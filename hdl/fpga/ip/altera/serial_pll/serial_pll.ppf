@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE pinplan>
+<pinplan intended_family="Cyclone IV E" variation_name="serial_pll" megafunction_name="ALTPLL" specifies="all_ports">
+<global>
+<pin name="areset" direction="input" scope="external"  />
+<pin name="inclk0" direction="input" scope="external" source="clock"  />
+<pin name="c0" direction="output" scope="external" source="clock"  />
+<pin name="locked" direction="output" scope="external"  />
+
+</global>
+</pinplan>
