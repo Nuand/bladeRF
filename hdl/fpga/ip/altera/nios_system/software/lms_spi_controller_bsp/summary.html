@@ -1,0 +1,2041 @@
+<html xmlns:gen="http://www.altera.com/embeddedsw/bsp/schema">
+<title>Altera Nios II BSP Summary</title>
+<body>
+<h3>BSP Description</h3>
+<table border="1" bgcolor="#FFFFCC" width="90%">
+<tr mode="wrap">
+<td width="20%" bgcolor="#77BBFF">BSP Type:</td><td>hal</td>
+</tr>
+<tr mode="wrap">
+<td width="20%" bgcolor="#77BBFF">SOPC Design File:</td><td>Z:\work\nuandclean\release\hdl\fpga\ip\altera\nios_system\nios_system.sopcinfo</td>
+</tr>
+<tr mode="wrap">
+<td width="20%" bgcolor="#77BBFF">Quartus JDI File:</td><td>default</td>
+</tr>
+<tr mode="wrap">
+<td width="20%" bgcolor="#77BBFF">CPU:</td><td>nios2_qsys_0</td>
+</tr>
+<tr mode="wrap">
+<td width="20%" bgcolor="#77BBFF">BSP Settings File:</td><td>.\settings.bsp</td>
+</tr>
+<tr mode="wrap">
+<td width="20%" bgcolor="#77BBFF">BSP Version:</td><td>default</td>
+</tr>
+<tr mode="wrap">
+<td width="20%" bgcolor="#77BBFF">BSP Generated On:</td><td>Feb 18, 2013 3:36:43 AM</td>
+</tr>
+<tr mode="wrap">
+<td width="20%" bgcolor="#77BBFF">BSP Generated Timestamp:</td><td>1361187403314</td>
+</tr>
+<tr mode="wrap">
+<td width="20%" bgcolor="#77BBFF">BSP Generated Location:</td><td>Z:\work\nuandclean\release\hdl\fpga\ip\altera\nios_system\software\lms_spi_controller_bsp</td>
+</tr>
+</table>
+<br>
+<h3>Nios II Memory Map</h3>
+<table border="1" bgcolor="#FFFFCC" width="90%">
+<tr bgcolor="#77BBFF" mode="wrap">
+<th align="left" width="20%">Slave Descriptor</th><th align="left" width="40%">Address Range</th><th align="left" width="20%">Size</th><th align="left" width="20%">Attributes</th>
+</tr>
+<tr mode="wrap" STYLE="display: 'block'; font-family: 'courier'; color: '#000000'; font-weight: '500'; font-size: '14'; margin-top: '10pt'; text-align: 'left'">
+<td>uart_0</td><td>0x00024000 - 0x0002401F</td><td>32</td><td class="listing">printable</td>
+</tr>
+<tr mode="wrap" STYLE="display: 'block'; font-family: 'courier'; color: '#000000'; font-weight: '500'; font-size: '14'; margin-top: '10pt'; text-align: 'left'">
+<td>timer_0</td><td>0x00023000 - 0x0002303F</td><td>64</td><td class="listing">timer</td>
+</tr>
+<tr mode="wrap" STYLE="display: 'block'; font-family: 'courier'; color: '#000000'; font-weight: '500'; font-size: '14'; margin-top: '10pt'; text-align: 'left'">
+<td>jtag_uart_0</td><td>0x00022000 - 0x00022007</td><td>8</td><td class="listing">printable</td>
+</tr>
+<tr mode="wrap" STYLE="display: 'block'; font-family: 'courier'; color: '#000000'; font-weight: '500'; font-size: '14'; margin-top: '10pt'; text-align: 'left'">
+<td>spi_0</td><td>0x00021000 - 0x0002101F</td><td>32</td><td class="listing">&nbsp;</td>
+</tr>
+<tr mode="wrap" STYLE="display: 'block'; font-family: 'courier'; color: '#000000'; font-weight: '500'; font-size: '14'; margin-top: '10pt'; text-align: 'left'">
+<td>spi_1</td><td>0x00010000 - 0x0001001F</td><td>32</td><td class="listing">&nbsp;</td>
+</tr>
+<tr mode="wrap" STYLE="display: 'block'; font-family: 'courier'; color: '#000000'; font-weight: '500'; font-size: '14'; margin-top: '10pt'; text-align: 'left'">
+<td>onchip_memory2_0</td><td>0x00000000 - 0x00007FFF</td><td>32768</td><td class="listing">memory</td>
+</tr>
+</table>
+<br>
+<br>
+<h3>Linker Regions</h3>
+<table border="1" bgcolor="#FFFFCC" width="90%">
+<tr bgcolor="#77BBFF" mode="wrap">
+<th align="left" width="15%">Region</th><th align="left" width="40%">Address Range</th><th align="left" width="15%">Size</th><th align="left" width="15%">Memory</th><th align="left" width="15%">Offset</th>
+</tr>
+</table>
+<br>
+<br>
+<h3>Linker Section Mappings</h3>
+<table border="1" bgcolor="#FFFFCC" width="50%">
+<tr bgcolor="#77BBFF" mode="wrap">
+<th align="left" width="50%">Section</th><th align="left" width="50%">Region</th>
+</tr>
+<tr mode="wrap" STYLE="display: 'block'; font-family: 'courier'; color: '#000000'; font-weight: '500'; font-size: '14'; margin-top: '10pt'; text-align: 'left'">
+<td>.text</td><td>onchip_memory2_0</td>
+</tr>
+<tr mode="wrap" STYLE="display: 'block'; font-family: 'courier'; color: '#000000'; font-weight: '500'; font-size: '14'; margin-top: '10pt'; text-align: 'left'">
+<td>.rodata</td><td>onchip_memory2_0</td>
+</tr>
+<tr mode="wrap" STYLE="display: 'block'; font-family: 'courier'; color: '#000000'; font-weight: '500'; font-size: '14'; margin-top: '10pt'; text-align: 'left'">
+<td>.rwdata</td><td>onchip_memory2_0</td>
+</tr>
+<tr mode="wrap" STYLE="display: 'block'; font-family: 'courier'; color: '#000000'; font-weight: '500'; font-size: '14'; margin-top: '10pt'; text-align: 'left'">
+<td>.bss</td><td>onchip_memory2_0</td>
+</tr>
+<tr mode="wrap" STYLE="display: 'block'; font-family: 'courier'; color: '#000000'; font-weight: '500'; font-size: '14'; margin-top: '10pt'; text-align: 'left'">
+<td>.heap</td><td>onchip_memory2_0</td>
+</tr>
+<tr mode="wrap" STYLE="display: 'block'; font-family: 'courier'; color: '#000000'; font-weight: '500'; font-size: '14'; margin-top: '10pt'; text-align: 'left'">
+<td>.stack</td><td>onchip_memory2_0</td>
+</tr>
+</table>
+<h3>Settings</h3>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">altera_avalon_jtag_uart_driver.enable_small_driver</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>ALTERA_AVALON_JTAG_UART_SMALL</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>false</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>false</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>BooleanDefineOnly</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>public_mk_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Small-footprint (polled mode) driver</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">altera_avalon_uart_driver.enable_ioctl</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>ALTERA_AVALON_UART_USE_IOCTL</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>false</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>false</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>BooleanDefineOnly</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>public_mk_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Enable driver ioctl() support. This feature is not compatible with the 'small' driver; ioctl() support will not be compiled if either the UART 'enable_small_driver' or HAL 'enable_reduced_device_drivers' settings are enabled.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">altera_avalon_uart_driver.enable_small_driver</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>ALTERA_AVALON_UART_SMALL</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>false</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>false</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>BooleanDefineOnly</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>public_mk_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Small-footprint (polled mode) driver</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.custom_newlib_flags</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>CUSTOM_NEWLIB_FLAGS</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>public_mk_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Build a custom version of newlib with the specified space-separated compiler flags.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>The custom newlib build will be placed in the &amp;lt;bsp root&gt;/newlib directory, and will be used only for applications that utilize this BSP.</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.enable_c_plus_plus</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>ALT_NO_C_PLUS_PLUS</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>1</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>Boolean</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>public_mk_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Enable support for a subset of the C++ language. This option increases code footprint by adding support for C++ constructors. Certain features, such as multiple inheritance and exceptions are not supported. If false, adds -DALT_NO_C_PLUS_PLUS to ALT_CPPFLAGS in public.mk, and reduces code footprint.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.enable_clean_exit</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>ALT_NO_CLEAN_EXIT</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>1</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>Boolean</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>public_mk_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>When your application exits, close file descriptors, call C++ destructors, etc. Code footprint can be reduced by disabling clean exit. If disabled, adds -DALT_NO_CLEAN_EXIT to ALT_CPPFLAGS and -Wl,--defsym, exit=_exit to ALT_LDFLAGS in public.mk.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.enable_exit</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>ALT_NO_EXIT</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>1</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>Boolean</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>public_mk_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Add exit() support. This option increases code footprint if your "main()" routine does "return" or call "exit()". If false, adds -DALT_NO_EXIT to ALT_CPPFLAGS in public.mk, and reduces footprint</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.enable_gprof</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>ALT_PROVIDE_GMON</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>Boolean</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>public_mk_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Causes code to be compiled with gprof profiling enabled and the application ELF to be linked with the GPROF library. If true, adds -DALT_PROVIDE_GMON to ALT_CPPFLAGS and -pg to ALT_CFLAGS in public.mk.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.enable_instruction_related_exceptions_api</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>ALT_INCLUDE_INSTRUCTION_RELATED_EXCEPTION_API</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>false</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>false</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>BooleanDefineOnly</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>system_h_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Enables API for registering handlers to service instruction-related exceptions. Enabling this setting increases the size of the exception entry code.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>These exception types can be generated if various processor options are enabled, such as the MMU, MPU, or other advanced exception types.</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.enable_lightweight_device_driver_api</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>ALT_USE_DIRECT_DRIVERS</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>1</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>Boolean</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>public_mk_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Enables lightweight device driver API. This reduces code and data footprint by removing the HAL layer that maps device names (e.g. /dev/uart0) to file descriptors. Instead, driver routines are called directly. The open(), close(), and lseek() routines will always fail if called. The read(), write(), fstat(), ioctl(), and isatty() routines only work for the stdio devices. If true, adds -DALT_USE_DIRECT_DRIVERS to ALT_CPPFLAGS in public.mk.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>The Altera Host and read-only ZIP file systems can't be used if hal.enable_lightweight_device_driver_api is true.</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.enable_mul_div_emulation</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>ALT_NO_INSTRUCTION_EMULATION</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>Boolean</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>public_mk_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Adds code to emulate multiply and divide instructions in case they are executed but aren't present in the CPU. Normally this isn't required because the compiler won't use multiply and divide instructions that aren't present in the CPU. If false, adds -DALT_NO_INSTRUCTION_EMULATION to ALT_CPPFLAGS in public.mk.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.enable_reduced_device_drivers</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>ALT_USE_SMALL_DRIVERS</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>1</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>Boolean</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>public_mk_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Certain drivers are compiled with reduced functionality to reduce code footprint. Not all drivers observe this setting. The altera_avalon_uart and altera_avalon_jtag_uart drivers switch from interrupt-driven to polled operation. CAUTION: Several device drivers are disabled entirely. These include the altera_avalon_cfi_flash, altera_avalon_epcs_flash_controller, and altera_avalon_lcd_16207 drivers. This can result in certain API (HAL flash access routines) to fail. You can define a symbol provided by each driver to prevent it from being removed. If true, adds -DALT_USE_SMALL_DRIVERS to ALT_CPPFLAGS in public.mk.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.enable_runtime_stack_checking</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>ALT_STACK_CHECK</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>Boolean</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>public_mk_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Turns on HAL runtime stack checking feature. Enabling this setting causes additional code to be placed into each subroutine call to generate an exception if a stack collision occurs with the heap or statically allocated data. If true, adds -DALT_STACK_CHECK and -mstack-check to ALT_CPPFLAGS in public.mk.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.enable_sim_optimize</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>ALT_SIM_OPTIMIZE</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>Boolean</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>public_mk_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>The BSP is compiled with optimizations to speedup HDL simulation such as initializing the cache, clearing the .bss section, and skipping long delay loops. If true, adds -DALT_SIM_OPTIMIZE to ALT_CPPFLAGS in public.mk.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>When this setting is true, the BSP shouldn't be used to build applications that are expected to run real hardware.</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.enable_small_c_library</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>NONE</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>1</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>Boolean</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>public_mk_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Causes the small newlib (C library) to be used. This reduces code and data footprint at the expense of reduced functionality. Several newlib features are removed such as floating-point support in printf(), stdin input routines, and buffered I/O. The small C library is not compatible with Micrium MicroC/OS-II. If true, adds -msmallc to ALT_LDFLAGS in public.mk.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.enable_sopc_sysid_check</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>NONE</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>1</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>1</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>Boolean</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>public_mk_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Enable SOPC Builder System ID. If a System ID SOPC Builder component is connected to the CPU associated with this BSP, it will be enabled in the creation of command-line arguments to download an ELF to the target. Otherwise, system ID and timestamp values are left out of public.mk for application Makefile "download-elf" target definition. With the system ID check disabled, the Nios II EDS tools will not automatically ensure that the application .elf file (and BSP it is linked against) corresponds to the hardware design on the target. If false, adds --accept-bad-sysid to SOPC_SYSID_FLAG in public.mk.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.linker.allow_code_at_reset</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>ALT_ALLOW_CODE_AT_RESET</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>1</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>Boolean</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>none</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Indicates if initialization code is allowed at the reset address. If true, defines the macro ALT_ALLOW_CODE_AT_RESET in linker.h.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>If true, defines the macro ALT_ALLOW_CODE_AT_RESET in linker.h. This setting is typically false if an external bootloader (e.g. flash bootloader) is present.</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.linker.enable_alt_load</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>NONE</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>1</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>Boolean</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>none</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Enables the alt_load() facility. The alt_load() facility copies sections from the .text memory into RAM. If true, this setting sets up the VMA/LMA of sections in linker.x to allow them to be loaded into the .text memory.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>This setting is typically false if an external bootloader (e.g. flash bootloader) is present.</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.linker.enable_alt_load_copy_exceptions</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>NONE</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>Boolean</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>none</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Causes the alt_load() facility to copy the .exceptions section. If true, this setting defines the macro ALT_LOAD_COPY_EXCEPTIONS in linker.h.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.linker.enable_alt_load_copy_rodata</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>NONE</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>Boolean</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>none</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Causes the alt_load() facility to copy the .rodata section. If true, this setting defines the macro ALT_LOAD_COPY_RODATA in linker.h.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.linker.enable_alt_load_copy_rwdata</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>NONE</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>1</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>Boolean</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>none</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Causes the alt_load() facility to copy the .rwdata section. If true, this setting defines the macro ALT_LOAD_COPY_RWDATA in linker.h.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.linker.enable_exception_stack</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>NONE</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>Boolean</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>none</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Enables use of a separate exception stack. If true, defines the macro ALT_EXCEPTION_STACK in linker.h, adds a memory region called exception_stack to linker.x, and provides the symbols __alt_exception_stack_pointer and __alt_exception_stack_limit in linker.x.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>The hal.linker.exception_stack_size and hal.linker.exception_stack_memory_region_name settings must also be valid. This setting must be false for MicroC/OS-II BSPs. The exception stack can be used to improve interrupt and other exception performance if the EIC is *not* used.</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.linker.enable_interrupt_stack</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>NONE</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>Boolean</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>none</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Enables use of a separate interrupt stack. If true, defines the macro ALT_INTERRUPT_STACK in linker.h, adds a memory region called interrupt_stack to linker.x, and provides the symbols __alt_interrupt_stack_pointer and __alt_interrupt_stack_limit in linker.x.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>The hal.linker.interrupt_stack_size and hal.linker.interrupt_stack_memory_region_name settings must also be valid. This setting must be false for MicroC/OS-II BSPs. Only enable if the EIC is used exclusively. The exception stack can be used to improve interrupt and other exception performance if the EIC is *not* used.</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.linker.exception_stack_memory_region_name</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>NONE</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>onchip_memory2_0</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>none</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Name of the existing memory region that will be divided up to create the 'exception_stack' memory region. The selected region name will be adjusted automatically when the BSP is generated to create the 'exception_stack' memory region.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>Only used if hal.linker.enable_exception_stack is true.</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.linker.exception_stack_size</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>NONE</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>1024</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>1024</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>DecimalNumber</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>none</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Size of the exception stack in bytes.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>Only used if hal.linker.enable_exception_stack is true.</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.linker.interrupt_stack_memory_region_name</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>NONE</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>onchip_memory2_0</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>none</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Name of the existing memory region that will be divided up to create the 'interrupt_stack' memory region. The selected region name will be adjusted automatically when the BSP is generated to create the 'interrupt_stack' memory region.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>Only used if hal.linker.enable_interrupt_stack is true.</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.linker.interrupt_stack_size</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>NONE</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>1024</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>1024</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>DecimalNumber</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>none</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Size of the interrupt stack in bytes.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>Only used if hal.linker.enable_interrupt_stack is true.</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.log_flags</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>ALT_LOG_FLAGS</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>DecimalNumber</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>public_mk_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>The value is assigned to ALT_LOG_FLAGS in the generated public.mk. See hal.log_port setting description. Values can be -1 through 3.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>hal.log_port must be set for this to be used.</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.log_port</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>NONE</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>public_mk_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Slave descriptor of debug logging character-mode device. If defined, it enables extra debug messages in the HAL source. This setting is used by the ALT_LOG_PORT family of defines in system.h.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.ar</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>AR</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>nios2-elf-ar</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>nios2-elf-ar</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>makefile_variable</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Archiver command. Creates library files.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.ar_post_process</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>AR_POST_PROCESS</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>makefile_variable</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Command executed after archiver execution.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.ar_pre_process</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>AR_PRE_PROCESS</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>makefile_variable</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Command executed before archiver execution.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.as</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>AS</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>nios2-elf-gcc</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>nios2-elf-gcc</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>makefile_variable</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Assembler command. Note that CC is used for .S files.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.as_post_process</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>AS_POST_PROCESS</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>makefile_variable</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Command executed after each assembly file is compiled.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.as_pre_process</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>AS_PRE_PROCESS</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>makefile_variable</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Command executed before each assembly file is compiled.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.bsp_arflags</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>BSP_ARFLAGS</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>-src</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>-src</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>makefile_variable</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Custom flags only passed to the archiver. This content of this variable is directly passed to the archiver rather than the more standard "ARFLAGS". The reason for this is that GNU Make assumes some default content in ARFLAGS. This setting defines the value of BSP_ARFLAGS in Makefile.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.bsp_asflags</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>BSP_ASFLAGS</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>-Wa,-gdwarf2</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>-Wa,-gdwarf2</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>makefile_variable</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Custom flags only passed to the assembler. This setting defines the value of BSP_ASFLAGS in Makefile.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.bsp_cflags_debug</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>BSP_CFLAGS_DEBUG</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>-g</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>-g</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>makefile_variable</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>C/C++ compiler debug level. '-g' provides the default set of debug symbols typically required to debug a typical application. Omitting '-g' removes debug symbols from the ELF. This setting defines the value of BSP_CFLAGS_DEBUG in Makefile.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.bsp_cflags_defined_symbols</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>BSP_CFLAGS_DEFINED_SYMBOLS</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>makefile_variable</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Preprocessor macros to define. A macro definition in this setting has the same effect as a "#define" in source code. Adding "-DALT_DEBUG" to this setting has the same effect as "#define ALT_DEBUG" in a souce file. Adding "-DFOO=1" to this setting is equivalent to the macro "#define FOO 1" in a source file. Macros defined with this setting are applied to all .S, .c, and C++ files in the BSP. This setting defines the value of BSP_CFLAGS_DEFINED_SYMBOLS in the BSP Makefile.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.bsp_cflags_optimization</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>BSP_CFLAGS_OPTIMIZATION</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>-O0</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>'-Os'</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>makefile_variable</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>C/C++ compiler optimization level. "-O0" = no optimization,"-O2" = "normal" optimization, etc. "-O0" is recommended for code that you want to debug since compiler optimization can remove variables and produce non-sequential execution of code while debugging. This setting defines the value of BSP_CFLAGS_OPTIMIZATION in Makefile.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.bsp_cflags_undefined_symbols</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>BSP_CFLAGS_UNDEFINED_SYMBOLS</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>makefile_variable</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Preprocessor macros to undefine. Undefined macros are similar to defined macros, but replicate the "#undef" directive in source code. To undefine the macro FOO use the syntax "-u FOO" in this setting. This is equivalent to "#undef FOO" in a source file. Note: the syntax differs from macro definition (there is a space, i.e. "-u FOO" versus "-DFOO"). Macros defined with this setting are applied to all .S, .c, and C++ files in the BSP. This setting defines the value of BSP_CFLAGS_UNDEFINED_SYMBOLS in the BSP Makefile.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.bsp_cflags_user_flags</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>BSP_CFLAGS_USER_FLAGS</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>makefile_variable</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Custom flags passed to the compiler when compiling C, C++, and .S files. This setting defines the value of BSP_CFLAGS_USER_FLAGS in Makefile.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.bsp_cflags_warnings</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>BSP_CFLAGS_WARNINGS</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>-Wall</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>-Wall</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>makefile_variable</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>C/C++ compiler warning level. "-Wall" is commonly used.This setting defines the value of BSP_CFLAGS_WARNINGS in Makefile.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.bsp_cxx_flags</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>BSP_CXXFLAGS</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>makefile_variable</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Custom flags only passed to the C++ compiler. This setting defines the value of BSP_CXXFLAGS in Makefile.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.bsp_inc_dirs</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>BSP_INC_DIRS</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>makefile_variable</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Space separated list of extra include directories to scan for header files. Directories are relative to the top-level BSP directory. The -I prefix's added by the makefile so don't add it here. This setting defines the value of BSP_INC_DIRS in Makefile.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.build_post_process</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>BUILD_POST_PROCESS</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>makefile_variable</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Command executed after BSP built.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.build_pre_process</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>BUILD_PRE_PROCESS</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>makefile_variable</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Command executed before BSP built.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.cc</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>CC</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>nios2-elf-gcc -xc</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>nios2-elf-gcc -xc</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>makefile_variable</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>C compiler command.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.cc_post_process</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>CC_POST_PROCESS</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>makefile_variable</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Command executed after each .c/.S file is compiled.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.cc_pre_process</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>CC_PRE_PROCESS</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>makefile_variable</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Command executed before each .c/.S file is compiled.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.cxx</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>CXX</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>nios2-elf-gcc -xc++</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>nios2-elf-gcc -xc++</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>makefile_variable</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>C++ compiler command.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.cxx_post_process</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>CXX_POST_PROCESS</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>makefile_variable</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Command executed before each C++ file is compiled.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.cxx_pre_process</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>CXX_PRE_PROCESS</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>makefile_variable</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Command executed before each C++ file is compiled.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.ignore_system_derived.big_endian</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>NONE</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>Boolean</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>public_mk_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Enable BSP generation to query if SOPC system is big endian. If true ignores export of 'ALT_CFLAGS += -EB' to public.mk if big endian system. If true ignores export of 'ALT_CFLAGS += -EL' if little endian system.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.ignore_system_derived.debug_core_present</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>NONE</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>Boolean</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>public_mk_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Enable BSP generation to query if SOPC system has a debug core present. If true ignores export of 'CPU_HAS_DEBUG_CORE = 1' to public.mk if a debug core is found in the system. If true ignores export of 'CPU_HAS_DEBUG_CORE = 0' if no debug core is found in the system.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.ignore_system_derived.fpu_present</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>NONE</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>Boolean</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>public_mk_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Enable BSP generation to query if SOPC system has FPU present. If true ignores export of 'ALT_CFLAGS += -mhard-float' to public.mk if FPU is found in the system. If true ignores export of 'ALT_CFLAGS += -mhard-soft' if FPU is not found in the system.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.ignore_system_derived.hardware_divide_present</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>NONE</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>Boolean</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>public_mk_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Enable BSP generation to query if SOPC system has hardware divide present. If true ignores export of 'ALT_CFLAGS += -mno-hw-div' to public.mk if no division is found in system. If true ignores export of 'ALT_CFLAGS += -mhw-div' if division is found in the system.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.ignore_system_derived.hardware_fp_cust_inst_divider_present</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>NONE</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>Boolean</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>public_mk_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Enable BSP generation to query if SOPC system floating point custom instruction with a divider is present. If true ignores export of 'ALT_CFLAGS += -mcustom-fpu-cfg=60-2' and 'ALT_LDFLAGS += -mcustom-fpu-cfg=60-2' to public.mk if the custom instruction is found in the system.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.ignore_system_derived.hardware_fp_cust_inst_no_divider_present</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>NONE</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>Boolean</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>public_mk_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Enable BSP generation to query if SOPC system floating point custom instruction without a divider is present. If true ignores export of 'ALT_CFLAGS += -mcustom-fpu-cfg=60-1' and 'ALT_LDFLAGS += -mcustom-fpu-cfg=60-1' to public.mk if the custom instruction is found in the system.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.ignore_system_derived.hardware_multiplier_present</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>NONE</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>Boolean</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>public_mk_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Enable BSP generation to query if SOPC system has multiplier present. If true ignores export of 'ALT_CFLAGS += -mno-hw-mul' to public.mk if no multiplier is found in the system. If true ignores export of 'ALT_CFLAGS += -mhw-mul' if multiplier is found in the system.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.ignore_system_derived.hardware_mulx_present</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>NONE</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>Boolean</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>public_mk_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Enable BSP generation to query if SOPC system has hardware mulx present. If true ignores export of 'ALT_CFLAGS += -mno-hw-mulx' to public.mk if no mulx is found in the system. If true ignores export of 'ALT_CFLAGS += -mhw-mulx' if mulx is found in the system.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.ignore_system_derived.sopc_simulation_enabled</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>NONE</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>Boolean</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>public_mk_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Enable BSP generation to query if SOPC system has simulation enabled. If true ignores export of 'ELF_PATCH_FLAG  += --simulation_enabled' to public.mk.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.ignore_system_derived.sopc_system_base_address</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>NONE</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>Boolean</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>public_mk_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Enable BSP generation to query SOPC system for system ID base address. If true ignores export of 'SOPC_SYSID_FLAG += --sidp=&lt;address&gt;' and 'ELF_PATCH_FLAG  += --sidp=&lt;address&gt;' to public.mk.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.ignore_system_derived.sopc_system_id</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>NONE</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>Boolean</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>public_mk_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Enable BSP generation to query SOPC system for system ID. If true ignores export of 'SOPC_SYSID_FLAG += --id=&lt;sysid&gt;' and 'ELF_PATCH_FLAG  += --id=&lt;sysid&gt;' to public.mk.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.ignore_system_derived.sopc_system_timestamp</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>NONE</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>0</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>Boolean</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>public_mk_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Enable BSP generation to query SOPC system for system timestamp. If true ignores export of 'SOPC_SYSID_FLAG += --timestamp=&lt;timestamp&gt;' and 'ELF_PATCH_FLAG  += --timestamp=&lt;timestamp&gt;' to public.mk.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.make.rm</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>RM</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>rm -f</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>rm -f</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>makefile_variable</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Command used to remove files during 'clean' target.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.max_file_descriptors</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>ALT_MAX_FD</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>32</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>4</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>DecimalNumber</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>system_h_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Determines the number of file descriptors statically allocated. This setting defines the value of ALT_MAX_FD in system.h.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>If hal.enable_lightweight_device_driver_api is true, there are no file descriptors so this setting is ignored. If hal.enable_lightweight_device_driver_api is false, this setting must be at least 4 because HAL needs a file descriptor for /dev/null, /dev/stdin, /dev/stdout, and /dev/stderr.</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.stderr</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>NONE</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>jtag_uart_0</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>system_h_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Slave descriptor of STDERR character-mode device. This setting is used by the ALT_STDERR family of defines in system.h.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.stdin</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>NONE</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>jtag_uart_0</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>system_h_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Slave descriptor of STDIN character-mode device. This setting is used by the ALT_STDIN family of defines in system.h.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.stdout</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>NONE</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>jtag_uart_0</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>system_h_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Slave descriptor of STDOUT character-mode device. This setting is used by the ALT_STDOUT family of defines in system.h.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.sys_clk_timer</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>ALT_SYS_CLK</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>system_h_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Slave descriptor of the system clock timer device. This device provides a periodic interrupt ("tick") and is typically required for RTOS use. This setting defines the value of ALT_SYS_CLK in system.h.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<table border="1" bgcolor="#FFFFCC" width="60%">
+<tr bgcolor="#77BBFF">
+<td align="left" width="15%">Setting Name:</td><td align="left">hal.timestamp_timer</td>
+</tr>
+<tr>
+<td width="20%">Identifier:</td><td>ALT_TIMESTAMP_CLK</td>
+</tr>
+<tr>
+<td width="20%">Default Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Value:</td><td>none</td>
+</tr>
+<tr>
+<td width="20%">Type:</td><td>UnquotedString</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Destination:</td><td>system_h_define</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Description:</td><td>Slave descriptor of timestamp timer device. This device is used by Altera HAL timestamp drivers for high-resolution time measurement. This setting defines the value of ALT_TIMESTAMP_CLK in system.h.</td>
+</tr>
+<tr mode="wrap">
+<td width="20%">Restrictions:</td><td>none</td>
+</tr>
+</table>
+<br>
+<br>
+<br>
+</body>
+</html>

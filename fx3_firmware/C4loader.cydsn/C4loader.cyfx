@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="us-ascii"?>
+<CyXmlSerializer>
+  <!--This file is machine generated and read. It is not intended to be edited by hand.-->
+  <!--Due to this, there is no schema for this file.-->
+  <CyGuid_7d237aff-d944-11da-aaba-00164119d63b type_name="CyGpif2Designer.Common.PrjMgmt.Model.CyPrjMgmtGpif2exe" version="2">
+    <CyGuid_7d237b00-d944-11da-aaba-00164119d63b type_name="CyGpif2Designer.Common.PrjMgmt.Model.CyPrjMgmtProject" version="1">
+      <ProjectDocs>
+        <CyGuid_7d237b03-d944-11da-aaba-00164119d63b type_name="CyGpif2Designer.Common.PrjMgmt.Model.CyPrjMgmtItem" name="gpif2model.xml" persistent="./projectfiles/gpif2model.xml" target="7d237b02-d944-11da-aaba-00164119d63b">
+          <Hidden v="False" />
+        </CyGuid_7d237b03-d944-11da-aaba-00164119d63b>
+        <CyGuid_7d237b03-d944-11da-aaba-00164119d63b type_name="CyGpif2Designer.Common.PrjMgmt.Model.CyPrjMgmtItem" name="gpif2view.xml" persistent="./projectfiles/gpif2view.xml" target="7d237b01-d944-11da-aaba-00164119d63b">
+          <Hidden v="False" />
+        </CyGuid_7d237b03-d944-11da-aaba-00164119d63b>
+        <CyGuid_7d237b03-d944-11da-aaba-00164119d63b type_name="CyGpif2Designer.Common.PrjMgmt.Model.CyPrjMgmtItem" name="gpif2timingsimulation.xml" persistent="./projectfiles/gpif2timingsimulation.xml" target="3ad448c6-d155-4f76-a7fb-e760cd8e6feb">
+          <Hidden v="False" />
+        </CyGuid_7d237b03-d944-11da-aaba-00164119d63b>
+      </ProjectDocs>
+      <OutputDocs>
+        <CyGuid_7d237b03-d944-11da-aaba-00164119d63b type_name="CyGpif2Designer.Common.PrjMgmt.Model.CyPrjMgmtItem" name="cyfxgpif2config.h" persistent="C:\Users\Robert\Documents\GPIF II Designer\waste.cydsn\cyfxgpif2config.h" target="7d237afd-d944-11da-aaba-00164119d63b">
+          <Hidden v="False" />
+        </CyGuid_7d237b03-d944-11da-aaba-00164119d63b>
+        <CyGuid_7d237b03-d944-11da-aaba-00164119d63b type_name="CyGpif2Designer.Common.PrjMgmt.Model.CyPrjMgmtItem" name="cyfxgpif2config.h" persistent="C:\Users\Robert\Documents\GPIF II Designer\c4loader.cydsn\cyfxgpif2config.h" target="7d237afd-d944-11da-aaba-00164119d63b">
+          <Hidden v="False" />
+        </CyGuid_7d237b03-d944-11da-aaba-00164119d63b>
+      </OutputDocs>
+    </CyGuid_7d237b00-d944-11da-aaba-00164119d63b>
+    <Settings>
+      <Setting name="GPIF2_OutputName" value="cyfxgpif2config" />
+      <Setting name="GPIF2_OutputLocation" value="${ProjectDir}" />
+      <Setting name="GPIF2_Template" value="cygpif2cheadertemplate" />
+    </Settings>
+  </CyGuid_7d237aff-d944-11da-aaba-00164119d63b>
+</CyXmlSerializer>
