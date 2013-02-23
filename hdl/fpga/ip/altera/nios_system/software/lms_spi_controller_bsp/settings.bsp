@@ -2,10 +2,10 @@
 <sch:Settings xmlns:sch="http://www.altera.com/embeddedsw/bsp/schema">
         <BspType>hal</BspType>
         <BspVersion>default</BspVersion>
-        <BspGeneratedTimeStamp>Feb 18, 2013 3:36:43 AM</BspGeneratedTimeStamp>
-        <BspGeneratedUnixTimeStamp>1361187403314</BspGeneratedUnixTimeStamp>
+        <BspGeneratedTimeStamp>Feb 22, 2013 10:43:13 PM</BspGeneratedTimeStamp>
+        <BspGeneratedUnixTimeStamp>1361601793367</BspGeneratedUnixTimeStamp>
         <BspGeneratedLocation>Z:\work\nuandclean\release\hdl\fpga\ip\altera\nios_system\software\lms_spi_controller_bsp</BspGeneratedLocation>
-        <BspSettingsFile>.\settings.bsp</BspSettingsFile>
+        <BspSettingsFile>settings.bsp</BspSettingsFile>
         <SopcDesignFile>Z:\work\nuandclean\release\hdl\fpga\ip\altera\nios_system\nios_system.sopcinfo</SopcDesignFile>
         <JdiFile>default</JdiFile>
         <Cpu>nios2_qsys_0</Cpu>
@@ -876,8 +876,8 @@
         </Setting>
         <MemoryMap>
                 <slaveDescriptor>onchip_memory2_0</slaveDescriptor>
-                <addressRange>0x00000000 - 0x00007FFF</addressRange>
-                <addressSpan>32768</addressSpan>
+                <addressRange>0x00000000 - 0x00003FFF</addressRange>
+                <addressSpan>16384</addressSpan>
                 <attributes>memory</attributes>
         </MemoryMap>
         <MemoryMap>
