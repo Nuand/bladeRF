@@ -158,7 +158,7 @@ void UartBridgeStart(void)
 
     /* Set UART configuration */
     CyU3PMemSet ((uint8_t *)&uartConfig, 0, sizeof (uartConfig));
-    uartConfig.baudRate = CY_U3P_UART_BAUDRATE_4M608K;
+    uartConfig.baudRate = CY_U3P_UART_BAUDRATE_115200;
     uartConfig.stopBit = CY_U3P_UART_ONE_STOP_BIT;
     uartConfig.parity = CY_U3P_UART_NO_PARITY;
     uartConfig.txEnable = CyTrue;
@@ -227,8 +227,8 @@ void UartBridgeStart(void)
     }
 
     CyU3PMemSet((uint8_t *)&dmaCfg, 0, sizeof(dmaCfg));
-    dmaCfg.size  = size;
-    dmaCfg.count = 2;
+    dmaCfg.size  = 16;
+    dmaCfg.count = 10;
     dmaCfg.prodSckId = CY_U3P_UIB_SOCKET_PROD_2;
     dmaCfg.consSckId = CY_U3P_LPP_SOCKET_UART_CONS;
     dmaCfg.dmaMode = CY_U3P_DMA_MODE_BYTE;
@@ -282,6 +282,37 @@ void UartBridgeStart(void)
      if (apiRetStatus != CY_U3P_SUCCESS) {
          CyFxAppErrorHandler(apiRetStatus);
      }
+}
+
+void UartBridgeStop(void)
+{
+    CyU3PEpConfig_t epCfg;
+    CyU3PReturnStatus_t apiRetStatus = CY_U3P_SUCCESS;
+
+    /* Flush the endpoint memory */
+    CyU3PUsbFlushEp(BLADE_UART_EP_PRODUCER);
+    CyU3PUsbFlushEp(BLADE_UART_EP_CONSUMER);
+
+    /* Destroy the channel */
+    CyU3PDmaChannelDestroy(&glChHandlebladeRFUARTtoU);
+    CyU3PDmaChannelDestroy(&glChHandlebladeRFUARTtoU);
+
+    /* Disable endpoints. */
+    CyU3PMemSet((uint8_t *)&epCfg, 0, sizeof (epCfg));
+    epCfg.enable = CyFalse;
+
+    /* Producer endpoint configuration. */
+    apiRetStatus = CyU3PSetEpConfig(BLADE_UART_EP_PRODUCER, &epCfg);
+    if (apiRetStatus != CY_U3P_SUCCESS) {
+        CyU3PDebugPrint (4, "CyU3PSetEpConfig failed, Error code = %d\n", apiRetStatus);
+        CyFxAppErrorHandler (apiRetStatus);
+    }
+
+    apiRetStatus = CyU3PSetEpConfig(BLADE_UART_EP_CONSUMER, &epCfg);
+    if (apiRetStatus != CY_U3P_SUCCESS) {
+        CyU3PDebugPrint (4, "CyU3PSetEpConfig failed, Error code = %d\n", apiRetStatus);
+        CyFxAppErrorHandler (apiRetStatus);
+    }
 }
 
 void CyFxGpioInit(void)
@@ -493,6 +524,8 @@ void NuandRFLinkStart(void)
         CyFxAppErrorHandler(apiRetStatus);
     }
 
+
+    UartBridgeStart();
     glAppMode = MODE_RF_CONFIG;
 
 }
@@ -534,6 +567,7 @@ void NuandRFLinkStop (void)
     /* Reset the GPIF */
     CyU3PGpifDisable(CyTrue);
 
+    UartBridgeStop();
     glAppMode = MODE_NO_CONFIG;
 }
 
