@@ -162,6 +162,9 @@ architecture arch of bladerf is
     signal rf_tx_fifo_enough  : std_logic;
     --- end RF tx FIFO
 
+    signal debug_line_speed : std_logic;
+    signal debug_line_speed_rx, debug_line_speed_tx : std_logic;
+
     signal can_perform_rx, should_perform_rx : std_logic;
     signal can_perform_tx, should_perform_tx : std_logic;
 
@@ -340,11 +343,19 @@ begin
     rf_rx_fifo_clr <= '1' when (sys_rst = '1' or (rf_rx_fifo_full = '1' and signed(rf_rx_sample_idx) = 0)) else '0';
     rf_rx_fifo_read <= '1' when (current_state = M_READ) else '0';
 
-    fx3_gpif <= rf_rx_fifo_q when (current_state = M_READ or current_state = M_IDLE_RD) else (others => 'Z');
+    fx3_gpif <= rf_rx_fifo_q when (debug_line_speed_rx = '0' and (current_state = M_READ or current_state = M_IDLE_RD)) else (others => 'Z');
 
-    can_perform_rx <= '1' when (dma_rx_en = '1' and rf_rx_fifo_enough = '1' and (
-                        (dma_rdy_0 = '0' and rf_rx_next_dma = '0') or (dma_rdy_1 = '0' and rf_rx_next_dma = '1')
-                    )) else '0';
+    debug_line_speed <= '0';
+    debug_line_speed_rx <= debug_line_speed;
+
+    can_perform_rx <= '1' when (dma_rx_en = '1' and (
+                                    debug_line_speed_rx = '1' or
+                                    (rf_rx_fifo_enough = '1' and (
+                                          (dma_rdy_0 = '0' and rf_rx_next_dma = '0') or
+                                          (dma_rdy_1 = '0' and rf_rx_next_dma = '1')
+                                          )
+                                    )
+                                )) else '0';
 
     can_perform_tx <= '0';
 
@@ -363,26 +374,20 @@ begin
             case current_state is
                 when M_IDLE =>
                     if( dma_idle = '1' ) then
-                        if(should_perform_rx = '1') then
+                        if( should_perform_rx = '1' ) then
+                            rf_fifo_rcnt <= to_signed(256, 13);
 
-                                if( ((dma_rdy_0 = '0' and rf_rx_next_dma = '0') or
-                                    (dma_rdy_1 = '0' and rf_rx_next_dma = '1')) ) then
-
-                                    rf_fifo_rcnt <= to_signed(256, 13);
-
-                                    if ( rf_rx_next_dma = '0') then
-                                        rf_rx_dma_0 <= '1';
-                                        rf_rx_dma_1 <= '0';
-                                    else
-                                        rf_rx_dma_0 <= '0';
-                                        rf_rx_dma_1 <= '1';
-                                    end if;
-
-                                    rf_rx_next_dma <= not rf_rx_next_dma;
-
-                                    current_state <= M_IDLE_RD;
+                            if ( rf_rx_next_dma = '0') then
+                                rf_rx_dma_0 <= '1';
+                                rf_rx_dma_1 <= '0';
+                            else
+                                rf_rx_dma_0 <= '0';
+                                rf_rx_dma_1 <= '1';
                             end if;
 
+                            rf_rx_next_dma <= not rf_rx_next_dma;
+
+                            current_state <= M_IDLE_RD;
                             -- set this to DE_RX unconditionally so that no hangs occur
                             -- if there is an problem with RX
                             dma_last_event <= DE_RX;
