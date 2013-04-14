@@ -162,6 +162,9 @@ architecture arch of bladerf is
     signal rf_tx_fifo_enough  : std_logic;
     --- end RF tx FIFO
 
+    signal can_perform_rx, should_perform_rx : std_logic;
+    signal can_perform_tx, should_perform_tx : std_logic;
+
     signal rf_rx_next_dma : std_logic;
     signal rf_rx_dma_0  : std_logic;
     signal rf_rx_dma_1  : std_logic;
@@ -339,6 +342,14 @@ begin
 
     fx3_gpif <= rf_rx_fifo_q when (current_state = M_READ or current_state = M_IDLE_RD) else (others => 'Z');
 
+    can_perform_rx <= '1' when (dma_rx_en = '1' and rf_rx_fifo_enough = '1' and (
+                        (dma_rdy_0 = '0' and rf_rx_next_dma = '0') or (dma_rdy_1 = '0' and rf_rx_next_dma = '1')
+                    )) else '0';
+
+    can_perform_tx <= '0';
+
+    should_perform_rx <= '1' when ( can_perform_rx = '1' and (can_perform_tx = '0' or (can_perform_tx = '1' and dma_last_event = DE_TX ) ) ) else '0';
+
     process(sys_rst, fx3_pclk)
     begin
         if( sys_rst = '1' ) then
@@ -352,7 +363,7 @@ begin
             case current_state is
                 when M_IDLE =>
                     if( dma_idle = '1' ) then
-                        if( dma_rx_en = '1' and rf_rx_fifo_enough = '1' ) then
+                        if(should_perform_rx = '1') then
 
                                 if( ((dma_rdy_0 = '0' and rf_rx_next_dma = '0') or
                                     (dma_rdy_1 = '0' and rf_rx_next_dma = '1')) ) then
