@@ -168,6 +168,10 @@ architecture arch of bladerf is
     signal can_perform_rx, should_perform_rx : std_logic;
     signal can_perform_tx, should_perform_tx : std_logic;
 
+    signal rf_tx_next_dma : std_logic;
+    signal rf_tx_dma_2  : std_logic;
+    signal rf_tx_dma_3  : std_logic;
+
     signal rf_rx_next_dma : std_logic;
     signal rf_rx_dma_0  : std_logic;
     signal rf_rx_dma_1  : std_logic;
@@ -357,7 +361,14 @@ begin
                                     )
                                 )) else '0';
 
-    can_perform_tx <= '0';
+    can_perform_tx <= '1' when (dma_tx_en = '1' and (
+                                    debug_line_speed_tx = '1' or
+                                    (rf_tx_fifo_enough = '1' and (
+                                          (dma_rdy_2 = '0' and rf_tx_next_dma = '0') or
+                                          (dma_rdy_3 = '0' and rf_tx_next_dma = '1')
+                                          )
+                                    )
+                                )) else '0';
 
     should_perform_rx <= '1' when ( can_perform_rx = '1' and (can_perform_tx = '0' or (can_perform_tx = '1' and dma_last_event = DE_TX ) ) ) else '0';
 
@@ -365,6 +376,7 @@ begin
     begin
         if( sys_rst = '1' ) then
             current_state <= M_IDLE;
+            rf_tx_next_dma <= '0';
             rf_rx_next_dma <= '0';
             rf_rx_dma_0 <= '0';
             rf_rx_dma_1 <= '0';
@@ -391,11 +403,31 @@ begin
                             -- set this to DE_RX unconditionally so that no hangs occur
                             -- if there is an problem with RX
                             dma_last_event <= DE_RX;
+                        elsif( should_perform_tx = '1' ) then
+                            rf_fifo_rcnt <= to_signed(256, 13);
+
+                            if( rf_tx_next_dma = '0') then
+                                rf_tx_dma_2 <= '1';
+                                rf_tx_dma_3 <= '0';
+                            else
+                                rf_tx_dma_2 <= '0';
+                                rf_tx_dma_3 <= '1';
+                            end if;
+
+                            rf_tx_next_dma <= not rf_tx_next_dma;
+
+                            current_state <= M_WRITE;
+
+                            dma_last_event <= DE_TX;
                         end if;
                     end if;
 
                 when M_WRITE =>
-                    current_state <= M_IDLE;
+                    if( unsigned(rf_fifo_rcnt) /= 0 ) then
+                        rf_fifo_rcnt <= rf_fifo_rcnt - 1;
+                    else
+                        current_state <= M_IDLE;
+                    end if;
                 when M_IDLE_RD =>
                     current_state <= M_READ;
                 when M_READ =>
@@ -407,7 +439,6 @@ begin
                     else
                         current_state <= M_IDLE;
                     end if;
-
             end case;
 
         end if;
