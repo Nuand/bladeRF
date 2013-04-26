@@ -4,11 +4,6 @@ library ieee ;
     use ieee.math_real.all ;
     use ieee.math_complex.all ;
 
-library pll ;
-library serial_pll ;
-library rx_fifo;
-library tx_fifo;
-
 entity bladerf is
   port (
     -- Main 38.4MHz system clock
@@ -133,6 +128,8 @@ architecture arch of bladerf is
     signal qualifier : unsigned(5 downto 0) := (others =>'0') ;
     attribute noprune of qualifier : signal is true ;
 
+    signal gpif_var            : std_logic_vector(31 downto 0) ;
+
     signal rf_fifo_rcnt : signed(12 downto 0);
 
     --- RF rx FIFO signals
@@ -160,6 +157,10 @@ architecture arch of bladerf is
     signal rf_tx_fifo_cnt    : std_logic_vector(11 downto 0);
 
     signal rf_tx_fifo_enough  : std_logic;
+
+    signal rf_tx_fifo_data_iq_r    : std_logic_vector(31 downto 0);
+    signal rf_tx_fifo_data_iq_rr   : std_logic_vector(31 downto 0);
+    signal tx_data           :   std_logic_vector(11 downto 0) ;
     --- end RF tx FIFO
 
     signal debug_line_speed : std_logic;
@@ -190,8 +191,14 @@ architecture arch of bladerf is
 
     signal dma_rx_en_r  : std_logic;
     signal dma_rx_en_rr : std_logic;
+    signal dma_tx_en_r  : std_logic;
+    signal dma_tx_en_rr : std_logic;
+    signal rf_tx_en_iq_r  : std_logic;
+    signal rf_tx_en_iq_rr : std_logic;
 
-    type m_state is (M_IDLE, M_IDLE_RD, M_READ, M_WRITE);
+    signal tx_iq_idx : std_logic;
+
+    type m_state is (M_IDLE, M_IDLE_RD, M_IDLE_WR, M_READ, M_WRITE);
     signal current_state : m_state;
 
     attribute keep: boolean;
@@ -206,6 +213,14 @@ architecture arch of bladerf is
     attribute keep of rf_rx_fifo_clr: signal is true;
     attribute keep of lms_rx_clock: signal is true;
 
+    attribute keep of can_perform_rx: signal is true;
+    attribute keep of can_perform_tx: signal is true;
+    attribute keep of should_perform_rx: signal is true;
+    attribute keep of should_perform_tx: signal is true;
+    attribute keep of rf_tx_fifo_enough: signal is true;
+    attribute keep of rf_tx_fifo_cnt: signal is true;
+    attribute keep of rf_tx_fifo_w: signal is true;
+
     attribute noprune of dma_idle: signal is true;
     attribute noprune of rf_rx_fifo_cnt: signal is true;
     attribute noprune of rf_rx_fifo_enough: signal is true;
@@ -217,6 +232,13 @@ architecture arch of bladerf is
     attribute noprune of rf_rx_fifo_clr: signal is true;
     attribute noprune of lms_rx_clock: signal is true;
 
+    attribute noprune of can_perform_rx: signal is true;
+    attribute noprune of can_perform_tx: signal is true;
+    attribute noprune of should_perform_rx: signal is true;
+    attribute noprune of should_perform_tx: signal is true;
+    attribute noprune of rf_tx_fifo_enough: signal is true;
+    attribute noprune of rf_tx_fifo_cnt: signal is true;
+    attribute noprune of rf_tx_fifo_w: signal is true;
 
 begin
 
@@ -225,7 +247,7 @@ begin
     rx_i <= lms_rx_data when rising_edge(lms_rx_clock_out) and lms_rx_iq_select = '1' ;
     rx_q <= lms_rx_data when rising_edge(lms_rx_clock_out) and lms_rx_iq_select = '0' ;
 
-    U_pll : entity pll.pll
+    U_pll : entity work.pll
       port map (
         inclk0   =>  c4_clock,
         c0      =>  \76.8MHz\,
@@ -234,7 +256,7 @@ begin
         locked  => open
       ) ;
 
-    U_serial_pll : entity serial_pll.serial_pll
+    U_serial_pll : entity work.serial_pll
       port map (
         inclk0  => c4_clock,
         c0      => rs232_clock,
@@ -290,8 +312,8 @@ begin
 
     fx3_ctl(0) <= rf_rx_dma_0;
     fx3_ctl(1) <= rf_rx_dma_1;
-    fx3_ctl(2) <= '0';
-    fx3_ctl(3) <= '0';
+    fx3_ctl(2) <= rf_tx_dma_2;
+    fx3_ctl(3) <= rf_tx_dma_3;
 
     dma_rx_en  <= fx3_ctl(4);
     dma_tx_en  <= fx3_ctl(5);
@@ -307,8 +329,8 @@ begin
       port map (
         aclr      => rf_tx_fifo_clr,
         data      => rf_tx_fifo_data,
-        rdclk     => \76.8MHz\,
-        rdreq     => rf_tx_fifo_read,
+        rdclk     => c4_clock,
+        rdreq     => dma_tx_en_rr,
         wrclk     => fx3_pclk,
         wrreq     => rf_tx_fifo_w,
         q         => rf_tx_fifo_q,
@@ -319,11 +341,52 @@ begin
         wrfull    => open,
         wrusedw   => rf_tx_fifo_cnt
       );
-    rf_tx_fifo_enough <= '1' when ((2**rf_tx_fifo_cnt'length) - 256 <= unsigned(rf_tx_fifo_cnt)) else '0';
+    rf_tx_fifo_enough <= '1' when (unsigned(rf_tx_fifo_cnt) <= ((2**(rf_tx_fifo_cnt'length-1))  - 512)) else '0';
     rf_tx_fifo_clr <= '1' when (sys_rst = '1') else '0';
 
-    rf_tx_fifo_read <= '1' when (current_state = M_WRITE) else '0';
+    rf_tx_fifo_w <= '1' when (current_state = M_WRITE) else '0';
 
+    process(sys_rst, c4_clock)
+    begin
+        if( sys_rst = '1' ) then
+            dma_tx_en_r <= '0';
+            dma_tx_en_rr <= '0';
+        elsif( rising_edge(c4_clock) ) then
+            dma_tx_en_r <= dma_tx_en;
+            dma_tx_en_rr <= dma_tx_en_r;
+        end if;
+    end process;
+
+    process(sys_rst, \76.8MHz\)
+    begin
+        if( sys_rst = '1' ) then
+            rf_tx_en_iq_r <= '0';
+            rf_tx_en_iq_rr <= '0';
+            rf_tx_fifo_data_iq_r <= (others => '0');
+            rf_tx_fifo_data_iq_rr <= (others => '0');
+        elsif( rising_edge(\76.8MHz\) ) then
+            rf_tx_en_iq_r <= not rf_tx_fifo_empty;
+            rf_tx_en_iq_rr <= rf_tx_en_iq_r;
+            rf_tx_fifo_data_iq_r <= rf_tx_fifo_q;
+            rf_tx_fifo_data_iq_rr <= rf_tx_fifo_data_iq_r;
+        end if;
+    end process;
+
+    process(sys_rst, \76.8MHz\)
+    begin
+        if( sys_rst = '1' ) then
+            tx_iq_idx <= '0';
+        elsif( rising_edge(\76.8MHz\) ) then
+            if (rf_tx_en_iq_rr = '1') then
+                tx_iq_idx <= not tx_iq_idx;
+            elsif (rf_tx_en_iq_rr = '0') then
+                tx_iq_idx <= '0';
+            end if;
+        end if;
+    end process;
+
+    tx_data <= rf_tx_fifo_data_iq_rr(27 downto 16) when tx_iq_idx = '0' else rf_tx_fifo_data_iq_rr(11 downto 0);
+    lms_tx_data <= signed(tx_data) when rf_tx_en_iq_rr = '1' else (others => '0');
 
     rf_rx_fifo : entity work.rx_fifo
       port map (
@@ -342,15 +405,38 @@ begin
         wrusedw   => open
       );
 
-    rf_rx_fifo_enough <= '1' when (unsigned(rf_rx_fifo_cnt) >= 256 ) else '0';
+    rf_rx_fifo_enough <= '1' when (unsigned(rf_rx_fifo_cnt) >= 512 ) else '0';
 
     rf_rx_fifo_clr <= '1' when (sys_rst = '1' or (rf_rx_fifo_full = '1' and signed(rf_rx_sample_idx) = 0)) else '0';
     rf_rx_fifo_read <= '1' when (current_state = M_READ) else '0';
 
-    fx3_gpif <= rf_rx_fifo_q when (debug_line_speed_rx = '0' and (current_state = M_READ or current_state = M_IDLE_RD)) else (others => 'Z');
+    process(all)
+    begin
+        if( current_state = M_READ or current_state = M_IDLE_RD) then
+            fx3_gpif <= rf_rx_fifo_q;
+        elsif( current_state = M_WRITE or current_state = M_IDLE_WR) then
+            rf_tx_fifo_data <= fx3_gpif;
+        else
+            fx3_gpif <= (others => 'Z');
+        end if;
+    end process;
+    --todo: readd debug_line_speed handling
+    --fx3_gpif <= rf_rx_fifo_q when (debug_line_speed_rx = '0' and (current_state = M_READ or current_state = M_IDLE_RD)) else (others => 'Z');
+    --gpif_var <= fx3_gpif;
+    --process(all)
+    --begin
+    --    if (debug_line_speed_rx = '0' and (current_state = M_READ or current_state = M_IDLE_RD)) then
+    --        fx3_gpif <= rf_rx_fifo_q;
+    --    elsif (current_state = M_WRITE ) then
+    --        gpif_var <= fx3_gpif;
+    --    else
+    --        fx3_gpif <= (others => 'Z');
+    --    end if;
+    --end process;
 
     debug_line_speed <= '0';
     debug_line_speed_rx <= debug_line_speed;
+    debug_line_speed_tx <= debug_line_speed;
 
     can_perform_rx <= '1' when (dma_rx_en = '1' and (
                                     debug_line_speed_rx = '1' or
@@ -372,6 +458,8 @@ begin
 
     should_perform_rx <= '1' when ( can_perform_rx = '1' and (can_perform_tx = '0' or (can_perform_tx = '1' and dma_last_event = DE_TX ) ) ) else '0';
 
+    should_perform_tx <= '1' when ( can_perform_tx = '1' and (can_perform_rx = '0' or (can_perform_rx = '1' and dma_last_event = DE_RX ) ) ) else '0';
+
     process(sys_rst, fx3_pclk)
     begin
         if( sys_rst = '1' ) then
@@ -380,6 +468,8 @@ begin
             rf_rx_next_dma <= '0';
             rf_rx_dma_0 <= '0';
             rf_rx_dma_1 <= '0';
+            rf_tx_dma_2 <= '0';
+            rf_tx_dma_3 <= '0';
             rf_fifo_rcnt <= (others => '0');
             dma_last_event <= DE_TX;
         elsif( rising_edge(fx3_pclk) ) then
@@ -387,7 +477,7 @@ begin
                 when M_IDLE =>
                     if( dma_idle = '1' ) then
                         if( should_perform_rx = '1' ) then
-                            rf_fifo_rcnt <= to_signed(256, 13);
+                            rf_fifo_rcnt <= to_signed(512, 13);
 
                             if ( rf_rx_next_dma = '0') then
                                 rf_rx_dma_0 <= '1';
@@ -404,7 +494,7 @@ begin
                             -- if there is an problem with RX
                             dma_last_event <= DE_RX;
                         elsif( should_perform_tx = '1' ) then
-                            rf_fifo_rcnt <= to_signed(256, 13);
+                            rf_fifo_rcnt <= to_signed(512, 13);
 
                             if( rf_tx_next_dma = '0') then
                                 rf_tx_dma_2 <= '1';
@@ -416,13 +506,17 @@ begin
 
                             rf_tx_next_dma <= not rf_tx_next_dma;
 
-                            current_state <= M_WRITE;
+                            current_state <= M_IDLE_WR;
 
                             dma_last_event <= DE_TX;
                         end if;
                     end if;
 
+				    when M_IDLE_WR =>
+					     current_state <= M_WRITE;
                 when M_WRITE =>
+                    rf_tx_dma_2 <= '0';
+                    rf_tx_dma_3 <= '0';
                     if( unsigned(rf_fifo_rcnt) /= 0 ) then
                         rf_fifo_rcnt <= rf_fifo_rcnt - 1;
                     else
@@ -626,7 +720,7 @@ begin
 --        end if ;
 --    end process ;
 
-	lms_tx_data <= (others => '1');
+--	lms_tx_data <= (others => '1');
     U_ramp : entity work.ramp
       port map (
         clock   => c4_clock,
