@@ -37,7 +37,7 @@
 
 
 set_global_assignment -name FAMILY "Cyclone IV E"
-set_global_assignment -name DEVICE EP4CE15F23I7
+set_global_assignment -name DEVICE EP4CE40F23C8
 set_global_assignment -name TOP_LEVEL_ENTITY bladerf
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION 12.1
 set_global_assignment -name PROJECT_CREATION_TIME_DATE "00:17:06  NOVEMBER 24, 2012"
@@ -268,27 +268,27 @@ set_location_assignment PIN_AB16 -to lms_sen
 set_location_assignment PIN_AB19 -to lms_rx_v[2]
 set_location_assignment PIN_AB20 -to lms_rx_v[1]
 set_location_assignment PIN_J22 -to lms_tx_iq_select
-set_location_assignment PIN_A13 -to exp_spi_mosi
+set_location_assignment PIN_B13 -to exp_spi_mosi
 set_location_assignment PIN_A14 -to exp_gpio[1]
-set_location_assignment PIN_A15 -to exp_gpio[2]
-set_location_assignment PIN_A16 -to exp_gpio[3]
-set_location_assignment PIN_A17 -to exp_gpio[4]
-set_location_assignment PIN_A18 -to exp_gpio[5]
-set_location_assignment PIN_A19 -to exp_gpio[6]
-set_location_assignment PIN_A20 -to exp_gpio[7]
-set_location_assignment PIN_C19 -to exp_gpio[8]
-set_location_assignment PIN_B13 -to exp_gpio[9]
-set_location_assignment PIN_B14 -to exp_gpio[10]
-set_location_assignment PIN_B15 -to exp_gpio[11]
-set_location_assignment PIN_B16 -to exp_gpio[12]
-set_location_assignment PIN_B17 -to exp_gpio[13]
-set_location_assignment PIN_B18 -to exp_gpio[14]
-set_location_assignment PIN_B19 -to exp_gpio[15]
-set_location_assignment PIN_B20 -to exp_gpio[16]
+set_location_assignment PIN_D13 -to exp_gpio[2]
+set_location_assignment PIN_E13 -to exp_gpio[3]
+set_location_assignment PIN_E14 -to exp_gpio[4]
+set_location_assignment PIN_E15 -to exp_gpio[5]
+set_location_assignment PIN_E16 -to exp_gpio[6]
+set_location_assignment PIN_D17 -to exp_gpio[7]
+set_location_assignment PIN_D19 -to exp_gpio[8]
+set_location_assignment PIN_C19 -to exp_gpio[9]
+set_location_assignment PIN_D20 -to exp_gpio[10]
+set_location_assignment PIN_C20 -to exp_gpio[11]
+set_location_assignment PIN_F13 -to exp_gpio[12]
+set_location_assignment PIN_F14 -to exp_gpio[13]
+set_location_assignment PIN_F15 -to exp_gpio[14]
+set_location_assignment PIN_D15 -to exp_gpio[15]
+set_location_assignment PIN_A13 -to exp_gpio[16]
 set_location_assignment PIN_C13 -to exp_present
 set_location_assignment PIN_G1 -to fx3_pclk
 set_location_assignment PIN_AA15 -to lms_sclk
-set_location_assignment PIN_D13 -to exp_spi_miso
+set_location_assignment PIN_F11 -to exp_spi_miso
 set_location_assignment PIN_E12 -to exp_spi_clock
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_pclk
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to led[1]
@@ -300,8 +300,8 @@ set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_rx_v[1]
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_tx_v[2]
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_tx_v[1]
 set_location_assignment PIN_AA21 -to lms_tx_v[1]
-set_global_assignment -name MIN_CORE_JUNCTION_TEMP "-40"
-set_global_assignment -name MAX_CORE_JUNCTION_TEMP 100
+set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
+set_global_assignment -name MAX_CORE_JUNCTION_TEMP 85
 set_global_assignment -name ENABLE_SIGNALTAP ON
 set_global_assignment -name USE_SIGNALTAP_FILE ../fpga/ip/altera/nios_system/stp1.stp
 set_global_assignment -name SLD_NODE_CREATOR_ID 110 -section_id auto_signaltap_0
@@ -508,3 +508,30 @@ set_global_assignment -name QIP_FILE ../fpga/ip/altera/serial_pll/serial_pll.qip
 set_global_assignment -name QIP_FILE ../fpga/ip/altera/rx_fifo/rx_fifo.qip
 set_global_assignment -name QIP_FILE ../fpga/ip/altera/tx_fifo/tx_fifo.qip
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
+set_global_assignment -name DEVICE_MIGRATION_LIST "EP4CE40F23C8,EP4CE115F23C8"
+set_location_assignment PIN_K2 -to fx3_ctl[9]
+set_location_assignment PIN_G22 -to c4_tx_clock
+set_location_assignment PIN_A12 -to exp_clock_in
+set_location_assignment PIN_A14 -to exp_gpio[25]
+set_location_assignment PIN_A15 -to exp_gpio[26]
+set_location_assignment PIN_A16 -to exp_gpio[27]
+set_location_assignment PIN_A17 -to exp_gpio[28]
+set_location_assignment PIN_A18 -to exp_gpio[32]
+set_location_assignment PIN_A19 -to exp_gpio[31]
+set_location_assignment PIN_A20 -to exp_gpio[30]
+set_location_assignment PIN_B20 -to exp_gpio[29]
+set_location_assignment PIN_B14 -to exp_gpio[17]
+set_location_assignment PIN_B15 -to exp_gpio[18]
+set_location_assignment PIN_B16 -to exp_gpio[20]
+set_location_assignment PIN_B17 -to exp_gpio[21]
+set_location_assignment PIN_B18 -to exp_gpio[23]
+set_location_assignment PIN_B19 -to exp_gpio[24]
+set_location_assignment PIN_C15 -to exp_gpio[19]
+set_location_assignment PIN_C17 -to exp_gpio[22]
+set_location_assignment PIN_AB10 -to led[3]
+set_location_assignment PIN_AB8 -to mini_exp1
+set_location_assignment PIN_AB9 -to mini_exp2
+set_location_assignment PIN_AB11 -to ref_1pps
+set_location_assignment PIN_AB12 -to ref_sma_clock
+set_location_assignment PIN_A6 -to si_scl
+set_location_assignment PIN_A7 -to si_sda
