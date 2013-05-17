@@ -42,124 +42,122 @@ set_global_assignment -name TOP_LEVEL_ENTITY bladerf
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION 12.1
 set_global_assignment -name PROJECT_CREATION_TIME_DATE "00:17:06  NOVEMBER 24, 2012"
 set_global_assignment -name LAST_QUARTUS_VERSION "12.1 SP1"
-set_global_assignment -name SEARCH_PATH nuand
 set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
 set_global_assignment -name DEVICE_FILTER_PACKAGE FBGA
 set_global_assignment -name DEVICE_FILTER_PIN_COUNT 484
 set_global_assignment -name EDA_SIMULATION_TOOL "ModelSim-Altera (VHDL)"
 set_global_assignment -name EDA_OUTPUT_DATA_FORMAT VHDL -section_id eda_simulation
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to c4_clock
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to dac_csx
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to dac_sclk
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to dac_sdi
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to dac_sdo
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to refexp_1pps
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to exp_clock
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to exp_gpio[16]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to exp_gpio[15]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to exp_gpio[14]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to exp_gpio[13]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to exp_gpio[12]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to exp_gpio[11]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to exp_gpio[10]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to exp_gpio[9]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to exp_gpio[8]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to exp_gpio[7]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to exp_gpio[6]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to exp_gpio[5]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to exp_gpio[4]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to exp_gpio[3]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to exp_gpio[2]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to exp_gpio[1]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to exp_present
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to exp_spi_clock
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to exp_spi_miso
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to exp_spi_mosi
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_ctl[12]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_ctl[11]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_ctl[10]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_ctl[9]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_ctl[8]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_ctl[7]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_ctl[6]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_ctl[5]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_ctl[4]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_ctl[3]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_ctl[2]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_ctl[1]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_ctl[0]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_gpif[31]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_gpif[30]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_gpif[29]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_gpif[28]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_gpif[27]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_gpif[26]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_gpif[25]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_gpif[24]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_gpif[23]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_gpif[22]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_gpif[21]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_gpif[20]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_gpif[19]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_gpif[18]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_gpif[17]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_gpif[16]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_gpif[15]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_gpif[14]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_gpif[13]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_gpif[12]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_gpif[11]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_gpif[10]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_gpif[9]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_gpif[8]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_gpif[7]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_gpif[6]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_gpif[5]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_gpif[4]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_gpif[3]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_gpif[2]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_gpif[1]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_gpif[0]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_uart_csx
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_uart_rxd
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_uart_txd
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_pll_out
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_reset
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_rx_clock
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_rx_clock_out
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_rx_data[11]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_rx_data[10]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_rx_data[9]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_rx_data[8]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_rx_data[7]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_rx_data[6]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_rx_data[5]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_rx_data[4]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_rx_data[3]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_rx_data[2]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_rx_data[1]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_rx_data[0]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_rx_enable
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_rx_iq_select
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_sclk
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_sdio
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_sdo
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_sen
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_tx_clock
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_tx_data[11]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_tx_data[10]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_tx_data[9]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_tx_data[8]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_tx_data[7]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_tx_data[6]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_tx_data[5]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_tx_data[4]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_tx_data[3]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_tx_data[2]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_tx_data[1]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_tx_data[0]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_tx_enable
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_tx_iq_select
+set_instance_assignment -name IO_STANDARD "1.8 V" -to c4_clock
+set_instance_assignment -name IO_STANDARD "1.8 V" -to dac_csx
+set_instance_assignment -name IO_STANDARD "1.8 V" -to dac_sclk
+set_instance_assignment -name IO_STANDARD "1.8 V" -to dac_sdi
+set_instance_assignment -name IO_STANDARD "1.8 V" -to dac_sdo
+set_instance_assignment -name IO_STANDARD "1.8 V" -to refexp_1pps
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_clock
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[16]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[15]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[14]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[13]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[12]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[11]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[10]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[9]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[8]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[7]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[6]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[5]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[4]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[3]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[2]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[1]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_present
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_spi_clock
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_spi_miso
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_spi_mosi
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_ctl[12]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_ctl[11]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_ctl[10]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_ctl[8]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_ctl[7]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_ctl[6]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_ctl[5]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_ctl[4]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_ctl[3]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_ctl[2]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_ctl[1]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_ctl[0]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[31]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[30]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[29]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[28]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[27]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[26]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[25]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[24]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[23]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[22]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[21]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[20]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[19]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[18]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[17]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[16]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[15]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[14]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[13]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[12]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[11]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[10]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[9]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[8]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[7]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[6]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[5]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[4]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[3]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[2]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[1]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[0]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_uart_csx
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_uart_rxd
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_uart_txd
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_pll_out
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_reset
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_rx_clock
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_rx_clock_out
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_rx_data[11]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_rx_data[10]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_rx_data[9]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_rx_data[8]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_rx_data[7]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_rx_data[6]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_rx_data[5]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_rx_data[4]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_rx_data[3]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_rx_data[2]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_rx_data[1]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_rx_data[0]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_rx_enable
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_rx_iq_select
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_sclk
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_sdio
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_sdo
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_sen
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_tx_clock
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_tx_data[11]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_tx_data[10]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_tx_data[9]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_tx_data[8]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_tx_data[7]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_tx_data[6]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_tx_data[5]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_tx_data[4]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_tx_data[3]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_tx_data[2]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_tx_data[1]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_tx_data[0]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_tx_enable
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_tx_iq_select
 set_location_assignment PIN_A11 -to c4_clock
 set_location_assignment PIN_B10 -to dac_csx
 set_location_assignment PIN_B9 -to dac_sclk
@@ -290,15 +288,15 @@ set_location_assignment PIN_G1 -to fx3_pclk
 set_location_assignment PIN_AA15 -to lms_sclk
 set_location_assignment PIN_F11 -to exp_spi_miso
 set_location_assignment PIN_E12 -to exp_spi_clock
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fx3_pclk
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to led[1]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to led[2]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_pclk
+set_instance_assignment -name IO_STANDARD "1.8 V" -to led[1]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to led[2]
 set_location_assignment PIN_AA7 -to led[1]
 set_location_assignment PIN_AB7 -to led[2]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_rx_v[2]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_rx_v[1]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_tx_v[2]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to lms_tx_v[1]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_rx_v[2]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_rx_v[1]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_tx_v[2]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_tx_v[1]
 set_location_assignment PIN_AA21 -to lms_tx_v[1]
 set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
 set_global_assignment -name MAX_CORE_JUNCTION_TEMP 85
@@ -426,24 +424,6 @@ set_global_assignment -name EDA_TEST_BENCH_NAME tb -section_id eda_simulation
 set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id tb
 set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME tb -section_id tb
 set_global_assignment -name EDA_TEST_BENCH_FILE ../fpga/platforms/bladerf/vhdl/tb/tb.vhd -section_id tb
-set_global_assignment -name SIGNALTAP_FILE ../fpga/ip/altera/nios_system/stp1.stp
-set_global_assignment -name VHDL_FILE ../fpga/ip/nuand/synthesis/nco.vhd -hdl_version VHDL_2008
-set_global_assignment -name VHDL_FILE ../fpga/ip/nuand/synthesis/fsk_modulator.vhd -hdl_version VHDL_2008
-set_global_assignment -name VHDL_FILE ../fpga/ip/nuand/synthesis/fsk_demodulator.vhd -hdl_version VHDL_2008
-set_global_assignment -name VHDL_FILE ../fpga/ip/nuand/synthesis/cordic.vhd -hdl_version VHDL_2008
-set_global_assignment -name VHDL_FILE ../fpga/platforms/bladerf/vhdl/ramp.vhd -hdl_version VHDL_2008
-set_global_assignment -name VHDL_FILE ../fpga/platforms/bladerf/vhdl/spi_reader.vhd -hdl_version VHDL_2008
-set_global_assignment -name SDC_FILE ../fpga/platforms/bladerf/constraints/bladerf.sdc
-set_global_assignment -name VHDL_FILE ../fpga/platforms/bladerf/vhdl/fx3.vhd -hdl_version VHDL_2008
-set_global_assignment -name VHDL_FILE ../fpga/platforms/bladerf/vhdl/bladerf_debug_p.vhd -hdl_version VHDL_2008
-set_global_assignment -name VHDL_FILE ../fpga/platforms/bladerf/vhdl/bladerf.vhd -hdl_version VHDL_2008
-set_global_assignment -name VHDL_FILE ../fpga/platforms/bladerf/vhdl/tb/tb.vhd -hdl_version VHDL_2008
-set_global_assignment -name VHDL_FILE ../fpga/ip/nuand/synthesis/uart.vhd -hdl_version VHDL_2008
-set_global_assignment -name VHDL_FILE ../fpga/ip/nuand/synthesis/sync_fifo.vhd -hdl_version VHDL_2008
-set_global_assignment -name VHDL_FILE ../fpga/ip/nuand/synthesis/constellation_mapper.vhd -hdl_version VHDL_2008
-set_global_assignment -name QSYS_FILE ../fpga/ip/altera/nios_system/nios_system.qsys
-set_global_assignment -name SIGNALTAP_FILE ../fpga/ip/altera/nios_system/stp2.stp
-set_global_assignment -name SIGNALTAP_FILE ../fpga/ip/altera/nios_system/stp3.stp
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[46] -to can_perform_rx -section_id auto_signaltap_0
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[47] -to can_perform_tx -section_id auto_signaltap_0
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[48] -to dma_idle -section_id auto_signaltap_0
@@ -502,14 +482,8 @@ set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_INVERSION_MASK=00
 set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_INVERSION_MASK_LENGTH=673" -section_id auto_signaltap_0
 set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_NODE_CRC_LOWORD=64" -section_id auto_signaltap_0
 set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_NODE_CRC_HIWORD=38811" -section_id auto_signaltap_0
-set_global_assignment -name QIP_FILE ../fpga/ip/altera/nios_system/software/lms_spi_controller/mem_init/meminit.qip
-set_global_assignment -name QIP_FILE ../fpga/ip/altera/pll/pll.qip
-set_global_assignment -name QIP_FILE ../fpga/ip/altera/serial_pll/serial_pll.qip
-set_global_assignment -name QIP_FILE ../fpga/ip/altera/rx_fifo/rx_fifo.qip
-set_global_assignment -name QIP_FILE ../fpga/ip/altera/tx_fifo/tx_fifo.qip
-set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
 set_global_assignment -name DEVICE_MIGRATION_LIST "EP4CE40F23C8,EP4CE115F23C8"
-set_location_assignment PIN_K2 -to fx3_ctl[9]
+set_location_assignment PIN_K2 -to fx3_ctl[9] -disable
 set_location_assignment PIN_G22 -to c4_tx_clock
 set_location_assignment PIN_A12 -to exp_clock_in
 set_location_assignment PIN_A14 -to exp_gpio[25]
@@ -535,3 +509,65 @@ set_location_assignment PIN_AB11 -to ref_1pps
 set_location_assignment PIN_AB12 -to ref_sma_clock
 set_location_assignment PIN_A6 -to si_scl
 set_location_assignment PIN_A7 -to si_sda
+set_global_assignment -name SEARCH_PATH "z:\\work\\nuandrelease\\release\\hdl\\fpga\\ip\\altera\\nios_system\\nios_system\\synthesis\\submodules"
+set_global_assignment -name SEARCH_PATH "z:\\work\\nuandrelease\\release\\hdl\\fpga\\ip\\altera\\nios_system\\nios_system\\synthesis"
+set_global_assignment -name SEARCH_PATH "z:\\work\\nuandrelease\\release\\hdl\\fpga\\ip\\opencores\\i2c\\rtl\\vhdl"
+set_global_assignment -name SEARCH_PATH "z:\\work\\nuandrelease\\release\\hdl\\fpga\\ip\\opencores\\i2c"
+set_global_assignment -name SEARCH_PATH "z:\\work\\nuandrelease\\release\\hdl\\fpga\\ip\\opencores\\i2c\\qsys"
+set_global_assignment -name SEARCH_PATH nuand
+set_global_assignment -name SEARCH_PATH ../fpga/ip/altera/nios_system/software/lms_spi_controller/mem_init/
+set_global_assignment -name QIP_FILE ../fpga/ip/altera/nios_system/nios_system/synthesis/nios_system.qip
+set_global_assignment -name QIP_FILE ../fpga/ip/altera/nios_system/synthesis/nios_system.qip
+set_global_assignment -name SIGNALTAP_FILE ../fpga/ip/altera/nios_system/stp1.stp
+set_global_assignment -name VHDL_FILE ../fpga/ip/nuand/synthesis/nco.vhd -hdl_version VHDL_2008
+set_global_assignment -name VHDL_FILE ../fpga/ip/nuand/synthesis/fsk_modulator.vhd -hdl_version VHDL_2008
+set_global_assignment -name VHDL_FILE ../fpga/ip/nuand/synthesis/fsk_demodulator.vhd -hdl_version VHDL_2008
+set_global_assignment -name VHDL_FILE ../fpga/ip/nuand/synthesis/cordic.vhd -hdl_version VHDL_2008
+set_global_assignment -name VHDL_FILE ../fpga/platforms/bladerf/vhdl/ramp.vhd -hdl_version VHDL_2008
+set_global_assignment -name VHDL_FILE ../fpga/platforms/bladerf/vhdl/spi_reader.vhd -hdl_version VHDL_2008
+set_global_assignment -name SDC_FILE ../fpga/platforms/bladerf/constraints/bladerf.sdc
+set_global_assignment -name VHDL_FILE ../fpga/platforms/bladerf/vhdl/fx3.vhd -hdl_version VHDL_2008
+set_global_assignment -name VHDL_FILE ../fpga/platforms/bladerf/vhdl/bladerf_debug_p.vhd -hdl_version VHDL_2008
+set_global_assignment -name VHDL_FILE ../fpga/platforms/bladerf/vhdl/bladerf.vhd -hdl_version VHDL_2008
+set_global_assignment -name VHDL_FILE ../fpga/platforms/bladerf/vhdl/tb/tb.vhd -hdl_version VHDL_2008
+set_global_assignment -name VHDL_FILE ../fpga/ip/nuand/synthesis/uart.vhd -hdl_version VHDL_2008
+set_global_assignment -name VHDL_FILE ../fpga/ip/nuand/synthesis/sync_fifo.vhd -hdl_version VHDL_2008
+set_global_assignment -name VHDL_FILE ../fpga/ip/nuand/synthesis/constellation_mapper.vhd -hdl_version VHDL_2008
+set_global_assignment -name SIGNALTAP_FILE ../fpga/ip/altera/nios_system/stp2.stp
+set_global_assignment -name SIGNALTAP_FILE ../fpga/ip/altera/nios_system/stp3.stp
+set_global_assignment -name QIP_FILE ../fpga/ip/altera/nios_system/software/lms_spi_controller/mem_init/meminit.qip
+set_global_assignment -name QIP_FILE ../fpga/ip/altera/pll/pll.qip
+set_global_assignment -name QIP_FILE ../fpga/ip/altera/serial_pll/serial_pll.qip
+set_global_assignment -name QIP_FILE ../fpga/ip/altera/rx_fifo/rx_fifo.qip
+set_global_assignment -name QIP_FILE ../fpga/ip/altera/tx_fifo/tx_fifo.qip
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_ctl[9]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to led[3]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to altera_reserved_tdi
+set_instance_assignment -name IO_STANDARD "1.8 V" -to altera_reserved_tck
+set_instance_assignment -name IO_STANDARD "1.8 V" -to altera_reserved_tdo
+set_instance_assignment -name IO_STANDARD "1.8 V" -to altera_reserved_tms
+set_instance_assignment -name IO_STANDARD "1.8 V" -to c4_tx_clock
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_clock_in
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[31]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[32]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[28]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[27]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[26]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[25]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[24]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[30]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[29]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[23]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[22]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[21]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[20]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[19]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[18]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[17]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to si_sda
+set_instance_assignment -name IO_STANDARD "1.8 V" -to mini_exp1
+set_instance_assignment -name IO_STANDARD "1.8 V" -to mini_exp2
+set_instance_assignment -name IO_STANDARD "1.8 V" -to ref_1pps
+set_instance_assignment -name IO_STANDARD "1.8 V" -to ref_sma_clock
+set_instance_assignment -name IO_STANDARD "1.8 V" -to si_scl
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

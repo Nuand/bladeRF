@@ -236,7 +236,7 @@ architecture arch of bladerf is
     attribute keep of sys_rst: signal is true;
     attribute keep of rf_rx_fifo_full: signal is true;
     attribute keep of rf_rx_fifo_clr: signal is true;
-    attribute keep of lms_rx_clock: signal is true;
+    --attribute keep of lms_rx_clock: signal is true;
 
     attribute keep of can_perform_rx: signal is true;
     attribute keep of can_perform_tx: signal is true;
@@ -255,7 +255,7 @@ architecture arch of bladerf is
     attribute noprune of sys_rst: signal is true;
     attribute noprune of rf_rx_fifo_full: signal is true;
     attribute noprune of rf_rx_fifo_clr: signal is true;
-    attribute noprune of lms_rx_clock: signal is true;
+    --attribute noprune of lms_rx_clock: signal is true;
 
     attribute noprune of can_perform_rx: signal is true;
     attribute noprune of can_perform_tx: signal is true;
@@ -639,7 +639,14 @@ begin
         spi_SCLK        => lms_sclk,
         spi_SS_n        => lms_sen,
         uart_rxd        => fx3_uart_txd,
-        uart_txd        => fx3_uart_rxd
+        uart_txd        => fx3_uart_rxd,
+        oc_i2c_scl_pad_o    => i2c_scl_out,
+        oc_i2c_scl_padoen_o => i2c_scl_oen,
+        oc_i2c_sda_pad_i    => i2c_sda_in,
+        oc_i2c_sda_pad_o    => i2c_sda_out,
+        oc_i2c_sda_padoen_o => i2c_sda_oen,
+        oc_i2c_arst_i       => '0',
+        oc_i2c_scl_pad_i    => i2c_scl_in
       ) ;
 
     si_scl <= i2c_scl_out when i2c_scl_oen = '0' else 'Z' ;
