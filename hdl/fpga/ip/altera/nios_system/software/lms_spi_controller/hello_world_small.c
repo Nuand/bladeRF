@@ -100,6 +100,75 @@
 #define MHz(x) (x*1000000)
 #define GHz(x) (x*1000000000)
 
+
+// Register offsets from the base
+#define I2C 				OC_I2C_MASTER_0_BASE
+#define OC_I2C_PRESCALER 	0
+#define OC_I2C_CTRL 		2
+#define OC_I2C_DATA 		3
+#define OC_I2C_CMD_STATUS 	4
+
+#define SI5338_I2C 			(0xE0)
+#define OC_I2C_ENABLE 		(1<<7)
+#define OC_I2C_STA 			(1<<7)
+#define OC_I2C_STO 			(1<<6)
+#define OC_I2C_WR  			(1<<4)
+#define OC_I2C_RD 			(1<<5)
+#define OC_I2C_TIP 			(1<<1)
+#define OC_I2C_RXACK 		(1<<7)
+#define OC_I2C_NACK 		(1<<3)
+
+void si5338_complete_transfer( uint8_t check_rxack ) {
+	if( (IORD_8DIRECT(I2C, OC_I2C_CMD_STATUS)&OC_I2C_TIP) == 0 ) {
+		while( (IORD_8DIRECT(I2C, OC_I2C_CMD_STATUS)&OC_I2C_TIP) == 0 ) { } ;
+	}
+	while( IORD_8DIRECT(I2C, OC_I2C_CMD_STATUS)&OC_I2C_TIP ) { } ;
+	while( check_rxack && IORD_8DIRECT(I2C, OC_I2C_CMD_STATUS)&OC_I2C_RXACK ) { } ;
+}
+
+void si5338_read( uint8_t addr, uint8_t *data ) {
+
+	// Set the address to the Si5338
+	IOWR_8DIRECT(I2C, OC_I2C_DATA, SI5338_I2C ) ;
+	IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_STA | OC_I2C_WR ) ;
+	si5338_complete_transfer( 1 ) ;
+
+	IOWR_8DIRECT(I2C, OC_I2C_DATA, addr ) ;
+	IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_WR | OC_I2C_STO ) ;
+	si5338_complete_transfer( 1 ) ;
+
+	// Next transfer is a read operation, so '1' in the read/write bit
+	IOWR_8DIRECT(I2C, OC_I2C_DATA, SI5338_I2C | 1 ) ;
+	IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_STA | OC_I2C_WR ) ;
+	si5338_complete_transfer( 1 ) ;
+
+	IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_RD | OC_I2C_NACK | OC_I2C_STO ) ;
+	si5338_complete_transfer( 0 ) ;
+
+	*data = IORD_8DIRECT(I2C, OC_I2C_DATA) ;
+	return ;
+}
+
+void si5338_write( uint8_t addr, uint8_t data ) {
+
+	// Set the address to the Si5338
+	IOWR_8DIRECT(I2C, OC_I2C_DATA, SI5338_I2C) ;
+	IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_STA | OC_I2C_WR ) ;
+	si5338_complete_transfer( 1 ) ;
+
+	IOWR_8DIRECT(I2C, OC_I2C_DATA, addr) ;
+	IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_CMD_STATUS | OC_I2C_WR ) ;
+	si5338_complete_transfer( 1 ) ;
+
+	IOWR_8DIRECT(I2C, OC_I2C_DATA, data ) ;
+	IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_WR | OC_I2C_STO ) ;
+	si5338_complete_transfer( 0 ) ;
+
+	return ;
+}
+
+
+
 // Trim DAC write
 void dac_write( uint16_t val ) {
 //	alt_printf( "DAC Writing: %x\n", val ) ;
@@ -170,6 +239,7 @@ int main()
 #define UART_PKT_MODE_DEV_SHIFT  4
 #define UART_PKT_DEV_LMS         (1<<UART_PKT_MODE_DEV_SHIFT)
 #define UART_PKT_DEV_VCTCXO      (2<<UART_PKT_MODE_DEV_SHIFT)
+#define UART_PKT_DEV_SI5338      (3<<UART_PKT_MODE_DEV_SHIFT)
 
 #define UART_PKT_MODE_DIR_MASK   0xC0
 #define UART_PKT_MODE_DIR_SHIFT  6
@@ -181,6 +251,10 @@ int main()
       unsigned char addr;
       unsigned char data;
   };
+
+  // Set the prescaler for 384kHz with a 38.4MHz clock
+  IOWR_16DIRECT(I2C, OC_I2C_PRESCALER, 0x20 ) ;
+  IOWR_8DIRECT(I2C, OC_I2C_CTRL, OC_I2C_ENABLE ) ;
 
   /* Event loop never exits. */
   {
@@ -250,6 +324,22 @@ int main()
 							  lms_spi_read(cmd_ptr->addr, &cmd_ptr->data);
 						  } else if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_WRITE) {
 							  lms_spi_write(cmd_ptr->addr, cmd_ptr->data);
+							  cmd_ptr->data = 0;
+						  } else {
+							  cmd_ptr->addr = 0;
+							  cmd_ptr->data = 0;
+						  }
+						  cmd_ptr++;
+					  }
+				  }
+				  if ((mode & UART_PKT_MODE_DEV_MASK) == UART_PKT_DEV_SI5338) {
+					  for (i = 0; i < cnt; i++) {
+						  if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_READ) {
+							  uint8_t tmpvar;
+							  si5338_read(cmd_ptr->addr, &tmpvar);
+							  cmd_ptr->data = tmpvar;
+						  } else if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_WRITE) {
+							  si5338_write(cmd_ptr->addr, cmd_ptr->data);
 							  cmd_ptr->data = 0;
 						  } else {
 							  cmd_ptr->addr = 0;
