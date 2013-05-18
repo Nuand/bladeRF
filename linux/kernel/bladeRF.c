@@ -516,6 +516,8 @@ long bladerf_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
     int pages_to_write, page_idx;
     int pages_to_read;
     int check_idx, check_error;
+    int count, tries;
+    int targetdev;
 
     unsigned char buf[1024];
     struct bladeRF_firmware brf_fw;
@@ -688,6 +690,52 @@ leave_fw:
             printk("RF_TX!\n");
             retval = __bladerf_snd_one_word(dev, BLADE_USB_CMD_RF_TX, data);
             break;
+
+        case BLADE_LMS_WRITE:
+        case BLADE_LMS_READ:
+        case BLADE_SI5338_WRITE:
+        case BLADE_SI5338_READ:
+        case BLADE_VCTCXO_WRITE:
+
+            if (copy_from_user(&spi_reg, (void __user *)arg, sizeof(struct uart_cmd))) {
+                retval = -EFAULT;
+                break;
+            }
+
+            nread = count = 16;
+            memset(buf, 0, 20);
+            buf[0] = 'N';
+
+            targetdev = UART_PKT_DEV_SI5338;
+            if (cmd == BLADE_LMS_WRITE || cmd == BLADE_LMS_READ)
+                targetdev = UART_PKT_DEV_LMS;
+            if (cmd == BLADE_VCTCXO_WRITE)
+                targetdev = UART_PKT_MODE_DIR_WRITE;
+
+            if (cmd == BLADE_LMS_WRITE || cmd == BLADE_SI5338_WRITE || cmd == BLADE_VCTCXO_WRITE) {
+                buf[1] = UART_PKT_MODE_DIR_WRITE | targetdev | 0x01;
+                buf[2] = spi_reg.addr;
+                buf[3] = spi_reg.data;
+            } else if (cmd == BLADE_LMS_READ || cmd == BLADE_SI5338_READ) {
+                buf[1] = UART_PKT_MODE_DIR_READ | targetdev | 0x01;
+                buf[2] = spi_reg.addr;
+                buf[3] = 0xff;
+            }
+
+            retval = usb_bulk_msg(dev->udev, usb_sndbulkpipe(dev->udev, 2), buf, count, &nread, BLADE_USB_TIMEOUT_MS);
+            memset(buf, 0, 20);
+
+            tries = 3;
+            do {
+                retval = usb_bulk_msg(dev->udev, usb_rcvbulkpipe(dev->udev, 0x82), buf, count, &nread, 1);
+            } while(retval == -ETIMEDOUT && tries--);
+
+            spi_reg.addr = buf[2];
+            spi_reg.data = buf[3];
+
+            retval = copy_to_user((void __user *)arg, &spi_reg, count);
+            break;
+
     }
 
     return retval;
