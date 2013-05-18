@@ -14,6 +14,7 @@ struct data_buffer {
     struct urb  *urb;
     void        *addr;
     dma_addr_t   dma;
+    int          valid;
 };
 
 typedef struct {
@@ -27,10 +28,25 @@ typedef struct {
     unsigned int          data_in_consumer_idx;
     unsigned int          data_in_producer_idx;
     atomic_t              data_in_cnt;
+    atomic_t              data_in_inflight;
     struct data_buffer    data_in_bufs[NUM_DATA_URB];
     struct usb_anchor     data_in_anchor;
     wait_queue_head_t     data_in_wait;
 
+    int                   tx_en;
+    spinlock_t            data_out_lock;
+    unsigned int          data_out_consumer_idx;
+    unsigned int          data_out_producer_idx;
+    atomic_t              data_out_cnt;
+    atomic_t              data_out_inflight;
+    struct data_buffer    data_out_bufs[NUM_DATA_URB];
+    struct usb_anchor     data_out_anchor;
+    wait_queue_head_t     data_out_wait;
+
+    struct semaphore      config_sem;
+
+    int bytes;
+    int debug;
 } bladerf_device_t;
 
 static struct usb_driver bladerf_driver;
@@ -44,22 +60,37 @@ MODULE_DEVICE_TABLE(usb, bladerf_table);
 
 static int __submit_rx_urb(bladerf_device_t *dev, unsigned int flags) {
     struct urb *urb;
+    unsigned long irq_flags;
+    int ret;
 
-    urb = dev->data_in_bufs[dev->data_in_producer_idx].urb;
+    ret = 0;
+    while (atomic_read(&dev->data_in_inflight) < NUM_CONCURRENT && atomic_read(&dev->data_in_cnt) < NUM_DATA_URB) {
+        spin_lock_irqsave(&dev->data_in_lock, irq_flags);
+        urb = dev->data_in_bufs[dev->data_in_producer_idx].urb;
 
-    dev->data_in_producer_idx++;
-    dev->data_in_producer_idx &= (NUM_DATA_URB - 1);
+        dev->data_in_producer_idx++;
+        dev->data_in_producer_idx &= (NUM_DATA_URB - 1);
+        atomic_inc(&dev->data_in_inflight);
 
-    atomic_inc(&dev->data_in_cnt);
-    return usb_submit_urb(urb, flags ? flags : GFP_KERNEL );
+        usb_anchor_urb(urb, &dev->data_in_anchor);
+        spin_unlock_irqrestore(&dev->data_in_lock, irq_flags);
+        ret = usb_submit_urb(urb, GFP_ATOMIC);
+    }
+
+    return ret;
 }
 
+static void __bladeRF_write_cb(struct urb *urb);
 static void __bladeRF_read_cb(struct urb *urb) {
     bladerf_device_t *dev;
     unsigned char *buf;
 
     buf = (unsigned char *)urb->transfer_buffer;
     dev = (bladerf_device_t *)urb->context;
+    usb_unanchor_urb(urb);
+    atomic_dec(&dev->data_in_inflight);
+    dev->bytes += DATA_BUF_SZ;
+    atomic_inc(&dev->data_in_cnt);
 
     if (dev->rx_en)
         __submit_rx_urb(dev, GFP_ATOMIC);
@@ -79,6 +110,7 @@ static int bladerf_start(bladerf_device_t *dev) {
     for (i = 0; i < NUM_DATA_URB; i++) {
         buf = usb_alloc_coherent(dev->udev, DATA_BUF_SZ,
                 GFP_KERNEL, &dev->data_in_bufs[i].dma);
+        memset(buf, 0, DATA_BUF_SZ);
         if (!buf) {
             dev_err(&dev->interface->dev, "Could not allocate data IN buffer\n");
             return -1;
@@ -101,6 +133,40 @@ static int bladerf_start(bladerf_device_t *dev) {
         urb->transfer_dma = dev->data_in_bufs[i].dma;
     }
 
+    dev->tx_en = 0;
+    atomic_set(&dev->data_out_cnt, 0);
+    dev->data_out_consumer_idx = 0;
+    dev->data_out_producer_idx = 0;
+
+    for (i = 0; i < NUM_DATA_URB; i++) {
+        buf = usb_alloc_coherent(dev->udev, DATA_BUF_SZ,
+                GFP_KERNEL, &dev->data_out_bufs[i].dma);
+        memset(buf, 0, DATA_BUF_SZ);
+        if (!buf) {
+            dev_err(&dev->interface->dev, "Could not allocate data OUT buffer\n");
+            return -1;
+        }
+
+        dev->data_out_bufs[i].addr = buf;
+
+        urb = usb_alloc_urb(0, GFP_KERNEL);
+        printk("%d) urb=%p\n", i, urb);
+        if (!buf) {
+            dev_err(&dev->interface->dev, "Could not allocate data OUT URB\n");
+            return -1;
+        }
+
+        dev->data_out_bufs[i].urb = urb;
+        dev->data_out_bufs[i].valid = 0;
+
+        usb_fill_bulk_urb(urb, dev->udev, usb_sndbulkpipe(dev->udev, 1),
+                dev->data_out_bufs[i].addr, DATA_BUF_SZ, __bladeRF_write_cb, dev);
+
+        urb->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;
+        urb->transfer_dma = dev->data_out_bufs[i].dma;
+    }
+
+
     return 0;
 }
 
@@ -109,10 +175,78 @@ static void bladerf_stop(bladerf_device_t *dev) {
     for (i = 0; i < NUM_DATA_URB; i++) {
         usb_free_coherent(dev->udev, DATA_BUF_SZ, dev->data_in_bufs[i].addr, dev->data_in_bufs[i].dma);
         usb_free_urb(dev->data_in_bufs[i].urb);
+        usb_free_coherent(dev->udev, DATA_BUF_SZ, dev->data_out_bufs[i].addr, dev->data_out_bufs[i].dma);
+        usb_free_urb(dev->data_out_bufs[i].urb);
     }
 }
 
 int __bladerf_snd_cmd(bladerf_device_t *dev, int cmd, void *ptr, __u16 len);
+static int disable_tx(bladerf_device_t *dev) {
+    int ret;
+    unsigned int val;
+    val = 0;
+
+    if (dev->intnum != 1)
+        return -1;
+
+    dev->tx_en = 0;
+
+    usb_kill_anchored_urbs(&dev->data_out_anchor);
+
+    ret = __bladerf_snd_cmd(dev, BLADE_USB_CMD_RF_TX, &val, sizeof(val));
+    if (ret < 0)
+        goto err_out;
+
+    ret = 0;
+
+err_out:
+    return ret;
+}
+
+static int enable_tx(bladerf_device_t *dev) {
+    int ret;
+    unsigned int val;
+    val = 1;
+
+    if (dev->intnum != 1)
+        return -1;
+
+    ret = __bladerf_snd_cmd(dev, BLADE_USB_CMD_RF_TX, &val, sizeof(val));
+    if (ret < 0)
+        goto err_out;
+
+    ret = 0;
+    dev->tx_en = 1;
+
+err_out:
+    return ret;
+}
+
+static int disable_rx(bladerf_device_t *dev) {
+    int ret;
+    unsigned int val;
+    val = 0;
+
+    if (dev->intnum != 1)
+        return -1;
+
+    dev->rx_en = 0;
+
+    usb_kill_anchored_urbs(&dev->data_in_anchor);
+
+    ret = __bladerf_snd_cmd(dev, BLADE_USB_CMD_RF_RX, &val, sizeof(val));
+    if (ret < 0)
+        goto err_out;
+
+    ret = 0;
+    atomic_set(&dev->data_in_cnt, 0);
+    dev->data_in_consumer_idx = 0;
+    dev->data_in_producer_idx = 0;
+
+err_out:
+    return ret;
+}
+
 static int enable_rx(bladerf_device_t *dev) {
     int ret;
     int i;
@@ -144,6 +278,7 @@ static ssize_t bladerf_read(struct file *file, char __user *buf, size_t count, l
 {
     ssize_t ret = 0;
     bladerf_device_t *dev;
+    unsigned long flags;
     int read;
 
     dev = (bladerf_device_t *)file->private_data;
@@ -159,14 +294,18 @@ static ssize_t bladerf_read(struct file *file, char __user *buf, size_t count, l
     read = 0;
 
     while (!read) {
-        if (atomic_read(&dev->data_in_cnt)) {
+        int reread;
+        reread = atomic_read(&dev->data_in_cnt);
+
+        if (reread) {
             unsigned int idx;
 
-            spin_lock(&dev->data_in_lock);
+            spin_lock_irqsave(&dev->data_in_lock, flags);
             atomic_dec(&dev->data_in_cnt);
             idx = dev->data_in_consumer_idx++;
-            dev->data_in_consumer_idx &= (DATA_BUF_SZ - 1);
-            spin_unlock(&dev->data_in_lock);
+            dev->data_in_consumer_idx &= (NUM_DATA_URB - 1);
+
+            spin_unlock_irqrestore(&dev->data_in_lock, flags);
 
             ret = copy_to_user(buf, dev->data_in_bufs[idx].addr, DATA_BUF_SZ);
 
@@ -186,28 +325,102 @@ static ssize_t bladerf_read(struct file *file, char __user *buf, size_t count, l
     return ret;
 }
 
+static int __submit_tx_urb(bladerf_device_t *dev) {
+    struct urb *urb;
+    struct data_buffer *db;
+    unsigned long flags;
+
+    int ret = 0;
+
+    while (atomic_read(&dev->data_out_inflight) < NUM_CONCURRENT && atomic_read(&dev->data_out_cnt)) {
+        spin_lock_irqsave(&dev->data_out_lock, flags);
+        db = &dev->data_out_bufs[dev->data_out_consumer_idx];
+        urb = db->urb;
+
+        if (!db->valid)
+            break;
+
+        dev->data_out_consumer_idx++;
+        dev->data_out_consumer_idx &= (NUM_DATA_URB - 1);
+
+        atomic_dec(&dev->data_out_cnt);
+
+        usb_anchor_urb(urb, &dev->data_out_anchor);
+        spin_unlock_irqrestore(&dev->data_out_lock, flags);
+        ret = usb_submit_urb(urb, GFP_ATOMIC);
+        if (!ret)
+            atomic_inc(&dev->data_out_inflight);
+        else
+            break;
+    }
+
+    return ret;
+}
+
+static void __bladeRF_write_cb(struct urb *urb)
+{
+    bladerf_device_t *dev;
+
+    dev = (bladerf_device_t *)urb->context;
+
+    usb_unanchor_urb(urb);
+
+    atomic_dec(&dev->data_out_inflight);
+    __submit_tx_urb(dev);
+    dev->bytes += DATA_BUF_SZ;
+    wake_up_interruptible(&dev->data_out_wait);
+}
+
 static ssize_t bladerf_write(struct file *file, const char *user_buf, size_t count, loff_t *ppos)
 {
     bladerf_device_t *dev;
+    unsigned long flags;
     char *buf = NULL;
-    struct urb *urb = NULL;
-    int nwrote, ret;
+    struct data_buffer *db = NULL;
+    unsigned int idx;
+    int reread;
 
     dev = (bladerf_device_t *)file->private_data;
 
-    buf = kmalloc(count, GFP_KERNEL);
-    if (copy_from_user(buf, user_buf, count)) {
+    if (dev->intnum == 0) {
+        int ret, llen;
+        buf = (char *)kmalloc(count, GFP_KERNEL);
+        if (copy_from_user(buf, user_buf, count)) {
+            ret = -EFAULT;
+            goto err_out;
+        }
+        ret = usb_bulk_msg(dev->udev, usb_sndbulkpipe(dev->udev, 2), buf, count, &llen, BLADE_USB_TIMEOUT_MS);
+err_out:
         kfree(buf);
+        return ret;
+    }
+
+    reread = atomic_read(&dev->data_out_cnt);
+    if (reread >= NUM_DATA_URB) {
+         wait_event_interruptible(dev->data_out_wait, atomic_read(&dev->data_out_cnt) < NUM_DATA_URB);
+	    reread = atomic_read(&dev->data_out_cnt);
+    }
+
+    spin_lock_irqsave(&dev->data_out_lock, flags);
+
+    idx = dev->data_out_producer_idx++;
+    dev->data_out_producer_idx &= (NUM_DATA_URB - 1);
+    db = &dev->data_out_bufs[idx];
+    atomic_inc(&dev->data_out_cnt);
+
+    spin_unlock_irqrestore(&dev->data_out_lock, flags);
+
+    if (copy_from_user(db->addr, user_buf, count)) {
         return -EFAULT;
     }
 
-    ret = usb_bulk_msg(dev->udev, usb_sndbulkpipe(dev->udev, 2), buf, count, &nwrote, 2000);
-    kfree(buf);
+    db->valid = 1;
 
-    if (ret)
-        return ret;
+    __submit_tx_urb(dev);
+    if (!dev->tx_en)
+        enable_tx(dev);
 
-    return nwrote;
+    return count;
 }
 
 
@@ -298,6 +511,7 @@ long bladerf_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
     int ret;
     int retval = -EINVAL;
     int sz, nread, nwrite;
+    struct uart_cmd spi_reg;
     int sectors_to_wipe, sector_idx;
     int pages_to_write, page_idx;
     int pages_to_read;
@@ -391,6 +605,7 @@ long bladerf_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
                 }
             }
 
+            sz = 0;
             if (dev->udev->speed == USB_SPEED_HIGH) {
                 sz = 64;
             } else if (dev->udev->speed == USB_SPEED_SUPER) {
@@ -504,6 +719,22 @@ static int bladerf_open(struct inode *inode, struct file *file)
 
 static int bladerf_release(struct inode *inode, struct file *file)
 {
+    bladerf_device_t *dev;
+
+    dev = (bladerf_device_t *)file->private_data;
+    if (dev->debug) {
+        dev->debug--;
+        return 0;
+    }
+
+    if (dev->tx_en) {
+        disable_tx(dev);
+    }
+
+    if (dev->rx_en) {
+        disable_rx(dev);
+    }
+
     return 0;
 }
 
@@ -539,12 +770,21 @@ static int bladerf_probe(struct usb_interface *interface,
 
 
     spin_lock_init(&dev->data_in_lock);
+    spin_lock_init(&dev->data_out_lock);
     dev->udev = usb_get_dev(interface_to_usbdev(interface));
     dev->interface = interface;
     dev->intnum = 0;
+    dev->bytes = 0;
+    dev->debug = 0;
+
+    atomic_set(&dev->data_in_inflight, 0);
+    atomic_set(&dev->data_out_inflight, 0);
 
     init_usb_anchor(&dev->data_in_anchor);
     init_waitqueue_head(&dev->data_in_wait);
+
+    init_usb_anchor(&dev->data_out_anchor);
+    init_waitqueue_head(&dev->data_out_wait);
 
     bladerf_start(dev);
 
