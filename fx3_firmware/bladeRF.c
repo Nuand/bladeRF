@@ -780,6 +780,11 @@ CyBool_t CyFxbladeRFApplnUSBSetupCB(uint32_t setupdat0, uint32_t setupdat1)
 
             	apiRetStatus = CyU3PUsbGetEP0Data(4, buf, &readC);
 
+                if (!(buf[0] || buf[3])) {
+                    apiRetStatus = CyU3PUsbResetEp(BLADE_RF_SAMPLE_EP_CONSUMER);
+                    //CyU3PThreadSleep(1000);
+                }
+
             	CyU3PGpioSetValue(GPIO_RX_EN, (buf[0] || buf[3]) ? CyTrue : CyFalse);
             break;
 
@@ -788,6 +793,11 @@ CyBool_t CyFxbladeRFApplnUSBSetupCB(uint32_t setupdat0, uint32_t setupdat1)
                 CyU3PGpioSetValue(GPIO_SYS_RST, CyFalse);
 
                 apiRetStatus = CyU3PUsbGetEP0Data(4, buf, &readC);
+
+                if (!(buf[0] || buf[3])) {
+                    apiRetStatus = CyU3PUsbResetEp(BLADE_RF_SAMPLE_EP_PRODUCER);
+                    //CyU3PThreadSleep(1000);
+                }
 
                 CyU3PGpioSetValue(GPIO_TX_EN, (buf[0] || buf[3]) ? CyTrue : CyFalse);
             break;
