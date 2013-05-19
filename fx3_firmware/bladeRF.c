@@ -458,7 +458,7 @@ void NuandRFLinkStart(void)
     CyU3PMemSet ((uint8_t *)&epCfg, 0, sizeof (epCfg));
     epCfg.enable = CyTrue;
     epCfg.epType = CY_U3P_USB_EP_BULK;
-    epCfg.burstLen = 1;
+    epCfg.burstLen = 15;
     epCfg.streams = 0;
     epCfg.pcktSize = size;
 
@@ -476,8 +476,8 @@ void NuandRFLinkStart(void)
         CyFxAppErrorHandler (apiRetStatus);
     }
 
-    dmaMultiConfig.size = size;
-    dmaMultiConfig.count = 50;
+    dmaMultiConfig.size = size * 2;
+    dmaMultiConfig.count = 22;
     dmaMultiConfig.validSckCount = 2;
     dmaMultiConfig.prodSckId[0] = BLADE_RF_SAMPLE_EP_PRODUCER_USB_SOCKET;
     dmaMultiConfig.consSckId[0] = CY_U3P_PIB_SOCKET_2;
