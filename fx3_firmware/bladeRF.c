@@ -336,7 +336,7 @@ void CyFxGpioInit(void)
         CyFxAppErrorHandler(apiRetStatus);
     }
 
-    NuandGPIOReconfigure(CyFalse, CyFalse);
+    NuandGPIOReconfigure(CyTrue, CyFalse);
 }
 
 int FpgaBeginProgram(void)
@@ -368,14 +368,16 @@ void bladeRFConfigUtoPDmaCallback(CyU3PDmaChannel *chHandle, CyU3PDmaCbType_t ty
     if (type == CY_U3P_DMA_CB_PROD_EVENT) {
         int i;
         unsigned char *buf = input->buffer_p.buffer;
-        unsigned short *us_buf = (unsigned short *)input->buffer_p.buffer;
-        unsigned short tmpr, tmpw;
+        unsigned *us_buf = (unsigned short *)input->buffer_p.buffer;
+        unsigned tmpr, tmpw;
 
         /* Flip the bits in such a way that the FPGA can be programmed
          * This mapping can be determined by looking at the schematic */
         for (i = input->buffer_p.count - 1; i >= 0; i--) {
-            buf[i * 2] = buf[i];
-            buf[i * 2 + 1] = 0;
+            buf[i * 4] = buf[i];
+            buf[i * 4 + 1] = 0;
+            buf[i * 4 + 2] = 0;
+            buf[i * 4 + 3] = 0;
             tmpr = us_buf[i];
 
             tmpw = 0;
@@ -390,7 +392,7 @@ void bladeRFConfigUtoPDmaCallback(CyU3PDmaChannel *chHandle, CyU3PDmaCbType_t ty
             US_GPIF_2_FPP(11, 7);
             us_buf[i] = tmpw;
         }
-        status = CyU3PDmaChannelCommitBuffer (chHandle, input->buffer_p.count * 2, 0);
+        status = CyU3PDmaChannelCommitBuffer (chHandle, input->buffer_p.count * 4, 0);
         if (status != CY_U3P_SUCCESS) {
             CyU3PDebugPrint (4, "CyU3PDmaChannelCommitBuffer failed, Error code = %d\n", status);
         }
@@ -579,7 +581,7 @@ void NuandFpgaConfigStart(void)
     CyU3PReturnStatus_t apiRetStatus = CY_U3P_SUCCESS;
     CyU3PUSBSpeed_t usbSpeed = CyU3PUsbGetSpeed();
 
-    NuandGPIOReconfigure(CyFalse, CyFalse);
+    NuandGPIOReconfigure(CyTrue, CyFalse);
 
     /* Load the GPIF configuration for loading the FPGA */
     apiRetStatus = CyU3PGpifLoad(&C4loader_CyFxGpifConfig);
@@ -629,7 +631,7 @@ void NuandFpgaConfigStart(void)
         CyFxAppErrorHandler (apiRetStatus);
     }
 
-    dmaCfg.size  = size * 2;
+    dmaCfg.size  = size * 4;
     dmaCfg.count = BLADE_DMA_BUF_COUNT;
     dmaCfg.prodSckId = BLADE_FPGA_CONFIG_SOCKET;
     dmaCfg.consSckId = CY_U3P_PIB_SOCKET_3;
@@ -640,7 +642,7 @@ void NuandFpgaConfigStart(void)
 
     dmaCfg.cb = bladeRFConfigUtoPDmaCallback;
     dmaCfg.prodHeader = 0;
-    dmaCfg.prodFooter = size;
+    dmaCfg.prodFooter = size * 3;
     dmaCfg.consHeader = 0;
     dmaCfg.prodAvailCount = 0;
 
@@ -766,7 +768,7 @@ CyBool_t CyFxbladeRFApplnUSBSetupCB(uint32_t setupdat0, uint32_t setupdat1)
         {
             case BLADE_USB_CMD_QUERY_VERSION:
                 ver.major = 0;
-                ver.minor = 1;
+                ver.minor = 2;
                 apiRetStatus = CyU3PUsbSendEP0Data(sizeof(ver), &ver);
             break;
 
