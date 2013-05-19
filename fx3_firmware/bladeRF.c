@@ -71,7 +71,9 @@ void NuandGPIOReconfigure(CyBool_t fullGpif, CyBool_t warm)
         {GPIO_SYS_RST,  CyFalse, CyFalse},
         {GPIO_RX_EN,    CyFalse, CyFalse},
         {GPIO_TX_EN,    CyFalse, CyFalse},
-        {GPIO_nCONFIG,  CyFalse, CyTrue}
+        {GPIO_nCONFIG,  CyFalse, CyTrue},
+        {GPIO_ID,       CyTrue,  CyTrue},
+        {GPIO_LED,      CyFalse,  CyTrue}
     };
 #define ARR_SIZE(x) (sizeof(x)/sizeof(x[0]))
 
