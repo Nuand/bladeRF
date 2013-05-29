@@ -17,7 +17,7 @@ To build and run the FSK bridge rea
 		i) Processing -> Start Compilation
 
 2) Compile driver and user mode applications
-	a) cd linux/kernel ; make ; inmod bladeRF.ko
+	a) cd linux/kernel ; make ; insmod bladeRF.ko
 	b) cd ../apps; make
 	c) To program the fpga execute ./simple_load c4images/blink.rbf
 		i) Load bladerf.rbf from the quartus output_files directory
