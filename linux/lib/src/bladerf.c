@@ -1,11 +1,20 @@
 #include <fcntl.h>
 #include <unistd.h>
+#include <ftw.h>
 #include <sys/ioctl.h>
 
-/* TODO    v--- Something here needs to be renamed!*/
+/* TODO    v--- Something here needs to be renamed! */
 #include "bladerf.h"    /* C API */
 #include "bladeRF.h"    /* Kernel module interface */
+#include "debug.h"
 
+#ifndef BLADERF_DEV_DIR
+#   define BLADERF_DEV_DIR "/dev/"
+#endif
+
+#ifndef BLADERF_DEV_PFX
+#   define BLADERF_PREFIX  "bladerf"
+#endif
 
 /* TODO Should there be a "big-lock" wrapped around accesses to a device */
 struct bladerf {
@@ -13,17 +22,34 @@ struct bladerf {
     struct bladerf_stats stats;
 };
 
+static int check_entry(const char *fpath, const struct stat *sb,
+                        int typeflag, struct FTW *ftwbuf)
+{
+    dbg_printf("Hit with fpath = %s\n", fpath);
+    return 0;
+}
+
 ssize_t bladerf_get_device_list(struct bladerf_devinfo **devices)
 {
     struct bladerf_devinfo *ret;
-    const size_t num_devices = 3;   /* Initial guess. Realloc as neccessary */
+    size_t num_devices = 0;
+    size_t devices_array_sz = 3; /* Initial guess. Realloc as neccessary */
 
-    ret = calloc(num_devices, sizeof(*ret));
+    ret = calloc(devices_array_sz, sizeof(*ret));
     if (!ret) {
         *devices = NULL;
         return BLADERF_ERR_MEM;
     }
 
+    if (nftw(BLADERF_DEV_DIR, check_entry, 256, FTW_F) < 0)
+        goto bladerf_get_device_list_err;
+
+    *devices = ret;
+    return num_devices;
+
+bladerf_get_device_list_err:
+    free(ret);
+    *devices = NULL;
     return 0;
 }
 

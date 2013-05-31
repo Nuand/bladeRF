@@ -9,6 +9,7 @@ include make/version.mk
 
 LIB_NAME := libbladerf
 
+BIN_DIR := bin
 SRC_DIR := src
 INC_DIR := include
 LIB_DIR := lib
@@ -41,18 +42,21 @@ CFLAGS := -Wall -Wextra -Wno-unused-parameter \
 LDFLAGS := -fPIC
 
 ifdef DEBUG
-	CFLAGS += -O0 -ggdb3
+	CFLAGS += -O0 -ggdb3 -DDEBUG
 else
-	CFLAGS += -O2
+	CFLAGS += -O2 -DNDEBUG
 endif
 
 # Default install prefix
 INSTALL_PREFIX ?= /usr
 
-all: shared static
+all: shared static cli
 
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
+
+$(BIN_DIR):
+	mkdir -p $(BIN_DIR)
 
 # Build static library
 static: $(LIB_DIR) $(STATIC_LIB)
@@ -68,9 +72,15 @@ $(SHARED_LIB): $(OBJ)
 	@cd $(LIB_DIR); \
 		ln -fs $(LIB_NAME_FULL) $(LIB_SO_NAME).$(LIB_VER_MIN); \
 		ln -fs $(LIB_SO_NAME).$(LIB_VER_MIN) $(LIB_SO_NAME); \
+		ln -fs $(LIB_SO_NAME) $(LIB_NAME).so
 
 doc:
 	$(MAKE) -C doc/doxygen
+
+cli: shared $(BIN_DIR)
+	$(MAKE) -C $(SRC_DIR)/cli
+	cp $(SRC_DIR)/cli/bladerf $(BIN_DIR)/
+
 
 install: shared
 	cp lib/* $(INSTALL_PREFIX)/lib
@@ -82,7 +92,9 @@ uninstall:
 
 clean:
 	rm -rf $(LIB_DIR)
+	rm -rf $(BIN_DIR)
 	rm -f $(OBJ)
 	$(MAKE) -C doc/doxygen clean
+	$(MAKE) -C $(SRC_DIR)/cli clean
 
 .PHONY: clean doc
