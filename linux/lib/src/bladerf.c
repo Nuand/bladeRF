@@ -7,7 +7,6 @@
 #include "bladeRF.h"    /* Kernel module interface */
 
 
-
 /* TODO Should there be a "big-lock" wrapped around accesses to a device */
 struct bladerf {
     int fd;   /* File descriptor to associated driver device node */
@@ -17,7 +16,7 @@ struct bladerf {
 ssize_t bladerf_get_device_list(struct bladerf_devinfo **devices)
 {
     struct bladerf_devinfo *ret;
-    const size_t num_devices = 3;   /* Initial guess */
+    const size_t num_devices = 3;   /* Initial guess. Realloc as neccessary */
 
     ret = calloc(num_devices, sizeof(*ret));
     if (!ret) {
@@ -50,6 +49,7 @@ struct bladerf * bladerf_open(const char *dev_path)
         return ret;
 
     /* Test that this device is actually a bladeRF */
+    return ret;
 }
 
 void bladerf_close(struct bladerf *dev)

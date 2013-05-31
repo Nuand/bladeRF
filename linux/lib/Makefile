@@ -28,11 +28,17 @@ STATIC_LIB := $(LIB_DIR)/$(LIB_NAME).a
 LIB_VER_FLAG := -DLIB_VERSION=\"v$(LIB_VER_MAJ).$(LIB_VER_MIN).$(LIB_VER_PAT)\"
 
 # Path to driver interface headers
-DRIVER_HEADER_DIR ?= /usr/include
+# Changing default to make our lives easier for now...
+##DRIVER_HEADER_DIR ?= /usr/include
+DRIVER_HEADER_DIR ?= ../../common
 
-CFLAGS := -Wall -Wextra -Wno-unused-parameter -fPIC -std=gnu99 $(LIB_VER_FLAG) \
-			-I$(INC_DIR) -I$(DRIVER_HEADER_DIR)
-LDFLAGS :=
+
+CFLAGS := -Wall -Wextra -Wno-unused-parameter \
+		  -fPIC \
+		  -std=gnu99 -D_GNU_SOURCE $(LIB_VER_FLAG) \
+		  -I$(INC_DIR) -I$(DRIVER_HEADER_DIR)
+
+LDFLAGS := -fPIC
 
 ifdef DEBUG
 	CFLAGS += -O0 -ggdb3
