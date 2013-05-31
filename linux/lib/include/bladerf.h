@@ -42,14 +42,33 @@ struct bladerf_devinfo {
 };
 
 /**
+ * Device statistics
+ *
+ * TODO document these
+ */
+struct bladerf_stats {
+    uint64_t rx_overruns;
+    uint64_t rx_throughput;
+    uint64_t tx_underruns;
+    uint64_t tx_throughput;
+};
+
+/**
  * TODO describe "module" in more detail
  */
-enum bladerf_module { TX, RX } ;
+enum bladerf_module {
+    TX,
+    RX
+};
 
 /**
  * TODO describe LNA gain in more detail
  */
-enum bladerf_lna_gain { LOW, MED, HIGH } ;
+enum bladerf_lna_gain {
+    LOW,
+    MED,
+    HIGH
+};
 
 /**
  * TODO describe various loopback modes
@@ -333,6 +352,15 @@ int bladerf_get_fw_version(struct bladerf *dev,
  */
 int bladerf_is_fpga_programmed(struct bladerf *dev);
 
+/**
+ * Obtain device statistics
+ *
+ * @param[in]   dev     Device handle
+ * @param[out]  stats   Current device statistics
+ *
+ * @return 0 on success, BLADERF_ERR_* on failure
+ */
+int bladerf_stats(struct bladerf *dev, struct bladerf_stats *stats);
 
 /** @} (End FN_INFO) */
 
@@ -351,7 +379,7 @@ int bladerf_is_fpga_programmed(struct bladerf *dev);
  * @param   dev         Device handle
  * @param   firmware    Full path to firmware file
  *
- *
+ * @return 0 on success, BLADERF_ERR_* failure
  */
 int bladerf_flash_firmware(struct bladerf *dev, const char *firmware);
 

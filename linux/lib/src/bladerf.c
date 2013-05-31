@@ -7,13 +7,6 @@
 #include "bladeRF.h"    /* Kernel module interface */
 
 
-/* Statistics we want to keep about the device */
-struct bladerf_stats {
-    uint64_t rx_overruns;
-    uint64_t rx_throughput;
-    uint64_t tx_underruns;
-    uint64_t tx_throughput;
-};
 
 /* TODO Should there be a "big-lock" wrapped around accesses to a device */
 struct bladerf {
