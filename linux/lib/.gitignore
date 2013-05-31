@@ -1,0 +1,7 @@
+*.swp
+*~
+*.o
+*.orig
+lib/*
+bin/*
+doc/doxygen/html/*
