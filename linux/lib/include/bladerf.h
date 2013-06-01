@@ -387,18 +387,6 @@ int bladerf_stats(struct bladerf *dev, struct bladerf_stats *stats);
 int bladerf_flash_firmware(struct bladerf *dev, const char *firmware);
 
 /**
- * Flash firmware onto device
- *
- * @note This will require a power cycle to take effect
- *
- * @param   dev         Device handle
- * @param   firmware    Full path to firmware file
- *
- * @return 0 on success, BLADERF_ERR_* failure
- */
-int bladerf_flash_firmware(struct bladerf *dev, const char *firmware);
-
-/**
  * Load device's FPGA
  *
  * @param   dev         Device handle

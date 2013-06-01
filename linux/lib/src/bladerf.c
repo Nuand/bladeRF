@@ -9,7 +9,6 @@
 
 #include "bladerf.h"
 #include "bladerf_priv.h"
-#include "driver.h"
 #include "debug.h"
 
 #ifndef BLADERF_DEV_DIR
