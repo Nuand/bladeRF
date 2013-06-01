@@ -37,8 +37,11 @@ struct bladerf;
  * Information about a bladeRF attached to the system
  */
 struct bladerf_devinfo {
-    char *path;         /**< Path to devices */
-    uint64_t serial;    /**< Device's serial number */
+    char *path;                 /**< Path to device */
+    uint64_t serial;            /**< Device's serial number */
+    int fpga_configured;        /**< Is the FPGA loaded? */
+    unsigned int fw_ver_maj;    /**< Firmware major version number */
+    unsigned int fw_ver_min;    /**< Firmware minor version number */
 };
 
 /**
@@ -47,10 +50,10 @@ struct bladerf_devinfo {
  * TODO document these
  */
 struct bladerf_stats {
-    uint64_t rx_overruns;
-    uint64_t rx_throughput;
-    uint64_t tx_underruns;
-    uint64_t tx_throughput;
+    uint64_t rx_overruns;       /**< TODO describe rx overrun conditions */
+    uint64_t rx_throughput;     /**< TODO Unit? */
+    uint64_t tx_underruns;      /**< TODO describe tx overrun conditions */
+    uint64_t tx_throughput;     /**< TODO Unit? */
 };
 
 /**
@@ -339,18 +342,18 @@ int bladerf_get_serial(struct bladerf *dev, uint64_t *serial);
  * @return 0 on success, BLADERF_ERR_* failure
  */
 int bladerf_get_fw_version(struct bladerf *dev,
-                            unsigned int *major, unsigned int minor);
+                            unsigned int *major, unsigned int *minor);
 
 /**
  * Check FPGA status
  *
  * @param   dev     Device handle
  *
- * @return  1 if FPGA is programmed,
+ * @return  1 if FPGA is configured,
  *          0 if it is not,
  *          and BLADERF_ERR_* on failure
  */
-int bladerf_is_fpga_programmed(struct bladerf *dev);
+int bladerf_is_fpga_configured(struct bladerf *dev);
 
 /**
  * Obtain device statistics
