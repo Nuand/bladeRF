@@ -41,5 +41,12 @@ int main(int argc, char *argv[])
 {
     struct bladerf *dev;
     probe();
+
+    dev = bladerf_open_any();
+    if (dev) {
+        printf("Opened device. Closing...\n");
+        bladerf_close(dev);
+    }
+
     return 0;
 }

@@ -5,10 +5,12 @@
 #include <unistd.h>
 #include <errno.h>
 #include <dirent.h>
+#include <assert.h>
 #include <sys/ioctl.h>
 
-#include "bladerf.h"
-#include "bladerf_priv.h"
+#include "bladeRF.h"        /* Driver interface */
+#include "bladerf.h"        /* API */
+#include "bladerf_priv.h"   /* Implementation-specific items ("private") */
 #include "debug.h"
 
 #ifndef BLADERF_DEV_DIR
@@ -19,6 +21,11 @@
 #   define BLADERF_DEV_PFX  "bladerf"
 #endif
 
+/*******************************************************************************
+ * Device discovery & initialization/deinitialization
+ ******************************************************************************/
+
+/* Return 0 if dirent name matches that of what we expect for a bladerf dev */
 static int bladerf_filter(const struct dirent *d)
 {
     const size_t pfx_len = strlen(BLADERF_DEV_PFX);
@@ -43,6 +50,7 @@ static int bladerf_filter(const struct dirent *d)
     return 0;
 }
 
+/* Helper routine for freeing dirent list from scandir() */
 static inline void free_dirents(struct dirent **d, int n)
 {
     if (d && n > 0 ) {
@@ -55,8 +63,8 @@ static inline void free_dirents(struct dirent **d, int n)
 /* Open and if a non-NULL bladerf_devinfo ptr is provided, attempt to verify
  * that the device we opened is a bladeRF via a info calls.
  * (Does not fill out devinfo's path) */
-struct bladerf * bladerf_open_(const char *dev_path,
-                               struct bladerf_devinfo *i)
+struct bladerf * _bladerf_open_info(const char *dev_path,
+                                    struct bladerf_devinfo *i)
 {
     struct bladerf *ret;
 
@@ -120,7 +128,7 @@ ssize_t bladerf_get_device_list(struct bladerf_devinfo **devices)
                 strcpy(dev_path, BLADERF_DEV_DIR);
                 strcat(dev_path, matches[i]->d_name);
 
-                dev = bladerf_open_(dev_path, &ret[num_devices]);
+                dev = _bladerf_open_info(dev_path, &ret[num_devices]);
 
                 if (dev) {
                     ret[num_devices++].path = dev_path;
@@ -152,15 +160,9 @@ void bladerf_free_device_list(struct bladerf_devinfo *devices, size_t n)
 struct bladerf * bladerf_open(const char *dev_path)
 {
     struct bladerf_devinfo i;
-    struct bladerf *ret;
 
-    /* Use the device info to ensure what we opened is actually a bladeRF */
-    ret = bladerf_open_(dev_path, &i);
-
-    if (ret)
-        free(i.path);
-
-    return ret;
+    /* Use open with devinfo check to verify that this is actually a bladeRF */
+    return _bladerf_open_info(dev_path, &i);
 }
 
 void bladerf_close(struct bladerf *dev)
@@ -171,7 +173,7 @@ void bladerf_close(struct bladerf *dev)
     }
 }
 
-int bladerf_set_loopback( struct bladerf *dev, enum bladerf_loopback l)
+int bladerf_set_loopback(struct bladerf *dev, enum bladerf_loopback l)
 {
     return 0;
 }
@@ -219,6 +221,10 @@ int bladerf_set_frequency(struct bladerf *dev,
     return 0;
 }
 
+/*******************************************************************************
+ * Data transmission and reception
+ ******************************************************************************/
+
 ssize_t bladerf_send_c12(struct bladerf *dev, int16_t *samples, size_t n)
 {
     return 0;
@@ -235,6 +241,11 @@ ssize_t bladerf_read_c16(struct bladerf *dev,
     return 0;
 }
 
+/*******************************************************************************
+ * Device info
+ ******************************************************************************/
+
+/* TODO - Devices do not currently support serials */
 int bladerf_get_serial(struct bladerf *dev, uint64_t *serial)
 {
     *serial = 0;
@@ -243,13 +254,38 @@ int bladerf_get_serial(struct bladerf *dev, uint64_t *serial)
 
 int bladerf_is_fpga_configured(struct bladerf *dev)
 {
-    return 0;
+    int status;
+    int configured;
+
+    assert(dev);
+
+    status = ioctl(dev->fd, BLADE_QUERY_FPGA_STATUS, &configured);
+
+    if (status || configured < 0 || configured > 1)
+        configured = BLADERF_ERR_IO;
+
+    return configured;
 }
 
 int bladerf_get_fw_version(struct bladerf *dev,
                             unsigned int *major, unsigned int *minor)
 {
-    *major = 0;
-    *minor = 1;
-    return 0;
+    int status;
+    struct bladeRF_version ver;
+
+    assert(dev && major && minor);
+
+    status = ioctl(dev->fd, BLADE_QUERY_VERSION, &ver);
+    if (!status) {
+        *major = ver.major;
+        *minor = ver.minor;
+        return 0;
+    }
+
+    /* TODO return more appropriate error code based upon errno */
+    return BLADERF_ERR_IO;
 }
+
+/*------------------------------------------------------------------------------
+ * Device programming
+ *----------------------------------------------------------------------------*/
