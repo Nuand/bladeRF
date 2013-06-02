@@ -88,7 +88,7 @@ install: shared
 
 uninstall:
 	rm -f $(INSTALL_PREFIX)/lib/libbladerf*
-	rm -f $(INSTALL_PREFIX)/include/bladef.h
+	rm -f $(INSTALL_PREFIX)/include/bladerf.h
 
 clean:
 	rm -rf $(LIB_DIR)

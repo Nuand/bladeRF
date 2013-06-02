@@ -3,9 +3,16 @@
  *
  * @brief bladeRF library
  */
+#ifndef BLADERF_H_
+#define BLADERF_H_
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @defgroup    RETCODES    Error return codes
@@ -434,3 +441,9 @@ int bladerf_load_fpga(struct bladerf *dev, const char *fpga);
 
 
 /* @} (End of FN_PROG) */
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* BLADERF_H_ */
