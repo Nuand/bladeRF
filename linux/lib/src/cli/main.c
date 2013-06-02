@@ -26,10 +26,17 @@ int probe()
     for (i = 0; i < n_devices; i++) {
         printf("    Path: %s\n", devices[i].path);
         printf("    Serial: 0x%016lX\n", devices[i].serial);
-        printf("    Firmware: v%02d.%02d\n", devices[i].fw_ver_maj,
+        printf("    Firmware: v%d.%d\n", devices[i].fw_ver_maj,
                devices[i].fw_ver_min);
-        printf("    FPGA Configured: %s\n\n",
-                devices[i].fpga_configured ? "yes" : "no");
+
+        if (devices[i].fpga_configured) {
+            printf("    FPGA: v%d.%d\n",
+                    devices[i].fpga_ver_maj, devices[i].fpga_ver_min);
+        } else {
+            printf("    FPGA: not configured\n");
+        }
+
+        printf("\n");
     }
 
     bladerf_free_device_list(devices, n_devices);

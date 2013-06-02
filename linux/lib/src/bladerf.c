@@ -89,6 +89,10 @@ struct bladerf * _bladerf_open_info(const char *dev_path,
 
         if (bladerf_get_fw_version(ret, &i->fw_ver_maj, &i->fw_ver_min) < 0)
             goto bladerf_open__err;
+
+        if (bladerf_get_fpga_version(ret,
+                                     &i->fpga_ver_maj, &i->fpga_ver_min) < 0)
+            goto bladerf_open__err;
     }
 
     return ret;
@@ -248,6 +252,8 @@ ssize_t bladerf_read_c16(struct bladerf *dev,
 /* TODO - Devices do not currently support serials */
 int bladerf_get_serial(struct bladerf *dev, uint64_t *serial)
 {
+    assert(dev && serial);
+
     *serial = 0;
     return 0;
 }
@@ -265,6 +271,18 @@ int bladerf_is_fpga_configured(struct bladerf *dev)
         configured = BLADERF_ERR_IO;
 
     return configured;
+}
+
+/* TODO Not yet supported */
+int bladerf_get_fpga_version(struct bladerf *dev,
+                                unsigned int *major, unsigned int *minor)
+{
+    assert(dev && major && minor);
+
+    *major = 0;
+    *minor = 0;
+
+    return 0;
 }
 
 int bladerf_get_fw_version(struct bladerf *dev,
@@ -289,3 +307,17 @@ int bladerf_get_fw_version(struct bladerf *dev,
 /*------------------------------------------------------------------------------
  * Device programming
  *----------------------------------------------------------------------------*/
+
+/* TODO Unimplemented: flashing FX3 firmware */
+int bladerf_flash_firmware(struct bladerf *dev, const char *firmware)
+{
+    assert(dev && firmware);
+    return 0;
+}
+
+/* TODO Unimplemented: loading FPGA */
+int bladerf_load_fpga(struct bladerf *dev, const char *fpga)
+{
+    assert(dev && fpga);
+    return 0;
+}

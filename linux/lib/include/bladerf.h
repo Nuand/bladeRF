@@ -1,5 +1,7 @@
 /**
- * bladeRF library
+ * @file bladerf.h
+ *
+ * @brief bladeRF library
  */
 #include <stdint.h>
 #include <stdbool.h>
@@ -8,8 +10,8 @@
 /**
  * @defgroup    RETCODES    Error return codes
  *
- * bladerf library routines return negative values to indicate erros. Values
- * >= 0 are reserved for returning other meaningful values upon success.
+ * bladeRF library routines return negative values to indicate errors.
+ * Values >= 0 are used to indicate success.
  *
  * @code
  *  int status = bladerf_set_txvga1(dev, 2);
@@ -40,6 +42,8 @@ struct bladerf_devinfo {
     char *path;                 /**< Path to device */
     uint64_t serial;            /**< Device's serial number */
     int fpga_configured;        /**< Is the FPGA loaded? */
+    unsigned int fpga_ver_maj;  /**< FPGA major version number */
+    unsigned int fpga_ver_min;  /**< FPGA minor version number */
     unsigned int fw_ver_maj;    /**< Firmware major version number */
     unsigned int fw_ver_min;    /**< Firmware minor version number */
 };
@@ -356,8 +360,8 @@ int bladerf_get_serial(struct bladerf *dev, uint64_t *serial);
  * Query firmware version
  *
  * @param[in]   dev     Device handle
- * @param[out]  major   Firmware major revision
- * @param[out]  minor   Firmware minor revision
+ * @param[out]  major   Firmware major version
+ * @param[out]  minor   Firmware minor version
  *
  * @return 0 on success, BLADERF_ERR_* failure
  */
@@ -365,7 +369,7 @@ int bladerf_get_fw_version(struct bladerf *dev,
                             unsigned int *major, unsigned int *minor);
 
 /**
- * Check FPGA status
+ * Check FPGA configuration status
  *
  * @param   dev     Device handle
  *
@@ -374,6 +378,18 @@ int bladerf_get_fw_version(struct bladerf *dev,
  *          and BLADERF_ERR_* on failure
  */
 int bladerf_is_fpga_configured(struct bladerf *dev);
+
+/**
+ * Query FPGA version
+ *
+ * @param[in]   dev     Device handle
+ * @param[out]  major   FPGA major version
+ * @param[out]  minor   FPGA minor version
+ *
+ * @return 0 on success, BLADERF_ERR_* failure
+ */
+int bladerf_get_fpga_version(struct bladerf *dev,
+                                unsigned int *major, unsigned int *minor);
 
 /**
  * Obtain device statistics
