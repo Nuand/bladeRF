@@ -6,7 +6,7 @@
         <BspGeneratedUnixTimeStamp>1368776984211</BspGeneratedUnixTimeStamp>
         <BspGeneratedLocation>Z:\work\release\hdl\fpga\ip\altera\nios_system\software\lms_spi_controller_bsp</BspGeneratedLocation>
         <BspSettingsFile>settings.bsp</BspSettingsFile>
-        <SopcDesignFile>Z:\work\release\hdl\fpga\ip\altera\nios_system\nios_system.sopcinfo</SopcDesignFile>
+        <SopcDesignFile>..\..\nios_system.sopcinfo</SopcDesignFile>
         <JdiFile>default</JdiFile>
         <Cpu>nios2_qsys_0</Cpu>
         <SchemaVersion>1.9</SchemaVersion>
