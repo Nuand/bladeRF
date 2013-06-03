@@ -71,7 +71,9 @@ void NuandGPIOReconfigure(CyBool_t fullGpif, CyBool_t warm)
         {GPIO_SYS_RST,  CyFalse, CyFalse},
         {GPIO_RX_EN,    CyFalse, CyFalse},
         {GPIO_TX_EN,    CyFalse, CyFalse},
-        {GPIO_nCONFIG,  CyFalse, CyTrue}
+        {GPIO_nCONFIG,  CyFalse, CyTrue},
+        {GPIO_ID,       CyTrue,  CyTrue},
+        {GPIO_LED,      CyFalse,  CyTrue}
     };
 #define ARR_SIZE(x) (sizeof(x)/sizeof(x[0]))
 
@@ -158,7 +160,7 @@ void UartBridgeStart(void)
 
     /* Set UART configuration */
     CyU3PMemSet ((uint8_t *)&uartConfig, 0, sizeof (uartConfig));
-    uartConfig.baudRate = CY_U3P_UART_BAUDRATE_4M608K;
+    uartConfig.baudRate = CY_U3P_UART_BAUDRATE_115200;
     uartConfig.stopBit = CY_U3P_UART_ONE_STOP_BIT;
     uartConfig.parity = CY_U3P_UART_NO_PARITY;
     uartConfig.txEnable = CyTrue;
@@ -227,8 +229,8 @@ void UartBridgeStart(void)
     }
 
     CyU3PMemSet((uint8_t *)&dmaCfg, 0, sizeof(dmaCfg));
-    dmaCfg.size  = size;
-    dmaCfg.count = 2;
+    dmaCfg.size  = 16;
+    dmaCfg.count = 10;
     dmaCfg.prodSckId = CY_U3P_UIB_SOCKET_PROD_2;
     dmaCfg.consSckId = CY_U3P_LPP_SOCKET_UART_CONS;
     dmaCfg.dmaMode = CY_U3P_DMA_MODE_BYTE;
@@ -284,6 +286,37 @@ void UartBridgeStart(void)
      }
 }
 
+void UartBridgeStop(void)
+{
+    CyU3PEpConfig_t epCfg;
+    CyU3PReturnStatus_t apiRetStatus = CY_U3P_SUCCESS;
+
+    /* Flush the endpoint memory */
+    CyU3PUsbFlushEp(BLADE_UART_EP_PRODUCER);
+    CyU3PUsbFlushEp(BLADE_UART_EP_CONSUMER);
+
+    /* Destroy the channel */
+    CyU3PDmaChannelDestroy(&glChHandlebladeRFUARTtoU);
+    CyU3PDmaChannelDestroy(&glChHandlebladeRFUARTtoU);
+
+    /* Disable endpoints. */
+    CyU3PMemSet((uint8_t *)&epCfg, 0, sizeof (epCfg));
+    epCfg.enable = CyFalse;
+
+    /* Producer endpoint configuration. */
+    apiRetStatus = CyU3PSetEpConfig(BLADE_UART_EP_PRODUCER, &epCfg);
+    if (apiRetStatus != CY_U3P_SUCCESS) {
+        CyU3PDebugPrint (4, "CyU3PSetEpConfig failed, Error code = %d\n", apiRetStatus);
+        CyFxAppErrorHandler (apiRetStatus);
+    }
+
+    apiRetStatus = CyU3PSetEpConfig(BLADE_UART_EP_CONSUMER, &epCfg);
+    if (apiRetStatus != CY_U3P_SUCCESS) {
+        CyU3PDebugPrint (4, "CyU3PSetEpConfig failed, Error code = %d\n", apiRetStatus);
+        CyFxAppErrorHandler (apiRetStatus);
+    }
+}
+
 void CyFxGpioInit(void)
 {
     CyU3PGpioClock_t gpioClock;
@@ -305,7 +338,7 @@ void CyFxGpioInit(void)
         CyFxAppErrorHandler(apiRetStatus);
     }
 
-    NuandGPIOReconfigure(CyFalse, CyFalse);
+    NuandGPIOReconfigure(CyTrue, CyFalse);
 }
 
 int FpgaBeginProgram(void)
@@ -337,14 +370,16 @@ void bladeRFConfigUtoPDmaCallback(CyU3PDmaChannel *chHandle, CyU3PDmaCbType_t ty
     if (type == CY_U3P_DMA_CB_PROD_EVENT) {
         int i;
         unsigned char *buf = input->buffer_p.buffer;
-        unsigned short *us_buf = (unsigned short *)input->buffer_p.buffer;
-        unsigned short tmpr, tmpw;
+        unsigned *us_buf = (unsigned short *)input->buffer_p.buffer;
+        unsigned tmpr, tmpw;
 
         /* Flip the bits in such a way that the FPGA can be programmed
          * This mapping can be determined by looking at the schematic */
         for (i = input->buffer_p.count - 1; i >= 0; i--) {
-            buf[i * 2] = buf[i];
-            buf[i * 2 + 1] = 0;
+            buf[i * 4] = buf[i];
+            buf[i * 4 + 1] = 0;
+            buf[i * 4 + 2] = 0;
+            buf[i * 4 + 3] = 0;
             tmpr = us_buf[i];
 
             tmpw = 0;
@@ -359,7 +394,7 @@ void bladeRFConfigUtoPDmaCallback(CyU3PDmaChannel *chHandle, CyU3PDmaCbType_t ty
             US_GPIF_2_FPP(11, 7);
             us_buf[i] = tmpw;
         }
-        status = CyU3PDmaChannelCommitBuffer (chHandle, input->buffer_p.count * 2, 0);
+        status = CyU3PDmaChannelCommitBuffer (chHandle, input->buffer_p.count * 4, 0);
         if (status != CY_U3P_SUCCESS) {
             CyU3PDebugPrint (4, "CyU3PDmaChannelCommitBuffer failed, Error code = %d\n", status);
         }
@@ -425,7 +460,7 @@ void NuandRFLinkStart(void)
     CyU3PMemSet ((uint8_t *)&epCfg, 0, sizeof (epCfg));
     epCfg.enable = CyTrue;
     epCfg.epType = CY_U3P_USB_EP_BULK;
-    epCfg.burstLen = 1;
+    epCfg.burstLen = 15;
     epCfg.streams = 0;
     epCfg.pcktSize = size;
 
@@ -443,8 +478,8 @@ void NuandRFLinkStart(void)
         CyFxAppErrorHandler (apiRetStatus);
     }
 
-    dmaMultiConfig.size = size;
-    dmaMultiConfig.count = 50;
+    dmaMultiConfig.size = size * 2;
+    dmaMultiConfig.count = 22;
     dmaMultiConfig.validSckCount = 2;
     dmaMultiConfig.prodSckId[0] = BLADE_RF_SAMPLE_EP_PRODUCER_USB_SOCKET;
     dmaMultiConfig.consSckId[0] = CY_U3P_PIB_SOCKET_2;
@@ -493,6 +528,8 @@ void NuandRFLinkStart(void)
         CyFxAppErrorHandler(apiRetStatus);
     }
 
+
+    UartBridgeStart();
     glAppMode = MODE_RF_CONFIG;
 
 }
@@ -534,6 +571,7 @@ void NuandRFLinkStop (void)
     /* Reset the GPIF */
     CyU3PGpifDisable(CyTrue);
 
+    UartBridgeStop();
     glAppMode = MODE_NO_CONFIG;
 }
 
@@ -545,7 +583,7 @@ void NuandFpgaConfigStart(void)
     CyU3PReturnStatus_t apiRetStatus = CY_U3P_SUCCESS;
     CyU3PUSBSpeed_t usbSpeed = CyU3PUsbGetSpeed();
 
-    NuandGPIOReconfigure(CyFalse, CyFalse);
+    NuandGPIOReconfigure(CyTrue, CyFalse);
 
     /* Load the GPIF configuration for loading the FPGA */
     apiRetStatus = CyU3PGpifLoad(&C4loader_CyFxGpifConfig);
@@ -595,7 +633,7 @@ void NuandFpgaConfigStart(void)
         CyFxAppErrorHandler (apiRetStatus);
     }
 
-    dmaCfg.size  = size * 2;
+    dmaCfg.size  = size * 4;
     dmaCfg.count = BLADE_DMA_BUF_COUNT;
     dmaCfg.prodSckId = BLADE_FPGA_CONFIG_SOCKET;
     dmaCfg.consSckId = CY_U3P_PIB_SOCKET_3;
@@ -606,7 +644,7 @@ void NuandFpgaConfigStart(void)
 
     dmaCfg.cb = bladeRFConfigUtoPDmaCallback;
     dmaCfg.prodHeader = 0;
-    dmaCfg.prodFooter = size;
+    dmaCfg.prodFooter = size * 3;
     dmaCfg.consHeader = 0;
     dmaCfg.prodAvailCount = 0;
 
@@ -732,7 +770,7 @@ CyBool_t CyFxbladeRFApplnUSBSetupCB(uint32_t setupdat0, uint32_t setupdat1)
         {
             case BLADE_USB_CMD_QUERY_VERSION:
                 ver.major = 0;
-                ver.minor = 1;
+                ver.minor = 2;
                 apiRetStatus = CyU3PUsbSendEP0Data(sizeof(ver), &ver);
             break;
 
@@ -742,6 +780,11 @@ CyBool_t CyFxbladeRFApplnUSBSetupCB(uint32_t setupdat0, uint32_t setupdat1)
 
             	apiRetStatus = CyU3PUsbGetEP0Data(4, buf, &readC);
 
+                if (!(buf[0] || buf[3])) {
+                    apiRetStatus = CyU3PUsbResetEp(BLADE_RF_SAMPLE_EP_CONSUMER);
+                    //CyU3PThreadSleep(1000);
+                }
+
             	CyU3PGpioSetValue(GPIO_RX_EN, (buf[0] || buf[3]) ? CyTrue : CyFalse);
             break;
 
@@ -750,6 +793,11 @@ CyBool_t CyFxbladeRFApplnUSBSetupCB(uint32_t setupdat0, uint32_t setupdat1)
                 CyU3PGpioSetValue(GPIO_SYS_RST, CyFalse);
 
                 apiRetStatus = CyU3PUsbGetEP0Data(4, buf, &readC);
+
+                if (!(buf[0] || buf[3])) {
+                    apiRetStatus = CyU3PUsbResetEp(BLADE_RF_SAMPLE_EP_PRODUCER);
+                    //CyU3PThreadSleep(1000);
+                }
 
                 CyU3PGpioSetValue(GPIO_TX_EN, (buf[0] || buf[3]) ? CyTrue : CyFalse);
             break;

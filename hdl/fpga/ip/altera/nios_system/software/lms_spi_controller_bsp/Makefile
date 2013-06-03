@@ -101,7 +101,7 @@ ACDS_VERSION := 12.1sp1
 # BUILD_NUMBER: 243
 
 SETTINGS_FILE := settings.bsp
-SOPC_FILE := Z:/work/nuandclean/release/hdl/fpga/ip/altera/nios_system/nios_system.sopcinfo
+SOPC_FILE := Z:/work/nuandrelease/release/hdl/fpga/ip/altera/nios_system/nios_system.sopcinfo
 
 #-------------------------------------------------------------------------------
 #                             TOOL & COMMAND DEFINITIONS

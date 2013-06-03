@@ -12,8 +12,8 @@ derive_clock_uncertainty
 # TODO: Constrain the FX3 interface
 
 # TODO: Constrain the LMS interface
-set_input_delay -clock [get_clocks *clk*0*] -reference_pin [get_ports lms_rx_clock_out] -max 10.0 [get_ports lms_rx_data*]
-set_input_delay -clock [get_clocks *clk*0*] -reference_pin [get_ports lms_rx_clock_out] -min 1.0 [get_ports lms_rx_data*] -add_delay
+set_input_delay -clock [get_clocks lms_rx_clock_out] -max 10.0 [get_ports lms_rx_data*]
+set_input_delay -clock [get_clocks lms_rx_clock_out] -min 1.0 [get_ports lms_rx_data*] -add_delay
 
 
 

@@ -58,6 +58,9 @@ extern uint32_t glAppMode;
 #define GPIO_nCONFIG    51
 #define GPIO_CONFDONE   50
 
+#define GPIO_LED        58
+#define GPIO_ID         59
+
 #define GPIO_SYS_RST    24
 #define GPIO_RX_EN      21
 #define GPIO_TX_EN      22
