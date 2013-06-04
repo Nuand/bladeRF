@@ -4,13 +4,13 @@ OBJ := $(SRC:.c=.o)
 CFLAGS := -Wall -Wextra -Wno-unused-parameter -ggdb3 -O0 -I../../include
 LDFLAGS := -lbladeRF -L ../../lib
 
-all: bladerf
+all: bladeRF
 
-bladerf: $(OBJ)
+bladeRF: $(OBJ)
 	$(CC) $^ $(LDFLAGS) -o $@
 
 clean:
-	rm -f bladerf
+	rm -f bladeRF
 	rm -f $(OBJ)
 
 .PHONY: clean

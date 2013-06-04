@@ -1,5 +1,5 @@
 ################################################################################
-# libbladerf
+# libbladeRF
 #
 # Quick Makefile, until we get autotools in order
 ################################################################################
@@ -76,45 +76,46 @@ $(SHARED_LIB): $(OBJ)
 
 cli: shared $(BIN_DIR)
 	$(MAKE) -C $(SRC_DIR)/cli
-	cp $(SRC_DIR)/cli/bladerf $(BIN_DIR)/
+	cp $(SRC_DIR)/cli/bladeRF $(BIN_DIR)/
 
-libbladerf.pc: shared
+libbladeRF.pc: shared
 	@echo "prefix=${INSTALL_PREFIX}" > $@
 	@echo "exec_prefix=$$""{prefix}" >> $@
 	@echo "libdir=$$""{exec_prefix}/lib" >> $@
 	@echo "includedir=$$""{exec_prefix}/include" >> $@
-	@echo -e "\nName: libbladerf" >> $@
+	@echo -e "\nName: libbladeRF" >> $@
 	@echo "Description: C library for nuand bladeRF devices" >> $@
 	@echo "URL: http://www.nuand.com" >> $@
 	@echo "Version: ${LIB_VER}" >> $@
-	@echo "Libs: -L$$""{libdir} -lbladerf" >> $@
+	@echo "Libs: -L$$""{libdir} -lbladeRF" >> $@
 	@echo "Cflags: -I$$""{includedir}"  >> $@
 
 doc:
 	$(MAKE) -C doc/doxygen
 
-install: shared libbladerf.pc
+install: shared libbladeRF.pc
 	cp lib/* $(INSTALL_PREFIX)/lib
 	cp include/* $(INSTALL_PREFIX)/include
 	@if [ -d $(INSTALL_PREFIX)/share/pkgconfig ]; then \
-		cp libbladerf.pc $(INSTALL_PREFIX)/share/pkgconfig/ ; \
+		cp libbladeRF.pc $(INSTALL_PREFIX)/share/pkgconfig/ ; \
 	elif [ -d $(INSTALL_PREFIX)/lib/pkgconfig ]; then \
-		cp libbladerf.pc $(INSTALL_PREFIX)/lib/pkgconfig/ ; \
+		cp libbladeRF.pc $(INSTALL_PREFIX)/lib/pkgconfig/ ; \
 	else \
-		@echo "Unsure where to install libbladerf.pc ... aborting." ; \
+		@echo "Unsure where to install libbladeRF.pc ... aborting." ; \
 		exit 1; \
 	fi
 
-
 uninstall:
-	rm -f $(INSTALL_PREFIX)/lib/libbladerf*
-	rm -f $(INSTALL_PREFIX)/include/bladerf.h
+	rm -f $(INSTALL_PREFIX)/lib/libbladeRF*
+	rm -f $(INSTALL_PREFIX)/include/libbladeRF.h
+	rm -f $(INSTALL_PREFIX)/lib/pkgconfig/libbladeRF.pc
+	rm -f $(INSTALL_PREFIX)/share/pkgconfig/libbladeRF.pc
 
 clean:
 	rm -rf $(LIB_DIR)
 	rm -rf $(BIN_DIR)
 	rm -f $(OBJ)
-	rm -f libbladerf.pc
+	rm -f libbladeRF.pc
 	$(MAKE) -C doc/doxygen clean
 	$(MAKE) -C $(SRC_DIR)/cli clean
 
