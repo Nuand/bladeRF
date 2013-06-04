@@ -3,7 +3,7 @@
  */
 #include <stdlib.h>
 #include <stdio.h>
-#include "bladerf.h"
+#include "libbladeRF.h"
 
 void usage(const char *argv0)
 {

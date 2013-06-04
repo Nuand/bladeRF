@@ -7,7 +7,7 @@
 # Fetch the library version
 include make/version.mk
 
-LIB_NAME := libbladerf
+LIB_NAME := libbladeRF
 
 BIN_DIR := bin
 SRC_DIR := src

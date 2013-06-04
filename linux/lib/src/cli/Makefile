@@ -2,7 +2,7 @@ SRC := $(wildcard *.c)
 OBJ := $(SRC:.c=.o)
 
 CFLAGS := -Wall -Wextra -Wno-unused-parameter -ggdb3 -O0 -I../../include
-LDFLAGS := -lbladerf -L ../../lib
+LDFLAGS := -lbladeRF -L ../../lib
 
 all: bladerf
 

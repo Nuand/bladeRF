@@ -9,7 +9,7 @@
 #include <sys/ioctl.h>
 
 #include "bladeRF.h"        /* Driver interface */
-#include "bladerf.h"        /* API */
+#include "libbladeRF.h"     /* API */
 #include "bladerf_priv.h"   /* Implementation-specific items ("private") */
 #include "debug.h"
 
@@ -112,7 +112,7 @@ ssize_t bladerf_get_device_list(struct bladerf_devinfo **devices)
     char *dev_path;
 
     ret = NULL;
-    num_devices = -1;
+    num_devices = 0;
 
     num_matches = scandir(BLADERF_DEV_DIR, &matches, bladerf_filter, alphasort);
     if (num_matches > 0) {
@@ -123,7 +123,6 @@ ssize_t bladerf_get_device_list(struct bladerf_devinfo **devices)
             goto bladerf_get_device_list_out;
         }
 
-        num_devices = 0;
         for (i = 0; i < num_matches; i++) {
             dev_path = malloc(strlen(BLADERF_DEV_DIR) +
                                 strlen(matches[i]->d_name) + 1);
@@ -139,6 +138,9 @@ ssize_t bladerf_get_device_list(struct bladerf_devinfo **devices)
                     bladerf_close(dev);
                 } else
                     free(dev_path);
+            } else {
+                num_devices = BLADERF_ERR_MEM;
+                goto bladerf_get_device_list_out;
             }
         }
     }
