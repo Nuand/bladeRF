@@ -179,7 +179,7 @@ void bladerf_close(struct bladerf *dev)
     }
 }
 
-int bladerf_set_loopback(struct bladerf *dev, enum bladerf_loopback l)
+int bladerf_set_loopback(struct bladerf *dev, bladerf_loopback l)
 {
     return 0;
 }
@@ -200,7 +200,7 @@ int bladerf_set_txvga1(struct bladerf *dev, int gain)
     return 0;
 }
 
-int bladerf_set_lna_gain(struct bladerf *dev, enum bladerf_lna_gain gain)
+int bladerf_set_lna_gain(struct bladerf *dev, bladerf_lna_gain gain)
 {
     return 0;
 }
@@ -339,4 +339,28 @@ int si5338_i2c_write(struct bladerf *dev, uint8_t address, uint8_t val)
     uc.addr = address;
     uc.data = val;
     return ioctl(dev->fd, BLADE_SI5338_WRITE, &uc);
+}
+
+/*------------------------------------------------------------------------------
+ * LMS register read / write functions
+ */
+
+int lms_spi_read(struct bladerf *dev, uint8_t address, uint8_t *val)
+{
+    int ret;
+    struct uart_cmd uc;
+    address &= 0x7f;
+    uc.addr = address;
+    uc.data = 0xff;
+    ret = ioctl(dev->fd, BLADE_LMS_READ, &uc);
+    *val = uc.data;
+    return ret;
+}
+
+int lms_spi_write(struct bladerf *dev, uint8_t address, uint8_t val)
+{
+    struct uart_cmd uc;
+    uc.addr = address;
+    uc.data = val;
+    return ioctl(dev->fd, BLADE_LMS_WRITE, &uc);
 }

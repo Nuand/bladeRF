@@ -10,6 +10,16 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <fcntl.h>
+
+/**
+ * bladerRF device handle
+ */
+struct bladerf;
+
+#include <liblms.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,11 +49,6 @@ extern "C" {
 /** @} (End RETCODES) */
 
 /**
- * bladerRF device handle
- */
-struct bladerf;
-
-/**
  * Information about a bladeRF attached to the system
  */
 struct bladerf_devinfo {
@@ -68,36 +73,9 @@ struct bladerf_stats {
     uint64_t tx_throughput;     /**< TODO Unit? */
 };
 
-/**
- * TODO describe "module" in more detail
- */
-enum bladerf_module {
-    TX,
-    RX
-};
-
-/**
- * TODO describe LNA gain in more detail
- */
-enum bladerf_lna_gain {
-    LOW,
-    MED,
-    HIGH
-};
-
-/**
- * TODO describe various loopback modes
- */
-enum bladerf_loopback {
-    LB_BB_LPF = 0,
-    LB_BB_VGA2,
-    LB_BB_OP,
-    LB_RF_LNA1,
-    LB_RF_LNA2,
-    LB_RF_LNA3,
-    LB_NONE
-};
-
+#define bladerf_lna_gain lms_lna_gain_t
+#define bladerf_module lms_module_t
+#define bladerf_loopback lms_loopback_mode_t
 
 /**
  * @defgroup FN_INIT    Initialization/deinitialization
@@ -197,7 +175,7 @@ void bladerf_close(struct bladerf *device);
  * @return 0 on success, BLADERF_ERR_* failure
  */
 int bladerf_enable_module(struct bladerf *dev,
-                            enum bladerf_module m, bool enable) ;
+                            bladerf_module m, bool enable) ;
 
 /**
  * Apply specified loopback mode
@@ -208,7 +186,7 @@ int bladerf_enable_module(struct bladerf *dev,
  *
  * @return 0 on success, BLADERF_ERR_* failure
  */
-int bladerf_set_loopback( struct bladerf *dev, enum bladerf_loopback l);
+int bladerf_set_loopback( struct bladerf *dev, bladerf_loopback l);
 
 
 /**
@@ -251,7 +229,7 @@ int bladerf_set_txvga1(struct bladerf *dev, int gain);
  *
  * @return 0 on success, BLADERF_ERR_* failure
  */
-int bladerf_set_lna_gain(struct bladerf *dev, enum bladerf_lna_gain gain);
+int bladerf_set_lna_gain(struct bladerf *dev, bladerf_lna_gain gain);
 
 /**
  * Set the pre-LPF VGA gain
@@ -297,7 +275,7 @@ int bladerf_set_bandwidth(struct bladerf *dev, unsigned int bandwidth,
  * @return 0 on success, BLADERF_ERR_* failure
  */
 int bladerf_set_frequency(struct bladerf *dev,
-                            enum bladerf_module module, unsigned int frequency);
+                            bladerf_module module, unsigned int frequency);
 
 /** @} (End of FN_CTRL) */
 
@@ -493,6 +471,36 @@ int si5338_set_rx_freq(struct bladerf *dev, unsigned freq);
 
 
 /* @} (End of SI5338_CTL) */
+
+/**
+ * @defgroup LMS_CTL    LMS register read/write functions
+ *
+ * @{
+ */
+
+/**
+ * Read a LMS register
+ *
+ * @param   dev         Device handle
+ * @param   address     LMS register offset
+ * @param   val         Pointer to variable the data should be read into
+ *
+ * @return 0 on success, BLADERF_ERR_* failure
+ */
+int lms_spi_read(struct bladerf *dev, uint8_t address, uint8_t *val);
+
+/**
+ * Write a LMS register
+ *
+ * @param   dev         Device handle
+ * @param   address     LMS register offset
+ * @param   val         Data to write to register
+ *
+ * @return 0 on success, BLADERF_ERR_* failure
+ */
+int lms_spi_write(struct bladerf *dev, uint8_t address, uint8_t val);
+
+/* @} (End of LMS_CTL) */
 
 #ifdef __cplusplus
 }
