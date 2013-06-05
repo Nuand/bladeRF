@@ -218,11 +218,16 @@ int bladerf_set_rxvga2(struct bladerf *dev, int gain)
 int bladerf_set_bandwidth(struct bladerf *dev, unsigned int bandwidth,
                             unsigned int *bandwidth_actual)
 {
-    return 0;
+    int ret = -1;
+    ret = si5338_set_tx_freq(dev, bandwidth);
+    if (!ret)
+        ret = si5338_set_rx_freq(dev, bandwidth);
+    *bandwidth_actual = bandwidth;
+    return ret;
 }
 
 int bladerf_set_frequency(struct bladerf *dev,
-                            enum bladerf_module module, unsigned int frequency)
+                            bladerf_module module, unsigned int frequency)
 {
     return 0;
 }
@@ -322,4 +327,16 @@ int bladerf_load_fpga(struct bladerf *dev, const char *fpga)
 {
     assert(dev && fpga);
     return 0;
+}
+
+/*------------------------------------------------------------------------------
+ * Si5338 register read / write functions
+ */
+
+int si5338_i2c_write(struct bladerf *dev, uint8_t address, uint8_t val)
+{
+    struct uart_cmd uc;
+    uc.addr = address;
+    uc.data = val;
+    return ioctl(dev->fd, BLADE_SI5338_WRITE, &uc);
 }

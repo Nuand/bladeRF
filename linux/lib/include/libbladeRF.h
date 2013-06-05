@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -441,6 +442,57 @@ int bladerf_load_fpga(struct bladerf *dev, const char *fpga);
 
 
 /* @} (End of FN_PROG) */
+
+/**
+ * @defgroup SI5338_CTL Si5338 register read/write functions
+ *
+ * @{
+ */
+
+/**
+ * Read a Si5338 register
+ *
+ * @param   dev         Device handle
+ * @param   address     Si5338 register offset
+ * @param   val         Pointer to variable the data should be read into
+ *
+ * @return 0 on success, BLADERF_ERR_* failure
+ */
+int si5338_i2c_read(struct bladerf *dev, uint8_t address, uint8_t *val);
+
+/**
+ * Write a Si5338 register
+ *
+ * @param   dev         Device handle
+ * @param   address     Si5338 register offset
+ * @param   val         Data to write to register
+ *
+ * @return 0 on success, BLADERF_ERR_* failure
+ */
+int si5338_i2c_write(struct bladerf *dev, uint8_t address, uint8_t val);
+
+/**
+ * Set frequency for TX clocks
+ *
+ * @param   dev         Device handle
+ * @param   freq        Desired TX frequency in Hz
+ *
+ * @return 0 on success, BLADERF_ERR_* failure
+ */
+int si5338_set_tx_freq(struct bladerf *dev, unsigned freq);
+
+/**
+ * Set frequency for RX clocks
+ *
+ * @param   dev         Device handle
+ * @param   freq        Desired RX frequency in Hz
+ *
+ * @return 0 on success, BLADERF_ERR_* failure
+ */
+int si5338_set_rx_freq(struct bladerf *dev, unsigned freq);
+
+
+/* @} (End of SI5338_CTL) */
 
 #ifdef __cplusplus
 }
