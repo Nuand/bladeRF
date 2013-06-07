@@ -8,7 +8,7 @@ TARGET = $(BIN_DIR)/bladeRF
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
-	$(CC) $^ $(LDFLAGS) -o $(TARGET)
+	$(CC) $^ $(LDFLAGS) -ltecla -o $(TARGET)
 
 clean:
 	rm -f bladeRF
