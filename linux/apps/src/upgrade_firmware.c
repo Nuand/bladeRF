@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
             printf("Can't open `%s'\n", argv[1]);
             return 1;
         }
-        
+
         if (fstat(fw_fd, &fw_stat) == -1) {
             printf("Can't fstat firmware file\n");
             return 1;
@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
         } while(nread);
 
         ret = ioctl(fd, BLADE_UPGRADE_FW, &fw_param);
-        printf("Upgrading fw, ptr=%p, len=%d\n", fw_param.ptr, fw_param.len); 
+        printf("Upgrading fw, ptr=%p, len=%d\n", fw_param.ptr, fw_param.len);
         printf("BLADE_UPGRADE_FW = %d\n", ret);
         free(fw_param.ptr);
         close(fw_fd);

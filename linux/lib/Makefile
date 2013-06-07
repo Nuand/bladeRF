@@ -50,7 +50,7 @@ endif
 # Default install prefix
 INSTALL_PREFIX ?= /usr
 
-all: shared static 
+all: shared static
 
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)

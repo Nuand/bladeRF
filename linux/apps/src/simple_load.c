@@ -34,7 +34,7 @@ int time_past(struct timeval ref, struct timeval now) {
     return 0;
 }
 
-#define STACK_BUFFER_SZ 1024 
+#define STACK_BUFFER_SZ 1024
 
 int prog_fpga(int fd, char *file) {
     int ret;
