@@ -50,7 +50,7 @@ endif
 # Default install prefix
 INSTALL_PREFIX ?= /usr
 
-all: shared static cli
+all: shared static 
 
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
@@ -73,10 +73,6 @@ $(SHARED_LIB): $(OBJ)
 		ln -fs $(LIB_NAME_FULL) $(LIB_SO_NAME).$(LIB_VER_MIN); \
 		ln -fs $(LIB_SO_NAME).$(LIB_VER_MIN) $(LIB_SO_NAME); \
 		ln -fs $(LIB_SO_NAME) $(LIB_NAME).so
-
-cli: shared $(BIN_DIR)
-	$(MAKE) -C $(SRC_DIR)/cli
-	cp $(SRC_DIR)/cli/bladeRF $(BIN_DIR)/
 
 libbladeRF.pc: shared
 	@echo "prefix=${INSTALL_PREFIX}" > $@
@@ -117,6 +113,5 @@ clean:
 	rm -f $(OBJ)
 	rm -f libbladeRF.pc
 	$(MAKE) -C doc/doxygen clean
-	$(MAKE) -C $(SRC_DIR)/cli clean
 
 .PHONY: clean doc
