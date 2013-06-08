@@ -36,7 +36,7 @@ $(BIN_DIR):
 
 $(BIN_DIR)/% : $(BIN_DIR)
 	$(MAKE) -C $(SRC_DIR)/$(notdir $@) \
-		BIN_DIR="$(abspath $(dir $@))" CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)"
+		BIN_DIR="$(abspath $(dir $@))" CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" INTERACTIVE="$(INTERACTIVE)"
 
 clean:
 	rm -rf $(BIN_DIR)

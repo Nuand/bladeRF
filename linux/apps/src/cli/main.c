@@ -8,7 +8,9 @@
 #include <getopt.h>
 #include <stdbool.h>
 #include <libbladeRF.h>
+#ifdef INTERACTIVE
 #include <libtecla.h>
+#endif
 
 #include "version.h"
 
@@ -164,6 +166,7 @@ int cmd_probe()
 #endif
 static inline int interactive()
 {
+#ifdef INTERACTIVE
     char *line;
     bool quit = false;
     GetLine *gl = new_GetLine(CLI_MAX_LINE_LEN, CLI_MAX_HIST_LEN);
@@ -182,6 +185,7 @@ static inline int interactive()
     }
 
     del_GetLine(gl);
+#endif
     return 0;
 }
 

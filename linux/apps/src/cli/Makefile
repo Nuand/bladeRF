@@ -3,12 +3,18 @@ OBJ := $(SRC:.c=.o)
 
 BIN_DIR ?= .
 
+FLAGS ?= $(CFLAGS)
+
+ifdef INTERACTIVE
+FLAGS += -ltecla -DINTERACTIVE
+endif
+
 TARGET = $(BIN_DIR)/bladeRF
 
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
-	$(CC) $^ $(LDFLAGS) -ltecla -o $(TARGET)
+	$(CC) $^ $(LDFLAGS) $(FLAGS) -o $(TARGET)
 
 clean:
 	rm -f bladeRF
