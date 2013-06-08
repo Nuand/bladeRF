@@ -6,7 +6,11 @@
 #include <errno.h>
 #include <dirent.h>
 #include <assert.h>
+#include <time.h>
 #include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/time.h>
 
 #include "bladeRF.h"        /* Driver interface */
 #include "libbladeRF.h"     /* API */
@@ -322,11 +326,65 @@ int bladerf_flash_firmware(struct bladerf *dev, const char *firmware)
     return 0;
 }
 
+static int time_past(struct timeval ref, struct timeval now) {
+    if (now.tv_sec > ref.tv_sec)
+        return 1;
+
+    if (now.tv_sec == ref.tv_sec && now.tv_usec > ref.tv_usec)
+        return 1;
+
+    return 0;
+}
+
+#define STACK_BUFFER_SZ 1024
+
 /* TODO Unimplemented: loading FPGA */
 int bladerf_load_fpga(struct bladerf *dev, const char *fpga)
 {
+    int ret;
+    int fpga_fd, nread;
+    int programmed;
+    size_t bytes;
+    struct stat stat;
+    char buf[STACK_BUFFER_SZ];
+    struct timeval end_time, curr_time;
+    struct timespec ts;
+
     assert(dev && fpga);
-    return 0;
+
+    fpga_fd = open(fpga, 0);
+    if (fpga_fd == -1)
+        return 1;
+    ioctl(dev->fd, BLADE_BEGIN_PROG, &ret);
+    fstat(fpga_fd, &stat);
+
+#define min(x,y) ((x<y)?x:y)
+    for (bytes = stat.st_size; bytes;) {
+        nread = read(fpga_fd, buf, min(STACK_BUFFER_SZ, bytes));
+        write(dev->fd, buf, nread);
+        bytes -= nread;
+        ts.tv_sec = 0;
+        ts.tv_nsec = 4000000;
+        nanosleep(&ts, NULL);
+    }
+    close(fpga_fd);
+
+    gettimeofday(&end_time, NULL);
+    end_time.tv_sec++;
+
+    programmed = 0;
+    do {
+        ioctl(dev->fd, BLADE_QUERY_FPGA_STATUS, &ret);
+        if (ret) {
+            programmed = 1;
+            break;
+        }
+        gettimeofday(&curr_time, NULL);
+    } while(!time_past(end_time, curr_time));
+
+    ioctl(dev->fd, BLADE_END_PROG, &ret);
+
+    return !programmed;
 }
 
 /*------------------------------------------------------------------------------
