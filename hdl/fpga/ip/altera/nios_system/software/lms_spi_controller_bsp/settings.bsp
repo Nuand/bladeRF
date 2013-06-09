@@ -2,8 +2,8 @@
 <sch:Settings xmlns:sch="http://www.altera.com/embeddedsw/bsp/schema">
         <BspType>hal</BspType>
         <BspVersion>default</BspVersion>
-        <BspGeneratedTimeStamp>May 17, 2013 12:49:44 AM</BspGeneratedTimeStamp>
-        <BspGeneratedUnixTimeStamp>1368776984211</BspGeneratedUnixTimeStamp>
+        <BspGeneratedTimeStamp>Jun 8, 2013 3:36:00 PM</BspGeneratedTimeStamp>
+        <BspGeneratedUnixTimeStamp>1370730960890</BspGeneratedUnixTimeStamp>
         <BspGeneratedLocation>Z:\work\release\hdl\fpga\ip\altera\nios_system\software\lms_spi_controller_bsp</BspGeneratedLocation>
         <BspSettingsFile>settings.bsp</BspSettingsFile>
         <SopcDesignFile>..\..\nios_system.sopcinfo</SopcDesignFile>
@@ -887,32 +887,38 @@
                 <attributes>timer</attributes>
         </MemoryMap>
         <MemoryMap>
-                <slaveDescriptor>spi_1</slaveDescriptor>
+                <slaveDescriptor>pio_0</slaveDescriptor>
                 <addressRange>0x00009040 - 0x0000905F</addressRange>
                 <addressSpan>32</addressSpan>
                 <attributes/>
         </MemoryMap>
         <MemoryMap>
-                <slaveDescriptor>uart_0</slaveDescriptor>
+                <slaveDescriptor>spi_1</slaveDescriptor>
                 <addressRange>0x00009060 - 0x0000907F</addressRange>
+                <addressSpan>32</addressSpan>
+                <attributes/>
+        </MemoryMap>
+        <MemoryMap>
+                <slaveDescriptor>uart_0</slaveDescriptor>
+                <addressRange>0x00009080 - 0x0000909F</addressRange>
                 <addressSpan>32</addressSpan>
                 <attributes>printable</attributes>
         </MemoryMap>
         <MemoryMap>
                 <slaveDescriptor>spi_0</slaveDescriptor>
-                <addressRange>0x00009080 - 0x0000909F</addressRange>
+                <addressRange>0x000090A0 - 0x000090BF</addressRange>
                 <addressSpan>32</addressSpan>
                 <attributes/>
         </MemoryMap>
         <MemoryMap>
                 <slaveDescriptor>oc_i2c_master_0</slaveDescriptor>
-                <addressRange>0x000090A0 - 0x000090A7</addressRange>
+                <addressRange>0x000090C0 - 0x000090C7</addressRange>
                 <addressSpan>8</addressSpan>
                 <attributes/>
         </MemoryMap>
         <MemoryMap>
                 <slaveDescriptor>jtag_uart_0</slaveDescriptor>
-                <addressRange>0x000090A8 - 0x000090AF</addressRange>
+                <addressRange>0x000090C8 - 0x000090CF</addressRange>
                 <addressSpan>8</addressSpan>
                 <attributes>printable</attributes>
         </MemoryMap>

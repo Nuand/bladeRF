@@ -94,7 +94,8 @@ architecture arch of bladerf is
         oc_i2c_sda_pad_o    : out std_logic;
         oc_i2c_sda_padoen_o : out std_logic;
         oc_i2c_arst_i       : in  std_logic;
-        oc_i2c_scl_pad_i    : in  std_logic
+        oc_i2c_scl_pad_i    : in  std_logic;
+        gpio_export         : out std_logic_vector(31 downto 0)
       );
     end component nios_system;
 
@@ -133,6 +134,8 @@ architecture arch of bladerf is
 
     signal nios_uart_txd : std_logic ;
     signal nios_uart_rxd : std_logic ;
+
+    signal nios_gpio     : std_logic_vector(31 downto 0) ;
 
     attribute noprune of nios_uart_txd : signal is true ;
     attribute noprune of nios_uart_rxd : signal is true ;
@@ -640,6 +643,7 @@ begin
         spi_SS_n        => lms_sen,
         uart_rxd        => fx3_uart_txd,
         uart_txd        => fx3_uart_rxd,
+        gpio_export     => nios_gpio,
         oc_i2c_scl_pad_o    => i2c_scl_out,
         oc_i2c_scl_padoen_o => i2c_scl_oen,
         oc_i2c_sda_pad_i    => i2c_sda_in,
@@ -739,11 +743,11 @@ begin
 --    dac_sdo             <= '0' ;
 --    dac_csx             <= '0' ;
 
-    lms_reset <= '1' ;
+    lms_reset <= nios_gpio(0) ;
 
-    lms_rx_enable       <= '1' ;
+    lms_rx_enable       <= nios_gpio(1) ;
 
-    lms_tx_enable       <= '1' ;
+    lms_tx_enable       <= nios_gpio(2) ;
     lms_tx_iq_select    <= not lms_tx_iq_select when rising_edge(\76.8MHz\) ;
 
 --    assign_data : process(\76.8MHz\)
@@ -769,8 +773,8 @@ begin
     --lms_sen             <= '0' ;
     --lms_sdo             <= '0' ;
 
-    lms_tx_v            <= "10" ;
-    lms_rx_v            <= "10" ;
+    lms_tx_v            <= nios_gpio(4 downto 3) ;
+    lms_rx_v            <= nios_gpio(6 downto 5) ;
 
     fx3_gpif            <= (others =>'Z') ;
     fx3_ctl             <= (others =>'Z') ;

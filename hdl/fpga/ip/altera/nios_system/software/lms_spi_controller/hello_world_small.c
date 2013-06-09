@@ -83,6 +83,7 @@
 #include "altera_avalon_spi.h"
 #include "altera_avalon_uart_regs.h"
 #include "altera_avalon_jtag_uart_regs.h"
+#include "altera_avalon_pio_regs.h"
 #include "priv/alt_busy_sleep.h"
 #include "priv/alt_file.h"
 #include <stdint.h>
@@ -237,6 +238,7 @@ int main()
 
 #define UART_PKT_MODE_DEV_MASK   0x30
 #define UART_PKT_MODE_DEV_SHIFT  4
+#define UART_PKT_DEV_GPIO        (0<<UART_PKT_MODE_DEV_SHIFT)
 #define UART_PKT_DEV_LMS         (1<<UART_PKT_MODE_DEV_SHIFT)
 #define UART_PKT_DEV_VCTCXO      (2<<UART_PKT_MODE_DEV_SHIFT)
 #define UART_PKT_DEV_SI5338      (3<<UART_PKT_MODE_DEV_SHIFT)
@@ -346,6 +348,17 @@ int main()
 							  cmd_ptr->data = 0;
 						  }
 						  cmd_ptr++;
+					  }
+				  }
+				  if ((mode & UART_PKT_MODE_DEV_MASK) == UART_PKT_DEV_GPIO) {
+					  if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_READ) {
+						  cmd_ptr->data = IORD_ALTERA_AVALON_PIO_DATA(PIO_0_BASE) ;
+					  } else if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_WRITE) {
+						  IOWR_ALTERA_AVALON_PIO_DATA(PIO_0_BASE, cmd_ptr->data);
+						  cmd_ptr->data = 0;
+					  } else {
+						  cmd_ptr->addr = 0;
+						  cmd_ptr->data = 0;
 					  }
 				  }
 

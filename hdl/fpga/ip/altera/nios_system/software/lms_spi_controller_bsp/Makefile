@@ -101,7 +101,7 @@ ACDS_VERSION := 12.1sp1
 # BUILD_NUMBER: 243
 
 SETTINGS_FILE := settings.bsp
-SOPC_FILE := Z:/work/nuandrelease/release/hdl/fpga/ip/altera/nios_system/nios_system.sopcinfo
+SOPC_FILE := ../../nios_system.sopcinfo
 
 #-------------------------------------------------------------------------------
 #                             TOOL & COMMAND DEFINITIONS
@@ -219,6 +219,10 @@ altera_avalon_jtag_uart_driver_C_LIB_SRCS := \
 	$(altera_avalon_jtag_uart_driver_SRCS_ROOT)/src/altera_avalon_jtag_uart_ioctl.c \
 	$(altera_avalon_jtag_uart_driver_SRCS_ROOT)/src/altera_avalon_jtag_uart_fd.c
 
+# altera_avalon_pio_driver sources root 
+altera_avalon_pio_driver_SRCS_ROOT := drivers
+
+# altera_avalon_pio_driver sources 
 # altera_avalon_spi_driver sources root 
 altera_avalon_spi_driver_SRCS_ROOT := drivers
 
