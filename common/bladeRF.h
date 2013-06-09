@@ -12,6 +12,8 @@
 #define BLADE_SI5338_WRITE      _IOR(BLADERF_IOCTL_BASE, 22, unsigned int)
 #define BLADE_SI5338_READ       _IOR(BLADERF_IOCTL_BASE, 23, unsigned int)
 #define BLADE_VCTCXO_WRITE      _IOR(BLADERF_IOCTL_BASE, 24, unsigned int)
+#define BLADE_GPIO_WRITE        _IOR(BLADERF_IOCTL_BASE, 25, unsigned int)
+#define BLADE_GPIO_READ         _IOR(BLADERF_IOCTL_BASE, 26, unsigned int)
 
 #define BLADE_UPGRADE_FW        _IOR(BLADERF_IOCTL_BASE, 50, unsigned int)
 
@@ -63,6 +65,7 @@ struct uart_pkt {
 
 #define UART_PKT_MODE_DEV_MASK   0x30
 #define UART_PKT_MODE_DEV_SHIFT  4
+#define UART_PKT_DEV_GPIO        (0<<UART_PKT_MODE_DEV_SHIFT)
 #define UART_PKT_DEV_LMS         (1<<UART_PKT_MODE_DEV_SHIFT)
 #define UART_PKT_DEV_VCTCXO      (2<<UART_PKT_MODE_DEV_SHIFT)
 #define UART_PKT_DEV_SI5338      (3<<UART_PKT_MODE_DEV_SHIFT)

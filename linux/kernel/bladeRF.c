@@ -695,6 +695,8 @@ leave_fw:
         case BLADE_LMS_READ:
         case BLADE_SI5338_WRITE:
         case BLADE_SI5338_READ:
+        case BLADE_GPIO_WRITE:
+        case BLADE_GPIO_READ:
         case BLADE_VCTCXO_WRITE:
 
             if (copy_from_user(&spi_reg, (void __user *)arg, sizeof(struct uart_cmd))) {
@@ -707,16 +709,18 @@ leave_fw:
             buf[0] = 'N';
 
             targetdev = UART_PKT_DEV_SI5338;
+            if (cmd == BLADE_GPIO_WRITE || cmd == BLADE_GPIO_READ)
+                targetdev = UART_PKT_DEV_GPIO;
             if (cmd == BLADE_LMS_WRITE || cmd == BLADE_LMS_READ)
                 targetdev = UART_PKT_DEV_LMS;
             if (cmd == BLADE_VCTCXO_WRITE)
                 targetdev = UART_PKT_MODE_DIR_WRITE;
 
-            if (cmd == BLADE_LMS_WRITE || cmd == BLADE_SI5338_WRITE || cmd == BLADE_VCTCXO_WRITE) {
+            if (cmd == BLADE_LMS_WRITE || cmd == BLADE_GPIO_WRITE || cmd == BLADE_SI5338_WRITE || cmd == BLADE_VCTCXO_WRITE) {
                 buf[1] = UART_PKT_MODE_DIR_WRITE | targetdev | 0x01;
                 buf[2] = spi_reg.addr;
                 buf[3] = spi_reg.data;
-            } else if (cmd == BLADE_LMS_READ || cmd == BLADE_SI5338_READ) {
+            } else if (cmd == BLADE_LMS_READ || cmd == BLADE_GPIO_READ || cmd == BLADE_SI5338_READ) {
                 buf[1] = UART_PKT_MODE_DIR_READ | targetdev | 0x01;
                 buf[2] = spi_reg.addr;
                 buf[3] = 0xff;

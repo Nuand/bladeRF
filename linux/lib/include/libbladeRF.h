@@ -502,6 +502,34 @@ int lms_spi_write(struct bladerf *dev, uint8_t address, uint8_t val);
 
 /* @} (End of LMS_CTL) */
 
+/**
+ * @defgroup GPIO_CTL   GPIO register read/write functions
+ *
+ * @{
+ */
+
+/**
+ * Read a GPIO register
+ *
+ * @param   dev         Device handle
+ * @param   val         Pointer to variable the data should be read into
+ *
+ * @return 0 on success, BLADERF_ERR_* failure
+ */
+int gpio_read(struct bladerf *dev, uint32_t *val);
+
+/**
+ * Write a LMS register
+ *
+ * @param   dev         Device handle
+ * @param   val         Data to write to GPIO register
+ *
+ * @return 0 on success, BLADERF_ERR_* failure
+ */
+int gpio_write(struct bladerf *dev, uint32_t val);
+
+/* @} (End of GPIO_CTL) */
+
 #ifdef __cplusplus
 }
 #endif

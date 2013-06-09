@@ -352,6 +352,10 @@ int bladerf_load_fpga(struct bladerf *dev, const char *fpga)
 
     assert(dev && fpga);
 
+    ioctl(dev->fd, BLADE_QUERY_FPGA_STATUS, &ret);
+    if (ret)
+        return 1;
+
     fpga_fd = open(fpga, 0);
     if (fpga_fd == -1)
         return 1;
@@ -421,4 +425,26 @@ int lms_spi_write(struct bladerf *dev, uint8_t address, uint8_t val)
     uc.addr = address;
     uc.data = val;
     return ioctl(dev->fd, BLADE_LMS_WRITE, &uc);
+}
+
+/*------------------------------------------------------------------------------
+ * GPIO register read / write functions
+ */
+int gpio_read(struct bladerf *dev, uint32_t *val)
+{
+    int ret;
+    struct uart_cmd uc;
+    uc.addr = 0;
+    uc.data = 0xff;
+    ret = ioctl(dev->fd, BLADE_GPIO_READ, &uc);
+    *val = uc.data;
+    return ret;
+}
+
+int gpio_write(struct bladerf *dev, uint32_t val)
+{
+    struct uart_cmd uc;
+    uc.addr = 0;
+    uc.data = val;
+    return ioctl(dev->fd, BLADE_GPIO_WRITE, &uc);
 }
