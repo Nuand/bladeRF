@@ -1,0 +1,23 @@
+# Convenience variable
+set here $::quartus(qip_path)
+
+# Altera IP
+set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/pll/pll.qip]]
+set_global_assignment -name QSYS_FILE [file normalize [file join $here ../../ip/altera/nios_system/nios_system.qsys]]
+set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/rx_fifo/rx_fifo.qip]]
+set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/tx_fifo/tx_fifo.qip]]
+set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/serial_pll/serial_pll.qip]]
+
+# Nuand IP
+set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/fsk_demodulator.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/fsk_modulator.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/nco.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/cordic.vhd]]
+
+# Implementation details
+set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/ramp.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/bladerf-fsk_bridge.vhd]]
+
+# SDC Constraints
+set_global_assignment -name SDC_FILE [file normalize [file join $here constraints/bladerf.sdc]]
+

@@ -1,0 +1,3 @@
+<library>
+	<path path="../../fpga/ip/**/*"/>
+</library>
