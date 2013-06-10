@@ -1,34 +1,61 @@
-FX3FWROOT="C:/Cypress/EZ-USB FX3 SDK/1.2/firmware"
-FX3PFWROOT="C:/Cypress/EZ-USB FX3 SDK/1.2/firmware/u3p_firmware"
+# bladeRF FX3 Firmware
+#
+# Be sure to configure you toolchain paths in make/toolchain.mk
+################################################################################
 
-all:compile
+ifeq ($(wildcard make/toolchain.mk),)
+$(error Copy make/toolchain.mk.sample to make/toolchain.mk and edit paths accordingly before running make)
+endif
+include make/toolchain.mk
 
-include $(FX3FWROOT)/common/fx3_build_config.mak
+TARGET := bladeRF
 
-MODULE = bladeRF
+# bladeRF code
+BLADERF_SOURCE_C := $(wildcard *.c)
+BLADERF_SOURCE_ASM := $(wildcard *.S)
+BLADERF_OBJ_C := $(BLADERF_SOURCE_C:.c=.o)
+BLADERF_OBJ_ASM := $(BLAERF_SOURCE__ASM:.S=.o)
 
+# Items provided in the toolchain
+TOOLCHAIN_OBJ_C := $(notdir $(SOURCE:.c=.o))
+TOOLCHAIN_OBJ_ASM := $(notdir $(SOURCE_ASM:.S=.o))
 
-SOURCE += $(MODULE).c
+OBJ := $(BLADERF_OBJ_C) $(BLADERF_OBJ_ASM) \
+		$(TOOLCHAIN_OBJ_C) $(TOOLCHAIN_OBJ_ASM)
 
-C_OBJECT=$(SOURCE:%.c=./%.o)
-A_OBJECT=$(SOURCE_ASM:%.S=./%.o)
+# Target files
+ELF := $(TARGET).$(EXEEXT)
+IMG := $(TARGET).img
+MAP := $(TARGET).map
 
-EXES = $(MODULE).$(EXEEXT)
+all: $(IMG)
 
-$(MODULE).$(EXEEXT): $(A_OBJECT) $(C_OBJECT)
+$(ELF): $(OBJ)
 	$(LINK)
 
-$(C_OBJECT) : %.o : %.c
+$(IMG): $(ELF) elf2img
+	./elf2img -i $< -o $@
+
+elf2img: $(ELF2IMG_PATH)/elf2img.c
+	$(HOST_CC) -Wall -O2 $^ -o $@
+
+$(BLADERF_OBJ_C): %.o : %.c
 	$(COMPILE)
 
-$(A_OBJECT) : %.o : %.S
+$(TOOLCHAIN_OBJ_C): %.o : $(FX3FWROOT)/common/%.c
+	$(COMPILE)
+
+$(BLADERF_OBJ_A): %.o : %.S
+	$(ASSEMBLE)
+
+$(TOOLCHAIN_OBJ_ASM): %.o : $(FX3FWROOT)/common/%.S
 	$(ASSEMBLE)
 
 clean:
-	rm -f ./$(MODULE).$(EXEEXT)
-	rm -f ./$(MODULE).map
-	rm -f ./*.o
+	rm -f $(ELF) $(IMG) $(MAP) $(OBJ)
 
-compile: $(C_OBJECT) $(A_OBJECT) $(EXES)
+realclean: clean
+	rm -f elf2img
 
-#[]#
+
+.PHONY: clean

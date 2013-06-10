@@ -1,0 +1,36 @@
+# Copy this file to toolchain.mk and fill FX3_ROOT appropriately
+################################################################################
+
+# Grab this before CC is defined as the cross toolchain
+HOST_CC := $(CC)
+
+# Hack to check if we're in windows, otherwise assume *nix
+#
+# Note that the ARMGCC_INSTALL_PATH is assumed to be in the environment
+# by the toolchain makefiles
+ifdef SystemRoot
+	FX3_ROOT ?= C:/Cypress/EZ-USB\ FX3\ SDK/1.2
+	export ARMGCC_INSTALL_PATH ?= $(FX3_ROOT)
+else
+	FX3_ROOT ?= /opt/cypress/fx3_sdk
+	export ARMGCC_INSTALL_PATH ?= $(FX3_ROOT)/arm-2011.03
+endif
+
+# This is needed by the FX3 toolchain makefiles to resolve the
+# path to libgcc
+ARMGCC_VERSION := 4.5.2
+
+#
+# Ensure the ARM toolchain is in our path
+export PATH := $(PATH):$(ARMGCC_INSTALL_PATH)/bin
+
+# The FX3 toolchain makefiles assume we've defined these variables
+FX3FWROOT := $(FX3_ROOT)/cyfx3sdk/firmware
+FX3PFWROOT := $(FX3FWROOT)/u3p_firmware
+
+# Path to ELF -> img conversion tool, provided by FX3 toolchain
+ELF2IMG_PATH := $(FX3_ROOT)/cyfx3sdk/util/elf2img
+
+# Include build definitions from the toolchain
+include $(FX3FWROOT)/common/fx3_build_config.mak
+
