@@ -195,22 +195,24 @@ int bladerf_set_loopback( struct bladerf *dev, bladerf_loopback l);
  * TODO what's the unit here? Hz?
  *
  * @param[in]    dev        Device handle
+ * @param[in]    module     Module to change
  * @param[out]   rate       Sample rate
  *
  * @return 0 on success, BLADERF_ERR_* failure
  */
-int bladerf_set_sample_rate(struct bladerf *dev, unsigned int rate);
+int bladerf_set_sample_rate(struct bladerf *dev, bladerf_module module, unsigned int rate);
 
 /**
  * Read the device's sample rate in Hz
  *
  *
  * @param[in]   dev         Device handle
+ * @param[in]   module      Module to query
  * @param[out]  rate        Pointer to returned sample rate
  *
  * @return 0 on success, value from \ref RETCODE list upon failure
  */
-int bladerf_get_sample_rate( struct bladerf *dev, unsigned int *rate);
+int bladerf_get_sample_rate( struct bladerf *dev, bladerf_module module, unsigned int *rate);
 
 /**
  * Set the PA gain in dB
@@ -223,6 +225,16 @@ int bladerf_get_sample_rate( struct bladerf *dev, unsigned int *rate);
 int bladerf_set_txvga2(struct bladerf *dev, int gain);
 
 /**
+ * Get the PA gain in dB
+ *
+ * @param       dev         Device handle
+ * @param       gain        Pointer to returned gain
+ *
+ * @return 0 on success, BLADERF_ERR_* on failure
+ */
+int bladerf_get_txvga2(struct bladerf *dev, int *gain);
+
+/**
  * Set the post-LPF gain in dB
  *
  * @param       dev         Device handle
@@ -231,6 +243,16 @@ int bladerf_set_txvga2(struct bladerf *dev, int gain);
  * @return 0 on success, BLADERF_ERR_* failure
  */
 int bladerf_set_txvga1(struct bladerf *dev, int gain);
+
+/**
+ * Get the post-LPF gain in dB
+ *
+ * @param       dev         Device handle
+ * @param       gain        Pointer to returned gain
+ *
+ * @return 0 on success, BLADERF_ERR_* on failure
+ */
+int bladerf_get_txvga1(struct bladerf *dev, int *gain);
 
 /**
  * Set the LNA gain
@@ -287,18 +309,32 @@ int bladerf_set_rxvga2(struct bladerf *dev, int gain);
 int bladerf_get_rxvga2(struct bladerf *dev, int *gain);
 
 /**
- * Set the bandwidth to specified value (TODO units?)
+ * Set the bandwidth to specified value in Hz
  *
  * @param       dev                 Device handle
+ * @param       module              Module for bandwidth request
  * @param       bandwidth           Desired bandwidth
- * @param       bandwidth_actual    If non-NULL, written with the actual
+ * @param       actual              If non-NULL, written with the actual
  *                                  bandwidth that the device was able to
  *                                  achieve
  *
  * @return 0 on success, BLADERF_ERR_* failure
  */
-int bladerf_set_bandwidth(struct bladerf *dev, unsigned int bandwidth,
-                            unsigned int *bandwidth_actual);
+int bladerf_set_bandwidth(struct bladerf *dev, bladerf_module module,
+                            unsigned int bandwidth,
+                            unsigned int *actual);
+
+/**
+ * Get the bandwidth of the LMS LPF
+ *
+ * @param       dev                 Device Handle
+ * @param       module              Module for bandwidth request
+ * @param       bandwidth           Actual bandwidth in Hz
+ *
+ * @return 0 on success, BLADERF_ERR_* failure
+ */
+int bladerf_get_bandwidth(struct bladerf *dev, bladerf_module module,
+                            unsigned int *bandwidth);
 
 /**
  * Set module's frequency (TODO units?)

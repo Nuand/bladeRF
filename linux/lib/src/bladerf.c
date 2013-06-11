@@ -188,12 +188,12 @@ int bladerf_set_loopback(struct bladerf *dev, bladerf_loopback l)
     return 0;
 }
 
-int bladerf_set_sample_rate(struct bladerf *dev, unsigned int rate)
+int bladerf_set_sample_rate(struct bladerf *dev, bladerf_module module, unsigned int rate)
 {
     return 0;
 }
 
-int bladerf_get_sample_rate( struct bladerf *dev, unsigned int *rate)
+int bladerf_get_sample_rate( struct bladerf *dev, bladerf_module module, unsigned int *rate)
 {
     return 0 ;
 }
@@ -203,7 +203,17 @@ int bladerf_set_txvga2(struct bladerf *dev, int gain)
     return 0;
 }
 
+int bladerf_get_txvga2(struct bladerf *dev, int *gain)
+{
+    return 0;
+}
+
 int bladerf_set_txvga1(struct bladerf *dev, int gain)
+{
+    return 0;
+}
+
+int bladerf_get_txvga1(struct bladerf *dev, int *gain)
 {
     return 0;
 }
@@ -238,15 +248,25 @@ int bladerf_get_rxvga2(struct bladerf *dev, int *gain)
     return 0 ;
 }
 
-int bladerf_set_bandwidth(struct bladerf *dev, unsigned int bandwidth,
-                            unsigned int *bandwidth_actual)
+int bladerf_set_bandwidth(struct bladerf *dev, bladerf_module module,
+                            unsigned int bandwidth,
+                            unsigned int *actual)
 {
-    int ret = -1;
-    ret = si5338_set_tx_freq(dev, bandwidth);
-    if (!ret)
+/*    int ret = -1;
+    if( module == TX ) {
+        ret = si5338_set_tx_freq(dev, bandwidth);
+    } else {
         ret = si5338_set_rx_freq(dev, bandwidth);
-    *bandwidth_actual = bandwidth;
-    return ret;
+    }
+    *actual = bandwidth;
+    return ret;*/
+    return 0;
+}
+
+int bladerf_get_bandwidth(struct bladerf *dev, bladerf_module module,
+                            unsigned int *bandwidth )
+{
+    return 0 ;
 }
 
 int bladerf_set_frequency(struct bladerf *dev,
