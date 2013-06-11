@@ -202,6 +202,17 @@ int bladerf_set_loopback( struct bladerf *dev, bladerf_loopback l);
 int bladerf_set_sample_rate(struct bladerf *dev, unsigned int rate);
 
 /**
+ * Read the device's sample rate in Hz
+ *
+ *
+ * @param[in]   dev         Device handle
+ * @param[out]  rate        Pointer to returned sample rate
+ *
+ * @return 0 on success, value from \ref RETCODE list upon failure
+ */
+int bladerf_get_sample_rate( struct bladerf *dev, unsigned int *rate);
+
+/**
  * Set the PA gain in dB
  *
  * @param       dev         Device handle
@@ -232,6 +243,14 @@ int bladerf_set_txvga1(struct bladerf *dev, int gain);
 int bladerf_set_lna_gain(struct bladerf *dev, bladerf_lna_gain gain);
 
 /**
+ * Get the LNA gain
+ *
+ * @param       dev         Device handle
+ * @param       gain        Pointer to the set gain level
+ */
+int bladerf_get_lna_gain(struct bladerf *dev, bladerf_lna_gain *gain);
+
+/**
  * Set the pre-LPF VGA gain
  *
  * @param       dev         Device handle
@@ -242,6 +261,14 @@ int bladerf_set_lna_gain(struct bladerf *dev, bladerf_lna_gain gain);
 int bladerf_set_rxvga1(struct bladerf *dev, int gain);
 
 /**
+ * Get the pre-LPF VGA gain
+ *
+ * @param       dev         Device handle
+ * @param       gain        Pointer to the set gain level
+ */
+int bladerf_get_rxvga1(struct bladerf *dev, int *gain);
+
+/**
  * Set the post-LPF VGA gain
  *
  * @param       dev         Device handle
@@ -250,6 +277,14 @@ int bladerf_set_rxvga1(struct bladerf *dev, int gain);
  * @return 0 on success, BLADERF_ERR_* failure
  */
 int bladerf_set_rxvga2(struct bladerf *dev, int gain);
+
+/**
+ * Get the post-LPF VGA gain
+ *
+ * @param       dev         Device handle
+ * @param       gain        Pointer to the set gain level
+ */
+int bladerf_get_rxvga2(struct bladerf *dev, int *gain);
 
 /**
  * Set the bandwidth to specified value (TODO units?)
@@ -276,6 +311,16 @@ int bladerf_set_bandwidth(struct bladerf *dev, unsigned int bandwidth,
  */
 int bladerf_set_frequency(struct bladerf *dev,
                             bladerf_module module, unsigned int frequency);
+
+/**
+ * Set module's frequency in Hz
+ *
+ * @param       dev         Device handle
+ * @param       module      Module to configure
+ * @param       frequency   Pointer to the returned frequency
+ */
+int bladerf_get_frequency(struct bladerf *dev,
+                            bladerf_module module, unsigned int *frequency);
 
 /** @} (End of FN_CTRL) */
 

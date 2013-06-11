@@ -193,6 +193,10 @@ int bladerf_set_sample_rate(struct bladerf *dev, unsigned int rate)
     return 0;
 }
 
+int bladerf_get_sample_rate( struct bladerf *dev, unsigned int *rate)
+{
+    return 0 ;
+}
 
 int bladerf_set_txvga2(struct bladerf *dev, int gain)
 {
@@ -209,14 +213,29 @@ int bladerf_set_lna_gain(struct bladerf *dev, bladerf_lna_gain gain)
     return 0;
 }
 
+int bladerf_get_lna_gain(struct bladerf *dev, bladerf_lna_gain *gain)
+{
+    return 0 ;
+}
+
 int bladerf_set_rxvga1(struct bladerf *dev, int gain)
 {
     return 0;
 }
 
+int bladerf_get_rxvga1(struct bladerf *dev, int *gain)
+{
+    return 0 ;
+}
+
 int bladerf_set_rxvga2(struct bladerf *dev, int gain)
 {
     return 0;
+}
+
+int bladerf_get_rxvga2(struct bladerf *dev, int *gain)
+{
+    return 0 ;
 }
 
 int bladerf_set_bandwidth(struct bladerf *dev, unsigned int bandwidth,
@@ -236,6 +255,11 @@ int bladerf_set_frequency(struct bladerf *dev,
     return 0;
 }
 
+int bladerf_get_frequency(struct bladerf *dev,
+                            bladerf_module module, unsigned int *frequency)
+{
+    return 0 ;
+}
 /*******************************************************************************
  * Data transmission and reception
  ******************************************************************************/
