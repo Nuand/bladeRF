@@ -1,5 +1,5 @@
 #include "libbladeRF.h"
-
+#include "liblms.h"
 
 #ifndef PRIu32
 #define PRIu32 "lu"
@@ -7,7 +7,34 @@
 
 #define lms_printf(...)
 
-const freq_range_t bands[] = {
+// LPF conversion table
+const unsigned int uint_bandwidths[] = {
+    MHz(28),
+    MHz(20),
+    MHz(14),
+    MHz(12),
+    MHz(10),
+    kHz(8750),
+    MHz(7),
+    MHz(6),
+    kHz(5500),
+    MHz(5),
+    kHz(3840),
+    MHz(3),
+    kHz(2750),
+    kHz(2500),
+    kHz(1750),
+    kHz(1500)
+} ;
+
+// Frequency Range table
+struct freq_range {
+    uint32_t    low ;
+    uint32_t    high ;
+    uint8_t     value ;
+} ;
+
+const struct freq_range bands[] = {
     { .low =  232500000, .high =  285625000, .value = 0x27 },
     { .low =  285625000, .high =  336875000, .value = 0x2f },
     { .low =  336875000, .high =  405000000, .value = 0x37 },
@@ -97,6 +124,34 @@ lms_bw_t lms_get_bandwidth( struct bladerf *dev, lms_module_t mod )
     return (lms_bw_t)data ;
 }
 
+lms_bw_t lms_uint2bw( unsigned int req )
+{
+    lms_bw_t ret ;
+    if(      req <= kHz(1500) ) ret = BW_1p5MHz ;
+    else if( req <= kHz(1750) ) ret = BW_1p75MHz ;
+    else if( req <= kHz(2500) ) ret = BW_2p5MHz ;
+    else if( req <= kHz(2750) ) ret = BW_2p75MHz ;
+    else if( req <= MHz(3)    ) ret = BW_3MHz ;
+    else if( req <= kHz(3840) ) ret = BW_3p84MHz ;
+    else if( req <= MHz(5)    ) ret = BW_5MHz ;
+    else if( req <= kHz(5500) ) ret = BW_5p5MHz ;
+    else if( req <= MHz(6)    ) ret = BW_6MHz ;
+    else if( req <= MHz(7)    ) ret = BW_7MHz ;
+    else if( req <= kHz(8750) ) ret = BW_8p75MHz ;
+    else if( req <= MHz(10)   ) ret = BW_10MHz ;
+    else if( req <= MHz(12)   ) ret = BW_12MHz ;
+    else if( req <= MHz(14)   ) ret = BW_14MHz ;
+    else if( req <= MHz(20)   ) ret = BW_20MHz ;
+    else                        ret = BW_28MHz ;
+    return ret ;
+}
+
+unsigned int lms_bw2uint( lms_bw_t bw )
+{
+    /* Return the table entry */
+    return uint_bandwidths[bw&0xf] ;
+}
+
 // Enable dithering on the module PLL
 void lms_dither_enable( struct bladerf *dev, lms_module_t mod, uint8_t nbits )
 {
@@ -151,6 +206,16 @@ void lms_lna_set_gain( struct bladerf *dev, lms_lna_gain_t gain )
     return ;
 }
 
+void lms_lna_get_gain( struct bladerf *dev, lms_lna_gain_t *gain )
+{
+    uint8_t data ;
+    lms_spi_read( dev, 0x75, &data ) ;
+    data >>= 6 ;
+    data &= 3 ;
+    *gain = (lms_lna_gain_t)data ;
+    return ;
+}
+
 // Select which LNA to enable
 void lms_lna_select( struct bladerf *dev, lms_lna_t lna )
 {
@@ -178,6 +243,30 @@ void lms_rxvga1_enable(struct bladerf *dev )
     return ;
 }
 
+// Set the RFB_TIA_RXFE mixer gain
+void lms_rxvga1_set_gain(struct bladerf *dev, uint8_t gain)
+{
+    uint8_t data ;
+    if( gain > 120 ) {
+        fprintf( stderr, "%s: %d being clamped to 120\n", __FUNCTION__, gain ) ;
+        gain = 120 ;
+    }
+    lms_spi_read( dev, 0x76, &data ) ;
+    data &= ~(0x3f) ;
+    data |= gain ;
+    lms_spi_write( dev, 0x76, gain&0x3f ) ;
+    return ;
+}
+
+// Get the RFB_TIA_RXFE mixer gain
+void lms_rxvga1_get_gain(struct bladerf *dev, uint8_t *gain)
+{
+    uint8_t data ;
+    lms_spi_read( dev, 0x76, &data ) ;
+    *gain = data&0x3f ;
+    return ;
+}
+
 // Disable RXVGA2
 void lms_rxvga2_disable(struct bladerf *dev )
 {
@@ -191,13 +280,25 @@ void lms_rxvga2_disable(struct bladerf *dev )
 // Set the gain on RXVGA2
 void lms_rxvga2_set_gain( struct bladerf *dev, uint8_t gain )
 {
+    uint8_t data ;
     // NOTE: Gain is calculated as gain*3dB and shouldn't really
     // go above 30dB
     if( (gain&0x1f) > 10 )
     {
         lms_printf( "Setting gain above 30dB? You crazy!!\n" ) ;
     }
-    lms_spi_write( dev, 0x65, (0x1f)&gain ) ;
+    lms_spi_read( dev, 0x65, &data ) ;
+    data &= ~(0x1f) ;
+    data |= gain ;
+    lms_spi_write( dev, 0x65, data ) ;
+    return ;
+}
+
+void lms_rxvga2_get_gain( struct bladerf *dev, uint8_t *gain )
+{
+    uint8_t data ;
+    lms_spi_read( dev, 0x65, &data ) ;
+    *gain = data&0x1f ;
     return ;
 }
 
@@ -304,11 +405,41 @@ void lms_tx_loopback_enable( struct bladerf *dev, lms_txlb_t mode )
     return ;
 }
 
-void lms_set_txvga2_gain( struct bladerf *dev, uint8_t gain ) {
+void lms_txvga2_set_gain( struct bladerf *dev, uint8_t gain )
+{
+    uint8_t data ;
     if( gain > 25 ) {
         gain = 25 ;
     }
-    lms_spi_write( dev, 0x45, gain << 3 ) ;
+    lms_spi_read( dev, 0x45, &data ) ;
+    data &= ~(0x1f<<3) ;
+    data |= ((gain&0x1f)<<3) ;
+    lms_spi_write( dev, 0x45, data ) ;
+    return ;
+}
+
+void lms_txvga2_get_gain( struct bladerf *dev, uint8_t *gain )
+{
+    uint8_t data ;
+    lms_spi_read( dev, 0x45, &data ) ;
+    *gain = (data>>3)&0x1f ;
+    return ;
+}
+
+void lms_txvga1_set_gain( struct bladerf *dev, int8_t gain )
+{
+    gain = -(gain+35) ;
+    /* Since 0x41 is only VGA1GAIN, we don't need to RMW */
+    lms_spi_write( dev, 0x41, gain&0x1f ) ;
+    return ;
+}
+
+void lms_txvga1_get_gain( struct bladerf *dev, int8_t *gain )
+{
+    uint8_t data ;
+    lms_spi_read( dev, 0x41, &data ) ;
+    *gain = data&0x1f ;
+    *gain = (-*gain) + 35 ;
     return ;
 }
 
@@ -391,6 +522,7 @@ void lms_loopback_enable( struct bladerf *dev, lms_loopback_mode_t mode )
             lms_spi_write( dev, 0x70, (1<<1) ) ;
             break ;
 
+        case LB_RF_LNA_START:
         case LB_NONE:
             // Weird
             break ;
@@ -468,6 +600,7 @@ void lms_loopback_disable( struct bladerf *dev, lms_lna_t lna, lms_bw_t bw )
             // Enable selected LNA
             lms_lna_select( dev, lna ) ;
             break ;
+        case LB_RF_LNA_START:
         case LB_NONE:
             // Weird
             break ;
@@ -548,7 +681,7 @@ void lms_tx_disable( struct bladerf *dev )
 }
 
 // Print a frequency structure
-void lms_print_frequency( lms_freq_t *f )
+void lms_print_frequency( struct lms_freq *f )
 {
     lms_printf( "  x        : %d\n", f->x ) ;
     lms_printf( "  nint     : %d\n", f->nint ) ;
@@ -559,7 +692,7 @@ void lms_print_frequency( lms_freq_t *f )
 }
 
 // Get the frequency structure
-void lms_get_frequency( struct bladerf *dev, lms_module_t mod, lms_freq_t *f ) {
+void lms_get_frequency( struct bladerf *dev, lms_module_t mod, struct lms_freq *f ) {
     uint8_t base = (mod == RX) ? 0x20 : 0x10 ;
     uint8_t data ;
     lms_spi_read( dev, base+0, &data ) ;
@@ -587,12 +720,11 @@ void lms_set_frequency( struct bladerf *dev, lms_module_t mod, uint32_t freq )
     uint8_t freqsel = bands[0].value ;
     uint16_t nint ;
     uint32_t nfrac ;
-    lms_freq_t f ;
+    struct lms_freq f ;
     uint8_t data ;
     uint32_t x;
     uint32_t reference = 38400000 ;
     uint64_t vcofreq ;
-    uint64_t temp ;
     uint32_t left ;
 
 
@@ -626,7 +758,6 @@ void lms_set_frequency( struct bladerf *dev, lms_module_t mod, uint32_t freq )
     //nint = floor( 2^(freqsel(2:0)-3) * f_lo / f_ref)
     //nfrac = floor(2^23 * (((x*f_lo)/f_ref) -nint))
     {
-        temp ;
         vcofreq = (uint64_t)freq*x ;
 
         nint = vcofreq/reference ;
@@ -824,7 +955,7 @@ void lms_lpf_init(struct bladerf *dev)
 }
 
 
-int lms_config_init(struct bladerf *dev, xcvr_config_t *config)
+int lms_config_init(struct bladerf *dev, struct lms_xcvr_config *config)
 {
 
     lms_soft_reset( dev ) ;
@@ -842,7 +973,7 @@ int lms_config_init(struct bladerf *dev, xcvr_config_t *config)
     lms_pa_enable( dev, config->pa ) ;
 
     if( config->loopback_mode == LB_NONE ) {
-        lms_loopback_disable( dev, config->lna, config->bw ) ;
+        lms_loopback_disable( dev, config->lna, config->tx_bw ) ;
     } else {
         lms_loopback_enable(dev, config->loopback_mode);
     }

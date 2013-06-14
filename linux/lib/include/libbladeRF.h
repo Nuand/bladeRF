@@ -63,14 +63,12 @@ struct bladerf_devinfo {
 
 /**
  * Device statistics
- *
- * TODO document these
  */
 struct bladerf_stats {
-    uint64_t rx_overruns;       /**< TODO describe rx overrun conditions */
-    uint64_t rx_throughput;     /**< TODO Unit? */
-    uint64_t tx_underruns;      /**< TODO describe tx overrun conditions */
-    uint64_t tx_throughput;     /**< TODO Unit? */
+    uint64_t rx_overruns;       /**< The number of times samples have been lost in the FPGA */
+    uint64_t rx_throughput;     /**< The overall throughput of the device in samples/second */
+    uint64_t tx_underruns;      /**< The number of times samples have been too late to transmit to the FPGA */
+    uint64_t tx_throughput;     /**< The overall throughput of the device in samples/second */
 };
 
 #define bladerf_lna_gain lms_lna_gain_t
@@ -190,17 +188,37 @@ int bladerf_set_loopback( struct bladerf *dev, bladerf_loopback l);
 
 
 /**
- * Configure the device's sample rate, in (TODO Units?)
+ * Configure the device's sample rate, in Hz.  Note this requires the sample
+ * rate is an integer value of Hz.  Use bladerf_set_rational_sample_rate()
+ * for more arbitrary values.
  *
- * TODO what's the unit here? Hz?
- *
- * @param[in]    dev        Device handle
- * @param[in]    module     Module to change
- * @param[out]   rate       Sample rate
+ * @param[in]   dev         Device handle
+ * @param[in]   module      Module to change
+ * @param[in]   rate        Sample rate
+ * @param[out]  actual      Actual sample rate
  *
  * @return 0 on success, BLADERF_ERR_* failure
  */
-int bladerf_set_sample_rate(struct bladerf *dev, bladerf_module module, unsigned int rate);
+int bladerf_set_sample_rate(struct bladerf *dev, bladerf_module module, unsigned int rate, unsigned int *actual);
+
+/**
+ * Configure the device's sample rate as a rational fraction of Hz.
+ * Sample rates are in the form of integer + num/denom.
+ * TODO: Should this be the only way we set values, and num=0 and denom=1
+ * for integer portions?
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   module      Module to change
+ * @param[in]   integer     Integer portion of the equation integer + num/denom
+ * @param[in]   num         Numerator of rational fractional part
+ * @param[in]   denom       Denominator of rational fractional part
+ *
+ * @return 0 on success, BLADERF_ERR_* failure
+ */
+int bladerf_set_rational_sample_rate(struct bladerf *dev, bladerf_module module,
+                                        unsigned int integer, unsigned int num,
+                                        unsigned int denom);
+
 
 /**
  * Read the device's sample rate in Hz
@@ -337,7 +355,7 @@ int bladerf_get_bandwidth(struct bladerf *dev, bladerf_module module,
                             unsigned int *bandwidth);
 
 /**
- * Set module's frequency (TODO units?)
+ * Set module's frequency in Hz.
  *
  * @param       dev         Device handle
  * @param       module      Module to configure
