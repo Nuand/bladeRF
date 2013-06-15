@@ -460,7 +460,7 @@ void NuandRFLinkStart(void)
     CyU3PMemSet ((uint8_t *)&epCfg, 0, sizeof (epCfg));
     epCfg.enable = CyTrue;
     epCfg.epType = CY_U3P_USB_EP_BULK;
-    epCfg.burstLen = 15;
+    epCfg.burstLen = (usbSpeed == CY_U3P_SUPER_SPEED ? 15 : 1);
     epCfg.streams = 0;
     epCfg.pcktSize = size;
 
