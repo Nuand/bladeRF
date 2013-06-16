@@ -1,5 +1,5 @@
 /**
- * @file bladerf.h
+ * @file libbladeRF.h
  *
  * @brief bladeRF library
  */
@@ -13,17 +13,13 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <fcntl.h>
-
-/**
- * bladerRF device handle
- */
-struct bladerf;
-
 #include <liblms.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+struct bladerf;
 
 /**
  * @defgroup    RETCODES    Error return codes
@@ -42,9 +38,10 @@ extern "C" {
  */
 #define BLADERF_ERR_UNEXPECTED (-1)  /**< An unexpected failure occurred */
 #define BLADERF_ERR_RANGE      (-2)  /**< Provided parameter is out of range */
-#define BLADERF_ERR_INVAL      (-3)  /**< Invalid paramter provided */
+#define BLADERF_ERR_INVAL      (-3)  /**< Invalid operation/parameter */
 #define BLADERF_ERR_MEM        (-4)  /**< Memory allocation error */
 #define BLADERF_ERR_IO         (-5)  /**< File/Device I/O error */
+#define BLADERF_ERR_TIMEOUT    (-6)  /**< Operation timed out */
 
 /** @} (End RETCODES) */
 
@@ -71,9 +68,21 @@ struct bladerf_stats {
     uint64_t tx_throughput;     /**< The overall throughput of the device in samples/second */
 };
 
-#define bladerf_lna_gain lms_lna_gain_t
-#define bladerf_module lms_module_t
-#define bladerf_loopback lms_loopback_mode_t
+/**
+ * LNA gain options.
+ */
+typedef lms_lna_gain_t bladerf_lna_gain;
+
+
+/**
+ * Module selector
+ */
+typedef lms_module_t   bladerf_module;
+
+/**
+ * Loop modes
+ */
+typedef lms_loopback_mode_t bladerf_loopback;
 
 /**
  * @defgroup FN_INIT    Initialization/deinitialization
@@ -104,7 +113,7 @@ struct bladerf_stats {
  *
  * @param[out]  devices
  *
- * @return number of items in returned device list, or BLADERF_ERR_* failure
+ * @return number of items in returned device list, or value from \ref RETCODES list on failure
  */
 ssize_t bladerf_get_device_list(struct bladerf_devinfo **devices);
 
@@ -128,7 +137,7 @@ struct bladerf * bladerf_open(const char *dev_path);
 /**
  * Convenience wrapper for opening the first bladerRF device found.
  *
- * @return handle to bladerf on success, NULL on failure or no device found.
+ * @return device handle on success, NULL on failure or no device found.
  */
 static inline struct bladerf * bladerf_open_any()
 {
@@ -156,7 +165,6 @@ void bladerf_close(struct bladerf *device);
 
 /** @} (End FN_INIT) */
 
-
 /**
  * @defgroup FN_CTRL    Device control and configuration
  *
@@ -170,7 +178,7 @@ void bladerf_close(struct bladerf *device);
  * @param       m       Device module
  * @param       enable  true to enable, false to disable
  *
- * @return 0 on success, BLADERF_ERR_* failure
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 int bladerf_enable_module(struct bladerf *dev,
                             bladerf_module m, bool enable) ;
@@ -182,7 +190,7 @@ int bladerf_enable_module(struct bladerf *dev,
  * @param       l       Loopback mode. Note that LB_NONE disables the use
  *                      of loopback functionality.
  *
- * @return 0 on success, BLADERF_ERR_* failure
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 int bladerf_set_loopback( struct bladerf *dev, bladerf_loopback l);
 
@@ -197,7 +205,7 @@ int bladerf_set_loopback( struct bladerf *dev, bladerf_loopback l);
  * @param[in]   rate        Sample rate
  * @param[out]  actual      Actual sample rate
  *
- * @return 0 on success, BLADERF_ERR_* failure
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 int bladerf_set_sample_rate(struct bladerf *dev, bladerf_module module, unsigned int rate, unsigned int *actual);
 
@@ -213,7 +221,7 @@ int bladerf_set_sample_rate(struct bladerf *dev, bladerf_module module, unsigned
  * @param[in]   num         Numerator of rational fractional part
  * @param[in]   denom       Denominator of rational fractional part
  *
- * @return 0 on success, BLADERF_ERR_* failure
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 int bladerf_set_rational_sample_rate(struct bladerf *dev, bladerf_module module,
                                         unsigned int integer, unsigned int num,
@@ -228,7 +236,7 @@ int bladerf_set_rational_sample_rate(struct bladerf *dev, bladerf_module module,
  * @param[in]   module      Module to query
  * @param[out]  rate        Pointer to returned sample rate
  *
- * @return 0 on success, value from \ref RETCODE list upon failure
+ * @return 0 on success, value from \ref RETCODES list upon failure
  */
 int bladerf_get_sample_rate( struct bladerf *dev, bladerf_module module, unsigned int *rate);
 
@@ -238,7 +246,7 @@ int bladerf_get_sample_rate( struct bladerf *dev, bladerf_module module, unsigne
  * @param       dev         Device handle
  * @param       gain        Desired gain
  *
- * @return 0 on success, BLADERF_ERR_* failure
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 int bladerf_set_txvga2(struct bladerf *dev, int gain);
 
@@ -248,7 +256,7 @@ int bladerf_set_txvga2(struct bladerf *dev, int gain);
  * @param       dev         Device handle
  * @param       gain        Pointer to returned gain
  *
- * @return 0 on success, BLADERF_ERR_* on failure
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 int bladerf_get_txvga2(struct bladerf *dev, int *gain);
 
@@ -258,7 +266,7 @@ int bladerf_get_txvga2(struct bladerf *dev, int *gain);
  * @param       dev         Device handle
  * @param       gain        Desired gain
  *
- * @return 0 on success, BLADERF_ERR_* failure
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 int bladerf_set_txvga1(struct bladerf *dev, int gain);
 
@@ -268,7 +276,7 @@ int bladerf_set_txvga1(struct bladerf *dev, int gain);
  * @param       dev         Device handle
  * @param       gain        Pointer to returned gain
  *
- * @return 0 on success, BLADERF_ERR_* on failure
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 int bladerf_get_txvga1(struct bladerf *dev, int *gain);
 
@@ -278,7 +286,7 @@ int bladerf_get_txvga1(struct bladerf *dev, int *gain);
  * @param       dev         Device handle
  * @param       gain        Desired gain level
  *
- * @return 0 on success, BLADERF_ERR_* failure
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 int bladerf_set_lna_gain(struct bladerf *dev, bladerf_lna_gain gain);
 
@@ -296,7 +304,7 @@ int bladerf_get_lna_gain(struct bladerf *dev, bladerf_lna_gain *gain);
  * @param       dev         Device handle
  * @param       gain        Desired gain
  *
- * @return 0 on success, BLADERF_ERR_* failure
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 int bladerf_set_rxvga1(struct bladerf *dev, int gain);
 
@@ -314,7 +322,7 @@ int bladerf_get_rxvga1(struct bladerf *dev, int *gain);
  * @param       dev         Device handle
  * @param       gain        Desired gain
  *
- * @return 0 on success, BLADERF_ERR_* failure
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 int bladerf_set_rxvga2(struct bladerf *dev, int gain);
 
@@ -336,7 +344,7 @@ int bladerf_get_rxvga2(struct bladerf *dev, int *gain);
  *                                  bandwidth that the device was able to
  *                                  achieve
  *
- * @return 0 on success, BLADERF_ERR_* failure
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 int bladerf_set_bandwidth(struct bladerf *dev, bladerf_module module,
                             unsigned int bandwidth,
@@ -349,7 +357,7 @@ int bladerf_set_bandwidth(struct bladerf *dev, bladerf_module module,
  * @param       module              Module for bandwidth request
  * @param       bandwidth           Actual bandwidth in Hz
  *
- * @return 0 on success, BLADERF_ERR_* failure
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 int bladerf_get_bandwidth(struct bladerf *dev, bladerf_module module,
                             unsigned int *bandwidth);
@@ -361,7 +369,7 @@ int bladerf_get_bandwidth(struct bladerf *dev, bladerf_module module,
  * @param       module      Module to configure
  * @param       frequency   Desired frequency
  *
- * @return 0 on success, BLADERF_ERR_* failure
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 int bladerf_set_frequency(struct bladerf *dev,
                             bladerf_module module, unsigned int frequency);
@@ -392,7 +400,7 @@ int bladerf_get_frequency(struct bladerf *dev,
  * @param       samples     Array of samples
  * @param       n           Size of samples array, in elements
  *
- * @return number of samples sent or BLADERF_ERR_* upon failure
+ * @return number of samples sent or value from \ref RETCODES list on failure
  */
 ssize_t bladerf_send_c12(struct bladerf *dev, int16_t *samples, size_t n);
 
@@ -403,7 +411,8 @@ ssize_t bladerf_send_c12(struct bladerf *dev, int16_t *samples, size_t n);
  * @param       samples     Array of samples
  * @param       n           Size of samples array, in elements
  *
- * @return number of sampels sent on success, BLADERF_ERR_* failure
+ * @return number of samples sent on success,
+ *          value from \ref RETCODES list on failure
  */
 ssize_t bladerf_send_c16(struct bladerf *dev, int16_t *samples, size_t n);
 
@@ -414,7 +423,7 @@ ssize_t bladerf_send_c16(struct bladerf *dev, int16_t *samples, size_t n);
  * @param       samples     Buffer to store samples in
  * @param       max_samples Max number of sample to read
  *
- * @return number of samples read or BLADERF_ERR_* failure
+ * @return number of samples read or value from \ref RETCODES list on failure
  */
 ssize_t bladerf_read_c16(struct bladerf *dev,
                             int16_t *samples, size_t max_samples);
@@ -437,7 +446,7 @@ ssize_t bladerf_read_c16(struct bladerf *dev,
  * @param[out]  serial  Will be updated with serial number. If an error occurs,
  *                      no data will be written to this pointer.
  *
- * @return 0 on success, BLADERF_ERR_* failure
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 int bladerf_get_serial(struct bladerf *dev, uint64_t *serial);
 
@@ -448,7 +457,7 @@ int bladerf_get_serial(struct bladerf *dev, uint64_t *serial);
  * @param[out]  major   Firmware major version
  * @param[out]  minor   Firmware minor version
  *
- * @return 0 on success, BLADERF_ERR_* failure
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 int bladerf_get_fw_version(struct bladerf *dev,
                             unsigned int *major, unsigned int *minor);
@@ -460,7 +469,7 @@ int bladerf_get_fw_version(struct bladerf *dev,
  *
  * @return  1 if FPGA is configured,
  *          0 if it is not,
- *          and BLADERF_ERR_* on failure
+ *          and value from \ref RETCODES list on failure
  */
 int bladerf_is_fpga_configured(struct bladerf *dev);
 
@@ -471,7 +480,7 @@ int bladerf_is_fpga_configured(struct bladerf *dev);
  * @param[out]  major   FPGA major version
  * @param[out]  minor   FPGA minor version
  *
- * @return 0 on success, BLADERF_ERR_* failure
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 int bladerf_get_fpga_version(struct bladerf *dev,
                                 unsigned int *major, unsigned int *minor);
@@ -482,7 +491,7 @@ int bladerf_get_fpga_version(struct bladerf *dev,
  * @param[in]   dev     Device handle
  * @param[out]  stats   Current device statistics
  *
- * @return 0 on success, BLADERF_ERR_* on failure
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 int bladerf_stats(struct bladerf *dev, struct bladerf_stats *stats);
 
@@ -503,7 +512,7 @@ int bladerf_stats(struct bladerf *dev, struct bladerf_stats *stats);
  * @param   dev         Device handle
  * @param   firmware    Full path to firmware file
  *
- * @return 0 on success, BLADERF_ERR_* failure
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 int bladerf_flash_firmware(struct bladerf *dev, const char *firmware);
 
@@ -513,12 +522,29 @@ int bladerf_flash_firmware(struct bladerf *dev, const char *firmware);
  * @param   dev         Device handle
  * @param   fpga        Full path to FPGA bitstream
  *
- * @return 0 on success, BLADERF_ERR_* failure
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 int bladerf_load_fpga(struct bladerf *dev, const char *fpga);
 
 
 /* @} (End of FN_PROG) */
+
+/**
+ * @defgroup FN_MISC Miscellaneous
+ * @{
+ */
+
+/**
+ * Obtain a textual description of a value from the \ref RETCODES list
+ *
+ * @warning Do not attempt to modify the returned string.
+ *
+ * @param   error   Error value to look up
+ * @return  Error string
+ */
+const char * bladerf_strerror(int error);
+
+/** @} (End of FN_MISC) */
 
 /**
  * @defgroup SI5338_CTL Si5338 register read/write functions
@@ -533,7 +559,7 @@ int bladerf_load_fpga(struct bladerf *dev, const char *fpga);
  * @param   address     Si5338 register offset
  * @param   val         Pointer to variable the data should be read into
  *
- * @return 0 on success, BLADERF_ERR_* failure
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 int si5338_i2c_read(struct bladerf *dev, uint8_t address, uint8_t *val);
 
@@ -544,7 +570,7 @@ int si5338_i2c_read(struct bladerf *dev, uint8_t address, uint8_t *val);
  * @param   address     Si5338 register offset
  * @param   val         Data to write to register
  *
- * @return 0 on success, BLADERF_ERR_* failure
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 int si5338_i2c_write(struct bladerf *dev, uint8_t address, uint8_t val);
 
@@ -554,7 +580,7 @@ int si5338_i2c_write(struct bladerf *dev, uint8_t address, uint8_t val);
  * @param   dev         Device handle
  * @param   freq        Desired TX frequency in Hz
  *
- * @return 0 on success, BLADERF_ERR_* failure
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 int si5338_set_tx_freq(struct bladerf *dev, unsigned freq);
 
@@ -564,7 +590,7 @@ int si5338_set_tx_freq(struct bladerf *dev, unsigned freq);
  * @param   dev         Device handle
  * @param   freq        Desired RX frequency in Hz
  *
- * @return 0 on success, BLADERF_ERR_* failure
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 int si5338_set_rx_freq(struct bladerf *dev, unsigned freq);
 
@@ -584,7 +610,7 @@ int si5338_set_rx_freq(struct bladerf *dev, unsigned freq);
  * @param   address     LMS register offset
  * @param   val         Pointer to variable the data should be read into
  *
- * @return 0 on success, BLADERF_ERR_* failure
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 int lms_spi_read(struct bladerf *dev, uint8_t address, uint8_t *val);
 
@@ -595,7 +621,7 @@ int lms_spi_read(struct bladerf *dev, uint8_t address, uint8_t *val);
  * @param   address     LMS register offset
  * @param   val         Data to write to register
  *
- * @return 0 on success, BLADERF_ERR_* failure
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 int lms_spi_write(struct bladerf *dev, uint8_t address, uint8_t val);
 
@@ -613,7 +639,7 @@ int lms_spi_write(struct bladerf *dev, uint8_t address, uint8_t val);
  * @param   dev         Device handle
  * @param   val         Pointer to variable the data should be read into
  *
- * @return 0 on success, BLADERF_ERR_* failure
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 int gpio_read(struct bladerf *dev, uint32_t *val);
 
@@ -623,7 +649,7 @@ int gpio_read(struct bladerf *dev, uint32_t *val);
  * @param   dev         Device handle
  * @param   val         Data to write to GPIO register
  *
- * @return 0 on success, BLADERF_ERR_* failure
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 int gpio_write(struct bladerf *dev, uint32_t val);
 

@@ -428,6 +428,32 @@ int bladerf_get_fw_version(struct bladerf *dev,
 }
 
 /*------------------------------------------------------------------------------
+ * Misc.
+ *----------------------------------------------------------------------------*/
+
+const char * bladerf_strerror(int error)
+{
+    switch (error) {
+        case BLADERF_ERR_UNEXPECTED:
+            return "An unexpected error occurred";
+        case BLADERF_ERR_RANGE:
+            return "Provided parameter was out of the allowable range";
+        case BLADERF_ERR_INVAL:
+            return "Invalid operation or parameter";
+        case BLADERF_ERR_MEM:
+            return "A memory allocation error occurred";
+        case BLADERF_ERR_IO:
+            return "File or device I/O failure";
+        case BLADERF_ERR_TIMEOUT:
+            return "Operation timed out";
+        case 0:
+            return "Success";
+        default:
+            return "Unknown error code";
+    }
+}
+
+/*------------------------------------------------------------------------------
  * Device programming
  *----------------------------------------------------------------------------*/
 
