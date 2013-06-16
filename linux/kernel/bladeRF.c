@@ -150,7 +150,6 @@ static int bladerf_start(bladerf_device_t *dev) {
         dev->data_out_bufs[i].addr = buf;
 
         urb = usb_alloc_urb(0, GFP_KERNEL);
-        printk("%d) urb=%p\n", i, urb);
         if (!buf) {
             dev_err(&dev->interface->dev, "Could not allocate data OUT URB\n");
             return -1;
