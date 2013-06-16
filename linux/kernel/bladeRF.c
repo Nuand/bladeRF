@@ -392,7 +392,11 @@ static ssize_t bladerf_write(struct file *file, const char *user_buf, size_t cou
         ret = usb_bulk_msg(dev->udev, usb_sndbulkpipe(dev->udev, 2), buf, count, &llen, BLADE_USB_TIMEOUT_MS);
 err_out:
         kfree(buf);
-        return ret;
+
+        if (ret < 0)
+            return ret;
+        else
+            return llen;
     }
 
     reread = atomic_read(&dev->data_out_cnt);
