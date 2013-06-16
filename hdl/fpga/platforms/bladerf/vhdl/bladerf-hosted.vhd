@@ -209,7 +209,7 @@ begin
 
     U_pll : entity work.pll
       port map (
-        inclk0   =>  c4_clock,
+        inclk0   =>  c4_tx_clock,
         c0      =>  \76.8MHz\,
         c1      =>  \38.4MHz\,
         c2      =>  \76.8MHz@90\,
@@ -242,7 +242,7 @@ begin
       port map (
         aclr      => rf_tx_fifo_clr,
         data      => rf_tx_fifo_data,
-        rdclk     => c4_clock,
+        rdclk     => \38.4MHz\,
         rdreq     => dma_tx_en_rr,
         wrclk     => fx3_pclk,
         wrreq     => rf_tx_fifo_w,
