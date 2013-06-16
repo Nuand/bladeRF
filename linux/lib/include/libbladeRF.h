@@ -522,7 +522,9 @@ int bladerf_flash_firmware(struct bladerf *dev, const char *firmware);
  * @param   dev         Device handle
  * @param   fpga        Full path to FPGA bitstream
  *
- * @return 0 on success, value from \ref RETCODES list on failure
+ * @return 0 upon successfully,
+ *         1 if FPGA is already loaded,
+ *         or a value from \ref RETCODES list on failure
  */
 int bladerf_load_fpga(struct bladerf *dev, const char *fpga);
 

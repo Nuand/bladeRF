@@ -7,6 +7,7 @@
 #include <dirent.h>
 #include <assert.h>
 #include <time.h>
+#include <stdbool.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -24,6 +25,12 @@
 #ifndef BLADERF_DEV_PFX
 #   define BLADERF_DEV_PFX  "bladerf"
 #endif
+
+
+static inline size_t min_sz(size_t x, size_t y)
+{
+    return x < y ? x : y;
+}
 
 /*******************************************************************************
  * Device discovery & initialization/deinitialization
@@ -460,73 +467,179 @@ const char * bladerf_strerror(int error)
 /* TODO Unimplemented: flashing FX3 firmware */
 int bladerf_flash_firmware(struct bladerf *dev, const char *firmware)
 {
+    int fw_fd, upgrade_status, ret;
+    struct stat fw_stat;
+    struct bladeRF_firmware fw_param;
+    ssize_t n_read, read_status;
+
     assert(dev && firmware);
-    return 0;
+
+    fw_fd = open(firmware, O_RDONLY);
+    if (fw_fd < 0) {
+        dbg_printf("Failed to open firmware file: %s\n", strerror(errno));
+        return BLADERF_ERR_IO;
+    }
+
+    if (fstat(fw_fd, &fw_stat) < 0) {
+        dbg_printf("Failed to stat firmware file: %s\n", strerror(errno));
+        close(fw_fd);
+        return BLADERF_ERR_IO;
+    }
+
+    fw_param.len = fw_stat.st_size;
+
+    /* Quick sanity check: We know the firmware file is roughly 100K
+     * Env var is a quick opt-out of this check - can it ever get this large?
+     *
+     * TODO: Query max flash size for upper bound?
+     */
+    if (!getenv("BLADERF_SKIP_FW_SIZE_CHECK") &&
+            (fw_param.len < (50 * 1024) || fw_param.len > (1 * 1024 * 1024))) {
+        dbg_printf("Detected potentially invalid firmware file. Aborting!\n");
+        close(fw_fd);
+        return BLADERF_ERR_INVAL;
+    }
+
+    fw_param.ptr = malloc(fw_param.len);
+    if (!fw_param.ptr) {
+        dbg_printf("Failed to allocate firmware buffer: %s\n", strerror(errno));
+        close(fw_fd);
+        return BLADERF_ERR_MEM;
+    }
+
+    n_read = 0;
+    do {
+        read_status = read(fw_fd, fw_param.ptr + n_read, fw_param.len - n_read);
+        if (read_status < 0) {
+            dbg_printf("Failed to read firmware file: %s\n", strerror(errno));
+            free(fw_param.ptr);
+            close(fw_fd);
+            return BLADERF_ERR_IO;
+        } else {
+            n_read += read_status;
+        }
+    } while(n_read < fw_param.len);
+    close(fw_fd);
+
+    /* Bug catcher */
+    assert(n_read == fw_param.len);
+
+    ret = 0;
+    upgrade_status = ioctl(dev->fd, BLADE_UPGRADE_FW, &fw_param);
+    if (upgrade_status < 0) {
+        dbg_printf("Firmware upgrade failed: %s\n", strerror(errno));
+        ret = BLADERF_ERR_UNEXPECTED;
+    }
+
+    free(fw_param.ptr);
+    return ret;
 }
 
-static int time_past(struct timeval ref, struct timeval now) {
+static bool time_past(struct timeval ref, struct timeval now) {
     if (now.tv_sec > ref.tv_sec)
-        return 1;
+        return true;
 
     if (now.tv_sec == ref.tv_sec && now.tv_usec > ref.tv_usec)
-        return 1;
+        return true;
 
-    return 0;
+    return false;
 }
 
 #define STACK_BUFFER_SZ 1024
-
-/* TODO Unimplemented: loading FPGA */
 int bladerf_load_fpga(struct bladerf *dev, const char *fpga)
 {
-    int ret;
-    int fpga_fd, nread;
-    int programmed;
+    int ret, fpga_status, fpga_fd;
+    ssize_t nread, written, write_tmp;
     size_t bytes;
     struct stat stat;
     char buf[STACK_BUFFER_SZ];
     struct timeval end_time, curr_time;
-    struct timespec ts;
+    bool timed_out;
 
     assert(dev && fpga);
 
-    ioctl(dev->fd, BLADE_QUERY_FPGA_STATUS, &ret);
-    if (ret)
+    /* TODO Check FPGA on the board versus size of image */
+
+    if (ioctl(dev->fd, BLADE_QUERY_FPGA_STATUS, &fpga_status) < 0) {
+        dbg_printf("ioctl(BLADE_QUERY_FPGA_STATUS) failed: %s\n",
+                    strerror(errno));
+        return BLADERF_ERR_UNEXPECTED;
+    }
+
+    /* FPGA is already programmed */
+    if (fpga_status)
         return 1;
 
     fpga_fd = open(fpga, 0);
-    if (fpga_fd == -1)
-        return 1;
-    ioctl(dev->fd, BLADE_BEGIN_PROG, &ret);
-    fstat(fpga_fd, &stat);
+    if (fpga_fd < 0) {
+        dbg_printf("Failed to open device (%s): %s\n", fpga, strerror(errno));
+        return BLADERF_ERR_IO;
+    }
 
-#define min(x,y) ((x<y)?x:y)
+    if (fstat(fpga_fd, &stat) < 0) {
+        dbg_printf("Failed to stat fpga file (%s): %s\n", fpga, strerror(errno));
+        close(fpga_fd);
+        return BLADERF_ERR_IO;
+    }
+
+    if (ioctl(dev->fd, BLADE_BEGIN_PROG, &fpga_status)) {
+        dbg_printf("ioctl(BLADE_BEGIN_PROG) failed: %s\n", strerror(errno));
+        close(fpga_fd);
+        return BLADERF_ERR_UNEXPECTED;
+    }
+
     for (bytes = stat.st_size; bytes;) {
-        nread = read(fpga_fd, buf, min(STACK_BUFFER_SZ, bytes));
-        write(dev->fd, buf, nread);
+        nread = read(fpga_fd, buf, min_sz(STACK_BUFFER_SZ, bytes));
+
+        written = 0;
+        do {
+            write_tmp = write(dev->fd, buf + written, nread - written);
+            if (write_tmp < 0) {
+                /* Failing out...at least attempt to "finish" programming */
+                ioctl(dev->fd, BLADE_END_PROG, &ret);
+                dbg_printf("Write failure: %s\n", strerror(errno));
+                close(fpga_fd);
+                return BLADERF_ERR_IO;
+            } else {
+                written += write_tmp;
+            }
+        } while(written < nread);
+
         bytes -= nread;
-        ts.tv_sec = 0;
-        ts.tv_nsec = 4000000;
-        nanosleep(&ts, NULL);
+
+        /* FIXME? Perhaps it would be better if the driver blocked on the
+         * write call, rather than sleeping in userspace? */
+        usleep(4000);
     }
     close(fpga_fd);
 
+    /* Debug mode bug catcher */
+    assert(bytes == 0);
+
+    /* Time out within 1 second */
     gettimeofday(&end_time, NULL);
     end_time.tv_sec++;
 
-    programmed = 0;
+    ret = 0;
     do {
-        ioctl(dev->fd, BLADE_QUERY_FPGA_STATUS, &ret);
-        if (ret) {
-            programmed = 1;
-            break;
+        if (ioctl(dev->fd, BLADE_QUERY_FPGA_STATUS, &fpga_status) < 0) {
+            dbg_printf("Failed to query FPGA status: %s\n", strerror(errno));
+            ret = BLADERF_ERR_UNEXPECTED;
         }
         gettimeofday(&curr_time, NULL);
-    } while(!time_past(end_time, curr_time));
+        timed_out = time_past(end_time, curr_time);
+    } while(!fpga_status && !timed_out && !ret);
 
-    ioctl(dev->fd, BLADE_END_PROG, &ret);
+    if (ioctl(dev->fd, BLADE_END_PROG, &fpga_status)) {
+        dbg_printf("Failed to end programming procedure: %s\n",
+                strerror(errno));
 
-    return !programmed;
+        /* Don't clobber a previous error */
+        if (!ret)
+            ret = BLADERF_ERR_UNEXPECTED;
+    }
+
+    return ret;
 }
 
 /*------------------------------------------------------------------------------
