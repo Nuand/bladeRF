@@ -372,7 +372,7 @@ ssize_t bladerf_send_c16(struct bladerf *dev, int16_t *samples, size_t n)
 ssize_t bladerf_read_c16(struct bladerf *dev,
                             int16_t *samples, size_t max_samples)
 {
-    return 0;
+    return read( dev->fd, samples, max_samples ) ;
 }
 
 /*******************************************************************************
