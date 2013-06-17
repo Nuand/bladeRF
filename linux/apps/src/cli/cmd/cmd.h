@@ -2,7 +2,6 @@
 #define CMD_H__
 
 #include <stdbool.h>
-
 #include "common.h"
 
 /* Fatal errors */
@@ -19,10 +18,6 @@
 #define CMD_RET_LIBBLADERF  5       /**< See cli_state for libladerf error */
 #define CMD_RET_NODEV       6       /**< No device is currently opened */
 
-// I'll define this later. It will contain the "current" struct bladerf *device
-// and some other state info?
-struct cli_state;
-
 /**
  * Parse and execute the supplied command
  *
@@ -30,8 +25,17 @@ struct cli_state;
  */
 int cmd_handle(struct cli_state *s, const char *line);
 
+/**
+ * @return true if provided return code is fatal, false otherwise
+ */
 static inline bool cmd_fatal(int status) { return status < 0; }
 
+/**
+ * @param   error       CMD_RET_* error
+ * @param   lib_error   BLADERF_ERR_* - only used if error is CMD_RET_LIBBLADERF
+ *
+ * @return A string represntation of the provided errors
+ */
 const char * cmd_strerror(int error, int lib_error);
 
 #endif

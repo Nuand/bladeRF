@@ -30,7 +30,7 @@ static const struct cmd cmd_table[] = {
     {
         .name = "help",
         .exec = cmd_help,
-        .desc = "This command!",
+        .desc = "Provide information about specified command",
         .help =
             "help <command>\n"
             "\n"
@@ -286,21 +286,23 @@ int cmd_handle(struct cli_state *s, const char *line_)
         token = strtok_r(NULL, " \t\r\n", &saveptr);
     }
 
-    cmd = get_cmd(argv[0]);
+    if (argc > 0) {
+        cmd = get_cmd(argv[0]);
 
-    if (cmd) {
-        if (cmd->exec) { /* ---v  will be cmd_handle's cli_state param */
-            ret = cmd->exec(s, argc, argv);
+        if (cmd) {
+            if (cmd->exec) { /* ---v  will be cmd_handle's cli_state param */
+                ret = cmd->exec(s, argc, argv);
+            } else {
+                ret = CMD_RET_QUIT;
+            }
         } else {
-            ret = CMD_RET_QUIT;
+            printf( "\nUnrecognized command: %s\n\n", argv[0] ) ;
+            ret = CMD_RET_NOCMD;
         }
-    } else {
-        printf( "\nUnrecognized command: %s\n\n", argv[0] ) ;
-        ret = CMD_RET_NOCMD;
-    }
 
-    if(ret != 0)
-        s->last_error = ret;
+        if(ret != 0)
+            s->last_error = ret;
+    }
 
     free(line);
     return ret;
