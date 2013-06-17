@@ -125,6 +125,16 @@ ssize_t bladerf_get_device_list(struct bladerf_devinfo **devices);
  */
 void bladerf_free_device_list(struct bladerf_devinfo *devices, size_t n);
 
+
+/**
+ * Get the device path if a bladeRF device
+ *
+ * @param[in]   dev     Device handle
+ *
+ * @returns A pointer to the device path string, or NULL on error
+ */
+char * bladerf_dev_path(struct bladerf *dev);
+
 /**
  * Open specified device
  *
@@ -181,7 +191,7 @@ void bladerf_close(struct bladerf *device);
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 int bladerf_enable_module(struct bladerf *dev,
-                            bladerf_module m, bool enable) ;
+                            bladerf_module m, bool enable);
 
 /**
  * Apply specified loopback mode

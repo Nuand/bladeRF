@@ -11,7 +11,7 @@
 #endif
 
 #ifndef CLI_PROMPT
-#   define CLI_PROMPT   "bladeRF> "
+#   define CLI_DEFAULT_PROMPT   "bladeRF> "
 #endif
 
 int interactive(struct cli_state *s)
@@ -32,11 +32,14 @@ int interactive(struct cli_state *s)
 
     status = 0;
     while (!cmd_fatal(status) && status != CMD_RET_QUIT) {
-        line = gl_get_line(gl, CLI_PROMPT, NULL, 0);
+        if( s->curr_device ) {
+           /* TODO: Change the prompt based on which device is open */
+        }
+        line = gl_get_line(gl, CLI_DEFAULT_PROMPT, NULL, 0);
         if (!line)
             break;
         else {
-            status = cmd_handle( s, line ) ;
+            status = cmd_handle( s, line );
 
             if (status) {
                 error = cmd_strerror(status, s->last_lib_error);

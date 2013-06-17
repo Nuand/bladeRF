@@ -89,6 +89,12 @@ struct bladerf * _bladerf_open_info(const char *dev_path,
     if ((ret->fd = open(dev_path, O_RDWR)) < 0)
         goto bladerf_open__err;
 
+    /* Successfully opened, so save off the path */
+    if( (ret->path = strdup(dev_path)) == NULL) {
+        /* Not so successful string duplication */
+        goto bladerf_open__err;
+    }
+
     /* TODO -- spit our errors/warning here depending on library verbosity? */
     if (i) {
         if (bladerf_get_serial(ret, &i->serial) < 0)
@@ -174,6 +180,15 @@ void bladerf_free_device_list(struct bladerf_devinfo *devices, size_t n)
     }
 }
 
+char * bladerf_dev_path(struct bladerf *dev)
+{
+    if( dev ) {
+        return dev->path;
+    } else {
+        return NULL;
+    }
+}
+
 struct bladerf * bladerf_open(const char *dev_path)
 {
     struct bladerf_devinfo i;
@@ -186,13 +201,14 @@ void bladerf_close(struct bladerf *dev)
 {
     if (dev) {
         close(dev->fd);
+        free(dev->path);
         free(dev);
     }
 }
 
 int bladerf_set_loopback(struct bladerf *dev, bladerf_loopback l)
 {
-    lms_loopback_enable( dev, l ) ;
+    lms_loopback_enable( dev, l );
     return 0;
 }
 
@@ -219,103 +235,103 @@ int bladerf_set_rational_sample_rate(struct bladerf *dev, bladerf_module module,
 int bladerf_get_sample_rate( struct bladerf *dev, bladerf_module module, unsigned int *rate)
 {
     /* TODO: Read the Si5338 and figure out the sample rate */
-    return 0 ;
+    return 0;
 }
 
 int bladerf_get_rational_sample_rate(struct bladerf *dev, bladerf_module module, unsigned int integer, unsigned int num, unsigned int denom)
 {
     /* TODO: Read the Si5338 and figure out the sample rate */
-    return 0 ;
+    return 0;
 }
 
 int bladerf_set_txvga2(struct bladerf *dev, int gain)
 {
     if( gain > 25 ) {
-        fprintf( stderr, "%s: %d being clamped to 25dB\n", __FUNCTION__, gain ) ;
-        gain = 25 ;
+        fprintf( stderr, "%s: %d being clamped to 25dB\n", __FUNCTION__, gain );
+        gain = 25;
     }
     if( gain < 0 ) {
-        fprintf( stderr, "%s: %d being clamped to 0dB\n", __FUNCTION__, gain ) ;
-        gain = 0 ;
+        fprintf( stderr, "%s: %d being clamped to 0dB\n", __FUNCTION__, gain );
+        gain = 0;
     }
     /* TODO: Make return values for lms call and return it for failure */
-    lms_txvga2_set_gain( dev, gain ) ;
+    lms_txvga2_set_gain( dev, gain );
     return 0;
 }
 
 int bladerf_get_txvga2(struct bladerf *dev, int *gain)
 {
-    *gain = 0 ;
+    *gain = 0;
     /* TODO: Make return values for lms call and return it for failure */
-    lms_txvga2_get_gain( dev, (uint8_t *)gain ) ;
+    lms_txvga2_get_gain( dev, (uint8_t *)gain );
     return 0;
 }
 
 int bladerf_set_txvga1(struct bladerf *dev, int gain)
 {
     if( gain < -35 ) {
-        fprintf( stderr, "%s: %d being clamped to -35dB\n", __FUNCTION__, gain ) ;
-        gain = -35 ;
+        fprintf( stderr, "%s: %d being clamped to -35dB\n", __FUNCTION__, gain );
+        gain = -35;
     }
     if( gain > -4 ) {
-        fprintf( stderr, "%s: %d being clamped to -4dB\n", __FUNCTION__, gain ) ;
-        gain = -4 ;
+        fprintf( stderr, "%s: %d being clamped to -4dB\n", __FUNCTION__, gain );
+        gain = -4;
     }
     /* TODO: Make return values for lms call and return it for failure */
-    lms_txvga1_set_gain( dev, gain ) ;
+    lms_txvga1_set_gain( dev, gain );
     return 0;
 }
 
 int bladerf_get_txvga1(struct bladerf *dev, int *gain)
 {
-    *gain = 0 ;
+    *gain = 0;
     /* TODO: Make return values for lms call and return it for failure */
-    lms_txvga1_get_gain( dev, (int8_t *)gain ) ;
+    lms_txvga1_get_gain( dev, (int8_t *)gain );
     return 0;
 }
 
 int bladerf_set_lna_gain(struct bladerf *dev, bladerf_lna_gain gain)
 {
     /* TODO: Make return values for lms call and return it for failure */
-    lms_lna_set_gain( dev, gain ) ;
+    lms_lna_set_gain( dev, gain );
     return 0;
 }
 
 int bladerf_get_lna_gain(struct bladerf *dev, bladerf_lna_gain *gain)
 {
     /* TODO: Make return values for lms call and return it for failure */
-    lms_lna_get_gain( dev, gain ) ;
-    return 0 ;
+    lms_lna_get_gain( dev, gain );
+    return 0;
 }
 
 int bladerf_set_rxvga1(struct bladerf *dev, int gain)
 {
     /* TODO: Make return values for lms call and return it for failure */
-    lms_rxvga1_set_gain( dev, (uint8_t)gain ) ;
+    lms_rxvga1_set_gain( dev, (uint8_t)gain );
     return 0;
 }
 
 int bladerf_get_rxvga1(struct bladerf *dev, int *gain)
 {
-    *gain = 0 ;
+    *gain = 0;
     /* TODO: Make return values for lms call and return it for failure */
-    lms_rxvga1_get_gain( dev, (uint8_t *)gain ) ;
-    return 0 ;
+    lms_rxvga1_get_gain( dev, (uint8_t *)gain );
+    return 0;
 }
 
 int bladerf_set_rxvga2(struct bladerf *dev, int gain)
 {
     /* TODO: Make return values for lms call and return it for failure */
-    lms_rxvga2_set_gain( dev, (uint8_t)gain ) ;
+    lms_rxvga2_set_gain( dev, (uint8_t)gain );
     return 0;
 }
 
 int bladerf_get_rxvga2(struct bladerf *dev, int *gain)
 {
-    *gain = 0 ;
+    *gain = 0;
     /* TODO: Make return values for lms call and return it for failure */
-    lms_rxvga2_get_gain( dev, (uint8_t *)gain ) ;
-    return 0 ;
+    lms_rxvga2_get_gain( dev, (uint8_t *)gain );
+    return 0;
 }
 
 int bladerf_set_bandwidth(struct bladerf *dev, bladerf_module module,
@@ -323,9 +339,9 @@ int bladerf_set_bandwidth(struct bladerf *dev, bladerf_module module,
                             unsigned int *actual)
 {
     /* TODO: Make return values for lms call and return it for failure */
-    lms_bw_t bw = lms_uint2bw(bandwidth) ;
-    lms_lpf_enable( dev, module, bw ) ;
-    *actual = lms_bw2uint(bw) ;
+    lms_bw_t bw = lms_uint2bw(bandwidth);
+    lms_lpf_enable( dev, module, bw );
+    *actual = lms_bw2uint(bw);
     return 0;
 }
 
@@ -333,16 +349,16 @@ int bladerf_get_bandwidth(struct bladerf *dev, bladerf_module module,
                             unsigned int *bandwidth )
 {
     /* TODO: Make return values for lms call and return it for failure */
-    lms_bw_t bw = lms_get_bandwidth( dev, module ) ;
-    *bandwidth = lms_bw2uint(bw) ;
-    return 0 ;
+    lms_bw_t bw = lms_get_bandwidth( dev, module );
+    *bandwidth = lms_bw2uint(bw);
+    return 0;
 }
 
 int bladerf_set_frequency(struct bladerf *dev,
                             bladerf_module module, unsigned int frequency)
 {
     /* TODO: Make return values for lms call and return it for failure */
-    lms_set_frequency( dev, module, frequency ) ;
+    lms_set_frequency( dev, module, frequency );
     return 0;
 }
 
@@ -350,10 +366,10 @@ int bladerf_get_frequency(struct bladerf *dev,
                             bladerf_module module, unsigned int *frequency)
 {
     /* TODO: Make return values for lms call and return it for failure */
-    struct lms_freq f ;
-    lms_get_frequency( dev, module, &f ) ;
-    *frequency = (unsigned int)(((uint64_t)((f.nint<<23) + f.nfrac)) * (f.reference/f.x) >>23) ;
-    return 0 ;
+    struct lms_freq f;
+    lms_get_frequency( dev, module, &f );
+    *frequency = (unsigned int)(((uint64_t)((f.nint<<23) + f.nfrac)) * (f.reference/f.x) >>23);
+    return 0;
 }
 /*******************************************************************************
  * Data transmission and reception
@@ -372,7 +388,7 @@ ssize_t bladerf_send_c16(struct bladerf *dev, int16_t *samples, size_t n)
 ssize_t bladerf_read_c16(struct bladerf *dev,
                             int16_t *samples, size_t max_samples)
 {
-    return read( dev->fd, samples, max_samples ) ;
+    return read( dev->fd, samples, max_samples );
 }
 
 /*******************************************************************************
@@ -464,7 +480,6 @@ const char * bladerf_strerror(int error)
  * Device programming
  *----------------------------------------------------------------------------*/
 
-/* TODO Unimplemented: flashing FX3 firmware */
 int bladerf_flash_firmware(struct bladerf *dev, const char *firmware)
 {
     int fw_fd, upgrade_status, ret;

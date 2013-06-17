@@ -50,11 +50,20 @@ static const struct cmd cmd_table[] = {
         .exec = cmd_peek,
         .desc = "Peek a memory location",
         .help =
-            "peek <lms|trimdac|si> <address>\n"
+            "peek <dac|lms|si> <address> [num addresses]\n"
             "\n"
             "The peek command can read any of the devices hanging off\n"
             "the FPGA which includes the LMS6002D transceiver, VCTCXO\n"
             "trim DAC or the Si5338 clock generator chip.\n"
+            "\n"
+            "If num_addresses is supplied, the address is incremented by\n"
+            "1 and another peek is performed.\n"
+            "\n"
+            "Valid Address Ranges\n"
+            "--------------------\n"
+            "dac            0   255\n"
+            "lms            0   127\n"
+            "si             0   255\n"
             "\n"
             "Examples\n"
             "--------\n"
@@ -65,11 +74,20 @@ static const struct cmd cmd_table[] = {
         .exec = cmd_poke,
         .desc = "Poke a memory location",
         .help =
-            "poke <lms|trimdac|si> <address> <data>\n"
+            "poke <dac|lms|si> <address> <data>\n"
             "\n"
             "The poke command can write any of the devices hanging off\n"
             "the FPGA which includes the LMS6002D transceiver, VCTCXO\n"
             "trim DAC or the Si5338 clock generator chip.\n"
+            "\n"
+            "If num_addresses is supplied, the address is incremented by\n"
+            "1 and another poke is performed.\n"
+            "\n"
+            "Valid Address Ranges\n"
+            "--------------------\n"
+            "dac            0   255\n"
+            "lms            0   127\n"
+            "si             0   255\n"
             "\n"
             "Examples\n"
             "-------\n"
@@ -193,29 +211,29 @@ static const struct cmd cmd_table[] = {
 const struct cmd *get_cmd( char *name )
 {
     const struct cmd *rv = NULL;
-    int i = 0 ;
-    for( i = 0 ; cmd_table[i].name != NULL && rv == 0 ; i++ ) {
+    int i = 0;
+    for( i = 0; cmd_table[i].name != NULL && rv == 0; i++ ) {
         if( strcasecmp( name, cmd_table[i].name ) == 0 ) {
-            rv = &(cmd_table[i]) ;
+            rv = &(cmd_table[i]);
         }
     }
 
-    return rv ;
+    return rv;
 }
 
 int cmd_help(struct cli_state *s, int argc, char **argv)
 {
-    int i = 0 ;
-    int ret = CMD_RET_OK ;
-    const struct cmd *cmd ;
+    int i = 0;
+    int ret = CMD_RET_OK;
+    const struct cmd *cmd;
 
     /* Asking for general help */
     if( argc == 1 ) {
-        printf( "\n" ) ;
-        for( i = 0 ; cmd_table[i].name != NULL ; i++ ) {
+        printf( "\n" );
+        for( i = 0; cmd_table[i].name != NULL; i++ ) {
             /* Hidden functions for fun and profit */
-            if( cmd_table[i].name[0] == '_' ) continue ;
-            printf( "  %-20s%s\n", cmd_table[i].name, cmd_table[i].desc ) ;
+            if( cmd_table[i].name[0] == '_' ) continue;
+            printf( "  %-20s%s\n", cmd_table[i].name, cmd_table[i].desc );
         }
         printf( "\n" );
 
@@ -227,18 +245,18 @@ int cmd_help(struct cli_state *s, int argc, char **argv)
 
         /* If we found it, print the help */
         if( cmd ) {
-            printf( "\n%s\n", cmd->help ) ;
+            printf( "\n%s\n", cmd->help );
         } else {
             /* Otherwise, print that we couldn't find it :( */
-            printf( "%s: Could not find help on command %s\n", argv[0], argv[1] ) ;
-            ret = CMD_RET_INVPARAM ;
+            printf( "%s: Could not find help on command %s\n", argv[0], argv[1] );
+            ret = CMD_RET_INVPARAM;
         }
     } else {
-        printf( "%s: Incorrect number of arguments (%d)\n", argv[0], argc ) ;
-        ret = CMD_RET_INVPARAM ;
+        printf( "%s: Incorrect number of arguments (%d)\n", argv[0], argc );
+        ret = CMD_RET_INVPARAM;
     }
 
-    return ret ;
+    return ret;
 }
 
 const char * cmd_strerror(int error, int lib_error)
@@ -296,7 +314,7 @@ int cmd_handle(struct cli_state *s, const char *line_)
                 ret = CMD_RET_QUIT;
             }
         } else {
-            printf( "\nUnrecognized command: %s\n\n", argv[0] ) ;
+            printf( "\nUnrecognized command: %s\n\n", argv[0] );
             ret = CMD_RET_NOCMD;
         }
 

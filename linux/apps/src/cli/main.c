@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
             status = -1;
         }
     } else {
-        /* TODO re-enable once the composite device situatoin is resolved */
+        /* TODO re-enable once the composite device situation is resolved */
         //state.curr_device = bladerf_open_any();
     }
 
