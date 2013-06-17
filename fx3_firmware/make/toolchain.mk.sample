@@ -8,7 +8,7 @@
 #
 # If you edit this file, be wary of potential path-related issues.
 # (Specifically, be careful will paths with spaces. These will likely appear
-#  in Windows-based builds if default install paths are used.b
+#  in Windows-based builds if default install paths are used.
 ################################################################################
 
 # Hack to check if we're in windows, otherwise assume *nix
