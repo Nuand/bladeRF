@@ -7,14 +7,15 @@
 #include <stdio.h>
 #include <getopt.h>
 #include <stdbool.h>
+#include <errno.h>
 #include <libbladeRF.h>
-#ifdef INTERACTIVE
-#include <libtecla.h>
-#endif
-
+#include "interactive.h"
+#include "common.h"
+#include "cmd.h"
 #include "version.h"
 
-#define OPTSTR "d:bf:l:LVh"
+
+#define OPTSTR "pd:bf:l:LVh"
 static const struct option longopts[] = {
     { "device",         required_argument,  0, 'd' },
     { "batch",          no_argument,        0, 'b' },
@@ -66,11 +67,25 @@ int get_rc_config(int argc, char *argv[], struct rc_config *rc)
     do {
         switch(c) {
             case 'f':
-                rc->fw_file = calloc(1, strlen(optarg) + 1);
-                if (rc->fw_file)
-                    strcpy(rc->fw_file, optarg);
-                else {
-                    perror("calloc");
+                rc->fw_file = strdup(optarg);
+                if (!rc->fw_file) {
+                    perror("strdup");
+                    return -1;
+                }
+                break;
+
+            case 'l':
+                rc->fpga_file = strdup(optarg);
+                if (!rc->fpga_file) {
+                    perror("strdup");
+                    return -1;
+                }
+                break;
+
+            case 'd':
+                rc->device = strdup(optarg);
+                if (!rc->device) {
+                    perror("strdup");
                     return -1;
                 }
                 break;
@@ -81,18 +96,22 @@ int get_rc_config(int argc, char *argv[], struct rc_config *rc)
 
             case 'p':
                 rc->probe = true;
+                rc->batch_mode = true;
                 break;
 
             case 'h':
                 rc->show_help = true;
+                rc->batch_mode = true;
                 break;
 
             case 'V':
                 rc->show_version = true;
+                rc->batch_mode = true;
                 break;
 
             case 'L':
                 rc->show_lib_version = true;
+                rc->batch_mode = true;
                 break;
         }
 
@@ -108,107 +127,107 @@ void usage(const char *argv0)
     printf("bladeRF command line interface and test utility (" CLI_VERSION ")\n\n");
     printf("Options:\n");
     printf("  -d, --device <device>            Use the specified bladeRF device.\n");
-    printf("  -f, --flash-firmware <file>      Flash specified firmware file. Requires -d.\n");
-    printf("  -l, --load-fpga <file>           Load specified FPGA bitstream. Requires -d.\n");
+    printf("  -f, --flash-firmware <file>      Flash specified firmware file.\n");
+    printf("  -l, --load-fpga <file>           Load specified FPGA bitstream.\n");
     printf("  -p, --probe                      Probe for devices, print results, then exit.\n");
     printf("  -b, --batch                      Batch mode - do not enter interactive mode.\n");
     printf("  -L, --lib-version                Print libbladeRF version and exit.\n");
     printf("  -V, --version                    Print CLI version and exit.\n");
     printf("  -h, --help                       Show this help text.\n");
     printf("\n");
+    printf("Notes:\n");
+    printf("  If the -d parameter is not provided, the first available device\n");
+    printf("  will be used for the provided command, or will be opened prior\n");
+    printf("  to entering interactive mode.\n");
+    printf("\n");
+    printf("  Batch mode is implicit for the following options:\n");
+    printf("     -p, --probe               -h, --help\n");
+    printf("     -L, --lib-version         -V, --version\n");
+    printf("\n");
+
+#ifndef INTERACTIVE
+    printf("  This tool has been build with INTERACTIVE=n. the interactive\n"
+           "  console is disabled.\n");
+#endif
 }
 
-/* Todo move to cmd_probe.c */
-int cmd_probe()
+static void print_error_need_devarg()
 {
-    struct bladerf_devinfo *devices = NULL;
-    ssize_t n_devices, i;
-
-    if ((n_devices = bladerf_get_device_list(&devices)) < 0) {
-        fprintf(stderr, "Error: Failed to probe for devices.\n");
-        return -1;
-    }
-
-    printf("     Attached bladeRF devices:\n");
-    printf("---------------------------------------\n");
-    for (i = 0; i < n_devices; i++) {
-        printf("    Path: %s\n", devices[i].path);
-        printf("    Serial: 0x%016lX\n", devices[i].serial);
-        printf("    Firmware: v%d.%d\n", devices[i].fw_ver_maj,
-               devices[i].fw_ver_min);
-
-        if (devices[i].fpga_configured) {
-            printf("    FPGA: v%d.%d\n",
-                    devices[i].fpga_ver_maj, devices[i].fpga_ver_min);
-        } else {
-            printf("    FPGA: not configured\n");
-        }
-
-        printf("\n");
-    }
-
-    bladerf_free_device_list(devices, n_devices);
-
-    return 0;
-}
-
-
-#ifndef CLI_MAX_LINE_LEN
-#   define CLI_MAX_LINE_LEN 320
-#endif
-
-#ifndef CLI_MAX_HIST_LEN
-#   define CLI_MAX_HIST_LEN 500
-#endif
-
-#ifndef CLI_PROMPT
-#   define CLI_PROMPT   "bladeRF> "
-#endif
-static inline int interactive()
-{
-#ifdef INTERACTIVE
-    char *line;
-    bool quit = false;
-    GetLine *gl = new_GetLine(CLI_MAX_LINE_LEN, CLI_MAX_HIST_LEN);
-
-    if (!gl) {
-        perror("new_GetLine");
-        return 2;
-    }
-
-    while (!quit) {
-        line = gl_get_line(gl, CLI_PROMPT, NULL, 0);
-        if (!line)
-            break;
-
-        quit = !strcasecmp(line, "quit\n") || !strcasecmp(line, "exit\n");
-    }
-
-    del_GetLine(gl);
-#endif
-    return 0;
+    printf("\nError: Either no devices or multiple devices are present,\n"
+           "       but -d was not specified. Aborting.\n\n");
 }
 
 int main(int argc, char *argv[])
 {
     int status;
     struct rc_config rc = DEFAULT_RC_CONFIG;
+    struct cli_state state = CLI_STATE_INITIALIZER;
 
-    if (get_rc_config(argc, argv, &rc))
+    if (get_rc_config(argc, argv, &rc)) {
         return 1;
+    }
 
     status = 0;
 
-    if (rc.show_help)
+    if (rc.show_help) {
         usage(argv[0]);
-    else if (rc.show_version)
+    } else if (rc.show_version) {
         printf(CLI_VERSION "\n");
-    else if (rc.show_lib_version) {
+    } else if (rc.show_lib_version) {
         /* TODO implement libbladerf_version() */
         printf("TODO!\n");
-    } else if (rc.probe)
-        status = cmd_probe();
+    } else if (rc.probe) {
+        status = cmd_handle(&state, "probe");
+    }
 
+    if (rc.device) {
+        state.curr_device = bladerf_open(rc.device);
+        if (!state.curr_device) {
+            /* TODO use upcoming bladerf_strerror() here */
+            fprintf(stderr, "Failed to open device (%s): %s\n",
+                    rc.device, strerror(errno));
+            status = -1;
+        }
+    } else {
+        /* TODO re-enable once the composite device situatoin is resolved */
+        //state.curr_device = bladerf_open_any();
+    }
+
+    if (!status && rc.fw_file) {
+        if (!state.curr_device) {
+            print_error_need_devarg();
+            status = -1;
+        } else {
+            printf("Flashing firmware...\n");
+            status = bladerf_flash_firmware(state.curr_device, rc.fw_file);
+            if (status) {
+                fprintf(stderr, "Error: failed to flash firmware: %s\n",
+                        bladerf_strerror(status));
+            } else {
+                printf("Done.\n");
+            }
+
+        }
+    }
+
+    /* TODO Do we have to fire off some sort of reset after flashing
+     *      the firmware, and before loading the FPGA */
+
+    if (rc.fpga_file) {
+        if (!state.curr_device) {
+            print_error_need_devarg();
+            status = -1;
+        } else {
+            printf("Loading fpga...\n");
+            status = bladerf_load_fpga(state.curr_device, rc.fpga_file);
+            if (status) {
+                fprintf(stderr, "Error: failed to flash firmware: %s\n",
+                        bladerf_strerror(status));
+            } else {
+                printf("Done.\n");
+            }
+        }
+    }
 
     free(rc.device);
     free(rc.fw_file);
@@ -218,9 +237,13 @@ int main(int argc, char *argv[])
     if (status)
         return 2;
 
-    /* Exit cleanly if we did some 'X and exit' operations */
-    if (rc.batch_mode || rc.show_help || rc.show_version || rc.show_lib_version)
+    /* Exit cleanly when configured for batch mode. Remember that this is
+     * implicit with some commands */
+    if (rc.batch_mode) {
+        if (state.curr_device)
+            bladerf_close(state.curr_device);
         return 0;
-    else
-        return interactive();
+    } else {
+        return interactive(&state);
+    }
 }
