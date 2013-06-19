@@ -52,6 +52,26 @@ struct printset_entry printset_table[] = {
     { .print = NULL, .set = NULL, .name = "" }
 };
 
+bladerf_module get_module( char *mod, bool *ok )
+{
+    bladerf_module rv = RX;
+    *ok = true;
+    if( strcasecmp( mod, "rx" ) == 0 ) {
+        rv = RX;
+    } else if( strcasecmp( mod, "tx" ) == 0 ) {
+        rv = TX;
+    } else {
+        *ok = false;
+    }
+    return rv;
+}
+
+void invalid_argc( char *cmd, char *param, int argc )
+{
+    printf( "%s %s: Invalid number of arguments (%d)\n", cmd, param, argc );
+    return;
+}
+
 int print_bandwidth(struct cli_state *state, int argc, char **argv)
 {
     /* Usage: print bandwidth [<rx|tx>]*/
@@ -63,12 +83,10 @@ int print_bandwidth(struct cli_state *state, int argc, char **argv)
     }
 
     else if( argc == 3 ) {
-        if( strcasecmp( argv[2], "rx" ) == 0 ) {
-            module = RX;
-        } else if( strcasecmp( argv[2], "tx" ) == 0 ) {
-            module = TX;
-        } else {
-            printf( "%s: %s is not TX or RX - printing both\n", argv[0], argv[2] );
+        bool ok;
+        module = get_module( argv[2], &ok );
+        if( !ok ) {
+            printf( "%s %s: %s is not TX or RX - printing both\n", argv[0], argv[1], argv[2] );
         }
     }
 
@@ -110,14 +128,14 @@ int set_bandwidth(struct cli_state *state, int argc, char **argv)
 
     /* Check for optional module */
     else if( argc == 4 ) {
+        /* Parse module */
         bool ok;
-        if( strcasecmp( argv[2], "rx" ) == 0 ) {
-            module = RX;
-        } else if( strcasecmp( argv[2], "tx" ) == 0 ) {
-            module = TX;
-        } else {
+        module = get_module( argv[2], &ok );
+        if( !ok ) {
+            printf( "%s %s: %s is not TX or RX\n", argv[0], argv[1], argv[2] );
             rv = CMD_RET_INVPARAM;
         }
+
         /* Parse bandwidth */
         bw = str2uint( argv[3], 0, UINT_MAX, &ok );
         if( !ok ) {
@@ -131,33 +149,40 @@ int set_bandwidth(struct cli_state *state, int argc, char **argv)
         bool ok;
         bw = str2uint( argv[2], 0, UINT_MAX, &ok );
         if( !ok ) {
-            printf( "%s: %s is not a valid bandwidth\n", argv[0], argv[2] );
+            printf( "%s %s: %s is not a valid bandwidth\n", argv[0], argv[1], argv[2] );
             rv = CMD_RET_INVPARAM;
         }
     }
 
+    /* Weird number of arguments */
+    else {
+        invalid_argc( argv[0], argv[1], argc );
+        rv = CMD_RET_INVPARAM;
+    }
+
     /* Problem parsing arguments? */
-    if( rv != CMD_RET_OK ) goto finish ;
+    if( argc > 2 && rv == CMD_RET_OK ) {
 
-    printf( "\n" );
+        printf( "\n" );
 
-    /* Lack of option, so set both or RX only */
-    if( argc == 3 || module == RX ) {
-        /* TODO: Check ret */
-        ret = bladerf_set_bandwidth( state->curr_device, RX, bw, &actual );
-        printf( "  Setting RX bandwidth - req:%9uHz actual:%9uHz\n",  bw, actual );
+        /* Lack of option, so set both or RX only */
+        if( argc == 3 || module == RX ) {
+            /* TODO: Check ret */
+            ret = bladerf_set_bandwidth( state->curr_device, RX, bw, &actual );
+            printf( "  Setting RX bandwidth - req:%9uHz actual:%9uHz\n",  bw, actual );
+        }
+
+        /* Lack of option, so set both or TX only */
+        if( argc == 3 || module == TX ) {
+            /* TODO: Check ret */
+            ret = bladerf_set_bandwidth( state->curr_device, TX, bw, &actual );
+            printf( "  Setting TX bandwidth - req:%9uHz actual:%9uHz\n", bw, actual );
+        }
+
+        printf( "\n" );
     }
 
-    /* Lack of option, so set both or TX only */
-    if( argc == 3 || module == TX ) {
-        /* TODO: Check ret */
-        ret = bladerf_set_bandwidth( state->curr_device, TX, bw, &actual );
-        printf( "  Setting TX bandwidth - req:%9uHz actual:%9uHz\n", bw, actual );
-    }
 
-    printf( "\n" );
-
-finish:
     return rv;
 }
 
@@ -173,16 +198,101 @@ int set_config(struct cli_state *state, int argc, char **argv)
 
 int print_frequency(struct cli_state *state, int argc, char **argv)
 {
-    return CMD_RET_OK;
+    /* Usage: print frequency [<rx|tx>] */
+    int rv = CMD_RET_OK;
+    unsigned int freq;
+    bladerf_module module = RX;
+    if( argc == 3 ) {
+        /* Parse module */
+        bool ok;
+        module = get_module( argv[2], &ok );
+        if( !ok ) {
+            printf( "%s %s: %s is not TX or RX\n", argv[0], argv[1], argv[2] );
+            rv = CMD_RET_INVPARAM;
+        }
+    } else if( argc != 2 ) {
+        invalid_argc( argv[0], argv[1], argc );
+        rv = CMD_RET_INVPARAM;
+    }
+
+    if( rv == CMD_RET_OK ) {
+        printf( "\n" );
+        if( argc == 2 || module == RX ) {
+            /* TODO: Check ret */
+            int ret;
+            ret = bladerf_get_frequency( state->curr_device, RX, &freq );
+            printf( "  RX Frequency: %10uHz\n", freq );
+        }
+
+        if( argc == 2 || module == TX ) {
+            /* TODO: Check ret */
+            int ret;
+            ret = bladerf_get_frequency( state->curr_device, TX, &freq );
+            printf( "  TX Frequency: %10uHz\n", freq );
+        }
+        printf( "\n" );
+    }
+
+    return rv;
 }
 
 int set_frequency(struct cli_state *state, int argc, char **argv)
 {
-    return CMD_RET_OK;
+    /* Usage: set frequency [<rx|tx>] <frequency in Hz> */
+    int rv = CMD_RET_OK;
+    unsigned int freq;
+    bladerf_module module = RX;
+
+    if( argc == 2 ) {
+        printf( "set frequency specialized help\n" );
+    } else if( argc == 4 ) {
+        /* Parse module */
+        bool ok;
+        module = get_module( argv[2], &ok );
+        if( !ok ) {
+            printf( "%s %s: %s is not TX or RX\n", argv[0], argv[1], argv[2] );
+            rv = CMD_RET_INVPARAM;
+        }
+    } else if( argc != 3 ) {
+        invalid_argc( argv[0], argv[1], argc );
+        rv = CMD_RET_INVPARAM;
+    }
+
+    if( argc > 2 && rv == CMD_RET_OK ) {
+        bool ok;
+        /* Parse out frequency */
+        freq = str2uint( argv[argc-1], 0, UINT_MAX, &ok );
+
+        if( !ok ) {
+            printf( "%s %s: %s is not a valid frequency\n", argv[0], argv[1], argv[argc-1] );
+        } else {
+
+            printf( "\n" );
+
+            /* Change RX frequency */
+            if( argc == 3 || module == RX ) {
+                /* TODO: Check ret */
+                int ret = bladerf_set_frequency( state->curr_device, RX, freq );
+                printf( "  Set RX frequency: %10uHz\n", freq );
+            }
+
+            /* Change TX frequency */
+            if( argc == 3 || module == TX ) {
+                /* TODO: Check ret */
+                int ret = bladerf_set_frequency( state->curr_device, TX, freq );
+                printf( "  Set TX frequency: %10uHz\n", freq );
+            }
+
+            printf( "\n" );
+        }
+    }
+
+    return rv;
 }
 
 int print_gpio(struct cli_state *state, int argc, char **argv)
 {
+    /* TODO: Can't be implemented until gpio_read() is implemented */
     return CMD_RET_OK;
 }
 
@@ -201,6 +311,7 @@ int set_gpio(struct cli_state *state, int argc, char **argv)
             gpio_write( state->curr_device,val );
         }
     } else {
+        /* TODO: Fill this in */
         printf( "set gpio specialized help\n" );
     }
     return rv;
@@ -294,16 +405,65 @@ int print_samplerate(struct cli_state *state, int argc, char **argv)
 
 int set_samplerate(struct cli_state *state, int argc, char **argv)
 {
-    return CMD_RET_OK;
+    /* Usage: set samplerate [rx|tx] <samplerate in Hz> */
+    int rv = CMD_RET_OK;
+    bladerf_module module  = RX;
+
+    if( argc == 2 ) {
+        printf( "set samplerate specific help\n" );
+    } else if( argc == 4 ) {
+        /* Parse module */
+        bool ok;
+        module = get_module( argv[2], &ok );
+        if( !ok ) {
+            printf( "%s %s: %s is not TX or RX\n", argv[0], argv[1], argv[2] );
+            rv = CMD_RET_INVPARAM;
+        }
+    } else if( argc != 3 ) {
+        invalid_argc( argv[0], argv[1], argc );
+        rv = CMD_RET_INVPARAM;
+    }
+
+    if( argc > 2 && rv == CMD_RET_OK ) {
+        bool ok;
+        unsigned int rate, actual;
+        rate = str2uint( argv[argc-1], 160000, 40000000, &ok );
+
+        if( !ok ) {
+            printf( "%s %s: %s is not a valid samplerate\n", argv[0], argv[1], argv[2] );
+            rv = CMD_RET_INVPARAM;
+        } else {
+            printf( "\n" );
+            if( argc == 3 || module == RX ) {
+                /* TODO: Check ret */
+                int ret;
+                ret = bladerf_set_sample_rate( state->curr_device, RX, rate, &actual );
+                printf( "  Setting RX sample rate - req: %9uHz actual: %9uHz\n", rate, actual );
+            }
+
+            if( argc == 3 || module == TX ) {
+                /* TODO: Check ret */
+                int ret;
+                ret = bladerf_set_sample_rate( state->curr_device, TX, rate, &actual );
+                printf( "  Setting TX sample rate - req: %9uHz actual: %9uHz\n", rate, actual );
+            }
+            printf( "\n" );
+
+        }
+    }
+
+    return rv;
 }
 
 int print_trimdac(struct cli_state *state, int argc, char **argv)
 {
+    /* TODO: Can't be implemented until dac_read() is written */
     return CMD_RET_OK;
 }
 
 int set_trimdac(struct cli_state *state, int argc, char **argv)
 {
+    /* TODO: Can't be implemented until dac_write() is written */
     return CMD_RET_OK;
 }
 
@@ -312,7 +472,7 @@ int print_txvga1(struct cli_state *state, int argc, char **argv)
     /* Usage: print txvga1 */
     int rv = CMD_RET_OK, ret, gain;
     if( argc != 2 ) {
-        printf( "%s: Ignoring %d extra parameters\n", argv[0], argc-2 );
+        printf( "%s: Ignoring %d extra arguments\n", argv[0], argc-2 );
     }
 
     ret = bladerf_get_txvga1( state->curr_device, &gain );
@@ -329,6 +489,7 @@ int set_txvga1(struct cli_state *state, int argc, char **argv)
     /* Usage: set txvga1 <gain> */
     int rv = CMD_RET_OK, gain;
     if( argc == 2 ) {
+        /* TODO: Write this better */
         printf( "set txvga1 specialized help\n" );
     }
 
@@ -348,7 +509,7 @@ int set_txvga1(struct cli_state *state, int argc, char **argv)
     }
 
     else {
-        printf( "%s %s: Invalid number of arguments (%d)\n", argv[0], argv[1], argc );
+        invalid_argc( argv[0], argv[1], argc );
         rv = CMD_RET_INVPARAM;
     }
 
@@ -357,12 +518,44 @@ int set_txvga1(struct cli_state *state, int argc, char **argv)
 
 int print_txvga2(struct cli_state *state, int argc, char **argv)
 {
-    return CMD_RET_OK;
+    /* Usage: print txvga2 */
+    int rv = CMD_RET_OK;
+    if( argc != 2 ) {
+        invalid_argc( argv[0], argv[1], argc );
+        rv = CMD_RET_INVPARAM;
+    } else {
+        int ret, gain;
+        ret = bladerf_get_txvga2( state->curr_device, &gain );
+        printf( "\n" );
+        printf( "  TXVGA2 Gain: %ddB\n", gain );
+        printf( "\n" );
+    }
+    return rv;
 }
 
 int set_txvga2(struct cli_state *state, int argc, char **argv)
 {
-    return CMD_RET_OK;
+    /* Usage: set txvga2 <gain> */
+    int rv = CMD_RET_OK;
+    if( argc == 2 ) {
+        printf( "specialized set_txvga2 help\n" );
+    } else if( argc != 3 ) {
+        invalid_argc( argv[0], argv[1], argc );
+        rv = CMD_RET_INVPARAM;
+    } else {
+        bool ok;
+        int gain;
+        gain = str2int( argv[2], INT_MIN, INT_MAX, &ok );
+        if( !ok ) {
+            printf( "%s %s: %s is not a valid gain value\n", argv[0], argv[1], argv[2] );
+            rv = CMD_RET_INVPARAM;
+        } else {
+            /* TODO: Check ret */
+            int ret;
+            ret = bladerf_set_txvga2( state->curr_device, gain );
+        }
+    }
+    return rv;
 }
 
 struct printset_entry *get_printset_entry( char *name)
@@ -417,7 +610,7 @@ int cmd_set(struct cli_state *state, int argc, char **argv)
             rv = CMD_RET_INVPARAM;
         }
     } else {
-        printf( "%s: Invalid number of parameters (%d)\n", argv[0], argc);
+        invalid_argc( argv[0], argv[1], argc);
         rv = CMD_RET_INVPARAM;
     }
     return rv;

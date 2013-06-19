@@ -197,6 +197,22 @@ struct bladerf * bladerf_open(const char *dev_path)
     return _bladerf_open_info(dev_path, &i);
 }
 
+struct bladerf * bladerf_open_any()
+{
+    struct bladerf *ret = NULL;
+    struct bladerf_devinfo *devices;
+    ssize_t n_devices;
+
+    n_devices = bladerf_get_device_list(&devices);
+    if (n_devices > 0) {
+        ret = bladerf_open(devices[0].path);
+        bladerf_free_device_list(devices, n_devices);
+    }
+
+    return ret;
+}
+
+
 void bladerf_close(struct bladerf *dev)
 {
     if (dev) {

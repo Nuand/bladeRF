@@ -149,20 +149,7 @@ struct bladerf * bladerf_open(const char *dev_path);
  *
  * @return device handle on success, NULL on failure or no device found.
  */
-static inline struct bladerf * bladerf_open_any()
-{
-    struct bladerf *ret = NULL;
-    struct bladerf_devinfo *devices;
-    ssize_t n_devices;
-
-    n_devices = bladerf_get_device_list(&devices);
-    if (n_devices > 0) {
-        ret = bladerf_open(devices[0].path);
-        bladerf_free_device_list(devices, n_devices);
-    }
-
-    return ret;
-}
+struct bladerf * bladerf_open_any();
 
 /**
  * Close device
