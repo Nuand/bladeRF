@@ -40,8 +40,8 @@ struct bladeRF_firmware {
 #define BLADE_USB_TYPE_IN       0xC0
 #define BLADE_USB_TIMEOUT_MS    1000
 
-#define USB_NUAND_VENDOR_ID     0x04b4
-#define USB_NUAND_BLADERF_PRODUCT_ID    0x00f1
+#define USB_NUAND_VENDOR_ID     0x1d50
+#define USB_NUAND_BLADERF_PRODUCT_ID    0x6066
 #define NUM_CONCURRENT  8
 #define NUM_DATA_URB    (128)
 #define DATA_BUF_SZ     (1024*4)
