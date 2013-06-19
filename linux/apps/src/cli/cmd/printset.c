@@ -54,12 +54,107 @@ struct printset_entry printset_table[] = {
 
 int print_bandwidth(struct cli_state *state, int argc, char **argv)
 {
-    return CMD_RET_OK;
+    /* Usage: print bandwidth [<rx|tx>]*/
+    int rv = CMD_RET_OK, ret;
+    bladerf_module module = RX ;
+    unsigned int bw ;
+    if( argc == 3 ) {
+        if( strcasecmp( argv[2], "rx" ) == 0 ) {
+            module = RX;
+        } else if( strcasecmp( argv[2], "tx" ) == 0 ) {
+            module = TX;
+        } else {
+            printf( "%s: %s is not TX or RX - printing both\n", argv[0], argv[2] );
+        }
+    }
+
+    printf( "\n" ) ;
+
+    if( argc == 2 || module == RX ) {
+        /* TODO: Check ret */
+        ret = bladerf_get_bandwidth( state->curr_device, RX, &bw );
+        printf( "  RX Bandwidth: %9uHz\n", bw );
+    }
+
+    if( argc == 2 || module == TX ) {
+        /* TODO: Check ret */
+        ret = bladerf_get_bandwidth( state->curr_device, TX, &bw );
+        printf( "  TX Bandwidth: %9uHz\n", bw );
+    }
+
+    printf( "\n" );
+
+    return rv;
 }
 
 int set_bandwidth(struct cli_state *state, int argc, char **argv)
 {
-    return CMD_RET_OK;
+    /* Usage: set bandwidth [rx|tx] <bandwidth in Hz> */
+    int rv = CMD_RET_OK, ret;
+    bladerf_module module = RX;
+    unsigned int bw = 28000000, actual;
+
+    /* Check for extended help */
+    if( argc == 2 ) {
+        printf( "\n" );
+        printf( "Usage: set bandwidth [module] <bandwidth>\n" );
+        printf( "\n" );
+        printf( "    module         Optional argument to set single module bandwidth\n" );
+        printf( "    bandwidth      Bandwidth in Hz - will be rounded up to closest bandwidth\n" );
+        printf( "\n" );
+    }
+
+    /* Check for optional module */
+    else if( argc == 4 ) {
+        bool ok;
+        if( strcasecmp( argv[2], "rx" ) == 0 ) {
+            module = RX;
+        } else if( strcasecmp( argv[2], "tx" ) == 0 ) {
+            module = TX;
+        } else {
+            rv = CMD_RET_INVPARAM;
+        }
+        /* Parse bandwidth */
+        bw = str2uint( argv[3], 0, UINT_MAX, &ok );
+        if( !ok ) {
+            printf( "%s: %s is not a valid bandwidth\n", argv[0], argv[3] );
+            rv = CMD_RET_INVPARAM;
+        }
+    }
+
+    /* No module, just bandwidth */
+    else if( argc == 3 ) {
+        bool ok;
+        bw = str2uint( argv[2], 0, UINT_MAX, &ok );
+        if( !ok ) {
+            printf( "%s: %s is not a valid bandwidth\n", argv[0], argv[2] );
+            rv = CMD_RET_INVPARAM;
+        }
+    }
+
+    /* Problem parsing arguments? */
+    if( rv != CMD_RET_OK ) goto finish ;
+
+    printf( "\n" );
+
+    /* Lack of option, so set both or RX only */
+    if( argc == 3 || module == RX ) {
+        /* TODO: Check ret */
+        ret = bladerf_set_bandwidth( state->curr_device, RX, bw, &actual );
+        printf( "  Setting RX bandwidth - req:%9uHz actual:%9uHz\n",  bw, actual );
+    }
+
+    /* Lack of option, so set both or TX only */
+    if( argc == 3 || module == TX ) {
+        /* TODO: Check ret */
+        ret = bladerf_set_bandwidth( state->curr_device, TX, bw, &actual );
+        printf( "  Setting TX bandwidth - req:%9uHz actual:%9uHz\n", bw, actual );
+    }
+
+    printf( "\n" );
+
+finish:
+    return rv;
 }
 
 int print_config(struct cli_state *state, int argc, char **argv)
@@ -287,7 +382,7 @@ int cmd_set(struct cli_state *state, int argc, char **argv)
 int cmd_print(struct cli_state *state, int argc, char **argv)
 {
     /* Valid commands:
-        print bandwidth
+        print bandwidth <rx|tx>
         print config
         print frequency
         print gpio
@@ -306,21 +401,16 @@ int cmd_print(struct cli_state *state, int argc, char **argv)
         print txvga2
     */
     int rv = CMD_RET_OK;
-    if( argc == 2 ) {
-        struct printset_entry *entry = NULL;
+    struct printset_entry *entry = NULL;
 
-        entry = get_printset_entry( argv[1] );
+    entry = get_printset_entry( argv[1] );
 
-        if( entry ) {
-            /* Call the parameter printing function */
-            rv = entry->print(state, argc, argv);
-        } else {
-            /* Incorrect parameter to print */
-            printf( "%s: %s is not a valid parameter to print\n", argv[0], argv[1] );
-            rv = CMD_RET_INVPARAM;
-        }
+    if( entry ) {
+        /* Call the parameter printing function */
+        rv = entry->print(state, argc, argv);
     } else {
-        printf( "%s: Invalid number of parameters (%d)\n", argv[0], argc );
+        /* Incorrect parameter to print */
+        printf( "%s: %s is not a valid parameter to print\n", argv[0], argv[1] );
         rv = CMD_RET_INVPARAM;
     }
     return rv;
