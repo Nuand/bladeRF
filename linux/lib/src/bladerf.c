@@ -287,6 +287,7 @@ int bladerf_get_txvga1(struct bladerf *dev, int *gain)
     *gain = 0;
     /* TODO: Make return values for lms call and return it for failure */
     lms_txvga1_get_gain( dev, (int8_t *)gain );
+    *gain |= 0xffffff00 ;
     return 0;
 }
 

@@ -428,7 +428,7 @@ void lms_txvga2_get_gain( struct bladerf *dev, uint8_t *gain )
 
 void lms_txvga1_set_gain( struct bladerf *dev, int8_t gain )
 {
-    gain = -(gain+35) ;
+    gain = (gain+35) ;
     /* Since 0x41 is only VGA1GAIN, we don't need to RMW */
     lms_spi_write( dev, 0x41, gain&0x1f ) ;
     return ;
@@ -438,8 +438,9 @@ void lms_txvga1_get_gain( struct bladerf *dev, int8_t *gain )
 {
     uint8_t data ;
     lms_spi_read( dev, 0x41, &data ) ;
-    *gain = data&0x1f ;
-    *gain = (-*gain) + 35 ;
+    data = data&0x1f ;
+    *gain -= 35 ;
+    *gain += data ;
     return ;
 }
 

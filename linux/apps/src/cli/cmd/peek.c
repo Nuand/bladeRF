@@ -88,7 +88,7 @@ int cmd_peek(struct cli_state *state, int argc, char **argv)
             uint8_t val;
             for(; count > 0 && address < max_address; count-- ) {
                 ret = f( state->curr_device, (uint8_t)address, &val );
-                printf( "  %2.2x: %2.2x\n", address++, val );
+                printf( "  0x%2.2x: 0x%2.2x\n", address++, val );
             }
         }
 

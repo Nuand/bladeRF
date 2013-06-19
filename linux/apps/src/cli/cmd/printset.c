@@ -58,7 +58,11 @@ int print_bandwidth(struct cli_state *state, int argc, char **argv)
     int rv = CMD_RET_OK, ret;
     bladerf_module module = RX ;
     unsigned int bw ;
-    if( argc == 3 ) {
+    if( argc == 2 ) {
+        printf( "print bandwidth specialized help\n" ) ;
+    }
+
+    else if( argc == 3 ) {
         if( strcasecmp( argv[2], "rx" ) == 0 ) {
             module = RX;
         } else if( strcasecmp( argv[2], "tx" ) == 0 ) {
@@ -305,12 +309,50 @@ int set_trimdac(struct cli_state *state, int argc, char **argv)
 
 int print_txvga1(struct cli_state *state, int argc, char **argv)
 {
-    return CMD_RET_OK;
+    /* Usage: print txvga1 */
+    int rv = CMD_RET_OK, ret, gain;
+    if( argc != 2 ) {
+        printf( "%s: Ignoring %d extra parameters\n", argv[0], argc-2 );
+    }
+
+    ret = bladerf_get_txvga1( state->curr_device, &gain );
+
+    printf( "\n" );
+    printf( "  TXVGA1 Gain: %ddB\n", gain ) ;
+    printf( "\n" );
+
+    return rv;
 }
 
 int set_txvga1(struct cli_state *state, int argc, char **argv)
 {
-    return CMD_RET_OK;
+    /* Usage: set txvga1 <gain> */
+    int rv = CMD_RET_OK, gain;
+    if( argc == 2 ) {
+        printf( "set txvga1 specialized help\n" );
+    }
+
+    else if( argc == 3 ) {
+        bool ok ;
+        gain = str2int( argv[2], INT_MIN, INT_MAX, &ok );
+
+        if( !ok ) {
+            printf( "%s %s: %s is not a valid gain setting\n", argv[0], argv[1], argv[2] );
+            rv = CMD_RET_INVPARAM;
+        } else {
+            int ret ;
+            /* TODO: Check ret */
+            printf( "  Setting TXVGA1 to %d\n", gain );
+            ret = bladerf_set_txvga1( state->curr_device, gain );
+        }
+    }
+
+    else {
+        printf( "%s %s: Invalid number of arguments (%d)\n", argv[0], argv[1], argc );
+        rv = CMD_RET_INVPARAM;
+    }
+
+    return rv;
 }
 
 int print_txvga2(struct cli_state *state, int argc, char **argv)
@@ -358,7 +400,10 @@ int cmd_set(struct cli_state *state, int argc, char **argv)
        a nice usage note for that specific setting.
     */
     int rv = CMD_RET_OK;
-    if( argc > 1 ) {
+    if( state->curr_device == NULL ) {
+        rv = CMD_RET_NODEV;
+    }
+    else if( argc > 1 ) {
         struct printset_entry *entry = NULL;
 
         entry = get_printset_entry( argv[1] );
@@ -403,15 +448,20 @@ int cmd_print(struct cli_state *state, int argc, char **argv)
     int rv = CMD_RET_OK;
     struct printset_entry *entry = NULL;
 
-    entry = get_printset_entry( argv[1] );
-
-    if( entry ) {
-        /* Call the parameter printing function */
-        rv = entry->print(state, argc, argv);
+    if( state->curr_device == NULL ) {
+        rv = CMD_RET_NODEV;
     } else {
-        /* Incorrect parameter to print */
-        printf( "%s: %s is not a valid parameter to print\n", argv[0], argv[1] );
-        rv = CMD_RET_INVPARAM;
+
+        entry = get_printset_entry( argv[1] );
+
+        if( entry ) {
+            /* Call the parameter printing function */
+            rv = entry->print(state, argc, argv);
+        } else {
+            /* Incorrect parameter to print */
+            printf( "%s: %s is not a valid parameter to print\n", argv[0], argv[1] );
+            rv = CMD_RET_INVPARAM;
+        }
     }
     return rv;
 }
