@@ -546,20 +546,41 @@ begin
 
     nios_uart_rxd <= demod_ssd(demod_ssd'high) when demod_valid = '1' ;
 
-    toggle_led1 : process(c4_clock)
-        variable count : natural range 0 to 38_400_00 := 38_400_00 ;
+    toggle_led1 : process(fx3_pclk)
+        variable count : natural range 0 to 100_000_000 := 100_000_000 ;
     begin
-        if( rising_edge(c4_clock) ) then
+        if( rising_edge(fx3_pclk) ) then
             count := count - 1 ;
             if( count = 0 ) then
-                count := 38_400_00 ;
+                count := 100_000_00 ;
                 led(1) <= not led(1) ;
             end if ;
         end if ;
     end process ;
 
-    led(2) <= '0';
-    led(3) <= '1';
+    toggle_led2 : process(lms_rx_clock_out)
+        variable count : natural range 0 to 38_400_00 := 38_400_00 ;
+    begin
+        if( rising_edge(lms_rx_clock_out) ) then
+            count := count - 1 ;
+            if( count = 0 ) then
+                count := 38_400_00 ;
+                led(2) <= not led(2) ;
+            end if ;
+        end if ;
+    end process ;
+
+    toggle_led3 : process(lms_rx_iq_select)
+        variable count : natural range 0 to 19_200_000 := 19_200_000 ;
+    begin
+        if( rising_edge(lms_rx_iq_select) ) then
+            count := count - 1 ;
+            if( count = 0 ) then
+                count := 19_200_000 ;
+                led(3) <= not led(3) ;
+            end if ;
+        end if ;
+    end process ;
 
     lms_reset <= nios_gpio(0) ;
 
