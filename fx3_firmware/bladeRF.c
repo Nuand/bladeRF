@@ -34,6 +34,9 @@ CyU3PDmaChannel glChHandlebladeRFUARTtoU;   /* DMA Channel for U2P transfers */
 CyU3PDmaMultiChannel glChHandleMultiUtoP;
 CyU3PDmaMultiChannel glChHandleMultiPtoU;
 
+uint8_t glUsbConfiguration = 0;             /* Active USB configuration. */
+uint8_t glUsbInterface = 0;                 /* Active USB interface. */
+
 uint32_t glDMARxCount = 0;                  /* Counter to track the number of buffers received 
                                              * from USB during FPGA programming */
 
@@ -715,6 +718,12 @@ CyBool_t CyFxbladeRFApplnUSBSetupCB(uint32_t setupdat0, uint32_t setupdat1)
 
     if (bType == CY_U3P_USB_STANDARD_RQT)
     {
+        if (bRequest == CY_U3P_USB_SC_GET_INTERFACE) {
+                glEp0Buffer[0] = glUsbInterface;
+                CyU3PUsbSendEP0Data(wLength, glEp0Buffer);
+                isHandled = CyTrue;
+        }
+
         /* Handle suspend requests */
         if ((bTarget == CY_U3P_USB_TARGET_INTF) && ((bRequest == CY_U3P_USB_SC_SET_FEATURE)
                     || (bRequest == CY_U3P_USB_SC_CLEAR_FEATURE)) && (wValue == 0)) {
@@ -896,6 +905,7 @@ void CyFxbladeRFApplnUSBEventCB (CyU3PUsbEventType_t evtype, uint16_t evdata)
                 glEp0Idx = 0;
                 NuandFirmwareStart();
             }
+            glUsbInterface = interface;
         break;
 
         case CY_U3P_USB_EVENT_SETCONF:
@@ -967,7 +977,7 @@ void bladeRFInit(void)
     /* The fast enumeration is the easiest way to setup a USB connection,
      * where all enumeration phase is handled by the library. Only the
      * class / vendor requests need to be handled by the application. */
-    CyU3PUsbRegisterSetupCallback(CyFxbladeRFApplnUSBSetupCB, CyTrue);
+    CyU3PUsbRegisterSetupCallback(CyFxbladeRFApplnUSBSetupCB, CyFalse);
 
     /* Setup the callback to handle the USB events. */
     CyU3PUsbRegisterEventCallback(CyFxbladeRFApplnUSBEventCB);
