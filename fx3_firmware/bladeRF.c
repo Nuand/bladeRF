@@ -300,7 +300,7 @@ void UartBridgeStop(void)
 
     /* Destroy the channel */
     CyU3PDmaChannelDestroy(&glChHandlebladeRFUARTtoU);
-    CyU3PDmaChannelDestroy(&glChHandlebladeRFUARTtoU);
+    CyU3PDmaChannelDestroy(&glChHandlebladeRFUtoUART);
 
     /* Disable endpoints. */
     CyU3PMemSet((uint8_t *)&epCfg, 0, sizeof (epCfg));
@@ -318,6 +318,7 @@ void UartBridgeStop(void)
         CyU3PDebugPrint (4, "CyU3PSetEpConfig failed, Error code = %d\n", apiRetStatus);
         CyFxAppErrorHandler (apiRetStatus);
     }
+    CyU3PUartDeInit();
 }
 
 void CyFxGpioInit(void)
