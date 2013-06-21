@@ -296,8 +296,38 @@ int set_frequency(struct cli_state *state, int argc, char **argv)
 
 int print_gpio(struct cli_state *state, int argc, char **argv)
 {
-    /* TODO: Can't be implemented until gpio_read() is implemented */
-    return CMD_RET_OK;
+    int rv = CMD_RET_OK, ret ;
+    unsigned int val ;
+    if( argc != 2 ) {
+        printf( "%s %s: Ignoring extra arguments\n", argv[0], argv[1] );
+    }
+
+    /* TODO: Should this be exposed at this level? */
+    ret = gpio_read( state->curr_device, &val );
+    printf( "\n" );
+    printf( "  GPIO: 0x%8.8x\n", val );
+    printf( "\n" );
+    printf( "    %-20s%-10s\n", "LMS Enable:", val&0x01 ? "Enabled" : "Reset" ); // Active low
+    printf( "    %-20s%-10s\n", "LMS RX Enable:", val&0x02 ? "Enabled" : "Disabled" );
+    printf( "    %-20s%-10s\n", "LMS TX Enable:", val&0x04 ? "Enabled" : "Disabled" );
+    printf( "    %-20s", "TX Band:" );
+    if( ((val>>3)&3) == 2 ) {
+        printf( "Low Band (300M - 1.5GHz)\n" );
+    } else if( ((val>>3)&3) == 1 ) {
+        printf( "High Band (1.5GHz - 3.8GHz)\n" );
+    } else {
+        printf( "Invalid Band Selection!\n" );
+    }
+    printf( "    %-20s", "RX Band:" );
+    if( ((val>>5)&3) == 2 ) {
+        printf( "Low Band (300M - 1.5GHz)\n" );
+    } else if( ((val>>5)&3) == 1 ) {
+        printf( "High Band (1.5GHz - 3.8GHz)\n" );
+    } else {
+        printf( "Invalid Band Selection!\n" );
+    }
+    printf( "\n" );
+    return rv;
 }
 
 int set_gpio(struct cli_state *state, int argc, char **argv)
@@ -312,6 +342,7 @@ int set_gpio(struct cli_state *state, int argc, char **argv)
             printf( "%s %s: %s is not a valid value\n", argv[0], argv[1], argv[2] );
             rv = CMD_RET_INVPARAM;
         } else {
+            /* TODO: Should this be exposed at this level? */
             gpio_write( state->curr_device,val );
         }
     } else {
