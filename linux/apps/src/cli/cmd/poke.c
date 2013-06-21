@@ -80,7 +80,7 @@ int cmd_poke(struct cli_state *state, int argc, char **argv)
         if( rv == CMD_RET_OK && f ) {
             int ret;
             ret = f( state->curr_device, (uint8_t)address, (uint8_t)value );
-            printf( "  %2.2x: %2.2x\n", address, value );
+            printf( "  0x%2.2x: 0x%2.2x\n", address, value );
         }
 
     } else {
