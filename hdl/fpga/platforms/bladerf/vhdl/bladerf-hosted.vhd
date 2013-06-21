@@ -158,7 +158,7 @@ architecture hosted_bladerf of bladerf is
 
     signal tx_iq_idx : std_logic;
 
-    type m_state is (M_IDLE, M_IDLE_RD, M_IDLE_WR, M_READ, M_WRITE);
+    type m_state is (M_IDLE, M_IDLE_RD, M_IDLE_WR, M_IDLE_WR_1, M_IDLE_WR_2, M_IDLE_WR_3, M_READ, M_WRITE);
     signal current_state : m_state;
 
     attribute keep: boolean;
@@ -180,6 +180,9 @@ architecture hosted_bladerf of bladerf is
     attribute keep of rf_tx_fifo_enough: signal is true;
     attribute keep of rf_tx_fifo_cnt: signal is true;
     attribute keep of rf_tx_fifo_w: signal is true;
+    attribute keep of \38.4MHz\: signal is true;
+    attribute keep of rf_tx_fifo_data_iq_rr: signal is true;
+    attribute keep of rf_tx_fifo_q: signal is true;
 
     attribute noprune of dma_idle: signal is true;
     attribute noprune of rf_rx_fifo_cnt: signal is true;
@@ -191,6 +194,9 @@ architecture hosted_bladerf of bladerf is
     attribute noprune of rf_rx_fifo_full: signal is true;
     attribute noprune of rf_rx_fifo_clr: signal is true;
     --attribute noprune of lms_rx_clock: signal is true;
+    attribute noprune of \38.4MHz\: signal is true;
+    attribute noprune of rf_tx_fifo_data_iq_rr: signal is true;
+    attribute noprune of rf_tx_fifo_q: signal is true;
 
     attribute noprune of can_perform_rx: signal is true;
     attribute noprune of can_perform_tx: signal is true;
@@ -377,7 +383,7 @@ begin
     begin
         if( sys_rst = '1' ) then
             current_state <= M_IDLE;
-            rf_tx_next_dma <= '0';
+            rf_tx_next_dma <= '1';
             rf_rx_next_dma <= '0';
             rf_rx_dma_0 <= '0';
             rf_rx_dma_1 <= '0';
@@ -407,7 +413,7 @@ begin
                             -- if there is an problem with RX
                             dma_last_event <= DE_RX;
                         elsif( should_perform_tx = '1' ) then
-                            rf_fifo_rcnt <= to_signed(512, 13);
+                            rf_fifo_rcnt <= to_signed(511, 13);
 
                             if( rf_tx_next_dma = '0') then
                                 rf_tx_dma_2 <= '1';
@@ -417,7 +423,9 @@ begin
                                 rf_tx_dma_3 <= '1';
                             end if;
 
-                            rf_tx_next_dma <= not rf_tx_next_dma;
+                            --DMA thread 3 is always next
+                            --rf_tx_next_dma <= not rf_tx_next_dma;
+                            rf_tx_next_dma <= '1';
 
                             current_state <= M_IDLE_WR;
 
@@ -426,6 +434,12 @@ begin
                     end if;
 
                 when M_IDLE_WR =>
+                    current_state <= M_IDLE_WR_1;
+                when M_IDLE_WR_1 =>
+                    current_state <= M_IDLE_WR_2;
+                when M_IDLE_WR_2 =>
+                    current_state <= M_IDLE_WR_3;
+                when M_IDLE_WR_3 =>
                     current_state <= M_WRITE;
                 when M_WRITE =>
                     rf_tx_dma_2 <= '0';
