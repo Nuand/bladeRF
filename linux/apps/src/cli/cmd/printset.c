@@ -18,6 +18,8 @@ PRINTSET_DECL(config)
 PRINTSET_DECL(frequency)
 PRINTSET_DECL(gpio)
 PRINTSET_DECL(lmsregs)
+PRINTSET_DECL(lna)
+PRINTSET_DECL(lnagain)
 PRINTSET_DECL(loopback)
 PRINTSET_DECL(mimo)
 PRINTSET_DECL(pa)
@@ -38,6 +40,8 @@ struct printset_entry printset_table[] = {
     PRINTSET_ENTRY(frequency),
     PRINTSET_ENTRY(gpio),
     PRINTSET_ENTRY(lmsregs),
+    PRINTSET_ENTRY(lna),
+    PRINTSET_ENTRY(lnagain),
     PRINTSET_ENTRY(loopback),
     PRINTSET_ENTRY(mimo),
     PRINTSET_ENTRY(pa),
@@ -326,6 +330,67 @@ int print_lmsregs(struct cli_state *state, int argc, char **argv)
 int set_lmsregs(struct cli_state *state, int argc, char **argv)
 {
     return CMD_RET_OK;
+}
+
+int print_lna(struct cli_state *state, int argc, char **argv)
+{
+    return CMD_RET_OK;
+}
+
+int set_lna(struct cli_state *state, int argc, char **argv)
+{
+    return CMD_RET_OK;
+}
+
+int print_lnagain(struct cli_state *state, int argc, char **argv)
+{
+    int rv = CMD_RET_OK, ret;
+    bladerf_lna_gain gain;
+    if( argc != 2 ) {
+        printf( "%s %s: Ignoring extra arguments\n", argv[0], argv[1] );
+    }
+
+    /* TODO: Check ret */
+    ret = bladerf_get_lna_gain( state->curr_device, &gain );
+
+    printf( "\n" );
+    printf( "  LNA Gain: ");
+    switch(gain) {
+        case LNA_UNKNOWN: printf( "LNA_UNKNOWN\n" ); break;
+        case LNA_MID    : printf( "LNA_MID\n" ); break;
+        case LNA_MAX    : printf( "LNA_MAX\n" ); break;
+        case LNA_BYPASS : printf( "LNA_BYPASS\n"); break;
+    }
+    printf( "\n" ) ;
+    return rv;
+}
+
+int set_lnagain(struct cli_state *state, int argc, char **argv)
+{
+    int rv = CMD_RET_OK;
+    if ( argc == 2 ) {
+        printf( "set lnagain specialized help\n" );
+    } else if( argc != 3 ) {
+        printf( "%s %s: Invalid number of arguments (%d)\n", argv[0], argv[1], argc );
+        rv = CMD_RET_INVPARAM;
+    } else {
+        int ret ;
+        bladerf_lna_gain gain;
+        if( strcasecmp( argv[2], "max" ) == 0 ) {
+            gain = LNA_MAX;
+        } else if( strcasecmp( argv[2], "mid" ) == 0 ) {
+            gain = LNA_MID;
+        } else if( strcasecmp( argv[2], "bypass" ) == 0 ) {
+            gain = LNA_BYPASS;
+        } else {
+            printf( "%s %s: %s is not a valid gain setting, so using MAX instead\n", argv[0], argv[1], argv[2] );
+            gain = LNA_MAX;
+        }
+        /* TODO: Check ret */
+        ret = bladerf_set_lna_gain( state->curr_device, gain );
+    }
+
+    return rv;
 }
 
 int print_loopback(struct cli_state *state, int argc, char **argv)
