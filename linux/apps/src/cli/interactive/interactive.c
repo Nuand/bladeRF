@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <libtecla.h>
 #include "interactive.h"
 #include "cmd.h"
@@ -22,12 +23,20 @@ int interactive(struct cli_state *s)
     const char *error;
 
     gl = new_GetLine(CLI_MAX_LINE_LEN, CLI_MAX_HIST_LEN);
-    /* TODO trap SIGINT and SIGTERM - use these to exit cleanly as if
-     * we have received a "quit"/"exit" command */
 
     if (!gl) {
         perror("new_GetLine");
         return 2;
+    }
+
+    /* Try to set up a clean exit on these signals. If it fails, we'll
+     * trudge along with a warning */
+    status = gl_trap_signal(gl, SIGINT, GLS_DONT_FORWARD, GLS_ABORT, EINTR);
+    status |= gl_trap_signal(gl, SIGTERM, GLS_DONT_FORWARD, GLS_ABORT, EINTR);
+    status |= gl_trap_signal(gl, SIGQUIT, GLS_DONT_FORWARD, GLS_ABORT, EINTR);
+
+    if (status) {
+        fprintf(stderr, "Warning: Failed to set up signal handlers.\n");
     }
 
     status = 0;
@@ -36,9 +45,9 @@ int interactive(struct cli_state *s)
            /* TODO: Change the prompt based on which device is open */
         }
         line = gl_get_line(gl, CLI_DEFAULT_PROMPT, NULL, 0);
-        if (!line)
+        if (!line) {
             break;
-        else {
+        } else {
             status = cmd_handle( s, line );
 
             if (status) {
