@@ -31,7 +31,11 @@ CyU3PDmaChannel glChHandlebladeRFPtoU;      /* DMA Channel for RF P2U (P-Port to
 CyU3PDmaChannel glChHandlebladeRFUtoUART;   /* DMA Channel for U2P transfers */
 CyU3PDmaChannel glChHandlebladeRFUARTtoU;   /* DMA Channel for U2P transfers */
 
+#ifdef TX_MULTI
 CyU3PDmaMultiChannel glChHandleMultiUtoP;
+#else
+CyU3PDmaChannel glChHandleUtoP;
+#endif
 CyU3PDmaMultiChannel glChHandleMultiPtoU;
 
 uint8_t glUsbConfiguration = 0;             /* Active USB configuration. */
@@ -482,6 +486,7 @@ void NuandRFLinkStart(void)
         CyFxAppErrorHandler (apiRetStatus);
     }
 
+    // multi variant
     dmaMultiConfig.size = size * 2;
     dmaMultiConfig.count = 22;
     dmaMultiConfig.validSckCount = 2;
@@ -496,7 +501,26 @@ void NuandRFLinkStart(void)
     dmaMultiConfig.consHeader = 0;
     dmaMultiConfig.prodAvailCount = 0;
 
+    // non multi variant
+    CyU3PMemSet((uint8_t *)&dmaCfg, 0, sizeof(dmaCfg));
+    dmaCfg.size  = size * 2;
+    dmaCfg.count = 22;
+    dmaCfg.prodSckId = BLADE_RF_SAMPLE_EP_PRODUCER_USB_SOCKET;
+    dmaCfg.consSckId = CY_U3P_PIB_SOCKET_3;
+    dmaCfg.dmaMode = CY_U3P_DMA_MODE_BYTE;
+    dmaCfg.notification = 0;
+    dmaCfg.cb = 0;
+    dmaCfg.prodHeader = 0;
+    dmaCfg.prodFooter = 0;
+    dmaCfg.consHeader = 0;
+    dmaCfg.prodAvailCount = 0;
+
+#if TX_MULTI
     apiRetStatus = CyU3PDmaMultiChannelCreate(&glChHandleMultiUtoP, CY_U3P_DMA_TYPE_AUTO_ONE_TO_MANY, &dmaMultiConfig);
+#else
+    apiRetStatus = CyU3PDmaChannelCreate(&glChHandleUtoP, CY_U3P_DMA_TYPE_AUTO, &dmaCfg);
+#endif
+
     if (apiRetStatus != CY_U3P_SUCCESS) {
         CyU3PDebugPrint(4, "CyU3PDmaMultiChannelCreate failed, Error code = %d\n", apiRetStatus);
         CyFxAppErrorHandler(apiRetStatus);
@@ -519,7 +543,11 @@ void NuandRFLinkStart(void)
 
     /* Set DMA channel transfer size. */
 
+#ifdef TX_MULTI
     apiRetStatus = CyU3PDmaMultiChannelSetXfer (&glChHandleMultiUtoP, BLADE_DMA_TX_SIZE, 0);
+#else
+    apiRetStatus = CyU3PDmaChannelSetXfer (&glChHandleUtoP, BLADE_DMA_TX_SIZE);
+#endif
 
     if (apiRetStatus != CY_U3P_SUCCESS) {
         CyU3PDebugPrint(4, "CyU3PDmaChannelSetXfer Failed, Error code = %d\n", apiRetStatus);
@@ -551,7 +579,11 @@ void NuandRFLinkStop (void)
     CyU3PUsbFlushEp(BLADE_RF_SAMPLE_EP_CONSUMER);
 
     /* Destroy the channels */
+#ifdef TX_MUTLI
     CyU3PDmaMultiChannelDestroy(&glChHandleMultiUtoP);
+#else
+    CyU3PDmaChannelDestroy(&glChHandleUtoP);
+#endif
     CyU3PDmaMultiChannelDestroy(&glChHandleMultiPtoU);
 
     /* Disable endpoints. */
@@ -780,7 +812,7 @@ CyBool_t CyFxbladeRFApplnUSBSetupCB(uint32_t setupdat0, uint32_t setupdat1)
         {
             case BLADE_USB_CMD_QUERY_VERSION:
                 ver.major = 0;
-                ver.minor = 2;
+                ver.minor = 3;
                 apiRetStatus = CyU3PUsbSendEP0Data(sizeof(ver), &ver);
             break;
 
