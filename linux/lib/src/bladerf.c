@@ -599,8 +599,9 @@ int bladerf_load_fpga(struct bladerf *dev, const char *fpga)
     }
 
     /* FPGA is already programmed */
-    if (fpga_status)
-        return 1;
+    if (fpga_status) {
+        printf( "FPGA aleady loaded - reloading!\n" );
+    }
 
     fpga_fd = open(fpga, 0);
     if (fpga_fd < 0) {
