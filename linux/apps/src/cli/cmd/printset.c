@@ -445,26 +445,84 @@ int set_refclk(struct cli_state *state, int argc, char **argv)
 
 int print_rxvga1(struct cli_state *state, int argc, char **argv)
 {
-    return CMD_RET_OK;
+    int rv = CMD_RET_OK, ret, gain;
+    if( argc != 2 ) {
+        printf( "%s %s: Ignoring extra arguments\n", argv[0], argv[1] );
+    }
+
+    /* TODO: Check gain */
+    ret = bladerf_get_rxvga1( state->curr_device, &gain );
+
+    printf( "\n" );
+    printf( "  RXVGA1 Gain: %3d\n", gain );
+    printf( "\n" );
+    return rv;
 }
 
 int set_rxvga1(struct cli_state *state, int argc, char **argv)
 {
-    return CMD_RET_OK;
+    int rv = CMD_RET_OK, ret, gain;
+    if( argc == 2 ) {
+        printf( "set rxvga1 specialized help\n" );
+    } else if( argc != 3 ) {
+        printf( "%s %s: Invalid number of arguments (%d)\n", argv[0], argv[1], argc );
+        rv = CMD_RET_INVPARAM;
+    } else {
+        bool ok;
+        gain = str2int( argv[2], INT_MIN, INT_MAX, &ok );
+        if( !ok ) {
+            printf( "%s %s: %s is not a valid gain\n", argv[0], argv[1], argv[2] );
+            rv = CMD_RET_INVPARAM;
+        } else {
+            /* TODO: Check ret */
+            ret = bladerf_set_rxvga1( state->curr_device, gain );
+        }
+    }
+    return rv;
 }
 
 int print_rxvga2(struct cli_state *state, int argc, char **argv)
 {
-    return CMD_RET_OK;
+    int rv = CMD_RET_OK, ret, gain;
+    if( argc != 2 ) {
+        printf( "%s %s: Ignoring extra arguments\n", argv[0], argv[1] );
+    }
+
+    /* TODO: Check ret */
+    ret = bladerf_get_rxvga2( state->curr_device, &gain );
+
+    printf( "\n" );
+    printf( "  RXVGA2 Gain: %3ddB\n", gain );
+    printf( "\n" );
+
+    return rv;
 }
 
 int set_rxvga2(struct cli_state *state, int argc, char **argv)
 {
-    return CMD_RET_OK;
+    int rv = CMD_RET_OK, ret, gain;
+    if( argc == 2 ) {
+        printf( "set rxvga2 specialized help\n" );
+    } else if( argc != 3 ) {
+        printf( "%s %s: Invalid number of arguments (%d)\n", argv[0], argv[1], argc );
+        rv = CMD_RET_INVPARAM;
+    } else {
+        bool ok;
+        gain = str2int( argv[2], INT_MIN, INT_MAX, &ok );
+        if( !ok ) {
+            printf( "%s %s: %s is not a valid gain\n", argv[0], argv[1], argv[2] );
+            rv = CMD_RET_INVPARAM;
+        } else {
+            /* TODO: Check ret */
+            ret = bladerf_set_rxvga2( state->curr_device, gain );
+        }
+    }
+    return rv;
 }
 
 int print_samplerate(struct cli_state *state, int argc, char **argv)
 {
+    /* TODO: Can't do this until we can read back from the si5338 */
     return CMD_RET_OK;
 }
 

@@ -252,9 +252,9 @@ void lms_rxvga1_set_gain(struct bladerf *dev, uint8_t gain)
         gain = 120 ;
     }
     lms_spi_read( dev, 0x76, &data ) ;
-    data &= ~(0x3f) ;
+    data &= ~(0x7f) ;
     data |= gain ;
-    lms_spi_write( dev, 0x76, gain&0x3f ) ;
+    lms_spi_write( dev, 0x76, gain&0x7f ) ;
     return ;
 }
 
@@ -263,7 +263,7 @@ void lms_rxvga1_get_gain(struct bladerf *dev, uint8_t *gain)
 {
     uint8_t data ;
     lms_spi_read( dev, 0x76, &data ) ;
-    *gain = data&0x3f ;
+    *gain = data&0x7f ;
     return ;
 }
 

@@ -339,7 +339,8 @@ int bladerf_get_rxvga1(struct bladerf *dev, int *gain)
 int bladerf_set_rxvga2(struct bladerf *dev, int gain)
 {
     /* TODO: Make return values for lms call and return it for failure */
-    lms_rxvga2_set_gain( dev, (uint8_t)gain );
+    /* Raw value to write which is 3dB per unit */
+    lms_rxvga2_set_gain( dev, (uint8_t)gain/3 );
     return 0;
 }
 
@@ -348,6 +349,8 @@ int bladerf_get_rxvga2(struct bladerf *dev, int *gain)
     *gain = 0;
     /* TODO: Make return values for lms call and return it for failure */
     lms_rxvga2_get_gain( dev, (uint8_t *)gain );
+    /* Value returned from LMS lib is just the raw value, which is 3dB/unit */
+    *gain = *gain*3 ;
     return 0;
 }
 
