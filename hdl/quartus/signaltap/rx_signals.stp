@@ -1,0 +1,245 @@
+<session sof_file="">
+  <display_tree gui_logging_enabled="0">
+    <display_branch instance="auto_signaltap_0" signal_set="USE_GLOBAL_TEMP" trigger="USE_GLOBAL_TEMP"/>
+  </display_tree>
+  <global_info>
+    <single attribute="active instance" value="0"/>
+    <multi attribute="frame size" size="2" value="1192,711"/>
+    <single attribute="jtag widget visible" value="1"/>
+    <multi attribute="jtag widget size" size="2" value="400,145"/>
+    <single attribute="instance widget visible" value="1"/>
+    <single attribute="config widget visible" value="1"/>
+    <single attribute="hierarchy widget visible" value="1"/>
+    <single attribute="data log widget visible" value="1"/>
+  </global_info>
+  <instance entity_name="sld_signaltap" is_auto_node="yes" name="auto_signaltap_0" source_file="sld_signaltap.vhd">
+    <node_ip_info instance_id="0" mfg_id="110" node_id="0" version="6"/>
+    <position_info>
+      <single attribute="active tab" value="1"/>
+    </position_info>
+    <signal_set global_temp="1" name="signal_set: 2013/06/21 17:48:20  #0">
+      <clock name="lms_rx_clock_out" polarity="posedge" tap_mode="classic"/>
+      <config ram_type="M4K" reserved_data_nodes="0" reserved_storage_qualifier_nodes="0" reserved_trigger_nodes="0" sample_depth="8192" trigger_in_enable="no" trigger_out_enable="no"/>
+      <top_entity/>
+      <signal_vec>
+        <trigger_input_vec>
+          <wire name="rf_rx_fifo_full" tap_mode="classic" type="combinatorial"/>
+          <wire name="rf_rx_fifo_sample[0]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[10]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[11]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[12]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[13]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[14]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[15]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[16]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[17]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[18]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[19]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[1]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[20]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[21]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[22]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[23]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[24]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[25]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[26]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[27]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[28]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[29]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[2]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[30]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[31]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[3]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[4]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[5]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[6]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[7]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[8]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[9]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_w" tap_mode="classic" type="register"/>
+        </trigger_input_vec>
+        <data_input_vec>
+          <wire name="rf_rx_fifo_full" tap_mode="classic" type="combinatorial"/>
+          <wire name="rf_rx_fifo_sample[0]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[10]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[11]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[12]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[13]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[14]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[15]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[16]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[17]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[18]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[19]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[1]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[20]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[21]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[22]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[23]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[24]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[25]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[26]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[27]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[28]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[29]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[2]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[30]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[31]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[3]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[4]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[5]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[6]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[7]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[8]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[9]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_w" tap_mode="classic" type="register"/>
+        </data_input_vec>
+        <storage_qualifier_input_vec>
+          <wire name="rf_rx_fifo_full" tap_mode="classic" type="combinatorial"/>
+          <wire name="rf_rx_fifo_sample[0]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[10]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[11]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[12]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[13]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[14]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[15]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[16]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[17]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[18]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[19]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[1]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[20]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[21]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[22]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[23]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[24]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[25]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[26]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[27]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[28]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[29]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[2]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[30]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[31]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[3]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[4]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[5]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[6]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[7]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[8]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_sample[9]" tap_mode="classic" type="register"/>
+          <wire name="rf_rx_fifo_w" tap_mode="classic" type="register"/>
+        </storage_qualifier_input_vec>
+      </signal_vec>
+      <presentation>
+        <data_view>
+          <bus is_signal_inverted="no" link="all" name="rf_rx_fifo_sample" order="msb_to_lsb" radix="hex" state="collapse" type="register">
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[31]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[30]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[29]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[28]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[27]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[26]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[25]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[24]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[23]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[22]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[21]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[20]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[19]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[18]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[17]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[16]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[15]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[14]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[13]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[12]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[11]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[10]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[9]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[8]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[7]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[6]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[5]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[4]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[3]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[2]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[1]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[0]"/>
+          </bus>
+          <net is_signal_inverted="no" name="rf_rx_fifo_full"/>
+          <net is_signal_inverted="no" name="rf_rx_fifo_w"/>
+        </data_view>
+        <setup_view>
+          <bus is_signal_inverted="no" link="all" name="rf_rx_fifo_sample" order="msb_to_lsb" radix="hex" state="collapse" type="register">
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[31]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[30]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[29]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[28]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[27]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[26]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[25]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[24]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[23]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[22]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[21]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[20]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[19]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[18]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[17]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[16]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[15]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[14]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[13]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[12]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[11]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[10]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[9]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[8]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[7]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[6]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[5]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[4]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[3]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[2]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[1]"/>
+            <net is_signal_inverted="no" name="rf_rx_fifo_sample[0]"/>
+          </bus>
+          <net is_signal_inverted="no" name="rf_rx_fifo_full"/>
+          <net is_signal_inverted="no" name="rf_rx_fifo_w"/>
+        </setup_view>
+      </presentation>
+      <trigger attribute_mem_mode="false" gap_record="true" global_temp="1" name="trigger: 2013/06/21 17:48:20  #1" position="pre" power_up_trigger_mode="false" record_data_gap="true" segment_size="2048" storage_mode="off" storage_qualifier_disabled="no" storage_qualifier_port_is_pin="true" storage_qualifier_port_name="auto_stp_external_storage_qualifier" storage_qualifier_port_tap_mode="classic" trigger_in="dont_care" trigger_out="active high" trigger_type="circular">
+        <power_up_trigger position="pre" storage_qualifier_disabled="no" trigger_in="dont_care" trigger_out="active high"/>
+        <events use_custom_flow_control="no">
+          <level enabled="yes" name="condition1" type="basic">
+            <power_up enabled="yes">
+            </power_up>
+            <op_node/>
+          </level>
+        </events>
+        <storage_qualifier_events>
+          <transitional>0000000000000000000000000000000000
+            <pwr_up_transitional>0000000000000000000000000000000000</pwr_up_transitional>
+          </transitional>
+          <storage_qualifier_level type="basic">
+            <power_up>
+            </power_up>
+            <op_node/>
+          </storage_qualifier_level>
+          <storage_qualifier_level type="basic">
+            <power_up>
+            </power_up>
+            <op_node/>
+          </storage_qualifier_level>
+          <storage_qualifier_level type="basic">
+            <power_up>
+            </power_up>
+            <op_node/>
+          </storage_qualifier_level>
+        </storage_qualifier_events>
+      </trigger>
+    </signal_set>
+  </instance>
+  <mnemonics/>
+</session>
