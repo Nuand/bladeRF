@@ -36,7 +36,12 @@ CyU3PDmaMultiChannel glChHandleMultiUtoP;
 #else
 CyU3PDmaChannel glChHandleUtoP;
 #endif
+
+#ifdef RX_MULTI
 CyU3PDmaMultiChannel glChHandleMultiPtoU;
+#else
+CyU3PDmaChannel glChHandlePtoU;
+#endif
 
 uint8_t glUsbConfiguration = 0;             /* Active USB configuration. */
 uint8_t glUsbInterface = 0;                 /* Active USB interface. */
@@ -526,12 +531,18 @@ void NuandRFLinkStart(void)
         CyFxAppErrorHandler(apiRetStatus);
     }
 
+#ifdef RX_MULTI
     dmaMultiConfig.prodSckId[0] = CY_U3P_PIB_SOCKET_0;
     dmaMultiConfig.prodSckId[1] = CY_U3P_PIB_SOCKET_1;
     dmaMultiConfig.consSckId[0] = BLADE_RF_SAMPLE_EP_CONSUMER_USB_SOCKET;
     dmaMultiConfig.consSckId[1] = 0;
 
     apiRetStatus = CyU3PDmaMultiChannelCreate(&glChHandleMultiPtoU, CY_U3P_DMA_TYPE_AUTO_MANY_TO_ONE, &dmaMultiConfig);
+#else
+    dmaCfg.prodSckId = CY_U3P_PIB_SOCKET_0;
+    dmaCfg.consSckId = BLADE_RF_SAMPLE_EP_CONSUMER_USB_SOCKET;
+    apiRetStatus = CyU3PDmaChannelCreate(&glChHandlePtoU, CY_U3P_DMA_TYPE_AUTO, &dmaCfg);
+#endif
     if (apiRetStatus != CY_U3P_SUCCESS) {
         CyU3PDebugPrint(4, "CyU3PDmaMultiChannelCreate failed, Error code = %d\n", apiRetStatus);
         CyFxAppErrorHandler(apiRetStatus);
@@ -554,7 +565,11 @@ void NuandRFLinkStart(void)
         CyFxAppErrorHandler(apiRetStatus);
     }
 
+#ifdef RX_MULTI
     apiRetStatus = CyU3PDmaMultiChannelSetXfer (&glChHandleMultiPtoU, BLADE_DMA_TX_SIZE, 0);
+#else
+    apiRetStatus = CyU3PDmaChannelSetXfer (&glChHandlePtoU, BLADE_DMA_TX_SIZE);
+#endif
     if (apiRetStatus != CY_U3P_SUCCESS) {
         CyU3PDebugPrint(4, "CyU3PDmaChannelSetXfer Failed, Error code = %d\n", apiRetStatus);
         CyFxAppErrorHandler(apiRetStatus);
@@ -584,7 +599,11 @@ void NuandRFLinkStop (void)
 #else
     CyU3PDmaChannelDestroy(&glChHandleUtoP);
 #endif
+#ifdef RX_MULTI
     CyU3PDmaMultiChannelDestroy(&glChHandleMultiPtoU);
+#else
+    CyU3PDmaChannelDestroy(&glChHandlePtoU);
+#endif
 
     /* Disable endpoints. */
     CyU3PMemSet ((uint8_t *)&epCfg, 0, sizeof (epCfg));
