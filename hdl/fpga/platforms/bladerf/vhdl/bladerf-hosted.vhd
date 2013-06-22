@@ -181,6 +181,7 @@ architecture hosted_bladerf of bladerf is
     attribute keep of rf_tx_fifo_cnt: signal is true;
     attribute keep of rf_tx_fifo_w: signal is true;
     attribute keep of \38.4MHz\: signal is true;
+    attribute keep of \76.8MHz\: signal is true;
     attribute keep of rf_tx_fifo_data_iq_rr: signal is true;
     attribute keep of rf_tx_fifo_q: signal is true;
 
@@ -195,6 +196,7 @@ architecture hosted_bladerf of bladerf is
     attribute noprune of rf_rx_fifo_clr: signal is true;
     --attribute noprune of lms_rx_clock: signal is true;
     attribute noprune of \38.4MHz\: signal is true;
+    attribute noprune of \76.8MHz\: signal is true;
     attribute noprune of rf_tx_fifo_data_iq_rr: signal is true;
     attribute noprune of rf_tx_fifo_q: signal is true;
 
@@ -406,7 +408,9 @@ begin
                                 rf_rx_dma_1 <= '1';
                             end if;
 
-                            rf_rx_next_dma <= not rf_rx_next_dma;
+                            -- DMA thread 0 is always next
+                            --rf_rx_next_dma <= not rf_rx_next_dma;
+                            rf_rx_next_dma <= '0';
 
                             current_state <= M_IDLE_RD;
                             -- set this to DE_RX unconditionally so that no hangs occur
