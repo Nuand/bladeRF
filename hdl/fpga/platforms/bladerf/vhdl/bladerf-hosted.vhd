@@ -250,8 +250,8 @@ begin
       port map (
         aclr      => rf_tx_fifo_clr,
         data      => rf_tx_fifo_data,
-        rdclk     => \38.4MHz\,
-        rdreq     => dma_tx_en_rr,
+        rdclk     => c4_tx_clock,
+        rdreq     => dma_tx_en_rr and lms_tx_iq_select,
         wrclk     => fx3_pclk,
         wrreq     => rf_tx_fifo_w,
         q         => rf_tx_fifo_q,
@@ -267,25 +267,25 @@ begin
 
     rf_tx_fifo_w <= '1' when (current_state = M_WRITE) else '0';
 
-    process(sys_rst, c4_clock)
+    process(sys_rst, c4_tx_clock)
     begin
         if( sys_rst = '1' ) then
             dma_tx_en_r <= '0';
             dma_tx_en_rr <= '0';
-        elsif( rising_edge(c4_clock) ) then
+        elsif( rising_edge(c4_tx_clock) ) then
             dma_tx_en_r <= dma_tx_en;
             dma_tx_en_rr <= dma_tx_en_r;
         end if;
     end process;
 
-    process(sys_rst, \76.8MHz\)
+    process(sys_rst, c4_tx_clock)
     begin
         if( sys_rst = '1' ) then
             rf_tx_en_iq_r <= '0';
             rf_tx_en_iq_rr <= '0';
             rf_tx_fifo_data_iq_r <= (others => '0');
             rf_tx_fifo_data_iq_rr <= (others => '0');
-        elsif( rising_edge(\76.8MHz\) ) then
+        elsif( rising_edge(c4_tx_clock) ) then
             rf_tx_en_iq_r <= not rf_tx_fifo_empty;
             rf_tx_en_iq_rr <= rf_tx_en_iq_r;
             rf_tx_fifo_data_iq_r <= rf_tx_fifo_q;
@@ -293,11 +293,11 @@ begin
         end if;
     end process;
 
-    process(sys_rst, \76.8MHz\)
+    process(sys_rst, c4_tx_clock)
     begin
         if( sys_rst = '1' ) then
             tx_iq_idx <= '0';
-        elsif( rising_edge(\76.8MHz\) ) then
+        elsif( rising_edge(c4_tx_clock) ) then
             if (rf_tx_en_iq_rr = '1') then
                 tx_iq_idx <= not tx_iq_idx;
             elsif (rf_tx_en_iq_rr = '0') then
@@ -398,7 +398,7 @@ begin
                 when M_IDLE =>
                     if( dma_idle = '1' ) then
                         if( should_perform_rx = '1' ) then
-                            rf_fifo_rcnt <= to_signed(512, 13);
+                            rf_fifo_rcnt <= to_signed(511, 13);
 
                             if ( rf_rx_next_dma = '0') then
                                 rf_rx_dma_0 <= '1';
@@ -605,7 +605,7 @@ begin
     lms_rx_enable       <= nios_gpio(1) ;
 
     lms_tx_enable       <= nios_gpio(2) ;
-    lms_tx_iq_select    <= not lms_tx_iq_select when rising_edge(\76.8MHz\) ;
+    lms_tx_iq_select    <= not lms_tx_iq_select when rising_edge(c4_tx_clock) ;
 
     lms_tx_v            <= nios_gpio(4 downto 3) ;
     lms_rx_v            <= nios_gpio(6 downto 5) ;
