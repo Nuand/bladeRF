@@ -250,8 +250,13 @@ int main()
   };
 
   struct uart_cmd {
-      unsigned char addr;
-      unsigned char data;
+	  union {
+		  struct {
+			  unsigned char addr;
+			  unsigned char data;
+		  };
+		  unsigned short word;
+	  };
   };
 
   // Set the prescaler for 384kHz with a 38.4MHz clock
@@ -352,9 +357,18 @@ int main()
 				  }
 				  if ((mode & UART_PKT_MODE_DEV_MASK) == UART_PKT_DEV_GPIO) {
 					  if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_READ) {
-						  cmd_ptr->data = IORD_ALTERA_AVALON_PIO_DATA(PIO_0_BASE) ;
+						  cmd_ptr->word = IORD_ALTERA_AVALON_PIO_DATA(PIO_0_BASE) ;
 					  } else if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_WRITE) {
-						  IOWR_ALTERA_AVALON_PIO_DATA(PIO_0_BASE, cmd_ptr->data);
+						  IOWR_ALTERA_AVALON_PIO_DATA(PIO_0_BASE, cmd_ptr->word);
+						  cmd_ptr->data = 0;
+					  } else {
+						  cmd_ptr->addr = 0;
+						  cmd_ptr->data = 0;
+					  }
+				  }
+				  if ((mode & UART_PKT_MODE_DEV_MASK) == UART_PKT_DEV_VCTCXO) {
+					  if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_WRITE) {
+						  dac_write (cmd_ptr->word);
 						  cmd_ptr->data = 0;
 					  } else {
 						  cmd_ptr->addr = 0;
