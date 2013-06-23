@@ -717,7 +717,7 @@ leave_fw:
             if (cmd == BLADE_LMS_WRITE || cmd == BLADE_LMS_READ)
                 targetdev = UART_PKT_DEV_LMS;
             if (cmd == BLADE_VCTCXO_WRITE)
-                targetdev = UART_PKT_MODE_DIR_WRITE;
+                targetdev = UART_PKT_DEV_VCTCXO;
 
             if (cmd == BLADE_LMS_WRITE || cmd == BLADE_GPIO_WRITE || cmd == BLADE_SI5338_WRITE || cmd == BLADE_VCTCXO_WRITE) {
                 buf[1] = UART_PKT_MODE_DIR_WRITE | targetdev | 0x01;

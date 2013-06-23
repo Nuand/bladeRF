@@ -77,6 +77,11 @@ struct uart_pkt {
 };
 
 struct uart_cmd {
-    unsigned char addr;
-    unsigned char data;
+    union {
+        struct {
+            unsigned char addr;
+            unsigned char data;
+        };
+        unsigned short word;
+    };
 };
