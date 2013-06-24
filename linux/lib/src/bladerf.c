@@ -230,13 +230,12 @@ int bladerf_set_loopback(struct bladerf *dev, bladerf_loopback l)
 
 int bladerf_set_sample_rate(struct bladerf *dev, bladerf_module module, unsigned int rate, unsigned int *actual)
 {
-    /* TODO: Program the Si5338 to be 2x the desired sample rate */
     int ret = -1;
     /* TODO: Use module to pick the correct clock output to change */
     if( module == TX ) {
-        ret = si5338_set_tx_freq(dev, rate);
+        ret = si5338_set_tx_freq(dev, rate<<1);
     } else {
-        ret = si5338_set_rx_freq(dev, rate);
+        ret = si5338_set_rx_freq(dev, rate<<1);
     }
     *actual = rate;
     return ret;
