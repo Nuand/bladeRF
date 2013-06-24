@@ -735,3 +735,13 @@ int gpio_write(struct bladerf *dev, uint32_t val)
     uc.data = val;
     return ioctl(dev->fd, BLADE_GPIO_WRITE, &uc);
 }
+
+/*------------------------------------------------------------------------------
+ * VCTCXO DAC register write
+ */
+int dac_write(struct bladerf *dev, uint16_t val)
+{
+    struct uart_cmd uc;
+    uc.word = val;
+    return ioctl(dev->fd, BLADE_VCTCXO_WRITE, &uc);
+}

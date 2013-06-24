@@ -654,6 +654,16 @@ int gpio_write(struct bladerf *dev, uint32_t val);
 
 /* @} (End of GPIO_CTL) */
 
+/**
+ * Write value to VCTCXO DAC
+ *
+ * @param   dev         Device handle
+ * @param   val         Data to write to DAC register
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+int dac_write(struct bladerf *dev, uint16_t val);
+
 #ifdef __cplusplus
 }
 #endif
