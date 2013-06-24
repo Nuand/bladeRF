@@ -682,6 +682,18 @@ int bladerf_load_fpga(struct bladerf *dev, const char *fpga)
  * Si5338 register read / write functions
  */
 
+int si5338_i2c_read(struct bladerf *dev, uint8_t address, uint8_t *val)
+{
+    int ret;
+    struct uart_cmd uc;
+    address &= 0x7f;
+    uc.addr = address;
+    uc.data = 0xff;
+    ret = ioctl(dev->fd, BLADE_SI5338_READ, &uc);
+    *val = uc.data;
+    return ret;
+}
+
 int si5338_i2c_write(struct bladerf *dev, uint8_t address, uint8_t val)
 {
     struct uart_cmd uc;
