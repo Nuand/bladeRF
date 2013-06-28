@@ -401,7 +401,8 @@ ssize_t bladerf_send_c12(struct bladerf *dev, int16_t *samples, size_t n)
 
 ssize_t bladerf_send_c16(struct bladerf *dev, int16_t *samples, size_t n)
 {
-    return 0;
+    int ret = write( dev->fd, samples, 4*n );
+    return n;
 }
 
 ssize_t bladerf_read_c16(struct bladerf *dev,
@@ -754,5 +755,6 @@ int dac_write(struct bladerf *dev, uint16_t val)
 {
     struct uart_cmd uc;
     uc.word = val;
+    printf( "Writing %d to VCTCXO\n", val );
     return ioctl(dev->fd, BLADE_VCTCXO_WRITE, &uc);
 }

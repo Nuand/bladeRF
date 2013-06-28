@@ -617,7 +617,26 @@ int print_trimdac(struct cli_state *state, int argc, char **argv)
 
 int set_trimdac(struct cli_state *state, int argc, char **argv)
 {
-    /* TODO: Can't be implemented until dac_write() is written */
+    int rv = CMD_RET_OK;
+    unsigned int val;
+
+    if( argc == 2 ) {
+        printf( "set trimdac specialized help here\n" );
+    } else if( argc != 3 ) {
+        invalid_argc( argv[0], argv[1], argc );
+        rv = CMD_RET_INVPARAM;
+    } else {
+        bool ok;
+        val = str2uint( argv[2], 0, 65535, &ok );
+        if( !ok ) {
+            printf( "%s %s: %s is not a valid VCTCXO DAC value\n", argv[0], argv[1], argv[2] );
+            rv = CMD_RET_INVPARAM;
+        } else {
+            int ret;
+            /* TODO: Check ret */
+            ret = dac_write( state->curr_device, val );
+        }
+    }
     return CMD_RET_OK;
 }
 
