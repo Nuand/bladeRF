@@ -212,8 +212,8 @@ begin
 
     qualifier <= qualifier + 1 when rising_edge(\38.4MHz\) ;
 
-    rx_i <= lms_rx_data when rising_edge(lms_rx_clock_out) and lms_rx_iq_select = '1' ;
-    rx_q <= lms_rx_data when rising_edge(lms_rx_clock_out) and lms_rx_iq_select = '0' ;
+    rx_i <= lms_rx_data when rising_edge(lms_rx_clock_out) and lms_rx_iq_select = '0' ;
+    rx_q <= lms_rx_data when rising_edge(lms_rx_clock_out) and lms_rx_iq_select = '1' ;
 
     U_pll : entity work.pll
       port map (
