@@ -78,13 +78,13 @@ void lms_lpf_enable( struct bladerf *dev, lms_module_t mod, lms_bw_t bw )
     uint8_t data ;
     // Check to see which bandwidth we have selected
     lms_spi_read( dev, reg, &data ) ;
+    data |= (1<<1) ;
     if( (lms_bw_t)(data&0x3c>>2) != bw )
     {
         data &= ~0x3c ;
         data |= (bw<<2) ;
-        data |= (1<<1) ;
-        lms_spi_write( dev, reg, data ) ;
     }
+    lms_spi_write( dev, reg, data ) ;
     // Check to see if we are bypassed
     lms_spi_read( dev, reg+1, &data ) ;
     if( data&(1<<6) )
@@ -109,7 +109,10 @@ void lms_lpf_bypass( struct bladerf *dev, lms_module_t mod )
 void lms_lpf_disable( struct bladerf *dev, lms_module_t mod )
 {
     uint8_t reg = (mod == RX) ? 0x54 : 0x34 ;
-    lms_spi_write( dev, reg, 0x00 ) ;
+    uint8_t data ;
+    lms_spi_read( dev, reg, &data ) ;
+    data &= ~(1<<6) ;
+    lms_spi_write( dev, reg, data ) ;
     return ;
 }
 
