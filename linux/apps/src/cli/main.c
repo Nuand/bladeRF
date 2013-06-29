@@ -211,9 +211,9 @@ int main(int argc, char *argv[])
     }
 
     /* TODO Do we have to fire off some sort of reset after flashing
-     *      the firmware, and before loading the FPGA */
+     *      the firmware, and before loading the FPGA? */
 
-    if (rc.fpga_file) {
+    if (!status && rc.fpga_file) {
         if (!state.curr_device) {
             print_error_need_devarg();
             status = -1;
