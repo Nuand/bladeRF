@@ -20,23 +20,28 @@ DEFINE_CMD(probe);
 #define MAX_ARGS    10
 
 struct cmd {
-    const char  *name;      /* Name of command */
-    const char **aliases;   /* Aliases for the commands */
+    const char **names;
     int (*exec)(struct cli_state *s, int argc, char **argv);
     const char  *desc;
     const char  *help;
 };
 
-static const char *aliases_null[] = { NULL };
-static const char *aliases_help[] = { "h", "?", NULL };
-static const char *aliases_open[] = { "o", NULL };
-static const char *aliases_quit[] = { "q", "exit", "x", NULL };
-static const char *aliases_version[] = { "ver", "v", NULL };
+static const char *cmd_names_help[] = { "help", "h", "?", NULL };
+static const char *cmd_names_load[] = { "load", "ld", NULL };
+static const char *cmd_names_peek[] = { "peek", "pe", NULL };
+static const char *cmd_names_poke[] = { "poke", "po", NULL };
+static const char *cmd_names_print[] = { "print", "pr", "p", NULL };
+static const char *cmd_names_open[] = { "open", "op", "o", "NULL" };
+static const char *cmd_names_probe[] = { "probe", "pro", NULL };
+static const char *cmd_names_quit[] = { "quit", "q", "exit", "x", NULL };
+static const char *cmd_names_rx[] = { "rx", NULL };
+static const char *cmd_names_tx[] = { "tx", NULL };
+static const char *cmd_names_set[] = { "set", "s", NULL };
+static const char *cmd_names_ver[] = { "version", "ver", "v", NULL };
 
 static const struct cmd cmd_table[] = {
     {
-        .name = "help",
-        .aliases = aliases_help,
+        .names = cmd_names_help,
         .exec = cmd_help,
         .desc = "Provide information about specified command",
         .help =
@@ -45,8 +50,7 @@ static const struct cmd cmd_table[] = {
             "Provides extended help, like this, on any command.\n"
     },
     {
-        .name = "load",
-        .aliases = aliases_null,
+        .names = cmd_names_load,
         .exec = cmd_load,
         .desc = "Load FPGA or FX3",
         .help =
@@ -55,8 +59,7 @@ static const struct cmd cmd_table[] = {
             "Load an FPGA bitstream or program the FX3's SPI flash.\n"
     },
     {
-        .name = "peek",
-        .aliases = aliases_null,
+        .names = cmd_names_peek,
         .exec = cmd_peek,
         .desc = "Peek a memory location",
         .help =
@@ -80,8 +83,7 @@ static const struct cmd cmd_table[] = {
             "  bladeRF> peek si ...\n"
     },
     {
-        .name = "poke",
-        .aliases = aliases_null,
+        .names = cmd_names_poke,
         .exec = cmd_poke,
         .desc = "Poke a memory location",
         .help =
@@ -105,9 +107,7 @@ static const struct cmd cmd_table[] = {
             "  bladeRF> poke lms ...\n"
     },
     {
-        .name = "print",
-        .aliases = aliases_null,
-        .exec = cmd_print,
+        .names = cmd_names_print,
         .desc = "Print information about the device",
         .help =
             "print <param>\n"
@@ -132,8 +132,7 @@ static const struct cmd cmd_table[] = {
             "   txvga2          Gain setting of TXVGA2 in dB (range: )\n"
     },
     {
-        .name = "open",
-        .aliases = aliases_open,
+        .names = cmd_names_open,
         .exec = cmd_open,
         .desc = "Open a bladeRF device",
         .help = "open <device>\n"
@@ -142,8 +141,7 @@ static const struct cmd cmd_table[] = {
                 "Any previously opened device will be closed.\n",
     },
     {
-        .name = "probe",
-        .aliases = aliases_null,
+        .names = cmd_names_probe,
         .exec = cmd_probe,
         .desc = "List attached bladeRF devices",
         .help = "probe\n"
@@ -152,15 +150,13 @@ static const struct cmd cmd_table[] = {
                 "of results.\n",
     },
     {
-        .name = "quit",
-        .aliases = aliases_quit,
+        .names = cmd_names_quit,
         .exec = NULL,   /* Default action on NULL exec function is to quit */
         .desc = "Exit the CLI",
         .help = "Exit the CLI\n"
     },
     {
-        .name = "rx",
-        .aliases = aliases_null,
+        .names = cmd_names_rx,
         .exec = cmd_rx,
         .desc = "Receive IQ samples",
         .help =
@@ -170,8 +166,7 @@ static const struct cmd cmd_table[] = {
             "TODO\n"
     },
     {
-        .name = "tx",
-        .aliases = aliases_null,
+        .names = cmd_names_tx,
         .exec = cmd_tx,
         .desc = "Transmit IQ samples",
         .help =
@@ -181,8 +176,7 @@ static const struct cmd cmd_table[] = {
             "TODO\n"
     },
     {
-        .name = "set",
-        .aliases = aliases_null,
+        .names = cmd_names_set,
         .exec = cmd_set,
         .desc = "Set device settings",
         .help =
@@ -209,8 +203,7 @@ static const struct cmd cmd_table[] = {
             "   txvga2          Gain setting of TXVGA2 in dB (range: )\n"
     },
     {
-        .name = "version",
-        .aliases = aliases_version,
+        .names = cmd_names_ver,
         .exec = cmd_version,
         .desc = "Device and firmware versions",
         .help =
@@ -220,11 +213,10 @@ static const struct cmd cmd_table[] = {
     },
     /* Always terminate the command entry with a completely NULL entry */
     {
-        .name = NULL,
-        .aliases = NULL,
+        .names = NULL,
         .exec = NULL,
-        .desc = "",
-        .help = ""
+        .desc = NULL,
+        .help = NULL,
     }
 };
 
@@ -232,14 +224,10 @@ const struct cmd *get_cmd( char *name )
 {
     const struct cmd *rv = NULL;
     int i = 0, j = 0 ;
-    for( i = 0; cmd_table[i].name != NULL && rv == 0; i++ ) {
-        if( strcasecmp( name, cmd_table[i].name ) == 0 ) {
-            rv = &(cmd_table[i]);
-        } else {
-            for( j = 0; cmd_table[i].aliases[j] != NULL && rv == 0; j++ ) {
-                if( strcasecmp( name, cmd_table[i].aliases[j] ) == 0 ) {
-                    rv = &(cmd_table[i]);
-                }
+    for( i = 0; cmd_table[i].names != NULL && rv == 0; i++ ) {
+        for( j = 0; cmd_table[i].names[j] != NULL && rv == 0; j++ ) {
+            if( strcasecmp( name, cmd_table[i].names[j] ) == 0 ) {
+                rv = &(cmd_table[i]);
             }
         }
     }
@@ -256,10 +244,10 @@ int cmd_help(struct cli_state *s, int argc, char **argv)
     /* Asking for general help */
     if( argc == 1 ) {
         printf( "\n" );
-        for( i = 0; cmd_table[i].name != NULL; i++ ) {
+        for( i = 0; cmd_table[i].names != NULL; i++ ) {
             /* Hidden functions for fun and profit */
-            if( cmd_table[i].name[0] == '_' ) continue;
-            printf( "  %-20s%s\n", cmd_table[i].name, cmd_table[i].desc );
+            if( cmd_table[i].names[0][0] == '_' ) continue;
+            printf( "  %-20s%s\n", cmd_table[i].names[0], cmd_table[i].desc );
         }
         printf( "\n" );
 
