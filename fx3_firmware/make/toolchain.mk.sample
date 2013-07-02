@@ -1,36 +1,133 @@
-# Copy this file to toolchain.mk and fill FX3_ROOT appropriately
+# Copy this file to toolchain.mk and ensure the following are filled in
+# correctly for your system:
+#
+# FX3_ROOT              - Path to FX3 SDK
+# ARMGCC_INSTALL_PATH   - Path to ARM GCC toolchain within the FX3 SDK
+# ARMGCC_VERSION        - Version number of GCC toolchain included in SDK
+# FX3_FW_DIR            - "firmware" directory in FX3 SDK
+#
+# If you edit this file, be wary of potential path-related issues.
+# (Specifically, be careful will paths with spaces. These will likely appear
+#  in Windows-based builds if default install paths are used.
 ################################################################################
 
-# Grab this before CC is defined as the cross toolchain
-HOST_CC := $(CC)
-
 # Hack to check if we're in windows, otherwise assume *nix
-#
-# Note that the ARMGCC_INSTALL_PATH is assumed to be in the environment
-# by the toolchain makefiles
 ifdef SystemRoot
-	FX3_ROOT ?= C:/Cypress/EZ-USB\ FX3\ SDK/1.2
-	export ARMGCC_INSTALL_PATH ?= $(FX3_ROOT)
-else
-	FX3_ROOT ?= /opt/cypress/fx3_sdk
-	export ARMGCC_INSTALL_PATH ?= $(FX3_ROOT)/arm-2011.03
+	HOST_IS_WINDOWS := y
 endif
 
-# This is needed by the FX3 toolchain makefiles to resolve the
-# path to libgcc
-ARMGCC_VERSION := 4.5.2
-
+# Running into some issues with Windows paths, as back-escaped spaces in paths
+# are needed for make, but this doesn't fly when executing external programs
+# (e.g., gcc, ld)
 #
-# Ensure the ARM toolchain is in our path
-export PATH := $(PATH):$(ARMGCC_INSTALL_PATH)/bin
+# This is a little hack to replace a paths with escaped spaces 
+# with a quoted, space-containing path.
+#
+# If anyone has any suggestions or advice on cleaning this up, 
+# please feel free to make some noise over at: 
+#     www.github.com/jynik/bladeRF 
+pathfixup = $(if $(HOST_IS_WINDOWS),"$(subst /,\,$(subst \ , ,$(1)))",$(1))
 
-# The FX3 toolchain makefiles assume we've defined these variables
-FX3FWROOT := $(FX3_ROOT)/cyfx3sdk/firmware
-FX3PFWROOT := $(FX3FWROOT)/u3p_firmware
+# These are the items that will likely vary system to system
+ARMGCC_VERSION ?= 4.5.2
 
-# Path to ELF -> img conversion tool, provided by FX3 toolchain
-ELF2IMG_PATH := $(FX3_ROOT)/cyfx3sdk/util/elf2img
+################################
+# Paths
+################################
 
-# Include build definitions from the toolchain
-include $(FX3FWROOT)/common/fx3_build_config.mak
+ifdef HOST_IS_WINDOWS
+	FX3_ROOT ?= C:/Program\ Files\ (x86)/Cypress/EZ-USB\ FX3\ SDK/1.2
+	ARMGCC_INSTALL_PATH ?= $(FX3_ROOT)
+	FX3_FW_DIR := $(FX3_ROOT)/firmware
+	ELF2IMG_DIR := $(FX3_ROOT)/util/elf2img
+else
+	FX3_ROOT ?= /opt/cypress/fx3_sdk
+	ARMGCC_INSTALL_PATH ?= $(FX3_ROOT)/arm-2011.03
+	FX3_FW_DIR := $(FX3_ROOT)/cyfx3sdk/firmware
+	ELF2IMG_DIR := $(FX3_ROOT)/cyfx3sdk/util/elf2img
+endif
 
+# Target firmare directory
+FX3_U3PFW_DIR := $(FX3_FW_DIR)/u3p_firmware
+
+# Header files for our target device
+FX3_FWINC_DIR := $(FX3_U3PFW_DIR)/inc
+
+# Library directory
+ifdef DEBUG
+	FX3_LIB_DIR := $(FX3_U3PFW_DIR)/lib/fx3_debug
+else
+	FX3_LIB_DIR := $(FX3_U3PFW_DIR)/lib/fx3_release
+endif
+
+# Path to some build depdencies - we'll need to compile/assemble a few items
+# from this directory and link against them
+TOOLCHAIN_DEPS_DIR := $(FX3_FW_DIR)/common
+
+
+################################
+# Libraries
+################################
+
+FX3_LIBGCC := $(ARMGCC_INSTALL_PATH)/lib/gcc/arm-none-eabi/$(ARMGCC_VERSION)/libgcc.a
+FX3_LIBC   := $(ARMGCC_INSTALL_PATH)/arm-none-eabi/lib/libc.a
+
+# Careful if you're making changes here - remember that order matters.
+FX3_LIBS :=	$(call pathfixup,$(FX3_LIB_DIR)/cyfxapi.a) \
+			$(call pathfixup,$(FX3_LIB_DIR)/cyu3lpp.a) \
+			$(call pathfixup,$(FX3_LIB_DIR)/cyu3threadx.a)\
+			$(call pathfixup,$(FX3_LIBC)) \
+			$(call pathfixup,$(FX3_LIBGCC))
+
+
+################################
+# Tools
+################################
+
+# Setup host and cross tools
+CROSS_COMPILE ?= $(ARMGCC_INSTALL_PATH)/bin/arm-none-eabi-
+HOST_CC := $(CC)
+CC := $(call pathfixup,$(CROSS_COMPILE)gcc)
+LD := $(call pathfixup,$(CROSS_COMPILE)ld)
+
+FW_INC := -I$(call pathfixup,$(FX3_FWINC_DIR))
+LINKER_FILE := $(call pathfixup,$(FX3_FW_DIR)/common/fx3.ld)
+
+ifdef HOST_IS_WINDOWS
+	RM := cs-rm
+else
+	RM := rm
+endif
+
+# Set up toolchain specific compiler and linker flags
+TOOLCHAIN_CFLAGS := -DCYU3P_FX3=1 -D__CYU3P_TX__=1 \
+					-mcpu=arm926ej-s -mthumb-interwork \
+					$(FW_INC)
+
+ifdef DEBUG
+	TOOLCHAIN_CFLAGS += -DTX_ENABLE_EVENT_TRACE
+endif
+
+TOOLCHAIN_LDFLAGS := --entry CyU3PFirmwareEntry \
+						$(FX3_LIBS) \
+						-T $(LINKER_FILE) -d --gc-sections \
+						--no-wchar-size-warning
+
+################################
+# Dependencies
+################################
+TOOLCHAIN_DEPS_SRC_C := $(TOOLCHAIN_DEPS_DIR)/cyfxtx.c
+TOOLCHAIN_DEPS_SRC_A := $(TOOLCHAIN_DEPS_DIR)/cyfx_gcc_startup.S
+TOOLCHAIN_DEPS_OBJ_C := $(notdir $(TOOLCHAIN_DEPS_SRC_C:.c=.o))
+TOOLCHAIN_DEPS_OBJ_A := $(notdir $(TOOLCHAIN_DEPS_SRC_A:.S=.o))
+TOOLCHAIN_DEPS_OBJ := $(TOOLCHAIN_DEPS_OBJ_C) $(TOOLCHAIN_DEPS_OBJ_A)
+
+ifdef HOST_IS_WINDOWS
+	ELF2IMG_SRC :=
+	ELF2IMG := $(ELF2IMG_DIR)/elf2img.exe
+else
+	ELF2IMG_SRC := $(call pathfixup,$(ELF2IMG_DIR)/elf2img.c)
+	ELF2IMG := ./elf2img
+endif
+
+build_toolchain_dep = $(CC) $(call pathfixup,$(1)) $(CFLAGS) -c -o $(2)

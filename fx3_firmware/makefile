@@ -8,54 +8,49 @@ $(error Copy make/toolchain.mk.sample to make/toolchain.mk and edit paths accord
 endif
 include make/toolchain.mk
 
-TARGET := bladeRF
-
-# bladeRF code
-BLADERF_SOURCE_C := $(wildcard *.c)
-BLADERF_SOURCE_ASM := $(wildcard *.S)
-BLADERF_OBJ_C := $(BLADERF_SOURCE_C:.c=.o)
-BLADERF_OBJ_ASM := $(BLAERF_SOURCE__ASM:.S=.o)
-
-# Items provided in the toolchain
-TOOLCHAIN_OBJ_C := $(notdir $(SOURCE:.c=.o))
-TOOLCHAIN_OBJ_ASM := $(notdir $(SOURCE_ASM:.S=.o))
-
-OBJ := $(BLADERF_OBJ_C) $(BLADERF_OBJ_ASM) \
-		$(TOOLCHAIN_OBJ_C) $(TOOLCHAIN_OBJ_ASM)
-
 # Target files
-ELF := $(TARGET).$(EXEEXT)
+TARGET := bladeRF
+ELF := $(TARGET).elf
 IMG := $(TARGET).img
 MAP := $(TARGET).map
 
+SRC := $(wildcard *.c)
+OBJ := $(SRC:.c=.o) $(TOOLCHAIN_DEPS_OBJ) 
+
+CFLAGS := -Wall -Wextra -Wno-unused-parameter \
+		  $(TOOLCHAIN_CFLAGS) \
+		  $(EXTRA_CFLAGS)
+
+ifdef DEBUG
+	CFLAGS += -O0 -ggdb3 -DDEBUG
+else
+	CFLAGS += -O2 -DNDEBUG
+endif
+
+LDFLAGS := $(TOOLCHAIN_LDFLAGS) -Map $(MAP)
+
 all: $(IMG)
 
-$(ELF): $(OBJ)
-	$(LINK)
+$(ELF): $(OBJ) 
+	$(LD) $(OBJ) $(LDFLAGS) -o $@
 
-$(IMG): $(ELF) elf2img
-	./elf2img -i $< -o $@
+$(IMG): $(ELF) $(ELF2IMG)
+	$(ELF2IMG) -i $< -o $@
 
-elf2img: $(ELF2IMG_PATH)/elf2img.c
-	$(HOST_CC) -Wall -O2 $^ -o $@
+$(ELF2IMG): $(ELF2IMG_SRC)
+	$(HOST_CC) $< -O2 -o $@
 
-$(BLADERF_OBJ_C): %.o : %.c
-	$(COMPILE)
+# Build any toolchain dependencies. 
+$(TOOLCHAIN_DEPS_OBJ_C): %.o : $(TOOLCHAIN_DEPS_DIR)/%.c
+	$(call build_toolchain_dep,$<,$@)
 
-$(TOOLCHAIN_OBJ_C): %.o : $(FX3FWROOT)/common/%.c
-	$(COMPILE)
-
-$(BLADERF_OBJ_A): %.o : %.S
-	$(ASSEMBLE)
-
-$(TOOLCHAIN_OBJ_ASM): %.o : $(FX3FWROOT)/common/%.S
-	$(ASSEMBLE)
+$(TOOLCHAIN_DEPS_OBJ_A): %.o : $(TOOLCHAIN_DEPS_DIR)/%.S
+	$(call build_toolchain_dep,$<,$@)
 
 clean:
-	rm -f $(ELF) $(IMG) $(MAP) $(OBJ)
+	$(RM) -f $(ELF) $(IMG) $(MAP) $(OBJ) $(TOOLCHAIN_OBJ)
 
 realclean: clean
-	rm -f elf2img
+	$(RM) -f elf2img
 
-
-.PHONY: clean
+.PHONY: clean realclean
