@@ -307,7 +307,6 @@ const char * cmd_strerror(int error, int lib_error)
     }
 }
 
-/* TODO this will need to take a cli_state * param */
 int cmd_handle(struct cli_state *s, const char *line_)
 {
     int argc, ret;
@@ -325,7 +324,9 @@ int cmd_handle(struct cli_state *s, const char *line_)
     ret = 0;
 
     token = strtok_r(line, " \t\r\n", &saveptr);
-    while (token) {
+
+    /* Fill argv as long as we see tokens that aren't comments */
+    while (token && token[0] != '#') {
         argv[argc++] = token;
         token = strtok_r(NULL, " \t\r\n", &saveptr);
     }
@@ -334,7 +335,7 @@ int cmd_handle(struct cli_state *s, const char *line_)
         cmd = get_cmd(argv[0]);
 
         if (cmd) {
-            if (cmd->exec) { /* ---v  will be cmd_handle's cli_state param */
+            if (cmd->exec) {
                 ret = cmd->exec(s, argc, argv);
             } else {
                 ret = CMD_RET_QUIT;

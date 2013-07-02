@@ -10,6 +10,9 @@ struct cli_state {
     struct bladerf *curr_device;    /**< Device currently in use */
     int last_lib_error;             /**< Last libbladeRF error */
     int last_error;                 /**< Last command error */
+
+    FILE *script;                   /**< Loaded script */
+    int lineno;                     /**< Line # count, when running scripts */
 };
 
 /** Static initializer */
@@ -17,6 +20,7 @@ struct cli_state {
     .curr_device = NULL, \
     .last_lib_error = 0, \
     .last_error = 0, \
+    .lineno = 0,\
 }
 
 /**

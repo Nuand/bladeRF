@@ -15,13 +15,14 @@
 #include "version.h"
 
 
-#define OPTSTR "pd:bf:l:LVh"
+#define OPTSTR "d:bf:l:s:pLVh"
 static const struct option longopts[] = {
     { "device",         required_argument,  0, 'd' },
     { "batch",          no_argument,        0, 'b' },
     { "flash-firmware", required_argument,  0, 'f' },
-    { "probe",          no_argument,        0, 'p' },
     { "load-fpga",      required_argument,  0, 'l' },
+    { "script",         required_argument,  0, 's' },
+    { "probe",          no_argument,        0, 'p' },
     { "lib-version",    no_argument,        0, 'L' },
     { "version",        no_argument,        0, 'V' },
     { "help",           no_argument,        0, 'h' },
@@ -41,6 +42,7 @@ struct rc_config {
     char *device;
     char *fw_file;
     char *fpga_file;
+    char *script_file;
 };
 
 #define DEFAULT_RC_CONFIG {\
@@ -90,6 +92,14 @@ int get_rc_config(int argc, char *argv[], struct rc_config *rc)
                 }
                 break;
 
+            case 's':
+                rc->script_file = strdup(optarg);
+                if (!rc->script_file) {
+                    perror("strdup");
+                    return -1;
+                }
+                break;
+
             case 'b':
                 rc->batch_mode = true;
                 break;
@@ -130,6 +140,7 @@ void usage(const char *argv0)
     printf("  -f, --flash-firmware <file>      Flash specified firmware file.\n");
     printf("  -l, --load-fpga <file>           Load specified FPGA bitstream.\n");
     printf("  -p, --probe                      Probe for devices, print results, then exit.\n");
+    printf("  -s, --script <file>              Run provided script.\n");
     printf("  -b, --batch                      Batch mode - do not enter interactive mode.\n");
     printf("  -L, --lib-version                Print libbladeRF version and exit.\n");
     printf("  -V, --version                    Print CLI version and exit.\n");
@@ -157,6 +168,83 @@ static void print_error_need_devarg()
            "       but -d was not specified. Aborting.\n\n");
 }
 
+static int open_device(struct rc_config *rc, struct cli_state *state, int status)
+{
+    if (!status) {
+        if (rc->device) {
+            state->curr_device = bladerf_open(rc->device);
+            if (!state->curr_device) {
+                /* TODO use upcoming bladerf_strerror() here */
+                fprintf(stderr, "Failed to open device (%s): %s\n",
+                        rc->device, strerror(errno));
+                status = -1;
+            }
+        } else {
+            /* TODO re-enable once the composite device situation is resolved */
+            //state.curr_device = bladerf_open_any();
+        }
+    }
+
+    return status;
+}
+
+static int flash_fw(struct rc_config *rc, struct cli_state *state, int status)
+{
+    if (!status && rc->fw_file) {
+        if (!state->curr_device) {
+            print_error_need_devarg();
+            status = -1;
+        } else {
+            printf("Flashing firmware...\n");
+            status = bladerf_flash_firmware(state->curr_device, rc->fw_file);
+            if (status) {
+                fprintf(stderr, "Error: failed to flash firmware: %s\n",
+                        bladerf_strerror(status));
+            } else {
+                printf("Done.\n");
+            }
+        }
+    }
+
+    /* TODO Do we have to fire off some sort of reset after flashing
+     *      the firmware, and before loading the FPGA? */
+
+    return status;
+}
+
+static int load_fpga(struct rc_config *rc, struct cli_state *state, int status)
+{
+    if (!status && rc->fpga_file) {
+        if (!state->curr_device) {
+            print_error_need_devarg();
+            status = -1;
+        } else {
+            printf("Loading fpga...\n");
+            status = bladerf_load_fpga(state->curr_device, rc->fpga_file);
+            if (status) {
+                fprintf(stderr, "Error: failed to flash firmware: %s\n",
+                        bladerf_strerror(status));
+            } else {
+                printf("Done.\n");
+            }
+        }
+    }
+
+    return status;
+}
+
+static int open_script(struct rc_config *rc, struct cli_state *state, int status)
+{
+    if (!status && rc->script_file) {
+        state->script = fopen(rc->script_file, "r");
+        if (!state->script) {
+            status = -1;
+        }
+    }
+
+    return status;
+}
+
 int main(int argc, char *argv[])
 {
     int status;
@@ -180,58 +268,17 @@ int main(int argc, char *argv[])
         status = cmd_handle(&state, "probe");
     }
 
-    if (rc.device) {
-        state.curr_device = bladerf_open(rc.device);
-        if (!state.curr_device) {
-            /* TODO use upcoming bladerf_strerror() here */
-            fprintf(stderr, "Failed to open device (%s): %s\n",
-                    rc.device, strerror(errno));
-            status = -1;
-        }
-    } else {
-        /* TODO re-enable once the composite device situation is resolved */
-        //state.curr_device = bladerf_open_any();
-    }
+    /* Conditionally performed items, depending on runtime config */
+    status = open_device(&rc, &state, status);
+    status = flash_fw(&rc, &state, status);
+    status = load_fpga(&rc, &state, status);
+    status = open_script(&rc, &state, status);
 
-    if (!status && rc.fw_file) {
-        if (!state.curr_device) {
-            print_error_need_devarg();
-            status = -1;
-        } else {
-            printf("Flashing firmware...\n");
-            status = bladerf_flash_firmware(state.curr_device, rc.fw_file);
-            if (status) {
-                fprintf(stderr, "Error: failed to flash firmware: %s\n",
-                        bladerf_strerror(status));
-            } else {
-                printf("Done.\n");
-            }
-
-        }
-    }
-
-    /* TODO Do we have to fire off some sort of reset after flashing
-     *      the firmware, and before loading the FPGA? */
-
-    if (!status && rc.fpga_file) {
-        if (!state.curr_device) {
-            print_error_need_devarg();
-            status = -1;
-        } else {
-            printf("Loading fpga...\n");
-            status = bladerf_load_fpga(state.curr_device, rc.fpga_file);
-            if (status) {
-                fprintf(stderr, "Error: failed to flash firmware: %s\n",
-                        bladerf_strerror(status));
-            } else {
-                printf("Done.\n");
-            }
-        }
-    }
-
+    /* These items are no longer needed */
     free(rc.device);
     free(rc.fw_file);
     free(rc.fpga_file);
+    free(rc.script_file);
 
     /* Abort if anything went wrong */
     if (status)
