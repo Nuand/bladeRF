@@ -7,7 +7,7 @@ int cmd_probe(struct cli_state *s, int argc, char *argv[])
     ssize_t n_devices, i;
 
     if ((n_devices = bladerf_get_device_list(&devices)) < 0) {
-        fprintf(stderr, "Error: Failed to probe for devices.\n");
+        cli_err(s, argv[0], "Failed to probe for devices");
         s->last_lib_error = n_devices;
         return CMD_RET_LIBBLADERF;
     }

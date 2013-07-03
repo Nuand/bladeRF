@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <libbladeRF.h>
 
+#include "common.h"
 #include "cmd.h"
 #include "peekpoke.h"
 
@@ -28,7 +29,8 @@ int cmd_peek(struct cli_state *state, int argc, char **argv)
         if( argc == 4 ) {
             count = str2uint( argv[3], 0, MAX_NUM_ADDRESSES, &ok );
             if( !ok ) {
-                printf( "%s: %s not a valid unsigned value, defaulting to 1\n", argv[0], argv[3] );
+                cli_err(state, argv[0],
+                        "%s not a valid unsigned value, defaulting to 1", argv[3]);
                 count = 1;
             }
         }
@@ -38,7 +40,7 @@ int cmd_peek(struct cli_state *state, int argc, char **argv)
             /* Parse address */
             address = str2uint( argv[2], 0, DAC_MAX_ADDRESS, &ok );
             if( !ok ) {
-                invalid_address( argv[0], argv[2] );
+                invalid_address(state, argv[0], argv[2]);
                 rv = CMD_RET_INVPARAM;
             } else {
                 /* TODO: Point function pointer */
@@ -53,7 +55,7 @@ int cmd_peek(struct cli_state *state, int argc, char **argv)
             /* Parse address */
             address = str2uint( argv[2], 0, LMS_MAX_ADDRESS, &ok );
             if( !ok ) {
-                invalid_address( argv[0], argv[2] );
+                invalid_address(state, argv[0], argv[2]);
                 rv = CMD_RET_INVPARAM;
             } else {
                 f = lms_spi_read;
@@ -66,7 +68,7 @@ int cmd_peek(struct cli_state *state, int argc, char **argv)
             /* Parse address */
             address = str2uint( argv[2], 0, SI_MAX_ADDRESS, &ok );
             if( !ok ) {
-                invalid_address( argv[0], argv[2] );
+                invalid_address(state, argv[0], argv[2]);
                 rv = CMD_RET_INVPARAM;
             } else {
                 /* TODO: Populate this function when it is available */
@@ -78,22 +80,27 @@ int cmd_peek(struct cli_state *state, int argc, char **argv)
 
         /* I guess we aren't reading from anything :( */
         else {
-            printf( "%s: %s is not a peekable device\n", argv[0], argv[1] );
+            cli_err(state, argv[0], "%s is not a peekable device\n", argv[1]);
             rv = CMD_RET_INVPARAM;
         }
 
         /* Loop over the addresses and output the values */
         if( rv == CMD_RET_OK && f ) {
-            int ret;
+            int status;
             uint8_t val;
             for(; count > 0 && address < max_address; count-- ) {
-                ret = f( state->curr_device, (uint8_t)address, &val );
-                printf( "  0x%2.2x: 0x%2.2x\n", address++, val );
+                status = f( state->curr_device, (uint8_t)address, &val );
+                if (status < 0) {
+                    state->last_lib_error = status;
+                    rv = CMD_RET_LIBBLADERF;
+                } else {
+                    printf( "  0x%2.2x: 0x%2.2x\n", address++, val );
+                }
             }
         }
 
     } else {
-        printf( "%s: Invalid number of arguments (%d)\n", argv[0], argc );
+        cli_err(state, argv[0], "Invalid number of arguments (%d)\n",  argc);
         rv = CMD_RET_INVPARAM;
     }
     return rv;

@@ -37,13 +37,12 @@ int cmd_load(struct cli_state *state, int argc, char **argv)
                 printf("Done.\n");
             }
         } else {
-            printf( "%s: \"%s\" is not a valid programming target\n",
-                    argv[0], argv[1] ) ;
+            cli_err(state, argv[0],
+                    "\"%s\" is not a valid programming target\n", argv[1]) ;
             rv = CMD_RET_INVPARAM;
         }
     } else {
-        /* FIXME: cmd_handle should probably print this, not this code */
-        printf( "%s: Invalid number of arguments (%d)\n", argv[0], argc );
+        rv = CMD_RET_NARGS;
     }
 
     return rv;

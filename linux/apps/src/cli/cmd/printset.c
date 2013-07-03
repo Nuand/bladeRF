@@ -70,42 +70,57 @@ bladerf_module get_module( char *mod, bool *ok )
     return rv;
 }
 
-void invalid_argc( char *cmd, char *param, int argc )
+static inline void invalid_module(struct cli_state *s, const char *cmd,
+                                  const char *module)
 {
-    printf( "%s %s: Invalid number of arguments (%d)\n", cmd, param, argc );
-    return;
+    cli_err(s, cmd, "Invalid module (%s)", module);
 }
+
+static inline void invalid_gain(struct cli_state *s, const char *cmd,
+                                const char *param, const char *gain)
+{
+    cli_err(s, cmd, "Invalid gain setting for %s (%s)", param, gain);
+}
+
 
 int print_bandwidth(struct cli_state *state, int argc, char **argv)
 {
     /* Usage: print bandwidth [<rx|tx>]*/
-    int rv = CMD_RET_OK, ret;
+    int rv = CMD_RET_OK, status;
     bladerf_module module = RX ;
     unsigned int bw ;
-    if( argc == 2 ) {
-        printf( "print bandwidth specialized help\n" ) ;
-    }
 
-    else if( argc == 3 ) {
+    if( argc == 3 ) {
         bool ok;
         module = get_module( argv[2], &ok );
         if( !ok ) {
-            printf( "%s %s: %s is not TX or RX - printing both\n", argv[0], argv[1], argv[2] );
+            invalid_module(state, argv[0], argv[2]);
+            return CMD_RET_INVPARAM;
         }
+    } else {
+        return CMD_RET_NARGS;
     }
 
     printf( "\n" ) ;
 
     if( argc == 2 || module == RX ) {
-        /* TODO: Check ret */
-        ret = bladerf_get_bandwidth( state->curr_device, RX, &bw );
-        printf( "  RX Bandwidth: %9uHz\n", bw );
+        status =  bladerf_get_bandwidth( state->curr_device, RX, &bw );
+        if (status < 0) {
+            state->last_lib_error = status;
+            rv = CMD_RET_LIBBLADERF;
+        } else {
+            printf( "  RX Bandwidth: %9uHz\n", bw );
+        }
     }
 
     if( argc == 2 || module == TX ) {
-        /* TODO: Check ret */
-        ret = bladerf_get_bandwidth( state->curr_device, TX, &bw );
-        printf( "  TX Bandwidth: %9uHz\n", bw );
+        status = bladerf_get_bandwidth( state->curr_device, TX, &bw );
+        if (status < 0) {
+            state->last_lib_error = status;
+            rv = CMD_RET_LIBBLADERF;
+        } else {
+            printf( "  TX Bandwidth: %9uHz\n", bw );
+        }
     }
 
     printf( "\n" );
@@ -116,7 +131,8 @@ int print_bandwidth(struct cli_state *state, int argc, char **argv)
 int set_bandwidth(struct cli_state *state, int argc, char **argv)
 {
     /* Usage: set bandwidth [rx|tx] <bandwidth in Hz> */
-    int rv = CMD_RET_OK, ret;
+    int rv = CMD_RET_OK;
+    int status;
     bladerf_module module = RX;
     unsigned int bw = 28000000, actual;
 
@@ -136,14 +152,14 @@ int set_bandwidth(struct cli_state *state, int argc, char **argv)
         bool ok;
         module = get_module( argv[2], &ok );
         if( !ok ) {
-            printf( "%s %s: %s is not TX or RX\n", argv[0], argv[1], argv[2] );
+            invalid_module(state, argv[0], argv[2]);
             rv = CMD_RET_INVPARAM;
         }
 
         /* Parse bandwidth */
         bw = str2uint( argv[3], 0, UINT_MAX, &ok );
         if( !ok ) {
-            printf( "%s: %s is not a valid bandwidth\n", argv[0], argv[3] );
+            cli_err(state, argv[0], "Invalid bandwidth (%s)", argv[3]);
             rv = CMD_RET_INVPARAM;
         }
     }
@@ -153,15 +169,14 @@ int set_bandwidth(struct cli_state *state, int argc, char **argv)
         bool ok;
         bw = str2uint( argv[2], 0, UINT_MAX, &ok );
         if( !ok ) {
-            printf( "%s %s: %s is not a valid bandwidth\n", argv[0], argv[1], argv[2] );
+            cli_err(state, argv[0], "Invalid bandwidth (%s)", argv[2]);
             rv = CMD_RET_INVPARAM;
         }
     }
 
     /* Weird number of arguments */
     else {
-        invalid_argc( argv[0], argv[1], argc );
-        rv = CMD_RET_INVPARAM;
+        rv = CMD_RET_NARGS;
     }
 
     /* Problem parsing arguments? */
@@ -171,16 +186,24 @@ int set_bandwidth(struct cli_state *state, int argc, char **argv)
 
         /* Lack of option, so set both or RX only */
         if( argc == 3 || module == RX ) {
-            /* TODO: Check ret */
-            ret = bladerf_set_bandwidth( state->curr_device, RX, bw, &actual );
-            printf( "  Setting RX bandwidth - req:%9uHz actual:%9uHz\n",  bw, actual );
+            status = bladerf_set_bandwidth( state->curr_device, RX, bw, &actual );
+            if (status < 0) {
+                state->last_lib_error = status;
+                rv = CMD_RET_LIBBLADERF;
+            } else {
+                printf( "  Set RX bandwidth - req:%9uHz actual:%9uHz\n",  bw, actual );
+            }
         }
 
         /* Lack of option, so set both or TX only */
         if( argc == 3 || module == TX ) {
-            /* TODO: Check ret */
-            ret = bladerf_set_bandwidth( state->curr_device, TX, bw, &actual );
-            printf( "  Setting TX bandwidth - req:%9uHz actual:%9uHz\n", bw, actual );
+            status = bladerf_set_bandwidth( state->curr_device, TX, bw, &actual );
+            if (status < 0) {
+                state->last_lib_error = status;
+                rv = CMD_RET_LIBBLADERF;
+            } else {
+                printf( "  Set TX bandwidth - req:%9uHz actual:%9uHz\n", bw, actual );
+            }
         }
 
         printf( "\n" );
@@ -204,6 +227,7 @@ int print_frequency(struct cli_state *state, int argc, char **argv)
 {
     /* Usage: print frequency [<rx|tx>] */
     int rv = CMD_RET_OK;
+    int status;
     unsigned int freq;
     bladerf_module module = RX;
     if( argc == 3 ) {
@@ -211,28 +235,33 @@ int print_frequency(struct cli_state *state, int argc, char **argv)
         bool ok;
         module = get_module( argv[2], &ok );
         if( !ok ) {
-            printf( "%s %s: %s is not TX or RX\n", argv[0], argv[1], argv[2] );
+            invalid_module(state, argv[0], argv[2]);
             rv = CMD_RET_INVPARAM;
         }
     } else if( argc != 2 ) {
-        invalid_argc( argv[0], argv[1], argc );
-        rv = CMD_RET_INVPARAM;
+        rv = CMD_RET_NARGS;
     }
 
     if( rv == CMD_RET_OK ) {
         printf( "\n" );
         if( argc == 2 || module == RX ) {
-            /* TODO: Check ret */
-            int ret;
-            ret = bladerf_get_frequency( state->curr_device, RX, &freq );
-            printf( "  RX Frequency: %10uHz\n", freq );
+            status = bladerf_get_frequency( state->curr_device, RX, &freq );
+            if (status < 0) {
+                state->last_lib_error = status;
+                rv = CMD_RET_LIBBLADERF;
+            } else {
+                printf( "  RX Frequency: %10uHz\n", freq );
+            }
         }
 
         if( argc == 2 || module == TX ) {
-            /* TODO: Check ret */
-            int ret;
-            ret = bladerf_get_frequency( state->curr_device, TX, &freq );
-            printf( "  TX Frequency: %10uHz\n", freq );
+            status = bladerf_get_frequency( state->curr_device, TX, &freq );
+            if (status < 0) {
+                state->last_lib_error = status;
+                rv = CMD_RET_LIBBLADERF;
+            } else {
+                printf( "  TX Frequency: %10uHz\n", freq );
+            }
         }
         printf( "\n" );
     }
@@ -244,22 +273,20 @@ int set_frequency(struct cli_state *state, int argc, char **argv)
 {
     /* Usage: set frequency [<rx|tx>] <frequency in Hz> */
     int rv = CMD_RET_OK;
+    int status;
     unsigned int freq;
     bladerf_module module = RX;
 
-    if( argc == 2 ) {
-        printf( "set frequency specialized help\n" );
-    } else if( argc == 4 ) {
+    if( argc == 4 ) {
         /* Parse module */
         bool ok;
         module = get_module( argv[2], &ok );
         if( !ok ) {
-            printf( "%s %s: %s is not TX or RX\n", argv[0], argv[1], argv[2] );
+            invalid_module(state, argv[0], argv[2]);
             rv = CMD_RET_INVPARAM;
         }
     } else if( argc != 3 ) {
-        invalid_argc( argv[0], argv[1], argc );
-        rv = CMD_RET_INVPARAM;
+        rv = CMD_RET_NARGS;
     }
 
     if( argc > 2 && rv == CMD_RET_OK ) {
@@ -268,23 +295,32 @@ int set_frequency(struct cli_state *state, int argc, char **argv)
         freq = str2uint( argv[argc-1], 0, UINT_MAX, &ok );
 
         if( !ok ) {
-            printf( "%s %s: %s is not a valid frequency\n", argv[0], argv[1], argv[argc-1] );
+            cli_err(state, argv[0], "Invalid frequency (%s)", argv[argc - 1]);
+            rv = CMD_RET_INVPARAM;
         } else {
 
             printf( "\n" );
 
             /* Change RX frequency */
             if( argc == 3 || module == RX ) {
-                /* TODO: Check ret */
-                int ret = bladerf_set_frequency( state->curr_device, RX, freq );
-                printf( "  Set RX frequency: %10uHz\n", freq );
+                int status = bladerf_set_frequency( state->curr_device, RX, freq );
+                if (status < 0) {
+                    state->last_lib_error = status;
+                    rv = CMD_RET_LIBBLADERF;
+                } else {
+                    printf( "  Set RX frequency: %10uHz\n", freq );
+                }
             }
 
             /* Change TX frequency */
             if( argc == 3 || module == TX ) {
-                /* TODO: Check ret */
-                int ret = bladerf_set_frequency( state->curr_device, TX, freq );
-                printf( "  Set TX frequency: %10uHz\n", freq );
+                status = bladerf_set_frequency( state->curr_device, TX, freq );
+                if (status < 0) {
+                    state->last_lib_error = status;
+                    rv = CMD_RET_LIBBLADERF;
+                } else {
+                    printf( "  Set TX frequency: %10uHz\n", freq );
+                }
             }
 
             printf( "\n" );
@@ -296,37 +332,39 @@ int set_frequency(struct cli_state *state, int argc, char **argv)
 
 int print_gpio(struct cli_state *state, int argc, char **argv)
 {
-    int rv = CMD_RET_OK, ret ;
+    int rv = CMD_RET_OK, status;
     unsigned int val ;
-    if( argc != 2 ) {
-        printf( "%s %s: Ignoring extra arguments\n", argv[0], argv[1] );
-    }
 
     /* TODO: Should this be exposed at this level? */
-    ret = gpio_read( state->curr_device, &val );
-    printf( "\n" );
-    printf( "  GPIO: 0x%8.8x\n", val );
-    printf( "\n" );
-    printf( "    %-20s%-10s\n", "LMS Enable:", val&0x01 ? "Enabled" : "Reset" ); // Active low
-    printf( "    %-20s%-10s\n", "LMS RX Enable:", val&0x02 ? "Enabled" : "Disabled" );
-    printf( "    %-20s%-10s\n", "LMS TX Enable:", val&0x04 ? "Enabled" : "Disabled" );
-    printf( "    %-20s", "TX Band:" );
-    if( ((val>>3)&3) == 2 ) {
-        printf( "Low Band (300M - 1.5GHz)\n" );
-    } else if( ((val>>3)&3) == 1 ) {
-        printf( "High Band (1.5GHz - 3.8GHz)\n" );
+    status = gpio_read( state->curr_device, &val );
+    if (status < 0) {
+        state->last_lib_error = status;
+        rv = CMD_RET_LIBBLADERF;
     } else {
-        printf( "Invalid Band Selection!\n" );
+        printf( "\n" );
+        printf( "  GPIO: 0x%8.8x\n", val );
+        printf( "\n" );
+        printf( "    %-20s%-10s\n", "LMS Enable:", val&0x01 ? "Enabled" : "Reset" ); // Active low
+        printf( "    %-20s%-10s\n", "LMS RX Enable:", val&0x02 ? "Enabled" : "Disabled" );
+        printf( "    %-20s%-10s\n", "LMS TX Enable:", val&0x04 ? "Enabled" : "Disabled" );
+        printf( "    %-20s", "TX Band:" );
+        if( ((val>>3)&3) == 2 ) {
+            printf( "Low Band (300M - 1.5GHz)\n" );
+        } else if( ((val>>3)&3) == 1 ) {
+            printf( "High Band (1.5GHz - 3.8GHz)\n" );
+        } else {
+            printf( "Invalid Band Selection!\n" );
+        }
+        printf( "    %-20s", "RX Band:" );
+        if( ((val>>5)&3) == 2 ) {
+            printf( "Low Band (300M - 1.5GHz)\n" );
+        } else if( ((val>>5)&3) == 1 ) {
+            printf( "High Band (1.5GHz - 3.8GHz)\n" );
+        } else {
+            printf( "Invalid Band Selection!\n" );
+        }
+        printf( "\n" );
     }
-    printf( "    %-20s", "RX Band:" );
-    if( ((val>>5)&3) == 2 ) {
-        printf( "Low Band (300M - 1.5GHz)\n" );
-    } else if( ((val>>5)&3) == 1 ) {
-        printf( "High Band (1.5GHz - 3.8GHz)\n" );
-    } else {
-        printf( "Invalid Band Selection!\n" );
-    }
-    printf( "\n" );
     return rv;
 }
 
@@ -336,18 +374,18 @@ int set_gpio(struct cli_state *state, int argc, char **argv)
     int rv = CMD_RET_OK;
     uint32_t val;
     bool ok;
+
     if( argc == 3 ) {
         val = str2uint( argv[2], 0, UINT_MAX, &ok );
         if( !ok ) {
-            printf( "%s %s: %s is not a valid value\n", argv[0], argv[1], argv[2] );
+            cli_err(state, argv[0], "Invalid gpio value (%s)", argv[2]);
             rv = CMD_RET_INVPARAM;
         } else {
             /* TODO: Should this be exposed at this level? */
             gpio_write( state->curr_device,val );
         }
     } else {
-        /* TODO: Fill this in */
-        printf( "set gpio specialized help\n" );
+        rv = CMD_RET_NARGS;
     }
     return rv;
 }
@@ -375,38 +413,37 @@ int set_lna(struct cli_state *state, int argc, char **argv)
 
 int print_lnagain(struct cli_state *state, int argc, char **argv)
 {
-    int rv = CMD_RET_OK, ret;
+    int rv = CMD_RET_OK, status;
     bladerf_lna_gain gain;
-    if( argc != 2 ) {
-        printf( "%s %s: Ignoring extra arguments\n", argv[0], argv[1] );
+
+    status = bladerf_get_lna_gain( state->curr_device, &gain );
+    if (status < 0) {
+        state->last_lib_error = status;
+        rv = CMD_RET_LIBBLADERF;
+    } else {
+        printf( "\n" );
+        printf( "  LNA Gain: ");
+        switch(gain) {
+            case LNA_UNKNOWN: printf( "LNA_UNKNOWN\n" ); break;
+            case LNA_MID    : printf( "LNA_MID\n" ); break;
+            case LNA_MAX    : printf( "LNA_MAX\n" ); break;
+            case LNA_BYPASS : printf( "LNA_BYPASS\n"); break;
+        }
+        printf( "\n" ) ;
     }
 
-    /* TODO: Check ret */
-    ret = bladerf_get_lna_gain( state->curr_device, &gain );
-
-    printf( "\n" );
-    printf( "  LNA Gain: ");
-    switch(gain) {
-        case LNA_UNKNOWN: printf( "LNA_UNKNOWN\n" ); break;
-        case LNA_MID    : printf( "LNA_MID\n" ); break;
-        case LNA_MAX    : printf( "LNA_MAX\n" ); break;
-        case LNA_BYPASS : printf( "LNA_BYPASS\n"); break;
-    }
-    printf( "\n" ) ;
     return rv;
 }
 
 int set_lnagain(struct cli_state *state, int argc, char **argv)
 {
     int rv = CMD_RET_OK;
-    if ( argc == 2 ) {
-        printf( "set lnagain specialized help\n" );
-    } else if( argc != 3 ) {
-        printf( "%s %s: Invalid number of arguments (%d)\n", argv[0], argv[1], argc );
-        rv = CMD_RET_INVPARAM;
+    int status;
+
+    if( argc != 3 ) {
+        rv = CMD_RET_NARGS;
     } else {
-        int ret ;
-        bladerf_lna_gain gain;
+        bladerf_lna_gain gain = LNA_UNKNOWN;
         if( strcasecmp( argv[2], "max" ) == 0 ) {
             gain = LNA_MAX;
         } else if( strcasecmp( argv[2], "mid" ) == 0 ) {
@@ -414,11 +451,18 @@ int set_lnagain(struct cli_state *state, int argc, char **argv)
         } else if( strcasecmp( argv[2], "bypass" ) == 0 ) {
             gain = LNA_BYPASS;
         } else {
-            printf( "%s %s: %s is not a valid gain setting, so using MAX instead\n", argv[0], argv[1], argv[2] );
-            gain = LNA_MAX;
+            invalid_gain(state, argv[0], argv[1], argv[2]);
         }
-        /* TODO: Check ret */
-        ret = bladerf_set_lna_gain( state->curr_device, gain );
+
+        if (gain != LNA_UNKNOWN) {
+            status = bladerf_set_lna_gain( state->curr_device, gain );
+            if (status < 0) {
+                state->last_lib_error = status;
+                rv = CMD_RET_LIBBLADERF;
+            }
+        } else {
+            rv = CMD_RET_INVPARAM;
+        }
     }
 
     return rv;
@@ -476,37 +520,38 @@ int set_refclk(struct cli_state *state, int argc, char **argv)
 
 int print_rxvga1(struct cli_state *state, int argc, char **argv)
 {
-    int rv = CMD_RET_OK, ret, gain;
-    if( argc != 2 ) {
-        printf( "%s %s: Ignoring extra arguments\n", argv[0], argv[1] );
+    int rv = CMD_RET_OK, gain, status;
+
+    status = bladerf_get_rxvga1( state->curr_device, &gain );
+    if (status < 0) {
+        state->last_lib_error = status;
+        rv = CMD_RET_LIBBLADERF;
+    } else {
+        printf( "\n" );
+        printf( "  RXVGA1 Gain: %3d\n", gain );
+        printf( "\n" );
     }
 
-    /* TODO: Check gain */
-    ret = bladerf_get_rxvga1( state->curr_device, &gain );
-
-    printf( "\n" );
-    printf( "  RXVGA1 Gain: %3d\n", gain );
-    printf( "\n" );
     return rv;
 }
 
 int set_rxvga1(struct cli_state *state, int argc, char **argv)
 {
-    int rv = CMD_RET_OK, ret, gain;
-    if( argc == 2 ) {
-        printf( "set rxvga1 specialized help\n" );
-    } else if( argc != 3 ) {
-        printf( "%s %s: Invalid number of arguments (%d)\n", argv[0], argv[1], argc );
-        rv = CMD_RET_INVPARAM;
+    int rv = CMD_RET_OK, gain, status;
+    if( argc != 3 ) {
+        rv = CMD_RET_NARGS;
     } else {
         bool ok;
         gain = str2int( argv[2], INT_MIN, INT_MAX, &ok );
         if( !ok ) {
-            printf( "%s %s: %s is not a valid gain\n", argv[0], argv[1], argv[2] );
+            invalid_gain(state, argv[0], argv[1], argv[2]);
             rv = CMD_RET_INVPARAM;
         } else {
-            /* TODO: Check ret */
-            ret = bladerf_set_rxvga1( state->curr_device, gain );
+            status = bladerf_set_rxvga1( state->curr_device, gain );
+            if (status < 0) {
+                state->last_lib_error = status;
+                rv = CMD_RET_LIBBLADERF;
+            }
         }
     }
     return rv;
@@ -514,38 +559,39 @@ int set_rxvga1(struct cli_state *state, int argc, char **argv)
 
 int print_rxvga2(struct cli_state *state, int argc, char **argv)
 {
-    int rv = CMD_RET_OK, ret, gain;
-    if( argc != 2 ) {
-        printf( "%s %s: Ignoring extra arguments\n", argv[0], argv[1] );
+    int rv = CMD_RET_OK, gain, status;
+
+    status = bladerf_get_rxvga2( state->curr_device, &gain );
+    if (status < 0) {
+        state->last_lib_error = status;
+        rv = CMD_RET_LIBBLADERF;
+    } else {
+        printf( "\n" );
+        printf( "  RXVGA2 Gain: %3ddB\n", gain );
+        printf( "\n" );
     }
-
-    /* TODO: Check ret */
-    ret = bladerf_get_rxvga2( state->curr_device, &gain );
-
-    printf( "\n" );
-    printf( "  RXVGA2 Gain: %3ddB\n", gain );
-    printf( "\n" );
 
     return rv;
 }
 
 int set_rxvga2(struct cli_state *state, int argc, char **argv)
 {
-    int rv = CMD_RET_OK, ret, gain;
-    if( argc == 2 ) {
-        printf( "set rxvga2 specialized help\n" );
-    } else if( argc != 3 ) {
-        printf( "%s %s: Invalid number of arguments (%d)\n", argv[0], argv[1], argc );
-        rv = CMD_RET_INVPARAM;
+    int rv = CMD_RET_OK, gain, status;
+
+    if( argc != 3 ) {
+        rv = CMD_RET_NARGS;
     } else {
         bool ok;
         gain = str2int( argv[2], INT_MIN, INT_MAX, &ok );
         if( !ok ) {
-            printf( "%s %s: %s is not a valid gain\n", argv[0], argv[1], argv[2] );
+            invalid_gain(state, argv[0], argv[1], argv[2]);
             rv = CMD_RET_INVPARAM;
         } else {
-            /* TODO: Check ret */
-            ret = bladerf_set_rxvga2( state->curr_device, gain );
+            status = bladerf_set_rxvga2( state->curr_device, gain );
+            if (status < 0) {
+                state->last_lib_error = status;
+                rv = CMD_RET_LIBBLADERF;
+            }
         }
     }
     return rv;
@@ -563,19 +609,16 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
     int rv = CMD_RET_OK;
     bladerf_module module  = RX;
 
-    if( argc == 2 ) {
-        printf( "set samplerate specific help\n" );
-    } else if( argc == 4 ) {
+    if( argc == 4 ) {
         /* Parse module */
         bool ok;
         module = get_module( argv[2], &ok );
         if( !ok ) {
-            printf( "%s %s: %s is not TX or RX\n", argv[0], argv[1], argv[2] );
+            invalid_module(state, argv[0], argv[2]);
             rv = CMD_RET_INVPARAM;
         }
     } else if( argc != 3 ) {
-        invalid_argc( argv[0], argv[1], argc );
-        rv = CMD_RET_INVPARAM;
+        rv = CMD_RET_NARGS;
     }
 
     if( argc > 2 && rv == CMD_RET_OK ) {
@@ -584,22 +627,33 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
         rate = str2uint( argv[argc-1], 160000, 40000000, &ok );
 
         if( !ok ) {
-            printf( "%s %s: %s is not a valid samplerate\n", argv[0], argv[1], argv[2] );
+            cli_err(state, argv[0], "Invalid sample rate (%s)", argv[2]);
             rv = CMD_RET_INVPARAM;
         } else {
             printf( "\n" );
             if( argc == 3 || module == RX ) {
-                /* TODO: Check ret */
-                int ret;
-                ret = bladerf_set_sample_rate( state->curr_device, RX, rate, &actual );
-                printf( "  Setting RX sample rate - req: %9uHz actual: %9uHz\n", rate, actual );
+                int status = bladerf_set_sample_rate( state->curr_device,
+                                                      RX, rate, &actual );
+
+                if (status < 0) {
+                    state->last_lib_error = status;
+                    rv = CMD_RET_LIBBLADERF;
+                } else {
+                    printf( "  Setting RX sample rate - req: %9uHz, "
+                            "actual: %9uHz\n", rate, actual );
+                }
             }
 
             if( argc == 3 || module == TX ) {
-                /* TODO: Check ret */
-                int ret;
-                ret = bladerf_set_sample_rate( state->curr_device, TX, rate, &actual );
-                printf( "  Setting TX sample rate - req: %9uHz actual: %9uHz\n", rate, actual );
+                int status = bladerf_set_sample_rate( state->curr_device, TX,
+                                                      rate, &actual );
+                if (status < 0) {
+                    state->last_lib_error = status;
+                    rv = CMD_RET_LIBBLADERF;
+                } else {
+                    printf( "  Set TX sample rate - req: %9uHz, "
+                            "actual: %9uHz\n", rate, actual );
+                }
             }
             printf( "\n" );
 
@@ -620,39 +674,39 @@ int set_trimdac(struct cli_state *state, int argc, char **argv)
     int rv = CMD_RET_OK;
     unsigned int val;
 
-    if( argc == 2 ) {
-        printf( "set trimdac specialized help here\n" );
-    } else if( argc != 3 ) {
-        invalid_argc( argv[0], argv[1], argc );
-        rv = CMD_RET_INVPARAM;
+    if( argc != 3 ) {
+        rv = CMD_RET_NARGS;
     } else {
         bool ok;
         val = str2uint( argv[2], 0, 65535, &ok );
         if( !ok ) {
-            printf( "%s %s: %s is not a valid VCTCXO DAC value\n", argv[0], argv[1], argv[2] );
+            cli_err(state, argv[0], "Invalid VCTCXO DAC value (%s)", argv[2]);
             rv = CMD_RET_INVPARAM;
         } else {
-            int ret;
-            /* TODO: Check ret */
-            ret = dac_write( state->curr_device, val );
+            int status = dac_write( state->curr_device, val );
+            if (status < 0) {
+                state->last_lib_error = status;
+                rv = CMD_RET_LIBBLADERF;
+            }
         }
     }
-    return CMD_RET_OK;
+    return rv;
 }
 
 int print_txvga1(struct cli_state *state, int argc, char **argv)
 {
     /* Usage: print txvga1 */
-    int rv = CMD_RET_OK, ret, gain;
-    if( argc != 2 ) {
-        printf( "%s: Ignoring %d extra arguments\n", argv[0], argc-2 );
+    int rv = CMD_RET_OK, gain, status;
+
+    status = bladerf_get_txvga1( state->curr_device, &gain );
+    if (status < 0) {
+        state->last_lib_error = status;
+        rv = CMD_RET_LIBBLADERF;
+    } else {
+        printf( "\n" );
+        printf( "  TXVGA1 Gain: %ddB\n", gain ) ;
+        printf( "\n" );
     }
-
-    ret = bladerf_get_txvga1( state->curr_device, &gain );
-
-    printf( "\n" );
-    printf( "  TXVGA1 Gain: %ddB\n", gain ) ;
-    printf( "\n" );
 
     return rv;
 }
@@ -661,29 +715,25 @@ int set_txvga1(struct cli_state *state, int argc, char **argv)
 {
     /* Usage: set txvga1 <gain> */
     int rv = CMD_RET_OK, gain;
-    if( argc == 2 ) {
-        /* TODO: Write this better */
-        printf( "set txvga1 specialized help\n" );
-    }
 
-    else if( argc == 3 ) {
+    if( argc == 3 ) {
         bool ok ;
         gain = str2int( argv[2], INT_MIN, INT_MAX, &ok );
 
         if( !ok ) {
-            printf( "%s %s: %s is not a valid gain setting\n", argv[0], argv[1], argv[2] );
+            invalid_gain(state, argv[0], argv[1], argv[2]);
             rv = CMD_RET_INVPARAM;
         } else {
-            int ret ;
-            /* TODO: Check ret */
-            printf( "  Setting TXVGA1 to %d\n", gain );
-            ret = bladerf_set_txvga1( state->curr_device, gain );
+            int status = bladerf_set_txvga1( state->curr_device, gain );
+            if (status < 0) {
+                state->last_lib_error = status;
+                rv = CMD_RET_LIBBLADERF;
+            } else {
+                printf( "  Set TXVGA1 to %d\n", gain );
+            }
         }
-    }
-
-    else {
-        invalid_argc( argv[0], argv[1], argc );
-        rv = CMD_RET_INVPARAM;
+    } else {
+        rv = CMD_RET_NARGS;
     }
 
     return rv;
@@ -693,12 +743,13 @@ int print_txvga2(struct cli_state *state, int argc, char **argv)
 {
     /* Usage: print txvga2 */
     int rv = CMD_RET_OK;
-    if( argc != 2 ) {
-        invalid_argc( argv[0], argv[1], argc );
-        rv = CMD_RET_INVPARAM;
+    int status, gain;
+
+    status = bladerf_get_txvga2( state->curr_device, &gain );
+    if (status < 0) {
+        state->last_lib_error = status;
+        rv = CMD_RET_LIBBLADERF;
     } else {
-        int ret, gain;
-        ret = bladerf_get_txvga2( state->curr_device, &gain );
         printf( "\n" );
         printf( "  TXVGA2 Gain: %ddB\n", gain );
         printf( "\n" );
@@ -710,22 +761,22 @@ int set_txvga2(struct cli_state *state, int argc, char **argv)
 {
     /* Usage: set txvga2 <gain> */
     int rv = CMD_RET_OK;
-    if( argc == 2 ) {
-        printf( "specialized set_txvga2 help\n" );
-    } else if( argc != 3 ) {
-        invalid_argc( argv[0], argv[1], argc );
-        rv = CMD_RET_INVPARAM;
+
+    if( argc != 3 ) {
+        rv = CMD_RET_NARGS;
     } else {
         bool ok;
         int gain;
         gain = str2int( argv[2], INT_MIN, INT_MAX, &ok );
         if( !ok ) {
-            printf( "%s %s: %s is not a valid gain value\n", argv[0], argv[1], argv[2] );
+            invalid_gain(state, argv[0], argv[1], argv[2]);
             rv = CMD_RET_INVPARAM;
         } else {
-            /* TODO: Check ret */
-            int ret;
-            ret = bladerf_set_txvga2( state->curr_device, gain );
+            int status = bladerf_set_txvga2( state->curr_device, gain );
+            if (status < 0) {
+                state->last_lib_error = status;
+                rv = CMD_RET_LIBBLADERF;
+            }
         }
     }
     return rv;
@@ -779,12 +830,11 @@ int cmd_set(struct cli_state *state, int argc, char **argv)
             rv = entry->set(state, argc, argv);
         } else {
             /* Incorrect parameter to print */
-            printf( "%s: %s is not a valid parameter to print\n", argv[0], argv[1] );
+            cli_err(state, argv[0], "Invalid parameter (%s)", argv[1]);
             rv = CMD_RET_INVPARAM;
         }
     } else {
-        invalid_argc( argv[0], argv[1], argc);
-        rv = CMD_RET_INVPARAM;
+        rv = CMD_RET_NARGS;
     }
     return rv;
 }
@@ -825,7 +875,7 @@ int cmd_print(struct cli_state *state, int argc, char **argv)
             rv = entry->print(state, argc, argv);
         } else {
             /* Incorrect parameter to print */
-            printf( "%s: %s is not a valid parameter to print\n", argv[0], argv[1] );
+            cli_err(state, argv[0], "Invalid parameter (%s)", argv[1]);
             rv = CMD_RET_INVPARAM;
         }
     }

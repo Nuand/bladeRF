@@ -4,18 +4,19 @@
 
 #include "cmd.h"
 
-#define DEFINE_CMD(x) int cmd_##x (struct cli_state *, int, char **)
-DEFINE_CMD(help);
-DEFINE_CMD(load);
-DEFINE_CMD(peek);
-DEFINE_CMD(poke);
-DEFINE_CMD(print);
-DEFINE_CMD(rx);
-DEFINE_CMD(set);
-DEFINE_CMD(tx);
-DEFINE_CMD(version);
-DEFINE_CMD(open);
-DEFINE_CMD(probe);
+#define DECLARE_CMD(x) int cmd_##x (struct cli_state *, int, char **)
+DECLARE_CMD(clear);
+DECLARE_CMD(help);
+DECLARE_CMD(load);
+DECLARE_CMD(open);
+DECLARE_CMD(peek);
+DECLARE_CMD(poke);
+DECLARE_CMD(print);
+DECLARE_CMD(probe);
+DECLARE_CMD(rx);
+DECLARE_CMD(set);
+DECLARE_CMD(tx);
+DECLARE_CMD(version);
 
 #define MAX_ARGS    10
 
@@ -26,12 +27,13 @@ struct cmd {
     const char  *help;
 };
 
+static const char *cmd_names_clear[] = { "clear", "cls", NULL };
 static const char *cmd_names_help[] = { "help", "h", "?", NULL };
 static const char *cmd_names_load[] = { "load", "ld", NULL };
+static const char *cmd_names_open[] = { "open", "op", "o", "NULL" };
 static const char *cmd_names_peek[] = { "peek", "pe", NULL };
 static const char *cmd_names_poke[] = { "poke", "po", NULL };
 static const char *cmd_names_print[] = { "print", "pr", "p", NULL };
-static const char *cmd_names_open[] = { "open", "op", "o", "NULL" };
 static const char *cmd_names_probe[] = { "probe", "pro", NULL };
 static const char *cmd_names_quit[] = { "quit", "q", "exit", "x", NULL };
 static const char *cmd_names_rx[] = { "rx", NULL };
@@ -40,121 +42,6 @@ static const char *cmd_names_set[] = { "set", "s", NULL };
 static const char *cmd_names_ver[] = { "version", "ver", "v", NULL };
 
 static const struct cmd cmd_table[] = {
-    {
-        .names = cmd_names_help,
-        .exec = cmd_help,
-        .desc = "Provide information about specified command",
-        .help =
-            "help <command>\n"
-            "\n"
-            "Provides extended help, like this, on any command.\n"
-    },
-    {
-        .names = cmd_names_load,
-        .exec = cmd_load,
-        .desc = "Load FPGA or FX3",
-        .help =
-            "load <fpga|fx3> <filename>\n"
-            "\n"
-            "Load an FPGA bitstream or program the FX3's SPI flash.\n"
-    },
-    {
-        .names = cmd_names_peek,
-        .exec = cmd_peek,
-        .desc = "Peek a memory location",
-        .help =
-            "peek <dac|lms|si> <address> [num addresses]\n"
-            "\n"
-            "The peek command can read any of the devices hanging off\n"
-            "the FPGA which includes the LMS6002D transceiver, VCTCXO\n"
-            "trim DAC or the Si5338 clock generator chip.\n"
-            "\n"
-            "If num_addresses is supplied, the address is incremented by\n"
-            "1 and another peek is performed.\n"
-            "\n"
-            "Valid Address Ranges\n"
-            "--------------------\n"
-            "dac            0   255\n"
-            "lms            0   127\n"
-            "si             0   255\n"
-            "\n"
-            "Examples\n"
-            "--------\n"
-            "  bladeRF> peek si ...\n"
-    },
-    {
-        .names = cmd_names_poke,
-        .exec = cmd_poke,
-        .desc = "Poke a memory location",
-        .help =
-            "poke <dac|lms|si> <address> <data>\n"
-            "\n"
-            "The poke command can write any of the devices hanging off\n"
-            "the FPGA which includes the LMS6002D transceiver, VCTCXO\n"
-            "trim DAC or the Si5338 clock generator chip.\n"
-            "\n"
-            "If num_addresses is supplied, the address is incremented by\n"
-            "1 and another poke is performed.\n"
-            "\n"
-            "Valid Address Ranges\n"
-            "--------------------\n"
-            "dac            0   255\n"
-            "lms            0   127\n"
-            "si             0   255\n"
-            "\n"
-            "Examples\n"
-            "-------\n"
-            "  bladeRF> poke lms ...\n"
-    },
-    {
-        .names = cmd_names_print,
-        .desc = "Print information about the device",
-        .help =
-            "print <param>\n"
-            "\n"
-            "The print command takes a parameter to print.  The parameter\n"
-            "is one of:\n"
-            "\n"
-            "   bandwidth       Bandwidth settings\n"
-            "   config          Overview of everything\n"
-            "   frequency       Frequency settings\n"
-            "   lmsregs         LMS6002D register dump\n"
-            "   loopback        Loopback settings\n"
-            "   mimo            MIMO settings\n"
-            "   pa              PA settings\n"
-            "   pps             PPS settings\n"
-            "   refclk          Reference clock settings\n"
-            "   rxvga1          Gain setting of RXVGA1 in dB (range: )\n"
-            "   rxvga2          Gain setting of RXVGA2 in dB (range: )\n"
-            "   samplerate      Samplerate settings\n"
-            "   trimdac         VCTCXO Trim DAC settings\n"
-            "   txvga1          Gain setting of TXVGA1 in dB (range: )\n"
-            "   txvga2          Gain setting of TXVGA2 in dB (range: )\n"
-    },
-    {
-        .names = cmd_names_open,
-        .exec = cmd_open,
-        .desc = "Open a bladeRF device",
-        .help = "open <device>\n"
-                "\n"
-                "Open the specified device for use with successive commands.\n"
-                "Any previously opened device will be closed.\n",
-    },
-    {
-        .names = cmd_names_probe,
-        .exec = cmd_probe,
-        .desc = "List attached bladeRF devices",
-        .help = "probe\n"
-                "\n"
-                "Search for attached bladeRF device and print a list\n"
-                "of results.\n",
-    },
-    {
-        .names = cmd_names_quit,
-        .exec = NULL,   /* Default action on NULL exec function is to quit */
-        .desc = "Exit the CLI",
-        .help = "Exit the CLI\n"
-    },
     {
         .names = cmd_names_rx,
         .exec = cmd_rx,
@@ -203,6 +90,116 @@ static const struct cmd cmd_table[] = {
             "   txvga2          Gain setting of TXVGA2 in dB (range: )\n"
     },
     {
+        .names = cmd_names_poke,
+        .exec = cmd_poke,
+        .desc = "Poke a memory location",
+        .help =
+            "poke <dac|lms|si> <address> <data>\n"
+            "\n"
+            "The poke command can write any of the devices hanging off\n"
+            "the FPGA which includes the LMS6002D transceiver, VCTCXO\n"
+            "trim DAC or the Si5338 clock generator chip.\n"
+            "\n"
+            "If num_addresses is supplied, the address is incremented by\n"
+            "1 and another poke is performed.\n"
+            "\n"
+            "Valid Address Ranges\n"
+            "--------------------\n"
+            "dac            0   255\n"
+            "lms            0   127\n"
+            "si             0   255\n"
+            "\n"
+            "Examples\n"
+            "-------\n"
+            "  bladeRF> poke lms ...\n"
+    },
+    {
+        .names = cmd_names_peek,
+        .exec = cmd_peek,
+        .desc = "Peek a memory location",
+        .help =
+            "peek <dac|lms|si> <address> [num addresses]\n"
+            "\n"
+            "The peek command can read any of the devices hanging off\n"
+            "the FPGA which includes the LMS6002D transceiver, VCTCXO\n"
+            "trim DAC or the Si5338 clock generator chip.\n"
+            "\n"
+            "If num_addresses is supplied, the address is incremented by\n"
+            "1 and another peek is performed.\n"
+            "\n"
+            "Valid Address Ranges\n"
+            "--------------------\n"
+            "dac            0   255\n"
+            "lms            0   127\n"
+            "si             0   255\n"
+            "\n"
+            "Examples\n"
+            "--------\n"
+            "  bladeRF> peek si ...\n"
+    },
+    {
+        .names = cmd_names_help,
+        .exec = cmd_help,
+        .desc = "Provide information about specified command",
+        .help =
+            "help <command>\n"
+            "\n"
+            "Provides extended help, like this, on any command.\n"
+    },
+    {
+        .names = cmd_names_load,
+        .exec = cmd_load,
+        .desc = "Load FPGA or FX3",
+        .help =
+            "load <fpga|fx3> <filename>\n"
+            "\n"
+            "Load an FPGA bitstream or program the FX3's SPI flash.\n"
+    },
+    {
+        .names = cmd_names_print,
+        .exec = cmd_print,
+        .desc = "Print information about the device",
+        .help =
+            "print <param>\n"
+            "\n"
+            "The print command takes a parameter to print.  The parameter\n"
+            "is one of:\n"
+            "\n"
+            "   bandwidth       Bandwidth settings\n"
+            "   config          Overview of everything\n"
+            "   frequency       Frequency settings\n"
+            "   lmsregs         LMS6002D register dump\n"
+            "   loopback        Loopback settings\n"
+            "   mimo            MIMO settings\n"
+            "   pa              PA settings\n"
+            "   pps             PPS settings\n"
+            "   refclk          Reference clock settings\n"
+            "   rxvga1          Gain setting of RXVGA1 in dB (range: )\n"
+            "   rxvga2          Gain setting of RXVGA2 in dB (range: )\n"
+            "   samplerate      Samplerate settings\n"
+            "   trimdac         VCTCXO Trim DAC settings\n"
+            "   txvga1          Gain setting of TXVGA1 in dB (range: )\n"
+            "   txvga2          Gain setting of TXVGA2 in dB (range: )\n"
+    },
+    {
+        .names = cmd_names_open,
+        .exec = cmd_open,
+        .desc = "Open a bladeRF device",
+        .help = "open <device>\n"
+                "\n"
+                "Open the specified device for use with successive commands.\n"
+                "Any previously opened device will be closed.\n",
+    },
+    {
+        .names = cmd_names_probe,
+        .exec = cmd_probe,
+        .desc = "List attached bladeRF devices",
+        .help = "probe\n"
+                "\n"
+                "Search for attached bladeRF device and print a list\n"
+                "of results.\n",
+    },
+    {
         .names = cmd_names_ver,
         .exec = cmd_version,
         .desc = "Device and firmware versions",
@@ -210,6 +207,20 @@ static const struct cmd cmd_table[] = {
             "version\n"
             "\n"
             "Prints version information for device and firmware.\n"
+    },
+    {
+        .names = cmd_names_clear,
+        .exec = cmd_clear,
+        .desc = "Clear the screen",
+        .help = "clear\n"
+                "\n"
+                "Clears the screen\n",
+    },
+    {
+        .names = cmd_names_quit,
+        .exec = NULL,   /* Default action on NULL exec function is to quit */
+        .desc = "Exit the CLI",
+        .help = "Exit the CLI\n"
     },
     /* Always terminate the command entry with a completely NULL entry */
     {
@@ -262,12 +273,11 @@ int cmd_help(struct cli_state *s, int argc, char **argv)
             printf( "\n%s\n", cmd->help );
         } else {
             /* Otherwise, print that we couldn't find it :( */
-            printf( "%s: Could not find help on command %s\n", argv[0], argv[1] );
+            cli_err(s, argv[0], "No help info available for \"%s\"", argv[1]);
             ret = CMD_RET_INVPARAM;
         }
     } else {
-        printf( "%s: Incorrect number of arguments (%d)\n", argv[0], argc );
-        ret = CMD_RET_INVPARAM;
+        ret = CMD_RET_NARGS;
     }
 
     return ret;
@@ -277,22 +287,33 @@ const char * cmd_strerror(int error, int lib_error)
 {
     switch (error) {
         case CMD_RET_MEM:
-            return "\nA fatal memory allocation error has occurred.\n";
+            return "A fatal memory allocation error has occurred";
+
+        case CMD_RET_UNKNOWN:
+            return "A fatal unknown error has occurred";
 
         case CMD_RET_MAX_ARGC:
-            return "\nNumber of arguments exceeds allowed maximum.\n";
+            return "Number of arguments exceeds allowed maximum";
 
         case CMD_RET_LIBBLADERF:
             return bladerf_strerror(lib_error);
 
         case CMD_RET_NODEV:
-            return "\nError: No devices are currently opened.\n";
+            return "No devices are currently opened";
+
+        case CMD_RET_NARGS:
+            return "Invalid number of arguments provided";
 
         /* Other commands shall print out helpful info from within their
          * implementation */
         default:
             return NULL;
     }
+}
+
+int cmd_clear(struct cli_state *s, int argc, char **argv)
+{
+    return CMD_RET_CLEAR_TERM;
 }
 
 int cmd_handle(struct cli_state *s, const char *line_)
@@ -329,7 +350,7 @@ int cmd_handle(struct cli_state *s, const char *line_)
                 ret = CMD_RET_QUIT;
             }
         } else {
-            printf( "\nUnrecognized command: %s\n\n", argv[0] );
+            cli_err(s, "Unrecognized command", "%s", argv[0]);
             ret = CMD_RET_NOCMD;
         }
 
@@ -340,3 +361,4 @@ int cmd_handle(struct cli_state *s, const char *line_)
     free(line);
     return ret;
 }
+

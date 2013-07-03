@@ -19,7 +19,7 @@ int cmd_rx(struct cli_state *state, int argc, char **argv)
         } else if( strcasecmp( argv[2], "binary" ) == 0 ) {
 
         } else {
-            printf( "%s: %s is an invalid format\n", argv[0], argv[2] );
+            cli_err(state, argv[0], "\"%s\" is an invalid format\n", argv[2] );
             rv = CMD_RET_INVPARAM;
         }
 

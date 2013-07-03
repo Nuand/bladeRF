@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "common.h"
 #include "cmd.h"
 
 /* Usage:
@@ -7,11 +8,11 @@
 int cmd_open(struct cli_state *state, int argc, char **argv)
 {
     if (argc < 2) {
-        printf("%s: No device specified\n", argv[0]);
+        cli_err(state, argv[0], "No device specified");
         return CMD_RET_INVPARAM;
     } else if (argc > 2) {
-        printf("%s: Extraneous arguments encountered at \"%s\"\n",
-                argv[0], argv[1]);
+        cli_err(state, argv[0], "Extraneous arguments encountered at \"%s\"\n",
+                argv[1]);
         return CMD_RET_INVPARAM;
     }
 

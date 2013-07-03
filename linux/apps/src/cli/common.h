@@ -51,4 +51,16 @@ int str2int(const char *str, int min, int max, bool *ok);
  */
 unsigned int str2uint(const char *str,
                         unsigned int min, unsigned int max, bool *ok);
+
+/**
+ * Print an error message, with a line number, if running from a script.
+ *
+ *
+ * @param   s       CLI state.
+ * @param   pfx     Error prefix. "Error: " is used if this is null
+ * @param   format  Printf-style format string, followed by args
+ *
+ */
+void cli_err(struct cli_state *s, const char *pfx, const char *format, ...);
+
 #endif

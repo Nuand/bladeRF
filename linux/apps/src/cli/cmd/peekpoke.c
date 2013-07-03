@@ -1,7 +1,6 @@
-#include <stdio.h>
+#include "common.h"
 
-void invalid_address( char *fn, char *str ) {
-    printf( "%s: %s is not a valid address to write\n", fn, str );
-    return;
+void invalid_address(struct cli_state *s, char *fn, char *str) {
+    cli_err(s, fn, "%s is an invalid address", str);
 }
 
