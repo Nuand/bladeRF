@@ -30,8 +30,8 @@ int cmd_peek(struct cli_state *state, int argc, char **argv)
             count = str2uint( argv[3], 0, MAX_NUM_ADDRESSES, &ok );
             if( !ok ) {
                 cli_err(state, argv[0],
-                        "%s not a valid unsigned value, defaulting to 1", argv[3]);
-                count = 1;
+                        "Invalid number of addresses provided (%s)", argv[3]);
+                return CMD_RET_INVPARAM;
             }
         }
 

@@ -29,8 +29,8 @@ int cmd_poke(struct cli_state *state, int argc, char **argv)
             value = str2uint( argv[3], 0, MAX_VALUE, &ok );
             if( !ok ) {
                 cli_err(state, argv[0],
-                        "%s not a valid unsigned value, defaulting to 1", argv[3]);
-                rv = CMD_RET_INVPARAM;
+                        "Invalid number of addresses provided (%s)", argv[3]);
+                return CMD_RET_INVPARAM;
             }
         }
 

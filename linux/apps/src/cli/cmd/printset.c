@@ -85,7 +85,7 @@ static inline void invalid_gain(struct cli_state *s, const char *cmd,
 
 int print_bandwidth(struct cli_state *state, int argc, char **argv)
 {
-    /* Usage: print bandwidth [<rx|tx>]*/
+    /* Usage: print bandwidth [rx|tx]*/
     int rv = CMD_RET_OK, status;
     bladerf_module module = RX ;
     unsigned int bw ;
@@ -97,7 +97,8 @@ int print_bandwidth(struct cli_state *state, int argc, char **argv)
             invalid_module(state, argv[0], argv[2]);
             return CMD_RET_INVPARAM;
         }
-    } else {
+    } else if (argc != 2) {
+        /* Assume both RX & TX if not specified */
         return CMD_RET_NARGS;
     }
 
@@ -239,6 +240,7 @@ int print_frequency(struct cli_state *state, int argc, char **argv)
             rv = CMD_RET_INVPARAM;
         }
     } else if( argc != 2 ) {
+        /* Assume both RX & TX if not specified */
         rv = CMD_RET_NARGS;
     }
 
@@ -286,6 +288,7 @@ int set_frequency(struct cli_state *state, int argc, char **argv)
             rv = CMD_RET_INVPARAM;
         }
     } else if( argc != 3 ) {
+        /* Assume both RX & TX if not specified */
         rv = CMD_RET_NARGS;
     }
 

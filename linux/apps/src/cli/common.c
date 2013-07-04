@@ -92,7 +92,8 @@ void cli_err(struct cli_state *s, const char *pfx, const char *format, ...)
         snprintf(lbuf, lbuf_sz, " (line %d)", s->lineno);
     }
 
-    err = calloc(strlen(lbuf) + strlen(pfx) + strlen(format) + 5, 1);
+    /* +6 --> 3 newlines, 2 chars padding, NUL terminator */
+    err = calloc(strlen(lbuf) + strlen(pfx) + strlen(format) + 6, 1);
     if (err) {
         strcat(err, "\n");
         strcat(err, pfx);
