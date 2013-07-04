@@ -386,9 +386,15 @@ int bladerf_get_frequency(struct bladerf *dev,
 {
     /* TODO: Make return values for lms call and return it for failure */
     struct lms_freq f;
+    int rv = 0;
     lms_get_frequency( dev, module, &f );
-    *frequency = (unsigned int)(((uint64_t)((f.nint<<23) + f.nfrac)) * (f.reference/f.x) >>23);
-    return 0;
+    if( f.x == 0 ) {
+        *frequency = 0 ;
+        rv = BLADERF_ERR_INVAL;
+    } else {
+        *frequency = (unsigned int)(((uint64_t)((f.nint<<23) + f.nfrac)) * (f.reference/f.x) >>23);
+    }
+    return rv;
 }
 /*******************************************************************************
  * Data transmission and reception

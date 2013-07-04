@@ -245,14 +245,17 @@ int print_frequency(struct cli_state *state, int argc, char **argv)
     }
 
     if( rv == CMD_RET_OK ) {
-        printf( "\n" );
         if( argc == 2 || module == RX ) {
             status = bladerf_get_frequency( state->curr_device, RX, &freq );
             if (status < 0) {
                 state->last_lib_error = status;
                 rv = CMD_RET_LIBBLADERF;
             } else {
+                printf( "\n" );
                 printf( "  RX Frequency: %10uHz\n", freq );
+                if( argc == 3 ) {
+                    printf( "\n" );
+                }
             }
         }
 
@@ -262,10 +265,13 @@ int print_frequency(struct cli_state *state, int argc, char **argv)
                 state->last_lib_error = status;
                 rv = CMD_RET_LIBBLADERF;
             } else {
+                if( argc == 3 ) {
+                    printf( "\n" );
+                }
                 printf( "  TX Frequency: %10uHz\n", freq );
+                printf( "\n" );
             }
         }
-        printf( "\n" );
     }
 
     return rv;
