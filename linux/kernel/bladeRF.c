@@ -518,7 +518,7 @@ long bladerf_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
     int sectors_to_wipe, sector_idx;
     int pages_to_write, page_idx;
     int pages_to_read;
-    int check_idx, check_error;
+    int check_idx;
     int count, tries;
     int targetdev;
 
@@ -630,7 +630,6 @@ long bladerf_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
             pages_to_read = (brf_fw.len + 255) / 0x100;
 
-            check_error = 0;
             for (page_idx = 0; page_idx < pages_to_read; page_idx++) {
                 nread = 0;
                 do {
@@ -644,7 +643,7 @@ long bladerf_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
                     if (buf[check_idx] != fw_buf[page_idx * 256 + check_idx]) {
                         printk("ERROR: bladeRF firmware verification detected a mismatch at byte offset 0x%.8x\n", page_idx * 256 + check_idx);
                         printk("ERROR: expected byte 0x%.2X, got 0x%.2X\n", fw_buf[page_idx * 256 + check_idx], buf[check_idx]);
-                        check_error = 1;
+                        retval = -EINVAL;
                         goto leave_fw;
                     }
                 }
