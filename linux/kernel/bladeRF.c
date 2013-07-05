@@ -524,6 +524,7 @@ long bladerf_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
     unsigned char buf[1024];
     struct bladeRF_firmware brf_fw;
+    struct bladeRF_sector brf_sector;
     unsigned char *fw_buf;
 
     dev = file->private_data;
@@ -561,6 +562,213 @@ long bladerf_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
                 ret = usb_set_interface(dev->udev, 1,0);
                 dev->intnum = 1;
             }
+            break;
+
+        case BLADE_CAL:
+            if (dev->intnum != 2) {
+                retval = usb_set_interface(dev->udev, 2,0);
+
+                if (retval)
+                    break;
+
+                dev->intnum = 2;
+            }
+            if (copy_from_user(&brf_fw, data, sizeof(struct bladeRF_firmware))) {
+                return -EFAULT;
+            }
+
+            fw_buf = kzalloc(256, GFP_KERNEL);
+            if (!fw_buf)
+                return -EINVAL;
+
+            memset(fw_buf, 0xff, 256);
+
+            if (copy_from_user(fw_buf, brf_fw.ptr, brf_fw.len)) {
+                retval = -EFAULT;
+                break;
+            }
+
+            retval = usb_control_msg(dev->udev, usb_rcvctrlpipe(dev->udev, 0),
+                    BLADE_USB_CMD_FLASH_ERASE, BLADE_USB_TYPE_IN, 0x0000, 3,
+                    &ret, 4, BLADE_USB_TIMEOUT_MS * 100);
+
+            if (!retval) {
+                dev_err(&dev->interface->dev, "Could not erase NAND cal sector 3.\n");
+                break;
+            }
+
+            retval = usb_control_msg(dev->udev, usb_rcvctrlpipe(dev->udev, 0),
+                    BLADE_USB_CMD_FLASH_WRITE, BLADE_USB_TYPE_OUT, 0x0000, 768,
+                    fw_buf, 256, BLADE_USB_TIMEOUT_MS);
+
+            if (!retval) {
+                dev_err(&dev->interface->dev, "Could not write NAND cal sector 768.\n");
+                break;
+            }
+
+            memset(buf, 0, 256);
+
+            retval = usb_control_msg(dev->udev, usb_rcvctrlpipe(dev->udev, 0),
+                    BLADE_USB_CMD_FLASH_READ, BLADE_USB_TYPE_IN, 0x0000, 768,
+                    buf, 256, BLADE_USB_TIMEOUT_MS);
+
+            if (!retval) {
+                dev_err(&dev->interface->dev, "Could not read NAND cal sector 768.\n");
+                break;
+            }
+
+            retval = memcmp(fw_buf, buf, 256);
+            break;
+
+        case BLADE_FLASH_ERASE:
+                retval = usb_control_msg(dev->udev, usb_rcvctrlpipe(dev->udev, 0),
+                        BLADE_USB_CMD_FLASH_ERASE, BLADE_USB_TYPE_IN, 0x0000, arg,
+                        &ret, 4, BLADE_USB_TIMEOUT_MS * 100);
+
+                if (!retval) {
+                    dev_err(&dev->interface->dev, "Could not read NAND cal sector 768.\n");
+                    break;
+                }
+
+                retval = !ret;
+        break;
+
+        case BLADE_OTP:
+            if (dev->intnum != 2) {
+                retval = usb_set_interface(dev->udev, 2,0);
+
+                if (retval)
+                    break;
+
+                dev->intnum = 2;
+            }
+
+            if (copy_from_user(&brf_fw, data, sizeof(struct bladeRF_firmware))) {
+                return -EFAULT;
+            }
+
+            fw_buf = kzalloc(256, GFP_KERNEL);
+            if (!fw_buf)
+                return -EINVAL;
+            memset(fw_buf, 0xff, 256);
+
+            if (copy_from_user(fw_buf, brf_fw.ptr, brf_fw.len)) {
+                retval = -EFAULT;
+                kfree(fw_buf);
+                break;
+            }
+
+            memcpy(buf, fw_buf, brf_fw.len);
+
+            retval = usb_control_msg(dev->udev, usb_rcvctrlpipe(dev->udev, 0),
+                    BLADE_USB_CMD_WRITE_OTP, BLADE_USB_TYPE_OUT, 0x0000, 0,
+                    fw_buf, 256, BLADE_USB_TIMEOUT_MS);
+
+            if (!retval) {
+                dev_err(&dev->interface->dev, "Could not write OTP.\n");
+                break;
+            }
+
+            memset(buf, 0, 256);
+
+            retval = usb_control_msg(dev->udev, usb_rcvctrlpipe(dev->udev, 0),
+                    BLADE_USB_CMD_READ_OTP, BLADE_USB_TYPE_IN, 0x0000, 0,
+                    buf, 256, BLADE_USB_TIMEOUT_MS);
+
+            if (!retval) {
+                dev_err(&dev->interface->dev, "Could not read OTP.\n");
+                break;
+            }
+
+            retval = memcmp(fw_buf, buf, 256);
+            break;
+
+        case BLADE_OTP_READ:
+        case BLADE_FLASH_READ:
+        case BLADE_FLASH_WRITE:
+            if (dev->intnum != 2) {
+                retval = usb_set_interface(dev->udev, 2,0);
+
+                if (retval)
+                    break;
+
+                dev->intnum = 2;
+            }
+
+            if (copy_from_user(&brf_sector, data, sizeof(struct bladeRF_sector))) {
+                return -EFAULT;
+            }
+
+            if (cmd == BLADE_OTP_READ) {
+                if (brf_sector.idx != 0 || brf_sector.len != 0x100)
+                    dev_err(&dev->interface->dev, "Invalid OTP settings, expecting idx=0, len=256\n");
+            }
+
+
+            sz = 0;
+            if (dev->udev->speed == USB_SPEED_HIGH) {
+                sz = 64;
+            } else if (dev->udev->speed == USB_SPEED_SUPER) {
+                sz = 256;
+            }
+
+            count = brf_sector.len + (sz - (brf_sector.len % sz));
+            fw_buf = kzalloc(count, GFP_KERNEL);
+
+            if (!fw_buf)
+                return -EFAULT;
+
+            memset(fw_buf, 0xff, count);
+
+            if (cmd == BLADE_FLASH_READ || cmd == BLADE_OTP_READ) {
+                pages_to_read = (brf_sector.len + 255) / 0x100;
+                nread = 0;
+                for (page_idx = 0; page_idx < pages_to_read; page_idx++) {
+                    do {
+                        retval = usb_control_msg(dev->udev, usb_rcvctrlpipe(dev->udev, 0),
+                                (cmd == BLADE_FLASH_READ) ? BLADE_USB_CMD_FLASH_READ : BLADE_USB_CMD_READ_OTP,
+                                BLADE_USB_TYPE_IN, 0x0000, brf_sector.idx + page_idx,
+                                &fw_buf[nread], sz, BLADE_USB_TIMEOUT_MS);
+                        printk("%d read %d bytes %x %x %x %x\n", retval, sz, fw_buf[nread], fw_buf[nread+1], fw_buf[nread+2], fw_buf[nread+3]);
+                        nread += sz;
+                        if (retval != sz) break;
+                    } while (nread != 256);
+                    if (retval != sz) break;
+                }
+
+                if (!retval) {
+                    dev_err(&dev->interface->dev, "Could not read NAND cal page idx %d.\n", page_idx);
+                    break;
+                }
+                if (copy_to_user((void __user *)brf_sector.ptr, fw_buf, brf_sector.len)) {
+                    retval = -EFAULT;
+                    break;
+                }
+            } else if (cmd == BLADE_FLASH_WRITE) {
+                if (copy_from_user(fw_buf, brf_sector.ptr, brf_sector.len)) {
+                    retval = -EFAULT;
+                    break;
+                }
+
+                pages_to_write = (brf_fw.len + 255) / 0x100;
+                nwrite = 0;
+                for (page_idx = 0; page_idx < pages_to_write; page_idx++) {
+                    do {
+                        retval = usb_control_msg(dev->udev, usb_rcvctrlpipe(dev->udev, 0),
+                                BLADE_USB_CMD_FLASH_WRITE, BLADE_USB_TYPE_OUT, 0x0000, brf_sector.idx + page_idx,
+                                &fw_buf[page_idx * 256 + nwrite], sz, BLADE_USB_TIMEOUT_MS);
+                        nwrite += sz;
+                        if (retval) break;
+                    } while (nwrite != 256);
+                    if (retval) break;
+                }
+
+                if (!retval) {
+                    dev_err(&dev->interface->dev, "Could not write NAND cal page idx %d.\n", page_idx);
+                    break;
+                }
+            }
+
             break;
 
         case BLADE_UPGRADE_FW:

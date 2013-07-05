@@ -15,7 +15,14 @@
 #define BLADE_GPIO_WRITE        _IOR(BLADERF_IOCTL_BASE, 25, unsigned int)
 #define BLADE_GPIO_READ         _IOR(BLADERF_IOCTL_BASE, 26, unsigned int)
 
+#define BLADE_FLASH_READ        _IOR(BLADERF_IOCTL_BASE, 40, unsigned int)
+#define BLADE_FLASH_WRITE       _IOR(BLADERF_IOCTL_BASE, 41, unsigned int)
+#define BLADE_FLASH_ERASE       _IOR(BLADERF_IOCTL_BASE, 42, unsigned int)
+#define BLADE_OTP_READ          _IOR(BLADERF_IOCTL_BASE, 43, unsigned int)
+
 #define BLADE_UPGRADE_FW        _IOR(BLADERF_IOCTL_BASE, 50, unsigned int)
+#define BLADE_CAL               _IOR(BLADERF_IOCTL_BASE, 51, unsigned int)
+#define BLADE_OTP               _IOR(BLADERF_IOCTL_BASE, 52, unsigned int)
 
 #define BLADE_USB_CMD_QUERY_VERSION             0
 #define BLADE_USB_CMD_QUERY_FPGA_STATUS         1
@@ -29,7 +36,6 @@
 #define BLADE_USB_CMD_READ_OTP                103
 #define BLADE_USB_CMD_WRITE_OTP               104
 
-
 #define BLADE_USB_CMD_QUERY_VERSION      0
 #define BLADE_USB_CMD_QUERY_FPGA_STATUS  1
 #define BLADE_USB_CMD_BEGIN_PROG         2
@@ -42,6 +48,12 @@ struct bladeRF_version {
 };
 
 struct bladeRF_firmware {
+    unsigned int len;
+    unsigned char *ptr;
+};
+
+struct bladeRF_sector {
+    unsigned int idx;
     unsigned int len;
     unsigned char *ptr;
 };
