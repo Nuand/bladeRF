@@ -395,7 +395,9 @@ int bladerf_get_frequency(struct bladerf *dev,
  *
  * @param       dev         Device handle
  * @param       samples     Array of samples
- * @param       n           Size of samples array, in elements
+ * @param       n           Number of sample (IQ pairs) to send
+ *
+ * @note    Currently unimplemented. Always returns 0.
  *
  * @return number of samples sent or value from \ref RETCODES list on failure
  */
@@ -406,24 +408,47 @@ ssize_t bladerf_send_c12(struct bladerf *dev, int16_t *samples, size_t n);
  *
  * @param       dev         Device handle
  * @param       samples     Array of samples
- * @param       n           Size of samples array, in elements
+ * @param       num_samples Number of samples (IQ pairs) to write
+ *
+ * @note        "Samples" denotes 2 x int16_t's -- an int16_t for I
+ *              and another for Q. These must be interleaved in the provided
+ *              samples buffer ([I, Q, I, Q, I, Q, ... Q]).
+ *              <br>
+ *              Therefore,  the size of the provided samples array should be
+ *              2 * (num_samples) elements, not (num_samples) elements.
+ *              <br>
+ *              Ideally, the return value will be n. Again, this is in units of
+ *              samples, so it implies 2 * (returned value) int16_t's were
+ *              written.
  *
  * @return number of samples sent on success,
  *          value from \ref RETCODES list on failure
  */
-ssize_t bladerf_send_c16(struct bladerf *dev, int16_t *samples, size_t n);
+ssize_t bladerf_send_c16(struct bladerf *dev,
+                         int16_t *samples, size_t num_samples);
 
 /**
  * Read 16-bit signed samples
  *
  * @param       dev         Device handle
  * @param       samples     Buffer to store samples in
- * @param       max_samples Max number of sample to read
+ * @param       num_samples Number of samples (IQ pairs) to read
+ *
+ * @note        "Samples" denotes 2 x int16_t's -- an int16_t for I
+ *              and another for Q. The data written to the provided samples
+ *              array is interleaved: [I, Q, I, Q, I, Q, ... Q].
+ *              <br>
+ *              Therefore,  the size of the provided samples array should be
+ *              2 * (num_samples) elements, not (num_samples) elements.
+ *              <br>
+ *              Ideally, the return value will be n (samples).
+ *              Again, this is in units of samples, so it implies
+ *              2 * (returned value) int16_t's were written.
  *
  * @return number of samples read or value from \ref RETCODES list on failure
  */
 ssize_t bladerf_read_c16(struct bladerf *dev,
-                            int16_t *samples, size_t max_samples);
+                         int16_t *samples, size_t num_samples);
 
 /** @} (End of FN_DATA) */
 
