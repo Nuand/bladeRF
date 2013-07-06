@@ -26,6 +26,17 @@
 #   define BLADERF_DEV_PFX  "bladerf"
 #endif
 
+/* TODO Check for truncation (e.g., odd # bytes)? */
+static inline size_t bytes_to_c16_samples(size_t n_bytes)
+{
+    return n_bytes / (2 * sizeof(int16_t));
+}
+
+/* TODO Overflow check? */
+static inline size_t c16_samples_to_bytes(size_t n_samples)
+{
+    return n_samples * 2 * sizeof(int16_t);
+}
 
 static inline size_t min_sz(size_t x, size_t y)
 {
@@ -83,15 +94,20 @@ struct bladerf * _bladerf_open_info(const char *dev_path,
     if (!ret)
         return NULL;
 
+    ret->last_errno = 0;
+
     /* TODO -- spit out error/warning message to assist in debugging
      * device node permissions issues?
      */
-    if ((ret->fd = open(dev_path, O_RDWR)) < 0)
+    if ((ret->fd = open(dev_path, O_RDWR)) < 0) {
+        ret->last_errno = errno;
         goto bladerf_open__err;
+    }
 
     /* Successfully opened, so save off the path */
     if( (ret->path = strdup(dev_path)) == NULL) {
         /* Not so successful string duplication */
+        ret->last_errno = errno;
         goto bladerf_open__err;
     }
 
@@ -398,6 +414,9 @@ int bladerf_get_frequency(struct bladerf *dev,
 }
 /*******************************************************************************
  * Data transmission and reception
+ *
+ * Note that:
+ *  For c16:  1 sample   =   1 i,q pair   =   2 int16_t's  =  4 bytes
  ******************************************************************************/
 
 ssize_t bladerf_send_c12(struct bladerf *dev, int16_t *samples, size_t n)
@@ -405,16 +424,63 @@ ssize_t bladerf_send_c12(struct bladerf *dev, int16_t *samples, size_t n)
     return 0;
 }
 
+/* TODO Fail out if n > ssize_t max, as we can't return that. */
 ssize_t bladerf_send_c16(struct bladerf *dev, int16_t *samples, size_t n)
 {
-    int ret = write( dev->fd, samples, 4*n );
-    return n;
+    ssize_t i, ret = 0;
+    size_t bytes_written = 0;
+    const size_t bytes_total = c16_samples_to_bytes(n);
+
+    while (bytes_written < n) {
+
+        i = write(dev->fd, samples + bytes_written ,bytes_total - bytes_written);
+
+        if (i < 0 && errno != EINTR) {
+            dev->last_errno = errno;
+            bytes_written = BLADERF_ERR_IO;
+            dbg_printf("Failed to write with errno=%d: %s\n",
+                    dev->last_errno, strerror(dev->last_errno));
+            break;
+        } else if (i > 0) {
+            bytes_written += i;
+        }
+    }
+
+    if (ret < 0) {
+        return ret;
+    } else {
+        return bytes_to_c16_samples(bytes_written);
+    }
 }
 
+/* TODO Fail out if n > ssize_t max, as we can't return that */
 ssize_t bladerf_read_c16(struct bladerf *dev,
-                            int16_t *samples, size_t max_samples)
+                            int16_t *samples, size_t n)
 {
-    return read( dev->fd, samples, max_samples );
+    ssize_t i, ret = 0;
+    size_t bytes_read = 0;
+    const size_t bytes_total = c16_samples_to_bytes(n);
+
+    while (bytes_read < n) {
+
+        i = read(dev->fd, samples + bytes_read, bytes_total - bytes_read);
+
+        if (i < 0 && errno != EINTR) {
+            dev->last_errno = errno;
+            ret = BLADERF_ERR_IO;
+            dbg_printf("Read failed with errno=%d: %s\n",
+                        dev->last_errno, strerror(dev->last_errno));
+            break;
+        } else if (i > 0) {
+            bytes_read += i;
+        }
+    }
+
+    if (ret < 0) {
+        return ret;
+    } else {
+        return bytes_to_c16_samples(bytes_read);
+    }
 }
 
 /*******************************************************************************
