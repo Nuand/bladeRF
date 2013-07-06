@@ -879,6 +879,42 @@ CyBool_t CyFxbladeRFApplnUSBSetupCB(uint32_t setupdat0, uint32_t setupdat1)
                 apiRetStatus = CyU3PUsbSendEP0Data (sizeof(ret), &ret);
             break;
 
+            case BLADE_USB_CMD_WRITE_OTP:
+                NuandEnso();
+                if (CyU3PUsbGetSpeed() == CY_U3P_SUPER_SPEED) {
+                    apiRetStatus = CyU3PUsbGetEP0Data(0x100, &glEp0Buffer, &readC);
+                    apiRetStatus = CyFxSpiTransfer (0, 0x100,
+                            glEp0Buffer, CyFalse);
+                }
+                NuandExso();
+                NuandLockOtp();
+            break;
+
+            case BLADE_USB_CMD_READ_OTP:
+                if (CyU3PUsbGetSpeed() == CY_U3P_HIGH_SPEED) {
+                    if (glEp0Idx == 0) {
+                        NuandEnso();
+                        apiRetStatus = CyFxSpiTransfer (0, 0x100,
+                                glEp0Buffer, CyTrue);
+                        apiRetStatus = CyU3PUsbSendEP0Data(wLength, &glEp0Buffer);
+                        NuandExso();
+                    } else {
+                        apiRetStatus = CY_U3P_SUCCESS;
+                    }
+                    apiRetStatus = CyU3PUsbSendEP0Data(wLength, &glEp0Buffer[glEp0Idx]);
+
+                    glEp0Idx += 64;
+                    if (glEp0Idx == 256)
+                        glEp0Idx = 0;
+                } else if (CyU3PUsbGetSpeed() == CY_U3P_SUPER_SPEED) {
+                    NuandEnso();
+                    apiRetStatus = CyFxSpiTransfer (0, 0x100,
+                            glEp0Buffer, CyTrue);
+                    apiRetStatus = CyU3PUsbSendEP0Data(0x100, &glEp0Buffer);
+                    NuandExso();
+                }
+            break;
+
             case BLADE_USB_CMD_FLASH_READ:
                 if (CyU3PUsbGetSpeed() == CY_U3P_HIGH_SPEED) {
                     if (glEp0Idx == 0) {

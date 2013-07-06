@@ -171,6 +171,65 @@ CyU3PReturnStatus_t CyFxSpiTransfer(uint16_t pageAddress, uint16_t byteCount, ui
     return CY_U3P_SUCCESS;
 }
 
+void NuandLockOtp() {
+    CyU3PReturnStatus_t status = CY_U3P_SUCCESS;
+    char location[4];
+
+    location[0] = 0x05; /* RDSTATUS */
+    CyU3PSpiSetSsnLine (CyFalse);
+    status = CyU3PSpiTransmitWords (location, 1);
+    status = CyU3PSpiReceiveWords(location, 1);
+    CyU3PSpiSetSsnLine (CyTrue);
+
+    location[0] = 0x06;  /* Write enable. */
+
+    CyU3PSpiSetSsnLine (CyFalse);
+    status = CyU3PSpiTransmitWords (location, 1);
+    CyU3PSpiSetSsnLine (CyTrue);
+
+    location[0] = 0x05; /* RDSTATUS */
+    CyU3PSpiSetSsnLine (CyFalse);
+    status = CyU3PSpiTransmitWords (location, 1);
+    status = CyU3PSpiReceiveWords(location, 1);
+    CyU3PSpiSetSsnLine (CyTrue);
+
+    CyU3PSpiSetSsnLine (CyFalse);
+    location[0] = 0x2f;// WRSCUR
+    status = CyU3PSpiTransmitWords (location, 1);
+    CyU3PSpiSetSsnLine (CyTrue);
+    CyU3PSpiSetSsnLine (CyFalse);
+    location[0] = 0x2;// WRSCUR
+    status = CyU3PSpiTransmitWords (location, 1);
+    CyU3PSpiSetSsnLine (CyTrue);
+
+    location[0] = 0x2b; /* RDSCUR */
+    CyU3PSpiSetSsnLine (CyFalse);
+    status = CyU3PSpiTransmitWords (location, 1);
+    status = CyU3PSpiReceiveWords(location, 1);
+    CyU3PSpiSetSsnLine (CyTrue);
+}
+
+void NuandEnso() {
+    CyU3PReturnStatus_t status = CY_U3P_SUCCESS;
+    char location[4];
+
+    location[0] = 0xb1; // ENSO
+    CyU3PSpiSetSsnLine (CyFalse);
+    status = CyU3PSpiTransmitWords (location, 1);
+    CyU3PSpiSetSsnLine (CyTrue);
+}
+
+
+void NuandExso() {
+    CyU3PReturnStatus_t status = CY_U3P_SUCCESS;
+    char location[4];
+
+    location[0] = 0xc1; // EXSO
+    CyU3PSpiSetSsnLine (CyFalse);
+    status = CyU3PSpiTransmitWords (location, 1);
+    CyU3PSpiSetSsnLine (CyTrue);
+}
+
 /* Function to erase SPI flash sectors. */
 CyU3PReturnStatus_t CyFxSpiEraseSector(CyBool_t isErase, uint8_t sector)
 {
