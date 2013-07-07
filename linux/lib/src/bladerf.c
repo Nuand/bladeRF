@@ -431,9 +431,9 @@ ssize_t bladerf_send_c16(struct bladerf *dev, int16_t *samples, size_t n)
     size_t bytes_written = 0;
     const size_t bytes_total = c16_samples_to_bytes(n);
 
-    while (bytes_written < n) {
+    while (bytes_written < bytes_total) {
 
-        i = write(dev->fd, samples + bytes_written ,bytes_total - bytes_written);
+        i = write(dev->fd, samples + bytes_written, bytes_total - bytes_written);
 
         if (i < 0 && errno != EINTR) {
             dev->last_errno = errno;
@@ -443,6 +443,9 @@ ssize_t bladerf_send_c16(struct bladerf *dev, int16_t *samples, size_t n)
             break;
         } else if (i > 0) {
             bytes_written += i;
+        } else {
+            dbg_printf("\nInterrupted in bladerf_send_c16 (%zd/%zd\n",
+                       bytes_written, bytes_total);
         }
     }
 
@@ -461,7 +464,7 @@ ssize_t bladerf_read_c16(struct bladerf *dev,
     size_t bytes_read = 0;
     const size_t bytes_total = c16_samples_to_bytes(n);
 
-    while (bytes_read < n) {
+    while (bytes_read < bytes_total) {
 
         i = read(dev->fd, samples + bytes_read, bytes_total - bytes_read);
 
@@ -473,6 +476,9 @@ ssize_t bladerf_read_c16(struct bladerf *dev,
             break;
         } else if (i > 0) {
             bytes_read += i;
+        } else {
+            dbg_printf("\nInterrupted in bladerf_read_c16 (%zd/%zd\n",
+                       bytes_read, bytes_total);
         }
     }
 
