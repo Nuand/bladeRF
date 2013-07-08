@@ -810,20 +810,35 @@ int lms_spi_write(struct bladerf *dev, uint8_t address, uint8_t val)
 int gpio_read(struct bladerf *dev, uint32_t *val)
 {
     int ret;
+    int i;
+    uint32_t rval;
     struct uart_cmd uc;
-    uc.addr = 0;
-    uc.data = 0xff;
-    ret = ioctl(dev->fd, BLADE_GPIO_READ, &uc);
-    *val = uc.data;
+    rval = 0;
+    for (i = 0; i < 4; i++) {
+        uc.addr = i;
+        uc.data = 0xff;
+        ret = ioctl(dev->fd, BLADE_GPIO_READ, &uc);
+        if (ret)
+            break;
+        rval |= uc.data << (i * 8);
+    }
+    *val = rval;
     return ret;
 }
 
 int gpio_write(struct bladerf *dev, uint32_t val)
 {
     struct uart_cmd uc;
-    uc.addr = 0;
-    uc.data = val;
-    return ioctl(dev->fd, BLADE_GPIO_WRITE, &uc);
+    int ret;
+    int i;
+    for (i = 0; i < 4; i++) {
+        uc.addr = i;
+        uc.data = val >> (i * 8);
+        ret = ioctl(dev->fd, BLADE_GPIO_WRITE, &uc);
+        if (ret)
+            break;
+    }
+    return ret;
 }
 
 /*------------------------------------------------------------------------------

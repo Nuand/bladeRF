@@ -352,9 +352,13 @@ int main()
 				  }
 				  if ((mode & UART_PKT_MODE_DEV_MASK) == UART_PKT_DEV_GPIO) {
 					  if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_READ) {
-						  cmd_ptr->data = IORD_ALTERA_AVALON_PIO_DATA(PIO_0_BASE) ;
+						  cmd_ptr->data = (IORD_ALTERA_AVALON_PIO_DATA(PIO_0_BASE)) >> (cmd_ptr->addr * 8);
 					  } else if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_WRITE) {
-						  IOWR_ALTERA_AVALON_PIO_DATA(PIO_0_BASE, cmd_ptr->data);
+						  uint32_t tmpvar;
+						  tmpvar = IORD_ALTERA_AVALON_PIO_DATA(PIO_0_BASE);
+						  tmpvar &= ~ (0xff << (8 * cmd_ptr->addr));
+						  tmpvar |= cmd_ptr->data << (8 * cmd_ptr->addr);
+						  IOWR_ALTERA_AVALON_PIO_DATA(PIO_0_BASE, tmpvar);
 						  cmd_ptr->data = 0;
 					  } else {
 						  cmd_ptr->addr = 0;
