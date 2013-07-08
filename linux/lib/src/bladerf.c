@@ -849,5 +849,14 @@ int dac_write(struct bladerf *dev, uint16_t val)
     struct uart_cmd uc;
     uc.word = val;
     printf( "Writing %d to VCTCXO\n", val );
-    return ioctl(dev->fd, BLADE_VCTCXO_WRITE, &uc);
+    int i;
+    int ret;
+    for (i = 0; i < 4; i++) {
+        uc.addr = i;
+        uc.data = val >> (i * 8);
+        ret = ioctl(dev->fd, BLADE_VCTCXO_WRITE, &uc);
+        if (ret)
+            break;
+    }
+    return ret;
 }

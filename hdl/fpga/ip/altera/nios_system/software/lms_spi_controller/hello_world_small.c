@@ -272,6 +272,7 @@ int main()
 	  unsigned char mode;
 	  unsigned char buf[14];
 	  struct uart_cmd *cmd_ptr;
+	  uint16_t dacval;
 
 	  state = LOOKING_FOR_MAGIC;
 	  while(1)
@@ -359,6 +360,21 @@ int main()
 						  tmpvar &= ~ (0xff << (8 * cmd_ptr->addr));
 						  tmpvar |= cmd_ptr->data << (8 * cmd_ptr->addr);
 						  IOWR_ALTERA_AVALON_PIO_DATA(PIO_0_BASE, tmpvar);
+						  cmd_ptr->data = 0;
+					  } else {
+						  cmd_ptr->addr = 0;
+						  cmd_ptr->data = 0;
+					  }
+				  }
+				  if ((mode & UART_PKT_MODE_DEV_MASK) == UART_PKT_DEV_VCTCXO) {
+					  if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_READ) {
+						  cmd_ptr->data = dacval >> (cmd_ptr->addr * 8);
+					  } else if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_WRITE) {
+						  dacval &= ~ (0xff << (8 * cmd_ptr->addr));
+						  dacval |= cmd_ptr->data << (8 * cmd_ptr->addr);
+						  if (cmd_ptr->addr == 1) {
+							  dac_write(dacval);
+						  }
 						  cmd_ptr->data = 0;
 					  } else {
 						  cmd_ptr->addr = 0;
