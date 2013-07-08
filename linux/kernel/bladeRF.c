@@ -1023,6 +1023,8 @@ static int bladerf_probe(struct usb_interface *interface,
 {
     bladerf_device_t *dev;
     int retval;
+    if (interface->cur_altsetting->desc.bInterfaceNumber != 0)
+        return 0;
 
     dev = kzalloc(sizeof(bladerf_device_t), GFP_KERNEL);
     if (dev == NULL) {
@@ -1069,6 +1071,8 @@ error_oom:
 static void bladerf_disconnect(struct usb_interface *interface)
 {
     bladerf_device_t *dev;
+    if (interface->cur_altsetting->desc.bInterfaceNumber != 0)
+        return;
 
     dev = usb_get_intfdata(interface);
 
