@@ -22,6 +22,7 @@ typedef struct {
     struct usb_interface *interface;
 
     int                   intnum;
+    int                   disconnecting;
 
     int                   rx_en;
     spinlock_t            data_in_lock;
@@ -255,6 +256,9 @@ static int enable_rx(bladerf_device_t *dev) {
     if (dev->intnum != 1)
         return -1;
 
+    if (dev->disconnecting)
+        return -ENODEV;
+
     ret = __bladerf_snd_cmd(dev, BLADE_USB_CMD_RF_RX, &val, sizeof(val));
     if (ret < 0)
         goto err_out;
@@ -284,6 +288,9 @@ static ssize_t bladerf_read(struct file *file, char __user *buf, size_t count, l
     if (dev->intnum != 1) {
         return -1;
     }
+
+    if (dev->disconnecting)
+        return -ENODEV;
 
     if (!dev->rx_en) {
         if (enable_rx(dev)) {
@@ -365,7 +372,8 @@ static void __bladeRF_write_cb(struct urb *urb)
     usb_unanchor_urb(urb);
 
     atomic_dec(&dev->data_out_inflight);
-    __submit_tx_urb(dev);
+    if (dev->tx_en)
+        __submit_tx_urb(dev);
     dev->bytes += DATA_BUF_SZ;
     wake_up_interruptible(&dev->data_out_wait);
 }
@@ -1040,6 +1048,7 @@ static int bladerf_probe(struct usb_interface *interface,
     dev->intnum = 0;
     dev->bytes = 0;
     dev->debug = 0;
+    dev->disconnecting = 0;
 
     atomic_set(&dev->data_in_inflight, 0);
     atomic_set(&dev->data_out_inflight, 0);
@@ -1075,6 +1084,13 @@ static void bladerf_disconnect(struct usb_interface *interface)
         return;
 
     dev = usb_get_intfdata(interface);
+
+    dev->disconnecting = 1;
+    dev->tx_en = 0;
+    dev->rx_en = 0;
+
+    usb_kill_anchored_urbs(&dev->data_out_anchor);
+    usb_kill_anchored_urbs(&dev->data_in_anchor);
 
     bladerf_stop(dev);
 
