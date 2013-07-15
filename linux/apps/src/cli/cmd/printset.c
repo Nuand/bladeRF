@@ -660,7 +660,7 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
                     state->last_lib_error = status;
                     rv = CMD_RET_LIBBLADERF;
                 } else {
-                    printf( "  Set TX sample rate - req: %9uHz, "
+                    printf( "  Setting TX sample rate - req: %9uHz, "
                             "actual: %9uHz\n", rate, actual );
                 }
             }
