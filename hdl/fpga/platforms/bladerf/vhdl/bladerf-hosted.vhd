@@ -306,7 +306,7 @@ begin
         end if;
     end process;
 
-    tx_data <= rf_tx_fifo_data_iq_rr(27 downto 16) when tx_iq_idx = '0' else rf_tx_fifo_data_iq_rr(11 downto 0);
+    tx_data <= rf_tx_fifo_data_iq_rr(27 downto 16) when tx_iq_idx = '1' else rf_tx_fifo_data_iq_rr(11 downto 0);
     lms_tx_data <= signed(tx_data) when rf_tx_en_iq_rr = '1' else (others => '0');
 
     rf_rx_fifo : entity work.rx_fifo
@@ -505,7 +505,7 @@ begin
                 --    rf_rx_fifo_w <= '0';
                 --end if;
 
-                rf_rx_fifo_sample(31 downto 0) <= "1011" & rx_i & "0011" & rx_q;
+                rf_rx_fifo_sample(31 downto 0) <= "0011" & rx_q & "1011" & rx_i;
                 rf_rx_fifo_w <= not lms_rx_iq_select;
                 --if ( rf_rx_sample_idx(0) = '0')
                 --rf_rx_fifo_sample(11 downto 0) <= upcnter;
