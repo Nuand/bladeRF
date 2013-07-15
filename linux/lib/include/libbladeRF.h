@@ -360,6 +360,16 @@ int bladerf_get_bandwidth(struct bladerf *dev, bladerf_module module,
                             unsigned int *bandwidth);
 
 /**
+ * Select the appropriate band path given a frequency in Hz.
+ *
+ * @param       dev         Device handle
+ * @param       module      Module to configure
+ * @param       frequency   Tuned frequency
+ */
+int bladerf_select_band(struct bladerf *dev, bladerf_module module,
+                        unsigned int frequency);
+
+/**
  * Set module's frequency in Hz.
  *
  * @param       dev         Device handle

@@ -301,7 +301,7 @@ int set_frequency(struct cli_state *state, int argc, char **argv)
     if( argc > 2 && rv == CMD_RET_OK ) {
         bool ok;
         /* Parse out frequency */
-        freq = str2uint( argv[argc-1], 0, UINT_MAX, &ok );
+        freq = str2uint( argv[argc-1], 225000000, 3900000000u, &ok );
 
         if( !ok ) {
             cli_err(state, argv[0], "Invalid frequency (%s)", argv[argc - 1]);

@@ -389,11 +389,29 @@ int bladerf_get_bandwidth(struct bladerf *dev, bladerf_module module,
     return 0;
 }
 
+int bladerf_select_band(struct bladerf *dev, bladerf_module module,
+                        unsigned int frequency)
+{
+    uint32_t gpio ;
+    uint32_t band = 0;
+    if( frequency >= 1500000000 ) {
+        band = 1; // High Band selection
+    } else {
+        band = 2; // Low Band selection
+    }
+    gpio_read(dev, &gpio);
+    gpio &= ~(module == RX ? 3<<3 : 3<<5);
+    gpio |= (module == RX ? band<<3 : band<<5);
+    gpio_write(dev, gpio);
+    return 0;
+}
+
 int bladerf_set_frequency(struct bladerf *dev,
                             bladerf_module module, unsigned int frequency)
 {
     /* TODO: Make return values for lms call and return it for failure */
     lms_set_frequency( dev, module, frequency );
+    bladerf_select_band( dev, module, frequency );
     return 0;
 }
 
@@ -408,7 +426,7 @@ int bladerf_get_frequency(struct bladerf *dev,
         *frequency = 0 ;
         rv = BLADERF_ERR_INVAL;
     } else {
-        *frequency = (unsigned int)(((uint64_t)((f.nint<<23) + f.nfrac)) * (f.reference/f.x) >>23);
+        *frequency = (unsigned int)(((uint64_t)(((f.nint<<23) + f.nfrac)) * (f.reference/f.x) ) >>23);
     }
     return rv;
 }

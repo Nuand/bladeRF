@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
         printf( "    update-rate            The number of samples inbetween statistics printing\n" );
     }
 
-    struct bladerf *dev = bladerf_open("/dev/bladerf1");
+    struct bladerf *dev = bladerf_open("/dev/bladerf0");
     if (!dev) {
         printf( "Couldn't open device\n" ) ;
         return 0;
