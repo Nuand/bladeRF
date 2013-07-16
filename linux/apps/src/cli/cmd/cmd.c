@@ -30,7 +30,7 @@ struct cmd {
 static const char *cmd_names_clear[] = { "clear", "cls", NULL };
 static const char *cmd_names_help[] = { "help", "h", "?", NULL };
 static const char *cmd_names_load[] = { "load", "ld", NULL };
-static const char *cmd_names_open[] = { "open", "op", "o", "NULL" };
+static const char *cmd_names_open[] = { "open", "op", "o", NULL };
 static const char *cmd_names_peek[] = { "peek", "pe", NULL };
 static const char *cmd_names_poke[] = { "poke", "po", NULL };
 static const char *cmd_names_print[] = { "print", "pr", "p", NULL };
