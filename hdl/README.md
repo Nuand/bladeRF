@@ -54,4 +54,7 @@ quartus_sh -t ../build.tcl -rev hosted -size 115 -stp ../signaltap/debug_rx.stp
 Note that to use Signal Tap with the Quartus II Web Edition software, Altera requires that the TalkBack feature be enabled.  The build script tries to 'fake' this out by setting the TalkBack feature to be on, compiling the project, then turning it off immediately.  If this behavior is not desired, don't try to add a Signal Tap file to the project.
 
 ## Pre-compiled FPGA Binaries ##
-We currently do not provide pre-compiled binaries of the FPGA firmware due to the volatility of the FPGA code.  This will be rectified in the near future.
+Some FPGA binaries are available for [download][download].  Please note the md5 hash as well as the git commit hash.
+
+[download]: http://nuand.com/fpga (nuand/FPGA Images)
+
