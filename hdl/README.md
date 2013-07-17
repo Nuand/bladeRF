@@ -33,7 +33,7 @@ The Quartus II build tools supports TCL as a scripting language which we utilize
 1. Create a work directory for the project: `mkdir -p quartus/work ; cd quartus/work`
 1. Create the bladeRF project with all the revisions: `quartus_sh -t ../bladerf.tcl`
 1. Build a specific revision of the bladeRF project: `quartus_sh -t ../build.tcl -rev hosted -size 40`
-1. Look for the file `output_files/`_revision_`.rbf` which is the FPGA programming image.
+1. Look for the file `output_files/<revision>.rbf` which is the FPGA programming image.
 
 Note that there will be a _lot_ of information displayed from notes to critical warnings.  Some of these are benign and others are, in fact, critical.
 
