@@ -321,10 +321,15 @@ static ssize_t bladerf_read(struct file *file, char __user *buf, size_t count, l
             break;
 
         } else {
-            ret = wait_event_interruptible(dev->data_in_wait, atomic_read(&dev->data_in_cnt));
-            if (ret < 0)
+            ret = wait_event_interruptible_timeout(dev->data_in_wait, atomic_read(&dev->data_in_cnt), 2 * HZ);
+            if (ret < 0) {
                 break;
-
+            } else if (ret == 0) {
+                ret = -ETIMEDOUT;
+                break;
+            } else {
+                ret = 0;
+            }
         }
     }
 
@@ -386,30 +391,37 @@ static ssize_t bladerf_write(struct file *file, const char *user_buf, size_t cou
     struct data_buffer *db = NULL;
     unsigned int idx;
     int reread;
+    int status = 0;
+
+    /* TODO truncate count to be within range of ssize_t here? */
 
     dev = (bladerf_device_t *)file->private_data;
 
     if (dev->intnum == 0) {
-        int ret, llen;
+        int llen;
         buf = (char *)kmalloc(count, GFP_KERNEL);
         if (copy_from_user(buf, user_buf, count)) {
-            ret = -EFAULT;
-            goto err_out;
+            status = -EFAULT;
+        } else {
+            status = usb_bulk_msg(dev->udev, usb_sndbulkpipe(dev->udev, 2), buf, count, &llen, BLADE_USB_TIMEOUT_MS);
         }
-        ret = usb_bulk_msg(dev->udev, usb_sndbulkpipe(dev->udev, 2), buf, count, &llen, BLADE_USB_TIMEOUT_MS);
-err_out:
         kfree(buf);
 
-        if (ret < 0)
-            return ret;
+        if (status < 0)
+            return status;
         else
             return llen;
     }
 
     reread = atomic_read(&dev->data_out_cnt);
     if (reread >= NUM_DATA_URB) {
-         wait_event_interruptible(dev->data_out_wait, atomic_read(&dev->data_out_cnt) < NUM_DATA_URB);
-	    reread = atomic_read(&dev->data_out_cnt);
+        status = wait_event_interruptible_timeout(dev->data_out_wait, atomic_read(&dev->data_out_cnt) < NUM_DATA_URB, 2 * HZ);
+
+        if (status < 0) {
+            return status;
+        } else if (status == 0) {
+            return -ETIMEDOUT;
+        }
     }
 
     spin_lock_irqsave(&dev->data_out_lock, flags);
@@ -952,10 +964,12 @@ leave_fw:
                 retval = usb_bulk_msg(dev->udev, usb_rcvbulkpipe(dev->udev, 0x82), buf, count, &nread, 1);
             } while(retval == -ETIMEDOUT && tries--);
 
-            spi_reg.addr = buf[2];
-            spi_reg.data = buf[3];
+            if (!retval) {
+                spi_reg.addr = buf[2];
+                spi_reg.data = buf[3];
 
-            retval = copy_to_user((void __user *)arg, &spi_reg, count);
+                retval = copy_to_user((void __user *)arg, &spi_reg, sizeof(struct uart_cmd));
+            }
             break;
 
     }
@@ -1116,5 +1130,5 @@ module_usb_driver(bladerf_driver);
 
 MODULE_AUTHOR("Robert Ghilduta <robert.ghilduta@gmail.com>");
 MODULE_DESCRIPTION("bladeRF USB driver");
-MODULE_VERSION("v0.1");
+MODULE_VERSION("v0.2");
 MODULE_LICENSE("GPL");
