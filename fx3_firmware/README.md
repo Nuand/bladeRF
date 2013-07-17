@@ -14,7 +14,9 @@ The RF link ushers the baseband IQ samples between the FPGA and the host over th
 The control interface uses the built in UART to talk to the FPGA in an out-of-band way for checking status and configuring the system in general.  Some messages that go over this are general GPIO settings, LMS SPI messages, VTCXO trim DAC settings and the Si5338 clock generator programming.
 
 ## Building ##
-Building the FX3 firmware first requires the download of the [Cypress FX3 SDK][http://www.cypress.com/?rID=57990] which may require registration on their website.  The FX3 uses ThreadX as an RTOS for the ARM9 which is distributed with their SDK and linked to from our software.
+Building the FX3 firmware first requires the download of the [Cypress FX3 SDK][cypress_sdk] which may require registration on their website.  The FX3 uses ThreadX as an RTOS for the ARM9 which is distributed with their SDK and linked to from our software.
+
+[cypress_sdk]: http://www.cypress.com/?rID=57990 (Cypress FX3 SDK)
 
 Once the SDK is downloaded, building the firmware requires a file defining the toolchain in `make/toolchain.mk`.  A sample can be found in the `make` directory.
 
