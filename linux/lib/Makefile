@@ -90,7 +90,7 @@ doc:
 	$(MAKE) -C doc/doxygen
 
 install: shared libbladeRF.pc
-	cp lib/* $(INSTALL_PREFIX)/lib
+	cp -P lib/* $(INSTALL_PREFIX)/lib
 	cp include/* $(INSTALL_PREFIX)/include
 	if [ -d $(INSTALL_PREFIX)/share/pkgconfig ]; then \
 		cp libbladeRF.pc $(INSTALL_PREFIX)/share/pkgconfig/ ; \
