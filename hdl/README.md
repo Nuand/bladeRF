@@ -12,6 +12,13 @@ IP, as it is added to the repository, falls under the category of who created th
 
 Currently, the only platform we have is bladeRF.  As more platforms come out, more top levels will be created but the same IP should be able to be used with any of those platforms.
 
+## Required Software ##
+We use an [Altera][altera] [Cyclone IV E FPGA][cive].  The size of the FPGA is the only difference between the x40 and x115 models.  Altera provides their [Quartus II software][quartus] for synthesizing designs for their FPGAs.  It is free of charge, but not open source and may require registering on their site to download the software.
+
+[altera]: http://www.altera.com (Altera)
+[quartus]: http://www.altera.com/products/software/quartus-ii/web-edition/qts-we-index.html (Quartus II Web Edition Software)
+[cive]: http://www.altera.com/devices/fpga/cyclone-iv/overview/cyiv-overview.html
+
 ## HDL Structure ##
 Since the FPGA is connected and soldered down to the board, it makes sense to have a single top level which defines where the pins go, their IO levels and their genera directionality.  We use a single `bladerf.vhd` top level to define a VHDL entity called `bladerf` that defines these pins.
 
@@ -43,4 +50,5 @@ For advanced users who want to use Signal Tap internal logic analyzer in their d
 ```
 quartus_sh -t ../build.tcl -rev hosted -size 115 -stp ../signaltap/debug_rx.stp
 ```
-
+## Pre-compiled FPGA Binaries ##
+We currently do not provide pre-compiled binaries of the FPGA firmware due to the volatility of the FPGA code.  This will be rectified in the near future.
