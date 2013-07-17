@@ -21,10 +21,24 @@ Building the FX3 firmware first requires the download of the [Cypress FX3 SDK][c
 Once the SDK is downloaded, building the firmware requires a file defining the toolchain in `make/toolchain.mk`.  A sample can be found in the `make` directory.
 
 1. Create your own `toolchain.mk` file from the example given: `cp make/toolchain.mk.sample make/toolchain.mk`
-1. Modify your `make/toolchain.mk` to declare an `FX3_ROOT` where the SDK was installed.
-1. Compile the firmware using `make`.  Use `DEBUG=yes` if you want to include debug symbols.
-1. The file `bladeRF.img` should have been produced with a note saying that 256 bytes of interrupt vector code have been removed.  This warning is normal and you have just built the FX3 firmware successfully!
+2. Modify your `make/toolchain.mk` to declare an `FX3_ROOT` where the SDK was installed.
+3. Compile the firmware using `make`.  Use `DEBUG=yes` if you want to include debug symbols.
+4. The file `bladeRF.img` should have been produced with a note saying that 256 bytes of interrupt vector code have been removed.  This warning is normal and you have just built the FX3 firmware successfully!
+
+### Eclipse ###
+The FX3 SDK provides an Eclipse-based IDE. A project file for this tool is provided in this directory. To import this project, perform the following steps.
+
+1. Start the `Eclipse` IDE provided with the FX3 SDK, navigate to your workspace, and switch to the C/C++ perspective.
+2. From the C/C++ Projects view, select `Import...` --> `General` -> `Existing Projects into Workspace`. Click `Next >`."
+3. Under `Select root directory`, select this directory (`bladeRF/fx3_firmware`)
+4. You should see `bladeRF` listed under `Projects`. Ensure this is checked and click `Finish`.
+5. Linux users only -- (Windows users skip this step) -- From the C/C++ Projects view, right click bladeRF and select `Properties`. Under `C/C++ Build` --> `Builder Settings`, uncheck `Use default build command` and change `cs-make` to `make`. cs-make is provided with the Windows SDK. Linux users may simply use the make program provided by their distribution.
+6. Kick off the build! The results here should be the same as those obtained from the command-line build outlined in the previous section.
+
+For more information about developing and debugging FX3 firmware, see the [FX3 Programmer's Manual][fx3_prog_manual].
+
+[fx3_prog_manual]: http://www.cypress.com/?rID=52250  (FX3 Programmer's Manual)
 
 ## Pre-built Firmware Binaries ##
-Pre-built binaries are not available in a specific place yet due to the volatility of the current firmware.
+Pre-built binaries are not available yet due to the volatility of the current firmware. Once we reach a stable point in the codebase, this file will be update to include links to firmware releases. Bear with us, and check back soon!
 
