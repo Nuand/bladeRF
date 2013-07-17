@@ -2,8 +2,13 @@
 This directory contains applications that utilize libbladeRF.  Currently, this consists of a command-line "bladerf" tool intended to aid in development and testing.  This tool can be used in a batch mode with single, simple operations but the real power is when it is compiled with an interactive shell.
 
 ## Dependencies ##
-- libbladeRF
-- libtecla (optional)
+- [libbladeRF][lib]
+- [libtecla][tecla] (optional)
+
+[libtecla][tecla] can be installed via most package managers.  Check your distribution for support.
+
+[lib]: ../lib (libbladeRF)
+[tecla]: http://www.astro.caltech.edu/~mcs/tecla/ (libtecla)
 
 ## Building ##
 1. `make`

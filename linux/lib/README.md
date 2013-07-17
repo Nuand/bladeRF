@@ -45,6 +45,6 @@ make all && sudo make install
 Change installation to be `/usr/local` and enable debug symbols:
 
 ```
-make DEBUG=yes all && sudo make INSTALL_PREFIX=/usr/local all
+make DEBUG=yes all && sudo make INSTALL_PREFIX=/usr/local install
 ```
 

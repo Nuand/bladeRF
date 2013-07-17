@@ -7,7 +7,7 @@ Even though we build a module for the kernel, your kernels source code is requir
 ## Building ##
 1. `make`
 1. See that `bladeRF.ko` has been made.
-1. `insmod bladeRF.ko`
+1. `sudo insmod bladeRF.ko`
 
 The kernel module should now be installed and ready to be used.
 
