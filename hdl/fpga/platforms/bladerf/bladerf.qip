@@ -5,4 +5,4 @@ set here $::quartus(qip_path)
 set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/bladerf.vhd]]
 
 # Basic timing constraints
-set_global_assignment -name SDC_FILE [file normalize [file join $here constraints/bladerf.vhd]]
+set_global_assignment -name SDC_FILE [file normalize [file join $here constraints/bladerf.sdc]]
