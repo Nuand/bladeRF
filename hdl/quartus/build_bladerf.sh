@@ -26,7 +26,23 @@ $ip_generate \
     --system-info=DEVICE_SPEEDGRADE=8 \
     --component-file=$nios_system/nios_system.qsys
 
-echo "Synthesizing bladeRF FPGA..."
-quartus_sh -t bladerf.tcl
+# BROKEN: This should probably be done after going into 'work'
+#echo "Synthesizing bladeRF FPGA..."
+#quartus_sh -t bladerf.tcl
+
+echo "Building BSP and sample application..."
+pushd .
+cd $nios_system/software/lms_spi_controller_bsp
+nios2-bsp-generate-files --settings=settings.bsp --bsp-dir=.
+make
+cd ../lms_spi_controller
+make
+make mem_init_generate
+popd
 
 echo "Completed!"
+
+echo "Make a 'work' directory, cd into it, then:"
+echo "  quartus_sh -t ../bladerf.tcl"
+echo "  quartus_sh -t ../build.tcl -rev hosted -size 40     (or -size 115 if applicable)"
+
