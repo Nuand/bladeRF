@@ -16,6 +16,7 @@ set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/
 
 # Implementation details
 set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/ramp.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/bladerf-qpsk_tx.vhd]]
 
 # SDC Constraints
 set_global_assignment -name SDC_FILE [file normalize [file join $here constraints/bladerf.sdc]]
