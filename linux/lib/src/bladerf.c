@@ -95,6 +95,8 @@ struct bladerf * _bladerf_open_info(const char *dev_path,
         return NULL;
 
     ret->last_errno = 0;
+    ret->last_tx_sample_rate = 0;
+    ret->last_rx_sample_rate = 0;
 
     /* TODO -- spit out error/warning message to assist in debugging
      * device node permissions issues?
@@ -250,8 +252,10 @@ int bladerf_set_sample_rate(struct bladerf *dev, bladerf_module module, unsigned
     /* TODO: Use module to pick the correct clock output to change */
     if( module == TX ) {
         ret = si5338_set_tx_freq(dev, rate<<1);
+        dev->last_tx_sample_rate = rate;
     } else {
         ret = si5338_set_rx_freq(dev, rate<<1);
+        dev->last_rx_sample_rate = rate;
     }
     *actual = rate;
     return ret;
@@ -265,7 +269,15 @@ int bladerf_set_rational_sample_rate(struct bladerf *dev, bladerf_module module,
 
 int bladerf_get_sample_rate( struct bladerf *dev, bladerf_module module, unsigned int *rate)
 {
-    /* TODO: Read the Si5338 and figure out the sample rate */
+    /* TODO Reconstruct samplerare from Si5338 readback */
+    if (module == RX) {
+        *rate = dev->last_rx_sample_rate;
+    } else if (module == TX) {
+        *rate = dev->last_tx_sample_rate;
+    } else {
+        return BLADERF_ERR_INVAL;
+    }
+
     return 0;
 }
 

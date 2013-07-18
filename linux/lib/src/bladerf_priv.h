@@ -12,6 +12,10 @@ struct bladerf {
 
     int last_errno; /* Added for debugging. TODO Remove or integrate into
                      * error reporting? (I vote the latter -- Jon). */
+
+    /* FIXME temporary workaround for not being able to read back sample rate */
+    unsigned int last_tx_sample_rate;
+    unsigned int last_rx_sample_rate;
 };
 
 #endif
