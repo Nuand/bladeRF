@@ -304,6 +304,9 @@ const char * cmd_strerror(int error, int lib_error)
         case CMD_RET_NARGS:
             return "Invalid number of arguments provided";
 
+        case CMD_RET_NOFPGA:
+            return "Command requires FPGA to be loaded";
+
         /* Other commands shall print out helpful info from within their
          * implementation */
         default:

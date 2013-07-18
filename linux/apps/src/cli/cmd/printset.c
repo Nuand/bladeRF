@@ -344,35 +344,39 @@ int print_gpio(struct cli_state *state, int argc, char **argv)
     int rv = CMD_RET_OK, status;
     unsigned int val ;
 
-    /* TODO: Should this be exposed at this level? */
-    status = gpio_read( state->curr_device, &val );
-    if (status < 0) {
-        state->last_lib_error = status;
-        rv = CMD_RET_LIBBLADERF;
+    if( !bladerf_is_fpga_configured(state->curr_device) ) {
+        rv = CMD_RET_NODEV;
     } else {
-        printf( "\n" );
-        printf( "  GPIO: 0x%8.8x\n", val );
-        printf( "\n" );
-        printf( "    %-20s%-10s\n", "LMS Enable:", val&0x01 ? "Enabled" : "Reset" ); // Active low
-        printf( "    %-20s%-10s\n", "LMS RX Enable:", val&0x02 ? "Enabled" : "Disabled" );
-        printf( "    %-20s%-10s\n", "LMS TX Enable:", val&0x04 ? "Enabled" : "Disabled" );
-        printf( "    %-20s", "TX Band:" );
-        if( ((val>>3)&3) == 2 ) {
-            printf( "Low Band (300M - 1.5GHz)\n" );
-        } else if( ((val>>3)&3) == 1 ) {
-            printf( "High Band (1.5GHz - 3.8GHz)\n" );
+        status = gpio_read( state->curr_device, &val );
+
+        if (status < 0) {
+            state->last_lib_error = status;
+            rv = CMD_RET_LIBBLADERF;
         } else {
-            printf( "Invalid Band Selection!\n" );
+            printf( "\n" );
+            printf( "  GPIO: 0x%8.8x\n", val );
+            printf( "\n" );
+            printf( "    %-20s%-10s\n", "LMS Enable:", val&0x01 ? "Enabled" : "Reset" ); // Active low
+            printf( "    %-20s%-10s\n", "LMS RX Enable:", val&0x02 ? "Enabled" : "Disabled" );
+            printf( "    %-20s%-10s\n", "LMS TX Enable:", val&0x04 ? "Enabled" : "Disabled" );
+            printf( "    %-20s", "TX Band:" );
+            if( ((val>>3)&3) == 2 ) {
+                printf( "Low Band (300M - 1.5GHz)\n" );
+            } else if( ((val>>3)&3) == 1 ) {
+                printf( "High Band (1.5GHz - 3.8GHz)\n" );
+            } else {
+                printf( "Invalid Band Selection!\n" );
+            }
+            printf( "    %-20s", "RX Band:" );
+            if( ((val>>5)&3) == 2 ) {
+                printf( "Low Band (300M - 1.5GHz)\n" );
+            } else if( ((val>>5)&3) == 1 ) {
+                printf( "High Band (1.5GHz - 3.8GHz)\n" );
+            } else {
+                printf( "Invalid Band Selection!\n" );
+            }
+            printf( "\n" );
         }
-        printf( "    %-20s", "RX Band:" );
-        if( ((val>>5)&3) == 2 ) {
-            printf( "Low Band (300M - 1.5GHz)\n" );
-        } else if( ((val>>5)&3) == 1 ) {
-            printf( "High Band (1.5GHz - 3.8GHz)\n" );
-        } else {
-            printf( "Invalid Band Selection!\n" );
-        }
-        printf( "\n" );
     }
     return rv;
 }
@@ -828,8 +832,9 @@ int cmd_set(struct cli_state *state, int argc, char **argv)
     int rv = CMD_RET_OK;
     if( state->curr_device == NULL ) {
         rv = CMD_RET_NODEV;
-    }
-    else if( argc > 1 ) {
+    } else if( !bladerf_is_fpga_configured( state->curr_device ) ) {
+        rv = CMD_RET_NOFPGA;
+    } else if( argc > 1 ) {
         struct printset_entry *entry = NULL;
 
         entry = get_printset_entry( argv[1] );
@@ -875,7 +880,9 @@ int cmd_print(struct cli_state *state, int argc, char **argv)
 
     if( state->curr_device == NULL ) {
         rv = CMD_RET_NODEV;
-    } else {
+    } else if( !bladerf_is_fpga_configured( state->curr_device ) ) {
+        rv = CMD_RET_NOFPGA;
+    } else if( argc > 1 ) {
 
         entry = get_printset_entry( argv[1] );
 
@@ -887,6 +894,8 @@ int cmd_print(struct cli_state *state, int argc, char **argv)
             cli_err(state, argv[0], "Invalid parameter (%s)", argv[1]);
             rv = CMD_RET_INVPARAM;
         }
+    } else {
+        rv = CMD_RET_NARGS;
     }
     return rv;
 }

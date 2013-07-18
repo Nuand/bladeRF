@@ -17,6 +17,7 @@
 #define CMD_RET_LIBBLADERF  (-5)    /**< See cli_state for libladerf error */
 #define CMD_RET_NODEV       (-6)    /**< No device is currently opened */
 #define CMD_RET_NARGS       (-7)    /**< Invalid number of arguments provided */
+#define CMD_RET_NOFPGA      (-8)    /**< FPGA Not Programmed */
 
 /** Command OK */
 #define CMD_RET_OK          0
