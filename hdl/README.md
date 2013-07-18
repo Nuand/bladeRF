@@ -8,7 +8,7 @@ The HDL is separated out into two different sections:
 | fpga      | Source HDL in the form of IP blocks or platform specific top levels   |
 | quartus   | Specific files for Quartus II project creation and building           |
 
-IP, as it is added to the repository, falls under the category of who created the IP.  Some IP is created by Altera tools and remains in an Altera directory.  Some has been written by nuand or has been downloaded from OpenCores.  These blocks should be seen as independant from the platform and, essentially, building blocks for the entire platform.
+IP, as it is added to the repository, falls under the category of who created the IP.  Some IP is created by Altera tools and remains in an Altera directory.  Some has been written by nuand or has been downloaded from OpenCores.  These blocks should be seen as independent from the platform and, essentially, building blocks for the entire platform.
 
 Currently, the only platform we have is bladeRF.  As more platforms come out, more top levels will be created but the same IP should be able to be used with any of those platforms.
 
@@ -36,11 +36,10 @@ This technique can be seen with the different architectures:
 ## Building the Project ##
 The Quartus II build tools supports TCL as a scripting language which we utilize to not only create the project file, but build the system without requiring the need of the GUI.
 
-1. Execute the `build_bladerf.sh` script in the `quartus` directory: `cd quartus; ./build_bladerf.sh; cd ..`  This will create the NIOS system and software associated with the FPGA build needed by the internal RAM for execution.
-1. Create a work directory for the project: `mkdir -p quartus/work ; cd quartus/work`
-1. Create the bladeRF project with all the revisions: `quartus_sh -t ../bladerf.tcl`
-1. Build a specific revision of the bladeRF project: `quartus_sh -t ../build.tcl -rev hosted -size 40`
-1. Look for the file `output_files/<revision>.rbf` which is the FPGA programming image.
+1. Enter the `quartus` directory
+2. Execute ./build_bladerf.sh -h to view the usage for the build script. Note the size and revision options.
+3. Execute ./build_bladerf.sh -s &lt;size&gt; -r &lt;revision&gt;, with the relevant size for your bladeRF, and the desired revision.  This will create the NIOS system and software associated with the FPGA build needed by the internal RAM for execution.
+4. The current directory should now contain an FPGA image file, named in the form, &lt;revision&gt;x&lt;size&gt;.rbf
 
 Note that there will be a _lot_ of information displayed from notes to critical warnings.  Some of these are benign and others are, in fact, critical.
 
