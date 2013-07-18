@@ -612,8 +612,44 @@ int set_rxvga2(struct cli_state *state, int argc, char **argv)
 
 int print_samplerate(struct cli_state *state, int argc, char **argv)
 {
-    /* TODO: Can't do this until we can read back from the si5338 */
-    return CMD_RET_OK;
+    int status;
+    unsigned int rate;
+    bladerf_module module;
+    bool ok;
+
+    if (argc == 3) {
+        module = get_module(argv[2], &ok);
+        if (!ok) {
+            invalid_module(state, argv[0], argv[2]);
+            status = CMD_RET_INVPARAM;
+        } else {
+            status = bladerf_get_sample_rate(state->curr_device, module, &rate);
+            printf("  %s sample rate: %u\n", module == RX ? "RX" : "TX", rate);
+        }
+    } else if (argc == 2) {
+        unsigned int tx_rate;
+        status = bladerf_get_sample_rate(state->curr_device, RX, &rate);
+
+        if (!status) {
+            status = bladerf_get_sample_rate(state->curr_device, TX, &tx_rate);
+
+            if (!status) {
+                printf("  RX sample rate: %u\n", rate);
+                printf("  TX sample rate: %u\n", tx_rate);
+            } else {
+                state->last_lib_error = status;
+                status = CMD_RET_LIBBLADERF;
+            }
+        } else {
+            state->last_lib_error = status;
+            status = CMD_RET_LIBBLADERF;
+        }
+
+    } else {
+        return CMD_RET_NARGS;
+    }
+
+    return status;
 }
 
 int set_samplerate(struct cli_state *state, int argc, char **argv)
