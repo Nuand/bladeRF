@@ -82,6 +82,21 @@ static inline void invalid_gain(struct cli_state *s, const char *cmd,
     cli_err(s, cmd, "Invalid gain setting for %s (%s)", param, gain);
 }
 
+static int is_fpga_configured(struct cli_state *state, const char *cmd)
+{
+    int status;
+
+    status = bladerf_is_fpga_configured(state->curr_device);
+    if (status < 0) {
+        cli_err(state, cmd, "Failed to determine if the FPGA is "
+                            "configured. Is the FX3 programmed?");
+
+        state->last_lib_error = status;
+        status = CMD_RET_LIBBLADERF;
+    }
+
+    return status;
+}
 
 int print_bandwidth(struct cli_state *state, int argc, char **argv)
 {
@@ -342,42 +357,39 @@ int set_frequency(struct cli_state *state, int argc, char **argv)
 int print_gpio(struct cli_state *state, int argc, char **argv)
 {
     int rv = CMD_RET_OK, status;
-    unsigned int val ;
+    unsigned int val;
 
-    if( !bladerf_is_fpga_configured(state->curr_device) ) {
-        rv = CMD_RET_NODEV;
+    status = gpio_read( state->curr_device, &val );
+
+    if (status < 0) {
+        state->last_lib_error = status;
+        rv = CMD_RET_LIBBLADERF;
     } else {
-        status = gpio_read( state->curr_device, &val );
-
-        if (status < 0) {
-            state->last_lib_error = status;
-            rv = CMD_RET_LIBBLADERF;
+        printf( "\n" );
+        printf( "  GPIO: 0x%8.8x\n", val );
+        printf( "\n" );
+        printf( "    %-20s%-10s\n", "LMS Enable:", val&0x01 ? "Enabled" : "Reset" ); // Active low
+        printf( "    %-20s%-10s\n", "LMS RX Enable:", val&0x02 ? "Enabled" : "Disabled" );
+        printf( "    %-20s%-10s\n", "LMS TX Enable:", val&0x04 ? "Enabled" : "Disabled" );
+        printf( "    %-20s", "TX Band:" );
+        if( ((val>>3)&3) == 2 ) {
+            printf( "Low Band (300M - 1.5GHz)\n" );
+        } else if( ((val>>3)&3) == 1 ) {
+            printf( "High Band (1.5GHz - 3.8GHz)\n" );
         } else {
-            printf( "\n" );
-            printf( "  GPIO: 0x%8.8x\n", val );
-            printf( "\n" );
-            printf( "    %-20s%-10s\n", "LMS Enable:", val&0x01 ? "Enabled" : "Reset" ); // Active low
-            printf( "    %-20s%-10s\n", "LMS RX Enable:", val&0x02 ? "Enabled" : "Disabled" );
-            printf( "    %-20s%-10s\n", "LMS TX Enable:", val&0x04 ? "Enabled" : "Disabled" );
-            printf( "    %-20s", "TX Band:" );
-            if( ((val>>3)&3) == 2 ) {
-                printf( "Low Band (300M - 1.5GHz)\n" );
-            } else if( ((val>>3)&3) == 1 ) {
-                printf( "High Band (1.5GHz - 3.8GHz)\n" );
-            } else {
-                printf( "Invalid Band Selection!\n" );
-            }
-            printf( "    %-20s", "RX Band:" );
-            if( ((val>>5)&3) == 2 ) {
-                printf( "Low Band (300M - 1.5GHz)\n" );
-            } else if( ((val>>5)&3) == 1 ) {
-                printf( "High Band (1.5GHz - 3.8GHz)\n" );
-            } else {
-                printf( "Invalid Band Selection!\n" );
-            }
-            printf( "\n" );
+            printf( "Invalid Band Selection!\n" );
         }
+        printf( "    %-20s", "RX Band:" );
+        if( ((val>>5)&3) == 2 ) {
+            printf( "Low Band (300M - 1.5GHz)\n" );
+        } else if( ((val>>5)&3) == 1 ) {
+            printf( "High Band (1.5GHz - 3.8GHz)\n" );
+        } else {
+            printf( "Invalid Band Selection!\n" );
+        }
+        printf( "\n" );
     }
+
     return rv;
 }
 
@@ -866,9 +878,18 @@ int cmd_set(struct cli_state *state, int argc, char **argv)
        a nice usage note for that specific setting.
     */
     int rv = CMD_RET_OK;
+    int fpga_configured;
+
+
     if( state->curr_device == NULL ) {
-        rv = CMD_RET_NODEV;
-    } else if( !bladerf_is_fpga_configured( state->curr_device ) ) {
+        return  CMD_RET_NODEV;
+    }
+
+    fpga_configured = is_fpga_configured(state, argv[0]);
+
+    if ( fpga_configured < 0) {
+        rv = fpga_configured;
+    } else if ( !fpga_configured ) {
         rv = CMD_RET_NOFPGA;
     } else if( argc > 1 ) {
         struct printset_entry *entry = NULL;
@@ -913,10 +934,17 @@ int cmd_print(struct cli_state *state, int argc, char **argv)
     */
     int rv = CMD_RET_OK;
     struct printset_entry *entry = NULL;
+    int fpga_configured;
 
     if( state->curr_device == NULL ) {
-        rv = CMD_RET_NODEV;
-    } else if( !bladerf_is_fpga_configured( state->curr_device ) ) {
+        return CMD_RET_NODEV;
+    }
+
+    fpga_configured = is_fpga_configured( state, argv[0] );
+
+    if ( fpga_configured < 0 ) {
+        rv = fpga_configured;
+    } else if( !fpga_configured ) {
         rv = CMD_RET_NOFPGA;
     } else if( argc > 1 ) {
 
