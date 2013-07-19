@@ -34,12 +34,13 @@ This technique can be seen with the different architectures:
 | qpsk_tx       | A debug implementation which just transmits 3.84Msps QPSK which has been RRC filtered |
 
 ## Building the Project ##
-The Quartus II build tools supports TCL as a scripting language which we utilize to not only create the project file, but build the system without requiring the need of the GUI.
+The Quartus II build tools supports TCL as a scripting language which we utilize to not only create the project file, but build the system without requiring the need of the GUI. Currently, the `build_bladerf.sh` performs some environment checks, builds the NIOS BSP and software, and then kicks off TCL scripts to build the FPGA image. 
 
-1. Enter the `quartus` directory
-2. Execute ./build_bladerf.sh -h to view the usage for the build script. Note the size and revision options.
-3. Execute ./build_bladerf.sh -s &lt;size&gt; -r &lt;revision&gt;, with the relevant size for your bladeRF, and the desired revision.  This will create the NIOS system and software associated with the FPGA build needed by the internal RAM for execution.
-4. The current directory should now contain an FPGA image file, named in the form, &lt;revision&gt;x&lt;size&gt;.rbf
+1. Take note of which Altera Cyclone IV you have. (The EP4CE40 is 40 kLE, and the EP4CE115 is 115 kLE.)  You'll need this size below...
+2. Enter the `quartus` directory
+3. Execute ./build_bladerf.sh -h to view the usage for the build script. Note the size and revision options. Also note any items you'll need to add to your PATH before continuing.
+4. Execute ./build_bladerf.sh -s &lt;size&gt; -r &lt;revision&gt;, with the relevant size for your bladeRF, and the desired revision.  This will create the NIOS system and software associated with the FPGA build needed by the internal RAM for execution.
+5. The current directory should now contain an FPGA image file, named in the form, &lt;revision&gt;x&lt;size&gt;.rbf
 
 Note that there will be a _lot_ of information displayed from notes to critical warnings.  Some of these are benign and others are, in fact, critical.
 
