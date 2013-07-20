@@ -350,16 +350,19 @@ int bladerf_get_lna_gain(struct bladerf *dev, bladerf_lna_gain *gain)
 
 int bladerf_set_rxvga1(struct bladerf *dev, int gain)
 {
+    int r;
     /* TODO: Make return values for lms call and return it for failure */
-    lms_rxvga1_set_gain( dev, (uint8_t)gain );
+    for (r=2; (r * r) < ((gain - 5) << 9); r++);
+    lms_rxvga1_set_gain( dev, r );
     return 0;
 }
 
 int bladerf_get_rxvga1(struct bladerf *dev, int *gain)
 {
-    *gain = 0;
+    uint8_t gain_u8;
     /* TODO: Make return values for lms call and return it for failure */
-    lms_rxvga1_get_gain( dev, (uint8_t *)gain );
+    lms_rxvga1_get_gain( dev, &gain_u8 );
+    *gain = 5 + (((int)gain_u8 * (int)gain_u8) >> 9);
     return 0;
 }
 
