@@ -304,9 +304,10 @@ int bladerf_set_txvga2(struct bladerf *dev, int gain)
 
 int bladerf_get_txvga2(struct bladerf *dev, int *gain)
 {
-    *gain = 0;
+    uint8_t gain_u8;
     /* TODO: Make return values for lms call and return it for failure */
-    lms_txvga2_get_gain( dev, (uint8_t *)gain );
+    lms_txvga2_get_gain( dev, &gain_u8 );
+    *gain = gain_u8;
     return 0;
 }
 
@@ -376,11 +377,11 @@ int bladerf_set_rxvga2(struct bladerf *dev, int gain)
 
 int bladerf_get_rxvga2(struct bladerf *dev, int *gain)
 {
-    *gain = 0;
+    uint8_t gain_u8;
     /* TODO: Make return values for lms call and return it for failure */
-    lms_rxvga2_get_gain( dev, (uint8_t *)gain );
+    lms_rxvga2_get_gain( dev, &gain_u8 );
     /* Value returned from LMS lib is just the raw value, which is 3dB/unit */
-    *gain = *gain*3 ;
+    *gain = gain_u8 * 3;
     return 0;
 }
 
