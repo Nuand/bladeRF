@@ -770,17 +770,17 @@ long bladerf_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
                     break;
                 }
 
-                pages_to_write = (brf_fw.len + 255) / 0x100;
+                pages_to_write = (brf_sector.len + 255) / 0x100;
                 nwrite = 0;
                 for (page_idx = 0; page_idx < pages_to_write; page_idx++) {
                     do {
-                        retval = usb_control_msg(dev->udev, usb_rcvctrlpipe(dev->udev, 0),
+                        retval = usb_control_msg(dev->udev, usb_sndctrlpipe(dev->udev, 0),
                                 BLADE_USB_CMD_FLASH_WRITE, BLADE_USB_TYPE_OUT, 0x0000, brf_sector.idx + page_idx,
                                 &fw_buf[page_idx * 256 + nwrite], sz, BLADE_USB_TIMEOUT_MS);
                         nwrite += sz;
-                        if (retval) break;
+                        if (retval != sz) break;
                     } while (nwrite != 256);
-                    if (retval) break;
+                    if (retval != sz) break;
                 }
 
                 if (!retval) {
@@ -849,7 +849,7 @@ long bladerf_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
             for (page_idx = pages_to_write - 1; page_idx >= 0; page_idx--) {
                 nwrite = 0;
                 do {
-                    retval = usb_control_msg(dev->udev, usb_rcvctrlpipe(dev->udev, 0),
+                    retval = usb_control_msg(dev->udev, usb_sndctrlpipe(dev->udev, 0),
                             BLADE_USB_CMD_FLASH_WRITE, BLADE_USB_TYPE_OUT, 0x0000, page_idx,
                             &fw_buf[page_idx * 256 + nwrite], sz, BLADE_USB_TIMEOUT_MS);
                     nwrite += sz;
