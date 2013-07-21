@@ -491,6 +491,14 @@ void lms_tx_enable( struct bladerf *dev );
 void lms_tx_disable( struct bladerf *dev );
 
 /**
+ * Converts a frequency structure into the final frequency in Hz
+ *
+ * @param[in]   freq    Frequency structure to print out
+ * @returns The closest frequency in Hz that it's tuned to
+ */
+uint32_t lms_frequency_to_hz( struct lms_freq *f );
+
+/**
  * Pretty print a frequency structure
  *
  * @param[in]   freq    Frequency structure to print out
