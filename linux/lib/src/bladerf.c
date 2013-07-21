@@ -444,7 +444,7 @@ int bladerf_get_frequency(struct bladerf *dev,
         *frequency = 0 ;
         rv = BLADERF_ERR_INVAL;
     } else {
-        *frequency = (unsigned int)(((uint64_t)(((f.nint<<23) + f.nfrac)) * (f.reference/f.x) ) >>23);
+        *frequency = lms_frequency_to_hz(&f);
     }
     return rv;
 }

@@ -684,6 +684,18 @@ void lms_tx_disable( struct bladerf *dev )
     return ;
 }
 
+// Converts frequency structure to Hz
+uint32_t lms_frequency_to_hz( struct lms_freq *f )
+{
+    uint64_t pll_coeff;
+    uint32_t div;
+
+    pll_coeff = (((uint64_t)f->nint) << 23) + f->nfrac;
+    div = (f->x << 23);
+
+    return (uint32_t)(((f->reference * pll_coeff) + (div >> 1)) / div);
+}
+
 // Print a frequency structure
 void lms_print_frequency( struct lms_freq *f )
 {
@@ -692,7 +704,7 @@ void lms_print_frequency( struct lms_freq *f )
     lms_printf( "  nfrac    : %"PRIu32"\n", f->nfrac ) ;
     lms_printf( "  freqsel  : %x\n", f->freqsel ) ;
     lms_printf( "  reference: %"PRIu32"\n", f->reference ) ;
-    lms_printf( "  freq     : %"PRIu32"\n", (uint32_t) ( ((uint64_t)((f->nint<<23) + f->nfrac)) * (f->reference/f->x) >>23) )  ;
+    lms_printf( "  freq     : %"PRIu32"\n", lms_frequency_to_hz(f) );
 }
 
 // Get the frequency structure
