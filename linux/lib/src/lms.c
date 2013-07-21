@@ -799,35 +799,54 @@ void lms_set_frequency( struct bladerf *dev, lms_module_t mod, uint32_t freq )
     lms_spi_read( dev, base+9, &data ) ;
     data &= ~(0x3f) ;
     {
-        uint8_t i, vtune, low = 64, high = 0;
-        for( i = 0 ; i < 64 ; i++ )
-        {
-            data &= ~(0x3f) ;
-            data |= i ;
-            lms_spi_write( dev, base+9, data ) ;
-            lms_spi_read( dev, base+10, &vtune ) ;
-            if( (vtune&0xc0) == 0xc0 )
-            {
-                lms_printf( "MESSED UP!!!!!\n" ) ;
-            }
-            if( vtune&0x80 )
-            {
-                //lms_printf( "Setting HIGH\n" ) ;
-                high = i ;
-            }
-            if( (vtune&0x40) && low == 64 )
-            {
-                low = i ;
-                break ;
+#define VCO_HIGH 0x02
+#define VCO_NORM 0x00
+#define VCO_LOW 0x01
+
+        int start_i = -1, stop_i = -1, avg_i;
+        int state = VCO_HIGH;
+        int i;
+        uint8_t v;
+
+        for (i=0; i<64; i++) {
+            uint8_t v;
+
+            lms_spi_write(dev, base + 9, i | 0x80);
+            lms_spi_read(dev, base + 10, &v);
+
+            int vcocap = v >> 6;
+
+            if (vcocap == VCO_HIGH) {
+                continue;
+            } else if (vcocap == VCO_LOW) {
+                if (state == VCO_NORM) {
+                    stop_i = i - 1;
+                    state = VCO_LOW;
+                }
+            } else if (vcocap == VCO_NORM) {
+                if (state == VCO_HIGH) {
+                    start_i = i;
+                    state = VCO_NORM;
+                }
+            } else {
+                lms_printf("Invalid VCOCAP\n");
             }
         }
-        lms_printf( "LOW: %x HIGH: %x VCOCAP: %x\n", low, high, (low+high)>>1 ) ;
-        data &= ~(0x3f) ;
-        data |= ((low+high)>>1) ;
-        lms_spi_write( dev, base+9, data ) ;
-        lms_spi_write( dev, base+9, data ) ;
-        lms_spi_read( dev, base+10, &vtune ) ;
-        lms_printf( "VTUNE: %x\n", vtune&0xc0 ) ;
+
+        if (state == VCO_NORM)
+            stop_i = 63;
+
+        if ((start_i == -1) || (stop_i == -1))
+            lms_printf("Can't find VCOCAP value while tuning\n");
+
+        avg_i = (start_i + stop_i) >> 1;
+
+        printf("start=%d stop=%d set=%d\n", start_i, stop_i, avg_i);
+
+        lms_spi_write(dev, base + 9, avg_i | data);
+
+        lms_spi_read( dev, base + 10, &v ) ;
+        lms_printf( "VTUNE: %x\n", v >> 6 ) ;
     }
 
     // Turn off the DSMs
