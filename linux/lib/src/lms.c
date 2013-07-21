@@ -726,11 +726,8 @@ void lms_set_frequency( struct bladerf *dev, lms_module_t mod, uint32_t freq )
     uint32_t nfrac ;
     struct lms_freq f ;
     uint8_t data ;
-    uint32_t x;
-    uint32_t reference = 38400000 ;
-    uint64_t vcofreq ;
-    uint32_t left ;
-
+    uint64_t ref_clock = 38400000 ;
+    uint64_t vco_x ;
 
     // Turn on the DSMs
     lms_spi_read( dev, 0x09, &data ) ;
@@ -758,53 +755,22 @@ void lms_set_frequency( struct bladerf *dev, lms_module_t mod, uint32_t freq )
         }
     }
 
-    x = 1 << ((freqsel&7)-3);
-    //nint = floor( 2^(freqsel(2:0)-3) * f_lo / f_ref)
-    //nfrac = floor(2^23 * (((x*f_lo)/f_ref) -nint))
-    {
-        vcofreq = (uint64_t)freq*x ;
+    vco_x = 1 << ((freqsel & 7) - 3);
+    nint = (vco_x * freq) / ref_clock;
+    nfrac = ((1 << 23) * (vco_x * freq - nint * ref_clock)) / ref_clock;
 
-        nint = vcofreq/reference ;
-        left = vcofreq - nint*reference ;
-        nfrac = 0 ;
-        {
-            // Long division ...
-            int i ;
-            for( i = 0 ; i < 24 ; i++ ) {
-                if( left >= reference ) {
-                    left = left - reference ;
-                    nfrac = (nfrac << 1) + 1 ;
-                } else {
-                    nfrac <<= 1 ;
-                }
-                left <<= 1 ;
-            }
-        }
-
-        //        temp = (uint64_t)((uint64_t)x*(uint64_t)freq) ;
-        //        nint = ((uint64_t)x*(uint64_t)freq)/(uint64_t)reference ;
-        //        {
-        //        	uint32_t left =
-        //        }
-        //        nfrac = (temp - (nint*reference))<<23 ;
-
-    }
-    //nfrac = (lfreq>>2) - (lfreq>>5) - (lfreq>>12) ;
-    //nfrac <<= ((freqsel&7)-3) ;
-    f.x = x ;
+    f.x = vco_x ;
     f.nint = nint ;
     f.nfrac = nfrac ;
     f.freqsel = freqsel ;
-    f.reference = reference ;
+    f.reference = ref_clock;
     lms_print_frequency( &f ) ;
 
     // Program freqsel, selout (rx only), nint and nfrac
-    if( mod == RX )
-    {
+    if( mod == RX ) {
         lms_spi_write( dev, base+5, freqsel<<2 | (freq < 1500000000 ? 1 : 2 ) ) ;
     } else {
-        //		lms_spi_write( dev, base+5, freqsel<<2 ) ;
-        lms_spi_write( dev, base+5, freqsel<<2 | (freq < 1500000000 ? 1 : 2 ) ) ;
+        lms_spi_write( dev, base+5, freqsel<<2 ) ;
     }
     data = nint>>1 ;// lms_printf( "%x\n", data ) ;
     lms_spi_write( dev, base+0, data ) ;
