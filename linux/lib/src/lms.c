@@ -5,7 +5,7 @@
 #define PRIu32 "lu"
 #endif
 
-#define lms_printf(...)
+#define lms_printf(...) do {} while (0)
 
 // LPF conversion table
 const unsigned int uint_bandwidths[] = {
