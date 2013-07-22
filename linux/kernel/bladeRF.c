@@ -48,6 +48,8 @@ typedef struct {
 
     struct semaphore      config_sem;
 
+    struct file           *reader, *writer;
+
     int bytes;
     int debug;
 } bladerf_device_t;
@@ -302,6 +304,13 @@ static ssize_t bladerf_read(struct file *file, char __user *buf, size_t count, l
     if (dev->intnum != 1) {
         return -1;
     }
+
+    if (dev->reader) {
+        if (file != dev->reader) {
+            return -EPERM;
+        }
+    } else
+        dev->reader = file;
 
     if (dev->disconnecting)
         return -ENODEV;
@@ -1049,17 +1058,19 @@ static int bladerf_release(struct inode *inode, struct file *file)
     bladerf_device_t *dev;
 
     dev = (bladerf_device_t *)file->private_data;
-    if (dev->debug) {
-        dev->debug--;
-        return 0;
+
+    if (dev->writer && dev->writer == file) {
+        if (dev->tx_en) {
+            disable_tx(dev);
+        }
+        dev->writer = NULL;
     }
 
-    if (dev->tx_en) {
-        disable_tx(dev);
-    }
-
-    if (dev->rx_en) {
-        disable_rx(dev);
+    if (dev->reader && dev->reader == file) {
+        if (dev->rx_en) {
+            disable_rx(dev);
+        }
+        dev->reader = NULL;
     }
 
     return 0;
