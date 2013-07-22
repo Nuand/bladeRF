@@ -89,6 +89,7 @@ struct bladerf * _bladerf_open_info(const char *dev_path,
                                     struct bladerf_devinfo *i)
 {
     struct bladerf *ret;
+    unsigned int speed;
 
     ret = malloc(sizeof(*ret));
     if (!ret)
@@ -105,6 +106,12 @@ struct bladerf * _bladerf_open_info(const char *dev_path,
         ret->last_errno = errno;
         goto bladerf_open__err;
     }
+
+
+    /* Determine the device's USB speed */
+    if (ioctl(ret->fd, BLADE_GET_SPEED, &speed))
+        goto bladerf_open__err;
+    ret->speed = speed;
 
     /* Successfully opened, so save off the path */
     if( (ret->path = strdup(dev_path)) == NULL) {
@@ -867,6 +874,14 @@ int gpio_write(struct bladerf *dev, uint32_t val)
     struct uart_cmd uc;
     int ret;
     int i;
+
+    i = 0;
+
+    // set bit 7: this tells the FPGA the FX3 is connected via HS, informing the
+    // FPGA that DMA transfer sizes should be only 256 cycles instead of 512
+    if (dev->speed == 0)
+        val |= 0x8;
+
     for (i = 0; i < 4; i++) {
         uc.addr = i;
         uc.data = val >> (i * 8);

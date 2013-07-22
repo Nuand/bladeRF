@@ -8,6 +8,7 @@
 struct bladerf {
     int fd;         /* File descriptor to associated driver device node */
     char *path;     /* Path of the opened fd */
+    int speed;      /* The device's USB speed, 0 is HS, 1 is SS */
     struct bladerf_stats stats;
 
     int last_errno; /* Added for debugging. TODO Remove or integrate into

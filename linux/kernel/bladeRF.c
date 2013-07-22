@@ -1010,6 +1010,11 @@ leave_fw:
             }
             break;
 
+        case BLADE_GET_SPEED:
+            ret = dev->udev->speed == USB_SPEED_SUPER;
+            retval = copy_to_user((void __user *)arg, &ret, sizeof(ret));
+            break;
+
     }
 
     return retval;

@@ -14,6 +14,7 @@
 #define BLADE_VCTCXO_WRITE      _IOR(BLADERF_IOCTL_BASE, 24, unsigned int)
 #define BLADE_GPIO_WRITE        _IOR(BLADERF_IOCTL_BASE, 25, unsigned int)
 #define BLADE_GPIO_READ         _IOR(BLADERF_IOCTL_BASE, 26, unsigned int)
+#define BLADE_GET_SPEED         _IOR(BLADERF_IOCTL_BASE, 27, unsigned int)
 
 #define BLADE_FLASH_READ        _IOR(BLADERF_IOCTL_BASE, 40, unsigned int)
 #define BLADE_FLASH_WRITE       _IOR(BLADERF_IOCTL_BASE, 41, unsigned int)

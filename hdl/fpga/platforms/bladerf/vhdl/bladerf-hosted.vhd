@@ -158,6 +158,9 @@ architecture hosted_bladerf of bladerf is
 
     signal tx_iq_idx : std_logic;
 
+    signal gpif_buf_sz : unsigned(10 downto 0);
+    signal gpif_buf_sel_r, gpif_buf_sel_rr : std_logic;
+
     type m_state is (M_IDLE, M_IDLE_RD, M_IDLE_WR, M_IDLE_WR_1, M_IDLE_WR_2, M_IDLE_WR_3, M_READ, M_WRITE);
     signal current_state : m_state;
 
@@ -246,6 +249,8 @@ begin
     dma_rdy_2  <= fx3_ctl(10);
     dma_rdy_3  <= fx3_ctl(11);
 
+    gpif_buf_sz <= to_unsigned(512, gpif_buf_sz'length) when gpif_buf_sel_rr = '0' else to_unsigned(256, gpif_buf_sz'length);
+
     rf_tx_fifo : entity work.tx_fifo
       port map (
         aclr      => rf_tx_fifo_clr,
@@ -262,7 +267,7 @@ begin
         wrfull    => open,
         wrusedw   => rf_tx_fifo_cnt
       );
-    rf_tx_fifo_enough <= '1' when (unsigned(rf_tx_fifo_cnt) <= ((2**(rf_tx_fifo_cnt'length-1))  - 512)) else '0';
+    rf_tx_fifo_enough <= '1' when (unsigned(rf_tx_fifo_cnt) <= ((2**(rf_tx_fifo_cnt'length-1))  - gpif_buf_sz)) else '0';
     rf_tx_fifo_clr <= '1' when (sys_rst = '1') else '0';
 
     rf_tx_fifo_w <= '1' when (current_state = M_WRITE) else '0';
@@ -326,7 +331,7 @@ begin
         wrusedw   => open
       );
 
-    rf_rx_fifo_enough <= '1' when (unsigned(rf_rx_fifo_cnt) >= 512 ) else '0';
+    rf_rx_fifo_enough <= '1' when (unsigned(rf_rx_fifo_cnt) >= gpif_buf_sz ) else '0';
 
     rf_rx_fifo_clr <= '1' when (sys_rst = '1' or (rf_rx_fifo_full = '1' and signed(rf_rx_sample_idx) = 0)) else '0';
     rf_rx_fifo_read <= '1' when (current_state = M_READ) else '0';
@@ -613,6 +618,14 @@ begin
     exp_spi_clock       <= '0' ;
     exp_spi_mosi        <= '0' ;
     exp_gpio            <= (others =>'Z') ;
+
+    process(fx3_pclk)
+    begin
+        if( rising_edge(fx3_pclk)) then
+            gpif_buf_sel_r <= nios_gpio(7);
+            gpif_buf_sel_rr <= gpif_buf_sel_r;
+        end if;
+    end process;
 
 end architecture ; -- arch
 
