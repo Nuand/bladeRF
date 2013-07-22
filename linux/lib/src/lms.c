@@ -5,7 +5,7 @@
 #define PRIu32 "lu"
 #endif
 
-#define lms_printf(...)
+#define lms_printf(...) do {} while (0)
 
 // LPF conversion table
 const unsigned int uint_bandwidths[] = {
@@ -684,6 +684,18 @@ void lms_tx_disable( struct bladerf *dev )
     return ;
 }
 
+// Converts frequency structure to Hz
+uint32_t lms_frequency_to_hz( struct lms_freq *f )
+{
+    uint64_t pll_coeff;
+    uint32_t div;
+
+    pll_coeff = (((uint64_t)f->nint) << 23) + f->nfrac;
+    div = (f->x << 23);
+
+    return (uint32_t)(((f->reference * pll_coeff) + (div >> 1)) / div);
+}
+
 // Print a frequency structure
 void lms_print_frequency( struct lms_freq *f )
 {
@@ -692,7 +704,7 @@ void lms_print_frequency( struct lms_freq *f )
     lms_printf( "  nfrac    : %"PRIu32"\n", f->nfrac ) ;
     lms_printf( "  freqsel  : %x\n", f->freqsel ) ;
     lms_printf( "  reference: %"PRIu32"\n", f->reference ) ;
-    lms_printf( "  freq     : %"PRIu32"\n", (uint32_t) ( ((uint64_t)((f->nint<<23) + f->nfrac)) * (f->reference/f->x) >>23) )  ;
+    lms_printf( "  freq     : %"PRIu32"\n", lms_frequency_to_hz(f) );
 }
 
 // Get the frequency structure
@@ -726,11 +738,8 @@ void lms_set_frequency( struct bladerf *dev, lms_module_t mod, uint32_t freq )
     uint32_t nfrac ;
     struct lms_freq f ;
     uint8_t data ;
-    uint32_t x;
-    uint32_t reference = 38400000 ;
-    uint64_t vcofreq ;
-    uint32_t left ;
-
+    uint64_t ref_clock = 38400000 ;
+    uint64_t vco_x ;
 
     // Turn on the DSMs
     lms_spi_read( dev, 0x09, &data ) ;
@@ -758,53 +767,22 @@ void lms_set_frequency( struct bladerf *dev, lms_module_t mod, uint32_t freq )
         }
     }
 
-    x = 1 << ((freqsel&7)-3);
-    //nint = floor( 2^(freqsel(2:0)-3) * f_lo / f_ref)
-    //nfrac = floor(2^23 * (((x*f_lo)/f_ref) -nint))
-    {
-        vcofreq = (uint64_t)freq*x ;
+    vco_x = 1 << ((freqsel & 7) - 3);
+    nint = (vco_x * freq) / ref_clock;
+    nfrac = ((1 << 23) * (vco_x * freq - nint * ref_clock)) / ref_clock;
 
-        nint = vcofreq/reference ;
-        left = vcofreq - nint*reference ;
-        nfrac = 0 ;
-        {
-            // Long division ...
-            int i ;
-            for( i = 0 ; i < 24 ; i++ ) {
-                if( left >= reference ) {
-                    left = left - reference ;
-                    nfrac = (nfrac << 1) + 1 ;
-                } else {
-                    nfrac <<= 1 ;
-                }
-                left <<= 1 ;
-            }
-        }
-
-        //        temp = (uint64_t)((uint64_t)x*(uint64_t)freq) ;
-        //        nint = ((uint64_t)x*(uint64_t)freq)/(uint64_t)reference ;
-        //        {
-        //        	uint32_t left =
-        //        }
-        //        nfrac = (temp - (nint*reference))<<23 ;
-
-    }
-    //nfrac = (lfreq>>2) - (lfreq>>5) - (lfreq>>12) ;
-    //nfrac <<= ((freqsel&7)-3) ;
-    f.x = x ;
+    f.x = vco_x ;
     f.nint = nint ;
     f.nfrac = nfrac ;
     f.freqsel = freqsel ;
-    f.reference = reference ;
+    f.reference = ref_clock;
     lms_print_frequency( &f ) ;
 
     // Program freqsel, selout (rx only), nint and nfrac
-    if( mod == RX )
-    {
+    if( mod == RX ) {
         lms_spi_write( dev, base+5, freqsel<<2 | (freq < 1500000000 ? 1 : 2 ) ) ;
     } else {
-        //		lms_spi_write( dev, base+5, freqsel<<2 ) ;
-        lms_spi_write( dev, base+5, freqsel<<2 | (freq < 1500000000 ? 1 : 2 ) ) ;
+        lms_spi_write( dev, base+5, freqsel<<2 ) ;
     }
     data = nint>>1 ;// lms_printf( "%x\n", data ) ;
     lms_spi_write( dev, base+0, data ) ;
@@ -833,35 +811,54 @@ void lms_set_frequency( struct bladerf *dev, lms_module_t mod, uint32_t freq )
     lms_spi_read( dev, base+9, &data ) ;
     data &= ~(0x3f) ;
     {
-        uint8_t i, vtune, low = 64, high = 0;
-        for( i = 0 ; i < 64 ; i++ )
-        {
-            data &= ~(0x3f) ;
-            data |= i ;
-            lms_spi_write( dev, base+9, data ) ;
-            lms_spi_read( dev, base+10, &vtune ) ;
-            if( (vtune&0xc0) == 0xc0 )
-            {
-                lms_printf( "MESSED UP!!!!!\n" ) ;
-            }
-            if( vtune&0x80 )
-            {
-                //lms_printf( "Setting HIGH\n" ) ;
-                high = i ;
-            }
-            if( (vtune&0x40) && low == 64 )
-            {
-                low = i ;
-                break ;
+#define VCO_HIGH 0x02
+#define VCO_NORM 0x00
+#define VCO_LOW 0x01
+
+        int start_i = -1, stop_i = -1, avg_i;
+        int state = VCO_HIGH;
+        int i;
+        uint8_t v;
+
+        for (i=0; i<64; i++) {
+            uint8_t v;
+
+            lms_spi_write(dev, base + 9, i | 0x80);
+            lms_spi_read(dev, base + 10, &v);
+
+            int vcocap = v >> 6;
+
+            if (vcocap == VCO_HIGH) {
+                continue;
+            } else if (vcocap == VCO_LOW) {
+                if (state == VCO_NORM) {
+                    stop_i = i - 1;
+                    state = VCO_LOW;
+                }
+            } else if (vcocap == VCO_NORM) {
+                if (state == VCO_HIGH) {
+                    start_i = i;
+                    state = VCO_NORM;
+                }
+            } else {
+                lms_printf("Invalid VCOCAP\n");
             }
         }
-        lms_printf( "LOW: %x HIGH: %x VCOCAP: %x\n", low, high, (low+high)>>1 ) ;
-        data &= ~(0x3f) ;
-        data |= ((low+high)>>1) ;
-        lms_spi_write( dev, base+9, data ) ;
-        lms_spi_write( dev, base+9, data ) ;
-        lms_spi_read( dev, base+10, &vtune ) ;
-        lms_printf( "VTUNE: %x\n", vtune&0xc0 ) ;
+
+        if (state == VCO_NORM)
+            stop_i = 63;
+
+        if ((start_i == -1) || (stop_i == -1))
+            lms_printf("Can't find VCOCAP value while tuning\n");
+
+        avg_i = (start_i + stop_i) >> 1;
+
+        printf("start=%d stop=%d set=%d\n", start_i, stop_i, avg_i);
+
+        lms_spi_write(dev, base + 9, avg_i | data);
+
+        lms_spi_read( dev, base + 10, &v ) ;
+        lms_printf( "VTUNE: %x\n", v >> 6 ) ;
     }
 
     // Turn off the DSMs
