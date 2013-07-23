@@ -18,5 +18,5 @@ Usually the udev rules associated with USB devices use the VID and PID to determ
 KERNEL=="bladerf*", MODE="0660", GROUP="plugdev"
 ```
 
-Please feel free to suggest a tigher rule that applies the appropriate mode to the `/dev/bladerf#` entry.
+Please feel free to suggest a tighter rule that applies the appropriate mode to the `/dev/bladerf#` entry.
 
