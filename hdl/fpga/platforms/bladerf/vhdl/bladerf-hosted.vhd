@@ -159,6 +159,7 @@ architecture hosted_bladerf of bladerf is
     signal tx_iq_idx : std_logic;
 
     signal gpif_buf_sz : unsigned(10 downto 0);
+    signal gpif_buf_sz_cond : signed(12 downto 0);
     signal gpif_buf_sel_r, gpif_buf_sel_rr : std_logic;
 
     type m_state is (M_IDLE, M_IDLE_RD, M_IDLE_WR, M_IDLE_WR_1, M_IDLE_WR_2, M_IDLE_WR_3, M_READ, M_WRITE);
@@ -250,6 +251,7 @@ begin
     dma_rdy_3  <= fx3_ctl(11);
 
     gpif_buf_sz <= to_unsigned(512, gpif_buf_sz'length) when gpif_buf_sel_rr = '0' else to_unsigned(256, gpif_buf_sz'length);
+    gpif_buf_sz_cond <= to_signed(511, gpif_buf_sz_cond'length) when gpif_buf_sel_rr = '0' else to_signed(255, gpif_buf_sz_cond'length);
 
     rf_tx_fifo : entity work.tx_fifo
       port map (
@@ -403,7 +405,7 @@ begin
                 when M_IDLE =>
                     if( dma_idle = '1' ) then
                         if( should_perform_rx = '1' ) then
-                            rf_fifo_rcnt <= to_signed(511, 13);
+                            rf_fifo_rcnt <= gpif_buf_sz_cond;
 
                             if ( rf_rx_next_dma = '0') then
                                 rf_rx_dma_0 <= '1';
@@ -422,7 +424,7 @@ begin
                             -- if there is an problem with RX
                             dma_last_event <= DE_RX;
                         elsif( should_perform_tx = '1' ) then
-                            rf_fifo_rcnt <= to_signed(511, 13);
+                            rf_fifo_rcnt <= gpif_buf_sz_cond;
 
                             if( rf_tx_next_dma = '0') then
                                 rf_tx_dma_2 <= '1';
