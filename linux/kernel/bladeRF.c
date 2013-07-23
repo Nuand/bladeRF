@@ -345,7 +345,7 @@ static ssize_t bladerf_read(struct file *file, char __user *buf, size_t count, l
             // samples may have also been dropped if this happens because the user-mode
             // application is not reading samples fast enough
             if (atomic_read(&dev->data_in_inflight) == 0)
-                __submit_rx_urb(dev);
+                __submit_rx_urb(dev, 0);
 
 
             if (!ret)
