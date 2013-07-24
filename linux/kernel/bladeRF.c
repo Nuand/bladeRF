@@ -139,6 +139,7 @@ static int bladerf_start(bladerf_device_t *dev) {
         }
 
         dev->data_in_bufs[i].urb = urb;
+        dev->data_in_bufs[i].valid = 1;
 
         usb_fill_bulk_urb(urb, dev->udev, usb_rcvbulkpipe(dev->udev, 1),
                 dev->data_in_bufs[i].addr, DATA_BUF_SZ, __bladeRF_read_cb, dev);
@@ -274,6 +275,9 @@ static int enable_rx(bladerf_device_t *dev) {
 
     if (dev->disconnecting)
         return -ENODEV;
+
+    for (i = 0; i < NUM_DATA_URB; i++)
+        dev->data_in_bufs[i].valid = 1;
 
     ret = __bladerf_snd_cmd(dev, BLADE_USB_CMD_RF_RX, &val, sizeof(val));
     if (ret < 0)
