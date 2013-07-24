@@ -589,6 +589,8 @@ const char * bladerf_strerror(int error);
 /**
  * Read a Si5338 register
  *
+ * @warning This function will be renamed/replaced in the future
+ *
  * @param   dev         Device handle
  * @param   address     Si5338 register offset
  * @param   val         Pointer to variable the data should be read into
@@ -599,6 +601,8 @@ int si5338_i2c_read(struct bladerf *dev, uint8_t address, uint8_t *val);
 
 /**
  * Write a Si5338 register
+ *
+ * @warning This function will be renamed/replaced in the future
  *
  * @param   dev         Device handle
  * @param   address     Si5338 register offset
@@ -611,6 +615,8 @@ int si5338_i2c_write(struct bladerf *dev, uint8_t address, uint8_t val);
 /**
  * Set frequency for TX clocks
  *
+ * @warning This function will be renamed/replaced in the future
+ *
  * @param   dev         Device handle
  * @param   freq        Desired TX frequency in Hz
  *
@@ -620,6 +626,8 @@ int si5338_set_tx_freq(struct bladerf *dev, unsigned freq);
 
 /**
  * Set frequency for RX clocks
+ *
+ * @warning This function will be renamed/replaced in the future
  *
  * @param   dev         Device handle
  * @param   freq        Desired RX frequency in Hz
@@ -640,6 +648,8 @@ int si5338_set_rx_freq(struct bladerf *dev, unsigned freq);
 /**
  * Read a LMS register
  *
+ * @warning This function will be renamed/replaced in the future
+ *
  * @param   dev         Device handle
  * @param   address     LMS register offset
  * @param   val         Pointer to variable the data should be read into
@@ -650,6 +660,8 @@ int lms_spi_read(struct bladerf *dev, uint8_t address, uint8_t *val);
 
 /**
  * Write a LMS register
+ *
+ * @warning This function will be renamed/replaced in the future
  *
  * @param   dev         Device handle
  * @param   address     LMS register offset
@@ -668,7 +680,21 @@ int lms_spi_write(struct bladerf *dev, uint8_t address, uint8_t val);
  */
 
 /**
+ * This GPIO bit configures the FPGA to use smaller DMA 
+ * transfers (256 cycles instead of 512). This is required
+ * when the device is not connected at Super Speed (i.e., when
+ * it is connected at High Speed). 
+ *
+ * However, the caller need not set this in gpio_set() calls.
+ * The library will set this as needed; callers generally 
+ * need not be concerned with this bit.
+ */
+#define BLADERF_GPIO_FEATURE_SMALL_DMA_XFER (1 << 7)
+
+/**
  * Read a GPIO register
+ *
+ * @warning This function will be renamed/replaced in the future
  *
  * @param   dev         Device handle
  * @param   val         Pointer to variable the data should be read into
@@ -678,7 +704,9 @@ int lms_spi_write(struct bladerf *dev, uint8_t address, uint8_t val);
 int gpio_read(struct bladerf *dev, uint32_t *val);
 
 /**
- * Write a LMS register
+ * Write a GPIO register
+
+ * @warning This function will be renamed/replaced in the future
  *
  * @param   dev         Device handle
  * @param   val         Data to write to GPIO register
@@ -692,6 +720,8 @@ int gpio_write(struct bladerf *dev, uint32_t val);
 /**
  * Write value to VCTCXO DAC
  *
+ * @warning This function will be renamed/replaced in the future
+ *
  * @param   dev         Device handle
  * @param   val         Data to write to DAC register
  *
@@ -702,7 +732,5 @@ int dac_write(struct bladerf *dev, uint16_t val);
 #ifdef __cplusplus
 }
 #endif
-
-#define BLADERF_GPIO_FEATURE_HW 0x80
 
 #endif /* BLADERF_H_ */
