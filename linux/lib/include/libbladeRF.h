@@ -703,4 +703,6 @@ int dac_write(struct bladerf *dev, uint16_t val);
 }
 #endif
 
+#define BLADERF_GPIO_FEATURE_HW 0x80
+
 #endif /* BLADERF_H_ */

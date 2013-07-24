@@ -880,7 +880,7 @@ int gpio_write(struct bladerf *dev, uint32_t val)
     // set bit 7: this tells the FPGA the FX3 is connected via HS, informing the
     // FPGA that DMA transfer sizes should be only 256 cycles instead of 512
     if (dev->speed == 0)
-        val |= 0x8;
+        val |= GPIO_FEATURE_HS;
 
     for (i = 0; i < 4; i++) {
         uc.addr = i;
