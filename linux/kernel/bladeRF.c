@@ -9,6 +9,7 @@
 #include <linux/mutex.h>
 #include <linux/wait.h>
 #include <linux/uaccess.h>
+#include <linux/version.h>
 #include "../../common/bladeRF.h"
 
 struct data_buffer {
@@ -123,8 +124,13 @@ static int bladerf_start(bladerf_device_t *dev) {
     dev->data_in_producer_idx = 0;
 
     for (i = 0; i < NUM_DATA_URB; i++) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,35)
+        buf = usb_buffer_alloc(dev->udev, DATA_BUF_SZ,
+                GFP_KERNEL, &dev->data_in_bufs[i].dma);
+#else
         buf = usb_alloc_coherent(dev->udev, DATA_BUF_SZ,
                 GFP_KERNEL, &dev->data_in_bufs[i].dma);
+#endif
         memset(buf, 0, DATA_BUF_SZ);
         if (!buf) {
             dev_err(&dev->interface->dev, "Could not allocate data IN buffer\n");
@@ -157,8 +163,13 @@ static int bladerf_start(bladerf_device_t *dev) {
     dev->data_out_producer_idx = 0;
 
     for (i = 0; i < NUM_DATA_URB; i++) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,35)
+        buf = usb_buffer_alloc(dev->udev, DATA_BUF_SZ,
+                GFP_KERNEL, &dev->data_out_bufs[i].dma);
+#else
         buf = usb_alloc_coherent(dev->udev, DATA_BUF_SZ,
                 GFP_KERNEL, &dev->data_out_bufs[i].dma);
+#endif
         memset(buf, 0, DATA_BUF_SZ);
         if (!buf) {
             dev_err(&dev->interface->dev, "Could not allocate data OUT buffer\n");
@@ -190,10 +201,17 @@ static int bladerf_start(bladerf_device_t *dev) {
 static void bladerf_stop(bladerf_device_t *dev) {
     int i;
     for (i = 0; i < NUM_DATA_URB; i++) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,35)
+        usb_buffer_free(dev->udev, DATA_BUF_SZ, dev->data_in_bufs[i].addr, dev->data_in_bufs[i].dma);
+        usb_free_urb(dev->data_in_bufs[i].urb);
+        usb_buffer_free(dev->udev, DATA_BUF_SZ, dev->data_out_bufs[i].addr, dev->data_out_bufs[i].dma);
+        usb_free_urb(dev->data_out_bufs[i].urb);
+#else
         usb_free_coherent(dev->udev, DATA_BUF_SZ, dev->data_in_bufs[i].addr, dev->data_in_bufs[i].dma);
         usb_free_urb(dev->data_in_bufs[i].urb);
         usb_free_coherent(dev->udev, DATA_BUF_SZ, dev->data_out_bufs[i].addr, dev->data_out_bufs[i].dma);
         usb_free_urb(dev->data_out_bufs[i].urb);
+#endif
     }
 }
 
