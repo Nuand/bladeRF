@@ -247,6 +247,44 @@ void bladerf_close(struct bladerf *dev)
     }
 }
 
+int bladerf_enable_module(struct bladerf *dev,
+                            bladerf_module m, bool enable)
+{
+    int status = BLADERF_ERR_UNEXPECTED;
+    uint32_t gpio_reg;
+
+    status = gpio_read(dev, &gpio_reg);
+
+    if (status >= 0) {
+        switch (m) {
+            case TX:
+                if (enable) {
+                    gpio_reg |= BLADERF_GPIO_LMS_TX_ENABLE;
+                } else {
+                    gpio_reg &= ~BLADERF_GPIO_LMS_TX_ENABLE;
+                }
+                break;
+            case RX:
+                if (enable) {
+                    gpio_reg |= BLADERF_GPIO_LMS_RX_ENABLE;
+                } else {
+                    gpio_reg &= ~BLADERF_GPIO_LMS_RX_ENABLE;
+                }
+                break;
+        }
+
+        status = gpio_write(dev, gpio_reg);
+        if (status >= 0) {
+            status = 0;
+        } else {
+        }
+    } else {
+        printf("GPIO READ FAILED\n");
+    }
+
+    return status;
+}
+
 int bladerf_set_loopback(struct bladerf *dev, bladerf_loopback l)
 {
     lms_loopback_enable( dev, l );

@@ -674,20 +674,39 @@ int lms_spi_write(struct bladerf *dev, uint8_t address, uint8_t val);
 /* @} (End of LMS_CTL) */
 
 /**
- * @defgroup GPIO_CTL   GPIO register read/write functions
+ * @defgroup GPIO_CTL   NIOS GPIO register read/write functions
+ *
+ * @warning These routines will soon be removed from this API, and replaced
+ *          with more appropriate routines.
  *
  * @{
  */
 
 /**
- * This GPIO bit configures the FPGA to use smaller DMA 
+ * Enable LMS receive
+ *
+ * @note Use bladerf_enable_module(dev, RX, true) instead of using the
+ *       soon-to-be deprecated gpio_write() routing.
+ */
+#define BLADERF_GPIO_LMS_RX_ENABLE (1 << 1)
+
+/**
+ * Enable LMS transmit
+ *
+ * @note Use bladerf_enable_module(dev, TX, true) instead of using the
+ *       soon-to-be deprecated gpio_write() routing.
+ */
+#define BLADERF_GPIO_LMS_TX_ENABLE  (1 << 2)
+
+/**
+ * This GPIO bit configures the FPGA to use smaller DMA
  * transfers (256 cycles instead of 512). This is required
  * when the device is not connected at Super Speed (i.e., when
- * it is connected at High Speed). 
+ * it is connected at High Speed).
  *
  * However, the caller need not set this in gpio_set() calls.
- * The library will set this as needed; callers generally 
- * need not be concerned with this bit.
+ * The library will set this as needed; callers generally
+ * do not need to be concerned with setting/clearing this bit.
  */
 #define BLADERF_GPIO_FEATURE_SMALL_DMA_XFER (1 << 7)
 
@@ -704,8 +723,10 @@ int lms_spi_write(struct bladerf *dev, uint8_t address, uint8_t val);
 int gpio_read(struct bladerf *dev, uint32_t *val);
 
 /**
- * Write a GPIO register
-
+ * Write a GPIO register. Callers should be sure to perform a
+ * read-modify-write sequence to avoid accidentally clearing other
+ * GPIO bits that may be set by the library internally.
+ *
  * @warning This function will be renamed/replaced in the future
  *
  * @param   dev         Device handle
