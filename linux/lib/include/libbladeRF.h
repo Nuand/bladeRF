@@ -686,7 +686,7 @@ int lms_spi_write(struct bladerf *dev, uint8_t address, uint8_t val);
  * Enable LMS receive
  *
  * @note Use bladerf_enable_module(dev, RX, true) instead of using the
- *       soon-to-be deprecated gpio_write() routing.
+ *       soon-to-be deprecated gpio_write() routine.
  */
 #define BLADERF_GPIO_LMS_RX_ENABLE (1 << 1)
 
@@ -694,7 +694,7 @@ int lms_spi_write(struct bladerf *dev, uint8_t address, uint8_t val);
  * Enable LMS transmit
  *
  * @note Use bladerf_enable_module(dev, TX, true) instead of using the
- *       soon-to-be deprecated gpio_write() routing.
+ *       soon-to-be deprecated gpio_write() routine.
  */
 #define BLADERF_GPIO_LMS_TX_ENABLE  (1 << 2)
 
