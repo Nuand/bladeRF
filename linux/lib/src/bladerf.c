@@ -82,6 +82,30 @@ static inline void free_dirents(struct dirent **d, int n)
     }
 }
 
+int _bladerf_init_device(struct bladerf *dev)
+{
+    /* Set the GPIO pins to enable the LMS for TX/RX and select the low band */
+    gpio_write( dev, 0x57 );
+
+    /* Set the internal LMS register to enable RX and TX */
+    lms_spi_write( 0x05, 0x3e );
+
+    /* LMS FAQ: Improve TX spurious emission performance */
+    lms_spi_write( dev, 0x47, 0x40 );
+
+    /* LMS FAQ: Improve ADC performance */
+    lms_spi_write( dev, 0x59, 0x29 );
+
+    /* LMS FAQ: Common mode voltage for ADC */
+    lms_spi_write( dev, 0x64, 0x36 );
+
+    /* LMS FAQ: Higher LNA Gain */
+    lms_spi_write( dev, 0x79, 0x37 );
+
+    /* TODO: Read this return from the SPI calls */
+    return 0;
+}
+
 /* Open and if a non-NULL bladerf_devinfo ptr is provided, attempt to verify
  * that the device we opened is a bladeRF via a info calls.
  * (Does not fill out devinfo's path) */
@@ -827,6 +851,9 @@ int bladerf_load_fpga(struct bladerf *dev, const char *fpga)
         if (!ret)
             ret = BLADERF_ERR_UNEXPECTED;
     }
+
+    /* Now that the FPGA is loaded, initialize the device */
+    _bladerf_init_device(dev);
 
     return ret;
 }

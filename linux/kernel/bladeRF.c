@@ -76,7 +76,7 @@ static int __submit_rx_urb(bladerf_device_t *dev, unsigned int flags) {
 
         if (!dev->data_in_bufs[dev->data_in_producer_idx].valid) {
             spin_unlock_irqrestore(&dev->data_in_lock, irq_flags);
-            break;
+            // break;
         }
 
         dev->data_in_bufs[dev->data_in_producer_idx].valid = 0; // mark this RX packet as being in use
@@ -388,7 +388,7 @@ static int __submit_tx_urb(bladerf_device_t *dev) {
 
         if (!db->valid) {
             spin_unlock_irqrestore(&dev->data_out_lock, flags);
-            break;
+            // break;
         }
 
         // clear this packet's valid flag so it is not submitted until the next time it
