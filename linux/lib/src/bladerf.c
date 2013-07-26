@@ -88,7 +88,7 @@ int _bladerf_init_device(struct bladerf *dev)
     gpio_write( dev, 0x51 );
 
     /* Set the internal LMS register to enable RX and TX */
-    lms_spi_write( 0x05, 0x3e );
+    lms_spi_write( dev, 0x05, 0x3e );
 
     /* LMS FAQ: Improve TX spurious emission performance */
     lms_spi_write( dev, 0x47, 0x40 );
