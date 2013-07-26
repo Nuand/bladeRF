@@ -82,6 +82,30 @@ static inline void free_dirents(struct dirent **d, int n)
     }
 }
 
+int _bladerf_init_device(struct bladerf *dev)
+{
+    /* Set the GPIO pins to enable the LMS and select the low band */
+    gpio_write( dev, 0x51 );
+
+    /* Set the internal LMS register to enable RX and TX */
+    lms_spi_write( dev, 0x05, 0x3e );
+
+    /* LMS FAQ: Improve TX spurious emission performance */
+    lms_spi_write( dev, 0x47, 0x40 );
+
+    /* LMS FAQ: Improve ADC performance */
+    lms_spi_write( dev, 0x59, 0x29 );
+
+    /* LMS FAQ: Common mode voltage for ADC */
+    lms_spi_write( dev, 0x64, 0x36 );
+
+    /* LMS FAQ: Higher LNA Gain */
+    lms_spi_write( dev, 0x79, 0x37 );
+
+    /* TODO: Read this return from the SPI calls */
+    return 0;
+}
+
 /* Open and if a non-NULL bladerf_devinfo ptr is provided, attempt to verify
  * that the device we opened is a bladeRF via a info calls.
  * (Does not fill out devinfo's path) */
@@ -245,6 +269,38 @@ void bladerf_close(struct bladerf *dev)
         free(dev->path);
         free(dev);
     }
+}
+
+int bladerf_enable_module(struct bladerf *dev,
+                            bladerf_module m, bool enable)
+{
+    int status = BLADERF_ERR_UNEXPECTED;
+    uint32_t gpio_reg;
+
+    status = gpio_read(dev, &gpio_reg);
+
+    if (status == 0) {
+        switch (m) {
+            case TX:
+                if (enable) {
+                    gpio_reg |= BLADERF_GPIO_LMS_TX_ENABLE;
+                } else {
+                    gpio_reg &= ~BLADERF_GPIO_LMS_TX_ENABLE;
+                }
+                break;
+            case RX:
+                if (enable) {
+                    gpio_reg |= BLADERF_GPIO_LMS_RX_ENABLE;
+                } else {
+                    gpio_reg &= ~BLADERF_GPIO_LMS_RX_ENABLE;
+                }
+                break;
+        }
+
+        status = gpio_write(dev, gpio_reg);
+    }
+
+    return status;
 }
 
 int bladerf_set_loopback(struct bladerf *dev, bladerf_loopback l)
@@ -724,7 +780,7 @@ int bladerf_load_fpga(struct bladerf *dev, const char *fpga)
 
     /* FPGA is already programmed */
     if (fpga_status) {
-        printf( "FPGA aleady loaded - reloading!\n" );
+        fprintf( stderr, "FPGA aleady loaded - reloading!\n" );
     }
 
     fpga_fd = open(fpga, 0);
@@ -796,6 +852,9 @@ int bladerf_load_fpga(struct bladerf *dev, const char *fpga)
             ret = BLADERF_ERR_UNEXPECTED;
     }
 
+    /* Now that the FPGA is loaded, initialize the device */
+    _bladerf_init_device(dev);
+
     return ret;
 }
 
@@ -861,9 +920,16 @@ int gpio_read(struct bladerf *dev, uint32_t *val)
         uc.addr = i;
         uc.data = 0xff;
         ret = ioctl(dev->fd, BLADE_GPIO_READ, &uc);
-        if (ret)
+        if (ret) {
+            if (errno == ETIMEDOUT) {
+                ret = BLADERF_ERR_TIMEOUT;
+            } else {
+                ret = BLADERF_ERR_UNEXPECTED;
+            }
             break;
-        rval |= uc.data << (i * 8);
+        } else {
+            rval |= uc.data << (i * 8);
+        }
     }
     *val = rval;
     return ret;
@@ -877,18 +943,24 @@ int gpio_write(struct bladerf *dev, uint32_t val)
 
     i = 0;
 
-    // set bit 7: this tells the FPGA the FX3 is connected via HS, informing the
-    // FPGA that DMA transfer sizes should be only 256 cycles instead of 512
+    /* If we're connected at HS, we need to use smaller DMA transfers */
     if (dev->speed == 0)
-        val |= 0x8;
+        val |= BLADERF_GPIO_FEATURE_SMALL_DMA_XFER;
 
     for (i = 0; i < 4; i++) {
         uc.addr = i;
         uc.data = val >> (i * 8);
         ret = ioctl(dev->fd, BLADE_GPIO_WRITE, &uc);
-        if (ret)
+        if (ret) {
+            if (errno == ETIMEDOUT) {
+                ret = BLADERF_ERR_TIMEOUT;
+            } else {
+                ret = BLADERF_ERR_UNEXPECTED;
+            }
             break;
+        }
     }
+
     return ret;
 }
 
@@ -899,7 +971,6 @@ int dac_write(struct bladerf *dev, uint16_t val)
 {
     struct uart_cmd uc;
     uc.word = val;
-    printf( "Writing %d to VCTCXO\n", val );
     int i;
     int ret;
     for (i = 0; i < 4; i++) {

@@ -37,7 +37,7 @@ static void exit_script(GetLine *gl, struct cli_state *s, bool *in_script)
     }
 }
 
-int interactive(struct cli_state *s)
+int interactive(struct cli_state *s, bool batch)
 {
     char *line;
     int status;
@@ -74,13 +74,17 @@ int interactive(struct cli_state *s)
     }
 
     while (!cmd_fatal(status) && status != CMD_RET_QUIT) {
-        if( s->curr_device ) {
-           /* TODO: Change the prompt based on which device is open */
-        }
+
+        /* TODO: Change the prompt based on which device is open */
         line = gl_get_line(gl, CLI_DEFAULT_PROMPT, NULL, 0);
         if (!line) {
             if (in_script) {
                 exit_script(gl, s, &in_script);
+
+                /* Exit if we were run with -b -s <script> */
+                if (batch)
+                    status = CMD_RET_QUIT;
+
             } else {
                 /* Leaving interactivce mode */
                 break;
@@ -113,11 +117,6 @@ int interactive(struct cli_state *s)
         if (in_script) {
             s->lineno++;
         }
-    }
-
-    if (s->curr_device) {
-        bladerf_close(s->curr_device);
-        s->curr_device = NULL;
     }
 
     del_GetLine(gl);

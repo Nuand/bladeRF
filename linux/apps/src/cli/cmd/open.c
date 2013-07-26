@@ -16,12 +16,16 @@ int cmd_open(struct cli_state *state, int argc, char **argv)
         return CMD_RET_INVPARAM;
     }
 
-    if (state->curr_device) {
-        bladerf_close(state->curr_device);
+    if (cli_device_in_use(state)) {
+        return CMD_RET_BUSY;
     }
 
-    state->curr_device = bladerf_open(argv[1]);
-    if (!state->curr_device) {
+    if (state->dev) {
+        bladerf_close(state->dev);
+    }
+
+    state->dev = bladerf_open(argv[1]);
+    if (!state->dev) {
         state->last_lib_error = BLADERF_ERR_IO;
         return CMD_RET_LIBBLADERF;
     } else {

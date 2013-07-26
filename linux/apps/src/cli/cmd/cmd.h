@@ -18,6 +18,9 @@
 #define CMD_RET_NODEV       (-6)    /**< No device is currently opened */
 #define CMD_RET_NARGS       (-7)    /**< Invalid number of arguments provided */
 #define CMD_RET_NOFPGA      (-8)    /**< FPGA Not Programmed */
+#define CMD_RET_STATE       (-9)    /**< Operation invalid for current state */
+#define CMD_RET_FILEOP      (-10)   /**< File operation failed */
+#define CMD_RET_BUSY        (-11)   /**< Device is currently busy */
 
 /** Command OK */
 #define CMD_RET_OK          0

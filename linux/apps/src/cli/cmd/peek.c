@@ -17,8 +17,7 @@ int cmd_peek(struct cli_state *state, int argc, char **argv)
     int (*f)(struct bladerf *, uint8_t, uint8_t *);
     unsigned int count, address, max_address;
 
-    if( state->curr_device == NULL ) {
-        /* TODO: Should this check happen above the command being called? */
+    if (!cli_device_is_opened(state)) {
         return CMD_RET_NODEV;
     }
 
@@ -89,7 +88,7 @@ int cmd_peek(struct cli_state *state, int argc, char **argv)
             int status;
             uint8_t val;
             for(; count > 0 && address < max_address; count-- ) {
-                status = f( state->curr_device, (uint8_t)address, &val );
+                status = f( state->dev, (uint8_t)address, &val );
                 if (status < 0) {
                     state->last_lib_error = status;
                     rv = CMD_RET_LIBBLADERF;

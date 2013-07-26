@@ -86,7 +86,7 @@ static int is_fpga_configured(struct cli_state *state, const char *cmd)
 {
     int status;
 
-    status = bladerf_is_fpga_configured(state->curr_device);
+    status = bladerf_is_fpga_configured(state->dev);
     if (status < 0) {
         cli_err(state, cmd, "Failed to determine if the FPGA is "
                             "configured. Is the FX3 programmed?");
@@ -120,7 +120,7 @@ int print_bandwidth(struct cli_state *state, int argc, char **argv)
     printf( "\n" ) ;
 
     if( argc == 2 || module == RX ) {
-        status =  bladerf_get_bandwidth( state->curr_device, RX, &bw );
+        status =  bladerf_get_bandwidth( state->dev, RX, &bw );
         if (status < 0) {
             state->last_lib_error = status;
             rv = CMD_RET_LIBBLADERF;
@@ -130,7 +130,7 @@ int print_bandwidth(struct cli_state *state, int argc, char **argv)
     }
 
     if( argc == 2 || module == TX ) {
-        status = bladerf_get_bandwidth( state->curr_device, TX, &bw );
+        status = bladerf_get_bandwidth( state->dev, TX, &bw );
         if (status < 0) {
             state->last_lib_error = status;
             rv = CMD_RET_LIBBLADERF;
@@ -202,7 +202,7 @@ int set_bandwidth(struct cli_state *state, int argc, char **argv)
 
         /* Lack of option, so set both or RX only */
         if( argc == 3 || module == RX ) {
-            status = bladerf_set_bandwidth( state->curr_device, RX, bw, &actual );
+            status = bladerf_set_bandwidth( state->dev, RX, bw, &actual );
             if (status < 0) {
                 state->last_lib_error = status;
                 rv = CMD_RET_LIBBLADERF;
@@ -213,7 +213,7 @@ int set_bandwidth(struct cli_state *state, int argc, char **argv)
 
         /* Lack of option, so set both or TX only */
         if( argc == 3 || module == TX ) {
-            status = bladerf_set_bandwidth( state->curr_device, TX, bw, &actual );
+            status = bladerf_set_bandwidth( state->dev, TX, bw, &actual );
             if (status < 0) {
                 state->last_lib_error = status;
                 rv = CMD_RET_LIBBLADERF;
@@ -261,7 +261,7 @@ int print_frequency(struct cli_state *state, int argc, char **argv)
 
     if( rv == CMD_RET_OK ) {
         if( argc == 2 || module == RX ) {
-            status = bladerf_get_frequency( state->curr_device, RX, &freq );
+            status = bladerf_get_frequency( state->dev, RX, &freq );
             if (status < 0) {
                 state->last_lib_error = status;
                 rv = CMD_RET_LIBBLADERF;
@@ -275,7 +275,7 @@ int print_frequency(struct cli_state *state, int argc, char **argv)
         }
 
         if( argc == 2 || module == TX ) {
-            status = bladerf_get_frequency( state->curr_device, TX, &freq );
+            status = bladerf_get_frequency( state->dev, TX, &freq );
             if (status < 0) {
                 state->last_lib_error = status;
                 rv = CMD_RET_LIBBLADERF;
@@ -327,7 +327,7 @@ int set_frequency(struct cli_state *state, int argc, char **argv)
 
             /* Change RX frequency */
             if( argc == 3 || module == RX ) {
-                int status = bladerf_set_frequency( state->curr_device, RX, freq );
+                int status = bladerf_set_frequency( state->dev, RX, freq );
                 if (status < 0) {
                     state->last_lib_error = status;
                     rv = CMD_RET_LIBBLADERF;
@@ -338,7 +338,7 @@ int set_frequency(struct cli_state *state, int argc, char **argv)
 
             /* Change TX frequency */
             if( argc == 3 || module == TX ) {
-                status = bladerf_set_frequency( state->curr_device, TX, freq );
+                status = bladerf_set_frequency( state->dev, TX, freq );
                 if (status < 0) {
                     state->last_lib_error = status;
                     rv = CMD_RET_LIBBLADERF;
@@ -359,7 +359,7 @@ int print_gpio(struct cli_state *state, int argc, char **argv)
     int rv = CMD_RET_OK, status;
     unsigned int val;
 
-    status = gpio_read( state->curr_device, &val );
+    status = gpio_read( state->dev, &val );
 
     if (status < 0) {
         state->last_lib_error = status;
@@ -407,7 +407,7 @@ int set_gpio(struct cli_state *state, int argc, char **argv)
             rv = CMD_RET_INVPARAM;
         } else {
             /* TODO: Should this be exposed at this level? */
-            gpio_write( state->curr_device,val );
+            gpio_write( state->dev,val );
         }
     } else {
         rv = CMD_RET_NARGS;
@@ -441,7 +441,7 @@ int print_lnagain(struct cli_state *state, int argc, char **argv)
     int rv = CMD_RET_OK, status;
     bladerf_lna_gain gain;
 
-    status = bladerf_get_lna_gain( state->curr_device, &gain );
+    status = bladerf_get_lna_gain( state->dev, &gain );
     if (status < 0) {
         state->last_lib_error = status;
         rv = CMD_RET_LIBBLADERF;
@@ -480,7 +480,7 @@ int set_lnagain(struct cli_state *state, int argc, char **argv)
         }
 
         if (gain != LNA_UNKNOWN) {
-            status = bladerf_set_lna_gain( state->curr_device, gain );
+            status = bladerf_set_lna_gain( state->dev, gain );
             if (status < 0) {
                 state->last_lib_error = status;
                 rv = CMD_RET_LIBBLADERF;
@@ -547,7 +547,7 @@ int print_rxvga1(struct cli_state *state, int argc, char **argv)
 {
     int rv = CMD_RET_OK, gain, status;
 
-    status = bladerf_get_rxvga1( state->curr_device, &gain );
+    status = bladerf_get_rxvga1( state->dev, &gain );
     if (status < 0) {
         state->last_lib_error = status;
         rv = CMD_RET_LIBBLADERF;
@@ -572,7 +572,7 @@ int set_rxvga1(struct cli_state *state, int argc, char **argv)
             invalid_gain(state, argv[0], argv[1], argv[2]);
             rv = CMD_RET_INVPARAM;
         } else {
-            status = bladerf_set_rxvga1( state->curr_device, gain );
+            status = bladerf_set_rxvga1( state->dev, gain );
             if (status < 0) {
                 state->last_lib_error = status;
                 rv = CMD_RET_LIBBLADERF;
@@ -586,7 +586,7 @@ int print_rxvga2(struct cli_state *state, int argc, char **argv)
 {
     int rv = CMD_RET_OK, gain, status;
 
-    status = bladerf_get_rxvga2( state->curr_device, &gain );
+    status = bladerf_get_rxvga2( state->dev, &gain );
     if (status < 0) {
         state->last_lib_error = status;
         rv = CMD_RET_LIBBLADERF;
@@ -612,7 +612,7 @@ int set_rxvga2(struct cli_state *state, int argc, char **argv)
             invalid_gain(state, argv[0], argv[1], argv[2]);
             rv = CMD_RET_INVPARAM;
         } else {
-            status = bladerf_set_rxvga2( state->curr_device, gain );
+            status = bladerf_set_rxvga2( state->dev, gain );
             if (status < 0) {
                 state->last_lib_error = status;
                 rv = CMD_RET_LIBBLADERF;
@@ -635,15 +635,15 @@ int print_samplerate(struct cli_state *state, int argc, char **argv)
             invalid_module(state, argv[0], argv[2]);
             status = CMD_RET_INVPARAM;
         } else {
-            status = bladerf_get_sample_rate(state->curr_device, module, &rate);
+            status = bladerf_get_sample_rate(state->dev, module, &rate);
             printf("  %s sample rate: %u\n", module == RX ? "RX" : "TX", rate);
         }
     } else if (argc == 2) {
         unsigned int tx_rate;
-        status = bladerf_get_sample_rate(state->curr_device, RX, &rate);
+        status = bladerf_get_sample_rate(state->dev, RX, &rate);
 
         if (!status) {
-            status = bladerf_get_sample_rate(state->curr_device, TX, &tx_rate);
+            status = bladerf_get_sample_rate(state->dev, TX, &tx_rate);
 
             if (!status) {
                 printf("  RX sample rate: %u\n", rate);
@@ -693,7 +693,7 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
         } else {
             printf( "\n" );
             if( argc == 3 || module == RX ) {
-                int status = bladerf_set_sample_rate( state->curr_device,
+                int status = bladerf_set_sample_rate( state->dev,
                                                       RX, rate, &actual );
 
                 if (status < 0) {
@@ -706,7 +706,7 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
             }
 
             if( argc == 3 || module == TX ) {
-                int status = bladerf_set_sample_rate( state->curr_device, TX,
+                int status = bladerf_set_sample_rate( state->dev, TX,
                                                       rate, &actual );
                 if (status < 0) {
                     state->last_lib_error = status;
@@ -744,7 +744,7 @@ int set_trimdac(struct cli_state *state, int argc, char **argv)
             cli_err(state, argv[0], "Invalid VCTCXO DAC value (%s)", argv[2]);
             rv = CMD_RET_INVPARAM;
         } else {
-            int status = dac_write( state->curr_device, val );
+            int status = dac_write( state->dev, val );
             if (status < 0) {
                 state->last_lib_error = status;
                 rv = CMD_RET_LIBBLADERF;
@@ -759,7 +759,7 @@ int print_txvga1(struct cli_state *state, int argc, char **argv)
     /* Usage: print txvga1 */
     int rv = CMD_RET_OK, gain, status;
 
-    status = bladerf_get_txvga1( state->curr_device, &gain );
+    status = bladerf_get_txvga1( state->dev, &gain );
     if (status < 0) {
         state->last_lib_error = status;
         rv = CMD_RET_LIBBLADERF;
@@ -785,7 +785,7 @@ int set_txvga1(struct cli_state *state, int argc, char **argv)
             invalid_gain(state, argv[0], argv[1], argv[2]);
             rv = CMD_RET_INVPARAM;
         } else {
-            int status = bladerf_set_txvga1( state->curr_device, gain );
+            int status = bladerf_set_txvga1( state->dev, gain );
             if (status < 0) {
                 state->last_lib_error = status;
                 rv = CMD_RET_LIBBLADERF;
@@ -806,7 +806,7 @@ int print_txvga2(struct cli_state *state, int argc, char **argv)
     int rv = CMD_RET_OK;
     int status, gain;
 
-    status = bladerf_get_txvga2( state->curr_device, &gain );
+    status = bladerf_get_txvga2( state->dev, &gain );
     if (status < 0) {
         state->last_lib_error = status;
         rv = CMD_RET_LIBBLADERF;
@@ -833,7 +833,7 @@ int set_txvga2(struct cli_state *state, int argc, char **argv)
             invalid_gain(state, argv[0], argv[1], argv[2]);
             rv = CMD_RET_INVPARAM;
         } else {
-            int status = bladerf_set_txvga2( state->curr_device, gain );
+            int status = bladerf_set_txvga2( state->dev, gain );
             if (status < 0) {
                 state->last_lib_error = status;
                 rv = CMD_RET_LIBBLADERF;
@@ -880,8 +880,7 @@ int cmd_set(struct cli_state *state, int argc, char **argv)
     int rv = CMD_RET_OK;
     int fpga_configured;
 
-
-    if( state->curr_device == NULL ) {
+    if (!cli_device_is_opened(state)) {
         return  CMD_RET_NODEV;
     }
 
@@ -936,8 +935,8 @@ int cmd_print(struct cli_state *state, int argc, char **argv)
     struct printset_entry *entry = NULL;
     int fpga_configured;
 
-    if( state->curr_device == NULL ) {
-        return CMD_RET_NODEV;
+    if (!cli_device_is_opened(state)) {
+        return  CMD_RET_NODEV;
     }
 
     fpga_configured = is_fpga_configured( state, argv[0] );

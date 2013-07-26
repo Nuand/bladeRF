@@ -8,6 +8,7 @@
 #include <linux/sched.h>
 #include <linux/mutex.h>
 #include <linux/wait.h>
+#include <linux/uaccess.h>
 #include "../../common/bladeRF.h"
 
 struct data_buffer {
@@ -75,7 +76,7 @@ static int __submit_rx_urb(bladerf_device_t *dev, unsigned int flags) {
 
         if (!dev->data_in_bufs[dev->data_in_producer_idx].valid) {
             spin_unlock_irqrestore(&dev->data_in_lock, irq_flags);
-            break;
+            // break;
         }
 
         dev->data_in_bufs[dev->data_in_producer_idx].valid = 0; // mark this RX packet as being in use
@@ -139,6 +140,7 @@ static int bladerf_start(bladerf_device_t *dev) {
         }
 
         dev->data_in_bufs[i].urb = urb;
+        dev->data_in_bufs[i].valid = 1;
 
         usb_fill_bulk_urb(urb, dev->udev, usb_rcvbulkpipe(dev->udev, 1),
                 dev->data_in_bufs[i].addr, DATA_BUF_SZ, __bladeRF_read_cb, dev);
@@ -275,6 +277,9 @@ static int enable_rx(bladerf_device_t *dev) {
     if (dev->disconnecting)
         return -ENODEV;
 
+    for (i = 0; i < NUM_DATA_URB; i++)
+        dev->data_in_bufs[i].valid = 1;
+
     ret = __bladerf_snd_cmd(dev, BLADE_USB_CMD_RF_RX, &val, sizeof(val));
     if (ret < 0)
         goto err_out;
@@ -383,7 +388,7 @@ static int __submit_tx_urb(bladerf_device_t *dev) {
 
         if (!db->valid) {
             spin_unlock_irqrestore(&dev->data_out_lock, flags);
-            break;
+            // break;
         }
 
         // clear this packet's valid flag so it is not submitted until the next time it

@@ -1,5 +1,5 @@
 # bladeRF Linux Applications #
-This directory contains applications that utilize libbladeRF.  Currently, this consists of a command-line "bladerf" tool intended to aid in development and testing.  This tool can be used in a batch mode with single, simple operations but the real power is when it is compiled with an interactive shell.
+This directory contains applications that utilize libbladeRF.  Currently, this consists of a command-line `bladeRF-cli` tool intended to aid in development and testing.  This tool can be used in a batch mode with single, simple operations but the real power is when it is compiled with an interactive shell.
 
 ## Dependencies ##
 - [libbladeRF][lib]
@@ -11,78 +11,124 @@ This directory contains applications that utilize libbladeRF.  Currently, this c
 [tecla]: http://www.astro.caltech.edu/~mcs/tecla/ (libtecla)
 
 ## Building ##
-1. `make`
-1. Notice the binary `bin/bladeRF`
+1. Run `make` or `make DEBUG=y` (to build with debug symbols)
+2. Note that the CLI program has been created: `bin/bladeRF-cli`
 
-The default with the build is to want to be interactive.  To disable this:
+By default, bladeRF-cli uses libtecla to provide an interactive console. To disable this, include `INTERACTIVE=n`:
 
 ```
 make INTERACTIVE=n
 ```
 
-To enable debug symbols in the resulting binary:
+## Basic Usage ##
+For usage information, run:
 
 ```
-make DEBUG=y
+./bladeRF-cli --help
 ```
 
-## Usage ##
-Print the help:
+If you encounter issues and ask folks on IRC or in the forum assistance, it's always helpful to note the CLI version:
 
 ```
-./bladeRF --help
+./bladeRF-cli --version
 ```
+
+If only one device is connected, the -d option is not needed. The CLI will find and open the attached device. This option is required if multiple devices are connected. For the sake of completeness, the following examples will include this command line option.
 
 Load the FPGA and enter interactive mode:
 
 ```
-./bladeRF -d /dev/bladerf0 -l /path/to/fpga.rbf
+./bladeRF-cli -d /dev/bladerf0 -l /path/to/fpga.rbf
 ```
 
-Pass in a script to run to setup a device in a specific way:
+Pass in a script to run to setup a device in a specific way, and then interactive mode.
 
 ```
-./bladeRF -d /dev/bladerf0 < setup.txt
+./bladeRF-cli -d /dev/bladerf0 -s setup.txt
+```
+
+Load the FPGA, setup the device, but to do not enter interactive mode:
+
+```
+./bladeRF-cli -d /dev/bladerf0 -l /path/to/fpga.rbf -s setup.txt -b
 ```
 
 ## Some Useful Interactive Commands ##
-The `help` command prints out the top level commands that are available.  The most useful commands are `peek` and `poke` for setting registers at a very basic level and `print` and `set` for performing system level tasks like setting gains, frequency, bandwidth or samplerate.
+The `help` command prints out the top level commands that are available. Using `help <cmd>` gives a more detailed help on that command.
 
-Using `help <cmd>` gives a more detailed help on that command.
+The most useful control commands are `peek` and `poke` for setting registers at a very basic level and `print` and `set` for performing system level tasks like setting gains, frequency, bandwidth or sample rate.
 
-`print gpio` will show what the current state of the LMS reset, enables, and the band selection.
+The `rx` and `tx` commands allow data to be transmitted and received in the background, while the interactive console remains in the foreground. 
 
-`set gpio 0x57` is a good value to use to:
+`rx config` and `tx config` are used to configure and view various RX and TX parameters. Note that `rx` and `tx` is a supported shorthand for viewing the RX/TX configuration. See `help rx` and `help tx` for more information about these parameters. Below are a few examples:
 
-- Bring the LMS6002D out of reset
-- Enable LMS TX
-- Enable LMS RX
+Receive 10,000 samples to a binary file (host endianness):
+```
+rx config file=samples.bin format=bin n=10000
+rx start
+```
 
-To make the LMS more functional, the registers must be set internally to enable operation, so `poke lms 5 0x3e` will enable all the appropriate subsystems.
+`rx` or `rx config` may be used to view the RX task status. When it no longer reports "Running", the samples should be available in the file. Note that for larger sample rate or small values of `n`, the RX task may finish before you can enter the `rx` command to view its state.
 
-## Creating a setup.txt ##
-It was useful in debugging to get into a known state easily and reproducibly.  We created a `setup.txt` file which we would feed into the `stdin` of the command to get here.
 
-Our `setup.txt` looked like this:
+Receive 4096 samples to a CSV file:
+```
+rx config file=samples.csv format=csv n=4096
+rx start
+```
+
+Files can also be transmitted:
 
 ```
-set gpio 0x57
+tx config file=samples.bin
+tx start
+```
 
-poke lms 5 0x3E
-poke lms 0x59 0x29  # Per Lime Micro FAQ, improves ADC performance
-poke lms 0x64 0x36  # Per Lime Micro FAQ, set ADC common mode voltage
+The transmission of the file can be repeated a number of times, with a configurable delay (microseconds) between each repetition:
 
-set frequency 1000000000
-set samplerate 10000000
-set bandwidth 28000000
+```
+tx config file=samples.bin repeat=100 delay=10000
+tx start
+```
 
+While `format=csv` is valid for `tx`, note that the CLI will first convert the CSV to a temporary binary file:
+
+```
+bladeRF&gt; tx config file=samples.txt format=csv repeat=10 delay=10000000
+bladeRF&gt; tx start
+
+Converted CSV file to binary file. Using /tmp/bladeRF-ddLNmc
+Note that this program will not delete the temporary file.
+
+bladeRF&gt; tx
+
+    State: Running
+    File: /tmp/bladeRF-ddLNmc
+    Format: C16, Binary (Little Endian)
+    Repeat: 10 iterations
+    Repeat delay: 10000000 us
+```
+
+## Creating a setup.txt ##
+It was useful in debugging to get into a known state easily and reproducibly.  We created a `setup.txt` file which can be provided via the -s command line option.
+
+Below is an example `setup.txt`:
+
+```
+set frequency 1000000000  # Tune to 1 GHz on both RX and TX
+set samplerate 10000000   # Sample @ 10 MHz
+set bandwidth 28000000    # 28 MHz bandwidth
+
+# Configure gains
 set lnagain bypass
 set txvga1 -14
 set txvga2 20
 set rxvga1 20
 set rxvga2 20
 
+# Print out a few settings
+
 print frequency
+print samplerate
 print bandwidth
-print gpio
 ```

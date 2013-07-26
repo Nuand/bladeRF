@@ -8,10 +8,12 @@
 #include <getopt.h>
 #include <stdbool.h>
 #include <errno.h>
+#include <pthread.h>
 #include <libbladeRF.h>
 #include "interactive.h"
 #include "common.h"
 #include "cmd.h"
+#include "rxtx.h"
 #include "version.h"
 
 
@@ -46,15 +48,16 @@ struct rc_config {
 };
 
 #define DEFAULT_RC_CONFIG {\
-    .device = NULL, \
     .batch_mode = false, \
     .flash_fw = false, \
     .load_fpga = false, \
     .probe = false, \
     .show_version = false, \
     .show_lib_version = false, \
+    .device = NULL, \
     .fw_file = NULL, \
     .fpga_file = NULL, \
+    .script_file = NULL \
 }
 
 /* Fetch runtime-configuration info
@@ -164,24 +167,23 @@ void usage(const char *argv0)
 
 static void print_error_need_devarg()
 {
-    printf("\nError: Either no devices or multiple devices are present,\n"
-           "       but -d was not specified. Aborting.\n\n");
+    printf("\nError: Either no devices are present, or multiple devices are\n"
+            "        present and -d was not specified. Aborting.\n\n");
 }
 
 static int open_device(struct rc_config *rc, struct cli_state *state, int status)
 {
     if (!status) {
         if (rc->device) {
-            state->curr_device = bladerf_open(rc->device);
-            if (!state->curr_device) {
+            state->dev= bladerf_open(rc->device);
+            if (!state->dev) {
                 /* TODO use upcoming bladerf_strerror() here */
                 fprintf(stderr, "Failed to open device (%s): %s\n",
                         rc->device, strerror(errno));
                 status = -1;
             }
         } else {
-            /* TODO re-enable once the composite device situation is resolved */
-            //state.curr_device = bladerf_open_any();
+            state->dev = bladerf_open_any();
         }
     }
 
@@ -191,12 +193,12 @@ static int open_device(struct rc_config *rc, struct cli_state *state, int status
 static int flash_fw(struct rc_config *rc, struct cli_state *state, int status)
 {
     if (!status && rc->fw_file) {
-        if (!state->curr_device) {
+        if (!state->dev) {
             print_error_need_devarg();
             status = -1;
         } else {
             printf("Flashing firmware...\n");
-            status = bladerf_flash_firmware(state->curr_device, rc->fw_file);
+            status = bladerf_flash_firmware(state->dev, rc->fw_file);
             if (status) {
                 fprintf(stderr, "Error: failed to flash firmware: %s\n",
                         bladerf_strerror(status));
@@ -215,12 +217,12 @@ static int flash_fw(struct rc_config *rc, struct cli_state *state, int status)
 static int load_fpga(struct rc_config *rc, struct cli_state *state, int status)
 {
     if (!status && rc->fpga_file) {
-        if (!state->curr_device) {
+        if (!state->dev) {
             print_error_need_devarg();
             status = -1;
         } else {
             printf("Loading fpga...\n");
-            status = bladerf_load_fpga(state->curr_device, rc->fpga_file);
+            status = bladerf_load_fpga(state->dev, rc->fpga_file);
             if (status) {
                 fprintf(stderr, "Error: failed to flash firmware: %s\n",
                         bladerf_strerror(status));
@@ -245,17 +247,32 @@ static int open_script(struct rc_config *rc, struct cli_state *state, int status
     return status;
 }
 
+static inline int start_threads(struct cli_state *s)
+{
+    return rxtx_start_tasks(s);
+}
+
+static inline void stop_threads(struct cli_state *s)
+{
+    rxtx_stop_tasks(s->rxtx_data);
+}
+
 int main(int argc, char *argv[])
 {
-    int status;
+    int status = 0;
     struct rc_config rc = DEFAULT_RC_CONFIG;
-    struct cli_state state = CLI_STATE_INITIALIZER;
+    struct cli_state *state;
 
     if (get_rc_config(argc, argv, &rc)) {
         return 1;
     }
 
-    status = 0;
+    state = cli_state_create();
+
+    if (!state) {
+        fprintf(stderr, "Failed to create state object\n");
+        return 1;
+    }
 
     if (rc.show_help) {
         usage(argv[0]);
@@ -265,32 +282,54 @@ int main(int argc, char *argv[])
         /* TODO implement libbladerf_version() */
         printf("TODO!\n");
     } else if (rc.probe) {
-        status = cmd_handle(&state, "probe");
+        status = cmd_handle(state, "probe");
     }
 
     /* Conditionally performed items, depending on runtime config */
-    status = open_device(&rc, &state, status);
-    status = flash_fw(&rc, &state, status);
-    status = load_fpga(&rc, &state, status);
-    status = open_script(&rc, &state, status);
+    status = open_device(&rc, state, status);
+    status = flash_fw(&rc, state, status);
+    status = load_fpga(&rc, state, status);
+    status = open_script(&rc, state, status);
 
     /* These items are no longer needed */
     free(rc.device);
-    free(rc.fw_file);
-    free(rc.fpga_file);
-    free(rc.script_file);
+    rc.device = NULL;
 
-    /* Abort if anything went wrong */
+    free(rc.fw_file);
+    rc.fw_file = NULL;
+
+    free(rc.fpga_file);
+    rc.fpga_file = NULL;
+
+    free(rc.script_file);
+    rc.script_file = NULL;
+
     if (status)
         return 2;
 
     /* Exit cleanly when configured for batch mode. Remember that this is
      * implicit with some commands */
-    if (rc.batch_mode) {
-        if (state.curr_device)
-            bladerf_close(state.curr_device);
-        return 0;
-    } else {
-        return interactive(&state);
+    if (!rc.batch_mode || state->script != NULL) {
+        status = start_threads(state);
+
+        if (status < 0) {
+            fprintf(stderr, "Failed to kick off threads\n");
+        } else {
+            status = interactive(state, rc.batch_mode);
+            stop_threads(state);
+        }
+
     }
+
+
+
+    /* Ensure we exit with RX & TX disabled.
+     * Can't do much about an error at this point anyway... */
+    if (state->dev) {
+        bladerf_enable_module(state->dev, TX, false);
+        bladerf_enable_module(state->dev, RX, false);
+    }
+
+    cli_state_destroy(state);
+    return status;
 }

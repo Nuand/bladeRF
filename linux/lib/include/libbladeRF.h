@@ -589,6 +589,8 @@ const char * bladerf_strerror(int error);
 /**
  * Read a Si5338 register
  *
+ * @warning This function will be renamed/replaced in the future
+ *
  * @param   dev         Device handle
  * @param   address     Si5338 register offset
  * @param   val         Pointer to variable the data should be read into
@@ -599,6 +601,8 @@ int si5338_i2c_read(struct bladerf *dev, uint8_t address, uint8_t *val);
 
 /**
  * Write a Si5338 register
+ *
+ * @warning This function will be renamed/replaced in the future
  *
  * @param   dev         Device handle
  * @param   address     Si5338 register offset
@@ -611,6 +615,8 @@ int si5338_i2c_write(struct bladerf *dev, uint8_t address, uint8_t val);
 /**
  * Set frequency for TX clocks
  *
+ * @warning This function will be renamed/replaced in the future
+ *
  * @param   dev         Device handle
  * @param   freq        Desired TX frequency in Hz
  *
@@ -620,6 +626,8 @@ int si5338_set_tx_freq(struct bladerf *dev, unsigned freq);
 
 /**
  * Set frequency for RX clocks
+ *
+ * @warning This function will be renamed/replaced in the future
  *
  * @param   dev         Device handle
  * @param   freq        Desired RX frequency in Hz
@@ -640,6 +648,8 @@ int si5338_set_rx_freq(struct bladerf *dev, unsigned freq);
 /**
  * Read a LMS register
  *
+ * @warning This function will be renamed/replaced in the future
+ *
  * @param   dev         Device handle
  * @param   address     LMS register offset
  * @param   val         Pointer to variable the data should be read into
@@ -650,6 +660,8 @@ int lms_spi_read(struct bladerf *dev, uint8_t address, uint8_t *val);
 
 /**
  * Write a LMS register
+ *
+ * @warning This function will be renamed/replaced in the future
  *
  * @param   dev         Device handle
  * @param   address     LMS register offset
@@ -662,13 +674,46 @@ int lms_spi_write(struct bladerf *dev, uint8_t address, uint8_t val);
 /* @} (End of LMS_CTL) */
 
 /**
- * @defgroup GPIO_CTL   GPIO register read/write functions
+ * @defgroup GPIO_CTL   NIOS GPIO register read/write functions
+ *
+ * @warning These routines will soon be removed from this API, and replaced
+ *          with more appropriate routines.
  *
  * @{
  */
 
 /**
+ * Enable LMS receive
+ *
+ * @note Use bladerf_enable_module(dev, RX, true) instead of using the
+ *       soon-to-be deprecated gpio_write() routine.
+ */
+#define BLADERF_GPIO_LMS_RX_ENABLE (1 << 1)
+
+/**
+ * Enable LMS transmit
+ *
+ * @note Use bladerf_enable_module(dev, TX, true) instead of using the
+ *       soon-to-be deprecated gpio_write() routine.
+ */
+#define BLADERF_GPIO_LMS_TX_ENABLE  (1 << 2)
+
+/**
+ * This GPIO bit configures the FPGA to use smaller DMA
+ * transfers (256 cycles instead of 512). This is required
+ * when the device is not connected at Super Speed (i.e., when
+ * it is connected at High Speed).
+ *
+ * However, the caller need not set this in gpio_set() calls.
+ * The library will set this as needed; callers generally
+ * do not need to be concerned with setting/clearing this bit.
+ */
+#define BLADERF_GPIO_FEATURE_SMALL_DMA_XFER (1 << 7)
+
+/**
  * Read a GPIO register
+ *
+ * @warning This function will be renamed/replaced in the future
  *
  * @param   dev         Device handle
  * @param   val         Pointer to variable the data should be read into
@@ -678,7 +723,11 @@ int lms_spi_write(struct bladerf *dev, uint8_t address, uint8_t val);
 int gpio_read(struct bladerf *dev, uint32_t *val);
 
 /**
- * Write a LMS register
+ * Write a GPIO register. Callers should be sure to perform a
+ * read-modify-write sequence to avoid accidentally clearing other
+ * GPIO bits that may be set by the library internally.
+ *
+ * @warning This function will be renamed/replaced in the future
  *
  * @param   dev         Device handle
  * @param   val         Data to write to GPIO register
@@ -691,6 +740,8 @@ int gpio_write(struct bladerf *dev, uint32_t val);
 
 /**
  * Write value to VCTCXO DAC
+ *
+ * @warning This function will be renamed/replaced in the future
  *
  * @param   dev         Device handle
  * @param   val         Data to write to DAC register
