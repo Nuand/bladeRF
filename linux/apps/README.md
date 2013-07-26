@@ -1,5 +1,5 @@
 # bladeRF Linux Applications #
-This directory contains applications that utilize libbladeRF.  Currently, this consists of a command-line "bladeRF-cli" tool intended to aid in development and testing.  This tool can be used in a batch mode with single, simple operations but the real power is when it is compiled with an interactive shell.
+This directory contains applications that utilize libbladeRF.  Currently, this consists of a command-line `bladeRF-cli` tool intended to aid in development and testing.  This tool can be used in a batch mode with single, simple operations but the real power is when it is compiled with an interactive shell.
 
 ## Dependencies ##
 - [libbladeRF][lib]
@@ -47,7 +47,7 @@ Pass in a script to run to setup a device in a specific way, and then interactiv
 ./bladeRF-cli -d /dev/bladerf0 -s setup.txt
 ```
 
-Load the FPGA, setup the device, but to do not enter interactive mod:
+Load the FPGA, setup the device, but to do not enter interactive mode:
 
 ```
 ./bladeRF-cli -d /dev/bladerf0 -l /path/to/fpga.rbf -s setup.txt -b
@@ -56,7 +56,7 @@ Load the FPGA, setup the device, but to do not enter interactive mod:
 ## Some Useful Interactive Commands ##
 The `help` command prints out the top level commands that are available. Using `help <cmd>` gives a more detailed help on that command.
 
-The most useful control commands are `peek` and `poke` for setting registers at a very basic level and `print` and `set` for performing system level tasks like setting gains, frequency, bandwidth or samplerate.
+The most useful control commands are `peek` and `poke` for setting registers at a very basic level and `print` and `set` for performing system level tasks like setting gains, frequency, bandwidth or sample rate.
 
 The `rx` and `tx` commands allow data to be transmitted and received in the background, while the interactive console remains in the foreground. 
 
