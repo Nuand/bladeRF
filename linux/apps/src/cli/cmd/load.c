@@ -10,15 +10,16 @@ int cmd_load(struct cli_state *state, int argc, char **argv)
     int rv = CMD_RET_OK ;
     int librv;
 
-    if (!state->curr_device) {
-        /* FIXME: cmd_handle should probably print this, not this code */
+    if (!cli_device_is_opened(state)) {
         return CMD_RET_NODEV;
+    } else if (cli_device_in_use(state)) {
+        return CMD_RET_BUSY;
     }
 
-    if( argc == 3 ) {
+    if ( argc == 3 ) {
         if( strcasecmp( argv[1], "fpga" ) == 0 ) {
             printf("Loading fpga...\n");
-            librv = bladerf_load_fpga(state->curr_device, argv[2]);
+            librv = bladerf_load_fpga(state->dev, argv[2]);
 
             if (librv < 0) {
                 state->last_lib_error = librv;
@@ -28,13 +29,13 @@ int cmd_load(struct cli_state *state, int argc, char **argv)
             }
         } else if( strcasecmp( argv[1], "fx3" ) == 0 ) {
             printf("Flashing firmware...\n");
-            librv = bladerf_flash_firmware(state->curr_device, argv[2]);
+            librv = bladerf_flash_firmware(state->dev, argv[2]);
 
             if (librv < 0) {
                 state->last_lib_error = librv;
                 rv = CMD_RET_LIBBLADERF;
             } else {
-                printf("Done.\n");
+                printf("Done. Cycle power on the device.\n");
             }
         } else {
             cli_err(state, argv[0],

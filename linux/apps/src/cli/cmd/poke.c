@@ -17,8 +17,7 @@ int cmd_poke(struct cli_state *state, int argc, char **argv)
     int (*f)(struct bladerf *, uint8_t, uint8_t);
     unsigned int address, value;
 
-    if( state->curr_device == NULL ) {
-        /* TODO: Should this be checked before calling the command? */
+    if (!cli_device_is_opened(state)) {
         return CMD_RET_NODEV;
     }
 
@@ -80,7 +79,7 @@ int cmd_poke(struct cli_state *state, int argc, char **argv)
 
         /* Write the value to the address */
         if( rv == CMD_RET_OK && f ) {
-            status = f( state->curr_device, (uint8_t)address, (uint8_t)value );
+            status = f( state->dev, (uint8_t)address, (uint8_t)value );
             if (status < 0) {
                 state->last_lib_error = status;
                 rv = CMD_RET_LIBBLADERF;

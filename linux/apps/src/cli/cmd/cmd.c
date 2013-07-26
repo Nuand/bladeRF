@@ -13,9 +13,8 @@ DECLARE_CMD(peek);
 DECLARE_CMD(poke);
 DECLARE_CMD(print);
 DECLARE_CMD(probe);
-DECLARE_CMD(rx);
 DECLARE_CMD(set);
-DECLARE_CMD(tx);
+DECLARE_CMD(rxtx);
 DECLARE_CMD(version);
 
 #define MAX_ARGS    10
@@ -36,31 +35,88 @@ static const char *cmd_names_poke[] = { "poke", "po", NULL };
 static const char *cmd_names_print[] = { "print", "pr", "p", NULL };
 static const char *cmd_names_probe[] = { "probe", "pro", NULL };
 static const char *cmd_names_quit[] = { "quit", "q", "exit", "x", NULL };
-static const char *cmd_names_rx[] = { "rx", NULL };
-static const char *cmd_names_tx[] = { "tx", NULL };
+static const char *cmd_names_rx[] = { "rx", "receive", NULL };
+static const char *cmd_names_tx[] = { "tx", "transmit", NULL };
 static const char *cmd_names_set[] = { "set", "s", NULL };
 static const char *cmd_names_ver[] = { "version", "ver", "v", NULL };
 
 static const struct cmd cmd_table[] = {
     {
         .names = cmd_names_rx,
-        .exec = cmd_rx,
+        .exec = cmd_rxtx,
         .desc = "Receive IQ samples",
         .help =
-            " rx <filename> [format] [# samples]\n"
+            " rx <start | stop | config [param=val [param=val [...]]>\n"
             "\n"
             "Receive IQ samples and write them to the specified file.\n"
-            "TODO\n"
+            "Reception is controlled and configured by one of the following:\n"
+            "\n"
+            "    start         Start receiving samples\n"
+            "    stop          Stop Receiving samples\n"
+            "    config        Configure sample reception. If no parameters\n"
+            "                  are provided, the current parameters are printed.\n"
+            "\n"
+            "Running 'rx' without any additional commands is valid shorthand "
+            "for 'rx config'.\n"
+            "\n"
+            "Configuration parameters take the form 'param=value', and may be\n"
+            "specified in a single or multiple 'rx config' invocations. Below\n"
+            "is a list of available parameters.\n"
+            "\n"
+            "    n             Number of samples to receive. 0 = inf.\n"
+            "    file          Filename to write received samples to\n"
+            "    format        Output file format. One of the following:\n"
+            "                      csv          CSV of c16 (IQ) values\n"
+            "                      binl         Raw C16 data, little endian\n"
+            "                      binb         Raw C16 data, big endian\n"
+            "                      bin          Raw C16 data, host endianness\n"
+            "\n"
+            "Example:\n"
+            "  rx config file=/tmp/some_file format=binle_c16 n=10000\n"
+            "\n"
+            "Notes:\n"
+            "\n"
+            "  An 'rx stop' followed by an 'rx start' will result in the\n"
+            "  samples file being truncated. If this is not desired, be sure\n"
+            "  to run 'rx config' to set another file before restaring the\n"
+            "  rx stream.\n"
     },
     {
         .names = cmd_names_tx,
-        .exec = cmd_tx,
+        .exec = cmd_rxtx,
         .desc = "Transmit IQ samples",
         .help =
-            " tx <filename> TODO\n"
+            " tx <start | stop | config [parameters]>\n"
             "\n"
             "Receive IQ samples and write them to the specified file.\n"
-            "TODO\n"
+            "Reception is controlled and configured by one of the following:\n"
+            "\n"
+            "    start         Start receiving samples\n"
+            "    stop          Stop Receiving samples\n"
+            "    config        Configure sample reception. If no parameters\n"
+            "                  are provided, the current parameters are printed.\n"
+            "\n"
+            "Running 'tx' without any additional commands is valid shorthand "
+            "for 'tx config'.\n"
+            "\n"
+            "Configuration parameters take the form 'param=value', and may be\n"
+            "specified in a single or multiple 'tx config' invocations. Below\n"
+            "is a list of available parameters.\n"
+            "\n"
+            "\n"
+            "    file          Filename to read samples from\n"
+            "    format        Input file format. One of the following:\n"
+            "                      csv       CSV of c16 (IQ) values\n"
+            "                      binl      Raw C16 data, little endian\n"
+            "                      binb      Raw C16 data, big endian\n"
+            "                      bin       Raw C16 data, host endianness\n"
+            "    repeat        The number of times the file contents should\n"
+            "                  be transmitted. 0 implies repeat until stopped.\n"
+            "    delay         The number of microseconds to delay between\n"
+            "                  retransmitting file contents. 0 implies no delay.\n"
+            "Example:\n"
+            "  tx config file=data.bin format=binle_c16 repeat=2 delay=250000\n"
+            "\n"
     },
     {
         .names = cmd_names_set,
@@ -307,6 +363,15 @@ const char * cmd_strerror(int error, int lib_error)
         case CMD_RET_NOFPGA:
             return "Command requires FPGA to be loaded";
 
+        case CMD_RET_STATE:
+            return "Operation invalid in current state";
+
+        case CMD_RET_FILEOP:
+            return "File operation failed";
+
+        case CMD_RET_BUSY:
+            return "Could not complete operation - device is currently busy";
+
         /* Other commands shall print out helpful info from within their
          * implementation */
         default:
@@ -356,9 +421,6 @@ int cmd_handle(struct cli_state *s, const char *line_)
             cli_err(s, "Unrecognized command", "%s", argv[0]);
             ret = CMD_RET_NOCMD;
         }
-
-        if(ret != 0)
-            s->last_error = ret;
     }
 
     free(line);
