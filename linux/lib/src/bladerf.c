@@ -255,7 +255,7 @@ int bladerf_enable_module(struct bladerf *dev,
 
     status = gpio_read(dev, &gpio_reg);
 
-    if (status >= 0) {
+    if (status == 0) {
         switch (m) {
             case TX:
                 if (enable) {
@@ -274,12 +274,6 @@ int bladerf_enable_module(struct bladerf *dev,
         }
 
         status = gpio_write(dev, gpio_reg);
-        if (status >= 0) {
-            status = 0;
-        } else {
-        }
-    } else {
-        printf("GPIO READ FAILED\n");
     }
 
     return status;
@@ -762,7 +756,7 @@ int bladerf_load_fpga(struct bladerf *dev, const char *fpga)
 
     /* FPGA is already programmed */
     if (fpga_status) {
-        printf( "FPGA aleady loaded - reloading!\n" );
+        fprintf( stderr, "FPGA aleady loaded - reloading!\n" );
     }
 
     fpga_fd = open(fpga, 0);
@@ -899,9 +893,16 @@ int gpio_read(struct bladerf *dev, uint32_t *val)
         uc.addr = i;
         uc.data = 0xff;
         ret = ioctl(dev->fd, BLADE_GPIO_READ, &uc);
-        if (ret)
+        if (ret) {
+            if (errno == ETIMEDOUT) {
+                ret = BLADERF_ERR_TIMEOUT;
+            } else {
+                ret = BLADERF_ERR_UNEXPECTED;
+            }
             break;
-        rval |= uc.data << (i * 8);
+        } else {
+            rval |= uc.data << (i * 8);
+        }
     }
     *val = rval;
     return ret;
@@ -923,9 +924,16 @@ int gpio_write(struct bladerf *dev, uint32_t val)
         uc.addr = i;
         uc.data = val >> (i * 8);
         ret = ioctl(dev->fd, BLADE_GPIO_WRITE, &uc);
-        if (ret)
+        if (ret) {
+            if (errno == ETIMEDOUT) {
+                ret = BLADERF_ERR_TIMEOUT;
+            } else {
+                ret = BLADERF_ERR_UNEXPECTED;
+            }
             break;
+        }
     }
+
     return ret;
 }
 
@@ -936,7 +944,6 @@ int dac_write(struct bladerf *dev, uint16_t val)
 {
     struct uart_cmd uc;
     uc.word = val;
-    printf( "Writing %d to VCTCXO\n", val );
     int i;
     int ret;
     for (i = 0; i < 4; i++) {

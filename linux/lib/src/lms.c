@@ -853,8 +853,6 @@ void lms_set_frequency( struct bladerf *dev, lms_module_t mod, uint32_t freq )
 
         avg_i = (start_i + stop_i) >> 1;
 
-        printf("start=%d stop=%d set=%d\n", start_i, stop_i, avg_i);
-
         lms_spi_write(dev, base + 9, avg_i | data);
 
         lms_spi_read( dev, base + 10, &v ) ;
