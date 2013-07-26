@@ -84,8 +84,8 @@ static inline void free_dirents(struct dirent **d, int n)
 
 int _bladerf_init_device(struct bladerf *dev)
 {
-    /* Set the GPIO pins to enable the LMS for TX/RX and select the low band */
-    gpio_write( dev, 0x57 );
+    /* Set the GPIO pins to enable the LMS and select the low band */
+    gpio_write( dev, 0x51 );
 
     /* Set the internal LMS register to enable RX and TX */
     lms_spi_write( 0x05, 0x3e );
