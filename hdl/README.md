@@ -58,4 +58,26 @@ quartus_sh -t ../build.tcl -rev hosted -size 115 -stp ../signaltap/debug_rx.stp
 
 Note that to use Signal Tap with the Quartus II Web Edition software, Altera requires that the TalkBack feature be enabled.  The build script tries to 'fake' this out by setting the TalkBack feature to be on, compiling the project, then turning it off immediately.  If this behavior is not desired, don't try to add a Signal Tap file to the project.
 
+## Troubleshooting ##
+### /opt/altera/12.1sp1/nios2eds/bin/sh_jar.sh: 6: Bad substitution ###
+Most of the build tools are hardcoded to use /bin/sh, expecting that it will point to the bash shell.  However, with Ubuntu systems in particular, /bin/sh is linked to the dash shell, which is almost but not quite compatible.  There are two workarounds, choose the best for your situation.
+
+The first workaround involves pointing /bin/sh at bash instead of dash.  This could impact system-related things, although it shouldn't:
+
+```
+sudo rm /bin/sh
+sudo ln -s /bin/bash /bin/sh
+```
+
+The second workaround is to edit the scripts that call sh_jar.sh to use /bin/bash:
+
+```
+cd /path/to/altera/12.1sp1/nios2eds/bin
+grep sh_jar.sh *
+# Returns all the files containing calls to sh_jar.sh
+sensible-editor bin2flash
+# Change the first line from #!/bin/sh to #!/bin/bash
+sensible-editor elf2flash
+# Lather, rinse, repeat for each file returned by grep...
+```
 
