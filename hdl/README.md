@@ -12,6 +12,11 @@ IP, as it is added to the repository, falls under the category of who created th
 
 Currently, the only platform we have is bladeRF.  As more platforms come out, more top levels will be created but the same IP should be able to be used with any of those platforms.
 
+## Pre-compiled FPGA Binaries ##
+Some FPGA binaries are available for [download][download].  Please note the md5 hash as well as the git commit hash.
+
+[download]: http://nuand.com/fpga (nuand/FPGA Images)
+
 ## Required Software ##
 We use an [Altera][altera] [Cyclone IV E FPGA][cive].  The size of the FPGA is the only difference between the x40 and x115 models.  Altera provides their [Quartus II software][quartus] for synthesizing designs for their FPGAs.  It is free of charge, but not open source and may require registering on their site to download the software.
 
@@ -53,8 +58,4 @@ quartus_sh -t ../build.tcl -rev hosted -size 115 -stp ../signaltap/debug_rx.stp
 
 Note that to use Signal Tap with the Quartus II Web Edition software, Altera requires that the TalkBack feature be enabled.  The build script tries to 'fake' this out by setting the TalkBack feature to be on, compiling the project, then turning it off immediately.  If this behavior is not desired, don't try to add a Signal Tap file to the project.
 
-## Pre-compiled FPGA Binaries ##
-Some FPGA binaries are available for [download][download].  Please note the md5 hash as well as the git commit hash.
-
-[download]: http://nuand.com/fpga (nuand/FPGA Images)
 
