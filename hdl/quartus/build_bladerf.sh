@@ -106,7 +106,7 @@ if [ $? -ne 0 ] || [ ! -d "$quartus_sh_path" ]; then
 fi
 
 # Ensure the NIOS II EDS dir is in PATH by checking for a known script
-niosscript="`which nios2-build-project`"
+niosscript="`which nios2-terminal`"
 if [ $? -ne 0 ] || [ ! -f "$niosscript" ]; then
     echo -e "\nError: The NIOS II EDS 'bin' directory does not appear to be in your PATH\n" >&2
     exit 1
