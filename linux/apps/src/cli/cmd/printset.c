@@ -28,10 +28,10 @@ PRINTSET_DECL(refclk)
 PRINTSET_DECL(rxvga1)
 PRINTSET_DECL(rxvga2)
 PRINTSET_DECL(samplerate)
+PRINTSET_DECL(sampling)
 PRINTSET_DECL(trimdac)
 PRINTSET_DECL(txvga1)
 PRINTSET_DECL(txvga2)
-
 
 /* print/set parameter table */
 struct printset_entry printset_table[] = {
@@ -50,6 +50,7 @@ struct printset_entry printset_table[] = {
     PRINTSET_ENTRY(rxvga1),
     PRINTSET_ENTRY(rxvga2),
     PRINTSET_ENTRY(samplerate),
+    PRINTSET_ENTRY(sampling),
     PRINTSET_ENTRY(trimdac),
     PRINTSET_ENTRY(txvga1),
     PRINTSET_ENTRY(txvga2),
@@ -719,6 +720,67 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
             printf( "\n" );
 
         }
+    }
+
+    return rv;
+}
+
+int set_sampling(struct cli_state *state, int argc, char **argv)
+{
+    /* Usage: set sampling [internal|external] */
+    int rv = CMD_RET_OK;
+    uint8_t val = 0;
+    if( argc != 3 ) {
+        rv = CMD_RET_NARGS ;
+    } else {
+        if( strcasecmp( "internal", argv[2] ) == 0 ) {
+            /* Disconnect the ADC input from the outside world */
+            lms_spi_read( state->dev, 0x09, &val );
+            val &= ~(1<<7) ;
+            lms_spi_write( state->dev, 0x09, val );
+
+            /* Turn on RXVGA2 */
+            lms_spi_read( state->dev, 0x64, &val );
+            val |= (1<<1) ;
+            lms_spi_write( state->dev, 0x64, val );
+
+        } else if( strcasecmp( "external", argv[2] ) == 0 ) {
+            /* Turn off RXVGA2 */
+            lms_spi_read( state->dev, 0x64, &val );
+            val &= ~(1<<1) ;
+            lms_spi_write( state->dev, 0x64, val );
+
+            /* Connect the external ADC pins to the internal ADC input */
+            lms_spi_read( state->dev, 0x09, &val );
+            val |= (1<<7) ;
+            lms_spi_write( state->dev, 0x09, val );
+        } else {
+            cli_err(state, argv[0], "Invalid sampling mode (%s)", argv[2] );
+        }
+    }
+    return rv;
+}
+
+int print_sampling( struct cli_state *state, int argc, char **argv)
+{
+    int rv = CMD_RET_OK;
+    uint8_t val = 0;
+    int external = 0 ;
+    if( argc != 2 ) {
+        rv = CMD_RET_NARGS;
+    } else {
+        /* Read the ADC input mux */
+        lms_spi_read( state->dev, 0x09, &val );
+        external = val&(1<<7) ? 1 : 0;
+        printf( "  %-20s%-20s\n", "RX ADC Switch:", external ? "Closed" : "Open" );
+
+        /* Read the RXVGA2 module state */
+        lms_spi_read( state->dev, 0x64, &val );
+        external |= val&(1<<1) ? 0 : 2 ;
+        printf( "  %-20s%-20s\n", "RXVGA2 Module:", external&2 ? "Powered down" : "Powered up" );
+
+        /* If external has both those bits set, we are external */
+        printf( "  %-20s%-20s\n", "Sampling:", external == 3 ? "External" : external == 0 ? "Internal" : "Weirdness" ) ;
     }
 
     return rv;
