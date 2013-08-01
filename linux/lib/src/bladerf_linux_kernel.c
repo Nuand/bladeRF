@@ -30,6 +30,11 @@ static bool time_past(struct timeval ref, struct timeval now) {
     return false;
 }
 
+static inline size_t min_sz(size_t x, size_t y)
+{
+    return x < y ? x : y;
+}
+
 /* TODO clean this up with some labels for erroring out */
 /* XXX: This function definition changed so it needs to be revisited */
 int linux_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size)

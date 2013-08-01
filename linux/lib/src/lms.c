@@ -78,20 +78,20 @@ void lms_lpf_enable( struct bladerf *dev, lms_module_t mod, lms_bw_t bw )
     uint8_t reg = (mod == RX) ? 0x54 : 0x34 ;
     uint8_t data ;
     // Check to see which bandwidth we have selected
-    (*dev->fn->lms_read)( dev, reg, &data ) ;
+    bladerf_lms_read( dev, reg, &data ) ;
     data |= (1<<1) ;
     if( (lms_bw_t)(data&0x3c>>2) != bw )
     {
         data &= ~0x3c ;
         data |= (bw<<2) ;
     }
-    dev->fn->lms_write( dev, reg, data ) ;
+    bladerf_lms_write( dev, reg, data ) ;
     // Check to see if we are bypassed
-    dev->fn->lms_read( dev, reg+1, &data ) ;
+    bladerf_lms_read( dev, reg+1, &data ) ;
     if( data&(1<<6) )
     {
         data &= ~(1<<6) ;
-        dev->fn->lms_write( dev, reg+1, data ) ;
+        bladerf_lms_write( dev, reg+1, data ) ;
     }
     return ;
 }
@@ -100,9 +100,9 @@ void lms_lpf_bypass( struct bladerf *dev, lms_module_t mod )
 {
     uint8_t reg = (mod == RX) ? 0x55 : 0x35 ;
     uint8_t data ;
-    dev->fn->lms_read( dev, reg, &data ) ;
+    bladerf_lms_read( dev, reg, &data ) ;
     data |= (1<<6) ;
-    dev->fn->lms_write( dev, reg, data ) ;
+    bladerf_lms_write( dev, reg, data ) ;
     return ;
 }
 
@@ -111,9 +111,9 @@ void lms_lpf_disable( struct bladerf *dev, lms_module_t mod )
 {
     uint8_t reg = (mod == RX) ? 0x54 : 0x34 ;
     uint8_t data ;
-    dev->fn->lms_read( dev, reg, &data ) ;
+    bladerf_lms_read( dev, reg, &data ) ;
     data &= ~(1<<6) ;
-    dev->fn->lms_write( dev, reg, data ) ;
+    bladerf_lms_write( dev, reg, data ) ;
     return ;
 }
 
@@ -122,7 +122,7 @@ lms_bw_t lms_get_bandwidth( struct bladerf *dev, lms_module_t mod )
 {
     uint8_t data ;
     uint8_t reg = (mod == RX) ? 0x54 : 0x34 ;
-    dev->fn->lms_read( dev, reg, &data ) ;
+    bladerf_lms_read( dev, reg, &data ) ;
     data &= 0x3c ;
     data >>= 2 ;
     return (lms_bw_t)data ;
@@ -164,7 +164,7 @@ void lms_dither_enable( struct bladerf *dev, lms_module_t mod, uint8_t nbits )
     uint8_t data ;
 
     // Read what we currently have in there
-    dev->fn->lms_read( dev, reg, &data ) ;
+    bladerf_lms_read( dev, reg, &data ) ;
 
     // Enable dithering
     data |= (1<<7) ;
@@ -176,7 +176,7 @@ void lms_dither_enable( struct bladerf *dev, lms_module_t mod, uint8_t nbits )
     data |= ((nbits-1)&7) ;
 
     // Write it out
-    dev->fn->lms_write( dev, reg, data ) ;
+    bladerf_lms_write( dev, reg, data ) ;
     return ;
 }
 
@@ -185,17 +185,17 @@ void lms_dither_disable( struct bladerf *dev, lms_module_t mod )
 {
     uint8_t reg = (mod == RX) ? 0x24 : 0x14 ;
     uint8_t data ;
-    dev->fn->lms_read( dev, reg, &data ) ;
+    bladerf_lms_read( dev, reg, &data ) ;
     data &= ~(1<<7) ;
-    dev->fn->lms_write( dev, reg, data ) ;
+    bladerf_lms_write( dev, reg, data ) ;
     return ;
 }
 
 // Soft reset of the LMS
 void lms_soft_reset( struct bladerf *dev )
 {
-    dev->fn->lms_write( dev, 0x05, 0x12 ) ;
-    dev->fn->lms_write( dev, 0x05, 0x32 ) ;
+    bladerf_lms_write( dev, 0x05, 0x12 ) ;
+    bladerf_lms_write( dev, 0x05, 0x32 ) ;
     return ;
 }
 
@@ -203,17 +203,17 @@ void lms_soft_reset( struct bladerf *dev )
 void lms_lna_set_gain( struct bladerf *dev, lms_lna_gain_t gain )
 {
     uint8_t data ;
-    dev->fn->lms_read( dev, 0x75, &data ) ;
+    bladerf_lms_read( dev, 0x75, &data ) ;
     data &= ~(3<<6) ;
     data |= ((gain&3)<<6) ;
-    dev->fn->lms_write( dev, 0x75, data ) ;
+    bladerf_lms_write( dev, 0x75, data ) ;
     return ;
 }
 
 void lms_lna_get_gain( struct bladerf *dev, lms_lna_gain_t *gain )
 {
     uint8_t data ;
-    dev->fn->lms_read( dev, 0x75, &data ) ;
+    bladerf_lms_read( dev, 0x75, &data ) ;
     data >>= 6 ;
     data &= 3 ;
     *gain = (lms_lna_gain_t)data ;
@@ -224,10 +224,10 @@ void lms_lna_get_gain( struct bladerf *dev, lms_lna_gain_t *gain )
 void lms_lna_select( struct bladerf *dev, lms_lna_t lna )
 {
     uint8_t data ;
-    dev->fn->lms_read( dev, 0x75, &data ) ;
+    bladerf_lms_read( dev, 0x75, &data ) ;
     data &= ~(3<<4) ;
     data |= ((lna&3)<<4) ;
-    dev->fn->lms_write( dev, 0x75, data ) ;
+    bladerf_lms_write( dev, 0x75, data ) ;
     return ;
 }
 
@@ -235,7 +235,7 @@ void lms_lna_select( struct bladerf *dev, lms_lna_t lna )
 void lms_rxvga1_disable(struct bladerf *dev )
 {
     // Set bias current to 0
-    dev->fn->lms_write( dev, 0x7b, 0x03 ) ;
+    bladerf_lms_write( dev, 0x7b, 0x03 ) ;
     return ;
 }
 
@@ -243,7 +243,7 @@ void lms_rxvga1_disable(struct bladerf *dev )
 void lms_rxvga1_enable(struct bladerf *dev )
 {
     // Set bias current to nominal
-    dev->fn->lms_write( dev, 0x7b, 0x33 ) ;
+    bladerf_lms_write( dev, 0x7b, 0x33 ) ;
     return ;
 }
 
@@ -255,10 +255,10 @@ void lms_rxvga1_set_gain(struct bladerf *dev, uint8_t gain)
         fprintf( stderr, "%s: %d being clamped to 120\n", __FUNCTION__, gain ) ;
         gain = 120 ;
     }
-    dev->fn->lms_read( dev, 0x76, &data ) ;
+    bladerf_lms_read( dev, 0x76, &data ) ;
     data &= ~(0x7f) ;
     data |= gain ;
-    dev->fn->lms_write( dev, 0x76, gain&0x7f ) ;
+    bladerf_lms_write( dev, 0x76, gain&0x7f ) ;
     return ;
 }
 
@@ -266,7 +266,7 @@ void lms_rxvga1_set_gain(struct bladerf *dev, uint8_t gain)
 void lms_rxvga1_get_gain(struct bladerf *dev, uint8_t *gain)
 {
     uint8_t data ;
-    dev->fn->lms_read( dev, 0x76, &data ) ;
+    bladerf_lms_read( dev, 0x76, &data ) ;
     *gain = data&0x7f ;
     return ;
 }
@@ -275,9 +275,9 @@ void lms_rxvga1_get_gain(struct bladerf *dev, uint8_t *gain)
 void lms_rxvga2_disable(struct bladerf *dev )
 {
     uint8_t data ;
-    dev->fn->lms_read( dev, 0x64, &data ) ;
+    bladerf_lms_read( dev, 0x64, &data ) ;
     data &= ~(1<<1) ;
-    dev->fn->lms_write( dev, 0x64, data ) ;
+    bladerf_lms_write( dev, 0x64, data ) ;
     return ;
 }
 
@@ -291,17 +291,17 @@ void lms_rxvga2_set_gain( struct bladerf *dev, uint8_t gain )
     {
         lms_printf( "Setting gain above 30dB? You crazy!!\n" ) ;
     }
-    dev->fn->lms_read( dev, 0x65, &data ) ;
+    bladerf_lms_read( dev, 0x65, &data ) ;
     data &= ~(0x1f) ;
     data |= gain ;
-    dev->fn->lms_write( dev, 0x65, data ) ;
+    bladerf_lms_write( dev, 0x65, data ) ;
     return ;
 }
 
 void lms_rxvga2_get_gain( struct bladerf *dev, uint8_t *gain )
 {
     uint8_t data ;
-    dev->fn->lms_read( dev, 0x65, &data ) ;
+    bladerf_lms_read( dev, 0x65, &data ) ;
     *gain = data&0x1f ;
     return ;
 }
@@ -310,9 +310,9 @@ void lms_rxvga2_get_gain( struct bladerf *dev, uint8_t *gain )
 void lms_rxvga2_enable( struct bladerf *dev, uint8_t gain )
 {
     uint8_t data ;
-    dev->fn->lms_read( dev, 0x64, &data ) ;
+    bladerf_lms_read( dev, 0x64, &data ) ;
     data |= (1<<1) ;
-    dev->fn->lms_write( dev, 0x64, data ) ;
+    bladerf_lms_write( dev, 0x64, data ) ;
     lms_rxvga2_set_gain( dev, gain ) ;
     return ;
 }
@@ -321,7 +321,7 @@ void lms_rxvga2_enable( struct bladerf *dev, uint8_t gain )
 void lms_pa_enable( struct bladerf *dev, lms_pa_t pa )
 {
     uint8_t data ;
-    dev->fn->lms_read( dev, 0x44, &data ) ;
+    bladerf_lms_read( dev, 0x44, &data ) ;
     if( pa == PA_AUX )
     {
         data &= ~(1<<1) ;
@@ -334,7 +334,7 @@ void lms_pa_enable( struct bladerf *dev, lms_pa_t pa )
         data &= ~(3<<3) ;
         data |= (2<<3) ;
     }
-    dev->fn->lms_write( dev, 0x44, data ) ;
+    bladerf_lms_write( dev, 0x44, data ) ;
     return ;
 }
 
@@ -342,7 +342,7 @@ void lms_pa_enable( struct bladerf *dev, lms_pa_t pa )
 void lms_pa_disable( struct bladerf *dev, lms_pa_t pa )
 {
     uint8_t data ;
-    dev->fn->lms_read( dev, 0x44, &data ) ;
+    bladerf_lms_read( dev, 0x44, &data ) ;
     if( pa == PA_ALL )
     {
         data |= (1<<1) ;
@@ -357,25 +357,25 @@ void lms_pa_disable( struct bladerf *dev, lms_pa_t pa )
     } else { // pa == PA_2
         data &= ~(2<<2) ;
     }
-    dev->fn->lms_write( dev, 0x44, data ) ;
+    bladerf_lms_write( dev, 0x44, data ) ;
     return ;
 }
 
 void lms_peakdetect_enable( struct bladerf *dev )
 {
     uint8_t data ;
-    dev->fn->lms_read( dev, 0x44, &data ) ;
+    bladerf_lms_read( dev, 0x44, &data ) ;
     data &= ~(1<<0) ;
-    dev->fn->lms_write( dev, 0x44, data ) ;
+    bladerf_lms_write( dev, 0x44, data ) ;
     return ;
 }
 
 void lms_peakdetect_disable( struct bladerf *dev )
 {
     uint8_t data ;
-    dev->fn->lms_read( dev, 0x44, &data ) ;
+    bladerf_lms_read( dev, 0x44, &data ) ;
     data |= (1<<0) ;
-    dev->fn->lms_write( dev, 0x44, data ) ;
+    bladerf_lms_write( dev, 0x44, data ) ;
     return ;
 }
 
@@ -386,24 +386,24 @@ void lms_tx_loopback_enable( struct bladerf *dev, lms_txlb_t mode )
     switch(mode)
     {
         case TXLB_BB:
-            dev->fn->lms_read( dev, 0x46, &data ) ;
+            bladerf_lms_read( dev, 0x46, &data ) ;
             data |= (3<<2) ;
-            dev->fn->lms_write( dev, 0x46, data ) ;
+            bladerf_lms_write( dev, 0x46, data ) ;
             break ;
         case TXLB_RF:
             // Disable all the PA's first
             lms_pa_disable( dev, PA_ALL ) ;
             // Connect up the switch
-            dev->fn->lms_read( dev, 0x0b, &data ) ;
+            bladerf_lms_read( dev, 0x0b, &data ) ;
             data |= (1<<0) ;
-            dev->fn->lms_write( dev, 0x0b, data ) ;
+            bladerf_lms_write( dev, 0x0b, data ) ;
             // Enable the AUX PA only
             lms_pa_enable( dev, PA_AUX ) ;
             lms_peakdetect_enable( dev );
             // Make sure we're muxed over to the AUX mux
-            dev->fn->lms_read( dev, 0x45, &data ) ;
+            bladerf_lms_read( dev, 0x45, &data ) ;
             data &= ~(7<<0) ;
-            dev->fn->lms_write( dev, 0x45, data ) ;
+            bladerf_lms_write( dev, 0x45, data ) ;
             break ;
     }
     return ;
@@ -415,17 +415,17 @@ void lms_txvga2_set_gain( struct bladerf *dev, uint8_t gain )
     if( gain > 25 ) {
         gain = 25 ;
     }
-    dev->fn->lms_read( dev, 0x45, &data ) ;
+    bladerf_lms_read( dev, 0x45, &data ) ;
     data &= ~(0x1f<<3) ;
     data |= ((gain&0x1f)<<3) ;
-    dev->fn->lms_write( dev, 0x45, data ) ;
+    bladerf_lms_write( dev, 0x45, data ) ;
     return ;
 }
 
 void lms_txvga2_get_gain( struct bladerf *dev, uint8_t *gain )
 {
     uint8_t data ;
-    dev->fn->lms_read( dev, 0x45, &data ) ;
+    bladerf_lms_read( dev, 0x45, &data ) ;
     *gain = (data>>3)&0x1f ;
     return ;
 }
@@ -434,14 +434,14 @@ void lms_txvga1_set_gain( struct bladerf *dev, int8_t gain )
 {
     gain = (gain+35) ;
     /* Since 0x41 is only VGA1GAIN, we don't need to RMW */
-    dev->fn->lms_write( dev, 0x41, gain&0x1f ) ;
+    bladerf_lms_write( dev, 0x41, gain&0x1f ) ;
     return ;
 }
 
 void lms_txvga1_get_gain( struct bladerf *dev, int8_t *gain )
 {
     uint8_t data ;
-    dev->fn->lms_read( dev, 0x41, &data ) ;
+    bladerf_lms_read( dev, 0x41, &data ) ;
     data = data&0x1f ;
     *gain -= 35 ;
     *gain += data ;
@@ -455,19 +455,19 @@ void lms_tx_loopback_disable( struct bladerf *dev, lms_txlb_t mode )
     switch(mode)
     {
         case TXLB_BB:
-            dev->fn->lms_read( dev, 0x46, &data ) ;
+            bladerf_lms_read( dev, 0x46, &data ) ;
             data &= ~(3<<2) ;
-            dev->fn->lms_write( dev, 0x46, data ) ;
+            bladerf_lms_write( dev, 0x46, data ) ;
             break ;
         case TXLB_RF:
             // Disable the AUX PA
             lms_pa_disable( dev, PA_AUX ) ;
             // Disconnect the switch
-            dev->fn->lms_read( dev, 0x0b, &data ) ;
+            bladerf_lms_read( dev, 0x0b, &data ) ;
             data &= ~(1<<0) ;
-            dev->fn->lms_write( dev, 0x0b, data ) ;
+            bladerf_lms_write( dev, 0x0b, data ) ;
             // Power up the LNA's
-            dev->fn->lms_write( dev, 0x70, 0 ) ;
+            bladerf_lms_write( dev, 0x70, 0 ) ;
             break ;
     }
     return ;
@@ -485,7 +485,7 @@ void lms_loopback_enable( struct bladerf *dev, lms_loopback_mode_t mode )
 
             // Enable BB TX and RX loopback
             lms_tx_loopback_enable( dev, TXLB_BB ) ;
-            dev->fn->lms_write( dev, 0x08, 1<<6 ) ;
+            bladerf_lms_write( dev, 0x08, 1<<6 ) ;
             break ;
 
         case LB_BB_VGA2:
@@ -494,7 +494,7 @@ void lms_loopback_enable( struct bladerf *dev, lms_loopback_mode_t mode )
 
             // Enable TX and RX loopback
             lms_tx_loopback_enable( dev, TXLB_BB ) ;
-            dev->fn->lms_write( dev, 0x08, 1<<5 ) ;
+            bladerf_lms_write( dev, 0x08, 1<<5 ) ;
             break ;
 
         case LB_BB_OP:
@@ -505,7 +505,7 @@ void lms_loopback_enable( struct bladerf *dev, lms_loopback_mode_t mode )
 
             // Enable TX and RX loopback
             lms_tx_loopback_enable( dev, TXLB_BB ) ;
-            dev->fn->lms_write( dev, 0x08, 1<<4 ) ;
+            bladerf_lms_write( dev, 0x08, 1<<4 ) ;
             break ;
 
         case LB_RF_LNA1:
@@ -516,15 +516,15 @@ void lms_loopback_enable( struct bladerf *dev, lms_loopback_mode_t mode )
 
             // Enable AUX PA, PD[0], and loopback
             lms_tx_loopback_enable( dev, TXLB_RF ) ;
-            dev->fn->lms_read( dev, 0x7d, &data ) ;
+            bladerf_lms_read( dev, 0x7d, &data ) ;
             data |= 1 ;
-            dev->fn->lms_write( dev, 0x7d, data ) ;
+            bladerf_lms_write( dev, 0x7d, data ) ;
 
             // Choose the LNA (1 = LNA1, 2 = LNA2, 3 = LNA3)
-            dev->fn->lms_write( dev, 0x08, (mode - LB_RF_LNA_START) ) ;
+            bladerf_lms_write( dev, 0x08, (mode - LB_RF_LNA_START) ) ;
 
             // Set magical decode test registers bit
-            dev->fn->lms_write( dev, 0x70, (1<<1) ) ;
+            bladerf_lms_write( dev, 0x70, (1<<1) ) ;
             break ;
 
         case LB_RF_LNA_START:
@@ -540,7 +540,7 @@ lms_loopback_mode_t lms_get_loopback_mode( struct bladerf *dev )
 {
     uint8_t data ;
     lms_loopback_mode_t mode = LB_NONE ;
-    dev->fn->lms_read( dev, 0x08, &data ) ;
+    bladerf_lms_read( dev, 0x08, &data ) ;
     if( data == 0 )
     {
         mode = LB_NONE ;
@@ -573,7 +573,7 @@ void lms_loopback_disable( struct bladerf *dev, lms_lna_t lna, lms_bw_t bw )
     lms_loopback_mode_t mode = lms_get_loopback_mode( dev ) ;
 
     // Disable all RX loopback modes
-    dev->fn->lms_write( dev, 0x08, 0 ) ;
+    bladerf_lms_write( dev, 0x08, 0 ) ;
 
     switch(mode)
     {
@@ -617,9 +617,9 @@ void lms_loopback_disable( struct bladerf *dev, lms_lna_t lna, lms_bw_t bw )
 void lms_power_down( struct bladerf *dev )
 {
     uint8_t data ;
-    dev->fn->lms_read( dev, 0x05, &data ) ;
+    bladerf_lms_read( dev, 0x05, &data ) ;
     data &= ~(1<<4) ;
-    dev->fn->lms_write( dev, 0x05, data ) ;
+    bladerf_lms_write( dev, 0x05, data ) ;
     return ;
 }
 
@@ -628,9 +628,9 @@ void lms_pll_enable( struct bladerf *dev, lms_module_t mod )
 {
     uint8_t reg = (mod == RX) ? 0x24 : 0x14 ;
     uint8_t data ;
-    dev->fn->lms_read( dev, reg, &data ) ;
+    bladerf_lms_read( dev, reg, &data ) ;
     data |= (1<<3) ;
-    dev->fn->lms_write( dev, reg, data ) ;
+    bladerf_lms_write( dev, reg, data ) ;
     return ;
 }
 
@@ -639,9 +639,9 @@ void lms_pll_disable( struct bladerf *dev, lms_module_t mod )
 {
     uint8_t reg = (mod == RX) ? 0x24 : 0x14 ;
     uint8_t data ;
-    dev->fn->lms_read( dev, reg, &data ) ;
+    bladerf_lms_read( dev, reg, &data ) ;
     data &= ~(1<<3) ;
-    dev->fn->lms_write( dev, reg, data ) ;
+    bladerf_lms_write( dev, reg, data ) ;
     return ;
 }
 
@@ -649,9 +649,9 @@ void lms_pll_disable( struct bladerf *dev, lms_module_t mod )
 void lms_rx_enable( struct bladerf *dev )
 {
     uint8_t data ;
-    dev->fn->lms_read( dev, 0x05, &data ) ;
+    bladerf_lms_read( dev, 0x05, &data ) ;
     data |= (1<<2) ;
-    dev->fn->lms_write( dev, 0x05, data ) ;
+    bladerf_lms_write( dev, 0x05, data ) ;
     return ;
 }
 
@@ -659,9 +659,9 @@ void lms_rx_enable( struct bladerf *dev )
 void lms_rx_disable( struct bladerf *dev )
 {
     uint8_t data ;
-    dev->fn->lms_read( dev, 0x05, &data ) ;
+    bladerf_lms_read( dev, 0x05, &data ) ;
     data &= ~(1<<2) ;
-    dev->fn->lms_write( dev, 0x05, data ) ;
+    bladerf_lms_write( dev, 0x05, data ) ;
     return ;
 }
 
@@ -669,9 +669,9 @@ void lms_rx_disable( struct bladerf *dev )
 void lms_tx_enable( struct bladerf *dev )
 {
     uint8_t data ;
-    dev->fn->lms_read( dev, 0x05, &data ) ;
+    bladerf_lms_read( dev, 0x05, &data ) ;
     data |= (1<<3) ;
-    dev->fn->lms_write( dev, 0x05, data ) ;
+    bladerf_lms_write( dev, 0x05, data ) ;
     return ;
 }
 
@@ -679,9 +679,9 @@ void lms_tx_enable( struct bladerf *dev )
 void lms_tx_disable( struct bladerf *dev )
 {
     uint8_t data ;
-    dev->fn->lms_read( dev, 0x05, &data ) ;
+    bladerf_lms_read( dev, 0x05, &data ) ;
     data &= ~(1<<3) ;
-    dev->fn->lms_write( dev, 0x05, data ) ;
+    bladerf_lms_write( dev, 0x05, data ) ;
     return ;
 }
 
@@ -712,16 +712,16 @@ void lms_print_frequency( struct lms_freq *f )
 void lms_get_frequency( struct bladerf *dev, lms_module_t mod, struct lms_freq *f ) {
     uint8_t base = (mod == RX) ? 0x20 : 0x10 ;
     uint8_t data ;
-    dev->fn->lms_read( dev, base+0, &data ) ;
+    bladerf_lms_read( dev, base+0, &data ) ;
     f->nint = ((uint16_t)data) << 1 ;
-    dev->fn->lms_read( dev, base+1, &data ) ;
+    bladerf_lms_read( dev, base+1, &data ) ;
     f->nint |= (data&0x80)>>7 ;
     f->nfrac = ((uint32_t)data&0x7f)<<16 ;
-    dev->fn->lms_read( dev, base+2, &data ) ;
+    bladerf_lms_read( dev, base+2, &data ) ;
     f->nfrac |= ((uint32_t)data)<<8 ;
-    dev->fn->lms_read( dev, base+3, &data) ;
+    bladerf_lms_read( dev, base+3, &data) ;
     f->nfrac |= data ;
-    dev->fn->lms_read( dev, base+5, &data ) ;
+    bladerf_lms_read( dev, base+5, &data ) ;
     f->freqsel = (data>>2) ;
     f->x = 1 << ((f->freqsel&7)-3);
     f->reference = 38400000 ;
@@ -743,9 +743,9 @@ void lms_set_frequency( struct bladerf *dev, lms_module_t mod, uint32_t freq )
     uint64_t vco_x ;
 
     // Turn on the DSMs
-    dev->fn->lms_read( dev, 0x09, &data ) ;
+    bladerf_lms_read( dev, 0x09, &data ) ;
     data |= 0x05 ;
-    dev->fn->lms_write( dev, 0x09, data ) ;
+    bladerf_lms_write( dev, 0x09, data ) ;
 
     // Figure out freqsel
     if( lfreq < bands[0].low )
@@ -781,35 +781,35 @@ void lms_set_frequency( struct bladerf *dev, lms_module_t mod, uint32_t freq )
 
     // Program freqsel, selout (rx only), nint and nfrac
     if( mod == RX ) {
-        dev->fn->lms_write( dev, base+5, freqsel<<2 | (freq < 1500000000 ? 1 : 2 ) ) ;
+        bladerf_lms_write( dev, base+5, freqsel<<2 | (freq < 1500000000 ? 1 : 2 ) ) ;
     } else {
-        dev->fn->lms_write( dev, base+5, freqsel<<2 ) ;
+        bladerf_lms_write( dev, base+5, freqsel<<2 ) ;
     }
     data = nint>>1 ;// lms_printf( "%x\n", data ) ;
-    dev->fn->lms_write( dev, base+0, data ) ;
+    bladerf_lms_write( dev, base+0, data ) ;
     data = ((nint&1)<<7) | ((nfrac>>16)&0x7f) ;//  lms_printf( "%x\n", data ) ;
-    dev->fn->lms_write( dev, base+1, data ) ;
+    bladerf_lms_write( dev, base+1, data ) ;
     data = ((nfrac>>8)&0xff) ;//  lms_printf( "%x\n", data ) ;
-    dev->fn->lms_write( dev, base+2, data ) ;
+    bladerf_lms_write( dev, base+2, data ) ;
     data = (nfrac&0xff) ;//  lms_printf( "%x\n", data ) ;
-    dev->fn->lms_write( dev, base+3, data ) ;
+    bladerf_lms_write( dev, base+3, data ) ;
 
     // Set the PLL Ichp, Iup and Idn currents
-    dev->fn->lms_read( dev, base+6, &data ) ;
+    bladerf_lms_read( dev, base+6, &data ) ;
     data &= ~(0x1f) ;
     data |= 0x0c ;
-    dev->fn->lms_write( dev, base+6, data ) ;
-    dev->fn->lms_read( dev, base+7, &data ) ;
+    bladerf_lms_write( dev, base+6, data ) ;
+    bladerf_lms_read( dev, base+7, &data ) ;
     data &= ~(0x1f) ;
     data |= 3 ;
     data = 0xe3;
-    dev->fn->lms_write( dev, base+7, data ) ;
-    dev->fn->lms_read( dev, base+8, &data ) ;
+    bladerf_lms_write( dev, base+7, data ) ;
+    bladerf_lms_read( dev, base+8, &data ) ;
     data &= ~(0x1f) ;
-    dev->fn->lms_write( dev, base+8, data ) ;
+    bladerf_lms_write( dev, base+8, data ) ;
 
     // Loop through the VCOCAP to figure out optimal values
-    dev->fn->lms_read( dev, base+9, &data ) ;
+    bladerf_lms_read( dev, base+9, &data ) ;
     data &= ~(0x3f) ;
     {
 #define VCO_HIGH 0x02
@@ -824,8 +824,8 @@ void lms_set_frequency( struct bladerf *dev, lms_module_t mod, uint32_t freq )
         for (i=0; i<64; i++) {
             uint8_t v;
 
-            dev->fn->lms_write(dev, base + 9, i | 0x80);
-            dev->fn->lms_read(dev, base + 10, &v);
+            bladerf_lms_write(dev, base + 9, i | 0x80);
+            bladerf_lms_read(dev, base + 10, &v);
 
             int vcocap = v >> 6;
 
@@ -854,16 +854,16 @@ void lms_set_frequency( struct bladerf *dev, lms_module_t mod, uint32_t freq )
 
         avg_i = (start_i + stop_i) >> 1;
 
-        dev->fn->lms_write(dev, base + 9, avg_i | data);
+        bladerf_lms_write(dev, base + 9, avg_i | data);
 
-        dev->fn->lms_read( dev, base + 10, &v ) ;
+        bladerf_lms_read( dev, base + 10, &v ) ;
         lms_printf( "VTUNE: %x\n", v >> 6 ) ;
     }
 
     // Turn off the DSMs
-    dev->fn->lms_read( dev, 0x09, &data ) ;
+    bladerf_lms_read( dev, 0x09, &data ) ;
     data &= ~(0x05) ;
-    dev->fn->lms_write( dev, 0x09, data ) ;
+    bladerf_lms_write( dev, 0x09, data ) ;
 
     return ;
 }
@@ -874,7 +874,7 @@ void lms_dump_registers(struct bladerf *dev)
     uint16_t num_reg = sizeof(lms_reg_dumpset);
     for (i = 0; i < num_reg; i++)
     {
-        dev->fn->lms_read( dev, lms_reg_dumpset[i], &data ) ;
+        bladerf_lms_read( dev, lms_reg_dumpset[i], &data ) ;
         lms_printf( "addr: %x data: %x\n", lms_reg_dumpset[i], data ) ;
     }
 }
@@ -882,75 +882,75 @@ void lms_dump_registers(struct bladerf *dev)
 void lms_calibrate_dc(struct bladerf *dev)
 {
     // RX path
-    dev->fn->lms_write( dev, 0x09, 0x8c ) ; // CLK_EN[3]
-    dev->fn->lms_write( dev, 0x43, 0x08 ) ; // I filter
-    dev->fn->lms_write( dev, 0x43, 0x28 ) ; // Start Calibration
-    dev->fn->lms_write( dev, 0x43, 0x08 ) ; // Stop calibration
+    bladerf_lms_write( dev, 0x09, 0x8c ) ; // CLK_EN[3]
+    bladerf_lms_write( dev, 0x43, 0x08 ) ; // I filter
+    bladerf_lms_write( dev, 0x43, 0x28 ) ; // Start Calibration
+    bladerf_lms_write( dev, 0x43, 0x08 ) ; // Stop calibration
 
-    dev->fn->lms_write( dev, 0x43, 0x09 ) ; // Q Filter
-    dev->fn->lms_write( dev, 0x43, 0x29 ) ;
-    dev->fn->lms_write( dev, 0x43, 0x09 ) ;
+    bladerf_lms_write( dev, 0x43, 0x09 ) ; // Q Filter
+    bladerf_lms_write( dev, 0x43, 0x29 ) ;
+    bladerf_lms_write( dev, 0x43, 0x09 ) ;
 
-    dev->fn->lms_write( dev, 0x09, 0x84 ) ;
+    bladerf_lms_write( dev, 0x09, 0x84 ) ;
 
-    dev->fn->lms_write( dev, 0x09, 0x94 ) ; // CLK_EN[4]
-    dev->fn->lms_write( dev, 0x66, 0x00 ) ; // Enable comparators
+    bladerf_lms_write( dev, 0x09, 0x94 ) ; // CLK_EN[4]
+    bladerf_lms_write( dev, 0x66, 0x00 ) ; // Enable comparators
 
-    dev->fn->lms_write( dev, 0x63, 0x08 ) ; // DC reference module
-    dev->fn->lms_write( dev, 0x63, 0x28 ) ;
-    dev->fn->lms_write( dev, 0x63, 0x08 ) ;
+    bladerf_lms_write( dev, 0x63, 0x08 ) ; // DC reference module
+    bladerf_lms_write( dev, 0x63, 0x28 ) ;
+    bladerf_lms_write( dev, 0x63, 0x08 ) ;
 
-    dev->fn->lms_write( dev, 0x63, 0x09 ) ;
-    dev->fn->lms_write( dev, 0x63, 0x29 ) ;
-    dev->fn->lms_write( dev, 0x63, 0x09 ) ;
+    bladerf_lms_write( dev, 0x63, 0x09 ) ;
+    bladerf_lms_write( dev, 0x63, 0x29 ) ;
+    bladerf_lms_write( dev, 0x63, 0x09 ) ;
 
-    dev->fn->lms_write( dev, 0x63, 0x0a ) ;
-    dev->fn->lms_write( dev, 0x63, 0x2a ) ;
-    dev->fn->lms_write( dev, 0x63, 0x0a ) ;
+    bladerf_lms_write( dev, 0x63, 0x0a ) ;
+    bladerf_lms_write( dev, 0x63, 0x2a ) ;
+    bladerf_lms_write( dev, 0x63, 0x0a ) ;
 
-    dev->fn->lms_write( dev, 0x63, 0x0b ) ;
-    dev->fn->lms_write( dev, 0x63, 0x2b ) ;
-    dev->fn->lms_write( dev, 0x63, 0x0b ) ;
+    bladerf_lms_write( dev, 0x63, 0x0b ) ;
+    bladerf_lms_write( dev, 0x63, 0x2b ) ;
+    bladerf_lms_write( dev, 0x63, 0x0b ) ;
 
-    dev->fn->lms_write( dev, 0x63, 0x0c ) ;
-    dev->fn->lms_write( dev, 0x63, 0x2c ) ;
-    dev->fn->lms_write( dev, 0x63, 0x0c ) ;
+    bladerf_lms_write( dev, 0x63, 0x0c ) ;
+    bladerf_lms_write( dev, 0x63, 0x2c ) ;
+    bladerf_lms_write( dev, 0x63, 0x0c ) ;
 
-    dev->fn->lms_write( dev, 0x66, 0x0a ) ;
-    dev->fn->lms_write( dev, 0x09, 0x84 ) ;
+    bladerf_lms_write( dev, 0x66, 0x0a ) ;
+    bladerf_lms_write( dev, 0x09, 0x84 ) ;
 
     // TX path
-    dev->fn->lms_write( dev, 0x57, 0x04 ) ;
-    dev->fn->lms_write( dev, 0x09, 0x42 ) ;
+    bladerf_lms_write( dev, 0x57, 0x04 ) ;
+    bladerf_lms_write( dev, 0x09, 0x42 ) ;
 
-    dev->fn->lms_write( dev, 0x33, 0x08 ) ;
-    dev->fn->lms_write( dev, 0x33, 0x28 ) ;
-    dev->fn->lms_write( dev, 0x33, 0x08 ) ;
+    bladerf_lms_write( dev, 0x33, 0x08 ) ;
+    bladerf_lms_write( dev, 0x33, 0x28 ) ;
+    bladerf_lms_write( dev, 0x33, 0x08 ) ;
 
-    dev->fn->lms_write( dev, 0x33, 0x09 ) ;
-    dev->fn->lms_write( dev, 0x33, 0x29 ) ;
-    dev->fn->lms_write( dev, 0x33, 0x09 ) ;
+    bladerf_lms_write( dev, 0x33, 0x09 ) ;
+    bladerf_lms_write( dev, 0x33, 0x29 ) ;
+    bladerf_lms_write( dev, 0x33, 0x09 ) ;
 
-    dev->fn->lms_write( dev, 0x57, 0x84 ) ;
-    dev->fn->lms_write( dev, 0x09, 0x81 ) ;
+    bladerf_lms_write( dev, 0x57, 0x84 ) ;
+    bladerf_lms_write( dev, 0x09, 0x81 ) ;
 
-    dev->fn->lms_write( dev, 0x42, 0x77 ) ;
-    dev->fn->lms_write( dev, 0x43, 0x7f ) ;
+    bladerf_lms_write( dev, 0x42, 0x77 ) ;
+    bladerf_lms_write( dev, 0x43, 0x7f ) ;
 
     return ;
 }
 
 void lms_lpf_init(struct bladerf *dev)
 {
-    dev->fn->lms_write( dev, 0x06, 0x0d ) ;
-    dev->fn->lms_write( dev, 0x17, 0x43 ) ;
-    dev->fn->lms_write( dev, 0x27, 0x43 ) ;
-    dev->fn->lms_write( dev, 0x41, 0x1f ) ;
-    dev->fn->lms_write( dev, 0x44, 1<<3 ) ;
-    dev->fn->lms_write( dev, 0x45, 0x1f<<3 ) ;
-    dev->fn->lms_write( dev, 0x48, 0xc  ) ;
-    dev->fn->lms_write( dev, 0x49, 0xc ) ;
-    dev->fn->lms_write( dev, 0x57, 0x84 ) ;
+    bladerf_lms_write( dev, 0x06, 0x0d ) ;
+    bladerf_lms_write( dev, 0x17, 0x43 ) ;
+    bladerf_lms_write( dev, 0x27, 0x43 ) ;
+    bladerf_lms_write( dev, 0x41, 0x1f ) ;
+    bladerf_lms_write( dev, 0x44, 1<<3 ) ;
+    bladerf_lms_write( dev, 0x45, 0x1f<<3 ) ;
+    bladerf_lms_write( dev, 0x48, 0xc  ) ;
+    bladerf_lms_write( dev, 0x49, 0xc ) ;
+    bladerf_lms_write( dev, 0x57, 0x84 ) ;
     return ;
 }
 
@@ -963,8 +963,8 @@ int lms_config_init(struct bladerf *dev, struct lms_xcvr_config *config)
     lms_tx_enable( dev ) ;
     lms_rx_enable( dev) ;
 
-    dev->fn->lms_write( dev, 0x48, 20 ) ;
-    dev->fn->lms_write( dev, 0x49, 20 ) ;
+    bladerf_lms_write( dev, 0x48, 20 ) ;
+    bladerf_lms_write( dev, 0x49, 20 ) ;
 
     lms_set_frequency( dev, RX,  config->rx_freq_hz ) ;
     lms_set_frequency( dev, TX,  config->tx_freq_hz ) ;
