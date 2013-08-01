@@ -13,6 +13,9 @@
 
 #define BLADERF_LIBUSB_TIMEOUT_MS 1000
 
+#define EP_IN(x) (0x80 | x)
+#define EP_OUT(x) (x)
+
 struct lusb {
     libusb_device           *dev;
     libusb_device_handle    *handle;
@@ -188,11 +191,12 @@ static int lusb_close(struct bladerf *dev)
     return status;
 }
 
+/* Returns BLADERF_ERR_* on failure */
 static int access_peripheral(struct lusb *lusb, int per, int dir,
                                 struct uart_cmd *cmd)
 {
     uint8_t buf[16];
-    int res, transferred;
+    int status, libusb_status, transferred;
 
     /* Populate the buffer for transfer */
     buf[0] = UART_PKT_MAGIC;
@@ -201,20 +205,26 @@ static int access_peripheral(struct lusb *lusb, int per, int dir,
     buf[3] = cmd->data;
 
     /* Write down the command */
-    res = libusb_bulk_transfer(lusb->handle, 0x02, buf, 16,
-                                &transferred, BLADERF_LIBUSB_TIMEOUT_MS);
+    libusb_status = libusb_bulk_transfer(lusb->handle, 0x02, buf, 16,
+                                           &transferred,
+                                           BLADERF_LIBUSB_TIMEOUT_MS);
 
-    if (res) {
+    if (libusb_status < 0) {
         fprintf(stderr, "could not access peripheral\n");
         return BLADERF_ERR_IO;
     }
 
     /* If it's a read, we'll want to read back the result */
     transferred = 0;
-    res = 0;
-    while (res == 0 && transferred != 16) {
-        res = libusb_bulk_transfer(lusb->handle, 0x82, buf, 16,
-                                    &transferred, BLADERF_LIBUSB_TIMEOUT_MS);
+    libusb_status = status =  0;
+    while (libusb_status == 0 && transferred != 16) {
+        libusb_status = libusb_bulk_transfer(lusb->handle, 0x82, buf, 16,
+                                             &transferred,
+                                             BLADERF_LIBUSB_TIMEOUT_MS);
+    }
+
+    if (libusb_status < 0) {
+        return BLADERF_ERR_IO;
     }
 
     /* Save off the result if it was a read */
@@ -222,7 +232,7 @@ static int access_peripheral(struct lusb *lusb, int per, int dir,
         cmd->data = buf[3];
     }
 
-    return 0;
+    return status;
 }
 
 static int lusb_gpio_write(struct bladerf *dev, uint32_t val)
@@ -271,7 +281,15 @@ static int lusb_gpio_read(struct bladerf *dev, uint32_t *val)
                                     &cmd
                                   );
 
+        if (status < 0) {
+            break;
+        }
+
         *val |= (cmd.data << (8*i));
+    }
+
+    if (status < 0) {
+        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
     }
 
     return status;
@@ -279,37 +297,168 @@ static int lusb_gpio_read(struct bladerf *dev, uint32_t *val)
 
 static int lusb_si5338_write(struct bladerf *dev, uint8_t addr, uint8_t data)
 {
-    return 0;
+    int status;
+    struct uart_cmd cmd;
+    struct lusb *lusb = dev->driver;
+
+    cmd.addr = addr;
+    cmd.data = data;
+
+    status = access_peripheral(lusb, UART_PKT_DEV_SI5338,
+                               UART_PKT_MODE_DIR_WRITE, &cmd);
+
+    if (status < 0) {
+        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
+    }
+
+    return status;
 }
 
 static int lusb_si5338_read(struct bladerf *dev, uint8_t addr, uint8_t *data)
 {
-    return 0;
+    int status = 0;
+    struct uart_cmd cmd;
+    struct lusb *lusb = dev->driver;
+
+    cmd.addr = addr;
+    cmd.data = 0xff;
+
+    status = access_peripheral(lusb, UART_PKT_DEV_SI5338,
+                               UART_PKT_MODE_DIR_READ, &cmd);
+
+    if (status < 0) {
+        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
+    } else {
+        *data = cmd.data;
+    }
+
+    return status;
 }
 
 static int lusb_lms_write(struct bladerf *dev, uint8_t addr, uint8_t data)
 {
-    return 0;
+    int status;
+    struct uart_cmd cmd;
+    struct lusb *lusb = dev->driver;
+
+    cmd.addr = addr;
+    cmd.data = data;
+
+    status = access_peripheral(lusb, UART_PKT_DEV_LMS,
+                                UART_PKT_MODE_DIR_WRITE, &cmd);
+
+    if (status < 0) {
+        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
+    }
+
+    return status;
 }
 
 static int lusb_lms_read(struct bladerf *dev, uint8_t addr, uint8_t *data)
 {
-    return 0;
+    int status;
+    struct uart_cmd cmd;
+    struct lusb *lusb = dev->driver;
+
+    cmd.addr = addr;
+    cmd.data = 0xff;
+    status = access_peripheral(lusb, UART_PKT_DEV_LMS,
+                               UART_PKT_MODE_DIR_READ, &cmd);
+
+    if (status < 0) {
+        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
+    } else {
+        *data = cmd.data;
+    }
+
+    return status;
 }
 
 static int lusb_dac_write(struct bladerf *dev, uint16_t value)
 {
-    return 0;
+    int status;
+    struct uart_cmd cmd;
+    struct lusb *lusb = dev->driver;
+
+    cmd.word = value;
+    status = access_peripheral(lusb, UART_PKT_DEV_VCTCXO,
+                               UART_PKT_MODE_DIR_WRITE, &cmd);
+
+    if (status < 0) {
+        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
+    }
+
+    return status;
 }
 
 static ssize_t lusb_read_samples(struct bladerf *dev, int16_t *samples, size_t n)
 {
-    return 0;
+    int status, transferred;
+    size_t bytes_read;
+    const size_t bytes_total = c16_samples_to_bytes(n);
+    struct lusb *lusb = dev->driver;
+
+    /* Unexpected overflow */
+    assert(bytes_total <= (size_t)INT_MAX);
+
+    status =  bytes_read = 0;
+    while (bytes_read < bytes_total) {
+
+        transferred = 0;
+        status = libusb_bulk_transfer(lusb->handle, EP_IN(1),
+                                      (unsigned char *)(samples + bytes_read),
+                                      (int)(bytes_total - bytes_read),
+                                      &transferred,
+                                      BLADERF_LIBUSB_TIMEOUT_MS);
+
+        if(status < 0) {
+            fprintf(stderr, "error reading samples (%d): %s\n",
+                        status, libusb_error_name(status));
+
+            bladerf_set_error(&dev->error, ETYPE_DRIVER, status);
+            return BLADERF_ERR_IO;
+        } else {
+            assert(transferred > 0);
+            bytes_read += transferred;
+        }
+    }
+
+    return bytes_to_c16_samples(bytes_read);
 }
 
 static ssize_t lusb_write_samples(struct bladerf *dev, int16_t *samples, size_t n)
 {
-    return 0;
+    int status, transferred;
+    size_t bytes_written;
+    const size_t bytes_total = c16_samples_to_bytes(n);
+    struct lusb *lusb = dev->driver;
+
+    /* Unexpected overflow */
+    assert(bytes_total <= (size_t)INT_MAX);
+
+    status =  bytes_written = 0;
+    while (bytes_written < bytes_total) {
+
+        transferred = 0;
+        status = libusb_bulk_transfer(lusb->handle, EP_OUT(1),
+                                      (unsigned char *)(samples + bytes_written),
+                                      (int)(bytes_total - bytes_written),
+                                      &transferred,
+                                      BLADERF_LIBUSB_TIMEOUT_MS);
+
+        if(status < 0) {
+            fprintf(stderr, "error writing samples (%d): %s\n",
+                        status, libusb_error_name(status));
+
+            bladerf_set_error(&dev->error, ETYPE_DRIVER, status);
+            return BLADERF_ERR_IO;
+        } else {
+            assert(transferred > 0);
+            bytes_written += transferred;
+        }
+    }
+
+    return bytes_to_c16_samples(bytes_written);
 }
 
 const struct bladerf_fn lusb_fn = {
@@ -325,5 +474,3 @@ const struct bladerf_fn lusb_fn = {
     .write_samples = lusb_write_samples,
     .read_samples = lusb_read_samples,
 };
-
-

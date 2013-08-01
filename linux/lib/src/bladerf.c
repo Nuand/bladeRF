@@ -26,22 +26,6 @@
 #   define BLADERF_DEV_PFX  "bladerf"
 #endif
 
-/* TODO Check for truncation (e.g., odd # bytes)? */
-static inline size_t bytes_to_c16_samples(size_t n_bytes)
-{
-    return n_bytes / (2 * sizeof(int16_t));
-}
-
-/* TODO Overflow check? */
-static inline size_t c16_samples_to_bytes(size_t n_samples)
-{
-    return n_samples * 2 * sizeof(int16_t);
-}
-
-static inline size_t min_sz(size_t x, size_t y)
-{
-    return x < y ? x : y;
-}
 
 /*******************************************************************************
  * Device discovery & initialization/deinitialization
