@@ -19,7 +19,7 @@
 int interactive(struct cli_state *s, bool batch);
 
 #else
-#define interactive(x) (0)
+#define interactive(x,y) (0)
 #define interactive_cleanup(x) do {} while(0)
 #endif
 
