@@ -15,8 +15,9 @@ INC_DIR := include
 LIB_DIR := lib
 BIN_DIR := bin
 
+# FIXME Move files to appropriate subdirs
 SRC := $(wildcard $(SRC_DIR)/*.c)
-OBJ := $(SRC:.c=.o)
+OBJ = $(SRC:.c=.o)
 
 # Craft the various file names associated with the library
 LIB_SO_NAME := $(LIB_NAME).so.$(LIB_VER_MAJ)
@@ -41,10 +42,18 @@ CFLAGS := -Wall -Wextra -Wno-unused-parameter \
 
 LDFLAGS := -fPIC
 
+# Set DEBUG to enable a debug build, otherwise default to a release build
 ifdef DEBUG
 	CFLAGS += -O0 -ggdb3 -DDEBUG
 else
 	CFLAGS += -O2 -DNDEBUG
+endif
+
+# Enable libusb (>= 1.0) support by defining USE_LIBUSB
+USE_LIBUSB=y
+ifdef USE_LIBUSB
+	CFLAGS += -DUSE_LIBUSB
+	LDFLAGS += -lusb-1.0
 endif
 
 # Default install prefix

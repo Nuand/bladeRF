@@ -119,7 +119,6 @@ struct bladerf * _bladerf_open_info(const char *dev_path,
     if (!ret)
         return NULL;
 
-    ret->last_errno = 0;
     ret->last_tx_sample_rate = 0;
     ret->last_rx_sample_rate = 0;
 
@@ -757,14 +756,17 @@ static bool time_past(struct timeval ref, struct timeval now) {
     return false;
 }
 
-#define STACK_BUFFER_SZ 1024
+
+/* TODO clean this up with some labels for erroring out */
 int bladerf_load_fpga(struct bladerf *dev, const char *fpga)
 {
-    int ret, fpga_status, fpga_fd;
+    FILE * fpga_image_file;
+    int fpga_image_file_fd;
+    uint8_t fpga_image;
+    int ret, fpga_status;
     ssize_t nread, written, write_tmp;
     size_t bytes;
     struct stat stat;
-    char buf[STACK_BUFFER_SZ];
     struct timeval end_time, curr_time;
     bool timed_out;
 
@@ -783,21 +785,46 @@ int bladerf_load_fpga(struct bladerf *dev, const char *fpga)
         fprintf( stderr, "FPGA aleady loaded - reloading!\n" );
     }
 
-    fpga_fd = open(fpga, 0);
-    if (fpga_fd < 0) {
+    fpga_image_file = fopen(fpga, "rb");
+    if (!fpga_image_file) {
         dbg_printf("Failed to open device (%s): %s\n", fpga, strerror(errno));
         return BLADERF_ERR_IO;
     }
 
-    if (fstat(fpga_fd, &stat) < 0) {
-        dbg_printf("Failed to stat fpga file (%s): %s\n", fpga, strerror(errno));
-        close(fpga_fd);
+    fpga_image_file_fd = fileno(fpga_image_file);
+    if (fpga_image_file_fd < 0) {
+        fclose(fpga_image_file);
         return BLADERF_ERR_IO;
     }
 
+    if (fstat(fpga_image_file_fd, &stat) < 0) {
+        dbg_printf("Failed to stat fpga file (%s): %s\n", fpga, strerror(errno));
+        fclose(fpga_image_file);
+        return BLADERF_ERR_IO;
+    }
+
+    buf = malloc(stat.st_size);
+    if (!buf) {
+        dbg_printf("Failed to allocate FPGA image buffer: %s\n",
+                    strerror(errno));
+        fclose(fpga_image_file);
+        return BLADERF_ERR_MEM;
+    }
+
+    if (fread(buf, 1, stat.st_size, fpga_image_file != stat.st_size)) {
+        free(buf);
+        fclose(fpga_image_file);
+        return BLADERF_ERR_IO;
+    }
+
+    /* TODO */
+    //dev->fn->load_fpga(dev, buf, stat.st_size);
+    //
+#if 0
     if (ioctl(dev->fd, BLADE_BEGIN_PROG, &fpga_status)) {
         dbg_printf("ioctl(BLADE_BEGIN_PROG) failed: %s\n", strerror(errno));
-        close(fpga_fd);
+        free(buf);
+        fclose(fpga_image_file);
         return BLADERF_ERR_UNEXPECTED;
     }
 
@@ -824,7 +851,9 @@ int bladerf_load_fpga(struct bladerf *dev, const char *fpga)
          * write call, rather than sleeping in userspace? */
         usleep(4000);
     }
-    close(fpga_fd);
+#endif
+    fclose(fpga_image_file);
+    free(buf);
 
     /* Debug mode bug catcher */
     assert(bytes == 0);
