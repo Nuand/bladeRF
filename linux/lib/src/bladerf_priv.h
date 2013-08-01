@@ -4,6 +4,7 @@
 #ifndef BLADERF_PRIV_H_
 #define BLADERF_PRIV_H_
 
+#include <limits.h>
 #include <libbladeRF.h>
 
 typedef enum {
@@ -24,6 +25,49 @@ struct bladerf_error {
     int value;
 };
 
+/* XXX: Not sure where to put these */
+int bladerf_init_device(struct bladerf *dev);
+size_t bytes_to_c16_samples(size_t n_bytes);
+size_t c16_samples_to_bytes(size_t n_samples);
+
+/* Forward declaration for the function table */
+struct bladerf;
+
+/* Driver specific function table.  These functions are required for each
+   unique platform to operate the device. */
+struct bladerf_fn {
+    /* FPGA Loading and checking */
+    int (*load_fpga)(struct bladerf *dev, uint8_t *image, size_t image_size);
+    int (*is_fpga_configured)(struct bladerf *dev);
+
+    /* Platform information */
+    int (*get_serial)(struct bladerf *dev, uint64_t *serial);
+    int (*get_fw_version)(struct bladerf *dev, unsigned int *maj, unsigned int *min);
+    int (*get_fpga_version)(struct bladerf *dev, unsigned int *maj, unsigned int *min);
+
+    /* Closing of the device and freeing of the data */
+    int (*close)(struct bladerf *dev);
+
+    /* GPIO accessors */
+    int (*gpio_write)(struct bladerf *dev, uint32_t val);
+    int (*gpio_read)(struct bladerf *dev, uint32_t *val);
+
+    /* Si5338 accessors */
+    int (*si5338_write)(struct bladerf *dev, uint8_t addr, uint8_t data);
+    int (*si5338_read)(struct bladerf *dev, uint8_t addr, uint8_t *data);
+
+    /* LMS6002D accessors */
+    int (*lms_write)(struct bladerf *dev, uint8_t addr, uint8_t data);
+    int (*lms_read)(struct bladerf *dev, uint8_t addr, uint8_t *data);
+
+    /* VCTCXO accessor */
+    int (*dac_write)(struct bladerf *dev, uint16_t value);
+
+    /* Sample stream */
+    /* XXX: Add metadata struct? */
+    ssize_t (*read_samples)(struct bladerf *dev, int16_t *samples, size_t n);
+    ssize_t (*write_samples)(struct bladerf *dev, int16_t *samples, size_t n);
+};
 
 /* TODO Should there be a "big-lock" wrapped around accesses to a device */
 struct bladerf {
@@ -43,27 +87,6 @@ struct bladerf {
 
     /* Driver-sppecific implementations */
     struct bladerf_fn *fn;
-};
-
-struct bladerf_fn {
-    int (*load_fpga)(struct bladerf *dev, uint8_t *image, size_t image_size);
-
-    int (*close)(struct bladerf *dev);
-
-    int (*gpio_write)(struct bladerf *dev, uint32_t val);
-    int (*gpio_read)(struct bladerf *dev, uint32_t *val);
-
-    int (*si5338_write)(struct bladerf *dev, uint8_t addr, uint8_t data);
-    int (*si5338_read)(struct bladerf *dev, uint8_t addr, uint8_t *data);
-
-    int (*lms_write)(struct bladerf *dev, uint8_t addr, uint8_t data);
-    int (*lms_read)(struct bladerf *dev, uint8_t addr, uint8_t *data);
-
-    int (*dac_write)(struct bladerf *dev, uint16_t value);
-
-    ssize_t (*read_samples)(struct bladerf *dev, int16_t *samples, size_t n);
-    ssize_t (*write_samples)(struct bladerf *dev, int16_t *samples, size_t n);
-
 };
 
 /**
@@ -93,3 +116,4 @@ static inline size_t min_sz(size_t x, size_t y)
 }
 
 #endif
+

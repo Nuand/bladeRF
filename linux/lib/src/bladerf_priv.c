@@ -5,7 +5,7 @@ void bladerf_set_error(struct bladerf_error *error,
                         bladerf_error_t type, int val)
 {
     error->type = type;
-    error->val = val;
+    error->value = val;
 }
 
 void bladerf_get_error(struct bladerf_error *error,
@@ -16,6 +16,7 @@ void bladerf_get_error(struct bladerf_error *error,
     }
 
     if (val) {
-        *val = error->val;
+        *val = error->value;
     }
 }
+

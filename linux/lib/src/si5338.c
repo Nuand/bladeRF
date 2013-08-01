@@ -1,4 +1,5 @@
 #include "libbladeRF.h"
+#include "bladerf_priv.h"
 
 // this file needs to be linked with definitions for si5338_i2c_write(), and
 // possibly si5338_printf()
@@ -51,11 +52,11 @@ static void print_ms(struct tspec *ts) {
 
 static void configure_ms(struct bladerf *dev, struct tspec *ts) {
     int i;
-    si5338_i2c_write(dev, 36 + ts->id, (ts->enA ? 1 : 0) | (ts->enB ? 2 : 0) );
+    dev->fn->si5338_write(dev, 36 + ts->id, (ts->enA ? 1 : 0) | (ts->enB ? 2 : 0) );
     for (i = 0; i < 9; i++) {
-        si5338_i2c_write(dev, ts->base + i, ts->regs[i]);
+        dev->fn->si5338_write(dev, ts->base + i, ts->regs[i]);
     }
-    si5338_i2c_write(dev, 31 + ts->id, 0xC0 | (ts->rpow << 2));
+    dev->fn->si5338_write(dev, 31 + ts->id, 0xC0 | (ts->rpow << 2));
 }
 
 static int nodecimals(double num) {

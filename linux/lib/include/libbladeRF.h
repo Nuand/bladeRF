@@ -597,7 +597,7 @@ const char * bladerf_strerror(int error);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-int si5338_i2c_read(struct bladerf *dev, uint8_t address, uint8_t *val);
+int bladerf_si5338_read(struct bladerf *dev, uint8_t address, uint8_t *val);
 
 /**
  * Write a Si5338 register
@@ -610,7 +610,7 @@ int si5338_i2c_read(struct bladerf *dev, uint8_t address, uint8_t *val);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-int si5338_i2c_write(struct bladerf *dev, uint8_t address, uint8_t val);
+int bladerf_si5338_write(struct bladerf *dev, uint8_t address, uint8_t val);
 
 /**
  * Set frequency for TX clocks
@@ -622,7 +622,7 @@ int si5338_i2c_write(struct bladerf *dev, uint8_t address, uint8_t val);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-int si5338_set_tx_freq(struct bladerf *dev, unsigned freq);
+int bladerf_si5338_set_tx_freq(struct bladerf *dev, unsigned freq);
 
 /**
  * Set frequency for RX clocks
@@ -634,7 +634,7 @@ int si5338_set_tx_freq(struct bladerf *dev, unsigned freq);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-int si5338_set_rx_freq(struct bladerf *dev, unsigned freq);
+int bladerf_si5338_set_rx_freq(struct bladerf *dev, unsigned freq);
 
 
 /* @} (End of SI5338_CTL) */
@@ -656,7 +656,7 @@ int si5338_set_rx_freq(struct bladerf *dev, unsigned freq);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-int lms_spi_read(struct bladerf *dev, uint8_t address, uint8_t *val);
+int bladerf_lms_read(struct bladerf *dev, uint8_t address, uint8_t *val);
 
 /**
  * Write a LMS register
@@ -669,7 +669,7 @@ int lms_spi_read(struct bladerf *dev, uint8_t address, uint8_t *val);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-int lms_spi_write(struct bladerf *dev, uint8_t address, uint8_t val);
+int bladerf_lms_write(struct bladerf *dev, uint8_t address, uint8_t val);
 
 /* @} (End of LMS_CTL) */
 
@@ -720,7 +720,7 @@ int lms_spi_write(struct bladerf *dev, uint8_t address, uint8_t val);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-int gpio_read(struct bladerf *dev, uint32_t *val);
+int bladerf_gpio_read(struct bladerf *dev, uint32_t *val);
 
 /**
  * Write a GPIO register. Callers should be sure to perform a
@@ -734,7 +734,7 @@ int gpio_read(struct bladerf *dev, uint32_t *val);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-int gpio_write(struct bladerf *dev, uint32_t val);
+int bladerf_gpio_write(struct bladerf *dev, uint32_t val);
 
 /* @} (End of GPIO_CTL) */
 
@@ -748,7 +748,7 @@ int gpio_write(struct bladerf *dev, uint32_t val);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-int dac_write(struct bladerf *dev, uint16_t val);
+int bladerf_dac_write(struct bladerf *dev, uint16_t val);
 
 #ifdef __cplusplus
 }
