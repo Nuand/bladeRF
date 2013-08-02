@@ -41,7 +41,7 @@ DRIVER_HEADER_DIR ?= ../../common
 CFLAGS := -Wall -Wextra -Wno-unused-parameter \
 		  -fPIC \
 		  -std=gnu99 -D_GNU_SOURCE $(LIB_VER_FLAG) \
-		  -I$(SRC_DIR) -I$(SRC_DIR)/backends \
+		  -I$(SRC_DIR) \
 		  -I$(INC_DIR) -I$(DRIVER_HEADER_DIR)
 
 LDFLAGS := -fPIC
@@ -55,14 +55,14 @@ endif
 
 # Enable libusb (>= 1.0) support by defining ENABLE_BACKEND_LIBUSB
 ifdef ENABLE_BACKEND_LIBUSB
-	SRC += $(SRC_DIR)/backends/libusb.c
+	SRC += $(SRC_DIR)/backend/libusb.c
 	CFLAGS += -DENABLE_BACKEND_LIBUSB
 	LDFLAGS += -lusb-1.0
 endif
 
 # Enable Linux kernel driver backend by defining ENABLE_BACKEND_LINUX_DRIVER
 ifdef ENABLE_BACKEND_LINUX_DRIVER
-	SRC += $(SRC_DIR)/backends/driver_linux.c
+	SRC += $(SRC_DIR)/backend/linux.c
 	CFLAGS += -DENABLE_BACKEND_LINUX_DRIVER
 endif
 
