@@ -532,7 +532,9 @@ ssize_t bladerf_send_c16(struct bladerf *dev, int16_t *samples, size_t n)
 
     while (bytes_written < bytes_total) {
 
-        i = write(dev->fd, samples + bytes_written, bytes_total - bytes_written);
+        i = write(dev->fd,
+                  ((uint8_t*)samples) + bytes_written,
+                  bytes_total - bytes_written);
 
         if (i < 0 && errno != EINTR) {
             dev->last_errno = errno;
@@ -565,7 +567,9 @@ ssize_t bladerf_read_c16(struct bladerf *dev,
 
     while (bytes_read < bytes_total) {
 
-        i = read(dev->fd, samples + bytes_read, bytes_total - bytes_read);
+        i = read(dev->fd,
+                 ((uint8_t*)samples) + bytes_read,
+                 bytes_total - bytes_read);
 
         if (i < 0 && errno != EINTR) {
             dev->last_errno = errno;
