@@ -16,6 +16,7 @@
 #include "bladeRF.h"        /* Driver interface */
 #include "libbladeRF.h"     /* API */
 #include "bladerf_priv.h"   /* Implementation-specific items ("private") */
+#include "si5338.h"
 #include "debug.h"
 
 #ifndef BLADERF_DEV_DIR
@@ -167,6 +168,8 @@ ssize_t bladerf_get_device_list(struct bladerf_devinfo **devices)
     ret = NULL;
     num_devices = 0;
 
+    /* Use backend_probe() to get the list */
+
     num_matches = scandir(BLADERF_DEV_DIR, &matches, bladerf_filter, alphasort);
     if (num_matches > 0) {
 
@@ -209,6 +212,8 @@ void bladerf_free_device_list(struct bladerf_devinfo *devices, size_t n)
 {
     size_t i;
 
+    /* Free items returned by backend_probe */
+
     if (devices) {
         for (i = 0; i < n; i++)
             free(devices[i].path);
@@ -228,13 +233,30 @@ char * bladerf_dev_path(struct bladerf *dev)
     return NULL;
 }
 
-struct bladerf * bladerf_open(const char *dev_path)
+struct bladerf * bladerf_open_with_devinfo(struct bladerf_devinfo *devinfo)
 {
-    struct bladerf_devinfo i;
+    /* Switch on backend type */
 
-    /* Use open with devinfo check to verify that this is actually a bladeRF */
-    return _bladerf_open_info(dev_path, &i);
+    return NULL;
 }
+
+static int str2devinfo(const char *str, struct bladerf_devinfo *devinfo)
+{
+    return 0;
+}
+
+/* dev path becomes device specifier string (osmosdr-like) */
+struct bladerf * bladerf_open(const char *dev_id)
+{
+    struct bladerf_devinfo devinfo;
+    int status;
+
+    /* Populate dev-info from string */
+    status = str2devinfo(dev_id, &devinfo);
+
+    return bladerf_open_with_devinfo(&devinfo);
+}
+
 
 struct bladerf * bladerf_open_any()
 {
@@ -244,7 +266,7 @@ struct bladerf * bladerf_open_any()
 
     n_devices = bladerf_get_device_list(&devices);
     if (n_devices > 0) {
-        ret = bladerf_open(devices[0].path);
+        ret = bladerf_open_with_devinfo(&devices[0]);
         bladerf_free_device_list(devices, n_devices);
     }
 
@@ -255,6 +277,7 @@ struct bladerf * bladerf_open_any()
 void bladerf_close(struct bladerf *dev)
 {
     dev->fn->close(dev);
+
     /* XXX: Freeing here?
     if (dev) {
         close(dev->fd);
@@ -307,10 +330,10 @@ int bladerf_set_sample_rate(struct bladerf *dev, bladerf_module module, unsigned
     int ret = -1;
     /* TODO: Use module to pick the correct clock output to change */
     if( module == TX ) {
-        ret = bladerf_si5338_set_tx_freq(dev, rate<<1);
+        ret = si5338_set_tx_freq(dev, rate<<1);
         dev->last_tx_sample_rate = rate;
     } else {
-        ret = bladerf_si5338_set_rx_freq(dev, rate<<1);
+        ret = si5338_set_rx_freq(dev, rate<<1);
         dev->last_rx_sample_rate = rate;
     }
     *actual = rate;
@@ -506,6 +529,50 @@ int bladerf_get_frequency(struct bladerf *dev,
 }
 
 /*------------------------------------------------------------------------------
+ * Device Info
+ *----------------------------------------------------------------------------*/
+
+int bladerf_get_serial(struct bladerf *dev, uint64_t *serial)
+{
+    return dev->fn->get_serial(dev, serial);
+}
+
+int bladerf_get_fw_version(struct bladerf *dev,
+                            unsigned int *major, unsigned int *minor)
+{
+    return dev->fn->get_fw_version(dev, major, minor);
+}
+
+int bladerf_is_fpga_configured(struct bladerf *dev)
+{
+    return dev->fn->is_fpga_configured(dev);
+}
+
+int bladerf_get_fpga_version(struct bladerf *dev,
+                                unsigned int *major, unsigned int *minor)
+{
+    return dev->fn->get_fpga_version(dev, major, minor);
+}
+
+int bladerf_stats(struct bladerf *dev, struct bladerf_stats *stats)
+{
+    return dev->fn->stats(dev, stats);
+}
+
+/*------------------------------------------------------------------------------
+ * Device Programming
+ *----------------------------------------------------------------------------*/
+int bladerf_flash_firmware(struct bladerf *dev, const char *firmware)
+{
+    return 0;
+}
+
+int bladerf_load_fpga(struct bladerf *dev, const char *fpga)
+{
+    return 0;
+}
+
+/*------------------------------------------------------------------------------
  * Misc.
  *----------------------------------------------------------------------------*/
 
@@ -537,16 +604,12 @@ const char * bladerf_strerror(int error)
 
 int bladerf_si5338_read(struct bladerf *dev, uint8_t address, uint8_t *val)
 {
-    if (dev)
-        return dev->fn->si5338_read(dev,address,val);
-    return BLADERF_ERR_IO;
+    return dev->fn->si5338_read(dev,address,val);
 }
 
 int bladerf_si5338_write(struct bladerf *dev, uint8_t address, uint8_t val)
 {
-    if (dev)
-        return dev->fn->si5338_write(dev,address,val);
-    return BLADERF_ERR_IO;
+    return dev->fn->si5338_write(dev,address,val);
 }
 
 /*------------------------------------------------------------------------------
@@ -555,16 +618,12 @@ int bladerf_si5338_write(struct bladerf *dev, uint8_t address, uint8_t val)
 
 int bladerf_lms_read(struct bladerf *dev, uint8_t address, uint8_t *val)
 {
-    if (dev)
-        return dev->fn->lms_read(dev,address,val);
-    return BLADERF_ERR_IO;
+    return dev->fn->lms_read(dev,address,val);
 }
 
 int bladerf_lms_write(struct bladerf *dev, uint8_t address, uint8_t val)
 {
-    if (dev)
-        return dev->fn->lms_write(dev,address,val);
-    return BLADERF_ERR_IO;
+    return dev->fn->lms_write(dev,address,val);
 }
 
 /*------------------------------------------------------------------------------
@@ -572,16 +631,12 @@ int bladerf_lms_write(struct bladerf *dev, uint8_t address, uint8_t val)
  */
 int bladerf_gpio_read(struct bladerf *dev, uint32_t *val)
 {
-    if (dev)
-        return dev->fn->gpio_read(dev,val);
-    return BLADERF_ERR_IO;
+    return dev->fn->gpio_read(dev,val);
 }
 
 int bladerf_gpio_write(struct bladerf *dev, uint32_t val)
 {
-    if (dev)
-        return dev->fn->gpio_write(dev,val);
-    return BLADERF_ERR_IO;
+    return dev->fn->gpio_write(dev,val);
 
 }
 
@@ -590,7 +645,5 @@ int bladerf_gpio_write(struct bladerf *dev, uint32_t val)
  */
 int bladerf_dac_write(struct bladerf *dev, uint16_t val)
 {
-    if (dev)
-        return dev->fn->dac_write(dev,val);
-    return BLADERF_ERR_IO;
+    return dev->fn->dac_write(dev,val);
 }

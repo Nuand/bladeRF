@@ -69,6 +69,25 @@ struct bladerf_stats {
 };
 
 /**
+ * Sample format
+ */
+typedef enum {
+    FORMAT_SC16, /**< Signed, Complex 16-bit Q12. TODO more info */
+    FORMAT_FC64, /**< Floating point, Complex 64-bit TODO more info */
+} bladerf_format_t;
+
+/**
+ * Sample metadata
+ */
+struct bladerf_metadata {
+    uint32_t version;           /**< Metadata format version */
+    uint64_t timestamp;
+};
+
+/* XXX Change so that libbladeRF.h is the toplevel and lms.h depends on this,
+ *  getting rid of libblms.h */
+
+/**
  * LNA gain options.
  */
 typedef lms_lna_gain_t bladerf_lna_gain;
@@ -136,13 +155,26 @@ void bladerf_free_device_list(struct bladerf_devinfo *devices, size_t n);
 char * bladerf_dev_path(struct bladerf *dev);
 
 /**
- * Open specified device
+ * Opens device specified by provided bladerf_devinfo structure
  *
- * @param   dev_path  Path to bladeRF device
+ * @pre devinfo has been populated via a call to bladerf_get_device_list
+ *
+ * @param   devinfo     Device specification
  *
  * @return device handle or NULL on failure
  */
-struct bladerf * bladerf_open(const char *dev_path);
+struct bladerf * bladerf_open_with_devinfo(struct bladerf_devinfo *devinfo);
+
+/**
+ * Open specified device
+ *
+ * @param   dev_id  Device identifier string
+ *
+ * TODO document identifier string args
+ *
+ * @return device handle or NULL on failure
+ */
+struct bladerf * bladerf_open(const char *dev_id);
 
 /**
  * Convenience wrapper for opening the first bladerRF device found.
@@ -155,6 +187,8 @@ struct bladerf * bladerf_open_any();
  * Close device
  *
  * @note    Failing to close a device may result in memory leaks.
+ *
+ * @post    device is deallocated and may no longer be used.
  *
  * @param   device  Device handle previously obtained by bladerf_open()
  */
@@ -401,6 +435,8 @@ int bladerf_get_frequency(struct bladerf *dev,
  */
 
 /**
+ * XXX REMOVE
+ *
  * Send complex, packed 12-bit signed samples
  *
  * @param       dev         Device handle
@@ -413,7 +449,10 @@ int bladerf_get_frequency(struct bladerf *dev,
  */
 ssize_t bladerf_send_c12(struct bladerf *dev, int16_t *samples, size_t n);
 
+
 /**
+ * XXX REMOVE
+ *
  * Send complex, 16-bit signed samples
  *
  * @param       dev         Device handle
@@ -437,7 +476,14 @@ ssize_t bladerf_send_c12(struct bladerf *dev, int16_t *samples, size_t n);
 ssize_t bladerf_send_c16(struct bladerf *dev,
                          int16_t *samples, size_t num_samples);
 
+
+ssize_t bladerf_tx(struct bladerf *dev, bladerf_format_t format,
+                   void *samples, size_t num_samples,
+                   struct bladerf_metadata *metadata);
+
 /**
+ * XXX REMOVE
+ *
  * Read 16-bit signed samples
  *
  * @param       dev         Device handle
@@ -459,6 +505,10 @@ ssize_t bladerf_send_c16(struct bladerf *dev,
  */
 ssize_t bladerf_read_c16(struct bladerf *dev,
                          int16_t *samples, size_t num_samples);
+
+ssize_t bladerf_rx(struct bladerf *dev, bladerf_format_t format,
+                   void *samples, size_t num_samples,
+                   struct bladerf_metadata *metadata);
 
 /** @} (End of FN_DATA) */
 

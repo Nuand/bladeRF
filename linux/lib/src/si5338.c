@@ -52,11 +52,11 @@ static void print_ms(struct tspec *ts) {
 
 static void configure_ms(struct bladerf *dev, struct tspec *ts) {
     int i;
-    dev->fn->si5338_write(dev, 36 + ts->id, (ts->enA ? 1 : 0) | (ts->enB ? 2 : 0) );
+    bladerf_si5338_write(dev, 36 + ts->id, (ts->enA ? 1 : 0) | (ts->enB ? 2 : 0) );
     for (i = 0; i < 9; i++) {
-        dev->fn->si5338_write(dev, ts->base + i, ts->regs[i]);
+        bladerf_si5338_write(dev, ts->base + i, ts->regs[i]);
     }
-    dev->fn->si5338_write(dev, 31 + ts->id, 0xC0 | (ts->rpow << 2));
+    bladerf_si5338_write(dev, 31 + ts->id, 0xC0 | (ts->rpow << 2));
 }
 
 static int nodecimals(double num) {

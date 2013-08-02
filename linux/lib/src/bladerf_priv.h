@@ -8,9 +8,9 @@
 #include <libbladeRF.h>
 
 typedef enum {
-    INVALID = -1,
-    LINUX_KERNEL,
-    LIBUSB,
+    BACKEND_INVALID = -1,
+    BACKEND_LINUX,
+    BACKEND_LIBUSB,
 } bladerf_backend_t;
 
 typedef enum {
@@ -67,6 +67,9 @@ struct bladerf_fn {
     /* XXX: Add metadata struct? */
     ssize_t (*read_samples)(struct bladerf *dev, int16_t *samples, size_t n);
     ssize_t (*write_samples)(struct bladerf *dev, int16_t *samples, size_t n);
+
+    /* Gather statistics */
+    int (*stats)(struct bladerf *dev, struct bladerf_stats *stats);
 };
 
 /* TODO Should there be a "big-lock" wrapped around accesses to a device */
