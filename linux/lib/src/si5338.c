@@ -1,3 +1,4 @@
+#include <string.h>
 #include "libbladeRF.h"
 #include "bladerf_priv.h"
 
