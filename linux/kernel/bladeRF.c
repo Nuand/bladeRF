@@ -1009,18 +1009,24 @@ leave_fw:
             }
 
             retval = usb_bulk_msg(dev->udev, usb_sndbulkpipe(dev->udev, 2), buf, count, &nread, BLADE_USB_TIMEOUT_MS);
-            memset(buf, 0, 20);
-
-            tries = 3;
-            do {
-                retval = usb_bulk_msg(dev->udev, usb_rcvbulkpipe(dev->udev, 0x82), buf, count, &nread, 1);
-            } while(retval == -ETIMEDOUT && tries--);
-
             if (!retval) {
-                spi_reg.addr = buf[2];
-                spi_reg.data = buf[3];
+                memset(buf, 0, 20);
 
-                retval = copy_to_user((void __user *)arg, &spi_reg, sizeof(struct uart_cmd));
+                tries = 3;
+                do {
+                    retval = usb_bulk_msg(dev->udev, usb_rcvbulkpipe(dev->udev, 0x82), buf, count, &nread, BLADE_USB_TIMEOUT_MS);
+                } while(retval == -ETIMEDOUT && tries--);
+
+                if (!retval) {
+                    spi_reg.addr = buf[2];
+                    spi_reg.data = buf[3];
+
+                    retval = copy_to_user((void __user *)arg, &spi_reg, sizeof(struct uart_cmd));
+                } else {
+                    dev_err(&dev->interface->dev, "Failed to read peripheral response\n");
+                }
+            } else {
+                dev_err(&dev->interface->dev, "Failed to send peripheral request\n");
             }
             break;
 
