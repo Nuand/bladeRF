@@ -11,7 +11,6 @@
 #define dbg_printf(...) do { \
     fprintf(stderr, \
         "[DEBUG " __FILE__ ":" _DEBUG_STRFY_(__LINE__) "] " __VA_ARGS__ ); \
-    fflush(stderr); \
 } while(0)
 
 #else
