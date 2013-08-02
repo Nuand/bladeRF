@@ -110,7 +110,7 @@ doc:
 
 install: shared libbladeRF.pc
 	cp -P lib/* $(INSTALL_PREFIX)/lib
-	cp include/* $(INSTALL_PREFIX)/include
+	cp include/libbladeRF.h $(INSTALL_PREFIX)/include/libbladeRF.h
 	if [ -d $(INSTALL_PREFIX)/share/pkgconfig ]; then \
 		cp libbladeRF.pc $(INSTALL_PREFIX)/share/pkgconfig/ ; \
 	elif [ -d $(INSTALL_PREFIX)/lib/pkgconfig ]; then \

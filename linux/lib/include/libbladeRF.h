@@ -13,12 +13,12 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <fcntl.h>
-#include <liblms.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/** This structure is an opaque device handle */
 struct bladerf;
 
 /**
@@ -62,10 +62,18 @@ struct bladerf_devinfo {
  * Device statistics
  */
 struct bladerf_stats {
-    uint64_t rx_overruns;       /**< The number of times samples have been lost in the FPGA */
-    uint64_t rx_throughput;     /**< The overall throughput of the device in samples/second */
-    uint64_t tx_underruns;      /**< The number of times samples have been too late to transmit to the FPGA */
-    uint64_t tx_throughput;     /**< The overall throughput of the device in samples/second */
+
+    /** The number of times samples have been lost in the FPGA */
+    uint64_t rx_overruns;
+
+    /** The overall throughput of the device in samples/second */
+    uint64_t rx_throughput;
+
+    /**<  Number of times samples have been too late to transmit to the FPGA */
+    uint64_t tx_underruns;
+
+    /**< The overall throughput of the device in samples/second */
+    uint64_t tx_throughput;
 };
 
 /**
@@ -84,24 +92,38 @@ struct bladerf_metadata {
     uint64_t timestamp;
 };
 
-/* XXX Change so that libbladeRF.h is the toplevel and lms.h depends on this,
- *  getting rid of libblms.h */
+/**
+ * LNA gain options
+ */
+typedef enum {
+    LNA_UNKNOWN,    /**< Invalid LNA gain */
+    LNA_BYPASS,     /**< LNA bypassed - 0dB gain */
+    LNA_MID,        /**< LNA Mid Gain (MAX-6dB) */
+    LNA_MAX         /**< LNA Max Gain */
+} bladerf_lna_gain_t ;
 
 /**
- * LNA gain options.
+ * Module selection for those which have both RX and TX constituents
  */
-typedef lms_lna_gain_t bladerf_lna_gain;
-
-
-/**
- * Module selector
- */
-typedef lms_module_t   bladerf_module;
+typedef enum
+{
+    RX,             /**< Receive Module */
+    TX              /**< Transmit Module */
+} bladerf_module_t ;
 
 /**
- * Loop modes
+ * Transmit Loopback options
  */
-typedef lms_loopback_mode_t bladerf_loopback;
+typedef enum {
+    LB_BB_LPF = 0,   /**< Baseband loopback enters before RX low-pass filter input */
+    LB_BB_VGA2,      /**< Baseband loopback enters before RX VGA2 input */
+    LB_BB_OP,        /**< Baseband loopback enters before RX ADC input */
+    LB_RF_LNA_START, /**< Placeholder - DO NOT USE */
+    LB_RF_LNA1,      /**< RF loopback enters at LNA1 (300MHz - 2.8GHz)*/
+    LB_RF_LNA2,      /**< RF loopback enters at LNA2 (1.5GHz - 3.8GHz)*/
+    LB_RF_LNA3,      /**< RF loopback enters at LNA3 (300MHz - 3.0GHz)*/
+    LB_NONE          /**< Null loopback mode*/
+} bladerf_loopback_t;
 
 /**
  * @defgroup FN_INIT    Initialization/deinitialization
@@ -132,7 +154,8 @@ typedef lms_loopback_mode_t bladerf_loopback;
  *
  * @param[out]  devices
  *
- * @return number of items in returned device list, or value from \ref RETCODES list on failure
+ * @return number of items in returned device list, or value from
+ *         \ref RETCODES list on failure
  */
 ssize_t bladerf_get_device_list(struct bladerf_devinfo **devices);
 
@@ -212,7 +235,7 @@ void bladerf_close(struct bladerf *device);
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 int bladerf_enable_module(struct bladerf *dev,
-                            bladerf_module m, bool enable);
+                            bladerf_module_t m, bool enable);
 
 /**
  * Apply specified loopback mode
@@ -223,7 +246,7 @@ int bladerf_enable_module(struct bladerf *dev,
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-int bladerf_set_loopback( struct bladerf *dev, bladerf_loopback l);
+int bladerf_set_loopback( struct bladerf *dev, bladerf_loopback_t l);
 
 
 /**
@@ -238,7 +261,8 @@ int bladerf_set_loopback( struct bladerf *dev, bladerf_loopback l);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-int bladerf_set_sample_rate(struct bladerf *dev, bladerf_module module, unsigned int rate, unsigned int *actual);
+int bladerf_set_sample_rate(struct bladerf *dev, bladerf_module_t module_t,
+                            unsigned int rate, unsigned int *actual);
 
 /**
  * Configure the device's sample rate as a rational fraction of Hz.
@@ -254,9 +278,10 @@ int bladerf_set_sample_rate(struct bladerf *dev, bladerf_module module, unsigned
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-int bladerf_set_rational_sample_rate(struct bladerf *dev, bladerf_module module,
-                                        unsigned int integer, unsigned int num,
-                                        unsigned int denom);
+int bladerf_set_rational_sample_rate(struct bladerf *dev,
+                                     bladerf_module_t module,
+                                     unsigned int integer, unsigned int num,
+                                     unsigned int denom);
 
 
 /**
@@ -269,7 +294,8 @@ int bladerf_set_rational_sample_rate(struct bladerf *dev, bladerf_module module,
  *
  * @return 0 on success, value from \ref RETCODES list upon failure
  */
-int bladerf_get_sample_rate( struct bladerf *dev, bladerf_module module, unsigned int *rate);
+int bladerf_get_sample_rate(struct bladerf *dev, bladerf_module_t module_t,
+                            unsigned int *rate);
 
 /**
  * Set the PA gain in dB
@@ -319,7 +345,7 @@ int bladerf_get_txvga1(struct bladerf *dev, int *gain);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-int bladerf_set_lna_gain(struct bladerf *dev, bladerf_lna_gain gain);
+int bladerf_set_lna_gain(struct bladerf *dev, bladerf_lna_gain_t gain);
 
 /**
  * Get the LNA gain
@@ -327,7 +353,7 @@ int bladerf_set_lna_gain(struct bladerf *dev, bladerf_lna_gain gain);
  * @param       dev         Device handle
  * @param       gain        Pointer to the set gain level
  */
-int bladerf_get_lna_gain(struct bladerf *dev, bladerf_lna_gain *gain);
+int bladerf_get_lna_gain(struct bladerf *dev, bladerf_lna_gain_t *gain);
 
 /**
  * Set the pre-LPF VGA gain
@@ -377,7 +403,7 @@ int bladerf_get_rxvga2(struct bladerf *dev, int *gain);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-int bladerf_set_bandwidth(struct bladerf *dev, bladerf_module module,
+int bladerf_set_bandwidth(struct bladerf *dev, bladerf_module_t module,
                             unsigned int bandwidth,
                             unsigned int *actual);
 
@@ -390,7 +416,7 @@ int bladerf_set_bandwidth(struct bladerf *dev, bladerf_module module,
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-int bladerf_get_bandwidth(struct bladerf *dev, bladerf_module module,
+int bladerf_get_bandwidth(struct bladerf *dev, bladerf_module_t module,
                             unsigned int *bandwidth);
 
 /**
@@ -400,7 +426,7 @@ int bladerf_get_bandwidth(struct bladerf *dev, bladerf_module module,
  * @param       module      Module to configure
  * @param       frequency   Tuned frequency
  */
-int bladerf_select_band(struct bladerf *dev, bladerf_module module,
+int bladerf_select_band(struct bladerf *dev, bladerf_module_t module,
                         unsigned int frequency);
 
 /**
@@ -413,7 +439,7 @@ int bladerf_select_band(struct bladerf *dev, bladerf_module module,
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 int bladerf_set_frequency(struct bladerf *dev,
-                            bladerf_module module, unsigned int frequency);
+                            bladerf_module_t module, unsigned int frequency);
 
 /**
  * Set module's frequency in Hz
@@ -423,7 +449,7 @@ int bladerf_set_frequency(struct bladerf *dev,
  * @param       frequency   Pointer to the returned frequency
  */
 int bladerf_get_frequency(struct bladerf *dev,
-                            bladerf_module module, unsigned int *frequency);
+                            bladerf_module_t module, unsigned int *frequency);
 
 /** @} (End of FN_CTRL) */
 
