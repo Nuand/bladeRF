@@ -9,14 +9,14 @@
 
 typedef enum {
     INVALID = -1,
-    KERNEL,
+    LINUX_KERNEL,
     LIBUSB,
-} bladerf_driver_t;
+} bladerf_backend_t;
 
 typedef enum {
     ETYPE_ERRNO,
     ETYPE_LIBBLADERF,
-    ETYPE_DRIVER,
+    ETYPE_BACKEND,
     ETYPE_OTHER = INT_MAX - 1
 } bladerf_error_t;
 
@@ -82,8 +82,8 @@ struct bladerf {
     struct bladerf_error error;
 
     /* Type of the underlying driver and its private data  */
-    bladerf_driver_t driver_type;
-    void *driver;
+    bladerf_backend_t backend_type;
+    void *backend;
 
     /* Driver-sppecific implementations */
     struct bladerf_fn *fn;

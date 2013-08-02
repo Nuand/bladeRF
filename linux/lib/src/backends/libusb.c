@@ -28,7 +28,7 @@ static int vendor_command(struct bladerf *dev, int cmd, int *result)
     int buf;
     int status;
     int transferred = 0;
-    struct lusb *lusb = dev->driver;
+    struct lusb *lusb = dev->backend;
     status = libusb_control_transfer(
                 lusb->handle,
                 LIBUSB_RECIPIENT_INTERFACE | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN,
@@ -97,7 +97,7 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
     unsigned int wait_count;
     int status = 0;
     int transferred = 0;
-    struct lusb *lusb = dev->driver;
+    struct lusb *lusb = dev->backend;
 
     /* Make sure we are using the configuration interface */
     /*
@@ -111,7 +111,7 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
     /* Begin programming */
     status = begin_fpga_programming(dev);
     if (status < 0) {
-        bladerf_set_error(&dev->error, ETYPE_DRIVER, status);
+        bladerf_set_error(&dev->error, ETYPE_BACKEND, status);
         return BLADERF_ERR_IO;
     }
 
@@ -119,14 +119,14 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
     status = libusb_bulk_transfer(lusb->handle, 0x2, image, image_size,
                                   &transferred, 5 * BLADERF_LIBUSB_TIMEOUT_MS);
     if (status < 0) {
-        bladerf_set_error(&dev->error, ETYPE_DRIVER, status);
+        bladerf_set_error(&dev->error, ETYPE_BACKEND, status);
         return BLADERF_ERR_IO;
     }
 
     /*  End programming */
     status = end_fpga_programming(dev);
     if (status) {
-        bladerf_set_error(&dev->error, ETYPE_DRIVER, status);
+        bladerf_set_error(&dev->error, ETYPE_BACKEND, status);
         return BLADERF_ERR_IO;
     }
 
@@ -146,7 +146,7 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
 
     /* Failed to determine if FPGA is loaded */
     if (status < 0) {
-        bladerf_set_error(&dev->error, ETYPE_DRIVER, status);
+        bladerf_set_error(&dev->error, ETYPE_BACKEND, status);
         return  BLADERF_ERR_IO;
     } else if (wait_count == 0) {
         bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, BLADERF_ERR_TIMEOUT);
@@ -165,7 +165,7 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
 static int lusb_close(struct bladerf *dev)
 {
     int status = 0;
-    struct lusb *lusb = dev->driver;
+    struct lusb *lusb = dev->backend;
 
     status = libusb_release_interface(lusb->handle, 0);
 
@@ -240,7 +240,7 @@ static int lusb_gpio_write(struct bladerf *dev, uint32_t val)
     int i = 0;
     int status = 0;
     struct uart_cmd cmd;
-    struct lusb *lusb = dev->driver;
+    struct lusb *lusb = dev->backend;
 
     for (i = 0; status == 0 && i < 4; i++) {
         cmd.addr = i;
@@ -269,7 +269,7 @@ static int lusb_gpio_read(struct bladerf *dev, uint32_t *val)
     int i = 0;
     int status = 0;
     struct uart_cmd cmd;
-    struct lusb *lusb = dev->driver;
+    struct lusb *lusb = dev->backend;
 
     *val = 0;
     for(i = 0; status == 0 && i < 4; i++) {
@@ -299,7 +299,7 @@ static int lusb_si5338_write(struct bladerf *dev, uint8_t addr, uint8_t data)
 {
     int status;
     struct uart_cmd cmd;
-    struct lusb *lusb = dev->driver;
+    struct lusb *lusb = dev->backend;
 
     cmd.addr = addr;
     cmd.data = data;
@@ -318,7 +318,7 @@ static int lusb_si5338_read(struct bladerf *dev, uint8_t addr, uint8_t *data)
 {
     int status = 0;
     struct uart_cmd cmd;
-    struct lusb *lusb = dev->driver;
+    struct lusb *lusb = dev->backend;
 
     cmd.addr = addr;
     cmd.data = 0xff;
@@ -339,7 +339,7 @@ static int lusb_lms_write(struct bladerf *dev, uint8_t addr, uint8_t data)
 {
     int status;
     struct uart_cmd cmd;
-    struct lusb *lusb = dev->driver;
+    struct lusb *lusb = dev->backend;
 
     cmd.addr = addr;
     cmd.data = data;
@@ -358,7 +358,7 @@ static int lusb_lms_read(struct bladerf *dev, uint8_t addr, uint8_t *data)
 {
     int status;
     struct uart_cmd cmd;
-    struct lusb *lusb = dev->driver;
+    struct lusb *lusb = dev->backend;
 
     cmd.addr = addr;
     cmd.data = 0xff;
@@ -378,7 +378,7 @@ static int lusb_dac_write(struct bladerf *dev, uint16_t value)
 {
     int status;
     struct uart_cmd cmd;
-    struct lusb *lusb = dev->driver;
+    struct lusb *lusb = dev->backend;
 
     cmd.word = value;
     status = access_peripheral(lusb, UART_PKT_DEV_VCTCXO,
@@ -396,7 +396,7 @@ static ssize_t lusb_read_samples(struct bladerf *dev, int16_t *samples, size_t n
     int status, transferred;
     size_t bytes_read;
     const size_t bytes_total = c16_samples_to_bytes(n);
-    struct lusb *lusb = dev->driver;
+    struct lusb *lusb = dev->backend;
 
     /* Unexpected overflow */
     assert(bytes_total <= (size_t)INT_MAX);
@@ -415,7 +415,7 @@ static ssize_t lusb_read_samples(struct bladerf *dev, int16_t *samples, size_t n
             fprintf(stderr, "error reading samples (%d): %s\n",
                         status, libusb_error_name(status));
 
-            bladerf_set_error(&dev->error, ETYPE_DRIVER, status);
+            bladerf_set_error(&dev->error, ETYPE_BACKEND, status);
             return BLADERF_ERR_IO;
         } else {
             assert(transferred > 0);
@@ -431,7 +431,7 @@ static ssize_t lusb_write_samples(struct bladerf *dev, int16_t *samples, size_t 
     int status, transferred;
     size_t bytes_written;
     const size_t bytes_total = c16_samples_to_bytes(n);
-    struct lusb *lusb = dev->driver;
+    struct lusb *lusb = dev->backend;
 
     /* Unexpected overflow */
     assert(bytes_total <= (size_t)INT_MAX);
@@ -450,7 +450,7 @@ static ssize_t lusb_write_samples(struct bladerf *dev, int16_t *samples, size_t 
             fprintf(stderr, "error writing samples (%d): %s\n",
                         status, libusb_error_name(status));
 
-            bladerf_set_error(&dev->error, ETYPE_DRIVER, status);
+            bladerf_set_error(&dev->error, ETYPE_BACKEND, status);
             return BLADERF_ERR_IO;
         } else {
             assert(transferred > 0);

@@ -14,10 +14,6 @@
 /* Linux device driver information */
 struct bladerf_linux {
     int fd;         /* File descriptor to associated driver device node */
-    char *path;     /* Path of the opened fd */
-
-    int last_errno; /* Added for debugging. TODO Remove or integrate into
-                     * error reporting? (I vote the latter -- Jon). */
 };
 
 static bool time_past(struct timeval ref, struct timeval now) {
@@ -39,22 +35,17 @@ static inline size_t min_sz(size_t x, size_t y)
 /* XXX: This function definition changed so it needs to be revisited */
 int linux_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size)
 {
-    FILE * fpga_image_file;
-    int fpga_image_file_fd;
-    uint8_t fpga_image;
     int ret, fpga_status;
-    ssize_t nread, written, write_tmp;
-    size_t bytes;
-    struct stat stat;
+    size_t written;         /* Total # of bytes written */
+    ssize_t write_tmp;      /* # bytes written in a single write() call */
     struct timeval end_time, curr_time;
     bool timed_out;
-    uint8_t *buf;
-    struct bladerf_linux *driver = (struct bladerf_linux *)dev->driver;
-    assert(dev && fpga);
+    struct bladerf_linux *backend = (struct bladerf_linux *)dev->backend;
+    assert(dev && image);
 
     /* TODO Check FPGA on the board versus size of image */
 
-    if (ioctl(driver->fd, BLADE_QUERY_FPGA_STATUS, &fpga_status) < 0) {
+    if (ioctl(backend->fd, BLADE_QUERY_FPGA_STATUS, &fpga_status) < 0) {
         dbg_printf("ioctl(BLADE_QUERY_FPGA_STATUS) failed: %s\n",
                     strerror(errno));
         return BLADERF_ERR_UNEXPECTED;
@@ -65,79 +56,28 @@ int linux_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size)
         fprintf( stderr, "FPGA aleady loaded - reloading!\n" );
     }
 
-/*
-    fpga_image_file = fopen(fpga, "rb");
-    if (!fpga_image_file) {
-        dbg_printf("Failed to open device (%s): %s\n", fpga, strerror(errno));
-        return BLADERF_ERR_IO;
-    }
-
-    fpga_image_file_fd = fileno(fpga_image_file);
-    if (fpga_image_file_fd < 0) {
-        fclose(fpga_image_file);
-        return BLADERF_ERR_IO;
-    }
-
-    if (fstat(fpga_image_file_fd, &stat) < 0) {
-        dbg_printf("Failed to stat fpga file (%s): %s\n", fpga, strerror(errno));
-        fclose(fpga_image_file);
-        return BLADERF_ERR_IO;
-    }
-*/
-    buf = malloc(stat.st_size);
-    if (!buf) {
-        dbg_printf("Failed to allocate FPGA image buffer: %s\n",
-                    strerror(errno));
-        fclose(fpga_image_file);
-        return BLADERF_ERR_MEM;
-    }
-
-    if (fread(buf, 1, stat.st_size, fpga_image_file) != stat.st_size) {
-        free(buf);
-        fclose(fpga_image_file);
-        return BLADERF_ERR_IO;
-    }
-
-    /* TODO */
-    //dev->fn->load_fpga(dev, buf, stat.st_size);
-    //
-#if 0
-    if (ioctl(dev->fd, BLADE_BEGIN_PROG, &fpga_status)) {
+    if (ioctl(backend->fd, BLADE_BEGIN_PROG, &fpga_status)) {
         dbg_printf("ioctl(BLADE_BEGIN_PROG) failed: %s\n", strerror(errno));
-        free(buf);
-        fclose(fpga_image_file);
         return BLADERF_ERR_UNEXPECTED;
     }
 
-    for (bytes = stat.st_size; bytes;) {
-        nread = read(fpga_fd, buf, min_sz(STACK_BUFFER_SZ, bytes));
+    written = 0;
+    do {
+        write_tmp = write(backend->fd, image + written, image_size - written);
+        if (write_tmp < 0) {
+            /* Failing out...at least attempt to "finish" programming */
+            ioctl(backend->fd, BLADE_END_PROG, &ret);
+            dbg_printf("Write failure: %s\n", strerror(errno));
+            return BLADERF_ERR_IO;
+        } else {
+            written += write_tmp;
+        }
+    } while(written < image_size);
 
-        written = 0;
-        do {
-            write_tmp = write(dev->fd, buf + written, nread - written);
-            if (write_tmp < 0) {
-                /* Failing out...at least attempt to "finish" programming */
-                ioctl(dev->fd, BLADE_END_PROG, &ret);
-                dbg_printf("Write failure: %s\n", strerror(errno));
-                close(fpga_fd);
-                return BLADERF_ERR_IO;
-            } else {
-                written += write_tmp;
-            }
-        } while(written < nread);
 
-        bytes -= nread;
-
-        /* FIXME? Perhaps it would be better if the driver blocked on the
-         * write call, rather than sleeping in userspace? */
-        usleep(4000);
-    }
-#endif
-    fclose(fpga_image_file);
-    free(buf);
-
-    /* Debug mode bug catcher */
-    assert(bytes == 0);
+    /* FIXME? Perhaps it would be better if the driver blocked on the
+     * write call, rather than sleeping in userspace? */
+    usleep(4000);
 
     /* Time out within 1 second */
     gettimeofday(&end_time, NULL);
@@ -145,7 +85,7 @@ int linux_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size)
 
     ret = 0;
     do {
-        if (ioctl(driver->fd, BLADE_QUERY_FPGA_STATUS, &fpga_status) < 0) {
+        if (ioctl(backend->fd, BLADE_QUERY_FPGA_STATUS, &fpga_status) < 0) {
             dbg_printf("Failed to query FPGA status: %s\n", strerror(errno));
             ret = BLADERF_ERR_UNEXPECTED;
         }
@@ -153,7 +93,7 @@ int linux_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size)
         timed_out = time_past(end_time, curr_time);
     } while(!fpga_status && !timed_out && !ret);
 
-    if (ioctl(driver->fd, BLADE_END_PROG, &fpga_status)) {
+    if (ioctl(backend->fd, BLADE_END_PROG, &fpga_status)) {
         dbg_printf("Failed to end programming procedure: %s\n",
                 strerror(errno));
 
@@ -175,7 +115,7 @@ int linux_flash_firmware(struct bladerf *dev, const char *firmware)
     struct stat fw_stat;
     struct bladeRF_firmware fw_param;
     ssize_t n_read, read_status;
-    struct bladerf_linux *driver = (struct bladerf_linux*)driver ;
+    struct bladerf_linux *backend = (struct bladerf_linux*)backend ;
 
     assert(dev && firmware);
 
@@ -230,7 +170,7 @@ int linux_flash_firmware(struct bladerf *dev, const char *firmware)
     assert(n_read == fw_param.len);
 
     ret = 0;
-    upgrade_status = ioctl(driver->fd, BLADE_UPGRADE_FW, &fw_param);
+    upgrade_status = ioctl(backend->fd, BLADE_UPGRADE_FW, &fw_param);
     if (upgrade_status < 0) {
         dbg_printf("Firmware upgrade failed: %s\n", strerror(errno));
         ret = BLADERF_ERR_UNEXPECTED;
@@ -245,11 +185,11 @@ int linux_get_fw_version(struct bladerf *dev,
 {
     int status;
     struct bladeRF_version ver;
-    struct bladerf_linux *driver = (struct bladerf_linux *)dev->driver;
+    struct bladerf_linux *backend = (struct bladerf_linux *)dev->backend;
 
     assert(dev && major && minor);
 
-    status = ioctl(driver->fd, BLADE_QUERY_VERSION, &ver);
+    status = ioctl(backend->fd, BLADE_QUERY_VERSION, &ver);
     if (!status) {
         *major = ver.major;
         *minor = ver.minor;
@@ -264,11 +204,11 @@ static int linux_is_fpga_configured(struct bladerf *dev)
 {
     int status;
     int configured;
-    struct bladerf_linux *driver = (struct bladerf_linux *)dev->driver;
+    struct bladerf_linux *backend = (struct bladerf_linux *)dev->backend;
 
     assert(dev);
 
-    status = ioctl(driver->fd, BLADE_QUERY_FPGA_STATUS, &configured);
+    status = ioctl(backend->fd, BLADE_QUERY_FPGA_STATUS, &configured);
 
     if (status || configured < 0 || configured > 1)
         configured = BLADERF_ERR_IO;
@@ -284,12 +224,12 @@ int linux_si5338_read(struct bladerf *dev, uint8_t address, uint8_t *val)
 {
     int ret;
     struct uart_cmd uc;
-    struct bladerf_linux *driver = (struct bladerf_linux *)dev->driver;
+    struct bladerf_linux *backend = (struct bladerf_linux *)dev->backend;
 
     address &= 0x7f;
     uc.addr = address;
     uc.data = 0xff;
-    ret = ioctl(driver->fd, BLADE_SI5338_READ, &uc);
+    ret = ioctl(backend->fd, BLADE_SI5338_READ, &uc);
     *val = uc.data;
     return ret;
 }
@@ -297,10 +237,10 @@ int linux_si5338_read(struct bladerf *dev, uint8_t address, uint8_t *val)
 int linux_si5338_write(struct bladerf *dev, uint8_t address, uint8_t val)
 {
     struct uart_cmd uc;
-    struct bladerf_linux *driver = (struct bladerf_linux *)dev->driver;
+    struct bladerf_linux *backend = (struct bladerf_linux *)dev->backend;
     uc.addr = address;
     uc.data = val;
-    return ioctl(driver->fd, BLADE_SI5338_WRITE, &uc);
+    return ioctl(backend->fd, BLADE_SI5338_WRITE, &uc);
 }
 
 /*------------------------------------------------------------------------------
@@ -311,11 +251,11 @@ int linux_lms_read(struct bladerf *dev, uint8_t address, uint8_t *val)
 {
     int ret;
     struct uart_cmd uc;
-    struct bladerf_linux *driver = (struct bladerf_linux *)dev->driver;
+    struct bladerf_linux *backend = (struct bladerf_linux *)dev->backend;
     address &= 0x7f;
     uc.addr = address;
     uc.data = 0xff;
-    ret = ioctl(driver->fd, BLADE_LMS_READ, &uc);
+    ret = ioctl(backend->fd, BLADE_LMS_READ, &uc);
     *val = uc.data;
     return ret;
 }
@@ -323,10 +263,10 @@ int linux_lms_read(struct bladerf *dev, uint8_t address, uint8_t *val)
 int linux_lms_write(struct bladerf *dev, uint8_t address, uint8_t val)
 {
     struct uart_cmd uc;
-    struct bladerf_linux *driver = (struct bladerf_linux *)dev->driver;
+    struct bladerf_linux *backend = (struct bladerf_linux *)dev->backend;
     uc.addr = address;
     uc.data = val;
-    return ioctl(driver->fd, BLADE_LMS_WRITE, &uc);
+    return ioctl(backend->fd, BLADE_LMS_WRITE, &uc);
 }
 
 /*------------------------------------------------------------------------------
@@ -338,12 +278,12 @@ int linux_gpio_read(struct bladerf *dev, uint32_t *val)
     int i;
     uint32_t rval;
     struct uart_cmd uc;
-    struct bladerf_linux *driver = (struct bladerf_linux *)dev->driver;
+    struct bladerf_linux *backend = (struct bladerf_linux *)dev->backend;
     rval = 0;
     for (i = 0; i < 4; i++) {
         uc.addr = i;
         uc.data = 0xff;
-        ret = ioctl(driver->fd, BLADE_GPIO_READ, &uc);
+        ret = ioctl(backend->fd, BLADE_GPIO_READ, &uc);
         if (ret) {
             if (errno == ETIMEDOUT) {
                 ret = BLADERF_ERR_TIMEOUT;
@@ -364,7 +304,7 @@ int linux_gpio_write(struct bladerf *dev, uint32_t val)
     struct uart_cmd uc;
     int ret;
     int i;
-    struct bladerf_linux *driver = (struct bladerf_linux *)dev->driver;
+    struct bladerf_linux *backend = (struct bladerf_linux *)dev->backend;
 
     i = 0;
 
@@ -375,7 +315,7 @@ int linux_gpio_write(struct bladerf *dev, uint32_t val)
     for (i = 0; i < 4; i++) {
         uc.addr = i;
         uc.data = val >> (i * 8);
-        ret = ioctl(driver->fd, BLADE_GPIO_WRITE, &uc);
+        ret = ioctl(backend->fd, BLADE_GPIO_WRITE, &uc);
         if (ret) {
             if (errno == ETIMEDOUT) {
                 ret = BLADERF_ERR_TIMEOUT;
@@ -398,11 +338,11 @@ int linux_dac_write(struct bladerf *dev, uint16_t val)
     uc.word = val;
     int i;
     int ret;
-    struct bladerf_linux *driver = (struct bladerf_linux *)dev->driver;
+    struct bladerf_linux *backend = (struct bladerf_linux *)dev->backend;
     for (i = 0; i < 4; i++) {
         uc.addr = i;
         uc.data = val >> (i * 8);
-        ret = ioctl(driver->fd, BLADE_VCTCXO_WRITE, &uc);
+        ret = ioctl(backend->fd, BLADE_VCTCXO_WRITE, &uc);
         if (ret)
             break;
     }
@@ -415,17 +355,18 @@ ssize_t linux_write_samples(struct bladerf *dev, int16_t *samples, size_t n)
     ssize_t i, ret = 0;
     size_t bytes_written = 0;
     const size_t bytes_total = c16_samples_to_bytes(n);
-    struct bladerf_linux *driver = (struct bladerf_linux *)dev->driver;
+    struct bladerf_linux *backend = (struct bladerf_linux *)dev->backend;
 
     while (bytes_written < bytes_total) {
 
-        i = write(driver->fd, samples + bytes_written, bytes_total - bytes_written);
+        i = write(backend->fd, samples + bytes_written, bytes_total - bytes_written);
 
         if (i < 0 && errno != EINTR) {
-            driver->last_errno = errno;
+            int errno_val = errno;
+            bladerf_set_error(&dev->error, ETYPE_ERRNO, errno_val);
             bytes_written = BLADERF_ERR_IO;
             dbg_printf("Failed to write with errno=%d: %s\n",
-                    dev->last_errno, strerror(dev->last_errno));
+                        errno_val, strerror(errno_val));
             break;
         } else if (i > 0) {
             bytes_written += i;
@@ -449,17 +390,18 @@ ssize_t linux_read_samples(struct bladerf *dev,
     ssize_t i, ret = 0;
     size_t bytes_read = 0;
     const size_t bytes_total = c16_samples_to_bytes(n);
-    struct bladerf_linux *driver = (struct bladerf_linux *)dev->driver;
+    struct bladerf_linux *backend = (struct bladerf_linux *)dev->backend;
 
     while (bytes_read < bytes_total) {
 
-        i = read(driver->fd, samples + bytes_read, bytes_total - bytes_read);
+        i = read(backend->fd, samples + bytes_read, bytes_total - bytes_read);
 
         if (i < 0 && errno != EINTR) {
-            driver->last_errno = errno;
+            int errno_val = errno;
+            bladerf_set_error(&dev->error, ETYPE_ERRNO, errno_val);
             ret = BLADERF_ERR_IO;
             dbg_printf("Read failed with errno=%d: %s\n",
-                        dev->last_errno, strerror(dev->last_errno));
+                        errno_val, strerror(errno_val));
             break;
         } else if (i > 0) {
             bytes_read += i;

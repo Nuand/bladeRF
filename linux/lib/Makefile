@@ -4,6 +4,10 @@
 # Quick Makefile, until we get autotools in order
 ################################################################################
 
+# XXX Quickly enabling these items for the time being
+ENABLE_BACKEND_LIBUSB=y
+ENABLE_BACKEND_LINUX_DRIVER=y
+
 # Fetch the library version
 include make/version.mk
 
@@ -15,7 +19,6 @@ INC_DIR := include
 LIB_DIR := lib
 BIN_DIR := bin
 
-# FIXME Move files to appropriate subdirs
 SRC := $(wildcard $(SRC_DIR)/*.c)
 OBJ = $(SRC:.c=.o)
 
@@ -38,6 +41,7 @@ DRIVER_HEADER_DIR ?= ../../common
 CFLAGS := -Wall -Wextra -Wno-unused-parameter \
 		  -fPIC \
 		  -std=gnu99 -D_GNU_SOURCE $(LIB_VER_FLAG) \
+		  -I$(SRC_DIR) -I$(SRC_DIR)/backends \
 		  -I$(INC_DIR) -I$(DRIVER_HEADER_DIR)
 
 LDFLAGS := -fPIC
@@ -49,11 +53,17 @@ else
 	CFLAGS += -O2 -DNDEBUG
 endif
 
-# Enable libusb (>= 1.0) support by defining USE_LIBUSB
-USE_LIBUSB=y
-ifdef USE_LIBUSB
-	CFLAGS += -DUSE_LIBUSB
+# Enable libusb (>= 1.0) support by defining ENABLE_BACKEND_LIBUSB
+ifdef ENABLE_BACKEND_LIBUSB
+	SRC += $(SRC_DIR)/backends/libusb.c
+	CFLAGS += -DENABLE_BACKEND_LIBUSB
 	LDFLAGS += -lusb-1.0
+endif
+
+# Enable Linux kernel driver backend by defining ENABLE_BACKEND_LINUX_DRIVER
+ifdef ENABLE_BACKEND_LINUX_DRIVER
+	SRC += $(SRC_DIR)/backends/driver_linux.c
+	CFLAGS += -DENABLE_BACKEND_LINUX_DRIVER
 endif
 
 # Default install prefix
