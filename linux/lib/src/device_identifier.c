@@ -169,7 +169,7 @@ static int next_arg(char **saveptr, char **arg, char **value)
     return 1;
 }
 
-int devinfo_from_string(const char *dev_id_const, struct bladerf_devinfo *d)
+int str2devinfo(const char *dev_id_const, struct bladerf_devinfo *d)
 {
     char *dev_id, *token, *arg, *val, *saveptr;
     int status, arg_status;

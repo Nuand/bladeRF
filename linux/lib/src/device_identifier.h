@@ -8,12 +8,14 @@
  * Fill out a device info structure based upon the provided device indentifer
  * string. If a failure occurrs, the contents of d are undefined.
  *
+ * For device identifier format, see the documentation for bladerf_open
+ * (in include/libbladeRF.h)
+ *
  * @param[in]  device_identifier   Device identifier string
  * @param[out] d                   Device info to fill in
  *
  * @return 0 on success, BLADERF_ERR_* on failure
  */
-int devinfo_from_string(const char *device_identifier,
-                        struct bladerf_devinfo *d);
+int str2devinfo(const char *device_identifier, struct bladerf_devinfo *d);
 
 #endif
