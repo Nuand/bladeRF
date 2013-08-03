@@ -437,15 +437,112 @@ static int linux_get_serial(struct bladerf *dev, uint64_t *serial)
     return 0;
 }
 
+static inline bool instance_matches(struct bladerf_devinfo *a, struct bladerf_devinfo *b)
+{
+    return a->instance == DEVINFO_INST_UNDEFINED ||
+           b->instance == DEVINFO_INST_UNDEFINED ||
+           a->instance == b->instance;
+}
+
+
+static inline bool serial_matches(struct bladerf_devinfo *a, struct bladerf_devinfo *b)
+{
+    return a->serial == DEVINFO_SERIAL_UNDEFINED ||
+           b->serial == DEVINFO_SERIAL_UNDEFINED ||
+           a->serial == b->serial;
+}
+
+static inline bool usb_bus_addr_match(struct bladerf_devinfo *a, struct bladerf_devinfo *b)
+{
+    bool bus_match, addr_match;
+
+    bus_match = a->usb_bus == DEVINFO_BUS_UNDEFINED ||
+                b->usb_bus == DEVINFO_BUS_UNDEFINED ||
+                a->usb_bus == b->usb_bus;
+
+    addr_match = a->usb_addr == DEVINFO_BUS_UNDEFINED ||
+                 b->usb_addr == DEVINFO_BUS_UNDEFINED ||
+                 a->usb_addr == b->usb_addr;
+
+    return bus_match && addr_match;
+}
+
+
+
 static struct bladerf * linux_open(struct bladerf_devinfo *info)
 {
-    dbg_printf("\"Hello\" in linux open impl\n");
-    return NULL;
+    char dev_name[32];
+    struct bladerf_linux *backend;
+    struct bladerf *ret = NULL;
+
+    int fd; /* Everything here starts with a driver file descriptor,
+             * so no need to allocate backend and ret until we know we
+             * have said fd */
+
+    assert(info->backend == BACKEND_LINUX);
+
+    /* If an instance is specified, we start with that */
+    if (info->instance != DEVINFO_INST_UNDEFINED) {
+        snprintf(dev_name, sizeof(dev_name), "/dev/bladerf%d", info->instance);
+        fd = open(dev_name, O_RDWR);
+
+        if (fd >= 0) {
+            backend = malloc(sizeof(*backend));
+            ret = malloc(sizeof(*ret));
+
+            if (backend && ret) {
+                backend->fd = fd;
+                ret->backend = backend;
+            } else {
+                free(backend);
+                free(ret);
+            }
+        } else {
+            dbg_printf("Failed to open %s: %s\n", dev_name, strerror(errno));
+        }
+    } else {
+        /* Otherwise, we user our probe routine to get a device info list,
+         * and then search it */
+        dbg_printf("No instance specified- call to linux_probe() goes here\n");
+
+        /* Probe */
+
+        /* Iterate over list ... */
+#if 0
+        for each in list {
+
+            /* Note that these indicate a match for any wildcards */
+            if (instance_matches(a, b) &&
+                usb_bus_addr_match(a, b) &&
+                serial_matches(a, b)) {
+
+                ret = linux_open(a)
+                break;
+            }
+
+
+        }
+#endif
+    }
+
+    return ret;
 }
 
 int linux_close(struct bladerf *dev)
 {
-    return 0;
+    int status;
+    struct bladerf_linux *backend = dev->backend;
+    assert(backend);
+
+    status = close(backend->fd);
+    free(backend);
+    free(dev);
+
+    if (status < 0) {
+        return BLADERF_ERR_IO;
+    } else {
+        return 0;
+    }
 }
 
 const struct bladerf_fn bladerf_linux_fn = {

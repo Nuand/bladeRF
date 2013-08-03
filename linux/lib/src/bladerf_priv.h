@@ -7,6 +7,12 @@
 #include <limits.h>
 #include <libbladeRF.h>
 
+/* Reserved values for bladerf_devinfo fields to indicate "undefined" */
+#define DEVINFO_SERIAL_UNDEFINED    UINT64_MAX
+#define DEVINFO_BUS_UNDEFINED       UINT8_MAX
+#define DEVINFO_ADDR_UNDEFINED      UINT8_MAX
+#define DEVINFO_INST_UNDEFINED      UINT_MAX
+
 typedef enum {
     ETYPE_ERRNO,
     ETYPE_LIBBLADERF,

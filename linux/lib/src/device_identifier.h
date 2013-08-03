@@ -4,6 +4,7 @@
 #ifndef DEVICE_IDENTIFIER_H__
 #define DEVICE_IDENTIFIER_H__
 
+
 /**
  * Fill out a device info structure based upon the provided device indentifer
  * string. If a failure occurrs, the contents of d are undefined.

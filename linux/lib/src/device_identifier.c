@@ -7,13 +7,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <errno.h>
+
+#include "bladerf_priv.h"
 #include "device_identifier.h"
 #include "debug.h"
-
-#define SERIAL_UNDEFINED    UINT64_MAX
-#define BUS_UNDEFINED       UINT8_MAX
-#define ADDR_UNDEFINED      UINT8_MAX
-#define INST_UNDEFINED      UINT_MAX
 
 #define DELIM_SPACE         " \t\r\n\v\f"
 
@@ -68,11 +65,11 @@ unsigned int str2uint(const char *str, unsigned int min, unsigned int max, bool 
 
 static void init_devinfo(struct bladerf_devinfo *d)
 {
-    d->backend = BACKEND_ANY;
-    d->serial = SERIAL_UNDEFINED;
-    d->usb_bus = BUS_UNDEFINED;
-    d->usb_addr = ADDR_UNDEFINED;
-    d->instance = INST_UNDEFINED;
+    d->backend  = BACKEND_ANY;
+    d->serial   = DEVINFO_SERIAL_UNDEFINED;
+    d->usb_bus  = DEVINFO_BUS_UNDEFINED;
+    d->usb_addr = DEVINFO_ADDR_UNDEFINED;
+    d->instance = DEVINFO_INST_UNDEFINED;
 }
 
 static int handle_backend(char *str, struct bladerf_devinfo *d)
@@ -120,8 +117,8 @@ static int handle_device(struct bladerf_devinfo *d, char *value)
         *addr = '\0';
         addr++;
 
-        d->usb_bus = str2uint(bus, 0, BUS_UNDEFINED - 1, &bus_ok);
-        d->usb_addr = str2uint(addr, 0, ADDR_UNDEFINED - 1, &addr_ok);
+        d->usb_bus = str2uint(bus, 0, DEVINFO_BUS_UNDEFINED - 1, &bus_ok);
+        d->usb_addr = str2uint(addr, 0, DEVINFO_ADDR_UNDEFINED - 1, &addr_ok);
 
         if (bus_ok && addr_ok) {
             status = 0;
@@ -138,7 +135,7 @@ static int handle_instance(struct bladerf_devinfo *d, char *value)
 {
     bool ok;
 
-    d->instance = str2uint(value, 0, INST_UNDEFINED - 1, &ok);
+    d->instance = str2uint(value, 0, DEVINFO_INST_UNDEFINED - 1, &ok);
     if (!ok) {
         dbg_printf("Bad instance: %s\n", value);
         return BLADERF_ERR_INVAL;
@@ -152,7 +149,7 @@ static int handle_serial(struct bladerf_devinfo *d, char *value)
 {
     bool ok;
 
-    d->serial = str2uint64(value, 0, SERIAL_UNDEFINED - 1, &ok);
+    d->serial = str2uint64(value, 0, DEVINFO_SERIAL_UNDEFINED - 1, &ok);
     if (!ok) {
         dbg_printf("Bad serial: %s\n", value);
         return BLADERF_ERR_INVAL;
