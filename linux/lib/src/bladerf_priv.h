@@ -72,7 +72,6 @@ struct bladerf_fn {
     int (*stats)(struct bladerf *dev, struct bladerf_stats *stats);
 };
 
-/* TODO Should there be a "big-lock" wrapped around accesses to a device */
 struct bladerf {
     int speed;      /* The device's USB speed, 0 is HS, 1 is SS */
     struct bladerf_stats stats;
@@ -98,6 +97,9 @@ struct bladerf {
 void bladerf_set_error(struct bladerf_error *error,
                         bladerf_error_t type, int val);
 
+/**
+ * Fetch an error and type
+ */
 void bladerf_get_error(struct bladerf_error *error,
                         bladerf_error_t *type, int *val);
 

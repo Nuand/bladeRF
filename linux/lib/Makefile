@@ -66,10 +66,6 @@ ifdef ENABLE_BACKEND_LINUX_DRIVER
 	CFLAGS += -DENABLE_BACKEND_LINUX_DRIVER
 endif
 
-# Default to LINUX for now
-OS ?= linux
-SRC += $(SRC_DIR)/os/$(OS).c
-
 # Default install prefix
 INSTALL_PREFIX ?= /usr
 

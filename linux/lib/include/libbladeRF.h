@@ -65,10 +65,10 @@ struct bladerf_stats {
     /** The overall throughput of the device in samples/second */
     uint64_t rx_throughput;
 
-    /**<  Number of times samples have been too late to transmit to the FPGA */
+    /**  Number of times samples have been too late to transmit to the FPGA */
     uint64_t tx_underruns;
 
-    /**< The overall throughput of the device in samples/second */
+    /** The overall throughput of the device in samples/second */
     uint64_t tx_throughput;
 };
 
@@ -76,7 +76,7 @@ struct bladerf_stats {
  * Sample format
  */
 typedef enum {
-    FORMAT_SC16, /**< Signed, Complex 16-bit Q12. TODO more info */
+    FORMAT_SC16, /**< Signed, Complex 16-bit Q12.    TODO more info */
     FORMAT_FC64, /**< Floating point, Complex 64-bit TODO more info */
 } bladerf_format_t;
 
@@ -84,8 +84,8 @@ typedef enum {
  * Sample metadata
  */
 struct bladerf_metadata {
-    uint32_t version;           /**< Metadata format version */
-    uint64_t timestamp;
+    uint32_t version;       /**< Metadata format version */
+    uint64_t timestamp;     /**< TODO Time in \<unit\> since \<origin\> */
 };
 
 /**
@@ -185,22 +185,44 @@ char * bladerf_dev_path(struct bladerf *dev);
 struct bladerf * bladerf_open_with_devinfo(struct bladerf_devinfo *devinfo);
 
 /**
- * Open specified device
+ * Open specified device using a device identifier string
  *
- * @param   dev_id  Device identifier string
+ * The general form of the device identifier string is;
+ * @code
+ *      <backend>:[device=<bus>:<addr>] [instance=<n>] [serial=<serial>]
+ * @endcode
  *
- * TODO document identifier string args
+ * An empty ("") or NULL device identifier will result in the first
+ * encountered device being opened (using the first discovered backend)
+ *
+ * The 'backend' describes the mechanism used to communicate with the device,
+ * and may be one of the following:
+ *   - libusb:  libusb (>= 1.0.9)
+ *   - linux:   Linux Kernel Driver
+ *
+ * If no arguments are provided after the backend, the first encountred
+ * device on the specified backend will be opened.
+ *
+ * Next, any provided arguments are provide as used to find the desired device.
+ * Be sure not to overconstrain the search. Generally, only one of the above
+ * is required -- providing all of these may overconstrain the search for the
+ * desired device (e.g., if a serial number matches, but not on the specified
+ * bus and address.)
+ *
+ *   - device=\<bus\>:\<addr\>
+ *      - Specifies USB bus and address. Decimal or hex prefixed by '0x' is
+ *        permitted.
+ *   - instance=\<n\>
+ *      - Nth instance encountered (libusb)
+ *      - Device node N, such as /dev/bladerfN (linux)
+ *   - serial=\<serial\>
+ *      - Device's serial number. Decimal or hex prefixed by '0x' is permitted.
+ *
+ * @param   device_identifier  Device identifier, formatted as described above
  *
  * @return device handle or NULL on failure
  */
-struct bladerf * bladerf_open(const char *dev_id);
-
-/**
- * Convenience wrapper for opening the first bladerRF device found.
- *
- * @return device handle on success, NULL on failure or no device found.
- */
-struct bladerf * bladerf_open_any();
+struct bladerf * bladerf_open(const char *device_identifier);
 
 /**
  * Close device
@@ -257,7 +279,7 @@ int bladerf_set_loopback( struct bladerf *dev, bladerf_loopback_t l);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-int bladerf_set_sample_rate(struct bladerf *dev, bladerf_module_t module_t,
+int bladerf_set_sample_rate(struct bladerf *dev, bladerf_module_t module,
                             unsigned int rate, unsigned int *actual);
 
 /**
@@ -283,14 +305,13 @@ int bladerf_set_rational_sample_rate(struct bladerf *dev,
 /**
  * Read the device's sample rate in Hz
  *
- *
  * @param[in]   dev         Device handle
  * @param[in]   module      Module to query
  * @param[out]  rate        Pointer to returned sample rate
  *
  * @return 0 on success, value from \ref RETCODES list upon failure
  */
-int bladerf_get_sample_rate(struct bladerf *dev, bladerf_module_t module_t,
+int bladerf_get_sample_rate(struct bladerf *dev, bladerf_module_t module,
                             unsigned int *rate);
 
 /**
@@ -499,9 +520,11 @@ ssize_t bladerf_send_c16(struct bladerf *dev,
                          int16_t *samples, size_t num_samples);
 
 
+#if 0
 ssize_t bladerf_tx(struct bladerf *dev, bladerf_format_t format,
                    void *samples, size_t num_samples,
                    struct bladerf_metadata *metadata);
+#endif
 
 /**
  * XXX REMOVE
@@ -528,9 +551,11 @@ ssize_t bladerf_tx(struct bladerf *dev, bladerf_format_t format,
 ssize_t bladerf_read_c16(struct bladerf *dev,
                          int16_t *samples, size_t num_samples);
 
+#if 0
 ssize_t bladerf_rx(struct bladerf *dev, bladerf_format_t format,
                    void *samples, size_t num_samples,
                    struct bladerf_metadata *metadata);
+#endif
 
 /** @} (End of FN_DATA) */
 

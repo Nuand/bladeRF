@@ -16,6 +16,7 @@
 #include "bladerf_priv.h"   /* Implementation-specific items ("private") */
 #include "lms.h"
 #include "si5338.h"
+#include "file_ops.h"
 #include "debug.h"
 
 #ifndef BLADERF_DEV_DIR
@@ -27,9 +28,9 @@
 #endif
 
 
-/*******************************************************************************
+/*------------------------------------------------------------------------------
  * Device discovery & initialization/deinitialization
- ******************************************************************************/
+ *----------------------------------------------------------------------------*/
 
 /* Return 0 if dirent name matches that of what we expect for a bladerf dev */
 static int bladerf_filter(const struct dirent *d)
@@ -248,30 +249,18 @@ static int str2devinfo(const char *str, struct bladerf_devinfo *devinfo)
 struct bladerf * bladerf_open(const char *dev_id)
 {
     struct bladerf_devinfo devinfo;
+    struct bladerf *ret = NULL;
     int status;
 
     /* Populate dev-info from string */
     status = str2devinfo(dev_id, &devinfo);
 
-    return bladerf_open_with_devinfo(&devinfo);
-}
-
-
-struct bladerf * bladerf_open_any()
-{
-    struct bladerf *ret = NULL;
-    struct bladerf_devinfo *devices;
-    ssize_t n_devices;
-
-    n_devices = bladerf_get_device_list(&devices);
-    if (n_devices > 0) {
-        ret = bladerf_open_with_devinfo(&devices[0]);
-        bladerf_free_device_list(devices, n_devices);
+    if (!status) {
+        ret = bladerf_open_with_devinfo(&devinfo);
     }
 
     return ret;
 }
-
 
 void bladerf_close(struct bladerf *dev)
 {
@@ -561,14 +550,48 @@ int bladerf_stats(struct bladerf *dev, struct bladerf_stats *stats)
 /*------------------------------------------------------------------------------
  * Device Programming
  *----------------------------------------------------------------------------*/
-int bladerf_flash_firmware(struct bladerf *dev, const char *firmware)
+int bladerf_flash_firmware(struct bladerf *dev, const char *firmware_file)
 {
+    int status;
+    uint8_t *buf;
+    size_t  buf_size;
+
+    status = read_file(firmware_file, &buf, &buf_size);
+    if (!status) {
+
+        /* TODO sanity check FPGA:
+         *  - Check for a reasonable size
+         *  - Known header/footer on images?
+         *  - Checksum/hash?
+         */
+
+        status = dev->fn->load_fpga(dev, buf, buf_size);
+        free(buf);
+    }
+
     return 0;
 }
 
-int bladerf_load_fpga(struct bladerf *dev, const char *fpga)
+int bladerf_load_fpga(struct bladerf *dev, const char *fpga_file)
 {
-    return 0;
+    uint8_t *buf;
+    size_t  buf_size;
+    int status;
+
+    status = read_file(fpga_file, &buf, &buf_size);
+    if (!status ) {
+
+        /* TODO sanity check FPGA:
+         *  - Check for a reasonable size
+         *  - Known header/footer on images?
+         *  - Checksum/hash?
+         */
+
+        status = dev->fn->load_fpga(dev, buf, buf_size);
+        free(buf);
+    }
+
+    return status;
 }
 
 /*------------------------------------------------------------------------------
@@ -599,7 +622,7 @@ const char * bladerf_strerror(int error)
 
 /*------------------------------------------------------------------------------
  * Si5338 register read / write functions
- */
+ *----------------------------------------------------------------------------*/
 
 int bladerf_si5338_read(struct bladerf *dev, uint8_t address, uint8_t *val)
 {
@@ -613,7 +636,7 @@ int bladerf_si5338_write(struct bladerf *dev, uint8_t address, uint8_t val)
 
 /*------------------------------------------------------------------------------
  * LMS register read / write functions
- */
+ *----------------------------------------------------------------------------*/
 
 int bladerf_lms_read(struct bladerf *dev, uint8_t address, uint8_t *val)
 {
@@ -627,7 +650,8 @@ int bladerf_lms_write(struct bladerf *dev, uint8_t address, uint8_t val)
 
 /*------------------------------------------------------------------------------
  * GPIO register read / write functions
- */
+ *----------------------------------------------------------------------------*/
+
 int bladerf_gpio_read(struct bladerf *dev, uint32_t *val)
 {
     return dev->fn->gpio_read(dev,val);
@@ -641,7 +665,8 @@ int bladerf_gpio_write(struct bladerf *dev, uint32_t val)
 
 /*------------------------------------------------------------------------------
  * VCTCXO DAC register write
- */
+ *----------------------------------------------------------------------------*/
+
 int bladerf_dac_write(struct bladerf *dev, uint16_t val)
 {
     return dev->fn->dac_write(dev,val);
