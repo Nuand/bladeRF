@@ -11,11 +11,11 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    dev = bladerf_open(argv[0]);
+    dev = bladerf_open(argv[1]);
 
-    if (!dev) {
+    if (dev) {
+        bladerf_close(dev);
+     } else {
         fprintf(stderr, "Failed to open device!\n");
-    }
-
-    bladerf_close(dev);
+     }
 }

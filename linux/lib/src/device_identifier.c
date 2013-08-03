@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <libbladeRF.h>
 #include <limits.h>
 #include <assert.h>
@@ -77,12 +78,29 @@ static void init_devinfo(struct bladerf_devinfo *d)
 static int handle_backend(char *str, struct bladerf_devinfo *d)
 {
     int status = 0;
+    char *str_end;
+
+    if (!str || strlen(str) == 0) {
+        return BLADERF_ERR_INVAL;
+    }
+
+
+    /* Gobble up any leading whitespace */
+    while (*str && isspace(*str)) {
+        str++;
+    };
+
+    /* Likewise for trailing whitespace */
+    str_end = str + strlen(str) - 1;
+    while (str_end > str && isspace(*str_end)) { str_end--; };
+    str_end[1] = '\0';
 
     if (!strcasecmp("libusb", str)) {
         d->backend = BACKEND_LIBUSB;
     } else if (!strcasecmp("linux", str)) {
         d->backend = BACKEND_LINUX;
     } else {
+        dbg_printf("Invalid backend: %s\n", str);
         status = BLADERF_ERR_INVAL;
     }
 
@@ -96,13 +114,20 @@ static int handle_device(struct bladerf_devinfo *d, char *value)
     char *bus = value;
     char *addr = strchr(value, ':');
 
-    if (addr && ++addr != '\0') {
+    if (addr && addr[1] != '\0') {
+
+        /* Null-terminate bus and set addr to start of addr text */
+        *addr = '\0';
+        addr++;
+
         d->usb_bus = str2uint(bus, 0, BUS_UNDEFINED - 1, &bus_ok);
         d->usb_addr = str2uint(addr, 0, ADDR_UNDEFINED - 1, &addr_ok);
 
         if (bus_ok && addr_ok) {
             status = 0;
             dbg_printf("Device: %d:%d\n", d->usb_bus, d->usb_addr);
+        } else {
+            dbg_printf("Bad bus (%s) or address (%s)\n", bus, addr);
         }
     }
 
@@ -115,6 +140,7 @@ static int handle_instance(struct bladerf_devinfo *d, char *value)
 
     d->instance = str2uint(value, 0, INST_UNDEFINED - 1, &ok);
     if (!ok) {
+        dbg_printf("Bad instance: %s\n", value);
         return BLADERF_ERR_INVAL;
     } else {
         dbg_printf("Instance: %u\n", d->instance);
@@ -128,6 +154,7 @@ static int handle_serial(struct bladerf_devinfo *d, char *value)
 
     d->serial = str2uint64(value, 0, SERIAL_UNDEFINED - 1, &ok);
     if (!ok) {
+        dbg_printf("Bad serial: %s\n", value);
         return BLADERF_ERR_INVAL;
     } else {
         dbg_printf("Serial 0x%016lX\n", d->serial);
@@ -192,7 +219,7 @@ int str2devinfo(const char *dev_id_const, struct bladerf_devinfo *d)
     }
 
     /* Extract backend */
-    token = strtok_r(dev_id, DELIM_SPACE, &saveptr);
+    token = strtok_r(dev_id, ":", &saveptr);
 
     /* We require a valid backend -- args only is not supported */
     if (token) {

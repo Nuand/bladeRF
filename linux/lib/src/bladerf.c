@@ -19,6 +19,7 @@
 #include "file_ops.h"
 #include "debug.h"
 #include "backend.h"
+#include "device_identifier.h"
 
 #ifndef BLADERF_DEV_DIR
 #   define BLADERF_DEV_DIR "/dev/"
@@ -229,11 +230,6 @@ void bladerf_free_device_list(struct bladerf_devinfo *devices, size_t n)
 struct bladerf * bladerf_open_with_devinfo(struct bladerf_devinfo *devinfo)
 {
     return backend_open(devinfo);
-}
-
-static int str2devinfo(const char *str, struct bladerf_devinfo *devinfo)
-{
-    return 0;
 }
 
 /* dev path becomes device specifier string (osmosdr-like) */
