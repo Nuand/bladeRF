@@ -247,7 +247,7 @@ void lms_rxvga1_set_gain(struct bladerf *dev, uint8_t gain)
 {
     uint8_t data;
     if (gain > 120) {
-        fprintf(stderr, "%s: %d being clamped to 120\n", __FUNCTION__, gain);
+        dbg_printf("%s: %d being clamped to 120\n", __FUNCTION__, gain);
         gain = 120;
     }
     bladerf_lms_read(dev, 0x76, &data);

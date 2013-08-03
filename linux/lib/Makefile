@@ -21,8 +21,7 @@ BIN_DIR := bin
 
 SRC := $(wildcard $(SRC_DIR)/*.c)
 OBJ = $(SRC:.c=.o)
-
-# Craft the various file names associated with the library
+# Craft the various file names associated with the library 
 LIB_SO_NAME := $(LIB_NAME).so.$(LIB_VER_MAJ)
 LIB_NAME_FULL := $(LIB_SO_NAME).$(LIB_VER_MIN).$(LIB_VER_PAT)
 
@@ -69,7 +68,9 @@ endif
 # Default install prefix
 INSTALL_PREFIX ?= /usr
 
-all: shared static
+# XXX threw in a quick and dirty test program to use until
+#     we're ready to bring the CLI into the mix
+all: shared static test
 
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
@@ -89,9 +90,11 @@ shared: $(LIB_DIR) $(SHARED_LIB)
 $(SHARED_LIB): $(OBJ)
 	$(CC) -shared -Wl,-soname,$(LIB_SO_NAME) $(OBJ) $(LDFLAGS) -o $@
 	@cd $(LIB_DIR); \
-		ln -fs $(LIB_NAME_FULL) $(LIB_SO_NAME).$(LIB_VER_MIN); \
-		ln -fs $(LIB_SO_NAME).$(LIB_VER_MIN) $(LIB_SO_NAME); \
-		ln -fs $(LIB_SO_NAME) $(LIB_NAME).so
+		if [ -f $(LIB_NAME_FULL) ]; then \
+			ln -fs $(LIB_NAME_FULL) $(LIB_SO_NAME).$(LIB_VER_MIN); \
+			ln -fs $(LIB_SO_NAME).$(LIB_VER_MIN) $(LIB_SO_NAME); \
+			ln -fs $(LIB_SO_NAME) $(LIB_NAME).so; \
+		fi
 
 libbladeRF.pc: shared
 	@echo "prefix=${INSTALL_PREFIX}" > $@
@@ -131,6 +134,10 @@ clean:
 	rm -rf $(BIN_DIR)
 	rm -f $(OBJ)
 	rm -f libbladeRF.pc
+	rm -f test
 	$(MAKE) -C doc/doxygen clean
+
+test: test.c $(STATIC_LIB)
+	gcc -ggdb3 -O0 $^ -lusb-1.0 -o test
 
 .PHONY: clean doc

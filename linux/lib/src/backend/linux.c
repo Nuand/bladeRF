@@ -35,9 +35,8 @@ static inline size_t min_sz(size_t x, size_t y)
     return x < y ? x : y;
 }
 
-/* TODO clean this up with some labels for erroring out */
-/* XXX: This function definition changed so it needs to be revisited */
-int linux_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size)
+static int linux_load_fpga(struct bladerf *dev,
+                           uint8_t *image, size_t image_size)
 {
     int ret, fpga_status;
     size_t written;         /* Total # of bytes written */
@@ -113,7 +112,9 @@ int linux_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size)
 }
 
 
-int linux_flash_firmware(struct bladerf *dev, const char *firmware)
+/* XXX fix for new interface -- See FPGA load */
+#if 0
+static int linux_flash_firmware(struct bladerf *dev, const char *firmware)
 {
     int fw_fd, upgrade_status, ret;
     struct stat fw_stat;
@@ -183,9 +184,10 @@ int linux_flash_firmware(struct bladerf *dev, const char *firmware)
     free(fw_param.ptr);
     return ret;
 }
+#endif
 
-int linux_get_fw_version(struct bladerf *dev,
-                            unsigned int *major, unsigned int *minor)
+static int linux_get_fw_version(struct bladerf *dev,
+                                unsigned int *major, unsigned int *minor)
 {
     int status;
     struct bladeRF_version ver;
@@ -224,7 +226,7 @@ static int linux_is_fpga_configured(struct bladerf *dev)
  * Si5338 register read / write functions
  */
 
-int linux_si5338_read(struct bladerf *dev, uint8_t address, uint8_t *val)
+static int linux_si5338_read(struct bladerf *dev, uint8_t address, uint8_t *val)
 {
     int ret;
     struct uart_cmd uc;
@@ -238,7 +240,7 @@ int linux_si5338_read(struct bladerf *dev, uint8_t address, uint8_t *val)
     return ret;
 }
 
-int linux_si5338_write(struct bladerf *dev, uint8_t address, uint8_t val)
+static int linux_si5338_write(struct bladerf *dev, uint8_t address, uint8_t val)
 {
     struct uart_cmd uc;
     struct bladerf_linux *backend = (struct bladerf_linux *)dev->backend;
@@ -251,7 +253,7 @@ int linux_si5338_write(struct bladerf *dev, uint8_t address, uint8_t val)
  * LMS register read / write functions
  */
 
-int linux_lms_read(struct bladerf *dev, uint8_t address, uint8_t *val)
+static int linux_lms_read(struct bladerf *dev, uint8_t address, uint8_t *val)
 {
     int ret;
     struct uart_cmd uc;
@@ -264,7 +266,7 @@ int linux_lms_read(struct bladerf *dev, uint8_t address, uint8_t *val)
     return ret;
 }
 
-int linux_lms_write(struct bladerf *dev, uint8_t address, uint8_t val)
+static int linux_lms_write(struct bladerf *dev, uint8_t address, uint8_t val)
 {
     struct uart_cmd uc;
     struct bladerf_linux *backend = (struct bladerf_linux *)dev->backend;
@@ -276,7 +278,7 @@ int linux_lms_write(struct bladerf *dev, uint8_t address, uint8_t val)
 /*------------------------------------------------------------------------------
  * GPIO register read / write functions
  */
-int linux_gpio_read(struct bladerf *dev, uint32_t *val)
+static int linux_gpio_read(struct bladerf *dev, uint32_t *val)
 {
     int ret;
     int i;
@@ -303,7 +305,7 @@ int linux_gpio_read(struct bladerf *dev, uint32_t *val)
     return ret;
 }
 
-int linux_gpio_write(struct bladerf *dev, uint32_t val)
+static int linux_gpio_write(struct bladerf *dev, uint32_t val)
 {
     struct uart_cmd uc;
     int ret;
@@ -336,7 +338,7 @@ int linux_gpio_write(struct bladerf *dev, uint32_t val)
 /*------------------------------------------------------------------------------
  * VCTCXO DAC register write
  */
-int linux_dac_write(struct bladerf *dev, uint16_t val)
+static int linux_dac_write(struct bladerf *dev, uint16_t val)
 {
     struct uart_cmd uc;
     uc.word = val;
@@ -354,7 +356,7 @@ int linux_dac_write(struct bladerf *dev, uint16_t val)
 }
 
 /* TODO Fail out if n > ssize_t max, as we can't return that. */
-ssize_t linux_write_samples(struct bladerf *dev, int16_t *samples, size_t n)
+static ssize_t linux_write_samples(struct bladerf *dev, int16_t *samples, size_t n)
 {
     ssize_t i, ret = 0;
     size_t bytes_written = 0;
@@ -388,8 +390,7 @@ ssize_t linux_write_samples(struct bladerf *dev, int16_t *samples, size_t n)
 }
 
 /* TODO Fail out if n > ssize_t max, as we can't return that */
-ssize_t linux_read_samples(struct bladerf *dev,
-                            int16_t *samples, size_t n)
+static ssize_t linux_read_samples(struct bladerf *dev, int16_t *samples, size_t n)
 {
     ssize_t i, ret = 0;
     size_t bytes_read = 0;
@@ -423,17 +424,23 @@ ssize_t linux_read_samples(struct bladerf *dev,
 }
 
 /* XXX: For realsies */
-int linux_get_fpga_version(struct bladerf *dev, unsigned int *maj, unsigned int *min)
+static int linux_get_fpga_version(struct bladerf *dev, unsigned int *maj, unsigned int *min)
 {
     *min = *maj = 0;
     return 0;
 }
 
 /* XXX: For realsies */
-int linux_get_serial(struct bladerf *dev, uint64_t *serial)
+static int linux_get_serial(struct bladerf *dev, uint64_t *serial)
 {
     *serial = 0xdeadbeef;
     return 0;
+}
+
+static struct bladerf * linux_open(struct bladerf_devinfo *info)
+{
+    dbg_printf("\"Hello\" in linux open impl\n");
+    return NULL;
 }
 
 int linux_close(struct bladerf *dev)
@@ -442,14 +449,17 @@ int linux_close(struct bladerf *dev)
 }
 
 const struct bladerf_fn bladerf_linux_fn = {
+    .open                   =   linux_open,
+    .close                  =   linux_close,
+
     .load_fpga              =   linux_load_fpga,
     .is_fpga_configured     =   linux_is_fpga_configured,
+
+    .flash_firmware         =   NULL,
 
     .get_serial             =   linux_get_serial,
     .get_fw_version         =   linux_get_fw_version,
     .get_fpga_version       =   linux_get_fpga_version,
-
-    .close                  =   linux_close,
 
     .gpio_write             =   linux_gpio_write,
     .gpio_read              =   linux_gpio_read,

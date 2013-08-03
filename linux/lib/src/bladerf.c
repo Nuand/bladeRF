@@ -18,6 +18,7 @@
 #include "si5338.h"
 #include "file_ops.h"
 #include "debug.h"
+#include "backend.h"
 
 #ifndef BLADERF_DEV_DIR
 #   define BLADERF_DEV_DIR "/dev/"
@@ -32,7 +33,9 @@
  * Device discovery & initialization/deinitialization
  *----------------------------------------------------------------------------*/
 
-/* Return 0 if dirent name matches that of what we expect for a bladerf dev */
+/* XXX REMOVE (or move to backend/linux.c)
+ * Return 0 if dirent name matches that of what we expect for a bladerf dev */
+#if 0
 static int bladerf_filter(const struct dirent *d)
 {
     const size_t pfx_len = strlen(BLADERF_DEV_PFX);
@@ -56,6 +59,7 @@ static int bladerf_filter(const struct dirent *d)
 
     return 0;
 }
+#endif
 
 /* Helper routine for freeing dirent list from scandir() */
 static inline void free_dirents(struct dirent **d, int n)
@@ -91,7 +95,11 @@ int bladerf_init_device(struct bladerf *dev)
     return 0;
 }
 
-/* Open and if a non-NULL bladerf_devinfo ptr is provided, attempt to verify
+
+#if 0
+/* XXX REMOVE (or move to backend/linux.c)
+ *
+ * Open and if a non-NULL bladerf_devinfo ptr is provided, attempt to verify
  * that the device we opened is a bladeRF via a info calls.
  * (Does not fill out devinfo's path) */
 struct bladerf * _bladerf_open_info(const char *dev_path,
@@ -155,7 +163,10 @@ bladerf_open__err:
     free(ret);
     return NULL;
 }
+#endif
 
+/* XXX (Some form of this will move to backend/linux.c) */
+#if 0
 ssize_t bladerf_get_device_list(struct bladerf_devinfo **devices)
 {
     struct bladerf_devinfo *ret;
@@ -207,37 +218,17 @@ bladerf_get_device_list_out:
     free_dirents(matches, num_matches);
     return num_devices;
 }
+#endif
 
+/* XXX I think we might be able to just lett the user free() the device list */
 void bladerf_free_device_list(struct bladerf_devinfo *devices, size_t n)
 {
-    size_t i;
-
-    /* Free items returned by backend_probe */
-
-    if (devices) {
-        for (i = 0; i < n; i++)
-            free(devices[i].path);
-        free(devices);
-    }
-}
-
-char * bladerf_dev_path(struct bladerf *dev)
-{
-    /* XXX: Temporary fix
-    if( dev ) {
-        return dev->path;
-    } else {
-        return NULL;
-    }
-    */
-    return NULL;
+    /* XXX Free items returned by backend_probe */
 }
 
 struct bladerf * bladerf_open_with_devinfo(struct bladerf_devinfo *devinfo)
 {
-    /* Switch on backend type */
-
-    return NULL;
+    return backend_open(devinfo);
 }
 
 static int str2devinfo(const char *str, struct bladerf_devinfo *devinfo)
@@ -357,11 +348,11 @@ int bladerf_get_rational_sample_rate(struct bladerf *dev, bladerf_module_t modul
 int bladerf_set_txvga2(struct bladerf *dev, int gain)
 {
     if( gain > 25 ) {
-        fprintf( stderr, "%s: %d being clamped to 25dB\n", __FUNCTION__, gain );
+        dbg_printf( "%s: %d being clamped to 25dB\n", __FUNCTION__, gain );
         gain = 25;
     }
     if( gain < 0 ) {
-        fprintf( stderr, "%s: %d being clamped to 0dB\n", __FUNCTION__, gain );
+        dbg_printf( "%s: %d being clamped to 0dB\n", __FUNCTION__, gain );
         gain = 0;
     }
     /* TODO: Make return values for lms call and return it for failure */
@@ -381,11 +372,11 @@ int bladerf_get_txvga2(struct bladerf *dev, int *gain)
 int bladerf_set_txvga1(struct bladerf *dev, int gain)
 {
     if( gain < -35 ) {
-        fprintf( stderr, "%s: %d being clamped to -35dB\n", __FUNCTION__, gain );
+        dbg_printf( "%s: %d being clamped to -35dB\n", __FUNCTION__, gain );
         gain = -35;
     }
     if( gain > -4 ) {
-        fprintf( stderr, "%s: %d being clamped to -4dB\n", __FUNCTION__, gain );
+        dbg_printf( "%s: %d being clamped to -4dB\n", __FUNCTION__, gain );
         gain = -4;
     }
     /* TODO: Make return values for lms call and return it for failure */

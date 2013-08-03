@@ -8,12 +8,6 @@
 #include <libbladeRF.h>
 
 typedef enum {
-    BACKEND_INVALID = -1,
-    BACKEND_LINUX,
-    BACKEND_LIBUSB,
-} bladerf_backend_t;
-
-typedef enum {
     ETYPE_ERRNO,
     ETYPE_LIBBLADERF,
     ETYPE_BACKEND,
@@ -36,17 +30,25 @@ struct bladerf;
 /* Driver specific function table.  These functions are required for each
    unique platform to operate the device. */
 struct bladerf_fn {
+    /* XXX Add a backend-specific probe here */
+
+    /* Opening device based upon specified device info */
+    struct bladerf * (*open)(struct bladerf_devinfo *info);
+
+    /* Closing of the device and freeing of the data */
+    int (*close)(struct bladerf *dev);
+
     /* FPGA Loading and checking */
     int (*load_fpga)(struct bladerf *dev, uint8_t *image, size_t image_size);
     int (*is_fpga_configured)(struct bladerf *dev);
+
+    /* Flash FX3 firmware */
+    int (*flash_firmware)(struct bladerf *dev, uint8_t *image, size_t image_size);
 
     /* Platform information */
     int (*get_serial)(struct bladerf *dev, uint64_t *serial);
     int (*get_fw_version)(struct bladerf *dev, unsigned int *maj, unsigned int *min);
     int (*get_fpga_version)(struct bladerf *dev, unsigned int *maj, unsigned int *min);
-
-    /* Closing of the device and freeing of the data */
-    int (*close)(struct bladerf *dev);
 
     /* GPIO accessors */
     int (*gpio_write)(struct bladerf *dev, uint32_t val);

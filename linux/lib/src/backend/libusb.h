@@ -3,6 +3,6 @@
 
 #include "bladerf_priv.h"
 
-const struct bladerf_fn lusb_fn;
+extern const struct bladerf_fn bladerf_lusb_fn;
 
 #endif

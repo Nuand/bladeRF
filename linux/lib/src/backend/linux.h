@@ -3,6 +3,6 @@
 
 #include "bladerf_priv.h"
 
-const struct bladerf_fn linux_fn;
+extern const struct bladerf_fn bladerf_linux_fn;
 
 #endif

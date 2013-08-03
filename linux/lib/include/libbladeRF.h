@@ -41,17 +41,26 @@ struct bladerf;
 
 /** @} (End RETCODES) */
 
+
+/**
+ * Backend by which the host communicates with the device
+ */
+typedef enum {
+    BACKEND_ANY,        /**< "Don't Care" -- use any available backend */
+    BACKEND_LINUX,      /**< Linux kernel driver */
+    BACKEND_LIBUSB,     /**< libusb */
+} bladerf_backend_t;
+
+
 /**
  * Information about a bladeRF attached to the system
  */
 struct bladerf_devinfo {
-    char *path;                 /**< Path to device */
+    bladerf_backend_t backend;  /**< Backend to use when connecting to device */
     uint64_t serial;            /**< Device's serial number */
-    int fpga_configured;        /**< Is the FPGA loaded? */
-    unsigned int fpga_ver_maj;  /**< FPGA major version number */
-    unsigned int fpga_ver_min;  /**< FPGA minor version number */
-    unsigned int fw_ver_maj;    /**< Firmware major version number */
-    unsigned int fw_ver_min;    /**< Firmware minor version number */
+    uint8_t  usb_bus;           /**< Bus # device is attached to */
+    uint8_t  usb_addr;          /**< Device address on bus */
+    unsigned int instance;      /**< Device instance or ID */
 };
 
 /**
@@ -124,24 +133,6 @@ typedef enum {
 /**
  * @defgroup FN_INIT    Initialization/deinitialization
  *
- * The below snippet shows the general process of finding and acquiring a handle
- * to a bladeRF device.
- *
- * @code
- *  struct bladerf_devinfo *available_devs = NULL;
- *  ssize_t num_available_devs;
- *  struct bladerf *dev = NULL;
- *  char *desired_dev_path;
- *
- *  num_availble_devs = bladerf_get_device_list(&available_devs);
- *  if (num_availble_devs >= 0) {
- *      desired_dev_path = desired_device(available_devs, num_available_devs);
- *      dev = bladerf_open(desired_dev_path);
- *      bladerf_free_device_list(available_devs, num_available_devs);
- *  }
- *
- * @endcode
- *
  * @{
  */
 
@@ -197,11 +188,13 @@ struct bladerf * bladerf_open_with_devinfo(struct bladerf_devinfo *devinfo);
  *
  * The 'backend' describes the mechanism used to communicate with the device,
  * and may be one of the following:
- *   - libusb:  libusb (>= 1.0.9)
+ *   - libusb:  libusb (See libusb changelog notes for required version, given
+ *   your OS and controller)
  *   - linux:   Linux Kernel Driver
  *
  * If no arguments are provided after the backend, the first encountred
- * device on the specified backend will be opened.
+ * device on the specified backend will be opened. Note that a backend is
+ * required, if any arguments are to be provided.
  *
  * Next, any provided arguments are provide as used to find the desired device.
  * Be sure not to overconstrain the search. Generally, only one of the above

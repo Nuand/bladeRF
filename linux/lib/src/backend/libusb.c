@@ -11,6 +11,7 @@
 #include <libusb-1.0/libusb.h>
 
 #include "bladerf_priv.h"
+#include "debug.h"
 
 #define BLADERF_LIBUSB_TIMEOUT_MS 1000
 
@@ -73,7 +74,8 @@ static int end_fpga_programming(struct bladerf *dev)
     int result;
     int status = vendor_command(dev, BLADE_USB_CMD_QUERY_FPGA_STATUS, &result);
     if (status < 0) {
-        fprintf(stderr, "%s: Received response of (%d): %s\n", __func__, status, libusb_error_name(status));
+        dbg_printf("Received response of (%d): %s\n",
+                    status, libusb_error_name(status));
         return status;
     } else {
         return result;
@@ -92,6 +94,40 @@ int is_fpga_configured(struct bladerf *dev)
     }
 }
 
+static struct bladerf * lusb_open(struct bladerf_devinfo *info)
+{
+    dbg_printf("\"Failing\" in lusb open impl\n");
+    return NULL;
+}
+
+static int lusb_close(struct bladerf *dev)
+{
+    int status = 0;
+    struct lusb *lusb = dev->backend;
+
+    status = libusb_release_interface(lusb->handle, 0);
+
+    if (status) {
+        dbg_printf("error releasing 0 usb_handle\n");
+        status = BLADERF_ERR_IO;
+    }
+
+    status = libusb_release_interface(lusb->handle, 1);
+    if (status) {
+        dbg_printf("error releasing 1 usb_handle\n");
+        status = BLADERF_ERR_IO;
+    }
+
+    status = libusb_release_interface(lusb->handle, 2);
+    if(status) {
+        dbg_printf("error releasing 2 usb_handle\n");
+        status = BLADERF_ERR_IO;
+    }
+
+    libusb_close(lusb->handle);
+
+    return status;
+}
 
 static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size)
 {
@@ -104,7 +140,7 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
     /*
     status = libusb_set_interface_alt_setting(dev->usb_handle, 0, 0);
     if(status) {
-        fprintf(stderr, "libusb_set_interface_alt_setting: ");
+        dbg_printf("libusb_set_interface_alt_setting: ");
         print_libusb_error(status);
         goto deallocate;
     }*/
@@ -157,40 +193,40 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
     /* Go into RF link mode by selecting interface 1 */
     status = libusb_set_interface_alt_setting(lusb->handle, 1, 0);
     if(status) {
-        fprintf(stderr, "libusb_set_interface_alt_setting: ");
+        dbg_printf("libusb_set_interface_alt_setting: ");
     }
 
     return 0;
 }
 
-static int lusb_close(struct bladerf *dev)
+static int lusb_is_fpga_configured(struct bladerf *dev)
 {
-    int status = 0;
-    struct lusb *lusb = dev->backend;
-
-    status = libusb_release_interface(lusb->handle, 0);
-
-    if (status) {
-        fprintf(stderr, "error releasing 0 usb_handle\n");
-        status = BLADERF_ERR_IO;
-    }
-
-    status = libusb_release_interface(lusb->handle, 1);
-    if (status) {
-        fprintf(stderr, "error releasing 1 usb_handle\n");
-        status = BLADERF_ERR_IO;
-    }
-
-    status = libusb_release_interface(lusb->handle, 2);
-    if(status) {
-        fprintf(stderr, "error releasing 2 usb_handle\n");
-        status = BLADERF_ERR_IO;
-    }
-
-    libusb_close(lusb->handle);
-
-    return status;
+    return 0;
 }
+
+static int lusb_flash_firmware(struct bladerf *dev,
+                               uint8_t *image, size_t image_size)
+{
+    return 0;
+}
+
+static int lusb_get_serial(struct bladerf *dev, uint64_t *serial)
+{
+    return 0;
+}
+
+static int lusb_get_fw_version(struct bladerf *dev,
+                               unsigned int *maj, unsigned int *min)
+{
+    return 0;
+}
+
+static int lusb_get_fpga_version(struct bladerf *dev,
+                                 unsigned int *maj, unsigned int *min)
+{
+    return 0;
+}
+
 
 /* Returns BLADERF_ERR_* on failure */
 static int access_peripheral(struct lusb *lusb, int per, int dir,
@@ -211,7 +247,7 @@ static int access_peripheral(struct lusb *lusb, int per, int dir,
                                            BLADERF_LIBUSB_TIMEOUT_MS);
 
     if (libusb_status < 0) {
-        fprintf(stderr, "could not access peripheral\n");
+        dbg_printf("could not access peripheral\n");
         return BLADERF_ERR_IO;
     }
 
@@ -413,7 +449,7 @@ static ssize_t lusb_read_samples(struct bladerf *dev, int16_t *samples, size_t n
                                       BLADERF_LIBUSB_TIMEOUT_MS);
 
         if(status < 0) {
-            fprintf(stderr, "error reading samples (%d): %s\n",
+            dbg_printf("error reading samples (%d): %s\n",
                         status, libusb_error_name(status));
 
             bladerf_set_error(&dev->error, ETYPE_BACKEND, status);
@@ -427,7 +463,8 @@ static ssize_t lusb_read_samples(struct bladerf *dev, int16_t *samples, size_t n
     return bytes_to_c16_samples(bytes_read);
 }
 
-static ssize_t lusb_write_samples(struct bladerf *dev, int16_t *samples, size_t n)
+static ssize_t lusb_write_samples(struct bladerf *dev,
+                                  int16_t *samples, size_t n)
 {
     int status, transferred;
     size_t bytes_written;
@@ -442,13 +479,13 @@ static ssize_t lusb_write_samples(struct bladerf *dev, int16_t *samples, size_t 
 
         transferred = 0;
         status = libusb_bulk_transfer(lusb->handle, EP_OUT(1),
-                                      (unsigned char *)(samples + bytes_written),
-                                      (int)(bytes_total - bytes_written),
-                                      &transferred,
-                                      BLADERF_LIBUSB_TIMEOUT_MS);
+                                     (unsigned char *)(samples + bytes_written),
+                                     (int)(bytes_total - bytes_written),
+                                     &transferred,
+                                     BLADERF_LIBUSB_TIMEOUT_MS);
 
         if(status < 0) {
-            fprintf(stderr, "error writing samples (%d): %s\n",
+            dbg_printf("error writing samples (%d): %s\n",
                         status, libusb_error_name(status));
 
             bladerf_set_error(&dev->error, ETYPE_BACKEND, status);
@@ -462,16 +499,30 @@ static ssize_t lusb_write_samples(struct bladerf *dev, int16_t *samples, size_t 
     return bytes_to_c16_samples(bytes_written);
 }
 
-const struct bladerf_fn lusb_fn = {
-    .load_fpga = lusb_load_fpga,
-    .close = lusb_close,
-    .gpio_write = lusb_gpio_write,
-    .gpio_read = lusb_gpio_read,
-    .si5338_write = lusb_si5338_write,
-    .si5338_read = lusb_si5338_read,
-    .lms_write = lusb_lms_write,
-    .lms_read = lusb_lms_read,
-    .dac_write = lusb_dac_write,
-    .write_samples = lusb_write_samples,
-    .read_samples = lusb_read_samples,
+const struct bladerf_fn bladerf_lusb_fn = {
+    .open               = lusb_open,
+    .close              = lusb_close,
+
+    .load_fpga          = lusb_load_fpga,
+    .is_fpga_configured = lusb_is_fpga_configured,
+
+    .flash_firmware     = lusb_flash_firmware,
+
+    .get_serial         = lusb_get_serial,
+    .get_fw_version     = lusb_get_fw_version,
+    .get_fpga_version   = lusb_get_fpga_version,
+
+    .gpio_write         = lusb_gpio_write,
+    .gpio_read          = lusb_gpio_read,
+
+    .si5338_write       = lusb_si5338_write,
+    .si5338_read        = lusb_si5338_read,
+
+    .lms_write          = lusb_lms_write,
+    .lms_read           = lusb_lms_read,
+
+    .dac_write          = lusb_dac_write,
+
+    .write_samples      = lusb_write_samples,
+    .read_samples       = lusb_read_samples,
 };
