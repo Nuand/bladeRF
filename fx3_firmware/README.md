@@ -7,7 +7,7 @@ The FX3 currently has 3 interfaces associated with it:
   - RF Link with the LMS6002D
   - Control Interface
 
-The FPGA loder is responsible for loading, or reloading, the FPGA over the USB link.
+The FPGA loader is responsible for loading, or reloading, the FPGA over the USB link.
 
 The RF link ushers the baseband IQ samples between the FPGA and the host over the USB link.
 
@@ -40,5 +40,10 @@ For more information about developing and debugging FX3 firmware, see the [FX3 P
 [fx3_prog_manual]: http://www.cypress.com/?rID=52250  (FX3 Programmer's Manual)
 
 ## Pre-built Firmware Binaries ##
-Pre-built binaries are not available yet due to the volatility of the current firmware. Once we reach a stable point in the codebase, this file will be update to include links to firmware releases. Bear with us, and check back soon!
+Pre-built binaries are not being posted to a "release page" yet due to the volatility of the current firmware. Once we reach a stable point in the codebase, this file will be update to point to said page.  Bear with us, and check back soon!
+
+For the time being, we'll try to keep an updated link to a development build here:
+2013-08-04 (Debug build as of 465b96e7999a96d2d845a0e838628b5334c3e6fd)
+MD5: 34c158b08f89f7cec614f2fc603f0e6b
+Link: http://nuand.com/~bpadalino/bladeRF.img
 
