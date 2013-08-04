@@ -14,7 +14,7 @@ int read_file(const char *filename, uint8_t **buf_ret, size_t *size_ret)
     struct stat sb;
     FILE *f;
     int fd;
-    char *buf;
+    uint8_t *buf;
     ssize_t n_read;
 
     f = fopen(filename, "rb");
@@ -54,6 +54,8 @@ int read_file(const char *filename, uint8_t **buf_ret, size_t *size_ret)
         goto os_read_file__err_fread;
     }
 
+    *buf_ret = buf;
+    *size_ret = sb.st_size;
     return 0;
 
 os_read_file__err_fread:
