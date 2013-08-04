@@ -21,6 +21,11 @@ It is not necessary to rebuild the Cypress FX3 firmware (hooray!), and there are
 
 If you've made it this far, congratulations!  You can read (or write) raw samples in a variety of formats using the `bladeRF-cli` tool, or you can use third-party tools that support the bladeRF.
 
+## Building for use with GNU Radio ##
+[Directions for building and using this with GNU Radio][kb3gtn_guide] have been compiled by kb3gtn.
+
+[kb3gtn_guide]: http://forums.nuand.com/forums/viewtopic.php?f=9&t=2804 (kb3gtn guide)
+
 ## Building Procedure ##
 Each subsection of the source code can be built by itself and maintains their own README files for building.  The recommended build flow is as such:
 
