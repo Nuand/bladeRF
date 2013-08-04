@@ -60,7 +60,6 @@ static int bladerf_filter(const struct dirent *d)
 
     return 0;
 }
-#endif
 
 /* Helper routine for freeing dirent list from scandir() */
 static inline void free_dirents(struct dirent **d, int n)
@@ -71,7 +70,9 @@ static inline void free_dirents(struct dirent **d, int n)
         free(d);
     }
 }
+#endif
 
+/* XXX Mode to bladerf_priv - this is not a public routine */
 int bladerf_init_device(struct bladerf *dev)
 {
     /* Set the GPIO pins to enable the LMS and select the low band */
@@ -546,17 +547,29 @@ int bladerf_flash_firmware(struct bladerf *dev, const char *firmware_file)
     status = read_file(firmware_file, &buf, &buf_size);
     if (!status) {
 
-        /* TODO sanity check FPGA:
-         *  - Check for a reasonable size
+        /* Sanity check firmware
+         *
+         * Quick and dirty check for any absurd sizes. This is arbitrarily
+         * chosen based upon the current FX3 image size.
+         *
+         * TODO This should be replaced with something that also looks for:
          *  - Known header/footer on images?
          *  - Checksum/hash?
          */
+        if (!getenv("BLADERF_SKIP_FW_SIZE_CHECK") &&
+                (buf_size < (50 * 1024) || (buf_size > (1 * 1024 * 1024)))) {
+            dbg_printf("Error: Detected potentially invalid firmware file.\n");
+            dbg_printf("Define BLADERF_SKIP_FW_SIZE_CHECK in your evironment "
+                       "to skip this check.\n");
+            status = BLADERF_ERR_INVAL;
+        } else {
+            status = dev->fn->load_fpga(dev, buf, buf_size);
+        }
 
-        status = dev->fn->load_fpga(dev, buf, buf_size);
         free(buf);
     }
 
-    return 0;
+    return status;
 }
 
 int bladerf_load_fpga(struct bladerf *dev, const char *fpga_file)
@@ -564,15 +577,24 @@ int bladerf_load_fpga(struct bladerf *dev, const char *fpga_file)
     uint8_t *buf;
     size_t  buf_size;
     int status;
+    int is_loaded;
 
-    status = read_file(fpga_file, &buf, &buf_size);
-    if (!status ) {
+        is_loaded = dev->fn->is_fpga_configured(dev);
+        if (is_loaded > 0) {
+            dbg_printf("FPGA is already loaded -- reloading.\n");
+        } else if (is_loaded < 0) {
+            dbg_printf("Failed to determine FPGA status. (%d) "
+                       "Attempting to load anyway...\n", is_loaded);
+        }
 
         /* TODO sanity check FPGA:
-         *  - Check for a reasonable size
+         *  - Check for x40 vs x115 and verify FPGA image size
          *  - Known header/footer on images?
          *  - Checksum/hash?
          */
+
+    status = read_file(fpga_file, &buf, &buf_size);
+    if (!status ) {
 
         status = dev->fn->load_fpga(dev, buf, buf_size);
         free(buf);

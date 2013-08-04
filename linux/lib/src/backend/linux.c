@@ -46,19 +46,6 @@ static int linux_load_fpga(struct bladerf *dev,
     struct bladerf_linux *backend = (struct bladerf_linux *)dev->backend;
     assert(dev && image);
 
-    /* TODO Check FPGA on the board versus size of image */
-
-    if (ioctl(backend->fd, BLADE_QUERY_FPGA_STATUS, &fpga_status) < 0) {
-        dbg_printf("ioctl(BLADE_QUERY_FPGA_STATUS) failed: %s\n",
-                    strerror(errno));
-        return BLADERF_ERR_UNEXPECTED;
-    }
-
-    /* FPGA is already programmed */
-    if (fpga_status) {
-        fprintf( stderr, "FPGA aleady loaded - reloading!\n" );
-    }
-
     if (ioctl(backend->fd, BLADE_BEGIN_PROG, &fpga_status)) {
         dbg_printf("ioctl(BLADE_BEGIN_PROG) failed: %s\n", strerror(errno));
         return BLADERF_ERR_UNEXPECTED;
