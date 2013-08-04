@@ -43,7 +43,8 @@ For more information about developing and debugging FX3 firmware, see the [FX3 P
 Pre-built binaries are not being posted to a "release page" yet due to the volatility of the current firmware. Once we reach a stable point in the codebase, this file will be update to point to said page.  Bear with us, and check back soon!
 
 For the time being, we'll try to keep an updated link to a development build here:
-2013-08-04 (Debug build as of 465b96e7999a96d2d845a0e838628b5334c3e6fd)
-MD5: 34c158b08f89f7cec614f2fc603f0e6b
-Link: http://nuand.com/~bpadalino/bladeRF.img
+
+- 2013-08-04 (Debug build as of 465b96e7999a96d2d845a0e838628b5334c3e6fd)
+- MD5: 34c158b08f89f7cec614f2fc603f0e6b
+- Link: http://nuand.com/~bpadalino/bladeRF.img
 
