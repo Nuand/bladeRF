@@ -8,10 +8,10 @@
 #include <libbladeRF.h>
 
 /* Reserved values for bladerf_devinfo fields to indicate "undefined" */
-#define DEVINFO_SERIAL_UNDEFINED    UINT64_MAX
-#define DEVINFO_BUS_UNDEFINED       UINT8_MAX
-#define DEVINFO_ADDR_UNDEFINED      UINT8_MAX
-#define DEVINFO_INST_UNDEFINED      UINT_MAX
+#define DEVINFO_SERIAL_ANY    UINT64_MAX
+#define DEVINFO_BUS_ANY       UINT8_MAX
+#define DEVINFO_ADDR_ANY      UINT8_MAX
+#define DEVINFO_INST_ANY      UINT_MAX
 
 typedef enum {
     ETYPE_ERRNO,
@@ -111,6 +111,40 @@ void bladerf_set_error(struct bladerf_error *error,
 void bladerf_get_error(struct bladerf_error *error,
                         bladerf_error_t *type, int *val);
 
+/**
+ * Do the device instances for the two provided device info structures match
+ * (taking wildcards into account)?
+ *
+ * @param   a   Device information to compare
+ * @param   b   Device information to compare
+ *
+ * @return true on match, false otherwise
+ */
+bool bladerf_instance_matches(struct bladerf_devinfo *a,
+                              struct bladerf_devinfo *b);
 
+/**
+ * Do the serials match for the two provided device info structures match
+ * (taking wildcards into account)?
+ *
+ * @param   a   Device information to compare
+ * @param   b   Device information to compare
+ *
+ * @return true on match, false otherwise
+ */
+bool bladerf_serial_matches(struct bladerf_devinfo *a,
+                            struct bladerf_devinfo *b);
+
+/**
+ * Do the bus and addr match for the two provided device info structures match
+ * (taking wildcards into account)?
+ *
+ * @param   a   Device information to compare
+ * @param   b   Device information to compare
+ *
+ * @return true on match, false otherwise
+ */
+bool bladerf_bus_addr_match(struct bladerf_devinfo *a,
+                            struct bladerf_devinfo *b);
 #endif
 

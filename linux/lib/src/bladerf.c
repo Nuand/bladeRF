@@ -579,19 +579,19 @@ int bladerf_load_fpga(struct bladerf *dev, const char *fpga_file)
     int status;
     int is_loaded;
 
-        is_loaded = dev->fn->is_fpga_configured(dev);
-        if (is_loaded > 0) {
-            dbg_printf("FPGA is already loaded -- reloading.\n");
-        } else if (is_loaded < 0) {
-            dbg_printf("Failed to determine FPGA status. (%d) "
-                       "Attempting to load anyway...\n", is_loaded);
-        }
+    is_loaded = dev->fn->is_fpga_configured(dev);
+    if (is_loaded > 0) {
+        dbg_printf("FPGA is already loaded -- reloading.\n");
+    } else if (is_loaded < 0) {
+        dbg_printf("Failed to determine FPGA status. (%d) "
+                "Attempting to load anyway...\n", is_loaded);
+    }
 
-        /* TODO sanity check FPGA:
-         *  - Check for x40 vs x115 and verify FPGA image size
-         *  - Known header/footer on images?
-         *  - Checksum/hash?
-         */
+    /* TODO sanity check FPGA:
+     *  - Check for x40 vs x115 and verify FPGA image size
+     *  - Known header/footer on images?
+     *  - Checksum/hash?
+     */
 
     status = read_file(fpga_file, &buf, &buf_size);
     if (!status ) {

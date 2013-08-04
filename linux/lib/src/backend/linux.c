@@ -424,38 +424,6 @@ static int linux_get_serial(struct bladerf *dev, uint64_t *serial)
     return 0;
 }
 
-static inline bool instance_matches(struct bladerf_devinfo *a, struct bladerf_devinfo *b)
-{
-    return a->instance == DEVINFO_INST_UNDEFINED ||
-           b->instance == DEVINFO_INST_UNDEFINED ||
-           a->instance == b->instance;
-}
-
-
-static inline bool serial_matches(struct bladerf_devinfo *a, struct bladerf_devinfo *b)
-{
-    return a->serial == DEVINFO_SERIAL_UNDEFINED ||
-           b->serial == DEVINFO_SERIAL_UNDEFINED ||
-           a->serial == b->serial;
-}
-
-static inline bool usb_bus_addr_match(struct bladerf_devinfo *a, struct bladerf_devinfo *b)
-{
-    bool bus_match, addr_match;
-
-    bus_match = a->usb_bus == DEVINFO_BUS_UNDEFINED ||
-                b->usb_bus == DEVINFO_BUS_UNDEFINED ||
-                a->usb_bus == b->usb_bus;
-
-    addr_match = a->usb_addr == DEVINFO_BUS_UNDEFINED ||
-                 b->usb_addr == DEVINFO_BUS_UNDEFINED ||
-                 a->usb_addr == b->usb_addr;
-
-    return bus_match && addr_match;
-}
-
-
-
 static struct bladerf * linux_open(struct bladerf_devinfo *info)
 {
     char dev_name[32];
@@ -469,7 +437,7 @@ static struct bladerf * linux_open(struct bladerf_devinfo *info)
     assert(info->backend == BACKEND_LINUX);
 
     /* If an instance is specified, we start with that */
-    if (info->instance != DEVINFO_INST_UNDEFINED) {
+    if (info->instance != DEVINFO_INST_ANY) {
         snprintf(dev_name, sizeof(dev_name), "/dev/bladerf%d", info->instance);
         fd = open(dev_name, O_RDWR);
 
