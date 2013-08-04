@@ -56,6 +56,7 @@ int read_file(const char *filename, uint8_t **buf_ret, size_t *size_ret)
 
     *buf_ret = buf;
     *size_ret = sb.st_size;
+    fclose(f);
     return 0;
 
 os_read_file__err_fread:

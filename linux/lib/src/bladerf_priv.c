@@ -32,6 +32,14 @@ size_t c16_samples_to_bytes(size_t n_samples)
     return n_samples * 2 * sizeof(int16_t);
 }
 
+bool bladerf_devinfo_matches(struct bladerf_devinfo *a,
+                             struct bladerf_devinfo *b)
+{
+    return
+      bladerf_instance_matches(a,b) &&
+      bladerf_serial_matches(a,b) &&
+      bladerf_bus_addr_matches(a,b);
+}
 
 bool bladerf_instance_matches(struct bladerf_devinfo *a,
                               struct bladerf_devinfo *b)
@@ -49,8 +57,8 @@ bool bladerf_serial_matches(struct bladerf_devinfo *a,
            a->serial == b->serial;
 }
 
-bool bladerf_bus_addr_match(struct bladerf_devinfo *a,
-                            struct bladerf_devinfo *b)
+bool bladerf_bus_addr_matches(struct bladerf_devinfo *a,
+                              struct bladerf_devinfo *b)
 {
     bool bus_match, addr_match;
 

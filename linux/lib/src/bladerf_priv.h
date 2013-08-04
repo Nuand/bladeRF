@@ -112,6 +112,17 @@ void bladerf_get_error(struct bladerf_error *error,
                         bladerf_error_t *type, int *val);
 
 /**
+ * Compare two devinfo's against each other.
+ *
+ * @param   a   Device information to compare
+ * @param   b   Device information to compare
+ *
+ * @return  true on match, false otherwise
+ */
+bool bladerf_devinfo_matches(struct bladerf_devinfo *a,
+                             struct bladerf_devinfo *b);
+
+/**
  * Do the device instances for the two provided device info structures match
  * (taking wildcards into account)?
  *
@@ -144,7 +155,7 @@ bool bladerf_serial_matches(struct bladerf_devinfo *a,
  *
  * @return true on match, false otherwise
  */
-bool bladerf_bus_addr_match(struct bladerf_devinfo *a,
-                            struct bladerf_devinfo *b);
+bool bladerf_bus_addr_matches(struct bladerf_devinfo *a,
+                              struct bladerf_devinfo *b);
 #endif
 
