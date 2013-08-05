@@ -151,6 +151,9 @@ void usage(const char *argv0)
     printf("  -h, --help                       Show this help text.\n");
     printf("\n");
     printf("Notes:\n");
+    printf("  The -d option takes a device specifier string. See the bladef_open()\n");
+    printf("  documentation for more information about the format of this string.\n");
+    printf("\n");
     printf("  If the -d parameter is not provided, the first available device\n");
     printf("  will be used for the provided command, or will be opened prior\n");
     printf("  to entering interactive mode.\n");
@@ -321,8 +324,6 @@ int main(int argc, char *argv[])
         }
 
     }
-
-
 
     /* Ensure we exit with RX & TX disabled.
      * Can't do much about an error at this point anyway... */
