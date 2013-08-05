@@ -444,12 +444,17 @@ static ssize_t bladerf_write(struct file *file, const char *user_buf, size_t cou
     if (dev->intnum == 0) {
         int llen;
         buf = (char *)kmalloc(count, GFP_KERNEL);
-        if (copy_from_user(buf, user_buf, count)) {
-            status = -EFAULT;
+        if (buf) {
+            if (copy_from_user(buf, user_buf, count)) {
+                status = -EFAULT;
+            } else {
+                status = usb_bulk_msg(dev->udev, usb_sndbulkpipe(dev->udev, 2), buf, count, &llen, BLADE_USB_TIMEOUT_MS);
+            }
+            kfree(buf);
         } else {
-            status = usb_bulk_msg(dev->udev, usb_sndbulkpipe(dev->udev, 2), buf, count, &llen, BLADE_USB_TIMEOUT_MS);
+            dev_err(&dev->interface->dev, "Failed to allocate write buffer\n");
+            status = -ENOMEM;
         }
-        kfree(buf);
 
         if (status < 0)
             return status;

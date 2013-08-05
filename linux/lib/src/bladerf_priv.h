@@ -96,7 +96,7 @@ struct bladerf {
     void *backend;
 
     /* Driver-sppecific implementations */
-    struct bladerf_fn *fn;
+    const struct bladerf_fn *fn;
 };
 
 /**

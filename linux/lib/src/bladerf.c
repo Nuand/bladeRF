@@ -253,14 +253,6 @@ struct bladerf * bladerf_open(const char *dev_id)
 void bladerf_close(struct bladerf *dev)
 {
     dev->fn->close(dev);
-
-    /* XXX: Freeing here?
-    if (dev) {
-        close(dev->fd);
-        free(dev->path);
-        free(dev);
-    }
-    */
 }
 
 int bladerf_enable_module(struct bladerf *dev,
@@ -594,8 +586,7 @@ int bladerf_load_fpga(struct bladerf *dev, const char *fpga_file)
      */
 
     status = read_file(fpga_file, &buf, &buf_size);
-    if (!status ) {
-
+    if (!status) {
         status = dev->fn->load_fpga(dev, buf, buf_size);
         free(buf);
     }

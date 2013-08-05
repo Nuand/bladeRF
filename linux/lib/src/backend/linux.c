@@ -13,6 +13,7 @@
 #include "bladeRF.h"
 #include "libbladeRF.h"
 #include "bladerf_priv.h"
+#include "backend/linux.h"
 #include "debug.h"
 
 /* Linux device driver information */
@@ -34,12 +35,33 @@ static inline size_t min_sz(size_t x, size_t y)
 {
     return x < y ? x : y;
 }
+/*------------------------------------------------------------------------------
+ * FPGA & Firmware loading
+ *----------------------------------------------------------------------------*/
+
+static int linux_is_fpga_configured(struct bladerf *dev)
+{
+    int status;
+    int configured;
+    struct bladerf_linux *backend = (struct bladerf_linux *)dev->backend;
+
+    assert(dev);
+
+    status = ioctl(backend->fd, BLADE_QUERY_FPGA_STATUS, &configured);
+
+    if (status || configured < 0 || configured > 1)
+        configured = BLADERF_ERR_IO;
+
+    return configured;
+}
+
 
 static int linux_load_fpga(struct bladerf *dev,
                            uint8_t *image, size_t image_size)
 {
     int ret, fpga_status;
-    size_t written;         /* Total # of bytes written */
+    size_t written = 0;     /* Total # of bytes written */
+    size_t to_write;
     ssize_t write_tmp;      /* # bytes written in a single write() call */
     struct timeval end_time, curr_time;
     bool timed_out;
@@ -51,18 +73,22 @@ static int linux_load_fpga(struct bladerf *dev,
         return BLADERF_ERR_UNEXPECTED;
     }
 
-    written = 0;
-    do {
-        write_tmp = write(backend->fd, image + written, image_size - written);
-        if (write_tmp < 0) {
-            /* Failing out...at least attempt to "finish" programming */
-            ioctl(backend->fd, BLADE_END_PROG, &ret);
-            dbg_printf("Write failure: %s\n", strerror(errno));
-            return BLADERF_ERR_IO;
-        } else {
-            written += write_tmp;
-        }
-    } while(written < image_size);
+    /* FIXME This loops is just here to work around the fact that the
+     *       driver currently can't handle large writes... */
+    while (written < image_size) {
+        to_write = min_sz(1024, image_size - written);
+        do {
+            write_tmp = write(backend->fd, image + written, to_write);
+            if (write_tmp < 0) {
+                /* Failing out...at least attempt to "finish" programming */
+                ioctl(backend->fd, BLADE_END_PROG, &ret);
+                dbg_printf("Write failure: %s\n", strerror(errno));
+                return BLADERF_ERR_IO;
+            } else {
+                written += write_tmp;
+            }
+        } while(written < image_size);
+    }
 
 
     /* FIXME? Perhaps it would be better if the driver blocked on the
@@ -75,12 +101,13 @@ static int linux_load_fpga(struct bladerf *dev,
 
     ret = 0;
     do {
-        if (ioctl(backend->fd, BLADE_QUERY_FPGA_STATUS, &fpga_status) < 0) {
-            dbg_printf("Failed to query FPGA status: %s\n", strerror(errno));
-            ret = BLADERF_ERR_UNEXPECTED;
+        fpga_status = linux_is_fpga_configured(dev);
+        if (fpga_status < 0) {
+            ret = fpga_status;
+        } else {
+            gettimeofday(&curr_time, NULL);
+            timed_out = time_past(end_time, curr_time);
         }
-        gettimeofday(&curr_time, NULL);
-        timed_out = time_past(end_time, curr_time);
     } while(!fpga_status && !timed_out && !ret);
 
     if (ioctl(backend->fd, BLADE_END_PROG, &fpga_status)) {
@@ -193,25 +220,10 @@ static int linux_get_fw_version(struct bladerf *dev,
     return BLADERF_ERR_IO;
 }
 
-static int linux_is_fpga_configured(struct bladerf *dev)
-{
-    int status;
-    int configured;
-    struct bladerf_linux *backend = (struct bladerf_linux *)dev->backend;
-
-    assert(dev);
-
-    status = ioctl(backend->fd, BLADE_QUERY_FPGA_STATUS, &configured);
-
-    if (status || configured < 0 || configured > 1)
-        configured = BLADERF_ERR_IO;
-
-    return configured;
-}
-
 /*------------------------------------------------------------------------------
- * Si5338 register read / write functions
- */
+ * Si5338 register access
+ *----------------------------------------------------------------------------*/
+
 
 static int linux_si5338_read(struct bladerf *dev, uint8_t address, uint8_t *val)
 {
@@ -237,8 +249,8 @@ static int linux_si5338_write(struct bladerf *dev, uint8_t address, uint8_t val)
 }
 
 /*------------------------------------------------------------------------------
- * LMS register read / write functions
- */
+ * LMS register access
+ *----------------------------------------------------------------------------*/
 
 static int linux_lms_read(struct bladerf *dev, uint8_t address, uint8_t *val)
 {
@@ -263,8 +275,8 @@ static int linux_lms_write(struct bladerf *dev, uint8_t address, uint8_t val)
 }
 
 /*------------------------------------------------------------------------------
- * GPIO register read / write functions
- */
+ * GPIO register access
+ *----------------------------------------------------------------------------*/
 static int linux_gpio_read(struct bladerf *dev, uint32_t *val)
 {
     int ret;
@@ -324,7 +336,7 @@ static int linux_gpio_write(struct bladerf *dev, uint32_t val)
 
 /*------------------------------------------------------------------------------
  * VCTCXO DAC register write
- */
+ *----------------------------------------------------------------------------*/
 static int linux_dac_write(struct bladerf *dev, uint16_t val)
 {
     struct uart_cmd uc;
@@ -342,6 +354,9 @@ static int linux_dac_write(struct bladerf *dev, uint16_t val)
     return ret;
 }
 
+/*------------------------------------------------------------------------------
+ * Data transfer
+ *----------------------------------------------------------------------------*/
 /* TODO Fail out if n > ssize_t max, as we can't return that. */
 static ssize_t linux_write_samples(struct bladerf *dev, int16_t *samples, size_t n)
 {
@@ -410,6 +425,10 @@ static ssize_t linux_read_samples(struct bladerf *dev, int16_t *samples, size_t 
     }
 }
 
+/*------------------------------------------------------------------------------
+ * Platform information
+ *----------------------------------------------------------------------------*/
+
 /* XXX: For realsies */
 static int linux_get_fpga_version(struct bladerf *dev, unsigned int *maj, unsigned int *min)
 {
@@ -423,6 +442,10 @@ static int linux_get_serial(struct bladerf *dev, uint64_t *serial)
     *serial = 0xdeadbeef;
     return 0;
 }
+
+/*------------------------------------------------------------------------------
+ * Init/deinit
+ *----------------------------------------------------------------------------*/
 
 static struct bladerf * linux_open(struct bladerf_devinfo *info)
 {
@@ -447,6 +470,7 @@ static struct bladerf * linux_open(struct bladerf_devinfo *info)
 
             if (backend && ret) {
                 backend->fd = fd;
+                ret->fn = &bladerf_linux_fn;
                 ret->backend = backend;
             } else {
                 free(backend);
@@ -499,6 +523,10 @@ int linux_close(struct bladerf *dev)
         return 0;
     }
 }
+
+/*------------------------------------------------------------------------------
+ * Init/deinit
+ *----------------------------------------------------------------------------*/
 
 const struct bladerf_fn bladerf_linux_fn = {
     .open                   =   linux_open,

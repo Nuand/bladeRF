@@ -10,7 +10,7 @@
 
 int read_file(const char *filename, uint8_t **buf_ret, size_t *size_ret)
 {
-    int status = 0;
+    int status = BLADERF_ERR_UNEXPECTED;
     struct stat sb;
     FILE *f;
     int fd;
