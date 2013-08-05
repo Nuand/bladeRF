@@ -2,6 +2,7 @@
 #define COMMON_H__
 #include <pthread.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <libbladeRF.h>
 /**
  * Differentiates error code types

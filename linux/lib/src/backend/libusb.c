@@ -38,17 +38,19 @@ static int vendor_command(struct bladerf *dev, int cmd, int *result)
                 cmd,
                 0,
                 0,
-                &buf,
+                (unsigned char *)&buf,
                 sizeof(buf),
                 BLADERF_LIBUSB_TIMEOUT_MS
              );
     if (status < 0) {
+        dbg_printf( "status < 0: %s\n", libusb_error_name(status) );
         if (status == LIBUSB_ERROR_TIMEOUT) {
             status = BLADERF_ERR_TIMEOUT;
         } else {
             status = BLADERF_ERR_IO;
         }
     } else if (status != sizeof(buf)) {
+        dbg_printf( "status != sizeof(buf): %s\n", libusb_error_name(status) );
         status = BLADERF_ERR_IO;
     } else {
         *result = buf;
@@ -83,7 +85,7 @@ static int end_fpga_programming(struct bladerf *dev)
     }
 }
 
-int is_fpga_configured(struct bladerf *dev)
+int lusb_is_fpga_configured(struct bladerf *dev)
 {
     int result;
     int status = vendor_command(dev, BLADE_USB_CMD_QUERY_FPGA_STATUS, &result);
@@ -200,7 +202,13 @@ static struct bladerf * lusb_open(struct bladerf_devinfo *info)
                         goto error_device_list;
                     }
                 }
-                dbg_printf( "Claimed all inferfaces successfully\n" );
+
+                /* Assign top level stuff */
+                dev->speed = libusb_get_device_speed(lusb->dev) - 3;
+                dev->last_tx_sample_rate = 0;
+                dev->last_rx_sample_rate = 0;
+
+               dbg_printf( "Claimed all inferfaces successfully\n" );
                 break ;
             }
         }
@@ -283,7 +291,7 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
     status = 0;
 
     while (wait_count > 0 && status == 0) {
-        status = is_fpga_configured(dev);
+        status = lusb_is_fpga_configured(dev);
         if (status == 1) {
             break;
         }
@@ -307,17 +315,6 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
         dbg_printf("libusb_set_interface_alt_setting: %s", libusb_error_name(status));
     }
 
-    return 0;
-}
-
-static int lusb_is_fpga_configured(struct bladerf *dev)
-{
-    int result;
-    int status = 0;
-    struct bladerf_lusb *lusb = dev->backend ;
-    if( (status = vendor_command(dev, BLADE_USB_CMD_QUERY_FPGA_STATUS, &result)) > 0) {
-        return result;
-    }
     return 0;
 }
 

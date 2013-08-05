@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <errno.h>
 #include <pthread.h>
+#include <string.h>
 #include <libbladeRF.h>
 #include "interactive.h"
 #include "common.h"
@@ -183,7 +184,7 @@ static int open_device(struct rc_config *rc, struct cli_state *state, int status
                 status = -1;
             }
         } else {
-            state->dev = bladerf_open_any();
+            state->dev = bladerf_open(NULL);
         }
     }
 

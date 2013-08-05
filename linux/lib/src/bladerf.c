@@ -168,9 +168,11 @@ bladerf_open__err:
 #endif
 
 /* XXX (Some form of this will move to backend/linux.c) */
-#if 0
 ssize_t bladerf_get_device_list(struct bladerf_devinfo **devices)
 {
+    return 0 ;
+}
+#if 0
     struct bladerf_devinfo *ret;
     ssize_t num_devices;
     struct dirent **matches;

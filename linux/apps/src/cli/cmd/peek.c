@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <libbladeRF.h>
 
 #include "common.h"
@@ -57,7 +58,7 @@ int cmd_peek(struct cli_state *state, int argc, char **argv)
                 invalid_address(state, argv[0], argv[2]);
                 rv = CMD_RET_INVPARAM;
             } else {
-                f = lms_spi_read;
+                f = bladerf_lms_read;
                 max_address = LMS_MAX_ADDRESS;
             }
         }

@@ -1,5 +1,6 @@
 #include "cmd.h"
 #include <stdio.h>
+#include <string.h>
 
 int cmd_load(struct cli_state *state, int argc, char **argv)
 {

@@ -14,7 +14,7 @@ int cmd_probe(struct cli_state *s, int argc, char *argv[])
 
     printf("\n");
     for (i = 0; i < n_devices; i++) {
-        printf("    Path: %s\n", devices[i].path);
+/*        printf("    Path: %s\n", devices[i].path);
         printf("    Serial: 0x%016lX\n", devices[i].serial);
         printf("    Firmware: v%d.%d\n", devices[i].fw_ver_maj,
                devices[i].fw_ver_min);
@@ -25,8 +25,8 @@ int cmd_probe(struct cli_state *s, int argc, char *argv[])
         } else {
             printf("    FPGA: not configured\n");
         }
-
-        printf("\n");
+*/
+        printf("Kind of stubbed out for now\n");
     }
 
     bladerf_free_device_list(devices, n_devices);

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <libbladeRF.h>
 
 #include "cmd.h"
@@ -55,7 +56,7 @@ int cmd_poke(struct cli_state *state, int argc, char **argv)
                 invalid_address(state, argv[0], argv[2]);
                 rv = CMD_RET_INVPARAM;
             } else {
-                f = lms_spi_write;
+                f = bladerf_lms_write;
             }
         }
 
@@ -67,7 +68,7 @@ int cmd_poke(struct cli_state *state, int argc, char **argv)
                 invalid_address(state, argv[0], argv[2]);
                 rv = CMD_RET_INVPARAM;
             } else {
-                f = si5338_i2c_write;
+                f = bladerf_si5338_write;
             }
         }
 

@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <limits.h>
 #include <pthread.h>
+#include <string.h>
 
 #include "cmd.h"
 #include "cmd/rxtx.h"

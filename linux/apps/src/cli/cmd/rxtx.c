@@ -16,6 +16,8 @@
 #include <endian.h>
 #include <errno.h>
 #include <assert.h>
+#include <string.h>
+#include <unistd.h>
 #include "cmd.h"
 
 #define RXTX_CMDSTR_START "start"
@@ -604,7 +606,7 @@ static void *rx_task(void *arg) {
     struct cli_state *s = (struct cli_state *) arg;
     struct rx_cfg *rx = &s->rxtx_data->rx;
     unsigned int n_samples_left = 0;
-    bool inf;
+    bool inf = false;
     size_t to_write = 0;
 
     /* We expect to be in the IDLE state when this task is kicked off */
@@ -628,17 +630,18 @@ static void *rx_task(void *arg) {
                 pthread_mutex_lock(&rx->common.file_lock);
 
                 /* Flush out any old samples before recording any data */
-                lib_ret = bladerf_read_c16(s->dev, rx->common.buff,
-                                                   rx->common.buff_size / 2);
-
+                /*lib_ret = bladerf_read_c16(s->dev, rx->common.buff,
+                                                   rx->common.buff_size / 2);*/
+                lib_ret = rx->common.buff_size/2 ;
                 if (lib_ret < 0) {
                     set_last_error(&rx->common.error, ETYPE_BLADERF, lib_ret);
                     state = RXTX_STATE_ERROR;
                 }
             } else {
-                lib_ret = bladerf_read_c16(s->dev, rx->common.buff,
-                                           rx->common.buff_size / 2);
+                /*lib_ret = bladerf_read_c16(s->dev, rx->common.buff,
+                                           rx->common.buff_size / 2);*/
 
+                lib_ret = rx->common.buff_size/2 ;
                 if (lib_ret < 0) {
                     set_last_error(&rx->common.error, ETYPE_BLADERF, lib_ret);
                     state = RXTX_STATE_ERROR;
@@ -750,10 +753,12 @@ static void *tx_task(void *arg) {
                     read_ret == 0) {
 
                     if (read_ret != 0) {
+                        /*
                         lib_ret = bladerf_send_c16(s->dev,
                                                    tx->common.buff,
                                                    tx->common.buff_size / 2);
-
+                        */
+                        lib_ret = tx->common.buff_size/2 ;
                         if (lib_ret < 0) {
                             set_last_error(&tx->common.error,
                                     ETYPE_BLADERF, lib_ret);

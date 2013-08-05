@@ -1,5 +1,6 @@
 #include <limits.h>
 #include <stdint.h>
+#include <string.h>
 #include "cmd.h"
 
 #define PRINTSET_DECL(x) int print_##x(struct cli_state *, int, char **); int set_##x(struct cli_state *, int, char **);
@@ -57,9 +58,9 @@ struct printset_entry printset_table[] = {
     { .print = NULL, .set = NULL, .name = "" }
 };
 
-bladerf_module get_module( char *mod, bool *ok )
+bladerf_module_t get_module( char *mod, bool *ok )
 {
-    bladerf_module rv = RX;
+    bladerf_module_t rv = RX;
     *ok = true;
     if( strcasecmp( mod, "rx" ) == 0 ) {
         rv = RX;
@@ -103,7 +104,7 @@ int print_bandwidth(struct cli_state *state, int argc, char **argv)
 {
     /* Usage: print bandwidth [rx|tx]*/
     int rv = CMD_RET_OK, status;
-    bladerf_module module = RX ;
+    bladerf_module_t module = RX ;
     unsigned int bw ;
 
     if( argc == 3 ) {
@@ -150,7 +151,7 @@ int set_bandwidth(struct cli_state *state, int argc, char **argv)
     /* Usage: set bandwidth [rx|tx] <bandwidth in Hz> */
     int rv = CMD_RET_OK;
     int status;
-    bladerf_module module = RX;
+    bladerf_module_t module = RX;
     unsigned int bw = 28000000, actual;
 
     /* Check for extended help */
@@ -246,7 +247,7 @@ int print_frequency(struct cli_state *state, int argc, char **argv)
     int rv = CMD_RET_OK;
     int status;
     unsigned int freq;
-    bladerf_module module = RX;
+    bladerf_module_t module = RX;
     if( argc == 3 ) {
         /* Parse module */
         bool ok;
@@ -299,7 +300,7 @@ int set_frequency(struct cli_state *state, int argc, char **argv)
     int rv = CMD_RET_OK;
     int status;
     unsigned int freq;
-    bladerf_module module = RX;
+    bladerf_module_t module = RX;
 
     if( argc == 4 ) {
         /* Parse module */
@@ -360,7 +361,7 @@ int print_gpio(struct cli_state *state, int argc, char **argv)
     int rv = CMD_RET_OK, status;
     unsigned int val;
 
-    status = gpio_read( state->dev, &val );
+    status = bladerf_gpio_read( state->dev, &val );
 
     if (status < 0) {
         state->last_lib_error = status;
@@ -408,7 +409,7 @@ int set_gpio(struct cli_state *state, int argc, char **argv)
             rv = CMD_RET_INVPARAM;
         } else {
             /* TODO: Should this be exposed at this level? */
-            gpio_write( state->dev,val );
+            bladerf_gpio_write( state->dev,val );
         }
     } else {
         rv = CMD_RET_NARGS;
@@ -440,7 +441,7 @@ int set_lna(struct cli_state *state, int argc, char **argv)
 int print_lnagain(struct cli_state *state, int argc, char **argv)
 {
     int rv = CMD_RET_OK, status;
-    bladerf_lna_gain gain;
+    bladerf_lna_gain_t gain;
 
     status = bladerf_get_lna_gain( state->dev, &gain );
     if (status < 0) {
@@ -469,7 +470,7 @@ int set_lnagain(struct cli_state *state, int argc, char **argv)
     if( argc != 3 ) {
         rv = CMD_RET_NARGS;
     } else {
-        bladerf_lna_gain gain = LNA_UNKNOWN;
+        bladerf_lna_gain_t gain = LNA_UNKNOWN;
         if( strcasecmp( argv[2], "max" ) == 0 ) {
             gain = LNA_MAX;
         } else if( strcasecmp( argv[2], "mid" ) == 0 ) {
@@ -627,7 +628,7 @@ int print_samplerate(struct cli_state *state, int argc, char **argv)
 {
     int status;
     unsigned int rate;
-    bladerf_module module;
+    bladerf_module_t module;
     bool ok;
 
     if (argc == 3) {
@@ -669,7 +670,7 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
 {
     /* Usage: set samplerate [rx|tx] <samplerate in Hz> */
     int rv = CMD_RET_OK;
-    bladerf_module module  = RX;
+    bladerf_module_t module  = RX;
 
     if( argc == 4 ) {
         /* Parse module */
@@ -735,25 +736,25 @@ int set_sampling(struct cli_state *state, int argc, char **argv)
     } else {
         if( strcasecmp( "internal", argv[2] ) == 0 ) {
             /* Disconnect the ADC input from the outside world */
-            lms_spi_read( state->dev, 0x09, &val );
+            bladerf_lms_read( state->dev, 0x09, &val );
             val &= ~(1<<7) ;
-            lms_spi_write( state->dev, 0x09, val );
+            bladerf_lms_write( state->dev, 0x09, val );
 
             /* Turn on RXVGA2 */
-            lms_spi_read( state->dev, 0x64, &val );
+            bladerf_lms_read( state->dev, 0x64, &val );
             val |= (1<<1) ;
-            lms_spi_write( state->dev, 0x64, val );
+            bladerf_lms_write( state->dev, 0x64, val );
 
         } else if( strcasecmp( "external", argv[2] ) == 0 ) {
             /* Turn off RXVGA2 */
-            lms_spi_read( state->dev, 0x64, &val );
+            bladerf_lms_read( state->dev, 0x64, &val );
             val &= ~(1<<1) ;
-            lms_spi_write( state->dev, 0x64, val );
+            bladerf_lms_write( state->dev, 0x64, val );
 
             /* Connect the external ADC pins to the internal ADC input */
-            lms_spi_read( state->dev, 0x09, &val );
+            bladerf_lms_read( state->dev, 0x09, &val );
             val |= (1<<7) ;
-            lms_spi_write( state->dev, 0x09, val );
+            bladerf_lms_write( state->dev, 0x09, val );
         } else {
             cli_err(state, argv[0], "Invalid sampling mode (%s)", argv[2] );
         }
@@ -770,12 +771,12 @@ int print_sampling( struct cli_state *state, int argc, char **argv)
         rv = CMD_RET_NARGS;
     } else {
         /* Read the ADC input mux */
-        lms_spi_read( state->dev, 0x09, &val );
+        bladerf_lms_read( state->dev, 0x09, &val );
         external = val&(1<<7) ? 1 : 0;
         printf( "  %-20s%-20s\n", "RX ADC Switch:", external ? "Closed" : "Open" );
 
         /* Read the RXVGA2 module state */
-        lms_spi_read( state->dev, 0x64, &val );
+        bladerf_lms_read( state->dev, 0x64, &val );
         external |= val&(1<<1) ? 0 : 2 ;
         printf( "  %-20s%-20s\n", "RXVGA2 Module:", external&2 ? "Powered down" : "Powered up" );
 
@@ -806,7 +807,7 @@ int set_trimdac(struct cli_state *state, int argc, char **argv)
             cli_err(state, argv[0], "Invalid VCTCXO DAC value (%s)", argv[2]);
             rv = CMD_RET_INVPARAM;
         } else {
-            int status = dac_write( state->dev, val );
+            int status = bladerf_dac_write( state->dev, val );
             if (status < 0) {
                 state->last_lib_error = status;
                 rv = CMD_RET_LIBBLADERF;
