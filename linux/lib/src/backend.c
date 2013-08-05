@@ -69,6 +69,7 @@ struct bladerf * backend_open(struct bladerf_devinfo *info) {
             dbg_printf("Invalid backend!\n");
             assert(0);
     }
+    return NULL;
 }
 
 /* XXX for the probe routine, we can do something similar to

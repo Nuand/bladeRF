@@ -26,15 +26,20 @@ struct bladerf_lusb {
 
 const struct bladerf_fn bladerf_lusb_fn;
 
-static int vendor_command(struct bladerf *dev, int cmd, int *result)
+static int vendor_command(struct bladerf *dev, int cmd, int ep_dir, int *val)
 {
-    *result = 0;
     int buf;
     int status;
     struct bladerf_lusb *lusb = dev->backend;
+
+    if( ep_dir == LIBUSB_ENDPOINT_IN ) {
+        *val = 0 ;
+    } else {
+        buf = *val ;
+    }
     status = libusb_control_transfer(
                 lusb->handle,
-                LIBUSB_RECIPIENT_INTERFACE | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN,
+                LIBUSB_RECIPIENT_INTERFACE | LIBUSB_REQUEST_TYPE_VENDOR | ep_dir,
                 cmd,
                 0,
                 0,
@@ -53,7 +58,9 @@ static int vendor_command(struct bladerf *dev, int cmd, int *result)
         dbg_printf( "status != sizeof(buf): %s\n", libusb_error_name(status) );
         status = BLADERF_ERR_IO;
     } else {
-        *result = buf;
+        if( ep_dir == LIBUSB_ENDPOINT_IN ) {
+            *val = buf;
+        }
         status = 0;
     }
 
@@ -63,7 +70,7 @@ static int vendor_command(struct bladerf *dev, int cmd, int *result)
 static int begin_fpga_programming(struct bladerf *dev)
 {
     int result;
-    int status = vendor_command(dev, BLADE_USB_CMD_BEGIN_PROG, &result);
+    int status = vendor_command(dev, BLADE_USB_CMD_BEGIN_PROG, LIBUSB_ENDPOINT_IN, &result);
 
     if (status < 0) {
         return status;
@@ -75,7 +82,7 @@ static int begin_fpga_programming(struct bladerf *dev)
 static int end_fpga_programming(struct bladerf *dev)
 {
     int result;
-    int status = vendor_command(dev, BLADE_USB_CMD_QUERY_FPGA_STATUS, &result);
+    int status = vendor_command(dev, BLADE_USB_CMD_QUERY_FPGA_STATUS, LIBUSB_ENDPOINT_IN, &result);
     if (status < 0) {
         dbg_printf("Received response of (%d): %s\n",
                     status, libusb_error_name(status));
@@ -88,7 +95,7 @@ static int end_fpga_programming(struct bladerf *dev)
 int lusb_is_fpga_configured(struct bladerf *dev)
 {
     int result;
-    int status = vendor_command(dev, BLADE_USB_CMD_QUERY_FPGA_STATUS, &result);
+    int status = vendor_command(dev, BLADE_USB_CMD_QUERY_FPGA_STATUS, LIBUSB_ENDPOINT_IN, &result);
 
     if (status < 0) {
         return status;
@@ -252,7 +259,7 @@ static int lusb_close(struct bladerf *dev)
 static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size)
 {
     unsigned int wait_count;
-    int status = 0;
+    int status = 0, val;
     int transferred = 0;
     struct bladerf_lusb *lusb = dev->backend;
 
@@ -313,6 +320,17 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
     status = libusb_set_interface_alt_setting(lusb->handle, 1, 0);
     if(status) {
         dbg_printf("libusb_set_interface_alt_setting: %s", libusb_error_name(status));
+    }
+
+    val = 1;
+    status = vendor_command(dev, BLADE_USB_CMD_RF_RX, LIBUSB_ENDPOINT_OUT, &val);
+    if(status) {
+        dbg_printf("Could not enable RF RX (%d): %s\n", status, libusb_error_name(status) );
+    }
+
+    status = vendor_command(dev, BLADE_USB_CMD_RF_TX, LIBUSB_ENDPOINT_OUT, &val);
+    if(status) {
+        dbg_printf("Could not enable RF TX (%d): %s\n", status, libusb_error_name(status) );
     }
 
     return 0;
@@ -581,14 +599,71 @@ static int lusb_dac_write(struct bladerf *dev, uint16_t value)
 static ssize_t lusb_tx(struct bladerf *dev, bladerf_format_t format, void *samples,
                        size_t n, struct bladerf_metadata *metadata)
 {
+    size_t bytes_total, bytes_remaining;
+    struct bladerf_lusb *lusb = (struct bladerf_lusb *)dev->backend;
+    uint8_t *samples8 = (uint8_t *)samples;
+    int transferred, status;
 
-    return 0;
+    assert(format==FORMAT_SC16);
+
+    bytes_total = bytes_remaining = c16_samples_to_bytes(n);
+
+    while( bytes_remaining > 0 ) {
+        transferred = 0;
+        status = libusb_bulk_transfer(
+                    lusb->handle,
+                    0x01,
+                    samples8,
+                    bytes_remaining,
+                    &transferred,
+                    BLADERF_LIBUSB_TIMEOUT_MS
+                );
+        if( status < 0 ) {
+            dbg_printf( "Error reading samples (%d): %s\n", status, libusb_error_name(status) );
+            return BLADERF_ERR_IO;
+        } else {
+            assert(transferred > 0);
+            bytes_remaining -= transferred;
+            samples8 += transferred;
+        }
+    }
+
+    return bytes_to_c16_samples(bytes_total - bytes_remaining);
 }
 
 static ssize_t lusb_rx(struct bladerf *dev, bladerf_format_t format, void *samples,
                        size_t n, struct bladerf_metadata *metadata)
 {
-    return 0;
+    ssize_t bytes_total, bytes_remaining = c16_samples_to_bytes(n) ;
+    struct bladerf_lusb *lusb = (struct bladerf_lusb *)dev->backend;
+    uint8_t *samples8 = (uint8_t *)samples;
+    int transferred, status;
+
+    assert(format==FORMAT_SC16);
+
+    bytes_total = bytes_remaining = c16_samples_to_bytes(n);
+
+    while( bytes_remaining ) {
+        transferred = 0;
+        status = libusb_bulk_transfer(
+                    lusb->handle,
+                    0x81,
+                    samples8,
+                    bytes_remaining,
+                    &transferred,
+                    BLADERF_LIBUSB_TIMEOUT_MS
+                );
+        if( status < 0 ) {
+            dbg_printf( "Error reading samples (%d): %s\n", status, libusb_error_name(status) );
+            return BLADERF_ERR_IO;
+        } else {
+            assert(transferred > 0);
+            bytes_remaining -= transferred;
+            samples8 += transferred;
+        }
+    }
+
+    return bytes_to_c16_samples(bytes_total - bytes_remaining);
 }
 
 //static ssize_t lusb_write_samples(struct bladerf *dev,
