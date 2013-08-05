@@ -35,6 +35,7 @@ static inline size_t min_sz(size_t x, size_t y)
 {
     return x < y ? x : y;
 }
+
 /*------------------------------------------------------------------------------
  * FPGA & Firmware loading
  *----------------------------------------------------------------------------*/
@@ -401,6 +402,7 @@ static int linux_get_serial(struct bladerf *dev, uint64_t *serial)
  * Init/deinit
  *----------------------------------------------------------------------------*/
 
+
 static struct bladerf * linux_open(struct bladerf_devinfo *info)
 {
     char dev_name[32];
@@ -410,8 +412,6 @@ static struct bladerf * linux_open(struct bladerf_devinfo *info)
     int fd; /* Everything here starts with a driver file descriptor,
              * so no need to allocate backend and ret until we know we
              * have said fd */
-
-    dbg_printf("LIN LINUX IPOEN\n");
 
     assert(info->backend == BACKEND_LINUX);
 
