@@ -219,7 +219,7 @@ error_device_list:
 
 error_context:
     if( dev == NULL ) {
-        libusb_exit(lusb->context);
+        libusb_exit(context);
     }
 
 done:
