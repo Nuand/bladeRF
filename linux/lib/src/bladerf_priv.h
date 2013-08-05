@@ -25,7 +25,6 @@ struct bladerf_error {
     int value;
 };
 
-/* XXX: Not sure where to put these */
 int bladerf_init_device(struct bladerf *dev);
 size_t bytes_to_c16_samples(size_t n_bytes);
 size_t c16_samples_to_bytes(size_t n_samples);

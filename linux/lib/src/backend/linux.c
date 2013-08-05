@@ -126,79 +126,27 @@ static int linux_load_fpga(struct bladerf *dev,
 }
 
 
-/* XXX fix for new interface -- See FPGA load */
-#if 0
-static int linux_flash_firmware(struct bladerf *dev, const char *firmware)
+static int linux_flash_firmware(struct bladerf *dev,
+                                uint8_t *image, size_t image_size)
 {
-    int fw_fd, upgrade_status, ret;
-    struct stat fw_stat;
+    int upgrade_status;
+    int ret = 0;
     struct bladeRF_firmware fw_param;
-    ssize_t n_read, read_status;
-    struct bladerf_linux *backend = (struct bladerf_linux*)backend ;
+    struct bladerf_linux *backend = (struct bladerf_linux*)dev->backend;
 
-    assert(dev && firmware);
+    assert(dev && image);
 
-    fw_fd = open(firmware, O_RDONLY);
-    if (fw_fd < 0) {
-        dbg_printf("Failed to open firmware file: %s\n", strerror(errno));
-        return BLADERF_ERR_IO;
-    }
+    fw_param.ptr = image;
+    fw_param.len = image_size;
 
-    if (fstat(fw_fd, &fw_stat) < 0) {
-        dbg_printf("Failed to stat firmware file: %s\n", strerror(errno));
-        close(fw_fd);
-        return BLADERF_ERR_IO;
-    }
-
-    fw_param.len = fw_stat.st_size;
-
-    /* Quick sanity check: We know the firmware file is roughly 100K
-     * Env var is a quick opt-out of this check - can it ever get this large?
-     *
-     * TODO: Query max flash size for upper bound?
-     */
-    if (!getenv("BLADERF_SKIP_FW_SIZE_CHECK") &&
-            (fw_param.len < (50 * 1024) || fw_param.len > (1 * 1024 * 1024))) {
-        dbg_printf("Detected potentially invalid firmware file. Aborting!\n");
-        close(fw_fd);
-        return BLADERF_ERR_INVAL;
-    }
-
-    fw_param.ptr = malloc(fw_param.len);
-    if (!fw_param.ptr) {
-        dbg_printf("Failed to allocate firmware buffer: %s\n", strerror(errno));
-        close(fw_fd);
-        return BLADERF_ERR_MEM;
-    }
-
-    n_read = 0;
-    do {
-        read_status = read(fw_fd, fw_param.ptr + n_read, fw_param.len - n_read);
-        if (read_status < 0) {
-            dbg_printf("Failed to read firmware file: %s\n", strerror(errno));
-            free(fw_param.ptr);
-            close(fw_fd);
-            return BLADERF_ERR_IO;
-        } else {
-            n_read += read_status;
-        }
-    } while(n_read < fw_param.len);
-    close(fw_fd);
-
-    /* Bug catcher */
-    assert(n_read == fw_param.len);
-
-    ret = 0;
     upgrade_status = ioctl(backend->fd, BLADE_UPGRADE_FW, &fw_param);
     if (upgrade_status < 0) {
         dbg_printf("Firmware upgrade failed: %s\n", strerror(errno));
         ret = BLADERF_ERR_UNEXPECTED;
     }
 
-    free(fw_param.ptr);
     return ret;
 }
-#endif
 
 static int linux_get_fw_version(struct bladerf *dev,
                                 unsigned int *major, unsigned int *minor)
@@ -463,6 +411,8 @@ static struct bladerf * linux_open(struct bladerf_devinfo *info)
              * so no need to allocate backend and ret until we know we
              * have said fd */
 
+    dbg_printf("LIN LINUX IPOEN\n");
+
     assert(info->backend == BACKEND_LINUX);
 
     /* If an instance is specified, we start with that */
@@ -541,7 +491,7 @@ const struct bladerf_fn bladerf_linux_fn = {
     .load_fpga              =   linux_load_fpga,
     .is_fpga_configured     =   linux_is_fpga_configured,
 
-    .flash_firmware         =   NULL,
+    .flash_firmware         =   linux_flash_firmware,
 
     .get_serial             =   linux_get_serial,
     .get_fw_version         =   linux_get_fw_version,

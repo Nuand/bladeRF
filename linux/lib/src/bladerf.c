@@ -72,31 +72,6 @@ static inline void free_dirents(struct dirent **d, int n)
 }
 #endif
 
-/* XXX Mode to bladerf_priv - this is not a public routine */
-int bladerf_init_device(struct bladerf *dev)
-{
-    /* Set the GPIO pins to enable the LMS and select the low band */
-    bladerf_gpio_write( dev, 0x51 );
-
-    /* Set the internal LMS register to enable RX and TX */
-    bladerf_lms_write( dev, 0x05, 0x3e );
-
-    /* LMS FAQ: Improve TX spurious emission performance */
-    bladerf_lms_write( dev, 0x47, 0x40 );
-
-    /* LMS FAQ: Improve ADC performance */
-    bladerf_lms_write( dev, 0x59, 0x29 );
-
-    /* LMS FAQ: Common mode voltage for ADC */
-    bladerf_lms_write( dev, 0x64, 0x36 );
-
-    /* LMS FAQ: Higher LNA Gain */
-    bladerf_lms_write( dev, 0x79, 0x37 );
-
-    /* TODO: Read this return from the SPI calls */
-    return 0;
-}
-
 
 #if 0
 /* XXX REMOVE (or move to backend/linux.c)
@@ -569,7 +544,7 @@ int bladerf_flash_firmware(struct bladerf *dev, const char *firmware_file)
                        "to skip this check.\n");
             status = BLADERF_ERR_INVAL;
         } else {
-            status = dev->fn->load_fpga(dev, buf, buf_size);
+            status = dev->fn->flash_firmware(dev, buf, buf_size);
         }
 
         free(buf);
@@ -603,6 +578,10 @@ int bladerf_load_fpga(struct bladerf *dev, const char *fpga_file)
     if (!status) {
         status = dev->fn->load_fpga(dev, buf, buf_size);
         free(buf);
+    }
+
+    if (!status) {
+        status = bladerf_init_device(dev);
     }
 
     return status;

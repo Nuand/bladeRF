@@ -32,6 +32,30 @@ size_t c16_samples_to_bytes(size_t n_samples)
     return n_samples * 2 * sizeof(int16_t);
 }
 
+int bladerf_init_device(struct bladerf *dev)
+{
+    /* Set the GPIO pins to enable the LMS and select the low band */
+    bladerf_gpio_write( dev, 0x51 );
+
+    /* Set the internal LMS register to enable RX and TX */
+    bladerf_lms_write( dev, 0x05, 0x3e );
+
+    /* LMS FAQ: Improve TX spurious emission performance */
+    bladerf_lms_write( dev, 0x47, 0x40 );
+
+    /* LMS FAQ: Improve ADC performance */
+    bladerf_lms_write( dev, 0x59, 0x29 );
+
+    /* LMS FAQ: Common mode voltage for ADC */
+    bladerf_lms_write( dev, 0x64, 0x36 );
+
+    /* LMS FAQ: Higher LNA Gain */
+    bladerf_lms_write( dev, 0x79, 0x37 );
+
+    /* TODO: Read this return from the SPI calls */
+    return 0;
+}
+
 bool bladerf_devinfo_matches(struct bladerf_devinfo *a,
                              struct bladerf_devinfo *b)
 {
