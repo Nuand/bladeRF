@@ -473,22 +473,6 @@ int bladerf_get_frequency(struct bladerf *dev,
 /**
  * XXX REMOVE
  *
- * Send complex, packed 12-bit signed samples
- *
- * @param       dev         Device handle
- * @param       samples     Array of samples
- * @param       n           Number of sample (IQ pairs) to send
- *
- * @note    Currently unimplemented. Always returns 0.
- *
- * @return number of samples sent or value from \ref RETCODES list on failure
- */
-ssize_t bladerf_send_c12(struct bladerf *dev, int16_t *samples, size_t n);
-
-
-/**
- * XXX REMOVE
- *
  * Send complex, 16-bit signed samples
  *
  * @param       dev         Device handle
@@ -509,15 +493,13 @@ ssize_t bladerf_send_c12(struct bladerf *dev, int16_t *samples, size_t n);
  * @return number of samples sent on success,
  *          value from \ref RETCODES list on failure
  */
-ssize_t bladerf_send_c16(struct bladerf *dev,
+/*ssize_t bladerf_send_c16(struct bladerf *dev,
                          int16_t *samples, size_t num_samples);
+*/
 
-
-#if 0
 ssize_t bladerf_tx(struct bladerf *dev, bladerf_format_t format,
                    void *samples, size_t num_samples,
                    struct bladerf_metadata *metadata);
-#endif
 
 /**
  * XXX REMOVE
@@ -541,14 +523,13 @@ ssize_t bladerf_tx(struct bladerf *dev, bladerf_format_t format,
  *
  * @return number of samples read or value from \ref RETCODES list on failure
  */
-ssize_t bladerf_read_c16(struct bladerf *dev,
+/*ssize_t bladerf_read_c16(struct bladerf *dev,
                          int16_t *samples, size_t num_samples);
+*/
 
-#if 0
 ssize_t bladerf_rx(struct bladerf *dev, bladerf_format_t format,
                    void *samples, size_t num_samples,
                    struct bladerf_metadata *metadata);
-#endif
 
 /** @} (End of FN_DATA) */
 
@@ -787,6 +768,34 @@ int bladerf_lms_write(struct bladerf *dev, uint8_t address, uint8_t val);
  *       soon-to-be deprecated gpio_write() routine.
  */
 #define BLADERF_GPIO_LMS_TX_ENABLE  (1 << 2)
+
+/**
+ * Switch to use TX low band (300MHz - 1.5GHz)
+ *
+ * @note This is set using bladerf_set_frequency().
+ */
+#define BLADERF_GPIO_TX_LB_ENABLE   (2 << 3)
+
+/**
+ * Switch to use TX high band (1.5GHz - 3.8GHz)
+ *
+ * @note This is set using bladerf_set_frequency().
+ */
+#define BLADERF_GPIO_TX_HB_ENABLE   (1 << 3)
+
+/**
+ * Switch to use RX low band (300M - 1.5GHz)
+ *
+ * @note THis is set using bladerf_set_frequency().
+ */
+#define BLADERF_GPIO_RX_LB_ENABLE   (2 << 5)
+
+/**
+ * Switch to use RX high band (1.5GHz - 3.8GHz)
+ *
+ * @note This is set using bladerf_set_frequency().
+ */
+#define BLADERF_GPIO_RX_HB_ENABLE   (1 << 5)
 
 /**
  * This GPIO bit configures the FPGA to use smaller DMA

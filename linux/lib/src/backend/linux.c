@@ -358,16 +358,19 @@ static int linux_dac_write(struct bladerf *dev, uint16_t val)
  * Data transfer
  *----------------------------------------------------------------------------*/
 /* TODO Fail out if n > ssize_t max, as we can't return that. */
-static ssize_t linux_write_samples(struct bladerf *dev, int16_t *samples, size_t n)
+static ssize_t linux_tx(struct bladerf *dev, bladerf_format_t format,
+                        void *samples, size_t n, struct bladerf_metadata *metadata)
+//static ssize_t linux_write_samples(struct bladerf *dev, int16_t *samples, size_t n)
 {
     ssize_t i, ret = 0;
     size_t bytes_written = 0;
     const size_t bytes_total = c16_samples_to_bytes(n);
     struct bladerf_linux *backend = (struct bladerf_linux *)dev->backend;
+    int8_t *samples8 = (int8_t *)samples;
 
     while (bytes_written < bytes_total) {
 
-        i = write(backend->fd, samples + bytes_written, bytes_total - bytes_written);
+        i = write(backend->fd, samples8 + bytes_written, bytes_total - bytes_written);
 
         if (i < 0 && errno != EINTR) {
             int errno_val = errno;
@@ -392,16 +395,19 @@ static ssize_t linux_write_samples(struct bladerf *dev, int16_t *samples, size_t
 }
 
 /* TODO Fail out if n > ssize_t max, as we can't return that */
-static ssize_t linux_read_samples(struct bladerf *dev, int16_t *samples, size_t n)
+static ssize_t linux_rx(struct bladerf *dev, bladerf_format_t format,
+                        void *samples, size_t n, struct bladerf_metadata *metadata)
+//static ssize_t linux_read_samples(struct bladerf *dev, int16_t *samples, size_t n)
 {
     ssize_t i, ret = 0;
     size_t bytes_read = 0;
     const size_t bytes_total = c16_samples_to_bytes(n);
     struct bladerf_linux *backend = (struct bladerf_linux *)dev->backend;
+    int8_t *samples8 = (int8_t *)samples;
 
     while (bytes_read < bytes_total) {
 
-        i = read(backend->fd, samples + bytes_read, bytes_total - bytes_read);
+        i = read(backend->fd, samples8 + bytes_read, bytes_total - bytes_read);
 
         if (i < 0 && errno != EINTR) {
             int errno_val = errno;
@@ -552,7 +558,7 @@ const struct bladerf_fn bladerf_linux_fn = {
 
     .dac_write              =   linux_dac_write,
 
-    .write_samples          =   linux_write_samples,
-    .read_samples           =   linux_read_samples
+    .rx                     =   linux_rx,
+    .tx                     =   linux_tx
 };
 

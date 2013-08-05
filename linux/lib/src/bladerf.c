@@ -498,6 +498,18 @@ int bladerf_get_frequency(struct bladerf *dev,
     return rv;
 }
 
+ssize_t bladerf_tx(struct bladerf *dev, bladerf_format_t format, void *samples,
+                   size_t num_samples, struct bladerf_metadata *metadata)
+{
+    return dev->fn->tx(dev, format, samples, num_samples, metadata);
+}
+
+ssize_t bladerf_rx(struct bladerf *dev, bladerf_format_t format, void *samples,
+                   size_t num_samples, struct bladerf_metadata *metadata)
+{
+    return dev->fn->rx(dev, format, samples, num_samples, metadata);
+}
+
 /*------------------------------------------------------------------------------
  * Device Info
  *----------------------------------------------------------------------------*/

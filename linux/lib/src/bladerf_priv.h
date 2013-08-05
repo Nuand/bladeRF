@@ -72,9 +72,8 @@ struct bladerf_fn {
     int (*dac_write)(struct bladerf *dev, uint16_t value);
 
     /* Sample stream */
-    /* XXX: Add metadata struct? */
-    ssize_t (*read_samples)(struct bladerf *dev, int16_t *samples, size_t n);
-    ssize_t (*write_samples)(struct bladerf *dev, int16_t *samples, size_t n);
+    ssize_t (*rx)(struct bladerf *dev, bladerf_format_t format, void *samples, size_t n, struct bladerf_metadata *metadata);
+    ssize_t (*tx)(struct bladerf *dev, bladerf_format_t format, void *samples, size_t n, struct bladerf_metadata *metadata);
 
     /* Gather statistics */
     int (*stats)(struct bladerf *dev, struct bladerf_stats *stats);

@@ -632,7 +632,13 @@ static void *rx_task(void *arg) {
                 /* Flush out any old samples before recording any data */
                 /*lib_ret = bladerf_read_c16(s->dev, rx->common.buff,
                                                    rx->common.buff_size / 2);*/
-                lib_ret = rx->common.buff_size/2 ;
+                lib_ret = bladerf_rx(
+                            s->dev,
+                            FORMAT_SC16,
+                            rx->common.buff,
+                            rx->common.buff_size/2,
+                            NULL
+                          );
                 if (lib_ret < 0) {
                     set_last_error(&rx->common.error, ETYPE_BLADERF, lib_ret);
                     state = RXTX_STATE_ERROR;
@@ -641,7 +647,13 @@ static void *rx_task(void *arg) {
                 /*lib_ret = bladerf_read_c16(s->dev, rx->common.buff,
                                            rx->common.buff_size / 2);*/
 
-                lib_ret = rx->common.buff_size/2 ;
+                lib_ret = bladerf_rx(
+                            s->dev,
+                            FORMAT_SC16,
+                            rx->common.buff,
+                            rx->common.buff_size/2,
+                            NULL
+                          );
                 if (lib_ret < 0) {
                     set_last_error(&rx->common.error, ETYPE_BLADERF, lib_ret);
                     state = RXTX_STATE_ERROR;
@@ -758,7 +770,13 @@ static void *tx_task(void *arg) {
                                                    tx->common.buff,
                                                    tx->common.buff_size / 2);
                         */
-                        lib_ret = tx->common.buff_size/2 ;
+                        lib_ret = bladerf_tx(
+                                    s->dev,
+                                    FORMAT_SC16,
+                                    tx->common.buff,
+                                    tx->common.buff_size/2,
+                                    NULL
+                                  );
                         if (lib_ret < 0) {
                             set_last_error(&tx->common.error,
                                     ETYPE_BLADERF, lib_ret);
