@@ -30,12 +30,12 @@ static const struct bladerf_fn * backend_fns[] = {
 
 static struct bladerf * open_with_any_backend(struct bladerf_devinfo *info)
 {
-    const struct bladerf_fn *fn_tbl;
+    const struct bladerf_fn **fn_tbl;
     struct bladerf *ret = NULL;
 
-    for (fn_tbl = backend_fns[0]; fn_tbl != NULL && ret == NULL; fn_tbl++) {
-        assert(fn_tbl->open);
-        ret = fn_tbl->open(info);
+    for (fn_tbl = &backend_fns[0]; *fn_tbl != NULL && ret == NULL; fn_tbl++) {
+        assert((*fn_tbl)->open);
+        ret = (*fn_tbl)->open(info);
     }
 
     return ret;

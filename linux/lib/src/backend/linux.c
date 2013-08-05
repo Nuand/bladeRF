@@ -413,7 +413,7 @@ static struct bladerf * linux_open(struct bladerf_devinfo *info)
              * so no need to allocate backend and ret until we know we
              * have said fd */
 
-    assert(info->backend == BACKEND_LINUX);
+    assert(info->backend == BACKEND_LINUX || info->backend == BACKEND_ANY);
 
     /* If an instance is specified, we start with that */
     if (info->instance != DEVINFO_INST_ANY) {

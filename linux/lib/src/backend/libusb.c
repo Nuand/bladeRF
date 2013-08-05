@@ -129,17 +129,17 @@ int lusb_get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
     status = libusb_open( dev, &handle );
     if( status ) {
         dbg_printf( "Couldn't populate devinfo - %s\n", libusb_error_name(status) );
-        goto done;
+        status = BLADERF_ERR_IO;
+    } else {
+        /* Populate */
+        info->backend = BACKEND_LIBUSB;
+        info->serial = 0;
+        info->usb_bus = libusb_get_bus_number(dev);
+        info->usb_addr = libusb_get_device_address(dev);
+
+        libusb_close( handle );
     }
 
-    /* Populate */
-    info->backend = BACKEND_LIBUSB;
-    info->serial = 0;
-    info->usb_bus = libusb_get_bus_number(dev);
-    info->usb_addr = libusb_get_device_address(dev);
-
-done:
-    libusb_close( handle );
     return status ;
 }
 
