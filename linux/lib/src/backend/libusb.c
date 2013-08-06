@@ -75,7 +75,7 @@ static int begin_fpga_programming(struct bladerf *dev)
     if (status < 0) {
         return status;
     } else {
-        return result;
+        return 0;
     }
 }
 
@@ -88,7 +88,7 @@ static int end_fpga_programming(struct bladerf *dev)
                     status, libusb_error_name(status));
         return status;
     } else {
-        return result;
+        return 0;
     }
 }
 

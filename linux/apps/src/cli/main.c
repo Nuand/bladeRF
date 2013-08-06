@@ -228,7 +228,7 @@ static int load_fpga(struct rc_config *rc, struct cli_state *state, int status)
             printf("Loading fpga...\n");
             status = bladerf_load_fpga(state->dev, rc->fpga_file);
             if (status) {
-                fprintf(stderr, "Error: failed to flash firmware: %s\n",
+                fprintf(stderr, "Error: failed to load FPGA: %s\n",
                         bladerf_strerror(status));
             } else {
                 printf("Done.\n");

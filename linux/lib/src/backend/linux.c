@@ -56,11 +56,35 @@ static int linux_is_fpga_configured(struct bladerf *dev)
     return configured;
 }
 
+static inline int linux_begin_fpga_programming(int fd)
+{
+    int status = 0;
+    int fpga_status;
+    if (ioctl(fd, BLADE_BEGIN_PROG, &fpga_status)) {
+        dbg_printf("ioctl(BLADE_BEGIN_PROG) failed: %s\n", strerror(errno));
+        status = BLADERF_ERR_UNEXPECTED;
+    }
+
+    return status;
+}
+
+static int linux_end_fpga_programming(int fd)
+{
+    int status = 0;
+    int fpga_status;
+    if (ioctl(fd, BLADE_END_PROG, &fpga_status)) {
+        dbg_printf("Failed to end programming procedure: %s\n",
+                strerror(errno));
+        status = BLADERF_ERR_UNEXPECTED;
+    }
+
+    return status;
+}
 
 static int linux_load_fpga(struct bladerf *dev,
                            uint8_t *image, size_t image_size)
 {
-    int ret, fpga_status;
+    int ret, fpga_status, end_prog_status;
     size_t written = 0;     /* Total # of bytes written */
     size_t to_write;
     ssize_t write_tmp;      /* # bytes written in a single write() call */
@@ -69,9 +93,9 @@ static int linux_load_fpga(struct bladerf *dev,
     struct bladerf_linux *backend = (struct bladerf_linux *)dev->backend;
     assert(dev && image);
 
-    if (ioctl(backend->fd, BLADE_BEGIN_PROG, &fpga_status)) {
-        dbg_printf("ioctl(BLADE_BEGIN_PROG) failed: %s\n", strerror(errno));
-        return BLADERF_ERR_UNEXPECTED;
+    ret = linux_begin_fpga_programming(backend->fd);
+    if (ret < 0) {
+        return ret;
     }
 
     /* FIXME This loops is just here to work around the fact that the
@@ -111,13 +135,12 @@ static int linux_load_fpga(struct bladerf *dev,
         }
     } while(!fpga_status && !timed_out && !ret);
 
-    if (ioctl(backend->fd, BLADE_END_PROG, &fpga_status)) {
-        dbg_printf("Failed to end programming procedure: %s\n",
-                strerror(errno));
 
-        /* Don't clobber a previous error */
-        if (!ret)
-            ret = BLADERF_ERR_UNEXPECTED;
+    end_prog_status = linux_end_fpga_programming(backend->fd);
+
+    /* Return the first error encountered */
+    if (end_prog_status < 0 && ret == 0) {
+        ret = end_prog_status;
     }
 
     /* Now that the FPGA is loaded, initialize the device */
