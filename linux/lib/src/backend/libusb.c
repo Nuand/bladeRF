@@ -13,7 +13,7 @@
 #include "bladerf_priv.h"
 #include "debug.h"
 
-#define BLADERF_LIBUSB_TIMEOUT_MS 1000
+#define BLADERF_LIBUSB_TIMEOUT_MS 10000
 
 #define EP_IN(x) (0x80 | x)
 #define EP_OUT(x) (x)
@@ -612,7 +612,7 @@ static ssize_t lusb_tx(struct bladerf *dev, bladerf_format_t format, void *sampl
         transferred = 0;
         status = libusb_bulk_transfer(
                     lusb->handle,
-                    0x01,
+                    EP_OUT(0x1),
                     samples8,
                     bytes_remaining,
                     &transferred,
@@ -647,7 +647,7 @@ static ssize_t lusb_rx(struct bladerf *dev, bladerf_format_t format, void *sampl
         transferred = 0;
         status = libusb_bulk_transfer(
                     lusb->handle,
-                    0x81,
+                    EP_IN(0x1),
                     samples8,
                     bytes_remaining,
                     &transferred,

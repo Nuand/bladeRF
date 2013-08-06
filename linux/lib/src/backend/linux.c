@@ -143,9 +143,6 @@ static int linux_load_fpga(struct bladerf *dev,
         ret = end_prog_status;
     }
 
-    /* Now that the FPGA is loaded, initialize the device */
-    bladerf_init_device(dev);
-
     return ret;
 }
 
