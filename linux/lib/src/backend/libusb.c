@@ -333,7 +333,6 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
         dbg_printf("Could not enable RF TX (%d): %s\n", status, libusb_error_name(status) );
     }
 
-done:
     return status;
 }
 
@@ -562,41 +561,6 @@ static int lusb_dac_write(struct bladerf *dev, uint16_t value)
     return status;
 }
 
-//static ssize_t lusb_read_samples(struct bladerf *dev, int16_t *samples, size_t n)
-//{
-//    int status, transferred;
-//    size_t bytes_read;
-//    const size_t bytes_total = c16_samples_to_bytes(n);
-//    struct bladerf_lusb *lusb = dev->backend;
-//
-//    /* Unexpected overflow */
-//    assert(bytes_total <= (size_t)INT_MAX);
-//
-//    status =  bytes_read = 0;
-//    while (bytes_read < bytes_total) {
-//
-//        transferred = 0;
-//        status = libusb_bulk_transfer(lusb->handle, EP_IN(1),
-//                                      (unsigned char *)(samples + bytes_read),
-//                                      (int)(bytes_total - bytes_read),
-//                                      &transferred,
-//                                      BLADERF_LIBUSB_TIMEOUT_MS);
-//
-//        if(status < 0) {
-//            dbg_printf("error reading samples (%d): %s\n",
-//                        status, libusb_error_name(status));
-//
-//            bladerf_set_error(&dev->error, ETYPE_BACKEND, status);
-//            return BLADERF_ERR_IO;
-//        } else {
-//            assert(transferred > 0);
-//            bytes_read += transferred;
-//        }
-//    }
-//
-//    return bytes_to_c16_samples(bytes_read);
-//}
-
 static ssize_t lusb_tx(struct bladerf *dev, bladerf_format_t format, void *samples,
                        size_t n, struct bladerf_metadata *metadata)
 {
@@ -667,44 +631,47 @@ static ssize_t lusb_rx(struct bladerf *dev, bladerf_format_t format, void *sampl
     return bytes_to_c16_samples(bytes_total - bytes_remaining);
 }
 
-//static ssize_t lusb_write_samples(struct bladerf *dev,
-//                                  int16_t *samples, size_t n)
-//{
-//    int status, transferred;
-//    size_t bytes_written;
-//    const size_t bytes_total = c16_samples_to_bytes(n);
-//    struct bladerf_lusb *lusb = dev->backend;
-//
-//    /* Unexpected overflow */
-//    assert(bytes_total <= (size_t)INT_MAX);
-//
-//    status =  bytes_written = 0;
-//    while (bytes_written < bytes_total) {
-//
-//        transferred = 0;
-//        status = libusb_bulk_transfer(lusb->handle, EP_OUT(1),
-//                                     (unsigned char *)(samples + bytes_written),
-//                                     (int)(bytes_total - bytes_written),
-//                                     &transferred,
-//                                     BLADERF_LIBUSB_TIMEOUT_MS);
-//
-//        if(status < 0) {
-//            dbg_printf("error writing samples (%d): %s\n",
-//                        status, libusb_error_name(status));
-//
-//            bladerf_set_error(&dev->error, ETYPE_BACKEND, status);
-//            return BLADERF_ERR_IO;
-//        } else {
-//            assert(transferred > 0);
-//            bytes_written += transferred;
-//        }
-//    }
-//
-//    return bytes_to_c16_samples(bytes_written);
-//}
+int lusb_probe(struct bladerf_devinfo_list *info_list)
+{
+    int status, i, n;
+    ssize_t count;
+    libusb_device **list;
+    struct bladerf_devinfo info;
+
+    libusb_context *context ;
+
+    /* Initialize libusb for device tree walking */
+    status = libusb_init(&context);
+    if( status ) {
+        dbg_printf( "Could not initialize libusb: %s\n", libusb_error_name(status) );
+        goto done;
+    }
+
+    count = libusb_get_device_list( NULL, &list );
+    /* Iterate through all the USB devices */
+    for( i = 0, n = 0 ; i < count && status == 0 ; i++ ) {
+        if( lusb_device_is_bladerf(list[i]) ) {
+            /* Open the USB device and get some information */
+            status = lusb_get_devinfo( list[i], &info );
+            if( status ) {
+                dbg_printf( "Could not open bladeRF device: %s\n", libusb_error_name(status) );
+            } else {
+                info.instance = n++;
+                status = bladerf_devinfo_list_add(info_list, &info);
+                if( status ) {
+                    dbg_printf( "Could not add device to list: %s\n", bladerf_strerror(status) );
+                }
+            }
+        }
+    }
+    libusb_free_device_list(list,1);
+    libusb_exit(context);
+done:
+    return status;
+}
 
 const struct bladerf_fn bladerf_lusb_fn = {
-    .probe              = NULL,
+    .probe              = lusb_probe,
 
     .open               = lusb_open,
     .close              = lusb_close,

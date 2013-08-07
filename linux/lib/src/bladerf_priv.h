@@ -191,10 +191,6 @@ bladerf_get_devinfo_list(struct bladerf_devinfo *devinfo);
  * 0 on success, BLADERF_ERR_* on failuer
  */
 int bladerf_devinfo_list_add(struct bladerf_devinfo_list *list,
-                                    bladerf_backend_t backend,
-                                    uint64_t serial,
-                                    uint8_t usb_bus,
-                                    uint8_t usb_addr,
-                                    unsigned int instance);
+                             struct bladerf_devinfo *info);
 #endif
 

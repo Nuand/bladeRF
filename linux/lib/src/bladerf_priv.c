@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <string.h>
 #include <libbladeRF.h>
 
 #include "bladerf_priv.h"
@@ -132,11 +133,7 @@ int bladerf_devinfo_list_alloc(struct bladerf_devinfo_list **list_ret)
 }
 
 int bladerf_devinfo_list_add(struct bladerf_devinfo_list *list,
-                                    bladerf_backend_t backend,
-                                    uint64_t serial,
-                                    uint8_t usb_bus,
-                                    uint8_t usb_addr,
-                                    unsigned int instance)
+                             struct bladerf_devinfo *info)
 {
     int status = 0;
     struct bladerf_devinfo *info_tmp;
@@ -151,12 +148,13 @@ int bladerf_devinfo_list_add(struct bladerf_devinfo_list *list,
     }
 
     if (status == 0) {
-        list->elt[list->num_elt].backend = backend;
+        memcpy(&list->elt[list->num_elt], info, sizeof(*info));
+        /*list->elt[list->num_elt].backend = backend;
         list->elt[list->num_elt].serial = serial;
         list->elt[list->num_elt].usb_bus = usb_bus;
         list->elt[list->num_elt].usb_addr = usb_addr;
         list->elt[list->num_elt].instance = instance;
-        list->num_elt++;
+        list->num_elt++;*/
     }
 
     return status;
