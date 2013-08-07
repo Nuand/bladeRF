@@ -63,15 +63,6 @@ unsigned int str2uint(const char *str, unsigned int min, unsigned int max, bool 
     return value;
 }
 
-static void init_devinfo(struct bladerf_devinfo *d)
-{
-    d->backend  = BACKEND_ANY;
-    d->serial   = DEVINFO_SERIAL_ANY;
-    d->usb_bus  = DEVINFO_BUS_ANY;
-    d->usb_addr = DEVINFO_ADDR_ANY;
-    d->instance = DEVINFO_INST_ANY;
-}
-
 static int handle_backend(char *str, struct bladerf_devinfo *d)
 {
     int status = 0;
@@ -202,7 +193,7 @@ int str2devinfo(const char *dev_id_const, struct bladerf_devinfo *d)
 
     /* Prep our device info before we begin manpulating it, defaulting to
      * a "wildcard" device indentification */
-    init_devinfo(d);
+    bladerf_init_devinfo(d);
 
     /* No device indentifier -- pick anything we can find */
     if (!dev_id_const || strlen(dev_id_const) == 0) {

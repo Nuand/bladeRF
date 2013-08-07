@@ -429,49 +429,6 @@ static int linux_get_serial(struct bladerf *dev, uint64_t *serial)
     return 0;
 }
 
-/*------------------------------------------------------------------------------
- * Device probing
- *----------------------------------------------------------------------------*/
-static int device_filter(const struct dirent *d)
-{
-    const size_t pfx_len = strlen(BLADERF_DEV_PFX);
-    long int tmp;
-    char *endptr;
-
-    if (strlen(d->d_name) > pfx_len &&
-        !strncmp(d->d_name, BLADERF_DEV_PFX, pfx_len)) {
-
-        /* Is the remainder of the entry a valid (positive) integer? */
-        tmp = strtol(&d->d_name[pfx_len], &endptr, 10);
-
-        /* Nope */
-        if (*endptr != '\0' || tmp < 0 ||
-            (errno == ERANGE && (tmp == LONG_MAX || tmp == LONG_MIN)))
-            return 0;
-
-        /* Looks like a bladeRF by name... we'll check more later. */
-        return 1;
-    }
-
-    return 0;
-}
-
-/* Helper routine for freeing dirent list from scandir() */
-static inline void free_dirents(struct dirent **d, int n)
-{
-    if (d && n > 0 ) {
-        while (n--)
-            free(d[n]);
-        free(d);
-    }
-}
-
-static int linux_probe(struct bladerf_devinfo_list *list)
-{
-    int status;
-
-}
-
 
 /*------------------------------------------------------------------------------
  * Init/deinit
@@ -555,7 +512,79 @@ int linux_close(struct bladerf *dev)
 }
 
 /*------------------------------------------------------------------------------
- * Init/deinit
+ * Device probing
+ *----------------------------------------------------------------------------*/
+static int device_filter(const struct dirent *d)
+{
+    const size_t pfx_len = strlen(BLADERF_DEV_PFX);
+    long int tmp;
+    char *endptr;
+
+    if (strlen(d->d_name) > pfx_len &&
+        !strncmp(d->d_name, BLADERF_DEV_PFX, pfx_len)) {
+
+        /* Is the remainder of the entry a valid (positive) integer? */
+        tmp = strtol(&d->d_name[pfx_len], &endptr, 10);
+
+        /* Nope */
+        if (*endptr != '\0' || tmp < 0 ||
+            (errno == ERANGE && (tmp == LONG_MAX || tmp == LONG_MIN)))
+            return 0;
+
+        /* Looks like a bladeRF by name... we'll check more later. */
+        return 1;
+    }
+
+    return 0;
+}
+
+/* Helper routine for freeing dirent list from scandir() */
+static inline void free_dirents(struct dirent **d, int n)
+{
+    if (d && n > 0 ) {
+        while (n--)
+            free(d[n]);
+        free(d);
+    }
+}
+
+static int str2instance(const char *bladerf_dev)
+{
+    /* TODO grab number off of instance */
+    return 0;
+}
+
+static int linux_probe(struct bladerf_devinfo_list *list)
+{
+    int status = 0;
+    struct dirent **matches;
+    int num_matches, i;
+    struct bladerf *dev;
+    struct bladerf_devinfo devinfo;
+
+    bladerf_init_devinfo(&devinfo);
+
+    num_matches = scandir(BLADERF_DEV_DIR, &matches, device_filter, alphasort);
+    if (num_matches > 0) {
+
+        for (i = 0; i < num_matches; i++) {
+            devinfo.instance = str2instance(matches[i]->d_name);
+            dev = linux_open(&devinfo);
+
+            if (dev) {
+                /* Fill out devinfo structure here */
+            } else {
+                dbg_printf("Failed to open instance=%d\n", devinfo.instance);
+            }
+        }
+    }
+
+    free_dirents(matches, num_matches);
+    return status;
+}
+
+/*------------------------------------------------------------------------------
+ * Function table
  *----------------------------------------------------------------------------*/
 
 const struct bladerf_fn bladerf_linux_fn = {

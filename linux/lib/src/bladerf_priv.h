@@ -121,6 +121,11 @@ void bladerf_get_error(struct bladerf_error *error,
                         bladerf_error_t *type, int *val);
 
 /**
+ * Initialize a bladerf_devinfo's fields to wildcards
+ */
+void bladerf_init_devinfo(struct bladerf_devinfo *d);
+
+/**
  * Compare two devinfo's against each other.
  *
  * @param   a   Device information to compare
