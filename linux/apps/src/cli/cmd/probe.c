@@ -14,9 +14,11 @@ int cmd_probe(struct cli_state *s, int argc, char *argv[])
 
     printf("\n");
     for (i = 0; i < n_devices; i++) {
-/*        printf("    Path: %s\n", devices[i].path);
+        printf("    Bakend: %s\n", devices[i].backend == BACKEND_LIBUSB ? "libusb" : "linux kernel" );
         printf("    Serial: 0x%016lX\n", devices[i].serial);
-        printf("    Firmware: v%d.%d\n", devices[i].fw_ver_maj,
+        printf("    USB Bus: %d\n", devices[i].usb_addr);
+        printf("    USB Address: %d\n", devices[i].usb_bus);
+        /*printf("    Firmware: v%d.%d\n", devices[i].fw_ver_maj,
                devices[i].fw_ver_min);
 
         if (devices[i].fpga_configured) {
@@ -24,12 +26,10 @@ int cmd_probe(struct cli_state *s, int argc, char *argv[])
                     devices[i].fpga_ver_maj, devices[i].fpga_ver_min);
         } else {
             printf("    FPGA: not configured\n");
-        }
-*/
-        printf("Kind of stubbed out for now\n");
+        }*/
     }
 
-    bladerf_free_device_list(devices, n_devices);
+    bladerf_free_device_list(devices);
 
     return 0;
 }
