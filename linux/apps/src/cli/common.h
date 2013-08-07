@@ -145,4 +145,18 @@ static inline unsigned int uint_max(unsigned int x, unsigned int y)
     return x > y ? x : y;
 }
 
+/* expand_file - tecla expansion, optional
+ 
+   Optionally expand tecla paths, if we're in interactive mode.  Unfortunately
+   we can't house this in the interactive module since we handle commands
+   here.
+
+   Caller is expected to free() the returned char *
+
+   A return value of NULL indicates some form of internal error
+
+   On non-interactive compiles this returns the same path
+*/
+char *expand_file(const char *inpath);
+
 #endif

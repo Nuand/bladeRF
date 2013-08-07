@@ -7,6 +7,10 @@
 #include <limits.h>
 #include <pthread.h>
 
+#ifdef INTERACTIVE
+#include <libtecla.h>
+#endif
+
 #include "cmd.h"
 #include "cmd/rxtx.h"
 
@@ -206,3 +210,33 @@ char *to_path(FILE *f)
 
     return file_path;
 }
+
+#ifdef INTERACTIVE
+char *expand_file(const char *inpath) {
+	ExpandFile *ef = NULL;
+	FileExpansion *fe = NULL;
+	char *ret = NULL;
+
+	ef = new_ExpandFile();
+	if (!ef) 
+		return NULL;
+
+	fe = ef_expand_file(ef, inpath, strlen(inpath));
+
+	if (!fe)
+		return NULL;
+
+	if (fe->nfile <= 0)
+		return NULL;
+
+	ret = strdup(fe->files[0]);
+
+	del_ExpandFile(ef);
+
+	return ret;
+}
+#else
+char *expand_file(const char *inpath) {
+	return strdup(inpath);
+}
+#endif

@@ -170,7 +170,8 @@ static int set_sample_file_path(struct common_cfg *c, const char *file_path)
         free(c->file_path);
     }
 
-    c->file_path = strdup(file_path);
+    /* c->file_path = strdup(file_path); */
+	c->file_path = expand_file(file_path);
     if (!c->file_path) {
         status = CMD_RET_MEM;
     }
