@@ -1,16 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <errno.h>
-#include <dirent.h>
 #include <assert.h>
-#include <time.h>
-#include <sys/ioctl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/time.h>
 
 #include "libbladeRF.h"     /* Public API */
 #include "bladerf_priv.h"   /* Implementation-specific items ("private") */
@@ -21,126 +12,9 @@
 #include "backend.h"
 #include "device_identifier.h"
 
-#ifndef BLADERF_DEV_DIR
-#   define BLADERF_DEV_DIR "/dev/"
-#endif
-
-#ifndef BLADERF_DEV_PFX
-#   define BLADERF_DEV_PFX  "bladerf"
-#endif
-
-
 /*------------------------------------------------------------------------------
  * Device discovery & initialization/deinitialization
  *----------------------------------------------------------------------------*/
-
-/* XXX REMOVE (or move to backend/linux.c)
- * Return 0 if dirent name matches that of what we expect for a bladerf dev */
-#if 0
-static int bladerf_filter(const struct dirent *d)
-{
-    const size_t pfx_len = strlen(BLADERF_DEV_PFX);
-    long int tmp;
-    char *endptr;
-
-    if (strlen(d->d_name) > pfx_len &&
-        !strncmp(d->d_name, BLADERF_DEV_PFX, pfx_len)) {
-
-        /* Is the remainder of the entry a valid (positive) integer? */
-        tmp = strtol(&d->d_name[pfx_len], &endptr, 10);
-
-        /* Nope */
-        if (*endptr != '\0' || tmp < 0 ||
-            (errno == ERANGE && (tmp == LONG_MAX || tmp == LONG_MIN)))
-            return 0;
-
-        /* Looks like a bladeRF by name... we'll check more later. */
-        return 1;
-    }
-
-    return 0;
-}
-
-/* Helper routine for freeing dirent list from scandir() */
-static inline void free_dirents(struct dirent **d, int n)
-{
-    if (d && n > 0 ) {
-        while (n--)
-            free(d[n]);
-        free(d);
-    }
-}
-#endif
-
-
-#if 0
-/* XXX REMOVE (or move to backend/linux.c)
- *
- * Open and if a non-NULL bladerf_devinfo ptr is provided, attempt to verify
- * that the device we opened is a bladeRF via a info calls.
- * (Does not fill out devinfo's path) */
-struct bladerf * _bladerf_open_info(const char *dev_path,
-                                    struct bladerf_devinfo *i)
-{
-    struct bladerf *ret;
-    unsigned int speed;
-
-    ret = malloc(sizeof(*ret));
-    if (!ret)
-        return NULL;
-
-    ret->last_tx_sample_rate = 0;
-    ret->last_rx_sample_rate = 0;
-
-    /* TODO -- spit out error/warning message to assist in debugging
-     * device node permissions issues?
-     */
-    /* XXX: Temporary fix
-    if ((ret->fd = open(dev_path, O_RDWR)) < 0) {
-        ret->last_errno = errno;
-        goto bladerf_open__err;
-    }
-    */
-
-    /* Determine the device's USB speed */
-    /* XXX: Temporary fix
-    if (ioctl(ret->fd, BLADE_GET_SPEED, &speed))
-        goto bladerf_open__err;
-    ret->speed = speed;
-    */
-    /* Successfully opened, so save off the path */
-    /* XXX: Temporary fix
-    if( (ret->path = strdup(dev_path)) == NULL) {
-        // Not so successful string duplication
-        ret->last_errno = errno;
-        goto bladerf_open__err;
-    }
-    */
-
-    /* TODO -- spit our errors/warning here depending on library verbosity? */
-    if (i) {
-        if (bladerf_get_serial(ret, &i->serial) < 0)
-            goto bladerf_open__err;
-
-        i->fpga_configured = bladerf_is_fpga_configured(ret);
-        if (i->fpga_configured < 0)
-            goto bladerf_open__err;
-
-        if (bladerf_get_fw_version(ret, &i->fw_ver_maj, &i->fw_ver_min) < 0)
-            goto bladerf_open__err;
-
-        if (bladerf_get_fpga_version(ret,
-                                     &i->fpga_ver_maj, &i->fpga_ver_min) < 0)
-            goto bladerf_open__err;
-    }
-
-    return ret;
-
-bladerf_open__err:
-    free(ret);
-    return NULL;
-}
-#endif
 
 ssize_t bladerf_get_device_list(struct bladerf_devinfo **devices)
 {
@@ -162,10 +36,8 @@ ssize_t bladerf_get_device_list(struct bladerf_devinfo **devices)
     return ret;
 }
 
-/* XXX I think we might be able to just lett the user free() the device list */
-void bladerf_free_device_list(struct bladerf_devinfo *devices, size_t n)
+void bladerf_free_device_list(struct bladerf_devinfo *devices)
 {
-    /* XXX Free items returned by backend_probe */
 }
 
 struct bladerf * bladerf_open_with_devinfo(struct bladerf_devinfo *devinfo)

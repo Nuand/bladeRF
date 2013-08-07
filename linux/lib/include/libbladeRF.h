@@ -150,9 +150,8 @@ ssize_t bladerf_get_device_list(struct bladerf_devinfo **devices);
  * Free device list returned by bladerf_get_device_list()
  *
  * @param   devices     List of available devices
- * @param   n           Number of devices in the list
  */
-void bladerf_free_device_list(struct bladerf_devinfo *devices, size_t n);
+void bladerf_free_device_list(struct bladerf_devinfo *devices);
 
 
 /**

@@ -9,12 +9,23 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <sys/time.h>
+#include <dirent.h>
 
 #include "bladeRF.h"
 #include "libbladeRF.h"
 #include "bladerf_priv.h"
 #include "backend/linux.h"
 #include "debug.h"
+
+#ifndef BLADERF_DEV_DIR
+#   define BLADERF_DEV_DIR "/dev/"
+#endif
+
+#ifndef BLADERF_DEV_PFX
+#   define BLADERF_DEV_PFX  "bladerf"
+#endif
+
+
 
 /* Linux device driver information */
 struct bladerf_linux {
@@ -419,9 +430,52 @@ static int linux_get_serial(struct bladerf *dev, uint64_t *serial)
 }
 
 /*------------------------------------------------------------------------------
+ * Device probing
+ *----------------------------------------------------------------------------*/
+static int device_filter(const struct dirent *d)
+{
+    const size_t pfx_len = strlen(BLADERF_DEV_PFX);
+    long int tmp;
+    char *endptr;
+
+    if (strlen(d->d_name) > pfx_len &&
+        !strncmp(d->d_name, BLADERF_DEV_PFX, pfx_len)) {
+
+        /* Is the remainder of the entry a valid (positive) integer? */
+        tmp = strtol(&d->d_name[pfx_len], &endptr, 10);
+
+        /* Nope */
+        if (*endptr != '\0' || tmp < 0 ||
+            (errno == ERANGE && (tmp == LONG_MAX || tmp == LONG_MIN)))
+            return 0;
+
+        /* Looks like a bladeRF by name... we'll check more later. */
+        return 1;
+    }
+
+    return 0;
+}
+
+/* Helper routine for freeing dirent list from scandir() */
+static inline void free_dirents(struct dirent **d, int n)
+{
+    if (d && n > 0 ) {
+        while (n--)
+            free(d[n]);
+        free(d);
+    }
+}
+
+static int linux_probe(struct bladerf_devinfo_list *list)
+{
+    int status;
+
+}
+
+
+/*------------------------------------------------------------------------------
  * Init/deinit
  *----------------------------------------------------------------------------*/
-
 
 static struct bladerf * linux_open(struct bladerf_devinfo *info)
 {
@@ -505,7 +559,7 @@ int linux_close(struct bladerf *dev)
  *----------------------------------------------------------------------------*/
 
 const struct bladerf_fn bladerf_linux_fn = {
-    .probe                  =   NULL,
+    .probe                  =   linux_probe,
 
     .open                   =   linux_open,
     .close                  =   linux_close,
