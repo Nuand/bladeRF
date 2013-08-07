@@ -44,7 +44,7 @@ Pre-built binaries are not being posted to a "release page" yet due to the volat
 
 For the time being, we'll try to keep an updated link to a development build here:
 
-- 2013-08-04 (Debug build as of 465b96e7999a96d2d845a0e838628b5334c3e6fd)
-- MD5: 34c158b08f89f7cec614f2fc603f0e6b
+- 2013-08-04 (Debug build as of 1b260ec4277002bc1993349212000733603dfa11)
+- MD5: d898bb9f5b93891edee65393b7956f25
 - Link: http://nuand.com/~bpadalino/bladeRF.img
 
