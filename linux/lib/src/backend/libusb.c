@@ -264,12 +264,12 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
     struct bladerf_lusb *lusb = dev->backend;
 
     /* Make sure we are using the configuration interface */
-    /*status = libusb_set_interface_alt_setting(lusb->handle, 0, 0);
+    status = libusb_set_interface_alt_setting(lusb->handle, 0, 0);
     if(status) {
-        dbg_printf("libusb_set_interface_alt_setting: ");
-        print_libusb_error(status);
-        goto deallocate;
-    }*/
+        bladerf_set_error(&dev->error, ETYPE_BACKEND, status);
+        dbg_printf( "alt_setting issue: %s\n", libusb_error_name(status) );
+        return BLADERF_ERR_IO;;
+    }
 
     /* Begin programming */
     status = begin_fpga_programming(dev);
@@ -333,7 +333,8 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
         dbg_printf("Could not enable RF TX (%d): %s\n", status, libusb_error_name(status) );
     }
 
-    return 0;
+done:
+    return status;
 }
 
 static int lusb_flash_firmware(struct bladerf *dev,
