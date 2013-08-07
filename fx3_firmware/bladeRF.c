@@ -46,7 +46,7 @@ CyU3PDmaChannel glChHandlePtoU;
 uint8_t glUsbConfiguration = 0;             /* Active USB configuration. */
 uint8_t glUsbInterface = 0;                 /* Active USB interface. */
 
-uint32_t glDMARxCount = 0;                  /* Counter to track the number of buffers received 
+uint32_t glDMARxCount = 0;                  /* Counter to track the number of buffers received
                                              * from USB during FPGA programming */
 
 uint8_t glEp0Buffer[4096] __attribute__ ((aligned (32)));
@@ -977,19 +977,22 @@ void CyFxbladeRFApplnUSBEventCB (CyU3PUsbEventType_t evtype, uint16_t evdata)
         case CY_U3P_USB_EVENT_SETINTF:
             interface = evdata >> 8;
 
+            /* Don't do anything if we're setting the same interface over */
+            if( interface == glUsbInterface ) break ;
+
+            /* Stop whatever we were doing */
+            switch(glUsbInterface) {
+                case 0: NuandFpgaConfigStop() ; break ;
+                case 1: NuandRFLinkStop(); break ;
+                default: break ;
+            }
+
+            /* Start up the new one */
             if (interface == 0) {
-                NuandRFLinkStop();
                 NuandFpgaConfigStart();
             } else if (interface == 1) {
-                NuandFpgaConfigStop();
                 NuandRFLinkStart();
             } else if (interface == 2) {
-                if (glAppMode == MODE_RF_CONFIG) {
-                    NuandRFLinkStop();
-                }
-                if (glAppMode == MODE_FPGA_CONFIG) {
-                    NuandFpgaConfigStop();
-                }
                 glEp0Idx = 0;
                 NuandFirmwareStart();
             }
