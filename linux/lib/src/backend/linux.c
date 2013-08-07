@@ -505,6 +505,8 @@ int linux_close(struct bladerf *dev)
  *----------------------------------------------------------------------------*/
 
 const struct bladerf_fn bladerf_linux_fn = {
+    .probe                  =   NULL,
+
     .open                   =   linux_open,
     .close                  =   linux_close,
 

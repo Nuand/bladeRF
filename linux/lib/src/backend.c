@@ -72,6 +72,24 @@ struct bladerf * backend_open(struct bladerf_devinfo *info) {
     return NULL;
 }
 
-/* XXX for the probe routine, we can do something similar to
- *     open_with_any_backend, where we loop over the backend funtion tables
- */
+int backend_probe(struct bladerf_devinfo **devinfo_items, size_t *num_items)
+{
+    int status;
+    struct bladerf_devinfo_list *list;
+    const struct bladerf_fn **fn_tbl;
+
+    status = bladerf_devinfo_list_alloc(&list);
+
+    if (status == 0) {
+        for (fn_tbl = &backend_fns[0]; *fn_tbl != NULL; fn_tbl++) {
+            assert((*fn_tbl)->probe);
+            status = (*fn_tbl)->probe(list);
+
+            if (status < 0) {
+                bladerf_devinfo_list_free(list);
+            }
+        }
+    }
+
+    return status;
+}

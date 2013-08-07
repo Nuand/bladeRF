@@ -620,7 +620,7 @@ static ssize_t lusb_tx(struct bladerf *dev, bladerf_format_t format, void *sampl
                     BLADERF_LIBUSB_TIMEOUT_MS
                 );
         if( status < 0 ) {
-            dbg_printf( "Error reading samples (%d): %s\n", status, libusb_error_name(status) );
+            dbg_printf( "Error transmitting samples (%d): %s\n", status, libusb_error_name(status) );
             return BLADERF_ERR_IO;
         } else {
             assert(transferred > 0);
@@ -704,6 +704,8 @@ static ssize_t lusb_rx(struct bladerf *dev, bladerf_format_t format, void *sampl
 //}
 
 const struct bladerf_fn bladerf_lusb_fn = {
+    .probe              = NULL,
+
     .open               = lusb_open,
     .close              = lusb_close,
 

@@ -142,62 +142,25 @@ bladerf_open__err:
 }
 #endif
 
-/* XXX (Some form of this will move to backend/linux.c) */
 ssize_t bladerf_get_device_list(struct bladerf_devinfo **devices)
 {
-    return 0 ;
-}
-#if 0
-    struct bladerf_devinfo *ret;
-    ssize_t num_devices;
-    struct dirent **matches;
-    int num_matches, i;
-    struct bladerf *dev;
-    char *dev_path;
+    ssize_t ret;
+    size_t num_devices;
+    struct bladerf_devinfo *devices_local;
+    int status;
 
-    ret = NULL;
-    num_devices = 0;
+    status = backend_probe(&devices_local, &num_devices);
 
-    /* Use backend_probe() to get the list */
-
-    num_matches = scandir(BLADERF_DEV_DIR, &matches, bladerf_filter, alphasort);
-    if (num_matches > 0) {
-
-        ret = malloc(num_matches * sizeof(*ret));
-        if (!ret) {
-            num_devices = BLADERF_ERR_MEM;
-            goto bladerf_get_device_list_out;
-        }
-
-        for (i = 0; i < num_matches; i++) {
-            dev_path = malloc(strlen(BLADERF_DEV_DIR) +
-                                strlen(matches[i]->d_name) + 1);
-
-            if (dev_path) {
-                strcpy(dev_path, BLADERF_DEV_DIR);
-                strcat(dev_path, matches[i]->d_name);
-
-                dev = _bladerf_open_info(dev_path, &ret[num_devices]);
-
-                if (dev) {
-                    ret[num_devices++].path = dev_path;
-                    bladerf_close(dev);
-                } else
-                    free(dev_path);
-            } else {
-                num_devices = BLADERF_ERR_MEM;
-                goto bladerf_get_device_list_out;
-            }
-        }
+    if (status < 0) {
+        /* Note */
+        ret = status;
+    } else {
+        assert(num_devices <= SSIZE_MAX);
+        ret = (ssize_t)num_devices;
     }
 
-
-bladerf_get_device_list_out:
-    *devices = ret;
-    free_dirents(matches, num_matches);
-    return num_devices;
+    return ret;
 }
-#endif
 
 /* XXX I think we might be able to just lett the user free() the device list */
 void bladerf_free_device_list(struct bladerf_devinfo *devices, size_t n)

@@ -25,6 +25,14 @@ struct bladerf_error {
     int value;
 };
 
+struct bladerf_devinfo_list
+{
+    struct bladerf_devinfo *elt;
+    unsigned int cookie;        /* Bug catcher */
+    size_t num_elt;             /* Number of elements in the list */
+    size_t backing_size;        /* Size of backing array */
+};
+
 int bladerf_init_device(struct bladerf *dev);
 size_t bytes_to_c16_samples(size_t n_bytes);
 size_t c16_samples_to_bytes(size_t n_samples);
@@ -35,9 +43,12 @@ struct bladerf;
 /* Driver specific function table.  These functions are required for each
    unique platform to operate the device. */
 struct bladerf_fn {
-    /* XXX Add a backend-specific probe here */
 
-    /* Opening device based upon specified device info */
+    /* Backends probe for devices and append entries to this list using
+     * bladerf_devinfo_list_append() */
+    int (*probe)(struct bladerf_devinfo_list *info_list);
+
+    /* Opening device based upon specified device info*/
     struct bladerf * (*open)(struct bladerf_devinfo *info);
 
     /* Closing of the device and freeing of the data */
@@ -155,5 +166,35 @@ bool bladerf_serial_matches(struct bladerf_devinfo *a,
  */
 bool bladerf_bus_addr_matches(struct bladerf_devinfo *a,
                               struct bladerf_devinfo *b);
+
+/**
+ * Create list of deinfos
+ */
+int bladerf_devinfo_list_alloc(struct bladerf_devinfo_list **list);
+
+/**
+ * Dellocate and free devinfo list
+ */
+void bladerf_devinfo_list_free(struct bladerf_devinfo_list *list);
+
+/**
+ * Get a pointer to the parent devinfo_list container of a devinfo
+ *
+ * @return pointer to container on success, NULL on error
+ */
+struct bladerf_devinfo_list *
+bladerf_get_devinfo_list(struct bladerf_devinfo *devinfo);
+
+/**
+ * Add and item to our internal devinfo list
+ *
+ * 0 on success, BLADERF_ERR_* on failuer
+ */
+int bladerf_devinfo_list_add(struct bladerf_devinfo_list *list,
+                                    bladerf_backend_t backend,
+                                    uint64_t serial,
+                                    uint8_t usb_bus,
+                                    uint8_t usb_addr,
+                                    unsigned int instance);
 #endif
 

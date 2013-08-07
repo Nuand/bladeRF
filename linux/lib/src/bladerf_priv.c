@@ -1,5 +1,8 @@
+#include <assert.h>
 #include <libbladeRF.h>
+
 #include "bladerf_priv.h"
+#include "debug.h"
 
 void bladerf_set_error(struct bladerf_error *error,
                         bladerf_error_t type, int val)
@@ -52,6 +55,9 @@ int bladerf_init_device(struct bladerf *dev)
     /* LMS FAQ: Higher LNA Gain */
     bladerf_lms_write( dev, 0x79, 0x37 );
 
+    /* FPGA workaround: Set IQ polarity for RX */
+    bladerf_lms_write( dev, 0x5a, 0xa0 );
+
     /* TODO: Read this return from the SPI calls */
     return 0;
 }
@@ -96,4 +102,91 @@ bool bladerf_bus_addr_matches(struct bladerf_devinfo *a,
 
     return bus_match && addr_match;
 }
+
+int bladerf_devinfo_list_alloc(struct bladerf_devinfo_list **list_ret)
+{
+    int status = BLADERF_ERR_UNEXPECTED;
+    struct bladerf_devinfo_list *list;
+
+    list = malloc(sizeof(struct bladerf_devinfo_list));
+    if (!list) {
+        dbg_printf("Failed to allocated devinfo list!\n");
+        status = BLADERF_ERR_MEM;
+    } else {
+        list->cookie = 0xdeadbeef;
+        list->num_elt = 0;
+        list->backing_size = 5;
+
+        list->elt = malloc(list->backing_size * sizeof(struct bladerf_devinfo));
+
+        if (!list->elt) {
+            free(list);
+            status = BLADERF_ERR_MEM;
+        } else {
+            *list_ret = list;
+            status = 0;
+        }
+    }
+
+    return status;
+}
+
+int bladerf_devinfo_list_add(struct bladerf_devinfo_list *list,
+                                    bladerf_backend_t backend,
+                                    uint64_t serial,
+                                    uint8_t usb_bus,
+                                    uint8_t usb_addr,
+                                    unsigned int instance)
+{
+    int status = 0;
+    struct bladerf_devinfo *info_tmp;
+
+    if (list->num_elt >= list->backing_size) {
+        info_tmp = realloc(list->elt, list->backing_size * 2);
+        if (!info_tmp) {
+            status = BLADERF_ERR_MEM;
+        } else {
+            list->elt = info_tmp;
+        }
+    }
+
+    if (status == 0) {
+        list->elt[list->num_elt].backend = backend;
+        list->elt[list->num_elt].serial = serial;
+        list->elt[list->num_elt].usb_bus = usb_bus;
+        list->elt[list->num_elt].usb_addr = usb_addr;
+        list->elt[list->num_elt].instance = instance;
+        list->num_elt++;
+    }
+
+    return status;
+}
+
+void bladerf_devinfo_list_free(struct bladerf_devinfo_list *list)
+{
+    assert(list && list->elt && list->cookie == 0xdeadbeef);
+    free(list->elt);
+    free(list);
+}
+
+/* In the spirit of container_of & offset_of
+ *   http://www.kroah.com/log/linux/container_of.html)
+ */
+struct bladerf_devinfo_list *
+bladerf_get_devinfo_list(struct bladerf_devinfo *devinfo)
+{
+    struct bladerf_devinfo_list *ret;
+    size_t offset = (size_t)(((struct bladerf_devinfo_list*)0)->elt);
+
+    ret = (struct bladerf_devinfo_list *)((char *)devinfo - offset);
+
+    /* Assert for debug, error for release build... */
+    assert(ret->cookie == 0xdeadbeef);
+    if (ret->cookie != 0xdeadbeef) {
+        ret = NULL;
+    }
+
+    return ret;
+}
+
 
