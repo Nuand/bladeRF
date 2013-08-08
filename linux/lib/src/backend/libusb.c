@@ -158,7 +158,7 @@ static struct bladerf * lusb_open(struct bladerf_devinfo *info)
     status = libusb_init(&context);
     if( status ) {
         dbg_printf( "Could not initialize libusb: %s\n", libusb_error_name(status) );
-        goto done;
+        goto lusb_open_done;
     }
 
     count = libusb_get_device_list( NULL, &list );
@@ -169,7 +169,7 @@ static struct bladerf * lusb_open(struct bladerf_devinfo *info)
             status = lusb_get_devinfo( list[i], &thisinfo );
             if( status ) {
                 dbg_printf( "Could not open bladeRF device: %s\n", libusb_error_name(status) );
-                goto error_context;
+                goto lusb_open__err_context;
             }
             thisinfo.instance = n++;
 
@@ -187,14 +187,11 @@ static struct bladerf * lusb_open(struct bladerf_devinfo *info)
                 /* Populate the backend information */
                 lusb->context = context;
                 lusb->dev = list[i];
+                lusb->handle = NULL;
                 status = libusb_open(list[i], &lusb->handle);
                 if( status ) {
                     dbg_printf( "Could not open bladeRF device: %s\n", libusb_error_name(status) );
-                    free(lusb);
-                    lusb = NULL;
-                    free(dev);
-                    dev = NULL;
-                    goto error_device_list;
+                    goto lusb_open__err_device_list;
                 }
 
                 /* Claim interfaces */
@@ -202,11 +199,7 @@ static struct bladerf * lusb_open(struct bladerf_devinfo *info)
                     status = libusb_claim_interface(lusb->handle, inf);
                     if( status ) {
                         dbg_printf( "Could not claim interface %i - %s\n", inf, libusb_error_name(status) );
-                        free(lusb);
-                        lusb = NULL;
-                        free(dev);
-                        dev = NULL;
-                        goto error_device_list;
+                        goto lusb_open__err_device_list;
                     }
                 }
 
@@ -221,15 +214,27 @@ static struct bladerf * lusb_open(struct bladerf_devinfo *info)
         }
     }
 
-error_device_list:
+/* XXX I'd prefer if we made a call here to lusb_close(), but that would result
+ *     in an attempt to release interfaces we haven't claimed... thoughts? */
+lusb_open__err_device_list:
     libusb_free_device_list( list, 1 );
+    if (status != 0) {
+        if (lusb->handle) {
+            libusb_close(lusb->handle);
+        }
 
-error_context:
+        free(lusb);
+        free(dev);
+        lusb = NULL;
+        dev = NULL;
+    }
+
+lusb_open__err_context:
     if( dev == NULL ) {
         libusb_exit(context);
     }
 
-done:
+lusb_open_done:
     return dev;
 }
 
@@ -644,7 +649,7 @@ int lusb_probe(struct bladerf_devinfo_list *info_list)
     status = libusb_init(&context);
     if( status ) {
         dbg_printf( "Could not initialize libusb: %s\n", libusb_error_name(status) );
-        goto done;
+        goto lusb_probe_done;
     }
 
     count = libusb_get_device_list( NULL, &list );
@@ -666,7 +671,7 @@ int lusb_probe(struct bladerf_devinfo_list *info_list)
     }
     libusb_free_device_list(list,1);
     libusb_exit(context);
-done:
+lusb_probe_done:
     return status;
 }
 

@@ -26,11 +26,11 @@ ssize_t bladerf_get_device_list(struct bladerf_devinfo **devices)
     status = backend_probe(&devices_local, &num_devices);
 
     if (status < 0) {
-        /* Note */
         ret = status;
     } else {
         assert(num_devices <= SSIZE_MAX);
         ret = (ssize_t)num_devices;
+        *devices = devices_local;
     }
 
     return ret;
@@ -38,6 +38,10 @@ ssize_t bladerf_get_device_list(struct bladerf_devinfo **devices)
 
 void bladerf_free_device_list(struct bladerf_devinfo *devices)
 {
+    /* Admittedly, we could just have the user call free() directly,
+     * but this creates a 1:1 pair of calls, and this gives us a spot
+     * to do any additional cleanup here, if ever needed in the future */
+    free(devices);
 }
 
 struct bladerf * bladerf_open_with_devinfo(struct bladerf_devinfo *devinfo)

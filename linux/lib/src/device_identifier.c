@@ -1,67 +1,21 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <libbladeRF.h>
 #include <limits.h>
 #include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <errno.h>
 
 #include "bladerf_priv.h"
 #include "device_identifier.h"
+#include "conversions.h"
 #include "debug.h"
 
 #define DELIM_SPACE         " \t\r\n\v\f"
 
-unsigned int str2uint64(const char *str, uint64_t min, uint64_t max, bool *ok)
-{
-    unsigned long long value;
-    char *endptr;
-
-    errno = 0;
-    value = strtoull(str, &endptr, 0);
-
-    if (errno != 0 || endptr == str || *endptr != '\0' ||
-        value < (unsigned long long)min || value > (unsigned long long)max) {
-
-        if (ok) {
-            *ok = false;
-        }
-
-        return 0;
-    }
-
-    if (ok) {
-        *ok = true;
-    }
-
-    return (uint64_t)value;
-}
-
-unsigned int str2uint(const char *str, unsigned int min, unsigned int max, bool *ok)
-{
-    unsigned int value;
-    char *endptr;
-
-    errno = 0;
-    value = strtoul(str, &endptr, 0);
-
-    if (errno != 0 || value < min || value > max ||
-        endptr == str || *endptr != '\0') {
-
-        if (ok) {
-            *ok = false;
-        }
-
-        return 0;
-    }
-
-    if (ok) {
-        *ok = true;
-    }
-    return value;
-}
 
 static int handle_backend(char *str, struct bladerf_devinfo *d)
 {

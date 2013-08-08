@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <string.h>
 #include <libbladeRF.h>
+#include <stddef.h>
 
 #include "bladerf_priv.h"
 #include "debug.h"
@@ -113,29 +114,18 @@ bool bladerf_bus_addr_matches(struct bladerf_devinfo *a,
     return bus_match && addr_match;
 }
 
-int bladerf_devinfo_list_alloc(struct bladerf_devinfo_list **list_ret)
+int bladerf_devinfo_list_init(struct bladerf_devinfo_list *list)
 {
-    int status = BLADERF_ERR_UNEXPECTED;
-    struct bladerf_devinfo_list *list;
+    int status = 0;
 
-    list = malloc(sizeof(struct bladerf_devinfo_list));
-    if (!list) {
-        dbg_printf("Failed to allocated devinfo list!\n");
+    list->num_elt = 0;
+    list->backing_size = 5;
+
+    list->elt = malloc(list->backing_size * sizeof(struct bladerf_devinfo));
+
+    if (!list->elt) {
+        free(list);
         status = BLADERF_ERR_MEM;
-    } else {
-        list->cookie = 0xdeadbeef;
-        list->num_elt = 0;
-        list->backing_size = 5;
-
-        list->elt = malloc(list->backing_size * sizeof(struct bladerf_devinfo));
-
-        if (!list->elt) {
-            free(list);
-            status = BLADERF_ERR_MEM;
-        } else {
-            *list_ret = list;
-            status = 0;
-        }
     }
 
     return status;
@@ -158,42 +148,8 @@ int bladerf_devinfo_list_add(struct bladerf_devinfo_list *list,
 
     if (status == 0) {
         memcpy(&list->elt[list->num_elt], info, sizeof(*info));
-        /*list->elt[list->num_elt].backend = backend;
-        list->elt[list->num_elt].serial = serial;
-        list->elt[list->num_elt].usb_bus = usb_bus;
-        list->elt[list->num_elt].usb_addr = usb_addr;
-        list->elt[list->num_elt].instance = instance;
-        list->num_elt++;*/
+        list->num_elt++;
     }
 
     return status;
 }
-
-void bladerf_devinfo_list_free(struct bladerf_devinfo_list *list)
-{
-    assert(list && list->elt && list->cookie == 0xdeadbeef);
-    free(list->elt);
-    free(list);
-}
-
-/* In the spirit of container_of & offset_of
- *   http://www.kroah.com/log/linux/container_of.html)
- */
-struct bladerf_devinfo_list *
-bladerf_get_devinfo_list(struct bladerf_devinfo *devinfo)
-{
-    struct bladerf_devinfo_list *ret;
-    size_t offset = (size_t)(((struct bladerf_devinfo_list*)0)->elt);
-
-    ret = (struct bladerf_devinfo_list *)((char *)devinfo - offset);
-
-    /* Assert for debug, error for release build... */
-    assert(ret->cookie == 0xdeadbeef);
-    if (ret->cookie != 0xdeadbeef) {
-        ret = NULL;
-    }
-
-    return ret;
-}
-
-

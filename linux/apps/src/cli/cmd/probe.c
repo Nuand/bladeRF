@@ -1,4 +1,17 @@
+#include <assert.h>
 #include "cmd.h"
+
+static inline const char *backend2str(bladerf_backend_t b)
+{
+    switch (b) {
+        case BACKEND_LIBUSB:
+            return "libusb";
+        case BACKEND_LINUX:
+            return "Linux kernel driver";
+        default:
+            return "Unknown";
+    }
+}
 
 /* Todo move to cmd_probe.c */
 int cmd_probe(struct cli_state *s, int argc, char *argv[])
@@ -14,7 +27,7 @@ int cmd_probe(struct cli_state *s, int argc, char *argv[])
 
     printf("\n");
     for (i = 0; i < n_devices; i++) {
-        printf("    Bakend: %s\n", devices[i].backend == BACKEND_LIBUSB ? "libusb" : "linux kernel" );
+        printf("    Backend: %s\n", backend2str(devices[i].backend));
         printf("    Serial: 0x%016lX\n", devices[i].serial);
         printf("    USB Bus: %d\n", devices[i].usb_addr);
         printf("    USB Address: %d\n", devices[i].usb_bus);
@@ -27,9 +40,13 @@ int cmd_probe(struct cli_state *s, int argc, char *argv[])
         } else {
             printf("    FPGA: not configured\n");
         }*/
+        printf("\n");
     }
 
-    bladerf_free_device_list(devices);
+    if (devices) {
+        assert(n_devices != 0);
+        bladerf_free_device_list(devices);
+    }
 
     return 0;
 }

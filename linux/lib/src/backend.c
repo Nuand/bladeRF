@@ -75,20 +75,38 @@ struct bladerf * backend_open(struct bladerf_devinfo *info) {
 int backend_probe(struct bladerf_devinfo **devinfo_items, size_t *num_items)
 {
     int status;
-    struct bladerf_devinfo_list *list;
+    struct bladerf_devinfo_list list;
     const struct bladerf_fn **fn_tbl;
 
-    status = bladerf_devinfo_list_alloc(&list);
+    *devinfo_items = NULL;
+    *num_items = 0;
+
+    status = bladerf_devinfo_list_init(&list);
 
     if (status == 0) {
-        for (fn_tbl = &backend_fns[0]; *fn_tbl != NULL; fn_tbl++) {
+        for (fn_tbl = &backend_fns[0]; *fn_tbl != NULL && !status; fn_tbl++) {
             assert((*fn_tbl)->probe);
-            status = (*fn_tbl)->probe(list);
+            status = (*fn_tbl)->probe(&list);
 
             if (status < 0) {
-                bladerf_devinfo_list_free(list);
+
             }
         }
+    }
+
+    if (status == 0) {
+        *num_items = list.num_elt;
+
+        if (*num_items != 0) {
+            *devinfo_items = list.elt;
+        } else {
+            /* For no items, we end up passing back a NULL list to the
+             * API caller, so we'll just free this up now */
+            free(list.elt);
+        }
+
+    } else {
+        free(list.elt);
     }
 
     return status;

@@ -15,6 +15,7 @@
 #include "libbladeRF.h"
 #include "bladerf_priv.h"
 #include "backend/linux.h"
+#include "conversions.h"
 #include "debug.h"
 
 #ifndef BLADERF_DEV_DIR
@@ -24,8 +25,6 @@
 #ifndef BLADERF_DEV_PFX
 #   define BLADERF_DEV_PFX  "bladerf"
 #endif
-
-
 
 /* Linux device driver information */
 struct bladerf_linux {
@@ -425,7 +424,7 @@ static int linux_get_fpga_version(struct bladerf *dev, unsigned int *maj, unsign
 /* XXX: For realsies */
 static int linux_get_serial(struct bladerf *dev, uint64_t *serial)
 {
-    *serial = 0xdeadbeef;
+    *serial = 0;
     return 0;
 }
 
@@ -548,39 +547,90 @@ static inline void free_dirents(struct dirent **d, int n)
     }
 }
 
+/* Assumes bladerF_dev is BLADERF_DEV_PFX followed by a number */
 static int str2instance(const char *bladerf_dev)
 {
-    /* TODO grab number off of instance */
-    return 0;
+    const size_t pfx_len = strlen(BLADERF_DEV_PFX);
+    int instance;
+    bool ok;
+
+    /* Validate assumption - bug catcher */
+    assert(strlen(bladerf_dev) > pfx_len);
+
+    instance = str2uint(&bladerf_dev[pfx_len], 0, UINT_MAX, &ok);
+
+    if (!ok) {
+        instance = DEVINFO_INST_ANY - 1;
+        dbg_printf("Failed to convert to instance: %s\n", bladerf_dev);
+        dbg_printf("Returning a value likely to fail: %d\n", instance);
+    }
+
+    return instance;
 }
 
-static int linux_probe(struct bladerf_devinfo_list *list)
+static int linux_probe(struct bladerf_devinfo_list *info_list)
 {
-    int status = 0;
+    int status;
     struct dirent **matches;
-    int num_matches, i;
+    int num_matches, i, tmp;
     struct bladerf *dev;
     struct bladerf_devinfo devinfo;
+    struct bladerf_linux *backend;
 
-    bladerf_init_devinfo(&devinfo);
+
 
     num_matches = scandir(BLADERF_DEV_DIR, &matches, device_filter, alphasort);
     if (num_matches > 0) {
 
         for (i = 0; i < num_matches; i++) {
+            status = 0;
+            bladerf_init_devinfo(&devinfo);
+            devinfo.backend = BACKEND_LINUX;
             devinfo.instance = str2instance(matches[i]->d_name);
             dev = linux_open(&devinfo);
+            backend = dev->backend;
 
             if (dev) {
-                /* Fill out devinfo structure here */
+
+                /* Fetch USB bus and address */
+                status = ioctl(backend->fd, BLADE_GET_BUS, &tmp);
+                if (status != 0) {
+                    dbg_printf("Failed to get bus. Skipping instance %d\n",
+                                devinfo.instance);
+                } else {
+                    assert(tmp >= 0 || tmp < (int)DEVINFO_INST_ANY);
+                    devinfo.usb_bus = tmp;
+                }
+
+                status = ioctl(backend->fd, BLADE_GET_ADDR, &tmp);
+                if (status != 0) {
+                    dbg_printf("Failed to get addr. Skipping instance %d\n",
+                               devinfo.instance);
+                } else {
+                    assert(tmp >= 0 && tmp < DEVINFO_ADDR_ANY);
+                    devinfo.usb_addr = tmp;
+                }
+
+                /* Fetch device's serial # */
+                status = linux_get_serial(dev, &devinfo.serial);
+                if (status != 0) {
+                    dbg_printf("Failed to get serial. Skipping instance %d\n",
+                               devinfo.instance);
+                }
+
             } else {
                 dbg_printf("Failed to open instance=%d\n", devinfo.instance);
             }
+
+            if (status == 0) {
+                bladerf_devinfo_list_add(info_list, &devinfo);
+            }
+            linux_close(dev);
         }
     }
 
     free_dirents(matches, num_matches);
-    return status;
+    return 0;
 }
 
 /*------------------------------------------------------------------------------

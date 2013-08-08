@@ -28,9 +28,8 @@ struct bladerf_error {
 struct bladerf_devinfo_list
 {
     struct bladerf_devinfo *elt;
-    unsigned int cookie;        /* Bug catcher */
-    size_t num_elt;             /* Number of elements in the list */
-    size_t backing_size;        /* Size of backing array */
+    size_t num_elt;      /* Number of elements in the list */
+    size_t backing_size; /* Size of backing array */
 };
 
 int bladerf_init_device(struct bladerf *dev);
@@ -175,12 +174,7 @@ bool bladerf_bus_addr_matches(struct bladerf_devinfo *a,
 /**
  * Create list of deinfos
  */
-int bladerf_devinfo_list_alloc(struct bladerf_devinfo_list **list);
-
-/**
- * Dellocate and free devinfo list
- */
-void bladerf_devinfo_list_free(struct bladerf_devinfo_list *list);
+int bladerf_devinfo_list_init(struct bladerf_devinfo_list *list);
 
 /**
  * Get a pointer to the parent devinfo_list container of a devinfo
