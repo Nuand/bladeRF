@@ -44,9 +44,28 @@ void bladerf_free_device_list(struct bladerf_devinfo *devices)
     free(devices);
 }
 
+static void init_stats(struct bladerf_stats *stats)
+{
+    stats->rx_overruns = 0;
+    stats->rx_throughput = 0;
+    stats->tx_underruns = 0;
+    stats->tx_throughput = 0;
+}
+
 struct bladerf * bladerf_open_with_devinfo(struct bladerf_devinfo *devinfo)
 {
-    return backend_open(devinfo);
+    struct bladerf *ret;
+
+    ret = backend_open(devinfo);
+    if (ret) {
+        bladerf_set_error(&ret->error, ETYPE_LIBBLADERF, 0);
+        init_stats(&ret->stats);
+
+        ret->last_tx_sample_rate = 0;
+        ret->last_rx_sample_rate = 0;
+    }
+
+    return ret;
 }
 
 /* dev path becomes device specifier string (osmosdr-like) */
@@ -491,6 +510,13 @@ int bladerf_gpio_read(struct bladerf *dev, uint32_t *val)
 
 int bladerf_gpio_write(struct bladerf *dev, uint32_t val)
 {
+    /* If we're connected at HS, we need to use smaller DMA transfers */
+    if (dev->speed == 0) {
+        val |= BLADERF_GPIO_FEATURE_SMALL_DMA_XFER;
+    } else {
+        val &= ~BLADERF_GPIO_FEATURE_SMALL_DMA_XFER;
+    }
+
     return dev->fn->gpio_write(dev,val);
 
 }

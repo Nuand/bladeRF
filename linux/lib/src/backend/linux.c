@@ -292,10 +292,6 @@ static int linux_gpio_write(struct bladerf *dev, uint32_t val)
 
     i = 0;
 
-    /* If we're connected at HS, we need to use smaller DMA transfers */
-    if (dev->speed == 0)
-        val |= BLADERF_GPIO_FEATURE_SMALL_DMA_XFER;
-
     for (i = 0; i < 4; i++) {
         uc.addr = i;
         uc.data = val >> (i * 8);
@@ -432,12 +428,30 @@ static int linux_get_serial(struct bladerf *dev, uint64_t *serial)
 /*------------------------------------------------------------------------------
  * Init/deinit
  *----------------------------------------------------------------------------*/
+int linux_close(struct bladerf *dev)
+{
+    int status;
+    struct bladerf_linux *backend = dev->backend;
+    assert(backend);
+
+    status = close(backend->fd);
+    free(backend);
+    free(dev);
+
+    if (status < 0) {
+        return BLADERF_ERR_IO;
+    } else {
+        return 0;
+    }
+}
+
 
 static struct bladerf * linux_open(struct bladerf_devinfo *info)
 {
     char dev_name[32];
     struct bladerf_linux *backend;
     struct bladerf *ret = NULL;
+    int status;
 
     int fd; /* Everything here starts with a driver file descriptor,
              * so no need to allocate backend and ret until we know we
@@ -490,25 +504,18 @@ static struct bladerf * linux_open(struct bladerf_devinfo *info)
 #endif
     }
 
+    if (ret) {
+        status = ioctl(backend->fd, BLADE_GET_SPEED, &ret->speed);
+        if (status != 0) {
+            dbg_printf("Failed to get device speed: %s\n", strerror(errno));
+            linux_close(ret);
+            ret = NULL;
+        }
+    }
+
     return ret;
 }
 
-int linux_close(struct bladerf *dev)
-{
-    int status;
-    struct bladerf_linux *backend = dev->backend;
-    assert(backend);
-
-    status = close(backend->fd);
-    free(backend);
-    free(dev);
-
-    if (status < 0) {
-        return BLADERF_ERR_IO;
-    } else {
-        return 0;
-    }
-}
 
 /*------------------------------------------------------------------------------
  * Device probing
