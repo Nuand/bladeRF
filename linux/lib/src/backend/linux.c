@@ -446,6 +446,9 @@ int linux_close(struct bladerf *dev)
 }
 
 
+/* Forward declared so linux_open can use it for the wildcard case */
+static int linux_probe(struct bladerf_devinfo_list *info_list);
+
 static struct bladerf * linux_open(struct bladerf_devinfo *info)
 {
     char dev_name[32];
@@ -482,31 +485,40 @@ static struct bladerf * linux_open(struct bladerf_devinfo *info)
     } else {
         /* Otherwise, we user our probe routine to get a device info list,
          * and then search it */
-        dbg_printf("No instance specified- call to linux_probe() goes here\n");
+        struct bladerf_devinfo_list list;
+        size_t i;
 
-        /* Probe */
+        status = bladerf_devinfo_list_init(&list);
 
-        /* Iterate over list ... */
-#if 0
-        for each in list {
+        if (status < 0) {
+            dbg_printf("Failed to initialized devinfo list!\n");
+        } else {
+            status = linux_probe(&list);
+            if (status < 0) {
+                dbg_printf("Probe failed: %s\n", bladerf_strerror(status));
+            } else {
+                for (i = 0; i < list.num_elt && !ret; i++) {
+                    if (bladerf_devinfo_matches(&list.elt[i], info)) {
+                        ret = linux_open(&list.elt[i]);
 
-            /* Note that these indicate a match for any wildcards */
-            if (instance_matches(a, b) &&
-                usb_bus_addr_match(a, b) &&
-                serial_matches(a, b)) {
+                        if (!ret) {
+                            dbg_printf("Failed to open instance %d - "
+                                       "trying next\n", list.elt[i].instance);
 
-                ret = linux_open(a)
-                break;
+                        } else {
+                            backend = ret->backend;
+                        }
+                    }
+                }
+
+                free(list.elt);
             }
-
-
         }
-#endif
     }
 
     if (ret) {
         status = ioctl(backend->fd, BLADE_GET_SPEED, &ret->speed);
-        if (status != 0) {
+        if (status < 0) {
             dbg_printf("Failed to get device speed: %s\n", strerror(errno));
             linux_close(ret);
             ret = NULL;
