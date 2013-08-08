@@ -342,7 +342,12 @@ static ssize_t bladerf_read(struct file *file, char __user *buf, size_t count, l
 
             spin_unlock_irqrestore(&dev->data_in_lock, flags);
 
-            ret = copy_to_user(buf, dev->data_in_bufs[idx].addr, DATA_BUF_SZ);
+            if (copy_to_user(buf, dev->data_in_bufs[idx].addr, DATA_BUF_SZ)) {
+                ret = -EFAULT;
+            } else {
+                ret = 0;
+            }
+
 
             dev->data_in_bufs[idx].valid = 1; // mark this RX packet as free
 
@@ -534,7 +539,11 @@ int __bladerf_rcv_one_word(bladerf_device_t *dev, int cmd, void __user *arg) {
 
     if (retval >= 0) {
         buf = le32_to_cpu(buf);
-        retval = copy_to_user(arg, &buf, sizeof(buf));
+        if (copy_to_user(arg, &buf, sizeof(buf))) {
+            retval = -EFAULT;
+        } else {
+            retval = 0;
+        }
     }
 
     if (retval >= 0) {
@@ -599,6 +608,7 @@ long bladerf_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
     int count, tries;
     int targetdev;
 
+    /* FIXME this large buffer should be kmalloc'd and kept with the dev, no? */
     unsigned char buf[1024];
     struct bladeRF_firmware brf_fw;
     struct bladeRF_sector brf_sector;
@@ -614,7 +624,11 @@ long bladerf_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
             if (retval >= 0) {
                 ver.major = le16_to_cpu(ver.major);
                 ver.minor = le16_to_cpu(ver.minor);
-                retval = copy_to_user(data, &ver, sizeof(struct bladeRF_version));
+                if (copy_to_user(data, &ver, sizeof(struct bladeRF_version))) {
+                    retval = -EFAULT;
+                } else {
+                    retval = 0;
+                }
             }
             break;
 
@@ -950,8 +964,12 @@ leave_fw:
                     retval = 0;
                     ret = usb_set_interface(dev->udev, 1,0);
                     dev->intnum = 1;
-                    retval = copy_to_user((void __user *)arg, &ret, sizeof(ret));
-                    printk("ok changed intf\n");
+
+                    if (copy_to_user((void __user *)arg, &ret, sizeof(ret))){
+                        retval = -EFAULT;
+                    } else {
+                        retval = 0;
+                    }
                 }
             }
             break;
@@ -1025,13 +1043,39 @@ leave_fw:
                 spi_reg.addr = buf[2];
                 spi_reg.data = buf[3];
 
-                retval = copy_to_user((void __user *)arg, &spi_reg, sizeof(struct uart_cmd));
+                if (copy_to_user((void __user *)arg, &spi_reg, sizeof(struct uart_cmd))) {
+                    retval = -EFAULT;
+                } else {
+                    retval = 0;
+                }
             }
             break;
 
         case BLADE_GET_SPEED:
             ret = dev->udev->speed == USB_SPEED_SUPER;
-            retval = copy_to_user((void __user *)arg, &ret, sizeof(ret));
+            if (copy_to_user((void __user *)arg, &ret, sizeof(ret))) {
+                retval = -EFAULT;
+            } else {
+                retval = 0;
+            }
+            break;
+
+        case BLADE_GET_ADDR:
+            ret = dev->udev->devnum;
+            if (copy_to_user((void __user *)arg, &ret, sizeof(ret))) {
+                retval = -EFAULT;
+            } else {
+                retval = 0;
+            }
+            break;
+
+        case BLADE_GET_BUS:
+            ret = dev->udev->bus->busnum;
+            if (copy_to_user((void __user *)arg, &ret, sizeof(ret))) {
+                retval = -EFAULT;
+            } else {
+                retval = 0;
+            }
             break;
 
     }
