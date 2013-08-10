@@ -380,12 +380,11 @@ int bladerf_stats(struct bladerf *dev, struct bladerf_stats *stats)
 int bladerf_flash_firmware(struct bladerf *dev, const char *firmware_file)
 {
     int status;
-    uint8_t *buf;
-    size_t  buf_size;
+    uint8_t *buf, *buf_padded;
+    size_t buf_size, buf_size_padded;
 
     status = read_file(firmware_file, &buf, &buf_size);
     if (!status) {
-
         /* Sanity check firmware
          *
          * Quick and dirty check for any absurd sizes. This is arbitrarily
@@ -402,7 +401,20 @@ int bladerf_flash_firmware(struct bladerf *dev, const char *firmware_file)
                        "to skip this check.\n");
             status = BLADERF_ERR_INVAL;
         } else {
-            status = dev->fn->flash_firmware(dev, buf, buf_size);
+
+            /* Pad firmare data out to a flash page size */
+            buf_size_padded = FLASH_BYTES_TO_PAGES(buf_size) * FLASH_PAGE_SIZE;
+            buf_padded = realloc(buf, buf_size_padded);
+            if (!buf_padded) {
+                status = BLADERF_ERR_MEM;
+            } else {
+                buf = buf_padded;
+                memset(buf + buf_size, 0xFF, buf_size_padded - buf_size);
+            }
+
+            if (!status) {
+                status = dev->fn->flash_firmware(dev, buf, buf_size);
+            }
         }
 
         free(buf);
