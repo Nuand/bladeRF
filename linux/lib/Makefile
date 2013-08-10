@@ -68,9 +68,7 @@ endif
 # Default install prefix
 INSTALL_PREFIX ?= /usr
 
-# XXX threw in a quick and dirty test program to use until
-#     we're ready to bring the CLI into the mix
-all: shared static test
+all: shared static
 
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
@@ -134,10 +132,6 @@ clean:
 	rm -rf $(BIN_DIR)
 	rm -f $(OBJ)
 	rm -f libbladeRF.pc
-	rm -f test
 	$(MAKE) -C doc/doxygen clean
-
-test: test.c $(STATIC_LIB)
-	gcc -ggdb3 -O0 $^ -lusb-1.0 -o test
 
 .PHONY: clean doc

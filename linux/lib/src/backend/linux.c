@@ -462,12 +462,12 @@ int linux_close(struct bladerf *dev)
 /* Forward declared so linux_open can use it for the wildcard case */
 static int linux_probe(struct bladerf_devinfo_list *info_list);
 
-static struct bladerf * linux_open(struct bladerf_devinfo *info)
+static int linux_open( struct bladerf **device, struct bladerf_devinfo *info)
 {
     char dev_name[32];
     struct bladerf_linux *backend;
     struct bladerf *ret = NULL;
-    int status;
+    int status = BLADERF_ERR_IO;
 
     int fd; /* Everything here starts with a driver file descriptor,
              * so no need to allocate backend and ret until we know we
@@ -488,6 +488,8 @@ static struct bladerf * linux_open(struct bladerf_devinfo *info)
                 backend->fd = fd;
                 ret->fn = &bladerf_linux_fn;
                 ret->backend = backend;
+                *device = ret;
+                status = 0;
             } else {
                 free(backend);
                 free(ret);
@@ -512,14 +514,14 @@ static struct bladerf * linux_open(struct bladerf_devinfo *info)
             } else {
                 for (i = 0; i < list.num_elt && !ret; i++) {
                     if (bladerf_devinfo_matches(&list.elt[i], info)) {
-                        ret = linux_open(&list.elt[i]);
+                        status = linux_open(device, &list.elt[i]);
 
-                        if (!ret) {
+                        if (status) {
                             dbg_printf("Failed to open instance %d - "
                                        "trying next\n", list.elt[i].instance);
 
                         } else {
-                            backend = ret->backend;
+                            backend =(*device)->backend;
                         }
                     }
                 }
@@ -529,7 +531,7 @@ static struct bladerf * linux_open(struct bladerf_devinfo *info)
         }
     }
 
-    return ret;
+    return status;
 }
 
 
@@ -593,14 +595,12 @@ static int str2instance(const char *bladerf_dev)
 
 static int linux_probe(struct bladerf_devinfo_list *info_list)
 {
-    int status;
+    int status = 0;
     struct dirent **matches;
     int num_matches, i, tmp;
     struct bladerf *dev;
     struct bladerf_devinfo devinfo;
     struct bladerf_linux *backend;
-
-
 
     num_matches = scandir(BLADERF_DEV_DIR, &matches, device_filter, alphasort);
     if (num_matches > 0) {
@@ -610,25 +610,27 @@ static int linux_probe(struct bladerf_devinfo_list *info_list)
             bladerf_init_devinfo(&devinfo);
             devinfo.backend = BACKEND_LINUX;
             devinfo.instance = str2instance(matches[i]->d_name);
-            dev = linux_open(&devinfo);
+            status = linux_open(&dev, &devinfo);
             backend = dev->backend;
 
-            if (dev) {
+            if (!status) {
 
                 /* Fetch USB bus and address */
                 status = ioctl(backend->fd, BLADE_GET_BUS, &tmp);
-                if (status != 0) {
+                if (status < 0) {
                     dbg_printf("Failed to get bus. Skipping instance %d\n",
                                 devinfo.instance);
+                    status = BLADERF_ERR_IO;
                 } else {
                     assert(tmp >= 0 || tmp < (int)DEVINFO_INST_ANY);
                     devinfo.usb_bus = tmp;
                 }
 
                 status = ioctl(backend->fd, BLADE_GET_ADDR, &tmp);
-                if (status != 0) {
+                if (status < 0) {
                     dbg_printf("Failed to get addr. Skipping instance %d\n",
                                devinfo.instance);
+                    status = BLADERF_ERR_IO;
                 } else {
                     assert(tmp >= 0 && tmp < DEVINFO_ADDR_ANY);
                     devinfo.usb_addr = tmp;
@@ -636,9 +638,10 @@ static int linux_probe(struct bladerf_devinfo_list *info_list)
 
                 /* Fetch device's serial # */
                 status = linux_get_serial(dev, &devinfo.serial);
-                if (status != 0) {
+                if (status < 0) {
                     dbg_printf("Failed to get serial. Skipping instance %d\n",
                                devinfo.instance);
+                    status = BLADERF_ERR_IO;
                 }
 
             } else {

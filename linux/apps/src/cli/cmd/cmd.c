@@ -241,10 +241,11 @@ static const struct cmd cmd_table[] = {
         .names = cmd_names_open,
         .exec = cmd_open,
         .desc = "Open a bladeRF device",
-        .help = "open <device>\n"
+        .help = "open [device identifiers]\n"
                 "\n"
                 "Open the specified device for use with successive commands.\n"
-                "Any previously opened device will be closed.\n",
+                "Any previously opened device will be closed.\n"
+                "See the bladerf_open() documentation for the device specifier format.\n",
     },
     {
         .names = cmd_names_probe,

@@ -28,40 +28,44 @@ static const struct bladerf_fn * backend_fns[] = {
     NULL
 };
 
-static struct bladerf * open_with_any_backend(struct bladerf_devinfo *info)
+int open_with_any_backend(struct bladerf **device,
+                          struct bladerf_devinfo *info)
 {
+    int status = 0;
     const struct bladerf_fn **fn_tbl;
     struct bladerf *ret = NULL;
 
     for (fn_tbl = &backend_fns[0]; *fn_tbl != NULL && ret == NULL; fn_tbl++) {
         assert((*fn_tbl)->open);
-        ret = (*fn_tbl)->open(info);
+        status = (*fn_tbl)->open(device, info);
     }
 
-    return ret;
+    return status;
 }
 
 /* To keep this from getting messy, the fn table could be a tuple:
  *  <BACKEND_* , fn_tbl> and we could walk through it here...
  *
  *  (Then again, how many backend will we ever have? 4?) */
-struct bladerf * backend_open(struct bladerf_devinfo *info) {
+int backend_open(struct bladerf **device, struct bladerf_devinfo *info) {
+    int status = BLADERF_ERR_INVAL;
+
     switch (info->backend) {
 
 #ifdef ENABLE_BACKEND_LIBUSB
         case BACKEND_LIBUSB:
-            return bladerf_lusb_fn.open(info);
+            status = bladerf_lusb_fn.open(device, info);
             break;
 #endif
 
 #ifdef ENABLE_BACKEND_LINUX_DRIVER
         case BACKEND_LINUX:
-            return bladerf_linux_fn.open(info);
+            status = bladerf_linux_fn.open(device, info);
             break;
 #endif
 
         case BACKEND_ANY:
-            return open_with_any_backend(info);
+            status = open_with_any_backend(device, info);
             break;
 
         default:
@@ -69,7 +73,8 @@ struct bladerf * backend_open(struct bladerf_devinfo *info) {
             dbg_printf("Invalid backend!\n");
             assert(0);
     }
-    return NULL;
+
+    return status;
 }
 
 int backend_probe(struct bladerf_devinfo **devinfo_items, size_t *num_items)

@@ -52,44 +52,56 @@ static void init_stats(struct bladerf_stats *stats)
     stats->tx_throughput = 0;
 }
 
-struct bladerf * bladerf_open_with_devinfo(struct bladerf_devinfo *devinfo)
+int bladerf_open_with_devinfo(struct bladerf **device,
+                                struct bladerf_devinfo *devinfo)
 {
     int status;
     struct bladerf *ret;
 
-    ret = backend_open(devinfo);
-    if (ret) {
-        bladerf_set_error(&ret->error, ETYPE_LIBBLADERF, 0);
-        init_stats(&ret->stats);
+    *device = NULL;
 
-        ret->last_tx_sample_rate = 0;
-        ret->last_rx_sample_rate = 0;
+    status = backend_open(&ret, devinfo);
+    if (!status) {
 
-        status = ret->fn->get_device_speed(ret, &ret->speed);
-        if (status < 0) {
-            ret->fn->close(ret);
-            ret = NULL;
+        /* We got a device */
+        if (ret) {
+            bladerf_set_error(&ret->error, ETYPE_LIBBLADERF, 0);
+            init_stats(&ret->stats);
+
+            ret->last_tx_sample_rate = 0;
+            ret->last_rx_sample_rate = 0;
+
+            status = ret->fn->get_device_speed(ret, &ret->speed);
+            if (status < 0) {
+                ret->fn->close(ret);
+                ret = NULL;
+            } else {
+                *device = ret;
+            }
+        } else {
+            status = BLADERF_ERR_NODEV;
         }
     }
 
-    return ret;
+    return status;
 }
 
 /* dev path becomes device specifier string (osmosdr-like) */
-struct bladerf * bladerf_open(const char *dev_id)
+int bladerf_open(struct bladerf **device, const char *dev_id)
 {
     struct bladerf_devinfo devinfo;
-    struct bladerf *ret = NULL;
     int status;
+
+    *device = NULL;
 
     /* Populate dev-info from string */
     status = str2devinfo(dev_id, &devinfo);
 
     if (!status) {
-        ret = bladerf_open_with_devinfo(&devinfo);
+        status = bladerf_open_with_devinfo(device, &devinfo);
     }
 
-    return ret;
+    return status;
 }
 
 void bladerf_close(struct bladerf *dev)
@@ -483,6 +495,8 @@ const char * bladerf_strerror(int error)
             return "File or device I/O failure";
         case BLADERF_ERR_TIMEOUT:
             return "Operation timed out";
+        case BLADERF_ERR_NODEV:
+            return "No device(s) available";
         case 0:
             return "Success";
         default:

@@ -152,7 +152,7 @@ int lusb_get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
     return status ;
 }
 
-static struct bladerf * lusb_open(struct bladerf_devinfo *info)
+static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
 {
     int status, i, n, inf;
     ssize_t count;
@@ -163,10 +163,13 @@ static struct bladerf * lusb_open(struct bladerf_devinfo *info)
 
     libusb_context *context ;
 
+    *device = NULL;
+
     /* Initialize libusb for device tree walking */
     status = libusb_init(&context);
     if( status ) {
         dbg_printf( "Could not initialize libusb: %s\n", libusb_error_name(status) );
+        status = BLADERF_ERR_IO;
         goto lusb_open_done;
     }
 
@@ -178,6 +181,7 @@ static struct bladerf * lusb_open(struct bladerf_devinfo *info)
             status = lusb_get_devinfo( list[i], &thisinfo );
             if( status ) {
                 dbg_printf( "Could not open bladeRF device: %s\n", libusb_error_name(status) );
+                status = BLADERF_ERR_IO;
                 goto lusb_open__err_context;
             }
             thisinfo.instance = n++;
@@ -200,6 +204,7 @@ static struct bladerf * lusb_open(struct bladerf_devinfo *info)
                 status = libusb_open(list[i], &lusb->handle);
                 if( status ) {
                     dbg_printf( "Could not open bladeRF device: %s\n", libusb_error_name(status) );
+                    status = BLADERF_ERR_IO;
                     goto lusb_open__err_device_list;
                 }
 
@@ -208,11 +213,12 @@ static struct bladerf * lusb_open(struct bladerf_devinfo *info)
                     status = libusb_claim_interface(lusb->handle, inf);
                     if( status ) {
                         dbg_printf( "Could not claim interface %i - %s\n", inf, libusb_error_name(status) );
+                        status = BLADERF_ERR_IO;
                         goto lusb_open__err_device_list;
                     }
                 }
 
-               dbg_printf( "Claimed all inferfaces successfully\n" );
+                dbg_printf( "Claimed all inferfaces successfully\n" );
                 break ;
             }
         }
@@ -239,7 +245,11 @@ lusb_open__err_context:
     }
 
 lusb_open_done:
-    return dev;
+    if (!status) {
+        *device = dev;
+    }
+
+    return status;
 }
 
 static int lusb_close(struct bladerf *dev)

@@ -61,7 +61,7 @@ struct bladerf_fn {
     int (*probe)(struct bladerf_devinfo_list *info_list);
 
     /* Opening device based upon specified device info*/
-    struct bladerf * (*open)(struct bladerf_devinfo *info);
+    int (*open)(struct bladerf **device,  struct bladerf_devinfo *info);
 
     /* Closing of the device and freeing of the data */
     int (*close)(struct bladerf *dev);

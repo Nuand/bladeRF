@@ -38,6 +38,7 @@ struct bladerf;
 #define BLADERF_ERR_MEM        (-4)  /**< Memory allocation error */
 #define BLADERF_ERR_IO         (-5)  /**< File/Device I/O error */
 #define BLADERF_ERR_TIMEOUT    (-6)  /**< Operation timed out */
+#define BLADERF_ERR_NODEV      (-7)  /**< No device(s) available */
 
 /** @} (End RETCODES) */
 
@@ -168,11 +169,13 @@ char * bladerf_dev_path(struct bladerf *dev);
  *
  * @pre devinfo has been populated via a call to bladerf_get_device_list
  *
- * @param   devinfo     Device specification
+ * @param[out]  device      Update with device handle on success
+ * @param[in]   devinfo     Device specification
  *
- * @return device handle or NULL on failure
+ * @return 0 on success, or value from \ref RETCODES list on failure
  */
-struct bladerf * bladerf_open_with_devinfo(struct bladerf_devinfo *devinfo);
+int bladerf_open_with_devinfo(struct bladerf **device,
+                              struct bladerf_devinfo *devinfo);
 
 /**
  * Open specified device using a device identifier string
@@ -210,11 +213,12 @@ struct bladerf * bladerf_open_with_devinfo(struct bladerf_devinfo *devinfo);
  *   - serial=\<serial\>
  *      - Device's serial number. Decimal or hex prefixed by '0x' is permitted.
  *
- * @param   device_identifier  Device identifier, formatted as described above
+ * @param[out]  device             Update with device handle on success
+ * @param[in]   device_identifier  Device identifier, formatted as described above
  *
- * @return device handle or NULL on failure
+ * @return 0 on success, or value from \ref RETCODES list on failure
  */
-struct bladerf * bladerf_open(const char *device_identifier);
+int bladerf_open(struct bladerf **device, const char *device_identifier);
 
 /**
  * Close device
