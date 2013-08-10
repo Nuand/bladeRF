@@ -411,19 +411,32 @@ static ssize_t linux_rx(struct bladerf *dev, bladerf_format_t format,
  *----------------------------------------------------------------------------*/
 
 /* XXX: For realsies */
-static int linux_get_fpga_version(struct bladerf *dev, unsigned int *maj, unsigned int *min)
-{
-    *min = *maj = 0;
-    return 0;
-}
-
-/* XXX: For realsies */
 static int linux_get_serial(struct bladerf *dev, uint64_t *serial)
 {
     *serial = 0;
     return 0;
 }
 
+/* XXX: For realsies */
+static int linux_get_fpga_version(struct bladerf *dev, unsigned int *maj, unsigned int *min)
+{
+    *min = *maj = 0;
+    return 0;
+}
+
+static int linux_get_device_speed(struct bladerf *dev, int *speed)
+{
+    int status = 0;
+    struct bladerf_linux *backend = dev->backend;
+
+    status = ioctl(backend->fd, BLADE_GET_SPEED, speed);
+    if (status < 0) {
+        dbg_printf("Failed to get device speed: %s\n", strerror(errno));
+        status = BLADERF_ERR_IO;
+    }
+
+    return status;
+}
 
 /*------------------------------------------------------------------------------
  * Init/deinit
@@ -513,15 +526,6 @@ static struct bladerf * linux_open(struct bladerf_devinfo *info)
 
                 free(list.elt);
             }
-        }
-    }
-
-    if (ret) {
-        status = ioctl(backend->fd, BLADE_GET_SPEED, &ret->speed);
-        if (status < 0) {
-            dbg_printf("Failed to get device speed: %s\n", strerror(errno));
-            linux_close(ret);
-            ret = NULL;
         }
     }
 
@@ -670,6 +674,7 @@ const struct bladerf_fn bladerf_linux_fn = {
     .get_serial             =   linux_get_serial,
     .get_fw_version         =   linux_get_fw_version,
     .get_fpga_version       =   linux_get_fpga_version,
+    .get_device_speed       =   linux_get_device_speed,
 
     .gpio_write             =   linux_gpio_write,
     .gpio_read              =   linux_gpio_read,

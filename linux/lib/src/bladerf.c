@@ -54,6 +54,7 @@ static void init_stats(struct bladerf_stats *stats)
 
 struct bladerf * bladerf_open_with_devinfo(struct bladerf_devinfo *devinfo)
 {
+    int status;
     struct bladerf *ret;
 
     ret = backend_open(devinfo);
@@ -63,6 +64,12 @@ struct bladerf * bladerf_open_with_devinfo(struct bladerf_devinfo *devinfo)
 
         ret->last_tx_sample_rate = 0;
         ret->last_rx_sample_rate = 0;
+
+        status = ret->fn->get_device_speed(ret, &ret->speed);
+        if (status < 0) {
+            ret->fn->close(ret);
+            ret = NULL;
+        }
     }
 
     return ret;

@@ -21,6 +21,11 @@
 #define FLASH_NUM_SECTORS   4096
 #define FLASH_NUM_PAGES     (FLASH_NUM_SECTORS * (FLASH_SECTOR_SIZE / FLASH_PAGE_SIZE))
 
+/* Interface numbers */
+#define USB_IF_CONFIG       0
+#define USB_IF_RF_LINK      1
+#define USB_IF_SPI_FLASH    2
+
 typedef enum {
     ETYPE_ERRNO,
     ETYPE_LIBBLADERF,
@@ -72,6 +77,7 @@ struct bladerf_fn {
     int (*get_serial)(struct bladerf *dev, uint64_t *serial);
     int (*get_fw_version)(struct bladerf *dev, unsigned int *maj, unsigned int *min);
     int (*get_fpga_version)(struct bladerf *dev, unsigned int *maj, unsigned int *min);
+    int (*get_device_speed)(struct bladerf *dev, int *speed);
 
     /* GPIO accessors */
     int (*gpio_write)(struct bladerf *dev, uint32_t val);
