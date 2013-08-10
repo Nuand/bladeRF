@@ -656,7 +656,8 @@ static int linux_probe(struct bladerf_devinfo_list *info_list)
     }
 
     free_dirents(matches, num_matches);
-    return 0;
+
+    return (!status &&  num_matches > 0) ? status : BLADERF_ERR_NODEV;
 }
 
 /*------------------------------------------------------------------------------

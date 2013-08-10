@@ -181,8 +181,8 @@ static int open_device(struct rc_config *rc, struct cli_state *state, int status
         if (rc->device) {
             status = bladerf_open(&state->dev, rc->device);
             if (status) {
-                fprintf(stderr, "Failed to open device (%s): %s\n",
-                        rc->device, bladerf_strerror(status));
+                fprintf(stderr, "Failed to open device: %s\n",
+                        bladerf_strerror(status));
                 status = -1;
             }
         } else {
