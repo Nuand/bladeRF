@@ -78,27 +78,28 @@ int backend_open(struct bladerf **device, struct bladerf_devinfo *info) {
 
 int backend_probe(struct bladerf_devinfo **devinfo_items, size_t *num_items)
 {
-    int status;
+    int probe_status, backend_status;
     struct bladerf_devinfo_list list;
     const struct bladerf_fn **fn_tbl;
 
     *devinfo_items = NULL;
     *num_items = 0;
 
-    status = bladerf_devinfo_list_init(&list);
+    probe_status = bladerf_devinfo_list_init(&list);
 
-    if (status == 0) {
-        for (fn_tbl = &backend_fns[0]; *fn_tbl != NULL && !status; fn_tbl++) {
+    if (probe_status == 0) {
+        for (fn_tbl = &backend_fns[0]; *fn_tbl != NULL && !probe_status; fn_tbl++) {
             assert((*fn_tbl)->probe);
-            status = (*fn_tbl)->probe(&list);
+            backend_status = (*fn_tbl)->probe(&list);
 
-            if (status < 0) {
-
+            /* Error out if a backend hit any concerning error */
+            if (backend_status  < 0 && backend_status != BLADERF_ERR_NODEV) {
+                probe_status = backend_status;
             }
         }
     }
 
-    if (status == 0) {
+    if (probe_status == 0) {
         *num_items = list.num_elt;
 
         if (*num_items != 0) {
@@ -107,11 +108,12 @@ int backend_probe(struct bladerf_devinfo **devinfo_items, size_t *num_items)
             /* For no items, we end up passing back a NULL list to the
              * API caller, so we'll just free this up now */
             free(list.elt);
+            probe_status = BLADERF_ERR_NODEV;
         }
 
     } else {
         free(list.elt);
     }
 
-    return status;
+    return probe_status;
 }

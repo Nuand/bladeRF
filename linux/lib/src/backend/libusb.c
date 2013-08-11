@@ -247,9 +247,10 @@ lusb_open__err_context:
 lusb_open_done:
     if (!status) {
 
-        if (*device) {
+        if (dev) {
             *device = dev;
         } else {
+            dbg_printf("No devices available on the libusb backend.\n");
             status = BLADERF_ERR_NODEV;
         }
     }
