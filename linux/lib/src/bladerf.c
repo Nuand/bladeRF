@@ -496,7 +496,7 @@ const char * bladerf_strerror(int error)
         case BLADERF_ERR_TIMEOUT:
             return "Operation timed out";
         case BLADERF_ERR_NODEV:
-            return "No device(s) available";
+            return "No devices available";
         case 0:
             return "Success";
         default:
