@@ -575,6 +575,9 @@ static int lusb_get_fw_version(struct bladerf *dev,
 static int lusb_get_fpga_version(struct bladerf *dev,
                                  unsigned int *maj, unsigned int *min)
 {
+    dbg_printf("FPGA currently does not have a version number.\n");
+    *maj = 0;
+    *min = 0;
     return 0;
 }
 

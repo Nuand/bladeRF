@@ -180,26 +180,6 @@ static int linux_flash_firmware(struct bladerf *dev,
     return ret;
 }
 
-static int linux_get_fw_version(struct bladerf *dev,
-                                unsigned int *major, unsigned int *minor)
-{
-    int status;
-    struct bladeRF_version ver;
-    struct bladerf_linux *backend = (struct bladerf_linux *)dev->backend;
-
-    assert(dev && major && minor);
-
-    status = ioctl(backend->fd, BLADE_QUERY_VERSION, &ver);
-    if (!status) {
-        *major = ver.major;
-        *minor = ver.minor;
-        return 0;
-    }
-
-    /* TODO return more appropriate error code based upon errno */
-    return BLADERF_ERR_IO;
-}
-
 /*------------------------------------------------------------------------------
  * Si5338 register access
  *----------------------------------------------------------------------------*/
@@ -421,9 +401,31 @@ static int linux_get_serial(struct bladerf *dev, uint64_t *serial)
 /* XXX: For realsies */
 static int linux_get_fpga_version(struct bladerf *dev, unsigned int *maj, unsigned int *min)
 {
+    dbg_printf("FPGA currently does not have a version number.\n");
     *min = *maj = 0;
     return 0;
 }
+
+static int linux_get_fw_version(struct bladerf *dev,
+                                unsigned int *major, unsigned int *minor)
+{
+    int status;
+    struct bladeRF_version ver;
+    struct bladerf_linux *backend = (struct bladerf_linux *)dev->backend;
+
+    assert(dev && major && minor);
+
+    status = ioctl(backend->fd, BLADE_QUERY_VERSION, &ver);
+    if (!status) {
+        *major = ver.major;
+        *minor = ver.minor;
+        return 0;
+    }
+
+    /* TODO return more appropriate error code based upon errno */
+    return BLADERF_ERR_IO;
+}
+
 
 static int linux_get_device_speed(struct bladerf *dev, int *speed)
 {
