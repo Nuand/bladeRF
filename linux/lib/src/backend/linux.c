@@ -111,8 +111,8 @@ static int linux_load_fpga(struct bladerf *dev,
     /* FIXME This loops is just here to work around the fact that the
      *       driver currently can't handle large writes... */
     while (written < image_size) {
-        to_write = min_sz(1024, image_size - written);
         do {
+            to_write = min_sz(1024, image_size - written);
             write_tmp = write(backend->fd, image + written, to_write);
             if (write_tmp < 0) {
                 /* Failing out...at least attempt to "finish" programming */
@@ -120,6 +120,7 @@ static int linux_load_fpga(struct bladerf *dev,
                 dbg_printf("Write failure: %s\n", strerror(errno));
                 return BLADERF_ERR_IO;
             } else {
+                assert(write_tmp == (ssize_t)to_write);
                 written += write_tmp;
             }
         } while(written < image_size);
