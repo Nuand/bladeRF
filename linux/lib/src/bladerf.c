@@ -55,31 +55,31 @@ static void init_stats(struct bladerf_stats *stats)
 int bladerf_open_with_devinfo(struct bladerf **device,
                                 struct bladerf_devinfo *devinfo)
 {
+    struct bladerf *opened_device;
     int status;
-    struct bladerf *ret;
 
     *device = NULL;
+    status = backend_open(device, devinfo);
 
-    status = backend_open(&ret, devinfo);
     if (!status) {
 
+        /* Catch bugs from backends returning status = 0, but a NULL device */
+        assert(*device);
+        opened_device = *device;
+
         /* We got a device */
-        if (ret) {
-            bladerf_set_error(&ret->error, ETYPE_LIBBLADERF, 0);
-            init_stats(&ret->stats);
+        bladerf_set_error(&opened_device->error, ETYPE_LIBBLADERF, 0);
+        init_stats(&opened_device->stats);
 
-            ret->last_tx_sample_rate = 0;
-            ret->last_rx_sample_rate = 0;
+        opened_device->last_tx_sample_rate = 0;
+        opened_device->last_rx_sample_rate = 0;
 
-            status = ret->fn->get_device_speed(ret, &ret->speed);
-            if (status < 0) {
-                ret->fn->close(ret);
-                ret = NULL;
-            } else {
-                *device = ret;
-            }
-        } else {
-            status = BLADERF_ERR_NODEV;
+        status = opened_device->fn->get_device_speed(opened_device,
+                                                     &opened_device->speed);
+
+        if (status < 0) {
+            opened_device->fn->close((*device));
+            *device = NULL;
         }
     }
 

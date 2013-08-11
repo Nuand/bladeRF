@@ -597,7 +597,10 @@ static int lusb_get_device_speed(struct bladerf *dev, int *device_speed)
 static int access_peripheral(struct bladerf_lusb *lusb, int per, int dir,
                                 struct uart_cmd *cmd)
 {
-    uint8_t buf[16];
+    uint8_t buf[16] = { 0 };    /* Zeroing out to avoid some valgrind noise
+                                 * on the reserved items that aren't currently
+                                 * used (i.e., bytes 4-15 */
+
     int status, libusb_status, transferred;
 
     /* Populate the buffer for transfer */

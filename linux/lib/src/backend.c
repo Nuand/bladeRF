@@ -31,11 +31,10 @@ static const struct bladerf_fn * backend_fns[] = {
 int open_with_any_backend(struct bladerf **device,
                           struct bladerf_devinfo *info)
 {
-    int status = 0;
+    int status = BLADERF_ERR_NODEV;
     const struct bladerf_fn **fn_tbl;
-    struct bladerf *ret = NULL;
 
-    for (fn_tbl = &backend_fns[0]; *fn_tbl != NULL && ret == NULL; fn_tbl++) {
+    for (fn_tbl = &backend_fns[0]; *fn_tbl != NULL && status != 0; fn_tbl++) {
         assert((*fn_tbl)->open);
         status = (*fn_tbl)->open(device, info);
     }

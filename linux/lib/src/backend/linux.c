@@ -510,7 +510,11 @@ static int linux_open( struct bladerf **device, struct bladerf_devinfo *info)
         } else {
             status = linux_probe(&list);
             if (status < 0) {
-                dbg_printf("Probe failed: %s\n", bladerf_strerror(status));
+                if (status == BLADERF_ERR_NODEV) {
+                    dbg_printf("No devices available on the Linux driver backend.\n");
+                } else {
+                    dbg_printf("Probe failed: %s\n", bladerf_strerror(status));
+                }
             } else {
                 for (i = 0; i < list.num_elt && !ret; i++) {
                     if (bladerf_devinfo_matches(&list.elt[i], info)) {
