@@ -110,22 +110,18 @@ int get_rc_config(int argc, char *argv[], struct rc_config *rc)
 
             case 'p':
                 rc->probe = true;
-                rc->batch_mode = true;
                 break;
 
             case 'h':
                 rc->show_help = true;
-                rc->batch_mode = true;
                 break;
 
             case 'V':
                 rc->show_version = true;
-                rc->batch_mode = true;
                 break;
 
             case 'L':
                 rc->show_lib_version = true;
-                rc->batch_mode = true;
                 break;
         }
 
@@ -265,6 +261,7 @@ int main(int argc, char *argv[])
     int status = 0;
     struct rc_config rc = DEFAULT_RC_CONFIG;
     struct cli_state *state;
+    bool exit_immediately = false;
 
     if (get_rc_config(argc, argv, &rc)) {
         return 1;
@@ -279,56 +276,62 @@ int main(int argc, char *argv[])
 
     if (rc.show_help) {
         usage(argv[0]);
+        exit_immediately = true;
     } else if (rc.show_version) {
         printf(CLI_VERSION "\n");
+        exit_immediately = true;
     } else if (rc.show_lib_version) {
         /* TODO implement libbladerf_version() */
         printf("TODO!\n");
+        exit_immediately = true;
     } else if (rc.probe) {
         status = cmd_handle(state, "probe");
+        exit_immediately = true;
     }
 
-    /* Conditionally performed items, depending on runtime config */
-    status = open_device(&rc, state, status);
-    status = flash_fw(&rc, state, status);
-    status = load_fpga(&rc, state, status);
-    status = open_script(&rc, state, status);
+    if (!exit_immediately) {
+        /* Conditionally performed items, depending on runtime config */
+        status = open_device(&rc, state, status);
+        status = flash_fw(&rc, state, status);
+        status = load_fpga(&rc, state, status);
+        status = open_script(&rc, state, status);
 
-    /* These items are no longer needed */
-    free(rc.device);
-    rc.device = NULL;
+        /* These items are no longer needed */
+        free(rc.device);
+        rc.device = NULL;
 
-    free(rc.fw_file);
-    rc.fw_file = NULL;
+        free(rc.fw_file);
+        rc.fw_file = NULL;
 
-    free(rc.fpga_file);
-    rc.fpga_file = NULL;
+        free(rc.fpga_file);
+        rc.fpga_file = NULL;
 
-    free(rc.script_file);
-    rc.script_file = NULL;
+        free(rc.script_file);
+        rc.script_file = NULL;
 
-    if (status)
-        return 2;
+        if (status)
+            return 2;
 
-    /* Exit cleanly when configured for batch mode. Remember that this is
-     * implicit with some commands */
-    if (!rc.batch_mode || state->script != NULL) {
-        status = start_threads(state);
+        /* Exit cleanly when configured for batch mode. Remember that this is
+         * implicit with some commands */
+        if (!rc.batch_mode || state->script != NULL) {
+            status = start_threads(state);
 
-        if (status < 0) {
-            fprintf(stderr, "Failed to kick off threads\n");
-        } else {
-            status = interactive(state, rc.batch_mode);
-            stop_threads(state);
+            if (status < 0) {
+                fprintf(stderr, "Failed to kick off threads\n");
+            } else {
+                status = interactive(state, rc.batch_mode);
+                stop_threads(state);
+            }
+
         }
 
-    }
-
-    /* Ensure we exit with RX & TX disabled.
-     * Can't do much about an error at this point anyway... */
-    if (state->dev) {
-        bladerf_enable_module(state->dev, TX, false);
-        bladerf_enable_module(state->dev, RX, false);
+        /* Ensure we exit with RX & TX disabled.
+         * Can't do much about an error at this point anyway... */
+        if (state->dev) {
+            bladerf_enable_module(state->dev, TX, false);
+            bladerf_enable_module(state->dev, RX, false);
+        }
     }
 
     cli_state_destroy(state);
