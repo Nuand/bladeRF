@@ -246,7 +246,12 @@ lusb_open__err_context:
 
 lusb_open_done:
     if (!status) {
-        *device = dev;
+
+        if (*device) {
+            *device = dev;
+        } else {
+            status = BLADERF_ERR_NODEV;
+        }
     }
 
     return status;
