@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <endian.h>
 #include <bladeRF.h>
 #include <libusb-1.0/libusb.h>
 
@@ -34,10 +35,11 @@ static inline size_t min_sz(size_t a, size_t b)
     return a < b ? a : b;
 }
 
-static int vendor_command(struct bladerf *dev,
-                          uint16_t cmd, uint8_t ep_dir, int *val)
+/* Quick wrapper for vendor commands that get/send a 32-bit integer value */
+static int vendor_command_int(struct bladerf *dev,
+                          uint16_t cmd, uint8_t ep_dir, int32_t *val)
 {
-    int buf;
+    int32_t buf;
     int status;
     struct bladerf_lusb *lusb = dev->backend;
 
@@ -79,7 +81,7 @@ static int vendor_command(struct bladerf *dev,
 static int begin_fpga_programming(struct bladerf *dev)
 {
     int result;
-    int status = vendor_command(dev, BLADE_USB_CMD_BEGIN_PROG, EP_DIR_IN, &result);
+    int status = vendor_command_int(dev, BLADE_USB_CMD_BEGIN_PROG, EP_DIR_IN, &result);
 
     if (status < 0) {
         return status;
@@ -91,7 +93,7 @@ static int begin_fpga_programming(struct bladerf *dev)
 static int end_fpga_programming(struct bladerf *dev)
 {
     int result;
-    int status = vendor_command(dev, BLADE_USB_CMD_QUERY_FPGA_STATUS, EP_DIR_IN, &result);
+    int status = vendor_command_int(dev, BLADE_USB_CMD_QUERY_FPGA_STATUS, EP_DIR_IN, &result);
     if (status < 0) {
         dbg_printf("Received response of (%d): %s\n",
                     status, libusb_error_name(status));
@@ -104,7 +106,7 @@ static int end_fpga_programming(struct bladerf *dev)
 int lusb_is_fpga_configured(struct bladerf *dev)
 {
     int result;
-    int status = vendor_command(dev, BLADE_USB_CMD_QUERY_FPGA_STATUS, EP_DIR_IN, &result);
+    int status = vendor_command_int(dev, BLADE_USB_CMD_QUERY_FPGA_STATUS, EP_DIR_IN, &result);
 
     if (status < 0) {
         return status;
@@ -348,12 +350,12 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
     }
 
     val = 1;
-    status = vendor_command(dev, BLADE_USB_CMD_RF_RX, EP_DIR_OUT, &val);
+    status = vendor_command_int(dev, BLADE_USB_CMD_RF_RX, EP_DIR_OUT, &val);
     if(status) {
         dbg_printf("Could not enable RF RX (%d): %s\n", status, libusb_error_name(status) );
     }
 
-    status = vendor_command(dev, BLADE_USB_CMD_RF_TX, EP_DIR_OUT, &val);
+    status = vendor_command_int(dev, BLADE_USB_CMD_RF_TX, EP_DIR_OUT, &val);
     if(status) {
         dbg_printf("Could not enable RF TX (%d): %s\n", status, libusb_error_name(status) );
     }
@@ -569,7 +571,39 @@ static int lusb_get_serial(struct bladerf *dev, uint64_t *serial)
 static int lusb_get_fw_version(struct bladerf *dev,
                                unsigned int *maj, unsigned int *min)
 {
-    return 0;
+    int status;
+
+    /* FIXME  We're playing with fire here - these structures need to be
+     *        serialized/deserialized when communicating them between the
+     *        host and the FX3. If the contents are change to not
+     *        conveniently land on word boundaries and the struct is
+     *        padded, we'll run into trouble.
+     */
+    struct bladeRF_version fw_ver;
+    struct bladerf_lusb *lusb = dev->backend;
+
+    status = libusb_control_transfer(
+                lusb->handle,
+                LIBUSB_RECIPIENT_INTERFACE |
+                    LIBUSB_REQUEST_TYPE_VENDOR |
+                    EP_DIR_IN,
+                BLADE_USB_CMD_QUERY_VERSION,
+                0,
+                0,
+                (unsigned char *)&fw_ver,
+                sizeof(fw_ver),
+                BLADERF_LIBUSB_TIMEOUT_MS
+             );
+
+    if (status < 0) {
+        status = BLADERF_ERR_IO;
+        *maj = *min = 0;
+    } else {
+        *maj = (unsigned int) le16toh(fw_ver.major);
+        *min = (unsigned int) le16toh(fw_ver.minor);
+    }
+
+    return status;
 }
 
 static int lusb_get_fpga_version(struct bladerf *dev,

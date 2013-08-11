@@ -24,12 +24,13 @@ int cmd_version(struct cli_state *state, int argc, char **argv)
         return status;
     }
 
-    printf("Firmware version: %u.%u\n", fw_major, fw_minor);
+    printf("\nFirmware version: %u.%u\n", fw_major, fw_minor);
     if (fpga_loaded) {
         printf("FPGA version:     %u.%u\n", fpga_major, fpga_minor);
     } else {
         printf("FPGA version:     Unknown (FPGA not loaded)\n");
     }
+    printf("\n");
 
 
     return CMD_RET_OK;
