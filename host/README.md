@@ -1,3 +1,6 @@
+TODO Update
+
+<!--
 # bladeRF Linux Source #
 The linux source is separated out into three separate areas:
 
@@ -16,4 +19,4 @@ It's highly recommended to build the linux directories in order:
 1. [kernel][kernel]
 1. [lib][lib]
 1. [apps][apps]
-
+-->

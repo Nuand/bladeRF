@@ -1,3 +1,5 @@
+TODO This information is out of date!
+<!--
 # bladeRF Linux Applications #
 This directory contains applications that utilize libbladeRF.  Currently, this consists of a command-line `bladeRF-cli` tool intended to aid in development and testing.  This tool can be used in a batch mode with single, simple operations but the real power is when it is compiled with an interactive shell.
 
@@ -132,3 +134,4 @@ print frequency
 print samplerate
 print bandwidth
 ```
+-->
