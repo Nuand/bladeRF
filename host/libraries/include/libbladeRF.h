@@ -557,6 +557,28 @@ ssize_t bladerf_rx(struct bladerf *dev, bladerf_format_t format,
 int bladerf_get_serial(struct bladerf *dev, char *serial);
 
 /**
+ * Query a device's VCTCXO calibration trim
+ *
+ * @param[in]   dev     Device handle
+ * @param[out]  trim    Will be updated with the factory DAC trim value. If an
+ *                      error occurs, no data will be written to this pointer.
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+int bladerf_get_vctcxo_trim(struct bladerf *dev, char *serial);
+
+/**
+ * Query a device's FPGA size
+ *
+ * @param[in]   dev     Device handle
+ * @param[out]  size    Will be updated with the onboard FPGA's size. If an
+ *                      error occurs, no data will be written to this pointer.
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+int bladerf_get_fpga_size(struct bladerf *dev, char *size);
+
+/**
  * Query firmware version
  *
  * @param[in]   dev     Device handle

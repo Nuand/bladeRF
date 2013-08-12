@@ -440,9 +440,33 @@ static int get_otp_field(struct bladerf *dev, char *field, char *val, int maxlen
     return extract_field(otp, 256, field, val, maxlen);
 }
 
+static int get_cal_field(struct bladerf *dev, char *field, char *val, int maxlen) {
+    int status;
+    char *cal;
+    cal = malloc(256);
+
+    if (!cal) {
+        return BLADERF_ERR_MEM;
+    }
+    status = dev->fn->get_cal(dev, cal);
+    if (status < 0)
+        return status;
+    return extract_field(cal, 256, field, val, maxlen);
+}
+
 int bladerf_get_serial(struct bladerf *dev, char *serial)
 {
     return get_otp_field(dev, "S", serial, 32);
+}
+
+int bladerf_get_vctcxo_trim(struct bladerf *dev, char *trim)
+{
+    return get_cal_field(dev, "DAC", trim, 6);
+}
+
+int bladerf_get_fpga_size(struct bladerf *dev, char *size)
+{
+    return get_cal_field(dev, "B", size, 6);
 }
 
 int bladerf_get_fw_version(struct bladerf *dev,

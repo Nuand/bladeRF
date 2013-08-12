@@ -74,6 +74,7 @@ struct bladerf_fn {
     int (*flash_firmware)(struct bladerf *dev, uint8_t *image, size_t image_size);
 
     /* Platform information */
+    int (*get_cal)(struct bladerf *dev, char *cal);
     int (*get_otp)(struct bladerf *dev, char *otp);
     int (*get_fw_version)(struct bladerf *dev, unsigned int *maj, unsigned int *min);
     int (*get_fpga_version)(struct bladerf *dev, unsigned int *maj, unsigned int *min);

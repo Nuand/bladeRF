@@ -408,6 +408,23 @@ static int linux_get_otp(struct bladerf *dev, char *otp)
     return status;
 }
 
+static int linux_get_cal(struct bladerf *dev, char *cal)
+{
+    int status;
+    struct bladeRF_sector bs;
+    struct bladerf_linux *backend = dev->backend;
+    bs.idx = 768;
+    bs.ptr = (unsigned char *)cal;
+    bs.len = 256;
+
+    status = ioctl(backend->fd, BLADE_FLASH_READ, &bs);
+    if (status < 0) {
+        dbg_printf("Failed to read calibration sector with errno=%d: %s\n", errno, strerror(errno));
+        status = BLADERF_ERR_IO;
+    }
+    return status;
+}
+
 /* XXX: For realsies */
 static int linux_get_fpga_version(struct bladerf *dev, unsigned int *maj, unsigned int *min)
 {
@@ -692,6 +709,7 @@ const struct bladerf_fn bladerf_linux_fn = {
 
     .flash_firmware         =   linux_flash_firmware,
 
+    .get_cal                =   linux_get_cal,
     .get_otp                =   linux_get_otp,
     .get_fw_version         =   linux_get_fw_version,
     .get_fpga_version       =   linux_get_fpga_version,

@@ -411,6 +411,57 @@ static int erase_flash(struct bladerf *dev, int sector_offset, int n_bytes)
     return status;
 }
 
+static int read_flash(struct bladerf *dev, int page_offset,
+                        uint8_t *ptr, size_t n_bytes)
+{
+    int status = 0;
+    int page_i, n_read;
+    int read_size = dev->speed ? FLASH_PAGE_SIZE: 64;
+    int pages_to_read = FLASH_BYTES_TO_PAGES(n_bytes);
+    struct bladerf_lusb *lusb = dev->backend;
+
+    assert(page_offset < FLASH_NUM_PAGES);
+    assert((page_offset + n_bytes) < FLASH_NUM_PAGES);
+
+    for (page_i = page_offset;
+         page_i < (page_offset + pages_to_read) && !status;
+         page_i++) {
+
+        /* Read back a page */
+        n_read = 0;
+        do {
+            status = libusb_control_transfer(
+                        lusb->handle,
+                        LIBUSB_RECIPIENT_INTERFACE |
+                            LIBUSB_REQUEST_TYPE_VENDOR |
+                            EP_DIR_IN,
+                        BLADE_USB_CMD_FLASH_READ,
+                        0,
+                        page_i,
+                        ptr,
+                        read_size,
+                        BLADERF_LIBUSB_TIMEOUT_MS);
+
+
+            if (status != read_size) {
+                if (status < 0) {
+                    dbg_printf("Failed to read back page %d: %s\n", page_i,
+                               libusb_error_name(status));
+                } else {
+                    dbg_printf("Unexpected read size: %d\n", status);
+                }
+
+                status = BLADERF_ERR_IO;
+            } else {
+                n_read += read_size;
+                ptr += n_read;
+                status = 0;
+            }
+        } while (n_read < FLASH_PAGE_SIZE && !status);
+    }
+    return status;
+}
+
 static int verify_flash(struct bladerf *dev, int page_offset,
                         uint8_t *image, size_t n_bytes)
 {
@@ -587,6 +638,10 @@ static int lusb_get_otp(struct bladerf *dev, char *otp)
         }
     }
     return status;
+}
+
+static int lusb_get_cal(struct bladerf *dev, char *cal) {
+    return read_flash(dev, 768, (uint8_t *)cal, 256);
 }
 
 static int lusb_get_fw_version(struct bladerf *dev,
@@ -980,6 +1035,7 @@ const struct bladerf_fn bladerf_lusb_fn = {
 
     .flash_firmware     = lusb_flash_firmware,
 
+    .get_cal            = lusb_get_cal,
     .get_otp            = lusb_get_otp,
     .get_fw_version     = lusb_get_fw_version,
     .get_fpga_version   = lusb_get_fpga_version,
