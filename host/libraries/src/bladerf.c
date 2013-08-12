@@ -367,9 +367,82 @@ ssize_t bladerf_rx(struct bladerf *dev, bladerf_format_t format, void *samples,
  * Device Info
  *----------------------------------------------------------------------------*/
 
-int bladerf_get_serial(struct bladerf *dev, uint64_t *serial)
+/******
+ * CRC16 implementation from http://softwaremonkey.org/Code/CRC16
+ */
+typedef  unsigned char                   byte;    /*     8 bit unsigned       */
+typedef  unsigned short int              word;    /*    16 bit unsigned       */
+
+word crc16mp(word crcval, void *data_p, word count) {
+    /* CRC-16 Routine for processing multiple part data blocks.
+     * Pass 0 into 'crcval' for first call for any given block; for
+     * subsequent calls pass the CRC returned by the previous call. */
+    word            xx;
+    byte            *ptr=data_p;
+
+    while (count-- > 0) {
+        crcval=(word)(crcval^(word)(((word)*ptr++)<<8));
+        for (xx=0;xx<8;xx++) {
+            if(crcval&0x8000) { crcval=(word)((word)(crcval<<1)^0x1021); }
+            else              { crcval=(word)(crcval<<1);                }
+        }
+    }
+    return(crcval);
+}
+
+static int extract_field(char *ptr, int len, char *field, char *val, int maxlen) {
+    int c, wlen;
+    unsigned char *ub, *end;
+    unsigned short a1, a2;
+    int flen;
+
+    flen = strlen(field);
+
+    ub = (unsigned char *)ptr;
+    end = ub + len;
+    while (ub < end) {
+        c = *ub;
+
+        if (c == 0xff) // flash and OTP are 0xff if they've never been written to
+            break;
+
+        a1 = *(unsigned short *)(&ub[c+1]);  // read checksum
+        a2 = crc16mp(0, ub, c+1);  // calculated checksum
+
+        if (a1 == a2) {
+            if (!strncmp((char *)ub + 1, field, flen)) {
+#define MIN(x,y) (((x)<(y))?(x):(y))
+                wlen = MIN(c - flen, maxlen);
+                strncpy(val, (char *)ub + 1 + flen, wlen);
+                val[wlen] = 0;
+                return 0;
+            }
+        } else {
+            dbg_printf( "%s: Field checksum mistmatch\n", __FUNCTION__);
+            return BLADERF_ERR_INVAL;
+        }
+        ub += c + 3; //skip past `c' bytes, 2 byte CRC field, and 1 byte len field
+    }
+    return BLADERF_ERR_INVAL;
+}
+
+static int get_otp_field(struct bladerf *dev, char *field, char *val, int maxlen) {
+    int status;
+    char *otp;
+    otp = malloc(256);
+
+    if (!otp) {
+        return BLADERF_ERR_MEM;
+    }
+    status = dev->fn->get_otp(dev, otp);
+    if (status < 0)
+        return status;
+    return extract_field(otp, 256, field, val, maxlen);
+}
+
+int bladerf_get_serial(struct bladerf *dev, char *serial)
 {
-    return dev->fn->get_serial(dev, serial);
+    return get_otp_field(dev, "S", serial, 32);
 }
 
 int bladerf_get_fw_version(struct bladerf *dev,

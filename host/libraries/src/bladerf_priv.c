@@ -67,7 +67,7 @@ int bladerf_init_device(struct bladerf *dev)
 void bladerf_init_devinfo(struct bladerf_devinfo *d)
 {
     d->backend  = BACKEND_ANY;
-    d->serial   = DEVINFO_SERIAL_ANY;
+    strcpy(d->serial, DEVINFO_SERIAL_ANY);
     d->usb_bus  = DEVINFO_BUS_ANY;
     d->usb_addr = DEVINFO_ADDR_ANY;
     d->instance = DEVINFO_INST_ANY;
@@ -93,9 +93,9 @@ bool bladerf_instance_matches(struct bladerf_devinfo *a,
 bool bladerf_serial_matches(struct bladerf_devinfo *a,
                             struct bladerf_devinfo *b)
 {
-    return a->serial == DEVINFO_SERIAL_ANY ||
-           b->serial == DEVINFO_SERIAL_ANY ||
-           a->serial == b->serial;
+    return !strcmp(a->serial, DEVINFO_SERIAL_ANY) ||
+           !strcmp(b->serial, DEVINFO_SERIAL_ANY) ||
+           !strcmp(a->serial, b->serial);
 }
 
 bool bladerf_bus_addr_matches(struct bladerf_devinfo *a,

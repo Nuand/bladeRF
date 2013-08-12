@@ -144,7 +144,6 @@ int lusb_get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
     } else {
         /* Populate */
         info->backend = BACKEND_LIBUSB;
-        info->serial = 0;
         info->usb_bus = libusb_get_bus_number(dev);
         info->usb_addr = libusb_get_device_address(dev);
 
@@ -563,9 +562,31 @@ static int lusb_flash_firmware(struct bladerf *dev,
     return status;
 }
 
-static int lusb_get_serial(struct bladerf *dev, uint64_t *serial)
+static int lusb_get_otp(struct bladerf *dev, char *otp)
 {
-    return 0;
+    struct bladerf_lusb *lusb = dev->backend;
+    int status;
+    int read_size = dev->speed ? 256 : 64;
+    int nbytes;
+
+    for (nbytes = 0; nbytes < 256; nbytes += read_size) {
+        status = libusb_control_transfer(
+                lusb->handle,
+                LIBUSB_RECIPIENT_INTERFACE |
+                LIBUSB_REQUEST_TYPE_VENDOR |
+                EP_DIR_IN,
+                BLADE_USB_CMD_READ_OTP,
+                0,
+                0,
+                (unsigned char *)&otp[nbytes],
+                read_size,
+                BLADERF_LIBUSB_TIMEOUT_MS);
+        if (status < 0) {
+            dbg_printf("Failed to read OTP with errno=%d: %s\n", errno, strerror(errno));
+            break;
+        }
+    }
+    return status;
 }
 
 static int lusb_get_fw_version(struct bladerf *dev,
@@ -959,7 +980,7 @@ const struct bladerf_fn bladerf_lusb_fn = {
 
     .flash_firmware     = lusb_flash_firmware,
 
-    .get_serial         = lusb_get_serial,
+    .get_otp            = lusb_get_otp,
     .get_fw_version     = lusb_get_fw_version,
     .get_fpga_version   = lusb_get_fpga_version,
     .get_device_speed   = lusb_get_device_speed,

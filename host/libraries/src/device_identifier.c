@@ -92,17 +92,28 @@ static int handle_instance(struct bladerf_devinfo *d, char *value)
 
 static int handle_serial(struct bladerf_devinfo *d, char *value)
 {
-    bool ok;
+    char c;
+    int i;
 
-    d->serial = str2uint64(value, 0, DEVINFO_SERIAL_ANY - 1, &ok);
-    if (!ok) {
-        dbg_printf("Bad serial: %s\n", value);
+    if (strlen(value) != 32) {
         return BLADERF_ERR_INVAL;
-    } else {
-        dbg_printf("Serial 0x%016lX\n", d->serial);
-        return 0;
     }
 
+    for (i = 0; i < 32; i++) {
+        c = value[i];
+        if (c >= 'A' && c <='F') {
+            value[i] = tolower(c);
+        }
+        if ((c < 'a' || c > 'f') && (c < '0' || c > '9')) {
+            dbg_printf("Bad serial: %s\n", value);
+            return BLADERF_ERR_INVAL;
+        }
+    }
+
+    strncpy(d->serial, value, 32);
+    d->serial[32] = 0;
+
+    dbg_printf("Serial 0x%s\n", d->serial);
     return 0;
 }
 

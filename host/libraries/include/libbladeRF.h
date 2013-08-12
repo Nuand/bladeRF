@@ -58,7 +58,7 @@ typedef enum {
  */
 struct bladerf_devinfo {
     bladerf_backend_t backend;  /**< Backend to use when connecting to device */
-    uint64_t serial;            /**< Device's serial number */
+    char serial[33];            /**< Device's serial number */
     uint8_t  usb_bus;           /**< Bus # device is attached to */
     uint8_t  usb_addr;          /**< Device address on bus */
     unsigned int instance;      /**< Device instance or ID */
@@ -554,7 +554,7 @@ ssize_t bladerf_rx(struct bladerf *dev, bladerf_format_t format,
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-int bladerf_get_serial(struct bladerf *dev, uint64_t *serial);
+int bladerf_get_serial(struct bladerf *dev, char *serial);
 
 /**
  * Query firmware version

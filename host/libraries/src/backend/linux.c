@@ -391,11 +391,21 @@ static ssize_t linux_rx(struct bladerf *dev, bladerf_format_t format,
  * Platform information
  *----------------------------------------------------------------------------*/
 
-/* XXX: For realsies */
-static int linux_get_serial(struct bladerf *dev, uint64_t *serial)
+static int linux_get_otp(struct bladerf *dev, char *otp)
 {
-    *serial = 0;
-    return 0;
+    int status;
+    struct bladeRF_sector bs;
+    struct bladerf_linux *backend = dev->backend;
+    bs.idx = 0;
+    bs.ptr = (unsigned char *)otp;
+    bs.len = 256;
+
+    status = ioctl(backend->fd, BLADE_OTP_READ, &bs);
+    if (status < 0) {
+        dbg_printf("Failed to read OTP with errno=%d: %s\n", errno, strerror(errno));
+        status = BLADERF_ERR_IO;
+    }
+    return status;
 }
 
 /* XXX: For realsies */
@@ -644,7 +654,7 @@ static int linux_probe(struct bladerf_devinfo_list *info_list)
                 }
 
                 /* Fetch device's serial # */
-                status = linux_get_serial(dev, &devinfo.serial);
+                status = bladerf_get_serial(dev, (char *)&devinfo.serial);
                 if (status < 0) {
                     dbg_printf("Failed to get serial. Skipping instance %d\n",
                                devinfo.instance);
@@ -682,7 +692,7 @@ const struct bladerf_fn bladerf_linux_fn = {
 
     .flash_firmware         =   linux_flash_firmware,
 
-    .get_serial             =   linux_get_serial,
+    .get_otp                =   linux_get_otp,
     .get_fw_version         =   linux_get_fw_version,
     .get_fpga_version       =   linux_get_fpga_version,
     .get_device_speed       =   linux_get_device_speed,

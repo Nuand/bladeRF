@@ -8,7 +8,7 @@
 #include <libbladeRF.h>
 
 /* Reserved values for bladerf_devinfo fields to indicate "undefined" */
-#define DEVINFO_SERIAL_ANY    UINT64_MAX
+#define DEVINFO_SERIAL_ANY    "ANY"
 #define DEVINFO_BUS_ANY       UINT8_MAX
 #define DEVINFO_ADDR_ANY      UINT8_MAX
 #define DEVINFO_INST_ANY      UINT_MAX
@@ -74,7 +74,7 @@ struct bladerf_fn {
     int (*flash_firmware)(struct bladerf *dev, uint8_t *image, size_t image_size);
 
     /* Platform information */
-    int (*get_serial)(struct bladerf *dev, uint64_t *serial);
+    int (*get_otp)(struct bladerf *dev, char *otp);
     int (*get_fw_version)(struct bladerf *dev, unsigned int *maj, unsigned int *min);
     int (*get_fpga_version)(struct bladerf *dev, unsigned int *maj, unsigned int *min);
     int (*get_device_speed)(struct bladerf *dev, int *speed);
