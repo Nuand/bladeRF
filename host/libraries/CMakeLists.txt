@@ -5,7 +5,7 @@
 # TODO license text here (see top-level COPYING for time being)
 #
 # Portions of this file have been borrowed from and/or inspired by
-# the CMakeLists.txt from the rtl-sdr project.
+# the CMakeLists.txt from the rtl-sdr project (GPLv2)
 #   http://sdr.osmocom.org/trac/wiki/rtl-sdr
 
 cmake_minimum_required(VERSION 2.8)
@@ -24,6 +24,12 @@ include(Version)
 set(VERSION "${VERSION_INFO}")
 set(LIBVER "${VERSION_INFO_BASE}")
 
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/src/version.h
+    @ONLY
+)
+
 ################################################################################
 # Configuration options
 ################################################################################
@@ -32,17 +38,20 @@ set(LIBVER "${VERSION_INFO_BASE}")
 # Backend Support
 ##############################
 
-option (BACKEND_LIBUSB 
+option(BACKEND_LIBUSB 
     "Enable libusb backend support" 
-    ON)
+    ON
+)
 
-option (LIBUSB_DETACH_KERNEL_DRIVER 
-    "Enable calls to libusb_detach_kernel_driver(). Not supported in Windows" 
-    ON)
+option(LIBUSB_DETACH_KERNEL_DRIVER 
+    "Enable calls to libusb_detach_kernel_driver(). Not supported in Windows." 
+    ON
+)
 
-option (BACKEND_LINUX_DRIVER 
-    "Enable Linux driver backend support" 
-    OFF)
+option(BACKEND_LINUX_DRIVER 
+    "Enable Linux driver backend support." 
+    OFF
+)
 
 # Ensure we've got at least one backend enabled
 if(NOT BACKEND_LIBUSB AND NOT BACKEND_LINUX_DRIVER)
@@ -52,21 +61,9 @@ if(NOT BACKEND_LIBUSB AND NOT BACKEND_LINUX_DRIVER)
 endif()
 
 
-# Disable items not supported in Windows
-if(WIN32)
+# Detach kernel not supported in Windows
+if(CMAKE_HOST_WIN32)
     set(LIBUSB_DETACH_KERNEL_DRIVER OFF)
-endif()
-
-##############################
-# udev rules
-##############################
-
-option(INSTALL_UDEV_RULES 
-    "Install udev rules for the Nuand bladeRF" 
-    OFF)
-
-if(WIN32 AND INSTALL_UDEV_RULES)
-    message(FATAL_ERROR "INSTALL_UDEV_RULES=ON is not valid for Windows")
 endif()
 
 ################################################################################
@@ -80,22 +77,17 @@ endif()
 ################################################################################
 # Include paths
 ################################################################################
-
-# TODO the entry for common is sloppy -- perhaps we could use a variable here
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include
                     ${CMAKE_CURRENT_SOURCE_DIR}/src
                     ${BLADERF_COMMON_INCLUDE_DIR}
+                    ${CMAKE_CURRENT_BINARY_DIR}/src
                     ${LIBUSB_INCLUDE_DIRS}
-                   )
-
-if(NOT DEFINED LIB_INSTALL_DIR)
-    set(LIB_INSTALL_DIR lib)
-endif()
+)
 
 ################################################################################
 # Build dependencies
 ################################################################################
-find_package (PkgConfig)
+find_package(PkgConfig)
 
 if(BACKEND_LIBUSB)
     find_package(LibUSB)
@@ -122,7 +114,8 @@ set(LIBBLADERF_SOURCE
         src/file_ops.c
         src/lms.c
         src/si5338.c
-   )
+        src/version.h
+)
 
 if(BACKEND_LIBUSB)
     set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend/libusb.c)
@@ -147,6 +140,15 @@ set_target_properties(libbladerf_shared PROPERTIES OUTPUT_NAME bladeRF)
 
 # Set shared library version
 set_target_properties(libbladerf_shared PROPERTIES SOVERSION ${VERSION_INFO_MAJOR})
+
+
+################################################################################
+# Misc. installation config 
+################################################################################
+
+if(NOT DEFINED LIB_INSTALL_DIR)
+    set(LIB_INSTALL_DIR lib)
+endif()
 
 ################################################################################
 # Install udev rules
@@ -210,4 +212,3 @@ install(TARGETS libbladerf_shared
 # Informational output
 ################################################################################
 message(STATUS "libbladeRF version: ${VERSION_INFO}")
-message(STATUS "libbladeRF install prefix: ${CMAKE_INSTALL_PREFIX}")

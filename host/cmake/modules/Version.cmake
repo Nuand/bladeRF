@@ -13,7 +13,6 @@
 # Provides:
 #   ${VERSION_INFO_BASE}  -  Major.Minor.Patch
 #   ${VERSION_INFO}       -  Major.minor.Patch[-git_info] 
-#   
 #
 # Requires values for:
 #   ${VERSION_INFO_MAJOR} - Increment on API compatibility changes.

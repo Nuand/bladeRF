@@ -11,6 +11,7 @@
 #include "debug.h"
 #include "backend.h"
 #include "device_identifier.h"
+#include "version.h"        /* Generated at build time */
 
 /*------------------------------------------------------------------------------
  * Device discovery & initialization/deinitialization
@@ -502,6 +503,25 @@ const char * bladerf_strerror(int error)
         default:
             return "Unknown error code";
     }
+}
+
+const char * bladerf_version(unsigned int *major,
+                             unsigned int *minor,
+                             unsigned int *patch)
+{
+    if (major) {
+        *major = LIBBLADERF_VERSION_MAJOR;
+    }
+
+    if (minor) {
+        *minor = LIBBLADERF_VERSION_MINOR;
+    }
+
+    if (patch) {
+        *patch = LIBBLADERF_VERSION_PATCH;
+    }
+
+    return LIBBLADERF_VERSION;
 }
 
 /*------------------------------------------------------------------------------

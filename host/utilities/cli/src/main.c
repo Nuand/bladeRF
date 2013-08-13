@@ -134,7 +134,7 @@ int get_rc_config(int argc, char *argv[], struct rc_config *rc)
 void usage(const char *argv0)
 {
     printf("Usage: %s [options]\n", argv0);
-    printf("bladeRF command line interface and test utility (" CLI_VERSION ")\n\n");
+    printf("bladeRF command line interface and test utility (" BLADERF_CLI_VERSION ")\n\n");
     printf("Options:\n");
     printf("  -d, --device <device>            Use the specified bladeRF device.\n");
     printf("  -f, --flash-firmware <file>      Flash specified firmware file.\n");
@@ -278,11 +278,10 @@ int main(int argc, char *argv[])
         usage(argv[0]);
         exit_immediately = true;
     } else if (rc.show_version) {
-        printf(CLI_VERSION "\n");
+        printf(BLADERF_CLI_VERSION "\n");
         exit_immediately = true;
     } else if (rc.show_lib_version) {
-        /* TODO implement libbladerf_version() */
-        printf("TODO!\n");
+        printf("%s\n", bladerf_version(NULL, NULL, NULL));
         exit_immediately = true;
     } else if (rc.probe) {
         status = cmd_handle(state, "probe");

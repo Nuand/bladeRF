@@ -652,6 +652,24 @@ int bladerf_load_fpga(struct bladerf *dev, const char *fpga);
  */
 const char * bladerf_strerror(int error);
 
+/**
+ * Get libbladeRF version information.
+ *
+ * The parameters are optional and may be set to NULL if not needed
+ *
+ * param[out] major     Major version
+ * param[out] minor     Minor version
+ * param[out] patch     Patch version
+ *
+ * @warning Do not attempt to modify the returned string.
+ *
+ * @return  Version string. This value will contain git information for
+ *          non-release builds (i.e., a short changeset and "dirty" status)
+ */
+const char * bladerf_version(unsigned int *major,
+                             unsigned int *minor,
+                             unsigned int *patch);
+
 /** @} (End of FN_MISC) */
 
 /**

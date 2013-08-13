@@ -31,7 +31,7 @@ set(BLADERF_COMMON_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/../common)
 ###############################
 # GCC
 ###############################
-option(ENABLE_GDB_EXTENTIONS
+option(ENABLE_GDB_EXTENSIONS
        "When performing a debug build with GCC, this will enable -ggdb instead of -g"
        OFF)
 
@@ -39,9 +39,9 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug" AND
    "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
 
     # Personal preference - as much debug info as possible with GDB
-    if(${ENABLE_GDB_EXTENTIONS})
+    if(${ENABLE_GDB_EXTENSIONS})
         string(REGEX REPLACE "^-g$" "-ggdb3" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
-    endif(${ENABLE_GDB_EXTENTIONS})
+    endif(${ENABLE_GDB_EXTENSIONS})
 
 endif()
 
@@ -74,7 +74,8 @@ endif("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" OR
 ################################################################################
 
 add_subdirectory(libraries)
-#add_subdirectory(utilities)
+add_subdirectory(utilities)
+add_subdirectory(misc)
 
 ################################################################################
 # Create uninstall target
