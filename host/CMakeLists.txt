@@ -28,12 +28,45 @@ set(BLADERF_COMMON_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/../common)
 # Compiler configuration
 ################################################################################
 
-if("${CMAKE_CC_COMPILER_ID}" STREQUAL "GNU" OR
-    "${CMAKE_CC_COMPILER_ID}" STREQUAL "Clang" )
-    ADD_DEFINITIONS(-Wall)
-    ADD_DEFINITIONS(-Wextra)
-    ADD_DEFINITIONS(-Wno-unused-parameter)
+###############################
+# GCC
+###############################
+option(ENABLE_GDB_EXTENTIONS
+       "When performing a debug build with GCC, this will enable -ggdb instead of -g"
+       OFF)
+
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug" AND
+   "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
+
+    # Personal preference - as much debug info as possible with GDB
+    if(${ENABLE_GDB_EXTENTIONS})
+        string(REGEX REPLACE "^-g$" "-ggdb3" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
+    endif(${ENABLE_GDB_EXTENTIONS})
+
 endif()
+
+###############################
+# GCC and Clang
+###############################
+if("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" OR
+   "${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
+
+    # Prefer more warnings, enforce C89 so folks developing in Linux can keep
+    # an eye on stuff that will likely cause portability issues
+    add_definitions(-Wall)
+    add_definitions(-Wextra)
+# TODO Re-enable these
+#    add_definitions(-pedantic)
+#    add_definitions(-std=c89)
+    add_definitions(-Wno-unused-parameter)
+
+    if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+        add_definitions(-DDEBUG=1)
+        add_definitions(-O0)
+    endif("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+
+endif("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" OR
+      "${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
 
 
 ################################################################################
