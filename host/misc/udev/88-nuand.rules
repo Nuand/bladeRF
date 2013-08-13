@@ -1,0 +1,3 @@
+# nuand bladeRF
+ACTION=="add", ATTR{idVendor}=="1d50", ATTR{idProduct}=="6066", MODE="660", GROUP="plugdev"
+ACTION=="add", KERNEL=="bladerf*", MODE="0660", GROUP="plugdev"
