@@ -1,4 +1,4 @@
-# Copyright 2012 Nuand, LLC.
+# Copyright 2013 Nuand, LLC.
 #
 # This file is part of the bladeRF project
 #

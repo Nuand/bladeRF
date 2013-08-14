@@ -1,4 +1,4 @@
-# Copyright 2012 Nuand, LLC.
+# Copyright 2013 Nuand, LLC.
 #
 # This file is part of the bladeRF project
 #
@@ -40,7 +40,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src
                     ${CMAKE_CURRENT_SOURCE_DIR}/src/cmd                    
                     ${CMAKE_CURRENT_SOURCE_DIR}/src/interactive
                     ${CMAKE_CURRENT_BINARY_DIR}/src
-                    ${LIBBLADERF_INCLUDE_DIR}
+                    ${libbladeRF_SOURCE_DIR}/include
                     ${LIBTECLA_INCLUDE_DIR}
 )
 
@@ -74,11 +74,7 @@ add_executable(bladeRF-cli ${BLADERF_CLI_SOURCE})
 ################################################################################
 find_package(PkgConfig)
 find_package(Threads)
-find_package(LibbladeRF)
-
-if(NOT LIBBLADERF_FOUND)
-    message(FATAL_ERROR "Unable to find libbladeRF")
-endif()
+#find_package(LibbladeRF)
 
 if(ENABLE_INTERACTIVE_TECLA)
     find_package(LibTecla)
@@ -92,7 +88,7 @@ endif(ENABLE_INTERACTIVE_TECLA)
 # Build configuration
 ################################################################################
 target_link_libraries(bladeRF-cli 
-                      ${LIBBLADERF_LIBRARIES}
+                      libbladerf_shared
                       ${CMAKE_THREAD_LIBS_INIT}
                       ${LIBTECLA_LIBRARIES}
 )
@@ -109,4 +105,4 @@ install(TARGETS bladeRF-cli DESTINATION ${BIN_INSTALL_DIR})
 ################################################################################
 # Informational output
 ################################################################################
-message(STATUS "bladeRF-cli version: ${VERSION_INFO}")
+message(STATUS "Configured to build bladeRF-cli version: ${VERSION_INFO}")
