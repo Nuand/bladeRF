@@ -26,12 +26,12 @@ void tx_callback(struct bladerf *dev, struct bladerf_stream *stream,
     if (shutdown) {
         stream->state = BLADERF_STREAM_CANCELLING;
     } else {
-        memcpy(samples, &my_data->data[my_data->idx], n_bytes);
         my_data->idx += n_bytes;
 
-        if (my_data->idx > my_data->size) {
+        if (my_data->idx >= my_data->size) {
             my_data->idx = 0;
         }
+        memcpy(samples, &my_data->data[my_data->idx], n_bytes);
     }
 }
 
@@ -64,16 +64,20 @@ int populate_test_data(struct test_data *test_data)
             test_data->size = 0;
             return -1;
         }
-
+        size_t i;
+        for(i=0;i<test_data->size;){
+            test_data->data[i++] = 0x7f ;
+            test_data->data[i++] = 0x7f ;
+        }
         return 0;
     }
 }
 
 void handler(int signal)
 {
-    if (signal == SIGTERM) {
+    if (signal == SIGUSR1) {
         shutdown = true;
-        printf("Caught SIGTERM, canceling transfers\n");
+        printf("Caught SIGUSR1, canceling transfers\n");
         fflush(stdout);
     } else {
         printf("Wrong signal bro\n");
@@ -84,6 +88,7 @@ void handler(int signal)
 int main(int argc, char *argv[])
 {
     int status;
+    unsigned int actual;
     struct bladerf *dev;
     struct bladerf_stream stream;
     struct test_data test_data;
@@ -111,7 +116,7 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    if (signal(SIGTERM, handler) == SIG_ERR) {
+    if (signal(SIGUSR1, handler) == SIG_ERR) {
         fprintf(stderr, "Failed to set up signal handler\n");
         return EXIT_FAILURE;
     }
@@ -125,6 +130,8 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Failed to open device: %s\n", bladerf_strerror(status));
         return EXIT_FAILURE;
     }
+
+    bladerf_set_sample_rate( dev, TX, 40000000, &actual );
 
     status = bladerf_tx_stream(dev, FORMAT_SC16, &stream);
     if (status) {

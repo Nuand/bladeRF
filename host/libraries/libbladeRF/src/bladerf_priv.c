@@ -39,6 +39,8 @@ size_t c16_samples_to_bytes(size_t n_samples)
 
 int bladerf_init_device(struct bladerf *dev)
 {
+    unsigned int actual ;
+
     /* Set the GPIO pins to enable the LMS and select the low band */
     bladerf_gpio_write( dev, 0x51 );
 
@@ -59,6 +61,18 @@ int bladerf_init_device(struct bladerf *dev)
 
     /* FPGA workaround: Set IQ polarity for RX */
     bladerf_lms_write( dev, 0x5a, 0xa0 );
+
+    /* Set a default saplerate */
+    bladerf_set_sample_rate( dev, TX, 1000000, &actual );
+    bladerf_set_sample_rate( dev, RX, 1000000, &actual );
+
+    /* Enable TX and RX */
+    bladerf_enable_module( dev, TX, true );
+    bladerf_enable_module( dev, RX, true );
+
+    /* Set a default frequency of 1GHz */
+    bladerf_set_frequency( dev, TX, 1000000000 );
+    bladerf_set_frequency( dev, RX, 1000000000 );
 
     /* TODO: Read this return from the SPI calls */
     return 0;

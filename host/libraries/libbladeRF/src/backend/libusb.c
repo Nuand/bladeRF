@@ -956,16 +956,20 @@ struct lusb_stream_data {
     struct bladerf_stream *stream ;
 } ;
 
-
-
 static void lusb_tx_stream_cb(struct libusb_transfer *transfer)
 {
+    struct lusb_stream_data *stream_data = (struct lusb_stream_data *)transfer->user_data;
     /* Check to see if the stream is still valid */
+    if( stream_data->stream->state == BLADERF_STREAM_RUNNING ) {
 
-    /* Call user callback requesting more data to transmit */
+        /* Call user callback requesting more data to transmit */
+        stream_data->stream->cb( stream_data->dev, stream_data->stream, NULL, transfer->buffer, bytes_to_c16_samples(transfer->length) );
 
-    /* Check the stream to make sure we're still valid and submit transfer */
-    libusb_submit_transfer(transfer) ;
+        /* Check the stream to make sure we're still valid and submit transfer */
+        if( stream_data->stream->state == BLADERF_STREAM_RUNNING ) {
+            libusb_submit_transfer(transfer) ;
+        }
+    }
     return;
 }
 
@@ -1008,7 +1012,7 @@ static int lusb_allocate_transfers( struct lusb_stream_transfer **transfers,
     } else if ( ret ) {
         /* Clean up our partially allocated data */
         for ( i = 0; i < num_transfers; i++ ) {
-            free( ret[i].transfer );
+            libusb_free_transfer( ret[i].transfer );
             free( ret[i].buffer );
         }
 
@@ -1021,7 +1025,7 @@ static int lusb_allocate_transfers( struct lusb_stream_transfer **transfers,
 static void lusb_deallocate_transfer( struct lusb_stream_transfer *transfer )
 {
     if ( transfer ) {
-        free(transfer->transfer);
+        libusb_free_transfer(transfer->transfer);
         free(transfer->buffer);
 
         transfer->transfer = NULL;
@@ -1092,7 +1096,7 @@ static int lusb_tx_stream(struct bladerf *dev, bladerf_format_t format,
             case BLADERF_STREAM_ERRORED:
                 freed_transfers = 0 ;
                 for( i = 0 ; i < stream->buffers_per_stream ; i++ ) {
-                    if( transfers[i].transfer->status != LIBUSB_TRANSFER_CANCELLED ) {
+                    if( transfers[i].transfer->status != LIBUSB_TRANSFER_COMPLETED ) {
                         libusb_cancel_transfer( transfers[i].transfer );
                     } else if( lusb_transfer_is_allocated( &transfers[i] ) ) {
                         /* Deallocate transfer data and buffer */
