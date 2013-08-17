@@ -23,24 +23,24 @@ bladeRF-cli --version
 bladeRF-cli --lib-version
 ```
 
-If only one device is connected, the -d option is not needed. The CLI will find and open the attached device. This option is required if multiple devices are connected. For the sake of completeness, the following examples will include this command line option.
+If only one device is connected, the -d option is not needed. The CLI will find and open the attached device. This option is required if multiple devices are connected. For the sake of completeness, the following examples will include this command line option, using the libusb backend.
 
 Load the FPGA and enter interactive mode:
 
 ```
-./bladeRF-cli -d /dev/bladerf0 -l /path/to/fpga.rbf
+./bladeRF-cli -d "libusb: instance=0" -l /path/to/fpga.rbf
 ```
 
 Pass in a script to run to setup a device in a specific way, and then interactive mode.
 
 ```
-./bladeRF-cli -d /dev/bladerf0 -s setup.txt
+./bladeRF-cli -d "libusb: instance=0" -s setup.txt
 ```
 
 Load the FPGA, setup the device, but to do not enter interactive mode:
 
 ```
-./bladeRF-cli -d /dev/bladerf0 -l /path/to/fpga.rbf -s setup.txt -b
+./bladeRF-cli -d "libusb: instance=0" -l /path/to/fpga.rbf -s setup.txt -b
 ```
 
 ## Some Useful Interactive Commands ##
