@@ -950,6 +950,172 @@ static ssize_t lusb_tx(struct bladerf *dev, bladerf_format_t format, void *sampl
     return bytes_to_c16_samples(bytes_total - bytes_remaining);
 }
 
+struct lusb_stream_data {
+    bladerf_format_t format ;
+    struct bladerf *dev ;
+    struct bladerf_stream *stream ;
+} ;
+
+
+
+static void lusb_tx_stream_cb(struct libusb_transfer *transfer)
+{
+    /* Check to see if the stream is still valid */
+
+    /* Call user callback requesting more data to transmit */
+
+    /* Check the stream to make sure we're still valid and submit transfer */
+    libusb_submit_transfer(transfer) ;
+    return;
+}
+
+#define BULK_TIMEOUT 5000
+
+struct lusb_stream_transfer {
+    struct libusb_transfer *transfer;
+    uint8_t *buffer;
+} ;
+
+static int lusb_allocate_transfers( struct lusb_stream_transfer **transfers,
+                                    size_t num_transfers,
+                                    size_t buffer_size )
+{
+    size_t i;
+    int status = 0;
+    struct lusb_stream_transfer *ret ;
+
+    *transfers = NULL;
+
+    /* Ensure things are zero'd so we can free() without worries upon error */
+    ret = calloc( num_transfers, sizeof(*ret) );
+    if ( ret ) {
+        for ( i = 0; i < num_transfers && !status; i++ ) {
+            ret[i].transfer = libusb_alloc_transfer(0);
+            ret[i].buffer = malloc(buffer_size);
+
+            /* Error out on any failure */
+            if ( !ret[i].transfer || !ret[i].buffer ) {
+                status = BLADERF_ERR_MEM;
+            }
+        }
+    } else {
+        status = BLADERF_ERR_MEM;
+    }
+
+    /* Success */
+    if ( status == 0 ) {
+        *transfers = ret;
+    } else if ( ret ) {
+        /* Clean up our partially allocated data */
+        for ( i = 0; i < num_transfers; i++ ) {
+            free( ret[i].transfer );
+            free( ret[i].buffer );
+        }
+
+        free( ret );
+    }
+
+    return status;
+}
+
+static void lusb_deallocate_transfer( struct lusb_stream_transfer *transfer )
+{
+    if ( transfer ) {
+        free(transfer->transfer);
+        free(transfer->buffer);
+
+        transfer->transfer = NULL;
+        transfer->buffer = NULL;
+    }
+}
+
+static inline bool lusb_transfer_is_allocated(struct lusb_stream_transfer *transfer)
+{
+    return transfer->transfer || transfer->buffer;
+}
+
+static int lusb_tx_stream(struct bladerf *dev, bladerf_format_t format,
+                          struct bladerf_stream *stream)
+{
+    int rv, status;
+    size_t i, freed_transfers = 0;
+    size_t buffer_size = c16_samples_to_bytes(stream->samples_per_buffer);
+    struct bladerf_lusb *lusb = (struct bladerf_lusb *)dev->backend;
+    struct lusb_stream_data stream_data;
+    struct lusb_stream_transfer *transfers;
+    struct timeval tv = { 1 , 0 };
+
+    /* Fill in stream data information */
+    stream_data.format = format ;
+    stream_data.dev = dev ;
+    stream_data.stream = stream ;
+
+    /* Allocate buffer space based on requested format */
+    rv = lusb_allocate_transfers( &transfers, stream->buffers_per_stream, buffer_size ) ;
+
+
+    if (rv) {
+        return rv;
+    }
+
+    /* Call lusb_tx_stream_cb() to populate transfer buffers and submit */
+    for( i = 0 ; i < stream->buffers_per_stream ; i++ ) {
+        /* Fill up the bulk transfer request */
+        libusb_fill_bulk_transfer(
+            transfers[i].transfer,
+            lusb->handle,
+            0x01,
+            transfers[i].buffer,
+            buffer_size,
+            lusb_tx_stream_cb,
+            (void *)&stream_data,
+            BULK_TIMEOUT
+        ) ;
+
+        stream->state = BLADERF_STREAM_RUNNING;
+
+        /* Call the callback to populate transfer buffer and submit*/
+        lusb_tx_stream_cb( transfers[i].transfer );
+    }
+
+    /* Wait for the stream to end */
+    while( stream->state != BLADERF_STREAM_DONE ) {
+        switch(stream->state) {
+            case BLADERF_STREAM_RUNNING:
+                status = libusb_handle_events_timeout(lusb->context, &tv);
+                if ( status ) {
+                    stream->state = BLADERF_STREAM_ERRORED;
+                }
+                break;
+
+            case BLADERF_STREAM_CANCELLING:
+            case BLADERF_STREAM_ERRORED:
+                freed_transfers = 0 ;
+                for( i = 0 ; i < stream->buffers_per_stream ; i++ ) {
+                    if( transfers[i].transfer->status != LIBUSB_TRANSFER_CANCELLED ) {
+                        libusb_cancel_transfer( transfers[i].transfer );
+                    } else if( lusb_transfer_is_allocated( &transfers[i] ) ) {
+                        /* Deallocate transfer data and buffer */
+                        lusb_deallocate_transfer(&transfers[i]);
+                        freed_transfers++ ;
+                    } else {
+                        freed_transfers++ ;
+                    }
+                }
+                if( freed_transfers == stream->buffers_per_stream ) {
+                    stream->state = BLADERF_STREAM_DONE;
+                }
+                break ;
+            default:
+                /* Nothing to do */
+                break ;
+        }
+    }
+
+    free(transfers);
+    return rv;
+}
+
 static ssize_t lusb_rx(struct bladerf *dev, bladerf_format_t format, void *samples,
                        size_t n, struct bladerf_metadata *metadata)
 {
@@ -983,6 +1149,67 @@ static ssize_t lusb_rx(struct bladerf *dev, bladerf_format_t format, void *sampl
     }
 
     return bytes_to_c16_samples(bytes_total - bytes_remaining);
+}
+
+
+static void lusb_rx_stream_cb(struct libusb_transfer *transfer)
+{
+
+    struct bladerf_metadata metadata;
+    struct lusb_stream_data *data = transfer->user_data;
+    struct bladerf *dev = data->dev ;
+    struct bladerf_stream *stream = data->stream;
+    unsigned int num_samples = bytes_to_c16_samples(transfer->actual_length) ;
+
+    /* Make sure libusb was fine */
+    if( transfer->status == LIBUSB_TRANSFER_COMPLETED ) {
+
+        /* Check stream state to make sure we are still running */
+        if( stream->state == BLADERF_STREAM_RUNNING ) {
+            /* Populate metadata information */
+
+            /* Convert samples from input type to output type */
+
+            /* Call user callback */
+            stream->cb(dev, stream, &metadata, transfer->buffer, num_samples) ;
+        }
+
+        if( stream->state == BLADERF_STREAM_RUNNING ) {
+            /* Check stream state and resubmit transfer */
+            libusb_submit_transfer(transfer);
+        }
+    } else if( transfer->status != LIBUSB_TRANSFER_CANCELLED ) {
+        /* TODO: Keep track of these errors */
+        dbg_printf( "Callback received weird status: %d\n", transfer->status );
+    }
+
+    /* Done */
+    return;
+}
+
+static int lusb_rx_stream(struct bladerf *dev, bladerf_format_t format,
+                          struct bladerf_stream *stream)
+{
+    int rv = 0;
+    struct lusb_stream_data stream_data ;
+
+    stream_data.format = format ;
+    stream_data.dev = dev ;
+    stream_data.stream = stream ;
+
+    /* Allocate buffer space based on requested format */
+
+    /* Submit all the transfers and set the state to running */
+
+    /* Wait for the stream to end */
+    while( stream->state != BLADERF_STREAM_CANCELLING ) {
+
+    }
+
+    /* Deallocate buffers */
+
+    /* Done */
+    return rv;
 }
 
 int lusb_probe(struct bladerf_devinfo_list *info_list)
@@ -1054,5 +1281,8 @@ const struct bladerf_fn bladerf_lusb_fn = {
 
     .rx                 = lusb_rx,
     .tx                 = lusb_tx,
+
+    .rx_stream          = lusb_rx_stream,
+    .tx_stream          = lusb_tx_stream
 };
 

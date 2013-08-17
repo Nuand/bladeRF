@@ -534,6 +534,44 @@ ssize_t bladerf_rx(struct bladerf *dev, bladerf_format_t format,
                    void *samples, size_t num_samples,
                    struct bladerf_metadata *metadata);
 
+typedef enum {
+    BLADERF_STREAM_REQUESTED,
+    BLADERF_STREAM_RUNNING,
+    BLADERF_STREAM_CANCELLING,
+    BLADERF_STREAM_ERRORED,
+    BLADERF_STREAM_DONE
+} bladerf_stream_state ;
+
+struct bladerf_stream {
+    size_t samples_per_buffer;
+    size_t buffers_per_stream;
+    void *data; /**< User data */
+    void (*cb)(struct bladerf *dev, struct bladerf_stream *stream,
+               struct bladerf_metadata *metadata, void *samples,
+               size_t num_samples);
+
+    int status;
+    bladerf_stream_state state;
+};
+
+/**
+ *
+ * @pre The provided bladerf_stream must have had its callback,
+ *      samples_per_buffer, buffers_per_stream, and (optional) data fields
+ *      initialized prior to this call
+ */
+int bladerf_rx_stream(struct bladerf *dev, bladerf_format_t format,
+                      struct bladerf_stream *stream);
+
+/**
+ *
+ * @pre The provided bladerf_stream must have had its state, callback,
+ *      samples_per_buffer, buffers_per_stream, and (optional) data fields
+ *      initialized prior to this call
+ */
+int bladerf_tx_stream(struct bladerf *dev, bladerf_format_t format,
+                      struct bladerf_stream *stream);
+
 /** @} (End of FN_DATA) */
 
 

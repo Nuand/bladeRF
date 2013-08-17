@@ -218,3 +218,8 @@ install(TARGETS libbladerf_shared
 # Informational output
 ################################################################################
 message(STATUS "libbladeRF version: ${VERSION_INFO}")
+
+################################################################################
+# Library tests
+################################################################################
+add_subdirectory(tests)
