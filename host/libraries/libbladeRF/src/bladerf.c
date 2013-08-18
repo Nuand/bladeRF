@@ -373,12 +373,40 @@ int bladerf_init_stream(struct bladerf_stream *stream,
                         size_t num_transfers,
                         void *user_data)
 {
+
+    struct bladerf_stream *lstream;
+
+    /* Create a stream and populate it with the appropriate information */
+    lstream = malloc(sizeof(struct bladerf_stream));
+    lstream->samples_per_buffer = samples_per_buffer;
+    lstream->num_buffers = num_buffers;
+    lstream->num_transfers = num_transfers;
+    lstream->format = format;
+    /* Create the buffers that we are passing back to the user */
+    /* lstream->buffers gets created in here */
+    /* lstream->backend_data get filled in during bladerf_*_stream call*/
+    lstream->cb = callback;
+
+    /* Assign it to the user pointer */
+    stream = lstream;
+
+    /* Done */
+    return 0;
 }
 
 int bladerf_rx_stream(struct bladerf *dev, bladerf_format_t format,
                       struct bladerf_stream *stream)
 {
-    return dev->fn->rx_stream(dev, format, stream);
+    int stream_status = 0;
+    int module_status;
+
+    module_status = bladerf_enable_module(dev, RX, true);
+
+    if (!module_status) {
+        stream_status = dev->fn->rx_stream(dev, format, stream);
+    }
+
+    return stream_status ? stream_status : module_status;
 }
 
 int bladerf_tx_stream(struct bladerf *dev, bladerf_format_t format,
@@ -391,7 +419,6 @@ int bladerf_tx_stream(struct bladerf *dev, bladerf_format_t format,
 
     if (!module_status) {
         stream_status = dev->fn->tx_stream(dev, format, stream);
-        module_status = bladerf_enable_module(dev, TX, false);
     }
 
     return stream_status ? stream_status : module_status;

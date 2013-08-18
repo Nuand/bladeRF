@@ -987,40 +987,49 @@ static void lusb_deallocate_transfer( struct lusb_stream_transfer *transfer )
 
 static void lusb_tx_stream_cb(struct libusb_transfer *transfer)
 {
-#if 0
     struct lusb_stream_transfer *stream_transfer  = (struct lusb_stream_transfer*)transfer->user_data;
     struct lusb_stream_data *parent_stream = stream_transfer->parent_stream;
+    void *next_buffer;
 
-    /* Check to see if the transfer has been cancelled */
+    /* Check to see if the transfer has been cancelled or errored */
     if( transfer->status == LIBUSB_TRANSFER_CANCELLED ) {
         dbg_printf("Got transfer cancellation for transfer @ %p\n", transfer);
         lusb_deallocate_transfer( stream_transfer );
         return;
+    } else if( transfer->buffer != NULL && transfer->status != LIBUSB_TRANSFER_COMPLETED ) {
+        /* Errored out for some reason .. */
+        dbg_printf("Transfer was not completed: %d\n", transfer->status );
+        lusb_deallocate_transfer( stream_transfer );
     }
-
-    /* Check to see if the transfer had an error */
 
     /* Check to see if the stream is still valid */
     if( parent_stream->state == BLADERF_STREAM_RUNNING ) {
 
         /* Call user callback requesting more data to transmit */
-        parent_stream->cb(stream_data->dev, stream_data->stream, NULL,
-                                transfer->buffer,
-                                bytes_to_c16_samples(transfer->length) );
+        next_buffer = parent_stream->cb(stream_data->dev, stream_data->stream, NULL,
+                                        transfer->buffer,
+                                        bytes_to_c16_samples(transfer->length) );
 
     }
 
     /* Check the stream to make sure we're still valid and submit transfer,
      * as the user may have transitioned us from RUNNING to CANCELLING */
     if( stream_data->stream->state == BLADERF_STREAM_RUNNING ) {
+        /* TODO: Fill this in using the next_buffer pointer */
+        //libusb_fill_bulk_transfer() ;
         libusb_submit_transfer(transfer) ;
     } else {
         dbg_printf("Got CANCELLING from user call for: %p\n", transfer);
 
         /* Otherwise, if we're cancelled or errored out, clean up */
         lusb_deallocate_transfer( stream_data->transfer );
+
+        /* Cancel all the other transfers */
     }
-#endif
+
+    /* Check to see if all the transfers have been cancelled, and if so, clean up the stream */
+
+    return ;
 }
 
 
@@ -1071,29 +1080,21 @@ static int lusb_allocate_transfers( struct lusb_stream_data *stream,
 static int lusb_tx_stream(struct bladerf *dev, bladerf_format_t format,
                           struct bladerf_stream *stream)
 {
-#if 0
     int rv, status;
     size_t i, freed_transfers = 0;
     size_t buffer_size = c16_samples_to_bytes(stream->samples_per_buffer);
     struct bladerf_lusb *lusb = (struct bladerf_lusb *)dev->backend;
     struct lusb_stream_data stream_data;
-    struct timeval tv = { 1 , 0 };
 
-    /* Fill in stream data information */
-    stream_data.format = format ;
-    stream_data.dev = dev ;
-    stream_data.stream = stream ;
+    /* Fill in backend stream information */
 
-    /* Allocate buffer space based on requested format */
-    rv = lusb_allocate_transfers( &stream, stream->buffers_per_stream, buffer_size ) ;
+    /* Allocate backend transfers based on stream parameters */
 
-    if (rv) {
-        return rv;
-    }
+    /* Set our state to running */
+    stream->state = BLADERF_STREAM_RUNNING;
 
     /* Call lusb_tx_stream_cb() to populate transfer buffers and submit */
     for( i = 0 ; i < stream->buffers_per_stream ; i++ ) {
-        stream_data.transfer = &transfers[i] ;
         /* Fill up the bulk transfer request */
         libusb_fill_bulk_transfer(
             transfers[i].transfer,
@@ -1106,57 +1107,12 @@ static int lusb_tx_stream(struct bladerf *dev, bladerf_format_t format,
             BULK_TIMEOUT
         ) ;
 
-        stream->state = BLADERF_STREAM_RUNNING;
-
         /* Call the callback to populate transfer buffer and submit*/
         lusb_tx_stream_cb( transfers[i].transfer );
     }
 
-    /* No Longer have to do this part .. Wait for the stream to end */
-    while( stream->state != BLADERF_STREAM_DONE ) {
-        status = libusb_handle_events_timeout(lusb->context, &tv);
-        if ( status ) {
-            stream->state = BLADERF_STREAM_ERRORED;
-        }
-
-        switch(stream->state) {
-
-            case BLADERF_STREAM_CANCELLING:
-                /* Fall-through */
-
-            case BLADERF_STREAM_ERRORED:
-                /* Check whether all of our transfers have been deallocated */
-                freed_transfers = 0 ;
-                for( i = 0 ; i < stream->buffers_per_stream ; i++ ) {
-                    if( lusb_transfer_is_allocated(&transfers[i]) ) {
-                        libusb_cancel_transfer( transfers[i].transfer );
-                    } else {
-                        dbg_printf("Found that transfer %d (%p)was free\n", i, &transfers[i]);
-                        freed_transfers++ ;
-                    }
-                }
-
-                /* If so, we can finally transition out of our current state */
-                if( freed_transfers == stream->buffers_per_stream ) {
-                    stream->state = BLADERF_STREAM_DONE;
-                } else {
-                    dbg_printf("There are %zd freed_transfers\n", freed_transfers);
-                }
-                break ;
-
-            case BLADERF_STREAM_RUNNING:
-                /* Fall-through. We'll keep handling events */
-
-            default:
-                /* Nothing to do */
-                break ;
-        }
-    }
-
-    free(stream.transfers);
+    /* Callback sequence should be in control now, or we errored so we're done here */
     return rv;
-#endif
-    return 0;
 }
 
 static ssize_t lusb_rx(struct bladerf *dev, bladerf_format_t format, void *samples,

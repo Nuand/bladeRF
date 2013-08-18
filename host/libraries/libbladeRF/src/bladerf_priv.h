@@ -47,9 +47,10 @@ struct bladerf_devinfo_list {
 struct bladerf_stream {
     size_t samples_per_buffer;
     size_t num_buffers;
+    size_t num_transfers;
     bladerf_format_t format;
 
-    void *buffers;
+    void **buffers;
     void *backend_data;
 
     bladerf_stream_cb cb;
