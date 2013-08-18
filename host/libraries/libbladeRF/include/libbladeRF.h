@@ -156,7 +156,7 @@ typedef enum {
  *                  which should be num_samples in size.
  *
  */
-typedef void  (*bladerf_stream_cb)(struct bladerf *dev,
+typedef void *(*bladerf_stream_cb)(struct bladerf *dev,
                                    struct bladerf_stream *stream,
                                    struct bladerf_metadata *meta,
                                    void *samples,

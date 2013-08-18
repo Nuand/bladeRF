@@ -39,6 +39,7 @@ struct lusb_stream_transfer {
 
 struct lusb_stream_data {
     struct libusb_transfer *transfers;
+    size_t num_allocated;
 } ;
 
 
@@ -997,6 +998,8 @@ static void lusb_tx_stream_cb(struct libusb_transfer *transfer)
         return;
     }
 
+    /* Check to see if the transfer had an error */
+
     /* Check to see if the stream is still valid */
     if( parent_stream->state == BLADERF_STREAM_RUNNING ) {
 
@@ -1009,7 +1012,9 @@ static void lusb_tx_stream_cb(struct libusb_transfer *transfer)
 
     /* Check the stream to make sure we're still valid and submit transfer,
      * as the user may have transitioned us from RUNNING to CANCELLING */
-    if( stream_data->stream->state == BLADERF_STREAM_RUNNING ) { libusb_submit_transfer(transfer) ; } else {
+    if( stream_data->stream->state == BLADERF_STREAM_RUNNING ) {
+        libusb_submit_transfer(transfer) ;
+    } else {
         dbg_printf("Got CANCELLING from user call for: %p\n", transfer);
 
         /* Otherwise, if we're cancelled or errored out, clean up */
@@ -1094,7 +1099,7 @@ static int lusb_tx_stream(struct bladerf *dev, bladerf_format_t format,
             transfers[i].transfer,
             lusb->handle,
             0x01,
-            transfers[i].buffer,
+            NULL,
             buffer_size,
             lusb_tx_stream_cb,
             (void *)&stream_data,
@@ -1107,7 +1112,7 @@ static int lusb_tx_stream(struct bladerf *dev, bladerf_format_t format,
         lusb_tx_stream_cb( transfers[i].transfer );
     }
 
-    /* Wait for the stream to end */
+    /* No Longer have to do this part .. Wait for the stream to end */
     while( stream->state != BLADERF_STREAM_DONE ) {
         status = libusb_handle_events_timeout(lusb->context, &tv);
         if ( status ) {

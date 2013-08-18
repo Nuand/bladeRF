@@ -2,75 +2,55 @@
 #include <stdio.h>
 #include <signal.h>
 #include <string.h>
+#include <unistd.h>
 #include <libbladeRF.h>
 
 #define DATA_SOURCE "/dev/urandom"
 
-#if 0
 static bool shutdown = false;
 
 struct test_data
 {
-    uint8_t *data;
-    size_t   size;
-    unsigned int idx;
+    void            **buffers;          /* Transmit buffers */
+    size_t          num_buffers;        /* Number of transmit buffers */
+    unsigned int    idx;                /* The next one that needs to go out */
 };
 
-
-void tx_callback(struct bladerf *dev, struct bladerf_stream *stream,
-                 struct bladerf_metadata *metadata, void *samples,
-                 size_t num_samples)
+void *tx_callback(struct bladerf *dev, struct bladerf_stream *stream,
+                  struct bladerf_metadata *metadata, void *samples,
+                  size_t num_samples, void *user_data)
 {
-    struct test_data *my_data = stream->data;
-    size_t n_bytes = 2 * sizeof(int16_t) * num_samples;
+    struct test_data *my_data = user_data;
 
     if (shutdown) {
-        stream->state = BLADERF_STREAM_CANCELLING;
+        return NULL;
     } else {
-        my_data->idx += n_bytes;
-
-        if (my_data->idx >= my_data->size) {
-            my_data->idx = 0;
-        }
-        memcpy(samples, &my_data->data[my_data->idx], n_bytes);
+        void *rv = my_data->buffers[my_data->idx];
+        my_data->idx = (my_data->idx + 1) % my_data->num_buffers;
+        return rv ;
     }
 }
 
-int populate_test_data(struct test_data *test_data)
+int populate_test_data(struct test_data *test_data, size_t buffer_size)
 {
     FILE *in;
     ssize_t n_read;
 
     test_data->idx = 0;
-    test_data->size = 1 * 1024 * 1024;
-    test_data->data = malloc(test_data->size);
-
-    if (!test_data->data) {
-        test_data->size = 0;
-        return -1;
-    }
 
     in = fopen(DATA_SOURCE, "rb");
 
     if (!in) {
-        free(test_data->data);
-        test_data->data = NULL;
-        test_data->size = 0;
         return -1;
     } else {
-        n_read = fread(test_data->data, 1, test_data->size, in);
-        if (n_read != (ssize_t)test_data->size) {
-            free(test_data->data);
-            test_data->data = NULL;
-            test_data->size = 0;
-            fclose(in);
-            return -1;
-        }
         size_t i;
-        //for(i=0;i<test_data->size;){
-        //    test_data->data[i++] = 0x7f ;
-        //    test_data->data[i++] = 0x7f ;
-        //}
+        for(i=0;i<test_data->num_buffers;i++) {
+            n_read = fread(test_data->buffers[i], sizeof(int16_t)*2, buffer_size, in);
+            if (n_read != (ssize_t)buffer_size) {
+                fclose(in);
+                return -1;
+            }
+        }
         fclose(in);
         return 0;
     }
@@ -87,11 +67,12 @@ void handler(int signal)
 
 int main(int argc, char *argv[])
 {
-    int status;
+    int status, samples_per_buffer, buffers_per_stream;
     unsigned int actual;
     struct bladerf *dev;
-    struct bladerf_stream stream;
+    struct bladerf_stream *stream;
     struct test_data test_data;
+    void **buffers;
 
     if (argc != 3) {
         fprintf(stderr,
@@ -99,32 +80,24 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    stream.samples_per_buffer = atoi(argv[1]);
-    if (stream.samples_per_buffer <= 0) {
+    samples_per_buffer = atoi(argv[1]);
+    if (samples_per_buffer <= 0) {
         fprintf(stderr, "Invalid samples per buffer value: %s\n", argv[1]);
         return EXIT_FAILURE;
     }
 
-    stream.buffers_per_stream = atoi(argv[2]);
-    if (stream.buffers_per_stream <= 0 ) {
+    buffers_per_stream = atoi(argv[2]);
+    if (buffers_per_stream <= 0 ) {
         fprintf(stderr, "Invalid # buffers per stream: %s\n", argv[2]);
         return EXIT_FAILURE;
     }
 
-    if (populate_test_data(&test_data)) {
-        fprintf(stderr, "Failed to populated test data\n");
-        return EXIT_FAILURE;
-    }
 
     if (signal(SIGINT, handler) == SIG_ERR ||
         signal(SIGTERM, handler) == SIG_ERR) {
         fprintf(stderr, "Failed to set up signal handler\n");
         return EXIT_FAILURE;
     }
-
-    stream.data = &test_data;
-
-    stream.cb = tx_callback;
 
     status = bladerf_open(&dev, NULL);
     if (status < 0) {
@@ -148,22 +121,39 @@ int main(int argc, char *argv[])
         }
     }
 
-    status = bladerf_tx_stream(dev, FORMAT_SC16, &stream);
+    /* Initialize the stream */
+    status = bladerf_init_stream(
+                stream,
+                dev,
+                tx_callback,
+                &buffers,
+                buffers_per_stream,
+                FORMAT_SC16,
+                samples_per_buffer,
+                buffers_per_stream,
+                &test_data
+             ) ;
+
+    /* Populate buffers here */
+    if (populate_test_data(&test_data, samples_per_buffer) ) {
+        fprintf(stderr, "Failed to populated test data\n");
+        return EXIT_FAILURE;
+    }
+
+    /* Start stream */
+    status = bladerf_tx_stream(dev, FORMAT_SC16, stream);
     if (status < 0) {
         fprintf(stderr, "TX Stream error: %s\n", bladerf_strerror(status));
+    }
+
+    while( shutdown == false ) {
+        sleep(1) ;
     }
 
     if (dev) {
         bladerf_close(dev);
     }
 
-    free(test_data.data);
-
     return 0;
 }
-#endif
 
-int main(int argc, char *argv[])
-{
-    return 0;
-}
