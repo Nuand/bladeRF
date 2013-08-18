@@ -510,7 +510,8 @@ int bladerf_get_frequency(struct bladerf *dev,
 /**
  * Initialize a stream for use with asynchronous routines
  *
- * @param   stream[in]          Stream to initialize
+ * @param   stream[out]         Upon success, this will be updated to contain
+ *                              a stream handle (i.e., address)
  *
  * @param   dev[in]             Device to associate with the stream
  *
@@ -538,7 +539,7 @@ int bladerf_get_frequency(struct bladerf *dev,
  * @return 0 on success,
  *          value from \ref RETCODES list on failure
  */
-int bladerf_init_stream(struct bladerf_stream *stream,
+int bladerf_init_stream(struct bladerf_stream **stream,
                         struct bladerf *dev,
                         bladerf_stream_cb callback,
                         void ***buffers,
@@ -608,15 +609,6 @@ ssize_t bladerf_tx(struct bladerf *dev, bladerf_format_t format,
 ssize_t bladerf_rx(struct bladerf *dev, bladerf_format_t format,
                    void *samples, size_t num_samples,
                    struct bladerf_metadata *metadata);
-
-typedef enum {
-    BLADERF_STREAM_REQUESTED,
-    BLADERF_STREAM_RUNNING,
-    BLADERF_STREAM_CANCELLING,
-    BLADERF_STREAM_ERRORED,
-    BLADERF_STREAM_DONE
-} bladerf_stream_state ;
-
 
 /**
  *

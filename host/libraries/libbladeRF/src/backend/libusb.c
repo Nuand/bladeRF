@@ -31,11 +31,13 @@ struct bladerf_lusb {
 
 const struct bladerf_fn bladerf_lusb_fn;
 
+#if 0
 struct lusb_stream_transfer {
     struct libusb_transfer *transfer;
     uint8_t *buffer;
     struct lusb_stream_data *parent_stream;
 } ;
+#endif
 
 struct lusb_stream_data {
     struct libusb_transfer *transfers;
@@ -1083,10 +1085,15 @@ static int lusb_tx_stream(struct bladerf *dev, bladerf_format_t format,
     int rv, status;
     size_t i, freed_transfers = 0;
     size_t buffer_size = c16_samples_to_bytes(stream->samples_per_buffer);
-    struct bladerf_lusb *lusb = (struct bladerf_lusb *)dev->backend;
-    struct lusb_stream_data stream_data;
+    struct bladerf_lusb *lusb = dev->backend;
+    struct lusb_stream_data *stream_data;
 
     /* Fill in backend stream information */
+    stream_data = malloc(/*TODO */ 0 );
+    if (!stream_data) {
+#           error TODO
+    }
+    stream->backend = stream_data;
 
     /* Allocate backend transfers based on stream parameters */
 
@@ -1097,7 +1104,7 @@ static int lusb_tx_stream(struct bladerf *dev, bladerf_format_t format,
     for( i = 0 ; i < stream->buffers_per_stream ; i++ ) {
         /* Fill up the bulk transfer request */
         libusb_fill_bulk_transfer(
-            transfers[i].transfer,
+            transfers[i].transfer, //
             lusb->handle,
             0x01,
             NULL,

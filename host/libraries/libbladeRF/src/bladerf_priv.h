@@ -31,10 +31,10 @@ typedef enum {
     ETYPE_LIBBLADERF,
     ETYPE_BACKEND,
     ETYPE_OTHER = INT_MAX - 1
-} bladerf_error_t;
+} bladerf_error;
 
 struct bladerf_error {
-    bladerf_error_t type;
+    bladerf_error type;
     int value;
 };
 
@@ -44,7 +44,18 @@ struct bladerf_devinfo_list {
     size_t backing_size; /* Size of backing array */
 };
 
+typedef enum {
+    STREAM_IDLE,            /* Idle and initialized */
+    STREAM_RUNNING,         /* Currently running */
+    STREAM_ERROR,           /* Hit an error while running */
+    STREAM_SHUTTING_DOWN,   /* Currently tearing down */
+    STREAM_DONE             /* Done and deallocated */
+} bladerf_stream_state;
+
 struct bladerf_stream {
+    int error_code;
+    bladerf_stream_state state;
+
     size_t samples_per_buffer;
     size_t num_buffers;
     size_t num_transfers;
@@ -54,6 +65,7 @@ struct bladerf_stream {
     void *backend_data;
 
     bladerf_stream_cb cb;
+    void *user_data;
 };
 
 /* Forward declaration for the function table */
@@ -149,13 +161,13 @@ size_t c16_samples_to_bytes(size_t n_samples);
  * Set an error and type
  */
 void bladerf_set_error(struct bladerf_error *error,
-                        bladerf_error_t type, int val);
+                        bladerf_error type, int val);
 
 /**
  * Fetch an error and type
  */
 void bladerf_get_error(struct bladerf_error *error,
-                        bladerf_error_t *type, int *val);
+                        bladerf_error *type, int *val);
 
 /**
  * Initialize a bladerf_devinfo's fields to wildcards

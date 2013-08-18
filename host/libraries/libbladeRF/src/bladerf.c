@@ -363,7 +363,7 @@ ssize_t bladerf_rx(struct bladerf *dev, bladerf_format_t format, void *samples,
     return dev->fn->rx(dev, format, samples, num_samples, metadata);
 }
 
-int bladerf_init_stream(struct bladerf_stream *stream,
+int bladerf_init_stream(struct bladerf_stream **stream,
                         struct bladerf *dev,
                         bladerf_stream_cb callback,
                         void ***buffers,
@@ -375,23 +375,70 @@ int bladerf_init_stream(struct bladerf_stream *stream,
 {
 
     struct bladerf_stream *lstream;
+    size_t buffer_size_bytes;
+    size_t i;
+    int status = 0;
 
     /* Create a stream and populate it with the appropriate information */
     lstream = malloc(sizeof(struct bladerf_stream));
+
+    if (!lstream) {
+        return BLADERF_ERR_MEM;
+    }
+
+    lstream->error_code = 0;
+    lstream->state = STREAM_IDLE;
     lstream->samples_per_buffer = samples_per_buffer;
     lstream->num_buffers = num_buffers;
     lstream->num_transfers = num_transfers;
     lstream->format = format;
-    /* Create the buffers that we are passing back to the user */
-    /* lstream->buffers gets created in here */
-    /* lstream->backend_data get filled in during bladerf_*_stream call*/
     lstream->cb = callback;
+    lstream->user_data = user_data;
+    lstream->buffers = NULL;
 
-    /* Assign it to the user pointer */
-    stream = lstream;
+    switch(format) {
+        case FORMAT_SC16:
+            buffer_size_bytes = c16_samples_to_bytes(samples_per_buffer);
+            break;
 
-    /* Done */
-    return 0;
+        default:
+            status = BLADERF_ERR_INVAL;
+            break;
+    }
+
+    if (!status) {
+        lstream->buffers = calloc(num_buffers, sizeof(lstream->buffers[0]));
+        if (lstream->buffers) {
+            for (i = 0; i < num_buffers && !status; i++) {
+                lstream->buffers[i] = calloc(1, buffer_size_bytes);
+                if (!lstream->buffers[i]) {
+                    status = BLADERF_ERR_MEM;
+                }
+            }
+        } else {
+            status = BLADERF_ERR_MEM;
+        }
+    }
+
+    /* Clean up everything we've allocated if we hit any errors */
+    if (status) {
+
+        if (lstream->buffers) {
+            for (i = 0; i < num_buffers; i++) {
+                free(lstream->buffers[i]);
+            }
+
+            free(lstream->buffers);
+        }
+
+        free(lstream);
+    } else {
+        /* Update the caller's pointers */
+        *stream = lstream;
+        *buffers = lstream->buffers;
+    }
+
+    return status;;
 }
 
 int bladerf_rx_stream(struct bladerf *dev, bladerf_format_t format,
