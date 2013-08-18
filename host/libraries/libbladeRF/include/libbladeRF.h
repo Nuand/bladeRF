@@ -17,6 +17,9 @@ extern "C" {
 /** This structure is an opaque device handle */
 struct bladerf;
 
+/** This opaque structure is used to keep track of stream information */
+struct bladerf_stream;
+
 /**
  * @defgroup    RETCODES    Error return codes
  *
@@ -41,7 +44,6 @@ struct bladerf;
 #define BLADERF_ERR_NODEV      (-7)  /**< No device(s) available */
 
 /** @} (End RETCODES) */
-
 
 /**
  * Backend by which the host communicates with the device
@@ -130,6 +132,37 @@ typedef enum {
     LB_RF_LNA3,      /**< RF loopback enters at LNA3 (300MHz - 3.0GHz)*/
     LB_NONE          /**< Null loopback mode*/
 } bladerf_loopback_t;
+
+/**
+ * For both RX and TX, the stream callback receives:
+ * dev:             Device structure
+ * stream:          The associated stream
+ * metadata:        TBD
+ * user_data:       User data provided when initializing stream
+ *
+ * <br>
+ *
+ * For TX callbacks:
+ *  samples:        Pointer fo buffer of samples that was sent
+ *  num_samples:    Number of sent in last transfer and to send in next transfer
+ *
+ *  Return value:   The user specifies the address of the next buffer to send
+ *
+ * For RX callbacks:
+ *  samples:        Buffer filled with received data
+ *  num_samples:    Number of samples received and size of next buffers
+ *
+ *  Return value:   The user specifies the next buffer to fill with RX data,
+ *                  which should be num_samples in size.
+ *
+ */
+typedef void  (*bladerf_stream_cb)(struct bladerf *dev,
+                                   struct bladerf_stream *stream,
+                                   struct bladerf_metadata *meta,
+                                   void *samples,
+                                   size_t num_samples,
+                                   void *user_data);
+
 
 /**
  * @defgroup FN_INIT    Initialization/deinitialization
@@ -473,6 +506,48 @@ int bladerf_get_frequency(struct bladerf *dev,
  * @{
  */
 
+
+/**
+ * Initialize a stream for use with asynchronous routines
+ *
+ * @param   stream[in]          Stream to initialize
+ *
+ * @param   dev[in]             Device to associate with the stream
+ *
+ * @param   callback[in]        Callback routine to handle asynchronous events
+ *
+ * @param   buffers[out]        This will be updated to point to a dynamically
+ *                              allocated array of buffer pointers.
+ *
+ * @param   num_buffers[in]     Number of buffers to allocate and return
+ *
+ * @param   format[in]          Sample data format
+ *
+ * @param   samples_per_buffer[in]  Size of each buffer, in units of samples.
+ *                                  (Note that the physical size of the buffer
+ *                                  is a function of this and the format param.)
+ *
+ * @param   num_transfers[in]   Maximum number of transfers that may be
+ *                              in-flight simultaneous. This must be <= the
+ *                              number of buffers.
+ *
+ * @param   user_data[in]       Caller-provided data that will be provided
+ *                              in stream callbacks
+ *
+ *
+ * @return 0 on success,
+ *          value from \ref RETCODES list on failure
+ */
+int bladerf_init_stream(struct bladerf_stream *stream,
+                        struct bladerf *dev,
+                        bladerf_stream_cb callback,
+                        void ***buffers,
+                        size_t num_buffers,
+                        bladerf_format_t format,
+                        size_t samples_per_buffer,
+                        size_t num_transfers,
+                        void *user_data);
+
 /**
  * XXX REMOVE
  *
@@ -542,17 +617,6 @@ typedef enum {
     BLADERF_STREAM_DONE
 } bladerf_stream_state ;
 
-struct bladerf_stream {
-    size_t samples_per_buffer;
-    size_t buffers_per_stream;
-    void *data; /**< User data */
-    void (*cb)(struct bladerf *dev, struct bladerf_stream *stream,
-               struct bladerf_metadata *metadata, void *samples,
-               size_t num_samples);
-
-    int status;
-    bladerf_stream_state state;
-};
 
 /**
  *

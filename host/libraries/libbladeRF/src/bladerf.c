@@ -363,6 +363,18 @@ ssize_t bladerf_rx(struct bladerf *dev, bladerf_format_t format, void *samples,
     return dev->fn->rx(dev, format, samples, num_samples, metadata);
 }
 
+int bladerf_init_stream(struct bladerf_stream *stream,
+                        struct bladerf *dev,
+                        bladerf_stream_cb callback,
+                        void ***buffers,
+                        size_t num_buffers,
+                        bladerf_format_t format,
+                        size_t samples_per_buffer,
+                        size_t num_transfers,
+                        void *user_data)
+{
+}
+
 int bladerf_rx_stream(struct bladerf *dev, bladerf_format_t format,
                       struct bladerf_stream *stream)
 {

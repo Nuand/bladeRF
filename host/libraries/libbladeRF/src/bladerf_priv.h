@@ -38,16 +38,22 @@ struct bladerf_error {
     int value;
 };
 
-struct bladerf_devinfo_list
-{
+struct bladerf_devinfo_list {
     struct bladerf_devinfo *elt;
     size_t num_elt;      /* Number of elements in the list */
     size_t backing_size; /* Size of backing array */
 };
 
-int bladerf_init_device(struct bladerf *dev);
-size_t bytes_to_c16_samples(size_t n_bytes);
-size_t c16_samples_to_bytes(size_t n_samples);
+struct bladerf_stream {
+    size_t samples_per_buffer;
+    size_t num_buffers;
+    bladerf_format_t format;
+
+    void *buffers;
+    void *backend_data;
+
+    bladerf_stream_cb cb;
+};
 
 /* Forward declaration for the function table */
 struct bladerf;
@@ -124,6 +130,19 @@ struct bladerf {
     /* Driver-sppecific implementations */
     const struct bladerf_fn *fn;
 };
+
+/**
+ * Initialize device registers - required after power-up, but safe
+ * to call multiple times after power-up (e.g., multiple close and reopens)
+ */
+int bladerf_init_device(struct bladerf *dev);
+
+/**
+ *
+ */
+size_t bytes_to_c16_samples(size_t n_bytes);
+size_t c16_samples_to_bytes(size_t n_samples);
+
 
 /**
  * Set an error and type

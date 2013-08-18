@@ -6,6 +6,7 @@
 
 #define DATA_SOURCE "/dev/urandom"
 
+#if 0
 static bool shutdown = false;
 
 struct test_data
@@ -62,25 +63,24 @@ int populate_test_data(struct test_data *test_data)
             free(test_data->data);
             test_data->data = NULL;
             test_data->size = 0;
+            fclose(in);
             return -1;
         }
         size_t i;
-        for(i=0;i<test_data->size;){
-            test_data->data[i++] = 0x7f ;
-            test_data->data[i++] = 0x7f ;
-        }
+        //for(i=0;i<test_data->size;){
+        //    test_data->data[i++] = 0x7f ;
+        //    test_data->data[i++] = 0x7f ;
+        //}
+        fclose(in);
         return 0;
     }
 }
 
 void handler(int signal)
 {
-    if (signal == SIGUSR1) {
+    if (signal == SIGTERM || signal == SIGINT) {
         shutdown = true;
-        printf("Caught SIGUSR1, canceling transfers\n");
-        fflush(stdout);
-    } else {
-        printf("Wrong signal bro\n");
+        printf("Caught signal, canceling transfers\n");
         fflush(stdout);
     }
 }
@@ -116,7 +116,8 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    if (signal(SIGUSR1, handler) == SIG_ERR) {
+    if (signal(SIGINT, handler) == SIG_ERR ||
+        signal(SIGTERM, handler) == SIG_ERR) {
         fprintf(stderr, "Failed to set up signal handler\n");
         return EXIT_FAILURE;
     }
@@ -131,10 +132,24 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    bladerf_set_sample_rate( dev, TX, 40000000, &actual );
+    if (!status) {
+        status = bladerf_set_frequency(dev, TX, 1000000000);
+        if (status < 0) {
+            fprintf(stderr, "Failed to set TX frequency: %s\n",
+                    bladerf_strerror(status));
+        }
+    }
+
+    if (!status) {
+        status = bladerf_set_sample_rate(dev, TX, 40000000, &actual);
+        if (status < 0) {
+            fprintf(stderr, "Failed to set TX sample rate: %s\n",
+                    bladerf_strerror(status));
+        }
+    }
 
     status = bladerf_tx_stream(dev, FORMAT_SC16, &stream);
-    if (status) {
+    if (status < 0) {
         fprintf(stderr, "TX Stream error: %s\n", bladerf_strerror(status));
     }
 
@@ -144,5 +159,11 @@ int main(int argc, char *argv[])
 
     free(test_data.data);
 
+    return 0;
+}
+#endif
+
+int main(int argc, char *argv[])
+{
     return 0;
 }
