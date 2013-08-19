@@ -474,17 +474,7 @@ void bladerf_deinit_stream(struct bladerf_stream *stream)
 int bladerf_stream(struct bladerf *dev, bladerf_module_t module,
                    bladerf_format_t format, struct bladerf_stream *stream)
 {
-    int stream_status = 0;
-    int module_status;
-
-    module_status = bladerf_enable_module(dev, module, true);
-
-    if (!module_status) {
-        stream_status = dev->fn->stream(dev, module, format, stream);
-        module_status = bladerf_enable_module(dev, module, false);
-    }
-
-    return stream_status ? stream_status : module_status;
+    return dev->fn->stream(dev, module, format, stream);
 }
 
 /*------------------------------------------------------------------------------
