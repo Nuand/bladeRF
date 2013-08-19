@@ -28,7 +28,9 @@ int cmd_probe(struct cli_state *s, int argc, char *argv[])
     printf("\n");
     for (i = 0; i < n_devices; i++) {
         printf("    Backend: %s\n", backend2str(devices[i].backend));
-        printf("    Serial: 0x%016lX\n", devices[i].serial);
+        /* printf("    Serial: 0x%016lX\n", devices[i].serial); */
+        /* TODO: Fix OTP support for serial readback! */
+        printf("    Serial: <Not yet supported>\n");
         printf("    USB Bus: %d\n", devices[i].usb_addr);
         printf("    USB Address: %d\n", devices[i].usb_bus);
         /*printf("    Firmware: v%d.%d\n", devices[i].fw_ver_maj,

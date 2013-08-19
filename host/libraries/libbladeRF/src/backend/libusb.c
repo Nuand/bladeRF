@@ -31,18 +31,10 @@ struct bladerf_lusb {
 
 const struct bladerf_fn bladerf_lusb_fn;
 
-#if 0
-struct lusb_stream_transfer {
-    struct libusb_transfer *transfer;
-    uint8_t *buffer;
-    struct lusb_stream_data *parent_stream;
-} ;
-#endif
-
 struct lusb_stream_data {
     struct libusb_transfer **transfers;
     size_t active_transfers;
-} ;
+};
 
 
 static inline size_t min_sz(size_t a, size_t b)
@@ -59,9 +51,9 @@ static int vendor_command_int(struct bladerf *dev,
     struct bladerf_lusb *lusb = dev->backend;
 
     if( ep_dir == EP_DIR_IN ) {
-        *val = 0 ;
+        *val = 0;
     } else {
-        buf = *val ;
+        buf = *val;
     }
     status = libusb_control_transfer(
                 lusb->handle,
@@ -165,7 +157,7 @@ int lusb_get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
         libusb_close( handle );
     }
 
-    return status ;
+    return status;
 }
 
 static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
@@ -177,7 +169,7 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
     libusb_device **list;
     struct bladerf_devinfo thisinfo;
 
-    libusb_context *context ;
+    libusb_context *context;
 
     *device = NULL;
 
@@ -191,7 +183,7 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
 
     count = libusb_get_device_list( NULL, &list );
     /* Iterate through all the USB devices */
-    for( i = 0, n = 0 ; i < count ; i++ ) {
+    for( i = 0, n = 0; i < count; i++ ) {
         if( lusb_device_is_bladerf(list[i]) ) {
             /* Open the USB device and get some information */
             status = lusb_get_devinfo( list[i], &thisinfo );
@@ -225,7 +217,7 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
                 }
 
                 /* Claim interfaces */
-                for( inf = 0 ; inf < 3 ; inf++ ) {
+                for( inf = 0; inf < 3; inf++ ) {
                     status = libusb_claim_interface(lusb->handle, inf);
                     if( status ) {
                         dbg_printf( "Could not claim interface %i - %s\n", inf, libusb_error_name(status) );
@@ -235,7 +227,7 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
                 }
 
                 dbg_printf( "Claimed all inferfaces successfully\n" );
-                break ;
+                break;
             }
         }
     }
@@ -281,7 +273,7 @@ static int lusb_close(struct bladerf *dev)
     struct bladerf_lusb *lusb = dev->backend;
 
 
-    for( inf = 0 ; inf < 2 ; inf++ ) {
+    for( inf = 0; inf < 2; inf++ ) {
         status = libusb_release_interface(lusb->handle, inf);
         if (status) {
             dbg_printf("error releasing interface %i\n", inf);
@@ -965,28 +957,6 @@ static ssize_t lusb_tx(struct bladerf *dev, bladerf_format_t format, void *sampl
     return bytes_to_c16_samples(bytes_total - bytes_remaining);
 }
 
-#if 0
-static inline bool lusb_transfer_is_allocated(struct lusb_stream_transfer *transfer)
-{
-    return transfer->transfer || transfer->buffer;
-}
-
-static void lusb_deallocate_transfer( struct lusb_stream_transfer *transfer )
-{
-    if ( transfer ) {
-        libusb_free_transfer(transfer->transfer);
-        free(transfer->buffer);
-
-        transfer->transfer = NULL;
-        transfer->buffer = NULL;
-
-        dbg_printf("After deallocating, we think we are now: %s\n",
-                    (lusb_transfer_is_allocated(transfer) ?
-                        "still allocated" : "deallocated"));
-    }
-}
-#endif
-
 static void lusb_stream_cb(struct libusb_transfer *transfer)
 {
     struct bladerf_stream *stream  = transfer->user_data;
@@ -995,6 +965,7 @@ static void lusb_stream_cb(struct libusb_transfer *transfer)
     struct bladerf_metadata metadata;
     struct lusb_stream_data *stream_data = stream->backend_data;
     size_t i;
+    int status;
 
     /* Check to see if the transfer has been cancelled or errored */
     if( transfer->status != LIBUSB_TRANSFER_COMPLETED ) {
@@ -1009,18 +980,21 @@ static void lusb_stream_cb(struct libusb_transfer *transfer)
             case LIBUSB_TRANSFER_NO_DEVICE:
             case LIBUSB_TRANSFER_OVERFLOW:
                 dbg_printf( "Caught error: %d\n", transfer->status );
-                break ;
+                break;
             default:
                 dbg_printf( "No idea why this transfer happened: %d\n", transfer->status );
-                break ;
+                break;
         }
         dbg_printf( "Decrementing active transfers\n" );
         stream_data->active_transfers--;
 
         dbg_printf( "Cancelling other transfers\n" );
-        for (i = 0; i < stream->num_transfers ; i++ ) {
-            int status;
+        for (i = 0; i < stream->num_transfers; i++ ) {
             status = libusb_cancel_transfer(stream_data->transfers[i]);
+            if (status) {
+                dbg_printf("Error canceling transfer: %s\n",
+                            libusb_error_name(status));
+            }
         }
     }
 
@@ -1058,9 +1032,9 @@ static void lusb_stream_cb(struct libusb_transfer *transfer)
             lusb_stream_cb,
             stream,
             BULK_TIMEOUT
-        ) ;
+        );
         /* Submit the tranfer */
-        libusb_submit_transfer(transfer) ;
+        libusb_submit_transfer(transfer);
     }
 
     /* Check to see if all the transfers have been cancelled, and if so, clean up the stream */
@@ -1073,53 +1047,8 @@ static void lusb_stream_cb(struct libusb_transfer *transfer)
         }
     }
 
-    return ;
+    return;
 }
-
-
-#if 0
-static int lusb_allocate_transfers( struct lusb_stream_data *stream,
-                                    size_t num_transfers,
-                                    size_t buffer_size )
-{
-#error TO DO
-    size_t i;
-    int status = 0;
-
-    stream->transfers = NULL;
-
-    /* Ensure things are zero'd so we can free() without worries upon error */
-    ret = calloc( num_transfers, sizeof(stream->transfers) );
-    if ( ret ) {
-        for ( i = 0; i < num_transfers && !status; i++ ) {
-            stream->transfers[i].transfer = libusb_alloc_transfer(0);
-            stream->transfers[i].buffer = malloc(buffer_size);
-            stream->transfers[i].parent_stream = stream;
-
-            /* Error out on any failure */
-            if ( !stream->transfers[i].transfer ||
-                 !stream->transfers[i].buffer ) {
-
-                status = BLADERF_ERR_MEM;
-            }
-        }
-    } else {
-        status = BLADERF_ERR_MEM;
-    }
-
-    /* Clean up our partially allocated data */
-    if ( stream->transfers && status ) {
-        for ( i = 0; i < num_transfers; i++ ) {
-            lusb_deallocate_transfer( &stream->transfers[i] );
-        }
-
-        free( stream->transfers );
-    }
-
-    return status;
-}
-#endif
-
 
 static int lusb_stream(struct bladerf *dev, bladerf_module_t module, bladerf_format_t format,
                           struct bladerf_stream *stream)
@@ -1150,7 +1079,7 @@ static int lusb_stream(struct bladerf *dev, bladerf_module_t module, bladerf_for
     stream_data->active_transfers = 0;
 
     /* Call lusb_stream_cb() to populate transfer buffers and submit */
-    for( i = 0 ; i < stream->num_transfers ; i++ ) {
+    for( i = 0; i < stream->num_transfers; i++ ) {
         /* Create the libusb transfer */
         stream_data->transfers[i] = libusb_alloc_transfer(0);
         if( module == TX ) {
@@ -1161,9 +1090,9 @@ static int lusb_stream(struct bladerf *dev, bladerf_module_t module, bladerf_for
                         NULL,
                         0,
                         stream->user_data
-                     ) ;
+                     );
         } else {
-            buffer = stream->buffers[i] ;
+            buffer = stream->buffers[i];
         }
         /* Fill up the bulk transfer request */
         libusb_fill_bulk_transfer(
@@ -1175,7 +1104,7 @@ static int lusb_stream(struct bladerf *dev, bladerf_module_t module, bladerf_for
             lusb_stream_cb,
             stream,
             BULK_TIMEOUT
-        ) ;
+        );
         stream_data->active_transfers++;
         libusb_submit_transfer(stream_data->transfers[i]);
         /* Call the callback to have the user populate transfer buffer and submit*/
@@ -1193,13 +1122,13 @@ static int lusb_stream(struct bladerf *dev, bladerf_module_t module, bladerf_for
 static ssize_t lusb_rx(struct bladerf *dev, bladerf_format_t format, void *samples,
                        size_t n, struct bladerf_metadata *metadata)
 {
-    ssize_t bytes_total, bytes_remaining = c16_samples_to_bytes(n) ;
+    ssize_t bytes_total, bytes_remaining = c16_samples_to_bytes(n);
     struct bladerf_lusb *lusb = (struct bladerf_lusb *)dev->backend;
     uint8_t *samples8 = (uint8_t *)samples;
     int transferred, status;
 
-    assert(format==FORMAT_SC16);
-
+    /* The only format currently is assumed here */
+    assert(format == FORMAT_SC16);
     bytes_total = bytes_remaining = c16_samples_to_bytes(n);
 
     while( bytes_remaining ) {
@@ -1225,79 +1154,12 @@ static ssize_t lusb_rx(struct bladerf *dev, bladerf_format_t format, void *sampl
     return bytes_to_c16_samples(bytes_total - bytes_remaining);
 }
 
-#if 0
-static void lusb_rx_stream_cb(struct libusb_transfer *transfer)
-{
-    struct bladerf_metadata metadata;
-    struct lusb_stream_data *data = transfer->user_data;
-    struct bladerf *dev = data->dev ;
-    struct bladerf_stream *stream = data->stream;
-    unsigned int num_samples = bytes_to_c16_samples(transfer->actual_length) ;
-
-    /* Make sure libusb was fine */
-    if( transfer->status == LIBUSB_TRANSFER_COMPLETED ) {
-
-        /* Check stream state to make sure we are still running */
-        if( stream->state == BLADERF_STREAM_RUNNING ) {
-            /* Populate metadata information */
-
-            /* Convert samples from input type to output type */
-
-            /* Call user callback */
-            stream->cb(dev, stream, &metadata, transfer->buffer, num_samples) ;
-        }
-
-        if( stream->state == BLADERF_STREAM_RUNNING ) {
-            /* Check stream state and resubmit transfer */
-            libusb_submit_transfer(transfer);
-        }
-    } else if( transfer->status == LIBUSB_TRANSFER_CANCELLED ) {
-        libusb_free_transfer(transfer);
-    } else {
-        /* TODO: Keep track of these errors */
-        dbg_printf( "Callback received weird status: %d\n", transfer->status );
-    }
-
-    /* Done */
-    return;
-}
-#endif
-
-#if 0
-static int lusb_rx_stream(struct bladerf *dev, bladerf_format_t format,
-                          struct bladerf_stream *stream)
-{
-    int rv = 0;
-
-    struct lusb_stream_data stream_data ;
-
-    stream_data.format = format ;
-    stream_data.dev = dev ;
-    stream_data.stream = stream ;
-
-    /* Allocate buffer space based on requested format */
-
-    /* Submit all the transfers and set the state to running */
-
-    /* Wait for the stream to end */
-    while( stream->state != BLADERF_STREAM_CANCELLING ) {
-
-    }
-
-    /* Deallocate buffers */
-
-    /* Done */
-
-    return rv;
-}
-#endif
-
 void lusb_deinit_stream(struct bladerf_stream *stream)
 {
     size_t i;
     struct lusb_stream_data *stream_data = stream->backend_data;
 
-    for (i = 0; i < stream->num_transfers ; i++ ) {
+    for (i = 0; i < stream->num_transfers; i++ ) {
         libusb_free_transfer(stream_data->transfers[i]);
         stream_data->transfers[i] = NULL;
     }
@@ -1315,7 +1177,7 @@ int lusb_probe(struct bladerf_devinfo_list *info_list)
     libusb_device **list;
     struct bladerf_devinfo info;
 
-    libusb_context *context ;
+    libusb_context *context;
 
     /* Initialize libusb for device tree walking */
     status = libusb_init(&context);
@@ -1326,7 +1188,7 @@ int lusb_probe(struct bladerf_devinfo_list *info_list)
 
     count = libusb_get_device_list( NULL, &list );
     /* Iterate through all the USB devices */
-    for( i = 0, n = 0 ; i < count && status == 0 ; i++ ) {
+    for( i = 0, n = 0; i < count && status == 0; i++ ) {
         if( lusb_device_is_bladerf(list[i]) ) {
             /* Open the USB device and get some information */
             status = lusb_get_devinfo( list[i], &info );
