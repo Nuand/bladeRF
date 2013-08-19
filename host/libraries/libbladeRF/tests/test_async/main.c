@@ -3,9 +3,13 @@
 #include <signal.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
+#include <limits.h>
 #include <libbladeRF.h>
 
-#define DATA_SOURCE "/dev/urandom"
+#ifndef DATA_SOURCE
+#   define DATA_SOURCE "/dev/urandom"
+#endif
 
 static bool shutdown = false;
 
@@ -14,12 +18,37 @@ unsigned int count = 0;
 struct test_data
 {
     void                **buffers;      /* Transmit buffers */
-    size_t              num_buffers;    /* Number of transmit buffers */
+    size_t              num_buffers;    /* Number of buffers */
+    size_t              samples_per_buffer; /* Number of samples per buffer */
     unsigned int        idx;            /* The next one that needs to go out */
     bladerf_module_t    module;         /* Direction */
-    FILE                *fout;          /* Output file */
+    FILE                *fout;          /* Output file (RX only) */
     ssize_t             samples_left;   /* Number of samples left */
 };
+
+int str2int(const char *str, int min, int max, bool *ok)
+{
+    long value;
+    char *endptr;
+
+    errno = 0;
+    value = strtol(str, &endptr, 0);
+
+    if (errno != 0 || value < (long)min || value > (long)max ||
+        endptr == str || *endptr != '\0') {
+
+        if (ok) {
+            *ok = false;
+        }
+
+        return 0;
+    }
+
+    if (ok) {
+        *ok = true;
+    }
+    return (int)value;
+}
 
 void *stream_callback(struct bladerf *dev, struct bladerf_stream *stream,
                   struct bladerf_metadata *metadata, void *samples,
@@ -60,7 +89,7 @@ void *stream_callback(struct bladerf *dev, struct bladerf_stream *stream,
     }
 }
 
-int populate_test_data(struct test_data *test_data, size_t buffer_size)
+int populate_test_data(struct test_data *test_data)
 {
     FILE *in;
     ssize_t n_read;
@@ -74,8 +103,11 @@ int populate_test_data(struct test_data *test_data, size_t buffer_size)
     } else {
         size_t i;
         for(i=0;i<test_data->num_buffers;i++) {
-            n_read = fread(test_data->buffers[i], sizeof(int16_t)*2, buffer_size, in);
-            if (n_read != (ssize_t)buffer_size) {
+            n_read = fread(test_data->buffers[i], sizeof(int16_t) * 2,
+                            test_data->samples_per_buffer, in);
+
+            if (n_read != (ssize_t)test_data->samples_per_buffer) {
+                fprintf(stderr, "Hit partial read while gathering test data\n");
                 fclose(in);
                 return -1;
             }
@@ -96,12 +128,12 @@ void handler(int signal)
 
 int main(int argc, char *argv[])
 {
-    int status, samples_per_buffer, buffers_per_stream, num_samples = 0;
+    int status;
     unsigned int actual;
     struct bladerf *dev;
     struct bladerf_stream *stream;
-    bladerf_module_t module = TX;
     struct test_data test_data;
+    bool conv_ok;
 
     if (argc != 4 && argc != 5) {
         fprintf(stderr,
@@ -110,30 +142,34 @@ int main(int argc, char *argv[])
     }
 
     if (strcasecmp(argv[1], "rx") == 0 ) {
-        module = RX ;
+        test_data.module = RX ;
     } else if (strcasecmp(argv[1], "tx") == 0 ) {
-        module = TX;
+        test_data.module = TX;
     } else {
         fprintf(stderr, "Invalid module: %s\n", argv[1]);
         return EXIT_FAILURE;
     }
 
-    samples_per_buffer = atoi(argv[2]);
-    if (samples_per_buffer <= 0) {
+    test_data.idx = 0;
+    test_data.fout = NULL;
+
+    test_data.samples_per_buffer = str2int(argv[2], 1, INT_MAX, &conv_ok);
+    if (!conv_ok) {
         fprintf(stderr, "Invalid samples per buffer value: %s\n", argv[2]);
         return EXIT_FAILURE;
     }
 
-    buffers_per_stream = atoi(argv[3]);
-    if (buffers_per_stream <= 0 ) {
-        fprintf(stderr, "Invalid # buffers per stream: %s\n", argv[3]);
+    test_data.num_buffers = str2int(argv[3], 1, INT_MAX, &conv_ok);
+    if (!conv_ok) {
+        fprintf(stderr, "Invalid # buffers: %s\n", argv[3]);
         return EXIT_FAILURE;
     }
 
-    if( module == RX && argc == 5) {
-        num_samples = atoi(argv[4]);
-        if( num_samples < 0 ) {
+    if(test_data.module == RX && argc == 5) {
+        test_data.samples_per_buffer = str2int(argv[4], 1, INT_MAX, &conv_ok);
+        if(!conv_ok) {
             fprintf(stderr, "Invalid number of samples: %s\n", argv[4]);
+            return EXIT_FAILURE;
         }
     }
 
@@ -150,18 +186,22 @@ int main(int argc, char *argv[])
     }
 
     if (!status) {
-        status = bladerf_set_frequency(dev, module, 1000000000);
+        status = bladerf_set_frequency(dev, test_data.module, 1000000000);
         if (status < 0) {
             fprintf(stderr, "Failed to set frequency: %s\n",
                     bladerf_strerror(status));
+            bladerf_close(dev);
+            return EXIT_FAILURE;
         }
     }
 
     if (!status) {
-        status = bladerf_set_sample_rate(dev, module, 40000000, &actual);
+        status = bladerf_set_sample_rate(dev, test_data.module, 40000000, &actual);
         if (status < 0) {
             fprintf(stderr, "Failed to set sample rate: %s\n",
                     bladerf_strerror(status));
+            bladerf_close(dev);
+            return EXIT_FAILURE;
         }
     }
 
@@ -171,40 +211,58 @@ int main(int argc, char *argv[])
                 dev,
                 stream_callback,
                 &test_data.buffers,
-                buffers_per_stream,
+                test_data.num_buffers,
                 FORMAT_SC16,
-                samples_per_buffer,
-                buffers_per_stream,
+                test_data.samples_per_buffer,
+                test_data.num_buffers,
                 &test_data
              ) ;
 
-    test_data.num_buffers = buffers_per_stream ;
-    test_data.idx = 0;
-
-    /* Populate buffers here */
-    if( module == TX ) {
-        if (populate_test_data(&test_data, samples_per_buffer) ) {
+    /* Populate buffers with test data */
+    if( test_data.module == TX ) {
+        if (populate_test_data(&test_data) ) {
             fprintf(stderr, "Failed to populated test data\n");
+            bladerf_deinit_stream(stream);
+            bladerf_close(dev);
             return EXIT_FAILURE;
         }
     } else {
-        test_data.samples_left = num_samples ;
+        /* Open up file we'll read test data to */
         test_data.fout = fopen( "samples.txt", "w" );
+        if (!test_data.fout) {
+            fprintf(stderr, "Failed to open samples.txt: %s\n", strerror(errno));
+            bladerf_deinit_stream(stream);
+            bladerf_close(dev);
+            return EXIT_FAILURE;
+        }
     }
 
-    /* Start stream and stay there until we kill the stream */
-    status = bladerf_stream(dev, module, FORMAT_SC16, stream);
+    status = bladerf_enable_module(dev, test_data.module, true);
     if (status < 0) {
-        fprintf(stderr, "Stream error: %s\n", bladerf_strerror(status));
+        fprintf(stderr, "Failed to enable module: %s\n",
+                bladerf_strerror(status));
+    }
+
+    if (!status) {
+        /* Start stream and stay there until we kill the stream */
+        status = bladerf_stream(dev, test_data.module, FORMAT_SC16, stream);
+        if (status < 0) {
+            fprintf(stderr, "Stream error: %s\n", bladerf_strerror(status));
+        }
+    }
+
+    status = bladerf_enable_module(dev, test_data.module, false);
+    if (status < 0) {
+        fprintf(stderr, "Failed to enable module: %s\n",
+                bladerf_strerror(status));
     }
 
     bladerf_deinit_stream(stream);
+    bladerf_close(dev);
 
-    if (dev) {
-        bladerf_close(dev);
+    if (test_data.fout) {
+        fclose(test_data.fout);
     }
-
-    fclose(test_data.fout);
 
     return 0;
 }

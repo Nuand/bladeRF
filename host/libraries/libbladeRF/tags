@@ -1,0 +1,681 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+ARRAY_SIZE	src/backend.c	7;"	d	file:
+BACKEND_ANY	include/libbladeRF.h	/^    BACKEND_ANY,        \/**< "Don't Care" -- use any available backend *\/$/;"	e	enum:__anon10
+BACKEND_H__	src/backend.h	2;"	d
+BACKEND_LIBUSB	include/libbladeRF.h	/^    BACKEND_LIBUSB,     \/**< libusb *\/$/;"	e	enum:__anon10
+BACKEND_LIBUSB_H__	src/backend/libusb.h	2;"	d
+BACKEND_LINUX	include/libbladeRF.h	/^    BACKEND_LINUX,      \/**< Linux kernel driver *\/$/;"	e	enum:__anon10
+BACKEND_LINUX_H__	src/backend/linux.h	2;"	d
+BLADERF_DEV_DIR	src/backend/linux.c	22;"	d	file:
+BLADERF_DEV_PFX	src/backend/linux.c	26;"	d	file:
+BLADERF_ERR_INVAL	include/libbladeRF.h	37;"	d
+BLADERF_ERR_IO	include/libbladeRF.h	39;"	d
+BLADERF_ERR_MEM	include/libbladeRF.h	38;"	d
+BLADERF_ERR_NODEV	include/libbladeRF.h	41;"	d
+BLADERF_ERR_RANGE	include/libbladeRF.h	36;"	d
+BLADERF_ERR_TIMEOUT	include/libbladeRF.h	40;"	d
+BLADERF_ERR_UNEXPECTED	include/libbladeRF.h	35;"	d
+BLADERF_GPIO_FEATURE_SMALL_DMA_XFER	include/libbladeRF.h	891;"	d
+BLADERF_GPIO_LMS_RX_ENABLE	include/libbladeRF.h	843;"	d
+BLADERF_GPIO_LMS_TX_ENABLE	include/libbladeRF.h	851;"	d
+BLADERF_GPIO_RX_HB_ENABLE	include/libbladeRF.h	879;"	d
+BLADERF_GPIO_RX_LB_ENABLE	include/libbladeRF.h	872;"	d
+BLADERF_GPIO_TX_HB_ENABLE	include/libbladeRF.h	865;"	d
+BLADERF_GPIO_TX_LB_ENABLE	include/libbladeRF.h	858;"	d
+BLADERF_H_	include/libbladeRF.h	7;"	d
+BLADERF_LIBUSB_TIMEOUT_MS	src/backend/libusb.c	17;"	d	file:
+BLADERF_PRIV_H_	src/bladerf_priv.h	5;"	d
+BLADERF_STREAM_CANCELLING	include/libbladeRF.h	/^    BLADERF_STREAM_CANCELLING,$/;"	e	enum:__anon15
+BLADERF_STREAM_DONE	include/libbladeRF.h	/^    BLADERF_STREAM_DONE$/;"	e	enum:__anon15
+BLADERF_STREAM_ERRORED	include/libbladeRF.h	/^    BLADERF_STREAM_ERRORED,$/;"	e	enum:__anon15
+BLADERF_STREAM_REQUESTED	include/libbladeRF.h	/^    BLADERF_STREAM_REQUESTED,$/;"	e	enum:__anon15
+BLADERF_STREAM_RUNNING	include/libbladeRF.h	/^    BLADERF_STREAM_RUNNING,$/;"	e	enum:__anon15
+BULK_TIMEOUT	src/backend/libusb.c	972;"	d	file:
+BW_10MHz	src/lms.h	/^    BW_10MHz,       \/**< 10MHz bandwidth, 5MHz LPF *\/$/;"	e	enum:__anon5
+BW_12MHz	src/lms.h	/^    BW_12MHz,       \/**< 12MHz bandwidth, 6MHz LPF *\/$/;"	e	enum:__anon5
+BW_14MHz	src/lms.h	/^    BW_14MHz,       \/**< 14MHz bandwidth, 7MHz LPF *\/$/;"	e	enum:__anon5
+BW_1p5MHz	src/lms.h	/^    BW_1p5MHz,      \/**< 1.5MHz bandwidth, 0.75MHz LPF *\/$/;"	e	enum:__anon5
+BW_1p75MHz	src/lms.h	/^    BW_1p75MHz,     \/**< 1.75MHz bandwidth, 0.875MHz LPF *\/$/;"	e	enum:__anon5
+BW_20MHz	src/lms.h	/^    BW_20MHz,       \/**< 20MHz bandwidth, 10MHz LPF *\/$/;"	e	enum:__anon5
+BW_28MHz	src/lms.h	/^    BW_28MHz,       \/**< 28MHz bandwidth, 14MHz LPF *\/$/;"	e	enum:__anon5
+BW_2p5MHz	src/lms.h	/^    BW_2p5MHz,      \/**< 2.5MHz bandwidth, 1.25MHz LPF *\/$/;"	e	enum:__anon5
+BW_2p75MHz	src/lms.h	/^    BW_2p75MHz,     \/**< 2.75MHz bandwidth, 1.375MHz LPF *\/$/;"	e	enum:__anon5
+BW_3MHz	src/lms.h	/^    BW_3MHz,        \/**< 3MHz bandwidth, 1.5MHz LPF *\/$/;"	e	enum:__anon5
+BW_3p84MHz	src/lms.h	/^    BW_3p84MHz,     \/**< 3.84MHz bandwidth, 1.92MHz LPF *\/$/;"	e	enum:__anon5
+BW_5MHz	src/lms.h	/^    BW_5MHz,        \/**< 5MHz bandwidth, 2.5MHz LPF *\/$/;"	e	enum:__anon5
+BW_5p5MHz	src/lms.h	/^    BW_5p5MHz,      \/**< 5.5MHz bandwidth, 2.75MHz LPF *\/$/;"	e	enum:__anon5
+BW_6MHz	src/lms.h	/^    BW_6MHz,        \/**< 6MHz bandwidth, 3MHz LPF *\/$/;"	e	enum:__anon5
+BW_7MHz	src/lms.h	/^    BW_7MHz,        \/**< 7MHz bandwidth, 3.5MHz LPF *\/$/;"	e	enum:__anon5
+BW_8p75MHz	src/lms.h	/^    BW_8p75MHz,     \/**< 8.75MHz bandwidth, 4.375MHz LPF *\/$/;"	e	enum:__anon5
+CONVERSIONS_H__	src/conversions.h	2;"	d
+DATA_SOURCE	tests/tx_async/main.c	7;"	d	file:
+DEBUG_H	src/debug.h	2;"	d
+DELIM_SPACE	src/device_identifier.c	17;"	d	file:
+DEVICE_IDENTIFIER_H__	src/device_identifier.h	5;"	d
+DEVINFO_ADDR_ANY	src/bladerf_priv.h	13;"	d
+DEVINFO_BUS_ANY	src/bladerf_priv.h	12;"	d
+DEVINFO_INST_ANY	src/bladerf_priv.h	14;"	d
+DEVINFO_SERIAL_ANY	src/bladerf_priv.h	11;"	d
+EP_DIR_IN	src/backend/libusb.c	19;"	d	file:
+EP_DIR_OUT	src/backend/libusb.c	20;"	d	file:
+EP_IN	src/backend/libusb.c	22;"	d	file:
+EP_OUT	src/backend/libusb.c	23;"	d	file:
+ETYPE_BACKEND	src/bladerf_priv.h	/^    ETYPE_BACKEND,$/;"	e	enum:__anon9
+ETYPE_ERRNO	src/bladerf_priv.h	/^    ETYPE_ERRNO,$/;"	e	enum:__anon9
+ETYPE_LIBBLADERF	src/bladerf_priv.h	/^    ETYPE_LIBBLADERF,$/;"	e	enum:__anon9
+ETYPE_OTHER	src/bladerf_priv.h	/^    ETYPE_OTHER = INT_MAX - 1$/;"	e	enum:__anon9
+FILE_OPS_H__	src/file_ops.h	6;"	d
+FLASH_BYTES_TO_PAGES	src/bladerf_priv.h	20;"	d
+FLASH_BYTES_TO_SECTORS	src/bladerf_priv.h	19;"	d
+FLASH_NUM_PAGES	src/bladerf_priv.h	22;"	d
+FLASH_NUM_SECTORS	src/bladerf_priv.h	21;"	d
+FLASH_PAGE_SIZE	src/bladerf_priv.h	18;"	d
+FLASH_SECTOR_SIZE	src/bladerf_priv.h	17;"	d
+FORMAT_FC64	include/libbladeRF.h	/^    FORMAT_FC64, \/**< Floating point, Complex 64-bit TODO more info *\/$/;"	e	enum:__anon11
+FORMAT_SC16	include/libbladeRF.h	/^    FORMAT_SC16, \/**< Signed, Complex 16-bit Q12.    TODO more info *\/$/;"	e	enum:__anon11
+GHz	src/lms.h	14;"	d
+LB_BB_LPF	include/libbladeRF.h	/^    LB_BB_LPF = 0,   \/**< Baseband loopback enters before RX low-pass filter input *\/$/;"	e	enum:__anon14
+LB_BB_OP	include/libbladeRF.h	/^    LB_BB_OP,        \/**< Baseband loopback enters before RX ADC input *\/$/;"	e	enum:__anon14
+LB_BB_VGA2	include/libbladeRF.h	/^    LB_BB_VGA2,      \/**< Baseband loopback enters before RX VGA2 input *\/$/;"	e	enum:__anon14
+LB_NONE	include/libbladeRF.h	/^    LB_NONE          \/**< Null loopback mode*\/$/;"	e	enum:__anon14
+LB_RF_LNA1	include/libbladeRF.h	/^    LB_RF_LNA1,      \/**< RF loopback enters at LNA1 (300MHz - 2.8GHz)*\/$/;"	e	enum:__anon14
+LB_RF_LNA2	include/libbladeRF.h	/^    LB_RF_LNA2,      \/**< RF loopback enters at LNA2 (1.5GHz - 3.8GHz)*\/$/;"	e	enum:__anon14
+LB_RF_LNA3	include/libbladeRF.h	/^    LB_RF_LNA3,      \/**< RF loopback enters at LNA3 (300MHz - 3.0GHz)*\/$/;"	e	enum:__anon14
+LB_RF_LNA_START	include/libbladeRF.h	/^    LB_RF_LNA_START, \/**< Placeholder - DO NOT USE *\/$/;"	e	enum:__anon14
+LMS_H_	src/lms.h	8;"	d
+LNA_1	src/lms.h	/^    LNA_1,      \/**< Enable LNA1 (300MHz - 2.8GHz) *\/$/;"	e	enum:__anon6
+LNA_2	src/lms.h	/^    LNA_2,      \/**< Enable LNA2 (1.5GHz - 3.8GHz) *\/$/;"	e	enum:__anon6
+LNA_3	src/lms.h	/^    LNA_3       \/**< Enable LNA3 (300MHz - 3.0GHz) *\/$/;"	e	enum:__anon6
+LNA_BYPASS	include/libbladeRF.h	/^    LNA_BYPASS,     \/**< LNA bypassed - 0dB gain *\/$/;"	e	enum:__anon12
+LNA_MAX	include/libbladeRF.h	/^    LNA_MAX         \/**< LNA Max Gain *\/$/;"	e	enum:__anon12
+LNA_MID	include/libbladeRF.h	/^    LNA_MID,        \/**< LNA Mid Gain (MAX-6dB) *\/$/;"	e	enum:__anon12
+LNA_NONE	src/lms.h	/^    LNA_NONE,   \/**< Disable all LNAs *\/$/;"	e	enum:__anon6
+LNA_UNKNOWN	include/libbladeRF.h	/^    LNA_UNKNOWN,    \/**< Invalid LNA gain *\/$/;"	e	enum:__anon12
+MHz	src/lms.h	13;"	d
+MIN	src/bladerf.c	436;"	d	file:
+NUM_MS	src/si5338.c	33;"	d	file:
+PA_1	src/lms.h	/^    PA_1,           \/**< PA1 Enable *\/$/;"	e	enum:__anon8
+PA_2	src/lms.h	/^    PA_2,           \/**< PA2 Enable *\/$/;"	e	enum:__anon8
+PA_ALL	src/lms.h	/^    PA_ALL          \/**< ALL PA's - used for DISABLE only.  Cannot be used for ENABLE *\/$/;"	e	enum:__anon8
+PA_AUX	src/lms.h	/^    PA_AUX,         \/**< AUX PA Enable - used for RF loopback modes *\/$/;"	e	enum:__anon8
+RX	include/libbladeRF.h	/^    RX,             \/**< Receive Module *\/$/;"	e	enum:__anon13
+SI5338_H__	src/si5338.h	2;"	d
+TX	include/libbladeRF.h	/^    TX              \/**< Transmit Module *\/$/;"	e	enum:__anon13
+TXLB_BB	src/lms.h	/^    TXLB_BB,        \/**< TX Baseband Loopback *\/$/;"	e	enum:__anon7
+TXLB_RF	src/lms.h	/^    TXLB_RF         \/**< TX RF Loopback *\/$/;"	e	enum:__anon7
+USB_IF_CONFIG	src/bladerf_priv.h	25;"	d
+USB_IF_RF_LINK	src/bladerf_priv.h	26;"	d
+USB_IF_SPI_FLASH	src/bladerf_priv.h	27;"	d
+VCO_HIGH	src/lms.c	810;"	d	file:
+VCO_LOW	src/lms.c	812;"	d	file:
+VCO_NORM	src/lms.c	811;"	d	file:
+_DEBUG_STRFY_	src/debug.h	8;"	d
+_DEBUG_STRFY__	src/debug.h	7;"	d
+__si5338_do_multisynth	src/si5338.c	/^static int __si5338_do_multisynth(struct bladerf *dev, struct tspec *ms, unsigned vco_freq) {$/;"	f	file:	signature:(struct bladerf *dev, struct tspec *ms, unsigned vco_freq)
+a	src/si5338.c	/^    unsigned a, b, c;$/;"	m	struct:tspec	file:	access:public
+access_peripheral	src/backend/libusb.c	/^static int access_peripheral(struct bladerf_lusb *lusb, int per, int dir,$/;"	f	file:	signature:(struct bladerf_lusb *lusb, int per, int dir, struct uart_cmd *cmd)
+b	src/si5338.c	/^    unsigned a, b, c;$/;"	m	struct:tspec	file:	access:public
+backend	include/libbladeRF.h	/^    bladerf_backend_t backend;  \/**< Backend to use when connecting to device *\/$/;"	m	struct:bladerf_devinfo	access:public
+backend	src/bladerf_priv.h	/^    void *backend;$/;"	m	struct:bladerf	access:public
+backend_list	src/backend.c	/^static const struct backend_table_entry backend_list[] = BLADERF_BACKEND_LIST;$/;"	v	typeref:struct:backend_table_entry	file:
+backend_open	src/backend.c	/^int backend_open(struct bladerf **device, struct bladerf_devinfo *info) {$/;"	f	signature:(struct bladerf **device, struct bladerf_devinfo *info)
+backend_open	src/backend.h	/^int backend_open(struct bladerf **device,  struct bladerf_devinfo *info);$/;"	p	signature:(struct bladerf **device, struct bladerf_devinfo *info)
+backend_probe	src/backend.c	/^int backend_probe(struct bladerf_devinfo **devinfo_items, size_t *num_items)$/;"	f	signature:(struct bladerf_devinfo **devinfo_items, size_t *num_items)
+backend_probe	src/backend.h	/^int backend_probe(struct bladerf_devinfo **devinfo_items, size_t *num_items);$/;"	p	signature:(struct bladerf_devinfo **devinfo_items, size_t *num_items)
+backend_table_entry	src/backend.c	/^struct backend_table_entry {$/;"	s	file:
+backend_table_entry::fns	src/backend.c	/^    const struct bladerf_fn *fns;$/;"	m	struct:backend_table_entry	typeref:struct:backend_table_entry::bladerf_fn	file:	access:public
+backend_table_entry::type	src/backend.c	/^    const bladerf_backend_t type;$/;"	m	struct:backend_table_entry	file:	access:public
+backend_type	src/bladerf_priv.h	/^    bladerf_backend_t backend_type;$/;"	m	struct:bladerf	access:public
+backing_size	src/bladerf_priv.h	/^    size_t backing_size; \/* Size of backing array *\/$/;"	m	struct:bladerf_devinfo_list	access:public
+bands	src/lms.c	/^const struct freq_range bands[] = {$/;"	v	typeref:struct:freq_range
+base	src/si5338.c	/^    int base;$/;"	m	struct:tspec	file:	access:public
+begin_fpga_programming	src/backend/libusb.c	/^static int begin_fpga_programming(struct bladerf *dev)$/;"	f	file:	signature:(struct bladerf *dev)
+bladerf	src/bladerf_priv.h	/^struct bladerf {$/;"	s
+bladerf::backend	src/bladerf_priv.h	/^    void *backend;$/;"	m	struct:bladerf	access:public
+bladerf::backend_type	src/bladerf_priv.h	/^    bladerf_backend_t backend_type;$/;"	m	struct:bladerf	access:public
+bladerf::error	src/bladerf_priv.h	/^    struct bladerf_error error;$/;"	m	struct:bladerf	typeref:struct:bladerf::bladerf_error	access:public
+bladerf::fn	src/bladerf_priv.h	/^    const struct bladerf_fn *fn;$/;"	m	struct:bladerf	typeref:struct:bladerf::bladerf_fn	access:public
+bladerf::last_rx_sample_rate	src/bladerf_priv.h	/^    unsigned int last_rx_sample_rate;$/;"	m	struct:bladerf	access:public
+bladerf::last_tx_sample_rate	src/bladerf_priv.h	/^    unsigned int last_tx_sample_rate;$/;"	m	struct:bladerf	access:public
+bladerf::speed	src/bladerf_priv.h	/^    int speed;      \/* The device's USB speed, 0 is HS, 1 is SS *\/$/;"	m	struct:bladerf	access:public
+bladerf::stats	src/bladerf_priv.h	/^    struct bladerf_stats stats;$/;"	m	struct:bladerf	typeref:struct:bladerf::bladerf_stats	access:public
+bladerf_backend_t	include/libbladeRF.h	/^} bladerf_backend_t;$/;"	t	typeref:enum:__anon10
+bladerf_bus_addr_matches	src/bladerf_priv.c	/^bool bladerf_bus_addr_matches(struct bladerf_devinfo *a,$/;"	f	signature:(struct bladerf_devinfo *a, struct bladerf_devinfo *b)
+bladerf_bus_addr_matches	src/bladerf_priv.h	/^bool bladerf_bus_addr_matches(struct bladerf_devinfo *a,$/;"	p	signature:(struct bladerf_devinfo *a, struct bladerf_devinfo *b)
+bladerf_close	include/libbladeRF.h	/^void bladerf_close(struct bladerf *device);$/;"	p	signature:(struct bladerf *device)
+bladerf_close	src/bladerf.c	/^void bladerf_close(struct bladerf *dev)$/;"	f	signature:(struct bladerf *dev)
+bladerf_dac_write	include/libbladeRF.h	/^int bladerf_dac_write(struct bladerf *dev, uint16_t val);$/;"	p	signature:(struct bladerf *dev, uint16_t val)
+bladerf_dac_write	src/bladerf.c	/^int bladerf_dac_write(struct bladerf *dev, uint16_t val)$/;"	f	signature:(struct bladerf *dev, uint16_t val)
+bladerf_dev_path	include/libbladeRF.h	/^char * bladerf_dev_path(struct bladerf *dev);$/;"	p	signature:(struct bladerf *dev)
+bladerf_devinfo	include/libbladeRF.h	/^struct bladerf_devinfo {$/;"	s
+bladerf_devinfo::backend	include/libbladeRF.h	/^    bladerf_backend_t backend;  \/**< Backend to use when connecting to device *\/$/;"	m	struct:bladerf_devinfo	access:public
+bladerf_devinfo::instance	include/libbladeRF.h	/^    unsigned int instance;      \/**< Device instance or ID *\/$/;"	m	struct:bladerf_devinfo	access:public
+bladerf_devinfo::serial	include/libbladeRF.h	/^    char serial[33];            \/**< Device's serial number *\/$/;"	m	struct:bladerf_devinfo	access:public
+bladerf_devinfo::usb_addr	include/libbladeRF.h	/^    uint8_t  usb_addr;          \/**< Device address on bus *\/$/;"	m	struct:bladerf_devinfo	access:public
+bladerf_devinfo::usb_bus	include/libbladeRF.h	/^    uint8_t  usb_bus;           \/**< Bus # device is attached to *\/$/;"	m	struct:bladerf_devinfo	access:public
+bladerf_devinfo_list	src/bladerf_priv.h	/^struct bladerf_devinfo_list$/;"	s
+bladerf_devinfo_list::backing_size	src/bladerf_priv.h	/^    size_t backing_size; \/* Size of backing array *\/$/;"	m	struct:bladerf_devinfo_list	access:public
+bladerf_devinfo_list::elt	src/bladerf_priv.h	/^    struct bladerf_devinfo *elt;$/;"	m	struct:bladerf_devinfo_list	typeref:struct:bladerf_devinfo_list::bladerf_devinfo	access:public
+bladerf_devinfo_list::num_elt	src/bladerf_priv.h	/^    size_t num_elt;      \/* Number of elements in the list *\/$/;"	m	struct:bladerf_devinfo_list	access:public
+bladerf_devinfo_list_add	src/bladerf_priv.c	/^int bladerf_devinfo_list_add(struct bladerf_devinfo_list *list,$/;"	f	signature:(struct bladerf_devinfo_list *list, struct bladerf_devinfo *info)
+bladerf_devinfo_list_add	src/bladerf_priv.h	/^int bladerf_devinfo_list_add(struct bladerf_devinfo_list *list,$/;"	p	signature:(struct bladerf_devinfo_list *list, struct bladerf_devinfo *info)
+bladerf_devinfo_list_init	src/bladerf_priv.c	/^int bladerf_devinfo_list_init(struct bladerf_devinfo_list *list)$/;"	f	signature:(struct bladerf_devinfo_list *list)
+bladerf_devinfo_list_init	src/bladerf_priv.h	/^int bladerf_devinfo_list_init(struct bladerf_devinfo_list *list);$/;"	p	signature:(struct bladerf_devinfo_list *list)
+bladerf_devinfo_matches	src/bladerf_priv.c	/^bool bladerf_devinfo_matches(struct bladerf_devinfo *a,$/;"	f	signature:(struct bladerf_devinfo *a, struct bladerf_devinfo *b)
+bladerf_devinfo_matches	src/bladerf_priv.h	/^bool bladerf_devinfo_matches(struct bladerf_devinfo *a,$/;"	p	signature:(struct bladerf_devinfo *a, struct bladerf_devinfo *b)
+bladerf_enable_module	include/libbladeRF.h	/^int bladerf_enable_module(struct bladerf *dev,$/;"	p	signature:(struct bladerf *dev, bladerf_module_t m, bool enable)
+bladerf_enable_module	src/bladerf.c	/^int bladerf_enable_module(struct bladerf *dev,$/;"	f	signature:(struct bladerf *dev, bladerf_module_t m, bool enable)
+bladerf_error	src/bladerf_priv.h	/^struct bladerf_error {$/;"	s
+bladerf_error::type	src/bladerf_priv.h	/^    bladerf_error_t type;$/;"	m	struct:bladerf_error	access:public
+bladerf_error::value	src/bladerf_priv.h	/^    int value;$/;"	m	struct:bladerf_error	access:public
+bladerf_error_t	src/bladerf_priv.h	/^} bladerf_error_t;$/;"	t	typeref:enum:__anon9
+bladerf_flash_firmware	include/libbladeRF.h	/^int bladerf_flash_firmware(struct bladerf *dev, const char *firmware);$/;"	p	signature:(struct bladerf *dev, const char *firmware)
+bladerf_flash_firmware	src/bladerf.c	/^int bladerf_flash_firmware(struct bladerf *dev, const char *firmware_file)$/;"	f	signature:(struct bladerf *dev, const char *firmware_file)
+bladerf_fn	src/bladerf_priv.h	/^struct bladerf_fn {$/;"	s
+bladerf_fn::close	src/bladerf_priv.h	/^    int (*close)(struct bladerf *dev);$/;"	m	struct:bladerf_fn	access:public
+bladerf_fn::dac_write	src/bladerf_priv.h	/^    int (*dac_write)(struct bladerf *dev, uint16_t value);$/;"	m	struct:bladerf_fn	access:public
+bladerf_fn::flash_firmware	src/bladerf_priv.h	/^    int (*flash_firmware)(struct bladerf *dev, uint8_t *image, size_t image_size);$/;"	m	struct:bladerf_fn	access:public
+bladerf_fn::get_cal	src/bladerf_priv.h	/^    int (*get_cal)(struct bladerf *dev, char *cal);$/;"	m	struct:bladerf_fn	access:public
+bladerf_fn::get_device_speed	src/bladerf_priv.h	/^    int (*get_device_speed)(struct bladerf *dev, int *speed);$/;"	m	struct:bladerf_fn	access:public
+bladerf_fn::get_fpga_version	src/bladerf_priv.h	/^    int (*get_fpga_version)(struct bladerf *dev, unsigned int *maj, unsigned int *min);$/;"	m	struct:bladerf_fn	access:public
+bladerf_fn::get_fw_version	src/bladerf_priv.h	/^    int (*get_fw_version)(struct bladerf *dev, unsigned int *maj, unsigned int *min);$/;"	m	struct:bladerf_fn	access:public
+bladerf_fn::get_otp	src/bladerf_priv.h	/^    int (*get_otp)(struct bladerf *dev, char *otp);$/;"	m	struct:bladerf_fn	access:public
+bladerf_fn::gpio_read	src/bladerf_priv.h	/^    int (*gpio_read)(struct bladerf *dev, uint32_t *val);$/;"	m	struct:bladerf_fn	access:public
+bladerf_fn::gpio_write	src/bladerf_priv.h	/^    int (*gpio_write)(struct bladerf *dev, uint32_t val);$/;"	m	struct:bladerf_fn	access:public
+bladerf_fn::is_fpga_configured	src/bladerf_priv.h	/^    int (*is_fpga_configured)(struct bladerf *dev);$/;"	m	struct:bladerf_fn	access:public
+bladerf_fn::lms_read	src/bladerf_priv.h	/^    int (*lms_read)(struct bladerf *dev, uint8_t addr, uint8_t *data);$/;"	m	struct:bladerf_fn	access:public
+bladerf_fn::lms_write	src/bladerf_priv.h	/^    int (*lms_write)(struct bladerf *dev, uint8_t addr, uint8_t data);$/;"	m	struct:bladerf_fn	access:public
+bladerf_fn::load_fpga	src/bladerf_priv.h	/^    int (*load_fpga)(struct bladerf *dev, uint8_t *image, size_t image_size);$/;"	m	struct:bladerf_fn	access:public
+bladerf_fn::open	src/bladerf_priv.h	/^    int (*open)(struct bladerf **device,  struct bladerf_devinfo *info);$/;"	m	struct:bladerf_fn	access:public
+bladerf_fn::probe	src/bladerf_priv.h	/^    int (*probe)(struct bladerf_devinfo_list *info_list);$/;"	m	struct:bladerf_fn	access:public
+bladerf_fn::rx	src/bladerf_priv.h	/^    ssize_t (*rx)(struct bladerf *dev, bladerf_format_t format, void *samples, size_t n, struct bladerf_metadata *metadata);$/;"	m	struct:bladerf_fn	access:public
+bladerf_fn::rx_stream	src/bladerf_priv.h	/^    int (*rx_stream)(struct bladerf *dev, bladerf_format_t format, struct bladerf_stream *stream);$/;"	m	struct:bladerf_fn	access:public
+bladerf_fn::si5338_read	src/bladerf_priv.h	/^    int (*si5338_read)(struct bladerf *dev, uint8_t addr, uint8_t *data);$/;"	m	struct:bladerf_fn	access:public
+bladerf_fn::si5338_write	src/bladerf_priv.h	/^    int (*si5338_write)(struct bladerf *dev, uint8_t addr, uint8_t data);$/;"	m	struct:bladerf_fn	access:public
+bladerf_fn::stats	src/bladerf_priv.h	/^    int (*stats)(struct bladerf *dev, struct bladerf_stats *stats);$/;"	m	struct:bladerf_fn	access:public
+bladerf_fn::tx	src/bladerf_priv.h	/^    ssize_t (*tx)(struct bladerf *dev, bladerf_format_t format, void *samples, size_t n, struct bladerf_metadata *metadata);$/;"	m	struct:bladerf_fn	access:public
+bladerf_fn::tx_stream	src/bladerf_priv.h	/^    int (*tx_stream)(struct bladerf *dev, bladerf_format_t format, struct bladerf_stream *stream);$/;"	m	struct:bladerf_fn	access:public
+bladerf_format_t	include/libbladeRF.h	/^} bladerf_format_t;$/;"	t	typeref:enum:__anon11
+bladerf_free_device_list	include/libbladeRF.h	/^void bladerf_free_device_list(struct bladerf_devinfo *devices);$/;"	p	signature:(struct bladerf_devinfo *devices)
+bladerf_free_device_list	src/bladerf.c	/^void bladerf_free_device_list(struct bladerf_devinfo *devices)$/;"	f	signature:(struct bladerf_devinfo *devices)
+bladerf_get_bandwidth	include/libbladeRF.h	/^int bladerf_get_bandwidth(struct bladerf *dev, bladerf_module_t module,$/;"	p	signature:(struct bladerf *dev, bladerf_module_t module, unsigned int *bandwidth)
+bladerf_get_bandwidth	src/bladerf.c	/^int bladerf_get_bandwidth(struct bladerf *dev, bladerf_module_t module,$/;"	f	signature:(struct bladerf *dev, bladerf_module_t module, unsigned int *bandwidth )
+bladerf_get_device_list	include/libbladeRF.h	/^ssize_t bladerf_get_device_list(struct bladerf_devinfo **devices);$/;"	p	signature:(struct bladerf_devinfo **devices)
+bladerf_get_device_list	src/bladerf.c	/^ssize_t bladerf_get_device_list(struct bladerf_devinfo **devices)$/;"	f	signature:(struct bladerf_devinfo **devices)
+bladerf_get_devinfo_list	src/bladerf_priv.h	/^bladerf_get_devinfo_list(struct bladerf_devinfo *devinfo);$/;"	p	signature:(struct bladerf_devinfo *devinfo)
+bladerf_get_error	src/bladerf_priv.c	/^void bladerf_get_error(struct bladerf_error *error,$/;"	f	signature:(struct bladerf_error *error, bladerf_error_t *type, int *val)
+bladerf_get_error	src/bladerf_priv.h	/^void bladerf_get_error(struct bladerf_error *error,$/;"	p	signature:(struct bladerf_error *error, bladerf_error_t *type, int *val)
+bladerf_get_fpga_size	include/libbladeRF.h	/^int bladerf_get_fpga_size(struct bladerf *dev, char *size);$/;"	p	signature:(struct bladerf *dev, char *size)
+bladerf_get_fpga_size	src/bladerf.c	/^int bladerf_get_fpga_size(struct bladerf *dev, char *size)$/;"	f	signature:(struct bladerf *dev, char *size)
+bladerf_get_fpga_version	include/libbladeRF.h	/^int bladerf_get_fpga_version(struct bladerf *dev,$/;"	p	signature:(struct bladerf *dev, unsigned int *major, unsigned int *minor)
+bladerf_get_fpga_version	src/bladerf.c	/^int bladerf_get_fpga_version(struct bladerf *dev,$/;"	f	signature:(struct bladerf *dev, unsigned int *major, unsigned int *minor)
+bladerf_get_frequency	include/libbladeRF.h	/^int bladerf_get_frequency(struct bladerf *dev,$/;"	p	signature:(struct bladerf *dev, bladerf_module_t module, unsigned int *frequency)
+bladerf_get_frequency	src/bladerf.c	/^int bladerf_get_frequency(struct bladerf *dev,$/;"	f	signature:(struct bladerf *dev, bladerf_module_t module, unsigned int *frequency)
+bladerf_get_fw_version	include/libbladeRF.h	/^int bladerf_get_fw_version(struct bladerf *dev,$/;"	p	signature:(struct bladerf *dev, unsigned int *major, unsigned int *minor)
+bladerf_get_fw_version	src/bladerf.c	/^int bladerf_get_fw_version(struct bladerf *dev,$/;"	f	signature:(struct bladerf *dev, unsigned int *major, unsigned int *minor)
+bladerf_get_lna_gain	include/libbladeRF.h	/^int bladerf_get_lna_gain(struct bladerf *dev, bladerf_lna_gain_t *gain);$/;"	p	signature:(struct bladerf *dev, bladerf_lna_gain_t *gain)
+bladerf_get_lna_gain	src/bladerf.c	/^int bladerf_get_lna_gain(struct bladerf *dev, bladerf_lna_gain_t *gain)$/;"	f	signature:(struct bladerf *dev, bladerf_lna_gain_t *gain)
+bladerf_get_rational_sample_rate	src/bladerf.c	/^int bladerf_get_rational_sample_rate(struct bladerf *dev, bladerf_module_t module, unsigned int integer, unsigned int num, unsigned int denom)$/;"	f	signature:(struct bladerf *dev, bladerf_module_t module, unsigned int integer, unsigned int num, unsigned int denom)
+bladerf_get_rxvga1	include/libbladeRF.h	/^int bladerf_get_rxvga1(struct bladerf *dev, int *gain);$/;"	p	signature:(struct bladerf *dev, int *gain)
+bladerf_get_rxvga1	src/bladerf.c	/^int bladerf_get_rxvga1(struct bladerf *dev, int *gain)$/;"	f	signature:(struct bladerf *dev, int *gain)
+bladerf_get_rxvga2	include/libbladeRF.h	/^int bladerf_get_rxvga2(struct bladerf *dev, int *gain);$/;"	p	signature:(struct bladerf *dev, int *gain)
+bladerf_get_rxvga2	src/bladerf.c	/^int bladerf_get_rxvga2(struct bladerf *dev, int *gain)$/;"	f	signature:(struct bladerf *dev, int *gain)
+bladerf_get_sample_rate	include/libbladeRF.h	/^int bladerf_get_sample_rate(struct bladerf *dev, bladerf_module_t module,$/;"	p	signature:(struct bladerf *dev, bladerf_module_t module, unsigned int *rate)
+bladerf_get_sample_rate	src/bladerf.c	/^int bladerf_get_sample_rate( struct bladerf *dev, bladerf_module_t module, unsigned int *rate)$/;"	f	signature:( struct bladerf *dev, bladerf_module_t module, unsigned int *rate)
+bladerf_get_serial	include/libbladeRF.h	/^int bladerf_get_serial(struct bladerf *dev, char *serial);$/;"	p	signature:(struct bladerf *dev, char *serial)
+bladerf_get_serial	src/bladerf.c	/^int bladerf_get_serial(struct bladerf *dev, char *serial)$/;"	f	signature:(struct bladerf *dev, char *serial)
+bladerf_get_txvga1	include/libbladeRF.h	/^int bladerf_get_txvga1(struct bladerf *dev, int *gain);$/;"	p	signature:(struct bladerf *dev, int *gain)
+bladerf_get_txvga1	src/bladerf.c	/^int bladerf_get_txvga1(struct bladerf *dev, int *gain)$/;"	f	signature:(struct bladerf *dev, int *gain)
+bladerf_get_txvga2	include/libbladeRF.h	/^int bladerf_get_txvga2(struct bladerf *dev, int *gain);$/;"	p	signature:(struct bladerf *dev, int *gain)
+bladerf_get_txvga2	src/bladerf.c	/^int bladerf_get_txvga2(struct bladerf *dev, int *gain)$/;"	f	signature:(struct bladerf *dev, int *gain)
+bladerf_get_vctcxo_trim	include/libbladeRF.h	/^int bladerf_get_vctcxo_trim(struct bladerf *dev, char *serial);$/;"	p	signature:(struct bladerf *dev, char *serial)
+bladerf_get_vctcxo_trim	src/bladerf.c	/^int bladerf_get_vctcxo_trim(struct bladerf *dev, char *trim)$/;"	f	signature:(struct bladerf *dev, char *trim)
+bladerf_gpio_read	include/libbladeRF.h	/^int bladerf_gpio_read(struct bladerf *dev, uint32_t *val);$/;"	p	signature:(struct bladerf *dev, uint32_t *val)
+bladerf_gpio_read	src/bladerf.c	/^int bladerf_gpio_read(struct bladerf *dev, uint32_t *val)$/;"	f	signature:(struct bladerf *dev, uint32_t *val)
+bladerf_gpio_write	include/libbladeRF.h	/^int bladerf_gpio_write(struct bladerf *dev, uint32_t val);$/;"	p	signature:(struct bladerf *dev, uint32_t val)
+bladerf_gpio_write	src/bladerf.c	/^int bladerf_gpio_write(struct bladerf *dev, uint32_t val)$/;"	f	signature:(struct bladerf *dev, uint32_t val)
+bladerf_init_device	src/bladerf_priv.c	/^int bladerf_init_device(struct bladerf *dev)$/;"	f	signature:(struct bladerf *dev)
+bladerf_init_device	src/bladerf_priv.h	/^int bladerf_init_device(struct bladerf *dev);$/;"	p	signature:(struct bladerf *dev)
+bladerf_init_devinfo	src/bladerf_priv.c	/^void bladerf_init_devinfo(struct bladerf_devinfo *d)$/;"	f	signature:(struct bladerf_devinfo *d)
+bladerf_init_devinfo	src/bladerf_priv.h	/^void bladerf_init_devinfo(struct bladerf_devinfo *d);$/;"	p	signature:(struct bladerf_devinfo *d)
+bladerf_instance_matches	src/bladerf_priv.c	/^bool bladerf_instance_matches(struct bladerf_devinfo *a,$/;"	f	signature:(struct bladerf_devinfo *a, struct bladerf_devinfo *b)
+bladerf_instance_matches	src/bladerf_priv.h	/^bool bladerf_instance_matches(struct bladerf_devinfo *a,$/;"	p	signature:(struct bladerf_devinfo *a, struct bladerf_devinfo *b)
+bladerf_is_fpga_configured	include/libbladeRF.h	/^int bladerf_is_fpga_configured(struct bladerf *dev);$/;"	p	signature:(struct bladerf *dev)
+bladerf_is_fpga_configured	src/bladerf.c	/^int bladerf_is_fpga_configured(struct bladerf *dev)$/;"	f	signature:(struct bladerf *dev)
+bladerf_linux	src/backend/linux.c	/^struct bladerf_linux {$/;"	s	file:
+bladerf_linux::fd	src/backend/linux.c	/^    int fd;         \/* File descriptor to associated driver device node *\/$/;"	m	struct:bladerf_linux	file:	access:public
+bladerf_linux_fn	src/backend/linux.c	/^const struct bladerf_fn bladerf_linux_fn = {$/;"	v	typeref:struct:bladerf_fn
+bladerf_lms_read	include/libbladeRF.h	/^int bladerf_lms_read(struct bladerf *dev, uint8_t address, uint8_t *val);$/;"	p	signature:(struct bladerf *dev, uint8_t address, uint8_t *val)
+bladerf_lms_read	src/bladerf.c	/^int bladerf_lms_read(struct bladerf *dev, uint8_t address, uint8_t *val)$/;"	f	signature:(struct bladerf *dev, uint8_t address, uint8_t *val)
+bladerf_lms_write	include/libbladeRF.h	/^int bladerf_lms_write(struct bladerf *dev, uint8_t address, uint8_t val);$/;"	p	signature:(struct bladerf *dev, uint8_t address, uint8_t val)
+bladerf_lms_write	src/bladerf.c	/^int bladerf_lms_write(struct bladerf *dev, uint8_t address, uint8_t val)$/;"	f	signature:(struct bladerf *dev, uint8_t address, uint8_t val)
+bladerf_lna_gain_t	include/libbladeRF.h	/^} bladerf_lna_gain_t ;$/;"	t	typeref:enum:__anon12
+bladerf_load_fpga	include/libbladeRF.h	/^int bladerf_load_fpga(struct bladerf *dev, const char *fpga);$/;"	p	signature:(struct bladerf *dev, const char *fpga)
+bladerf_load_fpga	src/bladerf.c	/^int bladerf_load_fpga(struct bladerf *dev, const char *fpga_file)$/;"	f	signature:(struct bladerf *dev, const char *fpga_file)
+bladerf_loopback_t	include/libbladeRF.h	/^} bladerf_loopback_t;$/;"	t	typeref:enum:__anon14
+bladerf_lusb	src/backend/libusb.c	/^struct bladerf_lusb {$/;"	s	file:
+bladerf_lusb::context	src/backend/libusb.c	/^    libusb_context          *context;$/;"	m	struct:bladerf_lusb	file:	access:public
+bladerf_lusb::dev	src/backend/libusb.c	/^    libusb_device           *dev;$/;"	m	struct:bladerf_lusb	file:	access:public
+bladerf_lusb::handle	src/backend/libusb.c	/^    libusb_device_handle    *handle;$/;"	m	struct:bladerf_lusb	file:	access:public
+bladerf_lusb_fn	src/backend/libusb.c	/^const struct bladerf_fn bladerf_lusb_fn = {$/;"	v	typeref:struct:bladerf_fn
+bladerf_lusb_fn	src/backend/libusb.c	/^const struct bladerf_fn bladerf_lusb_fn;$/;"	v	typeref:struct:bladerf_fn
+bladerf_metadata	include/libbladeRF.h	/^struct bladerf_metadata {$/;"	s
+bladerf_metadata::timestamp	include/libbladeRF.h	/^    uint64_t timestamp;     \/**< TODO Time in \\<unit\\> since \\<origin\\> *\/$/;"	m	struct:bladerf_metadata	access:public
+bladerf_metadata::version	include/libbladeRF.h	/^    uint32_t version;       \/**< Metadata format version *\/$/;"	m	struct:bladerf_metadata	access:public
+bladerf_module_t	include/libbladeRF.h	/^} bladerf_module_t ;$/;"	t	typeref:enum:__anon13
+bladerf_open	include/libbladeRF.h	/^int bladerf_open(struct bladerf **device, const char *device_identifier);$/;"	p	signature:(struct bladerf **device, const char *device_identifier)
+bladerf_open	src/bladerf.c	/^int bladerf_open(struct bladerf **device, const char *dev_id)$/;"	f	signature:(struct bladerf **device, const char *dev_id)
+bladerf_open_with_devinfo	include/libbladeRF.h	/^int bladerf_open_with_devinfo(struct bladerf **device,$/;"	p	signature:(struct bladerf **device, struct bladerf_devinfo *devinfo)
+bladerf_open_with_devinfo	src/bladerf.c	/^int bladerf_open_with_devinfo(struct bladerf **device,$/;"	f	signature:(struct bladerf **device, struct bladerf_devinfo *devinfo)
+bladerf_rx	include/libbladeRF.h	/^ssize_t bladerf_rx(struct bladerf *dev, bladerf_format_t format,$/;"	p	signature:(struct bladerf *dev, bladerf_format_t format, void *samples, size_t num_samples, struct bladerf_metadata *metadata)
+bladerf_rx	src/bladerf.c	/^ssize_t bladerf_rx(struct bladerf *dev, bladerf_format_t format, void *samples,$/;"	f	signature:(struct bladerf *dev, bladerf_format_t format, void *samples, size_t num_samples, struct bladerf_metadata *metadata)
+bladerf_rx_stream	include/libbladeRF.h	/^int bladerf_rx_stream(struct bladerf *dev, bladerf_format_t format,$/;"	p	signature:(struct bladerf *dev, bladerf_format_t format, struct bladerf_stream *stream)
+bladerf_rx_stream	src/bladerf.c	/^int bladerf_rx_stream(struct bladerf *dev, bladerf_format_t format,$/;"	f	signature:(struct bladerf *dev, bladerf_format_t format, struct bladerf_stream *stream)
+bladerf_select_band	include/libbladeRF.h	/^int bladerf_select_band(struct bladerf *dev, bladerf_module_t module,$/;"	p	signature:(struct bladerf *dev, bladerf_module_t module, unsigned int frequency)
+bladerf_select_band	src/bladerf.c	/^int bladerf_select_band(struct bladerf *dev, bladerf_module_t module,$/;"	f	signature:(struct bladerf *dev, bladerf_module_t module, unsigned int frequency)
+bladerf_serial_matches	src/bladerf_priv.c	/^bool bladerf_serial_matches(struct bladerf_devinfo *a,$/;"	f	signature:(struct bladerf_devinfo *a, struct bladerf_devinfo *b)
+bladerf_serial_matches	src/bladerf_priv.h	/^bool bladerf_serial_matches(struct bladerf_devinfo *a,$/;"	p	signature:(struct bladerf_devinfo *a, struct bladerf_devinfo *b)
+bladerf_set_bandwidth	include/libbladeRF.h	/^int bladerf_set_bandwidth(struct bladerf *dev, bladerf_module_t module,$/;"	p	signature:(struct bladerf *dev, bladerf_module_t module, unsigned int bandwidth, unsigned int *actual)
+bladerf_set_bandwidth	src/bladerf.c	/^int bladerf_set_bandwidth(struct bladerf *dev, bladerf_module_t module,$/;"	f	signature:(struct bladerf *dev, bladerf_module_t module, unsigned int bandwidth, unsigned int *actual)
+bladerf_set_error	src/bladerf_priv.c	/^void bladerf_set_error(struct bladerf_error *error,$/;"	f	signature:(struct bladerf_error *error, bladerf_error_t type, int val)
+bladerf_set_error	src/bladerf_priv.h	/^void bladerf_set_error(struct bladerf_error *error,$/;"	p	signature:(struct bladerf_error *error, bladerf_error_t type, int val)
+bladerf_set_frequency	include/libbladeRF.h	/^int bladerf_set_frequency(struct bladerf *dev,$/;"	p	signature:(struct bladerf *dev, bladerf_module_t module, unsigned int frequency)
+bladerf_set_frequency	src/bladerf.c	/^int bladerf_set_frequency(struct bladerf *dev,$/;"	f	signature:(struct bladerf *dev, bladerf_module_t module, unsigned int frequency)
+bladerf_set_lna_gain	include/libbladeRF.h	/^int bladerf_set_lna_gain(struct bladerf *dev, bladerf_lna_gain_t gain);$/;"	p	signature:(struct bladerf *dev, bladerf_lna_gain_t gain)
+bladerf_set_lna_gain	src/bladerf.c	/^int bladerf_set_lna_gain(struct bladerf *dev, bladerf_lna_gain_t gain)$/;"	f	signature:(struct bladerf *dev, bladerf_lna_gain_t gain)
+bladerf_set_loopback	include/libbladeRF.h	/^int bladerf_set_loopback( struct bladerf *dev, bladerf_loopback_t l);$/;"	p	signature:( struct bladerf *dev, bladerf_loopback_t l)
+bladerf_set_loopback	src/bladerf.c	/^int bladerf_set_loopback(struct bladerf *dev, bladerf_loopback_t l)$/;"	f	signature:(struct bladerf *dev, bladerf_loopback_t l)
+bladerf_set_rational_sample_rate	include/libbladeRF.h	/^int bladerf_set_rational_sample_rate(struct bladerf *dev,$/;"	p	signature:(struct bladerf *dev, bladerf_module_t module, unsigned int integer, unsigned int num, unsigned int denom)
+bladerf_set_rational_sample_rate	src/bladerf.c	/^int bladerf_set_rational_sample_rate(struct bladerf *dev, bladerf_module_t module, unsigned int integer, unsigned int num, unsigned int denom)$/;"	f	signature:(struct bladerf *dev, bladerf_module_t module, unsigned int integer, unsigned int num, unsigned int denom)
+bladerf_set_rxvga1	include/libbladeRF.h	/^int bladerf_set_rxvga1(struct bladerf *dev, int gain);$/;"	p	signature:(struct bladerf *dev, int gain)
+bladerf_set_rxvga1	src/bladerf.c	/^int bladerf_set_rxvga1(struct bladerf *dev, int gain)$/;"	f	signature:(struct bladerf *dev, int gain)
+bladerf_set_rxvga2	include/libbladeRF.h	/^int bladerf_set_rxvga2(struct bladerf *dev, int gain);$/;"	p	signature:(struct bladerf *dev, int gain)
+bladerf_set_rxvga2	src/bladerf.c	/^int bladerf_set_rxvga2(struct bladerf *dev, int gain)$/;"	f	signature:(struct bladerf *dev, int gain)
+bladerf_set_sample_rate	include/libbladeRF.h	/^int bladerf_set_sample_rate(struct bladerf *dev, bladerf_module_t module,$/;"	p	signature:(struct bladerf *dev, bladerf_module_t module, unsigned int rate, unsigned int *actual)
+bladerf_set_sample_rate	src/bladerf.c	/^int bladerf_set_sample_rate(struct bladerf *dev, bladerf_module_t module, unsigned int rate, unsigned int *actual)$/;"	f	signature:(struct bladerf *dev, bladerf_module_t module, unsigned int rate, unsigned int *actual)
+bladerf_set_txvga1	include/libbladeRF.h	/^int bladerf_set_txvga1(struct bladerf *dev, int gain);$/;"	p	signature:(struct bladerf *dev, int gain)
+bladerf_set_txvga1	src/bladerf.c	/^int bladerf_set_txvga1(struct bladerf *dev, int gain)$/;"	f	signature:(struct bladerf *dev, int gain)
+bladerf_set_txvga2	include/libbladeRF.h	/^int bladerf_set_txvga2(struct bladerf *dev, int gain);$/;"	p	signature:(struct bladerf *dev, int gain)
+bladerf_set_txvga2	src/bladerf.c	/^int bladerf_set_txvga2(struct bladerf *dev, int gain)$/;"	f	signature:(struct bladerf *dev, int gain)
+bladerf_si5338_read	include/libbladeRF.h	/^int bladerf_si5338_read(struct bladerf *dev, uint8_t address, uint8_t *val);$/;"	p	signature:(struct bladerf *dev, uint8_t address, uint8_t *val)
+bladerf_si5338_read	src/bladerf.c	/^int bladerf_si5338_read(struct bladerf *dev, uint8_t address, uint8_t *val)$/;"	f	signature:(struct bladerf *dev, uint8_t address, uint8_t *val)
+bladerf_si5338_set_rx_freq	include/libbladeRF.h	/^int bladerf_si5338_set_rx_freq(struct bladerf *dev, unsigned freq);$/;"	p	signature:(struct bladerf *dev, unsigned freq)
+bladerf_si5338_set_tx_freq	include/libbladeRF.h	/^int bladerf_si5338_set_tx_freq(struct bladerf *dev, unsigned freq);$/;"	p	signature:(struct bladerf *dev, unsigned freq)
+bladerf_si5338_write	include/libbladeRF.h	/^int bladerf_si5338_write(struct bladerf *dev, uint8_t address, uint8_t val);$/;"	p	signature:(struct bladerf *dev, uint8_t address, uint8_t val)
+bladerf_si5338_write	src/bladerf.c	/^int bladerf_si5338_write(struct bladerf *dev, uint8_t address, uint8_t val)$/;"	f	signature:(struct bladerf *dev, uint8_t address, uint8_t val)
+bladerf_stats	include/libbladeRF.h	/^int bladerf_stats(struct bladerf *dev, struct bladerf_stats *stats);$/;"	p	signature:(struct bladerf *dev, struct bladerf_stats *stats)
+bladerf_stats	include/libbladeRF.h	/^struct bladerf_stats {$/;"	s
+bladerf_stats	src/bladerf.c	/^int bladerf_stats(struct bladerf *dev, struct bladerf_stats *stats)$/;"	f	signature:(struct bladerf *dev, struct bladerf_stats *stats)
+bladerf_stats::rx_overruns	include/libbladeRF.h	/^    uint64_t rx_overruns;$/;"	m	struct:bladerf_stats	access:public
+bladerf_stats::rx_throughput	include/libbladeRF.h	/^    uint64_t rx_throughput;$/;"	m	struct:bladerf_stats	access:public
+bladerf_stats::tx_throughput	include/libbladeRF.h	/^    uint64_t tx_throughput;$/;"	m	struct:bladerf_stats	access:public
+bladerf_stats::tx_underruns	include/libbladeRF.h	/^    uint64_t tx_underruns;$/;"	m	struct:bladerf_stats	access:public
+bladerf_stream	include/libbladeRF.h	/^struct bladerf_stream {$/;"	s
+bladerf_stream::buffers_per_stream	include/libbladeRF.h	/^    size_t buffers_per_stream;$/;"	m	struct:bladerf_stream	access:public
+bladerf_stream::cb	include/libbladeRF.h	/^    void (*cb)(struct bladerf *dev, struct bladerf_stream *stream,$/;"	m	struct:bladerf_stream	access:public
+bladerf_stream::data	include/libbladeRF.h	/^    void *data; \/**< User data *\/$/;"	m	struct:bladerf_stream	access:public
+bladerf_stream::samples_per_buffer	include/libbladeRF.h	/^    size_t samples_per_buffer;$/;"	m	struct:bladerf_stream	access:public
+bladerf_stream::state	include/libbladeRF.h	/^    bladerf_stream_state state;$/;"	m	struct:bladerf_stream	access:public
+bladerf_stream::status	include/libbladeRF.h	/^    int status;$/;"	m	struct:bladerf_stream	access:public
+bladerf_stream_state	include/libbladeRF.h	/^} bladerf_stream_state ;$/;"	t	typeref:enum:__anon15
+bladerf_strerror	include/libbladeRF.h	/^const char * bladerf_strerror(int error);$/;"	p	signature:(int error)
+bladerf_strerror	src/bladerf.c	/^const char * bladerf_strerror(int error)$/;"	f	signature:(int error)
+bladerf_tx	include/libbladeRF.h	/^ssize_t bladerf_tx(struct bladerf *dev, bladerf_format_t format,$/;"	p	signature:(struct bladerf *dev, bladerf_format_t format, void *samples, size_t num_samples, struct bladerf_metadata *metadata)
+bladerf_tx	src/bladerf.c	/^ssize_t bladerf_tx(struct bladerf *dev, bladerf_format_t format, void *samples,$/;"	f	signature:(struct bladerf *dev, bladerf_format_t format, void *samples, size_t num_samples, struct bladerf_metadata *metadata)
+bladerf_tx_stream	include/libbladeRF.h	/^int bladerf_tx_stream(struct bladerf *dev, bladerf_format_t format,$/;"	p	signature:(struct bladerf *dev, bladerf_format_t format, struct bladerf_stream *stream)
+bladerf_tx_stream	src/bladerf.c	/^int bladerf_tx_stream(struct bladerf *dev, bladerf_format_t format,$/;"	f	signature:(struct bladerf *dev, bladerf_format_t format, struct bladerf_stream *stream)
+bladerf_version	include/libbladeRF.h	/^const char * bladerf_version(unsigned int *major,$/;"	p	signature:(unsigned int *major, unsigned int *minor, unsigned int *patch)
+bladerf_version	src/bladerf.c	/^const char * bladerf_version(unsigned int *major,$/;"	f	signature:(unsigned int *major, unsigned int *minor, unsigned int *patch)
+buffer	src/backend/libusb.c	/^    uint8_t *buffer;$/;"	m	struct:lusb_stream_transfer	file:	access:public
+buffers_per_stream	include/libbladeRF.h	/^    size_t buffers_per_stream;$/;"	m	struct:bladerf_stream	access:public
+byte	src/bladerf.c	/^typedef  unsigned char                   byte;    \/*     8 bit unsigned       *\/$/;"	t	file:
+bytes_to_c16_samples	src/bladerf_priv.c	/^size_t bytes_to_c16_samples(size_t n_bytes)$/;"	f	signature:(size_t n_bytes)
+bytes_to_c16_samples	src/bladerf_priv.h	/^size_t bytes_to_c16_samples(size_t n_bytes);$/;"	p	signature:(size_t n_bytes)
+c	src/si5338.c	/^    unsigned a, b, c;$/;"	m	struct:tspec	file:	access:public
+c16_samples_to_bytes	src/bladerf_priv.c	/^size_t c16_samples_to_bytes(size_t n_samples)$/;"	f	signature:(size_t n_samples)
+c16_samples_to_bytes	src/bladerf_priv.h	/^size_t c16_samples_to_bytes(size_t n_samples);$/;"	p	signature:(size_t n_samples)
+cb	include/libbladeRF.h	/^    void (*cb)(struct bladerf *dev, struct bladerf_stream *stream,$/;"	m	struct:bladerf_stream	access:public
+close	src/bladerf_priv.h	/^    int (*close)(struct bladerf *dev);$/;"	m	struct:bladerf_fn	access:public
+configure_ms	src/si5338.c	/^static void configure_ms(struct bladerf *dev, struct tspec *ts) {$/;"	f	file:	signature:(struct bladerf *dev, struct tspec *ts)
+context	src/backend/libusb.c	/^    libusb_context          *context;$/;"	m	struct:bladerf_lusb	file:	access:public
+crc16mp	src/bladerf.c	/^word crc16mp(word crcval, void *data_p, word count) {$/;"	f	signature:(word crcval, void *data_p, word count)
+dac_write	src/bladerf_priv.h	/^    int (*dac_write)(struct bladerf *dev, uint16_t value);$/;"	m	struct:bladerf_fn	access:public
+data	include/libbladeRF.h	/^    void *data; \/**< User data *\/$/;"	m	struct:bladerf_stream	access:public
+data	tests/tx_async/main.c	/^    uint8_t *data;$/;"	m	struct:test_data	file:	access:public
+dbg_printf	src/debug.h	11;"	d
+dbg_printf	src/debug.h	19;"	d
+dev	src/backend/libusb.c	/^    libusb_device           *dev;$/;"	m	struct:bladerf_lusb	file:	access:public
+dev	src/backend/libusb.c	/^    struct bladerf *dev ;$/;"	m	struct:lusb_stream_data	typeref:struct:lusb_stream_data::bladerf	file:	access:public
+device_filter	src/backend/linux.c	/^static int device_filter(const struct dirent *d)$/;"	f	file:	signature:(const struct dirent *d)
+elt	src/bladerf_priv.h	/^    struct bladerf_devinfo *elt;$/;"	m	struct:bladerf_devinfo_list	typeref:struct:bladerf_devinfo_list::bladerf_devinfo	access:public
+en	src/si5338.c	/^    unsigned en;$/;"	m	struct:tspec	file:	access:public
+enA	src/si5338.c	/^    int enA, enB;$/;"	m	struct:tspec	file:	access:public
+enB	src/si5338.c	/^    int enA, enB;$/;"	m	struct:tspec	file:	access:public
+end_fpga_programming	src/backend/libusb.c	/^static int end_fpga_programming(struct bladerf *dev)$/;"	f	file:	signature:(struct bladerf *dev)
+erase_flash	src/backend/libusb.c	/^static int erase_flash(struct bladerf *dev, int sector_offset, int n_bytes)$/;"	f	file:	signature:(struct bladerf *dev, int sector_offset, int n_bytes)
+error	src/bladerf_priv.h	/^    struct bladerf_error error;$/;"	m	struct:bladerf	typeref:struct:bladerf::bladerf_error	access:public
+extract_field	src/bladerf.c	/^static int extract_field(char *ptr, int len, char *field, char *val, int maxlen) {$/;"	f	file:	signature:(char *ptr, int len, char *field, char *val, int maxlen)
+fd	src/backend/linux.c	/^    int fd;         \/* File descriptor to associated driver device node *\/$/;"	m	struct:bladerf_linux	file:	access:public
+flash_firmware	src/bladerf_priv.h	/^    int (*flash_firmware)(struct bladerf *dev, uint8_t *image, size_t image_size);$/;"	m	struct:bladerf_fn	access:public
+fn	src/bladerf_priv.h	/^    const struct bladerf_fn *fn;$/;"	m	struct:bladerf	typeref:struct:bladerf::bladerf_fn	access:public
+fns	src/backend.c	/^    const struct bladerf_fn *fns;$/;"	m	struct:backend_table_entry	typeref:struct:backend_table_entry::bladerf_fn	file:	access:public
+format	src/backend/libusb.c	/^    bladerf_format_t format ;$/;"	m	struct:lusb_stream_data	file:	access:public
+free_dirents	src/backend/linux.c	/^static inline void free_dirents(struct dirent **d, int n)$/;"	f	file:	signature:(struct dirent **d, int n)
+freq_range	src/lms.c	/^struct freq_range {$/;"	s	file:
+freq_range::high	src/lms.c	/^    uint32_t    high;$/;"	m	struct:freq_range	file:	access:public
+freq_range::low	src/lms.c	/^    uint32_t    low;$/;"	m	struct:freq_range	file:	access:public
+freq_range::value	src/lms.c	/^    uint8_t     value;$/;"	m	struct:freq_range	file:	access:public
+freqsel	src/lms.h	/^    uint8_t     freqsel;   \/**< Choice of VCO and dision ratio *\/$/;"	m	struct:lms_freq	access:public
+get_cal	src/bladerf_priv.h	/^    int (*get_cal)(struct bladerf *dev, char *cal);$/;"	m	struct:bladerf_fn	access:public
+get_cal_field	src/bladerf.c	/^static int get_cal_field(struct bladerf *dev, char *field, char *val, int maxlen) {$/;"	f	file:	signature:(struct bladerf *dev, char *field, char *val, int maxlen)
+get_device_speed	src/bladerf_priv.h	/^    int (*get_device_speed)(struct bladerf *dev, int *speed);$/;"	m	struct:bladerf_fn	access:public
+get_fpga_version	src/bladerf_priv.h	/^    int (*get_fpga_version)(struct bladerf *dev, unsigned int *maj, unsigned int *min);$/;"	m	struct:bladerf_fn	access:public
+get_fw_version	src/bladerf_priv.h	/^    int (*get_fw_version)(struct bladerf *dev, unsigned int *maj, unsigned int *min);$/;"	m	struct:bladerf_fn	access:public
+get_otp	src/bladerf_priv.h	/^    int (*get_otp)(struct bladerf *dev, char *otp);$/;"	m	struct:bladerf_fn	access:public
+get_otp_field	src/bladerf.c	/^static int get_otp_field(struct bladerf *dev, char *field, char *val, int maxlen) {$/;"	f	file:	signature:(struct bladerf *dev, char *field, char *val, int maxlen)
+gpio_read	src/bladerf_priv.h	/^    int (*gpio_read)(struct bladerf *dev, uint32_t *val);$/;"	m	struct:bladerf_fn	access:public
+gpio_write	src/bladerf_priv.h	/^    int (*gpio_write)(struct bladerf *dev, uint32_t val);$/;"	m	struct:bladerf_fn	access:public
+handle	src/backend/libusb.c	/^    libusb_device_handle    *handle;$/;"	m	struct:bladerf_lusb	file:	access:public
+handle_backend	src/device_identifier.c	/^static int handle_backend(char *str, struct bladerf_devinfo *d)$/;"	f	file:	signature:(char *str, struct bladerf_devinfo *d)
+handle_device	src/device_identifier.c	/^static int handle_device(struct bladerf_devinfo *d, char *value)$/;"	f	file:	signature:(struct bladerf_devinfo *d, char *value)
+handle_instance	src/device_identifier.c	/^static int handle_instance(struct bladerf_devinfo *d, char *value)$/;"	f	file:	signature:(struct bladerf_devinfo *d, char *value)
+handle_serial	src/device_identifier.c	/^static int handle_serial(struct bladerf_devinfo *d, char *value)$/;"	f	file:	signature:(struct bladerf_devinfo *d, char *value)
+handler	tests/tx_async/main.c	/^void handler(int signal)$/;"	f	signature:(int signal)
+high	src/lms.c	/^    uint32_t    high;$/;"	m	struct:freq_range	file:	access:public
+id	src/si5338.c	/^    int id;$/;"	m	struct:tspec	file:	access:public
+idx	tests/tx_async/main.c	/^    unsigned int idx;$/;"	m	struct:test_data	file:	access:public
+in_freq	src/si5338.c	/^int in_freq = 38400000;$/;"	v
+init_stats	src/bladerf.c	/^static void init_stats(struct bladerf_stats *stats)$/;"	f	file:	signature:(struct bladerf_stats *stats)
+instance	include/libbladeRF.h	/^    unsigned int instance;      \/**< Device instance or ID *\/$/;"	m	struct:bladerf_devinfo	access:public
+is_fpga_configured	src/bladerf_priv.h	/^    int (*is_fpga_configured)(struct bladerf *dev);$/;"	m	struct:bladerf_fn	access:public
+kHz	src/lms.h	12;"	d
+last_rx_sample_rate	src/bladerf_priv.h	/^    unsigned int last_rx_sample_rate;$/;"	m	struct:bladerf	access:public
+last_tx_sample_rate	src/bladerf_priv.h	/^    unsigned int last_tx_sample_rate;$/;"	m	struct:bladerf	access:public
+linux_begin_fpga_programming	src/backend/linux.c	/^static inline int linux_begin_fpga_programming(int fd)$/;"	f	file:	signature:(int fd)
+linux_close	src/backend/linux.c	/^int linux_close(struct bladerf *dev)$/;"	f	signature:(struct bladerf *dev)
+linux_dac_write	src/backend/linux.c	/^static int linux_dac_write(struct bladerf *dev, uint16_t val)$/;"	f	file:	signature:(struct bladerf *dev, uint16_t val)
+linux_end_fpga_programming	src/backend/linux.c	/^static int linux_end_fpga_programming(int fd)$/;"	f	file:	signature:(int fd)
+linux_flash_firmware	src/backend/linux.c	/^static int linux_flash_firmware(struct bladerf *dev,$/;"	f	file:	signature:(struct bladerf *dev, uint8_t *image, size_t image_size)
+linux_get_cal	src/backend/linux.c	/^static int linux_get_cal(struct bladerf *dev, char *cal)$/;"	f	file:	signature:(struct bladerf *dev, char *cal)
+linux_get_device_speed	src/backend/linux.c	/^static int linux_get_device_speed(struct bladerf *dev, int *speed)$/;"	f	file:	signature:(struct bladerf *dev, int *speed)
+linux_get_fpga_version	src/backend/linux.c	/^static int linux_get_fpga_version(struct bladerf *dev, unsigned int *maj, unsigned int *min)$/;"	f	file:	signature:(struct bladerf *dev, unsigned int *maj, unsigned int *min)
+linux_get_fw_version	src/backend/linux.c	/^static int linux_get_fw_version(struct bladerf *dev,$/;"	f	file:	signature:(struct bladerf *dev, unsigned int *major, unsigned int *minor)
+linux_get_otp	src/backend/linux.c	/^static int linux_get_otp(struct bladerf *dev, char *otp)$/;"	f	file:	signature:(struct bladerf *dev, char *otp)
+linux_gpio_read	src/backend/linux.c	/^static int linux_gpio_read(struct bladerf *dev, uint32_t *val)$/;"	f	file:	signature:(struct bladerf *dev, uint32_t *val)
+linux_gpio_write	src/backend/linux.c	/^static int linux_gpio_write(struct bladerf *dev, uint32_t val)$/;"	f	file:	signature:(struct bladerf *dev, uint32_t val)
+linux_is_fpga_configured	src/backend/linux.c	/^static int linux_is_fpga_configured(struct bladerf *dev)$/;"	f	file:	signature:(struct bladerf *dev)
+linux_lms_read	src/backend/linux.c	/^static int linux_lms_read(struct bladerf *dev, uint8_t address, uint8_t *val)$/;"	f	file:	signature:(struct bladerf *dev, uint8_t address, uint8_t *val)
+linux_lms_write	src/backend/linux.c	/^static int linux_lms_write(struct bladerf *dev, uint8_t address, uint8_t val)$/;"	f	file:	signature:(struct bladerf *dev, uint8_t address, uint8_t val)
+linux_load_fpga	src/backend/linux.c	/^static int linux_load_fpga(struct bladerf *dev,$/;"	f	file:	signature:(struct bladerf *dev, uint8_t *image, size_t image_size)
+linux_open	src/backend/linux.c	/^static int linux_open( struct bladerf **device, struct bladerf_devinfo *info)$/;"	f	file:	signature:( struct bladerf **device, struct bladerf_devinfo *info)
+linux_probe	src/backend/linux.c	/^static int linux_probe(struct bladerf_devinfo_list *info_list)$/;"	f	file:	signature:(struct bladerf_devinfo_list *info_list)
+linux_probe	src/backend/linux.c	/^static int linux_probe(struct bladerf_devinfo_list *info_list);$/;"	p	file:	signature:(struct bladerf_devinfo_list *info_list)
+linux_rx	src/backend/linux.c	/^static ssize_t linux_rx(struct bladerf *dev, bladerf_format_t format,$/;"	f	file:	signature:(struct bladerf *dev, bladerf_format_t format, void *samples, size_t n, struct bladerf_metadata *metadata)
+linux_si5338_read	src/backend/linux.c	/^static int linux_si5338_read(struct bladerf *dev, uint8_t address, uint8_t *val)$/;"	f	file:	signature:(struct bladerf *dev, uint8_t address, uint8_t *val)
+linux_si5338_write	src/backend/linux.c	/^static int linux_si5338_write(struct bladerf *dev, uint8_t address, uint8_t val)$/;"	f	file:	signature:(struct bladerf *dev, uint8_t address, uint8_t val)
+linux_tx	src/backend/linux.c	/^static ssize_t linux_tx(struct bladerf *dev, bladerf_format_t format,$/;"	f	file:	signature:(struct bladerf *dev, bladerf_format_t format, void *samples, size_t n, struct bladerf_metadata *metadata)
+lms_bw2uint	src/lms.c	/^unsigned int lms_bw2uint(lms_bw_t bw)$/;"	f	signature:(lms_bw_t bw)
+lms_bw2uint	src/lms.h	/^unsigned int lms_bw2uint(lms_bw_t bw);$/;"	p	signature:(lms_bw_t bw)
+lms_bw_t	src/lms.h	/^} lms_bw_t;$/;"	t	typeref:enum:__anon5
+lms_calibrate_dc	src/lms.c	/^void lms_calibrate_dc(struct bladerf *dev)$/;"	f	signature:(struct bladerf *dev)
+lms_calibrate_dc	src/lms.h	/^void lms_calibrate_dc(struct bladerf *dev);$/;"	p	signature:(struct bladerf *dev)
+lms_config_init	src/lms.c	/^int lms_config_init(struct bladerf *dev, struct lms_xcvr_config *config)$/;"	f	signature:(struct bladerf *dev, struct lms_xcvr_config *config)
+lms_config_init	src/lms.h	/^int lms_config_init(struct bladerf *dev, struct lms_xcvr_config *config);$/;"	p	signature:(struct bladerf *dev, struct lms_xcvr_config *config)
+lms_dither_disable	src/lms.c	/^void lms_dither_disable(struct bladerf *dev, bladerf_module_t mod)$/;"	f	signature:(struct bladerf *dev, bladerf_module_t mod)
+lms_dither_disable	src/lms.h	/^void lms_dither_disable(struct bladerf *dev, bladerf_module_t mod);$/;"	p	signature:(struct bladerf *dev, bladerf_module_t mod)
+lms_dither_enable	src/lms.c	/^void lms_dither_enable(struct bladerf *dev, bladerf_module_t mod, uint8_t nbits)$/;"	f	signature:(struct bladerf *dev, bladerf_module_t mod, uint8_t nbits)
+lms_dither_enable	src/lms.h	/^void lms_dither_enable(struct bladerf *dev, bladerf_module_t mod, uint8_t nbits);$/;"	p	signature:(struct bladerf *dev, bladerf_module_t mod, uint8_t nbits)
+lms_dump_registers	src/lms.c	/^void lms_dump_registers(struct bladerf *dev)$/;"	f	signature:(struct bladerf *dev)
+lms_dump_registers	src/lms.h	/^void lms_dump_registers(struct bladerf *dev);$/;"	p	signature:(struct bladerf *dev)
+lms_freq	src/lms.h	/^struct lms_freq {$/;"	s
+lms_freq::freqsel	src/lms.h	/^    uint8_t     freqsel;   \/**< Choice of VCO and dision ratio *\/$/;"	m	struct:lms_freq	access:public
+lms_freq::nfrac	src/lms.h	/^    uint32_t    nfrac;     \/**< Fractional portion of f_LO given nint and f_REF *\/$/;"	m	struct:lms_freq	access:public
+lms_freq::nint	src/lms.h	/^    uint16_t    nint;      \/**< Integer portion of f_LO given f_REF *\/$/;"	m	struct:lms_freq	access:public
+lms_freq::reference	src/lms.h	/^    uint32_t    reference; \/**< Reference frequency going to the LMS6002D *\/$/;"	m	struct:lms_freq	access:public
+lms_freq::x	src/lms.h	/^    uint8_t     x;         \/**< VCO division ratio *\/$/;"	m	struct:lms_freq	access:public
+lms_frequency_to_hz	src/lms.c	/^uint32_t lms_frequency_to_hz(struct lms_freq *f)$/;"	f	signature:(struct lms_freq *f)
+lms_frequency_to_hz	src/lms.h	/^uint32_t lms_frequency_to_hz(struct lms_freq *f);$/;"	p	signature:(struct lms_freq *f)
+lms_get_bandwidth	src/lms.c	/^lms_bw_t lms_get_bandwidth(struct bladerf *dev, bladerf_module_t mod)$/;"	f	signature:(struct bladerf *dev, bladerf_module_t mod)
+lms_get_bandwidth	src/lms.h	/^lms_bw_t lms_get_bandwidth(struct bladerf *dev, bladerf_module_t mod);$/;"	p	signature:(struct bladerf *dev, bladerf_module_t mod)
+lms_get_frequency	src/lms.c	/^void lms_get_frequency(struct bladerf *dev, bladerf_module_t mod, struct lms_freq *f) {$/;"	f	signature:(struct bladerf *dev, bladerf_module_t mod, struct lms_freq *f)
+lms_get_frequency	src/lms.h	/^void lms_get_frequency(struct bladerf *dev, bladerf_module_t mod,$/;"	p	signature:(struct bladerf *dev, bladerf_module_t mod, struct lms_freq *freq)
+lms_get_loopback_mode	src/lms.c	/^bladerf_loopback_t lms_get_loopback_mode(struct bladerf *dev)$/;"	f	signature:(struct bladerf *dev)
+lms_get_loopback_mode	src/lms.h	/^bladerf_loopback_t lms_get_loopback_mode(struct bladerf *dev);$/;"	p	signature:(struct bladerf *dev)
+lms_lna_get_gain	src/lms.c	/^void lms_lna_get_gain(struct bladerf *dev, bladerf_lna_gain_t *gain)$/;"	f	signature:(struct bladerf *dev, bladerf_lna_gain_t *gain)
+lms_lna_get_gain	src/lms.h	/^void lms_lna_get_gain(struct bladerf *dev, bladerf_lna_gain_t *gain);$/;"	p	signature:(struct bladerf *dev, bladerf_lna_gain_t *gain)
+lms_lna_select	src/lms.c	/^void lms_lna_select(struct bladerf *dev, lms_lna_t lna)$/;"	f	signature:(struct bladerf *dev, lms_lna_t lna)
+lms_lna_select	src/lms.h	/^void lms_lna_select(struct bladerf *dev, lms_lna_t lna);$/;"	p	signature:(struct bladerf *dev, lms_lna_t lna)
+lms_lna_set_gain	src/lms.c	/^void lms_lna_set_gain(struct bladerf *dev, bladerf_lna_gain_t gain)$/;"	f	signature:(struct bladerf *dev, bladerf_lna_gain_t gain)
+lms_lna_set_gain	src/lms.h	/^void lms_lna_set_gain(struct bladerf *dev, bladerf_lna_gain_t gain);$/;"	p	signature:(struct bladerf *dev, bladerf_lna_gain_t gain)
+lms_lna_t	src/lms.h	/^} lms_lna_t;$/;"	t	typeref:enum:__anon6
+lms_loopback_disable	src/lms.c	/^void lms_loopback_disable(struct bladerf *dev, lms_lna_t lna, lms_bw_t bw)$/;"	f	signature:(struct bladerf *dev, lms_lna_t lna, lms_bw_t bw)
+lms_loopback_disable	src/lms.h	/^void lms_loopback_disable(struct bladerf *dev, lms_lna_t lna, lms_bw_t bw);$/;"	p	signature:(struct bladerf *dev, lms_lna_t lna, lms_bw_t bw)
+lms_loopback_enable	src/lms.c	/^void lms_loopback_enable(struct bladerf *dev, bladerf_loopback_t mode)$/;"	f	signature:(struct bladerf *dev, bladerf_loopback_t mode)
+lms_loopback_enable	src/lms.h	/^void lms_loopback_enable(struct bladerf *dev, bladerf_loopback_t mode);$/;"	p	signature:(struct bladerf *dev, bladerf_loopback_t mode)
+lms_lpf_bypass	src/lms.c	/^void lms_lpf_bypass(struct bladerf *dev, bladerf_module_t mod)$/;"	f	signature:(struct bladerf *dev, bladerf_module_t mod)
+lms_lpf_bypass	src/lms.h	/^void lms_lpf_bypass(struct bladerf *dev, bladerf_module_t mod);$/;"	p	signature:(struct bladerf *dev, bladerf_module_t mod)
+lms_lpf_disable	src/lms.c	/^void lms_lpf_disable(struct bladerf *dev, bladerf_module_t mod)$/;"	f	signature:(struct bladerf *dev, bladerf_module_t mod)
+lms_lpf_disable	src/lms.h	/^void lms_lpf_disable(struct bladerf *dev, bladerf_module_t mod);$/;"	p	signature:(struct bladerf *dev, bladerf_module_t mod)
+lms_lpf_enable	src/lms.c	/^void lms_lpf_enable(struct bladerf *dev, bladerf_module_t mod, lms_bw_t bw)$/;"	f	signature:(struct bladerf *dev, bladerf_module_t mod, lms_bw_t bw)
+lms_lpf_enable	src/lms.h	/^void lms_lpf_enable(struct bladerf *dev, bladerf_module_t mod, lms_bw_t bw);$/;"	p	signature:(struct bladerf *dev, bladerf_module_t mod, lms_bw_t bw)
+lms_lpf_init	src/lms.c	/^void lms_lpf_init(struct bladerf *dev)$/;"	f	signature:(struct bladerf *dev)
+lms_lpf_init	src/lms.h	/^void lms_lpf_init(struct bladerf *dev);$/;"	p	signature:(struct bladerf *dev)
+lms_pa_disable	src/lms.c	/^void lms_pa_disable(struct bladerf *dev, lms_pa_t pa)$/;"	f	signature:(struct bladerf *dev, lms_pa_t pa)
+lms_pa_disable	src/lms.h	/^void lms_pa_disable(struct bladerf *dev, lms_pa_t pa);$/;"	p	signature:(struct bladerf *dev, lms_pa_t pa)
+lms_pa_enable	src/lms.c	/^void lms_pa_enable(struct bladerf *dev, lms_pa_t pa)$/;"	f	signature:(struct bladerf *dev, lms_pa_t pa)
+lms_pa_enable	src/lms.h	/^void lms_pa_enable(struct bladerf *dev, lms_pa_t pa);$/;"	p	signature:(struct bladerf *dev, lms_pa_t pa)
+lms_pa_t	src/lms.h	/^} lms_pa_t;$/;"	t	typeref:enum:__anon8
+lms_peakdetect_disable	src/lms.c	/^void lms_peakdetect_disable(struct bladerf *dev)$/;"	f	signature:(struct bladerf *dev)
+lms_peakdetect_disable	src/lms.h	/^void lms_peakdetect_disable(struct bladerf *dev);$/;"	p	signature:(struct bladerf *dev)
+lms_peakdetect_enable	src/lms.c	/^void lms_peakdetect_enable(struct bladerf *dev)$/;"	f	signature:(struct bladerf *dev)
+lms_peakdetect_enable	src/lms.h	/^void lms_peakdetect_enable(struct bladerf *dev);$/;"	p	signature:(struct bladerf *dev)
+lms_pll_disable	src/lms.c	/^void lms_pll_disable(struct bladerf *dev, bladerf_module_t mod)$/;"	f	signature:(struct bladerf *dev, bladerf_module_t mod)
+lms_pll_disable	src/lms.h	/^void lms_pll_disable(struct bladerf *dev, bladerf_module_t mod);$/;"	p	signature:(struct bladerf *dev, bladerf_module_t mod)
+lms_pll_enable	src/lms.c	/^void lms_pll_enable(struct bladerf *dev, bladerf_module_t mod)$/;"	f	signature:(struct bladerf *dev, bladerf_module_t mod)
+lms_pll_enable	src/lms.h	/^void lms_pll_enable(struct bladerf *dev, bladerf_module_t mod);$/;"	p	signature:(struct bladerf *dev, bladerf_module_t mod)
+lms_power_down	src/lms.c	/^void lms_power_down(struct bladerf *dev)$/;"	f	signature:(struct bladerf *dev)
+lms_power_down	src/lms.h	/^void lms_power_down(struct bladerf *dev);$/;"	p	signature:(struct bladerf *dev)
+lms_print_frequency	src/lms.c	/^void lms_print_frequency(struct lms_freq *f)$/;"	f	signature:(struct lms_freq *f)
+lms_print_frequency	src/lms.h	/^void lms_print_frequency(struct lms_freq *freq);$/;"	p	signature:(struct lms_freq *freq)
+lms_read	src/bladerf_priv.h	/^    int (*lms_read)(struct bladerf *dev, uint8_t addr, uint8_t *data);$/;"	m	struct:bladerf_fn	access:public
+lms_reg_dumpset	src/lms.c	/^const uint8_t lms_reg_dumpset[] = {$/;"	v
+lms_rx_disable	src/lms.c	/^void lms_rx_disable(struct bladerf *dev)$/;"	f	signature:(struct bladerf *dev)
+lms_rx_disable	src/lms.h	/^void lms_rx_disable(struct bladerf *dev);$/;"	p	signature:(struct bladerf *dev)
+lms_rx_enable	src/lms.c	/^void lms_rx_enable(struct bladerf *dev)$/;"	f	signature:(struct bladerf *dev)
+lms_rx_enable	src/lms.h	/^void lms_rx_enable(struct bladerf *dev);$/;"	p	signature:(struct bladerf *dev)
+lms_rxvga1_disable	src/lms.c	/^void lms_rxvga1_disable(struct bladerf *dev)$/;"	f	signature:(struct bladerf *dev)
+lms_rxvga1_disable	src/lms.h	/^void lms_rxvga1_disable(struct bladerf *dev);$/;"	p	signature:(struct bladerf *dev)
+lms_rxvga1_enable	src/lms.c	/^void lms_rxvga1_enable(struct bladerf *dev)$/;"	f	signature:(struct bladerf *dev)
+lms_rxvga1_enable	src/lms.h	/^void lms_rxvga1_enable(struct bladerf *dev);$/;"	p	signature:(struct bladerf *dev)
+lms_rxvga1_get_gain	src/lms.c	/^void lms_rxvga1_get_gain(struct bladerf *dev, uint8_t *gain)$/;"	f	signature:(struct bladerf *dev, uint8_t *gain)
+lms_rxvga1_get_gain	src/lms.h	/^void lms_rxvga1_get_gain(struct bladerf *dev, uint8_t *gain);$/;"	p	signature:(struct bladerf *dev, uint8_t *gain)
+lms_rxvga1_set_gain	src/lms.c	/^void lms_rxvga1_set_gain(struct bladerf *dev, uint8_t gain)$/;"	f	signature:(struct bladerf *dev, uint8_t gain)
+lms_rxvga1_set_gain	src/lms.h	/^void lms_rxvga1_set_gain(struct bladerf *dev, uint8_t gain);$/;"	p	signature:(struct bladerf *dev, uint8_t gain)
+lms_rxvga2_disable	src/lms.c	/^void lms_rxvga2_disable(struct bladerf *dev)$/;"	f	signature:(struct bladerf *dev)
+lms_rxvga2_disable	src/lms.h	/^void lms_rxvga2_disable(struct bladerf *dev);$/;"	p	signature:(struct bladerf *dev)
+lms_rxvga2_enable	src/lms.c	/^void lms_rxvga2_enable(struct bladerf *dev, uint8_t gain)$/;"	f	signature:(struct bladerf *dev, uint8_t gain)
+lms_rxvga2_enable	src/lms.h	/^void lms_rxvga2_enable(struct bladerf *dev, uint8_t gain);$/;"	p	signature:(struct bladerf *dev, uint8_t gain)
+lms_rxvga2_get_gain	src/lms.c	/^void lms_rxvga2_get_gain(struct bladerf *dev, uint8_t *gain)$/;"	f	signature:(struct bladerf *dev, uint8_t *gain)
+lms_rxvga2_get_gain	src/lms.h	/^void lms_rxvga2_get_gain(struct bladerf *dev, uint8_t *gain);$/;"	p	signature:(struct bladerf *dev, uint8_t *gain)
+lms_rxvga2_set_gain	src/lms.c	/^void lms_rxvga2_set_gain(struct bladerf *dev, uint8_t gain)$/;"	f	signature:(struct bladerf *dev, uint8_t gain)
+lms_rxvga2_set_gain	src/lms.h	/^void lms_rxvga2_set_gain(struct bladerf *dev, uint8_t gain);$/;"	p	signature:(struct bladerf *dev, uint8_t gain)
+lms_set_frequency	src/lms.c	/^void lms_set_frequency(struct bladerf *dev, bladerf_module_t mod, uint32_t freq)$/;"	f	signature:(struct bladerf *dev, bladerf_module_t mod, uint32_t freq)
+lms_set_frequency	src/lms.h	/^void lms_set_frequency(struct bladerf *dev,$/;"	p	signature:(struct bladerf *dev, bladerf_module_t mod, uint32_t freq)
+lms_soft_reset	src/lms.c	/^void lms_soft_reset(struct bladerf *dev)$/;"	f	signature:(struct bladerf *dev)
+lms_soft_reset	src/lms.h	/^void lms_soft_reset(struct bladerf *dev);$/;"	p	signature:(struct bladerf *dev)
+lms_tx_disable	src/lms.c	/^void lms_tx_disable(struct bladerf *dev)$/;"	f	signature:(struct bladerf *dev)
+lms_tx_disable	src/lms.h	/^void lms_tx_disable(struct bladerf *dev);$/;"	p	signature:(struct bladerf *dev)
+lms_tx_enable	src/lms.c	/^void lms_tx_enable(struct bladerf *dev)$/;"	f	signature:(struct bladerf *dev)
+lms_tx_enable	src/lms.h	/^void lms_tx_enable(struct bladerf *dev);$/;"	p	signature:(struct bladerf *dev)
+lms_tx_loopback_disable	src/lms.c	/^void lms_tx_loopback_disable(struct bladerf *dev, lms_txlb_t mode)$/;"	f	signature:(struct bladerf *dev, lms_txlb_t mode)
+lms_tx_loopback_disable	src/lms.h	/^void lms_tx_loopback_disable(struct bladerf *dev, lms_txlb_t mode);$/;"	p	signature:(struct bladerf *dev, lms_txlb_t mode)
+lms_tx_loopback_enable	src/lms.c	/^void lms_tx_loopback_enable(struct bladerf *dev, lms_txlb_t mode)$/;"	f	signature:(struct bladerf *dev, lms_txlb_t mode)
+lms_tx_loopback_enable	src/lms.h	/^void lms_tx_loopback_enable(struct bladerf *dev, lms_txlb_t mode);$/;"	p	signature:(struct bladerf *dev, lms_txlb_t mode)
+lms_txlb_t	src/lms.h	/^} lms_txlb_t;$/;"	t	typeref:enum:__anon7
+lms_txvga1_get_gain	src/lms.c	/^void lms_txvga1_get_gain(struct bladerf *dev, int8_t *gain)$/;"	f	signature:(struct bladerf *dev, int8_t *gain)
+lms_txvga1_get_gain	src/lms.h	/^void lms_txvga1_get_gain(struct bladerf *dev, int8_t *gain);$/;"	p	signature:(struct bladerf *dev, int8_t *gain)
+lms_txvga1_set_gain	src/lms.c	/^void lms_txvga1_set_gain(struct bladerf *dev, int8_t gain)$/;"	f	signature:(struct bladerf *dev, int8_t gain)
+lms_txvga1_set_gain	src/lms.h	/^void lms_txvga1_set_gain(struct bladerf *dev, int8_t gain);$/;"	p	signature:(struct bladerf *dev, int8_t gain)
+lms_txvga2_get_gain	src/lms.c	/^void lms_txvga2_get_gain(struct bladerf *dev, uint8_t *gain)$/;"	f	signature:(struct bladerf *dev, uint8_t *gain)
+lms_txvga2_get_gain	src/lms.h	/^void lms_txvga2_get_gain(struct bladerf *dev, uint8_t *gain);$/;"	p	signature:(struct bladerf *dev, uint8_t *gain)
+lms_txvga2_set_gain	src/lms.c	/^void lms_txvga2_set_gain(struct bladerf *dev, uint8_t gain)$/;"	f	signature:(struct bladerf *dev, uint8_t gain)
+lms_txvga2_set_gain	src/lms.h	/^void lms_txvga2_set_gain(struct bladerf *dev, uint8_t gain);$/;"	p	signature:(struct bladerf *dev, uint8_t gain)
+lms_uint2bw	src/lms.c	/^lms_bw_t lms_uint2bw(unsigned int req)$/;"	f	signature:(unsigned int req)
+lms_uint2bw	src/lms.h	/^lms_bw_t lms_uint2bw(unsigned int req);$/;"	p	signature:(unsigned int req)
+lms_write	src/bladerf_priv.h	/^    int (*lms_write)(struct bladerf *dev, uint8_t addr, uint8_t data);$/;"	m	struct:bladerf_fn	access:public
+lms_xcvr_config	src/lms.h	/^struct lms_xcvr_config {$/;"	s
+lms_xcvr_config::lna	src/lms.h	/^    lms_lna_t lna;                         \/**< LNA Selection *\/$/;"	m	struct:lms_xcvr_config	access:public
+lms_xcvr_config::loopback_mode	src/lms.h	/^    bladerf_loopback_t loopback_mode;     \/**< Loopback Mode *\/$/;"	m	struct:lms_xcvr_config	access:public
+lms_xcvr_config::pa	src/lms.h	/^    lms_pa_t pa;                           \/**< PA Selection *\/$/;"	m	struct:lms_xcvr_config	access:public
+lms_xcvr_config::rx_bw	src/lms.h	/^    lms_bw_t rx_bw;                        \/**< Receive Bandwidth *\/$/;"	m	struct:lms_xcvr_config	access:public
+lms_xcvr_config::rx_freq_hz	src/lms.h	/^    uint32_t rx_freq_hz;                   \/**< Receive frequency in Hz *\/$/;"	m	struct:lms_xcvr_config	access:public
+lms_xcvr_config::tx_bw	src/lms.h	/^    lms_bw_t tx_bw;                        \/**< Transmit Bandwidth *\/$/;"	m	struct:lms_xcvr_config	access:public
+lms_xcvr_config::tx_freq_hz	src/lms.h	/^    uint32_t tx_freq_hz;                   \/**< Transmit frequency in Hz *\/$/;"	m	struct:lms_xcvr_config	access:public
+lna	src/lms.h	/^    lms_lna_t lna;                         \/**< LNA Selection *\/$/;"	m	struct:lms_xcvr_config	access:public
+load_fpga	src/bladerf_priv.h	/^    int (*load_fpga)(struct bladerf *dev, uint8_t *image, size_t image_size);$/;"	m	struct:bladerf_fn	access:public
+loopback_mode	src/lms.h	/^    bladerf_loopback_t loopback_mode;     \/**< Loopback Mode *\/$/;"	m	struct:lms_xcvr_config	access:public
+low	src/lms.c	/^    uint32_t    low;$/;"	m	struct:freq_range	file:	access:public
+lusb_allocate_transfers	src/backend/libusb.c	/^static int lusb_allocate_transfers( struct lusb_stream_transfer **transfers,$/;"	f	file:	signature:( struct lusb_stream_transfer **transfers, size_t num_transfers, size_t buffer_size )
+lusb_close	src/backend/libusb.c	/^static int lusb_close(struct bladerf *dev)$/;"	f	file:	signature:(struct bladerf *dev)
+lusb_dac_write	src/backend/libusb.c	/^static int lusb_dac_write(struct bladerf *dev, uint16_t value)$/;"	f	file:	signature:(struct bladerf *dev, uint16_t value)
+lusb_deallocate_transfer	src/backend/libusb.c	/^static void lusb_deallocate_transfer( struct lusb_stream_transfer *transfer )$/;"	f	file:	signature:( struct lusb_stream_transfer *transfer )
+lusb_device_is_bladerf	src/backend/libusb.c	/^int lusb_device_is_bladerf(libusb_device *dev)$/;"	f	signature:(libusb_device *dev)
+lusb_flash_firmware	src/backend/libusb.c	/^static int lusb_flash_firmware(struct bladerf *dev,$/;"	f	file:	signature:(struct bladerf *dev, uint8_t *image, size_t image_size)
+lusb_get_cal	src/backend/libusb.c	/^static int lusb_get_cal(struct bladerf *dev, char *cal) {$/;"	f	file:	signature:(struct bladerf *dev, char *cal)
+lusb_get_device_speed	src/backend/libusb.c	/^static int lusb_get_device_speed(struct bladerf *dev, int *device_speed)$/;"	f	file:	signature:(struct bladerf *dev, int *device_speed)
+lusb_get_devinfo	src/backend/libusb.c	/^int lusb_get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)$/;"	f	signature:(libusb_device *dev, struct bladerf_devinfo *info)
+lusb_get_fpga_version	src/backend/libusb.c	/^static int lusb_get_fpga_version(struct bladerf *dev,$/;"	f	file:	signature:(struct bladerf *dev, unsigned int *maj, unsigned int *min)
+lusb_get_fw_version	src/backend/libusb.c	/^static int lusb_get_fw_version(struct bladerf *dev,$/;"	f	file:	signature:(struct bladerf *dev, unsigned int *maj, unsigned int *min)
+lusb_get_otp	src/backend/libusb.c	/^static int lusb_get_otp(struct bladerf *dev, char *otp)$/;"	f	file:	signature:(struct bladerf *dev, char *otp)
+lusb_gpio_read	src/backend/libusb.c	/^static int lusb_gpio_read(struct bladerf *dev, uint32_t *val)$/;"	f	file:	signature:(struct bladerf *dev, uint32_t *val)
+lusb_gpio_write	src/backend/libusb.c	/^static int lusb_gpio_write(struct bladerf *dev, uint32_t val)$/;"	f	file:	signature:(struct bladerf *dev, uint32_t val)
+lusb_is_fpga_configured	src/backend/libusb.c	/^int lusb_is_fpga_configured(struct bladerf *dev)$/;"	f	signature:(struct bladerf *dev)
+lusb_lms_read	src/backend/libusb.c	/^static int lusb_lms_read(struct bladerf *dev, uint8_t addr, uint8_t *data)$/;"	f	file:	signature:(struct bladerf *dev, uint8_t addr, uint8_t *data)
+lusb_lms_write	src/backend/libusb.c	/^static int lusb_lms_write(struct bladerf *dev, uint8_t addr, uint8_t data)$/;"	f	file:	signature:(struct bladerf *dev, uint8_t addr, uint8_t data)
+lusb_load_fpga	src/backend/libusb.c	/^static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size)$/;"	f	file:	signature:(struct bladerf *dev, uint8_t *image, size_t image_size)
+lusb_open	src/backend/libusb.c	/^static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)$/;"	f	file:	signature:(struct bladerf **device, struct bladerf_devinfo *info)
+lusb_probe	src/backend/libusb.c	/^int lusb_probe(struct bladerf_devinfo_list *info_list)$/;"	f	signature:(struct bladerf_devinfo_list *info_list)
+lusb_rx	src/backend/libusb.c	/^static ssize_t lusb_rx(struct bladerf *dev, bladerf_format_t format, void *samples,$/;"	f	file:	signature:(struct bladerf *dev, bladerf_format_t format, void *samples, size_t n, struct bladerf_metadata *metadata)
+lusb_rx_stream	src/backend/libusb.c	/^static int lusb_rx_stream(struct bladerf *dev, bladerf_format_t format,$/;"	f	file:	signature:(struct bladerf *dev, bladerf_format_t format, struct bladerf_stream *stream)
+lusb_rx_stream_cb	src/backend/libusb.c	/^static void lusb_rx_stream_cb(struct libusb_transfer *transfer)$/;"	f	file:	signature:(struct libusb_transfer *transfer)
+lusb_si5338_read	src/backend/libusb.c	/^static int lusb_si5338_read(struct bladerf *dev, uint8_t addr, uint8_t *data)$/;"	f	file:	signature:(struct bladerf *dev, uint8_t addr, uint8_t *data)
+lusb_si5338_write	src/backend/libusb.c	/^static int lusb_si5338_write(struct bladerf *dev, uint8_t addr, uint8_t data)$/;"	f	file:	signature:(struct bladerf *dev, uint8_t addr, uint8_t data)
+lusb_stream_data	src/backend/libusb.c	/^struct lusb_stream_data {$/;"	s	file:
+lusb_stream_data::dev	src/backend/libusb.c	/^    struct bladerf *dev ;$/;"	m	struct:lusb_stream_data	typeref:struct:lusb_stream_data::bladerf	file:	access:public
+lusb_stream_data::format	src/backend/libusb.c	/^    bladerf_format_t format ;$/;"	m	struct:lusb_stream_data	file:	access:public
+lusb_stream_data::stream	src/backend/libusb.c	/^    struct bladerf_stream *stream ;$/;"	m	struct:lusb_stream_data	typeref:struct:lusb_stream_data::bladerf_stream	file:	access:public
+lusb_stream_transfer	src/backend/libusb.c	/^struct lusb_stream_transfer {$/;"	s	file:
+lusb_stream_transfer::buffer	src/backend/libusb.c	/^    uint8_t *buffer;$/;"	m	struct:lusb_stream_transfer	file:	access:public
+lusb_stream_transfer::transfer	src/backend/libusb.c	/^    struct libusb_transfer *transfer;$/;"	m	struct:lusb_stream_transfer	typeref:struct:lusb_stream_transfer::libusb_transfer	file:	access:public
+lusb_transfer_is_allocated	src/backend/libusb.c	/^static inline bool lusb_transfer_is_allocated(struct lusb_stream_transfer *transfer)$/;"	f	file:	signature:(struct lusb_stream_transfer *transfer)
+lusb_tx	src/backend/libusb.c	/^static ssize_t lusb_tx(struct bladerf *dev, bladerf_format_t format, void *samples,$/;"	f	file:	signature:(struct bladerf *dev, bladerf_format_t format, void *samples, size_t n, struct bladerf_metadata *metadata)
+lusb_tx_stream	src/backend/libusb.c	/^static int lusb_tx_stream(struct bladerf *dev, bladerf_format_t format,$/;"	f	file:	signature:(struct bladerf *dev, bladerf_format_t format, struct bladerf_stream *stream)
+lusb_tx_stream_cb	src/backend/libusb.c	/^static void lusb_tx_stream_cb(struct libusb_transfer *transfer)$/;"	f	file:	signature:(struct libusb_transfer *transfer)
+main	tests/tx_async/main.c	/^int main(int argc, char *argv[])$/;"	f	signature:(int argc, char *argv[])
+min_sz	src/backend/libusb.c	/^static inline size_t min_sz(size_t a, size_t b)$/;"	f	file:	signature:(size_t a, size_t b)
+min_sz	src/backend/linux.c	/^static inline size_t min_sz(size_t x, size_t y)$/;"	f	file:	signature:(size_t x, size_t y)
+next_arg	src/device_identifier.c	/^static int next_arg(char **saveptr, char **arg, char **value)$/;"	f	file:	signature:(char **saveptr, char **arg, char **value)
+nfrac	src/lms.h	/^    uint32_t    nfrac;     \/**< Fractional portion of f_LO given nint and f_REF *\/$/;"	m	struct:lms_freq	access:public
+nint	src/lms.h	/^    uint16_t    nint;      \/**< Integer portion of f_LO given f_REF *\/$/;"	m	struct:lms_freq	access:public
+nodecimals	src/si5338.c	/^static int nodecimals(double num) {$/;"	f	file:	signature:(double num)
+num_elt	src/bladerf_priv.h	/^    size_t num_elt;      \/* Number of elements in the list *\/$/;"	m	struct:bladerf_devinfo_list	access:public
+open	src/bladerf_priv.h	/^    int (*open)(struct bladerf **device,  struct bladerf_devinfo *info);$/;"	m	struct:bladerf_fn	access:public
+open_with_any_backend	src/backend.c	/^int open_with_any_backend(struct bladerf **device,$/;"	f	signature:(struct bladerf **device, struct bladerf_devinfo *info)
+out_freq	src/si5338.c	/^    unsigned out_freq;$/;"	m	struct:tspec	file:	access:public
+p1	src/si5338.c	/^    unsigned p1, p2, p3;$/;"	m	struct:tspec	file:	access:public
+p2	src/si5338.c	/^    unsigned p1, p2, p3;$/;"	m	struct:tspec	file:	access:public
+p3	src/si5338.c	/^    unsigned p1, p2, p3;$/;"	m	struct:tspec	file:	access:public
+pa	src/lms.h	/^    lms_pa_t pa;                           \/**< PA Selection *\/$/;"	m	struct:lms_xcvr_config	access:public
+populate_test_data	tests/tx_async/main.c	/^int populate_test_data(struct test_data *test_data)$/;"	f	signature:(struct test_data *test_data)
+print_ms	src/si5338.c	/^static void print_ms(struct tspec *ts) {$/;"	f	file:	signature:(struct tspec *ts)
+probe	src/bladerf_priv.h	/^    int (*probe)(struct bladerf_devinfo_list *info_list);$/;"	m	struct:bladerf_fn	access:public
+r	src/si5338.c	/^    unsigned r, rpow;$/;"	m	struct:tspec	file:	access:public
+read_file	src/file_ops.c	/^int read_file(const char *filename, uint8_t **buf_ret, size_t *size_ret)$/;"	f	signature:(const char *filename, uint8_t **buf_ret, size_t *size_ret)
+read_file	src/file_ops.h	/^int read_file(const char *filename, uint8_t **buf, size_t *size);$/;"	p	signature:(const char *filename, uint8_t **buf, size_t *size)
+read_flash	src/backend/libusb.c	/^static int read_flash(struct bladerf *dev, int page_offset,$/;"	f	file:	signature:(struct bladerf *dev, int page_offset, uint8_t *ptr, size_t n_bytes)
+real_freq	src/si5338.c	/^    unsigned real_freq;$/;"	m	struct:tspec	file:	access:public
+reference	src/lms.h	/^    uint32_t    reference; \/**< Reference frequency going to the LMS6002D *\/$/;"	m	struct:lms_freq	access:public
+regs	src/si5338.c	/^    unsigned char regs[10];$/;"	m	struct:tspec	file:	access:public
+rpow	src/si5338.c	/^    unsigned r, rpow;$/;"	m	struct:tspec	file:	access:public
+rx	src/bladerf_priv.h	/^    ssize_t (*rx)(struct bladerf *dev, bladerf_format_t format, void *samples, size_t n, struct bladerf_metadata *metadata);$/;"	m	struct:bladerf_fn	access:public
+rx_bw	src/lms.h	/^    lms_bw_t rx_bw;                        \/**< Receive Bandwidth *\/$/;"	m	struct:lms_xcvr_config	access:public
+rx_freq_hz	src/lms.h	/^    uint32_t rx_freq_hz;                   \/**< Receive frequency in Hz *\/$/;"	m	struct:lms_xcvr_config	access:public
+rx_overruns	include/libbladeRF.h	/^    uint64_t rx_overruns;$/;"	m	struct:bladerf_stats	access:public
+rx_stream	src/bladerf_priv.h	/^    int (*rx_stream)(struct bladerf *dev, bladerf_format_t format, struct bladerf_stream *stream);$/;"	m	struct:bladerf_fn	access:public
+rx_throughput	include/libbladeRF.h	/^    uint64_t rx_throughput;$/;"	m	struct:bladerf_stats	access:public
+samples_per_buffer	include/libbladeRF.h	/^    size_t samples_per_buffer;$/;"	m	struct:bladerf_stream	access:public
+serial	include/libbladeRF.h	/^    char serial[33];            \/**< Device's serial number *\/$/;"	m	struct:bladerf_devinfo	access:public
+shutdown	tests/tx_async/main.c	/^static bool shutdown = false;$/;"	v	file:
+si5338_printf	src/si5338.c	7;"	d	file:
+si5338_read	src/bladerf_priv.h	/^    int (*si5338_read)(struct bladerf *dev, uint8_t addr, uint8_t *data);$/;"	m	struct:bladerf_fn	access:public
+si5338_set_exp_clk	src/si5338.c	/^int si5338_set_exp_clk(struct bladerf *dev, int enabled, unsigned freq) {$/;"	f	signature:(struct bladerf *dev, int enabled, unsigned freq)
+si5338_set_mimo_mode	src/si5338.c	/^int si5338_set_mimo_mode(struct bladerf *dev, int mode) {$/;"	f	signature:(struct bladerf *dev, int mode)
+si5338_set_rx_freq	src/si5338.c	/^int si5338_set_rx_freq(struct bladerf *dev, unsigned freq) {$/;"	f	signature:(struct bladerf *dev, unsigned freq)
+si5338_set_rx_freq	src/si5338.h	/^int si5338_set_rx_freq(struct bladerf *dev, unsigned int freq);$/;"	p	signature:(struct bladerf *dev, unsigned int freq)
+si5338_set_tx_freq	src/si5338.c	/^int si5338_set_tx_freq(struct bladerf *dev, unsigned freq) {$/;"	f	signature:(struct bladerf *dev, unsigned freq)
+si5338_set_tx_freq	src/si5338.h	/^int si5338_set_tx_freq(struct bladerf *dev, unsigned int freq);$/;"	p	signature:(struct bladerf *dev, unsigned int freq)
+si5338_write	src/bladerf_priv.h	/^    int (*si5338_write)(struct bladerf *dev, uint8_t addr, uint8_t data);$/;"	m	struct:bladerf_fn	access:public
+size	tests/tx_async/main.c	/^    size_t   size;$/;"	m	struct:test_data	file:	access:public
+speed	src/bladerf_priv.h	/^    int speed;      \/* The device's USB speed, 0 is HS, 1 is SS *\/$/;"	m	struct:bladerf	access:public
+state	include/libbladeRF.h	/^    bladerf_stream_state state;$/;"	m	struct:bladerf_stream	access:public
+stats	src/bladerf_priv.h	/^    int (*stats)(struct bladerf *dev, struct bladerf_stats *stats);$/;"	m	struct:bladerf_fn	access:public
+stats	src/bladerf_priv.h	/^    struct bladerf_stats stats;$/;"	m	struct:bladerf	typeref:struct:bladerf::bladerf_stats	access:public
+status	include/libbladeRF.h	/^    int status;$/;"	m	struct:bladerf_stream	access:public
+str2devinfo	src/device_identifier.c	/^int str2devinfo(const char *dev_id_const, struct bladerf_devinfo *d)$/;"	f	signature:(const char *dev_id_const, struct bladerf_devinfo *d)
+str2devinfo	src/device_identifier.h	/^int str2devinfo(const char *device_identifier, struct bladerf_devinfo *d);$/;"	p	signature:(const char *device_identifier, struct bladerf_devinfo *d)
+str2instance	src/backend/linux.c	/^static int str2instance(const char *bladerf_dev)$/;"	f	file:	signature:(const char *bladerf_dev)
+str2uint	src/conversions.c	/^unsigned int str2uint(const char *str, unsigned int min, unsigned int max, bool *ok)$/;"	f	signature:(const char *str, unsigned int min, unsigned int max, bool *ok)
+str2uint	src/conversions.h	/^unsigned int str2uint(const char *str, unsigned int min, unsigned int max, bool *ok);$/;"	p	signature:(const char *str, unsigned int min, unsigned int max, bool *ok)
+str2uint64	src/conversions.c	/^unsigned int str2uint64(const char *str, uint64_t min, uint64_t max, bool *ok)$/;"	f	signature:(const char *str, uint64_t min, uint64_t max, bool *ok)
+str2uint64	src/conversions.h	/^unsigned int str2uint64(const char *str, uint64_t min, uint64_t max, bool *ok);$/;"	p	signature:(const char *str, uint64_t min, uint64_t max, bool *ok)
+stream	src/backend/libusb.c	/^    struct bladerf_stream *stream ;$/;"	m	struct:lusb_stream_data	typeref:struct:lusb_stream_data::bladerf_stream	file:	access:public
+test_data	tests/tx_async/main.c	/^struct test_data$/;"	s	file:
+test_data::data	tests/tx_async/main.c	/^    uint8_t *data;$/;"	m	struct:test_data	file:	access:public
+test_data::idx	tests/tx_async/main.c	/^    unsigned int idx;$/;"	m	struct:test_data	file:	access:public
+test_data::size	tests/tx_async/main.c	/^    size_t   size;$/;"	m	struct:test_data	file:	access:public
+time_past	src/backend/linux.c	/^static bool time_past(struct timeval ref, struct timeval now) {$/;"	f	file:	signature:(struct timeval ref, struct timeval now)
+timestamp	include/libbladeRF.h	/^    uint64_t timestamp;     \/**< TODO Time in \\<unit\\> since \\<origin\\> *\/$/;"	m	struct:bladerf_metadata	access:public
+transfer	src/backend/libusb.c	/^    struct libusb_transfer *transfer;$/;"	m	struct:lusb_stream_transfer	typeref:struct:lusb_stream_transfer::libusb_transfer	file:	access:public
+tspec	src/si5338.c	/^struct tspec {$/;"	s	file:
+tspec::a	src/si5338.c	/^    unsigned a, b, c;$/;"	m	struct:tspec	file:	access:public
+tspec::b	src/si5338.c	/^    unsigned a, b, c;$/;"	m	struct:tspec	file:	access:public
+tspec::base	src/si5338.c	/^    int base;$/;"	m	struct:tspec	file:	access:public
+tspec::c	src/si5338.c	/^    unsigned a, b, c;$/;"	m	struct:tspec	file:	access:public
+tspec::en	src/si5338.c	/^    unsigned en;$/;"	m	struct:tspec	file:	access:public
+tspec::enA	src/si5338.c	/^    int enA, enB;$/;"	m	struct:tspec	file:	access:public
+tspec::enB	src/si5338.c	/^    int enA, enB;$/;"	m	struct:tspec	file:	access:public
+tspec::id	src/si5338.c	/^    int id;$/;"	m	struct:tspec	file:	access:public
+tspec::out_freq	src/si5338.c	/^    unsigned out_freq;$/;"	m	struct:tspec	file:	access:public
+tspec::p1	src/si5338.c	/^    unsigned p1, p2, p3;$/;"	m	struct:tspec	file:	access:public
+tspec::p2	src/si5338.c	/^    unsigned p1, p2, p3;$/;"	m	struct:tspec	file:	access:public
+tspec::p3	src/si5338.c	/^    unsigned p1, p2, p3;$/;"	m	struct:tspec	file:	access:public
+tspec::r	src/si5338.c	/^    unsigned r, rpow;$/;"	m	struct:tspec	file:	access:public
+tspec::real_freq	src/si5338.c	/^    unsigned real_freq;$/;"	m	struct:tspec	file:	access:public
+tspec::regs	src/si5338.c	/^    unsigned char regs[10];$/;"	m	struct:tspec	file:	access:public
+tspec::rpow	src/si5338.c	/^    unsigned r, rpow;$/;"	m	struct:tspec	file:	access:public
+tx	src/bladerf_priv.h	/^    ssize_t (*tx)(struct bladerf *dev, bladerf_format_t format, void *samples, size_t n, struct bladerf_metadata *metadata);$/;"	m	struct:bladerf_fn	access:public
+tx_bw	src/lms.h	/^    lms_bw_t tx_bw;                        \/**< Transmit Bandwidth *\/$/;"	m	struct:lms_xcvr_config	access:public
+tx_callback	tests/tx_async/main.c	/^void tx_callback(struct bladerf *dev, struct bladerf_stream *stream,$/;"	f	signature:(struct bladerf *dev, struct bladerf_stream *stream, struct bladerf_metadata *metadata, void *samples, size_t num_samples)
+tx_freq_hz	src/lms.h	/^    uint32_t tx_freq_hz;                   \/**< Transmit frequency in Hz *\/$/;"	m	struct:lms_xcvr_config	access:public
+tx_stream	src/bladerf_priv.h	/^    int (*tx_stream)(struct bladerf *dev, bladerf_format_t format, struct bladerf_stream *stream);$/;"	m	struct:bladerf_fn	access:public
+tx_throughput	include/libbladeRF.h	/^    uint64_t tx_throughput;$/;"	m	struct:bladerf_stats	access:public
+tx_underruns	include/libbladeRF.h	/^    uint64_t tx_underruns;$/;"	m	struct:bladerf_stats	access:public
+type	src/backend.c	/^    const bladerf_backend_t type;$/;"	m	struct:backend_table_entry	file:	access:public
+type	src/bladerf_priv.h	/^    bladerf_error_t type;$/;"	m	struct:bladerf_error	access:public
+uint_bandwidths	src/lms.c	/^const unsigned int uint_bandwidths[] = {$/;"	v
+usb_addr	include/libbladeRF.h	/^    uint8_t  usb_addr;          \/**< Device address on bus *\/$/;"	m	struct:bladerf_devinfo	access:public
+usb_bus	include/libbladeRF.h	/^    uint8_t  usb_bus;           \/**< Bus # device is attached to *\/$/;"	m	struct:bladerf_devinfo	access:public
+value	src/bladerf_priv.h	/^    int value;$/;"	m	struct:bladerf_error	access:public
+value	src/lms.c	/^    uint8_t     value;$/;"	m	struct:freq_range	file:	access:public
+vco_ms_n	src/si5338.c	/^int vco_ms_n = 66; \/\/ this is the VCO's divider$/;"	v
+vendor_command_int	src/backend/libusb.c	/^static int vendor_command_int(struct bladerf *dev,$/;"	f	file:	signature:(struct bladerf *dev, uint16_t cmd, uint8_t ep_dir, int32_t *val)
+verify_flash	src/backend/libusb.c	/^static int verify_flash(struct bladerf *dev, int page_offset,$/;"	f	file:	signature:(struct bladerf *dev, int page_offset, uint8_t *image, size_t n_bytes)
+version	include/libbladeRF.h	/^    uint32_t version;       \/**< Metadata format version *\/$/;"	m	struct:bladerf_metadata	access:public
+word	src/bladerf.c	/^typedef  unsigned short int              word;    \/*    16 bit unsigned       *\/$/;"	t	file:
+write_flash	src/backend/libusb.c	/^static int write_flash(struct bladerf *dev, int page_offset,$/;"	f	file:	signature:(struct bladerf *dev, int page_offset, uint8_t *data, size_t data_size)
+x	src/lms.h	/^    uint8_t     x;         \/**< VCO division ratio *\/$/;"	m	struct:lms_freq	access:public
