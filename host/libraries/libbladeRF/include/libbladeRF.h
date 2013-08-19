@@ -549,6 +549,8 @@ int bladerf_init_stream(struct bladerf_stream **stream,
                         size_t num_transfers,
                         void *user_data);
 
+void bladerf_deinit_stream(struct bladerf_stream *stream);
+
 /**
  * XXX REMOVE
  *

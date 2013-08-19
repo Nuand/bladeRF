@@ -9,6 +9,8 @@
 
 static bool shutdown = false;
 
+unsigned int count = 0;
+
 struct test_data
 {
     void            **buffers;          /* Transmit buffers */
@@ -21,6 +23,12 @@ void *tx_callback(struct bladerf *dev, struct bladerf_stream *stream,
                   size_t num_samples, void *user_data)
 {
     struct test_data *my_data = user_data;
+
+    count++ ;
+
+    if( (count&0xffff) == 0 ) {
+        fprintf( stderr, "Called 0x%8.8x times\n", count ) ;
+    }
 
     if (shutdown) {
         return NULL;
@@ -72,7 +80,6 @@ int main(int argc, char *argv[])
     struct bladerf *dev;
     struct bladerf_stream *stream;
     struct test_data test_data;
-    void **buffers;
 
     if (argc != 3) {
         fprintf(stderr,
@@ -123,10 +130,10 @@ int main(int argc, char *argv[])
 
     /* Initialize the stream */
     status = bladerf_init_stream(
-                stream,
+                &stream,
                 dev,
                 tx_callback,
-                &buffers,
+                &test_data.buffers,
                 buffers_per_stream,
                 FORMAT_SC16,
                 samples_per_buffer,
@@ -134,21 +141,22 @@ int main(int argc, char *argv[])
                 &test_data
              ) ;
 
+    test_data.num_buffers = buffers_per_stream ;
+    test_data.idx = 0;
+
     /* Populate buffers here */
     if (populate_test_data(&test_data, samples_per_buffer) ) {
         fprintf(stderr, "Failed to populated test data\n");
         return EXIT_FAILURE;
     }
 
-    /* Start stream */
+    /* Start stream and stay there until we kill the stream */
     status = bladerf_tx_stream(dev, FORMAT_SC16, stream);
     if (status < 0) {
         fprintf(stderr, "TX Stream error: %s\n", bladerf_strerror(status));
     }
 
-    while( shutdown == false ) {
-        sleep(1) ;
-    }
+    bladerf_deinit_stream(stream);
 
     if (dev) {
         bladerf_close(dev);

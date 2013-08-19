@@ -53,6 +53,7 @@ typedef enum {
 } bladerf_stream_state;
 
 struct bladerf_stream {
+    struct bladerf *dev;
     int error_code;
     bladerf_stream_state state;
 
@@ -120,6 +121,8 @@ struct bladerf_fn {
 
     int (*rx_stream)(struct bladerf *dev, bladerf_format_t format, struct bladerf_stream *stream);
     int (*tx_stream)(struct bladerf *dev, bladerf_format_t format, struct bladerf_stream *stream);
+
+    void (*deinit_stream)(struct bladerf_stream *stream);
 
     /* Gather statistics */
     int (*stats)(struct bladerf *dev, struct bladerf_stats *stats);

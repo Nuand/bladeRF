@@ -2,6 +2,7 @@
 #include <string.h>
 #include <limits.h>
 #include <assert.h>
+#include <unistd.h>
 
 #include "libbladeRF.h"     /* Public API */
 #include "bladerf_priv.h"   /* Implementation-specific items ("private") */
@@ -386,6 +387,7 @@ int bladerf_init_stream(struct bladerf_stream **stream,
         return BLADERF_ERR_MEM;
     }
 
+    lstream->dev = dev;
     lstream->error_code = 0;
     lstream->state = STREAM_IDLE;
     lstream->samples_per_buffer = samples_per_buffer;
@@ -438,7 +440,35 @@ int bladerf_init_stream(struct bladerf_stream **stream,
         *buffers = lstream->buffers;
     }
 
-    return status;;
+    return status;
+}
+
+void bladerf_deinit_stream(struct bladerf_stream *stream)
+{
+
+    size_t i;
+
+    while( stream->state != STREAM_DONE ) {
+    dbg_printf( "Stream not done...\n" );
+        sleep(1);
+    }
+
+    /* Free up the backend data */
+    stream->dev->fn->deinit_stream(stream);
+
+    /* Free up the buffers */
+    for (i = 0; i < stream->num_buffers; i++) {
+        free(stream->buffers[i]);
+    }
+
+    /* Free up the pointer to the buffers */
+    free(stream->buffers);
+
+    /* Free up the stream itself */
+    free(stream);
+
+    /* Done */
+    return ;
 }
 
 int bladerf_rx_stream(struct bladerf *dev, bladerf_format_t format,
