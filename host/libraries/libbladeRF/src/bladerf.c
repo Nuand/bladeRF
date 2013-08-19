@@ -471,31 +471,17 @@ void bladerf_deinit_stream(struct bladerf_stream *stream)
     return ;
 }
 
-int bladerf_rx_stream(struct bladerf *dev, bladerf_format_t format,
-                      struct bladerf_stream *stream)
+int bladerf_stream(struct bladerf *dev, bladerf_module_t module,
+                   bladerf_format_t format, struct bladerf_stream *stream)
 {
     int stream_status = 0;
     int module_status;
 
-    module_status = bladerf_enable_module(dev, RX, true);
+    module_status = bladerf_enable_module(dev, module, true);
 
     if (!module_status) {
-        stream_status = dev->fn->rx_stream(dev, format, stream);
-    }
-
-    return stream_status ? stream_status : module_status;
-}
-
-int bladerf_tx_stream(struct bladerf *dev, bladerf_format_t format,
-                      struct bladerf_stream *stream)
-{
-    int stream_status = 0;
-    int module_status;
-
-    module_status = bladerf_enable_module(dev, TX, true);
-
-    if (!module_status) {
-        stream_status = dev->fn->tx_stream(dev, format, stream);
+        stream_status = dev->fn->stream(dev, module, format, stream);
+        module_status = bladerf_enable_module(dev, module, false);
     }
 
     return stream_status ? stream_status : module_status;

@@ -618,8 +618,8 @@ ssize_t bladerf_rx(struct bladerf *dev, bladerf_format_t format,
  *      samples_per_buffer, buffers_per_stream, and (optional) data fields
  *      initialized prior to this call
  */
-int bladerf_rx_stream(struct bladerf *dev, bladerf_format_t format,
-                      struct bladerf_stream *stream);
+int bladerf_stream(struct bladerf *dev, bladerf_module_t module,
+                   bladerf_format_t format, struct bladerf_stream *stream);
 
 /**
  *
@@ -627,9 +627,9 @@ int bladerf_rx_stream(struct bladerf *dev, bladerf_format_t format,
  *      samples_per_buffer, buffers_per_stream, and (optional) data fields
  *      initialized prior to this call
  */
-int bladerf_tx_stream(struct bladerf *dev, bladerf_format_t format,
+/*int bladerf_tx_stream(struct bladerf *dev, bladerf_format_t format,
                       struct bladerf_stream *stream);
-
+*/
 /** @} (End of FN_DATA) */
 
 

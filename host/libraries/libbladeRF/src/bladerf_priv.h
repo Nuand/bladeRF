@@ -54,6 +54,7 @@ typedef enum {
 
 struct bladerf_stream {
     struct bladerf *dev;
+    bladerf_module_t module;
     int error_code;
     bladerf_stream_state state;
 
@@ -119,8 +120,7 @@ struct bladerf_fn {
     ssize_t (*rx)(struct bladerf *dev, bladerf_format_t format, void *samples, size_t n, struct bladerf_metadata *metadata);
     ssize_t (*tx)(struct bladerf *dev, bladerf_format_t format, void *samples, size_t n, struct bladerf_metadata *metadata);
 
-    int (*rx_stream)(struct bladerf *dev, bladerf_format_t format, struct bladerf_stream *stream);
-    int (*tx_stream)(struct bladerf *dev, bladerf_format_t format, struct bladerf_stream *stream);
+    int (*stream)(struct bladerf *dev, bladerf_module_t module, bladerf_format_t format, struct bladerf_stream *stream);
 
     void (*deinit_stream)(struct bladerf_stream *stream);
 
