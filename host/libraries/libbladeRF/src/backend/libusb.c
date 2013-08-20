@@ -110,7 +110,7 @@ static int end_fpga_programming(struct bladerf *dev)
     }
 }
 
-int lusb_is_fpga_configured(struct bladerf *dev)
+static int lusb_is_fpga_configured(struct bladerf *dev)
 {
     int result;
     int status = vendor_command_int(dev, BLADE_USB_CMD_QUERY_FPGA_STATUS, EP_DIR_IN, &result);
@@ -122,7 +122,7 @@ int lusb_is_fpga_configured(struct bladerf *dev)
     }
 }
 
-int lusb_device_is_bladerf(libusb_device *dev)
+static int lusb_device_is_bladerf(libusb_device *dev)
 {
     int err;
     int rv = 0;
@@ -139,7 +139,7 @@ int lusb_device_is_bladerf(libusb_device *dev)
     return rv;
 }
 
-int lusb_get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
+static int lusb_get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
 {
     int status = 0;
     libusb_device_handle *handle;
@@ -957,6 +957,42 @@ static ssize_t lusb_tx(struct bladerf *dev, bladerf_format_t format, void *sampl
     return bytes_to_c16_samples(bytes_total - bytes_remaining);
 }
 
+static ssize_t lusb_rx(struct bladerf *dev, bladerf_format_t format, void *samples,
+                       size_t n, struct bladerf_metadata *metadata)
+{
+    ssize_t bytes_total, bytes_remaining = c16_samples_to_bytes(n);
+    struct bladerf_lusb *lusb = (struct bladerf_lusb *)dev->backend;
+    uint8_t *samples8 = (uint8_t *)samples;
+    int transferred, status;
+
+    /* The only format currently is assumed here */
+    assert(format == FORMAT_SC16);
+    bytes_total = bytes_remaining = c16_samples_to_bytes(n);
+
+    while( bytes_remaining ) {
+        transferred = 0;
+        status = libusb_bulk_transfer(
+                    lusb->handle,
+                    EP_IN(0x1),
+                    samples8,
+                    bytes_remaining,
+                    &transferred,
+                    BLADERF_LIBUSB_TIMEOUT_MS
+                );
+        if( status < 0 ) {
+            dbg_printf( "Error reading samples (%d): %s\n", status, libusb_error_name(status) );
+            return BLADERF_ERR_IO;
+        } else {
+            assert(transferred > 0);
+            bytes_remaining -= transferred;
+            samples8 += transferred;
+        }
+    }
+
+    return bytes_to_c16_samples(bytes_total - bytes_remaining);
+}
+
+
 static void lusb_stream_cb(struct libusb_transfer *transfer)
 {
     struct bladerf_stream *stream  = transfer->user_data;
@@ -992,8 +1028,8 @@ static void lusb_stream_cb(struct libusb_transfer *transfer)
         for (i = 0; i < stream->num_transfers; i++ ) {
             status = libusb_cancel_transfer(stream_data->transfers[i]);
             if (status) {
-                dbg_printf("Error canceling transfer: %s\n",
-                            libusb_error_name(status));
+                dbg_printf("Error canceling transfer (%d): %s\n",
+                            status, libusb_error_name(status));
             }
         }
     }
@@ -1117,41 +1153,6 @@ static int lusb_stream(struct bladerf *dev, bladerf_module_t module, bladerf_for
     }
 
     return 0;
-}
-
-static ssize_t lusb_rx(struct bladerf *dev, bladerf_format_t format, void *samples,
-                       size_t n, struct bladerf_metadata *metadata)
-{
-    ssize_t bytes_total, bytes_remaining = c16_samples_to_bytes(n);
-    struct bladerf_lusb *lusb = (struct bladerf_lusb *)dev->backend;
-    uint8_t *samples8 = (uint8_t *)samples;
-    int transferred, status;
-
-    /* The only format currently is assumed here */
-    assert(format == FORMAT_SC16);
-    bytes_total = bytes_remaining = c16_samples_to_bytes(n);
-
-    while( bytes_remaining ) {
-        transferred = 0;
-        status = libusb_bulk_transfer(
-                    lusb->handle,
-                    EP_IN(0x1),
-                    samples8,
-                    bytes_remaining,
-                    &transferred,
-                    BLADERF_LIBUSB_TIMEOUT_MS
-                );
-        if( status < 0 ) {
-            dbg_printf( "Error reading samples (%d): %s\n", status, libusb_error_name(status) );
-            return BLADERF_ERR_IO;
-        } else {
-            assert(transferred > 0);
-            bytes_remaining -= transferred;
-            samples8 += transferred;
-        }
-    }
-
-    return bytes_to_c16_samples(bytes_total - bytes_remaining);
 }
 
 void lusb_deinit_stream(struct bladerf_stream *stream)
