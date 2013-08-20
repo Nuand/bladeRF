@@ -7,7 +7,20 @@
 #include <stdbool.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <endian.h>
+#include <sys/types.h> 
+
+#ifdef __APPLE__
+    #include "../endian_mac.h"
+    #ifdef __i386__
+        #define __LITTLE_ENDIAN
+    #elif defined( __x86_64__ )
+        #define __LITTLE_ENDIAN
+    #endif
+#elif
+    #include <endian.h>
+#endif
+
+
 #include <bladeRF.h>
 #include <libusb-1.0/libusb.h>
 

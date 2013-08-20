@@ -9,6 +9,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <sys/types.h> 
+
 
 #ifdef __cplusplus
 extern "C" {

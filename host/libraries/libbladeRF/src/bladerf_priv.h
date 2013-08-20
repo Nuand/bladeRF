@@ -6,6 +6,7 @@
 
 #include <limits.h>
 #include <libbladeRF.h>
+#include <sys/types.h> 
 
 /* Reserved values for bladerf_devinfo fields to indicate "undefined" */
 #define DEVINFO_SERIAL_ANY    "ANY"

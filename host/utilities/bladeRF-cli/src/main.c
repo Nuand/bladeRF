@@ -311,6 +311,7 @@ int main(int argc, char *argv[])
         if (status)
             return 2;
 
+#ifdef INTERACTIVE
         /* Exit cleanly when configured for batch mode. Remember that this is
          * implicit with some commands */
         if (!rc.batch_mode || state->script != NULL) {
@@ -324,7 +325,7 @@ int main(int argc, char *argv[])
             }
 
         }
-
+#endif
         /* Ensure we exit with RX & TX disabled.
          * Can't do much about an error at this point anyway... */
         if (state->dev) {

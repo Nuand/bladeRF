@@ -13,7 +13,16 @@
 #include <stdint.h>
 #include <pthread.h>
 #include <limits.h>
-#include <endian.h>
+#ifdef __APPLE__
+    #include "../endian_mac.h"
+    #ifdef __i386__
+        #define __LITTLE_ENDIAN
+#elif defined( __x86_64__ )
+        #define __LITTLE_ENDIAN
+    #endif
+#elif
+    #include <endian.h>
+#endif
 #include <errno.h>
 #include <assert.h>
 #include <string.h>
