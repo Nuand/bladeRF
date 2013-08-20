@@ -185,6 +185,17 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    status = bladerf_is_fpga_configured(dev);
+    if (status < 0) {
+        fprintf(stderr, "Failed to determine FPGA state: %s\n",
+                bladerf_strerror(status));
+        return EXIT_FAILURE;
+    } else if (status == 0) {
+        fprintf(stderr, "Error: FPGA is not loaded.\n");
+        bladerf_close(dev);
+        return EXIT_FAILURE;
+    }
+
     if (!status) {
         status = bladerf_set_frequency(dev, test_data.module, 1000000000);
         if (status < 0) {

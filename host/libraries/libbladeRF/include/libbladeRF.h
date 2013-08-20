@@ -35,13 +35,14 @@ struct bladerf_stream;
  *
  * @{
  */
-#define BLADERF_ERR_UNEXPECTED (-1)  /**< An unexpected failure occurred */
-#define BLADERF_ERR_RANGE      (-2)  /**< Provided parameter is out of range */
-#define BLADERF_ERR_INVAL      (-3)  /**< Invalid operation/parameter */
-#define BLADERF_ERR_MEM        (-4)  /**< Memory allocation error */
-#define BLADERF_ERR_IO         (-5)  /**< File/Device I/O error */
-#define BLADERF_ERR_TIMEOUT    (-6)  /**< Operation timed out */
-#define BLADERF_ERR_NODEV      (-7)  /**< No device(s) available */
+#define BLADERF_ERR_UNEXPECTED  (-1)  /**< An unexpected failure occurred */
+#define BLADERF_ERR_RANGE       (-2)  /**< Provided parameter is out of range */
+#define BLADERF_ERR_INVAL       (-3)  /**< Invalid operation/parameter */
+#define BLADERF_ERR_MEM         (-4)  /**< Memory allocation error */
+#define BLADERF_ERR_IO          (-5)  /**< File/Device I/O error */
+#define BLADERF_ERR_TIMEOUT     (-6)  /**< Operation timed out */
+#define BLADERF_ERR_NODEV       (-7)  /**< No device(s) available */
+#define BLADERF_ERR_UNSUPPORTED (-8)  /**< Operation not supported */
 
 /** @} (End RETCODES) */
 

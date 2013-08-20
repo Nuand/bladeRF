@@ -34,12 +34,64 @@ const struct bladerf_fn bladerf_lusb_fn;
 struct lusb_stream_data {
     struct libusb_transfer **transfers;
     size_t active_transfers;
+
+    /* libusb recommends use of libusb_handle_events_timeout_completed() over
+     * libusb_handle_events_timeout(). While nothing in the documentation [1]
+     * jumped out at me after a quick read, I figured this should be used
+     * for safe measures...or at least I revisit that documentation in more
+     * detail. At this time, our "completed" indication is the stream
+     * entering the DONE state.
+     *
+     * [1] http://libusb.sourceforge.net/api-1.0/mtasync.html
+     */
+    int  libusb_completed;
 };
 
 
 static inline size_t min_sz(size_t a, size_t b)
 {
     return a < b ? a : b;
+}
+
+static int error_libusb2bladerf(int error)
+{
+    int ret;
+    switch (error) {
+        case LIBUSB_ERROR_IO:
+            ret = BLADERF_ERR_IO;
+            break;
+
+        case LIBUSB_ERROR_INVALID_PARAM:
+            ret = BLADERF_ERR_INVAL;
+            break;
+
+        case LIBUSB_ERROR_BUSY:
+        case LIBUSB_ERROR_NO_DEVICE:
+            ret = BLADERF_ERR_NODEV;
+            break;
+
+        case LIBUSB_ERROR_TIMEOUT:
+            ret = BLADERF_ERR_TIMEOUT;
+            break;
+
+        case LIBUSB_ERROR_NO_MEM:
+            ret = BLADERF_ERR_MEM;
+            break;
+
+        case LIBUSB_ERROR_NOT_SUPPORTED:
+            ret = BLADERF_ERR_UNSUPPORTED;
+            break;
+
+        case LIBUSB_ERROR_OVERFLOW:
+        case LIBUSB_ERROR_PIPE:
+        case LIBUSB_ERROR_INTERRUPTED:
+        case LIBUSB_ERROR_ACCESS:
+        case LIBUSB_ERROR_NOT_FOUND:
+        default:
+            ret = BLADERF_ERR_UNEXPECTED;
+    }
+
+    return ret;
 }
 
 /* Quick wrapper for vendor commands that get/send a 32-bit integer value */
@@ -65,13 +117,10 @@ static int vendor_command_int(struct bladerf *dev,
                 sizeof(buf),
                 BLADERF_LIBUSB_TIMEOUT_MS
              );
+
     if (status < 0) {
         dbg_printf( "status < 0: %s\n", libusb_error_name(status) );
-        if (status == LIBUSB_ERROR_TIMEOUT) {
-            status = BLADERF_ERR_TIMEOUT;
-        } else {
-            status = BLADERF_ERR_IO;
-        }
+        status = error_libusb2bladerf(status);
     } else if (status != sizeof(buf)) {
         dbg_printf( "status != sizeof(buf): %s\n", libusb_error_name(status) );
         status = BLADERF_ERR_IO;
@@ -147,7 +196,7 @@ static int lusb_get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
     status = libusb_open( dev, &handle );
     if( status ) {
         dbg_printf( "Couldn't populate devinfo - %s\n", libusb_error_name(status) );
-        status = BLADERF_ERR_IO;
+        status = error_libusb2bladerf(status);
     } else {
         /* Populate */
         info->backend = BACKEND_LIBUSB;
@@ -177,7 +226,7 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
     status = libusb_init(&context);
     if( status ) {
         dbg_printf( "Could not initialize libusb: %s\n", libusb_error_name(status) );
-        status = BLADERF_ERR_IO;
+        status = error_libusb2bladerf(status);
         goto lusb_open_done;
     }
 
@@ -187,18 +236,28 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
         if( lusb_device_is_bladerf(list[i]) ) {
             /* Open the USB device and get some information */
             status = lusb_get_devinfo( list[i], &thisinfo );
-            if( status ) {
+            if(status < 0) {
                 dbg_printf( "Could not open bladeRF device: %s\n", libusb_error_name(status) );
-                status = BLADERF_ERR_IO;
+                status = error_libusb2bladerf(status);
                 goto lusb_open__err_context;
             }
             thisinfo.instance = n++;
 
             /* Check to see if this matches the info stuct */
             if( bladerf_devinfo_matches( &thisinfo, info ) ) {
+
                 /* Allocate backend structure and populate*/
                 dev = (struct bladerf *)malloc(sizeof(struct bladerf));
                 lusb = (struct bladerf_lusb *)malloc(sizeof(struct bladerf_lusb));
+
+                if (!dev || !lusb) {
+                    free(dev);
+                    free(lusb);
+                    dbg_printf("Skipping instance %d due to memory allocation "
+                               "error", thisinfo.instance);
+
+                    continue;
+                }
 
                 /* Assign libusb function table, backend type and backend */
                 dev->fn = &bladerf_lusb_fn;
@@ -209,19 +268,20 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
                 lusb->context = context;
                 lusb->dev = list[i];
                 lusb->handle = NULL;
+
                 status = libusb_open(list[i], &lusb->handle);
-                if( status ) {
+                if(status < 0) {
                     dbg_printf( "Could not open bladeRF device: %s\n", libusb_error_name(status) );
-                    status = BLADERF_ERR_IO;
+                    status = error_libusb2bladerf(status);
                     goto lusb_open__err_device_list;
                 }
 
                 /* Claim interfaces */
                 for( inf = 0; inf < 3; inf++ ) {
                     status = libusb_claim_interface(lusb->handle, inf);
-                    if( status ) {
+                    if(status < 0) {
                         dbg_printf( "Could not claim interface %i - %s\n", inf, libusb_error_name(status) );
-                        status = BLADERF_ERR_IO;
+                        status = error_libusb2bladerf(status);
                         goto lusb_open__err_device_list;
                     }
                 }
@@ -275,9 +335,9 @@ static int lusb_close(struct bladerf *dev)
 
     for( inf = 0; inf < 2; inf++ ) {
         status = libusb_release_interface(lusb->handle, inf);
-        if (status) {
+        if (status < 0) {
             dbg_printf("error releasing interface %i\n", inf);
-            status = BLADERF_ERR_IO;
+            status = error_libusb2bladerf(status);
         }
     }
 
@@ -298,32 +358,36 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
 
     /* Make sure we are using the configuration interface */
     status = libusb_set_interface_alt_setting(lusb->handle, USB_IF_CONFIG, 0);
-    if(status) {
-        bladerf_set_error(&dev->error, ETYPE_BACKEND, status);
+    if(status < 0) {
+        status = error_libusb2bladerf(status);
+        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
         dbg_printf( "alt_setting issue: %s\n", libusb_error_name(status) );
-        return BLADERF_ERR_IO;;
+        return status;;
     }
 
     /* Begin programming */
     status = begin_fpga_programming(dev);
     if (status < 0) {
-        bladerf_set_error(&dev->error, ETYPE_BACKEND, status);
-        return BLADERF_ERR_IO;
+        status = error_libusb2bladerf(status);
+        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
+        return status;
     }
 
     /* Send the file down */
     status = libusb_bulk_transfer(lusb->handle, 0x2, image, image_size,
                                   &transferred, 5 * BLADERF_LIBUSB_TIMEOUT_MS);
     if (status < 0) {
-        bladerf_set_error(&dev->error, ETYPE_BACKEND, status);
-        return BLADERF_ERR_IO;
+        status = error_libusb2bladerf(status);
+        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
+        return status;
     }
 
     /*  End programming */
     status = end_fpga_programming(dev);
     if (status) {
-        bladerf_set_error(&dev->error, ETYPE_BACKEND, status);
-        return BLADERF_ERR_IO;
+        status = error_libusb2bladerf(status);
+        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
+        return status;
     }
 
     /* Poll FPGA status to determine if programming was a success */
@@ -342,8 +406,9 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
 
     /* Failed to determine if FPGA is loaded */
     if (status < 0) {
-        bladerf_set_error(&dev->error, ETYPE_BACKEND, status);
-        return  BLADERF_ERR_IO;
+        status = error_libusb2bladerf(status);
+        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
+        return status;
     } else if (wait_count == 0) {
         bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, BLADERF_ERR_TIMEOUT);
         return BLADERF_ERR_TIMEOUT;
@@ -1005,9 +1070,12 @@ static void lusb_stream_cb(struct libusb_transfer *transfer)
 
     /* Check to see if the transfer has been cancelled or errored */
     if( transfer->status != LIBUSB_TRANSFER_COMPLETED ) {
+
         /* Errored out for some reason .. */
         dbg_printf("Transfer was not completed: %d\n", transfer->status );
-        stream->state = STREAM_ERROR;
+        stream->state = STREAM_SHUTTING_DOWN;
+        stream->error_code = error_libusb2bladerf(transfer->status);
+
         switch(transfer->status) {
             case LIBUSB_TRANSFER_ERROR:
             case LIBUSB_TRANSFER_TIMED_OUT:
@@ -1015,16 +1083,17 @@ static void lusb_stream_cb(struct libusb_transfer *transfer)
             case LIBUSB_TRANSFER_STALL:
             case LIBUSB_TRANSFER_NO_DEVICE:
             case LIBUSB_TRANSFER_OVERFLOW:
-                dbg_printf( "Caught error: %d\n", transfer->status );
+                dbg_printf( "Caught transfer error: %d\n", transfer->status );
                 break;
             default:
-                dbg_printf( "No idea why this transfer happened: %d\n", transfer->status );
+                dbg_printf( "Unexpected transfer status: %d\n", transfer->status );
                 break;
         }
+
         dbg_printf( "Decrementing active transfers\n" );
         stream_data->active_transfers--;
 
-        dbg_printf( "Cancelling other transfers\n" );
+        dbg_printf( "Cancelling other transfers and erroring out\n" );
         for (i = 0; i < stream->num_transfers; i++ ) {
             status = libusb_cancel_transfer(stream_data->transfers[i]);
             if (status) {
@@ -1032,6 +1101,8 @@ static void lusb_stream_cb(struct libusb_transfer *transfer)
                             status, libusb_error_name(status));
             }
         }
+
+
     }
 
     /* Check to see if the stream is still valid */
@@ -1080,6 +1151,7 @@ static void lusb_stream_cb(struct libusb_transfer *transfer)
         } else {
             dbg_printf( "No more active transfers - moving to done\n" );
             stream->state = STREAM_DONE;
+            stream_data->libusb_completed = 1;
         }
     }
 
@@ -1090,12 +1162,14 @@ static int lusb_stream(struct bladerf *dev, bladerf_module_t module, bladerf_for
                           struct bladerf_stream *stream)
 {
     size_t i;
-    size_t buffer_size = c16_samples_to_bytes(stream->samples_per_buffer);
-    struct bladerf_lusb *lusb = dev->backend;
-    struct lusb_stream_data *stream_data;
     void *buffer;
     struct bladerf_metadata metadata;
-    struct timeval tv = { 1, 0 };
+    int status;
+    struct lusb_stream_data *stream_data;
+
+    const size_t buffer_size = c16_samples_to_bytes(stream->samples_per_buffer);
+    struct bladerf_lusb *lusb = dev->backend;
+    struct timeval tv = { 5, 0 };
 
     /* Fill in backend stream information */
     stream_data = malloc( sizeof(struct lusb_stream_data) );
@@ -1109,15 +1183,44 @@ static int lusb_stream(struct bladerf *dev, bladerf_module_t module, bladerf_for
 
     /* Set our state to running */
     stream->state = STREAM_RUNNING;
+    stream_data->libusb_completed = 0;
 
     /* Pointers for libusb transfers */
     stream_data->transfers = malloc(stream->num_transfers * sizeof(struct libusb_transfer *));
+    if (!stream_data->transfers) {
+        dbg_printf("Failed to allocate libusb tranfers\n");
+        free(stream_data);
+        stream->backend_data = NULL;
+    }
+
     stream_data->active_transfers = 0;
 
-    /* Call lusb_stream_cb() to populate transfer buffers and submit */
+    /* Create the libusb transfers */
     for( i = 0; i < stream->num_transfers; i++ ) {
-        /* Create the libusb transfer */
         stream_data->transfers[i] = libusb_alloc_transfer(0);
+
+        /* Upon error, start tearing down anything we've started allocating
+         * and report that the stream is in a bad state */
+        if (!stream_data->transfers[i]) {
+
+            /* Note: <= 0 not appropriate as we're dealing
+             *       with an unsigned index */
+            while (i > 0) {
+                if (--i) {
+                    libusb_free_transfer(stream_data->transfers[i]);
+                    stream_data->transfers[i] = NULL;
+                }
+            }
+
+            /* Don't even start up */
+            stream->state = STREAM_DONE;
+            stream->error_code = BLADERF_ERR_MEM;
+            break;
+        }
+    }
+
+    /* Set up initial set of buffers */
+    for( i = 0; i < stream->num_transfers; i++ ) {
         if( module == TX ) {
             buffer = stream->cb(
                         dev,
@@ -1127,9 +1230,25 @@ static int lusb_stream(struct bladerf *dev, bladerf_module_t module, bladerf_for
                         0,
                         stream->user_data
                      );
+
+            /* It'd be odd for a user to attempt to stop the stream here,
+             * so it's most likely a bug on their end and we should shut down
+             * before issuing any transfers */
+            if (!buffer) {
+
+                /* Don't even start up */
+                stream->state = STREAM_DONE;
+                stream->error_code = BLADERF_ERR_INVAL;
+            }
         } else {
             buffer = stream->buffers[i];
         }
+    }
+
+    for (i = 0;
+         i < stream->num_transfers && stream->state == STREAM_RUNNING;
+         i++) {
+
         /* Fill up the bulk transfer request */
         libusb_fill_bulk_transfer(
             stream_data->transfers[i],
@@ -1141,15 +1260,40 @@ static int lusb_stream(struct bladerf *dev, bladerf_module_t module, bladerf_for
             stream,
             BULK_TIMEOUT
         );
+
         stream_data->active_transfers++;
-        libusb_submit_transfer(stream_data->transfers[i]);
-        /* Call the callback to have the user populate transfer buffer and submit*/
+        status = libusb_submit_transfer(stream_data->transfers[i]);
+
+        /* If we failed to submit any transfers, cancel everything in flight.
+         * We'll leave the stream in the running state so we can have
+         * libusb fire off callbacks with the cancelled status*/
+        if (status < 0) {
+            stream->error_code = error_libusb2bladerf(status);
+
+            /* Note: <= 0 not appropriate as we're dealing
+             *       with an unsigned index */
+            while (i > 0) {
+                if (--i) {
+                    status = libusb_cancel_transfer(stream_data->transfers[i]);
+                    if (status < 0) {
+                        dbg_printf("Failed to cancel transfer %zd: %s\n",
+                                   i, libusb_error_name(status));
+                    }
+                }
+            }
+
+        }
+
     }
 
     /* This loop is required so libusb can do callbacks and whatnot */
     while( stream->state != STREAM_DONE ) {
-        /* TODO: Look at status here and report accordingly */
-        libusb_handle_events_timeout(lusb->context, &tv);
+        status = libusb_handle_events_timeout_completed(lusb->context,&tv,
+                                              &stream_data->libusb_completed);
+        if (status < 0) {
+            dbg_printf("Got unexpected return value from events processing: "
+                       "%d: %s\n", status, libusb_error_name(status));
+        }
     }
 
     return 0;
@@ -1167,6 +1311,8 @@ void lusb_deinit_stream(struct bladerf_stream *stream)
 
     free(stream_data->transfers);
     free(stream->backend_data);
+
+    stream->backend_data = NULL;
 
     return;
 }

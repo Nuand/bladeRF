@@ -474,7 +474,12 @@ void bladerf_deinit_stream(struct bladerf_stream *stream)
 int bladerf_stream(struct bladerf *dev, bladerf_module_t module,
                    bladerf_format_t format, struct bladerf_stream *stream)
 {
-    return dev->fn->stream(dev, module, format, stream);
+    int status;
+
+    status = dev->fn->stream(dev, module, format, stream);
+
+    /* Backend return value takes precedence over stream error status */
+    return status == 0 ? stream->error_code : status;
 }
 
 /*------------------------------------------------------------------------------
@@ -709,6 +714,8 @@ const char * bladerf_strerror(int error)
             return "Operation timed out";
         case BLADERF_ERR_NODEV:
             return "No devices available";
+        case BLADERF_ERR_UNSUPPORTED:
+            return "Operation not supported";
         case 0:
             return "Success";
         default:
