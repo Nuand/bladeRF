@@ -45,8 +45,7 @@ struct Si5338_readT
     int base;             // this can be gotten from block_index
 
     unsigned int P1,P2,P3;   // as from section 5.2 of Reference manual
-    double        a;          // may have decimals from divisions...
-    unsigned int b,c,r;
+    unsigned int a_1dec, b,c,r;
 
     unsigned int *FoutxP;  // write result here
 
@@ -56,7 +55,7 @@ struct Si5338_readT
 
 #define NUM_MS 4
 
-//#define SI5338_DBG
+#define SI5338_DBG
 
 static void print_ms(struct tspec *ts) {
 #ifdef SI5338_DBG
@@ -293,20 +292,24 @@ static void sis5338_get_sample_rate_calc ( struct Si5338_readT *retP )
 
 	unsigned int p1 = retP->P1;
 
-	double A = (p1 + 512);
+	uint64_t A = (p1 + 512);
 	A = A * c;
 	A = A - b * 128;
-	A = A / ( c * 128 );
+	A = (A * 10) / ( c * 128 );  // switch to fixed decimal point
 
-	retP->a = A;
+	// bpadalino want to embed this into NIOS II....
+	retP->a_1dec = A;
 
-	double MSx = A + (double)b / (double)c;
+	if ( A % 10 > 5 )
+		A = A / 10 + 1;
+	else
+		A = A / 10;
 
-	double divisor = MSx * (double)retP->r;
+	uint32_t r = retP->r;
 
-	double Fout = (double)SI5338_F_VCO / divisor;
+	uint64_t divisor = A * r + ( b * r ) / c;
 
-	unsigned int f_twice = (unsigned int)Fout;
+	uint32_t f_twice = SI5338_F_VCO / divisor;
 
 	retP->FoutxP[0] = f_twice / 2;  // yes, compiler may optimize this to >> 1
 	}
@@ -316,10 +319,10 @@ static void print_Si5338_readT(struct Si5338_readT *ts)
 #ifdef SI5338_DBG
     int i;
     si5338_printf("out_freq: %dHz\n", ts->FoutxP[0]);
-    si5338_printf("a: %f\n", ts->a);
-    si5338_printf("b: %d\n", ts->b);
-    si5338_printf("c: %d\n", ts->c);
-    si5338_printf("r: %d\n", ts->r);
+    si5338_printf("a_1dec: %d\n", ts->a_1dec);
+    si5338_printf("b:      %d\n", ts->b);
+    si5338_printf("c:      %d\n", ts->c);
+    si5338_printf("r:      %d\n", ts->r);
     si5338_printf("p1: %x\n", ts->P1);
     si5338_printf("p2: %x\n", ts->P2);
     si5338_printf("p3: %x\n", ts->P3);
