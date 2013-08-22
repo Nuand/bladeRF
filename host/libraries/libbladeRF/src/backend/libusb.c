@@ -1079,11 +1079,21 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
                 /* We expect this case when we begin tearing down the stream */
                 break;
 
-            case LIBUSB_TRANSFER_ERROR:
             case LIBUSB_TRANSFER_STALL:
-            case LIBUSB_TRANSFER_OVERFLOW :
-                dbg_printf("Got transfer state = %d for buffer %p\n", transfer->status, transfer->buffer);
+                dbg_printf("Hit stall for buffer %p\n", transfer->buffer);
+                stream->error_code = BLADERF_ERR_IO;
+                break;
 
+            case LIBUSB_TRANSFER_ERROR:
+                dbg_printf("Got transfer error for buffer %p\n",
+                            transfer->buffer);
+                stream->error_code = BLADERF_ERR_IO;
+                break;
+
+            case LIBUSB_TRANSFER_OVERFLOW :
+                dbg_printf("Got transfer over for buffer %p, "
+                            "transfer \"actual_length\" = %d\n",
+                            transfer->buffer, transfer->actual_length);
                 stream->error_code = BLADERF_ERR_IO;
                 break;
 
@@ -1265,7 +1275,7 @@ static int lusb_stream(struct bladerf *dev, bladerf_module_t module, bladerf_for
             BULK_TIMEOUT
         );
 
-        dbg_printf("Initial transfer with buffer: %p\n", buffer);
+        dbg_printf("Initial transfer with buffer: %p (i=%zd)\n", buffer, i);
 
         stream_data->active_transfers++;
         status = libusb_submit_transfer(stream_data->transfers[i]);
@@ -1292,8 +1302,7 @@ static int lusb_stream(struct bladerf *dev, bladerf_module_t module, bladerf_for
 
     /* This loop is required so libusb can do callbacks and whatnot */
     while( stream->state != STREAM_DONE ) {
-        status = libusb_handle_events_timeout_completed(lusb->context,&tv,
-                                              &stream_data->libusb_completed);
+        status = libusb_handle_events_timeout(lusb->context,&tv);
         if (status < 0) {
             dbg_printf("Got unexpected return value from events processing: "
                        "%d: %s\n", status, libusb_error_name(status));

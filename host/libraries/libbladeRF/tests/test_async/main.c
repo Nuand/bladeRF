@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
     }
 
     if(test_data.module == RX && argc == 5) {
-        test_data.samples_per_buffer = str2int(argv[4], 1, INT_MAX, &conv_ok);
+        test_data.samples_left = str2int(argv[4], 1, INT_MAX, &conv_ok);
         if(!conv_ok) {
             fprintf(stderr, "Invalid number of samples: %s\n", argv[4]);
             return EXIT_FAILURE;
