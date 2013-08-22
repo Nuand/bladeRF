@@ -265,7 +265,7 @@ static unsigned int bytes_to_uint32 ( uint8_t msb, uint8_t ms1, uint8_t ms2, uin
 
 static void sis5338_get_sample_rate_calc ( struct Si5338_readT *retP )
 	{
-	unsigned int c = retP->c = retP->P3;
+	uint64_t c = retP->c = retP->P3;
 
 	unsigned int p2 = retP->P2;
 
@@ -300,16 +300,17 @@ static void sis5338_get_sample_rate_calc ( struct Si5338_readT *retP )
 	// bpadalino want to embed this into NIOS II....
 	retP->a_1dec = A;
 
-	if ( A % 10 > 5 )
-		A = A / 10 + 1;
-	else
-		A = A / 10;
+	// go back to the integer value
+	uint64_t a = A / 10;
 
-	uint32_t r = retP->r;
+	// do manual rounding....
+	if ( A % 10 > 5 ) a++;
 
-	uint64_t divisor = A * r + ( b * r ) / c;
-
-	uint32_t f_twice = SI5338_F_VCO / divisor;
+    // step by step to avoid too much compiler optimization
+	uint64_t f_twice = SI5338_F_VCO * c;
+	uint64_t divisor = a * c + b;
+    f_twice = f_twice / divisor;
+    f_twice = f_twice / retP->r;
 
 	retP->FoutxP[0] = f_twice / 2;  // yes, compiler may optimize this to >> 1
 	}
