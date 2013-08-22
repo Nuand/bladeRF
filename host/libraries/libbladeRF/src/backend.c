@@ -7,7 +7,7 @@
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 
 struct backend_table_entry {
-    const bladerf_backend_t type;
+    const bladerf_backend type;
     const struct bladerf_fn *fns;
 };
 
@@ -33,7 +33,7 @@ int backend_open(struct bladerf **device, struct bladerf_devinfo *info) {
     int status = BLADERF_ERR_NODEV;
     const size_t n_backends = ARRAY_SIZE(backend_list);
 
-    if (info->backend == BACKEND_ANY) {
+    if (info->backend == BLADERF_BACKEND_ANY) {
         status = open_with_any_backend(device, info);
     } else {
         for (i = 0; i < n_backends; i++) {

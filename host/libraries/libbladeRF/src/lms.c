@@ -68,9 +68,9 @@ const uint8_t lms_reg_dumpset[] = {
 };
 
 // When enabling an LPF, we must select both the module and the filter bandwidth
-void lms_lpf_enable(struct bladerf *dev, bladerf_module_t mod, lms_bw_t bw)
+void lms_lpf_enable(struct bladerf *dev, bladerf_module mod, lms_bw_t bw)
 {
-    uint8_t reg = (mod == RX) ? 0x54 : 0x34;
+    uint8_t reg = (mod == BLADERF_MODULE_RX) ? 0x54 : 0x34;
     uint8_t data;
     // Check to see which bandwidth we have selected
     bladerf_lms_read(dev, reg, &data);
@@ -91,9 +91,9 @@ void lms_lpf_enable(struct bladerf *dev, bladerf_module_t mod, lms_bw_t bw)
     return;
 }
 
-void lms_lpf_bypass(struct bladerf *dev, bladerf_module_t mod)
+void lms_lpf_bypass(struct bladerf *dev, bladerf_module mod)
 {
-    uint8_t reg = (mod == RX) ? 0x55 : 0x35;
+    uint8_t reg = (mod == BLADERF_MODULE_RX) ? 0x55 : 0x35;
     uint8_t data;
     bladerf_lms_read(dev, reg, &data);
     data |= (1<<6);
@@ -102,9 +102,9 @@ void lms_lpf_bypass(struct bladerf *dev, bladerf_module_t mod)
 }
 
 // Disable the LPF for a specific module
-void lms_lpf_disable(struct bladerf *dev, bladerf_module_t mod)
+void lms_lpf_disable(struct bladerf *dev, bladerf_module mod)
 {
-    uint8_t reg = (mod == RX) ? 0x54 : 0x34;
+    uint8_t reg = (mod == BLADERF_MODULE_RX) ? 0x54 : 0x34;
     uint8_t data;
     bladerf_lms_read(dev, reg, &data);
     data &= ~(1<<6);
@@ -113,10 +113,10 @@ void lms_lpf_disable(struct bladerf *dev, bladerf_module_t mod)
 }
 
 // Get the bandwidth for the selected module
-lms_bw_t lms_get_bandwidth(struct bladerf *dev, bladerf_module_t mod)
+lms_bw_t lms_get_bandwidth(struct bladerf *dev, bladerf_module mod)
 {
     uint8_t data;
-    uint8_t reg = (mod == RX) ? 0x54 : 0x34;
+    uint8_t reg = (mod == BLADERF_MODULE_RX) ? 0x54 : 0x34;
     bladerf_lms_read(dev, reg, &data);
     data &= 0x3c;
     data >>= 2;
@@ -152,10 +152,10 @@ unsigned int lms_bw2uint(lms_bw_t bw)
 }
 
 // Enable dithering on the module PLL
-void lms_dither_enable(struct bladerf *dev, bladerf_module_t mod, uint8_t nbits)
+void lms_dither_enable(struct bladerf *dev, bladerf_module mod, uint8_t nbits)
 {
     // Select the base address based on which PLL we are configuring
-    uint8_t reg = (mod == RX) ? 0x24 : 0x14;
+    uint8_t reg = (mod == BLADERF_MODULE_RX) ? 0x24 : 0x14;
     uint8_t data;
 
     // Read what we currently have in there
@@ -176,9 +176,9 @@ void lms_dither_enable(struct bladerf *dev, bladerf_module_t mod, uint8_t nbits)
 }
 
 // Disable dithering on the module PLL
-void lms_dither_disable(struct bladerf *dev, bladerf_module_t mod)
+void lms_dither_disable(struct bladerf *dev, bladerf_module mod)
 {
-    uint8_t reg = (mod == RX) ? 0x24 : 0x14;
+    uint8_t reg = (mod == BLADERF_MODULE_RX) ? 0x24 : 0x14;
     uint8_t data;
     bladerf_lms_read(dev, reg, &data);
     data &= ~(1<<7);
@@ -195,7 +195,7 @@ void lms_soft_reset(struct bladerf *dev)
 }
 
 // Set the gain on the LNA
-void lms_lna_set_gain(struct bladerf *dev, bladerf_lna_gain_t gain)
+void lms_lna_set_gain(struct bladerf *dev, bladerf_lna_gain gain)
 {
     uint8_t data;
     bladerf_lms_read(dev, 0x75, &data);
@@ -205,13 +205,13 @@ void lms_lna_set_gain(struct bladerf *dev, bladerf_lna_gain_t gain)
     return;
 }
 
-void lms_lna_get_gain(struct bladerf *dev, bladerf_lna_gain_t *gain)
+void lms_lna_get_gain(struct bladerf *dev, bladerf_lna_gain *gain)
 {
     uint8_t data;
     bladerf_lms_read(dev, 0x75, &data);
     data >>= 6;
     data &= 3;
-    *gain = (bladerf_lna_gain_t)data;
+    *gain = (bladerf_lna_gain)data;
     return;
 }
 
@@ -469,12 +469,12 @@ void lms_tx_loopback_disable(struct bladerf *dev, lms_txlb_t mode)
 }
 
 // Loopback enable
-void lms_loopback_enable(struct bladerf *dev, bladerf_loopback_t mode)
+void lms_loopback_enable(struct bladerf *dev, bladerf_loopback mode)
 {
     uint8_t data;
     switch(mode)
     {
-        case LB_BB_LPF:
+        case BLADERF_LB_BB_LPF:
             // Disable RXVGA1 first
             lms_rxvga1_disable(dev);
 
@@ -483,29 +483,29 @@ void lms_loopback_enable(struct bladerf *dev, bladerf_loopback_t mode)
             bladerf_lms_write(dev, 0x08, 1<<6);
             break;
 
-        case LB_BB_VGA2:
+        case BLADERF_LB_BB_VGA2:
             // Disable RXLPF first
-            lms_lpf_disable(dev, RX);
+            lms_lpf_disable(dev, BLADERF_MODULE_RX);
 
             // Enable TX and RX loopback
             lms_tx_loopback_enable(dev, TXLB_BB);
             bladerf_lms_write(dev, 0x08, 1<<5);
             break;
 
-        case LB_BB_OP:
+        case BLADERF_LB_BB_OP:
             // Disable RXLPF, RXVGA2, and RXVGA1
             lms_rxvga1_disable(dev);
             lms_rxvga2_disable(dev);
-            lms_lpf_disable(dev, RX);
+            lms_lpf_disable(dev, BLADERF_MODULE_RX);
 
             // Enable TX and RX loopback
             lms_tx_loopback_enable(dev, TXLB_BB);
             bladerf_lms_write(dev, 0x08, 1<<4);
             break;
 
-        case LB_RF_LNA1:
-        case LB_RF_LNA2:
-        case LB_RF_LNA3:
+        case BLADERF_LB_RF_LNA1:
+        case BLADERF_LB_RF_LNA2:
+        case BLADERF_LB_RF_LNA3:
             // Disable all LNAs
             lms_lna_select(dev, LNA_NONE);
 
@@ -516,14 +516,14 @@ void lms_loopback_enable(struct bladerf *dev, bladerf_loopback_t mode)
             bladerf_lms_write(dev, 0x7d, data);
 
             // Choose the LNA (1 = LNA1, 2 = LNA2, 3 = LNA3)
-            bladerf_lms_write(dev, 0x08, (mode - LB_RF_LNA_START));
+            bladerf_lms_write(dev, 0x08, (mode - BLADERF_LB_RF_LNA_START));
 
             // Set magical decode test registers bit
             bladerf_lms_write(dev, 0x70, (1<<1));
             break;
 
-        case LB_RF_LNA_START:
-        case LB_NONE:
+        case BLADERF_LB_RF_LNA_START:
+        case BLADERF_LB_NONE:
             // Weird
             break;
     }
@@ -531,32 +531,32 @@ void lms_loopback_enable(struct bladerf *dev, bladerf_loopback_t mode)
 }
 
 // Figure out what loopback mode we're in (if any at all!)
-bladerf_loopback_t lms_get_loopback_mode(struct bladerf *dev)
+bladerf_loopback lms_get_loopback_mode(struct bladerf *dev)
 {
     uint8_t data;
-    bladerf_loopback_t mode = LB_NONE;
+    bladerf_loopback mode = BLADERF_LB_NONE;
     bladerf_lms_read(dev, 0x08, &data);
     if (data == 0)
     {
-        mode = LB_NONE;
+        mode = BLADERF_LB_NONE;
     } else if (data&(1<<6))
     {
-        mode = LB_BB_LPF;
+        mode = BLADERF_LB_BB_LPF;
     } else if (data&(1<<5))
     {
-        mode = LB_BB_VGA2;
+        mode = BLADERF_LB_BB_VGA2;
     } else if (data&(1<<4))
     {
-        mode = LB_BB_OP;
+        mode = BLADERF_LB_BB_OP;
     } else if ((data&0xf) == 1)
     {
-        mode = LB_RF_LNA1;
+        mode = BLADERF_LB_RF_LNA1;
     } else if ((data&0xf) == 2)
     {
-        mode = LB_RF_LNA2;
+        mode = BLADERF_LB_RF_LNA2;
     } else if ((data&0xf) == 3)
     {
-        mode = LB_RF_LNA3;
+        mode = BLADERF_LB_RF_LNA3;
     }
     return mode;
 }
@@ -565,43 +565,43 @@ bladerf_loopback_t lms_get_loopback_mode(struct bladerf *dev)
 void lms_loopback_disable(struct bladerf *dev, lms_lna_t lna, lms_bw_t bw)
 {
     // Read which type of loopback mode we were in
-    bladerf_loopback_t mode = lms_get_loopback_mode(dev);
+    bladerf_loopback mode = lms_get_loopback_mode(dev);
 
     // Disable all RX loopback modes
     bladerf_lms_write(dev, 0x08, 0);
 
     switch(mode)
     {
-        case LB_BB_LPF:
+        case BLADERF_LB_BB_LPF:
             // Disable TX baseband loopback
             lms_tx_loopback_disable(dev, TXLB_BB);
             // Enable RXVGA1
             lms_rxvga1_enable(dev);
             break;
-        case LB_BB_VGA2:
+        case BLADERF_LB_BB_VGA2:
             // Disable TX baseband loopback
             lms_tx_loopback_disable(dev, TXLB_BB);
             // Enable RXLPF
-            lms_lpf_enable(dev, RX, bw);
+            lms_lpf_enable(dev, BLADERF_MODULE_RX, bw);
             break;
-        case LB_BB_OP:
+        case BLADERF_LB_BB_OP:
             // Disable TX baseband loopback
             lms_tx_loopback_disable(dev, TXLB_BB);
             // Enable RXLPF, RXVGA1 and RXVGA2
-            lms_lpf_enable(dev, RX, bw);
+            lms_lpf_enable(dev, BLADERF_MODULE_RX, bw);
             lms_rxvga2_enable(dev, 30/3);
             lms_rxvga1_enable(dev);
             break;
-        case LB_RF_LNA1:
-        case LB_RF_LNA2:
-        case LB_RF_LNA3:
+        case BLADERF_LB_RF_LNA1:
+        case BLADERF_LB_RF_LNA2:
+        case BLADERF_LB_RF_LNA3:
             // Disable TX RF loopback
             lms_tx_loopback_disable(dev, TXLB_RF);
             // Enable selected LNA
             lms_lna_select(dev, lna);
             break;
-        case LB_RF_LNA_START:
-        case LB_NONE:
+        case BLADERF_LB_RF_LNA_START:
+        case BLADERF_LB_NONE:
             // Weird
             break;
     }
@@ -619,9 +619,9 @@ void lms_power_down(struct bladerf *dev)
 }
 
 // Enable the PLL of a module
-void lms_pll_enable(struct bladerf *dev, bladerf_module_t mod)
+void lms_pll_enable(struct bladerf *dev, bladerf_module mod)
 {
-    uint8_t reg = (mod == RX) ? 0x24 : 0x14;
+    uint8_t reg = (mod == BLADERF_MODULE_RX) ? 0x24 : 0x14;
     uint8_t data;
     bladerf_lms_read(dev, reg, &data);
     data |= (1<<3);
@@ -630,9 +630,9 @@ void lms_pll_enable(struct bladerf *dev, bladerf_module_t mod)
 }
 
 // Disable the PLL of a module
-void lms_pll_disable(struct bladerf *dev, bladerf_module_t mod)
+void lms_pll_disable(struct bladerf *dev, bladerf_module mod)
 {
-    uint8_t reg = (mod == RX) ? 0x24 : 0x14;
+    uint8_t reg = (mod == BLADERF_MODULE_RX) ? 0x24 : 0x14;
     uint8_t data;
     bladerf_lms_read(dev, reg, &data);
     data &= ~(1<<3);
@@ -704,8 +704,8 @@ void lms_print_frequency(struct lms_freq *f)
 }
 
 // Get the frequency structure
-void lms_get_frequency(struct bladerf *dev, bladerf_module_t mod, struct lms_freq *f) {
-    uint8_t base = (mod == RX) ? 0x20 : 0x10;
+void lms_get_frequency(struct bladerf *dev, bladerf_module mod, struct lms_freq *f) {
+    uint8_t base = (mod == BLADERF_MODULE_RX) ? 0x20 : 0x10;
     uint8_t data;
     bladerf_lms_read(dev, base+0, &data);
     f->nint = ((uint16_t)data) << 1;
@@ -724,10 +724,10 @@ void lms_get_frequency(struct bladerf *dev, bladerf_module_t mod, struct lms_fre
 }
 
 // Set the frequency of a module
-void lms_set_frequency(struct bladerf *dev, bladerf_module_t mod, uint32_t freq)
+void lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
 {
     // Select the base address based on which PLL we are configuring
-    uint8_t base = (mod == RX) ? 0x20 : 0x10;
+    uint8_t base = (mod == BLADERF_MODULE_RX) ? 0x20 : 0x10;
     uint32_t lfreq = freq;
     uint8_t freqsel = bands[0].value;
     uint16_t nint;
@@ -775,7 +775,7 @@ void lms_set_frequency(struct bladerf *dev, bladerf_module_t mod, uint32_t freq)
     lms_print_frequency(&f);
 
     // Program freqsel, selout (rx only), nint and nfrac
-    if (mod == RX) {
+    if (mod == BLADERF_MODULE_RX) {
         bladerf_lms_write(dev, base+5, freqsel<<2 | (freq < 1500000000 ? 1 : 2));
     } else {
         bladerf_lms_write(dev, base+5, freqsel<<2);
@@ -961,13 +961,13 @@ int lms_config_init(struct bladerf *dev, struct lms_xcvr_config *config)
     bladerf_lms_write(dev, 0x48, 20);
     bladerf_lms_write(dev, 0x49, 20);
 
-    lms_set_frequency(dev, RX,  config->rx_freq_hz);
-    lms_set_frequency(dev, TX,  config->tx_freq_hz);
+    lms_set_frequency(dev, BLADERF_MODULE_RX, config->rx_freq_hz);
+    lms_set_frequency(dev, BLADERF_MODULE_TX, config->tx_freq_hz);
 
     lms_lna_select(dev, config->lna);
     lms_pa_enable(dev, config->pa);
 
-    if (config->loopback_mode == LB_NONE) {
+    if (config->loopback_mode == BLADERF_LB_NONE) {
         lms_loopback_disable(dev, config->lna, config->tx_bw);
     } else {
         lms_loopback_enable(dev, config->loopback_mode);

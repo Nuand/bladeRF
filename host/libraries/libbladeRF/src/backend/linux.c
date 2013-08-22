@@ -694,6 +694,17 @@ static int linux_probe(struct bladerf_devinfo_list *info_list)
     return (!status &&  num_matches > 0) ? status : BLADERF_ERR_NODEV;
 }
 
+static int linux_stream(struct bladerf *dev, bladerf_module_t module,
+                        bladerf_format_t format, struct bladerf_stream *stream)
+{
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
+void lusb_deinit_stream(struct bladerf_stream *stream)
+{
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
 /*------------------------------------------------------------------------------
  * Function table
  *----------------------------------------------------------------------------*/
@@ -728,5 +739,8 @@ const struct bladerf_fn bladerf_linux_fn = {
 
     .rx                     =   linux_rx,
     .tx                     =   linux_tx
+
+    .stream                 =   linux_stream,
+    .deinit_stream          =   linux_deinit_stream
 };
 

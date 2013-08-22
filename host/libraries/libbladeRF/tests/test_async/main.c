@@ -21,7 +21,7 @@ struct test_data
     size_t              num_buffers;    /* Number of buffers */
     size_t              samples_per_buffer; /* Number of samples per buffer */
     unsigned int        idx;            /* The next one that needs to go out */
-    bladerf_module_t    module;         /* Direction */
+    bladerf_module      module;         /* Direction */
     FILE                *fout;          /* Output file (RX only) */
     ssize_t             samples_left;   /* Number of samples left */
 };
@@ -63,7 +63,7 @@ void *stream_callback(struct bladerf *dev, struct bladerf_stream *stream,
     }
 
     /* Save off the samples to disk if we are in RX */
-    if( my_data->module == RX ) {
+    if( my_data->module == BLADERF_MODULE_RX ) {
         size_t i;
         int16_t *sample = samples ;
         for(i = 0; i < num_samples ; i++ ) {
@@ -142,9 +142,9 @@ int main(int argc, char *argv[])
     }
 
     if (strcasecmp(argv[1], "rx") == 0 ) {
-        test_data.module = RX ;
+        test_data.module = BLADERF_MODULE_RX ;
     } else if (strcasecmp(argv[1], "tx") == 0 ) {
-        test_data.module = TX;
+        test_data.module = BLADERF_MODULE_TX;
     } else {
         fprintf(stderr, "Invalid module: %s\n", argv[1]);
         return EXIT_FAILURE;
@@ -165,7 +165,7 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    if(test_data.module == RX && argc == 5) {
+    if(test_data.module == BLADERF_MODULE_RX && argc == 5) {
         test_data.samples_left = str2int(argv[4], 1, INT_MAX, &conv_ok);
         if(!conv_ok) {
             fprintf(stderr, "Invalid number of samples: %s\n", argv[4]);
@@ -223,14 +223,14 @@ int main(int argc, char *argv[])
                 stream_callback,
                 &test_data.buffers,
                 test_data.num_buffers,
-                FORMAT_SC16,
+                BLADERF_FORMAT_SC16_Q12,
                 test_data.samples_per_buffer,
                 test_data.num_buffers,
                 &test_data
              ) ;
 
     /* Populate buffers with test data */
-    if( test_data.module == TX ) {
+    if( test_data.module == BLADERF_MODULE_TX ) {
         if (populate_test_data(&test_data) ) {
             fprintf(stderr, "Failed to populated test data\n");
             bladerf_deinit_stream(stream);
@@ -256,7 +256,9 @@ int main(int argc, char *argv[])
 
     if (!status) {
         /* Start stream and stay there until we kill the stream */
-        status = bladerf_stream(dev, test_data.module, FORMAT_SC16, stream);
+        status = bladerf_stream(dev, test_data.module,
+                                BLADERF_FORMAT_SC16_Q12, stream);
+
         if (status < 0) {
             fprintf(stderr, "Stream error: %s\n", bladerf_strerror(status));
         }

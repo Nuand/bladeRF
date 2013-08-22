@@ -56,14 +56,14 @@ typedef enum {
 
 struct bladerf_stream {
     struct bladerf *dev;
-    bladerf_module_t module;
+    bladerf_module module;
     int error_code;
     bladerf_stream_state state;
 
     size_t samples_per_buffer;
     size_t num_buffers;
     size_t num_transfers;
-    bladerf_format_t format;
+    bladerf_format format;
 
     void **buffers;
     void *backend_data;
@@ -119,10 +119,10 @@ struct bladerf_fn {
     int (*dac_write)(struct bladerf *dev, uint16_t value);
 
     /* Sample stream */
-    ssize_t (*rx)(struct bladerf *dev, bladerf_format_t format, void *samples, size_t n, struct bladerf_metadata *metadata);
-    ssize_t (*tx)(struct bladerf *dev, bladerf_format_t format, void *samples, size_t n, struct bladerf_metadata *metadata);
+    ssize_t (*rx)(struct bladerf *dev, bladerf_format format, void *samples, size_t n, struct bladerf_metadata *metadata);
+    ssize_t (*tx)(struct bladerf *dev, bladerf_format format, void *samples, size_t n, struct bladerf_metadata *metadata);
 
-    int (*stream)(struct bladerf *dev, bladerf_module_t module, bladerf_format_t format, struct bladerf_stream *stream);
+    int (*stream)(struct bladerf *dev, bladerf_module module, bladerf_format format, struct bladerf_stream *stream);
 
     void (*deinit_stream)(struct bladerf_stream *stream);
 
@@ -142,7 +142,7 @@ struct bladerf {
     struct bladerf_error error;
 
     /* Type of the underlying driver and its private data  */
-    bladerf_backend_t backend_type;
+    bladerf_backend backend_type;
     void *backend;
 
     /* Driver-sppecific implementations */

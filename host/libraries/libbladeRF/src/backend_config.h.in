@@ -7,7 +7,7 @@
 #ifdef ENABLE_BACKEND_LIBUSB
 #   include "backend/libusb.h"
 #   define BACKEND_LIBUSB_FN_TBL_ENTRY \
-        {BACKEND_LIBUSB, &bladerf_lusb_fn},
+        {BLADERF_BACKEND_LIBUSB, &bladerf_lusb_fn},
 #else
 #   define BACKEND_LIBUSB_FN_TBL_ENTRY
 #endif
@@ -15,7 +15,7 @@
 #ifdef ENABLE_BACKEND_LINUX_DRIVER
 #   include "backend/linux.h"
 #   define BACKEND_LINUX_DRIVER_FN_TBL_ENTRY \
-        { BACKEND_LINUX_DRIVER, &bladerf_linux_fn},
+        { BLADERF_BACKEND_LINUX_DRIVER, &bladerf_linux_fn},
 #else
 #   define BACKEND_LINUX_DRIVER_FN_TBL_ENTRY
 #endif

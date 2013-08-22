@@ -1,12 +1,12 @@
 #include <assert.h>
 #include "cmd.h"
 
-static inline const char *backend2str(bladerf_backend_t b)
+static inline const char *backend2str(bladerf_backend b)
 {
     switch (b) {
-        case BACKEND_LIBUSB:
+        case BLADERF_BACKEND_LIBUSB:
             return "libusb";
-        case BACKEND_LINUX:
+        case BLADERF_BACKEND_LINUX:
             return "Linux kernel driver";
         default:
             return "Unknown";

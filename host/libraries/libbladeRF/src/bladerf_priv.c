@@ -63,16 +63,16 @@ int bladerf_init_device(struct bladerf *dev)
     bladerf_lms_write( dev, 0x5a, 0xa0 );
 
     /* Set a default saplerate */
-    bladerf_set_sample_rate( dev, TX, 1000000, &actual );
-    bladerf_set_sample_rate( dev, RX, 1000000, &actual );
+    bladerf_set_sample_rate( dev, BLADERF_MODULE_TX, 1000000, &actual );
+    bladerf_set_sample_rate( dev, BLADERF_MODULE_RX, 1000000, &actual );
 
     /* Enable TX and RX */
-    bladerf_enable_module( dev, TX, true );
-    bladerf_enable_module( dev, RX, true );
+    bladerf_enable_module( dev, BLADERF_MODULE_TX, true );
+    bladerf_enable_module( dev, BLADERF_MODULE_RX, true );
 
     /* Set a default frequency of 1GHz */
-    bladerf_set_frequency( dev, TX, 1000000000 );
-    bladerf_set_frequency( dev, RX, 1000000000 );
+    bladerf_set_frequency( dev, BLADERF_MODULE_TX, 1000000000 );
+    bladerf_set_frequency( dev, BLADERF_MODULE_RX, 1000000000 );
 
     /* TODO: Read this return from the SPI calls */
     return 0;
@@ -80,7 +80,7 @@ int bladerf_init_device(struct bladerf *dev)
 
 void bladerf_init_devinfo(struct bladerf_devinfo *d)
 {
-    d->backend  = BACKEND_ANY;
+    d->backend  = BLADERF_BACKEND_ANY;
     strcpy(d->serial, DEVINFO_SERIAL_ANY);
     d->usb_bus  = DEVINFO_BUS_ANY;
     d->usb_addr = DEVINFO_ADDR_ANY;

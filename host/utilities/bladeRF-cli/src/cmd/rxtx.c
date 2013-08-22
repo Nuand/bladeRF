@@ -634,7 +634,7 @@ static void *rx_task(void *arg) {
                                                    rx->common.buff_size / 2);*/
                 lib_ret = bladerf_rx(
                             s->dev,
-                            FORMAT_SC16,
+                            BLADERF_FORMAT_SC16_Q12,
                             rx->common.buff,
                             rx->common.buff_size/2,
                             NULL
@@ -649,7 +649,7 @@ static void *rx_task(void *arg) {
 
                 lib_ret = bladerf_rx(
                             s->dev,
-                            FORMAT_SC16,
+                            BLADERF_FORMAT_SC16_Q12,
                             rx->common.buff,
                             rx->common.buff_size/2,
                             NULL
@@ -686,7 +686,7 @@ static void *rx_task(void *arg) {
 
         if (state != RXTX_STATE_RUNNING && prev_state == RXTX_STATE_RUNNING) {
             /* Clean up as we transition from RUNNING -> <any other state> */
-            lib_ret = bladerf_enable_module(s->dev, RX, false);
+            lib_ret = bladerf_enable_module(s->dev, BLADERF_MODULE_RX, false);
             close_samples_file(&rx->common, false);
             pthread_mutex_unlock(&rx->common.file_lock);
 
@@ -772,7 +772,7 @@ static void *tx_task(void *arg) {
                         */
                         lib_ret = bladerf_tx(
                                     s->dev,
-                                    FORMAT_SC16,
+                                    BLADERF_FORMAT_SC16_Q12,
                                     tx->common.buff,
                                     tx->common.buff_size/2,
                                     NULL
@@ -835,7 +835,7 @@ static void *tx_task(void *arg) {
 
         /* Clean up as we transition from RUNNING -> <any other state> */
         if (state != RXTX_STATE_RUNNING && prev_state == RXTX_STATE_RUNNING) {
-            lib_ret = bladerf_enable_module(s->dev, TX, false);
+            lib_ret = bladerf_enable_module(s->dev, BLADERF_MODULE_TX, false);
             close_samples_file(&tx->common, false);
             pthread_mutex_unlock(&tx->common.file_lock);
 
@@ -1141,7 +1141,7 @@ static int rx_start_init(struct cli_state *s)
             return CMD_RET_UNKNOWN;
     }
 
-    status = bladerf_enable_module(s->dev, RX, true);
+    status = bladerf_enable_module(s->dev, BLADERF_MODULE_RX, true);
     if (status >= 0) {
         set_state(&rx->common, RXTX_STATE_RUNNING, true);
 
@@ -1191,7 +1191,7 @@ static int tx_start_init(struct cli_state *s)
             return CMD_RET_UNKNOWN;
     }
 
-    status = bladerf_enable_module(s->dev, TX, true);
+    status = bladerf_enable_module(s->dev, BLADERF_MODULE_TX, true);
     if (status >= 0) {
         set_state(&s->rxtx_data->tx.common, RXTX_STATE_RUNNING, true);
 

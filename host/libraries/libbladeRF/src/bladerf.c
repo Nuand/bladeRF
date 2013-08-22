@@ -112,7 +112,7 @@ void bladerf_close(struct bladerf *dev)
 }
 
 int bladerf_enable_module(struct bladerf *dev,
-                            bladerf_module_t m, bool enable)
+                            bladerf_module m, bool enable)
 {
     int status = BLADERF_ERR_UNEXPECTED;
     uint32_t gpio_reg;
@@ -121,14 +121,14 @@ int bladerf_enable_module(struct bladerf *dev,
 
     if (status == 0) {
         switch (m) {
-            case TX:
+            case BLADERF_MODULE_TX:
                 if (enable) {
                     gpio_reg |= BLADERF_GPIO_LMS_TX_ENABLE;
                 } else {
                     gpio_reg &= ~BLADERF_GPIO_LMS_TX_ENABLE;
                 }
                 break;
-            case RX:
+            case BLADERF_MODULE_RX:
                 if (enable) {
                     gpio_reg |= BLADERF_GPIO_LMS_RX_ENABLE;
                 } else {
@@ -143,17 +143,17 @@ int bladerf_enable_module(struct bladerf *dev,
     return status;
 }
 
-int bladerf_set_loopback(struct bladerf *dev, bladerf_loopback_t l)
+int bladerf_set_loopback(struct bladerf *dev, bladerf_loopback l)
 {
     lms_loopback_enable( dev, l );
     return 0;
 }
 
-int bladerf_set_sample_rate(struct bladerf *dev, bladerf_module_t module, unsigned int rate, unsigned int *actual)
+int bladerf_set_sample_rate(struct bladerf *dev, bladerf_module module, unsigned int rate, unsigned int *actual)
 {
     int ret = -1;
     /* TODO: Use module to pick the correct clock output to change */
-    if( module == TX ) {
+    if( module == BLADERF_MODULE_TX ) {
         ret = si5338_set_tx_freq(dev, rate<<1);
         dev->last_tx_sample_rate = rate;
     } else {
@@ -164,18 +164,18 @@ int bladerf_set_sample_rate(struct bladerf *dev, bladerf_module_t module, unsign
     return ret;
 }
 
-int bladerf_set_rational_sample_rate(struct bladerf *dev, bladerf_module_t module, unsigned int integer, unsigned int num, unsigned int denom)
+int bladerf_set_rational_sample_rate(struct bladerf *dev, bladerf_module module, unsigned int integer, unsigned int num, unsigned int denom)
 {
     /* TODO: Program the Si5338 to be 2x the desired sample rate */
     return 0;
 }
 
-int bladerf_get_sample_rate( struct bladerf *dev, bladerf_module_t module, unsigned int *rate)
+int bladerf_get_sample_rate( struct bladerf *dev, bladerf_module module, unsigned int *rate)
 {
     /* TODO Reconstruct samplerare from Si5338 readback */
-    if (module == RX) {
+    if (module == BLADERF_MODULE_RX) {
         *rate = dev->last_rx_sample_rate;
-    } else if (module == TX) {
+    } else if (module == BLADERF_MODULE_TX) {
         *rate = dev->last_tx_sample_rate;
     } else {
         return BLADERF_ERR_INVAL;
@@ -184,7 +184,7 @@ int bladerf_get_sample_rate( struct bladerf *dev, bladerf_module_t module, unsig
     return 0;
 }
 
-int bladerf_get_rational_sample_rate(struct bladerf *dev, bladerf_module_t module, unsigned int integer, unsigned int num, unsigned int denom)
+int bladerf_get_rational_sample_rate(struct bladerf *dev, bladerf_module module, unsigned int integer, unsigned int num, unsigned int denom)
 {
     /* TODO: Read the Si5338 and figure out the sample rate */
     return 0;
@@ -238,14 +238,14 @@ int bladerf_get_txvga1(struct bladerf *dev, int *gain)
     return 0;
 }
 
-int bladerf_set_lna_gain(struct bladerf *dev, bladerf_lna_gain_t gain)
+int bladerf_set_lna_gain(struct bladerf *dev, bladerf_lna_gain gain)
 {
     /* TODO: Make return values for lms call and return it for failure */
     lms_lna_set_gain( dev, gain );
     return 0;
 }
 
-int bladerf_get_lna_gain(struct bladerf *dev, bladerf_lna_gain_t *gain)
+int bladerf_get_lna_gain(struct bladerf *dev, bladerf_lna_gain *gain)
 {
     /* TODO: Make return values for lms call and return it for failure */
     lms_lna_get_gain( dev, gain );
@@ -288,7 +288,7 @@ int bladerf_get_rxvga2(struct bladerf *dev, int *gain)
     return 0;
 }
 
-int bladerf_set_bandwidth(struct bladerf *dev, bladerf_module_t module,
+int bladerf_set_bandwidth(struct bladerf *dev, bladerf_module module,
                             unsigned int bandwidth,
                             unsigned int *actual)
 {
@@ -299,7 +299,7 @@ int bladerf_set_bandwidth(struct bladerf *dev, bladerf_module_t module,
     return 0;
 }
 
-int bladerf_get_bandwidth(struct bladerf *dev, bladerf_module_t module,
+int bladerf_get_bandwidth(struct bladerf *dev, bladerf_module module,
                             unsigned int *bandwidth )
 {
     /* TODO: Make return values for lms call and return it for failure */
@@ -308,7 +308,7 @@ int bladerf_get_bandwidth(struct bladerf *dev, bladerf_module_t module,
     return 0;
 }
 
-int bladerf_select_band(struct bladerf *dev, bladerf_module_t module,
+int bladerf_select_band(struct bladerf *dev, bladerf_module module,
                         unsigned int frequency)
 {
     uint32_t gpio ;
@@ -321,14 +321,14 @@ int bladerf_select_band(struct bladerf *dev, bladerf_module_t module,
         lms_lna_select(dev, LNA_1);
     }
     bladerf_gpio_read(dev, &gpio);
-    gpio &= ~(module == TX ? (3<<3) : (3<<5));
-    gpio |= (module == TX ? (band<<3) : (band<<5));
+    gpio &= ~(module == BLADERF_MODULE_TX ? (3<<3) : (3<<5));
+    gpio |= (module == BLADERF_MODULE_TX ? (band<<3) : (band<<5));
     bladerf_gpio_write(dev, gpio);
     return 0;
 }
 
 int bladerf_set_frequency(struct bladerf *dev,
-                            bladerf_module_t module, unsigned int frequency)
+                            bladerf_module module, unsigned int frequency)
 {
     /* TODO: Make return values for lms call and return it for failure */
     lms_set_frequency( dev, module, frequency );
@@ -337,7 +337,7 @@ int bladerf_set_frequency(struct bladerf *dev,
 }
 
 int bladerf_get_frequency(struct bladerf *dev,
-                            bladerf_module_t module, unsigned int *frequency)
+                            bladerf_module module, unsigned int *frequency)
 {
     /* TODO: Make return values for lms call and return it for failure */
     struct lms_freq f;
@@ -352,13 +352,13 @@ int bladerf_get_frequency(struct bladerf *dev,
     return rv;
 }
 
-ssize_t bladerf_tx(struct bladerf *dev, bladerf_format_t format, void *samples,
+ssize_t bladerf_tx(struct bladerf *dev, bladerf_format format, void *samples,
                    size_t num_samples, struct bladerf_metadata *metadata)
 {
     return dev->fn->tx(dev, format, samples, num_samples, metadata);
 }
 
-ssize_t bladerf_rx(struct bladerf *dev, bladerf_format_t format, void *samples,
+ssize_t bladerf_rx(struct bladerf *dev, bladerf_format format, void *samples,
                    size_t num_samples, struct bladerf_metadata *metadata)
 {
     return dev->fn->rx(dev, format, samples, num_samples, metadata);
@@ -369,7 +369,7 @@ int bladerf_init_stream(struct bladerf_stream **stream,
                         bladerf_stream_cb callback,
                         void ***buffers,
                         size_t num_buffers,
-                        bladerf_format_t format,
+                        bladerf_format format,
                         size_t samples_per_buffer,
                         size_t num_transfers,
                         void *user_data)
@@ -399,7 +399,7 @@ int bladerf_init_stream(struct bladerf_stream **stream,
     lstream->buffers = NULL;
 
     switch(format) {
-        case FORMAT_SC16:
+        case BLADERF_FORMAT_SC16_Q12:
             buffer_size_bytes = c16_samples_to_bytes(samples_per_buffer);
             break;
 
@@ -471,8 +471,8 @@ void bladerf_deinit_stream(struct bladerf_stream *stream)
     return ;
 }
 
-int bladerf_stream(struct bladerf *dev, bladerf_module_t module,
-                   bladerf_format_t format, struct bladerf_stream *stream)
+int bladerf_stream(struct bladerf *dev, bladerf_module module,
+                   bladerf_format format, struct bladerf_stream *stream)
 {
     int status;
 

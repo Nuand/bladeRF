@@ -38,9 +38,9 @@ static int handle_backend(char *str, struct bladerf_devinfo *d)
     str_end[1] = '\0';
 
     if (!strcasecmp("libusb", str)) {
-        d->backend = BACKEND_LIBUSB;
+        d->backend = BLADERF_BACKEND_LIBUSB;
     } else if (!strcasecmp("linux", str)) {
-        d->backend = BACKEND_LINUX;
+        d->backend = BLADERF_BACKEND_LINUX;
     } else {
         dbg_printf("Invalid backend: %s\n", str);
         status = BLADERF_ERR_INVAL;

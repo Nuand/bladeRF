@@ -84,7 +84,7 @@ typedef enum {
 struct lms_xcvr_config {
     uint32_t tx_freq_hz;                   /**< Transmit frequency in Hz */
     uint32_t rx_freq_hz;                   /**< Receive frequency in Hz */
-    bladerf_loopback_t loopback_mode;     /**< Loopback Mode */
+    bladerf_loopback loopback_mode;     /**< Loopback Mode */
     lms_lna_t lna;                         /**< LNA Selection */
     lms_pa_t pa;                           /**< PA Selection */
     lms_bw_t tx_bw;                        /**< Transmit Bandwidth */
@@ -120,7 +120,7 @@ unsigned int lms_bw2uint(lms_bw_t bw);
  * @param[in]   mod     Module to change
  * @param[in]   bw      Low-pass bandwidth selection
  */
-void lms_lpf_enable(struct bladerf *dev, bladerf_module_t mod, lms_bw_t bw);
+void lms_lpf_enable(struct bladerf *dev, bladerf_module mod, lms_bw_t bw);
 
 /**
  * Explicitly bypass the low-pass filter
@@ -128,7 +128,7 @@ void lms_lpf_enable(struct bladerf *dev, bladerf_module_t mod, lms_bw_t bw);
  * @param[in]   dev     Device handle
  * @param[in]   mod     Module to change
  */
-void lms_lpf_bypass(struct bladerf *dev, bladerf_module_t mod);
+void lms_lpf_bypass(struct bladerf *dev, bladerf_module mod);
 
 /**
  * Disable the LPF for a specific module
@@ -136,7 +136,7 @@ void lms_lpf_bypass(struct bladerf *dev, bladerf_module_t mod);
  * @param[in]   dev     Device handle
  * @param[in]   mod     Module to change
  */
-void lms_lpf_disable(struct bladerf *dev, bladerf_module_t mod);
+void lms_lpf_disable(struct bladerf *dev, bladerf_module mod);
 
 /**
  * Get the bandwidth for the selected module
@@ -147,7 +147,7 @@ void lms_lpf_disable(struct bladerf *dev, bladerf_module_t mod);
  *
  * @return the current bandwidth of the module
  */
-lms_bw_t lms_get_bandwidth(struct bladerf *dev, bladerf_module_t mod);
+lms_bw_t lms_get_bandwidth(struct bladerf *dev, bladerf_module mod);
 
 /**
  * Enable dithering on PLL in the module to help reduce any fractional spurs
@@ -157,7 +157,7 @@ lms_bw_t lms_get_bandwidth(struct bladerf *dev, bladerf_module_t mod);
  * @param[in]   mod     Module to change
  * @param[in]   nbits   Number of bits to dither (1 to 8)
  */
-void lms_dither_enable(struct bladerf *dev, bladerf_module_t mod, uint8_t nbits);
+void lms_dither_enable(struct bladerf *dev, bladerf_module mod, uint8_t nbits);
 
 /**
  * Disable dithering on PLL in the module.
@@ -165,7 +165,7 @@ void lms_dither_enable(struct bladerf *dev, bladerf_module_t mod, uint8_t nbits)
  * @param[in]   dev     Device handle
  * @param[in]   mod     Module to change
  */
-void lms_dither_disable(struct bladerf *dev, bladerf_module_t mod);
+void lms_dither_disable(struct bladerf *dev, bladerf_module mod);
 
 /**
  * Perform a soft reset of the LMS6002D device
@@ -183,7 +183,7 @@ void lms_soft_reset(struct bladerf *dev);
  * @param[in]   dev     Device handle
  * @param[in]   gain    Bypass, mid or max gain
  */
-void lms_lna_set_gain(struct bladerf *dev, bladerf_lna_gain_t gain);
+void lms_lna_set_gain(struct bladerf *dev, bladerf_lna_gain gain);
 
 /**
  * Get the gain of the LNA
@@ -191,7 +191,7 @@ void lms_lna_set_gain(struct bladerf *dev, bladerf_lna_gain_t gain);
  * @param[in]   dev     Device handle
  * @param[out]  gain    Bypass, mid or max gain
  */
-void lms_lna_get_gain(struct bladerf *dev, bladerf_lna_gain_t *gain);
+void lms_lna_get_gain(struct bladerf *dev, bladerf_lna_gain *gain);
 
 /**
  * Select which LNA to enable
@@ -382,7 +382,7 @@ void lms_tx_loopback_disable(struct bladerf *dev, lms_txlb_t mode);
  * @param[in]   dev     Device handle
  * @param[in]   mode    Loopback mode
  */
-void lms_loopback_enable(struct bladerf *dev, bladerf_loopback_t mode);
+void lms_loopback_enable(struct bladerf *dev, bladerf_loopback mode);
 
 /**
  * Figure out what loopback mode we're in (if any at all!)
@@ -391,7 +391,7 @@ void lms_loopback_enable(struct bladerf *dev, bladerf_loopback_t mode);
  *
  * @return the loopback mode the LMS6002D is currently in, if any.
  */
-bladerf_loopback_t lms_get_loopback_mode(struct bladerf *dev);
+bladerf_loopback lms_get_loopback_mode(struct bladerf *dev);
 
 /**
  * Disable loopback mode.
@@ -416,7 +416,7 @@ void lms_power_down(struct bladerf *dev);
  * @param[in]   dev     Device handle
  * @param[in]   mod     Module PLL to enable
  */
-void lms_pll_enable(struct bladerf *dev, bladerf_module_t mod);
+void lms_pll_enable(struct bladerf *dev, bladerf_module mod);
 
 /**
  * Disable the PLL of a module.
@@ -424,7 +424,7 @@ void lms_pll_enable(struct bladerf *dev, bladerf_module_t mod);
  * @param[in]   dev     Device handle
  * @param[in]   mod     Module PLL to disable
  */
-void lms_pll_disable(struct bladerf *dev, bladerf_module_t mod);
+void lms_pll_disable(struct bladerf *dev, bladerf_module mod);
 
 /**
  * Enable the RX subsystem
@@ -476,7 +476,7 @@ void lms_print_frequency(struct lms_freq *freq);
  * @param[in]   mod     Module to change
  * @param[out]  freq    LMS frequency structure detailing VCO settings
  */
-void lms_get_frequency(struct bladerf *dev, bladerf_module_t mod,
+void lms_get_frequency(struct bladerf *dev, bladerf_module mod,
                        struct lms_freq *freq);
 
 /**
@@ -487,7 +487,7 @@ void lms_get_frequency(struct bladerf *dev, bladerf_module_t mod,
  * @param[in]   freq    Frequency in Hz to tune
  */
 void lms_set_frequency(struct bladerf *dev,
-                       bladerf_module_t mod, uint32_t freq);
+                       bladerf_module mod, uint32_t freq);
 
 /**
  * Read back every register from the LMS6002D device.

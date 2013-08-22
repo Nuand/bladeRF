@@ -50,20 +50,20 @@ struct bladerf_stream;
  * Backend by which the host communicates with the device
  */
 typedef enum {
-    BACKEND_ANY,        /**< "Don't Care" -- use any available backend */
-    BACKEND_LINUX,      /**< Linux kernel driver */
-    BACKEND_LIBUSB,     /**< libusb */
-} bladerf_backend_t;
+    BLADERF_BACKEND_ANY,    /**< "Don't Care" -- use any available backend */
+    BLADERF_BACKEND_LINUX,  /**< Linux kernel driver */
+    BLADERF_BACKEND_LIBUSB  /**< libusb */
+} bladerf_backend;
 
 
 /**
  * Information about a bladeRF attached to the system
  */
 struct bladerf_devinfo {
-    bladerf_backend_t backend;  /**< Backend to use when connecting to device */
+    bladerf_backend backend;    /**< Backend to use when connecting to device */
     char serial[33];            /**< Device's serial number */
-    uint8_t  usb_bus;           /**< Bus # device is attached to */
-    uint8_t  usb_addr;          /**< Device address on bus */
+    uint8_t usb_bus;            /**< Bus # device is attached to */
+    uint8_t usb_addr;           /**< Device address on bus */
     unsigned int instance;      /**< Device instance or ID */
 };
 
@@ -89,9 +89,9 @@ struct bladerf_stats {
  * Sample format
  */
 typedef enum {
-    FORMAT_SC16, /**< Signed, Complex 16-bit Q12.    TODO more info */
-    FORMAT_FC64, /**< Floating point, Complex 64-bit TODO more info */
-} bladerf_format_t;
+    BLADERF_FORMAT_SC16_Q12, /**< Signed, Complex 16-bit Q12.
+                               *  This is the native format of the DAC data. */
+} bladerf_format;
 
 /**
  * Sample metadata
@@ -105,34 +105,34 @@ struct bladerf_metadata {
  * LNA gain options
  */
 typedef enum {
-    LNA_UNKNOWN,    /**< Invalid LNA gain */
-    LNA_BYPASS,     /**< LNA bypassed - 0dB gain */
-    LNA_MID,        /**< LNA Mid Gain (MAX-6dB) */
-    LNA_MAX         /**< LNA Max Gain */
-} bladerf_lna_gain_t ;
+    BLADERF_LNA_GAIN_UNKNOWN,    /**< Invalid LNA gain */
+    BLADERF_LNA_GAIN_BYPASS,     /**< LNA bypassed - 0dB gain */
+    BLADERF_LNA_GAIN_MID,        /**< LNA Mid Gain (MAX-6dB) */
+    BLADERF_LNA_GAIN_MAX         /**< LNA Max Gain */
+} bladerf_lna_gain;
 
 /**
  * Module selection for those which have both RX and TX constituents
  */
 typedef enum
 {
-    RX,             /**< Receive Module */
-    TX              /**< Transmit Module */
-} bladerf_module_t ;
+    BLADERF_MODULE_RX,  /**< Receive Module */
+    BLADERF_MODULE_TX   /**< Transmit Module */
+} bladerf_module;
 
 /**
  * Transmit Loopback options
  */
 typedef enum {
-    LB_BB_LPF = 0,   /**< Baseband loopback enters before RX low-pass filter input */
-    LB_BB_VGA2,      /**< Baseband loopback enters before RX VGA2 input */
-    LB_BB_OP,        /**< Baseband loopback enters before RX ADC input */
-    LB_RF_LNA_START, /**< Placeholder - DO NOT USE */
-    LB_RF_LNA1,      /**< RF loopback enters at LNA1 (300MHz - 2.8GHz)*/
-    LB_RF_LNA2,      /**< RF loopback enters at LNA2 (1.5GHz - 3.8GHz)*/
-    LB_RF_LNA3,      /**< RF loopback enters at LNA3 (300MHz - 3.0GHz)*/
-    LB_NONE          /**< Null loopback mode*/
-} bladerf_loopback_t;
+    BLADERF_LB_BB_LPF = 0,   /**< Baseband loopback enters before RX low-pass filter input */
+    BLADERF_LB_BB_VGA2,      /**< Baseband loopback enters before RX VGA2 input */
+    BLADERF_LB_BB_OP,        /**< Baseband loopback enters before RX ADC input */
+    BLADERF_LB_RF_LNA_START, /**< Placeholder - DO NOT USE */
+    BLADERF_LB_RF_LNA1,      /**< RF loopback enters at LNA1 (300MHz - 2.8GHz)*/
+    BLADERF_LB_RF_LNA2,      /**< RF loopback enters at LNA2 (1.5GHz - 3.8GHz)*/
+    BLADERF_LB_RF_LNA3,      /**< RF loopback enters at LNA3 (300MHz - 3.0GHz)*/
+    BLADERF_LB_NONE          /**< Null loopback mode*/
+} bladerf_loopback;
 
 /**
  * For both RX and TX, the stream callback receives:
@@ -283,7 +283,7 @@ void bladerf_close(struct bladerf *device);
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 int bladerf_enable_module(struct bladerf *dev,
-                            bladerf_module_t m, bool enable);
+                            bladerf_module m, bool enable);
 
 /**
  * Apply specified loopback mode
@@ -294,7 +294,7 @@ int bladerf_enable_module(struct bladerf *dev,
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-int bladerf_set_loopback( struct bladerf *dev, bladerf_loopback_t l);
+int bladerf_set_loopback( struct bladerf *dev, bladerf_loopback l);
 
 
 /**
@@ -309,7 +309,7 @@ int bladerf_set_loopback( struct bladerf *dev, bladerf_loopback_t l);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-int bladerf_set_sample_rate(struct bladerf *dev, bladerf_module_t module,
+int bladerf_set_sample_rate(struct bladerf *dev, bladerf_module module,
                             unsigned int rate, unsigned int *actual);
 
 /**
@@ -327,7 +327,7 @@ int bladerf_set_sample_rate(struct bladerf *dev, bladerf_module_t module,
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 int bladerf_set_rational_sample_rate(struct bladerf *dev,
-                                     bladerf_module_t module,
+                                     bladerf_module module,
                                      unsigned int integer, unsigned int num,
                                      unsigned int denom);
 
@@ -341,7 +341,7 @@ int bladerf_set_rational_sample_rate(struct bladerf *dev,
  *
  * @return 0 on success, value from \ref RETCODES list upon failure
  */
-int bladerf_get_sample_rate(struct bladerf *dev, bladerf_module_t module,
+int bladerf_get_sample_rate(struct bladerf *dev, bladerf_module module,
                             unsigned int *rate);
 
 /**
@@ -392,7 +392,7 @@ int bladerf_get_txvga1(struct bladerf *dev, int *gain);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-int bladerf_set_lna_gain(struct bladerf *dev, bladerf_lna_gain_t gain);
+int bladerf_set_lna_gain(struct bladerf *dev, bladerf_lna_gain gain);
 
 /**
  * Get the LNA gain
@@ -400,7 +400,7 @@ int bladerf_set_lna_gain(struct bladerf *dev, bladerf_lna_gain_t gain);
  * @param       dev         Device handle
  * @param       gain        Pointer to the set gain level
  */
-int bladerf_get_lna_gain(struct bladerf *dev, bladerf_lna_gain_t *gain);
+int bladerf_get_lna_gain(struct bladerf *dev, bladerf_lna_gain *gain);
 
 /**
  * Set the pre-LPF VGA gain
@@ -450,7 +450,7 @@ int bladerf_get_rxvga2(struct bladerf *dev, int *gain);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-int bladerf_set_bandwidth(struct bladerf *dev, bladerf_module_t module,
+int bladerf_set_bandwidth(struct bladerf *dev, bladerf_module module,
                             unsigned int bandwidth,
                             unsigned int *actual);
 
@@ -463,7 +463,7 @@ int bladerf_set_bandwidth(struct bladerf *dev, bladerf_module_t module,
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-int bladerf_get_bandwidth(struct bladerf *dev, bladerf_module_t module,
+int bladerf_get_bandwidth(struct bladerf *dev, bladerf_module module,
                             unsigned int *bandwidth);
 
 /**
@@ -473,7 +473,7 @@ int bladerf_get_bandwidth(struct bladerf *dev, bladerf_module_t module,
  * @param       module      Module to configure
  * @param       frequency   Tuned frequency
  */
-int bladerf_select_band(struct bladerf *dev, bladerf_module_t module,
+int bladerf_select_band(struct bladerf *dev, bladerf_module module,
                         unsigned int frequency);
 
 /**
@@ -486,7 +486,7 @@ int bladerf_select_band(struct bladerf *dev, bladerf_module_t module,
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 int bladerf_set_frequency(struct bladerf *dev,
-                            bladerf_module_t module, unsigned int frequency);
+                            bladerf_module module, unsigned int frequency);
 
 /**
  * Set module's frequency in Hz
@@ -496,7 +496,7 @@ int bladerf_set_frequency(struct bladerf *dev,
  * @param       frequency   Pointer to the returned frequency
  */
 int bladerf_get_frequency(struct bladerf *dev,
-                            bladerf_module_t module, unsigned int *frequency);
+                            bladerf_module module, unsigned int *frequency);
 
 /** @} (End of FN_CTRL) */
 
@@ -545,7 +545,7 @@ int bladerf_init_stream(struct bladerf_stream **stream,
                         bladerf_stream_cb callback,
                         void ***buffers,
                         size_t num_buffers,
-                        bladerf_format_t format,
+                        bladerf_format format,
                         size_t samples_per_buffer,
                         size_t num_transfers,
                         void *user_data);
@@ -579,7 +579,7 @@ void bladerf_deinit_stream(struct bladerf_stream *stream);
                          int16_t *samples, size_t num_samples);
 */
 
-ssize_t bladerf_tx(struct bladerf *dev, bladerf_format_t format,
+ssize_t bladerf_tx(struct bladerf *dev, bladerf_format format,
                    void *samples, size_t num_samples,
                    struct bladerf_metadata *metadata);
 
@@ -609,7 +609,7 @@ ssize_t bladerf_tx(struct bladerf *dev, bladerf_format_t format,
                          int16_t *samples, size_t num_samples);
 */
 
-ssize_t bladerf_rx(struct bladerf *dev, bladerf_format_t format,
+ssize_t bladerf_rx(struct bladerf *dev, bladerf_format format,
                    void *samples, size_t num_samples,
                    struct bladerf_metadata *metadata);
 
@@ -619,8 +619,8 @@ ssize_t bladerf_rx(struct bladerf *dev, bladerf_format_t format,
  *      samples_per_buffer, buffers_per_stream, and (optional) data fields
  *      initialized prior to this call
  */
-int bladerf_stream(struct bladerf *dev, bladerf_module_t module,
-                   bladerf_format_t format, struct bladerf_stream *stream);
+int bladerf_stream(struct bladerf *dev, bladerf_module module,
+                   bladerf_format format, struct bladerf_stream *stream);
 
 /**
  *
@@ -628,7 +628,7 @@ int bladerf_stream(struct bladerf *dev, bladerf_module_t module,
  *      samples_per_buffer, buffers_per_stream, and (optional) data fields
  *      initialized prior to this call
  */
-/*int bladerf_tx_stream(struct bladerf *dev, bladerf_format_t format,
+/*int bladerf_tx_stream(struct bladerf *dev, bladerf_format format,
                       struct bladerf_stream *stream);
 */
 /** @} (End of FN_DATA) */

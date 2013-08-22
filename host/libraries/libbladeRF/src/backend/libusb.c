@@ -199,7 +199,7 @@ static int lusb_get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
         status = error_libusb2bladerf(status);
     } else {
         /* Populate */
-        info->backend = BACKEND_LIBUSB;
+        info->backend = BLADERF_BACKEND_LIBUSB;
         info->usb_bus = libusb_get_bus_number(dev);
         info->usb_addr = libusb_get_device_address(dev);
 
@@ -262,7 +262,7 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
                 /* Assign libusb function table, backend type and backend */
                 dev->fn = &bladerf_lusb_fn;
                 dev->backend = (void *)lusb;
-                dev->backend_type = BACKEND_LIBUSB;
+                dev->backend_type = BLADERF_BACKEND_LIBUSB;
 
                 /* Populate the backend information */
                 lusb->context = context;
@@ -987,7 +987,7 @@ static int lusb_dac_write(struct bladerf *dev, uint16_t value)
     return status;
 }
 
-static ssize_t lusb_tx(struct bladerf *dev, bladerf_format_t format, void *samples,
+static ssize_t lusb_tx(struct bladerf *dev, bladerf_format format, void *samples,
                        size_t n, struct bladerf_metadata *metadata)
 {
     size_t bytes_total, bytes_remaining;
@@ -995,7 +995,8 @@ static ssize_t lusb_tx(struct bladerf *dev, bladerf_format_t format, void *sampl
     uint8_t *samples8 = (uint8_t *)samples;
     int transferred, status;
 
-    assert(format==FORMAT_SC16);
+    /* This is the only format we currently support */
+    assert(format == BLADERF_FORMAT_SC16_Q12);
 
     bytes_total = bytes_remaining = c16_samples_to_bytes(n);
 
@@ -1022,7 +1023,7 @@ static ssize_t lusb_tx(struct bladerf *dev, bladerf_format_t format, void *sampl
     return bytes_to_c16_samples(bytes_total - bytes_remaining);
 }
 
-static ssize_t lusb_rx(struct bladerf *dev, bladerf_format_t format, void *samples,
+static ssize_t lusb_rx(struct bladerf *dev, bladerf_format format, void *samples,
                        size_t n, struct bladerf_metadata *metadata)
 {
     ssize_t bytes_total, bytes_remaining = c16_samples_to_bytes(n);
@@ -1031,7 +1032,7 @@ static ssize_t lusb_rx(struct bladerf *dev, bladerf_format_t format, void *sampl
     int transferred, status;
 
     /* The only format currently is assumed here */
-    assert(format == FORMAT_SC16);
+    assert(format == BLADERF_FORMAT_SC16_Q12);
     bytes_total = bytes_remaining = c16_samples_to_bytes(n);
 
     while( bytes_remaining ) {
@@ -1150,7 +1151,7 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
         libusb_fill_bulk_transfer(
             transfer,
             lusb->handle,
-            stream->module == TX ? EP_OUT(0x01) : EP_IN(0x01),
+            stream->module == BLADERF_MODULE_TX ? EP_OUT(0x01) : EP_IN(0x01),
             next_buffer,
             c16_samples_to_bytes(stream->samples_per_buffer),
             lusb_stream_cb,
@@ -1171,8 +1172,8 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
     }
 }
 
-static int lusb_stream(struct bladerf *dev, bladerf_module_t module, bladerf_format_t format,
-                          struct bladerf_stream *stream)
+static int lusb_stream(struct bladerf *dev, bladerf_module module,
+                       bladerf_format format, struct bladerf_stream *stream)
 {
     size_t i;
     void *buffer;
@@ -1234,7 +1235,7 @@ static int lusb_stream(struct bladerf *dev, bladerf_module_t module, bladerf_for
 
     /* Set up initial set of buffers */
     for( i = 0; i < stream->num_transfers; i++ ) {
-        if( module == TX ) {
+        if( module == BLADERF_MODULE_TX ) {
             buffer = stream->cb(
                         dev,
                         stream,
@@ -1267,7 +1268,7 @@ static int lusb_stream(struct bladerf *dev, bladerf_module_t module, bladerf_for
         libusb_fill_bulk_transfer(
             stream_data->transfers[i],
             lusb->handle,
-            module == TX ? EP_OUT(0x01) : EP_IN(0x01),
+            module == BLADERF_MODULE_TX ? EP_OUT(0x01) : EP_IN(0x01),
             buffer,
             buffer_size,
             lusb_stream_cb,

@@ -58,14 +58,14 @@ struct printset_entry printset_table[] = {
     { .print = NULL, .set = NULL, .name = "" }
 };
 
-bladerf_module_t get_module( char *mod, bool *ok )
+bladerf_module get_module( char *mod, bool *ok )
 {
-    bladerf_module_t rv = RX;
+    bladerf_module rv = BLADERF_MODULE_RX;
     *ok = true;
     if( strcasecmp( mod, "rx" ) == 0 ) {
-        rv = RX;
+        rv = BLADERF_MODULE_RX;
     } else if( strcasecmp( mod, "tx" ) == 0 ) {
-        rv = TX;
+        rv = BLADERF_MODULE_TX;
     } else {
         *ok = false;
     }
@@ -104,7 +104,7 @@ int print_bandwidth(struct cli_state *state, int argc, char **argv)
 {
     /* Usage: print bandwidth [rx|tx]*/
     int rv = CMD_RET_OK, status;
-    bladerf_module_t module = RX ;
+    bladerf_module module = BLADERF_MODULE_RX ;
     unsigned int bw ;
 
     if( argc == 3 ) {
@@ -121,8 +121,8 @@ int print_bandwidth(struct cli_state *state, int argc, char **argv)
 
     printf( "\n" ) ;
 
-    if( argc == 2 || module == RX ) {
-        status =  bladerf_get_bandwidth( state->dev, RX, &bw );
+    if( argc == 2 || module == BLADERF_MODULE_RX ) {
+        status =  bladerf_get_bandwidth( state->dev, BLADERF_MODULE_RX, &bw );
         if (status < 0) {
             state->last_lib_error = status;
             rv = CMD_RET_LIBBLADERF;
@@ -131,8 +131,8 @@ int print_bandwidth(struct cli_state *state, int argc, char **argv)
         }
     }
 
-    if( argc == 2 || module == TX ) {
-        status = bladerf_get_bandwidth( state->dev, TX, &bw );
+    if( argc == 2 || module == BLADERF_MODULE_TX ) {
+        status = bladerf_get_bandwidth( state->dev, BLADERF_MODULE_TX, &bw );
         if (status < 0) {
             state->last_lib_error = status;
             rv = CMD_RET_LIBBLADERF;
@@ -151,7 +151,7 @@ int set_bandwidth(struct cli_state *state, int argc, char **argv)
     /* Usage: set bandwidth [rx|tx] <bandwidth in Hz> */
     int rv = CMD_RET_OK;
     int status;
-    bladerf_module_t module = RX;
+    bladerf_module module = BLADERF_MODULE_RX;
     unsigned int bw = 28000000, actual;
 
     /* Check for extended help */
@@ -203,24 +203,30 @@ int set_bandwidth(struct cli_state *state, int argc, char **argv)
         printf( "\n" );
 
         /* Lack of option, so set both or RX only */
-        if( argc == 3 || module == RX ) {
-            status = bladerf_set_bandwidth( state->dev, RX, bw, &actual );
+        if( argc == 3 || module == BLADERF_MODULE_RX ) {
+            status = bladerf_set_bandwidth( state->dev, BLADERF_MODULE_RX,
+                                            bw, &actual );
+
             if (status < 0) {
                 state->last_lib_error = status;
                 rv = CMD_RET_LIBBLADERF;
             } else {
-                printf( "  Set RX bandwidth - req:%9uHz actual:%9uHz\n",  bw, actual );
+                printf( "  Set RX bandwidth - req:%9uHz actual:%9uHz\n",
+                        bw, actual );
             }
         }
 
         /* Lack of option, so set both or TX only */
-        if( argc == 3 || module == TX ) {
-            status = bladerf_set_bandwidth( state->dev, TX, bw, &actual );
+        if( argc == 3 || module == BLADERF_MODULE_TX ) {
+            status = bladerf_set_bandwidth( state->dev, BLADERF_MODULE_TX,
+                                            bw, &actual );
+
             if (status < 0) {
                 state->last_lib_error = status;
                 rv = CMD_RET_LIBBLADERF;
             } else {
-                printf( "  Set TX bandwidth - req:%9uHz actual:%9uHz\n", bw, actual );
+                printf( "  Set TX bandwidth - req:%9uHz actual:%9uHz\n",
+                        bw, actual );
             }
         }
 
@@ -247,7 +253,7 @@ int print_frequency(struct cli_state *state, int argc, char **argv)
     int rv = CMD_RET_OK;
     int status;
     unsigned int freq;
-    bladerf_module_t module = RX;
+    bladerf_module module = BLADERF_MODULE_RX;
     if( argc == 3 ) {
         /* Parse module */
         bool ok;
@@ -262,8 +268,8 @@ int print_frequency(struct cli_state *state, int argc, char **argv)
     }
 
     if( rv == CMD_RET_OK ) {
-        if( argc == 2 || module == RX ) {
-            status = bladerf_get_frequency( state->dev, RX, &freq );
+        if( argc == 2 || module == BLADERF_MODULE_RX ) {
+            status = bladerf_get_frequency( state->dev, BLADERF_MODULE_RX, &freq );
             if (status < 0) {
                 state->last_lib_error = status;
                 rv = CMD_RET_LIBBLADERF;
@@ -276,8 +282,8 @@ int print_frequency(struct cli_state *state, int argc, char **argv)
             }
         }
 
-        if( argc == 2 || module == TX ) {
-            status = bladerf_get_frequency( state->dev, TX, &freq );
+        if( argc == 2 || module == BLADERF_MODULE_TX ) {
+            status = bladerf_get_frequency( state->dev, BLADERF_MODULE_TX, &freq );
             if (status < 0) {
                 state->last_lib_error = status;
                 rv = CMD_RET_LIBBLADERF;
@@ -300,7 +306,7 @@ int set_frequency(struct cli_state *state, int argc, char **argv)
     int rv = CMD_RET_OK;
     int status;
     unsigned int freq;
-    bladerf_module_t module = RX;
+    bladerf_module module = BLADERF_MODULE_RX;
 
     if( argc == 4 ) {
         /* Parse module */
@@ -328,8 +334,10 @@ int set_frequency(struct cli_state *state, int argc, char **argv)
             printf( "\n" );
 
             /* Change RX frequency */
-            if( argc == 3 || module == RX ) {
-                int status = bladerf_set_frequency( state->dev, RX, freq );
+            if( argc == 3 || module == BLADERF_MODULE_RX ) {
+                int status = bladerf_set_frequency( state->dev,
+                                                    BLADERF_MODULE_RX, freq );
+
                 if (status < 0) {
                     state->last_lib_error = status;
                     rv = CMD_RET_LIBBLADERF;
@@ -339,8 +347,10 @@ int set_frequency(struct cli_state *state, int argc, char **argv)
             }
 
             /* Change TX frequency */
-            if( argc == 3 || module == TX ) {
-                status = bladerf_set_frequency( state->dev, TX, freq );
+            if( argc == 3 || module == BLADERF_MODULE_TX ) {
+                status = bladerf_set_frequency( state->dev,
+                                                BLADERF_MODULE_TX, freq );
+
                 if (status < 0) {
                     state->last_lib_error = status;
                     rv = CMD_RET_LIBBLADERF;
@@ -441,7 +451,7 @@ int set_lna(struct cli_state *state, int argc, char **argv)
 int print_lnagain(struct cli_state *state, int argc, char **argv)
 {
     int rv = CMD_RET_OK, status;
-    bladerf_lna_gain_t gain;
+    bladerf_lna_gain gain;
 
     status = bladerf_get_lna_gain( state->dev, &gain );
     if (status < 0) {
@@ -451,10 +461,21 @@ int print_lnagain(struct cli_state *state, int argc, char **argv)
         printf( "\n" );
         printf( "  LNA Gain: ");
         switch(gain) {
-            case LNA_UNKNOWN: printf( "LNA_UNKNOWN\n" ); break;
-            case LNA_MID    : printf( "LNA_MID\n" ); break;
-            case LNA_MAX    : printf( "LNA_MAX\n" ); break;
-            case LNA_BYPASS : printf( "LNA_BYPASS\n"); break;
+            case BLADERF_LNA_GAIN_UNKNOWN:
+                    printf( "BLADERF_LNA_GAIN_UNKNOWN\n" );
+                    break;
+
+            case BLADERF_LNA_GAIN_MID:
+                    printf( "BLADERF_LNA_GAIN_MID\n" );
+                    break;
+
+            case BLADERF_LNA_GAIN_MAX:
+                    printf( "BLADERF_LNA_GAIN_MAX\n" );
+                    break;
+
+            case BLADERF_LNA_GAIN_BYPASS:
+                    printf( "BLADERF_LNA_GAIN_BYPASS\n");
+                    break;
         }
         printf( "\n" ) ;
     }
@@ -470,18 +491,18 @@ int set_lnagain(struct cli_state *state, int argc, char **argv)
     if( argc != 3 ) {
         rv = CMD_RET_NARGS;
     } else {
-        bladerf_lna_gain_t gain = LNA_UNKNOWN;
+        bladerf_lna_gain gain = BLADERF_LNA_GAIN_UNKNOWN;
         if( strcasecmp( argv[2], "max" ) == 0 ) {
-            gain = LNA_MAX;
+            gain = BLADERF_LNA_GAIN_MAX;
         } else if( strcasecmp( argv[2], "mid" ) == 0 ) {
-            gain = LNA_MID;
+            gain = BLADERF_LNA_GAIN_MID;
         } else if( strcasecmp( argv[2], "bypass" ) == 0 ) {
-            gain = LNA_BYPASS;
+            gain = BLADERF_LNA_GAIN_BYPASS;
         } else {
             invalid_gain(state, argv[0], argv[1], argv[2]);
         }
 
-        if (gain != LNA_UNKNOWN) {
+        if (gain != BLADERF_LNA_GAIN_UNKNOWN) {
             status = bladerf_set_lna_gain( state->dev, gain );
             if (status < 0) {
                 state->last_lib_error = status;
@@ -628,7 +649,7 @@ int print_samplerate(struct cli_state *state, int argc, char **argv)
 {
     int status;
     unsigned int rate;
-    bladerf_module_t module;
+    bladerf_module module;
     bool ok;
 
     if (argc == 3) {
@@ -638,14 +659,16 @@ int print_samplerate(struct cli_state *state, int argc, char **argv)
             status = CMD_RET_INVPARAM;
         } else {
             status = bladerf_get_sample_rate(state->dev, module, &rate);
-            printf("  %s sample rate: %u\n", module == RX ? "RX" : "TX", rate);
+            printf("  %s sample rate: %u\n",
+                    module == BLADERF_MODULE_RX ? "RX" : "TX", rate);
         }
     } else if (argc == 2) {
         unsigned int tx_rate;
-        status = bladerf_get_sample_rate(state->dev, RX, &rate);
+        status = bladerf_get_sample_rate(state->dev, BLADERF_MODULE_RX, &rate);
 
         if (!status) {
-            status = bladerf_get_sample_rate(state->dev, TX, &tx_rate);
+            status = bladerf_get_sample_rate(state->dev,
+                                                BLADERF_MODULE_TX, &tx_rate);
 
             if (!status) {
                 printf("  RX sample rate: %u\n", rate);
@@ -670,7 +693,7 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
 {
     /* Usage: set samplerate [rx|tx] <samplerate in Hz> */
     int rv = CMD_RET_OK;
-    bladerf_module_t module  = RX;
+    bladerf_module module = BLADERF_MODULE_RX;
 
     if( argc == 4 ) {
         /* Parse module */
@@ -694,9 +717,10 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
             rv = CMD_RET_INVPARAM;
         } else {
             printf( "\n" );
-            if( argc == 3 || module == RX ) {
+            if( argc == 3 || module == BLADERF_MODULE_RX ) {
                 int status = bladerf_set_sample_rate( state->dev,
-                                                      RX, rate, &actual );
+                                                      BLADERF_MODULE_RX,
+                                                      rate, &actual );
 
                 if (status < 0) {
                     state->last_lib_error = status;
@@ -707,8 +731,9 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
                 }
             }
 
-            if( argc == 3 || module == TX ) {
-                int status = bladerf_set_sample_rate( state->dev, TX,
+            if( argc == 3 || module == BLADERF_MODULE_TX ) {
+                int status = bladerf_set_sample_rate( state->dev,
+                                                      BLADERF_MODULE_TX,
                                                       rate, &actual );
                 if (status < 0) {
                     state->last_lib_error = status;
