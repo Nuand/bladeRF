@@ -230,7 +230,7 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
         goto lusb_open_done;
     }
 
-    count = libusb_get_device_list( NULL, &list );
+    count = libusb_get_device_list( context, &list );
     /* Iterate through all the USB devices */
     for( i = 0, n = 0; i < count; i++ ) {
         if( lusb_device_is_bladerf(list[i]) ) {
@@ -1347,7 +1347,7 @@ int lusb_probe(struct bladerf_devinfo_list *info_list)
         goto lusb_probe_done;
     }
 
-    count = libusb_get_device_list( NULL, &list );
+    count = libusb_get_device_list( context, &list );
     /* Iterate through all the USB devices */
     for( i = 0, n = 0; i < count && status == 0; i++ ) {
         if( lusb_device_is_bladerf(list[i]) ) {
