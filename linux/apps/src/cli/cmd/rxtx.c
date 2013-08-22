@@ -29,7 +29,6 @@
 #define RXTX_PARAM_REPEAT       "repeat"
 #define RXTX_PARAM_REPEATDLY    "delay"
 
-
 #define RXTX_ERRMSG_VALUE(param, value) \
     "Invalid value for \"%s\" (%s)", param, value
 
@@ -52,35 +51,26 @@
 #   define EOL "\n"
 #endif
 
-#if defined(__BIG_ENDIAN__)
-#   define RXTX_FMT_BINHOST_C16 RXTX_FMT_BINBE_C16
-#elif defined(__LITTLE_ENDIAN)
-#   define RXTX_FMT_BINHOST_C16 RXTX_FMT_BINLE_C16
-#else
-#   error "Compiler did not define __BIG/LITTLE_ENDIAN__ - required here"
-#endif
-
 #define TMP_FILE_NAME "/tmp/bladeRF-XXXXXX"
 
 enum rxtx_fmt {
-    RXTX_FMT_INVALID = -1,
-    RXTX_FMT_CSV_C16,   /* CSV (Comma-separated, one entry per line) c16 I,Q */
     RXTX_FMT_BINLE_C16, /* Binary (little-endian), c16 I,Q */
     RXTX_FMT_BINBE_C16, /* Binary (big-endian), c16 I,Q */
+    RXTX_FMT_CSV_C16    /* CSV (Comma-separated, one entry per line) c16 I,Q */
 };
 
 enum rxtx_cmd {
     RXTX_CMD_INVALID,
     RXTX_CMD_START,
     RXTX_CMD_STOP,
-    RXTX_CMD_CFG,
+    RXTX_CMD_CFG
 };
 
 enum rxtx_state {
     RXTX_STATE_IDLE,
     RXTX_STATE_RUNNING,
     RXTX_STATE_SHUTDOWN,
-    RXTX_STATE_ERROR,
+    RXTX_STATE_ERROR
 };
 
 struct common_cfg
@@ -136,6 +126,41 @@ struct rxtx_data
     struct rx_cfg rx;
     struct tx_cfg tx;
 };
+
+
+
+
+/**
+ * convert the desired format into an internal constant
+ * if generic bin is given then the format will be a C16 with the host endianess
+ * if the format is invalid it will default to bin but will emit a warning message
+ * this will make like easier for the user
+ */
+static enum rxtx_fmt str2fmt(const char *str)
+{
+    if (strcasecmp("csv", str)==0)
+        return RXTX_FMT_CSV_C16;
+
+    if (strcasecmp("binl", str)==0)
+        return RXTX_FMT_BINLE_C16;
+
+    if (strcasecmp("binb", str)==0)
+        return RXTX_FMT_BINBE_C16;
+
+    if ( strcasecmp("bin", str) )
+		{
+    	// if the format is NOT a bin I just emit a warning and assume a reasonable format
+		fprintf(stderr, "Invalid format provided (%s), will default to bin", str);
+		}
+
+#if defined(__BIG_ENDIAN__)
+    return RXTX_FMT_BINBE_C16;
+#elif defined(__LITTLE_ENDIAN)
+    return RXTX_FMT_BINLE_C16;
+#else
+#   error "Compiler did not define __BIG/LITTLE_ENDIAN__ - required here"
+#endif
+}
 
 static inline void set_state(struct common_cfg *cfg,
                                 enum rxtx_state state, bool notify)
@@ -260,6 +285,112 @@ static int close_samples_file(struct common_cfg *c, bool lock)
     }
 
     return ret;
+
+}
+
+
+
+
+
+/**
+ * this is for TX only, apparently I caould not have csv data here ?
+ * One point i to avoid to mess with data if they are already of the correct endian
+  the logic is that if I want big endian and am in little endian then I do something
+ */
+static void c16_sample_fixup_tx(int16_t *buff, size_t n, enum rxtx_fmt fmt )
+{
+    size_t i;
+
+	if (fmt == RXTX_FMT_BINLE_C16) {
+#if defined(__BIG_ENDIAN__)
+		for (i = 0; i < n; i++) {
+			/* I - Correct sign extension is assumed */
+			*buff = (htole16(*buff) & 0x0fff);
+			buff++;
+
+			/* Q - Correct sign extention is assumed*/
+			*buff = (htole16(*buff) & 0x0fff);
+			buff++;
+		}
+#endif
+
+		return;
+	}
+
+	if (fmt == RXTX_FMT_BINBE_C16) {
+#if defined(__LITTLE_ENDIAN)
+		for (i = 0; i < n; i++) {
+			/* I - Correct sign extension is assumed */
+			*buff = (htobe16(*buff) & 0x0fff);
+			buff++;
+
+			/* Q - Correct sign extention is assumed*/
+			*buff = (htobe16(*buff) & 0x0fff);
+			buff++;
+		}
+#endif
+
+		return;
+	}
+
+	fprintf(stderr,"c16_sample_fixup_tx: invalid tx format %d \n",fmt);
+}
+
+/**
+ * this is for RX only same logic as above
+ * One point i to avoid to mess with data if they are already of the correct endian
+  the logic is that if I want big endian and am in little endian then I do something
+ */
+static void c16_sample_fixup_rx(int16_t *buff, size_t n, enum rxtx_fmt fmt )
+{
+	size_t i;
+
+	if (fmt == RXTX_FMT_BINLE_C16) {
+#if defined(__BIG_ENDIAN__)
+		for (i = 0; i < n; i++) {
+			/* I - Mask off the marker and sign extend */
+			*buff = htole16(*buff) & 0x0fff;
+			if (*buff & 0x800) {
+				*buff |= 0xf000;
+			}
+			buff++;
+
+			/* Q - Mask off the marker and sign extend */
+			*buff = htole16(*buff) & 0x0fff;
+			if (*buff & 0x800) {
+				*buff |= 0xf000;
+			}
+			buff++;
+		}
+#endif
+
+		return;
+	}
+
+
+	if (fmt == RXTX_FMT_BINBE_C16) {
+#if defined(__LITTLE_ENDIAN)
+		for (i = 0; i < n; i++) {
+			/* I - Mask off the marker and sign extend */
+			*buff = htobe16(*buff) & 0x0fff;
+			if (*buff & 0x800) {
+				*buff |= 0xf000;
+			}
+			buff++;
+
+			/* Q - Mask off the marker and sign extend */
+			*buff = htobe16(*buff) & 0x0fff;
+			if (*buff & 0x800) {
+				*buff |= 0xf000;
+			}
+			buff++;
+		}
+#endif
+		return;
+	}
+
+	// should not happen, but who knows...
+	fprintf(stderr,"c16_sample_fixup_rx: invalid rx format %d \n",fmt);
 }
 
 /*
@@ -267,82 +398,22 @@ static int close_samples_file(struct common_cfg *c, bool lock)
  * fmt  - binle or binbe
  * in   - Is this data being TX'd (RX'd assumed otherwise)
  */
-static void c16_sample_fixup(int16_t *buff, size_t n,
-                                enum rxtx_fmt fmt, bool tx)
+static void c16_sample_fixup(int16_t *buff, size_t n, enum rxtx_fmt fmt, bool tx)
 {
-    size_t i;
-
-    /* For each sample, we need to:
-     *  (1) Convert to appropriate endianness
-     *  (2, RX only) Mask and sign-extend.
-     *      FIXME  this will soon be done in libbladeRF
-     *
-     *  The 4 permutations are unrolled here intentionally, to keep
-     *  the amount of massaging on these samples to a minimum...
-     */
-
-    if (tx) {
-        if (fmt == RXTX_FMT_BINLE_C16) {
-            for (i = 0; i < n; i++) {
-                /* I - Correct sign extension is assumed */
-                *buff = (htole16(*buff) & 0x0fff);
-                buff++;
-
-                /* Q - Correct sign extention is assumed*/
-                *buff = (htole16(*buff) & 0x0fff);
-                buff++;
-            }
-        } else {
-            for (i = 0; i < n; i++) {
-                /* I - Correct sign extension is assumed */
-                *buff = (htobe16(*buff) & 0x0fff);
-                buff++;
-
-                /* Q - Correct sign extention is assumed*/
-                *buff = (htobe16(*buff) & 0x0fff);
-                buff++;
-            }
-        }
-    } else {
-        if (fmt == RXTX_FMT_CSV_C16) {
-            fmt = RXTX_FMT_BINHOST_C16;
-        }
-
-        if (fmt == RXTX_FMT_BINLE_C16) {
-            for (i = 0; i < n; i++) {
-                /* I - Mask off the marker and sign extend */
-                *buff = htole16(*buff) & 0x0fff;
-                if (*buff & 0x800) {
-                    *buff |= 0xf000;
-                }
-                buff++;
-
-                /* Q - Mask off the marker and sign extend */
-                *buff = htole16(*buff) & 0x0fff;
-                if (*buff & 0x800) {
-                    *buff |= 0xf000;
-                }
-                buff++;
-
-            }
-        } else {
-            for (i = 0; i < n; i++) {
-                /* I - Mask off the marker and sign extend */
-                *buff = htobe16(*buff) & 0x0fff;
-                if (*buff & 0x800) {
-                    *buff |= 0xf000;
-                }
-                buff++;
-
-                /* Q - Mask off the marker and sign extend */
-                *buff = htobe16(*buff) & 0x0fff;
-                if (*buff & 0x800) {
-                    *buff |= 0xf000;
-                }
-                buff++;
-            }
-        }
+    if ( tx ) {
+    	// apparently no change f format on tx
+    	c16_sample_fixup_tx(buff,n,fmt);
+    	return;
     }
+
+    // this is surely on rx mode
+
+	if (fmt == RXTX_FMT_CSV_C16) {
+		// so, on rx, I can only do binary ?
+		fmt = str2fmt("bin");
+	}
+
+	c16_sample_fixup_rx(buff,n,fmt);
 }
 
 /* returns 0 on success, -1 on failure (and calls set_last_error()) */
@@ -493,7 +564,6 @@ static int tx_csv_to_c16(struct cli_state *s)
     const char delim[] = " \r\n\t,.:";
     const size_t buff_size = 81;
     char buff[buff_size];
-    enum rxtx_fmt fmt = RXTX_FMT_BINHOST_C16;
     struct tx_cfg *tx = &s->rxtx_data->tx;
     char *token, *saveptr;
     int tmp_int;
@@ -504,6 +574,8 @@ static int tx_csv_to_c16(struct cli_state *s)
     int bin_fd;
     char *bin_path;
     char bin_name[] = TMP_FILE_NAME;
+
+    enum rxtx_fmt fmt = str2fmt("bin");
 
     ret = 0;
 
@@ -604,7 +676,7 @@ static void *rx_task(void *arg) {
     struct cli_state *s = (struct cli_state *) arg;
     struct rx_cfg *rx = &s->rxtx_data->rx;
     unsigned int n_samples_left = 0;
-    bool inf;
+    bool inf=false;
     size_t to_write = 0;
 
     /* We expect to be in the IDLE state when this task is kicked off */
@@ -856,9 +928,6 @@ static int validate_config(struct cli_state *s, const char *cmd,
     if (!file_path_set) {
         cli_err(s, cmd, "File parameter has not been configured");
         status = CMD_RET_INVPARAM;
-    } else if (common->file_fmt == RXTX_FMT_INVALID) {
-        cli_err(s, cmd, "File format parameter has not been configured");
-        status = CMD_RET_INVPARAM;
     }
 
     return status;
@@ -952,6 +1021,7 @@ static void print_config(struct rxtx_data *d, bool is_tx)
             break;
         default:
             printf("    Format: Not configured\n");
+            break;
     }
 
     if (is_tx) {
@@ -979,22 +1049,6 @@ static enum rxtx_cmd get_cmd(const char *cmd)
     return ret;
 }
 
-static enum rxtx_fmt str2fmt(const char *str)
-{
-    enum rxtx_fmt ret = RXTX_FMT_INVALID;
-
-    if (!strcasecmp("csv", str)) {
-        ret = RXTX_FMT_CSV_C16;
-    } else if (!strcasecmp("binl", str)) {
-        ret = RXTX_FMT_BINLE_C16;
-    } else if (!strcasecmp("binb", str)) {
-        ret = RXTX_FMT_BINBE_C16;
-    } else if (!strcasecmp("bin", str)) {
-        ret = RXTX_FMT_BINHOST_C16;
-    }
-
-    return ret;
-}
 
 static int handle_tx_param(struct cli_state *s,
                                 const char *param, const char *value)
@@ -1076,10 +1130,6 @@ static int handle_params(struct cli_state *s, int argc, char **argv, bool is_tx)
             status = set_sample_file_path(common, val);
         } else if (!strcasecmp(RXTX_PARAM_FILEFORMAT, argv[i])) {
             common->file_fmt = str2fmt(val);
-            if (common->file_fmt == RXTX_FMT_INVALID) {
-                cli_err(s, argv[0], "Invalid format provided (%s)", val);
-                return CMD_RET_INVPARAM;
-            }
         } else {
             if (is_tx) {
                 status = handle_tx_param(s, argv[i], val);
@@ -1275,44 +1325,57 @@ int cmd_rxtx(struct cli_state *s, int argc, char **argv)
         default:
             cli_err(s, argv[0], "Invalid command (%s)", argv[1]);
             ret = CMD_RET_INVPARAM;
+            break;
     }
 
 
     return ret;
 }
 
-/* Buffer size is in units of # elements, not bytes */
+/**
+ *  Buffer size is in units of # elements, not bytes
+ *  @return 0 of all goes well or -1 if it fails
+ */
 static int common_cfg_init(struct common_cfg *c, size_t buff_size)
 {
-    int status = -1;
+	if ( c == NULL )
+		return -1;
 
     c->buff_size = buff_size;
     c->buff = calloc(buff_size, sizeof(c->buff[0]));
 
-    if (c->buff) {
-        c->file = NULL;
-        c->file_path = NULL;
-        c->file_fmt = RXTX_FMT_BINHOST_C16;
-        c->task_state = RXTX_STATE_IDLE;
-        c->error.type = ETYPE_ERRNO;
-        c->error.value = 0;;
+    if ( c->buff == NULL )
+    	return -1;
 
-        if (pthread_mutex_init(&c->error.lock, NULL) < 0) {
-            fprintf(stderr, "Failed to initialize error.lock\n");
-        } else if (pthread_mutex_init(&c->task_lock, NULL) < 0) {
-            fprintf(stderr, "Failed to initialize task_lock\n");
-        } else if (pthread_mutex_init(&c->file_lock, NULL) < 0) {
-            fprintf(stderr, "Failed to initialize file_lock\n");
-        } else if (pthread_mutex_init(&c->param_lock, NULL) < 0) {
-            fprintf(stderr, "Failed to initialize param_lock\n");
-        } else if (pthread_cond_init(&c->task_state_changed, NULL) < 0) {
-            fprintf(stderr, "Failed to initialize state_changed\n");
-        } else {
-            status = 0;
-        }
-    }
+	c->file       = NULL;
+	c->file_path  = NULL;
+	c->file_fmt   = str2fmt("bin");  // init with default host format
+	c->task_state = RXTX_STATE_IDLE;
+	c->error.type = ETYPE_ERRNO;
+	c->error.value = 0;
 
-    return status;
+	bool failed = true;
+
+	if (pthread_mutex_init(&c->error.lock, NULL) < 0) {
+		fprintf(stderr, "Failed to initialize error.lock\n");
+	} else if (pthread_mutex_init(&c->task_lock, NULL) < 0) {
+		fprintf(stderr, "Failed to initialize task_lock\n");
+	} else if (pthread_mutex_init(&c->file_lock, NULL) < 0) {
+		fprintf(stderr, "Failed to initialize file_lock\n");
+	} else if (pthread_mutex_init(&c->param_lock, NULL) < 0) {
+		fprintf(stderr, "Failed to initialize param_lock\n");
+	} else if (pthread_cond_init(&c->task_state_changed, NULL) < 0) {
+		fprintf(stderr, "Failed to initialize state_changed\n");
+	} else
+		failed = false;
+
+	if ( failed ) {
+		// if thread fails you need to deallocate buffer
+		free(c->buff);
+		return -1;
+		}
+
+    return 0;
 }
 
 static void common_cfg_deinit(struct common_cfg *c)

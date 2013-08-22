@@ -330,20 +330,6 @@ int bladerf_set_rational_sample_rate(struct bladerf *dev, bladerf_module module,
     return 0;
 }
 
-int bladerf_get_sample_rate( struct bladerf *dev, bladerf_module module, unsigned int *rate)
-{
-    /* TODO Reconstruct samplerare from Si5338 readback */
-    if (module == RX) {
-        *rate = dev->last_rx_sample_rate;
-    } else if (module == TX) {
-        *rate = dev->last_tx_sample_rate;
-    } else {
-        return BLADERF_ERR_INVAL;
-    }
-
-    return 0;
-}
-
 int bladerf_get_rational_sample_rate(struct bladerf *dev, bladerf_module module, unsigned int integer, unsigned int num, unsigned int denom)
 {
     /* TODO: Read the Si5338 and figure out the sample rate */
@@ -866,6 +852,10 @@ int bladerf_load_fpga(struct bladerf *dev, const char *fpga)
  * Si5338 register read / write functions
  */
 
+/**
+ * read a Si register and return result
+ * @return
+ */
 int si5338_i2c_read(struct bladerf *dev, uint8_t address, uint8_t *val)
 {
     int ret;
