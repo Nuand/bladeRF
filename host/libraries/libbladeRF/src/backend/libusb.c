@@ -1082,7 +1082,8 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
             case LIBUSB_TRANSFER_ERROR:
             case LIBUSB_TRANSFER_STALL:
             case LIBUSB_TRANSFER_OVERFLOW :
-                dbg_printf("Got transfer state = %d\n", transfer->status);
+                dbg_printf("Got transfer state = %d for buffer %p\n", transfer->status, transfer->buffer);
+
                 stream->error_code = BLADERF_ERR_IO;
                 break;
 
@@ -1233,25 +1234,26 @@ static int lusb_stream(struct bladerf *dev, bladerf_module_t module, bladerf_for
                         stream->user_data
                      );
 
-            /* It'd be odd for a user to attempt to stop the stream here,
-             * so it's most likely a bug on their end and we should shut down
-             * before issuing any transfers */
             if (!buffer) {
+                /* If we have transfers in flight and the user prematurely
+                 * cancels the stream, we'll start shutting down */
+                if (stream_data->active_transfers > 0) {
+                    stream->state = STREAM_SHUTTING_DOWN;
+                } else {
+                    /* No transfers have been shipped out yet so we can
+                     * simply enter our "done" state */
+                    stream->state = STREAM_DONE;
+                }
 
-                /* Don't even start up */
-                stream->state = STREAM_DONE;
-                stream->error_code = BLADERF_ERR_INVAL;
+                /* In either of the above we don't want to attempt to
+                 * get any more buffers from the user */
+                break;
             }
         } else {
             buffer = stream->buffers[i];
         }
-    }
 
-    for (i = 0;
-         i < stream->num_transfers && stream->state == STREAM_RUNNING;
-         i++) {
-
-        /* Fill up the bulk transfer request */
+        /* Fill and submit the bulk transfer request */
         libusb_fill_bulk_transfer(
             stream_data->transfers[i],
             lusb->handle,
@@ -1262,6 +1264,8 @@ static int lusb_stream(struct bladerf *dev, bladerf_module_t module, bladerf_for
             stream,
             BULK_TIMEOUT
         );
+
+        dbg_printf("Initial transfer with buffer: %p\n", buffer);
 
         stream_data->active_transfers++;
         status = libusb_submit_transfer(stream_data->transfers[i]);
@@ -1283,9 +1287,7 @@ static int lusb_stream(struct bladerf *dev, bladerf_module_t module, bladerf_for
                     }
                 }
             }
-
         }
-
     }
 
     /* This loop is required so libusb can do callbacks and whatnot */
