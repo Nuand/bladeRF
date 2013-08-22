@@ -22,7 +22,8 @@ endif()
 set(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "Build type")
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/modules)
 
-set(BLADERF_COMMON_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/../common)
+# Firmware <--> Host common files
+set(BLADERF_FW_COMMON_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/../firmware_common)
 
 ################################################################################
 # Compiler configuration
@@ -70,7 +71,7 @@ endif("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" OR
 
 
 ################################################################################
-# Process subdirectories 
+# Process subdirectories
 ################################################################################
 
 add_subdirectory(libraries)
@@ -86,6 +87,6 @@ configure_file(
     IMMEDIATE @ONLY)
 
 add_custom_target(uninstall
-    COMMAND 
+    COMMAND
     ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake
 )

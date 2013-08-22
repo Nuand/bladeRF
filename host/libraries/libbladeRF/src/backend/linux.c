@@ -31,6 +31,8 @@ struct bladerf_linux {
     int fd;         /* File descriptor to associated driver device node */
 };
 
+const struct bladerf_fn bladerf_linux_fn;
+
 static bool time_past(struct timeval ref, struct timeval now) {
     if (now.tv_sec > ref.tv_sec)
         return true;
@@ -314,7 +316,7 @@ static int linux_dac_write(struct bladerf *dev, uint16_t val)
  * Data transfer
  *----------------------------------------------------------------------------*/
 /* TODO Fail out if n > ssize_t max, as we can't return that. */
-static ssize_t linux_tx(struct bladerf *dev, bladerf_format_t format,
+static ssize_t linux_tx(struct bladerf *dev, bladerf_format format,
                         void *samples, size_t n, struct bladerf_metadata *metadata)
 //static ssize_t linux_write_samples(struct bladerf *dev, int16_t *samples, size_t n)
 {
@@ -351,7 +353,7 @@ static ssize_t linux_tx(struct bladerf *dev, bladerf_format_t format,
 }
 
 /* TODO Fail out if n > ssize_t max, as we can't return that */
-static ssize_t linux_rx(struct bladerf *dev, bladerf_format_t format,
+static ssize_t linux_rx(struct bladerf *dev, bladerf_format format,
                         void *samples, size_t n, struct bladerf_metadata *metadata)
 //static ssize_t linux_read_samples(struct bladerf *dev, int16_t *samples, size_t n)
 {
@@ -503,7 +505,8 @@ static int linux_open( struct bladerf **device, struct bladerf_devinfo *info)
              * so no need to allocate backend and ret until we know we
              * have said fd */
 
-    assert(info->backend == BACKEND_LINUX || info->backend == BACKEND_ANY);
+    assert(info->backend == BLADERF_BACKEND_LINUX ||
+           info->backend == BLADERF_BACKEND_ANY);
 
     /* If an instance is specified, we start with that */
     if (info->instance != DEVINFO_INST_ANY) {
@@ -642,7 +645,7 @@ static int linux_probe(struct bladerf_devinfo_list *info_list)
         for (i = 0; i < num_matches; i++) {
             status = 0;
             bladerf_init_devinfo(&devinfo);
-            devinfo.backend = BACKEND_LINUX;
+            devinfo.backend = BLADERF_BACKEND_LINUX;
             devinfo.instance = str2instance(matches[i]->d_name);
             status = linux_open(&dev, &devinfo);
             backend = dev->backend;
@@ -694,15 +697,14 @@ static int linux_probe(struct bladerf_devinfo_list *info_list)
     return (!status &&  num_matches > 0) ? status : BLADERF_ERR_NODEV;
 }
 
-static int linux_stream(struct bladerf *dev, bladerf_module_t module,
-                        bladerf_format_t format, struct bladerf_stream *stream)
+static int linux_stream(struct bladerf *dev, bladerf_module module,
+                        bladerf_format format, struct bladerf_stream *stream)
 {
     return BLADERF_ERR_UNSUPPORTED;
 }
 
-void lusb_deinit_stream(struct bladerf_stream *stream)
+void linux_deinit_stream(struct bladerf_stream *stream)
 {
-    return BLADERF_ERR_UNSUPPORTED;
 }
 
 /*------------------------------------------------------------------------------
@@ -738,7 +740,7 @@ const struct bladerf_fn bladerf_linux_fn = {
     .dac_write              =   linux_dac_write,
 
     .rx                     =   linux_rx,
-    .tx                     =   linux_tx
+    .tx                     =   linux_tx,
 
     .stream                 =   linux_stream,
     .deinit_stream          =   linux_deinit_stream

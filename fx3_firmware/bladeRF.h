@@ -4,7 +4,7 @@
 #include "cyu3externcstart.h"
 #include "cyu3types.h"
 #include "cyu3usbconst.h"
-#include "../common/bladeRF.h"
+#include "../firmware_common/bladeRF.h"
 
 #define BLADE_GPIF_16_32BIT_CONF_SELECT (0)
 
@@ -18,7 +18,7 @@
 #define BLADE_FPGA_EP_PRODUCER          0x02
 #define BLADE_FPGA_CONFIG_SOCKET        CY_U3P_UIB_SOCKET_PROD_2
 
-// interface #1 
+// interface #1
 #define BLADE_RF_SAMPLE_EP_PRODUCER     0x01
 #define BLADE_RF_SAMPLE_EP_PRODUCER_USB_SOCKET CY_U3P_UIB_SOCKET_PROD_1
 #define BLADE_UART_EP_PRODUCER          0x02

@@ -3,12 +3,12 @@ This repository contains all the source code required to program and interact wi
 The source is organized as follows:
 
 
-| Directory       | Description                                                                                       |
-| --------------- |:--------------------------------------------------------------------------------------------------|
-| [common]        | Source and header files common between the following components                                   |
-| [fx3_firmware]  | Firmware for the Cypress FX3 USB controller                                                       |
-| [hdl]           | All HDL code associated with the Cyclone IV FPGA                                                  |
-| [host]          | Host-side libraries, drivers, utilities and samples                                               |
+| Directory         | Description                                                                                       |
+| ----------------- |:--------------------------------------------------------------------------------------------------|
+| [firmware_common] | Source and header files common between firmware and host software                                 |
+| [fx3_firmware]    | Firmware for the Cypress FX3 USB controller                                                       |
+| [hdl]             | All HDL code associated with the Cyclone IV FPGA                                                  |
+| [host]            | Host-side libraries, drivers, utilities and samples                                               |
 
 
 ## Quick Start ##

@@ -15,7 +15,7 @@ project(libbladeRF C)
 # Version information
 ################################################################################
 
-set(VERSION_INFO_MAJOR  0)   
+set(VERSION_INFO_MAJOR  0)
 set(VERSION_INFO_MINOR  3)
 set(VERSION_INFO_PATCH  0)
 set(VERSION_INFO_EXTRA "git")
@@ -39,12 +39,12 @@ configure_file(
 ##############################
 
 option(ENABLE_BACKEND_LIBUSB
-    "Enable libusb backend support" 
+    "Enable libusb backend support"
     ON
 )
 
-option(LIBUSB_DETACH_KERNEL_DRIVER 
-    "Enable calls to libusb_detach_kernel_driver(). Not supported in Windows." 
+option(LIBUSB_DETACH_KERNEL_DRIVER
+    "Enable calls to libusb_detach_kernel_driver(). Not supported in Windows."
     ON
 )
 
@@ -55,9 +55,9 @@ option(ENABLE_BACKEND_LINUX_DRIVER
 
 # Ensure we've got at least one backend enabled
 if(NOT ENABLE_BACKEND_LIBUSB AND NOT ENABLE_BACKEND_LINUX_DRIVER)
-    message(FATAL_ERROR 
+    message(FATAL_ERROR
             "No libbladeRF backends are enabled. "
-            "Please enable one or more backends." ) 
+            "Please enable one or more backends." )
 endif()
 
 
@@ -85,7 +85,7 @@ endif()
 ################################################################################
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include
                     ${CMAKE_CURRENT_SOURCE_DIR}/src
-                    ${BLADERF_COMMON_INCLUDE_DIR}
+                    ${BLADERF_FW_COMMON_INCLUDE_DIR}
                     ${CMAKE_CURRENT_BINARY_DIR}/src
                     ${LIBUSB_INCLUDE_DIRS}
 )
@@ -111,7 +111,7 @@ endif()
 ################################################################################
 # Configure source files
 ################################################################################
-set(LIBBLADERF_SOURCE  
+set(LIBBLADERF_SOURCE
         src/backend.c
         src/bladerf.c
         src/bladerf_priv.c
@@ -128,7 +128,7 @@ if(ENABLE_BACKEND_LIBUSB)
 endif()
 
 if(ENABLE_BACKEND_LINUX_DRIVER)
-    set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/linux.c)
+    set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend/linux.c)
 endif()
 
 add_library(libbladerf_shared SHARED ${LIBBLADERF_SOURCE})
@@ -149,7 +149,7 @@ set_target_properties(libbladerf_shared PROPERTIES SOVERSION ${VERSION_INFO_MAJO
 
 
 ################################################################################
-# Misc. installation config 
+# Misc. installation config
 ################################################################################
 
 if(NOT DEFINED LIB_INSTALL_DIR)
@@ -208,7 +208,7 @@ install(
 # Library installation information
 ################################################################################
 install(TARGETS libbladerf_shared
-    LIBRARY DESTINATION ${LIB_INSTALL_DIR} # .so/.dylib 
+    LIBRARY DESTINATION ${LIB_INSTALL_DIR} # .so/.dylib
     ARCHIVE DESTINATION ${LIB_INSTALL_DIR} # .a/.lib
     RUNTIME DESTINATION bin                # .dll
 )
