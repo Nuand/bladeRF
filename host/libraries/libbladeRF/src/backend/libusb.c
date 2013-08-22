@@ -1058,7 +1058,7 @@ static ssize_t lusb_rx(struct bladerf *dev, bladerf_format_t format, void *sampl
 }
 
 
-static void lusb_stream_cb(struct libusb_transfer *transfer)
+static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
 {
     struct bladerf_stream *stream  = transfer->user_data;
     struct bladerf_lusb *lusb = stream->dev->backend;
@@ -1072,37 +1072,43 @@ static void lusb_stream_cb(struct libusb_transfer *transfer)
     if( transfer->status != LIBUSB_TRANSFER_COMPLETED ) {
 
         /* Errored out for some reason .. */
-        dbg_printf("Transfer was not completed: %d\n", transfer->status );
         stream->state = STREAM_SHUTTING_DOWN;
-        stream->error_code = error_libusb2bladerf(transfer->status);
 
         switch(transfer->status) {
-            case LIBUSB_TRANSFER_ERROR:
-            case LIBUSB_TRANSFER_TIMED_OUT:
             case LIBUSB_TRANSFER_CANCELLED:
-            case LIBUSB_TRANSFER_STALL:
-            case LIBUSB_TRANSFER_NO_DEVICE:
-            case LIBUSB_TRANSFER_OVERFLOW:
-                dbg_printf( "Caught transfer error: %d\n", transfer->status );
+                /* We expect this case when we begin tearing down the stream */
                 break;
+
+            case LIBUSB_TRANSFER_ERROR:
+            case LIBUSB_TRANSFER_STALL:
+            case LIBUSB_TRANSFER_OVERFLOW :
+                dbg_printf("Got transfer state = %d\n", transfer->status);
+                stream->error_code = BLADERF_ERR_IO;
+                break;
+
+            case LIBUSB_TRANSFER_TIMED_OUT:
+                stream->error_code = BLADERF_ERR_TIMEOUT;
+                break;
+
+            case LIBUSB_TRANSFER_NO_DEVICE:
+                stream->error_code = BLADERF_ERR_NODEV;
+                break;
+
             default:
                 dbg_printf( "Unexpected transfer status: %d\n", transfer->status );
                 break;
         }
 
-        dbg_printf( "Decrementing active transfers\n" );
+        /* This transfer is no longer active */
         stream_data->active_transfers--;
 
-        dbg_printf( "Cancelling other transfers and erroring out\n" );
         for (i = 0; i < stream->num_transfers; i++ ) {
             status = libusb_cancel_transfer(stream_data->transfers[i]);
-            if (status) {
+            if (status < 0 && status != LIBUSB_ERROR_NOT_FOUND) {
                 dbg_printf("Error canceling transfer (%d): %s\n",
                             status, libusb_error_name(status));
             }
         }
-
-
     }
 
     /* Check to see if the stream is still valid */
@@ -1144,18 +1150,14 @@ static void lusb_stream_cb(struct libusb_transfer *transfer)
         libusb_submit_transfer(transfer);
     }
 
-    /* Check to see if all the transfers have been cancelled, and if so, clean up the stream */
+    /* Check to see if all the transfers have been cancelled,
+     * and if so, clean up the stream */
     if( stream->state == STREAM_SHUTTING_DOWN ) {
-        if( stream_data->active_transfers > 0 ) {
-            dbg_printf( "Active transfers: %zd\n", stream_data->active_transfers );
-        } else {
-            dbg_printf( "No more active transfers - moving to done\n" );
+        if( stream_data->active_transfers == 0 ) {
             stream->state = STREAM_DONE;
             stream_data->libusb_completed = 1;
         }
     }
-
-    return;
 }
 
 static int lusb_stream(struct bladerf *dev, bladerf_module_t module, bladerf_format_t format,
