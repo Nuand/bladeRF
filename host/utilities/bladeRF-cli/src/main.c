@@ -18,13 +18,20 @@
 #include "version.h"
 
 
-#define OPTSTR "d:bf:l:s:pLVh"
+#ifdef INTERACTIVE
+#   define OPTSTR "d:bf:l:s:pLVh"
+#else
+#   define OPTSTR "d:bf:l:pLVh"
+#endif
+
 static const struct option longopts[] = {
     { "device",         required_argument,  0, 'd' },
     { "batch",          no_argument,        0, 'b' },
     { "flash-firmware", required_argument,  0, 'f' },
     { "load-fpga",      required_argument,  0, 'l' },
+#ifdef INTERACTIVE
     { "script",         required_argument,  0, 's' },
+#endif
     { "probe",          no_argument,        0, 'p' },
     { "lib-version",    no_argument,        0, 'L' },
     { "version",        no_argument,        0, 'V' },
@@ -96,6 +103,7 @@ int get_rc_config(int argc, char *argv[], struct rc_config *rc)
                 }
                 break;
 
+#ifdef INTERACTIVE
             case 's':
                 rc->script_file = strdup(optarg);
                 if (!rc->script_file) {
@@ -103,6 +111,7 @@ int get_rc_config(int argc, char *argv[], struct rc_config *rc)
                     return -1;
                 }
                 break;
+#endif
 
             case 'b':
                 rc->batch_mode = true;
@@ -140,7 +149,9 @@ void usage(const char *argv0)
     printf("  -f, --flash-firmware <file>      Flash specified firmware file.\n");
     printf("  -l, --load-fpga <file>           Load specified FPGA bitstream.\n");
     printf("  -p, --probe                      Probe for devices, print results, then exit.\n");
+#ifdef INTERACTIVE
     printf("  -s, --script <file>              Run provided script.\n");
+#endif
     printf("  -b, --batch                      Batch mode - do not enter interactive mode.\n");
     printf("  -L, --lib-version                Print libbladeRF version and exit.\n");
     printf("  -V, --version                    Print CLI version and exit.\n");
@@ -160,8 +171,8 @@ void usage(const char *argv0)
     printf("\n");
 
 #ifndef INTERACTIVE
-    printf("  This tool has been build with INTERACTIVE=n. the interactive\n"
-           "  console is disabled.\n");
+    printf("  This tool has been built without INTERACTIVE=y. The interactive\n"
+           "  console is disabled and the -s option is not supported.\n");
 #endif
 }
 
