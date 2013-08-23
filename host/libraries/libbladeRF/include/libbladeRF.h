@@ -789,11 +789,16 @@ const char * bladerf_version(unsigned int *major,
  * @defgroup LOW_LEVEL Low level development and testing routines
  *
  * In a most cases, higher-level routines should be used. These routines are
- * only intended to support development and testing. Use these routines with
- * great care, and be sure to reference the relevant schematics, datasheets,
- * and source code (e.g., firmware and hdl). Be careful when mixing these
- * calls with higher-level routines that manipulate the same
- * registers/settings.
+ * only intended to support development and testing.   Treat these routines as
+ * if they may disappear in future revision of the API; do not depend on them
+ * for any long-term software.
+ *
+ * Use these routines with great care, and be sure to reference the relevant
+ * schematics, datasheets, and source code (e.g., firmware and hdl).
+ *
+ * Be careful when mixing these calls with higher-level routines that manipulate
+ * the same registers/settings.
+ *
  *
  * @{
  */
