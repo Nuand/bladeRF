@@ -30,6 +30,12 @@ configure_file(
     @ONLY
 )
 
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/Doxyfile.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/Doxyfile
+    @ONLY
+)
+
 ################################################################################
 # Configuration options
 ################################################################################

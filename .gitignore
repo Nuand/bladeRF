@@ -20,3 +20,5 @@ fx3_firmware/make/toolchain.mk
 fx3_firmware/elf2img
 
 host/build/*
+host/libraries/libbladeRF/doc/doxygen/html
+host/libraries/libbladeRF/doc/doxygen/Doxyfile

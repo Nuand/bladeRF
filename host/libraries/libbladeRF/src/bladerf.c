@@ -380,6 +380,10 @@ int bladerf_init_stream(struct bladerf_stream **stream,
     size_t i;
     int status = 0;
 
+    if (num_transfers > num_buffers) {
+        return BLADERF_ERR_INVAL;
+    }
+
     /* Create a stream and populate it with the appropriate information */
     lstream = malloc(sizeof(struct bladerf_stream));
 

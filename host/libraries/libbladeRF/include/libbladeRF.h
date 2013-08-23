@@ -90,7 +90,18 @@ struct bladerf_stats {
  */
 typedef enum {
     BLADERF_FORMAT_SC16_Q12, /**< Signed, Complex 16-bit Q12.
-                               *  This is the native format of the DAC data. */
+                               *  This is the native format of the DAC data.
+                               *
+                               *  Samples are interleaved IQ value pairs, where
+                               *  each value in the pair is an int16_t. For each
+                               *  value, the data in the lower bits. The upper
+                               *  bits are reserved.
+                               *
+                               *  When using this format, note that buffers
+                               *  must be at least
+                               *       2 * num_samples * sizeof(int16_t)
+                               *  bytes large
+                               */
 } bladerf_format;
 
 /**
@@ -228,13 +239,13 @@ int bladerf_open_with_devinfo(struct bladerf **device,
  *   your OS and controller)
  *   - linux:   Linux Kernel Driver
  *
- * If no arguments are provided after the backend, the first encountred
+ * If no arguments are provided after the backend, the first encountered
  * device on the specified backend will be opened. Note that a backend is
  * required, if any arguments are to be provided.
  *
  * Next, any provided arguments are provide as used to find the desired device.
- * Be sure not to overconstrain the search. Generally, only one of the above
- * is required -- providing all of these may overconstrain the search for the
+ * Be sure not to over constrain the search. Generally, only one of the above
+ * is required -- providing all of these may over constrain the search for the
  * desired device (e.g., if a serial number matches, but not on the specified
  * bus and address.)
  *
@@ -511,31 +522,34 @@ int bladerf_get_frequency(struct bladerf *dev,
 /**
  * Initialize a stream for use with asynchronous routines
  *
- * @param   stream[out]         Upon success, this will be updated to contain
+ * @param[out]  stream          Upon success, this will be updated to contain
  *                              a stream handle (i.e., address)
  *
- * @param   dev[in]             Device to associate with the stream
+ * @param[in]   dev             Device to associate with the stream
  *
- * @param   callback[in]        Callback routine to handle asynchronous events
+ * @param[in]   callback        Callback routine to handle asynchronous events
  *
- * @param   buffers[out]        This will be updated to point to a dynamically
+ * @param[out]  buffers         This will be updated to point to a dynamically
  *                              allocated array of buffer pointers.
  *
- * @param   num_buffers[in]     Number of buffers to allocate and return
+ * @param[in]   num_buffers     Number of buffers to allocate and return
  *
- * @param   format[in]          Sample data format
+ * @param[in]   format          Sample data format
  *
- * @param   samples_per_buffer[in]  Size of each buffer, in units of samples.
- *                                  (Note that the physical size of the buffer
- *                                  is a function of this and the format param.)
+ * @param[in]   num_samples     Number of samples in each buffer of samples.
+ *                              Note that the physical size of the buffer
+ *                              is a function of this and the format parameter.
  *
- * @param   num_transfers[in]   Maximum number of transfers that may be
+ * @param[in]   num_transfers   Maximum number of transfers that may be
  *                              in-flight simultaneous. This must be <= the
  *                              number of buffers.
  *
- * @param   user_data[in]       Caller-provided data that will be provided
+ * @param[in]   user_data        Caller-provided data that will be provided
  *                              in stream callbacks
  *
+ *
+ * @note  This call should be later followed by a call to
+ *        bladerf_deinit_stream() to avoid memory leaks.
  *
  * @return 0 on success,
  *          value from \ref RETCODES list on failure
@@ -546,69 +560,56 @@ int bladerf_init_stream(struct bladerf_stream **stream,
                         void ***buffers,
                         size_t num_buffers,
                         bladerf_format format,
-                        size_t samples_per_buffer,
+                        size_t num_samples,
                         size_t num_transfers,
                         void *user_data);
 
+/**
+ * Deinitialize and deallocate stream resources
+ */
 void bladerf_deinit_stream(struct bladerf_stream *stream);
 
 /**
- * XXX REMOVE
+ * Transmit IQ samples
  *
- * Send complex, 16-bit signed samples
+ * @param[in]   dev         Device handle
+ * @param[in]   format      Format of the provided samples
+ * @param[in]   samples     Array of samples
+ * @param[in]   num_samples Number of samples to write
+ * @param[in]   metadata    Sample metadata. This parameter is currently
+ *                          unused.
  *
- * @param       dev         Device handle
- * @param       samples     Array of samples
- * @param       num_samples Number of samples (IQ pairs) to write
- *
- * @note        "Samples" denotes 2 x int16_t's -- an int16_t for I
- *              and another for Q. These must be interleaved in the provided
- *              samples buffer ([I, Q, I, Q, I, Q, ... Q]).
- *              <br>
- *              Therefore,  the size of the provided samples array should be
- *              2 * (num_samples) elements, not (num_samples) elements.
- *              <br>
- *              Ideally, the return value will be n. Again, this is in units of
- *              samples, so it implies 2 * (returned value) int16_t's were
- *              written.
+ * @note When using the libusb backend, this function will likely be too slow
+ *       for mid to high sample rates. For anything other than slow sample
+ *       rates, the bladerf_stream() function is better choice.
  *
  * @return number of samples sent on success,
  *          value from \ref RETCODES list on failure
  */
-/*ssize_t bladerf_send_c16(struct bladerf *dev,
-                         int16_t *samples, size_t num_samples);
-*/
-
 ssize_t bladerf_tx(struct bladerf *dev, bladerf_format format,
                    void *samples, size_t num_samples,
                    struct bladerf_metadata *metadata);
 
 /**
- * XXX REMOVE
+ * Receive IQ samples
  *
- * Read 16-bit signed samples
+ * @param[in]   dev         Device handle
+ * @param[in]   format      The data format that the received data should be in.
+ *                          The caller is responsible for ensuring the provided
+ *                          sample buffer is sufficiently large.
  *
- * @param       dev         Device handle
- * @param       samples     Buffer to store samples in
- * @param       num_samples Number of samples (IQ pairs) to read
+ * @param[out]  samples     Buffer to store samples in
+ * @param[in]   num_samples Number of samples to read
+ * @param[out]  metadata    Sample metadata. This parameter is currently
+ *                          unused.
  *
- * @note        "Samples" denotes 2 x int16_t's -- an int16_t for I
- *              and another for Q. The data written to the provided samples
- *              array is interleaved: [I, Q, I, Q, I, Q, ... Q].
- *              <br>
- *              Therefore,  the size of the provided samples array should be
- *              2 * (num_samples) elements, not (num_samples) elements.
- *              <br>
- *              Ideally, the return value will be n (samples).
- *              Again, this is in units of samples, so it implies
- *              2 * (returned value) int16_t's were written.
+ * @note When using the libusb backend, this function will likely be too slow
+ *       for mid to high sample rates. For anything other than slow sample
+ *       rates, the bladerf_stream() function is better choice.
+ *
  *
  * @return number of samples read or value from \ref RETCODES list on failure
  */
-/*ssize_t bladerf_read_c16(struct bladerf *dev,
-                         int16_t *samples, size_t num_samples);
-*/
-
 ssize_t bladerf_rx(struct bladerf *dev, bladerf_format format,
                    void *samples, size_t num_samples,
                    struct bladerf_metadata *metadata);
@@ -622,17 +623,7 @@ ssize_t bladerf_rx(struct bladerf *dev, bladerf_format format,
 int bladerf_stream(struct bladerf *dev, bladerf_module module,
                    bladerf_format format, struct bladerf_stream *stream);
 
-/**
- *
- * @pre The provided bladerf_stream must have had its state, callback,
- *      samples_per_buffer, buffers_per_stream, and (optional) data fields
- *      initialized prior to this call
- */
-/*int bladerf_tx_stream(struct bladerf *dev, bladerf_format format,
-                      struct bladerf_stream *stream);
-*/
 /** @} (End of FN_DATA) */
-
 
 
 
@@ -653,6 +644,8 @@ int bladerf_stream(struct bladerf *dev, bladerf_module module,
  */
 int bladerf_get_serial(struct bladerf *dev, char *serial);
 
+/* FIXME this routine will be changed to have an int16_t* trim paramter soon */
+#if 0
 /**
  * Query a device's VCTCXO calibration trim
  *
@@ -662,7 +655,8 @@ int bladerf_get_serial(struct bladerf *dev, char *serial);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-int bladerf_get_vctcxo_trim(struct bladerf *dev, char *serial);
+int bladerf_get_vctcxo_trim(struct bladerf *dev, char *trim);
+#endif
 
 /**
  * Query a device's FPGA size
@@ -792,15 +786,20 @@ const char * bladerf_version(unsigned int *major,
 /** @} (End of FN_MISC) */
 
 /**
- * @defgroup SI5338_CTL Si5338 register read/write functions
+ * @defgroup LOW_LEVEL Low level development and testing routines
+ *
+ * In a most cases, higher-level routines should be used. These routines are
+ * only intended to support development and testing. Use these routines with
+ * great care, and be sure to reference the relevant schematics, datasheets,
+ * and source code (e.g., firmware and hdl). Be careful when mixing these
+ * calls with higher-level routines that manipulate the same
+ * registers/settings.
  *
  * @{
  */
 
 /**
  * Read a Si5338 register
- *
- * @warning This function will be renamed/replaced in the future
  *
  * @param   dev         Device handle
  * @param   address     Si5338 register offset
@@ -813,8 +812,6 @@ int bladerf_si5338_read(struct bladerf *dev, uint8_t address, uint8_t *val);
 /**
  * Write a Si5338 register
  *
- * @warning This function will be renamed/replaced in the future
- *
  * @param   dev         Device handle
  * @param   address     Si5338 register offset
  * @param   val         Data to write to register
@@ -826,8 +823,6 @@ int bladerf_si5338_write(struct bladerf *dev, uint8_t address, uint8_t val);
 /**
  * Set frequency for TX clocks
  *
- * @warning This function will be renamed/replaced in the future
- *
  * @param   dev         Device handle
  * @param   freq        Desired TX frequency in Hz
  *
@@ -838,8 +833,6 @@ int bladerf_si5338_set_tx_freq(struct bladerf *dev, unsigned freq);
 /**
  * Set frequency for RX clocks
  *
- * @warning This function will be renamed/replaced in the future
- *
  * @param   dev         Device handle
  * @param   freq        Desired RX frequency in Hz
  *
@@ -848,18 +841,8 @@ int bladerf_si5338_set_tx_freq(struct bladerf *dev, unsigned freq);
 int bladerf_si5338_set_rx_freq(struct bladerf *dev, unsigned freq);
 
 
-/* @} (End of SI5338_CTL) */
-
-/**
- * @defgroup LMS_CTL    LMS register read/write functions
- *
- * @{
- */
-
 /**
  * Read a LMS register
- *
- * @warning This function will be renamed/replaced in the future
  *
  * @param   dev         Device handle
  * @param   address     LMS register offset
@@ -872,8 +855,6 @@ int bladerf_lms_read(struct bladerf *dev, uint8_t address, uint8_t *val);
 /**
  * Write a LMS register
  *
- * @warning This function will be renamed/replaced in the future
- *
  * @param   dev         Device handle
  * @param   address     LMS register offset
  * @param   val         Data to write to register
@@ -882,30 +863,17 @@ int bladerf_lms_read(struct bladerf *dev, uint8_t address, uint8_t *val);
  */
 int bladerf_lms_write(struct bladerf *dev, uint8_t address, uint8_t val);
 
-/* @} (End of LMS_CTL) */
-
-/**
- * @defgroup GPIO_CTL   NIOS GPIO register read/write functions
- *
- * @warning These routines will soon be removed from this API, and replaced
- *          with more appropriate routines.
- *
- * @{
- */
-
 /**
  * Enable LMS receive
  *
- * @note Use bladerf_enable_module(dev, RX, true) instead of using the
- *       soon-to-be deprecated gpio_write() routine.
+ * @note This bit is set/cleared by bladerf_enable_module()
  */
 #define BLADERF_GPIO_LMS_RX_ENABLE (1 << 1)
 
 /**
  * Enable LMS transmit
  *
- * @note Use bladerf_enable_module(dev, TX, true) instead of using the
- *       soon-to-be deprecated gpio_write() routine.
+ * @note This bit is set/cleared by bladerf_enable_module()
  */
 #define BLADERF_GPIO_LMS_TX_ENABLE  (1 << 2)
 
@@ -952,8 +920,6 @@ int bladerf_lms_write(struct bladerf *dev, uint8_t address, uint8_t val);
 /**
  * Read a GPIO register
  *
- * @warning This function will be renamed/replaced in the future
- *
  * @param   dev         Device handle
  * @param   val         Pointer to variable the data should be read into
  *
@@ -966,8 +932,6 @@ int bladerf_gpio_read(struct bladerf *dev, uint32_t *val);
  * read-modify-write sequence to avoid accidentally clearing other
  * GPIO bits that may be set by the library internally.
  *
- * @warning This function will be renamed/replaced in the future
- *
  * @param   dev         Device handle
  * @param   val         Data to write to GPIO register
  *
@@ -975,12 +939,9 @@ int bladerf_gpio_read(struct bladerf *dev, uint32_t *val);
  */
 int bladerf_gpio_write(struct bladerf *dev, uint32_t val);
 
-/* @} (End of GPIO_CTL) */
 
 /**
  * Write value to VCTCXO DAC
- *
- * @warning This function will be renamed/replaced in the future
  *
  * @param   dev         Device handle
  * @param   val         Data to write to DAC register
@@ -988,6 +949,8 @@ int bladerf_gpio_write(struct bladerf *dev, uint32_t val);
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 int bladerf_dac_write(struct bladerf *dev, uint16_t val);
+
+/* @} (End of LOW_LEVEL) */
 
 #ifdef __cplusplus
 }
