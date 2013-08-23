@@ -5,23 +5,23 @@
 # TODO license text here (see top-level COPYING for time being)
 cmake_minimum_required(VERSION 2.8)
 
-option(INSTALL_UDEV_RULES 
-    "Install udev rules for the nuand bladeRF" 
-    OFF)
+option(INSTALL_UDEV_RULES
+    "Install udev rules for the nuand bladeRF"
+    ON)
 
 if(NOT CMAKE_HOST_UNIX)
     if(INSTALL_UDEV_RULES)
-        message(FATAL_ERROR "INSTALL_UDEV_RULES=ON is not valid for this OS.")
+        message(STATUS "udev rules not supported on this platform. Hide this message via -DINSTALL_UDEV_RULES=Off")
     endif(INSTALL_UDEV_RULES)
 else()
     if(INSTALL_UDEV_RULES)
-        message(STATUS  "Installing nuand bladeRF udev rules")
-        install(FILES 88-nuand.rules 
-                DESTINATION /etc/udev/rules.d 
+        message(STATUS  "nuand bladeRF udev rules will be installed upon running 'make install'")
+        install(FILES 88-nuand.rules
+                DESTINATION /etc/udev/rules.d
                 COMPONENT "udev_rules")
     else()
         message(STATUS
-                "Not installing nuand bladeRF udev rules. Set INSTALL_UDEV_RULES=ON to install." 
+                "nuand bladeRF udev rules will not be installed because INSTALL_UDEV_RULES=OFF"
                )
     endif(INSTALL_UDEV_RULES)
 endif()
