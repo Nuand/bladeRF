@@ -5,6 +5,7 @@
 #include "common.h"
 #include "cmd.h"
 #include "peekpoke.h"
+#include "conversions.h"
 
 int cmd_peek(struct cli_state *state, int argc, char **argv)
 {

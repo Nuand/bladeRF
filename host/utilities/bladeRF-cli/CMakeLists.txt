@@ -10,7 +10,7 @@ project(bladeRF-cli C)
 # Version information
 ################################################################################
 
-set(VERSION_INFO_MAJOR  0)   
+set(VERSION_INFO_MAJOR  0)
 set(VERSION_INFO_MINOR  3)
 set(VERSION_INFO_PATCH  0)
 set(VERSION_INFO_EXTRA "git")
@@ -36,18 +36,25 @@ option(ENABLE_INTERACTIVE_TECLA
 ################################################################################
 # Include paths
 ################################################################################
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src
-                    ${CMAKE_CURRENT_SOURCE_DIR}/src/cmd                    
-                    ${CMAKE_CURRENT_SOURCE_DIR}/src/interactive
-                    ${CMAKE_CURRENT_BINARY_DIR}/src
-                    ${libbladeRF_SOURCE_DIR}/include
-                    ${LIBTECLA_INCLUDE_DIR}
+set(BLADERF_CLI_INCLUDE
+       ${CMAKE_CURRENT_SOURCE_DIR}/src
+       ${CMAKE_CURRENT_SOURCE_DIR}/src/cmd
+       ${CMAKE_CURRENT_SOURCE_DIR}/src/interactive
+       ${CMAKE_CURRENT_BINARY_DIR}/src
+       ${BLADERF_HOST_COMMON_DIR}
+       ${libbladeRF_SOURCE_DIR}/include
 )
+
+if(ENABLE_INTERACTIVE_TECLA)
+    set(BLADERF_CLI_INCLUDE ${BLADERF_CLI_INCLUDE} ${LIBTECLA_INCLUDE_DIR})
+endif()
+
+include_directories(${BLADERF_CLI_INCLUDE})
 
 ################################################################################
 # Configure source files
 ################################################################################
-set(BLADERF_CLI_SOURCE  
+set(BLADERF_CLI_SOURCE
         src/main.c
         src/common.c
         src/cmd/cmd.c
@@ -79,7 +86,7 @@ find_package(Threads)
 if(ENABLE_INTERACTIVE_TECLA)
     find_package(LibTecla)
     if(NOT LIBTECLA_FOUND)
-        message(FATAL_ERROR 
+        message(FATAL_ERROR
                 "ENABLE_INTERACTIVE_TECLA set, but libtecla could not be found")
     endif(NOT LIBTECLA_FOUND)
 endif(ENABLE_INTERACTIVE_TECLA)
@@ -87,7 +94,7 @@ endif(ENABLE_INTERACTIVE_TECLA)
 ################################################################################
 # Build configuration
 ################################################################################
-target_link_libraries(bladeRF-cli 
+target_link_libraries(bladeRF-cli
                       libbladerf_shared
                       ${CMAKE_THREAD_LIBS_INIT}
                       ${LIBTECLA_LIBRARIES}

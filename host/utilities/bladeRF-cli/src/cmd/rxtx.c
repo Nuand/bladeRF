@@ -19,6 +19,8 @@
 #include <string.h>
 #include <unistd.h>
 #include "cmd.h"
+#include "conversions.h"
+#include "minmax.h"
 
 #define RXTX_CMDSTR_START "start"
 #define RXTX_CMDSTR_STOP  "stop"

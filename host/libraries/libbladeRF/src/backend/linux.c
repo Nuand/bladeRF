@@ -16,6 +16,7 @@
 #include "bladerf_priv.h"
 #include "backend/linux.h"
 #include "conversions.h"
+#include "minmax.h"
 #include "debug.h"
 
 #ifndef BLADERF_DEV_DIR
@@ -41,11 +42,6 @@ static bool time_past(struct timeval ref, struct timeval now) {
         return true;
 
     return false;
-}
-
-static inline size_t min_sz(size_t x, size_t y)
-{
-    return x < y ? x : y;
 }
 
 /*------------------------------------------------------------------------------

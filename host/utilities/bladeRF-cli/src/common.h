@@ -63,34 +63,7 @@ bool cli_device_is_opened(struct cli_state *s);
  */
 bool cli_device_in_use(struct cli_state *s);
 
-/**
- * String to integer conversion with range and error checking
- *
- *  @param  str     String to convert
- *  @param  min     Inclusive minimum allowed value
- *  @param  max     Inclusive maximum allowed value
- *  @param  ok      If non-NULL, this will be set to true to denote that
- *                  the conversion succeeded. If this value is not true,
- *                  then the return value should not be used.
- *
- * @return 0 on success, undefined on failure
- */
-int str2int(const char *str, int min, int max, bool *ok);
 
-/**
- * String to unsigned integer conversion with range and error checking
- *
- *  @param  str     String to convert
- *  @param  min     Inclusive minimum allowed value
- *  @param  max     Inclusive maximum allowed value
- *  @param  ok      If non-NULL, this will be set to true to denote that
- *                  the conversion succeeded. If this value is not true,
- *                  then the return value should not be used.
- *
- * @return 0 on success, undefined on failure
- */
-unsigned int str2uint(const char *str,
-                        unsigned int min, unsigned int max, bool *ok);
 
 /**
  * Print an error message, with a line number, if running from a script.
@@ -135,15 +108,5 @@ void get_last_error(struct cli_error *e, enum error_type *type, int *error);
  * @return path string on success, NULL on failure
  */
 char *to_path(FILE *f);
-
-static inline unsigned int uint_min(unsigned int x, unsigned int y)
-{
-    return x < y ? x : y;
-}
-
-static inline unsigned int uint_max(unsigned int x, unsigned int y)
-{
-    return x > y ? x : y;
-}
 
 #endif

@@ -85,6 +85,7 @@ endif()
 ################################################################################
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include
                     ${CMAKE_CURRENT_SOURCE_DIR}/src
+                    ${BLADERF_HOST_COMMON_DIR}
                     ${BLADERF_FW_COMMON_INCLUDE_DIR}
                     ${CMAKE_CURRENT_BINARY_DIR}/src
                     ${LIBUSB_INCLUDE_DIRS}
@@ -115,12 +116,12 @@ set(LIBBLADERF_SOURCE
         src/backend.c
         src/bladerf.c
         src/bladerf_priv.c
-        src/conversions.c
         src/device_identifier.c
         src/file_ops.c
         src/lms.c
         src/si5338.c
         src/version.h
+        ${BLADERF_HOST_COMMON_DIR}/conversions.c
 )
 
 if(ENABLE_BACKEND_LIBUSB)

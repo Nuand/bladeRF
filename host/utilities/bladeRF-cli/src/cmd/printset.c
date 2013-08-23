@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "cmd.h"
+#include "conversions.h"
 
 #define PRINTSET_DECL(x) int print_##x(struct cli_state *, int, char **); int set_##x(struct cli_state *, int, char **);
 #define PRINTSET_ENTRY(x) { .print = print_##x, .set = set_##x, .name = #x }

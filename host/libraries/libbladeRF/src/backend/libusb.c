@@ -12,6 +12,7 @@
 #include <libusb-1.0/libusb.h>
 
 #include "bladerf_priv.h"
+#include "minmax.h"
 #include "debug.h"
 
 #define BLADERF_LIBUSB_TIMEOUT_MS 1000
@@ -46,12 +47,6 @@ struct lusb_stream_data {
      */
     int  libusb_completed;
 };
-
-
-static inline size_t min_sz(size_t a, size_t b)
-{
-    return a < b ? a : b;
-}
 
 static int error_libusb2bladerf(int error)
 {

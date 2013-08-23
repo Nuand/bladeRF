@@ -25,6 +25,9 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/modules)
 # Firmware <--> Host common files
 set(BLADERF_FW_COMMON_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/../firmware_common)
 
+# Source common amongst host software
+set(BLADERF_HOST_COMMON_DIR ${CMAKE_CURRENT_LIST_DIR}/common)
+
 ################################################################################
 # Compiler configuration
 ################################################################################
