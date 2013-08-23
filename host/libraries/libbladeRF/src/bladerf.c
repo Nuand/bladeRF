@@ -135,6 +135,9 @@ int bladerf_enable_module(struct bladerf *dev,
                     gpio_reg &= ~BLADERF_GPIO_LMS_RX_ENABLE;
                 }
                 break;
+
+            default:
+                return BLADERF_ERR_INVAL;
         }
 
         status = bladerf_gpio_write(dev, gpio_reg);
