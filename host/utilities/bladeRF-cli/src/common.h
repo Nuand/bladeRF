@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <libbladeRF.h>
+
 /**
  * Differentiates error code types
  */

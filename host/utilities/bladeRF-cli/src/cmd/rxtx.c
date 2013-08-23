@@ -13,7 +13,6 @@
 #include <stdint.h>
 #include <pthread.h>
 #include <limits.h>
-#include <endian.h>
 #include <errno.h>
 #include <assert.h>
 #include <string.h>
@@ -21,6 +20,7 @@
 #include "cmd.h"
 #include "conversions.h"
 #include "minmax.h"
+#include "host_config.h"
 
 #define RXTX_CMDSTR_START "start"
 #define RXTX_CMDSTR_STOP  "stop"

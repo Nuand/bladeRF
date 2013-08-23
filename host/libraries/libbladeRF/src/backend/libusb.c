@@ -7,7 +7,6 @@
 #include <stdbool.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <endian.h>
 #include <bladeRF.h>
 #include <libusb-1.0/libusb.h>
 
@@ -742,8 +741,8 @@ static int lusb_get_fw_version(struct bladerf *dev,
         status = BLADERF_ERR_IO;
         *maj = *min = 0;
     } else {
-        *maj = (unsigned int) le16toh(fw_ver.major);
-        *min = (unsigned int) le16toh(fw_ver.minor);
+        *maj = (unsigned int) LE16_TO_HOST(fw_ver.major);
+        *min = (unsigned int) LE16_TO_HOST(fw_ver.minor);
     }
 
     return status;

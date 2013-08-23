@@ -41,7 +41,7 @@ set(BLADERF_CLI_INCLUDE
        ${CMAKE_CURRENT_SOURCE_DIR}/src/cmd
        ${CMAKE_CURRENT_SOURCE_DIR}/src/interactive
        ${CMAKE_CURRENT_BINARY_DIR}/src
-       ${BLADERF_HOST_COMMON_DIR}
+       ${BLADERF_HOST_COMMON_INCLUDE_DIRS}
        ${libbladeRF_SOURCE_DIR}/include
 )
 
@@ -67,6 +67,7 @@ set(BLADERF_CLI_SOURCE
         src/cmd/probe.c
         src/cmd/rxtx.c
         src/cmd/version.c
+        ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
 )
 
 if(ENABLE_INTERACTIVE_TECLA)

@@ -25,8 +25,14 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/modules)
 # Firmware <--> Host common files
 set(BLADERF_FW_COMMON_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/../firmware_common)
 
-# Source common amongst host software
-set(BLADERF_HOST_COMMON_DIR ${CMAKE_CURRENT_LIST_DIR}/common)
+# Source and headers common amongst host software
+set(BLADERF_HOST_COMMON_INCLUDE_DIRS
+        ${CMAKE_CURRENT_LIST_DIR}/common
+        ${CMAKE_CURRENT_BINARY_DIR}/common
+)
+
+set(BLADERF_HOST_COMMON_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/common)
+
 
 ################################################################################
 # Compiler configuration
@@ -72,14 +78,29 @@ if("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" OR
 endif("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" OR
       "${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
 
+###############################
+# System configuration
+###############################
+
+# Linux (TODO determine if this will actually be sufficient for BSD)
+if(${CMAKE_SYSTEM_NAME} MATCHES "Linux" OR ${CMAKE_SYSTEM_NAME} MATCHES "BSD")
+    set(BLADERF_OS_LINUX 1)
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    set(BLADERF_OS_OSX 1)
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    set(BLADERF_OS_WINDOWS 1)
+else()
+    message(FATAL_ERROR "Unsupported host operating system: ${CMAKE_SYSTEM_NAME}")
+endif()
 
 ################################################################################
 # Process subdirectories
 ################################################################################
 
+add_subdirectory(common)
 add_subdirectory(libraries)
-add_subdirectory(utilities)
 add_subdirectory(misc)
+add_subdirectory(utilities)
 
 ################################################################################
 # Create uninstall target
