@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <limits.h>
+#include <sys/types.h>
 #include <libbladeRF.h>
 
 #ifndef DATA_SOURCE
@@ -23,7 +24,7 @@ struct test_data
     unsigned int        idx;            /* The next one that needs to go out */
     bladerf_module      module;         /* Direction */
     FILE                *fout;          /* Output file (RX only) */
-    ssize_t             samples_left;   /* Number of samples left */
+    int                 samples_left;   /* Number of samples left */
 };
 
 int str2int(const char *str, int min, int max, bool *ok)

@@ -120,8 +120,8 @@ struct bladerf_fn {
     int (*dac_write)(struct bladerf *dev, uint16_t value);
 
     /* Sample stream */
-    ssize_t (*rx)(struct bladerf *dev, bladerf_format format, void *samples, size_t n, struct bladerf_metadata *metadata);
-    ssize_t (*tx)(struct bladerf *dev, bladerf_format format, void *samples, size_t n, struct bladerf_metadata *metadata);
+    int (*rx)(struct bladerf *dev, bladerf_format format, void *samples, int n, struct bladerf_metadata *metadata);
+    int (*tx)(struct bladerf *dev, bladerf_format format, void *samples, int n, struct bladerf_metadata *metadata);
 
     int (*stream)(struct bladerf *dev, bladerf_module module, bladerf_format format, struct bladerf_stream *stream);
 

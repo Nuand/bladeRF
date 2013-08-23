@@ -18,9 +18,9 @@
  * Device discovery & initialization/deinitialization
  *----------------------------------------------------------------------------*/
 
-ssize_t bladerf_get_device_list(struct bladerf_devinfo **devices)
+int bladerf_get_device_list(struct bladerf_devinfo **devices)
 {
-    ssize_t ret;
+    int ret;
     size_t num_devices;
     struct bladerf_devinfo *devices_local;
     int status;
@@ -30,8 +30,8 @@ ssize_t bladerf_get_device_list(struct bladerf_devinfo **devices)
     if (status < 0) {
         ret = status;
     } else {
-        assert(num_devices <= SSIZE_MAX);
-        ret = (ssize_t)num_devices;
+        assert(num_devices <= INT_MAX);
+        ret = num_devices;
         *devices = devices_local;
     }
 
@@ -355,15 +355,25 @@ int bladerf_get_frequency(struct bladerf *dev,
     return rv;
 }
 
-ssize_t bladerf_tx(struct bladerf *dev, bladerf_format format, void *samples,
-                   size_t num_samples, struct bladerf_metadata *metadata)
+int bladerf_tx(struct bladerf *dev, bladerf_format format, void *samples,
+               int num_samples, struct bladerf_metadata *metadata)
 {
+    if (num_samples < 1024 || num_samples % 1024 != 0) {
+        dbg_printf("num_samples must be multiples of 1024\n");
+        return BLADERF_ERR_INVAL;
+    }
+
     return dev->fn->tx(dev, format, samples, num_samples, metadata);
 }
 
-ssize_t bladerf_rx(struct bladerf *dev, bladerf_format format, void *samples,
-                   size_t num_samples, struct bladerf_metadata *metadata)
+int bladerf_rx(struct bladerf *dev, bladerf_format format, void *samples,
+                   int num_samples, struct bladerf_metadata *metadata)
 {
+    if (num_samples < 1024 || num_samples % 1024 != 0) {
+        dbg_printf("num_samples must be multiples of 1024\n");
+        return BLADERF_ERR_INVAL;
+    }
+
     return dev->fn->rx(dev, format, samples, num_samples, metadata);
 }
 
@@ -384,6 +394,12 @@ int bladerf_init_stream(struct bladerf_stream **stream,
     int status = 0;
 
     if (num_transfers > num_buffers) {
+        dbg_printf("num_transfers must be <= num_buffers\n");
+        return BLADERF_ERR_INVAL;
+    }
+
+    if (samples_per_buffer < 1024 || samples_per_buffer% 1024 != 0) {
+        dbg_printf("samples_per_buffer must be multiples of 1024\n");
         return BLADERF_ERR_INVAL;
     }
 

@@ -190,7 +190,7 @@ typedef void *(*bladerf_stream_cb)(struct bladerf *dev,
  * @return number of items in returned device list, or value from
  *         \ref RETCODES list on failure
  */
-ssize_t bladerf_get_device_list(struct bladerf_devinfo **devices);
+ int bladerf_get_device_list(struct bladerf_devinfo **devices);
 
 /**
  * Free device list returned by bladerf_get_device_list()
@@ -570,6 +570,15 @@ int bladerf_init_stream(struct bladerf_stream **stream,
 void bladerf_deinit_stream(struct bladerf_stream *stream);
 
 /**
+ *
+ * @pre The provided bladerf_stream must have had its callback,
+ *      samples_per_buffer, buffers_per_stream, and (optional) data fields
+ *      initialized prior to this call
+ */
+int bladerf_stream(struct bladerf *dev, bladerf_module module,
+                   bladerf_format format, struct bladerf_stream *stream);
+
+/**
  * Transmit IQ samples
  *
  * @param[in]   dev         Device handle
@@ -586,9 +595,9 @@ void bladerf_deinit_stream(struct bladerf_stream *stream);
  * @return number of samples sent on success,
  *          value from \ref RETCODES list on failure
  */
-ssize_t bladerf_tx(struct bladerf *dev, bladerf_format format,
-                   void *samples, size_t num_samples,
-                   struct bladerf_metadata *metadata);
+int bladerf_tx(struct bladerf *dev, bladerf_format format,
+               void *samples, int num_samples,
+               struct bladerf_metadata *metadata);
 
 /**
  * Receive IQ samples
@@ -610,18 +619,9 @@ ssize_t bladerf_tx(struct bladerf *dev, bladerf_format format,
  *
  * @return number of samples read or value from \ref RETCODES list on failure
  */
-ssize_t bladerf_rx(struct bladerf *dev, bladerf_format format,
-                   void *samples, size_t num_samples,
-                   struct bladerf_metadata *metadata);
-
-/**
- *
- * @pre The provided bladerf_stream must have had its callback,
- *      samples_per_buffer, buffers_per_stream, and (optional) data fields
- *      initialized prior to this call
- */
-int bladerf_stream(struct bladerf *dev, bladerf_module module,
-                   bladerf_format format, struct bladerf_stream *stream);
+int bladerf_rx(struct bladerf *dev, bladerf_format format,
+               void *samples, int num_samples,
+               struct bladerf_metadata *metadata);
 
 /** @} (End of FN_DATA) */
 

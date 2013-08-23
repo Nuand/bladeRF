@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <sys/stat.h>
-#include <unistd.h>
+#include <sys/types.h>
 #include <bladeRF.h>
 #include <libusb-1.0/libusb.h>
 
@@ -385,7 +385,7 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
     }
 
     /* Poll FPGA status to determine if programming was a success */
-    wait_count = 10;
+    wait_count = 1000;
     status = 0;
 
     while (wait_count > 0 && status == 0) {
@@ -395,7 +395,6 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
         }
 
         wait_count--;
-        usleep(10000);
     }
 
     /* Failed to determine if FPGA is loaded */
@@ -403,7 +402,7 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
         status = error_libusb2bladerf(status);
         bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
         return status;
-    } else if (wait_count == 0) {
+    } else if (wait_count == 0 && !status) {
         bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, BLADERF_ERR_TIMEOUT);
         return BLADERF_ERR_TIMEOUT;
     }
@@ -981,8 +980,8 @@ static int lusb_dac_write(struct bladerf *dev, uint16_t value)
     return status;
 }
 
-static ssize_t lusb_tx(struct bladerf *dev, bladerf_format format, void *samples,
-                       size_t n, struct bladerf_metadata *metadata)
+static int lusb_tx(struct bladerf *dev, bladerf_format format, void *samples,
+                   int n, struct bladerf_metadata *metadata)
 {
     size_t bytes_total, bytes_remaining;
     struct bladerf_lusb *lusb = (struct bladerf_lusb *)dev->backend;
@@ -1017,10 +1016,10 @@ static ssize_t lusb_tx(struct bladerf *dev, bladerf_format format, void *samples
     return bytes_to_c16_samples(bytes_total - bytes_remaining);
 }
 
-static ssize_t lusb_rx(struct bladerf *dev, bladerf_format format, void *samples,
-                       size_t n, struct bladerf_metadata *metadata)
+static int lusb_rx(struct bladerf *dev, bladerf_format format, void *samples,
+                   int n, struct bladerf_metadata *metadata)
 {
-    ssize_t bytes_total, bytes_remaining = c16_samples_to_bytes(n);
+    int bytes_total, bytes_remaining = c16_samples_to_bytes(n);
     struct bladerf_lusb *lusb = (struct bladerf_lusb *)dev->backend;
     uint8_t *samples8 = (uint8_t *)samples;
     int transferred, status;

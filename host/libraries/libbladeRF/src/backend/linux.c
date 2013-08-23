@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <errno.h>
 #include <sys/time.h>
 #include <dirent.h>
@@ -311,10 +312,8 @@ static int linux_dac_write(struct bladerf *dev, uint16_t val)
 /*------------------------------------------------------------------------------
  * Data transfer
  *----------------------------------------------------------------------------*/
-/* TODO Fail out if n > ssize_t max, as we can't return that. */
-static ssize_t linux_tx(struct bladerf *dev, bladerf_format format,
-                        void *samples, size_t n, struct bladerf_metadata *metadata)
-//static ssize_t linux_write_samples(struct bladerf *dev, int16_t *samples, size_t n)
+static int linux_tx(struct bladerf *dev, bladerf_format format,
+                    void *samples, int n, struct bladerf_metadata *metadata)
 {
     ssize_t i, ret = 0;
     size_t bytes_written = 0;
@@ -348,10 +347,8 @@ static ssize_t linux_tx(struct bladerf *dev, bladerf_format format,
     }
 }
 
-/* TODO Fail out if n > ssize_t max, as we can't return that */
-static ssize_t linux_rx(struct bladerf *dev, bladerf_format format,
-                        void *samples, size_t n, struct bladerf_metadata *metadata)
-//static ssize_t linux_read_samples(struct bladerf *dev, int16_t *samples, size_t n)
+static int linux_rx(struct bladerf *dev, bladerf_format format,
+                    void *samples, int n, struct bladerf_metadata *metadata)
 {
     ssize_t i, ret = 0;
     size_t bytes_read = 0;
