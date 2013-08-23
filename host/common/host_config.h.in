@@ -79,4 +79,18 @@
 #define strtok_r strtok_s
 #endif
 
+/* Windows (msvc) does not support C99 designated initializers.
+ *
+ * Therefore, the following macro should be used. However, note that you'll
+ * need to be sure to keep your elements in order to avoid breaking Windows
+ * portability!
+ *
+ * http://stackoverflow.com/questions/5440611/how-to-rewrite-c-struct-designated-initializers-to-c89-resp-msvc-c-compiler
+ */
+#if BLADERF_OS_WINDOWS
+#   define FIELD_INIT(field, ...) field = __VA_ARGS__
+#else
+#   define FIELD_INIT(field, ...) __VA_ARGS__
+#endif
+
 #endif
