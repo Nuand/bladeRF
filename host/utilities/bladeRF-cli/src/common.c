@@ -55,55 +55,6 @@ bool cli_device_in_use(struct cli_state *s)
             (rxtx_tx_task_running(s) || rxtx_rx_task_running(s));
 }
 
-int str2int(const char *str, int min, int max, bool *ok)
-{
-    long value;
-    char *endptr;
-
-    errno = 0;
-    value = strtol(str, &endptr, 0);
-
-    if (errno != 0 || value < (long)min || value > (long)max ||
-        endptr == str || *endptr != '\0') {
-
-        if (ok) {
-            *ok = false;
-        }
-
-        return 0;
-    }
-
-    if (ok) {
-        *ok = true;
-    }
-    return (int)value;
-}
-
-double str2double(const char *str, double min, double max, bool *ok)
-{
-    double value;
-    char *endptr;
-
-    errno = 0;
-    value = strtod(str, &endptr);
-
-    if (errno != 0 || value < min || value > max ||
-        endptr == str || *endptr != '\0') {
-
-        if (ok) {
-            *ok = false;
-        }
-
-        return 0;
-    }
-
-    if (ok) {
-        *ok = true;
-    }
-
-    return value;
-}
-
 void cli_err(struct cli_state *s, const char *pfx, const char *format, ...)
 {
     va_list arg_list;
