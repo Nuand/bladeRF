@@ -1,27 +1,35 @@
-# This is a *slightly* modified version of the file written by Hedrik Sattler, 
-# from the OpenOBEX project (licensed GPLv2/LGPL).  (If this is not correct, 
+# This is a *slightly* modified version of the file written by Hedrik Sattler,
+# from the OpenOBEX project (licensed GPLv2/LGPL).  (If this is not correct,
 # please contact us so we can attribute the author appropriately.)
 #
 # https://github.com/zuckschwerdt/openobex/blob/master/CMakeModules/FindLibUSB.cmake
 # http://dev.zuckschwerdt.org/openobex/
 #
+# Find libusb(x)-1.0
 #
-# - Find libusb for portable USB support
-# This module will find libusb as published by
-#  http://libusb.sf.net and
-#  http://libusb-win32.sf.net
-# 
-# It will use PkgConfig if present and supported, else search
-# it on its own. If the LIBUSB_ROOT_DIR environment variable
-# is defined, it will be used as base path.
+# It will use PkgConfig if present and supported, otherwise this
+# script searches for binary distribution in the path defined by
+# the LIBUSB_PATH variable.
+#
 # The following standard variables get defined:
 #  LIBUSB_FOUND:        true if LibUSB was found
 #  LIBUSB_HEADER_FILE:  the location of the C header file
 #  LIBUSB_INCLUDE_DIRS: the directory that contains the include file
 #  LIBUSB_LIBRARIES:    the library
 
+if(DEFINED __INCLUDED_BLADERF_FINDLIBUSB_CMAKE)
+    return()
+endif()
+set(__INCLUDED_BLADERF_FINDLIBUSB_CMAKE TRUE)
+
 include ( CheckLibraryExists )
 include ( CheckIncludeFile )
+
+# Attempts to use a LIBUSB_PATH variable
+option(LIBUSB_PATH
+        "Path to libusb files. (Generally only needed for binary distributions.)"
+        $ENV{LIBUSB_PATH}
+      )
 
 find_package ( PkgConfig )
 if ( PKG_CONFIG_FOUND )
@@ -48,43 +56,44 @@ if ( PKGCONFIG_LIBUSB_FOUND )
 else ( PKGCONFIG_LIBUSB_FOUND )
   find_file ( LIBUSB_HEADER_FILE
     NAMES
-      libusb.h usb.h
+      libusb.h
     PATHS
-      $ENV{ProgramFiles}/LibUSB-Win32
-      $ENV{LIBUSB_ROOT_DIR}
-    PATH_SUFFIXES
-      include
+      ${LIBUSB_PATH}
+      PATH_SUFFIXES
+      include include/libusbx-1.0
   )
   mark_as_advanced ( LIBUSB_HEADER_FILE )
   get_filename_component ( LIBUSB_INCLUDE_DIRS "${LIBUSB_HEADER_FILE}" PATH )
 
   if ( ${CMAKE_SYSTEM_NAME} STREQUAL "Windows" )
-    # LibUSB-Win32 binary distribution contains several libs.
+    # The libusbx binary distribution contains several libs.
     # Use the lib that got compiled with the same compiler.
     if ( MSVC )
       if ( WIN32 )
-        set ( LIBUSB_LIBRARY_PATH_SUFFIX lib/msvc )
+        set ( LIBUSB_LIBRARY_PATH_SUFFIX MS32/dll )
       else ( WIN32 )
-        set ( LIBUSB_LIBRARY_PATH_SUFFIX lib/msvc_x64 )
-      endif ( WIN32 )          
-    elseif ( BORLAND )
-      set ( LIBUSB_LIBRARY_PATH_SUFFIX lib/bcc )
+        set ( LIBUSB_LIBRARY_PATH_SUFFIX MS64/dll )
+      endif ( WIN32 )
     elseif ( CMAKE_COMPILER_IS_GNUCC )
-      set ( LIBUSB_LIBRARY_PATH_SUFFIX lib/gcc )
+      if ( WIN32 )
+        set ( LIBUSB_LIBRARY_PATH_SUFFIX MinGW32/dll )
+      else ( WIN32 )
+        set ( LIBUSB_LIBRARY_PATH_SUFFIX MinGW64/dll )
+      endif ( WIN32 )
     endif ( MSVC )
   endif ( ${CMAKE_SYSTEM_NAME} STREQUAL "Windows" )
 
   find_library ( usb_LIBRARY
     NAMES
-      usb-1.0 libusb usb
+      libusb-1.0
     PATHS
-      $ENV{ProgramFiles}/LibUSB-Win32
-      $ENV{LIBUSB_ROOT_DIR}
-    PATH_SUFFIXES
+      ${LIBUSB_PATH}
+      PATH_SUFFIXES
       ${LIBUSB_LIBRARY_PATH_SUFFIX}
   )
   mark_as_advanced ( usb_LIBRARY )
   if ( usb_LIBRARY )
+    message(STATUS "Found libusb library at ${usb_LIBRARY}")
     set ( LIBUSB_LIBRARIES ${usb_LIBRARY} )
   endif ( usb_LIBRARY )
 
@@ -100,13 +109,15 @@ if ( LIBUSB_FOUND )
 endif ( LIBUSB_FOUND )
 
 if ( LIBUSB_FOUND )
-  check_library_exists ( "${usb_LIBRARY}" usb_open "" LIBUSB_FOUND )
   check_library_exists ( "${usb_LIBRARY}" libusb_get_device_list "" LIBUSB_VERSION_1.0 )
+  check_library_exists ( "${usb_LIBRARY}" libusb_error_name "" LIBUSB_VERSION_1.0 )
+  check_library_exists ( "${usb_LIBRARY}" libusb_handle_events_timeout_completed "" LIBUSB_VERSION_1.0 )
+
 endif ( LIBUSB_FOUND )
 
 if ( NOT LIBUSB_FOUND )
   if ( NOT LIBUSB_FIND_QUIETLY )
-    message ( STATUS "libusb not found, try setting LIBUSB_ROOT_DIR environment variable." )
+      message ( STATUS "libusb-1.0 not found. If you're using a binary distribution, try setting -DLIBUSB_PATH=<path_to_libusb_files>" )
   endif ( NOT LIBUSB_FIND_QUIETLY )
   if ( LIBUSB_FIND_REQUIRED )
     message ( FATAL_ERROR "" )
