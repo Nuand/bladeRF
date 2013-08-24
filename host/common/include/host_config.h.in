@@ -70,7 +70,7 @@
 
 
 /*******************************************************************************
- * Miscellaneous fixups
+ * Miscellaneous Windows fixups
  ******************************************************************************/
 
 /* Windows does not appear to provide strtok_r, but appears to provide a

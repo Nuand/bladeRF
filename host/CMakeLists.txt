@@ -97,6 +97,13 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(BLADERF_OS_OSX 1)
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set(BLADERF_OS_WINDOWS 1)
+
+    # We also need to add some headers that the system will not provide
+    set(BLADERF_HOST_COMMON_INCLUDE_DIRS
+            ${BLADERF_HOST_COMMON_INCLUDE_DIRS}
+            ${CMAKE_CURRENT_LIST_DIR}/common/include/windows
+    )
+
 else()
     message(FATAL_ERROR "Unsupported host operating system: ${CMAKE_SYSTEM_NAME}")
 endif()
