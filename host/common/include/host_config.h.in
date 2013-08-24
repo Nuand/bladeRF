@@ -86,6 +86,9 @@
  * portability!
  *
  * http://stackoverflow.com/questions/5440611/how-to-rewrite-c-struct-designated-initializers-to-c89-resp-msvc-c-compiler
+ *
+ * Here's a sample regexep you could use in vim to clean these up in your code:
+ *  @\(\s\+\)\(\.[a-zA-Z0-9_]\+\)\s*=\s*\([a-zA-Z0-9_]\+\)\(,\)\?@\1FIELD_INIT(\2,\3)\4@gc
  */
 #if BLADERF_OS_WINDOWS
 #   define FIELD_INIT(field, ...) field = __VA_ARGS__

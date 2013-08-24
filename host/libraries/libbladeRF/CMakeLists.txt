@@ -130,6 +130,8 @@ set(LIBBLADERF_SOURCE
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
 )
 
+message(STATUS "In libraries ${BLADERF_HOST_COMMON_SOURCE_DIR}")
+
 if(ENABLE_BACKEND_LIBUSB)
     set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend/libusb.c)
 endif()

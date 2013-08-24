@@ -27,12 +27,20 @@ set(BLADERF_FW_COMMON_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/../firmware_common)
 
 # Source and headers common amongst host software
 set(BLADERF_HOST_COMMON_INCLUDE_DIRS
-        ${CMAKE_CURRENT_LIST_DIR}/common
-        ${CMAKE_CURRENT_BINARY_DIR}/common
+        ${CMAKE_CURRENT_LIST_DIR}/common/include
+        ${CMAKE_CURRENT_BINARY_DIR}/common/include
 )
 
-set(BLADERF_HOST_COMMON_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/common)
+set(BLADERF_HOST_COMMON_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/common/src)
 
+################################################################################
+# Configure host-specific items
+################################################################################
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/include/host_config.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/common/include/host_config.h
+    @ONLY
+)
 
 ################################################################################
 # Compiler configuration
@@ -93,11 +101,15 @@ else()
     message(FATAL_ERROR "Unsupported host operating system: ${CMAKE_SYSTEM_NAME}")
 endif()
 
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/include/host_config.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/common/include/host_config.h
+    @ONLY
+)
+
 ################################################################################
 # Process subdirectories
 ################################################################################
-
-add_subdirectory(common)
 add_subdirectory(libraries)
 add_subdirectory(misc)
 add_subdirectory(utilities)
