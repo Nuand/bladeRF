@@ -1359,42 +1359,51 @@ int lusb_probe(struct bladerf_devinfo_list *info_list)
     }
     libusb_free_device_list(list,1);
     libusb_exit(context);
+
 lusb_probe_done:
     return status;
 }
 
+static int lusb_get_stats(struct bladerf *dev, struct bladerf_stats *stats)
+{
+    /* TODO Implementation requires FPGA support */
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
 const struct bladerf_fn bladerf_lusb_fn = {
-    .probe              = lusb_probe,
+    FIELD_INIT(.probe, lusb_probe),
 
-    .open               = lusb_open,
-    .close              = lusb_close,
+    FIELD_INIT(.open, lusb_open),
+    FIELD_INIT(.close, lusb_close),
 
-    .load_fpga          = lusb_load_fpga,
-    .is_fpga_configured = lusb_is_fpga_configured,
+    FIELD_INIT(.load_fpga, lusb_load_fpga),
+    FIELD_INIT(.is_fpga_configured, lusb_is_fpga_configured),
 
-    .flash_firmware     = lusb_flash_firmware,
+    FIELD_INIT(.flash_firmware, lusb_flash_firmware),
 
-    .get_cal            = lusb_get_cal,
-    .get_otp            = lusb_get_otp,
-    .get_fw_version     = lusb_get_fw_version,
-    .get_fpga_version   = lusb_get_fpga_version,
-    .get_device_speed   = lusb_get_device_speed,
+    FIELD_INIT(.get_cal, lusb_get_cal),
+    FIELD_INIT(.get_otp, lusb_get_otp),
+    FIELD_INIT(.get_fw_version, lusb_get_fw_version),
+    FIELD_INIT(.get_fpga_version, lusb_get_fpga_version),
+    FIELD_INIT(.get_device_speed, lusb_get_device_speed),
 
-    .gpio_write         = lusb_gpio_write,
-    .gpio_read          = lusb_gpio_read,
+    FIELD_INIT(.gpio_write, lusb_gpio_write),
+    FIELD_INIT(.gpio_read, lusb_gpio_read),
 
-    .si5338_write       = lusb_si5338_write,
-    .si5338_read        = lusb_si5338_read,
+    FIELD_INIT(.si5338_write, lusb_si5338_write),
+    FIELD_INIT(.si5338_read, lusb_si5338_read),
 
-    .lms_write          = lusb_lms_write,
-    .lms_read           = lusb_lms_read,
+    FIELD_INIT(.lms_write, lusb_lms_write),
+    FIELD_INIT(.lms_read, lusb_lms_read),
 
-    .dac_write          = lusb_dac_write,
+    FIELD_INIT(.dac_write, lusb_dac_write),
 
-    .rx                 = lusb_rx,
-    .tx                 = lusb_tx,
+    FIELD_INIT(.rx, lusb_rx),
+    FIELD_INIT(.tx, lusb_tx),
 
-    .stream             = lusb_stream,
-    .deinit_stream      = lusb_deinit_stream
+    FIELD_INIT(.stream, lusb_stream),
+    FIELD_INIT(.deinit_stream, lusb_deinit_stream),
+
+    FIELD_INIT(.stats, lusb_get_stats)
 };
 

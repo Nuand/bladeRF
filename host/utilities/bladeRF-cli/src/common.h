@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <libbladeRF.h>
+#include "host_config.h"
 
 /**
  * Differentiates error code types

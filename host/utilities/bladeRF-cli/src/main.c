@@ -55,18 +55,21 @@ struct rc_config {
     char *script_file;
 };
 
-#define DEFAULT_RC_CONFIG {\
-    .batch_mode = false, \
-    .flash_fw = false, \
-    .load_fpga = false, \
-    .probe = false, \
-    .show_version = false, \
-    .show_lib_version = false, \
-    .device = NULL, \
-    .fw_file = NULL, \
-    .fpga_file = NULL, \
-    .script_file = NULL \
+static void init_rc_config(struct rc_config *rc)
+{
+    rc->batch_mode = false;
+    rc->flash_fw = false;
+    rc->load_fpga = false;
+    rc->probe = false;
+    rc->show_version = false;
+    rc->show_lib_version = false;
+
+    rc->device = NULL;
+    rc->fw_file = NULL;
+    rc->fpga_file = NULL;
+    rc->script_file = NULL;
 }
+
 
 /* Fetch runtime-configuration info
  *
@@ -270,9 +273,11 @@ static inline void stop_threads(struct cli_state *s)
 int main(int argc, char *argv[])
 {
     int status = 0;
-    struct rc_config rc = DEFAULT_RC_CONFIG;
+    struct rc_config rc;
     struct cli_state *state;
     bool exit_immediately = false;
+
+    init_rc_config(&rc);
 
     if (get_rc_config(argc, argv, &rc)) {
         return 1;

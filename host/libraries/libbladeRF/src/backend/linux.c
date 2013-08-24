@@ -696,8 +696,14 @@ static int linux_stream(struct bladerf *dev, bladerf_module module,
     return BLADERF_ERR_UNSUPPORTED;
 }
 
-void linux_deinit_stream(struct bladerf_stream *stream)
+static void linux_deinit_stream(struct bladerf_stream *stream)
 {
+}
+
+static int linux_get_stats(struct bladerf *dev, struct bladerf_stats *stats)
+{
+    /* TODO Currently unimplemented in the FPGA */
+    return BLADERF_ERR_UNSUPPORTED;
 }
 
 /*------------------------------------------------------------------------------
@@ -705,37 +711,39 @@ void linux_deinit_stream(struct bladerf_stream *stream)
  *----------------------------------------------------------------------------*/
 
 const struct bladerf_fn bladerf_linux_fn = {
-    .probe                  =   linux_probe,
+    FIELD_INIT(.probe, linux_probe),
 
-    .open                   =   linux_open,
-    .close                  =   linux_close,
+    FIELD_INIT(.open, linux_open),
+    FIELD_INIT(.close, linux_close),
 
-    .load_fpga              =   linux_load_fpga,
-    .is_fpga_configured     =   linux_is_fpga_configured,
+    FIELD_INIT(.load_fpga, linux_load_fpga),
+    FIELD_INIT(.is_fpga_configured, linux_is_fpga_configured),
 
-    .flash_firmware         =   linux_flash_firmware,
+    FIELD_INIT(.flash_firmware, linux_flash_firmware),
 
-    .get_cal                =   linux_get_cal,
-    .get_otp                =   linux_get_otp,
-    .get_fw_version         =   linux_get_fw_version,
-    .get_fpga_version       =   linux_get_fpga_version,
-    .get_device_speed       =   linux_get_device_speed,
+    FIELD_INIT(.get_cal, linux_get_cal),
+    FIELD_INIT(.get_otp, linux_get_otp),
+    FIELD_INIT(.get_fw_version, linux_get_fw_version),
+    FIELD_INIT(.get_fpga_version, linux_get_fpga_version),
+    FIELD_INIT(.get_device_speed, linux_get_device_speed),
 
-    .gpio_write             =   linux_gpio_write,
-    .gpio_read              =   linux_gpio_read,
+    FIELD_INIT(.gpio_write, linux_gpio_write),
+    FIELD_INIT(.gpio_read, linux_gpio_read),
 
-    .si5338_write           =   linux_si5338_write,
-    .si5338_read            =   linux_si5338_read,
+    FIELD_INIT(.si5338_write, linux_si5338_write),
+    FIELD_INIT(.si5338_read, linux_si5338_read),
 
-    .lms_write              =   linux_lms_write,
-    .lms_read               =   linux_lms_read,
+    FIELD_INIT(.lms_write, linux_lms_write),
+    FIELD_INIT(.lms_read, linux_lms_read),
 
-    .dac_write              =   linux_dac_write,
+    FIELD_INIT(.dac_write, linux_dac_write),
 
-    .rx                     =   linux_rx,
-    .tx                     =   linux_tx,
+    FIELD_INIT(.rx, linux_rx),
+    FIELD_INIT(.tx, linux_tx),
 
-    .stream                 =   linux_stream,
-    .deinit_stream          =   linux_deinit_stream
+    FIELD_INIT(.stream, linux_stream),
+    FIELD_INIT(.deinit_stream, linux_deinit_stream),
+
+    FIELD_INIT(.stats, linux_get_stats)
 };
 

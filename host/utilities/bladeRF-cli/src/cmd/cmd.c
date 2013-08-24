@@ -42,10 +42,10 @@ static const char *cmd_names_ver[] = { "version", "ver", "v", NULL };
 
 static const struct cmd cmd_table[] = {
     {
-        .names = cmd_names_rx,
-        .exec = cmd_rxtx,
-        .desc = "Receive IQ samples",
-        .help =
+        FIELD_INIT(.names, cmd_names_rx),
+        FIELD_INIT(.exec, cmd_rxtx),
+        FIELD_INIT(.desc, "Receive IQ samples"),
+        FIELD_INIT(.help,
             " rx <start | stop | config [param=val [param=val [...]]>\n"
             "\n"
             "Receive IQ samples and write them to the specified file.\n"
@@ -80,12 +80,13 @@ static const struct cmd cmd_table[] = {
             "  samples file being truncated. If this is not desired, be sure\n"
             "  to run 'rx config' to set another file before restaring the\n"
             "  rx stream.\n"
+        )
     },
     {
-        .names = cmd_names_tx,
-        .exec = cmd_rxtx,
-        .desc = "Transmit IQ samples",
-        .help =
+        FIELD_INIT(.names, cmd_names_tx),
+        FIELD_INIT(.exec, cmd_rxtx),
+        FIELD_INIT(.desc, "Transmit IQ samples"),
+        FIELD_INIT(.help,
             " tx <start | stop | config [parameters]>\n"
             "\n"
             "Receive IQ samples and write them to the specified file.\n"
@@ -117,12 +118,13 @@ static const struct cmd cmd_table[] = {
             "Example:\n"
             "  tx config file=data.bin format=binle_c16 repeat=2 delay=250000\n"
             "\n"
+        )
     },
     {
-        .names = cmd_names_set,
-        .exec = cmd_set,
-        .desc = "Set device settings",
-        .help =
+        FIELD_INIT(.names, cmd_names_set),
+        FIELD_INIT(.exec, cmd_set),
+        FIELD_INIT(.desc, "Set device settings"),
+        FIELD_INIT(.help,
             "set <param> <arguments>\n"
             "\n"
             "The set command takes a parameter and an arbitrary number of\n"
@@ -144,12 +146,13 @@ static const struct cmd cmd_table[] = {
             "   trimdac         VCTCXO Trim DAC settings\n"
             "   txvga1          Gain setting of TXVGA1 in dB (range: )\n"
             "   txvga2          Gain setting of TXVGA2 in dB (range: )\n"
+        )
     },
     {
-        .names = cmd_names_poke,
-        .exec = cmd_poke,
-        .desc = "Poke a memory location",
-        .help =
+        FIELD_INIT(.names, cmd_names_poke),
+        FIELD_INIT(.exec, cmd_poke),
+        FIELD_INIT(.desc, "Poke a memory location"),
+        FIELD_INIT(.help,
             "poke <dac|lms|si> <address> <data>\n"
             "\n"
             "The poke command can write any of the devices hanging off\n"
@@ -168,12 +171,13 @@ static const struct cmd cmd_table[] = {
             "Examples\n"
             "-------\n"
             "  bladeRF> poke lms ...\n"
+        )
     },
     {
-        .names = cmd_names_peek,
-        .exec = cmd_peek,
-        .desc = "Peek a memory location",
-        .help =
+        FIELD_INIT(.names, cmd_names_peek),
+        FIELD_INIT(.exec, cmd_peek),
+        FIELD_INIT(.desc, "Peek a memory location"),
+        FIELD_INIT(.help,
             "peek <dac|lms|si> <address> [num addresses]\n"
             "\n"
             "The peek command can read any of the devices hanging off\n"
@@ -192,30 +196,33 @@ static const struct cmd cmd_table[] = {
             "Examples\n"
             "--------\n"
             "  bladeRF> peek si ...\n"
+        )
     },
     {
-        .names = cmd_names_help,
-        .exec = cmd_help,
-        .desc = "Provide information about specified command",
-        .help =
+        FIELD_INIT(.names, cmd_names_help),
+        FIELD_INIT(.exec, cmd_help),
+        FIELD_INIT(.desc, "Provide information about specified command"),
+        FIELD_INIT(.help,
             "help <command>\n"
             "\n"
             "Provides extended help, like this, on any command.\n"
+        )
     },
     {
-        .names = cmd_names_load,
-        .exec = cmd_load,
-        .desc = "Load FPGA or FX3",
-        .help =
+        FIELD_INIT(.names, cmd_names_load),
+        FIELD_INIT(.exec, cmd_load),
+        FIELD_INIT(.desc, "Load FPGA or FX3"),
+        FIELD_INIT(.help,
             "load <fpga|fx3> <filename>\n"
             "\n"
             "Load an FPGA bitstream or program the FX3's SPI flash.\n"
+        )
     },
     {
-        .names = cmd_names_print,
-        .exec = cmd_print,
-        .desc = "Print information about the device",
-        .help =
+        FIELD_INIT(.names, cmd_names_print),
+        FIELD_INIT(.exec, cmd_print),
+        FIELD_INIT(.desc, "Print information about the device"),
+        FIELD_INIT(.help,
             "print <param>\n"
             "\n"
             "The print command takes a parameter to print.  The parameter\n"
@@ -236,55 +243,60 @@ static const struct cmd cmd_table[] = {
             "   trimdac         VCTCXO Trim DAC settings\n"
             "   txvga1          Gain setting of TXVGA1 in dB (range: )\n"
             "   txvga2          Gain setting of TXVGA2 in dB (range: )\n"
+        )
     },
     {
-        .names = cmd_names_open,
-        .exec = cmd_open,
-        .desc = "Open a bladeRF device",
-        .help = "open [device identifiers]\n"
+        FIELD_INIT(.names, cmd_names_open),
+        FIELD_INIT(.exec, cmd_open),
+        FIELD_INIT(.desc, "Open a bladeRF device"),
+        FIELD_INIT(.help, "open [device identifiers]\n"
                 "\n"
                 "Open the specified device for use with successive commands.\n"
                 "Any previously opened device will be closed.\n"
                 "See the bladerf_open() documentation for the device specifier format.\n",
+        )
     },
     {
-        .names = cmd_names_probe,
-        .exec = cmd_probe,
-        .desc = "List attached bladeRF devices",
-        .help = "probe\n"
+        FIELD_INIT(.names, cmd_names_probe),
+        FIELD_INIT(.exec, cmd_probe),
+        FIELD_INIT(.desc, "List attached bladeRF devices"),
+        FIELD_INIT(.help, "probe\n"
                 "\n"
                 "Search for attached bladeRF device and print a list\n"
                 "of results.\n",
+        )
     },
     {
-        .names = cmd_names_ver,
-        .exec = cmd_version,
-        .desc = "Device and firmware versions",
-        .help =
+        FIELD_INIT(.names, cmd_names_ver),
+        FIELD_INIT(.exec, cmd_version),
+        FIELD_INIT(.desc, "Device and firmware versions"),
+        FIELD_INIT(.help,
             "version\n"
             "\n"
             "Prints version information for device and firmware.\n"
+        )
     },
     {
-        .names = cmd_names_clear,
-        .exec = cmd_clear,
-        .desc = "Clear the screen",
-        .help = "clear\n"
+        FIELD_INIT(.names, cmd_names_clear),
+        FIELD_INIT(.exec, cmd_clear),
+        FIELD_INIT(.desc, "Clear the screen"),
+        FIELD_INIT(.help, "clear\n"
                 "\n"
-                "Clears the screen\n",
+                "Clears the screen\n"
+        )
     },
     {
-        .names = cmd_names_quit,
-        .exec = NULL,   /* Default action on NULL exec function is to quit */
-        .desc = "Exit the CLI",
-        .help = "Exit the CLI\n"
+        FIELD_INIT(.names, cmd_names_quit),
+        FIELD_INIT(.exec, NULL), /* Default action on NULL exec function is to quit */
+        FIELD_INIT(.desc, "Exit the CLI"),
+        FIELD_INIT(.help, "Exit the CLI\n")
     },
     /* Always terminate the command entry with a completely NULL entry */
     {
-        .names = NULL,
-        .exec = NULL,
-        .desc = NULL,
-        .help = NULL,
+        FIELD_INIT(.names, NULL),
+        FIELD_INIT(.exec, NULL),
+        FIELD_INIT(.desc, NULL),
+        FIELD_INIT(.help, NULL),
     }
 };
 

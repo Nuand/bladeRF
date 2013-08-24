@@ -31,22 +31,22 @@ struct freq_range {
 };
 
 const struct freq_range bands[] = {
-    { .low =  232500000, .high =  285625000, .value = 0x27 },
-    { .low =  285625000, .high =  336875000, .value = 0x2f },
-    { .low =  336875000, .high =  405000000, .value = 0x37 },
-    { .low =  405000000, .high =  465000000, .value = 0x3f },
-    { .low =  465000000, .high =  571250000, .value = 0x26 },
-    { .low =  571250000, .high =  673750000, .value = 0x2e },
-    { .low =  673750000, .high =  810000000, .value = 0x36 },
-    { .low =  810000000, .high =  930000000, .value = 0x3e },
-    { .low =  930000000, .high = 1142500000, .value = 0x25 },
-    { .low = 1142500000, .high = 1347500000, .value = 0x2d },
-    { .low = 1347500000, .high = 1620000000, .value = 0x35 },
-    { .low = 1620000000, .high = 1860000000, .value = 0x3d },
-    { .low = 1860000000u, .high = 2285000000u, .value = 0x24 },
-    { .low = 2285000000u, .high = 2695000000u, .value = 0x2c },
-    { .low = 2695000000u, .high = 3240000000u, .value = 0x34 },
-    { .low = 3240000000u, .high = 3720000000u, .value = 0x3c }
+    { FIELD_INIT(.low, 232500000),   FIELD_INIT(.high, 285625000),   FIELD_INIT(.value, 0x27) },
+    { FIELD_INIT(.low, 285625000),   FIELD_INIT(.high, 336875000),   FIELD_INIT(.value, 0x2f) },
+    { FIELD_INIT(.low, 336875000),   FIELD_INIT(.high, 405000000),   FIELD_INIT(.value, 0x37) },
+    { FIELD_INIT(.low, 405000000),   FIELD_INIT(.high, 465000000),   FIELD_INIT(.value, 0x3f) },
+    { FIELD_INIT(.low, 465000000),   FIELD_INIT(.high, 571250000),   FIELD_INIT(.value, 0x26) },
+    { FIELD_INIT(.low, 571250000),   FIELD_INIT(.high, 673750000),   FIELD_INIT(.value, 0x2e) },
+    { FIELD_INIT(.low, 673750000),   FIELD_INIT(.high, 810000000),   FIELD_INIT(.value, 0x36) },
+    { FIELD_INIT(.low, 810000000),   FIELD_INIT(.high, 930000000),   FIELD_INIT(.value, 0x3e) },
+    { FIELD_INIT(.low, 930000000),   FIELD_INIT(.high, 1142500000),  FIELD_INIT(.value, 0x25) },
+    { FIELD_INIT(.low, 1142500000),  FIELD_INIT(.high, 1347500000),  FIELD_INIT(.value, 0x2d) },
+    { FIELD_INIT(.low, 1347500000),  FIELD_INIT(.high, 1620000000),  FIELD_INIT(.value, 0x35) },
+    { FIELD_INIT(.low, 1620000000),  FIELD_INIT(.high, 1860000000),  FIELD_INIT(.value, 0x3d) },
+    { FIELD_INIT(.low, 1860000000u), FIELD_INIT(.high, 2285000000u), FIELD_INIT(.value, 0x24) },
+    { FIELD_INIT(.low, 2285000000u), FIELD_INIT(.high, 2695000000u), FIELD_INIT(.value, 0x2c) },
+    { FIELD_INIT(.low, 2695000000u), FIELD_INIT(.high, 3240000000u), FIELD_INIT(.value, 0x34) },
+    { FIELD_INIT(.low, 3240000000u), FIELD_INIT(.high, 3720000000u), FIELD_INIT(.value, 0x3c) }
 };
 
 
