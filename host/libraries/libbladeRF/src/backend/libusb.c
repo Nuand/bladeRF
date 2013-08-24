@@ -1297,7 +1297,7 @@ static int lusb_stream(struct bladerf *dev, bladerf_module module,
     /* This loop is required so libusb can do callbacks and whatnot */
     while( stream->state != STREAM_DONE ) {
         status = libusb_handle_events_timeout(lusb->context,&tv);
-        if (status < 0) {
+        if (status < 0 && status != LIBUSB_ERROR_INTERRUPTED) {
             dbg_printf("Got unexpected return value from events processing: "
                        "%d: %s\n", status, libusb_error_name(status));
         }
