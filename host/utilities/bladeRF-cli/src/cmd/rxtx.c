@@ -613,7 +613,7 @@ static void *rx_task(void *arg) {
 
     /* We expect to be in the IDLE state when this task is kicked off */
     state = prev_state = get_state(&rx->common);
-    assert(state == RXTX_STATE_IDLE);
+    assert(state == RXTX_STATE_IDLE || state == RXTX_STATE_SHUTDOWN);
 
     while (state != RXTX_STATE_SHUTDOWN) {
         if (state == RXTX_STATE_RUNNING) {
@@ -737,7 +737,7 @@ static void *tx_task(void *arg) {
 
     /* We expect to be in the IDLE state when this task is kicked off */
     state = prev_state = get_state(&tx->common);
-    assert(state == RXTX_STATE_IDLE);
+    assert(state == RXTX_STATE_IDLE || state == RXTX_STATE_SHUTDOWN);
 
     while (state != RXTX_STATE_SHUTDOWN) {
 
