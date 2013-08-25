@@ -61,6 +61,7 @@ static void init_rc_config(struct rc_config *rc)
     rc->flash_fw = false;
     rc->load_fpga = false;
     rc->probe = false;
+    rc->show_help = false;
     rc->show_version = false;
     rc->show_lib_version = false;
 
