@@ -84,7 +84,7 @@ const uint8_t CyFxUSBSSConfigDscr[] __attribute__ ((aligned (32))) =
     0x09,                           /* Descriptor size */
     CY_U3P_USB_CONFIG_DESCR,        /* Configuration descriptor type */
     0x72,0x00,                      /* Length of this descriptor and all sub descriptors */
-    0x03,                           /* Number of interfaces */
+    0x01,                           /* Number of interfaces */
     0x01,                           /* Configuration number */
     0x00,                           /* COnfiguration string index */
     0x80,                           /* Config characteristics - Bus powered */
@@ -122,8 +122,8 @@ const uint8_t CyFxUSBSSConfigDscr[] __attribute__ ((aligned (32))) =
     /* Interface descriptor #1 */
     0x09,                           /* Descriptor size */
     CY_U3P_USB_INTRFC_DESCR,        /* Interface Descriptor type */
-    0x01,                           /* Interface number */
-    0x00,                           /* Alternate setting number */
+    0x00,                           /* Interface number */
+    0x01,                           /* Alternate setting number */
     0x04,                           /* Number of end points */
     0xFF,                           /* Interface class */
     0x00,                           /* Interface sub class */
@@ -194,8 +194,8 @@ const uint8_t CyFxUSBSSConfigDscr[] __attribute__ ((aligned (32))) =
     /* Interface descriptor #2*/
     0x09,                           /* Descriptor size */
     CY_U3P_USB_INTRFC_DESCR,        /* Interface Descriptor type */
-    0x02,                           /* Interface number */
-    0x00,                           /* Alternate setting number */
+    0x00,                           /* Interface number */
+    0x02,                           /* Alternate setting number */
     0x01,                           /* Number of end points */
     0xFF,                           /* Interface class */
     0x00,                           /* Interface sub class */

@@ -44,7 +44,7 @@ CyU3PDmaChannel glChHandlePtoU;
 #endif
 
 uint8_t glUsbConfiguration = 0;             /* Active USB configuration. */
-uint8_t glUsbInterface = 0;                 /* Active USB interface. */
+uint8_t glUsbAltInterface = -1;                 /* Active USB interface. */
 
 uint32_t glDMARxCount = 0;                  /* Counter to track the number of buffers received
                                              * from USB during FPGA programming */
@@ -771,7 +771,12 @@ CyBool_t CyFxbladeRFApplnUSBSetupCB(uint32_t setupdat0, uint32_t setupdat1)
     if (bType == CY_U3P_USB_STANDARD_RQT)
     {
         if (bRequest == CY_U3P_USB_SC_GET_INTERFACE) {
-                glEp0Buffer[0] = glUsbInterface;
+                glEp0Buffer[0] = glUsbAltInterface;
+                CyU3PUsbSendEP0Data(wLength, glEp0Buffer);
+                isHandled = CyTrue;
+        }
+        if (bRequest == CY_U3P_USB_SC_GET_CONFIGURATION) {
+                glEp0Buffer[0] = glUsbConfiguration;
                 CyU3PUsbSendEP0Data(wLength, glEp0Buffer);
                 isHandled = CyTrue;
         }
@@ -971,44 +976,36 @@ CyBool_t CyFxbladeRFApplnUSBSetupCB(uint32_t setupdat0, uint32_t setupdat1)
 /* This is the callback function to handle the USB events. */
 void CyFxbladeRFApplnUSBEventCB (CyU3PUsbEventType_t evtype, uint16_t evdata)
 {
-    int interface;
+    int alt_interface;
     switch (evtype)
     {
         case CY_U3P_USB_EVENT_SETINTF:
-            interface = evdata >> 8;
+            alt_interface = evdata & 0xf;
 
             /* Don't do anything if we're setting the same interface over */
-            if( interface == glUsbInterface ) break ;
+            if( alt_interface == glUsbAltInterface ) break ;
 
             /* Stop whatever we were doing */
-            switch(glUsbInterface) {
+            switch(glUsbAltInterface) {
                 case 0: NuandFpgaConfigStop() ; break ;
                 case 1: NuandRFLinkStop(); break ;
                 default: break ;
             }
 
             /* Start up the new one */
-            if (interface == 0) {
+            if (alt_interface == 0) {
                 NuandFpgaConfigStart();
-            } else if (interface == 1) {
+            } else if (alt_interface == 1) {
                 NuandRFLinkStart();
-            } else if (interface == 2) {
+            } else if (alt_interface == 2) {
                 glEp0Idx = 0;
                 NuandFirmwareStart();
             }
-            glUsbInterface = interface;
+            glUsbAltInterface = alt_interface;
         break;
 
         case CY_U3P_USB_EVENT_SETCONF:
-            /* Stop the application before re-starting. */
-            switch (glAppMode) {
-            case MODE_RF_CONFIG:
-                NuandRFLinkStop();
-            case MODE_NO_CONFIG:
-                NuandFpgaConfigStart();
-            case MODE_FPGA_CONFIG:
-                FpgaBeginProgram();
-            }
+            glUsbConfiguration = evdata;
             break;
 
         case CY_U3P_USB_EVENT_RESET:
