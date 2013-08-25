@@ -104,9 +104,9 @@ struct bladerf_fn {
     int (*get_fpga_version)(struct bladerf *dev, unsigned int *maj, unsigned int *min);
     int (*get_device_speed)(struct bladerf *dev, int *speed);
 
-    /* GPIO accessors */
-    int (*gpio_write)(struct bladerf *dev, uint32_t val);
-    int (*gpio_read)(struct bladerf *dev, uint32_t *val);
+    /* Configuration GPIO accessors */
+    int (*config_gpio_write)(struct bladerf *dev, uint32_t val);
+    int (*config_gpio_read)(struct bladerf *dev, uint32_t *val);
 
     /* Si5338 accessors */
     int (*si5338_write)(struct bladerf *dev, uint8_t addr, uint8_t data);

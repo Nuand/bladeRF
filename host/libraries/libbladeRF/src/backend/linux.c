@@ -236,7 +236,7 @@ static int linux_lms_write(struct bladerf *dev, uint8_t address, uint8_t val)
 /*------------------------------------------------------------------------------
  * GPIO register access
  *----------------------------------------------------------------------------*/
-static int linux_gpio_read(struct bladerf *dev, uint32_t *val)
+static int linux_config_gpio_read(struct bladerf *dev, uint32_t *val)
 {
     int ret;
     int i;
@@ -263,7 +263,7 @@ static int linux_gpio_read(struct bladerf *dev, uint32_t *val)
     return ret;
 }
 
-static int linux_gpio_write(struct bladerf *dev, uint32_t val)
+static int linux_config_gpio_write(struct bladerf *dev, uint32_t val)
 {
     struct uart_cmd uc;
     int ret;
@@ -727,8 +727,8 @@ const struct bladerf_fn bladerf_linux_fn = {
     FIELD_INIT(.get_fpga_version, linux_get_fpga_version),
     FIELD_INIT(.get_device_speed, linux_get_device_speed),
 
-    FIELD_INIT(.gpio_write, linux_gpio_write),
-    FIELD_INIT(.gpio_read, linux_gpio_read),
+    FIELD_INIT(.config_gpio_write, linux_config_gpio_write),
+    FIELD_INIT(.config_gpio_read, linux_config_gpio_read),
 
     FIELD_INIT(.si5338_write, linux_si5338_write),
     FIELD_INIT(.si5338_read, linux_si5338_read),

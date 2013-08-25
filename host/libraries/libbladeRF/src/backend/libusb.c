@@ -11,6 +11,7 @@
 #include <libusb.h>
 
 #include "bladerf_priv.h"
+#include "backend/libusb.h"
 #include "minmax.h"
 #include "debug.h"
 
@@ -824,7 +825,7 @@ static int access_peripheral(struct bladerf_lusb *lusb, int per, int dir,
     return status;
 }
 
-static int lusb_gpio_write(struct bladerf *dev, uint32_t val)
+static int lusb_config_gpio_write(struct bladerf *dev, uint32_t val)
 {
     int i = 0;
     int status = 0;
@@ -853,7 +854,7 @@ static int lusb_gpio_write(struct bladerf *dev, uint32_t val)
     return status;
 }
 
-static int lusb_gpio_read(struct bladerf *dev, uint32_t *val)
+static int lusb_config_gpio_read(struct bladerf *dev, uint32_t *val)
 {
     int i = 0;
     int status = 0;
@@ -1387,8 +1388,8 @@ const struct bladerf_fn bladerf_lusb_fn = {
     FIELD_INIT(.get_fpga_version, lusb_get_fpga_version),
     FIELD_INIT(.get_device_speed, lusb_get_device_speed),
 
-    FIELD_INIT(.gpio_write, lusb_gpio_write),
-    FIELD_INIT(.gpio_read, lusb_gpio_read),
+    FIELD_INIT(.config_gpio_write, lusb_config_gpio_write),
+    FIELD_INIT(.config_gpio_read, lusb_config_gpio_read),
 
     FIELD_INIT(.si5338_write, lusb_si5338_write),
     FIELD_INIT(.si5338_read, lusb_si5338_read),

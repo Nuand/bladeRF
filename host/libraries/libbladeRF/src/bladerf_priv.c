@@ -42,7 +42,7 @@ int bladerf_init_device(struct bladerf *dev)
     unsigned int actual ;
 
     /* Set the GPIO pins to enable the LMS and select the low band */
-    bladerf_gpio_write( dev, 0x51 );
+    bladerf_config_gpio_write( dev, 0x51 );
 
     /* Set the internal LMS register to enable RX and TX */
     bladerf_lms_write( dev, 0x05, 0x3e );

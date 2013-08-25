@@ -923,17 +923,17 @@ int bladerf_lms_write(struct bladerf *dev, uint8_t address, uint8_t val);
 #define BLADERF_GPIO_FEATURE_SMALL_DMA_XFER (1 << 7)
 
 /**
- * Read a GPIO register
+ * Read a configuration GPIO register
  *
  * @param   dev         Device handle
  * @param   val         Pointer to variable the data should be read into
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-int bladerf_gpio_read(struct bladerf *dev, uint32_t *val);
+int bladerf_config_gpio_read(struct bladerf *dev, uint32_t *val);
 
 /**
- * Write a GPIO register. Callers should be sure to perform a
+ * Write a configuration GPIO register. Callers should be sure to perform a
  * read-modify-write sequence to avoid accidentally clearing other
  * GPIO bits that may be set by the library internally.
  *
@@ -942,8 +942,7 @@ int bladerf_gpio_read(struct bladerf *dev, uint32_t *val);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-int bladerf_gpio_write(struct bladerf *dev, uint32_t val);
-
+int bladerf_config_gpio_write(struct bladerf *dev, uint32_t val);
 
 /**
  * Write value to VCTCXO DAC

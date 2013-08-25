@@ -372,7 +372,7 @@ int print_gpio(struct cli_state *state, int argc, char **argv)
     int rv = CMD_RET_OK, status;
     unsigned int val;
 
-    status = bladerf_gpio_read( state->dev, &val );
+    status = bladerf_config_gpio_read( state->dev, &val );
 
     if (status < 0) {
         state->last_lib_error = status;
@@ -419,8 +419,7 @@ int set_gpio(struct cli_state *state, int argc, char **argv)
             cli_err(state, argv[0], "Invalid gpio value (%s)", argv[2]);
             rv = CMD_RET_INVPARAM;
         } else {
-            /* TODO: Should this be exposed at this level? */
-            bladerf_gpio_write( state->dev,val );
+            bladerf_config_gpio_write( state->dev,val );
         }
     } else {
         rv = CMD_RET_NARGS;

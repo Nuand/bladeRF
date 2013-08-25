@@ -116,7 +116,7 @@ int bladerf_enable_module(struct bladerf *dev,
     int status = BLADERF_ERR_UNEXPECTED;
     uint32_t gpio_reg;
 
-    status = bladerf_gpio_read(dev, &gpio_reg);
+    status = bladerf_config_gpio_read(dev, &gpio_reg);
 
     if (status == 0) {
         switch (m) {
@@ -139,7 +139,7 @@ int bladerf_enable_module(struct bladerf *dev,
                 return BLADERF_ERR_INVAL;
         }
 
-        status = bladerf_gpio_write(dev, gpio_reg);
+        status = bladerf_config_gpio_write(dev, gpio_reg);
     }
 
     return status;
@@ -322,10 +322,10 @@ int bladerf_select_band(struct bladerf *dev, bladerf_module module,
         band = 2; // Low Band selection
         lms_lna_select(dev, LNA_1);
     }
-    bladerf_gpio_read(dev, &gpio);
+    bladerf_config_gpio_read(dev, &gpio);
     gpio &= ~(module == BLADERF_MODULE_TX ? (3<<3) : (3<<5));
     gpio |= (module == BLADERF_MODULE_TX ? (band<<3) : (band<<5));
-    bladerf_gpio_write(dev, gpio);
+    bladerf_config_gpio_write(dev, gpio);
     return 0;
 }
 
@@ -796,12 +796,12 @@ int bladerf_lms_write(struct bladerf *dev, uint8_t address, uint8_t val)
  * GPIO register read / write functions
  *----------------------------------------------------------------------------*/
 
-int bladerf_gpio_read(struct bladerf *dev, uint32_t *val)
+int bladerf_config_gpio_read(struct bladerf *dev, uint32_t *val)
 {
-    return dev->fn->gpio_read(dev,val);
+    return dev->fn->config_gpio_read(dev,val);
 }
 
-int bladerf_gpio_write(struct bladerf *dev, uint32_t val)
+int bladerf_config_gpio_write(struct bladerf *dev, uint32_t val)
 {
     /* If we're connected at HS, we need to use smaller DMA transfers */
     if (dev->speed == 0) {
@@ -810,7 +810,7 @@ int bladerf_gpio_write(struct bladerf *dev, uint32_t val)
         val &= ~BLADERF_GPIO_FEATURE_SMALL_DMA_XFER;
     }
 
-    return dev->fn->gpio_write(dev,val);
+    return dev->fn->config_gpio_write(dev,val);
 
 }
 
