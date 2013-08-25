@@ -25,11 +25,7 @@ The source is organized as follows:
 
 In the meantime, see the **Building GNURADIO from GIT** section of [kb3gtn's bladeRF setup guide] for information on this.
 
-
-[common]: ./common (Common)
+[firmware_common]: ./firmware_common (Host-Firmware common files)
 [fx3_firmware]: ./fx3_firmware (FX3 Firmware)
 [hdl]: ./hdl (HDL)
 [host]: ./host (Host)
-[FPGA image]: http://nuand.com/fpga (nuand FPGA Images)
-[bladeRF-cli]: ./host/utilities/bladeRF-cli (bladeRF command line interface tool)
-[kb3gtn's bladeRF setup guide]: http://nuand.com/forums/viewtopic.php?f=9&t=2804 (kb3gtn's bladeRF setup guide)
