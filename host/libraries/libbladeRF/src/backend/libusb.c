@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <bladeRF.h>
-#include <libusb-1.0/libusb.h>
+#include <libusb.h>
 
 #include "bladerf_priv.h"
 #include "minmax.h"

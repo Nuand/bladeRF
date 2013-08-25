@@ -816,13 +816,15 @@ void lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
         int i;
         uint8_t v;
 
+        int vcocap;
+
         for (i=0; i<64; i++) {
             uint8_t v;
 
             bladerf_lms_write(dev, base + 9, i | 0x80);
             bladerf_lms_read(dev, base + 10, &v);
 
-            int vcocap = v >> 6;
+            vcocap = v >> 6;
 
             if (vcocap == VCO_HIGH) {
                 continue;

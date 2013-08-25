@@ -2,7 +2,6 @@
 #include <string.h>
 #include <limits.h>
 #include <assert.h>
-#include <unistd.h>
 
 #include "libbladeRF.h"     /* Public API */
 #include "bladerf_priv.h"   /* Implementation-specific items ("private") */

@@ -69,6 +69,10 @@ static int nodecimals(double num) {
 static int __si5338_do_multisynth(struct bladerf *dev, struct tspec *ms, unsigned vco_freq) {
     struct tspec vco;
     int i, j, found;
+    double rem;
+    unsigned long long a, b, c;
+    unsigned long long p1, p2, p3;
+    double bfl;
 
     vco.out_freq = vco_freq;
 
@@ -103,10 +107,6 @@ static int __si5338_do_multisynth(struct bladerf *dev, struct tspec *ms, unsigne
     }
 
     // simplest algorithm
-    double rem;
-    unsigned long long a, b, c;
-    unsigned long long p1, p2, p3;
-    double bfl;
     for (i = 0; i < NUM_MS; i++) {
         if (!ms[i].en)
             continue;

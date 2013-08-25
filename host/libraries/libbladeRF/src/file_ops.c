@@ -5,7 +5,7 @@
 #include <string.h>
 #include <errno.h>
 #include <libbladeRF.h>
-
+#include "host_config.h"
 #include "file_ops.h"
 #include "debug.h"
 
