@@ -287,6 +287,12 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
         }
     }
 
+    if (!status) {
+        if (lusb_is_fpga_configured(dev)) {
+            status = libusb_set_interface_alt_setting(lusb->handle, 0, USB_IF_RF_LINK);
+        }
+    }
+
 /* XXX I'd prefer if we made a call here to lusb_close(), but that would result
  *     in an attempt to release interfaces we haven't claimed... thoughts? */
 lusb_open__err_device_list:
