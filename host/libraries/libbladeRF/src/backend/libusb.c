@@ -272,7 +272,7 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
                 }
 
                 /* Claim interfaces */
-                for( inf = 0; inf < 3; inf++ ) {
+                for( inf = 0; inf < 1; inf++ ) {
                     status = libusb_claim_interface(lusb->handle, inf);
                     if(status < 0) {
                         dbg_printf( "Could not claim interface %i - %s\n", inf, libusb_error_name(status) );
@@ -328,7 +328,7 @@ static int lusb_close(struct bladerf *dev)
     struct bladerf_lusb *lusb = dev->backend;
 
 
-    for( inf = 0; inf < 2; inf++ ) {
+    for( inf = 0; inf < 1; inf++ ) {
         status = libusb_release_interface(lusb->handle, inf);
         if (status < 0) {
             dbg_printf("error releasing interface %i\n", inf);
@@ -352,7 +352,7 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
     struct bladerf_lusb *lusb = dev->backend;
 
     /* Make sure we are using the configuration interface */
-    status = libusb_set_interface_alt_setting(lusb->handle, USB_IF_CONFIG, 0);
+    status = libusb_set_interface_alt_setting(lusb->handle, 0, USB_IF_CONFIG);
     if(status < 0) {
         status = error_libusb2bladerf(status);
         bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
@@ -409,7 +409,7 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
     }
 
     /* Go into RF link mode by selecting interface 1 */
-    status = libusb_set_interface_alt_setting(lusb->handle, 1, 0);
+    status = libusb_set_interface_alt_setting(lusb->handle, 0, USB_IF_RF_LINK);
     if(status) {
         dbg_printf("libusb_set_interface_alt_setting: %s", libusb_error_name(status));
     }
@@ -655,7 +655,7 @@ static int lusb_flash_firmware(struct bladerf *dev,
     int status;
     struct bladerf_lusb *lusb = dev->backend;
 
-    status = libusb_set_interface_alt_setting(lusb->handle, USB_IF_SPI_FLASH, 0);
+    status = libusb_set_interface_alt_setting(lusb->handle, 0, USB_IF_SPI_FLASH);
     if (status) {
         dbg_printf("Failed to set interface: %s\n", libusb_error_name(status));
         status = BLADERF_ERR_IO;

@@ -650,14 +650,14 @@ long bladerf_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
             retval = __bladerf_rcv_one_word(dev, BLADE_USB_CMD_QUERY_FPGA_STATUS, data);
 
             if (!retval) {
-                ret = usb_set_interface(dev->udev, 1,0);
+                ret = usb_set_interface(dev->udev, 0,1);
                 dev->intnum = 1;
             }
             break;
 
         case BLADE_CAL:
             if (dev->intnum != 2) {
-                retval = usb_set_interface(dev->udev, 2,0);
+                retval = usb_set_interface(dev->udev, 0,2);
 
                 if (retval)
                     break;
@@ -726,7 +726,7 @@ long bladerf_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
         case BLADE_OTP:
             if (dev->intnum != 2) {
-                retval = usb_set_interface(dev->udev, 2,0);
+                retval = usb_set_interface(dev->udev, 0,2);
 
                 if (retval)
                     break;
@@ -778,7 +778,7 @@ long bladerf_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
         case BLADE_FLASH_READ:
         case BLADE_FLASH_WRITE:
             if (dev->intnum != 2) {
-                retval = usb_set_interface(dev->udev, 2,0);
+                retval = usb_set_interface(dev->udev, 0,2);
 
                 if (retval)
                     break;
@@ -865,7 +865,7 @@ long bladerf_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
         case BLADE_UPGRADE_FW:
 
             if (dev->intnum != 2) {
-                retval = usb_set_interface(dev->udev, 2,0);
+                retval = usb_set_interface(dev->udev, 0,2);
 
                 if (retval)
                     break;
@@ -962,7 +962,7 @@ leave_fw:
                 printk("retval =%d     ret=%d\n", retval, ret);
                 if (retval >= 0 && ret) {
                     retval = 0;
-                    ret = usb_set_interface(dev->udev, 1,0);
+                    ret = usb_set_interface(dev->udev, 0,1);
                     dev->intnum = 1;
 
                     if (copy_to_user((void __user *)arg, &ret, sizeof(ret))){
