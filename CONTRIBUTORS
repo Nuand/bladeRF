@@ -1,0 +1,46 @@
+#-------------------------------------------------------------------------------
+#
+# This file is intended to give credit to all the people who have contributed to
+# the bladeRF project, and doubles as "MAINTAINERS" file.
+#
+# For bugs and questions, github, the forum, and IRC should be used. (Please
+# avoid spamming contributors!)
+#
+# This file is "opt-in" only. Feel free to provide as much or as little
+# information about your contributions as you wish. If you should be listed in
+# this file and you're not, please submit a patch or pull request for this file,
+# email us, or catch us on IRC.
+#
+# Contributors are sorted by last name or handle. The fields are:
+#   (N) Name or handle
+#   (E) Email address
+#   (F) Handle on nuand forum
+#   (I) IRC handle in Freenode/#bladerf
+#   (G) GitHub handle
+#   (D) Description of contributions or project responsibilities
+#
+# Feel free to add multiple fields (e.g., multiple (W) fields - one per site),
+# and omit fields.
+#
+#-------------------------------------------------------------------------------
+
+N: Brian Padalino
+E: bpadalino@nuand.com
+F: bpadalino
+I: bpadalino
+G: bpadalino
+D: Project maintainer
+
+N: Robert Ghilduta
+E: robert.ghilduta@nuand.com
+F: robertghilduta
+I: mIKEjONES
+G: robertghilduta
+D: Project maintainer
+
+N: Jon Szymaniak
+E: jon@nuand.com
+F: jynik
+I: jynik
+G: jynik
+D: Project maintainer
