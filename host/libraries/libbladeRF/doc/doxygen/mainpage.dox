@@ -1,0 +1,5 @@
+/**
+  @mainpage
+
+  This library supports the nuand bladeRF. See our <a class="el" href="https://www.nuand.com">website</a> and <a class="el" href="https://github.com/nuand/bladerf">GitHub project page</a> for more information.
+*/

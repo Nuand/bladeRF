@@ -1,0 +1,119 @@
+#ifndef HOST_CONFIG_H__
+#define HOST_CONFIG_H__
+
+#cmakedefine01  BLADERF_OS_LINUX
+#cmakedefine01  BLADERF_OS_OSX
+#cmakedefine01  BLADERF_OS_WINDOWS
+
+#if !(BLADERF_OS_LINUX || BLADERF_OS_OSX || BLADERF_OS_WINDOWS)
+#   error "Build not configured for any supported operating systems"
+#endif
+
+#if 1 < (BLADERF_OS_LINUX + BLADERF_OS_OSX + BLADERF_OS_WINDOWS)
+#error "Build configured for multiple operating systems"
+#endif
+
+
+
+
+/*******************************************************************************
+ * Endianness conversions
+ *
+ * HOST_TO_LE16         16-bit host endianness to little endian conversion
+ * LE16_TO_HOST         16-bit little endian to host endianness conversion
+ * HOST_TO_BE16         16-bit host endianness to big endian conversion
+ * BE16_TO_HOST         16-bit big endian to host endianness conversion
+ ******************************************************************************/
+
+/*-----------------------
+ * Linux
+ *---------------------*/
+#if BLADERF_OS_LINUX
+#include <endian.h>
+
+#define HOST_TO_LE16(val) htole16(val)
+#define LE16_TO_HOST(val) le16toh(val)
+#define HOST_TO_BE16(val) htobe16(val)
+#define BE16_TO_HOST(val) be16toh(val)
+
+/*-----------------------
+ * Apple OSX
+ *---------------------*/
+#elif BLADERF_OS_OSX
+#include <libkern/OSByteOrder.h>
+
+#define HOST_TO_LE16(val) OSSwapHostToLittleInt16(val)
+#define LE16_TO_HOST(val) OSSwapLittleToHostInt16(val)
+#define HOST_TO_BE16(val) OSSwapHostToBigInt16(val)
+#define BE16_TO_HOST(val) OSSwapBigToHostInt16(val)
+
+/*-----------------------
+ * Windows
+ *---------------------*/
+#elif BLADERF_OS_WINDOWS
+#include <intrin.h>
+
+/* We'll assume little endian for Windows platforms:
+ * http://blogs.msdn.com/b/larryosterman/archive/2005/06/07/426334.aspx
+ */
+#define HOST_TO_LE16(val) (val)
+#define LE16_TO_HOST(val) (val)
+#define HOST_TO_BE16(val) _byteswap_ushort(val)
+#define BE16_TO_HOST(val) _byteswap_ushort(val)
+
+/*-----------------------
+ * Unsupported or bug
+ *---------------------*/
+#else
+#error "Encountered an OS that we do not have endian wrappers for?"
+#endif
+
+/*******************************************************************************
+ * Miscellaneous Linux fixups
+ ******************************************************************************/
+#if BLADERF_OS_LINUX
+
+/* Added here just to keep this out of the other source files. We'll have
+ * a few Windows replacements for unistd.h items. */
+#include <unistd.h>
+
+/*******************************************************************************
+ * Miscellaneous OSX fixups
+ ******************************************************************************/
+#elif BLADERF_OS_OSX
+
+#include <unistd.h>
+
+/*******************************************************************************
+ * Miscellaneous Windows fixups
+ ******************************************************************************/
+#elif BLADERF_OS_WINDOWS
+
+/* Windows does not appear to provide strtok_r, but appears to provide a
+ * strtok_s which presents the same interface */
+#define strtok_r strtok_s
+
+/* ssize_t lives elsewhere */
+#include <BaseTsd.h>
+#define ssize_t SSIZE_T
+
+#endif
+
+/* Windows (msvc) does not support C99 designated initializers.
+ *
+ * Therefore, the following macro should be used. However, note that you'll
+ * need to be sure to keep your elements in order to avoid breaking Windows
+ * portability!
+ *
+ * http://stackoverflow.com/questions/5440611/how-to-rewrite-c-struct-designated-initializers-to-c89-resp-msvc-c-compiler
+ *
+ * Here's a sample regexep you could use in vim to clean these up in your code:
+ *  @\(\s\+\)\(\.[a-zA-Z0-9_]\+\)\s*=\s*\([a-zA-Z0-9_]\+\)\(,\)\?@\1FIELD_INIT(\2,\3)\4@gc
+ */
+#if BLADERF_OS_WINDOWS
+#   define FIELD_INIT(field, ...) __VA_ARGS__
+#else
+#   define FIELD_INIT(field, ...) field = __VA_ARGS__
+#endif
+
+#endif

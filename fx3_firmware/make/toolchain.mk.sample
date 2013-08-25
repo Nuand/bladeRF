@@ -20,12 +20,14 @@ endif
 # are needed for make, but this doesn't fly when executing external programs
 # (e.g., gcc, ld)
 #
-# This is a little hack to replace a paths with escaped spaces 
+# This is a little hack to replace a paths with escaped spaces
 # with a quoted, space-containing path.
 #
-# If anyone has any suggestions or advice on cleaning this up, 
-# please feel free to make some noise over at: 
-#     www.github.com/jynik/bladeRF 
+# If anyone has any suggestions or advice on cleaning this up,
+# please feel free to create an issue at:
+#
+#   https://github.com/nuand/bladerf/issues
+#
 pathfixup = $(if $(HOST_IS_WINDOWS),"$(subst /,\,$(subst \ , ,$(1)))",$(1))
 
 # These are the items that will likely vary system to system
