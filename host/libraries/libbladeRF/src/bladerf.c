@@ -107,7 +107,7 @@ int bladerf_open(struct bladerf **device, const char *dev_id)
         status = bladerf_open_with_devinfo(device, &devinfo);
     }
 
-    if (!status) {
+    if (!status && !(*device)->legacy) {
         dev = *device;
 
         char tmp[40];
@@ -121,7 +121,9 @@ int bladerf_open(struct bladerf **device, const char *dev_id)
         dev->variant = str2uint(tmp, 0, 115, &ok);
         if (!ok)
             dev->variant = 0;
-        dbg_printf("%s: serial = %s dac=0x%.4x var=%d\n", __FUNCTION__, dev->serial, dev->dac_trim, dev->variant);
+
+        dbg_printf("%s: fw=v%d.%d serial=%s dac=0x%.4x var=%d\n", __FUNCTION__, dev->fw_major,
+                dev->fw_minor, dev->serial, dev->dac_trim, dev->variant);
     }
 
     return status;

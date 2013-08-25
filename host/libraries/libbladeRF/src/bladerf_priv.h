@@ -131,10 +131,16 @@ struct bladerf_fn {
     int (*stats)(struct bladerf *dev, struct bladerf_stats *stats);
 };
 
+#define FW_LEGACY_ALT_SETTING_MAJOR 1
+#define FW_LEGACY_ALT_SETTING_MINOR 1
+#define LEGACY_ALT_SETTING  1
 struct bladerf {
     char serial[33]; /* The device's serial number */
     uint16_t dac_trim;
     int variant;
+
+    unsigned int fw_major, fw_minor;
+    int legacy;
 
     int speed;      /* The device's USB speed, 0 is HS, 1 is SS */
     struct bladerf_stats stats;

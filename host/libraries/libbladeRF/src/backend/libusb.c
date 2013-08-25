@@ -258,6 +258,7 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
                 dev->fn = &bladerf_lusb_fn;
                 dev->backend = (void *)lusb;
                 dev->backend_type = BLADERF_BACKEND_LIBUSB;
+                dev->legacy = 0;
 
                 /* Populate the backend information */
                 lusb->context = context;
@@ -271,8 +272,21 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
                     goto lusb_open__err_device_list;
                 }
 
+                bladerf_get_fw_version(dev, &dev->fw_major, &dev->fw_minor);
+                if (dev->fw_major < FW_LEGACY_ALT_SETTING_MAJOR ||
+                        (dev->fw_major == FW_LEGACY_ALT_SETTING_MAJOR && dev->fw_minor < FW_LEGACY_ALT_SETTING_MINOR)) {
+                    dev->legacy = LEGACY_ALT_SETTING;
+                }
+
+                if (dev->legacy) {
+                    printf("********************************************************************************\n");
+                    printf("* ENTERING LEGACY MODE, PLEASE UPGRADE TO THE LATEST FIRMWARE BY RUNNING:\n");
+                    printf("* wget http://nuand.com/fx3/latest.img ; bladeRF-cli -b -f latest.img\n");
+                    printf("********************************************************************************\n");
+                }
+
                 /* Claim interfaces */
-                for( inf = 0; inf < 1; inf++ ) {
+                for( inf = 0; inf < ((dev->legacy & LEGACY_ALT_SETTING) ? 3 : 1) ; inf++ ) {
                     status = libusb_claim_interface(lusb->handle, inf);
                     if(status < 0) {
                         dbg_printf( "Could not claim interface %i - %s\n", inf, libusb_error_name(status) );
@@ -334,7 +348,7 @@ static int lusb_close(struct bladerf *dev)
     struct bladerf_lusb *lusb = dev->backend;
 
 
-    for( inf = 0; inf < 1; inf++ ) {
+    for( inf = 0; inf < ((dev->legacy & LEGACY_ALT_SETTING) ? 3 : 1) ; inf++ ) {
         status = libusb_release_interface(lusb->handle, inf);
         if (status < 0) {
             dbg_printf("error releasing interface %i\n", inf);
@@ -661,7 +675,13 @@ static int lusb_flash_firmware(struct bladerf *dev,
     int status;
     struct bladerf_lusb *lusb = dev->backend;
 
-    status = libusb_set_interface_alt_setting(lusb->handle, 0, USB_IF_SPI_FLASH);
+    if (dev->legacy & LEGACY_ALT_SETTING) {
+        printf("Using legacy alt setting to flash firmware\n");
+        status = libusb_set_interface_alt_setting(lusb->handle, USB_IF_SPI_FLASH, 0);
+    } else {
+        status = libusb_set_interface_alt_setting(lusb->handle, 0, USB_IF_SPI_FLASH);
+    }
+
     if (status) {
         dbg_printf("Failed to set interface: %s\n", libusb_error_name(status));
         status = BLADERF_ERR_IO;
