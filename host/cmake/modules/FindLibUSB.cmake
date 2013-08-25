@@ -25,11 +25,18 @@ set(__INCLUDED_BLADERF_FINDLIBUSB_CMAKE TRUE)
 include ( CheckLibraryExists )
 include ( CheckIncludeFile )
 
-# Attempts to use a LIBUSB_PATH variable
-option(LIBUSB_PATH
-        "Path to libusb files. (Generally only needed for binary distributions.)"
-        $ENV{LIBUSB_PATH}
-      )
+
+# In Linux, folks should generally be able to simply fetch the libusb library and
+# development packages from their distros package repository. Windows users will
+# likely want to fetch a binary distribution, hence the Windows-oriented default.
+#
+# See http://www.libusb.org/wiki/windows_backend#LatestBinarySnapshots
+set(LIBUSB_PATH 
+		"C:/Program Files (x86)/libusbx-1.0.16"
+        CACHE
+		PATH
+		"Path to libusb files. (This is generally only needed for Windows users who downloaded binary distributions.)"
+    )
 
 find_package ( PkgConfig )
 if ( PKG_CONFIG_FOUND )
@@ -112,14 +119,6 @@ if ( LIBUSB_FOUND )
   check_library_exists ( "${usb_LIBRARY}" libusb_get_device_list "" LIBUSB_VERSION_1.0 )
   check_library_exists ( "${usb_LIBRARY}" libusb_error_name "" LIBUSB_VERSION_1.0 )
   check_library_exists ( "${usb_LIBRARY}" libusb_handle_events_timeout_completed "" LIBUSB_VERSION_1.0 )
-
+else ()
+	message ( FATAL_ERROR "libusb-1.0 not found - is it installed? If you're using a binary distribution, try setting -DLIBUSB_PATH=<path_to_libusb_files>." )
 endif ( LIBUSB_FOUND )
-
-if ( NOT LIBUSB_FOUND )
-  if ( NOT LIBUSB_FIND_QUIETLY )
-      message ( STATUS "libusb-1.0 not found. If you're using a binary distribution, try setting -DLIBUSB_PATH=<path_to_libusb_files>" )
-  endif ( NOT LIBUSB_FIND_QUIETLY )
-  if ( LIBUSB_FIND_REQUIRED )
-    message ( FATAL_ERROR "" )
-  endif ( LIBUSB_FIND_REQUIRED )
-endif ( NOT LIBUSB_FOUND )

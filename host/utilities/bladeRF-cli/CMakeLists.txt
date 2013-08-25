@@ -82,7 +82,11 @@ add_executable(bladeRF-cli ${BLADERF_CLI_SOURCE})
 ################################################################################
 find_package(PkgConfig)
 find_package(Threads)
-#find_package(LibbladeRF)
+
+set(CLI_LINK_LIBRARIES
+    libbladerf_shared
+    ${CMAKE_THREAD_LIBS_INIT}
+)	
 
 if(ENABLE_INTERACTIVE_TECLA)
     find_package(LibTecla)
@@ -90,16 +94,15 @@ if(ENABLE_INTERACTIVE_TECLA)
         message(FATAL_ERROR
                 "ENABLE_INTERACTIVE_TECLA set, but libtecla could not be found")
     endif(NOT LIBTECLA_FOUND)
+
+    set(CLI_LINK_LIBRARIES ${BLADERF_LINK_LIBRARIES} ${LIBTECLA_LIBRARIES})
+
 endif(ENABLE_INTERACTIVE_TECLA)
 
 ################################################################################
 # Build configuration
 ################################################################################
-target_link_libraries(bladeRF-cli
-                      libbladerf_shared
-                      ${CMAKE_THREAD_LIBS_INIT}
-                      ${LIBTECLA_LIBRARIES}
-)
+target_link_libraries(bladeRF-cli ${CLI_LINK_LIBRARIES})
 
 ################################################################################
 # Installation
