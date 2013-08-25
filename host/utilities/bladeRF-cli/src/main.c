@@ -308,9 +308,17 @@ int main(int argc, char *argv[])
     if (!exit_immediately) {
         /* Conditionally performed items, depending on runtime config */
         status = open_device(&rc, state, status);
+        if (status)
+            fprintf(stderr, "Could not open device\n");
         status = flash_fw(&rc, state, status);
+        if (status)
+            fprintf(stderr, "Could not flash firmware\n");
         status = load_fpga(&rc, state, status);
+        if (status)
+            fprintf(stderr, "Could not load fpga\n");
         status = open_script(&rc, state, status);
+        if (status)
+            fprintf(stderr, "Could not load scripts\n");
 
         /* These items are no longer needed */
         free(rc.device);
@@ -325,8 +333,10 @@ int main(int argc, char *argv[])
         free(rc.script_file);
         rc.script_file = NULL;
 
-        if (status)
+        if (status) {
+            fprintf(stderr, "Could not launch interactive shell\n");
             return 2;
+        }
 
         /* Exit cleanly when configured for batch mode. Remember that this is
          * implicit with some commands */
