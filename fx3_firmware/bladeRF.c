@@ -989,6 +989,7 @@ void CyFxbladeRFApplnUSBEventCB (CyU3PUsbEventType_t evtype, uint16_t evdata)
             switch(glUsbAltInterface) {
                 case 0: NuandFpgaConfigStop() ; break ;
                 case 1: NuandRFLinkStop(); break ;
+                case 2: NuandFirmwareStop(); break ;
                 default: break ;
             }
 

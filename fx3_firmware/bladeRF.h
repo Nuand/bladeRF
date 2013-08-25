@@ -48,6 +48,7 @@ extern const uint8_t CyFxUSBProductDscr[];
 
 int FpgaBeginProgram(void);
 void NuandFirmwareStart(void);
+void NuandFirmwareStop(void);
 CyU3PReturnStatus_t CyFxSpiEraseSector(CyBool_t /* isErase */, uint8_t /* sector */);
 void NuandEnso();
 void NuandExso();

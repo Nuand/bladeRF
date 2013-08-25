@@ -51,6 +51,10 @@ CyU3PReturnStatus_t CyFxSpiInit(uint16_t pageLen)
     return status;
 }
 
+CyU3PReturnStatus_t CyFxSpiDeInit() {
+	CyU3PSpiDeInit();
+}
+
 /* Wait for the status response from the SPI flash. */
 CyU3PReturnStatus_t CyFxSpiWaitForStatus(void)
 {
@@ -279,4 +283,8 @@ void NuandFirmwareStart() {
     status = CyFxSpiInit(0x100);
 
     glAppMode = MODE_FW_CONFIG;
+}
+
+void NuandFirmwareStop() {
+	CyFxSpiDeInit();
 }
