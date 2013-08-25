@@ -86,6 +86,21 @@ if("${CMAKE_CC_COMPILER_ID}" STREQUAL "GNU" OR
 #    add_definitions(-fvisibility=hidden)
 endif()
 
+if(ENABLE_BACKEND_LIBUSB)
+    find_package(LibUSB)
+    if(NOT LIBUSB_FOUND)
+        message(FATAL_ERROR "libusb-1.0 required to use for libusb backend")
+    else(NOT LIBUSB_FOUND)
+        set(LIBUSB_INCLUDE_DIRS ${PKGCONFIG_LIBUSB_INCLUDE_DIRS})
+    endif(NOT LIBUSB_FOUND)
+
+    # TODO stricter LibUSB version check?  IIRC we actually require >= 1.0.10?
+endif(ENABLE_BACKEND_LIBUSB)
+
+if(ENABLE_BACKEND_LINUX_DRIVER)
+    # TODO find Linux Driver?
+endif()
+
 ################################################################################
 # Include paths
 ################################################################################
@@ -102,18 +117,6 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include
 ################################################################################
 find_package(PkgConfig)
 
-if(ENABLE_BACKEND_LIBUSB)
-    find_package(LibUSB)
-    if(NOT LIBUSB_FOUND)
-        message(FATAL_ERROR "libusb-1.0 required to use for libusb backend")
-    endif(NOT LIBUSB_FOUND)
-
-    # TODO stricter LibUSB version check?  IIRC we actually require >= 1.0.10?
-endif(ENABLE_BACKEND_LIBUSB)
-
-if(ENABLE_BACKEND_LINUX_DRIVER)
-    # TODO find Linux Driver?
-endif()
 
 ################################################################################
 # Configure source files
