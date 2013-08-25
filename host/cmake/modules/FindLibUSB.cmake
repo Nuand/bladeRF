@@ -14,8 +14,8 @@
 # The following standard variables get defined:
 #  LIBUSB_FOUND:        true if LibUSB was found
 #  LIBUSB_HEADER_FILE:  the location of the C header file
-#  LIBUSB_INCLUDE_DIRS: the directory that contains the include file
-#  LIBUSB_LIBRARIES:    the library
+#  LIBUSB_INCLUDE_DIRS: the directorys that contain headers
+#  LIBUSB_LIBRARIES:    the library files
 
 if(DEFINED __INCLUDED_BLADERF_FINDLIBUSB_CMAKE)
     return()
@@ -41,9 +41,6 @@ set(LIBUSB_PATH
 find_package ( PkgConfig )
 if ( PKG_CONFIG_FOUND )
   pkg_check_modules ( PKGCONFIG_LIBUSB libusb-1.0 )
-  if ( NOT PKGCONFIG_LIBUSB_FOUND )
-    pkg_check_modules ( PKGCONFIG_LIBUSB libusb )
-  endif ( NOT PKGCONFIG_LIBUSB_FOUND )
 endif ( PKG_CONFIG_FOUND )
 
 if ( PKGCONFIG_LIBUSB_FOUND )
@@ -67,7 +64,7 @@ else ( PKGCONFIG_LIBUSB_FOUND )
     PATHS
       ${LIBUSB_PATH}
       PATH_SUFFIXES
-      include include/libusbx-1.0
+      include include/libusbx-1.0 include/libusb-1.0
   )
   mark_as_advanced ( LIBUSB_HEADER_FILE )
   get_filename_component ( LIBUSB_INCLUDE_DIRS "${LIBUSB_HEADER_FILE}" PATH )

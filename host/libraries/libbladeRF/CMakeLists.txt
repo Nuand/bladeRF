@@ -83,37 +83,40 @@ configure_file(
 ################################################################################
 if("${CMAKE_CC_COMPILER_ID}" STREQUAL "GNU" OR
     "${CMAKE_CC_COMPILER_ID}" STREQUAL "Clang" )
+
+# TODO Want to default to this with some sort of API_EXPORT
 #    add_definitions(-fvisibility=hidden)
 endif()
 
 ################################################################################
 # Include paths
 ################################################################################
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include
-                    ${CMAKE_CURRENT_SOURCE_DIR}/src
-                    ${BLADERF_HOST_COMMON_INCLUDE_DIRS}
-                    ${BLADERF_FW_COMMON_INCLUDE_DIR}
-                    ${CMAKE_CURRENT_BINARY_DIR}/src
-                    ${LIBUSB_INCLUDE_DIRS}
+set(LIBBLADERF_INCLUDES
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${BLADERF_HOST_COMMON_INCLUDE_DIRS}
+    ${BLADERF_FW_COMMON_INCLUDE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}/src
 )
 
 ################################################################################
 # Build dependencies
 ################################################################################
-find_package(PkgConfig)
-
 if(ENABLE_BACKEND_LIBUSB)
     find_package(LibUSB)
     if(NOT LIBUSB_FOUND)
         message(FATAL_ERROR "libusb-1.0 required to use for libusb backend")
+    else(NOT LIBUSB_FOUND)
+        set(LIBBLADERF_INCLUDES ${LIBBLADERF_INCLUDES} ${LIBUSB_INCLUDE_DIRS})
     endif(NOT LIBUSB_FOUND)
-
-    # TODO stricter LibUSB version check?  IIRC we actually require >= 1.0.10?
 endif(ENABLE_BACKEND_LIBUSB)
 
 if(ENABLE_BACKEND_LINUX_DRIVER)
     # TODO find Linux Driver?
 endif()
+
+
+include_directories(${LIBBLADERF_INCLUDES})
 
 ################################################################################
 # Configure source files

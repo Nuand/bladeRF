@@ -36,7 +36,7 @@ option(ENABLE_INTERACTIVE_TECLA
 ################################################################################
 # Include paths
 ################################################################################
-set(BLADERF_CLI_INCLUDE
+set(CLI_INCLUDE_DIRS
        ${CMAKE_CURRENT_SOURCE_DIR}/src
        ${CMAKE_CURRENT_SOURCE_DIR}/src/cmd
        ${CMAKE_CURRENT_SOURCE_DIR}/src/interactive
@@ -46,10 +46,10 @@ set(BLADERF_CLI_INCLUDE
 )
 
 if(ENABLE_INTERACTIVE_TECLA)
-    set(BLADERF_CLI_INCLUDE ${BLADERF_CLI_INCLUDE} ${LIBTECLA_INCLUDE_DIR})
+    set(CLI_INCLUDE_DIRS ${CLI_INCLUDE_DIRS} ${LIBTECLA_INCLUDE_DIR})
 endif()
 
-include_directories(${BLADERF_CLI_INCLUDE})
+include_directories(${CLI_INCLUDE_DIRS})
 
 ################################################################################
 # Configure source files
@@ -95,7 +95,7 @@ if(ENABLE_INTERACTIVE_TECLA)
                 "ENABLE_INTERACTIVE_TECLA set, but libtecla could not be found")
     endif(NOT LIBTECLA_FOUND)
 
-    set(CLI_LINK_LIBRARIES ${BLADERF_LINK_LIBRARIES} ${LIBTECLA_LIBRARIES})
+    set(CLI_LINK_LIBRARIES ${CLI_LINK_LIBRARIES} ${LIBTECLA_LIBRARIES})
 
 endif(ENABLE_INTERACTIVE_TECLA)
 

@@ -68,11 +68,26 @@
 #error "Encountered an OS that we do not have endian wrappers for?"
 #endif
 
+/*******************************************************************************
+ * Miscellaneous Linux fixups
+ ******************************************************************************/
+#if BLADERF_OS_LINUX
+
+/* Added here just to keep this out of the other source files. We'll have
+ * a few Windows replacements for unistd.h items. */
+#include <unistd.h>
+
+/*******************************************************************************
+ * Miscellaneous OSX fixups
+ ******************************************************************************/
+#elif BLADERF_OS_OSX
+
+#include <unistd.h>
 
 /*******************************************************************************
  * Miscellaneous Windows fixups
  ******************************************************************************/
-#if BLADERF_OS_WINDOWS
+#elif BLADERF_OS_WINDOWS
 
 /* Windows does not appear to provide strtok_r, but appears to provide a
  * strtok_s which presents the same interface */
