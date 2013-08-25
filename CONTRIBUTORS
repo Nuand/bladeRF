@@ -44,3 +44,10 @@ F: jynik
 I: jynik
 G: jynik
 D: Project maintainer
+
+N: Ryan Tucker 
+E: rtucker@gmail.com
+I: HoopyCat
+G: rtucker
+D: Documentation, FPGA build automation
+W: http://hoopycat.com/bladerf_builds
