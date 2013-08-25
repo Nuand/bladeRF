@@ -49,6 +49,8 @@ uint8_t glUsbAltInterface = -1;                 /* Active USB interface. */
 uint32_t glDMARxCount = 0;                  /* Counter to track the number of buffers received
                                              * from USB during FPGA programming */
 
+uint8_t glOtp[0x100] __attribute__ ((aligned (32)));
+uint8_t glCal[0x100] __attribute__ ((aligned (32)));
 uint8_t glEp0Buffer[4096] __attribute__ ((aligned (32)));
 uint32_t glEp0Idx;
 
@@ -637,8 +639,11 @@ void NuandFpgaConfigStart(void)
     CyU3PDmaChannelConfig_t dmaCfg;
     CyU3PReturnStatus_t apiRetStatus = CY_U3P_SUCCESS;
     CyU3PUSBSpeed_t usbSpeed = CyU3PUsbGetSpeed();
+    static int first_call = 1;
 
-    NuandGPIOReconfigure(CyTrue, CyFalse);
+    NuandGPIOReconfigure(CyTrue, !first_call);
+    first_call = 0;
+
 
     /* Load the GPIF configuration for loading the FPGA */
     apiRetStatus = CyU3PGpifLoad(&C4loader_CyFxGpifConfig);
@@ -898,11 +903,16 @@ CyBool_t CyFxbladeRFApplnUSBSetupCB(uint32_t setupdat0, uint32_t setupdat1)
             case BLADE_USB_CMD_READ_OTP:
                 if (CyU3PUsbGetSpeed() == CY_U3P_HIGH_SPEED) {
                     if (glEp0Idx == 0) {
-                        NuandEnso();
-                        apiRetStatus = CyFxSpiTransfer (0, 0x100,
-                                glEp0Buffer, CyTrue);
+                        if (glUsbAltInterface == 2) {
+                            NuandEnso();
+                            apiRetStatus = CyFxSpiTransfer (0, 0x100,
+                                    glEp0Buffer, CyTrue);
+                        } else {
+                            memcpy(glEp0Buffer, glOtp, 0x100);
+                        }
                         apiRetStatus = CyU3PUsbSendEP0Data(wLength, &glEp0Buffer);
-                        NuandExso();
+                        if (glUsbAltInterface == 2)
+                            NuandExso();
                     } else {
                         apiRetStatus = CY_U3P_SUCCESS;
                     }
@@ -912,21 +922,29 @@ CyBool_t CyFxbladeRFApplnUSBSetupCB(uint32_t setupdat0, uint32_t setupdat1)
                     if (glEp0Idx == 256)
                         glEp0Idx = 0;
                 } else if (CyU3PUsbGetSpeed() == CY_U3P_SUPER_SPEED) {
-                    NuandEnso();
-                    apiRetStatus = CyFxSpiTransfer (0, 0x100,
-                            glEp0Buffer, CyTrue);
-                    apiRetStatus = CyU3PUsbSendEP0Data(0x100, &glEp0Buffer);
-                    NuandExso();
+                    if (glUsbAltInterface == 2) {
+                        NuandEnso();
+                        apiRetStatus = CyFxSpiTransfer (0, 0x100,
+                                glEp0Buffer, CyTrue);
+                        apiRetStatus = CyU3PUsbSendEP0Data(0x100, &glEp0Buffer);
+                        NuandExso();
+                    } else {
+                        apiRetStatus = CyU3PUsbSendEP0Data(0x100, &glOtp);
+                    }
                 }
             break;
 
             case BLADE_USB_CMD_FLASH_READ:
                 if (CyU3PUsbGetSpeed() == CY_U3P_HIGH_SPEED) {
-                    if (glEp0Idx == 0) {
-                        apiRetStatus = CyFxSpiTransfer (wIndex, 0x100,
-                                glEp0Buffer, CyTrue);
+                    if (glUsbAltInterface == 2) {
+                        if (glEp0Idx == 0) {
+                            apiRetStatus = CyFxSpiTransfer (wIndex, 0x100,
+                                    glEp0Buffer, CyTrue);
+                        } else {
+                            apiRetStatus = CY_U3P_SUCCESS;
+                        }
                     } else {
-                        apiRetStatus = CY_U3P_SUCCESS;
+                        memcpy(glEp0Buffer, glCal, 0x100);
                     }
                     apiRetStatus = CyU3PUsbSendEP0Data(wLength, &glEp0Buffer[glEp0Idx]);
 
@@ -934,9 +952,13 @@ CyBool_t CyFxbladeRFApplnUSBSetupCB(uint32_t setupdat0, uint32_t setupdat1)
                     if (glEp0Idx == 256)
                         glEp0Idx = 0;
                 } else if (CyU3PUsbGetSpeed() == CY_U3P_SUPER_SPEED) {
-                    apiRetStatus = CyFxSpiTransfer (wIndex, 0x100,
-                            glEp0Buffer, CyTrue);
-                    apiRetStatus = CyU3PUsbSendEP0Data(0x100, &glEp0Buffer);
+                    if (glUsbAltInterface == 2) {
+                        apiRetStatus = CyFxSpiTransfer (wIndex, 0x100,
+                                glEp0Buffer, CyTrue);
+                        apiRetStatus = CyU3PUsbSendEP0Data(0x100, &glEp0Buffer);
+                    } else {
+                        apiRetStatus = CyU3PUsbSendEP0Data(0x100, &glCal);
+                    }
                 }
             break;
 
@@ -1164,7 +1186,19 @@ void bladeRFAppThread_Entry( uint32_t input)
 
     bladeRFInit();
 
+    NuandFirmwareStart();
+
+    NuandEnso();
+    state = CyFxSpiTransfer(0, 0x100, glOtp, CyTrue);
+    NuandExso();
+
+    CyFxSpiTransfer(768, 0x100, glCal, CyTrue);
+
+    NuandFirmwareStop();
+
+
     FpgaBeginProgram();
+
 
     for (;;) {
         CyU3PThreadSleep (100);
