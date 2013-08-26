@@ -58,7 +58,7 @@
 
 #if defined(__BIG_ENDIAN__)
 #   define RXTX_FMT_BINHOST_C16 RXTX_FMT_BINBE_C16
-#elif defined(__LITTLE_ENDIAN)
+#elif defined(__LITTLE_ENDIAN__)
 #   define RXTX_FMT_BINHOST_C16 RXTX_FMT_BINLE_C16
 #else
 #   error "Compiler did not define __BIG/LITTLE_ENDIAN__ - required here"
@@ -289,21 +289,21 @@ static void c16_sample_fixup(int16_t *buff, size_t n,
         if (fmt == RXTX_FMT_BINLE_C16) {
             for (i = 0; i < n; i++) {
                 /* I - Correct sign extension is assumed */
-                *buff = (htole16(*buff) & 0x0fff);
+                *buff = (HOST_TO_LE16(*buff) & 0x0fff);
                 buff++;
 
                 /* Q - Correct sign extention is assumed*/
-                *buff = (htole16(*buff) & 0x0fff);
+                *buff = (HOST_TO_LE16(*buff) & 0x0fff);
                 buff++;
             }
         } else {
             for (i = 0; i < n; i++) {
                 /* I - Correct sign extension is assumed */
-                *buff = (htobe16(*buff) & 0x0fff);
+                *buff = (HOST_TO_BE16(*buff) & 0x0fff);
                 buff++;
 
                 /* Q - Correct sign extention is assumed*/
-                *buff = (htobe16(*buff) & 0x0fff);
+                *buff = (HOST_TO_BE16(*buff) & 0x0fff);
                 buff++;
             }
         }
@@ -315,14 +315,14 @@ static void c16_sample_fixup(int16_t *buff, size_t n,
         if (fmt == RXTX_FMT_BINLE_C16) {
             for (i = 0; i < n; i++) {
                 /* I - Mask off the marker and sign extend */
-                *buff = htole16(*buff) & 0x0fff;
+                *buff = HOST_TO_LE16(*buff) & 0x0fff;
                 if (*buff & 0x800) {
                     *buff |= 0xf000;
                 }
                 buff++;
 
                 /* Q - Mask off the marker and sign extend */
-                *buff = htole16(*buff) & 0x0fff;
+                *buff = HOST_TO_LE16(*buff) & 0x0fff;
                 if (*buff & 0x800) {
                     *buff |= 0xf000;
                 }
@@ -332,14 +332,14 @@ static void c16_sample_fixup(int16_t *buff, size_t n,
         } else {
             for (i = 0; i < n; i++) {
                 /* I - Mask off the marker and sign extend */
-                *buff = htobe16(*buff) & 0x0fff;
+                *buff = HOST_TO_BE16(*buff) & 0x0fff;
                 if (*buff & 0x800) {
                     *buff |= 0xf000;
                 }
                 buff++;
 
                 /* Q - Mask off the marker and sign extend */
-                *buff = htobe16(*buff) & 0x0fff;
+                *buff = HOST_TO_BE16(*buff) & 0x0fff;
                 if (*buff & 0x800) {
                     *buff |= 0xf000;
                 }

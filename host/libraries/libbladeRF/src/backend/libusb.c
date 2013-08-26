@@ -301,7 +301,7 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
         }
     }
 
-    if (!status) {
+    if (dev) {
         if (lusb_is_fpga_configured(dev)) {
             status = libusb_set_interface_alt_setting(lusb->handle, 0, USB_IF_RF_LINK);
         }
