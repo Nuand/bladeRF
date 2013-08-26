@@ -12,7 +12,11 @@
 #include "backend.h"
 #include "device_identifier.h"
 #include "version.h"        /* Generated at build time */
+#include "conversions.h"
 
+
+static int get_otp_field(struct bladerf *dev, char *field, char *val, int maxlen);
+static int get_cal_field(struct bladerf *dev, char *field, char *val, int maxlen);
 /*------------------------------------------------------------------------------
  * Device discovery & initialization/deinitialization
  *----------------------------------------------------------------------------*/
@@ -90,6 +94,7 @@ int bladerf_open_with_devinfo(struct bladerf **device,
 /* dev path becomes device specifier string (osmosdr-like) */
 int bladerf_open(struct bladerf **device, const char *dev_id)
 {
+    struct bladerf *dev;
     struct bladerf_devinfo devinfo;
     int status;
 
@@ -100,6 +105,23 @@ int bladerf_open(struct bladerf **device, const char *dev_id)
 
     if (!status) {
         status = bladerf_open_with_devinfo(device, &devinfo);
+    }
+
+    if (!status) {
+        dev = *device;
+
+        char tmp[40];
+        bool ok;
+        get_otp_field(*device, "S", dev->serial, 32);
+        get_cal_field(*device, "DAC", tmp, 6);
+        dev->dac_trim = str2uint(tmp, 0, 0xffff, &ok);
+        if (!ok)
+            dev->dac_trim = 0x8000;
+        get_cal_field(*device, "B", tmp, 6);
+        dev->variant = str2uint(tmp, 0, 115, &ok);
+        if (!ok)
+            dev->variant = 0;
+        dbg_printf("%s: serial = %s dac=0x%.4x var=%d\n", __FUNCTION__, dev->serial, dev->dac_trim, dev->variant);
     }
 
     return status;
@@ -567,7 +589,7 @@ static int extract_field(char *ptr, int len, char *field, char *val, int maxlen)
     return BLADERF_ERR_INVAL;
 }
 
-static int get_otp_field(struct bladerf *dev, char *field, char *val, int maxlen) {
+int get_otp_field(struct bladerf *dev, char *field, char *val, int maxlen) {
     int status;
     char *otp;
     otp = malloc(256);
@@ -581,7 +603,7 @@ static int get_otp_field(struct bladerf *dev, char *field, char *val, int maxlen
     return extract_field(otp, 256, field, val, maxlen);
 }
 
-static int get_cal_field(struct bladerf *dev, char *field, char *val, int maxlen) {
+int get_cal_field(struct bladerf *dev, char *field, char *val, int maxlen) {
     int status;
     char *cal;
     cal = malloc(256);
@@ -597,17 +619,20 @@ static int get_cal_field(struct bladerf *dev, char *field, char *val, int maxlen
 
 int bladerf_get_serial(struct bladerf *dev, char *serial)
 {
-    return get_otp_field(dev, "S", serial, 32);
+    strcpy(serial, dev->serial);
+    return 0;
 }
 
-int bladerf_get_vctcxo_trim(struct bladerf *dev, char *trim)
+int bladerf_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim)
 {
-    return get_cal_field(dev, "DAC", trim, 6);
+    *trim = dev->dac_trim;
+    return 0;
 }
 
-int bladerf_get_fpga_size(struct bladerf *dev, char *size)
+int bladerf_get_fpga_size(struct bladerf *dev, int *size)
 {
-    return get_cal_field(dev, "B", size, 6);
+    *size = dev->variant;
+    return 0;
 }
 
 int bladerf_get_fw_version(struct bladerf *dev,

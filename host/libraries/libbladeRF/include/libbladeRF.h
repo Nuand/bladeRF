@@ -644,8 +644,6 @@ int bladerf_rx(struct bladerf *dev, bladerf_format format,
  */
 int bladerf_get_serial(struct bladerf *dev, char *serial);
 
-/* FIXME this routine will be changed to have an int16_t* trim paramter soon */
-#if 0
 /**
  * Query a device's VCTCXO calibration trim
  *
@@ -655,8 +653,7 @@ int bladerf_get_serial(struct bladerf *dev, char *serial);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-int bladerf_get_vctcxo_trim(struct bladerf *dev, char *trim);
-#endif
+int bladerf_get_vctcxo_trim(struct bladerf *dev, uint16_t *serial);
 
 /**
  * Query a device's FPGA size
@@ -667,7 +664,7 @@ int bladerf_get_vctcxo_trim(struct bladerf *dev, char *trim);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-int bladerf_get_fpga_size(struct bladerf *dev, char *size);
+int bladerf_get_fpga_size(struct bladerf *dev, int *size);
 
 /**
  * Query firmware version

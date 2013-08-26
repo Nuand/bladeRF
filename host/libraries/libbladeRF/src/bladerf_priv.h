@@ -132,6 +132,10 @@ struct bladerf_fn {
 };
 
 struct bladerf {
+    char serial[33]; /* The device's serial number */
+    uint16_t dac_trim;
+    int variant;
+
     int speed;      /* The device's USB speed, 0 is HS, 1 is SS */
     struct bladerf_stats stats;
 
