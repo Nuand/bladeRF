@@ -46,5 +46,5 @@ For the time being, we'll try to keep an updated link to a development build her
 
 - 2013-08-06 Debug build (changeset 03b7011210f36729afa15e5d2a4cc7448a8503df)
 - MD5:  d26d1b1d4bc212c407107c4c6e7740d8
-- Link: http://nuand.com/fx3/lastest.img
+- Link: http://nuand.com/fx3/lasest.img
 
