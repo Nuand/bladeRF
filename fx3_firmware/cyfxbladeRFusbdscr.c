@@ -88,7 +88,7 @@ const uint8_t CyFxUSBSSConfigDscr[] __attribute__ ((aligned (32))) =
     0x01,                           /* Configuration number */
     0x00,                           /* COnfiguration string index */
     0x80,                           /* Config characteristics - Bus powered */
-    0x32,                           /* Max power consumption of device (in 8mA unit) : 400mA */
+    0x64,                           /* Max power consumption of device (in 8mA unit) : 200mA */
 
 
     /* Interface descriptor #0*/
@@ -228,31 +228,23 @@ const uint8_t CyFxUSBHSConfigDscr[] __attribute__ ((aligned (32))) =
     /* Configuration descriptor */
     0x09,                           /* Descriptor size */
     CY_U3P_USB_CONFIG_DESCR,        /* Configuration descriptor type */
-    0x55,0x00,                      /* Length of this descriptor and all sub descriptors */
-    0x03,                           /* Number of interfaces */
+    0x4E,0x00,                      /* Length of this descriptor and all sub descriptors */
+    0x01,                           /* Number of interfaces */
     0x01,                           /* Configuration number */
     0x00,                           /* COnfiguration string index */
     0x80,                           /* Config characteristics - bus powered */
-    0x32,                           /* Max power consumption of device (in 2mA unit) : 100mA */
+    0x64,                           /* Max power consumption of device (in 2mA unit) : 200mA */
 
     /* Interface descriptor #0 */
     0x09,                           /* Descriptor size */
     CY_U3P_USB_INTRFC_DESCR,        /* Interface Descriptor type */
     0x00,                           /* Interface number */
     0x00,                           /* Alternate setting number */
-    0x02,                           /* Number of endpoints */
+    0x01,                           /* Number of endpoints */
     0xFF,                           /* Interface class */
     0x00,                           /* Interface sub class */
     0x00,                           /* Interface protocol code */
     0x00,                           /* Interface descriptor string index */
-
-    /* Endpoint descriptor for producer EP */
-    0x07,                           /* Descriptor size */
-    CY_U3P_USB_ENDPNT_DESCR,        /* Endpoint descriptor type */
-    CY_FX_EP_PRODUCER,              /* Endpoint address and description */
-    CY_U3P_USB_EP_BULK,             /* Bulk endpoint type */
-    0x00,0x02,                      /* Max packet size = 512 bytes */
-    0x00,                           /* Servicing interval for data transfers : 0 for bulk */
 
     /* Endpoint descriptor for producer EP */
     0x07,                           /* Descriptor size */
@@ -265,8 +257,8 @@ const uint8_t CyFxUSBHSConfigDscr[] __attribute__ ((aligned (32))) =
     /* Interface descriptor #1 */
     0x09,                           /* Descriptor size */
     CY_U3P_USB_INTRFC_DESCR,        /* Interface Descriptor type */
-    0x01,                           /* Interface number */
-    0x00,                           /* Alternate setting number */
+    0x00,                           /* Interface number */
+    0x01,                           /* Alternate setting number */
     0x04,                           /* Number of endpoints */
     0xFF,                           /* Interface class */
     0x00,                           /* Interface sub class */
@@ -308,8 +300,8 @@ const uint8_t CyFxUSBHSConfigDscr[] __attribute__ ((aligned (32))) =
     /* Interface descriptor #2 */
     0x09,                           /* Descriptor size */
     CY_U3P_USB_INTRFC_DESCR,        /* Interface Descriptor type */
-    0x02,                           /* Interface number */
-    0x00,                           /* Alternate setting number */
+    0x00,                           /* Interface number */
+    0x02,                           /* Alternate setting number */
     0x01,                           /* Number of endpoints */
     0xFF,                           /* Interface class */
     0x00,                           /* Interface sub class */
