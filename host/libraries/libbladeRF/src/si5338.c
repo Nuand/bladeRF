@@ -1,10 +1,9 @@
 #include <string.h>
+
 #include "libbladeRF.h"
 #include "bladerf_priv.h"
+#include "debug.h"
 
-// this file needs to be linked with definitions for si5338_i2c_write(), and
-// possibly si5338_printf()
-#define si5338_printf(...)
 
 struct tspec {
     int id;
@@ -32,24 +31,48 @@ struct tspec {
 
 #define NUM_MS 4
 
+#define SI5338_F_VCO (38400000UL * 66UL)
+
+/**
+ * This is used to read a set of registers and calculate back to frequency
+ */
+struct si5338_readT 	{
+	int block_index;
+    int base;             // this can be gotten from block_index
+
+    unsigned int P1,P2,P3;   // as from section 5.2 of Reference manual
+    unsigned int a_1dec, b,c,r;
+
+    unsigned int *FoutxP;  // write result here
+
+    unsigned char regs[10];
+    unsigned char rpow_raw;
+};
+
+#define NUM_MS 4
+
+
+
+
+
 static void print_ms(struct tspec *ts) {
-#ifdef SI5338_DBG
     int i;
-    si5338_printf("out_freq: %dHz\n", ts->out_freq);
-    si5338_printf("real_freq: %dHz\n", ts->real_freq);
-    si5338_printf("en: %d\n", ts->en);
-    si5338_printf("a: %d\n", ts->a);
-    si5338_printf("b: %d\n", ts->b);
-    si5338_printf("c: %d\n", ts->c);
-    si5338_printf("r: %d\n", ts->r);
-    si5338_printf("p1: %x\n", ts->p1);
-    si5338_printf("p2: %x\n", ts->p2);
-    si5338_printf("p3: %x\n", ts->p3);
-    for (i = 0; i < 9; i++) {
-        si5338_printf("regs[%d] = 0x%.2x\n", ts->base + i, ts->regs[i]);
-    }
-#endif
+    dbg_printf("out_freq: %dHz\n", ts->out_freq);
+    dbg_printf("real_freq: %dHz\n", ts->real_freq);
+    dbg_printf("en: %d\n", ts->en);
+    dbg_printf("a: %d\n", ts->a);
+    dbg_printf("b: %d\n", ts->b);
+    dbg_printf("c: %d\n", ts->c);
+    dbg_printf("r: %d\n", ts->r);
+    dbg_printf("p1: %x\n", ts->p1);
+    dbg_printf("p2: %x\n", ts->p2);
+    dbg_printf("p3: %x\n", ts->p3);
+
+    for (i = 0; i < 9; i++) dbg_printf("[%d]=0x%.2x\n", ts->base + i, ts->regs[i]);
 }
+
+
+
 
 static void configure_ms(struct bladerf *dev, struct tspec *ts) {
     int i;
@@ -100,7 +123,7 @@ static int __si5338_do_multisynth(struct bladerf *dev, struct tspec *ms, unsigne
             }
 
             if (!found) {
-                si5338_printf("Requested frequency of %dHz on MS%d is too low\n", ms[i].out_freq, i);
+                dbg_printf("Requested frequency of %dHz on MS%d is too low\n", ms[i].out_freq, i);
                 return -1;
             }
         }
@@ -128,7 +151,7 @@ static int __si5338_do_multisynth(struct bladerf *dev, struct tspec *ms, unsigne
 
             }
             if (!found) {
-                si5338_printf("Could not find a+b/c for %dHz on MS%d\n", ms[i].out_freq, i);
+                dbg_printf("Could not find a+b/c for %dHz on MS%d\n", ms[i].out_freq, i);
                 return -1;
             }
         } else {
@@ -207,3 +230,161 @@ int si5338_set_exp_clk(struct bladerf *dev, int enabled, unsigned freq) {
 
     return __si5338_do_multisynth(dev, ms, in_freq * vco_ms_n);
 }
+
+/**
+ * gets the basic regs from Si
+ * @return 0 if all is fine or an error code
+ */
+static int sis5338_get_sample_rate_regs ( struct bladerf *dev, struct si5338_readT *retP )  {
+    int i,retcode;
+
+    for (i = 0; i < 9; i++)  {
+        if ( (retcode=bladerf_si5338_read(dev, retP->base + i, retP->regs+i)) < 0 )	{
+        	dbg_printf("sis5338_get_sample_rate_regs: ioctl failed\n");
+			return retcode;
+			}
+        }
+
+    if ( (retcode=bladerf_si5338_read(dev, 31 + retP->block_index, &retP->rpow_raw)) < 0 )
+    		return retcode;
+
+    return 0;
+}
+
+static unsigned int bytes_to_uint32 ( uint8_t msb, uint8_t ms1, uint8_t ms2, uint8_t lsb, uint8_t last_shift ) {
+	unsigned int risul = msb;
+	risul = (risul << 9) + ms1;
+	risul = (risul << 8) + ms2;
+	risul = (risul << last_shift) + lsb;
+	return risul;
+}
+
+
+static void sis5338_get_sample_rate_calc ( struct si5338_readT *retP ) {
+	uint64_t c = retP->c = retP->P3;
+
+	unsigned int p2 = retP->P2;
+
+	unsigned int b=0;
+
+	int i;
+
+	// c should never be zero, but if it is at least we do not crash
+	if ( c == 0 ) return;
+
+	for (i=1; i<128; i++)
+			{
+			unsigned int B = c*i+p2;
+
+			if ( (B % 128) == 0 )
+					{
+					b = B / 128;
+
+					retP->b = b;
+
+					break;
+					}
+			}
+
+	unsigned int p1 = retP->P1;
+
+	uint64_t A = (p1 + 512);
+	A = A * c;
+	A = A - b * 128;
+	A = (A * 10) / ( c * 128 );  // switch to fixed decimal point
+
+	// bpadalino want to embed this into NIOS II....
+	retP->a_1dec = A;
+
+	// go back to the integer value
+	uint64_t a = A / 10;
+
+	// do manual rounding....
+	if ( A % 10 > 5 ) a++;
+
+// step by step to avoid too much compiler optimization
+	uint64_t f_twice = SI5338_F_VCO * c;
+	uint64_t divisor = a * c + b;
+    f_twice = f_twice / divisor;
+    f_twice = f_twice / retP->r;
+
+	retP->FoutxP[0] = f_twice / 2;  // yes, compiler may optimize this to >> 1
+}
+
+static void print_Si5338_readT(struct si5338_readT *ts)  {
+    int i;
+    dbg_printf("out_freq: %dHz\n", ts->FoutxP[0]);
+    dbg_printf("a_1dec: %d\n", ts->a_1dec);
+    dbg_printf("b:      %d\n", ts->b);
+    dbg_printf("c:      %d\n", ts->c);
+    dbg_printf("r:      %d\n", ts->r);
+    dbg_printf("p1: %x\n", ts->P1);
+    dbg_printf("p2: %x\n", ts->P2);
+    dbg_printf("p3: %x\n", ts->P3);
+
+    for (i = 0; i < 9; i++) dbg_printf("[%d]=0x%.2x\n", ts->base + i, ts->regs[i]);
+
+    dbg_printf("[r]=0x%.2x\n", ts->rpow_raw);
+}
+
+
+static int sis5338_get_sample_rate_A ( struct bladerf *dev, struct si5338_readT *retP )  {
+	int retcode;
+
+	// gets the raw sample rate regs
+	if ( (retcode=sis5338_get_sample_rate_regs(dev, retP )) ) return retcode;
+
+	// I now need to reverse the packing, see pag. 10 of reference manual
+	unsigned char *valP = retP->regs;
+	retP->P1 = bytes_to_uint32 ( 0, valP[2] & 0x03, valP[1], valP[0], 8);
+	retP->P2 = bytes_to_uint32 ( valP[5], valP[4], valP[3], valP[2] >> 2, 6 );
+	retP->P3 = bytes_to_uint32 ( valP[9] & 0x3F, valP[8], valP[7], valP[6], 8 );
+
+	uint8_t shi = (retP->rpow_raw >> 2) & 0x03;
+	retP->r = 1 << shi;
+
+	sis5338_get_sample_rate_calc(retP);
+
+	print_Si5338_readT(retP);
+
+	return 0;
+}
+
+/**
+ * get the sample rate back from the Si5338
+ * @param module the subsection I wish to know about
+ * @param rateP pointer to result
+ * @return 0 if all fine or an error code
+ */
+int bladerf_get_sample_rate (struct bladerf *dev, bladerf_module module, unsigned int *rateP ) {
+	// safety check
+	if ( rateP == NULL ) return -1;
+
+	struct si5338_readT risul;
+
+	memset(&risul,0,sizeof(risul));
+
+	risul.FoutxP = rateP;
+
+	switch ( module )
+			{
+			case BLADERF_MODULE_RX:
+					risul.block_index = 1;
+					risul.base = 53 + 1 * 11;
+					return sis5338_get_sample_rate_A(dev,&risul);
+
+			case BLADERF_MODULE_TX:
+					risul.block_index = 2;
+					risul.base = 53 + 2 * 11;
+					return sis5338_get_sample_rate_A(dev,&risul);
+
+			default:
+					break;
+			}
+
+	return -1;
+}
+
+
+
+

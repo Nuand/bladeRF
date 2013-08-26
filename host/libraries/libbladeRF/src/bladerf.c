@@ -176,6 +176,10 @@ int bladerf_set_loopback(struct bladerf *dev, bladerf_loopback l)
     return 0;
 }
 
+/**
+ * why is the rate multiplied by two ?
+ * Should this be explicit ?
+ */
 int bladerf_set_sample_rate(struct bladerf *dev, bladerf_module module, unsigned int rate, unsigned int *actual)
 {
     int ret = -1;
@@ -197,19 +201,6 @@ int bladerf_set_rational_sample_rate(struct bladerf *dev, bladerf_module module,
     return 0;
 }
 
-int bladerf_get_sample_rate( struct bladerf *dev, bladerf_module module, unsigned int *rate)
-{
-    /* TODO Reconstruct samplerare from Si5338 readback */
-    if (module == BLADERF_MODULE_RX) {
-        *rate = dev->last_rx_sample_rate;
-    } else if (module == BLADERF_MODULE_TX) {
-        *rate = dev->last_tx_sample_rate;
-    } else {
-        return BLADERF_ERR_INVAL;
-    }
-
-    return 0;
-}
 
 int bladerf_get_rational_sample_rate(struct bladerf *dev, bladerf_module module, unsigned int integer, unsigned int num, unsigned int denom)
 {
