@@ -26,6 +26,7 @@
 #define BLADE_UPGRADE_FW        _IOR(BLADERF_IOCTL_BASE, 50, unsigned int)
 #define BLADE_CAL               _IOR(BLADERF_IOCTL_BASE, 51, unsigned int)
 #define BLADE_OTP               _IOR(BLADERF_IOCTL_BASE, 52, unsigned int)
+#define BLADE_DEVICE_RESET      _IOR(BLADERF_IOCTL_BASE, 53, unsigned int)
 
 #define BLADE_USB_CMD_QUERY_VERSION             0
 #define BLADE_USB_CMD_QUERY_FPGA_STATUS         1
@@ -38,6 +39,7 @@
 #define BLADE_USB_CMD_FLASH_ERASE             102
 #define BLADE_USB_CMD_READ_OTP                103
 #define BLADE_USB_CMD_WRITE_OTP               104
+#define BLADE_USB_CMD_RESET                   105
 
 #define BLADE_USB_CMD_QUERY_VERSION      0
 #define BLADE_USB_CMD_QUERY_FPGA_STATUS  1

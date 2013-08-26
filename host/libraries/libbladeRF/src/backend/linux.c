@@ -178,6 +178,17 @@ static int linux_flash_firmware(struct bladerf *dev,
 
     return ret;
 }
+static int linux_device_reset(struct bladerf *dev)
+{
+    int ret = 0;
+    struct bladerf_linux *backend = (struct bladerf_linux*)dev->backend;
+
+    assert(dev);
+
+    ret = ioctl(backend->fd, BLADE_DEVICE_RESET, NULL);
+    return ret;
+}
+
 
 /*------------------------------------------------------------------------------
  * Si5338 register access
@@ -720,6 +731,7 @@ const struct bladerf_fn bladerf_linux_fn = {
     FIELD_INIT(.is_fpga_configured, linux_is_fpga_configured),
 
     FIELD_INIT(.flash_firmware, linux_flash_firmware),
+    FIELD_INIT(.device_reset, linux_device_reset),
 
     FIELD_INIT(.get_cal, linux_get_cal),
     FIELD_INIT(.get_otp, linux_get_otp),

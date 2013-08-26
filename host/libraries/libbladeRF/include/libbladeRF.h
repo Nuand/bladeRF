@@ -733,6 +733,17 @@ int bladerf_stats(struct bladerf *dev, struct bladerf_stats *stats);
 int bladerf_flash_firmware(struct bladerf *dev, const char *firmware);
 
 /**
+ * Reset the device
+ *
+ * @note This also causes the device to reload its firmware
+ *
+ * @param   dev         Device handle
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+int bladerf_device_reset(struct bladerf *dev);
+
+/**
  * Load device's FPGA
  *
  * @param   dev         Device handle

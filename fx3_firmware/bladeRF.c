@@ -985,6 +985,11 @@ CyBool_t CyFxbladeRFApplnUSBSetupCB(uint32_t setupdat0, uint32_t setupdat1)
                 CyU3PUsbSendEP0Data(sizeof(ret), &ret);
             break;
 
+            case BLADE_USB_CMD_RESET:
+                apiRetStatus = CyU3PUsbGetEP0Data(4, buf, &readC);
+                CyU3PDeviceReset(CyFalse);
+            break;
+
             break;
             default:
                 isHandled = CyFalse;

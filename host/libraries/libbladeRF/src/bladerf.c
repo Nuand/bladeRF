@@ -700,12 +700,22 @@ int bladerf_flash_firmware(struct bladerf *dev, const char *firmware_file)
             if (!status) {
                 status = dev->fn->flash_firmware(dev, buf, buf_size);
             }
+            if (!status) {
+                if (dev->legacy) {
+                    printf("DEVICE OPERATING IN LEGACY MODE, MANUAL RESET IS NECESSARY AFTER SUCCESSFUL UPGRADE\n");
+                }
+            }
         }
 
         free(buf);
     }
 
     return status;
+}
+
+int bladerf_device_reset(struct bladerf *dev)
+{
+    return dev->fn->device_reset(dev);
 }
 
 int bladerf_load_fpga(struct bladerf *dev, const char *fpga_file)

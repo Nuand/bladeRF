@@ -954,6 +954,12 @@ leave_fw:
             kfree(fw_buf);
             break;
 
+        case BLADE_UPGRADE_FW:
+            ret = 1;
+            retval = __bladerf_snd_cmd(dev, BLADE_USB_CMD_RESET, &ret, sizeof(ret));
+            break;
+
+
         case BLADE_CHECK_PROG:
             retval = 0;
             printk("ok %d\n", dev->intnum);

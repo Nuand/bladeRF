@@ -705,6 +705,26 @@ static int lusb_flash_firmware(struct bladerf *dev,
     return status;
 }
 
+static int lusb_device_reset(struct bladerf *dev)
+{
+    struct bladerf_lusb *lusb = dev->backend;
+    int status, ok;
+    ok = 1;
+    status = libusb_control_transfer(
+                lusb->handle,
+                LIBUSB_RECIPIENT_INTERFACE |
+                    LIBUSB_REQUEST_TYPE_VENDOR |
+                    EP_DIR_OUT,
+                BLADE_USB_CMD_RESET,
+                0,
+                0,
+                (unsigned char *)&ok,
+                sizeof(ok),
+                BLADERF_LIBUSB_TIMEOUT_MS
+             );
+    return status;
+}
+
 static int lusb_get_otp(struct bladerf *dev, char *otp)
 {
     struct bladerf_lusb *lusb = dev->backend;
@@ -1407,6 +1427,7 @@ const struct bladerf_fn bladerf_lusb_fn = {
     FIELD_INIT(.is_fpga_configured, lusb_is_fpga_configured),
 
     FIELD_INIT(.flash_firmware, lusb_flash_firmware),
+    FIELD_INIT(.device_reset, lusb_device_reset),
 
     FIELD_INIT(.get_cal, lusb_get_cal),
     FIELD_INIT(.get_otp, lusb_get_otp),

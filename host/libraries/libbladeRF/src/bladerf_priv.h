@@ -96,6 +96,7 @@ struct bladerf_fn {
 
     /* Flash FX3 firmware */
     int (*flash_firmware)(struct bladerf *dev, uint8_t *image, size_t image_size);
+    int (*device_reset)(struct bladerf *dev);
 
     /* Platform information */
     int (*get_cal)(struct bladerf *dev, char *cal);
