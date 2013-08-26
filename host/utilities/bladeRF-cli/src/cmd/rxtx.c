@@ -58,7 +58,7 @@
 
 #if defined(__BIG_ENDIAN__)
 #   define RXTX_FMT_BINHOST_C16 RXTX_FMT_BINBE_C16
-#elif defined(__LITTLE_ENDIAN__)
+#elif defined(__LITTLE_ENDIAN__) || defined(__LITTLE_ENDIAN)
 #   define RXTX_FMT_BINHOST_C16 RXTX_FMT_BINLE_C16
 #else
 #   error "Compiler did not define __BIG/LITTLE_ENDIAN__ - required here"
