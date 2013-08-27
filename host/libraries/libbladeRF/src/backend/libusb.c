@@ -544,7 +544,7 @@ static int read_flash(struct bladerf *dev, int page_offset,
                 status = BLADERF_ERR_IO;
             } else {
                 n_read += read_size;
-                ptr += n_read;
+                ptr += read_size;
                 status = 0;
             }
         } while (n_read < FLASH_PAGE_SIZE && !status);
