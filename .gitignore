@@ -1,8 +1,7 @@
 *.o
 *.elf
 *.img
-*.swp
-*.swo
+*.s[a-w][a-z]
 *.~
 *.cmd
 *.order
