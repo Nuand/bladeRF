@@ -256,7 +256,7 @@ int bladerf_open_with_devinfo(struct bladerf **device,
  *      - Nth instance encountered (libusb)
  *      - Device node N, such as /dev/bladerfN (linux)
  *   - serial=\<serial\>
- *      - Device's serial number. Decimal or hex prefixed by '0x' is permitted.
+ *      - Device's serial number.
  *
  * @param[out]  device             Update with device handle on success
  * @param[in]   device_identifier  Device identifier, formatted as described above
@@ -653,7 +653,7 @@ int bladerf_get_serial(struct bladerf *dev, char *serial);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-int bladerf_get_vctcxo_trim(struct bladerf *dev, uint16_t *serial);
+int bladerf_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim);
 
 /**
  * Query a device's FPGA size
