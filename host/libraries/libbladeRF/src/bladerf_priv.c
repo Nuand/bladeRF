@@ -258,13 +258,13 @@ int bladerf_get_cal_field(struct bladerf *dev, char *field,
         return extract_field(cal, CAL_BUFFER_SIZE, field, data, data_size);
 }
 
-int bladerf_get_serial_nocache(struct bladerf *dev)
+int bladerf_get_and_cache_serial(struct bladerf *dev)
 {
     return bladerf_get_otp_field(dev, "S", dev->serial,
                                     BLADERF_SERIAL_LENGTH - 1);
 }
 
-int bladerf_get_vctcxo_trim_nocache(struct bladerf *dev)
+int bladerf_get_and_cache_vctcxo_trim(struct bladerf *dev)
 {
     int status;
     bool ok;
@@ -285,7 +285,7 @@ int bladerf_get_vctcxo_trim_nocache(struct bladerf *dev)
     return status;
 }
 
-int bladerf_get_fpga_size_nocache(struct bladerf *device)
+int bladerf_get_and_cache_fpga_size(struct bladerf *device)
 {
     int status;
     char tmp[7] = { 0 };

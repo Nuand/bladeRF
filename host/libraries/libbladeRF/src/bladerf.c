@@ -112,14 +112,14 @@ int bladerf_open(struct bladerf **device, const char *dev_id)
             /* FIXME Will this be neccessary since we'll hae to have gotten
              *       the serial # while probing?
              */
-            status = bladerf_get_serial_nocache(dev);
+            status = bladerf_get_and_cache_serial(dev);
 
             if (!status) {
-                status = bladerf_get_vctcxo_trim_nocache(dev);
+                status = bladerf_get_and_cache_vctcxo_trim(dev);
             }
 
             if (!status) {
-                status = bladerf_get_fpga_size_nocache(dev);
+                status = bladerf_get_and_cache_fpga_size(dev);
             }
 
             if (!status) {

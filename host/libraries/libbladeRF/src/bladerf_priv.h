@@ -291,32 +291,35 @@ int bladerf_get_otp_field(struct bladerf *device, char *field,
                             char *data, size_t data_size);
 
 /**
- * Retrieve the device serial from flash
+ * Retrieve the device serial from flash and cache it in the provided
+ * device structure
  *
  * @param[inout]   dev      Device handle. On success, serial field is updated
  *
  * 0 on success, BLADERF_ERR_* on failure
  */
-int bladerf_get_serial_nocache(struct bladerf *device);
+int bladerf_get_and_cache_serial(struct bladerf *device);
 
 /**
- * Retrieve VCTCXO calibration value from flash
+ * Retrieve VCTCXO calibration value from flash and cache it in the
+ * provided device structure
  *
  * @param[inout]   dev      Device handle. On success, trim field is updated
  *
  * 0 on success, BLADERF_ERR_* on failure
  */
-int bladerf_get_vctcxo_trim_nocache(struct bladerf *device);
+int bladerf_get_and_cache_vctcxo_trim(struct bladerf *device);
 
 /**
- * Retrieve FPGA size variant from flash
+ * Retrieve FPGA size variant from flash and cache it in the provided
+ * device structure
  *
  * @param[inout]   dev      Device handle.
  *                          On success, fpga_size field  is updated
  *
  * 0 on success, BLADERF_ERR_* on failure
  */
-int bladerf_get_fpga_size_nocache(struct bladerf *device);
+int bladerf_get_and_cache_fpga_size(struct bladerf *device);
 
 #endif
 
