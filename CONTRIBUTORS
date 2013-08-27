@@ -24,18 +24,24 @@
 #
 #-------------------------------------------------------------------------------
 
-N: Brian Padalino
-E: bpadalino@nuand.com
-F: bpadalino
-I: bpadalino
-G: bpadalino
-D: Project maintainer
+N: Damiano Bolla
+I: engidea
+G: Engidea
+D: si5338 sample rate readback, misc. bugfixes
 
 N: Robert Ghilduta
 E: robert.ghilduta@nuand.com
 F: robertghilduta
 I: mIKEjONES
 G: robertghilduta
+D: Project maintainer
+
+
+N: Brian Padalino
+E: bpadalino@nuand.com
+F: bpadalino
+I: bpadalino
+G: bpadalino
 D: Project maintainer
 
 N: Jon Szymaniak
