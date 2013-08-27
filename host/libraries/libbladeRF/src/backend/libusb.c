@@ -193,10 +193,15 @@ static int lusb_get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
         dbg_printf( "Couldn't populate devinfo - %s\n", libusb_error_name(status) );
         status = error_libusb2bladerf(status);
     } else {
-        /* Populate */
+        /* Populate device info */
         info->backend = BLADERF_BACKEND_LIBUSB;
         info->usb_bus = libusb_get_bus_number(dev);
         info->usb_addr = libusb_get_device_address(dev);
+
+        /* FIXME We need to get the serial number here before we've opened
+         *      the device. Clearing it out for now to avoid uninitialized
+         *      memory issues. */
+        memset(info->serial, 0, BLADERF_SERIAL_LENGTH);
 
         libusb_close( handle );
     }
@@ -229,7 +234,12 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
     /* Iterate through all the USB devices */
     for( i = 0, n = 0; i < count; i++ ) {
         if( lusb_device_is_bladerf(list[i]) ) {
-            /* Open the USB device and get some information */
+
+            /* Open the USB device and get some information
+             *
+             * FIXME in order for the bladerf_devinfo_matches() to work, this
+             *       routine has to be able to get the serial #.
+             */
             status = lusb_get_devinfo( list[i], &thisinfo );
             if(status < 0) {
                 dbg_printf( "Could not open bladeRF device: %s\n", libusb_error_name(status) );
@@ -278,12 +288,6 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
                     dev->legacy = LEGACY_ALT_SETTING;
                 }
 
-                if (dev->legacy) {
-                    printf("********************************************************************************\n");
-                    printf("* ENTERING LEGACY MODE, PLEASE UPGRADE TO THE LATEST FIRMWARE BY RUNNING:\n");
-                    printf("* wget http://nuand.com/fx3/latest.img ; bladeRF-cli -b -f latest.img\n");
-                    printf("********************************************************************************\n");
-                }
 
                 /* Claim interfaces */
                 for( inf = 0; inf < ((dev->legacy & LEGACY_ALT_SETTING) ? 3 : 1) ; inf++ ) {
@@ -540,7 +544,7 @@ static int read_flash(struct bladerf *dev, int page_offset,
                 status = BLADERF_ERR_IO;
             } else {
                 n_read += read_size;
-                ptr += n_read;
+                ptr += read_size;
                 status = 0;
             }
         } while (n_read < FLASH_PAGE_SIZE && !status);

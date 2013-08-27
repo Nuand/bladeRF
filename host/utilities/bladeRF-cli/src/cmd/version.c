@@ -6,8 +6,8 @@ int cmd_version(struct cli_state *state, int argc, char **argv)
     int status;
     unsigned int fw_major, fw_minor;
     unsigned int fpga_major, fpga_minor;
-    char serial[40];
-    int variant;
+    char serial[BLADERF_SERIAL_LENGTH] = { 0 };
+    bladerf_fpga_size fpga_size;
     uint16_t dac_trim;
 
     bool fpga_loaded = false;
@@ -33,7 +33,7 @@ int cmd_version(struct cli_state *state, int argc, char **argv)
         return status;
     }
 
-    status = bladerf_get_fpga_size(state->dev, &variant);
+    status = bladerf_get_fpga_size(state->dev, &fpga_size);
     if (status < 0) {
         return status;
     }
@@ -44,9 +44,9 @@ int cmd_version(struct cli_state *state, int argc, char **argv)
     }
 
 
-    printf("\nbladeRF serial: %s\n", serial);
+    printf("\nSerial #: %s\n", serial);
     printf("VCTCXO DAC calibration: 0x%.4x\n", dac_trim);
-    printf("bladeRF FPGA size: %d KLE\n", variant);
+    printf("FPGA size: %d KLE\n", fpga_size);
     printf("Firmware version: %u.%u\n", fw_major, fw_minor);
     if (fpga_loaded) {
         printf("FPGA version:     %u.%u\n", fpga_major, fpga_minor);

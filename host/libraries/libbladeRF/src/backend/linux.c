@@ -181,9 +181,8 @@ static int linux_flash_firmware(struct bladerf *dev,
 static int linux_device_reset(struct bladerf *dev)
 {
     int ret = 0;
-    struct bladerf_linux *backend = (struct bladerf_linux*)dev->backend;
-
     assert(dev);
+    struct bladerf_linux *backend = (struct bladerf_linux*)dev->backend;
 
     ret = ioctl(backend->fd, BLADE_DEVICE_RESET, NULL);
     return ret;
