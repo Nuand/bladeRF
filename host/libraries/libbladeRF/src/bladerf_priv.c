@@ -7,6 +7,7 @@
 #include "debug.h"
 
 #define OTP_BUFFER_SIZE 256
+#define CAL_BUFFER_SIZE 256
 
 void bladerf_set_error(struct bladerf_error *error,
                         bladerf_error type, int val)
@@ -248,13 +249,13 @@ int bladerf_get_cal_field(struct bladerf *dev, char *field,
                             char *data, size_t data_size)
 {
     int status;
-    char cal[OTP_BUFFER_SIZE];
+    char cal[CAL_BUFFER_SIZE];
 
     status = dev->fn->get_cal(dev, cal);
     if (status < 0)
         return status;
     else
-        return extract_field(cal, OTP_BUFFER_SIZE, field, data, data_size);
+        return extract_field(cal, CAL_BUFFER_SIZE, field, data, data_size);
 }
 
 int bladerf_get_serial_nocache(struct bladerf *dev)
