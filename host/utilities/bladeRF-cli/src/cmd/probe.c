@@ -31,8 +31,8 @@ int cmd_probe(struct cli_state *s, int argc, char *argv[])
         /* printf("    Serial: 0x%016lX\n", devices[i].serial); */
         /* TODO: Fix OTP support for serial readback! */
         printf("    Serial: %s\n", devices[i].serial);
-        printf("    USB Bus: %d\n", devices[i].usb_addr);
-        printf("    USB Address: %d\n", devices[i].usb_bus);
+        printf("    USB Bus: %d\n", devices[i].usb_bus);
+        printf("    USB Address: %d\n", devices[i].usb_addr);
         /*printf("    Firmware: v%d.%d\n", devices[i].fw_ver_maj,
                devices[i].fw_ver_min);
 
