@@ -55,13 +55,15 @@ typedef enum {
     BLADERF_BACKEND_LIBUSB  /**< libusb */
 } bladerf_backend;
 
+/* Length of device serial number string, including NUL-terminator */
+#define BLADERF_SERIAL_LENGTH   33
 
 /**
  * Information about a bladeRF attached to the system
  */
 struct bladerf_devinfo {
     bladerf_backend backend;    /**< Backend to use when connecting to device */
-    char serial[33];            /**< Device's serial number */
+    char serial[BLADERF_SERIAL_LENGTH]; /**< Device serial number string */
     uint8_t usb_bus;            /**< Bus # device is attached to */
     uint8_t usb_addr;           /**< Device address on bus */
     unsigned int instance;      /**< Device instance or ID */
@@ -103,6 +105,15 @@ typedef enum {
                                *  bytes large
                                */
 } bladerf_format;
+
+/**
+ * FPGA device variant (size)
+ */
+typedef enum {
+    BLADERF_FPGA_UNKNOWN = 0,   /**< Unable to determine FPGA variant */
+    BLADERF_FPGA_40KLE = 40,    /**< 40 kLE FPGA */
+    BLADERF_FPGA_115KLE = 115   /**< 115 kLE FPGA */
+} bladerf_fpga_size;
 
 /**
  * Sample metadata
@@ -664,7 +675,7 @@ int bladerf_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-int bladerf_get_fpga_size(struct bladerf *dev, int *size);
+int bladerf_get_fpga_size(struct bladerf *dev, bladerf_fpga_size *size);
 
 /**
  * Query firmware version

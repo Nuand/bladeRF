@@ -7,6 +7,8 @@
 #include <limits.h>
 #include <libbladeRF.h>
 #include "host_config.h"
+#include "minmax.h"
+#include "conversions.h"
 
 /* Reserved values for bladerf_devinfo fields to indicate "undefined" */
 #define DEVINFO_SERIAL_ANY    "ANY"
@@ -136,9 +138,9 @@ struct bladerf_fn {
 #define FW_LEGACY_ALT_SETTING_MINOR 1
 #define LEGACY_ALT_SETTING  1
 struct bladerf {
-    char serial[33]; /* The device's serial number */
+    char serial[BLADERF_SERIAL_LENGTH]; /* The device's serial number */
     uint16_t dac_trim;
-    int variant;
+    bladerf_fpga_size fpga_size;
 
     unsigned int fw_major, fw_minor;
     int legacy;
@@ -254,9 +256,67 @@ bladerf_get_devinfo_list(struct bladerf_devinfo *devinfo);
 /**
  * Add and item to our internal devinfo list
  *
- * 0 on success, BLADERF_ERR_* on failuer
+ * @param   list    List to append to
+ * @param   info    Info to copy into the list
+ *
+ * 0 on success, BLADERF_ERR_* on failure
  */
 int bladerf_devinfo_list_add(struct bladerf_devinfo_list *list,
                              struct bladerf_devinfo *info);
+
+/**
+ * Read data from one-time-programmabe (OTP) section of flash
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   field       OTP field
+ * @param[out]  data        Populated with retrieved data
+ * @param[in]   data_size   Size of the data to read
+ *
+ * 0 on success, BLADERF_ERR_* on failure
+ */
+int bladerf_get_otp_field(struct bladerf *device, char *field,
+                            char *data, size_t data_size);
+
+/**
+ * Read data from calibration ("cal") section of flash
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   field       Cal field
+ * @param[out]  data        Populated with retrieved data
+ * @param[in]   data_size   Size of the data to read
+ *
+ * 0 on success, BLADERF_ERR_* on failure
+ */
+int bladerf_get_otp_field(struct bladerf *device, char *field,
+                            char *data, size_t data_size);
+
+/**
+ * Retrieve the device serial from flash
+ *
+ * @param[inout]   dev      Device handle. On success, serial field is updated
+ *
+ * 0 on success, BLADERF_ERR_* on failure
+ */
+int bladerf_get_serial_nocache(struct bladerf *device);
+
+/**
+ * Retrieve VCTCXO calibration value from flash
+ *
+ * @param[inout]   dev      Device handle. On success, trim field is updated
+ *
+ * 0 on success, BLADERF_ERR_* on failure
+ */
+int bladerf_get_vctcxo_trim_nocache(struct bladerf *device);
+
+/**
+ * Retrieve FPGA size variant from flash
+ *
+ * @param[inout]   dev      Device handle.
+ *                          On success, fpga_size field  is updated
+ *
+ * 0 on success, BLADERF_ERR_* on failure
+ */
+int bladerf_get_fpga_size_nocache(struct bladerf *device);
+
 #endif
 

@@ -6,6 +6,8 @@
 #include "bladerf_priv.h"
 #include "debug.h"
 
+#define OTP_BUFFER_SIZE 256
+
 void bladerf_set_error(struct bladerf_error *error,
                         bladerf_error type, int val)
 {
@@ -163,6 +165,138 @@ int bladerf_devinfo_list_add(struct bladerf_devinfo_list *list,
     if (status == 0) {
         memcpy(&list->elt[list->num_elt], info, sizeof(*info));
         list->num_elt++;
+    }
+
+    return status;
+}
+
+
+/******
+ * CRC16 implementation from http://softwaremonkey.org/Code/CRC16
+ */
+typedef  unsigned char                   byte;    /*     8 bit unsigned       */
+typedef  unsigned short int              word;    /*    16 bit unsigned       */
+
+static word crc16mp(word crcval, void *data_p, word count) {
+    /* CRC-16 Routine for processing multiple part data blocks.
+     * Pass 0 into 'crcval' for first call for any given block; for
+     * subsequent calls pass the CRC returned by the previous call. */
+    word            xx;
+    byte            *ptr=data_p;
+
+    while (count-- > 0) {
+        crcval=(word)(crcval^(word)(((word)*ptr++)<<8));
+        for (xx=0;xx<8;xx++) {
+            if(crcval&0x8000) { crcval=(word)((word)(crcval<<1)^0x1021); }
+            else              { crcval=(word)(crcval<<1);                }
+        }
+    }
+    return(crcval);
+}
+
+static int extract_field(char *ptr, int len, char *field,
+                            char *val, size_t  maxlen) {
+    int c, wlen;
+    unsigned char *ub, *end;
+    unsigned short a1, a2;
+    int flen;
+
+    flen = strlen(field);
+
+    ub = (unsigned char *)ptr;
+    end = ub + len;
+    while (ub < end) {
+        c = *ub;
+
+        if (c == 0xff) // flash and OTP are 0xff if they've never been written to
+            break;
+
+        a1 = *(unsigned short *)(&ub[c+1]);  // read checksum
+        a2 = crc16mp(0, ub, c+1);  // calculated checksum
+
+        if (a1 == a2) {
+            if (!strncmp((char *)ub + 1, field, flen)) {
+                wlen = min_sz(c - flen, maxlen);
+                strncpy(val, (char *)ub + 1 + flen, wlen);
+                val[wlen] = 0;
+                return 0;
+            }
+        } else {
+            dbg_printf( "%s: Field checksum mistmatch\n", __FUNCTION__);
+            return BLADERF_ERR_INVAL;
+        }
+        ub += c + 3; //skip past `c' bytes, 2 byte CRC field, and 1 byte len field
+    }
+    return BLADERF_ERR_INVAL;
+}
+
+
+int bladerf_get_otp_field(struct bladerf *dev, char *field,
+                             char *data, size_t data_size)
+{
+    int status;
+    char otp[OTP_BUFFER_SIZE];
+
+    status = dev->fn->get_otp(dev, otp);
+    if (status < 0)
+        return status;
+    else
+        return extract_field(otp, OTP_BUFFER_SIZE, field, data, data_size);
+}
+
+int bladerf_get_cal_field(struct bladerf *dev, char *field,
+                            char *data, size_t data_size)
+{
+    int status;
+    char cal[OTP_BUFFER_SIZE];
+
+    status = dev->fn->get_cal(dev, cal);
+    if (status < 0)
+        return status;
+    else
+        return extract_field(cal, OTP_BUFFER_SIZE, field, data, data_size);
+}
+
+int bladerf_get_serial_nocache(struct bladerf *dev)
+{
+    return bladerf_get_otp_field(dev, "S", dev->serial,
+                                    BLADERF_SERIAL_LENGTH - 1);
+}
+
+int bladerf_get_vctcxo_trim_nocache(struct bladerf *dev)
+{
+    int status;
+    bool ok;
+    int16_t trim;
+    char tmp[7] = { 0 };
+
+    status = bladerf_get_cal_field(dev, "DAC", tmp, sizeof(tmp) - 1);
+    if (!status) {
+        trim = str2uint(tmp, 0, 0xffff, &ok);
+        if (ok) {
+            dev->dac_trim = trim;
+        } else {
+            dbg_printf("DAC trim unprogrammed. Defaulting to 0x8000\n");
+            dev->dac_trim = 0x8000;
+        }
+    }
+
+    return status;
+}
+
+int bladerf_get_fpga_size_nocache(struct bladerf *device)
+{
+    int status;
+    char tmp[7] = { 0 };
+
+    status = bladerf_get_cal_field(device, "B", tmp, sizeof(tmp) - 1);
+
+    if (!strcmp("40", tmp)) {
+        device->fpga_size = BLADERF_FPGA_40KLE;
+    } else if(!strcmp("115", tmp)) {
+        device->fpga_size = BLADERF_FPGA_40KLE;
+    } else {
+        device->fpga_size = BLADERF_FPGA_UNKNOWN;
     }
 
     return status;
