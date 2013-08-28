@@ -5,229 +5,40 @@
 #include "debug.h"
 
 
-struct tspec {
-    int id;
-    int enA, enB;
-    unsigned out_freq;
-    unsigned real_freq;
-    unsigned en;
-    unsigned a, b, c;
-    unsigned r, rpow;
-    unsigned p1, p2, p3;
-
-    int base;
-    unsigned char regs[10];
-    // 0: p1[7:0]
-    // 1: p1[15:8]
-    // 2: p2[5:0] & p1[17:16]
-    // 3: p2[13:6]
-    // 4: p2[21:14]
-    // 5: p2[29:22]
-    // 6: p3[7:0]
-    // 7: p3[15:8]
-    // 8: p3[23:16]
-    // 9: p3[29:24]
-};
-
-#define NUM_MS 4
+#define SI5338_EN_A		0x01
+#define SI5338_EN_B		0x02
 
 #define SI5338_F_VCO (38400000UL * 66UL)
 
+
 /**
- * This is used to read a set of registers and calculate back to frequency
- * XXX: This looks very familiar - maybe just have 1 structure?
-*/
-struct si5338_readT {
+ * This is used set or recreate the si5338 frequency
+ * Each si port can be set independently
+ */
+struct si5338_port {
     int block_index;
-    int base;             // this can be gotten from block_index
+    int base;                  // this can be gotten from block_index
 
-    uint32_t P1,P2,P3;   // as from section 5.2 of Reference manual
-    uint32_t a_1dec, b,c,r;
+    uint32_t want_sample_rate; // if used as setter this is what I wish
+    uint8_t enable_port_bits;  // You may want Just port A out or both port A & B
 
-    uint32_t *FoutxP;  // write result here
+    uint32_t sample_rate_r;    // the sample rate adjusted with the r multiplier
+
+    uint32_t P1,P2,P3;         // as from section 5.2 of Reference manual
+    uint32_t a,b,c,r;
+
+    uint32_t *f_outP;          // write result here
 
     uint8_t regs[10];
-    uint8_t rpow_raw;
+    uint8_t raw_r;
 };
 
-static void print_ms(struct tspec *ts) {
-    int i;
-    dbg_printf("out_freq: %dHz\n", ts->out_freq);
-    dbg_printf("real_freq: %dHz\n", ts->real_freq);
-    dbg_printf("en: %d\n", ts->en);
-    dbg_printf("a:  %d\n", ts->a);
-    dbg_printf("b:  %d\n", ts->b);
-    dbg_printf("c:  %d\n", ts->c);
-    dbg_printf("r:  %d\n", ts->r);
-    dbg_printf("p1: %x\n", ts->p1);
-    dbg_printf("p2: %x\n", ts->p2);
-    dbg_printf("p3: %x\n", ts->p3);
-
-    for (i = 0; i < 9; i++) dbg_printf("[%d]=0x%.2x\n", ts->base + i, ts->regs[i]);
-}
-
-static void configure_ms(struct bladerf *dev, struct tspec *ts) {
-    int i;
-    bladerf_si5338_write(dev, 36 + ts->id, (ts->enA ? 1 : 0) | (ts->enB ? 2 : 0) );
-    for (i = 0; i < 9; i++) {
-        bladerf_si5338_write(dev, ts->base + i, ts->regs[i]);
-    }
-    bladerf_si5338_write(dev, 31 + ts->id, 0xC0 | (ts->rpow << 2));
-}
-
-static int nodecimals(double num) {
-    int a;
-    a = num;
-    return ((double)(num - (double)a) == 0.0f);
-}
-
-static int __si5338_do_multisynth(struct bladerf *dev, struct tspec *ms, unsigned vco_freq) {
-    struct tspec vco;
-    int i, j, found;
-    double rem;
-    unsigned long long a, b, c;
-    unsigned long long p1, p2, p3;
-    double bfl;
-
-    vco.out_freq = vco_freq;
-
-    for (i = 0; i < NUM_MS; i++) {
-        ms[i].id = i;
-        ms[i].base = 53 + i * 11;
-        if (!ms[i].enA && !ms[i].enB)
-            ms[i].enA = ms[i].enB = 1;
-        if (!ms[i].out_freq)
-            continue;
-        ms[i].r = 1;
-        ms[i].en = 1;
-        if (ms[i].out_freq < 5000000) {
-            // find an R that makes this MS's fout > 5MHz
-            found = 0;
-            for (j = 0; j <= 5; j++) {
-                if (ms[i].out_freq * (1 << j) >= 5000000) {
-                    ms[i].rpow = j;
-                    ms[i].r = 1 << j;
-                    ms[i].real_freq = ms[i].out_freq;
-                    ms[i].out_freq *= ms[i].r;
-                    found = 1;
-                    break;
-                }
-            }
-
-            if (!found) {
-                dbg_printf("Requested frequency of %dHz on MS%d is too low\n", ms[i].out_freq, i);
-                return -1;
-            }
-        }
-    }
-
-    // simplest algorithm
-    for (i = 0; i < NUM_MS; i++) {
-        if (!ms[i].en)
-            continue;
-        a = vco.out_freq / ms[i].out_freq;
-
-        // find a ratio that works
-        rem = (vco.out_freq - a * ms[i].out_freq) / (double)ms[i].out_freq;
-        if (rem != 0) {
-            found = 0;
-            for (c = 1; c < ((2ULL<<30)-1); c++) {
-                bfl = rem * c;
-                if (bfl < 1)
-                    continue;
-                if (nodecimals(bfl)) {
-                    b = bfl;
-                    found = 1;
-                    break;
-                }
-
-            }
-            if (!found) {
-                dbg_printf("Could not find a+b/c for %dHz on MS%d\n", ms[i].out_freq, i);
-                return -1;
-            }
-        } else {
-            c = 1;
-            b = 0;
-        }
-
-        if (i == 1)
-            ms[i].enB = 0;
-
-        ms[i].a = a;
-        ms[i].b = b;
-        ms[i].c = c;
-
-        // calculate P1, P2, P3 based off page 9 in the Si5338 reference manual
-        ms[i].p1 = p1 = (a * c + b) * 128 / c - 512;
-        ms[i].p2 = p2 = (b * 128) % c;
-        ms[i].p3 = p3 = c;
-
-        ms[i].regs[0] = p1 & 0xff;
-        ms[i].regs[1] = (p1 >> 8) & 0xff;
-        ms[i].regs[2] = ((p2 & 0x3f) << 2) | ((p1 >> 16) & 0x3);
-        ms[i].regs[3] = (p2 >> 6) & 0xff;
-        ms[i].regs[4] = (p2 >> 14) & 0xff;
-        ms[i].regs[5] = (p2 >> 22) & 0xff;
-        ms[i].regs[6] = p3 & 0xff;
-        ms[i].regs[7] = (p3 >> 8) & 0xff;
-        ms[i].regs[8] = (p3 >> 16) & 0xff;
-        ms[i].regs[9] = (p3 >> 24) & 0xff;
-
-        print_ms(&ms[i]);
-        configure_ms(dev, &ms[i]);
-    }
-
-    return 0;
-}
-
-// hardcode these for now
-int in_freq = 38400000;
-int vco_ms_n = 66; // this is the VCO's divider
-
-int si5338_set_tx_freq(struct bladerf *dev, unsigned freq) {
-    struct tspec ms[NUM_MS];
-
-    memset(&ms, 0, sizeof(ms));
-
-    ms[2].out_freq = freq;
-    ms[2].enA = ms[2].enB = 1;
-
-    return __si5338_do_multisynth(dev, ms, in_freq * vco_ms_n);
-}
-
-int si5338_set_rx_freq(struct bladerf *dev, unsigned freq) {
-    struct tspec ms[NUM_MS];
-
-    memset(&ms, 0, sizeof(ms));
-
-    ms[1].out_freq = freq;
-    ms[1].enA = 1;
-
-    return __si5338_do_multisynth(dev, ms, in_freq * vco_ms_n);
-}
-
-int si5338_set_mimo_mode(struct bladerf *dev, int mode) {
-    return 0;
-}
-
-int si5338_set_exp_clk(struct bladerf *dev, int enabled, unsigned freq) {
-    // TODO implement disabling
-    struct tspec ms[NUM_MS];
-
-    memset(&ms, 0, sizeof(ms));
-
-    ms[3].out_freq = freq;
-    ms[3].enB = 1;
-
-    return __si5338_do_multisynth(dev, ms, in_freq * vco_ms_n);
-}
 
 /**
  * gets the basic regs from Si
  * @return 0 if all is fine or an error code
  */
-static int si5338_get_sample_rate_regs ( struct bladerf *dev, struct si5338_readT *retP )
+static int si5338_get_sample_rate_regs ( struct bladerf *dev, struct si5338_port *retP )
 {
     int i,retcode;
 
@@ -238,7 +49,7 @@ static int si5338_get_sample_rate_regs ( struct bladerf *dev, struct si5338_read
             }
         }
 
-    if ( (retcode=bladerf_si5338_read(dev, 31 + retP->block_index, &retP->rpow_raw)) < 0 ) {
+    if ( (retcode=bladerf_si5338_read(dev, 31 + retP->block_index, &retP->raw_r)) < 0 ) {
             dbg_printf("Could not read from si5338 (%d): %s\n",retcode, bladerf_strerror(retcode));
             return retcode;
     }
@@ -256,7 +67,7 @@ static unsigned int bytes_to_uint32 ( uint8_t msb, uint8_t ms1, uint8_t ms2, uin
 }
 
 
-static void si5338_get_sample_rate_calc ( struct si5338_readT *retP )
+static void si5338_get_sample_rate_calc ( struct si5338_port *retP )
 {
     uint64_t c = retP->c = retP->P3;
     uint32_t p2 = retP->P2;
@@ -286,14 +97,13 @@ static void si5338_get_sample_rate_calc ( struct si5338_readT *retP )
     A = A - b * 128;
     A = (A * 10) / ( c * 128 );  // switch to fixed decimal point
 
-    // bpadalino want to embed this into NIOS II....
-    retP->a_1dec = A;
-
-    // go back to the integer value
+    // get the integer value
     a = A / 10;
 
     // do manual rounding....
     if ( A % 10 > 5 ) a++;
+
+    retP->a = a;
 
 // step by step to avoid too much compiler optimization
     f_twice = SI5338_F_VCO * c;
@@ -301,28 +111,28 @@ static void si5338_get_sample_rate_calc ( struct si5338_readT *retP )
     f_twice = f_twice / divisor;
     f_twice = f_twice / retP->r;
 
-    retP->FoutxP[0] = f_twice / 2;  // yes, compiler may optimize this to >> 1
+    retP->f_outP[0] = f_twice / 2;  // yes, compiler may optimize this to >> 1
 }
 
-static void print_si5338_readT(struct si5338_readT *ts)
+static void print_si5338_port(struct si5338_port *portP)
 {
     int i;
-    dbg_printf("out_freq: %dHz\n", ts->FoutxP[0]);
-    dbg_printf("a_1dec: %d\n", ts->a_1dec);
-    dbg_printf("b:      %d\n", ts->b);
-    dbg_printf("c:      %d\n", ts->c);
-    dbg_printf("r:      %d\n", ts->r);
-    dbg_printf("p1: %x\n", ts->P1);
-    dbg_printf("p2: %x\n", ts->P2);
-    dbg_printf("p3: %x\n", ts->P3);
+    dbg_printf("out_freq: %dHz\n", portP->f_outP[0]);
+    dbg_printf("a:  %d\n", portP->a);
+    dbg_printf("b:  %d\n", portP->b);
+    dbg_printf("c:  %d\n", portP->c);
+    dbg_printf("r:  %d\n", portP->r);
+    dbg_printf("p1: %x\n", portP->P1);
+    dbg_printf("p2: %x\n", portP->P2);
+    dbg_printf("p3: %x\n", portP->P3);
 
-    for (i = 0; i < 9; i++) dbg_printf("[%d]=0x%.2x\n", ts->base + i, ts->regs[i]);
+    for (i = 0; i < 9; i++) dbg_printf("[%d]=0x%.2x\n", portP->base + i, portP->regs[i]);
 
-    dbg_printf("[r]=0x%.2x\n", ts->rpow_raw);
+    dbg_printf("[r]=0x%.2x\n", portP->raw_r);
 }
 
 
-static int si5338_get_sample_rate_A ( struct bladerf *dev, struct si5338_readT *retP )
+static int si5338_get_sample_rate ( struct bladerf *dev, struct si5338_port *retP )
 {
     int retcode;
     uint8_t *valP, shi;
@@ -335,12 +145,12 @@ static int si5338_get_sample_rate_A ( struct bladerf *dev, struct si5338_readT *
     retP->P2 = bytes_to_uint32 ( valP[5], valP[4], valP[3], valP[2] >> 2, 6 );
     retP->P3 = bytes_to_uint32 ( valP[9] & 0x3F, valP[8], valP[7], valP[6], 8 );
 
-    shi = (retP->rpow_raw >> 2) & 0x03;
+    shi = (retP->raw_r >> 2) & 0x03;
     retP->r = 1 << shi;
 
     si5338_get_sample_rate_calc(retP);
 
-    print_si5338_readT(retP);
+    print_si5338_port(retP);
 
     return 0;
 }
@@ -356,22 +166,22 @@ int bladerf_get_sample_rate (struct bladerf *dev, bladerf_module module, unsigne
     // safety check
     if ( rateP == NULL ) return BLADERF_ERR_UNEXPECTED;
 
-    struct si5338_readT risul;
+    struct si5338_port risul;
 
     memset(&risul,0,sizeof(risul));
 
-    risul.FoutxP = rateP;
+    risul.f_outP = rateP;
 
     switch ( module ) {
         case BLADERF_MODULE_RX:
             risul.block_index = 1;
             risul.base = 53 + 1 * 11;
-            return si5338_get_sample_rate_A(dev,&risul);
+            return si5338_get_sample_rate(dev,&risul);
 
         case BLADERF_MODULE_TX:
             risul.block_index = 2;
             risul.base = 53 + 2 * 11;
-            return si5338_get_sample_rate_A(dev,&risul);
+            return si5338_get_sample_rate(dev,&risul);
 
         default:
             break;
@@ -380,6 +190,210 @@ int bladerf_get_sample_rate (struct bladerf *dev, bladerf_module module, unsigne
     return BLADERF_ERR_INVAL;
 }
 
+/**
+ * Euclide algorithm to find gcd between two numbers, see wikipedia
+ * @return the greater common divisor of the two numbers
+ */
+static uint32_t euclide_gcd(uint32_t n1, uint32_t n2)
+{
+        uint32_t a, b, mcd = 1;
 
+        if (n1 > n2){
+                a = n1;
+                b = n2;
+        } else {
+                a = n2;
+                b = n1;
+        }
+
+        if ((a % b) == 0)
+                mcd = b;
+        else
+                mcd = euclide_gcd (b, a % b);
+
+        return mcd;
+}
+
+/**
+ * Calculated a,b,c to satisfy the si equations
+ * see pag 9 of reference manual
+ */
+static int set_sample_rate_calc_abc ( struct si5338_port *portP )
+{
+	// find out the integer part of the result
+    portP->a = SI5338_F_VCO / portP->sample_rate_r;
+
+    if ( portP->a < 4 || portP->a > 567 ) {
+		dbg_printf("a=%d too big \n", portP->a);
+		return BLADERF_ERR_INVAL;
+    }
+
+    // I still have this hertz left that are not integer divisible by VCO
+    uint32_t remainder = SI5338_F_VCO - (portP->a * portP->sample_rate_r);
+
+    if ( remainder == 0 )
+		{
+    	portP->b=0;
+    	portP->c=1;
+    	return 0;
+		}
+
+    // the gcd is the biggest number that divides both as integers
+    uint32_t gcd = euclide_gcd(portP->sample_rate_r, remainder);
+
+//    dbg_printf("VCO=%u a=%u sr=%u remainder=%u gcd=%d \n",SI5338_F_VCO,portP->sample_rate_r,portP->a,remainder,gcd);
+
+    // I now have to check if any of the b,c satisfy si conditions
+    uint32_t b = remainder / gcd;
+
+    if ( b > 0x40000000 ) {
+		dbg_printf("cannot find suitable b ratio %dHz on MS%d \n", portP->want_sample_rate, portP->block_index);
+		return BLADERF_ERR_INVAL;
+    }
+
+    uint32_t c = portP->sample_rate_r / gcd;
+
+    if ( c > 0x40000000 ) {
+		dbg_printf("cannot find suitable c ratio %dHz on MS%d \n", portP->want_sample_rate, portP->block_index);
+		return BLADERF_ERR_INVAL;
+    }
+
+    portP->b = b;
+    portP->c = c;
+
+    return 0;
+}
+
+/**
+ * calculates a r that satisfy si5338
+ * @return 0 if all is fine or an error code
+ */
+static int set_sample_rate_calc_r ( struct si5338_port *portP )
+{
+	int j;
+
+	for (j=0; j <= 5; j++ ) {
+        // see pag. 27 of si5338 RM rev 1.2 1/13
+		// find an R that makes this MS's fout > 5MHz
+
+    	portP->r = 1 << j;   // this is the r I will be using
+    	portP->raw_r = j;    // this is what goes into the chip
+
+    	uint32_t candidate = portP->want_sample_rate * portP->r;
+
+		if ( candidate >= 5000000)	{
+			portP->sample_rate_r = candidate;
+			break;
+		    }
+		}
+
+	if ( ! portP->sample_rate_r ) {
+		dbg_printf("Requested frequency of %dHz on MS%d is too low\n", portP->want_sample_rate, portP->block_index);
+		return BLADERF_ERR_INVAL;
+	}
+
+	return 0;
+}
+
+/**
+ * calculate P1, P2, P3 based off page 9 in the Si5338 reference manual
+ * make sure we have enough space to handle all cases
+ */
+static void set_sample_rate_calc_regs (struct si5338_port *portP)
+{
+    // P1 = (a * c + b) * 128 / c - 512;
+    uint64_t P1 = portP->a * portP->c + portP->b;
+             P1 = P1 * 128;
+             P1 = P1 / portP->c - 512;
+
+    // P2 = (b * 128) % c;
+    uint64_t P2 = portP->b * 128;
+             P2 = P2 % portP->c;
+
+    uint32_t p1 = portP->P1 = P1;
+    uint32_t p2 = portP->P2 = P2;
+    uint32_t p3 = portP->P3 = portP->c;
+
+    uint8_t *regs = portP->regs;
+    regs[0] = p1 & 0xff;
+    regs[1] = (p1 >> 8) & 0xff;
+    regs[2] = ((p2 & 0x3f) << 2) | ((p1 >> 16) & 0x3);
+    regs[3] = (p2 >> 6) & 0xff;
+    regs[4] = (p2 >> 14) & 0xff;
+    regs[5] = (p2 >> 22) & 0xff;
+    regs[6] = p3 & 0xff;
+    regs[7] = (p3 >> 8) & 0xff;
+    regs[8] = (p3 >> 16) & 0xff;
+    regs[9] = (p3 >> 24) & 0xff;
+}
+
+static int set_sample_rate_write_regs(struct bladerf *dev, struct si5338_port *portP) {
+    int i,errcode;
+
+    if ( (errcode=bladerf_si5338_write(dev, 36 + portP->block_index, portP->enable_port_bits )) ) return errcode;
+
+    for (i = 0; i < 9; i++) {
+    	if ( (errcode=bladerf_si5338_write(dev, portP->base + i, portP->regs[i] )) ) return errcode;
+    }
+
+    return bladerf_si5338_write(dev, 31 + portP->block_index, 0xC0 | (portP->raw_r << 2));
+}
+
+/**
+ * This just convert the sample rate into a,b,c that is suitable
+ * @return invalid params if frequency cannot be set
+ */
+static int set_sample_rate_A (struct bladerf *dev, struct si5338_port *portP)
+{
+	int errcode;
+
+    portP->base = 53 + portP->block_index * 11;
+
+	if ( (errcode=set_sample_rate_calc_r(portP)) ) return errcode;
+
+	if ( (errcode=set_sample_rate_calc_abc(portP)) ) return errcode;
+
+	set_sample_rate_calc_regs(portP);
+
+	print_si5338_port(portP);
+
+	if ( (errcode=set_sample_rate_write_regs(dev, portP)) ) return errcode;
+
+	if ( portP->f_outP ) return si5338_get_sample_rate(dev, portP);
+
+	return 0;
+}
+
+
+
+/**
+ * sets the sample rate as requested
+ */
+int bladerf_set_sample_rate(struct bladerf *dev, bladerf_module module, uint32_t rate, uint32_t *actualP)
+{
+    struct si5338_port risul;
+
+    memset(&risul,0,sizeof(risul));
+
+    risul.f_outP = actualP;  // may be NULL
+    risul.want_sample_rate = rate * 2;   // LMS needs one clock for I and one clock for Q
+
+    switch ( module ) {
+        case BLADERF_MODULE_RX:
+            risul.block_index = 1;
+            risul.enable_port_bits = SI5338_EN_A;
+            return set_sample_rate_A(dev,&risul);
+
+        case BLADERF_MODULE_TX:
+            risul.block_index = 2;
+            risul.enable_port_bits = SI5338_EN_A | SI5338_EN_B;
+            return set_sample_rate_A(dev,&risul);
+
+        default:
+            break;
+    }
+
+    return BLADERF_ERR_INVAL;
+}
 
 

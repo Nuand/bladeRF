@@ -74,9 +74,6 @@ int bladerf_open_with_devinfo(struct bladerf **device,
         bladerf_set_error(&opened_device->error, ETYPE_LIBBLADERF, 0);
         init_stats(&opened_device->stats);
 
-        opened_device->last_tx_sample_rate = 0;
-        opened_device->last_rx_sample_rate = 0;
-
         status = opened_device->fn->get_device_speed(opened_device,
                                                      &opened_device->speed);
 
@@ -193,24 +190,6 @@ int bladerf_set_loopback(struct bladerf *dev, bladerf_loopback l)
     return 0;
 }
 
-/**
- * why is the rate multiplied by two ?
- * Should this be explicit ?
- */
-int bladerf_set_sample_rate(struct bladerf *dev, bladerf_module module, unsigned int rate, unsigned int *actual)
-{
-    int ret = -1;
-    /* TODO: Use module to pick the correct clock output to change */
-    if( module == BLADERF_MODULE_TX ) {
-        ret = si5338_set_tx_freq(dev, rate<<1);
-        dev->last_tx_sample_rate = rate;
-    } else {
-        ret = si5338_set_rx_freq(dev, rate<<1);
-        dev->last_rx_sample_rate = rate;
-    }
-    *actual = rate;
-    return ret;
-}
 
 int bladerf_set_rational_sample_rate(struct bladerf *dev, bladerf_module module, unsigned int integer, unsigned int num, unsigned int denom)
 {
