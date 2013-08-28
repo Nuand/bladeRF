@@ -9,6 +9,7 @@
 #   http://sdr.osmocom.org/trac/wiki/rtl-sdr
 
 cmake_minimum_required(VERSION 2.8)
+project(bladeRF_all C)
 
 ################################################################################
 # Project configuration
