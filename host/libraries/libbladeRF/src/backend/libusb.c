@@ -435,7 +435,7 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
     /* Go into RF link mode by selecting interface 1 */
     status = libusb_set_interface_alt_setting(lusb->handle, 0, USB_IF_RF_LINK);
     if(status) {
-        dbg_printf("libusb_set_interface_alt_setting: %s", libusb_error_name(status));
+        dbg_printf("libusb_set_interface_alt_setting: %s\n", libusb_error_name(status));
     }
 
     val = 1;
