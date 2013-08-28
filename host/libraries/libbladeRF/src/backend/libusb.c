@@ -736,12 +736,12 @@ static int lusb_get_otp(struct bladerf *dev, char *otp)
     int read_size = dev->speed ? 256 : 64;
     int nbytes;
 
-    for (nbytes = 0; nbytes < 256; nbytes += read_size) {
+    for (nbytes = 0; nbytes < 256; nbytes += status) {
         status = libusb_control_transfer(
                 lusb->handle,
                 LIBUSB_RECIPIENT_INTERFACE |
-                LIBUSB_REQUEST_TYPE_VENDOR |
-                EP_DIR_IN,
+                    LIBUSB_REQUEST_TYPE_VENDOR |
+                    EP_DIR_IN,
                 BLADE_USB_CMD_READ_OTP,
                 0,
                 0,
@@ -749,11 +749,11 @@ static int lusb_get_otp(struct bladerf *dev, char *otp)
                 read_size,
                 BLADERF_LIBUSB_TIMEOUT_MS);
         if (status < 0) {
-            dbg_printf("Failed to read OTP with errno=%d: %s\n", errno, strerror(errno));
-            break;
+            dbg_printf("Failed to read OTP (%d): %s\n", status, libusb_error_name(status));
+            return error_libusb2bladerf(status);
         }
     }
-    return status;
+    return 0;
 }
 
 static int lusb_get_cal(struct bladerf *dev, char *cal) {

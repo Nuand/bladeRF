@@ -161,7 +161,7 @@ int str2devinfo(const char *dev_id_const, struct bladerf_devinfo *d)
     bladerf_init_devinfo(d);
 
     /* No device indentifier -- pick anything we can find */
-    if (!dev_id_const || strlen(dev_id_const) == 0) {
+    if ( dev_id_const == NULL || strlen(dev_id_const) == 0) {
         return 0;
     }
 

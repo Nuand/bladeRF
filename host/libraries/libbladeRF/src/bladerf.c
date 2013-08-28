@@ -116,16 +116,22 @@ int bladerf_open(struct bladerf **device, const char *dev_id)
 
             if (!status) {
                 status = bladerf_get_and_cache_vctcxo_trim(dev);
+            } else {
+                dbg_printf( "Could not extract serial number\n" ) ;
             }
 
             if (!status) {
                 status = bladerf_get_and_cache_fpga_size(dev);
+            } else {
+                dbg_printf( "Could not extract VCTCXO trim value\n" ) ;
             }
 
             if (!status) {
                 dbg_printf("%s: fw=v%d.%d serial=%s trim=0x%.4x fpga_size=%d\n",
                         __FUNCTION__, dev->fw_major, dev->fw_minor,
                         dev->serial, dev->dac_trim, dev->fpga_size);
+            } else {
+                dbg_printf( "Could not extract FPGA size\n" ) ;
             }
         } else {
             printf("********************************************************************************\n");
@@ -133,6 +139,9 @@ int bladerf_open(struct bladerf **device, const char *dev_id)
             printf("* wget http://nuand.com/fx3/latest.img ; bladeRF-cli -b -f latest.img\n");
             printf("********************************************************************************\n");
         }
+
+        /* All status in here is not fatal, so whatever */
+        status = 0 ;
     }
 
     return status;

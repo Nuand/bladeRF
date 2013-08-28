@@ -189,15 +189,12 @@ static void print_error_need_devarg()
 static int open_device(struct rc_config *rc, struct cli_state *state, int status)
 {
     if (!status) {
-        if (rc->device) {
-            status = bladerf_open(&state->dev, rc->device);
-            if (status) {
-                fprintf(stderr, "Failed to open device: %s\n",
-                        bladerf_strerror(status));
-                status = -1;
-            }
-        } else {
-            status = bladerf_open(&state->dev, NULL);
+        status = bladerf_open(&state->dev, rc->device);
+        if (status) {
+            fprintf(stderr, "Failed to open device (%s): %s\n",
+                    rc->device ? rc->device : "NULL",
+                    bladerf_strerror(status));
+            status = -1;
         }
     }
 
@@ -309,18 +306,30 @@ int main(int argc, char *argv[])
     if (!exit_immediately) {
         /* Conditionally performed items, depending on runtime config */
         status = open_device(&rc, state, status);
-        if (status)
+        if (status) {
             fprintf(stderr, "Could not open device\n");
-        status = flash_fw(&rc, state, status);
-        if (status)
-            fprintf(stderr, "Could not flash firmware\n");
-        status = load_fpga(&rc, state, status);
-        if (status)
-            fprintf(stderr, "Could not load fpga\n");
-        status = open_script(&rc, state, status);
-        if (status)
-            fprintf(stderr, "Could not load scripts\n");
+            goto main__issues ;
+        }
 
+        status = flash_fw(&rc, state, status);
+        if (status) {
+            fprintf(stderr, "Could not flash firmware\n");
+            goto main__issues ;
+        }
+
+        status = load_fpga(&rc, state, status);
+        if (status) {
+            fprintf(stderr, "Could not load fpga\n");
+            goto main__issues ;
+        }
+
+        status = open_script(&rc, state, status);
+        if (status) {
+            fprintf(stderr, "Could not load scripts\n");
+            goto main__issues ;
+        }
+
+main__issues:
         /* These items are no longer needed */
         free(rc.device);
         rc.device = NULL;
@@ -333,11 +342,6 @@ int main(int argc, char *argv[])
 
         free(rc.script_file);
         rc.script_file = NULL;
-
-        if (status) {
-            fprintf(stderr, "Could not launch interactive shell\n");
-            return 2;
-        }
 
         /* Exit cleanly when configured for batch mode. Remember that this is
          * implicit with some commands */
