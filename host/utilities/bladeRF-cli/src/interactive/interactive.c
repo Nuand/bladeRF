@@ -3,6 +3,7 @@
  */
 
 #include <errno.h>
+#include <string.h>
 #include <libtecla.h>
 #include "interactive.h"
 #include "cmd.h"
@@ -124,3 +125,27 @@ int interactive(struct cli_state *s, bool batch)
     return 0;
 }
 
+char * interactive_expand_path(char * path)
+{
+    ExpandFile *ef = NULL;
+    FileExpansion *fe = NULL;
+    char *ret = NULL;
+
+    ef = new_ExpandFile();
+    if (!ef)
+        return NULL;
+
+    fe = ef_expand_file(ef, path, strlen(path));
+
+    if (!fe)
+        return NULL;
+
+    if (fe->nfile <= 0)
+        return NULL;
+
+    ret = strdup(fe->files[0]);
+
+    del_ExpandFile(ef);
+
+    return ret;
+}

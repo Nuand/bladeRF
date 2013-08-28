@@ -36,6 +36,11 @@ I: mIKEjONES
 G: robertghilduta
 D: Project maintainer
 
+N: Mike Kershaw
+E: dragorn@kismetwireless.net
+I: dragorn
+G: dragorn
+D: CLI bug fixes
 
 N: Brian Padalino
 E: bpadalino@nuand.com
@@ -43,6 +48,13 @@ F: bpadalino
 I: bpadalino
 G: bpadalino
 D: Project maintainer
+
+N: Marco Schwan
+E: bladerf@maggo.info
+F: maggo1404
+I: maggo1404
+G: maggo1404
+D: OSX build fixes
 
 N: Jon Szymaniak
 E: jon@nuand.com
