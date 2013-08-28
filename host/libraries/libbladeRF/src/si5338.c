@@ -35,9 +35,10 @@ struct tspec {
 
 /**
  * This is used to read a set of registers and calculate back to frequency
- */
+ * XXX: This looks very familiar - maybe just have 1 structure?
+*/
 struct si5338_readT {
-	int block_index;
+    int block_index;
     int base;             // this can be gotten from block_index
 
     uint32_t P1,P2,P3;   // as from section 5.2 of Reference manual
@@ -48,7 +49,6 @@ struct si5338_readT {
     uint8_t regs[10];
     uint8_t rpow_raw;
 };
-
 
 static void print_ms(struct tspec *ts) {
     int i;
@@ -65,9 +65,6 @@ static void print_ms(struct tspec *ts) {
 
     for (i = 0; i < 9; i++) dbg_printf("[%d]=0x%.2x\n", ts->base + i, ts->regs[i]);
 }
-
-
-
 
 static void configure_ms(struct bladerf *dev, struct tspec *ts) {
     int i;
@@ -235,15 +232,15 @@ static int si5338_get_sample_rate_regs ( struct bladerf *dev, struct si5338_read
     int i,retcode;
 
     for (i = 0; i < 9; i++)  {
-        if ( (retcode=bladerf_si5338_read(dev, retP->base + i, retP->regs+i)) < 0 )	{
-        	dbg_printf("ioctl fail %s \n",strerror(errno));
-			return retcode;
-			}
+        if ( (retcode=bladerf_si5338_read(dev, retP->base + i, retP->regs+i)) < 0 )    {
+            dbg_printf("Could not read from si5338 (%d): %s\n",retcode, bladerf_strerror(retcode));
+            return retcode;
+            }
         }
 
     if ( (retcode=bladerf_si5338_read(dev, 31 + retP->block_index, &retP->rpow_raw)) < 0 ) {
-    		dbg_printf("ioctl fail %s \n",strerror(errno));
-    		return retcode;
+            dbg_printf("Could not read from si5338 (%d): %s\n",retcode, bladerf_strerror(retcode));
+            return retcode;
     }
 
     return 0;
@@ -251,62 +248,60 @@ static int si5338_get_sample_rate_regs ( struct bladerf *dev, struct si5338_read
 
 static unsigned int bytes_to_uint32 ( uint8_t msb, uint8_t ms1, uint8_t ms2, uint8_t lsb, uint8_t last_shift )
 {
-	unsigned int risul = msb;
-	risul = (risul << 9) + ms1;
-	risul = (risul << 8) + ms2;
-	risul = (risul << last_shift) + lsb;
-	return risul;
+    unsigned int risul = msb;
+    risul = (risul << 9) + ms1;
+    risul = (risul << 8) + ms2;
+    risul = (risul << last_shift) + lsb;
+    return risul;
 }
 
 
-static void sis5338_get_sample_rate_calc ( struct si5338_readT *retP )
+static void si5338_get_sample_rate_calc ( struct si5338_readT *retP )
 {
-	uint64_t c = retP->c = retP->P3;
-	uint32_t p2 = retP->P2;
-	uint32_t b=0;
+    uint64_t c = retP->c = retP->P3;
+    uint32_t p2 = retP->P2;
+    uint32_t b=0;
+    uint32_t p1 ;
+    uint64_t A, a, f_twice, divisor ;
+    uint32_t B ;
+    int i;
 
-	int i;
+    // c should never be zero, but if it is at least we do not crash
+    if ( c == 0 ) return;
 
-	// c should never be zero, but if it is at least we do not crash
-	if ( c == 0 ) return;
+    for (i=1; i<128; i++) {
+        B = c*i+p2;
 
-	for (i=1; i<128; i++)
-			{
-			unsigned int B = c*i+p2;
+        if ( (B % 128) == 0 ) {
+            b = B / 128;
+            retP->b = b;
+            break;
+        }
+    }
 
-			if ( (B % 128) == 0 )
-					{
-					b = B / 128;
+    p1 = retP->P1;
 
-					retP->b = b;
+    A = (p1 + 512);
+    A = A * c;
+    A = A - b * 128;
+    A = (A * 10) / ( c * 128 );  // switch to fixed decimal point
 
-					break;
-					}
-			}
+    // bpadalino want to embed this into NIOS II....
+    retP->a_1dec = A;
 
-	uint32_t p1 = retP->P1;
+    // go back to the integer value
+    a = A / 10;
 
-	uint64_t A = (p1 + 512);
-	A = A * c;
-	A = A - b * 128;
-	A = (A * 10) / ( c * 128 );  // switch to fixed decimal point
-
-	// bpadalino want to embed this into NIOS II....
-	retP->a_1dec = A;
-
-	// go back to the integer value
-	uint64_t a = A / 10;
-
-	// do manual rounding....
-	if ( A % 10 > 5 ) a++;
+    // do manual rounding....
+    if ( A % 10 > 5 ) a++;
 
 // step by step to avoid too much compiler optimization
-	uint64_t f_twice = SI5338_F_VCO * c;
-	uint64_t divisor = a * c + b;
+    f_twice = SI5338_F_VCO * c;
+    divisor = a * c + b;
     f_twice = f_twice / divisor;
     f_twice = f_twice / retP->r;
 
-	retP->FoutxP[0] = f_twice / 2;  // yes, compiler may optimize this to >> 1
+    retP->FoutxP[0] = f_twice / 2;  // yes, compiler may optimize this to >> 1
 }
 
 static void print_si5338_readT(struct si5338_readT *ts)
@@ -327,27 +322,27 @@ static void print_si5338_readT(struct si5338_readT *ts)
 }
 
 
-static int sis5338_get_sample_rate_A ( struct bladerf *dev, struct si5338_readT *retP )
+static int si5338_get_sample_rate_A ( struct bladerf *dev, struct si5338_readT *retP )
 {
-	int retcode;
+    int retcode;
+    uint8_t *valP, shi;
+    // gets the raw sample rate regs
+    if ( (retcode=si5338_get_sample_rate_regs(dev, retP )) ) return retcode;
 
-	// gets the raw sample rate regs
-	if ( (retcode=si5338_get_sample_rate_regs(dev, retP )) ) return retcode;
+    // I now need to reverse the packing, see pag. 10 of reference manual
+    valP = retP->regs;
+    retP->P1 = bytes_to_uint32 ( 0, valP[2] & 0x03, valP[1], valP[0], 8);
+    retP->P2 = bytes_to_uint32 ( valP[5], valP[4], valP[3], valP[2] >> 2, 6 );
+    retP->P3 = bytes_to_uint32 ( valP[9] & 0x3F, valP[8], valP[7], valP[6], 8 );
 
-	// I now need to reverse the packing, see pag. 10 of reference manual
-	unsigned char *valP = retP->regs;
-	retP->P1 = bytes_to_uint32 ( 0, valP[2] & 0x03, valP[1], valP[0], 8);
-	retP->P2 = bytes_to_uint32 ( valP[5], valP[4], valP[3], valP[2] >> 2, 6 );
-	retP->P3 = bytes_to_uint32 ( valP[9] & 0x3F, valP[8], valP[7], valP[6], 8 );
+    shi = (retP->rpow_raw >> 2) & 0x03;
+    retP->r = 1 << shi;
 
-	uint8_t shi = (retP->rpow_raw >> 2) & 0x03;
-	retP->r = 1 << shi;
+    si5338_get_sample_rate_calc(retP);
 
-	sis5338_get_sample_rate_calc(retP);
+    print_si5338_readT(retP);
 
-	print_si5338_readT(retP);
-
-	return 0;
+    return 0;
 }
 
 /**
@@ -358,32 +353,31 @@ static int sis5338_get_sample_rate_A ( struct bladerf *dev, struct si5338_readT 
  */
 int bladerf_get_sample_rate (struct bladerf *dev, bladerf_module module, unsigned int *rateP )
 {
-	// safety check
-	if ( rateP == NULL ) return BLADERF_ERR_UNEXPECTED;
+    // safety check
+    if ( rateP == NULL ) return BLADERF_ERR_UNEXPECTED;
 
-	struct si5338_readT risul;
+    struct si5338_readT risul;
 
-	memset(&risul,0,sizeof(risul));
+    memset(&risul,0,sizeof(risul));
 
-	risul.FoutxP = rateP;
+    risul.FoutxP = rateP;
 
-	switch ( module )
-			{
-			case BLADERF_MODULE_RX:
-					risul.block_index = 1;
-					risul.base = 53 + 1 * 11;
-					return sis5338_get_sample_rate_A(dev,&risul);
+    switch ( module ) {
+        case BLADERF_MODULE_RX:
+            risul.block_index = 1;
+            risul.base = 53 + 1 * 11;
+            return si5338_get_sample_rate_A(dev,&risul);
 
-			case BLADERF_MODULE_TX:
-					risul.block_index = 2;
-					risul.base = 53 + 2 * 11;
-					return sis5338_get_sample_rate_A(dev,&risul);
+        case BLADERF_MODULE_TX:
+            risul.block_index = 2;
+            risul.base = 53 + 2 * 11;
+            return si5338_get_sample_rate_A(dev,&risul);
 
-			default:
-					break;
-			}
+        default:
+            break;
+    }
 
-	return BLADERF_ERR_INVAL;
+    return BLADERF_ERR_INVAL;
 }
 
 
