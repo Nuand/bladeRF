@@ -36,23 +36,18 @@ struct tspec {
 /**
  * This is used to read a set of registers and calculate back to frequency
  */
-struct si5338_readT 	{
+struct si5338_readT {
 	int block_index;
     int base;             // this can be gotten from block_index
 
-    unsigned int P1,P2,P3;   // as from section 5.2 of Reference manual
-    unsigned int a_1dec, b,c,r;
+    uint32_t P1,P2,P3;   // as from section 5.2 of Reference manual
+    uint32_t a_1dec, b,c,r;
 
-    unsigned int *FoutxP;  // write result here
+    uint32_t *FoutxP;  // write result here
 
-    unsigned char regs[10];
-    unsigned char rpow_raw;
+    uint8_t regs[10];
+    uint8_t rpow_raw;
 };
-
-#define NUM_MS 4
-
-
-
 
 
 static void print_ms(struct tspec *ts) {
@@ -60,10 +55,10 @@ static void print_ms(struct tspec *ts) {
     dbg_printf("out_freq: %dHz\n", ts->out_freq);
     dbg_printf("real_freq: %dHz\n", ts->real_freq);
     dbg_printf("en: %d\n", ts->en);
-    dbg_printf("a: %d\n", ts->a);
-    dbg_printf("b: %d\n", ts->b);
-    dbg_printf("c: %d\n", ts->c);
-    dbg_printf("r: %d\n", ts->r);
+    dbg_printf("a:  %d\n", ts->a);
+    dbg_printf("b:  %d\n", ts->b);
+    dbg_printf("c:  %d\n", ts->c);
+    dbg_printf("r:  %d\n", ts->r);
     dbg_printf("p1: %x\n", ts->p1);
     dbg_printf("p2: %x\n", ts->p2);
     dbg_printf("p3: %x\n", ts->p3);
@@ -235,23 +230,27 @@ int si5338_set_exp_clk(struct bladerf *dev, int enabled, unsigned freq) {
  * gets the basic regs from Si
  * @return 0 if all is fine or an error code
  */
-static int sis5338_get_sample_rate_regs ( struct bladerf *dev, struct si5338_readT *retP )  {
+static int si5338_get_sample_rate_regs ( struct bladerf *dev, struct si5338_readT *retP )
+{
     int i,retcode;
 
     for (i = 0; i < 9; i++)  {
         if ( (retcode=bladerf_si5338_read(dev, retP->base + i, retP->regs+i)) < 0 )	{
-        	dbg_printf("sis5338_get_sample_rate_regs: ioctl failed\n");
+        	dbg_printf("ioctl fail %s \n",strerror(errno));
 			return retcode;
 			}
         }
 
-    if ( (retcode=bladerf_si5338_read(dev, 31 + retP->block_index, &retP->rpow_raw)) < 0 )
+    if ( (retcode=bladerf_si5338_read(dev, 31 + retP->block_index, &retP->rpow_raw)) < 0 ) {
+    		dbg_printf("ioctl fail %s \n",strerror(errno));
     		return retcode;
+    }
 
     return 0;
 }
 
-static unsigned int bytes_to_uint32 ( uint8_t msb, uint8_t ms1, uint8_t ms2, uint8_t lsb, uint8_t last_shift ) {
+static unsigned int bytes_to_uint32 ( uint8_t msb, uint8_t ms1, uint8_t ms2, uint8_t lsb, uint8_t last_shift )
+{
 	unsigned int risul = msb;
 	risul = (risul << 9) + ms1;
 	risul = (risul << 8) + ms2;
@@ -260,12 +259,11 @@ static unsigned int bytes_to_uint32 ( uint8_t msb, uint8_t ms1, uint8_t ms2, uin
 }
 
 
-static void sis5338_get_sample_rate_calc ( struct si5338_readT *retP ) {
+static void sis5338_get_sample_rate_calc ( struct si5338_readT *retP )
+{
 	uint64_t c = retP->c = retP->P3;
-
-	unsigned int p2 = retP->P2;
-
-	unsigned int b=0;
+	uint32_t p2 = retP->P2;
+	uint32_t b=0;
 
 	int i;
 
@@ -286,7 +284,7 @@ static void sis5338_get_sample_rate_calc ( struct si5338_readT *retP ) {
 					}
 			}
 
-	unsigned int p1 = retP->P1;
+	uint32_t p1 = retP->P1;
 
 	uint64_t A = (p1 + 512);
 	A = A * c;
@@ -311,7 +309,8 @@ static void sis5338_get_sample_rate_calc ( struct si5338_readT *retP ) {
 	retP->FoutxP[0] = f_twice / 2;  // yes, compiler may optimize this to >> 1
 }
 
-static void print_Si5338_readT(struct si5338_readT *ts)  {
+static void print_si5338_readT(struct si5338_readT *ts)
+{
     int i;
     dbg_printf("out_freq: %dHz\n", ts->FoutxP[0]);
     dbg_printf("a_1dec: %d\n", ts->a_1dec);
@@ -328,11 +327,12 @@ static void print_Si5338_readT(struct si5338_readT *ts)  {
 }
 
 
-static int sis5338_get_sample_rate_A ( struct bladerf *dev, struct si5338_readT *retP )  {
+static int sis5338_get_sample_rate_A ( struct bladerf *dev, struct si5338_readT *retP )
+{
 	int retcode;
 
 	// gets the raw sample rate regs
-	if ( (retcode=sis5338_get_sample_rate_regs(dev, retP )) ) return retcode;
+	if ( (retcode=si5338_get_sample_rate_regs(dev, retP )) ) return retcode;
 
 	// I now need to reverse the packing, see pag. 10 of reference manual
 	unsigned char *valP = retP->regs;
@@ -345,7 +345,7 @@ static int sis5338_get_sample_rate_A ( struct bladerf *dev, struct si5338_readT 
 
 	sis5338_get_sample_rate_calc(retP);
 
-	print_Si5338_readT(retP);
+	print_si5338_readT(retP);
 
 	return 0;
 }
@@ -356,9 +356,10 @@ static int sis5338_get_sample_rate_A ( struct bladerf *dev, struct si5338_readT 
  * @param rateP pointer to result
  * @return 0 if all fine or an error code
  */
-int bladerf_get_sample_rate (struct bladerf *dev, bladerf_module module, unsigned int *rateP ) {
+int bladerf_get_sample_rate (struct bladerf *dev, bladerf_module module, unsigned int *rateP )
+{
 	// safety check
-	if ( rateP == NULL ) return -1;
+	if ( rateP == NULL ) return BLADERF_ERR_UNEXPECTED;
 
 	struct si5338_readT risul;
 
@@ -382,7 +383,7 @@ int bladerf_get_sample_rate (struct bladerf *dev, bladerf_module module, unsigne
 					break;
 			}
 
-	return -1;
+	return BLADERF_ERR_INVAL;
 }
 
 
