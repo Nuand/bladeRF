@@ -94,7 +94,7 @@ struct common_cfg
 
 
 
-    int16_t *buff;
+    uint16_t *buff;
     size_t buff_size;      /* Size in elements, NOT bytes */
 
     struct cli_error error; /* Last error the task encountered. Use
@@ -263,21 +263,47 @@ static int close_samples_file(struct common_cfg *c, bool lock)
     return ret;
 }
 
+/**
+ * Clean up the data in the buffer, note that buffsize is in elements not bytes
+ * NOTE The data should stay the same, buffer is always written in LE format,
+ * It just needs to be cleaned up
+ */
+static void rxtx_bin_c16_clean (uint16_t *bufP, size_t buff_size )
+{
+	if ( bufP == NULL ) return;
+
+	size_t i;
+	uint16_t mask;
+
+	// hopefully this is a portable way to discover byte ordering....
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	mask = 0x0FFF;
+#elif __BYTE_ORDER == __BIG_ENDIAN
+	mask = 0xFFF0;
+#else
+#error "Compiler did not define __BIG/LITTLE_ENDIAN__ - required here"
+#endif
+
+	for (i=0; i<buff_size; i++)
+		bufP[i] = bufP[i] & mask;
+}
+
 
 /**
  * Writes the samples assuming they are in LE c16 format
+ * NOTE: This function cleans the data buffer of extra bits !!!
  * @return 0 on success, -1 on failure (and calls set_last_error())
  */
-static int rxtx_write_bin_c16(struct cli_state *s, size_t n_samples)
+static int rxtx_bin_c16_write(struct cli_state *s, size_t n_samples)
 {
-	printf("rxtx_write_bin_c16: n_sa=%d\n",n_samples);
-
     size_t status;
     struct rx_cfg *rx = &s->rxtx_data->rx;
     struct common_cfg *common = &rx->common;
 
     /* We assume we have pairs... */
     assert((common->buff_size & 1) == 0);
+
+    rxtx_bin_c16_clean(common->buff,common->buff_size);
 
     status = fwrite(common->buff, sizeof(int16_t),
                     common->buff_size, common->file);
@@ -290,25 +316,10 @@ static int rxtx_write_bin_c16(struct cli_state *s, size_t n_samples)
     }
 }
 
-/**
- * swap uint16 bytes
- * Compiler will optimize it the way it wishes
- */
-static uint16_t swap_uint16 ( uint16_t input )
-{
-	uint16_t risul;
-
-	uint8_t * inP  = (uint8_t *)&input;
-	uint8_t * outP = (uint8_t *)&risul;
-
-	outP[0] = inP[1];
-	outP[1] = inP[0];
-
-	return risul;
-}
 
 /**
  * Writes samples assuming they are LE c16
+ * NOTE: Samples have some extra info that should be masked
  * @return 0 on success, -1 on failure (and calls set_last_error())
  */
 static int rxtx_write_csv_c16(struct cli_state *s, size_t n_samples)
@@ -328,11 +339,13 @@ static int rxtx_write_csv_c16(struct cli_state *s, size_t n_samples)
     	uint16_t sample_i = common->buff[i];
     	uint16_t sample_q = common->buff[i + 1];
 
-#ifdef __BIG_ENDIAN
-        // swapping is needed only on big endians
-    	sample_i = swap_uint16 ( sample_i);
-    	sample_q = swap_uint16 ( sample_q);
-#endif
+    	// The macro will decide if to swap or not
+    	sample_i = LE16_TO_HOST( sample_i);
+    	sample_q = LE16_TO_HOST ( sample_q);
+
+    	// here I am in "host" format and this is always correct
+    	sample_i = sample_i & 0x0FFF;
+    	sample_q = sample_q & 0x0FFF;
 
         snprintf(line, line_sz, "%d, %d" EOL,sample_i, sample_q);
 
@@ -474,11 +487,9 @@ static void tx_csv_write_iq (struct csv_readT *csv_readP  )
 	uint16_t sample_i = csv_readP->tmp_i;
 	uint16_t sample_q = csv_readP->tmp_q;
 
-#ifdef __BIG_ENDIAN
-        // swapping is needed only on big endians
-    	sample_i = swap_uint16 ( sample_i);
-    	sample_q = swap_uint16 ( sample_q);
-#endif
+	// The macro will decide if to swap or not
+	sample_i = HOST_TO_LE16 ( sample_i);
+	sample_q = HOST_TO_LE16 ( sample_q);
 
     if (fwrite(&sample_i, sizeof(sample_i), 1, csv_readP->write_fdP) != 1) {
     	csv_readP->conversion_failed=true;
@@ -1186,7 +1197,7 @@ static int rx_start_init(struct cli_state *s)
             break;
 
         case RXTX_FMT_BINLE_C16:
-            rx->write_samples = rxtx_write_bin_c16;
+            rx->write_samples = rxtx_bin_c16_write;
             break;
 
         /* This shouldn't happen...*/
