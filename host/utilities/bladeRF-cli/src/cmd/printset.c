@@ -755,33 +755,25 @@ int set_sampling(struct cli_state *state, int argc, char **argv)
 {
     /* Usage: set sampling [internal|external] */
     int rv = CMD_RET_OK;
-    uint8_t val = 0;
+    int status = 0;
     if( argc != 3 ) {
         rv = CMD_RET_NARGS ;
     } else {
         if( strcasecmp( "internal", argv[2] ) == 0 ) {
-            /* Disconnect the ADC input from the outside world */
-            bladerf_lms_read( state->dev, 0x09, &val );
-            val &= ~(1<<7) ;
-            bladerf_lms_write( state->dev, 0x09, val );
-
-            /* Turn on RXVGA2 */
-            bladerf_lms_read( state->dev, 0x64, &val );
-            val |= (1<<1) ;
-            bladerf_lms_write( state->dev, 0x64, val );
-
+            status = bladerf_set_sampling( state->dev, BLADERF_SAMPLING_INTERNAL );
+            if (status) {
+                state->last_lib_error = status;
+                rv = CMD_RET_LIBBLADERF;
+            }
         } else if( strcasecmp( "external", argv[2] ) == 0 ) {
-            /* Turn off RXVGA2 */
-            bladerf_lms_read( state->dev, 0x64, &val );
-            val &= ~(1<<1) ;
-            bladerf_lms_write( state->dev, 0x64, val );
-
-            /* Connect the external ADC pins to the internal ADC input */
-            bladerf_lms_read( state->dev, 0x09, &val );
-            val |= (1<<7) ;
-            bladerf_lms_write( state->dev, 0x09, val );
+            status = bladerf_set_sampling( state->dev, BLADERF_SAMPLING_EXTERNAL );
+            if (status) {
+                state->last_lib_error = status;
+                rv = CMD_RET_LIBBLADERF;
+            }
         } else {
             cli_err(state, argv[0], "Invalid sampling mode (%s)", argv[2] );
+            rv = CMD_RET_INVPARAM;
         }
     }
     return rv;
@@ -789,24 +781,19 @@ int set_sampling(struct cli_state *state, int argc, char **argv)
 
 int print_sampling( struct cli_state *state, int argc, char **argv)
 {
-    int rv = CMD_RET_OK;
-    uint8_t val = 0;
-    int external = 0 ;
+    int rv = CMD_RET_OK, status = 0;
+    bladerf_sampling mode;
     if( argc != 2 ) {
         rv = CMD_RET_NARGS;
     } else {
         /* Read the ADC input mux */
-        bladerf_lms_read( state->dev, 0x09, &val );
-        external = val&(1<<7) ? 1 : 0;
-        printf( "  %-20s%-20s\n", "RX ADC Switch:", external ? "Closed" : "Open" );
-
-        /* Read the RXVGA2 module state */
-        bladerf_lms_read( state->dev, 0x64, &val );
-        external |= val&(1<<1) ? 0 : 2 ;
-        printf( "  %-20s%-20s\n", "RXVGA2 Module:", external&2 ? "Powered down" : "Powered up" );
-
-        /* If external has both those bits set, we are external */
-        printf( "  %-20s%-20s\n", "Sampling:", external == 3 ? "External" : external == 0 ? "Internal" : "Weirdness" ) ;
+        status = bladerf_get_sampling( state->dev, &mode);
+        if (status) {
+            state->last_lib_error = status;
+            rv = CMD_RET_LIBBLADERF;
+        } else {
+            printf( "  %-20s%-20s\n", "Sampling:", mode == BLADERF_SAMPLING_EXTERNAL ? "External" : mode == BLADERF_SAMPLING_INTERNAL ? "Internal" : "UNKNOWN" ) ;
+        }
     }
 
     return rv;
