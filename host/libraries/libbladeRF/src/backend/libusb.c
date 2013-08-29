@@ -209,9 +209,21 @@ static int lusb_get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
     return status;
 }
 
+static int change_setting(struct bladerf *dev, uint8_t setting)
+{
+    struct bladerf_lusb *lusb = dev->backend ;
+    if (dev->legacy  & LEGACY_ALT_SETTING) {
+        dbg_printf("Legacy change to interface %d\n", setting);
+        return libusb_set_interface_alt_setting(lusb->handle, setting, 0);
+    } else {
+        dbg_printf( "Change to alternate interface %d\n", setting);
+        return libusb_set_interface_alt_setting(lusb->handle, 0, setting);
+    }
+}
+
 static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
 {
-    int status, i, n, inf;
+    int status, i, n, inf, val;
     ssize_t count;
     struct bladerf *dev = NULL;
     struct bladerf_lusb *lusb = NULL;
@@ -234,6 +246,7 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
     /* Iterate through all the USB devices */
     for( i = 0, n = 0; i < count; i++ ) {
         if( lusb_device_is_bladerf(list[i]) ) {
+            dbg_printf( "Found a bladeRF\n" ) ;
 
             /* Open the USB device and get some information
              *
@@ -307,7 +320,18 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
 
     if (dev) {
         if (lusb_is_fpga_configured(dev)) {
-            status = libusb_set_interface_alt_setting(lusb->handle, 0, USB_IF_RF_LINK);
+            status = change_setting(dev, USB_IF_RF_LINK);
+            dbg_printf( "Changed into RF link mode: %s\n", libusb_error_name(status) ) ;
+            val = 1;
+            status = vendor_command_int(dev, BLADE_USB_CMD_RF_RX, EP_DIR_OUT, &val);
+            if(status) {
+                dbg_printf("Could not enable RF RX (%d): %s\n", status, libusb_error_name(status) );
+            }
+
+            status = vendor_command_int(dev, BLADE_USB_CMD_RF_TX, EP_DIR_OUT, &val);
+            if(status) {
+                dbg_printf("Could not enable RF TX (%d): %s\n", status, libusb_error_name(status) );
+            }
         }
     }
 
@@ -376,7 +400,7 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
     struct bladerf_lusb *lusb = dev->backend;
 
     /* Make sure we are using the configuration interface */
-    status = libusb_set_interface_alt_setting(lusb->handle, 0, USB_IF_CONFIG);
+    status = change_setting(dev, USB_IF_CONFIG);
     if(status < 0) {
         status = error_libusb2bladerf(status);
         bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
@@ -433,7 +457,7 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
     }
 
     /* Go into RF link mode by selecting interface 1 */
-    status = libusb_set_interface_alt_setting(lusb->handle, 0, USB_IF_RF_LINK);
+    status = change_setting(dev, USB_IF_RF_LINK);
     if(status) {
         dbg_printf("libusb_set_interface_alt_setting: %s\n", libusb_error_name(status));
     }
@@ -677,14 +701,8 @@ static int lusb_flash_firmware(struct bladerf *dev,
                                uint8_t *image, size_t image_size)
 {
     int status;
-    struct bladerf_lusb *lusb = dev->backend;
 
-    if (dev->legacy & LEGACY_ALT_SETTING) {
-        printf("Using legacy alt setting to flash firmware\n");
-        status = libusb_set_interface_alt_setting(lusb->handle, USB_IF_SPI_FLASH, 0);
-    } else {
-        status = libusb_set_interface_alt_setting(lusb->handle, 0, USB_IF_SPI_FLASH);
-    }
+    status = change_setting(dev, USB_IF_SPI_FLASH);
 
     if (status) {
         dbg_printf("Failed to set interface: %s\n", libusb_error_name(status));
