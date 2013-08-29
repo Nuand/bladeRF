@@ -124,6 +124,15 @@ struct bladerf_metadata {
 };
 
 /**
+ * Sampling connection
+ */
+typedef enum {
+    BLADERF_SAMPLING_UNKNOWN,
+    BLADERF_SAMPLING_INTERNAL,
+    BLADERF_SAMPLING_EXTERNAL
+} bladerf_sampling;
+
+/**
  * LNA gain options
  */
 typedef enum {
@@ -353,6 +362,29 @@ int bladerf_set_rational_sample_rate(struct bladerf *dev,
                                      unsigned int integer, unsigned int num,
                                      unsigned int denom);
 
+/**
+ * Configure the sampling of the LMS6002D to be either internal or
+ * external.  Internal sampling will read from the RXVGA2 driver internal
+ * to the chip.  External sampling will connect the ADC inputs to the
+ * external inputs for direct sampling.
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   sampling    Sampling connection
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+int bladerf_set_sampling(struct bladerf *dev, bladerf_sampling sampling);
+
+/**
+ * Read the device's current state of RXVGA2 and ADC pin connection
+ * to figure out which sampling mode it is currently configured in.
+ *
+ * @param[in]   dev         Device handle
+ * @param[out]  sampling    Sampling connection
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+int bladerf_get_sampling(struct bladerf *dev, bladerf_sampling *sampling);
 
 /**
  * Read the device's sample rate in Hz
