@@ -17,7 +17,6 @@
 #include <assert.h>
 #include <string.h>
 #include <unistd.h>
-#include <ctype.h>
 #include "cmd.h"
 #include "conversions.h"
 #include "minmax.h"
@@ -350,7 +349,7 @@ static void c16_sample_fixup(int16_t *buff, size_t n,
     }
 }
 
-/* returns 0 on success, -1 on failure (and calls set_last_error()) */
+/* returns 0 on success, CMD_RET_* on failure (and calls set_last_error()) */
 static int rxtx_write_bin_c16(struct cli_state *s, size_t n_samples)
 {
     size_t status;
@@ -367,13 +366,13 @@ static int rxtx_write_bin_c16(struct cli_state *s, size_t n_samples)
 
     if (status < common->buff_size) {
         set_last_error(&common->error, ETYPE_ERRNO, errno);
-        return -1;
+        return CMD_RET_FILEOP;
     } else {
         return 0;
     }
 }
 
-/* returns 0 on success, -1 on failure (and calls set_last_error()) */
+/* returns 0 on success, CMD_RET_* on failure (and calls set_last_error()) */
 static int rxtx_write_csv_c16(struct cli_state *s, size_t n_samples)
 {
     size_t i;
@@ -394,7 +393,7 @@ static int rxtx_write_csv_c16(struct cli_state *s, size_t n_samples)
 
         if (fputs(line, common->file) < 0) {
             set_last_error(&common->error, ETYPE_ERRNO, errno);
-            return -1;
+            return CMD_RET_FILEOP;
         }
     }
 
@@ -405,7 +404,7 @@ static int rxtx_write_csv_c16(struct cli_state *s, size_t n_samples)
  * Fill buffer with samples from file contents, 0-padding if appropriate
  *
  * returns: # IQ values on success,
- *          -1 on error (and calls set_last_error())
+ *          CMD_RET_* on error (and calls set_last_error())
  */
 static ssize_t rxtx_read_bin_c16(struct cli_state *s,
                                     unsigned int *repeats_left)
@@ -433,7 +432,7 @@ static ssize_t rxtx_read_bin_c16(struct cli_state *s,
 
         if (rd_ret != rd_size && ferror(tx->common.file)) {
             set_last_error(&tx->common.error, ETYPE_ERRNO, errno);
-            ret = -1;
+            ret = CMD_RET_FILEOP;
             break;
         }
 
@@ -457,7 +456,7 @@ static ssize_t rxtx_read_bin_c16(struct cli_state *s,
                 /* Wrap back around to start of file if we're repeating */
                 if (fseek(tx->common.file, 0, SEEK_SET) < 0) {
                     set_last_error(&tx->common.error, ETYPE_ERRNO, errno);
-                    ret = -1;
+                    ret = CMD_RET_FILEOP;
                     break;
                 } else if (tx->repeat_delay != 0) {
                     /* Case (4) */
@@ -483,239 +482,119 @@ static ssize_t rxtx_read_bin_c16(struct cli_state *s,
     return ret;
 }
 
-enum csv_read_stateT {
-	CSV_STATE_IDLE_I=0,  // Waiting for an I sample
-	CSV_STATE_IDLE_Q,    // Waiting for a Q sample
-	CSV_STATE_I,         // Parsing an I sample
-	CSV_STATE_Q          // Parsing a Q sample
-};
-
-
-struct csv_readT {
-	FILE *write_fdP;  // if non NULL then it has to be closed
-	char write_fname[sizeof(TMP_FILE_NAME)+10];  // allocated filename
-	bool  conversion_failed;  // if true then conversion has failed
-	int  return_code;         // return code at the function end
-	enum csv_read_stateT csv_state;
-    uint16_t tmp_i;
-    uint16_t tmp_q;
-};
-
-
-
-static int tx_csv_new_bin_file (struct csv_readT *csv_readP)
-{
-
-	strcpy(csv_readP->write_fname,TMP_FILE_NAME);
-
-	int write_fd;
-
-	// mkstemp will return the fname after havng allocated it
-    write_fd = mkstemp(csv_readP->write_fname);
-    if (! write_fd) {
-        return CMD_RET_FILEOP;
-    }
-
-    csv_readP->write_fdP = fdopen(write_fd, "wb");
-    if ( csv_readP->write_fdP == NULL ) {
-    	close(write_fd);
-        return CMD_RET_FILEOP;
-    }
-
-    return 0;
-}
-
-
-static void tx_csv_write_iq (struct csv_readT *csv_readP  )
-{
-
-    if (fwrite(&csv_readP->tmp_i, sizeof(csv_readP->tmp_i), 1, csv_readP->write_fdP) != 1) {
-    	csv_readP->conversion_failed=true;
-    	csv_readP->return_code=CMD_RET_FILEOP;
-        }
-
-    if (fwrite(&csv_readP->tmp_q, sizeof(csv_readP->tmp_q), 1, csv_readP->write_fdP) != 1) {
-    	csv_readP->conversion_failed=true;
-    	csv_readP->return_code=CMD_RET_FILEOP;
-        }
-
-    // MUST reset iq values after write
-    csv_readP->tmp_i=0;
-    csv_readP->tmp_q=0;
-}
-
-static void tx_csv_parse_nondigit (struct csv_readT *csv_readP )
-{
-
-	switch ( csv_readP->csv_state ){
-		case CSV_STATE_IDLE_I:
-		case CSV_STATE_IDLE_Q:
-			// If I am idling and I receive another nonnumeric I stay here
-			return;
-
-		case CSV_STATE_I:
-			// I an reading I and I receive a non numeric
-			// Just go waiting for Q
-			csv_readP->csv_state=CSV_STATE_IDLE_Q;
-			return;
-
-		case CSV_STATE_Q:
-			// I an reading Q and I receive a non numeric
-			// Save I and Q and go to waiting I
-			tx_csv_write_iq(csv_readP);
-			csv_readP->csv_state=CSV_STATE_IDLE_I;
-			return;
-
-		default:
-			// should never happen...
-			break;
-	}
-}
-
-/**
- * stream is done, I must write last bit, if appropriate
- */
-static void tx_csv_parse_eof (struct csv_readT *csv_readP )
-{
-
-	switch ( csv_readP->csv_state ){
-		case CSV_STATE_IDLE_I:
-		case CSV_STATE_IDLE_Q:
-			// If I am idling and I for EOF, nothing to do
-			return;
-
-		case CSV_STATE_I:
-        	csv_readP->conversion_failed=true;
-        	csv_readP->return_code=CMD_RET_INVPARAM;
-			return;
-
-		case CSV_STATE_Q:
-			// I an reading Q and I for an EOF, I should write it...
-			// Save I and Q and go to waiting I
-			tx_csv_write_iq(csv_readP);
-			csv_readP->csv_state=CSV_STATE_IDLE_I;
-			return;
-
-		default:
-			// should never happen...
-			break;
-	}
-}
-
-static void tx_csv_update_filename ( struct common_cfg *txP, char *newFnameP )
-{
-	if ( newFnameP == NULL ) return;
-
-	if ( txP->file_path ) free(txP->file_path);
-
-	txP->file_path = malloc(strlen(newFnameP)+2);
-
-	if ( txP->file_path == NULL ) return;
-
-	strcpy(txP->file_path,newFnameP);
-}
-
 /* Create a temp (binary) file from a CSV so we don't have to waste time
  * parsing it in between sending samples.
- * CSV file is defined as a sequence of integer numbers separated by non digit characters
- * The sequence is a sequence of I and Q values
  *
  * Preconditions:  Assumes CLI state's TX cfg data has a valid file descriptor
  *
- * Postconditions: TX cfg's file descriptor, filename, and format will be changed.
+ * Postconditions: TX cfg's file descriptor, filename, and format will be
+ *                  changed.
  *
  * return 0 on success, CMD_RET_* on failure
  */
 static int tx_csv_to_c16(struct cli_state *s)
 {
-    struct common_cfg *tx = &s->rxtx_data->tx.common;
-    struct csv_readT csv_read;
+    const char delim[] = " \r\n\t,.:";
+    const size_t buff_size = 81;
+    char buff[buff_size];
+    enum rxtx_fmt fmt = RXTX_FMT_BINHOST_C16;
+    struct tx_cfg *tx = &s->rxtx_data->tx;
+    char *token, *saveptr;
+    int tmp_int;
+    int16_t tmp_iq[2];
+    bool ok;
+    int ret;
+    FILE *bin;
+    int bin_fd;
+    char *bin_path;
+    char bin_name[] = TMP_FILE_NAME;
 
-    int retcode,achar;
+    ret = 0;
 
-    memset(&csv_read,0,sizeof(csv_read));
 
-    if ( (retcode=tx_csv_new_bin_file(&csv_read)) )
-    	return retcode;
-
-    // I now can read from input file and write to output
-
-    for (;;) {
-
-    	achar=fgetc(tx->file);
-
-    	if ( achar == EOF ) {
-    		if(ferror(tx->file) ){
-            	csv_read.conversion_failed=true;
-            	csv_read.return_code=CMD_RET_FILEOP;
-    		}
-    		else{
-				// handling the last char is not as easy as it seems...
-				tx_csv_parse_eof(&csv_read);
-    		}
-
-    		// in any case break out of the loop
-    		break;
-    	}
-
-    	if ( ! isdigit(achar) ) {
-    		tx_csv_parse_nondigit(&csv_read);
-    		continue;
-    	}
-
-    	uint8_t uchar = achar - '0';
-
-    	switch ( csv_read.csv_state ){
-
-		case CSV_STATE_IDLE_I:
-			// received the first MSB digit of I
-			csv_read.tmp_i = uchar;
-			csv_read.csv_state=CSV_STATE_I;
-			continue;
-
-		case CSV_STATE_IDLE_Q:
-			// received the first MSB digit of Q
-			csv_read.tmp_q = uchar;
-			csv_read.csv_state=CSV_STATE_Q;
-			continue;
-
-		case CSV_STATE_I:
-			csv_read.tmp_i = (csv_read.tmp_i * 10) + uchar;
-            continue;
-
-		case CSV_STATE_Q:
-			csv_read.tmp_q = (csv_read.tmp_q * 10) + uchar;
-            continue;
-
-		default:
-			// should never happen
-			break;
-    	}
+    bin_fd = mkstemp(bin_name);
+    if (!bin_fd) {
+        return CMD_RET_FILEOP;
     }
 
+    bin = fdopen(bin_fd, "wb");
+    if (!bin) {
+        return CMD_RET_FILEOP;
+    }
 
-    if ( csv_read.conversion_failed ) {
-    	// the resulting bin file should be thrown away
-        fclose(csv_read.write_fdP);
-        // should I really check if it fails.. ?
-        remove (csv_read.write_fname);
-        // return previous errcode
-    	return csv_read.return_code;
-		}
+    bin_path = to_path(bin);
+    if (!bin_path) {
+        return CMD_RET_FILEOP;
+    }
 
+    while (fgets(buff, buff_size, tx->common.file))
+    {
+        /* I */
+        token = strtok_r(buff, delim, &saveptr);
 
-    fclose(tx->file);
+        if (token) {
+            tmp_int = str2int(token, INT16_MIN, INT16_MAX, &ok);
 
-    // make sure all data has been written
-    fflush(csv_read.write_fdP);
-    // attempt to reqind to beginning of file
-    fseek(csv_read.write_fdP,0,SEEK_SET);
+            if (ok) {
+                tmp_iq[0] = tmp_int;
+            } else {
+                cli_err(s, "tx", "Invalid I value encountered in CSV file");
+                ret = CMD_RET_INVPARAM;
+                break;
+            }
 
-    tx->file = csv_read.write_fdP;
-    tx->file_fmt = RXTX_FMT_BINHOST_C16;
-    tx_csv_update_filename(tx,csv_read.write_fname);
+            /* Q */
+            token = strtok_r(NULL, delim, &saveptr);
 
-    return 0;
+            if (token) {
+                tmp_int = str2int(token, INT16_MIN, INT16_MAX, &ok);
+
+                if (ok) {
+                    tmp_iq[1] = tmp_int;
+                } else {
+                    cli_err(s, "tx", "Invalid Q value encountered in CSV file");
+                    ret = CMD_RET_INVPARAM;
+                    break;
+                }
+
+            } else {
+                cli_err(s, "tx", "Missing Q value in CSV file");
+                ret = CMD_RET_INVPARAM;
+                break;
+            }
+
+            /* Check for extraneous tokens */
+            token = strtok_r(NULL, delim, &saveptr);
+            if (!token) {
+                if (fwrite(tmp_iq, sizeof(tmp_iq[0]), 2, bin) != 2) {
+                    ret = CMD_RET_FILEOP;
+                    break;
+                }
+            } else {
+                cli_err(s, "tx",
+                        "Encountered extra token after Q value in CSV file");
+
+                ret = CMD_RET_INVPARAM;
+                break;
+            }
+        }
+    }
+
+    if (ret >= 0 && feof(tx->common.file)) {
+
+        fclose(tx->common.file);
+        tx->common.file = bin;
+        tx->common.file_fmt = fmt;
+
+        free(tx->common.file_path);
+        tx->common.file_path = bin_path;
+
+    } else {
+        fclose(bin);
+        free(bin_path);
+    }
+
+    return ret;
 }
 
 /* FIXME Clean up this function up. It's very unreadable.
@@ -1429,7 +1308,7 @@ int cmd_rxtx(struct cli_state *s, int argc, char **argv)
 /* Buffer size is in units of # elements, not bytes */
 static int common_cfg_init(struct common_cfg *c, size_t buff_size)
 {
-    int status = -1;
+    int status = CMD_RET_UNKNOWN;
 
     c->buff_size = buff_size;
     c->buff = calloc(buff_size, sizeof(c->buff[0]));
