@@ -104,31 +104,3 @@ void get_last_error(struct cli_error *e, enum error_type *type, int *error)
     *error = e->value;
     pthread_mutex_unlock(&e->lock);
 }
-
-/* FIXME this function is *nix-specific */
-char *to_path(FILE *f)
-{
-    size_t buff_size = 64;
-    char buff[buff_size];
-    ssize_t status;
-    char *file_path = NULL;
-
-    int fd = fileno(f);
-
-    if (fd < 0) {
-        return NULL;
-    }
-
-    file_path = calloc(PATH_MAX + 1, 1);
-    if (file_path) {
-        snprintf(buff, buff_size, "/proc/self/fd/%d", fd);
-        status = readlink(buff, file_path, PATH_MAX);
-
-        if (status < 0) {
-            free(file_path);
-            file_path = NULL;
-        }
-    }
-
-    return file_path;
-}

@@ -64,7 +64,7 @@
 #   error "Compiler did not define __BIG/LITTLE_ENDIAN__ - required here"
 #endif
 
-#define TMP_FILE_NAME "/tmp/bladeRF-XXXXXX"
+#define TMP_FILE_NAME "bladeRF_samples_from_csv.bin"
 
 enum rxtx_fmt {
     RXTX_FMT_INVALID = -1,
@@ -506,25 +506,18 @@ static int tx_csv_to_c16(struct cli_state *s)
     bool ok;
     int ret;
     FILE *bin;
-    int bin_fd;
-    char *bin_path;
-    char bin_name[] = TMP_FILE_NAME;
+    char *bin_name;
 
     ret = 0;
 
-
-    bin_fd = mkstemp(bin_name);
-    if (!bin_fd) {
-        return CMD_RET_FILEOP;
+    bin_name = strdup(TMP_FILE_NAME);
+    if (!bin_name) {
+        return CMD_RET_MEM;
     }
 
-    bin = fdopen(bin_fd, "wb");
+    bin = fopen(bin_name, "wb+");
     if (!bin) {
-        return CMD_RET_FILEOP;
-    }
-
-    bin_path = to_path(bin);
-    if (!bin_path) {
+        free(bin_name);
         return CMD_RET_FILEOP;
     }
 
@@ -583,19 +576,21 @@ static int tx_csv_to_c16(struct cli_state *s)
 
     if (ret >= 0 && feof(tx->common.file)) {
 
+        rewind(bin);
         fclose(tx->common.file);
+
         tx->common.file = bin;
         tx->common.file_fmt = fmt;
 
         free(tx->common.file_path);
-        tx->common.file_path = bin_path;
+        tx->common.file_path = bin_name;
 
     } else {
         fclose(tx->common.file);
         tx->common.file = NULL;
 
         fclose(bin);
-        free(bin_path);
+        free(bin_name);
     }
 
     return ret;
