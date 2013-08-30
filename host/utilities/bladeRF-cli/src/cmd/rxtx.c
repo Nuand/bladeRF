@@ -488,7 +488,8 @@ static ssize_t rxtx_read_bin_c16(struct cli_state *s,
  * Preconditions:  Assumes CLI state's TX cfg data has a valid file descriptor
  *
  * Postconditions: TX cfg's file descriptor, filename, and format will be
- *                  changed.
+ *                 changed. (On success they'll be set to the binary file,
+ *                 and on failure the csv will be closed.)
  *
  * return 0 on success, CMD_RET_* on failure
  */
@@ -590,6 +591,9 @@ static int tx_csv_to_c16(struct cli_state *s)
         tx->common.file_path = bin_path;
 
     } else {
+        fclose(tx->common.file);
+        tx->common.file = NULL;
+
         fclose(bin);
         free(bin_path);
     }
