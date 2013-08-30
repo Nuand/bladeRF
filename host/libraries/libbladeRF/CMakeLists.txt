@@ -30,12 +30,6 @@ configure_file(
     @ONLY
 )
 
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/Doxyfile.in
-    ${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/Doxyfile
-    @ONLY
-)
-
 ################################################################################
 # Configuration options
 ################################################################################
@@ -135,7 +129,7 @@ set(LIBBLADERF_SOURCE
 
 message(STATUS "In libraries ${BLADERF_HOST_COMMON_SOURCE_DIR}")
 
-if(ENABLE_BACKEND_LIBUSB)
+if(LIBUSB_FOUND AND ENABLE_BACKEND_LIBUSB)
     set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend/libusb.c)
 endif()
 
@@ -235,3 +229,24 @@ message(STATUS "libbladeRF version: ${VERSION_INFO}")
 # Library tests
 ################################################################################
 add_subdirectory(tests)
+
+################################################################################
+# Doxygen documentation
+################################################################################
+find_package(Doxygen)
+
+if(DOXYGEN_FOUND)
+
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/Doxyfile.in
+    ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/Doxyfile
+    @ONLY
+)
+
+add_custom_target(doc ALL
+        ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/Doxyfile
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen
+        COMMENT "Generating libbladeRF API documentation via Doxygen in: ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen"
+)
+
+endif(DOXYGEN_FOUND)
