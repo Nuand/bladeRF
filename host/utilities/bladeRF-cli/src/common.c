@@ -104,4 +104,3 @@ void get_last_error(struct cli_error *e, enum error_type *type, int *error)
     *error = e->value;
     pthread_mutex_unlock(&e->lock);
 }
-
