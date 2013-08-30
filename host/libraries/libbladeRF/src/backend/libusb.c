@@ -212,16 +212,13 @@ static int lusb_get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
 static int change_setting(struct bladerf *dev, uint8_t setting)
 {
     struct bladerf_lusb *lusb = dev->backend ;
-    int status;
     if (dev->legacy  & LEGACY_ALT_SETTING) {
         dbg_printf("Legacy change to interface %d\n", setting);
-        status = libusb_set_interface_alt_setting(lusb->handle, setting, 0);
+        return libusb_set_interface_alt_setting(lusb->handle, setting, 0);
     } else {
         dbg_printf( "Change to alternate interface %d\n", setting);
-        status = libusb_set_interface_alt_setting(lusb->handle, 0, setting);
+        return libusb_set_interface_alt_setting(lusb->handle, 0, setting);
     }
-
-    return error_libusb2bladerf(status);
 }
 
 static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
