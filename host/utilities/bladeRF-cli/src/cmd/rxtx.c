@@ -56,35 +56,27 @@
 #   define EOL "\n"
 #endif
 
-#if defined(__BIG_ENDIAN__)
-#   define RXTX_FMT_BINHOST_C16 RXTX_FMT_BINBE_C16
-#elif defined(__LITTLE_ENDIAN__) || defined(__LITTLE_ENDIAN)
-#   define RXTX_FMT_BINHOST_C16 RXTX_FMT_BINLE_C16
-#else
-#   error "Compiler did not define __BIG/LITTLE_ENDIAN__ - required here"
-#endif
 
 #define TMP_FILE_NAME "bladeRF_samples_from_csv.bin"
 
 enum rxtx_fmt {
     RXTX_FMT_INVALID = -1,
-    RXTX_FMT_CSV_C16,   /* CSV (Comma-separated, one entry per line) c16 I,Q */
-    RXTX_FMT_BINLE_C16, /* Binary (little-endian), c16 I,Q */
-    RXTX_FMT_BINBE_C16, /* Binary (big-endian), c16 I,Q */
+    RXTX_FMT_CSV_SC16Q12,   /* CSV (Comma-separated, one entry per line) */
+    RXTX_FMT_BIN_SC16Q12    /* Binary (big-endian), c16 I,Q */
 };
 
 enum rxtx_cmd {
     RXTX_CMD_INVALID,
     RXTX_CMD_START,
     RXTX_CMD_STOP,
-    RXTX_CMD_CFG,
+    RXTX_CMD_CFG
 };
 
 enum rxtx_state {
     RXTX_STATE_IDLE,
     RXTX_STATE_RUNNING,
     RXTX_STATE_SHUTDOWN,
-    RXTX_STATE_ERROR,
+    RXTX_STATE_ERROR
 };
 
 struct common_cfg
@@ -266,91 +258,66 @@ static int close_samples_file(struct common_cfg *c, bool lock)
     return ret;
 }
 
-/*
- * n    - # samples
- * fmt  - binle or binbe
- * in   - Is this data being TX'd (RX'd assumed otherwise)
+/**
+ * Peform adjustments on samples before transmitting them:
+ *  (1) Convert samples to little-endian, if needed.
+ *
+ *  @pre    Assumes provided samples are already sign-extend appropriately
+ *          and bits [15:12] = 0.
+ *
+ *  @param  buff    Sample buffer
+ *  @param  n       Number of samples
  */
-static void c16_sample_fixup(int16_t *buff, size_t n,
-                                enum rxtx_fmt fmt, bool tx)
+static void tx_sc16q12_sample_fixup(int16_t *buff, size_t n)
 {
     size_t i;
 
-    /* For each sample, we need to:
-     *  (1) Convert to appropriate endianness
-     *  (2, RX only) Mask and sign-extend.
-     *      FIXME  this will soon be done in libbladeRF
-     *
-     *  The 4 permutations are unrolled here intentionally, to keep
-     *  the amount of massaging on these samples to a minimum...
-     */
+    for (i = 0; i < n; i++) {
+        /* I */
+        *buff = (HOST_TO_LE16(*buff));
+        buff++;
 
-    if (tx) {
-        if (fmt == RXTX_FMT_BINLE_C16) {
-            for (i = 0; i < n; i++) {
-                /* I - Correct sign extension is assumed */
-                *buff = (HOST_TO_LE16(*buff) & 0x0fff);
-                buff++;
+        /* Q */
+        *buff = (HOST_TO_LE16(*buff));
+        buff++;
+    }
+}
 
-                /* Q - Correct sign extention is assumed*/
-                *buff = (HOST_TO_LE16(*buff) & 0x0fff);
-                buff++;
-            }
-        } else {
-            for (i = 0; i < n; i++) {
-                /* I - Correct sign extension is assumed */
-                *buff = (HOST_TO_BE16(*buff) & 0x0fff);
-                buff++;
-
-                /* Q - Correct sign extention is assumed*/
-                *buff = (HOST_TO_BE16(*buff) & 0x0fff);
-                buff++;
-            }
-        }
-    } else {
-        if (fmt == RXTX_FMT_CSV_C16) {
-            fmt = RXTX_FMT_BINHOST_C16;
+/**
+ * Peform adjustments on received samples before writing them out:
+ *  (1) Mask off FPGA markers
+ *  (2) Convert little-endian samples to host endianness, if needed.
+ *
+ *  @param  buff    Sample buffer
+ *  @param  n       Number of samples
+ */
+static void rx_sc16q12_sample_fixup(int16_t *buff, size_t n)
+{
+    size_t i;
+    for (i = 0; i < n; i++) {
+        /* I - Mask off the marker and sign extend */
+        *buff &= (*buff) & 0x0fff;
+        if (*buff & 0x800) {
+            *buff |= 0xf000;
         }
 
-        if (fmt == RXTX_FMT_BINLE_C16) {
-            for (i = 0; i < n; i++) {
-                /* I - Mask off the marker and sign extend */
-                *buff = HOST_TO_LE16(*buff) & 0x0fff;
-                if (*buff & 0x800) {
-                    *buff |= 0xf000;
-                }
-                buff++;
+        *buff = LE16_TO_HOST(*buff);
+        buff++;
 
-                /* Q - Mask off the marker and sign extend */
-                *buff = HOST_TO_LE16(*buff) & 0x0fff;
-                if (*buff & 0x800) {
-                    *buff |= 0xf000;
-                }
-                buff++;
-
-            }
-        } else {
-            for (i = 0; i < n; i++) {
-                /* I - Mask off the marker and sign extend */
-                *buff = HOST_TO_BE16(*buff) & 0x0fff;
-                if (*buff & 0x800) {
-                    *buff |= 0xf000;
-                }
-                buff++;
-
-                /* Q - Mask off the marker and sign extend */
-                *buff = HOST_TO_BE16(*buff) & 0x0fff;
-                if (*buff & 0x800) {
-                    *buff |= 0xf000;
-                }
-                buff++;
-            }
+        /* Q - Mask off the marker and sign extend */
+        *buff = HOST_TO_LE16(*buff) & 0x0fff;
+        if (*buff & 0x800) {
+            *buff |= 0xf000;
         }
+
+        *buff = LE16_TO_HOST(*buff);
+        buff++;
+
     }
 }
 
 /* returns 0 on success, CMD_RET_* on failure (and calls set_last_error()) */
-static int rxtx_write_bin_c16(struct cli_state *s, size_t n_samples)
+static int rx_write_bin_c16(struct cli_state *s, size_t n_samples)
 {
     size_t status;
     struct rx_cfg *rx = &s->rxtx_data->rx;
@@ -359,7 +326,7 @@ static int rxtx_write_bin_c16(struct cli_state *s, size_t n_samples)
     /* We assume we have pairs... */
     assert((common->buff_size & 1) == 0);
 
-    c16_sample_fixup(common->buff, common->buff_size/2, common->file_fmt, rx);
+    rx_sc16q12_sample_fixup(common->buff, common->buff_size/2);
 
     status = fwrite(common->buff, sizeof(int16_t),
                     common->buff_size, common->file);
@@ -373,7 +340,7 @@ static int rxtx_write_bin_c16(struct cli_state *s, size_t n_samples)
 }
 
 /* returns 0 on success, CMD_RET_* on failure (and calls set_last_error()) */
-static int rxtx_write_csv_c16(struct cli_state *s, size_t n_samples)
+static int rx_write_csv_c16(struct cli_state *s, size_t n_samples)
 {
     size_t i;
     struct rx_cfg *rx = &s->rxtx_data->rx;
@@ -385,7 +352,7 @@ static int rxtx_write_csv_c16(struct cli_state *s, size_t n_samples)
     /* We assume we have pairs... */
     assert((common->buff_size & 1) == 0);
 
-    c16_sample_fixup(common->buff, common->buff_size/2, common->file_fmt, false);
+    rx_sc16q12_sample_fixup(common->buff, common->buff_size/2);
 
     for (i = 0; i < to_write; i += 2) {
         snprintf(line, line_sz, "%d, %d" EOL,
@@ -406,8 +373,7 @@ static int rxtx_write_csv_c16(struct cli_state *s, size_t n_samples)
  * returns: # IQ values on success,
  *          CMD_RET_* on error (and calls set_last_error())
  */
-static ssize_t rxtx_read_bin_c16(struct cli_state *s,
-                                    unsigned int *repeats_left)
+static ssize_t tx_read_bin_c16(struct cli_state *s, unsigned int *repeats_left)
 {
     ssize_t ret = 0;
     struct tx_cfg *tx;
@@ -474,8 +440,7 @@ static ssize_t rxtx_read_bin_c16(struct cli_state *s,
     if (ret > 0) {
         /* Zero padding for cases (3) and (4) */
         memset(tx->common.buff + n_read, 0, tx->common.buff_size - n_read);
-        c16_sample_fixup(tx->common.buff, tx->common.buff_size/2,
-                            tx->common.file_fmt, true);
+        tx_sc16q12_sample_fixup(tx->common.buff, tx->common.buff_size/2);
         ret = tx->common.buff_size;
     }
 
@@ -493,12 +458,12 @@ static ssize_t rxtx_read_bin_c16(struct cli_state *s,
  *
  * return 0 on success, CMD_RET_* on failure
  */
-static int tx_csv_to_c16(struct cli_state *s)
+static int tx_csv_to_sc16q12(struct cli_state *s)
 {
     const char delim[] = " \r\n\t,.:";
     const size_t buff_size = 81;
     char buff[buff_size];
-    enum rxtx_fmt fmt = RXTX_FMT_BINHOST_C16;
+    enum rxtx_fmt fmt = RXTX_FMT_BIN_SC16Q12;
     struct tx_cfg *tx = &s->rxtx_data->tx;
     char *token, *saveptr;
     int tmp_int;
@@ -964,14 +929,11 @@ static void print_config(struct rxtx_data *d, bool is_tx)
             common->file_path != NULL ? common->file_path : "Not configured");
 
     switch (common->file_fmt) {
-        case RXTX_FMT_CSV_C16:
-            printf("    Format: C16, CSV\n");
+        case RXTX_FMT_CSV_SC16Q12:
+            printf("    Format: SC16 Q12, CSV\n");
             break;
-        case RXTX_FMT_BINLE_C16:
-            printf("    Format: C16, Binary (Little Endian)\n");
-            break;
-        case RXTX_FMT_BINBE_C16:
-            printf("    Format: C16, Binary (Big Endian)\n");
+        case RXTX_FMT_BIN_SC16Q12:
+            printf("    Format: SC16 Q12, Binary\n");
             break;
         default:
             printf("    Format: Not configured\n");
@@ -1007,13 +969,9 @@ static enum rxtx_fmt str2fmt(const char *str)
     enum rxtx_fmt ret = RXTX_FMT_INVALID;
 
     if (!strcasecmp("csv", str)) {
-        ret = RXTX_FMT_CSV_C16;
-    } else if (!strcasecmp("binl", str)) {
-        ret = RXTX_FMT_BINLE_C16;
-    } else if (!strcasecmp("binb", str)) {
-        ret = RXTX_FMT_BINBE_C16;
+        ret = RXTX_FMT_CSV_SC16Q12;
     } else if (!strcasecmp("bin", str)) {
-        ret = RXTX_FMT_BINHOST_C16;
+        ret = RXTX_FMT_BIN_SC16Q12;
     }
 
     return ret;
@@ -1126,13 +1084,12 @@ static int rx_start_init(struct cli_state *s)
     struct rx_cfg *rx = &s->rxtx_data->rx;
 
     switch(s->rxtx_data->rx.common.file_fmt) {
-        case RXTX_FMT_CSV_C16:
-            rx->write_samples = rxtx_write_csv_c16;
+        case RXTX_FMT_CSV_SC16Q12:
+            rx->write_samples = rx_write_csv_c16;
             break;
 
-        case RXTX_FMT_BINLE_C16:
-        case RXTX_FMT_BINBE_C16:
-            rx->write_samples = rxtx_write_bin_c16;
+        case RXTX_FMT_BIN_SC16Q12:
+            rx->write_samples = rx_write_bin_c16;
             break;
 
         /* This shouldn't happen...*/
@@ -1169,8 +1126,8 @@ static int tx_start_init(struct cli_state *s)
     enum rxtx_state state;
 
     switch(s->rxtx_data->tx.common.file_fmt) {
-        case RXTX_FMT_CSV_C16:
-            status = tx_csv_to_c16(s);
+        case RXTX_FMT_CSV_SC16Q12:
+            status = tx_csv_to_sc16q12(s);
             if (status < 0)
                 return status;
 
@@ -1180,9 +1137,8 @@ static int tx_start_init(struct cli_state *s)
             /* Fall through - if we hit this line we're now using
              * a temporary binary file */
 
-        case RXTX_FMT_BINLE_C16:
-        case RXTX_FMT_BINBE_C16:
-            s->rxtx_data->tx.read_samples = rxtx_read_bin_c16;
+        case RXTX_FMT_BIN_SC16Q12:
+            s->rxtx_data->tx.read_samples = tx_read_bin_c16;
             break;
 
         /* This shouldn't happen...*/
@@ -1315,7 +1271,7 @@ static int common_cfg_init(struct common_cfg *c, size_t buff_size)
     if (c->buff) {
         c->file = NULL;
         c->file_path = NULL;
-        c->file_fmt = RXTX_FMT_BINHOST_C16;
+        c->file_fmt = RXTX_FMT_BIN_SC16Q12;
         c->task_state = RXTX_STATE_IDLE;
         c->error.type = ETYPE_ERRNO;
         c->error.value = 0;;
