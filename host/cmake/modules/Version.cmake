@@ -76,7 +76,7 @@ if(GIT_FOUND)
     endif()
 
 else()
-    message(ERROR_WARNING "git missing -- unable to check libladeRF version")
+    message(WARNING "git missing -- unable to check libladeRF version.")
     set(GIT_CHANGESET "unknown")   
     set(GIT_DIRTY "")
 endif()
