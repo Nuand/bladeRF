@@ -11,6 +11,8 @@
 #define SI5338_BC_MAX 	0x40000000   // see pag. 9 si5338-RM rev 1.2, value NOT included
 
 // maybe there should be a better way to report error string ?
+#include <stdio.h>
+
 #define error_printf printf
 
 /**
