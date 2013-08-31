@@ -295,7 +295,7 @@ int bladerf_get_and_cache_fpga_size(struct bladerf *device)
     if (!strcmp("40", tmp)) {
         device->fpga_size = BLADERF_FPGA_40KLE;
     } else if(!strcmp("115", tmp)) {
-        device->fpga_size = BLADERF_FPGA_40KLE;
+        device->fpga_size = BLADERF_FPGA_115KLE;
     } else {
         device->fpga_size = BLADERF_FPGA_UNKNOWN;
     }
