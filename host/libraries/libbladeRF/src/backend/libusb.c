@@ -480,7 +480,6 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
 static int erase_flash(struct bladerf *dev, int sector_offset, int n_bytes)
 {
     int status = 0;
-    off_t i;
     int sector_to_erase;
     int erase_ret;
     const int n_sectors = FLASH_BYTES_TO_SECTORS(n_bytes);
@@ -492,8 +491,7 @@ static int erase_flash(struct bladerf *dev, int sector_offset, int n_bytes)
     dbg_printf("Erasing %d sectors starting @ sector %d\n",
                 n_sectors, sector_offset);
 
-    for (i = sector_offset; i < (sector_offset + n_sectors) && !status; i++) {
-        sector_to_erase = sector_offset + i;
+    for (sector_to_erase = sector_offset; sector_to_erase < (sector_offset + n_sectors) && !status; sector_to_erase++) {
         status = libusb_control_transfer(
                                 lusb->handle,
                                 LIBUSB_RECIPIENT_INTERFACE |
@@ -501,7 +499,7 @@ static int erase_flash(struct bladerf *dev, int sector_offset, int n_bytes)
                                     EP_DIR_IN,
                                 BLADE_USB_CMD_FLASH_ERASE,
                                 0,
-                                i,
+                                sector_to_erase,
                                 (unsigned char *)&erase_ret,
                                 sizeof(erase_ret),
                                 BLADERF_LIBUSB_TIMEOUT_MS);
