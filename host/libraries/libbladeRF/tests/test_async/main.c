@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <signal.h>
 #include <string.h>
-#include <unistd.h>
+#include <host_config.h>
 #include <errno.h>
 #include <limits.h>
 #include <sys/types.h>
@@ -12,7 +12,7 @@
 #   define DATA_SOURCE "/dev/urandom"
 #endif
 
-static bool shutdown = false;
+static bool shutdown_stream = false;
 
 unsigned int count = 0;
 
@@ -55,7 +55,7 @@ void *stream_callback(struct bladerf *dev, struct bladerf_stream *stream,
                   struct bladerf_metadata *metadata, void *samples,
                   size_t num_samples, void *user_data)
 {
-    struct test_data *my_data = user_data;
+    struct test_data *my_data = (struct test_data *)user_data;
 
     count++ ;
 
@@ -66,7 +66,7 @@ void *stream_callback(struct bladerf *dev, struct bladerf_stream *stream,
     /* Save off the samples to disk if we are in RX */
     if( my_data->module == BLADERF_MODULE_RX ) {
         size_t i;
-        int16_t *sample = samples ;
+        int16_t *sample = (int16_t *)samples ;
         for(i = 0; i < num_samples ; i++ ) {
             *(sample) &= 0xfff ;
             if( (*sample)&0x800 ) *(sample) |= 0xf000 ;
@@ -77,11 +77,11 @@ void *stream_callback(struct bladerf *dev, struct bladerf_stream *stream,
         }
         my_data->samples_left -= num_samples ;
         if( my_data->samples_left <= 0 ) {
-            shutdown = true ;
+            shutdown_stream = true ;
         }
     }
 
-    if (shutdown) {
+    if (shutdown_stream) {
         return NULL;
     } else {
         void *rv = my_data->buffers[my_data->idx];
@@ -121,7 +121,7 @@ int populate_test_data(struct test_data *test_data)
 void handler(int signal)
 {
     if (signal == SIGTERM || signal == SIGINT) {
-        shutdown = true;
+        shutdown_stream = true;
         printf("Caught signal, canceling transfers\n");
         fflush(stdout);
     }
