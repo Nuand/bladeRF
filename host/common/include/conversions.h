@@ -7,6 +7,7 @@
 #define CONVERSIONS_H__
 
 #include <stdint.h>
+#include "host_config.h"
 
 /**
  * String to integer conversion with range and error checking

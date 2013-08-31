@@ -6,6 +6,7 @@
 #ifndef MINMAX_H__
 #define MINMAX_H__
 
+#include "host_config.h"
 
 static inline size_t min_sz(size_t x, size_t y)
 {

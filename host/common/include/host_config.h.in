@@ -89,13 +89,23 @@
  ******************************************************************************/
 #elif BLADERF_OS_WINDOWS
 
-/* Windows does not appear to provide strtok_r, but appears to provide a
- * strtok_s which presents the same interface */
-#define strtok_r strtok_s
+/* Rename a few functions and types */
+#include <Windows.h>
+#define strtok_r        strtok_s
+#define strtoull        _strtoui64
+//#define snprintf      _snprintf
+//#define vsnprintf     _vsnprintf
+#define strcasecmp      _stricmp
+#define strncasecmp     _strnicmp   
+#define usleep          Sleep
 
 /* ssize_t lives elsewhere */
 #include <BaseTsd.h>
 #define ssize_t SSIZE_T
+
+/* With msvc, inline is only available for C++. Otherwise we need to use __inline:
+ *  http://msdn.microsoft.com/en-us/library/z8y1yy88.aspx */
+#define inline __inline
 
 #endif
 

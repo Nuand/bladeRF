@@ -163,10 +163,10 @@ static int si5338_get_sample_rate ( struct bladerf *dev, struct si5338_port *ret
  */
 int bladerf_get_sample_rate (struct bladerf *dev, bladerf_module module, unsigned int *rateP )
 {
+    struct si5338_port risul;
+
     // safety check
     if ( rateP == NULL ) return BLADERF_ERR_UNEXPECTED;
-
-    struct si5338_port risul;
 
     memset(&risul,0,sizeof(risul));
 
@@ -220,6 +220,8 @@ static uint32_t euclide_gcd(uint32_t n1, uint32_t n2)
  */
 static int set_sample_rate_calc_abc ( struct si5338_port *portP )
 {
+    uint32_t remainder, gcd, b, c;
+
 	// find out the integer part of the result
     portP->a = SI5338_F_VCO / portP->sample_rate_r;
 
@@ -229,7 +231,7 @@ static int set_sample_rate_calc_abc ( struct si5338_port *portP )
     }
 
     // I still have this hertz left that are not integer divisible by VCO
-    uint32_t remainder = SI5338_F_VCO - (portP->a * portP->sample_rate_r);
+    remainder = SI5338_F_VCO - (portP->a * portP->sample_rate_r);
 
     if ( remainder == 0 )
 		{
@@ -239,19 +241,19 @@ static int set_sample_rate_calc_abc ( struct si5338_port *portP )
 		}
 
     // the gcd is the biggest number that divides both as integers
-    uint32_t gcd = euclide_gcd(portP->sample_rate_r, remainder);
+    gcd = euclide_gcd(portP->sample_rate_r, remainder);
 
 //    dbg_printf("VCO=%u a=%u sr=%u remainder=%u gcd=%d \n",SI5338_F_VCO,portP->sample_rate_r,portP->a,remainder,gcd);
 
     // I now have to check if any of the b,c satisfy si conditions
-    uint32_t b = remainder / gcd;
+    b = remainder / gcd;
 
     if ( b > 0x40000000 ) {
 		bladerf_log_warning("cannot find suitable b ratio %dHz on MS%d \n", portP->want_sample_rate, portP->block_index);
 		return BLADERF_ERR_INVAL;
     }
 
-    uint32_t c = portP->sample_rate_r / gcd;
+    c = portP->sample_rate_r / gcd;
 
     if ( c > 0x40000000 ) {
 		bladerf_log_warning("cannot find suitable c ratio %dHz on MS%d \n", portP->want_sample_rate, portP->block_index);
@@ -270,6 +272,7 @@ static int set_sample_rate_calc_abc ( struct si5338_port *portP )
  */
 static int set_sample_rate_calc_r ( struct si5338_port *portP )
 {
+    uint32_t candidate;
 	int j;
 
 	for (j=0; j <= 5; j++ ) {
@@ -279,7 +282,7 @@ static int set_sample_rate_calc_r ( struct si5338_port *portP )
     	portP->r = 1 << j;   // this is the r I will be using
     	portP->raw_r = j;    // this is what goes into the chip
 
-    	uint32_t candidate = portP->want_sample_rate * portP->r;
+    	candidate = portP->want_sample_rate * portP->r;
 
 		if ( candidate >= 5000000)	{
 			portP->sample_rate_r = candidate;
@@ -301,20 +304,23 @@ static int set_sample_rate_calc_r ( struct si5338_port *portP )
  */
 static void set_sample_rate_calc_regs (struct si5338_port *portP)
 {
+    uint64_t P1, P2, p1, p2, p3;
+    uint8_t *regs;
+
     // P1 = (a * c + b) * 128 / c - 512;
-    uint64_t P1 = portP->a * portP->c + portP->b;
-             P1 = P1 * 128;
-             P1 = P1 / portP->c - 512;
+    P1 = portP->a * portP->c + portP->b;
+    P1 = P1 * 128;
+    P1 = P1 / portP->c - 512;
 
     // P2 = (b * 128) % c;
-    uint64_t P2 = portP->b * 128;
-             P2 = P2 % portP->c;
+    P2 = portP->b * 128;
+    P2 = P2 % portP->c;
 
-    uint32_t p1 = portP->P1 = P1;
-    uint32_t p2 = portP->P2 = P2;
-    uint32_t p3 = portP->P3 = portP->c;
+    p1 = portP->P1 = P1;
+    p2 = portP->P2 = P2;
+    p3 = portP->P3 = portP->c;
 
-    uint8_t *regs = portP->regs;
+    regs = portP->regs;
     regs[0] = p1 & 0xff;
     regs[1] = (p1 >> 8) & 0xff;
     regs[2] = ((p2 & 0x3f) << 2) | ((p1 >> 16) & 0x3);
