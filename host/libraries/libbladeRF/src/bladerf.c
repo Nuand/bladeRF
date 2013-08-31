@@ -12,7 +12,7 @@
 #include "log.h"
 #include "backend.h"
 #include "device_identifier.h"
-#include "version.h"        /* Generated at build time */
+#include "version.h"                /* Generated at build time */
 #include "conversions.h"
 
 /*------------------------------------------------------------------------------
@@ -195,6 +195,16 @@ int bladerf_set_rational_sample_rate(struct bladerf *dev, bladerf_module module,
 {
     /* TODO: Program the Si5338 to be 2x the desired sample rate */
     return 0;
+}
+
+int bladerf_set_sample_rate(struct bladerf *dev, bladerf_module module, uint32_t rate, uint32_t *actual)
+{
+    return si5338_set_sample_rate(dev, module, rate, actual);
+}
+
+int bladerf_get_sample_rate(struct bladerf *dev, bladerf_module module, unsigned int *rate)
+{
+    return si5338_get_sample_rate(dev, module, rate);
 }
 
 int bladerf_get_sampling(struct bladerf *dev, bladerf_sampling *sampling)

@@ -14,8 +14,6 @@
 #endif
 
 
-
-
 /*******************************************************************************
  * Endianness conversions
  *
@@ -96,7 +94,7 @@
 //#define snprintf      _snprintf
 //#define vsnprintf     _vsnprintf
 #define strcasecmp      _stricmp
-#define strncasecmp     _strnicmp   
+#define strncasecmp     _strnicmp
 #define usleep          Sleep
 
 /* ssize_t lives elsewhere */

@@ -132,7 +132,7 @@ static void print_si5338_port(struct si5338_port *portP)
 }
 
 
-static int si5338_get_sample_rate ( struct bladerf *dev, struct si5338_port *retP )
+static int si5338_get_module_sample_rate ( struct bladerf *dev, struct si5338_port *retP )
 {
     int retcode;
     uint8_t *valP, shi;
@@ -161,7 +161,7 @@ static int si5338_get_sample_rate ( struct bladerf *dev, struct si5338_port *ret
  * @param rateP pointer to result
  * @return 0 if all fine or an error code
  */
-int bladerf_get_sample_rate (struct bladerf *dev, bladerf_module module, unsigned int *rateP )
+int si5338_get_sample_rate(struct bladerf *dev, bladerf_module module, unsigned int *rateP)
 {
     struct si5338_port risul;
 
@@ -176,12 +176,12 @@ int bladerf_get_sample_rate (struct bladerf *dev, bladerf_module module, unsigne
         case BLADERF_MODULE_RX:
             risul.block_index = 1;
             risul.base = 53 + 1 * 11;
-            return si5338_get_sample_rate(dev,&risul);
+            return si5338_get_module_sample_rate(dev,&risul);
 
         case BLADERF_MODULE_TX:
             risul.block_index = 2;
             risul.base = 53 + 2 * 11;
-            return si5338_get_sample_rate(dev,&risul);
+            return si5338_get_module_sample_rate(dev,&risul);
 
         default:
             break;
@@ -365,7 +365,7 @@ static int set_sample_rate_A (struct bladerf *dev, struct si5338_port *portP)
 
 	if ( (errcode=set_sample_rate_write_regs(dev, portP)) ) return errcode;
 
-	if ( portP->f_outP ) return si5338_get_sample_rate(dev, portP);
+	if ( portP->f_outP ) return si5338_get_module_sample_rate(dev, portP);
 
 	return 0;
 }
@@ -375,7 +375,7 @@ static int set_sample_rate_A (struct bladerf *dev, struct si5338_port *portP)
 /**
  * sets the sample rate as requested
  */
-int bladerf_set_sample_rate(struct bladerf *dev, bladerf_module module, uint32_t rate, uint32_t *actualP)
+int si5338_set_sample_rate(struct bladerf *dev, bladerf_module module, uint32_t rate, uint32_t *actualP)
 {
     struct si5338_port risul;
 
