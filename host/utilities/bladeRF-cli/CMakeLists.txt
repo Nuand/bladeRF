@@ -95,7 +95,15 @@ set(CLI_LINK_LIBRARIES
 )
 
 if(ENABLE_INTERACTIVE_TECLA)
-    set(CLI_LINK_LIBRARIES ${CLI_LINK_LIBRARIES} ${LIBTECLA_LIBRARIES} ncurses)
+    # CLI_LINK_LIBRARIES_EXTA is here for a workaround for the following issue
+    set(CLI_LINK_LIBRARIES ${CLI_LINK_LIBRARIES} ${LIBTECLA_LIBRARIES} ${CLI_LINK_LIBRARIES_EXTRA})
+
+    # On a few tests Linux distros, libtecla is not build against
+    # ncurses. However, folks have reported that builds on OSX use it
+    if(CMAKE_HOST_APPLE)
+        set(CLI_LINK_LIBRARIES ${CLI_LINK_LIBRARIES} ncurses})
+    endif(CMAKE_HOST_APPLE)
+
 endif(ENABLE_INTERACTIVE_TECLA)
 
 ################################################################################
