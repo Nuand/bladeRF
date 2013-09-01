@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# get configuration variables
+source /etc/bladerf.cfg
+
+# Flash the firmware
+# Once firmware is loaded. you don't need to do it again, unless your updating it. Its flashed onto the FX3..
+#/usr/bin/logger -t bladerf -s "Loading bladeRF device ${BLADERF_DEVICE} with firmware ${BLADERF_FIRMWARE_IMAGE}"
+#/usr/bin/bladeRF-cli -b -d "${BLADERF_DEVICE}" -f "${BLADERF_FIRMWARE_IMAGE}"
+
+# Only load the FPGA instead
+/usr/bin/logger -t bladerf -s "Loading bladeRF device ${BLADERF_DEVICE} with FPGA ${BLADERF_FPGA_IMAGE}"
+/usr/bin/bladeRF-cli -b -d "${BLADERF_DEVICE}" -l "${BLADERF_FPGA_IMAGE}"
+echo "Complete."
