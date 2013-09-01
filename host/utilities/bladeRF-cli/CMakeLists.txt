@@ -130,6 +130,10 @@ if(ENABLE_INTERACTIVE_TECLA)
 
 endif(ENABLE_INTERACTIVE_TECLA)
 
+if(LIBPTHREADSWIN32_FOUND)
+    set(CLI_LINK_LIBRARIES ${CLI_LINK_LIBRARIES} ${LIBPTHREADSWIN32_LIBRARIES})
+endif()
+
 target_link_libraries(bladeRF-cli ${CLI_LINK_LIBRARIES})
 
 ################################################################################
