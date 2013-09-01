@@ -11,14 +11,17 @@ if(NOT CMAKE_HOST_UNIX)
 else()
     if(INSTALL_UDEV_RULES)
         message(STATUS  "nuand bladeRF udev rules will be installed upon running 'make install'")
-        configure_file(bladerf.cfg.in bladerf.cfg)
-        configure_file(init_board.sh.in init_board.sh)
+        configure_file(bladerf.cfg.in bladerf.cfg @ONLY)
+        configure_file(load_fpga.sh.in load_fpga.sh @ONLY)
+        configure_file(flash_firmware.sh.in flash_firmware.sh @ONLY)
         install(FILES init_board.sh version
                 DESTINATION share/bladerf/scripts
-                COMPONENT "udev_rules")
+                COMPONENT "udev_rules"
+                USE_SOURCE_PERMISSIONS)
         install(FILES bladerf.cfg
                 DESTINATION /etc
-                COMPONENT "udev_rules")
+                COMPONENT "udev_rules"
+                USE_SOURCE_PERMISSIONS)
     else()
         message(STATUS
                 "nuand bladeRF udev rules will not be installed because INSTALL_UDEV_RULES=OFF"
