@@ -89,13 +89,13 @@
 
 /* Rename a few functions and types */
 #include <Windows.h>
-#define strtok_r        strtok_s
-#define strtoull        _strtoui64
-//#define snprintf      _snprintf
-//#define vsnprintf     _vsnprintf
-#define strcasecmp      _stricmp
-#define strncasecmp     _strnicmp
-#define usleep          Sleep
+#define strtok_r    strtok_s
+#define strtoull    _strtoui64
+#define snprintf    _snprintf_s
+#define vsnprintf   _vsnprintf_s
+#define strcasecmp  _stricmp
+#define strncasecmp _strnicmp
+#define usleep      Sleep
 
 /* ssize_t lives elsewhere */
 #include <BaseTsd.h>

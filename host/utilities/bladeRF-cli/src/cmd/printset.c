@@ -5,7 +5,11 @@
 #include "conversions.h"
 
 #define PRINTSET_DECL(x) int print_##x(struct cli_state *, int, char **); int set_##x(struct cli_state *, int, char **);
-#define PRINTSET_ENTRY(x) { .print = print_##x, .set = set_##x, .name = #x }
+#define PRINTSET_ENTRY(x) { \
+        FIELD_INIT(.print, print_##x), \
+        FIELD_INIT(.set, set_##x), \
+        FIELD_INIT(.name, #x) \
+}
 
 /* An entry in the printset table */
 struct printset_entry {
@@ -56,7 +60,9 @@ struct printset_entry printset_table[] = {
     PRINTSET_ENTRY(trimdac),
     PRINTSET_ENTRY(txvga1),
     PRINTSET_ENTRY(txvga2),
-    { .print = NULL, .set = NULL, .name = "" }
+
+    /* End of table marked by entry with NULL/empty fields */
+    { FIELD_INIT(.print, NULL), FIELD_INIT(.set, NULL), FIELD_INIT(.name, "") }
 };
 
 bladerf_module get_module( char *mod, bool *ok )

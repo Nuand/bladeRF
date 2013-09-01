@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <errno.h>
-#include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <limits.h>
@@ -58,15 +57,14 @@ bool cli_device_in_use(struct cli_state *s)
 void cli_err(struct cli_state *s, const char *pfx, const char *format, ...)
 {
     va_list arg_list;
-    const size_t lbuf_sz = 32;
-    char lbuf[lbuf_sz];
+    char lbuf[32];
     char *err;
 
-    memset(lbuf, 0, lbuf_sz);
+    memset(lbuf, 0, sizeof(lbuf));
 
     /* If we're in a script, we can provide line number info */
     if (s->script) {
-        snprintf(lbuf, lbuf_sz, " (line %d)", s->lineno);
+        snprintf(lbuf, sizeof(lbuf), " (line %d)", s->lineno);
     }
 
     /* +6 --> 3 newlines, 2 chars padding, NUL terminator */

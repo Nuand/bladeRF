@@ -16,7 +16,6 @@
 #include <errno.h>
 #include <assert.h>
 #include <string.h>
-#include <unistd.h>
 #include "cmd.h"
 #include "conversions.h"
 #include "minmax.h"
@@ -345,9 +344,8 @@ static int rx_write_csv_c16(struct cli_state *s, size_t n_samples)
     size_t i;
     struct rx_cfg *rx = &s->rxtx_data->rx;
     struct common_cfg *common = &rx->common;
-    const size_t line_sz = 32;
     const size_t to_write = n_samples * 2;
-    char line[line_sz];
+    char line[32] = { 0 };
 
     /* We assume we have pairs... */
     assert((common->buff_size & 1) == 0);
@@ -355,7 +353,7 @@ static int rx_write_csv_c16(struct cli_state *s, size_t n_samples)
     rx_sc16q12_sample_fixup(common->buff, common->buff_size/2);
 
     for (i = 0; i < to_write; i += 2) {
-        snprintf(line, line_sz, "%d, %d" EOL,
+        snprintf(line, sizeof(line), "%d, %d" EOL,
                  common->buff[i], common->buff[i + 1]);
 
         if (fputs(line, common->file) < 0) {
@@ -461,8 +459,7 @@ static ssize_t tx_read_bin_c16(struct cli_state *s, unsigned int *repeats_left)
 static int tx_csv_to_sc16q12(struct cli_state *s)
 {
     const char delim[] = " \r\n\t,.:";
-    const size_t buff_size = 81;
-    char buff[buff_size];
+    char buff[81] = { 0 };
     enum rxtx_fmt fmt = RXTX_FMT_BIN_SC16Q12;
     struct tx_cfg *tx = &s->rxtx_data->tx;
     char *token, *saveptr;
@@ -486,7 +483,7 @@ static int tx_csv_to_sc16q12(struct cli_state *s)
         return CMD_RET_FILEOP;
     }
 
-    while (fgets(buff, buff_size, tx->common.file))
+    while (fgets(buff, sizeof(buff),  tx->common.file))
     {
         /* I */
         token = strtok_r(buff, delim, &saveptr);

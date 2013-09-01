@@ -39,7 +39,7 @@ static int load_fx3(struct cli_state *s, char *file)
     int lib_status;
 
     if ((expanded_path = interactive_expand_path(file)) == NULL) {
-        cli_err(s, "Unable to expand firmware file path: \%s\"", file);
+        cli_err(s, "Unable to expand firmware file path: \"%s\"", file);
         cmd_status = CMD_RET_INVPARAM;
     } else {
         printf("Flashing firmware from %s...\n", expanded_path);
