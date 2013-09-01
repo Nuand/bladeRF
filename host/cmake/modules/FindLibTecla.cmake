@@ -6,6 +6,13 @@
 #
 # License: GPLv3 
 #
+if(DEFINED __INCLUDED_BLADERF_FINDLIBTECLA_CMAKE)
+    return()
+endif()
+set(__INCLUDED_BLADERF_FINDLIBTECLA_CMAKE TRUE)
+
+find_package(PkgConfig)
+
 if(NOT LIBTECLA_FOUND)
   pkg_check_modules (LIBTECLA_PKG libtecla)
   find_path(LIBTECLA_INCLUDE_DIR NAMES libtecla.h

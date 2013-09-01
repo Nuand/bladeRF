@@ -28,10 +28,17 @@ configure_file(
 # Configuration options
 ################################################################################
 
+find_package(LibTecla)
 option(ENABLE_INTERACTIVE_TECLA
        "Enable interactive mode support via libtecla"
        ON
 )
+
+if(ENABLE_INTERACTIVE_TECLA AND NOT ${LIBTECLA_FOUND})
+    message(STATUS "Disabling ENABLE_INTERACTIVE_TECLA because libtecla was not found.")
+    set(ENABLE_INTERACTIVE_TECLA OFF)
+endif()
+
 
 ################################################################################
 # Include paths
@@ -72,7 +79,7 @@ set(BLADERF_CLI_SOURCE
 
 if(ENABLE_INTERACTIVE_TECLA)
     add_definitions(-DINTERACTIVE=y)
-    set (BLADERF_CLI_SOURCE ${BLADERF_CLI_SOURCE} src/interactive/interactive.c)
+    set(BLADERF_CLI_SOURCE ${BLADERF_CLI_SOURCE} src/interactive/interactive.c)
 endif()
 
 add_executable(bladeRF-cli ${BLADERF_CLI_SOURCE})
@@ -80,23 +87,15 @@ add_executable(bladeRF-cli ${BLADERF_CLI_SOURCE})
 ################################################################################
 # Build dependencies
 ################################################################################
-find_package(PkgConfig)
 find_package(Threads)
 
 set(CLI_LINK_LIBRARIES
     libbladerf_shared
     ${CMAKE_THREAD_LIBS_INIT}
-)	
+)
 
 if(ENABLE_INTERACTIVE_TECLA)
-    find_package(LibTecla)
-    if(NOT LIBTECLA_FOUND)
-        message(FATAL_ERROR
-                "ENABLE_INTERACTIVE_TECLA set, but libtecla could not be found")
-    endif(NOT LIBTECLA_FOUND)
-
     set(CLI_LINK_LIBRARIES ${CLI_LINK_LIBRARIES} ${LIBTECLA_LIBRARIES} ncurses)
-
 endif(ENABLE_INTERACTIVE_TECLA)
 
 ################################################################################
