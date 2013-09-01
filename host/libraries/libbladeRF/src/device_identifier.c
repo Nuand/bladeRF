@@ -12,7 +12,7 @@
 #include "bladerf_priv.h"
 #include "device_identifier.h"
 #include "conversions.h"
-#include "debug.h"
+#include "log.h"
 
 #define DELIM_SPACE         " \t\r\n\v\f"
 
@@ -42,7 +42,7 @@ static int handle_backend(char *str, struct bladerf_devinfo *d)
     } else if (!strcasecmp("linux", str)) {
         d->backend = BLADERF_BACKEND_LINUX;
     } else {
-        dbg_printf("Invalid backend: %s\n", str);
+        bladerf_log_error("Invalid backend: %s\n", str);
         status = BLADERF_ERR_INVAL;
     }
 
@@ -67,9 +67,9 @@ static int handle_device(struct bladerf_devinfo *d, char *value)
 
         if (bus_ok && addr_ok) {
             status = 0;
-            dbg_printf("Device: %d:%d\n", d->usb_bus, d->usb_addr);
+            bladerf_log_info("Device: %d:%d\n", d->usb_bus, d->usb_addr);
         } else {
-            dbg_printf("Bad bus (%s) or address (%s)\n", bus, addr);
+            bladerf_log_error("Bad bus (%s) or address (%s)\n", bus, addr);
         }
     }
 
@@ -82,10 +82,10 @@ static int handle_instance(struct bladerf_devinfo *d, char *value)
 
     d->instance = str2uint(value, 0, DEVINFO_INST_ANY - 1, &ok);
     if (!ok) {
-        dbg_printf("Bad instance: %s\n", value);
+        bladerf_log_error("Bad instance: %s\n", value);
         return BLADERF_ERR_INVAL;
     } else {
-        dbg_printf("Instance: %u\n", d->instance);
+        bladerf_log_info("Instance: %u\n", d->instance);
         return 0;
     }
 }
@@ -105,7 +105,7 @@ static int handle_serial(struct bladerf_devinfo *d, char *value)
             value[i] = tolower(c);
         }
         if ((c < 'a' || c > 'f') && (c < '0' || c > '9')) {
-            dbg_printf("Bad serial: %s\n", value);
+            bladerf_log_error("Bad serial: %s\n", value);
             return BLADERF_ERR_INVAL;
         }
     }
@@ -113,7 +113,7 @@ static int handle_serial(struct bladerf_devinfo *d, char *value)
     strncpy(d->serial, value, 32);
     d->serial[32] = 0;
 
-    dbg_printf("Serial 0x%s\n", d->serial);
+    bladerf_log_info("Serial 0x%s\n", d->serial);
     return 0;
 }
 

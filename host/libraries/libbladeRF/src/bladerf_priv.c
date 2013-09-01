@@ -4,7 +4,7 @@
 #include <stddef.h>
 
 #include "bladerf_priv.h"
-#include "debug.h"
+#include "log.h"
 
 #define OTP_BUFFER_SIZE 256
 #define CAL_BUFFER_SIZE 256
@@ -223,7 +223,7 @@ static int extract_field(char *ptr, int len, char *field,
                 return 0;
             }
         } else {
-            dbg_printf( "%s: Field checksum mistmatch\n", __FUNCTION__);
+            bladerf_log_warning( "%s: Field checksum mistmatch\n", __FUNCTION__);
             return BLADERF_ERR_INVAL;
         }
         ub += c + 3; //skip past `c' bytes, 2 byte CRC field, and 1 byte len field
@@ -277,7 +277,7 @@ int bladerf_get_and_cache_vctcxo_trim(struct bladerf *dev)
         if (ok) {
             dev->dac_trim = trim;
         } else {
-            dbg_printf("DAC trim unprogrammed. Defaulting to 0x8000\n");
+            bladerf_log_info("DAC trim unprogrammed. Defaulting to 0x8000\n");
             dev->dac_trim = 0x8000;
         }
     }
