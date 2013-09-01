@@ -101,7 +101,7 @@ if(ENABLE_INTERACTIVE_TECLA)
     # On a few tests Linux distros, libtecla is not build against
     # ncurses. However, folks have reported that builds on OSX use it
     if(CMAKE_HOST_APPLE)
-        set(CLI_LINK_LIBRARIES ${CLI_LINK_LIBRARIES} ncurses})
+        set(CLI_LINK_LIBRARIES ${CLI_LINK_LIBRARIES} ncurses)
     endif(CMAKE_HOST_APPLE)
 
 endif(ENABLE_INTERACTIVE_TECLA)
