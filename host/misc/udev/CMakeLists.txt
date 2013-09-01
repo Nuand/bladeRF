@@ -16,6 +16,7 @@ if(NOT CMAKE_HOST_UNIX)
 else()
     if(INSTALL_UDEV_RULES)
         message(STATUS  "nuand bladeRF udev rules will be installed upon running 'make install'")
+        configure_file(88-nuand.rules.in 88-nuand.rules)
         install(FILES 88-nuand.rules
                 DESTINATION /etc/udev/rules.d
                 COMPONENT "udev_rules")

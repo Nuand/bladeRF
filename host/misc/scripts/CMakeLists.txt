@@ -11,6 +11,8 @@ if(NOT CMAKE_HOST_UNIX)
 else()
     if(INSTALL_UDEV_RULES)
         message(STATUS  "nuand bladeRF udev rules will be installed upon running 'make install'")
+        configure_file(bladerf.cfg.in bladerf.cfg)
+        configure_file(init_board.sh.in init_board.sh)
         install(FILES init_board.sh version
                 DESTINATION share/bladerf/scripts
                 COMPONENT "udev_rules")
