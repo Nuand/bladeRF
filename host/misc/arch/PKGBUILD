@@ -1,8 +1,8 @@
 # Maintainer: Guido Paliot <guido@paliot.de>
 pkgname=bladerf-util-git
-pkgver=7831c03
+pkgver=df0f495
 pkgrel=1
-pkgdesc="Utils, libraries and firmware for the Nuand bladeRF"
+pkgdesc="Utils, libraries and prebuilt firmware for the Nuand bladeRF"
 arch=('x86_64')
 url="https://github.com/Nuand/bladeRF"
 license=('GPL')
@@ -18,18 +18,12 @@ source=('bladeRF::git+https://github.com/Nuand/bladeRF#branch=master'
         'http://nuand.com/fx3/latest.img'
         'http://nuand.com/fpga/ddc81d0fb1b653227b5824d8d5fcb444556da175/hostedx40.rbf'
         'http://nuand.com/fpga/ddc81d0fb1b653227b5824d8d5fcb444556da175/hostedx115.rbf'
-	    'init_board.sh'
-	    'bladerf.cfg'
-        'version'
 )
 sha1sums=(
         'SKIP'
         'SKIP'
         '10251c8d12bf32bd4d2ec987f904fa3e644883cd'
         '211d3d997b56624d46abfa2eeaeefde345a38c87'
-        '17668d00ed190c67fe34541e60fde74ab049592a'
-        '9c93695123aaaf7c76d5e949b8a176ad1da6ace4'
-        '605b5d1778ada628fe6f62ea3fa573a4fd62fa5e'
 )
 
 
@@ -60,7 +54,7 @@ build() {
 
   cd "$srcdir/$_gitname-build/host"
 
-  cmake -DCMAKE_INSTALL_PREFIX=/usr -DENABLE_BACKEND_LINUX_DRIVER=OFF -DENABLE_BACKEND_LIBUSB=ON -DLIBTECLA_INCLUDE_DIR=/usr/include -DCMAKE_BUILD_TYPE=Debug .
+  cmake -DCMAKE_INSTALL_PREFIX=/usr -DENABLE_BACKEND_LINUX_DRIVER=OFF -DENABLE_BACKEND_LIBUSB=ON -DLIBTECLA_INCLUDE_DIR=/usr/include -DCMAKE_BUILD_TYPE=Release .
 
   make
 }
@@ -72,12 +66,12 @@ package() {
   mkdir -p $pkgdir/usr/share/bladerf/fpga
   mkdir $pkgdir/usr/share/bladerf/firmware
   mkdir $pkgdir/usr/share/bladerf/scripts
-  cp $srcdir/bladerf.cfg $pkgdir/etc/
-  cp $srcdir/init_board.sh $pkgdir/usr/share/bladerf/
+  cp $srcdir/$_gitname-build/host/misc/scripts/bladerf.cfg $pkgdir/etc/
+  cp $srcdir/$_gitname-build/host/misc/scripts/init_board.sh $pkgdir/usr/share/bladerf/scripts/
+  cp $srcdir/$_gitname-build/host/misc/scripts/version $pkgdir/usr/share/bladerf/scripts/
   cp $srcdir/latest.img $pkgdir/usr/share/bladerf/firmware/
   cp $srcdir/hostedx40.rbf $pkgdir/usr/share/bladerf/fpga/
   cp $srcdir/hostedx115.rbf $pkgdir/usr/share/bladerf/fpga/
-  cp $srcdir/version $pkgdir/usr/share/bladerf/scripts/
   cp $srcdir/$_gitname-build/COPYING $pkgdir/usr/share/bladerf/LICENSE
 }
 

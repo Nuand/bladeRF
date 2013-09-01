@@ -1,2 +1,2 @@
 # nuand bladeRF
-ATTR{idVendor}=="1d50", ATTR{idProduct}=="6066", MODE="660", GROUP="plugdev"
+ATTR{idVendor}=="1d50", ATTR{idProduct}=="6066", MODE="660", GROUP="adm", RUN+="/usr/share/bladerf/scripts/init_board.sh"
