@@ -2,7 +2,7 @@
 
 #include "libbladeRF.h"
 #include "bladerf_priv.h"
-#include "debug.h"
+#include "log.h"
 
 
 #define SI5338_EN_A		0x01
@@ -44,13 +44,13 @@ static int si5338_get_sample_rate_regs ( struct bladerf *dev, struct si5338_port
 
     for (i = 0; i < 9; i++)  {
         if ( (retcode=bladerf_si5338_read(dev, retP->base + i, retP->regs+i)) < 0 )    {
-            dbg_printf("Could not read from si5338 (%d): %s\n",retcode, bladerf_strerror(retcode));
+            bladerf_log_error("Could not read from si5338 (%d): %s\n",retcode, bladerf_strerror(retcode));
             return retcode;
             }
         }
 
     if ( (retcode=bladerf_si5338_read(dev, 31 + retP->block_index, &retP->raw_r)) < 0 ) {
-            dbg_printf("Could not read from si5338 (%d): %s\n",retcode, bladerf_strerror(retcode));
+            bladerf_log_error("Could not read from si5338 (%d): %s\n",retcode, bladerf_strerror(retcode));
             return retcode;
     }
 
@@ -117,18 +117,18 @@ static void si5338_get_sample_rate_calc ( struct si5338_port *retP )
 static void print_si5338_port(struct si5338_port *portP)
 {
     int i;
-    dbg_printf("out_freq: %dHz\n", portP->f_outP[0]);
-    dbg_printf("a:  %d\n", portP->a);
-    dbg_printf("b:  %d\n", portP->b);
-    dbg_printf("c:  %d\n", portP->c);
-    dbg_printf("r:  %d\n", portP->r);
-    dbg_printf("p1: %x\n", portP->P1);
-    dbg_printf("p2: %x\n", portP->P2);
-    dbg_printf("p3: %x\n", portP->P3);
+    bladerf_log_debug("out_freq: %dHz\n", portP->f_outP[0]);
+    bladerf_log_debug("a:  %d\n", portP->a);
+    bladerf_log_debug("b:  %d\n", portP->b);
+    bladerf_log_debug("c:  %d\n", portP->c);
+    bladerf_log_debug("r:  %d\n", portP->r);
+    bladerf_log_debug("p1: %x\n", portP->P1);
+    bladerf_log_debug("p2: %x\n", portP->P2);
+    bladerf_log_debug("p3: %x\n", portP->P3);
 
-    for (i = 0; i < 9; i++) dbg_printf("[%d]=0x%.2x\n", portP->base + i, portP->regs[i]);
+    for (i = 0; i < 9; i++) bladerf_log_debug("[%d]=0x%.2x\n", portP->base + i, portP->regs[i]);
 
-    dbg_printf("[r]=0x%.2x\n", portP->raw_r);
+    bladerf_log_debug("[r]=0x%.2x\n", portP->raw_r);
 }
 
 
@@ -224,7 +224,7 @@ static int set_sample_rate_calc_abc ( struct si5338_port *portP )
     portP->a = SI5338_F_VCO / portP->sample_rate_r;
 
     if ( portP->a < 4 || portP->a > 567 ) {
-		dbg_printf("a=%d too big \n", portP->a);
+		bladerf_log_warning("a=%d too big \n", portP->a);
 		return BLADERF_ERR_INVAL;
     }
 
@@ -247,14 +247,14 @@ static int set_sample_rate_calc_abc ( struct si5338_port *portP )
     uint32_t b = remainder / gcd;
 
     if ( b > 0x40000000 ) {
-		dbg_printf("cannot find suitable b ratio %dHz on MS%d \n", portP->want_sample_rate, portP->block_index);
+		bladerf_log_warning("cannot find suitable b ratio %dHz on MS%d \n", portP->want_sample_rate, portP->block_index);
 		return BLADERF_ERR_INVAL;
     }
 
     uint32_t c = portP->sample_rate_r / gcd;
 
     if ( c > 0x40000000 ) {
-		dbg_printf("cannot find suitable c ratio %dHz on MS%d \n", portP->want_sample_rate, portP->block_index);
+		bladerf_log_warning("cannot find suitable c ratio %dHz on MS%d \n", portP->want_sample_rate, portP->block_index);
 		return BLADERF_ERR_INVAL;
     }
 
@@ -288,7 +288,7 @@ static int set_sample_rate_calc_r ( struct si5338_port *portP )
 		}
 
 	if ( ! portP->sample_rate_r ) {
-		dbg_printf("Requested frequency of %dHz on MS%d is too low\n", portP->want_sample_rate, portP->block_index);
+		bladerf_log_warning("Requested frequency of %dHz on MS%d is too low\n", portP->want_sample_rate, portP->block_index);
 		return BLADERF_ERR_INVAL;
 	}
 

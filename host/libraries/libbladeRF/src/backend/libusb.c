@@ -13,7 +13,7 @@
 #include "bladerf_priv.h"
 #include "backend/libusb.h"
 #include "minmax.h"
-#include "debug.h"
+#include "log.h"
 
 #define BLADERF_LIBUSB_TIMEOUT_MS 1000
 #define BULK_TIMEOUT 1000
@@ -112,10 +112,10 @@ static int vendor_command_int(struct bladerf *dev,
              );
 
     if (status < 0) {
-        dbg_printf( "status < 0: %s\n", libusb_error_name(status) );
+        bladerf_log_error( "status < 0: %s\n", libusb_error_name(status) );
         status = error_libusb2bladerf(status);
     } else if (status != sizeof(buf)) {
-        dbg_printf( "status != sizeof(buf): %s\n", libusb_error_name(status) );
+        bladerf_log_error( "status != sizeof(buf): %s\n", libusb_error_name(status) );
         status = BLADERF_ERR_IO;
     } else {
         if( ep_dir == EP_DIR_IN ) {
@@ -144,7 +144,7 @@ static int end_fpga_programming(struct bladerf *dev)
     int result;
     int status = vendor_command_int(dev, BLADE_USB_CMD_QUERY_FPGA_STATUS, EP_DIR_IN, &result);
     if (status < 0) {
-        dbg_printf("Received response of (%d): %s\n",
+        bladerf_log_error("Received response of (%d): %s\n",
                     status, libusb_error_name(status));
         return status;
     } else {
@@ -172,7 +172,7 @@ static int lusb_device_is_bladerf(libusb_device *dev)
 
     err = libusb_get_device_descriptor(dev, &desc);
     if( err ) {
-        dbg_printf( "Couldn't open libusb device - %s\n", libusb_error_name(err) );
+        bladerf_log_error( "Couldn't open libusb device - %s\n", libusb_error_name(err) );
     } else {
         if( desc.idVendor == USB_NUAND_VENDOR_ID && desc.idProduct == USB_NUAND_BLADERF_PRODUCT_ID ) {
             rv = 1;
@@ -188,7 +188,7 @@ static int lusb_get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
 
     status = libusb_open( dev, &handle );
     if( status ) {
-        dbg_printf( "Couldn't populate devinfo - %s\n", libusb_error_name(status) );
+        bladerf_log_error( "Couldn't populate devinfo - %s\n", libusb_error_name(status) );
         status = error_libusb2bladerf(status);
     } else {
         /* Populate device info */
@@ -211,10 +211,10 @@ static int change_setting(struct bladerf *dev, uint8_t setting)
 {
     struct bladerf_lusb *lusb = dev->backend ;
     if (dev->legacy  & LEGACY_ALT_SETTING) {
-        dbg_printf("Legacy change to interface %d\n", setting);
+        bladerf_log_info("Legacy change to interface %d\n", setting);
         return libusb_set_interface_alt_setting(lusb->handle, setting, 0);
     } else {
-        dbg_printf( "Change to alternate interface %d\n", setting);
+        bladerf_log_info( "Change to alternate interface %d\n", setting);
         return libusb_set_interface_alt_setting(lusb->handle, 0, setting);
     }
 }
@@ -235,7 +235,7 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
     /* Initialize libusb for device tree walking */
     status = libusb_init(&context);
     if( status ) {
-        dbg_printf( "Could not initialize libusb: %s\n", libusb_error_name(status) );
+        bladerf_log_error( "Could not initialize libusb: %s\n", libusb_error_name(status) );
         status = error_libusb2bladerf(status);
         goto lusb_open_done;
     }
@@ -244,7 +244,7 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
     /* Iterate through all the USB devices */
     for( i = 0, n = 0; i < count; i++ ) {
         if( lusb_device_is_bladerf(list[i]) ) {
-            dbg_printf( "Found a bladeRF\n" ) ;
+            bladerf_log_info( "Found a bladeRF\n" ) ;
 
             /* Open the USB device and get some information
              *
@@ -253,7 +253,7 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
              */
             status = lusb_get_devinfo( list[i], &thisinfo );
             if(status < 0) {
-                dbg_printf( "Could not open bladeRF device: %s\n", libusb_error_name(status) );
+                bladerf_log_error( "Could not open bladeRF device: %s\n", libusb_error_name(status) );
                 status = error_libusb2bladerf(status);
                 goto lusb_open__err_context;
             }
@@ -269,7 +269,7 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
                 if (!dev || !lusb) {
                     free(dev);
                     free(lusb);
-                    dbg_printf("Skipping instance %d due to memory allocation "
+                    bladerf_log_warning("Skipping instance %d due to memory allocation "
                                "error", thisinfo.instance);
 
                     continue;
@@ -288,7 +288,7 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
 
                 status = libusb_open(list[i], &lusb->handle);
                 if(status < 0) {
-                    dbg_printf( "Could not open bladeRF device: %s\n", libusb_error_name(status) );
+                    bladerf_log_error( "Could not open bladeRF device: %s\n", libusb_error_name(status) );
                     status = error_libusb2bladerf(status);
                     goto lusb_open__err_device_list;
                 }
@@ -304,13 +304,13 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
                 for( inf = 0; inf < ((dev->legacy & LEGACY_ALT_SETTING) ? 3 : 1) ; inf++ ) {
                     status = libusb_claim_interface(lusb->handle, inf);
                     if(status < 0) {
-                        dbg_printf( "Could not claim interface %i - %s\n", inf, libusb_error_name(status) );
+                        bladerf_log_error( "Could not claim interface %i - %s\n", inf, libusb_error_name(status) );
                         status = error_libusb2bladerf(status);
                         goto lusb_open__err_device_list;
                     }
                 }
 
-                dbg_printf( "Claimed all inferfaces successfully\n" );
+                bladerf_log_info( "Claimed all inferfaces successfully\n" );
                 break;
             }
         }
@@ -319,16 +319,16 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
     if (dev) {
         if (lusb_is_fpga_configured(dev)) {
             status = change_setting(dev, USB_IF_RF_LINK);
-            dbg_printf( "Changed into RF link mode: %s\n", libusb_error_name(status) ) ;
+            bladerf_log_info( "Changed into RF link mode: %s\n", libusb_error_name(status) ) ;
             val = 1;
             status = vendor_command_int(dev, BLADE_USB_CMD_RF_RX, EP_DIR_OUT, &val);
             if(status) {
-                dbg_printf("Could not enable RF RX (%d): %s\n", status, libusb_error_name(status) );
+                bladerf_log_warning("Could not enable RF RX (%d): %s\n", status, libusb_error_name(status) );
             }
 
             status = vendor_command_int(dev, BLADE_USB_CMD_RF_TX, EP_DIR_OUT, &val);
             if(status) {
-                dbg_printf("Could not enable RF TX (%d): %s\n", status, libusb_error_name(status) );
+                bladerf_log_warning("Could not enable RF TX (%d): %s\n", status, libusb_error_name(status) );
             }
         }
     }
@@ -359,7 +359,7 @@ lusb_open_done:
         if (dev) {
             *device = dev;
         } else {
-            dbg_printf("No devices available on the libusb backend.\n");
+            bladerf_log_error("No devices available on the libusb backend.\n");
             status = BLADERF_ERR_NODEV;
         }
     }
@@ -377,7 +377,7 @@ static int lusb_close(struct bladerf *dev)
     for( inf = 0; inf < ((dev->legacy & LEGACY_ALT_SETTING) ? 3 : 1) ; inf++ ) {
         status = libusb_release_interface(lusb->handle, inf);
         if (status < 0) {
-            dbg_printf("error releasing interface %i\n", inf);
+            bladerf_log_error("error releasing interface %i\n", inf);
             status = error_libusb2bladerf(status);
         }
     }
@@ -402,7 +402,7 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
     if(status < 0) {
         status = error_libusb2bladerf(status);
         bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
-        dbg_printf( "alt_setting issue: %s\n", libusb_error_name(status) );
+        bladerf_log_error( "alt_setting issue: %s\n", libusb_error_name(status) );
         return status;;
     }
 
@@ -457,18 +457,18 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
     /* Go into RF link mode by selecting interface 1 */
     status = change_setting(dev, USB_IF_RF_LINK);
     if(status) {
-        dbg_printf("libusb_set_interface_alt_setting: %s\n", libusb_error_name(status));
+        bladerf_log_info("libusb_set_interface_alt_setting: %s\n", libusb_error_name(status));
     }
 
     val = 1;
     status = vendor_command_int(dev, BLADE_USB_CMD_RF_RX, EP_DIR_OUT, &val);
     if(status) {
-        dbg_printf("Could not enable RF RX (%d): %s\n", status, libusb_error_name(status) );
+        bladerf_log_warning("Could not enable RF RX (%d): %s\n", status, libusb_error_name(status) );
     }
 
     status = vendor_command_int(dev, BLADE_USB_CMD_RF_TX, EP_DIR_OUT, &val);
     if(status) {
-        dbg_printf("Could not enable RF TX (%d): %s\n", status, libusb_error_name(status) );
+        bladerf_log_warning("Could not enable RF TX (%d): %s\n", status, libusb_error_name(status) );
     }
 
     return status;
@@ -486,7 +486,7 @@ static int erase_flash(struct bladerf *dev, int sector_offset, int n_bytes)
     assert(sector_offset < FLASH_NUM_SECTORS);
     assert((sector_offset + n_sectors) < FLASH_NUM_SECTORS);
 
-    dbg_printf("Erasing %d sectors starting @ sector %d\n",
+    bladerf_log_info("Erasing %d sectors starting @ sector %d\n",
                 n_sectors, sector_offset);
 
     for (sector_to_erase = sector_offset; sector_to_erase < (sector_offset + n_sectors) && !status; sector_to_erase++) {
@@ -503,17 +503,17 @@ static int erase_flash(struct bladerf *dev, int sector_offset, int n_bytes)
                                 BLADERF_LIBUSB_TIMEOUT_MS);
 
         if (status != sizeof(erase_ret) || !erase_ret) {
-            dbg_printf("Failed to erase sector %d\n", sector_to_erase);
+            bladerf_log_error("Failed to erase sector %d\n", sector_to_erase);
             if (status < 0) {
-                dbg_printf("libusb status: %s\n", libusb_error_name(status));
+                bladerf_log_error("libusb status: %s\n", libusb_error_name(status));
             } else if (!erase_ret) {
-                dbg_printf("Received erase failure status from FX3.\n");
+                bladerf_log_error("Received erase failure status from FX3.\n");
             } else {
-                dbg_printf("Unexpected read size: %d\n", status);
+                bladerf_log_error("Unexpected read size: %d\n", status);
             }
             status = BLADERF_ERR_IO;
         } else {
-            dbg_printf("Erased sector %d...\n", sector_to_erase);
+            bladerf_log_info("Erased sector %d...\n", sector_to_erase);
             status = 0;
         }
     }
@@ -555,10 +555,10 @@ static int read_flash(struct bladerf *dev, int page_offset,
 
             if (status != read_size) {
                 if (status < 0) {
-                    dbg_printf("Failed to read back page %d: %s\n", page_i,
+                    bladerf_log_error("Failed to read back page %d: %s\n", page_i,
                                libusb_error_name(status));
                 } else {
-                    dbg_printf("Unexpected read size: %d\n", status);
+                    bladerf_log_error("Unexpected read size: %d\n", status);
                 }
 
                 status = BLADERF_ERR_IO;
@@ -584,7 +584,7 @@ static int verify_flash(struct bladerf *dev, int page_offset,
     uint8_t page_buf[FLASH_PAGE_SIZE];
     uint8_t *image_page;
 
-    dbg_printf("Verifying with read size = %d\n", read_size);
+    bladerf_log_info("Verifying with read size = %d\n", read_size);
 
     assert(page_offset < FLASH_NUM_PAGES);
     assert((page_offset + n_bytes) < FLASH_NUM_PAGES);
@@ -611,10 +611,10 @@ static int verify_flash(struct bladerf *dev, int page_offset,
 
             if (status != read_size) {
                 if (status < 0) {
-                    dbg_printf("Failed to read back page %d: %s\n", page_i,
+                    bladerf_log_error("Failed to read back page %d: %s\n", page_i,
                                libusb_error_name(status));
                 } else {
-                    dbg_printf("Unexpected read size: %d\n", status);
+                    bladerf_log_error("Unexpected read size: %d\n", status);
                 }
 
                 status = BLADERF_ERR_IO;
@@ -654,7 +654,7 @@ static int write_flash(struct bladerf *dev, int page_offset,
     struct bladerf_lusb *lusb = dev->backend;
     uint8_t *data_page;
 
-    dbg_printf("Flashing with write size = %d\n", write_size);
+    bladerf_log_info("Flashing with write size = %d\n", write_size);
 
     assert(page_offset < FLASH_NUM_PAGES);
     assert((page_offset + pages_to_write) < FLASH_NUM_PAGES);
@@ -677,10 +677,10 @@ static int write_flash(struct bladerf *dev, int page_offset,
 
             if (status != write_size) {
                 if (status < 0) {
-                    dbg_printf("Failed to write page %d: %s\n", i,
+                    bladerf_log_error("Failed to write page %d: %s\n", i,
                             libusb_error_name(status));
                 } else {
-                    dbg_printf("Got unexpected write size: %d\n", status);
+                    bladerf_log_error("Got unexpected write size: %d\n", status);
                 }
                 status = BLADERF_ERR_IO;
             } else {
@@ -701,7 +701,7 @@ static int lusb_flash_firmware(struct bladerf *dev,
     status = change_setting(dev, USB_IF_SPI_FLASH);
 
     if (status) {
-        dbg_printf("Failed to set interface: %s\n", libusb_error_name(status));
+        bladerf_log_error("Failed to set interface: %s\n", libusb_error_name(status));
         status = BLADERF_ERR_IO;
     }
 
@@ -763,7 +763,7 @@ static int lusb_get_otp(struct bladerf *dev, char *otp)
                 read_size,
                 BLADERF_LIBUSB_TIMEOUT_MS);
         if (status < 0) {
-            dbg_printf("Failed to read OTP (%d): %s\n", status, libusb_error_name(status));
+            bladerf_log_error("Failed to read OTP (%d): %s\n", status, libusb_error_name(status));
             return error_libusb2bladerf(status);
         }
     }
@@ -815,7 +815,7 @@ static int lusb_get_fw_version(struct bladerf *dev,
 static int lusb_get_fpga_version(struct bladerf *dev,
                                  unsigned int *maj, unsigned int *min)
 {
-    dbg_printf("FPGA currently does not have a version number.\n");
+    bladerf_log_warning("FPGA currently does not have a version number.\n");
     *maj = 0;
     *min = 0;
     return 0;
@@ -835,7 +835,7 @@ static int lusb_get_device_speed(struct bladerf *dev, int *device_speed)
     } else {
         /* FIXME - We should have a better error code...
          * BLADERF_ERR_UNSUPPORTED? */
-        dbg_printf("Got unsupported or unknown device speed: %d\n", speed);
+        bladerf_log_error("Got unsupported or unknown device speed: %d\n", speed);
         status = BLADERF_ERR_INVAL;
     }
 
@@ -864,7 +864,7 @@ static int access_peripheral(struct bladerf_lusb *lusb, int per, int dir,
                                            BLADERF_LIBUSB_TIMEOUT_MS);
 
     if (libusb_status < 0) {
-        dbg_printf("could not access peripheral\n");
+        bladerf_log_error("could not access peripheral\n");
         return BLADERF_ERR_IO;
     }
 
@@ -1069,7 +1069,7 @@ static int lusb_tx(struct bladerf *dev, bladerf_format format, void *samples,
                     BLADERF_LIBUSB_TIMEOUT_MS
                 );
         if( status < 0 ) {
-            dbg_printf( "Error transmitting samples (%d): %s\n", status, libusb_error_name(status) );
+            bladerf_log_error( "Error transmitting samples (%d): %s\n", status, libusb_error_name(status) );
             return BLADERF_ERR_IO;
         } else {
             assert(transferred > 0);
@@ -1104,7 +1104,7 @@ static int lusb_rx(struct bladerf *dev, bladerf_format format, void *samples,
                     BLADERF_LIBUSB_TIMEOUT_MS
                 );
         if( status < 0 ) {
-            dbg_printf( "Error reading samples (%d): %s\n", status, libusb_error_name(status) );
+            bladerf_log_error( "Error reading samples (%d): %s\n", status, libusb_error_name(status) );
             return BLADERF_ERR_IO;
         } else {
             assert(transferred > 0);
@@ -1139,18 +1139,18 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
                 break;
 
             case LIBUSB_TRANSFER_STALL:
-                dbg_printf("Hit stall for buffer %p\n", transfer->buffer);
+                bladerf_log_error("Hit stall for buffer %p\n", transfer->buffer);
                 stream->error_code = BLADERF_ERR_IO;
                 break;
 
             case LIBUSB_TRANSFER_ERROR:
-                dbg_printf("Got transfer error for buffer %p\n",
+                bladerf_log_error("Got transfer error for buffer %p\n",
                             transfer->buffer);
                 stream->error_code = BLADERF_ERR_IO;
                 break;
 
             case LIBUSB_TRANSFER_OVERFLOW :
-                dbg_printf("Got transfer over for buffer %p, "
+                bladerf_log_error("Got transfer over for buffer %p, "
                             "transfer \"actual_length\" = %d\n",
                             transfer->buffer, transfer->actual_length);
                 stream->error_code = BLADERF_ERR_IO;
@@ -1165,7 +1165,7 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
                 break;
 
             default:
-                dbg_printf( "Unexpected transfer status: %d\n", transfer->status );
+                bladerf_log_error( "Unexpected transfer status: %d\n", transfer->status );
                 break;
         }
 
@@ -1175,7 +1175,7 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
         for (i = 0; i < stream->num_transfers; i++ ) {
             status = libusb_cancel_transfer(stream_data->transfers[i]);
             if (status < 0 && status != LIBUSB_ERROR_NOT_FOUND) {
-                dbg_printf("Error canceling transfer (%d): %s\n",
+                bladerf_log_error("Error canceling transfer (%d): %s\n",
                             status, libusb_error_name(status));
             }
         }
@@ -1260,7 +1260,7 @@ static int lusb_stream(struct bladerf *dev, bladerf_module module,
     /* Pointers for libusb transfers */
     stream_data->transfers = malloc(stream->num_transfers * sizeof(struct libusb_transfer *));
     if (!stream_data->transfers) {
-        dbg_printf("Failed to allocate libusb tranfers\n");
+        bladerf_log_error("Failed to allocate libusb tranfers\n");
         free(stream_data);
         stream->backend_data = NULL;
     }
@@ -1334,7 +1334,7 @@ static int lusb_stream(struct bladerf *dev, bladerf_module module,
             BULK_TIMEOUT
         );
 
-        dbg_printf("Initial transfer with buffer: %p (i=%zd)\n", buffer, i);
+        bladerf_log_info("Initial transfer with buffer: %p (i=%zd)\n", buffer, i);
 
         stream_data->active_transfers++;
         status = libusb_submit_transfer(stream_data->transfers[i]);
@@ -1351,7 +1351,7 @@ static int lusb_stream(struct bladerf *dev, bladerf_module module,
                 if (--i) {
                     status = libusb_cancel_transfer(stream_data->transfers[i]);
                     if (status < 0) {
-                        dbg_printf("Failed to cancel transfer %zd: %s\n",
+                        bladerf_log_error("Failed to cancel transfer %zd: %s\n",
                                    i, libusb_error_name(status));
                     }
                 }
@@ -1365,7 +1365,7 @@ static int lusb_stream(struct bladerf *dev, bladerf_module module,
                                                         &stream_data->libusb_completed);
 
         if (status < 0 && status != LIBUSB_ERROR_INTERRUPTED) {
-            dbg_printf("Got unexpected return value from events processing: "
+            bladerf_log_warning("Got unexpected return value from events processing: "
                        "%d: %s\n", status, libusb_error_name(status));
         }
     }
@@ -1403,7 +1403,7 @@ int lusb_probe(struct bladerf_devinfo_list *info_list)
     /* Initialize libusb for device tree walking */
     status = libusb_init(&context);
     if( status ) {
-        dbg_printf( "Could not initialize libusb: %s\n", libusb_error_name(status) );
+        bladerf_log_error( "Could not initialize libusb: %s\n", libusb_error_name(status) );
         goto lusb_probe_done;
     }
 
@@ -1414,12 +1414,12 @@ int lusb_probe(struct bladerf_devinfo_list *info_list)
             /* Open the USB device and get some information */
             status = lusb_get_devinfo( list[i], &info );
             if( status ) {
-                dbg_printf( "Could not open bladeRF device: %s\n", libusb_error_name(status) );
+                bladerf_log_error( "Could not open bladeRF device: %s\n", libusb_error_name(status) );
             } else {
                 info.instance = n++;
                 status = bladerf_devinfo_list_add(info_list, &info);
                 if( status ) {
-                    dbg_printf( "Could not add device to list: %s\n", bladerf_strerror(status) );
+                    bladerf_log_error( "Could not add device to list: %s\n", bladerf_strerror(status) );
                 }
             }
         }

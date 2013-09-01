@@ -2,7 +2,7 @@
 
 #include "backend.h"
 #include "backend_config.h"
-#include "debug.h"
+#include "log.h"
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 
