@@ -19,7 +19,7 @@
 
 
 #ifdef INTERACTIVE
-#   define OPTSTR "d:bf:l:s:ipLVh"
+#   define OPTSTR "d:bf:l:s:pLVh"
 #else
 #   define OPTSTR "d:bf:l:pLVh"
 #endif
@@ -31,7 +31,6 @@ static const struct option longopts[] = {
     { "load-fpga",      required_argument,  0, 'l' },
 #ifdef INTERACTIVE
     { "script",         required_argument,  0, 's' },
-    { "interactive",    no_argument,        0, 'i' },
 #endif
     { "probe",          no_argument,        0, 'p' },
     { "lib-version",    no_argument,        0, 'L' },
@@ -58,7 +57,7 @@ struct rc_config {
 
 static void init_rc_config(struct rc_config *rc)
 {
-    rc->batch_mode = true;
+    rc->batch_mode = false;
     rc->flash_fw = false;
     rc->load_fpga = false;
     rc->probe = false;
@@ -116,11 +115,8 @@ int get_rc_config(int argc, char *argv[], struct rc_config *rc)
                     return -1;
                 }
                 break;
-            case 'i':
-                rc->batch_mode = false;
-                break;
 #endif
-            // Left in for backwards compatibility
+
             case 'b':
                 rc->batch_mode = true;
                 break;
@@ -159,9 +155,8 @@ void usage(const char *argv0)
     printf("  -p, --probe                      Probe for devices, print results, then exit.\n");
 #ifdef INTERACTIVE
     printf("  -s, --script <file>              Run provided script.\n");
-    printf("  -i, --interactive                Interactive mode.\n");
 #endif
-    printf("  -b, --batch                      Batch mode - for backwards compatibility.\n");
+    printf("  -b, --batch                      Batch mode - do not enter interactive mode.\n");
     printf("  -L, --lib-version                Print libbladeRF version and exit.\n");
     printf("  -V, --version                    Print CLI version and exit.\n");
     printf("  -h, --help                       Show this help text.\n");
