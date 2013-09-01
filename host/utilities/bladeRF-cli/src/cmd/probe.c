@@ -19,8 +19,16 @@ int cmd_probe(struct cli_state *s, int argc, char *argv[])
     struct bladerf_devinfo *devices = NULL;
     ssize_t n_devices, i;
 
-    if ((n_devices = bladerf_get_device_list(&devices)) < 0) {
-        cli_err(s, argv[0], "Failed to probe for devices");
+    n_devices = bladerf_get_device_list(&devices);
+
+    if (n_devices < 0) {
+        if (n_devices == BLADERF_ERR_NODEV) {
+            cli_err(s, argv[0], "No devices found.");
+        } else {
+            cli_err(s, argv[0], "Failed to probe for devices: %s",
+                    bladerf_strerror(n_devices));
+        }
+
         s->last_lib_error = n_devices;
         return CMD_RET_LIBBLADERF;
     }
