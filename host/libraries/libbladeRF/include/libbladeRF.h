@@ -177,6 +177,30 @@ typedef enum {
 } bladerf_loopback;
 
 /**
+ * Severity levels for logging functions
+ */
+typedef enum {
+    BLADERF_LOG_LEVEL_VERBOSE,  /**< Verbose level logging */
+    BLADERF_LOG_LEVEL_DEBUG,    /**< Debug level logging */
+    BLADERF_LOG_LEVEL_INFO,     /**< Information level logging */
+    BLADERF_LOG_LEVEL_WARNING,  /**< Warning level logging */
+    BLADERF_LOG_LEVEL_ERROR,    /**< Error level logging */
+    BLADERF_LOG_LEVEL_CRITICAL  /**< Fatal error level logging */
+} bladerf_log_level;
+
+/**
+ * Sets the filter level for displayed log messages. Messages that are at
+ * or above the specified log level will be written to the log output, while
+ * messages with a lower log level will be suppressed. This function returns
+ * the previous log level.
+ *
+ * @param   level       The new log level filter value
+ *
+ * @return The previous log level
+ */
+bladerf_log_level bladerf_log_set_verbosity(bladerf_log_level level);
+
+/**
  * For both RX and TX, the stream callback receives:
  * dev:             Device structure
  * stream:          The associated stream

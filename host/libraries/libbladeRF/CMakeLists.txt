@@ -125,6 +125,7 @@ set(LIBBLADERF_SOURCE
         src/si5338.c
         src/version.h
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
+        ${BLADERF_HOST_COMMON_SOURCE_DIR}/log.c
 )
 
 message(STATUS "In libraries ${BLADERF_HOST_COMMON_SOURCE_DIR}")
