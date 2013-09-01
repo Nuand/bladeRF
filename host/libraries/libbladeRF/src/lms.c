@@ -876,6 +876,7 @@ void lms_dump_registers(struct bladerf *dev)
     }
 }
 
+/*
 void lms_calibrate_dc(struct bladerf *dev)
 {
     // RX path
@@ -936,6 +937,7 @@ void lms_calibrate_dc(struct bladerf *dev)
 
     return;
 }
+*/
 
 void lms_lpf_init(struct bladerf *dev)
 {
@@ -975,6 +977,131 @@ int lms_config_init(struct bladerf *dev, struct lms_xcvr_config *config)
         lms_loopback_enable(dev, config->loopback_mode);
     }
 
+    return 0;
+}
+
+#define LMS_MAX_CAL_COUNT   10
+
+static int lms_dc_cal_loop(struct bladerf *dev, uint8_t base, uint8_t cal_address, uint8_t *dc_regval)
+{
+    /* Reference LMS6002D calibration guide, section 4.1 flow chart */
+    uint8_t i, val;
+    bool done = false;
+
+    dbg_printf( "Calibrating module %2.2x:%2.2x\n", base, cal_address );
+
+    /* Set the calibration address for the block, and start it up */
+    bladerf_lms_read(dev, base+0x03, &val);
+    val &= ~(0x03);
+    val |= cal_address&0x03;
+    bladerf_lms_write(dev, base+0x03, val);
+
+    /* Zeroize the DC countval - this is here because sometimes the loop doesn't
+     * always assert DC_CLBR_DONE, so this is an attempt to force that to happen */
+    /* bladerf_lms_write(dev, base+0x02, 0);
+    val |= (1<<4);
+    bladerf_lms_write(dev, base+0x03, val);
+    val &= ~(1<<4);
+    bladerf_lms_write(dev, base+0x03, val);*/
+
+    /* Start the calibration by toggling DC_START_CLBR */
+    val |= (1<<5);
+    bladerf_lms_write(dev, base+0x03, val);
+
+    bladerf_lms_read(dev, base+0x01, &val);
+    dbg_printf( "DC_CLBR_DONE: %d\n", (val>>1)&1 );
+
+    val &= ~(1<<5);
+    bladerf_lms_write(dev, base+0x03, val);
+
+    /* Main loop checking the calibration */
+    for (i = 0 ; i < LMS_MAX_CAL_COUNT ; i++) {
+        /* Read active low DC_CLBR_DONE */
+        bladerf_lms_read(dev, base+0x01, &val);
+
+        if( ((val>>1)&1) == 0 ) {
+            /* We think we're done, but we need to check DC_LOCK */
+            if (((val>>2)&7) != 0 && ((val>>2)&7) != 7) {
+                dbg_printf( "Converged in %d iterations for %2x:%2x\n", i+1, base, cal_address );
+                done = true;
+                break ;
+            }
+        }
+    }
+
+    if (done == false) {
+        dbg_printf( "Never converged - DC_CLBR_DONE: %d DC_LOCK: %d\n", (val>>1)&1, (val>>2)&7 );
+    }
+
+    /* See what the DC register value is and return it to the caller */
+    bladerf_lms_read(dev, base, dc_regval);
+    *dc_regval &= 0x3f;
+    dbg_printf( "DC_REGVAL: %d\n", *dc_regval );
+
+    /* TODO: If it didn't converge, return back some error */
+    return 0;
+}
+
+int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
+{
+    uint8_t clockenables, base, addrs, i, val, dc_regval;
+
+    /* Save off the top level clock enables */
+    bladerf_lms_read(dev, 0x09, &clockenables);
+
+    val = clockenables;
+    switch (module) {
+        case BLADERF_DC_CAL_LPF_TUNING:
+            val |= (1<<5);  /* CLK_EN[5] - LPF CAL Clock */
+            base = 0x00; 
+            addrs = 1; 
+            break;
+
+        case BLADERF_DC_CAL_TX_LPF:
+            val |= (1<<1);  /* CLK_EN[1] - TX LPF DCCAL Clock */
+            base = 0x30;
+            addrs = 2;
+            break;
+
+        case BLADERF_DC_CAL_RX_LPF:
+            val |= (1<<3);  /* CLK_EN[3] - RX LPF DCCAL Clock */
+            base = 0x50;
+            addrs = 2;
+            break;
+
+        case BLADERF_DC_CAL_RXVGA2:
+            val |= (1<<4);  /* CLK_EN[4] - RX VGA2 DCCAL Clock */
+            base = 0x60;
+            addrs = 5; 
+            break;
+    }
+
+    /* Enable the appropriate clock based on the module */
+    bladerf_lms_write(dev, 0x09, val);
+
+    /* Figure out number of addresses to calibrate based on module */
+    for (i = 0; i < addrs ; i++) {
+        lms_dc_cal_loop(dev, base, i, &dc_regval) ;
+    }
+
+    /* Special case for LPF tuning module where results are written to TX/RX LPF DCCAL */
+    if (module == BLADERF_DC_CAL_LPF_TUNING) {
+        /* Set the DC level to RX and TX DCCAL modules */
+        bladerf_lms_read(dev, 0x35, &val);
+        val &= ~(0x3f);
+        val |= dc_regval;
+        bladerf_lms_write(dev, 0x35, val);
+
+        bladerf_lms_read(dev, 0x55, &val);
+        val &= ~(0x3f);
+        val |= dc_regval;
+        bladerf_lms_write(dev, 0x55, val);
+    }
+
+    /* Restore clock enables */
+    bladerf_lms_write(dev, 0x09, clockenables);
+
+    /* TODO: Return something appropriate if something goes awry */
     return 0;
 }
 

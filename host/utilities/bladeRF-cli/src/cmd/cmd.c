@@ -5,6 +5,7 @@
 #include "cmd.h"
 
 #define DECLARE_CMD(x) int cmd_##x (struct cli_state *, int, char **)
+DECLARE_CMD(calibrate);
 DECLARE_CMD(clear);
 DECLARE_CMD(help);
 DECLARE_CMD(load);
@@ -26,6 +27,7 @@ struct cmd {
     const char  *help;
 };
 
+static const char *cmd_names_calibrate[] = { "calibrate", "cal", NULL };
 static const char *cmd_names_clear[] = { "clear", "cls", NULL };
 static const char *cmd_names_help[] = { "help", "h", "?", NULL };
 static const char *cmd_names_load[] = { "load", "ld", NULL };
@@ -41,6 +43,14 @@ static const char *cmd_names_set[] = { "set", "s", NULL };
 static const char *cmd_names_ver[] = { "version", "ver", "v", NULL };
 
 static const struct cmd cmd_table[] = {
+    {
+        FIELD_INIT(.names, cmd_names_calibrate),
+        FIELD_INIT(.exec, cmd_calibrate),
+        FIELD_INIT(.desc, "Calibrate transceiver"),
+        FIELD_INIT(.help,
+            "Calibrate the DC offset for both RX and TX\n"
+        )
+    },
     {
         FIELD_INIT(.names, cmd_names_rx),
         FIELD_INIT(.exec, cmd_rxtx),

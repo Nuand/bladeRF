@@ -152,6 +152,17 @@ typedef enum
 } bladerf_module;
 
 /**
+ * DC Calibration Modules
+ */
+typedef enum
+{
+    BLADERF_DC_CAL_LPF_TUNING,
+    BLADERF_DC_CAL_TX_LPF,
+    BLADERF_DC_CAL_RX_LPF,
+    BLADERF_DC_CAL_RXVGA2
+} bladerf_cal_module;
+
+/**
  * Transmit Loopback options
  */
 typedef enum {
@@ -1004,6 +1015,16 @@ int bladerf_config_gpio_write(struct bladerf *dev, uint32_t val);
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 int bladerf_dac_write(struct bladerf *dev, uint16_t val);
+
+/**
+ * Calibration routines
+ *
+ * @param   dev         Device handle
+ * @param   module      Module to calibrate
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+int bladerf_calibrate_dc(struct bladerf *dev, bladerf_cal_module module);
 
 /* @} (End of LOW_LEVEL) */
 

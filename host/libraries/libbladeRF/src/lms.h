@@ -503,8 +503,11 @@ void lms_dump_registers(struct bladerf *dev);
  * direct conversion receiver.
  *
  * @param[in]   dev     Device handle
+ * @param[in]   module  Module to calibrate
+ *
+ * @return 0 on success, -1 on failure.
  */
-void lms_calibrate_dc(struct bladerf *dev);
+int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module);
 
 /**
  * Initialize and calibrate the low pass filters

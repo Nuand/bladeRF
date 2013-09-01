@@ -64,6 +64,7 @@ include_directories(${CLI_INCLUDE_DIRS})
 set(BLADERF_CLI_SOURCE
         src/main.c
         src/common.c
+        src/cmd/calibrate.c
         src/cmd/cmd.c
         src/cmd/load.c
         src/cmd/open.c

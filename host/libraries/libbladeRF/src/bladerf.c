@@ -853,3 +853,11 @@ int bladerf_dac_write(struct bladerf *dev, uint16_t val)
 {
     return dev->fn->dac_write(dev,val);
 }
+
+/*------------------------------------------------------------------------------
+ * DC Calibration routines
+ *----------------------------------------------------------------------------*/
+ int bladerf_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
+ {
+    return lms_calibrate_dc(dev, module);
+ }
