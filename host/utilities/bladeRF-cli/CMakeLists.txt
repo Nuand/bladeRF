@@ -39,6 +39,16 @@ if(ENABLE_INTERACTIVE_TECLA AND NOT ${LIBTECLA_FOUND})
     set(ENABLE_INTERACTIVE_TECLA OFF)
 endif()
 
+################################################################################
+# Build dependencies
+################################################################################
+
+if(MSVC)
+    find_package(LibPThreadsWin32 REQUIRED)
+else(MSVC)
+	find_package(Threads REQUIRED)
+endif(MSVC)
+
 
 ################################################################################
 # Include paths
@@ -54,6 +64,13 @@ set(CLI_INCLUDE_DIRS
 
 if(ENABLE_INTERACTIVE_TECLA)
     set(CLI_INCLUDE_DIRS ${CLI_INCLUDE_DIRS} ${LIBTECLA_INCLUDE_DIR})
+endif()
+
+if(MSVC)
+    set(CLI_INCLUDE_DIRS ${CLI_INCLUDE_DIRS} 
+        ${BLADERF_HOST_COMMON_INCLUDE_DIRS}/windows
+        ${LIBPTHREADSWIN32_INCLUDE_DIRS}
+    )
 endif()
 
 include_directories(${CLI_INCLUDE_DIRS})
@@ -84,13 +101,18 @@ if(ENABLE_INTERACTIVE_TECLA)
     set(BLADERF_CLI_SOURCE ${BLADERF_CLI_SOURCE} src/interactive/interactive.c)
 endif()
 
+if(MSVC)
+    set(BLADERF_CLI_SOURCE ${BLADERF_CLI_SOURCE}
+            ${BLADERF_HOST_COMMON_SOURCE_DIR}/windows/getopt.c
+            ${BLADERF_HOST_COMMON_SOURCE_DIR}/windows/getopt_long.c
+       )
+endif()
+
 add_executable(bladeRF-cli ${BLADERF_CLI_SOURCE})
 
 ################################################################################
-# Build dependencies
+# Build configuration
 ################################################################################
-find_package(Threads)
-
 set(CLI_LINK_LIBRARIES
     libbladerf_shared
     ${CMAKE_THREAD_LIBS_INIT}
@@ -108,9 +130,6 @@ if(ENABLE_INTERACTIVE_TECLA)
 
 endif(ENABLE_INTERACTIVE_TECLA)
 
-################################################################################
-# Build configuration
-################################################################################
 target_link_libraries(bladeRF-cli ${CLI_LINK_LIBRARIES})
 
 ################################################################################
