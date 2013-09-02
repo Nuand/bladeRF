@@ -16,6 +16,9 @@ int cmd_calibrate(struct cli_state *state, int argc, char **argv)
     }
 
     if( argc == 1 ) {
+        /* Ensure both TX and RX are enabled */
+        bladerf_enable_module(state->dev, BLADERF_MODULE_TX, true);
+        bladerf_enable_module(state->dev, BLADERF_MODULE_RX, true);
         /* Calibrate LPF Tuning Module */
         bladerf_calibrate_dc(state->dev, BLADERF_DC_CAL_LPF_TUNING);
 
@@ -35,10 +38,13 @@ int cmd_calibrate(struct cli_state *state, int argc, char **argv)
             module = BLADERF_DC_CAL_LPF_TUNING;
         } else if (strcasecmp(argv[1], "txlpf") == 0) {
             module = BLADERF_DC_CAL_TX_LPF;
+            bladerf_enable_module(state->dev, BLADERF_MODULE_TX, true);
         } else if (strcasecmp(argv[1], "rxlpf") == 0) {
             module = BLADERF_DC_CAL_RX_LPF;
+            bladerf_enable_module(state->dev, BLADERF_MODULE_RX, true);
         } else if (strcasecmp(argv[1], "rxvga2") == 0) {
             module = BLADERF_DC_CAL_RXVGA2;
+            bladerf_enable_module(state->dev, BLADERF_MODULE_RX, true);
         } else {
             cli_err(state, argv[0], "Invalid module provided (%s)", argv[1]);
             return CMD_RET_INVPARAM;

@@ -980,42 +980,46 @@ int lms_config_init(struct bladerf *dev, struct lms_xcvr_config *config)
     return 0;
 }
 
-#define LMS_MAX_CAL_COUNT   10
+#define LMS_MAX_CAL_COUNT   25
 
 static int lms_dc_cal_loop(struct bladerf *dev, uint8_t base, uint8_t cal_address, uint8_t *dc_regval)
 {
     /* Reference LMS6002D calibration guide, section 4.1 flow chart */
-    uint8_t i, val;
+    uint8_t i, val, control;
     bool done = false;
 
     dbg_printf( "Calibrating module %2.2x:%2.2x\n", base, cal_address );
 
     /* Set the calibration address for the block, and start it up */
     bladerf_lms_read(dev, base+0x03, &val);
-    val &= ~(0x03);
-    val |= cal_address&0x03;
+    val &= ~(0x07);
+    val |= cal_address&0x07;
     bladerf_lms_write(dev, base+0x03, val);
 
     /* Zeroize the DC countval - this is here because sometimes the loop doesn't
      * always assert DC_CLBR_DONE, so this is an attempt to force that to happen */
-    /* bladerf_lms_write(dev, base+0x02, 0);
+    /*bladerf_lms_write(dev, base+0x02, 0);
     val |= (1<<4);
     bladerf_lms_write(dev, base+0x03, val);
     val &= ~(1<<4);
     bladerf_lms_write(dev, base+0x03, val);*/
 
-    /* Start the calibration by toggling DC_START_CLBR */
+//    /* Start the calibration by toggling DC_START_CLBR */
     val |= (1<<5);
     bladerf_lms_write(dev, base+0x03, val);
-
-    bladerf_lms_read(dev, base+0x01, &val);
-    dbg_printf( "DC_CLBR_DONE: %d\n", (val>>1)&1 );
-
     val &= ~(1<<5);
     bladerf_lms_write(dev, base+0x03, val);
 
+    control = val;
+
     /* Main loop checking the calibration */
     for (i = 0 ; i < LMS_MAX_CAL_COUNT ; i++) {
+        /* Start the calibration by toggling DC_START_CLBR */
+//        control |= (1<<5);
+//        bladerf_lms_write(dev, base+0x03, control);
+//        control &= ~(1<<5);
+//        bladerf_lms_write(dev, base+0x03, control);
+
         /* Read active low DC_CLBR_DONE */
         bladerf_lms_read(dev, base+0x01, &val);
 
@@ -1025,6 +1029,12 @@ static int lms_dc_cal_loop(struct bladerf *dev, uint8_t base, uint8_t cal_addres
                 dbg_printf( "Converged in %d iterations for %2x:%2x\n", i+1, base, cal_address );
                 done = true;
                 break ;
+            } else {
+                dbg_printf( "DC_CLBR_DONE but no DC_LOCK - rekicking\n" );
+                control |= (1<<5);
+                bladerf_lms_write(dev, base+0x03, control);
+                control &= ~(1<<5);
+                bladerf_lms_write(dev, base+0x03, control);
             }
         }
     }
@@ -1044,40 +1054,71 @@ static int lms_dc_cal_loop(struct bladerf *dev, uint8_t base, uint8_t cal_addres
 
 int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
 {
-    uint8_t clockenables, base, addrs, i, val, dc_regval;
+    /* Working variables */
+    uint8_t cal_clock, base, addrs, i, val, dc_regval;
+
+    /* Saved values that are to be restored */
+    uint8_t clockenables, reg0x71, reg0x7c;
+    bladerf_lna_gain lna_gain;
+    int rxvga1, rxvga2;
 
     /* Save off the top level clock enables */
     bladerf_lms_read(dev, 0x09, &clockenables);
 
     val = clockenables;
+    cal_clock = 0 ;
     switch (module) {
         case BLADERF_DC_CAL_LPF_TUNING:
-            val |= (1<<5);  /* CLK_EN[5] - LPF CAL Clock */
-            base = 0x00; 
-            addrs = 1; 
+            cal_clock = (1<<5);  /* CLK_EN[5] - LPF CAL Clock */
+            base = 0x00;
+            addrs = 1;
             break;
 
         case BLADERF_DC_CAL_TX_LPF:
-            val |= (1<<1);  /* CLK_EN[1] - TX LPF DCCAL Clock */
+            cal_clock = (1<<1);  /* CLK_EN[1] - TX LPF DCCAL Clock */
             base = 0x30;
             addrs = 2;
             break;
 
         case BLADERF_DC_CAL_RX_LPF:
-            val |= (1<<3);  /* CLK_EN[3] - RX LPF DCCAL Clock */
+            cal_clock = (1<<3);  /* CLK_EN[3] - RX LPF DCCAL Clock */
             base = 0x50;
             addrs = 2;
             break;
 
         case BLADERF_DC_CAL_RXVGA2:
-            val |= (1<<4);  /* CLK_EN[4] - RX VGA2 DCCAL Clock */
+            cal_clock = (1<<4);  /* CLK_EN[4] - RX VGA2 DCCAL Clock */
             base = 0x60;
-            addrs = 5; 
+            addrs = 5;
             break;
     }
 
     /* Enable the appropriate clock based on the module */
-    bladerf_lms_write(dev, 0x09, val);
+    bladerf_lms_write(dev, 0x09, clockenables | cal_clock);
+
+    /* Special case for RX LPF or RX VGA2 */
+    if (module == BLADERF_DC_CAL_RX_LPF || module == BLADERF_DC_CAL_RXVGA2) {
+        /* Connect LNA to the external pads and interally terminate */
+        bladerf_lms_read(dev, 0x71, &reg0x71);
+        val = reg0x71;
+        val &= ~(1<<7);
+        bladerf_lms_write(dev, 0x71, val);
+
+        bladerf_lms_read(dev, 0x7c, &reg0x7c);
+        val = reg0x7c;
+        val |= (1<<2);
+        bladerf_lms_write(dev, 0x7c, val);
+
+        /* Set maximum gain for everything, but save off current values */
+        bladerf_get_lna_gain(dev, &lna_gain);
+        bladerf_set_lna_gain(dev, BLADERF_LNA_GAIN_MAX);
+
+        bladerf_get_rxvga1(dev, &rxvga1);
+        bladerf_set_rxvga1(dev, 30);
+
+        bladerf_get_rxvga2(dev, &rxvga2);
+        bladerf_set_rxvga2(dev, 30);
+    }
 
     /* Figure out number of addresses to calibrate based on module */
     for (i = 0; i < addrs ; i++) {
@@ -1097,8 +1138,17 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
         val |= dc_regval;
         bladerf_lms_write(dev, 0x55, val);
     }
+    /* Special case for RX LPF or RX VGA2 */
+    else if (module == BLADERF_DC_CAL_RX_LPF || module == BLADERF_DC_CAL_RXVGA2) {
+        /* Restore previously saved LNA Gain, VGA1 gain and VGA2 gain */
+        bladerf_set_rxvga2(dev, rxvga2);
+        bladerf_set_rxvga1(dev, rxvga1);
+        bladerf_set_lna_gain(dev, lna_gain);
+        bladerf_lms_write(dev, 0x71, reg0x71);
+        bladerf_lms_write(dev, 0x7c, reg0x7c);
+    }
 
-    /* Restore clock enables */
+    /* Restore original clock enables */
     bladerf_lms_write(dev, 0x09, clockenables);
 
     /* TODO: Return something appropriate if something goes awry */
