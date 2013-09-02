@@ -19,9 +19,9 @@
 
 
 #ifdef INTERACTIVE
-#   define OPTSTR "d:bf:l:s:ipLVh"
+#   define OPTSTR "d:f:l:s:ipLv:Vh"
 #else
-#   define OPTSTR "d:bf:l:pLVh"
+#   define OPTSTR "d:f:l:pLv:Vh"
 #endif
 
 static const struct option longopts[] = {
@@ -34,6 +34,7 @@ static const struct option longopts[] = {
 #endif
     { "probe",          no_argument,        0, 'p' },
     { "lib-version",    no_argument,        0, 'L' },
+    { "verbosity",      required_argument,  0, 'v' },
     { "version",        no_argument,        0, 'V' },
     { "help",           no_argument,        0, 'h' },
     { 0,                0,                  0,  0  },
@@ -48,6 +49,8 @@ struct rc_config {
     bool show_help;
     bool show_version;
     bool show_lib_version;
+
+    bladerf_log_level verbosity;
 
     char *device;
     char *fw_file;
@@ -64,6 +67,8 @@ static void init_rc_config(struct rc_config *rc)
     rc->show_help = false;
     rc->show_version = false;
     rc->show_lib_version = false;
+
+    rc->verbosity = BLADERF_LOG_LEVEL_INFO;
 
     rc->device = NULL;
     rc->fw_file = NULL;
@@ -128,6 +133,27 @@ int get_rc_config(int argc, char *argv[], struct rc_config *rc)
                 rc->show_help = true;
                 break;
 
+            case 'v':
+                if (!strcasecmp(optarg, "critical")) {
+                    rc->verbosity = BLADERF_LOG_LEVEL_CRITICAL;
+                } else if (!strcasecmp(optarg, "error")) {
+                    rc->verbosity = BLADERF_LOG_LEVEL_ERROR;
+                } else if (!strcasecmp(optarg, "warning")) {
+                    rc->verbosity = BLADERF_LOG_LEVEL_WARNING;
+                } else if (!strcasecmp(optarg, "info")) {
+                    rc->verbosity = BLADERF_LOG_LEVEL_INFO;
+                } else if (!strcasecmp(optarg, "debug")) {
+                    rc->verbosity = BLADERF_LOG_LEVEL_DEBUG;
+                } else if (!strcasecmp(optarg, "verbose")) {
+                    rc->verbosity = BLADERF_LOG_LEVEL_VERBOSE;
+                } else {
+                    fprintf(stderr, "Unknown verbosity level: %s\n", optarg);
+                    return -1;
+                }
+
+
+                break;
+
             case 'V':
                 rc->show_version = true;
                 break;
@@ -135,6 +161,9 @@ int get_rc_config(int argc, char *argv[], struct rc_config *rc)
             case 'L':
                 rc->show_lib_version = true;
                 break;
+
+            default:
+                return -1;
         }
 
         c = getopt_long(argc, argv, OPTSTR, longopts, &optidx);
@@ -157,11 +186,15 @@ void usage(const char *argv0)
     printf("  -i, --interactive                Enter interactive mode.\n");
 #endif
     printf("  -L, --lib-version                Print libbladeRF version and exit.\n");
+    printf("  -v, --verbosity <level>          Set the libbladeRF verbosity level.\n");
+    printf("                                   Levels, listed in increasing verbosity, are:\n");
+    printf("                                    critical, error, warning,\n");
+    printf("                                    info, debug, verbose\n");
     printf("  -V, --version                    Print CLI version and exit.\n");
     printf("  -h, --help                       Show this help text.\n");
     printf("\n");
     printf("Notes:\n");
-    printf("  The -d option takes a device specifier string. See the bladef_open()\n");
+    printf("  The -d option takes a device specifier string. See the bladerf_open()\n");
     printf("  documentation for more information about the format of this string.\n");
     printf("\n");
     printf("  If the -d parameter is not provided, the first available device\n");
@@ -283,6 +316,8 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Failed to create state object\n");
         return 1;
     }
+
+    bladerf_log_set_verbosity(rc.verbosity);
 
     if (rc.show_help) {
         usage(argv[0]);
