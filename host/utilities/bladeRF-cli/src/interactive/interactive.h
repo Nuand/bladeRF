@@ -17,12 +17,12 @@
  * If this function is passed a valid device handle, it will take responsibility
  * for deallocating it before returning.
  *
- * @param   s       CLI state
- * @param   batch   Batch mode script execution -- exit after script completes
+ * @param   s           CLI state
+ * @param   script_only Exit after script completes
  *
  * @return  0 on success, non-zero on failure
  */
-int interactive(struct cli_state *s, bool batch);
+int interactive(struct cli_state *s, bool script_only);
 
 /**
  * Expand a file path

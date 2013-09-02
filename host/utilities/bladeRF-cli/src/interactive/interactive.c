@@ -38,7 +38,7 @@ static void exit_script(GetLine *gl, struct cli_state *s, bool *in_script)
     }
 }
 
-int interactive(struct cli_state *s, bool batch)
+int interactive(struct cli_state *s, bool script_only)
 {
     char *line;
     int status;
@@ -82,8 +82,9 @@ int interactive(struct cli_state *s, bool batch)
             if (in_script) {
                 exit_script(gl, s, &in_script);
 
-                /* Exit if we were run with -b -s <script> */
-                if (batch)
+                /* Exit if we were run with a script, but not asked
+                 * to drop into interactive mode */
+                if (script_only)
                     status = CMD_RET_QUIT;
 
             } else {

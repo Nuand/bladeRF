@@ -26,7 +26,6 @@
 
 static const struct option longopts[] = {
     { "device",         required_argument,  0, 'd' },
-    { "batch",          no_argument,        0, 'b' },
     { "flash-firmware", required_argument,  0, 'f' },
     { "load-fpga",      required_argument,  0, 'l' },
 #ifdef INTERACTIVE
@@ -42,7 +41,7 @@ static const struct option longopts[] = {
 
 /* Runtime configuration items */
 struct rc_config {
-    bool batch_mode;
+    bool interactive_mode;
     bool flash_fw;
     bool load_fpga;
     bool probe;
@@ -58,7 +57,7 @@ struct rc_config {
 
 static void init_rc_config(struct rc_config *rc)
 {
-    rc->batch_mode = true;
+    rc->interactive_mode = false;
     rc->flash_fw = false;
     rc->load_fpga = false;
     rc->probe = false;
@@ -116,15 +115,11 @@ int get_rc_config(int argc, char *argv[], struct rc_config *rc)
                     return -1;
                 }
                 break;
+
             case 'i':
-                rc->batch_mode = false;
+                rc->interactive_mode = true;
                 break;
 #endif
-            // Left in for backwards compatibility
-            case 'b':
-                rc->batch_mode = true;
-                break;
-
             case 'p':
                 rc->probe = true;
                 break;
@@ -159,9 +154,8 @@ void usage(const char *argv0)
     printf("  -p, --probe                      Probe for devices, print results, then exit.\n");
 #ifdef INTERACTIVE
     printf("  -s, --script <file>              Run provided script.\n");
-    printf("  -i, --interactive                Interactive mode.\n");
+    printf("  -i, --interactive                Enter interactive mode.\n");
 #endif
-    printf("  -b, --batch                      Batch mode - for backwards compatibility.\n");
     printf("  -L, --lib-version                Print libbladeRF version and exit.\n");
     printf("  -V, --version                    Print CLI version and exit.\n");
     printf("  -h, --help                       Show this help text.\n");
@@ -174,14 +168,10 @@ void usage(const char *argv0)
     printf("  will be used for the provided command, or will be opened prior\n");
     printf("  to entering interactive mode.\n");
     printf("\n");
-    printf("  Batch mode is implicit for the following options:\n");
-    printf("     -p, --probe               -h, --help\n");
-    printf("     -L, --lib-version         -V, --version\n");
-    printf("\n");
 
 #ifndef INTERACTIVE
     printf("  This tool has been built without INTERACTIVE=y. The interactive\n"
-           "  console is disabled and the -s option is not supported.\n");
+           "  console is disabled (-i) and the -s option is not supported.\n");
 #endif
 }
 
@@ -348,15 +338,15 @@ main__issues:
         free(rc.script_file);
         rc.script_file = NULL;
 
-        /* Exit cleanly when configured for batch mode. Remember that this is
-         * implicit with some commands */
-        if (!rc.batch_mode || state->script != NULL) {
+        /* Drop into interactive mode or begin executing commands
+         * from a script. If we're not requested to do either, exit cleanly */
+        if (rc.interactive_mode || state->script != NULL) {
             status = start_threads(state);
 
             if (status < 0) {
                 fprintf(stderr, "Failed to kick off threads\n");
             } else {
-                status = interactive(state, rc.batch_mode);
+                status = interactive(state, !rc.interactive_mode);
                 stop_threads(state);
             }
 

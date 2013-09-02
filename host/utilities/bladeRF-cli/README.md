@@ -28,19 +28,19 @@ If only one device is connected, the -d option is not needed. The CLI will find 
 Load the FPGA and enter interactive mode:
 
 ```
-./bladeRF-cli -d "libusb: instance=0" -l /path/to/fpga.rbf
+./bladeRF-cli -d "libusb: instance=0" -l /path/to/fpga.rbf -i
 ```
 
 Pass in a script to run to setup a device in a specific way, and then interactive mode.
 
 ```
-./bladeRF-cli -d "libusb: instance=0" -s setup.txt
+./bladeRF-cli -d "libusb: instance=0" -s setup.txt -i
 ```
 
-Load the FPGA, setup the device, but to do not enter interactive mode:
+If you do not build the CLI with interactive mode support, you're most common usage of the CLI will likely be to simply load the FPGA, setup the device, and exit:
 
 ```
-./bladeRF-cli -d "libusb: instance=0" -l /path/to/fpga.rbf -s setup.txt -b
+./bladeRF-cli -d "libusb: instance=0" -l /path/to/fpga.rbf -s setup.txt
 ```
 
 ## Some Useful Interactive Commands ##
