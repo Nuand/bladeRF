@@ -145,6 +145,21 @@ endif()
 
 install(TARGETS bladeRF-cli DESTINATION ${BIN_INSTALL_DIR})
 
+if(MSVC)
+    add_custom_command(TARGET bladeRF-cli POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${LIBPTHREADSWIN32_PATH}/dll/${LIBPTHREADSWIN32_LIBRARY_PATH_SUFFIX}/pthreadVC2.dll"
+        "${CMAKE_BINARY_DIR}/utilities/bladeRF-cli/$(Configuration)/")
+    add_custom_command(TARGET bladeRF-cli POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_BINARY_DIR}/libraries/libbladeRF/$(Configuration)/libusb-1.0.dll"
+        "${CMAKE_BINARY_DIR}/utilities/bladeRF-cli/$(Configuration)/")
+    add_custom_command(TARGET bladeRF-cli POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_BINARY_DIR}/libraries/libbladeRF/$(Configuration)/bladeRF.dll"
+        "${CMAKE_BINARY_DIR}/utilities/bladeRF-cli/$(Configuration)/")
+endif(MSVC)
+
 ################################################################################
 # Informational output
 ################################################################################

@@ -46,15 +46,15 @@ get_filename_component ( LIBPTHREADSWIN32_INCLUDE_DIRS "${LIBPTHREADSWIN32_HEADE
 if ( WIN32 )
     if ( MSVC )
         if ( CMAKE_CL_64 )
-            set ( LIBPTHREADSWIN32_LIBRARY_PATH_SUFFIX lib/x64 )
+            set ( LIBPTHREADSWIN32_LIBRARY_PATH_SUFFIX x64 )
         else ( CMAKE_CL_64 )
-            set ( LIBPTHREADSWIN32_LIBRARY_PATH_SUFFIX lib/x86 )
+            set ( LIBPTHREADSWIN32_LIBRARY_PATH_SUFFIX x86 )
         endif ( CMAKE_CL_64 )
     elseif ( CMAKE_COMPILER_IS_GNUCC )
         if ( CMAKE_SIZEOF_VOID_P EQUAL 8 )
-            set ( LIBPTHREADSWIN32_LIBRARY_PATH_SUFFIX lib/x64 )
+            set ( LIBPTHREADSWIN32_LIBRARY_PATH_SUFFIX x64 )
         else ( CMAKE_SIZEOF_VOID_P EQUAL 8 )
-                set ( LIBPTHREADSWIN32_LIBRARY_PATH_SUFFIX lib/x86 )
+                set ( LIBPTHREADSWIN32_LIBRARY_PATH_SUFFIX x86 )
         endif ( CMAKE_SIZEOF_VOID_P EQUAL 8 )
     endif ( MSVC )
 
@@ -64,7 +64,7 @@ if ( WIN32 )
       PATHS
         ${LIBPTHREADSWIN32_PATH}
         PATH_SUFFIXES
-        ${LIBPTHREADSWIN32_LIBRARY_PATH_SUFFIX}
+        lib/${LIBPTHREADSWIN32_LIBRARY_PATH_SUFFIX}
     )
 
     mark_as_advanced ( PTHREAD_LIBRARY )
