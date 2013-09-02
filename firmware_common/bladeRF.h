@@ -69,6 +69,7 @@ struct bladeRF_sector {
 
 #define USB_NUAND_VENDOR_ID     0x1d50
 #define USB_NUAND_BLADERF_PRODUCT_ID    0x6066
+#define USB_NUAND_BLADERF_MINOR_BASE 193
 #define NUM_CONCURRENT  8
 #define NUM_DATA_URB    (1024)
 #define DATA_BUF_SZ     (1024*4)

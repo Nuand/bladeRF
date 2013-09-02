@@ -954,7 +954,7 @@ leave_fw:
             kfree(fw_buf);
             break;
 
-        case BLADE_UPGRADE_FW:
+        case BLADE_DEVICE_RESET:
             ret = 1;
             retval = __bladerf_snd_cmd(dev, BLADE_USB_CMD_RESET, &ret, sizeof(ret));
             break;
@@ -1049,6 +1049,7 @@ leave_fw:
                 if (!retval) {
                     spi_reg.addr = buf[2];
                     spi_reg.data = buf[3];
+                }
 
                 if (copy_to_user((void __user *)arg, &spi_reg, sizeof(struct uart_cmd))) {
                     retval = -EFAULT;
@@ -1145,9 +1146,6 @@ static struct file_operations bladerf_fops = {
     .open     =  bladerf_open,
     .release  =  bladerf_release,
 };
-
-
-#define USB_NUAND_BLADERF_MINOR_BASE 193
 
 static struct usb_class_driver bladerf_class = {
     .name       = "bladerf%d",
