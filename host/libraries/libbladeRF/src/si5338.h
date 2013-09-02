@@ -3,9 +3,9 @@
 
 #include <libbladeRF.h>
 
-// XXX document
 
-int si5338_set_tx_freq(struct bladerf *dev, unsigned int freq);
-int si5338_set_rx_freq(struct bladerf *dev, unsigned int freq);
+
+
+int si5338_set_rational_sample_rate(struct bladerf *dev, bladerf_module module, uint32_t frequency, uint32_t numerator, uint32_t denom);
 
 #endif

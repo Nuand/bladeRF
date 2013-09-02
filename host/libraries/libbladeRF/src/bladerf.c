@@ -190,11 +190,14 @@ int bladerf_set_loopback(struct bladerf *dev, bladerf_loopback l)
     return 0;
 }
 
-
-int bladerf_set_rational_sample_rate(struct bladerf *dev, bladerf_module module, unsigned int integer, unsigned int num, unsigned int denom)
+/**
+ * Rational sample rate is in Hz and the numerator/denominator defines the decimal Hz part
+ * It is also possible to write a pure rational part in the numerator / denominator
+ * @return 0 if operation successful or an appropriate error code
+ */
+int bladerf_set_rational_sample_rate(struct bladerf *dev, bladerf_module module, uint32_t frequency, uint32_t numerator, uint32_t denom)
 {
-    /* TODO: Program the Si5338 to be 2x the desired sample rate */
-    return 0;
+	return si5338_set_rational_sample_rate(dev,module,frequency,numerator,denom);
 }
 
 int bladerf_get_sampling(struct bladerf *dev, bladerf_sampling *sampling)
