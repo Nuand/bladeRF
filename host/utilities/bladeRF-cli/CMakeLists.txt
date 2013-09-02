@@ -76,6 +76,7 @@ set(BLADERF_CLI_SOURCE
         src/cmd/rxtx.c
         src/cmd/version.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
+        ${BLADERF_HOST_COMMON_SOURCE_DIR}/log.c
 )
 
 if(ENABLE_INTERACTIVE_TECLA)
