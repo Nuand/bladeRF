@@ -36,14 +36,12 @@ struct lusb_stream_data {
     struct libusb_transfer **transfers;
     size_t active_transfers;
 
-    /* libusb recommends use of libusb_handle_events_timeout_completed() over
-     * libusb_handle_events_timeout(). While nothing in the documentation [1]
-     * jumped out at me after a quick read, I figured this should be used
-     * for safe measures...or at least I revisit that documentation in more
-     * detail. At this time, our "completed" indication is the stream
-     * entering the DONE state.
+    /* libusb recommends use of libusb_handle_events_timeout_completed() for
+     * multithreaded applications.
+     *    http://libusb.sourceforge.net/api-1.0/mtasync.html
      *
-     * [1] http://libusb.sourceforge.net/api-1.0/mtasync.html
+     * In our case, "completion" is associated with a transistion to the done
+     * state.
      */
     int  libusb_completed;
 };
@@ -1363,7 +1361,9 @@ static int lusb_stream(struct bladerf *dev, bladerf_module module,
 
     /* This loop is required so libusb can do callbacks and whatnot */
     while( stream->state != STREAM_DONE ) {
-        status = libusb_handle_events_timeout(lusb->context,&tv);
+        status = libusb_handle_events_timeout_completed(lusb->context, &tv,
+                                                        &stream_data->libusb_completed);
+
         if (status < 0 && status != LIBUSB_ERROR_INTERRUPTED) {
             dbg_printf("Got unexpected return value from events processing: "
                        "%d: %s\n", status, libusb_error_name(status));
