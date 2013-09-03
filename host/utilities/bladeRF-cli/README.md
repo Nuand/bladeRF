@@ -1,5 +1,5 @@
 # bladeRF-cli: bladeRF Command Line Interface #
-This tool is intended to aid in development and testing.  bladeRF-cli can be used in a batch mode with simple operations, such as loading the bladeRF FPGA.  However, a majority of this tools functionality is accessible when it is compiled with an interactive shell.
+This tool is intended to aid in development and testing.  bladeRF-cli can be used from the command line for simple operations, such as loading the bladeRF FPGA.  However, a majority of this tool's functionality is accessible when run in its interactive mode.
 
 ## Dependencies ##
 - [libbladeRF][libbladeRF]
@@ -7,6 +7,9 @@ This tool is intended to aid in development and testing.  bladeRF-cli can be use
 
 [libbladeRF]: ../../libraries/libbladeRF (libbladeRF)
 [libtecla]: http://www.astro.caltech.edu/~mcs/tecla/ (libtecla)
+
+
+The bladeRF-cli build should detect whether libtecla is installed, and configure the ENABLE_LIBTECLA variable accordingly. You can override this when configuring the build with CMake via a ```-DENABLE_LIBTECLA=OFF``` argument.
 
 
 ## Basic Usage ##
@@ -31,16 +34,10 @@ Load the FPGA and enter interactive mode:
 ./bladeRF-cli -d "libusb: instance=0" -l /path/to/fpga.rbf -i
 ```
 
-Pass in a script to run to setup a device in a specific way, and then interactive mode.
+Pass in a script to setup a device in a specific way, but do not enter interactive mode. (See [Creating a setup.txt](#creating-a-setuptxt) for more information about scripts.)
 
 ```
-./bladeRF-cli -d "libusb: instance=0" -s setup.txt -i
-```
-
-If you do not build the CLI with interactive mode support, you're most common usage of the CLI will likely be to simply load the FPGA, setup the device, and exit:
-
-```
-./bladeRF-cli -d "libusb: instance=0" -l /path/to/fpga.rbf -s setup.txt
+./bladeRF-cli -d "libusb: instance=0" -s setup.txt
 ```
 
 ## Some Useful Interactive Commands ##
@@ -84,13 +81,13 @@ tx start
 While `format=csv` is valid for `tx`, note that the CLI will first convert the CSV to a temporary binary file:
 
 ```
-bladeRF&gt; tx config file=samples.txt format=csv repeat=10 delay=10000000
-bladeRF&gt; tx start
+bladeRF> tx config file=samples.txt format=csv repeat=10 delay=10000000
+bladeRF> tx start
 
 Converted CSV file to binary file. Using /tmp/bladeRF-ddLNmc
 Note that this program will not delete the temporary file.
 
-bladeRF&gt; tx
+bladeRF> tx
 
     State: Running
     File: /tmp/bladeRF-ddLNmc
@@ -100,9 +97,10 @@ bladeRF&gt; tx
 ```
 
 ## Creating a setup.txt ##
-It was useful in debugging to get into a known state easily and reproducibly.  We created a `setup.txt` file which can be provided via the -s command line option.
+It is often useful in debugging to quickly get the device into a known state.  The bladeRF-cli supports script files to alleviate the need to write a small program or manually enter a number of commands. (Running scripts from within scripts or the interactive mode is comming soon!)
 
-Below is an example `setup.txt`:
+Below is a sample `setup.txt` file which can be provided via the -s command line option. Note that the syntax from the interactive mode is used, _#_ may be used to comment out the remainder of a line.
+
 
 ```
 set frequency 1000000000  # Tune to 1 GHz on both RX and TX

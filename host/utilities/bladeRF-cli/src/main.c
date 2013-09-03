@@ -18,20 +18,14 @@
 #include "version.h"
 
 
-#ifdef INTERACTIVE
-#   define OPTSTR "d:f:l:s:ipLv:Vh"
-#else
-#   define OPTSTR "d:f:l:pLv:Vh"
-#endif
+#define OPTSTR "d:f:l:s:ipLv:Vh"
 
 static const struct option longopts[] = {
     { "device",         required_argument,  0, 'd' },
     { "flash-firmware", required_argument,  0, 'f' },
     { "load-fpga",      required_argument,  0, 'l' },
-#ifdef INTERACTIVE
     { "script",         required_argument,  0, 's' },
     { "interactive",    no_argument,        0, 'i' },
-#endif
     { "probe",          no_argument,        0, 'p' },
     { "lib-version",    no_argument,        0, 'L' },
     { "verbosity",      required_argument,  0, 'v' },
@@ -112,7 +106,6 @@ int get_rc_config(int argc, char *argv[], struct rc_config *rc)
                 }
                 break;
 
-#ifdef INTERACTIVE
             case 's':
                 rc->script_file = strdup(optarg);
                 if (!rc->script_file) {
@@ -124,7 +117,7 @@ int get_rc_config(int argc, char *argv[], struct rc_config *rc)
             case 'i':
                 rc->interactive_mode = true;
                 break;
-#endif
+
             case 'p':
                 rc->probe = true;
                 break;
@@ -181,10 +174,8 @@ void usage(const char *argv0)
     printf("  -f, --flash-firmware <file>      Flash specified firmware file.\n");
     printf("  -l, --load-fpga <file>           Load specified FPGA bitstream.\n");
     printf("  -p, --probe                      Probe for devices, print results, then exit.\n");
-#ifdef INTERACTIVE
     printf("  -s, --script <file>              Run provided script.\n");
     printf("  -i, --interactive                Enter interactive mode.\n");
-#endif
     printf("  -L, --lib-version                Print libbladeRF version and exit.\n");
     printf("  -v, --verbosity <level>          Set the libbladeRF verbosity level.\n");
     printf("                                   Levels, listed in increasing verbosity, are:\n");
@@ -201,11 +192,6 @@ void usage(const char *argv0)
     printf("  will be used for the provided command, or will be opened prior\n");
     printf("  to entering interactive mode.\n");
     printf("\n");
-
-#ifndef INTERACTIVE
-    printf("  This tool has been built without INTERACTIVE=y. The interactive\n"
-           "  console is disabled (-i) and the -s option is not supported.\n");
-#endif
 }
 
 static void print_error_need_devarg()

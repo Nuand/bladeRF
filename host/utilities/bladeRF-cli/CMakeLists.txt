@@ -29,15 +29,16 @@ configure_file(
 ################################################################################
 
 find_package(LibTecla)
-option(ENABLE_INTERACTIVE_TECLA
-       "Enable interactive mode support via libtecla"
-       ON
+
+option(ENABLE_LIBTECLA
+        "Enable the use of libtecla, if available."
+        ${LIBTECLA_FOUND}
 )
 
-if(ENABLE_INTERACTIVE_TECLA AND NOT ${LIBTECLA_FOUND})
-    message(STATUS "Disabling ENABLE_INTERACTIVE_TECLA because libtecla was not found.")
-    set(ENABLE_INTERACTIVE_TECLA OFF)
+if(ENABLE_LIBTECLA)
+    message(STATUS "libtecla support enabled")
 endif()
+
 
 ################################################################################
 # Build dependencies
@@ -62,7 +63,7 @@ set(CLI_INCLUDE_DIRS
        ${libbladeRF_SOURCE_DIR}/include
 )
 
-if(ENABLE_INTERACTIVE_TECLA)
+if(ENABLE_LIBTECLA)
     set(CLI_INCLUDE_DIRS ${CLI_INCLUDE_DIRS} ${LIBTECLA_INCLUDE_DIR})
 endif()
 
@@ -92,13 +93,16 @@ set(BLADERF_CLI_SOURCE
         src/cmd/probe.c
         src/cmd/rxtx.c
         src/cmd/version.c
+        src/interactive/interactive.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/log.c
 )
 
-if(ENABLE_INTERACTIVE_TECLA)
-    add_definitions(-DINTERACTIVE=y)
-    set(BLADERF_CLI_SOURCE ${BLADERF_CLI_SOURCE} src/interactive/interactive.c)
+# Select the interactive mode (and script handling) backend
+if(ENABLE_LIBTECLA)
+    set(BLADERF_CLI_SOURCE ${BLADERF_CLI_SOURCE} src/interactive/tecla.c)
+else()
+    set(BLADERF_CLI_SOURCE ${BLADERF_CLI_SOURCE} src/interactive/fgets.c)
 endif()
 
 if(MSVC)
@@ -118,8 +122,8 @@ set(CLI_LINK_LIBRARIES
     ${CMAKE_THREAD_LIBS_INIT}
 )
 
-if(ENABLE_INTERACTIVE_TECLA)
-    # CLI_LINK_LIBRARIES_EXTA is here for a workaround for the following issue
+if(ENABLE_LIBTECLA)
+    # CLI_LINK_LIBRARIES_EXTRA is here for a workaround for the following issue
     set(CLI_LINK_LIBRARIES ${CLI_LINK_LIBRARIES} ${LIBTECLA_LIBRARIES} ${CLI_LINK_LIBRARIES_EXTRA})
 
     # On a few tests Linux distros, libtecla is not build against
@@ -128,7 +132,7 @@ if(ENABLE_INTERACTIVE_TECLA)
         set(CLI_LINK_LIBRARIES ${CLI_LINK_LIBRARIES} ncurses)
     endif(CMAKE_HOST_APPLE)
 
-endif(ENABLE_INTERACTIVE_TECLA)
+endif(ENABLE_LIBTECLA)
 
 if(LIBPTHREADSWIN32_FOUND)
     set(CLI_LINK_LIBRARIES ${CLI_LINK_LIBRARIES} ${LIBPTHREADSWIN32_LIBRARIES})

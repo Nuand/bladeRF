@@ -38,14 +38,14 @@ Below is a list of useful and project-specific CMake options. Please see the CMa
 more information.
 
 | Option                                    | Description
-| ----------------------------------------- |:--------------------------------------------------------------------------------------------------|
-| -DCMAKE_BUILD_TYPE=\<type\>               | Set <type> to "Debug" to enable a debug build. "Release" is the default.                          |
-| -DCMAKE_C_COMPILER=\<compiler\>           | Specify the compiler to use. Otherwise, CMake will determine a default.                           |
-| -DENABLE_GDB_EXTENSIONS=\<ON/OFF\>        | GCC & GDB users may want to set this to use -ggdb3 instead of -g. Disabled by default.            |
-| -DENABLE_BACKEND_LIBUSB=\<ON/OFF\>        | Enables libusb backend in libbladeRF. Enabled by default.                                         |
-| -DENABLE_BACKEND_LINUX_DRIVER=\<ON/OFF\>  | Enables Linux driver in libbladeRF. Disabled by default.                                          |
-| -DENABLE_INTERACTIVE_TECLA=\<ON/OFF\>     | Enable bladeRF-cli interactive mode support via libtecla. Enabled by default.                     |
-| -DINSTALL_UDEV_RULES=\<ON/OFF\>           | Install udev rules to /etc/udev/rules.d/. Disabled by default.                                    |
+| ----------------------------------------- |:---------------------------------------------------------------------------------------------------------|
+| -DCMAKE_BUILD_TYPE=\<type\>               | Set <type> to "Debug" to enable a debug build. "Release" is the default.                                 |
+| -DCMAKE_C_COMPILER=\<compiler\>           | Specify the compiler to use. Otherwise, CMake will determine a default.                                  |
+| -DENABLE_GDB_EXTENSIONS=\<ON/OFF\>        | GCC & GDB users may want to set this to use -ggdb3 instead of -g. Disabled by default.                   |
+| -DENABLE_BACKEND_LIBUSB=\<ON/OFF\>        | Enables libusb backend in libbladeRF. Enabled by default.                                                |
+| -DENABLE_BACKEND_LINUX_DRIVER=\<ON/OFF\>  | Enables Linux driver in libbladeRF. Disabled by default.                                                 |
+| -DENABLE_LIBTECLA=\<ON/OFF\>              | Enable libtecla support in the bladeRF-cli program. Default: ON if libtecla is detected, OFF otherwise.  |
+| -DINSTALL_UDEV_RULES=\<ON/OFF\>           | Install udev rules to /etc/udev/rules.d/. Default: ON for Linux, OFF default otherwise.                  |
 
 [cmake]: ./cmake (CMake scripts)
 [drivers]: ./drivers (Drivers)

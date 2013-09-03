@@ -4,30 +4,22 @@
 
 #include <errno.h>
 #include <string.h>
-#include <libtecla.h>
 #include "interactive.h"
+#include "interactive_impl.h"
 #include "cmd.h"
 
-#ifndef CLI_MAX_LINE_LEN
-#   define CLI_MAX_LINE_LEN 320
-#endif
-
-#ifndef CLI_MAX_HIST_LEN
-#   define CLI_MAX_HIST_LEN 500
-#endif
-
-#ifndef CLI_PROMPT
-#   define CLI_DEFAULT_PROMPT   "bladeRF> "
-#endif
-
-static void exit_script(GetLine *gl, struct cli_state *s, bool *in_script)
+static void exit_script(struct cli_state *s, bool *in_script)
 {
+    int status;
+
     if (*in_script) {
         *in_script = false;
 
         /* TODO pop from a script stack here, restore line count */
-        if (gl_change_terminal(gl, stdin, stdout, getenv("term")) < 0) {
-            /* At least attempt to report something... */
+        status = interactive_set_input(stdin);
+
+        /* At least attempt to report something... */
+        if (status < 0) {
             cli_err(s, "Error", "Failed to reset terminal when exiting script");
         }
 
@@ -42,25 +34,12 @@ int interactive(struct cli_state *s, bool script_only)
 {
     char *line;
     int status;
-    GetLine *gl;
     const char *error;
     bool in_script;
 
-    gl = new_GetLine(CLI_MAX_LINE_LEN, CLI_MAX_HIST_LEN);
-
-    if (!gl) {
-        perror("new_GetLine");
-        return 2;
-    }
-
-    /* Try to set up a clean exit on these signals. If it fails, we'll
-     * trudge along with a warning */
-    status = gl_trap_signal(gl, SIGINT, GLS_DONT_FORWARD, GLS_ABORT, EINTR);
-    status |= gl_trap_signal(gl, SIGTERM, GLS_DONT_FORWARD, GLS_ABORT, EINTR);
-    status |= gl_trap_signal(gl, SIGQUIT, GLS_DONT_FORWARD, GLS_ABORT, EINTR);
-
-    if (status) {
-        fprintf(stderr, "Warning: Failed to set up signal handlers.\n");
+    status = interactive_init();
+    if (status < 0) {
+        return status;
     }
 
     status = 0;
@@ -68,19 +47,21 @@ int interactive(struct cli_state *s, bool script_only)
     s->lineno = 1;
 
     if (in_script) {
-        if (gl_change_terminal(gl, s->script, stdout, NULL) < 0) {
+        status = interactive_set_input(s->script);
+        if (status < 0) {
             fprintf(stderr, "Failed to run script. Aborting!\n");
-            status = CMD_RET_UNKNOWN;
+            status = CMD_RET_QUIT;
         }
     }
 
     while (!cmd_fatal(status) && status != CMD_RET_QUIT) {
 
         /* TODO: Change the prompt based on which device is open */
-        line = gl_get_line(gl, CLI_DEFAULT_PROMPT, NULL, 0);
+        line = interactive_get_line(CLI_DEFAULT_PROMPT);
+
         if (!line) {
             if (in_script) {
-                exit_script(gl, s, &in_script);
+                exit_script(s, &in_script);
 
                 /* Exit if we were run with a script, but not asked
                  * to drop into interactive mode */
@@ -101,12 +82,12 @@ int interactive(struct cli_state *s, bool script_only)
                 }
 
                 /* Stop executing script if we're in one */
-                exit_script(gl, s, &in_script);
+                exit_script(s, &in_script);
 
             } else if (status > 0){
                 switch (status) {
                     case CMD_RET_CLEAR_TERM:
-                        gl_erase_terminal(gl);
+                        interactive_clear_terminal();
                         break;
                     case CMD_RET_RUN_SCRIPT:
                         break;
@@ -121,32 +102,7 @@ int interactive(struct cli_state *s, bool script_only)
         }
     }
 
-    del_GetLine(gl);
+    interactive_deinit();
 
     return 0;
-}
-
-char * interactive_expand_path(char * path)
-{
-    ExpandFile *ef = NULL;
-    FileExpansion *fe = NULL;
-    char *ret = NULL;
-
-    ef = new_ExpandFile();
-    if (!ef)
-        return NULL;
-
-    fe = ef_expand_file(ef, path, strlen(path));
-
-    if (!fe)
-        return NULL;
-
-    if (fe->nfile <= 0)
-        return NULL;
-
-    ret = strdup(fe->files[0]);
-
-    del_ExpandFile(ef);
-
-    return ret;
 }
