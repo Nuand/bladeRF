@@ -167,7 +167,7 @@ int get_rc_config(int argc, char *argv[], struct rc_config *rc)
 
 void usage(const char *argv0)
 {
-    printf("Usage: %s [options]\n", argv0);
+    printf("Usage: %s <options>\n", argv0);
     printf("bladeRF command line interface and test utility (" BLADERF_CLI_VERSION ")\n\n");
     printf("Options:\n");
     printf("  -d, --device <device>            Use the specified bladeRF device.\n");
@@ -289,6 +289,11 @@ int main(int argc, char *argv[])
     struct rc_config rc;
     struct cli_state *state;
     bool exit_immediately = false;
+
+    /* If no actions are specified, just show the usage text and exit */
+    if (argc == 1) {
+        usage(argv[0]);
+    }
 
     init_rc_config(&rc);
 
