@@ -143,8 +143,6 @@ int get_rc_config(int argc, char *argv[], struct rc_config *rc)
                     fprintf(stderr, "Unknown verbosity level: %s\n", optarg);
                     return -1;
                 }
-
-
                 break;
 
             case 'V':
@@ -293,6 +291,7 @@ int main(int argc, char *argv[])
     /* If no actions are specified, just show the usage text and exit */
     if (argc == 1) {
         usage(argv[0]);
+        return 0;
     }
 
     init_rc_config(&rc);
