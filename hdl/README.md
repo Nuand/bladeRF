@@ -62,11 +62,10 @@ Note that to use Signal Tap with the Quartus II Web Edition software, Altera req
 ### /opt/altera/12.1sp1/nios2eds/bin/sh_jar.sh: 6: Bad substitution ###
 Most of the build tools are hardcoded to use /bin/sh, expecting that it will point to the bash shell.  However, with Ubuntu systems in particular, /bin/sh is linked to the dash shell, which is almost but not quite compatible.  There are two workarounds, choose the best for your situation.
 
-The first workaround involves pointing /bin/sh at bash instead of dash.  This could impact system-related things, although it shouldn't:
+The first workaround involves pointing /bin/sh at bash instead of dash. See the [DashAsBinSh page on the Ubuntu Wiki](https://wiki.ubuntu.com/DashAsBinSh) for more details.
 
 ```
-sudo rm /bin/sh
-sudo ln -s /bin/bash /bin/sh
+sudo dpkg-reconfigure dash
 ```
 
 The second workaround is to edit the scripts that call sh_jar.sh to use /bin/bash:
