@@ -451,7 +451,7 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
     }
 
     /* Poll FPGA status to determine if programming was a success */
-    wait_count = 1000;
+    wait_count = 10;
     status = 0;
 
     while (wait_count > 0 && status == 0) {
@@ -460,6 +460,7 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
             break;
         }
 
+        usleep(200000);
         wait_count--;
     }
 
