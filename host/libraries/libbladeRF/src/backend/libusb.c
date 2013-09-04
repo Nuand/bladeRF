@@ -50,6 +50,9 @@ static int error_libusb2bladerf(int error)
 {
     int ret;
     switch (error) {
+        case 0:
+            ret = 0;
+            break;
         case LIBUSB_ERROR_IO:
             ret = BLADERF_ERR_IO;
             break;
@@ -190,29 +193,37 @@ static int lusb_get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
     status = libusb_open( dev, &handle );
     if( status ) {
         bladerf_log_error( "Couldn't populate devinfo - %s\n", libusb_error_name(status) );
-        status = error_libusb2bladerf(status);
     } else {
         /* Populate device info */
         info->backend = BLADERF_BACKEND_LIBUSB;
         info->usb_bus = libusb_get_bus_number(dev);
         info->usb_addr = libusb_get_device_address(dev);
 
-        /* FIXME We need to get the serial number here before we've opened
-         *      the device. Clearing it out for now to avoid uninitialized
-         *      memory issues. */
         status = libusb_get_device_descriptor(dev, &desc);
         if (status) {
             memset(info->serial, 0, BLADERF_SERIAL_LENGTH);
         } else {
-            status = libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, &info->serial, BLADERF_SERIAL_LENGTH);
-			if (status > 0)
-				status = 0;
+            status = libusb_get_string_descriptor_ascii(handle,
+                                                        desc.iSerialNumber,
+                                                        (unsigned char *)&info->serial,
+                                                        BLADERF_SERIAL_LENGTH);
+
+            /* Consider this to be non-fatal, otherwise firmware <= 1.1
+             * wouldn't be able to get far enough to upgrade */
+            if (status < 0) {
+                bladerf_log_error("Failed to retrieve serial number\n");
+                memset(info->serial, 0, BLADERF_SERIAL_LENGTH);
+            }
+
+            /* Additinally, adjust for > 0 return code */
+            status = 0;
         }
 
         libusb_close( handle );
     }
 
-    return status;
+
+    return error_libusb2bladerf(status);
 }
 
 static int change_setting(struct bladerf *dev, uint8_t setting)
