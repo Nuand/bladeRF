@@ -54,7 +54,7 @@ unsigned int str2uint(const char *str, unsigned int min, unsigned int max, bool 
 }
 
 
-unsigned int str2uint64(const char *str, uint64_t min, uint64_t max, bool *ok)
+uint64_t str2uint64(const char *str, uint64_t min, uint64_t max, bool *ok)
 {
     unsigned long long value;
     char *endptr;

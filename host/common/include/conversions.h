@@ -50,7 +50,7 @@ unsigned int str2uint(const char *str,
  *
  * @return  Converted value on success, 0 on failure
  */
-unsigned int str2uint64(const char *str, uint64_t min, uint64_t max, bool *ok);
+uint64_t str2uint64(const char *str, uint64_t min, uint64_t max, bool *ok);
 
 /**
  * Convert a string to a double with range and error checking
