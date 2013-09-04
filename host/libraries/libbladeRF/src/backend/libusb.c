@@ -185,6 +185,7 @@ static int lusb_get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
 {
     int status = 0;
     libusb_device_handle *handle;
+    struct libusb_device_descriptor desc;
 
     status = libusb_open( dev, &handle );
     if( status ) {
@@ -199,7 +200,12 @@ static int lusb_get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
         /* FIXME We need to get the serial number here before we've opened
          *      the device. Clearing it out for now to avoid uninitialized
          *      memory issues. */
-        memset(info->serial, 0, BLADERF_SERIAL_LENGTH);
+        status = libusb_get_device_descriptor(dev, &desc);
+        if (status) {
+            memset(info->serial, 0, BLADERF_SERIAL_LENGTH);
+        } else {
+            status = libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, &info->serial, BLADERF_SERIAL_LENGTH);
+        }
 
         libusb_close( handle );
     }

@@ -54,6 +54,8 @@ void NuandEnso();
 void NuandExso();
 void NuandLockOtp();
 void NuandGPIOReconfigure(CyBool_t /* fullGpif */, CyBool_t /* warm */);
+int NuandExtractField(char * /* ptr */, int /* len */, char * /* field */, char * /* val */, size_t /* maxlen */);
+
 int FpgaBeginProgram(void);
 
 extern uint32_t glAppMode;

@@ -54,6 +54,17 @@ uint8_t glCal[0x100] __attribute__ ((aligned (32)));
 uint8_t glEp0Buffer[4096] __attribute__ ((aligned (32)));
 uint32_t glEp0Idx;
 
+/* Standard product string descriptor */
+uint8_t CyFxUSBSerial[] __attribute__ ((aligned (32))) =
+{
+    0x42,                           /* Descriptor size */
+    CY_U3P_USB_STRING_DESCR,        /* Device descriptor type */
+    '0',0x00,'0',0x00,'0',0x00,'0',0x00,'0',0x00,'0',0x00,'0',0x00,'0',0x00,
+    '0',0x00,'0',0x00,'0',0x00,'0',0x00,'0',0x00,'0',0x00,'0',0x00,'0',0x00,
+    '0',0x00,'0',0x00,'0',0x00,'0',0x00,'0',0x00,'0',0x00,'0',0x00,'0',0x00,
+    '0',0x00,'0',0x00,'0',0x00,'0',0x00,'0',0x00,'0',0x00,'0',0x00,'0',0x00,
+};
+
 /* Application Error Handler */
 void CyFxAppErrorHandler(CyU3PReturnStatus_t apiRetStatus)
 {
@@ -1173,6 +1184,13 @@ void bladeRFInit(void)
         CyFxAppErrorHandler(apiRetStatus);
     }
 
+    /* String descriptor 3 */
+    apiRetStatus = CyU3PUsbSetDesc(CY_U3P_USB_SET_STRING_DESCR, 3, (uint8_t *)CyFxUSBSerial);
+    if (apiRetStatus != CY_U3P_SUCCESS) {
+        CyU3PDebugPrint (4, "USB set string descriptor failed, Error code = %d\n", apiRetStatus);
+        CyFxAppErrorHandler(apiRetStatus);
+    }
+
     /* Connect the USB Pins with super speed operation enabled. */
     apiRetStatus = CyU3PConnectState(CyTrue, CyTrue);
     if (apiRetStatus != CY_U3P_SUCCESS) {
@@ -1198,6 +1216,16 @@ void bladeRFAppThread_Entry( uint32_t input)
     NuandExso();
 
     CyFxSpiTransfer(768, 0x100, glCal, CyTrue);
+
+    {
+        char serial_buf[32];
+        int i;
+        if (!NuandExtractField(glOtp, 0x100, "S", serial_buf, 32)) {
+            for (i = 0; i < 32; i++) {
+                CyFxUSBSerial[2+i*2] = serial_buf[i];
+            }
+        }
+    }
 
     NuandFirmwareStop();
 
