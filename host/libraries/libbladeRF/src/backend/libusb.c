@@ -205,6 +205,8 @@ static int lusb_get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
             memset(info->serial, 0, BLADERF_SERIAL_LENGTH);
         } else {
             status = libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, &info->serial, BLADERF_SERIAL_LENGTH);
+			if (status > 0)
+				status = 0;
         }
 
         libusb_close( handle );
