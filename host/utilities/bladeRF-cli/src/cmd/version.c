@@ -44,14 +44,19 @@ int cmd_version(struct cli_state *state, int argc, char **argv)
     }
 
 
-    printf("\nSerial #: %s\n", serial);
+    printf("\n");
+    printf("Serial #:               %s\n", serial);
     printf("VCTCXO DAC calibration: 0x%.4x\n", dac_trim);
-    printf("FPGA size: %d KLE\n", fpga_size);
-    printf("Firmware version: %u.%u\n", fw_major, fw_minor);
-    if (fpga_loaded) {
-        printf("FPGA version:     %u.%u\n", fpga_major, fpga_minor);
+    if (fpga_size != 0) {
+        printf("FPGA size:              %d KLE\n", fpga_size);
     } else {
-        printf("FPGA version:     Unknown (FPGA not loaded)\n");
+        printf("FPGA size:              Unknown\n");
+    }
+    printf("Firmware version:       %u.%u\n", fw_major, fw_minor);
+    if (fpga_loaded) {
+        printf("FPGA version:           %u.%u\n", fpga_major, fpga_minor);
+    } else {
+        printf("FPGA version:           Unknown (FPGA not loaded)\n");
     }
     printf("\n");
 

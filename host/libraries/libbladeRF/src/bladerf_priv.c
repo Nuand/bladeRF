@@ -260,8 +260,16 @@ int bladerf_get_cal_field(struct bladerf *dev, char *field,
 
 int bladerf_get_and_cache_serial(struct bladerf *dev)
 {
-    return bladerf_get_otp_field(dev, "S", dev->serial,
+    int status;
+    status = bladerf_get_otp_field(dev, "S", dev->serial,
                                     BLADERF_SERIAL_LENGTH - 1);
+
+    if (status < 0) {
+        bladerf_log_debug("Unable to fetch serial number. Defaulting to 0's\n");
+        memset(dev->serial, 0, BLADERF_SERIAL_LENGTH);
+    }
+
+    return status;
 }
 
 int bladerf_get_and_cache_vctcxo_trim(struct bladerf *dev)
@@ -274,12 +282,13 @@ int bladerf_get_and_cache_vctcxo_trim(struct bladerf *dev)
     status = bladerf_get_cal_field(dev, "DAC", tmp, sizeof(tmp) - 1);
     if (!status) {
         trim = str2uint(tmp, 0, 0xffff, &ok);
-        if (ok) {
-            dev->dac_trim = trim;
-        } else {
-            bladerf_log_info("DAC trim unprogrammed. Defaulting to 0x8000\n");
-            dev->dac_trim = 0x8000;
-        }
+    }
+
+    if (!status && ok) {
+        dev->dac_trim = trim;
+    } else {
+        bladerf_log_debug("Unable to fetch DAC trim. Defaulting to 0x8000\n");
+        dev->dac_trim = 0x8000;
     }
 
     return status;

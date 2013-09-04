@@ -106,30 +106,27 @@ int bladerf_open(struct bladerf **device, const char *dev_id)
     if (!status) {
         if (!dev->legacy) {
 
-            /* FIXME Will this be neccessary since we'll hae to have gotten
-             *       the serial # while probing?
-             */
             status = bladerf_get_and_cache_serial(dev);
-
             if (!status) {
-                status = bladerf_get_and_cache_vctcxo_trim(dev);
-            } else {
                 bladerf_log_warning( "Could not extract serial number\n" ) ;
             }
 
+            status = bladerf_get_and_cache_vctcxo_trim(dev);
             if (!status) {
-                status = bladerf_get_and_cache_fpga_size(dev);
-            } else {
                 bladerf_log_warning( "Could not extract VCTCXO trim value\n" ) ;
             }
 
+            status = bladerf_get_and_cache_fpga_size(dev);
             if (!status) {
-                bladerf_log_debug("%s: fw=v%d.%d serial=%s trim=0x%.4x fpga_size=%d\n",
-                        __FUNCTION__, dev->fw_major, dev->fw_minor,
-                        dev->serial, dev->dac_trim, dev->fpga_size);
-            } else {
                 bladerf_log_warning( "Could not extract FPGA size\n" ) ;
             }
+
+            /* If any of these routines failed, the dev structure should
+             * still have had it's fields dummied, so they're safe to
+             * print here (i.e., not uninitialized) */
+            bladerf_log_debug("%s: fw=v%d.%d serial=%s trim=0x%.4x fpga_size=%d\n",
+                    __FUNCTION__, dev->fw_major, dev->fw_minor,
+                    dev->serial, dev->dac_trim, dev->fpga_size);
         } else {
             printf("********************************************************************************\n");
             printf("* ENTERING LEGACY MODE, PLEASE UPGRADE TO THE LATEST FIRMWARE BY RUNNING:\n");
