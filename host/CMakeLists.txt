@@ -34,6 +34,17 @@ set(BLADERF_HOST_COMMON_INCLUDE_DIRS
 
 set(BLADERF_HOST_COMMON_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/common/src)
 
+###############################
+# Misc. options
+###############################
+option(ENABLE_LOG_FILE_INFO
+        "Enable source file and line number information in log messages."
+        OFF)
+
+if(ENABLE_LOG_FILE_INFO)
+    add_definitions(-DLOG_INCLUDE_FILE_INFO)
+endif()
+
 ################################################################################
 # Configure host-specific items
 ################################################################################
