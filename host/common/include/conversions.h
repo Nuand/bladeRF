@@ -10,6 +10,15 @@
 #include "host_config.h"
 
 /**
+ * Represents an association between a string suffix for a numeric value and
+ * its multiplier. For example, "k" might correspond to 1000.
+ */
+typedef struct numeric_suffix {
+    const char *suffix;
+    int multiplier;
+} numeric_suffix;
+
+/**
  * String to integer conversion with range and error checking
  *
  *  @param  str     String to convert
@@ -65,5 +74,25 @@ uint64_t str2uint64(const char *str, uint64_t min, uint64_t max, bool *ok);
  * @return  Converted value on success, 0 on failure
  */
 double str2double(const char *str, double min, double max, bool *ok);
+
+/**
+ * Convert a string to an unsigned integer with range and error checking.
+ * Supports the use of decimal representations and suffixes in the string.
+ * For example, a string "2.4G" might be converted to 2400000000.
+ *
+ * @param[in]   str     String to convert
+ * @param[in]   min     Minimum allowed value (inclusive)
+ * @param[in]   max     Maximum allowed value (inclusive)
+ * @param[in]   suffixes    List of allowed suffixes and their multipliers
+ * @param[in]   num_suffixes    Number of suffixes in the list
+ * @param[out]  ok      If non-NULL, this is set to true if the conversion was
+ *                      successful, and false for an invalid or out of range
+ *                      value.
+ *
+ * @return  Converted value on success, 0 on failure
+ */
+unsigned int str2uint_suffix(const char *str, unsigned int min,
+        unsigned int max, const struct numeric_suffix suffixes[],
+        int num_suffixes, bool *ok);
 
 #endif

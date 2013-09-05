@@ -104,3 +104,49 @@ double str2double(const char *str, double min, double max, bool *ok)
     return value;
 }
 
+unsigned int str2uint_suffix(const char *str, unsigned int min,
+        unsigned int max, const struct numeric_suffix suffixes[],
+        int num_suffixes, bool *ok)
+{
+    double value;
+    char *endptr;
+    int i;
+
+    errno = 0;
+    value = strtod(str, &endptr);
+
+    /* If a number could not be parsed at the beginning of the string */
+    if (errno != 0 || endptr == str) {
+        if (ok) {
+            *ok = false;
+        }
+        
+        return 0;
+    }
+
+    /* Loop through each available suffix */
+    for (i = 0; i < num_suffixes; i++) {
+        /* If the suffix appears at the end of the number */
+        if (!strcasecmp(endptr, suffixes[i].suffix)) {
+            /* Apply the multiplier */
+            value *= suffixes[i].multiplier;
+            break;
+        }
+    }
+
+    /* Check that the resulting value is in bounds */
+    if (value > max || value < min) {
+        if (ok) {
+            *ok = false;
+        }
+
+        return 0;
+    }
+
+    if (ok) {
+        *ok = true;
+    }
+
+    /* Truncate the floating point value to an integer and return it */
+    return (unsigned int)value;
+}
