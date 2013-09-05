@@ -700,8 +700,12 @@ static int linux_probe(struct bladerf_devinfo_list *info_list)
     return (!status &&  num_matches > 0) ? status : BLADERF_ERR_NODEV;
 }
 
-static int linux_stream(struct bladerf *dev, bladerf_module module,
-                        bladerf_format format, struct bladerf_stream *stream)
+static int linux_stream_init(struct bladerf_stream *stream)
+{
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
+static int linux_stream(struct bladerf_stream *stream, bladerf_module module)
 {
     return BLADERF_ERR_UNSUPPORTED;
 }
@@ -752,6 +756,7 @@ const struct bladerf_fn bladerf_linux_fn = {
     FIELD_INIT(.rx, linux_rx),
     FIELD_INIT(.tx, linux_tx),
 
+    FIELD_INIT(.init_stream, linux_stream_init),
     FIELD_INIT(.stream, linux_stream),
     FIELD_INIT(.deinit_stream, linux_deinit_stream),
 

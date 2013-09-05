@@ -257,8 +257,7 @@ int main(int argc, char *argv[])
 
     if (!status) {
         /* Start stream and stay there until we kill the stream */
-        status = bladerf_stream(dev, test_data.module,
-                                BLADERF_FORMAT_SC16_Q12, stream);
+        status = bladerf_stream(stream, test_data.module);
 
         if (status < 0) {
             fprintf(stderr, "Stream error: %s\n", bladerf_strerror(status));

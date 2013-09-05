@@ -126,8 +126,8 @@ struct bladerf_fn {
     int (*rx)(struct bladerf *dev, bladerf_format format, void *samples, int n, struct bladerf_metadata *metadata);
     int (*tx)(struct bladerf *dev, bladerf_format format, void *samples, int n, struct bladerf_metadata *metadata);
 
-    int (*stream)(struct bladerf *dev, bladerf_module module, bladerf_format format, struct bladerf_stream *stream);
-
+    int (*init_stream)(struct bladerf_stream *stream);
+    int (*stream)(struct bladerf_stream *stream, bladerf_module module);
     void (*deinit_stream)(struct bladerf_stream *stream);
 
     /* Gather statistics */

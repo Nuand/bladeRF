@@ -569,10 +569,19 @@ int bladerf_init_stream(struct bladerf_stream **stream,
 
         free(lstream);
     } else {
-        /* Update the caller's pointers */
-        *stream = lstream;
-        *buffers = lstream->buffers;
+        /* Perform any backend-specific stream initialization */
+        status = dev->fn->init_stream(lstream);
+
+        if (status < 0) {
+            bladerf_deinit_stream(lstream);
+            *stream = NULL;
+        } else {
+            /* Update the caller's pointers */
+            *stream = lstream;
+            *buffers = lstream->buffers;
+        }
     }
+
 
     return status;
 }
@@ -605,12 +614,14 @@ void bladerf_deinit_stream(struct bladerf_stream *stream)
     return ;
 }
 
-int bladerf_stream(struct bladerf *dev, bladerf_module module,
-                   bladerf_format format, struct bladerf_stream *stream)
+int bladerf_stream(struct bladerf_stream *stream, bladerf_module module)
 {
     int status;
+    struct bladerf *dev = stream->dev;
 
-    status = dev->fn->stream(dev, module, format, stream);
+    stream->module = module;
+    stream->state = STREAM_RUNNING;
+    status = dev->fn->stream(stream, module);
 
     /* Backend return value takes precedence over stream error status */
     return status == 0 ? stream->error_code : status;

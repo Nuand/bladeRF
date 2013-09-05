@@ -661,20 +661,22 @@ API_EXPORT int bladerf_init_stream(struct bladerf_stream **stream,
                                    void *user_data);
 
 /**
+ * Begin running  a stream. This call will block until the steam completes.
+ *
+ * @param   stream  A stream handle that has been successfully been initialized
+ *                  via bladerf_init_stream()
+ *
+ * @param   module  Module to perform streaming with
+ *
+ * @return  0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT int bladerf_stream(struct bladerf_stream *stream,
+                              bladerf_module module);
+
+/**
  * Deinitialize and deallocate stream resources
  */
 API_EXPORT void bladerf_deinit_stream(struct bladerf_stream *stream);
-
-/**
- *
- * @pre The provided bladerf_stream must have had its callback,
- *      samples_per_buffer, buffers_per_stream, and (optional) data fields
- *      initialized prior to this call
- */
-API_EXPORT int bladerf_stream(struct bladerf *dev,
-                              bladerf_module module,
-                              bladerf_format format,
-                              struct bladerf_stream *stream);
 
 /**
  * Transmit IQ samples

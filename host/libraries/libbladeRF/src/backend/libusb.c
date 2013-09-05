@@ -1250,39 +1250,32 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
     }
 }
 
-static int lusb_stream(struct bladerf *dev, bladerf_module module,
-                       bladerf_format format, struct bladerf_stream *stream)
+static int lusb_stream_init(struct bladerf_stream *stream)
 {
     size_t i;
-    void *buffer;
-    struct bladerf_metadata metadata;
-    int status;
     struct lusb_stream_data *stream_data;
-
-    const size_t buffer_size = c16_samples_to_bytes(stream->samples_per_buffer);
-    struct bladerf_lusb *lusb = dev->backend;
-    struct timeval tv = { 5, 0 };
+    int status = 0;
 
     /* Fill in backend stream information */
-    stream_data = malloc( sizeof(struct lusb_stream_data) );
+    stream_data = malloc(sizeof(struct lusb_stream_data));
     if (!stream_data) {
         return BLADERF_ERR_MEM;
     }
 
     /* Backend stream information */
     stream->backend_data = stream_data;
-    stream->module = module;
 
-    /* Set our state to running */
-    stream->state = STREAM_RUNNING;
     stream_data->libusb_completed = 0;
 
     /* Pointers for libusb transfers */
-    stream_data->transfers = malloc(stream->num_transfers * sizeof(struct libusb_transfer *));
+    stream_data->transfers =
+        calloc(stream->num_transfers, sizeof(struct libusb_transfer *));
+
     if (!stream_data->transfers) {
         bladerf_log_error("Failed to allocate libusb tranfers\n");
         free(stream_data);
         stream->backend_data = NULL;
+        return BLADERF_ERR_MEM;
     }
 
     stream_data->active_transfers = 0;
@@ -1304,12 +1297,28 @@ static int lusb_stream(struct bladerf *dev, bladerf_module module,
                 }
             }
 
-            /* Don't even start up */
-            stream->state = STREAM_DONE;
-            stream->error_code = BLADERF_ERR_MEM;
+            status = BLADERF_ERR_MEM;
             break;
         }
     }
+
+    return status;
+}
+
+static int lusb_stream(struct bladerf_stream *stream, bladerf_module module)
+{
+    size_t i;
+    int status;
+    void *buffer;
+    struct bladerf_metadata metadata;
+    struct bladerf *dev = stream->dev;
+    struct bladerf_lusb *lusb = dev->backend;
+    struct lusb_stream_data *stream_data = stream->backend_data;
+    struct timeval tv = { 5, 0 };
+    const size_t buffer_size = c16_samples_to_bytes(stream->samples_per_buffer);
+
+    /* Currently unused, so zero it out for a sanity check when debugging */
+    memset(&metadata, 0, sizeof(metadata));
 
     /* Set up initial set of buffers */
     for( i = 0; i < stream->num_transfers; i++ ) {
@@ -1344,17 +1353,17 @@ static int lusb_stream(struct bladerf *dev, bladerf_module module,
 
         /* Fill and submit the bulk transfer request */
         libusb_fill_bulk_transfer(
-            stream_data->transfers[i],
-            lusb->handle,
-            module == BLADERF_MODULE_TX ? EP_OUT(0x01) : EP_IN(0x01),
-            buffer,
-            buffer_size,
-            lusb_stream_cb,
-            stream,
-            BULK_TIMEOUT
-        );
+                stream_data->transfers[i],
+                lusb->handle,
+                module == BLADERF_MODULE_TX ? EP_OUT(0x01) : EP_IN(0x01),
+                buffer,
+                buffer_size,
+                lusb_stream_cb,
+                stream,
+                BULK_TIMEOUT
+                );
 
-        bladerf_log_info("Initial transfer with buffer: %p (i=%zd)\n", buffer, i);
+        bladerf_log_debug("Initial transfer with buffer: %p (i=%zd)\n", buffer, i);
 
         stream_data->active_transfers++;
         status = libusb_submit_transfer(stream_data->transfers[i]);
@@ -1372,7 +1381,7 @@ static int lusb_stream(struct bladerf *dev, bladerf_module module,
                     status = libusb_cancel_transfer(stream_data->transfers[i]);
                     if (status < 0) {
                         bladerf_log_error("Failed to cancel transfer %zd: %s\n",
-                                   i, libusb_error_name(status));
+                                i, libusb_error_name(status));
                     }
                 }
             }
@@ -1382,11 +1391,11 @@ static int lusb_stream(struct bladerf *dev, bladerf_module module,
     /* This loop is required so libusb can do callbacks and whatnot */
     while( stream->state != STREAM_DONE ) {
         status = libusb_handle_events_timeout_completed(lusb->context, &tv,
-                                                        &stream_data->libusb_completed);
+                                                &stream_data->libusb_completed);
 
         if (status < 0 && status != LIBUSB_ERROR_INTERRUPTED) {
-            bladerf_log_warning("Got unexpected return value from events processing: "
-                       "%d: %s\n", status, libusb_error_name(status));
+            bladerf_log_warning("unexpected value from events processing: "
+                                "%d: %s\n", status, libusb_error_name(status));
         }
     }
 
@@ -1489,6 +1498,7 @@ const struct bladerf_fn bladerf_lusb_fn = {
     FIELD_INIT(.rx, lusb_rx),
     FIELD_INIT(.tx, lusb_tx),
 
+    FIELD_INIT(.init_stream, lusb_stream_init),
     FIELD_INIT(.stream, lusb_stream),
     FIELD_INIT(.deinit_stream, lusb_deinit_stream),
 
