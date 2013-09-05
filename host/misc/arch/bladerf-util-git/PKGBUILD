@@ -1,0 +1,73 @@
+# Maintainer: Guido Paliot <guido@paliot.de>
+pkgname=bladerf-util-git
+pkgver=df0f495
+pkgrel=1
+pkgdesc="Utils, libraries and prebuilt firmware for the Nuand bladeRF"
+arch=('x86_64')
+url="https://github.com/Nuand/bladeRF"
+license=('GPL')
+depends=('libtecla' 'libusb>=1.0.12')
+makedepends=('git')
+optdepends=(
+	'bladerf:	Linux kernel driver backend for bladeRF'
+)
+conflicts=('bladerf-util')
+provides=('bladerf-util')
+backup=(etc/bladerf.cfg)
+source=('bladeRF::git+https://github.com/Nuand/bladeRF#branch=master'
+        'http://nuand.com/fx3/latest.img'
+        'http://nuand.com/fpga/ddc81d0fb1b653227b5824d8d5fcb444556da175/hostedx40.rbf'
+        'http://nuand.com/fpga/ddc81d0fb1b653227b5824d8d5fcb444556da175/hostedx115.rbf'
+)
+sha1sums=(
+        'SKIP'
+        'SKIP'
+        '10251c8d12bf32bd4d2ec987f904fa3e644883cd'
+        '211d3d997b56624d46abfa2eeaeefde345a38c87'
+)
+
+
+_gitname=bladeRF
+
+pkgver() {
+    cd $_gitname
+      # Use the tag of the last commit
+        git describe --always | sed 's|-|.|g'
+      }
+
+build() {
+  cd "$srcdir"
+  msg "Connecting to GIT server...."
+
+  if [[ -d "$_gitname" ]]; then
+    cd "$_gitname" && git pull origin
+    msg "The local files are updated."
+  else
+    git clone "$_gitroot" "$_gitname"
+  fi
+
+  msg "GIT checkout done or server timeout"
+  msg "Starting build..."
+
+  rm -rf "$srcdir/$_gitname-build"
+  git clone "$srcdir/$_gitname" "$srcdir/$_gitname-build"
+
+  cd "$srcdir/$_gitname-build/host"
+
+  cmake -DCMAKE_INSTALL_PREFIX=/usr -DINSTALL_UDEV_RULES=ON -DENABLE_BACKEND_LINUX_DRIVER=OFF -DENABLE_BACKEND_LIBUSB=ON -DLIBTECLA_INCLUDE_DIR=/usr/include -DCMAKE_BUILD_TYPE=Release .
+
+  make
+}
+
+package() {
+
+  cd "$srcdir/$_gitname-build/host"
+  make DESTDIR=$pkgdir install
+  mkdir -p $pkgdir/usr/share/bladerf/fpga
+  mkdir $pkgdir/usr/share/bladerf/firmware
+  cp $srcdir/latest.img $pkgdir/usr/share/bladerf/firmware/
+  cp $srcdir/hostedx40.rbf $pkgdir/usr/share/bladerf/fpga/
+  cp $srcdir/hostedx115.rbf $pkgdir/usr/share/bladerf/fpga/
+  cp $srcdir/$_gitname-build/COPYING $pkgdir/usr/share/bladerf/LICENSE
+}
+

@@ -1,0 +1,58 @@
+# Maintainer: Guido Paliot <guido@paliot.de>
+pkgname=bladerf-git
+pkgver=2b5bbe3
+pkgrel=1
+epoch=1
+install=.install
+pkgdesc="Kernel driver for the Nuand bladeRF"
+arch=('x86_64')
+url="https://github.com/Nuand/bladeRF"
+license=('GPL')
+depends=('kernel26>=3.5')
+makedepends=('git' 'linux-headers')
+provides=('bladerf')
+conflicts=('bladerf')
+backup=('etc/modules-load.d/bladerf.conf')
+source=('bladeRF::git+https://github.com/gpaliot/bladeRF#branch=master'
+        'bladerf.conf'
+)
+sha1sums=('SKIP'
+          'cff3733c6dc38e8a5a5d2aee236e36dabcc3feb4')
+
+_gitname=bladeRF
+
+pkgver() {
+    cd $_gitname
+      # Use the tag of the last commit
+        git describe --always | sed 's|-|.|g'
+      }
+
+build() {
+  cd "$srcdir"
+  msg "Connecting to GIT server...."
+
+  if [[ -d "$_gitname" ]]; then
+    cd "$_gitname" && git pull origin
+    msg "The local files are updated."
+  else
+    git clone "$_gitroot" "$_gitname"
+  fi
+
+  msg "GIT checkout done or server timeout"
+  msg "Starting build..."
+
+  rm -rf "$srcdir/$_gitname-build"
+  git clone "$srcdir/$_gitname" "$srcdir/$_gitname-build"
+  cd "$srcdir/$_gitname-build/host/drivers/linux"
+
+  make
+}
+
+package() {
+  mkdir -p $pkgdir/usr/lib/modules/`uname -r`/kernel/extramodules/bladeRF/
+  cp $srcdir/$_gitname-build/host/drivers/linux/bladeRF.ko \
+     $pkgdir/usr/lib/modules/`uname -r`/kernel/extramodules/bladeRF/
+  mkdir -p $pkgdir/etc/modules-load.d/
+  cp bladerf.conf $pkgdir/etc/modules-load.d/
+}
+
