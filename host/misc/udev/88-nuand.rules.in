@@ -1,0 +1,2 @@
+# nuand bladeRF
+ATTR{idVendor}=="1d50", ATTR{idProduct}=="6066", MODE="660", GROUP="@BLADERF_GROUP@", RUN+="@CMAKE_INSTALL_PREFIX@/share/bladerf/scripts/load_fpga.sh"
