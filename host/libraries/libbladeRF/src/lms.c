@@ -374,6 +374,21 @@ void lms_peakdetect_disable(struct bladerf *dev)
     return;
 }
 
+void lms_enable_rffe(struct bladerf *dev, bladerf_module module, bool enable)
+{
+    uint8_t data;
+    uint8_t base = module == BLADERF_MODULE_TX ? 0x40 : 0x70 ;
+
+    bladerf_lms_read(dev, base, &data);
+    if (enable) {
+        data |= (1<<1);
+    } else {
+        data &= ~(1<<1);
+    }
+    bladerf_lms_write(dev, base, data);
+    return;
+}
+
 // Enable TX loopback
 void lms_tx_loopback_enable(struct bladerf *dev, lms_txlb_t mode)
 {

@@ -359,6 +359,15 @@ void lms_peakdetect_enable(struct bladerf *dev);
 void lms_peakdetect_disable(struct bladerf *dev);
 
 /**
+ * Enable or disable the RF front end.
+ *
+ * @param[in]   dev     Device handle
+ * @param[in]   module  Module to enable or disable
+ * @param[in]   enable  Enable or disable boolean flag
+ */
+void lms_enable_rffe(struct bladerf *dev, bladerf_module module, bool enable);
+
+/**
  * Enable TX loopback
  * TODO: Does this need to be exposed like this?
  *

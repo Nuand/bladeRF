@@ -45,7 +45,7 @@ int bladerf_init_device(struct bladerf *dev)
     unsigned int actual ;
 
     /* Set the GPIO pins to enable the LMS and select the low band */
-    bladerf_config_gpio_write( dev, 0x51 );
+    bladerf_config_gpio_write( dev, 0x57 );
 
     /* Set the internal LMS register to enable RX and TX */
     bladerf_lms_write( dev, 0x05, 0x3e );
@@ -70,8 +70,8 @@ int bladerf_init_device(struct bladerf *dev)
     bladerf_set_sample_rate( dev, BLADERF_MODULE_RX, 1000000, &actual );
 
     /* Enable TX and RX */
-    bladerf_enable_module( dev, BLADERF_MODULE_TX, true );
-    bladerf_enable_module( dev, BLADERF_MODULE_RX, true );
+    bladerf_enable_module( dev, BLADERF_MODULE_TX, false );
+    bladerf_enable_module( dev, BLADERF_MODULE_RX, false );
 
     /* Set a default frequency of 1GHz */
     bladerf_set_frequency( dev, BLADERF_MODULE_TX, 1000000000 );
