@@ -39,12 +39,15 @@ else()
 
 	# Ubuntu
 	# Default 13.04 install has lsb_release, check the distro name
-	if (${LINUX_DISTRO_NAME} EQUAL "Ubuntu")
+	if (${LINUX_DISTRO_NAME} MATCHES "Ubuntu")
 		set (BLADERF_GROUP plugdev)
 	endif()
 
 	message(STATUS
 		"${CMAKE_SYSTEM_NAME} ${LINUX_DISTRO_NAME} detected"
+		)
+
+	message(STATUS
 		"bladeRF will be accessible by group ${BLADERF_GROUP}"
 		)
 
