@@ -18,6 +18,18 @@ struct printset_entry {
     const char *name;                   /*<< String associated with parameter */
 };
 
+static const struct numeric_suffix FREQ_SUFFIXES[] = {
+    { "G",      1000 * 1000 * 1000 },
+    { "GHz",    1000 * 1000 * 1000 },
+    { "M",      1000 * 1000 },
+    { "MHz",    1000 * 1000 },
+    { "k",      1000 } ,
+    { "kHz",    1000 }
+};
+
+static const int NUM_FREQ_SUFFIXES =
+        sizeof(FREQ_SUFFIXES) / sizeof(struct numeric_suffix);
+
 /* Declarations */
 PRINTSET_DECL(bandwidth)
 PRINTSET_DECL(config)
@@ -182,7 +194,8 @@ int set_bandwidth(struct cli_state *state, int argc, char **argv)
         }
 
         /* Parse bandwidth */
-        bw = str2uint( argv[3], 0, UINT_MAX, &ok );
+        bw = str2uint_suffix( argv[3], 0, UINT_MAX,
+                FREQ_SUFFIXES, NUM_FREQ_SUFFIXES, &ok );
         if( !ok ) {
             cli_err(state, argv[0], "Invalid bandwidth (%s)", argv[3]);
             rv = CMD_RET_INVPARAM;
@@ -192,7 +205,8 @@ int set_bandwidth(struct cli_state *state, int argc, char **argv)
     /* No module, just bandwidth */
     else if( argc == 3 ) {
         bool ok;
-        bw = str2uint( argv[2], 0, UINT_MAX, &ok );
+        bw = str2uint_suffix( argv[2], 0, UINT_MAX,
+                FREQ_SUFFIXES, NUM_FREQ_SUFFIXES, &ok );
         if( !ok ) {
             cli_err(state, argv[0], "Invalid bandwidth (%s)", argv[2]);
             rv = CMD_RET_INVPARAM;
@@ -331,7 +345,8 @@ int set_frequency(struct cli_state *state, int argc, char **argv)
     if( argc > 2 && rv == CMD_RET_OK ) {
         bool ok;
         /* Parse out frequency */
-        freq = str2uint( argv[argc-1], 225000000, 3900000000u, &ok );
+        freq = str2uint_suffix( argv[argc-1], 225000000, 3900000000u,
+                FREQ_SUFFIXES, NUM_FREQ_SUFFIXES, &ok );
 
         if( !ok ) {
             cli_err(state, argv[0], "Invalid frequency (%s)", argv[argc - 1]);
@@ -716,7 +731,8 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
     if( argc > 2 && rv == CMD_RET_OK ) {
         bool ok;
         unsigned int rate, actual;
-        rate = str2uint( argv[argc-1], 160000, 40000000, &ok );
+        rate = str2uint_suffix( argv[argc-1], 160000, 40000000,
+                FREQ_SUFFIXES, NUM_FREQ_SUFFIXES, &ok );
 
         if( !ok ) {
             cli_err(state, argv[0], "Invalid sample rate (%s)", argv[2]);
