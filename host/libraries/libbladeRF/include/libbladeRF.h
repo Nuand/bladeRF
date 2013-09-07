@@ -891,6 +891,51 @@ API_EXPORT int bladerf_flash_firmware(struct bladerf *dev,
                                       const char *firmware);
 
 /**
+ * Erase pages from FX3 flash device
+ *
+ * @note Only entire pages are erased
+ *
+ * @param   dev         Device handle
+ * @param   page_offset Page offset to begin erasing
+ * @param   n_bytes     Number of bytes to erase
+ *
+ * @return Number of pages erased on success, value from \ref RETCODES list on
+ *         failure
+ */
+API_EXPORT int bladerf_erase_flash(struct bladerf *dev, int page_offset,
+                        int n_bytes);
+
+/**
+ * Read bytes from FX3 flash device
+ *
+ * @param   dev         Device handle
+ * @param   page_offset Page offset to begin reading
+ * @param   ptr         Buffer to read into, must be n_bytes long
+ * @param   n_bytes     Number of bytes to read
+ *
+ * @return Number of bytes read on success, value from \ref RETCODES list on
+ *         failure
+ */
+API_EXPORT int bladerf_read_flash(struct bladerf *dev, int page_offset,
+                        uint8_t *ptr, size_t n_bytes);
+
+/**
+ * Write bytes to FX3 flash device
+ *
+ * @note Only write erased pages
+ *
+ * @param   dev         Device handle
+ * @param   page_offset Page offset to begin writing
+ * @param   data        Data to write to flash
+ * @param   data_size   Number of bytes to write
+ *
+ * @return Number of bytes written on success, value from \ref RETCODES list
+ *         on failure
+ */
+API_EXPORT int bladerf_write_flash(struct bladerf *dev, int page_offset,
+                        uint8_t *data, size_t data_size);
+
+/**
  * Reset the device
  *
  * @note This also causes the device to reload its firmware

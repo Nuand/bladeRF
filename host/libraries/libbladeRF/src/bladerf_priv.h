@@ -98,6 +98,12 @@ struct bladerf_fn {
 
     /* Flash FX3 firmware */
     int (*flash_firmware)(struct bladerf *dev, uint8_t *image, size_t image_size);
+    int (*erase_flash)(struct bladerf *dev, int page_offset,
+                            int n_bytes);
+    int (*read_flash)(struct bladerf *dev, int page_offset,
+                            uint8_t *ptr, size_t n_bytes);
+    int (*write_flash)(struct bladerf *dev, int page_offset,
+                            uint8_t *data, size_t data_size);
     int (*device_reset)(struct bladerf *dev);
 
     /* Platform information */

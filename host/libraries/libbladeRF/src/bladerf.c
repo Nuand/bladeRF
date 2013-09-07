@@ -711,6 +711,36 @@ int bladerf_flash_firmware(struct bladerf *dev, const char *firmware_file)
     return status;
 }
 
+int bladerf_erase_flash(struct bladerf *dev, int page_offset,
+                        int n_bytes)
+{
+    if (!dev->fn->erase_flash) {
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    return dev->fn->erase_flash(dev, page_offset, n_bytes);
+}
+
+int bladerf_read_flash(struct bladerf *dev, int page_offset,
+                        uint8_t *ptr, size_t n_bytes)
+{
+    if (!dev->fn->read_flash) {
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    return dev->fn->read_flash(dev, page_offset, ptr, n_bytes);
+}
+
+int bladerf_write_flash(struct bladerf *dev, int page_offset,
+                        uint8_t *data, size_t data_size)
+{
+    if (!dev->fn->write_flash) {
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    return dev->fn->write_flash(dev, page_offset, data, data_size);
+}
+
 int bladerf_device_reset(struct bladerf *dev)
 {
     return dev->fn->device_reset(dev);

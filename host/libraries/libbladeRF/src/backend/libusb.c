@@ -499,7 +499,7 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
 }
 
 /* Note: n_bytes is rounded up to a multiple of the sector size here */
-static int erase_flash(struct bladerf *dev, int sector_offset, int n_bytes)
+static int lusb_erase_flash(struct bladerf *dev, int sector_offset, int n_bytes)
 {
     int status = 0;
     int sector_to_erase;
@@ -509,6 +509,13 @@ static int erase_flash(struct bladerf *dev, int sector_offset, int n_bytes)
 
     assert(sector_offset < FLASH_NUM_SECTORS);
     assert((sector_offset + n_sectors) < FLASH_NUM_SECTORS);
+
+    status = change_setting(dev, USB_IF_SPI_FLASH);
+
+    if (status) {
+        log_error("Failed to set interface: %s\n", libusb_error_name(status));
+        status = BLADERF_ERR_IO;
+    }
 
     log_info("Erasing %d sectors starting @ sector %d\n",
                 n_sectors, sector_offset);
@@ -542,20 +549,35 @@ static int erase_flash(struct bladerf *dev, int sector_offset, int n_bytes)
         }
     }
 
-    return status;
+    if (status == 0) {
+        return n_sectors;
+    } else {
+        return status;
+    }
 }
 
-static int read_flash(struct bladerf *dev, int page_offset,
+static int lusb_read_flash(struct bladerf *dev, int page_offset,
                         uint8_t *ptr, size_t n_bytes)
 {
     int status = 0;
-    int page_i, n_read;
+    int page_i, n_read, total_read;
     int read_size = dev->speed ? FLASH_PAGE_SIZE: 64;
     int pages_to_read = FLASH_BYTES_TO_PAGES(n_bytes);
     struct bladerf_lusb *lusb = dev->backend;
 
     assert(page_offset < FLASH_NUM_PAGES);
     assert((page_offset + n_bytes) < FLASH_NUM_PAGES);
+    /* FIXME: support data_size that are not multiple of pages */
+    assert(n_bytes % FLASH_PAGE_SIZE == 0);
+
+    status = change_setting(dev, USB_IF_SPI_FLASH);
+
+    if (status) {
+        log_error("Failed to set interface: %s\n", libusb_error_name(status));
+        status = BLADERF_ERR_IO;
+    }
+
+    total_read = 0;
 
     for (page_i = page_offset;
          page_i < (page_offset + pages_to_read) && !status;
@@ -588,12 +610,18 @@ static int read_flash(struct bladerf *dev, int page_offset,
                 status = BLADERF_ERR_IO;
             } else {
                 n_read += read_size;
+                total_read += read_size;
                 ptr += read_size;
                 status = 0;
             }
         } while (n_read < FLASH_PAGE_SIZE && !status);
     }
-    return status;
+
+    if (status == 0) {
+        return total_read;
+    } else {
+        return status;
+    }
 }
 
 static int verify_flash(struct bladerf *dev, int page_offset,
@@ -667,21 +695,33 @@ static int verify_flash(struct bladerf *dev, int page_offset,
     return status;
 }
 
-static int write_flash(struct bladerf *dev, int page_offset,
+static int lusb_write_flash(struct bladerf *dev, int page_offset,
                         uint8_t *data, size_t data_size)
 {
     int status = 0;
     int i;
-    int n_write;
+    int n_write, total_written;
     int write_size = dev->speed ? FLASH_PAGE_SIZE : 64;
     int pages_to_write = FLASH_BYTES_TO_PAGES(data_size);
     struct bladerf_lusb *lusb = dev->backend;
     uint8_t *data_page;
 
     log_info("Flashing with write size = %d\n", write_size);
+    status = change_setting(dev, USB_IF_SPI_FLASH);
+
+    if (status) {
+        log_error("Failed to set interface: %s\n", libusb_error_name(status));
+        status = BLADERF_ERR_IO;
+    }
+
+    log_info("Flashing with write size = %d\n", write_size);
 
     assert(page_offset < FLASH_NUM_PAGES);
     assert((page_offset + pages_to_write) < FLASH_NUM_PAGES);
+    /* FIXME: support data_size that are not multiple of pages */
+    assert(data_size % FLASH_PAGE_SIZE == 0);
+
+    total_written = 0;
 
     for (i = page_offset; i < (page_offset + pages_to_write) && !status; i++) {
         n_write = 0;
@@ -709,12 +749,17 @@ static int write_flash(struct bladerf *dev, int page_offset,
                 status = BLADERF_ERR_IO;
             } else {
                 n_write += write_size;
+                total_written += write_size;
                 status = 0;
             }
         } while (n_write < FLASH_PAGE_SIZE && !status);
     }
 
-    return status;
+    if (status == 0) {
+        return total_written;
+    } else {
+        return status;
+    }
 }
 
 static int lusb_flash_firmware(struct bladerf *dev,
@@ -730,14 +775,14 @@ static int lusb_flash_firmware(struct bladerf *dev,
     }
 
     if (status == 0) {
-        status = erase_flash(dev, 0, image_size);
+        status = lusb_erase_flash(dev, 0, image_size);
     }
 
-    if (status == 0) {
-        status = write_flash(dev, 0, image, image_size);
+    if (status >= 0) {
+        status = lusb_write_flash(dev, 0, image, image_size);
     }
 
-    if (status == 0) {
+    if (status >= 0) {
         status = verify_flash(dev, 0, image, image_size);
     }
 
@@ -794,8 +839,18 @@ static int lusb_get_otp(struct bladerf *dev, char *otp)
     return 0;
 }
 
+#define CAL_SIZE 256
+
 static int lusb_get_cal(struct bladerf *dev, char *cal) {
-    return read_flash(dev, 768, (uint8_t *)cal, 256);
+    int status = lusb_read_flash(dev, 768, (uint8_t *)cal, CAL_SIZE);
+
+    if (status < 0) {
+        return status;
+    } else if (status == CAL_SIZE) {
+        return 0;
+    } else {
+        return BLADERF_ERR_IO;
+    }
 }
 
 static int lusb_get_fw_version(struct bladerf *dev,
@@ -1492,6 +1547,9 @@ const struct bladerf_fn bladerf_lusb_fn = {
     FIELD_INIT(.is_fpga_configured, lusb_is_fpga_configured),
 
     FIELD_INIT(.flash_firmware, lusb_flash_firmware),
+    FIELD_INIT(.erase_flash, lusb_erase_flash),
+    FIELD_INIT(.read_flash, lusb_read_flash),
+    FIELD_INIT(.write_flash, lusb_write_flash),
     FIELD_INIT(.device_reset, lusb_device_reset),
 
     FIELD_INIT(.get_cal, lusb_get_cal),
