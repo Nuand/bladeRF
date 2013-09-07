@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-static bladerf_log_level filter_level = BLADERF_LOG_LEVEL_INFO;
+static bladerf_log_level filter_level = BLADERF_LOG_LEVEL_VERBOSE;
 
 int bladerf_log(bladerf_log_level level, const char *format, ...)
 {
@@ -27,7 +27,7 @@ bladerf_log_level bladerf_log_set_verbosity(bladerf_log_level level)
     /* Replace the old level with the new level and return the old level */
     bladerf_log_level old_level = filter_level;
     filter_level = level;
-    
+
     return old_level;
 }
 
