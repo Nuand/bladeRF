@@ -379,7 +379,7 @@ main__issues:
 
         /* Ensure we exit with RX & TX disabled.
          * Can't do much about an error at this point anyway... */
-        if (state->dev) {
+        if (state->dev && bladerf_is_fpga_configured(state->dev)) {
             bladerf_enable_module(state->dev, BLADERF_MODULE_TX, false);
             bladerf_enable_module(state->dev, BLADERF_MODULE_RX, false);
         }

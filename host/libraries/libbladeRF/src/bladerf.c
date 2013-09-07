@@ -130,7 +130,7 @@ int bladerf_open(struct bladerf **device, const char *dev_id)
         } else {
             printf("********************************************************************************\n");
             printf("* ENTERING LEGACY MODE, PLEASE UPGRADE TO THE LATEST FIRMWARE BY RUNNING:\n");
-            printf("* wget http://nuand.com/fx3/latest.img ; bladeRF-cli -b -f latest.img\n");
+            printf("* wget http://nuand.com/fx3/latest.img ; bladeRF-cli -f latest.img\n");
             printf("********************************************************************************\n");
         }
 
