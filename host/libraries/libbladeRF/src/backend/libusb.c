@@ -246,6 +246,7 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
     struct bladerf_lusb *lusb = NULL;
     libusb_device **list;
     struct bladerf_devinfo thisinfo;
+    struct libusb_version *version;
 
     libusb_context *context;
 
@@ -258,6 +259,9 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
         status = error_libusb2bladerf(status);
         goto lusb_open_done;
     }
+
+    version = libusb_get_version();
+    bladerf_log_info( "Using libusb version %d.%d.%d.%d\n", version->major, version->minor, version->micro, version->nano );
 
     count = libusb_get_device_list( context, &list );
     /* Iterate through all the USB devices */
