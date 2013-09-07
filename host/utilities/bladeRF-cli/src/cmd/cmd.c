@@ -14,6 +14,7 @@ DECLARE_CMD(peek);
 DECLARE_CMD(poke);
 DECLARE_CMD(print);
 DECLARE_CMD(probe);
+DECLARE_CMD(erase);
 DECLARE_CMD(set);
 DECLARE_CMD(rxtx);
 DECLARE_CMD(version);
@@ -36,6 +37,7 @@ static const char *cmd_names_peek[] = { "peek", "pe", NULL };
 static const char *cmd_names_poke[] = { "poke", "po", NULL };
 static const char *cmd_names_print[] = { "print", "pr", "p", NULL };
 static const char *cmd_names_probe[] = { "probe", "pro", NULL };
+static const char *cmd_names_erase[] = { "erase", "e", NULL };
 static const char *cmd_names_quit[] = { "quit", "q", "exit", "x", NULL };
 static const char *cmd_names_rx[] = { "rx", "receive", NULL };
 static const char *cmd_names_tx[] = { "tx", "transmit", NULL };
@@ -270,6 +272,18 @@ static const struct cmd cmd_table[] = {
                 "\n"
                 "Search for attached bladeRF device and print a list\n"
                 "of results.\n",
+        )
+    },
+    {
+        FIELD_INIT(.names, cmd_names_erase),
+        FIELD_INIT(.exec, cmd_erase),
+        FIELD_INIT(.desc, "Erase part of FX3 flash device"),
+        FIELD_INIT(.help, "erase\n"
+                "\n"
+                "Erase pages from FX3 flash device.\n"
+                "\n"
+                "    page_offset   Starting page to erase\n"
+                "    n_bytes       Number of pages to erase\n"
         )
     },
     {
