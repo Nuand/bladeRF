@@ -246,7 +246,7 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
     struct bladerf_lusb *lusb = NULL;
     libusb_device **list;
     struct bladerf_devinfo thisinfo;
-    struct libusb_version *version;
+    const struct libusb_version *version;
 
     libusb_context *context;
 
@@ -1058,7 +1058,18 @@ static int lusb_dac_write(struct bladerf *dev, uint16_t value)
     struct uart_cmd cmd;
     struct bladerf_lusb *lusb = dev->backend;
 
-    cmd.word = value;
+    cmd.addr = 0 ;
+    cmd.data = value & 0xff ;
+    status = access_peripheral(lusb, UART_PKT_DEV_VCTCXO,
+                               UART_PKT_MODE_DIR_WRITE, &cmd);
+
+    if (status < 0) {
+        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
+        return status;
+    }
+
+    cmd.addr = 1 ;
+    cmd.data = (value>>8)&0xff ;
     status = access_peripheral(lusb, UART_PKT_DEV_VCTCXO,
                                UART_PKT_MODE_DIR_WRITE, &cmd);
 
