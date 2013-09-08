@@ -891,6 +891,59 @@ API_EXPORT int bladerf_flash_firmware(struct bladerf *dev,
                                       const char *firmware);
 
 /**
+ * Recover specified device using a device identifier string
+ *
+ * This method recovers a bladeRF that is in the FX3 bootloader by loading the
+ * specified firmware image.
+ *
+ * The general form of the device identifier string is;
+ * @code
+ *      <backend>:[device=<bus>:<addr>] [instance=<n>] [serial=<serial>]
+ * @endcode
+ *
+ * An empty ("") or NULL device identifier will result in the first
+ * encountered device being opened (using the first discovered backend)
+ *
+ * The 'backend' describes the mechanism used to communicate with the device,
+ * and may be one of the following:
+ *   - libusb:  libusb (See libusb changelog notes for required version, given
+ *   your OS and controller)
+ *   - linux:   Linux Kernel Driver
+ *
+ * If no arguments are provided after the backend, the first encountered
+ * device on the specified backend will be opened. Note that a backend is
+ * required, if any arguments are to be provided.
+ *
+ * Next, any provided arguments are provide as used to find the desired device.
+ * Be sure not to over constrain the search. Generally, only one of the above
+ * is required -- providing all of these may over constrain the search for the
+ * desired device (e.g., if a serial number matches, but not on the specified
+ * bus and address.)
+ *
+ *   - device=\<bus\>:\<addr\>
+ *      - Specifies USB bus and address. Decimal or hex prefixed by '0x' is
+ *        permitted.
+ *   - instance=\<n\>
+ *      - Nth instance encountered (libusb)
+ *      - Device node N, such as /dev/bladerfN (linux)
+ *   - serial=\<serial\>
+ *      - Device's serial number.
+ *
+ * @param[in]   device_identifier  Device identifier, formatted as described above
+ * @param[in]   fname              Filename of FX3 firmware load work
+ *
+ * @return 0 on success, or value from \ref RETCODES list on failure
+ */
+API_EXPORT int bladerf_recover_with_devinfo(
+        struct bladerf_devinfo *devinfo,
+        const char *fname
+        );
+API_EXPORT int bladerf_recover(
+        const char *device_identifier,
+        const char *fname
+        );
+
+/**
  * Erase pages from FX3 flash device
  *
  * @note Only entire pages are erased

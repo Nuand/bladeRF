@@ -43,10 +43,10 @@
     do { log_write(LEVEL, LEVEL_STRING  \
                      " @ "  __FILE__ ":" _LOG_STRINGIFY_(__LINE__) "] " \
                      __VA_ARGS__); \
-    } while (0);
+    } while (0)
 #else
 #   define LOG_WRITE(LEVEL, LEVEL_STRING, ...) \
-    do { log_write(LEVEL, LEVEL_STRING "] " __VA_ARGS__); } while (0);
+    do { log_write(LEVEL, LEVEL_STRING "] " __VA_ARGS__); } while (0)
 #endif
 
 /**

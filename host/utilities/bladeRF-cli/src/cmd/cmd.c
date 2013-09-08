@@ -18,6 +18,7 @@ DECLARE_CMD(erase);
 DECLARE_CMD(set);
 DECLARE_CMD(rxtx);
 DECLARE_CMD(version);
+DECLARE_CMD(recover);
 
 #define MAX_ARGS    10
 
@@ -43,6 +44,7 @@ static const char *cmd_names_rx[] = { "rx", "receive", NULL };
 static const char *cmd_names_tx[] = { "tx", "transmit", NULL };
 static const char *cmd_names_set[] = { "set", "s", NULL };
 static const char *cmd_names_ver[] = { "version", "ver", "v", NULL };
+static const char *cmd_names_rec[] = { "recover", "r", NULL };
 
 static const struct cmd cmd_table[] = {
     {
@@ -294,6 +296,14 @@ static const struct cmd cmd_table[] = {
             "version\n"
             "\n"
             "Prints version information for device and firmware.\n"
+        )
+    },
+    {
+        FIELD_INIT(.names, cmd_names_rec),
+        FIELD_INIT(.exec, cmd_recover),
+        FIELD_INIT(.desc, "Load firmware when operating in FX3 bootloader mode"),
+        FIELD_INIT(.help,
+            "recover [device_str] [file]\n"
         )
     },
     {

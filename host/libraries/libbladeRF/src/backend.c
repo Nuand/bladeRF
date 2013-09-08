@@ -27,6 +27,19 @@ int open_with_any_backend(struct bladerf **device,
     return status;
 }
 
+const struct bladerf_fn * backend_getfns(bladerf_backend type) {
+    size_t i;
+    const size_t n_backends = ARRAY_SIZE(backend_list);
+
+    for (i = 0; i < n_backends; i++) {
+        if (backend_list[i].type == type) {
+            return backend_list[i].fns;
+        }
+    }
+
+    return NULL;
+}
+
 int backend_open(struct bladerf **device, struct bladerf_devinfo *info) {
 
     size_t i;

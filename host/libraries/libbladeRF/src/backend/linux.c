@@ -733,6 +733,7 @@ const struct bladerf_fn bladerf_linux_fn = {
     FIELD_INIT(.load_fpga, linux_load_fpga),
     FIELD_INIT(.is_fpga_configured, linux_is_fpga_configured),
 
+    FIELD_INIT(.recover, NULL),
     FIELD_INIT(.flash_firmware, linux_flash_firmware),
     FIELD_INIT(.erase_flash, NULL),
     FIELD_INIT(.read_flash, NULL),

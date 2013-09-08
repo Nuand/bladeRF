@@ -63,6 +63,9 @@ struct bladeRF_sector {
     unsigned char *ptr;
 };
 
+#define USB_CYPRESS_VENDOR_ID   0x04b4
+#define USB_FX3_PRODUCT_ID      0x00f3
+
 #define BLADE_USB_TYPE_OUT      0x40
 #define BLADE_USB_TYPE_IN       0xC0
 #define BLADE_USB_TIMEOUT_MS    1000

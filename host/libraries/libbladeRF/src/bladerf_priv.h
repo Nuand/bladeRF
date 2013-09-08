@@ -97,6 +97,8 @@ struct bladerf_fn {
     int (*is_fpga_configured)(struct bladerf *dev);
 
     /* Flash FX3 firmware */
+    int (*recover)(struct bladerf_devinfo *info,
+                    const char *fname);
     int (*flash_firmware)(struct bladerf *dev, uint8_t *image, size_t image_size);
     int (*erase_flash)(struct bladerf *dev, int page_offset,
                             int n_bytes);
