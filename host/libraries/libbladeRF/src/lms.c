@@ -91,25 +91,41 @@ void lms_lpf_enable(struct bladerf *dev, bladerf_module mod, lms_bw_t bw)
     return;
 }
 
-void lms_lpf_bypass(struct bladerf *dev, bladerf_module mod)
-{
-    uint8_t reg = (mod == BLADERF_MODULE_RX) ? 0x55 : 0x35;
-    uint8_t data;
-    bladerf_lms_read(dev, reg, &data);
-    data |= (1<<6);
-    bladerf_lms_write(dev, reg, data);
-    return;
-}
-
-// Disable the LPF for a specific module
-void lms_lpf_disable(struct bladerf *dev, bladerf_module mod)
+void lms_lpf_get_mode(struct bladerf *dev, bladerf_module mod, bladerf_lpf_mode *mode)
 {
     uint8_t reg = (mod == BLADERF_MODULE_RX) ? 0x54 : 0x34;
     uint8_t data;
+
     bladerf_lms_read(dev, reg, &data);
-    data &= ~(1<<6);
-    bladerf_lms_write(dev, reg, data);
-    return;
+    if (!(data&(1<<6))) {
+        *mode = BLADERF_LPF_DISABLED;
+    } else {
+        bladerf_lms_read(dev, reg+1, &data);
+        if (data&(1<<6)) {
+            *mode = BLADERF_LPF_BYPASSED;
+        } else {
+            *mode = BLADERF_LPF_NORMAL;
+        }
+    }
+}
+
+void lms_lpf_set_mode(struct bladerf *dev, bladerf_module mod, bladerf_lpf_mode mode)
+{
+    uint8_t reg = (mod == BLADERF_MODULE_RX) ? 0x54 : 0x34;
+    uint8_t data_l, data_h;
+    bladerf_lms_read(dev, reg,   &data_l);
+    bladerf_lms_read(dev, reg+1, &data_h);
+    if (mode == BLADERF_LPF_DISABLED) {
+        data_l &= ~(1<<6);
+    } else if (mode == BLADERF_LPF_BYPASSED) {
+        data_l |= (1<<6);
+        data_h |= (1<<6);
+    } else {
+        data_l |= (1<<6);
+        data_h &= ~(1<<6);
+    }
+    bladerf_lms_write(dev, reg  , data_l);
+    bladerf_lms_write(dev, reg+1, data_h);
 }
 
 // Get the bandwidth for the selected module
@@ -500,7 +516,7 @@ void lms_loopback_enable(struct bladerf *dev, bladerf_loopback mode)
 
         case BLADERF_LB_BB_VGA2:
             // Disable RXLPF first
-            lms_lpf_disable(dev, BLADERF_MODULE_RX);
+            lms_lpf_set_mode(dev, BLADERF_MODULE_RX, BLADERF_LPF_DISABLED);
 
             // Enable TX and RX loopback
             lms_tx_loopback_enable(dev, TXLB_BB);
@@ -511,7 +527,7 @@ void lms_loopback_enable(struct bladerf *dev, bladerf_loopback mode)
             // Disable RXLPF, RXVGA2, and RXVGA1
             lms_rxvga1_disable(dev);
             lms_rxvga2_disable(dev);
-            lms_lpf_disable(dev, BLADERF_MODULE_RX);
+            lms_lpf_set_mode(dev, BLADERF_MODULE_RX, BLADERF_LPF_DISABLED);
 
             // Enable TX and RX loopback
             lms_tx_loopback_enable(dev, TXLB_BB);

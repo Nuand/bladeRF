@@ -123,20 +123,24 @@ unsigned int lms_bw2uint(lms_bw_t bw);
 void lms_lpf_enable(struct bladerf *dev, bladerf_module mod, lms_bw_t bw);
 
 /**
- * Explicitly bypass the low-pass filter
- *
+ * Set the LPF mode
+ * 
  * @param[in]   dev     Device handle
  * @param[in]   mod     Module to change
+ * @param[in]   mode    Mode to set to
  */
-void lms_lpf_bypass(struct bladerf *dev, bladerf_module mod);
+void lms_lpf_set_mode(struct bladerf *dev, bladerf_module mod,
+                      bladerf_lpf_mode mode);
 
 /**
- * Disable the LPF for a specific module
- *
+ * Get the LPF mode
+ * 
  * @param[in]   dev     Device handle
  * @param[in]   mod     Module to change
+ * @param[out]  mode    Current LPF mode
  */
-void lms_lpf_disable(struct bladerf *dev, bladerf_module mod);
+void lms_lpf_get_mode(struct bladerf *dev, bladerf_module mod,
+                      bladerf_lpf_mode *mode);
 
 /**
  * Get the bandwidth for the selected module

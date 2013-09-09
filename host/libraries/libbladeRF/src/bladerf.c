@@ -394,6 +394,22 @@ int bladerf_get_bandwidth(struct bladerf *dev, bladerf_module module,
     return 0;
 }
 
+int bladerf_set_lpf_mode(struct bladerf *dev, bladerf_module module,
+                         bladerf_lpf_mode mode)
+{
+    /* TODO: Make return values for lms call and return it for failure */
+    lms_lpf_set_mode( dev, module, mode );
+    return 0;
+}
+
+int bladerf_get_lpf_mode(struct bladerf *dev, bladerf_module module,
+                         bladerf_lpf_mode *mode)
+{
+    /* TODO: Make return values for lms call and return it for failure */
+    lms_lpf_get_mode( dev, module, mode );
+    return 0;
+}
+
 int bladerf_select_band(struct bladerf *dev, bladerf_module module,
                         unsigned int frequency)
 {

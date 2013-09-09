@@ -154,6 +154,15 @@ typedef enum {
 } bladerf_lna_gain;
 
 /**
+ * LPF mode
+ */
+typedef enum {
+    BLADERF_LPF_NORMAL,     /**< LPF connected and enabled */
+    BLADERF_LPF_BYPASSED,   /**< LPF bypassed */
+    BLADERF_LPF_DISABLED    /**< LPF disabled */
+} bladerf_lpf_mode;
+
+/**
  * Module selection for those which have both RX and TX constituents
  */
 typedef enum
@@ -570,6 +579,30 @@ API_EXPORT int bladerf_set_bandwidth(struct bladerf *dev, bladerf_module module,
  */
 API_EXPORT int bladerf_get_bandwidth(struct bladerf *dev, bladerf_module module,
                                      unsigned int *bandwidth);
+
+/**
+ * Set the LMS LPF mode to bypass or disable it
+ *
+ * @param       dev         Device handle
+ * @param       module      Module for mode request
+ * @param       mode        Mode to be set
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT int bladerf_set_lpf_mode(struct bladerf *dev, bladerf_module module,
+                                    bladerf_lpf_mode mode);
+
+/**
+ * Get the current mode of the LMS LPF
+ *
+ * @param       dev         Device handle
+ * @param       module      Module for mode request
+ * @param       mode        Current mode of the LPF
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT int bladerf_get_lpf_mode(struct bladerf *dev, bladerf_module module,
+                                    bladerf_lpf_mode *mode);
 
 /**
  * Select the appropriate band path given a frequency in Hz.
