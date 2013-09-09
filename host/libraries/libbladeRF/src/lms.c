@@ -112,6 +112,27 @@ void lms_lpf_disable(struct bladerf *dev, bladerf_module mod)
     return;
 }
 
+// Get the LPF status
+uint8_t lms_get_lpf_status(struct bladerf *dev, bladerf_module mod, lms_lpf_status_t *status)
+{
+    uint8_t reg = (mod == BLADERF_MODULE_RX) ? 0x54 : 0x34;
+    uint8_t data;
+
+    *status = LPF_NORMAL;
+
+    bladerf_lms_read(dev, reg+1, &data);
+    if (data&(1<<6)) {
+        *status = LPF_BYPASSED;
+    }
+
+    bladerf_lms_read(dev, reg, &data);
+    if (data&(1<<6)) {
+        *status = LPF_DISABLED;
+    }
+
+    return 0;
+}
+
 // Get the bandwidth for the selected module
 lms_bw_t lms_get_bandwidth(struct bladerf *dev, bladerf_module mod)
 {

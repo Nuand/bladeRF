@@ -544,7 +544,7 @@ API_EXPORT int bladerf_set_rxvga2(struct bladerf *dev, int gain);
 API_EXPORT int bladerf_get_rxvga2(struct bladerf *dev, int *gain);
 
 /**
- * Set the bandwidth to specified value in Hz
+ * Set the bandwidth to specified value in Hz. If 0, bypass the LPF.
  *
  * @param       dev                 Device handle
  * @param       module              Module for bandwidth request
@@ -560,7 +560,7 @@ API_EXPORT int bladerf_set_bandwidth(struct bladerf *dev, bladerf_module module,
                                      unsigned int *actual);
 
 /**
- * Get the bandwidth of the LMS LPF
+ * Get the bandwidth of the LMS LPF. Sets to 0 if bypassed.
  *
  * @param       dev                 Device Handle
  * @param       module              Module for bandwidth request
