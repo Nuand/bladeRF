@@ -61,6 +61,16 @@ typedef enum {
 
 
 /**
+ * LPF status
+ */
+typedef enum {
+    LPF_NORMAL,     /**< LPF normal   */
+    LPF_BYPASSED,   /**< LPF bypassed */
+    LPF_DISABLED    /**< LPF disabled */
+} lms_lpf_status_t;
+
+
+/**
  * TX loopback modes
  */
 typedef enum {
@@ -137,6 +147,17 @@ void lms_lpf_bypass(struct bladerf *dev, bladerf_module mod);
  * @param[in]   mod     Module to change
  */
 void lms_lpf_disable(struct bladerf *dev, bladerf_module mod);
+
+/**
+ * Get whether the LPF is bypassed
+ *
+ * @param[in]   dev     Device handle
+ * @param[in]   mod     Module to read
+ * @param[out]  status  LPF status
+ *
+ * @return the current bypass status, 0 for normal, 1 for bypassed
+ */
+uint8_t lms_get_lpf_status(struct bladerf *dev, bladerf_module mod, lms_lpf_status_t *status);
 
 /**
  * Get the bandwidth for the selected module
