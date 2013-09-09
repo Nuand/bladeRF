@@ -731,7 +731,7 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
     if( argc > 2 && rv == CMD_RET_OK ) {
         bool ok;
         unsigned int rate, actual;
-        rate = str2uint_suffix( argv[argc-1], 160000, 40000000,
+        rate = str2uint_suffix( argv[argc-1], 80000, 40000000,
                 FREQ_SUFFIXES, NUM_FREQ_SUFFIXES, &ok );
 
         if( !ok ) {

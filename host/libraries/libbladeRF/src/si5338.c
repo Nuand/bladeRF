@@ -1,405 +1,473 @@
 #include <string.h>
+#include <inttypes.h>
 
 #include "libbladeRF.h"
 #include "bladerf_priv.h"
 #include "log.h"
 
+#define SI5338_EN_A     0x01
+#define SI5338_EN_B     0x02
 
-#define SI5338_EN_A		0x01
-#define SI5338_EN_B		0x02
-
-#define SI5338_F_VCO (38400000UL * 66UL)
-
+#define SI5338_F_VCO    (38400000UL * 66UL)
 
 /**
  * This is used set or recreate the si5338 frequency
- * Each si port can be set independently
+ * Each si5338 multisynth module can be set independently
  */
-struct si5338_port {
-    int block_index;
-    int base;                  // this can be gotten from block_index
+struct si5338_multisynth {
+    /* Multisynth to program (0-3) */
+    uint8_t index;
 
-    uint32_t want_sample_rate; // if used as setter this is what I wish
-    uint8_t enable_port_bits;  // You may want Just port A out or both port A & B
+    /* Base address of the multisynth */
+    uint16_t base;
 
-    uint32_t sample_rate_r;    // the sample rate adjusted with the r multiplier
+    /* Requested and actual sample rates */
+    struct bladerf_rational_rate requested;
+    struct bladerf_rational_rate actual;
 
-    uint32_t P1,P2,P3;         // as from section 5.2 of Reference manual
-    uint32_t a,b,c,r;
+    /* Enables for A and/or B outputs */
+    uint8_t enable;
 
-    uint32_t *f_outP;          // write result here
+    /* f_out = fvco / (a + b/c) / r */
+    uint32_t a, b, c, r;
 
+    /* (a, b, c) in multisynth (p1, p2, p3) form */
+    uint32_t p1, p2, p3;
+
+    /* (p1, p2, p3) in register form */
     uint8_t regs[10];
-    uint8_t raw_r;
 };
 
+void si5338_read_error(int error, const char *s)
+{
+    log_error( "Could not read from si5338 (%d): %s\n", error, s );
+    return;
+}
+
+void si5338_write_error(int error, const char *s)
+{
+    log_error( "Could not write to si5338 (%d): %s\n", error, s );
+    return;
+}
+
+static uint64_t si5338_gcd(uint64_t a, uint64_t b)
+{
+    uint64_t t;
+    while (b != 0) {
+        t = b;
+        b = a % t;
+        a = t;
+    }
+    return a;
+}
+
+static void si5338_rational_reduce(struct bladerf_rational_rate *r)
+{
+    int64_t val;
+
+    if (r->num >= r->den) {
+        /* Get whole number */
+        uint64_t whole = r->num / r->den;
+        r->integer += whole;
+        r->num = r->num - whole*r->den;
+    }
+
+    /* Reduce fraction */
+    val = si5338_gcd(r->num, r->den);
+    r->num /= val;
+    r->den /= val;
+
+    return ;
+}
+
+static void si5338_rational_double(struct bladerf_rational_rate *r)
+{
+    r->integer *= 2;
+    r->num *= 2;
+    si5338_rational_reduce(r);
+    return;
+}
 
 /**
- * gets the basic regs from Si
- * @return 0 if all is fine or an error code
+ * Update the base address of the selected multisynth
  */
-static int si5338_get_sample_rate_regs ( struct bladerf *dev, struct si5338_port *retP )
+static void si5338_update_base(struct si5338_multisynth *ms)
 {
-    int i,retcode;
+    ms->base = 53 + ms->index*11 ;
+    return;
+}
 
-    for (i = 0; i < 9; i++)  {
-        if ( (retcode=bladerf_si5338_read(dev, retP->base + i, retP->regs+i)) < 0 )    {
-            log_error("Could not read from si5338 (%d): %s\n",retcode, bladerf_strerror(retcode));
-            return retcode;
-            }
-        }
+/**
+ * Unpack the recently read registers into (p1, p2, p3) and (a, b, c)
+ *
+ * Precondition:
+ *  regs[10] and r have been read
+ *
+ * Post-condition:
+ *  (p1, p2, p3), (a, b, c) and actual are populated
+ */
+static void si5338_unpack_regs(struct si5338_multisynth *ms)
+{
+    uint64_t temp;
 
-    if ( (retcode=bladerf_si5338_read(dev, 31 + retP->block_index, &retP->raw_r)) < 0 ) {
-            log_error("Could not read from si5338 (%d): %s\n",retcode, bladerf_strerror(retcode));
-            return retcode;
+    /* Zeroize */
+    ms->p1 = ms->p2 = ms->p3 = 0;
+
+    /* Populate */
+    ms->p1 =                                ((ms->regs[2]&3)<<16) | (ms->regs[1]<<8) | (ms->regs[0]);
+    ms->p2 = (ms->regs[5]<<22)          |       (ms->regs[4]<<14) | (ms->regs[3]<<6) | ((ms->regs[2]>>2)&0x3f);
+    ms->p3 = ((ms->regs[9]&0x3f)<<24)   |       (ms->regs[8]<<16) | (ms->regs[7]<<8) | (ms->regs[6]);
+
+    log_debug( "Unpacked P1: 0x%8.8x (%u) P2: 0x%8.8x (%u) P3: 0x%8.8x (%u)\n", ms->p1, ms->p1, ms->p2, ms->p2, ms->p3, ms->p3 );
+
+    /* c = p3 */
+    ms->c = ms->p3;
+
+    /* a =  (p1+512)/128
+     *
+     * NOTE: The +64 is for rounding purposes.
+     */
+    ms->a = (ms->p1+512)/128;
+
+    /* b = (((p1+512)-128*a)*c + (b % c) + 64)/128 */
+    temp = (ms->p1+512)-128*ms->a;
+    temp = (temp * ms->c) + ms->p2;
+    temp = (temp + 64) / 128;
+    ms->b = temp;
+
+    log_debug( "Unpacked a + b/c: %d + %d/%d\n", ms->a, ms->b, ms->c );
+    log_debug( "Unpacked r: %d\n", ms->r );
+}
+
+/*
+ * Pack (a, b, c, r) into (p1, p2, p3) and regs[]
+ */
+static void si5338_pack_regs(struct si5338_multisynth *ms)
+{
+    /* Precondition:
+     *  (a, b, c) and r have been populated
+     *
+     * Post-condition:
+     *  (p1, p2, p3) and regs[10] are populated
+     */
+
+    /* p1 = (a * c + b) * 128 / c - 512 */
+    uint64_t temp;
+    temp = ms->a * ms->c + ms->b;
+    temp = temp * 128 ;
+    temp = temp / ms->c - 512;
+    ms->p1 = temp;
+    //ms->p1 = ms->a * ms->c + ms->b;
+    //ms->p1 = ms->p1 * 128;
+    //ms->p1 = ms->p1 / ms->c - 512;
+
+    /* p2 = (b * 128) % c */
+    ms->p2 = ms->b * 128;
+    ms->p2 = ms->p2 % ms->c;
+
+    /* p3 = c */
+    ms->p3 = ms->c;
+
+    log_info( "MSx P1: 0x%8.8x (%u) P2: 0x%8.8x (%u) P3: 0x%8.8x (%u)\n", ms->p1, ms->p1, ms->p2, ms->p2, ms->p3, ms->p3 );
+
+    /* Regs */
+    ms->regs[0] = ms->p1 & 0xff;
+    ms->regs[1] = (ms->p1 >> 8) & 0xff;
+    ms->regs[2] = ((ms->p2 & 0x3f) << 2) | ((ms->p1 >> 16) & 0x3);
+    ms->regs[3] = (ms->p2 >> 6) & 0xff;
+    ms->regs[4] = (ms->p2 >> 14) & 0xff;
+    ms->regs[5] = (ms->p2 >> 22) & 0xff;
+    ms->regs[6] = ms->p3 & 0xff;
+    ms->regs[7] = (ms->p3 >> 8) & 0xff;
+    ms->regs[8] = (ms->p3 >> 16) & 0xff;
+    ms->regs[9] = (ms->p3 >> 24) & 0xff;
+
+    return ;
+}
+
+static int si5338_write_multisynth(struct bladerf *dev, struct si5338_multisynth *ms)
+{
+    int i, status;
+    uint8_t r_power, r_count, val;
+
+    log_debug( "Writing MS%d\n", ms->index );
+
+    /* Write out the enables */
+    status = bladerf_si5338_read(dev, 36 + ms->index, &val);
+    if (status < 0) {
+        si5338_read_error(status, bladerf_strerror(status));
+        return status;
     }
+    val &= ~(7);
+    val |= ms->enable;
+    log_debug( "Wrote enable register: 0x%2.2x\n", val );
+    status = bladerf_si5338_write(dev, 36 + ms->index, val);
+    if (status < 0) {
+        si5338_write_error(status, bladerf_strerror(status));
+        return status;
+    }
+
+    /* Write out the registers */
+    for (i = 0 ; i < 10 ; i++) {
+        status = bladerf_si5338_write(dev, ms->base + i, *(ms->regs+i));
+        if (status < 0) {
+            si5338_write_error(status, bladerf_strerror(status));
+            return status;
+        }
+        log_debug( "Wrote regs[%d]: 0x%2.2x\n", i, *(ms->regs+i) );
+    }
+
+    /* Calculate r_power from c_count */
+    r_power = 0;
+    r_count = ms->r >> 1 ;
+    while (r_count > 0) {
+        r_count >>= 1;
+        r_power++;
+    }
+
+    /* Set the r value to the log2(r_count) to match Figure 18 */
+    val = 0xc0;
+    val |= (r_power<<2);
+
+    log_debug( "Wrote r register: 0x%2.2x\n", val );
+
+    status = bladerf_si5338_write(dev, 31 + ms->index, val);
+    if (status < 0) {
+        si5338_write_error(status, bladerf_strerror(status));
+    }
+
+    return status ;
+}
+
+static int si5338_read_multisynth(struct bladerf *dev, struct si5338_multisynth *ms)
+{
+    int i, status;
+    uint8_t val;
+
+    log_debug( "Reading MS%d\n", ms->index );
+
+    /* Read the enable bits */
+    status = bladerf_si5338_read(dev, 36 + ms->index, &val);
+    if (status < 0) {
+        si5338_read_error(status, bladerf_strerror(status));
+        return status ;
+    }
+    ms->enable = val&7;
+    log_debug( "Read enable register: 0x%2.2x\n", val );
+
+    /* Read all of the multisynth registers */
+    for (i = 0; i < 10; i++) {
+        status = bladerf_si5338_read(dev, ms->base + i, ms->regs+i);
+        if (status < 0) {
+            si5338_read_error(status, bladerf_strerror(status));
+            return status;
+        }
+        log_debug( "Read regs[%d]: 0x%2.2x\n", i, *(ms->regs+i) );
+    }
+
+    /* Populate the RxDIV value from the register */
+    status = bladerf_si5338_read(dev, 31 + ms->index, &val);
+    if (status < 0) {
+        si5338_read_error(status, bladerf_strerror(status));
+        return status;
+    }
+    /* RxDIV is stored as a power of 2, so restore it on readback */
+    log_debug( "Read r register: 0x%2.2x\n", val );
+    val = (val>>2)&7;
+    ms->r = (1<<val);
+
+    /* Unpack the regs into appropriate values */
+    si5338_unpack_regs(ms) ;
 
     return 0;
 }
 
-static unsigned int bytes_to_uint32 ( uint8_t msb, uint8_t ms1, uint8_t ms2, uint8_t lsb, uint8_t last_shift )
+static void si5338_calculate_samplerate(struct si5338_multisynth *ms, struct bladerf_rational_rate *rate)
 {
-    unsigned int risul = msb;
-    risul = (risul << 9) + ms1;
-    risul = (risul << 8) + ms2;
-    risul = (risul << last_shift) + lsb;
-    return risul;
+    struct bladerf_rational_rate abc;
+    abc.integer = ms->a;
+    abc.num = ms->b;
+    abc.den = ms->c;
+
+    rate->integer = 0;
+    rate->num = SI5338_F_VCO * abc.den;
+    rate->den = (uint64_t)ms->r*2*(abc.integer * abc.den + abc.num);
+    si5338_rational_reduce(rate);
+
+    log_info( "Calculated samplerate: %"PRIu64" + %"PRIu64"/%"PRIu64"\n", rate->integer, rate->num, rate->den );
+
+    return;
 }
 
-
-static void si5338_get_sample_rate_calc ( struct si5338_port *retP )
+static int si5338_calculate_multisynth(struct si5338_multisynth *ms, struct bladerf_rational_rate *rate)
 {
-    uint64_t c = retP->c = retP->P3;
-    uint32_t p2 = retP->P2;
-    uint32_t b=0;
-    uint32_t p1 ;
-    uint64_t A, a, f_twice, divisor ;
-    uint32_t B ;
-    int i;
 
-    // c should never be zero, but if it is at least we do not crash
-    if ( c == 0 ) return;
+    struct bladerf_rational_rate req;
+    struct bladerf_rational_rate abc;
+    uint8_t r_value, r_power;
 
-    for (i=1; i<128; i++) {
-        B = c*i+p2;
+    /* Don't muss with the users data */
+    req = *rate;
 
-        if ( (B % 128) == 0 ) {
-            b = B / 128;
-            retP->b = b;
-            break;
-        }
+    /* Double requested frequency since LMS requires 2:1 clock:sample rate */
+    si5338_rational_double(&req);
+
+    /* Find a suitable R value */
+    r_value = 1;
+    r_power = 0;
+    while (req.integer < 5000000 && r_value < 32) {
+        si5338_rational_double(&req);
+        r_value <<= 1;
+        r_power++;
     }
 
-    p1 = retP->P1;
+    if (r_value == 32 && req.integer < 5000000) {
+        log_error( "Sample rate requires r > 32\n" );
+        return BLADERF_ERR_INVAL;
+    } else {
+        log_info( "Found r value of: %d\n", r_value );
+    }
 
-    A = (p1 + 512);
-    A = A * c;
-    A = A - b * 128;
-    A = (A * 10) / ( c * 128 );  // switch to fixed decimal point
+    /* Find suitable MS (a, b, c) values */
+    abc.integer = 0;
+    abc.num = SI5338_F_VCO * req.den;
+    abc.den = req.integer * req.den + req.num;
+    si5338_rational_reduce(&abc);
 
-    // get the integer value
-    a = A / 10;
+    log_info( "MSx a + b/c: %"PRIu64" + %"PRIu64"/%"PRIu64"\n", abc.integer, abc.num, abc.den );
 
-    // do manual rounding....
-    if ( A % 10 > 5 ) a++;
+    /* Check values to make sure they are OK */
+    if (abc.integer < 8) {
+        switch (abc.integer) {
+            case 0:
+            case 1:
+            case 2:
+            case 3:
+            case 5:
+            case 7:
+                log_error( "Integer portion too small: %"PRIu64"\n", abc.integer );
+                return BLADERF_ERR_INVAL;
+        }
+    } else if (abc.integer > 567) {
+        log_error( "Integer portion too large: %"PRIu64"\n", abc.integer );
+        return BLADERF_ERR_INVAL;
+    }
 
-    retP->a = a;
+    /* Loss of precision if num or den are greater than 2^30-1 */
+    while (abc.num > (1<<30) || abc.den > (1<<30) ) {
+        log_warning( "Loss of precision in reducing fraction from %"PRIu64"/%"PRIu64" to %"PRIu64"/%"PRIu64"\n", abc.num, abc.den, abc.num>>1, abc.den>>1);
+        abc.num >>= 1;
+        abc.den >>= 1;
+    }
 
-// step by step to avoid too much compiler optimization
-    f_twice = SI5338_F_VCO * c;
-    divisor = a * c + b;
-    f_twice = f_twice / divisor;
-    f_twice = f_twice / retP->r;
+    log_info( "MSx a + b/c: %"PRIu64" + %"PRIu64"/%"PRIu64"\n", abc.integer, abc.num, abc.den );
 
-    retP->f_outP[0] = f_twice / 2;  // yes, compiler may optimize this to >> 1
-}
+    /* Set it in the multisynth */
+    ms->a = abc.integer;
+    ms->b = abc.num;
+    ms->c = abc.den;
+    ms->r = r_value;
 
-static void print_si5338_port(struct si5338_port *portP)
-{
-    int i;
-    log_debug("out_freq: %dHz\n", portP->f_outP[0]);
-    log_debug("a:  %d\n", portP->a);
-    log_debug("b:  %d\n", portP->b);
-    log_debug("c:  %d\n", portP->c);
-    log_debug("r:  %d\n", portP->r);
-    log_debug("p1: %x\n", portP->P1);
-    log_debug("p2: %x\n", portP->P2);
-    log_debug("p3: %x\n", portP->P3);
-
-    for (i = 0; i < 9; i++) log_debug("[%d]=0x%.2x\n", portP->base + i, portP->regs[i]);
-
-    log_debug("[r]=0x%.2x\n", portP->raw_r);
-}
-
-
-static int si5338_get_module_sample_rate ( struct bladerf *dev, struct si5338_port *retP )
-{
-    int retcode;
-    uint8_t *valP, shi;
-    // gets the raw sample rate regs
-    if ( (retcode=si5338_get_sample_rate_regs(dev, retP )) ) return retcode;
-
-    // I now need to reverse the packing, see pag. 10 of reference manual
-    valP = retP->regs;
-    retP->P1 = bytes_to_uint32 ( 0, valP[2] & 0x03, valP[1], valP[0], 8);
-    retP->P2 = bytes_to_uint32 ( valP[5], valP[4], valP[3], valP[2] >> 2, 6 );
-    retP->P3 = bytes_to_uint32 ( valP[9] & 0x3F, valP[8], valP[7], valP[6], 8 );
-
-    shi = (retP->raw_r >> 2) & 0x03;
-    retP->r = 1 << shi;
-
-    si5338_get_sample_rate_calc(retP);
-
-    print_si5338_port(retP);
+    /* Pack the registers */
+    si5338_pack_regs(ms);
 
     return 0;
 }
 
-/**
- * get the sample rate back from the Si5338
- * @param module the subsection I wish to know about
- * @param rateP pointer to result
- * @return 0 if all fine or an error code
- */
-int si5338_get_sample_rate(struct bladerf *dev, bladerf_module module, unsigned int *rateP)
+int si5338_set_rational_sample_rate(struct bladerf *dev, bladerf_module module, struct bladerf_rational_rate *rate, struct bladerf_rational_rate *actual)
 {
-    struct si5338_port risul;
+    struct si5338_multisynth ms;
+    struct bladerf_rational_rate req;
+    int status;
 
-    // safety check
-    if ( rateP == NULL ) return BLADERF_ERR_UNEXPECTED;
+    /* Save off the value */
+    req = *rate;
 
-    memset(&risul,0,sizeof(risul));
-
-    risul.f_outP = rateP;
-
-    switch ( module ) {
-        case BLADERF_MODULE_RX:
-            risul.block_index = 1;
-            risul.base = 53 + 1 * 11;
-            return si5338_get_module_sample_rate(dev,&risul);
-
-        case BLADERF_MODULE_TX:
-            risul.block_index = 2;
-            risul.base = 53 + 2 * 11;
-            return si5338_get_module_sample_rate(dev,&risul);
-
-        default:
-            break;
+    /* Setup the multisynth enables and index */
+    ms.enable = SI5338_EN_A;
+    if (module == BLADERF_MODULE_TX) {
+        ms.enable |= SI5338_EN_B;
     }
 
-    return BLADERF_ERR_INVAL;
+    /* Set the multisynth module we're dealing with */
+    ms.index = (module == BLADERF_MODULE_RX) ? 1 : 2;
+
+    /* Update the base address register */
+    si5338_update_base(&ms);
+
+    /* Calculate multisynth values */
+    si5338_calculate_multisynth(&ms, &req);
+
+    /* Get the actual rate */
+    si5338_calculate_samplerate(&ms, actual);
+
+    /* Program it to the part */
+    status = si5338_write_multisynth(dev, &ms);
+
+    /* Done */
+    return status ;
 }
 
-/**
- * Euclide algorithm to find gcd between two numbers, see wikipedia
- * @return the greater common divisor of the two numbers
- */
-static uint32_t euclide_gcd(uint32_t n1, uint32_t n2)
+int si5338_set_sample_rate(struct bladerf *dev, bladerf_module module, uint32_t rate, uint32_t *actual)
 {
-        uint32_t a, b, mcd = 1;
+    struct bladerf_rational_rate req, act;
+    int status;
 
-        if (n1 > n2){
-                a = n1;
-                b = n2;
-        } else {
-                a = n2;
-                b = n1;
-        }
+    log_info( "Setting integer sample rate: %d\n", rate );
+    req.integer = rate;
+    req.num = 0;
+    req.den = 1;
 
-        if ((a % b) == 0)
-                mcd = b;
-        else
-                mcd = euclide_gcd (b, a % b);
+    status = si5338_set_rational_sample_rate(dev, module, &req, &act);
 
-        return mcd;
+    if (status == 0 && act.num != 0) {
+        log_warning( "Non-integer sample rate set from integer sample rate, truncating output\n" );
+    }
+
+    *actual = act.integer;
+    log_info( "Set actual integer sample rate: %d\n", act.integer );
+
+    return status ;
 }
 
-/**
- * Calculated a,b,c to satisfy the si equations
- * see pag 9 of reference manual
- */
-static int set_sample_rate_calc_abc ( struct si5338_port *portP )
+int si5338_get_rational_sample_rate(struct bladerf *dev, bladerf_module module, struct bladerf_rational_rate *rate)
 {
-    uint32_t remainder, gcd, b, c;
 
-	// find out the integer part of the result
-    portP->a = SI5338_F_VCO / portP->sample_rate_r;
+    struct si5338_multisynth ms;
+    int status;
 
-    if ( portP->a < 4 || portP->a > 567 ) {
-		log_warning("a=%d too big \n", portP->a);
-		return BLADERF_ERR_INVAL;
+    /* Select the multisynth we want to read */
+    ms.index = (module == BLADERF_MODULE_RX) ? 1 : 2;
+
+    /* Update the base address */
+    si5338_update_base(&ms);
+
+    /* Readback */
+    status = si5338_read_multisynth(dev, &ms);
+
+    if (status) {
+        si5338_read_error( status, bladerf_strerror(status) );
+        return status;
     }
 
-    // I still have this hertz left that are not integer divisible by VCO
-    remainder = SI5338_F_VCO - (portP->a * portP->sample_rate_r);
-
-    if ( remainder == 0 )
-		{
-    	portP->b=0;
-    	portP->c=1;
-    	return 0;
-		}
-
-    // the gcd is the biggest number that divides both as integers
-    gcd = euclide_gcd(portP->sample_rate_r, remainder);
-
-//    dbg_printf("VCO=%u a=%u sr=%u remainder=%u gcd=%d \n",SI5338_F_VCO,portP->sample_rate_r,portP->a,remainder,gcd);
-
-    // I now have to check if any of the b,c satisfy si conditions
-    b = remainder / gcd;
-
-    if ( b > 0x40000000 ) {
-		log_warning("cannot find suitable b ratio %dHz on MS%d \n", portP->want_sample_rate, portP->block_index);
-		return BLADERF_ERR_INVAL;
-    }
-
-    c = portP->sample_rate_r / gcd;
-
-    if ( c > 0x40000000 ) {
-		log_warning("cannot find suitable c ratio %dHz on MS%d \n", portP->want_sample_rate, portP->block_index);
-		return BLADERF_ERR_INVAL;
-    }
-
-    portP->b = b;
-    portP->c = c;
+    si5338_calculate_samplerate(&ms, rate);
 
     return 0;
 }
 
-/**
- * calculates a r that satisfy si5338
- * @return 0 if all is fine or an error code
- */
-static int set_sample_rate_calc_r ( struct si5338_port *portP )
+int si5338_get_sample_rate(struct bladerf *dev, bladerf_module module, unsigned int *rate)
 {
-    uint32_t candidate;
-	int j;
+    struct bladerf_rational_rate actual;
+    int status;
 
-	for (j=0; j <= 5; j++ ) {
-        // see pag. 27 of si5338 RM rev 1.2 1/13
-		// find an R that makes this MS's fout > 5MHz
+    status = si5338_get_rational_sample_rate(dev, module, &actual);
 
-    	portP->r = 1 << j;   // this is the r I will be using
-    	portP->raw_r = j;    // this is what goes into the chip
-
-    	candidate = portP->want_sample_rate * portP->r;
-
-		if ( candidate >= 5000000)	{
-			portP->sample_rate_r = candidate;
-			break;
-		    }
-		}
-
-	if ( ! portP->sample_rate_r ) {
-		log_warning("Requested frequency of %dHz on MS%d is too low\n", portP->want_sample_rate, portP->block_index);
-		return BLADERF_ERR_INVAL;
-	}
-
-	return 0;
-}
-
-/**
- * calculate P1, P2, P3 based off page 9 in the Si5338 reference manual
- * make sure we have enough space to handle all cases
- */
-static void set_sample_rate_calc_regs (struct si5338_port *portP)
-{
-    uint64_t P1, P2, p1, p2, p3;
-    uint8_t *regs;
-
-    // P1 = (a * c + b) * 128 / c - 512;
-    P1 = portP->a * portP->c + portP->b;
-    P1 = P1 * 128;
-    P1 = P1 / portP->c - 512;
-
-    // P2 = (b * 128) % c;
-    P2 = portP->b * 128;
-    P2 = P2 % portP->c;
-
-    p1 = portP->P1 = P1;
-    p2 = portP->P2 = P2;
-    p3 = portP->P3 = portP->c;
-
-    regs = portP->regs;
-    regs[0] = p1 & 0xff;
-    regs[1] = (p1 >> 8) & 0xff;
-    regs[2] = ((p2 & 0x3f) << 2) | ((p1 >> 16) & 0x3);
-    regs[3] = (p2 >> 6) & 0xff;
-    regs[4] = (p2 >> 14) & 0xff;
-    regs[5] = (p2 >> 22) & 0xff;
-    regs[6] = p3 & 0xff;
-    regs[7] = (p3 >> 8) & 0xff;
-    regs[8] = (p3 >> 16) & 0xff;
-    regs[9] = (p3 >> 24) & 0xff;
-}
-
-static int set_sample_rate_write_regs(struct bladerf *dev, struct si5338_port *portP) {
-    int i,errcode;
-
-    if ( (errcode=bladerf_si5338_write(dev, 36 + portP->block_index, portP->enable_port_bits )) ) return errcode;
-
-    for (i = 0; i < 9; i++) {
-    	if ( (errcode=bladerf_si5338_write(dev, portP->base + i, portP->regs[i] )) ) return errcode;
+    if (actual.num != 0) {
+        log_warning( "Fractional sample rate truncated during integer sample rate retrieval\n" );
     }
 
-    return bladerf_si5338_write(dev, 31 + portP->block_index, 0xC0 | (portP->raw_r << 2));
+    *rate = actual.integer;
+
+    return 0;
 }
-
-/**
- * This just convert the sample rate into a,b,c that is suitable
- * @return invalid params if frequency cannot be set
- */
-static int set_sample_rate_A (struct bladerf *dev, struct si5338_port *portP)
-{
-	int errcode;
-
-    portP->base = 53 + portP->block_index * 11;
-
-	if ( (errcode=set_sample_rate_calc_r(portP)) ) return errcode;
-
-	if ( (errcode=set_sample_rate_calc_abc(portP)) ) return errcode;
-
-	set_sample_rate_calc_regs(portP);
-
-	print_si5338_port(portP);
-
-	if ( (errcode=set_sample_rate_write_regs(dev, portP)) ) return errcode;
-
-	if ( portP->f_outP ) return si5338_get_module_sample_rate(dev, portP);
-
-	return 0;
-}
-
-
-
-/**
- * sets the sample rate as requested
- */
-int si5338_set_sample_rate(struct bladerf *dev, bladerf_module module, uint32_t rate, uint32_t *actualP)
-{
-    struct si5338_port risul;
-
-    memset(&risul,0,sizeof(risul));
-
-    risul.f_outP = actualP;  // may be NULL
-    risul.want_sample_rate = rate * 2;   // LMS needs one clock for I and one clock for Q
-
-    switch ( module ) {
-        case BLADERF_MODULE_RX:
-            risul.block_index = 1;
-            risul.enable_port_bits = SI5338_EN_A;
-            return set_sample_rate_A(dev,&risul);
-
-        case BLADERF_MODULE_TX:
-            risul.block_index = 2;
-            risul.enable_port_bits = SI5338_EN_A | SI5338_EN_B;
-            return set_sample_rate_A(dev,&risul);
-
-        default:
-            break;
-    }
-
-    return BLADERF_ERR_INVAL;
-}
-
 

@@ -160,15 +160,19 @@ int bladerf_set_loopback(struct bladerf *dev, bladerf_loopback l)
 }
 
 
-int bladerf_set_rational_sample_rate(struct bladerf *dev, bladerf_module module, unsigned int integer, unsigned int num, unsigned int denom)
+int bladerf_set_rational_sample_rate(struct bladerf *dev, bladerf_module module, struct bladerf_rational_rate *rate, struct bladerf_rational_rate *actual)
 {
-    /* TODO: Program the Si5338 to be 2x the desired sample rate */
-    return 0;
+    return si5338_set_rational_sample_rate(dev, module, rate, actual);
 }
 
 int bladerf_set_sample_rate(struct bladerf *dev, bladerf_module module, uint32_t rate, uint32_t *actual)
 {
     return si5338_set_sample_rate(dev, module, rate, actual);
+}
+
+int bladerf_get_rational_sample_rate(struct bladerf *dev, bladerf_module module, struct bladerf_rational_rate *rate)
+{
+    return si5338_get_rational_sample_rate(dev, module, rate);
 }
 
 int bladerf_get_sample_rate(struct bladerf *dev, bladerf_module module, unsigned int *rate)
@@ -268,12 +272,6 @@ int bladerf_set_sampling(struct bladerf *dev, bladerf_sampling sampling)
 
 bladerf_set_sampling__done:
     return status;
-}
-
-int bladerf_get_rational_sample_rate(struct bladerf *dev, bladerf_module module, unsigned int integer, unsigned int num, unsigned int denom)
-{
-    /* TODO: Read the Si5338 and figure out the sample rate */
-    return 0;
 }
 
 int bladerf_set_txvga2(struct bladerf *dev, int gain)

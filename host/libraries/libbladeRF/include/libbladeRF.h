@@ -81,6 +81,16 @@ struct bladerf_devinfo {
 };
 
 /**
+ * Rational sample rate representation
+ */
+struct bladerf_rational_rate {
+    uint64_t integer;           /**< Integer portion */
+    uint64_t num;               /**< Numerator in fractional portion */
+    uint64_t den;               /**< Denominator in fractional portion. This
+                                     must be > 0. */
+};
+
+/**
  * Device statistics
  */
 struct bladerf_stats {
@@ -390,22 +400,18 @@ API_EXPORT int bladerf_set_sample_rate(struct bladerf *dev, bladerf_module modul
 /**
  * Configure the device's sample rate as a rational fraction of Hz.
  * Sample rates are in the form of integer + num/denom.
- * TODO: Should this be the only way we set values, and num=0 and denom=1
- * for integer portions?
  *
  * @param[in]   dev         Device handle
  * @param[in]   module      Module to change
- * @param[in]   integer     Integer portion of the equation integer + num/denom
- * @param[in]   num         Numerator of rational fractional part
- * @param[in]   denom       Denominator of rational fractional part
+ * @param[in]   rate        Rational sample rate
+ * @param[out]  actual      Actual rational sample rate
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT int bladerf_set_rational_sample_rate(struct bladerf *dev,
                                                 bladerf_module module,
-                                                unsigned int integer,
-                                                unsigned int num,
-                                                unsigned int denom);
+                                                struct bladerf_rational_rate *rate,
+                                                struct bladerf_rational_rate *actual);
 
 /**
  * Configure the sampling of the LMS6002D to be either internal or
@@ -445,6 +451,19 @@ API_EXPORT int bladerf_get_sampling(struct bladerf *dev,
 API_EXPORT int bladerf_get_sample_rate(struct bladerf *dev,
                                        bladerf_module module,
                                        unsigned int *rate);
+
+/**
+ * Read the device's sample rate in rational Hz
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   module      Module to query
+ * @param[out]  rate        Pointer to returned rational sample rate
+ *
+ * @return 0 on success, value from \ref RETCODES list upon failure
+ */
+API_EXPORT int bladerf_get_rational_sample_rate(struct bladerf *dev,
+                                                bladerf_module module,
+                                                struct bladerf_rational_rate *rate);
 
 /**
  * Set the PA gain in dB
