@@ -107,17 +107,17 @@ int bladerf_open(struct bladerf **device, const char *dev_id)
         if (!dev->legacy) {
 
             status = bladerf_get_and_cache_serial(dev);
-            if (!status) {
+            if (status < 0) {
                 bladerf_log_warning( "Could not extract serial number\n" ) ;
             }
 
             status = bladerf_get_and_cache_vctcxo_trim(dev);
-            if (!status) {
+            if (status < 0) {
                 bladerf_log_warning( "Could not extract VCTCXO trim value\n" ) ;
             }
 
             status = bladerf_get_and_cache_fpga_size(dev);
-            if (!status) {
+            if (status < 0) {
                 bladerf_log_warning( "Could not extract FPGA size\n" ) ;
             }
 

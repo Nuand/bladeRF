@@ -831,6 +831,7 @@ static int lusb_get_fw_version(struct bladerf *dev,
     } else {
         *maj = (unsigned int) LE16_TO_HOST(fw_ver.major);
         *min = (unsigned int) LE16_TO_HOST(fw_ver.minor);
+        status = 0;
     }
 
     return status;
