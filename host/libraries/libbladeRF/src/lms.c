@@ -121,14 +121,12 @@ uint8_t lms_get_lpf_status(struct bladerf *dev, bladerf_module mod, lms_lpf_stat
     *status = LPF_NORMAL;
 
     bladerf_lms_read(dev, reg+1, &data);
-    if (data&(1<<6))
-    {
+    if (data&(1<<6)) {
         *status = LPF_BYPASSED;
     }
 
     bladerf_lms_read(dev, reg, &data);
-    if (data&(1<<6))
-    {
+    if (data&(1<<6)) {
         *status = LPF_DISABLED;
     }
 

@@ -379,18 +379,15 @@ int bladerf_set_bandwidth(struct bladerf *dev, bladerf_module module,
                             unsigned int *actual)
 {
     /* TODO: Make return values for lms call and return it for failure */
-    if (bandwidth == 0)
-    {
+    if (bandwidth == 0) {
         lms_lpf_bypass( dev, module );
-        if (actual)
-        {
+        if (actual) {
             *actual = 0;
         }
     } else {
         lms_bw_t bw = lms_uint2bw(bandwidth);
         lms_lpf_enable( dev, module, bw );
-        if (actual)
-        {
+        if (actual) {
             *actual = lms_bw2uint(bw);
         }
     }
@@ -407,8 +404,7 @@ int bladerf_get_bandwidth(struct bladerf *dev, bladerf_module module,
     /* Check if we've bypassed the LPF and set bandwidth to 0 if so */
     lms_lpf_status_t status;
     lms_get_lpf_status( dev, module, &status );
-    if (status == LPF_BYPASSED)
-    {
+    if (status == LPF_BYPASSED) {
         *bandwidth = 0;
     }
     return 0;
