@@ -82,7 +82,7 @@ if("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" OR
     # the GenerateExportHeader module appears to break for C-only projects:
     #
     # http://www.cmake.org/pipermail/cmake-commits/2012-August/013142.html
-    set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} -fvisibility=hidden)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
 endif()
 
 ################################################################################
