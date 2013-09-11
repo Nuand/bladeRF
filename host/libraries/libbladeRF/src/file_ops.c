@@ -20,19 +20,19 @@ int read_file(const char *filename, uint8_t **buf_ret, size_t *size_ret)
 
     f = fopen(filename, "rb");
     if (!f) {
-        bladerf_log_error("fopen: %s\n", strerror(errno));
+        log_error("fopen: %s\n", strerror(errno));
         return BLADERF_ERR_IO;
     }
 
     fd = fileno(f);
     if (fd < 0) {
-        bladerf_log_error("fileno: %s\n", strerror(errno));
+        log_error("fileno: %s\n", strerror(errno));
         status = BLADERF_ERR_IO;
         goto os_read_file__err_fileno;
     }
 
     if (fstat(fd, &sb) < 0) {
-        bladerf_log_error("fstat: %s\n", strerror(errno));
+        log_error("fstat: %s\n", strerror(errno));
         status = BLADERF_ERR_IO;
         goto os_read_file__err_stat;
     }
@@ -46,9 +46,9 @@ int read_file(const char *filename, uint8_t **buf_ret, size_t *size_ret)
     n_read = fread(buf, 1, sb.st_size, f);
     if (n_read != sb.st_size) {
         if (n_read < 0) {
-            bladerf_log_error("fread: %s\n", strerror(errno));
+            log_error("fread: %s\n", strerror(errno));
         } else {
-            bladerf_log_warning("short read: %zd/%zd\n", n_read, sb.st_size);
+            log_warning("short read: %zd/%zd\n", n_read, sb.st_size);
         }
 
         status = BLADERF_ERR_IO;

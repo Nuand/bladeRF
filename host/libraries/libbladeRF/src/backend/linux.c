@@ -70,7 +70,7 @@ static inline int linux_begin_fpga_programming(int fd)
     int status = 0;
     int fpga_status;
     if (ioctl(fd, BLADE_BEGIN_PROG, &fpga_status)) {
-        bladerf_log_error("ioctl(BLADE_BEGIN_PROG) failed: %s\n", strerror(errno));
+        log_error("ioctl(BLADE_BEGIN_PROG) failed: %s\n", strerror(errno));
         status = BLADERF_ERR_UNEXPECTED;
     }
 
@@ -82,8 +82,8 @@ static int linux_end_fpga_programming(int fd)
     int status = 0;
     int fpga_status;
     if (ioctl(fd, BLADE_END_PROG, &fpga_status)) {
-        bladerf_log_error("Failed to end programming procedure: %s\n",
-                strerror(errno));
+        log_error("Failed to end programming procedure: %s\n",
+                  strerror(errno));
         status = BLADERF_ERR_UNEXPECTED;
     }
 
@@ -116,7 +116,7 @@ static int linux_load_fpga(struct bladerf *dev,
             if (write_tmp < 0) {
                 /* Failing out...at least attempt to "finish" programming */
                 ioctl(backend->fd, BLADE_END_PROG, &ret);
-                bladerf_log_error("Write failure: %s\n", strerror(errno));
+                log_error("Write failure: %s\n", strerror(errno));
                 return BLADERF_ERR_IO;
             } else {
                 assert(write_tmp == (ssize_t)to_write);
@@ -172,7 +172,7 @@ static int linux_flash_firmware(struct bladerf *dev,
 
     upgrade_status = ioctl(backend->fd, BLADE_UPGRADE_FW, &fw_param);
     if (upgrade_status < 0) {
-        bladerf_log_error("Firmware upgrade failed: %s\n", strerror(errno));
+        log_error("Firmware upgrade failed: %s\n", strerror(errno));
         ret = BLADERF_ERR_UNEXPECTED;
     }
 
@@ -339,14 +339,14 @@ static int linux_tx(struct bladerf *dev, bladerf_format format,
             int errno_val = errno;
             bladerf_set_error(&dev->error, ETYPE_ERRNO, errno_val);
             bytes_written = BLADERF_ERR_IO;
-            bladerf_log_error("Failed to write with errno=%d: %s\n",
-                        errno_val, strerror(errno_val));
+            log_error("Failed to write with errno=%d: %s\n",
+                      errno_val, strerror(errno_val));
             break;
         } else if (i > 0) {
             bytes_written += i;
         } else {
-            bladerf_log_warning("\nInterrupted in bladerf_send_c16 (%zd/%zd\n",
-                       bytes_written, bytes_total);
+            log_warning("\nInterrupted in bladerf_send_c16 (%zd/%zd\n",
+                        bytes_written, bytes_total);
         }
     }
 
@@ -374,14 +374,14 @@ static int linux_rx(struct bladerf *dev, bladerf_format format,
             int errno_val = errno;
             bladerf_set_error(&dev->error, ETYPE_ERRNO, errno_val);
             ret = BLADERF_ERR_IO;
-            bladerf_log_error("Read failed with errno=%d: %s\n",
-                        errno_val, strerror(errno_val));
+            log_error("Read failed with errno=%d: %s\n",
+                      errno_val, strerror(errno_val));
             break;
         } else if (i > 0) {
             bytes_read += i;
         } else {
-            bladerf_log_warning("\nInterrupted in bladerf_read_c16 (%zd/%zd\n",
-                       bytes_read, bytes_total);
+            log_warning("\nInterrupted in bladerf_read_c16 (%zd/%zd\n",
+                        bytes_read, bytes_total);
         }
     }
 
@@ -407,7 +407,7 @@ static int linux_get_otp(struct bladerf *dev, char *otp)
 
     status = ioctl(backend->fd, BLADE_OTP_READ, &bs);
     if (status < 0) {
-        bladerf_log_error("Failed to read OTP with errno=%d: %s\n", errno, strerror(errno));
+        log_error("Failed to read OTP with errno=%d: %s\n", errno, strerror(errno));
         status = BLADERF_ERR_IO;
     }
     return status;
@@ -424,7 +424,7 @@ static int linux_get_cal(struct bladerf *dev, char *cal)
 
     status = ioctl(backend->fd, BLADE_FLASH_READ, &bs);
     if (status < 0) {
-        bladerf_log_error("Failed to read calibration sector with errno=%d: %s\n", errno, strerror(errno));
+        log_error("Failed to read calibration sector with errno=%d: %s\n", errno, strerror(errno));
         status = BLADERF_ERR_IO;
     }
     return status;
@@ -433,7 +433,7 @@ static int linux_get_cal(struct bladerf *dev, char *cal)
 /* XXX: For realsies */
 static int linux_get_fpga_version(struct bladerf *dev, unsigned int *maj, unsigned int *min)
 {
-    bladerf_log_warning("FPGA currently does not have a version number.\n");
+    log_warning("FPGA currently does not have a version number.\n");
     *min = *maj = 0;
     return 0;
 }
@@ -466,7 +466,7 @@ static int linux_get_device_speed(struct bladerf *dev, int *speed)
 
     status = ioctl(backend->fd, BLADE_GET_SPEED, speed);
     if (status < 0) {
-        bladerf_log_error("Failed to get device speed: %s\n", strerror(errno));
+        log_error("Failed to get device speed: %s\n", strerror(errno));
         status = BLADERF_ERR_IO;
     }
 
@@ -531,7 +531,7 @@ static int linux_open( struct bladerf **device, struct bladerf_devinfo *info)
                 free(ret);
             }
         } else {
-            bladerf_log_error("Failed to open %s: %s\n", dev_name, strerror(errno));
+            log_error("Failed to open %s: %s\n", dev_name, strerror(errno));
         }
     } else {
         /* Otherwise, we user our probe routine to get a device info list,
@@ -542,14 +542,14 @@ static int linux_open( struct bladerf **device, struct bladerf_devinfo *info)
         status = bladerf_devinfo_list_init(&list);
 
         if (status < 0) {
-            bladerf_log_error("Failed to initialized devinfo list!\n");
+            log_error("Failed to initialized devinfo list!\n");
         } else {
             status = linux_probe(&list);
             if (status < 0) {
                 if (status == BLADERF_ERR_NODEV) {
-                    bladerf_log_error("No devices available on the Linux driver backend.\n");
+                    log_error("No devices available on the Linux driver backend.\n");
                 } else {
-                    bladerf_log_error("Probe failed: %s\n", bladerf_strerror(status));
+                    log_error("Probe failed: %s\n", bladerf_strerror(status));
                 }
             } else {
                 for (i = 0; i < list.num_elt && !ret; i++) {
@@ -557,8 +557,8 @@ static int linux_open( struct bladerf **device, struct bladerf_devinfo *info)
                         status = linux_open(device, &list.elt[i]);
 
                         if (status) {
-                            bladerf_log_error("Failed to open instance %d - "
-                                       "trying next\n", list.elt[i].instance);
+                            log_error("Failed to open instance %d - "
+                                      "trying next\n", list.elt[i].instance);
 
                         } else {
                             backend =(*device)->backend;
@@ -626,8 +626,8 @@ static int str2instance(const char *bladerf_dev)
 
     if (!ok) {
         instance = DEVINFO_INST_ANY - 1;
-        bladerf_log_warning("Failed to convert to instance: %s\n", bladerf_dev);
-        bladerf_log_warning("Returning a value likely to fail: %d\n", instance);
+        log_warning("Failed to convert to instance: %s\n", bladerf_dev);
+        log_warning("Returning a value likely to fail: %d\n", instance);
     }
 
     return instance;
@@ -658,7 +658,7 @@ static int linux_probe(struct bladerf_devinfo_list *info_list)
                 /* Fetch USB bus and address */
                 status = ioctl(backend->fd, BLADE_GET_BUS, &tmp);
                 if (status < 0) {
-                    bladerf_log_warning("Failed to get bus. Skipping instance %d\n",
+                    log_warning("Failed to get bus. Skipping instance %d\n",
                                 devinfo.instance);
                     status = BLADERF_ERR_IO;
                 } else {
@@ -668,7 +668,7 @@ static int linux_probe(struct bladerf_devinfo_list *info_list)
 
                 status = ioctl(backend->fd, BLADE_GET_ADDR, &tmp);
                 if (status < 0) {
-                    bladerf_log_warning("Failed to get addr. Skipping instance %d\n",
+                    log_warning("Failed to get addr. Skipping instance %d\n",
                                devinfo.instance);
                     status = BLADERF_ERR_IO;
                 } else {
@@ -679,13 +679,13 @@ static int linux_probe(struct bladerf_devinfo_list *info_list)
                 /* Fetch device's serial # */
                 status = bladerf_get_serial(dev, (char *)&devinfo.serial);
                 if (status < 0) {
-                    bladerf_log_warning("Failed to get serial. Skipping instance %d\n",
+                    log_warning("Failed to get serial. Skipping instance %d\n",
                                devinfo.instance);
                     status = BLADERF_ERR_IO;
                 }
 
             } else {
-                bladerf_log_error("Failed to open instance=%d\n", devinfo.instance);
+                log_error("Failed to open instance=%d\n", devinfo.instance);
             }
 
             if (status == 0) {

@@ -209,18 +209,6 @@ typedef enum {
 } bladerf_log_level;
 
 /**
- * Sets the filter level for displayed log messages. Messages that are at
- * or above the specified log level will be written to the log output, while
- * messages with a lower log level will be suppressed. This function returns
- * the previous log level.
- *
- * @param   level       The new log level filter value
- *
- * @return The previous log level
- */
-bladerf_log_level bladerf_log_set_verbosity(bladerf_log_level level);
-
-/**
  * For both RX and TX, the stream callback receives:
  * dev:             Device structure
  * stream:          The associated stream
@@ -926,6 +914,18 @@ API_EXPORT const char * bladerf_strerror(int error);
 API_EXPORT const char * bladerf_version(unsigned int *major,
                                         unsigned int *minor,
                                         unsigned int *patch);
+
+/**
+ * Sets the filter level for displayed log messages. Messages that are at
+ * or above the specified log level will be written to the log output, while
+ * messages with a lower log level will be suppressed. This function returns
+ * the previous log level.
+ *
+ * @param   level       The new log level filter value
+ *
+ * @return The previous log level
+ */
+API_EXPORT bladerf_log_level bladerf_log_set_verbosity(bladerf_log_level level);
 
 /** @} (End of FN_MISC) */
 
