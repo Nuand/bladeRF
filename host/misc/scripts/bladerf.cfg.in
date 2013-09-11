@@ -4,7 +4,7 @@
 # This a configuration information file about what firmware and fpga image to load
 
 # For the kernel driver backend
-#BLADERF_DEVICE="/dev/bladerf0"
+#BLADERF_DEVICE="/dev/bladerf1"
 
 # For the libusb backend
 BLADERF_DEVICE="libusb: instance=0"
