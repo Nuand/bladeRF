@@ -1,0 +1,18 @@
+post_install() {
+	/usr/bin/depmod -a
+    modprobe bladeRF
+}
+
+pre_upgrade() {
+	rmmod bladeRF
+}
+
+post_upgrade() {
+	/usr/bin/depmod -a
+    modprobe bladeRF
+}
+
+pre_remove() {
+	rmmod bladeRF
+}
+
