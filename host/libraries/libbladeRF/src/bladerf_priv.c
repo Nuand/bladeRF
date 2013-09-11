@@ -223,7 +223,7 @@ static int extract_field(char *ptr, int len, char *field,
                 return 0;
             }
         } else {
-            log_warning( "%s: Field checksum mistmatch\n", __FUNCTION__);
+            log_warning( "%s: Field checksum mismatch\n", __FUNCTION__);
             return BLADERF_ERR_INVAL;
         }
         ub += c + 3; //skip past `c' bytes, 2 byte CRC field, and 1 byte len field
