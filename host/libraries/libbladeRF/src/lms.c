@@ -1122,6 +1122,9 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
             base = 0x60;
             addrs = 5;
             break;
+
+        default:
+            return BLADERF_ERR_INVAL;
     }
 
     /* Enable the appropriate clock based on the module */
