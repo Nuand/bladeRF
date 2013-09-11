@@ -18,6 +18,8 @@
 #include "pib_regs.h"
 
 #include "cyu3spi.h"
+#include "spi_flash_lib.h"
+
 uint16_t glSpiPageSize = 0x100;  /* SPI Page size to be used for transfers. */
 
 /* SPI initialization for application. */
@@ -52,7 +54,7 @@ CyU3PReturnStatus_t CyFxSpiInit(uint16_t pageLen)
 }
 
 CyU3PReturnStatus_t CyFxSpiDeInit() {
-	CyU3PSpiDeInit();
+	return CyU3PSpiDeInit();
 }
 
 /* Wait for the status response from the SPI flash. */
@@ -177,7 +179,7 @@ CyU3PReturnStatus_t CyFxSpiTransfer(uint16_t pageAddress, uint16_t byteCount, ui
 
 void NuandLockOtp() {
     CyU3PReturnStatus_t status = CY_U3P_SUCCESS;
-    char location[4];
+    uint8_t location[4];
 
     location[0] = 0x05; /* RDSTATUS */
     CyU3PSpiSetSsnLine (CyFalse);
@@ -215,7 +217,7 @@ void NuandLockOtp() {
 
 void NuandEnso() {
     CyU3PReturnStatus_t status = CY_U3P_SUCCESS;
-    char location[4];
+    uint8_t location[4];
 
     location[0] = 0xb1; // ENSO
     CyU3PSpiSetSsnLine (CyFalse);
@@ -226,7 +228,7 @@ void NuandEnso() {
 
 void NuandExso() {
     CyU3PReturnStatus_t status = CY_U3P_SUCCESS;
-    char location[4];
+    uint8_t location[4];
 
     location[0] = 0xc1; // EXSO
     CyU3PSpiSetSsnLine (CyFalse);
@@ -274,7 +276,6 @@ CyU3PReturnStatus_t CyFxSpiEraseSector(CyBool_t isErase, uint8_t sector)
 }
 
 void NuandFirmwareStart() {
-    CyU3PIoMatrixConfig_t io_cfg;
     CyU3PReturnStatus_t status = CY_U3P_SUCCESS;
 
     NuandGPIOReconfigure(CyFalse, CyFalse);

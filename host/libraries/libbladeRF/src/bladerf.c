@@ -775,6 +775,15 @@ int bladerf_device_reset(struct bladerf *dev)
     return dev->fn->device_reset(dev);
 }
 
+int bladerf_jump_to_bootloader(struct bladerf *dev)
+{
+    if (!dev->fn->jump_to_bootloader) {
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    return dev->fn->jump_to_bootloader(dev);
+}
+
 int bladerf_load_fpga(struct bladerf *dev, const char *fpga_file)
 {
     uint8_t *buf;

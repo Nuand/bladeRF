@@ -195,7 +195,10 @@ static int lusb_device_is_fx3(libusb_device *dev)
     if( err ) {
         log_error( "Couldn't open libusb device - %s\n", libusb_error_name(err) );
     } else {
-        if( desc.idVendor == USB_CYPRESS_VENDOR_ID && desc.idProduct == USB_FX3_PRODUCT_ID ) {
+        if(
+            (desc.idVendor == USB_CYPRESS_VENDOR_ID && desc.idProduct == USB_FX3_PRODUCT_ID) ||
+            (desc.idVendor == USB_NUAND_VENDOR_ID && desc.idProduct == USB_NUAND_BLADERF_BOOT_PRODUCT_ID)
+            ) {
             rv = 1;
         }
     }
@@ -919,6 +922,31 @@ static int lusb_device_reset(struct bladerf *dev)
                 sizeof(ok),
                 BLADERF_LIBUSB_TIMEOUT_MS
              );
+    return status;
+}
+
+static int lusb_jump_to_bootloader(struct bladerf *dev)
+{
+    struct bladerf_lusb *lusb = dev->backend;
+    int status;
+    status = libusb_control_transfer(
+                lusb->handle,
+                LIBUSB_RECIPIENT_INTERFACE |
+                    LIBUSB_REQUEST_TYPE_VENDOR |
+                    EP_DIR_OUT,
+                BLADE_USB_CMD_JUMP_TO_BOOTLOADER,
+                0,
+                0,
+                0,
+                0,
+                BLADERF_LIBUSB_TIMEOUT_MS
+             );
+
+    if (status < 0) {
+        bladerf_log_error( "Error jumping to bootloader: %s\n", libusb_error_name(status) );
+        status = error_libusb2bladerf(status);
+    }
+
     return status;
 }
 
@@ -1675,6 +1703,7 @@ const struct bladerf_fn bladerf_lusb_fn = {
     FIELD_INIT(.read_flash, lusb_read_flash),
     FIELD_INIT(.write_flash, lusb_write_flash),
     FIELD_INIT(.device_reset, lusb_device_reset),
+    FIELD_INIT(.jump_to_bootloader, lusb_jump_to_bootloader),
 
     FIELD_INIT(.get_cal, lusb_get_cal),
     FIELD_INIT(.get_otp, lusb_get_otp),

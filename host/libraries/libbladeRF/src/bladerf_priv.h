@@ -107,6 +107,7 @@ struct bladerf_fn {
     int (*write_flash)(struct bladerf *dev, int page_offset,
                             uint8_t *data, size_t data_size);
     int (*device_reset)(struct bladerf *dev);
+    int (*jump_to_bootloader)(struct bladerf *dev);
 
     /* Platform information */
     int (*get_cal)(struct bladerf *dev, char *cal);

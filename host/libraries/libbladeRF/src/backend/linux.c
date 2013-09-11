@@ -739,6 +739,7 @@ const struct bladerf_fn bladerf_linux_fn = {
     FIELD_INIT(.read_flash, NULL),
     FIELD_INIT(.write_flash, NULL),
     FIELD_INIT(.device_reset, linux_device_reset),
+    FIELD_INIT(.jump_to_bootloader, NULL),
 
     FIELD_INIT(.get_cal, linux_get_cal),
     FIELD_INIT(.get_otp, linux_get_otp),

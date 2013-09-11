@@ -1000,6 +1000,17 @@ API_EXPORT int bladerf_write_flash(struct bladerf *dev, int page_offset,
 API_EXPORT int bladerf_device_reset(struct bladerf *dev);
 
 /**
+ * Jump to FX3 bootloader
+ *
+ * @note This also causes the device to jump to the FX3 bootloader
+ *
+ * @param   dev         Device handle
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT int bladerf_jump_to_bootloader(struct bladerf *dev);
+
+/**
  * Load device's FPGA
  *
  * @param   dev         Device handle

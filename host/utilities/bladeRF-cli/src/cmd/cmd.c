@@ -19,6 +19,7 @@ DECLARE_CMD(set);
 DECLARE_CMD(rxtx);
 DECLARE_CMD(version);
 DECLARE_CMD(recover);
+DECLARE_CMD(jump_to_bootloader);
 
 #define MAX_ARGS    10
 
@@ -45,6 +46,7 @@ static const char *cmd_names_tx[] = { "tx", "transmit", NULL };
 static const char *cmd_names_set[] = { "set", "s", NULL };
 static const char *cmd_names_ver[] = { "version", "ver", "v", NULL };
 static const char *cmd_names_rec[] = { "recover", "r", NULL };
+static const char *cmd_names_jump[] = { "jump_to_boot", "j", NULL };
 
 static const struct cmd cmd_table[] = {
     {
@@ -304,6 +306,14 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.desc, "Load firmware when operating in FX3 bootloader mode"),
         FIELD_INIT(.help,
             "recover [device_str] [file]\n"
+        )
+    },
+    {
+        FIELD_INIT(.names, cmd_names_jump),
+        FIELD_INIT(.exec, cmd_jump_to_bootloader),
+        FIELD_INIT(.desc, "Jump to FX3 bootloader"),
+        FIELD_INIT(.help,
+            "jump_to_boot\n"
         )
     },
     {

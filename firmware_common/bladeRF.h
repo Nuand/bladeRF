@@ -40,6 +40,7 @@
 #define BLADE_USB_CMD_READ_OTP                103
 #define BLADE_USB_CMD_WRITE_OTP               104
 #define BLADE_USB_CMD_RESET                   105
+#define BLADE_USB_CMD_JUMP_TO_BOOTLOADER      106
 
 #define BLADE_USB_CMD_QUERY_VERSION      0
 #define BLADE_USB_CMD_QUERY_FPGA_STATUS  1
@@ -72,6 +73,7 @@ struct bladeRF_sector {
 
 #define USB_NUAND_VENDOR_ID     0x1d50
 #define USB_NUAND_BLADERF_PRODUCT_ID    0x6066
+#define USB_NUAND_BLADERF_BOOT_PRODUCT_ID    0x6080
 #define USB_NUAND_BLADERF_MINOR_BASE 193
 #define NUM_CONCURRENT  8
 #define NUM_DATA_URB    (1024)
