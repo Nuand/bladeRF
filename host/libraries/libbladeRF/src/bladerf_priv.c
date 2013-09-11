@@ -77,6 +77,9 @@ int bladerf_init_device(struct bladerf *dev)
     bladerf_set_frequency( dev, BLADERF_MODULE_TX, 1000000000 );
     bladerf_set_frequency( dev, BLADERF_MODULE_RX, 1000000000 );
 
+    /* Set the calibrated VCTCXO DAC value */
+    bladerf_dac_write( dev, dev->dac_trim );
+
     /* TODO: Read this return from the SPI calls */
     return 0;
 }
