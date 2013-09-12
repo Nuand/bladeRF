@@ -861,7 +861,7 @@ CyBool_t CyFxbladeRFApplnUSBSetupCB(uint32_t setupdat0, uint32_t setupdat1)
         {
             case BLADE_USB_CMD_QUERY_VERSION:
                 ver.major = 1;
-                ver.minor = 2;
+                ver.minor = 3;
                 apiRetStatus = CyU3PUsbSendEP0Data(sizeof(ver), (void*)&ver);
             break;
 
