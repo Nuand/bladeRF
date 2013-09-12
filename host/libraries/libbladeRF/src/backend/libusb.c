@@ -868,6 +868,8 @@ static int lusb_recover(
         status = ezusb_load_ram(device, fname, FX_TYPE_FX3, IMG_TYPE_IMG, 0);
 
         libusb_close(device);
+    } else {
+        bladerf_log_error("Failed to locate FX3 bootloader: %s\n", bladerf_strerror(status) );
     }
 
     libusb_exit(context);
@@ -922,7 +924,13 @@ static int lusb_device_reset(struct bladerf *dev)
                 sizeof(ok),
                 BLADERF_LIBUSB_TIMEOUT_MS
              );
-    return status;
+
+    if(status != LIBUSB_SUCCESS) {
+        bladerf_log_error("Error issuing reset: %s\n", libusb_error_name(status));
+        return error_libusb2bladerf(status);
+    } else {
+        return status;
+    }
 }
 
 static int lusb_jump_to_bootloader(struct bladerf *dev)

@@ -31,8 +31,6 @@ if(ENABLE_BACKEND_LIBUSB)
     find_package(LibUSB)
     if(NOT LIBUSB_FOUND)
         message(FATAL_ERROR "libusb-1.0 required to use for libusb backend")
-    else(NOT LIBUSB_FOUND)
-        set(LIBBLADERF_INCLUDES ${LIBBLADERF_INCLUDES} ${LIBUSB_INCLUDE_DIRS})
     endif(NOT LIBUSB_FOUND)
 else()
     return()
@@ -58,6 +56,9 @@ set(BLADERF_FLASH_SOURCE
         src/main.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/log.c
+        ${BLADERF_HOST_COMMON_SOURCE_DIR}/bladerf_devinfo.c
+        ${BLADERF_HOST_COMMON_SOURCE_DIR}/device_identifier.c
+        ${BLADERF_HOST_COMMON_SOURCE_DIR}/ezusb.c
 )
 
 if(MSVC)
