@@ -910,8 +910,7 @@ static int lusb_flash_firmware(struct bladerf *dev,
 static int lusb_device_reset(struct bladerf *dev)
 {
     struct bladerf_lusb *lusb = dev->backend;
-    int status, ok;
-    ok = 1;
+    int status;
     status = libusb_control_transfer(
                 lusb->handle,
                 LIBUSB_RECIPIENT_INTERFACE |
@@ -920,8 +919,8 @@ static int lusb_device_reset(struct bladerf *dev)
                 BLADE_USB_CMD_RESET,
                 0,
                 0,
-                (unsigned char *)&ok,
-                sizeof(ok),
+                0,
+                0,
                 BLADERF_LIBUSB_TIMEOUT_MS
              );
 

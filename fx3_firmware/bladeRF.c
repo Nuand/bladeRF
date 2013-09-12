@@ -1006,7 +1006,7 @@ CyBool_t CyFxbladeRFApplnUSBSetupCB(uint32_t setupdat0, uint32_t setupdat1)
             break;
 
             case BLADE_USB_CMD_RESET:
-                apiRetStatus = CyU3PUsbGetEP0Data(4, buf, &readC);
+                CyU3PUsbAckSetup();
                 CyU3PDeviceReset(CyFalse);
             break;
 

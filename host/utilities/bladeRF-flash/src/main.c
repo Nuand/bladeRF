@@ -198,6 +198,7 @@ static int count_events(
             libusb_get_bus_number(dev), libusb_get_device_address(dev));
 
     s->found += 1;
+    bladerf_init_devinfo(&s->devinfo);
     s->devinfo.backend  = BLADERF_BACKEND_LIBUSB;
     s->devinfo.usb_bus  = libusb_get_bus_number(dev);
     s->devinfo.usb_addr = libusb_get_device_address(dev);
@@ -663,7 +664,7 @@ int main(int argc, char *argv[])
     }
 
     if (rc.load_ram_only) {
-        bladerf_log_info("All done");
+        bladerf_log_info("All done\n");
         return 0;
     }
 
@@ -694,7 +695,7 @@ int main(int argc, char *argv[])
 
     status = get_bladerf(context, &devinfo);
     if (status == 0) {
-        bladerf_log_info("Successfully flashed bladeRF");
+        bladerf_log_info("Successfully flashed bladeRF\n");
     } else {
         bladerf_log_error("Failed to find bladeRF after flashing FX3 firmware, %d\n", status);
     }
