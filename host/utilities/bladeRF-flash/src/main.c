@@ -254,7 +254,7 @@ static int register_hotplug_notifications(libusb_context *context)
             USB_CYPRESS_VENDOR_ID, USB_FX3_PRODUCT_ID,
             &fx3_bootloader);
     if(status != 0) {
-        bladerf_log_error("Failed to init fx3_bootloader monitor, status = %d\n", status);
+        log_error("Failed to init fx3_bootloader monitor, status = %d\n", status);
         return status;
     }
 
@@ -262,7 +262,7 @@ static int register_hotplug_notifications(libusb_context *context)
             USB_NUAND_VENDOR_ID, USB_NUAND_BLADERF_BOOT_PRODUCT_ID,
             &bladerf_bootloader);
     if(status != 0) {
-        bladerf_log_error("Failed to init bladeRF bladerf_bootloader monitor, status = %d\n", status);
+        log_error("Failed to init bladeRF bladerf_bootloader monitor, status = %d\n", status);
         return status;
     }
 
@@ -270,7 +270,7 @@ static int register_hotplug_notifications(libusb_context *context)
             USB_NUAND_VENDOR_ID, USB_NUAND_BLADERF_PRODUCT_ID,
             &bladerf);
     if(status != 0) {
-        bladerf_log_error("Failed to init bladerf monitor, status = %d\n", status);
+        log_error("Failed to init bladerf monitor, status = %d\n", status);
         return status;
     }
 
@@ -285,7 +285,7 @@ static int device_is_fx3(libusb_device *dev)
 
     err = libusb_get_device_descriptor(dev, &desc);
     if( err ) {
-        bladerf_log_error( "Couldn't open libusb device - %s\n", libusb_error_name(err) );
+        log_error( "Couldn't open libusb device - %s\n", libusb_error_name(err) );
     } else {
         if(
             (desc.idVendor == USB_CYPRESS_VENDOR_ID && desc.idProduct == USB_FX3_PRODUCT_ID) ||
@@ -305,7 +305,7 @@ static int get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
 
     status = libusb_open( dev, &handle );
     if( status ) {
-        bladerf_log_error( "Couldn't populate devinfo - %s\n", libusb_error_name(status) );
+        log_error( "Couldn't populate devinfo - %s\n", libusb_error_name(status) );
     } else {
         /* Populate device info */
         info->backend = BLADERF_BACKEND_LIBUSB;
@@ -324,7 +324,7 @@ static int get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
             /* Consider this to be non-fatal, otherwise firmware <= 1.1
              * wouldn't be able to get far enough to upgrade */
             if (status < 0) {
-                bladerf_log_error("Failed to retrieve serial number\n");
+                log_error("Failed to retrieve serial number\n");
                 memset(info->serial, 0, BLADERF_SERIAL_LENGTH);
             }
 
@@ -352,7 +352,7 @@ static int find_fx3_via_info(
 
     status = libusb_get_device_list(context, &devs);
     if (status < 0) {
-        bladerf_log_error("libusb_get_device_list() failed: %d %s\n", status, libusb_error_name(status));
+        log_error("libusb_get_device_list() failed: %d %s\n", status, libusb_error_name(status));
         return status;
     }
 
@@ -363,13 +363,13 @@ static int find_fx3_via_info(
 
         status = get_devinfo(dev, &thisinfo);
         if (status < 0) {
-            bladerf_log_error( "Could not open bladeRF device: %s\n", libusb_error_name(status) );
+            log_error( "Could not open bladeRF device: %s\n", libusb_error_name(status) );
             status = status;
             break;
         }
 
         if (bladerf_devinfo_matches(&thisinfo, info)) {
-            bladerf_log_verbose("Found bladeRF bootloader, libusb:device=%d:%d\n",
+            log_verbose("Found bladeRF bootloader, libusb:device=%d:%d\n",
                     thisinfo.usb_bus, thisinfo.usb_addr);
             count += 1;
             found_dev = dev;
@@ -377,7 +377,7 @@ static int find_fx3_via_info(
     }
 
     if(count > 1) {
-        bladerf_log_error("Multiple bootloaders found, select one:\n");
+        log_error("Multiple bootloaders found, select one:\n");
         for (i=0; (dev=devs[i]) != NULL; i++) {
             if (!device_is_fx3(dev)) {
                 continue;
@@ -385,13 +385,13 @@ static int find_fx3_via_info(
 
             status = get_devinfo(dev, &thisinfo);
             if (status < 0) {
-                bladerf_log_error( "Could not open bladeRF device: %s\n", libusb_error_name(status) );
+                log_error( "Could not open bladeRF device: %s\n", libusb_error_name(status) );
                 status = status;
                 break;
             }
 
             if (bladerf_devinfo_matches(&thisinfo, info)) {
-                bladerf_log_error( "    libusb:device=%d:%d\n",
+                log_error( "    libusb:device=%d:%d\n",
                     thisinfo.usb_bus, thisinfo.usb_addr);
             }
         }
@@ -400,14 +400,14 @@ static int find_fx3_via_info(
 
     if (found_dev == NULL) {
         libusb_free_device_list(devs, 1);
-        bladerf_log_error("could not find a known device - try specifing bus, dev\n");
+        log_error("could not find a known device - try specifing bus, dev\n");
         return BLADERF_ERR_NODEV;
     }
 
     status = libusb_open(found_dev, handle);
     libusb_free_device_list(devs, 1);
     if (status != 0) {
-        bladerf_log_error("Error opening device: %s\n", libusb_error_name(status));
+        log_error("Error opening device: %s\n", libusb_error_name(status));
         return status;
     }
 
@@ -426,7 +426,7 @@ static int look_for_bootloader_connect(libusb_context * ctx, libusb_device **dev
     while(!event_count) {
         status = libusb_handle_events_timeout_completed(ctx, &timeout, NULL);
         if(status != 0) {
-            bladerf_log_error("Error waiting for events: %s\n", libusb_error_name(status));
+            log_error("Error waiting for events: %s\n", libusb_error_name(status));
             return status;
         }
     }
@@ -435,7 +435,7 @@ static int look_for_bootloader_connect(libusb_context * ctx, libusb_device **dev
     if(count == 1) {
         return 0;
     } else if(count > 1) {
-        bladerf_log_error("Just saw %d FX3 bootloader connect events, thats pretty weird, bailing\n",
+        log_error("Just saw %d FX3 bootloader connect events, thats pretty weird, bailing\n",
                 count);
         return BLADERF_ERR_UNEXPECTED;
     }
@@ -444,7 +444,7 @@ static int look_for_bootloader_connect(libusb_context * ctx, libusb_device **dev
     if(count == 1) {
         return 0;
     } else if(count > 1) {
-        bladerf_log_error("Just saw %d bladeRF bootloader connect events, thats pretty weird, bailing\n",
+        log_error("Just saw %d bladeRF bootloader connect events, thats pretty weird, bailing\n",
                 count);
         return BLADERF_ERR_UNEXPECTED;
     }
@@ -457,7 +457,7 @@ static int reach_bootloader(bool reset, struct bladerf *dev, libusb_context *ctx
     if(reset) {
         status = bladerf_device_reset(dev);
         if(status != 0) {
-            bladerf_log_error("Error resetting device: %s\n", bladerf_strerror(status));
+            log_error("Error resetting device: %s\n", bladerf_strerror(status));
             return status;
         }
 
@@ -469,7 +469,7 @@ static int reach_bootloader(bool reset, struct bladerf *dev, libusb_context *ctx
 
     status = bladerf_jump_to_bootloader(dev);
     if(status != 0) {
-        bladerf_log_info("Older bladeRF's don't support JUMP_TO_BOOTLOADER, "
+        log_info("Older bladeRF's don't support JUMP_TO_BOOTLOADER, "
                 "so ignore LIBUSB timeout errors until you update the FX3 firmware\n");
     }
 
@@ -478,11 +478,11 @@ static int reach_bootloader(bool reset, struct bladerf *dev, libusb_context *ctx
         return status;
     }
 
-    bladerf_log_info("Falling back to manually erasing first page of FX3 firmware\n");
+    log_info("Falling back to manually erasing first page of FX3 firmware\n");
 
     status = bladerf_erase_flash(dev, 0, 1);
     if(status != 0) {
-        bladerf_log_error("Failed to erase first page.  Flashing will likely "
+        log_error("Failed to erase first page.  Flashing will likely "
                 "require manual force to FX3 bootloader. See "
                 "http://nuand.com/forums/viewtopic.php?f=6&t=3072\n");
         return BLADERF_ERR_UNEXPECTED;
@@ -490,7 +490,7 @@ static int reach_bootloader(bool reset, struct bladerf *dev, libusb_context *ctx
 
     status = bladerf_device_reset(dev);
     if(status != 0) {
-        bladerf_log_error("Failed to reset device after erasing first page."
+        log_error("Failed to reset device after erasing first page."
                 "A manual reset of the bladeRF should place it in the FX3 "
                 "bootloader.  After the manual reset, re-run bladeRF-flash.");
         return BLADERF_ERR_UNEXPECTED;
@@ -498,7 +498,7 @@ static int reach_bootloader(bool reset, struct bladerf *dev, libusb_context *ctx
 
     status = look_for_bootloader_connect(ctx, device_out);
     if(status != 0) {
-        bladerf_log_error("Failed to reach bootloader.  Flashing will likely "
+        log_error("Failed to reach bootloader.  Flashing will likely "
                 "require manual force to FX3 bootloader. See "
                 "http://nuand.com/forums/viewtopic.php?f=6&t=3072\n");
         return BLADERF_ERR_NODEV;
@@ -515,12 +515,12 @@ static int get_to_bootloader(bool reset, const char *device_identifier,
     libusb_device *device = NULL;
     struct bladerf_devinfo devinfo;
 
-    bladerf_log_verbose("First try to open bladerf with devid provided\n");
+    log_verbose("First try to open bladerf with devid provided\n");
 
     status = bladerf_open(&dev, device_identifier);
     if(status == 0) {
         /* Reset bladeRF count */
-        bladerf_log_verbose("bladeRF found, trying to reach the bootloader\n");
+        log_verbose("bladeRF found, trying to reach the bootloader\n");
         status = reach_bootloader(reset, dev, context, &device);
         if(status != 0) {
             return status;
@@ -528,22 +528,22 @@ static int get_to_bootloader(bool reset, const char *device_identifier,
 
         status = libusb_open(device, device_out);
         if(status != 0) {
-            bladerf_log_error("Error opening bootloader: %s\n",
+            log_error("Error opening bootloader: %s\n",
                     libusb_error_name(status));
         }
         return status;
     } else {
-        bladerf_log_verbose("No bladeRF found, search for bootloader\n");
+        log_verbose("No bladeRF found, search for bootloader\n");
         status = str2devinfo(device_identifier, &devinfo);
         if(status != 0) {
-            bladerf_log_error("Failed to parse dev string %s, %s\n",
+            log_error("Failed to parse dev string %s, %s\n",
                 device_identifier, bladerf_strerror(status));
             return status;
         }
 
         if(devinfo.backend != BLADERF_BACKEND_LIBUSB && devinfo.backend != BLADERF_BACKEND_ANY) {
             status = BLADERF_ERR_UNSUPPORTED;
-            bladerf_log_error("Only libusb supported, %s\n",
+            log_error("Only libusb supported, %s\n",
                 bladerf_strerror(status));
             return status;
         }
@@ -568,14 +568,14 @@ static int get_bladerf(libusb_context *ctx, struct bladerf_devinfo *devinfo)
     while(!event_count) {
         status = libusb_handle_events_timeout_completed(ctx, &timeout, NULL);
         if(status != 0) {
-            bladerf_log_error("Error waiting for events: %s\n", libusb_error_name(status));
+            log_error("Error waiting for events: %s\n", libusb_error_name(status));
             return status;
         }
     }
 
     count = get_event_counts(&bladerf, devinfo, &device);
     if(count > 1) {
-        bladerf_log_error("Just saw %d bladeRF connect events, thats pretty weird, bailing\n",
+        log_error("Just saw %d bladeRF connect events, thats pretty weird, bailing\n",
                 count);
         return BLADERF_ERR_UNEXPECTED;
     } else if (count == 0) {
@@ -612,7 +612,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    bladerf_log_set_verbosity(rc.verbosity);
+    log_set_verbosity(rc.verbosity);
 
     if (rc.show_help) {
         usage(argv[0]);
@@ -636,7 +636,7 @@ int main(int argc, char *argv[])
     /* Optionally flash new image to SPI flash */
     status = libusb_init(&context);
     if (status != 0) {
-        bladerf_log_error( "Could not initialize libusb: %s\n", libusb_error_name(status) );
+        log_error( "Could not initialize libusb: %s\n", libusb_error_name(status) );
         return status;
     }
 
@@ -645,59 +645,59 @@ int main(int argc, char *argv[])
         return status;
     }
 
-    bladerf_log_verbose("Hotplug notifications installed\n");
+    log_verbose("Hotplug notifications installed\n");
 
     device = NULL;
     status = get_to_bootloader(rc.reset, rc.device, context, &device);
     if (status != 0) {
-        bladerf_log_error("Failed to find bladeRF bootloader after jumping, %d\n", status);
+        log_error("Failed to find bladeRF bootloader after jumping, %d\n", status);
         return status;
     }
 
-    bladerf_log_info("Attempting load with file %s\n", rc.fw_file);
+    log_info("Attempting load with file %s\n", rc.fw_file);
     status = ezusb_load_ram(device, rc.fw_file, FX_TYPE_FX3, IMG_TYPE_IMG, 0);
     libusb_close(device);
 
     if (status != 0) {
-        bladerf_log_error("Failed to load FX3 RAM %d\n", status);
+        log_error("Failed to load FX3 RAM %d\n", status);
         return status;
     }
 
     if (rc.load_ram_only) {
-        bladerf_log_info("All done\n");
+        log_info("All done\n");
         return 0;
     }
 
     status = get_bladerf(context, &devinfo);
     if (status != 0) {
-        bladerf_log_error("Failed to find bladeRF after loading RAM, %d\n", status);
+        log_error("Failed to find bladeRF after loading RAM, %d\n", status);
         return status;
     }
 
     printf("%d:%d\n", devinfo.usb_bus, devinfo.usb_addr);
     status = bladerf_open_with_devinfo(&dev, &devinfo);
     if (status != 0) {
-        bladerf_log_error("Error opening device again, %s\n", bladerf_strerror(status));
+        log_error("Error opening device again, %s\n", bladerf_strerror(status));
         return status;
     }
 
     status = bladerf_flash_firmware(dev, rc.fw_file);
     if (status != 0) {
-        bladerf_log_error("Error flashing firmware, %s\n", bladerf_strerror(status));
+        log_error("Error flashing firmware, %s\n", bladerf_strerror(status));
         return status;
     }
 
     status = bladerf_device_reset(dev);
     if (status != 0) {
-        bladerf_log_error("Error resetting bladeRF, %s\n", bladerf_strerror(status));
+        log_error("Error resetting bladeRF, %s\n", bladerf_strerror(status));
         return status;
     }
 
     status = get_bladerf(context, &devinfo);
     if (status == 0) {
-        bladerf_log_info("Successfully flashed bladeRF\n");
+        log_info("Successfully flashed bladeRF\n");
     } else {
-        bladerf_log_error("Failed to find bladeRF after flashing FX3 firmware, %d\n", status);
+        log_error("Failed to find bladeRF after flashing FX3 firmware, %d\n", status);
     }
 
     return 0;
