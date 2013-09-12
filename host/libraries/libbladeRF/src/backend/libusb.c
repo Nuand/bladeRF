@@ -245,7 +245,7 @@ static int lusb_get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
     }
 
 
-    return error_libusb2bladerf(status);
+    return status;
 }
 
 static int change_setting(struct bladerf *dev, uint8_t setting)
@@ -263,6 +263,7 @@ static int change_setting(struct bladerf *dev, uint8_t setting)
 static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
 {
     int status, i, n, inf, val;
+	int fx3_status;
     ssize_t count;
     struct bladerf *dev = NULL;
     struct bladerf_lusb *lusb = NULL;
@@ -361,9 +362,9 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
         }
 
         if( lusb_device_is_fx3(list[i]) ) {
-            status = lusb_get_devinfo( list[i], &thisinfo );
-            if( status ) {
-                log_error( "Could not open bladeRF device: %s\n", libusb_error_name(status) );
+            fx3_status = lusb_get_devinfo( list[i], &thisinfo );
+            if( fx3_status ) {
+                log_error( "Could not open FX3 bootloader device: %s\n", libusb_error_name(fx3_status) );
                 continue;
             }
 
@@ -395,7 +396,7 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
  *     in an attempt to release interfaces we haven't claimed... thoughts? */
 lusb_open__err_device_list:
     libusb_free_device_list( list, 1 );
-    if (status != 0) {
+    if (status != 0 && lusb != NULL) {
         if (lusb->handle) {
             libusb_close(lusb->handle);
         }
