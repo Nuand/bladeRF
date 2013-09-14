@@ -326,7 +326,7 @@ API_EXPORT int bladerf_open_with_devinfo(struct bladerf **device,
  *      - Specifies USB bus and address. Decimal or hex prefixed by '0x' is
  *        permitted.
  *   - instance=\<n\>
- *      - Nth instance encountered (libusb)
+ *      - Nth instance encountered, 0-indexed (libusb)
  *      - Device node N, such as /dev/bladerfN (linux)
  *   - serial=\<serial\>
  *      - Device's serial number.
@@ -702,6 +702,21 @@ API_EXPORT int bladerf_init_stream(struct bladerf_stream **stream,
 
 /**
  * Begin running  a stream. This call will block until the steam completes.
+ *
+ * Only 1 RX stream and 1 TX stream may be running at a time. Attempting to
+ * call bladerf_stream() with more than one stream per module will yield
+ * unexpected (and most likely undesirable) results.
+ *
+ * When running a full-duplex configuration with two threads (e.g,
+ * one thread calling bladerf_stream() for TX, and another for RX), stream
+ * callbacks may be executed in either thread. Therefore, the caller is
+ * responsible for ensuring that his or her callbacks are thread-safe. For the
+ * same reason, it is highly recommended that callbacks do not block.
+ *
+ * When starting a TX stream, an initial set of callbacks will be immediately
+ * invoked. The caller must ensure that there are at *more than* T buffers
+ * filled before calling bladerf_stream(..., BLADERF_MODULE_TX), where T is the
+ * num_transfers value provided to bladerf_init_stream(), to avoid an underrun.
  *
  * @param   stream  A stream handle that has been successfully been initialized
  *                  via bladerf_init_stream()
