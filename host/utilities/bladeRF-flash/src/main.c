@@ -2,7 +2,6 @@
  * bladeRF flashing utility
  */
 #include <stdlib.h>
-#include <unistd.h>
 #include <stdio.h>
 #include <getopt.h>
 #include <stdbool.h>
@@ -15,6 +14,7 @@
 #include "log.h"
 #include "ezusb.h"
 #include "device_identifier.h"
+#include "host_config.h"
 #include "bladerf_devinfo.h"
 
 
@@ -187,22 +187,19 @@ static int count_events(
     if(event != LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED) {
         return 0;
     }
-    fprintf(stderr, "Hotplug!\n");
+
     rc = libusb_get_device_descriptor(dev, &desc);
     if (LIBUSB_SUCCESS != rc) {
-        fprintf (stderr, "Error getting device descriptor\n");
+        log_error ("Error getting device descriptor for hotplug\n");
+        return 0;
     }
 
-    printf ("Device attach: %04x:%04x\n", desc.idVendor, desc.idProduct);
-    printf ("Device attach: %d:%d\n",
-            libusb_get_bus_number(dev), libusb_get_device_address(dev));
-
+    event_count += 1;
     s->found += 1;
     bladerf_init_devinfo(&s->devinfo);
     s->devinfo.backend  = BLADERF_BACKEND_LIBUSB;
     s->devinfo.usb_bus  = libusb_get_bus_number(dev);
     s->devinfo.usb_addr = libusb_get_device_address(dev);
-    event_count += 1;
 
     if(s->dev != NULL) {
          libusb_unref_device(s->dev);
@@ -242,6 +239,7 @@ static int get_event_counts(
     found = data->found;
     *devinfo = data->devinfo;
     *device = data->dev;
+    data->found = 0;
 
     return found;
 }
@@ -254,7 +252,7 @@ static int register_hotplug_notifications(libusb_context *context)
             USB_CYPRESS_VENDOR_ID, USB_FX3_PRODUCT_ID,
             &fx3_bootloader);
     if(status != 0) {
-        log_error("Failed to init fx3_bootloader monitor, status = %d\n", status);
+        log_error("Failed to init fx3_bootloader monitor, status = %s\n", libusb_error_name(status));
         return status;
     }
 
@@ -262,7 +260,7 @@ static int register_hotplug_notifications(libusb_context *context)
             USB_NUAND_VENDOR_ID, USB_NUAND_BLADERF_BOOT_PRODUCT_ID,
             &bladerf_bootloader);
     if(status != 0) {
-        log_error("Failed to init bladeRF bladerf_bootloader monitor, status = %d\n", status);
+        log_error("Failed to init bladeRF bladerf_bootloader monitor, status = %s\n", libusb_error_name(status));
         return status;
     }
 
@@ -270,7 +268,7 @@ static int register_hotplug_notifications(libusb_context *context)
             USB_NUAND_VENDOR_ID, USB_NUAND_BLADERF_PRODUCT_ID,
             &bladerf);
     if(status != 0) {
-        log_error("Failed to init bladerf monitor, status = %d\n", status);
+        log_error("Failed to init bladerf monitor, status = %s\n", libusb_error_name(status));
         return status;
     }
 
@@ -417,9 +415,10 @@ static int find_fx3_via_info(
 static int look_for_bootloader_connect(libusb_context * ctx, libusb_device **device_out) {
     struct bladerf_devinfo devinfo;
     int count, status;
-    struct timeval timeout = {
-        .tv_sec = RECONNECT_TIME,
-    };
+    struct timeval timeout;
+	
+    timeout.tv_sec = RECONNECT_TIME;
+    timeout.tv_usec = 0;
 
     event_count = 0;
 
@@ -556,12 +555,10 @@ static int get_bladerf(libusb_context *ctx, struct bladerf_devinfo *devinfo)
 {
     libusb_device *device;
     int count, status;
-
-    sleep(10);
-
-    struct timeval timeout = {
-        .tv_sec = RECONNECT_TIME,
-    };
+	struct timeval timeout;
+	
+    timeout.tv_sec = RECONNECT_TIME;
+    timeout.tv_usec = 0;
 
     event_count = 0;
 
@@ -674,7 +671,6 @@ int main(int argc, char *argv[])
         return status;
     }
 
-    printf("%d:%d\n", devinfo.usb_bus, devinfo.usb_addr);
     status = bladerf_open_with_devinfo(&dev, &devinfo);
     if (status != 0) {
         log_error("Error opening device again, %s\n", bladerf_strerror(status));
