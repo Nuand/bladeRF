@@ -14,7 +14,7 @@
 extern "C" {
 #endif
 
-/* Function visibility */
+/** Marks an API routine to be made visible to dynamic loader  */
 #if defined _WIN32 || defined _CYGWIN__
 #   ifdef __GNUC__
 #       define API_EXPORT __attribute__ ((dllexport))
@@ -66,7 +66,7 @@ typedef enum {
     BLADERF_BACKEND_LIBUSB  /**< libusb */
 } bladerf_backend;
 
-/* Length of device serial number string, including NUL-terminator */
+/** Length of device serial number string, including NUL-terminator */
 #define BLADERF_SERIAL_LENGTH   33
 
 /**
