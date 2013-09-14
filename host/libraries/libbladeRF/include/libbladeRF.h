@@ -892,9 +892,7 @@ API_EXPORT int bladerf_device_reset(struct bladerf *dev);
  * @param   dev         Device handle
  * @param   fpga        Full path to FPGA bitstream
  *
- * @return 0 upon successfully,
- *         1 if FPGA is already loaded,
- *         or a value from \ref RETCODES list on failure
+ * @return 0 upon successfully, or a value from \ref RETCODES list on failure
  */
 API_EXPORT int bladerf_load_fpga(struct bladerf *dev, const char *fpga);
 

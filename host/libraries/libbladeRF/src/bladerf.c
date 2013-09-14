@@ -721,15 +721,6 @@ int bladerf_load_fpga(struct bladerf *dev, const char *fpga_file)
     uint8_t *buf;
     size_t  buf_size;
     int status;
-    int is_loaded;
-
-    is_loaded = dev->fn->is_fpga_configured(dev);
-    if (is_loaded > 0) {
-        log_info("FPGA is already loaded -- reloading.\n");
-    } else if (is_loaded < 0) {
-        log_warning("Failed to determine FPGA status. (%d) "
-                    "Attempting to load anyway...\n", is_loaded);
-    }
 
     /* TODO sanity check FPGA:
      *  - Check for x40 vs x115 and verify FPGA image size
