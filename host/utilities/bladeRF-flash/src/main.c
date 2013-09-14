@@ -16,6 +16,7 @@
 #include "device_identifier.h"
 #include "host_config.h"
 #include "bladerf_devinfo.h"
+#include <time.h>
 
 
 #define RECONNECT_TIME 10 /* Time for USB reconnect after jump */
@@ -412,10 +413,10 @@ static int find_fx3_via_info(
     return 0;
 }
 
-static int look_for_bootloader_connect(libusb_context * ctx, libusb_device **device_out) {
-    struct bladerf_devinfo devinfo;
-    int count, status;
+static int poll_for_events(libusb_context * ctx) {
+    time_t end_t = time(NULL) + RECONNECT_TIME;
     struct timeval timeout;
+    int status;
 	
     timeout.tv_sec = RECONNECT_TIME;
     timeout.tv_usec = 0;
@@ -428,6 +429,22 @@ static int look_for_bootloader_connect(libusb_context * ctx, libusb_device **dev
             log_error("Error waiting for events: %s\n", libusb_error_name(status));
             return status;
         }
+
+        if(time(NULL) > end_t) {
+            break;
+        }
+    }
+
+    return 0;
+}
+
+static int look_for_bootloader_connect(libusb_context * ctx, libusb_device **device_out) {
+    struct bladerf_devinfo devinfo;
+    int count, status;
+
+    status = poll_for_events(ctx);
+    if(status != 0) {
+        return status;
     }
 
     count = get_event_counts(&fx3_bootloader, &devinfo, device_out);
@@ -555,19 +572,10 @@ static int get_bladerf(libusb_context *ctx, struct bladerf_devinfo *devinfo)
 {
     libusb_device *device;
     int count, status;
-	struct timeval timeout;
 	
-    timeout.tv_sec = RECONNECT_TIME;
-    timeout.tv_usec = 0;
-
-    event_count = 0;
-
-    while(!event_count) {
-        status = libusb_handle_events_timeout_completed(ctx, &timeout, NULL);
-        if(status != 0) {
-            log_error("Error waiting for events: %s\n", libusb_error_name(status));
-            return status;
-        }
+    status = poll_for_events(ctx);
+    if(status != 0) {
+        return status;
     }
 
     count = get_event_counts(&bladerf, devinfo, &device);
