@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# get configuration variables
+source /etc/bladerf.cfg
+
+# Flash the firmware
+/usr/bin/logger -t bladerf -s "Loading bladeRF device ${BLADERF_DEVICE} with firmware ${BLADERF_FIRMWARE_IMAGE}"
+@CMAKE_INSTALL_PREFIX@/bin/bladeRF-cli -d "${BLADERF_DEVICE}" -f "${BLADERF_FIRMWARE_IMAGE}"
+

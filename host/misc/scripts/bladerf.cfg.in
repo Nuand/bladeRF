@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# This file gets sourced for configuration information variables.
+# This a configuration information file about what firmware and fpga image to load
+
+# For the kernel driver backend
+#BLADERF_DEVICE="/dev/bladerf1"
+
+# For the libusb backend
+BLADERF_DEVICE="libusb: instance=0"
+
+BLADERF_FIRMWARE_IMAGE="@CMAKE_INSTALL_PREFIX@/share/bladerf/firmware/latest.img"
+BLADERF_FPGA_SIZE=`@CMAKE_INSTALL_PREFIX@/bin/bladeRF-cli -d "${BLADERF_DEVICE}" -s @CMAKE_INSTALL_PREFIX@/share/bladerf/scripts/version | grep '^FPGA size: ' | awk '{print $3}'`
+BLADERF_FPGA_IMAGE="@CMAKE_INSTALL_PREFIX@/share/bladerf/fpga/hostedx${BLADERF_FPGA_SIZE}.rbf"
+
+export BLADERF_FIRMWARE_IMAGE BLADERF_FPGA_IMAGE BLADERF_DEVICE BLADERF_FPGA_SIZE

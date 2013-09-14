@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# get configuration variables
+source /etc/bladerf.cfg
+
+# Load the FPGA
+/usr/bin/logger -t bladerf -s "Loading bladeRF device ${BLADERF_DEVICE} with FPGA ${BLADERF_FPGA_IMAGE}"
+@CMAKE_INSTALL_PREFIX@/bin/bladeRF-cli -d "${BLADERF_DEVICE}" -l "${BLADERF_FPGA_IMAGE}"
+echo "Complete."
