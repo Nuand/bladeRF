@@ -10,6 +10,7 @@
 #include <bladeRF.h>
 #include <libusb.h>
 
+#include "ezusb.h"
 #include "bladerf_priv.h"
 #include "backend/libusb.h"
 #include "minmax.h"
@@ -184,6 +185,27 @@ static int lusb_device_is_bladerf(libusb_device *dev)
     return rv;
 }
 
+static int lusb_device_is_fx3(libusb_device *dev)
+{
+    int err;
+    int rv = 0;
+    struct libusb_device_descriptor desc;
+
+    err = libusb_get_device_descriptor(dev, &desc);
+    if( err ) {
+        log_error( "Couldn't open libusb device - %s\n", libusb_error_name(err) );
+    } else {
+        if(
+            (desc.idVendor == USB_CYPRESS_VENDOR_ID && desc.idProduct == USB_FX3_PRODUCT_ID) ||
+            (desc.idVendor == USB_NUAND_VENDOR_ID && desc.idProduct == USB_NUAND_BLADERF_BOOT_PRODUCT_ID)
+            ) {
+            rv = 1;
+        }
+    }
+    return rv;
+}
+
+
 static int lusb_get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
 {
     int status = 0;
@@ -223,7 +245,7 @@ static int lusb_get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
     }
 
 
-    return error_libusb2bladerf(status);
+    return status;
 }
 
 static int change_setting(struct bladerf *dev, uint8_t setting)
@@ -241,6 +263,7 @@ static int change_setting(struct bladerf *dev, uint8_t setting)
 static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
 {
     int status, i, n, inf, val;
+	int fx3_status;
     ssize_t count;
     struct bladerf *dev = NULL;
     struct bladerf_lusb *lusb = NULL;
@@ -337,6 +360,19 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
                 break;
             }
         }
+
+        if( lusb_device_is_fx3(list[i]) ) {
+            fx3_status = lusb_get_devinfo( list[i], &thisinfo );
+            if( fx3_status ) {
+                log_error( "Could not open FX3 bootloader device: %s\n", libusb_error_name(fx3_status) );
+                continue;
+            }
+
+            log_warning( "Found FX3 bootloader device libusb:device=%d:%d, could be bladeRF.\n",
+                thisinfo.usb_bus, thisinfo.usb_addr);
+            log_warning( "Use \"recover libusb:device=%d:%d <FX3 firmware>\" to boot bladeRF.\n",
+                thisinfo.usb_bus, thisinfo.usb_addr);
+        }
     }
 
     if (dev) {
@@ -360,7 +396,7 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
  *     in an attempt to release interfaces we haven't claimed... thoughts? */
 lusb_open__err_device_list:
     libusb_free_device_list( list, 1 );
-    if (status != 0) {
+    if (status != 0 && lusb != NULL) {
         if (lusb->handle) {
             libusb_close(lusb->handle);
         }
@@ -499,7 +535,7 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
 }
 
 /* Note: n_bytes is rounded up to a multiple of the sector size here */
-static int erase_flash(struct bladerf *dev, int sector_offset, int n_bytes)
+static int lusb_erase_flash(struct bladerf *dev, int sector_offset, int n_bytes)
 {
     int status = 0;
     int sector_to_erase;
@@ -509,6 +545,13 @@ static int erase_flash(struct bladerf *dev, int sector_offset, int n_bytes)
 
     assert(sector_offset < FLASH_NUM_SECTORS);
     assert((sector_offset + n_sectors) < FLASH_NUM_SECTORS);
+
+    status = change_setting(dev, USB_IF_SPI_FLASH);
+
+    if (status) {
+        log_error("Failed to set interface: %s\n", libusb_error_name(status));
+        status = BLADERF_ERR_IO;
+    }
 
     log_info("Erasing %d sectors starting @ sector %d\n",
                 n_sectors, sector_offset);
@@ -542,20 +585,35 @@ static int erase_flash(struct bladerf *dev, int sector_offset, int n_bytes)
         }
     }
 
-    return status;
+    if (status == 0) {
+        return n_sectors;
+    } else {
+        return status;
+    }
 }
 
-static int read_flash(struct bladerf *dev, int page_offset,
+static int lusb_read_flash(struct bladerf *dev, int page_offset,
                         uint8_t *ptr, size_t n_bytes)
 {
     int status = 0;
-    int page_i, n_read;
+    int page_i, n_read, total_read;
     int read_size = dev->speed ? FLASH_PAGE_SIZE: 64;
     int pages_to_read = FLASH_BYTES_TO_PAGES(n_bytes);
     struct bladerf_lusb *lusb = dev->backend;
 
     assert(page_offset < FLASH_NUM_PAGES);
     assert((page_offset + n_bytes) < FLASH_NUM_PAGES);
+    /* FIXME: support data_size that are not multiple of pages */
+    assert(n_bytes % FLASH_PAGE_SIZE == 0);
+
+    status = change_setting(dev, USB_IF_SPI_FLASH);
+
+    if (status) {
+        log_error("Failed to set interface: %s\n", libusb_error_name(status));
+        status = BLADERF_ERR_IO;
+    }
+
+    total_read = 0;
 
     for (page_i = page_offset;
          page_i < (page_offset + pages_to_read) && !status;
@@ -588,12 +646,18 @@ static int read_flash(struct bladerf *dev, int page_offset,
                 status = BLADERF_ERR_IO;
             } else {
                 n_read += read_size;
+                total_read += read_size;
                 ptr += read_size;
                 status = 0;
             }
         } while (n_read < FLASH_PAGE_SIZE && !status);
     }
-    return status;
+
+    if (status == 0) {
+        return total_read;
+    } else {
+        return status;
+    }
 }
 
 static int verify_flash(struct bladerf *dev, int page_offset,
@@ -667,21 +731,33 @@ static int verify_flash(struct bladerf *dev, int page_offset,
     return status;
 }
 
-static int write_flash(struct bladerf *dev, int page_offset,
+static int lusb_write_flash(struct bladerf *dev, int page_offset,
                         uint8_t *data, size_t data_size)
 {
     int status = 0;
     int i;
-    int n_write;
+    int n_write, total_written;
     int write_size = dev->speed ? FLASH_PAGE_SIZE : 64;
     int pages_to_write = FLASH_BYTES_TO_PAGES(data_size);
     struct bladerf_lusb *lusb = dev->backend;
     uint8_t *data_page;
 
     log_info("Flashing with write size = %d\n", write_size);
+    status = change_setting(dev, USB_IF_SPI_FLASH);
+
+    if (status) {
+        log_error("Failed to set interface: %s\n", libusb_error_name(status));
+        status = BLADERF_ERR_IO;
+    }
+
+    log_info("Flashing with write size = %d\n", write_size);
 
     assert(page_offset < FLASH_NUM_PAGES);
     assert((page_offset + pages_to_write) < FLASH_NUM_PAGES);
+    /* FIXME: support data_size that are not multiple of pages */
+    assert(data_size % FLASH_PAGE_SIZE == 0);
+
+    total_written = 0;
 
     for (i = page_offset; i < (page_offset + pages_to_write) && !status; i++) {
         n_write = 0;
@@ -709,10 +785,95 @@ static int write_flash(struct bladerf *dev, int page_offset,
                 status = BLADERF_ERR_IO;
             } else {
                 n_write += write_size;
+                total_written += write_size;
                 status = 0;
             }
         } while (n_write < FLASH_PAGE_SIZE && !status);
     }
+
+    if (status == 0) {
+        return total_written;
+    } else {
+        return status;
+    }
+}
+
+static int find_fx3_via_info(
+        libusb_context * context,
+        struct bladerf_devinfo *info,
+        libusb_device_handle **handle) {
+    int status, i;
+    struct bladerf_devinfo thisinfo;
+    libusb_device *dev, **devs;
+    libusb_device *found_dev = NULL;
+
+    status = libusb_get_device_list(context, &devs);
+    if (status < 0) {
+        log_error("libusb_get_device_list() failed: %d %s\n", status, libusb_error_name(status));
+        return error_libusb2bladerf(status);
+    }
+
+    for (i=0; (dev=devs[i]) != NULL; i++) {
+        if (!lusb_device_is_fx3(dev)) {
+            continue;
+        }
+
+        status = lusb_get_devinfo(dev, &thisinfo);
+        if (status < 0) {
+            log_error( "Could not open bladeRF device: %s\n", libusb_error_name(status) );
+            status = error_libusb2bladerf(status);
+            break;
+        }
+
+        if (bladerf_devinfo_matches(&thisinfo, info)) {
+            found_dev = dev;
+            break;
+        }
+    }
+
+    if (found_dev == NULL) {
+        libusb_free_device_list(devs, 1);
+        log_error("could not find a known device - try specifing bus, dev\n");
+        return BLADERF_ERR_NODEV;
+    }
+
+    status = libusb_open(found_dev, handle);
+    libusb_free_device_list(devs, 1);
+    if (status != 0) {
+        log_error("Error opening device: %s\n", libusb_error_name(status));
+        return error_libusb2bladerf(status);
+    }
+
+    return 0;
+}
+
+static int lusb_recover(
+        struct bladerf_devinfo *devinfo,
+        const char *fname
+        )
+{
+    int status;
+    libusb_device_handle *device = NULL;
+
+    libusb_context *context;
+
+    status = libusb_init(&context);
+    if (status != 0) {
+        log_error( "Could not initialize libusb: %s\n", libusb_error_name(status) );
+        return error_libusb2bladerf(status);
+    }
+
+    status = find_fx3_via_info(context, devinfo, &device);
+    if (status == 0) {
+        log_info("Attempting load with file %s\n", fname);
+        status = ezusb_load_ram(device, fname, FX_TYPE_FX3, IMG_TYPE_IMG, 0);
+
+        libusb_close(device);
+    } else {
+        log_error("Failed to locate FX3 bootloader: %s\n", bladerf_strerror(status) );
+    }
+
+    libusb_exit(context);
 
     return status;
 }
@@ -730,14 +891,14 @@ static int lusb_flash_firmware(struct bladerf *dev,
     }
 
     if (status == 0) {
-        status = erase_flash(dev, 0, image_size);
+        status = lusb_erase_flash(dev, 0, image_size);
     }
 
-    if (status == 0) {
-        status = write_flash(dev, 0, image, image_size);
+    if (status >= 0) {
+        status = lusb_write_flash(dev, 0, image, image_size);
     }
 
-    if (status == 0) {
+    if (status >= 0) {
         status = verify_flash(dev, 0, image, image_size);
     }
 
@@ -750,8 +911,7 @@ static int lusb_flash_firmware(struct bladerf *dev,
 static int lusb_device_reset(struct bladerf *dev)
 {
     struct bladerf_lusb *lusb = dev->backend;
-    int status, ok;
-    ok = 1;
+    int status;
     status = libusb_control_transfer(
                 lusb->handle,
                 LIBUSB_RECIPIENT_INTERFACE |
@@ -760,10 +920,41 @@ static int lusb_device_reset(struct bladerf *dev)
                 BLADE_USB_CMD_RESET,
                 0,
                 0,
-                (unsigned char *)&ok,
-                sizeof(ok),
+                0,
+                0,
                 BLADERF_LIBUSB_TIMEOUT_MS
              );
+
+    if(status != LIBUSB_SUCCESS) {
+        log_error("Error issuing reset: %s\n", libusb_error_name(status));
+        return error_libusb2bladerf(status);
+    } else {
+        return status;
+    }
+}
+
+static int lusb_jump_to_bootloader(struct bladerf *dev)
+{
+    struct bladerf_lusb *lusb = dev->backend;
+    int status;
+    status = libusb_control_transfer(
+                lusb->handle,
+                LIBUSB_RECIPIENT_INTERFACE |
+                    LIBUSB_REQUEST_TYPE_VENDOR |
+                    EP_DIR_OUT,
+                BLADE_USB_CMD_JUMP_TO_BOOTLOADER,
+                0,
+                0,
+                0,
+                0,
+                BLADERF_LIBUSB_TIMEOUT_MS
+             );
+
+    if (status < 0) {
+        log_error( "Error jumping to bootloader: %s\n", libusb_error_name(status) );
+        status = error_libusb2bladerf(status);
+    }
+
     return status;
 }
 
@@ -794,8 +985,18 @@ static int lusb_get_otp(struct bladerf *dev, char *otp)
     return 0;
 }
 
+#define CAL_SIZE 256
+
 static int lusb_get_cal(struct bladerf *dev, char *cal) {
-    return read_flash(dev, 768, (uint8_t *)cal, 256);
+    int status = lusb_read_flash(dev, 768, (uint8_t *)cal, CAL_SIZE);
+
+    if (status < 0) {
+        return status;
+    } else if (status == CAL_SIZE) {
+        return 0;
+    } else {
+        return BLADERF_ERR_IO;
+    }
 }
 
 static int lusb_get_fw_version(struct bladerf *dev,
@@ -1468,6 +1669,19 @@ int lusb_probe(struct bladerf_devinfo_list *info_list)
                 }
             }
         }
+
+        if( lusb_device_is_fx3(list[i]) ) {
+            status = lusb_get_devinfo( list[i], &info );
+            if( status ) {
+                log_error( "Could not open bladeRF device: %s\n", libusb_error_name(status) );
+                continue;
+            }
+
+            log_warning( "Found FX3 bootloader device libusb:device=%d:%d, could be bladeRF.\n",
+                info.usb_bus, info.usb_addr);
+            log_warning( "Use \"recover libusb:device=%d:%d <FX3 firmware>\" to boot bladeRF.\n",
+                info.usb_bus, info.usb_addr);
+        }
     }
     libusb_free_device_list(list,1);
     libusb_exit(context);
@@ -1491,8 +1705,13 @@ const struct bladerf_fn bladerf_lusb_fn = {
     FIELD_INIT(.load_fpga, lusb_load_fpga),
     FIELD_INIT(.is_fpga_configured, lusb_is_fpga_configured),
 
+    FIELD_INIT(.recover, lusb_recover),
     FIELD_INIT(.flash_firmware, lusb_flash_firmware),
+    FIELD_INIT(.erase_flash, lusb_erase_flash),
+    FIELD_INIT(.read_flash, lusb_read_flash),
+    FIELD_INIT(.write_flash, lusb_write_flash),
     FIELD_INIT(.device_reset, lusb_device_reset),
+    FIELD_INIT(.jump_to_bootloader, lusb_jump_to_bootloader),
 
     FIELD_INIT(.get_cal, lusb_get_cal),
     FIELD_INIT(.get_otp, lusb_get_otp),

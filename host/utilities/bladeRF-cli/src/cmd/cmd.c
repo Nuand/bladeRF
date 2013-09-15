@@ -14,9 +14,12 @@ DECLARE_CMD(peek);
 DECLARE_CMD(poke);
 DECLARE_CMD(print);
 DECLARE_CMD(probe);
+DECLARE_CMD(erase);
 DECLARE_CMD(set);
 DECLARE_CMD(rxtx);
 DECLARE_CMD(version);
+DECLARE_CMD(recover);
+DECLARE_CMD(jump_to_bootloader);
 
 #define MAX_ARGS    10
 
@@ -36,11 +39,14 @@ static const char *cmd_names_peek[] = { "peek", "pe", NULL };
 static const char *cmd_names_poke[] = { "poke", "po", NULL };
 static const char *cmd_names_print[] = { "print", "pr", "p", NULL };
 static const char *cmd_names_probe[] = { "probe", "pro", NULL };
+static const char *cmd_names_erase[] = { "erase", "e", NULL };
 static const char *cmd_names_quit[] = { "quit", "q", "exit", "x", NULL };
 static const char *cmd_names_rx[] = { "rx", "receive", NULL };
 static const char *cmd_names_tx[] = { "tx", "transmit", NULL };
 static const char *cmd_names_set[] = { "set", "s", NULL };
 static const char *cmd_names_ver[] = { "version", "ver", "v", NULL };
+static const char *cmd_names_rec[] = { "recover", "r", NULL };
+static const char *cmd_names_jump[] = { "jump_to_boot", "j", NULL };
 
 static const struct cmd cmd_table[] = {
     {
@@ -273,6 +279,18 @@ static const struct cmd cmd_table[] = {
         )
     },
     {
+        FIELD_INIT(.names, cmd_names_erase),
+        FIELD_INIT(.exec, cmd_erase),
+        FIELD_INIT(.desc, "Erase part of FX3 flash device"),
+        FIELD_INIT(.help, "erase\n"
+                "\n"
+                "Erase pages from FX3 flash device.\n"
+                "\n"
+                "    page_offset   Starting page to erase\n"
+                "    n_bytes       Number of pages to erase\n"
+        )
+    },
+    {
         FIELD_INIT(.names, cmd_names_ver),
         FIELD_INIT(.exec, cmd_version),
         FIELD_INIT(.desc, "Device and firmware versions"),
@@ -280,6 +298,22 @@ static const struct cmd cmd_table[] = {
             "version\n"
             "\n"
             "Prints version information for device and firmware.\n"
+        )
+    },
+    {
+        FIELD_INIT(.names, cmd_names_rec),
+        FIELD_INIT(.exec, cmd_recover),
+        FIELD_INIT(.desc, "Load firmware when operating in FX3 bootloader mode"),
+        FIELD_INIT(.help,
+            "recover [device_str] [file]\n"
+        )
+    },
+    {
+        FIELD_INIT(.names, cmd_names_jump),
+        FIELD_INIT(.exec, cmd_jump_to_bootloader),
+        FIELD_INIT(.desc, "Jump to FX3 bootloader"),
+        FIELD_INIT(.help,
+            "jump_to_boot\n"
         )
     },
     {

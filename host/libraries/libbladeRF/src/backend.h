@@ -24,5 +24,14 @@ int backend_open(struct bladerf **device,  struct bladerf_devinfo *info);
  */
 int backend_probe(struct bladerf_devinfo **devinfo_items, size_t *num_items);
 
+/**
+ * Get functions for a backend
+ *
+ * @param       type        Type of backend
+ *
+ * @return NULL on unknown backend
+ */
+const struct bladerf_fn * backend_getfns(bladerf_backend type);
+
 #endif
 

@@ -122,11 +122,12 @@ set(LIBBLADERF_SOURCE
         src/backend.c
         src/bladerf.c
         src/bladerf_priv.c
-        src/device_identifier.c
         src/file_ops.c
         src/lms.c
         src/si5338.c
         src/version.h
+        ${BLADERF_HOST_COMMON_SOURCE_DIR}/device_identifier.c
+        ${BLADERF_HOST_COMMON_SOURCE_DIR}/bladerf_devinfo.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/log.c
 )
@@ -135,6 +136,7 @@ message(STATUS "In libraries ${BLADERF_HOST_COMMON_SOURCE_DIR}")
 
 if(LIBUSB_FOUND AND ENABLE_BACKEND_LIBUSB)
     set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend/libusb.c)
+    set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} ${BLADERF_HOST_COMMON_SOURCE_DIR}/ezusb.c)
 endif()
 
 if(ENABLE_BACKEND_LINUX_DRIVER)

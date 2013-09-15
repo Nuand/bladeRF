@@ -19,6 +19,7 @@
  * can result in linker error. */
 #include "cyfxgpif_C4loader.h"
 #include "cyfxgpif_RFlink.h"
+#include "spi_flash_lib.h"
 
 
 uint32_t glAppMode = MODE_NO_CONFIG;
@@ -82,7 +83,7 @@ void NuandGPIOReconfigure(CyBool_t fullGpif, CyBool_t warm)
     CyU3PIoMatrixConfig_t io_cfg;
     CyU3PGpioSimpleConfig_t gpioConfig;
     CyU3PReturnStatus_t status = CY_U3P_SUCCESS;
-    int i;
+    size_t i;
 
     struct {
         int pin;        // pin number
@@ -346,7 +347,6 @@ void UartBridgeStop(void)
 void CyFxGpioInit(void)
 {
     CyU3PGpioClock_t gpioClock;
-    CyU3PGpioSimpleConfig_t gpioConfig;
     CyU3PReturnStatus_t apiRetStatus = CY_U3P_SUCCESS;
 
     /* Init the GPIO module */
@@ -371,7 +371,7 @@ int FpgaBeginProgram(void)
 {
     CyBool_t value;
 
-    int tEnd;
+    unsigned tEnd;
     CyU3PReturnStatus_t apiRetStatus = CY_U3P_SUCCESS;
     apiRetStatus = CyU3PGpioSetValue(GPIO_nCONFIG, CyFalse);
     tEnd = CyU3PGetTime() + 10;
@@ -396,7 +396,7 @@ void bladeRFConfigUtoPDmaCallback(CyU3PDmaChannel *chHandle, CyU3PDmaCbType_t ty
     if (type == CY_U3P_DMA_CB_PROD_EVENT) {
         int i;
         unsigned char *buf = input->buffer_p.buffer;
-        unsigned *us_buf = (unsigned short *)input->buffer_p.buffer;
+        unsigned *us_buf = (unsigned *)input->buffer_p.buffer;
         unsigned tmpr, tmpw;
 
         /* Flip the bits in such a way that the FPGA can be programmed
@@ -767,6 +767,15 @@ void NuandFpgaConfigStop(void)
     glAppMode = MODE_NO_CONFIG;
 }
 
+static void StopApplication()
+{
+    if (glAppMode == MODE_RF_CONFIG) {
+        NuandRFLinkStop();
+    } else if (glAppMode == MODE_FPGA_CONFIG){
+        NuandFpgaConfigStop();
+    }
+}
+
 /* Callback to handle the USB setup requests. */
 CyBool_t CyFxbladeRFApplnUSBSetupCB(uint32_t setupdat0, uint32_t setupdat1)
 {
@@ -843,7 +852,7 @@ CyBool_t CyFxbladeRFApplnUSBSetupCB(uint32_t setupdat0, uint32_t setupdat1)
         struct bladeRF_version ver;
         CyU3PReturnStatus_t apiRetStatus = CY_U3P_SUCCESS;
         int retStatus;
-    	char buf[10];
+    	uint8_t buf[10];
     	uint16_t readC;
 
         isHandled = CyTrue;
@@ -852,15 +861,15 @@ CyBool_t CyFxbladeRFApplnUSBSetupCB(uint32_t setupdat0, uint32_t setupdat1)
         {
             case BLADE_USB_CMD_QUERY_VERSION:
                 ver.major = 1;
-                ver.minor = 2;
-                apiRetStatus = CyU3PUsbSendEP0Data(sizeof(ver), &ver);
+                ver.minor = 3;
+                apiRetStatus = CyU3PUsbSendEP0Data(sizeof(ver), (void*)&ver);
             break;
 
             case BLADE_USB_CMD_RF_RX:
                 CyU3PGpioSetValue(GPIO_SYS_RST, CyTrue);
                 CyU3PGpioSetValue(GPIO_SYS_RST, CyFalse);
 
-            	apiRetStatus = CyU3PUsbGetEP0Data(4, buf, &readC);
+            	apiRetStatus = CyU3PUsbGetEP0Data(4, buf, (void*)&readC);
 
                 if (!(buf[0] || buf[3])) {
                     apiRetStatus = CyU3PUsbResetEp(BLADE_RF_SAMPLE_EP_CONSUMER);
@@ -886,7 +895,7 @@ CyBool_t CyFxbladeRFApplnUSBSetupCB(uint32_t setupdat0, uint32_t setupdat1)
 
             case BLADE_USB_CMD_BEGIN_PROG:
                 retStatus = FpgaBeginProgram();
-                apiRetStatus = CyU3PUsbSendEP0Data (sizeof(retStatus), &retStatus);
+                apiRetStatus = CyU3PUsbSendEP0Data (sizeof(retStatus), (void*)&retStatus);
                 break;
             break;
 
@@ -897,13 +906,13 @@ CyBool_t CyFxbladeRFApplnUSBSetupCB(uint32_t setupdat0, uint32_t setupdat1)
                 } else {
                     ret = -1;
                 }
-                apiRetStatus = CyU3PUsbSendEP0Data (sizeof(ret), &ret);
+                apiRetStatus = CyU3PUsbSendEP0Data (sizeof(ret), (void*)&ret);
             break;
 
             case BLADE_USB_CMD_WRITE_OTP:
                 NuandEnso();
                 if (CyU3PUsbGetSpeed() == CY_U3P_SUPER_SPEED) {
-                    apiRetStatus = CyU3PUsbGetEP0Data(0x100, &glEp0Buffer, &readC);
+                    apiRetStatus = CyU3PUsbGetEP0Data(0x100, glEp0Buffer, &readC);
                     apiRetStatus = CyFxSpiTransfer (0, 0x100,
                             glEp0Buffer, CyFalse);
                 }
@@ -921,7 +930,7 @@ CyBool_t CyFxbladeRFApplnUSBSetupCB(uint32_t setupdat0, uint32_t setupdat1)
                         } else {
                             memcpy(glEp0Buffer, glOtp, 0x100);
                         }
-                        apiRetStatus = CyU3PUsbSendEP0Data(wLength, &glEp0Buffer);
+                        apiRetStatus = CyU3PUsbSendEP0Data(wLength, glEp0Buffer);
                         if (glUsbAltInterface == 2)
                             NuandExso();
                     } else {
@@ -937,10 +946,10 @@ CyBool_t CyFxbladeRFApplnUSBSetupCB(uint32_t setupdat0, uint32_t setupdat1)
                         NuandEnso();
                         apiRetStatus = CyFxSpiTransfer (0, 0x100,
                                 glEp0Buffer, CyTrue);
-                        apiRetStatus = CyU3PUsbSendEP0Data(0x100, &glEp0Buffer);
+                        apiRetStatus = CyU3PUsbSendEP0Data(0x100, glEp0Buffer);
                         NuandExso();
                     } else {
-                        apiRetStatus = CyU3PUsbSendEP0Data(0x100, &glOtp);
+                        apiRetStatus = CyU3PUsbSendEP0Data(0x100, glOtp);
                     }
                 }
             break;
@@ -966,9 +975,9 @@ CyBool_t CyFxbladeRFApplnUSBSetupCB(uint32_t setupdat0, uint32_t setupdat1)
                     if (glUsbAltInterface == 2) {
                         apiRetStatus = CyFxSpiTransfer (wIndex, 0x100,
                                 glEp0Buffer, CyTrue);
-                        apiRetStatus = CyU3PUsbSendEP0Data(0x100, &glEp0Buffer);
+                        apiRetStatus = CyU3PUsbSendEP0Data(0x100, glEp0Buffer);
                     } else {
-                        apiRetStatus = CyU3PUsbSendEP0Data(0x100, &glCal);
+                        apiRetStatus = CyU3PUsbSendEP0Data(0x100, glCal);
                     }
                 }
             break;
@@ -984,7 +993,7 @@ CyBool_t CyFxbladeRFApplnUSBSetupCB(uint32_t setupdat0, uint32_t setupdat1)
                         glEp0Idx = 0;
                     }
                 } else if (CyU3PUsbGetSpeed() == CY_U3P_SUPER_SPEED) {
-                    apiRetStatus = CyU3PUsbGetEP0Data(0x100, &glEp0Buffer, &readC);
+                    apiRetStatus = CyU3PUsbGetEP0Data(0x100, glEp0Buffer, &readC);
                     apiRetStatus = CyFxSpiTransfer (wIndex, 0x100,
                             glEp0Buffer, CyFalse);
                 }
@@ -993,14 +1002,45 @@ CyBool_t CyFxbladeRFApplnUSBSetupCB(uint32_t setupdat0, uint32_t setupdat1)
             case BLADE_USB_CMD_FLASH_ERASE:
                 apiRetStatus = CyFxSpiEraseSector(CyTrue, wIndex);
                 ret = (apiRetStatus == CY_U3P_SUCCESS);
-                CyU3PUsbSendEP0Data(sizeof(ret), &ret);
+                CyU3PUsbSendEP0Data(sizeof(ret), (void*)&ret);
             break;
 
             case BLADE_USB_CMD_RESET:
-                apiRetStatus = CyU3PUsbGetEP0Data(4, buf, &readC);
+                CyU3PUsbAckSetup();
                 CyU3PDeviceReset(CyFalse);
             break;
 
+            case BLADE_USB_CMD_JUMP_TO_BOOTLOADER:
+                StopApplication();
+                NuandFirmwareStart();
+
+                // Erase the first sector so we can write the bootloader 
+                // header
+                apiRetStatus = CyFxSpiEraseSector(CyTrue, 0);
+                if(apiRetStatus != CY_U3P_SUCCESS) {
+                    CyU3PUsbStall(0, CyTrue, CyFalse);
+                    CyU3PDeviceReset(CyFalse);
+                    break;
+                }
+
+                uint8_t bootloader_header[] = {
+                    'C','Y', // Common header
+                    0,       // 10 MHz SPI, image data
+                    0xB2,    // Bootloader VID/PID
+                    (USB_NUAND_BLADERF_BOOT_PRODUCT_ID & 0xFF),
+                    (USB_NUAND_BLADERF_BOOT_PRODUCT_ID & 0xFF00) >> 8,
+                    (USB_NUAND_VENDOR_ID & 0xFF),
+                    (USB_NUAND_VENDOR_ID & 0xFF00) >> 8,
+                };
+
+                apiRetStatus = CyFxSpiTransfer (
+                        /* Page */ 0,
+                        sizeof(bootloader_header), bootloader_header,
+                        CyFalse /* Writing */
+                        );
+
+                CyU3PUsbAckSetup();
+                CyU3PDeviceReset(CyFalse);
             break;
             default:
                 isHandled = CyFalse;
@@ -1050,11 +1090,7 @@ void CyFxbladeRFApplnUSBEventCB (CyU3PUsbEventType_t evtype, uint16_t evdata)
         case CY_U3P_USB_EVENT_RESET:
         case CY_U3P_USB_EVENT_DISCONNECT:
             /* Stop the loop back function. */
-            if (glAppMode == MODE_RF_CONFIG) {
-                NuandRFLinkStop();
-            } else if (glAppMode == MODE_FPGA_CONFIG){
-                NuandFpgaConfigStop();
-            }
+            StopApplication();
             break;
 
         default:
@@ -1220,7 +1256,7 @@ void bladeRFAppThread_Entry( uint32_t input)
     {
         char serial_buf[32];
         int i;
-        if (!NuandExtractField(glOtp, 0x100, "S", serial_buf, 32)) {
+        if (!NuandExtractField((void*)glOtp, 0x100, "S", serial_buf, 32)) {
             for (i = 0; i < 32; i++) {
                 CyFxUSBSerial[2+i*2] = serial_buf[i];
             }

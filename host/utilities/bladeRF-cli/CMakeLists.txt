@@ -84,6 +84,7 @@ set(BLADERF_CLI_SOURCE
         src/common.c
         src/cmd/calibrate.c
         src/cmd/cmd.c
+        src/cmd/erase.c
         src/cmd/load.c
         src/cmd/open.c
         src/cmd/peek.c
@@ -93,6 +94,8 @@ set(BLADERF_CLI_SOURCE
         src/cmd/probe.c
         src/cmd/rxtx.c
         src/cmd/version.c
+        src/cmd/recover.c
+        src/cmd/jump_boot.c
         src/interactive/interactive.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/log.c
