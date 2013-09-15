@@ -9,8 +9,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "bladerf_priv.h"
 #include "device_identifier.h"
+#include "bladerf_devinfo.h"
 #include "conversions.h"
 #include "log.h"
 

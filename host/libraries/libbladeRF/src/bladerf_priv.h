@@ -9,12 +9,7 @@
 #include "host_config.h"
 #include "minmax.h"
 #include "conversions.h"
-
-/* Reserved values for bladerf_devinfo fields to indicate "undefined" */
-#define DEVINFO_SERIAL_ANY    "ANY"
-#define DEVINFO_BUS_ANY       UINT8_MAX
-#define DEVINFO_ADDR_ANY      UINT8_MAX
-#define DEVINFO_INST_ANY      UINT_MAX
+#include "bladerf_devinfo.h"
 
 /* MX25U3235 - 32Mbit flash w/ 4KiB sectors */
 #define FLASH_SECTOR_SIZE   0x10000
@@ -39,12 +34,6 @@ typedef enum {
 struct bladerf_error {
     bladerf_error type;
     int value;
-};
-
-struct bladerf_devinfo_list {
-    struct bladerf_devinfo *elt;
-    size_t num_elt;      /* Number of elements in the list */
-    size_t backing_size; /* Size of backing array */
 };
 
 typedef enum {
@@ -97,8 +86,17 @@ struct bladerf_fn {
     int (*is_fpga_configured)(struct bladerf *dev);
 
     /* Flash FX3 firmware */
+    int (*recover)(struct bladerf_devinfo *info,
+                    const char *fname);
     int (*flash_firmware)(struct bladerf *dev, uint8_t *image, size_t image_size);
+    int (*erase_flash)(struct bladerf *dev, int page_offset,
+                            int n_bytes);
+    int (*read_flash)(struct bladerf *dev, int page_offset,
+                            uint8_t *ptr, size_t n_bytes);
+    int (*write_flash)(struct bladerf *dev, int page_offset,
+                            uint8_t *data, size_t data_size);
     int (*device_reset)(struct bladerf *dev);
+    int (*jump_to_bootloader)(struct bladerf *dev);
 
     /* Platform information */
     int (*get_cal)(struct bladerf *dev, char *cal);
@@ -187,82 +185,6 @@ void bladerf_set_error(struct bladerf_error *error,
  */
 void bladerf_get_error(struct bladerf_error *error,
                         bladerf_error *type, int *val);
-
-/**
- * Initialize a bladerf_devinfo's fields to wildcards
- */
-void bladerf_init_devinfo(struct bladerf_devinfo *d);
-
-/**
- * Compare two devinfo's against each other.
- *
- * @param   a   Device information to compare
- * @param   b   Device information to compare
- *
- * @return  true on match, false otherwise
- */
-bool bladerf_devinfo_matches(struct bladerf_devinfo *a,
-                             struct bladerf_devinfo *b);
-
-/**
- * Do the device instances for the two provided device info structures match
- * (taking wildcards into account)?
- *
- * @param   a   Device information to compare
- * @param   b   Device information to compare
- *
- * @return true on match, false otherwise
- */
-bool bladerf_instance_matches(struct bladerf_devinfo *a,
-                              struct bladerf_devinfo *b);
-
-/**
- * Do the serials match for the two provided device info structures match
- * (taking wildcards into account)?
- *
- * @param   a   Device information to compare
- * @param   b   Device information to compare
- *
- * @return true on match, false otherwise
- */
-bool bladerf_serial_matches(struct bladerf_devinfo *a,
-                            struct bladerf_devinfo *b);
-
-/**
- * Do the bus and addr match for the two provided device info structures match
- * (taking wildcards into account)?
- *
- * @param   a   Device information to compare
- * @param   b   Device information to compare
- *
- * @return true on match, false otherwise
- */
-bool bladerf_bus_addr_matches(struct bladerf_devinfo *a,
-                              struct bladerf_devinfo *b);
-
-/**
- * Create list of deinfos
- */
-int bladerf_devinfo_list_init(struct bladerf_devinfo_list *list);
-
-/**
- * Get a pointer to the parent devinfo_list container of a devinfo
- *
- * @return pointer to container on success, NULL on error
- */
-struct bladerf_devinfo_list *
-bladerf_get_devinfo_list(struct bladerf_devinfo *devinfo);
-
-/**
- * Add and item to our internal devinfo list
- *
- * @param   list    List to append to
- * @param   info    Info to copy into the list
- *
- * 0 on success, BLADERF_ERR_* on failure
- */
-int bladerf_devinfo_list_add(struct bladerf_devinfo_list *list,
-                             struct bladerf_devinfo *info);
 
 /**
  * Read data from one-time-programmabe (OTP) section of flash

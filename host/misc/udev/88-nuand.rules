@@ -1,2 +1,4 @@
 # nuand bladeRF
 ATTR{idVendor}=="1d50", ATTR{idProduct}=="6066", MODE="660", GROUP="plugdev"
+ATTR{idVendor}=="1d50", ATTR{idProduct}=="6080", MODE="660", GROUP="plugdev"
+ATTR{idVendor}=="04b4", ATTR{idProduct}=="00f3", MODE="660", GROUP="plugdev"

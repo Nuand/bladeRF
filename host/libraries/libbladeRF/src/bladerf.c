@@ -660,6 +660,35 @@ int bladerf_stats(struct bladerf *dev, struct bladerf_stats *stats)
 /*------------------------------------------------------------------------------
  * Device Programming
  *----------------------------------------------------------------------------*/
+int bladerf_recover_with_devinfo(
+        struct bladerf_devinfo *devinfo,
+        const char *fname
+        )
+{
+    const struct bladerf_fn * fn = backend_getfns(devinfo->backend);
+
+    if (!fn->recover) {
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    return fn->recover(devinfo, fname);
+}
+
+int bladerf_recover(
+        const char *dev_id,
+        const char *fname
+        )
+{
+    struct bladerf_devinfo devinfo;
+    int status = str2devinfo(dev_id, &devinfo);
+
+    if (!status) {
+        status = bladerf_recover_with_devinfo(&devinfo, fname);
+    }
+
+    return status;
+}
+
 int bladerf_flash_firmware(struct bladerf *dev, const char *firmware_file)
 {
     int status;
@@ -711,9 +740,48 @@ int bladerf_flash_firmware(struct bladerf *dev, const char *firmware_file)
     return status;
 }
 
+int bladerf_erase_flash(struct bladerf *dev, int page_offset,
+                        int n_bytes)
+{
+    if (!dev->fn->erase_flash) {
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    return dev->fn->erase_flash(dev, page_offset, n_bytes);
+}
+
+int bladerf_read_flash(struct bladerf *dev, int page_offset,
+                        uint8_t *ptr, size_t n_bytes)
+{
+    if (!dev->fn->read_flash) {
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    return dev->fn->read_flash(dev, page_offset, ptr, n_bytes);
+}
+
+int bladerf_write_flash(struct bladerf *dev, int page_offset,
+                        uint8_t *data, size_t data_size)
+{
+    if (!dev->fn->write_flash) {
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    return dev->fn->write_flash(dev, page_offset, data, data_size);
+}
+
 int bladerf_device_reset(struct bladerf *dev)
 {
     return dev->fn->device_reset(dev);
+}
+
+int bladerf_jump_to_bootloader(struct bladerf *dev)
+{
+    if (!dev->fn->jump_to_bootloader) {
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    return dev->fn->jump_to_bootloader(dev);
 }
 
 int bladerf_load_fpga(struct bladerf *dev, const char *fpga_file)
