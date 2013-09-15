@@ -416,6 +416,7 @@ int si5338_set_sample_rate(struct bladerf *dev, bladerf_module module, uint32_t 
     struct bladerf_rational_rate req, act;
     int status;
 
+    memset(&act, 0, sizeof(act));
     log_info( "Setting integer sample rate: %d\n", rate );
     req.integer = rate;
     req.num = 0;
