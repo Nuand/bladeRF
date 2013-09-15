@@ -95,7 +95,7 @@
 #define vsnprintf   _vsnprintf
 #define strcasecmp  _stricmp
 #define strncasecmp _strnicmp
-#define usleep      Sleep
+#define usleep(x)      Sleep((x)/1000)
 
 /* ssize_t lives elsewhere */
 #include <BaseTsd.h>
