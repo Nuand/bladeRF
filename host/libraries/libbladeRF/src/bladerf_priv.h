@@ -19,11 +19,6 @@
 #define FLASH_NUM_SECTORS   4096
 #define FLASH_NUM_PAGES     (FLASH_NUM_SECTORS * (FLASH_SECTOR_SIZE / FLASH_PAGE_SIZE))
 
-/* Interface numbers */
-#define USB_IF_CONFIG       0
-#define USB_IF_RF_LINK      1
-#define USB_IF_SPI_FLASH    2
-
 typedef enum {
     ETYPE_ERRNO,
     ETYPE_LIBBLADERF,
