@@ -20,6 +20,13 @@ if(NOT CMAKE_BUILD_TYPE)
     message(STATUS "Build type not specified: defaulting to a release build.")
 endif()
 
+if(MSVC)
+    # Cannot enable /WX on Windows build just yet, lots of warnings
+    #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /WX")
+else(MSVC)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Werror")
+endif(MSVC)
+
 set(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "Build type")
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/modules)
 
