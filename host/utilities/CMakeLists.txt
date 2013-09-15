@@ -1,3 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 add_subdirectory(bladeRF-cli)
+include(CheckFunctionExists)
+check_function_exists(libusb_hotplug_register_callback HAVE_LIBUSB_HOTPLUG)
+if(${HAVE_LIBUSB_HOTPLUG} MATCHES "1")
 add_subdirectory(bladeRF-flash)
+endif(${HAVE_LIBUSB_HOTPLUG} MATCHES "1")
