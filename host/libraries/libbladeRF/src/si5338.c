@@ -396,7 +396,10 @@ int si5338_set_rational_sample_rate(struct bladerf *dev, bladerf_module module, 
     si5338_update_base(&ms);
 
     /* Calculate multisynth values */
-    si5338_calculate_multisynth(&ms, &req);
+    status = si5338_calculate_multisynth(&ms, &req);
+    if(status != 0) {
+        return status;
+    }
 
     /* Get the actual rate */
     si5338_calculate_samplerate(&ms, actual);
@@ -461,6 +464,11 @@ int si5338_get_sample_rate(struct bladerf *dev, bladerf_module module, unsigned 
     int status;
 
     status = si5338_get_rational_sample_rate(dev, module, &actual);
+
+    if (status) {
+        si5338_read_error( status, bladerf_strerror(status) );
+        return status;
+    }
 
     if (actual.num != 0) {
         log_warning( "Fractional sample rate truncated during integer sample rate retrieval\n" );
