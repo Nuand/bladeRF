@@ -65,14 +65,14 @@ if(GIT_FOUND)
 
     execute_process(
         COMMAND ${GIT_EXECUTABLE} diff-index --quiet HEAD -- 
-        RESULT_VARIABLE GIT_NOT_DIRTY
+        RESULT_VARIABLE GIT_DIRTY
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     )
 
-    if(GET_NOT_DIRTY)
-        set(GIT_STATE "")
-    else()
+    if(GIT_DIRTY)
         set(GIT_STATE "-dirty")
+    else()
+        set(GIT_STATE "")
     endif()
 
 else()
