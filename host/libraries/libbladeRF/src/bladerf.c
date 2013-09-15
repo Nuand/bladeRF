@@ -725,7 +725,7 @@ int bladerf_flash_firmware(struct bladerf *dev, const char *firmware_file)
             }
 
             if (!status) {
-                status = dev->fn->flash_firmware(dev, buf, buf_size);
+                status = dev->fn->flash_firmware(dev, buf, buf_size_padded);
             }
             if (!status) {
                 if (dev->legacy) {
