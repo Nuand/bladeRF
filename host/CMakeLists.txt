@@ -15,17 +15,15 @@ project(bladeRF C)
 # Project configuration
 ################################################################################
 
+# All build output lands in this directory:
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/output)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/output)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/output)
+
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release")
     message(STATUS "Build type not specified: defaulting to a release build.")
 endif()
-
-if(MSVC)
-    # Cannot enable /WX on Windows build just yet, lots of warnings
-    #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /WX")
-else(MSVC)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Werror")
-endif(MSVC)
 
 set(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "Build type")
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/modules)
@@ -95,6 +93,7 @@ if("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" OR
 # TODO Re-enable these
 #    add_definitions(-pedantic)
 #    add_definitions(-std=c89)
+    add_definitions(-Werror)
     add_definitions(-Wno-unused-parameter)
 
     if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
@@ -106,8 +105,16 @@ endif("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" OR
       "${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
 
 ###############################
-# System configuration
+# MS Visual Studio
 ###############################
+if(MSVC)
+    # Cannot enable /WX on Windows build just yet, lots of warnings
+    #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /WX")
+endif(MSVC)
+
+################################################################################
+# System configuration
+################################################################################
 
 # Linux (TODO determine if this will actually be sufficient for BSD)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux" OR ${CMAKE_SYSTEM_NAME} MATCHES "BSD")
@@ -152,3 +159,39 @@ add_custom_target(uninstall
     COMMAND
     ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake
 )
+
+################################################################################
+# Windows-only, Post build: Copy libraries to our build output directory
+################################################################################
+if(WIN32)
+    find_package(LibPThreadsWin32)
+    if(LIBPTHREADSWIN32_FOUND)
+        set(WIN_POSTBUILD_ITEMS ${WIN_POSTBUILD_ITEMS}
+                "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/pthreadVC2.dll")
+
+        add_custom_command(
+            OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/pthreadVC2.dll"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${LIBPTHREADSWIN32_PATH}/dll/${LIBPTHREADSWIN32_LIBRARY_PATH_SUFFIX}/pthreadVC2.dll"
+                "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/"
+            COMMENT "Copying pthreadVC2.dll to output directory..."
+        )
+    endif(LIBPTHREADSWIN32_FOUND)
+
+    find_package(LibUsb)
+    if(LIBUSB_FOUND)
+        set(WIN_POSTBUILD_ITEMS ${WIN_POSTBUILD_ITEMS}
+            "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/libusb-1.0.dll")
+
+        add_custom_command(
+            OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/libusb-1.0.dll"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${LIBUSB_PATH}/${LIBUSB_LIBRARY_PATH_SUFFIX}/libusb-1.0.dll"
+                "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/"
+            COMMENT "Copying libusb-1.0.dll to output directory..."
+        )
+    endif(LIBUSB_FOUND)
+
+    add_custom_target(win_postbuild ALL DEPENDS ${WIN_POSTBUILD_ITEMS})
+
+endif(WIN32)

@@ -256,10 +256,3 @@ add_custom_target(doc
 )
 
 endif(DOXYGEN_FOUND)
-
-if(MSVC)
-    add_custom_command(TARGET libbladerf_shared POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${LIBUSB_PATH}/${LIBUSB_LIBRARY_PATH_SUFFIX}/libusb-1.0.dll"
-        "${CMAKE_BINARY_DIR}/libraries/libbladeRF/$(Configuration)/")
-endif(MSVC)

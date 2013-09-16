@@ -89,17 +89,6 @@ endif()
 
 install(TARGETS bladeRF-flash DESTINATION ${BIN_INSTALL_DIR})
 
-if(MSVC)
-    add_custom_command(TARGET bladeRF-flash POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_BINARY_DIR}/libraries/libbladeRF/$(Configuration)/libusb-1.0.dll"
-        "${CMAKE_BINARY_DIR}/utilities/bladeRF-flash/$(Configuration)/")
-    add_custom_command(TARGET bladeRF-flash POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_BINARY_DIR}/libraries/libbladeRF/$(Configuration)/bladeRF.dll"
-        "${CMAKE_BINARY_DIR}/utilities/bladeRF-flash/$(Configuration)/")
-endif(MSVC)
-
 ################################################################################
 # Informational output
 ################################################################################
