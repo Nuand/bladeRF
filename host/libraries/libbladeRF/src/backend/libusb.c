@@ -250,27 +250,27 @@ static int lusb_get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
 
 static int change_setting(struct bladerf *dev, uint8_t setting)
 {
-	int status;
+    int status;
 
     struct bladerf_lusb *lusb = dev->backend ;
     if (dev->legacy  & LEGACY_ALT_SETTING) {
         log_info("Legacy change to interface %d\n", setting);
 
-		/* 
-		 * Workaround: We're not seeing a transfer here in Windows, possibly because
-	     *             something in/under libusb_set_interface_alt_setting() assumes
-		 *             the interface is already set to the current value and 
-		 *             suppresses this attempt. Hence, we force this transfer. 
-		 */
+        /*
+         * Workaround: We're not seeing a transfer here in Windows, possibly because
+         *             something in/under libusb_set_interface_alt_setting() assumes
+         *             the interface is already set to the current value and
+         *             suppresses this attempt. Hence, we force this transfer.
+         */
 #if WIN32
-		status = libusb_control_transfer(lusb->handle,  LIBUSB_RECIPIENT_DEVICE | LIBUSB_REQUEST_TYPE_STANDARD | LIBUSB_ENDPOINT_OUT, 11, 0, setting, 0, 0, 0);
-		if (status > 0) {
-			status = 0;
-		}
-#else 
+        status = libusb_control_transfer(lusb->handle,  LIBUSB_RECIPIENT_DEVICE | LIBUSB_REQUEST_TYPE_STANDARD | LIBUSB_ENDPOINT_OUT, 11, 0, setting, 0, 0, 0);
+        if (status > 0) {
+            status = 0;
+        }
+#else
         status = libusb_set_interface_alt_setting(lusb->handle, setting, 0);
 #endif
-		return status;
+        return status;
     } else {
         log_info( "Change to alternate interface %d\n", setting);
         return libusb_set_interface_alt_setting(lusb->handle, 0, setting);
@@ -622,13 +622,6 @@ static int lusb_read_flash(struct bladerf *dev, int page_offset,
     assert((page_offset + n_bytes) < FLASH_NUM_PAGES);
     /* FIXME: support data_size that are not multiple of pages */
     assert(n_bytes % FLASH_PAGE_SIZE == 0);
-
-    status = change_setting(dev, USB_IF_SPI_FLASH);
-
-    if (status) {
-        log_error("Failed to set interface: %s\n", libusb_error_name(status));
-        status = BLADERF_ERR_IO;
-    }
 
     total_read = 0;
 
