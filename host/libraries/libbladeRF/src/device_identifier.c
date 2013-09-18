@@ -10,7 +10,7 @@
 #include <stdint.h>
 
 #include "device_identifier.h"
-#include "bladerf_devinfo.h"
+#include "devinfo.h"
 #include "conversions.h"
 #include "log.h"
 

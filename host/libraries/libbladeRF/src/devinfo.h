@@ -18,22 +18,6 @@ struct bladerf_devinfo_list {
 };
 
 /**
- * Initialize a bladerf_devinfo's fields to wildcards
- */
-void bladerf_init_devinfo(struct bladerf_devinfo *d);
-
-/**
- * Compare two devinfo's against each other.
- *
- * @param   a   Device information to compare
- * @param   b   Device information to compare
- *
- * @return  true on match, false otherwise
- */
-bool bladerf_devinfo_matches(struct bladerf_devinfo *a,
-                             struct bladerf_devinfo *b);
-
-/**
  * Do the device instances for the two provided device info structures match
  * (taking wildcards into account)?
  *
@@ -42,8 +26,8 @@ bool bladerf_devinfo_matches(struct bladerf_devinfo *a,
  *
  * @return true on match, false otherwise
  */
-bool bladerf_instance_matches(struct bladerf_devinfo *a,
-                              struct bladerf_devinfo *b);
+bool bladerf_instance_matches(const struct bladerf_devinfo *a,
+                              const struct bladerf_devinfo *b);
 
 /**
  * Do the serials match for the two provided device info structures match
@@ -54,8 +38,8 @@ bool bladerf_instance_matches(struct bladerf_devinfo *a,
  *
  * @return true on match, false otherwise
  */
-bool bladerf_serial_matches(struct bladerf_devinfo *a,
-                            struct bladerf_devinfo *b);
+bool bladerf_serial_matches(const struct bladerf_devinfo *a,
+                            const struct bladerf_devinfo *b);
 
 /**
  * Do the bus and addr match for the two provided device info structures match
@@ -66,8 +50,8 @@ bool bladerf_serial_matches(struct bladerf_devinfo *a,
  *
  * @return true on match, false otherwise
  */
-bool bladerf_bus_addr_matches(struct bladerf_devinfo *a,
-                              struct bladerf_devinfo *b);
+bool bladerf_bus_addr_matches(const struct bladerf_devinfo *a,
+                              const struct bladerf_devinfo *b);
 
 /**
  * Create list of deinfos

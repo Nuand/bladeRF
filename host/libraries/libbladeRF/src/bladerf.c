@@ -106,11 +106,6 @@ int bladerf_open(struct bladerf **device, const char *dev_id)
     if (!status) {
         if (!dev->legacy) {
 
-            status = bladerf_get_and_cache_serial(dev);
-            if (status < 0) {
-                log_warning( "Could not extract serial number\n" ) ;
-            }
-
             status = bladerf_get_and_cache_vctcxo_trim(dev);
             if (status < 0) {
                 log_warning( "Could not extract VCTCXO trim value\n" ) ;
@@ -126,7 +121,7 @@ int bladerf_open(struct bladerf **device, const char *dev_id)
              * print here (i.e., not uninitialized) */
             log_debug("%s: fw=v%d.%d serial=%s trim=0x%.4x fpga_size=%d\n",
                     __FUNCTION__, dev->fw_major, dev->fw_minor,
-                    dev->serial, dev->dac_trim, dev->fpga_size);
+                    dev->ident.serial, dev->dac_trim, dev->fpga_size);
         } else {
             printf("********************************************************************************\n");
             printf("* ENTERING LEGACY MODE, PLEASE UPGRADE TO THE LATEST FIRMWARE BY RUNNING:\n");
@@ -619,7 +614,7 @@ int bladerf_stream(struct bladerf_stream *stream, bladerf_module module)
 
 int bladerf_get_serial(struct bladerf *dev, char *serial)
 {
-    strcpy(serial, dev->serial);
+    strcpy(serial, dev->ident.serial);
     return 0;
 }
 
@@ -861,6 +856,66 @@ const char * bladerf_version(unsigned int *major,
 bladerf_log_level bladerf_log_set_verbosity(bladerf_log_level level)
 {
     return log_set_verbosity(level);
+}
+
+/*------------------------------------------------------------------------------
+ * Device identifier information
+ *----------------------------------------------------------------------------*/
+
+void bladerf_init_devinfo(struct bladerf_devinfo *info)
+{
+    info->backend  = BLADERF_BACKEND_ANY;
+
+    memset(info->serial, 0, BLADERF_SERIAL_LENGTH);
+    strncpy(info->serial, DEVINFO_SERIAL_ANY, BLADERF_SERIAL_LENGTH - 1);
+
+    info->usb_bus  = DEVINFO_BUS_ANY;
+    info->usb_addr = DEVINFO_ADDR_ANY;
+    info->instance = DEVINFO_INST_ANY;
+}
+
+int bladerf_get_devinfo(struct bladerf *dev, struct bladerf_devinfo *info)
+{
+    if (dev) {
+        memcpy(info, &dev->ident, sizeof(struct bladerf_devinfo));
+        return 0;
+    } else {
+        return BLADERF_ERR_INVAL;
+    }
+}
+
+int bladerf_get_devinfo_from_str(const char *devstr,
+                                 struct bladerf_devinfo *info)
+{
+    return str2devinfo(devstr, info);
+}
+
+bool bladerf_devinfo_matches(const struct bladerf_devinfo *a,
+                             const struct bladerf_devinfo *b)
+{
+    return bladerf_instance_matches(a, b) &&
+           bladerf_serial_matches(a, b)   &&
+           bladerf_bus_addr_matches(a ,b);
+}
+
+
+bool bladerf_devstr_matches(const char *dev_str,
+                            struct bladerf_devinfo *info)
+{
+    int status;
+    bool ret;
+    struct bladerf_devinfo from_str;
+
+    status = str2devinfo(dev_str, &from_str);
+    if (status < 0) {
+        ret = false;
+        log_error("Failed to parse device string: %s\n",
+                  bladerf_strerror(status));
+    } else {
+        ret = bladerf_devinfo_matches(&from_str, info);
+    }
+
+    return ret;
 }
 
 /*------------------------------------------------------------------------------

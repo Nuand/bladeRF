@@ -2,8 +2,6 @@
 #
 # This file is part of the bladeRF project
 #
-# TODO license text here (see top-level COPYING for time being)
-#
 # Portions of this file have been borrowed from and/or inspired by
 # the CMakeLists.txt from the rtl-sdr project (GPLv2)
 #   http://sdr.osmocom.org/trac/wiki/rtl-sdr
@@ -16,7 +14,7 @@ project(libbladeRF C)
 ################################################################################
 
 set(VERSION_INFO_MAJOR  0)
-set(VERSION_INFO_MINOR  3)
+set(VERSION_INFO_MINOR  4)
 set(VERSION_INFO_PATCH  0)
 set(VERSION_INFO_EXTRA "git")
 include(Version)
@@ -37,9 +35,7 @@ configure_file(
 ##############################
 # Backend Support
 ##############################
-
-option(ENABLE_BACKEND_LIBUSB
-    "Enable libusb backend support"
+option(ENABLE_BACKEND_LIBUSB "Enable libusb backend support"
     ON
 )
 
@@ -126,13 +122,11 @@ set(LIBBLADERF_SOURCE
         src/lms.c
         src/si5338.c
         src/version.h
-        ${BLADERF_HOST_COMMON_SOURCE_DIR}/device_identifier.c
-        ${BLADERF_HOST_COMMON_SOURCE_DIR}/bladerf_devinfo.c
+        src/device_identifier.c
+        src/devinfo.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/log.c
 )
-
-message(STATUS "In libraries ${BLADERF_HOST_COMMON_SOURCE_DIR}")
 
 if(LIBUSB_FOUND AND ENABLE_BACKEND_LIBUSB)
     set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend/libusb.c)
@@ -169,11 +163,6 @@ if(NOT DEFINED LIB_INSTALL_DIR)
 endif()
 
 ################################################################################
-# Install udev rules
-################################################################################
-# TODO
-
-################################################################################
 # Generate pkg-config file
 ################################################################################
 add_subdirectory(include)
@@ -184,10 +173,6 @@ endforeach()
 foreach(lib ${LIBBLADERF_LIBRARY_DIRS})
     list(APPEND LIBBLADERF_PC_PRIV_LIBS "-L${lib}")
 endforeach()
-
-if(ENABLE_BACKEND_LIBUSB)
-    # TODO set(LIBBLADERF_PC_REQUIRES ${LIBBLADERF_PC_REQUIRES} libusb-1.0 = ?)
-endif()
 
 set(LIBBLADERF_PC_PREFIX ${CMAKE_INSTALL_PREFIX})
 set(LIBBLADERF_PC_EXEC_PREFIX \${prefix})

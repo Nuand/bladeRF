@@ -1,41 +1,23 @@
-#include "bladerf_devinfo.h"
+#include "devinfo.h"
 
-void bladerf_init_devinfo(struct bladerf_devinfo *d)
-{
-    d->backend  = BLADERF_BACKEND_ANY;
-    strcpy(d->serial, DEVINFO_SERIAL_ANY);
-    d->usb_bus  = DEVINFO_BUS_ANY;
-    d->usb_addr = DEVINFO_ADDR_ANY;
-    d->instance = DEVINFO_INST_ANY;
-}
-
-bool bladerf_devinfo_matches(struct bladerf_devinfo *a,
-                             struct bladerf_devinfo *b)
-{
-    return
-      bladerf_instance_matches(a,b) &&
-      bladerf_serial_matches(a,b) &&
-      bladerf_bus_addr_matches(a,b);
-}
-
-bool bladerf_instance_matches(struct bladerf_devinfo *a,
-                              struct bladerf_devinfo *b)
+bool bladerf_instance_matches(const struct bladerf_devinfo *a,
+                              const struct bladerf_devinfo *b)
 {
     return a->instance == DEVINFO_INST_ANY ||
            b->instance == DEVINFO_INST_ANY ||
            a->instance == b->instance;
 }
 
-bool bladerf_serial_matches(struct bladerf_devinfo *a,
-                            struct bladerf_devinfo *b)
+bool bladerf_serial_matches(const struct bladerf_devinfo *a,
+                            const struct bladerf_devinfo *b)
 {
     return !strcmp(a->serial, DEVINFO_SERIAL_ANY) ||
            !strcmp(b->serial, DEVINFO_SERIAL_ANY) ||
            !strcmp(a->serial, b->serial);
 }
 
-bool bladerf_bus_addr_matches(struct bladerf_devinfo *a,
-                              struct bladerf_devinfo *b)
+bool bladerf_bus_addr_matches(const struct bladerf_devinfo *a,
+                              const struct bladerf_devinfo *b)
 {
     bool bus_match, addr_match;
 
@@ -89,5 +71,3 @@ int bladerf_devinfo_list_add(struct bladerf_devinfo_list *list,
 
     return status;
 }
-
-

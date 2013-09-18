@@ -150,6 +150,8 @@ int bladerf_get_otp_field(struct bladerf *dev, char *field,
     int status;
     char otp[OTP_BUFFER_SIZE];
 
+    memset(otp, 0xff, OTP_BUFFER_SIZE);
+
     status = dev->fn->get_otp(dev, otp);
     if (status < 0)
         return status;
@@ -170,16 +172,22 @@ int bladerf_get_cal_field(struct bladerf *dev, char *field,
         return extract_field(cal, CAL_BUFFER_SIZE, field, data, data_size);
 }
 
-int bladerf_get_and_cache_serial(struct bladerf *dev)
+int bladerf_read_serial(struct bladerf *dev, char *serial_buf)
 {
     int status;
-    status = bladerf_get_otp_field(dev, "S", dev->serial,
+
+    status = bladerf_get_otp_field(dev, "S", serial_buf,
                                     BLADERF_SERIAL_LENGTH - 1);
 
     if (status < 0) {
-        log_debug("Unable to fetch serial number. Defaulting to 0's\n");
-        memset(dev->serial, 0, BLADERF_SERIAL_LENGTH);
+        log_error("Unable to fetch serial number. Defaulting to 0's.\n");
+        memset(dev->ident.serial, '0', BLADERF_SERIAL_LENGTH - 1);
+
+        /* Treat this as non-fatal */
+        status = 0;
     }
+
+    serial_buf[BLADERF_SERIAL_LENGTH - 1] = '\0';
 
     return status;
 }

@@ -280,7 +280,7 @@ static int change_setting(struct bladerf *dev, uint8_t setting)
 static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
 {
     int status, i, n, inf, val;
-	int fx3_status;
+    int fx3_status;
     ssize_t count;
     struct bladerf *dev = NULL;
     struct bladerf_lusb *lusb = NULL;
@@ -341,8 +341,9 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
                 /* Assign libusb function table, backend type and backend */
                 dev->fn = &bladerf_lusb_fn;
                 dev->backend = (void *)lusb;
-                dev->backend_type = BLADERF_BACKEND_LIBUSB;
                 dev->legacy = 0;
+
+                memcpy(&dev->ident, &info, sizeof(struct bladerf_devinfo));
 
                 /* Populate the backend information */
                 lusb->context = context;

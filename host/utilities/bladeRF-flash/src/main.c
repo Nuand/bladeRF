@@ -13,9 +13,7 @@
 #include "version.h"
 #include "log.h"
 #include "ezusb.h"
-#include "device_identifier.h"
 #include "host_config.h"
-#include "bladerf_devinfo.h"
 #include <time.h>
 
 
@@ -160,10 +158,6 @@ void usage(const char *argv0)
     printf("  The -d option takes a device specifier string. See the bladerf_open()\n");
     printf("  documentation for more information about the format of this string.\n");
     printf("\n");
-    printf("  If the -d parameter is not provided, the first available device\n");
-    printf("  will be used for the provided command, or will be opened prior\n");
-    printf("  to entering interactive mode.\n");
-    printf("\n");
 }
 
 typedef struct {
@@ -211,7 +205,7 @@ static int count_events(
     return 0;
 }
 
-static int init_event_counts(libusb_context *ctx, 
+static int init_event_counts(libusb_context *ctx,
         int vender_id, int product_id, event_count_t * data)
 {
     int status;
@@ -417,7 +411,7 @@ static int poll_for_events(libusb_context * ctx) {
     time_t end_t = time(NULL) + RECONNECT_TIME;
     struct timeval timeout;
     int status;
-	
+
     timeout.tv_sec = RECONNECT_TIME;
     timeout.tv_usec = 0;
 
@@ -550,7 +544,7 @@ static int get_to_bootloader(bool reset, const char *device_identifier,
         return status;
     } else {
         log_verbose("No bladeRF found, search for bootloader\n");
-        status = str2devinfo(device_identifier, &devinfo);
+        status = bladerf_get_devinfo_from_str(device_identifier, &devinfo);
         if(status != 0) {
             log_error("Failed to parse dev string %s, %s\n",
                 device_identifier, bladerf_strerror(status));
@@ -572,7 +566,7 @@ static int get_bladerf(libusb_context *ctx, struct bladerf_devinfo *devinfo)
 {
     libusb_device *device;
     int count, status;
-	
+
     status = poll_for_events(ctx);
     if(status != 0) {
         return status;

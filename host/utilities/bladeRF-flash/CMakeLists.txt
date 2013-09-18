@@ -56,8 +56,6 @@ set(BLADERF_FLASH_SOURCE
         src/main.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/log.c
-        ${BLADERF_HOST_COMMON_SOURCE_DIR}/bladerf_devinfo.c
-        ${BLADERF_HOST_COMMON_SOURCE_DIR}/device_identifier.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/ezusb.c
 )
 
