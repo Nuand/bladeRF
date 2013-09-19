@@ -343,7 +343,7 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
                 dev->backend = (void *)lusb;
                 dev->legacy = 0;
 
-                memcpy(&dev->ident, &info, sizeof(struct bladerf_devinfo));
+                memcpy(&dev->ident, &thisinfo, sizeof(struct bladerf_devinfo));
 
                 /* Populate the backend information */
                 lusb->context = context;
