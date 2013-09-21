@@ -1,3 +1,5 @@
+#ifndef _BLADERF_FIRMWARE_COMMON_H_
+#define _BLADERF_FIRMWARE_COMMON_H_
 
 #define BLADERF_IOCTL_BASE      'N'
 #define BLADE_QUERY_VERSION     _IOR(BLADERF_IOCTL_BASE, 0, struct bladeRF_version)
@@ -111,3 +113,10 @@ struct uart_cmd {
         unsigned short word;
     };
 };
+
+/* Interface numbers */
+#define USB_IF_CONFIG       3
+#define USB_IF_RF_LINK      1
+#define USB_IF_SPI_FLASH    2
+
+#endif /* _BLADERF_FIRMWARE_COMMON_H_ */

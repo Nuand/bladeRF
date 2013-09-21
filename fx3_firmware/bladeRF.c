@@ -27,7 +27,6 @@ uint32_t glAppMode = MODE_NO_CONFIG;
 CyU3PThread bladeRFAppThread;
 
 CyU3PDmaChannel glChHandlebladeRFUtoP;      /* DMA Channel for RF U2P (USB to P-port) transfers */
-CyU3PDmaChannel glChHandlebladeRFPtoU;      /* DMA Channel for RF P2U (P-Port to USB) transfers */
 
 CyU3PDmaChannel glChHandlebladeRFUtoUART;   /* DMA Channel for U2P transfers */
 CyU3PDmaChannel glChHandlebladeRFUARTtoU;   /* DMA Channel for U2P transfers */
@@ -45,7 +44,7 @@ CyU3PDmaChannel glChHandlePtoU;
 #endif
 
 uint8_t glUsbConfiguration = 0;             /* Active USB configuration. */
-uint8_t glUsbAltInterface = -1;                 /* Active USB interface. */
+uint8_t glUsbAltInterface = 0;                 /* Active USB interface. */
 
 uint32_t glDMARxCount = 0;                  /* Counter to track the number of buffers received
                                              * from USB during FPGA programming */
@@ -776,6 +775,158 @@ static void StopApplication()
     }
 }
 
+int RF_status_bits[] = {
+    [BLADE_RF_SAMPLE_EP_PRODUCER] = 0,
+    [BLADE_RF_SAMPLE_EP_CONSUMER] = 0,
+    [BLADE_UART_EP_PRODUCER] = 0,
+    [BLADE_UART_EP_CONSUMER] = 0,
+};
+
+uint8_t FPGA_status_bits[] = {
+    [BLADE_FPGA_EP_PRODUCER] = 0,
+};
+
+CyBool_t GetStatus(uint16_t endpoint) {
+    CyBool_t isHandled = CyFalse;
+    uint8_t get_status_reply[] = {0x00, 0x00};
+
+    switch(glUsbAltInterface) {
+    case USB_IF_RF_LINK:
+        switch(endpoint) {
+        case BLADE_RF_SAMPLE_EP_PRODUCER:
+        case BLADE_RF_SAMPLE_EP_CONSUMER:
+        case BLADE_UART_EP_PRODUCER:
+        case BLADE_UART_EP_CONSUMER:
+            get_status_reply[0] = RF_status_bits[endpoint];
+            CyU3PUsbSendEP0Data(sizeof(get_status_reply), get_status_reply);
+            isHandled = CyTrue;
+            break;
+        }
+        break;
+    case USB_IF_CONFIG:
+        switch(endpoint) {
+        case BLADE_FPGA_EP_PRODUCER:
+            get_status_reply[0] = FPGA_status_bits[endpoint];
+            CyU3PUsbSendEP0Data(sizeof(get_status_reply), get_status_reply);
+            isHandled = CyTrue;
+            break;
+        }
+        break;
+    default:
+    case USB_IF_SPI_FLASH:
+        /* USB_IF_CONFIG has no end points */
+        break;
+    }
+
+    return isHandled;
+}
+
+void ClearDMAChannel(uint8_t ep, CyU3PDmaChannel * handle, uint32_t count, CyBool_t stall_only) {
+    CyU3PDmaChannelReset (handle);
+    CyU3PUsbFlushEp(ep);
+    CyU3PUsbResetEp(ep);
+    CyU3PDmaChannelSetXfer (handle, count);
+    CyU3PUsbStall (ep, CyFalse, CyTrue);
+
+    if(!stall_only) {
+        CyU3PUsbAckSetup ();
+    }
+}
+
+CyBool_t ClearHaltCondition(uint16_t endpoint) {
+    CyBool_t isHandled = CyFalse;
+
+    switch(glUsbAltInterface) {
+    case USB_IF_RF_LINK:
+        switch(endpoint) {
+        case BLADE_RF_SAMPLE_EP_PRODUCER:
+        case BLADE_RF_SAMPLE_EP_CONSUMER:
+        case BLADE_UART_EP_PRODUCER:
+        case BLADE_UART_EP_CONSUMER:
+            isHandled = CyTrue;
+            RF_status_bits[endpoint] = 0;
+            break;
+        }
+
+        switch(endpoint) {
+        case BLADE_RF_SAMPLE_EP_PRODUCER:
+            ClearDMAChannel(endpoint, &glChHandleUtoP, BLADE_DMA_TX_SIZE, CyFalse);
+            break;
+        case BLADE_RF_SAMPLE_EP_CONSUMER:
+            ClearDMAChannel(endpoint, &glChHandlePtoU, BLADE_DMA_TX_SIZE, CyFalse);
+            break;
+        case BLADE_UART_EP_PRODUCER:
+            ClearDMAChannel(endpoint, &glChHandlebladeRFUtoUART, BLADE_DMA_TX_SIZE, CyFalse);
+            break;
+        case BLADE_UART_EP_CONSUMER:
+            ClearDMAChannel(endpoint, &glChHandlebladeRFUARTtoU, BLADE_DMA_TX_SIZE, CyFalse);
+            break;
+        }
+        break;
+    case USB_IF_CONFIG:
+        switch(endpoint) {
+        case BLADE_FPGA_EP_PRODUCER:
+            isHandled = CyTrue;
+            FPGA_status_bits[endpoint] = 0;
+            ClearDMAChannel(endpoint, &glChHandlebladeRFUtoP, BLADE_DMA_TX_SIZE, CyFalse);
+            break;
+        }
+        break;
+    default:
+    case USB_IF_SPI_FLASH:
+        /* USB_IF_SPI_FLASH has no end points */
+        break;
+    }
+
+    return isHandled;
+}
+
+CyBool_t SetHaltCondition(uint16_t endpoint) {
+    CyBool_t isHandled = CyFalse;
+
+    switch(glUsbAltInterface) {
+    case USB_IF_RF_LINK:
+        switch(endpoint) {
+        case BLADE_RF_SAMPLE_EP_PRODUCER:
+        case BLADE_RF_SAMPLE_EP_CONSUMER:
+        case BLADE_UART_EP_PRODUCER:
+        case BLADE_UART_EP_CONSUMER:
+            RF_status_bits[endpoint] = 1;
+            break;
+        }
+
+        switch(endpoint) {
+        case BLADE_RF_SAMPLE_EP_PRODUCER:
+            ClearDMAChannel(endpoint, &glChHandleUtoP, BLADE_DMA_TX_SIZE, CyTrue);
+            break;
+        case BLADE_RF_SAMPLE_EP_CONSUMER:
+            ClearDMAChannel(endpoint, &glChHandlePtoU, BLADE_DMA_TX_SIZE, CyTrue);
+            break;
+        case BLADE_UART_EP_PRODUCER:
+            ClearDMAChannel(endpoint, &glChHandlebladeRFUtoUART, BLADE_DMA_TX_SIZE, CyTrue);
+            break;
+        case BLADE_UART_EP_CONSUMER:
+            ClearDMAChannel(endpoint, &glChHandlebladeRFUARTtoU, BLADE_DMA_TX_SIZE, CyTrue);
+            break;
+        }
+        break;
+    case USB_IF_CONFIG:
+        switch(endpoint) {
+        case BLADE_FPGA_EP_PRODUCER:
+            FPGA_status_bits[endpoint] = 1;
+            ClearDMAChannel(endpoint, &glChHandlebladeRFUtoP, BLADE_DMA_TX_SIZE, CyTrue);
+            break;
+        }
+        break;
+    default:
+    case USB_IF_SPI_FLASH:
+        /* USB_IF_CONFIG has no end points */
+        break;
+    }
+
+    return isHandled;
+}
+
 /* Callback to handle the USB setup requests. */
 CyBool_t CyFxbladeRFApplnUSBSetupCB(uint32_t setupdat0, uint32_t setupdat1)
 {
@@ -809,36 +960,36 @@ CyBool_t CyFxbladeRFApplnUSBSetupCB(uint32_t setupdat0, uint32_t setupdat1)
         /* Handle suspend requests */
         if ((bTarget == CY_U3P_USB_TARGET_INTF) && ((bRequest == CY_U3P_USB_SC_SET_FEATURE)
                     || (bRequest == CY_U3P_USB_SC_CLEAR_FEATURE)) && (wValue == 0)) {
-            if (glAppMode != MODE_NO_CONFIG)
+            if (glUsbConfiguration != 0) {
+                /* FIXME: Actually implement suspend/resume requests */
                 CyU3PUsbAckSetup();
-            else
+            } else {
                 CyU3PUsbStall(0, CyTrue, CyFalse);
+            }
             isHandled = CyTrue;
         }
 
-        /* Flush enpoint memory and reset channel if CLEAR_FEATURE is received */
+        if ((bTarget == CY_U3P_USB_TARGET_ENDPT) && (bRequest == CY_U3P_USB_SC_GET_STATUS))
+        {
+            if (glAppMode != MODE_NO_CONFIG) {
+                isHandled = GetStatus(wIndex);
+            }
+        }
+
         if ((bTarget == CY_U3P_USB_TARGET_ENDPT) && (bRequest == CY_U3P_USB_SC_CLEAR_FEATURE)
                 && (wValue == CY_U3P_USBX_FS_EP_HALT))
         {
             if (glAppMode != MODE_NO_CONFIG) {
-#if 0
-                if (wIndex == CY_FX_EP_PRODUCER) {
-                    CyU3PDmaChannelReset (&glChHandlebladeRFUtoP);
-                    CyU3PUsbFlushEp(CY_FX_EP_PRODUCER);
-                    CyU3PUsbResetEp(CY_FX_EP_PRODUCER);
-                    CyU3PDmaChannelSetXfer (&glChHandlebladeRFUtoP, BLADE_DMA_TX_SIZE);
-                }
+                isHandled = ClearHaltCondition(wIndex);
+            }
+        }
 
-                if (wIndex == CY_FX_EP_CONSUMER) {
-                    CyU3PDmaChannelReset (&glChHandlebladeRFPtoU);
-                    CyU3PUsbFlushEp(CY_FX_EP_CONSUMER);
-                    CyU3PUsbResetEp(CY_FX_EP_CONSUMER);
-                    CyU3PDmaChannelSetXfer (&glChHandlebladeRFPtoU, BLADE_DMA_RX_SIZE);
-                }
-#endif
-
-                CyU3PUsbStall(wIndex, CyFalse, CyTrue);
-                isHandled = CyTrue;
+        /* Flush endpoint memory and reset channel if CLEAR_FEATURE is received */
+        if ((bTarget == CY_U3P_USB_TARGET_ENDPT) && (bRequest == CY_U3P_USB_SC_SET_FEATURE)
+                && (wValue == CY_U3P_USBX_FS_EP_HALT))
+        {
+            if (glAppMode != MODE_NO_CONFIG) {
+                isHandled = SetHaltCondition(wIndex);
             }
         }
     }
@@ -1054,29 +1205,34 @@ CyBool_t CyFxbladeRFApplnUSBSetupCB(uint32_t setupdat0, uint32_t setupdat1)
 /* This is the callback function to handle the USB events. */
 void CyFxbladeRFApplnUSBEventCB (CyU3PUsbEventType_t evtype, uint16_t evdata)
 {
+    int interface;
     int alt_interface;
     switch (evtype)
     {
         case CY_U3P_USB_EVENT_SETINTF:
+            interface = (evdata & 0xf0) >> 8;
             alt_interface = evdata & 0xf;
+
+            /* Only support sets to interface 0 for now */
+            if(interface != 0) break;
 
             /* Don't do anything if we're setting the same interface over */
             if( alt_interface == glUsbAltInterface ) break ;
 
             /* Stop whatever we were doing */
             switch(glUsbAltInterface) {
-                case 0: NuandFpgaConfigStop() ; break ;
-                case 1: NuandRFLinkStop(); break ;
-                case 2: NuandFirmwareStop(); break ;
+                case USB_IF_CONFIG: NuandFpgaConfigStop() ; break ;
+                case USB_IF_RF_LINK: NuandRFLinkStop(); break ;
+                case USB_IF_SPI_FLASH: NuandFirmwareStop(); break ;
                 default: break ;
             }
 
             /* Start up the new one */
-            if (alt_interface == 0) {
+            if (alt_interface == USB_IF_CONFIG) {
                 NuandFpgaConfigStart();
-            } else if (alt_interface == 1) {
+            } else if (alt_interface == USB_IF_RF_LINK) {
                 NuandRFLinkStart();
-            } else if (alt_interface == 2) {
+            } else if (alt_interface == USB_IF_SPI_FLASH) {
                 glEp0Idx = 0;
                 NuandFirmwareStart();
             }
