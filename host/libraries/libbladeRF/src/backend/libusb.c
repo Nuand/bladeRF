@@ -1556,7 +1556,7 @@ static int lusb_stream(struct bladerf_stream *stream, bladerf_module module)
                         stream,
                         &metadata,
                         NULL,
-                        0,
+                        stream->samples_per_buffer,
                         stream->user_data
                      );
 
