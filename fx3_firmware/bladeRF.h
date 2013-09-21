@@ -14,7 +14,7 @@
 #define BLADE_THREAD_STACK       (0x0400)
 #define BLADE_THREAD_PRIORITY    (8)
 
-// interface #0
+// interface #3
 #define BLADE_FPGA_EP_PRODUCER          0x02
 #define BLADE_FPGA_CONFIG_SOCKET        CY_U3P_UIB_SOCKET_PROD_2
 
