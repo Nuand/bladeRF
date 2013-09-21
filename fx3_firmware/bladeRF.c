@@ -49,6 +49,7 @@ uint8_t glUsbAltInterface = 0;                 /* Active USB interface. */
 uint32_t glDMARxCount = 0;                  /* Counter to track the number of buffers received
                                              * from USB during FPGA programming */
 
+uint8_t glSelBuffer[32];
 uint8_t glOtp[0x100] __attribute__ ((aligned (32)));
 uint8_t glCal[0x100] __attribute__ ((aligned (32)));
 uint8_t glEp0Buffer[4096] __attribute__ ((aligned (32)));
@@ -946,6 +947,19 @@ CyBool_t CyFxbladeRFApplnUSBSetupCB(uint32_t setupdat0, uint32_t setupdat1)
 
     if (bType == CY_U3P_USB_STANDARD_RQT)
     {
+        if (bRequest == CY_U3P_USB_SC_SET_SEL)
+            {
+                if ((CyU3PUsbGetSpeed () == CY_U3P_SUPER_SPEED) && (wValue == 0) && (wIndex == 0) && (wLength == 6))
+                {
+                    CyU3PUsbGetEP0Data (32, glSelBuffer, 0);
+                }
+                else
+                {
+                    isHandled = CyFalse;
+                }
+            }
+
+
         if (bRequest == CY_U3P_USB_SC_GET_INTERFACE) {
                 glEp0Buffer[0] = glUsbAltInterface;
                 CyU3PUsbSendEP0Data(wLength, glEp0Buffer);
