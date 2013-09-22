@@ -13,4 +13,28 @@ endif(ENABLE_BACKEND_LIBUSB)
 
 if(${HAVE_LIBUSB_HOTPLUG} MATCHES "1")
     add_subdirectory(bladeRF-flash)
+else(${HAVE_LIBUSB_HOTPLUG} MATCHES "1")
+    if(WIN32)
+        find_package(LibUSB)
+        try_run(RET_RUN RET_COM
+            ${CMAKE_CURRENT_BINARY_DIR}
+            "${CMAKE_CURRENT_SOURCE_DIR}/ver.c"
+            CMAKE_FLAGS "-DINCLUDE_DIRECTORIES:STRING=${LIBUSB_INCLUDE_DIRS}"
+            RUN_OUTPUT_VARIABLE OUTPUT)
+
+        if(NOT ${RET_RUN} MATCHES "0" OR NOT ${RET_COM} MATCHES "TRUE")
+            message("Could not compile and run libusbx version test")
+        endif()
+
+        if(${OUTPUT} MATCHES "1")
+            message("Found the correct version of libusbx using alternate method")
+        else(${OUTPUT} MATCHES "1")
+            message(FATAL_ERROR "The version of libusbx that you are using is too old\n"
+                    "Follow this guide: https://github.com/Nuand/bladeRF/wiki/Getting-Started%3A-Windows#installing-libusbx"
+                    )
+        endif()
+    else(WIN32)
+        message("Your libusb version is out of date. Please follow the instructions at\n"
+               "https://github.com/Nuand/bladeRF/wiki/Debian-setup-guide#build-libusb-tools-and-libraries-from-nuand-git-master")
+    endif()
 endif(${HAVE_LIBUSB_HOTPLUG} MATCHES "1")
