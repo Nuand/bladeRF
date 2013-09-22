@@ -4,10 +4,10 @@
 #include <stddef.h>
 
 #include "bladerf_priv.h"
+#include "bladeRF.h"
 #include "log.h"
 
 #define OTP_BUFFER_SIZE 256
-#define CAL_BUFFER_SIZE 256
 
 void bladerf_set_error(struct bladerf_error *error,
                         bladerf_error type, int val)

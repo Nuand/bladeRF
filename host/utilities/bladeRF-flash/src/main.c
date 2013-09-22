@@ -492,9 +492,9 @@ static int reach_bootloader(bool reset, struct bladerf *dev, libusb_context *ctx
 
     status = bladerf_erase_flash(dev, 0, 1);
     if(status != 0) {
-        log_error("Failed to erase first page.  Flashing will likely "
-                "require manual force to FX3 bootloader. See "
-                "http://nuand.com/forums/viewtopic.php?f=6&t=3072\n");
+        log_warning("Maybe failed to erase first page."
+                "A manual reset of the bladeRF may place it in the FX3 "
+                "bootloader.  After the manual reset, try and re-run bladeRF-flash.\n");
         return BLADERF_ERR_UNEXPECTED;
     }
 
@@ -502,8 +502,9 @@ static int reach_bootloader(bool reset, struct bladerf *dev, libusb_context *ctx
     if(status != 0) {
         log_error("Failed to reset device after erasing first page."
                 "A manual reset of the bladeRF should place it in the FX3 "
-                "bootloader.  After the manual reset, re-run bladeRF-flash.");
+                "bootloader.  After the manual reset, re-run bladeRF-flash.\n");
         return BLADERF_ERR_UNEXPECTED;
+
     }
 
     status = look_for_bootloader_connect(ctx, device_out);

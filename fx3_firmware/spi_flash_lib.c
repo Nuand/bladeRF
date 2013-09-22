@@ -20,10 +20,9 @@
 #include "cyu3spi.h"
 #include "spi_flash_lib.h"
 
-uint16_t glSpiPageSize = 0x100;  /* SPI Page size to be used for transfers. */
 
 /* SPI initialization for application. */
-CyU3PReturnStatus_t CyFxSpiInit(uint16_t pageLen)
+CyU3PReturnStatus_t CyFxSpiInit(void)
 {
     CyU3PSpiConfig_t spiConfig;
     CyU3PReturnStatus_t status = CY_U3P_SUCCESS;
@@ -102,18 +101,18 @@ CyU3PReturnStatus_t CyFxSpiTransfer(uint16_t pageAddress, uint16_t byteCount, ui
 {
     uint8_t location[4];
     uint32_t byteAddress = 0;
-    uint16_t pageCount = (byteCount / glSpiPageSize);
+    uint16_t pageCount = (byteCount / FLASH_PAGE_SIZE);
     CyU3PReturnStatus_t status = CY_U3P_SUCCESS;
 
     if (byteCount == 0) {
         return CY_U3P_SUCCESS;
     }
 
-    if ((byteCount % glSpiPageSize) != 0) {
-        pageCount ++;
+    if ((byteCount % FLASH_PAGE_SIZE) != 0) {
+        return CY_U3P_ERROR_NOT_SUPPORTED;
     }
 
-    byteAddress = pageAddress * glSpiPageSize;
+    byteAddress = pageAddress * FLASH_PAGE_SIZE;
 
     while (pageCount != 0) {
         location[1] = (byteAddress >> 16) & 0xFF;       /* MS byte */
@@ -136,7 +135,7 @@ CyU3PReturnStatus_t CyFxSpiTransfer(uint16_t pageAddress, uint16_t byteCount, ui
                 return status;
             }
 
-            status = CyU3PSpiReceiveWords(buffer, glSpiPageSize);
+            status = CyU3PSpiReceiveWords(buffer, FLASH_PAGE_SIZE);
             if (status != CY_U3P_SUCCESS) {
                 CyU3PSpiSetSsnLine(CyTrue);
                 return status;
@@ -158,7 +157,7 @@ CyU3PReturnStatus_t CyFxSpiTransfer(uint16_t pageAddress, uint16_t byteCount, ui
                 return status;
             }
 
-            status = CyU3PSpiTransmitWords(buffer, glSpiPageSize);
+            status = CyU3PSpiTransmitWords(buffer, FLASH_PAGE_SIZE);
             if (status != CY_U3P_SUCCESS) {
                 CyU3PSpiSetSsnLine(CyTrue);
                 return status;
@@ -167,73 +166,14 @@ CyU3PReturnStatus_t CyFxSpiTransfer(uint16_t pageAddress, uint16_t byteCount, ui
             CyU3PSpiSetSsnLine(CyTrue);
         }
 
-        byteAddress += glSpiPageSize;
-        buffer += glSpiPageSize;
+        byteAddress += FLASH_PAGE_SIZE;
+        buffer += FLASH_PAGE_SIZE;
         pageCount--;
 
         CyU3PThreadSleep(15);
     }
 
     return CY_U3P_SUCCESS;
-}
-
-void NuandLockOtp() {
-    CyU3PReturnStatus_t status = CY_U3P_SUCCESS;
-    uint8_t location[4];
-
-    location[0] = 0x05; /* RDSTATUS */
-    CyU3PSpiSetSsnLine (CyFalse);
-    status = CyU3PSpiTransmitWords (location, 1);
-    status = CyU3PSpiReceiveWords(location, 1);
-    CyU3PSpiSetSsnLine (CyTrue);
-
-    location[0] = 0x06;  /* Write enable. */
-
-    CyU3PSpiSetSsnLine (CyFalse);
-    status = CyU3PSpiTransmitWords (location, 1);
-    CyU3PSpiSetSsnLine (CyTrue);
-
-    location[0] = 0x05; /* RDSTATUS */
-    CyU3PSpiSetSsnLine (CyFalse);
-    status = CyU3PSpiTransmitWords (location, 1);
-    status = CyU3PSpiReceiveWords(location, 1);
-    CyU3PSpiSetSsnLine (CyTrue);
-
-    CyU3PSpiSetSsnLine (CyFalse);
-    location[0] = 0x2f;// WRSCUR
-    status = CyU3PSpiTransmitWords (location, 1);
-    CyU3PSpiSetSsnLine (CyTrue);
-    CyU3PSpiSetSsnLine (CyFalse);
-    location[0] = 0x2;// WRSCUR
-    status = CyU3PSpiTransmitWords (location, 1);
-    CyU3PSpiSetSsnLine (CyTrue);
-
-    location[0] = 0x2b; /* RDSCUR */
-    CyU3PSpiSetSsnLine (CyFalse);
-    status = CyU3PSpiTransmitWords (location, 1);
-    status = CyU3PSpiReceiveWords(location, 1);
-    CyU3PSpiSetSsnLine (CyTrue);
-}
-
-void NuandEnso() {
-    CyU3PReturnStatus_t status = CY_U3P_SUCCESS;
-    uint8_t location[4];
-
-    location[0] = 0xb1; // ENSO
-    CyU3PSpiSetSsnLine (CyFalse);
-    status = CyU3PSpiTransmitWords (location, 1);
-    CyU3PSpiSetSsnLine (CyTrue);
-}
-
-
-void NuandExso() {
-    CyU3PReturnStatus_t status = CY_U3P_SUCCESS;
-    uint8_t location[4];
-
-    location[0] = 0xc1; // EXSO
-    CyU3PSpiSetSsnLine (CyFalse);
-    status = CyU3PSpiTransmitWords (location, 1);
-    CyU3PSpiSetSsnLine (CyTrue);
 }
 
 /* Function to erase SPI flash sectors. */
@@ -273,83 +213,4 @@ CyU3PReturnStatus_t CyFxSpiEraseSector(CyBool_t isErase, uint8_t sector)
     } while(rdBuf[0] & 1);
 
     return status;
-}
-
-void NuandFirmwareStart() {
-    CyU3PReturnStatus_t status = CY_U3P_SUCCESS;
-
-    NuandGPIOReconfigure(CyFalse, CyFalse);
-    FpgaBeginProgram();
-
-    status = CyFxSpiInit(0x100);
-
-    glAppMode = MODE_FW_CONFIG;
-}
-
-void NuandFirmwareStop() {
-	CyFxSpiDeInit();
-}
-
-
-/******
- * CRC16 implementation from http://softwaremonkey.org/Code/CRC16
- */
-typedef  unsigned char                   byte;    /*     8 bit unsigned       */
-typedef  unsigned short int              word;    /*    16 bit unsigned       */
-
-static word crc16mp(word crcval, void *data_p, word count) {
-    /* CRC-16 Routine for processing multiple part data blocks.
-     * Pass 0 into 'crcval' for first call for any given block; for
-     * subsequent calls pass the CRC returned by the previous call. */
-    word            xx;
-    byte            *ptr=data_p;
-
-    while (count-- > 0) {
-        crcval=(word)(crcval^(word)(((word)*ptr++)<<8));
-        for (xx=0;xx<8;xx++) {
-            if(crcval&0x8000) { crcval=(word)((word)(crcval<<1)^0x1021); }
-            else              { crcval=(word)(crcval<<1);                }
-        }
-    }
-    return(crcval);
-}
-
-static inline size_t min_sz(size_t x, size_t y)
-{
-    return x < y ? x : y;
-}
-
-int NuandExtractField(char *ptr, int len, char *field,
-                            char *val, size_t  maxlen) {
-    int c, wlen;
-    unsigned char *ub, *end;
-    unsigned short a1, a2;
-    int flen;
-
-    flen = strlen(field);
-
-    ub = (unsigned char *)ptr;
-    end = ub + len;
-    while (ub < end) {
-        c = *ub;
-
-        if (c == 0xff) // flash and OTP are 0xff if they've never been written to
-            break;
-
-        a1 = *(unsigned short *)(&ub[c+1]);  // read checksum
-        a2 = crc16mp(0, ub, c+1);  // calculated checksum
-
-        if (a1 == a2 || 1) {
-            if (!strncmp((char *)ub + 1, field, flen)) {
-                wlen = min_sz(c - flen, maxlen);
-                strncpy(val, (char *)ub + 1 + flen, wlen);
-                val[wlen] = 0;
-                return 0;
-            }
-        } else {
-            return 1;
-        }
-        ub += c + 3; //skip past `c' bytes, 2 byte CRC field, and 1 byte len field
-    }
-    return 1;
 }
