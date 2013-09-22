@@ -54,6 +54,7 @@ uint8_t glOtp[0x100] __attribute__ ((aligned (32)));
 uint8_t glCal[0x100] __attribute__ ((aligned (32)));
 uint8_t glEp0Buffer[4096] __attribute__ ((aligned (32)));
 uint32_t glEp0Idx;
+uint16_t glFlipLut[256];
 
 /* Standard product string descriptor */
 uint8_t CyFxUSBSerial[] __attribute__ ((aligned (32))) =
@@ -399,26 +400,14 @@ void bladeRFConfigUtoPDmaCallback(CyU3PDmaChannel *chHandle, CyU3PDmaCbType_t ty
         unsigned *us_buf = (unsigned *)input->buffer_p.buffer;
         unsigned tmpr, tmpw;
 
+        uint8_t *end_in_b = &( ((uint8_t *)input->buffer_p.buffer)[input->buffer_p.count - 1]);
+        uint32_t *end_in_w = &( ((uint32_t *)input->buffer_p.buffer)[input->buffer_p.count - 1]);
+
+
         /* Flip the bits in such a way that the FPGA can be programmed
          * This mapping can be determined by looking at the schematic */
         for (i = input->buffer_p.count - 1; i >= 0; i--) {
-            buf[i * 4] = buf[i];
-            buf[i * 4 + 1] = 0;
-            buf[i * 4 + 2] = 0;
-            buf[i * 4 + 3] = 0;
-            tmpr = us_buf[i];
-
-            tmpw = 0;
-#define US_GPIF_2_FPP(GPIFbit, FPPbit)      tmpw |= (tmpr & (1 << FPPbit)) ? (1 << GPIFbit) : 0;
-            US_GPIF_2_FPP(7,  0);
-            US_GPIF_2_FPP(15, 1);
-            US_GPIF_2_FPP(6,  2);
-            US_GPIF_2_FPP(2,  3);
-            US_GPIF_2_FPP(1,  4);
-            US_GPIF_2_FPP(3,  5);
-            US_GPIF_2_FPP(9,  6);
-            US_GPIF_2_FPP(11, 7);
-            us_buf[i] = tmpw;
+            *end_in_w-- = glFlipLut[*end_in_b--];
         }
         status = CyU3PDmaChannelCommitBuffer (chHandle, input->buffer_p.count * 4, 0);
         if (status != CY_U3P_SUCCESS) {
@@ -1480,6 +1469,7 @@ void CyFxApplicationDefine(void)
 int main(void)
 {
     CyU3PIoMatrixConfig_t io_cfg;
+    uint32_t i, tmpr, tmpw;
     CyU3PReturnStatus_t status = CY_U3P_SUCCESS;
 
     /* Initialize the device */
@@ -1492,6 +1482,22 @@ int main(void)
     status = CyU3PDeviceCacheControl(CyTrue, CyTrue, CyTrue);
     if (status != CY_U3P_SUCCESS) {
         goto handle_fatal_error;
+    }
+
+    for (i = 0; i < 256; i++) {
+        tmpr = i;
+
+        tmpw = 0;
+#define US_GPIF_2_FPP(GPIFbit, FPPbit)      tmpw |= (tmpr & (1 << FPPbit)) ? (1 << GPIFbit) : 0;
+        US_GPIF_2_FPP(7,  0);
+        US_GPIF_2_FPP(15, 1);
+        US_GPIF_2_FPP(6,  2);
+        US_GPIF_2_FPP(2,  3);
+        US_GPIF_2_FPP(1,  4);
+        US_GPIF_2_FPP(3,  5);
+        US_GPIF_2_FPP(9,  6);
+        US_GPIF_2_FPP(11, 7);
+        glFlipLut[i] = tmpw;
     }
 
     io_cfg.useUart   = CyTrue;
