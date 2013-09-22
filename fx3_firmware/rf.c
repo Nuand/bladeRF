@@ -390,7 +390,7 @@ CyBool_t NuandRFLinkHaltEndpoint(CyBool_t set, uint16_t endpoint)
     case BLADE_RF_SAMPLE_EP_CONSUMER:
     case BLADE_UART_EP_PRODUCER:
     case BLADE_UART_EP_CONSUMER:
-        isHandled = CyTrue;
+        isHandled = !set;
         RF_status_bits[endpoint] = set;
         break;
     }
@@ -403,10 +403,12 @@ CyBool_t NuandRFLinkHaltEndpoint(CyBool_t set, uint16_t endpoint)
         ClearDMAChannel(endpoint, &glChHandlePtoU, BLADE_DMA_TX_SIZE, set);
         break;
     case BLADE_UART_EP_PRODUCER:
-        ClearDMAChannel(endpoint, &glChHandlebladeRFUtoUART, BLADE_DMA_TX_SIZE, set);
+        ClearDMAChannel(endpoint,
+                &glChHandlebladeRFUtoUART, BLADE_DMA_TX_SIZE, set);
         break;
     case BLADE_UART_EP_CONSUMER:
-        ClearDMAChannel(endpoint, &glChHandlebladeRFUARTtoU, BLADE_DMA_TX_SIZE, set);
+        ClearDMAChannel(endpoint,
+                &glChHandlebladeRFUARTtoU, BLADE_DMA_TX_SIZE, set);
         break;
     }
 

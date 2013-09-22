@@ -198,7 +198,7 @@ CyBool_t NuandFpgaConfigHaltEndpoint(CyBool_t set, uint16_t endpoint)
         ClearDMAChannel(endpoint, &glChHandlebladeRFUtoP,
                         BLADE_DMA_TX_SIZE, set);
 
-        isHandled = CyTrue;
+        isHandled = !set;
         break;
     }
 
