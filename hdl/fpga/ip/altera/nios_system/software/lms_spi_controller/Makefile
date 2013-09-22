@@ -142,7 +142,7 @@ ACDS_VERSION := 12.1sp1
 ELF := lms_spi_controller.elf
 
 # Paths to C, C++, and assembly source files.
-C_SRCS := hello_world_small.c
+C_SRCS := lms_spi_controller.c
 CXX_SRCS :=
 ASM_SRCS :=
 
