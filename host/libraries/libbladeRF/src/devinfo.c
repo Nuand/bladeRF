@@ -42,7 +42,6 @@ int bladerf_devinfo_list_init(struct bladerf_devinfo_list *list)
     list->elt = malloc(list->backing_size * sizeof(struct bladerf_devinfo));
 
     if (!list->elt) {
-        free(list);
         status = BLADERF_ERR_MEM;
     }
 
