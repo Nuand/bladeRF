@@ -201,6 +201,7 @@ static void NuandRFLinkStart(void)
     CyU3PReturnStatus_t apiRetStatus = CY_U3P_SUCCESS;
     CyU3PUSBSpeed_t usbSpeed = CyU3PUsbGetSpeed();
 
+    NuandAllowSuspend(CyFalse);
     NuandGPIOReconfigure(CyTrue, CyTrue);
 
     /* Load the GPIF configuration for loading the RF transceiver */
@@ -371,6 +372,7 @@ static void NuandRFLinkStop (void)
     CyU3PGpifDisable(CyTrue);
 
     UartBridgeStop();
+    NuandAllowSuspend(CyTrue);
     glAppMode = MODE_NO_CONFIG;
 }
 
