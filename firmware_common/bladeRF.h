@@ -43,12 +43,9 @@
 #define BLADE_USB_CMD_WRITE_OTP               104
 #define BLADE_USB_CMD_RESET                   105
 #define BLADE_USB_CMD_JUMP_TO_BOOTLOADER      106
-
-#define BLADE_USB_CMD_QUERY_VERSION      0
-#define BLADE_USB_CMD_QUERY_FPGA_STATUS  1
-#define BLADE_USB_CMD_BEGIN_PROG         2
-#define BLADE_USB_CMD_END_PROG           3
-#define BLADE_USB_CMD_RF_RX              4
+#define BLADE_USB_CMD_READ_PAGE_BUFFER        107
+#define BLADE_USB_CMD_WRITE_PAGE_BUFFER       108
+#define BLADE_USB_CMD_LOCK_OTP                109
 
 struct bladeRF_version {
     unsigned short major;

@@ -123,8 +123,74 @@ static int vendor_command_int(struct bladerf *dev,
         status = BLADERF_ERR_IO;
     } else {
         if( ep_dir == EP_DIR_IN ) {
-            *val = buf;
+            *val = LE32_TO_HOST(buf);
         }
+        status = 0;
+    }
+
+    return status;
+}
+
+/* Quick wrapper for vendor commands that get/send a 32-bit integer value + wValue */
+static int vendor_command_int_value(struct bladerf *dev,
+                          uint16_t cmd, uint16_t wValue, int32_t *val)
+{
+    int32_t buf;
+    int status;
+    struct bladerf_lusb *lusb = dev->backend;
+
+    status = libusb_control_transfer(
+                lusb->handle,
+                LIBUSB_RECIPIENT_INTERFACE | LIBUSB_REQUEST_TYPE_VENDOR | EP_DIR_IN,
+                cmd,
+                wValue,
+                0,
+                (unsigned char *)&buf,
+                sizeof(buf),
+                BLADERF_LIBUSB_TIMEOUT_MS
+             );
+
+    if (status < 0) {
+        log_error( "status < 0: %s\n", libusb_error_name(status) );
+        status = error_libusb2bladerf(status);
+    } else if (status != sizeof(buf)) {
+        log_error( "status != sizeof(buf): %s\n", libusb_error_name(status) );
+        status = BLADERF_ERR_IO;
+    } else {
+        *val = LE32_TO_HOST(buf);
+        status = 0;
+    }
+
+    return status;
+}
+
+/* Quick wrapper for vendor commands that get/send a 32-bit integer value + wIndex */
+static int vendor_command_int_index(struct bladerf *dev,
+                          uint16_t cmd, uint16_t wIndex, int32_t *val)
+{
+    int32_t buf;
+    int status;
+    struct bladerf_lusb *lusb = dev->backend;
+
+    status = libusb_control_transfer(
+                lusb->handle,
+                LIBUSB_RECIPIENT_INTERFACE | LIBUSB_REQUEST_TYPE_VENDOR | EP_DIR_IN,
+                cmd,
+                0,
+                wIndex,
+                (unsigned char *)&buf,
+                sizeof(buf),
+                BLADERF_LIBUSB_TIMEOUT_MS
+             );
+
+    if (status < 0) {
+        log_error( "status < 0: %s\n", libusb_error_name(status) );
+        status = error_libusb2bladerf(status);
+    } else if (status != sizeof(buf)) {
+        log_error( "status != sizeof(buf): %s\n", libusb_error_name(status) );
+        status = BLADERF_ERR_IO;
+    } else {
+        *val = LE32_TO_HOST(buf);
         status = 0;
     }
 
@@ -277,9 +343,40 @@ static int change_setting(struct bladerf *dev, uint8_t setting)
     }
 }
 
+static void enable_rf(struct bladerf *dev) {
+    int32_t fx3_ret = -1;
+    int status;
+    uint16_t val;
+
+    status = change_setting(dev, USB_IF_RF_LINK);
+    log_info( "Changed into RF link mode: %s\n", libusb_error_name(status) ) ;
+    val = 1;
+    status = vendor_command_int_value(
+            dev, BLADE_USB_CMD_RF_RX,
+            val, &fx3_ret);
+    if(status) {
+        log_warning("Could not enable RF RX (%d): %s\n",
+                status, libusb_error_name(status) );
+    } else if(fx3_ret) {
+        log_warning("Error enabling RF RX (%d)\n",
+                fx3_ret );
+    }
+
+    status = vendor_command_int_value(
+            dev, BLADE_USB_CMD_RF_TX,
+            val, &fx3_ret);
+    if(status) {
+        log_warning("Could not enable RF TX (%d): %s\n", 
+                status, libusb_error_name(status) );
+    } else if(fx3_ret) {
+        log_warning("Error enabling RF RX (%d)\n",
+                fx3_ret );
+    }
+}
+
 static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
 {
-    int status, i, n, inf, val;
+    int status, i, n, inf;
     int fx3_status;
     ssize_t count;
     struct bladerf *dev = NULL;
@@ -395,18 +492,7 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
 
     if (dev) {
         if (lusb_is_fpga_configured(dev)) {
-            status = change_setting(dev, USB_IF_RF_LINK);
-            log_info( "Changed into RF link mode: %s\n", libusb_error_name(status) ) ;
-            val = 1;
-            status = vendor_command_int(dev, BLADE_USB_CMD_RF_RX, EP_DIR_OUT, &val);
-            if(status) {
-                log_warning("Could not enable RF RX (%d): %s\n", status, libusb_error_name(status) );
-            }
-
-            status = vendor_command_int(dev, BLADE_USB_CMD_RF_TX, EP_DIR_OUT, &val);
-            if(status) {
-                log_warning("Could not enable RF TX (%d): %s\n", status, libusb_error_name(status) );
-            }
+            enable_rf(dev);
         }
     }
 
@@ -470,7 +556,7 @@ static int lusb_close(struct bladerf *dev)
 static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size)
 {
     unsigned int wait_count;
-    int status = 0, val;
+    int status = 0;
     int transferred = 0;
     struct bladerf_lusb *lusb = dev->backend;
 
@@ -538,16 +624,7 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
         log_info("libusb_set_interface_alt_setting: %s\n", libusb_error_name(status));
     }
 
-    val = 1;
-    status = vendor_command_int(dev, BLADE_USB_CMD_RF_RX, EP_DIR_OUT, &val);
-    if(status) {
-        log_warning("Could not enable RF RX (%d): %s\n", status, libusb_error_name(status) );
-    }
-
-    status = vendor_command_int(dev, BLADE_USB_CMD_RF_TX, EP_DIR_OUT, &val);
-    if(status) {
-        log_warning("Could not enable RF TX (%d): %s\n", status, libusb_error_name(status) );
-    }
+    enable_rf(dev);
 
     return status;
 }
@@ -587,12 +664,13 @@ static int lusb_erase_flash(struct bladerf *dev, int sector_offset, int n_bytes)
                                 sizeof(erase_ret),
                                 BLADERF_LIBUSB_TIMEOUT_MS);
 
-        if (status != sizeof(erase_ret) || !erase_ret) {
+        if (status != sizeof(erase_ret) || erase_ret != 0) {
             log_error("Failed to erase sector %d\n", sector_to_erase);
             if (status < 0) {
                 log_error("libusb status: %s\n", libusb_error_name(status));
-            } else if (!erase_ret) {
-                log_error("Received erase failure status from FX3.\n");
+            } else if (erase_ret != 0) {
+                log_error("Received erase failure status from FX3. error = %d\n",
+                        erase_ret);
             } else {
                 log_error("Unexpected read size: %d\n", status);
             }
@@ -610,18 +688,80 @@ static int lusb_erase_flash(struct bladerf *dev, int sector_offset, int n_bytes)
     }
 }
 
+static int read_page_buffer(struct bladerf *dev, int read_size, uint8_t *ptr)
+{
+    struct bladerf_lusb *lusb = dev->backend;
+
+    size_t buf_off;
+    int status;
+
+    for(buf_off = 0; buf_off < FLASH_PAGE_SIZE; buf_off += read_size)
+    {
+        status = libusb_control_transfer(
+                    lusb->handle,
+                    LIBUSB_RECIPIENT_INTERFACE |
+                        LIBUSB_REQUEST_TYPE_VENDOR |
+                        EP_DIR_IN,
+                    BLADE_USB_CMD_READ_PAGE_BUFFER,
+                    0,
+                    buf_off,
+                    &ptr[buf_off],
+                    read_size,
+                    BLADERF_LIBUSB_TIMEOUT_MS);
+
+        if(status < 0) {
+            log_error("Failed to read page buffer at offset 0x%02x: %s\n",
+                    buf_off, libusb_error_name(status));
+            return error_libusb2bladerf(status);
+        } else if(status != read_size) {
+            log_error("Got unexpected read size when writing page buffer at offset 0x%02x: "
+                    "expected %d, got %d\n",
+                    read_size, status);
+            return BLADERF_ERR_IO;
+        }
+    }
+
+    return 0;
+}
+
+static int read_one_page(struct bladerf *dev, int read_size, int page_offset, uint8_t *ptr)
+{
+    int32_t read_status;
+    int status;
+
+    status = vendor_command_int_index(
+            dev, BLADE_USB_CMD_FLASH_READ,
+            page_offset, &read_status);
+    if(status != LIBUSB_SUCCESS) {
+        return status;
+    }
+
+    if(read_status != 0) {
+        log_error("Failed to read page %d: %d\n",
+                page_offset, read_status);
+        status = BLADERF_ERR_UNEXPECTED;
+    }
+
+    return read_page_buffer(dev, read_size, ptr);
+}
+
 static int lusb_read_flash(struct bladerf *dev, int page_offset,
                         uint8_t *ptr, size_t n_bytes)
 {
     int status = 0;
-    int page_i, n_read, total_read;
-    int read_size = dev->speed ? FLASH_PAGE_SIZE: 64;
+    int page_i, total_read;
+    int read_size = dev->speed ? FLASH_PAGE_SIZE : 64;
     int pages_to_read = FLASH_BYTES_TO_PAGES(n_bytes);
-    struct bladerf_lusb *lusb = dev->backend;
+
+    status = change_setting(dev, USB_IF_SPI_FLASH);
+
+    if (status) {
+        log_error("Failed to set interface: %s\n", libusb_error_name(status));
+        status = BLADERF_ERR_IO;
+    }
 
     assert(page_offset < FLASH_NUM_PAGES);
     assert((page_offset + n_bytes) < FLASH_NUM_PAGES);
-    /* FIXME: support data_size that are not multiple of pages */
     assert(n_bytes % FLASH_PAGE_SIZE == 0);
 
     total_read = 0;
@@ -631,37 +771,9 @@ static int lusb_read_flash(struct bladerf *dev, int page_offset,
          page_i++) {
 
         /* Read back a page */
-        n_read = 0;
-        do {
-            status = libusb_control_transfer(
-                        lusb->handle,
-                        LIBUSB_RECIPIENT_INTERFACE |
-                            LIBUSB_REQUEST_TYPE_VENDOR |
-                            EP_DIR_IN,
-                        BLADE_USB_CMD_FLASH_READ,
-                        0,
-                        page_i,
-                        ptr,
-                        read_size,
-                        BLADERF_LIBUSB_TIMEOUT_MS);
-
-
-            if (status != read_size) {
-                if (status < 0) {
-                    log_error("Failed to read back page %d: %s\n", page_i,
-                               libusb_error_name(status));
-                } else {
-                    log_error("Unexpected read size: %d\n", status);
-                }
-
-                status = BLADERF_ERR_IO;
-            } else {
-                n_read += read_size;
-                total_read += read_size;
-                ptr += read_size;
-                status = 0;
-            }
-        } while (n_read < FLASH_PAGE_SIZE && !status);
+        status = read_one_page(dev, read_size, page_i, ptr);
+        ptr += FLASH_PAGE_SIZE;
+        total_read += FLASH_PAGE_SIZE;
     }
 
     if (status == 0) {
@@ -675,10 +787,9 @@ static int verify_flash(struct bladerf *dev, int page_offset,
                         uint8_t *image, size_t n_bytes)
 {
     int status = 0;
-    int page_i, check_i, n_read;
+    int page_i, check_i;
     int read_size = dev->speed ? FLASH_PAGE_SIZE: 64;
     int pages_to_read = FLASH_BYTES_TO_PAGES(n_bytes);
-    struct bladerf_lusb *lusb = dev->backend;
 
     uint8_t page_buf[FLASH_PAGE_SIZE];
     uint8_t *image_page;
@@ -693,35 +804,7 @@ static int verify_flash(struct bladerf *dev, int page_offset,
          page_i++) {
 
         /* Read back a page */
-        n_read = 0;
-        do {
-            status = libusb_control_transfer(
-                        lusb->handle,
-                        LIBUSB_RECIPIENT_INTERFACE |
-                            LIBUSB_REQUEST_TYPE_VENDOR |
-                            EP_DIR_IN,
-                        BLADE_USB_CMD_FLASH_READ,
-                        0,
-                        page_i,
-                        page_buf + n_read,
-                        read_size,
-                        BLADERF_LIBUSB_TIMEOUT_MS);
-
-
-            if (status != read_size) {
-                if (status < 0) {
-                    log_error("Failed to read back page %d: %s\n", page_i,
-                               libusb_error_name(status));
-                } else {
-                    log_error("Unexpected read size: %d\n", status);
-                }
-
-                status = BLADERF_ERR_IO;
-            } else {
-                n_read += read_size;
-                status = 0;
-            }
-        } while (n_read < FLASH_PAGE_SIZE && !status);
+        status = read_one_page(dev, read_size, page_i, page_buf);
 
         /* Verify the page */
         for (check_i = 0; check_i < FLASH_PAGE_SIZE && !status; check_i++) {
@@ -742,18 +825,64 @@ static int verify_flash(struct bladerf *dev, int page_offset,
     return status;
 }
 
+static int write_one_page(struct bladerf *dev, int write_size, int page_offset, uint8_t *data)
+{
+    struct bladerf_lusb *lusb = dev->backend;
+    size_t buf_off;
+    int32_t write_status;
+    int status;
+
+    for(buf_off = 0; buf_off < FLASH_PAGE_SIZE; buf_off += write_size)
+    {
+        status = libusb_control_transfer(
+                    lusb->handle,
+                    LIBUSB_RECIPIENT_INTERFACE |
+                        LIBUSB_REQUEST_TYPE_VENDOR |
+                        EP_DIR_OUT,
+                    BLADE_USB_CMD_WRITE_PAGE_BUFFER,
+                    0,
+                    buf_off,
+                    &data[buf_off],
+                    write_size,
+                    BLADERF_LIBUSB_TIMEOUT_MS);
+
+        if(status < 0) {
+            log_error("Failed to write page buffer at offset 0x%02x for page %d: %s\n",
+                    buf_off, page_offset, libusb_error_name(status));
+            return error_libusb2bladerf(status);
+        } else if(status != write_size) {
+            log_error("Got unexpected write size when writing page buffer at offset 0x%02x: "
+                    "expected %d, got %d\n",
+                    write_size, status);
+            return BLADERF_ERR_IO;
+        }
+    }
+
+    status = vendor_command_int_index(
+            dev, BLADE_USB_CMD_FLASH_WRITE,
+            page_offset, &write_status);
+    if(status != LIBUSB_SUCCESS) {
+        return status;
+    }
+
+    if(write_status != 0) {
+        log_error("Failed to write page %d: %d\n",
+                page_offset, write_status);
+        status = BLADERF_ERR_UNEXPECTED;
+    }
+
+    return 0;
+}
+
 static int lusb_write_flash(struct bladerf *dev, int page_offset,
                         uint8_t *data, size_t data_size)
 {
     int status = 0;
     int i;
-    int n_write, total_written;
-    int write_size = dev->speed ? FLASH_PAGE_SIZE : 64;
+    int total_written;
     int pages_to_write = FLASH_BYTES_TO_PAGES(data_size);
-    struct bladerf_lusb *lusb = dev->backend;
-    uint8_t *data_page;
+    int write_size = dev->speed ? FLASH_PAGE_SIZE : 64;
 
-    log_info("Flashing with write size = %d\n", write_size);
     status = change_setting(dev, USB_IF_SPI_FLASH);
 
     if (status) {
@@ -765,41 +894,14 @@ static int lusb_write_flash(struct bladerf *dev, int page_offset,
 
     assert(page_offset < FLASH_NUM_PAGES);
     assert((page_offset + pages_to_write) < FLASH_NUM_PAGES);
-    /* FIXME: support data_size that are not multiple of pages */
     assert(data_size % FLASH_PAGE_SIZE == 0);
 
     total_written = 0;
 
     for (i = page_offset; i < (page_offset + pages_to_write) && !status; i++) {
-        n_write = 0;
-        do {
-            data_page = data + (i - page_offset) * FLASH_PAGE_SIZE + n_write;
-            status = libusb_control_transfer(
-                        lusb->handle,
-                        LIBUSB_RECIPIENT_INTERFACE |
-                            LIBUSB_REQUEST_TYPE_VENDOR |
-                            EP_DIR_OUT,
-                        BLADE_USB_CMD_FLASH_WRITE,
-                        0,
-                        i,
-                        (unsigned char *)data_page,
-                        write_size,
-                        BLADERF_LIBUSB_TIMEOUT_MS);
-
-            if (status != write_size) {
-                if (status < 0) {
-                    log_error("Failed to write page %d: %s\n", i,
-                            libusb_error_name(status));
-                } else {
-                    log_error("Got unexpected write size: %d\n", status);
-                }
-                status = BLADERF_ERR_IO;
-            } else {
-                n_write += write_size;
-                total_written += write_size;
-                status = 0;
-            }
-        } while (n_write < FLASH_PAGE_SIZE && !status);
+        status = write_one_page(dev, write_size, i, data);
+        total_written += FLASH_PAGE_SIZE;
+        data += FLASH_PAGE_SIZE;
     }
 
     if (status == 0) {
@@ -894,16 +996,7 @@ static int lusb_flash_firmware(struct bladerf *dev,
 {
     int status;
 
-    status = change_setting(dev, USB_IF_SPI_FLASH);
-
-    if (status) {
-        log_error("Failed to set interface: %s\n", libusb_error_name(status));
-        status = BLADERF_ERR_IO;
-    }
-
-    if (status == 0) {
-        status = lusb_erase_flash(dev, 0, image_size);
-    }
+    status = lusb_erase_flash(dev, 0, image_size);
 
     if (status >= 0) {
         status = lusb_write_flash(dev, 0, image, image_size);
@@ -971,29 +1064,31 @@ static int lusb_jump_to_bootloader(struct bladerf *dev)
 
 static int lusb_get_otp(struct bladerf *dev, char *otp)
 {
-    struct bladerf_lusb *lusb = dev->backend;
     int status;
     int read_size = dev->speed ? 256 : 64;
-    int nbytes;
+    int otp_page = 0;
+    int32_t read_status;
 
-    for (nbytes = 0; nbytes < 256; nbytes += status) {
-        status = libusb_control_transfer(
-                lusb->handle,
-                LIBUSB_RECIPIENT_INTERFACE |
-                    LIBUSB_REQUEST_TYPE_VENDOR |
-                    EP_DIR_IN,
-                BLADE_USB_CMD_READ_OTP,
-                0,
-                0,
-                (unsigned char *)&otp[nbytes],
-                read_size,
-                BLADERF_LIBUSB_TIMEOUT_MS);
-        if (status < 0) {
-            log_error("Failed to read OTP (%d): %s\n", status, libusb_error_name(status));
-            return error_libusb2bladerf(status);
-        }
+    status = change_setting(dev, USB_IF_SPI_FLASH);
+    if (status) {
+        log_error("Failed to set interface: %s\n", libusb_error_name(status));
+        return BLADERF_ERR_IO;
     }
-    return 0;
+
+    status = vendor_command_int_index(
+            dev, BLADE_USB_CMD_READ_OTP,
+            otp_page, &read_status);
+    if(status != LIBUSB_SUCCESS) {
+        return status;
+    }
+
+    if(read_status != 0) {
+        log_error("Failed to read OTP page %d: %d\n",
+                otp_page, read_status);
+        status = BLADERF_ERR_UNEXPECTED;
+    }
+
+    return read_page_buffer(dev, read_size, (uint8_t*)otp);
 }
 
 #define CAL_SIZE 256
