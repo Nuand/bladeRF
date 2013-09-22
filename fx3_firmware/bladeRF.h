@@ -52,6 +52,7 @@ CyU3PReturnStatus_t CyFxSpiEraseSector(CyBool_t /* isErase */, uint8_t /* sector
 void NuandGPIOReconfigure(CyBool_t /* fullGpif */, CyBool_t /* warm */);
 void ClearDMAChannel(uint8_t ep, CyU3PDmaChannel * handle, uint32_t count, CyBool_t stall_only);
 void CyFxAppErrorHandler(CyU3PReturnStatus_t apiRetStatus);
+void NuandAllowSuspend(CyBool_t set_allow_suspend);
 
 extern uint32_t glAppMode;
 
