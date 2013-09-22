@@ -343,23 +343,33 @@ static int change_setting(struct bladerf *dev, uint8_t setting)
     }
 }
 
-static void enable_rf(struct bladerf *dev) {
-    int32_t fx3_ret = -1;
+static int enable_rf(struct bladerf *dev) {
     int status;
+    int32_t fx3_ret = -1;
+    int ret_status = 0;
     uint16_t val;
 
     status = change_setting(dev, USB_IF_RF_LINK);
+    if(status < 0) {
+        status = error_libusb2bladerf(status);
+        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
+        log_error( "alt_setting issue: %s\n", libusb_error_name(status) );
+        return status;
+    }
     log_info( "Changed into RF link mode: %s\n", libusb_error_name(status) ) ;
     val = 1;
+
     status = vendor_command_int_value(
             dev, BLADE_USB_CMD_RF_RX,
             val, &fx3_ret);
     if(status) {
         log_warning("Could not enable RF RX (%d): %s\n",
                 status, libusb_error_name(status) );
+        ret_status = BLADERF_ERR_UNEXPECTED;
     } else if(fx3_ret) {
         log_warning("Error enabling RF RX (%d)\n",
                 fx3_ret );
+        ret_status = BLADERF_ERR_UNEXPECTED;
     }
 
     status = vendor_command_int_value(
@@ -368,10 +378,14 @@ static void enable_rf(struct bladerf *dev) {
     if(status) {
         log_warning("Could not enable RF TX (%d): %s\n", 
                 status, libusb_error_name(status) );
+        ret_status = BLADERF_ERR_UNEXPECTED;
     } else if(fx3_ret) {
         log_warning("Error enabling RF RX (%d)\n",
                 fx3_ret );
+        ret_status = BLADERF_ERR_UNEXPECTED;
     }
+
+    return ret_status;
 }
 
 static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
@@ -618,13 +632,7 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
         return BLADERF_ERR_TIMEOUT;
     }
 
-    /* Go into RF link mode by selecting interface 1 */
-    status = change_setting(dev, USB_IF_RF_LINK);
-    if(status) {
-        log_info("libusb_set_interface_alt_setting: %s\n", libusb_error_name(status));
-    }
-
-    enable_rf(dev);
+    status = enable_rf(dev);
 
     return status;
 }
