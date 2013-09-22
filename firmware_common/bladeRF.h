@@ -43,12 +43,15 @@
 #define BLADE_USB_CMD_WRITE_OTP               104
 #define BLADE_USB_CMD_RESET                   105
 #define BLADE_USB_CMD_JUMP_TO_BOOTLOADER      106
+#define BLADE_USB_CMD_READ_PAGE_BUFFER        107
+#define BLADE_USB_CMD_WRITE_PAGE_BUFFER       108
+#define BLADE_USB_CMD_LOCK_OTP                109
+#define BLADE_USB_CMD_READ_CAL_CACHE          110
+#define BLADE_USB_CMD_INVALIDATE_CAL_CACHE    111
+#define BLADE_USB_CMD_REFRESH_CAL_CACHE       112
 
-#define BLADE_USB_CMD_QUERY_VERSION      0
-#define BLADE_USB_CMD_QUERY_FPGA_STATUS  1
-#define BLADE_USB_CMD_BEGIN_PROG         2
-#define BLADE_USB_CMD_END_PROG           3
-#define BLADE_USB_CMD_RF_RX              4
+#define CAL_BUFFER_SIZE 256
+#define CAL_PAGE 768
 
 struct bladeRF_version {
     unsigned short major;
