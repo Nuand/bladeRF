@@ -34,9 +34,9 @@ bladeRF-flash -f <FX3 firmware image>
 
 This will initiate a flash process for the FX3 processor.  If it goes successful you do NOT need to manually reset the board.  For FX3 firmware versions above v1.3 this should go smoothly.
 
-For factory FX3 firmware versions, you may need to manually enter the FX3 bootloader.
+For factory FX3 firmware versions, you may need to manually enter the FX3 bootloader.  See [Forcing Cypress USB bootloader (DFU) mode](http://nuand.com/forums/viewtopic.php?f=6&t=3072).
 
-For factory or v1.2 firmware versions, try reseting the board if bladeRF-flash fails the first time.  The RESET vendor request in these versions is either missing or flaky, so a RESET may be required.
+For factory or v1.2 firmware versions, try reseting the board if bladeRF-flash fails the first time.  The RESET vendor request in these versions is either missing or flaky, so a manual reset may be required.
 
 ### Windows notes ###
 
