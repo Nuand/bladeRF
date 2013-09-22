@@ -798,6 +798,71 @@ int bladerf_jump_to_bootloader(struct bladerf *dev)
     return dev->fn->jump_to_bootloader(dev);
 }
 
+int bladerf_flash_fpga(struct bladerf *dev, const char *fpga_file)
+{
+    int status;
+    char fpga_len[10];
+    uint8_t *buf, *buf_padded, *ver;
+    size_t buf_size, buf_size_padded;
+    int hp_idx = 0;
+
+    if (!strcmp("X", fpga_file)) {
+        printf("Disabling FPGA flash auto-load\n");
+        return (dev->fn->erase_flash(dev, 4, 1) != 1);
+    }
+
+    status = read_file(fpga_file, &buf, &buf_size);
+    if (!status) {
+        if (!getenv("BLADERF_SKIP_FPGA_SIZE_CHECK") &&
+                (buf_size < (1 * 1024 * 1024) || (buf_size > (5 * 1024 * 1024)))) {
+            log_error("Error: Detected potentially invalid firmware file.\n");
+            log_error("Define BLADERF_SKIP_FPGA_SIZE_CHECK in your evironment "
+                       "to skip this check.\n");
+            status = BLADERF_ERR_INVAL;
+        } else {
+            /* Pad firmare data out to a flash page size */
+            buf_size_padded = (FLASH_BYTES_TO_PAGES(buf_size) + 1) * FLASH_PAGE_SIZE;
+            buf_padded = realloc(buf, buf_size_padded);
+            if (!buf_padded) {
+                status = BLADERF_ERR_MEM;
+            } else {
+                buf = buf_padded;
+                memset(buf + buf_size, 0xFF, buf_size_padded - buf_size - FLASH_PAGE_SIZE);
+                memmove(&buf[FLASH_PAGE_SIZE], buf, buf_size_padded - FLASH_PAGE_SIZE);
+                snprintf(fpga_len, 9, "%d", (int)buf_size);
+                memset(buf, 0xff, FLASH_PAGE_SIZE);
+                encode_field((char *)buf, FLASH_PAGE_SIZE, &hp_idx, "LEN", fpga_len);
+
+                if (status == 0) {
+                    status = dev->fn->erase_flash(dev, 4, buf_size_padded);
+                }
+
+                if (status >= 0) {
+                    status = dev->fn->write_flash(dev, 1024, buf, buf_size_padded);
+                }
+
+                ver = (uint8_t *)malloc(buf_size_padded);
+                if (!ver)
+                    status = BLADERF_ERR_MEM;
+
+                if (status >= 0) {
+                    status = dev->fn->read_flash(dev, 1024, ver, buf_size_padded);
+                }
+
+                if ((size_t)status == buf_size_padded) {
+                    status = memcmp(buf, ver, buf_size_padded);
+                }
+
+                free(ver);
+                free(buf);
+            }
+        }
+
+    }
+
+    return status;
+}
+
 int bladerf_load_fpga(struct bladerf *dev, const char *fpga_file)
 {
     uint8_t *buf;

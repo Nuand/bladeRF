@@ -906,6 +906,17 @@ API_EXPORT int bladerf_flash_firmware(struct bladerf *dev,
                                       const char *firmware);
 
 /**
+ * Flash FPGA image onto the device
+ *
+ * @param   dev         Device handle
+ * @param   fpga_image  Full path to FPGA file
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT int bladerf_flash_fpga(struct bladerf *dev,
+                                      const char *firmware);
+
+/**
  * Recover specified device using a device identifier string
  *
  * This method recovers a bladeRF that is in the FX3 bootloader by loading the
