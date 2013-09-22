@@ -691,11 +691,17 @@ void CyFxbladeRFApplnUSBEventCB (CyU3PUsbEventType_t evtype, uint16_t evdata)
    This application does not have any state in which we should not allow U1/U2 transitions; and therefore
    the function always return CyTrue.
  */
-CyBool_t
-CyFxApplnLPMRqtCB (
+
+static CyBool_t allow_suspend = CyTrue;
+
+void NuandAllowSuspend(CyBool_t set_allow_suspend) {
+    allow_suspend = set_allow_suspend;
+}
+
+static CyBool_t CyFxApplnLPMRqtCB (
         CyU3PUsbLinkPowerMode link_mode)
 {
-    return CyTrue;
+    return allow_suspend;
 }
 
 void bladeRFInit(void)

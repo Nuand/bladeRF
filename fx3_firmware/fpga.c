@@ -69,6 +69,8 @@ static void NuandFpgaConfigStart(void)
     CyU3PUSBSpeed_t usbSpeed = CyU3PUsbGetSpeed();
     static int first_call = 1;
 
+    NuandAllowSuspend(CyFalse);
+
     NuandGPIOReconfigure(CyTrue, !first_call);
     first_call = 0;
 
@@ -181,6 +183,7 @@ void NuandFpgaConfigStop(void)
 
     CyU3PGpifDisable(CyTrue);
 
+    NuandAllowSuspend(CyTrue);
     glAppMode = MODE_NO_CONFIG;
 }
 
