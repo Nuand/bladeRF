@@ -5,6 +5,8 @@
 
 CyU3PReturnStatus_t CyFxSpiInit();
 CyU3PReturnStatus_t CyFxSpiDeInit();
-CyU3PReturnStatus_t CyFxSpiTransfer(uint16_t pageAddress, uint16_t byteCount, uint8_t *buffer, CyBool_t isRead);
+CyU3PReturnStatus_t CyFxSpiTransfer(
+        uint16_t pageAddress, uint16_t byteCount,
+        uint8_t *buffer, CyBool_t isRead);
 
 #endif

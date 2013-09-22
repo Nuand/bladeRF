@@ -30,6 +30,9 @@ uint8_t glUsbAltInterface = 0;                 /* Active USB interface. */
 uint8_t glSelBuffer[32];
 uint8_t glPageBuffer[FLASH_PAGE_SIZE] __attribute__ ((aligned (32)));
 
+CyBool_t glCalCacheValid = CyFalse;
+uint8_t glCal[CAL_BUFFER_SIZE] __attribute__ ((aligned (32)));
+
 /* Standard product string descriptor */
 uint8_t CyFxUSBSerial[] __attribute__ ((aligned (32))) =
 {
@@ -283,6 +286,15 @@ void CyU3PUsbSendRetCode(CyU3PReturnStatus_t ret_status) {
     }
 }
 
+static CyU3PReturnStatus_t NuandReadCalTable(uint8_t *cal_buff) {
+    CyU3PReturnStatus_t apiRetStatus;
+    apiRetStatus = CyFxSpiTransfer(CAL_PAGE, CAL_BUFFER_SIZE, cal_buff, CyTrue);
+
+    /* FIXME: Validate table */
+
+    return apiRetStatus;
+}
+
 CyBool_t NuandHandleVendorRequest(
         uint8_t bRequest,
         uint16_t wValue,
@@ -446,6 +458,39 @@ CyBool_t NuandHandleVendorRequest(
         }
 
         apiRetStatus = CyFxSpiEraseSector(CyTrue, wIndex);
+        CyU3PUsbSendRetCode(apiRetStatus);
+    break;
+
+    case BLADE_USB_CMD_READ_CAL_CACHE:
+        if(!glCalCacheValid) {
+            /* Fail the request if the cache is invalid */
+            apiRetStatus = CyU3PUsbStall(0x80, CyTrue, CyFalse);
+        }
+
+        if(wIndex + wLength > sizeof(glCal)) {
+            apiRetStatus = CyU3PUsbStall(0x80, CyTrue, CyFalse);
+        }
+
+        apiRetStatus = CyU3PUsbSendEP0Data(wLength, &glCal[wIndex]);
+        if(apiRetStatus != CY_U3P_SUCCESS) {
+            CyU3PDebugPrint(4, "Failed to send data, error code = %d\n", apiRetStatus);
+        }
+    break;
+
+    case BLADE_USB_CMD_INVALIDATE_CAL_CACHE:
+        glCalCacheValid = CyFalse;
+        CyU3PUsbAckSetup();
+    break;
+
+    case BLADE_USB_CMD_REFRESH_CAL_CACHE:
+        if (glUsbAltInterface != USB_IF_SPI_FLASH) {
+           apiRetStatus = CyU3PUsbStall(0x80, CyTrue, CyFalse);
+        }
+
+        apiRetStatus = NuandReadCalTable(glCal);
+        if(apiRetStatus == CY_U3P_SUCCESS) {
+            glCalCacheValid = CyTrue;
+        }
         CyU3PUsbSendRetCode(apiRetStatus);
     break;
 
@@ -794,6 +839,12 @@ static void ExtractSerial(void)
         for (i = 0; i < 32; i++) {
             CyFxUSBSerial[2+i*2] = serial_buf[i];
         }
+    }
+
+    /* Initialize calibration table cache */
+    status = NuandReadCalTable(glCal);
+    if(status == CY_U3P_SUCCESS) {
+        glCalCacheValid = CyTrue;
     }
 
     NuandFirmwareStop();

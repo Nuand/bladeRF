@@ -688,21 +688,22 @@ static int lusb_erase_flash(struct bladerf *dev, int sector_offset, int n_bytes)
     }
 }
 
-static int read_page_buffer(struct bladerf *dev, int read_size, uint8_t *ptr)
+static int read_buffer(struct bladerf *dev, int request,
+        int read_size, size_t total_size, uint8_t *ptr)
 {
     struct bladerf_lusb *lusb = dev->backend;
 
     size_t buf_off;
     int status;
 
-    for(buf_off = 0; buf_off < FLASH_PAGE_SIZE; buf_off += read_size)
+    for(buf_off = 0; buf_off < total_size; buf_off += read_size)
     {
         status = libusb_control_transfer(
                     lusb->handle,
                     LIBUSB_RECIPIENT_INTERFACE |
                         LIBUSB_REQUEST_TYPE_VENDOR |
                         EP_DIR_IN,
-                    BLADE_USB_CMD_READ_PAGE_BUFFER,
+                    request,
                     0,
                     buf_off,
                     &ptr[buf_off],
@@ -722,6 +723,12 @@ static int read_page_buffer(struct bladerf *dev, int read_size, uint8_t *ptr)
     }
 
     return 0;
+}
+
+static int read_page_buffer(struct bladerf *dev, int read_size, uint8_t *ptr)
+{
+    return read_buffer(dev, BLADE_USB_CMD_READ_PAGE_BUFFER,
+            read_size, FLASH_PAGE_SIZE, ptr);
 }
 
 static int read_one_page(struct bladerf *dev, int read_size, int page_offset, uint8_t *ptr)
@@ -1091,18 +1098,10 @@ static int lusb_get_otp(struct bladerf *dev, char *otp)
     return read_page_buffer(dev, read_size, (uint8_t*)otp);
 }
 
-#define CAL_SIZE 256
-
 static int lusb_get_cal(struct bladerf *dev, char *cal) {
-    int status = lusb_read_flash(dev, 768, (uint8_t *)cal, CAL_SIZE);
-
-    if (status < 0) {
-        return status;
-    } else if (status == CAL_SIZE) {
-        return 0;
-    } else {
-        return BLADERF_ERR_IO;
-    }
+    int read_size = dev->speed ? 256 : 64;
+    return read_buffer(dev, BLADE_USB_CMD_READ_CAL_CACHE,
+            read_size, CAL_BUFFER_SIZE, (uint8_t*)cal);
 }
 
 static int lusb_get_fw_version(struct bladerf *dev,
