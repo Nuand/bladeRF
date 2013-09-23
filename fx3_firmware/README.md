@@ -44,7 +44,7 @@ Pre-built binaries are not being posted to a "release page" yet due to the volat
 
 For the time being, we'll try to keep an updated link to a development build here:
 
-- 2013-08-06 Debug build (changeset 03b7011210f36729afa15e5d2a4cc7448a8503df)
-- MD5:  d26d1b1d4bc212c407107c4c6e7740d8
+- Built: 2013-09-21 23:12
+- MD5:  2264095e58ed29f1d5a542c6693c2267
 - Link: http://nuand.com/fx3/latest.img
 
