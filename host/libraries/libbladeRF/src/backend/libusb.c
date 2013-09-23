@@ -741,7 +741,7 @@ static int read_page_buffer(struct bladerf *dev, int read_size, uint8_t *ptr)
 
 static int read_one_page(struct bladerf *dev, int read_size, int page_offset, uint8_t *ptr)
 {
-    int32_t read_status;
+    int32_t read_status = -1;
     int status;
 
     status = vendor_command_int_index(
@@ -844,7 +844,7 @@ static int write_one_page(struct bladerf *dev, int write_size, int page_offset, 
 {
     struct bladerf_lusb *lusb = dev->backend;
     size_t buf_off;
-    int32_t write_status;
+    int32_t write_status = -1;
     int status;
 
     for(buf_off = 0; buf_off < FLASH_PAGE_SIZE; buf_off += write_size)
@@ -1082,7 +1082,7 @@ static int lusb_get_otp(struct bladerf *dev, char *otp)
     int status;
     int read_size = dev->speed ? 256 : 64;
     int otp_page = 0;
-    int32_t read_status;
+    int32_t read_status = -1;
 
     status = change_setting(dev, USB_IF_SPI_FLASH);
     if (status) {
