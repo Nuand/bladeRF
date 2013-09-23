@@ -36,4 +36,4 @@ In the meantime, see the **Building GNURADIO from GIT** section of [kb3gtn's bla
 [firmware image]: ./fx3_firmware/README.md#pre-built-firmware-binaries (Pre-build firmware binaries)
 [bladeRF-cli]: ./host/utilities/bladeRF-cli (bladeRF Command Line Interface)
 [bladeRF-flash]: ./host/utilities/bladeRF-flash (bladeRF Flashing Utility)
-[kb3gtn's bladeRF setup guide]: http://nuand.com/forums/viewtopic.php?f=9&t=2804#p3397 (kb3gtn's bladeRF setup guide)
+[kb3gtn's bladeRF setup guide]: http://forum.nuand.com/forums/viewtopic.php?f=9&t=2992 (kb3gtn's bladeRF setup guide)
