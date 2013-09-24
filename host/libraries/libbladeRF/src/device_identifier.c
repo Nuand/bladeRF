@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <libbladeRF.h>
 #include <limits.h>
-#include <assert.h>
+#include "rel_assert.h"
 #include <stdbool.h>
 #include <stdint.h>
 

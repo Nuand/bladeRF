@@ -1,4 +1,4 @@
-#include <assert.h>
+#include "rel_assert.h"
 #include <string.h>
 #include <libbladeRF.h>
 #include <stddef.h>
@@ -109,10 +109,10 @@ static word crc16mp(word crcval, void *data_p, word count) {
 
 static int extract_field(char *ptr, int len, char *field,
                             char *val, size_t  maxlen) {
-    int c, wlen;
+    int c;
     unsigned char *ub, *end;
     unsigned short a1, a2;
-    int flen;
+    size_t flen, wlen;
 
     flen = strlen(field);
 

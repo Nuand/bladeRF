@@ -130,6 +130,7 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
             ${CMAKE_CURRENT_LIST_DIR}/common/include/windows
     )
 
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 else()
     message(FATAL_ERROR "Unsupported host operating system: ${CMAKE_SYSTEM_NAME}")
 endif()

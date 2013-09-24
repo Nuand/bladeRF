@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
-#include <assert.h>
+#include "rel_assert.h"
 
 #include "libbladeRF.h"     /* Public API */
 #include "bladerf_priv.h"   /* Implementation-specific items ("private") */
@@ -32,7 +32,7 @@ int bladerf_get_device_list(struct bladerf_devinfo **devices)
         ret = status;
     } else {
         assert(num_devices <= INT_MAX);
-        ret = num_devices;
+        ret = (int)num_devices;
         *devices = devices_local;
     }
 
