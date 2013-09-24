@@ -108,8 +108,7 @@ endif("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" OR
 # MS Visual Studio
 ###############################
 if(MSVC)
-    # Cannot enable /WX on Windows build just yet, lots of warnings
-    #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /WX")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /WX")
 endif(MSVC)
 
 ################################################################################
