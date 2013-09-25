@@ -360,7 +360,8 @@ static int enable_rf(struct bladerf *dev) {
     val = 1;
 
     if (dev->legacy) {
-        status = vendor_command_int(dev, BLADE_USB_CMD_RF_RX, val, &fx3_ret);
+        int32_t val32 = val;
+        status = vendor_command_int(dev, BLADE_USB_CMD_RF_RX, EP_DIR_OUT, &val32);
         fx3_ret = 0;
     } else {
         status = vendor_command_int_value(
@@ -378,7 +379,8 @@ static int enable_rf(struct bladerf *dev) {
     }
 
     if (dev->legacy) {
-        status = vendor_command_int(dev, BLADE_USB_CMD_RF_TX, val, &fx3_ret);
+        int32_t val32 = val;
+        status = vendor_command_int(dev, BLADE_USB_CMD_RF_TX, EP_DIR_OUT, &val32);
         fx3_ret = 0;
     } else {
         status = vendor_command_int_value(
