@@ -355,6 +355,7 @@ static int rx_write_csv_c16(struct cli_state *s, size_t n_samples)
     for (i = 0; i < to_write; i += 2) {
         snprintf(line, sizeof(line), "%d, %d" EOL,
                  common->buff[i], common->buff[i + 1]);
+        line[sizeof(line)-1] = '\0';
 
         if (fputs(line, common->file) < 0) {
             set_last_error(&common->error, ETYPE_ERRNO, errno);
@@ -416,7 +417,7 @@ static ssize_t tx_read_bin_c16(struct cli_state *s, unsigned int *repeats_left)
             if (*repeats_left == 0) {
                 ret = n_read;
                 break;
-            } else if (repeats_left != 0 ) {
+            } else if (*repeats_left != 0 ) {
                 /* Wrap back around to start of file if we're repeating */
                 if (fseek(tx->common.file, 0, SEEK_SET) < 0) {
                     set_last_error(&tx->common.error, ETYPE_ERRNO, errno);
@@ -486,6 +487,7 @@ static int tx_csv_to_sc16q12(struct cli_state *s)
     while (fgets(buff, sizeof(buff),  tx->common.file))
     {
         /* I */
+#pragma warning(suppress: 6001) // saveptr is an out argument from strtok_r, so if strtok_r doesn't return null
         token = strtok_r(buff, delim, &saveptr);
 
         if (token) {

@@ -133,6 +133,7 @@ static int next_arg(char **saveptr, char **arg, char **value)
     }
 
     /* Argument name */
+#pragma warning(suppress: 6001) // saveptr_local is an out argument from strtok_r, so if strtok_r doesn't return null
     *arg = strtok_r(token, "=", &saveptr_local);
 
     if (!*arg) {
@@ -172,6 +173,7 @@ int str2devinfo(const char *dev_id_const, struct bladerf_devinfo *d)
     }
 
     /* Extract backend */
+#pragma warning(suppress: 6001) // saveptr_local is an out argument from strtok_r, so if strtok_r doesn't return null
     token = strtok_r(dev_id, ":", &saveptr);
 
     /* We require a valid backend -- args only is not supported */

@@ -455,6 +455,9 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
                 if (!dev || !lusb) {
                     free(dev);
                     free(lusb);
+                    lusb = NULL;
+                    dev = NULL;
+
                     log_warning("Skipping instance %d due to memory allocation "
                                 "error", thisinfo.instance);
 
