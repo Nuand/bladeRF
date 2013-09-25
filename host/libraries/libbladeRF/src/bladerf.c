@@ -103,20 +103,21 @@ int bladerf_open(struct bladerf **device, const char *dev_id)
         dev = *device;
     }
 
-    if (dev->legacy) {
-        /* Currently two modes of legacy:
-         *  - ALT_SETTING
-         *  - CONFIG_IF
-         *
-         * If either of these are set, we should tell the user to update
-         */
-        printf("********************************************************************************\n");
-        printf("* ENTERING LEGACY MODE, PLEASE UPGRADE TO THE LATEST FIRMWARE BY RUNNING:\n");
-        printf("* wget http://nuand.com/fx3/latest.img ; bladeRF-cli -f latest.img\n");
-        printf("********************************************************************************\n");
-    }
 
     if (!status) {
+        if (dev->legacy) {
+            /* Currently two modes of legacy:
+             *  - ALT_SETTING
+             *  - CONFIG_IF
+             *
+             * If either of these are set, we should tell the user to update
+             */
+            printf("********************************************************************************\n");
+            printf("* ENTERING LEGACY MODE, PLEASE UPGRADE TO THE LATEST FIRMWARE BY RUNNING:\n");
+            printf("* wget http://nuand.com/fx3/latest.img ; bladeRF-cli -f latest.img\n");
+            printf("********************************************************************************\n");
+        }
+
         if (!(dev->legacy & LEGACY_ALT_SETTING)) {
 
             status = bladerf_get_and_cache_vctcxo_trim(dev);

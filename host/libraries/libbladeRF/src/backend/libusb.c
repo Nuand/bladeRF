@@ -691,7 +691,7 @@ static int lusb_erase_flash(struct bladerf *dev, int sector_offset, int n_bytes)
                                 sizeof(erase_ret),
                                 BLADERF_LIBUSB_TIMEOUT_MS);
 
-        if (status != sizeof(erase_ret) || erase_ret != 0) {
+        if (status != sizeof(erase_ret) || ((!(dev->legacy & LEGACY_CONFIG_IF)) &&  erase_ret != 0)) {
             log_error("Failed to erase sector %d\n", sector_to_erase);
             if (status < 0) {
                 log_error("libusb status: %s\n", libusb_error_name(status));
