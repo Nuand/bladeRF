@@ -139,4 +139,24 @@ int str2version(const char *str, struct bladerf_version *version);
  */
 const char * devspeed2str(bladerf_dev_speed speed);
 
+/**
+ * Convert a string to an argc/argv-style argument list. Arguments are split
+ * on whitespace. Double-quotes may be used to include whitespace in an
+ * argument.  Backescapes are not supported.
+ *
+ * @param[in]   str     String to break into args
+ * @param[out]  argv    Will be updated to point to heap-allocated argv list
+ *
+ * @return argc on success, -1 on failure
+ */
+int str2args(const char *line, char ***argv);
+
+/**
+ * Free argument list previously allocated by str2args
+ *
+ * @param       argc    Number of arguments
+ * @param       argv    Argument list
+ */
+void free_args(int argc, char **argv);
+
 #endif

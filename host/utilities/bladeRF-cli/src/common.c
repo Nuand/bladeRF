@@ -28,6 +28,7 @@
 
 #include "cmd.h"
 #include "cmd/rxtx.h"
+#include "script.h"
 
 struct cli_state *cli_state_create()
 {
@@ -36,8 +37,7 @@ struct cli_state *cli_state_create()
     if (ret) {
         ret->dev = NULL;
         ret->last_lib_error = 0;
-        ret->script = NULL;
-        ret->lineno = 0;
+        ret->scripts = NULL;
 
         ret->rx = rxtx_data_alloc(BLADERF_MODULE_RX);
         if (!ret->rx) {
@@ -72,6 +72,8 @@ cli_state_create_fail:
 void cli_state_destroy(struct cli_state *s)
 {
     if (s) {
+        cli_close_all_scripts(&s->scripts);
+
         if (s->rx) {
             rxtx_shutdown(s->rx);
             rxtx_data_free(s->rx);
@@ -87,7 +89,6 @@ void cli_state_destroy(struct cli_state *s)
         if (s->dev) {
             bladerf_close(s->dev);
         }
-
 
         free(s);
     }
@@ -107,15 +108,18 @@ bool cli_device_in_use(struct cli_state *s)
 void cli_err(struct cli_state *s, const char *pfx, const char *format, ...)
 {
     va_list arg_list;
-    char lbuf[32];
+    char lbuf[81];
     char *err;
 	int ret;
 
     memset(lbuf, 0, sizeof(lbuf));
 
     /* If we're in a script, we can provide line number info */
-    if (s->script) {
-        ret = snprintf(lbuf, sizeof(lbuf), " (line %d)", s->lineno);
+    if (cli_script_loaded(s->scripts)) {
+        ret = snprintf(lbuf, sizeof(lbuf), " (%s:%d)",
+                       cli_script_file_name(s->scripts),
+                       cli_script_line(s->scripts));
+
         if(ret < 0) {
             lbuf[0] = '\0';
         } else if(((size_t)ret) >= sizeof(lbuf)) {

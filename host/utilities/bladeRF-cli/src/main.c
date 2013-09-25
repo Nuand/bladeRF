@@ -27,6 +27,7 @@
 #include <string.h>
 #include <libbladeRF.h>
 #include "interactive.h"
+#include "script.h"
 #include "common.h"
 #include "cmd.h"
 #include "version.h"
@@ -231,10 +232,16 @@ static int open_device(struct rc_config *rc, struct cli_state *state, int status
     if (!status) {
         status = bladerf_open(&state->dev, rc->device);
         if (status) {
-            fprintf(stderr, "Failed to open device (%s): %s\n",
-                    rc->device ? rc->device : "NULL",
-                    bladerf_strerror(status));
-            status = -1;
+
+            /* Just warn if no device is attached; don't error out */
+            if (!rc->device && status == BLADERF_ERR_NODEV) {
+                fprintf(stderr, "No device(s) attached.\n");
+                status = 0;
+            } else {
+                fprintf(stderr, "Failed to open device (%s): %s\n",
+                        rc->device, bladerf_strerror(status));
+                status = -1;
+            }
         }
     }
 
@@ -310,18 +317,6 @@ static int load_fpga(struct rc_config *rc, struct cli_state *state, int status)
     return status;
 }
 
-static int open_script(struct rc_config *rc, struct cli_state *state, int status)
-{
-    if (!status && rc->script_file) {
-        state->script = fopen(rc->script_file, "r");
-        if (!state->script) {
-            status = -1;
-        }
-    }
-
-    return status;
-}
-
 int main(int argc, char *argv[])
 {
     int status = 0;
@@ -370,35 +365,32 @@ int main(int argc, char *argv[])
         /* Conditionally performed items, depending on runtime config */
         status = open_device(&rc, state, status);
         if (status) {
-            fprintf(stderr, "Could not open device\n");
-            goto main__issues ;
+            goto main_issues;
         }
 
         status = flash_fw(&rc, state, status);
         if (status) {
-            fprintf(stderr, "Could not flash firmware\n");
-            goto main__issues ;
+            goto main_issues;
         }
 
         status = flash_fpga(&rc, state, status);
         if (status) {
-            fprintf(stderr, "Could not flash fpga\n");
-            goto main__issues ;
+            goto main_issues;
         }
 
         status = load_fpga(&rc, state, status);
         if (status) {
-            fprintf(stderr, "Could not load fpga\n");
-            goto main__issues ;
+            goto main_issues;
         }
 
-        status = open_script(&rc, state, status);
-        if (status) {
-            fprintf(stderr, "Could not load scripts\n");
-            goto main__issues ;
+        if (rc.script_file) {
+            status = cli_open_script(&state->scripts, rc.script_file);
+            if (status != 0) {
+                goto main_issues;
+            }
         }
 
-main__issues:
+main_issues:
         /* These items are no longer needed */
         free(rc.device);
         rc.device = NULL;
@@ -414,7 +406,7 @@ main__issues:
 
         /* Drop into interactive mode or begin executing commands
          * from a script. If we're not requested to do either, exit cleanly */
-        if (rc.interactive_mode || state->script != NULL) {
+        if (rc.interactive_mode || cli_script_loaded(state->scripts)) {
             status = interactive(state, !rc.interactive_mode);
         }
     }

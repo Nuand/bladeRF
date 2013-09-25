@@ -22,10 +22,14 @@
 #include <stdio.h>
 
 #include "cmd.h"
+#include "conversions.h"
+#include "script.h"
 
 #define DECLARE_CMD(x) int cmd_##x (struct cli_state *, int, char **)
 DECLARE_CMD(calibrate);
 DECLARE_CMD(clear);
+DECLARE_CMD(echo);
+DECLARE_CMD(erase);
 DECLARE_CMD(help);
 DECLARE_CMD(info);
 DECLARE_CMD(load);
@@ -34,7 +38,7 @@ DECLARE_CMD(peek);
 DECLARE_CMD(poke);
 DECLARE_CMD(print);
 DECLARE_CMD(probe);
-DECLARE_CMD(erase);
+DECLARE_CMD(run);
 DECLARE_CMD(set);
 DECLARE_CMD(rx);
 DECLARE_CMD(tx);
@@ -54,6 +58,7 @@ struct cmd {
 
 static const char *cmd_names_calibrate[] = { "calibrate", "cal", NULL };
 static const char *cmd_names_clear[] = { "clear", "cls", NULL };
+static const char *cmd_names_echo[] = { "echo", NULL };
 static const char *cmd_names_help[] = { "help", "h", "?", NULL };
 static const char *cmd_names_info[] = { "info", "i", NULL };
 static const char *cmd_names_load[] = { "load", "ld", NULL };
@@ -66,6 +71,7 @@ static const char *cmd_names_erase[] = { "erase", "e", NULL };
 static const char *cmd_names_quit[] = { "quit", "q", "exit", "x", NULL };
 static const char *cmd_names_rx[] = { "rx", "receive", NULL };
 static const char *cmd_names_tx[] = { "tx", "transmit", NULL };
+static const char *cmd_names_run[] = { "run", NULL };
 static const char *cmd_names_set[] = { "set", "s", NULL };
 static const char *cmd_names_ver[] = { "version", "ver", "v", NULL };
 static const char *cmd_names_rec[] = { "recover", "r", NULL };
@@ -421,6 +427,23 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.desc, "Modify device MIMO operation"),
         FIELD_INIT(.help, "mimo [master|slave]\n")
     },
+    {
+        FIELD_INIT(.names, cmd_names_run),
+        FIELD_INIT(.exec, cmd_run),
+        FIELD_INIT(.desc, "Run a script"),
+        FIELD_INIT(.help, "run <script>\n"
+                "\n"
+                "Run the provided script.\n")
+    },
+    {
+        FIELD_INIT(.names, cmd_names_echo),
+        FIELD_INIT(.exec, cmd_echo),
+        FIELD_INIT(.desc, "Echo each argument on a new line"),
+        FIELD_INIT(.help, "echo [arg 1] [arg 2] ... [arg n]\n"
+                "\n"
+                "Echo each argument on a new line.\n")
+
+    },
     /* Always terminate the command entry with a completely NULL entry */
     {
         FIELD_INIT(.names, NULL),
@@ -527,29 +550,48 @@ int cmd_clear(struct cli_state *s, int argc, char **argv)
     return CMD_RET_CLEAR_TERM;
 }
 
-int cmd_handle(struct cli_state *s, const char *line_)
+int cmd_run(struct cli_state *state, int argc, char **argv)
 {
-    int argc, ret;
-    char *saveptr;
-    char *line;
-    char *token;
-    char *argv[MAX_ARGS]; /* TODO dynamically allocate? */
+    int status;
 
-    const struct cmd *cmd;
-
-    if (!(line = strdup(line_)))
-        return CMD_RET_MEM;
-
-    argc = 0;
-    ret = 0;
-
-    token = strtok_r(line, " \t\r\n", &saveptr);
-
-    /* Fill argv as long as we see tokens that aren't comments */
-    while (token && token[0] != '#') {
-        argv[argc++] = token;
-        token = strtok_r(NULL, " \t\r\n", &saveptr);
+    if (argc != 2) {
+        return CMD_RET_NARGS;
     }
+
+    status = cli_open_script(&state->scripts, argv[1]);
+
+    if (status == 0) {
+        return CMD_RET_RUN_SCRIPT;
+    } else if (status == 1) {
+        cli_err(state, "run", "Recursive loop detected in script");
+        return CMD_RET_INVPARAM;
+    } else if (status < 0) {
+        return CMD_RET_FILEOP;
+    } else {
+        /* Shouldn't happen */
+        return CMD_RET_UNKNOWN;
+    }
+}
+
+int cmd_echo(struct cli_state *state, int argc, char **argv)
+{
+    int i;
+
+    for (i = 1; i < argc; i++) {
+        printf("%s\n", argv[i]);
+    }
+
+    return 0;
+}
+
+int cmd_handle(struct cli_state *s, const char *line)
+{
+    const struct cmd *cmd;
+    int argc, ret;
+    char **argv = NULL;
+
+    ret = 0;
+    argc = str2args(line, &argv);
 
     if (argc > 0) {
         cmd = get_cmd(argv[0]);
@@ -564,8 +606,13 @@ int cmd_handle(struct cli_state *s, const char *line_)
             cli_err(s, "Unrecognized command", "%s", argv[0]);
             ret = CMD_RET_NOCMD;
         }
+
+        free_args(argc, argv);
+    } else if (argc == 0) {
+        free_args(argc, argv);
+    } else {
+        ret = CMD_RET_UNKNOWN;
     }
 
-    free(line);
     return ret;
 }

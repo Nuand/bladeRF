@@ -26,8 +26,18 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <errno.h>
 #include "conversions.h"
+
+enum str2args_parse_state {
+    PARSE_STATE_IN_SPACE,
+    PARSE_STATE_START_ARG,
+    PARSE_STATE_IN_ARG,
+    PARSE_STATE_IN_QUOTE,
+    PARSE_STATE_ERROR
+};
+
 
 int str2int(const char *str, int min, int max, bool *ok)
 {
@@ -220,6 +230,51 @@ int str2version(const char *str, struct bladerf_version *version)
     return 0;
 }
 
+void free_args(int argc, char **argv)
+{
+    int i;
+
+    if (argc >= 0 && argv != NULL) {
+
+        for (i = 0; i < argc; i++) {
+            free(argv[i]);
+        }
+
+        argc = 0;
+        free(argv);
+    }
+}
+
+static void zero_argvs(int start, int end, char **argv)
+{
+    int i;
+    for (i = start; i <= end; i++) {
+        argv[i] = NULL;
+    }
+}
+
+/* Returns 0 on success, -1 on failure */
+static int append_char(char **arg, int *arg_size, int *arg_i, char c)
+{
+    void *tmp;
+
+    if (*arg_i >= *arg_size) {
+        tmp = realloc(*arg, *arg_size * 2);
+
+        if (!tmp) {
+            return -1;
+        } else {
+            *arg = tmp;
+            *arg_size = *arg_size * 2;
+        }
+    }
+
+    (*arg)[*arg_i] = c;
+    *arg_i += 1;
+
+    return 0;
+}
+
 const char * devspeed2str(bladerf_dev_speed speed)
 {
     switch (speed) {
@@ -234,5 +289,148 @@ const char * devspeed2str(bladerf_dev_speed speed)
 
         default:
             return "Unknown";
+    }
+}
+
+int str2args(const char *line, char ***argv_ret)
+{
+    int line_i, arg_i;      /* Index into line and current argument */
+    int argv_size = 10;     /* Initial # of allocated args */
+    int arg_size;           /* Allocated size of the curr arg */
+    char **argv;
+    int argc;
+    enum str2args_parse_state state = PARSE_STATE_IN_SPACE;
+    const size_t line_len = strlen(line);
+
+
+    argc = arg_i = 0;
+    argv = malloc(argv_size * sizeof(char *));
+    if (!argv) {
+        return -1;
+    }
+
+    zero_argvs(0, argv_size - 1, argv);
+    arg_size = 0;
+    line_i = 0;
+
+    while ((size_t)line_i < line_len && state != PARSE_STATE_ERROR) {
+        switch (state) {
+            case PARSE_STATE_IN_SPACE:
+                /* Found the start of the next argument */
+                if (!isspace(line[line_i])) {
+                    state = PARSE_STATE_START_ARG;
+                } else {
+                    /* Gobble up space */
+                    line_i++;
+                }
+                break;
+
+            case PARSE_STATE_START_ARG:
+                /* Increase size of argv, if needed */
+                if (argc >= argv_size) {
+                    void *tmp;
+                    argv_size = argv_size + argv_size / 2;
+                    tmp = realloc(argv, argv_size);
+
+                    if (tmp) {
+                        argv = (char **)tmp;
+                        zero_argvs(argc, argv_size - 1, argv);
+                    } else {
+                        state = PARSE_STATE_ERROR;
+                    }
+                }
+
+                /* Record start of word (unless we failed to realloc() */
+                if (state != PARSE_STATE_ERROR) {
+
+                    /* Reset per-arg variables */
+                    arg_i = 0;
+                    arg_size = 32;
+
+                    /* Allocate this argument. This will be
+                     * realloc'd as necessary by append_char() */
+                    argv[argc] = calloc(arg_size, 1);
+                    if (!argv[argc]) {
+                        state = PARSE_STATE_ERROR;
+                        break;
+                    }
+
+                    if (line[line_i] == '"') {
+                        /* Gobble up quote */
+                        state = PARSE_STATE_IN_QUOTE;
+                    } else {
+                        /* Append this character to the argument begin
+                         * fetching up a word */
+                        if (append_char(&argv[argc], &arg_size,
+                                    &arg_i, line[line_i])) {
+                            state = PARSE_STATE_ERROR;
+                        } else {
+                            state = PARSE_STATE_IN_ARG;
+                        }
+                    }
+
+                    argc++;
+                    line_i++;
+                }
+
+                break;
+
+            case PARSE_STATE_IN_ARG:
+                if (isspace(line[line_i])) {
+                    state = PARSE_STATE_IN_SPACE;
+                } else if (line[line_i] == '"') {
+                    state = PARSE_STATE_IN_QUOTE;
+                } else {
+                    /* Append this character to the argument and remain in
+                     * PARSE_STATE_IN_ARG state */
+                    if (append_char(&argv[argc - 1], &arg_size,
+                                    &arg_i, line[line_i])) {
+                        state = PARSE_STATE_ERROR;
+                    }
+                }
+
+                line_i++;
+                break;
+
+
+            case PARSE_STATE_IN_QUOTE:
+                if (line[line_i] == '"') {
+                    /* Return to looking for more of the word */
+                    state = PARSE_STATE_IN_ARG;
+                } else {
+                    /* Append this character to the argumen */
+                  if (append_char(&argv[argc - 1], &arg_size,
+                                  &arg_i, line[line_i])) {
+                      state = PARSE_STATE_ERROR;
+                  }
+                }
+
+                line_i++;
+                break;
+
+            case PARSE_STATE_ERROR:
+                break;
+        }
+    }
+
+    /* Print PARSE_STATE_ERROR message if hit the EOL in an invalid state */
+    switch (state) {
+        case PARSE_STATE_IN_SPACE:
+        case PARSE_STATE_IN_ARG:
+            *argv_ret = argv;
+            break;
+
+        /* Unterminated quote or unexpexted state to end on */
+        case PARSE_STATE_IN_QUOTE:
+        default:
+            state = PARSE_STATE_ERROR;
+            break;
+    }
+
+    if (state == PARSE_STATE_ERROR) {
+        free_args(argc, argv);
+        return -1;
+    } else {
+        return argc;
     }
 }

@@ -58,9 +58,7 @@ struct cli_state {
 
     int last_lib_error;             /**< Last libbladeRF error */
 
-    /* TODO replace this with a script stack to allow for nested scripts */
-    FILE *script;                   /**< Loaded script */
-    int lineno;                     /**< Line # count, when running scripts */
+    struct script *scripts;         /**< Open script files */
 
     struct rxtx_data *rx;           /**< Data for sample reception */
     struct rxtx_data *tx;           /**< Data for sample transmission */

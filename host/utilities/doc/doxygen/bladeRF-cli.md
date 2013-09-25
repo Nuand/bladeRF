@@ -129,8 +129,14 @@ Load firmware onto a device running in bootloader mode, or list all devices curr
 \par jump_to_boot
 Jump to FX3 bootloader
 
+\par run <script>
+Run the provided script.
+
 \par clear
 Clear the screen
+
+\par echo [arg 1] [arg 2] ... [arg n]
+Echo each argument on a new line.
 
 \par quit
 Exit the CLI

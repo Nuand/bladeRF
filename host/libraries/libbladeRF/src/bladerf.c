@@ -835,7 +835,7 @@ int bladerf_flash_fpga(struct bladerf *dev, const char *fpga_file)
 
             /* Pad firmare data out to a flash page size */
             buf_size_padded = buf_size + buf_size_padding + page_size;
-            buf_padded = realloc(buf, buf_size_padded);
+            buf_padded = (uint8_t*)realloc(buf, buf_size_padded);
             if (buf_padded == NULL) {
                 status = BLADERF_ERR_MEM;
             } else {

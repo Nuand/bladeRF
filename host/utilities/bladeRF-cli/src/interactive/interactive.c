@@ -22,25 +22,27 @@
 #include "interactive.h"
 #include "interactive_impl.h"
 #include "cmd.h"
+#include "script.h"
 
-static void exit_script(struct cli_state *s, bool *in_script)
+static void exit_script(struct cli_state *s)
 {
     int status;
 
-    if (*in_script) {
-        *in_script = false;
+    if (cli_script_loaded(s->scripts)) {
 
-        /* TODO pop from a script stack here, restore line count */
-        status = interactive_set_input(stdin);
-
-        /* At least attempt to report something... */
+        status = cli_close_script(&s->scripts);
         if (status < 0) {
-            cli_err(s, "Error", "Failed to reset terminal when exiting script");
+            cli_err(s, "Error", "Failed to close script");
         }
 
-        if (s->script) {
-            fclose(s->script);
-            s->script = NULL;
+        if (!cli_script_loaded(s->scripts)) {
+            status = interactive_set_input(stdin);
+
+            /* At least attempt to report something... */
+            if (status < 0) {
+                cli_err(s, "Error",
+                        "Failed to reset terminal when exiting script");
+            }
         }
     }
 }
@@ -50,7 +52,6 @@ int interactive(struct cli_state *s, bool script_only)
     char *line;
     int status;
     const char *error;
-    bool in_script;
 
     status = interactive_init();
     if (status < 0) {
@@ -58,11 +59,9 @@ int interactive(struct cli_state *s, bool script_only)
     }
 
     status = 0;
-    in_script = s->script != NULL;
-    s->lineno = 1;
 
-    if (in_script) {
-        status = interactive_set_input(s->script);
+    if (cli_script_loaded(s->scripts)) {
+        status = interactive_set_input(cli_script_file(s->scripts));
         if (status < 0) {
             fprintf(stderr, "Failed to run script. Aborting!\n");
             status = CMD_RET_QUIT;
@@ -75,8 +74,8 @@ int interactive(struct cli_state *s, bool script_only)
         line = interactive_get_line(CLI_DEFAULT_PROMPT);
 
         if (!line) {
-            if (in_script) {
-                exit_script(s, &in_script);
+            if (cli_script_loaded(s->scripts)) {
+                exit_script(s);
 
                 /* Exit if we were run with a script, but not asked
                  * to drop into interactive mode */
@@ -97,7 +96,7 @@ int interactive(struct cli_state *s, bool script_only)
                 }
 
                 /* Stop executing script if we're in one */
-                exit_script(s, &in_script);
+                exit_script(s);
 
             } else if (status > 0){
                 switch (status) {
@@ -105,16 +104,20 @@ int interactive(struct cli_state *s, bool script_only)
                         interactive_clear_terminal();
                         break;
                     case CMD_RET_RUN_SCRIPT:
+                        status = interactive_set_input(
+                                    cli_script_file(s->scripts));
+
+                        if (status < 0) {
+                            cli_err(s, "Error",
+                                    "Failed to begin executing script");
+                        }
                         break;
                     default:
                         printf("Unknown return code: %d\n", status);
                 }
             }
         }
-
-        if (in_script) {
-            s->lineno++;
-        }
+        cli_script_bump_line_count(s->scripts);
     }
 
     interactive_deinit();
