@@ -487,7 +487,6 @@ static int tx_csv_to_sc16q12(struct cli_state *s)
     while (fgets(buff, sizeof(buff),  tx->common.file))
     {
         /* I */
-#pragma warning(suppress: 6001) // saveptr is an out argument from strtok_r, so if strtok_r doesn't return null
         token = strtok_r(buff, delim, &saveptr);
 
         if (token) {

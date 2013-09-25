@@ -453,7 +453,6 @@ int cmd_handle(struct cli_state *s, const char *line_)
     argc = 0;
     ret = 0;
 
-#pragma warning(suppress: 6001) // saveptr is an out argument from strtok_r, so if strtok_r doesn't return null
     token = strtok_r(line, " \t\r\n", &saveptr);
 
     /* Fill argv as long as we see tokens that aren't comments */
