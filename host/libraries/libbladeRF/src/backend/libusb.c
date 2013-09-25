@@ -359,9 +359,14 @@ static int enable_rf(struct bladerf *dev) {
     log_info( "Changed into RF link mode: %s\n", libusb_error_name(status) ) ;
     val = 1;
 
-    status = vendor_command_int_value(
-            dev, BLADE_USB_CMD_RF_RX,
-            val, &fx3_ret);
+    if (dev->legacy) {
+        status = vendor_command_int(dev, BLADE_USB_CMD_RF_RX, val, &fx3_ret);
+        fx3_ret = 0;
+    } else {
+        status = vendor_command_int_value(
+                dev, BLADE_USB_CMD_RF_RX,
+                val, &fx3_ret);
+    }
     if(status) {
         log_warning("Could not enable RF RX (%d): %s\n",
                 status, libusb_error_name(status) );
@@ -372,15 +377,20 @@ static int enable_rf(struct bladerf *dev) {
         ret_status = BLADERF_ERR_UNEXPECTED;
     }
 
-    status = vendor_command_int_value(
-            dev, BLADE_USB_CMD_RF_TX,
-            val, &fx3_ret);
+    if (dev->legacy) {
+        status = vendor_command_int(dev, BLADE_USB_CMD_RF_TX, val, &fx3_ret);
+        fx3_ret = 0;
+    } else {
+        status = vendor_command_int_value(
+                dev, BLADE_USB_CMD_RF_TX,
+                val, &fx3_ret);
+    }
     if(status) {
         log_warning("Could not enable RF TX (%d): %s\n", 
                 status, libusb_error_name(status) );
         ret_status = BLADERF_ERR_UNEXPECTED;
     } else if(fx3_ret) {
-        log_warning("Error enabling RF RX (%d)\n",
+        log_warning("Error enabling RF TX (%d)\n",
                 fx3_ret );
         ret_status = BLADERF_ERR_UNEXPECTED;
     }
@@ -474,6 +484,10 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
                     dev->legacy = LEGACY_ALT_SETTING;
                 }
 
+                if (dev->fw_major < FW_LEGACY_CONFIG_IF_MAJOR ||
+                        (dev->fw_major == FW_LEGACY_CONFIG_IF_MAJOR && dev->fw_minor < FW_LEGACY_CONFIG_IF_MINOR)) {
+                    dev->legacy |= LEGACY_CONFIG_IF;
+                }
 
                 /* Claim interfaces */
                 for( inf = 0; inf < ((dev->legacy & LEGACY_ALT_SETTING) ? 3 : 1) ; inf++ ) {
@@ -550,7 +564,6 @@ static int lusb_close(struct bladerf *dev)
     int inf = 0;
     struct bladerf_lusb *lusb = dev->backend;
 
-
     for( inf = 0; inf < ((dev->legacy & LEGACY_ALT_SETTING) ? 3 : 1) ; inf++ ) {
         status = libusb_release_interface(lusb->handle, inf);
         if (status < 0) {
@@ -575,7 +588,11 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
     struct bladerf_lusb *lusb = dev->backend;
 
     /* Make sure we are using the configuration interface */
-    status = change_setting(dev, USB_IF_CONFIG);
+    if (dev->legacy & LEGACY_CONFIG_IF) {
+        status = change_setting(dev, USB_IF_LEGACY_CONFIG);
+    } else {
+        status = change_setting(dev, USB_IF_CONFIG);
+    }
     if(status < 0) {
         status = error_libusb2bladerf(status);
         bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);

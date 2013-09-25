@@ -118,8 +118,10 @@ struct uart_cmd {
 };
 
 /* Interface numbers */
-#define USB_IF_CONFIG       3
-#define USB_IF_RF_LINK      1
-#define USB_IF_SPI_FLASH    2
+#define USB_IF_LEGACY_CONFIG    0
+#define USB_IF_NULL             0
+#define USB_IF_RF_LINK          1
+#define USB_IF_SPI_FLASH        2
+#define USB_IF_CONFIG           3
 
 #endif /* _BLADERF_FIRMWARE_COMMON_H_ */

@@ -104,7 +104,7 @@ int bladerf_open(struct bladerf **device, const char *dev_id)
     }
 
     if (!status) {
-        if (!dev->legacy) {
+        if (!(dev->legacy & LEGACY_ALT_SETTING)) {
 
             status = bladerf_get_and_cache_vctcxo_trim(dev);
             if (status < 0) {
@@ -723,7 +723,7 @@ int bladerf_flash_firmware(struct bladerf *dev, const char *firmware_file)
                 status = dev->fn->flash_firmware(dev, buf, buf_size_padded);
             }
             if (!status) {
-                if (dev->legacy) {
+                if (dev->legacy & LEGACY_ALT_SETTING) {
                     printf("DEVICE OPERATING IN LEGACY MODE, MANUAL RESET IS NECESSARY AFTER SUCCESSFUL UPGRADE\n");
                 }
             }
