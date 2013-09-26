@@ -284,10 +284,10 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.desc, "Erase part of FX3 flash device"),
         FIELD_INIT(.help, "erase\n"
                 "\n"
-                "Erase pages from FX3 flash device.\n"
+                "Erase sectors from FX3 flash device.\n"
                 "\n"
-                "    page_offset   Starting page to erase\n"
-                "    n_bytes       Number of pages to erase\n"
+                "    sector_offset   Starting sector to erase\n"
+                "    n_sectors       Number of sectors to erase\n"
         )
     },
     {
@@ -479,4 +479,3 @@ int cmd_handle(struct cli_state *s, const char *line_)
     free(line);
     return ret;
 }
-

@@ -710,7 +710,7 @@ int bladerf_flash_firmware(struct bladerf *dev, const char *firmware_file)
         } else {
 
             /* Pad firmare data out to a flash page size */
-            buf_size_padded = FLASH_BYTES_TO_PAGES(buf_size) * FLASH_PAGE_SIZE;
+            buf_size_padded = flash_to_pages(buf_size) * BLADERF_FLASH_PAGE_SIZE;
             buf_padded = realloc(buf, buf_size_padded);
             if (!buf_padded) {
                 status = BLADERF_ERR_MEM;
@@ -735,34 +735,33 @@ int bladerf_flash_firmware(struct bladerf *dev, const char *firmware_file)
     return status;
 }
 
-int bladerf_erase_flash(struct bladerf *dev, int page_offset,
-                        int n_bytes)
+int bladerf_erase_flash(struct bladerf *dev, uint32_t addr, uint32_t len)
 {
     if (!dev->fn->erase_flash) {
         return BLADERF_ERR_UNSUPPORTED;
     }
 
-    return dev->fn->erase_flash(dev, page_offset, n_bytes);
+    return dev->fn->erase_flash(dev, addr, len);
 }
 
-int bladerf_read_flash(struct bladerf *dev, int page_offset,
-                        uint8_t *ptr, size_t n_bytes)
+int bladerf_read_flash(struct bladerf *dev, uint32_t addr,
+                       uint8_t *buf, uint32_t len)
 {
     if (!dev->fn->read_flash) {
         return BLADERF_ERR_UNSUPPORTED;
     }
 
-    return dev->fn->read_flash(dev, page_offset, ptr, n_bytes);
+    return dev->fn->read_flash(dev, addr, buf, len);
 }
 
-int bladerf_write_flash(struct bladerf *dev, int page_offset,
-                        uint8_t *data, size_t data_size)
+int bladerf_write_flash(struct bladerf *dev, uint32_t addr,
+                       uint8_t *buf, uint32_t len)
 {
     if (!dev->fn->write_flash) {
         return BLADERF_ERR_UNSUPPORTED;
     }
 
-    return dev->fn->write_flash(dev, page_offset, data, data_size);
+    return dev->fn->write_flash(dev, addr, buf, len);
 }
 
 int bladerf_device_reset(struct bladerf *dev)
@@ -827,6 +826,8 @@ const char * bladerf_strerror(int error)
             return "No devices available";
         case BLADERF_ERR_UNSUPPORTED:
             return "Operation not supported";
+        case BLADERF_ERR_MISALIGNED:
+            return "Misaligned flash access";
         case 0:
             return "Success";
         default:

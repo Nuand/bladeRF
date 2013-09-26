@@ -11,13 +11,7 @@
 #include "conversions.h"
 #include "devinfo.h"
 
-/* MX25U3235 - 32Mbit flash w/ 4KiB sectors */
-#define FLASH_SECTOR_SIZE   0x10000
-#define FLASH_PAGE_SIZE     256
-#define FLASH_BYTES_TO_SECTORS(x) ((x + (FLASH_SECTOR_SIZE - 1)) / FLASH_SECTOR_SIZE)
-#define FLASH_BYTES_TO_PAGES(x) ((x + (FLASH_PAGE_SIZE - 1)) / FLASH_PAGE_SIZE)
-#define FLASH_NUM_SECTORS   4096
-#define FLASH_NUM_PAGES     (FLASH_NUM_SECTORS * (FLASH_SECTOR_SIZE / FLASH_PAGE_SIZE))
+#include "flash.h"
 
 typedef enum {
     ETYPE_ERRNO,
@@ -86,12 +80,11 @@ struct bladerf_fn {
     int (*recover)(struct bladerf_devinfo *info,
                     const char *fname);
     int (*flash_firmware)(struct bladerf *dev, uint8_t *image, size_t image_size);
-    int (*erase_flash)(struct bladerf *dev, int page_offset,
-                            int n_bytes);
-    int (*read_flash)(struct bladerf *dev, int page_offset,
-                            uint8_t *ptr, size_t n_bytes);
-    int (*write_flash)(struct bladerf *dev, int page_offset,
-                            uint8_t *data, size_t data_size);
+    int (*erase_flash)(struct bladerf *dev, uint32_t addr, uint32_t len);
+    int (*read_flash) (struct bladerf *dev, uint32_t addr, uint8_t *buf,
+                       uint32_t len);
+    int (*write_flash)(struct bladerf *dev, uint32_t addr, uint8_t *buf,
+                       uint32_t len);
     int (*device_reset)(struct bladerf *dev);
     int (*jump_to_bootloader)(struct bladerf *dev);
 
@@ -240,4 +233,3 @@ int bladerf_get_and_cache_vctcxo_trim(struct bladerf *device);
 int bladerf_get_and_cache_fpga_size(struct bladerf *device);
 
 #endif
-

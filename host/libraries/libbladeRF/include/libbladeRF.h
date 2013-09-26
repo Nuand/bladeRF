@@ -54,6 +54,7 @@ struct bladerf_stream;
 #define BLADERF_ERR_TIMEOUT     (-6)  /**< Operation timed out */
 #define BLADERF_ERR_NODEV       (-7)  /**< No device(s) available */
 #define BLADERF_ERR_UNSUPPORTED (-8)  /**< Operation not supported */
+#define BLADERF_ERR_MISALIGNED  (-9)  /**< Misaligned flash access */
 
 /** @} (End RETCODES) */
 
@@ -878,8 +879,34 @@ API_EXPORT int bladerf_stats(struct bladerf *dev, struct bladerf_stats *stats);
 /**
  * @defgroup FN_PROG    Device programming
  *
+ * The flash chip used for storing the FX3 firmware on the BladeRF is a
+ * MX25U3235 32Mbit flash with 4k sectors.
+ *
+ * The API for accessing the flash expects sector/page aligned byte
+ * addresses. See the respective functions for details.
+ *
  * @{
  */
+
+#define BLADERF_FLASH_PAGE_BITS   (8)  /**< 256bytes == 2^8  bytes */
+#define BLADERF_FLASH_SECTOR_BITS (16) /**< 64KiB    == 2^16 bytes */
+#define BLADERF_FLASH_SIZE_BITS   (22) /**< 32Mbit   == 2^22 bytes */
+
+#define BLADERF_FLASH_TOTAL_SIZE  (1<<BLADERF_FLASH_SIZE_BITS)
+#define BLADERF_FLASH_PAGE_SIZE   (1<<BLADERF_FLASH_PAGE_BITS)
+#define BLADERF_FLASH_SECTOR_SIZE (1<<BLADERF_FLASH_SECTOR_BITS)
+
+#define BLADERF_FLASH_NUM_BYTES BLADERF_FLASH_TOTAL_SIZE
+#define BLADERF_FLASH_NUM_PAGES \
+    (BLADERF_FLASH_TOTAL_SIZE / BLADERF_FLASH_PAGE_SIZE)
+#define BLADERF_FLASH_NUM_SECTORS \
+    (BLADERF_FLASH_TOTAL_SIZE / BLADERF_FLASH_SECTOR_SIZE)
+
+
+extern const unsigned int BLADERF_FLASH_ALIGNMENT_BYTE;
+extern const unsigned int BLADERF_FLASH_ALIGNMENT_PAGE;
+extern const unsigned int BLADERF_FLASH_ALIGNMENT_SECTOR;
+
 
 /**
  * Flash firmware onto the device
@@ -927,49 +954,63 @@ API_EXPORT int bladerf_recover_with_devinfo(struct bladerf_devinfo *devinfo,
 
 
 /**
- * Erase pages from FX3 flash device
+ * Erase sectors from FX3 flash device
  *
- * @note Only entire pages are erased
+ * @note Unlike the bladerf_read_flash/bladerf_write_flash functions this
+ *       function expects a BLADERF_FLASH_SECTOR_SIZE aligned address and
+ *       length!
  *
- * @param   dev         Device handle
- * @param   page_offset Page offset to begin erasing
- * @param   n_bytes     Number of bytes to erase
+ * @param   dev     Device handle
+ * @param   addr    Page aligned byte address of the first sector to erase
+ * @param   len     Number of bytes to erase, must be a multiple of
+ *                  BLADERF_FLASH_SECTOR_SIZE
  *
- * @return Number of pages erased on success, value from \ref RETCODES list on
- *         failure
+ * @return Positive number of bytes erased on success, negative value from \ref
+ *         RETCODES list on failure
  */
-API_EXPORT int bladerf_erase_flash(struct bladerf *dev, int page_offset,
-                        int n_bytes);
+API_EXPORT int bladerf_erase_flash(struct bladerf *dev,
+                                   uint32_t addr,
+                                   uint32_t len);
 
 /**
  * Read bytes from FX3 flash device
  *
- * @param   dev         Device handle
- * @param   page_offset Page offset to begin reading
- * @param   ptr         Buffer to read into, must be n_bytes long
- * @param   n_bytes     Number of bytes to read
+ * @note Unline the `bladerf_erase_flash' function this function expects a
+ *       BLADERF_FLASH_PAGE_SIZE aligned address and length!
  *
- * @return Number of bytes read on success, value from \ref RETCODES list on
- *         failure
+ * @param   dev   Device handle
+ * @param   addr  Page aligned byte address of the first page to read
+ * @param   buf   Buffer to read into, must be at least `len' bytes long
+ * @param   len   Number of bytes to read, must be a multiple of
+ *                BLADERF_FLASH_PAGE_SIZE
+ *
+ * @return Positive number of bytes read on success, negative value from \ref
+ *         RETCODES list on failure
  */
-API_EXPORT int bladerf_read_flash(struct bladerf *dev, int page_offset,
-                        uint8_t *ptr, size_t n_bytes);
+API_EXPORT int bladerf_read_flash(struct bladerf *dev,
+                                  uint32_t addr,
+                                  uint8_t *buf,
+                                  uint32_t len);
 
 /**
  * Write bytes to FX3 flash device
  *
- * @note Only write erased pages
+ * @note Unline the `bladerf_erase_flash' function this function expects a
+ *       BLADERF_FLASH_PAGE_SIZE aligned address and length!
  *
- * @param   dev         Device handle
- * @param   page_offset Page offset to begin writing
- * @param   data        Data to write to flash
- * @param   data_size   Number of bytes to write
+ * @param   dev   Device handle
+ * @param   addr  Page aligned byte address of the first page to write
+ * @param   buf   Data to write to flash
+ * @param   len   Number of bytes to write, must be a multiple of
+ *                BLADERF_FLASH_PAGE_SIZE
  *
- * @return Number of bytes written on success, value from \ref RETCODES list
- *         on failure
+ * @return Positive number of bytes written on success, negative value from \ref
+ *         RETCODES list on failure
  */
-API_EXPORT int bladerf_write_flash(struct bladerf *dev, int page_offset,
-                        uint8_t *data, size_t data_size);
+API_EXPORT int bladerf_write_flash(struct bladerf *dev,
+                                   uint32_t addr,
+                                   uint8_t *buf,
+                                   uint32_t len);
 
 /**
  * Reset the device
