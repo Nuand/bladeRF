@@ -1,5 +1,6 @@
 #include <string.h>
 #include <inttypes.h>
+#include "rel_assert.h"
 
 #include "libbladeRF.h"
 #include "bladerf_priv.h"
@@ -133,7 +134,8 @@ static void si5338_unpack_regs(struct si5338_multisynth *ms)
     temp = (ms->p1+512)-128*ms->a;
     temp = (temp * ms->c) + ms->p2;
     temp = (temp + 64) / 128;
-    ms->b = temp;
+    assert(temp <= UINT32_MAX);
+    ms->b = (uint32_t)temp;
 
     log_debug( "Unpacked a + b/c: %d + %d/%d\n", ms->a, ms->b, ms->c );
     log_debug( "Unpacked r: %d\n", ms->r );
@@ -156,7 +158,8 @@ static void si5338_pack_regs(struct si5338_multisynth *ms)
     temp = ms->a * ms->c + ms->b;
     temp = temp * 128 ;
     temp = temp / ms->c - 512;
-    ms->p1 = temp;
+    assert(temp <= UINT32_MAX);
+    ms->p1 = (uint32_t)temp;
     //ms->p1 = ms->a * ms->c + ms->b;
     //ms->p1 = ms->p1 * 128;
     //ms->p1 = ms->p1 / ms->c - 512;
@@ -363,9 +366,12 @@ static int si5338_calculate_multisynth(struct si5338_multisynth *ms, struct blad
     log_info( "MSx a + b/c: %"PRIu64" + %"PRIu64"/%"PRIu64"\n", abc.integer, abc.num, abc.den );
 
     /* Set it in the multisynth */
-    ms->a = abc.integer;
-    ms->b = abc.num;
-    ms->c = abc.den;
+    assert(abc.integer <= UINT32_MAX);
+    assert(abc.num <= UINT32_MAX);
+    assert(abc.den <= UINT32_MAX);
+    ms->a = (uint32_t)abc.integer;
+    ms->b = (uint32_t)abc.num;
+    ms->c = (uint32_t)abc.den;
     ms->r = r_value;
 
     /* Pack the registers */
@@ -428,7 +434,8 @@ int si5338_set_sample_rate(struct bladerf *dev, bladerf_module module, uint32_t 
         log_warning( "Non-integer sample rate set from integer sample rate, truncating output\n" );
     }
 
-    *actual = act.integer;
+    assert(act.integer <= UINT32_MAX);
+    *actual = (uint32_t)act.integer;
     log_info( "Set actual integer sample rate: %d\n", act.integer );
 
     return status ;
@@ -474,8 +481,9 @@ int si5338_get_sample_rate(struct bladerf *dev, bladerf_module module, unsigned 
     if (actual.num != 0) {
         log_warning( "Fractional sample rate truncated during integer sample rate retrieval\n" );
     }
-
-    *rate = actual.integer;
+    
+    assert(actual.integer <= UINT_MAX);
+    *rate = (unsigned int)actual.integer;
 
     return 0;
 }

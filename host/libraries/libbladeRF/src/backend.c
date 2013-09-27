@@ -1,4 +1,4 @@
-#include <assert.h>
+#include "rel_assert.h"
 
 #include "backend.h"
 #include "backend_config.h"

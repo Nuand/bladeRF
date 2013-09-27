@@ -44,7 +44,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <libbladeRF.h>
-#include <assert.h>
+#include "rel_assert.h"
 
 #include "repeater.h"
 #include "minmax.h"

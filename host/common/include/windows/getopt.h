@@ -57,11 +57,12 @@
 #include <unistd.h>
 #endif*/
 
-#ifdef _WIN32
+/*#ifdef _WIN32
 # if !defined(GETOPT_API)
 #  define GETOPT_API __declspec(dllimport)
 # endif
-#endif
+#endif*/
+#  define GETOPT_API
 
 /*
  * Gnu like getopt_long() and BSD4.4 getsubopt()/optreset extensions
