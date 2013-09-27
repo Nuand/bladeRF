@@ -229,6 +229,8 @@ static int flash_fw(struct rc_config *rc, struct cli_state *state, int status)
                 printf("Done.\n");
             }
             bladerf_device_reset(state->dev);
+            bladerf_close(state->dev);
+            state->dev = NULL;
         }
     }
 
