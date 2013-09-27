@@ -59,12 +59,18 @@ void cli_err(struct cli_state *s, const char *pfx, const char *format, ...)
     va_list arg_list;
     char lbuf[32];
     char *err;
+	int ret;
 
     memset(lbuf, 0, sizeof(lbuf));
 
     /* If we're in a script, we can provide line number info */
     if (s->script) {
-        snprintf(lbuf, sizeof(lbuf), " (line %d)", s->lineno);
+        ret = snprintf(lbuf, sizeof(lbuf), " (line %d)", s->lineno);
+        if(ret < 0) {
+            lbuf[0] = '\0';
+        } else if(((size_t)ret) >= sizeof(lbuf)) {
+            lbuf[sizeof(lbuf)-1] = '\0';
+        }
     }
 
     /* +6 --> 3 newlines, 2 chars padding, NUL terminator */
