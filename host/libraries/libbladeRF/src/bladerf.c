@@ -137,10 +137,10 @@ int bladerf_open(struct bladerf **device, const char *dev_id)
                     __FUNCTION__, dev->fw_major, dev->fw_minor,
                     dev->ident.serial, dev->dac_trim, dev->fpga_size);
         }
-    }
 
-    /* All status in here is not fatal, so whatever */
-    status = 0 ;
+        /* All status in here is not fatal, so whatever */
+        status = 0 ;
+    }
 
     return status;
 }
