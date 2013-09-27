@@ -1274,7 +1274,7 @@ static int lusb_get_otp(struct bladerf *dev, char *otp)
     if(read_status != 0) {
         log_error("Failed to read OTP page %d: %d\n",
                 otp_page, read_status);
-        status = BLADERF_ERR_UNEXPECTED;
+        return BLADERF_ERR_UNEXPECTED;
     }
 
     return read_page_buffer(dev, read_size, (uint8_t*)otp);
@@ -1613,7 +1613,7 @@ static int lusb_tx(struct bladerf *dev, bladerf_format format, void *samples,
 static int lusb_rx(struct bladerf *dev, bladerf_format format, void *samples,
                    int n, struct bladerf_metadata *metadata)
 {
-    size_t bytes_total, bytes_remaining = c16_samples_to_bytes(n), ret;
+    size_t bytes_total, bytes_remaining, ret;
     struct bladerf_lusb *lusb = (struct bladerf_lusb *)dev->backend;
     uint8_t *samples8 = (uint8_t *)samples;
     int transferred, status;
