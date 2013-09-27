@@ -758,10 +758,74 @@ static int read_page_buffer(struct bladerf *dev, int read_size, uint8_t *ptr)
             read_size, FLASH_PAGE_SIZE, ptr);
 }
 
+static int legacy_lusb_read_flash(struct bladerf *dev, int page_offset,
+                        uint8_t *ptr, size_t n_bytes)
+{
+    int status = 0;
+    int page_i, n_read, total_read;
+    int read_size = dev->speed ? FLASH_PAGE_SIZE: 64;
+    int pages_to_read = FLASH_BYTES_TO_PAGES(n_bytes);
+    struct bladerf_lusb *lusb = dev->backend;
+
+    assert(page_offset < FLASH_NUM_PAGES);
+    assert((page_offset + n_bytes) < FLASH_NUM_PAGES);
+    /* FIXME: support data_size that are not multiple of pages */
+    assert(n_bytes % FLASH_PAGE_SIZE == 0);
+
+    total_read = 0;
+
+    for (page_i = page_offset;
+         page_i < (page_offset + pages_to_read) && !status;
+         page_i++) {
+
+        /* Read back a page */
+        n_read = 0;
+        do {
+            status = libusb_control_transfer(
+                        lusb->handle,
+                        LIBUSB_RECIPIENT_INTERFACE |
+                            LIBUSB_REQUEST_TYPE_VENDOR |
+                            EP_DIR_IN,
+                        BLADE_USB_CMD_FLASH_READ,
+                        0,
+                        page_i,
+                        ptr,
+                        read_size,
+                        BLADERF_LIBUSB_TIMEOUT_MS);
+
+
+            if (status != read_size) {
+                if (status < 0) {
+                    log_error("Failed to read back page %d: %s\n", page_i,
+                               libusb_error_name(status));
+                } else {
+                    log_error("Unexpected read size: %d\n", status);
+                }
+
+                status = BLADERF_ERR_IO;
+            } else {
+                n_read += read_size;
+                total_read += read_size;
+                ptr += read_size;
+                status = 0;
+            }
+        } while (n_read < FLASH_PAGE_SIZE && !status);
+    }
+
+    if (status == 0) {
+        return total_read;
+    } else {
+        return status;
+    }
+}
+
 static int read_one_page(struct bladerf *dev, int read_size, int page_offset, uint8_t *ptr)
 {
     int32_t read_status = -1;
     int status;
+
+    if (dev->legacy & LEGACY_CONFIG_IF)
+        return (legacy_lusb_read_flash(dev, page_offset, ptr, FLASH_PAGE_SIZE) != FLASH_PAGE_SIZE);
 
     status = vendor_command_int_index(
             dev, BLADE_USB_CMD_FLASH_READ,
@@ -786,6 +850,9 @@ static int lusb_read_flash(struct bladerf *dev, int page_offset,
     int page_i, total_read;
     int read_size = dev->speed ? FLASH_PAGE_SIZE : 64;
     int pages_to_read = FLASH_BYTES_TO_PAGES(n_bytes);
+
+    if (dev->legacy & LEGACY_CONFIG_IF)
+        return legacy_lusb_read_flash(dev, page_offset, ptr, n_bytes);
 
     status = change_setting(dev, USB_IF_SPI_FLASH);
 
@@ -908,6 +975,73 @@ static int write_one_page(struct bladerf *dev, int write_size, int page_offset, 
     return 0;
 }
 
+static int legacy_lusb_write_flash(struct bladerf *dev, int page_offset,
+                        uint8_t *data, size_t data_size)
+{
+    int status = 0;
+    int i;
+    int n_write, total_written;
+    int write_size = dev->speed ? FLASH_PAGE_SIZE : 64;
+    int pages_to_write = FLASH_BYTES_TO_PAGES(data_size);
+    struct bladerf_lusb *lusb = dev->backend;
+    uint8_t *data_page;
+
+    log_info("Flashing with write size = %d\n", write_size);
+    status = change_setting(dev, USB_IF_SPI_FLASH);
+
+    if (status) {
+        log_error("Failed to set interface: %s\n", libusb_error_name(status));
+        status = BLADERF_ERR_IO;
+    }
+
+    log_info("Flashing with write size = %d\n", write_size);
+
+    assert(page_offset < FLASH_NUM_PAGES);
+    assert((page_offset + pages_to_write) < FLASH_NUM_PAGES);
+    /* FIXME: support data_size that are not multiple of pages */
+    assert(data_size % FLASH_PAGE_SIZE == 0);
+
+    total_written = 0;
+
+    for (i = page_offset; i < (page_offset + pages_to_write) && !status; i++) {
+        n_write = 0;
+        do {
+            data_page = data + (i - page_offset) * FLASH_PAGE_SIZE + n_write;
+            status = libusb_control_transfer(
+                        lusb->handle,
+                        LIBUSB_RECIPIENT_INTERFACE |
+                            LIBUSB_REQUEST_TYPE_VENDOR |
+                            EP_DIR_OUT,
+                        BLADE_USB_CMD_FLASH_WRITE,
+                        0,
+                        i,
+                        (unsigned char *)data_page,
+                        write_size,
+                        BLADERF_LIBUSB_TIMEOUT_MS);
+
+            if (status != write_size) {
+                if (status < 0) {
+                    log_error("Failed to write page %d: %s\n", i,
+                            libusb_error_name(status));
+                } else {
+                    log_error("Got unexpected write size: %d\n", status);
+                }
+                status = BLADERF_ERR_IO;
+            } else {
+                n_write += write_size;
+                total_written += write_size;
+                status = 0;
+            }
+        } while (n_write < FLASH_PAGE_SIZE && !status);
+    }
+
+    if (status == 0) {
+        return total_written;
+    } else {
+        return status;
+    }
+}
+
 static int lusb_write_flash(struct bladerf *dev, int page_offset,
                         uint8_t *data, size_t data_size)
 {
@@ -916,6 +1050,9 @@ static int lusb_write_flash(struct bladerf *dev, int page_offset,
     int total_written;
     int pages_to_write = FLASH_BYTES_TO_PAGES(data_size);
     int write_size = dev->speed ? FLASH_PAGE_SIZE : 64;
+
+    if (dev->legacy & LEGACY_CONFIG_IF)
+        return legacy_lusb_write_flash(dev, page_offset, data, data_size);
 
     status = change_setting(dev, USB_IF_SPI_FLASH);
 
