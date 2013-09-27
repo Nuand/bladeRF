@@ -770,7 +770,7 @@ static int legacy_lusb_read_flash(struct bladerf *dev, int page_offset,
     int status = 0;
     int page_i, n_read, total_read;
     int read_size = dev->speed ? FLASH_PAGE_SIZE: 64;
-    int pages_to_read = FLASH_BYTES_TO_PAGES(n_bytes);
+    size_t pages_to_read = FLASH_BYTES_TO_PAGES(n_bytes);
     struct bladerf_lusb *lusb = dev->backend;
 
     assert(page_offset < FLASH_NUM_PAGES);
@@ -996,7 +996,7 @@ static int legacy_lusb_write_flash(struct bladerf *dev, int page_offset,
     int i;
     int n_write, total_written;
     int write_size = dev->speed ? FLASH_PAGE_SIZE : 64;
-    int pages_to_write = FLASH_BYTES_TO_PAGES(data_size);
+    size_t pages_to_write = FLASH_BYTES_TO_PAGES(data_size);
     struct bladerf_lusb *lusb = dev->backend;
     uint8_t *data_page;
 
