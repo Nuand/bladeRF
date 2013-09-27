@@ -126,6 +126,10 @@ struct bladerf_fn {
 #define FW_LEGACY_ALT_SETTING_MINOR 1
 #define LEGACY_ALT_SETTING  1
 
+#define FW_LEGACY_CONFIG_IF_MAJOR   1
+#define FW_LEGACY_CONFIG_IF_MINOR   4
+#define LEGACY_CONFIG_IF    2
+
 struct bladerf {
 
     struct bladerf_devinfo ident;  /* Identifying information */

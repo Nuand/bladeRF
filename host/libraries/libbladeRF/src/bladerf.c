@@ -103,8 +103,22 @@ int bladerf_open(struct bladerf **device, const char *dev_id)
         dev = *device;
     }
 
+
     if (!status) {
-        if (!dev->legacy) {
+        if (dev->legacy) {
+            /* Currently two modes of legacy:
+             *  - ALT_SETTING
+             *  - CONFIG_IF
+             *
+             * If either of these are set, we should tell the user to update
+             */
+            printf("********************************************************************************\n");
+            printf("* ENTERING LEGACY MODE, PLEASE UPGRADE TO THE LATEST FIRMWARE BY RUNNING:\n");
+            printf("* wget http://nuand.com/fx3/latest.img ; bladeRF-cli -f latest.img\n");
+            printf("********************************************************************************\n");
+        }
+
+        if (!(dev->legacy & LEGACY_ALT_SETTING)) {
 
             status = bladerf_get_and_cache_vctcxo_trim(dev);
             if (status < 0) {
@@ -122,16 +136,11 @@ int bladerf_open(struct bladerf **device, const char *dev_id)
             log_debug("%s: fw=v%d.%d serial=%s trim=0x%.4x fpga_size=%d\n",
                     __FUNCTION__, dev->fw_major, dev->fw_minor,
                     dev->ident.serial, dev->dac_trim, dev->fpga_size);
-        } else {
-            printf("********************************************************************************\n");
-            printf("* ENTERING LEGACY MODE, PLEASE UPGRADE TO THE LATEST FIRMWARE BY RUNNING:\n");
-            printf("* wget http://nuand.com/fx3/latest.img ; bladeRF-cli -f latest.img\n");
-            printf("********************************************************************************\n");
         }
-
-        /* All status in here is not fatal, so whatever */
-        status = 0 ;
     }
+
+    /* All status in here is not fatal, so whatever */
+    status = 0 ;
 
     return status;
 }
@@ -723,7 +732,7 @@ int bladerf_flash_firmware(struct bladerf *dev, const char *firmware_file)
                 status = dev->fn->flash_firmware(dev, buf, buf_size_padded);
             }
             if (!status) {
-                if (dev->legacy) {
+                if (dev->legacy & LEGACY_ALT_SETTING) {
                     printf("DEVICE OPERATING IN LEGACY MODE, MANUAL RESET IS NECESSARY AFTER SUCCESSFUL UPGRADE\n");
                 }
             }
