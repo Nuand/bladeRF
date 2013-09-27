@@ -671,6 +671,10 @@ int bladerf_recover_with_devinfo(
 {
     const struct bladerf_fn * fn = backend_getfns(devinfo->backend);
 
+    if (!fn) {
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
     if (!fn->recover) {
         return BLADERF_ERR_UNSUPPORTED;
     }
