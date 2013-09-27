@@ -717,9 +717,11 @@ int bladerf_flash_firmware(struct bladerf *dev, const char *firmware_file)
                        "to skip this check.\n");
             status = BLADERF_ERR_INVAL;
         } else {
+            /* Pad firmare data out to a flash sector size */
+            const size_t sector_size = BLADERF_FLASH_SECTOR_SIZE;
+            size_t buf_size_padding = sector_size - (buf_size % sector_size);
 
-            /* Pad firmare data out to a flash page size */
-            buf_size_padded = flash_to_pages(buf_size) * BLADERF_FLASH_PAGE_SIZE;
+            buf_size_padded = buf_size + buf_size_padding;
             buf_padded = realloc(buf, buf_size_padded);
             if (!buf_padded) {
                 status = BLADERF_ERR_MEM;
