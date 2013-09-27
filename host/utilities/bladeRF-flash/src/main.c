@@ -613,6 +613,7 @@ int main(int argc, char *argv[])
     }
 
     log_set_verbosity(rc.verbosity);
+    bladerf_log_set_verbosity(rc.verbosity);
 
     if (rc.show_help) {
         usage(argv[0]);
