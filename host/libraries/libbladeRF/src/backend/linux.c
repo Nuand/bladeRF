@@ -753,6 +753,7 @@ const struct bladerf_fn bladerf_linux_fn = {
     FIELD_INIT(.get_cal, linux_get_cal),
     FIELD_INIT(.get_otp, linux_get_otp),
     FIELD_INIT(.get_fw_version, linux_get_fw_version),
+    FIELD_INIT(.get_fw_version_string, NULL),
     FIELD_INIT(.get_fpga_version, linux_get_fpga_version),
     FIELD_INIT(.get_device_speed, linux_get_device_speed),
 

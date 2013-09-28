@@ -33,7 +33,7 @@ endif
 LDFLAGS := $(TOOLCHAIN_LDFLAGS) -Map $(MAP)
 
 
-all: $(IMG)
+all: version $(IMG)
 
 $(OUTPUT_DIR)/.dirstamp:
 	-mkdir $(OUTPUT_DIR)
@@ -51,6 +51,7 @@ $(IMG): $(ELF) $(ELF2IMG)
 $(ELF2IMG): $(ELF2IMG_SRC)
 	$(HOST_CC) $< -O2 -o $@
 
+<<<<<<< HEAD
 # Build any toolchain dependencies. 
 $(OUTPUT_DIR)/cyfxtx.o: $(OUTPUT_DIR)/%.o : $(TOOLCHAIN_DEPS_DIR)/%.c
 	$(call build_toolchain_dep,$<,$@)
@@ -58,8 +59,12 @@ $(OUTPUT_DIR)/cyfxtx.o: $(OUTPUT_DIR)/%.o : $(TOOLCHAIN_DEPS_DIR)/%.c
 $(OUTPUT_DIR)/$(TOOLCHAIN_DEPS_OBJ_A): $(OUTPUT_DIR)/%.o : $(TOOLCHAIN_DEPS_DIR)/%.S
 	$(call build_toolchain_dep,$<,$@)
 
+version:
+	cmake .
+	rm -fr CMakeFiles CMakeCache.txt cmake_install.cmake Makefile
+
 clean:
-	$(RM) -f $(ELF) $(IMG) $(MAP) $(OBJ) $(TOOLCHAIN_OBJ)
+	$(RM) -f $(ELF) $(IMG) $(MAP) $(OBJ) $(TOOLCHAIN_OBJ) version.h
 
 realclean: clean
 	$(RM) -rf $(OUTPUT_DIR)

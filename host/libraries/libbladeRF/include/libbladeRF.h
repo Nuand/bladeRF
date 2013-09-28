@@ -839,6 +839,21 @@ API_EXPORT int bladerf_get_fw_version(struct bladerf *dev,
                                       unsigned int *minor);
 
 /**
+ * Query detailed firmware version string
+ *
+ * NOTE: Function will populate the ver return parameter with a single
+ * '?' if any errors are encountered while getting the version string.
+ *
+ * @param[in]   dev     Device handle
+ * @param[out]  ver     Firmware string
+ * @param[in]   len     Length of the buffer for the version string
+ *
+ */
+API_EXPORT void bladerf_get_fw_version_string(struct bladerf *dev,
+                                             char *ver,
+                                             size_t len);
+
+/**
  * Check FPGA configuration status
  *
  * @param   dev     Device handle

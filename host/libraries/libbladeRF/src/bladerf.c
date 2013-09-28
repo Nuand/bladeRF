@@ -647,6 +647,11 @@ int bladerf_get_fw_version(struct bladerf *dev,
     return dev->fn->get_fw_version(dev, major, minor);
 }
 
+void bladerf_get_fw_version_string(struct bladerf *dev, char *ver, size_t len)
+{
+    return dev->fn->get_fw_version_string(dev, ver, len);
+}
+
 int bladerf_is_fpga_configured(struct bladerf *dev)
 {
     return dev->fn->is_fpga_configured(dev);

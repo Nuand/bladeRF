@@ -9,6 +9,7 @@ int cmd_version(struct cli_state *state, int argc, char **argv)
     char serial[BLADERF_SERIAL_LENGTH] = { 0 };
     bladerf_fpga_size fpga_size;
     uint16_t dac_trim;
+    char version[32] = { 0 };
 
     bool fpga_loaded = false;
 
@@ -31,6 +32,8 @@ int cmd_version(struct cli_state *state, int argc, char **argv)
     if (status < 0) {
         return status;
     }
+
+    bladerf_get_fw_version_string(state->dev, version, sizeof(version));
 
     status = bladerf_get_serial(state->dev, serial);
     if (status < 0) {
@@ -57,6 +60,7 @@ int cmd_version(struct cli_state *state, int argc, char **argv)
         printf("FPGA size:              Unknown\n");
     }
     printf("Firmware version:       %u.%u\n", fw_major, fw_minor);
+    printf("Firmware string:        %s\n", version);
     if (fpga_loaded) {
         printf("FPGA version:           %u.%u\n", fpga_major, fpga_minor);
     } else {

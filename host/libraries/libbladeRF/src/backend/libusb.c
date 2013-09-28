@@ -388,7 +388,7 @@ static int enable_rf(struct bladerf *dev) {
                 val, &fx3_ret);
     }
     if(status) {
-        log_warning("Could not enable RF TX (%d): %s\n", 
+        log_warning("Could not enable RF TX (%d): %s\n",
                 status, libusb_error_name(status) );
         ret_status = BLADERF_ERR_UNEXPECTED;
     } else if(fx3_ret) {
@@ -868,11 +868,11 @@ static int lusb_read_flash(struct bladerf *dev, int page_offset,
         log_error("Failed to set interface: %s\n", libusb_error_name(status));
         status = BLADERF_ERR_IO;
     }
-    
+
     assert(page_offset < FLASH_NUM_PAGES);
     assert((page_offset + n_bytes) < FLASH_NUM_PAGES);
     assert(n_bytes % FLASH_PAGE_SIZE == 0);
-    
+
     assert(page_offset + pages_to_read <= UINT16_MAX);
 
     total_read = 0;
@@ -1080,7 +1080,7 @@ static int lusb_write_flash(struct bladerf *dev, int page_offset,
 
     assert(page_offset < FLASH_NUM_PAGES);
     assert((page_offset + pages_to_write) < FLASH_NUM_PAGES);
-    assert(data_size % FLASH_PAGE_SIZE == 0);    
+    assert(data_size % FLASH_PAGE_SIZE == 0);
     assert(page_offset + pages_to_write <= UINT16_MAX);
 
     total_written = 0;
@@ -1324,6 +1324,23 @@ static int lusb_get_fw_version(struct bladerf *dev,
     }
 
     return status;
+}
+
+static void lusb_get_fw_version_string(struct bladerf *dev,
+                                      char *ver, size_t len)
+{
+    int status;
+    struct bladerf_lusb *lusb = dev->backend;
+
+    /* TODO: String descriptor index should probably be in a common header */
+    status = libusb_get_string_descriptor_ascii(lusb->handle, 4, (unsigned char *)ver, len);
+
+    /* If we ran into an issue, populate with single questionmark */
+    if (status < 0) {
+        *ver = '?';
+    }
+
+    return;
 }
 
 static int lusb_get_fpga_version(struct bladerf *dev,
@@ -2021,6 +2038,7 @@ const struct bladerf_fn bladerf_lusb_fn = {
     FIELD_INIT(.get_cal, lusb_get_cal),
     FIELD_INIT(.get_otp, lusb_get_otp),
     FIELD_INIT(.get_fw_version, lusb_get_fw_version),
+    FIELD_INIT(.get_fw_version_string, lusb_get_fw_version_string),
     FIELD_INIT(.get_fpga_version, lusb_get_fpga_version),
     FIELD_INIT(.get_device_speed, lusb_get_device_speed),
 

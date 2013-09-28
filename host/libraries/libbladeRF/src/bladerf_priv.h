@@ -99,6 +99,7 @@ struct bladerf_fn {
     int (*get_cal)(struct bladerf *dev, char *cal);
     int (*get_otp)(struct bladerf *dev, char *otp);
     int (*get_fw_version)(struct bladerf *dev, unsigned int *maj, unsigned int *min);
+    void (*get_fw_version_string)(struct bladerf *dev, char *ver, size_t len);
     int (*get_fpga_version)(struct bladerf *dev, unsigned int *maj, unsigned int *min);
     int (*get_device_speed)(struct bladerf *dev, int *speed);
 
