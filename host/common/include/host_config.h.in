@@ -49,6 +49,8 @@
  * BE16_TO_HOST         16-bit big endian to host endianness conversion
  * HOST_TO_LE32         32-bit host endianness to little endian conversion
  * LE32_TO_HOST         32-bit little endian to host endianness conversion
+ * HOST_TO_BE32         32-bit host endianness to big endian conversion
+ * BE32_TO_HOST         32-bit big endian to host endianness conversion
  ******************************************************************************/
 
 /*-----------------------
@@ -63,6 +65,8 @@
 #define BE16_TO_HOST(val) be16toh(val)
 #define HOST_TO_LE32(val) htole32(val)
 #define LE32_TO_HOST(val) le32toh(val)
+#define HOST_TO_BE32(val) htobe32(val)
+#define BE32_TO_HOST(val) be32toh(val)
 
 /*-----------------------
  * Apple OSX
@@ -76,6 +80,8 @@
 #define BE16_TO_HOST(val) OSSwapBigToHostInt16(val)
 #define HOST_TO_LE32(val) OSSwapHostToLittleInt32(val)
 #define LE32_TO_HOST(val) OSSwapLittleToHostInt32(val)
+#define HOST_TO_BE32(val) OSSwapHostToBigInt32(val)
+#define BE32_TO_HOST(val) OSSwapBigToHostInt32(val)
 
 /*-----------------------
  * Windows
@@ -92,6 +98,8 @@
 #define BE16_TO_HOST(val) _byteswap_ushort(val)
 #define HOST_TO_LE32(val) (val)
 #define LE32_TO_HOST(val) (val)
+#define HOST_TO_BE32(val) _byteswap_ulong(val)
+#define BE32_TO_HOST(val) _byteswap_ulong(val)
 
 /*-----------------------
  * Unsupported or bug
