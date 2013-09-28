@@ -1160,11 +1160,11 @@ static int lusb_flash_firmware(struct bladerf *dev,
     status = lusb_erase_flash(dev, 0, image_size);
 
     if (status >= 0) {
-        status = lusb_write_flash(dev, 0, image, (int)image_size);
+        status = lusb_write_flash(dev, 0, image, (uint32_t)image_size);
     }
 
     if (status >= 0) {
-        status = verify_flash(dev, 0, image, (int)image_size);
+        status = verify_flash(dev, 0, image, (uint32_t)image_size);
     }
 
     /* A reset will be required at this point, so there's no sense in
