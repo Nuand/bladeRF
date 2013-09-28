@@ -29,7 +29,7 @@
 N: Damiano Bolla
 I: engidea
 G: Engidea
-D: si5338 sample rate readback, misc. bugfixes
+D: si5338 sample rate functionality, misc. bugfixes
 
 N: Robert Ghilduta
 E: robert.ghilduta@nuand.com
@@ -37,6 +37,13 @@ F: robertghilduta
 I: mIKEjONES
 G: robertghilduta
 D: Project maintainer
+
+N: Adam Greig
+E: adam@adamgreig.com
+F: adamgreig
+I: adamgreig
+G: adamgreig
+D: libbladeRF LPF mode routines
 
 N: Mike Kershaw
 E: dragorn@kismetwireless.net
@@ -56,7 +63,7 @@ E: litghost@softhome.net
 F: litghost
 I: litghost
 G: litghost
-D: Host and FX3 firmware fixes, firmware flashing and recovery support
+D: Host and FX3 FW fixes, FW flashing and recovery support
 
 N: Marco Schwan
 E: bladerf@maggo.info
