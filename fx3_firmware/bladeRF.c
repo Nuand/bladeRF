@@ -640,7 +640,7 @@ void CyFxbladeRFApplnUSBEventCB (CyU3PUsbEventType_t evtype, uint16_t evdata)
     switch (evtype)
     {
         case CY_U3P_USB_EVENT_SETINTF:
-            interface = (evdata & 0xf0) >> 8;
+            interface = (evdata & 0xf0) >> 4;
             alt_interface = evdata & 0xf;
 
             /* Only support sets to interface 0 for now */
