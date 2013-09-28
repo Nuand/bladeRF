@@ -740,7 +740,6 @@ static int read_buffer(struct bladerf *dev, uint8_t request,
            || request == BLADE_USB_CMD_READ_CAL_CACHE);
 
     assert(len % read_size == 0);
-    assert(len <= UINT16_MAX);
 
     uint16_t buf_off;
     for(buf_off = 0; buf_off < len; buf_off += read_size)
