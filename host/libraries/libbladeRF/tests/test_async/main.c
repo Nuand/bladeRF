@@ -197,6 +197,8 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    status = 0;
+
     if (!status) {
         status = bladerf_set_frequency(dev, test_data.module, 1000000000);
         if (status < 0) {
