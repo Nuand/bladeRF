@@ -12,6 +12,10 @@ int cmd_version(struct cli_state *state, int argc, char **argv)
 
     bool fpga_loaded = false;
 
+    if (state->dev == NULL) {
+        return CMD_RET_NODEV;
+    }
+
     status = bladerf_is_fpga_configured(state->dev);
     if (status < 0) {
         return status;
