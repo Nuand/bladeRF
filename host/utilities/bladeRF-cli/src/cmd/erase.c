@@ -1,4 +1,4 @@
-#include <assert.h>
+#include "rel_assert.h"
 #include <limits.h>
 #include <stdbool.h>
 #include <conversions.h>

@@ -16,7 +16,9 @@
 hdl/quartus/work/*
 
 fx3_firmware/make/toolchain.mk
-fx3_firmware/elf2img
+fx3_firmware/build/*
+
+build/*
 
 host/build/*
 host/libraries/libbladeRF/doc/doxygen/html

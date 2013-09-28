@@ -24,7 +24,7 @@ struct test_data
     unsigned int        idx;            /* The next one that needs to go out */
     bladerf_module      module;         /* Direction */
     FILE                *fout;          /* Output file (RX only) */
-    int                 samples_left;   /* Number of samples left */
+    ssize_t             samples_left;   /* Number of samples left */
 };
 
 int str2int(const char *str, int min, int max, bool *ok)
@@ -196,6 +196,8 @@ int main(int argc, char *argv[])
         bladerf_close(dev);
         return EXIT_FAILURE;
     }
+
+    status = 0;
 
     if (!status) {
         status = bladerf_set_frequency(dev, test_data.module, 1000000000);

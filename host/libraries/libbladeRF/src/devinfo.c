@@ -55,11 +55,12 @@ int bladerf_devinfo_list_add(struct bladerf_devinfo_list *list,
     struct bladerf_devinfo *info_tmp;
 
     if (list->num_elt >= list->backing_size) {
-        info_tmp = realloc(list->elt, list->backing_size * 2);
+        info_tmp = realloc(list->elt, list->backing_size * 2 * sizeof(*list->elt));
         if (!info_tmp) {
             status = BLADERF_ERR_MEM;
         } else {
             list->elt = info_tmp;
+            list->backing_size = list->backing_size * 2;
         }
     }
 

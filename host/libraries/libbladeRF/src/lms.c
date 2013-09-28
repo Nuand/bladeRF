@@ -2,6 +2,7 @@
 #include "lms.h"
 #include "bladerf_priv.h"
 #include "log.h"
+#include "rel_assert.h"
 
 // LPF conversion table
 const unsigned int uint_bandwidths[] = {
@@ -767,6 +768,7 @@ void lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
     uint8_t data;
     uint64_t ref_clock = 38400000;
     uint64_t vco_x;
+    uint64_t temp;
 
     // Turn on the DSMs
     bladerf_lms_read(dev, 0x09, &data);
@@ -794,15 +796,21 @@ void lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
         }
     }
 
-    vco_x = 1 << ((freqsel & 7) - 3);
-    nint = (vco_x * freq) / ref_clock;
-    nfrac = ((1 << 23) * (vco_x * freq - nint * ref_clock)) / ref_clock;
+    vco_x = ((uint64_t)1) << ((freqsel & 7) - 3);
+    temp = (vco_x * freq) / ref_clock;
+    assert(temp <= UINT16_MAX);
+    nint = (uint16_t)temp;
+    temp = ((1 << 23) * (vco_x * freq - nint * ref_clock)) / ref_clock;
+    assert(temp <= UINT32_MAX);
+    nfrac = (uint32_t)temp;
 
-    f.x = vco_x;
+    assert(vco_x <= UINT8_MAX);
+    f.x = (uint8_t)vco_x;
     f.nint = nint;
     f.nfrac = nfrac;
     f.freqsel = freqsel;
-    f.reference = ref_clock;
+    assert(ref_clock <= UINT32_MAX);
+    f.reference = (uint32_t)ref_clock;
     lms_print_frequency(&f);
 
     // Program freqsel, selout (rx only), nint and nfrac

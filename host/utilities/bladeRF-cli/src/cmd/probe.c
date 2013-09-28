@@ -1,4 +1,4 @@
-#include <assert.h>
+#include "rel_assert.h"
 #include "cmd.h"
 
 static inline const char *backend2str(bladerf_backend b)
@@ -17,7 +17,7 @@ static inline const char *backend2str(bladerf_backend b)
 int cmd_probe(struct cli_state *s, int argc, char *argv[])
 {
     struct bladerf_devinfo *devices = NULL;
-    ssize_t n_devices, i;
+    int n_devices, i;
 
     n_devices = bladerf_get_device_list(&devices);
 

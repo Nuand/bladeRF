@@ -2,7 +2,7 @@
 #include <string.h>
 #include <limits.h>
 #include <errno.h>
-#include <assert.h>
+#include "rel_assert.h"
 #include <stdio.h>
 #include <stdbool.h>
 #include <sys/stat.h>
@@ -94,7 +94,7 @@ static int error_libusb2bladerf(int error)
 
 /* Quick wrapper for vendor commands that get/send a 32-bit integer value */
 static int vendor_command_int(struct bladerf *dev,
-                          uint16_t cmd, uint8_t ep_dir, int32_t *val)
+                          uint8_t cmd, uint8_t ep_dir, int32_t *val)
 {
     int32_t buf;
     int status;
@@ -134,7 +134,7 @@ static int vendor_command_int(struct bladerf *dev,
 
 /* Quick wrapper for vendor commands that get/send a 32-bit integer value + wValue */
 static int vendor_command_int_value(struct bladerf *dev,
-                          uint16_t cmd, uint16_t wValue, int32_t *val)
+                          uint8_t cmd, uint16_t wValue, int32_t *val)
 {
     int32_t buf;
     int status;
@@ -167,7 +167,7 @@ static int vendor_command_int_value(struct bladerf *dev,
 
 /* Quick wrapper for vendor commands that get/send a 32-bit integer value + wIndex */
 static int vendor_command_int_index(struct bladerf *dev,
-                          uint16_t cmd, uint16_t wIndex, int32_t *val)
+                          uint8_t cmd, uint16_t wIndex, int32_t *val)
 {
     int32_t buf;
     int status;
@@ -456,6 +456,9 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
                 if (!dev || !lusb) {
                     free(dev);
                     free(lusb);
+                    lusb = NULL;
+                    dev = NULL;
+
                     log_warning("Skipping instance %d due to memory allocation "
                                 "error", thisinfo.instance);
 
@@ -612,7 +615,8 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
     }
 
     /* Send the file down */
-    status = libusb_bulk_transfer(lusb->handle, 0x2, image, image_size,
+    assert(image_size <= INT_MAX);
+    status = libusb_bulk_transfer(lusb->handle, 0x2, image, (int)image_size,
                                   &transferred, 5 * BLADERF_LIBUSB_TIMEOUT_MS);
     if (status < 0) {
         status = error_libusb2bladerf(status);
@@ -736,6 +740,7 @@ static int read_buffer(struct bladerf *dev, uint8_t request,
            || request == BLADE_USB_CMD_READ_CAL_CACHE);
 
     assert(len % read_size == 0);
+    assert(len <= UINT16_MAX);
 
     uint16_t buf_off;
     for(buf_off = 0; buf_off < len; buf_off += read_size)
@@ -1067,11 +1072,12 @@ static int find_fx3_via_info(
     struct bladerf_devinfo thisinfo;
     libusb_device *dev, **devs;
     libusb_device *found_dev = NULL;
+    ssize_t status_sz;
 
-    status = libusb_get_device_list(context, &devs);
-    if (status < 0) {
-        log_error("libusb_get_device_list() failed: %d %s\n", status, libusb_error_name(status));
-        return error_libusb2bladerf(status);
+    status_sz = libusb_get_device_list(context, &devs);
+    if (status_sz < 0) {
+        log_error("libusb_get_device_list() failed: %d %s\n", status_sz, libusb_error_name((int)status_sz));
+        return error_libusb2bladerf((int)status_sz);
     }
 
     for (i=0; (dev=devs[i]) != NULL; i++) {
@@ -1149,14 +1155,16 @@ static int lusb_flash_firmware(struct bladerf *dev,
     if(dev->legacy & LEGACY_ALT_SETTING)
         log_debug("LEGACY_ALT_SETTING");
 
+    assert(image_size <= UINT32_MAX);
+
     status = lusb_erase_flash(dev, 0, image_size);
 
     if (status >= 0) {
-        status = lusb_write_flash(dev, 0, image, image_size);
+        status = lusb_write_flash(dev, 0, image, (int)image_size);
     }
 
     if (status >= 0) {
-        status = verify_flash(dev, 0, image, image_size);
+        status = verify_flash(dev, 0, image, (int)image_size);
     }
 
     /* A reset will be required at this point, so there's no sense in
@@ -1237,7 +1245,7 @@ static int lusb_get_otp(struct bladerf *dev, char *otp)
     if(read_status != 0) {
         log_error("Failed to read OTP page %d: %d\n",
                 otp_page, read_status);
-        status = BLADERF_ERR_UNEXPECTED;
+        return BLADERF_ERR_UNEXPECTED;
     }
 
     return read_page_buffer(dev, (uint8_t*)otp);
@@ -1529,7 +1537,7 @@ static int lusb_dac_write(struct bladerf *dev, uint16_t value)
 static int lusb_tx(struct bladerf *dev, bladerf_format format, void *samples,
                    int n, struct bladerf_metadata *metadata)
 {
-    size_t bytes_total, bytes_remaining;
+    size_t bytes_total, bytes_remaining, ret;
     struct bladerf_lusb *lusb = (struct bladerf_lusb *)dev->backend;
     uint8_t *samples8 = (uint8_t *)samples;
     int transferred, status;
@@ -1539,13 +1547,15 @@ static int lusb_tx(struct bladerf *dev, bladerf_format format, void *samples,
 
     bytes_total = bytes_remaining = c16_samples_to_bytes(n);
 
+    assert(bytes_remaining <= INT_MAX);
+
     while( bytes_remaining > 0 ) {
         transferred = 0;
         status = libusb_bulk_transfer(
                     lusb->handle,
                     EP_OUT(0x1),
                     samples8,
-                    bytes_remaining,
+                    (int)bytes_remaining,
                     &transferred,
                     BLADERF_LIBUSB_TIMEOUT_MS
                 );
@@ -1554,18 +1564,21 @@ static int lusb_tx(struct bladerf *dev, bladerf_format format, void *samples,
             return BLADERF_ERR_IO;
         } else {
             assert(transferred > 0);
+            assert(bytes_remaining >= (size_t)transferred);
             bytes_remaining -= transferred;
             samples8 += transferred;
         }
     }
 
-    return bytes_to_c16_samples(bytes_total - bytes_remaining);
+    ret = bytes_to_c16_samples(bytes_total - bytes_remaining);
+    assert(ret <= INT_MAX);
+    return (int)ret;
 }
 
 static int lusb_rx(struct bladerf *dev, bladerf_format format, void *samples,
                    int n, struct bladerf_metadata *metadata)
 {
-    int bytes_total, bytes_remaining = c16_samples_to_bytes(n);
+    size_t bytes_total, bytes_remaining, ret;
     struct bladerf_lusb *lusb = (struct bladerf_lusb *)dev->backend;
     uint8_t *samples8 = (uint8_t *)samples;
     int transferred, status;
@@ -1574,13 +1587,15 @@ static int lusb_rx(struct bladerf *dev, bladerf_format format, void *samples,
     assert(format == BLADERF_FORMAT_SC16_Q12);
     bytes_total = bytes_remaining = c16_samples_to_bytes(n);
 
+    assert(bytes_remaining <= INT_MAX);
+
     while( bytes_remaining ) {
         transferred = 0;
         status = libusb_bulk_transfer(
                     lusb->handle,
                     EP_IN(0x1),
                     samples8,
-                    bytes_remaining,
+                    (int)bytes_remaining,
                     &transferred,
                     BLADERF_LIBUSB_TIMEOUT_MS
                 );
@@ -1589,12 +1604,16 @@ static int lusb_rx(struct bladerf *dev, bladerf_format format, void *samples,
             return BLADERF_ERR_IO;
         } else {
             assert(transferred > 0);
+            assert(bytes_remaining >= (size_t)transferred);
             bytes_remaining -= transferred;
             samples8 += transferred;
         }
     }
 
-    return bytes_to_c16_samples(bytes_total - bytes_remaining);
+    assert(bytes_total >= bytes_remaining);
+    ret = bytes_to_c16_samples(bytes_total - bytes_remaining);
+    assert(ret <= INT_MAX);
+    return (int)ret;
 }
 
 
@@ -1607,6 +1626,7 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
     struct lusb_stream_data *stream_data = stream->backend_data;
     size_t i;
     int status;
+    size_t bytes_per_buffer;
 
     /* Check to see if the transfer has been cancelled or errored */
     if( transfer->status != LIBUSB_TRANSFER_COMPLETED ) {
@@ -1683,6 +1703,9 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
         stream_data->active_transfers--;
     }
 
+    bytes_per_buffer = c16_samples_to_bytes(stream->samples_per_buffer);
+    assert(bytes_per_buffer <= INT_MAX);
+
     /* Check the stream to make sure we're still valid and submit transfer,
      * as the user may want to stop the stream by returning NULL for the next buffer */
     if( next_buffer != NULL ) {
@@ -1692,7 +1715,7 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
             lusb->handle,
             stream->module == BLADERF_MODULE_TX ? EP_OUT(0x01) : EP_IN(0x01),
             next_buffer,
-            c16_samples_to_bytes(stream->samples_per_buffer),
+            (int)bytes_per_buffer,
             lusb_stream_cb,
             stream,
             BULK_TIMEOUT
@@ -1778,6 +1801,8 @@ static int lusb_stream(struct bladerf_stream *stream, bladerf_module module)
     struct timeval tv = { 5, 0 };
     const size_t buffer_size = c16_samples_to_bytes(stream->samples_per_buffer);
 
+    assert(buffer_size <= INT_MAX);
+
     /* Currently unused, so zero it out for a sanity check when debugging */
     memset(&metadata, 0, sizeof(metadata));
 
@@ -1818,7 +1843,7 @@ static int lusb_stream(struct bladerf_stream *stream, bladerf_module module)
                 lusb->handle,
                 module == BLADERF_MODULE_TX ? EP_OUT(0x01) : EP_IN(0x01),
                 buffer,
-                buffer_size,
+                (int)buffer_size,
                 lusb_stream_cb,
                 stream,
                 BULK_TIMEOUT

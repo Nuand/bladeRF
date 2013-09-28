@@ -10,7 +10,7 @@
 
 static FILE *input = NULL;
 static char *line_buf = NULL;
-static const size_t line_buf_size = CLI_MAX_LINE_LEN + 1;
+static const int line_buf_size = CLI_MAX_LINE_LEN + 1;
 static bool caught_signal = false;
 
 /* Makes the assumption that the caller hasn't done all sorts of closing
