@@ -148,7 +148,9 @@ int bladerf_open(struct bladerf **device, const char *dev_id)
 
 void bladerf_close(struct bladerf *dev)
 {
-    dev->fn->close(dev);
+    if (dev) {
+        dev->fn->close(dev);
+    }
 }
 
 int bladerf_enable_module(struct bladerf *dev,
@@ -589,6 +591,10 @@ int bladerf_init_stream(struct bladerf_stream **stream,
 void bladerf_deinit_stream(struct bladerf_stream *stream)
 {
     size_t i;
+
+    if (!stream) {
+        return;
+    }
 
     while(stream->state != STREAM_DONE && stream->state != STREAM_IDLE) {
         log_info( "Stream not done...\n" );

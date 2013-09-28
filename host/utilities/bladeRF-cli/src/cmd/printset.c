@@ -738,11 +738,26 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
             cli_err(state, argv[0], "Invalid sample rate (%s)", argv[2]);
             rv = CMD_RET_INVPARAM;
         } else {
+            int status;
+            bladerf_dev_speed usb_speed = bladerf_device_speed(state->dev);
+
+            /* Discontinuities have been reported for 2.0 on Intel controllers
+             * above 6MHz. */
+            if (usb_speed != BLADERF_DEVICE_SPEED_SUPER && rate > 6000000) {
+                printf("\n  Warning: The provided sample rate may "
+                       "result in timeouts with the current\n"
+                       "           %s connection. "
+                       "A SuperSpeed connection or a lower sample\n"
+                       "           rate are recommended.\n",
+                       devspeed2str(usb_speed));
+            }
+
             printf( "\n" );
+
             if( argc == 3 || module == BLADERF_MODULE_RX ) {
-                int status = bladerf_set_sample_rate( state->dev,
-                                                      BLADERF_MODULE_RX,
-                                                      rate, &actual );
+                status = bladerf_set_sample_rate( state->dev,
+                                                  BLADERF_MODULE_RX,
+                                                  rate, &actual );
 
                 if (status < 0) {
                     state->last_lib_error = status;
@@ -754,9 +769,9 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
             }
 
             if( argc == 3 || module == BLADERF_MODULE_TX ) {
-                int status = bladerf_set_sample_rate( state->dev,
-                                                      BLADERF_MODULE_TX,
-                                                      rate, &actual );
+                status = bladerf_set_sample_rate( state->dev,
+                                                  BLADERF_MODULE_TX,
+                                                  rate, &actual );
                 if (status < 0) {
                     state->last_lib_error = status;
                     rv = CMD_RET_LIBBLADERF;

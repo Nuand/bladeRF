@@ -36,7 +36,8 @@ struct cli_state {
     FILE *script;                   /**< Loaded script */
     int lineno;                     /**< Line # count, when running scripts */
 
-    struct rxtx_data *rxtx_data;    /**< Data for transmit/receive commands */
+    struct rxtx_data *rx;           /**< Data for sample reception */
+    struct rxtx_data *tx;           /**< Data for sample transmission */
 };
 
 /**
@@ -79,10 +80,18 @@ bool cli_device_in_use(struct cli_state *s);
 void cli_err(struct cli_state *s, const char *pfx, const char *format, ...);
 
 /**
+ * Intialize error info. Defaults to "no error"
+ *
+ */
+void cli_error_init(struct cli_error *e);
+
+/**
  * Set the "last encountered error" info
  *
  * Always use this routine for thread safety - do not access these fields
  * directly.
+ *
+ * @pre e has been initialized vie cli_error_init()
  *
  * @param   e       Error structure
  * @param   type    Type of error (i.e. who's error code is it?)
@@ -93,8 +102,7 @@ void set_last_error(struct cli_error *e, enum error_type type, int error);
 /**
  * Fetch the "last encountered error" info
  *
- * Always use this routine for thread safety - do not access these fields
- * directly.
+ * @pre e has been initialized vie cli_error_init()
  *
  * @param[in]       e       Error structure
  * @param[out]      type    Type of error (i.e. who's error code is it?)

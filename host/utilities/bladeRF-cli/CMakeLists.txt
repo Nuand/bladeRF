@@ -11,7 +11,7 @@ project(bladeRF-cli C)
 ################################################################################
 
 set(VERSION_INFO_MAJOR  0)
-set(VERSION_INFO_MINOR  5)
+set(VERSION_INFO_MINOR  6)
 set(VERSION_INFO_PATCH  0)
 set(VERSION_INFO_EXTRA "git")
 include(Version)
@@ -93,7 +93,9 @@ set(BLADERF_CLI_SOURCE
         src/cmd/poke.c
         src/cmd/printset.c
         src/cmd/probe.c
+        src/cmd/rx.c
         src/cmd/rxtx.c
+        src/cmd/tx.c
         src/cmd/version.c
         src/cmd/recover.c
         src/cmd/jump_boot.c

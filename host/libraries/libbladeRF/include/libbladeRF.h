@@ -375,7 +375,8 @@ API_EXPORT int bladerf_open(struct bladerf **device,
  *
  * @post    device is deallocated and may no longer be used.
  *
- * @param   device  Device handle previously obtained by bladerf_open()
+ * @param   device  Device handle previously obtained by bladerf_open(). This
+ *                  function does nothing if device is NULL.
  */
 API_EXPORT void bladerf_close(struct bladerf *device);
 
@@ -758,7 +759,12 @@ API_EXPORT int bladerf_stream(struct bladerf_stream *stream,
                               bladerf_module module);
 
 /**
- * Deinitialize and deallocate stream resources
+ * Deinitialize and deallocate stream resources.
+ *
+ * @post   Stream is deallocated and may no longer be used.
+ *
+ * @param   stream      Stream to deinitialize. This function does nothin
+ *                      if stream is NULL.
  */
 API_EXPORT void bladerf_deinit_stream(struct bladerf_stream *stream);
 

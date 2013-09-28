@@ -20,25 +20,56 @@ struct cli_state *cli_state_create()
         ret->script = NULL;
         ret->lineno = 0;
 
-        ret->rxtx_data = rxtx_data_alloc(ret);
-        if (!ret->rxtx_data) {
-            fprintf(stderr, "Failed to allocate RX/TX task data\n");
-            free(ret);
-            ret = NULL;
+        ret->rx = rxtx_data_alloc(BLADERF_MODULE_RX);
+        if (!ret->rx) {
+            goto cli_state_create_fail;
+        }
+
+        ret->tx = rxtx_data_alloc(BLADERF_MODULE_TX);
+        if (!ret->tx) {
+            goto cli_state_create_fail;
+        }
+
+        if (rxtx_startup(ret, BLADERF_MODULE_RX)) {
+            rxtx_data_free(ret->rx);
+            ret->rx = NULL;
+            goto cli_state_create_fail;
+        }
+
+        if (rxtx_startup(ret, BLADERF_MODULE_TX)) {
+            rxtx_data_free(ret->tx);
+            ret->tx = NULL;
+            goto cli_state_create_fail;
         }
     }
 
     return ret;
+
+cli_state_create_fail:
+    cli_state_destroy(ret);
+    return NULL;
 }
 
 void cli_state_destroy(struct cli_state *s)
 {
     if (s) {
+        if (s->rx) {
+            rxtx_shutdown(s->rx);
+            rxtx_data_free(s->rx);
+            s->rx = NULL;
+        }
+
+        if (s->tx) {
+            rxtx_shutdown(s->tx);
+            rxtx_data_free(s->tx);
+            s->tx = NULL;
+        }
+
         if (s->dev) {
             bladerf_close(s->dev);
         }
 
-        rxtx_data_free(s->rxtx_data);
+
         free(s);
     }
 }
@@ -51,7 +82,7 @@ bool cli_device_is_opened(struct cli_state *s)
 bool cli_device_in_use(struct cli_state *s)
 {
     return cli_device_is_opened(s) &&
-            (rxtx_tx_task_running(s) || rxtx_rx_task_running(s));
+            (rxtx_task_running(s->rx) || rxtx_task_running(s->tx));
 }
 
 void cli_err(struct cli_state *s, const char *pfx, const char *format, ...)
@@ -91,6 +122,13 @@ void cli_err(struct cli_state *s, const char *pfx, const char *format, ...)
         /* Just do the best we can if a memory allocation error occurs */
         fprintf(stderr, "\nYikes! Multiple errors occurred!\n");
     }
+}
+
+void cli_error_init(struct cli_error *e)
+{
+    pthread_mutex_init(&e->lock, NULL);
+    e->type = ETYPE_CLI;
+    e->value = 0;
 }
 
 void set_last_error(struct cli_error *e, enum error_type type, int error)

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "cmd.h"
+#include "conversions.h"
 
 int cmd_info(struct cli_state *state, int argc, char **argv)
 {
@@ -10,9 +11,8 @@ int cmd_info(struct cli_state *state, int argc, char **argv)
     struct bladerf_devinfo info;
     bladerf_dev_speed usb_speed;
 
-    if (state->dev == NULL) {
-        printf("  No device is currently opened\n");
-        return 0;
+    if (!cli_device_is_opened(state)) {
+        return CMD_RET_NODEV;
     }
 
     status = bladerf_get_devinfo(state->dev, &info);
@@ -53,19 +53,7 @@ int cmd_info(struct cli_state *state, int argc, char **argv)
     printf("  FPGA loaded:              %s\n", fpga_loaded ? "yes" : "no");
     printf("  USB bus:                  %d\n", info.usb_bus);
     printf("  USB address:              %d\n", info.usb_addr);
-
-    switch(usb_speed) {
-        case BLADERF_DEVICE_SPEED_HIGH:
-            printf("  USB speed:                High\n");
-            break;
-
-        case BLADERF_DEVICE_SPEED_SUPER:
-            printf("  USB speed:                Super\n");
-            break;
-
-        default:
-            printf("  USB speed:                Unknown\n");
-    }
+    printf("  USB speed:                %s\n", devspeed2str(usb_speed));
 
     switch(info.backend) {
         case BLADERF_BACKEND_LIBUSB:

@@ -14,7 +14,6 @@
 #include "interactive.h"
 #include "common.h"
 #include "cmd.h"
-#include "rxtx.h"
 #include "version.h"
 
 
@@ -308,16 +307,6 @@ static int open_script(struct rc_config *rc, struct cli_state *state, int status
     return status;
 }
 
-static inline int start_threads(struct cli_state *s)
-{
-    return rxtx_start_tasks(s);
-}
-
-static inline void stop_threads(struct cli_state *s)
-{
-    rxtx_stop_tasks(s->rxtx_data);
-}
-
 int main(int argc, char *argv[])
 {
     int status = 0;
@@ -411,22 +400,7 @@ main__issues:
         /* Drop into interactive mode or begin executing commands
          * from a script. If we're not requested to do either, exit cleanly */
         if (rc.interactive_mode || state->script != NULL) {
-            status = start_threads(state);
-
-            if (status < 0) {
-                fprintf(stderr, "Failed to kick off threads\n");
-            } else {
-                status = interactive(state, !rc.interactive_mode);
-                stop_threads(state);
-            }
-
-        }
-
-        /* Ensure we exit with RX & TX disabled.
-         * Can't do much about an error at this point anyway... */
-        if (state->dev && bladerf_is_fpga_configured(state->dev)) {
-            bladerf_enable_module(state->dev, BLADERF_MODULE_TX, false);
-            bladerf_enable_module(state->dev, BLADERF_MODULE_RX, false);
+            status = interactive(state, !rc.interactive_mode);
         }
     }
 

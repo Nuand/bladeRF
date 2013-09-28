@@ -195,3 +195,20 @@ int str2version(const char *str, struct bladerf_version *version)
 
     return 0;
 }
+
+const char * devspeed2str(bladerf_dev_speed speed)
+{
+    switch (speed) {
+        case BLADERF_DEVICE_SPEED_HIGH:
+            /* Yeah, the USB IF actually spelled it "Hi" instead of "High".
+             * I know. It hurts me too. */
+            return "Hi-Speed";
+
+        case BLADERF_DEVICE_SPEED_SUPER:
+            /* ...and no hyphen :( */
+            return "SuperSpeed";
+
+        default:
+            return "Unknown";
+    }
+}

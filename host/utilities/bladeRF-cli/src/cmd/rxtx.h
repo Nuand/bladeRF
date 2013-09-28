@@ -1,56 +1,60 @@
-#ifndef CMD_RXTX_H_
-#define CMD_RXTX_H_
+/**
+ * RX and TX commands
+ */
 
 #include <stdbool.h>
+#include <libbladeRF.h>
+
 #include "common.h"
 
+struct rxtx_data;
+
 /**
- * Allocate and initialize data for RX and TX tasks.
+ * Allocate and initialize data for handling sample reception or transmission
  *
- * @param   s   CLI state
+ * @param   module  Used to configure this handle for use with RX or TX commands
  *
  * @return  allocated data on succss, NULL on failure
  */
-struct rxtx_data * rxtx_data_alloc(struct cli_state *s);
+struct rxtx_data *rxtx_data_alloc(bladerf_module module);
 
 /**
- * Kick off RX/TX tasks
+ * Startup the RX or TX task.
+ * The task will enter and wait in an idle state on success.
  *
- * @param   s   CLI state
+ * @param   s   CLI state handle with a valid rx_data handle
+ * @param   m   Module (RX or  TX) to start
  *
- * @pre     Must be preceeded by a call to rxtx_data_alloc()
+ * @pre     The cli_state is assumed to have had its rx_data or tx_data field
+ *          populated (whichever is relevant for the provided module)
  *
  * @return  0 on success, nonzero on failure
  */
-int rxtx_start_tasks(struct cli_state *s);
+int rxtx_startup(struct cli_state *s, bladerf_module m);
 
 /**
- * Request RX/TX tasks to shut down and exit
+ * Test whether RX or TX task is running (as opposed to idle or shutting down)
  *
- * @param   s   CLI state
+ * @param rxtx  Module handle
+ *
+ * @return true if the task is currently running,
+ *         false if it is any other state
  */
-void rxtx_stop_tasks(struct rxtx_data *d);
+bool rxtx_task_running(struct rxtx_data *rxtx);
+
+/**
+ * Request RX/TX task to shut down and exit. Blocks until task has shut down.
+ *
+ * @param   rxtx      RX/TX data handle
+ */
+void rxtx_shutdown(struct rxtx_data *rxtx);
 
 /**
  * Free data allocated with rxtx_data_alloc()
  *
- * @pre     Must be preceeded by a call to rxtx_stop_tasks()
+ * @pre     Must be preceeded by a call to rxtx_shutdown()
  *
- * @param   d   RX/TX data
+ * @param   rxtx        RXTX data handle
  */
-void rxtx_data_free(struct rxtx_data *d);
+void rxtx_data_free(struct rxtx_data *rxtx);
 
-/**
- * @return true if the TX task is currently running,
- *         false if it is any other state
- */
-bool rxtx_tx_task_running(struct cli_state *s);
-
-/**
- * @return true if the RX task is currently running,
- *         false if it is any other state
- */
-bool rxtx_rx_task_running(struct cli_state *s);
-
-
-#endif

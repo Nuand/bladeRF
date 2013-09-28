@@ -111,4 +111,9 @@ unsigned int str2uint_suffix(const char *str, unsigned int min,
  */
 int str2version(const char *str, struct bladerf_version *version);
 
+/**
+ * Convert a bladerf_dev_speed to a string suitable for printing
+ */
+const char * devspeed2str(bladerf_dev_speed speed);
+
 #endif
