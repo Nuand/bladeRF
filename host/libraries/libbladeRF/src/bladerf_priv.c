@@ -10,14 +10,14 @@
 #define OTP_BUFFER_SIZE 256
 
 void bladerf_set_error(struct bladerf_error *error,
-                        bladerf_error type, int val)
+                        bladerf_error_type type, int val)
 {
     error->type = type;
     error->value = val;
 }
 
 void bladerf_get_error(struct bladerf_error *error,
-                        bladerf_error *type, int *val)
+                        bladerf_error_type *type, int *val)
 {
     if (type) {
         *type = error->type;

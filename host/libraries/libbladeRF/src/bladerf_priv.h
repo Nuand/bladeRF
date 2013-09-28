@@ -24,10 +24,10 @@ typedef enum {
     ETYPE_LIBBLADERF,
     ETYPE_BACKEND,
     ETYPE_OTHER = INT_MAX - 1
-} bladerf_error;
+} bladerf_error_type;
 
 struct bladerf_error {
-    bladerf_error type;
+    bladerf_error_type type;
     int value;
 };
 
@@ -177,13 +177,13 @@ size_t c16_samples_to_bytes(size_t n_samples);
  * Set an error and type
  */
 void bladerf_set_error(struct bladerf_error *error,
-                        bladerf_error type, int val);
+                        bladerf_error_type type, int val);
 
 /**
  * Fetch an error and type
  */
 void bladerf_get_error(struct bladerf_error *error,
-                        bladerf_error *type, int *val);
+                        bladerf_error_type *type, int *val);
 
 /**
  * Read data from one-time-programmabe (OTP) section of flash
