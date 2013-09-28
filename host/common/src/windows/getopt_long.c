@@ -60,11 +60,16 @@ char opterrmsg[128]; /* last error message is stored here */
 static void warnx(int print_error, const char *fmt, ...)
 {
 	va_list ap;
+    int ret;
 	va_start(ap, fmt);
-	if (fmt != NULL)
-		_vsnprintf(opterrmsg, 128, fmt, ap);
-	else
+	if (fmt != NULL) {
+		ret = _vsnprintf(opterrmsg, sizeof(opterrmsg)/sizeof(opterrmsg[0])-1, fmt, ap);
+        if(ret == -1) {
+            opterrmsg[sizeof(opterrmsg)/sizeof(opterrmsg[0])-1] = '\0';
+        }
+    } else {
 		opterrmsg[0]='\0';
+    }
 	va_end(ap);
 	if (print_error) {
 		fprintf(stderr, opterrmsg);

@@ -340,13 +340,14 @@ static int find_fx3_via_info(
     struct bladerf_devinfo thisinfo;
     libusb_device *dev, **devs;
     libusb_device *found_dev = NULL;
+    ssize_t status_sz;
 
     count = 0;
 
-    status = libusb_get_device_list(context, &devs);
-    if (status < 0) {
-        log_error("libusb_get_device_list() failed: %d %s\n", status, libusb_error_name(status));
-        return status;
+    status_sz = libusb_get_device_list(context, &devs);
+    if (status_sz < 0) {
+        log_error("libusb_get_device_list() failed: %d %s\n", status_sz, libusb_error_name((int)status_sz));
+        return (int)status_sz;
     }
 
     for (i=0; (dev=devs[i]) != NULL; i++) {
@@ -586,6 +587,7 @@ static int get_bladerf(libusb_context *ctx, struct bladerf_devinfo *devinfo)
 }
 
 int main(int argc, char *argv[])
+
 {
     /* Arguments:
      * - Firmware image

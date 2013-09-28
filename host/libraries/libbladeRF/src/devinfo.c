@@ -60,6 +60,7 @@ int bladerf_devinfo_list_add(struct bladerf_devinfo_list *list,
             status = BLADERF_ERR_MEM;
         } else {
             list->elt = info_tmp;
+            list->backing_size = list->backing_size * 2;
         }
     }
 

@@ -14,7 +14,7 @@
 #include <pthread.h>
 #include <limits.h>
 #include <errno.h>
-#include <assert.h>
+#include "rel_assert.h"
 #include <string.h>
 #include "cmd.h"
 #include "conversions.h"
@@ -355,6 +355,7 @@ static int rx_write_csv_c16(struct cli_state *s, size_t n_samples)
     for (i = 0; i < to_write; i += 2) {
         snprintf(line, sizeof(line), "%d, %d" EOL,
                  common->buff[i], common->buff[i + 1]);
+        line[sizeof(line)-1] = '\0';
 
         if (fputs(line, common->file) < 0) {
             set_last_error(&common->error, ETYPE_ERRNO, errno);
@@ -416,7 +417,7 @@ static ssize_t tx_read_bin_c16(struct cli_state *s, unsigned int *repeats_left)
             if (*repeats_left == 0) {
                 ret = n_read;
                 break;
-            } else if (repeats_left != 0 ) {
+            } else if (*repeats_left != 0 ) {
                 /* Wrap back around to start of file if we're repeating */
                 if (fseek(tx->common.file, 0, SEEK_SET) < 0) {
                     set_last_error(&tx->common.error, ETYPE_ERRNO, errno);
@@ -567,9 +568,11 @@ static void *rx_task(void *arg) {
     enum rxtx_state state, prev_state;
     struct cli_state *s = (struct cli_state *) arg;
     struct rx_cfg *rx = &s->rxtx_data->rx;
-    unsigned int n_samples_left = 0;
+    size_t n_samples_left = 0;
     bool inf = false;
     size_t to_write = 0;
+
+    assert(rx->common.buff_size <= INT_MAX);
 
     /* We expect to be in the IDLE state when this task is kicked off */
     state = prev_state = get_state(&rx->common);
@@ -598,7 +601,7 @@ static void *rx_task(void *arg) {
                             s->dev,
                             BLADERF_FORMAT_SC16_Q12,
                             rx->common.buff,
-                            rx->common.buff_size/2,
+                            (int)rx->common.buff_size/2,
                             NULL
                           );
                 if (lib_ret < 0) {
@@ -613,7 +616,7 @@ static void *rx_task(void *arg) {
                             s->dev,
                             BLADERF_FORMAT_SC16_Q12,
                             rx->common.buff,
-                            rx->common.buff_size/2,
+                            (int)rx->common.buff_size/2,
                             NULL
                           );
                 if (lib_ret < 0) {
@@ -625,7 +628,7 @@ static void *rx_task(void *arg) {
                     assert((size_t)lib_ret <= (rx->common.buff_size / 2));
 
                     if (!inf) {
-                        to_write = uint_min(n_samples_left, lib_ret);
+                        to_write = min_sz(n_samples_left, lib_ret);
                     } else {
                         to_write = rx->common.buff_size / 2;
                     }
@@ -693,7 +696,8 @@ static void *tx_task(void *arg) {
     unsigned int repeats_left = 0;
     unsigned int repeat_delay = 0;
     bool repeats_inf = false;
-
+    
+    assert(tx->common.buff_size <= INT_MAX);
 
     /* We expect to be in the IDLE state when this task is kicked off */
     state = prev_state = get_state(&tx->common);
@@ -736,7 +740,7 @@ static void *tx_task(void *arg) {
                                     s->dev,
                                     BLADERF_FORMAT_SC16_Q12,
                                     tx->common.buff,
-                                    tx->common.buff_size/2,
+                                    (int)tx->common.buff_size/2,
                                     NULL
                                   );
                         if (lib_ret < 0) {

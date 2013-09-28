@@ -15,6 +15,7 @@ int cmd_open(struct cli_state *state, int argc, char **argv)
     size_t dev_ident_len;
     int i;
     int status;
+	int ret;
 
     /* Disallow opening of a diffrent device if the current one is doing work */
     if (cli_device_in_use(state)) {
@@ -55,9 +56,12 @@ int cmd_open(struct cli_state *state, int argc, char **argv)
     status = bladerf_open(&state->dev, dev_ident);
     if (status) {
         state->last_lib_error = status;
-        return CMD_RET_LIBBLADERF;
+        ret = CMD_RET_LIBBLADERF;
     } else {
-        return 0;
+        ret = 0;
     }
+
+    free(dev_ident);
+    return ret;
 }
 
