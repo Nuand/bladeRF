@@ -9,13 +9,16 @@ endif
 include make/toolchain.mk
 
 # Target files
+OUTPUT_DIR = build
 TARGET := bladeRF
-ELF := $(TARGET).elf
-IMG := $(TARGET).img
-MAP := $(TARGET).map
+ELF := $(OUTPUT_DIR)/$(TARGET).elf
+IMG := $(OUTPUT_DIR)/$(TARGET).img
+MAP := $(OUTPUT_DIR)/$(TARGET).map
+
 
 SRC := $(wildcard *.c)
-OBJ := $(SRC:.c=.o) $(TOOLCHAIN_DEPS_OBJ) 
+OBJ := $(addprefix $(OUTPUT_DIR)/,$(SRC:.c=.o)) \
+	$(addprefix $(OUTPUT_DIR)/,$(TOOLCHAIN_DEPS_OBJ))
 
 CFLAGS := -Wall -Wextra -Wno-unused-parameter \
 		  $(TOOLCHAIN_CFLAGS) \
@@ -29,28 +32,37 @@ endif
 
 LDFLAGS := $(TOOLCHAIN_LDFLAGS) -Map $(MAP)
 
+
 all: $(IMG)
 
-$(ELF): $(OBJ) 
+$(OUTPUT_DIR)/.dirstamp:
+	mkdir -p $(OUTPUT_DIR)
+	touch $@
+
+$(OUTPUT_DIR)/%.o: %.c
+	$(CC) -c $(CFLAGS) -o $@ $^
+
+$(ELF): $(OUTPUT_DIR)/.dirstamp $(OBJ)
 	$(LD) $(OBJ) $(LDFLAGS) -o $@
 
-$(IMG): $(ELF) $(ELF2IMG)
-	$(ELF2IMG) -i $< -o $@
+$(IMG): $(ELF) $(OUTPUT_DIR)/$(ELF2IMG)
+	$(OUTPUT_DIR)/$(ELF2IMG) -i $< -o $@
 
-$(ELF2IMG): $(ELF2IMG_SRC)
+$(OUTPUT_DIR)/$(ELF2IMG): $(ELF2IMG_SRC)
 	$(HOST_CC) $< -O2 -o $@
 
 # Build any toolchain dependencies. 
-$(TOOLCHAIN_DEPS_OBJ_C): %.o : $(TOOLCHAIN_DEPS_DIR)/%.c
+$(OUTPUT_DIR)/$(TOOLCHAIN_DEPS_OBJ_C): $(OUTPUT_DIR)/%.o : $(TOOLCHAIN_DEPS_DIR)/%.c
 	$(call build_toolchain_dep,$<,$@)
 
-$(TOOLCHAIN_DEPS_OBJ_A): %.o : $(TOOLCHAIN_DEPS_DIR)/%.S
+$(OUTPUT_DIR)/$(TOOLCHAIN_DEPS_OBJ_A): $(OUTPUT_DIR)/%.o : $(TOOLCHAIN_DEPS_DIR)/%.S
 	$(call build_toolchain_dep,$<,$@)
 
 clean:
 	$(RM) -f $(ELF) $(IMG) $(MAP) $(OBJ) $(TOOLCHAIN_OBJ)
 
 realclean: clean
-	$(RM) -f elf2img
+	$(RM) -f $(OUTPUT_DIR)/$(ELF2IMG)
+	$(RM) -rf $(OUTPUT_DIR)
 
 .PHONY: clean realclean
