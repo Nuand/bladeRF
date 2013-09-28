@@ -719,6 +719,7 @@ int ezusb_load_ram(libusb_device_handle *device, const char *path, int fx_type, 
           || ((fx_type == FX_TYPE_AN21) && (iic_header[0] != 0xB2))
           || ((fx_type == FX_TYPE_FX1) && (iic_header[0] != 0xB6)) ) {
             log_error("IIC image does not contain executable code - cannot load to RAM.\n");
+            fclose(image);
             return -1;
         }
     }
@@ -744,8 +745,10 @@ int ezusb_load_ram(libusb_device_handle *device, const char *path, int fx_type, 
         ctx.mode = internal_only;
 
         /* if required, halt the CPU while we overwrite its code/data */
-        if (cpucs_addr && !ezusb_cpucs(device, cpucs_addr, false))
+        if (cpucs_addr && !ezusb_cpucs(device, cpucs_addr, false)) {
+            fclose(image);
             return -1;
+        }
 
         /* 2nd stage, first part? loader was already uploaded */
     } else {
@@ -761,6 +764,7 @@ int ezusb_load_ram(libusb_device_handle *device, const char *path, int fx_type, 
     status = parse[img_type](image, &ctx, is_external, ram_poke);
     if (status < 0) {
         log_error("unable to upload %s\n", path);
+        fclose(image);
         return status;
     }
 
@@ -770,8 +774,10 @@ int ezusb_load_ram(libusb_device_handle *device, const char *path, int fx_type, 
         ctx.mode = skip_external;
 
         /* if needed, halt the CPU while we overwrite the 1st stage loader */
-        if (cpucs_addr && !ezusb_cpucs(device, cpucs_addr, false))
+        if (cpucs_addr && !ezusb_cpucs(device, cpucs_addr, false)) {
+            fclose(image);
             return -1;
+        }
 
         /* at least write the interrupt vectors (at 0x0000) for reset! */
         rewind(image);
@@ -779,12 +785,15 @@ int ezusb_load_ram(libusb_device_handle *device, const char *path, int fx_type, 
         status = parse_ihex(image, &ctx, is_external, ram_poke);
         if (status < 0) {
             log_error("unable to completely upload %s\n", path);
+            fclose(image);
             return status;
         }
     }
 
-    log_info("... WROTE: %d bytes, %d segments, avg %d\n",
-        (int)ctx.total, (int)ctx.count, (int)(ctx.total/ctx.count));
+    log_info("... WROTE: %d bytes, %d segments\n",
+        (int)ctx.total, (int)ctx.count);
+
+    fclose(image);
 
     /* if required, reset the CPU so it runs what we just uploaded */
     if (cpucs_addr && !ezusb_cpucs(device, cpucs_addr, true))
