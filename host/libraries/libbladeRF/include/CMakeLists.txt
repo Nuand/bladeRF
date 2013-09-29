@@ -4,6 +4,8 @@
 #
 # TODO license text here (see top-level COPYING for time being)
 
+cmake_minimum_required(VERSION 2.8)
+
 ################################################################################
 # Install libbladeRF header files 
 ################################################################################
