@@ -36,8 +36,8 @@ LDFLAGS := $(TOOLCHAIN_LDFLAGS) -Map $(MAP)
 all: $(IMG)
 
 $(OUTPUT_DIR)/.dirstamp:
-	mkdir -p $(OUTPUT_DIR)
-	touch $@
+	-mkdir $(OUTPUT_DIR)
+	echo THERE_IS_NO_TOUCH_ON_WINDOWS > $@
 
 $(OUTPUT_DIR)/%.o: %.c
 	$(CC) -c $(CFLAGS) -o $@ $^
@@ -45,14 +45,14 @@ $(OUTPUT_DIR)/%.o: %.c
 $(ELF): $(OUTPUT_DIR)/.dirstamp $(OBJ)
 	$(LD) $(OBJ) $(LDFLAGS) -o $@
 
-$(IMG): $(ELF) $(OUTPUT_DIR)/$(ELF2IMG)
-	$(OUTPUT_DIR)/$(ELF2IMG) -i $< -o $@
+$(IMG): $(ELF) $(ELF2IMG)
+	$(ELF2IMG) -i $< -o $@
 
-$(OUTPUT_DIR)/$(ELF2IMG): $(ELF2IMG_SRC)
+$(ELF2IMG): $(ELF2IMG_SRC)
 	$(HOST_CC) $< -O2 -o $@
 
 # Build any toolchain dependencies. 
-$(OUTPUT_DIR)/$(TOOLCHAIN_DEPS_OBJ_C): $(OUTPUT_DIR)/%.o : $(TOOLCHAIN_DEPS_DIR)/%.c
+$(OUTPUT_DIR)/cyfxtx.o: $(OUTPUT_DIR)/%.o : $(TOOLCHAIN_DEPS_DIR)/%.c
 	$(call build_toolchain_dep,$<,$@)
 
 $(OUTPUT_DIR)/$(TOOLCHAIN_DEPS_OBJ_A): $(OUTPUT_DIR)/%.o : $(TOOLCHAIN_DEPS_DIR)/%.S
@@ -62,7 +62,6 @@ clean:
 	$(RM) -f $(ELF) $(IMG) $(MAP) $(OBJ) $(TOOLCHAIN_OBJ)
 
 realclean: clean
-	$(RM) -f $(OUTPUT_DIR)/$(ELF2IMG)
 	$(RM) -rf $(OUTPUT_DIR)
 
 .PHONY: clean realclean
