@@ -8,7 +8,7 @@
 # the CMakeLists.txt from the rtl-sdr project.
 #   http://sdr.osmocom.org/trac/wiki/rtl-sdr
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.3)
 project(bladeRF C)
 
 ################################################################################

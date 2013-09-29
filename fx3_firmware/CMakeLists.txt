@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 2.8)
+
 add_custom_target(fx3_firmware ALL
     COMMAND ${CMAKE_MAKE_PROGRAM} OUTPUT_DIR=${CMAKE_CURRENT_BINARY_DIR}/build
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
