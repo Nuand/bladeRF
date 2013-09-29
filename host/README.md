@@ -17,7 +17,7 @@ libusb-1.0 and its development headers are required. \>= v1.0.12 is recommended 
 latest released version is always recommended. Please see the [libusb ChangeLog] for more information.
 
 ### CMake ###
-[CMake] is used to build the items in this directory.
+[CMake] is used to build the items in this directory.  \>= v2.8.3 is required.
 
 #### Ubuntu/Debian: ####
 ```sudo apt-get install libusb-1.0.0 libusb-1.0.0-dev cmake```
