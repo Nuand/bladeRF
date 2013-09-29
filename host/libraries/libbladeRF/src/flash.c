@@ -23,9 +23,9 @@ int flash_aligned(unsigned int align, unsigned int addr)
 int flash_bounds(unsigned int addr, unsigned int len)
 {
     assert(addr < BLADERF_FLASH_TOTAL_SIZE);
-    assert(addr + len < BLADERF_FLASH_TOTAL_SIZE);
+    assert(addr + len <= BLADERF_FLASH_TOTAL_SIZE);
 
-    return addr + len < BLADERF_FLASH_TOTAL_SIZE;
+    return addr + len <= BLADERF_FLASH_TOTAL_SIZE;
 }
 
 int flash_bounds_aligned(unsigned int align,
