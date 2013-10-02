@@ -47,7 +47,7 @@ const struct freq_range bands[] = {
     { FIELD_INIT(.low, 1860000000u), FIELD_INIT(.high, 2285000000u), FIELD_INIT(.value, 0x24) },
     { FIELD_INIT(.low, 2285000000u), FIELD_INIT(.high, 2695000000u), FIELD_INIT(.value, 0x2c) },
     { FIELD_INIT(.low, 2695000000u), FIELD_INIT(.high, 3240000000u), FIELD_INIT(.value, 0x34) },
-    { FIELD_INIT(.low, 3240000000u), FIELD_INIT(.high, 380000000u), FIELD_INIT(.value, 0x3c) }
+    { FIELD_INIT(.low, 3240000000u), FIELD_INIT(.high, 3900000000u), FIELD_INIT(.value, 0x3c) }
 };
 
 
@@ -853,7 +853,7 @@ void lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
 #define VCO_NORM 0x00
 #define VCO_LOW 0x01
 
-        int start_i = -1, stop_i = -1l
+        int start_i = -1, stop_i = -1;
         //int avg_i;
         //int state = VCO_HIGH;
         int i;
