@@ -1527,6 +1527,8 @@ static int lusb_si5338_write(struct bladerf *dev, uint8_t addr, uint8_t data)
     cmd.addr = addr;
     cmd.data = data;
 
+    log_verbose( "%s: 0x%2.2x 0x%2.2x\n", __func__, addr, data );
+
     status = access_peripheral(lusb, UART_PKT_DEV_SI5338,
                                UART_PKT_MODE_DIR_WRITE, &cmd);
 
@@ -1555,6 +1557,8 @@ static int lusb_si5338_read(struct bladerf *dev, uint8_t addr, uint8_t *data)
         *data = cmd.data;
     }
 
+    log_verbose( "%s: 0x%2.2x 0x%2.2x\n", __func__, addr, *data );
+
     return status;
 }
 
@@ -1566,6 +1570,8 @@ static int lusb_lms_write(struct bladerf *dev, uint8_t addr, uint8_t data)
 
     cmd.addr = addr;
     cmd.data = data;
+
+    log_verbose( "%s: 0x%2.2x 0x%2.2x\n", __func__, addr, data );
 
     status = access_peripheral(lusb, UART_PKT_DEV_LMS,
                                 UART_PKT_MODE_DIR_WRITE, &cmd);
@@ -1585,6 +1591,7 @@ static int lusb_lms_read(struct bladerf *dev, uint8_t addr, uint8_t *data)
 
     cmd.addr = addr;
     cmd.data = 0xff;
+
     status = access_peripheral(lusb, UART_PKT_DEV_LMS,
                                UART_PKT_MODE_DIR_READ, &cmd);
 
@@ -1593,6 +1600,8 @@ static int lusb_lms_read(struct bladerf *dev, uint8_t addr, uint8_t *data)
     } else {
         *data = cmd.data;
     }
+
+    log_verbose( "%s: 0x%2.2x 0x%2.2x\n", __func__, addr, *data );
 
     return status;
 }
