@@ -11,7 +11,7 @@ const unsigned int BLADERF_FLASH_ALIGNMENT_PAGE = ~((1<<BLADERF_FLASH_PAGE_BITS)
 const unsigned int BLADERF_FLASH_ALIGNMENT_SECTOR = ~((1<<BLADERF_FLASH_SECTOR_BITS) - 1);
 
 
-int flash_aligned(unsigned int align, unsigned int addr)
+static int flash_aligned(unsigned int align, unsigned int addr)
 {
     assert(align == BLADERF_FLASH_ALIGNMENT_BYTE
            || align == BLADERF_FLASH_ALIGNMENT_PAGE
@@ -20,7 +20,7 @@ int flash_aligned(unsigned int align, unsigned int addr)
     return (addr & (unsigned int)align) == addr;
 }
 
-int flash_bounds(unsigned int addr, unsigned int len)
+static int flash_bounds(unsigned int addr, unsigned int len)
 {
     assert(addr < BLADERF_FLASH_TOTAL_SIZE);
     assert(addr + len <= BLADERF_FLASH_TOTAL_SIZE);
@@ -28,7 +28,7 @@ int flash_bounds(unsigned int addr, unsigned int len)
     return addr + len <= BLADERF_FLASH_TOTAL_SIZE;
 }
 
-int flash_bounds_aligned(unsigned int align,
+static int flash_bounds_aligned(unsigned int align,
                          unsigned int addr, unsigned int len)
 {
     unsigned int aligned = flash_aligned(align, addr)
@@ -40,28 +40,28 @@ int flash_bounds_aligned(unsigned int align,
     return aligned;
 }
 
-unsigned int flash_to_sectors(unsigned int bytes)
+static unsigned int flash_to_sectors(unsigned int bytes)
 {
     assert(flash_aligned(BLADERF_FLASH_ALIGNMENT_SECTOR, bytes));
 
     return (bytes>>BLADERF_FLASH_SECTOR_BITS);
 }
 
-unsigned int flash_to_pages(unsigned int bytes)
+static unsigned int flash_to_pages(unsigned int bytes)
 {
     assert(flash_aligned(BLADERF_FLASH_ALIGNMENT_PAGE, bytes));
 
     return (bytes>>BLADERF_FLASH_PAGE_BITS);
 }
 
-unsigned int flash_from_pages(unsigned int page)
+static unsigned int flash_from_pages(unsigned int page)
 {
     assert(page < BLADERF_FLASH_NUM_PAGES);
 
     return page * BLADERF_FLASH_PAGE_SIZE;
 }
 
-unsigned int flash_from_sectors(unsigned int sector)
+static unsigned int flash_from_sectors(unsigned int sector)
 {
     assert(sector < BLADERF_FLASH_NUM_SECTORS);
 
