@@ -11,6 +11,9 @@
 *.mod.c
 *.rbf
 *.symvers
+*.bsf
+*.cmp
+*.objdump
 .tmp_versions
 
 hdl/quartus/work/*
@@ -23,3 +26,13 @@ build/*
 host/build/*
 host/libraries/libbladeRF/doc/doxygen/html
 host/libraries/libbladeRF/doc/doxygen/Doxyfile
+host/libraries/libbladeRF/lib
+host/libraries/libbladeRF/bin
+
+hdl/fpga/ip/altera/nios_system/.qsys_edit
+hdl/fpga/ip/altera/nios_system/nios_system.html
+hdl/fpga/ip/altera/nios_system/nios_system.sopcinfo
+hdl/fpga/ip/altera/nios_system/software/lms_spi_controller/mem_init
+hdl/fpga/ip/altera/nios_system/software/lms_spi_controller/obj
+hdl/fpga/ip/altera/nios_system/software/lms_spi_controller_bsp
+
