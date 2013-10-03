@@ -623,7 +623,9 @@ int main(int argc, char *argv[])
         printf(BLADERF_FLASH_VERSION "\n");
         return 0;
     } else if (rc.show_lib_version) {
-        printf("%s\n", bladerf_version(NULL, NULL, NULL));
+        struct bladerf_version version;
+        bladerf_version(&version);
+        printf("%s\n", version.describe);
         return 0;
     }
 

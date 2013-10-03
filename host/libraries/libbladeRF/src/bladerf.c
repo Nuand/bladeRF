@@ -133,8 +133,8 @@ int bladerf_open(struct bladerf **device, const char *dev_id)
             /* If any of these routines failed, the dev structure should
              * still have had it's fields dummied, so they're safe to
              * print here (i.e., not uninitialized) */
-            log_debug("%s: fw=v%d.%d serial=%s trim=0x%.4x fpga_size=%d\n",
-                    __FUNCTION__, dev->fw_major, dev->fw_minor,
+            log_debug("%s: fw=v%s serial=%s trim=0x%.4x fpga_size=%d\n",
+                    __FUNCTION__, dev->fw_version.describe,
                     dev->ident.serial, dev->dac_trim, dev->fpga_size);
         }
 
@@ -580,7 +580,6 @@ int bladerf_init_stream(struct bladerf_stream **stream,
 
 void bladerf_deinit_stream(struct bladerf_stream *stream)
 {
-
     size_t i;
 
     while(stream->state != STREAM_DONE && stream->state != STREAM_IDLE) {
@@ -641,15 +640,9 @@ int bladerf_get_fpga_size(struct bladerf *dev, bladerf_fpga_size *size)
     return 0;
 }
 
-int bladerf_get_fw_version(struct bladerf *dev,
-                            unsigned int *major, unsigned int *minor)
+int bladerf_fw_version(struct bladerf *dev, struct bladerf_version *version)
 {
-    return dev->fn->get_fw_version(dev, major, minor);
-}
-
-void bladerf_get_fw_version_string(struct bladerf *dev, char *ver, size_t len)
-{
-    return dev->fn->get_fw_version_string(dev, ver, len);
+    return dev->fn->fw_version(dev, version);
 }
 
 int bladerf_is_fpga_configured(struct bladerf *dev)
@@ -657,10 +650,9 @@ int bladerf_is_fpga_configured(struct bladerf *dev)
     return dev->fn->is_fpga_configured(dev);
 }
 
-int bladerf_get_fpga_version(struct bladerf *dev,
-                                unsigned int *major, unsigned int *minor)
+int bladerf_fpga_version(struct bladerf *dev, struct bladerf_version *version)
 {
-    return dev->fn->get_fpga_version(dev, major, minor);
+    return dev->fn->fpga_version(dev, version);
 }
 
 int bladerf_stats(struct bladerf *dev, struct bladerf_stats *stats)
@@ -854,23 +846,12 @@ const char * bladerf_strerror(int error)
     }
 }
 
-const char * bladerf_version(unsigned int *major,
-                             unsigned int *minor,
-                             unsigned int *patch)
+void bladerf_version(struct bladerf_version *version)
 {
-    if (major) {
-        *major = LIBBLADERF_VERSION_MAJOR;
-    }
-
-    if (minor) {
-        *minor = LIBBLADERF_VERSION_MINOR;
-    }
-
-    if (patch) {
-        *patch = LIBBLADERF_VERSION_PATCH;
-    }
-
-    return LIBBLADERF_VERSION;
+    version->major = LIBBLADERF_VERSION_MAJOR;
+    version->minor = LIBBLADERF_VERSION_MINOR;
+    version->patch = LIBBLADERF_VERSION_PATCH;
+    version->describe = LIBBLADERF_VERSION;
 }
 
 bladerf_log_level bladerf_log_set_verbosity(bladerf_log_level level)

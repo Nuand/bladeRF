@@ -317,7 +317,7 @@ CyBool_t NuandHandleVendorRequest(
     unsigned int ret;
     uint8_t use_feature;
     CyBool_t fpgaProg;
-    struct bladeRF_version ver;
+    struct bladerf_fx3_version ver;
     CyU3PReturnStatus_t apiRetStatus = CY_U3P_SUCCESS;
     int retStatus;
     uint16_t readC;

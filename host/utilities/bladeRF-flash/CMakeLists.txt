@@ -12,7 +12,7 @@ project(bladeRF-flash C)
 
 set(VERSION_INFO_MAJOR  0)
 set(VERSION_INFO_MINOR  4)
-set(VERSION_INFO_PATCH  0)
+set(VERSION_INFO_PATCH  1)
 set(VERSION_INFO_EXTRA "git")
 include(Version)
 

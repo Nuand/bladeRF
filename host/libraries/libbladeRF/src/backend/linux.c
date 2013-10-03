@@ -431,26 +431,31 @@ static int linux_get_cal(struct bladerf *dev, char *cal)
 }
 
 /* XXX: For realsies */
-static int linux_get_fpga_version(struct bladerf *dev, unsigned int *maj, unsigned int *min)
+static int linux_fpga_version(struct bladerf *dev,
+                                struct bladerf_version *version)
 {
-    log_warning("FPGA currently does not have a version number.\n");
-    *min = *maj = 0;
+    log_debug("FPGA currently does not have a version number.\n");
+    version->major = version ->minor = version->patch = 0;
+    version->describe = dev->fpga_version_str;
     return 0;
 }
 
-static int linux_get_fw_version(struct bladerf *dev,
-                                unsigned int *major, unsigned int *minor)
+/* TODO: Add support for patch version and string */
+static int linux_fw_version(struct bladerf *dev,
+                            struct bladerf_version *version)
 {
     int status;
-    struct bladeRF_version ver;
+    struct bladerf_fx3_version ver;
     struct bladerf_linux *backend = (struct bladerf_linux *)dev->backend;
-
-    assert(dev && major && minor);
 
     status = ioctl(backend->fd, BLADE_QUERY_VERSION, &ver);
     if (!status) {
-        *major = ver.major;
-        *minor = ver.minor;
+        version->major = ver.major;
+        version->minor = ver.minor;
+        version->patch = 0;
+        version->describe = dev->fw_version_str;
+        snprintf(dev->fw_version_str, BLADERF_VERSION_STR_MAX, "%d.%d.%d",
+                 version->major, version->minor, version->patch);
         return 0;
     }
 
@@ -752,9 +757,8 @@ const struct bladerf_fn bladerf_linux_fn = {
 
     FIELD_INIT(.get_cal, linux_get_cal),
     FIELD_INIT(.get_otp, linux_get_otp),
-    FIELD_INIT(.get_fw_version, linux_get_fw_version),
-    FIELD_INIT(.get_fw_version_string, NULL),
-    FIELD_INIT(.get_fpga_version, linux_get_fpga_version),
+    FIELD_INIT(.fw_version, linux_fw_version),
+    FIELD_INIT(.fpga_version, linux_fpga_version),
     FIELD_INIT(.get_device_speed, linux_get_device_speed),
 
     FIELD_INIT(.config_gpio_write, linux_config_gpio_write),

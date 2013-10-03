@@ -1,17 +1,23 @@
 #include "cmd.h"
+#include "version.h"
 #include <stdio.h>
 
 int cmd_version(struct cli_state *state, int argc, char **argv)
 {
     int status;
-    unsigned int fw_major, fw_minor;
-    unsigned int fpga_major, fpga_minor;
     char serial[BLADERF_SERIAL_LENGTH] = { 0 };
     bladerf_fpga_size fpga_size;
     uint16_t dac_trim;
-    char version[32] = { 0 };
 
+    struct bladerf_version fw_version, fpga_version, lib_version;
     bool fpga_loaded = false;
+
+    bladerf_version(&lib_version);
+
+    printf("\n");
+    printf("bladeRF-cli version:        " BLADERF_CLI_VERSION "\n");
+    printf("libbladeRF version:         %s\n", lib_version.describe);
+    printf("\n");
 
     if (state->dev == NULL) {
         return CMD_RET_NODEV;
@@ -22,18 +28,16 @@ int cmd_version(struct cli_state *state, int argc, char **argv)
         return status;
     } else if (status) {
         fpga_loaded = true;
-        status = bladerf_get_fpga_version(state->dev, &fpga_major, &fpga_minor);
+        status = bladerf_fpga_version(state->dev, &fpga_version);
         if (status < 0) {
             return status;
         }
     }
 
-    status = bladerf_get_fw_version(state->dev, &fw_major, &fw_minor);
+    status = bladerf_fw_version(state->dev, &fw_version);
     if (status < 0) {
         return status;
     }
-
-    bladerf_get_fw_version_string(state->dev, version, sizeof(version));
 
     status = bladerf_get_serial(state->dev, serial);
     if (status < 0) {
@@ -50,21 +54,21 @@ int cmd_version(struct cli_state *state, int argc, char **argv)
         return status;
     }
 
+    printf("Firmware version:           %s\n", fw_version.describe);
 
-    printf("\n");
-    printf("Serial #:               %s\n", serial);
-    printf("VCTCXO DAC calibration: 0x%.4x\n", dac_trim);
-    if (fpga_size != 0) {
-        printf("FPGA size:              %d KLE\n", fpga_size);
-    } else {
-        printf("FPGA size:              Unknown\n");
-    }
-    printf("Firmware version:       %u.%u\n", fw_major, fw_minor);
-    printf("Firmware string:        %s\n", version);
     if (fpga_loaded) {
-        printf("FPGA version:           %u.%u\n", fpga_major, fpga_minor);
+        printf("FPGA version:               %s\n", fpga_version.describe);
     } else {
-        printf("FPGA version:           Unknown (FPGA not loaded)\n");
+        printf("FPGA version:               Unknown (FPGA not loaded)\n");
+    }
+
+    /* TODO: Move these into an info command */
+    printf("Serial #:                   %s\n", serial);
+    printf("VCTCXO DAC calibration:     0x%.4x\n", dac_trim);
+    if (fpga_size != 0) {
+        printf("FPGA size:                  %d KLE\n", fpga_size);
+    } else {
+        printf("FPGA size:                  Unknown\n");
     }
     printf("\n");
 

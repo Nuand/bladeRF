@@ -2,7 +2,7 @@
 #define _BLADERF_FIRMWARE_COMMON_H_
 
 #define BLADERF_IOCTL_BASE      'N'
-#define BLADE_QUERY_VERSION     _IOR(BLADERF_IOCTL_BASE, 0, struct bladeRF_version)
+#define BLADE_QUERY_VERSION     _IOR(BLADERF_IOCTL_BASE, 0, struct bladerf_fx3_version)
 #define BLADE_QUERY_FPGA_STATUS     _IOR(BLADERF_IOCTL_BASE, 1, unsigned int)
 #define BLADE_BEGIN_PROG        _IOR(BLADERF_IOCTL_BASE, 2, unsigned int)
 #define BLADE_END_PROG          _IOR(BLADERF_IOCTL_BASE, 3, unsigned int)
@@ -50,10 +50,12 @@
 #define BLADE_USB_CMD_INVALIDATE_CAL_CACHE    111
 #define BLADE_USB_CMD_REFRESH_CAL_CACHE       112
 
+#define BLADE_USB_STR_INDEX_DEV_VER 4
+
 #define CAL_BUFFER_SIZE 256
 #define CAL_PAGE 768
 
-struct bladeRF_version {
+struct bladerf_fx3_version {
     unsigned short major;
     unsigned short minor;
 };

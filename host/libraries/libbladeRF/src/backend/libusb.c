@@ -13,6 +13,7 @@
 #include "ezusb.h"
 #include "bladerf_priv.h"
 #include "backend/libusb.h"
+#include "conversions.h"
 #include "minmax.h"
 #include "log.h"
 
@@ -449,7 +450,33 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
             if( bladerf_devinfo_matches( &thisinfo, info ) ) {
 
                 /* Allocate backend structure and populate*/
-                dev = (struct bladerf *)malloc(sizeof(struct bladerf));
+                dev = (struct bladerf *)calloc(1, sizeof(struct bladerf));
+                if (!dev) {
+                    log_error("Skipping instance %d due to failed allocation: "
+                              "device handle.\n", thisinfo.instance);
+                    continue;
+                }
+
+                dev->fpga_version_str = calloc(1, BLADERF_VERSION_STR_MAX + 1);
+                if (!dev->fpga_version_str) {
+                    log_error("Skipping instance %d due to failed allocation: "
+                              "FPGA version string.\n", thisinfo.instance);
+                    free(dev);
+                    dev = NULL;
+                    continue;
+                }
+
+                dev->fw_version_str = calloc(1, BLADERF_VERSION_STR_MAX + 1);
+                if (!dev->fw_version_str) {
+                    log_error("Skipping instance %d due to failed allocation\n",
+                              thisinfo.instance);
+                    free(dev);
+                    dev = NULL;
+                    continue;
+                }
+
+
+
                 lusb = (struct bladerf_lusb *)malloc(sizeof(struct bladerf_lusb));
 
                 if (!dev || !lusb) {
@@ -458,8 +485,6 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
                     lusb = NULL;
                     dev = NULL;
 
-                    log_warning("Skipping instance %d due to memory allocation "
-                                "error", thisinfo.instance);
 
                     continue;
                 }
@@ -483,14 +508,19 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
                     goto lusb_open__err_device_list;
                 }
 
-                bladerf_get_fw_version(dev, &dev->fw_major, &dev->fw_minor);
-                if (dev->fw_major < FW_LEGACY_ALT_SETTING_MAJOR ||
-                        (dev->fw_major == FW_LEGACY_ALT_SETTING_MAJOR && dev->fw_minor < FW_LEGACY_ALT_SETTING_MINOR)) {
+                status = bladerf_fw_version(dev, &dev->fw_version);
+                if (status < 0) {
+                    goto lusb_open__err_device_list;
+                }
+
+                if (dev->fw_version.major < FW_LEGACY_ALT_SETTING_MAJOR ||
+                        (dev->fw_version.major == FW_LEGACY_ALT_SETTING_MAJOR &&
+                         dev->fw_version.minor < FW_LEGACY_ALT_SETTING_MINOR)) {
                     dev->legacy = LEGACY_ALT_SETTING;
                 }
 
-                if (dev->fw_major < FW_LEGACY_CONFIG_IF_MAJOR ||
-                        (dev->fw_major == FW_LEGACY_CONFIG_IF_MAJOR && dev->fw_minor < FW_LEGACY_CONFIG_IF_MINOR)) {
+                if (dev->fw_version.major < FW_LEGACY_CONFIG_IF_MAJOR ||
+                        (dev->fw_version.major == FW_LEGACY_CONFIG_IF_MAJOR && dev->fw_version.minor < FW_LEGACY_CONFIG_IF_MINOR)) {
                     dev->legacy |= LEGACY_CONFIG_IF;
                 }
 
@@ -598,6 +628,7 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
     } else {
         status = change_setting(dev, USB_IF_CONFIG);
     }
+
     if(status < 0) {
         status = error_libusb2bladerf(status);
         bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
@@ -623,7 +654,7 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
         return status;
     }
 
-    /*  End programming */
+    /* End programming */
     status = end_fpga_programming(dev);
     if (status) {
         status = error_libusb2bladerf(status);
@@ -1287,18 +1318,13 @@ static int lusb_get_cal(struct bladerf *dev, char *cal) {
             read_size, CAL_BUFFER_SIZE, (uint8_t*)cal);
 }
 
-static int lusb_get_fw_version(struct bladerf *dev,
-                               unsigned int *maj, unsigned int *min)
+/* FW < 1.5.0  does not have version strings */
+static int lusb_fw_version_legacy(struct bladerf *dev,
+                                    struct bladerf_version *version)
 {
     int status;
 
-    /* FIXME  We're playing with fire here - these structures need to be
-     *        serialized/deserialized when communicating them between the
-     *        host and the FX3. If the contents are change to not
-     *        conveniently land on word boundaries and the struct is
-     *        padded, we'll run into trouble.
-     */
-    struct bladeRF_version fw_ver;
+    struct bladerf_fx3_version fw_ver;
     struct bladerf_lusb *lusb = dev->backend;
 
     status = libusb_control_transfer(
@@ -1316,39 +1342,52 @@ static int lusb_get_fw_version(struct bladerf *dev,
 
     if (status < 0) {
         status = BLADERF_ERR_IO;
-        *maj = *min = 0;
     } else {
-        *maj = (unsigned int) LE16_TO_HOST(fw_ver.major);
-        *min = (unsigned int) LE16_TO_HOST(fw_ver.minor);
+        version->major = LE16_TO_HOST(fw_ver.major);
+        version->minor = LE16_TO_HOST(fw_ver.minor);
+        version->patch = 0;
+        version->describe = dev->fw_version_str;
+        snprintf(dev->fw_version_str, BLADERF_VERSION_STR_MAX, "%d.%d.%d",
+                 version->major, version->minor, version->patch);
         status = 0;
     }
 
     return status;
 }
 
-static void lusb_get_fw_version_string(struct bladerf *dev,
-                                      char *ver, size_t len)
+static int lusb_fw_version(struct bladerf *dev,
+                           struct bladerf_version *version)
 {
     int status;
     struct bladerf_lusb *lusb = dev->backend;
 
-    /* TODO: String descriptor index should probably be in a common header */
-    status = libusb_get_string_descriptor_ascii(lusb->handle, 4, (unsigned char *)ver, len);
+    status = libusb_get_string_descriptor_ascii(lusb->handle,
+                                                BLADE_USB_STR_INDEX_DEV_VER,
+                                                (unsigned char *)dev->fw_version_str,
+                                                BLADERF_VERSION_STR_MAX);
 
-    /* If we ran into an issue, populate with single questionmark */
+    /* If we ran into an issue, we're likely dealing with an older firmware.
+     * Fall back to the legacy version*/
     if (status < 0) {
-        *ver = '?';
+        status = lusb_fw_version_legacy(dev, version);
+    } else {
+        status = str2version(dev->fw_version_str, version);
+        if (status != 0) {
+            status = BLADERF_ERR_UNEXPECTED;
+        }
     }
 
-    return;
+    return status;
 }
 
-static int lusb_get_fpga_version(struct bladerf *dev,
-                                 unsigned int *maj, unsigned int *min)
+static int lusb_fpga_version(struct bladerf *dev,
+                             struct bladerf_version *version)
 {
-    log_warning("FPGA currently does not have a version number.\n");
-    *maj = 0;
-    *min = 0;
+    log_debug("FPGA currently does not have a version number.\n");
+    version->major = 0;
+    version->minor = 0;
+    version->patch = 0;
+    version->describe = dev->fpga_version_str;
     return 0;
 }
 
@@ -2037,9 +2076,8 @@ const struct bladerf_fn bladerf_lusb_fn = {
 
     FIELD_INIT(.get_cal, lusb_get_cal),
     FIELD_INIT(.get_otp, lusb_get_otp),
-    FIELD_INIT(.get_fw_version, lusb_get_fw_version),
-    FIELD_INIT(.get_fw_version_string, lusb_get_fw_version_string),
-    FIELD_INIT(.get_fpga_version, lusb_get_fpga_version),
+    FIELD_INIT(.fw_version, lusb_fw_version),
+    FIELD_INIT(.fpga_version, lusb_fpga_version),
     FIELD_INIT(.get_device_speed, lusb_get_device_speed),
 
     FIELD_INIT(.config_gpio_write, lusb_config_gpio_write),

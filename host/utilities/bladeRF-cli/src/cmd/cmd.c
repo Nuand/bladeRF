@@ -293,11 +293,11 @@ static const struct cmd cmd_table[] = {
     {
         FIELD_INIT(.names, cmd_names_ver),
         FIELD_INIT(.exec, cmd_version),
-        FIELD_INIT(.desc, "Device and firmware versions"),
+        FIELD_INIT(.desc, "Host software and device version information"),
         FIELD_INIT(.help,
             "version\n"
             "\n"
-            "Prints version information for device and firmware.\n"
+            "Prints version information for both host software and the current device\n"
         )
     },
     {

@@ -120,7 +120,7 @@ unsigned int str2uint_suffix(const char *str, unsigned int min,
         if (ok) {
             *ok = false;
         }
-        
+
         return 0;
     }
 
@@ -149,4 +149,48 @@ unsigned int str2uint_suffix(const char *str, unsigned int min,
 
     /* Truncate the floating point value to an integer and return it */
     return (unsigned int)value;
+}
+
+int str2version(const char *str, struct bladerf_version *version)
+{
+    unsigned long tmp;
+    const char *start = str;
+    char *end;
+
+    /* Major version */
+    errno = 0;
+    tmp = strtoul(start, &end, 10);
+    if (errno != 0 || tmp > UINT16_MAX || end == start || *end != '.') {
+        return -1;
+    }
+    version->major = tmp;
+
+    /* Minor version */
+    if (end[0] == '\0' || end[1] == '\0') {
+        return -1;
+    }
+    errno = 0;
+    start = &end[1];
+    tmp = strtoul(start, &end, 10);
+    if (errno != 0 || tmp > UINT16_MAX || end == start || *end != '.') {
+        return -1;
+    }
+    version->minor = tmp;
+
+    /* Patch version */
+    if (end[0] == '\0' || end[1] == '\0') {
+        return -1;
+    }
+    errno = 0;
+    start = &end[1];
+    tmp = strtoul(start, &end, 10);
+    if (errno != 0 || tmp > UINT16_MAX || end == start ||
+            (*end != '-' && *end != '\0')) {
+        return -1;
+    }
+    version->patch = tmp;
+
+    version->describe = str;
+
+    return 0;
 }
