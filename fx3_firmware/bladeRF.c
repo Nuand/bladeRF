@@ -809,28 +809,43 @@ void bladeRFInit(void)
         CyFxAppErrorHandler(apiRetStatus);
     }
 
-    /* String descriptor 1 */
-    apiRetStatus = CyU3PUsbSetDesc(CY_U3P_USB_SET_STRING_DESCR, 1, (uint8_t *)CyFxUSBManufactureDscr);
+    /* Manufacturer string descriptor */
+    apiRetStatus = CyU3PUsbSetDesc(CY_U3P_USB_SET_STRING_DESCR,
+                                   BLADE_USB_STR_INDEX_MFR,
+                                   (uint8_t *)CyFxUSBManufactureDscr);
+
     if (apiRetStatus != CY_U3P_SUCCESS) {
         CyU3PDebugPrint (4, "USB set string descriptor failed, Error code = %d\n", apiRetStatus);
         CyFxAppErrorHandler(apiRetStatus);
     }
 
-    /* String descriptor 2 */
-    apiRetStatus = CyU3PUsbSetDesc(CY_U3P_USB_SET_STRING_DESCR, 2, (uint8_t *)CyFxUSBProductDscr);
+    /* Product string descriptor */
+    apiRetStatus = CyU3PUsbSetDesc(CY_U3P_USB_SET_STRING_DESCR,
+                                   BLADE_USB_STR_INDEX_PRODUCT,
+                                   (uint8_t *)CyFxUSBProductDscr);
+
     if (apiRetStatus != CY_U3P_SUCCESS) {
         CyU3PDebugPrint (4, "USB set string descriptor failed, Error code = %d\n", apiRetStatus);
         CyFxAppErrorHandler(apiRetStatus);
     }
 
-    /* String descriptor 3 */
-    apiRetStatus = CyU3PUsbSetDesc(CY_U3P_USB_SET_STRING_DESCR, 3, (uint8_t *)CyFxUSBSerial);
+    /* Fetch serial number from flash and configure the serial number
+     * string descriptor */
+    ExtractSerial();
+    apiRetStatus = CyU3PUsbSetDesc(CY_U3P_USB_SET_STRING_DESCR,
+                                   BLADE_USB_STR_INDEX_PRODUCT,
+                                   (uint8_t *)CyFxUSBSerial);
+
     if (apiRetStatus != CY_U3P_SUCCESS) {
         CyU3PDebugPrint (4, "USB set string descriptor failed, Error code = %d\n", apiRetStatus);
         CyFxAppErrorHandler(apiRetStatus);
     }
 
-    apiRetStatus = CyU3PUsbSetDesc(CY_U3P_USB_SET_STRING_DESCR, 4, (uint8_t *)CyFxUSBVersion);
+    /* Firmware version string descriptor */
+    apiRetStatus = CyU3PUsbSetDesc(CY_U3P_USB_SET_STRING_DESCR,
+                                  BLADE_USB_STR_INDEX_FW_VER,
+                                  (uint8_t *)CyFxUSBVersion);
+
     if (apiRetStatus != CY_U3P_SUCCESS) {
         CyU3PDebugPrint (4, "USB set descriptor failed for version string, Error code = %d\n", apiRetStatus);
         CyFxAppErrorHandler(apiRetStatus);
@@ -882,8 +897,6 @@ void bladeRFAppThread_Entry( uint32_t input)
     populateVersionString();
 
     bladeRFInit();
-
-    ExtractSerial();
 
     FpgaBeginProgram();
     for (;;) {

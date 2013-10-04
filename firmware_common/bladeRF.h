@@ -50,15 +50,32 @@
 #define BLADE_USB_CMD_INVALIDATE_CAL_CACHE    111
 #define BLADE_USB_CMD_REFRESH_CAL_CACHE       112
 
-#define BLADE_USB_STR_INDEX_DEV_VER 4
+/* String descriptor indices */
+#define BLADE_USB_STR_INDEX_MFR     1   /* Manufacturer */
+#define BLADE_USB_STR_INDEX_PRODUCT 2   /* Product */
+#define BLADE_USB_STR_INDEX_SERIAL  3   /* Serial number */
+#define BLADE_USB_STR_INDEX_FW_VER  4   /* Firmware version */
 
 #define CAL_BUFFER_SIZE 256
 #define CAL_PAGE 768
 
+#ifdef _MSC_VER
+#   define PACK(decl_to_pack_) \
+            __pragma(pack(push,1)) \
+            decl_to_pack_ \
+            __pragma(pack(pop))
+#elif defined(__GNUC__)
+#   define PACK(decl_to_pack_) \
+            decl_to_pack_ __attribute__((__packed__))
+#else
+#error "Unexpected compiler/environment"
+#endif
+
+PACK(
 struct bladerf_fx3_version {
     unsigned short major;
     unsigned short minor;
-};
+});
 
 struct bladeRF_firmware {
     unsigned int len;

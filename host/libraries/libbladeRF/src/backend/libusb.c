@@ -1362,7 +1362,7 @@ static int lusb_fw_version(struct bladerf *dev,
     struct bladerf_lusb *lusb = dev->backend;
 
     status = libusb_get_string_descriptor_ascii(lusb->handle,
-                                                BLADE_USB_STR_INDEX_DEV_VER,
+                                                BLADE_USB_STR_INDEX_FW_VER,
                                                 (unsigned char *)dev->fw_version_str,
                                                 BLADERF_VERSION_STR_MAX);
 
