@@ -470,22 +470,19 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
                 if (!dev->fw_version_str) {
                     log_error("Skipping instance %d due to failed allocation\n",
                               thisinfo.instance);
+                    free(dev->fpga_version_str);
                     free(dev);
                     dev = NULL;
                     continue;
                 }
 
-
-
                 lusb = (struct bladerf_lusb *)malloc(sizeof(struct bladerf_lusb));
-
-                if (!dev || !lusb) {
+                if (!lusb) {
+                    free(dev->fw_version_str);
+                    free(dev->fpga_version_str);
                     free(dev);
-                    free(lusb);
                     lusb = NULL;
                     dev = NULL;
-
-
                     continue;
                 }
 
@@ -610,6 +607,8 @@ static int lusb_close(struct bladerf *dev)
     libusb_close(lusb->handle);
     libusb_exit(lusb->context);
     free(dev->backend);
+    free(dev->fpga_version_str);
+    free(dev->fw_version_str);
     free(dev);
 
     return status;
