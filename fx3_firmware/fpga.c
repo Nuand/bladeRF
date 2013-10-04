@@ -200,7 +200,7 @@ CyBool_t NuandFpgaConfigHaltEndpoint(CyBool_t set, uint16_t endpoint)
         FPGA_status_bits[endpoint] = set;
         SetHaltDMAChannel(endpoint, &glChHandlebladeRFUtoP, BLADE_DMA_TX_SIZE, set);
 
-        isHandled = !set;
+        isHandled = CyTrue;
         break;
     }
 

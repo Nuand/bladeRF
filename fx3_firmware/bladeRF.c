@@ -236,8 +236,9 @@ CyBool_t GetStatus(uint16_t endpoint) {
 }
 
 static void HaltDMAChannel(uint8_t ep, CyU3PDmaChannel * handle) {
-    CyU3PDmaChannelReset (handle);
+    CyU3PDmaChannelAbort (handle);
     CyU3PUsbStall (ep, CyTrue, CyFalse);
+    CyU3PUsbAckSetup ();
 }
 
 static void ClearDMAChannel(uint8_t ep, CyU3PDmaChannel * handle, uint32_t count) {
@@ -245,7 +246,7 @@ static void ClearDMAChannel(uint8_t ep, CyU3PDmaChannel * handle, uint32_t count
     CyU3PUsbFlushEp(ep);
     CyU3PUsbResetEp(ep);
     CyU3PDmaChannelSetXfer (handle, count);
-    CyU3PUsbStall (ep, CyFalse, CyFalse);
+    CyU3PUsbStall (ep, CyFalse, CyTrue);
     CyU3PUsbAckSetup ();
 }
 
@@ -654,6 +655,32 @@ CyBool_t CyFxbladeRFApplnUSBSetupCB(uint32_t setupdat0, uint32_t setupdat1)
     return isHandled;
 }
 
+static void ClearHaltIfHaltedEp(const struct NuandApplication *app, uint8_t ep) {
+    uint8_t halted;
+    if(app->halted(ep, &halted)) {
+        if(halted) {
+            app->halt_endpoint(CyFalse, ep);
+        }
+    }
+}
+
+static void ClearHaltIfHalted() {
+    switch(glUsbAltInterface) {
+        case USB_IF_CONFIG:
+            ClearHaltIfHaltedEp(&NuandFpgaConfig, BLADE_FPGA_EP_PRODUCER);
+            break;
+        case USB_IF_RF_LINK:
+            ClearHaltIfHaltedEp(&NuandRFLink, BLADE_RF_SAMPLE_EP_PRODUCER);
+            ClearHaltIfHaltedEp(&NuandRFLink, BLADE_RF_SAMPLE_EP_CONSUMER);
+            ClearHaltIfHaltedEp(&NuandRFLink, BLADE_UART_EP_PRODUCER);
+            ClearHaltIfHaltedEp(&NuandRFLink, BLADE_UART_EP_CONSUMER);
+            break;
+        case USB_IF_SPI_FLASH:
+        default:
+            break;
+    }
+}
+
 /* This is the callback function to handle the USB events. */
 void CyFxbladeRFApplnUSBEventCB (CyU3PUsbEventType_t evtype, uint16_t evdata)
 {
@@ -669,7 +696,10 @@ void CyFxbladeRFApplnUSBEventCB (CyU3PUsbEventType_t evtype, uint16_t evdata)
             if(interface != 0) break;
 
             /* Don't do anything if we're setting the same interface over */
-            if( alt_interface == glUsbAltInterface ) break ;
+            if( alt_interface == glUsbAltInterface ) {
+                ClearHaltIfHalted();
+                break ;
+            }
 
             /* Stop whatever we were doing */
             switch(glUsbAltInterface) {
@@ -692,6 +722,12 @@ void CyFxbladeRFApplnUSBEventCB (CyU3PUsbEventType_t evtype, uint16_t evdata)
 
         case CY_U3P_USB_EVENT_SETCONF:
             glUsbConfiguration = evdata;
+
+            if(glUsbConfiguration != 1) {
+                StopApplication();
+            } else {
+                ClearHaltIfHalted();
+            }
             break;
 
         case CY_U3P_USB_EVENT_RESET:
