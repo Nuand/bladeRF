@@ -40,7 +40,7 @@ $(OUTPUT_DIR)/.dirstamp:
 	@mkdir -p $(OUTPUT_DIR)
 	@touch $(OUTPUT_DIR)/.dirstamp
 
-$(OUTPUT_DIR)/%.o: %.c
+$(OUTPUT_DIR)/%.o: $(abspath %.c)
 	$(CC) -c $(CFLAGS) -o $@ $^
 
 $(ELF): $(OUTPUT_DIR)/.dirstamp $(OBJ)

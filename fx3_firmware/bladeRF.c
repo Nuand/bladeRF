@@ -235,15 +235,25 @@ CyBool_t GetStatus(uint16_t endpoint) {
     return isHandled;
 }
 
-void ClearDMAChannel(uint8_t ep, CyU3PDmaChannel * handle, uint32_t count, CyBool_t stall_only) {
+static void HaltDMAChannel(uint8_t ep, CyU3PDmaChannel * handle) {
+    CyU3PDmaChannelReset (handle);
+    CyU3PUsbStall (ep, CyTrue, CyFalse);
+}
+
+static void ClearDMAChannel(uint8_t ep, CyU3PDmaChannel * handle, uint32_t count) {
     CyU3PDmaChannelReset (handle);
     CyU3PUsbFlushEp(ep);
     CyU3PUsbResetEp(ep);
     CyU3PDmaChannelSetXfer (handle, count);
-    CyU3PUsbStall (ep, CyFalse, CyTrue);
+    CyU3PUsbStall (ep, CyFalse, CyFalse);
+    CyU3PUsbAckSetup ();
+}
 
-    if(!stall_only) {
-        CyU3PUsbAckSetup ();
+void SetHaltDMAChannel(uint8_t ep, CyU3PDmaChannel * handle, uint32_t count, CyBool_t set) {
+    if(set) {
+        HaltDMAChannel(ep, handle);
+    } else {
+        ClearDMAChannel(ep, handle, count);
     }
 }
 
