@@ -37,7 +37,6 @@ all: version $(IMG)
 
 $(OUTPUT_DIR)/.dirstamp:
 	-mkdir $(OUTPUT_DIR)
-	echo THERE_IS_NO_TOUCH_ON_WINDOWS > $@
 
 $(OUTPUT_DIR)/%.o: %.c
 	$(CC) -c $(CFLAGS) -o $@ $^
@@ -51,7 +50,6 @@ $(IMG): $(ELF) $(ELF2IMG)
 $(ELF2IMG): $(ELF2IMG_SRC)
 	$(HOST_CC) $< -O2 -o $@
 
-<<<<<<< HEAD
 # Build any toolchain dependencies. 
 $(OUTPUT_DIR)/cyfxtx.o: $(OUTPUT_DIR)/%.o : $(TOOLCHAIN_DEPS_DIR)/%.c
 	$(call build_toolchain_dep,$<,$@)
