@@ -358,7 +358,6 @@ static int find_fx3_via_info(
         status = get_devinfo(dev, &thisinfo);
         if (status < 0) {
             log_error( "Could not open bladeRF device: %s\n", libusb_error_name(status) );
-            status = status;
             break;
         }
 
@@ -380,7 +379,6 @@ static int find_fx3_via_info(
             status = get_devinfo(dev, &thisinfo);
             if (status < 0) {
                 log_error( "Could not open bladeRF device: %s\n", libusb_error_name(status) );
-                status = status;
                 break;
             }
 
