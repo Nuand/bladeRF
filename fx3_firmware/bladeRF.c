@@ -716,6 +716,32 @@ static CyBool_t CyFxApplnLPMRqtCB (
     return allow_suspend;
 }
 
+static uint8_t otp_buf[0x100];
+static void ExtractSerial(void)
+{
+    int status;
+    char serial_buf[32];
+    int i;
+
+    NuandFirmwareStart();
+
+    status = NuandReadOtp(0, 0x100, otp_buf);
+
+    if (!NuandExtractField((void*)otp_buf, 0x100, "S", serial_buf, 32)) {
+        for (i = 0; i < 32; i++) {
+            CyFxUSBSerial[2+i*2] = serial_buf[i];
+        }
+    }
+
+    /* Initialize calibration table cache */
+    status = NuandReadCalTable(glCal);
+    if(status == CY_U3P_SUCCESS) {
+        glCalCacheValid = CyTrue;
+    }
+
+    NuandFirmwareStop();
+}
+
 void bladeRFInit(void)
 {
     CyU3PPibClock_t pibClock;
@@ -862,33 +888,6 @@ void bladeRFInit(void)
 }
 
 /* Entry function for the bladeRFAppThread. */
-
-static uint8_t otp_buf[0x100];
-static void ExtractSerial(void)
-{
-    int status;
-    char serial_buf[32];
-    int i;
-
-    NuandFirmwareStart();
-
-    status = NuandReadOtp(0, 0x100, otp_buf);
-
-    if (!NuandExtractField((void*)otp_buf, 0x100, "S", serial_buf, 32)) {
-        for (i = 0; i < 32; i++) {
-            CyFxUSBSerial[2+i*2] = serial_buf[i];
-        }
-    }
-
-    /* Initialize calibration table cache */
-    status = NuandReadCalTable(glCal);
-    if(status == CY_U3P_SUCCESS) {
-        glCalCacheValid = CyTrue;
-    }
-
-    NuandFirmwareStop();
-}
-
 void bladeRFAppThread_Entry( uint32_t input)
 {
     uint8_t state;
