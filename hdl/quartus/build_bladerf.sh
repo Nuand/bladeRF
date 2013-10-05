@@ -8,34 +8,23 @@ function usage()
     echo ""
     echo "bladeRF FPGA build script"
     echo ""
-    echo "Usage: `basename $0` -r <rev> -s <size>" 
+    echo "Usage: `basename $0` -r <rev> -s <size>"
     echo ""
     echo "Options:"
     echo "    -r <rev>       FPGA revision"
     echo "    -s <size>      FPGA size"
+    echo "    -a <stp>       SignalTap STP file"
     echo "    -h             Show this text"
     echo ""
     echo "Supported revisions:"
     echo "    hosted"
     echo "    headless"
     echo "    fsk_bridge"
-    echo "    qpsk_tx" 
+    echo "    qpsk_tx"
     echo ""
     echo "Supported sizes (kLE)"
     echo "    40"
     echo "    115"
-    echo ""
-    echo "This script requires the following items to be in your PATH:"
-    echo "    Quartus bin directory"
-    echo "    NIOS II EDS bin directory"
-    echo "    NIOS II EDS SDK2 directory"
-    echo "    NIOS II EDS GCC toolchain bin directory" 
-    echo ""
-    echo "    Example:"
-    echo "    export PATH=\$PATH:/opt/altera/12.1/quartus/bin"
-    echo "    export PATH=\$PATH:/opt/altera/12.1/nios2eds/bin"
-    echo "    export PATH=\$PATH:/opt/altera/12.1/nios2eds/sdk2/bin"
-    echo "    export PATH=\$PATH:/opt/altera/12.1/nios2eds/bin/gnu/H-i686-pc-linux-gnu/bin"
     echo ""
 }
 
@@ -44,7 +33,7 @@ if [ $# -eq 0 ]; then
     exit 0
 fi
 
-while getopts ":s:r:h" opt; do
+while getopts ":a:s:r:h" opt; do
     case $opt in
         h)
             usage
@@ -55,8 +44,13 @@ while getopts ":s:r:h" opt; do
             rev=$OPTARG
             ;;
 
-        s)    
+        s)
             size=$OPTARG
+            ;;
+
+        a)
+            echo "STP: $OPTARG"
+            stp=$(readlink -f $OPTARG)
             ;;
 
         *)
@@ -92,6 +86,11 @@ if [ "$rev" != "hosted" ] && [ "$rev" != "headless" ] && \
     exit 1
 fi
 
+if [ "$stp" != "" ] && [ ! -f "$stp" ]; then
+    echo -e "\nCould not find STP file: $stp\n" >&2
+    exit 1
+fi
+
 # quartus_sh script gives a reference point to the quartus bin dir
 quartus_sh="`which quartus_sh`"
 if [ $? -ne 0 ] || [ ! -f "$quartus_sh" ]; then
@@ -99,43 +98,6 @@ if [ $? -ne 0 ] || [ ! -f "$quartus_sh" ]; then
     exit 1
 fi
 
-quartus_sh_path="`dirname $quartus_sh`"
-if [ $? -ne 0 ] || [ ! -d "$quartus_sh_path" ]; then
-    echo -e "\nError: Could not identify path to quartus_sh\n" >&2
-    exit 1
-fi
-
-# Ensure the NIOS II EDS dir is in PATH by checking for a known script
-niosscript="`which nios2-terminal`"
-if [ $? -ne 0 ] || [ ! -f "$niosscript" ]; then
-    echo -e "\nError: The NIOS II EDS 'bin' directory does not appear to be in your PATH\n" >&2
-    exit 1
-fi
-
-# Additionally We appear to need SOPC_KIT_NIOS2 defined for use by some Makefiles
-if [ "$SOPC_KIT_NIOS2" = "" ]; then
-    export SOPC_KIT_NIOS2="`dirname $niosscript`/../"
-    if [ $? -ne 0 ] || [ ! -d "$SOPC_KIT_NIOS2" ]; then
-        echo -e "\nError: Failed to set up SOPC_KIT_NIOS2\n" >&2
-        exit 1
-    fi
-fi
-
-# ... and likewise for the NIOS II EDS SDK2 ...
-nios2_bsp_generate_files="`which nios2-bsp-generate-files`"
-if [ $? -ne 0 ] || [ ! -f "$nios2_bsp_generate_files" ]; then
-    echo -e "\nError: The NIOS II EDS SDK2 'bin' directory does not appear to be in your PATH\n" >&2
-    exit 1
-fi
-
-# ... and the GCC toolchain ...
-nios2_gcc="`which nios2-elf-gcc`"
-if [ $? -ne 0 ] || [ ! -f "$nios2_gcc" ]; then
-    echo -e "\nError: The NIOS II GCC toolchain 'bin' directory does not appear tobe in your PATH\n" >&2
-    exit 1
-fi
-
-ip_generate=$quartus_sh_path/../sopc_builder/bin/ip-generate
 nios_system=../fpga/ip/altera/nios_system
 
 # Error out at the first sign of trouble
@@ -147,7 +109,7 @@ echo "    Generating NIOS II Qsys for bladeRF ..."
 echo "##########################################################################"
 echo ""
 
-$ip_generate \
+ip-generate \
     --project-directory=$nios_system \
     --output-directory=$nios_system \
     --report-file=bsf:$nios_system/nios_system.bsf \
@@ -156,7 +118,7 @@ $ip_generate \
     --system-info=DEVICE_SPEEDGRADE=8 \
     --component-file=$nios_system/nios_system.qsys
 
-$ip_generate \
+ip-generate \
     --project-directory=$nios_system \
     --output-directory=$nios_system/synthesis \
     --file-set=QUARTUS_SYNTH \
@@ -177,7 +139,7 @@ echo ""
 
 pushd $nios_system/software/lms_spi_controller_bsp
 cp ../settings.bsp.in ./settings.bsp
-$nios2_bsp_generate_files --settings=settings.bsp --bsp-dir=.
+nios2-bsp-generate-files --settings=settings.bsp --bsp-dir=.
 make
 cd ../lms_spi_controller
 make
@@ -200,7 +162,11 @@ echo ""
 mkdir -p work
 pushd work
 $quartus_sh -t ../bladerf.tcl
-$quartus_sh -t ../build.tcl -rev $rev -size $size
+if [ "$stp" == "" ]; then
+    $quartus_sh -t ../build.tcl -rev $rev -size $size
+else
+    $quartus_sh -t ../build.tcl -rev $rev -size $size -stp $stp
+fi
 popd
 
 RBF="$rev"x"$size".rbf

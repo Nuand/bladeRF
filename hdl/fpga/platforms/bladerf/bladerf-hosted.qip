@@ -3,16 +3,20 @@ set here $::quartus(qip_path)
 
 # Altera IP
 set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/pll/pll.qip]]
-set_global_assignment -name QSYS_FILE [file normalize [file join $here ../../ip/altera/nios_system/nios_system.qsys]]
+set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/nios_system/synthesis/nios_system.qip]]
 set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/rx_fifo/rx_fifo.qip]]
 set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/tx_fifo/tx_fifo.qip]]
-set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/serial_pll/serial_pll.qip]]
 
 # Explicitly include Nios mem_init
 set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/nios_system/software/lms_spi_controller/mem_init/meminit.qip]]
 
 # Implementation details
-set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/ramp.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/synchronizer.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/reset_synchronizer.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/fifo_reader.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/fifo_writer.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/lms6002d/vhdl/lms6002d.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/fx3_gpif.vhd]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/bladerf-hosted.vhd]]
 
 # SDC Constraints
