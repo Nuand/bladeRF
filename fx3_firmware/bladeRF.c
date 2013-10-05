@@ -216,6 +216,10 @@ CyBool_t GetStatus(uint16_t endpoint) {
     uint8_t get_status_reply[] = {0x00, 0x00};
 
     switch(glUsbAltInterface) {
+    case USB_IF_NULL:
+        CyU3PUsbAckSetup();
+        isHandled = CyTrue;
+        break;
     case USB_IF_RF_LINK:
         isHandled = NuandRFLink.halted(endpoint, &get_status_reply[0]);
         break;
@@ -262,6 +266,10 @@ CyBool_t ClearHaltCondition(uint16_t endpoint) {
     CyBool_t isHandled = CyFalse;
 
     switch(glUsbAltInterface) {
+    case USB_IF_NULL:
+        CyU3PUsbAckSetup();
+        isHandled = CyTrue;
+        break;
     case USB_IF_RF_LINK:
         isHandled = NuandRFLink.halt_endpoint(CyFalse, endpoint);
         break;
@@ -281,6 +289,10 @@ CyBool_t SetHaltCondition(uint16_t endpoint) {
     CyBool_t isHandled = CyFalse;
 
     switch(glUsbAltInterface) {
+    case USB_IF_NULL:
+        CyU3PUsbAckSetup();
+        isHandled = CyTrue;
+        break;
     case USB_IF_RF_LINK:
         isHandled = NuandRFLink.halt_endpoint(CyTrue, endpoint);
         break;
@@ -686,6 +698,7 @@ void CyFxbladeRFApplnUSBEventCB (CyU3PUsbEventType_t evtype, uint16_t evdata)
 {
     int interface;
     int alt_interface;
+    uint8_t usb_alt_interface_save;
     switch (evtype)
     {
         case CY_U3P_USB_EVENT_SETINTF:
@@ -694,12 +707,6 @@ void CyFxbladeRFApplnUSBEventCB (CyU3PUsbEventType_t evtype, uint16_t evdata)
 
             /* Only support sets to interface 0 for now */
             if(interface != 0) break;
-
-            /* Don't do anything if we're setting the same interface over */
-            if( alt_interface == glUsbAltInterface ) {
-                ClearHaltIfHalted();
-                break ;
-            }
 
             /* Stop whatever we were doing */
             switch(glUsbAltInterface) {
@@ -710,12 +717,11 @@ void CyFxbladeRFApplnUSBEventCB (CyU3PUsbEventType_t evtype, uint16_t evdata)
             }
 
             /* Start up the new one */
-            if (alt_interface == USB_IF_CONFIG) {
-                NuandFpgaConfig.start();
-            } else if (alt_interface == USB_IF_RF_LINK) {
-                NuandRFLink.start();
-            } else if (alt_interface == USB_IF_SPI_FLASH) {
-                NuandFirmwareStart();
+            switch(alt_interface) {
+                case USB_IF_CONFIG: NuandFpgaConfig.start() ; break ;
+                case USB_IF_RF_LINK: NuandRFLink.start(); break ;
+                case USB_IF_SPI_FLASH: NuandFirmwareStart(); break ;
+                default: break ;
             }
             glUsbAltInterface = alt_interface;
         break;
@@ -723,10 +729,18 @@ void CyFxbladeRFApplnUSBEventCB (CyU3PUsbEventType_t evtype, uint16_t evdata)
         case CY_U3P_USB_EVENT_SETCONF:
             glUsbConfiguration = evdata;
 
-            if(glUsbConfiguration != 1) {
-                StopApplication();
+            StopApplication();
+
+            if(glUsbConfiguration == 1) {
+                usb_alt_interface_save = glUsbAltInterface;
+                switch(usb_alt_interface_save) {
+                    case USB_IF_CONFIG: NuandFpgaConfig.start() ; break ;
+                    case USB_IF_RF_LINK: NuandRFLink.start(); break ;
+                    case USB_IF_SPI_FLASH: NuandFirmwareStart(); break ;
+                    default: break ;
+                }
             } else {
-                ClearHaltIfHalted();
+                glUsbAltInterface = 0;
             }
             break;
 
@@ -734,6 +748,7 @@ void CyFxbladeRFApplnUSBEventCB (CyU3PUsbEventType_t evtype, uint16_t evdata)
         case CY_U3P_USB_EVENT_DISCONNECT:
             /* Stop the loop back function. */
             StopApplication();
+            glUsbAltInterface = 0;
             break;
 
         default:
