@@ -1,6 +1,6 @@
 
-#ifndef _INCLUDED_BLADE_H_
-#define _INCLUDED_BLADE_H_
+#ifndef _INCLUDED_CYFXBLADE_H_
+#define _INCLUDED_CYFXBLADE_H_
 
 #include "cyu3externcstart.h"
 #include "cyu3types.h"
@@ -44,6 +44,6 @@ extern const uint8_t CyFxUSBProductDscr[];
 
 #include "cyu3externcend.h"
 
-#endif /* _INCLUDED_BLADE_H_ */
+#endif /* _INCLUDED_CYFXBLADE_H_ */
 
 /*[]*/
