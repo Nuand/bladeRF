@@ -163,7 +163,7 @@ int str2version(const char *str, struct bladerf_version *version)
     if (errno != 0 || tmp > UINT16_MAX || end == start || *end != '.') {
         return -1;
     }
-    version->major = tmp;
+    version->major = (uint16_t)tmp;
 
     /* Minor version */
     if (end[0] == '\0' || end[1] == '\0') {
@@ -175,7 +175,7 @@ int str2version(const char *str, struct bladerf_version *version)
     if (errno != 0 || tmp > UINT16_MAX || end == start || *end != '.') {
         return -1;
     }
-    version->minor = tmp;
+    version->minor = (uint16_t)tmp;
 
     /* Patch version */
     if (end[0] == '\0' || end[1] == '\0') {
@@ -188,7 +188,7 @@ int str2version(const char *str, struct bladerf_version *version)
             (*end != '-' && *end != '\0')) {
         return -1;
     }
-    version->patch = tmp;
+    version->patch = (uint16_t)tmp;
 
     version->describe = str;
 
