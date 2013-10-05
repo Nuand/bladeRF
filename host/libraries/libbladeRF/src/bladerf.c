@@ -417,14 +417,21 @@ int bladerf_select_band(struct bladerf *dev, bladerf_module module,
 {
     uint32_t gpio ;
     uint32_t band = 0;
+    lms_lna_t lna ;
+    lms_pa_t pa ;
     if( frequency >= 1500000000 ) {
         band = 1; // High Band selection
-        lms_lna_select(dev, LNA_2);
-        lms_pa_enable(dev, PA_2);
+        lna = LNA_2;
+        pa = PA_2;
     } else {
         band = 2; // Low Band selection
-        lms_lna_select(dev, LNA_1);
-        lms_pa_enable(dev, PA_1);
+        lna = LNA_1;
+        pa = PA_1;
+    }
+    if (module == BLADERF_MODULE_TX) {
+        lms_pa_enable(dev, pa);
+    } else {
+        lms_lna_select(dev, lna);
     }
     bladerf_config_gpio_read(dev, &gpio);
     gpio &= ~(module == BLADERF_MODULE_TX ? (3<<3) : (3<<5));
