@@ -6,10 +6,10 @@
 ifeq ($(wildcard make/toolchain.mk),)
 $(error Copy make/toolchain.mk.sample to make/toolchain.mk and edit paths accordingly before running make)
 endif
+OUTPUT_DIR = build
 include make/toolchain.mk
 
 # Target files
-OUTPUT_DIR = build
 TARGET := bladeRF
 ELF := $(OUTPUT_DIR)/$(TARGET).elf
 IMG := $(OUTPUT_DIR)/$(TARGET).img
@@ -22,7 +22,8 @@ OBJ := $(addprefix $(OUTPUT_DIR)/,$(SRC:.c=.o)) \
 
 CFLAGS := -Wall -Wextra -Wno-unused-parameter \
 		  $(TOOLCHAIN_CFLAGS) \
-		  $(EXTRA_CFLAGS)
+		  $(EXTRA_CFLAGS) \
+		  -I$(OUTPUT_DIR)
 
 ifdef DEBUG
 	CFLAGS += -O0 -ggdb3 -DDEBUG
@@ -33,10 +34,11 @@ endif
 LDFLAGS := $(TOOLCHAIN_LDFLAGS) -Map $(MAP)
 
 
-all: version $(IMG)
+all: $(OUTPUT_DIR)/version.h $(IMG)
 
 $(OUTPUT_DIR)/.dirstamp:
-	-mkdir $(OUTPUT_DIR)
+	@mkdir -p $(OUTPUT_DIR)
+	@touch $(OUTPUT_DIR)/.dirstamp
 
 $(OUTPUT_DIR)/%.o: %.c
 	$(CC) -c $(CFLAGS) -o $@ $^
@@ -57,14 +59,14 @@ $(OUTPUT_DIR)/cyfxtx.o: $(OUTPUT_DIR)/%.o : $(TOOLCHAIN_DEPS_DIR)/%.c
 $(OUTPUT_DIR)/$(TOOLCHAIN_DEPS_OBJ_A): $(OUTPUT_DIR)/%.o : $(TOOLCHAIN_DEPS_DIR)/%.S
 	$(call build_toolchain_dep,$<,$@)
 
-version:
-	cmake .
-	rm -fr CMakeFiles CMakeCache.txt cmake_install.cmake Makefile
+$(OUTPUT_DIR)/version.h: $(OUTPUT_DIR)/.dirstamp version.h.in
+	cd $(OUTPUT_DIR) && \
+		cmake $(CURDIR)
+	-@cp $(OUTPUT_DIR)/build/version.h $(OUTPUT_DIR)/version.h
 
 clean:
-	$(RM) -f $(ELF) $(IMG) $(MAP) $(OBJ) $(TOOLCHAIN_OBJ) version.h
+	$(RM) -rf $(OUTPUT_DIR)
 
 realclean: clean
-	$(RM) -rf $(OUTPUT_DIR)
 
 .PHONY: clean realclean

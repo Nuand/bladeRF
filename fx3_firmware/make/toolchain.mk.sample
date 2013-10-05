@@ -129,7 +129,7 @@ ifdef HOST_IS_WINDOWS
 	ELF2IMG := $(ELF2IMG_DIR)/elf2img.exe
 else
 	ELF2IMG_SRC := $(call pathfixup,$(ELF2IMG_DIR)/elf2img.c)
-	ELF2IMG := ./elf2img
+	ELF2IMG := $(OUTPUT_DIR)/elf2img
 endif
 
 build_toolchain_dep = $(CC) $(call pathfixup,$(1)) $(CFLAGS) -c -o $(2)
