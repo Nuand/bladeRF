@@ -857,7 +857,7 @@ void bladeRFInit(void)
 
     /* Configure the serial number string descriptor */
     apiRetStatus = CyU3PUsbSetDesc(CY_U3P_USB_SET_STRING_DESCR,
-                                   BLADE_USB_STR_INDEX_PRODUCT,
+                                   BLADE_USB_STR_INDEX_SERIAL,
                                    (uint8_t *)CyFxUSBSerial);
 
     if (apiRetStatus != CY_U3P_SUCCESS) {
