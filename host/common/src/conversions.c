@@ -31,13 +31,14 @@ int str2int(const char *str, int min, int max, bool *ok)
 
 unsigned int str2uint(const char *str, unsigned int min, unsigned int max, bool *ok)
 {
-    unsigned int value;
+    unsigned long value;
     char *endptr;
 
     errno = 0;
     value = strtoul(str, &endptr, 0);
 
-    if (errno != 0 || value < min || value > max ||
+    if (errno != 0 ||
+        value < (unsigned long)min || value > (unsigned long)max ||
         endptr == str || *endptr != '\0') {
 
         if (ok) {
@@ -50,7 +51,7 @@ unsigned int str2uint(const char *str, unsigned int min, unsigned int max, bool 
     if (ok) {
         *ok = true;
     }
-    return value;
+    return (unsigned int)value;
 }
 
 
