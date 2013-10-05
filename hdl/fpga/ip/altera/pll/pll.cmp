@@ -1,4 +1,4 @@
---Copyright (C) 1991-2012 Altera Corporation
+--Copyright (C) 1991-2013 Altera Corporation
 --Your use of Altera Corporation's design tools, logic functions 
 --and other software and tools, and its AMPP partner logic 
 --functions, and any output files from any of the foregoing 
@@ -16,11 +16,8 @@
 component pll
 	PORT
 	(
-		areset		: IN STD_LOGIC  := '0';
 		inclk0		: IN STD_LOGIC  := '0';
 		c0		: OUT STD_LOGIC ;
-		c1		: OUT STD_LOGIC ;
-		c2		: OUT STD_LOGIC ;
 		locked		: OUT STD_LOGIC 
 	);
 end component;
