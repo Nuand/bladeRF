@@ -6,10 +6,10 @@
 ifeq ($(wildcard make/toolchain.mk),)
 $(error Copy make/toolchain.mk.sample to make/toolchain.mk and edit paths accordingly before running make)
 endif
+OUTPUT_DIR = build
 include make/toolchain.mk
 
 # Target files
-OUTPUT_DIR = build
 TARGET := bladeRF
 ELF := $(OUTPUT_DIR)/$(TARGET).elf
 IMG := $(OUTPUT_DIR)/$(TARGET).img
