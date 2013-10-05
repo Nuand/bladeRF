@@ -54,6 +54,10 @@ endif()
 include(TestBigEndian)
 TEST_BIG_ENDIAN(BLADERF_BIG_ENDIAN)
 
+# Test for libusb so warnings and such only occur at the top-level
+# TODO Once we enable other backends
+include(FindLibUSB)
+
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/common/include/host_config.h.in
     ${CMAKE_CURRENT_BINARY_DIR}/common/include/host_config.h
@@ -185,7 +189,6 @@ if(WIN32)
         )
     endif(LIBPTHREADSWIN32_FOUND)
 
-    find_package(LibUsb)
     if(LIBUSB_FOUND)
         set(WIN_POSTBUILD_ITEMS ${WIN_POSTBUILD_ITEMS}
             "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/libusb-1.0.dll")
