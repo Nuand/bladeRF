@@ -402,6 +402,81 @@ static int enable_rf(struct bladerf *dev) {
     return ret_status;
 }
 
+/* FW < 1.5.0  does not have version strings */
+static int lusb_fw_populate_version_legacy(struct bladerf *dev)
+{
+    int status;
+
+    struct bladerf_fx3_version fw_ver;
+    struct bladerf_lusb *lusb = dev->backend;
+
+    status = libusb_control_transfer(
+                lusb->handle,
+                LIBUSB_RECIPIENT_INTERFACE |
+                    LIBUSB_REQUEST_TYPE_VENDOR |
+                    EP_DIR_IN,
+                BLADE_USB_CMD_QUERY_VERSION,
+                0,
+                0,
+                (unsigned char *)&fw_ver,
+                sizeof(fw_ver),
+                BLADERF_LIBUSB_TIMEOUT_MS
+             );
+
+    if (status < 0) {
+        status = BLADERF_ERR_IO;
+    } else {
+        dev->fw_version.major = LE16_TO_HOST(fw_ver.major);
+        dev->fw_version.minor = LE16_TO_HOST(fw_ver.minor);
+        dev->fw_version.patch = 0;
+        snprintf((char*)dev->fw_version.describe, BLADERF_VERSION_STR_MAX,
+                 "%d.%d.%d", dev->fw_version.major, dev->fw_version.minor,
+                 dev->fw_version.patch);
+
+        status = 0;
+    }
+
+    return status;
+}
+
+static int lusb_populate_fw_version(struct bladerf *dev)
+{
+    int status;
+    struct bladerf_lusb *lusb = dev->backend;
+
+    status = libusb_get_string_descriptor_ascii(lusb->handle,
+                                                BLADE_USB_STR_INDEX_FW_VER,
+                                                (unsigned char *)dev->fw_version.describe,
+                                                BLADERF_VERSION_STR_MAX);
+
+    /* If we ran into an issue, we're likely dealing with an older firmware.
+     * Fall back to the legacy version*/
+    if (status < 0) {
+        status = lusb_fw_populate_version_legacy(dev);
+    } else {
+        status = str2version(dev->fw_version.describe, &dev->fw_version);
+        if (status != 0) {
+            status = BLADERF_ERR_UNEXPECTED;
+        }
+    }
+
+    return status;
+}
+
+static int lusb_populate_fpga_version(struct bladerf *dev)
+{
+    log_debug("FPGA currently does not have a version number.\n");
+
+    dev->fpga_version.major = 0;
+    dev->fpga_version.minor = 0;
+    dev->fpga_version.patch = 0;
+    strncpy((char *)dev->fpga_version.describe,
+            "0.0.0", BLADERF_VERSION_STR_MAX);
+
+    return 0;
+}
+
+
 static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
 {
     int status, i, n, inf;
@@ -458,8 +533,10 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
                     continue;
                 }
 
-                dev->fpga_version_str = calloc(1, BLADERF_VERSION_STR_MAX + 1);
-                if (!dev->fpga_version_str) {
+                dev->fpga_version.describe =
+                    calloc(1, BLADERF_VERSION_STR_MAX + 1);
+
+                if (!dev->fpga_version.describe) {
                     log_error("Skipping instance %d due to failed allocation: "
                               "FPGA version string.\n", thisinfo.instance);
                     free(dev);
@@ -467,11 +544,13 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
                     continue;
                 }
 
-                dev->fw_version_str = calloc(1, BLADERF_VERSION_STR_MAX + 1);
-                if (!dev->fw_version_str) {
+                dev->fw_version.describe =
+                    calloc(1, BLADERF_VERSION_STR_MAX + 1);
+
+                if (!dev->fw_version.describe) {
                     log_error("Skipping instance %d due to failed allocation\n",
                               thisinfo.instance);
-                    free(dev->fpga_version_str);
+                    free((void *)dev->fpga_version.describe);
                     free(dev);
                     dev = NULL;
                     continue;
@@ -479,8 +558,8 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
 
                 lusb = (struct bladerf_lusb *)malloc(sizeof(struct bladerf_lusb));
                 if (!lusb) {
-                    free(dev->fw_version_str);
-                    free(dev->fpga_version_str);
+                    free((void *)dev->fw_version.describe);
+                    free((void *)dev->fpga_version.describe);
                     free(dev);
                     lusb = NULL;
                     dev = NULL;
@@ -506,7 +585,12 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
                     goto lusb_open__err_device_list;
                 }
 
-                status = bladerf_fw_version(dev, &dev->fw_version);
+                status = lusb_populate_fpga_version(dev);
+                if (status < 0) {
+                    goto lusb_open__err_device_list;
+                }
+
+                status = lusb_populate_fw_version(dev);
                 if (status < 0) {
                     goto lusb_open__err_device_list;
                 }
@@ -608,8 +692,8 @@ static int lusb_close(struct bladerf *dev)
     libusb_close(lusb->handle);
     libusb_exit(lusb->context);
     free(dev->backend);
-    free(dev->fpga_version_str);
-    free(dev->fw_version_str);
+    free((void *)dev->fpga_version.describe);
+    free((void *)dev->fw_version.describe);
     free(dev);
 
     return status;
@@ -1306,79 +1390,6 @@ static int lusb_get_otp(struct bladerf *dev, char *otp)
     }
 
     return read_page_buffer(dev, (uint8_t*)otp);
-}
-
-/* FW < 1.5.0  does not have version strings */
-static int lusb_fw_version_legacy(struct bladerf *dev,
-                                    struct bladerf_version *version)
-{
-    int status;
-
-    struct bladerf_fx3_version fw_ver;
-    struct bladerf_lusb *lusb = dev->backend;
-
-    status = libusb_control_transfer(
-                lusb->handle,
-                LIBUSB_RECIPIENT_INTERFACE |
-                    LIBUSB_REQUEST_TYPE_VENDOR |
-                    EP_DIR_IN,
-                BLADE_USB_CMD_QUERY_VERSION,
-                0,
-                0,
-                (unsigned char *)&fw_ver,
-                sizeof(fw_ver),
-                BLADERF_LIBUSB_TIMEOUT_MS
-             );
-
-    if (status < 0) {
-        status = BLADERF_ERR_IO;
-    } else {
-        version->major = LE16_TO_HOST(fw_ver.major);
-        version->minor = LE16_TO_HOST(fw_ver.minor);
-        version->patch = 0;
-        version->describe = dev->fw_version_str;
-        snprintf(dev->fw_version_str, BLADERF_VERSION_STR_MAX, "%d.%d.%d",
-                 version->major, version->minor, version->patch);
-        status = 0;
-    }
-
-    return status;
-}
-
-static int lusb_fw_version(struct bladerf *dev,
-                           struct bladerf_version *version)
-{
-    int status;
-    struct bladerf_lusb *lusb = dev->backend;
-
-    status = libusb_get_string_descriptor_ascii(lusb->handle,
-                                                BLADE_USB_STR_INDEX_FW_VER,
-                                                (unsigned char *)dev->fw_version_str,
-                                                BLADERF_VERSION_STR_MAX);
-
-    /* If we ran into an issue, we're likely dealing with an older firmware.
-     * Fall back to the legacy version*/
-    if (status < 0) {
-        status = lusb_fw_version_legacy(dev, version);
-    } else {
-        status = str2version(dev->fw_version_str, version);
-        if (status != 0) {
-            status = BLADERF_ERR_UNEXPECTED;
-        }
-    }
-
-    return status;
-}
-
-static int lusb_fpga_version(struct bladerf *dev,
-                             struct bladerf_version *version)
-{
-    log_debug("FPGA currently does not have a version number.\n");
-    version->major = 0;
-    version->minor = 0;
-    version->patch = 0;
-    version->describe = dev->fpga_version_str;
-    return 0;
 }
 
 static int lusb_get_device_speed(struct bladerf *dev,
@@ -2090,8 +2101,6 @@ const struct bladerf_fn bladerf_lusb_fn = {
 
     FIELD_INIT(.get_cal, lusb_get_cal),
     FIELD_INIT(.get_otp, lusb_get_otp),
-    FIELD_INIT(.fw_version, lusb_fw_version),
-    FIELD_INIT(.fpga_version, lusb_fpga_version),
     FIELD_INIT(.get_device_speed, lusb_get_device_speed),
 
     FIELD_INIT(.config_gpio_write, lusb_config_gpio_write),

@@ -430,19 +430,18 @@ static int linux_get_cal(struct bladerf *dev, char *cal)
     return status;
 }
 
-/* XXX: For realsies */
-static int linux_fpga_version(struct bladerf *dev,
-                                struct bladerf_version *version)
+static int linux_populate_fpga_version(struct bladerf *dev)
 {
     log_debug("FPGA currently does not have a version number.\n");
-    version->major = version ->minor = version->patch = 0;
-    version->describe = dev->fpga_version_str;
+    dev->fpga_version.major = 0;
+    dev->fpga_version.minor = 0;
+    dev->fpga_version.patch = 0;
+    snprintf((char*)dev->fpga_version.describe, BLADERF_VERSION_STR_MAX, "0.0.0");
     return 0;
 }
 
 /* TODO: Add support for patch version and string */
-static int linux_fw_version(struct bladerf *dev,
-                            struct bladerf_version *version)
+static int linux_populate_fw_version(struct bladerf *dev)
 {
     int status;
     struct bladerf_fx3_version ver;
@@ -450,12 +449,13 @@ static int linux_fw_version(struct bladerf *dev,
 
     status = ioctl(backend->fd, BLADE_QUERY_VERSION, &ver);
     if (!status) {
-        version->major = ver.major;
-        version->minor = ver.minor;
-        version->patch = 0;
-        version->describe = dev->fw_version_str;
-        snprintf(dev->fw_version_str, BLADERF_VERSION_STR_MAX, "%d.%d.%d",
-                 version->major, version->minor, version->patch);
+        dev->fw_version.major = ver.major;
+        dev->fw_version.minor = ver.minor;
+        dev->fw_version.patch = 0;
+        snprintf((char *)dev->fw_version.describe,
+                 BLADERF_VERSION_STR_MAX, "%d.%d.%d",
+                 dev->fw_version.major, dev->fw_version.minor,
+                 dev->fw_version.patch);
         return 0;
     }
 
@@ -502,6 +502,8 @@ int linux_close(struct bladerf *dev)
     assert(backend);
 
     status = close(backend->fd);
+    free((void*)dev->fpga_version.describe);
+    free((void*)dev->fw_version.describe);
     free(backend);
     free(dev);
 
@@ -571,24 +573,59 @@ static int linux_open( struct bladerf **device, struct bladerf_devinfo *info)
         fd = open(dev_name, O_RDWR);
 
         if (fd >= 0) {
-            backend = malloc(sizeof(*backend));
-            ret = malloc(sizeof(*ret));
-
-            if (backend && ret) {
-                backend->fd = fd;
-                ret->fn = &bladerf_linux_fn;
-                ret->backend = backend;
-                *device = ret;
-
-                /* Ensure all dev-info fields are written */
-                status =
-                    linux_populate_devinfo(ret, &ret->ident, info->instance);
+            backend = calloc(1, sizeof(*backend));
+            if (backend == NULL) {
+                return BLADERF_ERR_MEM;
             }
 
-            if (!backend || !ret || status != 0) {
+            ret = calloc(1, sizeof(*ret));
+            if (ret == NULL) {
                 free(backend);
-                free(ret);
+                return BLADERF_ERR_MEM;
             }
+
+            ret->fpga_version.describe = calloc(1, BLADERF_VERSION_STR_MAX);
+            if (ret->fpga_version.describe == NULL) {
+                free(ret);
+                free(backend);
+                return BLADERF_ERR_MEM;
+            }
+
+            ret->fw_version.describe = calloc(1, BLADERF_VERSION_STR_MAX);
+            if (ret->fw_version.describe == NULL) {
+                free((void*)ret->fpga_version.describe);
+                free(ret);
+                free(backend);
+                return BLADERF_ERR_MEM;
+            }
+
+            backend->fd = fd;
+            ret->fn = &bladerf_linux_fn;
+            ret->backend = backend;
+            *device = ret;
+
+            /* Ensure all dev-info fields are written */
+            status = linux_populate_devinfo(ret, &ret->ident, info->instance);
+            if (status < 0) {
+                goto linux_open_err;
+            }
+
+            /* Populate version fields */
+            status = linux_populate_fpga_version(ret);
+            if (status < 0) {
+                goto linux_open_err;
+            }
+
+            status = linux_populate_fw_version(ret);
+
+linux_open_err:
+            if (status < 0) {
+                free((void*)ret->fw_version.describe);
+                free((void*)ret->fpga_version.describe);
+                free(ret);
+                free(backend);
+            }
+
         } else {
             log_error("Failed to open %s: %s\n", dev_name, strerror(errno));
         }
@@ -718,8 +755,8 @@ static int linux_probe(struct bladerf_devinfo_list *info_list)
                 /* Since this device was opened by instance, it will have
                  * had it's device info (dev->ident) filled out already */
                 bladerf_devinfo_list_add(info_list, &dev->ident);
+                linux_close(dev);
             }
-            linux_close(dev);
         }
     }
 
@@ -771,8 +808,6 @@ const struct bladerf_fn bladerf_linux_fn = {
 
     FIELD_INIT(.get_cal, linux_get_cal),
     FIELD_INIT(.get_otp, linux_get_otp),
-    FIELD_INIT(.fw_version, linux_fw_version),
-    FIELD_INIT(.fpga_version, linux_fpga_version),
     FIELD_INIT(.get_device_speed, linux_get_device_speed),
 
     FIELD_INIT(.config_gpio_write, linux_config_gpio_write),

@@ -91,8 +91,6 @@ struct bladerf_fn {
     /* Platform information */
     int (*get_cal)(struct bladerf *dev, char *cal);
     int (*get_otp)(struct bladerf *dev, char *otp);
-    int (*fw_version)(struct bladerf *dev, struct bladerf_version *version);
-    int (*fpga_version)(struct bladerf *dev, struct bladerf_version *version);
     int (*get_device_speed)(struct bladerf *dev, bladerf_dev_speed *speed);
 
     /* Configuration GPIO accessors */
@@ -139,9 +137,7 @@ struct bladerf {
     uint16_t dac_trim;
     bladerf_fpga_size fpga_size;
 
-    char *fw_version_str;
-    char *fpga_version_str;
-
+    struct bladerf_version fpga_version;
     struct bladerf_version fw_version;
     int legacy;
 

@@ -656,7 +656,8 @@ int bladerf_get_fpga_size(struct bladerf *dev, bladerf_fpga_size *size)
 
 int bladerf_fw_version(struct bladerf *dev, struct bladerf_version *version)
 {
-    return dev->fn->fw_version(dev, version);
+    memcpy(version, &dev->fw_version, sizeof(*version));
+    return 0;
 }
 
 int bladerf_is_fpga_configured(struct bladerf *dev)
@@ -666,7 +667,8 @@ int bladerf_is_fpga_configured(struct bladerf *dev)
 
 int bladerf_fpga_version(struct bladerf *dev, struct bladerf_version *version)
 {
-    return dev->fn->fpga_version(dev, version);
+    memcpy(version, &dev->fpga_version, sizeof(*version));
+    return 0;
 }
 
 int bladerf_stats(struct bladerf *dev, struct bladerf_stats *stats)
