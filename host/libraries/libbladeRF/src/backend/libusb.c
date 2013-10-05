@@ -1777,13 +1777,18 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
     else if( stream->state == STREAM_RUNNING ) {
 
         /* Call user callback requesting more data to transmit */
-        assert(transfer->length == transfer->actual_length);
+        if (transfer->length != transfer->actual_length) {
+            log_warning( "Received short transfer\n" );
+            if ((transfer->actual_length & 3) != 0) {
+                log_warning( "Fractional samples received - stream likely corrupt\n" );
+            }
+        }
         next_buffer = stream->cb(
                         stream->dev,
                         stream,
                         &metadata,
                         transfer->buffer,
-                        bytes_to_c16_samples(transfer->length),
+                        bytes_to_c16_samples(transfer->actual_length),
                         stream->user_data
                       );
         if( next_buffer == NULL ) {
