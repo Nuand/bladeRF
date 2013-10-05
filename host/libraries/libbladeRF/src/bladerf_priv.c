@@ -48,7 +48,7 @@ int bladerf_init_device(struct bladerf *dev)
     /* Readback the GPIO values to see if they are default or already set */
     bladerf_config_gpio_read( dev, &val );
 
-    if (val == 0) {
+    if ((val&0x7f) == 0) {
         log_verbose( "Default GPIO value found - initializing device\n" );
 
         /* Set the GPIO pins to enable the LMS and select the low band */

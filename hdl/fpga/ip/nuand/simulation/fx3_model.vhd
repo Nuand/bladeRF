@@ -4,99 +4,127 @@ library ieee ;
     use ieee.math_real.all ;
     use ieee.math_complex.all ;
 
+library nuand ;
+    use nuand.util.all ;
+
 entity fx3_model is
   port (
-    fx3_pclk            :   out     std_logic ;
+    fx3_pclk            :   buffer  std_logic := '1' ;
     fx3_gpif            :   inout   std_logic_vector(31 downto 0) ;
     fx3_ctl             :   inout   std_logic_vector(12 downto 0) ;
-    fx3_uart_rxd        :   out     std_logic ;
+    fx3_uart_rxd        :   buffer  std_logic ;
     fx3_uart_txd        :   in      std_logic ;
-    fx3_uart_csx        :   out     std_logic
+    fx3_uart_csx        :   buffer  std_logic
   ) ;
 end entity ; -- fx3_model
 
-architecture digital_loopback of fx3_model is
+architecture dma of fx3_model is
 
     constant PCLK_HALF_PERIOD       : time  := 1 sec * (1.0/100.0e6/2.0) ;
 
-    alias rxd_samples_request is fx3_ctl(0) ;
-    alias rxd_samples_acknowledge is fx3_ctl(1) ;
-    alias rxd_samples_we is fx3_ctl(2) ;
-    alias txd_samples_we is fx3_ctl(3) ;
-    alias gpif_reset is fx3_ctl(4) ;
-
-    alias unused_ctl is fx3_ctl(12 downto 5) ;
+    -- Control mapping
+    alias dma0_rx_ack   is fx3_ctl( 0) ;
+    alias dma1_rx_ack   is fx3_ctl( 1) ;
+    alias dma2_tx_ack   is fx3_ctl( 2) ;
+    alias dma3_tx_ack   is fx3_ctl( 3) ;
+    alias dma_rx_enable is fx3_ctl( 4) ;
+    alias dma_tx_enable is fx3_ctl( 5) ;
+    alias dma_idle      is fx3_ctl( 6) ;
+    alias system_reset  is fx3_ctl( 7) ;
+    alias dma0_rx_reqx  is fx3_ctl( 8) ;
+    alias dma1_rx_reqx  is fx3_ctl(12) ; -- due to 9 being connected to dclk
+    alias dma2_tx_reqx  is fx3_ctl(10) ;
+    alias dma3_tx_reqx  is fx3_ctl(11) ;
 
     type gpif_state_t is (IDLE, TX_SAMPLES, RX_SAMPLES) ;
     signal gpif_state : gpif_state_t ;
 
-    signal txd_samples : std_logic_vector(31 downto 0) ;
-
 begin
 
-    rxd_samples_request <= 'Z' ;
-    rxd_samples_we <= 'Z' ;
+    -- DCLK which isn't used
+    fx3_ctl(9) <= '0' ;
 
     -- Create a 100MHz clock output
-    fx3_pclk <= not fx3_pclk after PCLK_HALF_PERIOD when fx3_pclk = '0' or fx3_pclk = '1' else
-                '1' ;
+    fx3_pclk <= not fx3_pclk after PCLK_HALF_PERIOD ;
 
-    -- GPIF interface
-    fx3_gpif <= (others =>'Z') when rxd_samples_acknowledge = '1' else
-            txd_samples ;
+    rx_sample_stream : process
+        constant BLOCK_SIZE     : natural   := 512 ;
+        variable count          : natural   := 0 ;
+    begin
+        dma0_rx_reqx <= '1' ;
+        dma1_rx_reqx <= '1' ;
+        dma_rx_enable <= '0' ;
+        wait until rising_edge(fx3_pclk) and system_reset = '0' ;
+        for i in 1 to 10 loop
+            wait until rising_edge( fx3_pclk ) ;
+        end loop ;
+        dma_rx_enable <= '0' ;
+        wait ;
+        while true loop
+            dma0_rx_reqx <= '0' after 10 us ;
+            dma1_rx_reqx <= '0' after 10 us ;
+            while true loop
+                if( dma0_rx_ack = '1' ) then
+                    exit ;
+                elsif( dma1_rx_ack = '1' ) then
+                    exit ;
+                end if ;
+                wait ;
+            end loop ;
+        end loop ;
+        report "Done with RX sample stream" ;
+        wait ;
+    end process ;
 
-    stimulus : process
-        constant BLOCK_SIZE : natural := 128 ;
+    tx_sample_stream : process
+        constant BLOCK_SIZE : natural := 512 ;
         variable count : natural := 0 ;
     begin
-        gpif_reset <= '1' ;
-        gpif_state <= IDLE ;
-        rxd_samples_acknowledge <= '0' ;
-        txd_samples_we <= '0' ;
-        txd_samples <= (others =>'0') ;
+        dma2_tx_reqx <= '1' ;
+        dma3_tx_reqx <= '1' ;
+        dma_tx_enable <= '0' ;
+        wait until system_reset = '0' ;
         for i in 0 to 10 loop
             wait until rising_edge( fx3_pclk ) ;
         end loop ;
-        gpif_reset <= '0' ;
+        dma_tx_enable <= '1' ;
         while true loop
+            dma3_tx_reqx <= '0' ;
+            wait until rising_edge( fx3_pclk ) and dma3_tx_ack = '1' ;
             wait until rising_edge( fx3_pclk ) ;
-            case gpif_state is
-                when IDLE =>
-                    if( rxd_samples_request = '0' ) then
-                        gpif_state <= TX_SAMPLES ;
-                        txd_samples_we <= '1' ;
-                    end if ;
-                when TX_SAMPLES =>
-                    txd_samples <= std_logic_vector(unsigned(txd_samples) + 1) ;
-                    if( rxd_samples_request = '1' and count = 0) then
-                        gpif_state <= RX_SAMPLES ;
-                        txd_samples_we <= '0' ;
-                        rxd_samples_acknowledge <= '1' ;
-                        count := BLOCK_SIZE ;
-                    elsif( count > 0 ) then
-                        txd_samples_we <= '1' ;
-                        count := count - 1 ;
-                    end if ;
-                when RX_SAMPLES =>
-                    if( count = 1 ) then
-                        gpif_state <= TX_SAMPLES ;
-                        rxd_samples_acknowledge <= '0' ;
-                        count := BLOCK_SIZE ;
-                    else
-                        count := count - 1 ;
-                    end if ;
-            end case ;
-        end loop ;
+            wait until rising_edge( fx3_pclk ) ;
+            dma3_tx_reqx <= '1' ;
+            for i in 1 to BLOCK_SIZE loop
+                fx3_gpif(31 downto 16) <= std_logic_vector(to_signed(count, 16)) ;
+                fx3_gpif(15 downto 0) <= std_logic_vector(to_signed(-count, 16)) ;
+                count := (count + 1) mod 2048 ;
+                wait until rising_edge( fx3_pclk );
+            end loop ;
+            fx3_gpif <= (others =>'Z');
+            for i in 1 to 10 loop
+                wait until rising_edge( fx3_pclk );
+            end loop ;
+       end loop ;
+       report "Done with TX sample stream" ;
+       wait ;
     end process ;
 
-    -- Unused control signals for now
-    unused_ctl <= (others =>'0') ;
+    reset_system : process
+    begin
+        system_reset <= '1' ;
+        dma_idle <= '0' ;
+        nop( fx3_pclk, 100 ) ;
+        system_reset <= '0' ;
+        nop( fx3_pclk, 10 ) ;
+        dma_idle <= '1' ;
+        wait ;
+    end process ;
 
     -- TODO: UART Interface
     fx3_uart_rxd <= '0' ;
     fx3_uart_csx <= '1' ;
 
-end architecture ; -- digital_loopback
+end architecture ; -- dma
 
 architecture inband_scheduler of fx3_model is
 

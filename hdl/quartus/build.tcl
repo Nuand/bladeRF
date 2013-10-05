@@ -63,6 +63,7 @@ if { $opts(stp) != "" } {
         puts "Adding SignalTap file: [file normalize $opts(stp)]"
         set_global_assignment -name ENABLE_SIGNALTAP on
         set_global_assignment -name USE_SIGNALTAP_FILE [file normalize $opts(stp)]
+        set_global_assignment -name SIGNALTAP_FILE [file normalize $opts(stp)]
     } else {
         puts stderr "WARNING: Cannot add $opts(stp) to project without enabling TalkBack."
         puts stderr "         Use -force to enable and add SignalTap to project."
@@ -73,6 +74,13 @@ if { $opts(stp) != "" } {
 
 set_global_assignment -name DEVICE EP4CE$opts(size)F23C8
 set failed 0
+
+# Save all the options
+export_assignments
+project_close
+
+# Open the project with the specific revision
+project_open -revision $opts(rev) bladerf
 
 # Run Analysis and Synthesis
 if { [catch {execute_module -tool map} result] } {

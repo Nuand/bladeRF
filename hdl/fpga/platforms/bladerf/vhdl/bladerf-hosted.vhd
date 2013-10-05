@@ -6,6 +6,9 @@ library ieee ;
 
 architecture hosted_bladerf of bladerf is
 
+    attribute noprune   : boolean ;
+    attribute keep      : boolean ;
+
     component nios_system is
       port (
         clk_clk             : in  std_logic := 'X'; -- clk
@@ -31,529 +34,347 @@ architecture hosted_bladerf of bladerf is
       );
     end component nios_system;
 
-    signal ramp_out : signed(11 downto 0) ;
+    alias sys_rst   is fx3_ctl(7) ;
+    alias tx_clock  is c4_tx_clock ;
+    alias rx_clock  is lms_rx_clock_out ;
 
-    signal lms_tx_clock :   std_logic ;
+    signal \80MHz\          : std_logic ;
+    signal \80MHz locked\   : std_logic ;
+    signal \80MHz reset\    : std_logic ;
 
-    signal \38.4MHz\    :   std_logic ;
-    signal \76.8MHz\    :   std_logic ;
-    signal \76.8MHz@90\ :   std_logic ;
+    signal nios_gpio        : std_logic_vector(31 downto 0) := x"0000_00d7" ;
 
-    signal rs232_clock  :   std_logic ;
-    signal rs232_locked :   std_logic ;
+    signal i2c_scl_in       : std_logic ;
+    signal i2c_scl_out      : std_logic ;
+    signal i2c_scl_oen      : std_logic ;
 
-    signal sfifo_din    :   std_logic_vector(7 downto 0) ;
-    signal sfifo_dout   :   std_logic_vector(7 downto 0) ;
-    signal sfifo_full   :   std_logic ;
-    signal sfifo_empty  :   std_logic ;
-    signal sfifo_re     :   std_logic ;
-    signal sfifo_we     :   std_logic ;
+    signal i2c_sda_in       : std_logic ;
+    signal i2c_sda_out      : std_logic ;
+    signal i2c_sda_oen      : std_logic ;
 
-    attribute noprune : boolean ;
+    type fifo_t is record
+        aclr    :   std_logic ;
 
-    signal rx_i         :   signed(11 downto 0) ;
-    signal rx_q         :   signed(11 downto 0) ;
+        wclock  :   std_logic ;
+        wdata   :   std_logic_vector(31 downto 0) ;
+        wreq    :   std_logic ;
+        wempty  :   std_logic ;
+        wfull   :   std_logic ;
+        wused   :   std_logic_vector(11 downto 0) ;
 
-    attribute noprune of rx_i : signal is true ;
-    attribute noprune of rx_q : signal is true ;
+        rclock  :   std_logic ;
+        rdata   :   std_logic_vector(31 downto 0) ;
+        rreq    :   std_logic ;
+        rempty  :   std_logic ;
+        rfull   :   std_logic ;
+        rused   :   std_logic_vector(11 downto 0) ;
+    end record ;
 
-    signal fsk_real     : signed(15 downto 0) ;
-    signal fsk_imag     : signed(15 downto 0) ;
-    signal fsk_valid    : std_logic ;
+    signal rx_sample_fifo   : fifo_t ;
+    signal tx_sample_fifo   : fifo_t ;
 
-    attribute noprune of fsk_real : signal is true ;
-    attribute noprune of fsk_imag : signal is true ;
+    signal sys_rst_sync     : std_logic ;
 
-    signal nios_uart_txd : std_logic ;
-    signal nios_uart_rxd : std_logic ;
+    signal usb_speed        : std_logic ;
 
-    signal nios_gpio     : std_logic_vector(31 downto 0) ;
+    signal tx_reset         : std_logic ;
+    signal rx_reset         : std_logic ;
 
-    attribute noprune of nios_uart_txd : signal is true ;
-    attribute noprune of nios_uart_rxd : signal is true ;
+    signal pclk_tx_enable   :   std_logic ;
+    signal pclk_rx_enable   :   std_logic ;
 
-    signal demod_in_i   : signed(15 downto 0) ;
-    signal demod_in_q   : signed(15 downto 0) ;
-    signal demod_ssd    : signed(15 downto 0) ;
-    signal demod_valid  : std_logic ;
+    signal tx_enable        : std_logic ;
+    signal rx_enable        : std_logic ;
 
-    signal qualifier : unsigned(5 downto 0) := (others =>'0') ;
-    attribute noprune of qualifier : signal is true ;
+    signal rx_sample_i      : signed(11 downto 0) ;
+    signal rx_sample_q      : signed(11 downto 0) ;
+    signal rx_sample_valid  : std_logic ;
 
-    signal i2c_scl_in  : std_logic ;
-    signal i2c_scl_out : std_logic ;
-    signal i2c_scl_oen : std_logic ;
+    signal tx_sample_i      : signed(15 downto 0) ;
+    signal tx_sample_q      : signed(15 downto 0) ;
+    signal tx_sample_valid  : std_logic ;
 
-    signal i2c_sda_in  : std_logic ;
-    signal i2c_sda_out : std_logic ;
-    signal i2c_sda_oen : std_logic ;
+    signal fx3_gpif_in      : std_logic_vector(31 downto 0) ;
+    signal fx3_gpif_out     : std_logic_vector(31 downto 0) ;
+    signal fx3_gpif_oe      : std_logic ;
 
-    signal gpif_var            : std_logic_vector(31 downto 0) ;
+    signal fx3_ctl_in       : std_logic_vector(12 downto 0) ;
+    signal fx3_ctl_out      : std_logic_vector(12 downto 0) ;
+    signal fx3_ctl_oe       : std_logic_vector(12 downto 0) ;
 
-    signal rf_fifo_rcnt : signed(12 downto 0);
+    signal tx_underflow_led     :   std_logic ;
+    signal tx_underflow_count   :   unsigned(63 downto 0) ;
 
-    --- RF rx FIFO signals
-    signal rf_rx_fifo_full    : std_logic;
-    signal rf_rx_fifo_clr     : std_logic;
-    signal rf_rx_fifo_read    : std_logic;
-    signal rf_rx_fifo_cnt     : std_logic_vector(9 downto 0);
-    signal rf_rx_fifo_q       : std_logic_vector(31 downto 0);
-    signal rf_rx_fifo_w       : std_logic;
+    signal rx_overflow_led      :   std_logic ;
+    signal rx_overflow_count    :   unsigned(63 downto 0) ;
 
-    signal rf_rx_fifo_enough  : std_logic;
-
-    signal rf_rx_fifo_sample  : signed(31 downto 0) ;
-    signal rf_rx_last_sample  : signed(11 downto 0) ;
-    signal rf_rx_sample_idx   : signed(2 downto 0) ;
-    --- end RF rx FIFO
-
-    --- RF tx FIFO signals
-    signal rf_tx_fifo_clr    : std_logic;
-    signal rf_tx_fifo_data   : std_logic_vector(31 downto 0);
-    signal rf_tx_fifo_read   : std_logic;
-    signal rf_tx_fifo_w      : std_logic;
-    signal rf_tx_fifo_q      : std_logic_vector(31 downto 0);
-    signal rf_tx_fifo_empty  : std_logic;
-    signal rf_tx_fifo_cnt    : std_logic_vector(11 downto 0);
-
-    signal rf_tx_fifo_enough  : std_logic;
-
-    signal rf_tx_fifo_data_iq_r    : std_logic_vector(31 downto 0);
-    signal rf_tx_fifo_data_iq_rr   : std_logic_vector(31 downto 0);
-    signal tx_data           :   std_logic_vector(11 downto 0) ;
-    --- end RF tx FIFO
-
-    signal debug_line_speed : std_logic;
-    signal debug_line_speed_rx, debug_line_speed_tx : std_logic;
-
-    signal can_perform_rx, should_perform_rx : std_logic;
-    signal can_perform_tx, should_perform_tx : std_logic;
-
-    signal rf_tx_next_dma : std_logic;
-    signal rf_tx_dma_2  : std_logic;
-    signal rf_tx_dma_3  : std_logic;
-
-    signal rf_rx_next_dma : std_logic;
-    signal rf_rx_dma_0  : std_logic;
-    signal rf_rx_dma_1  : std_logic;
-
-    signal sys_rst : std_logic;
-
-    signal dma_idle : std_logic;
-    signal dma_rdy_0 : std_logic;
-    signal dma_rdy_1 : std_logic;
-    signal dma_rdy_2 : std_logic;
-    signal dma_rdy_3 : std_logic;
-    type dma_event is (DE_TX, DE_RX);
-    signal dma_last_event : dma_event;
-    signal dma_rx_en : std_logic;
-    signal dma_tx_en : std_logic;
-
-    signal dma_rx_en_r  : std_logic;
-    signal dma_rx_en_rr : std_logic;
-    signal dma_tx_en_r  : std_logic;
-    signal dma_tx_en_rr : std_logic;
-    signal rf_tx_en_iq_r  : std_logic;
-    signal rf_tx_en_iq_rr : std_logic;
-
-    signal tx_iq_idx : std_logic;
-
-    signal gpif_buf_sz : unsigned(10 downto 0);
-    signal gpif_buf_sz_cond : signed(12 downto 0);
-    signal gpif_buf_sel_r, gpif_buf_sel_rr : std_logic;
-
-    type m_state is (M_IDLE, M_IDLE_RD, M_IDLE_WR, M_IDLE_WR_1, M_IDLE_WR_2, M_IDLE_WR_3, M_READ, M_WRITE);
-    signal current_state : m_state;
-
-    attribute keep: boolean;
-    attribute keep of dma_idle: signal is true;
-    attribute keep of rf_rx_fifo_cnt: signal is true;
-    attribute keep of rf_rx_fifo_enough: signal is true;
-    attribute keep of dma_rdy_0: signal is true;
-    attribute keep of dma_rdy_1: signal is true;
-    attribute keep of rf_rx_next_dma: signal is true;
-    attribute keep of sys_rst: signal is true;
-    attribute keep of rf_rx_fifo_full: signal is true;
-    attribute keep of rf_rx_fifo_clr: signal is true;
-    --attribute keep of lms_rx_clock: signal is true;
-
-    attribute keep of can_perform_rx: signal is true;
-    attribute keep of can_perform_tx: signal is true;
-    attribute keep of should_perform_rx: signal is true;
-    attribute keep of should_perform_tx: signal is true;
-    attribute keep of rf_tx_fifo_enough: signal is true;
-    attribute keep of rf_tx_fifo_cnt: signal is true;
-    attribute keep of rf_tx_fifo_w: signal is true;
-    attribute keep of \38.4MHz\: signal is true;
-    attribute keep of \76.8MHz\: signal is true;
-    attribute keep of rf_tx_fifo_data_iq_rr: signal is true;
-    attribute keep of rf_tx_fifo_q: signal is true;
-
-    attribute noprune of dma_idle: signal is true;
-    attribute noprune of rf_rx_fifo_cnt: signal is true;
-    attribute noprune of rf_rx_fifo_enough: signal is true;
-    attribute noprune of dma_rdy_0: signal is true;
-    attribute noprune of dma_rdy_1: signal is true;
-    attribute noprune of rf_rx_next_dma: signal is true;
-    attribute noprune of sys_rst: signal is true;
-    attribute noprune of rf_rx_fifo_full: signal is true;
-    attribute noprune of rf_rx_fifo_clr: signal is true;
-    --attribute noprune of lms_rx_clock: signal is true;
-    attribute noprune of \38.4MHz\: signal is true;
-    attribute noprune of \76.8MHz\: signal is true;
-    attribute noprune of rf_tx_fifo_data_iq_rr: signal is true;
-    attribute noprune of rf_tx_fifo_q: signal is true;
-
-    attribute noprune of can_perform_rx: signal is true;
-    attribute noprune of can_perform_tx: signal is true;
-    attribute noprune of should_perform_rx: signal is true;
-    attribute noprune of should_perform_tx: signal is true;
-    attribute noprune of rf_tx_fifo_enough: signal is true;
-    attribute noprune of rf_tx_fifo_cnt: signal is true;
-    attribute noprune of rf_tx_fifo_w: signal is true;
+    signal lms_rx_data_reg      :   signed(11 downto 0) ;
+    signal lms_rx_iq_select_reg :   std_logic ;
 
 begin
 
-    qualifier <= qualifier + 1 when rising_edge(\38.4MHz\) ;
-
-    rx_i <= lms_rx_data when rising_edge(lms_rx_clock_out) and lms_rx_iq_select = '0' ;
-    rx_q <= lms_rx_data when rising_edge(lms_rx_clock_out) and lms_rx_iq_select = '1' ;
-
+    -- Create 80MHz from 38.4MHz coming from the c4_clock source
     U_pll : entity work.pll
       port map (
-        inclk0   =>  c4_tx_clock,
-        c0      =>  \76.8MHz\,
-        c1      =>  \38.4MHz\,
-        c2      =>  \76.8MHz@90\,
-        locked  => open
+        inclk0              =>  c4_clock,
+        c0                  =>  \80MHz\,
+        locked              =>  \80MHz locked\
       ) ;
 
-    U_serial_pll : entity work.serial_pll
-      port map (
-        inclk0  => c4_clock,
-        c0      => rs232_clock,
-        locked  => rs232_locked
+    -- Cross domain synchronizer chains
+    U_usb_speed : entity work.synchronizer
+      generic map (
+        RESET_LEVEL         =>  '0'
+      ) port map (
+        reset               =>  sys_rst_sync,
+        clock               =>  fx3_pclk,
+        async               =>  nios_gpio(7),
+        sync                =>  usb_speed
       ) ;
 
-    fx3_ctl(0) <= rf_rx_dma_0;
-    fx3_ctl(1) <= rf_rx_dma_1;
-    fx3_ctl(2) <= rf_tx_dma_2;
-    fx3_ctl(3) <= rf_tx_dma_3;
+    U_sys_reset_sync : entity work.reset_synchronizer
+      generic map (
+        INPUT_LEVEL         =>  '1',
+        OUTPUT_LEVEL        =>  '1'
+      ) port map (
+        clock               =>  fx3_pclk,
+        async               =>  sys_rst,
+        sync                =>  sys_rst_sync
+      ) ;
 
-    dma_rx_en  <= fx3_ctl(4);
-    dma_tx_en  <= fx3_ctl(5);
-    dma_idle   <= fx3_ctl(6);
-    sys_rst    <= fx3_ctl(7);
+    U_tx_reset : entity work.reset_synchronizer
+      generic map (
+        INPUT_LEVEL         =>  '1',
+        OUTPUT_LEVEL        =>  '1'
+      ) port map (
+        clock               =>  c4_tx_clock,
+        async               =>  sys_rst_sync,
+        sync                =>  tx_reset
+      ) ;
 
-    dma_rdy_0  <= fx3_ctl(8);
-    dma_rdy_1  <= fx3_ctl(12); -- 9 is DCLK, it is somewhat lost
-    dma_rdy_2  <= fx3_ctl(10);
-    dma_rdy_3  <= fx3_ctl(11);
+    U_rx_clock_reset : entity work.reset_synchronizer
+      generic map (
+        INPUT_LEVEL         =>  '1',
+        OUTPUT_LEVEL        =>  '1'
+      ) port map (
+        clock               =>  rx_clock,
+        async               =>  sys_rst_sync,
+        sync                =>  rx_reset
+      ) ;
 
-    gpif_buf_sz <= to_unsigned(512, gpif_buf_sz'length) when gpif_buf_sel_rr = '0' else to_unsigned(256, gpif_buf_sz'length);
-    gpif_buf_sz_cond <= to_signed(511, gpif_buf_sz_cond'length) when gpif_buf_sel_rr = '0' else to_signed(255, gpif_buf_sz_cond'length);
+    U_rx_enable_sync : entity work.synchronizer
+      generic map (
+        RESET_LEVEL =>  '0'
+      ) port map (
+        reset       =>  rx_reset,
+        clock       =>  rx_clock,
+        async       =>  pclk_rx_enable,
+        sync        =>  rx_enable
+      ) ;
 
-    rf_tx_fifo : entity work.tx_fifo
+    U_tx_enable_sync : entity work.synchronizer
+      generic map (
+        RESET_LEVEL =>  '0'
+      ) port map (
+        reset       =>  tx_reset,
+        clock       =>  tx_clock,
+        async       =>  pclk_tx_enable,
+        sync        =>  tx_enable
+      ) ;
+
+--    U_80MHz_reset : entity work.reset_synchronizer
+--      generic map (
+--        INPUT_LEVEL     => '1',
+--        OUTPUT_LEVEL    => '0'
+--      ) port map (
+--        clock           => \80MHz\,
+--        async           => sys_rst,
+--        sync            => \80MHz reset\
+--      ) ;
+
+    -- TX sample fifo
+    tx_sample_fifo.aclr <= tx_reset ;
+    tx_sample_fifo.wclock <= fx3_pclk ;
+    tx_sample_fifo.rclock <= tx_clock ;
+    U_tx_sample_fifo : entity work.tx_fifo
       port map (
-        aclr      => rf_tx_fifo_clr,
-        data      => rf_tx_fifo_data,
-        rdclk     => c4_tx_clock,
-        rdreq     => dma_tx_en_rr and lms_tx_iq_select,
-        wrclk     => fx3_pclk,
-        wrreq     => rf_tx_fifo_w,
-        q         => rf_tx_fifo_q,
-        rdempty   => rf_tx_fifo_empty,
-        rdfull    => open,
-        rdusedw   => open,
-        wrempty   => open,
-        wrfull    => open,
-        wrusedw   => rf_tx_fifo_cnt
-      );
-    rf_tx_fifo_enough <= '1' when (unsigned(rf_tx_fifo_cnt) <= ((2**(rf_tx_fifo_cnt'length-1))  - gpif_buf_sz)) else '0';
-    rf_tx_fifo_clr <= '1' when (sys_rst = '1') else '0';
-
-    rf_tx_fifo_w <= '1' when (current_state = M_WRITE) else '0';
-
-    process(sys_rst, c4_tx_clock)
-    begin
-        if( sys_rst = '1' ) then
-            dma_tx_en_r <= '0';
-            dma_tx_en_rr <= '0';
-        elsif( rising_edge(c4_tx_clock) ) then
-            dma_tx_en_r <= dma_tx_en;
-            dma_tx_en_rr <= dma_tx_en_r;
-        end if;
-    end process;
-
-    process(sys_rst, c4_tx_clock)
-    begin
-        if( sys_rst = '1' ) then
-            rf_tx_en_iq_r <= '0';
-            rf_tx_en_iq_rr <= '0';
-            rf_tx_fifo_data_iq_r <= (others => '0');
-            rf_tx_fifo_data_iq_rr <= (others => '0');
-        elsif( rising_edge(c4_tx_clock) ) then
-            rf_tx_en_iq_r <= not rf_tx_fifo_empty;
-            rf_tx_en_iq_rr <= rf_tx_en_iq_r;
-            rf_tx_fifo_data_iq_r <= rf_tx_fifo_q;
-            rf_tx_fifo_data_iq_rr <= rf_tx_fifo_data_iq_r;
-        end if;
-    end process;
-
-    process(sys_rst, c4_tx_clock)
-    begin
-        if( sys_rst = '1' ) then
-            tx_iq_idx <= '0';
-        elsif( rising_edge(c4_tx_clock) ) then
-            if (rf_tx_en_iq_rr = '1') then
-                tx_iq_idx <= not tx_iq_idx;
-            elsif (rf_tx_en_iq_rr = '0') then
-                tx_iq_idx <= '0';
-            end if;
-        end if;
-    end process;
-
-    tx_data <= rf_tx_fifo_data_iq_rr(27 downto 16) when tx_iq_idx = '1' else rf_tx_fifo_data_iq_rr(11 downto 0);
-    lms_tx_data <= signed(tx_data) when rf_tx_en_iq_rr = '1' else (others => '0');
-
-    rf_rx_fifo : entity work.rx_fifo
-      port map (
-        aclr      => rf_rx_fifo_clr,
-        data      => std_logic_vector(rf_rx_fifo_sample),
-        rdclk     => fx3_pclk,
-        rdreq     => rf_rx_fifo_read,
-        wrclk     => lms_rx_clock_out,
-        wrreq     => rf_rx_fifo_w,
-        q         => rf_rx_fifo_q,
-        rdempty   => open,
-        rdfull    => open,
-        rdusedw   => rf_rx_fifo_cnt,
-        wrempty   => open,
-        wrfull    => rf_rx_fifo_full,
-        wrusedw   => open
+        aclr                => tx_sample_fifo.aclr,
+        data                => tx_sample_fifo.wdata,
+        rdclk               => tx_sample_fifo.rclock,
+        rdreq               => tx_sample_fifo.rreq,
+        wrclk               => tx_sample_fifo.wclock,
+        wrreq               => tx_sample_fifo.wreq,
+        q                   => tx_sample_fifo.rdata,
+        rdempty             => tx_sample_fifo.rempty,
+        rdfull              => tx_sample_fifo.rfull,
+        rdusedw             => tx_sample_fifo.rused,
+        wrempty             => tx_sample_fifo.wempty,
+        wrfull              => tx_sample_fifo.wfull,
+        wrusedw             => tx_sample_fifo.wused
       );
 
-    rf_rx_fifo_enough <= '1' when (unsigned(rf_rx_fifo_cnt) >= gpif_buf_sz ) else '0';
+    -- RX sample fifo
+    rx_sample_fifo.wclock <= rx_clock ;
+    rx_sample_fifo.rclock <= fx3_pclk ;
+    U_rx_sample_fifo : entity work.rx_fifo
+      port map (
+        aclr                => rx_sample_fifo.aclr,
+        data                => rx_sample_fifo.wdata,
+        rdclk               => rx_sample_fifo.rclock,
+        rdreq               => rx_sample_fifo.rreq,
+        wrclk               => rx_sample_fifo.wclock,
+        wrreq               => rx_sample_fifo.wreq,
+        q                   => rx_sample_fifo.rdata,
+        rdempty             => rx_sample_fifo.rempty,
+        rdfull              => rx_sample_fifo.rfull,
+        rdusedw             => rx_sample_fifo.rused,
+        wrempty             => rx_sample_fifo.wempty,
+        wrfull              => rx_sample_fifo.wfull,
+        wrusedw             => rx_sample_fifo.wused
+      );
 
-    rf_rx_fifo_clr <= '1' when (sys_rst = '1' or (rf_rx_fifo_full = '1' and signed(rf_rx_sample_idx) = 0)) else '0';
-    rf_rx_fifo_read <= '1' when (current_state = M_READ) else '0';
+    -- FX3 GPIF
+    U_fx3_gpif : entity work.fx3_gpif
+      port map (
+        pclk                =>  fx3_pclk,
+        reset               =>  sys_rst_sync,
 
-    process(all)
+        usb_speed           =>  usb_speed,
+
+        rx_enable           =>  pclk_rx_enable,
+        tx_enable           =>  pclk_tx_enable,
+
+        gpif_in             =>  fx3_gpif_in,
+        gpif_out            =>  fx3_gpif_out,
+        gpif_oe             =>  fx3_gpif_oe,
+        ctl_in              =>  fx3_ctl_in,
+        ctl_out             =>  fx3_ctl_out,
+        ctl_oe              =>  fx3_ctl_oe,
+
+        tx_fifo_write       =>  tx_sample_fifo.wreq,
+        tx_fifo_full        =>  tx_sample_fifo.wfull,
+        tx_fifo_empty       =>  tx_sample_fifo.wempty,
+        tx_fifo_usedw       =>  tx_sample_fifo.wused,
+        tx_fifo_data        =>  tx_sample_fifo.wdata,
+
+        rx_fifo_read        =>  rx_sample_fifo.rreq,
+        rx_fifo_full        =>  rx_sample_fifo.rfull,
+        rx_fifo_empty       =>  rx_sample_fifo.rempty,
+        rx_fifo_usedw       =>  rx_sample_fifo.rused,
+        rx_fifo_data        =>  rx_sample_fifo.rdata
+      ) ;
+
+    -- Sample bridges
+    U_fifo_writer : entity work.fifo_writer
+      port map (
+        clock               =>  rx_clock,
+        reset               =>  rx_reset,
+        enable              =>  rx_enable,
+
+        fifo_clear          =>  rx_sample_fifo.aclr,
+        fifo_full           =>  rx_sample_fifo.wfull,
+        fifo_usedw          =>  rx_sample_fifo.wused,
+        fifo_data           =>  rx_sample_fifo.wdata,
+        fifo_write          =>  rx_sample_fifo.wreq,
+
+        in_i                =>  resize(rx_sample_i,16),
+        in_q                =>  resize(rx_sample_q,16),
+        in_valid            =>  rx_sample_valid,
+
+        overflow_led        =>  rx_overflow_led,
+        overflow_count      =>  rx_overflow_count,
+        overflow_duration   =>  x"abcd"
+      ) ;
+
+    U_fifo_reader : entity work.fifo_reader
+      port map (
+        clock               =>  tx_clock,
+        reset               =>  tx_reset,
+        enable              =>  tx_enable,
+
+        fifo_empty          =>  tx_sample_fifo.rempty,
+        fifo_usedw          =>  tx_sample_fifo.rused,
+        fifo_data           =>  tx_sample_fifo.rdata,
+        fifo_read           =>  tx_sample_fifo.rreq,
+
+        out_i               =>  tx_sample_i,
+        out_q               =>  tx_sample_q,
+        out_valid           =>  tx_sample_valid,
+
+        underflow_led       =>  tx_underflow_led,
+        underflow_count     =>  tx_underflow_count,
+        underflow_duration  =>  x"abcd"
+      ) ;
+
+    -- LMS6002D IQ interface
+    U_lms6002d : entity work.lms6002d
+      port map (
+        rx_clock            =>  rx_clock,
+        rx_reset            =>  rx_reset,
+        rx_enable           =>  rx_enable,
+
+        rx_lms_data         =>  lms_rx_data_reg,
+        rx_lms_iq_sel       =>  lms_rx_iq_select_reg,
+        rx_lms_enable       =>  open,
+
+        rx_sample_i         =>  rx_sample_i,
+        rx_sample_q         =>  rx_sample_q,
+        rx_sample_valid     =>  rx_sample_valid,
+
+        tx_clock            =>  tx_clock,
+        tx_reset            =>  tx_reset,
+        tx_enable           =>  tx_enable,
+
+        tx_sample_i         =>  tx_sample_i(11 downto 0),
+        tx_sample_q         =>  tx_sample_q(11 downto 0),
+        tx_sample_valid     =>  tx_sample_valid,
+
+        tx_lms_data         =>  lms_tx_data,
+        tx_lms_iq_sel       =>  lms_tx_iq_select,
+        tx_lms_enable       =>  open
+      ) ;
+
+    -- Register the inputs immediately
+    lms_rx_data_reg         <= lms_rx_data when rising_edge(rx_clock) ;
+    lms_rx_iq_select_reg    <= lms_rx_iq_select when rising_edge(rx_clock) ;
+
+    -- FX3 GPIF bidirectional signals
+    register_gpif : process(sys_rst_sync, fx3_pclk)
     begin
-        if( current_state = M_READ or current_state = M_IDLE_RD) then
-            fx3_gpif <= rf_rx_fifo_q;
-        elsif( current_state = M_WRITE or current_state = M_IDLE_WR) then
-            rf_tx_fifo_data <= fx3_gpif;
-        else
-            fx3_gpif <= (others => 'Z');
-        end if;
-    end process;
-    --todo: readd debug_line_speed handling
-    --fx3_gpif <= rf_rx_fifo_q when (debug_line_speed_rx = '0' and (current_state = M_READ or current_state = M_IDLE_RD)) else (others => 'Z');
-    --gpif_var <= fx3_gpif;
-    --process(all)
-    --begin
-    --    if (debug_line_speed_rx = '0' and (current_state = M_READ or current_state = M_IDLE_RD)) then
-    --        fx3_gpif <= rf_rx_fifo_q;
-    --    elsif (current_state = M_WRITE ) then
-    --        gpif_var <= fx3_gpif;
-    --    else
-    --        fx3_gpif <= (others => 'Z');
-    --    end if;
-    --end process;
-
-    debug_line_speed <= '0';
-    debug_line_speed_rx <= debug_line_speed;
-    debug_line_speed_tx <= debug_line_speed;
-
-    can_perform_rx <= '1' when (dma_rx_en = '1' and (
-                                    debug_line_speed_rx = '1' or
-                                    (rf_rx_fifo_enough = '1' and (
-                                          (dma_rdy_0 = '0' and rf_rx_next_dma = '0') or
-                                          (dma_rdy_1 = '0' and rf_rx_next_dma = '1')
-                                          )
-                                    )
-                                )) else '0';
-
-    can_perform_tx <= '1' when (dma_tx_en = '1' and (
-                                    debug_line_speed_tx = '1' or
-                                    (rf_tx_fifo_enough = '1' and (
-                                          (dma_rdy_2 = '0' and rf_tx_next_dma = '0') or
-                                          (dma_rdy_3 = '0' and rf_tx_next_dma = '1')
-                                          )
-                                    )
-                                )) else '0';
-
-    should_perform_rx <= '1' when ( can_perform_rx = '1' and (can_perform_tx = '0' or (can_perform_tx = '1' and dma_last_event = DE_TX ) ) ) else '0';
-
-    should_perform_tx <= '1' when ( can_perform_tx = '1' and (can_perform_rx = '0' or (can_perform_rx = '1' and dma_last_event = DE_RX ) ) ) else '0';
-
-    process(sys_rst, fx3_pclk)
-    begin
-        if( sys_rst = '1' ) then
-            current_state <= M_IDLE;
-            rf_tx_next_dma <= '1';
-            rf_rx_next_dma <= '0';
-            rf_rx_dma_0 <= '0';
-            rf_rx_dma_1 <= '0';
-            rf_tx_dma_2 <= '0';
-            rf_tx_dma_3 <= '0';
-            rf_fifo_rcnt <= (others => '0');
-            dma_last_event <= DE_TX;
+        if( sys_rst_sync = '1' ) then
+            fx3_gpif <= (others =>'Z') ;
         elsif( rising_edge(fx3_pclk) ) then
-            case current_state is
-                when M_IDLE =>
-                    if( dma_idle = '1' ) then
-                        if( should_perform_rx = '1' ) then
-                            rf_fifo_rcnt <= gpif_buf_sz_cond;
-
-                            if ( rf_rx_next_dma = '0') then
-                                rf_rx_dma_0 <= '1';
-                                rf_rx_dma_1 <= '0';
-                            else
-                                rf_rx_dma_0 <= '0';
-                                rf_rx_dma_1 <= '1';
-                            end if;
-
-                            -- DMA thread 0 is always next
-                            --rf_rx_next_dma <= not rf_rx_next_dma;
-                            rf_rx_next_dma <= '0';
-
-                            current_state <= M_IDLE_RD;
-                            -- set this to DE_RX unconditionally so that no hangs occur
-                            -- if there is an problem with RX
-                            dma_last_event <= DE_RX;
-                        elsif( should_perform_tx = '1' ) then
-                            rf_fifo_rcnt <= gpif_buf_sz_cond;
-
-                            if( rf_tx_next_dma = '0') then
-                                rf_tx_dma_2 <= '1';
-                                rf_tx_dma_3 <= '0';
-                            else
-                                rf_tx_dma_2 <= '0';
-                                rf_tx_dma_3 <= '1';
-                            end if;
-
-                            --DMA thread 3 is always next
-                            --rf_tx_next_dma <= not rf_tx_next_dma;
-                            rf_tx_next_dma <= '1';
-
-                            current_state <= M_IDLE_WR;
-
-                            dma_last_event <= DE_TX;
-                        end if;
-                    end if;
-
-                when M_IDLE_WR =>
-                    current_state <= M_IDLE_WR_1;
-                when M_IDLE_WR_1 =>
-                    current_state <= M_IDLE_WR_2;
-                when M_IDLE_WR_2 =>
-                    current_state <= M_IDLE_WR_3;
-                when M_IDLE_WR_3 =>
-                    current_state <= M_WRITE;
-                when M_WRITE =>
-                    rf_tx_dma_2 <= '0';
-                    rf_tx_dma_3 <= '0';
-                    if( unsigned(rf_fifo_rcnt) /= 0 ) then
-                        rf_fifo_rcnt <= rf_fifo_rcnt - 1;
-                    else
-                        current_state <= M_IDLE;
-                    end if;
-                when M_IDLE_RD =>
-                    current_state <= M_READ;
-                when M_READ =>
-                    rf_rx_dma_0 <= '0';
-                    rf_rx_dma_1 <= '0';
-
-                    if( unsigned(rf_fifo_rcnt) /= 0 ) then
-                        rf_fifo_rcnt <= rf_fifo_rcnt - 1;
-                    else
-                        current_state <= M_IDLE;
-                    end if;
-            end case;
-
-        end if;
-    end process;
-
-    -- |      Byte 1     |      Byte 2            Byte 3            Byte 4     |
-    -- | 0 0 0 0 0 0 0 0 | 0 0 0 0 1 1 1 1 | 1 1 1 1 1 1 1 1 | 2 2 2 2 2 2 2 2 |
-    -- | 2 2 2 2 3 3 3 3 | 3 3 3 3 3 3 3 3 | 4 4 4 4 4 4 4 4 | 4 4 4 4 5 5 5 5 |
-    -- | 5 5 5 5 5 5 5 5 | 6 6 6 6 6 6 6 6 | 6 6 6 6 7 7 7 7 | 7 7 7 7 7 7 7 7 |
-    --
-    -- Eight 12bit samples have to be collected to align data being fed into the FIFO
-    -- Enough data exists at the end of RF samples #2, #5, #7 to write data to the FIFO
-    process(sys_rst, lms_rx_clock_out)
-    begin
-        if( sys_rst = '1' ) then
-            dma_rx_en_r <= '0';
-            dma_rx_en_rr <= '0';
-        elsif( rising_edge(lms_rx_clock_out) ) then
-            dma_rx_en_r <= dma_rx_en;
-            dma_rx_en_rr <= dma_rx_en_r;
-        end if;
-    end process;
-
-
-    process(sys_rst, lms_rx_clock_out)
-    begin
-        if( sys_rst = '1' ) then
-            rf_rx_fifo_sample <= (others => '0');
-            rf_rx_last_sample <= (others => '0');
-            rf_rx_sample_idx <= (others => '0');
-            rf_rx_fifo_w <= '0';
-        elsif( rising_edge(lms_rx_clock_out) ) then
-            if( dma_rx_en_rr = '1' ) then
-                --rf_rx_last_sample <= upcnter;
-
-                --if( unsigned(rf_rx_sample_idx) = 2 or unsigned(rf_rx_sample_idx) = 5 or unsigned(rf_rx_sample_idx) = 7) then
-                --    rf_rx_fifo_w <= '1';
-                --else
-                --    rf_rx_fifo_w <= '0';
-                --end if;
-
-                rf_rx_fifo_sample(31 downto 0) <= "0011" & rx_q & "1011" & rx_i;
-                rf_rx_fifo_w <= not lms_rx_iq_select;
-                --if ( rf_rx_sample_idx(0) = '0')
-                --rf_rx_fifo_sample(11 downto 0) <= upcnter;
-                --if( unsigned(rf_rx_sample_idx) = 0 ) then
-                --    rf_rx_fifo_sample(11 downto 0)  <= upcnter(11 downto 0);
-                --elsif( unsigned(rf_rx_sample_idx) = 1 ) then
-                --    rf_rx_fifo_sample(23 downto 12) <= upcnter(11 downto 0);
-                --elsif( unsigned(rf_rx_sample_idx) = 2 ) then
-                --    rf_rx_fifo_sample(31 downto 24) <= upcnter(7 downto 0);
-                --elsif( unsigned(rf_rx_sample_idx) = 3 ) then
-                --    rf_rx_fifo_sample(15 downto 0)  <= upcnter(11 downto 0) & rf_rx_last_sample(11 downto 8);
-                --elsif( unsigned(rf_rx_sample_idx) = 4 ) then
-                --    rf_rx_fifo_sample(27 downto 16) <= upcnter(11 downto 0);
-                --elsif( unsigned(rf_rx_sample_idx) = 5 ) then
-                --    rf_rx_fifo_sample(31 downto 28) <= upcnter(3 downto 0);
-                --elsif( unsigned(rf_rx_sample_idx) = 6 ) then
-                --    rf_rx_fifo_sample(19 downto 0)  <= upcnter(11 downto 0) & rf_rx_last_sample(11 downto 4);
-                --elsif( unsigned(rf_rx_sample_idx) = 7 ) then
-                --    rf_rx_fifo_sample(31 downto 20) <= upcnter(11 downto 0);
-                --end if;
-                rf_rx_sample_idx <= rf_rx_sample_idx + 1;
+            fx3_gpif_in <= fx3_gpif ;
+            if( fx3_gpif_oe = '1' ) then
+                fx3_gpif <= fx3_gpif_out ;
+            else
+                fx3_gpif <= (others =>'Z') ;
             end if ;
         end if ;
-    end process;
+    end process ;
 
+    generate_ctl : for i in fx3_ctl'range generate
+        fx3_ctl(i) <= fx3_ctl_out(i) when fx3_ctl_oe(i) = '1' else 'Z';
+    end generate ;
 
+    fx3_ctl_in <= fx3_ctl ;
+
+    -- NIOS control system for si5338, vctcxo trim and lms control
     U_nios_system : nios_system
       port map (
-        clk_clk         => c4_clock,
-        reset_reset_n   => '1',
-        dac_MISO        => dac_sdo,
-        dac_MOSI        => dac_sdi,
-        dac_SCLK        => dac_sclk,
-        dac_SS_n        => dac_csx,
-        spi_MISO        => lms_sdo,
-        spi_MOSI        => lms_sdio,
-        spi_SCLK        => lms_sclk,
-        spi_SS_n        => lms_sen,
-        uart_rxd        => fx3_uart_txd,
-        uart_txd        => fx3_uart_rxd,
-        gpio_export     => nios_gpio,
+        clk_clk             => \80MHz\,
+        reset_reset_n       => '1',
+        dac_MISO            => dac_sdo,
+        dac_MOSI            => dac_sdi,
+        dac_SCLK            => dac_sclk,
+        dac_SS_n            => dac_csx,
+        spi_MISO            => lms_sdo,
+        spi_MOSI            => lms_sdio,
+        spi_SCLK            => lms_sclk,
+        spi_SS_n            => lms_sen,
+        uart_rxd            => fx3_uart_txd,
+        uart_txd            => fx3_uart_rxd,
+        gpio_export         => nios_gpio,
         oc_i2c_scl_pad_o    => i2c_scl_out,
         oc_i2c_scl_padoen_o => i2c_scl_oen,
         oc_i2c_sda_pad_i    => i2c_sda_in,
@@ -563,13 +384,12 @@ begin
         oc_i2c_scl_pad_i    => i2c_scl_in
       ) ;
 
+    -- IO for NIOS
     si_scl <= i2c_scl_out when i2c_scl_oen = '0' else 'Z' ;
     si_sda <= i2c_sda_out when i2c_sda_oen = '0' else 'Z' ;
 
     i2c_scl_in <= si_scl ;
     i2c_sda_in <= si_sda ;
-
-    nios_uart_rxd <= demod_ssd(demod_ssd'high) when demod_valid = '1' ;
 
     toggle_led1 : process(fx3_pclk)
         variable count : natural range 0 to 100_000_000 := 100_000_000 ;
@@ -583,51 +403,47 @@ begin
         end if ;
     end process ;
 
-    toggle_led2 : process(lms_rx_clock_out)
-        variable count : natural range 0 to 38_400_00 := 38_400_00 ;
-    begin
-        if( rising_edge(lms_rx_clock_out) ) then
-            count := count - 1 ;
-            if( count = 0 ) then
-                count := 38_400_00 ;
-                led(2) <= not led(2) ;
-            end if ;
-        end if ;
-    end process ;
+    led(2) <= tx_underflow_led ;
+    led(3) <= rx_overflow_led ;
 
-    toggle_led3 : process(lms_rx_iq_select)
-        variable count : natural range 0 to 19_200_000 := 19_200_000 ;
-    begin
-        if( rising_edge(lms_rx_iq_select) ) then
-            count := count - 1 ;
-            if( count = 0 ) then
-                count := 19_200_000 ;
-                led(3) <= not led(3) ;
-            end if ;
-        end if ;
-    end process ;
+--    toggle_led2 : process(rx_clock)
+--        variable count : natural range 0 to 38_400_00 := 38_400_00 ;
+--    begin
+--        if( rising_edge(rx_clock) ) then
+--            count := count - 1 ;
+--            if( count = 0 ) then
+--                count := 38_400_00 ;
+--                led(2) <= not led(2) ;
+--            end if ;
+--        end if ;
+--    end process ;
+--
+--    toggle_led3 : process(rx_clock)
+--        variable count : natural range 0 to 19_200_000 := 19_200_000 ;
+--    begin
+--        if( rising_edge(rx_clock) ) then
+--            count := count - 1 ;
+--            if( count = 0 ) then
+--                count := 19_200_000 ;
+--                led(3) <= not led(3) ;
+--            end if ;
+--        end if ;
+--    end process ;
 
-    lms_reset <= nios_gpio(0) ;
+    lms_reset               <= nios_gpio(0) ;
 
-    lms_rx_enable       <= nios_gpio(1) ;
+    lms_rx_enable           <= nios_gpio(1) ;
+    lms_tx_enable           <= nios_gpio(2) ;
 
-    lms_tx_enable       <= nios_gpio(2) ;
-    lms_tx_iq_select    <= not lms_tx_iq_select when rising_edge(c4_tx_clock) ;
+    lms_tx_v                <= nios_gpio(4 downto 3) ;
+    lms_rx_v                <= nios_gpio(6 downto 5) ;
 
-    lms_tx_v            <= nios_gpio(4 downto 3) ;
-    lms_rx_v            <= nios_gpio(6 downto 5) ;
+    exp_spi_clock           <= '0' ;
+    exp_spi_mosi            <= '0' ;
+    exp_gpio                <= (others =>'Z') ;
 
-    exp_spi_clock       <= '0' ;
-    exp_spi_mosi        <= '0' ;
-    exp_gpio            <= (others =>'Z') ;
-
-    process(fx3_pclk)
-    begin
-        if( rising_edge(fx3_pclk)) then
-            gpif_buf_sel_r <= nios_gpio(7);
-            gpif_buf_sel_rr <= gpif_buf_sel_r;
-        end if;
-    end process;
+    mini_exp1               <= 'Z';
+    mini_exp2               <= 'Z';
 
 end architecture ; -- arch
 

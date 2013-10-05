@@ -73,8 +73,8 @@ architecture arch of bladerf_tb is
     end procedure ;
 
     signal c4_clock     :   std_logic   := '1' ;
-    signal lms_rx       :   lms_rx_t ;
-    signal lms_tx       :   lms_tx_t ;
+    signal lms_rx       :   lms_rx_t := ( clock => '1', data => (others =>'0'), clock_out => '1', iq_select => '1', enable => '0' ) ;
+    signal lms_tx       :   lms_tx_t := ( clock => '1', data => (others =>'0'), enable => '1', iq_select => '1' ) ;
     signal lms_spi      :   lms_spi_t ;
     signal lms_pll_out  :   std_logic ;
     signal lms_reset    :   std_logic ;
@@ -87,6 +87,13 @@ begin
     -- Main 38.4MHz clock input
     c4_clock <= not c4_clock after C4_CLOCK_HALF_PERIOD ;
 
+    -- LMS 80MHz RX and TX clocks
+    lms_tx.clock <= not lms_tx.clock after (1.0/80.0e6) * 1 sec ;
+    lms_rx.clock <= not lms_rx.clock after (1.0/80.0e6) * 1 sec ;
+
+    -- FX3 UART
+    fx3_uart.txd <= '1' ;
+
     -- Top level of the FPGA
     U_bladerf : entity nuand.bladerf
       port map (
@@ -95,22 +102,26 @@ begin
 
         -- VCTCXO DAC
         dac_sclk            => open,
-        dac_sdi             => '0',
-        dac_sdo             => open,
+        dac_sdi             => open,
+        dac_sdo             => '0',
         dac_csx             => open,
 
+        -- LEDs
+        led                 => open,
+
         -- LMS RX Interface
-        lms_rx_clock        => lms_rx.clock,
         lms_rx_clock_out    => lms_rx.clock_out,
         lms_rx_data         => lms_rx.data,
         lms_rx_enable       => lms_rx.enable,
         lms_rx_iq_select    => lms_rx.iq_select,
+        lms_rx_v            => open,
 
         -- LMS TX Interface
-        lms_tx_clock        => lms_tx.clock,
+        c4_tx_clock         => lms_tx.clock,
         lms_tx_data         => lms_tx.data,
         lms_tx_enable       => lms_tx.enable,
         lms_tx_iq_select    => lms_tx.iq_select,
+        lms_tx_v            => open,
 
         -- LMS SPI Interface
         lms_sclk            => lms_spi.sclk,
@@ -130,15 +141,20 @@ begin
         fx3_uart_txd        => fx3_uart.txd,
         fx3_uart_csx        => fx3_uart.csx,
 
-        -- 1pps reference
-        refexp_1pps         => refexp_1pps,
+        -- Reference signals
+        ref_1pps            => refexp_1pps,
+        ref_sma_clock       => '0',
+
+        -- Mini expansion
+        mini_exp1           => open,
+        mini_exp2           => open,
 
         -- Expansion Interface
-        exp_clock           => open,
         exp_present         => '0',
         exp_spi_clock       => open,
         exp_spi_miso        => '0',
         exp_spi_mosi        => open,
+        exp_clock_in        => '0',
         exp_gpio            => open
       ) ;
 
@@ -146,31 +162,31 @@ begin
     U_lms6002d : entity nuand.lms6002d_model
       port map (
         -- LMS RX Interface
-        lms_rx_clock        => lms_rx.clock,
-        lms_rx_clock_out    => lms_rx.clock_out,
-        lms_rx_data         => lms_rx.data,
-        lms_rx_enable       => lms_rx.enable,
-        lms_rx_iq_select    => lms_rx.iq_select,
+        rx_clock        => lms_rx.clock,
+        rx_clock_out    => lms_rx.clock_out,
+        rx_data         => lms_rx.data,
+        rx_enable       => lms_rx.enable,
+        rx_iq_select    => lms_rx.iq_select,
 
         -- LMS TX Interface
-        lms_tx_clock        => lms_tx.clock,
-        lms_tx_data         => lms_tx.data,
-        lms_tx_enable       => lms_tx.enable,
-        lms_tx_iq_select    => lms_tx.iq_select,
+        tx_clock        => lms_tx.clock,
+        tx_data         => lms_tx.data,
+        tx_enable       => lms_tx.enable,
+        tx_iq_select    => lms_tx.iq_select,
 
         -- LMS SPI Interface
-        lms_sclk            => lms_spi.sclk,
-        lms_sen             => lms_spi.sen,
-        lms_sdio            => lms_spi.sdio,
-        lms_sdo             => lms_spi.sdo,
+        sclk            => lms_spi.sclk,
+        sen             => lms_spi.sen,
+        sdio            => lms_spi.sdio,
+        sdo             => lms_spi.sdo,
 
         -- LMS Control Interface
-        lms_pll_out         => lms_pll_out,
-        lms_reset           => lms_reset
+        pll_out         => lms_pll_out,
+        resetx          => lms_reset
       ) ;
 
     -- FX3 Model
-    U_fx3 : entity nuand.fx3_model(digital_loopback)
+    U_fx3 : entity nuand.fx3_model(dma)
       port map (
         -- GPIF
         fx3_pclk            => fx3_gpif.pclk,
