@@ -717,7 +717,7 @@ static CyBool_t CyFxApplnLPMRqtCB (
 }
 
 static uint8_t otp_buf[0x100];
-static void ExtractSerial(void)
+static void extractSerialAndCal(void)
 {
     int status;
     char serial_buf[32];
@@ -855,9 +855,7 @@ void bladeRFInit(void)
         CyFxAppErrorHandler(apiRetStatus);
     }
 
-    /* Fetch serial number from flash and configure the serial number
-     * string descriptor */
-    ExtractSerial();
+    /* Configure the serial number string descriptor */
     apiRetStatus = CyU3PUsbSetDesc(CY_U3P_USB_SET_STRING_DESCR,
                                    BLADE_USB_STR_INDEX_PRODUCT,
                                    (uint8_t *)CyFxUSBSerial);
@@ -894,6 +892,7 @@ void bladeRFAppThread_Entry( uint32_t input)
     CyFxGpioInit();
 
     populateVersionString();
+    extractSerialAndCal();
 
     bladeRFInit();
 
