@@ -15,12 +15,13 @@ int cmd_version(struct cli_state *state, int argc, char **argv)
     bladerf_version(&lib_version);
 
     printf("\n");
-    printf("bladeRF-cli version:        " BLADERF_CLI_VERSION "\n");
-    printf("libbladeRF version:         %s\n", lib_version.describe);
+    printf("  bladeRF-cli version:        " BLADERF_CLI_VERSION "\n");
+    printf("  libbladeRF version:         %s\n", lib_version.describe);
     printf("\n");
 
     if (state->dev == NULL) {
-        return CMD_RET_NODEV;
+        printf("  No device attached to retrive version information from.\n\n");
+        return 0;
     }
 
     status = bladerf_is_fpga_configured(state->dev);
@@ -54,21 +55,21 @@ int cmd_version(struct cli_state *state, int argc, char **argv)
         return status;
     }
 
-    printf("Firmware version:           %s\n", fw_version.describe);
+    printf("  Firmware version:           %s\n", fw_version.describe);
 
     if (fpga_loaded) {
-        printf("FPGA version:               %s\n", fpga_version.describe);
+        printf("  FPGA version:               %s\n", fpga_version.describe);
     } else {
-        printf("FPGA version:               Unknown (FPGA not loaded)\n");
+        printf("  FPGA version:               Unknown (FPGA not loaded)\n");
     }
 
     /* TODO: Move these into an info command */
-    printf("Serial #:                   %s\n", serial);
-    printf("VCTCXO DAC calibration:     0x%.4x\n", dac_trim);
+    printf("  Serial #:                   %s\n", serial);
+    printf("  VCTCXO DAC calibration:     0x%.4x\n", dac_trim);
     if (fpga_size != 0) {
-        printf("FPGA size:                  %d KLE\n", fpga_size);
+        printf("  FPGA size:                  %d KLE\n", fpga_size);
     } else {
-        printf("FPGA size:                  Unknown\n");
+        printf("  FPGA size:                  Unknown\n");
     }
     printf("\n");
 
