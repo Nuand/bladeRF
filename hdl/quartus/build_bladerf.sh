@@ -176,6 +176,7 @@ echo "##########################################################################
 echo ""
 
 pushd $nios_system/software/lms_spi_controller_bsp
+cp ../settings.bsp.in ./settings.bsp
 $nios2_bsp_generate_files --settings=settings.bsp --bsp-dir=.
 make
 cd ../lms_spi_controller

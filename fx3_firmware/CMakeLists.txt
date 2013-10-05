@@ -9,9 +9,17 @@ include(Version)
 
 set(VERSION "${VERSION_INFO}")
 
+# .dirstamp needs to touched before version.h so that fx3_firmware/makefile
+# doesn't try to rebuild version.h.
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/version.h.in
-    ${CMAKE_CURRENT_SOURCE_DIR}/version.h
+    ${CMAKE_CURRENT_BINARY_DIR}/build/.dirstamp
+    @ONLY
+)
+
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/version.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/build/version.h
     @ONLY
 )
 

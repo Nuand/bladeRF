@@ -40,3 +40,4 @@ hdl/fpga/ip/altera/nios_system/nios_system.sopcinfo
 hdl/fpga/ip/altera/nios_system/software/lms_spi_controller/mem_init
 hdl/fpga/ip/altera/nios_system/software/lms_spi_controller/obj
 hdl/fpga/ip/altera/nios_system/software/lms_spi_controller_bsp
+hdl/fpga/ip/altera/nios_system/synthesis/
