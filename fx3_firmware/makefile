@@ -47,10 +47,10 @@ $(ELF): $(OUTPUT_DIR)/.dirstamp $(OBJ)
 	$(LD) $(OBJ) $(LDFLAGS) -o $@
 
 $(IMG): $(ELF) $(ELF2IMG)
-	$(OUTPUT_DIR)/$(ELF2IMG) -i $< -o $@
+	$(ELF2IMG) -i $< -o $@
 
 $(ELF2IMG): $(ELF2IMG_SRC)
-	$(HOST_CC) $< -O2 -o $(OUTPUT_DIR)/$@
+	$(HOST_CC) $< -O2 -o $@
 
 # Build any toolchain dependencies. 
 $(OUTPUT_DIR)/cyfxtx.o: $(OUTPUT_DIR)/%.o : $(TOOLCHAIN_DEPS_DIR)/%.c
