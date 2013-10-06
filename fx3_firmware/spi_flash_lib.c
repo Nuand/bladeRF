@@ -96,6 +96,11 @@ CyU3PReturnStatus_t CyFxSpiWaitForStatus(void)
     return CY_U3P_SUCCESS;
 }
 
+CyBool_t spiFastRead = CyFalse;
+void CyFxSpiFastRead(CyBool_t v) {
+    spiFastRead = v;
+}
+
 /* SPI read / write for programmer application. */
 CyU3PReturnStatus_t CyFxSpiTransfer(uint16_t pageAddress, uint16_t byteCount, uint8_t *buffer, CyBool_t isRead)
 {
@@ -122,9 +127,11 @@ CyU3PReturnStatus_t CyFxSpiTransfer(uint16_t pageAddress, uint16_t byteCount, ui
         if (isRead) {
             location[0] = 0x03; /* Read command. */
 
-            status = CyFxSpiWaitForStatus();
-            if (status != CY_U3P_SUCCESS)
-                return status;
+            if (!spiFastRead) {
+                status = CyFxSpiWaitForStatus();
+                if (status != CY_U3P_SUCCESS)
+                    return status;
+            }
 
             CyU3PSpiSetSsnLine(CyFalse);
             status = CyU3PSpiTransmitWords(location, 4);
@@ -170,7 +177,8 @@ CyU3PReturnStatus_t CyFxSpiTransfer(uint16_t pageAddress, uint16_t byteCount, ui
         buffer += FLASH_PAGE_SIZE;
         pageCount--;
 
-        CyU3PThreadSleep(15);
+        if (!spiFastRead)
+            CyU3PThreadSleep(15);
     }
 
     return CY_U3P_SUCCESS;
