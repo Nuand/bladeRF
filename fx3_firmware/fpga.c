@@ -42,7 +42,7 @@ static void bladeRFConfigUtoPDmaCallback(CyU3PDmaChannel *chHandle, CyU3PDmaCbTy
         int i;
 
         uint8_t *end_in_b = &( ((uint8_t *)input->buffer_p.buffer)[input->buffer_p.count - 1]);
-        uint32_t *end_in_w = &( ((uint32_t *)input->buffer_p.buffer)[input->buffer_p.count - 1]);
+        uint16_t *end_in_w = &( ((uint16_t *)input->buffer_p.buffer)[input->buffer_p.count - 1]);
 
 
         /* Flip the bits in such a way that the FPGA can be programmed
@@ -50,7 +50,7 @@ static void bladeRFConfigUtoPDmaCallback(CyU3PDmaChannel *chHandle, CyU3PDmaCbTy
         for (i = input->buffer_p.count - 1; i >= 0; i--) {
             *end_in_w-- = glFlipLut[*end_in_b--];
         }
-        status = CyU3PDmaChannelCommitBuffer (chHandle, input->buffer_p.count * 4, 0);
+        status = CyU3PDmaChannelCommitBuffer (chHandle, input->buffer_p.count * 2, 0);
         if (status != CY_U3P_SUCCESS) {
             CyU3PDebugPrint (4, "CyU3PDmaChannelCommitBuffer failed, Error code = %d\n", status);
         }
@@ -71,7 +71,7 @@ static void NuandFpgaConfigStart(void)
 
     NuandAllowSuspend(CyFalse);
 
-    NuandGPIOReconfigure(CyTrue, !first_call);
+    NuandGPIOReconfigure(CyFalse, !first_call);
     first_call = 0;
 
 
