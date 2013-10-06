@@ -1,11 +1,11 @@
-bladerf (0~20131005-2) UNRELEASED; urgency=low
+bladerf (0~20131006-1) UNRELEASED; urgency=low
 
   * Another experimental release
   * Make it work
   * Rebase to b80d31f5 (Merge pull request #140)
-  * Fill out man pages
+  * Generate man pages from markdown'd doxygen
 
- -- Ryan Tucker <rtucker@gmail.com>  Sat, 05 Oct 2013 23:40:28 -0400
+ -- Ryan Tucker <rtucker@gmail.com>  Sun, 06 Oct 2013 19:38:31 -0400
 
 bladerf (0~20130929-1) UNRELEASED; urgency=low
 
