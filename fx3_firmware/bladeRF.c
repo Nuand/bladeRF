@@ -33,6 +33,9 @@ uint8_t glPageBuffer[FLASH_PAGE_SIZE] __attribute__ ((aligned (32)));
 CyBool_t glCalCacheValid = CyFalse;
 uint8_t glCal[CAL_BUFFER_SIZE] __attribute__ ((aligned (32)));
 
+CyBool_t glAutoLoadValid = CyFalse;
+uint8_t glAutoLoad[CAL_BUFFER_SIZE] __attribute__ ((aligned (32)));
+
 /* Standard product string descriptor */
 uint8_t CyFxUSBSerial[] __attribute__ ((aligned (32))) =
 {
@@ -66,28 +69,6 @@ void CyFxAppErrorHandler(CyU3PReturnStatus_t apiRetStatus)
         /* Thread sleep : 100 ms */
         CyU3PThreadSleep(100);
 }
-
-static int FpgaBeginProgram(void)
-{
-    CyBool_t value;
-
-    unsigned tEnd;
-    CyU3PReturnStatus_t apiRetStatus = CY_U3P_SUCCESS;
-    apiRetStatus = CyU3PGpioSetValue(GPIO_nCONFIG, CyFalse);
-    tEnd = CyU3PGetTime() + 10;
-    while (CyU3PGetTime() < tEnd);
-    apiRetStatus = CyU3PGpioSetValue(GPIO_nCONFIG, CyTrue);
-
-    tEnd = CyU3PGetTime() + 1000;
-    do {
-        apiRetStatus = CyU3PGpioGetValue(GPIO_nSTATUS, &value);
-        if (CyU3PGetTime() > tEnd)
-            return -1;
-    } while (!value);
-
-    return 0;
-}
-
 
 void NuandGPIOReconfigure(CyBool_t fullGpif, CyBool_t warm)
 {
@@ -301,6 +282,15 @@ void CyU3PUsbSendRetCode(CyU3PReturnStatus_t ret_status) {
 static CyU3PReturnStatus_t NuandReadCalTable(uint8_t *cal_buff) {
     CyU3PReturnStatus_t apiRetStatus;
     apiRetStatus = CyFxSpiTransfer(CAL_PAGE, CAL_BUFFER_SIZE, cal_buff, CyTrue);
+
+    /* FIXME: Validate table */
+
+    return apiRetStatus;
+}
+
+static CyU3PReturnStatus_t NuandReadAutoLoad(uint8_t *cal_buff) {
+    CyU3PReturnStatus_t apiRetStatus;
+    apiRetStatus = CyFxSpiTransfer(AUTOLOAD_PAGE, AUTOLOAD_BUFFER_SIZE, cal_buff, CyTrue);
 
     /* FIXME: Validate table */
 
@@ -739,6 +729,11 @@ static void extractSerialAndCal(void)
         glCalCacheValid = CyTrue;
     }
 
+    status = NuandReadAutoLoad(glAutoLoad);
+    if(status == CY_U3P_SUCCESS) {
+        glAutoLoadValid = CyTrue;
+    }
+
     NuandFirmwareStop();
 }
 
@@ -889,6 +884,7 @@ void bladeRFInit(void)
 void bladeRFAppThread_Entry( uint32_t input)
 {
     uint8_t state;
+    int cnt;
     CyFxGpioInit();
 
     populateVersionString();
@@ -897,8 +893,17 @@ void bladeRFAppThread_Entry( uint32_t input)
     bladeRFInit();
 
     FpgaBeginProgram();
-    for (;;) {
+    for (cnt = 0;;cnt++) {
         CyU3PThreadSleep (100);
+        if (cnt == 8 && glAutoLoadValid) {
+            char fpga_len[11];
+            if (!NuandExtractField((void*)glAutoLoad, 0x100, "LEN", (char *)&fpga_len, 10)) {
+                fpga_len[10] = 0;
+                NuandLoadFromFlash(atoi(fpga_len));
+            }
+
+        }
+
         CyU3PGpifGetSMState(&state);
     }
 }

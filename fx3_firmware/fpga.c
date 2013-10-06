@@ -12,6 +12,27 @@ static uint32_t glDMARxCount = 0;                  /* Counter to track the numbe
                                              * from USB during FPGA programming */
 static uint16_t glFlipLut[256];
 
+int FpgaBeginProgram(void)
+{
+    CyBool_t value;
+
+    unsigned tEnd;
+    CyU3PReturnStatus_t apiRetStatus = CY_U3P_SUCCESS;
+    apiRetStatus = CyU3PGpioSetValue(GPIO_nCONFIG, CyFalse);
+    tEnd = CyU3PGetTime() + 10;
+    while (CyU3PGetTime() < tEnd);
+    apiRetStatus = CyU3PGpioSetValue(GPIO_nCONFIG, CyTrue);
+
+    tEnd = CyU3PGetTime() + 1000;
+    do {
+        apiRetStatus = CyU3PGpioGetValue(GPIO_nSTATUS, &value);
+        if (CyU3PGetTime() > tEnd)
+            return -1;
+    } while (!value);
+
+    return 0;
+}
+
 
 void NuandFpgaConfigSwInit(void) {
     uint32_t i, tmpr, tmpw;
@@ -220,6 +241,94 @@ CyBool_t NuandFpgaConfigHalted(uint16_t endpoint, uint8_t * data)
     }
 
     return isHandled;
+}
+
+CyBool_t NuandLoadFromFlash(int fpga_len)
+{
+	char *ptr;
+	int nleft;
+	CyBool_t retval = CyFalse;
+	CyU3PDmaBuffer_t dbuf;
+	int sector_idx = 1025;
+	int prodCnt, consCnt, i;
+	CyU3PDmaState_t state;
+
+	CyU3PReturnStatus_t apiRetStatus = CY_U3P_SUCCESS;
+	NuandFpgaConfigStart();
+	ptr = CyU3PDmaBufferAlloc(4096);
+	apiRetStatus = CyFxSpiInit(0x100);
+
+	CyFxSpiFastRead(CyTrue);
+	apiRetStatus = CyU3PSpiSetClock(30000000);
+
+	FpgaBeginProgram();
+	nleft = fpga_len;
+
+	while(nleft) {
+		apiRetStatus = CyU3PDmaChannelGetStatus(&glChHandlebladeRFUtoP, &state, &prodCnt, &consCnt);
+		if (apiRetStatus)
+			break;
+
+		CyU3PDmaChannelAbort(&glChHandlebladeRFUtoP);
+
+		apiRetStatus = CyU3PDmaChannelGetStatus(&glChHandlebladeRFUtoP, &state, &prodCnt, &consCnt);
+		if (apiRetStatus)
+			break;
+
+		CyU3PDmaChannelReset(&glChHandlebladeRFUtoP);
+
+		apiRetStatus = CyU3PDmaChannelGetStatus(&glChHandlebladeRFUtoP, &state, &prodCnt, &consCnt);
+		if (apiRetStatus)
+			break;
+
+		if (CyFxSpiTransfer(sector_idx++, 0x100, ptr, CyTrue) != CY_U3P_SUCCESS)
+			break;
+
+		uint8_t *end_in_b = &( ((uint8_t *)ptr)[255]);
+		uint16_t *end_in_w = &( ((uint16_t *)ptr)[255]);
+
+		/* Flip the bits in such a way that the FPGA can be programmed
+		 * This mapping can be determined by looking at the schematic */
+		for (i = 255; i >= 0; i--)
+			*end_in_w-- = glFlipLut[*end_in_b--];
+
+		dbuf.buffer = ptr;
+		dbuf.count = ((nleft > 256) ? 256 : (nleft + 2)) * 2;
+		dbuf.size = 4096;
+		dbuf.status = 0;
+
+		apiRetStatus = CyU3PDmaChannelSetupSendBuffer(&glChHandlebladeRFUtoP, &dbuf);
+		if (apiRetStatus)
+			break;
+
+		apiRetStatus = CyU3PDmaChannelGetStatus(&glChHandlebladeRFUtoP, &state, &prodCnt, &consCnt);
+		if (apiRetStatus)
+			break;
+
+		apiRetStatus = CyU3PDmaChannelWaitForCompletion(&glChHandlebladeRFUtoP, 100);
+		if (apiRetStatus)
+			break;
+
+		apiRetStatus = CyU3PDmaChannelGetStatus(&glChHandlebladeRFUtoP, &state, &prodCnt, &consCnt);
+		if (apiRetStatus)
+			break;
+
+		if (nleft > 256) {
+			nleft -= 256;
+		} else {
+			retval = CyTrue;
+			nleft = 0;
+		    break;
+		}
+	}
+
+	CyU3PDmaBufferFree(ptr);
+	CyU3PSpiDeInit();
+
+	CyFxSpiFastRead(CyFalse);
+	NuandFpgaConfigStop();
+
+	return retval;
 }
 
 const struct NuandApplication NuandFpgaConfig = {

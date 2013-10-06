@@ -59,6 +59,9 @@
 #define CAL_BUFFER_SIZE 256
 #define CAL_PAGE 768
 
+#define AUTOLOAD_BUFFER_SIZE 256
+#define AUTOLOAD_PAGE 1024
+
 #ifdef _MSC_VER
 #   define PACK(decl_to_pack_) \
             __pragma(pack(push,1)) \
