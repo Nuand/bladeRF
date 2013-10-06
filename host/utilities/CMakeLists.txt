@@ -38,3 +38,24 @@ else(${HAVE_LIBUSB_HOTPLUG} MATCHES "1")
                "https://github.com/Nuand/bladeRF/wiki/Debian-setup-guide#build-libusb-tools-and-libraries-from-nuand-git-master")
     endif()
 endif(${HAVE_LIBUSB_HOTPLUG} MATCHES "1")
+
+################################################################################
+# Doxygen documentation
+################################################################################
+find_package(Doxygen)
+
+if(DOXYGEN_FOUND)
+
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/Doxyfile.in
+    ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/Doxyfile
+    @ONLY
+)
+
+add_custom_target(doc
+        ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/Doxyfile
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen
+        COMMENT "Generating bladeRF utilities documentation via Doxygen in: ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen"
+)
+
+endif(DOXYGEN_FOUND)
