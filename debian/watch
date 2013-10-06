@@ -1,0 +1,3 @@
+version=3
+opts=filenamemangle=s/.+\/v?(\d\S*)\.tar\.gz/bladeRF-$1.tar.gz/ \
+  https://github.com/Nuand/bladeRF/tags .*/v?(\d\S*)\.tar\.gz
