@@ -1,0 +1,66 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.TH BLADERF-FLASH 1 "October 5, 2013"
+.\" Please adjust this date whenever revising the manpage.
+
+.SH NAME
+bladeRF-flash - bladeRF flashing utility
+
+.SH SYNOPSIS
+.B bladeRF-flash
+.RI <options>
+
+.SH DESCRIPTION
+The
+.B bladeRF-flash
+utility is used when you are having a very bad day.
+.PP
+For more information on obtaining or building firmware files and FPGA
+bitstreams, please visit
+.IR http://nuand.com/ .
+
+.SH OPTIONS
+The program follows the usual GNU command line syntax, with long
+options starting with two dashes (`-').
+.TP
+.B -d, --device <device>
+Use the specified bladeRF device.
+.TP
+.B -f, --flash-firmware <file>
+Flash specified firmware file.
+.TP
+.B -r, --reset
+Start with RESET instead of JUMP_TO_BOOTLOADER.
+.TP
+.B -l, --load-ram
+Only load FX3 RAM instead of also flashing.
+.TP
+.B -L, --lib-version
+Print libbladeRF version and exit.
+.TP
+.B -v, --verbosity <level>
+Set the libbladeRF verbosity level.  Levels, listed in increasing verbosity, are: critical, error, warning, info, debug, verbose
+.TP
+.B -V, --version
+Print flasher version and exit.
+.TP
+.B -h, --help
+Show this help text.
+
+.SH NOTES
+The -d option takes a device specifier string. See the bladerf_open()
+documentation for more information about the format of this string.
+
+.SH SEE ALSO
+.BR bladeRF-cli (1).
+.PP
+More documentation is available at
+.IR http://nuand.com/
+and
+.IR https://github.com/nuand/bladerf .
+.SH AUTHOR
+bladeRF-flash was written by the contributors to the bladeRF Project.
+See the CONTRIBUTORS file for more information.
+.PP
+This manual page was written by Ryan Tucker <rtucker@gmail.com>.
+Options are current as of git revision
+.BR 3f8a176 .

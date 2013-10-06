@@ -1,0 +1,5 @@
+CONTRIBUTORS
+README.md
+host/README.md
+host/*/README.md
+host/*/*/README.md

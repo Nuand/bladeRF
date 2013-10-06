@@ -1,0 +1,180 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.TH BLADERF-CLI 1 "October 5, 2013"
+.\" Please adjust this date whenever revising the manpage.
+
+.SH NAME
+bladeRF-cli - bladeRF command line interface and test utility
+
+.SH SYNOPSIS
+.B bladeRF-cli
+.RI [ options ]
+
+.SH DESCRIPTION
+The
+.B bladeRF-cli
+utility is used to flash firmware files, load FPGA bitstreams, and perform
+other tasks on the Nuand bladeRF software-defined radio system.
+.PP
+For more information on obtaining or building firmware files and FPGA
+bitstreams, please visit
+.IR http://nuand.com/ .
+
+.SH OPTIONS
+The program follows the usual GNU command line syntax, with long
+options starting with two dashes (`-').
+.TP
+.B -d, --device <device>
+Use the specified bladeRF device.
+.TP
+.B -f, --flash-firmware <file>
+Flash specified firmware file.
+.TP
+.B -l, --load-fpga <file>
+Load specified FPGA bitstream.
+.TP
+.B -p, --probe
+Probe for devices, print results, then exit.
+.TP
+.B -s, --script <file>
+Run provided script.
+.TP
+.B -i, --interactive
+Enter interactive mode.
+.TP
+.B -L, --lib-version
+Print libbladeRF version and exit.
+.TP
+.B -v, --verbosity <level>
+Set the libbladeRF verbosity level. Levels, listed in increasing verbosity,
+are: critical, error, warning, info, debug, verbose
+.TP
+.B -V, --version
+Print CLI version and exit.
+.TP
+.B -h, --help
+Show this help text.
+
+.SH INTERACTIVE MODE COMMANDS
+.TP
+.B calibrate
+Calibrate transceiver
+.TP
+.B rx <start | stop | config [param=val [param=val [...]]>
+Receive IQ samples
+.TP
+.B tx <start | stop | config [parameters]>
+Transmit IQ samples
+.TP
+.B set <param> <arguments>
+Set device settings
+
+The set command takes a parameter and an arbitrary number of
+arguments for that particular command.  The parameter is one
+of:
+
+   bandwidth       Bandwidth settings
+   config          Overview of everything
+   frequency       Frequency settings
+   lmsregs         LMS6002D register dump
+   loopback        Loopback settings
+   mimo            MIMO settings
+   pa              PA settings
+   pps             PPS settings
+   refclk          Reference clock settings
+   rxvga1          Gain setting of RXVGA1 in dB (range: )
+   rxvga2          Gain setting of RXVGA2 in dB (range: )
+   samplerate      Samplerate settings
+   trimdac         VCTCXO Trim DAC settings
+   txvga1          Gain setting of TXVGA1 in dB (range: )
+   txvga2          Gain setting of TXVGA2 in dB (range: )
+
+.TP
+.B poke <dac|lms|si> <address> <data>
+Poke a memory location
+.TP
+.B peek <dac|lms|si> <address> [num addresses]
+Peek a memory location
+.TP
+.B help [<command>]
+Provide information about specified command
+.TP
+.B info
+Print information about the currently opened device
+.TP
+.B load <fpga|fx3> <filename>
+Load FPGA or FX3
+.TP
+.B print <param>
+Print information about the device
+
+The print command takes a parameter to print.  The parameter
+is one of:
+
+   bandwidth       Bandwidth settings
+   config          Overview of everything
+   frequency       Frequency settings
+   lmsregs         LMS6002D register dump
+   loopback        Loopback settings
+   mimo            MIMO settings
+   pa              PA settings
+   pps             PPS settings
+   refclk          Reference clock settings
+   rxvga1          Gain setting of RXVGA1 in dB (range: )
+   rxvga2          Gain setting of RXVGA2 in dB (range: )
+   samplerate      Samplerate settings
+   trimdac         VCTCXO Trim DAC settings
+   txvga1          Gain setting of TXVGA1 in dB (range: )
+   txvga2          Gain setting of TXVGA2 in dB (range: )
+
+.TP
+.B open [device identifiers]
+Open a bladeRF device
+
+Open the specified device for use with successive commands.
+Any previously opened device will be closed.
+See the bladerf_open() documentation for the device specifier format.
+
+.TP
+.B probe
+List attached bladeRF devices
+.TP
+.B erase
+Erase part of FX3 flash device
+.TP
+.B version
+Host software and device version information
+.TP
+.B recover [device_str] [file]
+Load firmware when operating in FX3 bootloader mode
+.TP
+.B jump_to_boot
+Jump to FX3 bootloader
+.TP
+.B clear
+Clear the screen
+.TP
+.B quit
+Exit the CLI
+
+.SH NOTES
+The -d option takes a device specifier string. See the bladerf_open()
+documentation for more information about the format of this string.
+
+If the -d parameter is not provided, the first available device
+will be used for the provided command, or will be opened prior
+to entering interactive mode.
+
+.SH SEE ALSO
+.BR bladeRF-flash (1).
+.PP
+More documentation is available at
+.IR http://nuand.com/
+and
+.IR https://github.com/nuand/bladerf .
+.SH AUTHOR
+bladeRF-cli was written by the contributors to the bladeRF Project.
+See the CONTRIBUTORS file for more information.
+.PP
+This manual page was written by Ryan Tucker <rtucker@gmail.com>.
+Options are current as of git revision
+.BR 3f8a176 .

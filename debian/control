@@ -1,0 +1,49 @@
+Source: bladerf
+Priority: extra
+Maintainer: Ryan Tucker <rtucker@gmail.com>
+Build-Depends: debhelper (>=8), cmake, pkg-config, doxygen, libusb-1.0-0-dev (>= 1.0.12), libtecla1-dev, libncurses5-dev, git
+Standards-Version: 3.9.2
+Section: comm
+Homepage: http://www.nuand.com/bladeRF
+Vcs-Git: git://github.com/Nuand/bladeRF.git
+Vcs-Browser: https://github.com/Nuand/bladeRF
+
+Package: libbladerf0
+Section: libs
+Architecture: any
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, libusb-1.0-0 (>= 1.0.12)
+Description: Interface to the nuand bladeRF software-defined radio device
+ The nuand bladeRF is an open-source software-defined radio (SDR) system,
+ comprised of an RF transceiver, a field-programmable gate array (FPGA),
+ a microcontroller driving a USB 3.0 interface, and a suite of host
+ libraries and drivers to facilitate interaction with the device.
+ .
+ This package provides the host library.
+
+Package: libbladerf0-dev
+Section: libdevel
+Architecture: any
+Depends: libbladerf0 (= ${binary:Version}), libc6-dev | libc-dev, ${misc:Depends}
+Provides: libbladerf-dev
+Conflicts: libbladerf-dev
+Description: Interface to the nuand bladeRF software-defined radio device (header files)
+ The nuand bladeRF is an open-source software-defined radio (SDR) system,
+ comprised of an RF transceiver, a field-programmable gate array (FPGA),
+ a microcontroller driving a USB 3.0 interface, and a suite of host
+ libraries and drivers to facilitate interaction with the device.
+ .
+ This package contains the header files required for compiling bladeRF
+ applications.
+
+Package: bladerf
+Section: comm
+Architecture: any
+Depends: libbladerf0 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Description: Interface to the nuand bladeRF software-defined radio device (tools)
+ The nuand bladeRF is an open-source software-defined radio (SDR) system,
+ comprised of an RF transceiver, a field-programmable gate array (FPGA),
+ a microcontroller driving a USB 3.0 interface, and a suite of host
+ libraries and drivers to facilitate interaction with the device.
+ .
+ This package provides command-line tools for controlling the bladeRF.

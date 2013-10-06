@@ -1,0 +1,7 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,4 +1,3 @@
+ cmake_minimum_required(VERSION 2.8)
+ add_subdirectory(host)
+-add_subdirectory(fx3_firmware)
+ 
