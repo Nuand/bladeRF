@@ -838,11 +838,11 @@ int bladerf_flash_fpga(struct bladerf *dev, const char *fpga_file)
                 encode_field((char *)buf, BLADERF_FLASH_PAGE_SIZE, &hp_idx, "LEN", fpga_len);
 
                 if (status == 0) {
-                    status = dev->fn->erase_flash(dev, 4, buf_size_padded);
+                    status = dev->fn->erase_flash(dev, flash_from_sectors(4), buf_size_padded);
                 }
 
                 if (status >= 0) {
-                    status = dev->fn->write_flash(dev, 1024, buf, buf_size_padded);
+                    status = dev->fn->write_flash(dev, flash_from_pages(1024), buf, buf_size_padded);
                 }
 
                 ver = (uint8_t *)malloc(buf_size_padded);
@@ -850,7 +850,7 @@ int bladerf_flash_fpga(struct bladerf *dev, const char *fpga_file)
                     status = BLADERF_ERR_MEM;
 
                 if (status >= 0) {
-                    status = dev->fn->read_flash(dev, 1024, ver, buf_size_padded);
+                    status = dev->fn->read_flash(dev, flash_from_pages(1024), ver, buf_size_padded);
                 }
 
                 if ((size_t)status == buf_size_padded) {
