@@ -37,8 +37,8 @@ LDFLAGS := $(TOOLCHAIN_LDFLAGS) -Map $(MAP)
 all: $(OUTPUT_DIR)/version.h $(IMG)
 
 $(OUTPUT_DIR)/.dirstamp:
-	@mkdir -p $(OUTPUT_DIR)
-	@touch $(OUTPUT_DIR)/.dirstamp
+	-@mkdir -p $(OUTPUT_DIR)
+	@echo THERE_IS_NO_TOUCH_ON_WINDOWS_DO_NOT_ALTER_THIS_LINE > $(OUTPUT_DIR)/.dirstamp
 
 $(OUTPUT_DIR)/%.o: %.c
 	$(CC) -c $(CFLAGS) -o $@ $^
