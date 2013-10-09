@@ -11,7 +11,7 @@ project(bladeRF-cli C)
 ################################################################################
 
 set(VERSION_INFO_MAJOR  0)
-set(VERSION_INFO_MINOR  4)
+set(VERSION_INFO_MINOR  5)
 set(VERSION_INFO_PATCH  0)
 set(VERSION_INFO_EXTRA "git")
 include(Version)
@@ -85,6 +85,7 @@ set(BLADERF_CLI_SOURCE
         src/cmd/calibrate.c
         src/cmd/cmd.c
         src/cmd/erase.c
+        src/cmd/info.c
         src/cmd/load.c
         src/cmd/open.c
         src/cmd/peek.c

@@ -113,6 +113,20 @@ struct bladerf_stats {
 };
 
 /**
+ * Version structure for FPGA, firmware, libbladeRF, and associated utilities
+ */
+struct bladerf_version {
+    uint16_t major;             /**< Major version */
+    uint16_t minor;             /**< Minor version */
+    uint16_t patch;             /**< Patch version */
+    const char *describe;       /**< Version string with any additional suffix
+                                 *   information.
+                                 *
+                                 *   @warning Do not attempt to modify or
+                                 *            free() this string. */
+};
+
+/**
  * Sample format
  */
 typedef enum {
@@ -829,15 +843,14 @@ API_EXPORT int bladerf_get_fpga_size(struct bladerf *dev,
 /**
  * Query firmware version
  *
- * @param[in]   dev     Device handle
- * @param[out]  major   Firmware major version
- * @param[out]  minor   Firmware minor version
+ * @param[in]   dev         Device handle
+ * @param[out]  version     Updated to contain firmware version
  *
- * @return 0 on success, value from \ref RETCODES list on failure
+ * @return 0 on success, value from \ref RETCODES list upon failing to retrieve
+ *         this information from the device.
  */
-API_EXPORT int bladerf_get_fw_version(struct bladerf *dev,
-                                      unsigned int *major,
-                                      unsigned int *minor);
+API_EXPORT int bladerf_fw_version(struct bladerf *dev,
+                                  struct bladerf_version *version);
 
 /**
  * Check FPGA configuration status
@@ -853,15 +866,13 @@ API_EXPORT int bladerf_is_fpga_configured(struct bladerf *dev);
 /**
  * Query FPGA version
  *
- * @param[in]   dev     Device handle
- * @param[out]  major   FPGA major version
- * @param[out]  minor   FPGA minor version
+ * @param[in]   dev         Device handle
+ * @param[out]  version     Updated to contain firmware version
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_get_fpga_version(struct bladerf *dev,
-                                        unsigned int *major,
-                                        unsigned int *minor);
+API_EXPORT int bladerf_fpga_version(struct bladerf *dev,
+                                    struct bladerf_version *version);
 
 /**
  * Obtain device statistics
@@ -919,6 +930,17 @@ extern const unsigned int BLADERF_FLASH_ALIGNMENT_SECTOR;
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT int bladerf_flash_firmware(struct bladerf *dev,
+                                      const char *firmware);
+
+/**
+ * Flash FPGA image onto the device
+ *
+ * @param   dev         Device handle
+ * @param   fpga_image  Full path to FPGA file
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT int bladerf_flash_fpga(struct bladerf *dev,
                                       const char *firmware);
 
 /**
@@ -1130,22 +1152,11 @@ API_EXPORT bool bladerf_devstr_matches(const char *dev_str,
 API_EXPORT const char * bladerf_strerror(int error);
 
 /**
- * Get libbladeRF version information.
+ * Get libbladeRF version information
  *
- * The parameters are optional and may be set to NULL if not needed
- *
- * param[out] major     Major version
- * param[out] minor     Minor version
- * param[out] patch     Patch version
- *
- * @warning Do not attempt to modify the returned string.
- *
- * @return  Version string. This value will contain git information for
- *          non-release builds (i.e., a short changeset and "dirty" status)
+ * @param[out]  version     libbladeRF version information
  */
-API_EXPORT const char * bladerf_version(unsigned int *major,
-                                        unsigned int *minor,
-                                        unsigned int *patch);
+API_EXPORT void bladerf_version(struct bladerf_version *version);
 
 /**
  * Sets the filter level for displayed log messages. Messages that are at

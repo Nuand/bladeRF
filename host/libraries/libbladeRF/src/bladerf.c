@@ -133,8 +133,8 @@ int bladerf_open(struct bladerf **device, const char *dev_id)
             /* If any of these routines failed, the dev structure should
              * still have had it's fields dummied, so they're safe to
              * print here (i.e., not uninitialized) */
-            log_debug("%s: fw=v%d.%d serial=%s trim=0x%.4x fpga_size=%d\n",
-                    __FUNCTION__, dev->fw_major, dev->fw_minor,
+            log_debug("%s: fw=v%s serial=%s trim=0x%.4x fpga_size=%d\n",
+                    __FUNCTION__, dev->fw_version.describe,
                     dev->ident.serial, dev->dac_trim, dev->fpga_size);
         }
 
@@ -417,12 +417,21 @@ int bladerf_select_band(struct bladerf *dev, bladerf_module module,
 {
     uint32_t gpio ;
     uint32_t band = 0;
+    lms_lna_t lna ;
+    lms_pa_t pa ;
     if( frequency >= 1500000000 ) {
         band = 1; // High Band selection
-        lms_lna_select(dev, LNA_2);
+        lna = LNA_2;
+        pa = PA_2;
     } else {
         band = 2; // Low Band selection
-        lms_lna_select(dev, LNA_1);
+        lna = LNA_1;
+        pa = PA_1;
+    }
+    if (module == BLADERF_MODULE_TX) {
+        lms_pa_enable(dev, pa);
+    } else {
+        lms_lna_select(dev, lna);
     }
     bladerf_config_gpio_read(dev, &gpio);
     gpio &= ~(module == BLADERF_MODULE_TX ? (3<<3) : (3<<5));
@@ -578,7 +587,6 @@ int bladerf_init_stream(struct bladerf_stream **stream,
 
 void bladerf_deinit_stream(struct bladerf_stream *stream)
 {
-
     size_t i;
 
     while(stream->state != STREAM_DONE && stream->state != STREAM_IDLE) {
@@ -639,10 +647,9 @@ int bladerf_get_fpga_size(struct bladerf *dev, bladerf_fpga_size *size)
     return 0;
 }
 
-int bladerf_get_fw_version(struct bladerf *dev,
-                            unsigned int *major, unsigned int *minor)
+int bladerf_fw_version(struct bladerf *dev, struct bladerf_version *version)
 {
-    return dev->fn->get_fw_version(dev, major, minor);
+    return dev->fn->fw_version(dev, version);
 }
 
 int bladerf_is_fpga_configured(struct bladerf *dev)
@@ -650,10 +657,9 @@ int bladerf_is_fpga_configured(struct bladerf *dev)
     return dev->fn->is_fpga_configured(dev);
 }
 
-int bladerf_get_fpga_version(struct bladerf *dev,
-                                unsigned int *major, unsigned int *minor)
+int bladerf_fpga_version(struct bladerf *dev, struct bladerf_version *version)
 {
-    return dev->fn->get_fpga_version(dev, major, minor);
+    return dev->fn->fpga_version(dev, version);
 }
 
 int bladerf_stats(struct bladerf *dev, struct bladerf_stats *stats)
@@ -793,6 +799,71 @@ int bladerf_jump_to_bootloader(struct bladerf *dev)
     return dev->fn->jump_to_bootloader(dev);
 }
 
+int bladerf_flash_fpga(struct bladerf *dev, const char *fpga_file)
+{
+    int status;
+    char fpga_len[10];
+    uint8_t *buf, *buf_padded, *ver;
+    size_t buf_size, buf_size_padded;
+    int hp_idx = 0;
+
+    if (!strcmp("X", fpga_file)) {
+        printf("Disabling FPGA flash auto-load\n");
+        return (dev->fn->erase_flash(dev, 4, 1) != 1);
+    }
+
+    status = read_file(fpga_file, &buf, &buf_size);
+    if (!status) {
+        if (!getenv("BLADERF_SKIP_FPGA_SIZE_CHECK") &&
+                (buf_size < (1 * 1024 * 1024) || (buf_size > (5 * 1024 * 1024)))) {
+            log_error("Error: Detected potentially invalid firmware file.\n");
+            log_error("Define BLADERF_SKIP_FPGA_SIZE_CHECK in your evironment "
+                       "to skip this check.\n");
+            status = BLADERF_ERR_INVAL;
+        } else {
+            /* Pad firmare data out to a flash page size */
+            buf_size_padded = (FLASH_BYTES_TO_PAGES(buf_size) + 1) * FLASH_PAGE_SIZE;
+            buf_padded = realloc(buf, buf_size_padded);
+            if (!buf_padded) {
+                status = BLADERF_ERR_MEM;
+            } else {
+                buf = buf_padded;
+                memset(buf + buf_size, 0xFF, buf_size_padded - buf_size - FLASH_PAGE_SIZE);
+                memmove(&buf[FLASH_PAGE_SIZE], buf, buf_size_padded - FLASH_PAGE_SIZE);
+                snprintf(fpga_len, 9, "%d", (int)buf_size);
+                memset(buf, 0xff, FLASH_PAGE_SIZE);
+                encode_field((char *)buf, FLASH_PAGE_SIZE, &hp_idx, "LEN", fpga_len);
+
+                if (status == 0) {
+                    status = dev->fn->erase_flash(dev, 4, buf_size_padded);
+                }
+
+                if (status >= 0) {
+                    status = dev->fn->write_flash(dev, 1024, buf, buf_size_padded);
+                }
+
+                ver = (uint8_t *)malloc(buf_size_padded);
+                if (!ver)
+                    status = BLADERF_ERR_MEM;
+
+                if (status >= 0) {
+                    status = dev->fn->read_flash(dev, 1024, ver, buf_size_padded);
+                }
+
+                if ((size_t)status == buf_size_padded) {
+                    status = memcmp(buf, ver, buf_size_padded);
+                }
+
+                free(ver);
+                free(buf);
+            }
+        }
+
+    }
+
+    return status;
+}
+
 int bladerf_load_fpga(struct bladerf *dev, const char *fpga_file)
 {
     uint8_t *buf;
@@ -850,23 +921,12 @@ const char * bladerf_strerror(int error)
     }
 }
 
-const char * bladerf_version(unsigned int *major,
-                             unsigned int *minor,
-                             unsigned int *patch)
+void bladerf_version(struct bladerf_version *version)
 {
-    if (major) {
-        *major = LIBBLADERF_VERSION_MAJOR;
-    }
-
-    if (minor) {
-        *minor = LIBBLADERF_VERSION_MINOR;
-    }
-
-    if (patch) {
-        *patch = LIBBLADERF_VERSION_PATCH;
-    }
-
-    return LIBBLADERF_VERSION;
+    version->major = LIBBLADERF_VERSION_MAJOR;
+    version->minor = LIBBLADERF_VERSION_MINOR;
+    version->patch = LIBBLADERF_VERSION_PATCH;
+    version->describe = LIBBLADERF_VERSION;
 }
 
 bladerf_log_level bladerf_log_set_verbosity(bladerf_log_level level)

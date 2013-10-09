@@ -6,10 +6,10 @@
 ifeq ($(wildcard make/toolchain.mk),)
 $(error Copy make/toolchain.mk.sample to make/toolchain.mk and edit paths accordingly before running make)
 endif
+OUTPUT_DIR = build
 include make/toolchain.mk
 
 # Target files
-OUTPUT_DIR = build
 TARGET := bladeRF
 ELF := $(OUTPUT_DIR)/$(TARGET).elf
 IMG := $(OUTPUT_DIR)/$(TARGET).img
@@ -22,7 +22,8 @@ OBJ := $(addprefix $(OUTPUT_DIR)/,$(SRC:.c=.o)) \
 
 CFLAGS := -Wall -Wextra -Wno-unused-parameter \
 		  $(TOOLCHAIN_CFLAGS) \
-		  $(EXTRA_CFLAGS)
+		  $(EXTRA_CFLAGS) \
+		  -I$(OUTPUT_DIR)
 
 ifdef DEBUG
 	CFLAGS += -O0 -ggdb3 -DDEBUG
@@ -33,11 +34,11 @@ endif
 LDFLAGS := $(TOOLCHAIN_LDFLAGS) -Map $(MAP)
 
 
-all: $(IMG)
+all: $(OUTPUT_DIR)/version.h $(IMG)
 
 $(OUTPUT_DIR)/.dirstamp:
-	mkdir -p $(OUTPUT_DIR)
-	touch $@
+	-@mkdir -p $(OUTPUT_DIR)
+	@echo THERE_IS_NO_TOUCH_ON_WINDOWS_DO_NOT_ALTER_THIS_LINE > $(OUTPUT_DIR)/.dirstamp
 
 $(OUTPUT_DIR)/%.o: %.c
 	$(CC) -c $(CFLAGS) -o $@ $^
@@ -45,24 +46,27 @@ $(OUTPUT_DIR)/%.o: %.c
 $(ELF): $(OUTPUT_DIR)/.dirstamp $(OBJ)
 	$(LD) $(OBJ) $(LDFLAGS) -o $@
 
-$(IMG): $(ELF) $(OUTPUT_DIR)/$(ELF2IMG)
-	$(OUTPUT_DIR)/$(ELF2IMG) -i $< -o $@
+$(IMG): $(ELF) $(ELF2IMG)
+	$(ELF2IMG) -i $< -o $@
 
-$(OUTPUT_DIR)/$(ELF2IMG): $(ELF2IMG_SRC)
+$(ELF2IMG): $(ELF2IMG_SRC)
 	$(HOST_CC) $< -O2 -o $@
 
 # Build any toolchain dependencies. 
-$(OUTPUT_DIR)/$(TOOLCHAIN_DEPS_OBJ_C): $(OUTPUT_DIR)/%.o : $(TOOLCHAIN_DEPS_DIR)/%.c
+$(OUTPUT_DIR)/cyfxtx.o: $(OUTPUT_DIR)/%.o : $(TOOLCHAIN_DEPS_DIR)/%.c
 	$(call build_toolchain_dep,$<,$@)
 
 $(OUTPUT_DIR)/$(TOOLCHAIN_DEPS_OBJ_A): $(OUTPUT_DIR)/%.o : $(TOOLCHAIN_DEPS_DIR)/%.S
 	$(call build_toolchain_dep,$<,$@)
 
+$(OUTPUT_DIR)/version.h: $(OUTPUT_DIR)/.dirstamp version.h.in
+	cd $(OUTPUT_DIR) && \
+		cmake $(CURDIR)
+	-@cp $(OUTPUT_DIR)/build/version.h $(OUTPUT_DIR)/version.h
+
 clean:
-	$(RM) -f $(ELF) $(IMG) $(MAP) $(OBJ) $(TOOLCHAIN_OBJ)
+	$(RM) -rf $(OUTPUT_DIR)
 
 realclean: clean
-	$(RM) -f $(OUTPUT_DIR)/$(ELF2IMG)
-	$(RM) -rf $(OUTPUT_DIR)
 
 .PHONY: clean realclean

@@ -171,7 +171,7 @@ static void si5338_pack_regs(struct si5338_multisynth *ms)
     /* p3 = c */
     ms->p3 = ms->c;
 
-    log_info( "MSx P1: 0x%8.8x (%u) P2: 0x%8.8x (%u) P3: 0x%8.8x (%u)\n", ms->p1, ms->p1, ms->p2, ms->p2, ms->p3, ms->p3 );
+    log_debug( "MSx P1: 0x%8.8x (%u) P2: 0x%8.8x (%u) P3: 0x%8.8x (%u)\n", ms->p1, ms->p1, ms->p2, ms->p2, ms->p3, ms->p3 );
 
     /* Regs */
     ms->regs[0] = ms->p1 & 0xff;
@@ -297,7 +297,7 @@ static void si5338_calculate_samplerate(struct si5338_multisynth *ms, struct bla
     rate->den = (uint64_t)ms->r*2*(abc.integer * abc.den + abc.num);
     si5338_rational_reduce(rate);
 
-    log_info( "Calculated samplerate: %"PRIu64" + %"PRIu64"/%"PRIu64"\n", rate->integer, rate->num, rate->den );
+    log_debug( "Calculated samplerate: %"PRIu64" + %"PRIu64"/%"PRIu64"\n", rate->integer, rate->num, rate->den );
 
     return;
 }
@@ -328,7 +328,7 @@ static int si5338_calculate_multisynth(struct si5338_multisynth *ms, struct blad
         log_error( "Sample rate requires r > 32\n" );
         return BLADERF_ERR_INVAL;
     } else {
-        log_info( "Found r value of: %d\n", r_value );
+        log_debug( "Found r value of: %d\n", r_value );
     }
 
     /* Find suitable MS (a, b, c) values */
@@ -337,7 +337,7 @@ static int si5338_calculate_multisynth(struct si5338_multisynth *ms, struct blad
     abc.den = req.integer * req.den + req.num;
     si5338_rational_reduce(&abc);
 
-    log_info( "MSx a + b/c: %"PRIu64" + %"PRIu64"/%"PRIu64"\n", abc.integer, abc.num, abc.den );
+    log_debug( "MSx a + b/c: %"PRIu64" + %"PRIu64"/%"PRIu64"\n", abc.integer, abc.num, abc.den );
 
     /* Check values to make sure they are OK */
     if (abc.integer < 8) {
@@ -363,7 +363,7 @@ static int si5338_calculate_multisynth(struct si5338_multisynth *ms, struct blad
         abc.den >>= 1;
     }
 
-    log_info( "MSx a + b/c: %"PRIu64" + %"PRIu64"/%"PRIu64"\n", abc.integer, abc.num, abc.den );
+    log_debug( "MSx a + b/c: %"PRIu64" + %"PRIu64"/%"PRIu64"\n", abc.integer, abc.num, abc.den );
 
     /* Set it in the multisynth */
     assert(abc.integer <= UINT32_MAX);
@@ -423,7 +423,7 @@ int si5338_set_sample_rate(struct bladerf *dev, bladerf_module module, uint32_t 
     int status;
 
     memset(&act, 0, sizeof(act));
-    log_info( "Setting integer sample rate: %d\n", rate );
+    log_debug( "Setting integer sample rate: %d\n", rate );
     req.integer = rate;
     req.num = 0;
     req.den = 1;
@@ -436,7 +436,7 @@ int si5338_set_sample_rate(struct bladerf *dev, bladerf_module module, uint32_t 
 
     assert(act.integer <= UINT32_MAX);
     *actual = (uint32_t)act.integer;
-    log_info( "Set actual integer sample rate: %d\n", act.integer );
+    log_debug( "Set actual integer sample rate: %d\n", act.integer );
 
     return status ;
 }
@@ -481,7 +481,7 @@ int si5338_get_sample_rate(struct bladerf *dev, bladerf_module module, unsigned 
     if (actual.num != 0) {
         log_warning( "Fractional sample rate truncated during integer sample rate retrieval\n" );
     }
-    
+
     assert(actual.integer <= UINT_MAX);
     *rate = (unsigned int)actual.integer;
 

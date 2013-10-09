@@ -596,7 +596,7 @@ long bladerf_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
     bladerf_device_t *dev;
     void __user *data;
-    struct bladeRF_version ver;
+    struct bladerf_fx3_version ver;
     int ret;
     int retval = -EINVAL;
     int sz, nread, nwrite;
@@ -624,7 +624,7 @@ long bladerf_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
             if (retval >= 0) {
                 ver.major = le16_to_cpu(ver.major);
                 ver.minor = le16_to_cpu(ver.minor);
-                if (copy_to_user(data, &ver, sizeof(struct bladeRF_version))) {
+                if (copy_to_user(data, &ver, sizeof(struct bladerf_fx3_version))) {
                     retval = -EFAULT;
                 } else {
                     retval = 0;

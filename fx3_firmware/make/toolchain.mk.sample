@@ -120,8 +120,8 @@ TOOLCHAIN_LDFLAGS := --entry CyU3PFirmwareEntry \
 ################################
 TOOLCHAIN_DEPS_SRC_C := $(TOOLCHAIN_DEPS_DIR)/cyfxtx.c
 TOOLCHAIN_DEPS_SRC_A := $(TOOLCHAIN_DEPS_DIR)/cyfx_gcc_startup.S
-TOOLCHAIN_DEPS_OBJ_C := $(notdir $(TOOLCHAIN_DEPS_SRC_C:.c=.o))
-TOOLCHAIN_DEPS_OBJ_A := $(notdir $(TOOLCHAIN_DEPS_SRC_A:.S=.o))
+TOOLCHAIN_DEPS_OBJ_C := $(strip $(notdir $(TOOLCHAIN_DEPS_SRC_C:.c=.o)))
+TOOLCHAIN_DEPS_OBJ_A := $(strip $(notdir $(TOOLCHAIN_DEPS_SRC_A:.S=.o)))
 TOOLCHAIN_DEPS_OBJ := $(TOOLCHAIN_DEPS_OBJ_C) $(TOOLCHAIN_DEPS_OBJ_A)
 
 ifdef HOST_IS_WINDOWS
@@ -129,7 +129,7 @@ ifdef HOST_IS_WINDOWS
 	ELF2IMG := $(ELF2IMG_DIR)/elf2img.exe
 else
 	ELF2IMG_SRC := $(call pathfixup,$(ELF2IMG_DIR)/elf2img.c)
-	ELF2IMG := ./elf2img
+	ELF2IMG := $(OUTPUT_DIR)/elf2img
 endif
 
 build_toolchain_dep = $(CC) $(call pathfixup,$(1)) $(CFLAGS) -c -o $(2)

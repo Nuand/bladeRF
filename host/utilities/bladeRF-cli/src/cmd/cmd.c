@@ -8,6 +8,7 @@
 DECLARE_CMD(calibrate);
 DECLARE_CMD(clear);
 DECLARE_CMD(help);
+DECLARE_CMD(info);
 DECLARE_CMD(load);
 DECLARE_CMD(open);
 DECLARE_CMD(peek);
@@ -33,6 +34,7 @@ struct cmd {
 static const char *cmd_names_calibrate[] = { "calibrate", "cal", NULL };
 static const char *cmd_names_clear[] = { "clear", "cls", NULL };
 static const char *cmd_names_help[] = { "help", "h", "?", NULL };
+static const char *cmd_names_info[] = { "info", "i", NULL };
 static const char *cmd_names_load[] = { "load", "ld", NULL };
 static const char *cmd_names_open[] = { "open", "op", "o", NULL };
 static const char *cmd_names_peek[] = { "peek", "pe", NULL };
@@ -221,6 +223,21 @@ static const struct cmd cmd_table[] = {
         )
     },
     {
+        FIELD_INIT(.names, cmd_names_info),
+        FIELD_INIT(.exec, cmd_info),
+        FIELD_INIT(.desc, "Print information about the currently opened device"),
+        FIELD_INIT(.help,
+                "info\n"
+                "\n"
+                "Prints the following information about an opened device:\n"
+                "  Serial number\n"
+                "  VCTCXO DAC calibration value\n"
+                "  FPGA size\n"
+                "  Whether or not the FPGA is loaded\n"
+                "  USB bus and address\n"
+        )
+    },
+    {
         FIELD_INIT(.names, cmd_names_load),
         FIELD_INIT(.exec, cmd_load),
         FIELD_INIT(.desc, "Load FPGA or FX3"),
@@ -293,11 +310,11 @@ static const struct cmd cmd_table[] = {
     {
         FIELD_INIT(.names, cmd_names_ver),
         FIELD_INIT(.exec, cmd_version),
-        FIELD_INIT(.desc, "Device and firmware versions"),
+        FIELD_INIT(.desc, "Host software and device version information"),
         FIELD_INIT(.help,
             "version\n"
             "\n"
-            "Prints version information for device and firmware.\n"
+            "Prints version information for both host software and the current device\n"
         )
     },
     {

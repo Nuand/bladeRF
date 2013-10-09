@@ -7,6 +7,7 @@
 #define CONVERSIONS_H__
 
 #include <stdint.h>
+#include <libbladeRF.h>
 #include "host_config.h"
 
 /**
@@ -94,5 +95,20 @@ double str2double(const char *str, double min, double max, bool *ok);
 unsigned int str2uint_suffix(const char *str, unsigned int min,
         unsigned int max, const struct numeric_suffix suffixes[],
         int num_suffixes, bool *ok);
+
+/**
+ * Convert a string to a bladerf_version
+ *
+ * Accepted inputs are in the form: X.Y.Z or X.Y.Z-<extra text>
+ *
+ * @param[in]   string  Version string to convert
+ * @param[out]  version Version structure to populate. For a valid string,
+ *                      the describe member will point to the provided
+ *                      string argument. The contents of this structure
+ *                      are undefined when this function returns -1.
+ *
+ * @return 0 on success, -1 if provided string is invalid
+ */
+int str2version(const char *str, struct bladerf_version *version);
 
 #endif

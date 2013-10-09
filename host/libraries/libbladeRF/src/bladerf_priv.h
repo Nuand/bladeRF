@@ -91,8 +91,8 @@ struct bladerf_fn {
     /* Platform information */
     int (*get_cal)(struct bladerf *dev, char *cal);
     int (*get_otp)(struct bladerf *dev, char *otp);
-    int (*get_fw_version)(struct bladerf *dev, unsigned int *maj, unsigned int *min);
-    int (*get_fpga_version)(struct bladerf *dev, unsigned int *maj, unsigned int *min);
+    int (*fw_version)(struct bladerf *dev, struct bladerf_version *version);
+    int (*fpga_version)(struct bladerf *dev, struct bladerf_version *version);
     int (*get_device_speed)(struct bladerf *dev, int *speed);
 
     /* Configuration GPIO accessors */
@@ -130,6 +130,8 @@ struct bladerf_fn {
 #define FW_LEGACY_CONFIG_IF_MINOR   4
 #define LEGACY_CONFIG_IF    2
 
+#define BLADERF_VERSION_STR_MAX 32
+
 struct bladerf {
 
     struct bladerf_devinfo ident;  /* Identifying information */
@@ -137,7 +139,10 @@ struct bladerf {
     uint16_t dac_trim;
     bladerf_fpga_size fpga_size;
 
-    unsigned int fw_major, fw_minor;
+    char *fw_version_str;
+    char *fpga_version_str;
+
+    struct bladerf_version fw_version;
     int legacy;
 
     int speed;      /* The device's USB speed, 0 is HS, 1 is SS */
@@ -235,5 +240,18 @@ int bladerf_get_and_cache_vctcxo_trim(struct bladerf *device);
  * 0 on success, BLADERF_ERR_* on failure
  */
 int bladerf_get_and_cache_fpga_size(struct bladerf *device);
+
+/**
+ * Create data that can be read by extract_field()
+ *
+ * @param[in]   ptr     Pointer to data buffer that will containt encoded data
+ * @param[in]   len     Length of data buffer that will containt encoded data
+ * @param[inout]   idx  Pointer indicating next free byte inside of data buffer that will containt encoded data
+ * @param[in]   field   Key of value to be stored in encoded data buffer
+ * @param[in]   val     Value to be stored in encoded data buffer
+ *
+ * 0 on success, BLADERF_ERR_* on failure
+ */
+int encode_field(char *ptr, int len, int *idx, char *field, char *val);
 
 #endif

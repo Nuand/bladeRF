@@ -105,7 +105,7 @@
 #define strncasecmp _strnicmp
 #define fileno      _fileno
 #define strdup      _strdup
-#define usleep(x)      Sleep((x)/1000)
+#define usleep(x)      Sleep((x+999)/1000)
 
 /* ssize_t lives elsewhere */
 #include <BaseTsd.h>

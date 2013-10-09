@@ -13,6 +13,7 @@
 #include "ezusb.h"
 #include "bladerf_priv.h"
 #include "backend/libusb.h"
+#include "conversions.h"
 #include "minmax.h"
 #include "log.h"
 #include "flash.h"
@@ -450,18 +451,39 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
             if( bladerf_devinfo_matches( &thisinfo, info ) ) {
 
                 /* Allocate backend structure and populate*/
-                dev = (struct bladerf *)malloc(sizeof(struct bladerf));
-                lusb = (struct bladerf_lusb *)malloc(sizeof(struct bladerf_lusb));
+                dev = (struct bladerf *)calloc(1, sizeof(struct bladerf));
+                if (!dev) {
+                    log_error("Skipping instance %d due to failed allocation: "
+                              "device handle.\n", thisinfo.instance);
+                    continue;
+                }
 
-                if (!dev || !lusb) {
+                dev->fpga_version_str = calloc(1, BLADERF_VERSION_STR_MAX + 1);
+                if (!dev->fpga_version_str) {
+                    log_error("Skipping instance %d due to failed allocation: "
+                              "FPGA version string.\n", thisinfo.instance);
                     free(dev);
-                    free(lusb);
+                    dev = NULL;
+                    continue;
+                }
+
+                dev->fw_version_str = calloc(1, BLADERF_VERSION_STR_MAX + 1);
+                if (!dev->fw_version_str) {
+                    log_error("Skipping instance %d due to failed allocation\n",
+                              thisinfo.instance);
+                    free(dev->fpga_version_str);
+                    free(dev);
+                    dev = NULL;
+                    continue;
+                }
+
+                lusb = (struct bladerf_lusb *)malloc(sizeof(struct bladerf_lusb));
+                if (!lusb) {
+                    free(dev->fw_version_str);
+                    free(dev->fpga_version_str);
+                    free(dev);
                     lusb = NULL;
                     dev = NULL;
-
-                    log_warning("Skipping instance %d due to memory allocation "
-                                "error", thisinfo.instance);
-
                     continue;
                 }
 
@@ -484,14 +506,19 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
                     goto lusb_open__err_device_list;
                 }
 
-                bladerf_get_fw_version(dev, &dev->fw_major, &dev->fw_minor);
-                if (dev->fw_major < FW_LEGACY_ALT_SETTING_MAJOR ||
-                        (dev->fw_major == FW_LEGACY_ALT_SETTING_MAJOR && dev->fw_minor < FW_LEGACY_ALT_SETTING_MINOR)) {
+                status = bladerf_fw_version(dev, &dev->fw_version);
+                if (status < 0) {
+                    goto lusb_open__err_device_list;
+                }
+
+                if (dev->fw_version.major < FW_LEGACY_ALT_SETTING_MAJOR ||
+                        (dev->fw_version.major == FW_LEGACY_ALT_SETTING_MAJOR &&
+                         dev->fw_version.minor < FW_LEGACY_ALT_SETTING_MINOR)) {
                     dev->legacy = LEGACY_ALT_SETTING;
                 }
 
-                if (dev->fw_major < FW_LEGACY_CONFIG_IF_MAJOR ||
-                        (dev->fw_major == FW_LEGACY_CONFIG_IF_MAJOR && dev->fw_minor < FW_LEGACY_CONFIG_IF_MINOR)) {
+                if (dev->fw_version.major < FW_LEGACY_CONFIG_IF_MAJOR ||
+                        (dev->fw_version.major == FW_LEGACY_CONFIG_IF_MAJOR && dev->fw_version.minor < FW_LEGACY_CONFIG_IF_MINOR)) {
                     dev->legacy |= LEGACY_CONFIG_IF;
                 }
 
@@ -581,6 +608,8 @@ static int lusb_close(struct bladerf *dev)
     libusb_close(lusb->handle);
     libusb_exit(lusb->context);
     free(dev->backend);
+    free(dev->fpga_version_str);
+    free(dev->fw_version_str);
     free(dev);
 
     return status;
@@ -599,6 +628,7 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
     } else {
         status = change_setting(dev, USB_IF_CONFIG);
     }
+
     if(status < 0) {
         status = error_libusb2bladerf(status);
         bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
@@ -624,7 +654,7 @@ static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size
         return status;
     }
 
-    /*  End programming */
+    /* End programming */
     status = end_fpga_programming(dev);
     if (status) {
         status = error_libusb2bladerf(status);
@@ -1250,18 +1280,13 @@ static int lusb_get_otp(struct bladerf *dev, char *otp)
     return read_page_buffer(dev, (uint8_t*)otp);
 }
 
-static int lusb_get_fw_version(struct bladerf *dev,
-                               unsigned int *maj, unsigned int *min)
+/* FW < 1.5.0  does not have version strings */
+static int lusb_fw_version_legacy(struct bladerf *dev,
+                                    struct bladerf_version *version)
 {
     int status;
 
-    /* FIXME  We're playing with fire here - these structures need to be
-     *        serialized/deserialized when communicating them between the
-     *        host and the FX3. If the contents are change to not
-     *        conveniently land on word boundaries and the struct is
-     *        padded, we'll run into trouble.
-     */
-    struct bladeRF_version fw_ver;
+    struct bladerf_fx3_version fw_ver;
     struct bladerf_lusb *lusb = dev->backend;
 
     status = libusb_control_transfer(
@@ -1279,22 +1304,52 @@ static int lusb_get_fw_version(struct bladerf *dev,
 
     if (status < 0) {
         status = BLADERF_ERR_IO;
-        *maj = *min = 0;
     } else {
-        *maj = (unsigned int) LE16_TO_HOST(fw_ver.major);
-        *min = (unsigned int) LE16_TO_HOST(fw_ver.minor);
+        version->major = LE16_TO_HOST(fw_ver.major);
+        version->minor = LE16_TO_HOST(fw_ver.minor);
+        version->patch = 0;
+        version->describe = dev->fw_version_str;
+        snprintf(dev->fw_version_str, BLADERF_VERSION_STR_MAX, "%d.%d.%d",
+                 version->major, version->minor, version->patch);
         status = 0;
     }
 
     return status;
 }
 
-static int lusb_get_fpga_version(struct bladerf *dev,
-                                 unsigned int *maj, unsigned int *min)
+static int lusb_fw_version(struct bladerf *dev,
+                           struct bladerf_version *version)
 {
-    log_warning("FPGA currently does not have a version number.\n");
-    *maj = 0;
-    *min = 0;
+    int status;
+    struct bladerf_lusb *lusb = dev->backend;
+
+    status = libusb_get_string_descriptor_ascii(lusb->handle,
+                                                BLADE_USB_STR_INDEX_FW_VER,
+                                                (unsigned char *)dev->fw_version_str,
+                                                BLADERF_VERSION_STR_MAX);
+
+    /* If we ran into an issue, we're likely dealing with an older firmware.
+     * Fall back to the legacy version*/
+    if (status < 0) {
+        status = lusb_fw_version_legacy(dev, version);
+    } else {
+        status = str2version(dev->fw_version_str, version);
+        if (status != 0) {
+            status = BLADERF_ERR_UNEXPECTED;
+        }
+    }
+
+    return status;
+}
+
+static int lusb_fpga_version(struct bladerf *dev,
+                             struct bladerf_version *version)
+{
+    log_debug("FPGA currently does not have a version number.\n");
+    version->major = 0;
+    version->minor = 0;
+    version->patch = 0;
+    version->describe = dev->fpga_version_str;
     return 0;
 }
 
@@ -1435,6 +1490,8 @@ static int lusb_si5338_write(struct bladerf *dev, uint8_t addr, uint8_t data)
     cmd.addr = addr;
     cmd.data = data;
 
+    log_verbose( "%s: 0x%2.2x 0x%2.2x\n", __FUNCTION__, addr, data );
+
     status = access_peripheral(lusb, UART_PKT_DEV_SI5338,
                                UART_PKT_MODE_DIR_WRITE, &cmd);
 
@@ -1463,6 +1520,8 @@ static int lusb_si5338_read(struct bladerf *dev, uint8_t addr, uint8_t *data)
         *data = cmd.data;
     }
 
+    log_verbose( "%s: 0x%2.2x 0x%2.2x\n", __FUNCTION__, addr, *data );
+
     return status;
 }
 
@@ -1474,6 +1533,8 @@ static int lusb_lms_write(struct bladerf *dev, uint8_t addr, uint8_t data)
 
     cmd.addr = addr;
     cmd.data = data;
+
+    log_verbose( "%s: 0x%2.2x 0x%2.2x\n", __FUNCTION__, addr, data );
 
     status = access_peripheral(lusb, UART_PKT_DEV_LMS,
                                 UART_PKT_MODE_DIR_WRITE, &cmd);
@@ -1493,6 +1554,7 @@ static int lusb_lms_read(struct bladerf *dev, uint8_t addr, uint8_t *data)
 
     cmd.addr = addr;
     cmd.data = 0xff;
+
     status = access_peripheral(lusb, UART_PKT_DEV_LMS,
                                UART_PKT_MODE_DIR_READ, &cmd);
 
@@ -1501,6 +1563,8 @@ static int lusb_lms_read(struct bladerf *dev, uint8_t addr, uint8_t *data)
     } else {
         *data = cmd.data;
     }
+
+    log_verbose( "%s: 0x%2.2x 0x%2.2x\n", __FUNCTION__, addr, *data );
 
     return status;
 }
@@ -1685,13 +1749,18 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
     else if( stream->state == STREAM_RUNNING ) {
 
         /* Call user callback requesting more data to transmit */
-        assert(transfer->length == transfer->actual_length);
+        if (transfer->length != transfer->actual_length) {
+            log_warning( "Received short transfer\n" );
+            if ((transfer->actual_length & 3) != 0) {
+                log_warning( "Fractional samples received - stream likely corrupt\n" );
+            }
+        }
         next_buffer = stream->cb(
                         stream->dev,
                         stream,
                         &metadata,
                         transfer->buffer,
-                        bytes_to_c16_samples(transfer->length),
+                        bytes_to_c16_samples(transfer->actual_length),
                         stream->user_data
                       );
         if( next_buffer == NULL ) {
@@ -1983,8 +2052,8 @@ const struct bladerf_fn bladerf_lusb_fn = {
 
     FIELD_INIT(.get_cal, lusb_get_cal),
     FIELD_INIT(.get_otp, lusb_get_otp),
-    FIELD_INIT(.get_fw_version, lusb_get_fw_version),
-    FIELD_INIT(.get_fpga_version, lusb_get_fpga_version),
+    FIELD_INIT(.fw_version, lusb_fw_version),
+    FIELD_INIT(.fpga_version, lusb_fpga_version),
     FIELD_INIT(.get_device_speed, lusb_get_device_speed),
 
     FIELD_INIT(.config_gpio_write, lusb_config_gpio_write),

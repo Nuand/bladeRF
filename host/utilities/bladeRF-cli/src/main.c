@@ -18,11 +18,12 @@
 #include "version.h"
 
 
-#define OPTSTR "d:f:l:s:ipLv:Vh"
+#define OPTSTR "d:f:H:l:s:ipLv:Vh"
 
 static const struct option longopts[] = {
     { "device",         required_argument,  0, 'd' },
     { "flash-firmware", required_argument,  0, 'f' },
+    { "flash-fpga",     required_argument,  0, 'H' },
     { "load-fpga",      required_argument,  0, 'l' },
     { "script",         required_argument,  0, 's' },
     { "interactive",    no_argument,        0, 'i' },
@@ -38,6 +39,7 @@ static const struct option longopts[] = {
 struct rc_config {
     bool interactive_mode;
     bool flash_fw;
+    bool flash_fpga;
     bool load_fpga;
     bool probe;
     bool show_help;
@@ -48,6 +50,7 @@ struct rc_config {
 
     char *device;
     char *fw_file;
+    char *flash_fpga_file;
     char *fpga_file;
     char *script_file;
 };
@@ -56,6 +59,7 @@ static void init_rc_config(struct rc_config *rc)
 {
     rc->interactive_mode = false;
     rc->flash_fw = false;
+    rc->flash_fpga = false;
     rc->load_fpga = false;
     rc->probe = false;
     rc->show_help = false;
@@ -66,6 +70,7 @@ static void init_rc_config(struct rc_config *rc)
 
     rc->device = NULL;
     rc->fw_file = NULL;
+    rc->flash_fpga_file = NULL;
     rc->fpga_file = NULL;
     rc->script_file = NULL;
 }
@@ -85,6 +90,14 @@ int get_rc_config(int argc, char *argv[], struct rc_config *rc)
             case 'f':
                 rc->fw_file = strdup(optarg);
                 if (!rc->fw_file) {
+                    perror("strdup");
+                    return -1;
+                }
+                break;
+
+            case 'H':
+                rc->flash_fpga_file = strdup(optarg);
+                if (!rc->flash_fpga_file) {
                     perror("strdup");
                     return -1;
                 }
@@ -240,6 +253,27 @@ static int flash_fw(struct rc_config *rc, struct cli_state *state, int status)
     return status;
 }
 
+static int flash_fpga(struct rc_config *rc, struct cli_state *state, int status)
+{
+    if (!status && rc->flash_fpga_file) {
+        if (!state->dev) {
+            print_error_need_devarg();
+            status = -1;
+        } else {
+            printf("Flashing fpga...\n");
+            status = bladerf_flash_fpga(state->dev, rc->flash_fpga_file);
+            if (status) {
+                fprintf(stderr, "Error: failed to flash FPGA: %s\n",
+                        bladerf_strerror(status));
+            } else {
+                printf("Done.\n");
+            }
+        }
+    }
+
+    return status;
+}
+
 static int load_fpga(struct rc_config *rc, struct cli_state *state, int status)
 {
     if (!status && rc->fpga_file) {
@@ -318,7 +352,9 @@ int main(int argc, char *argv[])
         printf(BLADERF_CLI_VERSION "\n");
         exit_immediately = true;
     } else if (rc.show_lib_version) {
-        printf("%s\n", bladerf_version(NULL, NULL, NULL));
+        struct bladerf_version version;
+        bladerf_version(&version);
+        printf("%s\n", version.describe);
         exit_immediately = true;
     } else if (rc.probe) {
         status = cmd_handle(state, "probe");
@@ -336,6 +372,12 @@ int main(int argc, char *argv[])
         status = flash_fw(&rc, state, status);
         if (status) {
             fprintf(stderr, "Could not flash firmware\n");
+            goto main__issues ;
+        }
+
+        status = flash_fpga(&rc, state, status);
+        if (status) {
+            fprintf(stderr, "Could not flash fpga\n");
             goto main__issues ;
         }
 

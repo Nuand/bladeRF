@@ -31,13 +31,14 @@ int str2int(const char *str, int min, int max, bool *ok)
 
 unsigned int str2uint(const char *str, unsigned int min, unsigned int max, bool *ok)
 {
-    unsigned int value;
+    unsigned long value;
     char *endptr;
 
     errno = 0;
     value = strtoul(str, &endptr, 0);
 
-    if (errno != 0 || value < min || value > max ||
+    if (errno != 0 ||
+        value < (unsigned long)min || value > (unsigned long)max ||
         endptr == str || *endptr != '\0') {
 
         if (ok) {
@@ -50,7 +51,7 @@ unsigned int str2uint(const char *str, unsigned int min, unsigned int max, bool 
     if (ok) {
         *ok = true;
     }
-    return value;
+    return (unsigned int)value;
 }
 
 
@@ -120,7 +121,7 @@ unsigned int str2uint_suffix(const char *str, unsigned int min,
         if (ok) {
             *ok = false;
         }
-        
+
         return 0;
     }
 
@@ -149,4 +150,48 @@ unsigned int str2uint_suffix(const char *str, unsigned int min,
 
     /* Truncate the floating point value to an integer and return it */
     return (unsigned int)value;
+}
+
+int str2version(const char *str, struct bladerf_version *version)
+{
+    unsigned long tmp;
+    const char *start = str;
+    char *end;
+
+    /* Major version */
+    errno = 0;
+    tmp = strtoul(start, &end, 10);
+    if (errno != 0 || tmp > UINT16_MAX || end == start || *end != '.') {
+        return -1;
+    }
+    version->major = (uint16_t)tmp;
+
+    /* Minor version */
+    if (end[0] == '\0' || end[1] == '\0') {
+        return -1;
+    }
+    errno = 0;
+    start = &end[1];
+    tmp = strtoul(start, &end, 10);
+    if (errno != 0 || tmp > UINT16_MAX || end == start || *end != '.') {
+        return -1;
+    }
+    version->minor = (uint16_t)tmp;
+
+    /* Patch version */
+    if (end[0] == '\0' || end[1] == '\0') {
+        return -1;
+    }
+    errno = 0;
+    start = &end[1];
+    tmp = strtoul(start, &end, 10);
+    if (errno != 0 || tmp > UINT16_MAX || end == start ||
+            (*end != '-' && *end != '\0')) {
+        return -1;
+    }
+    version->patch = (uint16_t)tmp;
+
+    version->describe = str;
+
+    return 0;
 }

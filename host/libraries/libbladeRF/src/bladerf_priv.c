@@ -143,6 +143,23 @@ static int extract_field(char *ptr, int len, char *field,
     return BLADERF_ERR_INVAL;
 }
 
+int encode_field(char *ptr, int len, int *idx, char *field,
+                            char *val) {
+    int vlen, flen, tlen;
+    flen = strlen(field);
+    vlen = strlen(val);
+    tlen = flen + vlen + 1;
+
+    if (tlen >= 256 || *idx + tlen >= len)
+        return BLADERF_ERR_MEM;
+
+    ptr[*idx] = flen + vlen;
+    strcpy(&ptr[*idx + 1], field);
+    strcpy(&ptr[*idx + 1 + flen], val);
+    *(unsigned short *)(&ptr[*idx + tlen ]) = crc16mp(0, &ptr[*idx ], tlen);
+    *idx += tlen + 2;
+    return 0;
+}
 
 int bladerf_get_otp_field(struct bladerf *dev, char *field,
                              char *data, size_t data_size)

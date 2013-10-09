@@ -47,7 +47,7 @@ const struct freq_range bands[] = {
     { FIELD_INIT(.low, 1860000000u), FIELD_INIT(.high, 2285000000u), FIELD_INIT(.value, 0x24) },
     { FIELD_INIT(.low, 2285000000u), FIELD_INIT(.high, 2695000000u), FIELD_INIT(.value, 0x2c) },
     { FIELD_INIT(.low, 2695000000u), FIELD_INIT(.high, 3240000000u), FIELD_INIT(.value, 0x34) },
-    { FIELD_INIT(.low, 3240000000u), FIELD_INIT(.high, 3720000000u), FIELD_INIT(.value, 0x3c) }
+    { FIELD_INIT(.low, 3240000000u), FIELD_INIT(.high, 3900000000u), FIELD_INIT(.value, 0x3c) }
 };
 
 
@@ -779,9 +779,12 @@ void lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
     if (lfreq < bands[0].low)
     {
         // Too low
+        log_error( "Frequency too low: %u\n", freq );
+        return;
     } else if (lfreq > bands[15].high)
     {
         // Too high!
+        log_error( "Frequency too high: %u\n", freq );
     } else
     {
         uint8_t i = 0;
@@ -850,13 +853,75 @@ void lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
 #define VCO_NORM 0x00
 #define VCO_LOW 0x01
 
-        int start_i = -1, stop_i = -1, avg_i;
-        int state = VCO_HIGH;
+        int start_i = -1, stop_i = -1;
+        //int avg_i;
+        //int state = VCO_HIGH;
         int i;
-        uint8_t v;
+        //uint8_t v;
 
-        int vcocap;
+        uint8_t vcocap = 32;
+        uint8_t step = vcocap >> 1 ;
+        uint8_t vtune;
 
+        for(i=0; i < 6 ; i++ ) {
+            bladerf_lms_write(dev, base + 9, vcocap | data);
+            bladerf_lms_read(dev, base + 10, &vtune);
+            vtune >>= 6;
+            if (vtune == VCO_NORM) {
+                log_verbose( "Found normal at VCOCAP: %d\n", vcocap );
+                break;
+            } else if (vtune == VCO_HIGH) {
+                log_verbose( "Too high: %d -> %d\n", vcocap, vcocap + step );
+                vcocap += step ;
+            } else if (vtune == VCO_LOW) {
+                log_verbose( "Too low: %d -> %d\n", vcocap, vcocap - step );
+                vcocap -= step ;
+            } else {
+                log_error( "Invalid VTUNE value encountered\n" );
+                return;
+            }
+            step >>= 1;
+        }
+
+        if (vtune != VCO_NORM) {
+            log_error( "VTUNE is not locked at the end of initial loop\n" );
+        }
+
+        start_i = stop_i = vcocap ;
+        while( start_i > 0 && vtune == VCO_NORM ) {
+            start_i -= 1;
+            bladerf_lms_write(dev, base + 9, start_i | data);
+            bladerf_lms_read(dev, base + 10, &vtune);
+            vtune >>= 6;
+        }
+        start_i += 1;
+        log_verbose( "Found lower limit VCOCAP: %d\n", start_i );
+
+        bladerf_lms_write(dev, base + 9, vcocap | data );
+        bladerf_lms_read(dev, base + 10, &vtune);
+        vtune >>= 6;
+        while( stop_i < 64 && vtune == VCO_NORM ) {
+            stop_i += 1;
+            bladerf_lms_write(dev, base + 9, stop_i | data);
+            bladerf_lms_read(dev, base + 10, &vtune);
+            vtune >>= 6;
+        }
+        stop_i -= 1;
+        log_verbose( "Found upper limit VCOCAP: %d\n", stop_i );
+
+        vcocap = (start_i + stop_i) >> 1 ;
+
+        log_verbose( "Goldilocks VCOCAP: %d\n", vcocap );
+
+        bladerf_lms_write(dev, base + 9, vcocap | data );
+        bladerf_lms_read(dev, base + 10, &vtune);
+        vtune >>= 6;
+        log_verbose( "VTUNE: %d\n", vtune );
+        if (vtune != VCO_NORM) {
+            log_warning( "VCOCAP could not converge and VTUNE is not locked - %d\n", vtune );
+        }
+
+/*
         for (i=0; i<64; i++) {
             uint8_t v;
 
@@ -894,6 +959,7 @@ void lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
 
         bladerf_lms_read(dev, base + 10, &v);
         log_debug("VTUNE: %x\n", v >> 6);
+*/
     }
 
     // Turn off the DSMs

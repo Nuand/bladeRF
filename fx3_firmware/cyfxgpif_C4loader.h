@@ -75,7 +75,7 @@ uint8_t C4loader_CyFxGpifWavedataPosition[]  = {
  */
 uint32_t C4loader_CyFxGpifRegValue[]  = {
     0x800083B0,  /*  CY_U3P_PIB_GPIF_CONFIG */
-    0x0000006C,  /*  CY_U3P_PIB_GPIF_BUS_CONFIG */
+    0x00000067,  /*  CY_U3P_PIB_GPIF_BUS_CONFIG */
     0x00000000,  /*  CY_U3P_PIB_GPIF_BUS_CONFIG2 */
     0x00000052,  /*  CY_U3P_PIB_GPIF_AD_CONFIG */
     0x00000000,  /*  CY_U3P_PIB_GPIF_STATUS */
