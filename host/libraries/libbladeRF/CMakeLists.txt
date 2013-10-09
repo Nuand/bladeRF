@@ -124,6 +124,7 @@ set(LIBBLADERF_SOURCE
         src/version.h
         src/device_identifier.c
         src/devinfo.c
+        src/flash.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/log.c
 )
