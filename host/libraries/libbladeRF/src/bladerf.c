@@ -821,18 +821,21 @@ int bladerf_flash_fpga(struct bladerf *dev, const char *fpga_file)
                        "to skip this check.\n");
             status = BLADERF_ERR_INVAL;
         } else {
+            const size_t page_size = BLADERF_FLASH_PAGE_SIZE;
+            size_t buf_size_padding = page_size - (buf_size % page_size);
+
             /* Pad firmare data out to a flash page size */
-            buf_size_padded = (FLASH_BYTES_TO_PAGES(buf_size) + 1) * FLASH_PAGE_SIZE;
+            buf_size_padded = buf_size + buf_size_padding + page_size;
             buf_padded = realloc(buf, buf_size_padded);
             if (!buf_padded) {
                 status = BLADERF_ERR_MEM;
             } else {
                 buf = buf_padded;
-                memset(buf + buf_size, 0xFF, buf_size_padded - buf_size - FLASH_PAGE_SIZE);
-                memmove(&buf[FLASH_PAGE_SIZE], buf, buf_size_padded - FLASH_PAGE_SIZE);
+                memset(buf + buf_size, 0xFF, buf_size_padded - buf_size - BLADERF_FLASH_PAGE_SIZE);
+                memmove(&buf[BLADERF_FLASH_PAGE_SIZE], buf, buf_size_padded - BLADERF_FLASH_PAGE_SIZE);
                 snprintf(fpga_len, 9, "%d", (int)buf_size);
-                memset(buf, 0xff, FLASH_PAGE_SIZE);
-                encode_field((char *)buf, FLASH_PAGE_SIZE, &hp_idx, "LEN", fpga_len);
+                memset(buf, 0xff, BLADERF_FLASH_PAGE_SIZE);
+                encode_field((char *)buf, BLADERF_FLASH_PAGE_SIZE, &hp_idx, "LEN", fpga_len);
 
                 if (status == 0) {
                     status = dev->fn->erase_flash(dev, 4, buf_size_padded);
