@@ -805,7 +805,7 @@ static int legacy_lusb_read_flash(struct bladerf *dev, int page_offset,
     struct bladerf_lusb *lusb = dev->backend;
 
     assert(page_offset < FLASH_NUM_PAGES);
-    assert((page_offset + n_bytes) < FLASH_NUM_PAGES);
+    assert((page_offset + FLASH_BYTES_TO_PAGES(n_bytes)) < FLASH_NUM_PAGES);
     /* FIXME: support data_size that are not multiple of pages */
     assert(n_bytes % FLASH_PAGE_SIZE == 0);
 
@@ -900,7 +900,7 @@ static int lusb_read_flash(struct bladerf *dev, int page_offset,
     }
 
     assert(page_offset < FLASH_NUM_PAGES);
-    assert((page_offset + n_bytes) < FLASH_NUM_PAGES);
+    assert((page_offset + FLASH_BYTES_TO_PAGES(n_bytes)) < FLASH_NUM_PAGES);
     assert(n_bytes % FLASH_PAGE_SIZE == 0);
 
     assert(page_offset + pages_to_read <= UINT16_MAX);
