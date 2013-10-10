@@ -321,7 +321,7 @@ static int change_setting(struct bladerf *dev, uint8_t setting)
 
     struct bladerf_lusb *lusb = dev->backend ;
     if (dev->legacy  & LEGACY_ALT_SETTING) {
-        log_info("Legacy change to interface %d\n", setting);
+        log_verbose("Legacy change to interface %d\n", setting);
 
         /*
          * Workaround: We're not seeing a transfer here in Windows, possibly because
@@ -339,7 +339,7 @@ static int change_setting(struct bladerf *dev, uint8_t setting)
 #endif
         return status;
     } else {
-        log_info( "Change to alternate interface %d\n", setting);
+        log_verbose( "Change to alternate interface %d\n", setting);
         return libusb_set_interface_alt_setting(lusb->handle, 0, setting);
     }
 }
@@ -357,7 +357,7 @@ static int enable_rf(struct bladerf *dev) {
         log_error( "alt_setting issue: %s\n", libusb_error_name(status) );
         return status;
     }
-    log_info( "Changed into RF link mode: %s\n", libusb_error_name(status) ) ;
+    log_verbose( "Changed into RF link mode: %s\n", libusb_error_name(status) ) ;
     val = 1;
 
     if (dev->legacy) {
@@ -425,13 +425,13 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
     }
 
     version = libusb_get_version();
-    log_info( "Using libusb version %d.%d.%d.%d\n", version->major, version->minor, version->micro, version->nano );
+    log_verbose( "Using libusb version %d.%d.%d.%d\n", version->major, version->minor, version->micro, version->nano );
 
     count = libusb_get_device_list( context, &list );
     /* Iterate through all the USB devices */
     for( i = 0, n = 0; i < count; i++ ) {
         if( lusb_device_is_bladerf(list[i]) ) {
-            log_info( "Found a bladeRF\n" ) ;
+            log_verbose( "Found a bladeRF\n" ) ;
 
             /* Open the USB device and get some information
              *
@@ -531,7 +531,7 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
                     }
                 }
 
-                log_info( "Claimed all inferfaces successfully\n" );
+                log_verbose( "Claimed all inferfaces successfully\n" );
                 break;
             }
         }
@@ -709,7 +709,7 @@ static int lusb_erase_flash(struct bladerf *dev, int sector_offset, int n_bytes)
         status = BLADERF_ERR_IO;
     }
 
-    log_info("Erasing %d sectors starting @ sector %d\n",
+    log_verbose("Erasing %d sectors starting @ sector %d\n",
                 n_sectors, sector_offset);
 
     for (sector_to_erase = sector_offset; sector_to_erase < (sector_offset + n_sectors) && !status; sector_to_erase++) {
@@ -737,7 +737,7 @@ static int lusb_erase_flash(struct bladerf *dev, int sector_offset, int n_bytes)
             }
             status = BLADERF_ERR_IO;
         } else {
-            log_info("Erased sector %d...\n", sector_to_erase);
+            log_verbose("Erased sector %d...\n", sector_to_erase);
             status = 0;
         }
     }
@@ -847,6 +847,7 @@ static int legacy_lusb_read_flash(struct bladerf *dev, int page_offset,
                 status = 0;
             }
         } while (n_read < FLASH_PAGE_SIZE && !status);
+        log_verbose( "Read page %d...\n", page_i );
     }
 
     if (status == 0) {
@@ -915,6 +916,7 @@ static int lusb_read_flash(struct bladerf *dev, int page_offset,
         status = read_one_page(dev, read_size, page_i, ptr);
         ptr += FLASH_PAGE_SIZE;
         total_read += FLASH_PAGE_SIZE;
+        log_verbose( "Read flash page %d...\n", page_i );
     }
 
     if (status == 0) {
@@ -936,7 +938,7 @@ static int verify_flash(struct bladerf *dev, int page_offset,
     uint8_t page_buf[FLASH_PAGE_SIZE];
     uint8_t *image_page;
 
-    log_info("Verifying with read size = %d\n", read_size);
+    log_verbose("Verifying with read size = %d\n", read_size);
 
     assert(page_offset < FLASH_NUM_PAGES);
     assert((page_offset + pages_to_read) < FLASH_NUM_PAGES);
@@ -954,8 +956,7 @@ static int verify_flash(struct bladerf *dev, int page_offset,
         for (check_i = 0; check_i < FLASH_PAGE_SIZE && !status; check_i++) {
             image_page = image + (page_i - page_offset) * FLASH_PAGE_SIZE + check_i;
             if (page_buf[check_i] != *image_page) {
-                fprintf(stderr,
-                        "Error: bladeRF firmware verification failed at byte %d"
+                log_error("Firmware verification failed at byte %d"
                         " Read 0x%02X, expected 0x%02X\n",
                         page_i * FLASH_PAGE_SIZE + check_i,
                         page_buf[check_i],
@@ -964,6 +965,7 @@ static int verify_flash(struct bladerf *dev, int page_offset,
                 status = BLADERF_ERR_IO;
             }
         }
+        log_verbose( "Verified page %d...\n", page_i );
     }
 
     return status;
@@ -1031,7 +1033,7 @@ static int legacy_lusb_write_flash(struct bladerf *dev, int page_offset,
     struct bladerf_lusb *lusb = dev->backend;
     uint8_t *data_page;
 
-    log_info("Flashing with write size = %d\n", write_size);
+    log_verbose("Flashing with write size = %d\n", write_size);
     status = change_setting(dev, USB_IF_SPI_FLASH);
 
     if (status) {
@@ -1039,7 +1041,7 @@ static int legacy_lusb_write_flash(struct bladerf *dev, int page_offset,
         status = BLADERF_ERR_IO;
     }
 
-    log_info("Flashing with write size = %d\n", write_size);
+    log_verbose("Flashing with write size = %d\n", write_size);
 
     assert(page_offset < FLASH_NUM_PAGES);
     assert((page_offset + pages_to_write) < FLASH_NUM_PAGES);
@@ -1078,6 +1080,7 @@ static int legacy_lusb_write_flash(struct bladerf *dev, int page_offset,
                 status = 0;
             }
         } while (n_write < FLASH_PAGE_SIZE && !status);
+        log_verbose( "Flashed page %d...\n", i );
     }
 
     if (status == 0) {
@@ -1106,7 +1109,7 @@ static int lusb_write_flash(struct bladerf *dev, int page_offset,
         status = BLADERF_ERR_IO;
     }
 
-    log_info("Flashing with write size = %d\n", write_size);
+    log_verbose("Flashing with write size = %d\n", write_size);
 
     assert(page_offset < FLASH_NUM_PAGES);
     assert((page_offset + pages_to_write) < FLASH_NUM_PAGES);
@@ -1196,7 +1199,7 @@ static int lusb_recover(
 
     status = find_fx3_via_info(context, devinfo, &device);
     if (status == 0) {
-        log_info("Attempting load with file %s\n", fname);
+        log_verbose("Attempting load with file %s\n", fname);
         status = ezusb_load_ram(device, fname, FX_TYPE_FX3, IMG_TYPE_IMG, 0);
 
         libusb_close(device);

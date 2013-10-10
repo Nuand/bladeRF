@@ -18,19 +18,19 @@
 #include "version.h"
 
 
-#define OPTSTR "d:f:H:l:s:ipLv:Vh"
+#define OPTSTR "L:d:f:l:s:ipv:h"
 
 static const struct option longopts[] = {
+    { "flash-fpga",     required_argument,  0, 'L' },
     { "device",         required_argument,  0, 'd' },
     { "flash-firmware", required_argument,  0, 'f' },
-    { "flash-fpga",     required_argument,  0, 'H' },
     { "load-fpga",      required_argument,  0, 'l' },
     { "script",         required_argument,  0, 's' },
     { "interactive",    no_argument,        0, 'i' },
     { "probe",          no_argument,        0, 'p' },
-    { "lib-version",    no_argument,        0, 'L' },
+    { "lib-version",    no_argument,        0,  1  },
     { "verbosity",      required_argument,  0, 'v' },
-    { "version",        no_argument,        0, 'V' },
+    { "version",        no_argument,        0,  2  },
     { "help",           no_argument,        0, 'h' },
     { 0,                0,                  0,  0  },
 };
@@ -95,7 +95,7 @@ int get_rc_config(int argc, char *argv[], struct rc_config *rc)
                 }
                 break;
 
-            case 'H':
+            case 'a':
                 rc->flash_fpga_file = strdup(optarg);
                 if (!rc->flash_fpga_file) {
                     perror("strdup");
@@ -158,11 +158,11 @@ int get_rc_config(int argc, char *argv[], struct rc_config *rc)
                 }
                 break;
 
-            case 'V':
+            case 1:
                 rc->show_version = true;
                 break;
 
-            case 'L':
+            case 2:
                 rc->show_lib_version = true;
                 break;
 
@@ -184,15 +184,16 @@ void usage(const char *argv0)
     printf("  -d, --device <device>            Use the specified bladeRF device.\n");
     printf("  -f, --flash-firmware <file>      Flash specified firmware file.\n");
     printf("  -l, --load-fpga <file>           Load specified FPGA bitstream.\n");
+    printf("  -L, --flash-fpga <file>          Flash the specified FPGA image for autoload.\n");
     printf("  -p, --probe                      Probe for devices, print results, then exit.\n");
     printf("  -s, --script <file>              Run provided script.\n");
     printf("  -i, --interactive                Enter interactive mode.\n");
-    printf("  -L, --lib-version                Print libbladeRF version and exit.\n");
+    printf("      --lib-version                Print libbladeRF version and exit.\n");
     printf("  -v, --verbosity <level>          Set the libbladeRF verbosity level.\n");
     printf("                                   Levels, listed in increasing verbosity, are:\n");
     printf("                                    critical, error, warning,\n");
     printf("                                    info, debug, verbose\n");
-    printf("  -V, --version                    Print CLI version and exit.\n");
+    printf("      --version                    Print CLI version and exit.\n");
     printf("  -h, --help                       Show this help text.\n");
     printf("\n");
     printf("Notes:\n");

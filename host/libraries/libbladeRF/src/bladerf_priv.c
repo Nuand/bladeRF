@@ -42,43 +42,51 @@ size_t c16_samples_to_bytes(size_t n_samples)
 
 int bladerf_init_device(struct bladerf *dev)
 {
-    unsigned int actual ;
+    unsigned int actual;
+    uint32_t val;
 
-    /* Set the GPIO pins to enable the LMS and select the low band */
-    bladerf_config_gpio_write( dev, 0x57 );
+    /* Readback the GPIO values to see if they are default or already set */
+    bladerf_config_gpio_read( dev, &val );
 
-    /* Set the internal LMS register to enable RX and TX */
-    bladerf_lms_write( dev, 0x05, 0x3e );
+    if (val == 0) {
+        log_verbose( "Default GPIO value found - initializing device\n" );
 
-    /* LMS FAQ: Improve TX spurious emission performance */
-    bladerf_lms_write( dev, 0x47, 0x40 );
+        /* Set the GPIO pins to enable the LMS and select the low band */
+        bladerf_config_gpio_write( dev, 0x57 );
 
-    /* LMS FAQ: Improve ADC performance */
-    bladerf_lms_write( dev, 0x59, 0x29 );
+        /* Set the internal LMS register to enable RX and TX */
+        bladerf_lms_write( dev, 0x05, 0x3e );
 
-    /* LMS FAQ: Common mode voltage for ADC */
-    bladerf_lms_write( dev, 0x64, 0x36 );
+        /* LMS FAQ: Improve TX spurious emission performance */
+        bladerf_lms_write( dev, 0x47, 0x40 );
 
-    /* LMS FAQ: Higher LNA Gain */
-    bladerf_lms_write( dev, 0x79, 0x37 );
+        /* LMS FAQ: Improve ADC performance */
+        bladerf_lms_write( dev, 0x59, 0x29 );
 
-    /* FPGA workaround: Set IQ polarity for RX */
-    bladerf_lms_write( dev, 0x5a, 0xa0 );
+        /* LMS FAQ: Common mode voltage for ADC */
+        bladerf_lms_write( dev, 0x64, 0x36 );
 
-    /* Set a default saplerate */
-    bladerf_set_sample_rate( dev, BLADERF_MODULE_TX, 1000000, &actual );
-    bladerf_set_sample_rate( dev, BLADERF_MODULE_RX, 1000000, &actual );
+        /* LMS FAQ: Higher LNA Gain */
+        bladerf_lms_write( dev, 0x79, 0x37 );
 
-    /* Enable TX and RX */
-    bladerf_enable_module( dev, BLADERF_MODULE_TX, false );
-    bladerf_enable_module( dev, BLADERF_MODULE_RX, false );
+        /* FPGA workaround: Set IQ polarity for RX */
+        bladerf_lms_write( dev, 0x5a, 0xa0 );
 
-    /* Set a default frequency of 1GHz */
-    bladerf_set_frequency( dev, BLADERF_MODULE_TX, 1000000000 );
-    bladerf_set_frequency( dev, BLADERF_MODULE_RX, 1000000000 );
+        /* Set a default saplerate */
+        bladerf_set_sample_rate( dev, BLADERF_MODULE_TX, 1000000, &actual );
+        bladerf_set_sample_rate( dev, BLADERF_MODULE_RX, 1000000, &actual );
 
-    /* Set the calibrated VCTCXO DAC value */
-    bladerf_dac_write( dev, dev->dac_trim );
+        /* Enable TX and RX */
+        bladerf_enable_module( dev, BLADERF_MODULE_TX, false );
+        bladerf_enable_module( dev, BLADERF_MODULE_RX, false );
+
+        /* Set a default frequency of 1GHz */
+        bladerf_set_frequency( dev, BLADERF_MODULE_TX, 1000000000 );
+        bladerf_set_frequency( dev, BLADERF_MODULE_RX, 1000000000 );
+
+        /* Set the calibrated VCTCXO DAC value */
+        bladerf_dac_write( dev, dev->dac_trim );
+    }
 
     /* TODO: Read this return from the SPI calls */
     return 0;

@@ -80,6 +80,10 @@ int bladerf_open_with_devinfo(struct bladerf **device,
         if (status < 0) {
             opened_device->fn->close((*device));
             *device = NULL;
+        } else {
+            if (bladerf_is_fpga_configured(opened_device)) {
+                bladerf_init_device(opened_device);
+            }
         }
     }
 

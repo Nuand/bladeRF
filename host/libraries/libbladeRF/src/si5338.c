@@ -66,7 +66,7 @@ static void si5338_rational_reduce(struct bladerf_rational_rate *r)
 {
     int64_t val;
 
-    if (r->num >= r->den) {
+    if ((r->den > 0) && (r->num >= r->den)) {
         /* Get whole number */
         uint64_t whole = r->num / r->den;
         r->integer += whole;
@@ -75,8 +75,10 @@ static void si5338_rational_reduce(struct bladerf_rational_rate *r)
 
     /* Reduce fraction */
     val = si5338_gcd(r->num, r->den);
-    r->num /= val;
-    r->den /= val;
+    if (val > 0) {
+        r->num /= val;
+        r->den /= val;
+    }
 
     return ;
 }
@@ -131,7 +133,7 @@ static void si5338_unpack_regs(struct si5338_multisynth *ms)
     ms->a = (ms->p1+512)/128;
 
     /* b = (((p1+512)-128*a)*c + (b % c) + 64)/128 */
-    temp = (ms->p1+512)-128*ms->a;
+    temp = (ms->p1+512)-128*(uint64_t)ms->a;
     temp = (temp * ms->c) + ms->p2;
     temp = (temp + 64) / 128;
     assert(temp <= UINT32_MAX);
@@ -155,7 +157,7 @@ static void si5338_pack_regs(struct si5338_multisynth *ms)
 
     /* p1 = (a * c + b) * 128 / c - 512 */
     uint64_t temp;
-    temp = ms->a * ms->c + ms->b;
+    temp = (uint64_t)ms->a * ms->c + ms->b;
     temp = temp * 128 ;
     temp = temp / ms->c - 512;
     assert(temp <= UINT32_MAX);
