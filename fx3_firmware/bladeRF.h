@@ -50,7 +50,7 @@ extern const uint8_t CyFxUSBProductDscr[];
 
 CyU3PReturnStatus_t CyFxSpiEraseSector(CyBool_t /* isErase */, uint8_t /* sector */);
 void NuandGPIOReconfigure(CyBool_t /* fullGpif */, CyBool_t /* warm */);
-void ClearDMAChannel(uint8_t ep, CyU3PDmaChannel * handle, uint32_t count, CyBool_t stall_only);
+void SetHaltDMAChannel(uint8_t ep, CyU3PDmaChannel * handle, uint32_t count, CyBool_t set);
 void CyFxAppErrorHandler(CyU3PReturnStatus_t apiRetStatus);
 void NuandAllowSuspend(CyBool_t set_allow_suspend);
 

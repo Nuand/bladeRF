@@ -221,10 +221,9 @@ CyBool_t NuandFpgaConfigHaltEndpoint(CyBool_t set, uint16_t endpoint)
     switch(endpoint) {
     case BLADE_FPGA_EP_PRODUCER:
         FPGA_status_bits[endpoint] = set;
-        ClearDMAChannel(endpoint, &glChHandlebladeRFUtoP,
-                        BLADE_DMA_TX_SIZE, set);
+        SetHaltDMAChannel(endpoint, &glChHandlebladeRFUtoP, BLADE_DMA_TX_SIZE, set);
 
-        isHandled = !set;
+        isHandled = CyTrue;
         break;
     }
 

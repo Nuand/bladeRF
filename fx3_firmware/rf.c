@@ -197,7 +197,6 @@ static void NuandRFLinkStart(void)
     uint16_t size = 0;
     CyU3PEpConfig_t epCfg;
     CyU3PDmaChannelConfig_t dmaCfg;
-    CyU3PDmaMultiChannelConfig_t dmaMultiConfig;
     CyU3PReturnStatus_t apiRetStatus = CY_U3P_SUCCESS;
     CyU3PUSBSpeed_t usbSpeed = CyU3PUsbGetSpeed();
 
@@ -247,7 +246,7 @@ static void NuandRFLinkStart(void)
     CyU3PMemSet ((uint8_t *)&epCfg, 0, sizeof (epCfg));
     epCfg.enable = CyTrue;
     epCfg.epType = CY_U3P_USB_EP_BULK;
-    epCfg.burstLen = (usbSpeed == CY_U3P_SUPER_SPEED ? 15 : 1);
+    epCfg.burstLen = (usbSpeed == CY_U3P_SUPER_SPEED ? 16 : 1);
     epCfg.streams = 0;
     epCfg.pcktSize = size;
 
@@ -264,21 +263,6 @@ static void NuandRFLinkStart(void)
         CyU3PDebugPrint(4, "CyU3PSetEpConfig failed, Error code = %d\n", apiRetStatus);
         CyFxAppErrorHandler (apiRetStatus);
     }
-
-    // multi variant
-    dmaMultiConfig.size = size * 2;
-    dmaMultiConfig.count = 22;
-    dmaMultiConfig.validSckCount = 2;
-    dmaMultiConfig.prodSckId[0] = BLADE_RF_SAMPLE_EP_PRODUCER_USB_SOCKET;
-    dmaMultiConfig.consSckId[0] = CY_U3P_PIB_SOCKET_2;
-    dmaMultiConfig.consSckId[1] = CY_U3P_PIB_SOCKET_3;
-    dmaMultiConfig.dmaMode = CY_U3P_DMA_MODE_BYTE;
-    dmaMultiConfig.notification = 0;
-    dmaMultiConfig.cb = 0;
-    dmaMultiConfig.prodHeader = 0;
-    dmaMultiConfig.prodFooter = 0;
-    dmaMultiConfig.consHeader = 0;
-    dmaMultiConfig.prodAvailCount = 0;
 
     // non multi variant
     CyU3PMemSet((uint8_t *)&dmaCfg, 0, sizeof(dmaCfg));
@@ -392,24 +376,24 @@ CyBool_t NuandRFLinkHaltEndpoint(CyBool_t set, uint16_t endpoint)
     case BLADE_RF_SAMPLE_EP_CONSUMER:
     case BLADE_UART_EP_PRODUCER:
     case BLADE_UART_EP_CONSUMER:
-        isHandled = !set;
+        isHandled = CyTrue;
         RF_status_bits[endpoint] = set;
         break;
     }
 
     switch(endpoint) {
     case BLADE_RF_SAMPLE_EP_PRODUCER:
-        ClearDMAChannel(endpoint, &glChHandleUtoP, BLADE_DMA_TX_SIZE, set);
+        SetHaltDMAChannel(endpoint, &glChHandleUtoP, BLADE_DMA_TX_SIZE, set);
         break;
     case BLADE_RF_SAMPLE_EP_CONSUMER:
-        ClearDMAChannel(endpoint, &glChHandlePtoU, BLADE_DMA_TX_SIZE, set);
+        SetHaltDMAChannel(endpoint, &glChHandlePtoU, BLADE_DMA_TX_SIZE, set);
         break;
     case BLADE_UART_EP_PRODUCER:
-        ClearDMAChannel(endpoint,
+        SetHaltDMAChannel(endpoint,
                 &glChHandlebladeRFUtoUART, BLADE_DMA_TX_SIZE, set);
         break;
     case BLADE_UART_EP_CONSUMER:
-        ClearDMAChannel(endpoint,
+        SetHaltDMAChannel(endpoint,
                 &glChHandlebladeRFUARTtoU, BLADE_DMA_TX_SIZE, set);
         break;
     }

@@ -40,7 +40,7 @@ $(OUTPUT_DIR)/.dirstamp:
 	-@mkdir -p $(OUTPUT_DIR)
 	@echo THERE_IS_NO_TOUCH_ON_WINDOWS_DO_NOT_ALTER_THIS_LINE > $(OUTPUT_DIR)/.dirstamp
 
-$(OUTPUT_DIR)/%.o: %.c
+$(OUTPUT_DIR)/%.o: $(abspath %.c)
 	$(CC) -c $(CFLAGS) -o $@ $^
 
 $(ELF): $(OUTPUT_DIR)/.dirstamp $(OBJ)
