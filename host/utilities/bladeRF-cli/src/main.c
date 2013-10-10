@@ -95,7 +95,7 @@ int get_rc_config(int argc, char *argv[], struct rc_config *rc)
                 }
                 break;
 
-            case 'a':
+            case 'L':
                 rc->flash_fpga_file = strdup(optarg);
                 if (!rc->flash_fpga_file) {
                     perror("strdup");
