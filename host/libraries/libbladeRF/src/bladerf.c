@@ -810,14 +810,14 @@ int bladerf_flash_fpga(struct bladerf *dev, const char *fpga_file)
     size_t buf_size, buf_size_padded;
     int hp_idx = 0;
 
-    if (!strcmp("X", fpga_file)) {
+    if (strcmp("X", fpga_file) == 0) {
         printf("Disabling FPGA flash auto-load\n");
         return (dev->fn->erase_flash(dev, 4, 1) != 1);
     }
 
     status = read_file(fpga_file, &buf, &buf_size);
-    if (!status) {
-        if (!getenv("BLADERF_SKIP_FPGA_SIZE_CHECK") &&
+    if (status == 0) {
+        if ((getenv("BLADERF_SKIP_FPGA_SIZE_CHECK") == 0)  &&
                 (buf_size < (1 * 1024 * 1024) || (buf_size > (5 * 1024 * 1024)))) {
             log_error("Error: Detected potentially invalid firmware file.\n");
             log_error("Define BLADERF_SKIP_FPGA_SIZE_CHECK in your evironment "
@@ -827,7 +827,7 @@ int bladerf_flash_fpga(struct bladerf *dev, const char *fpga_file)
             /* Pad firmare data out to a flash page size */
             buf_size_padded = (FLASH_BYTES_TO_PAGES(buf_size) + 1) * FLASH_PAGE_SIZE;
             buf_padded = realloc(buf, buf_size_padded);
-            if (!buf_padded) {
+            if (buf_padded == NULL) {
                 status = BLADERF_ERR_MEM;
             } else {
                 buf = buf_padded;
@@ -858,10 +858,9 @@ int bladerf_flash_fpga(struct bladerf *dev, const char *fpga_file)
                 }
 
                 free(ver);
-                free(buf);
             }
         }
-
+        free(buf);
     }
 
     return status;
