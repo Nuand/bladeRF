@@ -1,3 +1,24 @@
+/*
+ * This file is part of the bladeRF project:
+ *   http://www.github.com/nuand/bladeRF
+ *
+ * Copyright (C) 2013 Nuand LLC
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ */
+
 #include <libbladeRF.h>
 #include "lms.h"
 #include "bladerf_priv.h"
@@ -846,6 +867,7 @@ void lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
     bladerf_lms_read(dev, base+9, &data);
     data &= ~(0x3f);
     {
+        /* --- Begin portion (C) Sylvain Munaut --- */
 #define VCO_HIGH 0x02
 #define VCO_NORM 0x00
 #define VCO_LOW 0x01
@@ -917,46 +939,6 @@ void lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
         if (vtune != VCO_NORM) {
             log_warning( "VCOCAP could not converge and VTUNE is not locked - %d\n", vtune );
         }
-
-/*
-        for (i=0; i<64; i++) {
-            uint8_t v;
-
-            bladerf_lms_write(dev, base + 9, i | 0x80);
-            bladerf_lms_read(dev, base + 10, &v);
-
-            vcocap = v >> 6;
-
-            if (vcocap == VCO_HIGH) {
-                continue;
-            } else if (vcocap == VCO_LOW) {
-                if (state == VCO_NORM) {
-                    stop_i = i - 1;
-                    state = VCO_LOW;
-                }
-            } else if (vcocap == VCO_NORM) {
-                if (state == VCO_HIGH) {
-                    start_i = i;
-                    state = VCO_NORM;
-                }
-            } else {
-                log_warning("Invalid VCOCAP\n");
-            }
-        }
-
-        if (state == VCO_NORM)
-            stop_i = 63;
-
-        if ((start_i == -1) || (stop_i == -1))
-            log_warning("Can't find VCOCAP value while tuning\n");
-
-        avg_i = (start_i + stop_i) >> 1;
-
-        bladerf_lms_write(dev, base + 9, avg_i | data);
-
-        bladerf_lms_read(dev, base + 10, &v);
-        log_debug("VTUNE: %x\n", v >> 6);
-*/
     }
 
     // Turn off the DSMs

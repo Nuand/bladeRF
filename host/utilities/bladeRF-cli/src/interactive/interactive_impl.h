@@ -1,9 +1,27 @@
 /**
- * This file defines the routines to be implemented by the interactive/script
- * support code.
+ * @file interactive_impl.h
  *
- * These routines should only be called from interactive.c. They are not
- * thread safe or re-entrant.
+ * @brief This file defines the routines to be implemented by the
+ *        interactive/script support code. These routines should only be called
+ *        from interactive.c. They are not thread safe or re-entrant.
+ *
+ * This file is part of the bladeRF project
+ *
+ * Copyright (C) 2013 Nuand LLC
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 #ifndef INTERACTIVE_IMPL_H__
 #define INTERACTIVE_IMPL_H__

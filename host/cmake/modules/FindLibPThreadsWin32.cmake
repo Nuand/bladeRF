@@ -7,7 +7,7 @@
 #
 # Find pthreads-win32
 #
-# This requires the LIBPTHREADSWIN32_PATH variable to be set to the path to the 
+# This requires the LIBPTHREADSWIN32_PATH variable to be set to the path to the
 # a pthreads-win32 release, such as the Pre-built.2 directory from the 2.9.1 release:
 #   ftp://sourceware.org/pub/pthreads-win32/pthreads-w32-2-9-1-release.zip
 #

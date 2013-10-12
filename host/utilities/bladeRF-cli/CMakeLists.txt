@@ -123,7 +123,6 @@ endif()
 
 if(MSVC)
     set(BLADERF_CLI_SOURCE ${BLADERF_CLI_SOURCE}
-            ${BLADERF_HOST_COMMON_SOURCE_DIR}/windows/getopt.c
             ${BLADERF_HOST_COMMON_SOURCE_DIR}/windows/getopt_long.c
        )
 endif()

@@ -57,7 +57,6 @@ set(BLADERF_FLASH_SOURCE
 
 if(MSVC)
     set(BLADERF_FLASH_SOURCE ${BLADERF_FLASH_SOURCE}
-            ${BLADERF_HOST_COMMON_SOURCE_DIR}/windows/getopt.c
             ${BLADERF_HOST_COMMON_SOURCE_DIR}/windows/getopt_long.c
        )
 endif()

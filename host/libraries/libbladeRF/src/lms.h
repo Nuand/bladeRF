@@ -1,9 +1,27 @@
 /**
  * @file liblms.h
  *
- * @brief LMS6002D library
+ * @brief LMS6002D support
+ *
+ * This file is part of the bladeRF project:
+ *   http://www.github.com/nuand/bladeRF
+ *
+ * Copyright (C) 2013 Nuand LLC
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
-
 #ifndef LMS_H_
 #define LMS_H_
 
@@ -124,7 +142,7 @@ void lms_lpf_enable(struct bladerf *dev, bladerf_module mod, lms_bw_t bw);
 
 /**
  * Set the LPF mode
- * 
+ *
  * @param[in]   dev     Device handle
  * @param[in]   mod     Module to change
  * @param[in]   mode    Mode to set to
@@ -134,7 +152,7 @@ void lms_lpf_set_mode(struct bladerf *dev, bladerf_module mod,
 
 /**
  * Get the LPF mode
- * 
+ *
  * @param[in]   dev     Device handle
  * @param[in]   mod     Module to change
  * @param[out]  mode    Current LPF mode

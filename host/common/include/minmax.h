@@ -1,4 +1,6 @@
 /**
+ * @file minmax.h
+ *
  * @brief These static inline routines are preferred over the use of macros,
  *        as they provide type safety.
  */
@@ -27,6 +29,5 @@ static inline unsigned int uint_max(unsigned int x, unsigned int y)
 {
     return x > y ? x : y;
 }
-
 
 #endif
