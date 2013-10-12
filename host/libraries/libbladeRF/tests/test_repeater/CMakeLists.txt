@@ -15,7 +15,6 @@ set(TEST_REPEATER_SRC
 
 if(MSVC)
     set(TEST_REPEATER_SRC ${TEST_REPEATER_SRC}
-            ${BLADERF_HOST_COMMON_SOURCE_DIR}/windows/getopt.c
             ${BLADERF_HOST_COMMON_SOURCE_DIR}/windows/getopt_long.c
        )
 endif()
