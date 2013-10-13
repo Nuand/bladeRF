@@ -731,9 +731,11 @@ int bladerf_flash_firmware(struct bladerf *dev, const char *firmware_file)
                        "to skip this check.\n");
             status = BLADERF_ERR_INVAL;
         } else {
+            /* Pad firmare data out to a flash sector size */
+            const size_t sector_size = BLADERF_FLASH_SECTOR_SIZE;
+            size_t buf_size_padding = sector_size - (buf_size % sector_size);
 
-            /* Pad firmare data out to a flash page size */
-            buf_size_padded = FLASH_BYTES_TO_PAGES(buf_size) * FLASH_PAGE_SIZE;
+            buf_size_padded = buf_size + buf_size_padding;
             buf_padded = realloc(buf, buf_size_padded);
             if (!buf_padded) {
                 status = BLADERF_ERR_MEM;
@@ -758,34 +760,33 @@ int bladerf_flash_firmware(struct bladerf *dev, const char *firmware_file)
     return status;
 }
 
-int bladerf_erase_flash(struct bladerf *dev, int page_offset,
-                        int n_bytes)
+int bladerf_erase_flash(struct bladerf *dev, uint32_t addr, uint32_t len)
 {
     if (!dev->fn->erase_flash) {
         return BLADERF_ERR_UNSUPPORTED;
     }
 
-    return dev->fn->erase_flash(dev, page_offset, n_bytes);
+    return dev->fn->erase_flash(dev, addr, len);
 }
 
-int bladerf_read_flash(struct bladerf *dev, int page_offset,
-                        uint8_t *ptr, size_t n_bytes)
+int bladerf_read_flash(struct bladerf *dev, uint32_t addr,
+                       uint8_t *buf, uint32_t len)
 {
     if (!dev->fn->read_flash) {
         return BLADERF_ERR_UNSUPPORTED;
     }
 
-    return dev->fn->read_flash(dev, page_offset, ptr, n_bytes);
+    return dev->fn->read_flash(dev, addr, buf, len);
 }
 
-int bladerf_write_flash(struct bladerf *dev, int page_offset,
-                        uint8_t *data, size_t data_size)
+int bladerf_write_flash(struct bladerf *dev, uint32_t addr,
+                       uint8_t *buf, uint32_t len)
 {
     if (!dev->fn->write_flash) {
         return BLADERF_ERR_UNSUPPORTED;
     }
 
-    return dev->fn->write_flash(dev, page_offset, data, data_size);
+    return dev->fn->write_flash(dev, addr, buf, len);
 }
 
 int bladerf_device_reset(struct bladerf *dev)
@@ -824,25 +825,28 @@ int bladerf_flash_fpga(struct bladerf *dev, const char *fpga_file)
                        "to skip this check.\n");
             status = BLADERF_ERR_INVAL;
         } else {
+            const size_t page_size = BLADERF_FLASH_PAGE_SIZE;
+            size_t buf_size_padding = page_size - (buf_size % page_size);
+
             /* Pad firmare data out to a flash page size */
-            buf_size_padded = (FLASH_BYTES_TO_PAGES(buf_size) + 1) * FLASH_PAGE_SIZE;
+            buf_size_padded = buf_size + buf_size_padding + page_size;
             buf_padded = realloc(buf, buf_size_padded);
             if (buf_padded == NULL) {
                 status = BLADERF_ERR_MEM;
             } else {
                 buf = buf_padded;
-                memset(buf + buf_size, 0xFF, buf_size_padded - buf_size - FLASH_PAGE_SIZE);
-                memmove(&buf[FLASH_PAGE_SIZE], buf, buf_size_padded - FLASH_PAGE_SIZE);
+                memset(buf + buf_size, 0xFF, buf_size_padded - buf_size - BLADERF_FLASH_PAGE_SIZE);
+                memmove(&buf[BLADERF_FLASH_PAGE_SIZE], buf, buf_size_padded - BLADERF_FLASH_PAGE_SIZE);
                 snprintf(fpga_len, 9, "%d", (int)buf_size);
-                memset(buf, 0xff, FLASH_PAGE_SIZE);
-                encode_field((char *)buf, FLASH_PAGE_SIZE, &hp_idx, "LEN", fpga_len);
+                memset(buf, 0xff, BLADERF_FLASH_PAGE_SIZE);
+                encode_field((char *)buf, BLADERF_FLASH_PAGE_SIZE, &hp_idx, "LEN", fpga_len);
 
                 if (status == 0) {
-                    status = dev->fn->erase_flash(dev, 4, buf_size_padded);
+                    status = dev->fn->erase_flash(dev, flash_from_sectors(4), buf_size_padded);
                 }
 
                 if (status >= 0) {
-                    status = dev->fn->write_flash(dev, 1024, buf, buf_size_padded);
+                    status = dev->fn->write_flash(dev, flash_from_pages(1024), buf, buf_size_padded);
                 }
 
                 ver = (uint8_t *)malloc(buf_size_padded);
@@ -850,7 +854,7 @@ int bladerf_flash_fpga(struct bladerf *dev, const char *fpga_file)
                     status = BLADERF_ERR_MEM;
 
                 if (status >= 0) {
-                    status = dev->fn->read_flash(dev, 1024, ver, buf_size_padded);
+                    status = dev->fn->read_flash(dev, flash_from_pages(1024), ver, buf_size_padded);
                 }
 
                 if ((size_t)status == buf_size_padded) {
@@ -914,6 +918,8 @@ const char * bladerf_strerror(int error)
             return "No devices available";
         case BLADERF_ERR_UNSUPPORTED:
             return "Operation not supported";
+        case BLADERF_ERR_MISALIGNED:
+            return "Misaligned flash access";
         case 0:
             return "Success";
         default:

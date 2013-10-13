@@ -487,11 +487,11 @@ static int reach_bootloader(bool reset, struct bladerf *dev, libusb_context *ctx
         return status;
     }
 
-    log_info("Falling back to manually erasing first page of FX3 firmware\n");
+    log_info("Falling back to manually erasing first sector of FX3 firmware\n");
 
-    status = bladerf_erase_flash(dev, 0, 1);
+    status = bladerf_erase_flash(dev, 0, BLADERF_FLASH_SECTOR_SIZE);
     if(status != 0) {
-        log_warning("Maybe failed to erase first page."
+        log_warning("Maybe failed to erase first sector."
                 "A manual reset of the bladeRF may place it in the FX3 "
                 "bootloader.  After the manual reset, try and re-run bladeRF-flash.\n");
         return BLADERF_ERR_UNEXPECTED;
@@ -613,6 +613,7 @@ int main(int argc, char *argv[])
     }
 
     log_set_verbosity(rc.verbosity);
+    bladerf_log_set_verbosity(rc.verbosity);
 
     if (rc.show_help) {
         usage(argv[0]);
