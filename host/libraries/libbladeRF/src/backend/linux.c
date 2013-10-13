@@ -464,15 +464,29 @@ static int linux_fw_version(struct bladerf *dev,
 }
 
 
-static int linux_get_device_speed(struct bladerf *dev, int *speed)
+static int linux_get_device_speed(struct bladerf *dev,
+                                  bladerf_dev_speed  *device_speed)
 {
     int status = 0;
     struct bladerf_linux *backend = dev->backend;
+    int speed_from_driver;
 
-    status = ioctl(backend->fd, BLADE_GET_SPEED, speed);
+    status = ioctl(backend->fd, BLADE_GET_SPEED, &speed_from_driver);
     if (status < 0) {
         log_error("Failed to get device speed: %s\n", strerror(errno));
         status = BLADERF_ERR_IO;
+    } else if (speed_from_driver == 0) {
+        *device_speed = BLADERF_DEVICE_SPEED_HIGH;
+    } else if (speed_from_driver == 1) {
+        *device_speed = BLADERF_DEVICE_SPEED_SUPER;
+    } else {
+        log_error("Got invalid device speed from driver: %d\n",
+                  speed_from_driver);
+        status = BLADERF_ERR_UNEXPECTED;
+    }
+
+    if (status < 0) {
+        *device_speed = BLADERF_DEVICE_SPEED_UNKNOWN;
     }
 
     return status;

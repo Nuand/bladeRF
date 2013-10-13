@@ -11,6 +11,10 @@
 #ifndef BLADERF_FLASH_H_
 #define BLADERF_FLASH_H_
 
+extern const unsigned int BLADERF_FLASH_ALIGNMENT_BYTE;
+extern const unsigned int BLADERF_FLASH_ALIGNMENT_PAGE;
+extern const unsigned int BLADERF_FLASH_ALIGNMENT_SECTOR;
+
 /* Pass one of the BLADERF_FLASH_ALIGNMENT_* constants as `align' */
 int flash_aligned(unsigned int align, unsigned int addr);
 int flash_bounds(unsigned int addr, unsigned int len);

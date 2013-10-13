@@ -8,6 +8,7 @@ int cmd_info(struct cli_state *state, int argc, char **argv)
     uint16_t dac_trim;
     bool fpga_loaded;
     struct bladerf_devinfo info;
+    bladerf_dev_speed usb_speed;
 
     if (state->dev == NULL) {
         printf("  No device is currently opened\n");
@@ -39,6 +40,8 @@ int cmd_info(struct cli_state *state, int argc, char **argv)
         return CMD_RET_LIBBLADERF;
     }
 
+    usb_speed = bladerf_device_speed(state->dev);
+
     printf("\n");
     printf("  Serial #:                 %s\n", info.serial);
     printf("  VCTCXO DAC calibration:   0x%.4x\n", dac_trim);
@@ -50,6 +53,19 @@ int cmd_info(struct cli_state *state, int argc, char **argv)
     printf("  FPGA loaded:              %s\n", fpga_loaded ? "yes" : "no");
     printf("  USB bus:                  %d\n", info.usb_bus);
     printf("  USB address:              %d\n", info.usb_addr);
+
+    switch(usb_speed) {
+        case BLADERF_DEVICE_SPEED_HIGH:
+            printf("  USB speed:                High\n");
+            break;
+
+        case BLADERF_DEVICE_SPEED_SUPER:
+            printf("  USB speed:                Super\n");
+            break;
+
+        default:
+            printf("  USB speed:                Unknown\n");
+    }
 
     switch(info.backend) {
         case BLADERF_BACKEND_LIBUSB:

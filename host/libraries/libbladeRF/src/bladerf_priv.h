@@ -93,7 +93,7 @@ struct bladerf_fn {
     int (*get_otp)(struct bladerf *dev, char *otp);
     int (*fw_version)(struct bladerf *dev, struct bladerf_version *version);
     int (*fpga_version)(struct bladerf *dev, struct bladerf_version *version);
-    int (*get_device_speed)(struct bladerf *dev, int *speed);
+    int (*get_device_speed)(struct bladerf *dev, bladerf_dev_speed *speed);
 
     /* Configuration GPIO accessors */
     int (*config_gpio_write)(struct bladerf *dev, uint32_t val);
@@ -145,7 +145,8 @@ struct bladerf {
     struct bladerf_version fw_version;
     int legacy;
 
-    int speed;      /* The device's USB speed, 0 is HS, 1 is SS */
+    bladerf_dev_speed usb_speed;
+
     struct bladerf_stats stats;
 
     /* Last error encountered */

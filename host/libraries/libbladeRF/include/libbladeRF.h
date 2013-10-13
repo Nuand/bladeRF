@@ -67,6 +67,17 @@ typedef enum {
     BLADERF_BACKEND_LIBUSB  /**< libusb */
 } bladerf_backend;
 
+
+/**
+ * This enum describes the USB Speed at which the bladeRF is connected.
+ * Speeds not listed here are not supported.
+ */
+typedef enum {
+    BLADERF_DEVICE_SPEED_UNKNOWN,
+    BLADERF_DEVICE_SPEED_HIGH,
+    BLADERF_DEVICE_SPEED_SUPER,
+} bladerf_dev_speed;
+
 /** Length of device serial number string, including NUL-terminator */
 #define BLADERF_SERIAL_LENGTH   33
 
@@ -884,6 +895,14 @@ API_EXPORT int bladerf_fpga_version(struct bladerf *dev,
  */
 API_EXPORT int bladerf_stats(struct bladerf *dev, struct bladerf_stats *stats);
 
+/**
+ * Obtain the bus speed at which the device is operating
+ *
+ * @param       dev     Device handle
+ * @return      speed   Device speed
+ */
+API_EXPORT bladerf_dev_speed bladerf_device_speed(struct bladerf *dev);
+
 /** @} (End FN_INFO) */
 
 
@@ -903,21 +922,25 @@ API_EXPORT int bladerf_stats(struct bladerf *dev, struct bladerf_stats *stats);
 #define BLADERF_FLASH_SECTOR_BITS (16) /**< 64KiB    == 2^16 bytes */
 #define BLADERF_FLASH_SIZE_BITS   (22) /**< 32Mbit   == 2^22 bytes */
 
+/** Total size of bladeRF SPI flash */
 #define BLADERF_FLASH_TOTAL_SIZE  (1<<BLADERF_FLASH_SIZE_BITS)
+
+/** SPI flash page size */
 #define BLADERF_FLASH_PAGE_SIZE   (1<<BLADERF_FLASH_PAGE_BITS)
+
+/** SPI flash sector size */
 #define BLADERF_FLASH_SECTOR_SIZE (1<<BLADERF_FLASH_SECTOR_BITS)
 
+/** Size of the SPI flash, in bytes */
 #define BLADERF_FLASH_NUM_BYTES BLADERF_FLASH_TOTAL_SIZE
+
+/** Size of the SPI flash, in pages */
 #define BLADERF_FLASH_NUM_PAGES \
     (BLADERF_FLASH_TOTAL_SIZE / BLADERF_FLASH_PAGE_SIZE)
+
+/** Size of the SPI flash, in sectors */
 #define BLADERF_FLASH_NUM_SECTORS \
     (BLADERF_FLASH_TOTAL_SIZE / BLADERF_FLASH_SECTOR_SIZE)
-
-
-extern const unsigned int BLADERF_FLASH_ALIGNMENT_BYTE;
-extern const unsigned int BLADERF_FLASH_ALIGNMENT_PAGE;
-extern const unsigned int BLADERF_FLASH_ALIGNMENT_SECTOR;
-
 
 /**
  * Flash firmware onto the device
@@ -941,7 +964,7 @@ API_EXPORT int bladerf_flash_firmware(struct bladerf *dev,
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT int bladerf_flash_fpga(struct bladerf *dev,
-                                      const char *firmware);
+                                      const char *fpga_image);
 
 /**
  * Recover specified device using a device identifier string

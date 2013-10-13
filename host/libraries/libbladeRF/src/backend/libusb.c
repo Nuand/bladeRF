@@ -765,7 +765,14 @@ static int read_buffer(struct bladerf *dev, uint8_t request,
     int status, read_size;
     int buf_off;
 
-    read_size = dev->speed ? BLADERF_FLASH_PAGE_SIZE : 64;
+    if (dev->usb_speed == BLADERF_DEVICE_SPEED_SUPER) {
+        read_size = BLADERF_FLASH_PAGE_SIZE;
+    } else if (dev->usb_speed == BLADERF_DEVICE_SPEED_HIGH) {
+        read_size = 64;
+    } else {
+        log_error("Encountered unknown USB speed in %s\n", __FUNCTION__);
+        return BLADERF_ERR_UNEXPECTED;
+    }
 
     /* only these two requests seem to use bytes in the control transfer
      * parameters instead of pages/sectors so watch out! */
@@ -829,10 +836,19 @@ static int legacy_read_one_page(struct bladerf *dev,
                                 uint8_t *buf)
 {
     int status = 0;
-    int read_size = dev->speed ? BLADERF_FLASH_PAGE_SIZE : 64;
+    int read_size;
     struct bladerf_lusb *lusb = dev->backend;
-
     uint16_t buf_off;
+
+    if (dev->usb_speed == BLADERF_DEVICE_SPEED_HIGH) {
+        read_size = 64;
+    } else if (dev->usb_speed == BLADERF_DEVICE_SPEED_SUPER) {
+        read_size = BLADERF_FLASH_PAGE_SIZE;
+    } else {
+        log_error("Encountered unknown USB speed in %s\n", __FUNCTION__);
+        return BLADERF_ERR_UNEXPECTED;
+    }
+
     for(buf_off=0; buf_off < BLADERF_FLASH_PAGE_SIZE; buf_off += read_size) {
         status = libusb_control_transfer(
             lusb->handle,
@@ -989,7 +1005,16 @@ static int write_buffer(struct bladerf *dev,
     int status;
 
     uint32_t buf_off;
-    uint32_t write_size = dev->speed ? BLADERF_FLASH_PAGE_SIZE : 64;
+    uint32_t write_size;
+
+    if (dev->usb_speed == BLADERF_DEVICE_SPEED_SUPER) {
+        write_size = BLADERF_FLASH_PAGE_SIZE;
+    } else if (dev->usb_speed == BLADERF_DEVICE_SPEED_HIGH) {
+        write_size = 64;
+    } else {
+        log_error("Encountered unknown USB speed in %s\n", __FUNCTION__);
+        return BLADERF_ERR_UNEXPECTED;
+    }
 
     for(buf_off = 0; buf_off < BLADERF_FLASH_PAGE_SIZE; buf_off += write_size)
     {
@@ -1356,7 +1381,8 @@ static int lusb_fpga_version(struct bladerf *dev,
     return 0;
 }
 
-static int lusb_get_device_speed(struct bladerf *dev, int *device_speed)
+static int lusb_get_device_speed(struct bladerf *dev,
+                                 bladerf_dev_speed *device_speed)
 {
     int speed;
     int status = 0;
@@ -1364,14 +1390,23 @@ static int lusb_get_device_speed(struct bladerf *dev, int *device_speed)
 
     speed = libusb_get_device_speed(lusb->dev);
     if (speed == LIBUSB_SPEED_SUPER) {
-        *device_speed = 1;
+        *device_speed = BLADERF_DEVICE_SPEED_SUPER;
     } else if (speed == LIBUSB_SPEED_HIGH) {
-        *device_speed = 0;
+        *device_speed = BLADERF_DEVICE_SPEED_HIGH;
     } else {
-        /* FIXME - We should have a better error code...
-         * BLADERF_ERR_UNSUPPORTED? */
-        log_error("Got unsupported or unknown device speed: %d\n", speed);
-        status = BLADERF_ERR_INVAL;
+        *device_speed = BLADERF_DEVICE_SPEED_UNKNOWN;
+
+        if (speed == LIBUSB_SPEED_FULL) {
+            log_error("Error: Full speed connection is not suppored.\n");
+            status = BLADERF_ERR_UNSUPPORTED;
+        } else if (speed == LIBUSB_SPEED_LOW) {
+            log_error("Error: Low speed connection is not supported.\n");
+            status = BLADERF_ERR_UNSUPPORTED;
+        } else {
+            log_error("Error: Unknown/unexpected device speed (%d)\n", speed);
+            status = BLADERF_ERR_UNEXPECTED;
+        }
+
     }
 
     return status;

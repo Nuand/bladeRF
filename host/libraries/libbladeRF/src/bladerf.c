@@ -75,9 +75,11 @@ int bladerf_open_with_devinfo(struct bladerf **device,
         init_stats(&opened_device->stats);
 
         status = opened_device->fn->get_device_speed(opened_device,
-                                                     &opened_device->speed);
+                                                     &opened_device->usb_speed);
 
-        if (status < 0) {
+        if (status < 0 ||
+                (opened_device->usb_speed != BLADERF_DEVICE_SPEED_HIGH &&
+                 opened_device->usb_speed != BLADERF_DEVICE_SPEED_SUPER)) {
             opened_device->fn->close((*device));
             *device = NULL;
         } else {
@@ -666,6 +668,11 @@ int bladerf_stats(struct bladerf *dev, struct bladerf_stats *stats)
     return dev->fn->stats(dev, stats);
 }
 
+bladerf_dev_speed bladerf_device_speed(struct bladerf *dev)
+{
+    return dev->usb_speed;
+}
+
 /*------------------------------------------------------------------------------
  * Device Programming
  *----------------------------------------------------------------------------*/
@@ -1035,10 +1042,13 @@ int bladerf_config_gpio_read(struct bladerf *dev, uint32_t *val)
 int bladerf_config_gpio_write(struct bladerf *dev, uint32_t val)
 {
     /* If we're connected at HS, we need to use smaller DMA transfers */
-    if (dev->speed == 0) {
+    if (dev->usb_speed == BLADERF_DEVICE_SPEED_HIGH   ) {
         val |= BLADERF_GPIO_FEATURE_SMALL_DMA_XFER;
-    } else {
+    } else if (dev->usb_speed == BLADERF_DEVICE_SPEED_SUPER) {
         val &= ~BLADERF_GPIO_FEATURE_SMALL_DMA_XFER;
+    } else {
+        log_error("Encountered unknown USB speed in %s\n", __FUNCTION__);
+        return BLADERF_ERR_UNEXPECTED;
     }
 
     return dev->fn->config_gpio_write(dev,val);
