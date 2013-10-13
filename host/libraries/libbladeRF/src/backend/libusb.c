@@ -731,13 +731,15 @@ static int erase_sector(struct bladerf *dev, uint16_t sector)
 
 static int lusb_erase_flash(struct bladerf *dev, uint32_t addr, uint32_t len)
 {
+    int sector_addr, sector_len;
+    int i;
     int status = 0;
 
     if(!flash_bounds_aligned(BLADERF_FLASH_ALIGNMENT_SECTOR, addr, len))
         return BLADERF_ERR_MISALIGNED;
 
-    uint16_t sector_addr = flash_to_sectors(addr);
-    uint16_t sector_len  = flash_to_sectors(len);
+    sector_addr = flash_to_sectors(addr);
+    sector_len  = flash_to_sectors(len);
 
     status = change_setting(dev, USB_IF_SPI_FLASH);
     if (status) {
@@ -747,7 +749,6 @@ static int lusb_erase_flash(struct bladerf *dev, uint32_t addr, uint32_t len)
 
     log_info("Erasing 0x%02x bytes starting at address 0x%02x\n", len, addr);
 
-    uint16_t i;
     for (i=0; i < sector_len; i++) {
         status = erase_sector(dev, sector_addr + i);
         if(status)
@@ -760,9 +761,11 @@ static int lusb_erase_flash(struct bladerf *dev, uint32_t addr, uint32_t len)
 static int read_buffer(struct bladerf *dev, uint8_t request,
                        uint8_t *buf, uint16_t len)
 {
-    struct bladerf_lusb *lusb = dev->backend;
-    int status;
-    uint16_t read_size = dev->speed ? BLADERF_FLASH_PAGE_SIZE : 64;
+    struct bladerf_lusb *lusb = (struct bladerf_lusb *)dev->backend;
+    int status, read_size;
+    int buf_off;
+
+    read_size = dev->speed ? BLADERF_FLASH_PAGE_SIZE : 64;
 
     /* only these two requests seem to use bytes in the control transfer
      * parameters instead of pages/sectors so watch out! */
@@ -771,7 +774,6 @@ static int read_buffer(struct bladerf *dev, uint8_t request,
 
     assert(len % read_size == 0);
 
-    uint16_t buf_off;
     for(buf_off = 0; buf_off < len; buf_off += read_size)
     {
         status = libusb_control_transfer(
@@ -893,12 +895,14 @@ static int lusb_read_flash(struct bladerf *dev, uint32_t addr,
                            uint8_t *buf, uint32_t len)
 {
     int status;
+    int page_addr, page_len, i;
+    unsigned int read;
 
     if(!flash_bounds_aligned(BLADERF_FLASH_ALIGNMENT_PAGE, addr, len))
         return BLADERF_ERR_MISALIGNED;
 
-    uint16_t page_addr = flash_to_pages(addr);
-    uint16_t page_len  = flash_to_pages(len);
+    page_addr = flash_to_pages(addr);
+    page_len  = flash_to_pages(len);
 
     log_info("Reading 0x%02x bytes starting at address 0x%02x\n", len, addr);
 
@@ -908,8 +912,7 @@ static int lusb_read_flash(struct bladerf *dev, uint32_t addr,
         return BLADERF_ERR_IO;
     }
 
-    uintptr_t read = 0;
-    uint16_t i;
+    read = 0;
     for (i=0; i < page_len; i++) {
         log_verbose("Reading page at 0x%02x\n", flash_from_pages(i));
         status = read_one_page(dev, page_addr + i, buf + read);
@@ -924,7 +927,7 @@ static int lusb_read_flash(struct bladerf *dev, uint32_t addr,
 
 static int verify_page(uint8_t *page_buf, uint8_t *image_page)
 {
-    uint i;
+    int i;
     for (i = 0; i < BLADERF_FLASH_PAGE_SIZE; i++) {
         if (page_buf[i] != image_page[i]) {
             return -i;
@@ -938,6 +941,7 @@ static int verify_flash(struct bladerf *dev, uint32_t addr,
                         uint8_t *image, uint32_t len)
 {
     int status = 0;
+    int page_addr, page_len, i, idx;
 
     uint8_t page_buf[BLADERF_FLASH_PAGE_SIZE];
     uint8_t *image_page;
@@ -945,12 +949,11 @@ static int verify_flash(struct bladerf *dev, uint32_t addr,
     if(!flash_bounds_aligned(BLADERF_FLASH_ALIGNMENT_PAGE, addr, len))
         return BLADERF_ERR_MISALIGNED;
 
-    uint16_t page_addr = flash_to_pages(addr);
-    uint16_t page_len  = flash_to_pages(len);
+    page_addr = flash_to_pages(addr);
+    page_len  = flash_to_pages(len);
 
     log_info("Verifying 0x%02x bytes starting at address 0x%02x\n", len, addr);
 
-    uint16_t i;
     for(i=0; i < page_len; i++) {
         log_verbose("Verifying page at 0x%02x\n", flash_from_pages(i));
         status = read_one_page(dev, page_addr + i, page_buf);
@@ -961,7 +964,7 @@ static int verify_flash(struct bladerf *dev, uint32_t addr,
 
         status = verify_page(page_buf, image_page);
         if(status < 0) {
-            uint idx = abs(status);
+            idx = abs(status);
             log_error("bladeRF firmware verification failed at flash "
                       " address 0x%02x. Read 0x%02X, expected 0x%02X\n",
                       flash_from_pages(i) + idx,
@@ -1064,12 +1067,13 @@ static int lusb_write_flash(struct bladerf *dev, uint32_t addr,
                         uint8_t *buf, uint32_t len)
 {
     int status;
+    int page_addr, page_len, written, i;
 
     if(!flash_bounds_aligned(BLADERF_FLASH_ALIGNMENT_PAGE, addr, len))
         return BLADERF_ERR_MISALIGNED;
 
-    uint32_t page_addr = flash_to_pages(addr);
-    uint32_t page_len  = flash_to_pages(len);
+    page_addr = flash_to_pages(addr);
+    page_len  = flash_to_pages(len);
 
     log_info("Writing 0x%02x bytes starting at address 0x%02x\n", len, addr);
 
@@ -1079,8 +1083,7 @@ static int lusb_write_flash(struct bladerf *dev, uint32_t addr,
         return BLADERF_ERR_IO;
     }
 
-    uintptr_t written = 0;
-    uint16_t i;
+    written = 0;
     for(i=0; i < page_len; i++) {
         log_verbose("Writing page at 0x%02x\n", flash_from_pages(i));
         status = write_one_page(dev, page_addr + i, buf + written);

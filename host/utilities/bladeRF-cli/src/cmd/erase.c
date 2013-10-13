@@ -7,6 +7,7 @@
 int cmd_erase(struct cli_state *state, int argc, char **argv)
 {
     int status;
+    int addr, len;
     int sector_offset, n_sectors;
     bool ok;
 
@@ -30,8 +31,8 @@ int cmd_erase(struct cli_state *state, int argc, char **argv)
         return CMD_RET_INVPARAM;
     }
 
-    uint32_t addr = sector_offset * BLADERF_FLASH_SECTOR_SIZE;
-    uint32_t len  = n_sectors * BLADERF_FLASH_SECTOR_SIZE;
+    addr = sector_offset * BLADERF_FLASH_SECTOR_SIZE;
+    len  = n_sectors * BLADERF_FLASH_SECTOR_SIZE;
 
     status = bladerf_erase_flash(state->dev, addr, len);
 
