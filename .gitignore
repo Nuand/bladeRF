@@ -20,6 +20,8 @@
 GPATH
 GTAGS
 GRTAGS
+tags
+TAGS
 
 hdl/quartus/work/*
 
