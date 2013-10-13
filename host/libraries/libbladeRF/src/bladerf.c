@@ -81,6 +81,42 @@ int bladerf_open_with_devinfo(struct bladerf **device,
             opened_device->fn->close((*device));
             *device = NULL;
         } else {
+            if (opened_device->legacy) {
+                /* Currently two modes of legacy:
+                 *  - ALT_SETTING
+                 *  - CONFIG_IF
+                 *
+                 * If either of these are set, we should tell the user to update
+                 */
+                printf("********************************************************************************\n");
+                printf("* ENTERING LEGACY MODE, PLEASE UPGRADE TO THE LATEST FIRMWARE BY RUNNING:\n");
+                printf("* wget http://nuand.com/fx3/latest.img ; bladeRF-cli -f latest.img\n");
+                printf("********************************************************************************\n");
+            }
+
+            if (!(opened_device->legacy & LEGACY_ALT_SETTING)) {
+
+                status = bladerf_get_and_cache_vctcxo_trim(opened_device);
+                if (status < 0) {
+                    log_warning( "Could not extract VCTCXO trim value\n" ) ;
+                }
+
+                status = bladerf_get_and_cache_fpga_size(opened_device);
+                if (status < 0) {
+                    log_warning( "Could not extract FPGA size\n" ) ;
+                }
+
+                /* If any of these routines failed, the dev structure should
+                 * still have had it's fields dummied, so they're safe to
+                 * print here (i.e., not uninitialized) */
+                log_debug("%s: fw=v%s serial=%s trim=0x%.4x fpga_size=%d\n",
+                        __FUNCTION__, opened_device->fw_version.describe,
+                        opened_device->ident.serial, opened_device->dac_trim,
+                        opened_device->fpga_size);
+            }
+
+            /* All status in here is not fatal, so whatever */
+            status = 0 ;
             if (bladerf_is_fpga_configured(opened_device)) {
                 bladerf_init_device(opened_device);
             }
@@ -105,45 +141,6 @@ int bladerf_open(struct bladerf **device, const char *dev_id)
     if (!status) {
         status = bladerf_open_with_devinfo(device, &devinfo);
         dev = *device;
-    }
-
-
-    if (!status) {
-        if (dev->legacy) {
-            /* Currently two modes of legacy:
-             *  - ALT_SETTING
-             *  - CONFIG_IF
-             *
-             * If either of these are set, we should tell the user to update
-             */
-            printf("********************************************************************************\n");
-            printf("* ENTERING LEGACY MODE, PLEASE UPGRADE TO THE LATEST FIRMWARE BY RUNNING:\n");
-            printf("* wget http://nuand.com/fx3/latest.img ; bladeRF-cli -f latest.img\n");
-            printf("********************************************************************************\n");
-        }
-
-        if (!(dev->legacy & LEGACY_ALT_SETTING)) {
-
-            status = bladerf_get_and_cache_vctcxo_trim(dev);
-            if (status < 0) {
-                log_warning( "Could not extract VCTCXO trim value\n" ) ;
-            }
-
-            status = bladerf_get_and_cache_fpga_size(dev);
-            if (status < 0) {
-                log_warning( "Could not extract FPGA size\n" ) ;
-            }
-
-            /* If any of these routines failed, the dev structure should
-             * still have had it's fields dummied, so they're safe to
-             * print here (i.e., not uninitialized) */
-            log_debug("%s: fw=v%s serial=%s trim=0x%.4x fpga_size=%d\n",
-                    __FUNCTION__, dev->fw_version.describe,
-                    dev->ident.serial, dev->dac_trim, dev->fpga_size);
-        }
-
-        /* All status in here is not fatal, so whatever */
-        status = 0 ;
     }
 
     return status;
