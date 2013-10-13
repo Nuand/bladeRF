@@ -813,7 +813,7 @@ int bladerf_flash_fpga(struct bladerf *dev, const char *fpga_file)
 
     if (strcmp("X", fpga_file) == 0) {
         printf("Disabling FPGA flash auto-load\n");
-        return (dev->fn->erase_flash(dev, 4, 1) != 1);
+        return (dev->fn->erase_flash(dev, flash_from_sectors(4), BLADERF_FLASH_SECTOR_SIZE) != BLADERF_FLASH_SECTOR_SIZE);
     }
 
     status = read_file(fpga_file, &buf, &buf_size);
@@ -825,7 +825,7 @@ int bladerf_flash_fpga(struct bladerf *dev, const char *fpga_file)
                        "to skip this check.\n");
             status = BLADERF_ERR_INVAL;
         } else {
-            const size_t page_size = BLADERF_FLASH_PAGE_SIZE;
+            const size_t page_size = BLADERF_FLASH_SECTOR_SIZE;
             size_t buf_size_padding = page_size - (buf_size % page_size);
 
             /* Pad firmare data out to a flash page size */
@@ -835,8 +835,8 @@ int bladerf_flash_fpga(struct bladerf *dev, const char *fpga_file)
                 status = BLADERF_ERR_MEM;
             } else {
                 buf = buf_padded;
-                memset(buf + buf_size, 0xFF, buf_size_padded - buf_size - BLADERF_FLASH_PAGE_SIZE);
-                memmove(&buf[BLADERF_FLASH_PAGE_SIZE], buf, buf_size_padded - BLADERF_FLASH_PAGE_SIZE);
+                memset(buf + buf_size, 0xFF, buf_size_padded - buf_size - BLADERF_FLASH_SECTOR_SIZE);
+                memmove(&buf[BLADERF_FLASH_PAGE_SIZE], buf, buf_size_padded - BLADERF_FLASH_SECTOR_SIZE);
                 snprintf(fpga_len, 9, "%d", (int)buf_size);
                 memset(buf, 0xff, BLADERF_FLASH_PAGE_SIZE);
                 encode_field((char *)buf, BLADERF_FLASH_PAGE_SIZE, &hp_idx, "LEN", fpga_len);
