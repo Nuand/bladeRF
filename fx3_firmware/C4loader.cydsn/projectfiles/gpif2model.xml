@@ -12,7 +12,7 @@
       <ClockSource>Internal</ClockSource>
       <ClockEdge>Positive</ClockEdge>
       <Endianness>LittleEndian</Endianness>
-      <DataBusWidth>Bit32</DataBusWidth>
+      <DataBusWidth>Bit16</DataBusWidth>
       <AddressBuswidth>0</AddressBuswidth>
     </InterfaceSetting>
   </InterfaceDefination>

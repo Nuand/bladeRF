@@ -47,35 +47,35 @@
     </Signal>
     <Signal ElementId="FLAG0" SignalType="Flags" SpecialFunction="None">
       <DisplayName>FLAG0</DisplayName>
-      <GPIOPinNumber>GPIO_22</GPIOPinNumber>
+      <GPIOPinNumber>GPIO_25</GPIOPinNumber>
       <IntialValue>Low</IntialValue>
       <Polarity>ActiveHigh</Polarity>
       <Flags>Thread_0_DMA_Ready</Flags>
     </Signal>
     <Signal ElementId="FLAG1" SignalType="Flags" SpecialFunction="None">
       <DisplayName>FLAG1</DisplayName>
-      <GPIOPinNumber>GPIO_23</GPIOPinNumber>
+      <GPIOPinNumber>GPIO_29</GPIOPinNumber>
       <IntialValue>Low</IntialValue>
       <Polarity>ActiveHigh</Polarity>
       <Flags>Thread_1_DMA_Ready</Flags>
     </Signal>
     <Signal ElementId="FLAG2" SignalType="Flags" SpecialFunction="None">
       <DisplayName>FLAG2</DisplayName>
-      <GPIOPinNumber>GPIO_24</GPIOPinNumber>
+      <GPIOPinNumber>GPIO_27</GPIOPinNumber>
       <IntialValue>Low</IntialValue>
       <Polarity>ActiveHigh</Polarity>
       <Flags>Thread_2_DMA_Ready</Flags>
     </Signal>
     <Signal ElementId="FLAG3" SignalType="Flags" SpecialFunction="None">
       <DisplayName>FLAG3</DisplayName>
-      <GPIOPinNumber>GPIO_25</GPIOPinNumber>
+      <GPIOPinNumber>GPIO_28</GPIOPinNumber>
       <IntialValue>Low</IntialValue>
       <Polarity>ActiveHigh</Polarity>
       <Flags>Thread_3_DMA_Ready</Flags>
     </Signal>
     <Signal ElementId="OUTPUT1" SignalType="Output" SpecialFunction="None">
       <DisplayName>DMA_TX</DisplayName>
-      <GPIOPinNumber>GPIO_26</GPIOPinNumber>
+      <GPIOPinNumber>GPIO_22</GPIOPinNumber>
       <IntialValue>Low</IntialValue>
       <Polarity>ActiveHigh</Polarity>
       <Delay>Alpha</Delay>
@@ -83,11 +83,19 @@
     </Signal>
     <Signal ElementId="OUTPUT2" SignalType="Output" SpecialFunction="None">
       <DisplayName>DMA_DONE</DisplayName>
-      <GPIOPinNumber>GPIO_27</GPIOPinNumber>
+      <GPIOPinNumber>GPIO_23</GPIOPinNumber>
       <IntialValue>Low</IntialValue>
       <Polarity>ActiveHigh</Polarity>
       <Delay>Alpha</Delay>
       <AssetionType>Assert</AssetionType>
+    </Signal>
+    <Signal ElementId="OUTPUT3" SignalType="Output" SpecialFunction="None">
+      <DisplayName>SYS_RST</DisplayName>
+      <GPIOPinNumber>GPIO_24</GPIOPinNumber>
+      <IntialValue>High</IntialValue>
+      <Polarity>ActiveHigh</Polarity>
+      <Delay>Alpha</Delay>
+      <AssetionType>Toggle</AssetionType>
     </Signal>
   </Signals>
   <StateMachine>
@@ -108,6 +116,9 @@
       <DisplayName>INIT</DisplayName>
       <RepeatUntillNextTransition>True</RepeatUntillNextTransition>
       <RepeatCount>0</RepeatCount>
+      <Action ElementId="DR_GPIO0" ActionType="DR_GPIO">
+        <ControlPinName>SYS_RST</ControlPinName>
+      </Action>
     </State>
     <State ElementId="STATE1" StateType="NormalState">
       <DisplayName>IF_RX_0</DisplayName>
@@ -148,14 +159,14 @@
       <DisplayName>DONE</DisplayName>
       <RepeatUntillNextTransition>True</RepeatUntillNextTransition>
       <RepeatCount>0</RepeatCount>
-      <Action ElementId="DR_GPIO0" ActionType="DR_GPIO">
-        <ControlPinName>DMA_DONE</ControlPinName>
-      </Action>
     </State>
     <State ElementId="STATE6" StateType="NormalState">
       <DisplayName>WAIT_0</DisplayName>
       <RepeatUntillNextTransition>True</RepeatUntillNextTransition>
       <RepeatCount>0</RepeatCount>
+      <Action ElementId="DR_GPIO0" ActionType="DR_GPIO">
+        <ControlPinName>DMA_DONE</ControlPinName>
+      </Action>
     </State>
     <State ElementId="STATE12" StateType="NormalState">
       <DisplayName>IF_TX_3</DisplayName>
@@ -174,17 +185,11 @@
       <DisplayName>IF_TX</DisplayName>
       <RepeatUntillNextTransition>True</RepeatUntillNextTransition>
       <RepeatCount>0</RepeatCount>
-      <Action ElementId="DR_GPIO0" ActionType="DR_GPIO">
-        <ControlPinName>DMA_TX</ControlPinName>
-      </Action>
     </State>
     <State ElementId="STATE11" StateType="NormalState">
       <DisplayName>IF_RX</DisplayName>
       <RepeatUntillNextTransition>True</RepeatUntillNextTransition>
       <RepeatCount>0</RepeatCount>
-      <Action ElementId="DR_GPIO0" ActionType="DR_GPIO">
-        <ControlPinName>DMA_RX</ControlPinName>
-      </Action>
     </State>
     <Transition ElementId="TRANSITION0" SourceState="STARTSTATE0" DestinationState="STATE0" Equation="LOGIC_ONE" />
     <Transition ElementId="TRANSITION23" SourceState="STATE13" DestinationState="STATE10" Equation="TX_2" />
