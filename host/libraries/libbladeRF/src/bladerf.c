@@ -129,7 +129,6 @@ int bladerf_open_with_devinfo(struct bladerf **device,
 /* dev path becomes device specifier string (osmosdr-like) */
 int bladerf_open(struct bladerf **device, const char *dev_id)
 {
-    struct bladerf *dev;
     struct bladerf_devinfo devinfo;
     int status;
 
@@ -140,7 +139,6 @@ int bladerf_open(struct bladerf **device, const char *dev_id)
 
     if (!status) {
         status = bladerf_open_with_devinfo(device, &devinfo);
-        dev = *device;
     }
 
     return status;
