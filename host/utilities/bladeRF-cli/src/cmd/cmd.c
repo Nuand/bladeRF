@@ -21,6 +21,7 @@ DECLARE_CMD(rxtx);
 DECLARE_CMD(version);
 DECLARE_CMD(recover);
 DECLARE_CMD(jump_to_bootloader);
+DECLARE_CMD(mimo);
 
 #define MAX_ARGS    10
 
@@ -49,6 +50,7 @@ static const char *cmd_names_set[] = { "set", "s", NULL };
 static const char *cmd_names_ver[] = { "version", "ver", "v", NULL };
 static const char *cmd_names_rec[] = { "recover", "r", NULL };
 static const char *cmd_names_jump[] = { "jump_to_boot", "j", NULL };
+static const char *cmd_names_mimo[] = { "mimo", NULL };
 
 static const struct cmd cmd_table[] = {
     {
@@ -347,6 +349,12 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.exec, NULL), /* Default action on NULL exec function is to quit */
         FIELD_INIT(.desc, "Exit the CLI"),
         FIELD_INIT(.help, "Exit the CLI\n")
+    },
+    {
+        FIELD_INIT(.names, cmd_names_mimo),
+        FIELD_INIT(.exec, cmd_mimo),
+        FIELD_INIT(.desc, "Modify device MIMO operation"),
+        FIELD_INIT(.help, "mimo [master|slave]\n")
     },
     /* Always terminate the command entry with a completely NULL entry */
     {
