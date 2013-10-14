@@ -72,9 +72,7 @@ int cmd_peek(struct cli_state *state, int argc, char **argv)
                 invalid_address(state, argv[0], argv[2]);
                 rv = CMD_RET_INVPARAM;
             } else {
-                /* TODO: Populate this function when it is available */
-                /* f = si5338_i2c_read; */
-                f = NULL;
+                f = bladerf_si5338_read;
                 max_address = SI_MAX_ADDRESS;
             }
         }
