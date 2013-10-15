@@ -117,12 +117,12 @@ void lms_lpf_set_mode(struct bladerf *dev, bladerf_module mod, bladerf_lpf_mode 
     bladerf_lms_read(dev, reg,   &data_l);
     bladerf_lms_read(dev, reg+1, &data_h);
     if (mode == BLADERF_LPF_DISABLED) {
-        data_l &= ~(1<<6);
+        data_l &= ~(1<<1);
     } else if (mode == BLADERF_LPF_BYPASSED) {
-        data_l |= (1<<6);
+        data_l |= (1<<1);
         data_h |= (1<<6);
     } else {
-        data_l |= (1<<6);
+        data_l |= (1<<1);
         data_h &= ~(1<<6);
     }
     bladerf_lms_write(dev, reg  , data_l);
