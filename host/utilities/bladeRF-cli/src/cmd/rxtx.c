@@ -5,6 +5,7 @@
 #include "rxtx_impl.h"
 #include "cmd/cmd.h"
 #include "rel_assert.h"
+#include <inttypes.h>
 
 /* A "seems good enough" arbitrary minimum */
 #define RXTX_BUFFERS_MIN 4
@@ -447,8 +448,8 @@ static void check_samplerate(struct cli_state *s, struct rxtx_data *rxtx)
         if (samplerate_min <= 40000000) {
             printf("\n  Warning: The current sample rate may be too low. "
                    "For %u transfers and\n"
-                   "           %u samples per buffer, a sample rate >= "
-                   "%lu Hz is\n           recommended to avoid timeouts.\n\n",
+                   "           %u samples per buffer, a sample rate >= %"
+                   PRIu64" Hz is\n           recommended to avoid timeouts.\n\n",
                    n_xfers, samp_per_buf, samplerate_min);
         } else {
             printf("\n  Warning: The current configuraion with %u transfers and"

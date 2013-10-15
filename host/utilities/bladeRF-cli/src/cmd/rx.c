@@ -167,7 +167,7 @@ void *rx_task(void *cli_state_arg)
     struct cli_state *cli_state = (struct cli_state *) cli_state_arg;
     struct rxtx_data *rx = cli_state->rx;
     struct rx_params *rx_params = rx->params;
-    struct rx_callback_data cb_data = { 0 };
+    struct rx_callback_data cb_data;
 
     /* We expect to be in the IDLE state when this is kicked off. We could
      * also get into the shutdown state if the program exits before we
