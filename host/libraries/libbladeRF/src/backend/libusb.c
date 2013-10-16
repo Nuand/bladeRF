@@ -954,12 +954,8 @@ static int legacy_read_one_page(struct bladerf *dev,
                 log_error("Unexpected read size: %d\n", status);
             }
             return BLADERF_ERR_IO;
-        } else
-            status = 0;
+        }
     }
-
-    if(status)
-        return status;
 
     return 0;
 }
