@@ -187,7 +187,9 @@ void *rx_task(void *cli_state_arg)
 
             case RXTX_STATE_START:
             {
-                enum error_type err_type;
+                /* This should be set to an appropriate value upon
+                 * encountering an error condition */
+                enum error_type err_type = ETYPE_BUG;
 
                 /* Clear the last error */
                 set_last_error(&rx->last_error, ETYPE_ERRNO, 0);
@@ -201,31 +203,29 @@ void *rx_task(void *cli_state_arg)
                 cb_data.inf = cb_data.samples_left == 0;
 
                 /* Choose the callback appropriate for the desired file type */
-                if (status == 0) {
-                    pthread_mutex_lock(&rx->file_mgmt.file_meta_lock);
+                pthread_mutex_lock(&rx->file_mgmt.file_meta_lock);
 
-                    switch (rx->file_mgmt.format) {
-                        case RXTX_FMT_CSV_SC16Q12:
-                            cb_data.write_samples = rx_write_csv_sc16q12;
-                            break;
+                switch (rx->file_mgmt.format) {
+                    case RXTX_FMT_CSV_SC16Q12:
+                        cb_data.write_samples = rx_write_csv_sc16q12;
+                        break;
 
-                        case RXTX_FMT_BIN_SC16Q12:
-                            cb_data.write_samples = rx_write_bin_sc16q12;
-                            break;
+                    case RXTX_FMT_BIN_SC16Q12:
+                        cb_data.write_samples = rx_write_bin_sc16q12;
+                        break;
 
-                        default:
-                            status = CMD_RET_INVPARAM;
-                            set_last_error(&rx->last_error, ETYPE_CLI, status);
-                            rxtx_set_state(rx, RXTX_STATE_IDLE);
-                    }
-
-                    /* Open the specified file */
-                    if (status == 0) {
-                        assert(rx->file_mgmt.path);
-                    }
-
-                    pthread_mutex_unlock(&rx->file_mgmt.file_meta_lock);
+                    default:
+                        status = CMD_RET_INVPARAM;
+                        set_last_error(&rx->last_error, ETYPE_CLI, status);
+                        rxtx_set_state(rx, RXTX_STATE_IDLE);
                 }
+
+                /* Open the specified file */
+                if (status == 0) {
+                    assert(rx->file_mgmt.path);
+                }
+
+                pthread_mutex_unlock(&rx->file_mgmt.file_meta_lock);
 
                 /* Set up the reception stream and buffer information */
                 if (status == 0) {
@@ -264,6 +264,7 @@ void *rx_task(void *cli_state_arg)
                     rxtx_set_state(rx, RXTX_STATE_RUNNING);
                 } else {
                     bladerf_deinit_stream(rx->data_mgmt.stream);
+                    rx->data_mgmt.stream = NULL;
                     set_last_error(&rx->last_error, err_type, status);
                     rxtx_set_state(rx, RXTX_STATE_IDLE);
                 }

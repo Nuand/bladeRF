@@ -10,6 +10,9 @@
  * Differentiates error code types
  */
 enum error_type {
+    ETYPE_BUG = -1, /**< Invalid value that should never occur; we
+                     *   don't have a better classification and the
+                     *   condition should not have occurred. */
     ETYPE_CLI,      /**< CMD_RET cli error code */
     ETYPE_BLADERF,  /**< libbladeRF error code */
     ETYPE_ERRNO,    /**< errno value */

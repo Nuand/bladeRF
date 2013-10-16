@@ -168,7 +168,7 @@ void rxtx_print_error(struct rxtx_data *rxtx,
                 break;
 
             default:
-                printf("%sUnknown (%d)%s", prefix, val, suffix);
+                printf("%sBUG: Unexpected status=%d%s", prefix, val, suffix);
         }
     } else {
         printf("%sNone%s", prefix, suffix);
@@ -437,7 +437,7 @@ static void check_samplerate(struct cli_state *s, struct rxtx_data *rxtx)
     samp_per_buf = rxtx->data_mgmt.samples_per_buffer;
     pthread_mutex_unlock(&rxtx->data_mgmt.lock);
 
-    samplerate_min = n_xfers * samp_per_buf;
+    samplerate_min = (uint64_t)n_xfers * samp_per_buf;
     samplerate_min += (samplerate_min + 9) / 10;
 
     status = bladerf_get_sample_rate(s->dev, rxtx->module, &samplerate_dev);

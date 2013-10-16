@@ -172,8 +172,8 @@ static int tx_csv_to_sc16q12(struct cli_state *s)
 
     bin = fopen(bin_name, "wb+");
     if (!bin) {
-        free(bin_name);
-        return CMD_RET_FILEOP;
+        status = CMD_RET_FILEOP;
+        goto tx_csv_to_sc16q12_out;
     }
 
     while (fgets(buf, sizeof(buf), csv))
@@ -278,7 +278,7 @@ void *tx_task(void *cli_state_arg)
 
             case RXTX_STATE_START:
             {
-                enum error_type err_type;
+                enum error_type err_type = ETYPE_BUG;
 
                 /* Clear out the last error */
                 set_last_error(&tx->last_error, ETYPE_ERRNO, 0);
@@ -326,11 +326,14 @@ void *tx_task(void *cli_state_arg)
                     if (status < 0) {
                         err_type = ETYPE_BLADERF;
                     }
+
                 }
 
                 if (status == 0) {
                     rxtx_set_state(tx, RXTX_STATE_RUNNING);
                 } else {
+                    bladerf_deinit_stream(tx->data_mgmt.stream);
+                    tx->data_mgmt.stream = NULL;
                     set_last_error(&tx->last_error, err_type, status);
                     rxtx_set_state(tx, RXTX_STATE_IDLE);
                 }
