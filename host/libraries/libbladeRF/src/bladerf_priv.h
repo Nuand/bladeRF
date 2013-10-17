@@ -116,6 +116,9 @@ struct bladerf_fn {
     int (*stream)(struct bladerf_stream *stream, bladerf_module module);
     void (*deinit_stream)(struct bladerf_stream *stream);
 
+    void (*set_transfer_timeout)(struct bladerf *dev, bladerf_module module, int timeout);
+    int (*get_transfer_timeout)(struct bladerf *dev, bladerf_module module);
+
     /* Gather statistics */
     int (*stats)(struct bladerf *dev, struct bladerf_stats *stats);
 };
@@ -153,6 +156,8 @@ struct bladerf {
 
     /* Driver-sppecific implementations */
     const struct bladerf_fn *fn;
+
+    int transfer_timeout[2];
 };
 
 /**

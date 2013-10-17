@@ -1389,6 +1389,26 @@ API_EXPORT int bladerf_dac_write(struct bladerf *dev, uint16_t val);
  */
 API_EXPORT int bladerf_calibrate_dc(struct bladerf *dev, bladerf_cal_module module);
 
+/**
+ * Set transfer timeout in milliseconds
+ *
+ * @param   dev         Device handle
+ * @param   module      Module to adjust
+ * @param   timeout     Timeout in milliseconds
+ */
+API_EXPORT void bladerf_set_transfer_timeout(struct bladerf *dev, bladerf_module module, int timeout);
+
+
+/**
+ * Get transfer timeout in milliseconds
+ *
+ * @param   dev         Device handle
+ * @param   module      Module to adjust
+ *
+ * @return  Timeout in milliseconds
+ */
+int get_transfer_timeout(struct bladerf *dev, bladerf_module module);
+
 /* @} (End of LOW_LEVEL) */
 
 #ifdef __cplusplus

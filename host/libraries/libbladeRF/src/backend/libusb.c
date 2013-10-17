@@ -571,6 +571,9 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
                 dev->backend = (void *)lusb;
                 dev->legacy = 0;
 
+                dev->transfer_timeout[BLADERF_MODULE_TX] = BULK_TIMEOUT;
+                dev->transfer_timeout[BLADERF_MODULE_RX] = BULK_TIMEOUT;
+
                 memcpy(&dev->ident, &thisinfo, sizeof(struct bladerf_devinfo));
 
                 /* Populate the backend information */
@@ -1665,7 +1668,7 @@ static int lusb_tx(struct bladerf *dev, bladerf_format format, void *samples,
                     samples8,
                     (int)bytes_remaining,
                     &transferred,
-                    BLADERF_LIBUSB_TIMEOUT_MS
+                    dev->transfer_timeout[BLADERF_MODULE_TX]
                 );
         if( status < 0 ) {
             log_error( "Error transmitting samples (%d): %s\n", status, libusb_error_name(status) );
@@ -1705,7 +1708,7 @@ static int lusb_rx(struct bladerf *dev, bladerf_format format, void *samples,
                     samples8,
                     (int)bytes_remaining,
                     &transferred,
-                    BLADERF_LIBUSB_TIMEOUT_MS
+                    dev->transfer_timeout[BLADERF_MODULE_RX]
                 );
         if( status < 0 ) {
             log_error( "Error reading samples (%d): %s\n", status, libusb_error_name(status) );
@@ -1959,7 +1962,7 @@ static int lusb_stream(struct bladerf_stream *stream, bladerf_module module)
                 (int)buffer_size,
                 lusb_stream_cb,
                 stream,
-                BULK_TIMEOUT
+                dev->transfer_timeout[module]
                 );
 
         log_debug("Initial transfer with buffer: %p (i=%zd)\n", buffer, i);
@@ -2017,6 +2020,17 @@ void lusb_deinit_stream(struct bladerf_stream *stream)
     stream->backend_data = NULL;
 
     return;
+}
+
+void lusb_set_transfer_timeout(struct bladerf *dev, bladerf_module module, int timeout) {
+    if (dev)
+        dev->transfer_timeout[module] = timeout;
+}
+
+int lusb_get_transfer_timeout(struct bladerf *dev, bladerf_module module) {
+    if (!dev)
+        return 0;
+    return dev->transfer_timeout[module];
 }
 
 int lusb_probe(struct bladerf_devinfo_list *info_list)
@@ -2116,6 +2130,9 @@ const struct bladerf_fn bladerf_lusb_fn = {
     FIELD_INIT(.init_stream, lusb_stream_init),
     FIELD_INIT(.stream, lusb_stream),
     FIELD_INIT(.deinit_stream, lusb_deinit_stream),
+
+    FIELD_INIT(.set_transfer_timeout, lusb_set_transfer_timeout),
+    FIELD_INIT(.get_transfer_timeout, lusb_get_transfer_timeout),
 
     FIELD_INIT(.stats, lusb_get_stats)
 };

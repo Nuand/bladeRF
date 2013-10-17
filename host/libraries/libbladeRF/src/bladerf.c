@@ -468,6 +468,14 @@ int bladerf_get_frequency(struct bladerf *dev,
     return rv;
 }
 
+void bladerf_set_transfer_timeout(struct bladerf *dev, bladerf_module module, int timeout) {
+    dev->fn->set_transfer_timeout(dev, module, timeout);
+}
+
+int get_transfer_timeout(struct bladerf *dev, bladerf_module module) {
+    return dev->fn->get_transfer_timeout(dev, module);
+}
+
 int bladerf_tx(struct bladerf *dev, bladerf_format format, void *samples,
                int num_samples, struct bladerf_metadata *metadata)
 {
