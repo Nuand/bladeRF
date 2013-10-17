@@ -229,11 +229,10 @@ static int tx_csv_to_sc16q12(struct cli_state *s)
         line++;
     }
 
-    if (status >= 0 && feof(csv)) {
+    if (status == 0 && feof(csv)) {
         tx->file_mgmt.format = RXTX_FMT_BIN_SC16Q12;
         free(tx->file_mgmt.path);
         tx->file_mgmt.path = bin_name;
-        status = 0;
     }
 
 tx_csv_to_sc16q12_out:
