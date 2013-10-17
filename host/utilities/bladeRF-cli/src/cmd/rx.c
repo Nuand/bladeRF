@@ -144,7 +144,7 @@ static void *rx_callback(struct bladerf *dev,
         sc16q12_sample_fixup(samples, n_to_write);
 
         /* Write the samples out */
-        cb_data->write_samples(rx, (int16_t*)samples, num_samples);
+        cb_data->write_samples(rx, (int16_t*)samples, n_to_write);
 
         /* Fetch the next buffer */
         rx->data_mgmt.next_idx++;
