@@ -76,12 +76,10 @@ void lms_lpf_enable(struct bladerf *dev, bladerf_module mod, lms_bw_t bw)
     // Check to see which bandwidth we have selected
     bladerf_lms_read(dev, reg, &data);
     data |= (1<<1);
-    if ((lms_bw_t)(data&0x3c>>2) != bw)
-    {
-        data &= ~0x3c;
-        data |= (bw<<2);
-    }
+    data &= ~0x3c;
+    data |= (bw<<2);
     bladerf_lms_write(dev, reg, data);
+
     // Check to see if we are bypassed
     bladerf_lms_read(dev, reg+1, &data);
     if (data&(1<<6))
@@ -98,7 +96,7 @@ void lms_lpf_get_mode(struct bladerf *dev, bladerf_module mod, bladerf_lpf_mode 
     uint8_t data;
 
     bladerf_lms_read(dev, reg, &data);
-    if (!(data&(1<<6))) {
+    if ( (data&(1<<1)) == 0 ) {
         *mode = BLADERF_LPF_DISABLED;
     } else {
         bladerf_lms_read(dev, reg+1, &data);
@@ -185,7 +183,7 @@ void lms_dither_enable(struct bladerf *dev, bladerf_module mod, uint8_t nbits)
     data &= ~(7<<4);
 
     // Put in the number of bits to dither
-    data |= ((nbits-1)&7);
+    data |= (((nbits-1)&7) << 4);
 
     // Write it out
     bladerf_lms_write(dev, reg, data);
@@ -839,7 +837,6 @@ void lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
     bladerf_lms_read(dev, base+7, &data);
     data &= ~(0x1f);
     data |= 3;
-    data = 0xe3;
     bladerf_lms_write(dev, base+7, data);
     bladerf_lms_read(dev, base+8, &data);
     data &= ~(0x1f);
