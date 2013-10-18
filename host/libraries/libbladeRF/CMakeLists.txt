@@ -28,6 +28,8 @@ configure_file(
     @ONLY
 )
 
+include(GNUInstallDirs)
+
 ################################################################################
 # Configuration options
 ################################################################################
@@ -160,7 +162,7 @@ set_target_properties(libbladerf_shared PROPERTIES SOVERSION ${VERSION_INFO_MAJO
 ################################################################################
 
 if(NOT DEFINED LIB_INSTALL_DIR)
-    set(LIB_INSTALL_DIR lib)
+    set(LIB_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}" )
 endif()
 
 ################################################################################
