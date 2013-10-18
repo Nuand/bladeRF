@@ -142,14 +142,14 @@ cp ../settings.bsp.in ./settings.bsp
 nios2-bsp-generate-files --settings=settings.bsp --bsp-dir=.
 make
 cd ../lms_spi_controller
-make
+make clean all
 
 # Encountered issues on Ubuntu 13.04 with the SDK's scripts not resolving
 # paths properly. In the end, some items wind up being defined as .jar's that
 # should be in our PATH at this point, so we set these up here...
 
 #ELF2HEX=elf2hex.jar ELF2DAT=.jar make mem_init_generate
-make mem_init_generate
+make mem_init_clean mem_init_generate
 popd
 
 
