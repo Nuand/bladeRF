@@ -11,6 +11,7 @@ set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/a
 set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/nios_system/software/lms_spi_controller/mem_init/meminit.qip]]
 
 # Implementation details
+set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/signal_generator.vhd]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/synchronizer.vhd]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/reset_synchronizer.vhd]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/fifo_reader.vhd]]
