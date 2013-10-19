@@ -1,0 +1,8 @@
+# nuand bladeRF
+ATTR{idVendor}=="1d50", ATTR{idProduct}=="6066", MODE="660", GROUP="@BLADERF_GROUP@"
+
+# Reserved for future bladeRF-specific bootloader
+ATTR{idVendor}=="1d50", ATTR{idProduct}=="6081", MODE="660", GROUP="@BLADERF_GROUP@"
+
+# Cypress Bootloader
+ATTR{idVendor}=="04b4", ATTR{idProduct}=="00f3", MODE="660", GROUP="@BLADERF_GROUP@"

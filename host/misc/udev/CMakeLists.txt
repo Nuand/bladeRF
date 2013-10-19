@@ -1,13 +1,10 @@
-# Copyright 2013 Nuand, LLC.
-#
-# This file is part of the bladeRF project
-#
-# TODO license text here (see top-level COPYING for time being)
 cmake_minimum_required(VERSION 2.8)
 
 option(INSTALL_UDEV_RULES
     "Install udev rules for the nuand bladeRF"
     ON)
+
+set(BLADERF_GROUP "plugdev" CACHE STRING "Group to associate bladeRF devices with in udev rules")
 
 if(NOT CMAKE_HOST_UNIX)
     if(INSTALL_UDEV_RULES)
@@ -15,8 +12,13 @@ if(NOT CMAKE_HOST_UNIX)
     endif(INSTALL_UDEV_RULES)
 else()
     if(INSTALL_UDEV_RULES)
+        configure_file(${CMAKE_CURRENT_SOURCE_DIR}/88-nuand.rules.in
+                       ${CMAKE_CURRENT_BINARY_DIR}/88-nuand.rules
+                       @ONLY
+                      )
+
         message(STATUS  "nuand bladeRF udev rules will be installed upon running 'make install'")
-        install(FILES 88-nuand.rules
+        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/88-nuand.rules
                 DESTINATION /etc/udev/rules.d
                 COMPONENT "udev_rules")
     else()
