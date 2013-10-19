@@ -168,19 +168,19 @@ begin
                     should_rx <= '0' ;
                 end if ;
             else
-                should_tx <= '0' ;
+                should_rx <= '0' ;
             end if ;
 
             if( can_tx = '1' ) then
                 if( can_rx = '0' ) then
                     should_tx <= '1' ;
-                elsif( dma_last_event = DE_TX ) then
+                elsif( dma_last_event = DE_RX ) then
                     should_tx <= '1' ;
                 else
                     should_tx <= '0' ;
                 end if ;
             else
-                should_rx <= '0' ;
+                should_tx <= '0' ;
             end if ;
         end if ;
     end process ;
@@ -228,8 +228,6 @@ begin
                                 dma3_tx_ack <= '1';
                             end if;
 
-                            --DMA thread 3 is always next
-                            --rf_tx_next_dma <= not rf_tx_next_dma;
                             tx_next_dma <= '1';
 
                             state <= IDLE_WR;
@@ -253,6 +251,7 @@ begin
                         dma_downcount <= dma_downcount - 1;
                     else
                         state <= FINISHED;
+                        dma_downcount <= to_signed(10, dma_downcount'length) ;
                     end if;
                 when IDLE_RD =>
                     state <= SAMPLE_READ;
@@ -260,14 +259,19 @@ begin
                     dma0_rx_ack <= '0';
                     dma1_rx_ack <= '0';
 
-                    if( dma_downcount > 0 ) then
+                    if( dma_downcount >= 0 ) then
                         dma_downcount <= dma_downcount - 1;
                     else
                         state <= FINISHED;
+                        dma_downcount <= to_signed(10, dma_downcount'length) ;
                     end if;
                 when FINISHED =>
-                    state <= IDLE ;
-                    gpif_oe <= '1' ;
+                    if( dma_downcount >= 0 ) then
+                        dma_downcount <= dma_downcount - 1 ;
+                    else
+                        state <= IDLE ;
+                        gpif_oe <= '1' ;
+                    end if ;
             end case;
 
         end if;

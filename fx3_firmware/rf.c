@@ -233,10 +233,6 @@ static void NuandRFLinkStart(void)
         CyFxAppErrorHandler(apiRetStatus);
     }
 
-    // strobe the RESET pin to the FPGA
-    CyU3PGpioSetValue(GPIO_SYS_RST, CyTrue);
-    CyU3PGpioSetValue(GPIO_SYS_RST, CyFalse);
-
     /* Start the state machine. */
     apiRetStatus = CyU3PGpifSMStart(RFLINK_START, RFLINK_ALPHA_START);
     if (apiRetStatus != CY_U3P_SUCCESS) {
@@ -353,6 +349,10 @@ static void NuandRFLinkStart(void)
     UartBridgeStart();
     glAppMode = MODE_RF_CONFIG;
 
+    // strobe the RESET pin to the FPGA
+    CyU3PGpioSetValue(GPIO_SYS_RST, CyTrue);
+    CyU3PGpioSetValue(GPIO_SYS_RST, CyFalse);
+
 }
 
 /* This function stops the slave FIFO loop application. This shall be called
@@ -362,6 +362,8 @@ static void NuandRFLinkStop (void)
 {
     CyU3PEpConfig_t epCfg;
     CyU3PReturnStatus_t apiRetStatus = CY_U3P_SUCCESS;
+
+    CyU3PGpioSetValue(GPIO_SYS_RST, CyTrue);
 
     /* Flush endpoint memory buffers */
     CyU3PUsbFlushEp(BLADE_RF_SAMPLE_EP_PRODUCER);
