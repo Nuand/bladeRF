@@ -22,11 +22,7 @@ The source is organized as follows:
 7. You should now be able to see your device in the list output via ```bladeRF-cli -p```
 8. See the overview of the [bladeRF-cli] for more information about loading the FPGA and using the command line interface tool
 
-<br>
-
-*Coming Soon: Quick Start information for GNU Radio support via gr-osmosdr*
-
-In the meantime, see the **Building GNURADIO from GIT** section of [kb3gtn's bladeRF setup guide] for information on this.
+For more information, see the [bladeRF wiki]
 
 [firmware_common]: ./firmware_common (Host-Firmware common files)
 [fx3_firmware]: ./fx3_firmware (FX3 Firmware)
@@ -36,4 +32,5 @@ In the meantime, see the **Building GNURADIO from GIT** section of [kb3gtn's bla
 [firmware image]: ./fx3_firmware/README.md#pre-built-firmware-binaries (Pre-build firmware binaries)
 [bladeRF-cli]: ./host/utilities/bladeRF-cli (bladeRF Command Line Interface)
 [bladeRF-flash]: ./host/utilities/bladeRF-flash (bladeRF Flashing Utility)
-[kb3gtn's bladeRF setup guide]: http://forum.nuand.com/forums/viewtopic.php?f=9&t=2992 (kb3gtn's bladeRF setup guide)
+[bladeRF wiki]: https://github.com/nuand/bladeRF/wiki
+
