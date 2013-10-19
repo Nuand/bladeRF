@@ -90,6 +90,10 @@ architecture hosted_bladerf of bladerf is
     signal rx_sample_q      : signed(11 downto 0) ;
     signal rx_sample_valid  : std_logic ;
 
+    signal rx_gen_i         : signed(11 downto 0) ;
+    signal rx_gen_q         : signed(11 downto 0) ;
+    signal rx_gen_valid     : std_logic ;
+
     signal tx_sample_i      : signed(15 downto 0) ;
     signal tx_sample_q      : signed(15 downto 0) ;
     signal tx_sample_valid  : std_logic ;
@@ -126,7 +130,7 @@ begin
       generic map (
         RESET_LEVEL         =>  '0'
       ) port map (
-        reset               =>  sys_rst_sync,
+        reset               =>  '0',
         clock               =>  fx3_pclk,
         async               =>  nios_gpio(7),
         sync                =>  usb_speed
@@ -277,9 +281,9 @@ begin
         fifo_data           =>  rx_sample_fifo.wdata,
         fifo_write          =>  rx_sample_fifo.wreq,
 
-        in_i                =>  resize(rx_sample_i,16),
-        in_q                =>  resize(rx_sample_q,16),
-        in_valid            =>  rx_sample_valid,
+        in_i                =>  resize(rx_gen_i,16),
+        in_q                =>  resize(rx_gen_q,16),
+        in_valid            =>  rx_gen_valid,
 
         overflow_led        =>  rx_overflow_led,
         overflow_count      =>  rx_overflow_count,
@@ -332,6 +336,19 @@ begin
         tx_lms_data         =>  lms_tx_data,
         tx_lms_iq_sel       =>  lms_tx_iq_select,
         tx_lms_enable       =>  open
+      ) ;
+
+    U_rx_siggen : entity work.signal_generator
+      port map (
+        clock           =>  rx_clock,
+        reset           =>  rx_reset,
+        enable          =>  '1',
+
+        mode            =>  '0',
+
+        sample_i        =>  rx_gen_i,
+        sample_q        =>  rx_gen_q,
+        sample_valid    =>  rx_gen_valid
       ) ;
 
     -- Register the inputs immediately

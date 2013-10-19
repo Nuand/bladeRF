@@ -146,7 +146,7 @@ void NuandGPIOReconfigure(CyBool_t fullGpif, CyBool_t warm)
             gpioConfig.driveHighEn = CyFalse;
         } else {
             // output config
-            gpioConfig.outValue = CyFalse;
+            gpioConfig.outValue = CyTrue;
             gpioConfig.driveLowEn = CyTrue;
             gpioConfig.driveHighEn = CyTrue;
             gpioConfig.inputEn = CyFalse;
