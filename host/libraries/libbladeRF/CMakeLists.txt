@@ -30,6 +30,14 @@ configure_file(
 
 include(GNUInstallDirs)
 
+# Fall back to just "lib" if the item provided by GNUInstallDirs doesn't exist
+# For example, on Ubuntu 13.10 with CMake 2.8.11.2,
+# /usr/lib/${CMAKE_LIBRARY_ARCHITECTURE} doesn't exist.
+if (NOT EXISTS "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+    message(STATUS "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR} does not exist. Defaulting libbladeRF install location to ${CMAKE_INSTALL_PREFIX}/lib.")
+    set(CMAKE_INSTALL_LIBDIR lib)
+endif()
+
 ################################################################################
 # Configuration options
 ################################################################################
@@ -56,12 +64,6 @@ if(NOT ENABLE_BACKEND_LIBUSB AND NOT ENABLE_BACKEND_LINUX_DRIVER)
     message(FATAL_ERROR
             "No libbladeRF backends are enabled. "
             "Please enable one or more backends." )
-endif()
-
-
-# Detach kernel not supported in Windows
-if(CMAKE_HOST_WIN32)
-    set(LIBUSB_DETACH_KERNEL_DRIVER OFF)
 endif()
 
 configure_file(
@@ -105,11 +107,6 @@ if(ENABLE_BACKEND_LIBUSB)
         set(LIBBLADERF_INCLUDES ${LIBBLADERF_INCLUDES} ${LIBUSB_INCLUDE_DIRS})
     endif(NOT LIBUSB_FOUND)
 endif(ENABLE_BACKEND_LIBUSB)
-
-if(ENABLE_BACKEND_LINUX_DRIVER)
-    # TODO find Linux Driver?
-endif()
-
 
 include_directories(${LIBBLADERF_INCLUDES})
 
@@ -158,14 +155,6 @@ set_target_properties(libbladerf_shared PROPERTIES SOVERSION ${VERSION_INFO_MAJO
 
 
 ################################################################################
-# Misc. installation config
-################################################################################
-
-if(NOT DEFINED LIB_INSTALL_DIR)
-    set(LIB_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}" )
-endif()
-
-################################################################################
 # Generate pkg-config file
 ################################################################################
 add_subdirectory(include)
@@ -179,7 +168,7 @@ endforeach()
 
 set(LIBBLADERF_PC_PREFIX ${CMAKE_INSTALL_PREFIX})
 set(LIBBLADERF_PC_EXEC_PREFIX \${prefix})
-set(LIBBLADERF_PC_LIBDIR \${exec_prefix}/${LIB_INSTALL_DIR})
+set(LIBBLADERF_PC_LIBDIR \${exec_prefix}/${CMAKE_INSTALL_LIBDIR})
 set(LIBBLADERF_PC_INCLUDEDIR \${prefix}/include)
 set(LIBBLADERF_PC_VERSION ${VERSION})
 
@@ -201,16 +190,16 @@ configure_file(
 
 install(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/libbladeRF.pc
-    DESTINATION ${LIB_INSTALL_DIR}/pkgconfig/
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig/
 )
 
 ################################################################################
 # Library installation information
 ################################################################################
 install(TARGETS libbladerf_shared
-    LIBRARY DESTINATION ${LIB_INSTALL_DIR} # .so/.dylib
-    ARCHIVE DESTINATION ${LIB_INSTALL_DIR} # .a/.lib
-    RUNTIME DESTINATION bin                # .dll
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} # .so/.dylib
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} # .a/.lib
+    RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR} # .dll
 )
 
 
