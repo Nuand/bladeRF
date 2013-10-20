@@ -77,7 +77,7 @@ Copyright: 2008-2009 Hendrik Sattler
            2013 Nuand LLC
 License: GPL-2+
 Comment: This is file is based off of the FindLibUSB.cmake file written by
-         Hedrik Sattler, from the OpenOBEX project (licensed GPLv2/LGPL).  (If
+         Hendrik Sattler, from the OpenOBEX project (licensed GPLv2/LGPL).  (If
          this is not correct, please contact us so we can attribute the author
          appropriately.)
          https://github.com/zuckschwerdt/openobex/blob/master/CMakeModules/FindLibUSB.cmake

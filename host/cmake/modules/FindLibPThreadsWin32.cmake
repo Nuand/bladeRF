@@ -1,4 +1,4 @@
-# This is file is based off of the FindLibUSB.cmake file written by Hedrik Sattler,
+# This is file is based off of the FindLibUSB.cmake file written by Hendrik Sattler,
 # from the OpenOBEX project (licensed GPLv2/LGPL).  (If this is not correct,
 # please contact us so we can attribute the author appropriately.)
 #
