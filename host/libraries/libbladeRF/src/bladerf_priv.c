@@ -154,8 +154,8 @@ static int extract_field(char *ptr, int len, char *field,
 int encode_field(char *ptr, int len, int *idx, char *field,
                             char *val) {
     int vlen, flen, tlen;
-    flen = strlen(field);
-    vlen = strlen(val);
+    flen = (int)strlen(field);
+    vlen = (int)strlen(val);
     tlen = flen + vlen + 1;
 
     if (tlen >= 256 || *idx + tlen >= len)

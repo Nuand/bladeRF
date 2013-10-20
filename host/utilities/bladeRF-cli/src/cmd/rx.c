@@ -368,7 +368,7 @@ static int rx_cmd_config(struct cli_state *s, int argc, char **argv)
                 bool ok;
 
                 n = str2uint_suffix(val, 0, UINT_MAX, rxtx_kmg_suffixes,
-                                    rxtx_kmg_suffixes_len, &ok);
+                                    (int)rxtx_kmg_suffixes_len, &ok);
 
                 if (ok) {
                     pthread_mutex_lock(&s->rx->param_lock);

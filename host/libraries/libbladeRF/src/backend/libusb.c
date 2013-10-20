@@ -1297,7 +1297,7 @@ static int lusb_flash_firmware(struct bladerf *dev,
 
     assert(image_size <= UINT32_MAX);
 
-    status = lusb_erase_flash(dev, 0, image_size);
+    status = lusb_erase_flash(dev, 0, (uint32_t)image_size);
 
     if (status >= 0) {
         status = lusb_write_flash(dev, 0, image, (uint32_t)image_size);

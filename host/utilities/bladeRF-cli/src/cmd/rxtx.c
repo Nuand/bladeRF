@@ -181,9 +181,9 @@ void rxtx_print_stream_info(struct rxtx_data *rxtx,
     unsigned int bufs, samps, xfers;
 
     pthread_mutex_lock(&rxtx->data_mgmt.lock);
-    bufs = rxtx->data_mgmt.num_buffers;
-    samps = rxtx->data_mgmt.samples_per_buffer;
-    xfers = rxtx->data_mgmt.num_transfers;
+    bufs = (unsigned int)rxtx->data_mgmt.num_buffers;
+    samps = (unsigned int)rxtx->data_mgmt.samples_per_buffer;
+    xfers = (unsigned int)rxtx->data_mgmt.num_transfers;
     pthread_mutex_unlock(&rxtx->data_mgmt.lock);
 
     printf("%s# Buffers: %u%s", prefix, bufs, suffix);
@@ -370,7 +370,7 @@ int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
         } else if (!strcasecmp("buffers", param)) {
             tmp = str2uint_suffix(*val, RXTX_BUFFERS_MIN,
                                   UINT_MAX, rxtx_kmg_suffixes,
-                                  rxtx_kmg_suffixes_len, &ok);
+                                  (int)rxtx_kmg_suffixes_len, &ok);
 
             if (!ok) {
                 cli_err(s, argv0, RXTX_ERRMSG_VALUE(param, *val));
@@ -385,7 +385,7 @@ int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
         } else if (!strcasecmp("samples", param)) {
             tmp = str2uint_suffix(*val, RXTX_BUFFERS_MIN,
                                   UINT_MAX, rxtx_kmg_suffixes,
-                                  rxtx_kmg_suffixes_len, &ok);
+                                  (int)rxtx_kmg_suffixes_len, &ok);
 
             if (!ok) {
                 cli_err(s, argv0, RXTX_ERRMSG_VALUE(param, *val));
@@ -403,7 +403,7 @@ int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
             }
         } else if (!strcasecmp("xfers", param)) {
             tmp = str2uint_suffix(*val, RXTX_BUFFERS_MIN - 1, UINT_MAX,
-                                  rxtx_kmg_suffixes, rxtx_kmg_suffixes_len,
+                                  rxtx_kmg_suffixes, (int)rxtx_kmg_suffixes_len,
                                   &ok);
 
             if (!ok) {
@@ -433,8 +433,8 @@ static void check_samplerate(struct cli_state *s, struct rxtx_data *rxtx)
     unsigned int n_xfers, samp_per_buf;
 
     pthread_mutex_lock(&rxtx->data_mgmt.lock);
-    n_xfers = rxtx->data_mgmt.num_transfers;
-    samp_per_buf = rxtx->data_mgmt.samples_per_buffer;
+    n_xfers = (unsigned int)rxtx->data_mgmt.num_transfers;
+    samp_per_buf = (unsigned int)rxtx->data_mgmt.samples_per_buffer;
     pthread_mutex_unlock(&rxtx->data_mgmt.lock);
 
     samplerate_min = (uint64_t)n_xfers * samp_per_buf;
