@@ -115,6 +115,12 @@ architecture hosted_bladerf of bladerf is
     signal lms_rx_data_reg      :   signed(11 downto 0) ;
     signal lms_rx_iq_select_reg :   std_logic ;
 
+    signal rx_mux_sel           :   std_logic ;
+
+    signal rx_mux_i             :   signed(11 downto 0) ;
+    signal rx_mux_q             :   signed(11 downto 0) ;
+    signal rx_mux_valid         :   std_logic ;
+
 begin
 
     -- Create 80MHz from 38.4MHz coming from the c4_clock source
@@ -134,6 +140,16 @@ begin
         clock               =>  fx3_pclk,
         async               =>  nios_gpio(7),
         sync                =>  usb_speed
+      ) ;
+
+    U_rx_source : entity work.synchronizer
+      generic map (
+        RESET_LEVEL         =>  '0'
+      ) port map (
+        reset               =>  '0',
+        clock               =>  rx_clock,
+        async               =>  nios_gpio(8),
+        sync                =>  rx_mux_sel
       ) ;
 
     U_sys_reset_sync : entity work.reset_synchronizer
@@ -281,9 +297,9 @@ begin
         fifo_data           =>  rx_sample_fifo.wdata,
         fifo_write          =>  rx_sample_fifo.wreq,
 
-        in_i                =>  resize(rx_gen_i,16),
-        in_q                =>  resize(rx_gen_q,16),
-        in_valid            =>  rx_gen_valid,
+        in_i                =>  resize(rx_mux_i,16),
+        in_q                =>  resize(rx_mux_q,16),
+        in_valid            =>  rx_mux_valid,
 
         overflow_led        =>  rx_overflow_led,
         overflow_count      =>  rx_overflow_count,
@@ -350,6 +366,25 @@ begin
         sample_q        =>  rx_gen_q,
         sample_valid    =>  rx_gen_valid
       ) ;
+
+    rx_mux : process(rx_reset, rx_clock)
+    begin
+        if( rx_reset = '1' ) then
+            rx_mux_i <= (others =>'0') ;
+            rx_mux_q <= (others =>'0') ;
+            rx_mux_valid <= '0' ;
+        elsif( rising_edge(rx_clock) ) then
+            if( rx_mux_sel = '0' ) then
+                rx_mux_i <= rx_sample_i ;
+                rx_mux_q <= rx_sample_q ;
+                rx_mux_valid <= rx_sample_valid ;
+            else
+                rx_mux_i <= rx_gen_i ;
+                rx_mux_q <= rx_gen_q ;
+                rx_mux_valid <= rx_gen_valid ;
+            end if ;
+        end if ;
+    end process ;
 
     -- Register the inputs immediately
     lms_rx_data_reg         <= lms_rx_data when rising_edge(rx_clock) ;
