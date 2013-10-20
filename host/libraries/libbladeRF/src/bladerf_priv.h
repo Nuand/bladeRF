@@ -135,6 +135,7 @@ struct bladerf_fn {
     int (*dac_write)(struct bladerf *dev, uint16_t value);
 
     /* Sample stream */
+    int (*enable_module)(struct bladerf *dev, bladerf_module m, bool enable);
     int (*rx)(struct bladerf *dev, bladerf_format format, void *samples, int n, struct bladerf_metadata *metadata);
     int (*tx)(struct bladerf *dev, bladerf_format format, void *samples, int n, struct bladerf_metadata *metadata);
 

@@ -64,7 +64,7 @@ architecture sample_shuffler of fx3_gpif is
 
     type dma_event is (DE_TX, DE_RX);
     signal dma_last_event : dma_event;
-    type state_t is (IDLE, IDLE_RD, IDLE_WR, IDLE_WR_1, IDLE_WR_2, IDLE_WR_3, SAMPLE_READ, SAMPLE_WRITE, FINISHED);
+    type state_t is (IDLE, IDLE_RD, IDLE_RD_1, IDLE_WR, IDLE_WR_1, IDLE_WR_2, IDLE_WR_3, SAMPLE_READ, SAMPLE_WRITE, FINISHED);
     signal state : state_t;
 
     signal gpif_buf_size        :   unsigned(12 downto 0) ;
@@ -112,7 +112,7 @@ begin
                 tx_fifo_enough <= '0' ;
             end if ;
 
-            if( unsigned(rx_fifo_usedw) > gpif_buf_size ) then
+            if( unsigned(rx_fifo_full&rx_fifo_usedw) > gpif_buf_size ) then
                 rx_fifo_enough <= '1' ;
             else
                 rx_fifo_enough <= '0' ;
@@ -120,12 +120,12 @@ begin
         end if ;
     end process ;
 
-    rx_fifo_read  <= '1' when (state = SAMPLE_READ) else '0';
+    rx_fifo_read  <= '1' when (state = IDLE_RD or state = SAMPLE_READ ) else '0';
     tx_fifo_write <= '1' when (state = SAMPLE_WRITE) else '0';
 
     process(all)
     begin
-        if( state = SAMPLE_READ or state = IDLE_RD or state = FINISHED ) then
+        if( state = SAMPLE_READ or state = IDLE_RD or state = IDLE_RD_1 or state = FINISHED ) then
             gpif_out <= rx_fifo_data ;
         else
             gpif_out <= (others =>'0');
@@ -203,7 +203,7 @@ begin
                 when IDLE =>
                     if( dma_idle = '1' ) then
                         if( should_rx = '1' ) then
-                            dma_downcount <= gpif_buf_size_cond;
+                            dma_downcount <= gpif_buf_size_cond - 2;
 
                             if ( rx_next_dma = '0') then
                                 dma0_rx_ack <= '1';
@@ -255,6 +255,8 @@ begin
                     end if;
                 when IDLE_RD =>
                     state <= SAMPLE_READ;
+                when IDLE_RD_1 =>
+                    state <= SAMPLE_READ ;
                 when SAMPLE_READ =>
                     dma0_rx_ack <= '0';
                     dma1_rx_ack <= '0';

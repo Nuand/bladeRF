@@ -365,11 +365,42 @@ static int change_setting(struct bladerf *dev, uint8_t setting)
     }
 }
 
-static int enable_rf(struct bladerf *dev) {
+int lusb_enable_module(struct bladerf *dev, bladerf_module m, bool enable) {
     int status;
     int32_t fx3_ret = -1;
     int ret_status = 0;
     uint16_t val;
+
+    val = enable ? 1 : 0 ;
+
+    if (dev->legacy) {
+        int32_t val32 = val;
+        status = vendor_command_int(dev, (m == BLADERF_MODULE_RX) ? BLADE_USB_CMD_RF_RX : BLADE_USB_CMD_RF_TX, EP_DIR_OUT, &val32);
+        fx3_ret = 0;
+    } else {
+        status = vendor_command_int_value(
+                dev, (m == BLADERF_MODULE_RX) ? BLADE_USB_CMD_RF_RX : BLADE_USB_CMD_RF_TX,
+                val, &fx3_ret);
+    }
+    if(status) {
+        log_warning("Could not enable RF %s (%d): %s\n",
+                (m == BLADERF_MODULE_RX) ? "RX" : "TX", status, libusb_error_name(status) );
+        ret_status = BLADERF_ERR_UNEXPECTED;
+    } else if(fx3_ret) {
+        log_warning("Error enabling RF %s (%d)\n",
+                (m == BLADERF_MODULE_RX) ? "RX" : "TX", fx3_ret );
+        ret_status = BLADERF_ERR_UNEXPECTED;
+    }
+
+    return ret_status;
+}
+
+
+static int enable_rf(struct bladerf *dev) {
+    int status;
+    /*int32_t fx3_ret = -1;*/
+    int ret_status = 0;
+    /*uint16_t val;*/
 
     status = change_setting(dev, USB_IF_RF_LINK);
     if(status < 0) {
@@ -379,6 +410,7 @@ static int enable_rf(struct bladerf *dev) {
         return status;
     }
     log_verbose( "Changed into RF link mode: %s\n", libusb_error_name(status) ) ;
+/*
     val = 1;
 
     if (dev->legacy) {
@@ -418,9 +450,10 @@ static int enable_rf(struct bladerf *dev) {
                 fx3_ret );
         ret_status = BLADERF_ERR_UNEXPECTED;
     }
-
+*/
     return ret_status;
 }
+
 
 /* FW < 1.5.0  does not have version strings */
 static int lusb_fw_populate_version_legacy(struct bladerf *dev)
@@ -667,11 +700,13 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
         }
     }
 
+
     if (dev) {
         if (lusb_is_fpga_configured(dev)) {
             enable_rf(dev);
         }
     }
+
 
 /* XXX I'd prefer if we made a call here to lusb_close(), but that would result
  *     in an attempt to release interfaces we haven't claimed... thoughts? */
@@ -2075,6 +2110,7 @@ const struct bladerf_fn bladerf_lusb_fn = {
 
     FIELD_INIT(.dac_write, lusb_dac_write),
 
+    FIELD_INIT(.enable_module, lusb_enable_module),
     FIELD_INIT(.rx, lusb_rx),
     FIELD_INIT(.tx, lusb_tx),
 
