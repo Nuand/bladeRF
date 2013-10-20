@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 2.8.3)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/../host/cmake/modules)
 set(VERSION_INFO_MAJOR 1)
-set(VERSION_INFO_MINOR 5)
-set(VERSION_INFO_PATCH 3)
+set(VERSION_INFO_MINOR 6)
+set(VERSION_INFO_PATCH 0)
 set(VERSION_INFO_EXTRA "git")
 include(Version)
 
