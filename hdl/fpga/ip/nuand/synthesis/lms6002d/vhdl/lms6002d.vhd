@@ -57,11 +57,11 @@ begin
 
             rx_sample_valid <= '0' ;
             if( rx_lms_enable = '1' ) then
-                if(rx_lms_iq_sel = '0' ) then
+                if(rx_lms_iq_sel = '1' ) then
                     rx_sample_i <= rx_lms_data ;
-                    rx_sample_valid <= '1' ;
                 else
                     rx_sample_q <= rx_lms_data ;
+                    rx_sample_valid <= '1' ;
                 end if ;
             end if ;
         end if ;
