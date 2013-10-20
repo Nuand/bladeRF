@@ -37,9 +37,11 @@ begin
         elsif( rising_edge( clock ) ) then
             fifo_read <= '0' ;
             if( enable = '1' ) then
-                if( fifo_read = '0' and fifo_empty = '0' and unsigned(fifo_usedw) > 8 ) then
+                if( fifo_read = '0' and fifo_empty = '0' ) then
                     fifo_read <= '1' ;
                 end if ;
+            else
+                fifo_read <= '0' ;
             end if ;
         end if ;
     end process ;

@@ -25,7 +25,7 @@ begin
         variable count  : natural range 0 to 2047 ;
     begin
         if( reset = '1' ) then
-            count := 0 ;
+            count := 256 ;
             tock := '0' ;
             sample_i <= (others =>'0') ;
             sample_q <= (others =>'0') ;

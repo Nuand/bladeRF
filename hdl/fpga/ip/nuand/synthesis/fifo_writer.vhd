@@ -33,11 +33,10 @@ begin
 
     -- Simple concatenation of samples
     fifo_data   <= std_logic_vector(in_q & in_i) ;
-    fifo_write  <= in_valid when overflow_recovering = '0' else '0' ;
+    fifo_write  <= in_valid when overflow_recovering = '0' and fifo_full = '0' else '0' ;
 
     -- Clear out the contents when an overflow has occurred
-    fifo_clear <= '1' when reset = '1' else
-                  overflow_detected ;
+    fifo_clear <= '0' ;
 
     -- Overflow detection
     detect_overflows : process( clock, reset )
@@ -46,7 +45,7 @@ begin
             overflow_detected <= '0' ;
         elsif( rising_edge( clock ) ) then
             overflow_detected <= '0' ;
-            if( enable = '1' and fifo_write = '1' and fifo_full = '1' and fifo_clear = '0' ) then
+            if( enable = '1' and in_valid = '1' and fifo_full = '1' and fifo_clear = '0' ) then
                 overflow_detected <= '1' ;
             end if ;
         end if ;

@@ -834,6 +834,7 @@ const struct bladerf_fn bladerf_linux_fn = {
 
     FIELD_INIT(.dac_write, linux_dac_write),
 
+    FIELD_INIT(.enable_module, NULL),
     FIELD_INIT(.rx, linux_rx),
     FIELD_INIT(.tx, linux_tx),
 
