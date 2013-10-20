@@ -1,13 +1,177 @@
-Format: http://dep.debian.net/deps/dep5
+# vim:sw=1
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: bladerf
+Upstream-Contact: Nuand LLC <bladerf@nuand.com>
 Source: <https://github.com/Nuand/bladeRF/>
-
-Files: debian/*
-Copyright: 2013 Ryan Tucker <rtucker@gmail.com>
-License: GPL-2+
+Comment: Harmony copyright assignment agreements are in effect.
+         Only the host/ directory of the source is used to build the binary
+         Debian packages.
+X-Note: Upstream package source tarball obtained from:
+        https://github.com/Nuand/bladeRF/archive/(LATEST_GIT_REVISION_HERE).tar.gz
+Copyright: 2012-2013 Nuand LLC
 
 Files: *
-Copyright: Please see git log or source files for authorship information
+Copyright: 2013 Nuand LLC
+License: MIT
+Comment: All metadata (Makefiles, CMake scripts, etc.) are MIT license unless
+         otherwise stated.
+
+Files: hdl/*
+       firmware_common/*
+       fx3_firmware/*
+Copyright: 2013 Nuand LLC
+Comment: Not used in building Debian packages
+License: MIT
+
+Files: hdl/fpga/ip/altera/*
+       hdl/quartus/bladerf.qpf
+       hdl/quartus/bladerf.qsf
+       hdl/quartus/constraints/pins.tcl
+Copyright: 1991-2012 Altera Corporation
+Comment: Not used in building Debian packages
+ Boilerplate Altera copyright for Nuand LLC design licensed MIT
+License:
+ Your use of Altera Corporation's design tools, logic functions 
+ and other software and tools, and its AMPP partner logic 
+ functions, and any output files from any of the foregoing 
+ (including device programming or simulation files), and any 
+ associated documentation or information are expressly subject 
+ to the terms and conditions of the Altera Program License 
+ Subscription Agreement, Altera MegaCore Function License 
+ Agreement, or other applicable license agreement, including, 
+ without limitation, that your use is for the sole purpose of 
+ programming logic devices manufactured by Altera and sold by 
+ Altera or its authorized distributors.  Please refer to the 
+ applicable agreement for further details.
+
+Files: hdl/fpga/ip/altera/nios_system/*
+Copyright: 2013 Nuand LLC
+Comment: Not used in building Debian packages
+License: MIT
+
+Files: hdl/fpga/ip/opencores/i2c/*
+Copyright: 2000-2004 Richard Herveille richard@asics.ws
+Comment: Not used in building Debian packages
+License:
+ This source file may be used and distributed without
+ restriction provided that this copyright statement is not
+ removed from the file and that any derivative work contains
+ the original copyright notice and the associated disclaimer.
+ .
+     THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY
+ EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL THE AUTHOR
+ OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+ GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ LIABILITY, WHETHER IN  CONTRACT, STRICT LIABILITY, OR TORT
+ (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ POSSIBILITY OF SUCH DAMAGE.
+
+Files: host/cmake/modules/FindLibPThreadsWin32.cmake
+Copyright: 2008-2009 Hendrik Sattler
+           2013 Nuand LLC
+License: GPL-2+
+Comment: This is file is based off of the FindLibUSB.cmake file written by
+         Hedrik Sattler, from the OpenOBEX project (licensed GPLv2/LGPL).  (If
+         this is not correct, please contact us so we can attribute the author
+         appropriately.)
+         https://github.com/zuckschwerdt/openobex/blob/master/CMakeModules/FindLibUSB.cmake
+         http://dev.zuckschwerdt.org/openobex/
+
+Files: host/cmake/modules/FindLibUSB.cmake
+Copyright: 2008-2009 Hendrik Sattler
+           2013 Nuand LLC
+License: GPL-2+
+Comment: This is a *slightly* modified version of the file written by
+         Hendrik Sattler, from the OpenOBEX project (licensed GPLv2/LGPL).
+         (If this is not correct, please contact us so we can attribute the
+         author appropriately.)
+
+         https://github.com/zuckschwerdt/openobex/blob/master/CMakeModules/FindLibUSB.cmake
+         http://dev.zuckschwerdt.org/openobex/
+
+Files: host/common/include/windows/getopt.h
+       host/common/src/windows/getopt_long.c
+Copyright: 2007-11, Andrea Vedaldi and Brian Fulkerson
+           2012-13, The VLFeat Team
+Comment: Not used in building Debian packages
+License: BSD-2-clause
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are
+ met:
+ 1. Redistributions of source code must retain the above copyright
+ notice, this list of conditions and the following disclaimer.
+ 2. Redistributions in binary form must reproduce the above copyright
+ notice, this list of conditions and the following disclaimer in the
+ documentation and/or other materials provided with the
+ distribution.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Files: host/common/include/windows/inttypes.h
+Copyright: 2006-2013 Alexander Chemeris
+Comment: Not used in building Debian packages
+License: BSD-3-clause
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+ .
+   1. Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.
+ .
+   2. Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+ .
+   3. Neither the name of the product nor the names of its contributors may
+      be used to endorse or promote products derived from this software
+      without specific prior written permission.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+ WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+ EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
+ WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Files: host/drivers/linux/*
+Copyright: 2013 Nuand LLC
+           2013 Robert Ghilduta
+License: GPL-2+
+
+Files: host/libraries/*
+Copyright: 2013 Nuand LLC
+License: LGPL-2.1+
+
+Files: host/utilities/*
+Copyright: 2013 Nuand LLC
+License: GPL-2+
+
+Files: host/utilities/common/include/ezusb.h
+       host/utilities/common/src/ezusb.c
+Copyright: 2001 Stephen Williams (steve@icarus.com)
+           2001-2002 David Brownell (dbrownell@users.sourceforge.net)
+           2008 Roger Williams (rawqux@users.sourceforge.net)
+           2012 Pete Batard (pete@akeo.ie)
+           2013 Federico Manzan (f.manzan@gmail.com)
 License: GPL-2+
 
 License: GPL-2+
@@ -26,3 +190,40 @@ License: GPL-2+
  .
  On Debian systems, the complete text of the GNU General
  Public License version 2 can be found in "/usr/share/common-licenses/GPL-2".
+
+License: LGPL-2.1+
+ This library is free software; you can redistribute it and/or
+ modify it under the terms of the GNU Lesser General Public
+ License as published by the Free Software Foundation; either
+ version 2.1 of the License, or (at your option) any later version.
+ .
+ This library is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ Lesser General Public License for more details.
+ .
+ You should have received a copy of the GNU Lesser General Public
+ License along with this library; if not, see <http://www.gnu.org/licenses/>
+ .
+ On Debian systems, the complete text of the GNU Lesser General
+ Public License version 2.1 can be found in
+ "/usr/share/common-licenses/LGPL-2.1".
+
+License: MIT
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ .
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ .
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
