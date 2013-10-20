@@ -69,16 +69,9 @@ int bladerf_init_device(struct bladerf *dev)
         /* LMS FAQ: Higher LNA Gain */
         bladerf_lms_write( dev, 0x79, 0x37 );
 
-        /* FPGA workaround: Set IQ polarity for RX */
-        /* bladerf_lms_write( dev, 0x5a, 0xa0 ); */
-
         /* Set a default saplerate */
         bladerf_set_sample_rate( dev, BLADERF_MODULE_TX, 1000000, &actual );
         bladerf_set_sample_rate( dev, BLADERF_MODULE_RX, 1000000, &actual );
-
-        /* Enable TX and RX */
-        bladerf_enable_module( dev, BLADERF_MODULE_TX, false );
-        bladerf_enable_module( dev, BLADERF_MODULE_RX, false );
 
         /* Set a default frequency of 1GHz */
         bladerf_set_frequency( dev, BLADERF_MODULE_TX, 1000000000 );
