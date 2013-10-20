@@ -132,7 +132,7 @@ static int extract_field(char *ptr, int len, char *field,
         if (c == 0xff) // flash and OTP are 0xff if they've never been written to
             break;
 
-        a1 = *(unsigned short *)(&ub[c+1]);  // read checksum
+        a1 = LE16_TO_HOST(*(unsigned short *)(&ub[c+1]));  // read checksum
         a2 = crc16mp(0, ub, c+1);  // calculated checksum
 
         if (a1 == a2) {
