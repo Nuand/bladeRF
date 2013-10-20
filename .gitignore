@@ -2,7 +2,7 @@
 *.elf
 *.img
 *.s[a-w][a-z]
-*.~
+*~
 *.cmd
 *.order
 *.rpt
