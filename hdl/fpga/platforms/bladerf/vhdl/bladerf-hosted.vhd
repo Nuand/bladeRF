@@ -342,7 +342,7 @@ begin
       port map (
         clock           =>  rx_clock,
         reset           =>  rx_reset,
-        enable          =>  '1',
+        enable          =>  rx_enable,
 
         mode            =>  '0',
 

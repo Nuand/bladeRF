@@ -156,8 +156,10 @@ void bladerf_close(struct bladerf *dev)
 int bladerf_enable_module(struct bladerf *dev,
                             bladerf_module m, bool enable)
 {
+    int status;
     lms_enable_rffe(dev, m, enable);
-    return 0;
+    status = dev->fn->enable_module(dev, m, enable);
+    return status;
 }
 
 int bladerf_set_loopback(struct bladerf *dev, bladerf_loopback l)

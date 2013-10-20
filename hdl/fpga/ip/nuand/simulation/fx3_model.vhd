@@ -58,18 +58,15 @@ begin
         for i in 1 to 10 loop
             wait until rising_edge( fx3_pclk ) ;
         end loop ;
-        dma_rx_enable <= '0' ;
-        wait ;
+        dma_rx_enable <= '1' ;
         while true loop
-            dma0_rx_reqx <= '0' after 10 us ;
-            dma1_rx_reqx <= '0' after 10 us ;
-            while true loop
-                if( dma0_rx_ack = '1' ) then
-                    exit ;
-                elsif( dma1_rx_ack = '1' ) then
-                    exit ;
-                end if ;
-                wait ;
+            dma0_rx_reqx <= '0' ;
+            wait until rising_edge( fx3_pclk ) and dma0_rx_ack = '1' ;
+            wait until rising_edge( fx3_pclk ) ;
+            wait until rising_edge( fx3_pclk ) ;
+            dma0_rx_reqx <= '1' ;
+            for i in 1 to BLOCK_SIZE loop
+                wait until rising_edge( fx3_pclk ) ;
             end loop ;
         end loop ;
         report "Done with RX sample stream" ;

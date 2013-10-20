@@ -220,7 +220,7 @@ int main(int argc, char *argv[])
     }
 
     if (!status) {
-        status = bladerf_set_sample_rate(dev, test_data.module, 40000000, &actual);
+        status = bladerf_set_sample_rate(dev, test_data.module, 4000000, &actual);
         if (status < 0) {
             fprintf(stderr, "Failed to set sample rate: %s\n",
                     bladerf_strerror(status));

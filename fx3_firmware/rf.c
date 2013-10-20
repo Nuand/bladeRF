@@ -312,7 +312,6 @@ static void NuandRFLinkStart(void)
     /* Set DMA channel transfer size. */
 
     apiRetStatus = CyU3PDmaChannelSetXfer (&glChHandleUtoP, BLADE_DMA_TX_SIZE);
-
     if (apiRetStatus != CY_U3P_SUCCESS) {
         CyU3PDebugPrint(4, "CyU3PDmaChannelSetXfer Failed, Error code = %d\n", apiRetStatus);
         CyFxAppErrorHandler(apiRetStatus);
@@ -324,14 +323,13 @@ static void NuandRFLinkStart(void)
         CyFxAppErrorHandler(apiRetStatus);
     }
 
-
     UartBridgeStart();
     glAppMode = MODE_RF_CONFIG;
 
-    // strobe the RESET pin to the FPGA
-    CyU3PGpioSetValue(GPIO_SYS_RST, CyTrue);
+    // Deassert the RESET pin to the FPGA
+    CyU3PGpioSetValue(GPIO_RX_EN, CyFalse);
+    CyU3PGpioSetValue(GPIO_TX_EN, CyFalse);
     CyU3PGpioSetValue(GPIO_SYS_RST, CyFalse);
-
 }
 
 /* This function stops the slave FIFO loop application. This shall be called
@@ -343,6 +341,8 @@ static void NuandRFLinkStop (void)
     CyU3PReturnStatus_t apiRetStatus = CY_U3P_SUCCESS;
 
     CyU3PGpioSetValue(GPIO_SYS_RST, CyTrue);
+    CyU3PGpioSetValue(GPIO_RX_EN, CyFalse);
+    CyU3PGpioSetValue(GPIO_TX_EN, CyFalse);
 
     /* Flush endpoint memory buffers */
     CyU3PUsbFlushEp(BLADE_RF_SAMPLE_EP_PRODUCER);

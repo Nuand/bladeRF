@@ -323,9 +323,6 @@ CyBool_t NuandHandleVendorRequest(
     break;
 
     case BLADE_USB_CMD_RF_RX:
-        CyU3PGpioSetValue(GPIO_SYS_RST, CyTrue);
-        CyU3PGpioSetValue(GPIO_SYS_RST, CyFalse);
-
         apiRetStatus = CY_U3P_SUCCESS;
         use_feature = wValue;
 
@@ -338,14 +335,11 @@ CyBool_t NuandHandleVendorRequest(
             }
         }
 
-        apiRetStatus = CyU3PGpioSetValue(GPIO_RX_EN, use_feature ? CyTrue : CyFalse);
         CyU3PUsbSendRetCode(apiRetStatus);
+        CyU3PGpioSetValue(GPIO_RX_EN, use_feature ? CyTrue : CyFalse);
     break;
 
     case BLADE_USB_CMD_RF_TX:
-        CyU3PGpioSetValue(GPIO_SYS_RST, CyTrue);
-        CyU3PGpioSetValue(GPIO_SYS_RST, CyFalse);
-
         apiRetStatus = CY_U3P_SUCCESS;
         use_feature = wValue;
 
@@ -358,8 +352,8 @@ CyBool_t NuandHandleVendorRequest(
             }
         }
 
-        apiRetStatus = CyU3PGpioSetValue(GPIO_TX_EN, use_feature ? CyTrue : CyFalse);
         CyU3PUsbSendRetCode(apiRetStatus);
+        CyU3PGpioSetValue(GPIO_TX_EN, use_feature ? CyTrue : CyFalse);
     break;
 
     case BLADE_USB_CMD_BEGIN_PROG:
