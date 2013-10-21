@@ -55,7 +55,7 @@ configure_file(
 # Target to generate the man pages.
 # Note that doxygen prefers to output to lower-cased filenames.  This annoys
 # lintian, for obvious reasons.  So, we create copies with the correct case.
-add_custom_target(utilities_manpages
+add_custom_target(utilities_manpages ALL
     COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/Doxyfile
     COMMAND cp man/man1/bladerf-cli.1 man/man1/bladeRF-cli.1
     COMMAND cp man/man1/bladerf-flash.1 man/man1/bladeRF-flash.1
