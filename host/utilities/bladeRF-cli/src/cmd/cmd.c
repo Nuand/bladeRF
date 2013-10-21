@@ -355,7 +355,22 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.exec, cmd_recover),
         FIELD_INIT(.desc, "Load firmware when operating in FX3 bootloader mode"),
         FIELD_INIT(.help,
-            "recover [device_str] [file]\n"
+            "recover [<bus> <address> <firmware file>]\n"
+            "\n"
+            "Load firmware onto a device running in bootloader mode, or list\n"
+            "all devices currently in bootloader mode.\n"
+            "\n"
+            "With no arguments, this command lists the USB bus and address for\n"
+            "FX3-based devices running in bootloader mode.\n"
+            "\n"
+            "When provided a bus, address, and path to a firmware file, the\n"
+            "specified device will be loaded with and begin executing the\n"
+            "provided firmware.\n"
+            "\n"
+            "In most cases, after successfully loading firmware into the\n"
+            "device's RAM, users should open the device with the \"open\"\n"
+            "command, and write the firmware to flash via \n"
+            "\"load fx3 <firmware file>\"\n"
         )
     },
     {

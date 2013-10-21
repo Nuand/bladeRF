@@ -6,7 +6,7 @@ project(libbladeRF C)
 ################################################################################
 
 set(VERSION_INFO_MAJOR  0)
-set(VERSION_INFO_MINOR  7)
+set(VERSION_INFO_MINOR  8)
 set(VERSION_INFO_PATCH  0)
 set(VERSION_INFO_EXTRA "git")
 include(Version)
@@ -122,7 +122,6 @@ set(LIBBLADERF_SOURCE
 
 if(LIBUSB_FOUND AND ENABLE_BACKEND_LIBUSB)
     set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend/libusb.c)
-    set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} ${BLADERF_HOST_COMMON_SOURCE_DIR}/ezusb.c)
 endif()
 
 if(ENABLE_BACKEND_LINUX_DRIVER)

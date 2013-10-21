@@ -40,6 +40,7 @@ set(FLASH_INCLUDE_DIRS
        ${BLADERF_HOST_COMMON_INCLUDE_DIRS}
        ${libbladeRF_SOURCE_DIR}/include
        ${BLADERF_FW_COMMON_INCLUDE_DIR}
+       ${UTILITIES_COMMON_INC_DIR}
        ${LIBUSB_INCLUDE_DIRS})
 
 include_directories(${FLASH_INCLUDE_DIRS})
@@ -51,7 +52,7 @@ set(BLADERF_FLASH_SOURCE
         src/main.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/log.c
-        ${BLADERF_HOST_COMMON_SOURCE_DIR}/ezusb.c
+        ${UTILITIES_COMMON_SRC}/ezusb.c
 )
 
 if(MSVC)

@@ -123,8 +123,8 @@ Erase part of FX3 flash device
 \par version
 Host software and device version information
 
-\par recover [device_str] [file]
-Load firmware when operating in FX3 bootloader mode
+\par recover [\<bus\> \<address\> \<firmware file\>]
+Load firmware onto a device running in bootloader mode, or list all devices currently in bootloader mode.
 
 \par jump_to_boot
 Jump to FX3 bootloader

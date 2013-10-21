@@ -77,15 +77,16 @@ struct bladerf_fn {
     int (*is_fpga_configured)(struct bladerf *dev);
 
     /* Flash FX3 firmware */
-    int (*recover)(struct bladerf_devinfo *info,
-                    const char *fname);
     int (*flash_firmware)(struct bladerf *dev, uint8_t *image, size_t image_size);
+
+    /* Flash operations */
     int (*erase_flash)(struct bladerf *dev, uint32_t addr, uint32_t len);
     int (*read_flash) (struct bladerf *dev, uint32_t addr, uint8_t *buf,
                        uint32_t len);
     int (*write_flash)(struct bladerf *dev, uint32_t addr, uint8_t *buf,
                        uint32_t len);
     int (*device_reset)(struct bladerf *dev);
+
     int (*jump_to_bootloader)(struct bladerf *dev);
 
     /* Platform information */

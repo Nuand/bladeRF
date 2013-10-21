@@ -10,7 +10,6 @@
 #include <bladeRF.h>
 #include <libusb.h>
 
-#include "ezusb.h"
 #include "bladerf_priv.h"
 #include "backend/libusb.h"
 #include "conversions.h"
@@ -631,10 +630,13 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
                 continue;
             }
 
-            log_warning( "Found FX3 bootloader device libusb:device=%d:%d, could be bladeRF.\n",
-                thisinfo.usb_bus, thisinfo.usb_addr);
-            log_warning( "Use \"recover libusb:device=%d:%d <FX3 firmware>\" to boot bladeRF.\n",
-                thisinfo.usb_bus, thisinfo.usb_addr);
+            log_info("Found FX3 bootloader device on bus=%d addr=%d. "
+                     "This may be a bladeRF.\n",
+                     thisinfo.usb_bus, thisinfo.usb_addr);
+
+            log_info("Use bladeRF-cli command \"recover %d %d "
+                     "<FX3 firmware>\" to boot the bladeRF firmware.\n",
+                      thisinfo.usb_bus, thisinfo.usb_addr);
         }
     }
 
@@ -1202,87 +1204,6 @@ static int lusb_write_flash(struct bladerf *dev, uint32_t addr,
     }
 
     return written;
-}
-
-static int find_fx3_via_info(
-        libusb_context * context,
-        struct bladerf_devinfo *info,
-        libusb_device_handle **handle) {
-    int status, i;
-    struct bladerf_devinfo thisinfo;
-    libusb_device *dev, **devs;
-    libusb_device *found_dev = NULL;
-    ssize_t status_sz;
-
-    status_sz = libusb_get_device_list(context, &devs);
-    if (status_sz < 0) {
-        log_error("libusb_get_device_list() failed: %d %s\n", status_sz, libusb_error_name((int)status_sz));
-        return error_libusb2bladerf((int)status_sz);
-    }
-
-    for (i=0; (dev=devs[i]) != NULL; i++) {
-        if (!lusb_device_is_fx3(dev)) {
-            continue;
-        }
-
-        status = lusb_get_devinfo(dev, &thisinfo);
-        if (status < 0) {
-            log_error( "Could not open bladeRF device: %s\n", libusb_error_name(status) );
-            status = error_libusb2bladerf(status);
-            break;
-        }
-
-        if (bladerf_devinfo_matches(&thisinfo, info)) {
-            found_dev = dev;
-            break;
-        }
-    }
-
-    if (found_dev == NULL) {
-        libusb_free_device_list(devs, 1);
-        log_error("could not find a known device - try specifing bus, dev\n");
-        return BLADERF_ERR_NODEV;
-    }
-
-    status = libusb_open(found_dev, handle);
-    libusb_free_device_list(devs, 1);
-    if (status != 0) {
-        log_error("Error opening device: %s\n", libusb_error_name(status));
-        return error_libusb2bladerf(status);
-    }
-
-    return 0;
-}
-
-static int lusb_recover(
-        struct bladerf_devinfo *devinfo,
-        const char *fname
-        )
-{
-    int status;
-    libusb_device_handle *device = NULL;
-
-    libusb_context *context;
-
-    status = libusb_init(&context);
-    if (status != 0) {
-        log_error( "Could not initialize libusb: %s\n", libusb_error_name(status) );
-        return error_libusb2bladerf(status);
-    }
-
-    status = find_fx3_via_info(context, devinfo, &device);
-    if (status == 0) {
-        log_verbose("Attempting load with file %s\n", fname);
-        status = ezusb_load_ram(device, fname, FX_TYPE_FX3, IMG_TYPE_IMG, 0);
-
-        libusb_close(device);
-    } else {
-        log_error("Failed to locate FX3 bootloader: %s\n", bladerf_strerror(status) );
-    }
-
-    libusb_exit(context);
-
-    return status;
 }
 
 static int lusb_flash_firmware(struct bladerf *dev,
@@ -2073,10 +1994,13 @@ int lusb_probe(struct bladerf_devinfo_list *info_list)
                 continue;
             }
 
-            log_warning( "Found FX3 bootloader device libusb:device=%d:%d, could be bladeRF.\n",
-                info.usb_bus, info.usb_addr);
-            log_warning( "Use \"recover libusb:device=%d:%d <FX3 firmware>\" to boot bladeRF.\n",
-                info.usb_bus, info.usb_addr);
+            log_info("Found FX3 bootloader device on bus=%d addr=%d. "
+                     "This may be a bladeRF.\n",
+                     info.usb_bus, info.usb_addr);
+
+            log_info("Use bladeRF-cli command \"recover %d %d "
+                     "<FX3 firmware>\" to boot the bladeRF firmware.\n",
+                      info.usb_bus, info.usb_addr);
         }
     }
     libusb_free_device_list(list,1);
@@ -2101,8 +2025,8 @@ const struct bladerf_fn bladerf_lusb_fn = {
     FIELD_INIT(.load_fpga, lusb_load_fpga),
     FIELD_INIT(.is_fpga_configured, lusb_is_fpga_configured),
 
-    FIELD_INIT(.recover, lusb_recover),
     FIELD_INIT(.flash_firmware, lusb_flash_firmware),
+
     FIELD_INIT(.erase_flash, lusb_erase_flash),
     FIELD_INIT(.read_flash, lusb_read_flash),
     FIELD_INIT(.write_flash, lusb_write_flash),

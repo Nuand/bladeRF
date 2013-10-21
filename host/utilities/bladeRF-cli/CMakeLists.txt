@@ -6,7 +6,7 @@ project(bladeRF-cli C)
 ################################################################################
 
 set(VERSION_INFO_MAJOR  0)
-set(VERSION_INFO_MINOR  6)
+set(VERSION_INFO_MINOR  7)
 set(VERSION_INFO_PATCH  0)
 set(VERSION_INFO_EXTRA "git")
 include(Version)
@@ -34,6 +34,12 @@ if(ENABLE_LIBTECLA)
     message(STATUS "libtecla support enabled")
 endif()
 
+find_package(LibUSB)
+if (LIBUSB_FOUND)
+    add_definitions(-DCLI_LIBUSB_ENABLED)
+endif()
+
+
 
 ################################################################################
 # Build dependencies
@@ -56,10 +62,17 @@ set(CLI_INCLUDE_DIRS
        ${CMAKE_CURRENT_BINARY_DIR}/src
        ${BLADERF_HOST_COMMON_INCLUDE_DIRS}
        ${libbladeRF_SOURCE_DIR}/include
+       ${BLADERF_FW_COMMON_INCLUDE_DIR}
+       ${UTILITIES_COMMON_INC_DIR}
 )
+
 
 if(ENABLE_LIBTECLA)
     set(CLI_INCLUDE_DIRS ${CLI_INCLUDE_DIRS} ${LIBTECLA_INCLUDE_DIR})
+endif()
+
+if(LIBUSB_FOUND)
+    set(CLI_INCLUDE_DIRS ${CLI_INCLUDE_DIRS} ${LIBUSB_INCLUDE_DIRS})
 endif()
 
 if(MSVC)
@@ -98,6 +111,7 @@ set(BLADERF_CLI_SOURCE
         src/interactive/interactive.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/log.c
+        ${UTILITIES_COMMON_SRC}/ezusb.c
 )
 
 # Select the interactive mode (and script handling) backend
@@ -125,8 +139,7 @@ set(CLI_LINK_LIBRARIES
 )
 
 if(ENABLE_LIBTECLA)
-    # CLI_LINK_LIBRARIES_EXTRA is here for a workaround for the following issue
-    set(CLI_LINK_LIBRARIES ${CLI_LINK_LIBRARIES} ${LIBTECLA_LIBRARIES} ${CLI_LINK_LIBRARIES_EXTRA})
+    set(CLI_LINK_LIBRARIES ${CLI_LINK_LIBRARIES} ${LIBTECLA_LIBRARIES})
 
     # On a few tests Linux distros, libtecla is not build against
     # ncurses. However, folks have reported that builds on OSX use it
@@ -135,6 +148,10 @@ if(ENABLE_LIBTECLA)
     endif(CMAKE_HOST_APPLE)
 
 endif(ENABLE_LIBTECLA)
+
+if(LIBUSB_FOUND)
+    set(CLI_LINK_LIBRARIES ${CLI_LINK_LIBRARIES} ${LIBUSB_LIBRARIES})
+endif()
 
 if(LIBPTHREADSWIN32_FOUND)
     set(CLI_LINK_LIBRARIES ${CLI_LINK_LIBRARIES} ${LIBPTHREADSWIN32_LIBRARIES})

@@ -973,38 +973,6 @@ API_EXPORT int bladerf_flash_fpga(struct bladerf *dev,
                                       const char *fpga_image);
 
 /**
- * Recover specified device using a device identifier string
- *
- * This method recovers a bladeRF that is in the FX3 bootloader by loading the
- * specified firmware image.
- *
- * @param[in]   device_identifier  Device identifier, formatted as described in
- *                                  the bladerf_open() documentation
- *
- * @param[in]   fname              Filename of FX3 firmware to load
- *
- * @return 0 on success, or value from \ref RETCODES list on failure
- */
-API_EXPORT int bladerf_recover(const char *device_identifier,
-                               const char *fname);
-
-/**
- * Recover specified device using a device identifier information structure
- *
- * This method recovers a bladeRF that is in the FX3 bootloader by loading the
- * specified firmware image.
- *
- * @param[in]   devinfo            Device identifier
- *
- * @param[in]   fname              Filename of FX3 firmware to load
- *
- * @return 0 on success, or value from \ref RETCODES list on failure
- */
-API_EXPORT int bladerf_recover_with_devinfo(struct bladerf_devinfo *devinfo,
-                                            const char *fname);
-
-
-/**
  * Erase sectors from FX3 flash device
  *
  * @note Unlike the bladerf_read_flash/bladerf_write_flash functions this

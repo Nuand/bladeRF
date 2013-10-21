@@ -692,39 +692,6 @@ bladerf_dev_speed bladerf_device_speed(struct bladerf *dev)
 /*------------------------------------------------------------------------------
  * Device Programming
  *----------------------------------------------------------------------------*/
-int bladerf_recover_with_devinfo(
-        struct bladerf_devinfo *devinfo,
-        const char *fname
-        )
-{
-    const struct bladerf_fn * fn = backend_getfns(devinfo->backend);
-
-    if (!fn) {
-        return BLADERF_ERR_UNSUPPORTED;
-    }
-
-    if (!fn->recover) {
-        return BLADERF_ERR_UNSUPPORTED;
-    }
-
-    return fn->recover(devinfo, fname);
-}
-
-int bladerf_recover(
-        const char *dev_id,
-        const char *fname
-        )
-{
-    struct bladerf_devinfo devinfo;
-    int status = str2devinfo(dev_id, &devinfo);
-
-    if (!status) {
-        status = bladerf_recover_with_devinfo(&devinfo, fname);
-    }
-
-    return status;
-}
-
 int bladerf_flash_firmware(struct bladerf *dev, const char *firmware_file)
 {
     int status;
