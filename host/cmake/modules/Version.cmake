@@ -1,14 +1,6 @@
-# Copyright 2012 Nuand, LLC.
-#
-# This file is part of the bladeRF project
-#
-# TODO license text here (see top-level COPYING for time being)
-#
 # Portions of this file have been borrowed from and/or inspired by
 # the Version.cmake from the rtl-sdr project.
 #   http://sdr.osmocom.org/trac/wiki/rtl-sdr
-#
-#
 #
 # Provides:
 #   ${VERSION_INFO_BASE}  -  Major.Minor.Patch

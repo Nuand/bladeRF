@@ -1,11 +1,3 @@
-# This file has been adapted the gr-osmosdr project's FindLibbladeRF.cmake file,
-# written by Dimitri Stolnikov.
-#
-#   http://openbsc.osmocom.org/trac/wiki/OsmocomOverview
-#   http://git.osmocom.org/gr-osmosdr/log/cmake/Modules/FindLibbladeRF.cmake
-#
-# License: GPLv3 
-#
 if(DEFINED __INCLUDED_BLADERF_FINDLIBTECLA_CMAKE)
     return()
 endif()

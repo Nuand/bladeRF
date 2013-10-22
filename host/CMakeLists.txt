@@ -1,13 +1,3 @@
-# Copyright 2013 Nuand, LLC.
-#
-# This file is part of the bladeRF project
-#
-# TODO license text here (see top-level COPYING for time being)
-#
-# Portions of this file have been borrowed from and/or inspired by
-# the CMakeLists.txt from the rtl-sdr project.
-#   http://sdr.osmocom.org/trac/wiki/rtl-sdr
-
 cmake_minimum_required(VERSION 2.8.3)
 project(bladeRF C)
 
