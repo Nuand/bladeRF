@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <string.h>
 #include <errno.h>
+#include <inttypes.h>
 #include <libbladeRF.h>
 #include "host_config.h"
 #include "file_ops.h"
@@ -48,7 +49,8 @@ int read_file(const char *filename, uint8_t **buf_ret, size_t *size_ret)
         if (n_read < 0) {
             log_error("fread: %s\n", strerror(errno));
         } else {
-            log_warning("short read: %zd/%zd\n", n_read, sb.st_size);
+            log_warning("short read: " PRIu64 "/" PRIu64  "\n",
+                        (uint64_t)n_read, (uint64_t)sb.st_size);
         }
 
         status = BLADERF_ERR_IO;

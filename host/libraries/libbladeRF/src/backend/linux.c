@@ -344,9 +344,6 @@ static int linux_tx(struct bladerf *dev, bladerf_format format,
             break;
         } else if (i > 0) {
             bytes_written += i;
-        } else {
-            log_warning("\nInterrupted in bladerf_send_c16 (%zd/%zd\n",
-                        bytes_written, bytes_total);
         }
     }
 
@@ -379,9 +376,6 @@ static int linux_rx(struct bladerf *dev, bladerf_format format,
             break;
         } else if (i > 0) {
             bytes_read += i;
-        } else {
-            log_warning("\nInterrupted in bladerf_read_c16 (%zd/%zd\n",
-                        bytes_read, bytes_total);
         }
     }
 

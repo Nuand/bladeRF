@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <inttypes.h>
 #include <bladeRF.h>
 #include <libusb.h>
 
@@ -1891,7 +1892,8 @@ static int lusb_stream(struct bladerf_stream *stream, bladerf_module module)
                 dev->transfer_timeout[module]
                 );
 
-        log_debug("Initial transfer with buffer: %p (i=%zd)\n", buffer, i);
+        log_debug("Initial transfer with buffer: %p (i=" PRIu64 ")\n",
+                  buffer, (uint64_t)i);
 
         stream_data->active_transfers++;
         status = libusb_submit_transfer(stream_data->transfers[i]);
@@ -1908,8 +1910,8 @@ static int lusb_stream(struct bladerf_stream *stream, bladerf_module module)
                 if (--i) {
                     status = libusb_cancel_transfer(stream_data->transfers[i]);
                     if (status < 0) {
-                        log_error("Failed to cancel transfer %zd: %s\n",
-                                i, libusb_error_name(status));
+                        log_error("Failed to cancel transfer " PRIu64 ": %s\n",
+                                  (uint64_t)i, libusb_error_name(status));
                     }
                 }
             }
