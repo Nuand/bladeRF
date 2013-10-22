@@ -57,10 +57,12 @@
  * @param   level       The severity level of the message
  * @param   format      The printf-style format string
  * @param   ...         Optional values for format specifier substitution
- *
- * @return The number of characters written to the log
  */
-int log_write(bladerf_log_level level, const char *format, ...);
+#ifdef LOGGING_ENABLED
+void log_write(bladerf_log_level level, const char *format, ...);
+#else
+#define log_write(level, format, ...) do {} while(0)
+#endif
 
 
 /**
@@ -70,9 +72,12 @@ int log_write(bladerf_log_level level, const char *format, ...);
  * the previous log level.
  *
  * @param   level       The new log level filter value
- *
- * @return The previous log level
  */
-bladerf_log_level log_set_verbosity(bladerf_log_level level);
+#ifdef LOGGING_ENABLED
+void log_set_verbosity(bladerf_log_level level);
+#else
+#define log_set_verbosity(level) do {} while (0)
+#endif
+
 
 #endif

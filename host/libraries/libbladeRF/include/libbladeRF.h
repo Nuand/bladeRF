@@ -244,7 +244,8 @@ typedef enum {
     BLADERF_LOG_LEVEL_INFO,     /**< Information level logging */
     BLADERF_LOG_LEVEL_WARNING,  /**< Warning level logging */
     BLADERF_LOG_LEVEL_ERROR,    /**< Error level logging */
-    BLADERF_LOG_LEVEL_CRITICAL  /**< Fatal error level logging */
+    BLADERF_LOG_LEVEL_CRITICAL, /**< Fatal error level logging */
+    BLADERF_LOG_LEVEL_SILENT    /**< No output */
 } bladerf_log_level;
 
 /**
@@ -1162,10 +1163,8 @@ API_EXPORT void bladerf_version(struct bladerf_version *version);
  * the previous log level.
  *
  * @param   level       The new log level filter value
- *
- * @return The previous log level
  */
-API_EXPORT bladerf_log_level bladerf_log_set_verbosity(bladerf_log_level level);
+API_EXPORT void bladerf_log_set_verbosity(bladerf_log_level level);
 
 /** @} (End of FN_MISC) */
 

@@ -1,13 +1,12 @@
+#ifdef LOGGING_ENABLED
 #include <log.h>
 #include <stdio.h>
 #include <stdarg.h>
 
 static bladerf_log_level filter_level = BLADERF_LOG_LEVEL_INFO;
 
-int log_write(bladerf_log_level level, const char *format, ...)
+void log_write(bladerf_log_level level, const char *format, ...)
 {
-    int ret = 0;
-
     /* Only process this message if its level exceeds the current threshold */
     if (level >= filter_level)
     {
@@ -15,19 +14,13 @@ int log_write(bladerf_log_level level, const char *format, ...)
 
         /* Write the log message */
         va_start(args, format);
-        ret = vfprintf(stderr, format, args);
+        vfprintf(stderr, format, args);
         va_end(args);
     }
-
-    return ret;
 }
 
-bladerf_log_level log_set_verbosity(bladerf_log_level level)
+void log_set_verbosity(bladerf_log_level level)
 {
-    /* Replace the old level with the new level and return the old level */
-    bladerf_log_level old_level = filter_level;
     filter_level = level;
-
-    return old_level;
 }
-
+#endif

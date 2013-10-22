@@ -180,11 +180,12 @@ static bool ezusb_cpucs(libusb_device_handle *device, uint32_t addr, bool doRun)
         /* We may get an I/O error from libusbx as the device disappears */
         ((!doRun) || (status != LIBUSB_ERROR_IO)))
     {
-        const char *mesg = "can't modify CPUCS";
-        if (status < 0)
-            log_error("%s: %s\n", mesg, libusb_error_name(status));
-        else
-            log_info("%s\n", mesg);
+        if (status < 0) {
+            log_error("Can't modify CPUCS: %s\n", mesg,
+                      libusb_error_name(status));
+        } else {
+            log_info("Can't modify CPUCS\n", mesg);
+        }
         return false;
     } else
         return true;
@@ -207,11 +208,12 @@ static bool ezusb_fx3_jump(libusb_device_handle *device, uint32_t addr)
     /* We may get an I/O error from libusbx as the device disappears */
     if ((status != 0) && (status != LIBUSB_ERROR_IO))
     {
-        const char *mesg = "failed to send jump command";
-        if (status < 0)
-            log_error("%s: %s\n", mesg, libusb_error_name(status));
-        else
-            log_info("%s\n", mesg);
+        if (status < 0) {
+            log_error("Failed to send jump command: %s\n",
+                      mesg, libusb_error_name(status));
+        } else {
+            log_info("Failed to send jump command\n", mesg);
+        }
         return false;
     } else
         return true;
@@ -669,7 +671,7 @@ static int fx3_load_ram(libusb_device_handle *device, const char *path)
         fclose(image);
         return -7;
     }
-	
+
     fclose(image);
 
     // transfer execution to Program Entry

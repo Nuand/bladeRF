@@ -920,9 +920,9 @@ void bladerf_version(struct bladerf_version *version)
     version->describe = LIBBLADERF_VERSION;
 }
 
-bladerf_log_level bladerf_log_set_verbosity(bladerf_log_level level)
+void bladerf_log_set_verbosity(bladerf_log_level level)
 {
-    return log_set_verbosity(level);
+    log_set_verbosity(level);
 }
 
 /*------------------------------------------------------------------------------

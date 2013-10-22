@@ -6,7 +6,7 @@ project(libbladeRF C)
 ################################################################################
 
 set(VERSION_INFO_MAJOR  0)
-set(VERSION_INFO_MINOR  8)
+set(VERSION_INFO_MINOR  9)
 set(VERSION_INFO_PATCH  0)
 set(VERSION_INFO_EXTRA "git")
 include(Version)
@@ -33,6 +33,8 @@ endif()
 ################################################################################
 # Configuration options
 ################################################################################
+
+option(ENABLE_LIBBLADERF_LOGGING "Enable log messages in libbladeRF" ON)
 
 ##############################
 # Backend Support
@@ -67,6 +69,11 @@ configure_file(
 ################################################################################
 # Additional compiler options
 ################################################################################
+if(ENABLE_LIBBLADERF_LOGGING)
+    add_definitions(-DLOGGING_ENABLED)
+endif()
+
+
 if("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" OR
     "${CMAKE_C_COMPILER_ID}" STREQUAL "Clang" )
 

@@ -485,7 +485,6 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
     struct bladerf_lusb *lusb = NULL;
     libusb_device **list;
     struct bladerf_devinfo thisinfo;
-    const struct libusb_version *version;
 
     libusb_context *context;
 
@@ -499,8 +498,15 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
         goto lusb_open_done;
     }
 
-    version = libusb_get_version();
-    log_verbose( "Using libusb version %d.%d.%d.%d\n", version->major, version->minor, version->micro, version->nano );
+    /* We can only print this out when log output is enabled, or else we'll
+     * get snagged by -Werror=unused-but-set-variable */
+#   ifdef LOG_ENABLED
+    {
+        const struct libusb_version *version;
+        version = libusb_get_version();
+        log_verbose( "Using libusb version %d.%d.%d.%d\n", version->major, version->minor, version->micro, version->nano );
+    }
+#   endif
 
     count = libusb_get_device_list( context, &list );
     /* Iterate through all the USB devices */
@@ -1042,7 +1048,7 @@ static int verify_flash(struct bladerf *dev, uint32_t addr,
                         uint8_t *image, uint32_t len)
 {
     int status = 0;
-    int page_addr, page_len, i, idx;
+    int page_addr, page_len, i;
 
     uint8_t page_buf[BLADERF_FLASH_PAGE_SIZE];
     uint8_t *image_page;
@@ -1065,12 +1071,11 @@ static int verify_flash(struct bladerf *dev, uint32_t addr,
 
         status = verify_page(page_buf, image_page);
         if(status < 0) {
-            idx = abs(status);
             log_error("bladeRF firmware verification failed at flash "
                       " address 0x%02x. Read 0x%02X, expected 0x%02X\n",
-                      flash_from_pages(i) + idx,
-                      page_buf[idx],
-                      image_page[idx]
+                      flash_from_pages(i) + abs(status),
+                      page_buf[abs(status)],
+                      image_page[abs(status)]
             );
 
             return BLADERF_ERR_IO;
