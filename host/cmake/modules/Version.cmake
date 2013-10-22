@@ -62,15 +62,15 @@ if(GIT_FOUND)
     )
 
     if(GIT_DIRTY)
-        set(GIT_STATE "-dirty")
+        set(GIT_INFO "-${GIT_REV}-dirty")
     else()
-        set(GIT_STATE "")
+        set(GIT_INFO "-${GIT_REV}")
     endif()
 
 else()
     message(WARNING "git missing -- unable to check libladeRF version.")
-    set(GIT_CHANGESET "unknown")   
-    set(GIT_DIRTY "")
+    unset(GIT_REV)
+    unset(GIT_DIRTY)
 endif()
 
 
@@ -81,7 +81,7 @@ set(VERSION_INFO_BASE "${VER_MAJ}.${VER_MIN}.${VER_PAT}")
 
 # Intra-release builds
 if("${VERSION_INFO_EXTRA}" STREQUAL "git")
-    set(VERSION_INFO "${VERSION_INFO_BASE}-git-${GIT_REV}${GIT_STATE}")
+    set(VERSION_INFO "${VERSION_INFO_BASE}-git${GIT_INFO}")
 
 # Versioned releases
 elseif("${VERSION_INFO_EXTRA}" STREQUAL "")
