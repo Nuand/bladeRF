@@ -14,5 +14,11 @@ DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
 #	sed 's/@DEB_HOST_MULTIARCH@/$(DEB_HOST_MULTIARCH)/g' \
 #		debian/TODO.links.in > debian/TODO.links
 
+# To make lintian happy, make the manpages properly cased
+override_dh_auto_install:
+	dh_auto_install
+	mv debian/tmp/usr/share/man/man1/bladerf-cli.1 debian/tmp/usr/share/man/man1/bladeRF-cli.1
+	mv debian/tmp/usr/share/man/man1/bladerf-flash.1 debian/tmp/usr/share/man/man1/bladeRF-flash.1
+
 %:
 	dh $@ 

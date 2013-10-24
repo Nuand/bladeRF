@@ -62,8 +62,6 @@ configure_file(
 # lintian, for obvious reasons.  So, we create copies with the correct case.
 add_custom_target(utilities_manpages ALL
     COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/Doxyfile
-    COMMAND cp man/man1/bladerf-cli.1 man/man1/bladeRF-cli.1
-    COMMAND cp man/man1/bladerf-flash.1 man/man1/bladeRF-flash.1
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen
     COMMENT "Generating bladeRF utilities man pages via Doxygen in: ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen"
 )
@@ -73,8 +71,8 @@ if(NOT DEFINED MAN_INSTALL_DIR)
 endif(NOT DEFINED MAN_INSTALL_DIR)
 
 install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/man/man1/bladeRF-cli.1
-    ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/man/man1/bladeRF-flash.1
+    ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/man/man1/bladerf-cli.1
+    ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/man/man1/bladerf-flash.1
     DESTINATION ${MAN_INSTALL_DIR}/man1/)
 
 endif(DOXYGEN_FOUND)
