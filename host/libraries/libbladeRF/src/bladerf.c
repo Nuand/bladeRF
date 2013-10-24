@@ -177,7 +177,6 @@ int bladerf_enable_module(struct bladerf *dev,
                             bladerf_module m, bool enable)
 {
     int status;
-    lms_enable_rffe(dev, m, enable);
     status = dev->fn->enable_module(dev, m, enable);
     return status;
 }
@@ -656,7 +655,9 @@ int bladerf_stream(struct bladerf_stream *stream, bladerf_module module)
 
     stream->module = module;
     stream->state = STREAM_RUNNING;
+    lms_enable_rffe(dev, module, true);
     status = dev->fn->stream(stream, module);
+    lms_enable_rffe(dev, module, false);
 
     /* Backend return value takes precedence over stream error status */
     return status == 0 ? stream->error_code : status;
