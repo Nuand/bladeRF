@@ -231,7 +231,7 @@ void *rx_task(void *cli_state_arg)
                 if (status == 0) {
                     pthread_mutex_lock(&rx->data_mgmt.lock);
 
-                    rx->data_mgmt.next_idx = 0;
+                    rx->data_mgmt.next_idx = rx->data_mgmt.num_transfers - 1;
 
                     status = bladerf_init_stream(&rx->data_mgmt.stream,
                                 cli_state->dev,
