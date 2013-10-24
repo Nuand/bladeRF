@@ -208,11 +208,14 @@ void NuandFpgaConfigStop(void)
     CyU3PEpConfig_t epCfg;
     CyU3PReturnStatus_t apiRetStatus = CY_U3P_SUCCESS;
 
-    /* Flush the endpoint memory */
-    CyU3PUsbFlushEp(BLADE_FPGA_EP_PRODUCER);
+    /* Abort and clear the channel */
+    CyU3PDmaChannelReset(&glChHandlebladeRFUtoP);
 
     /* Destroy the channel */
     CyU3PDmaChannelDestroy(&glChHandlebladeRFUtoP);
+
+    /* Flush the endpoint memory */
+    CyU3PUsbFlushEp(BLADE_FPGA_EP_PRODUCER);
 
     /* Disable endpoints. */
     CyU3PMemSet((uint8_t *)&epCfg, 0, sizeof (epCfg));
