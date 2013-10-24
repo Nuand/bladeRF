@@ -25,6 +25,7 @@
 
 #include "bladerf_priv.h"
 #include "bladeRF.h"
+#include "lms.h"
 #include "log.h"
 
 #define OTP_BUFFER_SIZE 256
@@ -73,6 +74,10 @@ int bladerf_init_device(struct bladerf *dev)
 
         /* Set the GPIO pins to enable the LMS and select the low band */
         bladerf_config_gpio_write( dev, 0x57 );
+
+        /* Disable the front ends */
+        lms_enable_rffe(dev, BLADERF_MODULE_TX, false);
+        lms_enable_rffe(dev, BLADERF_MODULE_RX, false);
 
         /* Set the internal LMS register to enable RX and TX */
         bladerf_lms_write( dev, 0x05, 0x3e );
