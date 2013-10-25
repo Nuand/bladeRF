@@ -211,11 +211,11 @@ void NuandFpgaConfigStop(void)
     /* Abort and clear the channel */
     CyU3PDmaChannelReset(&glChHandlebladeRFUtoP);
 
-    /* Destroy the channel */
-    CyU3PDmaChannelDestroy(&glChHandlebladeRFUtoP);
-
     /* Flush the endpoint memory */
     CyU3PUsbFlushEp(BLADE_FPGA_EP_PRODUCER);
+
+    /* Destroy the channel */
+    CyU3PDmaChannelDestroy(&glChHandlebladeRFUtoP);
 
     /* Disable endpoints. */
     CyU3PMemSet((uint8_t *)&epCfg, 0, sizeof (epCfg));

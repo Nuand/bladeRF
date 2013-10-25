@@ -177,6 +177,7 @@ int bladerf_enable_module(struct bladerf *dev,
                             bladerf_module m, bool enable)
 {
     int status;
+    log_info("Enable Module: %s - %s\n", (m == BLADERF_MODULE_RX) ? "RX" : "TX", enable ? "True" : "False" ) ;
     status = dev->fn->enable_module(dev, m, enable);
     return status;
 }
