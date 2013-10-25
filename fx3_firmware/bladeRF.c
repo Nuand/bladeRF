@@ -165,7 +165,7 @@ void NuandGPIOReconfigure(CyBool_t fullGpif, CyBool_t warm)
             gpioConfig.driveHighEn = CyFalse;
         } else {
             // output config
-            gpioConfig.outValue = CyTrue;
+            gpioConfig.outValue = CyFalse;
             gpioConfig.driveLowEn = CyTrue;
             gpioConfig.driveHighEn = CyTrue;
             gpioConfig.inputEn = CyFalse;
@@ -330,7 +330,8 @@ CyBool_t NuandHandleVendorRequest(
     CyU3PReturnStatus_t apiRetStatus = CY_U3P_SUCCESS;
     int retStatus;
     uint16_t readC;
-
+    CyBool_t txen, rxen;
+    txen = rxen = CyFalse ;
     isHandled = CyTrue;
 
     switch (bRequest)
@@ -354,8 +355,15 @@ CyBool_t NuandHandleVendorRequest(
             }
         }
 
-        CyU3PUsbSendRetCode(apiRetStatus);
+        CyU3PGpioGetValue(GPIO_TX_EN, &txen) ;
+        CyU3PGpioGetValue(GPIO_RX_EN, &rxen) ;
+        if (txen == CyFalse && rxen == CyFalse) {
+            CyU3PGpioSetValue(GPIO_SYS_RST, CyTrue) ;
+            CyU3PGpioSetValue(GPIO_SYS_RST, CyFalse);
+        }
+
         CyU3PGpioSetValue(GPIO_RX_EN, use_feature ? CyTrue : CyFalse);
+        CyU3PUsbSendRetCode(apiRetStatus);
     break;
 
     case BLADE_USB_CMD_RF_TX:
@@ -371,8 +379,15 @@ CyBool_t NuandHandleVendorRequest(
             }
         }
 
-        CyU3PUsbSendRetCode(apiRetStatus);
+        CyU3PGpioGetValue(GPIO_TX_EN, &txen) ;
+        CyU3PGpioGetValue(GPIO_RX_EN, &rxen) ;
+        if (txen == CyFalse && rxen == CyFalse) {
+            CyU3PGpioSetValue(GPIO_SYS_RST, CyTrue) ;
+            CyU3PGpioSetValue(GPIO_SYS_RST, CyFalse);
+        }
+
         CyU3PGpioSetValue(GPIO_TX_EN, use_feature ? CyTrue : CyFalse);
+        CyU3PUsbSendRetCode(apiRetStatus);
     break;
 
     case BLADE_USB_CMD_BEGIN_PROG:

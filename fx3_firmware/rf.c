@@ -224,6 +224,10 @@ static void NuandRFLinkStart(void)
 
     NuandAllowSuspend(CyFalse);
     NuandGPIOReconfigure(CyTrue, CyTrue);
+
+    CyU3PGpioSetValue(GPIO_SYS_RST, CyTrue);
+    CyU3PGpioSetValue(GPIO_RX_EN, CyFalse);
+    CyU3PGpioSetValue(GPIO_TX_EN, CyFalse);
     CyU3PGpioSetValue(GPIO_SYS_RST, CyFalse);
 
     /* Load the GPIF configuration for loading the RF transceiver */
@@ -348,10 +352,6 @@ static void NuandRFLinkStart(void)
     UartBridgeStart();
     glAppMode = MODE_RF_CONFIG;
 
-    // Deassert the RESET pin to the FPGA
-    CyU3PGpioSetValue(GPIO_RX_EN, CyFalse);
-    CyU3PGpioSetValue(GPIO_TX_EN, CyFalse);
-    CyU3PGpioSetValue(GPIO_SYS_RST, CyFalse);
 }
 
 /* This function stops the slave FIFO loop application. This shall be called
