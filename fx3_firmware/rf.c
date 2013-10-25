@@ -224,6 +224,7 @@ static void NuandRFLinkStart(void)
 
     NuandAllowSuspend(CyFalse);
     NuandGPIOReconfigure(CyTrue, CyTrue);
+    CyU3PGpioSetValue(GPIO_SYS_RST, CyFalse);
 
     /* Load the GPIF configuration for loading the RF transceiver */
     apiRetStatus = CyU3PGpifLoad(&Rflink_CyFxGpifConfig);
