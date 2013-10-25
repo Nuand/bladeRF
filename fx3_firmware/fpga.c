@@ -232,6 +232,7 @@ void NuandFpgaConfigStop(void)
 
     NuandAllowSuspend(CyTrue);
     glAppMode = MODE_NO_CONFIG;
+    CyU3PGpioSetValue(GPIO_SYS_RST, CyTrue);
 }
 
 uint8_t FPGA_status_bits[] = {
