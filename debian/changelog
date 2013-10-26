@@ -1,3 +1,15 @@
+bladerf (0.9.0-2) unstable; urgency=low
+
+  * Renaming binary packages; see a7d88d0 for more info
+
+ -- Ryan Tucker <rtucker@gmail.com>  Fri, 25 Oct 2013 20:48:48 -0400
+
+bladerf (0.9.0-1) unstable; urgency=low
+
+  * Update changelog to match minor version bump in commit 7a1b2c1
+
+ -- Ryan Tucker <rtucker@gmail.com>  Mon, 21 Oct 2013 19:30:38 -0400
+
 bladerf (0~20131006-1) UNRELEASED; urgency=low
 
   * Another experimental release

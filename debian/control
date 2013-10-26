@@ -14,6 +14,7 @@ Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends}
 Depends: ${shlibs:Depends}, ${misc:Depends}, libusb-1.0-0 (>= 1.0.12)
+Recommends: bladerf-host
 Description: Interface to the nuand bladeRF software-defined radio device
  The nuand bladeRF is an open-source software-defined radio (SDR) system,
  comprised of an RF transceiver, a field-programmable gate array (FPGA),
@@ -22,13 +23,13 @@ Description: Interface to the nuand bladeRF software-defined radio device
  .
  This package provides the host library.
 
-Package: libbladerf0-dev
+Package: libbladerf-dev
 Section: libdevel
 Architecture: any
 Multi-Arch: same
 Depends: libbladerf0 (= ${binary:Version}), libc6-dev | libc-dev, ${misc:Depends}
-Provides: libbladerf-dev
-Conflicts: libbladerf-dev
+Replaces: libbladerf0-dev (<< 0.9.0)
+Breaks: libbladerf0-dev (<< 0.9.0)
 Description: Interface to the nuand bladeRF software-defined radio device (header files)
  The nuand bladeRF is an open-source software-defined radio (SDR) system,
  comprised of an RF transceiver, a field-programmable gate array (FPGA),
@@ -38,11 +39,14 @@ Description: Interface to the nuand bladeRF software-defined radio device (heade
  This package contains the header files required for compiling bladeRF
  applications.
 
-Package: bladerf
-Section: comm
+Package: bladerf-host
+Section: science
 Architecture: any
 Multi-Arch: foreign
 Depends: libbladerf0 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Suggests: gnuradio
+Replaces: bladerf (<< 0.9.0)
+Breaks: bladerf (<< 0.9.0)
 Description: Interface to the nuand bladeRF software-defined radio device (tools)
  The nuand bladeRF is an open-source software-defined radio (SDR) system,
  comprised of an RF transceiver, a field-programmable gate array (FPGA),
@@ -50,3 +54,17 @@ Description: Interface to the nuand bladeRF software-defined radio device (tools
  libraries and drivers to facilitate interaction with the device.
  .
  This package provides command-line tools for controlling the bladeRF.
+
+Package: libbladerf0-dev
+Depends: libbladerf-dev, ${misc:Depends}
+Architecture: all
+Section: oldlibs
+Description: transitional dummy package for libbladerf-dev
+ This is a transitional dummy package.  It can safely be removed.
+
+Package: bladerf
+Depends: bladerf-host, ${misc:Depends}
+Architecture: all
+Section: oldlibs
+Description: transitional dummy package for bladerf-host
+ This is a transitional dummy package.  It can safely be removed.
