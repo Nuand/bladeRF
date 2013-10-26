@@ -42,4 +42,4 @@ For more information about developing and debugging FX3 firmware, see the [FX3 P
 ## Pre-built Firmware Binaries ##
 Pre-built binaries are available at: http://www.nuand.com/fx3
 
-The latest image is pointed to by: http://www.nuand.com/latest.img
+The latest image is pointed to by: http://www.nuand.com/fx3/latest.img
