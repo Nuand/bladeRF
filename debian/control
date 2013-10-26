@@ -28,8 +28,8 @@ Section: libdevel
 Architecture: any
 Multi-Arch: same
 Depends: libbladerf0 (= ${binary:Version}), libc6-dev | libc-dev, ${misc:Depends}
-XXX-Replaces: libbladerf0-dev (<< FIXMEFIXMEFIXME)
-XXX-Breaks: libbladerf0-dev (<< FIXMEFIXMEFIXME)
+Replaces: libbladerf0-dev (<< 0.9.0)
+Breaks: libbladerf0-dev (<< 0.9.0)
 Description: Interface to the nuand bladeRF software-defined radio device (header files)
  The nuand bladeRF is an open-source software-defined radio (SDR) system,
  comprised of an RF transceiver, a field-programmable gate array (FPGA),
@@ -45,8 +45,8 @@ Architecture: any
 Multi-Arch: foreign
 Depends: libbladerf0 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
 Suggests: gnuradio
-XXX-Replaces: bladerf (<< FIXMEFIXMEFIXME)
-XXX-Breaks: bladerf (<< FIXMEFIXMEFIXME)
+Replaces: bladerf (<< 0.9.0)
+Breaks: bladerf (<< 0.9.0)
 Description: Interface to the nuand bladeRF software-defined radio device (tools)
  The nuand bladeRF is an open-source software-defined radio (SDR) system,
  comprised of an RF transceiver, a field-programmable gate array (FPGA),
