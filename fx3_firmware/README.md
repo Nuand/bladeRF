@@ -40,11 +40,6 @@ For more information about developing and debugging FX3 firmware, see the [FX3 P
 [fx3_prog_manual]: http://www.cypress.com/?rID=52250  (FX3 Programmer's Manual)
 
 ## Pre-built Firmware Binaries ##
-Pre-built binaries are not being posted to a "release page" yet due to the volatility of the current firmware. Once we reach a stable point in the codebase, this file will be update to point to said page.  Bear with us, and check back soon!
+Pre-built binaries are available at: http://www.nuand.com/fx3
 
-For the time being, we'll try to keep an updated link to a development build here:
-
-- Built: 2013-09-21 23:12
-- MD5:  2264095e58ed29f1d5a542c6693c2267
-- Link: http://nuand.com/fx3/latest.img
-
+The latest image is pointed to by: http://www.nuand.com/latest.img
