@@ -14,6 +14,20 @@ option(ENABLE_FX3_BUILD
 )
 
 #####################################################################
+# Flag for development version vs tagged release
+#####################################################################
+option(TAGGED_RELEASE
+       "Indicates that this is a tagged release.  Drops '-git' flag."
+       OFF
+)
+
+if(TAGGED_RELEASE)
+    set(VERSION_INFO_EXTRA "")
+else()
+    set(VERSION_INFO_EXTRA "git")
+endif()
+
+#####################################################################
 # Build components
 #####################################################################
 if(ENABLE_HOST_BUILD)
