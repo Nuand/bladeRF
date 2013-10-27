@@ -5,14 +5,23 @@
 # Uncomment this to turn on verbose mode.
 export DH_VERBOSE=1
 
-# Determine our target architecture
-DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
+# Test to see if we're a snapshot build by looking for the word
+# "-git" in our version.  If so, infer our current version and inject
+# it into the build process.
+DEB_VERSION_STRING ?= $(shell dpkg-parsechangelog | grep ^Version: | cut -d' ' -f2-)
 
-# Recommended by http://www.debian.org/doc/manuals/maint-guide/advanced.en.html
-#override_dh_auto_configure:
-#	dh_auto_configure
-#	sed 's/@DEB_HOST_MULTIARCH@/$(DEB_HOST_MULTIARCH)/g' \
-#		debian/TODO.links.in > debian/TODO.links
+ifneq (,$(findstring SNAPSHOT,$(DEB_VERSION_STRING)))
+	# Format is like: 0.9.0+1SNAPSHOT20131027041813-gitedc468d~saucy
+	DVS_SPLIT := $(subst ~, ,$(subst -git, ,$(DEB_VERSION_STRING)))
+	# Format is like: 0.9.0+1SNAPSHOT20131027041813 edc468d saucy
+	DEB_VERSION_GITHASH := $(word 2,$(DVS_SPLIT))
+	DEB_VERSION_SERIES := $(word 3,$(DVS_SPLIT))
+	# Produce a version suffix like: git-edc468d-ppasaucy
+	VERSION_INFO_OVERRIDE := git-$(DEB_VERSION_GITHASH)-ppa$(DEB_VERSION_SERIES)
+endif
+
+override_dh_auto_configure:
+	dh_auto_configure -- -DVERSION_INFO_OVERRIDE:STRING=$(VERSION_INFO_OVERRIDE) -DENABLE_HOST_BUILD=ON -DENABLE_FX3_BUILD=OFF
 
 # To make lintian happy, make the manpages properly cased
 override_dh_auto_install:

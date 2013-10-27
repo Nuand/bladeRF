@@ -39,6 +39,7 @@ more information.
 
 | Option                                    | Description
 | ----------------------------------------- |:---------------------------------------------------------------------------------------------------------|
+| -DENABLE_HOST_BUILD=\<ON/OFF\>            | Enables building of the Host components overall. Default is ON.                                          |
 | -DCMAKE_BUILD_TYPE=\<type\>               | Set <type> to "Debug" to enable a debug build. "Release" is the default.                                 |
 | -DCMAKE_C_COMPILER=\<compiler\>           | Specify the compiler to use. Otherwise, CMake will determine a default.                                  |
 | -DENABLE_GDB_EXTENSIONS=\<ON/OFF\>        | GCC & GDB users may want to set this to use -ggdb3 instead of -g. Disabled by default.                   |
