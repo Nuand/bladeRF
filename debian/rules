@@ -18,10 +18,10 @@ ifneq (,$(findstring SNAPSHOT,$(DEB_VERSION_STRING)))
 	DEB_VERSION_SERIES := $(word 3,$(DVS_SPLIT))
 	# Produce a version suffix like: git-edc468d-ppasaucy
 	VERSION_INFO_OVERRIDE := git-$(DEB_VERSION_GITHASH)-ppa$(DEB_VERSION_SERIES)
+endif
 
 override_dh_auto_configure:
-	dh_auto_configure -- -DVERSION_INFO_OVERRIDE:STRING=$(VERSION_INFO_OVERRIDE)
-endif
+	dh_auto_configure -- -DVERSION_INFO_OVERRIDE:STRING=$(VERSION_INFO_OVERRIDE) -DENABLE_HOST_BUILD=ON -DENABLE_FX3_BUILD=OFF
 
 # To make lintian happy, make the manpages properly cased
 override_dh_auto_install:
