@@ -47,32 +47,37 @@ endif(${HAVE_LIBUSB_HOTPLUG} MATCHES "1")
 ################################################################################
 # Doxygen documentation, for man pages
 ################################################################################
-find_package(Doxygen)
+if(BUILD_DOCUMENTATION)
+    find_package(Doxygen)
 
-if(DOXYGEN_FOUND)
+    if(DOXYGEN_FOUND)
+        message(STATUS "Configured to build man pages for bladeRF utilities.")
+        configure_file(
+            ${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/Doxyfile.in
+            ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/Doxyfile
+            @ONLY
+            )
 
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/Doxyfile.in
-    ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/Doxyfile
-    @ONLY
-)
+        # Target to generate the man pages.
+        # Note that doxygen prefers to output to lower-cased filenames.  This annoys
+        # lintian, for obvious reasons.  So, we create copies with the correct case.
+        add_custom_target(utilities_manpages ALL
+            COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/Doxyfile
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen
+            COMMENT "Generating bladeRF utilities man pages via Doxygen in: ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen"
+            )
 
-# Target to generate the man pages.
-# Note that doxygen prefers to output to lower-cased filenames.  This annoys
-# lintian, for obvious reasons.  So, we create copies with the correct case.
-add_custom_target(utilities_manpages ALL
-    COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/Doxyfile
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen
-    COMMENT "Generating bladeRF utilities man pages via Doxygen in: ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen"
-)
+        if(NOT DEFINED MAN_INSTALL_DIR)
+            set(MAN_INSTALL_DIR share/man)
+        endif(NOT DEFINED MAN_INSTALL_DIR)
 
-if(NOT DEFINED MAN_INSTALL_DIR)
-	set(MAN_INSTALL_DIR share/man)
-endif(NOT DEFINED MAN_INSTALL_DIR)
+        install(FILES
+            ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/man/man1/bladerf-cli.1
+            ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/man/man1/bladerf-flash.1
+            DESTINATION ${MAN_INSTALL_DIR}/man1/
+            )
+    else(DOXYGEN_FOUND)
+        message(WARNING "Could not find Doxygen. libbladeRF API documentation will not be built.")
+    endif(DOXYGEN_FOUND)
+endif(BUILD_DOCUMENTATION)
 
-install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/man/man1/bladerf-cli.1
-    ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/man/man1/bladerf-flash.1
-    DESTINATION ${MAN_INSTALL_DIR}/man1/)
-
-endif(DOXYGEN_FOUND)

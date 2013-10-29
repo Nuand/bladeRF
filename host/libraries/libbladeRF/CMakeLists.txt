@@ -216,20 +216,22 @@ add_subdirectory(tests)
 ################################################################################
 # Doxygen documentation
 ################################################################################
-find_package(Doxygen)
+if(BUILD_DOCUMENTATION)
+    find_package(Doxygen)
+    if(DOXYGEN_FOUND)
+        message(STATUS "Configured to build libbladeRF API documentation.")
+        configure_file(
+            ${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/Doxyfile.in
+            ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/Doxyfile
+            @ONLY
+            )
 
-if(DOXYGEN_FOUND)
-
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/Doxyfile.in
-    ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/Doxyfile
-    @ONLY
-)
-
-add_custom_target(doc
-        ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/Doxyfile
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen
-        COMMENT "Generating libbladeRF API documentation via Doxygen in: ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen"
-)
-
-endif(DOXYGEN_FOUND)
+        add_custom_target(doc
+            ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/Doxyfile
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen
+            COMMENT "Generating libbladeRF API documentation via Doxygen in: ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen"
+        )
+    else(DOXYGEN_FOUND)
+        message(WARNING "Could not find Doxygen. libbladeRF API documentation will not be built.")
+    endif(DOXYGEN_FOUND)
+endif(BUILD_DOCUMENTATION)

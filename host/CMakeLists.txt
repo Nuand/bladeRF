@@ -36,6 +36,10 @@ option(ENABLE_LOG_FILE_INFO
         "Enable source file and line number information in log messages."
         OFF)
 
+option(BUILD_DOCUMENTATION
+        "Enable build and install of manpages and other documentation."
+        OFF)
+
 if(ENABLE_LOG_FILE_INFO)
     add_definitions(-DLOG_INCLUDE_FILE_INFO)
 endif()

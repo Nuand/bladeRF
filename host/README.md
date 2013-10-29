@@ -41,6 +41,7 @@ more information.
 | ----------------------------------------- |:---------------------------------------------------------------------------------------------------------|
 | -DENABLE_HOST_BUILD=\<ON/OFF\>            | Enables building of the Host components overall. Default is ON.                                          |
 | -DCMAKE_BUILD_TYPE=\<type\>               | Set <type> to "Debug" to enable a debug build. "Release" is the default.                                 |
+| -DBUILD_DOCUMENTATION=\<ON/OFF\>          | Build libbladeRF API documentation and manpages for utilities. OFF by default.                           |
 | -DCMAKE_C_COMPILER=\<compiler\>           | Specify the compiler to use. Otherwise, CMake will determine a default.                                  |
 | -DENABLE_GDB_EXTENSIONS=\<ON/OFF\>        | GCC & GDB users may want to set this to use -ggdb3 instead of -g. Disabled by default.                   |
 | -DENABLE_BACKEND_LIBUSB=\<ON/OFF\>        | Enables libusb backend in libbladeRF. Enabled by default.                                                |
