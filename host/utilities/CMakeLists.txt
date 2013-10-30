@@ -58,9 +58,6 @@ if(BUILD_DOCUMENTATION)
             @ONLY
             )
 
-        # Target to generate the man pages.
-        # Note that doxygen prefers to output to lower-cased filenames.  This annoys
-        # lintian, for obvious reasons.  So, we create copies with the correct case.
         add_custom_target(utilities_manpages ALL
             COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/Doxyfile
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen
@@ -77,7 +74,7 @@ if(BUILD_DOCUMENTATION)
             DESTINATION ${MAN_INSTALL_DIR}/man1/
             )
     else(DOXYGEN_FOUND)
-        message(WARNING "Could not find Doxygen. libbladeRF API documentation will not be built.")
+        message(WARNING "Could not find Doxygen. bladeRF man pages will not be built.")
     endif(DOXYGEN_FOUND)
 endif(BUILD_DOCUMENTATION)
 
