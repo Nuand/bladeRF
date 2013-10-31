@@ -26,6 +26,7 @@
 #include "cyu3gpif.h"
 #include "cyfxgpif_RFlink.h"
 #include "cyu3uart.h"
+#include "cyu3pib.h"
 
 static CyU3PDmaChannel glChHandlebladeRFUtoUART;   /* DMA Channel for U2P transfers */
 static CyU3PDmaChannel glChHandlebladeRFUARTtoU;   /* DMA Channel for U2P transfers */
@@ -224,6 +225,30 @@ static void NuandRFLinkStart(void)
 
     NuandAllowSuspend(CyFalse);
     NuandGPIOReconfigure(CyTrue, CyTrue);
+
+    /* Restart the PIB block, due to a bug where 16-bit to 32-bit GPIF transitions
+       mess up the first DMA transaction.  Restarting the PIB wipes all of the GPIF
+       configurations */
+    CyU3PPibClock_t pibClock;
+
+    apiRetStatus = CyU3PPibDeInit();
+    if (apiRetStatus != CY_U3P_SUCCESS) {
+        CyU3PDebugPrint(4, "P-Port DeInitialization failed, Error Code = %d\n", apiRetStatus);
+        CyFxAppErrorHandler(apiRetStatus);
+    }
+
+    /* Initialize the P-Port here */
+    pibClock.clkDiv = 4;
+    pibClock.clkSrc = CY_U3P_SYS_CLK;
+    pibClock.isHalfDiv = CyFalse;
+
+    /* Enable DLL for async GPIF */
+    pibClock.isDllEnable = CyFalse;
+    apiRetStatus = CyU3PPibInit(CyTrue, &pibClock);
+    if (apiRetStatus != CY_U3P_SUCCESS) {
+        CyU3PDebugPrint(4, "P-Port Initialization failed, Error Code = %d\n", apiRetStatus);
+        CyFxAppErrorHandler(apiRetStatus);
+    }
 
     CyU3PGpioSetValue(GPIO_SYS_RST, CyTrue);
     CyU3PGpioSetValue(GPIO_RX_EN, CyFalse);
