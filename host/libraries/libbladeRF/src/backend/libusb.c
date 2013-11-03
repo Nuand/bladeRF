@@ -1511,6 +1511,20 @@ static int lusb_config_gpio_read(struct bladerf *dev, uint32_t *val)
     return status;
 }
 
+// static int lusb_config_set_dc_correction(struct bladerf *dev, uint16_t dc_real, uint16_t dc_imag)
+// {
+//     struct uart_cmd cmd;
+//     struct bladerf_lusb *lusb = dev->backend;
+
+//     cmd.addr = 
+//     access_peripheral(lusb, UART_PKT_DEV_GPIO, UART_PKT_MODE_DIR_READ,&cmd);
+//     if (status < 0){
+//             break;
+//         }
+
+
+// }
+
 static int lusb_si5338_write(struct bladerf *dev, uint8_t addr, uint8_t data)
 {
     int status;
