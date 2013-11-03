@@ -134,6 +134,12 @@ configure_file(
     @ONLY
 )
 
+# OSX
+if(APPLE)
+   set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+   set(CMAKE_INSTALL_NAME_DIR ${CMAKE_INSTALL_PREFIX}/lib)
+endif()
+
 ################################################################################
 # Process subdirectories
 ################################################################################
