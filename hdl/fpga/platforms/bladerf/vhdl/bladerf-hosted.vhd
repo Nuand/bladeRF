@@ -50,7 +50,9 @@ architecture hosted_bladerf of bladerf is
         oc_i2c_sda_padoen_o : out std_logic;
         oc_i2c_arst_i       : in  std_logic;
         oc_i2c_scl_pad_i    : in  std_logic;
-        gpio_export         : out std_logic_vector(31 downto 0)
+        gpio_export         : out std_logic_vector(31 downto 0); 
+        correction_dc_export : out std_logic_vector(31 downto 0);
+        correction_phase_gain_export : out std_logic_vector(31 downto 0)
       );
     end component nios_system;
 
@@ -63,6 +65,10 @@ architecture hosted_bladerf of bladerf is
     signal \80MHz reset\    : std_logic ;
 
     signal nios_gpio        : std_logic_vector(31 downto 0) := x"0000_00d7" ;
+
+
+    signal correction_dc_export :  std_logic_vector(31 downto 0);
+    signal correction_phase_gain_export :  std_logic_vector(31 downto 0);
 
     signal i2c_scl_in       : std_logic ;
     signal i2c_scl_out      : std_logic ;
@@ -150,14 +156,21 @@ architecture hosted_bladerf of bladerf is
     signal rx_mux_valid         :   std_logic ;
 
 
+    signal correction_valid : std_logic;
 
-
-    signal PHASE_OFFSET_SIGNED :  signed(15 downto 0) := to_signed(0,16);--to_signed(integer(round(real(2**Q_SCALE) * PHASE_OFFSET)),DC_WIDTH);
-    constant DC_OFFSET_REAL_SIGNED :  signed(15 downto 0) := to_signed(0,16);--to_signed(integer(round(real(2**Q_SCALE) * DC_OFFSET_REAL)),DC_WIDTH);
-    constant DC_OFFSET_IMAG_SIGNED :  signed(15 downto 0) :=-to_signed(0,16);--to_signed(integer(round(real(2**Q_SCALE) * DC_OFFSET_IMAG)),DC_WIDTH);
-    constant GAIN_OFFSET_SIGNED :  signed(15 downto 0) := to_signed(1,16);--to_signed(integer(round(real(2**Q_SCALE) * GAIN_OFFSET)),DC_WIDTH);
+    signal correction_phase :  signed(15 downto 0);--to_signed(integer(round(real(2**Q_SCALE) * PHASE_OFFSET)),DC_WIDTH);
+    signal correction_gain  :  signed(15 downto 0);--to_signed(integer(round(real(2**Q_SCALE) * DC_OFFSET_REAL)),DC_WIDTH);
+    signal correction_dc_real :  signed(15 downto 0);--to_signed(integer(round(real(2**Q_SCALE) * DC_OFFSET_IMAG)),DC_WIDTH);
+    signal correction_dc_imag :  signed(15 downto 0);--to_signed(integer(round(real(2**Q_SCALE) * GAIN_OFFSET)),DC_WIDTH);
 
 begin
+
+    correction_phase <= signed(correction_phase_gain_export(31 downto 16));
+    correction_gain  <= signed(correction_phase_gain_export(15 downto 0));
+    correction_dc_real <= signed(correction_dc_export(31 downto 16));
+    correction_dc_imag <= signed(correction_dc_export(15 downto 0));
+    correction_valid <= '1';
+
 
     -- Create 80MHz from 38.4MHz coming from the c4_clock source
     U_pll : entity work.pll
@@ -378,11 +391,10 @@ begin
             out_imag => tx_sample_q,
             out_valid => tx_sample_valid,
 
-            dc_real => DC_OFFSET_REAL_SIGNED,
-            dc_imag => DC_OFFSET_IMAG_SIGNED,
-            gain => GAIN_OFFSET_SIGNED,
-            phase => PHASE_OFFSET_SIGNED,
-
+            dc_real => correction_dc_real,
+            dc_imag => correction_dc_imag,
+            gain => correction_gain,
+            phase => correction_phase,
             correction_valid => correction_valid
       );
 
@@ -487,6 +499,8 @@ begin
         uart_rxd            => fx3_uart_txd,
         uart_txd            => fx3_uart_rxd,
         gpio_export         => nios_gpio,
+        correction_dc_export            => correction_dc_export,
+        correction_phase_gain_export    => correction_phase_gain_export,
         oc_i2c_scl_pad_o    => i2c_scl_out,
         oc_i2c_scl_padoen_o => i2c_scl_oen,
         oc_i2c_sda_pad_i    => i2c_sda_in,
