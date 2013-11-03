@@ -290,14 +290,29 @@ int main()
                       }
                   }
                   if ((mode & UART_PKT_MODE_DEV_MASK) == UART_PKT_DEV_GPIO) {
+                    uint8_t device;
+                    switch(cmd_ptr->addr)
+                    {
+                        case 0:case 1:case 2: case 3: 
+                            device = PIO_0_BASE;break;
+                        case 4: case 5: case 6: case 7:
+                            device = CORRECTION_DC_BASE;break;
+                        case 8: case 9: case 10: case 11:
+                            device = CORRECTION_PHASE_GAIN_BASE;break;
+                        default:
+                            //error
+                            device = PIO_0_BASE; 
+                    }
+
+                    cmd_ptr->addr -= device;
                       if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_READ) {
-                          cmd_ptr->data = (IORD_ALTERA_AVALON_PIO_DATA(PIO_0_BASE)) >> (cmd_ptr->addr * 8);
+                          cmd_ptr->data = (IORD_ALTERA_AVALON_PIO_DATA(device)) >> (cmd_ptr->addr * 8);
                       } else if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_WRITE) {
                           uint32_t tmpvar;
-                          tmpvar = IORD_ALTERA_AVALON_PIO_DATA(PIO_0_BASE);
+                          tmpvar = IORD_ALTERA_AVALON_PIO_DATA(device);
                           tmpvar &= ~ (0xff << (8 * cmd_ptr->addr));
                           tmpvar |= cmd_ptr->data << (8 * cmd_ptr->addr);
-                          IOWR_ALTERA_AVALON_PIO_DATA(PIO_0_BASE, tmpvar);
+                          IOWR_ALTERA_AVALON_PIO_DATA(device, tmpvar);
                           cmd_ptr->data = 0;
                       } else {
                           cmd_ptr->addr = 0;
