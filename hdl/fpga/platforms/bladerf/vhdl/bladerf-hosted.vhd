@@ -106,6 +106,10 @@ architecture hosted_bladerf of bladerf is
     signal tx_enable        : std_logic ;
     signal rx_enable        : std_logic ;
 
+    signal rx_sample_raw_i  : signed(11 downto 0);
+    signal rx_sample_raw_q  : signed(11 downto 0);
+    signal rx_sample_raw_valid : std_logic;
+
     signal rx_sample_i      : signed(11 downto 0) ;
     signal rx_sample_q      : signed(11 downto 0) ;
     signal rx_sample_valid  : std_logic ;
@@ -113,6 +117,10 @@ architecture hosted_bladerf of bladerf is
     signal rx_gen_i         : signed(11 downto 0) ;
     signal rx_gen_q         : signed(11 downto 0) ;
     signal rx_gen_valid     : std_logic ;
+
+    signal tx_sample_raw_i : signed(15 downto 0);
+    signal tx_sample_raw_q : signed(15 downto 0);
+    signal tx_sample_raw_valid : std_logic;
 
     signal tx_sample_i      : signed(15 downto 0) ;
     signal tx_sample_q      : signed(15 downto 0) ;
@@ -140,6 +148,14 @@ architecture hosted_bladerf of bladerf is
     signal rx_mux_i             :   signed(11 downto 0) ;
     signal rx_mux_q             :   signed(11 downto 0) ;
     signal rx_mux_valid         :   std_logic ;
+
+
+
+
+    signal PHASE_OFFSET_SIGNED :  signed(15 downto 0) := to_signed(0,16);--to_signed(integer(round(real(2**Q_SCALE) * PHASE_OFFSET)),DC_WIDTH);
+    constant DC_OFFSET_REAL_SIGNED :  signed(15 downto 0) := to_signed(0,16);--to_signed(integer(round(real(2**Q_SCALE) * DC_OFFSET_REAL)),DC_WIDTH);
+    constant DC_OFFSET_IMAG_SIGNED :  signed(15 downto 0) :=-to_signed(0,16);--to_signed(integer(round(real(2**Q_SCALE) * DC_OFFSET_IMAG)),DC_WIDTH);
+    constant GAIN_OFFSET_SIGNED :  signed(15 downto 0) := to_signed(1,16);--to_signed(integer(round(real(2**Q_SCALE) * GAIN_OFFSET)),DC_WIDTH);
 
 begin
 
@@ -337,14 +353,38 @@ begin
         fifo_data           =>  tx_sample_fifo.rdata,
         fifo_read           =>  tx_sample_fifo.rreq,
 
-        out_i               =>  tx_sample_i,
-        out_q               =>  tx_sample_q,
-        out_valid           =>  tx_sample_valid,
+        out_i               =>  tx_sample_raw_i,
+        out_q               =>  tx_sample_raw_q,
+        out_valid           =>  tx_sample_raw_valid,
 
         underflow_led       =>  tx_underflow_led,
         underflow_count     =>  tx_underflow_count,
         underflow_duration  =>  x"abcd"
       ) ;
+
+    U_tx_iq_correction : entity work.iq_correction(tx)
+        generic map(
+            INPUT_WIDTH => 16
+        )
+        port map(
+            reset => tx_reset,
+            clock => tx_clock,
+
+            in_real => tx_sample_raw_i,
+            in_imag => tx_sample_raw_q,
+            in_valid => tx_sample_raw_valid,
+
+            out_real => tx_sample_i,
+            out_imag => tx_sample_q,
+            out_valid => tx_sample_valid,
+
+            dc_real => DC_OFFSET_REAL_SIGNED,
+            dc_imag => DC_OFFSET_IMAG_SIGNED,
+            gain => GAIN_OFFSET_SIGNED,
+            phase => PHASE_OFFSET_SIGNED,
+
+            correction_valid => correction_valid
+      );
 
     -- LMS6002D IQ interface
     U_lms6002d : entity work.lms6002d
