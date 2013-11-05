@@ -142,7 +142,7 @@ static const struct cmd cmd_table[] = {
             "  An 'rx stop' followed by an 'rx start' will result in the samples file\n"
             "  being truncated. If this is not desired, be sure to run 'rx config' to set\n"
             "  another file before restarting the rx stream.\n"
-            )
+        )
     },
     {
         FIELD_INIT(.names, cmd_names_tx),
@@ -239,15 +239,14 @@ static const struct cmd cmd_table[] = {
             "If num_addresses is supplied, the address is incremented by\n"
             "1 and another poke is performed.\n"
             "\n"
-            "Valid Address Ranges\n"
-            "--------------------\n"
-            "dac            0   255\n"
-            "lms            0   127\n"
-            "si             0   255\n"
+            "    Valid Address Ranges\n"
+            "    --------------------\n"
+            "    dac          0   255\n"
+            "    lms          0   127\n"
+            "    si           0   255\n"
             "\n"
-            "Examples\n"
-            "-------\n"
-            "  bladeRF> poke lms ...\n"
+            "Example:\n"
+            "  poke lms ...\n"
         )
     },
     {
@@ -270,9 +269,8 @@ static const struct cmd cmd_table[] = {
             "    lms          0   127\n"
             "    si           0   255\n"
             "\n"
-            "    Examples\n"
-            "    --------\n"
-            "    bladeRF> peek si ...\n"
+            "Example:\n"
+            "  peek si ...\n"
         )
     },
     {
@@ -280,7 +278,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.exec, cmd_help),
         FIELD_INIT(.desc, "Provide information about specified command"),
         FIELD_INIT(.help,
-            "help <command>\n"
+            "help [<command>]\n"
             "\n"
             "Provides extended help, like this, on any command.\n"
         )
@@ -290,14 +288,16 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.exec, cmd_info),
         FIELD_INIT(.desc, "Print information about the currently opened device"),
         FIELD_INIT(.help,
-                "info\n"
-                "\n"
-                "Prints the following information about an opened device:\n"
-                "  Serial number\n"
-                "  VCTCXO DAC calibration value\n"
-                "  FPGA size\n"
-                "  Whether or not the FPGA is loaded\n"
-                "  USB bus and address\n"
+            "info\n"
+            "\n"
+            "Prints the following information about an opened device:\n"
+            "  Serial number\n"
+            "  VCTCXO DAC calibration value\n"
+            "  FPGA size\n"
+            "  Whether or not the FPGA is loaded\n"
+            "  USB bus, address, and speed\n"
+            "  Backend (libusb or kernel module)\n"
+            "  Instance number\n"
         )
     },
     {
@@ -307,7 +307,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.help,
             "load <fpga|fx3> <filename>\n"
             "\n"
-            "Load an FPGA bitstream or program the FX3's SPI flash.\n"
+            "Load a FPGA bitstream or program the FX3's SPI flash.\n"
         )
     },
     {
@@ -341,33 +341,36 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.names, cmd_names_open),
         FIELD_INIT(.exec, cmd_open),
         FIELD_INIT(.desc, "Open a bladeRF device"),
-        FIELD_INIT(.help, "open [device identifiers]\n"
-                "\n"
-                "Open the specified device for use with successive commands.\n"
-                "Any previously opened device will be closed.\n"
-                "See the bladerf_open() documentation for the device specifier format.\n",
+        FIELD_INIT(.help,
+            "open [device identifiers]\n"
+            "\n"
+            "Open the specified device for use with successive commands.\n"
+            "Any previously opened device will be closed.\n"
+            "See the bladerf_open() documentation for the device specifier format.\n",
         )
     },
     {
         FIELD_INIT(.names, cmd_names_probe),
         FIELD_INIT(.exec, cmd_probe),
         FIELD_INIT(.desc, "List attached bladeRF devices"),
-        FIELD_INIT(.help, "probe\n"
-                "\n"
-                "Search for attached bladeRF device and print a list\n"
-                "of results.\n",
+        FIELD_INIT(.help,
+            "probe\n"
+            "\n"
+            "Search for attached bladeRF device and print a list\n"
+            "of results.\n",
         )
     },
     {
         FIELD_INIT(.names, cmd_names_erase),
         FIELD_INIT(.exec, cmd_erase),
         FIELD_INIT(.desc, "Erase part of FX3 flash device"),
-        FIELD_INIT(.help, "erase\n"
-                "\n"
-                "Erase sectors from FX3 flash device.\n"
-                "\n"
-                "    sector_offset   Starting sector to erase\n"
-                "    n_sectors       Number of sectors to erase\n"
+        FIELD_INIT(.help,
+            "erase <sector_offset> <n_sectors>\n"
+            "\n"
+            "Erase sectors from FX3 flash device.\n"
+            "\n"
+            "    sector_offset   Starting sector to erase\n"
+            "    n_sectors       Number of sectors to erase\n"
         )
     },
     {
@@ -377,7 +380,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.help,
             "version\n"
             "\n"
-            "Prints version information for both host software and the current device\n"
+            "Prints version information for host software and the current device\n"
         )
     },
     {
@@ -409,30 +412,39 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.desc, "Jump to FX3 bootloader"),
         FIELD_INIT(.help,
             "jump_to_boot\n"
+            "\n"
+            "Jumps to the FX3 bootloader.\n"
         )
     },
     {
         FIELD_INIT(.names, cmd_names_clear),
         FIELD_INIT(.exec, cmd_clear),
         FIELD_INIT(.desc, "Clear the screen"),
-        FIELD_INIT(.help, "clear\n"
-                "\n"
-                "Clears the screen\n"
+        FIELD_INIT(.help,
+            "clear\n"
+            "\n"
+            "Clears the screen\n"
         )
     },
     {
         FIELD_INIT(.names, cmd_names_quit),
         FIELD_INIT(.exec, NULL), /* Default action on NULL exec function is to quit */
         FIELD_INIT(.desc, "Exit the CLI"),
-        FIELD_INIT(.help, "quit\n"
-                "\n"
-                "Exit the CLI\n")
+        FIELD_INIT(.help,
+            "quit\n"
+            "\n"
+            "Exit the CLI\n"
+        )
     },
     {
         FIELD_INIT(.names, cmd_names_mimo),
         FIELD_INIT(.exec, cmd_mimo),
         FIELD_INIT(.desc, "Modify device MIMO operation"),
-        FIELD_INIT(.help, "mimo [master|slave]\n")
+        FIELD_INIT(.help,
+            "mimo [master|slave]\n"
+            "\n"
+            "Modify device MIMO operation\n"
+        )
     },
     /* Always terminate the command entry with a completely NULL entry */
     {
