@@ -78,7 +78,18 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.exec, cmd_calibrate),
         FIELD_INIT(.desc, "Calibrate transceiver"),
         FIELD_INIT(.help,
+            "calibrate [<module>]\n"
+            "\n"
             "Calibrate the DC offset for both RX and TX\n"
+            "\n"
+            "Available modules for calibration:\n"
+            "\n"
+            "    tuning\n"
+            "    txlpf\n"
+            "    rxlpf\n"
+            "    rxvga2\n"
+            "\n"
+            "Leave blank to calibrate all of the above.\n"
         )
     },
     {
@@ -86,51 +97,51 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.exec, cmd_rx),
         FIELD_INIT(.desc, "Receive IQ samples"),
         FIELD_INIT(.help,
-" rx <start | stop | config [param=val [param=val [...]]>\n"
-"\n"
-"Receive IQ samples and write them to the specified file.\n"
-"Reception is controlled and configured by one of the following:\n"
-"\n"
-"    start         Start receiving samples\n"
-"    stop          Stop Receiving samples\n"
-"    config        Configure sample reception. If no parameters\n"
-"                  are provided, the current parameters are printed.\n"
-"\n"
-"Running 'rx' without any additional commands is valid shorthand "
-"for 'rx config'.\n"
-"\n"
-"Configuration parameters take the form 'param=value', and may be specified\n"
-"in a single or multiple 'rx config' invocations. Below is a list of\n"
-"available parameters.\n"
-"\n"
-"    n             Number of samples to receive. 0 = inf.\n"
-"\n"
-"    file          Filename to write received samples to\n"
-"\n"
-"    format        Output file format. One of the following:\n"
-"                      csv          CSV of SC16 Q12 samples\n"
-"                      bin          Raw SC16 Q12 DAC samples\n"
-"\n"
-"    samples       Number of samples per buffer to use in the asynchronous\n"
-"                  stream. Must be divisible by 1024 and >= 1024.\n"
-"\n"
-"    buffers       Number of sample buffers to use in the asynchronous\n"
-"                  stream. The min value is 4.\n"
-"\n"
-"    xfers         Number of simultaneous transfers to allow the asynchronous\n"
-"                  stream to use. This should be < the 'buffers' parameter.\n"
-"\n"
-"    The n, samples, buffers, and xfers parameters support the suffixes\n"
-"    'K', 'M', and 'G', which are multiples of 1024.\n"
-"\n"
-"Example:\n"
-"  rx config file=/tmp/some_file format=bin n=10K\n"
-"\n"
-"Notes:\n"
-"\n"
-"  An 'rx stop' followed by an 'rx start' will result in the samples file\n"
-"  being truncated. If this is not desired, be sure to run 'rx config' to set\n"
-"  another file before restarting the rx stream.\n"
+            "rx <start | stop | config [param=val [param=val [...]]>\n"
+            "\n"
+            "Receive IQ samples and write them to the specified file.\n"
+            "Reception is controlled and configured by one of the following:\n"
+            "\n"
+            "    start         Start receiving samples\n"
+            "    stop          Stop Receiving samples\n"
+            "    config        Configure sample reception. If no parameters\n"
+            "                  are provided, the current parameters are printed.\n"
+            "\n"
+            "Running 'rx' without any additional commands is valid shorthand "
+            "for 'rx config'.\n"
+            "\n"
+            "Configuration parameters take the form 'param=value', and may be specified\n"
+            "in a single or multiple 'rx config' invocations. Below is a list of\n"
+            "available parameters.\n"
+            "\n"
+            "    n             Number of samples to receive. 0 = inf.\n"
+            "\n"
+            "    file          Filename to write received samples to\n"
+            "\n"
+            "    format        Output file format. One of the following:\n"
+            "                      csv          CSV of SC16 Q12 samples\n"
+            "                      bin          Raw SC16 Q12 DAC samples\n"
+            "\n"
+            "    samples       Number of samples per buffer to use in the asynchronous\n"
+            "                  stream. Must be divisible by 1024 and >= 1024.\n"
+            "\n"
+            "    buffers       Number of sample buffers to use in the asynchronous\n"
+            "                  stream. The min value is 4.\n"
+            "\n"
+            "    xfers         Number of simultaneous transfers to allow the asynchronous\n"
+            "                  stream to use. This should be < the 'buffers' parameter.\n"
+            "\n"
+            "    The n, samples, buffers, and xfers parameters support the suffixes\n"
+            "    'K', 'M', and 'G', which are multiples of 1024.\n"
+            "\n"
+            "Example:\n"
+            "  rx config file=/tmp/some_file format=bin n=10K\n"
+            "\n"
+            "Notes:\n"
+            "\n"
+            "  An 'rx stop' followed by an 'rx start' will result in the samples file\n"
+            "  being truncated. If this is not desired, be sure to run 'rx config' to set\n"
+            "  another file before restarting the rx stream.\n"
         )
     },
     {
@@ -138,52 +149,52 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.exec, cmd_tx),
         FIELD_INIT(.desc, "Transmit IQ samples"),
         FIELD_INIT(.help,
-" tx <start | stop | config [parameters]>\n"
-"\n"
-"Read IQ samples from the specified file and transmit them.\n"
-"Transmission is controlled and configured by one of the following:\n"
-"\n"
-"    start         Start transmitting samples\n"
-"    stop          Stop transmitting samples\n"
-"    config        Configure sample transmission . If no parameters\n"
-"                  are provided, the current parameters are printed.\n"
-"\n"
-"Running 'tx' without any additional commands is valid shorthand for\n"
-"'tx config'.\n"
-"\n"
-"Configuration parameters take the form 'param=value', and may be specified\n"
-"in a single or multiple 'tx config' invocations. Below is a list of\n"
-"available parameters.\n"
-"\n"
-"\n"
-"    file          Filename to read samples from\n"
-"\n"
-"    format        Output file format. One of the following:\n"
-"                      csv          CSV of SC16 Q12 samples\n"
-"                      bin          Raw SC16 Q12 DAC samples\n"
-"\n"
-"    repeat        The number of times the file contents should be \n"
-"                  transmitted. 0 implies repeat until stopped.\n"
-"\n"
-"    delay         The number of microseconds to delay between retransmitting\n"
-"                  file contents. 0 implies no delay.\n"
-"\n"
-"    samples       Number of samples per buffer to use in the asynchronous\n"
-"                  stream. Must be divisible by 1024 and >= 1024.\n"
-"\n"
-"    buffers       Number of sample buffers to use in the asynchronous\n"
-"                  stream. The min value is 4.\n"
-"\n"
-"    xfers         Number of simultaneous transfers to allow the asynchronous\n"
-"                  stream to use. This should be < the 'buffers' parameter.\n"
-"\n"
-"\n"
-"    The n, samples, buffers, and xfers parameters support the suffixes\n"
-"    'K', 'M', and 'G', which are multiples of 1024.\n"
-"\n"
-"Example:\n"
-"  tx config file=data.bin format=bin repeat=2 delay=250000\n"
-"\n"
+            "tx <start | stop | config [parameters]>\n"
+            "\n"
+            "Read IQ samples from the specified file and transmit them.\n"
+            "Transmission is controlled and configured by one of the following:\n"
+            "\n"
+            "    start         Start transmitting samples\n"
+            "    stop          Stop transmitting samples\n"
+            "    config        Configure sample transmission . If no parameters\n"
+            "                  are provided, the current parameters are printed.\n"
+            "\n"
+            "Running 'tx' without any additional commands is valid shorthand for\n"
+            "'tx config'.\n"
+            "\n"
+            "Configuration parameters take the form 'param=value', and may be specified\n"
+            "in a single or multiple 'tx config' invocations. Below is a list of\n"
+            "available parameters.\n"
+            "\n"
+            "\n"
+            "    file          Filename to read samples from\n"
+            "\n"
+            "    format        Output file format. One of the following:\n"
+            "                      csv          CSV of SC16 Q12 samples\n"
+            "                      bin          Raw SC16 Q12 DAC samples\n"
+            "\n"
+            "    repeat        The number of times the file contents should be \n"
+            "                  transmitted. 0 implies repeat until stopped.\n"
+            "\n"
+            "    delay         The number of microseconds to delay between retransmitting\n"
+            "                  file contents. 0 implies no delay.\n"
+            "\n"
+            "    samples       Number of samples per buffer to use in the asynchronous\n"
+            "                  stream. Must be divisible by 1024 and >= 1024.\n"
+            "\n"
+            "    buffers       Number of sample buffers to use in the asynchronous\n"
+            "                  stream. The min value is 4.\n"
+            "\n"
+            "    xfers         Number of simultaneous transfers to allow the asynchronous\n"
+            "                  stream to use. This should be < the 'buffers' parameter.\n"
+            "\n"
+            "\n"
+            "    The n, samples, buffers, and xfers parameters support the suffixes\n"
+            "    'K', 'M', and 'G', which are multiples of 1024.\n"
+            "\n"
+            "Example:\n"
+            "  tx config file=data.bin format=bin repeat=2 delay=250000\n"
+            "\n"
         )
     },
     {
@@ -206,12 +217,12 @@ static const struct cmd cmd_table[] = {
             "   pa              PA settings\n"
             "   pps             PPS settings\n"
             "   refclk          Reference clock settings\n"
-            "   rxvga1          Gain setting of RXVGA1 in dB (range: )\n"
-            "   rxvga2          Gain setting of RXVGA2 in dB (range: )\n"
+            "   rxvga1          Gain setting of RXVGA1 in dB (range: TODO)\n"
+            "   rxvga2          Gain setting of RXVGA2 in dB (range: TODO)\n"
             "   samplerate      Samplerate settings\n"
             "   trimdac         VCTCXO Trim DAC settings\n"
-            "   txvga1          Gain setting of TXVGA1 in dB (range: )\n"
-            "   txvga2          Gain setting of TXVGA2 in dB (range: )\n"
+            "   txvga1          Gain setting of TXVGA1 in dB (range: TODO)\n"
+            "   txvga2          Gain setting of TXVGA2 in dB (range: TODO)\n"
         )
     },
     {
@@ -228,15 +239,14 @@ static const struct cmd cmd_table[] = {
             "If num_addresses is supplied, the address is incremented by\n"
             "1 and another poke is performed.\n"
             "\n"
-            "Valid Address Ranges\n"
-            "--------------------\n"
-            "dac            0   255\n"
-            "lms            0   127\n"
-            "si             0   255\n"
+            "    Valid Address Ranges\n"
+            "    --------------------\n"
+            "    dac          0   255\n"
+            "    lms          0   127\n"
+            "    si           0   255\n"
             "\n"
-            "Examples\n"
-            "-------\n"
-            "  bladeRF> poke lms ...\n"
+            "Example:\n"
+            "  poke lms ...\n"
         )
     },
     {
@@ -253,15 +263,14 @@ static const struct cmd cmd_table[] = {
             "If num_addresses is supplied, the address is incremented by\n"
             "1 and another peek is performed.\n"
             "\n"
-            "Valid Address Ranges\n"
-            "--------------------\n"
-            "dac            0   255\n"
-            "lms            0   127\n"
-            "si             0   255\n"
+            "    Valid Address Ranges\n"
+            "    --------------------\n"
+            "    dac          0   255\n"
+            "    lms          0   127\n"
+            "    si           0   255\n"
             "\n"
-            "Examples\n"
-            "--------\n"
-            "  bladeRF> peek si ...\n"
+            "Example:\n"
+            "  peek si ...\n"
         )
     },
     {
@@ -269,7 +278,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.exec, cmd_help),
         FIELD_INIT(.desc, "Provide information about specified command"),
         FIELD_INIT(.help,
-            "help <command>\n"
+            "help [<command>]\n"
             "\n"
             "Provides extended help, like this, on any command.\n"
         )
@@ -279,14 +288,16 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.exec, cmd_info),
         FIELD_INIT(.desc, "Print information about the currently opened device"),
         FIELD_INIT(.help,
-                "info\n"
-                "\n"
-                "Prints the following information about an opened device:\n"
-                "  Serial number\n"
-                "  VCTCXO DAC calibration value\n"
-                "  FPGA size\n"
-                "  Whether or not the FPGA is loaded\n"
-                "  USB bus and address\n"
+            "info\n"
+            "\n"
+            "Prints the following information about an opened device:\n"
+            "  Serial number\n"
+            "  VCTCXO DAC calibration value\n"
+            "  FPGA size\n"
+            "  Whether or not the FPGA is loaded\n"
+            "  USB bus, address, and speed\n"
+            "  Backend (libusb or kernel module)\n"
+            "  Instance number\n"
         )
     },
     {
@@ -296,7 +307,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.help,
             "load <fpga|fx3> <filename>\n"
             "\n"
-            "Load an FPGA bitstream or program the FX3's SPI flash.\n"
+            "Load a FPGA bitstream or program the FX3's SPI flash.\n"
         )
     },
     {
@@ -318,45 +329,48 @@ static const struct cmd cmd_table[] = {
             "   pa              PA settings\n"
             "   pps             PPS settings\n"
             "   refclk          Reference clock settings\n"
-            "   rxvga1          Gain setting of RXVGA1 in dB (range: )\n"
-            "   rxvga2          Gain setting of RXVGA2 in dB (range: )\n"
+            "   rxvga1          Gain setting of RXVGA1 in dB (range: TODO)\n"
+            "   rxvga2          Gain setting of RXVGA2 in dB (range: TODO)\n"
             "   samplerate      Samplerate settings\n"
             "   trimdac         VCTCXO Trim DAC settings\n"
-            "   txvga1          Gain setting of TXVGA1 in dB (range: )\n"
-            "   txvga2          Gain setting of TXVGA2 in dB (range: )\n"
+            "   txvga1          Gain setting of TXVGA1 in dB (range: TODO)\n"
+            "   txvga2          Gain setting of TXVGA2 in dB (range: TODO)\n"
         )
     },
     {
         FIELD_INIT(.names, cmd_names_open),
         FIELD_INIT(.exec, cmd_open),
         FIELD_INIT(.desc, "Open a bladeRF device"),
-        FIELD_INIT(.help, "open [device identifiers]\n"
-                "\n"
-                "Open the specified device for use with successive commands.\n"
-                "Any previously opened device will be closed.\n"
-                "See the bladerf_open() documentation for the device specifier format.\n",
+        FIELD_INIT(.help,
+            "open [device identifiers]\n"
+            "\n"
+            "Open the specified device for use with successive commands.\n"
+            "Any previously opened device will be closed.\n"
+            "See the bladerf_open() documentation for the device specifier format.\n",
         )
     },
     {
         FIELD_INIT(.names, cmd_names_probe),
         FIELD_INIT(.exec, cmd_probe),
         FIELD_INIT(.desc, "List attached bladeRF devices"),
-        FIELD_INIT(.help, "probe\n"
-                "\n"
-                "Search for attached bladeRF device and print a list\n"
-                "of results.\n",
+        FIELD_INIT(.help,
+            "probe\n"
+            "\n"
+            "Search for attached bladeRF device and print a list\n"
+            "of results.\n",
         )
     },
     {
         FIELD_INIT(.names, cmd_names_erase),
         FIELD_INIT(.exec, cmd_erase),
         FIELD_INIT(.desc, "Erase part of FX3 flash device"),
-        FIELD_INIT(.help, "erase\n"
-                "\n"
-                "Erase sectors from FX3 flash device.\n"
-                "\n"
-                "    sector_offset   Starting sector to erase\n"
-                "    n_sectors       Number of sectors to erase\n"
+        FIELD_INIT(.help,
+            "erase <sector_offset> <n_sectors>\n"
+            "\n"
+            "Erase sectors from FX3 flash device.\n"
+            "\n"
+            "    sector_offset   Starting sector to erase\n"
+            "    n_sectors       Number of sectors to erase\n"
         )
     },
     {
@@ -366,7 +380,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.help,
             "version\n"
             "\n"
-            "Prints version information for both host software and the current device\n"
+            "Prints version information for host software and the current device\n"
         )
     },
     {
@@ -398,28 +412,39 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.desc, "Jump to FX3 bootloader"),
         FIELD_INIT(.help,
             "jump_to_boot\n"
+            "\n"
+            "Jumps to the FX3 bootloader.\n"
         )
     },
     {
         FIELD_INIT(.names, cmd_names_clear),
         FIELD_INIT(.exec, cmd_clear),
         FIELD_INIT(.desc, "Clear the screen"),
-        FIELD_INIT(.help, "clear\n"
-                "\n"
-                "Clears the screen\n"
+        FIELD_INIT(.help,
+            "clear\n"
+            "\n"
+            "Clears the screen\n"
         )
     },
     {
         FIELD_INIT(.names, cmd_names_quit),
         FIELD_INIT(.exec, NULL), /* Default action on NULL exec function is to quit */
         FIELD_INIT(.desc, "Exit the CLI"),
-        FIELD_INIT(.help, "Exit the CLI\n")
+        FIELD_INIT(.help,
+            "quit\n"
+            "\n"
+            "Exit the CLI\n"
+        )
     },
     {
         FIELD_INIT(.names, cmd_names_mimo),
         FIELD_INIT(.exec, cmd_mimo),
         FIELD_INIT(.desc, "Modify device MIMO operation"),
-        FIELD_INIT(.help, "mimo [master|slave]\n")
+        FIELD_INIT(.help,
+            "mimo [master|slave]\n"
+            "\n"
+            "Modify device MIMO operation\n"
+        )
     },
     /* Always terminate the command entry with a completely NULL entry */
     {
