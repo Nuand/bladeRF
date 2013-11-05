@@ -173,11 +173,11 @@ int get_rc_config(int argc, char *argv[], struct rc_config *rc)
                 break;
 
             case 1:
-                rc->show_version = true;
+                rc->show_lib_version = true;
                 break;
 
             case 2:
-                rc->show_lib_version = true;
+                rc->show_version = true;
                 break;
 
             default:
