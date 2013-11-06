@@ -336,6 +336,14 @@ static int rx_cmd_start(struct cli_state *s)
 
         if (status == 0) {
             rxtx_submit_request(s->rx, RXTX_TASK_REQ_START);
+            status = rxtx_wait_for_state(s->rx, RXTX_STATE_RUNNING, 3000);
+
+            /* This should never occur. If it does, there's likely a defect
+             * present in the rx task */
+            if (status != 0) {
+                cli_err(s, "rx", "RX did not start up in the alloted time\n");
+                status = CMD_RET_UNKNOWN;
+            }
         }
     }
 
@@ -428,8 +436,10 @@ int cmd_rx(struct cli_state *s, int argc, char **argv)
         ret = rxtx_cmd_stop(s, s->rx);
     } else if (!strcasecmp(argv[1], RXTX_CMD_CONFIG)) {
         ret = rx_cmd_config(s, argc, argv);
+    } else if (!strcasecmp(argv[1], RXTX_CMD_WAIT)) {
+        ret = rxtx_handle_wait(s, s->rx, argc, argv);
     } else {
-        cli_err(s, argv[0], "Invalid command: (%s)", argv[1]);
+        cli_err(s, argv[0], "Invalid command: \"%s\"", argv[1]);
         ret = CMD_RET_INVPARAM;
     }
 

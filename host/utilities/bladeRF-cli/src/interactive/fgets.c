@@ -36,45 +36,6 @@ static inline bool is_stdin(FILE *file)
     return file && fileno(file) == 0;
 }
 
-#if BLADERF_OS_WINDOWS
-static void sig_handler(int signal) {
-    if (signal == SIGTERM || signal == SIGINT) {
-        caught_signal = true;
-    }
-}
-
-void init_signal_handling()
-{
-    if (signal(SIGINT, sig_handler) || signal(SIGTERM, sig_handler)) {
-        fprintf(stderr, SIGHANLDER_FAILED);
-    }
-}
-
-#else
-static void sig_handler(int signal, siginfo_t *signal_info, void *unused)
-{
-    if (signal == SIGTERM || signal == SIGINT) {
-        caught_signal = true;
-    }
-}
-
-void init_signal_handling()
-{
-    struct sigaction sigact;
-
-    sigemptyset(&sigact.sa_mask);
-    sigact.sa_sigaction = sig_handler;
-    sigact.sa_flags = SA_SIGINFO;
-
-    if (sigaction(SIGINT, &sigact, NULL)   ||
-        sigaction(SIGTERM, &sigact, NULL)  ||
-        sigaction(SIGQUIT, &sigact, NULL)) {
-
-        fprintf(stderr, SIGHANLDER_FAILED);
-    }
-}
-#endif
-
 int interactive_init()
 {
 
@@ -90,7 +51,6 @@ int interactive_init()
         return CMD_RET_MEM;
     }
 
-    init_signal_handling();
     caught_signal = false;
 
     return 0;
@@ -171,4 +131,9 @@ void interactive_clear_terminal()
 char * interactive_expand_path(char *path)
 {
     return strdup(path);
+}
+
+void interactive_ctrlc(void)
+{
+    caught_signal = true;
 }

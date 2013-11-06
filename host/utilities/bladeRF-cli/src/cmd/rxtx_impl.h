@@ -48,7 +48,7 @@
 #define RXTX_CMD_START "start"
 #define RXTX_CMD_STOP "stop"
 #define RXTX_CMD_CONFIG "config"
-
+#define RXTX_CMD_WAIT "wait"
 
 #define TMP_FILE_NAME "bladeRF_samples_from_csv.bin"
 
@@ -110,7 +110,10 @@ struct task_mgmt
     uint8_t req;                /* Requests for state change. See
                                  *   RXTX_TASK_REQ_* bitmasks */
     pthread_mutex_t lock;       /* Must be held to access 'req' or 'state' */
-    pthread_cond_t  signal_req; /* Signal when a request has been made */
+    pthread_cond_t signal_req;  /* Signal when a request has been made */
+    pthread_cond_t signal_done; /* Signal when task finishes work */
+    pthread_cond_t signal_state_change; /* Signal after state change */
+    bool main_task_waiting;     /* Main task is blocked waiting */
 };
 
 /* RX or TX-specific parameters */
@@ -285,6 +288,22 @@ int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
                              const char *argv0, char *param, char **val);
 
 /**
+ * Handle an rx/tx wait command.
+ *
+ * Waits either until the rx/tx operation completes, or a specified amount
+ * of time elapses
+ *
+ * @param   s       CLI state
+ * @param   rxtx    RX/TX data handle
+ * @param   argc    Number of pararamters provided to rx/tx command
+ * @param   argc    Pararamters provided to rx/tx command
+ *
+ * @return 0 on success, CMD_RET_* for any errors
+ */
+int rxtx_handle_wait(struct cli_state *s, struct rxtx_data *rxtx,
+                     int argc, char **argv);
+
+/**
  * Perform pre-start checks for rx/tx check command
  *
  * @param[in]       s           CLI state
@@ -328,5 +347,17 @@ void rxtx_task_exec_running(struct rxtx_data *rxtx);
  */
 void rxtx_task_exec_stop(struct rxtx_data *rxtx, unsigned char *requests,
                          struct bladerf *dev);
+
+/**
+ * Wait for a task to transition into the specified state
+ *
+ * @param   rxtx            RX/TX data handle
+ * @param   state           Desired state
+ * @param   timeout_ms      Timeout in ms. 0 will wait infinitely.
+ *
+ * @return 0 on the desired state change, -1 on a timeout or error
+ */
+int rxtx_wait_for_state(struct rxtx_data *rxtx, enum rxtx_state state,
+                        unsigned int timeout_ms);
 
 #endif

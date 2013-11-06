@@ -80,6 +80,7 @@ endif()
 if(MSVC)
     set(CLI_INCLUDE_DIRS ${CLI_INCLUDE_DIRS}
         ${BLADERF_HOST_COMMON_INCLUDE_DIRS}/windows
+        ${UTILITIES_COMMON_INC_DIR}/windows
         ${LIBPTHREADSWIN32_INCLUDE_DIRS}
     )
 endif()
@@ -127,6 +128,7 @@ endif()
 if(MSVC)
     set(BLADERF_CLI_SOURCE ${BLADERF_CLI_SOURCE}
             ${BLADERF_HOST_COMMON_SOURCE_DIR}/windows/getopt_long.c
+            ${UTILITIES_COMMON_SRC}/windows/clock_gettime.c
        )
 endif()
 

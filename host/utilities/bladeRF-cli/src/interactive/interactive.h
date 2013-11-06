@@ -50,4 +50,11 @@ int interactive(struct cli_state *s, bool script_only);
  */
 char * interactive_expand_path(char *path);
 
+/**
+ * Notify interactive support that we caught CTRL-C. This is neccessary if
+ * the underlying support doesn't catch signals, such as the simple fgets-based
+ * implementation.
+ */
+void interactive_ctrlc(void);
+
 #endif  /* INTERACTICE_H__ */

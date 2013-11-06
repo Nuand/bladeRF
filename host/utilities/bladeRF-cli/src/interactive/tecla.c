@@ -41,7 +41,6 @@ int interactive_init()
         /* Try to set up a clean exit on these signals. If it fails, we'll
         * trudge along with a warning */
         if (gl_trap_signal(gl, SIGINT, GLS_DONT_FORWARD, GLS_ABORT, EINTR)  ||
-            gl_trap_signal(gl, SIGTERM, GLS_DONT_FORWARD, GLS_ABORT, EINTR) ||
             gl_trap_signal(gl, SIGQUIT, GLS_DONT_FORWARD, GLS_ABORT, EINTR)) {
 
             fprintf(stderr, SIGHANLDER_FAILED);
@@ -106,4 +105,9 @@ char * interactive_expand_path(char *path)
 void interactive_clear_terminal()
 {
     gl_erase_terminal(gl);
+}
+
+/* Nothing to do here, libtecla handles the signal if we're in a call */
+void interactive_ctrlc(void)
+{
 }

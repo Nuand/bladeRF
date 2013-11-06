@@ -19,18 +19,30 @@
  */
 #include <string.h>
 #include <limits.h>
+#include <pthread.h>
+#include <errno.h>
+#include <inttypes.h>
+
+#include "host_config.h"
+#if BLADERF_OS_WINDOWS
+#include "clock_gettime.h"
+#else
+#include <time.h>
+#endif
 
 #include "rxtx.h"
 #include "rxtx_impl.h"
 #include "cmd/cmd.h"
 #include "rel_assert.h"
-#include <inttypes.h>
+#include "minmax.h"
 
 /* A "seems good enough" arbitrary minimum */
 #define RXTX_BUFFERS_MIN 4
 
 /* Dictated by bladeRF's transfer sizes */
 #define RXTX_SAMPLES_MIN 1024
+
+#define NSEC_PER_SEC 1000000000
 
 const struct numeric_suffix rxtx_kmg_suffixes[] = {
     { FIELD_INIT(.suffix, "K"), FIELD_INIT(.multiplier, 1024) },
@@ -48,6 +60,7 @@ void rxtx_set_state(struct rxtx_data *rxtx, enum rxtx_state state)
 {
     pthread_mutex_lock(&rxtx->task_mgmt.lock);
     rxtx->task_mgmt.state = state;
+    pthread_cond_signal(&rxtx->task_mgmt.signal_state_change);
     pthread_mutex_unlock(&rxtx->task_mgmt.lock);
 }
 
@@ -119,12 +132,24 @@ void rxtx_print_state(struct rxtx_data *rxtx,
             printf("%sIdle%s", prefix, suffix);
             break;
 
-        case RXTX_STATE_SHUTDOWN:
-            printf("%sShutting down%s", prefix, suffix);
+        case RXTX_STATE_START:
+            printf("%sStarting%s", prefix, suffix);
             break;
 
         case RXTX_STATE_RUNNING:
             printf("%sRunning%s", prefix, suffix);
+            break;
+
+        case RXTX_STATE_STOP:
+            printf("%sStopping%s", prefix, suffix);
+            break;
+
+        case RXTX_STATE_SHUTDOWN:
+            printf("%sShutting down%s", prefix, suffix);
+            break;
+
+        case RXTX_STATE_FAIL:
+            printf("%sFailed Initialization%s", prefix, suffix);
             break;
 
         default:
@@ -285,6 +310,9 @@ struct rxtx_data *rxtx_data_alloc(bladerf_module module)
    ret->task_mgmt.req = 0;
    pthread_mutex_init(&ret->task_mgmt.lock, NULL);
    pthread_cond_init(&ret->task_mgmt.signal_req, NULL);
+   pthread_cond_init(&ret->task_mgmt.signal_done, NULL);
+   pthread_cond_init(&ret->task_mgmt.signal_state_change, NULL);
+   ret->task_mgmt.main_task_waiting = false;
 
    cli_error_init(&ret->last_error);
 
@@ -625,4 +653,152 @@ void rxtx_task_exec_stop(struct rxtx_data *rxtx, unsigned char *requests,
     }
 
     *requests = 0;
+
+    rxtx_release_wait(rxtx);
+}
+
+int rxtx_handle_wait(struct cli_state *s, struct rxtx_data *rxtx,
+                     int argc, char **argv)
+{
+    int status;
+    bool ok;
+    unsigned int timeout_ms = 0;
+    struct timespec timeout_abs;
+    enum rxtx_state state;
+
+    static const struct numeric_suffix times[] = {
+        { "ms", 1 },
+        { "s", 1000 },
+        { "m", 60 * 1000 },
+        { "h", 60 * 60 * 1000 },
+    };
+
+    if (argc < 2 || argc > 3) {
+        return CMD_RET_NARGS;
+    }
+
+    /* The start cmd should have waited until we entered the RUNNING state */
+    state = rxtx_get_state(rxtx);
+    if (state != RXTX_STATE_RUNNING) {
+        return 0;
+    }
+
+    if (argc == 3) {
+        timeout_ms = str2uint_suffix(argv[2], 0, UINT_MAX, times,
+                                     sizeof(times)/sizeof(times[0]), &ok);
+
+        if (!ok) {
+            cli_err(s, argv[0], "Invalid wait timeout: \"%s\"\n", argv[2]);
+            return CMD_RET_INVPARAM;
+        }
+    }
+
+    if (timeout_ms != 0) {
+        const unsigned int timeout_sec = timeout_ms / 1000;
+
+        status = clock_gettime(CLOCK_REALTIME, &timeout_abs);
+        if (status != 0) {
+            return CMD_RET_UNKNOWN;
+        }
+
+        timeout_abs.tv_sec += timeout_sec;
+        timeout_abs.tv_nsec += (timeout_ms % 1000) * 1000 * 1000;
+
+        if (timeout_abs.tv_nsec >= NSEC_PER_SEC) {
+            timeout_abs.tv_sec += timeout_abs.tv_nsec / NSEC_PER_SEC;
+            timeout_abs.tv_nsec %= NSEC_PER_SEC;
+        }
+
+        pthread_mutex_lock(&rxtx->task_mgmt.lock);
+        rxtx->task_mgmt.main_task_waiting = true;
+        while (rxtx->task_mgmt.main_task_waiting) {
+            status = pthread_cond_timedwait(&rxtx->task_mgmt.signal_done,
+                                            &rxtx->task_mgmt.lock,
+                                            &timeout_abs);
+
+            if (status == ETIMEDOUT) {
+                rxtx->task_mgmt.main_task_waiting = false;
+            }
+        }
+        pthread_mutex_unlock(&rxtx->task_mgmt.lock);
+
+        /* Expected and OK condition */
+        if (status == ETIMEDOUT) {
+            status = 0;
+        }
+
+    } else {
+        pthread_mutex_lock(&rxtx->task_mgmt.lock);
+        rxtx->task_mgmt.main_task_waiting = true;
+        while (rxtx->task_mgmt.main_task_waiting) {
+            status = pthread_cond_wait(&rxtx->task_mgmt.signal_done,
+                                       &rxtx->task_mgmt.lock);
+        }
+        pthread_mutex_unlock(&rxtx->task_mgmt.lock);
+    }
+
+    if (status != 0) {
+        status = CMD_RET_UNKNOWN;
+    }
+
+    return status;
+}
+
+bool rxtx_release_wait(struct rxtx_data *rxtx)
+{
+    bool was_waiting = false;
+
+    pthread_mutex_lock(&rxtx->task_mgmt.lock);
+    was_waiting = rxtx->task_mgmt.main_task_waiting;
+    rxtx->task_mgmt.main_task_waiting = false;
+    pthread_cond_signal(&rxtx->task_mgmt.signal_done);
+    pthread_mutex_unlock(&rxtx->task_mgmt.lock);
+
+    return was_waiting;
+}
+
+int rxtx_wait_for_state(struct rxtx_data *rxtx, enum rxtx_state req_state,
+                        unsigned int timeout_ms)
+{
+    int status;
+    struct timespec timeout_abs;
+
+    if (timeout_ms != 0) {
+        const unsigned int timeout_sec = timeout_ms / 1000;
+
+        status  = clock_gettime(CLOCK_REALTIME, &timeout_abs);
+        if (status != 0) {
+            return -1;
+        }
+
+        timeout_abs.tv_sec += timeout_sec;
+        timeout_abs.tv_nsec += (timeout_ms % 1000) * 1000 * 1000;
+
+        if (timeout_abs.tv_nsec >= NSEC_PER_SEC) {
+            timeout_abs.tv_sec += timeout_abs.tv_nsec / NSEC_PER_SEC;
+            timeout_abs.tv_nsec %= NSEC_PER_SEC;
+        }
+
+        pthread_mutex_lock(&rxtx->task_mgmt.lock);
+        while (rxtx->task_mgmt.state != req_state) {
+            status = pthread_cond_timedwait(&rxtx->task_mgmt.signal_state_change,
+                                            &rxtx->task_mgmt.lock,
+                                            &timeout_abs);
+        }
+        pthread_mutex_unlock(&rxtx->task_mgmt.lock);
+
+    } else {
+        pthread_mutex_lock(&rxtx->task_mgmt.lock);
+        while (rxtx->task_mgmt.state != req_state) {
+            status = pthread_cond_wait(&rxtx->task_mgmt.signal_state_change,
+                                       &rxtx->task_mgmt.lock);
+        }
+        pthread_mutex_unlock(&rxtx->task_mgmt.lock);
+    }
+
+    if (status == 0) {
+        return 0;
+    } else {
+        return -1;
+    }
 }

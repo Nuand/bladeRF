@@ -386,7 +386,7 @@ static int tx_cmd_start(struct cli_state *s)
 {
     int status = 0;
 
-    status = rxtx_cmd_start_check(s, s->tx, "rx");
+    status = rxtx_cmd_start_check(s, s->tx, "tx");
 
     if (status == 0) {
         /* Perform file conversion (if needed) and open input file */
@@ -420,6 +420,14 @@ static int tx_cmd_start(struct cli_state *s)
 
         if (status == 0) {
             rxtx_submit_request(s->tx, RXTX_TASK_REQ_START);
+            status = rxtx_wait_for_state(s->tx, RXTX_STATE_RUNNING, 3000);
+
+            /* This should never occur. If it does, there's likely a defect
+             * present in the tx task */
+            if (status != 0) {
+                cli_err(s, "tx", "TX did not start up in the alloted time\n");
+                status = CMD_RET_UNKNOWN;
+            }
         }
     }
 
@@ -531,14 +539,16 @@ int cmd_tx(struct cli_state *s, int argc, char **argv)
     if (argc == 1) {
         tx_print_config(s->tx);
         status = 0;
-    } else if (!strcasecmp(argv[1], "start")) {
+    } else if (!strcasecmp(argv[1], RXTX_CMD_START)) {
         status = tx_cmd_start(s);
-    } else if (!strcasecmp(argv[1], "stop")) {
+    } else if (!strcasecmp(argv[1], RXTX_CMD_STOP)) {
         status = rxtx_cmd_stop(s, s->tx);
-    } else if (!strcasecmp(argv[1], "config")) {
+    } else if (!strcasecmp(argv[1], RXTX_CMD_CONFIG)) {
         status = tx_config(s, argc, argv);
+    } else if (!strcasecmp(argv[1], RXTX_CMD_WAIT)) {
+        status = rxtx_handle_wait(s, s->tx, argc, argv);
     } else {
-        cli_err(s, argv[0], "Invalid command: (%s)", argv[1]);
+        cli_err(s, argv[0], "Invalid command: \"%s\"", argv[1]);
         status = CMD_RET_INVPARAM;
     }
 

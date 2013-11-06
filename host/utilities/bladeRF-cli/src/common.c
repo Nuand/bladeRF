@@ -25,47 +25,110 @@
 #include <limits.h>
 #include <pthread.h>
 #include <string.h>
+#include <signal.h>
 
 #include "cmd.h"
 #include "cmd/rxtx.h"
 #include "script.h"
+#include "interactive.h"
+
+/* There's currently only ever 1 active cli_state */
+static struct cli_state *cli_state;
+
+static inline void ctrlc_handler_common(int signal)
+{
+    bool waiting = false;
+    if (signal == SIGINT || signal == SIGTERM) {
+
+        if (cli_state) {
+            /* Unblock any rx/tx "wait" commands */
+            waiting = rxtx_release_wait(cli_state->rx);
+            waiting |= rxtx_release_wait(cli_state->tx);
+        }
+
+        if (!waiting) {
+            /* Let out interactive support know we got a ctrl-C if we weren't just
+             * waiting on an rx/tx wait command */
+            interactive_ctrlc();
+        }
+    }
+}
+
+#if BLADERF_OS_WINDOWS
+static void ctrlc_handler(int signal)
+{
+    ctrlc_handler_common(signal);
+}
+
+static void init_signal_handling()
+{
+    void *sigint_prev, *sigterm_prev;
+
+    sigint_prev = signal(SIGINT, ctrlc_handler);
+    sigterm_prev = signal(SIGTERM, ctrlc_handler);
+
+    if (sigint_prev == SIG_ERR || sigterm_prev == SIG_ERR) {
+        fprintf(stderr, "Warning: Failed to initialize Ctrl-C "
+                        "handlers for rx/tx wait cmd.");
+    }
+}
+
+#else
+static void ctrlc_handler(int signal, siginfo_t *info, void *unused) {
+    ctrlc_handler_common(signal);
+}
+
+static void init_signal_handling()
+{
+    struct sigaction sigact;
+
+    sigemptyset(&sigact.sa_mask);
+    sigact.sa_sigaction = ctrlc_handler;
+    sigact.sa_flags = SA_SIGINFO;
+
+    sigaction(SIGINT, &sigact, NULL);
+    sigaction(SIGTERM, &sigact, NULL);
+}
+#endif
 
 struct cli_state *cli_state_create()
 {
-    struct cli_state *ret = malloc(sizeof(*ret));
+    cli_state = malloc(sizeof(*cli_state));
 
-    if (ret) {
-        ret->dev = NULL;
-        ret->last_lib_error = 0;
-        ret->scripts = NULL;
+    if (cli_state) {
+        cli_state->dev = NULL;
+        cli_state->last_lib_error = 0;
+        cli_state->scripts = NULL;
 
-        ret->rx = rxtx_data_alloc(BLADERF_MODULE_RX);
-        if (!ret->rx) {
+        cli_state->rx = rxtx_data_alloc(BLADERF_MODULE_RX);
+        if (!cli_state->rx) {
             goto cli_state_create_fail;
         }
 
-        ret->tx = rxtx_data_alloc(BLADERF_MODULE_TX);
-        if (!ret->tx) {
+        cli_state->tx = rxtx_data_alloc(BLADERF_MODULE_TX);
+        if (!cli_state->tx) {
             goto cli_state_create_fail;
         }
 
-        if (rxtx_startup(ret, BLADERF_MODULE_RX)) {
-            rxtx_data_free(ret->rx);
-            ret->rx = NULL;
+        if (rxtx_startup(cli_state, BLADERF_MODULE_RX)) {
+            rxtx_data_free(cli_state->rx);
+            cli_state->rx = NULL;
             goto cli_state_create_fail;
         }
 
-        if (rxtx_startup(ret, BLADERF_MODULE_TX)) {
-            rxtx_data_free(ret->tx);
-            ret->tx = NULL;
+        if (rxtx_startup(cli_state, BLADERF_MODULE_TX)) {
+            rxtx_data_free(cli_state->tx);
+            cli_state->tx = NULL;
             goto cli_state_create_fail;
         }
     }
 
-    return ret;
+    init_signal_handling();
+
+    return cli_state;
 
 cli_state_create_fail:
-    cli_state_destroy(ret);
+    cli_state_destroy(cli_state);
     return NULL;
 }
 

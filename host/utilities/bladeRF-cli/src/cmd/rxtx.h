@@ -69,11 +69,20 @@ bool rxtx_task_running(struct rxtx_data *rxtx);
 void rxtx_shutdown(struct rxtx_data *rxtx);
 
 /**
+ * Release any rx/tx wait commands
+ *
+ * @param   rxtx    RX/TX data handle
+ *
+ * @return True if a wait command was released
+ */
+bool rxtx_release_wait(struct rxtx_data *rxtx);
+
+/**
  * Free data allocated with rxtx_data_alloc()
  *
  * @pre     Must be preceeded by a call to rxtx_shutdown()
  *
- * @param   rxtx        RXTX data handle
+ * @param   rxtx        RX/TX data handle
  */
 void rxtx_data_free(struct rxtx_data *rxtx);
 
