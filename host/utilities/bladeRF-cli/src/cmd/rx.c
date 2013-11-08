@@ -93,7 +93,7 @@ static int rx_write_bin_sc16q12(struct rxtx_data *rx,
                     rx->file_mgmt.file);
     pthread_mutex_unlock(&rx->file_mgmt.file_lock);
 
-    if (status != n_samples) {
+    if (status != (2 * n_samples)) {
         set_last_error(&rx->last_error, ETYPE_CLI, CMD_RET_FILEOP);
         return CMD_RET_FILEOP;
     } else {
