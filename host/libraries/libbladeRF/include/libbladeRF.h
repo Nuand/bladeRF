@@ -318,16 +318,6 @@ API_EXPORT int bladerf_get_device_list(struct bladerf_devinfo **devices);
  */
 API_EXPORT void bladerf_free_device_list(struct bladerf_devinfo *devices);
 
-
-/**
- * Get the device path if a bladeRF device
- *
- * @param[in]   dev     Device handle
- *
- * @returns A pointer to the device path string, or NULL on error
- */
-API_EXPORT char * bladerf_dev_path(struct bladerf *dev);
-
 /**
  * Opens device specified by provided bladerf_devinfo structure
  *
