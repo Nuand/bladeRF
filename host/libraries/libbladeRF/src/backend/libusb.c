@@ -1053,7 +1053,7 @@ static int lusb_read_flash(struct bladerf *dev, uint32_t addr,
     return read;
 }
 
-static int verify_page(uint8_t *page_buf, uint8_t *image_page)
+static int compare_page_buffers(uint8_t *page_buf, uint8_t *image_page)
 {
     int i;
     for (i = 0; i < BLADERF_FLASH_PAGE_SIZE; i++) {
@@ -1065,14 +1065,39 @@ static int verify_page(uint8_t *page_buf, uint8_t *image_page)
     return 0;
 }
 
+static int verify_one_page(struct bladerf *dev,
+                           uint16_t page, uint8_t *image_buf)
+{
+    int status = 0;
+    uint8_t page_buf[BLADERF_FLASH_PAGE_SIZE];
+
+    log_verbose("Verifying page at 0x%02x\n", flash_from_pages(page));
+    status = read_one_page(dev, page, page_buf);
+    if(status)
+        return status;
+
+    status = compare_page_buffers(page_buf, image_buf);
+    if(status < 0) {
+        uint i = abs(status);
+        log_error("bladeRF firmware verification failed at flash "
+                  " address 0x%02x. Read 0x%02X, expected 0x%02X\n",
+                  flash_from_pages(page) + i,
+                  page_buf[i],
+                  image_buf[i]
+            );
+
+        return BLADERF_ERR_IO;
+    }
+
+    return 0;
+}
+
 static int verify_flash(struct bladerf *dev, uint32_t addr,
                         uint8_t *image, uint32_t len)
 {
     int status = 0;
     int page_addr, page_len, i;
-
-    uint8_t page_buf[BLADERF_FLASH_PAGE_SIZE];
-    uint8_t *image_page;
+    uint8_t *image_buf;
 
     if(!flash_bounds_aligned(BLADERF_FLASH_ALIGNMENT_PAGE, addr, len))
         return BLADERF_ERR_MISALIGNED;
@@ -1083,25 +1108,10 @@ static int verify_flash(struct bladerf *dev, uint32_t addr,
     log_info("Verifying 0x%02x bytes starting at address 0x%02x\n", len, addr);
 
     for(i=0; i < page_len; i++) {
-        log_verbose("Verifying page at 0x%02x\n", flash_from_pages(i));
-        status = read_one_page(dev, page_addr + i, page_buf);
-        if(status)
+        image_buf = &image[flash_from_pages(i)];
+        status = verify_one_page(dev, page_addr + i, image_buf);
+        if(status < 0)
             break;
-
-        image_page = &image[flash_from_pages(i)];
-
-        status = verify_page(page_buf, image_page);
-        if(status < 0) {
-            log_error("bladeRF firmware verification failed at flash "
-                      " address 0x%02x. Read 0x%02X, expected 0x%02X\n",
-                      flash_from_pages(i) + abs(status),
-                      page_buf[abs(status)],
-                      image_page[abs(status)]
-            );
-
-            return BLADERF_ERR_IO;
-        }
-        log_verbose( "Verified page %d...\n", i);
     }
 
     return status;
@@ -1195,6 +1205,10 @@ static int write_one_page(struct bladerf *dev, uint16_t page, uint8_t *buf)
 
          return BLADERF_ERR_UNEXPECTED;
     }
+
+    status = verify_one_page(dev, page, buf);
+    if(status < 0)
+        return status;
 
     return 0;
 }
