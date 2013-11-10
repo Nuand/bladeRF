@@ -47,6 +47,9 @@ endif()
 ################################################################################
 # Configure host-specific items
 ################################################################################
+include(TestBigEndian)
+TEST_BIG_ENDIAN(BLADERF_BIG_ENDIAN)
+
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/common/include/host_config.h.in
     ${CMAKE_CURRENT_BINARY_DIR}/common/include/host_config.h

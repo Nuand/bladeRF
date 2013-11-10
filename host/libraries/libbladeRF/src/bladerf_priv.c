@@ -171,8 +171,10 @@ static int extract_field(char *ptr, int len, char *field,
     return BLADERF_ERR_INVAL;
 }
 
-int encode_field(char *ptr, int len, int *idx, char *field,
-                            char *val) {
+int encode_field(char *ptr, int len, int *idx,
+                 const char *field,
+                 const char *val)
+{
     int vlen, flen, tlen;
     flen = (int)strlen(field);
     vlen = (int)strlen(val);
@@ -184,8 +186,32 @@ int encode_field(char *ptr, int len, int *idx, char *field,
     ptr[*idx] = flen + vlen;
     strcpy(&ptr[*idx + 1], field);
     strcpy(&ptr[*idx + 1 + flen], val);
-    *(unsigned short *)(&ptr[*idx + tlen ]) = crc16mp(0, &ptr[*idx ], tlen);
+    *(unsigned short *)(&ptr[*idx + tlen ]) = HOST_TO_LE16(crc16mp(0, &ptr[*idx ], tlen));
     *idx += tlen + 2;
+    return 0;
+}
+
+int add_field(char *buf, int buf_len, const char *field_name, char *val)
+{
+    /* skip to the end, ignoring crc (don't want to further corrupt partially
+     * corrupt data) */
+    intptr_t i = 0;
+    while(i < buf_len) {
+        uint8_t field_len = buf[i];
+
+        if(field_len == 0xff)
+            break;
+
+        /* skip past `field_len' bytes, 2 byte CRC field, and 1 byte len
+         * field */
+        i += field_len + 3;
+    }
+
+    int dummy_idx = 0;
+    int rv = encode_field(buf + i, buf_len - i, &dummy_idx, field_name, val);
+    if(rv < 0)
+        return rv;
+
     return 0;
 }
 

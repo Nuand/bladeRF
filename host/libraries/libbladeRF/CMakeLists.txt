@@ -125,6 +125,8 @@ set(LIBBLADERF_SOURCE
         src/device_identifier.c
         src/devinfo.c
         src/flash.c
+        src/image.c
+        ${BLADERF_HOST_COMMON_SOURCE_DIR}/sha256.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/log.c
 )

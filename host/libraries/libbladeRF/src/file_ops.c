@@ -3,6 +3,7 @@
  *   http://www.github.com/nuand/bladeRF
  *
  * Copyright (C) 2013 Nuand LLC
+ * Copyright (C) 2013 Daniel Gröber <dxld ÄT darkboxed DOT org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -30,14 +31,64 @@
 #include "file_ops.h"
 #include "log.h"
 
-int read_file(const char *filename, uint8_t **buf_ret, size_t *size_ret)
+int file_write(FILE *f, char *buf, size_t len)
+{
+    size_t rv;
+
+    rv = fwrite(buf, 1, len, f);
+    if(rv < len)
+        return BLADERF_ERR_IO;
+
+    return 0;
+}
+
+int file_read(FILE *f, char *buf, size_t len)
+{
+    size_t rv;
+
+    rv = fread(buf, 1, len, f);
+    if(rv < len) {
+        if(feof(f))
+            log_error("Unexpected end of file");
+        else
+            log_error("Error reading file");
+
+        return BLADERF_ERR_IO;
+    }
+
+    return 0;
+}
+
+ssize_t file_size(FILE *f)
+{
+    int rv = BLADERF_ERR_IO;
+
+    long int fpos = ftell(f);
+    if(fpos < 0)
+        goto out;
+
+    if(fseek(f, 0, SEEK_END))
+        goto out;
+
+    ssize_t len = ftell(f);
+    if(len < 0)
+        goto out;
+
+    if(fseek(f, fpos, SEEK_SET))
+        goto out;
+
+    rv = len;
+
+out:
+    return rv;
+}
+
+int file_read_buffer(const char *filename, uint8_t **buf_ret, size_t *size_ret)
 {
     int status = BLADERF_ERR_UNEXPECTED;
-    struct stat sb;
     FILE *f;
-    int fd;
     uint8_t *buf;
-    ssize_t n_read;
+    ssize_t len;
 
     f = fopen(filename, "rb");
     if (!f) {
@@ -45,48 +96,31 @@ int read_file(const char *filename, uint8_t **buf_ret, size_t *size_ret)
         return BLADERF_ERR_IO;
     }
 
-    fd = fileno(f);
-    if (fd < 0) {
-        log_error("fileno: %s\n", strerror(errno));
+    len = file_size(f);
+    if(len < 0) {
         status = BLADERF_ERR_IO;
-        goto os_read_file__err_fileno;
+        goto os_file_read__err_size;
     }
 
-    if (fstat(fd, &sb) < 0) {
-        log_error("fstat: %s\n", strerror(errno));
-        status = BLADERF_ERR_IO;
-        goto os_read_file__err_stat;
-    }
-
-    buf = malloc(sb.st_size);
+    buf = malloc(len);
     if (!buf) {
         status = BLADERF_ERR_MEM;
-        goto os_read_file__err_malloc;
+        goto os_file_read__err_malloc;
     }
 
-    n_read = fread(buf, 1, sb.st_size, f);
-    if (n_read != sb.st_size) {
-        if (n_read < 0) {
-            log_error("fread: %s\n", strerror(errno));
-        } else {
-            log_warning("short read: " PRIu64 "/" PRIu64  "\n",
-                        (uint64_t)n_read, (uint64_t)sb.st_size);
-        }
-
-        status = BLADERF_ERR_IO;
-        goto os_read_file__err_fread;
-    }
+    status = file_read(f, (char*)buf, len);
+    if (status < 0)
+        goto os_file_read__err_read;
 
     *buf_ret = buf;
-    *size_ret = sb.st_size;
+    *size_ret = len;
     fclose(f);
     return 0;
 
-os_read_file__err_fread:
+os_file_read__err_read:
     free(buf);
-os_read_file__err_malloc:
-os_read_file__err_stat:
-os_read_file__err_fileno:
+os_file_read__err_size:
+os_file_read__err_malloc:
     fclose(f);
     return status;
 }

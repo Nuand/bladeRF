@@ -718,7 +718,7 @@ int bladerf_flash_firmware(struct bladerf *dev, const char *firmware_file)
     uint8_t *buf, *buf_padded;
     size_t buf_size, buf_size_padded;
 
-    status = read_file(firmware_file, &buf, &buf_size);
+    status = file_read_buffer(firmware_file, &buf, &buf_size);
     if (!status) {
         /* Sanity check firmware
          *
@@ -821,7 +821,7 @@ int bladerf_flash_fpga(struct bladerf *dev, const char *fpga_file)
         return (dev->fn->erase_flash(dev, flash_from_sectors(4), BLADERF_FLASH_SECTOR_SIZE) != BLADERF_FLASH_SECTOR_SIZE);
     }
 
-    status = read_file(fpga_file, &buf, &buf_size);
+    status = file_read_buffer(fpga_file, &buf, &buf_size);
     if (status == 0) {
         if ((getenv("BLADERF_SKIP_FPGA_SIZE_CHECK") == 0)  &&
                 (buf_size < (1 * 1024 * 1024) || (buf_size > (5 * 1024 * 1024)))) {
@@ -887,7 +887,7 @@ int bladerf_load_fpga(struct bladerf *dev, const char *fpga_file)
      *  - Checksum/hash?
      */
 
-    status = read_file(fpga_file, &buf, &buf_size);
+    status = file_read_buffer(fpga_file, &buf, &buf_size);
     if (!status) {
         status = dev->fn->load_fpga(dev, buf, buf_size);
         free(buf);
@@ -925,6 +925,8 @@ const char * bladerf_strerror(int error)
             return "Operation not supported";
         case BLADERF_ERR_MISALIGNED:
             return "Misaligned flash access";
+        case BLADERF_ERR_CHECKSUM:
+            return "Invalid checksum";
         case 0:
             return "Success";
         default:
