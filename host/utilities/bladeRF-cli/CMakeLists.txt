@@ -119,6 +119,7 @@ set(BLADERF_CLI_SOURCE
         src/cmd/jump_boot.c
         src/cmd/mimo.c
         src/cmd/backuprestore.c
+        src/cmd/init_cal.c
         src/interactive/interactive.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/log.c

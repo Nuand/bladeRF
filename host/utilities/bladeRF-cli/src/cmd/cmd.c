@@ -48,6 +48,7 @@ DECLARE_CMD(jump_to_bootloader);
 DECLARE_CMD(mimo);
 DECLARE_CMD(backup);
 DECLARE_CMD(restore);
+DECLARE_CMD(init_cal);
 
 #define MAX_ARGS    10
 
@@ -81,6 +82,7 @@ static const char *cmd_names_jump[] = { "jump_to_boot", "j", NULL };
 static const char *cmd_names_mimo[] = { "mimo", NULL };
 static const char *cmd_names_backup[] = { "backup", "bc", NULL };
 static const char *cmd_names_restore[] = { "restore", "rc", NULL };
+static const char *cmd_names_init_cal[] = { "init_cal", NULL };
 
 static const struct cmd cmd_table[] = {
     {
@@ -476,6 +478,18 @@ static const struct cmd cmd_table[] = {
 "               the length of the image given"
             ),
     },
+    {
+        FIELD_INIT(.names, cmd_names_init_cal),
+        FIELD_INIT(.exec, cmd_init_cal),
+        FIELD_INIT(.desc, "Write new calibration data to device"),
+        FIELD_INIT(.help, "init_cal fpga_size vctcxo_trim\n"
+"\n"
+"Initializes the calibration region in the flash with new values"
+"   <fpga_size>       Either 40 or 115 depending on the device model.\n"
+"   <vctcxo_trim>     VCTCXO/DAC trim value (0x0-0xffff)\n"
+            )
+    },
+    {
         FIELD_INIT(.names, cmd_names_quit),
         FIELD_INIT(.exec, NULL), /* Default action on NULL exec function is to quit */
         FIELD_INIT(.desc, "Exit the CLI"),
