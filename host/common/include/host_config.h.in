@@ -30,6 +30,7 @@
 #cmakedefine01  BLADERF_OS_LINUX
 #cmakedefine01  BLADERF_OS_OSX
 #cmakedefine01  BLADERF_OS_WINDOWS
+#cmakedefine01  BLADERF_BIG_ENDIAN
 
 #if !(BLADERF_OS_LINUX || BLADERF_OS_OSX || BLADERF_OS_WINDOWS)
 #   error "Build not configured for any supported operating systems"
