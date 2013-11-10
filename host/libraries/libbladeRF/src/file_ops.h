@@ -10,6 +10,7 @@
  *   http://www.github.com/nuand/bladeRF
  *
  * Copyright (C) 2013 Nuand LLC
+ * Copyright (C) 2013 Daniel Gröber <dxld ÄT darkboxed DOT org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -31,7 +32,8 @@
 #include <stdint.h>
 
 /**
- * Read file contents into an allocated buffer.
+ * Read file contents into a buffer allocated internally and returned to the
+ * caller through `buf'.
  *
  * The caller is responsible for freeing the allocated buffer
  *
@@ -41,8 +43,42 @@
  * @parma[out]  size        Upon success, this will be updated to reflect the
  *                          size of the buffered file
  *
- * @return 0 on success, BLADERF_ERR_* value on failure
+ * @return 0 on success, negative BLADERF_ERR_* value on failure
  */
-int read_file(const char *filename, uint8_t **buf, size_t *size);
+int file_read_buffer(const char *filename, uint8_t **buf, size_t *size);
+
+/**
+ * Write to an open file stream.
+ *
+ * @param[in]   f           Open file stream.
+ * @param[in]   buf         Data to write to the stream.
+ * @parma[in]   len         Number of bytes to write to the stream.
+ *
+ * @return 0 on success, negative BLADERF_ERR_* value on failure
+ */
+int file_write(FILE *f, char *buf, size_t len);
+
+/**
+ * Read data from an open file stream.
+ *
+ * @param[in]   f           Open file stream.
+ * @param[out]  buf         Buffer to fill with data read.
+ * @parma[in]   len         Number of bytes to read. If EOF is encountered
+ *                          before this many bytes have been read will return
+ *                          an error.
+ *
+ * @return 0 on success, negative BLADERF_ERR_* value on failure
+ */
+int file_read(FILE *f, char *buf, size_t len);
+
+/**
+ * Determine the size of an open file stream.
+ *
+ * @param[in]   f           Open file stream.
+ *
+ * @return poisitive size of file on success, negative BLADERF_ERR_* value on
+ * failure
+ */
+ssize_t file_size(FILE *f);
 
 #endif
