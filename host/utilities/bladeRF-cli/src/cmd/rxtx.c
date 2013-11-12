@@ -764,7 +764,7 @@ bool rxtx_release_wait(struct rxtx_data *rxtx)
 int rxtx_wait_for_state(struct rxtx_data *rxtx, enum rxtx_state req_state,
                         unsigned int timeout_ms)
 {
-    int status;
+    int status = 0;
     struct timespec timeout_abs;
 
     if (timeout_ms != 0) {
