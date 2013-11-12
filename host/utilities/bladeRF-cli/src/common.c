@@ -72,22 +72,19 @@ cli_state_create_fail:
 void cli_state_destroy(struct cli_state *s)
 {
     if (s) {
-        if (s->rx) {
-            rxtx_shutdown(s->rx);
-            rxtx_data_free(s->rx);
-            s->rx = NULL;
-        }
+        if (cli_device_is_opened(s)) {
+            if (rxtx_task_running(s->rx)) {
+                rxtx_shutdown(s->rx);
+                rxtx_data_free(s->rx);
+            }
 
-        if (s->tx) {
-            rxtx_shutdown(s->tx);
-            rxtx_data_free(s->tx);
-            s->tx = NULL;
-        }
+            if (rxtx_task_running(s->tx)) {
+                rxtx_shutdown(s->tx);
+                rxtx_data_free(s->tx);
+            }
 
-        if (s->dev) {
             bladerf_close(s->dev);
         }
-
 
         free(s);
     }
