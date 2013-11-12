@@ -330,19 +330,23 @@ int rxtx_startup(struct cli_state *s, bladerf_module module)
     }
 
     if (module == BLADERF_MODULE_RX) {
-        rxtx_set_state(s->rx, RXTX_STATE_IDLE);
+        rxtx_set_state(s->rx, RXTX_STATE_INIT);
         status = pthread_create(&s->rx->task_mgmt.thread, NULL, rx_task, s);
 
         if (status < 0) {
             rxtx_set_state(s->rx, RXTX_STATE_FAIL);
+        } else {
+            status = rxtx_wait_for_state(s->rx, RXTX_STATE_IDLE, 1000);
         }
 
     } else {
-        rxtx_set_state(s->tx, RXTX_STATE_IDLE);
+        rxtx_set_state(s->tx, RXTX_STATE_INIT);
         status = pthread_create(&s->tx->task_mgmt.thread, NULL, tx_task, s);
 
         if (status < 0) {
             rxtx_set_state(s->tx, RXTX_STATE_FAIL);
+        } else {
+            status = rxtx_wait_for_state(s->tx, RXTX_STATE_IDLE, 1000);
         }
     }
 

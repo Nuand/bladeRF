@@ -60,6 +60,7 @@ enum rxtx_fmt {
 
 enum rxtx_state {
     RXTX_STATE_FAIL,        /* Failed to create task */
+    RXTX_STATE_INIT,        /* Task is initializing */
     RXTX_STATE_IDLE,        /* Awaiting rx/tx "start" command */
     RXTX_STATE_START,       /* Perform an pre-run initializations.
                              *   (Transition between IDLE -> RUNNING) */

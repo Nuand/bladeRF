@@ -284,7 +284,7 @@ void *tx_task(void *cli_state_arg)
      * also get into the shutdown state if the program exits before we
      * finish up initialization */
     task_state = rxtx_get_state(tx);
-    assert(task_state == RXTX_STATE_IDLE || task_state == RXTX_STATE_SHUTDOWN);
+    assert(task_state == RXTX_STATE_INIT);
 
     set_last_error(&tx->last_error, ETYPE_BLADERF, 0);
     requests = 0;
@@ -292,6 +292,9 @@ void *tx_task(void *cli_state_arg)
     while (task_state != RXTX_STATE_SHUTDOWN) {
         task_state = rxtx_get_state(tx);
         switch (task_state) {
+            case RXTX_STATE_INIT:
+                rxtx_set_state(tx, RXTX_STATE_IDLE);
+                break;
 
             case RXTX_STATE_IDLE:
                 rxtx_task_exec_idle(tx, &requests);

@@ -188,17 +188,17 @@ void *rx_task(void *cli_state_arg)
     struct rx_params *rx_params = rx->params;
     struct rx_callback_data cb_data;
 
-    /* We expect to be in the IDLE state when this is kicked off. We could
-     * also get into the shutdown state if the program exits before we
-     * finish up initialization */
     task_state = rxtx_get_state(rx);
-    assert(task_state == RXTX_STATE_IDLE || task_state == RXTX_STATE_SHUTDOWN);
+    assert(task_state == RXTX_STATE_INIT);
 
     set_last_error(&rx->last_error, ETYPE_BLADERF, 0);
     requests = 0;
 
     while (task_state != RXTX_STATE_SHUTDOWN) {
         switch (task_state) {
+            case RXTX_STATE_INIT:
+                rxtx_set_state(rx, RXTX_STATE_IDLE);
+                break;
 
             case RXTX_STATE_IDLE:
                 rxtx_task_exec_idle(rx, &requests);
