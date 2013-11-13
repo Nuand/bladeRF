@@ -103,24 +103,26 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.exec, cmd_rx),
         FIELD_INIT(.desc, "Receive IQ samples"),
         FIELD_INIT(.help,
-            "rx <start | stop | config [param=val [param=val [...]]>\n"
+            "rx <start | stop | wait | config [param=val [param=val [...]]>\n"
             "\n"
             "Receive IQ samples and write them to the specified file.\n"
             "Reception is controlled and configured by one of the following:\n"
             "\n"
             "    start         Start receiving samples\n"
             "    stop          Stop Receiving samples\n"
+            "    wait          Wait for sample transmission to complete, or until a specified\n"
+            "                  amount of time elapses\n"
             "    config        Configure sample reception. If no parameters\n"
             "                  are provided, the current parameters are printed.\n"
             "\n"
             "Running 'rx' without any additional commands is valid shorthand "
             "for 'rx config'.\n"
             "\n"
-"The wait command takes an optional timeout parameter. This parameter defaults\n"
-"to units of ms. The timeout unit may be specified using the ms, s, m, or h\n"
-"suffixes. If this parameter is not provided, the command will wait until\n"
-"the reception completes or Ctrl-C is pressed.\n"
-"\n"
+            "The wait command takes an optional timeout parameter. This parameter defaults\n"
+            "to units of ms. The timeout unit may be specified using the ms, s, m, or h\n"
+            "suffixes. If this parameter is not provided, the command will wait until\n"
+            "the reception completes or Ctrl-C is pressed.\n"
+            "\n"
             "Configuration parameters take the form 'param=value', and may be specified\n"
             "in a single or multiple 'rx config' invocations. Below is a list of\n"
             "available parameters.\n"
@@ -160,26 +162,26 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.exec, cmd_tx),
         FIELD_INIT(.desc, "Transmit IQ samples"),
         FIELD_INIT(.help,
-            "tx <start | stop | config [parameters]>\n"
+            "tx <start | stop | wait | config [parameters]>\n"
             "\n"
             "Read IQ samples from the specified file and transmit them.\n"
             "Transmission is controlled and configured by one of the following:\n"
             "\n"
             "    start         Start transmitting samples\n"
             "    stop          Stop transmitting samples\n"
-"    wait          Wait for sample transmission to complete, or until a specified\n"
-"                  amount of time elapses\n"
+            "    wait          Wait for sample transmission to complete, or until a specified\n"
+            "                  amount of time elapses\n"
             "    config        Configure sample transmission . If no parameters\n"
             "                  are provided, the current parameters are printed.\n"
             "\n"
             "Running 'tx' without any additional commands is valid shorthand for\n"
             "'tx config'.\n"
             "\n"
-"The wait command takes an optional timeout parameter. This parameter defaults\n"
-"to units of ms. The timeout unit may be specified using the ms, s, m, or h\n"
-"suffixes. If this parameter is not provided, the command will wait until\n"
-"the transmission completes or Ctrl-C is pressed.\n"
-"\n"
+            "The wait command takes an optional timeout parameter. This parameter defaults\n"
+            "to units of ms. The timeout unit may be specified using the ms, s, m, or h\n"
+            "suffixes. If this parameter is not provided, the command will wait until\n"
+            "the transmission completes or Ctrl-C is pressed.\n"
+            "\n"
             "Configuration parameters take the form 'param=value', and may be specified\n"
             "in a single or multiple 'tx config' invocations. Below is a list of\n"
             "available parameters.\n"
@@ -235,7 +237,7 @@ static const struct cmd cmd_table[] = {
             "   pa              PA settings\n"
             "   pps             PPS settings\n"
             "   refclk          Reference clock settings\n"
-            "   rxvga1          Gain setting of RXVGA1 in dB (range: TODO)\n"
+            "   rxvga1          Gain setting of RXVGA1 (range: TODO)\n"
             "   rxvga2          Gain setting of RXVGA2 in dB (range: TODO)\n"
             "   samplerate      Samplerate settings\n"
             "   trimdac         VCTCXO Trim DAC settings\n"
@@ -347,7 +349,7 @@ static const struct cmd cmd_table[] = {
             "   pa              PA settings\n"
             "   pps             PPS settings\n"
             "   refclk          Reference clock settings\n"
-            "   rxvga1          Gain setting of RXVGA1 in dB (range: TODO)\n"
+            "   rxvga1          Gain setting of RXVGA1 (range: TODO)\n"
             "   rxvga2          Gain setting of RXVGA2 in dB (range: TODO)\n"
             "   samplerate      Samplerate settings\n"
             "   trimdac         VCTCXO Trim DAC settings\n"
@@ -381,14 +383,14 @@ static const struct cmd cmd_table[] = {
     {
         FIELD_INIT(.names, cmd_names_erase),
         FIELD_INIT(.exec, cmd_erase),
-        FIELD_INIT(.desc, "Erase part of FX3 flash device"),
+        FIELD_INIT(.desc, "Erase specified sectors of SPI flash"),
         FIELD_INIT(.help,
-            "erase <sector_offset> <n_sectors>\n"
+            "erase <offset> <count>\n"
             "\n"
-            "Erase sectors from FX3 flash device.\n"
+            "Erase specified sectors of SPI flash\n"
             "\n"
-            "    sector_offset   Starting sector to erase\n"
-            "    n_sectors       Number of sectors to erase\n"
+            "    offset         Starting sector to erase\n"
+            "    count          Number of sectors to erase\n"
         )
     },
     {
@@ -459,7 +461,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.exec, cmd_mimo),
         FIELD_INIT(.desc, "Modify device MIMO operation"),
         FIELD_INIT(.help,
-            "mimo [master|slave]\n"
+            "mimo [master | slave]\n"
             "\n"
             "Modify device MIMO operation\n"
         )
