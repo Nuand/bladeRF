@@ -80,8 +80,8 @@ static const char *cmd_names_ver[] = { "version", "ver", "v", NULL };
 static const char *cmd_names_rec[] = { "recover", "r", NULL };
 static const char *cmd_names_jump[] = { "jump_to_boot", "j", NULL };
 static const char *cmd_names_mimo[] = { "mimo", NULL };
-static const char *cmd_names_backup[] = { "backup", "bc", NULL };
-static const char *cmd_names_restore[] = { "restore", "rc", NULL };
+static const char *cmd_names_backup[] = { "backup",  NULL };
+static const char *cmd_names_restore[] = { "restore", NULL };
 static const char *cmd_names_init_cal[] = { "init_cal", NULL };
 
 static const struct cmd cmd_table[] = {
@@ -395,8 +395,8 @@ static const struct cmd cmd_table[] = {
             "\n"
             "Erase specified sectors of SPI flash\n"
             "\n"
-            "    offset         Starting sector to erase\n"
-            "    count          Number of sectors to erase\n"
+            "    <offset>       Starting sector to erase\n"
+            "    <count>        Number of sectors to erase\n"
         )
     },
     {
@@ -456,37 +456,40 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.names, cmd_names_backup),
         FIELD_INIT(.exec, cmd_backup),
         FIELD_INIT(.desc, "Back up flash data"),
-        FIELD_INIT(.help, "backup <file> [address,len]\n"
+        FIELD_INIT(.help, "backup <file> [<address>,<length>]\n"
             "\n"
-            "Back up flash data to a file.\n"
-            "   `address'     defaults to the address of the calibration data.\n"
-            "   `len'         defaults the size of the calibration data "
-                   " (256 bytes).\n"
+            "Back up flash data to the specified file.\n"
+            "\n"
+            "Optional parameters:\n"
+            "   <address>   Defaults to the address of the calibration data.\n"
+            "   <len>       Defaults to the size of the calibration data "
+            "(256 bytes).\n"
             ),
     },
     {
         FIELD_INIT(.names, cmd_names_restore),
         FIELD_INIT(.exec, cmd_restore),
-        FIELD_INIT(.desc, "Restore calibration data"),
-        FIELD_INIT(.help, "restore file [address,len]\n\n"
-"Restore flash data from a file.\n"
-"\n"
-"   <address>   defaults to the address of the factory calibration data or the\n"
-"               address stored in the metadata section of the image if it exists\n"
-"\n"
-"   <len>       defaults the size of the factory calibration data (256 bytes) or\n"
-"               the length of the image given"
+        FIELD_INIT(.desc, "Restore flash data"),
+        FIELD_INIT(.help, "restore <file> [<address>,<length>]\n\n"
+            "Restore flash data from a file.\n"
+            "\n"
+            "   <address>   Defaults to the address of the factory calibration data or the\n"
+            "               address stored in the metadata section of the provided image,\n"
+            "               if available.\n\n"
+            "   <len>       defaults the size of the factory calibration data (256 bytes) or\n"
+            "               the length of the provided image."
             ),
     },
     {
         FIELD_INIT(.names, cmd_names_init_cal),
         FIELD_INIT(.exec, cmd_init_cal),
         FIELD_INIT(.desc, "Write new calibration data to device"),
-        FIELD_INIT(.help, "init_cal fpga_size vctcxo_trim\n"
-"\n"
-"Initializes the calibration region in the flash with new values"
-"   <fpga_size>       Either 40 or 115 depending on the device model.\n"
-"   <vctcxo_trim>     VCTCXO/DAC trim value (0x0-0xffff)\n"
+        FIELD_INIT(.help, "init_cal <fpga_size> <vctcxo_trim>\n"
+            "\n"
+            "Initializes the calibration region in the flash with new values. Be sure to\n"
+            "backup calibration data prior to running this command.\n\n"
+            "   <fpga_size>       Either 40 or 115, depending on the device model.\n"
+            "   <vctcxo_trim>     VCTCXO/DAC trim value (0x0-0xffff)\n"
             )
     },
     {

@@ -41,7 +41,7 @@ int cmd_init_cal(struct cli_state *state, int argc, char **argv)
         return CMD_RET_NARGS;
 
     if(strcmp(argv[1], "40") != 0 && strcmp(argv[1], "115") != 0) {
-        cli_err(state, argv[0], "FPGA size invalid. Must be either '40' or '115'");
+        cli_err(state, argv[0], "Invalid FPGA size: \"%s\". Size must be either '40' or '115'.", argv[1]);
         return CMD_RET_INVPARAM;
     }
 
@@ -58,7 +58,7 @@ int cmd_init_cal(struct cli_state *state, int argc, char **argv)
     rv = bladerf_make_cal_region(argv[1], dac, buf, sizeof(buf));
     if(rv < 0) {
         state->last_lib_error = rv;
-        cli_err(state, argv[0], "Making cal region failed!");
+        cli_err(state, argv[0], "Failed to create calibration data");
         return CMD_RET_LIBBLADERF;
     }
 
@@ -71,12 +71,13 @@ int cmd_init_cal(struct cli_state *state, int argc, char **argv)
     if(rv < 0) {
         state->last_lib_error = rv;
         cli_err(state, argv[0],
-"Writing cal region to flash failed!\n"
-"\n"
-"This is Pretty Bad^{TM} you should reflash the FX3 image just to be\n"
-"sure it didn't get damaged.\n"
-"\n"
-"See: https://github.com/Nuand/bladeRF/wiki/Upgrading-bladeRF-firmware\n"
+                "Failed to write calibration data.\n"
+                "\n"
+                "This may have resulted in a corrupted flash. If the device fails to\n"
+                "boot at the next power cycle, re-flash the firmware.\n"
+                "\n"
+                "See the following page for more information:\n"
+                "  https://github.com/Nuand/bladeRF/wiki/Upgrading-bladeRF-firmware\n"
         );
         return CMD_RET_LIBBLADERF;
     }
