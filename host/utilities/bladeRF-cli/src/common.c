@@ -190,15 +190,14 @@ void cli_err(struct cli_state *s, const char *pfx, const char *format, ...)
         }
     }
 
-    /* +6 --> 3 newlines, 2 chars padding, NUL terminator */
-    err = calloc(strlen(lbuf) + strlen(pfx) + strlen(format) + 6, 1);
+    /* +4 --> 1 newlines, 2 chars padding, NUL terminator */
+    err = calloc(strlen(lbuf) + strlen(pfx) + strlen(format) + 4, 1);
     if (err) {
-        strcat(err, "\n");
         strcat(err, pfx);
         strcat(err, lbuf);
         strcat(err, ": ");
         strcat(err, format);
-        strcat(err, "\n\n");
+        strcat(err, "\n");
 
         va_start(arg_list, format);
         vfprintf(stderr, err, arg_list);

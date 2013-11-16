@@ -31,13 +31,15 @@
 #include "file_ops.h"
 #include "log.h"
 
-int file_write(FILE *f, char *buf, size_t len)
+int file_write(FILE *f, uint8_t *buf, size_t len)
 {
     size_t rv;
 
     rv = fwrite(buf, 1, len, f);
-    if(rv < len)
+    if(rv < len) {
+        log_debug("File write failed: %s\n", strerror(errno));
         return BLADERF_ERR_IO;
+    }
 
     return 0;
 }
@@ -49,9 +51,9 @@ int file_read(FILE *f, char *buf, size_t len)
     rv = fread(buf, 1, len, f);
     if(rv < len) {
         if(feof(f))
-            log_error("Unexpected end of file");
+            log_debug("Unexpected end of file: %s\n", strerror(errno));
         else
-            log_error("Error reading file");
+            log_debug("Error reading file: %s\n", strerror(errno));
 
         return BLADERF_ERR_IO;
     }
@@ -62,24 +64,33 @@ int file_read(FILE *f, char *buf, size_t len)
 ssize_t file_size(FILE *f)
 {
     int rv = BLADERF_ERR_IO;
-
     long int fpos = ftell(f);
-    if(fpos < 0)
-        goto out;
+    ssize_t len;
 
-    if(fseek(f, 0, SEEK_END))
-        goto out;
+    if(fpos < 0) {
+        log_verbose("ftell failed: %s\n", strerror(errno));
+        goto file_size_out;
+    }
 
-    ssize_t len = ftell(f);
-    if(len < 0)
-        goto out;
+    if(fseek(f, 0, SEEK_END)) {
+        log_verbose("fseek failed: %s\n", strerror(errno));
+        goto file_size_out;
+    }
 
-    if(fseek(f, fpos, SEEK_SET))
-        goto out;
+    len = ftell(f);
+    if(len < 0) {
+        log_verbose("ftell failed: %s\n", strerror(errno));
+        goto file_size_out;
+    }
+
+    if(fseek(f, fpos, SEEK_SET)) {
+        log_debug("fseek failed: %s\n", strerror(errno));
+        goto file_size_out;
+    }
 
     rv = len;
 
-out:
+file_size_out:
     return rv;
 }
 
@@ -92,7 +103,7 @@ int file_read_buffer(const char *filename, uint8_t **buf_ret, size_t *size_ret)
 
     f = fopen(filename, "rb");
     if (!f) {
-        log_error("fopen: %s\n", strerror(errno));
+        log_verbose("fopen failed: %s\n", strerror(errno));
         return BLADERF_ERR_IO;
     }
 

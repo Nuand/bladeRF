@@ -68,6 +68,8 @@
 #define LE32_TO_HOST(val) le32toh(val)
 #define HOST_TO_BE32(val) htobe32(val)
 #define BE32_TO_HOST(val) be32toh(val)
+#define HOST_TO_BE64(val) be64toh(val)
+#define BE64_TO_HOST(val) be64toh(val)
 
 /*-----------------------
  * Apple OSX
@@ -83,6 +85,8 @@
 #define LE32_TO_HOST(val) OSSwapLittleToHostInt32(val)
 #define HOST_TO_BE32(val) OSSwapHostToBigInt32(val)
 #define BE32_TO_HOST(val) OSSwapBigToHostInt32(val)
+#define HOST_TO_BE64(val) OSSwapHostToBigInt64(val)
+#define BE64_TO_HOST(val) OSSwapBigToHostInt64(val)
 
 /*-----------------------
  * Windows
@@ -101,6 +105,8 @@
 #define LE32_TO_HOST(val) (val)
 #define HOST_TO_BE32(val) _byteswap_ulong(val)
 #define BE32_TO_HOST(val) _byteswap_ulong(val)
+#define HOST_TO_BE64(val) _byteswap_uint64(val)
+#define BE64_TO_HOST(val) _byteswap_uint64(val)
 
 /*-----------------------
  * Unsupported or bug

@@ -1,25 +1,88 @@
-/* image_header.c
- * Licensed under GPLv2+ or LGPLv2+
+/*
+ * This file is part of the bladeRF project:
+ *   http://www.github.com/nuand/bladeRF
+ *
  * Copyright (C) 2013  Daniel Gröber <dxld AT darkboxed DOT org>
+ * Copyright (C) 2013  Nuand, LLC.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
-
-#include <sha256.h>
-#include <host_config.h>
-#include <libbladeRF.h>
-#include <log.h>
-#include <minmax.h>
-#include <file_ops.h>
 
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
 #include <rel_assert.h>
 #include <limits.h>
+#include <errno.h>
 
-const char image_signature[] = "bladeRF Image v1";
+#include "host_config.h"
+#include "sha256.h"
+#include "libbladeRF.h"
+#include "log.h"
+#include "minmax.h"
+#include "file_ops.h"
 
-static void
-sha256_buffer(char *buf, size_t len, char digest[SHA256_DIGEST_SIZE])
+/* These two are used interchangeably - ensure they're the same! */
+#if SHA256_DIGEST_SIZE != BLADERF_IMAGE_CHECKSUM_LEN
+#error "Image checksum size mismatch"
+#endif
+
+#define CALC_IMAGE_SIZE(len) ((size_t) \
+     ( \
+        BLADERF_IMAGE_MAGIC_LEN + \
+        BLADERF_IMAGE_CHECKSUM_LEN + \
+        3 * sizeof(uint16_t) + \
+        sizeof(uint64_t) + \
+        BLADERF_SERIAL_LENGTH + \
+        BLADERF_IMAGE_RESERVED_LEN + \
+        3 * sizeof(uint32_t) + \
+        len \
+     ) \
+)
+
+static const char image_magic[] = "bladeRF";
+
+#if BLADERF_OS_WINDOWS
+/* TODO:
+ * http://social.msdn.microsoft.com/Forums/vstudio/en-US/430449b3-f6dd-4e18-84de-eebd26a8d668/gettimeofday?forum=vcgeneral
+ * http://msdn.microsoft.com/en-us/library/windows/desktop/ms724338%28v=vs.85%29.aspx
+ */
+static uint64_t get_timestamp()
+{
+#error not implemented
+}
+#else
+#include <sys/time.h>
+static inline uint64_t get_timestamp()
+{
+    uint64_t ret;
+    struct timeval tv;
+
+    if (gettimeofday(&tv, NULL) == 0) {
+        ret = tv.tv_sec;
+    } else {
+        log_verbose("gettimeofday failed: %s\n", strerror(errno));
+        ret = 0;
+    }
+
+    return ret;
+}
+#endif
+
+static void sha256_buffer(const char *buf, size_t len,
+                          char digest[SHA256_DIGEST_SIZE])
 {
     SHA256_CTX ctx;
 
@@ -28,394 +91,371 @@ sha256_buffer(char *buf, size_t len, char digest[SHA256_DIGEST_SIZE])
     SHA256_Final((uint8_t*)digest, &ctx);
 }
 
-const char *bladerf_image_strmeta(bladerf_image_meta_tag tag)
+static int verify_checksum(uint8_t *buf, size_t buf_len)
 {
-    switch(tag) {
-    case BLADERF_IMAGE_META_ADDRESS:
-        return "BLADERF_IMAGE_META_ADDRESS";
-    case BLADERF_IMAGE_META_VERSION:
-        return "BLADERF_IMAGE_META_VERSION";
-    case BLADERF_IMAGE_META_INVALID:
-    default:
-        return "BLADERF_IMAGE_META_INVALID";
+    char checksum_expected[SHA256_DIGEST_SIZE];
+    char checksum_calc[SHA256_DIGEST_SIZE];
+
+    if (buf_len <= CALC_IMAGE_SIZE(0)) {
+        log_debug("Provided buffer isn't a full image\n");
+        return BLADERF_ERR_INVAL;
+    }
+
+    /* Backup and clear the expected checksum before we calculate the
+     * expected checksum */
+    memcpy(checksum_expected, &buf[BLADERF_IMAGE_MAGIC_LEN],
+           sizeof(checksum_expected));
+
+    memset(&buf[BLADERF_IMAGE_MAGIC_LEN], 0, SHA256_DIGEST_SIZE);
+
+    sha256_buffer((const char *)buf, buf_len, checksum_calc);
+
+    if (memcmp(checksum_expected, checksum_calc, SHA256_DIGEST_SIZE) != 0) {
+        return BLADERF_ERR_CHECKSUM;
+    } else {
+        /* Restore the buffer's checksum so the caller can still use it */
+        memcpy(&buf[BLADERF_IMAGE_MAGIC_LEN], checksum_expected,
+               sizeof(checksum_expected));
+
+        return 0;
     }
 }
 
-int bladerf_image_fill(struct bladerf_image *img,
-                       bladerf_image_type_t type,
-                       char *data,
-                       size_t len)
-{
-    assert(len <= BLADERF_FLASH_TOTAL_SIZE);
+static bool image_type_is_valid(bladerf_image_type type) {
+    switch (type) {
+        case BLADERF_IMAGE_TYPE_RAW:
+        case BLADERF_IMAGE_TYPE_FIRMWARE:
+        case BLADERF_IMAGE_TYPE_FPGA_40KLE:
+        case BLADERF_IMAGE_TYPE_FPGA_115KLE:
+        case BLADERF_IMAGE_TYPE_CALIBRATION:
+            return true;
 
-    memcpy(img->signature, image_signature, BLADERF_SIGNATURE_SIZE);
-    img->type = type;
-    memset(&img->meta, 0x00, sizeof(img->meta));
-    img->len = len;
-    memcpy(img->data, data, len);
-    sha256_buffer(data, len, img->sha256);
+        default:
+            return false;
+    }
+}
+
+/* Serialize image contents and fill in checksum */
+static size_t pack_image(struct bladerf_image *img, uint8_t *buf)
+{
+    size_t i = 0;
+    uint16_t ver_field;
+    uint32_t type, len, addr;
+    uint64_t timestamp;
+    char checksum[BLADERF_IMAGE_CHECKSUM_LEN];
+
+    memcpy(&buf[i], img->magic, BLADERF_IMAGE_MAGIC_LEN);
+    i += BLADERF_IMAGE_MAGIC_LEN;
+
+    memset(&buf[i], 0, BLADERF_IMAGE_CHECKSUM_LEN);
+    i += BLADERF_IMAGE_CHECKSUM_LEN;
+
+    ver_field = HOST_TO_BE16(img->version.major);
+    memcpy(&buf[i], &ver_field, sizeof(ver_field));
+    i += sizeof(ver_field);
+
+    ver_field = HOST_TO_BE16(img->version.minor);
+    memcpy(&buf[i], &ver_field, sizeof(ver_field));
+    i += sizeof(ver_field);
+
+    ver_field = HOST_TO_BE16(img->version.patch);
+    memcpy(&buf[i], &ver_field, sizeof(ver_field));
+    i += sizeof(ver_field);
+
+    timestamp = HOST_TO_BE64(img->timestamp);
+    memcpy(&buf[i], &timestamp, sizeof(timestamp));
+    i += sizeof(timestamp);
+
+    memcpy(&buf[i], &img->serial, BLADERF_SERIAL_LENGTH);
+    i += BLADERF_SERIAL_LENGTH;
+
+    memset(&buf[i], 0, BLADERF_IMAGE_RESERVED_LEN);
+    i += BLADERF_IMAGE_RESERVED_LEN;
+
+    type = HOST_TO_BE32((uint32_t)img->type);
+    memcpy(&buf[i], &type, sizeof(type));
+    i += sizeof(type);
+
+    addr = HOST_TO_BE32(img->address);
+    memcpy(&buf[i], &addr, sizeof(addr));
+    i += sizeof(addr);
+
+    len = HOST_TO_BE32(img->length);
+    memcpy(&buf[i], &len, sizeof(len));
+    i += sizeof(len);
+
+    memcpy(&buf[i], img->data, img->length);
+    i += img->length;
+
+    sha256_buffer((const char *)buf, i, checksum);
+    memcpy(&buf[BLADERF_IMAGE_MAGIC_LEN], checksum, BLADERF_IMAGE_CHECKSUM_LEN);
+
+    return i;
+}
+
+/* Unpack flash image from file and validate fields */
+static int unpack_image(struct bladerf_image *img, uint8_t *buf, size_t len)
+{
+    size_t i = 0;
+    uint32_t type;
+
+    /* Ensure we have at least a full set of metadata */
+    if (len < CALC_IMAGE_SIZE(0)) {
+        return BLADERF_ERR_INVAL;
+    }
+
+    memcpy(img->magic, &buf[i], BLADERF_IMAGE_MAGIC_LEN);
+    img->magic[BLADERF_IMAGE_MAGIC_LEN] = '\0';
+    if (strncmp(img->magic, image_magic, BLADERF_IMAGE_MAGIC_LEN)) {
+        return BLADERF_ERR_INVAL;
+    }
+    i += BLADERF_IMAGE_MAGIC_LEN;
+
+    memcpy(img->checksum, &buf[i], BLADERF_IMAGE_CHECKSUM_LEN);
+    i += BLADERF_IMAGE_CHECKSUM_LEN;
+
+    memcpy(&img->version.major, &buf[i], sizeof(img->version.major));
+    i += sizeof(img->version.major);
+    img->version.major = BE16_TO_HOST(img->version.major);
+
+    memcpy(&img->version.minor, &buf[i], sizeof(img->version.minor));
+    i += sizeof(img->version.minor);
+    img->version.minor = BE16_TO_HOST(img->version.minor);
+
+    memcpy(&img->version.patch, &buf[i], sizeof(img->version.patch));
+    i += sizeof(img->version.patch);
+    img->version.patch = BE16_TO_HOST(img->version.patch);
+
+    memcpy(&img->timestamp, &buf[i], sizeof(img->timestamp));
+    i += sizeof(img->timestamp);
+    img->timestamp = BE64_TO_HOST(img->timestamp);
+
+    memcpy(img->serial, &buf[i], BLADERF_SERIAL_LENGTH);
+    img->serial[BLADERF_SERIAL_LENGTH] = '\0';
+
+    memcpy(img->reserved, &buf[i], BLADERF_IMAGE_RESERVED_LEN);
+    i += BLADERF_IMAGE_RESERVED_LEN;
+
+    memcpy(&type, &buf[i], sizeof(type));
+    i += sizeof(type);
+    type = BE32_TO_HOST(type);
+
+    if (!image_type_is_valid(type)) {
+        log_debug("Invalid type value in image: %d\n", (int)type);
+        return BLADERF_ERR_INVAL;
+    } else {
+        img->type = (bladerf_image_type)type;
+    }
+
+    memcpy(&img->address, &buf[i], sizeof(img->address));
+    i += sizeof(img->address);
+    img->address = BE32_TO_HOST(img->address);
+
+    memcpy(&img->length, &buf[i], sizeof(img->length));
+    i += sizeof(img->length);
+    img->length = BE32_TO_HOST(img->length);
+
+    if (len != CALC_IMAGE_SIZE(img->length)) {
+        log_debug("Image contains more or less data than expected\n");
+        return BLADERF_ERR_INVAL;
+    }
+
+    /* Just slide the data over */
+    memmove(&buf[0], &buf[i], img->length);
+    img->data = buf;
 
     return 0;
 }
 
-int bladerf_image_check_signature(char *sig)
-{
-    /* if this fails we got the wrong size in libbladerf.h! */
-    assert(BLADERF_SIGNATURE_SIZE == sizeof(image_signature));
 
-    return memcmp(image_signature, sig, BLADERF_SIGNATURE_SIZE);
-}
-
-static int verify_checksum(FILE *f)
+int bladerf_image_write(struct bladerf_image *img, const char *file)
 {
     int rv;
-    ssize_t len;
-    char *buf;
-    char sha256[SHA256_DIGEST_SIZE];
-    char sha256_image[SHA256_DIGEST_SIZE];
+    FILE *f = NULL;
+    uint8_t *buf = NULL;
+    size_t buf_len;
 
-    len = file_size(f);
-    if(len < 0) {
-        assert(len > INT_MIN);
-        return (int)len;
+    /* Ensure the format identifier is correct */
+    if (memcmp(img->magic, image_magic, BLADERF_IMAGE_MAGIC_LEN) != 0) {
+#ifdef LOGGING_ENABLED
+        char badmagic[BLADERF_IMAGE_MAGIC_LEN + 1];
+        memset(badmagic, 0, sizeof(badmagic));
+        memcpy(&badmagic, &img->magic, BLADERF_IMAGE_MAGIC_LEN);
+        log_debug("Invalid file format magic value: %s\n", badmagic);
+#endif
+        return BLADERF_ERR_INVAL;
     }
 
-    if(len <= SHA256_DIGEST_SIZE)
-        return -BLADERF_ERR_UNEXPECTED;
+    /* Check for a valid image type */
+    if (!image_type_is_valid(img->type)) {
+        log_debug("Invalid image type: %d\n", img->type);
+        return BLADERF_ERR_INVAL;
+    }
 
-    buf = malloc(len);
-    if(!buf)
+    /* Just to be tiny bit paranoid... */
+    if (!img->data) {
+        log_debug("Image data pointer is NULL\n");
+        return BLADERF_ERR_INVAL;
+    }
+
+    buf_len = CALC_IMAGE_SIZE(img->length);
+    buf = calloc(1, buf_len);
+    if (!buf) {
+        log_verbose("calloc failed: %s\n", strerror(errno));
         return BLADERF_ERR_MEM;
+    }
 
-    rv = file_read(f, buf, len - SHA256_DIGEST_SIZE);
-    if(rv < 0)
-        goto error;
+    pack_image(img, buf);
 
-    sha256_buffer(buf, len - SHA256_DIGEST_SIZE, sha256);
+    f = fopen(file, "wb");
+    if (!f) {
+        log_debug("Failed to open \"%s\": %s\n", file, strerror(errno));
+        rv = BLADERF_ERR_IO;
+        goto bladerf_image_write_out;
+    }
 
-    rv = file_read(f, sha256_image, SHA256_DIGEST_SIZE);
-    if(rv < 0)
-        goto error;
+    rv = file_write(f, buf, buf_len);
 
-    rv = (memcmp(sha256, sha256_image, SHA256_DIGEST_SIZE) != 0);
-
-    if(fseek(f, 0, SEEK_SET))
-        goto error;
-
-error:
+bladerf_image_write_out:
+    if (f) {
+        fclose(f);
+    }
     free(buf);
     return rv;
 }
 
-static int write_checksum(FILE *f)
+int bladerf_image_read(struct bladerf_image *img, const char *file)
 {
-    int rv;
-    ssize_t len;
-    char *buf;
-    char sha256[SHA256_DIGEST_SIZE];
+    int rv = -1;
+    FILE *f = NULL;
+    uint8_t *buf = NULL;
+    size_t buf_len;
 
-    len = file_size(f);
-    if(len < 0) {
-        assert(len > INT_MIN);
-        return (int)len;
+    rv = file_read_buffer(file, &buf, &buf_len);
+    if (rv < 0) {
+        goto bladerf_image_read_out;
     }
 
-    buf = malloc(len);
-    if(!buf)
-        return BLADERF_ERR_MEM;
-
-    if(fseek(f, 0, SEEK_SET))
-        goto error;
-
-    rv = file_read(f, buf, len);
-    if(rv < 0)
-        goto error;
-
-    sha256_buffer(buf, len, sha256);
-
-    rv = file_write(f, sha256, sizeof(sha256));
-    if(rv < 0)
-        goto error;
-
-error:
-    free(buf);
-    return rv;
-}
-
-int bladerf_image_probe_file(char *file)
-{
-    int rv;
-    FILE *f;
-    char sig[BLADERF_SIGNATURE_SIZE];
-    ssize_t len;
-
-    f = fopen(file, "rb");
-    if(!f)
-        return BLADERF_ERR_IO;
-
-    rv = file_read(f, sig, sizeof(sig));
-    if(rv < 0)
-        goto out;
-
-    rv = bladerf_image_check_signature(sig);
-    if(rv < 0)
-        goto out;
-    else if(rv) {
-        rv = BLADERF_ERR_INVAL;
-        goto out;
+    rv = verify_checksum(buf, buf_len);
+    if (rv < 0) {
+        goto bladerf_image_read_out;
     }
 
-    rv = BLADERF_ERR_IO;
-    if(fseek(f, 0, SEEK_SET))
-        goto out;
+    /* Note: On success, buf->data = buf, with the data memmove'd over.
+     *       Static analysis tools might indicate a false postive leak when
+     *       buf goes out of scope with rv == 0 */
+    rv = unpack_image(img, buf, buf_len);
 
-    len = file_size(f);
-    if(len < 0) {
-        assert(len > INT_MAX);
-        rv = len;
-        goto out;
+bladerf_image_read_out:
+    if (rv != 0) {
+        free(buf);
     }
 
-    if(len < (ssize_t)BLADERF_IMAGE_MIN_SIZE) {
-        rv = BLADERF_ERR_INVAL;
-        goto out;
+    if (f) {
+        fclose(f);
     }
-
-    rv = verify_checksum(f);
-    if(rv < 0)
-        goto out;
-    else if(rv) {
-        rv = BLADERF_ERR_CHECKSUM;
-        goto out;
-    }
-
-out:
-    fclose(f);
 
     return rv;
 }
 
-int bladerf_image_meta_add(struct bladerf_image_meta *meta,
-                           bladerf_image_meta_tag tag,
-                           void *data,
-                           uint32_t len)
+struct bladerf_image * bladerf_alloc_image(bladerf_image_type type,
+                                           uint32_t address,
+                                           size_t length)
 {
-    uint32_t i = meta->n_entries;
+    struct bladerf_image *image;
 
-    struct bladerf_image_meta_entry *ent = &meta->entries[i];
+    assert(BLADERF_IMAGE_MAGIC_LEN == (sizeof(image_magic) - 1));
 
-    assert(tag >= 0 && tag < BLADERF_IMAGE_META_LAST);
-    assert(len <= sizeof(ent->data));
+    image = calloc(1, sizeof(*image));
 
-    ent->tag = tag;
-    ent->len = len;
-    memcpy(ent->data, data, len);
+    if (!image) {
+        return NULL;
+    }
 
-    meta->n_entries++;
-
-    return 0;
-}
-
-int bladerf_image_meta_get(struct bladerf_image_meta *meta,
-                           int32_t tag,
-                           void *data,
-                           uint32_t len)
-{
-    struct bladerf_image_meta_entry *ent;
-    uint32_t n_entries = meta->n_entries;
-
-    uint32_t i;
-    for(i=0; i < n_entries; i++) {
-        ent = &meta->entries[i];
-        if(ent->tag == tag) {
-            assert(len <= sizeof(ent->data));
-            assert(ent->len == len); /* format probably changed */
-            memcpy(data, ent->data, len);
-
-            return 0;
+    if (length) {
+        image->data = calloc(1, length);
+        if (!image->data) {
+            free(image);
+            return NULL;
         }
     }
 
-    return -1;
+    memcpy(image->magic, &image_magic, BLADERF_IMAGE_MAGIC_LEN);
+
+    image->version.major = 0;
+    image->version.minor = 1;
+    image->version.patch = 0;
+    image->timestamp = get_timestamp();
+    image->address = address;
+    image->length = length;
+    image->type = type;
+
+    return image;
 }
 
-int bladerf_image_meta_write(struct bladerf_image_meta *meta, FILE *f)
+static int make_cal_region(bladerf_fpga_size size, uint16_t vctcxo_trim,
+                           uint8_t *buf, size_t len)
 {
     int rv;
-    uint32_t n_entries_be;
-    uint32_t i, count;
+    static const char fpga_size_40[] = "40";
+    static const char fpga_size_115[] = "115";
+    const char *fpga_size;
+    char dac[7] = {0};
 
-    n_entries_be = HOST_TO_BE32(meta->n_entries);
-    rv = file_write(f, (char*) &n_entries_be, sizeof(n_entries_be));
-    if(rv < 0)
-        goto out;
-
-    count = min_sz(meta->n_entries, BLADERF_IMAGE_META_NENT);
-    for(i=0; i < count; i++) {
-        int32_t tag_be;
-        uint32_t len_be;
-
-        struct bladerf_image_meta_entry *ent = &meta->entries[i];
-
-        tag_be = HOST_TO_BE32(ent->tag);
-        rv = file_write(f, (char*) &tag_be, sizeof(tag_be));
-        if(rv < 0)
-            goto out;
-
-        len_be = HOST_TO_BE32(ent->len);
-        rv = file_write(f, (char*) &len_be, sizeof(tag_be));
-        if(rv < 0)
-            goto out;
-
-        rv = file_write(f, ent->data, sizeof(ent->data));
-        if(rv < 0)
-            goto out;
+    if (size == BLADERF_FPGA_40KLE) {
+        fpga_size = fpga_size_40;
+    } else if (size == BLADERF_FPGA_115KLE) {
+        fpga_size = fpga_size_115;
+    } else {
+        assert(0); /* Bug catcher */
+        return BLADERF_ERR_INVAL;
     }
 
-out:
-    return rv;
+    memset(buf, 0xff, len);
+
+    assert(len < INT_MAX);
+    rv = add_field((char*)buf, (int)len, "B", fpga_size);
+    if (rv < 0) {
+        return rv;
+    }
+
+    sprintf(dac, "%u", vctcxo_trim);
+    rv = add_field((char*)buf, (int)len, "DAC", dac);
+    if (rv < 0) {
+        return rv;
+    }
+
+    return 0;
 }
 
-int bladerf_image_meta_read(struct bladerf_image_meta *meta, FILE *f)
+struct bladerf_image * bladerf_alloc_cal_image(bladerf_fpga_size fpga_size,
+                                               uint16_t vctcxo_trim)
 {
-    int rv;
-    uint32_t n_entries_be;
-    uint32_t i;
+    struct bladerf_image *image;
+    int status;
 
-    rv = file_read(f, (char*) &n_entries_be, sizeof(n_entries_be));
-    if(rv < 0)
-        goto out;
+    image = bladerf_alloc_image(BLADERF_IMAGE_TYPE_CALIBRATION,
+                                BLADERF_FLASH_ADDR_CALIBRATION,
+                                BLADERF_FLASH_LEN_CALIBRATION);
 
-    meta->n_entries = BE32_TO_HOST(n_entries_be);
-
-    for(i=0; i < meta->n_entries; i++) {
-        struct bladerf_image_meta_entry *ent = &meta->entries[i];
-        int32_t tag_be;
-        uint32_t len_be;
-
-        rv = file_read(f, (char*) &tag_be, sizeof(tag_be));
-        if(rv < 0)
-            goto out;
-        ent->tag = BE32_TO_HOST(tag_be);
-
-        rv = file_read(f, (char*) &len_be, sizeof(len_be));
-        if(rv < 0)
-            goto out;
-        ent->len = BE32_TO_HOST(len_be);
-
-        rv = file_read(f, ent->data, sizeof(ent->data));
-        if(rv < 0)
-            goto out;
+    if (!image) {
+        return NULL;
     }
 
-out:
-    return rv;
+    status = make_cal_region(fpga_size, vctcxo_trim,
+                             image->data, image->length);
+
+    if (status != 0) {
+        bladerf_free_image(image);
+        image = NULL;
+    }
+
+    return image;
 }
 
-int bladerf_image_write(struct bladerf_image *img, char* file)
+void bladerf_free_image(struct bladerf_image *image)
 {
-    int rv = -1;
-    FILE *f;
-    int32_t type;
-    uint32_t len;
-
-    f = fopen(file, "w+b");
-    if(!f)
-        return BLADERF_ERR_IO;
-
-    assert(memcmp(img->signature, image_signature, BLADERF_SIGNATURE_SIZE) == 0);
-
-    rv = file_write(f, img->signature, strlen(img->signature));
-    if(rv < 0)
-        goto out;
-
-    type = HOST_TO_BE32(img->type);
-    rv = file_write(f, (char*) &type, sizeof(type));
-    if(rv < 0)
-        goto out;
-
-    rv = bladerf_image_meta_write(&img->meta, f);
-    if(rv < 0)
-        goto out;
-
-    assert(img->len <= BLADERF_FLASH_TOTAL_SIZE);
-
-    len = HOST_TO_BE32(img->len);
-    rv = file_write(f, (char*) &len, sizeof(len));
-    if(rv < 0)
-        goto out;
-
-    rv = file_write(f, img->data, img->len);
-    if(rv < 0)
-        goto out;
-
-    rv = write_checksum(f);
-    if(rv < 0)
-        goto out;
-
-    rv = 0;
-out:
-    fclose(f);
-
-    return rv;
+    free(image->data);
+    free(image);
 }
 
-int bladerf_image_read(struct bladerf_image *img, char* file)
-{
-    int rv = -1;
-    FILE *f;
-    int32_t type_be;
-    uint32_t len_be;
-
-    f = fopen(file, "rb");
-    if(!f)
-        return BLADERF_ERR_IO;
-
-    rv = verify_checksum(f);
-    if(rv < 0) {
-        goto out;
-    } else if(rv) {
-        rv = BLADERF_ERR_CHECKSUM;
-        goto out;
-    }
-
-    rv = file_read(f, img->signature, BLADERF_SIGNATURE_SIZE);
-    if(rv < 0)
-        goto out;
-
-    if(memcmp(img->signature, image_signature, BLADERF_SIGNATURE_SIZE) != 0) {
-        goto out;
-    }
-
-    rv = file_read(f, (char*) &type_be, sizeof(type_be));
-    if(rv < 0)
-        goto out;
-
-    img->type = BE32_TO_HOST(type_be);
-
-    rv = bladerf_image_meta_read(&img->meta, f);
-    if(rv < 0)
-        goto out;
-
-    rv = file_read(f, (char*) &len_be, sizeof(len_be));
-    if(rv < 0)
-        goto out;
-
-    img->len = BE32_TO_HOST(len_be);
-
-    assert(img->len <= BLADERF_FLASH_TOTAL_SIZE);
-
-    rv = file_read(f, img->data, img->len);
-    if(rv < 0)
-        goto out;
-
-    rv = file_read(f, img->sha256, sizeof(img->sha256));
-    if(rv < 0)
-        goto out;
-
-    rv = 0;
-out:
-    fclose(f);
-
-    return rv;
-}

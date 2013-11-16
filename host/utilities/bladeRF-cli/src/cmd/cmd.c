@@ -455,29 +455,25 @@ static const struct cmd cmd_table[] = {
     {
         FIELD_INIT(.names, cmd_names_backup),
         FIELD_INIT(.exec, cmd_backup),
-        FIELD_INIT(.desc, "Back up flash data"),
-        FIELD_INIT(.help, "backup <file> [<address>,<length>]\n"
+        FIELD_INIT(.desc, "Back up flash data to a file with metadata."),
+        FIELD_INIT(.help, "backup <file> [<address> <length>]\n"
             "\n"
             "Back up flash data to the specified file.\n"
             "\n"
             "Optional parameters:\n"
-            "   <address>   Defaults to the address of the calibration data.\n"
-            "   <len>       Defaults to the size of the calibration data "
-            "(256 bytes).\n"
+            "   <address>   Defaults to the address of the calibration data region.\n"
+            "   <len>       Defaults to the size of the calibration data region (256 bytes).\n"
             ),
     },
     {
         FIELD_INIT(.names, cmd_names_restore),
         FIELD_INIT(.exec, cmd_restore),
-        FIELD_INIT(.desc, "Restore flash data"),
-        FIELD_INIT(.help, "restore <file> [<address>,<length>]\n\n"
-            "Restore flash data from a file.\n"
+        FIELD_INIT(.desc, "Restore flash data from a file"),
+        FIELD_INIT(.help, "restore <file> [<address> <length>]\n\n"
+            "Restore flash data from a file, optionally overriding values in the image metadata.\n"
             "\n"
-            "   <address>   Defaults to the address of the factory calibration data or the\n"
-            "               address stored in the metadata section of the provided image,\n"
-            "               if available.\n\n"
-            "   <len>       defaults the size of the factory calibration data (256 bytes) or\n"
-            "               the length of the provided image."
+            "   <address>   Defaults to the address specified in the provided flash image file.\n"
+            "   <length>    Defaults to length of the data in the provided image file.\n"
             ),
     },
     {

@@ -56,7 +56,7 @@ int file_read_buffer(const char *filename, uint8_t **buf, size_t *size);
  *
  * @return 0 on success, negative BLADERF_ERR_* value on failure
  */
-int file_write(FILE *f, char *buf, size_t len);
+int file_write(FILE *f, uint8_t *buf, size_t len);
 
 /**
  * Read data from an open file stream.
