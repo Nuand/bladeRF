@@ -26,29 +26,30 @@
 #include "script.h"
 
 #define DECLARE_CMD(x) int cmd_##x (struct cli_state *, int, char **)
+DECLARE_CMD(backup);
 DECLARE_CMD(calibrate);
 DECLARE_CMD(clear);
 DECLARE_CMD(echo);
 DECLARE_CMD(erase);
+DECLARE_CMD(flash_image);
 DECLARE_CMD(help);
 DECLARE_CMD(info);
+DECLARE_CMD(init_cal);
+DECLARE_CMD(jump_to_bootloader);
 DECLARE_CMD(load);
+DECLARE_CMD(mimo);
 DECLARE_CMD(open);
 DECLARE_CMD(peek);
 DECLARE_CMD(poke);
 DECLARE_CMD(print);
 DECLARE_CMD(probe);
+DECLARE_CMD(recover);
+DECLARE_CMD(restore);
 DECLARE_CMD(run);
 DECLARE_CMD(set);
 DECLARE_CMD(rx);
 DECLARE_CMD(tx);
 DECLARE_CMD(version);
-DECLARE_CMD(recover);
-DECLARE_CMD(jump_to_bootloader);
-DECLARE_CMD(mimo);
-DECLARE_CMD(backup);
-DECLARE_CMD(restore);
-DECLARE_CMD(init_cal);
 
 #define MAX_ARGS    10
 
@@ -59,32 +60,46 @@ struct cmd {
     const char  *help;
 };
 
+static const char *cmd_names_backup[] = { "backup",  NULL };
 static const char *cmd_names_calibrate[] = { "calibrate", "cal", NULL };
 static const char *cmd_names_clear[] = { "clear", "cls", NULL };
 static const char *cmd_names_echo[] = { "echo", NULL };
+static const char *cmd_names_erase[] = { "erase", "e", NULL };
+static const char *cmd_names_flash_image[] = { "flash_image", NULL };
 static const char *cmd_names_help[] = { "help", "h", "?", NULL };
 static const char *cmd_names_info[] = { "info", "i", NULL };
+static const char *cmd_names_init_cal[] = { "init_cal", NULL };
+static const char *cmd_names_jump[] = { "jump_to_boot", "j", NULL };
 static const char *cmd_names_load[] = { "load", "ld", NULL };
+static const char *cmd_names_mimo[] = { "mimo", NULL };
 static const char *cmd_names_open[] = { "open", "op", "o", NULL };
 static const char *cmd_names_peek[] = { "peek", "pe", NULL };
 static const char *cmd_names_poke[] = { "poke", "po", NULL };
 static const char *cmd_names_print[] = { "print", "pr", "p", NULL };
 static const char *cmd_names_probe[] = { "probe", "pro", NULL };
-static const char *cmd_names_erase[] = { "erase", "e", NULL };
 static const char *cmd_names_quit[] = { "quit", "q", "exit", "x", NULL };
+static const char *cmd_names_rec[] = { "recover", "r", NULL };
+static const char *cmd_names_restore[] = { "restore", NULL };
+static const char *cmd_names_run[] = { "run", NULL };
 static const char *cmd_names_rx[] = { "rx", "receive", NULL };
 static const char *cmd_names_tx[] = { "tx", "transmit", NULL };
-static const char *cmd_names_run[] = { "run", NULL };
 static const char *cmd_names_set[] = { "set", "s", NULL };
 static const char *cmd_names_ver[] = { "version", "ver", "v", NULL };
-static const char *cmd_names_rec[] = { "recover", "r", NULL };
-static const char *cmd_names_jump[] = { "jump_to_boot", "j", NULL };
-static const char *cmd_names_mimo[] = { "mimo", NULL };
-static const char *cmd_names_backup[] = { "backup",  NULL };
-static const char *cmd_names_restore[] = { "restore", NULL };
-static const char *cmd_names_init_cal[] = { "init_cal", NULL };
 
 static const struct cmd cmd_table[] = {
+    {
+        FIELD_INIT(.names, cmd_names_backup),
+        FIELD_INIT(.exec, cmd_backup),
+        FIELD_INIT(.desc, "Back up flash data to a file with metadata."),
+        FIELD_INIT(.help, "backup <file> [<address> <length>]\n"
+            "\n"
+            "Back up flash data to the specified file.\n"
+            "\n"
+            "Optional parameters:\n"
+            "   <address>   Defaults to the address of the calibration data region.\n"
+            "   <len>       Defaults to the size of the calibration data region (256 bytes).\n"
+            ),
+    },
     {
         FIELD_INIT(.names, cmd_names_calibrate),
         FIELD_INIT(.exec, cmd_calibrate),
@@ -103,6 +118,283 @@ static const struct cmd cmd_table[] = {
             "\n"
             "Leave blank to calibrate all of the above.\n"
         )
+    },
+    {
+        FIELD_INIT(.names, cmd_names_clear),
+        FIELD_INIT(.exec, cmd_clear),
+        FIELD_INIT(.desc, "Clear the screen"),
+        FIELD_INIT(.help,
+            "clear\n"
+            "\n"
+            "Clears the screen\n"
+        )
+    },
+    {
+        FIELD_INIT(.names, cmd_names_echo),
+        FIELD_INIT(.exec, cmd_echo),
+        FIELD_INIT(.desc, "Echo each argument on a new line"),
+        FIELD_INIT(.help, "echo [arg 1] [arg 2] ... [arg n]\n"
+                "\n"
+                "Echo each argument on a new line.\n")
+
+    },
+    {
+        FIELD_INIT(.names, cmd_names_erase),
+        FIELD_INIT(.exec, cmd_erase),
+        FIELD_INIT(.desc, "Erase specified sectors of SPI flash"),
+        FIELD_INIT(.help,
+            "erase <offset> <count>\n"
+            "\n"
+            "Erase specified sectors of SPI flash\n"
+            "\n"
+            "    <offset>       Starting sector to erase\n"
+            "    <count>        Number of sectors to erase\n"
+        )
+    },
+    {
+        FIELD_INIT(.names, cmd_names_flash_image),
+        FIELD_INIT(.exec, cmd_flash_image),
+        FIELD_INIT(.desc, "Print a flash image's metadata or create a new flash image"),
+        FIELD_INIT(.help, "flash_image <image> [output options]\n"
+                "\n"
+                "Print a flash image's metadata or create a new flash image."
+                "\n"
+                "When provided with the name of a flash image file as the only argument,\n"
+                "this command will print the metadata contents of the image.\n"
+                "\n"
+                "The following options may be used to create a new flash image.\n"
+                "    data=<file>      File to containing data to store in the image.\n"
+                "    address=<addr>   Flash address. Default depends upon 'type' parameter.\n"
+                "    type=<type>      Type of flash image. Defaults to \"raw\".\n"
+                "                     Valid options are:\n"
+                "                       cal     - Calibration data\n"
+                "                       fw      - Firmware\n"
+                "                       fpga70  - Metadata and bitstream for 70 kLE FPGA\n"
+                "                       fpga115 - Metadata and bitstream for 115 kLE FPGA\n"
+                "                       raw     - Raw data. The address and length parameters\n"
+                "                                 must be provided if this type is selected.\n"
+                "    serial=<serial>  Serial # to store in image. Defaults to zeros.\n"
+                )
+
+    },
+    {
+        FIELD_INIT(.names, cmd_names_help),
+        FIELD_INIT(.exec, cmd_help),
+        FIELD_INIT(.desc, "Provide information about specified command"),
+        FIELD_INIT(.help,
+            "help [<command>]\n"
+            "\n"
+            "Provides extended help, like this, on any command.\n"
+        )
+    },
+    {
+        FIELD_INIT(.names, cmd_names_info),
+        FIELD_INIT(.exec, cmd_info),
+        FIELD_INIT(.desc, "Print information about the currently opened device"),
+        FIELD_INIT(.help,
+            "info\n"
+            "\n"
+            "Prints the following information about an opened device:\n"
+            "  Serial number\n"
+            "  VCTCXO DAC calibration value\n"
+            "  FPGA size\n"
+            "  Whether or not the FPGA is loaded\n"
+            "  USB bus, address, and speed\n"
+            "  Backend (libusb or kernel module)\n"
+            "  Instance number\n"
+        )
+    },
+    {
+        FIELD_INIT(.names, cmd_names_init_cal),
+        FIELD_INIT(.exec, cmd_init_cal),
+        FIELD_INIT(.desc, "Write new calibration data to device"),
+        FIELD_INIT(.help, "init_cal <fpga_size> <vctcxo_trim>\n"
+            "\n"
+            "Initializes the calibration region in the flash with new values. Be sure to\n"
+            "backup calibration data prior to running this command.\n\n"
+            "   <fpga_size>       Either 40 or 115, depending on the device model.\n"
+            "   <vctcxo_trim>     VCTCXO/DAC trim value (0x0-0xffff)\n"
+            )
+    },
+    {
+        FIELD_INIT(.names, cmd_names_jump),
+        FIELD_INIT(.exec, cmd_jump_to_bootloader),
+        FIELD_INIT(.desc, "Jump to FX3 bootloader"),
+        FIELD_INIT(.help,
+            "jump_to_boot\n"
+            "\n"
+            "Jumps to the FX3 bootloader.\n"
+        )
+    },
+    {
+        FIELD_INIT(.names, cmd_names_load),
+        FIELD_INIT(.exec, cmd_load),
+        FIELD_INIT(.desc, "Load FPGA or FX3"),
+        FIELD_INIT(.help,
+            "load <fpga|fx3> <filename>\n"
+            "\n"
+            "Load an FPGA bitstream or program the FX3's SPI flash.\n"
+        )
+    },
+    {
+        FIELD_INIT(.names, cmd_names_mimo),
+        FIELD_INIT(.exec, cmd_mimo),
+        FIELD_INIT(.desc, "Modify device MIMO operation"),
+        FIELD_INIT(.help,
+            "mimo [master | slave]\n"
+            "\n"
+            "Modify device MIMO operation\n"
+        )
+    },
+    {
+        FIELD_INIT(.names, cmd_names_open),
+        FIELD_INIT(.exec, cmd_open),
+        FIELD_INIT(.desc, "Open a bladeRF device"),
+        FIELD_INIT(.help,
+            "open [device identifiers]\n"
+            "\n"
+            "Open the specified device for use with successive commands.\n"
+            "Any previously opened device will be closed.\n"
+            "See the bladerf_open() documentation for the device specifier format.\n",
+        )
+    },
+    {
+        FIELD_INIT(.names, cmd_names_peek),
+        FIELD_INIT(.exec, cmd_peek),
+        FIELD_INIT(.desc, "Peek a memory location"),
+        FIELD_INIT(.help,
+            "peek <dac|lms|si> <address> [num addresses]\n"
+            "\n"
+            "The peek command can read any of the devices hanging off\n"
+            "the FPGA which includes the LMS6002D transceiver, VCTCXO\n"
+            "trim DAC or the Si5338 clock generator chip.\n"
+            "\n"
+            "If num_addresses is supplied, the address is incremented by\n"
+            "1 and another peek is performed.\n"
+            "\n"
+            "    Valid Address Ranges\n"
+            "    --------------------\n"
+            "    dac          0   255\n"
+            "    lms          0   127\n"
+            "    si           0   255\n"
+            "\n"
+            "Example:\n"
+            "  peek si ...\n"
+        )
+    },
+    {
+        FIELD_INIT(.names, cmd_names_poke),
+        FIELD_INIT(.exec, cmd_poke),
+        FIELD_INIT(.desc, "Poke a memory location"),
+        FIELD_INIT(.help,
+            "poke <dac|lms|si> <address> <data>\n"
+            "\n"
+            "The poke command can write any of the devices hanging off\n"
+            "the FPGA which includes the LMS6002D transceiver, VCTCXO\n"
+            "trim DAC or the Si5338 clock generator chip.\n"
+            "\n"
+            "If num_addresses is supplied, the address is incremented by\n"
+            "1 and another poke is performed.\n"
+            "\n"
+            "    Valid Address Ranges\n"
+            "    --------------------\n"
+            "    dac          0   255\n"
+            "    lms          0   127\n"
+            "    si           0   255\n"
+            "\n"
+            "Example:\n"
+            "  poke lms ...\n"
+        )
+    },
+    {
+        FIELD_INIT(.names, cmd_names_print),
+        FIELD_INIT(.exec, cmd_print),
+        FIELD_INIT(.desc, "Print information about the device"),
+        FIELD_INIT(.help,
+            "print <param>\n"
+            "\n"
+            "The print command takes a parameter to print.  The parameter\n"
+            "is one of:\n"
+            "\n"
+            "   bandwidth       Bandwidth settings\n"
+            "   config          Overview of everything\n"
+            "   frequency       Frequency settings\n"
+            "   lmsregs         LMS6002D register dump\n"
+            "   loopback        Loopback settings\n"
+            "   mimo            MIMO settings\n"
+            "   pa              PA settings\n"
+            "   pps             PPS settings\n"
+            "   refclk          Reference clock settings\n"
+            "   rxvga1          Gain setting of RXVGA1 (range: TODO)\n"
+            "   rxvga2          Gain setting of RXVGA2 in dB (range: TODO)\n"
+            "   samplerate      Samplerate settings\n"
+            "   trimdac         VCTCXO Trim DAC settings\n"
+            "   txvga1          Gain setting of TXVGA1 in dB (range: TODO)\n"
+            "   txvga2          Gain setting of TXVGA2 in dB (range: TODO)\n"
+        )
+    },
+    {
+        FIELD_INIT(.names, cmd_names_probe),
+        FIELD_INIT(.exec, cmd_probe),
+        FIELD_INIT(.desc, "List attached bladeRF devices"),
+        FIELD_INIT(.help,
+            "probe\n"
+            "\n"
+            "Search for attached bladeRF device and print a list\n"
+            "of results.\n",
+        )
+    },
+    {
+        FIELD_INIT(.names, cmd_names_quit),
+        FIELD_INIT(.exec, NULL), /* Default action on NULL exec function is to quit */
+        FIELD_INIT(.desc, "Exit the CLI"),
+        FIELD_INIT(.help,
+            "quit\n"
+            "\n"
+            "Exit the CLI\n"
+        )
+    },
+    {
+        FIELD_INIT(.names, cmd_names_rec),
+        FIELD_INIT(.exec, cmd_recover),
+        FIELD_INIT(.desc, "Load firmware when operating in FX3 bootloader mode"),
+        FIELD_INIT(.help,
+            "recover [<bus> <address> <firmware file>]\n"
+            "\n"
+            "Load firmware onto a device running in bootloader mode, or list\n"
+            "all devices currently in bootloader mode.\n"
+            "\n"
+            "With no arguments, this command lists the USB bus and address for\n"
+            "FX3-based devices running in bootloader mode.\n"
+            "\n"
+            "When provided a bus, address, and path to a firmware file, the\n"
+            "specified device will be loaded with and begin executing the\n"
+            "provided firmware.\n"
+            "\n"
+            "In most cases, after successfully loading firmware into the\n"
+            "device's RAM, users should open the device with the \"open\"\n"
+            "command, and write the firmware to flash via \n"
+            "\"load fx3 <firmware file>\"\n"
+        )
+    },
+    {
+        FIELD_INIT(.names, cmd_names_restore),
+        FIELD_INIT(.exec, cmd_restore),
+        FIELD_INIT(.desc, "Restore flash data from a file"),
+        FIELD_INIT(.help, "restore <file> [<address> <length>]\n\n"
+            "Restore flash data from a file, optionally overriding values in the image metadata.\n"
+            "\n"
+            "   <address>   Defaults to the address specified in the provided flash image file.\n"
+            "   <length>    Defaults to length of the data in the provided image file.\n"
+            ),
+    },
+    {
+        FIELD_INIT(.names, cmd_names_run),
+        FIELD_INIT(.exec, cmd_run),
+        FIELD_INIT(.desc, "Run a script"),
+        FIELD_INIT(.help, "run <script>\n"
+                "\n"
+                "Run the provided script.\n")
     },
     {
         FIELD_INIT(.names, cmd_names_rx),
@@ -252,154 +544,6 @@ static const struct cmd cmd_table[] = {
         )
     },
     {
-        FIELD_INIT(.names, cmd_names_poke),
-        FIELD_INIT(.exec, cmd_poke),
-        FIELD_INIT(.desc, "Poke a memory location"),
-        FIELD_INIT(.help,
-            "poke <dac|lms|si> <address> <data>\n"
-            "\n"
-            "The poke command can write any of the devices hanging off\n"
-            "the FPGA which includes the LMS6002D transceiver, VCTCXO\n"
-            "trim DAC or the Si5338 clock generator chip.\n"
-            "\n"
-            "If num_addresses is supplied, the address is incremented by\n"
-            "1 and another poke is performed.\n"
-            "\n"
-            "    Valid Address Ranges\n"
-            "    --------------------\n"
-            "    dac          0   255\n"
-            "    lms          0   127\n"
-            "    si           0   255\n"
-            "\n"
-            "Example:\n"
-            "  poke lms ...\n"
-        )
-    },
-    {
-        FIELD_INIT(.names, cmd_names_peek),
-        FIELD_INIT(.exec, cmd_peek),
-        FIELD_INIT(.desc, "Peek a memory location"),
-        FIELD_INIT(.help,
-            "peek <dac|lms|si> <address> [num addresses]\n"
-            "\n"
-            "The peek command can read any of the devices hanging off\n"
-            "the FPGA which includes the LMS6002D transceiver, VCTCXO\n"
-            "trim DAC or the Si5338 clock generator chip.\n"
-            "\n"
-            "If num_addresses is supplied, the address is incremented by\n"
-            "1 and another peek is performed.\n"
-            "\n"
-            "    Valid Address Ranges\n"
-            "    --------------------\n"
-            "    dac          0   255\n"
-            "    lms          0   127\n"
-            "    si           0   255\n"
-            "\n"
-            "Example:\n"
-            "  peek si ...\n"
-        )
-    },
-    {
-        FIELD_INIT(.names, cmd_names_help),
-        FIELD_INIT(.exec, cmd_help),
-        FIELD_INIT(.desc, "Provide information about specified command"),
-        FIELD_INIT(.help,
-            "help [<command>]\n"
-            "\n"
-            "Provides extended help, like this, on any command.\n"
-        )
-    },
-    {
-        FIELD_INIT(.names, cmd_names_info),
-        FIELD_INIT(.exec, cmd_info),
-        FIELD_INIT(.desc, "Print information about the currently opened device"),
-        FIELD_INIT(.help,
-            "info\n"
-            "\n"
-            "Prints the following information about an opened device:\n"
-            "  Serial number\n"
-            "  VCTCXO DAC calibration value\n"
-            "  FPGA size\n"
-            "  Whether or not the FPGA is loaded\n"
-            "  USB bus, address, and speed\n"
-            "  Backend (libusb or kernel module)\n"
-            "  Instance number\n"
-        )
-    },
-    {
-        FIELD_INIT(.names, cmd_names_load),
-        FIELD_INIT(.exec, cmd_load),
-        FIELD_INIT(.desc, "Load FPGA or FX3"),
-        FIELD_INIT(.help,
-            "load <fpga|fx3> <filename>\n"
-            "\n"
-            "Load an FPGA bitstream or program the FX3's SPI flash.\n"
-        )
-    },
-    {
-        FIELD_INIT(.names, cmd_names_print),
-        FIELD_INIT(.exec, cmd_print),
-        FIELD_INIT(.desc, "Print information about the device"),
-        FIELD_INIT(.help,
-            "print <param>\n"
-            "\n"
-            "The print command takes a parameter to print.  The parameter\n"
-            "is one of:\n"
-            "\n"
-            "   bandwidth       Bandwidth settings\n"
-            "   config          Overview of everything\n"
-            "   frequency       Frequency settings\n"
-            "   lmsregs         LMS6002D register dump\n"
-            "   loopback        Loopback settings\n"
-            "   mimo            MIMO settings\n"
-            "   pa              PA settings\n"
-            "   pps             PPS settings\n"
-            "   refclk          Reference clock settings\n"
-            "   rxvga1          Gain setting of RXVGA1 (range: TODO)\n"
-            "   rxvga2          Gain setting of RXVGA2 in dB (range: TODO)\n"
-            "   samplerate      Samplerate settings\n"
-            "   trimdac         VCTCXO Trim DAC settings\n"
-            "   txvga1          Gain setting of TXVGA1 in dB (range: TODO)\n"
-            "   txvga2          Gain setting of TXVGA2 in dB (range: TODO)\n"
-        )
-    },
-    {
-        FIELD_INIT(.names, cmd_names_open),
-        FIELD_INIT(.exec, cmd_open),
-        FIELD_INIT(.desc, "Open a bladeRF device"),
-        FIELD_INIT(.help,
-            "open [device identifiers]\n"
-            "\n"
-            "Open the specified device for use with successive commands.\n"
-            "Any previously opened device will be closed.\n"
-            "See the bladerf_open() documentation for the device specifier format.\n",
-        )
-    },
-    {
-        FIELD_INIT(.names, cmd_names_probe),
-        FIELD_INIT(.exec, cmd_probe),
-        FIELD_INIT(.desc, "List attached bladeRF devices"),
-        FIELD_INIT(.help,
-            "probe\n"
-            "\n"
-            "Search for attached bladeRF device and print a list\n"
-            "of results.\n",
-        )
-    },
-    {
-        FIELD_INIT(.names, cmd_names_erase),
-        FIELD_INIT(.exec, cmd_erase),
-        FIELD_INIT(.desc, "Erase specified sectors of SPI flash"),
-        FIELD_INIT(.help,
-            "erase <offset> <count>\n"
-            "\n"
-            "Erase specified sectors of SPI flash\n"
-            "\n"
-            "    <offset>       Starting sector to erase\n"
-            "    <count>        Number of sectors to erase\n"
-        )
-    },
-    {
         FIELD_INIT(.names, cmd_names_ver),
         FIELD_INIT(.exec, cmd_version),
         FIELD_INIT(.desc, "Host software and device version information"),
@@ -408,122 +552,6 @@ static const struct cmd cmd_table[] = {
             "\n"
             "Prints version information for host software and the current device\n"
         )
-    },
-    {
-        FIELD_INIT(.names, cmd_names_rec),
-        FIELD_INIT(.exec, cmd_recover),
-        FIELD_INIT(.desc, "Load firmware when operating in FX3 bootloader mode"),
-        FIELD_INIT(.help,
-            "recover [<bus> <address> <firmware file>]\n"
-            "\n"
-            "Load firmware onto a device running in bootloader mode, or list\n"
-            "all devices currently in bootloader mode.\n"
-            "\n"
-            "With no arguments, this command lists the USB bus and address for\n"
-            "FX3-based devices running in bootloader mode.\n"
-            "\n"
-            "When provided a bus, address, and path to a firmware file, the\n"
-            "specified device will be loaded with and begin executing the\n"
-            "provided firmware.\n"
-            "\n"
-            "In most cases, after successfully loading firmware into the\n"
-            "device's RAM, users should open the device with the \"open\"\n"
-            "command, and write the firmware to flash via \n"
-            "\"load fx3 <firmware file>\"\n"
-        )
-    },
-    {
-        FIELD_INIT(.names, cmd_names_jump),
-        FIELD_INIT(.exec, cmd_jump_to_bootloader),
-        FIELD_INIT(.desc, "Jump to FX3 bootloader"),
-        FIELD_INIT(.help,
-            "jump_to_boot\n"
-            "\n"
-            "Jumps to the FX3 bootloader.\n"
-        )
-    },
-    {
-        FIELD_INIT(.names, cmd_names_clear),
-        FIELD_INIT(.exec, cmd_clear),
-        FIELD_INIT(.desc, "Clear the screen"),
-        FIELD_INIT(.help,
-            "clear\n"
-            "\n"
-            "Clears the screen\n"
-        )
-    },
-    {
-        FIELD_INIT(.names, cmd_names_backup),
-        FIELD_INIT(.exec, cmd_backup),
-        FIELD_INIT(.desc, "Back up flash data to a file with metadata."),
-        FIELD_INIT(.help, "backup <file> [<address> <length>]\n"
-            "\n"
-            "Back up flash data to the specified file.\n"
-            "\n"
-            "Optional parameters:\n"
-            "   <address>   Defaults to the address of the calibration data region.\n"
-            "   <len>       Defaults to the size of the calibration data region (256 bytes).\n"
-            ),
-    },
-    {
-        FIELD_INIT(.names, cmd_names_restore),
-        FIELD_INIT(.exec, cmd_restore),
-        FIELD_INIT(.desc, "Restore flash data from a file"),
-        FIELD_INIT(.help, "restore <file> [<address> <length>]\n\n"
-            "Restore flash data from a file, optionally overriding values in the image metadata.\n"
-            "\n"
-            "   <address>   Defaults to the address specified in the provided flash image file.\n"
-            "   <length>    Defaults to length of the data in the provided image file.\n"
-            ),
-    },
-    {
-        FIELD_INIT(.names, cmd_names_init_cal),
-        FIELD_INIT(.exec, cmd_init_cal),
-        FIELD_INIT(.desc, "Write new calibration data to device"),
-        FIELD_INIT(.help, "init_cal <fpga_size> <vctcxo_trim>\n"
-            "\n"
-            "Initializes the calibration region in the flash with new values. Be sure to\n"
-            "backup calibration data prior to running this command.\n\n"
-            "   <fpga_size>       Either 40 or 115, depending on the device model.\n"
-            "   <vctcxo_trim>     VCTCXO/DAC trim value (0x0-0xffff)\n"
-            )
-    },
-    {
-        FIELD_INIT(.names, cmd_names_quit),
-        FIELD_INIT(.exec, NULL), /* Default action on NULL exec function is to quit */
-        FIELD_INIT(.desc, "Exit the CLI"),
-        FIELD_INIT(.help,
-            "quit\n"
-            "\n"
-            "Exit the CLI\n"
-        )
-    },
-    {
-        FIELD_INIT(.names, cmd_names_mimo),
-        FIELD_INIT(.exec, cmd_mimo),
-        FIELD_INIT(.desc, "Modify device MIMO operation"),
-        FIELD_INIT(.help,
-            "mimo [master | slave]\n"
-            "\n"
-            "Modify device MIMO operation\n"
-        )
-    },
-    {
-        FIELD_INIT(.names, cmd_names_run),
-        FIELD_INIT(.exec, cmd_run),
-        FIELD_INIT(.desc, "Run a script"),
-        FIELD_INIT(.help, "run <script>\n"
-                "\n"
-                "Run the provided script.\n")
-    },
-    {
-        FIELD_INIT(.names, cmd_names_echo),
-        FIELD_INIT(.exec, cmd_echo),
-        FIELD_INIT(.desc, "Echo each argument on a new line"),
-        FIELD_INIT(.help, "echo [arg 1] [arg 2] ... [arg n]\n"
-                "\n"
-                "Echo each argument on a new line.\n")
-
     },
     /* Always terminate the command entry with a completely NULL entry */
     {

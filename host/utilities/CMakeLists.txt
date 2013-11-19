@@ -5,7 +5,6 @@ set(UTILITIES_COMMON_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/common/include)
 
 add_subdirectory(bladeRF-cli)
 
-
 if(ENABLE_BACKEND_LIBUSB)
     find_package(LibUSB)
     include(CheckFunctionExists)

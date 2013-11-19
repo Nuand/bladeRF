@@ -1025,6 +1025,30 @@ extern const unsigned int BLADERF_FLASH_ALIGNMENT_BYTE;
 extern const unsigned int BLADERF_FLASH_ALIGNMENT_PAGE;
 extern const unsigned int BLADERF_FLASH_ALIGNMENT_SECTOR;
 
+/** Address of firmware in flash */
+#define BLADERF_FLASH_ADDR_FIRMWARE     0x00000000
+
+/** Length of firmware region in flash*/
+#define BLADERF_FLASH_LEN_FIRMWARE      0x00030000
+
+/** Address of calibration data in flash */
+#define BLADERF_FLASH_ADDR_CAL          0x00030000
+
+/** Length of calibration data region */
+#define BLADERF_FLASH_LEN_CAL           0x100
+
+/** Address of FPGA metadata */
+#define BLADERF_FLASH_ADDR_FPGA_META    0x00040000
+
+/** Length of FPGA metadata */
+#define BLADERF_FLASH_LEN_FPGA_META     0x100
+
+/** Address of FPGA bitstream for autoloading */
+#define BLADERF_FLASH_ADDR_FPGA         0x00040100
+
+/** Length of of FPGA bistream */
+#define BLADERF_FLASH_LEN_FPGA          0x0003BFF0
+
 /**
  * Erase sectors from FX3 flash device
  *
@@ -1132,7 +1156,7 @@ API_EXPORT int bladerf_program_flash_unaligned(struct bladerf *dev,
 
 /** Type of data stored in a flash image */
 typedef enum {
-    BLADERF_IMAGE_TYPE_UNKNOWN = -1,    /** Used to denote invalid value */
+    BLADERF_IMAGE_TYPE_INVALID = -1,    /** Used to denote invalid value */
     BLADERF_IMAGE_TYPE_RAW,             /** Misc. raw data */
     BLADERF_IMAGE_TYPE_FIRMWARE,        /** Firmware data */
     BLADERF_IMAGE_TYPE_FPGA_40KLE,      /** FPGA bitstream for 40 KLE device */

@@ -162,7 +162,7 @@ int cmd_restore(struct cli_state *state, int argc, char **argv)
         goto cmd_restore_out;
     }
 
-    image = bladerf_alloc_image(BLADERF_IMAGE_TYPE_UNKNOWN, 0, 0);
+    image = bladerf_alloc_image(BLADERF_IMAGE_TYPE_INVALID, 0, 0);
     if (!image) {
         rv = CMD_RET_MEM;
         goto cmd_restore_out;
@@ -193,9 +193,8 @@ int cmd_restore(struct cli_state *state, int argc, char **argv)
         cli_err(state, argv[0],
         "Failed to restore flash region.\n"
         "\n"
-        "Flash contents may be corrupted. If the device fails to boot\n"
-        "at successive power-ons, see the following wiki page for recovery\n"
-        "instructions:"
+        "Flash contents may be corrupted. If the device fails to boot at successive\n"
+        "power-ons, see the following wiki page for recovery instructions:"
         "  https://github.com/Nuand/bladeRF/wiki/Upgrading-bladeRF-firmware"
         );
         goto cmd_restore_out;

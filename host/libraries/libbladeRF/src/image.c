@@ -232,6 +232,7 @@ static int unpack_image(struct bladerf_image *img, uint8_t *buf, size_t len)
 
     memcpy(img->serial, &buf[i], BLADERF_SERIAL_LENGTH);
     img->serial[BLADERF_SERIAL_LENGTH] = '\0';
+    i += BLADERF_SERIAL_LENGTH;
 
     memcpy(img->reserved, &buf[i], BLADERF_IMAGE_RESERVED_LEN);
     i += BLADERF_IMAGE_RESERVED_LEN;
