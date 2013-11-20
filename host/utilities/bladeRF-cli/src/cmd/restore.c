@@ -82,76 +82,14 @@ static int parse_argv(struct cli_state *state, int argc, char **argv,
     return 0;
 }
 
-int cmd_backup(struct cli_state *state, int argc, char **argv)
-{
-    int rv;
-    struct bladerf_devinfo info;
-    struct bladerf_image *image = NULL;
-    bladerf_image_type image_type;
-    struct options opt;
-
-    memset(&opt, 0, sizeof(opt));
-
-    if (!cli_device_is_opened(state)) {
-        rv = CMD_RET_NODEV;
-        goto cmd_backup_out;
-    }
-
-    rv = parse_argv(state, argc, argv, &opt);
-    if (rv < 0) {
-        return rv;
-    }
-
-    image_type = opt.override_defaults ? BLADERF_IMAGE_TYPE_RAW :
-                                         BLADERF_IMAGE_TYPE_CALIBRATION;
-
-    image = bladerf_alloc_image(image_type, opt.address, opt.len);
-    if (!image) {
-        return CMD_RET_MEM;
-    }
-
-    rv = bladerf_get_devinfo(state->dev, &info);
-    if (rv < 0) {
-        rv_error(rv, "Failed to get serial number");
-        goto cmd_backup_out;
-    }
-
-    strncpy(image->serial, info.serial, BLADERF_SERIAL_LENGTH);
-
-    rv = bladerf_read_flash_unaligned(state->dev, opt.address,
-                                      image->data, opt.len);
-
-    if (rv < 0) {
-        rv_error(rv, "Failed to read flash region");
-        goto cmd_backup_out;
-    }
-
-    rv = bladerf_image_write(image, opt.file);
-    if (rv < 0) {
-        rv_error(rv, "Failed to write image file.");
-        goto cmd_backup_out;
-    }
-
-    rv = CMD_RET_OK;
-
-cmd_backup_out:
-    if (image) {
-        bladerf_free_image(image);
-    }
-
-    if (opt.file) {
-        free(opt.file);
-    }
-
-    return rv;
-}
-
 int cmd_restore(struct cli_state *state, int argc, char **argv)
 {
     int rv;
     struct bladerf_image *image = NULL;
     struct options opt;
     uint32_t addr, len;
+
+    memset(&opt, 0, sizeof(opt));
 
     rv = parse_argv(state, argc, argv, &opt);
     if (rv < 0)
@@ -203,6 +141,7 @@ int cmd_restore(struct cli_state *state, int argc, char **argv)
     rv = CMD_RET_OK;
 
 cmd_restore_out:
+    free(opt.file);
     bladerf_free_image(image);
     return rv;
 }

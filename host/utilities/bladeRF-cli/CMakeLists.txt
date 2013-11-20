@@ -100,6 +100,7 @@ set(BLADERF_CLI_SOURCE
         src/main.c
         src/common.c
         src/script.c
+        src/cmd/backup.c
         src/cmd/calibrate.c
         src/cmd/cmd.c
         src/cmd/erase.c
@@ -117,9 +118,9 @@ set(BLADERF_CLI_SOURCE
         src/cmd/tx.c
         src/cmd/version.c
         src/cmd/recover.c
+        src/cmd/restore.c
         src/cmd/jump_boot.c
         src/cmd/mimo.c
-        src/cmd/backuprestore.c
         src/cmd/init_cal.c
         src/interactive/interactive.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
