@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <limits.h>
+#include <time.h>
 #include <libbladeRF.h>
 
 #include "cmd.h"
@@ -185,6 +186,9 @@ static int print_image_metadata(struct cli_state *s, struct params *p,
 {
     int status = 0;
     struct bladerf_image *image;
+    char datetime[64];
+    struct tm *timeval;
+    time_t time_tmp;
     int i;
 
     image = bladerf_alloc_image(BLADERF_IMAGE_TYPE_INVALID, 0, 0);
@@ -201,7 +205,11 @@ static int print_image_metadata(struct cli_state *s, struct params *p,
         printf("\nImage format version: %d.%d.%d\n", image->version.major,
                image->version.minor, image->version.patch);
 
-        printf("Timestamp: %llu\n", (long long unsigned int)image->timestamp);
+        time_tmp = image->timestamp;
+        timeval = localtime(&time_tmp);
+        memset(datetime, 0, sizeof(datetime));
+        strftime(datetime, sizeof(datetime) - 1, "%F %T", timeval);
+        printf("Timestamp: %s\n", datetime);
 
         switch (image->type) {
             case BLADERF_IMAGE_TYPE_RAW:
