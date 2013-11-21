@@ -1047,7 +1047,7 @@ extern const unsigned int BLADERF_FLASH_ALIGNMENT_SECTOR;
 #define BLADERF_FLASH_ADDR_FPGA         0x00040100
 
 /** Length of of FPGA bistream */
-#define BLADERF_FLASH_LEN_FPGA          0x0003BFF0
+#define BLADERF_FLASH_LEN_FPGA          0x003BFF00
 
 /**
  * Erase sectors from FX3 flash device
