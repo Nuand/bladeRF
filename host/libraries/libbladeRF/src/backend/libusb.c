@@ -1070,6 +1070,8 @@ static int verify_one_page(struct bladerf *dev,
 {
     int status = 0;
     uint8_t page_buf[BLADERF_FLASH_PAGE_SIZE];
+    unsigned int i;
+
 
     log_verbose("Verifying page at 0x%02x\n", flash_from_pages(page));
     status = read_one_page(dev, page, page_buf);
@@ -1078,7 +1080,7 @@ static int verify_one_page(struct bladerf *dev,
 
     status = compare_page_buffers(page_buf, image_buf);
     if(status < 0) {
-        uint i = abs(status);
+        i = abs(status);
         log_error("bladeRF firmware verification failed at flash "
                   " address 0x%02x. Read 0x%02X, expected 0x%02X\n",
                   flash_from_pages(page) + i,

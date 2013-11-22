@@ -123,7 +123,7 @@ static word crc16mp(word crcval, void *data_p, word count) {
      * Pass 0 into 'crcval' for first call for any given block; for
      * subsequent calls pass the CRC returned by the previous call. */
     word            xx;
-    byte            *ptr=data_p;
+    byte            *ptr= (byte *)data_p;
 
     while (count-- > 0) {
         crcval=(word)(crcval^(word)(((word)*ptr++)<<8));
@@ -191,11 +191,14 @@ int encode_field(char *ptr, int len, int *idx,
     return 0;
 }
 
-int add_field(char *buf, int buf_len, const char *field_name, char *val)
+int add_field(char *buf, int buf_len, const char *field_name, const char *val)
 {
+    int dummy_idx = 0;
+    int i = 0;
+    int rv;
+    
     /* skip to the end, ignoring crc (don't want to further corrupt partially
      * corrupt data) */
-    intptr_t i = 0;
     while(i < buf_len) {
         uint8_t field_len = buf[i];
 
@@ -207,8 +210,8 @@ int add_field(char *buf, int buf_len, const char *field_name, char *val)
         i += field_len + 3;
     }
 
-    int dummy_idx = 0;
-    int rv = encode_field(buf + i, buf_len - i, &dummy_idx, field_name, val);
+
+    rv = encode_field(buf + i, buf_len - i, &dummy_idx, field_name, val);
     if(rv < 0)
         return rv;
 

@@ -29,20 +29,19 @@
 #include "common.h"
 #include "conversions.h"
 #include "rel_assert.h"
+#include "interactive.h"
 
 struct params
 {
     const char *img_file;
-    const char *data_file;
-    const char *serial;
-    uint64_t timestamp;
+    char *data_file;
+    char serial[BLADERF_SERIAL_LENGTH + 1];
     uint32_t address;
-    uint32_t length;
+    uint32_t max_length;
     bladerf_image_type type;
 
     bool override_timestamp;
     bool override_address;
-    bool override_length;
 };
 
 static int handle_param(const char *param, char *val,
@@ -53,7 +52,7 @@ static int handle_param(const char *param, char *val,
     int status = 0;
 
     if (!strcasecmp("data", param)) {
-        p->data_file = param;
+        p->data_file = interactive_expand_path(val);
     } else if (!strcasecmp("serial", param)) {
         size_t i;
         size_t len = strlen(val);
@@ -75,12 +74,6 @@ static int handle_param(const char *param, char *val,
             cli_err(s, argv0, "Serial number must be %d hexadecimal digits.",
                     BLADERF_SERIAL_LENGTH);
         }
-    } else if (!strcasecmp("timestamp", param)) {
-        p->timestamp = str2uint64(val, 0, UINT64_MAX, &ok);
-        if (!ok) {
-            cli_err(s, argv0, "Invalid timestamp value provided.");
-            return CMD_RET_INVPARAM;
-        }
     } else if (!strcasecmp("address", param)) {
         p->address = str2uint(param, 0, UINT_MAX, &ok);
         if (!ok) {
@@ -89,42 +82,39 @@ static int handle_param(const char *param, char *val,
         }
     } else if (!strcasecmp("type", param)) {
         if (!strcasecmp("raw", val)) {
+            p->max_length = UINT_MAX;
             p->type = BLADERF_IMAGE_TYPE_RAW;
-        } else if (!strcasecmp("cal", param)) {
+        } else if (!strcasecmp("cal", val)) {
 
             if (!p->override_address) {
-                p->address = BLADERF_FLASH_ADDR_CAL;
+                p->address = BLADERF_FLASH_ADDR_CALIBRATION;
             }
 
-            if (!p->override_length) {
-                p->length = BLADERF_FLASH_LEN_CAL;
-            }
-
+            p->max_length = BLADERF_FLASH_LEN_CALIBRATION;
             p->type = BLADERF_IMAGE_TYPE_CALIBRATION;
 
-        } else if (!strcasecmp("fpga70", param) ||
-                   !strcasecmp("fpga115", param)) {
+        } else if (!strcasecmp("fpga40", val) ||
+                   !strcasecmp("fpga115", val)) {
 
             if (!p->override_address) {
                 p->address = BLADERF_FLASH_ADDR_FPGA_META;
             }
 
-            if (!p->override_length) {
-                p->length = BLADERF_FLASH_LEN_FPGA_META +
+            p->max_length = BLADERF_FLASH_LEN_FPGA_META +
                             BLADERF_FLASH_LEN_FPGA;
+
+            if (!strcasecmp("fpga40", val)) {
+                p->type = BLADERF_IMAGE_TYPE_FPGA_40KLE;
+            } else {
+                p->type = BLADERF_IMAGE_TYPE_FPGA_115KLE;
             }
 
-            p->type = BLADERF_IMAGE_TYPE_CALIBRATION;
-
-        } else if (!strcasecmp("fw", param)) {
+        } else if (!strcasecmp("fw", val) || !strcasecmp("firmware", val)) {
             if (!p->override_address) {
                 p->address = BLADERF_FLASH_ADDR_FIRMWARE;
             }
 
-            if (!p->override_length) {
-                p->length = BLADERF_FLASH_LEN_FIRMWARE;
-            }
-
+            p->max_length = BLADERF_FLASH_LEN_FIRMWARE;
             p->type = BLADERF_IMAGE_TYPE_FIRMWARE;
 
         } else {
@@ -133,7 +123,7 @@ static int handle_param(const char *param, char *val,
         }
     } else {
         cli_err(s, argv0, "Invalid parameter provided - \"%s\"", param);
-        status = CMD_RET_NARGS;
+        status = CMD_RET_INVPARAM;
     }
 
     return status;
@@ -146,6 +136,7 @@ int parse_cmdline(int argc, char **argv, struct params *p, struct cli_state *s)
     char *sep;
 
     memset(p, 0, sizeof(*p));
+    memset(p->serial, '0', BLADERF_SERIAL_LENGTH);
     p->type = BLADERF_IMAGE_TYPE_INVALID;
 
     assert(argc >= 2);
@@ -174,9 +165,13 @@ int parse_cmdline(int argc, char **argv, struct params *p, struct cli_state *s)
             cli_err(s, argv[0], "An image file parameter is required.");
             status = CMD_RET_INVPARAM;
         } else if (p->type == BLADERF_IMAGE_TYPE_RAW &&
-                !(p->override_address || p->override_length)) {
+                !(p->override_address || p->max_length == 0)) {
             cli_err(s, argv[0],
                     "An address and a length are required for type=raw.");
+            status = CMD_RET_INVPARAM;
+        } else if (argc > 2 && !p->data_file) {
+            cli_err(s, argv[0],
+                    "A data input file is required when creating an image.");
             status = CMD_RET_INVPARAM;
         }
     }
@@ -210,9 +205,11 @@ static int print_image_metadata(struct cli_state *s, struct params *p,
                image->version.minor, image->version.patch);
 
         time_tmp = image->timestamp;
+        printf("Timestamp (raw): %lld\n", time_tmp);
         timeval = localtime(&time_tmp);
+        printf("Time ptr: %p\n", timeval);
         memset(datetime, 0, sizeof(datetime));
-        strftime(datetime, sizeof(datetime) - 1, "%F %T", timeval);
+        strftime(datetime, sizeof(datetime) - 1, "%Y-%m-%d %H:%M:%S", timeval);
         printf("Timestamp: %s\n", datetime);
 
         switch (image->type) {
@@ -241,8 +238,6 @@ static int print_image_metadata(struct cli_state *s, struct params *p,
                 break;
         }
 
-        printf("Address: 0x%08x\n", image->address);
-        printf("Length: 0x%08x\n", image->length);
         printf("\n");
     } else {
         if (status == BLADERF_ERR_INVAL) {
@@ -258,9 +253,62 @@ static int print_image_metadata(struct cli_state *s, struct params *p,
     return status;
 }
 
-static int write_image(struct cli_state *s, struct params *p)
+static int write_image(struct cli_state *s, struct params *p, const char *argv0)
 {
-    int status = 0;
+    int status;
+    FILE *f;
+    long data_size;
+    struct bladerf_image *image = NULL;
+
+    f = fopen(p->data_file, "rb");
+    if (!f) {
+        return CMD_RET_FILEOP;
+    }
+
+    if (fseek(f, 0, SEEK_END) != 0) {
+        status = CMD_RET_FILEOP;
+        goto write_image_out;
+    }
+
+    data_size = ftell(f);
+    if (data_size < 0) {
+        status = CMD_RET_FILEOP;
+        goto write_image_out;
+    }
+
+    if ((uint32_t)data_size > p->max_length) {
+        status = CMD_RET_INVPARAM;
+        cli_err(s, argv0, "The provided data file is too large for the specified flash region.");
+        goto write_image_out;
+    }
+
+    if (fseek(f, 0, SEEK_SET) != 0) {
+        status = CMD_RET_FILEOP;
+        goto write_image_out;
+    }
+
+    image = bladerf_alloc_image(p->type, p->address, data_size);
+    if (!image) {
+        status = CMD_RET_MEM;
+        goto write_image_out;
+    }
+
+    if (fread(image->data, 1, data_size, f) != (size_t)data_size) {
+        status = CMD_RET_FILEOP;
+        goto write_image_out;
+    }
+
+    memcpy(image->serial, p->serial, BLADERF_SERIAL_LENGTH);
+
+    status = bladerf_image_write(image, p->img_file);
+    if (status != 0) {
+        s->last_lib_error = status;
+        status = CMD_RET_LIBBLADERF;
+    }
+
+write_image_out:
+    fclose(f);
+    bladerf_free_image(image);
     return status;
 }
 
@@ -275,13 +323,16 @@ int cmd_flash_image(struct cli_state *state, int argc, char **argv)
 
     status = parse_cmdline(argc, argv, &p, state);
     if (status == 0) {
-        if (p.img_file && argc == 2) {
+        assert(p.img_file);
+        if (argc == 2) {
             status = print_image_metadata(state, &p, argv[0]);
         } else {
             assert(p.data_file);
-            status = write_image(state, &p);
+            status = write_image(state, &p, argv[0]);
         }
     }
+
+    free(p.data_file);
 
     return status;
 }

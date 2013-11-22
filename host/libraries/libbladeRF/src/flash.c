@@ -114,12 +114,16 @@ int bladerf_read_flash_unaligned(struct bladerf *dev,
 {
     int rv;
     uint32_t page_aligned_addr, page_aligned_len;
+    intptr_t addr_diff;
+    uint8_t *buf;
+
     flash_align_bounds(BLADERF_FLASH_ALIGNMENT_PAGE, addr, len,
                        &page_aligned_addr, &page_aligned_len);
 
-    intptr_t addr_diff = abs(addr - page_aligned_addr);
+    /* MSVC complains about abs() for uint32_t params not being defined */
+    addr_diff = abs((long long)(addr - page_aligned_addr));
 
-    uint8_t *buf = malloc(page_aligned_len);
+    buf = (uint8_t*)malloc(page_aligned_len);
     if(!buf)
         return BLADERF_ERR_MEM;
 
@@ -143,15 +147,17 @@ int bladerf_program_flash_unaligned(struct bladerf *dev,
 {
     int rv;
     uint32_t sector_aligned_addr, sector_aligned_len;
+    uint8_t *buf = NULL;
+    intptr_t addr_diff;
+
     flash_align_bounds(BLADERF_FLASH_ALIGNMENT_SECTOR, addr, len,
                        &sector_aligned_addr, &sector_aligned_len);
 
-    uint8_t *buf = NULL;
-
     if(addr != sector_aligned_addr || len != sector_aligned_len) {
-        intptr_t addr_diff = abs(addr - sector_aligned_addr);
+        /* MSVC complains about abs(uint32_t) not being valid */
+        addr_diff = abs((long long)(addr - sector_aligned_addr));
 
-        buf = malloc(sector_aligned_len);
+        buf = (uint8_t*)malloc(sector_aligned_len);
         if(!buf)
             return BLADERF_ERR_MEM;
 
@@ -182,27 +188,4 @@ out:
         free(buf);
 
     return rv;
-}
-
-int bladerf_make_cal_region(char *fpga_size,
-                            uint16_t vctcxo_trim,
-                            char* buf, size_t len)
-{
-    int rv;
-    char dac[7] = {0};
-
-    assert(len >= BLADERF_FLASH_PAGE_SIZE);
-
-    memset(buf, 0xff, len);
-
-    rv = add_field(buf, len, "B", fpga_size);
-    if(rv < 0)
-        return rv;
-
-    sprintf(dac, "%u", vctcxo_trim);
-    add_field(buf, len, "DAC", dac);
-    if(rv < 0)
-        return rv;
-
-    return 0;
 }

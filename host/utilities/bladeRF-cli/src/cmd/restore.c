@@ -114,7 +114,7 @@ int cmd_restore(struct cli_state *state, int argc, char **argv)
 
     if (opt.override_defaults) {
         addr = opt.address;
-        len = min_sz(opt.len, image->length);
+        len = u32_min(opt.len, image->length);
 
         if (len < opt.len) {
             printf("  Warning: Reduced length because only %u bytes are in "

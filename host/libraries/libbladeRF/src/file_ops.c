@@ -63,7 +63,7 @@ int file_read(FILE *f, char *buf, size_t len)
 
 ssize_t file_size(FILE *f)
 {
-    int rv = BLADERF_ERR_IO;
+    ssize_t rv = BLADERF_ERR_IO;
     long int fpos = ftell(f);
     ssize_t len;
 

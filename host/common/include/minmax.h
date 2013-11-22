@@ -8,6 +8,8 @@
 #ifndef MINMAX_H__
 #define MINMAX_H__
 
+#include <stdlib.h>
+#include <stdint.h>
 #include "host_config.h"
 
 static inline size_t min_sz(size_t x, size_t y)
@@ -26,6 +28,16 @@ static inline unsigned int uint_min(unsigned int x, unsigned int y)
 }
 
 static inline unsigned int uint_max(unsigned int x, unsigned int y)
+{
+    return x > y ? x : y;
+}
+
+static inline uint32_t u32_min(uint32_t x, uint32_t y)
+{
+    return x < y ? x : y;
+}
+
+static inline uint32_t u32_max(uint32_t x, uint32_t y)
 {
     return x > y ? x : y;
 }

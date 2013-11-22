@@ -272,15 +272,17 @@ int bladerf_get_and_cache_fpga_size(struct bladerf *device);
 /**
  * Create data that can be read by extract_field()
  *
- * @param[in]   ptr     Pointer to data buffer that will containt encoded data
- * @param[in]   len     Length of data buffer that will containt encoded data
- * @param[inout]   idx  Pointer indicating next free byte inside of data buffer that will containt encoded data
- * @param[in]   field   Key of value to be stored in encoded data buffer
- * @param[in]   val     Value to be stored in encoded data buffer
+ * @param[in]       ptr     Pointer to data buffer that will contain encoded data
+ * @param[in]       len     Length of data buffer that will contain encoded data
+ * @param[inout]    idx     Pointer indicating next free byte inside of data
+ *                          buffer that will contain encoded data
+ * @param[in]       field   Key of value to be stored in encoded data buffer
+ * @param[in]       val     Value to be stored in encoded data buffer
  *
  * 0 on success, BLADERF_ERR_* on failure
  */
-int encode_field(char *ptr, int len, int *idx, const char *field, const char *val);
+int encode_field(char *ptr, int len, int *idx, const char *field,
+                 const char *val);
 
 /**
  * Add kv association to data region readable by extract_field()
@@ -292,7 +294,7 @@ int encode_field(char *ptr, int len, int *idx, const char *field, const char *va
  *
  * 0 on success, BLADERF_ERR_* on failure
  */
-int add_field(char *buf, int len, const char *field, char *val);
+int add_field(char *buf, int len, const char *field, const char *val);
 
 
 #endif

@@ -2,6 +2,7 @@
  * This file is part of the bladeRF project
  *
  * Copyright (C) 2013  Daniel Gröber <dxld AT darkboxed DOT org>
+ * Copyright (C) 2013 Nuand LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,70 +18,91 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-#include "cmd.h"
-#include "interactive.h"
-#include <minmax.h>
-
-#include <libbladeRF.h>
-#include <bladeRF.h>
-#include <conversions.h>
-
 #include <stdio.h>
 #include <limits.h>
 #include <string.h>
 #include <stdlib.h>
+
+#include <libbladeRF.h>
+#include <bladeRF.h>
+
+#include "conversions.h"
+#include "cmd.h"
+#include "interactive.h"
+#include "minmax.h"
+#include "rel_assert.h"
+
+int str2fpga(const char *str, bladerf_fpga_size *fpga_size)
+{
+    if (!strcmp(str, "40")) {
+        *fpga_size = BLADERF_FPGA_40KLE;
+        return 0;
+    } else if (!strcmp(str, "115")) {
+        *fpga_size = BLADERF_FPGA_115KLE;
+        return 0;
+    } else {
+        return CMD_RET_INVPARAM;
+    }
+}
 
 int cmd_init_cal(struct cli_state *state, int argc, char **argv)
 {
     int rv;
     bool ok;
     uint16_t dac;
-    char buf[CAL_BUFFER_SIZE];
+    bladerf_fpga_size fpga_size;
+    struct bladerf_image *image = NULL;
 
-    if(argc != 3)
+    if(argc != 3 && argc != 4) {
         return CMD_RET_NARGS;
+    }
 
-    if(strcmp(argv[1], "40") != 0 && strcmp(argv[1], "115") != 0) {
-        cli_err(state, argv[0], "Invalid FPGA size: \"%s\". Size must be either '40' or '115'.", argv[1]);
-        return CMD_RET_INVPARAM;
+    rv = str2fpga(argv[1], &fpga_size);
+    if (rv != 0) {
+        cli_err(state, argv[0], "Invalid FPGA provided.");
+        return rv;
     }
 
     dac = str2uint(argv[2], 0, 0xffff, &ok);
     if(!ok) {
-        cli_err(state, argv[0], "VCTCXO trim value invalid");
+        cli_err(state, argv[0], "Invalid VCTCXO trim value provided.");
         return CMD_RET_INVPARAM;
     }
 
-    if (!cli_device_is_opened(state)) {
-        return CMD_RET_NODEV;
+    image = bladerf_alloc_cal_image(fpga_size, dac);
+    if (!image) {
+        return CMD_RET_MEM;
     }
 
-    rv = bladerf_make_cal_region(argv[1], dac, buf, sizeof(buf));
-    if(rv < 0) {
-        state->last_lib_error = rv;
-        cli_err(state, argv[0], "Failed to create calibration data");
-        return CMD_RET_LIBBLADERF;
+    if (argc == 3) {
+
+        if (!cli_device_is_opened(state)) {
+            rv = CMD_RET_NODEV;
+            goto cmd_init_cal_out;
+        }
+
+        rv = bladerf_program_flash_unaligned(state->dev, image->address,
+                                             image->data, image->length);
+        if(rv < 0) {
+            cli_err(state, argv[0],
+            "Failed to write calibration data.\n"
+            "\n"
+            "This may have resulted in a corrupted flash. If the device fails to\n"
+            "boot at the next power cycle, re-flash the firmware.\n"
+            "\n"
+            "See the following page for more information:\n"
+            "  https://github.com/Nuand/bladeRF/wiki/Upgrading-bladeRF-firmware\n"
+            );
+
+            state->last_lib_error = rv;
+            rv = CMD_RET_LIBBLADERF;
+        }
+    } else {
+        assert(argc == 4);
+
     }
 
-    rv = bladerf_program_flash_unaligned(
-        state->dev,
-        CAL_PAGE * 256,
-        (uint8_t*)buf,
-        CAL_BUFFER_SIZE
-    );
-    if(rv < 0) {
-        state->last_lib_error = rv;
-        cli_err(state, argv[0],
-                "Failed to write calibration data.\n"
-                "\n"
-                "This may have resulted in a corrupted flash. If the device fails to\n"
-                "boot at the next power cycle, re-flash the firmware.\n"
-                "\n"
-                "See the following page for more information:\n"
-                "  https://github.com/Nuand/bladeRF/wiki/Upgrading-bladeRF-firmware\n"
-        );
-        return CMD_RET_LIBBLADERF;
-    }
-
-    return 0;
+cmd_init_cal_out:
+    bladerf_free_image(image);
+    return rv;
 }

@@ -45,6 +45,7 @@ int cmd_backup(struct cli_state *state, int argc, char **argv)
     bladerf_image_type image_type;
     unsigned int address, length;
     char *filename = NULL;
+    bool ok;
 
     if (!cli_device_is_opened(state)) {
         status = CMD_RET_NODEV;
@@ -63,8 +64,8 @@ int cmd_backup(struct cli_state *state, int argc, char **argv)
     if (argc == 3) {
         if (!strcasecmp(argv[2], "cal")) {
             image_type = BLADERF_IMAGE_TYPE_CALIBRATION;
-            address = BLADERF_FLASH_ADDR_CAL;
-            length = BLADERF_FLASH_LEN_CAL;
+            address = BLADERF_FLASH_ADDR_CALIBRATION;
+            length = BLADERF_FLASH_LEN_CALIBRATION;
         } else if (!strcasecmp(argv[2], "fw")) {
             image_type = BLADERF_IMAGE_TYPE_FIRMWARE;
             address = BLADERF_FLASH_ADDR_FIRMWARE;
@@ -84,7 +85,19 @@ int cmd_backup(struct cli_state *state, int argc, char **argv)
         }
     } else {
         assert(argc == 4);
+        address = str2uint(argv[2], 0, UINT_MAX, &ok);
+        if (!ok) {
+            cli_err(state, argv[0], "Invalid address provided.");
+            goto cmd_backup_out;
+        }
 
+        length = str2uint(argv[3], 0, UINT_MAX, &ok);
+        if (!ok) {
+            cli_err(state, argv[0], "Invalid length provided.");
+            goto cmd_backup_out;
+        }
+
+        image_type = BLADERF_IMAGE_TYPE_RAW;
     }
 
     image = bladerf_alloc_image(image_type, address, length);

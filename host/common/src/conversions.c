@@ -256,14 +256,15 @@ static void zero_argvs(int start, int end, char **argv)
 /* Returns 0 on success, -1 on failure */
 static int append_char(char **arg, int *arg_size, int *arg_i, char c)
 {
-    void *tmp;
+    char *tmp;
 
     if (*arg_i >= *arg_size) {
-        tmp = realloc(*arg, *arg_size * 2);
+        tmp = (char *)realloc(*arg, *arg_size * 2);
 
         if (!tmp) {
             return -1;
         } else {
+            memset(tmp + *arg_size, 0, *arg_size);
             *arg = tmp;
             *arg_size = *arg_size * 2;
         }
@@ -304,7 +305,7 @@ int str2args(const char *line, char ***argv_ret)
 
 
     argc = arg_i = 0;
-    argv = malloc(argv_size * sizeof(char *));
+    argv = (char **)malloc(argv_size * sizeof(char *));
     if (!argv) {
         return -1;
     }
@@ -349,7 +350,7 @@ int str2args(const char *line, char ***argv_ret)
 
                     /* Allocate this argument. This will be
                      * realloc'd as necessary by append_char() */
-                    argv[argc] = calloc(arg_size, 1);
+                    argv[argc] = (char *)calloc(arg_size, 1);
                     if (!argv[argc]) {
                         state = PARSE_STATE_ERROR;
                         break;

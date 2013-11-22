@@ -223,13 +223,16 @@ static const struct cmd cmd_table[] = {
     {
         FIELD_INIT(.names, cmd_names_init_cal),
         FIELD_INIT(.exec, cmd_init_cal),
-        FIELD_INIT(.desc, "Write new calibration data to device"),
-        FIELD_INIT(.help, "init_cal <fpga_size> <vctcxo_trim>\n"
+        FIELD_INIT(.desc, "Write new calibration data to a device or to a file"),
+        FIELD_INIT(.help, "init_cal <fpga_size> <vctcxo_trim> [output file]\n"
             "\n"
-            "Initializes the calibration region in the flash with new values. Be sure to\n"
-            "backup calibration data prior to running this command.\n\n"
+            "Create and write a new calibration data region to the currently opened device,\n"
+            "or to a file. Be sure to back up calibration data prior to running this command.\n"
+            " (See the `backup` command.\n)\n\n"
             "   <fpga_size>       Either 40 or 115, depending on the device model.\n"
             "   <vctcxo_trim>     VCTCXO/DAC trim value (0x0-0xffff)\n"
+            "   [output file]     File to write calibration data to. When this argument\n"
+            "                     is provided, no data will be written to the device's flash.\n"
             )
     },
     {

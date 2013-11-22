@@ -27,9 +27,10 @@
 #include <limits.h>
 #include <errno.h>
 
+#include "libbladeRF.h"
+#include "bladerf_priv.h"
 #include "host_config.h"
 #include "sha256.h"
-#include "libbladeRF.h"
 #include "log.h"
 #include "minmax.h"
 #include "file_ops.h"
@@ -55,13 +56,11 @@
 static const char image_magic[] = "bladeRF";
 
 #if BLADERF_OS_WINDOWS
-/* TODO:
- * http://social.msdn.microsoft.com/Forums/vstudio/en-US/430449b3-f6dd-4e18-84de-eebd26a8d668/gettimeofday?forum=vcgeneral
- * http://msdn.microsoft.com/en-us/library/windows/desktop/ms724338%28v=vs.85%29.aspx
- */
+#include <time.h>
 static uint64_t get_timestamp()
 {
-#error not implemented
+    __time64_t now = _time64(NULL);
+    return (uint64_t)now;
 }
 #else
 #include <sys/time.h>
@@ -241,7 +240,7 @@ static int unpack_image(struct bladerf_image *img, uint8_t *buf, size_t len)
     i += sizeof(type);
     type = BE32_TO_HOST(type);
 
-    if (!image_type_is_valid(type)) {
+    if (!image_type_is_valid((bladerf_image_type)type)) {
         log_debug("Invalid type value in image: %d\n", (int)type);
         return BLADERF_ERR_INVAL;
     } else {
@@ -300,7 +299,7 @@ int bladerf_image_write(struct bladerf_image *img, const char *file)
     }
 
     buf_len = CALC_IMAGE_SIZE(img->length);
-    buf = calloc(1, buf_len);
+    buf = (uint8_t *)calloc(1, buf_len);
     if (!buf) {
         log_verbose("calloc failed: %s\n", strerror(errno));
         return BLADERF_ERR_MEM;
@@ -361,20 +360,20 @@ bladerf_image_read_out:
 
 struct bladerf_image * bladerf_alloc_image(bladerf_image_type type,
                                            uint32_t address,
-                                           size_t length)
+                                           uint32_t length)
 {
     struct bladerf_image *image;
 
     assert(BLADERF_IMAGE_MAGIC_LEN == (sizeof(image_magic) - 1));
 
-    image = calloc(1, sizeof(*image));
+    image = (struct bladerf_image *)calloc(1, sizeof(*image));
 
     if (!image) {
         return NULL;
     }
 
     if (length) {
-        image->data = calloc(1, length);
+        image->data = (uint8_t *)calloc(1, length);
         if (!image->data) {
             free(image);
             return NULL;
@@ -416,11 +415,13 @@ static int make_cal_region(bladerf_fpga_size size, uint16_t vctcxo_trim,
 
     assert(len < INT_MAX);
     rv = add_field((char*)buf, (int)len, "B", fpga_size);
+
     if (rv < 0) {
         return rv;
     }
 
     sprintf(dac, "%u", vctcxo_trim);
+
     rv = add_field((char*)buf, (int)len, "DAC", dac);
     if (rv < 0) {
         return rv;
