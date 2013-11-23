@@ -43,7 +43,7 @@
 #define GHz(x)              (x*1000000000)
 
 // Register offsets from the base
-#define I2C                 OC_I2C_MASTER_0_BASE
+#define I2C                 BLADERF_OC_I2C_MASTER_0_BASE
 #define OC_I2C_PRESCALER    0
 #define OC_I2C_CTRL         2
 #define OC_I2C_DATA         3

@@ -4,7 +4,7 @@
 
 
 # 
-# oc_i2c_master "OpenCores I2C Master" v1.0
+# bladerf_oc_i2c_master "OpenCores I2C Master" v1.0
 # OpenCores 2013.05.14.23:13:27
 # OpenCores I2C Master
 # 
@@ -16,16 +16,16 @@ package require -exact qsys 12.1
 
 
 # 
-# module oc_i2c_master
+# module bladerf_oc_i2c_master
 # 
-set_module_property DESCRIPTION "OpenCores I2C Master"
-set_module_property NAME oc_i2c_master
+set_module_property DESCRIPTION "BladeRF OpenCores I2C Master"
+set_module_property NAME bladerf_oc_i2c_master
 set_module_property VERSION 1.0
 set_module_property INTERNAL false
 set_module_property OPAQUE_ADDRESS_MAP true
 set_module_property GROUP Communication
 set_module_property AUTHOR OpenCores
-set_module_property DISPLAY_NAME "OpenCores I2C Master"
+set_module_property DISPLAY_NAME "BladeRF OpenCores I2C Master"
 set_module_property INSTANTIATE_IN_SYSTEM_MODULE true
 set_module_property EDITABLE true
 set_module_property ANALYZE_HDL AUTO
@@ -107,7 +107,7 @@ add_interface_port conduit_end scl_pad_i export Input 1
 # connection point interrupt_sender
 # 
 add_interface interrupt_sender interrupt end
-set_interface_property interrupt_sender associatedAddressablePoint oc_i2c_master
+set_interface_property interrupt_sender associatedAddressablePoint bladerf_oc_i2c_master
 set_interface_property interrupt_sender associatedClock clock_sink
 set_interface_property interrupt_sender associatedReset reset_sink
 set_interface_property interrupt_sender ENABLED true
@@ -116,35 +116,35 @@ add_interface_port interrupt_sender wb_inta_o irq Output 1
 
 
 # 
-# connection point oc_i2c_master
+# connection point bladerf_oc_i2c_master
 # 
-add_interface oc_i2c_master avalon end
-set_interface_property oc_i2c_master addressUnits WORDS
-set_interface_property oc_i2c_master associatedClock clock_sink
-set_interface_property oc_i2c_master associatedReset reset_sink
-set_interface_property oc_i2c_master bitsPerSymbol 8
-set_interface_property oc_i2c_master burstOnBurstBoundariesOnly false
-set_interface_property oc_i2c_master burstcountUnits WORDS
-set_interface_property oc_i2c_master explicitAddressSpan 0
-set_interface_property oc_i2c_master holdTime 0
-set_interface_property oc_i2c_master linewrapBursts false
-set_interface_property oc_i2c_master maximumPendingReadTransactions 0
-set_interface_property oc_i2c_master readLatency 0
-set_interface_property oc_i2c_master readWaitTime 1
-set_interface_property oc_i2c_master setupTime 0
-set_interface_property oc_i2c_master timingUnits Cycles
-set_interface_property oc_i2c_master writeWaitTime 0
-set_interface_property oc_i2c_master ENABLED true
+add_interface bladerf_oc_i2c_master avalon end
+set_interface_property bladerf_oc_i2c_master addressUnits WORDS
+set_interface_property bladerf_oc_i2c_master associatedClock clock_sink
+set_interface_property bladerf_oc_i2c_master associatedReset reset_sink
+set_interface_property bladerf_oc_i2c_master bitsPerSymbol 8
+set_interface_property bladerf_oc_i2c_master burstOnBurstBoundariesOnly false
+set_interface_property bladerf_oc_i2c_master burstcountUnits WORDS
+set_interface_property bladerf_oc_i2c_master explicitAddressSpan 0
+set_interface_property bladerf_oc_i2c_master holdTime 0
+set_interface_property bladerf_oc_i2c_master linewrapBursts false
+set_interface_property bladerf_oc_i2c_master maximumPendingReadTransactions 0
+set_interface_property bladerf_oc_i2c_master readLatency 0
+set_interface_property bladerf_oc_i2c_master readWaitTime 1
+set_interface_property bladerf_oc_i2c_master setupTime 0
+set_interface_property bladerf_oc_i2c_master timingUnits Cycles
+set_interface_property bladerf_oc_i2c_master writeWaitTime 0
+set_interface_property bladerf_oc_i2c_master ENABLED true
 
-add_interface_port oc_i2c_master wb_dat_i writedata Input 8
-add_interface_port oc_i2c_master wb_dat_o readdata Output 8
-add_interface_port oc_i2c_master wb_we_i write Input 1
-add_interface_port oc_i2c_master wb_stb_i byteenable Input 1
-add_interface_port oc_i2c_master wb_cyc_i chipselect Input 1
-add_interface_port oc_i2c_master wb_ack_o waitrequest_n Output 1
-add_interface_port oc_i2c_master wb_adr_i address Input 3
-set_interface_assignment oc_i2c_master embeddedsw.configuration.isFlash 0
-set_interface_assignment oc_i2c_master embeddedsw.configuration.isMemoryDevice 0
-set_interface_assignment oc_i2c_master embeddedsw.configuration.isNonVolatileStorage 0
-set_interface_assignment oc_i2c_master embeddedsw.configuration.isPrintableDevice 0
+add_interface_port bladerf_oc_i2c_master wb_dat_i writedata Input 8
+add_interface_port bladerf_oc_i2c_master wb_dat_o readdata Output 8
+add_interface_port bladerf_oc_i2c_master wb_we_i write Input 1
+add_interface_port bladerf_oc_i2c_master wb_stb_i byteenable Input 1
+add_interface_port bladerf_oc_i2c_master wb_cyc_i chipselect Input 1
+add_interface_port bladerf_oc_i2c_master wb_ack_o waitrequest_n Output 1
+add_interface_port bladerf_oc_i2c_master wb_adr_i address Input 3
+set_interface_assignment bladerf_oc_i2c_master embeddedsw.configuration.isFlash 0
+set_interface_assignment bladerf_oc_i2c_master embeddedsw.configuration.isMemoryDevice 0
+set_interface_assignment bladerf_oc_i2c_master embeddedsw.configuration.isNonVolatileStorage 0
+set_interface_assignment bladerf_oc_i2c_master embeddedsw.configuration.isPrintableDevice 0
 

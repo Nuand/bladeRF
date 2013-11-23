@@ -20,6 +20,22 @@
          type = "String";
       }
    }
+   element bladerf_oc_i2c_master_0.bladerf_oc_i2c_master
+   {
+      datum baseAddress
+      {
+         value = "37088";
+         type = "String";
+      }
+   }
+   element bladerf_oc_i2c_master_0
+   {
+      datum _sortIndex
+      {
+         value = "11";
+         type = "int";
+      }
+   }
    element clk_0
    {
       datum _sortIndex
@@ -32,7 +48,7 @@
    {
       datum _sortIndex
       {
-         value = "10";
+         value = "9";
          type = "int";
       }
    }
@@ -40,7 +56,7 @@
    {
       datum _sortIndex
       {
-         value = "11";
+         value = "10";
          type = "int";
       }
    }
@@ -68,22 +84,6 @@
          type = "int";
       }
    }
-   element oc_i2c_master_0.oc_i2c_master
-   {
-      datum baseAddress
-      {
-         value = "37056";
-         type = "String";
-      }
-   }
-   element oc_i2c_master_0
-   {
-      datum _sortIndex
-      {
-         value = "8";
-         type = "int";
-      }
-   }
    element onchip_memory2_0
    {
       datum _sortIndex
@@ -96,8 +96,24 @@
    {
       datum _sortIndex
       {
-         value = "9";
+         value = "8";
          type = "int";
+      }
+   }
+   element onchip_memory2_0.s1
+   {
+      datum baseAddress
+      {
+         value = "16384";
+         type = "String";
+      }
+   }
+   element correction_phase_gain.s1
+   {
+      datum baseAddress
+      {
+         value = "37120";
+         type = "String";
       }
    }
    element pio_0.s1
@@ -124,22 +140,6 @@
          type = "String";
       }
    }
-   element correction_phase_gain.s1
-   {
-      datum baseAddress
-      {
-         value = "16";
-         type = "String";
-      }
-   }
-   element onchip_memory2_0.s1
-   {
-      datum baseAddress
-      {
-         value = "16384";
-         type = "String";
-      }
-   }
    element spi_0
    {
       datum _sortIndex
@@ -156,19 +156,19 @@
          type = "int";
       }
    }
-   element spi_0.spi_control_port
-   {
-      datum baseAddress
-      {
-         value = "37024";
-         type = "String";
-      }
-   }
    element spi_1.spi_control_port
    {
       datum baseAddress
       {
          value = "36960";
+         type = "String";
+      }
+   }
+   element spi_0.spi_control_port
+   {
+      datum baseAddress
+      {
+         value = "37024";
          type = "String";
       }
    }
@@ -203,7 +203,7 @@
  <parameter name="projectName" value="" />
  <parameter name="sopcBorderPoints" value="false" />
  <parameter name="systemHash" value="1" />
- <parameter name="timeStamp" value="1383510275521" />
+ <parameter name="timeStamp" value="1385180431323" />
  <parameter name="useTestBenchNamingPattern" value="false" />
  <instanceScript></instanceScript>
  <interface name="clk" internal="clk_0.clk_in" type="clock" dir="end" />
@@ -215,11 +215,6 @@
    type="conduit"
    dir="end" />
  <interface name="dac" internal="spi_1.external" type="conduit" dir="end" />
- <interface
-   name="oc_i2c"
-   internal="oc_i2c_master_0.conduit_end"
-   type="conduit"
-   dir="end" />
  <interface
    name="gpio"
    internal="pio_0.external_connection"
@@ -233,6 +228,11 @@
  <interface
    name="correction_phase_gain"
    internal="correction_phase_gain.external_connection"
+   type="conduit"
+   dir="end" />
+ <interface
+   name="oc_i2c"
+   internal="bladerf_oc_i2c_master_0.conduit_end"
    type="conduit"
    dir="end" />
  <module kind="clock_source" version="13.0" enabled="1" name="clk_0">
@@ -347,7 +347,7 @@
   <parameter name="tightlyCoupledInstructionMaster2AddrWidth" value="1" />
   <parameter name="tightlyCoupledInstructionMaster3AddrWidth" value="1" />
   <parameter name="instSlaveMapParam"><![CDATA[<address-map><slave name='onchip_memory2_0.s1' start='0x4000' end='0x8000' /><slave name='nios2_qsys_0.jtag_debug_module' start='0x8800' end='0x9000' /></address-map>]]></parameter>
-  <parameter name="dataSlaveMapParam"><![CDATA[<address-map><slave name='correction_dc.s1' start='0x0' end='0x10' /><slave name='correction_phase_gain.s1' start='0x10' end='0x20' /><slave name='onchip_memory2_0.s1' start='0x4000' end='0x8000' /><slave name='nios2_qsys_0.jtag_debug_module' start='0x8800' end='0x9000' /><slave name='timer_0.s1' start='0x9000' end='0x9040' /><slave name='pio_0.s1' start='0x9040' end='0x9060' /><slave name='spi_1.spi_control_port' start='0x9060' end='0x9080' /><slave name='uart_0.s1' start='0x9080' end='0x90A0' /><slave name='spi_0.spi_control_port' start='0x90A0' end='0x90C0' /><slave name='oc_i2c_master_0.oc_i2c_master' start='0x90C0' end='0x90C8' /><slave name='jtag_uart_0.avalon_jtag_slave' start='0x90C8' end='0x90D0' /></address-map>]]></parameter>
+  <parameter name="dataSlaveMapParam"><![CDATA[<address-map><slave name='correction_dc.s1' start='0x0' end='0x10' /><slave name='onchip_memory2_0.s1' start='0x4000' end='0x8000' /><slave name='nios2_qsys_0.jtag_debug_module' start='0x8800' end='0x9000' /><slave name='timer_0.s1' start='0x9000' end='0x9040' /><slave name='pio_0.s1' start='0x9040' end='0x9060' /><slave name='spi_1.spi_control_port' start='0x9060' end='0x9080' /><slave name='uart_0.s1' start='0x9080' end='0x90A0' /><slave name='spi_0.spi_control_port' start='0x90A0' end='0x90C0' /><slave name='jtag_uart_0.avalon_jtag_slave' start='0x90C8' end='0x90D0' /><slave name='bladerf_oc_i2c_master_0.bladerf_oc_i2c_master' start='0x90E0' end='0x90E8' /><slave name='correction_phase_gain.s1' start='0x9100' end='0x9110' /></address-map>]]></parameter>
   <parameter name="clockFrequency" value="80000000" />
   <parameter name="deviceFamilyName" value="Cyclone IV E" />
   <parameter name="internalIrqMaskSystemInfo" value="63" />
@@ -481,10 +481,6 @@
   <parameter name="avalonSpec" value="2.0" />
   <parameter name="inputClockRate" value="80000000" />
  </module>
- <module kind="oc_i2c_master" version="1.0" enabled="1" name="oc_i2c_master_0">
-  <parameter name="ARST_LVL" value="1" />
-  <parameter name="AUTO_CLOCK_SINK_CLOCK_RATE" value="80000000" />
- </module>
  <module
    kind="altera_avalon_pio"
    version="13.0.1.99.2"
@@ -538,6 +534,14 @@
   <parameter name="simDrivenValue" value="0" />
   <parameter name="width" value="32" />
   <parameter name="clockRate" value="80000000" />
+ </module>
+ <module
+   kind="bladerf_oc_i2c_master"
+   version="1.0"
+   enabled="1"
+   name="bladerf_oc_i2c_master_0">
+  <parameter name="ARST_LVL" value="0" />
+  <parameter name="AUTO_CLOCK_SINK_CLOCK_RATE" value="80000000" />
  </module>
  <connection
    kind="avalon"
@@ -693,32 +697,6 @@
    end="spi_1.irq">
   <parameter name="irqNumber" value="4" />
  </connection>
- <connection
-   kind="reset"
-   version="13.0"
-   start="clk_0.clk_reset"
-   end="oc_i2c_master_0.reset_sink" />
- <connection
-   kind="clock"
-   version="13.0"
-   start="clk_0.clk"
-   end="oc_i2c_master_0.clock_sink" />
- <connection
-   kind="interrupt"
-   version="13.0"
-   start="nios2_qsys_0.d_irq"
-   end="oc_i2c_master_0.interrupt_sender">
-  <parameter name="irqNumber" value="5" />
- </connection>
- <connection
-   kind="avalon"
-   version="13.0"
-   start="nios2_qsys_0.data_master"
-   end="oc_i2c_master_0.oc_i2c_master">
-  <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x90c0" />
-  <parameter name="defaultConnection" value="false" />
- </connection>
  <connection kind="clock" version="13.0" start="clk_0.clk" end="pio_0.clk" />
  <connection kind="reset" version="13.0" start="clk_0.clk_reset" end="pio_0.reset" />
  <connection
@@ -761,7 +739,33 @@
    start="nios2_qsys_0.data_master"
    end="correction_phase_gain.s1">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0010" />
+  <parameter name="baseAddress" value="0x9100" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection
+   kind="clock"
+   version="13.0"
+   start="clk_0.clk"
+   end="bladerf_oc_i2c_master_0.clock_sink" />
+ <connection
+   kind="reset"
+   version="13.0"
+   start="clk_0.clk_reset"
+   end="bladerf_oc_i2c_master_0.reset_sink" />
+ <connection
+   kind="interrupt"
+   version="13.0"
+   start="nios2_qsys_0.d_irq"
+   end="bladerf_oc_i2c_master_0.interrupt_sender">
+  <parameter name="irqNumber" value="5" />
+ </connection>
+ <connection
+   kind="avalon"
+   version="13.0"
+   start="nios2_qsys_0.data_master"
+   end="bladerf_oc_i2c_master_0.bladerf_oc_i2c_master">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x90e0" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <interconnectRequirement for="$system" name="qsys_mm.clockCrossingAdapter" value="HANDSHAKE" />
