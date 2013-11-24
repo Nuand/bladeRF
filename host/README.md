@@ -49,6 +49,7 @@ more information.
 | -DENABLE_LIBTECLA=\<ON/OFF\>              | Enable libtecla support in the bladeRF-cli program. Default: ON if libtecla is detected, OFF otherwise.  |
 | -DINSTALL_UDEV_RULES=\<ON/OFF\>           | Install udev rules to /etc/udev/rules.d/. Default: ON for Linux, OFF default otherwise.                  |
 | -DBLADERF_GROUP=\<group\>                 | Sets the group associated with the bladeRF in the installed udev rules. The default is plugdev.          |
+| -DTREAT_WARNINGS_AS_ERRORS=\<Yes/No\>     | Treat compiler warnings as errors, defaults to Yes. Contributors should keep this enabled.               |
 
 [cmake]: ./cmake (CMake scripts)
 [drivers]: ./drivers (Drivers)
