@@ -21,11 +21,12 @@ architecture arch of signal_generator is
 begin
 
     counter : process(clock, reset)
-        variable tock   :   std_logic ;
-        variable count  : natural range 0 to 2047 ;
+        constant COUNT_RESET    :   natural := 256 ;
+        variable tock           :   std_logic ;
+        variable count          :   natural range 0 to 2047 := COUNT_RESET ;
     begin
         if( reset = '1' ) then
-            count := 256 ;
+            count := COUNT_RESET ;
             tock := '0' ;
             sample_i <= (others =>'0') ;
             sample_q <= (others =>'0') ;
