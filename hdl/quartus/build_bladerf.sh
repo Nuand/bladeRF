@@ -152,6 +152,8 @@ make clean all
 make mem_init_clean mem_init_generate
 popd
 
+# Fix Quartus outputting '1' or '0' for ARST_LVL when it should be 1'b0 or 1'b1
+sed -i s/"'\([01]\)'"/"1'b\1"/ $nios_system/synthesis/nios_system.v
 
 echo ""
 echo "##########################################################################"
