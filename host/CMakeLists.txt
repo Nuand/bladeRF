@@ -40,6 +40,10 @@ option(BUILD_DOCUMENTATION
         "Enable build and install of manpages and other documentation."
         OFF)
 
+option(TREAT_WARNINGS_AS_ERRORS
+       "Treat compiler warnings as errors."
+       ON)
+
 if(ENABLE_LOG_FILE_INFO)
     add_definitions(-DLOG_INCLUDE_FILE_INFO)
 endif()
@@ -80,15 +84,13 @@ endif()
 if("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" OR
    "${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
 
-    # Prefer more warnings, enforce C89 so folks developing in Linux can keep
-    # an eye on stuff that will likely cause portability issues
     add_definitions(-Wall)
     add_definitions(-Wextra)
-# TODO Re-enable these
-#    add_definitions(-pedantic)
-#    add_definitions(-std=c89)
-    add_definitions(-Werror)
     add_definitions(-Wno-unused-parameter)
+
+    if(TREAT_WARNINGS_AS_ERRORS)
+        add_definitions(-Werror)
+    endif()
 
     if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
         add_definitions(-DDEBUG=1)
@@ -102,7 +104,9 @@ endif("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" OR
 # MS Visual Studio
 ###############################
 if(MSVC)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /WX")
+    if(TREAT_WARNINGS_AS_ERRORS)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /WX")
+    endif()
 endif(MSVC)
 
 ################################################################################
