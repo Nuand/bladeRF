@@ -73,8 +73,8 @@ set_interface_property clock_sink clockRate 0
 set_interface_property clock_sink ENABLED true
 set_interface_property clock_sink EXPORT_OF ""
 set_interface_property clock_sink PORT_NAME_MAP ""
-set_interface_property clock_sink CMSIS_SVD_VARIABLES ""
-set_interface_property clock_sink SVD_ADDRESS_GROUP ""
+#set_interface_property clock_sink CMSIS_SVD_VARIABLES ""
+#set_interface_property clock_sink SVD_ADDRESS_GROUP ""
 
 add_interface_port clock_sink wb_clk_i clk Input 1
 
@@ -88,8 +88,8 @@ set_interface_property reset_sink synchronousEdges DEASSERT
 set_interface_property reset_sink ENABLED true
 set_interface_property reset_sink EXPORT_OF ""
 set_interface_property reset_sink PORT_NAME_MAP ""
-set_interface_property reset_sink CMSIS_SVD_VARIABLES ""
-set_interface_property reset_sink SVD_ADDRESS_GROUP ""
+#set_interface_property reset_sink CMSIS_SVD_VARIABLES ""
+#set_interface_property reset_sink SVD_ADDRESS_GROUP ""
 
 add_interface_port reset_sink wb_rst_i reset Input 1
 
@@ -103,8 +103,8 @@ set_interface_property conduit_end associatedReset ""
 set_interface_property conduit_end ENABLED true
 set_interface_property conduit_end EXPORT_OF ""
 set_interface_property conduit_end PORT_NAME_MAP ""
-set_interface_property conduit_end CMSIS_SVD_VARIABLES ""
-set_interface_property conduit_end SVD_ADDRESS_GROUP ""
+#set_interface_property conduit_end CMSIS_SVD_VARIABLES ""
+#set_interface_property conduit_end SVD_ADDRESS_GROUP ""
 
 add_interface_port conduit_end scl_pad_o export Output 1
 add_interface_port conduit_end scl_padoen_o export Output 1
@@ -125,8 +125,8 @@ set_interface_property interrupt_sender associatedReset reset_sink
 set_interface_property interrupt_sender ENABLED true
 set_interface_property interrupt_sender EXPORT_OF ""
 set_interface_property interrupt_sender PORT_NAME_MAP ""
-set_interface_property interrupt_sender CMSIS_SVD_VARIABLES ""
-set_interface_property interrupt_sender SVD_ADDRESS_GROUP ""
+#set_interface_property interrupt_sender CMSIS_SVD_VARIABLES ""
+#set_interface_property interrupt_sender SVD_ADDRESS_GROUP ""
 
 add_interface_port interrupt_sender wb_inta_o irq Output 1
 
@@ -153,8 +153,8 @@ set_interface_property bladerf_oc_i2c_master writeWaitTime 0
 set_interface_property bladerf_oc_i2c_master ENABLED true
 set_interface_property bladerf_oc_i2c_master EXPORT_OF ""
 set_interface_property bladerf_oc_i2c_master PORT_NAME_MAP ""
-set_interface_property bladerf_oc_i2c_master CMSIS_SVD_VARIABLES ""
-set_interface_property bladerf_oc_i2c_master SVD_ADDRESS_GROUP ""
+#set_interface_property bladerf_oc_i2c_master CMSIS_SVD_VARIABLES ""
+#set_interface_property bladerf_oc_i2c_master SVD_ADDRESS_GROUP ""
 
 add_interface_port bladerf_oc_i2c_master wb_dat_i writedata Input 8
 add_interface_port bladerf_oc_i2c_master wb_dat_o readdata Output 8
