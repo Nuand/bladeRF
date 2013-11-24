@@ -71,6 +71,9 @@ set_false_path -from * -to [get_ports led*]
 # LMS long lived GPIO and RF Switches
 set_false_path -from * -to [get_ports {lms_*x_v* lms_*x_enable lms_reset}]
 
+# Long lived correction parameters
+set_false_path -from * -to [get_keepers {iq_correction:*} ]
+
 # JTAG settings
 set_clock_groups -exclusive -group [get_clocks altera_reserved_tck]
 set_input_delay -clock [get_clocks altera_reserved_tck] 20 [get_ports altera_reserved_tdi]
