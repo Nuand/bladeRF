@@ -25,8 +25,6 @@
 #ifndef OSX_CLOCK_GETTIME_H_
 #define OSX_CLOCK_GETTIME_H_
 
-#include <time.h>
-
 #ifndef __MACH__
 #   error "This file is intended for use with OSX systems only."
 #endif
