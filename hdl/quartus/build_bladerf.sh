@@ -99,6 +99,8 @@ if [ $? -ne 0 ] || [ ! -f "$quartus_sh" ]; then
 fi
 
 nios_system=../fpga/ip/altera/nios_system
+QUARTUS_BINDIR=$QUARTUS_ROOTDIR/bin
+export QUARTUS_BINDIR
 
 # Error out at the first sign of trouble
 set -e
