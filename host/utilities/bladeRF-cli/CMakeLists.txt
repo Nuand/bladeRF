@@ -164,6 +164,51 @@ endif()
 target_link_libraries(bladeRF-cli ${CLI_LINK_LIBRARIES})
 
 ################################################################################
+# Man pages
+################################################################################
+if(BUILD_DOCUMENTATION)
+    find_program(HELP2MAN_EXECUTABLE help2man)
+
+    if(HELP2MAN_EXECUTABLE)
+        message(STATUS "Will build man page for bladeRF-cli.")
+
+        if(NOT DEFINED MAN_INSTALL_DIR)
+            set(MAN_INSTALL_DIR share/man)
+        endif(NOT DEFINED MAN_INSTALL_DIR)
+
+        # Build interactive commands summary, for inclusion in man page
+        add_custom_command(
+            OUTPUT bladeRF-cli_auto.h2m
+            DEPENDS bladeRF-cli
+            COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/../doc/include_man/interrogate.py
+                           ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/bladeRF-cli > bladeRF-cli_auto.h2m
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        )
+
+        # Build actual man page
+        add_custom_command(
+            OUTPUT bladeRF-cli.1
+            DEPENDS bladeRF-cli bladeRF-cli_auto.h2m
+            COMMAND ${HELP2MAN_EXECUTABLE} --no-info
+                                           --opt-include=${CMAKE_CURRENT_SOURCE_DIR}/../doc/include_man/bladeRF-cli.h2m
+                                           --opt-include=${CMAKE_CURRENT_BINARY_DIR}/bladeRF-cli_auto.h2m
+                                           --opt-include=${CMAKE_CURRENT_SOURCE_DIR}/../doc/include_man/common.h2m
+                                           --output=bladeRF-cli.1 ./bladeRF-cli
+            WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+        )
+
+        install(FILES ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/bladeRF-cli.1 DESTINATION ${MAN_INSTALL_DIR}/man1)
+
+        add_custom_target(bladeRF-cli-manpage ALL SOURCES bladeRF-cli.1)
+
+    else(HELP2MAN_EXECUTABLE)
+        message(WARNING "Could not find help2man. bladeRF-cli man page will not be built.")
+    endif(HELP2MAN_EXECUTABLE)
+else(BUILD_DOCUMENTATION)
+    message(STATUS "Not building man page for bladeRF-cli.  (BUILD_DOCUMENTATION is OFF)")
+endif(BUILD_DOCUMENTATION)
+
+################################################################################
 # Installation
 ################################################################################
 if(NOT DEFINED BIN_INSTALL_DIR)

@@ -23,11 +23,5 @@ endif
 override_dh_auto_configure:
 	dh_auto_configure -- -DVERSION_INFO_OVERRIDE:STRING=$(VERSION_INFO_OVERRIDE) -DENABLE_HOST_BUILD=ON -DENABLE_FX3_BUILD=OFF -DBUILD_DOCUMENTATION=ON
 
-# To make lintian happy, make the manpages properly cased
-override_dh_auto_install:
-	dh_auto_install
-	mv debian/tmp/usr/share/man/man1/bladerf-cli.1 debian/tmp/usr/share/man/man1/bladeRF-cli.1
-	mv debian/tmp/usr/share/man/man1/bladerf-flash.1 debian/tmp/usr/share/man/man1/bladeRF-flash.1
-
 %:
 	dh $@ 
