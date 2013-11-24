@@ -205,11 +205,13 @@ static int print_image_metadata(struct cli_state *s, struct params *p,
                image->version.minor, image->version.patch);
 
         time_tmp = image->timestamp;
-        printf("Timestamp (raw): %lld\n", time_tmp);
         timeval = localtime(&time_tmp);
-        printf("Time ptr: %p\n", timeval);
-        memset(datetime, 0, sizeof(datetime));
-        strftime(datetime, sizeof(datetime) - 1, "%Y-%m-%d %H:%M:%S", timeval);
+        if (timeval) {
+            memset(datetime, 0, sizeof(datetime));
+            strftime(datetime, sizeof(datetime) - 1, "%Y-%m-%d %H:%M:%S", timeval);
+        } else {
+            strncpy(datetime, "Invalid value", sizeof(datetime));
+        }
         printf("Timestamp: %s\n", datetime);
 
         switch (image->type) {
