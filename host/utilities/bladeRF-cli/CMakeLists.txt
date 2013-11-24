@@ -77,6 +77,12 @@ if(LIBUSB_FOUND)
     set(CLI_INCLUDE_DIRS ${CLI_INCLUDE_DIRS} ${LIBUSB_INCLUDE_DIRS})
 endif()
 
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    set(CLI_INCLUDE_DIRS ${CLI_INCLUDE_DIRS}
+        ${UTILITIES_COMMON_INC_DIR}/macosx
+    )
+endif()
+
 if(MSVC)
     set(CLI_INCLUDE_DIRS ${CLI_INCLUDE_DIRS}
         ${BLADERF_HOST_COMMON_INCLUDE_DIRS}/windows
@@ -129,6 +135,12 @@ if(ENABLE_LIBTECLA)
     set(BLADERF_CLI_SOURCE ${BLADERF_CLI_SOURCE} src/interactive/tecla.c)
 else()
     set(BLADERF_CLI_SOURCE ${BLADERF_CLI_SOURCE} src/interactive/fgets.c)
+endif()
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    set(BLADERF_CLI_SOURCE ${BLADERF_CLI_SOURCE}
+            ${UTILITIES_COMMON_SRC}/macosx/clock_gettime.c
+       )
 endif()
 
 if(MSVC)
