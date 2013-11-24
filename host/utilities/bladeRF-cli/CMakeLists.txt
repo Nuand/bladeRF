@@ -85,6 +85,12 @@ if(MSVC)
     )
 endif()
 
+if(APPLE)
+    set(CLI_INCLUDE_DIRS ${CLI_INCLUDE_DIRS}
+        ${UTILITIES_COMMON_INC_DIR}/osx
+    )
+endif()
+
 include_directories(${CLI_INCLUDE_DIRS})
 
 ################################################################################
@@ -129,7 +135,13 @@ if(MSVC)
     set(BLADERF_CLI_SOURCE ${BLADERF_CLI_SOURCE}
             ${BLADERF_HOST_COMMON_SOURCE_DIR}/windows/getopt_long.c
             ${UTILITIES_COMMON_SRC}/windows/clock_gettime.c
-       )
+    )
+endif()
+
+if(APPLE)
+    set(BLADERF_CLI_SOURCE ${BLADERF_CLI_SOURCE}
+            ${UTILITIES_COMMON_SRC}/osx/clock_gettime.c
+    )
 endif()
 
 add_executable(bladeRF-cli ${BLADERF_CLI_SOURCE})

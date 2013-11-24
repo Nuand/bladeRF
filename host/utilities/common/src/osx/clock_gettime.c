@@ -1,7 +1,8 @@
 /*
- * This file is part of the bladeRF project:
- *   http://www.github.com/nuand/bladeRF
+ * clock_gettime() wrapper for OSX based upon jbenet's github "gist":
+ *   https://gist.github.com/jbenet/1087739
  *
+ * Copyright (c) 2011 Juan Batiz-Benet (https://github.com/jbenet)
  * Copyright (c) 2013 Nuand LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -22,37 +23,36 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef WIN32
-#   error "This file is intended for use with WIN32 systems only."
-#endif
-
-#include <Windows.h>
-#include <errno.h>
 #include "clock_gettime.h"
-#include "ptw32_timespec.h"
+#include <errno.h>
+#include <mach/clock.h>
+#include <mach/mach.h>
 
 int clock_gettime(clockid_t clk_id, struct timespec *tp)
 {
-    BOOL success;
-    FILETIME file_time;
-    SYSTEMTIME system_time;
+    kern_return_t ret;
+    clock_serv_t cclock;
+    mach_timespec_t mts;
 
-    if (clk_id != CLOCK_REALTIME) {
+    ret = host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
+    if (ret != 0) {
         errno = EINVAL;
         return -1;
     }
 
-    GetSystemTime(&system_time);
-    success = SystemTimeToFileTime(&system_time, &file_time);
-
-    if (!success) {
-        /* For lack of a better or more compliant return value... */
-        errno = EINVAL;
-        return -1;
+    ret = clock_get_time(cclock, &mts);
+    if (ret != 0) {
+        goto clock_gettime_out;
     }
 
-    ptw32_filetime_to_timespec(&file_time, tp);
+    tp->tv_sec = mts.tv_sec;
+    tp->tv_nsec = mts.tv_nsec;
 
-    return 0;
+clock_gettime_out:
+    if (mach_port_deallocate(mach_task_self(), cclock) != 0 || ret != 0) {
+        errno = EINVAL;
+        return -1;
+    } else {
+        return 0;
+    }
 }
-
