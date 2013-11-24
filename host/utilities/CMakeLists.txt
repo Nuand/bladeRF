@@ -43,38 +43,3 @@ else(${HAVE_LIBUSB_HOTPLUG} MATCHES "1")
                "https://github.com/Nuand/bladeRF/wiki/Debian-setup-guide#build-libusb-tools-and-libraries-from-nuand-git-master")
     endif()
 endif(${HAVE_LIBUSB_HOTPLUG} MATCHES "1")
-
-################################################################################
-# Doxygen documentation, for man pages
-################################################################################
-if(BUILD_DOCUMENTATION)
-    find_package(Doxygen)
-
-    if(DOXYGEN_FOUND)
-        message(STATUS "Configured to build man pages for bladeRF utilities.")
-        configure_file(
-            ${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/Doxyfile.in
-            ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/Doxyfile
-            @ONLY
-            )
-
-        add_custom_target(utilities_manpages ALL
-            COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/Doxyfile
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen
-            COMMENT "Generating bladeRF utilities man pages via Doxygen in: ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen"
-            )
-
-        if(NOT DEFINED MAN_INSTALL_DIR)
-            set(MAN_INSTALL_DIR share/man)
-        endif(NOT DEFINED MAN_INSTALL_DIR)
-
-        install(FILES
-            ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/man/man1/bladerf-cli.1
-            ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/man/man1/bladerf-flash.1
-            DESTINATION ${MAN_INSTALL_DIR}/man1/
-            )
-    else(DOXYGEN_FOUND)
-        message(WARNING "Could not find Doxygen. bladeRF man pages will not be built.")
-    endif(DOXYGEN_FOUND)
-endif(BUILD_DOCUMENTATION)
-

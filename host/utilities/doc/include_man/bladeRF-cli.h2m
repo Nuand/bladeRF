@@ -1,0 +1,36 @@
+[NAME]
+bladeRF-cli - command line interface and test utility
+
+[DESCRIPTION]
+The \fBbladeRF-cli\fP utility is used to flash firmware files, load FPGA
+bitstreams, and perform other tasks on the nuand bladeRF
+software-defined radio system\&.
+
+[EXAMPLES]
+.PP
+$ bladeRF-cli -l hostedx40.rbf
+.PP
+    Loads an FPGA image named hostedx40.rbf onto the bladeRF's FPGA.
+
+    \fBNote\fP: The FPGA image loaded with --load-fpga will be lost on power-off.
+
+.PP
+$ bladeRF-cli -f firmware.img
+.PP
+    Flashes firmware.img onto the bladeRF's firmware.
+
+.PP
+$ bladeRF-cli -L hostedx40.rbf
+.PP
+    Flashes the FPGA image named hostedx40.rbf onto the bladeRF, where it will
+    be automatically loaded on power-up.
+
+[INTERACTIVE COMMANDS]
+bladeRF-cli supports a scriptable interactive mode.  Run \fBbladeRF-cli --interactive\fP
+to enter this mode.  Type "\fBhelp\fP" for a listing of all commands, or
+"\fBhelp <command>\fP" for more information about <command>.
+
+The available commands are:
+
+[SEE ALSO]
+bladeRF-flash(1)\&.
