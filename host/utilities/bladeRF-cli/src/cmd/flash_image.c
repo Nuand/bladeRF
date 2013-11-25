@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <limits.h>
 #include <time.h>
+#include <inttypes.h>
 #include <libbladeRF.h>
 
 #include "cmd.h"
@@ -216,15 +217,15 @@ static int print_image_metadata(struct cli_state *s, struct params *p,
 
         switch (image->type) {
             case BLADERF_IMAGE_TYPE_RAW:
-                printf("Image type: raw\n");
+                printf("Image type: Raw\n");
                 break;
 
             case BLADERF_IMAGE_TYPE_CALIBRATION:
-                printf("Image type: calibration data\n");
+                printf("Image type: Calibration data\n");
                 break;
 
             case BLADERF_IMAGE_TYPE_FIRMWARE:
-                printf("Image type: firmware\n");
+                printf("Image type: Firmware\n");
                 break;
 
             case BLADERF_IMAGE_TYPE_FPGA_40KLE:
@@ -239,6 +240,9 @@ static int print_image_metadata(struct cli_state *s, struct params *p,
                 printf("Type: Unknown\n");
                 break;
         }
+
+        printf("Address: 0x%08" PRIx32 "\n", image->address);
+        printf("Length:  0x%08" PRIx32 "\n", image->length);
 
         printf("\n");
     } else {
