@@ -45,7 +45,7 @@ int str2fpga(const char *str, bladerf_fpga_size *fpga_size)
     }
 }
 
-int cmd_init_cal(struct cli_state *state, int argc, char **argv)
+int cmd_flash_init_cal(struct cli_state *state, int argc, char **argv)
 {
     int rv;
     bool ok;
@@ -78,7 +78,7 @@ int cmd_init_cal(struct cli_state *state, int argc, char **argv)
 
         if (!cli_device_is_opened(state)) {
             rv = CMD_RET_NODEV;
-            goto cmd_init_cal_out;
+            goto cmd_flash_init_cal_out;
         }
 
         rv = bladerf_program_flash_unaligned(state->dev, image->address,
@@ -96,13 +96,15 @@ int cmd_init_cal(struct cli_state *state, int argc, char **argv)
 
             state->last_lib_error = rv;
             rv = CMD_RET_LIBBLADERF;
+        } else {
+            rv = 0;
         }
     } else {
         assert(argc == 4);
-
+        rv = bladerf_image_write(image, argv[3]);
     }
 
-cmd_init_cal_out:
+cmd_flash_init_cal_out:
     bladerf_free_image(image);
     return rv;
 }

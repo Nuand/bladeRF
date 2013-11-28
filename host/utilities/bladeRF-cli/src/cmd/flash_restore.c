@@ -82,7 +82,7 @@ static int parse_argv(struct cli_state *state, int argc, char **argv,
     return 0;
 }
 
-int cmd_restore(struct cli_state *state, int argc, char **argv)
+int cmd_flash_restore(struct cli_state *state, int argc, char **argv)
 {
     int rv;
     struct bladerf_image *image = NULL;
@@ -97,19 +97,19 @@ int cmd_restore(struct cli_state *state, int argc, char **argv)
 
     if (!state->dev) {
         rv = CMD_RET_NODEV;
-        goto cmd_restore_out;
+        goto cmd_flash_restore_out;
     }
 
     image = bladerf_alloc_image(BLADERF_IMAGE_TYPE_INVALID, 0, 0);
     if (!image) {
         rv = CMD_RET_MEM;
-        goto cmd_restore_out;
+        goto cmd_flash_restore_out;
     }
 
     rv = bladerf_image_read(image, opt.file);
     if (rv < 0) {
         rv_error(rv, "Failed to read flash image from file.");
-        goto cmd_restore_out;
+        goto cmd_flash_restore_out;
     }
 
     if (opt.override_defaults) {
@@ -135,12 +135,12 @@ int cmd_restore(struct cli_state *state, int argc, char **argv)
         "power-ons, see the following wiki page for recovery instructions:"
         "  https://github.com/Nuand/bladeRF/wiki/Upgrading-bladeRF-firmware"
         );
-        goto cmd_restore_out;
+        goto cmd_flash_restore_out;
     }
 
     rv = CMD_RET_OK;
 
-cmd_restore_out:
+cmd_flash_restore_out:
     free(opt.file);
     bladerf_free_image(image);
     return rv;

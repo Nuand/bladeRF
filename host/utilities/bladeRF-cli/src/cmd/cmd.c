@@ -26,15 +26,16 @@
 #include "script.h"
 
 #define DECLARE_CMD(x) int cmd_##x (struct cli_state *, int, char **)
-DECLARE_CMD(backup);
 DECLARE_CMD(calibrate);
 DECLARE_CMD(clear);
 DECLARE_CMD(echo);
 DECLARE_CMD(erase);
+DECLARE_CMD(flash_backup);
 DECLARE_CMD(flash_image);
+DECLARE_CMD(flash_init_cal);
+DECLARE_CMD(flash_restore);
 DECLARE_CMD(help);
 DECLARE_CMD(info);
-DECLARE_CMD(init_cal);
 DECLARE_CMD(jump_to_bootloader);
 DECLARE_CMD(load);
 DECLARE_CMD(mimo);
@@ -44,7 +45,6 @@ DECLARE_CMD(poke);
 DECLARE_CMD(print);
 DECLARE_CMD(probe);
 DECLARE_CMD(recover);
-DECLARE_CMD(restore);
 DECLARE_CMD(run);
 DECLARE_CMD(set);
 DECLARE_CMD(rx);
@@ -60,15 +60,16 @@ struct cmd {
     const char  *help;
 };
 
-static const char *cmd_names_backup[] = { "backup",  NULL };
 static const char *cmd_names_calibrate[] = { "calibrate", "cal", NULL };
 static const char *cmd_names_clear[] = { "clear", "cls", NULL };
 static const char *cmd_names_echo[] = { "echo", NULL };
 static const char *cmd_names_erase[] = { "erase", "e", NULL };
-static const char *cmd_names_flash_image[] = { "flash_image", NULL };
+static const char *cmd_names_flash_backup[] = { "flash_backup", "fb",  NULL };
+static const char *cmd_names_flash_image[] = { "flash_image", "fi", NULL };
+static const char *cmd_names_flash_init_cal[] = { "flash_init_cal", "fic", NULL };
+static const char *cmd_names_flash_restore[] = { "flash_restore", "fr", NULL };
 static const char *cmd_names_help[] = { "help", "h", "?", NULL };
 static const char *cmd_names_info[] = { "info", "i", NULL };
-static const char *cmd_names_init_cal[] = { "init_cal", NULL };
 static const char *cmd_names_jump[] = { "jump_to_boot", "j", NULL };
 static const char *cmd_names_load[] = { "load", "ld", NULL };
 static const char *cmd_names_mimo[] = { "mimo", NULL };
@@ -79,7 +80,6 @@ static const char *cmd_names_print[] = { "print", "pr", "p", NULL };
 static const char *cmd_names_probe[] = { "probe", "pro", NULL };
 static const char *cmd_names_quit[] = { "quit", "q", "exit", "x", NULL };
 static const char *cmd_names_rec[] = { "recover", "r", NULL };
-static const char *cmd_names_restore[] = { "restore", NULL };
 static const char *cmd_names_run[] = { "run", NULL };
 static const char *cmd_names_rx[] = { "rx", "receive", NULL };
 static const char *cmd_names_tx[] = { "tx", "transmit", NULL };
@@ -87,35 +87,6 @@ static const char *cmd_names_set[] = { "set", "s", NULL };
 static const char *cmd_names_ver[] = { "version", "ver", "v", NULL };
 
 static const struct cmd cmd_table[] = {
-    {
-        FIELD_INIT(.names, cmd_names_backup),
-        FIELD_INIT(.exec, cmd_backup),
-        FIELD_INIT(.desc, "Back up flash data to a file with metadata."),
-        FIELD_INIT(.help, "backup <file> (<type> | <address> <length>)\n"
-            "\n"
-            "Back up flash data to the specified file. This command takes either two or\n"
-            "four arguments. The two-argument invocation is generally recommended for\n"
-            "non-development use.\n"
-            "\n"
-            "Parameters:\n"
-            "   <type>      Type of backup. This selects the appropriate address and length\n"
-            "               values based upon the selected type. Valid values are:\n"
-            "                   cal     - Calibration data\n"
-            "                   fw      - Firmware\n"
-            "                   fpga40  - Metadata and bitstream for a 40 kLE FPGA\n"
-            "                   fpga115 - Metadata and bitstream for a 115 kLE FPGA\n"
-            "\n"
-            "   <address>   Address of data to back up.\n"
-            "   <len>       Length of region to back up.\n"
-            "\n"
-            "Note: When an address and length are provided, the image type will default to \"raw\".\n"
-            "\n"
-            "Examples:\n"
-            "  backup cal.bin cal                   Back up the calibration data region.\n"
-            "  backup cal_raw.bin 0x30000 0x100     Back up the calibration region as\n"
-            "                                       a raw data image.\n"
-            ),
-    },
     {
         FIELD_INIT(.names, cmd_names_calibrate),
         FIELD_INIT(.exec, cmd_calibrate),
@@ -168,6 +139,35 @@ static const struct cmd cmd_table[] = {
         )
     },
     {
+        FIELD_INIT(.names, cmd_names_flash_backup),
+        FIELD_INIT(.exec, cmd_flash_backup),
+        FIELD_INIT(.desc, "Back up flash data to a file with metadata."),
+        FIELD_INIT(.help, "flash_backup <file> (<type> | <address> <length>)\n"
+            "\n"
+            "Back up flash data to the specified file. This command takes either two or\n"
+            "four arguments. The two-argument invocation is generally recommended for\n"
+            "non-development use.\n"
+            "\n"
+            "Parameters:\n"
+            "   <type>      Type of backup. This selects the appropriate address and length\n"
+            "               values based upon the selected type. Valid values are:\n"
+            "                   cal     - Calibration data\n"
+            "                   fw      - Firmware\n"
+            "                   fpga40  - Metadata and bitstream for a 40 kLE FPGA\n"
+            "                   fpga115 - Metadata and bitstream for a 115 kLE FPGA\n"
+            "\n"
+            "   <address>   Address of data to back up.\n"
+            "   <len>       Length of region to back up.\n"
+            "\n"
+            "Note: When an address and length are provided, the image type will default to \"raw\".\n"
+            "\n"
+            "Examples:\n"
+            "  flash_backup cal.bin cal                 Back up the calibration data region.\n"
+            "  flash_backup cal_raw.bin 0x30000 0x100   Back up the calibration region as\n"
+            "                                           a raw data image.\n"
+            ),
+    },
+    {
         FIELD_INIT(.names, cmd_names_flash_image),
         FIELD_INIT(.exec, cmd_flash_image),
         FIELD_INIT(.desc, "Print a flash image's metadata or create a new flash image"),
@@ -191,7 +191,32 @@ static const struct cmd cmd_table[] = {
                 "                                 must be provided if this type is selected.\n"
                 "    serial=<serial>  Serial # to store in image. Defaults to zeros.\n"
                 )
-
+    },
+    {
+        FIELD_INIT(.names, cmd_names_flash_init_cal),
+        FIELD_INIT(.exec, cmd_flash_init_cal),
+        FIELD_INIT(.desc, "Write new calibration data to a device or to a file"),
+        FIELD_INIT(.help, "flash_init_cal <fpga_size> <vctcxo_trim> [output file]\n"
+            "\n"
+            "Create and write a new calibration data region to the currently opened device,\n"
+            "or to a file. Be sure to back up calibration data prior to running this command.\n"
+            " (See the `flash_backup` command.)\n\n"
+            "   <fpga_size>       Either 40 or 115, depending on the device model.\n"
+            "   <vctcxo_trim>     VCTCXO/DAC trim value (0x0-0xffff)\n"
+            "   [output file]     File to write calibration data to. When this argument\n"
+            "                     is provided, no data will be written to the device's flash.\n"
+            )
+    },
+    {
+        FIELD_INIT(.names, cmd_names_flash_restore),
+        FIELD_INIT(.exec, cmd_flash_restore),
+        FIELD_INIT(.desc, "Restore flash data from a file"),
+        FIELD_INIT(.help, "flash_restore <file> [<address> <length>]\n\n"
+            "Restore flash data from a file, optionally overriding values in the image metadata.\n"
+            "\n"
+            "   <address>   Defaults to the address specified in the provided flash image file.\n"
+            "   <length>    Defaults to length of the data in the provided image file.\n"
+            ),
     },
     {
         FIELD_INIT(.names, cmd_names_help),
@@ -219,21 +244,6 @@ static const struct cmd cmd_table[] = {
             "  Backend (libusb or kernel module)\n"
             "  Instance number\n"
         )
-    },
-    {
-        FIELD_INIT(.names, cmd_names_init_cal),
-        FIELD_INIT(.exec, cmd_init_cal),
-        FIELD_INIT(.desc, "Write new calibration data to a device or to a file"),
-        FIELD_INIT(.help, "init_cal <fpga_size> <vctcxo_trim> [output file]\n"
-            "\n"
-            "Create and write a new calibration data region to the currently opened device,\n"
-            "or to a file. Be sure to back up calibration data prior to running this command.\n"
-            " (See the `backup` command.\n)\n\n"
-            "   <fpga_size>       Either 40 or 115, depending on the device model.\n"
-            "   <vctcxo_trim>     VCTCXO/DAC trim value (0x0-0xffff)\n"
-            "   [output file]     File to write calibration data to. When this argument\n"
-            "                     is provided, no data will be written to the device's flash.\n"
-            )
     },
     {
         FIELD_INIT(.names, cmd_names_jump),
@@ -395,17 +405,6 @@ static const struct cmd cmd_table[] = {
             "command, and write the firmware to flash via \n"
             "\"load fx3 <firmware file>\"\n"
         )
-    },
-    {
-        FIELD_INIT(.names, cmd_names_restore),
-        FIELD_INIT(.exec, cmd_restore),
-        FIELD_INIT(.desc, "Restore flash data from a file"),
-        FIELD_INIT(.help, "restore <file> [<address> <length>]\n\n"
-            "Restore flash data from a file, optionally overriding values in the image metadata.\n"
-            "\n"
-            "   <address>   Defaults to the address specified in the provided flash image file.\n"
-            "   <length>    Defaults to length of the data in the provided image file.\n"
-            ),
     },
     {
         FIELD_INIT(.names, cmd_names_run),

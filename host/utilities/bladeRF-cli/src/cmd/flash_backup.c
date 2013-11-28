@@ -37,7 +37,7 @@
     status = CMD_RET_LIBBLADERF; \
 } while (0)
 
-int cmd_backup(struct cli_state *state, int argc, char **argv)
+int cmd_flash_backup(struct cli_state *state, int argc, char **argv)
 {
     int status = 0;
     struct bladerf_devinfo info;
@@ -49,7 +49,7 @@ int cmd_backup(struct cli_state *state, int argc, char **argv)
 
     if (!cli_device_is_opened(state)) {
         status = CMD_RET_NODEV;
-        goto cmd_backup_out;
+        goto cmd_flash_backup_out;
     }
 
     if (argc != 3 && argc != 4) {
@@ -81,20 +81,20 @@ int cmd_backup(struct cli_state *state, int argc, char **argv)
         } else {
             cli_err(state, argv[0], "Invalid image type provided.");
             status = CMD_RET_INVPARAM;
-            goto cmd_backup_out;
+            goto cmd_flash_backup_out;
         }
     } else {
         assert(argc == 4);
         address = str2uint(argv[2], 0, UINT_MAX, &ok);
         if (!ok) {
             cli_err(state, argv[0], "Invalid address provided.");
-            goto cmd_backup_out;
+            goto cmd_flash_backup_out;
         }
 
         length = str2uint(argv[3], 0, UINT_MAX, &ok);
         if (!ok) {
             cli_err(state, argv[0], "Invalid length provided.");
-            goto cmd_backup_out;
+            goto cmd_flash_backup_out;
         }
 
         image_type = BLADERF_IMAGE_TYPE_RAW;
@@ -108,7 +108,7 @@ int cmd_backup(struct cli_state *state, int argc, char **argv)
     status = bladerf_get_devinfo(state->dev, &info);
     if (status < 0) {
         lib_error(status, "Failed to get serial number");
-        goto cmd_backup_out;
+        goto cmd_flash_backup_out;
     }
 
     strncpy(image->serial, info.serial, BLADERF_SERIAL_LENGTH);
@@ -118,16 +118,16 @@ int cmd_backup(struct cli_state *state, int argc, char **argv)
 
     if (status < 0) {
         lib_error(status, "Failed to read flash region");
-        goto cmd_backup_out;
+        goto cmd_flash_backup_out;
     }
 
     status = bladerf_image_write(image, filename);
     if (status < 0) {
         lib_error(status, "Failed to write image file.");
-        goto cmd_backup_out;
+        goto cmd_flash_backup_out;
     }
 
-cmd_backup_out:
+cmd_flash_backup_out:
     if (image) {
         bladerf_free_image(image);
     }
