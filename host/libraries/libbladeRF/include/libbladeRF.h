@@ -1213,7 +1213,7 @@ API_EXPORT struct bladerf_image * bladerf_alloc_image(bladerf_image_type type,
 
 /**
  * Create a flash image initialized to contain a calibration data region.
- * This is intended to be used in conjunction with bladerf_write_image(),
+ * This is intended to be used in conjunction with bladerf_image_write(),
  * or a write of the image's `data` field to flash.
  *
  * @param   fpga_size    Target FPGA size
@@ -1561,7 +1561,7 @@ extern const unsigned int BLADERF_FLASH_ALIGNMENT_SECTOR;
  *
  * @note Unlike the bladerf_read_flash/bladerf_write_flash functions this
  *       function expects a BLADERF_FLASH_SECTOR_SIZE aligned address and
- *       length!
+ *       length.
  *
  * @param   dev     Device handle
  * @param   addr    Page aligned byte address of the first sector to erase
@@ -1579,7 +1579,7 @@ API_EXPORT int bladerf_erase_flash(struct bladerf *dev,
  * Read bytes from FX3 flash device
  *
  * @note Unline the `bladerf_erase_flash' function this function expects a
- *       BLADERF_FLASH_PAGE_SIZE aligned address and length!
+ *       BLADERF_FLASH_PAGE_SIZE aligned address and length.
  *
  * @param   dev   Device handle
  * @param   addr  Page aligned byte address of the first page to read
@@ -1615,7 +1615,7 @@ API_EXPORT int bladerf_read_flash_unaligned(struct bladerf *dev,
  * Write bytes to FX3 flash device
  *
  * @note Unline the `bladerf_erase_flash' function this function expects a
- *       BLADERF_FLASH_PAGE_SIZE aligned address and length!
+ *       BLADERF_FLASH_PAGE_SIZE aligned address and length.
  *
  * @param   dev   Device handle
  * @param   addr  Page aligned byte address of the first page to write
