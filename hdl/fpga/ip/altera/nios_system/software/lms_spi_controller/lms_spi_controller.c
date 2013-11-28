@@ -290,7 +290,7 @@ int main()
                       }
                   }
                   if ((mode & UART_PKT_MODE_DEV_MASK) == UART_PKT_DEV_GPIO) {
-                    uint8_t device;
+                    uint32_t device;
                     switch(cmd_ptr->addr)
                     {
                         case 0:case 1:case 2: case 3: 
@@ -304,7 +304,7 @@ int main()
                             device = PIO_0_BASE; 
                     }
 
-                    cmd_ptr->addr -= device;
+                    //cmd_ptr->addr -= device;
                       if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_READ) {
                           cmd_ptr->data = (IORD_ALTERA_AVALON_PIO_DATA(device)) >> (cmd_ptr->addr * 8);
                       } else if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_WRITE) {
