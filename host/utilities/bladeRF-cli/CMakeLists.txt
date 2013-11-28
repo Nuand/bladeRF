@@ -6,7 +6,7 @@ project(bladeRF-cli C)
 ################################################################################
 
 set(VERSION_INFO_MAJOR  0)
-set(VERSION_INFO_MINOR  8)
+set(VERSION_INFO_MINOR  9)
 set(VERSION_INFO_PATCH  0)
 if(NOT DEFINED VERSION_INFO_EXTRA)
     set(VERSION_INFO_EXTRA "git")
