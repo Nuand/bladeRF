@@ -63,11 +63,17 @@ size_t c16_samples_to_bytes(size_t n_samples)
 
 int bladerf_init_device(struct bladerf *dev)
 {
+    int status;
     unsigned int actual;
     uint32_t val;
 
     /* Readback the GPIO values to see if they are default or already set */
-    bladerf_config_gpio_read( dev, &val );
+    status = bladerf_config_gpio_read( dev, &val );
+    if (status != 0) {
+        log_warning("Failed to read GPIO config, skipping device initialization: %s\n",
+                    bladerf_strerror(status));
+        return 0;
+    }
 
     if ((val&0x7f) == 0) {
         log_verbose( "Default GPIO value found - initializing device\n" );
