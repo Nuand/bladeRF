@@ -36,7 +36,7 @@ struct params
 {
     const char *img_file;
     char *data_file;
-    char serial[BLADERF_SERIAL_LENGTH + 1];
+    char serial[BLADERF_SERIAL_LENGTH];
     uint32_t address;
     uint32_t max_length;
     bladerf_image_type type;
@@ -58,7 +58,7 @@ static int handle_param(const char *param, char *val,
         size_t i;
         size_t len = strlen(val);
 
-        if (len != BLADERF_SERIAL_LENGTH) {
+        if (len != BLADERF_SERIAL_LENGTH - 1) {
             status = CMD_RET_INVPARAM;
         } else {
             for (i = 0; i < len && status == 0; i++) {
@@ -73,7 +73,7 @@ static int handle_param(const char *param, char *val,
 
         if (status != 0) {
             cli_err(s, argv0, "Serial number must be %d hexadecimal digits.",
-                    BLADERF_SERIAL_LENGTH);
+                    BLADERF_SERIAL_LENGTH - 1);
         }
     } else if (!strcasecmp("address", param)) {
         p->address = str2uint(param, 0, UINT_MAX, &ok);
@@ -137,7 +137,7 @@ int parse_cmdline(int argc, char **argv, struct params *p, struct cli_state *s)
     char *sep;
 
     memset(p, 0, sizeof(*p));
-    memset(p->serial, '0', BLADERF_SERIAL_LENGTH);
+    memset(p->serial, '0', BLADERF_SERIAL_LENGTH - 1);
     p->type = BLADERF_IMAGE_TYPE_INVALID;
 
     assert(argc >= 2);
@@ -192,6 +192,10 @@ static int print_image_metadata(struct cli_state *s, struct params *p,
     int i;
 
     image = bladerf_alloc_image(BLADERF_IMAGE_TYPE_INVALID, 0, 0);
+    if (!image) {
+        return CMD_RET_MEM;
+    }
+
     status = bladerf_image_read(image, p->img_file);
 
     if (status == 0) {
@@ -304,7 +308,7 @@ static int write_image(struct cli_state *s, struct params *p, const char *argv0)
         goto write_image_out;
     }
 
-    memcpy(image->serial, p->serial, BLADERF_SERIAL_LENGTH);
+    memcpy(image->serial, p->serial, BLADERF_SERIAL_LENGTH - 1);
 
     status = bladerf_image_write(image, p->img_file);
     if (status != 0) {

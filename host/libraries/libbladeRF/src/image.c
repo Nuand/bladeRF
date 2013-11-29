@@ -327,7 +327,6 @@ bladerf_image_write_out:
 int bladerf_image_read(struct bladerf_image *img, const char *file)
 {
     int rv = -1;
-    FILE *f = NULL;
     uint8_t *buf = NULL;
     size_t buf_len;
 
@@ -349,10 +348,6 @@ int bladerf_image_read(struct bladerf_image *img, const char *file)
 bladerf_image_read_out:
     if (rv != 0) {
         free(buf);
-    }
-
-    if (f) {
-        fclose(f);
     }
 
     return rv;
@@ -457,7 +452,9 @@ struct bladerf_image * bladerf_alloc_cal_image(bladerf_fpga_size fpga_size,
 
 void bladerf_free_image(struct bladerf_image *image)
 {
-    free(image->data);
-    free(image);
+    if (image) {
+        free(image->data);
+        free(image);
+    }
 }
 
