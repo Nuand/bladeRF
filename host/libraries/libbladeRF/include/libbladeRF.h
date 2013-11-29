@@ -30,15 +30,24 @@
 extern "C" {
 #endif
 
-/** Marks an API routine to be made visible to dynamic loader  */
 #if defined _WIN32 || defined _CYGWIN__
+#   include <Windows.h>
+#   define CALL_CONV __cdecl
 #   ifdef __GNUC__
 #       define API_EXPORT __attribute__ ((dllexport))
 #   else
 #       define API_EXPORT __declspec(dllexport)
 #   endif
+#elif defined _DOXYGEN_ONLY_
+    /** Marks an API routine to be made visible to the dynamic loader.
+     *  This is OS and/or compiler-specific. */
+#   define API_EXPORT
+    /** Specifies calling convention, if necessary.
+     *  This is OS and/or compiler-specific. */
+#   define CALL_CONV
 #else
 #   define API_EXPORT __attribute__ ((visibility ("default")))
+#   define CALL_CONV
 #endif
 
 /** This structure is an opaque device handle */
@@ -187,16 +196,16 @@ typedef enum {
  */
 struct bladerf_metadata {
     uint32_t version;       /**< Metadata format version */
-    uint64_t timestamp;     /**< TODO Time in \<unit\> since \<origin\> */
+    uint64_t timestamp;     /**< Timestamp (TODO format TBD) */
 };
 
 /**
  * Sampling connection
  */
 typedef enum {
-    BLADERF_SAMPLING_UNKNOWN,
-    BLADERF_SAMPLING_INTERNAL,
-    BLADERF_SAMPLING_EXTERNAL
+    BLADERF_SAMPLING_UNKNOWN,  /**< Unable to determine connection type */
+    BLADERF_SAMPLING_INTERNAL, /**< Sample from RX/TX connector */
+    BLADERF_SAMPLING_EXTERNAL  /**< Sample from J60 or J61 */
 } bladerf_sampling;
 
 /**
@@ -310,14 +319,16 @@ typedef void *(*bladerf_stream_cb)(struct bladerf *dev,
  * @return number of items in returned device list, or value from
  *         \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_get_device_list(struct bladerf_devinfo **devices);
+API_EXPORT
+int CALL_CONV bladerf_get_device_list(struct bladerf_devinfo **devices);
 
 /**
  * Free device list returned by bladerf_get_device_list()
  *
  * @param   devices     List of available devices
  */
-API_EXPORT void bladerf_free_device_list(struct bladerf_devinfo *devices);
+API_EXPORT
+void CALL_CONV bladerf_free_device_list(struct bladerf_devinfo *devices);
 
 /**
  * Opens device specified by provided bladerf_devinfo structure
@@ -329,8 +340,9 @@ API_EXPORT void bladerf_free_device_list(struct bladerf_devinfo *devices);
  *
  * @return 0 on success, or value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_open_with_devinfo(struct bladerf **device,
-                                         struct bladerf_devinfo *devinfo);
+API_EXPORT
+int CALL_CONV bladerf_open_with_devinfo(struct bladerf **device,
+                                        struct bladerf_devinfo *devinfo);
 
 /**
  * Open specified device using a device identifier string
@@ -373,8 +385,9 @@ API_EXPORT int bladerf_open_with_devinfo(struct bladerf **device,
  *
  * @return 0 on success, or value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_open(struct bladerf **device,
-                            const char *device_identifier);
+API_EXPORT
+int CALL_CONV bladerf_open(struct bladerf **device,
+                           const char *device_identifier);
 
 /**
  * Close device
@@ -386,7 +399,8 @@ API_EXPORT int bladerf_open(struct bladerf **device,
  * @param   device  Device handle previously obtained by bladerf_open(). This
  *                  function does nothing if device is NULL.
  */
-API_EXPORT void bladerf_close(struct bladerf *device);
+API_EXPORT
+void CALL_CONV bladerf_close(struct bladerf *device);
 
 /** @} (End FN_INIT) */
 
@@ -402,7 +416,8 @@ API_EXPORT void bladerf_close(struct bladerf *device);
  * Passing a bladerf_devinfo initialized with this function to
  * bladerf_open_with_devinfo() will match the first device found.
  */
-API_EXPORT void bladerf_init_devinfo(struct bladerf_devinfo *info);
+API_EXPORT
+void CALL_CONV bladerf_init_devinfo(struct bladerf_devinfo *info);
 
 /**
  * Fill out a provided bladerf_devinfo structure, given an open device handle.
@@ -414,8 +429,9 @@ API_EXPORT void bladerf_init_devinfo(struct bladerf_devinfo *info);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_get_devinfo(struct bladerf *dev,
-                                   struct bladerf_devinfo *info);
+API_EXPORT
+int CALL_CONV bladerf_get_devinfo(struct bladerf *dev,
+                                  struct bladerf_devinfo *info);
 
 /**
  * Populate a device identifier information structure using the provided
@@ -430,15 +446,17 @@ API_EXPORT int bladerf_get_devinfo(struct bladerf *dev,
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_get_devinfo_from_str(const char *devstr,
-                                            struct bladerf_devinfo *info);
+API_EXPORT
+int CALL_CONV bladerf_get_devinfo_from_str(const char *devstr,
+                                           struct bladerf_devinfo *info);
 
 /**
  * Test whether two device identifier information structures match, taking
  * wildcard values into account.
  */
-API_EXPORT bool bladerf_devinfo_matches(const struct bladerf_devinfo *a,
-                                        const struct bladerf_devinfo *b);
+API_EXPORT
+bool CALL_CONV bladerf_devinfo_matches(const struct bladerf_devinfo *a,
+                                       const struct bladerf_devinfo *b);
 
 /**
  * Test whether a provided device string matches a device described by
@@ -451,8 +469,9 @@ API_EXPORT bool bladerf_devinfo_matches(const struct bladerf_devinfo *a,
  *
  * @return  true upon a match, false otherwise
  */
-API_EXPORT bool bladerf_devstr_matches(const char *dev_str,
-                                       struct bladerf_devinfo *info);
+API_EXPORT
+bool CALL_CONV bladerf_devstr_matches(const char *dev_str,
+                                      struct bladerf_devinfo *info);
 /** @} (End of FN_DEVINFO) */
 
 
@@ -471,8 +490,9 @@ API_EXPORT bool bladerf_devstr_matches(const char *dev_str,
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_enable_module(struct bladerf *dev,
-                                     bladerf_module m, bool enable);
+API_EXPORT
+int CALL_CONV bladerf_enable_module(struct bladerf *dev,
+                                    bladerf_module m, bool enable);
 
 /**
  * Apply specified loopback mode
@@ -483,7 +503,9 @@ API_EXPORT int bladerf_enable_module(struct bladerf *dev,
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_set_loopback( struct bladerf *dev, bladerf_loopback l);
+API_EXPORT
+int CALL_CONV bladerf_set_loopback(struct bladerf *dev,
+                                   bladerf_loopback l);
 
 
 /**
@@ -498,8 +520,11 @@ API_EXPORT int bladerf_set_loopback( struct bladerf *dev, bladerf_loopback l);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_set_sample_rate(struct bladerf *dev, bladerf_module module,
-                                       unsigned int rate, unsigned int *actual);
+API_EXPORT
+int CALL_CONV bladerf_set_sample_rate(struct bladerf *dev,
+                                      bladerf_module module,
+                                      unsigned int rate,
+                                      unsigned int *actual);
 
 /**
  * Configure the device's sample rate as a rational fraction of Hz.
@@ -512,10 +537,11 @@ API_EXPORT int bladerf_set_sample_rate(struct bladerf *dev, bladerf_module modul
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_set_rational_sample_rate(struct bladerf *dev,
-                                                bladerf_module module,
-                                                struct bladerf_rational_rate *rate,
-                                                struct bladerf_rational_rate *actual);
+API_EXPORT
+int CALL_CONV bladerf_set_rational_sample_rate(struct bladerf *dev,
+                                               bladerf_module module,
+                                               struct bladerf_rational_rate *rate,
+                                               struct bladerf_rational_rate *actual);
 
 /**
  * Configure the sampling of the LMS6002D to be either internal or
@@ -528,8 +554,9 @@ API_EXPORT int bladerf_set_rational_sample_rate(struct bladerf *dev,
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_set_sampling(struct bladerf *dev,
-                                    bladerf_sampling sampling);
+API_EXPORT
+int CALL_CONV bladerf_set_sampling(struct bladerf *dev,
+                                   bladerf_sampling sampling);
 
 /**
  * Read the device's current state of RXVGA2 and ADC pin connection
@@ -540,8 +567,9 @@ API_EXPORT int bladerf_set_sampling(struct bladerf *dev,
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_get_sampling(struct bladerf *dev,
-                                    bladerf_sampling *sampling);
+API_EXPORT
+int CALL_CONV bladerf_get_sampling(struct bladerf *dev,
+                                   bladerf_sampling *sampling);
 
 /**
  * Read the device's sample rate in Hz
@@ -552,9 +580,10 @@ API_EXPORT int bladerf_get_sampling(struct bladerf *dev,
  *
  * @return 0 on success, value from \ref RETCODES list upon failure
  */
-API_EXPORT int bladerf_get_sample_rate(struct bladerf *dev,
-                                       bladerf_module module,
-                                       unsigned int *rate);
+API_EXPORT
+int CALL_CONV bladerf_get_sample_rate(struct bladerf *dev,
+                                      bladerf_module module,
+                                      unsigned int *rate);
 
 /**
  * Read the device's sample rate in rational Hz
@@ -565,9 +594,10 @@ API_EXPORT int bladerf_get_sample_rate(struct bladerf *dev,
  *
  * @return 0 on success, value from \ref RETCODES list upon failure
  */
-API_EXPORT int bladerf_get_rational_sample_rate(struct bladerf *dev,
-                                                bladerf_module module,
-                                                struct bladerf_rational_rate *rate);
+API_EXPORT
+int CALL_CONV bladerf_get_rational_sample_rate(struct bladerf *dev,
+                                               bladerf_module module,
+                                               struct bladerf_rational_rate *rate);
 
 /**
  * Set the PA gain in dB
@@ -577,7 +607,8 @@ API_EXPORT int bladerf_get_rational_sample_rate(struct bladerf *dev,
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_set_txvga2(struct bladerf *dev, int gain);
+API_EXPORT
+int CALL_CONV bladerf_set_txvga2(struct bladerf *dev, int gain);
 
 /**
  * Get the PA gain in dB
@@ -587,7 +618,8 @@ API_EXPORT int bladerf_set_txvga2(struct bladerf *dev, int gain);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_get_txvga2(struct bladerf *dev, int *gain);
+API_EXPORT int
+CALL_CONV bladerf_get_txvga2(struct bladerf *dev, int *gain);
 
 /**
  * Set the post-LPF gain in dB
@@ -597,7 +629,8 @@ API_EXPORT int bladerf_get_txvga2(struct bladerf *dev, int *gain);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_set_txvga1(struct bladerf *dev, int gain);
+API_EXPORT
+int CALL_CONV bladerf_set_txvga1(struct bladerf *dev, int gain);
 
 /**
  * Get the post-LPF gain in dB
@@ -607,7 +640,8 @@ API_EXPORT int bladerf_set_txvga1(struct bladerf *dev, int gain);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_get_txvga1(struct bladerf *dev, int *gain);
+API_EXPORT
+int CALL_CONV bladerf_get_txvga1(struct bladerf *dev, int *gain);
 
 /**
  * Set the LNA gain
@@ -617,7 +651,8 @@ API_EXPORT int bladerf_get_txvga1(struct bladerf *dev, int *gain);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_set_lna_gain(struct bladerf *dev, bladerf_lna_gain gain);
+API_EXPORT
+int CALL_CONV bladerf_set_lna_gain(struct bladerf *dev, bladerf_lna_gain gain);
 
 /**
  * Get the LNA gain
@@ -625,7 +660,8 @@ API_EXPORT int bladerf_set_lna_gain(struct bladerf *dev, bladerf_lna_gain gain);
  * @param       dev         Device handle
  * @param       gain        Pointer to the set gain level
  */
-API_EXPORT int bladerf_get_lna_gain(struct bladerf *dev, bladerf_lna_gain *gain);
+API_EXPORT
+int CALL_CONV bladerf_get_lna_gain(struct bladerf *dev, bladerf_lna_gain *gain);
 
 /**
  * Set the pre-LPF VGA gain
@@ -635,7 +671,8 @@ API_EXPORT int bladerf_get_lna_gain(struct bladerf *dev, bladerf_lna_gain *gain)
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_set_rxvga1(struct bladerf *dev, int gain);
+API_EXPORT
+int CALL_CONV bladerf_set_rxvga1(struct bladerf *dev, int gain);
 
 /**
  * Get the pre-LPF VGA gain
@@ -643,7 +680,8 @@ API_EXPORT int bladerf_set_rxvga1(struct bladerf *dev, int gain);
  * @param       dev         Device handle
  * @param       gain        Pointer to the set gain level
  */
-API_EXPORT int bladerf_get_rxvga1(struct bladerf *dev, int *gain);
+API_EXPORT
+int CALL_CONV bladerf_get_rxvga1(struct bladerf *dev, int *gain);
 
 /**
  * Set the post-LPF VGA gain
@@ -653,7 +691,8 @@ API_EXPORT int bladerf_get_rxvga1(struct bladerf *dev, int *gain);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_set_rxvga2(struct bladerf *dev, int gain);
+API_EXPORT
+int CALL_CONV bladerf_set_rxvga2(struct bladerf *dev, int gain);
 
 /**
  * Get the post-LPF VGA gain
@@ -661,7 +700,8 @@ API_EXPORT int bladerf_set_rxvga2(struct bladerf *dev, int gain);
  * @param       dev         Device handle
  * @param       gain        Pointer to the set gain level
  */
-API_EXPORT int bladerf_get_rxvga2(struct bladerf *dev, int *gain);
+API_EXPORT
+int CALL_CONV bladerf_get_rxvga2(struct bladerf *dev, int *gain);
 
 /**
  * Set the bandwidth to specified value in Hz
@@ -675,9 +715,10 @@ API_EXPORT int bladerf_get_rxvga2(struct bladerf *dev, int *gain);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_set_bandwidth(struct bladerf *dev, bladerf_module module,
-                                     unsigned int bandwidth,
-                                     unsigned int *actual);
+API_EXPORT
+int CALL_CONV bladerf_set_bandwidth(struct bladerf *dev, bladerf_module module,
+                                    unsigned int bandwidth,
+                                    unsigned int *actual);
 
 /**
  * Get the bandwidth of the LMS LPF
@@ -688,8 +729,9 @@ API_EXPORT int bladerf_set_bandwidth(struct bladerf *dev, bladerf_module module,
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_get_bandwidth(struct bladerf *dev, bladerf_module module,
-                                     unsigned int *bandwidth);
+API_EXPORT
+int CALL_CONV bladerf_get_bandwidth(struct bladerf *dev, bladerf_module module,
+                                    unsigned int *bandwidth);
 
 /**
  * Set the LMS LPF mode to bypass or disable it
@@ -700,8 +742,9 @@ API_EXPORT int bladerf_get_bandwidth(struct bladerf *dev, bladerf_module module,
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_set_lpf_mode(struct bladerf *dev, bladerf_module module,
-                                    bladerf_lpf_mode mode);
+API_EXPORT
+int CALL_CONV bladerf_set_lpf_mode(struct bladerf *dev, bladerf_module module,
+                                   bladerf_lpf_mode mode);
 
 /**
  * Get the current mode of the LMS LPF
@@ -712,8 +755,9 @@ API_EXPORT int bladerf_set_lpf_mode(struct bladerf *dev, bladerf_module module,
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_get_lpf_mode(struct bladerf *dev, bladerf_module module,
-                                    bladerf_lpf_mode *mode);
+API_EXPORT
+int CALL_CONV bladerf_get_lpf_mode(struct bladerf *dev, bladerf_module module,
+                                   bladerf_lpf_mode *mode);
 
 /**
  * Select the appropriate band path given a frequency in Hz.
@@ -722,8 +766,9 @@ API_EXPORT int bladerf_get_lpf_mode(struct bladerf *dev, bladerf_module module,
  * @param       module      Module to configure
  * @param       frequency   Tuned frequency
  */
-API_EXPORT int bladerf_select_band(struct bladerf *dev, bladerf_module module,
-                                   unsigned int frequency);
+API_EXPORT
+int CALL_CONV bladerf_select_band(struct bladerf *dev, bladerf_module module,
+                                  unsigned int frequency);
 
 /**
  * Set module's frequency in Hz.
@@ -734,9 +779,10 @@ API_EXPORT int bladerf_select_band(struct bladerf *dev, bladerf_module module,
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_set_frequency(struct bladerf *dev,
-                                     bladerf_module module,
-                                     unsigned int frequency);
+API_EXPORT
+int CALL_CONV bladerf_set_frequency(struct bladerf *dev,
+                                    bladerf_module module,
+                                    unsigned int frequency);
 
 /**
  * Set module's frequency in Hz
@@ -745,9 +791,10 @@ API_EXPORT int bladerf_set_frequency(struct bladerf *dev,
  * @param       module      Module to configure
  * @param       frequency   Pointer to the returned frequency
  */
-API_EXPORT int bladerf_get_frequency(struct bladerf *dev,
-                                     bladerf_module module,
-                                     unsigned int *frequency);
+API_EXPORT
+int CALL_CONV bladerf_get_frequency(struct bladerf *dev,
+                                    bladerf_module module,
+                                    unsigned int *frequency);
 
 /** @} (End of FN_CTRL) */
 
@@ -784,7 +831,7 @@ API_EXPORT int bladerf_get_frequency(struct bladerf *dev,
  *                              in-flight simultaneous. This must be <= the
  *                              number of buffers.
  *
- * @param[in]   user_data        Caller-provided data that will be provided
+ * @param[in]   user_data       Caller-provided data that will be provided
  *                              in stream callbacks
  *
  *
@@ -794,15 +841,16 @@ API_EXPORT int bladerf_get_frequency(struct bladerf *dev,
  * @return 0 on success,
  *          value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_init_stream(struct bladerf_stream **stream,
-                                   struct bladerf *dev,
-                                   bladerf_stream_cb callback,
-                                   void ***buffers,
-                                   size_t num_buffers,
-                                   bladerf_format format,
-                                   size_t num_samples,
-                                   size_t num_transfers,
-                                   void *user_data);
+API_EXPORT
+int CALL_CONV bladerf_init_stream(struct bladerf_stream **stream,
+                                  struct bladerf *dev,
+                                  bladerf_stream_cb callback,
+                                  void ***buffers,
+                                  size_t num_buffers,
+                                  bladerf_format format,
+                                  size_t num_samples,
+                                  size_t num_transfers,
+                                  void *user_data);
 
 /**
  * Begin running  a stream. This call will block until the steam completes.
@@ -829,8 +877,9 @@ API_EXPORT int bladerf_init_stream(struct bladerf_stream **stream,
  *
  * @return  0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_stream(struct bladerf_stream *stream,
-                              bladerf_module module);
+API_EXPORT
+int CALL_CONV bladerf_stream(struct bladerf_stream *stream,
+                             bladerf_module module);
 
 /**
  * Deinitialize and deallocate stream resources.
@@ -840,7 +889,8 @@ API_EXPORT int bladerf_stream(struct bladerf_stream *stream,
  * @param   stream      Stream to deinitialize. This function does nothin
  *                      if stream is NULL.
  */
-API_EXPORT void bladerf_deinit_stream(struct bladerf_stream *stream);
+API_EXPORT
+void CALL_CONV bladerf_deinit_stream(struct bladerf_stream *stream);
 
 /**
  * Transmit IQ samples
@@ -859,9 +909,10 @@ API_EXPORT void bladerf_deinit_stream(struct bladerf_stream *stream);
  * @return number of samples sent on success,
  *          value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_tx(struct bladerf *dev, bladerf_format format,
-                          void *samples, int num_samples,
-                          struct bladerf_metadata *metadata);
+API_EXPORT
+int CALL_CONV bladerf_tx(struct bladerf *dev, bladerf_format format,
+                         void *samples, int num_samples,
+                         struct bladerf_metadata *metadata);
 
 /**
  * Receive IQ samples
@@ -883,9 +934,10 @@ API_EXPORT int bladerf_tx(struct bladerf *dev, bladerf_format format,
  *
  * @return number of samples read or value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_rx(struct bladerf *dev, bladerf_format format,
-                          void *samples, int num_samples,
-                          struct bladerf_metadata *metadata);
+API_EXPORT
+int CALL_CONV bladerf_rx(struct bladerf *dev, bladerf_format format,
+                         void *samples, int num_samples,
+                         struct bladerf_metadata *metadata);
 
 /** @} (End of FN_DATA) */
 
@@ -906,7 +958,8 @@ API_EXPORT int bladerf_rx(struct bladerf *dev, bladerf_format format,
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_get_serial(struct bladerf *dev, char *serial);
+API_EXPORT
+int CALL_CONV bladerf_get_serial(struct bladerf *dev, char *serial);
 
 /**
  * Query a device's VCTCXO calibration trim
@@ -917,7 +970,8 @@ API_EXPORT int bladerf_get_serial(struct bladerf *dev, char *serial);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim);
+API_EXPORT
+int CALL_CONV bladerf_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim);
 
 /**
  * Query a device's FPGA size
@@ -928,8 +982,9 @@ API_EXPORT int bladerf_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_get_fpga_size(struct bladerf *dev,
-                                     bladerf_fpga_size *size);
+API_EXPORT
+int CALL_CONV bladerf_get_fpga_size(struct bladerf *dev,
+                                    bladerf_fpga_size *size);
 
 /**
  * Query firmware version
@@ -940,8 +995,9 @@ API_EXPORT int bladerf_get_fpga_size(struct bladerf *dev,
  * @return 0 on success, value from \ref RETCODES list upon failing to retrieve
  *         this information from the device.
  */
-API_EXPORT int bladerf_fw_version(struct bladerf *dev,
-                                  struct bladerf_version *version);
+API_EXPORT
+int CALL_CONV bladerf_fw_version(struct bladerf *dev,
+                                 struct bladerf_version *version);
 
 /**
  * Check FPGA configuration status
@@ -952,7 +1008,8 @@ API_EXPORT int bladerf_fw_version(struct bladerf *dev,
  *          0 if it is not,
  *          and value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_is_fpga_configured(struct bladerf *dev);
+API_EXPORT
+int CALL_CONV bladerf_is_fpga_configured(struct bladerf *dev);
 
 /**
  * Query FPGA version
@@ -962,8 +1019,9 @@ API_EXPORT int bladerf_is_fpga_configured(struct bladerf *dev);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_fpga_version(struct bladerf *dev,
-                                    struct bladerf_version *version);
+API_EXPORT
+int CALL_CONV bladerf_fpga_version(struct bladerf *dev,
+                                   struct bladerf_version *version);
 
 /**
  * Obtain device statistics
@@ -973,7 +1031,8 @@ API_EXPORT int bladerf_fpga_version(struct bladerf *dev,
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_stats(struct bladerf *dev, struct bladerf_stats *stats);
+API_EXPORT
+int CALL_CONV bladerf_stats(struct bladerf *dev, struct bladerf_stats *stats);
 
 /**
  * Obtain the bus speed at which the device is operating
@@ -981,7 +1040,8 @@ API_EXPORT int bladerf_stats(struct bladerf *dev, struct bladerf_stats *stats);
  * @param       dev     Device handle
  * @return      speed   Device speed
  */
-API_EXPORT bladerf_dev_speed bladerf_device_speed(struct bladerf *dev);
+API_EXPORT
+bladerf_dev_speed CALL_CONV bladerf_device_speed(struct bladerf *dev);
 
 /** @} (End FN_INFO) */
 
@@ -1002,8 +1062,9 @@ API_EXPORT bladerf_dev_speed bladerf_device_speed(struct bladerf *dev);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_flash_firmware(struct bladerf *dev,
-                                      const char *firmware);
+API_EXPORT
+int CALL_CONV bladerf_flash_firmware(struct bladerf *dev,
+                                     const char *firmware);
 
 /**
  * Load device's FPGA
@@ -1013,7 +1074,8 @@ API_EXPORT int bladerf_flash_firmware(struct bladerf *dev,
  *
  * @return 0 upon successfully, or a value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_load_fpga(struct bladerf *dev, const char *fpga);
+API_EXPORT
+int CALL_CONV bladerf_load_fpga(struct bladerf *dev, const char *fpga);
 
 /**
  * Flash FPGA image onto the device
@@ -1023,8 +1085,9 @@ API_EXPORT int bladerf_load_fpga(struct bladerf *dev, const char *fpga);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_flash_fpga(struct bladerf *dev,
-                                      const char *fpga_image);
+API_EXPORT
+int CALL_CONV bladerf_flash_fpga(struct bladerf *dev,
+                                 const char *fpga_image);
 
 /**
  * Reset the device, causing it to reload its firmware from flash
@@ -1033,7 +1096,8 @@ API_EXPORT int bladerf_flash_fpga(struct bladerf *dev,
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_device_reset(struct bladerf *dev);
+API_EXPORT
+int CALL_CONV bladerf_device_reset(struct bladerf *dev);
 
 /**
  * Jump to FX3 bootloader
@@ -1044,7 +1108,8 @@ API_EXPORT int bladerf_device_reset(struct bladerf *dev);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_jump_to_bootloader(struct bladerf *dev);
+API_EXPORT
+int CALL_CONV bladerf_jump_to_bootloader(struct bladerf *dev);
 
 /* @} (End of FN_PROG) */
 
@@ -1062,14 +1127,16 @@ API_EXPORT int bladerf_jump_to_bootloader(struct bladerf *dev);
  * @param   error   Error value to look up
  * @return  Error string
  */
-API_EXPORT const char * bladerf_strerror(int error);
+API_EXPORT
+const char * CALL_CONV bladerf_strerror(int error);
 
 /**
  * Get libbladeRF version information
  *
  * @param[out]  version     libbladeRF version information
  */
-API_EXPORT void bladerf_version(struct bladerf_version *version);
+API_EXPORT
+void CALL_CONV bladerf_version(struct bladerf_version *version);
 
 /**
  * Sets the filter level for displayed log messages. Messages that are at
@@ -1079,7 +1146,8 @@ API_EXPORT void bladerf_version(struct bladerf_version *version);
  *
  * @param   level       The new log level filter value
  */
-API_EXPORT void bladerf_log_set_verbosity(bladerf_log_level level);
+API_EXPORT
+void CALL_CONV bladerf_log_set_verbosity(bladerf_log_level level);
 
 /** @} (End of FN_MISC) */
 
@@ -1122,7 +1190,7 @@ typedef enum {
  *
  * The on disk format generated by the bladerf_image_write function is a
  * serialized version of this structure and its contents. When written to disk,
- * values are converted to big-endian byte order, for ease of reading in a hex
+ * values are CALL_CONVerted to big-endian byte order, for ease of reading in a hex
  * editor.
  */
 struct bladerf_image {
@@ -1207,9 +1275,10 @@ struct bladerf_image {
  * @return Pointer to allocated and initialized structure on success,
  *         NULL on memory allocation failure
  */
-API_EXPORT struct bladerf_image * bladerf_alloc_image(bladerf_image_type type,
-                                                      uint32_t address,
-                                                      uint32_t length);
+API_EXPORT
+struct bladerf_image * CALL_CONV bladerf_alloc_image(bladerf_image_type type,
+                                                     uint32_t address,
+                                                     uint32_t length);
 
 /**
  * Create a flash image initialized to contain a calibration data region.
@@ -1222,14 +1291,16 @@ API_EXPORT struct bladerf_image * bladerf_alloc_image(bladerf_image_type type,
  * @return Pointer to allocated and initialized structure on success,
  *         NULL on memory allocation failure
  */
-API_EXPORT struct bladerf_image * bladerf_alloc_cal_image(bladerf_fpga_size fpga_size,
-                                                          uint16_t vctcxo_trim);
+API_EXPORT
+struct bladerf_image * CALL_CONV bladerf_alloc_cal_image(bladerf_fpga_size fpga_size,
+                                                         uint16_t vctcxo_trim);
 
 /**
  * Free a bladerf_image previously obtained via bladerf_alloc_image.
  * If the bladerf_image's `data` field is non-NULL, it will be freed.
  */
-API_EXPORT void bladerf_free_image(struct bladerf_image *image);
+API_EXPORT
+void CALL_CONV bladerf_free_image(struct bladerf_image *image);
 
 
 /**
@@ -1246,8 +1317,9 @@ API_EXPORT void bladerf_free_image(struct bladerf_image *image);
  *
  * @return 0 upon success, or a value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_image_write(struct bladerf_image *image,
-                                   const char *file);
+API_EXPORT
+int CALL_CONV bladerf_image_write(struct bladerf_image *image,
+                                  const char *file);
 
 /**
  * Read flash image from a file.
@@ -1272,8 +1344,8 @@ API_EXPORT int bladerf_image_write(struct bladerf_image *image,
  *         BLADERF_ERR_IO on a file I/O error,<br>
  *         or a value from \ref RETCODES list on any other failure<br>
  */
-API_EXPORT int bladerf_image_read(struct bladerf_image *image,
-                                  const char *file);
+API_EXPORT
+int CALL_CONV bladerf_image_read(struct bladerf_image *image, const char *file);
 
 /** @} (End of FN_IMAGE) */
 
@@ -1306,9 +1378,9 @@ API_EXPORT int bladerf_image_read(struct bladerf_image *image,
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_si5338_read(struct bladerf *dev,
-                                   uint8_t address,
-                                   uint8_t *val);
+API_EXPORT
+int CALL_CONV bladerf_si5338_read(struct bladerf *dev,
+                                  uint8_t address, uint8_t *val);
 
 /**
  * Write a Si5338 register
@@ -1319,9 +1391,9 @@ API_EXPORT int bladerf_si5338_read(struct bladerf *dev,
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_si5338_write(struct bladerf *dev,
-                                    uint8_t address,
-                                    uint8_t val);
+API_EXPORT
+int CALL_CONV bladerf_si5338_write(struct bladerf *dev,
+                                   uint8_t address, uint8_t val);
 
 /**
  * Set frequency for TX clocks
@@ -1331,7 +1403,8 @@ API_EXPORT int bladerf_si5338_write(struct bladerf *dev,
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_si5338_set_tx_freq(struct bladerf *dev, unsigned freq);
+API_EXPORT
+int CALL_CONV bladerf_si5338_set_tx_freq(struct bladerf *dev, unsigned freq);
 
 /**
  * Set frequency for RX clocks
@@ -1341,8 +1414,8 @@ API_EXPORT int bladerf_si5338_set_tx_freq(struct bladerf *dev, unsigned freq);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_si5338_set_rx_freq(struct bladerf *dev,
-                                          unsigned freq);
+API_EXPORT
+int CALL_CONV bladerf_si5338_set_rx_freq(struct bladerf *dev, unsigned freq);
 
 
 /**
@@ -1354,9 +1427,9 @@ API_EXPORT int bladerf_si5338_set_rx_freq(struct bladerf *dev,
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_lms_read(struct bladerf *dev,
-                                uint8_t address,
-                                uint8_t *val);
+API_EXPORT
+int CALL_CONV bladerf_lms_read(struct bladerf *dev,
+                               uint8_t address, uint8_t *val);
 
 /**
  * Write a LMS register
@@ -1367,9 +1440,9 @@ API_EXPORT int bladerf_lms_read(struct bladerf *dev,
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_lms_write(struct bladerf *dev,
-                                 uint8_t address,
-                                 uint8_t val);
+API_EXPORT
+int CALL_CONV bladerf_lms_write(struct bladerf *dev,
+                                uint8_t address, uint8_t val);
 
 /**
  * Enable LMS receive
@@ -1433,7 +1506,8 @@ API_EXPORT int bladerf_lms_write(struct bladerf *dev,
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_config_gpio_read(struct bladerf *dev, uint32_t *val);
+API_EXPORT
+int CALL_CONV bladerf_config_gpio_read(struct bladerf *dev, uint32_t *val);
 
 /**
  * Write a configuration GPIO register. Callers should be sure to perform a
@@ -1445,7 +1519,8 @@ API_EXPORT int bladerf_config_gpio_read(struct bladerf *dev, uint32_t *val);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_config_gpio_write(struct bladerf *dev, uint32_t val);
+API_EXPORT
+int CALL_CONV bladerf_config_gpio_write(struct bladerf *dev, uint32_t val);
 
 /**
  * Write value to VCTCXO DAC
@@ -1455,7 +1530,8 @@ API_EXPORT int bladerf_config_gpio_write(struct bladerf *dev, uint32_t val);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_dac_write(struct bladerf *dev, uint16_t val);
+API_EXPORT
+int CALL_CONV bladerf_dac_write(struct bladerf *dev, uint16_t val);
 
 /**
  * Calibration routines
@@ -1465,7 +1541,9 @@ API_EXPORT int bladerf_dac_write(struct bladerf *dev, uint16_t val);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int bladerf_calibrate_dc(struct bladerf *dev, bladerf_cal_module module);
+API_EXPORT
+int CALL_CONV bladerf_calibrate_dc(struct bladerf *dev,
+                                   bladerf_cal_module module);
 
 /**
  * Set transfer timeout in milliseconds
@@ -1474,7 +1552,9 @@ API_EXPORT int bladerf_calibrate_dc(struct bladerf *dev, bladerf_cal_module modu
  * @param   module      Module to adjust
  * @param   timeout     Timeout in milliseconds
  */
-API_EXPORT void bladerf_set_transfer_timeout(struct bladerf *dev, bladerf_module module, int timeout);
+API_EXPORT
+void CALL_CONV bladerf_set_transfer_timeout(struct bladerf *dev,
+                                            bladerf_module module, int timeout);
 
 
 /**
@@ -1485,7 +1565,8 @@ API_EXPORT void bladerf_set_transfer_timeout(struct bladerf *dev, bladerf_module
  *
  * @return  Timeout in milliseconds
  */
-API_EXPORT int get_transfer_timeout(struct bladerf *dev, bladerf_module module);
+API_EXPORT
+int CALL_CONV get_transfer_timeout(struct bladerf *dev, bladerf_module module);
 
 /* @} (End of LOW_LEVEL) */
 
@@ -1527,11 +1608,6 @@ API_EXPORT int get_transfer_timeout(struct bladerf *dev, bladerf_module module);
 #define BLADERF_FLASH_NUM_SECTORS \
     (BLADERF_FLASH_TOTAL_SIZE / BLADERF_FLASH_SECTOR_SIZE)
 
-
-extern const unsigned int BLADERF_FLASH_ALIGNMENT_BYTE;
-extern const unsigned int BLADERF_FLASH_ALIGNMENT_PAGE;
-extern const unsigned int BLADERF_FLASH_ALIGNMENT_SECTOR;
-
 /** Address of firmware in flash */
 #define BLADERF_FLASH_ADDR_FIRMWARE     0x00000000
 
@@ -1571,9 +1647,9 @@ extern const unsigned int BLADERF_FLASH_ALIGNMENT_SECTOR;
  * @return Positive number of bytes erased on success, negative value from \ref
  *         RETCODES list on failure
  */
-API_EXPORT int bladerf_erase_flash(struct bladerf *dev,
-                                   uint32_t addr,
-                                   uint32_t len);
+API_EXPORT
+int CALL_CONV bladerf_erase_flash(struct bladerf *dev, uint32_t addr,
+                                  uint32_t len);
 
 /**
  * Read bytes from FX3 flash device
@@ -1590,10 +1666,9 @@ API_EXPORT int bladerf_erase_flash(struct bladerf *dev,
  * @return Positive number of bytes read on success, negative value from \ref
  *         RETCODES list on failure
  */
-API_EXPORT int bladerf_read_flash(struct bladerf *dev,
-                                  uint32_t addr,
-                                  uint8_t *buf,
-                                  uint32_t len);
+API_EXPORT
+int CALL_CONV bladerf_read_flash(struct bladerf *dev, uint32_t addr,
+                                 uint8_t *buf, uint32_t len);
 
 /**
  * Read an unaligned region of flash memory
@@ -1606,10 +1681,9 @@ API_EXPORT int bladerf_read_flash(struct bladerf *dev,
  * @return Positive number of bytes read on success, negative value from \ref
  *         RETCODES list on failure
  */
-API_EXPORT int bladerf_read_flash_unaligned(struct bladerf *dev,
-                                            uint32_t addr,
-                                            uint8_t *pbuf,
-                                            uint32_t len);
+API_EXPORT
+int CALL_CONV bladerf_read_flash_unaligned(struct bladerf *dev, uint32_t addr,
+                                           uint8_t *pbuf, uint32_t len);
 
 /**
  * Write bytes to FX3 flash device
@@ -1626,10 +1700,9 @@ API_EXPORT int bladerf_read_flash_unaligned(struct bladerf *dev,
  * @return Positive number of bytes written on success, negative value from \ref
  *         RETCODES list on failure
  */
-API_EXPORT int bladerf_write_flash(struct bladerf *dev,
-                                   uint32_t addr,
-                                   uint8_t *buf,
-                                   uint32_t len);
+API_EXPORT
+int CALL_CONV bladerf_write_flash(struct bladerf *dev, uint32_t addr,
+                                  uint8_t *buf, uint32_t len);
 
 /**
  * Program an unaligned region of flash memory (read/erase/write/verify).
@@ -1645,10 +1718,11 @@ API_EXPORT int bladerf_write_flash(struct bladerf *dev,
  * @return Positive number of bytes written on success, negative value from \ref
  *         RETCODES list on failure
  */
-API_EXPORT int bladerf_program_flash_unaligned(struct bladerf *dev,
-                                               uint32_t addr,
-                                               uint8_t *buf,
-                                               uint32_t len);
+API_EXPORT
+int CALL_CONV bladerf_program_flash_unaligned(struct bladerf *dev,
+                                              uint32_t addr,
+                                              uint8_t *buf,
+                                              uint32_t len);
 
 /* @} (End of FN_FLASH) */
 
