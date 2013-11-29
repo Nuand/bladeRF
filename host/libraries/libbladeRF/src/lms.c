@@ -320,7 +320,8 @@ void lms_rxvga2_set_gain(struct bladerf *dev, uint8_t gain)
     // go above 30dB
     if ((gain&0x1f) > 10)
     {
-        log_warning("Setting gain above 30dB? You crazy!!\n");
+        log_info("Clamping gain to 30dB\n");
+        gain = 10;
     }
     bladerf_lms_read(dev, 0x65, &data);
     data &= ~(0x1f);
@@ -798,12 +799,12 @@ void lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
     if (lfreq < bands[0].low)
     {
         // Too low
-        log_error( "Frequency too low: %u\n", freq );
+        log_warning( "Frequency too low: %u\n", freq );
         return;
     } else if (lfreq > bands[15].high)
     {
         // Too high!
-        log_error( "Frequency too high: %u\n", freq );
+        log_warning( "Frequency too high: %u\n", freq );
     } else
     {
         uint8_t i = 0;

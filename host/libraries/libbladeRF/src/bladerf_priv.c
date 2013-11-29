@@ -163,7 +163,7 @@ static int extract_field(char *ptr, int len, char *field,
                 return 0;
             }
         } else {
-            log_warning( "%s: Field checksum mismatch\n", __FUNCTION__);
+            log_debug( "%s: Field checksum mismatch\n", __FUNCTION__);
             return BLADERF_ERR_INVAL;
         }
         ub += c + 3; //skip past `c' bytes, 2 byte CRC field, and 1 byte len field
@@ -196,7 +196,7 @@ int add_field(char *buf, int buf_len, const char *field_name, const char *val)
     int dummy_idx = 0;
     int i = 0;
     int rv;
-    
+
     /* skip to the end, ignoring crc (don't want to further corrupt partially
      * corrupt data) */
     while(i < buf_len) {
@@ -254,7 +254,7 @@ int bladerf_read_serial(struct bladerf *dev, char *serial_buf)
                                     BLADERF_SERIAL_LENGTH - 1);
 
     if (status < 0) {
-        log_error("Unable to fetch serial number. Defaulting to 0's.\n");
+        log_info("Unable to fetch serial number. Defaulting to 0's.\n");
         memset(dev->ident.serial, '0', BLADERF_SERIAL_LENGTH - 1);
 
         /* Treat this as non-fatal */

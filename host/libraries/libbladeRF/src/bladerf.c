@@ -304,11 +304,11 @@ bladerf_set_sampling__done:
 int bladerf_set_txvga2(struct bladerf *dev, int gain)
 {
     if( gain > 25 ) {
-        log_info( "%s: %d being clamped to 25dB\n", __FUNCTION__, gain );
+        log_info( "%s: gain (%d) is being clamped to 25dB\n", __FUNCTION__, gain );
         gain = 25;
     }
     if( gain < 0 ) {
-        log_info( "%s: %d being clamped to 0dB\n", __FUNCTION__, gain );
+        log_info( "%s: gain (%d) is being clamped to 0dB\n", __FUNCTION__, gain );
         gain = 0;
     }
     /* TODO: Make return values for lms call and return it for failure */
@@ -328,11 +328,11 @@ int bladerf_get_txvga2(struct bladerf *dev, int *gain)
 int bladerf_set_txvga1(struct bladerf *dev, int gain)
 {
     if( gain < -35 ) {
-        log_info( "%s: %d being clamped to -35dB\n", __FUNCTION__, gain );
+        log_info( "%s: gain (%d) is being clamped to -35dB\n", __FUNCTION__, gain );
         gain = -35;
     }
     if( gain > -4 ) {
-        log_info( "%s: %d being clamped to -4dB\n", __FUNCTION__, gain );
+        log_info( "%s: gain (%d) is being clamped to -4dB\n", __FUNCTION__, gain );
         gain = -4;
     }
     /* TODO: Make return values for lms call and return it for failure */
@@ -500,7 +500,7 @@ int bladerf_tx(struct bladerf *dev, bladerf_format format, void *samples,
                int num_samples, struct bladerf_metadata *metadata)
 {
     if (num_samples < 1024 || num_samples % 1024 != 0) {
-        log_warning("num_samples must be multiples of 1024\n");
+        log_debug("num_samples must be multiples of 1024\n");
         return BLADERF_ERR_INVAL;
     }
 
@@ -511,7 +511,7 @@ int bladerf_rx(struct bladerf *dev, bladerf_format format, void *samples,
                    int num_samples, struct bladerf_metadata *metadata)
 {
     if (num_samples < 1024 || num_samples % 1024 != 0) {
-        log_warning("num_samples must be multiples of 1024\n");
+        log_debug("num_samples must be multiples of 1024\n");
         return BLADERF_ERR_INVAL;
     }
 
@@ -535,12 +535,12 @@ int bladerf_init_stream(struct bladerf_stream **stream,
     int status = 0;
 
     if (num_transfers > num_buffers) {
-        log_warning("num_transfers must be <= num_buffers\n");
+        log_debug("num_transfers must be <= num_buffers\n");
         return BLADERF_ERR_INVAL;
     }
 
     if (samples_per_buffer < 1024 || samples_per_buffer% 1024 != 0) {
-        log_warning("samples_per_buffer must be multiples of 1024\n");
+        log_debug("samples_per_buffer must be multiples of 1024\n");
         return BLADERF_ERR_INVAL;
     }
 
@@ -625,7 +625,7 @@ void bladerf_deinit_stream(struct bladerf_stream *stream)
     }
 
     while(stream->state != STREAM_DONE && stream->state != STREAM_IDLE) {
-        log_info( "Stream not done...\n" );
+        log_verbose( "Stream not done...\n" );
         usleep(1000000);
     }
 
@@ -731,8 +731,8 @@ int bladerf_flash_firmware(struct bladerf *dev, const char *firmware_file)
          */
         if (!getenv("BLADERF_SKIP_FW_SIZE_CHECK") &&
                 (buf_size < (50 * 1024) || (buf_size > (1 * 1024 * 1024)))) {
-            log_error("Error: Detected potentially invalid firmware file.\n");
-            log_error("Define BLADERF_SKIP_FW_SIZE_CHECK in your evironment "
+            log_info("Detected potentially invalid firmware file.\n");
+            log_info("Define BLADERF_SKIP_FW_SIZE_CHECK in your evironment "
                        "to skip this check.\n");
             status = BLADERF_ERR_INVAL;
         } else {
@@ -825,8 +825,8 @@ int bladerf_flash_fpga(struct bladerf *dev, const char *fpga_file)
     if (status == 0) {
         if ((getenv("BLADERF_SKIP_FPGA_SIZE_CHECK") == 0)  &&
                 (buf_size < (1 * 1024 * 1024) || (buf_size > (5 * 1024 * 1024)))) {
-            log_error("Error: Detected potentially invalid firmware file.\n");
-            log_error("Define BLADERF_SKIP_FPGA_SIZE_CHECK in your evironment "
+            log_info("Detected potentially invalid firmware file.\n");
+            log_info("Define BLADERF_SKIP_FPGA_SIZE_CHECK in your evironment "
                        "to skip this check.\n");
             status = BLADERF_ERR_INVAL;
         } else {
@@ -998,7 +998,7 @@ bool bladerf_devstr_matches(const char *dev_str,
     status = str2devinfo(dev_str, &from_str);
     if (status < 0) {
         ret = false;
-        log_error("Failed to parse device string: %s\n",
+        log_debug("Failed to parse device string: %s\n",
                   bladerf_strerror(status));
     } else {
         ret = bladerf_devinfo_matches(&from_str, info);
@@ -1052,7 +1052,7 @@ int bladerf_config_gpio_write(struct bladerf *dev, uint32_t val)
     } else if (dev->usb_speed == BLADERF_DEVICE_SPEED_SUPER) {
         val &= ~BLADERF_GPIO_FEATURE_SMALL_DMA_XFER;
     } else {
-        log_error("Encountered unknown USB speed in %s\n", __FUNCTION__);
+        log_warning("Encountered unknown USB speed in %s\n", __FUNCTION__);
         return BLADERF_ERR_UNEXPECTED;
     }
 

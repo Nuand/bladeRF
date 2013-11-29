@@ -657,7 +657,7 @@ linux_open_err:
             status = linux_probe(&list);
             if (status < 0) {
                 if (status == BLADERF_ERR_NODEV) {
-                    log_error("No devices available on the Linux driver backend.\n");
+                    log_debug("No devices available on the Linux driver backend.\n");
                 } else {
                     log_error("Probe failed: %s\n", bladerf_strerror(status));
                 }

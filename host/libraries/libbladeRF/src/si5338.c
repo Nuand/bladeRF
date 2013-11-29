@@ -347,7 +347,7 @@ static int si5338_calculate_multisynth(struct si5338_multisynth *ms, struct blad
     }
 
     if (r_value == 32 && req.integer < 5000000) {
-        log_error( "Sample rate requires r > 32\n" );
+        log_info( "Sample rate requires r > 32\n" );
         return BLADERF_ERR_INVAL;
     } else {
         log_debug( "Found r value of: %d\n", r_value );
@@ -453,7 +453,7 @@ int si5338_set_sample_rate(struct bladerf *dev, bladerf_module module, uint32_t 
     status = si5338_set_rational_sample_rate(dev, module, &req, &act);
 
     if (status == 0 && act.num != 0) {
-        log_warning( "Non-integer sample rate set from integer sample rate, truncating output\n" );
+        log_warning( "Non-integer sample rate set from integer sample rate, truncating output.\n" );
     }
 
     assert(act.integer <= UINT32_MAX);
