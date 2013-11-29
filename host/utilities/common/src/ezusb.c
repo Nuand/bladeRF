@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <errno.h>
 
 #include <libusb.h>
 #include "log.h"
@@ -131,9 +132,9 @@ static int ezusb_write(libusb_device_handle *device, const char *label,
         (unsigned char*)data, (uint16_t)len, 1000);
     if (status != (ssize_t)len) {
         if (status < 0)
-            log_error("%s: %s\n", label, libusb_error_name(status));
+            log_debug("%s: %s\n", label, libusb_error_name(status));
         else
-            log_info("%s ==> %d\n", label, status);
+            log_debug("%s ==> %d\n", label, status);
     }
     return (status < 0) ? -EIO : 0;
 }
@@ -154,9 +155,9 @@ static int ezusb_read(libusb_device_handle *device, const char *label,
         (unsigned char*)data, (uint16_t)len, 1000);
     if (status != (ssize_t)len) {
         if (status < 0)
-            log_error("%s: %s\n", label, libusb_error_name(status));
+            log_debug("%s: %s\n", label, libusb_error_name(status));
         else
-            log_info("%s ==> %d\n", label, status);
+            log_debug("%s ==> %d\n", label, status);
     }
     return (status < 0) ? -EIO : 0;
 }
@@ -170,7 +171,7 @@ static bool ezusb_cpucs(libusb_device_handle *device, uint32_t addr, bool doRun)
     int status;
     uint8_t data = doRun ? 0x00 : 0x01;
 
-    log_info("%s\n", data ? "stop CPU" : "reset CPU");
+    log_debug("%s\n", data ? "stop CPU" : "reset CPU");
 
     status = libusb_control_transfer(device,
         LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
@@ -181,10 +182,10 @@ static bool ezusb_cpucs(libusb_device_handle *device, uint32_t addr, bool doRun)
         ((!doRun) || (status != LIBUSB_ERROR_IO)))
     {
         if (status < 0) {
-            log_error("Can't modify CPUCS: %s\n", mesg,
+            log_debug("Can't modify CPUCS: %s\n", mesg,
                       libusb_error_name(status));
         } else {
-            log_info("Can't modify CPUCS\n", mesg);
+            log_debug("Can't modify CPUCS\n", mesg);
         }
         return false;
     } else
@@ -199,20 +200,21 @@ static bool ezusb_fx3_jump(libusb_device_handle *device, uint32_t addr)
 {
     int status;
 
-    log_info("transfer execution to Program Entry at 0x%08x\n", addr);
+    log_debug("Transfer execution to Program Entry at 0x%08x\n", addr);
 
     status = libusb_control_transfer(device,
         LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE,
         RW_INTERNAL, addr & 0xFFFF, addr >> 16,
         NULL, 0, 1000);
+
     /* We may get an I/O error from libusbx as the device disappears */
     if ((status != 0) && (status != LIBUSB_ERROR_IO))
     {
         if (status < 0) {
-            log_error("Failed to send jump command: %s\n",
+            log_debug("Failed to send jump command: %s\n",
                       mesg, libusb_error_name(status));
         } else {
-            log_info("Failed to send jump command\n", mesg);
+            log_debug("Failed to send jump command\n", mesg);
         }
         return false;
     } else
@@ -267,7 +269,7 @@ static int parse_ihex(FILE *image, void *context,
 
         cp = fgets(buf, sizeof(buf), image);
         if (cp == NULL) {
-            log_error("EOF without EOF record!\n");
+            log_debug("EOF without EOF record!\n");
             break;
         }
 
@@ -276,7 +278,7 @@ static int parse_ihex(FILE *image, void *context,
             continue;
 
         if (buf[0] != ':') {
-            log_error("not an ihex record: %s", buf);
+            log_debug("Not an ihex record: %s", buf);
             return -2;
         }
 
@@ -292,6 +294,12 @@ static int parse_ihex(FILE *image, void *context,
         buf[3] = 0;
         len = strtoul(buf+1, NULL, 16);
         buf[3] = tmp;
+
+        /* Sanity check for bogus length */
+        if (len > (512 * 1024)) {
+            log_debug("Encountered unexpectedly large length: %d\n", len);
+            return -3;
+        }
 
         /* Read the target offset (address up to 64KB) */
         tmp = buf[7];
@@ -318,12 +326,12 @@ static int parse_ihex(FILE *image, void *context,
         }
 
         if (type != 0) {
-            log_error("unsupported record type: %u\n", type);
+            log_debug("Unsupported record type: %u\n", type);
             return -3;
         }
 
         if ((len * 2) + 11 > strlen(buf)) {
-            log_error("record too short?\n");
+            log_debug("Record too short?\n");
             return -4;
         }
 
@@ -432,29 +440,44 @@ static int parse_iic(FILE *image, void *context,
     uint8_t block_header[4];
     int rc;
     bool external = false;
-    long file_size, initial_pos = ftell(image);
+    long file_size, initial_pos;
 
-    fseek(image, 0L, SEEK_END);
+    initial_pos = ftell(image);
+    if (initial_pos < 0) {
+        return -1;
+    }
+
+    if (fseek(image, 0L, SEEK_END) < 0) {
+        return -1;
+    }
+
     file_size = ftell(image);
-    fseek(image, initial_pos, SEEK_SET);
+    if (file_size < 0) {
+        return -1;
+    }
+
+    if (fseek(image, initial_pos, SEEK_SET) < 0) {
+        return -1;
+    }
+
     for (;;) {
         /* Ignore the trailing reset IIC data (5 bytes) */
         if (ftell(image) >= (file_size - 5))
             break;
         if (fread(&block_header, 1, sizeof(block_header), image) != 4) {
-            log_error("unable to read IIC block header\n");
+            log_debug("Unable to read IIC block header\n");
             return -1;
         }
         data_len = (block_header[0] << 8) + block_header[1];
         data_addr = (block_header[2] << 8) + block_header[3];
         if (data_len > sizeof(data)) {
             /* If this is ever reported as an error, switch to using malloc/realloc */
-            log_error("IIC data block too small - please report this error to libusbx.org\n");
+            log_debug("IIC data block too small - please report this error to libusbx.org\n");
             return -1;
         }
         read_len = fread(data, 1, data_len, image);
         if (read_len != data_len) {
-            log_error("read error\n");
+            log_debug("Read error: %s\n", strerror(errno));
             return -1;
         }
         if (is_external)
@@ -502,8 +525,8 @@ static int ram_poke(void *context, uint32_t addr, bool external,
     switch (ctx->mode) {
     case internal_only:     /* CPU should be stopped */
         if (external) {
-            log_error("can't write %u bytes external memory at 0x%08x\n",
-                (unsigned)len, addr);
+            log_debug("Can't write %u bytes external memory at 0x%08x\n",
+                      (unsigned)len, addr);
             return -EINVAL;
         }
         break;
@@ -523,7 +546,7 @@ static int ram_poke(void *context, uint32_t addr, bool external,
         break;
     case _undef:
     default:
-        log_error("bug\n");
+        log_error("Bug @ %s:%d\n", __FILE__, __LINE__);
         return -EDOM;
     }
 
@@ -558,21 +581,22 @@ static int fx3_load_ram(libusb_device_handle *device, const char *path)
 
     image = fopen(path, "rb");
     if (image == NULL) {
-        log_error("unable to open '%s' for input\n", path);
+        log_debug("Unable to open '%s' for input: %s\n", path,
+                  strerror(errno));
         return -2;
     } else
-        log_info("open firmware image %s for RAM upload\n", path);
+        log_debug("Open firmware image %s for RAM upload\n", path);
 
     // Read header
     if (fread(hBuf, sizeof(char), sizeof(hBuf), image) != sizeof(hBuf)) {
-        log_error("could not read image header");
+        log_debug("Could not read image header: %s\n", strerror(errno));
         fclose(image);
         return -3;
     }
 
     // check "CY" signature byte and format
     if ((hBuf[0] != 'C') || (hBuf[1] != 'Y')) {
-        log_error("image doesn't have a CYpress signature\n");
+        log_debug("Image doesn't have a \"CY\" signature\n");
         fclose(image);
         return -3;
     }
@@ -580,53 +604,59 @@ static int fx3_load_ram(libusb_device_handle *device, const char *path)
     // Check bImageType
     switch(hBuf[3]) {
     case 0xB0:
-        log_info("normal FW binary %s image with checksum\n", (hBuf[2]&0x01)?"data":"executable");
+        log_debug("Normal FW binary %s image with checksum\n", (hBuf[2]&0x01)?"data":"executable");
         break;
     case 0xB1:
-        log_error("security binary image is not currently supported\n");
+        log_debug("Security binary image is not currently supported\n");
         fclose(image);
         return -3;
     case 0xB2:
-        log_error("VID:PID image is not currently supported\n");
+        log_debug("VID:PID image is not currently supported\n");
         fclose(image);
         return -3;
     default:
-        log_error("invalid image type 0x%02X\n", hBuf[3]);
+        log_debug("Invalid image type 0x%02X\n", hBuf[3]);
         fclose(image);
         return -3;
     }
 
     // Read the bootloader version
-        if ((ezusb_read(device, "read bootloader version", RW_INTERNAL, 0xFFFF0020, blBuf, 4) < 0)) {
-            log_error("Could not read bootloader version\n");
-            fclose(image);
-            return -8;
-        }
-    log_info("FX3 bootloader version: 0x%02X%02X%02X%02X\n", blBuf[3], blBuf[2], blBuf[1], blBuf[0]);
+    if ((ezusb_read(device, "Read bootloader version", RW_INTERNAL, 0xFFFF0020, blBuf, 4) < 0)) {
+        log_debug("Could not read bootloader version\n");
+        fclose(image);
+        return -8;
+    }
+    log_debug("FX3 bootloader version: 0x%02X%02X%02X%02X\n", blBuf[3], blBuf[2], blBuf[1], blBuf[0]);
 
     dCheckSum = 0;
-    log_info("writing image...\n");
+    log_debug("Writing image...\n");
 
     while (1) {
         if ((fread(&dLength, sizeof(uint32_t), 1, image) != 1) ||  // read dLength
             (fread(&dAddress, sizeof(uint32_t), 1, image) != 1)) { // read dAddress
-            log_error("could not read image");
+            log_debug("Could not read image");
             fclose(image);
             return -3;
         }
         if (dLength == 0)
             break; // done
 
+        // Sanity check for bogus value
+        if (dLength > (512 * 1024)) {
+            log_debug("Encountered unexpectedly large length: %d\n", dLength);
+            return -3;
+        }
+
         dImageBuf = calloc(dLength, sizeof(uint32_t));
         if (dImageBuf == NULL) {
-            log_error("could not allocate buffer for image chunk\n");
+            log_debug("Could not allocate buffer for image chunk\n");
             fclose(image);
             return -4;
         }
 
         // read sections
         if (fread(dImageBuf, sizeof(uint32_t), dLength, image) != dLength) {
-            log_error("could not read image");
+            log_debug("Could not read image");
             free(dImageBuf);
             fclose(image);
             return -3;
@@ -640,9 +670,9 @@ static int fx3_load_ram(libusb_device_handle *device, const char *path)
             dLen = 4096; // 4K max
             if (dLen > dLength)
                 dLen = dLength;
-            if ((ezusb_write(device, "write firmware", RW_INTERNAL, dAddress, bBuf, dLen) < 0) ||
-                (ezusb_read(device, "read firmware", RW_INTERNAL, dAddress, rBuf, dLen) < 0)) {
-                log_error("R/W error\n");
+            if ((ezusb_write(device, "Write firmware", RW_INTERNAL, dAddress, bBuf, dLen) < 0) ||
+                (ezusb_read(device, "Read firmware", RW_INTERNAL, dAddress, rBuf, dLen) < 0)) {
+                log_debug("R/W error\n");
                 free(dImageBuf);
                 fclose(image);
                 return -5;
@@ -650,7 +680,7 @@ static int fx3_load_ram(libusb_device_handle *device, const char *path)
             // Verify data: rBuf with bBuf
             for (i = 0; i < dLen; i++) {
                 if (rBuf[i] != bBuf[i]) {
-                    log_error("verify error");
+                    log_debug("Verify error");
                     free(dImageBuf);
                     fclose(image);
                     return -6;
@@ -667,7 +697,7 @@ static int fx3_load_ram(libusb_device_handle *device, const char *path)
     // read pre-computed checksum data
     if ((fread(&dExpectedCheckSum, sizeof(uint32_t), 1, image) != 1) ||
         (dCheckSum != dExpectedCheckSum)) {
-        log_error("checksum error\n");
+        log_debug("Checksum error\n");
         fclose(image);
         return -7;
     }
@@ -710,17 +740,17 @@ int ezusb_load_ram(libusb_device_handle *device, const char *path, int fx_type, 
 
     image = fopen(path, "rb");
     if (image == NULL) {
-        log_error("%s: unable to open for input.\n", path);
+        log_debug("%s: Unable to open for input: %s\n", path, strerror(errno));
         return -2;
     } else
-        log_debug("open firmware image %s for RAM upload\n", path);
+        log_debug("Open firmware image %s for RAM upload\n", path);
 
     if (img_type == IMG_TYPE_IIC) {
         if ( (fread(iic_header, 1, sizeof(iic_header), image) != sizeof(iic_header))
           || (((fx_type == FX_TYPE_FX2LP) || (fx_type == FX_TYPE_FX2)) && (iic_header[0] != 0xC2))
           || ((fx_type == FX_TYPE_AN21) && (iic_header[0] != 0xB2))
           || ((fx_type == FX_TYPE_FX1) && (iic_header[0] != 0xB6)) ) {
-            log_error("IIC image does not contain executable code - cannot load to RAM.\n");
+            log_debug("IIC image does not contain executable code - cannot load to RAM.\n");
             fclose(image);
             return -1;
         }
@@ -757,7 +787,7 @@ int ezusb_load_ram(libusb_device_handle *device, const char *path, int fx_type, 
         ctx.mode = skip_internal;
 
         /* let CPU run; overwrite the 2nd stage loader later */
-        log_info("2nd stage: write external memory\n");
+        log_debug("2nd stage: write external memory\n");
     }
 
     /* scan the image, first (maybe only) time */
@@ -765,7 +795,7 @@ int ezusb_load_ram(libusb_device_handle *device, const char *path, int fx_type, 
     ctx.total = ctx.count = 0;
     status = parse[img_type](image, &ctx, is_external, ram_poke);
     if (status < 0) {
-        log_error("unable to upload %s\n", path);
+        log_debug("Unable to upload %s\n", path);
         fclose(image);
         return status;
     }
@@ -783,17 +813,17 @@ int ezusb_load_ram(libusb_device_handle *device, const char *path, int fx_type, 
 
         /* at least write the interrupt vectors (at 0x0000) for reset! */
         rewind(image);
-        log_info("2nd stage: write on-chip memory\n");
+        log_debug("2nd stage: write on-chip memory\n");
         status = parse_ihex(image, &ctx, is_external, ram_poke);
         if (status < 0) {
-            log_error("unable to completely upload %s\n", path);
+            log_error("Unable to completely upload %s\n", path);
             fclose(image);
             return status;
         }
     }
 
-    log_info("... WROTE: %d bytes, %d segments\n",
-        (int)ctx.total, (int)ctx.count);
+    log_debug("Wrote: %d bytes, %d segments\n",
+              (int)ctx.total, (int)ctx.count);
 
     fclose(image);
 
