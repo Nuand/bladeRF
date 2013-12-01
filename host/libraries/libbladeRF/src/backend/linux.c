@@ -320,6 +320,75 @@ static int linux_config_gpio_write(struct bladerf *dev, uint32_t val)
 }
 
 /*------------------------------------------------------------------------------
+ * Set IQ Correction parameters
+ *----------------------------------------------------------------------------*/
+static int linux_config_dc_correction_write(struct bladerf *dev, int16_t dc_i, int16_t dc_q)
+{
+    int i = 0;
+    int status = 0;
+    uint32_t tmp_data;
+    struct uart_cmd cmd;
+    struct bladerf_lusb *lusb = dev->backend;
+
+    tmp_data = (dc_i << 16 )| (dc_q);
+
+    for (i = 0; status == 0 && i < 4; i++) {
+        cmd.addr = i + UART_PKT_DEV_DC_CORR_ADDR;
+
+        cmd.data = (tmp_data>>(8*i))&0xff;
+        status = access_peripheral(
+                                    lusb,
+                                    UART_PKT_DEV_GPIO,
+                                    UART_PKT_MODE_DIR_WRITE,
+                                    &cmd
+                                  );
+
+        if (status < 0) {
+            break;
+        }
+    }
+
+    if (status < 0) {
+        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
+    }
+
+    return status;
+}
+
+static int linux_config_set_gain_phase_correction(struct bladerf *dev, int16_t gain, int16_t phase)
+{
+    int i = 0;
+    int status = 0;
+    uint32_t tmp_data;
+    struct uart_cmd cmd;
+    struct bladerf_lusb *lusb = dev->backend;
+
+    tmp_data = ((uint32_t) phase << 16 )| (gain);
+
+    for (i = 0; status == 0 && i < 4; i++) {
+        cmd.addr = i + UART_PKT_DEV_GAIN_PHASE_CORR_ADDR;
+
+        cmd.data = (tmp_data>>(8*i))&0xff;
+        status = access_peripheral(
+                                    lusb,
+                                    UART_PKT_DEV_GPIO,
+                                    UART_PKT_MODE_DIR_WRITE,
+                                    &cmd
+                                  );
+
+        if (status < 0) {
+            break;
+        }
+    }
+
+    if (status < 0) {
+        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
+    }
+
+    return status;
+}
+
+/*------------------------------------------------------------------------------
  * VCTCXO DAC register write
  *----------------------------------------------------------------------------*/
 static int linux_dac_write(struct bladerf *dev, uint16_t val)
@@ -825,6 +894,8 @@ const struct bladerf_fn bladerf_linux_fn = {
 
     FIELD_INIT(.config_gpio_write, linux_config_gpio_write),
     FIELD_INIT(.config_gpio_read, linux_config_gpio_read),
+
+    FIELD_INIT(.config_dc_gain_write, linux_config_dc_gain_write),
 
     FIELD_INIT(.si5338_write, linux_si5338_write),
     FIELD_INIT(.si5338_read, linux_si5338_read),

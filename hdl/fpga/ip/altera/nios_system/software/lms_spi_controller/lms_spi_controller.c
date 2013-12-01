@@ -196,6 +196,10 @@ int main()
   // Set the UART divisor to 14 to get 4000000bps UART (baud rate = clock/(divisor + 1))
   IOWR_ALTERA_AVALON_UART_DIVISOR(UART_0_BASE, 19) ;
 
+  // Set the IQ Correction parameters to 0
+  IOWR_ALTERA_AVALON_PIO_DATA(CORRECTION_DC_BASE, 0);
+  IOWR_ALTERA_AVALON_PIO_DATA(CORRECTION_PHASE_GAIN_BASE, 0);
+
   /* Event loop never exits. */
   {
       char state;
@@ -296,15 +300,18 @@ int main()
                         case 0:case 1:case 2: case 3: 
                             device = PIO_0_BASE;break;
                         case 4: case 5: case 6: case 7:
-                            device = CORRECTION_DC_BASE;break;
+                            device = CORRECTION_DC_BASE;
+                            cmd_ptr->addr -= 4;
+                            break;
                         case 8: case 9: case 10: case 11:
-                            device = CORRECTION_PHASE_GAIN_BASE;break;
+                            device = CORRECTION_PHASE_GAIN_BASE;
+                            cmd_ptr->addr -= 8;
+                            break;
                         default:
                             //error
                             device = PIO_0_BASE; 
                     }
 
-                    //cmd_ptr->addr -= device;
                       if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_READ) {
                           cmd_ptr->data = (IORD_ALTERA_AVALON_PIO_DATA(device)) >> (cmd_ptr->addr * 8);
                       } else if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_WRITE) {

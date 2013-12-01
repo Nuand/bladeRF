@@ -127,6 +127,10 @@ struct bladeRF_sector {
 #define NUM_DATA_URB    (1024)
 #define DATA_BUF_SZ     (1024*4)
 
+#define UART_PKT_DEV_GPIO_ADDR  0
+#define UART_PKT_DEV_DC_CORR_ADDR   4
+#define UART_PKT_DEV_GAIN_PHASE_CORR_ADDR 8
+
 struct uart_pkt {
     unsigned char magic;
 #define UART_PKT_MAGIC          'N'

@@ -1522,6 +1522,20 @@ int CALL_CONV bladerf_config_gpio_read(struct bladerf *dev, uint32_t *val);
 API_EXPORT
 int CALL_CONV bladerf_config_gpio_write(struct bladerf *dev, uint32_t val);
 
+
+/**
+ * Write a configuration GPIO register. Callers should be sure to perform a
+ * read-modify-write sequence to avoid accidentally clearing other
+ * GPIO bits that may be set by the library internally.
+ *
+ * @param   dev         Device handle
+ * @param   val         Data to write to GPIO register
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT int bladerf_config_dc_gain_write(struct bladerf *dev, int16_t dc_i, int16_t dc_q);
+
+
 /**
  * Write value to VCTCXO DAC
  *
