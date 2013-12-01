@@ -123,6 +123,9 @@ struct bladerf_fn {
     int (*config_gpio_write)(struct bladerf *dev, uint32_t val);
     int (*config_gpio_read)(struct bladerf *dev, uint32_t *val);
 
+    /* IQ Calibration Settings */
+    int (*config_dc_gain_write)(struct bladerf *deev, int16_t dc_i, int16_t dc_q);
+
     /* Si5338 accessors */
     int (*si5338_write)(struct bladerf *dev, uint8_t addr, uint8_t data);
     int (*si5338_read)(struct bladerf *dev, uint8_t addr, uint8_t *data);

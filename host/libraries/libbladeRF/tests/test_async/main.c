@@ -113,6 +113,7 @@ void *stream_callback(struct bladerf *dev, struct bladerf_stream *stream,
 int populate_test_data(struct test_data *test_data)
 {
     FILE *in;
+	size_t i;
     //ssize_t n_read;
 
     test_data->idx = 0;
@@ -123,7 +124,6 @@ int populate_test_data(struct test_data *test_data)
         return -1;
     } else {
         printf( "Populating data\n" );
-        size_t i;
         for(i=0;i<test_data->num_buffers;i++) {
             size_t j;
             int16_t *buffer = (int16_t *)test_data->buffers[i];
@@ -139,7 +139,7 @@ int populate_test_data(struct test_data *test_data)
             for(j = 0 ; j < test_data->samples_per_buffer ; j++) {
                 *buffer = (j % 2048) ;
                 buffer++;
-                *buffer = -(j % 2048);
+                *buffer = -((int16_t)(j % 2048));
                 buffer++;
             }
         }

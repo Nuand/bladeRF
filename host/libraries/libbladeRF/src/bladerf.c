@@ -1063,6 +1063,15 @@ int bladerf_config_gpio_write(struct bladerf *dev, uint32_t val)
 }
 
 /*------------------------------------------------------------------------------
+ * IQ Calibration routines
+ *----------------------------------------------------------------------------*/
+int bladerf_config_dc_gain_write(struct bladerf *dev, int16_t dc_i, int16_t dc_q)
+{
+    return dev->fn->config_dc_gain_write(dev,dc_i,dc_q);   
+}
+
+
+/*------------------------------------------------------------------------------
  * VCTCXO DAC register write
  *----------------------------------------------------------------------------*/
 
