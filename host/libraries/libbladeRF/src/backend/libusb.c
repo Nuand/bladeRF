@@ -1511,7 +1511,7 @@ static int lusb_config_gpio_read(struct bladerf *dev, uint32_t *val)
     return status;
 }
 
-static int lusb_config_set_gain_phase_correction(struct bladerf *dev, uint16_t gain, int16_t phase)
+static int lusb_set_phase_gain_correction(struct bladerf *dev, int16_t phase, uint16_t gain)
 {
     int i = 0;
     int status = 0;
@@ -1519,7 +1519,7 @@ static int lusb_config_set_gain_phase_correction(struct bladerf *dev, uint16_t g
     struct uart_cmd cmd;
     struct bladerf_lusb *lusb = dev->backend;
 
-    tmp_data = ((uint32_t) phase << 16 )| (gain);
+    tmp_data = (((uint32_t) phase) << 16 )| (gain);
 
     for (i = 0; status == 0 && i < 4; i++) {
         cmd.addr = i + UART_PKT_DEV_GAIN_PHASE_CORR_ADDR;
@@ -1544,7 +1544,7 @@ static int lusb_config_set_gain_phase_correction(struct bladerf *dev, uint16_t g
     return status;
 }
 
-static int lusb_config_dc_gain_write(struct bladerf *dev, int16_t dc_real, int16_t dc_imag)
+static int lusb_set_dc_correction(struct bladerf *dev, int16_t dc_real, int16_t dc_imag)
 {
     int i = 0;
     int status = 0;
@@ -1552,7 +1552,7 @@ static int lusb_config_dc_gain_write(struct bladerf *dev, int16_t dc_real, int16
     struct uart_cmd cmd;
     struct bladerf_lusb *lusb = dev->backend;
 
-    tmp_data = (((uint32_t)dc_imag) << 16 )| (dc_real);
+    tmp_data = (((uint32_t)dc_imag) << 16 )| (dc_real & 0xffff);
 
     for (i = 0; status == 0 && i < 4; i++) {
         cmd.addr = i + UART_PKT_DEV_DC_CORR_ADDR;
@@ -1574,7 +1574,7 @@ static int lusb_config_dc_gain_write(struct bladerf *dev, int16_t dc_real, int16
         bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
     }
 
-    lusb_config_set_gain_phase_correction(dev, 4096, 0);
+    lusb_set_phase_gain_correction(dev, 4096, 0);
 
     return status;
 }
@@ -2171,7 +2171,8 @@ const struct bladerf_fn bladerf_lusb_fn = {
     FIELD_INIT(.config_gpio_write, lusb_config_gpio_write),
     FIELD_INIT(.config_gpio_read, lusb_config_gpio_read),
 
-    FIELD_INIT(.config_dc_gain_write, lusb_config_dc_gain_write),
+    FIELD_INIT(.config_dc_gain_write, lusb_set_dc_correction),
+    FIELD_INIT(.phase_gain_write, lusb_set_phase_gain_correction),
 
     FIELD_INIT(.si5338_write, lusb_si5338_write),
     FIELD_INIT(.si5338_read, lusb_si5338_read),

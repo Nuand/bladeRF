@@ -47,6 +47,7 @@ DECLARE_CMD(recover);
 DECLARE_CMD(jump_to_bootloader);
 DECLARE_CMD(mimo);
 DECLARE_CMD(dc_gain);
+DECLARE_CMD(phase_gain);
 
 #define MAX_ARGS    10
 
@@ -58,6 +59,7 @@ struct cmd {
 };
 
 static const char *cmd_names_dc_gain[] = { "dc_gain", "dc", NULL };
+static const char *cmd_names_phase_gain[] = {"phase_gain", NULL};
 static const char *cmd_names_calibrate[] = { "calibrate", "cal", NULL };
 static const char *cmd_names_clear[] = { "clear", "cls", NULL };
 static const char *cmd_names_echo[] = { "echo", NULL };
@@ -473,9 +475,15 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.exec, cmd_dc_gain),
         FIELD_INIT(.desc, "Modify DC gain offset"),
         FIELD_INIT(.help,
-            "mimo [master | slave]\n"
-            "\n"
-            "Modify device MIMO operation\n"
+            "dc_gain [i_gain] [q_gain]\n"
+        )
+    },
+    {
+        FIELD_INIT(.names, cmd_names_phase_gain),
+        FIELD_INIT(.exec, cmd_phase_gain),
+        FIELD_INIT(.desc, "Modify phase offset & gain"),
+        FIELD_INIT(.help,
+            "dc_gain [phase] [gain]\n"
         )
     },
     {
