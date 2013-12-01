@@ -91,7 +91,6 @@ Comment: This is a *slightly* modified version of the file written by
          Hendrik Sattler, from the OpenOBEX project (licensed GPLv2/LGPL).
          (If this is not correct, please contact us so we can attribute the
          author appropriately.)
-
          https://github.com/zuckschwerdt/openobex/blob/master/CMakeModules/FindLibUSB.cmake
          http://dev.zuckschwerdt.org/openobex/
 
@@ -251,7 +250,7 @@ License: BSD-2-clause
  2. Redistributions in binary form must reproduce the above copyright
     notice, this list of conditions and the following disclaimer in the
     documentation and/or other materials provided with the distribution.
-
+ .
  THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -275,7 +274,7 @@ License: BSD-3-clause
     documentation and/or other materials provided with the distribution.
  3. The name of the author may not be used to endorse or promote products
     derived from this software without specific prior written permission.
-
+ .
  THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
  INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
  AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
