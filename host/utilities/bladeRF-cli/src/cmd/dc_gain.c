@@ -45,13 +45,13 @@ int cmd_dc_gain(struct cli_state *state, int argc, char **argv)
             dc_gain_i = str2int( argv[1], -MAX_GAIN_SETTING ,MAX_GAIN_SETTING, &ok );
             if( !ok ) {
                 cli_err(state, argv[0],
-                        "Invalid I gain setting provided (%s)", argv[2]);
+                        "Invalid I gain setting provided (%s)", argv[1]);
                 return CMD_RET_INVPARAM;
             }
             dc_gain_q = str2int( argv[2], (-MAX_GAIN_SETTING) ,MAX_GAIN_SETTING, &ok );
             if( !ok ) {
                 cli_err(state, argv[0],
-                        "Invalid Q gain setting provided (%s)", argv[3]);
+                        "Invalid Q gain setting provided (%s)", argv[2]);
                 return CMD_RET_INVPARAM;
             }
             else
@@ -71,7 +71,12 @@ int cmd_dc_gain(struct cli_state *state, int argc, char **argv)
             }
         }
 
-    } else {
+    } 
+    else if(argc == 1) {
+        /* If the command is issued with no additional arguements read the current value*/
+
+    }
+    else {
         cli_err(state, argv[0], "Invalid number of arguments (%d)\n", argc);
         rv = CMD_RET_INVPARAM;
     }

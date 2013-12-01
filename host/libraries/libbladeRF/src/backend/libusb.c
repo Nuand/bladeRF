@@ -1619,7 +1619,34 @@ static int lusb_set_dc_correction(struct bladerf *dev, int16_t dc_real, int16_t 
         bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
     }
 
-    lusb_set_phase_gain_correction(dev, 4096, 0);
+    return status;
+}
+
+static int lusb_get_dc_correction(struct bladerf *dev, int16_t *dc_real, int16_t *dc_imag)
+{
+    int i = 0;
+    int status = 0;
+    uint32_t tmp_data = 0;
+
+    for (i = 0; status == 0 && i < 4; i++){
+        cmd.addr = i + UART_PKT_DEV_DC_CORR_ADDR;
+        cmd.data = 0xff;
+
+        status = access_peripheral(
+                                    lusb,
+                                    UART_PKT_DEV_GPIO,
+                                    UART_PKT_MODE_DIR_READ,
+                                    &cmd
+                                    );
+
+        if (status < 0) {
+            break;
+        }
+        tmp_data |= (cmd.data << (i * 8));
+    }
+    if (status < 0){
+        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF,status);
+    }
 
     return status;
 }
