@@ -42,6 +42,7 @@ DECLARE_CMD(load);
 DECLARE_CMD(mimo);
 DECLARE_CMD(open);
 DECLARE_CMD(peek);
+DECLARE_CMD(phase_gain);
 DECLARE_CMD(poke);
 DECLARE_CMD(print);
 DECLARE_CMD(probe);
@@ -62,6 +63,7 @@ struct cmd {
 };
 
 static const char *cmd_names_dc_gain[] = { "dc_gain", "dc", NULL };
+static const char *cmd_names_phase_gain[] = {"phase_gain", NULL};
 static const char *cmd_names_calibrate[] = { "calibrate", "cal", NULL };
 static const char *cmd_names_clear[] = { "clear", "cls", NULL };
 static const char *cmd_names_echo[] = { "echo", NULL };
@@ -581,6 +583,14 @@ static const struct cmd cmd_table[] = {
             "dc_gain <i_offset> <q_offset>\n"
             "\n"
             "Change the DC correction parameters for the IQ correction block.\n"
+        )
+    },
+    {
+        FIELD_INIT(.names, cmd_names_phase_gain),
+        FIELD_INIT(.exec, cmd_phase_gain),
+        FIELD_INIT(.desc, "Modify phase offset & gain"),
+        FIELD_INIT(.help,
+            "phase_gain [phase] [gain]\n"
         )
     },
     /* Always terminate the command entry with a completely NULL entry */

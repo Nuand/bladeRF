@@ -1072,6 +1072,11 @@ int bladerf_config_dc_gain_write(struct bladerf *dev, int16_t dc_i, int16_t dc_q
     return dev->fn->config_dc_gain_write(dev,dc_i,dc_q);   
 }
 
+int bladerf_phase_gain_write(struct bladerf *dev, int16_t phase, uint16_t gain)
+{
+    return dev->fn->phase_gain_write(dev,phase,gain);
+}
+
 
 /*------------------------------------------------------------------------------
  * VCTCXO DAC register write

@@ -125,6 +125,7 @@ struct bladerf_fn {
 
     /* IQ Calibration Settings */
     int (*config_dc_gain_write)(struct bladerf *deev, int16_t dc_i, int16_t dc_q);
+    int (*phase_gain_write)(struct bladerf *deev, int16_t phase, uint16_t gain);
 
     /* Si5338 accessors */
     int (*si5338_write)(struct bladerf *dev, uint8_t addr, uint8_t data);

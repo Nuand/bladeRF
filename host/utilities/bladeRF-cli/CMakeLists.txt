@@ -123,6 +123,7 @@ set(BLADERF_CLI_SOURCE
         src/cmd/jump_boot.c
         src/cmd/mimo.c
         src/cmd/dc_gain.c
+        src/cmd/phase_gain.c
         src/interactive/interactive.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/log.c

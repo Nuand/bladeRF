@@ -26,13 +26,13 @@
 
 #define MAX_GAIN_SETTING ((1<<16) -1)
 
-int cmd_dc_gain(struct cli_state *state, int argc, char **argv)
+int cmd_phase_gain(struct cli_state *state, int argc, char **argv)
 {
     int rv = CMD_RET_OK;
     int status;
     bool ok = true;
-    int (*f)(struct bladerf *, int16_t, int16_t);
-    int dc_gain_i = 0,dc_gain_q = 0;
+    int (*f)(struct bladerf *, int16_t, uint16_t);
+    int phase = 0,gain = 0;
 
     if (!cli_device_is_opened(state)) {
         return CMD_RET_NODEV;
@@ -42,27 +42,27 @@ int cmd_dc_gain(struct cli_state *state, int argc, char **argv)
 
         /* Parse the value */
         if( argc == 3 ) {
-            dc_gain_i = str2int( argv[1], -MAX_GAIN_SETTING ,MAX_GAIN_SETTING, &ok );
+            phase = str2int( argv[1], -MAX_GAIN_SETTING ,MAX_GAIN_SETTING, &ok );
             if( !ok ) {
                 cli_err(state, argv[0],
-                        "Invalid I gain setting provided (%s)", argv[2]);
+                        "Invalid phase offset setting provided (%s)", argv[1]);
                 return CMD_RET_INVPARAM;
             }
-            dc_gain_q = str2int( argv[2], (-MAX_GAIN_SETTING) ,MAX_GAIN_SETTING, &ok );
+            gain = str2uint( argv[2], 0,MAX_GAIN_SETTING, &ok );
             if( !ok ) {
                 cli_err(state, argv[0],
-                        "Invalid Q gain setting provided (%s)", argv[3]);
+                        "Invalid gain setting provided (%s)", argv[2]);
                 return CMD_RET_INVPARAM;
             }
             else
             {
-                f = bladerf_config_dc_gain_write;
+                f = bladerf_phase_gain_write;
             }
         }
 
         /* Write the value to the address */
         if( rv == CMD_RET_OK && f ) {
-            status = f( state->dev, dc_gain_i, dc_gain_q );
+            status = f( state->dev, phase, gain );
             if (status < 0) {
                 state->last_lib_error = status;
                 rv = CMD_RET_LIBBLADERF;
@@ -77,4 +77,3 @@ int cmd_dc_gain(struct cli_state *state, int argc, char **argv)
     }
     return rv;
 }
-
