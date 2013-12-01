@@ -1556,40 +1556,7 @@ static int lusb_config_gpio_read(struct bladerf *dev, uint32_t *val)
     return status;
 }
 
-static int lusb_config_dc_gain_write(struct bladerf *dev, int16_t dc_real, int16_t dc_imag)
-{
-    int i = 0;
-    int status = 0;
-    uint32_t tmp_data;
-    struct uart_cmd cmd;
-    struct bladerf_lusb *lusb = dev->backend;
-
-    tmp_data = (dc_imag << 16 )| (dc_real);
-
-    for (i = 0; status == 0 && i < 4; i++) {
-        cmd.addr = i + UART_PKT_DEV_DC_CORR_ADDR;
-
-        cmd.data = (tmp_data>>(8*i))&0xff;
-        status = access_peripheral(
-                                    lusb,
-                                    UART_PKT_DEV_GPIO,
-                                    UART_PKT_MODE_DIR_WRITE,
-                                    &cmd
-                                  );
-
-        if (status < 0) {
-            break;
-        }
-    }
-
-    if (status < 0) {
-        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
-    }
-
-    return status;
-}
-
-static int lusb_config_set_gain_phase_correction(struct bladerf *dev, uint16_t gain, uint16_t phase)
+static int lusb_config_set_gain_phase_correction(struct bladerf *dev, uint16_t gain, int16_t phase)
 {
     int i = 0;
     int status = 0;
@@ -1621,6 +1588,42 @@ static int lusb_config_set_gain_phase_correction(struct bladerf *dev, uint16_t g
 
     return status;
 }
+
+static int lusb_config_dc_gain_write(struct bladerf *dev, int16_t dc_real, int16_t dc_imag)
+{
+    int i = 0;
+    int status = 0;
+    uint32_t tmp_data;
+    struct uart_cmd cmd;
+    struct bladerf_lusb *lusb = dev->backend;
+
+    tmp_data = (((uint32_t)dc_imag) << 16 )| (dc_real);
+
+    for (i = 0; status == 0 && i < 4; i++) {
+        cmd.addr = i + UART_PKT_DEV_DC_CORR_ADDR;
+
+        cmd.data = (tmp_data>>(8*i))&0xff;
+        status = access_peripheral(
+                                    lusb,
+                                    UART_PKT_DEV_GPIO,
+                                    UART_PKT_MODE_DIR_WRITE,
+                                    &cmd
+                                  );
+
+        if (status < 0) {
+            break;
+        }
+    }
+
+    if (status < 0) {
+        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
+    }
+
+    lusb_config_set_gain_phase_correction(dev, 4096, 0);
+
+    return status;
+}
+
 
 static int lusb_si5338_write(struct bladerf *dev, uint8_t addr, uint8_t data)
 {
@@ -2217,7 +2220,7 @@ const struct bladerf_fn bladerf_lusb_fn = {
 
     FIELD_INIT(.config_gpio_write, lusb_config_gpio_write),
     FIELD_INIT(.config_gpio_read, lusb_config_gpio_read),
-	
+
     FIELD_INIT(.config_dc_gain_write, lusb_config_dc_gain_write),
 
     FIELD_INIT(.si5338_write, lusb_si5338_write),
