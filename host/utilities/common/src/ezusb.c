@@ -644,6 +644,7 @@ static int fx3_load_ram(libusb_device_handle *device, const char *path)
         // Sanity check for bogus value
         if (dLength > (512 * 1024)) {
             log_debug("Encountered unexpectedly large length: %d\n", dLength);
+            fclose(image);
             return -3;
         }
 
