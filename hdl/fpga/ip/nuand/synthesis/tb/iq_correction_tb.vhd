@@ -66,7 +66,7 @@ begin
 
     clock <= not clock after 1 ns;
 
-    U_iq_correction : entity work.iq_correction(rx)
+    U_iq_correction : entity work.iq_correction(tx)
         generic map(
             INPUT_WIDTH => 16
         )
@@ -133,6 +133,10 @@ begin
         if reset = '1' then
             --
             i := 0;
+            signal_ref_real <= (others => '0');
+            signal_ref_imag <= (others => '0');
+            error_real <= (others => '0');
+            error_imag <= (others => '0');
         elsif rising_edge(clock) then
             signal_ref_real <= to_signed(integer(round(real(3635)*(cos( PHASE_STEP*real(i)  ) ))),signal_real'length);
             signal_ref_imag <= to_signed(integer(round(real(3635)*(sin( PHASE_STEP*real(i)  ) ))),signal_imag'length);

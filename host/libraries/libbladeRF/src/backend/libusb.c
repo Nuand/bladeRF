@@ -1581,6 +1581,8 @@ static int lusb_get_dc_correction(struct bladerf *dev, int16_t *dc_real, int16_t
 {
     int i = 0;
     int status = 0;
+    struct uart_cmd cmd;
+    struct bladerf_lusb *lusb = dev->backend;
     uint32_t tmp_data = 0;
 
     for (i = 0; status == 0 && i < 4; i++){
