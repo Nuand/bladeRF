@@ -9,7 +9,7 @@ entity tan_table is
         INPUT_WIDTH :   positive := 16;
         OUTPUT_WIDTH:   positive := 16;
         STEPS   :       positive := 4;
-        ANGLE   :       real := MATH_PI/4.0
+        ANGLE   :       real := MATH_PI*(45.0/180.0)
     );
     port(
         reset   :       in std_logic;
@@ -62,7 +62,7 @@ begin
         elsif rising_edge(clock) then
             y_valid <= '0';
             if phase_valid = '1' then
-                if phase > 0 then
+                if phase < 0 then
                     y <= table(to_integer(abs(phase)));
                 else
                     y <= -table(to_integer(abs(phase)));

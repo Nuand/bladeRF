@@ -176,7 +176,6 @@ architecture tx of iq_correction is
     signal phase_corrected_imag : signed(OUTPUT_WIDTH-1 downto 0);
     signal phase_corrected_valid : std_logic;
 
-    signal phase_offset : signed(OUTPUT_WIDTH-1 downto 0);
     signal phase_correction : signed(OUTPUT_WIDTH-1 downto 0);
     signal phase_tan : signed(OUTPUT_WIDTH-1 downto 0);
 
@@ -218,7 +217,7 @@ begin
         phase => phase_tan,
         phase_valid => correction_valid,
 
-        y => phase_offset,
+        y => phase_correction,
         y_valid => open
     );
 
