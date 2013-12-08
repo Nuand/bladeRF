@@ -2,6 +2,9 @@
 # Sun Nov 24 13:25:09 EST 2013
 # DO NOT MODIFY
 
+# !!! 'package require' statement has been modified from the origial
+# !!! Component Editor generation, to permit building under multiple
+# !!! Quartus versions.
 
 # 
 # bladerf_oc_i2c_master "BladeRF OpenCores I2C Master" v1.0
@@ -10,9 +13,9 @@
 # 
 
 # 
-# request TCL package from ACDS 13.1
+# request TCL package from ACDS
 # 
-package require -exact qsys 13.1
+package require qsys
 
 
 # 
