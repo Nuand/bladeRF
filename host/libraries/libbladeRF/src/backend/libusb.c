@@ -520,11 +520,12 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
 
     /* We can only print this out when log output is enabled, or else we'll
      * get snagged by -Werror=unused-but-set-variable */
-#   ifdef LOG_ENABLED
+#   ifdef LOGGING_ENABLED
     {
         const struct libusb_version *version;
         version = libusb_get_version();
-        log_verbose( "Using libusb version %d.%d.%d.%d\n", version->major, version->minor, version->micro, version->nano );
+        log_verbose("Using libusb version %d.%d.%d.%d\n", version->major,
+                    version->minor, version->micro, version->nano);
     }
 #   endif
 
