@@ -99,8 +99,14 @@ if [ $? -ne 0 ] || [ ! -f "$quartus_sh" ]; then
 fi
 
 nios_system=../fpga/ip/altera/nios_system
-QUARTUS_BINDIR=$QUARTUS_ROOTDIR/bin
-export QUARTUS_BINDIR
+
+# 9a484b436: Windows-specific workaround for Quartus bug
+if [ "x$(uname)" != "xLinux" ]; then
+    QUARTUS_BINDIR=$QUARTUS_ROOTDIR/bin
+    export QUARTUS_BINDIR
+    echo "## Non-Linux OS Detected (Windows?)"
+    echo "## Forcing QUARTUS_BINDIR to ${QUARTUS_BINDIR}"
+fi
 
 # Error out at the first sign of trouble
 set -e
