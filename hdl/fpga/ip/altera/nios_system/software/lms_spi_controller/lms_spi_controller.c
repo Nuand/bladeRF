@@ -42,6 +42,11 @@
 #define MHz(x)              (x*1000000)
 #define GHz(x)              (x*1000000000)
 
+ 
+//when version id is moved to a qsys port these will be removed
+#define FPGA_VERSION_ID         0x7777
+#define FPGA_VERSION            0xabcd0101
+
 // Register offsets from the base
 #define I2C                 BLADERF_OC_I2C_MASTER_0_BASE
 #define OC_I2C_PRESCALER    0
@@ -307,13 +312,23 @@ int main()
                             device = CORRECTION_PHASE_GAIN_BASE;
                             cmd_ptr->addr -= 8;
                             break;
+                        case 12: case 13: case 14: case 15:
+                            device = FPGA_VERSION_ID;
+                            cmd_ptr->addr -= 12;
                         default:
                             //error
                             device = PIO_0_BASE; 
                     }
 
                       if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_READ) {
-                          cmd_ptr->data = (IORD_ALTERA_AVALON_PIO_DATA(device)) >> (cmd_ptr->addr * 8);
+                          if (device == FPGA_VERSION_ID)
+                          {
+                            cmd_ptr->data = (FPGA_VERSION >> (cmd_ptr->addr * 8));
+                          }
+                          else
+                          {
+                            cmd_ptr->data = (IORD_ALTERA_AVALON_PIO_DATA(device)) >> (cmd_ptr->addr * 8);
+                          }
                       } else if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_WRITE) {
                           uint32_t tmpvar;
                           tmpvar = IORD_ALTERA_AVALON_PIO_DATA(device);

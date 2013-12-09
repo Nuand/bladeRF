@@ -138,8 +138,8 @@ begin
             error_real <= (others => '0');
             error_imag <= (others => '0');
         elsif rising_edge(clock) then
-            signal_ref_real <= to_signed(integer(round(real(3635)*(cos( PHASE_STEP*real(i)  ) ))),signal_real'length);
-            signal_ref_imag <= to_signed(integer(round(real(3635)*(sin( PHASE_STEP*real(i)  ) ))),signal_imag'length);
+            signal_ref_real <= to_signed(integer(round(real(3592)*(cos( PHASE_STEP*real(i)   + PHASE_OFFSET*MATH_PI/2.0 ) ))),signal_real'length);
+            signal_ref_imag <= to_signed(integer(round(real(3592)*(sin( PHASE_STEP*real(i) +  PHASE_OFFSET*MATH_PI/2.0 ) ))),signal_imag'length);
             
             if corrected_valid = '1' then
                 -- calc error

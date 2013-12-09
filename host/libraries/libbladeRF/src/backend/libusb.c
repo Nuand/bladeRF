@@ -519,13 +519,27 @@ static int lusb_populate_fw_version(struct bladerf *dev)
 
 static int lusb_populate_fpga_version(struct bladerf *dev)
 {
-    log_debug("FPGA currently does not have a version number.\n");
+    int status;
+    uint32_t version;
+    static int lusb_fpga_version_read(struct bladerf *dev, uint32_t *version); 
 
-    dev->fpga_version.major = 0;
-    dev->fpga_version.minor = 0;
-    dev->fpga_version.patch = 0;
-    strncpy((char *)dev->fpga_version.describe,
-            "0.0.0", BLADERF_VERSION_STR_MAX);
+    status = lusb_fpga_version_read(dev,&version);
+    if (status < 0)
+    {
+        dev->fpga_version.major = 0;
+        dev->fpga_version.minor = 0;
+        dev->fpga_version.patch = 0;
+    }
+    else
+    {
+        dev->fpga_version.major = (version >> 24) & 0xff;
+        dev->fpga_version.minor = (version >> 16) & 0xff;
+        dev->fpga_version.patch = version & 0xffff;
+    }
+        
+    snprintf((char*)dev->fpga_version.describe, BLADERF_VERSION_STR_MAX,
+                 "%d.%d.%d", dev->fpga_version.major, dev->fpga_version.minor,
+                 dev->fpga_version.patch);
 
     return 0;
 }
@@ -1645,6 +1659,37 @@ static int lusb_get_dc_correction(struct bladerf *dev, int16_t *dc_real, int16_t
             break;
         }
         tmp_data |= (cmd.data << (i * 8));
+    }
+    if (status < 0){
+        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF,status);
+    }
+
+    return status;
+}
+
+static int lusb_fpga_version_read(struct bladerf *dev, uint32_t *version)
+{
+    int i = 0;
+    int status = 0;
+    struct uart_cmd cmd;
+    struct bladerf_lusb *lusb = dev->backend;
+    *version = 0;
+
+    for (i = 0; status == 0 && i < 4; i++){
+        cmd.addr = i + UART_PKT_DEV_FGPA_VERSION_ID;
+        cmd.data = 0xff;
+
+        status = access_peripheral(
+                                    lusb,
+                                    UART_PKT_DEV_GPIO,
+                                    UART_PKT_MODE_DIR_READ,
+                                    &cmd
+                                    );
+
+        if (status < 0) {
+            break;
+        }
+        *version |= (cmd.data << (i * 8));
     }
     if (status < 0){
         bladerf_set_error(&dev->error, ETYPE_LIBBLADERF,status);
