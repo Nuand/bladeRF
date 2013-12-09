@@ -399,63 +399,6 @@ int lusb_enable_module(struct bladerf *dev, bladerf_module m, bool enable) {
 }
 
 
-static int enable_rf(struct bladerf *dev) {
-    int status;
-    /*int32_t fx3_ret = -1;*/
-    int ret_status = 0;
-    /*uint16_t val;*/
-
-    status = change_setting(dev, USB_IF_RF_LINK);
-    if(status < 0) {
-        status = error_libusb2bladerf(status);
-        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
-        log_debug( "alt_setting issue: %s\n", libusb_error_name(status) );
-        return status;
-    }
-    log_verbose( "Changed into RF link mode: %s\n", libusb_error_name(status) ) ;
-/*
-    val = 1;
-
-    if (dev->legacy) {
-        int32_t val32 = val;
-        status = vendor_command_int(dev, BLADE_USB_CMD_RF_RX, EP_DIR_OUT, &val32);
-        fx3_ret = 0;
-    } else {
-        status = vendor_command_int_value(
-                dev, BLADE_USB_CMD_RF_RX,
-                val, &fx3_ret);
-    }
-    if(status) {
-        log_error("Could not enable RF RX (%d): %s\n",
-                   status, libusb_error_name(status) );
-        ret_status = BLADERF_ERR_UNEXPECTED;
-    } else if(fx3_ret) {
-        log_error("Error enabling RF RX (%d)\n",
-                  fx3_ret );
-        ret_status = BLADERF_ERR_UNEXPECTED;
-    }
-
-    if (dev->legacy) {
-        int32_t val32 = val;
-        status = vendor_command_int(dev, BLADE_USB_CMD_RF_TX, EP_DIR_OUT, &val32);
-        fx3_ret = 0;
-    } else {
-        status = vendor_command_int_value(
-                dev, BLADE_USB_CMD_RF_TX,
-                val, &fx3_ret);
-    }
-    if(status) {
-        log_error("Could not enable RF TX (%d): %s\n",
-                status, libusb_error_name(status) );
-        ret_status = BLADERF_ERR_UNEXPECTED;
-    } else if(fx3_ret) {
-        log_error("Error enabling RF TX (%d)\n", fx3_ret );
-        ret_status = BLADERF_ERR_UNEXPECTED;
-    }
-*/
-    return ret_status;
-}
-
 
 /* FW < 1.5.0  does not have version strings */
 static int lusb_fw_populate_version_legacy(struct bladerf *dev)
@@ -517,26 +460,104 @@ static int lusb_populate_fw_version(struct bladerf *dev)
     return status;
 }
 
+/* Returns BLADERF_ERR_* on failure */
+static int access_peripheral(struct bladerf_lusb *lusb, int per, int dir,
+                                struct uart_cmd *cmd)
+{
+    uint8_t buf[16] = { 0 };    /* Zeroing out to avoid some valgrind noise
+                                 * on the reserved items that aren't currently
+                                 * used (i.e., bytes 4-15 */
+
+    int status, libusb_status, transferred;
+
+    /* Populate the buffer for transfer */
+    buf[0] = UART_PKT_MAGIC;
+    buf[1] = dir | per | 0x01;
+    buf[2] = cmd->addr;
+    buf[3] = cmd->data;
+
+    /* Write down the command */
+    libusb_status = libusb_bulk_transfer(lusb->handle, 0x02, buf, 16,
+                                           &transferred,
+                                           BLADERF_LIBUSB_TIMEOUT_MS);
+
+    if (libusb_status < 0) {
+        log_error("could not access peripheral\n");
+        return BLADERF_ERR_IO;
+    }
+
+    /* If it's a read, we'll want to read back the result */
+    transferred = 0;
+    libusb_status = status =  0;
+    while (libusb_status == 0 && transferred != 16) {
+        libusb_status = libusb_bulk_transfer(lusb->handle, 0x82, buf, 16,
+                                             &transferred,
+                                             BLADERF_LIBUSB_TIMEOUT_MS);
+    }
+
+    if (libusb_status < 0) {
+        return BLADERF_ERR_IO;
+    }
+
+    /* Save off the result if it was a read */
+    if (dir == UART_PKT_MODE_DIR_READ) {
+        cmd->data = buf[3];
+    }
+
+    return status;
+}
+
+static int lusb_fpga_version_read(struct bladerf *dev, uint32_t *version) {
+    int i = 0;
+    int status = 0;
+    struct uart_cmd cmd;
+    struct bladerf_lusb *lusb = dev->backend;
+    *version = 0;
+
+    for (i = 0; i < 4; i++){
+        cmd.addr = i + UART_PKT_DEV_FGPA_VERSION_ID;
+        cmd.data = 0xff;
+
+        status = access_peripheral(
+                                    lusb,
+                                    UART_PKT_DEV_GPIO,
+                                    UART_PKT_MODE_DIR_READ,
+                                    &cmd
+                                    );
+
+        if (status < 0) {
+            break;
+        }
+
+        *version |= (cmd.data << (i * 8));
+    }
+
+    if (status < 0){
+        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF,status);
+    }
+
+    return status;
+}
+
+
 static int lusb_populate_fpga_version(struct bladerf *dev)
 {
     int status;
     uint32_t version;
-    static int lusb_fpga_version_read(struct bladerf *dev, uint32_t *version); 
 
     status = lusb_fpga_version_read(dev,&version);
-    if (status < 0)
-    {
+    if (status < 0) {
+        log_debug( "Could not retrieve FPGA version\n" ) ;
         dev->fpga_version.major = 0;
         dev->fpga_version.minor = 0;
         dev->fpga_version.patch = 0;
     }
-    else
-    {
-        dev->fpga_version.major = (version >> 24) & 0xff;
-        dev->fpga_version.minor = (version >> 16) & 0xff;
-        dev->fpga_version.patch = version & 0xffff;
+    else {
+        log_debug( "Raw FPGA Version: 0x%8.8x\n", version ) ;
+        dev->fpga_version.major = (version >>  0) & 0xff;
+        dev->fpga_version.minor = (version >>  8) & 0xff;
+        dev->fpga_version.patch = (version >> 16) & 0xffff;
     }
-        
     snprintf((char*)dev->fpga_version.describe, BLADERF_VERSION_STR_MAX,
                  "%d.%d.%d", dev->fpga_version.major, dev->fpga_version.minor,
                  dev->fpga_version.patch);
@@ -559,6 +580,24 @@ static void get_libusb_version(char *buf, size_t buf_len)
     snprintf(buf, buf_len, "<= 1.0.9");
 }
 #endif
+
+static int enable_rf(struct bladerf *dev) {
+    int status;
+    /*int32_t fx3_ret = -1;*/
+    int ret_status = 0;
+    /*uint16_t val;*/
+
+    status = change_setting(dev, USB_IF_RF_LINK);
+    if(status < 0) {
+        status = error_libusb2bladerf(status);
+        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
+        log_debug( "alt_setting issue: %s\n", libusb_error_name(status) );
+        return status;
+    }
+    log_verbose( "Changed into RF link mode: %s\n", libusb_error_name(status) ) ;
+    ret_status = lusb_populate_fpga_version(dev) ;
+    return ret_status;
+}
 
 static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
 {
@@ -1462,54 +1501,6 @@ static int lusb_get_device_speed(struct bladerf *dev,
     return status;
 }
 
-/* Returns BLADERF_ERR_* on failure */
-static int access_peripheral(struct bladerf_lusb *lusb, int per, int dir,
-                                struct uart_cmd *cmd)
-{
-    uint8_t buf[16] = { 0 };    /* Zeroing out to avoid some valgrind noise
-                                 * on the reserved items that aren't currently
-                                 * used (i.e., bytes 4-15 */
-
-    int status, libusb_status, transferred;
-
-    /* Populate the buffer for transfer */
-    buf[0] = UART_PKT_MAGIC;
-    buf[1] = dir | per | 0x01;
-    buf[2] = cmd->addr;
-    buf[3] = cmd->data;
-
-    /* Write down the command */
-    libusb_status = libusb_bulk_transfer(lusb->handle, 0x02, buf, 16,
-                                           &transferred,
-                                           BLADERF_LIBUSB_TIMEOUT_MS);
-
-    if (libusb_status < 0) {
-        log_error("Failed to access peripheral: %s\n",
-                  libusb_error_name(libusb_status));
-        return BLADERF_ERR_IO;
-    }
-
-    /* If it's a read, we'll want to read back the result */
-    transferred = 0;
-    libusb_status = status =  0;
-    while (libusb_status == 0 && transferred != 16) {
-        libusb_status = libusb_bulk_transfer(lusb->handle, 0x82, buf, 16,
-                                             &transferred,
-                                             BLADERF_LIBUSB_TIMEOUT_MS);
-    }
-
-    if (libusb_status < 0) {
-        return BLADERF_ERR_IO;
-    }
-
-    /* Save off the result if it was a read */
-    if (dir == UART_PKT_MODE_DIR_READ) {
-        cmd->data = buf[3];
-    }
-
-    return status;
-}
-
 static int lusb_config_gpio_write(struct bladerf *dev, uint32_t val)
 {
     int i = 0;
@@ -1636,7 +1627,7 @@ static int lusb_set_dc_correction(struct bladerf *dev, int16_t dc_real, int16_t 
     return status;
 }
 
-static int lusb_get_dc_correction(struct bladerf *dev, int16_t *dc_real, int16_t *dc_imag)
+/*static int lusb_get_dc_correction(struct bladerf *dev, int16_t *dc_real, int16_t *dc_imag)
 {
     int i = 0;
     int status = 0;
@@ -1666,38 +1657,7 @@ static int lusb_get_dc_correction(struct bladerf *dev, int16_t *dc_real, int16_t
 
     return status;
 }
-
-static int lusb_fpga_version_read(struct bladerf *dev, uint32_t *version)
-{
-    int i = 0;
-    int status = 0;
-    struct uart_cmd cmd;
-    struct bladerf_lusb *lusb = dev->backend;
-    *version = 0;
-
-    for (i = 0; status == 0 && i < 4; i++){
-        cmd.addr = i + UART_PKT_DEV_FGPA_VERSION_ID;
-        cmd.data = 0xff;
-
-        status = access_peripheral(
-                                    lusb,
-                                    UART_PKT_DEV_GPIO,
-                                    UART_PKT_MODE_DIR_READ,
-                                    &cmd
-                                    );
-
-        if (status < 0) {
-            break;
-        }
-        *version |= (cmd.data << (i * 8));
-    }
-    if (status < 0){
-        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF,status);
-    }
-
-    return status;
-}
-
+*/
 
 static int lusb_si5338_write(struct bladerf *dev, uint8_t addr, uint8_t data)
 {

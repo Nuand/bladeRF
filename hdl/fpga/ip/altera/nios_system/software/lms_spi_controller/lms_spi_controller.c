@@ -42,10 +42,13 @@
 #define MHz(x)              (x*1000000)
 #define GHz(x)              (x*1000000000)
 
- 
+
 //when version id is moved to a qsys port these will be removed
 #define FPGA_VERSION_ID         0x7777
-#define FPGA_VERSION            0xabcd0101
+#define FPGA_VERSION_MAJOR      0
+#define FPGA_VERSION_MINOR      0
+#define FPGA_VERSION_PATCH      1
+#define FPGA_VERSION            (FPGA_VERSION_MAJOR | (FPGA_VERSION_MINOR << 8) | (FPGA_VERSION_PATCH << 16))
 
 // Register offsets from the base
 #define I2C                 BLADERF_OC_I2C_MASTER_0_BASE
@@ -302,7 +305,7 @@ int main()
                     uint32_t device;
                     switch(cmd_ptr->addr)
                     {
-                        case 0:case 1:case 2: case 3: 
+                        case 0:case 1:case 2: case 3:
                             device = PIO_0_BASE;break;
                         case 4: case 5: case 6: case 7:
                             device = CORRECTION_DC_BASE;
@@ -315,9 +318,10 @@ int main()
                         case 12: case 13: case 14: case 15:
                             device = FPGA_VERSION_ID;
                             cmd_ptr->addr -= 12;
+                            break;
                         default:
                             //error
-                            device = PIO_0_BASE; 
+                            device = PIO_0_BASE;
                     }
 
                       if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_READ) {
