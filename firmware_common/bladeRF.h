@@ -115,6 +115,10 @@ struct bladeRF_sector {
 #define USB_CYPRESS_VENDOR_ID   0x04b4
 #define USB_FX3_PRODUCT_ID      0x00f3
 
+//when version id is moved to a qsys port these will be removed
+#define FPGA_VERSION_ID         0x7777
+#define FPGA_VERSION            0xabcd0101
+
 #define BLADE_USB_TYPE_OUT      0x40
 #define BLADE_USB_TYPE_IN       0xC0
 #define BLADE_USB_TIMEOUT_MS    1000
@@ -130,6 +134,7 @@ struct bladeRF_sector {
 #define UART_PKT_DEV_GPIO_ADDR  0
 #define UART_PKT_DEV_DC_CORR_ADDR   4
 #define UART_PKT_DEV_GAIN_PHASE_CORR_ADDR 8
+#define UART_PKT_DEV_FGPA_VERSION_ID 12
 
 struct uart_pkt {
     unsigned char magic;
