@@ -55,7 +55,8 @@ include(TestBigEndian)
 TEST_BIG_ENDIAN(BLADERF_BIG_ENDIAN)
 
 # Test for libusb so warnings and such only occur at the top-level
-# TODO Once we enable other backends
+# TODO Once we enable other backends, we should revisit whether this is a good
+#      location for this
 include(FindLibUSB)
 
 configure_file(
