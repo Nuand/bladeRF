@@ -524,8 +524,8 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
     {
         const struct libusb_version *version;
         version = libusb_get_version();
-        log_verbose("Using libusb version %d.%d.%d.%d\n", version->major,
-                    version->minor, version->micro, version->nano);
+        log_debug("Using libusb version %d.%d.%d.%d\n", version->major,
+                  version->minor, version->micro, version->nano);
     }
 #   endif
 
@@ -657,13 +657,13 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
                 continue;
             }
 
-            log_debug("Found FX3 bootloader device on bus=%d addr=%d. "
-                      "This may be a bladeRF.\n",
-                      thisinfo.usb_bus, thisinfo.usb_addr);
+            log_info("Found FX3 bootloader device on bus=%d addr=%d. "
+                     "This may be a bladeRF.\n",
+                     thisinfo.usb_bus, thisinfo.usb_addr);
 
-            log_debug("Use bladeRF-cli command \"recover %d %d "
-                      "<FX3 firmware>\" to boot the bladeRF firmware.\n",
-                      thisinfo.usb_bus, thisinfo.usb_addr);
+            log_info("Use bladeRF-cli command \"recover %d %d "
+                     "<FX3 firmware>\" to boot the bladeRF firmware.\n",
+                     thisinfo.usb_bus, thisinfo.usb_addr);
         }
     }
 
@@ -841,7 +841,7 @@ static int erase_sector(struct bladerf *dev, uint16_t sector)
         return BLADERF_ERR_IO;
     }
 
-    log_info("Erased sector at 0x%02x...\n", flash_from_sectors(sector));
+    log_debug("Erased sector 0x%04x.\n", flash_from_sectors(sector));
     return 0;
 }
 
@@ -863,7 +863,7 @@ static int lusb_erase_flash(struct bladerf *dev, uint32_t addr, uint32_t len)
         return BLADERF_ERR_IO;
     }
 
-    log_info("Erasing 0x%02x bytes starting at address 0x%02x\n", len, addr);
+    log_info("Erasing 0x%08x bytes starting at address 0x%08x.\n", len, addr);
 
     for (i=0; i < sector_len; i++) {
         status = erase_sector(dev, sector_addr + i);
@@ -1032,17 +1032,17 @@ static int lusb_read_flash(struct bladerf *dev, uint32_t addr,
     page_addr = flash_to_pages(addr);
     page_len  = flash_to_pages(len);
 
-    log_verbose("Reading 0x%02x bytes starting at address 0x%02x\n", len, addr);
-
     status = change_setting(dev, USB_IF_SPI_FLASH);
     if (status) {
         log_error("Failed to set interface: %s\n", libusb_error_name(status));
         return BLADERF_ERR_IO;
     }
 
+    log_info("Reading 0x%08x bytes from address 0x%08x.\n", len, addr);
+
     read = 0;
     for (i=0; i < page_len; i++) {
-        log_verbose("Reading page at 0x%02x\n", flash_from_pages(i));
+        log_debug("Reading page 0x%04x.\n", flash_from_pages(i));
         status = read_one_page(dev, page_addr + i, buf + read);
         if(status)
             return status;
@@ -1073,7 +1073,7 @@ static int verify_one_page(struct bladerf *dev,
     unsigned int i;
 
 
-    log_verbose("Verifying page at 0x%02x\n", flash_from_pages(page));
+    log_debug("Verifying page 0x%04x.\n", flash_from_pages(page));
     status = read_one_page(dev, page, page_buf);
     if(status)
         return status;
@@ -1107,7 +1107,7 @@ static int verify_flash(struct bladerf *dev, uint32_t addr,
     page_addr = flash_to_pages(addr);
     page_len  = flash_to_pages(len);
 
-    log_verbose("Verifying 0x%02x bytes starting at address 0x%02x\n", len, addr);
+    log_info("Verifying 0x%08x bytes at address 0x%08x\n", len, addr);
 
     for(i=0; i < page_len; i++) {
         image_buf = &image[flash_from_pages(i)];
@@ -1208,9 +1208,11 @@ static int write_one_page(struct bladerf *dev, uint16_t page, uint8_t *buf)
          return BLADERF_ERR_UNEXPECTED;
     }
 
+#ifdef FLASH_VERIFY_PAGE_WRITES
     status = verify_one_page(dev, page, buf);
     if(status < 0)
         return status;
+#endif
 
     return 0;
 }
@@ -1227,17 +1229,17 @@ static int lusb_write_flash(struct bladerf *dev, uint32_t addr,
     page_addr = flash_to_pages(addr);
     page_len  = flash_to_pages(len);
 
-    log_verbose("Writing 0x%02x bytes starting at address 0x%02x\n", len, addr);
-
     status = change_setting(dev, USB_IF_SPI_FLASH);
     if (status) {
         log_error("Failed to set interface: %s\n", libusb_error_name(status));
         return BLADERF_ERR_IO;
     }
 
+    log_info("Writing 0x%08x bytes to address 0x%08x.\n", len, addr);
+
     written = 0;
     for(i=0; i < page_len; i++) {
-        log_verbose("Writing page at 0x%02x\n", flash_from_pages(i));
+        log_debug("Writing page at 0x%04x.\n", flash_from_pages(i));
         status = write_one_page(dev, page_addr + i, buf + written);
         if(status)
             return status;
