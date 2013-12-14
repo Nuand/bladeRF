@@ -495,6 +495,21 @@ static int lusb_populate_fpga_version(struct bladerf *dev)
     return 0;
 }
 
+#ifdef HAVE_LIBUSB_GET_VERSION
+static void get_libusb_version(char *buf, size_t buf_len)
+{
+    const struct libusb_version *version;
+    version = libusb_get_version();
+
+    snprintf(buf, buf_len, "%d.%d.%d.%d%s", version->major, version->minor,
+             version->micro, version->nano, version->rc);
+}
+#else
+static void get_libusb_version(char *buf, size_t buf_len)
+{
+    snprintf(buf, buf_len, "<= 1.0.9");
+}
+#endif
 
 static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
 {
@@ -522,10 +537,9 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
      * get snagged by -Werror=unused-but-set-variable */
 #   ifdef LOGGING_ENABLED
     {
-        const struct libusb_version *version;
-        version = libusb_get_version();
-        log_debug("Using libusb version %d.%d.%d.%d\n", version->major,
-                  version->minor, version->micro, version->nano);
+        char buf[64];
+        get_libusb_version(buf, sizeof(buf));
+        log_verbose("Using libusb version: %s\n", buf);
     }
 #   endif
 
