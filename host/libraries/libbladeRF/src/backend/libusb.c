@@ -1679,7 +1679,7 @@ static int lusb_dac_write(struct bladerf *dev, uint16_t value)
 
 
 
-static int set_fpga_correction(struct bladerf *dev, uint16_t addr, int16_t value)
+static int set_fpga_correction(struct bladerf *dev, uint8_t addr, int16_t value)
 {
     int i = 0;
     int status = 0;
@@ -1711,46 +1711,58 @@ static int set_fpga_correction(struct bladerf *dev, uint16_t addr, int16_t value
 static int lusb_set_correction(struct bladerf *dev, bladerf_correction_module module, int16_t value)
 {
     int status = 0;
-    uint16_t addr = UART_PKT_DEV_RX_PHASE_ADDR;
-    struct bladerf_lusb *lusb = dev->backend;
+    uint8_t tmp = 0x00;
+    uint8_t mask = 0x00;
+    uint8_t addr = UART_PKT_DEV_RX_PHASE_ADDR;
 
     switch(module)
     {
+        //the fall-through here is intentional and
+        //maps to the correct address within the lms_spi_controller code
         case BLADERF_IQ_CORR_TX_GAIN:   addr += 2;
         case BLADERF_IQ_CORR_TX_PHASE:  addr += 2;
         case BLADERF_IQ_CORR_RX_GAIN:   addr += 2;
         case BLADERF_IQ_CORR_RX_PHASE:
-            status = set_fpga_correction(dev,addr,value);
+            //return from fpga based correction here
+            return set_fpga_correction(dev,addr,value);
+        case BLADERF_IQ_CORR_TX_DC_I:
+            addr = 0x42;
             break;
-        case BLADERF_IQ_CORR_TX_DC_I:  
-            if(value < 0)
-                value =  abs(value) | (1 << 5);
-            status = lusb_lms_write(dev,0x42,(uint8_t)value);
-            break;  
         case BLADERF_IQ_CORR_TX_DC_Q:
-            if(value < 0)
-                value =  abs(value) | (1 << 5);
-            status = lusb_lms_write(dev,0x43,(uint8_t)value);
-            break;  
+            addr = 0x43;
+            break;
         case BLADERF_IQ_CORR_RX_DC_I:
-            if(value < 0)
-                value =  abs(value) | (1 << 5);
-            status = lusb_lms_write(dev,0x71,(uint8_t)value);
-            break;  
+            mask = 0x80;
+            addr = 0x71;
+            break;
         case BLADERF_IQ_CORR_RX_DC_Q:
-            if(value < 0)
-                value = abs(value) | (1 << 5);
-            status = lusb_lms_write(dev,0x72,(uint8_t)value);
-            break;  
-        default:    
+            mask = 0x80;
+            addr = 0x72;
+            break;
+        default:
             break;
     }
+    //this is only reached for corrections which apply to the lms registers controlled over spi
+    status = lusb_lms_read(dev,addr,&tmp);
+    if (status < 0) {
+        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
+        return status;
+    }
 
-    return status;
+    //mask out any bits in the dc correction area
+    tmp = tmp & mask;
+    if(value < 0)
+        value = (abs(value) & 0x3f )|(1 << 6);
+    else
+        value = value & 0x3f;
+
+    value |= tmp;
+
+    return lusb_lms_write(dev,addr,(uint8_t)value);
 }
 
 
-static int print_fpga_correction(struct bladerf *dev, uint16_t addr, int16_t *value)
+static int print_fpga_correction(struct bladerf *dev, uint8_t addr, int16_t *value)
 {
     int i = 0;
     int status = 0;
@@ -1782,11 +1794,10 @@ static int print_fpga_correction(struct bladerf *dev, uint16_t addr, int16_t *va
 }
 
 static int lusb_print_correction(struct bladerf *dev, bladerf_correction_module module, int16_t *value)
-{    
+{
     int status = 0;
 	uint8_t tmp;
-    uint16_t addr = UART_PKT_DEV_RX_PHASE_ADDR;
-    struct bladerf_lusb *lusb = dev->backend;
+    uint8_t addr = UART_PKT_DEV_RX_PHASE_ADDR;
 
     switch(module)
     {
@@ -1796,24 +1807,27 @@ static int lusb_print_correction(struct bladerf *dev, bladerf_correction_module 
         case BLADERF_IQ_CORR_RX_PHASE:
             status = print_fpga_correction(dev,addr,value);
             break;
-        case BLADERF_IQ_CORR_TX_DC_I:  
-            status = lusb_lms_read(dev,0x42,&tmp);
-			*value = tmp;
-            break;  
-        case BLADERF_IQ_CORR_TX_DC_Q:
-            status = lusb_lms_read(dev,0x43,&tmp);
-			*value = tmp;
-            break;  
-        case BLADERF_IQ_CORR_RX_DC_I:
-            status = lusb_lms_read(dev,0x71,&tmp);
-			*value = tmp;
-            break;  
-        case BLADERF_IQ_CORR_RX_DC_Q:
-            status = lusb_lms_read(dev,0x72,&tmp);
-			*value = tmp;
-            break;  
-        default:    
+        case BLADERF_IQ_CORR_TX_DC_I:
+            addr = 0x42;
             break;
+        case BLADERF_IQ_CORR_TX_DC_Q:
+            addr = 0x43;
+            break;
+        case BLADERF_IQ_CORR_RX_DC_I:
+            addr = 0x71;
+            break;
+        case BLADERF_IQ_CORR_RX_DC_Q:
+            addr = 0x72;
+            break;
+        default:
+            break;
+    }
+
+    status = lusb_lms_read(dev,addr,&tmp);
+    *value = tmp;
+
+    if (status < 0) {
+        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
     }
 
     return status;
