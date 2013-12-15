@@ -1067,14 +1067,14 @@ int bladerf_config_gpio_write(struct bladerf *dev, uint32_t val)
 /*------------------------------------------------------------------------------
  * IQ Calibration routines
  *----------------------------------------------------------------------------*/
-int bladerf_config_dc_gain_write(struct bladerf *dev, int16_t dc_i, int16_t dc_q)
+int bladerf_set_correction(struct bladerf *dev, bladerf_correction_module module, int16_t value)
 {
-    return dev->fn->config_dc_gain_write(dev,dc_i,dc_q);   
+    return dev->fn->set_correction(dev,module,value);   
 }
 
-int bladerf_phase_gain_write(struct bladerf *dev, int16_t phase, uint16_t gain)
+int bladerf_print_correction(struct bladerf *dev, bladerf_correction_module module, int16_t *value)
 {
-    return dev->fn->phase_gain_write(dev,phase,gain);
+    return dev->fn->print_correction(dev,module,value);
 }
 
 

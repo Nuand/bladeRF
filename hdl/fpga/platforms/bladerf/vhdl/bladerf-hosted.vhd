@@ -51,8 +51,8 @@ architecture hosted_bladerf of bladerf is
         oc_i2c_arst_i       : in  std_logic;
         oc_i2c_scl_pad_i    : in  std_logic;
         gpio_export         : out std_logic_vector(31 downto 0); 
-        correction_dc_export : out std_logic_vector(31 downto 0);
-        correction_phase_gain_export : out std_logic_vector(31 downto 0)
+        correction_rx_phase_gain_export : out std_logic_vector(31 downto 0);
+        correction_tx_phase_gain_export : out std_logic_vector(31 downto 0)
       );
     end component nios_system;
 
@@ -67,8 +67,8 @@ architecture hosted_bladerf of bladerf is
     signal nios_gpio        : std_logic_vector(31 downto 0) := x"0000_00d7" ;
 
 
-    signal correction_dc_export :  std_logic_vector(31 downto 0);
-    signal correction_phase_gain_export :  std_logic_vector(31 downto 0);
+    signal correction_rx_phase_gain :  std_logic_vector(31 downto 0);
+    signal correction_tx_phase_gain :  std_logic_vector(31 downto 0);
 
     signal i2c_scl_in       : std_logic ;
     signal i2c_scl_out      : std_logic ;
@@ -155,20 +155,26 @@ architecture hosted_bladerf of bladerf is
     signal rx_mux_q             :   signed(11 downto 0) ;
     signal rx_mux_valid         :   std_logic ;
 
+    signal rx_sample_corrected_i : signed(15 downto 0);
+    signal rx_sample_corrected_q : signed(15 downto 0);
+    signal rx_sample_corrected_valid : std_logic;
+
 
     signal correction_valid : std_logic;
 
-    signal correction_phase :  signed(15 downto 0);--to_signed(integer(round(real(2**Q_SCALE) * PHASE_OFFSET)),DC_WIDTH);
-    signal correction_gain  :  signed(15 downto 0);--to_signed(integer(round(real(2**Q_SCALE) * DC_OFFSET_REAL)),DC_WIDTH);
-    signal correction_dc_real :  signed(15 downto 0);--to_signed(integer(round(real(2**Q_SCALE) * DC_OFFSET_IMAG)),DC_WIDTH);
-    signal correction_dc_imag :  signed(15 downto 0);--to_signed(integer(round(real(2**Q_SCALE) * GAIN_OFFSET)),DC_WIDTH);
+    signal correction_tx_phase :  signed(15 downto 0);--to_signed(integer(round(real(2**Q_SCALE) * PHASE_OFFSET)),DC_WIDTH);
+    signal correction_tx_gain  :  signed(15 downto 0);--to_signed(integer(round(real(2**Q_SCALE) * DC_OFFSET_REAL)),DC_WIDTH);
+    signal correction_rx_phase :  signed(15 downto 0);--to_signed(integer(round(real(2**Q_SCALE) * PHASE_OFFSET)),DC_WIDTH);
+    signal correction_rx_gain  :  signed(15 downto 0);--to_signed(integer(round(real(2**Q_SCALE) * DC_OFFSET_REAL)),DC_WIDTH);
+
+    constant FPGA_DC_CORRECTION :  signed(15 downto 0) := to_signed(integer(0), 16);
 
 begin
 
-    correction_phase <= signed(correction_phase_gain_export(31 downto 16));
-    correction_gain  <= signed(correction_phase_gain_export(15 downto 0));
-    correction_dc_real <= signed(correction_dc_export(31 downto 16));
-    correction_dc_imag <= signed(correction_dc_export(15 downto 0));
+    correction_tx_phase <= signed(correction_tx_phase_gain(31 downto 16));
+    correction_tx_gain  <= signed(correction_tx_phase_gain(15 downto 0));
+    correction_rx_phase <= signed(correction_rx_phase_gain(31 downto 16));
+    correction_rx_gain  <= signed(correction_rx_phase_gain(15 downto 0));
     correction_valid <= '1';
 
 
@@ -346,14 +352,37 @@ begin
         fifo_data           =>  rx_sample_fifo.wdata,
         fifo_write          =>  rx_sample_fifo.wreq,
 
-        in_i                =>  resize(rx_mux_i,16),
-        in_q                =>  resize(rx_mux_q,16),
-        in_valid            =>  rx_mux_valid,
+        in_i                =>  rx_sample_corrected_i,
+        in_q                =>  rx_sample_corrected_q,
+        in_valid            =>  rx_sample_corrected_valid,
 
         overflow_led        =>  rx_overflow_led,
         overflow_count      =>  rx_overflow_count,
         overflow_duration   =>  x"abcd"
       ) ;
+
+    U_rx_iq_correction : entity work.iq_correction(rx)
+        generic map(
+            INPUT_WIDTH => 16
+        )
+        port map(
+            reset => rx_reset,
+            clock => rx_clock,
+
+            in_real => resize(rx_mux_i,16),
+            in_imag => resize(rx_mux_q,16),
+            in_valid => rx_mux_valid,
+
+            out_real => rx_sample_corrected_i,
+            out_imag => rx_sample_corrected_q,
+            out_valid => rx_sample_corrected_valid,
+
+            dc_real => FPGA_DC_CORRECTION,
+            dc_imag => FPGA_DC_CORRECTION,
+            gain => correction_rx_gain,
+            phase => correction_rx_phase,
+            correction_valid => correction_valid
+      );
 
     U_fifo_reader : entity work.fifo_reader
       port map (
@@ -391,10 +420,10 @@ begin
             out_imag => tx_sample_q,
             out_valid => tx_sample_valid,
 
-            dc_real => correction_dc_real,
-            dc_imag => correction_dc_imag,
-            gain => correction_gain,
-            phase => correction_phase,
+            dc_real => FPGA_DC_CORRECTION,
+            dc_imag => FPGA_DC_CORRECTION,
+            gain => correction_tx_gain,
+            phase => correction_tx_phase,
             correction_valid => correction_valid
       );
 
@@ -486,28 +515,28 @@ begin
     -- NIOS control system for si5338, vctcxo trim and lms control
     U_nios_system : nios_system
       port map (
-        clk_clk                         => \80MHz\,
-        reset_reset_n                   => '1',
-        dac_MISO                        => dac_sdo,
-        dac_MOSI                        => dac_sdi,
-        dac_SCLK                        => dac_sclk,
-        dac_SS_n                        => dac_csx,
-        spi_MISO                        => lms_sdo,
-        spi_MOSI                        => lms_sdio,
-        spi_SCLK                        => lms_sclk,
-        spi_SS_n                        => lms_sen,
-        uart_rxd                        => fx3_uart_txd,
-        uart_txd                        => fx3_uart_rxd,
-        gpio_export                     => nios_gpio,
-        correction_dc_export            => correction_dc_export,
-        correction_phase_gain_export    => correction_phase_gain_export,
-        oc_i2c_scl_pad_o                => i2c_scl_out,
-        oc_i2c_scl_padoen_o             => i2c_scl_oen,
-        oc_i2c_sda_pad_i                => i2c_sda_in,
-        oc_i2c_sda_pad_o                => i2c_sda_out,
-        oc_i2c_sda_padoen_o             => i2c_sda_oen,
-        oc_i2c_arst_i                   => '0',
-        oc_i2c_scl_pad_i                => i2c_scl_in
+        clk_clk             => \80MHz\,
+        reset_reset_n       => '1',
+        dac_MISO            => dac_sdo,
+        dac_MOSI            => dac_sdi,
+        dac_SCLK            => dac_sclk,
+        dac_SS_n            => dac_csx,
+        spi_MISO            => lms_sdo,
+        spi_MOSI            => lms_sdio,
+        spi_SCLK            => lms_sclk,
+        spi_SS_n            => lms_sen,
+        uart_rxd            => fx3_uart_txd,
+        uart_txd            => fx3_uart_rxd,
+        gpio_export         => nios_gpio,
+        correction_tx_phase_gain_export    => correction_tx_phase_gain,
+        correction_rx_phase_gain_export    => correction_rx_phase_gain,
+        oc_i2c_scl_pad_o    => i2c_scl_out,
+        oc_i2c_scl_padoen_o => i2c_scl_oen,
+        oc_i2c_sda_pad_i    => i2c_sda_in,
+        oc_i2c_sda_pad_o    => i2c_sda_out,
+        oc_i2c_sda_padoen_o => i2c_sda_oen,
+        oc_i2c_arst_i       => '0',
+        oc_i2c_scl_pad_i    => i2c_scl_in
       ) ;
 
     -- IO for NIOS

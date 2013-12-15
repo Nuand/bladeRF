@@ -1561,104 +1561,6 @@ static int lusb_config_gpio_read(struct bladerf *dev, uint32_t *val)
     return status;
 }
 
-static int lusb_set_phase_gain_correction(struct bladerf *dev, int16_t phase, uint16_t gain)
-{
-    int i = 0;
-    int status = 0;
-    uint32_t tmp_data;
-    struct uart_cmd cmd;
-    struct bladerf_lusb *lusb = dev->backend;
-
-    tmp_data = (((uint32_t) phase) << 16 )| (gain);
-
-    for (i = 0; status == 0 && i < 4; i++) {
-        cmd.addr = i + UART_PKT_DEV_GAIN_PHASE_CORR_ADDR;
-
-        cmd.data = (tmp_data>>(8*i))&0xff;
-        status = access_peripheral(
-                                    lusb,
-                                    UART_PKT_DEV_GPIO,
-                                    UART_PKT_MODE_DIR_WRITE,
-                                    &cmd
-                                  );
-
-        if (status < 0) {
-            break;
-        }
-    }
-
-    if (status < 0) {
-        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
-    }
-
-    return status;
-}
-
-static int lusb_set_dc_correction(struct bladerf *dev, int16_t dc_real, int16_t dc_imag)
-{
-    int i = 0;
-    int status = 0;
-    uint32_t tmp_data;
-    struct uart_cmd cmd;
-    struct bladerf_lusb *lusb = dev->backend;
-
-    tmp_data = (((uint32_t)dc_imag) << 16 )| (dc_real & 0xffff);
-
-    for (i = 0; status == 0 && i < 4; i++) {
-        cmd.addr = i + UART_PKT_DEV_DC_CORR_ADDR;
-
-        cmd.data = (tmp_data>>(8*i))&0xff;
-        status = access_peripheral(
-                                    lusb,
-                                    UART_PKT_DEV_GPIO,
-                                    UART_PKT_MODE_DIR_WRITE,
-                                    &cmd
-                                  );
-
-        if (status < 0) {
-            break;
-        }
-    }
-
-    if (status < 0) {
-        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
-    }
-
-    return status;
-}
-
-/*static int lusb_get_dc_correction(struct bladerf *dev, int16_t *dc_real, int16_t *dc_imag)
-{
-    int i = 0;
-    int status = 0;
-    struct uart_cmd cmd;
-    struct bladerf_lusb *lusb = dev->backend;
-    uint32_t tmp_data = 0;
-
-    for (i = 0; status == 0 && i < 4; i++){
-        cmd.addr = i + UART_PKT_DEV_DC_CORR_ADDR;
-        cmd.data = 0xff;
-
-        status = access_peripheral(
-                                    lusb,
-                                    UART_PKT_DEV_GPIO,
-                                    UART_PKT_MODE_DIR_READ,
-                                    &cmd
-                                    );
-
-        if (status < 0) {
-            break;
-        }
-        tmp_data |= (cmd.data << (i * 8));
-    }
-    if (status < 0){
-        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF,status);
-    }
-
-    return status;
-}
-*/
-
 static int lusb_si5338_write(struct bladerf *dev, uint8_t addr, uint8_t data)
 {
     int status;
@@ -1770,6 +1672,148 @@ static int lusb_dac_write(struct bladerf *dev, uint16_t value)
 
     if (status < 0) {
         bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
+    }
+
+    return status;
+}
+
+
+
+static int set_fpga_correction(struct bladerf *dev, uint16_t addr, int16_t value)
+{
+    int i = 0;
+    int status = 0;
+    struct uart_cmd cmd;
+    struct bladerf_lusb *lusb = dev->backend;
+
+    for (i = 0; status == 0 && i < 2; i++) {
+        cmd.addr = i + addr;
+
+        cmd.data = (value>>(8*i))&0xff;
+        status = access_peripheral(
+                                    lusb,
+                                    UART_PKT_DEV_GPIO,
+                                    UART_PKT_MODE_DIR_WRITE,
+                                    &cmd
+                                  );
+
+        if (status < 0) {
+            break;
+        }
+    }
+
+    if (status < 0) {
+        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
+    }
+    return status;
+}
+
+static int lusb_set_correction(struct bladerf *dev, bladerf_correction_module module, int16_t value)
+{
+    int status = 0;
+    uint16_t addr = UART_PKT_DEV_RX_PHASE_ADDR;
+    struct bladerf_lusb *lusb = dev->backend;
+
+    switch(module)
+    {
+        case BLADERF_IQ_CORR_TX_GAIN:   addr += 2;
+        case BLADERF_IQ_CORR_TX_PHASE:  addr += 2;
+        case BLADERF_IQ_CORR_RX_GAIN:   addr += 2;
+        case BLADERF_IQ_CORR_RX_PHASE:
+            status = set_fpga_correction(dev,addr,value);
+            break;
+        case BLADERF_IQ_CORR_TX_DC_I:  
+            if(value < 0)
+                value =  abs(value) | (1 << 5);
+            status = lusb_lms_write(dev,0x42,(uint8_t)value);
+            break;  
+        case BLADERF_IQ_CORR_TX_DC_Q:
+            if(value < 0)
+                value =  abs(value) | (1 << 5);
+            status = lusb_lms_write(dev,0x43,(uint8_t)value);
+            break;  
+        case BLADERF_IQ_CORR_RX_DC_I:
+            if(value < 0)
+                value =  abs(value) | (1 << 5);
+            status = lusb_lms_write(dev,0x71,(uint8_t)value);
+            break;  
+        case BLADERF_IQ_CORR_RX_DC_Q:
+            if(value < 0)
+                value = abs(value) | (1 << 5);
+            status = lusb_lms_write(dev,0x72,(uint8_t)value);
+            break;  
+        default:    
+            break;
+    }
+
+    return status;
+}
+
+
+static int print_fpga_correction(struct bladerf *dev, uint16_t addr, int16_t *value)
+{
+    int i = 0;
+    int status = 0;
+    struct uart_cmd cmd;
+    struct bladerf_lusb *lusb = dev->backend;
+
+	*value = 0;
+    for (i = 0; status == 0 && i < 2; i++) {
+        cmd.addr = i + addr;
+		cmd.data = 0xff;
+        status = access_peripheral(
+                                    lusb,
+                                    UART_PKT_DEV_GPIO,
+                                    UART_PKT_MODE_DIR_READ,
+                                    &cmd
+                                  );
+
+		*value |= (cmd.data << (i*8));
+
+        if (status < 0) {
+            break;
+        }
+    }
+
+    if (status < 0) {
+        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
+    }
+    return status;
+}
+
+static int lusb_print_correction(struct bladerf *dev, bladerf_correction_module module, int16_t *value)
+{    
+    int status = 0;
+	uint8_t tmp;
+    uint16_t addr = UART_PKT_DEV_RX_PHASE_ADDR;
+    struct bladerf_lusb *lusb = dev->backend;
+
+    switch(module)
+    {
+        case BLADERF_IQ_CORR_TX_GAIN:   addr += 2;
+        case BLADERF_IQ_CORR_TX_PHASE:  addr += 2;
+        case BLADERF_IQ_CORR_RX_GAIN:   addr += 2;
+        case BLADERF_IQ_CORR_RX_PHASE:
+            status = print_fpga_correction(dev,addr,value);
+            break;
+        case BLADERF_IQ_CORR_TX_DC_I:  
+            status = lusb_lms_read(dev,0x42,&tmp);
+			*value = tmp;
+            break;  
+        case BLADERF_IQ_CORR_TX_DC_Q:
+            status = lusb_lms_read(dev,0x43,&tmp);
+			*value = tmp;
+            break;  
+        case BLADERF_IQ_CORR_RX_DC_I:
+            status = lusb_lms_read(dev,0x71,&tmp);
+			*value = tmp;
+            break;  
+        case BLADERF_IQ_CORR_RX_DC_Q:
+            status = lusb_lms_read(dev,0x72,&tmp);
+			*value = tmp;
+            break;  
+        default:    
+            break;
     }
 
     return status;
@@ -2255,8 +2299,8 @@ const struct bladerf_fn bladerf_lusb_fn = {
     FIELD_INIT(.config_gpio_write, lusb_config_gpio_write),
     FIELD_INIT(.config_gpio_read, lusb_config_gpio_read),
 
-    FIELD_INIT(.config_dc_gain_write, lusb_set_dc_correction),
-    FIELD_INIT(.phase_gain_write, lusb_set_phase_gain_correction),
+    FIELD_INIT(.set_correction, lusb_set_correction),
+    FIELD_INIT(.print_correction, lusb_print_correction),
 
     FIELD_INIT(.si5338_write, lusb_si5338_write),
     FIELD_INIT(.si5338_read, lusb_si5338_read),

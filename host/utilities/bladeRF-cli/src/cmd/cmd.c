@@ -28,7 +28,7 @@
 #define DECLARE_CMD(x) int cmd_##x (struct cli_state *, int, char **)
 DECLARE_CMD(calibrate);
 DECLARE_CMD(clear);
-DECLARE_CMD(dc_gain);
+DECLARE_CMD(correct);
 DECLARE_CMD(echo);
 DECLARE_CMD(erase);
 DECLARE_CMD(flash_backup);
@@ -42,7 +42,6 @@ DECLARE_CMD(load);
 DECLARE_CMD(mimo);
 DECLARE_CMD(open);
 DECLARE_CMD(peek);
-DECLARE_CMD(phase_gain);
 DECLARE_CMD(poke);
 DECLARE_CMD(print);
 DECLARE_CMD(probe);
@@ -62,8 +61,7 @@ struct cmd {
     const char  *help;
 };
 
-static const char *cmd_names_dc_gain[] = { "dc_gain", "dc", NULL };
-static const char *cmd_names_phase_gain[] = {"phase_gain", NULL};
+static const char *cmd_names_correct[] = { "correct", NULL };
 static const char *cmd_names_calibrate[] = { "calibrate", "cal", NULL };
 static const char *cmd_names_clear[] = { "clear", "cls", NULL };
 static const char *cmd_names_echo[] = { "echo", NULL };
@@ -576,21 +574,11 @@ static const struct cmd cmd_table[] = {
         )
     },
     {
-        FIELD_INIT(.names, cmd_names_dc_gain),
-        FIELD_INIT(.exec, cmd_dc_gain),
-        FIELD_INIT(.desc, "Modify DC gain offset"),
+        FIELD_INIT(.names, cmd_names_correct),
+        FIELD_INIT(.exec, cmd_correct),
+        FIELD_INIT(.desc, "Correct for IQ Imbalances"),
         FIELD_INIT(.help,
-            "dc_gain <i_offset> <q_offset>\n"
-            "\n"
-            "Change the DC correction parameters for the IQ correction block.\n"
-        )
-    },
-    {
-        FIELD_INIT(.names, cmd_names_phase_gain),
-        FIELD_INIT(.exec, cmd_phase_gain),
-        FIELD_INIT(.desc, "Modify phase offset & gain"),
-        FIELD_INIT(.help,
-            "phase_gain [phase] [gain]\n"
+            "correct [tx|rx] [dc|phase|gain] [args]\n"
         )
     },
     /* Always terminate the command entry with a completely NULL entry */

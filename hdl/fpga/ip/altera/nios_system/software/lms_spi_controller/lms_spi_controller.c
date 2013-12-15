@@ -67,6 +67,13 @@
 #define OC_I2C_RXACK        (1<<7)
 #define OC_I2C_NACK         (1<<3)
 
+#define DEFAULT_GAIN_CORRECTION 0x1000
+#define GAIN_OFFSET 0
+#define DEFAULT_PHASE_CORRECTION 0x0000
+#define PHASE_OFFSET 16
+#define DEFAULT_CORRECTION ( (DEFAULT_PHASE_CORRECTION << PHASE_OFFSET)|  (DEFAULT_GAIN_CORRECTION << GAIN_OFFSET))
+
+
 void si5338_complete_transfer( uint8_t check_rxack ) {
     if( (IORD_8DIRECT(I2C, OC_I2C_CMD_STATUS)&OC_I2C_TIP) == 0 ) {
         while( (IORD_8DIRECT(I2C, OC_I2C_CMD_STATUS)&OC_I2C_TIP) == 0 ) { } ;
@@ -205,8 +212,8 @@ int main()
   IOWR_ALTERA_AVALON_UART_DIVISOR(UART_0_BASE, 19) ;
 
   // Set the IQ Correction parameters to 0
-  IOWR_ALTERA_AVALON_PIO_DATA(CORRECTION_DC_BASE, 0);
-  IOWR_ALTERA_AVALON_PIO_DATA(CORRECTION_PHASE_GAIN_BASE, 4096);
+  IOWR_ALTERA_AVALON_PIO_DATA(IQ_CORR_RX_PHASE_GAIN_BASE, DEFAULT_CORRECTION);
+  IOWR_ALTERA_AVALON_PIO_DATA(IQ_CORR_TX_PHASE_GAIN_BASE, DEFAULT_CORRECTION);
 
   /* Event loop never exits. */
   {
@@ -308,11 +315,11 @@ int main()
                         case 0:case 1:case 2: case 3:
                             device = PIO_0_BASE;break;
                         case 4: case 5: case 6: case 7:
-                            device = CORRECTION_DC_BASE;
+                            device = IQ_CORR_RX_PHASE_GAIN_BASE;
                             cmd_ptr->addr -= 4;
                             break;
                         case 8: case 9: case 10: case 11:
-                            device = CORRECTION_PHASE_GAIN_BASE;
+                            device = IQ_CORR_TX_PHASE_GAIN_BASE;
                             cmd_ptr->addr -= 8;
                             break;
                         case 12: case 13: case 14: case 15:
