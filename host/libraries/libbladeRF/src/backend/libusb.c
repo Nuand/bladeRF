@@ -716,10 +716,11 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
                     goto lusb_open__err_device_list;
                 }
 
-                status = lusb_populate_fpga_version(dev);
-                if (status < 0) {
-                    goto lusb_open__err_device_list;
-                }
+                /* The FPGA version is populated when rf link is established
+                 * (zeroize until then) */
+                dev->fpga_version.major = 0;
+                dev->fpga_version.minor = 0;
+                dev->fpga_version.patch = 0;
 
                 status = lusb_populate_fw_version(dev);
                 if (status < 0) {
@@ -1713,16 +1714,16 @@ static int lusb_set_correction(struct bladerf *dev, bladerf_correction_module mo
     int status = 0;
     uint8_t tmp = 0x00;
     uint8_t mask = 0x00;
-    uint8_t addr = UART_PKT_DEV_RX_PHASE_ADDR;
+    uint8_t addr = UART_PKT_DEV_RX_GAIN_ADDR;
 
     switch(module)
     {
         //the fall-through here is intentional and
         //maps to the correct address within the lms_spi_controller code
-        case BLADERF_IQ_CORR_TX_GAIN:   addr += 2;
         case BLADERF_IQ_CORR_TX_PHASE:  addr += 2;
-        case BLADERF_IQ_CORR_RX_GAIN:   addr += 2;
-        case BLADERF_IQ_CORR_RX_PHASE:
+        case BLADERF_IQ_CORR_TX_GAIN:   addr += 2;
+        case BLADERF_IQ_CORR_RX_PHASE:  addr += 2;
+        case BLADERF_IQ_CORR_RX_GAIN:
             //return from fpga based correction here
             return set_fpga_correction(dev,addr,value);
         case BLADERF_IQ_CORR_TX_DC_I:
@@ -1797,16 +1798,19 @@ static int lusb_print_correction(struct bladerf *dev, bladerf_correction_module 
 {
     int status = 0;
 	uint8_t tmp;
-    uint8_t addr = UART_PKT_DEV_RX_PHASE_ADDR;
+    uint8_t mask = 0xff;
+    uint8_t addr = UART_PKT_DEV_RX_GAIN_ADDR;
 
     switch(module)
     {
-        case BLADERF_IQ_CORR_TX_GAIN:   addr += 2;
+        //the fall-through here is intentional and
+        //maps to the correct address within the lms_spi_controller code
         case BLADERF_IQ_CORR_TX_PHASE:  addr += 2;
-        case BLADERF_IQ_CORR_RX_GAIN:   addr += 2;
-        case BLADERF_IQ_CORR_RX_PHASE:
-            status = print_fpga_correction(dev,addr,value);
-            break;
+        case BLADERF_IQ_CORR_TX_GAIN:   addr += 2;
+        case BLADERF_IQ_CORR_RX_PHASE:  addr += 2;
+        case BLADERF_IQ_CORR_RX_GAIN:
+            //return from fpga based correction here
+            return print_fpga_correction(dev,addr,value);
         case BLADERF_IQ_CORR_TX_DC_I:
             addr = 0x42;
             break;
@@ -1814,9 +1818,11 @@ static int lusb_print_correction(struct bladerf *dev, bladerf_correction_module 
             addr = 0x43;
             break;
         case BLADERF_IQ_CORR_RX_DC_I:
+            mask = 0x7f;
             addr = 0x71;
             break;
         case BLADERF_IQ_CORR_RX_DC_Q:
+            mask = 0x7f;
             addr = 0x72;
             break;
         default:
@@ -1824,7 +1830,7 @@ static int lusb_print_correction(struct bladerf *dev, bladerf_correction_module 
     }
 
     status = lusb_lms_read(dev,addr,&tmp);
-    *value = tmp;
+    *value = tmp & mask;
 
     if (status < 0) {
         bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
