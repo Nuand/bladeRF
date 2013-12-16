@@ -1713,7 +1713,6 @@ static int lusb_set_correction(struct bladerf *dev, bladerf_correction_module mo
 {
     int status = 0;
     uint8_t tmp = 0x00;
-    uint8_t mask = 0x00;
     uint8_t addr = UART_PKT_DEV_RX_GAIN_ADDR;
 
     switch(module)
@@ -1733,11 +1732,9 @@ static int lusb_set_correction(struct bladerf *dev, bladerf_correction_module mo
             addr = 0x43;
             break;
         case BLADERF_IQ_CORR_RX_DC_I:
-            mask = 0x80;
             addr = 0x71;
             break;
         case BLADERF_IQ_CORR_RX_DC_Q:
-            mask = 0x80;
             addr = 0x72;
             break;
         default:
@@ -1750,14 +1747,17 @@ static int lusb_set_correction(struct bladerf *dev, bladerf_correction_module mo
         return status;
     }
 
-    //mask out any bits in the dc correction area
-    tmp = tmp & mask;
-    if(value < 0)
-        value = (abs(value) & 0x3f )|(1 << 6);
-    else
-        value = value & 0x3f;
+    //mask out any control bits in the RX DC correction area
+    if ((module == BLADERF_IQ_CORR_RX_DC_I) || (module == BLADERF_IQ_CORR_RX_DC_Q) )
+    {
+        tmp = tmp & 0x80;
+        if(value < 0)
+            value = (abs(value) & 0x3f )|(1 << 6);
+        else
+            value = value & 0x3f;
+        value |= tmp;
+    }
 
-    value |= tmp;
 
     return lusb_lms_write(dev,addr,(uint8_t)value);
 }
@@ -1770,10 +1770,10 @@ static int print_fpga_correction(struct bladerf *dev, uint8_t addr, int16_t *val
     struct uart_cmd cmd;
     struct bladerf_lusb *lusb = dev->backend;
 
-	*value = 0;
+    *value = 0;
     for (i = 0; status == 0 && i < 2; i++) {
         cmd.addr = i + addr;
-		cmd.data = 0xff;
+        cmd.data = 0xff;
         status = access_peripheral(
                                     lusb,
                                     UART_PKT_DEV_GPIO,
@@ -1781,7 +1781,7 @@ static int print_fpga_correction(struct bladerf *dev, uint8_t addr, int16_t *val
                                     &cmd
                                   );
 
-		*value |= (cmd.data << (i*8));
+        *value |= (cmd.data << (i*8));
 
         if (status < 0) {
             break;
@@ -1797,8 +1797,7 @@ static int print_fpga_correction(struct bladerf *dev, uint8_t addr, int16_t *val
 static int lusb_print_correction(struct bladerf *dev, bladerf_correction_module module, int16_t *value)
 {
     int status = 0;
-	uint8_t tmp;
-    uint8_t mask = 0xff;
+    uint8_t tmp;
     uint8_t addr = UART_PKT_DEV_RX_GAIN_ADDR;
 
     switch(module)
@@ -1818,11 +1817,9 @@ static int lusb_print_correction(struct bladerf *dev, bladerf_correction_module 
             addr = 0x43;
             break;
         case BLADERF_IQ_CORR_RX_DC_I:
-            mask = 0x7f;
             addr = 0x71;
             break;
         case BLADERF_IQ_CORR_RX_DC_Q:
-            mask = 0x7f;
             addr = 0x72;
             break;
         default:
@@ -1830,7 +1827,20 @@ static int lusb_print_correction(struct bladerf *dev, bladerf_correction_module 
     }
 
     status = lusb_lms_read(dev,addr,&tmp);
-    *value = tmp & mask;
+
+    //mask out any control bits in the RX DC correction area
+    if ((module == BLADERF_IQ_CORR_RX_DC_I) || (module == BLADERF_IQ_CORR_RX_DC_Q) )
+    {
+        tmp = tmp & 0x7f;
+        if(tmp & (1 << 6))
+            *value = -(tmp &0x3f);
+        else
+            *value = tmp & 0x3f;
+    }
+    else
+    {
+        *value = (int8_t)tmp;
+    }
 
     if (status < 0) {
         bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
