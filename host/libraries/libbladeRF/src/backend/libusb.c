@@ -268,6 +268,9 @@ static int lusb_device_is_bladerf(libusb_device *dev)
     } else {
         if( desc.idVendor == USB_NUAND_VENDOR_ID && desc.idProduct == USB_NUAND_BLADERF_PRODUCT_ID ) {
             rv = 1;
+        } else {
+            log_verbose("Non-bladeRF device found: VID %04x, PID %04x\n",
+                        desc.idVendor, desc.idProduct);
         }
     }
     return rv;
@@ -478,7 +481,6 @@ static int lusb_populate_fw_version(struct bladerf *dev)
             status = BLADERF_ERR_UNEXPECTED;
         }
     }
-
     return status;
 }
 
@@ -547,22 +549,20 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
     /* Iterate through all the USB devices */
     for( i = 0, n = 0; i < count; i++ ) {
         if( lusb_device_is_bladerf(list[i]) ) {
-            log_verbose( "Found a bladeRF\n" ) ;
+            log_verbose("Found a bladeRF (based upon VID/PID)\n");
 
-            /* Open the USB device and get some information
-             *
-             * FIXME in order for the bladerf_devinfo_matches() to work, this
-             *       routine has to be able to get the serial #.
-             */
+            /* Open the USB device and get some information */
             status = lusb_get_devinfo( list[i], &thisinfo );
             if(status < 0) {
-                log_debug( "Could not open bladeRF device: %s\n", libusb_error_name(status) );
+                log_debug("Could not open bladeRF device: %s\n",
+                          libusb_error_name(status) );
+
                 status = error_libusb2bladerf(status);
                 goto lusb_open__err_context;
             }
             thisinfo.instance = n++;
 
-            /* Check to see if this matches the info stuct */
+            /* Check to see if this matches the info struct */
             if( bladerf_devinfo_matches( &thisinfo, info ) ) {
 
                 /* Allocate backend structure and populate*/
@@ -598,6 +598,8 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
 
                 lusb = (struct bladerf_lusb *)malloc(sizeof(struct bladerf_lusb));
                 if (!lusb) {
+                    log_debug("Skipping instance %d due to failed allocation\n",
+                              thisinfo.instance);
                     free((void *)dev->fw_version.describe);
                     free((void *)dev->fpga_version.describe);
                     free(dev);
@@ -635,6 +637,8 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
 
                 status = lusb_populate_fw_version(dev);
                 if (status < 0) {
+                    log_debug("Failed to populate FW version (instance %d): %s\n",
+                              bladerf_strerror(status));
                     goto lusb_open__err_device_list;
                 }
 
@@ -642,11 +646,13 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
                         (dev->fw_version.major == FW_LEGACY_ALT_SETTING_MAJOR &&
                          dev->fw_version.minor < FW_LEGACY_ALT_SETTING_MINOR)) {
                     dev->legacy = LEGACY_ALT_SETTING;
+                    log_verbose("Legacy alt setting detected.\n");
                 }
 
                 if (dev->fw_version.major < FW_LEGACY_CONFIG_IF_MAJOR ||
                         (dev->fw_version.major == FW_LEGACY_CONFIG_IF_MAJOR && dev->fw_version.minor < FW_LEGACY_CONFIG_IF_MINOR)) {
                     dev->legacy |= LEGACY_CONFIG_IF;
+                    log_verbose("Legacy config i/f detected.\n");
                 }
 
                 /* Claim interfaces */
@@ -661,6 +667,12 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
 
                 log_verbose( "Claimed all inferfaces successfully\n" );
                 break;
+            } else {
+                log_verbose("Devinfo doesn't match - skipping"
+                            "(instance=%d, serial=%d, bus/addr=%d\n",
+                            bladerf_instance_matches(&thisinfo, info),
+                            bladerf_serial_matches(&thisinfo, info),
+                            bladerf_bus_addr_matches(&thisinfo, info));
             }
         }
 
@@ -2033,6 +2045,8 @@ int lusb_probe(struct bladerf_devinfo_list *info_list)
     /* Iterate through all the USB devices */
     for( i = 0, n = 0; i < count && status == 0; i++ ) {
         if( lusb_device_is_bladerf(list[i]) ) {
+            log_verbose("Found bladeRF (based upon VID/PID)\n");
+
             /* Open the USB device and get some information */
             status = lusb_get_devinfo( list[i], &info );
             if( status ) {
@@ -2042,6 +2056,9 @@ int lusb_probe(struct bladerf_devinfo_list *info_list)
                 status = bladerf_devinfo_list_add(info_list, &info);
                 if( status ) {
                     log_error( "Could not add device to list: %s\n", bladerf_strerror(status) );
+                } else {
+                    log_verbose("Added instance %d to device list\n",
+                                info.instance);
                 }
             }
         }
