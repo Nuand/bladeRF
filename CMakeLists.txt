@@ -10,7 +10,7 @@ option(ENABLE_HOST_BUILD
 
 option(ENABLE_FX3_BUILD
        "Build the Cypress FX3 firmware component"
-       ON
+       OFF
 )
 
 #####################################################################
