@@ -82,7 +82,8 @@ int backend_open(struct bladerf **device, struct bladerf_devinfo *info) {
 
 int backend_probe(struct bladerf_devinfo **devinfo_items, size_t *num_items)
 {
-    int probe_status, backend_status;
+    int status;
+    int first_backend_error = 0;
     struct bladerf_devinfo_list list;
     size_t i;
     const size_t n_backends = ARRAY_SIZE(backend_list);
@@ -90,34 +91,39 @@ int backend_probe(struct bladerf_devinfo **devinfo_items, size_t *num_items)
     *devinfo_items = NULL;
     *num_items = 0;
 
-    probe_status = bladerf_devinfo_list_init(&list);
+    status = bladerf_devinfo_list_init(&list);
+    if (status != 0) {
+        log_debug("Failed to initialize devinfo list: %s\n",
+                  bladerf_strerror(status));
+        return status;
+    }
 
-    if (probe_status == 0) {
-        for (i = 0; i < n_backends && probe_status == 0; i++) {
-            backend_status = backend_list[i].fns->probe(&list);
+    for (i = 0; i < n_backends; i++) {
+        status = backend_list[i].fns->probe(&list);
 
-            /* Error out if a backend hit any concerning error */
-            if (backend_status  < 0 && backend_status != BLADERF_ERR_NODEV) {
-                probe_status = backend_status;
+        if (status < 0 && status != BLADERF_ERR_NODEV) {
+            log_debug("Probe failed on backend %d: %s\n",
+                      i, bladerf_strerror(status));
+
+            if (!first_backend_error) {
+                first_backend_error = status;
             }
         }
     }
 
-    if (probe_status == 0) {
-        *num_items = list.num_elt;
+    *num_items = list.num_elt;
 
-        if (*num_items != 0) {
-            *devinfo_items = list.elt;
-        } else {
-            /* For no items, we end up passing back a NULL list to the
-             * API caller, so we'll just free this up now */
-            free(list.elt);
-            probe_status = BLADERF_ERR_NODEV;
-        }
-
+    if (*num_items != 0) {
+        *devinfo_items = list.elt;
     } else {
+        /* For no items, we end up passing back a NULL list to the
+         * API caller, so we'll just free this up now */
         free(list.elt);
+
+        /* Report the first error that occurred if we couldn't find anything */
+        status =
+            first_backend_error == 0 ? BLADERF_ERR_NODEV : first_backend_error;
     }
 
-    return probe_status;
+    return status;
 }
