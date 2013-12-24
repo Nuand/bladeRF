@@ -16,6 +16,8 @@ vcom -work nuand -2008 ../../../ip/nuand/synthesis/lms6002d/vhdl/lms6002d.vhd
 vcom -work nuand -2008 ../../../ip/altera/pll/pll.vhd
 vcom -work nuand -2008 ../../../ip/altera/rx_fifo/rx_fifo.vhd
 vcom -work nuand -2008 ../../../ip/altera/tx_fifo/tx_fifo.vhd
+vcom -work nuand -2008 ../../../ip/altera/tx_meta_fifo/tx_meta_fifo.vhd
+vcom -work nuand -2008 ../../../ip/altera/rx_meta_fifo/rx_meta_fifo.vhd
 vcom -work nuand -2008 ../../../ip/altera/nios_system/simulation/nios_system.vhd
 
 vcom -work nuand -2008 ../vhdl/fx3_gpif.vhd

@@ -8,6 +8,10 @@ entity fifo_writer is
     reset               :   in      std_logic ;
     enable              :   in      std_logic ;
 
+    usb_speed           :   in      std_logic ;
+    meta_en             :   in      std_logic ;
+    timestamp           :   in      unsigned(63 downto 0);
+
     in_i                :   in      signed(15 downto 0) ;
     in_q                :   in      signed(15 downto 0) ;
     in_valid            :   in      std_logic ;
@@ -18,6 +22,11 @@ entity fifo_writer is
     fifo_full           :   in      std_logic ;
     fifo_data           :   out     std_logic_vector(31 downto 0) ;
 
+    meta_fifo_full      :   in     std_logic;
+    meta_fifo_usedw     :   in     std_logic_vector(4 downto 0);
+    meta_fifo_data      :   out    std_logic_vector(127 downto 0);
+    meta_fifo_write     :   out    std_logic;
+
     overflow_led        :   buffer  std_logic ;
     overflow_count      :   buffer  unsigned(63 downto 0) ;
     overflow_duration   :   in      unsigned(15 downto 0)
@@ -26,10 +35,36 @@ end entity ;
 
 architecture simple of fifo_writer is
 
+    signal buf_enough    : std_logic;
+    signal dma_buf_sz    : signed(12 downto 0);
+    signal dma_downcount : signed(12 downto 0);
     signal overflow_recovering  :   std_logic ;
     signal overflow_detected    :   std_logic ;
 
 begin
+
+    dma_buf_sz <= to_signed(1014, dma_buf_sz'length) when usb_speed = '0' else to_signed(502, dma_downcount'length);
+    process( clock, reset)
+    begin
+        if( reset = '1') then
+            dma_downcount <= dma_buf_sz;
+        elsif( rising_edge( clock ) ) then
+            if (enable = '1' and meta_en = '1') then
+                if ( dma_downcount <= 0) then
+                    dma_downcount <= dma_buf_sz;
+                else
+                    dma_downcount <= dma_downcount - 1;
+                end if;
+            else
+                dma_downcount <= dma_buf_sz;
+            end if;
+        end if;
+    end process;
+
+    buf_enough <= '1' when ( dma_downcount = (dma_buf_sz)) else '0';
+
+    meta_fifo_write <= '1' when (enable = '1' and meta_en = '1' and buf_enough = '1') else '0';
+    meta_fifo_data <= x"FFFFFFFF" & std_logic_vector(timestamp) & x"12344321";
 
     -- Simple concatenation of samples
     fifo_data   <= std_logic_vector(in_q & in_i) ;

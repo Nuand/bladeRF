@@ -6,6 +6,8 @@ set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/a
 set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/nios_system/synthesis/nios_system.qip]]
 set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/rx_fifo/rx_fifo.qip]]
 set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/tx_fifo/tx_fifo.qip]]
+set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/tx_meta_fifo/tx_meta_fifo.qip]]
+set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/rx_meta_fifo/rx_meta_fifo.qip]]
 
 # Explicitly include Nios mem_init
 set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/nios_system/software/lms_spi_controller/mem_init/meminit.qip]]

@@ -102,6 +102,44 @@ architecture hosted_bladerf of bladerf is
     signal rx_sample_fifo   : fifo_t ;
     signal tx_sample_fifo   : fifo_t ;
 
+    type meta_fifo_tx_t is record
+        aclr    :   std_logic ;
+
+        wclock  :   std_logic ;
+        wdata   :   std_logic_vector(31 downto 0) ;
+        wreq    :   std_logic ;
+        wempty  :   std_logic ;
+        wfull   :   std_logic ;
+        wused   :   std_logic_vector(4 downto 0) ;
+
+        rclock  :   std_logic ;
+        rdata   :   std_logic_vector(127 downto 0) ;
+        rreq    :   std_logic ;
+        rempty  :   std_logic ;
+        rfull   :   std_logic ;
+        rused   :   std_logic_vector(2 downto 0) ;
+    end record ;
+    signal tx_meta_fifo     : meta_fifo_tx_t ;
+
+    type meta_fifo_rx_t is record
+        aclr    :   std_logic ;
+
+        wclock  :   std_logic ;
+        wdata   :   std_logic_vector(127 downto 0) ;
+        wreq    :   std_logic ;
+        wempty  :   std_logic ;
+        wfull   :   std_logic ;
+        wused   :   std_logic_vector(4 downto 0) ;
+
+        rclock  :   std_logic ;
+        rdata   :   std_logic_vector(31 downto 0) ;
+        rreq    :   std_logic ;
+        rempty  :   std_logic ;
+        rfull   :   std_logic ;
+        rused   :   std_logic_vector(6 downto 0) ;
+    end record ;
+    signal rx_meta_fifo     : meta_fifo_rx_t ;
+
     signal sys_rst_sync     : std_logic ;
 
     signal usb_speed        : std_logic ;
@@ -115,8 +153,16 @@ architecture hosted_bladerf of bladerf is
     signal tx_enable        : std_logic ;
     signal rx_enable        : std_logic ;
 
-    signal rx_sample_i      : signed(15 downto 0) ;
-    signal rx_sample_q      : signed(15 downto 0) ;
+    signal meta_en          : std_logic ;
+    signal tx_timestamp     : unsigned(63 downto 0) ;
+    signal rx_timestamp     : unsigned(63 downto 0) ;
+
+    signal rx_sample_raw_i  : signed(11 downto 0);
+    signal rx_sample_raw_q  : signed(11 downto 0);
+    signal rx_sample_raw_valid : std_logic;
+
+    signal rx_sample_i      : signed(11 downto 0) ;
+    signal rx_sample_q      : signed(11 downto 0) ;
     signal rx_sample_valid  : std_logic ;
 
     signal rx_gen_mode      : std_logic ;
@@ -214,6 +260,16 @@ begin
           ) ;
     end generate ;
 
+    U_meta_source : entity work.synchronizer
+      generic map (
+        RESET_LEVEL         =>  '0'
+      ) port map (
+        reset               =>  '0',
+        clock               =>  rx_clock,
+        async               =>  nios_gpio(9),
+        sync                =>  meta_en
+      ) ;
+
     U_sys_reset_sync : entity work.reset_synchronizer
       generic map (
         INPUT_LEVEL         =>  '1',
@@ -295,6 +351,27 @@ begin
         wrusedw             => tx_sample_fifo.wused
       );
 
+    -- TX meta fifo
+    tx_meta_fifo.aclr <= tx_reset ;
+    tx_meta_fifo.wclock <= fx3_pclk ;
+    tx_meta_fifo.rclock <= tx_clock ;
+    U_tx_meta_fifo : entity work.tx_meta_fifo
+      port map (
+        aclr                => tx_meta_fifo.aclr,
+        data                => tx_meta_fifo.wdata,
+        rdclk               => tx_meta_fifo.rclock,
+        rdreq               => tx_meta_fifo.rreq,
+        wrclk               => tx_meta_fifo.wclock,
+        wrreq               => tx_meta_fifo.wreq,
+        q                   => tx_meta_fifo.rdata,
+        rdempty             => tx_meta_fifo.rempty,
+        rdfull              => tx_meta_fifo.rfull,
+        rdusedw             => tx_meta_fifo.rused,
+        wrempty             => tx_meta_fifo.wempty,
+        wrfull              => tx_meta_fifo.wfull,
+        wrusedw             => tx_meta_fifo.wused
+      );
+
     -- RX sample fifo
     rx_sample_fifo.wclock <= rx_clock ;
     rx_sample_fifo.rclock <= fx3_pclk ;
@@ -315,6 +392,27 @@ begin
         wrusedw             => rx_sample_fifo.wused
       );
 
+    -- RX meta fifo
+    rx_meta_fifo.aclr <= rx_reset ;
+    rx_meta_fifo.wclock <= rx_clock ;
+    rx_meta_fifo.rclock <= fx3_pclk ;
+    U_rx_meta_fifo : entity work.rx_meta_fifo
+      port map (
+        aclr                => rx_meta_fifo.aclr,
+        data                => rx_meta_fifo.wdata,
+        rdclk               => rx_meta_fifo.rclock,
+        rdreq               => rx_meta_fifo.rreq,
+        wrclk               => rx_meta_fifo.wclock,
+        wrreq               => rx_meta_fifo.wreq,
+        q                   => rx_meta_fifo.rdata,
+        rdempty             => rx_meta_fifo.rempty,
+        rdfull              => rx_meta_fifo.rfull,
+        rdusedw             => rx_meta_fifo.rused,
+        wrempty             => rx_meta_fifo.wempty,
+        wrfull              => rx_meta_fifo.wfull,
+        wrusedw             => rx_meta_fifo.wused
+      );
+
     -- FX3 GPIF
     U_fx3_gpif : entity work.fx3_gpif
       port map (
@@ -323,6 +421,7 @@ begin
 
         usb_speed           =>  usb_speed,
 
+        meta_enable         =>  meta_en,
         rx_enable           =>  pclk_rx_enable,
         tx_enable           =>  pclk_tx_enable,
 
@@ -339,11 +438,24 @@ begin
         tx_fifo_usedw       =>  tx_sample_fifo.wused,
         tx_fifo_data        =>  tx_sample_fifo.wdata,
 
+        tx_meta_fifo_write  =>  tx_meta_fifo.wreq,
+        tx_meta_fifo_full   =>  tx_meta_fifo.wfull,
+        tx_meta_fifo_empty  =>  tx_meta_fifo.wempty,
+        tx_meta_fifo_usedw  =>  tx_meta_fifo.wused,
+        tx_meta_fifo_data   =>  tx_meta_fifo.wdata,
+
+
         rx_fifo_read        =>  rx_sample_fifo.rreq,
         rx_fifo_full        =>  rx_sample_fifo.rfull,
         rx_fifo_empty       =>  rx_sample_fifo.rempty,
         rx_fifo_usedw       =>  rx_sample_fifo.rused,
-        rx_fifo_data        =>  rx_sample_fifo.rdata
+        rx_fifo_data        =>  rx_sample_fifo.rdata,
+
+        rx_meta_fifo_read   =>  rx_meta_fifo.rreq,
+        rx_meta_fifo_full   =>  rx_meta_fifo.rfull,
+        rx_meta_fifo_empty  =>  rx_meta_fifo.rempty,
+        rx_meta_fifo_usedr  =>  rx_meta_fifo.rused,
+        rx_meta_fifo_data   =>  rx_meta_fifo.rdata
       ) ;
 
     -- Sample bridges
@@ -353,11 +465,20 @@ begin
         reset               =>  rx_reset,
         enable              =>  rx_enable,
 
+        usb_speed           =>  usb_speed,
+        meta_en             =>  meta_en,
+        timestamp           =>  rx_timestamp,
+
         fifo_clear          =>  rx_sample_fifo.aclr,
         fifo_full           =>  rx_sample_fifo.wfull,
         fifo_usedw          =>  rx_sample_fifo.wused,
         fifo_data           =>  rx_sample_fifo.wdata,
         fifo_write          =>  rx_sample_fifo.wreq,
+
+        meta_fifo_full      =>  rx_meta_fifo.wfull,
+        meta_fifo_usedw     =>  rx_meta_fifo.wused,
+        meta_fifo_data      =>  rx_meta_fifo.wdata,
+        meta_fifo_write     =>  rx_meta_fifo.wreq,
 
         in_i                =>  rx_sample_corrected_i,
         in_q                =>  rx_sample_corrected_q,
@@ -396,10 +517,18 @@ begin
         reset               =>  tx_reset,
         enable              =>  tx_enable,
 
+        meta_en             =>  meta_en,
+        timestamp           =>  tx_timestamp,
+
         fifo_empty          =>  tx_sample_fifo.rempty,
         fifo_usedw          =>  tx_sample_fifo.rused,
         fifo_data           =>  tx_sample_fifo.rdata,
         fifo_read           =>  tx_sample_fifo.rreq,
+
+        meta_fifo_empty     =>  tx_meta_fifo.rempty,
+        meta_fifo_usedw     =>  tx_meta_fifo.rused,
+        meta_fifo_data      =>  tx_meta_fifo.rdata,
+        meta_fifo_read      =>  tx_meta_fifo.rreq,
 
         out_i               =>  tx_sample_raw_i,
         out_q               =>  tx_sample_raw_q,
@@ -630,6 +759,32 @@ begin
 
     mini_exp1               <= 'Z';
     mini_exp2               <= 'Z';
+
+    process(tx_clock, tx_reset)
+    begin
+        if( tx_reset = '1') then
+            tx_timestamp <= (others => '0');
+        elsif( rising_edge( tx_clock )) then
+            if (tx_enable = '1') then
+                tx_timestamp <= tx_timestamp + 1;
+            else
+                tx_timestamp <= (others => '0');
+            end if;
+        end if;
+    end process;
+
+    process(rx_clock, rx_reset)
+    begin
+        if( rx_reset = '1') then
+            rx_timestamp <= (others => '0');
+        elsif( rising_edge( rx_clock )) then
+            if (rx_enable = '1') then
+                rx_timestamp <= rx_timestamp + 1;
+            else
+                rx_timestamp <= (others => '0');
+            end if;
+        end if;
+    end process;
 
 end architecture ; -- arch
 
