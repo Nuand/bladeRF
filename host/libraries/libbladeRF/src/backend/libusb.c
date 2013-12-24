@@ -1435,7 +1435,8 @@ static int access_peripheral(struct bladerf_lusb *lusb, int per, int dir,
                                            BLADERF_LIBUSB_TIMEOUT_MS);
 
     if (libusb_status < 0) {
-        log_error("could not access peripheral\n");
+        log_error("Failed to access peripheral: %s\n",
+                  libusb_error_name(libusb_status));
         return BLADERF_ERR_IO;
     }
 
