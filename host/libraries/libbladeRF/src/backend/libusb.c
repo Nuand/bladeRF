@@ -1757,6 +1757,15 @@ static int lusb_set_correction(struct bladerf *dev, bladerf_correction_module mo
             value = value & 0x3f;
         value |= tmp;
     }
+    else
+    {
+        //lms6002d 0x00 = -16, 0x80 = 0, 0xff = 15.9375
+        uint8_t tmp = value & 0x7f;
+        if (value >= 0)
+            value =  0x80 + tmp;
+        else
+            value = tmp;
+    }
 
 
     return lusb_lms_write(dev,addr,(uint8_t)value);
@@ -1797,7 +1806,7 @@ static int print_fpga_correction(struct bladerf *dev, uint8_t addr, int16_t *val
 static int lusb_print_correction(struct bladerf *dev, bladerf_correction_module module, int16_t *value)
 {
     int status = 0;
-    uint8_t tmp;
+    uint8_t tmp = 0;
     uint8_t addr = UART_PKT_DEV_RX_GAIN_ADDR;
 
     switch(module)

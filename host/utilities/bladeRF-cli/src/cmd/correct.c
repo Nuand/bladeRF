@@ -24,14 +24,15 @@
 #include "cmd.h"
 #include "conversions.h"
 
-#define MAX_DC_OFFSET 15
+#define MAX_RX_DC_OFFSET 15
+#define MAX_TX_DC_OFFSET 127
 #define MAX_PHASE (2048)
 #define MAX_GAIN (2048)
 
 int cmd_correct(struct cli_state *state, int argc, char **argv)
 {
     int rv = CMD_RET_OK;
-    int status;
+    int status=0;
     bool ok = true;
     bool isTx = false;
 
@@ -105,10 +106,12 @@ int cmd_correct(struct cli_state *state, int argc, char **argv)
         if (!strcasecmp(argv[2],"dc"))
         {
 			int16_t val_i,val_q;
+            int16_t max = isTx ? MAX_TX_DC_OFFSET : MAX_RX_DC_OFFSET;
+            int16_t min = isTx ? -(MAX_TX_DC_OFFSET +1) : -MAX_RX_DC_OFFSET;
 			
-            val_i = str2int( argv[3], -MAX_DC_OFFSET ,MAX_DC_OFFSET, &ok );
-            val_q = str2int( argv[4], -MAX_DC_OFFSET ,MAX_DC_OFFSET, &ok );
-			if(isTx)
+            val_i = str2int( argv[3], min, max, &ok );
+            val_q = str2int( argv[4], min, max, &ok );
+			if(isTx) 
 			{
 				status = bladerf_set_correction(state->dev,BLADERF_IQ_CORR_TX_DC_I, val_i);
 				status = bladerf_set_correction(state->dev,BLADERF_IQ_CORR_TX_DC_Q, val_q);
@@ -119,6 +122,9 @@ int cmd_correct(struct cli_state *state, int argc, char **argv)
 				status = bladerf_set_correction(state->dev,BLADERF_IQ_CORR_RX_DC_Q, val_q);
 			}
 
+        }
+        if (status < 0) {
+            cli_err(state, argv[0], "Error setting correction");
         }
 
     }     
