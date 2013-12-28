@@ -34,7 +34,7 @@ entity fx3 is
     -- FX3 UART
     rxd                 :   out     std_logic ;
     txd                 :   in      std_logic ;
-    csx                 :   in      std_logic ;
+    cts                 :   in      std_logic ;
 
     -- USB RX'd data output side
     usb_data_rx         :   out     std_logic_vector(31 downto 0) ;
@@ -85,7 +85,7 @@ begin
     usb_data_tx_clear   <= '1' ;
 
     -- UART loopback
-    rxd <= txd when csx = '0' else '0' ;
+    rxd <= txd when cts = '1' else '0' ;
     uart_data_rx <= (others =>'0') ;
     uart_data_rx_we <= '0' ;
     uart_data_tx_re <= '0' ;

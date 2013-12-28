@@ -64,7 +64,7 @@ architecture arch of bladerf_tb is
     type fx3_uart_t is record
         rxd             :   std_logic ;
         txd             :   std_logic ;
-        csx             :   std_logic ;
+        cts             :   std_logic ;
     end record ;
 
     procedure nop( signal clock : in std_logic ; count : in natural ) is
@@ -159,7 +159,7 @@ begin
         fx3_ctl             => fx3_gpif.ctl,
         fx3_uart_rxd        => fx3_uart.rxd,
         fx3_uart_txd        => fx3_uart.txd,
-        fx3_uart_csx        => fx3_uart.csx,
+        fx3_uart_cts        => fx3_uart.cts,
 
         -- Reference signals
         ref_1pps            => refexp_1pps,
@@ -216,7 +216,7 @@ begin
         -- UART
         fx3_uart_rxd        => fx3_uart.rxd,
         fx3_uart_txd        => fx3_uart.txd,
-        fx3_uart_csx        => fx3_uart.csx
+        fx3_uart_cts        => fx3_uart.cts
       ) ;
 
     -- Create an accurate 1pps signal that is 1 ms wide

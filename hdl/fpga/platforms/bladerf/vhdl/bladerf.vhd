@@ -72,7 +72,7 @@ entity bladerf is
     fx3_ctl             :   inout   std_logic_vector(12 downto 0) ;
     fx3_uart_rxd        :   out     std_logic ;
     fx3_uart_txd        :   in      std_logic ;
-    fx3_uart_csx        :   in      std_logic ;
+    fx3_uart_cts        :   out     std_logic ;
 
     -- Reference signals
     ref_1pps            :   in      std_logic ;

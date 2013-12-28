@@ -486,28 +486,28 @@ begin
     -- NIOS control system for si5338, vctcxo trim and lms control
     U_nios_system : nios_system
       port map (
-        clk_clk             => \80MHz\,
-        reset_reset_n       => '1',
-        dac_MISO            => dac_sdo,
-        dac_MOSI            => dac_sdi,
-        dac_SCLK            => dac_sclk,
-        dac_SS_n            => dac_csx,
-        spi_MISO            => lms_sdo,
-        spi_MOSI            => lms_sdio,
-        spi_SCLK            => lms_sclk,
-        spi_SS_n            => lms_sen,
-        uart_rxd            => fx3_uart_txd,
-        uart_txd            => fx3_uart_rxd,
-        gpio_export         => nios_gpio,
+        clk_clk                         => \80MHz\,
+        reset_reset_n                   => '1',
+        dac_MISO                        => dac_sdo,
+        dac_MOSI                        => dac_sdi,
+        dac_SCLK                        => dac_sclk,
+        dac_SS_n                        => dac_csx,
+        spi_MISO                        => lms_sdo,
+        spi_MOSI                        => lms_sdio,
+        spi_SCLK                        => lms_sclk,
+        spi_SS_n                        => lms_sen,
+        uart_rxd                        => fx3_uart_txd,
+        uart_txd                        => fx3_uart_rxd,
+        gpio_export                     => nios_gpio,
         correction_dc_export            => correction_dc_export,
         correction_phase_gain_export    => correction_phase_gain_export,
-        oc_i2c_scl_pad_o    => i2c_scl_out,
-        oc_i2c_scl_padoen_o => i2c_scl_oen,
-        oc_i2c_sda_pad_i    => i2c_sda_in,
-        oc_i2c_sda_pad_o    => i2c_sda_out,
-        oc_i2c_sda_padoen_o => i2c_sda_oen,
-        oc_i2c_arst_i       => '0',
-        oc_i2c_scl_pad_i    => i2c_scl_in
+        oc_i2c_scl_pad_o                => i2c_scl_out,
+        oc_i2c_scl_padoen_o             => i2c_scl_oen,
+        oc_i2c_sda_pad_i                => i2c_sda_in,
+        oc_i2c_sda_pad_o                => i2c_sda_out,
+        oc_i2c_sda_padoen_o             => i2c_sda_oen,
+        oc_i2c_arst_i                   => '0',
+        oc_i2c_scl_pad_i                => i2c_scl_in
       ) ;
 
     -- IO for NIOS
@@ -563,6 +563,9 @@ begin
 
     lms_tx_v                <= nios_gpio(4 downto 3) ;
     lms_rx_v                <= nios_gpio(6 downto 5) ;
+
+    -- CTS and the SPI CSx are tied to the same signal.  When we are in reset, allow for SPI accesses
+    fx3_uart_cts            <= '1' when sys_rst = '0' else '0'  ;
 
     exp_spi_clock           <= '0' ;
     exp_spi_mosi            <= '0' ;

@@ -71,7 +71,7 @@ set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[3]
 set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[2]
 set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[1]
 set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_gpif[0]
-set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_uart_csx
+set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_uart_cts
 set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_uart_rxd
 set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_uart_txd
 set_instance_assignment -name IO_STANDARD "1.8 V" -to lms_pll_out
@@ -196,7 +196,7 @@ set_location_assignment PIN_A5 -to fx3_gpif[3]
 set_location_assignment PIN_B8 -to fx3_gpif[2]
 set_location_assignment PIN_B7 -to fx3_gpif[1]
 set_location_assignment PIN_B6 -to fx3_gpif[0]
-set_location_assignment PIN_AA4 -to fx3_uart_csx
+set_location_assignment PIN_AA4 -to fx3_uart_cts
 set_location_assignment PIN_AA5 -to fx3_uart_rxd
 set_location_assignment PIN_AA3 -to fx3_uart_txd
 set_location_assignment PIN_T21 -to lms_pll_out
