@@ -14,7 +14,7 @@ Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends}
 Depends: ${shlibs:Depends}, ${misc:Depends}, libusb-1.0-0 (>= 1.0.12)
-Description: Interface to the nuand bladeRF software-defined radio device
+Description: nuand bladeRF software-defined radio device
  The nuand bladeRF is an open-source software-defined radio (SDR) system,
  comprised of an RF transceiver, a field-programmable gate array (FPGA),
  a microcontroller driving a USB 3.0 interface, and a suite of host
@@ -22,14 +22,14 @@ Description: Interface to the nuand bladeRF software-defined radio device
  .
  This package provides the host library.
 
-Package: libbladerf0-dev
+Package: libbladerf-dev
 Section: libdevel
 Architecture: any
 Multi-Arch: same
 Depends: libbladerf0 (= ${binary:Version}), libc6-dev | libc-dev, ${misc:Depends}
-Provides: libbladerf-dev
-Conflicts: libbladerf-dev
-Description: Interface to the nuand bladeRF software-defined radio device (header files)
+Replaces: libbladerf0-dev (<< 0.11.0+1SNAPSHOT20131229)
+Breaks: libbladerf0-dev (<< 0.11.0+1SNAPSHOT20131229)
+Description: nuand bladeRF software-defined radio device (header files)
  The nuand bladeRF is an open-source software-defined radio (SDR) system,
  comprised of an RF transceiver, a field-programmable gate array (FPGA),
  a microcontroller driving a USB 3.0 interface, and a suite of host
@@ -38,12 +38,19 @@ Description: Interface to the nuand bladeRF software-defined radio device (heade
  This package contains the header files required for compiling bladeRF
  applications.
 
+Package: libbladerf0-dev
+Depends: libbladerf-dev, ${misc:Depends}
+Architecture: all
+Section: oldlibs
+Description: transitional dummy package
+ This is a transitional dummy package.  It can safely be removed.
+
 Package: bladerf
 Section: comm
 Architecture: any
 Multi-Arch: foreign
 Depends: libbladerf0 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Description: Interface to the nuand bladeRF software-defined radio device (tools)
+Description: nuand bladeRF software-defined radio device (tools)
  The nuand bladeRF is an open-source software-defined radio (SDR) system,
  comprised of an RF transceiver, a field-programmable gate array (FPGA),
  a microcontroller driving a USB 3.0 interface, and a suite of host

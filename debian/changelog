@@ -1,4 +1,10 @@
-bladerf (0~20131006-1) UNRELEASED; urgency=low
+bladerf (0~20131229-1) UNRELEASED; urgency=low
+
+  * Rename libbladerf0-dev -> libbladerf-dev
+
+ -- Ryan Tucker <rtucker@gmail.com>  Sun, 29 Dec 2013 16:04:17 -0500
+
+bladerf (0~20131006-1) unstable; urgency=low
 
   * Another experimental release
   * Make it work
@@ -7,7 +13,7 @@ bladerf (0~20131006-1) UNRELEASED; urgency=low
 
  -- Ryan Tucker <rtucker@gmail.com>  Sun, 06 Oct 2013 19:38:31 -0400
 
-bladerf (0~20130929-1) UNRELEASED; urgency=low
+bladerf (0~20130929-1) unstable; urgency=low
 
   * Initial Debian packaging (Closes: #121)
 
