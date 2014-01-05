@@ -176,8 +176,15 @@ void bladerf_close(struct bladerf *dev)
 int bladerf_enable_module(struct bladerf *dev,
                             bladerf_module m, bool enable)
 {
+    int status;
+    log_debug("Enable Module: %s - %s\n",
+                (m == BLADERF_MODULE_RX) ? "RX" : "TX",
+                enable ? "True" : "False") ;
+
     lms_enable_rffe(dev, m, enable);
-    return 0;
+    status = dev->fn->enable_module(dev, m, enable);
+
+    return status;
 }
 
 int bladerf_set_loopback(struct bladerf *dev, bladerf_loopback l)
@@ -647,6 +654,9 @@ void bladerf_deinit_stream(struct bladerf_stream *stream)
     return ;
 }
 
+/* No device control calls may be made in this function and the associated
+ * backend stream implementations, as the stream and control functionality are
+ * will generally be executed from separate thread contexts. */
 int bladerf_stream(struct bladerf_stream *stream, bladerf_module module)
 {
     int status;
@@ -1059,6 +1069,20 @@ int bladerf_config_gpio_write(struct bladerf *dev, uint32_t val)
     return dev->fn->config_gpio_write(dev,val);
 
 }
+
+/*------------------------------------------------------------------------------
+ * IQ Calibration routines
+ *----------------------------------------------------------------------------*/
+int bladerf_set_correction(struct bladerf *dev, bladerf_correction_module module, int16_t value)
+{
+    return dev->fn->set_correction(dev,module,value);
+}
+
+int bladerf_print_correction(struct bladerf *dev, bladerf_correction_module module, int16_t *value)
+{
+    return dev->fn->print_correction(dev,module,value);
+}
+
 
 /*------------------------------------------------------------------------------
  * VCTCXO DAC register write

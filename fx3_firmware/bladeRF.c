@@ -235,15 +235,22 @@ CyBool_t GetStatus(uint16_t endpoint) {
     return isHandled;
 }
 
-void ClearDMAChannel(uint8_t ep, CyU3PDmaChannel * handle, uint32_t count, CyBool_t stall_only) {
+void ClearDMAChannel(uint8_t ep, CyU3PDmaChannel * handle, uint32_t count,
+                     CyBool_t stall_only) {
+
+    CyU3PReturnStatus_t status;
+
     CyU3PDmaChannelReset (handle);
     CyU3PUsbFlushEp(ep);
     CyU3PUsbResetEp(ep);
-    CyU3PDmaChannelSetXfer (handle, count);
-    CyU3PUsbStall (ep, CyFalse, CyTrue);
+    status = CyU3PDmaChannelSetXfer (handle, count);
 
-    if(!stall_only) {
-        CyU3PUsbAckSetup ();
+    if (status == CY_U3P_SUCCESS) {
+        CyU3PUsbStall (ep, CyFalse, CyTrue);
+
+        if(!stall_only) {
+            CyU3PUsbAckSetup ();
+        }
     }
 }
 
@@ -330,7 +337,8 @@ CyBool_t NuandHandleVendorRequest(
     CyU3PReturnStatus_t apiRetStatus = CY_U3P_SUCCESS;
     int retStatus;
     uint16_t readC;
-
+    CyBool_t txen, rxen;
+    txen = rxen = CyFalse ;
     isHandled = CyTrue;
 
     switch (bRequest)
@@ -342,9 +350,6 @@ CyBool_t NuandHandleVendorRequest(
     break;
 
     case BLADE_USB_CMD_RF_RX:
-        CyU3PGpioSetValue(GPIO_SYS_RST, CyTrue);
-        CyU3PGpioSetValue(GPIO_SYS_RST, CyFalse);
-
         apiRetStatus = CY_U3P_SUCCESS;
         use_feature = wValue;
 
@@ -357,14 +362,18 @@ CyBool_t NuandHandleVendorRequest(
             }
         }
 
-        apiRetStatus = CyU3PGpioSetValue(GPIO_RX_EN, use_feature ? CyTrue : CyFalse);
+        CyU3PGpioGetValue(GPIO_TX_EN, &txen) ;
+        CyU3PGpioGetValue(GPIO_RX_EN, &rxen) ;
+        if (txen == CyFalse && rxen == CyFalse) {
+            CyU3PGpioSetValue(GPIO_SYS_RST, CyTrue) ;
+            CyU3PGpioSetValue(GPIO_SYS_RST, CyFalse);
+        }
+
+        CyU3PGpioSetValue(GPIO_RX_EN, use_feature ? CyTrue : CyFalse);
         CyU3PUsbSendRetCode(apiRetStatus);
     break;
 
     case BLADE_USB_CMD_RF_TX:
-        CyU3PGpioSetValue(GPIO_SYS_RST, CyTrue);
-        CyU3PGpioSetValue(GPIO_SYS_RST, CyFalse);
-
         apiRetStatus = CY_U3P_SUCCESS;
         use_feature = wValue;
 
@@ -377,7 +386,14 @@ CyBool_t NuandHandleVendorRequest(
             }
         }
 
-        apiRetStatus = CyU3PGpioSetValue(GPIO_TX_EN, use_feature ? CyTrue : CyFalse);
+        CyU3PGpioGetValue(GPIO_TX_EN, &txen) ;
+        CyU3PGpioGetValue(GPIO_RX_EN, &rxen) ;
+        if (txen == CyFalse && rxen == CyFalse) {
+            CyU3PGpioSetValue(GPIO_SYS_RST, CyTrue) ;
+            CyU3PGpioSetValue(GPIO_SYS_RST, CyFalse);
+        }
+
+        CyU3PGpioSetValue(GPIO_TX_EN, use_feature ? CyTrue : CyFalse);
         CyU3PUsbSendRetCode(apiRetStatus);
     break;
 

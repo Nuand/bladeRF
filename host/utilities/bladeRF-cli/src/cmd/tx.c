@@ -373,6 +373,9 @@ void *tx_task(void *cli_state_arg)
                 break;
 
             case RXTX_STATE_SHUTDOWN:
+                if (cli_state->dev) {
+                    bladerf_enable_module(cli_state->dev, BLADERF_MODULE_TX, false);
+                }
                 break;
 
             default:

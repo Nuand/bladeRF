@@ -30,10 +30,10 @@ entity bladerf is
     c4_clock            :   in      std_logic ;
 
     -- VCTCXO DAC
-    dac_sclk            :   out     std_logic ;
-    dac_sdi             :   out     std_logic ;
+    dac_sclk            :   out     std_logic := '0' ;
+    dac_sdi             :   out     std_logic := '0' ;
     dac_sdo             :   in      std_logic ;
-    dac_csx             :   out     std_logic ;
+    dac_csx             :   out     std_logic := '1' ;
 
     -- LEDs
     led                 :   buffer  std_logic_vector(3 downto 1) := (others =>'0') ;
@@ -42,7 +42,7 @@ entity bladerf is
     lms_rx_clock_out    :   in      std_logic ;
     lms_rx_data         :   in      signed(11 downto 0) ;
     lms_rx_enable       :   out     std_logic ;
-    lms_rx_iq_select    :   in      std_logic := '0' ;
+    lms_rx_iq_select    :   in      std_logic ;
     lms_rx_v            :   out     std_logic_vector(2 downto 1) ;
 
     -- LMS TX Interface
@@ -53,10 +53,10 @@ entity bladerf is
     lms_tx_v            :   out     std_logic_vector(2 downto 1) ;
 
     -- LMS SPI Interface
-    lms_sclk            :   buffer  std_logic ;
-    lms_sen             :   out     std_logic ;
-    lms_sdio            :   out     std_logic ;
-    lms_sdo             :   in      std_logic ;
+    lms_sclk            :   buffer  std_logic := '0' ;
+    lms_sen             :   out     std_logic := '1' ;
+    lms_sdio            :   out     std_logic := '0' ;
+    lms_sdo             :   in      std_logic := '0' ;
 
     -- LMS Control Interface
     lms_pll_out         :   in      std_logic ;
@@ -72,7 +72,7 @@ entity bladerf is
     fx3_ctl             :   inout   std_logic_vector(12 downto 0) ;
     fx3_uart_rxd        :   out     std_logic ;
     fx3_uart_txd        :   in      std_logic ;
-    fx3_uart_csx        :   in      std_logic ;
+    fx3_uart_cts        :   out     std_logic ;
 
     -- Reference signals
     ref_1pps            :   in      std_logic ;

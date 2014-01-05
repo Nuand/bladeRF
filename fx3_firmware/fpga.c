@@ -208,6 +208,9 @@ void NuandFpgaConfigStop(void)
     CyU3PEpConfig_t epCfg;
     CyU3PReturnStatus_t apiRetStatus = CY_U3P_SUCCESS;
 
+    /* Abort and clear the channel */
+    CyU3PDmaChannelReset(&glChHandlebladeRFUtoP);
+
     /* Flush the endpoint memory */
     CyU3PUsbFlushEp(BLADE_FPGA_EP_PRODUCER);
 
@@ -229,6 +232,7 @@ void NuandFpgaConfigStop(void)
 
     NuandAllowSuspend(CyTrue);
     glAppMode = MODE_NO_CONFIG;
+    CyU3PGpioSetValue(GPIO_SYS_RST, CyTrue);
 }
 
 uint8_t FPGA_status_bits[] = {

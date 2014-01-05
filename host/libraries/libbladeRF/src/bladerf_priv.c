@@ -25,6 +25,7 @@
 
 #include "bladerf_priv.h"
 #include "bladeRF.h"
+#include "lms.h"
 #include "log.h"
 
 #define OTP_BUFFER_SIZE 256
@@ -62,17 +63,27 @@ size_t c16_samples_to_bytes(size_t n_samples)
 
 int bladerf_init_device(struct bladerf *dev)
 {
+    int status;
     unsigned int actual;
     uint32_t val;
 
     /* Readback the GPIO values to see if they are default or already set */
-    bladerf_config_gpio_read( dev, &val );
+    status = bladerf_config_gpio_read( dev, &val );
+    if (status != 0) {
+        log_warning("Failed to read GPIO config, skipping device initialization: %s\n",
+                    bladerf_strerror(status));
+        return 0;
+    }
 
-    if (val == 0) {
+    if ((val&0x7f) == 0) {
         log_verbose( "Default GPIO value found - initializing device\n" );
 
         /* Set the GPIO pins to enable the LMS and select the low band */
         bladerf_config_gpio_write( dev, 0x57 );
+
+        /* Disable the front ends */
+        lms_enable_rffe(dev, BLADERF_MODULE_TX, false);
+        lms_enable_rffe(dev, BLADERF_MODULE_RX, false);
 
         /* Set the internal LMS register to enable RX and TX */
         bladerf_lms_write( dev, 0x05, 0x3e );
@@ -89,16 +100,9 @@ int bladerf_init_device(struct bladerf *dev)
         /* LMS FAQ: Higher LNA Gain */
         bladerf_lms_write( dev, 0x79, 0x37 );
 
-        /* FPGA workaround: Set IQ polarity for RX */
-        bladerf_lms_write( dev, 0x5a, 0xa0 );
-
         /* Set a default saplerate */
         bladerf_set_sample_rate( dev, BLADERF_MODULE_TX, 1000000, &actual );
         bladerf_set_sample_rate( dev, BLADERF_MODULE_RX, 1000000, &actual );
-
-        /* Enable TX and RX */
-        bladerf_enable_module( dev, BLADERF_MODULE_TX, false );
-        bladerf_enable_module( dev, BLADERF_MODULE_RX, false );
 
         /* Set a default frequency of 1GHz */
         bladerf_set_frequency( dev, BLADERF_MODULE_TX, 1000000000 );
