@@ -774,20 +774,7 @@ static void extractSerialAndCal(void)
 
 void bladeRFInit(void)
 {
-    CyU3PPibClock_t pibClock;
     CyU3PReturnStatus_t apiRetStatus = CY_U3P_SUCCESS;
-
-    /* Initialize the p-port block. */
-    pibClock.clkDiv = 4;
-    pibClock.clkSrc = CY_U3P_SYS_CLK;
-    pibClock.isHalfDiv = CyFalse;
-    /* Enable DLL for async GPIF */
-    pibClock.isDllEnable = CyFalse;
-    apiRetStatus = CyU3PPibInit(CyTrue, &pibClock);
-    if (apiRetStatus != CY_U3P_SUCCESS) {
-        CyU3PDebugPrint (4, "P-port Initialization failed, Error Code = %d\n",apiRetStatus);
-        CyFxAppErrorHandler(apiRetStatus);
-    }
 
     /* Start the USB functionality. */
     apiRetStatus = CyU3PUsbStart();
@@ -977,7 +964,6 @@ void CyFxApplicationDefine(void)
  */
 int main(void)
 {
-    CyU3PIoMatrixConfig_t io_cfg;
     CyU3PReturnStatus_t status = CY_U3P_SUCCESS;
 
     /* Initialize the device */
@@ -993,24 +979,6 @@ int main(void)
     }
 
     NuandFpgaConfigSwInit();
-
-    io_cfg.useUart   = CyTrue;
-    io_cfg.useI2C    = CyFalse;
-    io_cfg.useI2S    = CyFalse;
-    io_cfg.useSpi    = CyFalse;
-    io_cfg.isDQ32Bit = CyTrue;
-    io_cfg.lppMode   = CY_U3P_IO_MATRIX_LPP_DEFAULT;
-
-    /* No GPIOs are enabled. */
-    io_cfg.gpioSimpleEn[0]  = 0;
-    io_cfg.gpioSimpleEn[1]  = 0;
-    io_cfg.gpioComplexEn[0] = 0;
-    io_cfg.gpioComplexEn[1] = 0;
-    status = CyU3PDeviceConfigureIOMatrix (&io_cfg);
-    if (status != CY_U3P_SUCCESS)
-    {
-        goto handle_fatal_error;
-    }
 
     /* This is a non returnable call for initializing the RTOS kernel */
     CyU3PKernelEntry();
