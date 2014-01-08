@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <pthread.h>
 
 #include "cmd.h"
 #include "conversions.h"
@@ -735,7 +736,13 @@ int cmd_handle(struct cli_state *s, const char *line)
 
         if (cmd) {
             if (cmd->exec) {
+                /* Commands own the device handle while they're executing.
+                 * This is needed to prevent races on the device handle while
+                 * the RX/TX make any necessary control calls while
+                 * starting up or finishing up a stream() call*/
+                pthread_mutex_lock(&s->dev_lock);
                 ret = cmd->exec(s, argc, argv);
+                pthread_mutex_unlock(&s->dev_lock);
             } else {
                 ret = CMD_RET_QUIT;
             }

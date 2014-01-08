@@ -342,17 +342,6 @@ void *tx_task(void *cli_state_arg)
                     err_type = ETYPE_BLADERF;
                 }
 
-                /* Enable the TX module */
-                if (status == 0) {
-                    status = bladerf_enable_module(cli_state->dev,
-                                                    BLADERF_MODULE_TX, true);
-
-                    if (status < 0) {
-                        err_type = ETYPE_BLADERF;
-                    }
-
-                }
-
                 if (status == 0) {
                     rxtx_set_state(tx, RXTX_STATE_RUNNING);
                 } else {
@@ -365,17 +354,14 @@ void *tx_task(void *cli_state_arg)
             break;
 
             case RXTX_STATE_RUNNING:
-                rxtx_task_exec_running(tx);
+                rxtx_task_exec_running(tx, cli_state);
                 break;
 
             case RXTX_STATE_STOP:
-                rxtx_task_exec_stop(tx, &requests, cli_state->dev);
+                rxtx_task_exec_stop(tx, &requests);
                 break;
 
             case RXTX_STATE_SHUTDOWN:
-                if (cli_state->dev) {
-                    bladerf_enable_module(cli_state->dev, BLADERF_MODULE_TX, false);
-                }
                 break;
 
             default:

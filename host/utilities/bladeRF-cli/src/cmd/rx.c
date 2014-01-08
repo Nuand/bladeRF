@@ -269,16 +269,6 @@ void *rx_task(void *cli_state_arg)
                     pthread_mutex_unlock(&rx->data_mgmt.lock);
                 }
 
-                /* Enable the RX module */
-                if (status == 0) {
-                    status = bladerf_enable_module(cli_state->dev,
-                                                    BLADERF_MODULE_RX, true);
-
-                    if (status < 0) {
-                        err_type = ETYPE_BLADERF;
-                    }
-                }
-
                 if (status == 0) {
                     rxtx_set_state(rx, RXTX_STATE_RUNNING);
                 } else {
@@ -291,11 +281,11 @@ void *rx_task(void *cli_state_arg)
             break;
 
             case RXTX_STATE_RUNNING:
-                rxtx_task_exec_running(rx);
+                rxtx_task_exec_running(rx, cli_state);
                 break;
 
             case RXTX_STATE_STOP:
-                rxtx_task_exec_stop(rx, &requests, cli_state->dev);
+                rxtx_task_exec_stop(rx, &requests);
                 break;
 
             case RXTX_STATE_SHUTDOWN:

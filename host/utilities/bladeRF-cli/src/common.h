@@ -55,6 +55,8 @@ struct cli_error {
  */
 struct cli_state {
     struct bladerf *dev;            /**< Device currently in use */
+    pthread_mutex_t dev_lock;       /**< Should be held when performing
+                                     *   any "device conrol" calls */
 
     int last_lib_error;             /**< Last libbladeRF error */
 

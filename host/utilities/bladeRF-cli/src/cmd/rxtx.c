@@ -614,22 +614,38 @@ void rxtx_task_exec_idle(struct rxtx_data *rxtx, unsigned char *requests)
     *requests = 0;
 }
 
-void rxtx_task_exec_running(struct rxtx_data *rxtx)
+void rxtx_task_exec_running(struct rxtx_data *rxtx, struct cli_state *s)
 {
-    int status = bladerf_stream(rxtx->data_mgmt.stream, rxtx->module);
+    int status, disable_status;
+    struct bladerf *dev = s->dev;
+    pthread_mutex_t *dev_lock = &s->dev_lock;
+
+    pthread_mutex_lock(dev_lock);
+    status = bladerf_enable_module(dev, rxtx->module, true);
+    pthread_mutex_unlock(dev_lock);
 
     if (status < 0) {
         set_last_error(&rxtx->last_error, ETYPE_BLADERF, status);
+    } else {
+        status = bladerf_stream(rxtx->data_mgmt.stream, rxtx->module);
+        if (status < 0) {
+            set_last_error(&rxtx->last_error, ETYPE_BLADERF, status);
+        }
+
+        pthread_mutex_lock(dev_lock);
+        disable_status = bladerf_enable_module(dev, rxtx->module, false);
+        pthread_mutex_unlock(dev_lock);
+
+        if (status == 0 && disable_status < 0) {
+            set_last_error(&rxtx->last_error, ETYPE_BLADERF, status);
+        }
     }
 
     rxtx_set_state(rxtx, RXTX_STATE_STOP);
 }
 
-void rxtx_task_exec_stop(struct rxtx_data *rxtx, unsigned char *requests,
-                         struct bladerf *dev)
+void rxtx_task_exec_stop(struct rxtx_data *rxtx, unsigned char *requests)
 {
-    int status;
-
     *requests = rxtx_get_requests(rxtx,
                                   RXTX_TASK_REQ_STOP | RXTX_TASK_REQ_SHUTDOWN);
 
@@ -649,11 +665,6 @@ void rxtx_task_exec_stop(struct rxtx_data *rxtx, unsigned char *requests,
         rxtx_set_state(rxtx, RXTX_STATE_SHUTDOWN);
     } else {
         rxtx_set_state(rxtx, RXTX_STATE_IDLE);
-    }
-
-    status = bladerf_enable_module(dev, rxtx->module, false);
-    if (status < 0) {
-        set_last_error(&rxtx->last_error, ETYPE_BLADERF, status);
     }
 
     *requests = 0;

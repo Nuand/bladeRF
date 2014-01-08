@@ -100,6 +100,8 @@ struct cli_state *cli_state_create()
         cli_state->last_lib_error = 0;
         cli_state->scripts = NULL;
 
+        pthread_mutex_init(&cli_state->dev_lock, NULL);
+
         cli_state->rx = rxtx_data_alloc(BLADERF_MODULE_RX);
         if (!cli_state->rx) {
             goto cli_state_create_fail;

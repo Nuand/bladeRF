@@ -336,18 +336,17 @@ void rxtx_task_exec_idle(struct rxtx_data *rxtx, unsigned char *requests);
  * Handle the rx/tx task's RUNNING state
  *
  * @param   rxtx        RX/TX data handle
+ * @param   s           CLI state handle
  */
-void rxtx_task_exec_running(struct rxtx_data *rxtx);
+void rxtx_task_exec_running(struct rxtx_data *rxtx, struct cli_state *s);
 
 /**
  * Handle the rx/tx task's STOP state
  *
  * @param   rxtx        RX/TX data handle
  * @param   requests    Task's copy of pending requests
- * @param   dev         device handle
  */
-void rxtx_task_exec_stop(struct rxtx_data *rxtx, unsigned char *requests,
-                         struct bladerf *dev);
+void rxtx_task_exec_stop(struct rxtx_data *rxtx, unsigned char *requests);
 
 /**
  * Wait for a task to transition into the specified state
