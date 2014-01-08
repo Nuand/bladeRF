@@ -29,50 +29,93 @@ int cmd_calibrate(struct cli_state *state, int argc, char **argv)
     /* Valid commands:
         calibrate [module]
     */
-    int rv = CMD_RET_OK;
+    int status = 0;
+    int fpga_status;
+
     if (!cli_device_is_opened(state)) {
         return CMD_RET_NODEV;
     }
 
-    if( argc == 1 ) {
+    /* The FPGA needs to be loaded */
+    fpga_status = bladerf_is_fpga_configured(state->dev);
+    if (fpga_status < 0) {
+        state->last_lib_error = fpga_status;
+        return CMD_RET_LIBBLADERF;
+    } else if (fpga_status != 1) {
+        return CMD_RET_NOFPGA;
+    }
+
+
+    if  (argc == 1) {
+
         /* Ensure both TX and RX are enabled */
-        bladerf_enable_module(state->dev, BLADERF_MODULE_TX, true);
-        bladerf_enable_module(state->dev, BLADERF_MODULE_RX, true);
+        status = bladerf_enable_module(state->dev, BLADERF_MODULE_TX, true);
+        if (status != 0) {
+            goto cmd_calibrate_err;
+        }
+
+        status = bladerf_enable_module(state->dev, BLADERF_MODULE_RX, true);
+        if (status != 0) {
+            goto cmd_calibrate_err;
+        }
+
         /* Calibrate LPF Tuning Module */
-        bladerf_calibrate_dc(state->dev, BLADERF_DC_CAL_LPF_TUNING);
+        status = bladerf_calibrate_dc(state->dev, BLADERF_DC_CAL_LPF_TUNING);
+        if (status != 0) {
+            goto cmd_calibrate_err;
+        }
 
         /* Calibrate TX LPF Filter */
-        bladerf_calibrate_dc(state->dev, BLADERF_DC_CAL_TX_LPF);
+        status = bladerf_calibrate_dc(state->dev, BLADERF_DC_CAL_TX_LPF);
+        if (status != 0) {
+            goto cmd_calibrate_err;
+        }
 
         /* Calibrate RX LPF Filter */
-        bladerf_calibrate_dc(state->dev, BLADERF_DC_CAL_RX_LPF);
+        status = bladerf_calibrate_dc(state->dev, BLADERF_DC_CAL_RX_LPF);
+        if (status != 0) {
+            goto cmd_calibrate_err;
+        }
 
         /* Calibrate RX VGA2 */
-        bladerf_calibrate_dc(state->dev, BLADERF_DC_CAL_RXVGA2);
+        status = bladerf_calibrate_dc(state->dev, BLADERF_DC_CAL_RXVGA2);
+        if (status != 0) {
+            goto cmd_calibrate_err;
+        }
 
-    } else if( argc == 2 ) {
+    } else if (argc == 2) {
         bladerf_cal_module module;
+
         /* Figure out which module we are calibrating */
         if (strcasecmp(argv[1], "tuning") == 0) {
             module = BLADERF_DC_CAL_LPF_TUNING;
         } else if (strcasecmp(argv[1], "txlpf") == 0) {
             module = BLADERF_DC_CAL_TX_LPF;
-            bladerf_enable_module(state->dev, BLADERF_MODULE_TX, true);
+            status = bladerf_enable_module(state->dev, BLADERF_MODULE_TX, true);
         } else if (strcasecmp(argv[1], "rxlpf") == 0) {
             module = BLADERF_DC_CAL_RX_LPF;
-            bladerf_enable_module(state->dev, BLADERF_MODULE_RX, true);
+            status = bladerf_enable_module(state->dev, BLADERF_MODULE_RX, true);
         } else if (strcasecmp(argv[1], "rxvga2") == 0) {
             module = BLADERF_DC_CAL_RXVGA2;
-            bladerf_enable_module(state->dev, BLADERF_MODULE_RX, true);
+            status = bladerf_enable_module(state->dev, BLADERF_MODULE_RX, true);
         } else {
             cli_err(state, argv[0], "Invalid module provided (%s)", argv[1]);
             return CMD_RET_INVPARAM;
         }
-        /* Calibrate it */
-        bladerf_calibrate_dc(state->dev, module);
+
+        if (status != 0) {
+            /* Calibrate it */
+            status = bladerf_calibrate_dc(state->dev, module);
+        }
     } else {
         return CMD_RET_INVPARAM;
     }
 
-    return rv ;
+cmd_calibrate_err:
+    if (status != 0) {
+        state->last_lib_error = status;
+        status = CMD_RET_LIBBLADERF;
+    }
+
+    return status;
 }
