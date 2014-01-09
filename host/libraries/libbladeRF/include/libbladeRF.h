@@ -921,6 +921,9 @@ void CALL_CONV bladerf_deinit_stream(struct bladerf_stream *stream);
  *       for mid to high sample rates. For anything other than slow sample
  *       rates, the bladerf_stream() function is better choice.
  *
+ * @warning This function is scheduled to be removed and replaced by a
+ *          synchronous companion library that utilizes the async interface
+ *
  * @return number of samples sent on success,
  *          value from \ref RETCODES list on failure
  */
@@ -946,6 +949,8 @@ int CALL_CONV bladerf_tx(struct bladerf *dev, bladerf_format format,
  *       for mid to high sample rates. For anything other than slow sample
  *       rates, the bladerf_stream() function is better choice.
  *
+ * @warning This function is scheduled to be removed and replaced by a
+ *          synchronous companion library that utilizes the async interface
  *
  * @return number of samples read or value from \ref RETCODES list on failure
  */
@@ -953,6 +958,36 @@ API_EXPORT
 int CALL_CONV bladerf_rx(struct bladerf *dev, bladerf_format format,
                          void *samples, int num_samples,
                          struct bladerf_metadata *metadata);
+
+/**
+ * Set transfer timeout in milliseconds
+ *
+ * @param   dev         Device handle
+ * @param   module      Module to adjust
+ * @param   timeout     Timeout in milliseconds
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_transfer_timeout(struct bladerf *dev,
+                                            bladerf_module module,
+                                            unsigned int timeout);
+
+
+/**
+ * Get transfer timeout in milliseconds
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   module      Module to adjust
+ * @param[out]  timeout     On success, updated with current transfer
+ *                          timeout value. Undefined on failure.
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_transfer_timeout(struct bladerf *dev,
+                                           bladerf_module module,
+                                           unsigned int *timeout);
 
 /** @} (End of FN_DATA) */
 
@@ -1544,7 +1579,7 @@ int CALL_CONV bladerf_config_gpio_write(struct bladerf *dev, uint32_t val);
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT 
+API_EXPORT
 int bladerf_set_correction(struct bladerf *dev, bladerf_correction_module module, int16_t value);
 
 
@@ -1554,7 +1589,7 @@ int bladerf_set_correction(struct bladerf *dev, bladerf_correction_module module
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT 
+API_EXPORT
 int bladerf_print_correction(struct bladerf *dev, bladerf_correction_module module, int16_t *value);
 
 
@@ -1580,29 +1615,6 @@ int CALL_CONV bladerf_dac_write(struct bladerf *dev, uint16_t val);
 API_EXPORT
 int CALL_CONV bladerf_calibrate_dc(struct bladerf *dev,
                                    bladerf_cal_module module);
-
-/**
- * Set transfer timeout in milliseconds
- *
- * @param   dev         Device handle
- * @param   module      Module to adjust
- * @param   timeout     Timeout in milliseconds
- */
-API_EXPORT
-void CALL_CONV bladerf_set_transfer_timeout(struct bladerf *dev,
-                                            bladerf_module module, int timeout);
-
-
-/**
- * Get transfer timeout in milliseconds
- *
- * @param   dev         Device handle
- * @param   module      Module to adjust
- *
- * @return  Timeout in milliseconds
- */
-API_EXPORT
-int CALL_CONV get_transfer_timeout(struct bladerf *dev, bladerf_module module);
 
 /* @} (End of LOW_LEVEL) */
 

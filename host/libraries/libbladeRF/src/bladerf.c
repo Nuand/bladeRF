@@ -495,12 +495,24 @@ int bladerf_get_frequency(struct bladerf *dev,
     return rv;
 }
 
-void bladerf_set_transfer_timeout(struct bladerf *dev, bladerf_module module, int timeout) {
-    dev->fn->set_transfer_timeout(dev, module, timeout);
+int bladerf_set_transfer_timeout(struct bladerf *dev, bladerf_module module,
+                                 unsigned int timeout) {
+    if (dev) {
+        dev->transfer_timeout[module] = timeout;
+        return 0;
+    } else {
+        return BLADERF_ERR_NODEV;
+    }
 }
 
-int get_transfer_timeout(struct bladerf *dev, bladerf_module module) {
-    return dev->fn->get_transfer_timeout(dev, module);
+int bladerf_get_transfer_timeout(struct bladerf *dev, bladerf_module module,
+                                 unsigned int *timeout) {
+    if (dev) {
+        *timeout = dev->transfer_timeout[module];
+        return 0;
+    } else {
+        return BLADERF_ERR_NODEV;
+    }
 }
 
 int bladerf_tx(struct bladerf *dev, bladerf_format format, void *samples,

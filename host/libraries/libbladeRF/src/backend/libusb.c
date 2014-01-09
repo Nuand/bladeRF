@@ -2285,17 +2285,6 @@ void lusb_deinit_stream(struct bladerf_stream *stream)
     return;
 }
 
-void lusb_set_transfer_timeout(struct bladerf *dev, bladerf_module module, int timeout) {
-    if (dev)
-        dev->transfer_timeout[module] = timeout;
-}
-
-int lusb_get_transfer_timeout(struct bladerf *dev, bladerf_module module) {
-    if (!dev)
-        return 0;
-    return dev->transfer_timeout[module];
-}
-
 int lusb_probe(struct bladerf_devinfo_list *info_list)
 {
     int status, i, n;
@@ -2405,9 +2394,6 @@ const struct bladerf_fn bladerf_lusb_fn = {
     FIELD_INIT(.init_stream, lusb_stream_init),
     FIELD_INIT(.stream, lusb_stream),
     FIELD_INIT(.deinit_stream, lusb_deinit_stream),
-
-    FIELD_INIT(.set_transfer_timeout, lusb_set_transfer_timeout),
-    FIELD_INIT(.get_transfer_timeout, lusb_get_transfer_timeout),
 
     FIELD_INIT(.stats, lusb_get_stats)
 };
