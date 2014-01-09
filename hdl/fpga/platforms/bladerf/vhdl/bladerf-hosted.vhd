@@ -52,7 +52,10 @@ architecture hosted_bladerf of bladerf is
         oc_i2c_scl_pad_i    : in  std_logic;
         gpio_export         : out std_logic_vector(31 downto 0);
         correction_rx_phase_gain_export : out std_logic_vector(31 downto 0);
-        correction_tx_phase_gain_export : out std_logic_vector(31 downto 0)
+        correction_tx_phase_gain_export : out std_logic_vector(31 downto 0);
+        time_tamer_synchronize          : out std_logic;
+        time_tamer_time_tx              : in  std_logic_vector(63 downto 0);
+        time_tamer_time_rx              : in  std_logic_vector(63 downto 0)
       );
     end component nios_system;
 
@@ -156,6 +159,7 @@ architecture hosted_bladerf of bladerf is
     signal meta_en          : std_logic ;
     signal tx_timestamp     : unsigned(63 downto 0) ;
     signal rx_timestamp     : unsigned(63 downto 0) ;
+    signal timestamp_sync   : std_logic ;
 
     signal rx_sample_raw_i  : signed(11 downto 0);
     signal rx_sample_raw_q  : signed(11 downto 0);
@@ -210,6 +214,12 @@ architecture hosted_bladerf of bladerf is
     signal rx_sample_corrected_q : signed(15 downto 0);
     signal rx_sample_corrected_valid : std_logic;
 
+    signal rx_sync_r            : std_logic_vector(7 downto 0);
+    signal tx_sync_r            : std_logic_vector(7 downto 0);
+
+    attribute keep of rx_sync_r : signal is true;
+    attribute keep of timestamp_sync : signal is true;
+    attribute keep of rx_clock : signal is true;
 
     signal correction_valid : std_logic;
 
@@ -693,7 +703,10 @@ begin
         oc_i2c_sda_pad_o    => i2c_sda_out,
         oc_i2c_sda_padoen_o => i2c_sda_oen,
         oc_i2c_arst_i       => '0',
-        oc_i2c_scl_pad_i    => i2c_scl_in
+        oc_i2c_scl_pad_i    => i2c_scl_in,
+        time_tamer_time_tx  => std_logic_vector(tx_timestamp),
+        time_tamer_time_rx  => std_logic_vector(rx_timestamp),
+        time_tamer_synchronize => timestamp_sync
       ) ;
 
     -- IO for NIOS
@@ -764,11 +777,17 @@ begin
     begin
         if( tx_reset = '1') then
             tx_timestamp <= (others => '0');
+            tx_sync_r <= (others => '0');
         elsif( rising_edge( tx_clock )) then
-            if (tx_enable = '1') then
-                tx_timestamp <= tx_timestamp + 1;
-            else
+            tx_sync_r <= timestamp_sync & tx_sync_r(7 downto 1);
+            if (tx_sync_r(3 downto 0) = "1100") then
                 tx_timestamp <= (others => '0');
+            else
+                if (tx_enable = '1') then
+                    tx_timestamp <= tx_timestamp + 1;
+                else
+                    tx_timestamp <= (others => '0');
+                end if;
             end if;
         end if;
     end process;
@@ -777,11 +796,17 @@ begin
     begin
         if( rx_reset = '1') then
             rx_timestamp <= (others => '0');
+            rx_sync_r <= (others => '0');
         elsif( rising_edge( rx_clock )) then
-            if (rx_enable = '1') then
-                rx_timestamp <= rx_timestamp + 1;
-            else
+            rx_sync_r <= timestamp_sync & rx_sync_r(7 downto 1);
+            if (rx_sync_r(3 downto 0) = "1100") then
                 rx_timestamp <= (others => '0');
+            else
+                if (rx_enable = '1') then
+                    rx_timestamp <= rx_timestamp + 1;
+                else
+                    rx_timestamp <= (others => '0');
+                end if;
             end if;
         end if;
     end process;
