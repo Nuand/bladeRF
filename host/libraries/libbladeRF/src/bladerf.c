@@ -1085,14 +1085,16 @@ int bladerf_config_gpio_write(struct bladerf *dev, uint32_t val)
 /*------------------------------------------------------------------------------
  * IQ Calibration routines
  *----------------------------------------------------------------------------*/
-int bladerf_set_correction(struct bladerf *dev, bladerf_correction_module module, int16_t value)
+int bladerf_set_correction(struct bladerf *dev, bladerf_module module,
+                           bladerf_correction corr, int16_t value)
 {
-    return dev->fn->set_correction(dev,module,value);
+    return dev->fn->set_correction(dev, module, corr, value);
 }
 
-int bladerf_print_correction(struct bladerf *dev, bladerf_correction_module module, int16_t *value)
+int bladerf_get_correction(struct bladerf *dev, bladerf_module module,
+                           bladerf_correction corr, int16_t *value)
 {
-    return dev->fn->print_correction(dev,module,value);
+    return dev->fn->get_correction(dev, module, corr, value);
 }
 
 

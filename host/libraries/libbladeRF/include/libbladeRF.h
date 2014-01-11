@@ -248,19 +248,15 @@ typedef enum
 } bladerf_cal_module;
 
 /**
- * IQ Correction Modules
+ * Correction parameter
  */
 typedef enum
 {
-    BLADERF_IQ_CORR_TX_DC_I,
-    BLADERF_IQ_CORR_TX_DC_Q,
-    BLADERF_IQ_CORR_RX_DC_I,
-    BLADERF_IQ_CORR_RX_DC_Q,
-    BLADERF_IQ_CORR_RX_PHASE,
-    BLADERF_IQ_CORR_RX_GAIN,
-    BLADERF_IQ_CORR_TX_PHASE,
-    BLADERF_IQ_CORR_TX_GAIN
-} bladerf_correction_module;
+    BLADERF_IQ_CORR_DC_I,
+    BLADERF_IQ_CORR_DC_Q,
+    BLADERF_IQ_CORR_PHASE,
+    BLADERF_IQ_CORR_GAIN
+} bladerf_correction;
 
 /**
  * Transmit Loopback options
@@ -614,6 +610,33 @@ int CALL_CONV bladerf_get_rational_sample_rate(struct bladerf *dev,
                                                bladerf_module module,
                                                struct bladerf_rational_rate *rate);
 
+/**
+ * Set the value of the specified configuration parameter
+ *
+ * @param   dev         Device handle
+ * @param   module      Module to apply correction to
+ * @param   corr        Correction type
+ * @param   value       Value to apply
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int bladerf_set_correction(struct bladerf *dev, bladerf_module module,
+                           bladerf_correction corr, int16_t value);
+
+/**
+ * Obtain the current value of the specified configuration parameter
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   module      Module to retrieve correction information from
+ * @param[in]   corr        Correction type
+ * @param[out]  value       Current value
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int bladerf_get_correction(struct bladerf *dev, bladerf_module module,
+                           bladerf_correction corr, int16_t *value);
 /**
  * Set the PA gain in dB
  *
@@ -1571,26 +1594,6 @@ int CALL_CONV bladerf_config_gpio_read(struct bladerf *dev, uint32_t *val);
  */
 API_EXPORT
 int CALL_CONV bladerf_config_gpio_write(struct bladerf *dev, uint32_t val);
-
-
-/**
- *
- * @param   dev         Device handle
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int bladerf_set_correction(struct bladerf *dev, bladerf_correction_module module, int16_t value);
-
-
-/**
- *
- * @param   dev         Device handle
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int bladerf_print_correction(struct bladerf *dev, bladerf_correction_module module, int16_t *value);
 
 
 /**
