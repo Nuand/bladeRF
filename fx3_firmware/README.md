@@ -24,7 +24,7 @@ Once the SDK is downloaded, building the firmware requires a file defining the t
 2. Modify your `make/toolchain.mk` to declare an `FX3_ROOT` where the SDK was installed.
 3. Create and enter a `build/` directory
 4. Run `cmake ../`
-5. Compile the firmware vi `make`.
+5. Compile the firmware via `make`.
 6. The file `bladeRF.img` should have been produced with a note saying that 256 bytes of interrupt vector code have been removed.  This warning is normal and you have just built the FX3 firmware successfully!
 
 ### Eclipse ###
