@@ -20,6 +20,7 @@
 #include <limits.h>
 #include <stdint.h>
 #include <string.h>
+#include <inttypes.h>
 #include "cmd.h"
 #include "conversions.h"
 
@@ -688,7 +689,7 @@ int set_rxvga2(struct cli_state *state, int argc, char **argv)
 int print_samplerate(struct cli_state *state, int argc, char **argv)
 {
     int status;
-    unsigned int rate;
+    struct bladerf_rational_rate rate;
     bladerf_module module;
     bool ok;
 
@@ -698,21 +699,21 @@ int print_samplerate(struct cli_state *state, int argc, char **argv)
             invalid_module(state, argv[0], argv[2]);
             status = CMD_RET_INVPARAM;
         } else {
-            status = bladerf_get_sample_rate(state->dev, module, &rate);
-            printf("  %s sample rate: %u\n",
-                    module == BLADERF_MODULE_RX ? "RX" : "TX", rate);
+            status = bladerf_get_rational_sample_rate(state->dev, module, &rate);
+            printf("  %s sample rate: %"PRIu64" %"PRIu64"/%"PRIu64"\n",
+                    module == BLADERF_MODULE_RX ? "RX" : "TX", rate.integer, rate.num, rate.den);
         }
     } else if (argc == 2) {
-        unsigned int tx_rate;
-        status = bladerf_get_sample_rate(state->dev, BLADERF_MODULE_RX, &rate);
+        struct bladerf_rational_rate tx_rate;
+        status = bladerf_get_rational_sample_rate(state->dev, BLADERF_MODULE_RX, &rate);
 
         if (!status) {
-            status = bladerf_get_sample_rate(state->dev,
+            status = bladerf_get_rational_sample_rate(state->dev,
                                                 BLADERF_MODULE_TX, &tx_rate);
 
             if (!status) {
-                printf("  RX sample rate: %u\n", rate);
-                printf("  TX sample rate: %u\n", tx_rate);
+                printf("  RX sample rate: %"PRIu64" %"PRIu64"/%"PRIu64"\n", rate.integer, rate.num, rate.den);
+                printf("  TX sample rate: %"PRIu64" %"PRIu64"/%"PRIu64"\n", tx_rate.integer, tx_rate.num, tx_rate.den);
             } else {
                 state->last_lib_error = status;
                 status = CMD_RET_LIBBLADERF;
@@ -731,11 +732,11 @@ int print_samplerate(struct cli_state *state, int argc, char **argv)
 
 int set_samplerate(struct cli_state *state, int argc, char **argv)
 {
-    /* Usage: set samplerate [rx|tx] <samplerate in Hz> */
+    /* Usage: set samplerate [rx|tx] [integer [numerator denominator]]*/
     int rv = CMD_RET_OK;
     bladerf_module module = BLADERF_MODULE_RX;
 
-    if( argc == 4 ) {
+    if( argc == 4 || argc == 6 ) {
         /* Parse module */
         bool ok;
         module = get_module( argv[2], &ok );
@@ -743,26 +744,90 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
             invalid_module(state, argv[0], argv[2]);
             rv = CMD_RET_INVPARAM;
         }
-    } else if( argc != 3 ) {
+    } else if( argc != 3 && argc != 5 ) {
+        printf( "Usage:\n" );
+        printf( "\n" );
+        printf( "  set samplerate [rx|tx] [integer [numerator denominator]]\n" );
+        printf( "\n" );
+        printf( "Setting the sample rate first addresses an optional RX or TX module.\n" );
+        printf( "Omitting the module will set both of the modules.\n" );
+        printf( "\n" );
+        printf( "In the case of a whole integer sample rate, only the integer portion\n" );
+        printf( "is required in the command.  In the case of a fractional rate, the\n" );
+        printf( "numerator follows the integer portion followed by the denominator.\n" );
+        printf( "\n" );
+        printf( "Examples:\n" );
+        printf( "\n" );
+        printf( "  Set the sample rate for both RX and TX to 4MHz\n" );
+        printf( "\n" );
+        printf( "    set samplerate 4M\n" );
+        printf( "\n" );
+        printf( "  Set the sample rate for both RX and TX to GSM 270833 1/3Hz.\n" );
+        printf( "\n" );
+        printf( "    set samplerate 270833 1 3\n" );
+        printf( "\n" );
+        printf( "  Set the sample rate for RX to 40MHz\n" );
+        printf( "\n" );
+        printf( "    set samplerate rx 40M\n" );
+        printf( "\n" );
         rv = CMD_RET_NARGS;
     }
 
     if( argc > 2 && rv == CMD_RET_OK ) {
         bool ok;
-        unsigned int rate, actual;
-        rate = str2uint_suffix( argv[argc-1], 80000, 40000000,
-                FREQ_SUFFIXES, NUM_FREQ_SUFFIXES, &ok );
+        uint8_t idx = 0;
+        struct bladerf_rational_rate rate, actual;
 
-        if( !ok ) {
-            cli_err(state, argv[0], "Invalid sample rate (%s)", argv[2]);
-            rv = CMD_RET_INVPARAM;
+        /* Initialize the samplerate */
+        rate.integer = 0;
+        rate.num = 0;
+        rate.den = 1;
+
+        /* Figure out the integer index */
+        if( argc == 3 || argc == 5 ) {
+            idx = 2;
         } else {
+            idx = 3;
+        }
+
+        rate.integer = str2uint_suffix( argv[idx], 80000, 40000000,
+            FREQ_SUFFIXES, NUM_FREQ_SUFFIXES, &ok );
+
+        /* Integer portion didn't make it */
+        if( !ok ) {
+            cli_err(state, argv[0], "Invalid sample rate (%s)", argv[idx]);
+            rv = CMD_RET_INVPARAM;
+        }
+
+        /* Take in num/den if they are present */
+        if( rv == CMD_RET_OK && (argc == 5 || argc == 6) ) {
+            idx++;
+            rate.num = str2uint_suffix( argv[idx], 0, 999999999,
+                FREQ_SUFFIXES, NUM_FREQ_SUFFIXES, &ok );
+            if( !ok ) {
+                cli_err(state, argv[0], "Invalid sample rate (%s %s/%s)",
+                    argv[idx-1], argv[idx], argv[idx+1] );
+                rv = CMD_RET_INVPARAM;
+            }
+
+            if( ok ) {
+                idx++;
+                rate.den = str2uint_suffix( argv[idx], 1, 1000000000,
+                    FREQ_SUFFIXES, NUM_FREQ_SUFFIXES, &ok );
+                if( !ok ) {
+                    cli_err(state, argv[0], "Invalid sample rate (%s %s/%s)",
+                        argv[idx-2], argv[idx-1], argv[idx] ) ;
+                    rv = CMD_RET_INVPARAM;
+                }
+            }
+        }
+        if( rv == CMD_RET_OK ) {
             int status;
             bladerf_dev_speed usb_speed = bladerf_device_speed(state->dev);
 
             /* Discontinuities have been reported for 2.0 on Intel controllers
              * above 6MHz. */
-            if (usb_speed != BLADERF_DEVICE_SPEED_SUPER && rate > 6000000) {
+            if (usb_speed != BLADERF_DEVICE_SPEED_SUPER && rate.integer > 6000000) {
                 printf("\n  Warning: The provided sample rate may "
                        "result in timeouts with the current\n"
                        "           %s connection. "
@@ -773,30 +838,30 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
 
             printf( "\n" );
 
-            if( argc == 3 || module == BLADERF_MODULE_RX ) {
-                status = bladerf_set_sample_rate( state->dev,
-                                                  BLADERF_MODULE_RX,
-                                                  rate, &actual );
+            if( argc == 3 || argc == 5 || module == BLADERF_MODULE_RX ) {
+                status = bladerf_set_rational_sample_rate( state->dev,
+                                                           BLADERF_MODULE_RX,
+                                                           &rate, &actual );
 
                 if (status < 0) {
                     state->last_lib_error = status;
                     rv = CMD_RET_LIBBLADERF;
                 } else {
-                    printf( "  Setting RX sample rate - req: %9uHz, "
-                            "actual: %9uHz\n", rate, actual );
+                    printf( "  Setting RX sample rate - req: %9"PRIu64" %"PRIu64"/%"PRIu64"Hz, "
+                            "actual: %9"PRIu64" %"PRIu64"/%"PRIu64"Hz\n", rate.integer, rate.num, rate.den, actual.integer, actual.num, actual.den );
                 }
             }
 
-            if( argc == 3 || module == BLADERF_MODULE_TX ) {
-                status = bladerf_set_sample_rate( state->dev,
-                                                  BLADERF_MODULE_TX,
-                                                  rate, &actual );
+            if( argc == 3 || argc == 5 || module == BLADERF_MODULE_TX ) {
+                status = bladerf_set_rational_sample_rate( state->dev,
+                                                           BLADERF_MODULE_TX,
+                                                           &rate, &actual );
                 if (status < 0) {
                     state->last_lib_error = status;
                     rv = CMD_RET_LIBBLADERF;
                 } else {
-                    printf( "  Setting TX sample rate - req: %9uHz, "
-                            "actual: %9uHz\n", rate, actual );
+                    printf( "  Setting TX sample rate - req: %9"PRIu64" %"PRIu64"/%"PRIu64"Hz, "
+                            "actual: %9"PRIu64" %"PRIu64"/%"PRIu64"Hz\n", rate.integer, rate.num, rate.den, actual.integer, actual.num, actual.den );
                 }
             }
             printf( "\n" );
