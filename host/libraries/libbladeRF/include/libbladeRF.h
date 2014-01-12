@@ -163,11 +163,13 @@ struct bladerf_version {
                                  *            free() this string. */
 };
 
+
+
 /**
  * Sample format
  */
 typedef enum {
-    BLADERF_FORMAT_SC16_Q12, /**< Signed, Complex 16-bit Q12.
+    BLADERF_FORMAT_SC16_Q11, /**< Signed, Complex 16-bit Q11.
                                *  This is the native format of the DAC data.
                                *
                                *  Samples are interleaved IQ value pairs, where
@@ -181,6 +183,13 @@ typedef enum {
                                *  bytes large
                                */
 } bladerf_format;
+
+/**
+ * Reverse compatibility for the sample format misnomer fix
+ *
+ * @warning This is scheduled to be removed in the future.
+ */
+#define BLADERF_FORMAT_SC16_Q12 BLADERF_FORMAT_SC16_Q11
 
 /**
  * FPGA device variant (size)

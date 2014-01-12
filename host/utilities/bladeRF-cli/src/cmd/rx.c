@@ -53,7 +53,7 @@ struct rx_callback_data {
  *  @param  buff    Sample buffer
  *  @param  n       Number of samples
  */
-static inline void sc16q12_sample_fixup(int16_t *buf, size_t n)
+static inline void sc16q11_sample_fixup(int16_t *buf, size_t n)
 {
     size_t i;
 
@@ -82,7 +82,7 @@ static inline void sc16q12_sample_fixup(int16_t *buf, size_t n)
  * @pre data_mgmt lock is held
  *
  * returns 0 on success, CMD_RET_* on failure (and calls set_last_error()) */
-static int rx_write_bin_sc16q12(struct rxtx_data *rx,
+static int rx_write_bin_sc16q11(struct rxtx_data *rx,
                                 int16_t *samples, size_t n_samples)
 {
     size_t status;
@@ -102,7 +102,7 @@ static int rx_write_bin_sc16q12(struct rxtx_data *rx,
 }
 
 /* returns 0 on success, CMD_RET_* on failure (and calls set_last_error()) */
-static int rx_write_csv_sc16q12(struct rxtx_data *rx,
+static int rx_write_csv_sc16q11(struct rxtx_data *rx,
                                 int16_t *samples, size_t n_samples)
 {
     size_t i;
@@ -160,7 +160,7 @@ static void *rx_callback(struct bladerf *dev,
     assert((n_to_write & 1) == 0);
 
     if (n_to_write > 0) {
-        sc16q12_sample_fixup(samples, n_to_write);
+        sc16q11_sample_fixup(samples, n_to_write);
 
         /* Write the samples out */
         cb_data->write_samples(rx, (int16_t*)samples, n_to_write);
@@ -225,12 +225,12 @@ void *rx_task(void *cli_state_arg)
                 pthread_mutex_lock(&rx->file_mgmt.file_meta_lock);
 
                 switch (rx->file_mgmt.format) {
-                    case RXTX_FMT_CSV_SC16Q12:
-                        cb_data.write_samples = rx_write_csv_sc16q12;
+                    case RXTX_FMT_CSV_SC16Q11:
+                        cb_data.write_samples = rx_write_csv_sc16q11;
                         break;
 
-                    case RXTX_FMT_BIN_SC16Q12:
-                        cb_data.write_samples = rx_write_bin_sc16q12;
+                    case RXTX_FMT_BIN_SC16Q11:
+                        cb_data.write_samples = rx_write_bin_sc16q11;
                         break;
 
                     default:
@@ -257,7 +257,7 @@ void *rx_task(void *cli_state_arg)
                                 rx_callback,
                                 &rx->data_mgmt.buffers,
                                 rx->data_mgmt.num_buffers,
-                                BLADERF_FORMAT_SC16_Q12,
+                                BLADERF_FORMAT_SC16_Q11,
                                 rx->data_mgmt.samples_per_buffer,
                                 rx->data_mgmt.num_transfers,
                                 &cb_data);
@@ -310,10 +310,10 @@ static int rx_cmd_start(struct cli_state *s)
 
     if (status == 0) {
         pthread_mutex_lock(&s->rx->file_mgmt.file_lock);
-        if(s->rx->file_mgmt.format == RXTX_FMT_CSV_SC16Q12) {
+        if(s->rx->file_mgmt.format == RXTX_FMT_CSV_SC16Q11) {
             s->rx->file_mgmt.file = fopen(s->rx->file_mgmt.path, "w");
         } else {
-            /* RXTX_FMT_BIN_SC16Q12, open file in binary mode */
+            /* RXTX_FMT_BIN_SC16Q11, open file in binary mode */
             s->rx->file_mgmt.file = fopen(s->rx->file_mgmt.path, "wb");
         }
         if (!s->rx->file_mgmt.file) {

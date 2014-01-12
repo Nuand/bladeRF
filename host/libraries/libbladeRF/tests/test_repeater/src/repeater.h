@@ -42,7 +42,7 @@ struct repeater_config
 
     int num_buffers;            /**< Number of buffers to allocate and use */
     int num_transfers;          /**< Number of transfers to allocate and use */
-    int samples_per_buffer;     /**< Number of SC16Q12 samples per buffer */
+    int samples_per_buffer;     /**< Number of SC16Q11 samples per buffer */
 
 
     bladerf_log_level verbosity;    /** Library verbosity */

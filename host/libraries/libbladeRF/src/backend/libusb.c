@@ -1960,7 +1960,7 @@ static int lusb_tx(struct bladerf *dev, bladerf_format format, void *samples,
     int transferred, status;
 
     /* This is the only format we currently support */
-    assert(format == BLADERF_FORMAT_SC16_Q12);
+    assert(format == BLADERF_FORMAT_SC16_Q11);
 
     bytes_total = bytes_remaining = c16_samples_to_bytes(n);
 
@@ -2001,7 +2001,7 @@ static int lusb_rx(struct bladerf *dev, bladerf_format format, void *samples,
     int transferred, status;
 
     /* The only format currently is assumed here */
-    assert(format == BLADERF_FORMAT_SC16_Q12);
+    assert(format == BLADERF_FORMAT_SC16_Q11);
     bytes_total = bytes_remaining = c16_samples_to_bytes(n);
 
     assert(bytes_remaining <= INT_MAX);

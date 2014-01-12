@@ -256,7 +256,7 @@ int main(int argc, char *argv[])
                 stream_callback,
                 &test_data.buffers,
                 test_data.num_buffers,
-                BLADERF_FORMAT_SC16_Q12,
+                BLADERF_FORMAT_SC16_Q11,
                 test_data.samples_per_buffer,
                 test_data.num_buffers,
                 &test_data

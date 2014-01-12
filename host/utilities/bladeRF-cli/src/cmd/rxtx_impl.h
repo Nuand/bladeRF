@@ -54,8 +54,8 @@
 
 enum rxtx_fmt {
     RXTX_FMT_INVALID = -1,
-    RXTX_FMT_CSV_SC16Q12,   /* CSV (Comma-separated, one entry per line) */
-    RXTX_FMT_BIN_SC16Q12    /* Binary (big-endian), c16 I,Q */
+    RXTX_FMT_CSV_SC16Q11,   /* CSV (Comma-separated, one entry per line) */
+    RXTX_FMT_BIN_SC16Q11    /* Binary (big-endian), c16 I,Q */
 };
 
 enum rxtx_state {
@@ -77,7 +77,7 @@ struct data_mgmt
 {
     /* These two items should not be modified outside of the running task */
     struct bladerf_stream *stream;  /* Stream handle */
-    void **buffers;                 /* SC16 Q12 sample buffers*/
+    void **buffers;                 /* SC16 Q11 sample buffers*/
     size_t next_idx;                /* Index of next buffer to use */
 
     pthread_mutex_t lock;           /* Should be acquired to change the

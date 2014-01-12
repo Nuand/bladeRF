@@ -41,7 +41,7 @@ struct tx_callback_data
     bool done;                  /* We're done */
 };
 
-/* This callback reads SC16 Q12 data from a file (assumed to be little endian)
+/* This callback reads SC16 Q11 data from a file (assumed to be little endian)
  * and ships this data off in the provided sample buffers */
 static void *tx_callback(struct bladerf *dev,
                          struct bladerf_stream *stream,
@@ -159,7 +159,7 @@ tx_callback_out:
  *
  * return 0 on success, CMD_RET_* on failure
  */
-static int tx_csv_to_sc16q12(struct cli_state *s)
+static int tx_csv_to_sc16q11(struct cli_state *s)
 {
     struct rxtx_data *tx = s->tx;
     const char delim[] = " \r\n\t,.:";
@@ -179,20 +179,20 @@ static int tx_csv_to_sc16q12(struct cli_state *s)
     csv = fopen(tx->file_mgmt.path, "r");
     if (!csv) {
         status = CMD_RET_FILEOP;
-        goto tx_csv_to_sc16q12_out;
+        goto tx_csv_to_sc16q11_out;
     }
 
     status = 0;
     bin_name = strdup(TMP_FILE_NAME);
     if (!bin_name) {
         status = CMD_RET_MEM;
-        goto tx_csv_to_sc16q12_out;
+        goto tx_csv_to_sc16q11_out;
     }
 
     bin = fopen(bin_name, "wb+");
     if (!bin) {
         status = CMD_RET_FILEOP;
-        goto tx_csv_to_sc16q12_out;
+        goto tx_csv_to_sc16q11_out;
     }
 
     while (fgets(buf, sizeof(buf), csv))
@@ -249,12 +249,12 @@ static int tx_csv_to_sc16q12(struct cli_state *s)
     }
 
     if (status == 0 && feof(csv)) {
-        tx->file_mgmt.format = RXTX_FMT_BIN_SC16Q12;
+        tx->file_mgmt.format = RXTX_FMT_BIN_SC16Q11;
         free(tx->file_mgmt.path);
         tx->file_mgmt.path = bin_name;
     }
 
-tx_csv_to_sc16q12_out:
+tx_csv_to_sc16q11_out:
     if (status < 0) {
         free(bin_name);
     }
@@ -333,7 +333,7 @@ void *tx_task(void *cli_state_arg)
                                              tx_callback,
                                              &tx->data_mgmt.buffers,
                                              tx->data_mgmt.num_buffers,
-                                             BLADERF_FORMAT_SC16_Q12,
+                                             BLADERF_FORMAT_SC16_Q11,
                                              tx->data_mgmt.samples_per_buffer,
                                              tx->data_mgmt.num_transfers,
                                              &cb_data);
@@ -384,11 +384,11 @@ static int tx_cmd_start(struct cli_state *s)
         /* Perform file conversion (if needed) and open input file */
         pthread_mutex_lock(&s->tx->file_mgmt.file_meta_lock);
 
-        if (s->tx->file_mgmt.format == RXTX_FMT_CSV_SC16Q12) {
-            status = tx_csv_to_sc16q12(s);
+        if (s->tx->file_mgmt.format == RXTX_FMT_CSV_SC16Q11) {
+            status = tx_csv_to_sc16q11(s);
 
             if (status == 0) {
-                printf("    Converted CSV to SC16 Q12 file and "
+                printf("    Converted CSV to SC16 Q11 file and "
                         "switched to converted file.\n\n");
             }
         }
@@ -396,7 +396,7 @@ static int tx_cmd_start(struct cli_state *s)
         if (status == 0) {
             pthread_mutex_lock(&s->tx->file_mgmt.file_lock);
 
-            assert(s->tx->file_mgmt.format == RXTX_FMT_BIN_SC16Q12);
+            assert(s->tx->file_mgmt.format == RXTX_FMT_BIN_SC16Q11);
             s->tx->file_mgmt.file = fopen(s->tx->file_mgmt.path, "r");
             if (!s->tx->file_mgmt.file) {
                 set_last_error(&s->tx->last_error, ETYPE_ERRNO, errno);

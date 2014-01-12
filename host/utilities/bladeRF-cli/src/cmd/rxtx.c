@@ -178,11 +178,11 @@ void rxtx_print_file_format(struct rxtx_data *rxtx,
     pthread_mutex_unlock(&rxtx->file_mgmt.file_meta_lock);
 
     switch (fmt) {
-        case RXTX_FMT_CSV_SC16Q12:
-            printf("%sSC16 Q12, CSV%s", prefix, suffix);
+        case RXTX_FMT_CSV_SC16Q11:
+            printf("%sSC16 Q11, CSV%s", prefix, suffix);
             break;
-        case RXTX_FMT_BIN_SC16Q12:
-            printf("%sSC16 Q12, Binary%s", prefix, suffix);
+        case RXTX_FMT_BIN_SC16Q11:
+            printf("%sSC16 Q11, Binary%s", prefix, suffix);
             break;
         default:
             printf("%sNot configured%s", prefix, suffix);
@@ -240,9 +240,9 @@ enum rxtx_fmt rxtx_str2fmt(const char *str)
     enum rxtx_fmt ret = RXTX_FMT_INVALID;
 
     if (!strcasecmp("csv", str)) {
-        ret = RXTX_FMT_CSV_SC16Q12;
+        ret = RXTX_FMT_CSV_SC16Q11;
     } else if (!strcasecmp("bin", str)) {
-        ret = RXTX_FMT_BIN_SC16Q12;
+        ret = RXTX_FMT_BIN_SC16Q11;
     }
 
     return ret;
@@ -301,7 +301,7 @@ struct rxtx_data *rxtx_data_alloc(bladerf_module module)
     /* Initialize file management items */
     ret->file_mgmt.file = NULL;
     ret->file_mgmt.path = NULL;
-    ret->file_mgmt.format = RXTX_FMT_BIN_SC16Q12;
+    ret->file_mgmt.format = RXTX_FMT_BIN_SC16Q11;
     pthread_mutex_init(&ret->file_mgmt.file_lock, NULL);
     pthread_mutex_init(&ret->file_mgmt.file_meta_lock, NULL);
 
