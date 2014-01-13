@@ -498,20 +498,23 @@ static int lusb_populate_fw_version(struct bladerf *dev)
 }
 
 /* Returns BLADERF_ERR_* on failure */
-static int access_peripheral(struct bladerf_lusb *lusb, int per, int dir,
-                                struct uart_cmd *cmd)
+static int access_peripheral_v(struct bladerf_lusb *lusb, int per, int dir,
+                                struct uart_cmd *cmd, int len)
 {
     uint8_t buf[16] = { 0 };    /* Zeroing out to avoid some valgrind noise
                                  * on the reserved items that aren't currently
                                  * used (i.e., bytes 4-15 */
 
     int status, libusb_status, transferred;
+    int i;
 
     /* Populate the buffer for transfer */
     buf[0] = UART_PKT_MAGIC;
-    buf[1] = dir | per | 0x01;
-    buf[2] = cmd->addr;
-    buf[3] = cmd->data;
+    buf[1] = dir | per | len;
+    for (i = 0; i < len ; i++) {
+        buf[2 + i * 2] = cmd[i].addr;
+        buf[3 + i * 2] = cmd[i].data;
+    }
 
     log_verbose("Peripheral access: [ 0x%02x, 0x%02x, 0x%02x, 0x%02x ]\n",
                 buf[0], buf[1], buf[2], buf[3]);
@@ -542,10 +545,19 @@ static int access_peripheral(struct bladerf_lusb *lusb, int per, int dir,
 
     /* Save off the result if it was a read */
     if (dir == UART_PKT_MODE_DIR_READ) {
-        cmd->data = buf[3];
+        for (i = 0; i < len; i++) {
+            cmd[i].data = buf[3 + i * 2];
+        }
     }
 
     return status;
+}
+
+/* Returns BLADERF_ERR_* on failure */
+static int access_peripheral(struct bladerf_lusb *lusb, int per, int dir,
+                                struct uart_cmd *cmd)
+{
+    return access_peripheral_v(lusb, per, dir, cmd, 1);
 }
 
 static int lusb_fpga_version_read(struct bladerf *dev, uint32_t *version) {
