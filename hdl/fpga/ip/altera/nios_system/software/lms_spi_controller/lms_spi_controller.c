@@ -50,6 +50,7 @@
 #define FPGA_VERSION_PATCH      3
 #define FPGA_VERSION            (FPGA_VERSION_MAJOR | (FPGA_VERSION_MINOR << 8) | (FPGA_VERSION_PATCH << 16))
 
+#define TIME_TAMER              TIME_TAMER_0_BASE
 // Register offsets from the base
 #define I2C                 BLADERF_OC_I2C_MASTER_0_BASE
 #define OC_I2C_PRESCALER    0
@@ -310,47 +311,67 @@ int main()
                   }
                   if ((mode & UART_PKT_MODE_DEV_MASK) == UART_PKT_DEV_GPIO) {
                     uint32_t device;
-                    switch(cmd_ptr->addr)
-                    {
-                        case 0:case 1:case 2: case 3:
-                            device = PIO_0_BASE;break;
-                        case 4: case 5: case 6: case 7:
-                            device = IQ_CORR_RX_PHASE_GAIN_BASE;
-                            cmd_ptr->addr -= 4;
-                            break;
-                        case 8: case 9: case 10: case 11:
-                            device = IQ_CORR_TX_PHASE_GAIN_BASE;
-                            cmd_ptr->addr -= 8;
-                            break;
-                        case 12: case 13: case 14: case 15:
-                            device = FPGA_VERSION_ID;
-                            cmd_ptr->addr -= 12;
-                            break;
-                        default:
-                            //error
-                            device = PIO_0_BASE;
-                    }
+                    for (i = 0; i < cnt; i++) {
+                        switch(cmd_ptr->addr)
+                        {
+                            case 0:case 1:case 2: case 3:
+                                device = PIO_0_BASE;break;
+                            case 4: case 5: case 6: case 7:
+                                device = IQ_CORR_RX_PHASE_GAIN_BASE;
+                                cmd_ptr->addr -= 4;
+                                break;
+                            case 8: case 9: case 10: case 11:
+                                device = IQ_CORR_TX_PHASE_GAIN_BASE;
+                                cmd_ptr->addr -= 8;
+                                break;
+                            case 12: case 13: case 14: case 15:
+                                device = FPGA_VERSION_ID;
+                                cmd_ptr->addr -= 12;
+                                break;
 
-                      if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_READ) {
-                          if (device == FPGA_VERSION_ID)
-                          {
-                            cmd_ptr->data = (FPGA_VERSION >> (cmd_ptr->addr * 8));
-                          }
-                          else
-                          {
-                            cmd_ptr->data = (IORD_ALTERA_AVALON_PIO_DATA(device)) >> (cmd_ptr->addr * 8);
-                          }
-                      } else if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_WRITE) {
-                          uint32_t tmpvar;
-                          tmpvar = IORD_ALTERA_AVALON_PIO_DATA(device);
-                          tmpvar &= ~ (0xff << (8 * cmd_ptr->addr));
-                          tmpvar |= cmd_ptr->data << (8 * cmd_ptr->addr);
-                          IOWR_ALTERA_AVALON_PIO_DATA(device, tmpvar);
-                          cmd_ptr->data = 0;
-                      } else {
-                          cmd_ptr->addr = 0;
-                          cmd_ptr->data = 0;
-                      }
+                            case 16: case 17: case 18: case 19:
+                            case 20: case 21: case 22: case 23:
+                            case 24: case 25: case 26: case 27:
+                            case 28: case 29: case 30: case 31:
+                                cmd_ptr->addr -= 16;
+                                device = TIME_TAMER;
+                                break;
+                            default:
+                                //error
+                                device = PIO_0_BASE;
+                        }
+
+                        if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_READ) {
+                            if (device == FPGA_VERSION_ID)
+                            {
+                                cmd_ptr->data = (FPGA_VERSION >> (cmd_ptr->addr * 8));
+                            }
+                            else if (device == TIME_TAMER)
+                            {
+                                cmd_ptr->data = IORD_8DIRECT(TIME_TAMER, cmd_ptr->addr);
+                            }
+                            else
+                            {
+                                cmd_ptr->data = (IORD_ALTERA_AVALON_PIO_DATA(device)) >> (cmd_ptr->addr * 8);
+                            }
+                        } else if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_WRITE) {
+                            if (device == TIME_TAMER) {
+                                IOWR_8DIRECT(TIME_TAMER, cmd_ptr->addr, 1) ;
+                            } else {
+                                uint32_t tmpvar;
+                                tmpvar = IORD_ALTERA_AVALON_PIO_DATA(device);
+                                tmpvar &= ~ (0xff << (8 * cmd_ptr->addr));
+                                tmpvar |= cmd_ptr->data << (8 * cmd_ptr->addr);
+                                IOWR_ALTERA_AVALON_PIO_DATA(device, tmpvar);
+                                cmd_ptr->data = 0;
+                            }
+                        } else {
+                            cmd_ptr->addr = 0;
+                            cmd_ptr->data = 0;
+                        }
+
+                        cmd_ptr++;
+                    }
                   }
                   if ((mode & UART_PKT_MODE_DEV_MASK) == UART_PKT_DEV_VCTCXO) {
                       if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_READ) {
