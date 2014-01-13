@@ -114,6 +114,9 @@ struct bladerf_fn {
     int (*get_correction)(struct bladerf *dev, bladerf_module module,
                           bladerf_correction corr, int16_t *value);
 
+    /* Get current timestamp counter values */
+    int (*get_timestamp)(struct bladerf *dev, bladerf_module mod, uint64_t *value);
+
     /* Si5338 accessors */
     int (*si5338_write)(struct bladerf *dev, uint8_t addr, uint8_t data);
     int (*si5338_read)(struct bladerf *dev, uint8_t addr, uint8_t *data);

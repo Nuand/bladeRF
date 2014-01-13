@@ -1966,6 +1966,57 @@ static int get_fpga_correction(struct bladerf *dev,
     return status;
 }
 
+int lusb_get_timestamp(struct bladerf *dev, bladerf_module mod, uint64_t *value)
+{
+    int status = 0;
+    struct uart_cmd cmds[4];
+    unsigned char timestamp_bytes[8];
+    int i;
+
+    // offset 16 is the time tamer according to the Nios firmware
+    cmds[0].addr = (mod == BLADERF_MODULE_RX ? 16 : 24);
+    cmds[1].addr = (mod == BLADERF_MODULE_RX ? 17 : 25);
+    cmds[2].addr = (mod == BLADERF_MODULE_RX ? 18 : 26);
+    cmds[3].addr = (mod == BLADERF_MODULE_RX ? 19 : 27);
+    cmds[0].data = cmds[1].data = cmds[2].data = cmds[3].data = 0xff;
+    status = access_peripheral_v(
+            dev->backend,
+            UART_PKT_DEV_GPIO,
+            UART_PKT_MODE_DIR_READ,
+            cmds, 4
+            );
+
+    if (status)
+        return status;
+
+    for (i = 0; i < 4; i++)
+        timestamp_bytes[i] = cmds[i].data;
+
+    cmds[0].addr = (mod == BLADERF_MODULE_RX ? 20 : 28);
+    cmds[1].addr = (mod == BLADERF_MODULE_RX ? 21 : 29);
+    cmds[2].addr = (mod == BLADERF_MODULE_RX ? 22 : 30);
+    cmds[3].addr = (mod == BLADERF_MODULE_RX ? 23 : 31);
+    cmds[0].data = cmds[1].data = cmds[2].data = cmds[3].data = 0xff;
+    status = access_peripheral_v(
+            dev->backend,
+            UART_PKT_DEV_GPIO,
+            UART_PKT_MODE_DIR_READ,
+            cmds, 4
+            );
+
+    if (status)
+        return status;
+
+    for (i = 0; i < 4; i++)
+        timestamp_bytes[i + 4] = cmds[i].data;
+
+    *value = 0;
+    for (i = 7; i >= 0; i--) {
+        *value |= ((uint64_t)timestamp_bytes[i]) << (i * 8);
+    }
+    return 0;
+}
+
 static int get_lms_correction(struct bladerf *dev,
                                 bladerf_module module,
                                 uint8_t addr, int16_t *value)
@@ -2525,6 +2576,8 @@ const struct bladerf_fn bladerf_lusb_fn = {
 
     FIELD_INIT(.set_correction, lusb_set_correction),
     FIELD_INIT(.get_correction, lusb_get_correction),
+
+    FIELD_INIT(.get_timestamp, lusb_get_timestamp),
 
     FIELD_INIT(.si5338_write, lusb_si5338_write),
     FIELD_INIT(.si5338_read, lusb_si5338_read),

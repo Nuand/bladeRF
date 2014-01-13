@@ -2177,6 +2177,16 @@ int CALL_CONV bladerf_config_gpio_read(struct bladerf *dev, uint32_t *val);
 API_EXPORT
 int CALL_CONV bladerf_config_gpio_write(struct bladerf *dev, uint32_t val);
 
+/**
+ *
+ * @param   dev         Device handle
+ * @param   module      Module to perform streaming with
+ * @param   val         Pointer to variable the data should be read into
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_timestamp(struct bladerf *dev, bladerf_module mod, uint64_t *value);
 
 /**
  * Write value to VCTCXO DAC
