@@ -1221,10 +1221,9 @@ API_EXPORT
 void CALL_CONV bladerf_version(struct bladerf_version *version);
 
 /**
- * Sets the filter level for displayed log messages. Messages that are at
- * or above the specified log level will be written to the log output, while
- * messages with a lower log level will be suppressed. This function returns
- * the previous log level.
+ * Sets the filter level for displayed log messages. Messages that are at or
+ * above the specified log level will be printed, while messages with a lower
+ * log level will be suppressed.
  *
  * @param   level       The new log level filter value
  */
