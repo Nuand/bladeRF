@@ -32,7 +32,7 @@
 #include "cyu3gpio.h"
 #include "pib_regs.h"
 
-#include "firmware.h"
+#include "flash.h"
 #include "spi_flash_lib.h"
 #include "rf.h"
 #include "fpga.h"
@@ -538,7 +538,7 @@ CyBool_t NuandHandleVendorRequest(
 
     case BLADE_USB_CMD_JUMP_TO_BOOTLOADER:
         StopApplication();
-        NuandFirmwareStart();
+        NuandFlashInit();
 
         // Erase the first sector so we can write the bootloader
         // header
@@ -690,7 +690,7 @@ void CyFxbladeRFApplnUSBEventCB (CyU3PUsbEventType_t evtype, uint16_t evdata)
             switch(glUsbAltInterface) {
                 case USB_IF_CONFIG: NuandFpgaConfig.stop() ; break ;
                 case USB_IF_RF_LINK: NuandRFLink.stop(); break ;
-                case USB_IF_SPI_FLASH: NuandFirmwareStop(); break ;
+                case USB_IF_SPI_FLASH: NuandFlashDeinit(); break ;
                 default: break ;
             }
 
@@ -700,7 +700,7 @@ void CyFxbladeRFApplnUSBEventCB (CyU3PUsbEventType_t evtype, uint16_t evdata)
             } else if (alt_interface == USB_IF_RF_LINK) {
                 NuandRFLink.start();
             } else if (alt_interface == USB_IF_SPI_FLASH) {
-                NuandFirmwareStart();
+                NuandFlashInit();
             }
             glUsbAltInterface = alt_interface;
         break;
@@ -748,7 +748,7 @@ static void extractSerialAndCal(void)
     char serial_buf[32];
     int i;
 
-    NuandFirmwareStart();
+    NuandFlashInit();
 
     status = NuandReadOtp(0, 0x100, otp_buf);
 
@@ -769,7 +769,7 @@ static void extractSerialAndCal(void)
         glAutoLoadValid = CyTrue;
     }
 
-    NuandFirmwareStop();
+    NuandFlashDeinit();
 }
 
 void bladeRFInit(void)

@@ -19,12 +19,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include "firmware.h"
 #include <string.h>
 #include "cyu3spi.h"
 #include "cyu3error.h"
 #include "bladeRF.h"
 #include "spi_flash_lib.h"
+#include "flash.h"
 
 static CyU3PReturnStatus_t FlashReadStatus(uint8_t *val)
 {
@@ -115,17 +115,17 @@ CyU3PReturnStatus_t NuandWriteOtp(size_t offset, size_t size, void *buf) {
     return status;
 }
 
-void NuandFirmwareStart() {
+void NuandFlashInit() {
     CyU3PReturnStatus_t status = CY_U3P_SUCCESS;
 
-    NuandGPIOReconfigure(CyFalse, CyFalse);
+    NuandGPIOReconfigure(CyFalse, CyTrue);
 
     status = CyFxSpiInit();
 
     glAppMode = MODE_FW_CONFIG;
 }
 
-void NuandFirmwareStop() {
+void NuandFlashDeinit() {
     CyFxSpiDeInit();
 }
 
