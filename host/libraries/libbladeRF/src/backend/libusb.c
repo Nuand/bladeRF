@@ -368,6 +368,31 @@ static int change_setting(struct bladerf *dev, uint8_t setting)
     }
 }
 
+/* After performing a flash operation, switch back to either RF_LINK or the
+ * FPGA loader.
+ */
+static int restore_post_flash_setting(struct bladerf *dev)
+{
+    int fpga_loaded = lusb_is_fpga_configured(dev);
+    int status;
+
+    if (fpga_loaded < 0) {
+        log_debug("Not restoring alt interface setting - failed to check FPGA state\n");
+        status = fpga_loaded;
+    } else if (fpga_loaded) {
+        status = change_setting(dev, USB_IF_RF_LINK);
+    } else {
+        /* Make sure we are using the configuration interface */
+        if (dev->legacy & LEGACY_CONFIG_IF) {
+            status = change_setting(dev, USB_IF_LEGACY_CONFIG);
+        } else {
+            status = change_setting(dev, USB_IF_CONFIG);
+        }
+    }
+
+    return status;
+}
+
 int lusb_enable_module(struct bladerf *dev, bladerf_module m, bool enable) {
     int status;
     int32_t fx3_ret = -1;
@@ -595,7 +620,10 @@ static int enable_rf(struct bladerf *dev) {
         return status;
     }
     log_verbose( "Changed into RF link mode: %s\n", libusb_error_name(status) ) ;
-    ret_status = lusb_populate_fpga_version(dev) ;
+
+    /* We can only read the FPGA version once we've switched over to the
+     * RF_LINK mode */
+    ret_status = lusb_populate_fpga_version(dev);
     return ret_status;
 }
 
@@ -994,7 +1022,12 @@ static int lusb_erase_flash(struct bladerf *dev, uint32_t addr, uint32_t len)
             return status;
     }
 
-    return len;
+    status = restore_post_flash_setting(dev);
+    if (status != 0) {
+        return status;
+    } else {
+        return len;
+    }
 }
 
 static int read_buffer(struct bladerf *dev, uint8_t request,
@@ -1115,6 +1148,7 @@ static int legacy_read_one_page(struct bladerf *dev,
     return 0;
 }
 
+/* Assumes the device is already configured for USB_IF_SPI_FLASH */
 static int read_one_page(struct bladerf *dev, uint16_t page, uint8_t *buf)
 {
     int32_t read_status = -1;
@@ -1173,7 +1207,12 @@ static int lusb_read_flash(struct bladerf *dev, uint32_t addr,
         read += BLADERF_FLASH_PAGE_SIZE;
     }
 
-    return read;
+    status = restore_post_flash_setting(dev);
+    if (status != 0) {
+        return status;
+    } else {
+        return read;
+    }
 }
 
 static int compare_page_buffers(uint8_t *page_buf, uint8_t *image_page)
@@ -1195,6 +1234,11 @@ static int verify_one_page(struct bladerf *dev,
     uint8_t page_buf[BLADERF_FLASH_PAGE_SIZE];
     unsigned int i;
 
+    status = change_setting(dev, USB_IF_SPI_FLASH);
+    if (status) {
+        log_error("Failed to set interface: %s\n", libusb_error_name(status));
+        return BLADERF_ERR_IO;
+    }
 
     log_debug("Verifying page 0x%04x.\n", flash_from_pages(page));
     status = read_one_page(dev, page, page_buf);
@@ -1214,7 +1258,7 @@ static int verify_one_page(struct bladerf *dev,
         return BLADERF_ERR_IO;
     }
 
-    return 0;
+    return restore_post_flash_setting(dev);
 }
 
 static int verify_flash(struct bladerf *dev, uint32_t addr,
@@ -1370,18 +1414,18 @@ static int lusb_write_flash(struct bladerf *dev, uint32_t addr,
         written += BLADERF_FLASH_PAGE_SIZE;
     }
 
-    return written;
+    status = restore_post_flash_setting(dev);
+    if (status != 0) {
+        return status;
+    } else {
+        return written;
+    }
 }
 
 static int lusb_flash_firmware(struct bladerf *dev,
                                uint8_t *image, size_t image_size)
 {
     int status;
-
-    if(dev->legacy & LEGACY_CONFIG_IF)
-        log_debug("LEGACY_CONFIG_IF\n");
-    if(dev->legacy & LEGACY_ALT_SETTING)
-        log_debug("LEGACY_ALT_SETTING");
 
     assert(image_size <= UINT32_MAX);
 
@@ -1394,9 +1438,6 @@ static int lusb_flash_firmware(struct bladerf *dev,
     if (status >= 0) {
         status = verify_flash(dev, 0, image, (uint32_t)image_size);
     }
-
-    /* A reset will be required at this point, so there's no sense in
-     * bothering to set the interface back to USB_IF_RF_LINK */
 
     return status;
 }
