@@ -824,15 +824,23 @@ lusb_open_done:
 
 static int lusb_close(struct bladerf *dev)
 {
-    int status = 0;
+    int status;
+    int ret;
     int inf = 0;
     struct bladerf_lusb *lusb = dev->backend;
+
+    /* It seems we need to switch back to our NULL interface before closing,
+     * or else we run into some issues when re-opening in OSX */
+    ret = change_setting(dev, USB_IF_NULL);
 
     for( inf = 0; inf < ((dev->legacy & LEGACY_ALT_SETTING) ? 3 : 1) ; inf++ ) {
         status = libusb_release_interface(lusb->handle, inf);
         if (status < 0) {
             log_debug("error releasing interface %i\n", inf);
-            status = error_libusb2bladerf(status);
+
+            if (ret == 0) {
+                ret = error_libusb2bladerf(status);
+            }
         }
     }
 
@@ -843,7 +851,7 @@ static int lusb_close(struct bladerf *dev)
     free((void *)dev->fw_version.describe);
     free(dev);
 
-    return status;
+    return ret;
 }
 
 static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size)
