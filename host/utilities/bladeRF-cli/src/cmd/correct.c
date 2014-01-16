@@ -35,22 +35,22 @@ static int print_correction(struct cli_state *state, bladerf_module module)
     int16_t dc_i, dc_q, phase,gain;
     struct bladerf *dev = state->dev;
 
-    status = bladerf_get_correction(dev, module, BLADERF_IQ_CORR_DC_I, &dc_i);
+    status = bladerf_get_correction(dev, module, BLADERF_CORR_LMS_DCOFF_I, &dc_i);
     if (status != 0) {
         goto print_correction_out;
     }
 
-    status = bladerf_get_correction(dev, module, BLADERF_IQ_CORR_DC_Q, &dc_q);
+    status = bladerf_get_correction(dev, module, BLADERF_CORR_LMS_DCOFF_Q, &dc_q);
     if (status != 0) {
         goto print_correction_out;
     }
 
-    status = bladerf_get_correction(dev, module, BLADERF_IQ_CORR_PHASE, &phase);
+    status = bladerf_get_correction(dev, module, BLADERF_CORR_FPGA_PHASE, &phase);
     if (status != 0) {
         goto print_correction_out;
     }
 
-    status = bladerf_get_correction(dev, module, BLADERF_IQ_CORR_GAIN, &gain);
+    status = bladerf_get_correction(dev, module, BLADERF_CORR_FPGA_GAIN, &gain);
 
 print_correction_out:
 
@@ -71,7 +71,7 @@ static inline int set_phase_correction(struct cli_state *state,
     int status;
     struct bladerf *dev = state->dev;
 
-    status = bladerf_set_correction(dev, module, BLADERF_IQ_CORR_PHASE, value);
+    status = bladerf_set_correction(dev, module, BLADERF_CORR_FPGA_PHASE, value);
 
     if (status != 0) {
         state->last_lib_error = status;
@@ -87,7 +87,7 @@ static inline int set_gain_correction(struct cli_state *state,
     int status;
     struct bladerf *dev = state->dev;
 
-    status = bladerf_set_correction(dev, module, BLADERF_IQ_CORR_GAIN, value);
+    status = bladerf_set_correction(dev, module, BLADERF_CORR_FPGA_GAIN, value);
 
     if (status != 0) {
         state->last_lib_error = status;
@@ -104,9 +104,9 @@ static inline int set_dc_correction(struct cli_state *state,
     int status;
     struct bladerf *dev = state->dev;
 
-    status = bladerf_set_correction(dev, module, BLADERF_IQ_CORR_DC_I, val_i);
+    status = bladerf_set_correction(dev, module, BLADERF_CORR_LMS_DCOFF_I, val_i);
     if (status == 0) {
-        status = bladerf_set_correction(dev, module, BLADERF_IQ_CORR_DC_Q, val_q);
+        status = bladerf_set_correction(dev, module, BLADERF_CORR_LMS_DCOFF_Q, val_q);
     }
 
     if (status != 0) {

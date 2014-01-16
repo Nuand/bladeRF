@@ -261,10 +261,10 @@ typedef enum
  */
 typedef enum
 {
-    BLADERF_IQ_CORR_DC_I,
-    BLADERF_IQ_CORR_DC_Q,
-    BLADERF_IQ_CORR_PHASE,
-    BLADERF_IQ_CORR_GAIN
+    BLADERF_CORR_LMS_DCOFF_I,
+    BLADERF_CORR_LMS_DCOFF_Q,
+    BLADERF_CORR_FPGA_PHASE,
+    BLADERF_CORR_FPGA_GAIN
 } bladerf_correction;
 
 /**

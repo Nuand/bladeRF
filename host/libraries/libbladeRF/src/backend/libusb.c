@@ -1702,7 +1702,7 @@ static int lusb_lms_read(struct bladerf *dev, uint8_t addr, uint8_t *data)
     }
 
     return status;
-}
+        }
 
 static int lusb_dac_write(struct bladerf *dev, uint16_t value)
 {
@@ -1732,13 +1732,20 @@ static int lusb_dac_write(struct bladerf *dev, uint16_t value)
     return status;
 }
 
-
-static int set_fpga_correction(struct bladerf *dev, uint8_t addr, int16_t value)
+static int set_fpga_correction(struct bladerf *dev,
+                               bladerf_correction corr,uint8_t addr, int16_t value)
 {
     int i = 0;
     int status = 0;
     struct uart_cmd cmd;
     struct bladerf_lusb *lusb = dev->backend;
+
+    /* If this ia a gain correction add in the 1.0 value so 0 correction yields an unscaled gain */
+    if (corr == BLADERF_CORR_FPGA_GAIN) {
+        value += (int16_t)4096;
+    }
+
+    log_info("Setting FPGA Correction %d=%x\n",corr,value);
 
     for (i = 0; status == 0 && i < 2; i++) {
         cmd.addr = i + addr;
@@ -1767,6 +1774,7 @@ static int set_lms_correction(struct bladerf *dev, bladerf_module module,
 {
     int status;
     uint8_t tmp;
+    int16_t initial = value;
 
     status = lusb_lms_read(dev, addr, &tmp);
     if (status < 0) {
@@ -1774,9 +1782,17 @@ static int set_lms_correction(struct bladerf *dev, bladerf_module module,
         return status;
     }
 
+    /* Currently allocating 4 extra bits for the DC correction remove them*/
+    value >>= 4;
+
     /* Mask out any control bits in the RX DC correction area */
     if (module == BLADERF_MODULE_RX) {
         tmp = tmp & 0x80;
+        value >>= 1;
+
+        log_debug("Setting LMS  Initial Correction %d=0x%x abs(0x%x) 0x%x/%d @0x%x\n",module,value,abs(value),initial,initial,addr);
+
+        //RX only has 6 bits of scale to work with
         if (value < 0) {
             value = (abs(value) & 0x3f) | (1 << 6);
         } else {
@@ -1793,6 +1809,8 @@ static int set_lms_correction(struct bladerf *dev, bladerf_module module,
             value = tmp;
         }
     }
+
+    log_debug("Setting LMS  Correction %d=0x%x 0x%x/%d @0x%x\n",module,value,initial,initial,addr);
 
     status = lusb_lms_write(dev, addr, (uint8_t)value);
     if (status < 0) {
@@ -1811,13 +1829,13 @@ static inline void get_correction_addr_type(bladerf_module module,
 
         /* These items are controlled in the FPGA */
 
-        case BLADERF_IQ_CORR_PHASE:
+        case BLADERF_CORR_FPGA_PHASE:
             *type = CORR_FPGA;
             *addr = module == BLADERF_MODULE_TX ?
                         UART_PKT_DEV_TX_PHASE_ADDR : UART_PKT_DEV_RX_PHASE_ADDR;
             break;
 
-        case BLADERF_IQ_CORR_GAIN:
+        case BLADERF_CORR_FPGA_GAIN:
             *type = CORR_FPGA;
             *addr = module == BLADERF_MODULE_TX ?
                         UART_PKT_DEV_TX_GAIN_ADDR : UART_PKT_DEV_RX_GAIN_ADDR;
@@ -1825,12 +1843,12 @@ static inline void get_correction_addr_type(bladerf_module module,
 
         /* These items are controlled by the LMS6002D */
 
-        case BLADERF_IQ_CORR_DC_I:
+        case BLADERF_CORR_LMS_DCOFF_I:
             *type = CORR_LMS;
             *addr = module == BLADERF_MODULE_TX ? 0x42 : 0x71;
             break;
 
-        case BLADERF_IQ_CORR_DC_Q:
+        case BLADERF_CORR_LMS_DCOFF_Q:
             *type = CORR_LMS;
             *addr = module == BLADERF_MODULE_TX ? 0x43 : 0x72;
             break;
@@ -1852,11 +1870,11 @@ int lusb_set_correction(struct bladerf *dev, bladerf_module module,
 
     switch (type) {
         case CORR_FPGA:
-            status = set_fpga_correction(dev, addr, value);
+            status = set_fpga_correction(dev, corr, addr, value);
             break;
 
         case CORR_LMS:
-            status = set_lms_correction(dev, corr, addr, value);
+            status = set_lms_correction(dev, module, addr, value);
             break;
 
         default:
