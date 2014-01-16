@@ -23,7 +23,7 @@ begin
     counter : process(clock, reset)
         constant COUNT_RESET    :   natural := 256 ;
         variable tock           :   std_logic ;
-        variable count          :   natural range 0 to 2047 := COUNT_RESET ;
+        variable count          :   integer range -2047 to 2047 := COUNT_RESET ;
     begin
         if( reset = '1' ) then
             count := COUNT_RESET ;
@@ -44,7 +44,7 @@ begin
                 if( count < 2047 ) then
                     count := count + 1 ;
                 else
-                    count := 0 ;
+                    count := -2047 ;
                 end if ;
             end if ;
         end if ;

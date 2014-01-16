@@ -26,7 +26,7 @@ set_input_delay -clock [get_clocks fx3_virtual] -max 8.0 [get_ports {fx3_gpif* f
 set_input_delay -clock [get_clocks fx3_virtual] -min 0.5 [get_ports {fx3_gpif* fx3_ctl*}] -add_delay
 
 set_output_delay -clock [get_clocks fx3_virtual] -max 2.0 [get_ports {fx3_gpif* fx3_ctl*}]
-set_output_delay -clock [get_clocks fx3_virtual] -min 0.5 [get_ports {fx3_gpif* fx3_ctl*}] -add_delay
+set_output_delay -clock [get_clocks fx3_virtual] -min 1.5 [get_ports {fx3_gpif* fx3_ctl*}] -add_delay
 
 # LMS sample interface
 set_input_delay -clock [get_clocks lms_rx_virtual] -max  6.0 [get_ports {lms_rx_data* lms_rx_iq_select}]
@@ -43,6 +43,9 @@ set_input_delay -clock [get_clocks U_pll*0*] -max 1.0  [get_ports fx3_uart_txd] 
 
 set_output_delay -clock [get_clocks U_pll*0*] -min  0.0 [get_ports fx3_uart_rxd]
 set_output_delay -clock [get_clocks U_pll*0*] -max  1.0 [get_ports fx3_uart_rxd] -add_delay
+
+set_output_delay -clock [get_clocks fx3_virtual] -min 0.0 [get_ports fx3_uart_cts]
+set_output_delay -clock [get_clocks fx3_virtual] -max 1.0 [get_ports fx3_uart_cts]
 
 # LMS SPI interface
 set_input_delay  -clock [get_clocks U_pll*0*] -min  0.2 [get_ports lms_sdo]
@@ -79,4 +82,10 @@ set_clock_groups -exclusive -group [get_clocks altera_reserved_tck]
 set_input_delay -clock [get_clocks altera_reserved_tck] 20 [get_ports altera_reserved_tdi]
 set_input_delay -clock [get_clocks altera_reserved_tck] 20 [get_ports altera_reserved_tms]
 set_output_delay -clock [get_clocks altera_reserved_tck] 20 [get_ports altera_reserved_tdo]
+
+# Exceptions
+
+# The dcfifo which goes from the C4 TX domain to the PCLK domain seems to have an issue with the clear signal.  It isn't generally a issue so ignore it?
+set_false_path -from {reset_synchronizer:U_tx_reset|sync} -to {tx_fifo:U_tx_sample_fifo|dcfifo:dcfifo_component|dcfifo_nan1:auto_generated|dffpipe_3dc:wraclr|dffe12a[0]}
+set_false_path -from {reset_synchronizer:U_tx_reset|sync} -to {tx_fifo:U_tx_sample_fifo|dcfifo:dcfifo_component|dcfifo_nan1:auto_generated|dffpipe_3dc:wraclr|dffe13a[0]}
 

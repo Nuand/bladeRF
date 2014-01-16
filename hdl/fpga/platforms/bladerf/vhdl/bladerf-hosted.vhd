@@ -140,6 +140,9 @@ architecture hosted_bladerf of bladerf is
     signal fx3_ctl_out      : std_logic_vector(12 downto 0) ;
     signal fx3_ctl_oe       : std_logic_vector(12 downto 0) ;
 
+    signal nios_uart_rxd    :   std_logic ;
+    signal nios_uart_txd    :   std_logic ;
+
     signal tx_underflow_led     :   std_logic ;
     signal tx_underflow_count   :   unsigned(63 downto 0) ;
 
@@ -358,30 +361,29 @@ begin
 
         overflow_led        =>  rx_overflow_led,
         overflow_count      =>  rx_overflow_count,
-        overflow_duration   =>  x"abcd"
+        overflow_duration   =>  x"ffff"
       ) ;
 
     U_rx_iq_correction : entity work.iq_correction(rx)
-        generic map(
-            INPUT_WIDTH => 16
-        )
-        port map(
-            reset => rx_reset,
-            clock => rx_clock,
+      generic map(
+        INPUT_WIDTH         => rx_sample_corrected_i'length
+      ) port map(
+        reset               => rx_reset,
+        clock               => rx_clock,
 
-            in_real => resize(rx_mux_i,16),
-            in_imag => resize(rx_mux_q,16),
-            in_valid => rx_mux_valid,
+        in_real             => resize(rx_mux_i,16),
+        in_imag             => resize(rx_mux_q,16),
+        in_valid            => rx_mux_valid,
 
-            out_real => rx_sample_corrected_i,
-            out_imag => rx_sample_corrected_q,
-            out_valid => rx_sample_corrected_valid,
+        out_real            => rx_sample_corrected_i,
+        out_imag            => rx_sample_corrected_q,
+        out_valid           => rx_sample_corrected_valid,
 
-            dc_real => FPGA_DC_CORRECTION,
-            dc_imag => FPGA_DC_CORRECTION,
-            gain => correction_rx_gain,
-            phase => correction_rx_phase,
-            correction_valid => correction_valid
+        dc_real             => FPGA_DC_CORRECTION,
+        dc_imag             => FPGA_DC_CORRECTION,
+        gain                => correction_rx_gain,
+        phase               => correction_rx_phase,
+        correction_valid    => correction_valid
       );
 
     U_fifo_reader : entity work.fifo_reader
@@ -401,30 +403,29 @@ begin
 
         underflow_led       =>  tx_underflow_led,
         underflow_count     =>  tx_underflow_count,
-        underflow_duration  =>  x"abcd"
+        underflow_duration  =>  x"ffff"
       ) ;
 
     U_tx_iq_correction : entity work.iq_correction(tx)
-        generic map(
-            INPUT_WIDTH => 16
-        )
-        port map(
-            reset => tx_reset,
-            clock => tx_clock,
+      generic map (
+        INPUT_WIDTH         => tx_sample_raw_i'length
+      ) port map (
+        reset               => tx_reset,
+        clock               => tx_clock,
 
-            in_real => tx_sample_raw_i,
-            in_imag => tx_sample_raw_q,
-            in_valid => tx_sample_raw_valid,
+        in_real             => tx_sample_raw_i,
+        in_imag             => tx_sample_raw_q,
+        in_valid            => tx_sample_raw_valid,
 
-            out_real => tx_sample_i,
-            out_imag => tx_sample_q,
-            out_valid => tx_sample_valid,
+        out_real            => tx_sample_i,
+        out_imag            => tx_sample_q,
+        out_valid           => tx_sample_valid,
 
-            dc_real => FPGA_DC_CORRECTION,
-            dc_imag => FPGA_DC_CORRECTION,
-            gain => correction_tx_gain,
-            phase => correction_tx_phase,
-            correction_valid => correction_valid
+        dc_real             => FPGA_DC_CORRECTION,
+        dc_imag             => FPGA_DC_CORRECTION,
+        gain                => correction_tx_gain,
+        phase               => correction_tx_phase,
+        correction_valid    => correction_valid
       );
 
     -- LMS6002D IQ interface
@@ -512,6 +513,9 @@ begin
 
     fx3_ctl_in <= fx3_ctl ;
 
+    nios_uart_txd <= fx3_uart_txd when sys_rst_sync = '0' else '1' ;
+    fx3_uart_rxd <= nios_uart_rxd when sys_rst_sync = '0' else 'Z' ;
+
     -- NIOS control system for si5338, vctcxo trim and lms control
     U_nios_system : nios_system
       port map (
@@ -594,7 +598,7 @@ begin
     lms_rx_v                <= nios_gpio(6 downto 5) ;
 
     -- CTS and the SPI CSx are tied to the same signal.  When we are in reset, allow for SPI accesses
-    fx3_uart_cts            <= '1' when sys_rst = '0' else '0'  ;
+    fx3_uart_cts            <= '1' when sys_rst_sync = '0' else 'Z'  ;
 
     exp_spi_clock           <= '0' ;
     exp_spi_mosi            <= '0' ;
