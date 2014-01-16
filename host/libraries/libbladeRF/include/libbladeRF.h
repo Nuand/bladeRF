@@ -257,13 +257,41 @@ typedef enum
 } bladerf_cal_module;
 
 /**
- * Correction parameter
+ * Correction parameter selection
+ *
+ * These values specify the correction parameter to modify or query when
+ * calling bladerf_set_correction() or bladerf_get_correction(). Note that the
+ * meaning of the `value` parameter to these functions depends upon the
+ * correction parameter.
+ *
  */
 typedef enum
 {
+    /**
+     * Adjusts the in-phase DC offset via controls provided by the LMS6002D
+     * front end. Valid values are [-2047, 2047], which are scaled to the
+     * available control bits in the LMS device.
+     */
     BLADERF_CORR_LMS_DCOFF_I,
+
+    /**
+     * Adjusts the quadrature DC offset via controls provided the LMS6002D
+     * front end. Valid values are [-2047, 2047], which are scaled to the
+     * available control bits.
+     */
     BLADERF_CORR_LMS_DCOFF_Q,
+
+    /**
+     * Adjusts FPGA-based phase correction of [-10, 10] degrees, via a provided
+     * count value of [-4096, 4096].
+     */
     BLADERF_CORR_FPGA_PHASE,
+
+    /**
+     * Adjusts FPGA-based gain correction of [0.0, 2.0], via provided
+     * values in the range of [-4096, 4096], where a value of 0 corresponds to
+     * a gain of 1.0.
+     */
     BLADERF_CORR_FPGA_GAIN
 } bladerf_correction;
 
