@@ -1,6 +1,7 @@
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
+    use ieee.math_real.all;
 
 
 
@@ -57,25 +58,21 @@ architecture rx of iq_correction is
 
     signal phase_offset : signed(OUTPUT_WIDTH-1 downto 0);
     signal phase_correction : signed(OUTPUT_WIDTH-1 downto 0);
-    signal phase_tan : signed(OUTPUT_WIDTH-1 downto 0);
 
 
 begin
-
-    --left 2x shift to go from radians to 45degrees, right shift once to
-    --get the half value that needs to be applied for correction
-    phase_tan <= shift_left(abs(phase),1);
     --
     U_correction_lookup : entity work.tan_table
     generic map(
-            STEPS => 2**Q
+            STEPS => 2**Q,
+            ANGLE => MATH_PI*(10.0/180.0)
     )
     port map
     (
         clock => clock,
         reset => reset,
 
-        phase => phase_tan,
+        phase => phase,
         phase_valid => correction_valid,
 
         y => phase_correction,
@@ -177,14 +174,8 @@ architecture tx of iq_correction is
     signal phase_corrected_valid : std_logic;
 
     signal phase_correction : signed(OUTPUT_WIDTH-1 downto 0);
-    signal phase_tan : signed(OUTPUT_WIDTH-1 downto 0);
 
 begin
-
-
-    --left 2x shift to go from radians to 45degrees, right shift once to
-    --get the half value that needs to be applied for correction
-    phase_tan <= shift_left(abs(phase),1);
 
     --apply gain correction to real
     apply_gain : process(clock, reset)
@@ -207,14 +198,15 @@ begin
     --
     U_phase_correction_lookup : entity work.tan_table
     generic map(
-            STEPS => 2**Q
+            STEPS => 2**Q,
+            ANGLE => MATH_PI*(10.0/180.0)
     )
     port map
     (
         clock => clock,
         reset => reset,
 
-        phase => phase_tan,
+        phase => phase,
         phase_valid => correction_valid,
 
         y => phase_correction,
