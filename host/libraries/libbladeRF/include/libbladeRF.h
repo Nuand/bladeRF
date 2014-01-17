@@ -50,12 +50,6 @@ extern "C" {
 #   define CALL_CONV
 #endif
 
-/** This structure is an opaque device handle */
-struct bladerf;
-
-/** This opaque structure is used to keep track of stream information */
-struct bladerf_stream;
-
 /**
  * @defgroup    RETCODES    Error codes
  *
@@ -83,6 +77,16 @@ struct bladerf_stream;
 #define BLADERF_ERR_CHECKSUM    (-10) /**< Invalid checksum */
 
 /** @} (End RETCODES) */
+
+/**
+ * @defgroup FN_INIT    Initialization/deinitialization
+ *
+ * @{
+ */
+
+/** This structure is an opaque device handle */
+struct bladerf;
+
 
 /**
  * Backend by which the host communicates with the device
@@ -120,244 +124,6 @@ struct bladerf_devinfo {
     uint8_t usb_addr;           /**< Device address on bus */
     unsigned int instance;      /**< Device instance or ID */
 };
-
-/**
- * Rational sample rate representation
- */
-struct bladerf_rational_rate {
-    uint64_t integer;           /**< Integer portion */
-    uint64_t num;               /**< Numerator in fractional portion */
-    uint64_t den;               /**< Denominator in fractional portion. This
-                                     must be > 0. */
-};
-
-/**
- * Device statistics
- */
-struct bladerf_stats {
-
-    /** The number of times samples have been lost in the FPGA */
-    uint64_t rx_overruns;
-
-    /** The overall throughput of the device in samples/second */
-    uint64_t rx_throughput;
-
-    /**  Number of times samples have been too late to transmit to the FPGA */
-    uint64_t tx_underruns;
-
-    /** The overall throughput of the device in samples/second */
-    uint64_t tx_throughput;
-};
-
-/**
- * Version structure for FPGA, firmware, libbladeRF, and associated utilities
- */
-struct bladerf_version {
-    uint16_t major;             /**< Major version */
-    uint16_t minor;             /**< Minor version */
-    uint16_t patch;             /**< Patch version */
-    const char *describe;       /**< Version string with any additional suffix
-                                 *   information.
-                                 *
-                                 *   @warning Do not attempt to modify or
-                                 *            free() this string. */
-};
-
-
-
-/**
- * Sample format
- */
-typedef enum {
-    BLADERF_FORMAT_SC16_Q11, /**< Signed, Complex 16-bit Q11.
-                               *  This is the native format of the DAC data.
-                               *
-                               *  Samples are interleaved IQ value pairs, where
-                               *  each value in the pair is an int16_t. For each
-                               *  value, the data in the lower bits. The upper
-                               *  bits are reserved.
-                               *
-                               *  When using this format, note that buffers
-                               *  must be at least
-                               *       2 * num_samples * sizeof(int16_t)
-                               *  bytes large
-                               */
-} bladerf_format;
-
-/**
- * Reverse compatibility for the sample format misnomer fix
- *
- * @warning This is scheduled to be removed in the future.
- */
-#define BLADERF_FORMAT_SC16_Q12 BLADERF_FORMAT_SC16_Q11
-
-/**
- * FPGA device variant (size)
- */
-typedef enum {
-    BLADERF_FPGA_UNKNOWN = 0,   /**< Unable to determine FPGA variant */
-    BLADERF_FPGA_40KLE = 40,    /**< 40 kLE FPGA */
-    BLADERF_FPGA_115KLE = 115   /**< 115 kLE FPGA */
-} bladerf_fpga_size;
-
-/**
- * Sample metadata
- */
-struct bladerf_metadata {
-    uint32_t version;       /**< Metadata format version */
-    uint64_t timestamp;     /**< Timestamp (TODO format TBD) */
-};
-
-/**
- * Sampling connection
- */
-typedef enum {
-    BLADERF_SAMPLING_UNKNOWN,  /**< Unable to determine connection type */
-    BLADERF_SAMPLING_INTERNAL, /**< Sample from RX/TX connector */
-    BLADERF_SAMPLING_EXTERNAL  /**< Sample from J60 or J61 */
-} bladerf_sampling;
-
-/**
- * LNA gain options
- */
-typedef enum {
-    BLADERF_LNA_GAIN_UNKNOWN,    /**< Invalid LNA gain */
-    BLADERF_LNA_GAIN_BYPASS,     /**< LNA bypassed - 0dB gain */
-    BLADERF_LNA_GAIN_MID,        /**< LNA Mid Gain (MAX-6dB) */
-    BLADERF_LNA_GAIN_MAX         /**< LNA Max Gain */
-} bladerf_lna_gain;
-
-/**
- * LPF mode
- */
-typedef enum {
-    BLADERF_LPF_NORMAL,     /**< LPF connected and enabled */
-    BLADERF_LPF_BYPASSED,   /**< LPF bypassed */
-    BLADERF_LPF_DISABLED    /**< LPF disabled */
-} bladerf_lpf_mode;
-
-/**
- * Module selection for those which have both RX and TX constituents
- */
-typedef enum
-{
-    BLADERF_MODULE_RX,  /**< Receive Module */
-    BLADERF_MODULE_TX   /**< Transmit Module */
-} bladerf_module;
-
-/**
- * DC Calibration Modules
- */
-typedef enum
-{
-    BLADERF_DC_CAL_LPF_TUNING,
-    BLADERF_DC_CAL_TX_LPF,
-    BLADERF_DC_CAL_RX_LPF,
-    BLADERF_DC_CAL_RXVGA2
-} bladerf_cal_module;
-
-/**
- * Correction parameter selection
- *
- * These values specify the correction parameter to modify or query when
- * calling bladerf_set_correction() or bladerf_get_correction(). Note that the
- * meaning of the `value` parameter to these functions depends upon the
- * correction parameter.
- *
- */
-typedef enum
-{
-    /**
-     * Adjusts the in-phase DC offset via controls provided by the LMS6002D
-     * front end. Valid values are [-2047, 2047], which are scaled to the
-     * available control bits in the LMS device.
-     */
-    BLADERF_CORR_LMS_DCOFF_I,
-
-    /**
-     * Adjusts the quadrature DC offset via controls provided the LMS6002D
-     * front end. Valid values are [-2047, 2047], which are scaled to the
-     * available control bits.
-     */
-    BLADERF_CORR_LMS_DCOFF_Q,
-
-    /**
-     * Adjusts FPGA-based phase correction of [-10, 10] degrees, via a provided
-     * count value of [-4096, 4096].
-     */
-    BLADERF_CORR_FPGA_PHASE,
-
-    /**
-     * Adjusts FPGA-based gain correction of [0.0, 2.0], via provided
-     * values in the range of [-4096, 4096], where a value of 0 corresponds to
-     * a gain of 1.0.
-     */
-    BLADERF_CORR_FPGA_GAIN
-} bladerf_correction;
-
-/**
- * Transmit Loopback options
- */
-typedef enum {
-    BLADERF_LB_BB_LPF = 0,   /**< Baseband loopback enters before RX low-pass filter input */
-    BLADERF_LB_BB_VGA2,      /**< Baseband loopback enters before RX VGA2 input */
-    BLADERF_LB_BB_OP,        /**< Baseband loopback enters before RX ADC input */
-    BLADERF_LB_RF_LNA_START, /**< Placeholder - DO NOT USE */
-    BLADERF_LB_RF_LNA1,      /**< RF loopback enters at LNA1 (300MHz - 2.8GHz)*/
-    BLADERF_LB_RF_LNA2,      /**< RF loopback enters at LNA2 (1.5GHz - 3.8GHz)*/
-    BLADERF_LB_RF_LNA3,      /**< RF loopback enters at LNA3 (300MHz - 3.0GHz)*/
-    BLADERF_LB_NONE          /**< Null loopback mode*/
-} bladerf_loopback;
-
-/**
- * Severity levels for logging functions
- */
-typedef enum {
-    BLADERF_LOG_LEVEL_VERBOSE,  /**< Verbose level logging */
-    BLADERF_LOG_LEVEL_DEBUG,    /**< Debug level logging */
-    BLADERF_LOG_LEVEL_INFO,     /**< Information level logging */
-    BLADERF_LOG_LEVEL_WARNING,  /**< Warning level logging */
-    BLADERF_LOG_LEVEL_ERROR,    /**< Error level logging */
-    BLADERF_LOG_LEVEL_CRITICAL, /**< Fatal error level logging */
-    BLADERF_LOG_LEVEL_SILENT    /**< No output */
-} bladerf_log_level;
-
-/**
- * For both RX and TX, the stream callback receives:
- * dev:             Device structure
- * stream:          The associated stream
- * metadata:        TBD
- * user_data:       User data provided when initializing stream
- *
- * <br>
- *
- * For TX callbacks:
- *  samples:        Pointer fo buffer of samples that was sent
- *  num_samples:    Number of sent in last transfer and to send in next transfer
- *
- *  Return value:   The user specifies the address of the next buffer to send
- *
- * For RX callbacks:
- *  samples:        Buffer filled with received data
- *  num_samples:    Number of samples received and size of next buffers
- *
- *  Return value:   The user specifies the next buffer to fill with RX data,
- *                  which should be num_samples in size.
- *
- */
-typedef void *(*bladerf_stream_cb)(struct bladerf *dev,
-                                   struct bladerf_stream *stream,
-                                   struct bladerf_metadata *meta,
-                                   void *samples,
-                                   size_t num_samples,
-                                   void *user_data);
-
-
-/**
- * @defgroup FN_INIT    Initialization/deinitialization
- *
- * @{
- */
 
 /**
  * Obtain a list of bladeRF devices attached to the system
@@ -530,6 +296,120 @@ bool CALL_CONV bladerf_devstr_matches(const char *dev_str,
  */
 
 /**
+ * Loopback options
+ *
+ * @note These are schedule to change
+ */
+typedef enum {
+    BLADERF_LB_BB_LPF = 0,   /**< Baseband loopback enters before RX low-pass filter input */
+    BLADERF_LB_BB_VGA2,      /**< Baseband loopback enters before RX VGA2 input */
+    BLADERF_LB_BB_OP,        /**< Baseband loopback enters before RX ADC input */
+    BLADERF_LB_RF_LNA_START, /**< Placeholder - DO NOT USE */
+    BLADERF_LB_RF_LNA1,      /**< RF loopback enters at LNA1 (300MHz - 2.8GHz)*/
+    BLADERF_LB_RF_LNA2,      /**< RF loopback enters at LNA2 (1.5GHz - 3.8GHz)*/
+    BLADERF_LB_RF_LNA3,      /**< RF loopback enters at LNA3 (300MHz - 3.0GHz)*/
+    BLADERF_LB_NONE          /**< Null loopback mode*/
+} bladerf_loopback;
+
+
+/**
+ * Rational sample rate representation
+ */
+struct bladerf_rational_rate {
+    uint64_t integer;           /**< Integer portion */
+    uint64_t num;               /**< Numerator in fractional portion */
+    uint64_t den;               /**< Denominator in fractional portion. This
+                                     must be > 0. */
+};
+
+/**
+ * Sampling connection
+ */
+typedef enum {
+    BLADERF_SAMPLING_UNKNOWN,  /**< Unable to determine connection type */
+    BLADERF_SAMPLING_INTERNAL, /**< Sample from RX/TX connector */
+    BLADERF_SAMPLING_EXTERNAL  /**< Sample from J60 or J61 */
+} bladerf_sampling;
+
+/**
+ * LNA gain options
+ */
+typedef enum {
+    BLADERF_LNA_GAIN_UNKNOWN,    /**< Invalid LNA gain */
+    BLADERF_LNA_GAIN_BYPASS,     /**< LNA bypassed - 0dB gain */
+    BLADERF_LNA_GAIN_MID,        /**< LNA Mid Gain (MAX-6dB) */
+    BLADERF_LNA_GAIN_MAX         /**< LNA Max Gain */
+} bladerf_lna_gain;
+
+/**
+ * LPF mode
+ */
+typedef enum {
+    BLADERF_LPF_NORMAL,     /**< LPF connected and enabled */
+    BLADERF_LPF_BYPASSED,   /**< LPF bypassed */
+    BLADERF_LPF_DISABLED    /**< LPF disabled */
+} bladerf_lpf_mode;
+
+/**
+ * Module selection for those which have both RX and TX constituents
+ */
+typedef enum
+{
+    BLADERF_MODULE_RX,  /**< Receive Module */
+    BLADERF_MODULE_TX   /**< Transmit Module */
+} bladerf_module;
+
+/**
+ * DC Calibration Modules
+ */
+typedef enum
+{
+    BLADERF_DC_CAL_LPF_TUNING,
+    BLADERF_DC_CAL_TX_LPF,
+    BLADERF_DC_CAL_RX_LPF,
+    BLADERF_DC_CAL_RXVGA2
+} bladerf_cal_module;
+
+/**
+ * Correction parameter selection
+ *
+ * These values specify the correction parameter to modify or query when
+ * calling bladerf_set_correction() or bladerf_get_correction(). Note that the
+ * meaning of the `value` parameter to these functions depends upon the
+ * correction parameter.
+ *
+ */
+typedef enum
+{
+    /**
+     * Adjusts the in-phase DC offset via controls provided by the LMS6002D
+     * front end. Valid values are [-2047, 2047], which are scaled to the
+     * available control bits in the LMS device.
+     */
+    BLADERF_CORR_LMS_DCOFF_I,
+
+    /**
+     * Adjusts the quadrature DC offset via controls provided the LMS6002D
+     * front end. Valid values are [-2047, 2047], which are scaled to the
+     * available control bits.
+     */
+    BLADERF_CORR_LMS_DCOFF_Q,
+
+    /**
+     * Adjusts FPGA-based phase correction of [-10, 10] degrees, via a provided
+     * count value of [-4096, 4096].
+     */
+    BLADERF_CORR_FPGA_PHASE,
+
+    /**
+     * Adjusts FPGA-based gain correction of [0.0, 2.0], via provided
+     * values in the range of [-4096, 4096], where a value of 0 corresponds to
+     * a gain of 1.0.
+     */
+    BLADERF_CORR_FPGA_GAIN
+} bladerf_correction;
+
+/**
  * Enable or disable the specified RX/TX module
  *
  * @param       dev     Device handle
@@ -544,6 +424,9 @@ int CALL_CONV bladerf_enable_module(struct bladerf *dev,
 
 /**
  * Apply specified loopback mode
+ *
+ * @bug This function is not implemented, and should not be used in this
+ * version.
  *
  * @param       dev     Device handle
  * @param       l       Loopback mode. Note that LB_NONE disables the use
@@ -880,6 +763,72 @@ int CALL_CONV bladerf_get_frequency(struct bladerf *dev,
  * @{
  */
 
+/**
+ * Sample format
+ */
+typedef enum {
+    BLADERF_FORMAT_SC16_Q11, /**< Signed, Complex 16-bit Q11.
+                               *  This is the native format of the DAC data.
+                               *
+                               *  Samples are interleaved IQ value pairs, where
+                               *  each value in the pair is an int16_t. For each
+                               *  value, the data in the lower bits. The upper
+                               *  bits are reserved.
+                               *
+                               *  When using this format, note that buffers
+                               *  must be at least
+                               *       2 * num_samples * sizeof(int16_t)
+                               *  bytes large
+                               */
+} bladerf_format;
+
+/**
+ * Reverse compatibility for the sample format misnomer fix
+ *
+ * @warning This is scheduled to be removed in the future.
+ */
+#define BLADERF_FORMAT_SC16_Q12 BLADERF_FORMAT_SC16_Q11
+
+/** This opaque structure is used to keep track of stream information */
+struct bladerf_stream;
+
+/**
+ * Sample metadata
+ */
+struct bladerf_metadata {
+    uint32_t version;       /**< Metadata format version */
+    uint64_t timestamp;     /**< Timestamp (TODO format TBD) */
+};
+
+/**
+ * For both RX and TX, the stream callback receives:
+ * dev:             Device structure
+ * stream:          The associated stream
+ * metadata:        TBD
+ * user_data:       User data provided when initializing stream
+ *
+ * <br>
+ *
+ * For TX callbacks:
+ *  samples:        Pointer fo buffer of samples that was sent
+ *  num_samples:    Number of sent in last transfer and to send in next transfer
+ *
+ *  Return value:   The user specifies the address of the next buffer to send
+ *
+ * For RX callbacks:
+ *  samples:        Buffer filled with received data
+ *  num_samples:    Number of samples received and size of next buffers
+ *
+ *  Return value:   The user specifies the next buffer to fill with RX data,
+ *                  which should be num_samples in size.
+ *
+ */
+typedef void *(*bladerf_stream_cb)(struct bladerf *dev,
+                                   struct bladerf_stream *stream,
+                                   struct bladerf_metadata *meta,
+                                   void *samples,
+                                   size_t num_samples,
+                                   void *user_data);
 
 /**
  * Initialize a stream for use with asynchronous routines
@@ -1059,6 +1008,31 @@ int CALL_CONV bladerf_get_transfer_timeout(struct bladerf *dev,
  * @{
  */
 
+
+/**
+ * Version structure for FPGA, firmware, libbladeRF, and associated utilities
+ */
+struct bladerf_version {
+    uint16_t major;             /**< Major version */
+    uint16_t minor;             /**< Minor version */
+    uint16_t patch;             /**< Patch version */
+    const char *describe;       /**< Version string with any additional suffix
+                                 *   information.
+                                 *
+                                 *   @warning Do not attempt to modify or
+                                 *            free() this string. */
+};
+
+/**
+ * FPGA device variant (size)
+ */
+typedef enum {
+    BLADERF_FPGA_UNKNOWN = 0,   /**< Unable to determine FPGA variant */
+    BLADERF_FPGA_40KLE = 40,    /**< 40 kLE FPGA */
+    BLADERF_FPGA_115KLE = 115   /**< 115 kLE FPGA */
+} bladerf_fpga_size;
+
+
 /**
  * Query a device's serial number
  *
@@ -1132,17 +1106,6 @@ int CALL_CONV bladerf_is_fpga_configured(struct bladerf *dev);
 API_EXPORT
 int CALL_CONV bladerf_fpga_version(struct bladerf *dev,
                                    struct bladerf_version *version);
-
-/**
- * Obtain device statistics
- *
- * @param[in]   dev     Device handle
- * @param[out]  stats   Current device statistics
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_stats(struct bladerf *dev, struct bladerf_stats *stats);
 
 /**
  * Obtain the bus speed at which the device is operating
@@ -1228,6 +1191,19 @@ int CALL_CONV bladerf_jump_to_bootloader(struct bladerf *dev);
  * @defgroup FN_MISC Miscellaneous
  * @{
  */
+
+/**
+ * Severity levels for logging functions
+ */
+typedef enum {
+    BLADERF_LOG_LEVEL_VERBOSE,  /**< Verbose level logging */
+    BLADERF_LOG_LEVEL_DEBUG,    /**< Debug level logging */
+    BLADERF_LOG_LEVEL_INFO,     /**< Information level logging */
+    BLADERF_LOG_LEVEL_WARNING,  /**< Warning level logging */
+    BLADERF_LOG_LEVEL_ERROR,    /**< Error level logging */
+    BLADERF_LOG_LEVEL_CRITICAL, /**< Fatal error level logging */
+    BLADERF_LOG_LEVEL_SILENT    /**< No output */
+} bladerf_log_level;
 
 /**
  * Obtain a textual description of a value from the \ref RETCODES list
@@ -1644,7 +1620,7 @@ API_EXPORT
 int CALL_CONV bladerf_dac_write(struct bladerf *dev, uint16_t val);
 
 /**
- * Calibration routines
+ * Perform DC calibration
  *
  * @param   dev         Device handle
  * @param   module      Module to calibrate

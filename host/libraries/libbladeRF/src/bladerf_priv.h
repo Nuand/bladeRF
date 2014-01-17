@@ -148,9 +148,6 @@ struct bladerf_fn {
     int (*init_stream)(struct bladerf_stream *stream);
     int (*stream)(struct bladerf_stream *stream, bladerf_module module);
     void (*deinit_stream)(struct bladerf_stream *stream);
-
-    /* Gather statistics */
-    int (*stats)(struct bladerf *dev, struct bladerf_stats *stats);
 };
 
 #define FW_LEGACY_ALT_SETTING_MAJOR 1
@@ -175,8 +172,6 @@ struct bladerf {
     int legacy;
 
     bladerf_dev_speed usb_speed;
-
-    struct bladerf_stats stats;
 
     /* Last error encountered */
     struct bladerf_error error;

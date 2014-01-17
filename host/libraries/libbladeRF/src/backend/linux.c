@@ -895,12 +895,6 @@ static void linux_deinit_stream(struct bladerf_stream *stream)
 {
 }
 
-static int linux_get_stats(struct bladerf *dev, struct bladerf_stats *stats)
-{
-    /* TODO Currently unimplemented in the FPGA */
-    return BLADERF_ERR_UNSUPPORTED;
-}
-
 /*------------------------------------------------------------------------------
  * Function table
  *----------------------------------------------------------------------------*/
@@ -945,7 +939,5 @@ const struct bladerf_fn bladerf_linux_fn = {
     FIELD_INIT(.init_stream, linux_stream_init),
     FIELD_INIT(.stream, linux_stream),
     FIELD_INIT(.deinit_stream, linux_deinit_stream),
-
-    FIELD_INIT(.stats, linux_get_stats)
 };
 

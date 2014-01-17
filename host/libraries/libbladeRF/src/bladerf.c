@@ -67,14 +67,6 @@ void bladerf_free_device_list(struct bladerf_devinfo *devices)
     free(devices);
 }
 
-static void init_stats(struct bladerf_stats *stats)
-{
-    stats->rx_overruns = 0;
-    stats->rx_throughput = 0;
-    stats->tx_underruns = 0;
-    stats->tx_throughput = 0;
-}
-
 int bladerf_open_with_devinfo(struct bladerf **device,
                                 struct bladerf_devinfo *devinfo)
 {
@@ -92,7 +84,6 @@ int bladerf_open_with_devinfo(struct bladerf **device,
 
         /* We got a device */
         bladerf_set_error(&opened_device->error, ETYPE_LIBBLADERF, 0);
-        init_stats(&opened_device->stats);
 
         status = opened_device->fn->get_device_speed(opened_device,
                                                      &opened_device->usb_speed);
@@ -719,11 +710,6 @@ int bladerf_fpga_version(struct bladerf *dev, struct bladerf_version *version)
 {
     memcpy(version, &dev->fpga_version, sizeof(*version));
     return 0;
-}
-
-int bladerf_stats(struct bladerf *dev, struct bladerf_stats *stats)
-{
-    return dev->fn->stats(dev, stats);
 }
 
 bladerf_dev_speed bladerf_device_speed(struct bladerf *dev)

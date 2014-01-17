@@ -2408,12 +2408,6 @@ lusb_probe_done:
     return status;
 }
 
-static int lusb_get_stats(struct bladerf *dev, struct bladerf_stats *stats)
-{
-    /* TODO Implementation requires FPGA support */
-    return BLADERF_ERR_UNSUPPORTED;
-}
-
 const struct bladerf_fn bladerf_lusb_fn = {
     FIELD_INIT(.probe, lusb_probe),
 
@@ -2456,6 +2450,4 @@ const struct bladerf_fn bladerf_lusb_fn = {
     FIELD_INIT(.init_stream, lusb_stream_init),
     FIELD_INIT(.stream, lusb_stream),
     FIELD_INIT(.deinit_stream, lusb_deinit_stream),
-
-    FIELD_INIT(.stats, lusb_get_stats)
 };
