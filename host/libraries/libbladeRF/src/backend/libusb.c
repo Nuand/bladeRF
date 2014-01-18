@@ -785,8 +785,15 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
                         goto lusb_open__err_device_list;
                     }
                 }
-
                 log_verbose( "Claimed all inferfaces successfully\n" );
+
+                /* Just out of paranoia, put the device into a known state */
+                status = change_setting(dev, USB_IF_NULL);
+                if (status < 0) {
+                    log_debug("Failed to switch to USB_IF_NULL\n");
+                    goto lusb_open__err_device_list;
+                }
+
                 break;
             } else {
                 log_verbose("Devinfo doesn't match - skipping"
@@ -864,7 +871,8 @@ static int lusb_close(struct bladerf *dev)
     struct bladerf_lusb *lusb = dev->backend;
 
     /* It seems we need to switch back to our NULL interface before closing,
-     * or else we run into some issues when re-opening in OSX */
+     * or else our device doesn't close upon exit in OSC and then fails to
+     * re-open cleanly */
     ret = change_setting(dev, USB_IF_NULL);
 
     for( inf = 0; inf < ((dev->legacy & LEGACY_ALT_SETTING) ? 3 : 1) ; inf++ ) {
