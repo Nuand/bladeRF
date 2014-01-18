@@ -507,13 +507,17 @@ static int access_peripheral(struct bladerf_lusb *lusb, int per, int dir,
     buf[2] = cmd->addr;
     buf[3] = cmd->data;
 
+    log_verbose("Peripheral access: [ 0x%02x, 0x%02x, 0x%02x, 0x%02x ]\n",
+                buf[0], buf[1], buf[2], buf[3]);
+
     /* Write down the command */
     libusb_status = libusb_bulk_transfer(lusb->handle, 0x02, buf, 16,
                                            &transferred,
                                            BLADERF_LIBUSB_TIMEOUT_MS);
 
     if (libusb_status < 0) {
-        log_error("could not access peripheral\n");
+        log_error("Failed to access peripheral: %s\n",
+                  libusb_error_name(libusb_status));
         return BLADERF_ERR_IO;
     }
 
@@ -1740,20 +1744,36 @@ static int lusb_dac_write(struct bladerf *dev, uint16_t value)
     return status;
 }
 
+static const char * corr2str(bladerf_correction c)
+{
+    switch (c) {
+        case BLADERF_CORR_LMS_DCOFF_I:
+            return "BLADERF_CORR_LMS_DCOFF_I";
+        case BLADERF_CORR_LMS_DCOFF_Q:
+            return "BLADERF_CORR_LMS_DCOFF_Q";
+        case BLADERF_CORR_FPGA_PHASE:
+            return "BLADERF_CORR_FPGA_PHASE";
+        case BLADERF_CORR_FPGA_GAIN:
+            return "BLADERF_FPGA_GAIN";
+        default:
+            return "UNKNOWN";
+    }
+}
+
 static int set_fpga_correction(struct bladerf *dev,
-                               bladerf_correction corr,uint8_t addr, int16_t value)
+                               bladerf_correction corr,
+                               uint8_t addr, int16_t value)
 {
     int i = 0;
     int status = 0;
     struct uart_cmd cmd;
     struct bladerf_lusb *lusb = dev->backend;
 
-    /* If this ia a gain correction add in the 1.0 value so 0 correction yields an unscaled gain */
+    /* If this ia a gain correction add in the 1.0 value so 0 correction yields
+     * an unscaled gain */
     if (corr == BLADERF_CORR_FPGA_GAIN) {
         value += (int16_t)4096;
     }
-
-    log_info("Setting FPGA Correction %d=%x\n",corr,value);
 
     for (i = 0; status == 0 && i < 2; i++) {
         cmd.addr = i + addr;
@@ -1782,7 +1802,6 @@ static int set_lms_correction(struct bladerf *dev, bladerf_module module,
 {
     int status;
     uint8_t tmp;
-    int16_t initial = value;
 
     status = lusb_lms_read(dev, addr, &tmp);
     if (status < 0) {
@@ -1798,9 +1817,7 @@ static int set_lms_correction(struct bladerf *dev, bladerf_module module,
         tmp = tmp & 0x80;
         value >>= 1;
 
-        log_debug("Setting LMS  Initial Correction %d=0x%x abs(0x%x) 0x%x/%d @0x%x\n",module,value,abs(value),initial,initial,addr);
-
-        //RX only has 6 bits of scale to work with
+        /* RX only has 6 bits of scale to work with */
         if (value < 0) {
             value = (abs(value) & 0x3f) | (1 << 6);
         } else {
@@ -1817,8 +1834,6 @@ static int set_lms_correction(struct bladerf *dev, bladerf_module module,
             value = tmp;
         }
     }
-
-    log_debug("Setting LMS  Correction %d=0x%x 0x%x/%d @0x%x\n",module,value,initial,initial,addr);
 
     status = lusb_lms_write(dev, addr, (uint8_t)value);
     if (status < 0) {
@@ -1875,6 +1890,8 @@ int lusb_set_correction(struct bladerf *dev, bladerf_module module,
     corr_type type;
 
     get_correction_addr_type(module, corr, &addr, &type);
+
+    log_verbose("Setting %s = 0x%04x\n", corr2str(corr), value);
 
     switch (type) {
         case CORR_FPGA:
