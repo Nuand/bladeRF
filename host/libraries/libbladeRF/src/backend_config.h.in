@@ -26,6 +26,7 @@
 #define BLADERF_BACKEND_CONFIG_H__
 
 #cmakedefine ENABLE_BACKEND_LIBUSB
+#cmakedefine ENABLE_BACKEND_DUMMY
 #cmakedefine ENABLE_BACKEND_LINUX_DRIVER
 
 #ifdef ENABLE_BACKEND_LIBUSB
@@ -35,6 +36,15 @@
 #else
 #   define BACKEND_LIBUSB_FN_TBL_ENTRY
 #endif
+
+#ifdef ENABLE_BACKEND_DUMMY
+#   include "backend/dummy.h"
+#   define BACKEND_DUMMY_FN_TBL_ENTRY \
+        { BLADERF_BACKEND_DUMMY, &bladerf_dummy_fn },
+#else
+#   define BACKEND_DUMMY_FN_TBL_ENTRY
+#endif
+
 
 #ifdef ENABLE_BACKEND_LINUX_DRIVER
 #   include "backend/linux.h"
@@ -47,12 +57,14 @@
 /* TODO complain if native drivers for multiple OSs are enabled */
 
 #if !defined(ENABLE_BACKEND_LIBUSB) && \
+    !defined(ENABLE_BACKEND_DUMMY) && \
     !defined(ENABLE_BACKEND_LINUX_DRIVER)
     #error "No backends are enabled - one more more must be enabled."
 #endif
 
 /* This list should be ordered by preference (highest first) */
 #define BLADERF_BACKEND_LIST { \
+    BACKEND_DUMMY_FN_TBL_ENTRY \
     BACKEND_LIBUSB_FN_TBL_ENTRY \
     BACKEND_LINUX_DRIVER_FN_TBL_ENTRY \
 }
