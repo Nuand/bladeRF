@@ -1809,33 +1809,35 @@ static int set_lms_correction(struct bladerf *dev, bladerf_module module,
         return status;
     }
 
-    /* Currently allocating 4 extra bits for the DC correction remove them*/
-    value >>= 4;
-
     /* Mask out any control bits in the RX DC correction area */
     if (module == BLADERF_MODULE_RX) {
 
         //bit 7 is unrelated to lms dc correction, save its state
-        tmp = tmp & 0x80;
+        tmp = tmp & (1 << 7);
 
-        /* RX only has 6 bits of scale to work with */
-        value >>= 1;
+        /* RX only has 6 bits of scale to work with, remove normalization */
+        value >>= 5;
 
         if (value < 0) {
-            value = (value == -64) ? 0x3f :  (abs(value) & 0x3f);
+            value = (value <= -64) ? 0x3f :  (abs(value) & 0x3f);
             value |= (1 << 6);//this register uses bit 6 to denote a negative gain
         } else {
-            value = (value == 64) ? 0x3f : (value & 0x3f);
+            value = (value >= 64) ? 0x3f : (value & 0x3f);
         }
 
         value |= tmp;
     } else {
+
+        /* TX only has 7 bits of scale to work with, remove normalization */
+        value >>= 4;
+
         /* lms6002d 0x00 = -16, 0x80 = 0, 0xff = 15.9375 */
         if (value >= 0) {
-            tmp = (value == 128) ? 0x7f : (value & 0x7f);
-            value = 0x80 + tmp;
+            tmp = (value >= 128) ? 0x7f : (value & 0x7f);
+            //assert bit 7 for positive numbers
+            value = (1 << 7) + tmp;
         } else {
-            value &= 0x7f;
+            value = (value <= -128) ? 0x00 : (value & 0x7f);
         }
     }
 
