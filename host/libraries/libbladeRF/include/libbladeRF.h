@@ -383,14 +383,14 @@ typedef enum
 {
     /**
      * Adjusts the in-phase DC offset via controls provided by the LMS6002D
-     * front end. Valid values are [-2047, 2047], which are scaled to the
+     * front end. Valid values are [-2048, 2048], which are scaled to the
      * available control bits in the LMS device.
      */
     BLADERF_CORR_LMS_DCOFF_I,
 
     /**
      * Adjusts the quadrature DC offset via controls provided the LMS6002D
-     * front end. Valid values are [-2047, 2047], which are scaled to the
+     * front end. Valid values are [-2048, 2048], which are scaled to the
      * available control bits.
      */
     BLADERF_CORR_LMS_DCOFF_Q,
