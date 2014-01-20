@@ -100,6 +100,7 @@ set(BLADERF_CLI_SOURCE
         src/main.c
         src/common.c
         src/script.c
+        src/cmd/benchmark.c
         src/cmd/calibrate.c
         src/cmd/cmd.c
         src/cmd/erase.c
