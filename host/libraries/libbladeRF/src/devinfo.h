@@ -29,6 +29,10 @@
 #include <string.h>
 #include <limits.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Reserved values for bladerf_devinfo fields to indicate "undefined" */
 #define DEVINFO_SERIAL_ANY    "ANY"
 #define DEVINFO_BUS_ANY       UINT8_MAX
@@ -100,5 +104,10 @@ bladerf_get_devinfo_list(struct bladerf_devinfo *devinfo);
  */
 int bladerf_devinfo_list_add(struct bladerf_devinfo_list *list,
                              struct bladerf_devinfo *info);
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif /* _BLADERF_DEVINFO_H_ */

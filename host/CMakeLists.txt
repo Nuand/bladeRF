@@ -58,6 +58,7 @@ TEST_BIG_ENDIAN(BLADERF_BIG_ENDIAN)
 # TODO Once we enable other backends, we should revisit whether this is a good
 #      location for this
 include(FindLibUSB)
+include(FindCyAPI)
 
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/common/include/host_config.h.in

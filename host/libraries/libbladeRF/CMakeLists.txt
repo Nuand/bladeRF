@@ -50,6 +50,10 @@ option(ENABLE_BACKEND_DUMMY "Enable dummy backend support"
     OFF
 )
 
+option(ENABLE_BACKEND_GENUSB "Generic USB backend support"
+    OFF
+)
+
 option(LIBUSB_DETACH_KERNEL_DRIVER
     "Enable calls to libusb_detach_kernel_driver(). Not supported in Windows."
     ON
@@ -61,7 +65,7 @@ option(ENABLE_BACKEND_LINUX_DRIVER
 )
 
 # Ensure we've got at least one backend enabled
-if(NOT ENABLE_BACKEND_LIBUSB AND NOT ENABLE_BACKEND_LINUX_DRIVER AND NOT ENABLE_BACKEND_DUMMY)
+if(NOT ENABLE_BACKEND_LIBUSB AND NOT ENABLE_BACKEND_LINUX_DRIVER AND NOT ENABLE_BACKEND_DUMMY AND NOT ENABLE_BACKEND_GENUSB)
     message(FATAL_ERROR
             "No libbladeRF backends are enabled. "
             "Please enable one or more backends." )
@@ -109,14 +113,21 @@ if(ENABLE_BACKEND_LIBUSB)
     find_package(LibUSB)
     if(NOT LIBUSB_FOUND)
         message(FATAL_ERROR "libusb-1.0 not found. This is required to use the libbladeRF libusb backend. For binary releases, try setting LIBUSB_PATH.")
-    else(NOT LIBUSB_FOUND)
+    endif(NOT LIBUSB_FOUND)
+endif(ENABLE_BACKEND_LIBUSB)
+
+if(LIBUSB_FOUND)
         if(LIBUSB_HAVE_GET_VERSION)
             add_definitions(-DHAVE_LIBUSB_GET_VERSION)
         endif(LIBUSB_HAVE_GET_VERSION)
 
         set(LIBBLADERF_INCLUDES ${LIBBLADERF_INCLUDES} ${LIBUSB_INCLUDE_DIRS})
-    endif(NOT LIBUSB_FOUND)
-endif(ENABLE_BACKEND_LIBUSB)
+endif(LIBUSB_FOUND)
+
+if(CYAPI_FOUND)
+        set(LIBBLADERF_INCLUDES ${LIBBLADERF_INCLUDES} ${CYAPI_INCLUDE_DIR})
+endif(CYAPI_FOUND)
+
 
 include_directories(${LIBBLADERF_INCLUDES})
 
@@ -148,6 +159,10 @@ if(ENABLE_BACKEND_DUMMY)
     set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend/dummy.c)
 endif()
 
+if(ENABLE_BACKEND_GENUSB)
+    set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend/generic_usb.c src/backend/generic_usb_cypress.c  src/backend/generic_usb_libusb.c )
+    set_source_files_properties(src/backend/generic_usb_cypress.c PROPERTIES LANGUAGE CXX)
+endif()
 
 if(ENABLE_BACKEND_LINUX_DRIVER)
     set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend/linux.c)
@@ -159,8 +174,12 @@ add_library(libbladerf_shared SHARED ${LIBBLADERF_SOURCE})
 # Build configuration
 ################################################################################
 
-if(ENABLE_BACKEND_LIBUSB)
+if(LIBUSB_FOUND)
     target_link_libraries(libbladerf_shared ${LIBUSB_LIBRARIES})
+endif()
+
+if(CYAPI_FOUND)
+    target_link_libraries(libbladerf_shared ${CYAPI_LIBRARIES} setupapi.lib)
 endif()
 
 # Adjust our output name

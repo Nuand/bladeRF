@@ -28,6 +28,7 @@
 #cmakedefine ENABLE_BACKEND_LIBUSB
 #cmakedefine ENABLE_BACKEND_DUMMY
 #cmakedefine ENABLE_BACKEND_LINUX_DRIVER
+#cmakedefine ENABLE_BACKEND_GENUSB
 
 #ifdef ENABLE_BACKEND_LIBUSB
 #   include "backend/libusb.h"
@@ -46,6 +47,15 @@
 #endif
 
 
+#ifdef ENABLE_BACKEND_GENUSB
+#   include "backend/generic_usb.h"
+#   define BACKEND_GENUSB_FN_TBL_ENTRY \
+        { BLADERF_BACKEND_GENERIC_USB, &bladerf_genusb_fn },
+#else
+#   define BACKEND_GENUSB_FN_TBL_ENTRY
+#endif
+
+
 #ifdef ENABLE_BACKEND_LINUX_DRIVER
 #   include "backend/linux.h"
 #   define BACKEND_LINUX_DRIVER_FN_TBL_ENTRY \
@@ -58,6 +68,7 @@
 
 #if !defined(ENABLE_BACKEND_LIBUSB) && \
     !defined(ENABLE_BACKEND_DUMMY) && \
+    !defined(ENABLE_BACKEND_GENUSB) && \
     !defined(ENABLE_BACKEND_LINUX_DRIVER)
     #error "No backends are enabled - one more more must be enabled."
 #endif
@@ -66,6 +77,7 @@
 #define BLADERF_BACKEND_LIST { \
     BACKEND_DUMMY_FN_TBL_ENTRY \
     BACKEND_LIBUSB_FN_TBL_ENTRY \
+    BACKEND_GENUSB_FN_TBL_ENTRY \
     BACKEND_LINUX_DRIVER_FN_TBL_ENTRY \
 }
 

@@ -92,6 +92,7 @@ typedef enum {
     BLADERF_BACKEND_LINUX,  /**< Linux kernel driver */
     BLADERF_BACKEND_LIBUSB, /**< libusb */
     BLADERF_BACKEND_DUMMY,  /**< dummy */
+    BLADERF_BACKEND_GENERIC_USB,  /**< dummy */    
 } bladerf_backend;
 
 
@@ -115,7 +116,8 @@ typedef enum {
  * these structures.
  */
 struct bladerf_devinfo {
-    bladerf_backend backend;    /**< Backend to use when connecting to device */
+    bladerf_backend backend;             /**< Backend to use when connecting to device */
+    void*           backendParameter;    /**< Generic Parameter the backend is freely to use */
     char serial[BLADERF_SERIAL_LENGTH]; /**< Device serial number string */
     uint8_t usb_bus;            /**< Bus # device is attached to */
     uint8_t usb_addr;           /**< Device address on bus */
