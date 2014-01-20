@@ -24,10 +24,12 @@
 typedef struct 
 {
     int Count;
+    int Blocks;
     int MissedSamples;
     int LastI;
     int LastQ;
     bool First;
+    bool FirstBlock;
 } Bench_data_t;
 
 static void *bench_callback(struct bladerf *dev,
@@ -41,6 +43,12 @@ static void *bench_callback(struct bladerf *dev,
     uint16_t *Data = (uint16_t*) samples;
     Bench_data_t *CBData = (Bench_data_t*) user_data;
     int Start=0;
+    
+    if(CBData->FirstBlock) //First block will have left over data in it.. lets never look at it..
+    {
+        CBData->FirstBlock =false;
+        return samples;
+    }
 
     if (CBData->First)
     {
@@ -57,7 +65,7 @@ static void *bench_callback(struct bladerf *dev,
         int NewValue =(CBData->LastI+1) % 2048;
         if (NewValue != Data[i*2])
         {
-            printf("Offset = %d Skip = %d\n",i, (2048+Data[i*2]-NewValue) % 2048);
+            printf("Block %d Offset = %d Skip = %d\n",CBData->Blocks - CBData->Count,i,  (2048+Data[i*2]-NewValue) % 2048);
             CBData->MissedSamples++;
         }
         CBData->LastI = Data[i*2];
@@ -103,15 +111,16 @@ int cmd_benchmark(struct cli_state *state, int argc, char **argv)
         printf("Starting bandwidth benchmark.\n");
         bladerf_config_gpio_read(state->dev,  &GpioValue);
         bladerf_config_gpio_write(state->dev, GpioValue | (1<<8) );//Enable counting
-
+        bladerf_enable_module(state->dev, BLADERF_MODULE_RX, true);
         for (i=1; i<=40; i++)
         {
             BW = (unsigned int) (i*1E6);
             bladerf_set_sample_rate(state->dev, BLADERF_MODULE_RX, (unsigned int)BW, &Actual); 
             Data.First = true;
+            Data.FirstBlock = true;
             Data.LastI = 0;
             Data.LastQ = 0;
-            Data.Count = (int) (((((double)BW) / (1024*1024))*5)+1); //5sec or next closest..
+            Data.Count = Data.Blocks =  (int) (((((double)BW) / (1024*1024))*5)+1); //5sec or next closest..
             Data.MissedSamples = 0;
             bladerf_init_stream(&Stream, state->dev, bench_callback, &Buffers, 64, BLADERF_FORMAT_SC16_Q12, (size_t)(1024*1024) ,64,&Data);
             bladerf_stream(Stream , BLADERF_MODULE_RX);
@@ -119,6 +128,7 @@ int cmd_benchmark(struct cli_state *state, int argc, char **argv)
             printf("Speed : %dMhz missed = %d \n",(int)(BW/(1E6)) ,Data.MissedSamples);
         }
         bladerf_config_gpio_write(state->dev, GpioValue  );//Restore to original setting
+        bladerf_enable_module(state->dev, BLADERF_MODULE_RX, false);
         printf("\n");
     }
     return CMD_RET_OK;
