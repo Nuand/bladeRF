@@ -27,6 +27,8 @@ static inline const char *backend2str(bladerf_backend b)
             return "libusb";
         case BLADERF_BACKEND_LINUX:
             return "Linux kernel driver";
+        case BLADERF_BACKEND_GENERIC_USB:
+            return "Generic USB driver";
         default:
             return "Unknown";
     }

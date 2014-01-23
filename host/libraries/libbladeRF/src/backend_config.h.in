@@ -26,7 +26,9 @@
 #define BLADERF_BACKEND_CONFIG_H__
 
 #cmakedefine ENABLE_BACKEND_LIBUSB
+#cmakedefine ENABLE_BACKEND_DUMMY
 #cmakedefine ENABLE_BACKEND_LINUX_DRIVER
+#cmakedefine ENABLE_BACKEND_GENUSB
 
 #ifdef ENABLE_BACKEND_LIBUSB
 #   include "backend/libusb.h"
@@ -35,6 +37,24 @@
 #else
 #   define BACKEND_LIBUSB_FN_TBL_ENTRY
 #endif
+
+#ifdef ENABLE_BACKEND_DUMMY
+#   include "backend/dummy.h"
+#   define BACKEND_DUMMY_FN_TBL_ENTRY \
+        { BLADERF_BACKEND_DUMMY, &bladerf_dummy_fn },
+#else
+#   define BACKEND_DUMMY_FN_TBL_ENTRY
+#endif
+
+
+#ifdef ENABLE_BACKEND_GENUSB
+#   include "backend/generic_usb.h"
+#   define BACKEND_GENUSB_FN_TBL_ENTRY \
+        { BLADERF_BACKEND_GENERIC_USB, &bladerf_genusb_fn },
+#else
+#   define BACKEND_GENUSB_FN_TBL_ENTRY
+#endif
+
 
 #ifdef ENABLE_BACKEND_LINUX_DRIVER
 #   include "backend/linux.h"
@@ -47,13 +67,17 @@
 /* TODO complain if native drivers for multiple OSs are enabled */
 
 #if !defined(ENABLE_BACKEND_LIBUSB) && \
+    !defined(ENABLE_BACKEND_DUMMY) && \
+    !defined(ENABLE_BACKEND_GENUSB) && \
     !defined(ENABLE_BACKEND_LINUX_DRIVER)
     #error "No backends are enabled - one more more must be enabled."
 #endif
 
 /* This list should be ordered by preference (highest first) */
 #define BLADERF_BACKEND_LIST { \
+    BACKEND_DUMMY_FN_TBL_ENTRY \
     BACKEND_LIBUSB_FN_TBL_ENTRY \
+    BACKEND_GENUSB_FN_TBL_ENTRY \
     BACKEND_LINUX_DRIVER_FN_TBL_ENTRY \
 }
 

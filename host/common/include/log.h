@@ -32,6 +32,10 @@
 #include <stdio.h>
 #include "libbladeRF.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define _LOG_STRINGIFY__(x)         #x
 #define _LOG_STRINGIFY_(x)          _LOG_STRINGIFY__(x)
 
@@ -105,6 +109,10 @@ void log_write(bladerf_log_level level, const char *format, ...);
 void log_set_verbosity(bladerf_log_level level);
 #else
 #define log_set_verbosity(level) do {} while (0)
+#endif
+
+#ifdef __cplusplus
+ }
 #endif
 
 

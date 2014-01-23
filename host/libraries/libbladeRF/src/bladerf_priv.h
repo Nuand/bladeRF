@@ -37,7 +37,9 @@
 #include "devinfo.h"
 
 #include "flash.h"
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 typedef enum {
     ETYPE_ERRNO,
     ETYPE_LIBBLADERF,
@@ -295,5 +297,8 @@ int encode_field(char *ptr, int len, int *idx, const char *field,
  */
 int add_field(char *buf, int len, const char *field, const char *val);
 
+#ifdef __cplusplus
+ }
+#endif
 
 #endif

@@ -27,6 +27,7 @@
 #include "script.h"
 
 #define DECLARE_CMD(x) int cmd_##x (struct cli_state *, int, char **)
+DECLARE_CMD(benchmark);
 DECLARE_CMD(calibrate);
 DECLARE_CMD(clear);
 DECLARE_CMD(correct);
@@ -46,7 +47,9 @@ DECLARE_CMD(peek);
 DECLARE_CMD(poke);
 DECLARE_CMD(print);
 DECLARE_CMD(probe);
+#ifdef CLI_LIBUSB_ENABLED
 DECLARE_CMD(recover);
+#endif
 DECLARE_CMD(run);
 DECLARE_CMD(set);
 DECLARE_CMD(rx);
@@ -88,8 +91,18 @@ static const char *cmd_names_rx[] = { "rx", "receive", NULL };
 static const char *cmd_names_tx[] = { "tx", "transmit", NULL };
 static const char *cmd_names_set[] = { "set", "s", NULL };
 static const char *cmd_names_ver[] = { "version", "ver", "v", NULL };
+static const char *cmd_names_benchmark[] = { "benchmark", "bench", "b",NULL };
 
 static const struct cmd cmd_table[] = {
+    {
+        FIELD_INIT(.names, cmd_names_benchmark),
+        FIELD_INIT(.exec, cmd_benchmark),
+        FIELD_INIT(.desc, "Perform a benchmark on the reciever"),
+        FIELD_INIT(.help,
+            "Determine the maximum sustainable bandwith\n"
+            "\n"
+        )
+    },
     {
         FIELD_INIT(.names, cmd_names_calibrate),
         FIELD_INIT(.exec, cmd_calibrate),
@@ -386,6 +399,7 @@ static const struct cmd cmd_table[] = {
             "Exit the CLI\n"
         )
     },
+#ifdef CLI_LIBUSB_ENABLED    
     {
         FIELD_INIT(.names, cmd_names_rec),
         FIELD_INIT(.exec, cmd_recover),
@@ -409,6 +423,7 @@ static const struct cmd cmd_table[] = {
             "\"load fx3 <firmware file>\"\n"
         )
     },
+#endif
     {
         FIELD_INIT(.names, cmd_names_run),
         FIELD_INIT(.exec, cmd_run),
