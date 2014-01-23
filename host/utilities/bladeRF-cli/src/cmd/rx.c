@@ -59,19 +59,19 @@ static inline void sc16q11_sample_fixup(int16_t *buf, size_t n)
 
     for (i = 0; i < n; i++) {
         /* I - Mask off the marker and sign extend */
-        *buf &= (*buf) & 0x0fff;
-        if (*buf & 0x800) {
-            *buf |= 0xf000;
-        }
+//        *buf &= (*buf) & 0x0fff;
+//        if (*buf & 0x800) {
+//            *buf |= 0xf000;
+//        }
 
         *buf = LE16_TO_HOST(*buf);
         buf++;
 
         /* Q - Mask off the marker and sign extend */
-        *buf = HOST_TO_LE16(*buf) & 0x0fff;
-        if (*buf & 0x800) {
-            *buf |= 0xf000;
-        }
+//        *buf = HOST_TO_LE16(*buf) & 0x0fff;
+//        if (*buf & 0x800) {
+//            *buf |= 0xf000;
+//        }
 
         *buf = LE16_TO_HOST(*buf);
         buf++;

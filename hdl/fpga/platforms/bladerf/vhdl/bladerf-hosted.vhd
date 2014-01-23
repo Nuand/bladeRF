@@ -50,7 +50,7 @@ architecture hosted_bladerf of bladerf is
         oc_i2c_sda_padoen_o : out std_logic;
         oc_i2c_arst_i       : in  std_logic;
         oc_i2c_scl_pad_i    : in  std_logic;
-        gpio_export         : out std_logic_vector(31 downto 0); 
+        gpio_export         : out std_logic_vector(31 downto 0);
         correction_rx_phase_gain_export : out std_logic_vector(31 downto 0);
         correction_tx_phase_gain_export : out std_logic_vector(31 downto 0)
       );
@@ -59,6 +59,11 @@ architecture hosted_bladerf of bladerf is
     alias sys_rst   is fx3_ctl(7) ;
     alias tx_clock  is c4_tx_clock ;
     alias rx_clock  is lms_rx_clock_out ;
+
+    type rx_mux_mode_t is (RX_MUX_NORMAL, RX_MUX_12BIT_COUNTER, RX_MUX_32BIT_COUNTER, RX_MUX_ENTROPY) ;
+
+    signal rx_mux_sel       : unsigned(1 downto 0) ;
+    signal rx_mux_mode      : rx_mux_mode_t ;
 
     signal \80MHz\          : std_logic ;
     signal \80MHz locked\   : std_logic ;
@@ -112,17 +117,18 @@ architecture hosted_bladerf of bladerf is
     signal tx_enable        : std_logic ;
     signal rx_enable        : std_logic ;
 
-    signal rx_sample_raw_i  : signed(11 downto 0);
-    signal rx_sample_raw_q  : signed(11 downto 0);
-    signal rx_sample_raw_valid : std_logic;
-
-    signal rx_sample_i      : signed(11 downto 0) ;
-    signal rx_sample_q      : signed(11 downto 0) ;
+    signal rx_sample_i      : signed(15 downto 0) ;
+    signal rx_sample_q      : signed(15 downto 0) ;
     signal rx_sample_valid  : std_logic ;
 
-    signal rx_gen_i         : signed(11 downto 0) ;
-    signal rx_gen_q         : signed(11 downto 0) ;
+    signal rx_gen_mode      : std_logic ;
+    signal rx_gen_i         : signed(15 downto 0) ;
+    signal rx_gen_q         : signed(15 downto 0) ;
     signal rx_gen_valid     : std_logic ;
+
+    signal rx_entropy_i     : signed(15 downto 0) := (others =>'0') ;
+    signal rx_entropy_q     : signed(15 downto 0) := (others =>'0') ;
+    signal rx_entropy_valid : std_logic ;
 
     signal tx_sample_raw_i : signed(15 downto 0);
     signal tx_sample_raw_q : signed(15 downto 0);
@@ -152,10 +158,8 @@ architecture hosted_bladerf of bladerf is
     signal lms_rx_data_reg      :   signed(11 downto 0) ;
     signal lms_rx_iq_select_reg :   std_logic ;
 
-    signal rx_mux_sel           :   std_logic ;
-
-    signal rx_mux_i             :   signed(11 downto 0) ;
-    signal rx_mux_q             :   signed(11 downto 0) ;
+    signal rx_mux_i             :   signed(15 downto 0) ;
+    signal rx_mux_q             :   signed(15 downto 0) ;
     signal rx_mux_valid         :   std_logic ;
 
     signal rx_sample_corrected_i : signed(15 downto 0);
@@ -200,15 +204,17 @@ begin
         sync                =>  usb_speed
       ) ;
 
-    U_rx_source : entity work.synchronizer
-      generic map (
-        RESET_LEVEL         =>  '0'
-      ) port map (
-        reset               =>  '0',
-        clock               =>  rx_clock,
-        async               =>  nios_gpio(8),
-        sync                =>  rx_mux_sel
-      ) ;
+    generate_mux_sel : for i in rx_mux_sel'range generate
+        U_rx_source : entity work.synchronizer
+          generic map (
+            RESET_LEVEL         =>  '0'
+          ) port map (
+            reset               =>  '0',
+            clock               =>  rx_clock,
+            async               =>  nios_gpio(8+i),
+            sync                =>  rx_mux_sel(i)
+          ) ;
+    end generate ;
 
     U_sys_reset_sync : entity work.reset_synchronizer
       generic map (
@@ -429,6 +435,8 @@ begin
       );
 
     -- LMS6002D IQ interface
+    rx_sample_i(15 downto 12) <= (others => rx_sample_i(11)) ;
+    rx_sample_q(15 downto 12) <= (others => rx_sample_q(11)) ;
     U_lms6002d : entity work.lms6002d
       port map (
         rx_clock            =>  rx_clock,
@@ -439,8 +447,8 @@ begin
         rx_lms_iq_sel       =>  lms_rx_iq_select_reg,
         rx_lms_enable       =>  open,
 
-        rx_sample_i         =>  rx_sample_i,
-        rx_sample_q         =>  rx_sample_q,
+        rx_sample_i         =>  rx_sample_i(11 downto 0),
+        rx_sample_q         =>  rx_sample_q(11 downto 0),
         rx_sample_valid     =>  rx_sample_valid,
 
         tx_clock            =>  tx_clock,
@@ -462,12 +470,14 @@ begin
         reset           =>  rx_reset,
         enable          =>  rx_enable,
 
-        mode            =>  '0',
+        mode            =>  rx_gen_mode,
 
         sample_i        =>  rx_gen_i,
         sample_q        =>  rx_gen_q,
         sample_valid    =>  rx_gen_valid
       ) ;
+
+    rx_mux_mode <= rx_mux_mode'val(to_integer(rx_mux_sel)) ;
 
     rx_mux : process(rx_reset, rx_clock)
     begin
@@ -475,16 +485,31 @@ begin
             rx_mux_i <= (others =>'0') ;
             rx_mux_q <= (others =>'0') ;
             rx_mux_valid <= '0' ;
+            rx_gen_mode <= '0' ;
         elsif( rising_edge(rx_clock) ) then
-            if( rx_mux_sel = '0' ) then
-                rx_mux_i <= rx_sample_i ;
-                rx_mux_q <= rx_sample_q ;
-                rx_mux_valid <= rx_sample_valid ;
-            else
-                rx_mux_i <= rx_gen_i ;
-                rx_mux_q <= rx_gen_q ;
-                rx_mux_valid <= rx_gen_valid ;
-            end if ;
+            case rx_mux_mode is
+                when RX_MUX_NORMAL =>
+                    rx_mux_i <= rx_sample_i ;
+                    rx_mux_q <= rx_sample_q ;
+                    rx_mux_valid <= rx_sample_valid ;
+                when RX_MUX_12BIT_COUNTER | RX_MUX_32BIT_COUNTER =>
+                    rx_mux_i <= rx_gen_i ;
+                    rx_mux_q <= rx_gen_q ;
+                    rx_mux_valid <= rx_gen_valid ;
+                    if( rx_mux_mode = RX_MUX_32BIT_COUNTER ) then
+                        rx_gen_mode <= '1' ;
+                    else
+                        rx_gen_mode <= '0' ;
+                    end if ;
+                when RX_MUX_ENTROPY =>
+                    rx_mux_i <= rx_entropy_i ;
+                    rx_mux_q <= rx_entropy_q ;
+                    rx_mux_valid <= rx_entropy_valid ;
+                when others =>
+                    rx_mux_i <= (others =>'0') ;
+                    rx_mux_q <= (others =>'0') ;
+                    rx_mux_valid <= '0' ;
+            end case ;
         end if ;
     end process ;
 

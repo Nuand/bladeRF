@@ -441,6 +441,14 @@ int print_gpio(struct cli_state *state, int argc, char **argv)
         } else {
             printf( "Invalid Band Selection!\n" );
         }
+        printf( "    %-20s", "RX Source:" );
+        switch((val&0x300)>>8) {
+            case 0: printf( "LMS6002D\n" ); break;
+            case 1: printf( "Internal 12-bit counter\n" ); break;
+            case 2: printf( "Internal 32-bit counter\n" ); break;
+            case 3: printf( "Whitened Entropy\n" ); break;
+            default : printf( "????\n" ); break;
+        }
         printf( "\n" );
     }
 
