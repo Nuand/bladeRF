@@ -42,8 +42,12 @@ option(ENABLE_LIBBLADERF_LOGGING "Enable log messages in libbladeRF" ON)
 ##############################
 # Backend Support
 ##############################
-option(ENABLE_BACKEND_LIBUSB "Enable libusb backend support"
+option(ENABLE_BACKEND_LIBUSB "Enable libusb backend support."
     ON
+)
+
+option(ENABLE_BACKEND_DUMMY "Enable dummy backend support. This is only useful for some developers."
+    OFF
 )
 
 option(LIBUSB_DETACH_KERNEL_DRIVER
@@ -57,7 +61,7 @@ option(ENABLE_BACKEND_LINUX_DRIVER
 )
 
 # Ensure we've got at least one backend enabled
-if(NOT ENABLE_BACKEND_LIBUSB AND NOT ENABLE_BACKEND_LINUX_DRIVER)
+if(NOT ENABLE_BACKEND_LIBUSB AND NOT ENABLE_BACKEND_LINUX_DRIVER AND NOT ENABLE_BACKEND_DUMMY)
     message(FATAL_ERROR
             "No libbladeRF backends are enabled. "
             "Please enable one or more backends." )
@@ -139,6 +143,11 @@ set(LIBBLADERF_SOURCE
 if(LIBUSB_FOUND AND ENABLE_BACKEND_LIBUSB)
     set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend/libusb.c)
 endif()
+
+if(ENABLE_BACKEND_DUMMY)
+    set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend/dummy.c)
+endif()
+
 
 if(ENABLE_BACKEND_LINUX_DRIVER)
     set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend/linux.c)

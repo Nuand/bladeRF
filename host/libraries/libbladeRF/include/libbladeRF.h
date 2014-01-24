@@ -94,7 +94,8 @@ struct bladerf;
 typedef enum {
     BLADERF_BACKEND_ANY,    /**< "Don't Care" -- use any available backend */
     BLADERF_BACKEND_LINUX,  /**< Linux kernel driver */
-    BLADERF_BACKEND_LIBUSB  /**< libusb */
+    BLADERF_BACKEND_LIBUSB, /**< libusb */
+    BLADERF_BACKEND_DUMMY = 100, /**< Dummy used for development purposes */
 } bladerf_backend;
 
 
