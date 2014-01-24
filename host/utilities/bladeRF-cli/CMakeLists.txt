@@ -119,15 +119,20 @@ set(BLADERF_CLI_SOURCE
         src/cmd/rxtx.c
         src/cmd/tx.c
         src/cmd/version.c
-        src/cmd/recover.c
         src/cmd/jump_boot.c
         src/cmd/mimo.c
         src/cmd/correct.c
         src/interactive/interactive.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/log.c
-        ${UTILITIES_COMMON_SRC}/ezusb.c
 )
+
+if(LIBUSB_FOUND)
+  set(BLADERF_CLI_SOURCE ${BLADERF_CLI_SOURCE}
+          src/cmd/recover.c
+          ${UTILITIES_COMMON_SRC}/ezusb.c
+)
+endif()
 
 # Select the interactive mode (and script handling) backend
 if(ENABLE_LIBTECLA)

@@ -46,7 +46,9 @@ DECLARE_CMD(peek);
 DECLARE_CMD(poke);
 DECLARE_CMD(print);
 DECLARE_CMD(probe);
+#ifdef CLI_LIBUSB_ENABLED
 DECLARE_CMD(recover);
+#endif
 DECLARE_CMD(run);
 DECLARE_CMD(set);
 DECLARE_CMD(rx);
@@ -386,6 +388,7 @@ static const struct cmd cmd_table[] = {
             "Exit the CLI\n"
         )
     },
+#ifdef CLI_LIBUSB_ENABLED
     {
         FIELD_INIT(.names, cmd_names_rec),
         FIELD_INIT(.exec, cmd_recover),
@@ -407,8 +410,12 @@ static const struct cmd cmd_table[] = {
             "device's RAM, users should open the device with the \"open\"\n"
             "command, and write the firmware to flash via \n"
             "\"load fx3 <firmware file>\"\n"
+            "\n"
+            "Note: This command is only available when bladeRF-cli is built\n"
+            "      with libusb support.\n"
         )
     },
+#endif
     {
         FIELD_INIT(.names, cmd_names_run),
         FIELD_INIT(.exec, cmd_run),
