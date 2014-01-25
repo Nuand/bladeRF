@@ -77,7 +77,7 @@ int interactive_set_input(FILE *file)
     }
 }
 
-char * interactive_expand_path(char *path)
+char * interactive_expand_path(const char *path)
 {
     ExpandFile *ef = NULL;
     FileExpansion *fe = NULL;

@@ -48,7 +48,7 @@ int interactive(struct cli_state *s, bool script_only);
  *
  * @return Expanded path on success, NULL on failure.
  */
-char * interactive_expand_path(char *path);
+char * interactive_expand_path(const char *path);
 
 /**
  * Notify interactive support that we caught CTRL-C. This is neccessary if

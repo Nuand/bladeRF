@@ -145,4 +145,19 @@ void get_last_error(struct cli_error *e, enum error_type *type, int *error);
  */
 char *to_path(FILE *f);
 
+/**
+ * Open the file, expanding the path first, if possible.
+ *
+ * This is a wrapper around fopen() and interactive_expand_path()
+ *
+ * @note The value of errno IS NOT guarenteed to be assoicated with fopen()
+ *       failures when this function returns.
+ *
+ * @param   filename    Filename to expand and open
+ * @param   mode        fopen() access mode string
+ *
+ * @return  File handle on success, NULL on failure.
+ */
+FILE *expand_and_open(const char *filename, const char *mode);
+
 #endif

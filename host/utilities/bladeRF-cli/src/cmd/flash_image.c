@@ -53,7 +53,7 @@ static int handle_param(const char *param, char *val,
     int status = 0;
 
     if (!strcasecmp("data", param)) {
-        p->data_file = interactive_expand_path(val);
+        p->data_file = val;
     } else if (!strcasecmp("serial", param)) {
         size_t i;
         size_t len = strlen(val);
@@ -270,7 +270,7 @@ static int write_image(struct cli_state *s, struct params *p, const char *argv0)
     long data_size;
     struct bladerf_image *image = NULL;
 
-    f = fopen(p->data_file, "rb");
+    f = expand_and_open(p->data_file, "rb");
     if (!f) {
         return CMD_RET_FILEOP;
     }
@@ -341,8 +341,6 @@ int cmd_flash_image(struct cli_state *state, int argc, char **argv)
             status = write_image(state, &p, argv[0]);
         }
     }
-
-    free(p.data_file);
 
     return status;
 }

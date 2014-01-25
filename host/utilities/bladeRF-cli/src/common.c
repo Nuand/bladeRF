@@ -233,3 +233,18 @@ void get_last_error(struct cli_error *e, enum error_type *type, int *error)
     *error = e->value;
     pthread_mutex_unlock(&e->lock);
 }
+
+FILE *expand_and_open(const char *filename, const char *mode)
+{
+    char *expanded_filename;
+    FILE *ret;
+
+    expanded_filename = interactive_expand_path(filename);
+    if (expanded_filename == NULL) {
+        return NULL;
+    }
+
+    ret = fopen(expanded_filename, mode);
+    free(expanded_filename);
+    return ret;
+}

@@ -181,7 +181,7 @@ static int tx_csv_to_sc16q11(struct cli_state *s)
 
     assert(tx->file_mgmt.path != NULL);
 
-    csv = fopen(tx->file_mgmt.path, "r");
+    csv = expand_and_open(tx->file_mgmt.path, "r");
     if (!csv) {
         status = CMD_RET_FILEOP;
         goto tx_csv_to_sc16q11_out;
@@ -194,7 +194,7 @@ static int tx_csv_to_sc16q11(struct cli_state *s)
         goto tx_csv_to_sc16q11_out;
     }
 
-    bin = fopen(bin_name, "wb+");
+    bin = expand_and_open(bin_name, "wb+");
     if (!bin) {
         status = CMD_RET_FILEOP;
         goto tx_csv_to_sc16q11_out;
@@ -423,7 +423,7 @@ static int tx_cmd_start(struct cli_state *s)
             pthread_mutex_lock(&s->tx->file_mgmt.file_lock);
 
             assert(s->tx->file_mgmt.format == RXTX_FMT_BIN_SC16Q11);
-            s->tx->file_mgmt.file = fopen(s->tx->file_mgmt.path, "r");
+            s->tx->file_mgmt.file = expand_and_open(s->tx->file_mgmt.path, "r");
             if (!s->tx->file_mgmt.file) {
                 set_last_error(&s->tx->last_error, ETYPE_ERRNO, errno);
                 status = CMD_RET_FILEOP;

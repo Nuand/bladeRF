@@ -25,6 +25,7 @@
 #include <assert.h>
 #include "script.h"
 #include "host_config.h"
+#include "common.h"
 
 #if BLADERF_OS_WINDOWS
 #include <io.h>
@@ -96,7 +97,7 @@ int cli_open_script(struct script **s, const char *filename)
     int error;
     struct script *to_check, *new_script;
 
-    f = fopen(filename, "r");
+    f = expand_and_open(filename, "r");
     if (!f) {
         error = -errno;
         goto cli_open_script__file_err;
