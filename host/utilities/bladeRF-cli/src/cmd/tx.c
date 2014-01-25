@@ -61,8 +61,8 @@ static void *tx_callback(struct bladerf *dev,
 
     unsigned char requests; /* Requests from main control thread */
     size_t read_status;     /* Status from read() calls */
-    size_t n_read;          /* Number of bytes read from file */
-    size_t to_read;         /* Temp var, # of samples to read */
+    size_t n_read;          /* # of int16_t I and Q values already read */
+    size_t to_read;         /* # of int16_t I and Q values to attempt to read */
     bool zero_pad;          /* We need to zero-pad the rest of the buffer */
 
     int16_t *samples_int16 = NULL;
@@ -97,7 +97,7 @@ static void *tx_callback(struct bladerf *dev,
 
     /* Keep reading from the file until we have enough data, or have a
      * a condition in which we'll just zero pad the rest of the buffer */
-    while (n_read < tx->data_mgmt.samples_per_buffer && !zero_pad) {
+    while (n_read < (2 * tx->data_mgmt.samples_per_buffer) && !zero_pad) {
         to_read = 2 * tx->data_mgmt.samples_per_buffer - n_read;
         read_status = fread(samples_int16 + n_read, sizeof(int16_t),
                             to_read, tx->file_mgmt.file);
