@@ -31,6 +31,10 @@
 #include "host_config.h"
 #include "rxtx_impl.h"
 
+/* The DAC range is [-2048, 2047] */
+#define SC16Q11_IQ_MIN  (-2048)
+#define SC16Q11_IQ_MAX  (2047)
+
 struct tx_callback_data
 {
     struct rxtx_data *tx;
@@ -173,6 +177,7 @@ static int tx_csv_to_sc16q11(struct cli_state *s)
     FILE *csv = NULL;
     char *bin_name = NULL;
     int line = 1;
+    unsigned int n_clamped = 0;
 
     assert(tx->file_mgmt.path != NULL);
 
@@ -203,6 +208,14 @@ static int tx_csv_to_sc16q11(struct cli_state *s)
         if (token) {
             tmp_int = str2int(token, INT16_MIN, INT16_MAX, &ok);
 
+            if (tmp_int < SC16Q11_IQ_MIN) {
+                tmp_int = SC16Q11_IQ_MIN;
+                n_clamped++;
+            } else if (tmp_int > SC16Q11_IQ_MAX) {
+                tmp_int = SC16Q11_IQ_MAX;
+                n_clamped++;
+            }
+
             if (ok) {
                 tmp_iq[0] = tmp_int;
             } else {
@@ -216,6 +229,14 @@ static int tx_csv_to_sc16q11(struct cli_state *s)
 
             if (token) {
                 tmp_int = str2int(token, INT16_MIN, INT16_MAX, &ok);
+
+                if (tmp_int < SC16Q11_IQ_MIN) {
+                    tmp_int = SC16Q11_IQ_MIN;
+                    n_clamped++;
+                } else if (tmp_int > SC16Q11_IQ_MAX) {
+                    tmp_int = SC16Q11_IQ_MAX;
+                    n_clamped++;
+                }
 
                 if (ok) {
                     tmp_iq[1] = tmp_int;
@@ -252,6 +273,11 @@ static int tx_csv_to_sc16q11(struct cli_state *s)
         tx->file_mgmt.format = RXTX_FMT_BIN_SC16Q11;
         free(tx->file_mgmt.path);
         tx->file_mgmt.path = bin_name;
+
+        if (n_clamped != 0) {
+            printf("    Warning: %u values clamped within DAC SC16 Q11 range "
+                   "of [%d, %d].\n", n_clamped, SC16Q11_IQ_MIN, SC16Q11_IQ_MAX);
+        }
     }
 
 tx_csv_to_sc16q11_out:
