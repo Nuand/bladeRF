@@ -2087,6 +2087,25 @@ static int lusb_rx(struct bladerf *dev, bladerf_format format, void *samples,
     return (int)ret;
 }
 
+/* At the risk of being a little inefficient, just keep attempting to cancel
+ * everything. If a transfer's no longer active, we'll just get a NOT_FOUND
+ * error -- no big deal.  Just accepting that alleviates the need to track
+ * the status of each transfer...
+ */
+static inline void cancel_all_transfers(struct bladerf_stream *stream)
+{
+    size_t i;
+    int status;
+    struct lusb_stream_data *stream_data = stream->backend_data;
+
+    for (i = 0; i < stream->num_transfers; i++ ) {
+        status = libusb_cancel_transfer(stream_data->transfers[i]);
+        if (status < 0 && status != LIBUSB_ERROR_NOT_FOUND) {
+            log_error("Error canceling transfer (%d): %s\n",
+                    status, libusb_error_name(status));
+        }
+    }
+}
 
 static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
 {
@@ -2095,8 +2114,6 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
     void *next_buffer = NULL;
     struct bladerf_metadata metadata;
     struct lusb_stream_data *stream_data = stream->backend_data;
-    size_t i;
-    int status;
     size_t bytes_per_buffer;
 
     /* Check to see if the transfer has been cancelled or errored */
@@ -2143,14 +2160,7 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
 
         /* This transfer is no longer active */
         stream_data->active_transfers--;
-
-        for (i = 0; i < stream->num_transfers; i++ ) {
-            status = libusb_cancel_transfer(stream_data->transfers[i]);
-            if (status < 0 && status != LIBUSB_ERROR_NOT_FOUND) {
-                log_error("Error canceling transfer (%d): %s\n",
-                            status, libusb_error_name(status));
-            }
-        }
+        cancel_all_transfers(stream);
     }
 
     /* Check to see if the stream is still valid */
@@ -2177,6 +2187,7 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
         }
     } else {
         stream_data->active_transfers--;
+        cancel_all_transfers(stream);
     }
 
     bytes_per_buffer = c16_samples_to_bytes(stream->samples_per_buffer);
