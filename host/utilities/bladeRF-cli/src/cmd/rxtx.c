@@ -44,6 +44,14 @@
 
 #define NSEC_PER_SEC 1000000000
 
+#define ARRAY_LEN(x) (sizeof(x) / sizeof(x[0]))
+
+const struct numeric_suffix rxtx_time_suffixes[] = {
+    { FIELD_INIT(.suffix, "s"), FIELD_INIT(.multiplier, 1000) },
+    { FIELD_INIT(.suffix, "ms"), FIELD_INIT(.multiplier, 1) },
+    { FIELD_INIT(.suffix, "m"), FIELD_INIT(.multiplier, 1) },
+};
+
 const struct numeric_suffix rxtx_kmg_suffixes[] = {
     { FIELD_INIT(.suffix, "K"), FIELD_INIT(.multiplier, 1024) },
     { FIELD_INIT(.suffix, "k"), FIELD_INIT(.multiplier, 1024) },
@@ -53,8 +61,8 @@ const struct numeric_suffix rxtx_kmg_suffixes[] = {
     { FIELD_INIT(.suffix, "g"), FIELD_INIT(.multiplier, 1024 * 1024 * 1024)}
 };
 
-const size_t rxtx_kmg_suffixes_len =
-    sizeof(rxtx_kmg_suffixes) / sizeof(rxtx_kmg_suffixes[0]);
+const size_t rxtx_time_suffixes_len = ARRAY_LEN(rxtx_time_suffixes);
+const size_t rxtx_kmg_suffixes_len = ARRAY_LEN(rxtx_kmg_suffixes);
 
 void rxtx_set_state(struct rxtx_data *rxtx, enum rxtx_state state)
 {
@@ -222,17 +230,19 @@ void rxtx_print_error(struct rxtx_data *rxtx,
 void rxtx_print_stream_info(struct rxtx_data *rxtx,
                             const char *prefix, const char *suffix)
 {
-    unsigned int bufs, samps, xfers;
+    unsigned int bufs, samps, xfers, timeout;
 
     pthread_mutex_lock(&rxtx->data_mgmt.lock);
     bufs = (unsigned int)rxtx->data_mgmt.num_buffers;
     samps = (unsigned int)rxtx->data_mgmt.samples_per_buffer;
     xfers = (unsigned int)rxtx->data_mgmt.num_transfers;
+    timeout = rxtx->data_mgmt.timeout_ms;
     pthread_mutex_unlock(&rxtx->data_mgmt.lock);
 
     printf("%s# Buffers: %u%s", prefix, bufs, suffix);
     printf("%s# Samples per buffer: %u%s", prefix, samps, suffix);
     printf("%s# Transfers: %u%s", prefix, xfers, suffix);
+    printf("%sTimeout (ms): %u%s", prefix, timeout, suffix);
 }
 
 enum rxtx_fmt rxtx_str2fmt(const char *str)
@@ -296,6 +306,8 @@ struct rxtx_data *rxtx_data_alloc(bladerf_module module)
     ret->data_mgmt.num_buffers = 32;
     ret->data_mgmt.samples_per_buffer = 32 * 1024;
     ret->data_mgmt.num_transfers = 16;
+    ret->data_mgmt.timeout_ms = 1000;
+
     pthread_mutex_init(&ret->data_mgmt.lock, NULL);
 
     /* Initialize file management items */
@@ -466,29 +478,48 @@ int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
                 pthread_mutex_unlock(&rxtx->data_mgmt.lock);
                 status = 1;
             }
-        }
+        } else if (!strcasecmp("timeout", param)) {
+            tmp = str2uint_suffix(*val, 1, UINT_MAX, rxtx_time_suffixes,
+                                  (int)rxtx_time_suffixes_len, &ok);
 
+            if (!ok) {
+                cli_err(s, argv0, RXTX_ERRMSG_VALUE(param, *val));
+                status = CMD_RET_INVPARAM;
+            } else {
+                pthread_mutex_lock(&rxtx->data_mgmt.lock);
+                rxtx->data_mgmt.timeout_ms = tmp;
+                pthread_mutex_unlock(&rxtx->data_mgmt.lock);
+                status = 1;
+            }
+        }
     }
 
     return status;
 }
 
 /* Require a 10% margin on the sample rate to ensure we can keep up, and
- * warn if this margin is violated
+ * warn if this margin is violated.
+ *
+ * We effectively ensuring:
+ *
+ * Min sample rate > (xfers / timeout period) * samples / buffer
+ *                    ^
+ *  1 xfer = buffer --'
  */
 static void check_samplerate(struct cli_state *s, struct rxtx_data *rxtx)
 {
     int status;
     uint64_t samplerate_min;        /* Min required sample rate */
     unsigned int samplerate_dev;    /* Device's current sample rate */
-    unsigned int n_xfers, samp_per_buf;
+    unsigned int n_xfers, samp_per_buf, timeout_ms;
 
     pthread_mutex_lock(&rxtx->data_mgmt.lock);
     n_xfers = (unsigned int)rxtx->data_mgmt.num_transfers;
     samp_per_buf = (unsigned int)rxtx->data_mgmt.samples_per_buffer;
+    timeout_ms = rxtx->data_mgmt.timeout_ms;
     pthread_mutex_unlock(&rxtx->data_mgmt.lock);
 
-    samplerate_min = (uint64_t)n_xfers * samp_per_buf;
+    samplerate_min = (uint64_t)n_xfers * samp_per_buf * 1000 / timeout_ms;
     samplerate_min += (samplerate_min + 9) / 10;
 
     status = bladerf_get_sample_rate(s->dev, rxtx->module, &samplerate_dev);
@@ -497,16 +528,18 @@ static void check_samplerate(struct cli_state *s, struct rxtx_data *rxtx)
                             "Unable to perform sanity check.");
     } else if (samplerate_dev < samplerate_min) {
         if (samplerate_min <= 40000000) {
-            printf("\n  Warning: The current sample rate may be too low. "
-                   "For %u transfers and\n"
-                   "           %u samples per buffer, a sample rate >= %"
-                   PRIu64" Hz is\n           recommended to avoid timeouts.\n\n",
-                   n_xfers, samp_per_buf, samplerate_min);
+            printf("\n");
+            printf("    Warning: The current sample rate may be too low. For %u transfers,\n"
+                   "    %u samples per buffer, and a %u ms timeout, a sample rate\n"
+                   "    over %"PRIu64" Hz may be required. Alternatively, the 'timeout'\n"
+                   "    parameter could be increased, but may yield underruns.\n\n",
+                   n_xfers, samp_per_buf, timeout_ms, samplerate_min);
         } else {
-            printf("\n  Warning: The current configuraion with %u transfers and"
-                   "%u samples per buffer requires a sample rate above 40MHz.\n"
-                   "Timeouts will likely occur with these settings.\n",
-                   n_xfers, samp_per_buf);
+            printf("\n");
+            printf("    Warning: The current configuraion with %u transfers,\n"
+                   "    %u samples per buffer, and a %u ms timeout requires a\n"
+                   "    sample rate above 40MHz. Timeouts may occur with these settings.\n\n",
+                   n_xfers, samp_per_buf, timeout_ms);
         }
     }
 }

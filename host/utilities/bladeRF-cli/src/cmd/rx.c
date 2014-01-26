@@ -306,35 +306,53 @@ static int rx_cmd_start(struct cli_state *s)
 {
     int status;
 
+    /* Check that we can start up in our current state */
     status = rxtx_cmd_start_check(s, s->rx, "rx");
+    if (status != 0) {
+        return status;
+    }
 
-    if (status == 0) {
-        pthread_mutex_lock(&s->rx->file_mgmt.file_lock);
-        if(s->rx->file_mgmt.format == RXTX_FMT_CSV_SC16Q11) {
-            s->rx->file_mgmt.file = expand_and_open(s->rx->file_mgmt.path, "w");
-        } else {
-            /* RXTX_FMT_BIN_SC16Q11, open file in binary mode */
-            s->rx->file_mgmt.file = expand_and_open(s->rx->file_mgmt.path, "wb");
-        }
-        if (!s->rx->file_mgmt.file) {
-            set_last_error(&s->rx->last_error, ETYPE_ERRNO, errno);
-            status = CMD_RET_FILEOP;
-        } else {
-            status = 0;
-        }
-        pthread_mutex_unlock(&s->rx->file_mgmt.file_lock);
+    /* Set up output file */
+    pthread_mutex_lock(&s->rx->file_mgmt.file_lock);
+    if(s->rx->file_mgmt.format == RXTX_FMT_CSV_SC16Q11) {
+        s->rx->file_mgmt.file = expand_and_open(s->rx->file_mgmt.path, "w");
+    } else {
+        /* RXTX_FMT_BIN_SC16Q11, open file in binary mode */
+        s->rx->file_mgmt.file = expand_and_open(s->rx->file_mgmt.path, "wb");
+    }
+    if (!s->rx->file_mgmt.file) {
+        set_last_error(&s->rx->last_error, ETYPE_ERRNO, errno);
+        status = CMD_RET_FILEOP;
+    } else {
+        status = 0;
+    }
+    pthread_mutex_unlock(&s->rx->file_mgmt.file_lock);
 
-        if (status == 0) {
-            rxtx_submit_request(s->rx, RXTX_TASK_REQ_START);
-            status = rxtx_wait_for_state(s->rx, RXTX_STATE_RUNNING, 3000);
+    if (status != 0) {
+        return status;
+    }
 
-            /* This should never occur. If it does, there's likely a defect
-             * present in the rx task */
-            if (status != 0) {
-                cli_err(s, "rx", "RX did not start up in the alloted time\n");
-                status = CMD_RET_UNKNOWN;
-            }
-        }
+    /* Set our stream timeout */
+    pthread_mutex_lock(&s->rx->data_mgmt.lock);
+    status = bladerf_set_transfer_timeout(s->dev, BLADERF_MODULE_RX,
+                                          s->rx->data_mgmt.timeout_ms);
+    pthread_mutex_unlock(&s->rx->data_mgmt.lock);
+
+    if (status != 0) {
+        s->last_lib_error = status;
+        set_last_error(&s->rx->last_error, ETYPE_BLADERF, s->last_lib_error);
+        return CMD_RET_LIBBLADERF;
+    }
+
+    /* Request thread to start running */
+    rxtx_submit_request(s->rx, RXTX_TASK_REQ_START);
+    status = rxtx_wait_for_state(s->rx, RXTX_STATE_RUNNING, 3000);
+
+    /* This should never occur. If it does, there's likely a defect
+     * present in the rx task */
+    if (status != 0) {
+        cli_err(s, "rx", "RX did not start up in the alloted time\n");
+        status = CMD_RET_UNKNOWN;
     }
 
     return status;

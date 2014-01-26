@@ -404,49 +404,65 @@ static int tx_cmd_start(struct cli_state *s)
 {
     int status = 0;
 
+    /* Check that we're able to start up in our current state */
     status = rxtx_cmd_start_check(s, s->tx, "tx");
+    if (status != 0) {
+        return status;
+    }
+
+    /* Perform file conversion (if needed) and open input file */
+    pthread_mutex_lock(&s->tx->file_mgmt.file_meta_lock);
+
+    if (s->tx->file_mgmt.format == RXTX_FMT_CSV_SC16Q11) {
+        status = tx_csv_to_sc16q11(s);
+
+        if (status == 0) {
+            printf("    Converted CSV to SC16 Q11 file and "
+                    "switched to converted file.\n\n");
+        }
+    }
 
     if (status == 0) {
-        /* Perform file conversion (if needed) and open input file */
-        pthread_mutex_lock(&s->tx->file_mgmt.file_meta_lock);
+        pthread_mutex_lock(&s->tx->file_mgmt.file_lock);
 
-        if (s->tx->file_mgmt.format == RXTX_FMT_CSV_SC16Q11) {
-            status = tx_csv_to_sc16q11(s);
-
-            if (status == 0) {
-                printf("    Converted CSV to SC16 Q11 file and "
-                        "switched to converted file.\n\n");
-            }
+        assert(s->tx->file_mgmt.format == RXTX_FMT_BIN_SC16Q11);
+        s->tx->file_mgmt.file = expand_and_open(s->tx->file_mgmt.path, "r");
+        if (!s->tx->file_mgmt.file) {
+            set_last_error(&s->tx->last_error, ETYPE_ERRNO, errno);
+            status = CMD_RET_FILEOP;
+        } else {
+            status = 0;
         }
 
-        if (status == 0) {
-            pthread_mutex_lock(&s->tx->file_mgmt.file_lock);
+        pthread_mutex_unlock(&s->tx->file_mgmt.file_lock);
+    }
 
-            assert(s->tx->file_mgmt.format == RXTX_FMT_BIN_SC16Q11);
-            s->tx->file_mgmt.file = expand_and_open(s->tx->file_mgmt.path, "r");
-            if (!s->tx->file_mgmt.file) {
-                set_last_error(&s->tx->last_error, ETYPE_ERRNO, errno);
-                status = CMD_RET_FILEOP;
-            } else {
-                status = 0;
-            }
+    pthread_mutex_unlock(&s->tx->file_mgmt.file_meta_lock);
 
-            pthread_mutex_unlock(&s->tx->file_mgmt.file_lock);
-        }
+    if (status != 0) {
+        return status;
+    }
 
-        pthread_mutex_unlock(&s->tx->file_mgmt.file_meta_lock);
 
-        if (status == 0) {
-            rxtx_submit_request(s->tx, RXTX_TASK_REQ_START);
-            status = rxtx_wait_for_state(s->tx, RXTX_STATE_RUNNING, 3000);
+    /* Set our stream timeout */
+    status = bladerf_set_transfer_timeout(s->dev, BLADERF_MODULE_TX,
+                                          s->tx->data_mgmt.timeout_ms);
 
-            /* This should never occur. If it does, there's likely a defect
-             * present in the tx task */
-            if (status != 0) {
-                cli_err(s, "tx", "TX did not start up in the alloted time\n");
-                status = CMD_RET_UNKNOWN;
-            }
-        }
+    if (status != 0) {
+        s->last_lib_error = status;
+        set_last_error(&s->rx->last_error, ETYPE_BLADERF, s->last_lib_error);
+        return CMD_RET_LIBBLADERF;
+    }
+
+    /* Request thread to start running */
+    rxtx_submit_request(s->tx, RXTX_TASK_REQ_START);
+    status = rxtx_wait_for_state(s->tx, RXTX_STATE_RUNNING, 3000);
+
+    /* This should never occur. If it does, there's likely a defect
+     * present in the tx task */
+    if (status != 0) {
+        cli_err(s, "tx", "TX did not start up in the alloted time\n");
+        status = CMD_RET_UNKNOWN;
     }
 
     return status;

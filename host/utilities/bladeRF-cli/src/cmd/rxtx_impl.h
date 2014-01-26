@@ -85,6 +85,7 @@ struct data_mgmt
     size_t num_buffers;             /* # of buffers in 'buffers' list */
     size_t samples_per_buffer;      /* Size of each buffer (in samples) */
     size_t num_transfers;           /* # of transfers to use in the stream */
+    unsigned int timeout_ms;        /* Stream timeout, in ms */
 };
 
 /* Input/Ouput file and related metadata.
@@ -129,7 +130,8 @@ struct rxtx_data
     struct task_mgmt task_mgmt;
     struct cli_error last_error;
 
-    pthread_mutex_t param_lock; /* Must be held to access the following items */
+    /* Must be held to access the following items */
+    pthread_mutex_t param_lock;
     void *params;
 };
 
