@@ -28,6 +28,7 @@
 
 #include "conversions.h"
 #include "cmd.h"
+#include "flash_common.h"
 #include "interactive.h"
 #include "minmax.h"
 #include "rel_assert.h"
@@ -75,9 +76,8 @@ int cmd_flash_init_cal(struct cli_state *state, int argc, char **argv)
     }
 
     if (argc == 3) {
-
-        if (!cli_device_is_opened(state)) {
-            rv = CMD_RET_NODEV;
+        rv = flash_check_state(state, argv[0]);
+        if (rv != 0) {
             goto cmd_flash_init_cal_out;
         }
 

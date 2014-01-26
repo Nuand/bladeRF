@@ -87,7 +87,7 @@ int cmd_load(struct cli_state *state, int argc, char **argv)
 
     if (!cli_device_is_opened(state)) {
         return CMD_RET_NODEV;
-    } else if (cli_device_in_use(state)) {
+    } else if (cli_device_is_streaming(state)) {
         return CMD_RET_BUSY;
     }
 

@@ -26,6 +26,7 @@
 #include <bladeRF.h>
 
 #include "cmd.h"
+#include "flash_common.h"
 #include "interactive.h"
 #include "minmax.h"
 #include "conversions.h"
@@ -47,13 +48,13 @@ int cmd_flash_backup(struct cli_state *state, int argc, char **argv)
     char *filename = NULL;
     bool ok;
 
-    if (!cli_device_is_opened(state)) {
-        status = CMD_RET_NODEV;
-        goto cmd_flash_backup_out;
-    }
-
     if (argc != 3 && argc != 4) {
         return CMD_RET_NARGS;
+    }
+
+    status = flash_check_state(state, argv[0]);
+    if (status != 0) {
+        return status;
     }
 
     filename = interactive_expand_path(argv[1]);

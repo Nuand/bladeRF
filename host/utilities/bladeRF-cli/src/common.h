@@ -86,13 +86,11 @@ void cli_state_destroy(struct cli_state *s);
 bool cli_device_is_opened(struct cli_state *s);
 
 /**
- * Query whether the device is busy being used by other tasks
+ * Query whether the device is currently running RX or TX streams
  *
  * @return true if device is in use, false otherwise
  */
-bool cli_device_in_use(struct cli_state *s);
-
-
+bool cli_device_is_streaming(struct cli_state *s);
 
 /**
  * Print an error message, with a line number, if running from a script.

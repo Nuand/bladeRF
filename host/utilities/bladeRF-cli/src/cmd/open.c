@@ -37,7 +37,7 @@ int cmd_open(struct cli_state *state, int argc, char **argv)
 	int ret;
 
     /* Disallow opening of a diffrent device if the current one is doing work */
-    if (cli_device_in_use(state)) {
+    if (cli_device_is_streaming(state)) {
         return CMD_RET_BUSY;
     }
 

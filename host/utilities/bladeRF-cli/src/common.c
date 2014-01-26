@@ -164,7 +164,7 @@ bool cli_device_is_opened(struct cli_state *s)
     return s->dev != NULL;
 }
 
-bool cli_device_in_use(struct cli_state *s)
+bool cli_device_is_streaming(struct cli_state *s)
 {
     return cli_device_is_opened(s) &&
             (rxtx_task_running(s->rx) || rxtx_task_running(s->tx));

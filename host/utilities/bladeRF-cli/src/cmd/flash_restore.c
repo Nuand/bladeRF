@@ -26,6 +26,7 @@
 #include <libbladeRF.h>
 #include <bladeRF.h>
 
+#include "flash_common.h"
 #include "cmd.h"
 #include "interactive.h"
 #include "minmax.h"
@@ -95,8 +96,8 @@ int cmd_flash_restore(struct cli_state *state, int argc, char **argv)
     if (rv < 0)
         return rv;
 
-    if (!state->dev) {
-        rv = CMD_RET_NODEV;
+    rv = flash_check_state(state, argv[0]);
+    if (rv != 0) {
         goto cmd_flash_restore_out;
     }
 
