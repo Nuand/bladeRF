@@ -128,7 +128,7 @@ void interactive_clear_terminal()
 /* TODO: Linux/OSX: Expand ~/ to home directory, $<variables>
  *       Windows: %<varibles%
  */
-char * interactive_expand_path(char *path)
+char * interactive_expand_path(const char *path)
 {
     return strdup(path);
 }
