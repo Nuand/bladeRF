@@ -187,8 +187,10 @@ static void si5338_pack_regs(struct si5338_multisynth *ms)
     //ms->p1 = ms->p1 / ms->c - 512;
 
     /* p2 = (b * 128) % c */
-    ms->p2 = ms->b * 128;
-    ms->p2 = ms->p2 % ms->c;
+    temp = (uint64_t)ms->b * 128;
+    temp = temp % ms->c;
+    assert(temp <= UINT32_MAX);
+    ms->p2 = (uint32_t)temp;
 
     /* p3 = c */
     ms->p3 = ms->c;
