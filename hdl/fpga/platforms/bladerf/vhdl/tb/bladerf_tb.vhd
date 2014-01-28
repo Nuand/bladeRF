@@ -74,24 +74,6 @@ architecture arch of bladerf_tb is
         end loop ;
     end procedure ;
 
-    procedure uart_send( signal clock : in std_logic ; signal txd : out std_logic ; data : in std_logic_vector(7 downto 0) ; cpb : in natural ) is
-    begin
-        wait until rising_edge(clock) ;
-        -- Send start bit
-        txd <= '0' ;
-        nop( clock, cpb ) ;
-
-        -- Send data
-        for i in 0 to data'high loop
-            txd <= data(i) ;
-            nop( clock, cpb ) ;
-        end loop ;
-
-        -- Send stop bit
-        txd <= '1' ;
-        nop( clock, cpb ) ;
-    end procedure ;
-
     signal c4_clock     :   std_logic   := '1' ;
     signal lms_rx       :   lms_rx_t := ( clock => '1', data => (others =>'0'), clock_out => '1', iq_select => '1', enable => '0' ) ;
     signal lms_tx       :   lms_tx_t := ( clock => '1', data => (others =>'0'), enable => '1', iq_select => '1' ) ;
@@ -110,9 +92,6 @@ begin
     -- LMS 80MHz RX and TX clocks
     lms_tx.clock <= not lms_tx.clock after (1.0/80.0e6) * 1 sec ;
     lms_rx.clock <= not lms_rx.clock after (1.0/80.0e6) * 1 sec ;
-
-    -- FX3 UART
-    fx3_uart.txd <= '1' ;
 
     -- Top level of the FPGA
     U_bladerf : entity nuand.bladerf

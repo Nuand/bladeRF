@@ -40,20 +40,22 @@ begin
                 sample_q <= signed(std_logic_vector(count32(31 downto 16))) ;
             end if ;
 
-            if( enable = '1' ) then
-                sample_valid <= not sample_valid ;
-            else
+            if( enable = '0' ) then
+                count12 := COUNT_RESET ;
+                count32 := (others =>'0') ;
+                sample_i <= (others =>'0') ;
+                sample_q <= (others =>'0') ;
                 sample_valid <= '0' ;
-            end if ;
-
-            if( sample_valid = '1' ) then
-                if( count12 < 2047 ) then
-                    count12 := count12 + 1 ;
-                else
-                    count12 := -2047 ;
+            else
+                sample_valid <= not sample_valid ;
+                if( sample_valid = '1' ) then
+                    if( count12 < 2047 ) then
+                        count12 := count12 + 1 ;
+                    else
+                        count12 := -2047 ;
+                    end if ;
+                    count32 := count32 + 1 ;
                 end if ;
-
-                count32 := count32 + 1 ;
             end if ;
 
         end if ;

@@ -34,7 +34,7 @@ entity iq_correction is
         --correction signals
         dc_real     :   in signed(DC_WIDTH-1 downto 0);
         dc_imag     :   in signed(DC_WIDTH-1 downto 0);
-        
+
         gain :   in signed(GAIN_WIDTH-1 downto 0);
         phase :   in signed(PHASE_WIDTH-1 downto 0);
 
@@ -56,7 +56,6 @@ architecture rx of iq_correction is
     signal phase_corrected_imag : signed(OUTPUT_WIDTH-1 downto 0);
     signal phase_corrected_valid : std_logic;
 
-    signal phase_offset : signed(OUTPUT_WIDTH-1 downto 0);
     signal phase_correction : signed(OUTPUT_WIDTH-1 downto 0);
 
 

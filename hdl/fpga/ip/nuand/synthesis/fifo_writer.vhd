@@ -35,8 +35,18 @@ begin
     fifo_data   <= std_logic_vector(in_q & in_i) ;
     fifo_write  <= in_valid when overflow_recovering = '0' and fifo_full = '0' else '0' ;
 
-    -- Clear out the contents when an overflow has occurred
-    fifo_clear <= '0' ;
+    -- Clear out the contents when RX is disabled
+    clear_fifo : process( clock, reset )
+    begin
+        if( reset = '1' ) then
+            fifo_clear <= '1' ;
+        elsif( rising_edge(clock) ) then
+            fifo_clear <= '0' ;
+            if( enable = '0' ) then
+                fifo_clear <= '1' ;
+            end if ;
+        end if ;
+    end process ;
 
     -- Overflow detection
     detect_overflows : process( clock, reset )

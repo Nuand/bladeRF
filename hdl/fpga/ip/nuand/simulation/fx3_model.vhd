@@ -32,9 +32,9 @@ entity fx3_model is
     fx3_pclk            :   buffer  std_logic := '1' ;
     fx3_gpif            :   inout   std_logic_vector(31 downto 0) ;
     fx3_ctl             :   inout   std_logic_vector(12 downto 0) ;
-    fx3_uart_rxd        :   buffer  std_logic ;
-    fx3_uart_txd        :   in      std_logic ;
-    fx3_uart_csx        :   buffer  std_logic
+    fx3_uart_rxd        :   in      std_logic ;
+    fx3_uart_txd        :   buffer  std_logic ;
+    fx3_uart_cts        :   buffer  std_logic
   ) ;
 end entity ; -- fx3_model
 
@@ -78,15 +78,24 @@ begin
         for i in 1 to 10 loop
             wait until rising_edge( fx3_pclk ) ;
         end loop ;
-        dma_rx_enable <= '1' ;
         while true loop
-            dma0_rx_reqx <= '0' ;
-            wait until rising_edge( fx3_pclk ) and dma0_rx_ack = '1' ;
-            wait until rising_edge( fx3_pclk ) ;
-            wait until rising_edge( fx3_pclk ) ;
-            dma0_rx_reqx <= '1' ;
-            for i in 1 to BLOCK_SIZE loop
+            for i in 0 to 5 loop
+                dma0_rx_reqx <= '0' ;
+                wait until rising_edge( fx3_pclk ) and dma0_rx_ack = '1' ;
                 wait until rising_edge( fx3_pclk ) ;
+                wait until rising_edge( fx3_pclk ) ;
+                dma0_rx_reqx <= '1' ;
+                for i in 1 to BLOCK_SIZE loop
+                    wait until rising_edge( fx3_pclk ) ;
+                end loop ;
+            end loop ;
+            dma_rx_enable <= '0' ;
+            for i in 0 to 5000 loop
+                wait until rising_edge(fx3_pclk) ;
+            end loop ;
+            dma_rx_enable <= '1' ;
+            for i in 0 to 10 loop
+                wait until rising_edge(fx3_pclk);
             end loop ;
         end loop ;
         report "Done with RX sample stream" ;
@@ -100,8 +109,9 @@ begin
         dma2_tx_reqx <= '1' ;
         dma3_tx_reqx <= '1' ;
         dma_tx_enable <= '0' ;
+        fx3_gpif <= (others =>'Z') ;
         wait until system_reset = '0' ;
-        for i in 0 to 10 loop
+        for i in 0 to 1000 loop
             wait until rising_edge( fx3_pclk ) ;
         end loop ;
         dma_tx_enable <= '1' ;
@@ -138,8 +148,8 @@ begin
     end process ;
 
     -- TODO: UART Interface
-    fx3_uart_rxd <= '0' ;
-    fx3_uart_csx <= '1' ;
+    fx3_uart_txd <= '1' ;
+    fx3_uart_cts <= '1' ;
 
 end architecture ; -- dma
 

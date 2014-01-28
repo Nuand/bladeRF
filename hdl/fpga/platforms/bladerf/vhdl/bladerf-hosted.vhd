@@ -67,10 +67,8 @@ architecture hosted_bladerf of bladerf is
 
     signal \80MHz\          : std_logic ;
     signal \80MHz locked\   : std_logic ;
-    signal \80MHz reset\    : std_logic ;
 
-    signal nios_gpio        : std_logic_vector(31 downto 0) := x"0000_00d7" ;
-
+    signal nios_gpio        : std_logic_vector(31 downto 0) ;
 
     signal correction_rx_phase_gain :  std_logic_vector(31 downto 0);
     signal correction_tx_phase_gain :  std_logic_vector(31 downto 0);
@@ -128,7 +126,7 @@ architecture hosted_bladerf of bladerf is
 
     signal rx_entropy_i     : signed(15 downto 0) := (others =>'0') ;
     signal rx_entropy_q     : signed(15 downto 0) := (others =>'0') ;
-    signal rx_entropy_valid : std_logic ;
+    signal rx_entropy_valid : std_logic := '0' ;
 
     signal tx_sample_raw_i : signed(15 downto 0);
     signal tx_sample_raw_q : signed(15 downto 0);
@@ -477,7 +475,7 @@ begin
         sample_valid    =>  rx_gen_valid
       ) ;
 
-    rx_mux_mode <= rx_mux_mode'val(to_integer(rx_mux_sel)) ;
+    rx_mux_mode <= rx_mux_mode_t'val(to_integer(rx_mux_sel)) ;
 
     rx_mux : process(rx_reset, rx_clock)
     begin
@@ -522,6 +520,7 @@ begin
     begin
         if( sys_rst_sync = '1' ) then
             fx3_gpif <= (others =>'Z') ;
+            fx3_gpif_in <= (others =>'0') ;
         elsif( rising_edge(fx3_pclk) ) then
             fx3_gpif_in <= fx3_gpif ;
             if( fx3_gpif_oe = '1' ) then
@@ -554,8 +553,8 @@ begin
         spi_MOSI            => lms_sdio,
         spi_SCLK            => lms_sclk,
         spi_SS_n            => lms_sen,
-        uart_rxd            => fx3_uart_txd,
-        uart_txd            => fx3_uart_rxd,
+        uart_rxd            => nios_uart_txd,
+        uart_txd            => nios_uart_rxd,
         gpio_export         => nios_gpio,
         correction_tx_phase_gain_export    => correction_tx_phase_gain,
         correction_rx_phase_gain_export    => correction_rx_phase_gain,

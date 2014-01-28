@@ -38,14 +38,9 @@ set_output_delay -clock [get_clocks c4_tx_virtual] -max  1.0 [get_ports {lms_tx_
 ### Slow Interfaces ###
 
 # FX3 UART interface
-set_input_delay -clock [get_clocks U_pll*0*] -min 0.0   [get_ports fx3_uart_txd]
-set_input_delay -clock [get_clocks U_pll*0*] -max 1.0  [get_ports fx3_uart_txd] -add_delay
-
-set_output_delay -clock [get_clocks U_pll*0*] -min  0.0 [get_ports fx3_uart_rxd]
-set_output_delay -clock [get_clocks U_pll*0*] -max  1.0 [get_ports fx3_uart_rxd] -add_delay
-
-set_output_delay -clock [get_clocks fx3_virtual] -min 0.0 [get_ports fx3_uart_cts]
-set_output_delay -clock [get_clocks fx3_virtual] -max 1.0 [get_ports fx3_uart_cts]
+set_false_path -from * -to [get_ports fx3_uart_rxd]
+set_false_path -from [get_ports fx3_uart_txd] -to *
+set_false_path -from * -to [get_ports fx3_uart_cts]
 
 # LMS SPI interface
 set_input_delay  -clock [get_clocks U_pll*0*] -min  0.2 [get_ports lms_sdo]

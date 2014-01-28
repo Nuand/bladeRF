@@ -22,7 +22,9 @@ entity nios_system is
     oc_i2c_sda_pad_o    :   out std_logic ;
     oc_i2c_sda_padoen_o :   out std_logic ;
     oc_i2c_arst_i       :   in  std_logic ;
-    gpio_export         :   out std_logic_vector(31 downto 0)
+    gpio_export         :   out std_logic_vector(31 downto 0) := (others =>'0') ;
+    correction_rx_phase_gain_export : out std_logic_vector(31 downto 0) ;
+    correction_tx_phase_gain_export : out std_logic_vector(31 downto 0)
   ) ;
 end entity ;
 
@@ -45,7 +47,9 @@ begin
     oc_i2c_sda_pad_o <= '0' ;
     oc_i2c_sda_padoen_o <= '1' ;
 
-    gpio_export <= x"0000_0057" ;
+    gpio_export <= x"0000_0157" after 1 us ;
+    correction_rx_phase_gain_export <= x"00001000" ;
+    correction_tx_phase_gain_export <= x"00001000" ;
 
 end architecture ;
 
