@@ -81,6 +81,11 @@ set_output_delay -clock [get_clocks altera_reserved_tck] 20 [get_ports altera_re
 # Exceptions
 
 # The dcfifo which goes from the C4 TX domain to the PCLK domain seems to have an issue with the clear signal.  It isn't generally a issue so ignore it?
-set_false_path -from {reset_synchronizer:U_tx_reset|sync} -to {tx_fifo:U_tx_sample_fifo|dcfifo:dcfifo_component|dcfifo_nan1:auto_generated|dffpipe_3dc:wraclr|dffe12a[0]}
-set_false_path -from {reset_synchronizer:U_tx_reset|sync} -to {tx_fifo:U_tx_sample_fifo|dcfifo:dcfifo_component|dcfifo_nan1:auto_generated|dffpipe_3dc:wraclr|dffe13a[0]}
+set_false_path -from {reset_synchronizer:U_tx_reset|sync} -to {tx_*fifo:U_tx_*_fifo|dcfifo*:dcfifo_*|dcfifo_*:auto_generated|dffpipe_3dc:wraclr|dffe12a[0]}
+set_false_path -from {reset_synchronizer:U_tx_reset|sync} -to {tx_*fifo:U_tx_*_fifo|dcfifo*:dcfifo_*|dcfifo_*:auto_generated|dffpipe_3dc:wraclr|dffe13a[0]}
+
+# Time tamer registering
+set_false_path -from {rx_timestamp*} -to {nios_system:U_nios_system|time_tamer:time_tamer_0|time_rx_r*}
+set_false_path -from {tx_timestamp*} -to {nios_system:U_nios_system|time_tamer:time_tamer_0|time_tx_r*}
+set_false_path -from {nios_system:U_nios_system|time_tamer:time_tamer_0|*} -to {*x_sync_r*}
 

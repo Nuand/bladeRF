@@ -24,7 +24,10 @@ entity nios_system is
     oc_i2c_arst_i       :   in  std_logic ;
     gpio_export         :   out std_logic_vector(31 downto 0) := (others =>'0') ;
     correction_rx_phase_gain_export : out std_logic_vector(31 downto 0) ;
-    correction_tx_phase_gain_export : out std_logic_vector(31 downto 0)
+    correction_tx_phase_gain_export : out std_logic_vector(31 downto 0) ;
+    time_tamer_time_rx  :   in  std_logic_vector(63 downto 0) ;
+    time_tamer_time_tx  :   in  std_logic_vector(63 downto 0) ;
+    time_tamer_synchronize  : out std_logic
   ) ;
 end entity ;
 
@@ -50,6 +53,8 @@ begin
     gpio_export <= x"0000_0157" after 1 us ;
     correction_rx_phase_gain_export <= x"00001000" ;
     correction_tx_phase_gain_export <= x"00001000" ;
+
+    time_tamer_synchronize <= '0' ;
 
 end architecture ;
 

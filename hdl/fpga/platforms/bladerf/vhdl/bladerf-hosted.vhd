@@ -146,6 +146,7 @@ architecture hosted_bladerf of bladerf is
     signal sys_rst_sync     : std_logic ;
 
     signal usb_speed        : std_logic ;
+    signal usb_speed_rx     : std_logic ;
 
     signal tx_reset         : std_logic ;
     signal rx_reset         : std_logic ;
@@ -156,17 +157,15 @@ architecture hosted_bladerf of bladerf is
     signal tx_enable        : std_logic ;
     signal rx_enable        : std_logic ;
 
-    signal meta_en          : std_logic ;
+    signal meta_en_tx       : std_logic ;
+    signal meta_en_rx       : std_logic ;
+    signal meta_en_fx3      : std_logic ;
     signal tx_timestamp     : unsigned(63 downto 0) ;
     signal rx_timestamp     : unsigned(63 downto 0) ;
     signal timestamp_sync   : std_logic ;
 
-    signal rx_sample_raw_i  : signed(11 downto 0);
-    signal rx_sample_raw_q  : signed(11 downto 0);
-    signal rx_sample_raw_valid : std_logic;
-
-    signal rx_sample_i      : signed(11 downto 0) ;
-    signal rx_sample_q      : signed(11 downto 0) ;
+    signal rx_sample_i      : signed(15 downto 0) ;
+    signal rx_sample_q      : signed(15 downto 0) ;
     signal rx_sample_valid  : std_logic ;
 
     signal rx_gen_mode      : std_logic ;
@@ -258,6 +257,16 @@ begin
         sync                =>  usb_speed
       ) ;
 
+    U_usb_speed_rx : entity work.synchronizer
+      generic map (
+        RESET_LEVEL         =>  '0'
+      ) port map (
+        reset               =>  '0',
+        clock               =>  rx_clock,
+        async               =>  nios_gpio(7),
+        sync                =>  usb_speed_rx
+      ) ;
+
     generate_mux_sel : for i in rx_mux_sel'range generate
         U_rx_source : entity work.synchronizer
           generic map (
@@ -270,14 +279,34 @@ begin
           ) ;
     end generate ;
 
-    U_meta_source : entity work.synchronizer
+    U_meta_sync_fx3 : entity work.synchronizer
+      generic map (
+        RESET_LEVEL         =>  '0'
+      ) port map (
+        reset               =>  '0',
+        clock               =>  fx3_pclk,
+        async               =>  nios_gpio(16),
+        sync                =>  meta_en_fx3
+      ) ;
+
+    U_meta_sync_tx : entity work.synchronizer
+      generic map (
+        RESET_LEVEL         =>  '0'
+      ) port map (
+        reset               =>  '0',
+        clock               =>  tx_clock,
+        async               =>  nios_gpio(16),
+        sync                =>  meta_en_tx
+      ) ;
+
+    U_meta_sync_rx : entity work.synchronizer
       generic map (
         RESET_LEVEL         =>  '0'
       ) port map (
         reset               =>  '0',
         clock               =>  rx_clock,
-        async               =>  nios_gpio(9),
-        sync                =>  meta_en
+        async               =>  nios_gpio(16),
+        sync                =>  meta_en_rx
       ) ;
 
     U_sys_reset_sync : entity work.reset_synchronizer
@@ -431,7 +460,7 @@ begin
 
         usb_speed           =>  usb_speed,
 
-        meta_enable         =>  meta_en,
+        meta_enable         =>  meta_en_fx3,
         rx_enable           =>  pclk_rx_enable,
         tx_enable           =>  pclk_tx_enable,
 
@@ -475,8 +504,8 @@ begin
         reset               =>  rx_reset,
         enable              =>  rx_enable,
 
-        usb_speed           =>  usb_speed,
-        meta_en             =>  meta_en,
+        usb_speed           =>  usb_speed_rx,
+        meta_en             =>  meta_en_rx,
         timestamp           =>  rx_timestamp,
 
         fifo_clear          =>  rx_sample_fifo.aclr,
@@ -527,7 +556,7 @@ begin
         reset               =>  tx_reset,
         enable              =>  tx_enable,
 
-        meta_en             =>  meta_en,
+        meta_en             =>  meta_en_tx,
         timestamp           =>  tx_timestamp,
 
         fifo_empty          =>  tx_sample_fifo.rempty,

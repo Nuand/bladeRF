@@ -195,7 +195,7 @@ begin
         -- UART
         fx3_uart_rxd        => fx3_uart.rxd,
         fx3_uart_txd        => fx3_uart.txd,
-        fx3_uart_csx        => fx3_uart.cts
+        fx3_uart_cts        => fx3_uart.cts
       ) ;
 
     -- Create an accurate 1pps signal that is 1 ms wide
