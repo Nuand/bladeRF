@@ -187,6 +187,7 @@ set(LIBBLADERF_PC_EXEC_PREFIX \${prefix})
 set(LIBBLADERF_PC_LIBDIR \${exec_prefix}/${CMAKE_INSTALL_LIBDIR})
 set(LIBBLADERF_PC_INCLUDEDIR \${prefix}/include)
 set(LIBBLADERF_PC_VERSION ${VERSION})
+set(LIBBLADERF_PC_LIBS "-lbladeRF")
 
 # Use space-delimiter in the .pc file, rather than CMake's semicolon separator
 string(REPLACE ";" " " LIBBLADERF_PC_CFLAGS "${LIBBLADERF_PC_CFLAGS}")
