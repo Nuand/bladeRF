@@ -72,8 +72,8 @@ int str2int(const char *str, int min, int max, bool *ok)
 }
 
 void *stream_callback(struct bladerf *dev, struct bladerf_stream *stream,
-                  struct bladerf_metadata *metadata, void *samples,
-                  size_t num_samples, void *user_data)
+                      struct bladerf_metadata *metadata, void *samples,
+                      size_t num_samples, void *user_data)
 {
     struct test_data *my_data = (struct test_data *)user_data;
 
@@ -260,7 +260,7 @@ int main(int argc, char *argv[])
                 test_data.samples_per_buffer,
                 test_data.num_buffers,
                 &test_data
-             ) ;
+             );
 
     /* Populate buffers with test data */
     if( test_data.module == BLADERF_MODULE_TX ) {

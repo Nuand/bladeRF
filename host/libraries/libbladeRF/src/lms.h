@@ -550,8 +550,4 @@ int lms_config_init(struct bladerf *dev, struct lms_xcvr_config *config);
 int lms_select_band(struct bladerf *dev, bladerf_module module,
                     unsigned int freq);
 
-#ifdef __cplusplus
-}
-#endif
-
 #endif /* LMS_H_ */

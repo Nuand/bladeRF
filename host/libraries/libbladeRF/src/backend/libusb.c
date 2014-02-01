@@ -2008,89 +2008,6 @@ static int lusb_get_correction(struct bladerf *dev, bladerf_module module,
     return status;
 }
 
-
-static int lusb_tx(struct bladerf *dev, bladerf_format format, void *samples,
-                   int n, struct bladerf_metadata *metadata)
-{
-    size_t bytes_total, bytes_remaining, ret;
-    struct bladerf_lusb *lusb = (struct bladerf_lusb *)dev->backend;
-    uint8_t *samples8 = (uint8_t *)samples;
-    int transferred, status;
-
-    /* This is the only format we currently support */
-    assert(format == BLADERF_FORMAT_SC16_Q11);
-
-    bytes_total = bytes_remaining = c16_samples_to_bytes(n);
-
-    assert(bytes_remaining <= INT_MAX);
-
-    while( bytes_remaining > 0 ) {
-        transferred = 0;
-        status = libusb_bulk_transfer(
-                    lusb->handle,
-                    EP_OUT(0x1),
-                    samples8,
-                    (int)bytes_remaining,
-                    &transferred,
-                    dev->transfer_timeout[BLADERF_MODULE_TX]
-                );
-        if( status < 0 ) {
-            log_error( "Error transmitting samples (%d): %s\n", status, libusb_error_name(status) );
-            return BLADERF_ERR_IO;
-        } else {
-            assert(transferred > 0);
-            assert(bytes_remaining >= (size_t)transferred);
-            bytes_remaining -= transferred;
-            samples8 += transferred;
-        }
-    }
-
-    ret = bytes_to_c16_samples(bytes_total - bytes_remaining);
-    assert(ret <= INT_MAX);
-    return (int)ret;
-}
-
-static int lusb_rx(struct bladerf *dev, bladerf_format format, void *samples,
-                   int n, struct bladerf_metadata *metadata)
-{
-    size_t bytes_total, bytes_remaining, ret;
-    struct bladerf_lusb *lusb = (struct bladerf_lusb *)dev->backend;
-    uint8_t *samples8 = (uint8_t *)samples;
-    int transferred, status;
-
-    /* The only format currently is assumed here */
-    assert(format == BLADERF_FORMAT_SC16_Q11);
-    bytes_total = bytes_remaining = c16_samples_to_bytes(n);
-
-    assert(bytes_remaining <= INT_MAX);
-
-    while( bytes_remaining ) {
-        transferred = 0;
-        status = libusb_bulk_transfer(
-                    lusb->handle,
-                    EP_IN(0x1),
-                    samples8,
-                    (int)bytes_remaining,
-                    &transferred,
-                    dev->transfer_timeout[BLADERF_MODULE_RX]
-                );
-        if( status < 0 ) {
-            log_error( "Error reading samples (%d): %s\n", status, libusb_error_name(status) );
-            return BLADERF_ERR_IO;
-        } else {
-            assert(transferred > 0);
-            assert(bytes_remaining >= (size_t)transferred);
-            bytes_remaining -= transferred;
-            samples8 += transferred;
-        }
-    }
-
-    assert(bytes_total >= bytes_remaining);
-    ret = bytes_to_c16_samples(bytes_total - bytes_remaining);
-    assert(ret <= INT_MAX);
-    return (int)ret;
-}
-
 /* At the risk of being a little inefficient, just keep attempting to cancel
  * everything. If a transfer's no longer active, we'll just get a NOT_FOUND
  * error -- no big deal.  Just accepting that alleviates the need to track
@@ -2119,6 +2036,9 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
     struct bladerf_metadata metadata;
     struct lusb_stream_data *stream_data = stream->backend_data;
     size_t bytes_per_buffer;
+
+    /* Currently unused - zero out for out own debugging sanity... */
+    memset(&metadata, 0, sizeof(metadata));
 
     /* Check to see if the transfer has been cancelled or errored */
     if( transfer->status != LIBUSB_TRANSFER_COMPLETED ) {
@@ -2340,8 +2260,8 @@ static int lusb_stream(struct bladerf_stream *stream, bladerf_module module)
                 dev->transfer_timeout[module]
                 );
 
-        log_debug("Initial transfer with buffer: %p (i=" PRIu64 ")\n",
-                  buffer, (uint64_t)i);
+        log_verbose("Initial transfer with buffer: %p (i=%" PRIu64 ")\n",
+                    buffer, (uint64_t)i);
 
         stream_data->active_transfers++;
         status = libusb_submit_transfer(stream_data->transfers[i]);
@@ -2495,8 +2415,6 @@ const struct bladerf_fn bladerf_lusb_fn = {
     FIELD_INIT(.dac_write, lusb_dac_write),
 
     FIELD_INIT(.enable_module, lusb_enable_module),
-    FIELD_INIT(.rx, lusb_rx),
-    FIELD_INIT(.tx, lusb_tx),
 
     FIELD_INIT(.init_stream, lusb_stream_init),
     FIELD_INIT(.stream, lusb_stream),

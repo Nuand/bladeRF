@@ -309,3 +309,25 @@ int bladerf_get_and_cache_fpga_size(struct bladerf *device)
 
     return status;
 }
+
+int populate_abs_timeout(struct timespec *t, unsigned int timeout_ms)
+{
+    static const int nsec_per_sec = 1000 * 1000 * 1000;
+    const unsigned int timeout_sec = timeout_ms / 1000;
+    int status;
+
+    status = clock_gettime(CLOCK_REALTIME, t);
+    if (status != 0) {
+        return BLADERF_ERR_UNEXPECTED;
+    } else {
+        t->tv_sec += timeout_sec;
+        t->tv_nsec += (timeout_ms % 1000) * 1000 * 1000;
+
+        if (t->tv_nsec >= nsec_per_sec) {
+            t->tv_sec += t->tv_nsec / nsec_per_sec;
+            t->tv_nsec %= nsec_per_sec;
+        }
+
+        return 0;
+    }
+}

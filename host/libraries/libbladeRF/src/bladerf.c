@@ -26,6 +26,7 @@
 
 #include "libbladeRF.h"     /* Public API */
 #include "bladerf_priv.h"   /* Implementation-specific items ("private") */
+#include "sync.h"
 #include "lms.h"
 #include "si5338.h"
 #include "file_ops.h"
@@ -160,6 +161,10 @@ int bladerf_open(struct bladerf **device, const char *dev_id)
 void bladerf_close(struct bladerf *dev)
 {
     if (dev) {
+#ifdef ENABLE_LIBBLADERF_SYNC
+        sync_deinit(dev->sync_rx);
+        sync_deinit(dev->sync_tx);
+#endif
         dev->fn->close(dev);
     }
 }
@@ -168,9 +173,26 @@ int bladerf_enable_module(struct bladerf *dev,
                             bladerf_module m, bool enable)
 {
     int status;
+
     log_debug("Enable Module: %s - %s\n",
                 (m == BLADERF_MODULE_RX) ? "RX" : "TX",
                 enable ? "True" : "False") ;
+
+#ifdef ENABLE_LIBBLADERF_SYNC
+    if (enable == false) {
+        switch (m) {
+            case BLADERF_MODULE_TX:
+                sync_deinit(dev->sync_tx);
+                dev->sync_tx = NULL;
+                break;
+
+            case BLADERF_MODULE_RX:
+                sync_deinit(dev->sync_rx);
+                dev->sync_rx = NULL;
+                break;
+        }
+    }
+#endif
 
     lms_enable_rffe(dev, m, enable);
     status = dev->fn->enable_module(dev, m, enable);
@@ -458,46 +480,64 @@ int bladerf_get_frequency(struct bladerf *dev,
     return rv;
 }
 
-int bladerf_set_transfer_timeout(struct bladerf *dev, bladerf_module module,
-                                 unsigned int timeout) {
+int bladerf_set_stream_timeout(struct bladerf *dev, bladerf_module module,
+                               unsigned int timeout) {
     if (dev) {
         dev->transfer_timeout[module] = timeout;
         return 0;
     } else {
-        return BLADERF_ERR_NODEV;
+        return BLADERF_ERR_INVAL;
     }
 }
 
-int bladerf_get_transfer_timeout(struct bladerf *dev, bladerf_module module,
-                                 unsigned int *timeout) {
+int bladerf_get_stream_timeout(struct bladerf *dev, bladerf_module module,
+                               unsigned int *timeout) {
     if (dev) {
         *timeout = dev->transfer_timeout[module];
         return 0;
     } else {
-        return BLADERF_ERR_NODEV;
+        return BLADERF_ERR_INVAL;
     }
 }
 
-int bladerf_tx(struct bladerf *dev, bladerf_format format, void *samples,
-               int num_samples, struct bladerf_metadata *metadata)
+int CALL_CONV bladerf_sync_config(struct bladerf *dev,
+                                  bladerf_module module,
+                                  bladerf_format format,
+                                  unsigned int num_buffers,
+                                  unsigned int buffer_size,
+                                  unsigned int num_transfers,
+                                  unsigned int stream_timeout)
 {
-    if (num_samples < 1024 || num_samples % 1024 != 0) {
-        log_debug("num_samples must be multiples of 1024\n");
-        return BLADERF_ERR_INVAL;
-    }
-
-    return dev->fn->tx(dev, format, samples, num_samples, metadata);
+#ifdef ENABLE_LIBBLADERF_SYNC
+    return sync_init(dev, module, format, num_buffers, buffer_size,
+                     num_transfers, stream_timeout);
+#else
+    return BLADERF_ERR_UNSUPPORTED;
+#endif
 }
 
-int bladerf_rx(struct bladerf *dev, bladerf_format format, void *samples,
-                   int num_samples, struct bladerf_metadata *metadata)
+int bladerf_sync_tx(struct bladerf *dev,
+                    void *samples, unsigned int num_samples,
+                    struct bladerf_metadata *metadata,
+                    unsigned int timeout_ms)
 {
-    if (num_samples < 1024 || num_samples % 1024 != 0) {
-        log_debug("num_samples must be multiples of 1024\n");
-        return BLADERF_ERR_INVAL;
-    }
+#ifdef ENABLE_LIBBLADERF_SYNC
+    return sync_tx(dev, samples, num_samples, metadata, timeout_ms);
+#else
+    return BLADERF_ERR_UNSUPPORTED;
+#endif
+}
 
-    return dev->fn->rx(dev, format, samples, num_samples, metadata);
+int bladerf_sync_rx(struct bladerf *dev,
+                    void *samples, unsigned int num_samples,
+                    struct bladerf_metadata *metadata,
+                    unsigned int timeout_ms)
+{
+#ifdef ENABLE_LIBBLADERF_SYNC
+    return sync_rx(dev, samples, num_samples, metadata, timeout_ms);
+#else
+    return BLADERF_ERR_UNSUPPORTED;
+#endif
 }
 
 int bladerf_init_stream(struct bladerf_stream **stream,

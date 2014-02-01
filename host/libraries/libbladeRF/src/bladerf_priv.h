@@ -32,6 +32,13 @@
 #include <limits.h>
 #include <libbladeRF.h>
 #include "host_config.h"
+
+#if BLADERF_OS_WINDOWS || BLADERF_OS_OSX
+#include "clock_gettime.h"
+#else
+#include <time.h>
+#endif
+
 #include "minmax.h"
 #include "conversions.h"
 #include "devinfo.h"
@@ -145,8 +152,6 @@ struct bladerf_fn {
 
     /* Sample stream */
     int (*enable_module)(struct bladerf *dev, bladerf_module m, bool enable);
-    int (*rx)(struct bladerf *dev, bladerf_format format, void *samples, int n, struct bladerf_metadata *metadata);
-    int (*tx)(struct bladerf *dev, bladerf_format format, void *samples, int n, struct bladerf_metadata *metadata);
 
     int (*init_stream)(struct bladerf_stream *stream);
     int (*stream)(struct bladerf_stream *stream, bladerf_module module);
@@ -185,7 +190,12 @@ struct bladerf {
     /* Driver-sppecific implementations */
     const struct bladerf_fn *fn;
 
+    /* Stream transfer timeouts for RX and TX */
     int transfer_timeout[2];
+
+    /* Synchronous interface handles */
+    struct bladerf_sync *sync_rx;
+    struct bladerf_sync *sync_tx;
 };
 
 /**
@@ -298,5 +308,14 @@ int encode_field(char *ptr, int len, int *idx, const char *field,
  */
 int add_field(char *buf, int len, const char *field, const char *val);
 
+/**
+ * Populate the provided timeval structure for the specified timeout
+ *
+ * @param[out]  t_abs       Absolute timeout structure to populate
+ * @param[in]   timeout_ms  Desired timeout in ms.
+ *
+ * 0 on success, BLADERF_ERR_UNEXPECTED on failure
+ */
+int populate_abs_timeout(struct timespec *t_abs, unsigned int timeout_ms);
 
 #endif

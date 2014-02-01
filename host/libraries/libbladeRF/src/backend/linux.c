@@ -442,73 +442,6 @@ static int linux_dac_write(struct bladerf *dev, uint16_t val)
 }
 
 /*------------------------------------------------------------------------------
- * Data transfer
- *----------------------------------------------------------------------------*/
-static int linux_tx(struct bladerf *dev, bladerf_format format,
-                    void *samples, int n, struct bladerf_metadata *metadata)
-{
-    ssize_t i, ret = 0;
-    size_t bytes_written = 0;
-    const size_t bytes_total = c16_samples_to_bytes(n);
-    struct bladerf_linux *backend = (struct bladerf_linux *)dev->backend;
-    int8_t *samples8 = (int8_t *)samples;
-
-    while (bytes_written < bytes_total) {
-
-        i = write(backend->fd, samples8 + bytes_written, bytes_total - bytes_written);
-
-        if (i < 0 && errno != EINTR) {
-            int errno_val = errno;
-            bladerf_set_error(&dev->error, ETYPE_ERRNO, errno_val);
-            bytes_written = BLADERF_ERR_IO;
-            log_error("Failed to write with errno=%d: %s\n",
-                      errno_val, strerror(errno_val));
-            break;
-        } else if (i > 0) {
-            bytes_written += i;
-        }
-    }
-
-    if (ret < 0) {
-        return ret;
-    } else {
-        return bytes_to_c16_samples(bytes_written);
-    }
-}
-
-static int linux_rx(struct bladerf *dev, bladerf_format format,
-                    void *samples, int n, struct bladerf_metadata *metadata)
-{
-    ssize_t i, ret = 0;
-    size_t bytes_read = 0;
-    const size_t bytes_total = c16_samples_to_bytes(n);
-    struct bladerf_linux *backend = (struct bladerf_linux *)dev->backend;
-    int8_t *samples8 = (int8_t *)samples;
-
-    while (bytes_read < bytes_total) {
-
-        i = read(backend->fd, samples8 + bytes_read, bytes_total - bytes_read);
-
-        if (i < 0 && errno != EINTR) {
-            int errno_val = errno;
-            bladerf_set_error(&dev->error, ETYPE_ERRNO, errno_val);
-            ret = BLADERF_ERR_IO;
-            log_error("Read failed with errno=%d: %s\n",
-                      errno_val, strerror(errno_val));
-            break;
-        } else if (i > 0) {
-            bytes_read += i;
-        }
-    }
-
-    if (ret < 0) {
-        return ret;
-    } else {
-        return bytes_to_c16_samples(bytes_read);
-    }
-}
-
-/*------------------------------------------------------------------------------
  * Platform information
  *----------------------------------------------------------------------------*/
 
@@ -933,8 +866,6 @@ const struct bladerf_fn bladerf_linux_fn = {
     FIELD_INIT(.dac_write, linux_dac_write),
 
     FIELD_INIT(.enable_module, NULL),
-    FIELD_INIT(.rx, linux_rx),
-    FIELD_INIT(.tx, linux_tx),
 
     FIELD_INIT(.init_stream, linux_stream_init),
     FIELD_INIT(.stream, linux_stream),

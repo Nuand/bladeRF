@@ -136,8 +136,33 @@ int str2version(const char *str, struct bladerf_version *version);
 
 /**
  * Convert a bladerf_dev_speed to a string suitable for printing
+ *
+ * @note The caller should not attempt to modify or free() the returned string.
+ *
+ * @param   speed   Device speed
+ * @return  Const string describing the provided speed
  */
 const char * devspeed2str(bladerf_dev_speed speed);
+
+/**
+ * Convert a string to libbladeRF log verbosity level
+ *
+ * @param[in]   str     Input string
+ * @param[out]  ok      Value is updated to true if the input string was valid
+ *
+ * @return Log level if ok is true, undefined otherwise
+ */
+bladerf_log_level str2loglevel(const char *str, bool *ok);
+
+/**
+ * Convert a module enumeration to a string
+ *
+ * @note The caller should not attempt to modify or free() the returned string.
+ *
+ * @param   module      Module to convert to string
+ * @return  String representation of module
+ */
+const char * module2str(bladerf_module m);
 
 /**
  * Convert a string to an argc/argv-style argument list. Arguments are split
