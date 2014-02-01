@@ -293,6 +293,43 @@ const char * devspeed2str(bladerf_dev_speed speed)
     }
 }
 
+bladerf_log_level str2loglevel(const char *str, bool *ok)
+{
+    bladerf_log_level level = BLADERF_LOG_LEVEL_ERROR;
+    bool valid = true;
+
+    if (!strcasecmp(str, "critical")) {
+        level = BLADERF_LOG_LEVEL_CRITICAL;
+    } else if (!strcasecmp(str, "error")) {
+        level = BLADERF_LOG_LEVEL_ERROR;
+    } else if (!strcasecmp(str, "warning")) {
+        level = BLADERF_LOG_LEVEL_WARNING;
+    } else if (!strcasecmp(str, "info")) {
+        level = BLADERF_LOG_LEVEL_INFO;
+    } else if (!strcasecmp(str, "debug")) {
+        level = BLADERF_LOG_LEVEL_DEBUG;
+    } else if (!strcasecmp(str, "verbose")) {
+        level = BLADERF_LOG_LEVEL_VERBOSE;
+    } else {
+        valid = false;
+    }
+
+    *ok = valid;
+    return level;
+}
+
+const char * module2str(bladerf_module m)
+{
+    switch (m) {
+        case BLADERF_MODULE_RX:
+            return "RX";
+        case BLADERF_MODULE_TX:
+            return "TX";
+        default:
+            return "Unknown";
+    }
+}
+
 int str2args(const char *line, char ***argv_ret)
 {
     int line_i, arg_i;      /* Index into line and current argument */

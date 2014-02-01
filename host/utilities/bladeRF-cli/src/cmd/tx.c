@@ -445,8 +445,8 @@ static int tx_cmd_start(struct cli_state *s)
 
 
     /* Set our stream timeout */
-    status = bladerf_set_transfer_timeout(s->dev, BLADERF_MODULE_TX,
-                                          s->tx->data_mgmt.timeout_ms);
+    status = bladerf_set_stream_timeout(s->dev, BLADERF_MODULE_TX,
+                                        s->tx->data_mgmt.timeout_ms);
 
     if (status != 0) {
         s->last_lib_error = status;
