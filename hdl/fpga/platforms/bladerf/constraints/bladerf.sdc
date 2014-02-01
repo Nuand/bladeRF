@@ -26,7 +26,7 @@ set_input_delay -clock [get_clocks fx3_virtual] -max 8.0 [get_ports {fx3_gpif* f
 set_input_delay -clock [get_clocks fx3_virtual] -min 0.5 [get_ports {fx3_gpif* fx3_ctl*}] -add_delay
 
 set_output_delay -clock [get_clocks fx3_virtual] -max 2.0 [get_ports {fx3_gpif* fx3_ctl*}]
-set_output_delay -clock [get_clocks fx3_virtual] -min 1.5 [get_ports {fx3_gpif* fx3_ctl*}] -add_delay
+set_output_delay -clock [get_clocks fx3_virtual] -min -0.5 [get_ports {fx3_gpif* fx3_ctl*}] -add_delay
 
 # LMS sample interface
 set_input_delay -clock [get_clocks lms_rx_virtual] -max  6.0 [get_ports {lms_rx_data* lms_rx_iq_select}]
