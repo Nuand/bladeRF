@@ -453,6 +453,7 @@ static int lusb_fw_populate_version_legacy(struct bladerf *dev)
              );
 
     if (status < 0) {
+        log_debug("Legacy firmare version fetch failed with %d\n", status);
         status = BLADERF_ERR_IO;
     } else {
         dev->fw_version.major = LE16_TO_HOST(fw_ver.major);
@@ -481,6 +482,9 @@ static int lusb_populate_fw_version(struct bladerf *dev)
     /* If we ran into an issue, we're likely dealing with an older firmware.
      * Fall back to the legacy version*/
     if (status < 0) {
+        log_debug("Failed to get version string descriptor (%d). "
+                  "Using legacy fallback.\n", status);
+
         status = lusb_fw_populate_version_legacy(dev);
     } else {
         status = str2version(dev->fw_version.describe, &dev->fw_version);
@@ -763,7 +767,7 @@ static int lusb_open(struct bladerf **device, struct bladerf_devinfo *info)
                 status = lusb_populate_fw_version(dev);
                 if (status < 0) {
                     log_debug("Failed to populate FW version (instance %d): %s\n",
-                              bladerf_strerror(status));
+                              thisinfo.instance, bladerf_strerror(status));
                     goto lusb_open__err_device_list;
                 }
 
