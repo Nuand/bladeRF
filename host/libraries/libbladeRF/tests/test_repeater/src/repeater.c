@@ -119,6 +119,7 @@ void repeater_config_init(struct repeater_config *c)
     c->tx_freq = DEFAULT_FREQUENCY;
     c->rx_freq = DEFAULT_FREQUENCY;
     c->sample_rate = DEFAULT_SAMPLE_RATE;
+    c->bandwidth = DEFAULT_BANDWIDTH;
 
     c->num_buffers = DEFAULT_NUM_BUFFERS;
     c->num_transfers = DEFAULT_NUM_TRANSFERS;

@@ -26,7 +26,7 @@
 #define DEFAULT_SAMPLES_PER_BUFFER  8192
 #define DEFAULT_SAMPLE_RATE         10000000
 #define DEFAULT_FREQUENCY           1000000000
-#define DEFAULT_BANDWIDTH           7000000
+#define DEFAULT_BANDWIDTH           DEFAULT_SAMPLE_RATE
 
 /**
  * Application configuration
