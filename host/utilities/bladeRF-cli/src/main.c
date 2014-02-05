@@ -239,7 +239,8 @@ static int open_device(struct rc_config *rc, struct cli_state *state, int status
                 status = 0;
             } else {
                 fprintf(stderr, "Failed to open device (%s): %s\n",
-                        rc->device, bladerf_strerror(status));
+                        rc->device ? rc->device : "first available",
+                        bladerf_strerror(status));
                 status = -1;
             }
         }
