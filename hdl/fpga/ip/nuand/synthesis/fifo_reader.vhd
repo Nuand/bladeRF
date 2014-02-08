@@ -68,7 +68,7 @@ begin
             end if;
         end if;
     end process;
-    meta_time_eq <= '1' when (enable = '1' and meta_fifo_empty = '0' and to_integer(timestamp(63 downto 0)) = to_integer(meta_p_time)) else '0';
+    meta_time_eq <= '1' when (enable = '1' and meta_fifo_empty = '0' and timestamp(63 downto 0) = meta_p_time) else '0';
     process(clock, reset)
     begin
         if (reset = '1') then

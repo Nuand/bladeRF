@@ -50,7 +50,7 @@ begin
     oc_i2c_sda_pad_o <= '0' ;
     oc_i2c_sda_padoen_o <= '1' ;
 
-    gpio_export <= x"0000_0157" after 1 us ;
+    gpio_export <= x"0001_0157" after 1 us ;
     correction_rx_phase_gain_export <= x"00001000" ;
     correction_tx_phase_gain_export <= x"00001000" ;
 
