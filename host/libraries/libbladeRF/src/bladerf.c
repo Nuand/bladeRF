@@ -618,7 +618,10 @@ int bladerf_init_stream(struct bladerf_stream **stream,
         } else {
             /* Update the caller's pointers */
             *stream = lstream;
-            *buffers = lstream->buffers;
+
+            if (buffers) {
+                *buffers = lstream->buffers;
+            }
         }
     }
 

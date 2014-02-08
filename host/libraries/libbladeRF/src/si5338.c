@@ -404,10 +404,11 @@ static int si5338_calculate_multisynth(struct si5338_multisynth *ms, struct blad
     return 0;
 }
 
-int si5338_set_rational_sample_rate(struct bladerf *dev, bladerf_module module, struct bladerf_rational_rate *rate, struct bladerf_rational_rate *actual)
+int si5338_set_rational_sample_rate(struct bladerf *dev, bladerf_module module, struct bladerf_rational_rate *rate, struct bladerf_rational_rate *actual_ret)
 {
     struct si5338_multisynth ms;
     struct bladerf_rational_rate req;
+    struct bladerf_rational_rate actual;
     int status;
 
     /* Save off the value */
@@ -432,7 +433,10 @@ int si5338_set_rational_sample_rate(struct bladerf *dev, bladerf_module module, 
     }
 
     /* Get the actual rate */
-    si5338_calculate_samplerate(&ms, actual);
+    si5338_calculate_samplerate(&ms, &actual);
+    if (actual_ret) {
+        memcpy(actual_ret, &actual, sizeof(*actual_ret));
+    }
 
     /* Program it to the part */
     status = si5338_write_multisynth(dev, &ms);
@@ -459,7 +463,10 @@ int si5338_set_sample_rate(struct bladerf *dev, bladerf_module module, uint32_t 
     }
 
     assert(act.integer <= UINT32_MAX);
-    *actual = (uint32_t)act.integer;
+
+    if (actual) {
+        *actual = (uint32_t)act.integer;
+    }
     log_debug( "Set actual integer sample rate: %d\n", act.integer );
 
     return status ;
