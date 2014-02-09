@@ -819,11 +819,15 @@ void lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
         }
     }
 
+    /* Calculate integer portion of the frequency value */
     vco_x = ((uint64_t)1) << ((freqsel & 7) - 3);
     temp = (vco_x * freq) / ref_clock;
     assert(temp <= UINT16_MAX);
     nint = (uint16_t)temp;
-    temp = ((1 << 23) * (vco_x * freq - nint * ref_clock)) / ref_clock;
+
+    /* Calculate the fractional portion, rounding to the nearest value */
+    temp = (1 << 23) * (vco_x * freq - nint * ref_clock);
+    temp = (temp + ref_clock / 2) / ref_clock;
     assert(temp <= UINT32_MAX);
     nfrac = (uint32_t)temp;
 
