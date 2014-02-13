@@ -567,12 +567,112 @@ int set_lnagain(struct cli_state *state, int argc, char **argv)
 
 int print_loopback(struct cli_state *state, int argc, char **argv)
 {
-    return CMD_RET_OK;
+    int status;
+    bladerf_loopback loopback;
+
+    status = bladerf_get_loopback(state->dev, &loopback);
+    if (status != 0) {
+        state->last_lib_error = status;
+        return CMD_RET_LIBBLADERF;
+    }
+
+    switch (loopback) {
+        case BLADERF_LB_BB_TXLPF_RXVGA2:
+            printf("Loopback mode: bb_txlpf_rxvga2\n");
+            break;
+
+        case BLADERF_LB_BB_TXLPF_RXLPF:
+            printf("Loopback mode: bb_txlpf_rxlpf\n");
+            break;
+
+        case BLADERF_LB_BB_TXVGA1_RXVGA2:
+            printf("Loopback mode: bb_txvga1_rxvga2\n");
+            break;
+
+        case BLADERF_LB_BB_TXVGA1_RXLPF:
+            printf("Loopback mode: bb_txvga1_rxlpf\n");
+            break;
+
+        case BLADERF_LB_RF_LNA1:
+            printf("Loopback mode: rf_lna1\n");
+            break;
+
+        case BLADERF_LB_RF_LNA2:
+            printf("Loopback mode: rf_lna2\n");
+            break;
+
+        case BLADERF_LB_RF_LNA3:
+            printf("Loopback mode: rf_lna3\n");
+            break;
+
+        case BLADERF_LB_NONE:
+            printf("Loopback mode: none\n");
+            break;
+
+        default:
+            cli_err(state, argv[0], "Read back unexpected loopback mode: %d\n",
+                    (int)loopback);
+            return CMD_RET_INVPARAM;
+    }
+
+    return 0;
 }
 
 int set_loopback(struct cli_state *state, int argc, char **argv)
 {
-    return CMD_RET_OK;
+    int status;
+    bladerf_loopback loopback;
+
+    if (argc == 2) {
+        printf("\n");
+        printf("Usage: %s %s <mode>, where <mode> is one of the following:\n",
+               argv[0], argv[1]);
+        printf("\n");
+        printf("  bb_txlpf_rxvga2   Baseband loopback: TXLPF output --> RXVGA2 input\n");
+        printf("  bb_txlpf_rxlpf    Baseband loopback: TXLPF output --> RXLPF input\n");
+        printf("  bb_txvga1_rxvga2  Baseband loopback: TXVGA1 output --> RXVGA2 input.\n");
+        printf("  bb_txvga1_rxlpf   Baseband loopback: TXVGA1 output --> RXLPF input\n");
+        printf("  rx_lna1           RF loopback: TXMIX --> RXMIX via LNA1 path.\n");
+        printf("  rx_lna2           RF loopback: TXMIX --> RXMIX via LNA2 path.\n");
+        printf("  rx_lna3           RF loopback: TXMIX --> RXMIX via LNA3 path.\n");
+        printf("  none              Loopback disabled - Normal operation.\n");
+        printf("\n");
+
+        return CMD_RET_INVPARAM;
+
+    } else if (argc != 3) {
+        return CMD_RET_NARGS;
+    }
+
+    if (!strcasecmp(argv[2], "bb_txlpf_rxvga2")) {
+        loopback = BLADERF_LB_BB_TXLPF_RXVGA2;
+    } else if (!strcasecmp(argv[2], "bb_txlpf_rxlpf")) {
+        loopback = BLADERF_LB_BB_TXLPF_RXLPF;
+    } else if (!strcasecmp(argv[2], "bb_txvga1_rxvga2")) {
+        loopback = BLADERF_LB_BB_TXVGA1_RXVGA2;
+    } else if (!strcasecmp(argv[2], "bb_txvga1_rxlpf")) {
+        loopback = BLADERF_LB_BB_TXVGA1_RXLPF;
+    } else if (!strcasecmp(argv[2], "rf_lna1")) {
+        loopback = BLADERF_LB_RF_LNA1;
+    } else if (!strcasecmp(argv[2], "rf_lna2")) {
+        loopback = BLADERF_LB_RF_LNA2;
+    } else if (!strcasecmp(argv[2], "rf_lna3")) {
+        loopback = BLADERF_LB_RF_LNA3;
+    } else if (!strcasecmp(argv[2], "none")) {
+        loopback = BLADERF_LB_NONE;
+    } else {
+        cli_err(state, argv[0],
+                "Invalid loopback mode provided: %s\n", argv[2]);
+        return CMD_RET_INVPARAM;
+    }
+
+    status = bladerf_set_loopback(state->dev, loopback);
+    if (status != 0) {
+        state->last_lib_error = status;
+        return CMD_RET_LIBBLADERF;
+    } else {
+        return CMD_RET_OK;
+    }
 }
 
 int print_mimo(struct cli_state *state, int argc, char **argv)
@@ -1066,7 +1166,7 @@ int cmd_set(struct cli_state *state, int argc, char **argv)
         set bandwidth <rx|tx> <bw in Hz>
         set frequency <rx|tx> <frequency in Hz>
         set gpio <value>
-        set loopback <mode> [options]
+        set loopback [mode]
         set mimo <master|slave|off>
         set pa <lb|hb>
         set pps <on|off>
