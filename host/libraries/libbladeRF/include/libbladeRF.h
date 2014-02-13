@@ -298,18 +298,53 @@ bool CALL_CONV bladerf_devstr_matches(const char *dev_str,
 
 /**
  * Loopback options
- *
- * @note These are schedule to change
  */
 typedef enum {
-    BLADERF_LB_BB_LPF = 0,   /**< Baseband loopback enters before RX low-pass filter input */
-    BLADERF_LB_BB_VGA2,      /**< Baseband loopback enters before RX VGA2 input */
-    BLADERF_LB_BB_OP,        /**< Baseband loopback enters before RX ADC input */
-    BLADERF_LB_RF_LNA_START, /**< Placeholder - DO NOT USE */
-    BLADERF_LB_RF_LNA1,      /**< RF loopback enters at LNA1 (300MHz - 2.8GHz)*/
-    BLADERF_LB_RF_LNA2,      /**< RF loopback enters at LNA2 (1.5GHz - 3.8GHz)*/
-    BLADERF_LB_RF_LNA3,      /**< RF loopback enters at LNA3 (300MHz - 3.0GHz)*/
-    BLADERF_LB_NONE          /**< Null loopback mode*/
+
+    /**
+     * Basband loopback. TXLPF output is connected to the RXVGA2 input.
+     */
+    BLADERF_LB_BB_TXLPF_RXVGA2 = 2,
+
+    /**
+     * Baseband loopback. TXVGA1 output is connected to the RXVGA2 input.
+     */
+    BLADERF_LB_BB_TXVGA1_RXVGA2,
+
+    /**
+     * Baseband loopback. TXLPF output is connected to the RXLPF input.
+     */
+    BLADERF_LB_BB_TXLPF_RXLPF,
+
+    /**
+     * Baseband loopback. TXVGA1 output is connected to RXLPF input.
+     */
+    BLADERF_LB_BB_TXVGA1_RXLPF,
+
+    /**
+     * RF loopback. The TXMIX output, through the AUX PA, is connected to the
+     * output of LNA1.
+     */
+    BLADERF_LB_RF_LNA1,
+
+
+    /**
+     * RF loopback. The TXMIX output, through the AUX PA, is connected to the
+     * output of LNA2.
+     */
+    BLADERF_LB_RF_LNA2,
+
+    /**
+     * RF loopback. The TXMIX output, through the AUX PA, is connected to the
+     * output of LNA3.
+     */
+    BLADERF_LB_RF_LNA3,
+
+    /**
+     * Disables loopback and returns to normal operation.
+     */
+    BLADERF_LB_NONE
+
 } bladerf_loopback;
 
 
@@ -426,19 +461,26 @@ int CALL_CONV bladerf_enable_module(struct bladerf *dev,
 /**
  * Apply specified loopback mode
  *
- * @bug This function is not implemented, and should not be used in this
- * version.
- *
  * @param       dev     Device handle
- * @param       l       Loopback mode. Note that LB_NONE disables the use
- *                      of loopback functionality.
+ * @param       l       Loopback mode. Note that BLADERF_LB_NONE disables the
+ *                      use of loopback functionality.
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_set_loopback(struct bladerf *dev,
-                                   bladerf_loopback l);
+int CALL_CONV bladerf_set_loopback(struct bladerf *dev, bladerf_loopback l);
 
+
+/**
+ * Get current loopback mode
+ *
+ * @param[in]   dev     Device handle
+ * @param[out]  l       Current loopback mode
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_loopback(struct bladerf *dev, bladerf_loopback *l);
 
 /**
  * Configure the device's sample rate, in Hz.  Note this requires the sample
@@ -721,9 +763,15 @@ int CALL_CONV bladerf_get_lpf_mode(struct bladerf *dev, bladerf_module module,
 /**
  * Select the appropriate band path given a frequency in Hz.
  *
+ * The high band (LNA2 and PA2) is used for `frequency` >= 1.5 GHz. Otherwise,
+ * The low band (LNA1 and PA1)
+ * are used.
+ *
  * @param       dev         Device handle
  * @param       module      Module to configure
  * @param       frequency   Tuned frequency
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
 int CALL_CONV bladerf_select_band(struct bladerf *dev, bladerf_module module,
@@ -731,6 +779,8 @@ int CALL_CONV bladerf_select_band(struct bladerf *dev, bladerf_module module,
 
 /**
  * Set module's frequency in Hz.
+ *
+ * This calls bladerf_set_frequency() internally.
  *
  * @param       dev         Device handle
  * @param       module      Module to configure

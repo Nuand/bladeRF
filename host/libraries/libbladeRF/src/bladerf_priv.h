@@ -35,8 +35,11 @@
 #include "minmax.h"
 #include "conversions.h"
 #include "devinfo.h"
-
 #include "flash.h"
+
+/* For >= 1.5 GHz uses the high band should be used. Otherwise, the low
+ * band should be selected */
+#define BLADERF_BAND_HIGH (1500000000)
 
 typedef enum {
     ETYPE_ERRNO,
