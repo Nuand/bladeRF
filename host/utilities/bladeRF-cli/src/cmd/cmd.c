@@ -359,12 +359,12 @@ static const struct cmd cmd_table[] = {
             "   pa              PA settings\n"
             "   pps             PPS settings\n"
             "   refclk          Reference clock settings\n"
-            "   rxvga1          Gain setting of RXVGA1 (range: TODO)\n"
-            "   rxvga2          Gain setting of RXVGA2 in dB (range: TODO)\n"
+            "   rxvga1          Gain setting of RXVGA1\n"
+            "   rxvga2          Gain setting of RXVGA2, in dB\n"
             "   samplerate      Samplerate settings\n"
             "   trimdac         VCTCXO Trim DAC settings\n"
-            "   txvga1          Gain setting of TXVGA1 in dB (range: TODO)\n"
-            "   txvga2          Gain setting of TXVGA2 in dB (range: TODO)\n"
+            "   txvga1          Gain setting of TXVGA1, in dB\n"
+            "   txvga2          Gain setting of TXVGA2, in dB\n"
         )
     },
     {
@@ -594,12 +594,12 @@ static const struct cmd cmd_table[] = {
             "   pa              PA settings\n"
             "   pps             PPS settings\n"
             "   refclk          Reference clock settings\n"
-            "   rxvga1          Gain setting of RXVGA1 (range: TODO)\n"
-            "   rxvga2          Gain setting of RXVGA2 in dB (range: TODO)\n"
+            "   rxvga1          Gain setting of RXVGA1. Range: [0, 120]\n"
+            "   rxvga2          Gain setting of RXVGA2, in dB. Range: [0, 30]\n"
             "   samplerate      Samplerate settings\n"
             "   trimdac         VCTCXO Trim DAC settings\n"
-            "   txvga1          Gain setting of TXVGA1 in dB (range: TODO)\n"
-            "   txvga2          Gain setting of TXVGA2 in dB (range: TODO)\n"
+            "   txvga1          Gain setting of TXVGA1, in dB. Range: [-35, 4]\n"
+            "   txvga2          Gain setting of TXVGA2, in dB. Range: [0, 25]\n"
         )
     },
     {
