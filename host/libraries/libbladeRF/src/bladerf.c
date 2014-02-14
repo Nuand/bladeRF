@@ -304,119 +304,52 @@ bladerf_set_sampling__done:
 
 int bladerf_set_txvga2(struct bladerf *dev, int gain)
 {
-    if( gain > 25 ) {
-        log_info("%s: gain (%d) is being clamped to 25dB\n",
-                 __FUNCTION__, gain );
-        gain = 25;
-    }
-
-    if( gain < 0 ) {
-        log_info("%s: gain (%d) is being clamped to 0dB\n",
-                 __FUNCTION__, gain );
-        gain = 0;
-    }
-
     return lms_txvga2_set_gain(dev, gain);
 }
 
 int bladerf_get_txvga2(struct bladerf *dev, int *gain)
 {
-    int status;
-    uint8_t gain_u8;
-
-    status = lms_txvga2_get_gain( dev, &gain_u8 );
-    if (status == 0) {
-        *gain = gain_u8;
-    } else {
-        *gain = 0;
-    }
-
-    return status;
+    return lms_txvga2_get_gain(dev, gain);
 }
 
 int bladerf_set_txvga1(struct bladerf *dev, int gain)
 {
-    if(gain < -35) {
-        log_info("%s: gain (%d) is being clamped to -35dB\n",
-                 __FUNCTION__, gain);
-        gain = -35;
-    }
-
-    if(gain > -4) {
-        log_info("%s: gain (%d) is being clamped to -4dB\n",
-                 __FUNCTION__, gain);
-        gain = -4;
-    }
-
     return lms_txvga1_set_gain(dev, gain);
 }
 
 int bladerf_get_txvga1(struct bladerf *dev, int *gain)
 {
-    int status;
-
-    status = lms_txvga1_get_gain( dev, (int8_t *)gain );
-    if (status == 0) {
-        *gain |= 0xffffff00 ;
-    } else {
-        *gain = 0;
-    }
-
-    return status;
+    return lms_txvga1_get_gain(dev, gain);
 }
 
 int bladerf_set_lna_gain(struct bladerf *dev, bladerf_lna_gain gain)
 {
-    return lms_lna_set_gain( dev, gain );
+    return lms_lna_set_gain(dev, gain);
 }
 
 int bladerf_get_lna_gain(struct bladerf *dev, bladerf_lna_gain *gain)
 {
-    return lms_lna_get_gain( dev, gain );
+    return lms_lna_get_gain(dev, gain);
 }
 
 int bladerf_set_rxvga1(struct bladerf *dev, int gain)
 {
-    int r;
-    for (r = 2; (r * r) < ((gain - 5) << 9); r++);
-    return lms_rxvga1_set_gain( dev, r );
+    return lms_rxvga1_set_gain(dev, gain);
 }
 
 int bladerf_get_rxvga1(struct bladerf *dev, int *gain)
 {
-    uint8_t gain_u8;
-    int status = lms_rxvga1_get_gain(dev, &gain_u8);
-
-    if (status == 0) {
-        *gain = 5 + (((int)gain_u8 * (int)gain_u8) >> 9);
-    } else {
-        *gain = 0;
-    }
-
-    return status;
+    return lms_rxvga1_get_gain(dev, gain);
 }
 
 int bladerf_set_rxvga2(struct bladerf *dev, int gain)
 {
-    /* Raw value to write which is 3dB per unit */
-    return lms_rxvga2_set_gain( dev, (uint8_t)gain/3 );
+    return lms_rxvga2_set_gain(dev, gain);
 }
 
 int bladerf_get_rxvga2(struct bladerf *dev, int *gain)
 {
-    int status;
-    uint8_t gain_u8;
-
-    status = lms_rxvga2_get_gain( dev, &gain_u8 );
-    if (status == 0) {
-        /* Value returned from LMS lib is just the raw value,
-         * which is 3dB/unit */
-        *gain = gain_u8 * 3;
-    } else {
-        *gain = 0;
-    }
-
-    return status;
+    return lms_rxvga2_get_gain(dev, gain);
 }
 
 int bladerf_set_bandwidth(struct bladerf *dev, bladerf_module module,

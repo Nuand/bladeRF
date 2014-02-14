@@ -255,36 +255,24 @@ int lms_select_lna(struct bladerf *dev, lms_lna lna);
 int lms_rxvga1_enable(struct bladerf *dev, bool enable);
 
 /**
- * Set the RXVGA1 mixer gain in weird units.
- *
- * Gain range is complicated and non-linear.
- * If 120 -> mixer gain = 30dB
- * If 102 -> mixer gain = 19dB
- * If 2   -> mixer gain = 5dB
- *
- * Allowable range is 0 to 120.
+ * Set the gain value of RXVGA1 (in dB)
  *
  * @param[in]   dev     Device handle
  * @param[in]   gain    Gain value
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
-int lms_rxvga1_set_gain(struct bladerf *dev, uint8_t gain);
+int lms_rxvga1_set_gain(struct bladerf *dev, int gain);
 
 /**
- * Get the RXVGA1 mixer gain in weird units.
- *
- * Gain range is complicated and non-linear.
- * If 120 -> mixer gain = 30dB
- * If 102 -> mixer gain = 19dB
- * If 2   -> mixer gain = 5dB
+ * Get the RXVGA1 gain value (in dB)
  *
  * @param[in]   dev     Device handle
- * @param[out]  gain    Gain valye
+ * @param[out]  gain    Gain value
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
-int lms_rxvga1_get_gain(struct bladerf *dev, uint8_t *gain);
+int lms_rxvga1_get_gain(struct bladerf *dev, int *gain);
 
 /**
  * Set the gain in dB and enable RXVGA2, or disable RXVGA2
@@ -306,21 +294,21 @@ int lms_rxvga2_enable(struct bladerf *dev, bool enable);
  * Anything above 30dB is not recommended as a gain setting.
  *
  * @param[in]   dev     Device handle
- * @param[in]   gain    Gain in dB (range: 0 to 60, >30 not recommended)
+ * @param[in]   gain    Gain in dB (range: 0 to 30)
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
-int lms_rxvga2_set_gain(struct bladerf *dev, uint8_t gain);
+int lms_rxvga2_set_gain(struct bladerf *dev, int gain);
 
 /**
  * Get the gain on RXVGA2 in dB.
  *
  * @param[in]   dev     Device handle
- * @param[out]  gain    Gain in dB (range: 0 to 60)
+ * @param[out]  gain    Gain in dB (range: 0 to 30)
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
-int lms_rxvga2_get_gain(struct bladerf *dev, uint8_t *gain);
+int lms_rxvga2_get_gain(struct bladerf *dev, int *gain);
 
 /**
  * Set the gain in dB of TXVGA2.
@@ -329,11 +317,12 @@ int lms_rxvga2_get_gain(struct bladerf *dev, uint8_t *gain);
  * Anything above 25 will be clamped at 25.
  *
  * @param[in]   dev     Device handle
- * @param[in]   gain    Gain in dB (range: 0 to 25)
+ * @param[in]   gain    Gain in dB (range: 0 to 25). Out of range values will
+ *                      be clamped.
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
-int lms_txvga2_set_gain(struct bladerf *dev, uint8_t gain);
+int lms_txvga2_set_gain(struct bladerf *dev, int gain);
 
 /**
  * Get the gain in dB of TXVGA2.
@@ -343,7 +332,7 @@ int lms_txvga2_set_gain(struct bladerf *dev, uint8_t gain);
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
-int lms_txvga2_get_gain(struct bladerf *dev, uint8_t *gain);
+int lms_txvga2_get_gain(struct bladerf *dev, int *gain);
 
 /**
  * Set the gain in dB of TXVGA1.
@@ -351,11 +340,12 @@ int lms_txvga2_get_gain(struct bladerf *dev, uint8_t *gain);
  * The range of gain values is from -35dB to -4dB.
  *
  * @param[in]   dev     Device handle
- * @param[in]   gain    Gain in dB (range: -4 to -35)
+ * @param[in]   gain    Gain in dB (range: -4 to -35). Out of range values
+ *                      will be clamped.
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
-int lms_txvga1_set_gain(struct bladerf *dev, int8_t gain);
+int lms_txvga1_set_gain(struct bladerf *dev, int gain);
 
 /**
  * Get the gain in dB of TXVGA1.
@@ -363,11 +353,11 @@ int lms_txvga1_set_gain(struct bladerf *dev, int8_t gain);
  * The range of gain values is from -35dB to -4dB.
  *
  * @param[in]   dev     Device handle
- * @param[in]   gain    Gain in dB (range: -4 to -35)
+ * @param[out]  gain    Gain in dB (range: -4 to -35)
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
-int lms_txvga1_get_gain(struct bladerf *dev, int8_t *gain);
+int lms_txvga1_get_gain(struct bladerf *dev, int *gain);
 
 /**
  * Enable or disable a PA

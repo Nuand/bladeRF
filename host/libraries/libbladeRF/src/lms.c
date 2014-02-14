@@ -79,7 +79,7 @@ static const unsigned int uint_bandwidths[] = {
 }
 
 /* Frequency Range table. Corresponds to the LMS FREQSEL table */
-const struct freq_range {
+static const struct freq_range {
     uint32_t    low;
     uint32_t    high;
     uint8_t     value;
@@ -102,8 +102,33 @@ const struct freq_range {
     FREQ_RANGE(3240000000u, 3720000000u, 0x3c),
 };
 
+ /*
+ * The LMS FAQ (Rev 1.0r10, Section 5.20) states that the RXVGA1 codes may be
+ * converted to dB via:
+ *      value_db = 20 * log10(127 / (127 - code))
+ *
+ * However, an offset of 5 appears to be required, yielding:
+ *      value_db =  5 + 20 * log10(127 / (127 - code))
+ *
+ */
+static const uint8_t rxvga1_lut_code2val[] = {
+    5,  5,  5,  5,  5,  5,  5,  5,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,
+    6,  6,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  8,  8,  8,  8,  8,  8,
+    8,  8,  8,  8,  8,  9,  9,  9,  9,  9,  9,  9,  9,  9,  10, 10, 10, 10, 10,
+    10, 10, 10, 11, 11, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 13, 13,
+    13, 13, 13, 13, 14, 14, 14, 14, 14, 15, 15, 15, 15, 15, 16, 16, 16, 16, 17,
+    17, 17, 18, 18, 18, 18, 19, 19, 19, 20, 20, 21, 21, 22, 22, 22, 23, 24, 24,
+    25, 25, 26, 27, 28, 29, 30
+};
 
-const uint8_t lms_reg_dumpset[] = {
+/* The closest values from the above forumla have been selected.
+ * indicides 0 - 4 are clamped to 5dB */
+static const uint8_t rxvga1_lut_val2code[] = {
+    2,  2,  2,  2,   2,   2,   14,  26,  37,  47,  56,  63,  70,  76,  82,  87,
+    91, 95, 99, 102, 104, 107, 109, 111, 113, 114, 116, 117, 118, 119, 120,
+};
+
+static const uint8_t lms_reg_dumpset[] = {
     /* Top level configuration */
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B,
     0x0E, 0x0F,
@@ -517,50 +542,55 @@ int lms_select_lna(struct bladerf *dev, lms_lna lna)
     return bladerf_lms_write(dev, 0x75, data);
 }
 
+/* Enable bit is in reserved register documented in this thread:
+ *  https://groups.google.com/forum/#!topic/limemicro-opensource/8iTannzlfzg
+ */
 int lms_rxvga1_enable(struct bladerf *dev, bool enable)
 {
     int status;
+    uint8_t data;
 
-    if (enable) {
-        /* Set bias current to nominal */
-        status = bladerf_lms_write(dev, 0x7b, 0x33);
-    } else {
-        /* Set bias current to 0 */
-        status = bladerf_lms_write(dev, 0x7b, 0x03);
+    status = bladerf_lms_read(dev, 0x7d, &data);
+    if (status != 0) {
+        return status;
     }
 
-    return status;
+    if (enable) {
+        data &= ~(1 << 3);
+    } else {
+        data |= (1 << 3);
+    }
+
+    return bladerf_lms_write(dev, 0x7d, data);
 }
 
 /* Set the RFB_TIA_RXFE mixer gain */
-int lms_rxvga1_set_gain(struct bladerf *dev, uint8_t gain)
+int lms_rxvga1_set_gain(struct bladerf *dev, int gain)
 {
-    int status;
-    uint8_t data;
-
-    if (gain > 120) {
-        log_info("%s: %d being clamped to 120\n", __FUNCTION__, gain);
-        gain = 120;
+    if (gain > 30) {
+        log_info("Clamping RXVGA1 gain to 30dB\n");
+        gain = 30;
+    } else if (gain < 5) {
+        log_info("Clamping RXVGA1 gain to 5dB\n");
+        gain = 5;
     }
 
-    status = bladerf_lms_read(dev, 0x76, &data);
-    if (status == 0) {
-        data &= ~(0x7f);
-        data |= gain;
-        status = bladerf_lms_write(dev, 0x76, gain & 0x7f);
-    }
-
-    return status;
+    return bladerf_lms_write(dev, 0x76, rxvga1_lut_val2code[gain]);
 }
 
 /* Get the RFB_TIA_RXFE mixer gain */
-int lms_rxvga1_get_gain(struct bladerf *dev, uint8_t *gain)
+int lms_rxvga1_get_gain(struct bladerf *dev, int *gain)
 {
-    int status;
     uint8_t data;
-    status = bladerf_lms_read(dev, 0x76, &data);
+    int status = bladerf_lms_read(dev, 0x76, &data);
+
     if (status == 0) {
-        *gain = data & 0x7f;
+        data &= 0x7f;
+        if (data > 120) {
+            data = 120;
+        }
+
+        *gain = rxvga1_lut_code2val[data];
     }
 
     return status;
@@ -588,39 +618,33 @@ int lms_rxvga2_enable(struct bladerf *dev, bool enable)
 
 
 /* Set the gain on RXVGA2 */
-int lms_rxvga2_set_gain(struct bladerf *dev, uint8_t gain)
+int lms_rxvga2_set_gain(struct bladerf *dev, int gain)
 {
-    int status;
-    uint8_t data;
-
-    /* NOTE: Gain is calculated as gain*3dB and shouldn't really */
-    /* go above 30dB */
-    if ((gain & 0x1f) > 10)
-    {
-        log_info("Clamping gain to 30dB\n");
-        gain = 10;
+    if (gain > 30) {
+        log_info("Clamping RXVGA2 gain to 30dB\n");
+    } else if (gain < 0) {
+        log_info("Clamping RXVGA2 gain to 0dB\n");
     }
 
-    status = bladerf_lms_read(dev, 0x65, &data);
-    if (status == 0) {
-        data &= ~(0x1f);
-        data |= gain;
-        status = bladerf_lms_write(dev, 0x65, data);
-    }
-
-    return status;
+    /* 3 dB per register code */
+    return bladerf_lms_write(dev, 0x65, gain / 3);
 }
 
-int lms_rxvga2_get_gain(struct bladerf *dev, uint8_t *gain)
+int lms_rxvga2_get_gain(struct bladerf *dev, int *gain)
 {
 
     uint8_t data;
     const int status = bladerf_lms_read(dev, 0x65, &data);
 
     if (status == 0) {
-        *gain = data & 0x1f;
-    } else {
-        *gain = 0;
+        /* 3 dB per code */
+        data *= 3;
+
+        if (data > 30) {
+            *gain = 30;
+        } else {
+            *gain = data;
+        }
     }
 
     return status;
@@ -716,14 +740,20 @@ int lms_enable_rffe(struct bladerf *dev, bladerf_module module, bool enable)
     return status;
 }
 
-int lms_txvga2_set_gain(struct bladerf *dev, uint8_t gain)
+int lms_txvga2_set_gain(struct bladerf *dev, int gain_int)
 {
     int status;
     uint8_t data;
+    int8_t gain;
 
-    if (gain > 25) {
-        log_debug("%s: Clamping gain to 25 dB\n", __FUNCTION__);
+    if (gain_int > 25) {
         gain = 25;
+        log_info("Clamping TXVGA2 gain to 25dB\n");
+    } else if (gain_int < 0) {
+        gain = 0;
+        log_info("Clamping TXVGA2 gain to 0dB\n");
+    } else {
+        gain = gain_int;
     }
 
     status = bladerf_lms_read(dev, 0x45, &data);
@@ -736,7 +766,7 @@ int lms_txvga2_set_gain(struct bladerf *dev, uint8_t gain)
     return status;
 }
 
-int lms_txvga2_get_gain(struct bladerf *dev, uint8_t *gain)
+int lms_txvga2_get_gain(struct bladerf *dev, int *gain)
 {
     int status;
     uint8_t data;
@@ -745,25 +775,38 @@ int lms_txvga2_get_gain(struct bladerf *dev, uint8_t *gain)
 
     if (status == 0) {
         *gain = (data >> 3) & 0x1f;
+
+        /* Register values of 25-31 all correspond to 25 dB */
+        if (*gain > 25) {
+            *gain = 25;
+        }
     }
 
     return status;
 }
 
-int lms_txvga1_set_gain(struct bladerf *dev, int8_t gain)
+int lms_txvga1_set_gain(struct bladerf *dev, int gain_int)
 {
-    if (gain < -35 || gain > -4) {
-        return BLADERF_ERR_INVAL;
+    int8_t gain;
+
+    if (gain_int < -35) {
+        log_info("Clamping TXVGA1 gain to -35dB\n");
+        gain = -35;
+    } else if (gain_int > -4) {
+        gain = -4;
+        log_info("Clamping TXVGA1 gain to -4dB\n");
+    } else {
+        gain = gain_int;
     }
 
     /* Apply offset to convert gain to register table index */
     gain = (gain + 35);
 
     /* Since 0x41 is only VGA1GAIN, we don't need to RMW */
-    return bladerf_lms_write(dev, 0x41, gain & 0x1f);
+    return bladerf_lms_write(dev, 0x41, gain);
 }
 
-int lms_txvga1_get_gain(struct bladerf *dev, int8_t *gain)
+int lms_txvga1_get_gain(struct bladerf *dev, int *gain)
 {
     int status;
     uint8_t data;
