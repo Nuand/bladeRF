@@ -725,7 +725,7 @@ int print_rxvga1(struct cli_state *state, int argc, char **argv)
         rv = CMD_RET_LIBBLADERF;
     } else {
         printf( "\n" );
-        printf( "  RXVGA1 Gain: %3d\n", gain );
+        printf( "  RXVGA1 Gain: %3ddB\n", gain );
         printf( "\n" );
     }
 
