@@ -8,7 +8,7 @@ Linux Driver (host/drivers/linux): GPLv2
 Host Libraries (host/lib): LGPLv2.1
 Host Utilities (host/utilities): GPLv2
 
-Note that the misc. source files in host/common and host/utilities/commong vary
+Note that the misc. source files in host/common and host/utilities/common vary
 in their licenses (but are compatible with above items they are linked with.)
 Please see the individual files and/or their associated files in the
 legal/license directory for additional information.
