@@ -37,7 +37,12 @@ endif()
 # Configuration options
 ################################################################################
 
-option(ENABLE_LIBBLADERF_LOGGING "Enable log messages in libbladeRF" ON)
+option(ENABLE_LIBBLADERF_LOGGING "Enable log messages in libbladeRF." ON)
+
+option(BUILD_LIBBLADERF_DOCUMENTATION "Build libbladeRF documentation. Requries Doxygen." ${BUILD_DOCUMENTATION})
+if(NOT ${BUILD_DOCUMENTATION})
+    set(BUILD_LIBBLADERF_DOCUMENTATION OFF)
+endif()
 
 ##############################
 # Backend Support
@@ -233,7 +238,7 @@ add_subdirectory(tests)
 ################################################################################
 # Doxygen documentation
 ################################################################################
-if(BUILD_DOCUMENTATION)
+if(BUILD_LIBBLADERF_DOCUMENTATION)
     find_package(Doxygen)
     if(DOXYGEN_FOUND)
         message(STATUS "Configured to build libbladeRF API documentation.")
@@ -243,12 +248,17 @@ if(BUILD_DOCUMENTATION)
             @ONLY
             )
 
-        add_custom_target(doc
-            ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/Doxyfile
+        add_custom_command(
+            OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/html/index.html
+            DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/Doxyfile ${CMAKE_CURRENT_SOURCE_DIR}/include/libbladeRF.h
+            COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/Doxyfile
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen
             COMMENT "Generating libbladeRF API documentation via Doxygen in: ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen"
         )
+
+    add_custom_target(libbladeRF-doxygen ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/html/index.html) 
+
     else(DOXYGEN_FOUND)
         message(WARNING "Could not find Doxygen. libbladeRF API documentation will not be built.")
     endif(DOXYGEN_FOUND)
-endif(BUILD_DOCUMENTATION)
+endif(BUILD_LIBBLADERF_DOCUMENTATION)

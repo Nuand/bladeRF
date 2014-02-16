@@ -34,6 +34,19 @@ else()
 endif(ENABLE_BACKEND_LIBUSB)
 
 ################################################################################
+# Configuration options
+################################################################################
+
+option(BUILD_BLADERF_FLASH_DOCUMENTATION
+        "Build bladeRF-flash man page. Requires help2man."
+        ${BUILD_DOCUMENTATION})
+
+if(NOT ${BUILD_DOCUMENTATION})
+    set(BUILD_BLADERF_FLASH_DOCUMENTATION OFF)
+endif()
+
+
+################################################################################
 # Include paths
 ################################################################################
 set(FLASH_INCLUDE_DIRS
@@ -78,7 +91,7 @@ target_link_libraries(bladeRF-flash ${FLASH_LINK_LIBRARIES})
 ################################################################################
 # Man pages
 ################################################################################
-if(BUILD_DOCUMENTATION)
+if(BUILD_BLADERF_FLASH_DOCUMENTATION)
     find_program(HELP2MAN_EXECUTABLE help2man)
 
     if(HELP2MAN_EXECUTABLE)
@@ -112,14 +125,14 @@ if(BUILD_DOCUMENTATION)
 
         install(FILES ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/bladeRF-flash.1 DESTINATION ${MAN_INSTALL_DIR}/man1)
 
-        add_custom_target(bladeRF-flash-manpage ALL SOURCES bladeRF-flash.1)
+        add_custom_target(bladeRF-flash-manpage ALL DEPENDS bladeRF-flash.1)
 
     else(HELP2MAN_EXECUTABLE)
         message(WARNING "Could not find help2man. bladeRF-flash man page will not be built.")
     endif(HELP2MAN_EXECUTABLE)
-else(BUILD_DOCUMENTATION)
-    message(STATUS "Not building man page for bladeRF-flash.  (BUILD_DOCUMENTATION is OFF)")
-endif(BUILD_DOCUMENTATION)
+else(BUILD_BLADERF_FLASH_DOCUMENTATION)
+    message(STATUS "Not building man page for bladeRF-flash.  (BUILD_BLADERF_FLASH_DOCUMENTATION is OFF)")
+endif(BUILD_BLADERF_FLASH_DOCUMENTATION)
 
 ################################################################################
 # Installation

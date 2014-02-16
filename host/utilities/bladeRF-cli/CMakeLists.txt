@@ -22,30 +22,10 @@ configure_file(
 )
 
 ################################################################################
-# Configuration options
-################################################################################
-
-find_package(LibTecla)
-
-option(ENABLE_LIBTECLA
-        "Enable the use of libtecla, if available."
-        ${LIBTECLA_FOUND}
-)
-
-if(ENABLE_LIBTECLA)
-    message(STATUS "libtecla support enabled")
-endif()
-
-find_package(LibUSB)
-if (LIBUSB_FOUND)
-    add_definitions(-DCLI_LIBUSB_ENABLED)
-endif()
-
-
-
-################################################################################
 # Build dependencies
 ################################################################################
+find_package(LibTecla)
+find_package(LibUSB)
 
 if(MSVC)
     find_package(LibPThreadsWin32 REQUIRED)
@@ -53,6 +33,27 @@ else(MSVC)
 	find_package(Threads REQUIRED)
 endif(MSVC)
 
+################################################################################
+# Configuration options
+################################################################################
+
+option(ENABLE_LIBTECLA
+        "Enable the use of libtecla, if available."
+        ${LIBTECLA_FOUND}
+)
+
+option(BUILD_BLADERF_CLI_DOCUMENTATION
+        "Build bladeRF-cli man page. Requires help2man and python."
+        ${BUILD_DOCUMENTATION})
+
+if(NOT ${BUILD_DOCUMENTATION})
+    set(BUILD_BLADERF_CLI_DOCUMENTATION OFF)
+endif()
+
+
+if(ENABLE_LIBTECLA)
+    message(STATUS "libtecla support enabled")
+endif()
 
 ################################################################################
 # Include paths
@@ -177,6 +178,7 @@ if(ENABLE_LIBTECLA)
 endif(ENABLE_LIBTECLA)
 
 if(LIBUSB_FOUND)
+    add_definitions(-DCLI_LIBUSB_ENABLED)
     set(CLI_LINK_LIBRARIES ${CLI_LINK_LIBRARIES} ${LIBUSB_LIBRARIES})
 endif()
 
@@ -189,7 +191,7 @@ target_link_libraries(bladeRF-cli ${CLI_LINK_LIBRARIES})
 ################################################################################
 # Man pages
 ################################################################################
-if(BUILD_DOCUMENTATION)
+if(BUILD_BLADERF_CLI_DOCUMENTATION)
     find_program(HELP2MAN_EXECUTABLE help2man)
 
     if(HELP2MAN_EXECUTABLE)
@@ -222,14 +224,14 @@ if(BUILD_DOCUMENTATION)
 
         install(FILES ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/bladeRF-cli.1 DESTINATION ${MAN_INSTALL_DIR}/man1)
 
-        add_custom_target(bladeRF-cli-manpage ALL SOURCES bladeRF-cli.1)
+        add_custom_target(bladeRF-cli-manpage ALL DEPENDS bladeRF-cli.1)
 
     else(HELP2MAN_EXECUTABLE)
         message(WARNING "Could not find help2man. bladeRF-cli man page will not be built.")
     endif(HELP2MAN_EXECUTABLE)
-else(BUILD_DOCUMENTATION)
-    message(STATUS "Not building man page for bladeRF-cli.  (BUILD_DOCUMENTATION is OFF)")
-endif(BUILD_DOCUMENTATION)
+else(BUILD_BLADERF_CLI_DOCUMENTATION)
+    message(STATUS "Not building man page for bladeRF-cli.  (BUILD_BLADERF_CLI_DOCUMENTATION is OFF)")
+endif(BUILD_BLADERF_CLI_DOCUMENTATION)
 
 ################################################################################
 # Installation
