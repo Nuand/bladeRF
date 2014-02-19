@@ -226,9 +226,6 @@ static int write_pll_config(struct bladerf *dev, bladerf_module module,
     uint8_t selout;
     uint8_t addr;
 
-    /* This value is ignored by the device for TX */
-    selout = (frequency < BLADERF_BAND_HIGH ? 1 : 2);
-
     if (module == BLADERF_MODULE_TX) {
         addr = 0x15;
     } else {
@@ -240,17 +237,18 @@ static int write_pll_config(struct bladerf *dev, bladerf_module module,
         return status;
     }
 
-    /* Clear existing frequency range ([7:2]) and apply new value */
-    regval = (regval & ~0xfc) | (freqsel << 2);
-
     status = is_loopback_enabled(dev);
     if (status < 0) {
         return status;
     }
 
-    /* Loopback is not enabled - it's safe to update the PLL output buffer. */
     if (status == 0) {
-        regval |= selout;
+        /* Loopback not enabled - update the PLL output buffer. */
+        selout = (frequency < BLADERF_BAND_HIGH ? 1 : 2);
+        regval = (freqsel << 2) | selout;
+    } else {
+        /* Loopback is enabled - don't touch PLL output buffer. */
+        regval = (regval & ~0xfc) | (freqsel << 2);
     }
 
     return bladerf_lms_write(dev, addr, regval);
