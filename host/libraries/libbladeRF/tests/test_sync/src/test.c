@@ -27,11 +27,20 @@
 #include <string.h>
 #include <errno.h>
 #include <limits.h>
-
+#include <pthread.h>
 #include <libbladeRF.h>
 
 #include "test.h"
 #include "log.h"
+#include "minmax.h"
+
+struct task_args {
+    struct bladerf *dev;
+    struct test_params *p;
+    pthread_t thread;
+    int status;
+    bool running;
+};
 
 void test_init_params(struct test_params *p)
 {
@@ -127,167 +136,207 @@ initialize_device_out:
     return dev;
 }
 
+void *rx_task(void *args)
+{
+    int status;
+    uint8_t *samples;
+    unsigned int to_rx;
+    struct task_args *task = (struct task_args*) args;
+    struct test_params *p = task->p;
+    bool done = false;
+    size_t n;
+
+    samples = (uint8_t *)calloc(p->block_size, 2 * sizeof(int16_t));
+    if (samples == NULL) {
+        perror("calloc");
+        return NULL;
+    }
+
+    status = bladerf_sync_config(task->dev,
+                                 BLADERF_MODULE_RX,
+                                 BLADERF_FORMAT_SC16_Q11,
+                                 p->stream_buffer_count,
+                                 p->stream_buffer_size,
+                                 p->num_xfers,
+                                 p->timeout_ms);
+
+    if (status != 0) {
+        log_error("Failed to initialize RX sync handle: %s\n",
+                  bladerf_strerror(status));
+        goto rx_task_out;
+    }
+
+    status = bladerf_enable_module(task->dev, BLADERF_MODULE_RX, true);
+    if (status != 0) {
+        log_error("Failed to enable RX module: %s\n", bladerf_strerror(status));
+        goto rx_task_out;
+    }
+
+    while (!done) {
+        to_rx = uint_min(p->block_size, p->rx_count);
+        status = bladerf_sync_rx(task->dev, samples, to_rx, NULL,
+                                 SYNC_TIMEOUT_MS);
+
+        if (status != 0) {
+            log_error("RX failed: %s\n", bladerf_strerror(status));
+            done = true;
+        } else {
+            log_verbose("RX'd %llu samples.\n", (unsigned long long)to_rx);
+            n = fwrite(samples, 2 * sizeof(int16_t), to_rx, p->out_file);
+
+            if (n != to_rx) {
+                done = true;
+                status = ferror(p->out_file);
+                if (status != 0) {
+                    log_error("Failed to write RX data to file: %s\n",
+                              strerror(status));
+                }
+            } else {
+                p->rx_count -= to_rx;
+                done = p->rx_count == 0;
+            }
+        }
+    }
+
+rx_task_out:
+    free(samples);
+
+    status = bladerf_enable_module(task->dev, BLADERF_MODULE_RX, false);
+    if (status != 0) {
+        log_error("Failed to disable RX module: %s\n", bladerf_strerror(status));
+    }
+
+    return NULL;
+}
+
+void *tx_task(void *arg)
+{
+    int status;
+    uint8_t *samples;
+    unsigned int to_tx;
+    struct task_args *task = (struct task_args*) arg;
+    struct test_params *p = task->p;
+    bool done = false;
+
+    samples = (uint8_t *)calloc(p->block_size, 2 * sizeof(int16_t));
+    if (samples == NULL) {
+        perror("calloc");
+        return NULL;
+    }
+
+    status = bladerf_sync_config(task->dev,
+                                 BLADERF_MODULE_TX,
+                                 BLADERF_FORMAT_SC16_Q11,
+                                 p->stream_buffer_count,
+                                 p->stream_buffer_size,
+                                 p->num_xfers,
+                                 p->timeout_ms);
+
+    if (status != 0) {
+        log_error("Failed to initialize RX sync handle: %s\n",
+                  bladerf_strerror(status));
+        goto tx_task_out;
+    }
+
+    status = bladerf_enable_module(task->dev, BLADERF_MODULE_TX, true);
+    if (status != 0) {
+        log_error("Failed to enable RX module: %s\n", bladerf_strerror(status));
+        goto tx_task_out;
+    }
+
+    while (!done) {
+        to_tx = (unsigned int) fread(samples, 2 * sizeof(int16_t),
+                                     p->block_size, p->in_file);
+
+        if (to_tx != 0) {
+            status = bladerf_sync_tx(task->dev, samples, to_tx, NULL,
+                                     SYNC_TIMEOUT_MS);
+
+            if (status != 0) {
+                log_error("TX failed: %s\n", bladerf_strerror(status));
+                done = true;
+            }
+
+        } else {
+            if (--p->tx_repetitions != 0 && feof(p->in_file) &&
+                !ferror(p->in_file)) {
+
+                if (fseek(p->in_file, 0, SEEK_SET) == -1) {
+                    perror("fseek");
+                    done = true;
+                }
+            } else {
+                done = true;
+            }
+        }
+    }
+
+tx_task_out:
+    free(samples);
+
+    status = bladerf_enable_module(task->dev, BLADERF_MODULE_TX, false);
+    if (status != 0) {
+        log_error("Failed to disable TX module: %s\n", bladerf_strerror(status));
+    }
+
+    return NULL;
+}
+
 /* For the sake of simplicity, we'll just bounce back and forth between
  * RX and TX when doing both. */
 int test_run(struct test_params *p)
 {
-    int status;
-    size_t n;
-
     struct bladerf *dev;
-
-    uint8_t *buf_rx= NULL;
-    uint8_t *buf_tx= NULL;
-
-    bool rx_done = true;
-    bool tx_done = true;
-
-    unsigned int to_rx, to_tx;
+    struct task_args rx_args, tx_args;
 
     dev = initialize_device(p);
     if (dev == NULL) {
         return -1;
     }
 
-    if (p->out_file) {
-        buf_rx = (uint8_t*) calloc(p->block_size, 2 * sizeof(int16_t));
-        if (buf_rx == NULL) {
-            status = -1;
-            perror("calloc");
-            goto test_run_out;
-        }
+    if (p->in_file != NULL) {
+        tx_args.dev = dev;
+        tx_args.p = p;
+        tx_args.status = 0;
 
-        status = bladerf_sync_config(dev,
-                                     BLADERF_MODULE_RX,
-                                     BLADERF_FORMAT_SC16_Q11,
-                                     p->stream_buffer_count,
-                                     p->stream_buffer_size,
-                                     p->num_xfers,
-                                     p->timeout_ms
-                                    );
-
-        if (status != 0) {
-            log_error("Failed to intialize RX sync handle: %s\n",
-                    bladerf_strerror(status));
-            goto test_run_out;
-        }
-
-        status = bladerf_enable_module(dev, BLADERF_MODULE_RX, true);
-        if (status != 0) {
-            log_error("Failed to enable RX module: %s\n",
-                      bladerf_strerror(status));
-            goto test_run_out;
-        }
-
-        rx_done = false;
-    }
-
-    if (p->in_file) {
-        buf_tx = (uint8_t*) calloc(p->block_size, 2 * sizeof(int16_t));
-        if (buf_tx == NULL) {
-            status = -1;
-            perror("calloc");
-            goto test_run_out;
-        }
-
-        status = bladerf_sync_config(dev,
-                                     BLADERF_MODULE_TX,
-                                     BLADERF_FORMAT_SC16_Q11,
-                                     p->stream_buffer_count,
-                                     p->stream_buffer_size,
-                                     p->num_xfers,
-                                     p->timeout_ms
-                                    );
-
-        if (status != 0) {
-            log_error("Failed to initialize TX sync handle: %s\n",
-                    bladerf_strerror(status));
-            goto test_run_out;
-        }
-
-        status = bladerf_enable_module(dev, BLADERF_MODULE_TX, true);
-        if (status != 0) {
-            log_error("Failed to enable RX module: %s\n",
-                      bladerf_strerror(status));
-            goto test_run_out;
-        }
-
-        tx_done = false;
-    }
-
-    while (!rx_done || !tx_done) {
-        if (!rx_done) {
-            to_rx = (unsigned int)(p->rx_count > p->block_size ? p->block_size : p->rx_count);
-
-            status = bladerf_sync_rx(dev, buf_rx, to_rx, NULL, 0);
-
-            if (status != 0) {
-                rx_done = true;
-                log_error("RX failed: %s\n", bladerf_strerror(status));
-            } else {
-                log_verbose("RX'd %llu samples.\n", (unsigned long long)to_rx);
-
-                n = fwrite(buf_rx, SAMPLE_SIZE_BYTES, to_rx, p->out_file);
-                if (n != to_rx) {
-                    rx_done = true;
-
-                    status = ferror(p->out_file);
-                    if (status != 0) {
-                        log_error("Failed to write RX data to file: %s\n",
-                                  strerror(status));
-                    }
-                } else {
-                    p->rx_count -= to_rx;
-                    rx_done = p->rx_count == 0;
-                }
-            }
-        }
-
-        if (!tx_done) {
-            to_tx = (unsigned int) fread(buf_tx, SAMPLE_SIZE_BYTES, p->block_size, p->in_file);
-
-            if (to_tx != 0) {
-                status = bladerf_sync_tx(dev, buf_tx, to_tx, NULL, 0);
-                if (status != 0) {
-                    tx_done = true;
-                    log_error("TX failed: %s\n", bladerf_strerror(status));
-                } else {
-                    log_verbose("TX'd %llu samples.\n",
-                                (unsigned long long)to_tx);
-                }
-
-            } else {
-                if (--p->tx_repetitions != 0 && feof(p->in_file) &&
-                    !ferror(p->in_file)) {
-                    fseek(p->in_file, 0, SEEK_SET);
-                    log_debug("TX repetitions remaining: %u\n",
-                                p->tx_repetitions);
-                } else {
-                    tx_done = true;
-                }
-            }
+        log_debug("Starting TX task\n");
+        if (pthread_create(&tx_args.thread, NULL, tx_task, &tx_args) != 0) {
+            fclose(p->in_file);
+            p->in_file = NULL;
         }
     }
 
-test_run_out:
-    log_verbose("Disablng RX.\n");
-    status = bladerf_enable_module(dev, BLADERF_MODULE_RX, false);
-    if (status != 0) {
-        log_error("Failed to disable RX module: %s\n",
-                bladerf_strerror(status));
+    if (p->out_file != NULL) {
+        rx_args.dev = dev;
+        rx_args.p = p;
+        rx_args.status = 0;
+
+        log_debug("Starting RX task\n");
+        if (pthread_create(&rx_args.thread, NULL, rx_task, &rx_args) != 0) {
+            fclose(p->out_file);
+            p->out_file = NULL;
+        }
     }
 
-    log_verbose("Disablng TX.\n");
-    status = bladerf_enable_module(dev, BLADERF_MODULE_TX, false);
-    if (status != 0) {
-        log_error("Failed to disable RX module: %s\n",
-                bladerf_strerror(status));
+    log_debug("Running...\n");
+
+    if (p->in_file != NULL) {
+        log_debug("Joining TX task\n");
+        pthread_join(tx_args.thread, NULL);
     }
 
-    free(buf_rx);
-    free(buf_tx);
+    if (p->out_file != NULL) {
+        log_debug("Joining RX task\n");
+        pthread_join(rx_args.thread, NULL);
+    }
 
     bladerf_close(dev);
 
-    return status;
+    if (p->in_file != NULL && tx_args.status != 0) {
+        return -1;
+    } else if (p->out_file != NULL && rx_args.status != 0) {
+        return -1;
+    } else {
+        return 0;
+    }
 }

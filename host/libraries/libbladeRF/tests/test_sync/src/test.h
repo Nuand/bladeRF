@@ -23,8 +23,6 @@
  * THE SOFTWARE.
  */
 
-#define SAMPLE_SIZE_BYTES   (2 * sizeof(int16_t))
-
 /* Device config defaults */
 #define DEFAULT_SAMPLERATE      1000000
 #define DEFAULT_FREQUENCY       1000000000
@@ -35,10 +33,12 @@
 #define DEFAULT_BLOCK_SIZE      2048
 
 /* Stream defaults */
-#define DEFAULT_STREAM_XFERS        16
-#define DEFAULT_STREAM_BUFFERS      32
-#define DEFAULT_STREAM_SAMPLES      8192
-#define DEFAULT_STREAM_TIMEOUT      1000
+#define DEFAULT_STREAM_XFERS    16
+#define DEFAULT_STREAM_BUFFERS  32
+#define DEFAULT_STREAM_SAMPLES  8192
+#define DEFAULT_STREAM_TIMEOUT  1000
+
+#define SYNC_TIMEOUT_MS         500
 
 struct test_params {
     const char *device_str;

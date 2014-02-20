@@ -220,8 +220,12 @@ add_library(libbladerf_shared SHARED ${LIBBLADERF_SOURCE})
 # Build configuration
 ################################################################################
 
-if(MSVC AND ENABLE_LIBBLADERF_SYNC)
-    set(LIBBLADERF_LIBS ${LIBBLADERF_LIBS} ${LIBPTHREADSWIN32_LIBRARIES})
+if(ENABLE_LIBBLADERF_SYNC)
+    if(MSVC)
+        set(LIBBLADERF_LIBS ${LIBBLADERF_LIBS} ${LIBPTHREADSWIN32_LIBRARIES})
+    else()
+        set(LIBBLADERF_LIB  ${LIBBLADERF_LIBS} ${CMAKE_THREAD_LIBS_INIT})
+    endif(MSVC)
 endif()
 
 if(ENABLE_BACKEND_LIBUSB)
