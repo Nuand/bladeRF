@@ -165,6 +165,17 @@ bladerf_log_level str2loglevel(const char *str, bool *ok);
 const char * module2str(bladerf_module m);
 
 /**
+ * Convert a string to a loopback mode
+ *
+ * @param[in]   str         String to convert
+ * @param[out]  loopback    Corresponding loopback mode. Only valid when
+ *                          this function returns successfully
+ *
+ * @return 0 on success, -1 on invalid string
+ */
+int str2loopback(const char *str, bladerf_loopback *loopback);
+
+/**
  * Convert a string to an argc/argv-style argument list. Arguments are split
  * on whitespace. Double-quotes may be used to include whitespace in an
  * argument.  Backescapes are not supported.

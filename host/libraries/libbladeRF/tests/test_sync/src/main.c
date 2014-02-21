@@ -42,7 +42,7 @@
 #define FREQ_MIN                300000000
 #define FREQ_MAX                3000000000
 
-#define OPTSTR "hd:s:f:i:o:r:c:b:X:B:C:T:"
+#define OPTSTR "hd:s:f:l:i:o:r:c:b:X:B:C:T:"
 const struct option long_options[] = {
     { "help",           no_argument,        0,  'h' },
 
@@ -50,6 +50,7 @@ const struct option long_options[] = {
     { "device",         required_argument,  0,  'd' },
     { "samplerate",     required_argument,  0,  's' },
     { "frequency",      required_argument,  0,  'f' },
+    { "loopback",       required_argument,  0,  'l' },
 
     /* Test configuration */
     { "input",          required_argument,  0,  'i' },
@@ -109,6 +110,11 @@ static void print_usage(const char *argv0)
     printf("                                any device found will be used.\n");
     printf("    -f, --frequency <value>     Set the specified frequency. Default = %u.\n", DEFAULT_FREQUENCY);
     printf("    -s, --samplerate <value>    Set the specified sample rate. Default = %u.\n", DEFAULT_SAMPLERATE);
+    printf("    -l, --loopback <mode>       Operate in the specified loopback mode. Options are:\n");
+    printf("                                  bb_txlpf_rxvga2, bb_txlpf_rxlpf,\n");
+    printf("                                  bb_txvga1_rxvga1, bb_txvga1_rxlpf,\n");
+    printf("                                  rf_lna1, rf_lna2, rf_lna2, none\n");
+    printf("                                The default is 'none'.\n");
     printf("\n");
 
     printf("Test configuration options:\n");
@@ -136,7 +142,11 @@ static void print_usage(const char *argv0)
 
     printf("Notes:\n");
     printf("    The provided files must contain binary SC16 Q11 samples.\n");
+    printf("\n");
     printf("    The -f and -s options are applied to both RX and TX modules.\n");
+    printf("\n");
+    printf("    When transmitting, the input file size (in samples) should be a multiple\n");
+    printf("    of <block-size>, and at least 1 block. Otherwise, samples will be truncated.\n");
     printf("\n");
 }
 
@@ -210,7 +220,14 @@ int handle_cmdline(int argc, char *argv[], struct test_params *p)
                     log_error("Invalid frequency: %s\n", optarg);
                     return -1;
                 }
+                break;
 
+            case 'l':
+                if (str2loopback(optarg, &p->loopback) != 0) {
+                    log_error("Invalid loopback mode: %s\n", optarg);
+                    return -1;
+                }
+                break;
 
             case 'i':
                 if (p->in_file) {

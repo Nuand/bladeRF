@@ -22,6 +22,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#include <stdio.h>
+#include <libbladeRF.h>
 
 /* Device config defaults */
 #define DEFAULT_SAMPLERATE      1000000
@@ -44,6 +46,7 @@ struct test_params {
     const char *device_str;
     unsigned int samplerate;
     unsigned int frequency;
+    bladerf_loopback loopback;
 
     FILE *in_file;
     FILE *out_file;

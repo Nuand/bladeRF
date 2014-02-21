@@ -330,6 +330,33 @@ const char * module2str(bladerf_module m)
     }
 }
 
+int str2loopback(const char *str, bladerf_loopback *loopback)
+{
+    int status = 0;
+
+    if (!strcasecmp("bb_txlpf_rxvga2", str)) {
+        *loopback = BLADERF_LB_BB_TXLPF_RXVGA2;
+    } else if (!strcasecmp("bb_txlpf_rxlpf", str)) {
+        *loopback = BLADERF_LB_BB_TXLPF_RXLPF;
+    } else if (!strcasecmp("bb_txvga1_rxvga2", str)) {
+        *loopback = BLADERF_LB_BB_TXVGA1_RXVGA2;
+    } else if (!strcasecmp("bb_txvga1_rxlpf", str)) {
+        *loopback = BLADERF_LB_BB_TXVGA1_RXLPF;
+    } else if (!strcasecmp("rf_lna1", str)) {
+        *loopback = BLADERF_LB_RF_LNA1;
+    } else if (!strcasecmp("rf_lna2", str)) {
+        *loopback = BLADERF_LB_RF_LNA2;
+    } else if (!strcasecmp("rf_lna3", str)) {
+        *loopback = BLADERF_LB_RF_LNA3;
+    } else if (!strcasecmp("none", str)) {
+        *loopback = BLADERF_LB_NONE;
+    } else {
+        status = -1;
+    }
+
+    return status;
+}
+
 int str2args(const char *line, char ***argv_ret)
 {
     int line_i, arg_i;      /* Index into line and current argument */
