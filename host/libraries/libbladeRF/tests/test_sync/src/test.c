@@ -28,23 +28,65 @@
 #include <errno.h>
 #include <limits.h>
 #include <pthread.h>
+#include <signal.h>
 #include <libbladeRF.h>
 
 #include "test.h"
 #include "log.h"
 #include "minmax.h"
 
-struct task_args {
+static struct task_args {
     struct bladerf *dev;
     struct test_params *p;
     pthread_t thread;
     int status;
-    bool running;
-};
+    bool quit;
+} rx_args, tx_args;
+
+#if BLADERF_OS_WINDOWS
+static void ctrlc_handler(int signal)
+{
+    rx_args.quit = true;
+    tx_args.quit = true;
+}
+
+static void init_signal_handling()
+{
+    void *sigint_prev, *sigterm_prev;
+
+    sigint_prev = signal(SIGINT, ctrlc_handler);
+    sigterm_prev = signal(SIGTERM, ctrlc_handler);
+
+    if (sigint_prev == SIG_ERR || sigterm_prev == SIG_ERR) {
+        fprintf(stderr, "Warning: Failed to initialize Ctrl-C "
+                        "handlers for rx/tx wait cmd.");
+    }
+}
+
+#else
+static void ctrlc_handler(int signal, siginfo_t *info, void *unused) {
+    rx_args.quit = true;
+    tx_args.quit = true;
+}
+
+static void init_signal_handling()
+{
+    struct sigaction sigact;
+
+    sigemptyset(&sigact.sa_mask);
+    sigact.sa_sigaction = ctrlc_handler;
+    sigact.sa_flags = SA_SIGINFO;
+
+    sigaction(SIGINT, &sigact, NULL);
+    sigaction(SIGTERM, &sigact, NULL);
+}
+#endif
 
 void test_init_params(struct test_params *p)
 {
     memset(p, 0, sizeof(*p));
+
+    p->loopback = BLADERF_LB_NONE;
 
     p->rx_count = DEFAULT_RX_COUNT;
     p->block_size = DEFAULT_BLOCK_SIZE;
@@ -119,12 +161,27 @@ static struct bladerf * initialize_device(struct test_params *p)
     if (p->out_file) {
         status = init_module(dev, p, BLADERF_MODULE_RX);
         if (status != 0) {
+            log_error("Failed to init RX module: %s\n",
+                      bladerf_strerror(status));
             goto initialize_device_out;
         }
     }
 
     if (p->in_file) {
         status = init_module(dev, p, BLADERF_MODULE_TX);
+        if (status != 0) {
+            log_error("Failed to init TX module: %s\n",
+                      bladerf_strerror(status));
+            goto initialize_device_out;
+        }
+    }
+
+    status = bladerf_set_loopback(dev, p->loopback);
+    if (status != 0) {
+        log_error("Failed to set loopback mode: %s\n",
+                  bladerf_strerror(status));
+    } else {
+        log_debug("Set loopback to %d\n", p->loopback);
     }
 
 initialize_device_out:
@@ -172,7 +229,7 @@ void *rx_task(void *args)
         goto rx_task_out;
     }
 
-    while (!done) {
+    while (!done && !task->quit) {
         to_rx = uint_min(p->block_size, p->rx_count);
         status = bladerf_sync_rx(task->dev, samples, to_rx, NULL,
                                  SYNC_TIMEOUT_MS);
@@ -244,7 +301,7 @@ void *tx_task(void *arg)
         goto tx_task_out;
     }
 
-    while (!done) {
+    while (!done && !task->quit) {
         to_tx = (unsigned int) fread(samples, 2 * sizeof(int16_t),
                                      p->block_size, p->in_file);
 
@@ -286,8 +343,10 @@ tx_task_out:
  * RX and TX when doing both. */
 int test_run(struct test_params *p)
 {
+    int status;
     struct bladerf *dev;
-    struct task_args rx_args, tx_args;
+
+    init_signal_handling();
 
     dev = initialize_device(p);
     if (dev == NULL) {
@@ -298,6 +357,7 @@ int test_run(struct test_params *p)
         tx_args.dev = dev;
         tx_args.p = p;
         tx_args.status = 0;
+        tx_args.quit = false;
 
         log_debug("Starting TX task\n");
         if (pthread_create(&tx_args.thread, NULL, tx_task, &tx_args) != 0) {
@@ -310,6 +370,7 @@ int test_run(struct test_params *p)
         rx_args.dev = dev;
         rx_args.p = p;
         rx_args.status = 0;
+        rx_args.quit = false;
 
         log_debug("Starting RX task\n");
         if (pthread_create(&rx_args.thread, NULL, rx_task, &rx_args) != 0) {
@@ -321,13 +382,19 @@ int test_run(struct test_params *p)
     log_debug("Running...\n");
 
     if (p->in_file != NULL) {
-        log_debug("Joining TX task\n");
         pthread_join(tx_args.thread, NULL);
+        log_debug("Joined TX task\n");
     }
 
     if (p->out_file != NULL) {
-        log_debug("Joining RX task\n");
         pthread_join(rx_args.thread, NULL);
+        log_debug("Joined  RX task\n");
+    }
+
+    status = bladerf_set_loopback(dev, BLADERF_LB_NONE);
+    if (status != 0) {
+        log_error("Failed to set loopback mode to 'NONE': %s\n",
+                  bladerf_strerror(status));
     }
 
     bladerf_close(dev);
