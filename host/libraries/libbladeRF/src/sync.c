@@ -73,21 +73,17 @@ int sync_init(struct bladerf *dev,
 
     /* Deallocate any existing sync handle for this module */
     switch (module) {
+        case BLADERF_MODULE_TX:
         case BLADERF_MODULE_RX:
-            sync_deinit(dev->sync_rx);
-            sync = dev->sync_rx = (struct bladerf_sync *) calloc(1, sizeof(struct bladerf_sync));
-            if (dev->sync_rx == NULL) {
+            sync_deinit(dev->sync[module]);
+            sync = dev->sync[module] =
+                (struct bladerf_sync *) calloc(1, sizeof(struct bladerf_sync));
+
+            if (dev->sync[module] == NULL) {
                 status = BLADERF_ERR_MEM;
             }
             break;
 
-        case BLADERF_MODULE_TX:
-            sync_deinit(dev->sync_tx);
-            sync = dev->sync_tx = (struct bladerf_sync *) calloc(1, sizeof(struct bladerf_sync));
-            if (dev->sync_tx == NULL) {
-                status = BLADERF_ERR_MEM;
-            }
-            break;
 
         default:
             log_debug("Invalid bladerf_module value encountered: %d", module);
@@ -150,17 +146,8 @@ int sync_init(struct bladerf *dev,
     }
 
     if (status != 0) {
-        switch (module) {
-            case BLADERF_MODULE_RX:
-                sync_deinit(dev->sync_rx);
-                dev->sync_rx = NULL;
-                break;
-
-            case BLADERF_MODULE_TX:
-                sync_deinit(dev->sync_tx);
-                dev->sync_tx = NULL;
-                break;
-        }
+        sync_deinit(dev->sync[module]);
+        dev->sync[module] = NULL;
     }
 
     return status;
@@ -239,7 +226,7 @@ int sync_rx(struct bladerf *dev, void *samples, unsigned num_samples,
              struct bladerf_metadata *metadata, unsigned int timeout_ms)
 {
     int status;
-    struct bladerf_sync *s = dev->sync_rx;
+    struct bladerf_sync *s = dev->sync[BLADERF_MODULE_RX];
     struct buffer_mgmt *b = &s->buf_mgmt;
     unsigned int samples_returned = 0;
     struct timespec timeout_abs;
@@ -322,7 +309,7 @@ int sync_rx(struct bladerf *dev, void *samples, unsigned num_samples,
 int sync_tx(struct bladerf *dev, void *samples, unsigned int num_samples,
              struct bladerf_metadata *metadata, unsigned int timeout_ms)
 {
-    struct bladerf_sync *s = dev->sync_tx;
+    struct bladerf_sync *s = dev->sync[BLADERF_MODULE_TX];
     struct buffer_mgmt *b = &s->buf_mgmt;
     struct timespec timeout_abs;
     unsigned int samples_written = 0;

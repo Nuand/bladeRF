@@ -162,8 +162,8 @@ void bladerf_close(struct bladerf *dev)
 {
     if (dev) {
 #ifdef ENABLE_LIBBLADERF_SYNC
-        sync_deinit(dev->sync_rx);
-        sync_deinit(dev->sync_tx);
+        sync_deinit(dev->sync[BLADERF_MODULE_RX]);
+        sync_deinit(dev->sync[BLADERF_MODULE_TX]);
 #endif
         dev->fn->close(dev);
     }
@@ -174,23 +174,18 @@ int bladerf_enable_module(struct bladerf *dev,
 {
     int status;
 
+    if (m != BLADERF_MODULE_RX && m != BLADERF_MODULE_TX) {
+        return BLADERF_ERR_INVAL;
+    }
+
     log_debug("Enable Module: %s - %s\n",
                 (m == BLADERF_MODULE_RX) ? "RX" : "TX",
                 enable ? "True" : "False") ;
 
 #ifdef ENABLE_LIBBLADERF_SYNC
     if (enable == false) {
-        switch (m) {
-            case BLADERF_MODULE_TX:
-                sync_deinit(dev->sync_tx);
-                dev->sync_tx = NULL;
-                break;
-
-            case BLADERF_MODULE_RX:
-                sync_deinit(dev->sync_rx);
-                dev->sync_rx = NULL;
-                break;
-        }
+        sync_deinit(dev->sync[m]);
+        dev->sync[m] = NULL;
     }
 #endif
 
