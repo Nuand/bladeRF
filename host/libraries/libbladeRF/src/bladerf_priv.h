@@ -44,6 +44,9 @@
 #include "devinfo.h"
 #include "flash.h"
 
+/* 1 TX, 1 RX */
+#define NUM_MODULES 2
+
 /* For >= 1.5 GHz uses the high band should be used. Otherwise, the low
  * band should be selected */
 #define BLADERF_BAND_HIGH (1500000000)
@@ -191,11 +194,10 @@ struct bladerf {
     const struct bladerf_fn *fn;
 
     /* Stream transfer timeouts for RX and TX */
-    int transfer_timeout[2];
+    int transfer_timeout[NUM_MODULES];
 
     /* Synchronous interface handles */
-    struct bladerf_sync *sync_rx;
-    struct bladerf_sync *sync_tx;
+    struct bladerf_sync *sync[NUM_MODULES];
 };
 
 /**
