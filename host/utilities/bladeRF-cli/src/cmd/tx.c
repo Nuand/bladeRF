@@ -555,7 +555,7 @@ static int tx_config(struct cli_state *s, int argc, char **argv)
                 }
 
             } else {
-                cli_err(s, argv[0], "Unrecognized config parameter: %s", argv[2]);
+                cli_err(s, argv[0], "Unrecognized config parameter: %s", argv[i]);
                 return CMD_RET_INVPARAM;
             }
         }

@@ -456,7 +456,7 @@ int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
             } else if (tmp % RXTX_SAMPLES_MIN != 0) {
                 cli_err(s, argv0,
                         "The '%s' paramter must be a multiple of %u.",
-                        param, RXTX_BUFFERS_MIN);
+                        param, RXTX_SAMPLES_MIN);
                 status = CMD_RET_INVPARAM;
             } else {
                 pthread_mutex_lock(&rxtx->data_mgmt.lock);
