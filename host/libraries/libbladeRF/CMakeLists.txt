@@ -207,6 +207,12 @@ if(ENABLE_LIBBLADERF_SYNC)
         src/sync_worker.c
     )
 
+    if(BLADERF_OS_OSX)
+       set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE}
+           ${BLADERF_HOST_COMMON_SOURCE_DIR}/osx/clock_gettime.c
+       )
+    endif()
+
     if(MSVC)
         set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE}
             ${BLADERF_HOST_COMMON_SOURCE_DIR}/windows/clock_gettime.c
