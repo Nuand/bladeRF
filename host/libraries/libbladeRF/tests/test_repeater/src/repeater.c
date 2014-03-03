@@ -557,11 +557,6 @@ static int init_streams(struct repeater *repeater,
 {
     int status;
 
-    /* TODO Until we can provide NULL to the init stream call to indicate that
-     * we want to use user-probveded buffers, we'll just allocate and not
-     * use some dummy buffers for TX */
-    void **dummy;
-
     status = bladerf_init_stream(&repeater->rx_stream,
                                  repeater->device,
                                  rx_stream_callback,
@@ -583,7 +578,7 @@ static int init_streams(struct repeater *repeater,
     status = bladerf_init_stream(&repeater->tx_stream,
                                  repeater->device,
                                  tx_stream_callback,
-                                 &dummy,
+                                 NULL,
                                  config->num_buffers,
                                  BLADERF_FORMAT_SC16_Q11,
                                  config->samples_per_buffer,
