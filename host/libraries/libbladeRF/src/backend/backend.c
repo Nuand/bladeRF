@@ -20,20 +20,15 @@
  */
 #include "rel_assert.h"
 
-#include "backend.h"
-#include "backend_config.h"
+#include "backend/backend.h"
+#include "backend/backend_config.h"
 #include "log.h"
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 
-struct backend_table_entry {
-    const bladerf_backend type;
-    const struct bladerf_fn *fns;
-};
+static const struct backend_fns *backend_list[] = BLADERF_BACKEND_LIST;
 
-static const struct backend_table_entry backend_list[] = BLADERF_BACKEND_LIST;
-
-int open_with_any_backend(struct bladerf **device,
+int open_with_any_backend(struct bladerf *device,
                           struct bladerf_devinfo *info)
 {
     size_t i;
@@ -41,26 +36,13 @@ int open_with_any_backend(struct bladerf **device,
     const size_t n_backends = ARRAY_SIZE(backend_list);
 
     for (i = 0; i < n_backends && status != 0; i++) {
-        status = backend_list[i].fns->open(device, info);
+        status = backend_list[i]->open(device, info);
     }
 
     return status;
 }
 
-const struct bladerf_fn * backend_getfns(bladerf_backend type) {
-    size_t i;
-    const size_t n_backends = ARRAY_SIZE(backend_list);
-
-    for (i = 0; i < n_backends; i++) {
-        if (backend_list[i].type == type) {
-            return backend_list[i].fns;
-        }
-    }
-
-    return NULL;
-}
-
-int backend_open(struct bladerf **device, struct bladerf_devinfo *info) {
+int backend_open(struct bladerf *device, struct bladerf_devinfo *info) {
 
     size_t i;
     int status = BLADERF_ERR_NODEV;
@@ -70,8 +52,8 @@ int backend_open(struct bladerf **device, struct bladerf_devinfo *info) {
         status = open_with_any_backend(device, info);
     } else {
         for (i = 0; i < n_backends; i++) {
-            if (backend_list[i].type == info->backend) {
-                status = backend_list[i].fns->open(device, info);
+            if (backend_list[i]->matches(info->backend)) {
+                status = backend_list[i]->open(device, info);
                 break;
             }
         }
@@ -99,7 +81,7 @@ int backend_probe(struct bladerf_devinfo **devinfo_items, size_t *num_items)
     }
 
     for (i = 0; i < n_backends; i++) {
-        status = backend_list[i].fns->probe(&list);
+        status = backend_list[i]->probe(&list);
 
         if (status < 0 && status != BLADERF_ERR_NODEV) {
             log_debug("Probe failed on backend %d: %s\n",

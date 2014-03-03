@@ -1467,7 +1467,7 @@ static inline int tune_vcocap(struct bladerf *dev, uint8_t base, uint8_t data)
             log_verbose( "Too low: %d -> %d\n", vcocap, vcocap - step );
             vcocap -= step ;
         } else {
-            log_error( "Invalid VTUNE value encountered\n" );
+            log_error( "Invalid VTUNE value encountered: 0x%02x\n", vtune );
             return BLADERF_ERR_UNEXPECTED;
         }
 

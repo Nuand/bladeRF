@@ -69,14 +69,31 @@ if(NOT ${BUILD_DOCUMENTATION})
     set(BUILD_LIBBLADERF_DOCUMENTATION OFF)
 endif()
 
+option(ENABLE_LIBBLADERF_SYNC
+    "Enable the libbladeRF synchronous data interface. Requires pthreads."
+    ${HAVE_THREADS}
+)
+
+option(ENABLE_LIBBLADERF_SYNC_LOG_VERBOSE
+      "Enable log_verbose() calls in the sync interface's data path. Note that this may harm performance."
+      OFF
+)
+
 ##############################
 # Backend Support
 ##############################
-option(ENABLE_BACKEND_LIBUSB "Enable libusb backend support."
+option(ENABLE_BACKEND_USB
+    "Enable USB backends. Required when using the bladeRF with a host machine."
     ON
 )
 
-option(ENABLE_BACKEND_DUMMY "Enable dummy backend support. This is only useful for some developers."
+option(ENABLE_BACKEND_LIBUSB
+    "Enable libusb backend support."
+    ON
+)
+
+option(ENABLE_BACKEND_DUMMY
+    "Enable dummy backend support. This is only useful for some developers."
     OFF
 )
 
@@ -85,21 +102,11 @@ option(LIBUSB_DETACH_KERNEL_DRIVER
     ON
 )
 
-option(ENABLE_LIBBLADERF_SYNC
-    "Enable the libbladeRF synchronous data interface. Requires pthreads."
-    ON
-)
-
-option(ENABLE_LIBBLADERF_SYNC_LOG_VERBOSE
-      "Enable log_verbose() calls in the sync interface's data path. Note that this may harm performance."
-      OFF
-)
-
-
 option(ENABLE_BACKEND_LINUX_DRIVER
     "Enable Linux driver backend support."
     OFF
 )
+
 
 # Ensure we've got at least one backend enabled
 if(NOT ENABLE_BACKEND_LIBUSB AND NOT ENABLE_BACKEND_LINUX_DRIVER AND NOT ENABLE_BACKEND_DUMMY)
@@ -109,8 +116,8 @@ if(NOT ENABLE_BACKEND_LIBUSB AND NOT ENABLE_BACKEND_LINUX_DRIVER AND NOT ENABLE_
 endif()
 
 configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/backend_config.h.in
-    ${CMAKE_CURRENT_BINARY_DIR}/src/backend_config.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/backend/backend_config.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/src/backend/backend_config.h
     @ONLY
 )
 
@@ -150,6 +157,11 @@ if(NOT HAVE_THREADS)
     message(FATAL_ERROR "Pthreads is required for libbladeRF")
 endif()
 
+if(NOT ENABLE_BACKEND_USB)
+    set(ENABLE_BACKEND_LIBUSB OFF)
+    set(ENABLE_BACKEND_LINUX_DRIVER OFF)
+endif()
+
 if(ENABLE_BACKEND_LIBUSB)
     find_package(LibUSB)
     if(NOT LIBUSB_FOUND)
@@ -183,7 +195,7 @@ include_directories(${LIBBLADERF_INCLUDES})
 ################################################################################
 set(LIBBLADERF_SOURCE
         src/async.c
-        src/backend.c
+        src/backend/backend.c
         src/bladerf.c
         src/bladerf_priv.c
         src/file_ops.c
@@ -203,8 +215,12 @@ if (MSVC)
         set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} ${CMAKE_CURRENT_BINARY_DIR}/bladerf.rc)
 endif()
 
+if(ENABLE_BACKEND_USB)
+    set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend/usb/usb.c)
+endif()
+
 if(LIBUSB_FOUND AND ENABLE_BACKEND_LIBUSB)
-    set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend/libusb.c)
+    set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend//usb/libusb.c)
 endif()
 
 if(ENABLE_BACKEND_DUMMY)

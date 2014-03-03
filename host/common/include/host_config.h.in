@@ -64,10 +64,14 @@
 #define LE16_TO_HOST(val) le16toh(val)
 #define HOST_TO_BE16(val) htobe16(val)
 #define BE16_TO_HOST(val) be16toh(val)
+
 #define HOST_TO_LE32(val) htole32(val)
 #define LE32_TO_HOST(val) le32toh(val)
 #define HOST_TO_BE32(val) htobe32(val)
 #define BE32_TO_HOST(val) be32toh(val)
+
+#define HOST_TO_LE64(val) htole64(val)
+#define LE64_TO_HOST(val) le64toh(val)
 #define HOST_TO_BE64(val) be64toh(val)
 #define BE64_TO_HOST(val) be64toh(val)
 
@@ -81,10 +85,14 @@
 #define LE16_TO_HOST(val) OSSwapLittleToHostInt16(val)
 #define HOST_TO_BE16(val) OSSwapHostToBigInt16(val)
 #define BE16_TO_HOST(val) OSSwapBigToHostInt16(val)
+
 #define HOST_TO_LE32(val) OSSwapHostToLittleInt32(val)
 #define LE32_TO_HOST(val) OSSwapLittleToHostInt32(val)
 #define HOST_TO_BE32(val) OSSwapHostToBigInt32(val)
 #define BE32_TO_HOST(val) OSSwapBigToHostInt32(val)
+
+#define HOST_TO_LE64(val) OSSwapHostToLittleInt64(val)
+#define LE64_TO_HOST(val) OSSwapLittleInt64ToHost(val)
 #define HOST_TO_BE64(val) OSSwapHostToBigInt64(val)
 #define BE64_TO_HOST(val) OSSwapBigToHostInt64(val)
 
@@ -101,10 +109,15 @@
 #define LE16_TO_HOST(val) (val)
 #define HOST_TO_BE16(val) _byteswap_ushort(val)
 #define BE16_TO_HOST(val) _byteswap_ushort(val)
+
 #define HOST_TO_LE32(val) (val)
 #define LE32_TO_HOST(val) (val)
 #define HOST_TO_BE32(val) _byteswap_ulong(val)
 #define BE32_TO_HOST(val) _byteswap_ulong(val)
+
+
+#define HOST_TO_LE64(val) (val)
+#define LE64_TO_HOST(val) (val)
 #define HOST_TO_BE64(val) _byteswap_uint64(val)
 #define BE64_TO_HOST(val) _byteswap_uint64(val)
 

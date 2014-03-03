@@ -23,6 +23,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include "bladerf_priv.h"
+#include "backend.h"
+
+static bool dummy_matches(bladerf_backend backend)
+{
+    return false;
+}
 
 static int dummy_is_fpga_configured(struct bladerf *dev)
 {
@@ -173,7 +179,9 @@ int dummy_probe(struct bladerf_devinfo_list *info_list)
     return 0;
 }
 
-const struct bladerf_fn bladerf_dummy_fn = {
+const struct backend_fns backend_fns_dummy = {
+    FIELD_INIT(.matches, dummy_matches),
+
     FIELD_INIT(.probe, dummy_probe),
 
     FIELD_INIT(.open, dummy_open),

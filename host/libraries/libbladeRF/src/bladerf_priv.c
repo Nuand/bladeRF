@@ -24,6 +24,7 @@
 #include <stddef.h>
 
 #include "bladerf_priv.h"
+#include "backend/backend.h"
 #include "bladeRF.h"
 #include "lms.h"
 #include "log.h"
@@ -69,16 +70,8 @@ int bladerf_init_device(struct bladerf *dev)
     /* Readback the GPIO values to see if they are default or already set */
     status = bladerf_config_gpio_read( dev, &val );
     if (status != 0) {
-        log_warning("Failed to read GPIO config, skipping device initialization: %s\n",
-                    bladerf_strerror(status));
-
-        /* This has been left non-fatal due to some older FW/FPGA configs
-         * not supporting this call. However, it's questionable if such
-         * FW/FPGA configs will snowball into other errors after this anyway.
-         *
-         * TODO Revisit this when dropping support for older FW
-         */
-        return 0;
+        log_debug("Failed to read GPIO config %s\n", bladerf_strerror(status));
+        return status;
     }
 
     if ((val & 0x7f) == 0) {

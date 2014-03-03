@@ -43,6 +43,7 @@
 #include "conversions.h"
 #include "devinfo.h"
 #include "flash.h"
+#include "backend/backend.h"
 
 /* 1 TX, 1 RX */
 #define NUM_MODULES 2
@@ -65,90 +66,6 @@ struct bladerf_error {
 
 /* Forward declaration for the function table */
 struct bladerf;
-
-/* Driver specific function table.  These functions are required for each
-   unique platform to operate the device. */
-struct bladerf_fn {
-
-    /* Backends probe for devices and append entries to this list using
-     * bladerf_devinfo_list_append() */
-    int (*probe)(struct bladerf_devinfo_list *info_list);
-
-    /* Opening device based upon specified device info
-     * devinfo structure. The implementation of this function is responsible
-     * for ensuring (*device)->ident is populated */
-    int (*open)(struct bladerf **device,  struct bladerf_devinfo *info);
-
-    /* Closing of the device and freeing of the data */
-    int (*close)(struct bladerf *dev);
-
-    /* FPGA Loading and checking */
-    int (*load_fpga)(struct bladerf *dev, uint8_t *image, size_t image_size);
-    int (*is_fpga_configured)(struct bladerf *dev);
-
-    /* Flash FX3 firmware */
-    int (*flash_firmware)(struct bladerf *dev, uint8_t *image, size_t image_size);
-
-    /* Flash operations */
-    int (*erase_flash)(struct bladerf *dev, uint32_t addr, uint32_t len);
-    int (*read_flash) (struct bladerf *dev, uint32_t addr, uint8_t *buf,
-                       uint32_t len);
-    int (*write_flash)(struct bladerf *dev, uint32_t addr, uint8_t *buf,
-                       uint32_t len);
-    int (*device_reset)(struct bladerf *dev);
-
-    int (*jump_to_bootloader)(struct bladerf *dev);
-
-    /* Platform information */
-    int (*get_cal)(struct bladerf *dev, char *cal);
-    int (*get_otp)(struct bladerf *dev, char *otp);
-    int (*get_device_speed)(struct bladerf *dev, bladerf_dev_speed *speed);
-
-    /* Configuration GPIO accessors */
-    int (*config_gpio_write)(struct bladerf *dev, uint32_t val);
-    int (*config_gpio_read)(struct bladerf *dev, uint32_t *val);
-
-    /* Expansion GPIO accessors */
-    int (*expansion_gpio_write)(struct bladerf *dev, uint32_t val);
-    int (*expansion_gpio_read)(struct bladerf *dev, uint32_t *val);
-    int (*expansion_gpio_dir_write)(struct bladerf *dev, uint32_t val);
-    int (*expansion_gpio_dir_read)(struct bladerf *dev, uint32_t *val);
-
-    /* IQ Calibration Settings */
-    int (*set_correction)(struct bladerf *dev, bladerf_module,
-                          bladerf_correction corr, int16_t value);
-    int (*get_correction)(struct bladerf *dev, bladerf_module module,
-                          bladerf_correction corr, int16_t *value);
-
-    /* Get current timestamp counter values */
-    int (*get_timestamp)(struct bladerf *dev, bladerf_module mod, uint64_t *value);
-
-    /* Si5338 accessors */
-    int (*si5338_write)(struct bladerf *dev, uint8_t addr, uint8_t data);
-    int (*si5338_read)(struct bladerf *dev, uint8_t addr, uint8_t *data);
-
-    /* LMS6002D accessors */
-    int (*lms_write)(struct bladerf *dev, uint8_t addr, uint8_t data);
-    int (*lms_read)(struct bladerf *dev, uint8_t addr, uint8_t *data);
-
-    /* VCTCXO accessor */
-    int (*dac_write)(struct bladerf *dev, uint16_t value);
-
-    /* Expansion board SPI */
-    int (*xb_spi)(struct bladerf *dev, uint32_t value);
-
-    /* Configure firmware loopback */
-    int (*set_firmware_loopback)(struct bladerf *dev, bool enable);
-
-    /* Sample stream */
-    int (*enable_module)(struct bladerf *dev, bladerf_module m, bool enable);
-
-    int (*init_stream)(struct bladerf_stream *stream, size_t num_transfers);
-    int (*stream)(struct bladerf_stream *stream, bladerf_module module);
-    int (*submit_stream_buffer)(struct bladerf_stream *stream, void *buffer,
-                                unsigned int timeout_ms);
-    void (*deinit_stream)(struct bladerf_stream *stream);
-};
 
 #define FW_LEGACY_ALT_SETTING_MAJOR 1
 #define FW_LEGACY_ALT_SETTING_MINOR 1
@@ -180,7 +97,7 @@ struct bladerf {
     void *backend;
 
     /* Driver-sppecific implementations */
-    const struct bladerf_fn *fn;
+    const struct backend_fns *fn;
 
     /* Stream transfer timeouts for RX and TX */
     int transfer_timeout[NUM_MODULES];

@@ -32,7 +32,7 @@
 #include "si5338.h"
 #include "file_ops.h"
 #include "log.h"
-#include "backend.h"
+#include "backend/backend.h"
 #include "device_identifier.h"
 #include "version.h"       /* Generated at build time */
 #include "conversions.h"
@@ -69,73 +69,78 @@ void bladerf_free_device_list(struct bladerf_devinfo *devices)
     free(devices);
 }
 
-int bladerf_open_with_devinfo(struct bladerf **device,
+int bladerf_open_with_devinfo(struct bladerf **opened_device,
                                 struct bladerf_devinfo *devinfo)
 {
-    struct bladerf *opened_device;
+    struct bladerf *dev;
     int status;
 
-    *device = NULL;
-    status = backend_open(device, devinfo);
+    *opened_device = NULL;
 
-    if (!status) {
+    dev = (struct bladerf *)calloc(1, sizeof(struct bladerf));
+    if (dev == NULL) {
+        return BLADERF_ERR_MEM;
+    }
 
-        /* Catch bugs from backends returning status = 0, but a NULL device */
-        assert(*device);
-        opened_device = *device;
+    dev->fpga_version.describe = calloc(1, BLADERF_VERSION_STR_MAX + 1);
+    if (dev->fpga_version.describe == NULL) {
+        free(dev);
+        return BLADERF_ERR_MEM;
+    }
 
-        /* We got a device */
-        bladerf_set_error(&opened_device->error, ETYPE_LIBBLADERF, 0);
+    dev->fw_version.describe = calloc(1, BLADERF_VERSION_STR_MAX + 1);
+    if (dev->fw_version.describe == NULL) {
+        free((void*)dev->fpga_version.describe);
+        free(dev);
+        return BLADERF_ERR_MEM;
+    }
 
-        status = opened_device->fn->get_device_speed(opened_device,
-                                                     &opened_device->usb_speed);
+    status = backend_open(dev, devinfo);
+    if (status != 0) {
+        free((void*)dev->fw_version.describe);
+        free((void*)dev->fpga_version.describe);
+        free(dev);
+        return status;
+    }
 
-        if (status < 0 ||
-                (opened_device->usb_speed != BLADERF_DEVICE_SPEED_HIGH &&
-                 opened_device->usb_speed != BLADERF_DEVICE_SPEED_SUPER)) {
-            opened_device->fn->close((*device));
-            *device = NULL;
-        } else {
-            if (opened_device->legacy) {
-                /* Currently two modes of legacy:
-                 *  - ALT_SETTING
-                 *  - CONFIG_IF
-                 *
-                 * If either of these are set, we should tell the user to update
-                 */
-                printf("********************************************************************************\n");
-                printf("* ENTERING LEGACY MODE, PLEASE UPGRADE TO THE LATEST FIRMWARE BY RUNNING:\n");
-                printf("* wget http://nuand.com/fx3/latest.img ; bladeRF-cli -f latest.img\n");
-                printf("********************************************************************************\n");
-            }
+    status = dev->fn->get_device_speed(dev, &dev->usb_speed);
+    if (status < 0) {
+        log_debug("Failed to get device speed: %s\n",
+                  bladerf_strerror(status));
+        goto error;
+    }
 
-            if (!(opened_device->legacy & LEGACY_ALT_SETTING)) {
+    if (dev->usb_speed != BLADERF_DEVICE_SPEED_HIGH &&
+        dev->usb_speed != BLADERF_DEVICE_SPEED_SUPER) {
+        log_debug("Unsupported device speed: %d\n", dev->usb_speed);
+        goto error;
+    }
 
-                status = bladerf_get_and_cache_vctcxo_trim(opened_device);
-                if (status < 0) {
-                    log_warning( "Could not extract VCTCXO trim value\n" ) ;
-                }
+    /* VCTCXO trim and FPGA size are non-fatal indicators that we've
+     * trashed the calibration region of flash. If these were made fatal,
+     * we wouldn't be able to open the device to restore them. */
+    status = bladerf_get_and_cache_vctcxo_trim(dev);
+    if (status < 0) {
+        log_warning("Failed to get VCTCXO trim value: %s\n",
+                    bladerf_strerror(status));
+    }
 
-                status = bladerf_get_and_cache_fpga_size(opened_device);
-                if (status < 0) {
-                    log_warning( "Could not extract FPGA size\n" ) ;
-                }
+    status = bladerf_get_and_cache_fpga_size(dev);
+    if (status < 0) {
+        log_warning("Failed to get FPGA size %s\n",
+                    bladerf_strerror(status));
+    }
 
-                /* If any of these routines failed, the dev structure should
-                 * still have had it's fields dummied, so they're safe to
-                 * print here (i.e., not uninitialized) */
-                log_debug("%s: fw=v%s serial=%s trim=0x%.4x fpga_size=%d\n",
-                        __FUNCTION__, opened_device->fw_version.describe,
-                        opened_device->ident.serial, opened_device->dac_trim,
-                        opened_device->fpga_size);
-            }
+    status = bladerf_is_fpga_configured(dev);
+    if (status > 0) {
+        status = bladerf_init_device(dev);
+    }
 
-            /* All status in here is not fatal, so whatever */
-            status = 0 ;
-            if (bladerf_is_fpga_configured(opened_device)) {
-                bladerf_init_device(opened_device);
-            }
-        }
+error:
+    if (status < 0) {
+        bladerf_close(dev);
+    } else {
+        *opened_device = dev;
     }
 
     return status;
@@ -162,11 +167,18 @@ int bladerf_open(struct bladerf **device, const char *dev_id)
 void bladerf_close(struct bladerf *dev)
 {
     if (dev) {
+
 #ifdef ENABLE_LIBBLADERF_SYNC
         sync_deinit(dev->sync[BLADERF_MODULE_RX]);
         sync_deinit(dev->sync[BLADERF_MODULE_TX]);
 #endif
+
         dev->fn->close(dev);
+
+        free((void *)dev->fpga_version.describe);
+        free((void *)dev->fw_version.describe);
+
+        free(dev);
     }
 }
 
@@ -678,7 +690,7 @@ int bladerf_flash_firmware(struct bladerf *dev, const char *firmware_file)
             }
 
             if (!status) {
-                status = dev->fn->flash_firmware(dev, buf, buf_size_padded);
+                status = flash_write_fx3_fw(dev, buf, buf_size_padded);
             }
             if (!status) {
                 if (dev->legacy & LEGACY_ALT_SETTING) {

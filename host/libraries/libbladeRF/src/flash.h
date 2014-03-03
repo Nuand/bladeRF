@@ -47,4 +47,17 @@ unsigned int flash_to_pages(unsigned int bytes);
 unsigned int flash_from_pages(unsigned int page);
 unsigned int flash_from_sectors(unsigned int sector);
 
+/**
+ * Write the provided data to the FX3 Firmware region to flash.
+ *
+ * This function does no validation of the data (i.e., that it's valid FW).
+ *
+ * @param   dev         Handle to bladeRF to write firmware to
+ * @param   image       Firmware image data
+ * @param   image_size  Length of firmware to write, in bytes
+ *
+ * @return 0 on success, BLADERF_ERR_* value on failure
+ */
+int flash_write_fx3_fw(struct bladerf *dev, uint8_t *image, size_t image_size);
+
 #endif

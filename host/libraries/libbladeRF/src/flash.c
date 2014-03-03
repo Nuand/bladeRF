@@ -19,13 +19,17 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
-#include "flash.h"
-#include "bladerf_priv.h"
-#include <libbladeRF.h>
-
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
+
+#include "libbladeRF.h"
+#include "bladerf_priv.h"
+#include "flash.h"
+#include "log.h"
+
+#define FLASH_FIRMWARE_ADDR 0x0000000   /* Address of FW in SPI flash */
+#define FLASH_FIRMWARE_SIZE 0x0030000   /* Length (bytes) of FW region */
 
 const unsigned int BLADERF_FLASH_ALIGNMENT_BYTE = ~0;
 const unsigned int BLADERF_FLASH_ALIGNMENT_PAGE = ~((1<<BLADERF_FLASH_PAGE_BITS) - 1);
@@ -188,4 +192,81 @@ out:
         free(buf);
 
     return rv;
+}
+
+static inline int verify_flash(struct bladerf *dev, uint8_t *readback_buf,
+                               uint32_t addr, uint8_t *image, size_t len)
+{
+    int status = 0;
+    size_t i;
+
+    log_info("Verifying 0x%08x bytes at address 0x%08x\n", len, addr);
+    status = dev->fn->read_flash(dev, addr, readback_buf, len);
+
+    if (status < 0) {
+        log_debug("Failed to read from flash: %s\n", bladerf_strerror(status));
+        return status;
+    } else if ((size_t)status != len) {
+        log_warning("Flash read of unexpected size: expected=%llu, read=%llu\n",
+                    (unsigned long long)len, (unsigned long long)status);
+    } else {
+        status = 0;
+    }
+
+    for (i = 0; i < len; i++) {
+        if (image[i] != readback_buf[i]) {
+            status = BLADERF_ERR_UNEXPECTED;
+            log_info("Flash verification failed at byte %llu. "
+                     "Read %02x, expected %02x\n", readback_buf[i], image[i]);
+            break;
+        }
+    }
+
+    return status;
+}
+
+int flash_write_fx3_fw(struct bladerf *dev, uint8_t *image, size_t image_size)
+{
+    int status;
+    uint8_t *readback_buf;
+
+    readback_buf = malloc(image_size);
+    if (readback_buf == NULL) {
+        return BLADERF_ERR_MEM;
+    }
+
+    /* Erase the entire firmware region */
+    status = dev->fn->erase_flash(dev, FLASH_FIRMWARE_ADDR,
+                                  FLASH_FIRMWARE_SIZE);
+    if (status < 0) {
+        log_debug("Failed to erase firmware region: %s\n",
+                  bladerf_strerror(status));
+        goto error;
+    } else if (status != FLASH_FIRMWARE_SIZE) {
+        log_warning("Erase reported size of %llu vs expected %llu\n",
+                    (unsigned long long)status,
+                    (unsigned long long)FLASH_FIRMWARE_SIZE);
+    }
+
+    /* Write the firmware image to flash */
+    status = dev->fn->write_flash(dev, FLASH_FIRMWARE_ADDR, image, image_size);
+    if (status < 0) {
+        log_debug("Failed to write firmware: %s\n", bladerf_strerror(status));
+        goto error;
+    } else if ((size_t)status != image_size) {
+        log_warning("Firmware write reported %llu of %llu bytes written\n",
+                    (unsigned long long)status, (unsigned long long)image_size);
+    }
+
+    /* Read back and double-check what we just wrote */
+    status = verify_flash(dev, readback_buf, FLASH_FIRMWARE_ADDR,
+                          image, image_size);
+
+    if (status != 0) {
+        log_debug("Flash verification failed: %s\n", bladerf_strerror(status));
+    }
+
+error:
+    free(readback_buf);
+    return status;
 }
