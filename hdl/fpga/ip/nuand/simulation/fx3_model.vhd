@@ -34,7 +34,11 @@ entity fx3_model is
     fx3_ctl             :   inout   std_logic_vector(12 downto 0) ;
     fx3_uart_rxd        :   in      std_logic ;
     fx3_uart_txd        :   buffer  std_logic ;
-    fx3_uart_cts        :   buffer  std_logic
+    fx3_uart_cts        :   buffer  std_logic ;
+    fx3_rx_en           :   in      std_logic ;
+    fx3_rx_meta_en      :   in      std_logic ;
+    fx3_tx_en           :   in      std_logic ;
+    fx3_tx_meta_en      :   in      std_logic
   ) ;
 end entity ; -- fx3_model
 
@@ -78,8 +82,13 @@ begin
         for i in 1 to 10 loop
             wait until rising_edge( fx3_pclk ) ;
         end loop ;
+        if( fx3_rx_en = '0' ) then
+            wait;
+        end if;
+        wait for 30 us;
+        dma_rx_enable <= '1' ;
         while true loop
-            for i in 0 to 5 loop
+            for i in 0 to 2 loop
                 dma0_rx_reqx <= '0' ;
                 wait until rising_edge( fx3_pclk ) and dma0_rx_ack = '1' ;
                 wait until rising_edge( fx3_pclk ) ;
@@ -105,6 +114,8 @@ begin
     tx_sample_stream : process
         constant BLOCK_SIZE : natural := 512 ;
         variable count : natural := 0 ;
+        variable timestamp_cntr : natural := 80;
+        variable header_len : natural := 0;
     begin
         dma2_tx_reqx <= '1' ;
         dma3_tx_reqx <= '1' ;
@@ -114,14 +125,36 @@ begin
         for i in 0 to 1000 loop
             wait until rising_edge( fx3_pclk ) ;
         end loop ;
+        if( fx3_tx_en = '0' ) then
+            wait;
+        end if;
+        wait for 120 us;
         dma_tx_enable <= '1' ;
-        while true loop
+        for i in 0 to 3 loop
             dma3_tx_reqx <= '0' ;
             wait until rising_edge( fx3_pclk ) and dma3_tx_ack = '1' ;
             wait until rising_edge( fx3_pclk ) ;
             wait until rising_edge( fx3_pclk ) ;
             dma3_tx_reqx <= '1' ;
-            for i in 1 to BLOCK_SIZE loop
+            if( fx3_tx_meta_en = '1') then
+                for i in 1 to 4 loop
+                    if (i = 1 ) then
+                        fx3_gpif <= x"12341234";
+                    elsif (i = 3 ) then
+                        fx3_gpif <= (others => '0');
+                    elsif(i = 4) then
+                        fx3_gpif <= (others => '1');
+                    elsif (i = 2) then
+                        fx3_gpif(31 downto 0) <= std_logic_vector(to_signed(timestamp_cntr, 32));
+                        timestamp_cntr := timestamp_cntr + 508 * 2;
+                    end if;
+                    wait until rising_edge( fx3_pclk );
+                end loop;
+                header_len := 4;
+            else
+                header_len := 0;
+            end if;
+            for i in 1 to BLOCK_SIZE - header_len loop
                 fx3_gpif(31 downto 16) <= std_logic_vector(to_signed(count, 16)) ;
                 fx3_gpif(15 downto 0) <= std_logic_vector(to_signed(-count, 16)) ;
                 count := (count + 1) mod 2048 ;
