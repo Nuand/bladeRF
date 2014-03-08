@@ -197,9 +197,11 @@ void usage(const char *argv0)
     printf("bladeRF command line interface and test utility (" BLADERF_CLI_VERSION ")\n\n");
     printf("Options:\n");
     printf("  -d, --device <device>            Use the specified bladeRF device.\n");
-    printf("  -f, --flash-firmware <file>      Flash specified firmware file.\n");
-    printf("  -l, --load-fpga <file>           Load specified FPGA bitstream.\n");
-    printf("  -L, --flash-fpga <file>          Flash the specified FPGA image for autoload.\n");
+    printf("  -f, --flash-firmware <file>      Write the provided FX3 firmware file to flash.\n");
+    printf("  -l, --load-fpga <file>           Load the provided FPGA bitstream.\n");
+    printf("  -L, --flash-fpga <file>          Write the provided FPGA image to flash for\n");
+    printf("                                   autoloading. Use -L X or --flash-fpga X to\n");
+    printf("                                   disable FPGA autoloading.\n");
     printf("  -p, --probe                      Probe for devices, print results, then exit.\n");
     printf("  -s, --script <file>              Run provided script.\n");
     printf("  -i, --interactive                Enter interactive mode.\n");
