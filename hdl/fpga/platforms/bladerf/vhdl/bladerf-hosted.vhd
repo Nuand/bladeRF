@@ -477,6 +477,7 @@ begin
         tx_fifo_usedw       =>  tx_sample_fifo.wused,
         tx_fifo_data        =>  tx_sample_fifo.wdata,
 
+        tx_timestamp        =>  tx_timestamp,
         tx_meta_fifo_write  =>  tx_meta_fifo.wreq,
         tx_meta_fifo_full   =>  tx_meta_fifo.wfull,
         tx_meta_fifo_empty  =>  tx_meta_fifo.wempty,
@@ -812,7 +813,7 @@ begin
             if (tx_sync_r(3 downto 0) = "1100") then
                 tx_timestamp <= (others => '0');
             else
-                if (tx_enable = '1') then
+                if (meta_en_tx = '1') then
                     tx_timestamp <= tx_timestamp + 1;
                 else
                     tx_timestamp <= (others => '0');
@@ -831,7 +832,7 @@ begin
             if (rx_sync_r(3 downto 0) = "1100") then
                 rx_timestamp <= (others => '0');
             else
-                if (rx_enable = '1') then
+                if (meta_en_rx = '1') then
                     rx_timestamp <= rx_timestamp + 1;
                 else
                     rx_timestamp <= (others => '0');

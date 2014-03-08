@@ -33,6 +33,7 @@ entity fx3_gpif is
     tx_fifo_data    :   out std_logic_vector(31 downto 0) ;
 
     -- TX meta FIFO
+    tx_timestamp         :   in  unsigned(63 downto 0);
     tx_meta_fifo_write   :   out std_logic ;
     tx_meta_fifo_full    :   in  std_logic ;
     tx_meta_fifo_empty   :   in  std_logic ;
@@ -79,7 +80,7 @@ architecture sample_shuffler of fx3_gpif is
 
     type dma_event is (DE_TX, DE_RX);
     signal dma_last_event : dma_event;
-    type state_t is (IDLE, IDLE_RD, IDLE_RD_1, IDLE_WR, IDLE_WR_1, IDLE_WR_2, IDLE_WR_3, META_READ, SAMPLE_READ, META_WRITE, SAMPLE_WRITE, FINISHED);
+    type state_t is (IDLE, IDLE_RD, IDLE_RD_1, IDLE_WR, IDLE_WR_1, IDLE_WR_2, IDLE_WR_3, META_READ, SAMPLE_READ, META_WRITE, SAMPLE_WRITE, SAMPLE_WRITE_IGNORE, FINISHED);
     signal state : state_t;
 
     signal gpif_buf_size        :   unsigned(12 downto 0) ;
@@ -87,6 +88,8 @@ architecture sample_shuffler of fx3_gpif is
 
     signal tx_fifo_enough : std_logic ;
     signal rx_fifo_enough : std_logic ;
+
+    signal tx_timestamp_r, tx_timestamp_rr : unsigned(63 downto 0);
 
     signal rx_next_dma : std_logic ;
     signal tx_next_dma : std_logic ;
@@ -97,6 +100,7 @@ architecture sample_shuffler of fx3_gpif is
     signal dma_downcount : signed(12 downto 0) ;
     signal meta_downcount : signed(12 downto 0) ;
 
+    signal meta_buffer : std_logic_vector(127 downto 0);
 begin
 
     tx_meta_en <= meta_enable;
@@ -144,7 +148,7 @@ begin
 
     rx_fifo_read  <= '1' when ((rx_meta_en = '0' and state = IDLE_RD) or state = SAMPLE_READ ) else '0';
     tx_fifo_write <= '1' when (state = SAMPLE_WRITE) else '0';
-    tx_meta_fifo_write <= '1' when (state = META_WRITE) else '0';
+    tx_meta_fifo_write <= '1' when (state = SAMPLE_WRITE and meta_enable = '1' and meta_downcount >= 0) else '0';
     rx_meta_fifo_read <= '1' when (state = META_READ or (rx_meta_en = '1' and state = IDLE_RD) ) else '0';
 
     process(all)
@@ -163,12 +167,22 @@ begin
             tx_fifo_data <= (others =>'0');
         end if;
 
-        if( state = META_WRITE) then
-            tx_meta_fifo_data <= gpif_in;
+        if( state = SAMPLE_WRITE and meta_enable = '1') then
+            tx_meta_fifo_data <= meta_buffer(127 downto 96);
         end if;
 
     end process;
 
+    tx_tstamp_sync : process( pclk, reset )
+    begin
+        if( reset = '1' ) then
+            tx_timestamp_r <= (others => '0');
+            tx_timestamp_rr <= (others => '0');
+        elsif( rising_edge(pclk) ) then
+            tx_timestamp_r <= tx_timestamp;
+            tx_timestamp_rr <= tx_timestamp_r;
+        end if;
+    end process;
 
     can_and_should : process( pclk, reset )
     begin
@@ -278,18 +292,37 @@ begin
                 when IDLE_WR_3 =>
                     if( tx_meta_en = '1' ) then
                         state <= META_WRITE;
+                        meta_buffer <= (others => '0');
                     else
                         state <= SAMPLE_WRITE;
                     end if;
                 when META_WRITE =>
+                    meta_buffer(127 downto 0) <= meta_buffer(95 downto 0) & gpif_in(31 downto 0);
                     if( meta_downcount > 0 ) then
                         dma_downcount <= dma_downcount - 1;
                         meta_downcount <= meta_downcount - 1;
                     else
                         dma_downcount <= dma_downcount - 1;
-                        state <= SAMPLE_WRITE;
+                        if (unsigned(meta_buffer(31 downto 0) & meta_buffer(63 downto 32)) < (tx_timestamp_rr + 32)) then
+                           state <= SAMPLE_WRITE_IGNORE;
+                        else
+                           meta_downcount <= to_signed(3, 13);
+                           state <= SAMPLE_WRITE;
+                        end if;
+                    end if;
+                when SAMPLE_WRITE_IGNORE =>
+                    dma2_tx_ack <= '0';
+                    dma3_tx_ack <= '0';
+                    if( dma_downcount > 0 ) then
+                        dma_downcount <= dma_downcount - 1;
+                    else
+                        state <= FINISHED;
                     end if;
                 when SAMPLE_WRITE =>
+                    if( meta_downcount >= 0 ) then
+                        meta_downcount <= meta_downcount - 1;
+                        meta_buffer(127 downto 0) <= meta_buffer(95 downto 0) & x"00000000";
+                    end if;
                     dma2_tx_ack <= '0';
                     dma3_tx_ack <= '0';
                     if( dma_downcount > 0 ) then
