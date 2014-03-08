@@ -42,4 +42,9 @@ static inline uint32_t u32_max(uint32_t x, uint32_t y)
     return x > y ? x : y;
 }
 
+static inline uint64_t u64_min(uint64_t x, uint64_t y)
+{
+    return x < y ? x : y;
+}
+
 #endif

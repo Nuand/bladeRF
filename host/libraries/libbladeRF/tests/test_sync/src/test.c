@@ -31,6 +31,7 @@
 #include <signal.h>
 #include <libbladeRF.h>
 
+#include "rel_assert.h"
 #include "test.h"
 #include "log.h"
 #include "minmax.h"
@@ -229,8 +230,10 @@ void *rx_task(void *args)
         goto rx_task_out;
     }
 
+    /* This assumption is made with the below cast */
+    assert(p->block_size < UINT_MAX); 
     while (!done && !task->quit) {
-        to_rx = uint_min(p->block_size, p->rx_count);
+        to_rx = (unsigned int) u64_min(p->block_size, p->rx_count);
         status = bladerf_sync_rx(task->dev, samples, to_rx, NULL,
                                  SYNC_TIMEOUT_MS);
 
