@@ -186,6 +186,13 @@ if(LIBPTHREADSWIN32_FOUND)
     set(CLI_LINK_LIBRARIES ${CLI_LINK_LIBRARIES} ${LIBPTHREADSWIN32_LIBRARIES})
 endif()
 
+if(LIBC_VERSION)
+    # clock_gettime() was moved from librt -> libc in 2.17
+    if(${LIBC_VERSION} VERSION_LESS "2.17")
+        set(CLI_LINK_LIBRARIES ${CLI_LINK_LIBRARIES} rt)
+    endif()
+endif()
+
 target_link_libraries(bladeRF-cli ${CLI_LINK_LIBRARIES})
 
 ################################################################################
