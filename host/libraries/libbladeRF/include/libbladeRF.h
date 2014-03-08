@@ -936,14 +936,20 @@ int CALL_CONV bladerf_init_stream(struct bladerf_stream **stream,
  *
  * When running a full-duplex configuration with two threads (e.g,
  * one thread calling bladerf_stream() for TX, and another for RX), stream
- * callbacks may be executed in either thread. Therefore, the caller is
- * responsible for ensuring that his or her callbacks are thread-safe. For the
- * same reason, it is highly recommended that callbacks do not block.
+ * callbacks may be executed in the context of either thread. Therefore, the
+ * caller is responsible for ensuring that his or her callbacks are thread-safe.
+ *
+ * To avoid timeouts, stream callbacks should not block or perform long-running
+ * operations.
  *
  * When starting a TX stream, an initial set of callbacks will be immediately
  * invoked. The caller must ensure that there are at *more than* T buffers
  * filled before calling bladerf_stream(..., BLADERF_MODULE_TX), where T is the
  * num_transfers value provided to bladerf_init_stream(), to avoid an underrun.
+ *
+ * @pre This function should be preceded by a call to bladerf_enable_module()
+ *      to enable the associated RX or TX module before attempting to use
+ *      it to stream data.
  *
  * @param   stream  A stream handle that has been successfully been initialized
  *                  via bladerf_init_stream()
