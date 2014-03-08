@@ -426,7 +426,7 @@ static int tx_cmd_start(struct cli_state *s)
         pthread_mutex_lock(&s->tx->file_mgmt.file_lock);
 
         assert(s->tx->file_mgmt.format == RXTX_FMT_BIN_SC16Q11);
-        s->tx->file_mgmt.file = expand_and_open(s->tx->file_mgmt.path, "r");
+        s->tx->file_mgmt.file = expand_and_open(s->tx->file_mgmt.path, "rb");
         if (!s->tx->file_mgmt.file) {
             set_last_error(&s->tx->last_error, ETYPE_ERRNO, errno);
             status = CMD_RET_FILEOP;
