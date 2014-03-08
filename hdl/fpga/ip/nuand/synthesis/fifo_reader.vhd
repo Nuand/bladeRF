@@ -57,7 +57,7 @@ begin
             meta_fifo_read <= '0';
             if( meta_loaded = '0' ) then
                 if( unsigned(meta_fifo_usedw) > 0) then
-                    meta_p_time <= unsigned(meta_fifo_data(63 downto 0));
+                    meta_p_time <= unsigned(meta_fifo_data(95 downto 32));
                     meta_loaded <= '1';
                     meta_fifo_read <= '1';
                 end if;
@@ -68,14 +68,14 @@ begin
             end if;
         end if;
     end process;
-    meta_time_eq <= '1' when (enable = '1' and meta_fifo_empty = '0' and timestamp(63 downto 0) = meta_p_time) else '0';
+    meta_time_eq <= '1' when (enable = '1' and meta_loaded = '1' and timestamp(63 downto 0) >= meta_p_time) else '0';
     process(clock, reset)
     begin
         if (reset = '1') then
             meta_time_hit <= (others => '0');
         elsif(rising_edge(clock)) then
             if (meta_time_eq = '1') then
-                meta_time_hit <= to_signed(1021, 16); --meta_time_hit'length);
+                meta_time_hit <= to_signed(1014, 16); --meta_time_hit'length);
             else
                 if (meta_time_hit > 0) then
                     meta_time_hit <= meta_time_hit - 1;

@@ -43,7 +43,7 @@ architecture simple of fifo_writer is
 
 begin
 
-    dma_buf_sz <= to_signed(1014, dma_buf_sz'length) when usb_speed = '0' else to_signed(502, dma_downcount'length);
+    dma_buf_sz <= to_signed(1015, dma_buf_sz'length) when usb_speed = '0' else to_signed(503, dma_downcount'length);
     process( clock, reset)
     begin
         if( reset = '1') then
