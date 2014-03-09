@@ -22,8 +22,8 @@ endif(MSVC)
 ################################################################################
 
 set(VERSION_INFO_MAJOR  0)
-set(VERSION_INFO_MINOR  13)
-set(VERSION_INFO_PATCH  2)
+set(VERSION_INFO_MINOR  14)
+set(VERSION_INFO_PATCH  0)
 
 if(NOT DEFINED VERSION_INFO_EXTRA)
     set(VERSION_INFO_EXTRA "git")
@@ -328,7 +328,7 @@ if(BUILD_LIBBLADERF_DOCUMENTATION)
             COMMENT "Generating libbladeRF API documentation via Doxygen in: ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen"
         )
 
-    add_custom_target(libbladeRF-doxygen ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/html/index.html) 
+    add_custom_target(libbladeRF-doxygen ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/html/index.html)
 
     else(DOXYGEN_FOUND)
         message(WARNING "Could not find Doxygen. libbladeRF API documentation will not be built.")
