@@ -37,10 +37,10 @@
 #include "test.h"
 
 /* FIXME these should be provided in libbladeRF.h */
-#define SAMPLERATE_MIN          160000
-#define SAMPLERATE_MAX          40000000
-#define FREQ_MIN                300000000
-#define FREQ_MAX                3000000000
+#define SAMPLERATE_MIN          160000u
+#define SAMPLERATE_MAX          40000000u
+#define FREQ_MIN                300000000u
+#define FREQ_MAX                3000000000u
 
 #define OPTSTR "hd:s:f:l:i:o:r:c:b:X:B:C:T:"
 const struct option long_options[] = {
