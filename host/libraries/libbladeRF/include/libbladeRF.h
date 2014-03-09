@@ -450,7 +450,11 @@ typedef enum
  * Enable or disable the specified RX/TX module.
  *
  * When a synchronous stream is associated with the specified module, this
- * stream will be shut down.
+ * will shut down the underlying asynchronous stream when `enable` = false.
+ *
+ * When transmitting samples with the sync interface, be sure to provide ample
+ * time for TX samples reach the FPGA and be transmitted before calling this
+ * function with `enable` = false.
  *
  * @param       dev     Device handle
  * @param       m       Device module
@@ -890,12 +894,15 @@ typedef enum {
  *
  * @bug Metadata support is not yet implemented. API users should not attempt
  *      to read or write to metadata structures.
+ *
+ *      The size of this structure may change when metadata support is
+ *      completed, which may affect binary compatibility of library versions.
  */
 struct bladerf_metadata {
 
     /**
      * Free-running FPGA counter that monotonically increases at the
-     * samplerate of the associated module. */
+     * sample rate of the associated module. */
     uint64_t timestamp;
 
     /**
@@ -923,6 +930,34 @@ struct bladerf_metadata {
 /**
  * @defgroup FN_DATA_ASYNC    Asynchronous data transmission and reception
  *
+ * This interface gives the API user full control over the stream and buffer
+ * management, at the cost of added complexity.
+ *
+ * New users are recommended to first evaluate the \ref FN_DATA_SYNC interface,
+ * and to only use this interface if the former is found to not yield suitable
+ * performance.
+ *
+ * When using this interface, one must be aware of thread-safety implications.
+ * Internally, this library does not enforce thread-safe access to device
+ * handles; API users are responsible for this.
+ *
+ * However, it easy to avoid thread-safety issues if the following guidelines are
+ * adhered to:
+ *   - Divide threads that access the bladeRF device into two types: control and
+ *   data streaming.
+ *
+ *   - Only perform device configuration and control calls from the control
+ *   thread(s). If multiple threads are performing control calls, lock accesses
+ *   to device handles.  Here, "control calls" effectively includes all API
+ *   calls take a bladerf device handle, except for: bladerf_init_stream(),
+ *   bladerf_stream(), and bladerf_deinit_stream(). These three calls are "data
+ *   streaming" calls.
+ *
+ *   - Only access a bladerf_stream within a streaming thread context, and only
+ *     use the data streaming calls in this context.
+ *
+ *   - Do not make API calls from stream callbacks.
+ *
  * @{
  */
 
@@ -930,10 +965,31 @@ struct bladerf_metadata {
 struct bladerf_stream;
 
 /**
+ * Stream callback
+ *
+ * To avoid timeouts, stream callbacks should not block or perform long-running
+ * operations. Callbacks should be handled quickly, with work offloaded to other
+ * threads.
+ *
+ * In most use-cases, stream callbacks will be executing in a thread that is
+ * separate from the thread used to configure device parameters.
+ *
+ * Because this library <b>does not</b> currently ensure thread safe accesses to
+ * devices, callbacks being handled in different threads <b>must not make make
+ * API calls.</b>
+ *
+ * The API user is responsible for managing access to sample buffers, and
+ * ensuring that if another thread is using a buffer, it is not returned via the
+ * callback's return value.
+ *
+ * See the implementation of the \ref FN_DATA_SYNC interface for an example of
+ * a simple thread-safe buffer management scheme.
+ *
  * For both RX and TX, the stream callback receives:
  *  - dev:          Device structure
  *  - stream:       The associated stream
- *  - metadata:     (TODO)
+ *  - metadata:     For future support - do not attempt to read/write this
+ *                  in the current library implementation.
  *  - user_data:    User data provided when initializing stream
  *
  * For TX callbacks:
@@ -1040,15 +1096,13 @@ int CALL_CONV bladerf_init_stream(struct bladerf_stream **stream,
  *
  * Only 1 RX stream and 1 TX stream may be running at a time. Attempting to
  * call bladerf_stream() with more than one stream per module will yield
- * unexpected (and most likely undesirable) results.
+ * unexpected (and most likely undesirable) results. See the ::bladerf_stream_cb
+ * description for additional thread-safety caveats.
  *
  * When running a full-duplex configuration with two threads (e.g,
  * one thread calling bladerf_stream() for TX, and another for RX), stream
  * callbacks may be executed in the context of either thread. Therefore, the
  * caller is responsible for ensuring that his or her callbacks are thread-safe.
- *
- * To avoid timeouts, stream callbacks should not block or perform long-running
- * operations.
  *
  * When starting a TX stream, an initial set of callbacks will be immediately
  * invoked. The caller must ensure that there are at *more than* T buffers
@@ -1116,8 +1170,83 @@ int CALL_CONV bladerf_get_stream_timeout(struct bladerf *dev,
 /**
  * @defgroup FN_DATA_SYNC  Synchronous data transmission and reception
  *
- * The synchronous interface is built atop the asynchronous interface. This
- * interface requires libbladeRF to be built with pthreads support.
+ * The synchronous interface is built atop the asynchronous interface, and is
+ * generally less complex and easier to work with.  It alleviates the need to
+ * explicity spawn threads (it is done under the hood) and manually manage
+ * sample buffers.
+ *
+ * Under the hood, this interface spawns worker threads to handle an
+ * asynchronous stream and perform thread-safe buffer management.
+ *
+ * This interface requires libbladeRF to be built with pthreads support. Without
+ * pthreads support, all functions in this section of the API will return an
+ * BLADERF_ERR_UNSUPPORTED.
+ *
+ *
+ * Below is the general process for using this interface:
+ *
+ * @code{.c}
+ *
+ * // ...
+ *
+ * int status;
+ * int16_t *buffer;
+ * const size_t num_samples = 4096;
+ *
+ * // ...
+ *
+ * // Allocate a sample buffer.
+ * // Note that 4096 samples = 4096 int16_t IQ pairs = 2 * 4096 int16_t values
+ * buffer = malloc(num_samples * 2 * sizeof(int16_t));
+ * if (buffer == NULL) {
+ *     perror("malloc");
+ *     return BLADERF_ERR_MEM;
+ * }
+ *
+ * // Configure the device's RX module for use with the sync interface
+ * status = bladerf_sync_config(dev, BLADERF_MODULE_RX, BLADERF_FORMAT_SC16_Q11,
+ *                              64, 16384, 16, 3500);
+ *
+ * if (status != 0) {
+ *     fprintf(stderr, "Failed to configure sync interface: %s\n",
+ *             bladerf_strerror(status));
+ *     return status;
+ * }
+ *
+ * // We must always enable the RX module before attempting to RX samples
+ * status = bladerf_enable_module(dev, BLADERF_MODULE_RX, true);
+ * if (status != 0) {
+ *     fprintf(stderr, "Failed to enable RX module: %s\n",
+ *             bladerf_strerror(status));
+ *     return status;
+ * }
+ *
+ * // Receive samples and do work on them.
+ * while (status == 0 && !done) {
+ *     status = bladerf_sync_rx(dev, buffer, num_samples, NULL, 3500);
+ *     if (status == 0) {
+ *         done = do_work(buffer, num_samples);
+ *     } else {
+ *         fprintf(stderr, "Failed to RX samples: %s\n",
+ *                 bladerf_strerror(status));
+ *     }
+ * }
+ *
+ * // Disable RX module, shutting down our underlying RX stream
+ * status = bladerf_enable_module(dev, BLADERF_MODULE_RX, false);
+ * if (status != 0) {
+ *     fprintf(stderr, "Failed to disable RX module: %s\n",
+ *             bladerf_strerror(status));
+ * }
+ *
+ * // Free up our resources
+ * free(buffer);
+ *
+ * @endcode
+ *
+ * To run in a full-duplex mode of operation, one must simply add another call
+ * to bladerf_sync_config() for the BLADERF_MODULE_TX module, enable the TX
+ * module via bladerf_enable_module(), and then make calls to bladerf_sync_tx().
  *
  * @{
  */
@@ -1156,6 +1285,8 @@ int CALL_CONV bladerf_get_stream_timeout(struct bladerf *dev,
  *
  * @param   buffer_size     The size of the underlying stream buffers, in
  *                          samples. This value must be a multiple of 1024.
+ *                          Note that samples are only transferred when a buffer
+ *                          of this size is filled.
  *
  * @param   num_transfers   The number of active USB transfers that may be
  *                          in-flight at any given time. If unsure of what
@@ -1179,7 +1310,15 @@ int CALL_CONV bladerf_sync_config(struct bladerf *dev,
                                   unsigned int stream_timeout);
 
 /**
- * Transmit IQ samples
+ * Transmit IQ samples.
+ *
+ * Under the hood, this call starts up an underlying asynchronous stream as
+ * needed. This stream can be stopped by disabling the TX module. (See
+ * bladerf_enable_module for more details.)
+ *
+ * Samples will only be sent to the FPGA when a buffer have been filled. The
+ * number of samples required to fill a buffer corresponds to the `buffer_size`
+ * parameter passed to bladerf_sync_config().
  *
  * @param[in]   dev         Device handle
  * @param[in]   samples     Array of samples
@@ -1190,6 +1329,10 @@ int CALL_CONV bladerf_sync_config(struct bladerf *dev,
  *
  * @pre A bladerf_sync_config() call has been to configure the device for
  *      synchronous data transfer.
+ *
+ * @pre A call to bladerf_enable_module() should be made before attempting to
+ *      transmit samples. Failing to do this may result in timeouts and other
+ *      errors.
  *
  * @return 0 on success,
  *         BLADERF_ERR_UNSUPPORTED if libbladeRF is not built with support
@@ -1203,7 +1346,11 @@ int CALL_CONV bladerf_sync_tx(struct bladerf *dev,
                               unsigned int timeout_ms);
 
 /**
- * Receive IQ samples
+ * Receive IQ samples.
+ *
+ * Under the hood, this call starts up an underlying asynchronous stream as
+ * needed. This stream can be stopped by disabling the RX module. (See
+ * bladerf_enable_module for more details.)
  *
  * @param[in]   dev         Device handle
  *
@@ -1215,13 +1362,18 @@ int CALL_CONV bladerf_sync_tx(struct bladerf *dev,
  *
  * @param[in]   num_samples Number of samples to read
  *
- * @param[out]  metadata    Sample metadata. (Currently not used.)
+ * @param[out]  metadata    Sample metadata. Currently not used. Pass NULL.
  *
  * @param[in]   timeout_ms  Timeout (milliseconds) for this call to complete.
  *                          Zero implies "infinite."
  *
  * @pre A bladerf_sync_config() call has been to configure the device for
  *      synchronous data transfer.
+ *
+ * @pre A call to bladerf_enable_module() should be made before attempting to
+ *      receive samples. Failing to do this may result in timeouts and other
+ *      errors.
+ *
  *
  * @return 0 on success,
  *         BLADERF_ERR_UNSUPPORTED if libbladeRF is not built with support
