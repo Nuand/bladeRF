@@ -214,8 +214,9 @@ int set_bandwidth(struct cli_state *state, int argc, char **argv)
         }
 
         /* Parse bandwidth */
-        bw = str2uint_suffix( argv[3], 0, UINT_MAX,
-                FREQ_SUFFIXES, NUM_FREQ_SUFFIXES, &ok );
+        bw = str2uint_suffix( argv[3],
+                              BLADERF_BANDWIDTH_MIN, BLADERF_BANDWIDTH_MAX,
+                              FREQ_SUFFIXES, NUM_FREQ_SUFFIXES, &ok );
         if( !ok ) {
             cli_err(state, argv[0], "Invalid bandwidth (%s)", argv[3]);
             rv = CMD_RET_INVPARAM;
@@ -225,8 +226,9 @@ int set_bandwidth(struct cli_state *state, int argc, char **argv)
     /* No module, just bandwidth */
     else if( argc == 3 ) {
         bool ok;
-        bw = str2uint_suffix( argv[2], 0, UINT_MAX,
-                FREQ_SUFFIXES, NUM_FREQ_SUFFIXES, &ok );
+        bw = str2uint_suffix( argv[2],
+                              BLADERF_BANDWIDTH_MIN, BLADERF_BANDWIDTH_MAX,
+                              FREQ_SUFFIXES, NUM_FREQ_SUFFIXES, &ok );
         if( !ok ) {
             cli_err(state, argv[0], "Invalid bandwidth (%s)", argv[2]);
             rv = CMD_RET_INVPARAM;
@@ -365,8 +367,9 @@ int set_frequency(struct cli_state *state, int argc, char **argv)
     if( argc > 2 && rv == CMD_RET_OK ) {
         bool ok;
         /* Parse out frequency */
-        freq = str2uint_suffix( argv[argc-1], 225000000, 3900000000u,
-                FREQ_SUFFIXES, NUM_FREQ_SUFFIXES, &ok );
+        freq = str2uint_suffix( argv[argc-1],
+                                BLADERF_FREQUENCY_MIN, BLADERF_FREQUENCY_MAX,
+                                FREQ_SUFFIXES, NUM_FREQ_SUFFIXES, &ok );
 
         if( !ok ) {
             cli_err(state, argv[0], "Invalid frequency (%s)", argv[argc - 1]);
@@ -739,7 +742,8 @@ int set_rxvga1(struct cli_state *state, int argc, char **argv)
         rv = CMD_RET_NARGS;
     } else {
         bool ok;
-        gain = str2int( argv[2], INT_MIN, INT_MAX, &ok );
+        gain = str2int( argv[2], BLADERF_RXVGA1_GAIN_MIN,
+                        BLADERF_RXVGA1_GAIN_MAX, &ok );
         if( !ok ) {
             invalid_gain(state, argv[0], argv[1], argv[2]);
             rv = CMD_RET_INVPARAM;
@@ -779,7 +783,9 @@ int set_rxvga2(struct cli_state *state, int argc, char **argv)
         rv = CMD_RET_NARGS;
     } else {
         bool ok;
-        gain = str2int( argv[2], INT_MIN, INT_MAX, &ok );
+        gain = str2int( argv[2], BLADERF_RXVGA2_GAIN_MIN,
+                        BLADERF_RXVGA2_GAIN_MAX, &ok );
+
         if( !ok ) {
             invalid_gain(state, argv[0], argv[1], argv[2]);
             rv = CMD_RET_INVPARAM;
@@ -898,8 +904,10 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
             idx = 3;
         }
 
-        rate.integer = str2uint_suffix( argv[idx], 80000, 40000000,
-            FREQ_SUFFIXES, NUM_FREQ_SUFFIXES, &ok );
+        rate.integer = str2uint_suffix( argv[idx],
+                                        BLADERF_SAMPLERATE_MIN,
+                                        UINT_MAX,
+                                        FREQ_SUFFIXES, NUM_FREQ_SUFFIXES, &ok );
 
         /* Integer portion didn't make it */
         if( !ok ) {
@@ -1083,7 +1091,8 @@ int set_txvga1(struct cli_state *state, int argc, char **argv)
 
     if( argc == 3 ) {
         bool ok ;
-        gain = str2int( argv[2], INT_MIN, INT_MAX, &ok );
+        gain = str2int( argv[2], BLADERF_TXVGA1_GAIN_MIN,
+                        BLADERF_TXVGA1_GAIN_MAX, &ok );
 
         if( !ok ) {
             invalid_gain(state, argv[0], argv[1], argv[2]);
@@ -1132,7 +1141,8 @@ int set_txvga2(struct cli_state *state, int argc, char **argv)
     } else {
         bool ok;
         int gain;
-        gain = str2int( argv[2], INT_MIN, INT_MAX, &ok );
+        gain = str2int( argv[2], BLADERF_TXVGA2_GAIN_MIN,
+                        BLADERF_TXVGA2_GAIN_MAX, &ok );
         if( !ok ) {
             invalid_gain(state, argv[0], argv[1], argv[2]);
             rv = CMD_RET_INVPARAM;

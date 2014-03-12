@@ -594,11 +594,11 @@ static const struct cmd cmd_table[] = {
             "   pa              PA settings\n"
             "   pps             PPS settings\n"
             "   refclk          Reference clock settings\n"
-            "   rxvga1          Gain setting of RXVGA1, in dB. [5, 30]\n"
+            "   rxvga1          Gain setting of RXVGA1, in dB. Range: [5, 30]\n"
             "   rxvga2          Gain setting of RXVGA2, in dB. Range: [0, 30]\n"
             "   samplerate      Samplerate settings\n"
             "   trimdac         VCTCXO Trim DAC settings\n"
-            "   txvga1          Gain setting of TXVGA1, in dB. Range: [-35, 4]\n"
+            "   txvga1          Gain setting of TXVGA1, in dB. Range: [-35, -4]\n"
             "   txvga2          Gain setting of TXVGA2, in dB. Range: [0, 25]\n"
         )
     },
