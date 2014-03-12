@@ -39,6 +39,15 @@ configure_file(
     @ONLY
 )
 
+if(MSVC)
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/bladerf.rc.in
+        ${CMAKE_CURRENT_BINARY_DIR}/bladerf.rc
+        @ONLY
+    )
+endif()
+
+
 include(GNUInstallDirs)
 
 # Fall back to just "lib" if the item provided by GNUInstallDirs doesn't exist
@@ -188,6 +197,10 @@ set(LIBBLADERF_SOURCE
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/log.c
 )
+
+if (MSVC)
+        set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} ${CMAKE_CURRENT_BINARY_DIR}/bladerf.rc)
+endif()
 
 if(LIBUSB_FOUND AND ENABLE_BACKEND_LIBUSB)
     set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend/libusb.c)
