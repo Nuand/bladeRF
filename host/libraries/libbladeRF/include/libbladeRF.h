@@ -297,6 +297,48 @@ bool CALL_CONV bladerf_devstr_matches(const char *dev_str,
  * @{
  */
 
+/** Minimum RXVGA1 gain, in dB */
+#define BLADERF_RXVGA1_GAIN_MIN     5
+
+/** Maximum RXVGA1 gain, in dB */
+#define BLADERF_RXVGA1_GAIN_MAX     30
+
+/** Minimum RXVGA2 gain, in dB */
+#define BLADERF_RXVGA2_GAIN_MIN     0
+
+/** Maximum RXVGA2 gain, in dB */
+#define BLADERF_RXVGA2_GAIN_MAX     30
+
+/** Minimum TXVGA1 gain, in dB */
+#define BLADERF_TXVGA1_GAIN_MIN     (-35)
+
+/** Maximum TXVGA1 gain, in dB */
+#define BLADERF_TXVGA1_GAIN_MAX     (-4)
+
+/** Minimum TXVGA2 gain, in dB */
+#define BLADERF_TXVGA2_GAIN_MIN     0
+
+/** Maximum TXVGA2 gain, in dB */
+#define BLADERF_TXVGA2_GAIN_MAX     25
+
+/** Minimum sample rate, in Hz */
+#define BLADERF_SAMPLERATE_MIN      80000u
+
+/** Maximum recommended sample rate, in Hz */
+#define BLADERF_SAMPLERATE_REC_MAX  40000000u
+
+/** Minimum bandwidth, in Hz */
+#define BLADERF_BANDWIDTH_MIN       1500000u
+
+/** Maximum bandwidth, in Hz */
+#define BLADERF_BANDWIDTH_MAX       28000000u
+
+/** Minimum tunable frequency, in Hz */
+#define BLADERF_FREQUENCY_MIN       232500000u
+
+/** Maximum tunable frequency, in Hz */
+#define BLADERF_FREQUENCY_MAX       3720000000u
+
 /**
  * Loopback options
  */
@@ -495,12 +537,19 @@ int CALL_CONV bladerf_get_loopback(struct bladerf *dev, bladerf_loopback *l);
  * rate is an integer value of Hz.  Use bladerf_set_rational_sample_rate()
  * for more arbitrary values.
  *
+ * The sample rate must be greater than or equal to \ref BLADERF_SAMPLERATE_MIN.
+ * Values above \ref BLADERF_SAMPLERATE_REC_MAX are allowed, but not
+ * recommended. Setting the sample rates higher than recommended max may yield
+ * errors and unexpected results.
+ *
  * @param[in]   dev         Device handle
  * @param[in]   module      Module to change
  * @param[in]   rate        Sample rate
  * @param[out]  actual      Actual sample rate
  *
- * @return 0 on success, value from \ref RETCODES list on failure
+ * @return 0 on success,
+ *         BLADERF_ERR_INVAL for an invalid sample rate,
+ *         or a value from \ref RETCODES list on other failures
  */
 API_EXPORT
 int CALL_CONV bladerf_set_sample_rate(struct bladerf *dev,
@@ -517,7 +566,14 @@ int CALL_CONV bladerf_set_sample_rate(struct bladerf *dev,
  * @param[in]   rate        Rational sample rate
  * @param[out]  actual      Actual rational sample rate
  *
- * @return 0 on success, value from \ref RETCODES list on failure
+ * The sample rate must be greater than or equal to \ref BLADERF_SAMPLERATE_MIN.
+ * Values above \ref BLADERF_SAMPLERATE_REC_MAX are allowed, but not
+ * recommended. Setting the sample rates higher than recommended max may yield
+ * errors and unexpected results.
+ *
+ * @return 0 on success,
+ *         BLADERF_ERR_INVAL for an invalid sample rate,
+ *         or a value from \ref RETCODES list on other failures
  */
 API_EXPORT
 int CALL_CONV bladerf_set_rational_sample_rate(struct bladerf *dev,
@@ -584,6 +640,9 @@ int CALL_CONV bladerf_get_rational_sample_rate(struct bladerf *dev,
 /**
  * Set the value of the specified configuration parameter
  *
+ * See the ::bladerf_correction description for the valid ranges of the
+ * `value` parameter.
+ *
  * @param   dev         Device handle
  * @param   module      Module to apply correction to
  * @param   corr        Correction type
@@ -611,6 +670,10 @@ int bladerf_get_correction(struct bladerf *dev, bladerf_module module,
 /**
  * Set the PA gain in dB
  *
+ * Values outside the range of
+ * [ \ref BLADERF_TXVGA2_GAIN_MIN, \ref BLADERF_TXVGA2_GAIN_MAX ]
+ * will be clamped.
+ *
  * @param       dev         Device handle
  * @param       gain        Desired gain
  *
@@ -632,6 +695,10 @@ CALL_CONV bladerf_get_txvga2(struct bladerf *dev, int *gain);
 
 /**
  * Set the post-LPF gain in dB
+ *
+ * Values outside the range of
+ * [ \ref BLADERF_TXVGA1_GAIN_MIN, \ref BLADERF_TXVGA1_GAIN_MAX ]
+ * will be clamped.
  *
  * @param       dev         Device handle
  * @param       gain        Desired gain
@@ -675,6 +742,10 @@ int CALL_CONV bladerf_get_lna_gain(struct bladerf *dev, bladerf_lna_gain *gain);
 /**
  * Set the pre-LPF VGA gain
  *
+ * Values outside the range of
+ * [ \ref BLADERF_RXVGA1_GAIN_MIN, \ref BLADERF_RXVGA1_GAIN_MAX ]
+ * will be clamped.
+ *
  * @param       dev         Device handle
  * @param       gain        Desired gain
  *
@@ -695,6 +766,10 @@ int CALL_CONV bladerf_get_rxvga1(struct bladerf *dev, int *gain);
 /**
  * Set the post-LPF VGA gain
  *
+ * Values outside the range of
+ * [ \ref BLADERF_RXVGA2_GAIN_MIN, \ref BLADERF_RXVGA2_GAIN_MAX ]
+ * will be clamped.
+ *
  * @param       dev         Device handle
  * @param       gain        Desired gain
  *
@@ -713,12 +788,20 @@ API_EXPORT
 int CALL_CONV bladerf_get_rxvga2(struct bladerf *dev, int *gain);
 
 /**
- * Set the bandwidth to specified value in Hz
+ * Set the bandwidth of the LMS LPF to specified value in Hz
  *
- * @param       dev                 Device handle
- * @param       module              Module for bandwidth request
- * @param       bandwidth           Desired bandwidth
- * @param       actual              If non-NULL, written with the actual
+ * The underlying device is capable of a discrete set of bandwidth values. The
+ * caller should check the `actual` parameter to determine which of these
+ * discrete bandwidth values is actually used for the requested bandwidth.
+ *
+ * Values outside the range of
+ * [ \ref BLADERF_BANDWIDTH_MIN, \ref BLADERF_BANDWIDTH_MAX ]
+ * will be clamped.
+ *
+ * @param[in]   dev                 Device handle
+ * @param[in]   module              Module for bandwidth request
+ * @param[in]   bandwidth           Desired bandwidth
+ * @param[out]  actual              If non-NULL, written with the actual
  *                                  bandwidth that the device was able to
  *                                  achieve
  *
@@ -772,8 +855,11 @@ int CALL_CONV bladerf_get_lpf_mode(struct bladerf *dev, bladerf_module module,
  * Select the appropriate band path given a frequency in Hz.
  *
  * The high band (LNA2 and PA2) is used for `frequency` >= 1.5 GHz. Otherwise,
- * The low band (LNA1 and PA1)
- * are used.
+ * The low band (LNA1 and PA1) is used.
+ *
+ * Frequency values outside the range of
+ * [ \ref BLADERF_FREQUENCY_MIN, \ref BLADERF_FREQUENCY_MAX ]
+ * will be clamped.
  *
  * @param       dev         Device handle
  * @param       module      Module to configure
@@ -788,7 +874,11 @@ int CALL_CONV bladerf_select_band(struct bladerf *dev, bladerf_module module,
 /**
  * Set module's frequency in Hz.
  *
- * This calls bladerf_set_frequency() internally.
+ * Values outside the range of
+ * [ \ref BLADERF_FREQUENCY_MIN, \ref BLADERF_FREQUENCY_MAX ]
+ * will be clamped.
+ *
+ * This calls bladerf_select_band() internally.
  *
  * @param       dev         Device handle
  * @param       module      Module to configure
@@ -802,7 +892,7 @@ int CALL_CONV bladerf_set_frequency(struct bladerf *dev,
                                     unsigned int frequency);
 
 /**
- * Set module's frequency in Hz
+ * Get module's current frequency in Hz
  *
  * @param       dev         Device handle
  * @param       module      Module to configure

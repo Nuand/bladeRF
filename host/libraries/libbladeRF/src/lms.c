@@ -565,12 +565,12 @@ int lms_rxvga1_enable(struct bladerf *dev, bool enable)
 /* Set the RFB_TIA_RXFE mixer gain */
 int lms_rxvga1_set_gain(struct bladerf *dev, int gain)
 {
-    if (gain > 30) {
-        log_info("Clamping RXVGA1 gain to 30dB\n");
-        gain = 30;
-    } else if (gain < 5) {
-        log_info("Clamping RXVGA1 gain to 5dB\n");
-        gain = 5;
+    if (gain > BLADERF_RXVGA1_GAIN_MAX) {
+        gain = BLADERF_RXVGA1_GAIN_MAX;
+        log_info("Clamping RXVGA1 gain to %ddB\n", gain);
+    } else if (gain < BLADERF_RXVGA1_GAIN_MIN) {
+        gain = BLADERF_RXVGA1_GAIN_MIN;
+        log_info("Clamping RXVGA1 gain to %ddB\n", gain);
     }
 
     return bladerf_lms_write(dev, 0x76, rxvga1_lut_val2code[gain]);
@@ -618,10 +618,12 @@ int lms_rxvga2_enable(struct bladerf *dev, bool enable)
 /* Set the gain on RXVGA2 */
 int lms_rxvga2_set_gain(struct bladerf *dev, int gain)
 {
-    if (gain > 30) {
-        log_info("Clamping RXVGA2 gain to 30dB\n");
-    } else if (gain < 0) {
-        log_info("Clamping RXVGA2 gain to 0dB\n");
+    if (gain > BLADERF_RXVGA2_GAIN_MAX) {
+        gain = BLADERF_RXVGA2_GAIN_MAX;
+        log_info("Clamping RXVGA2 gain to %ddB\n", gain);
+    } else if (gain < BLADERF_RXVGA2_GAIN_MIN) {
+        gain = BLADERF_RXVGA2_GAIN_MIN;
+        log_info("Clamping RXVGA2 gain to %ddB\n", gain);
     }
 
     /* 3 dB per register code */
@@ -637,12 +639,7 @@ int lms_rxvga2_get_gain(struct bladerf *dev, int *gain)
     if (status == 0) {
         /* 3 dB per code */
         data *= 3;
-
-        if (data > 30) {
-            *gain = 30;
-        } else {
-            *gain = data;
-        }
+        *gain = data;
     }
 
     return status;
@@ -744,12 +741,12 @@ int lms_txvga2_set_gain(struct bladerf *dev, int gain_int)
     uint8_t data;
     int8_t gain;
 
-    if (gain_int > 25) {
-        gain = 25;
-        log_info("Clamping TXVGA2 gain to 25dB\n");
-    } else if (gain_int < 0) {
+    if (gain_int > BLADERF_TXVGA2_GAIN_MAX) {
+        gain = BLADERF_TXVGA2_GAIN_MAX;
+        log_info("Clamping TXVGA2 gain to %ddB\n", gain);
+    } else if (gain_int < BLADERF_TXVGA2_GAIN_MIN) {
         gain = 0;
-        log_info("Clamping TXVGA2 gain to 0dB\n");
+        log_info("Clamping TXVGA2 gain to %ddB\n", gain);
     } else {
         gain = gain_int;
     }
@@ -787,12 +784,12 @@ int lms_txvga1_set_gain(struct bladerf *dev, int gain_int)
 {
     int8_t gain;
 
-    if (gain_int < -35) {
-        log_info("Clamping TXVGA1 gain to -35dB\n");
-        gain = -35;
-    } else if (gain_int > -4) {
-        gain = -4;
-        log_info("Clamping TXVGA1 gain to -4dB\n");
+    if (gain_int < BLADERF_TXVGA1_GAIN_MIN) {
+        gain = BLADERF_TXVGA1_GAIN_MIN;
+        log_info("Clamping TXVGA1 gain to %ddB\n", gain);
+    } else if (gain_int > BLADERF_TXVGA1_GAIN_MAX) {
+        gain = BLADERF_TXVGA1_GAIN_MAX;
+        log_info("Clamping TXVGA1 gain to %ddB\n", gain);
     } else {
         gain = gain_int;
     }
@@ -1563,8 +1560,8 @@ int lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
 {
     /* Select the base address based on which PLL we are configuring */
     const uint8_t base = (mod == BLADERF_MODULE_RX) ? 0x20 : 0x10;
-    const uint32_t lfreq = freq;
     const uint64_t ref_clock = 38400000;
+    uint32_t lfreq = freq;
     uint8_t freqsel = bands[0].value;
     uint16_t nint;
     uint32_t nfrac;
@@ -1574,22 +1571,23 @@ int lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
     uint64_t temp;
     int status, dsm_status;
 
+    /* Clamp out of range values */
+    if (lfreq < BLADERF_FREQUENCY_MIN) {
+        lfreq = BLADERF_FREQUENCY_MIN;
+        log_info("Clamping frequency to: %u\n", lfreq);
+    } else if (lfreq > BLADERF_FREQUENCY_MAX) {
+        lfreq = BLADERF_FREQUENCY_MAX;
+        log_info("Clamping frequency to: %u\n", lfreq);
+    }
+
     /* Figure out freqsel */
-    if (lfreq < bands[0].low) {
-        log_debug("Frequency too low: %u\n", freq);
-        return BLADERF_ERR_INVAL;
-    } else if (lfreq > bands[15].high) {
-        log_debug("Frequency too high: %u\n", freq);
-        return BLADERF_ERR_INVAL;
-    } else {
-        uint8_t i = 0;
-        while(i < 16) {
-            if ((lfreq > bands[i].low) && (lfreq <= bands[i].high)) {
-                freqsel = bands[i].value;
-                break;
-            }
-            i++;
+    uint8_t i = 0;
+    while(i < 16) {
+        if ((lfreq > bands[i].low) && (lfreq <= bands[i].high)) {
+            freqsel = bands[i].value;
+            break;
         }
+        i++;
     }
 
     /* Calculate integer portion of the frequency value */
@@ -1915,7 +1913,7 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
             return status;
         }
 
-        status = bladerf_set_rxvga1(dev, 30);
+        status = bladerf_set_rxvga1(dev, BLADERF_RXVGA1_GAIN_MAX);
         if (status != 0) {
             return status;
         }
@@ -1925,7 +1923,7 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
             return status;
         }
 
-       status = bladerf_set_rxvga2(dev, 30);
+       status = bladerf_set_rxvga2(dev, BLADERF_RXVGA2_GAIN_MAX);
        if (status != 0) {
            return status;
        }

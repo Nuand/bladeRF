@@ -374,9 +374,18 @@ int bladerf_set_bandwidth(struct bladerf *dev, bladerf_module module,
                           unsigned int *actual)
 {
     int status;
-    const lms_bw bw = lms_uint2bw(bandwidth);
+    lms_bw bw;
+
+    if (bandwidth < BLADERF_BANDWIDTH_MIN) {
+        bandwidth = BLADERF_BANDWIDTH_MIN;
+        log_info("Clamping bandwidth to %d Hz\n", bandwidth);
+    } else if (bandwidth > BLADERF_BANDWIDTH_MAX) {
+        bandwidth = BLADERF_BANDWIDTH_MAX;
+        log_info("Clamping bandwidth to %d Hz\n", bandwidth);
+    }
 
     *actual = 0;
+    bw = lms_uint2bw(bandwidth);
 
     status = lms_lpf_enable(dev, module, true);
     if (status != 0) {
@@ -423,7 +432,17 @@ int bladerf_select_band(struct bladerf *dev, bladerf_module module,
 {
     int status;
     uint32_t gpio;
-    uint32_t band = (frequency >= BLADERF_BAND_HIGH) ? 1 : 2;
+    uint32_t band;
+
+    if (frequency < BLADERF_FREQUENCY_MIN) {
+        frequency = BLADERF_FREQUENCY_MIN;
+        log_info("Clamping frequency to %u\n", frequency);
+    } else if (frequency > BLADERF_FREQUENCY_MAX) {
+        frequency = BLADERF_FREQUENCY_MAX;
+        log_info("Clamping frequency to %u\n", frequency);
+    }
+
+    band = (frequency >= BLADERF_BAND_HIGH) ? 1 : 2;
 
     status = lms_select_band(dev, module, frequency);
     if (status != 0) {

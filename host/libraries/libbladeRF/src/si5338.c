@@ -411,6 +411,13 @@ int si5338_set_rational_sample_rate(struct bladerf *dev, bladerf_module module, 
     struct bladerf_rational_rate actual;
     int status;
 
+    /* Enforce minimum sample rate */
+    si5338_rational_reduce(rate);
+    if (rate->integer < BLADERF_SAMPLERATE_MIN) {
+        log_debug("%s: provided sample rate violates minimum\n", __FUNCTION__);
+        return BLADERF_ERR_INVAL;
+    }
+
     /* Save off the value */
     req = *rate;
 
