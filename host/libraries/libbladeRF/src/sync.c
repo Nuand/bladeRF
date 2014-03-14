@@ -377,7 +377,7 @@ int sync_tx(struct bladerf *dev, void *samples, unsigned int num_samples,
 
         pthread_mutex_unlock(&b->lock);
 
-        if (status == -ETIMEDOUT) {
+        if (status == ETIMEDOUT) {
             status = BLADERF_ERR_TIMEOUT;
         } else if (status != 0) {
             status = BLADERF_ERR_UNEXPECTED;

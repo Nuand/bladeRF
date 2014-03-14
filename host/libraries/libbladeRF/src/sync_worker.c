@@ -130,7 +130,6 @@ static void *rx_callback(struct bladerf *dev,
         pthread_cond_signal(&b->buf_produced);
     }
 
-    pthread_mutex_unlock(&b->lock);
 
     if (status == 0) {
         log_verbose("%s worker: buf[%u] = full, buf[%u] = in_flight\n",
@@ -147,11 +146,10 @@ static void *rx_callback(struct bladerf *dev,
 
         /* The API caller may be blocked waiting on us to produce a buffer,
          * so we need to wake them and let them figure out what to do */
-        pthread_mutex_lock(&b->lock);
         pthread_cond_signal(&b->buf_produced);
-        pthread_mutex_unlock(&b->lock);
     }
 
+    pthread_mutex_unlock(&b->lock);
     return next_buf;
 }
 
@@ -247,7 +245,6 @@ static void *tx_callback(struct bladerf *dev,
         b->cons_i = (b->cons_i + 1) % b->num_buffers;
     }
 
-    pthread_mutex_unlock(&b->lock);
 
     if (requests & SYNC_WORKER_STOP) {
         next_buf = NULL;
@@ -269,11 +266,10 @@ static void *tx_callback(struct bladerf *dev,
 
         /* The API caller may be blocked waiting on us to consume a buffer,
          * so we need to wake them and let them figure out what to do */
-        pthread_mutex_lock(&b->lock);
         pthread_cond_signal(&b->buf_consumed);
-        pthread_mutex_unlock(&b->lock);
     }
 
+    pthread_mutex_unlock(&b->lock);
     return next_buf;
 }
 
@@ -511,6 +507,23 @@ static sync_worker_state exec_idle_state(struct bladerf_sync *s)
 static void exec_running_state(struct bladerf_sync *s)
 {
     int status;
+    unsigned int i;
+
+    /* If we've previously timed out on a stream, we'll likely have some stale
+     * buffers marked "in-flight" that have since been cancelled. */
+    pthread_mutex_lock(&s->buf_mgmt.lock);
+    for (i = 0; i < s->buf_mgmt.num_buffers; i++) {
+        if (s->buf_mgmt.status[i] == SYNC_BUFFER_IN_FLIGHT) {
+            s->buf_mgmt.status[i] = SYNC_BUFFER_EMPTY;
+        }
+    }
+
+    /* sync_tx() may be blocked waiting for an empty buffer. Wake it so it
+     * can re-evaluate the state of the buffer it's waiting on */
+    if (s->stream_config.module == BLADERF_MODULE_TX) {
+        pthread_cond_signal(&s->buf_mgmt.buf_consumed);
+    }
+    pthread_mutex_unlock(&s->buf_mgmt.lock);
 
     status = bladerf_stream(s->worker->stream, s->stream_config.module);
 
