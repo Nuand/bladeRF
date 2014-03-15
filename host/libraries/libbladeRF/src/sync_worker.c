@@ -41,6 +41,7 @@
 
 void *sync_worker_task(void *arg);
 
+
 static void *rx_callback(struct bladerf *dev,
                          struct bladerf_stream *stream,
                          struct bladerf_metadata *meta,
@@ -509,12 +510,14 @@ static void exec_running_state(struct bladerf_sync *s)
     int status;
     unsigned int i;
 
-    /* If we've previously timed out on a stream, we'll likely have some stale
-     * buffers marked "in-flight" that have since been cancelled. */
-    pthread_mutex_lock(&s->buf_mgmt.lock);
-    for (i = 0; i < s->buf_mgmt.num_buffers; i++) {
-        if (s->buf_mgmt.status[i] == SYNC_BUFFER_IN_FLIGHT) {
-            s->buf_mgmt.status[i] = SYNC_BUFFER_EMPTY;
+    if (s->module == BLADERF_MODULE_TX) {
+        /* If we've previously timed out on a stream, we'll likely have some
+         * stale buffers marked "in-flight" that have since been cancelled. */
+        pthread_mutex_lock(&s->buf_mgmt.lock);
+        for (i = 0; i < s->buf_mgmt.num_buffers; i++) {
+            if (s->buf_mgmt.status[i] == SYNC_BUFFER_IN_FLIGHT) {
+                s->buf_mgmt.status[i] = SYNC_BUFFER_EMPTY;
+            }
         }
     }
 
