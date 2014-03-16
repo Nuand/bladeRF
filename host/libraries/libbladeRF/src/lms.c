@@ -1570,6 +1570,7 @@ int lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
     uint64_t vco_x;
     uint64_t temp;
     int status, dsm_status;
+    uint8_t i = 0;
 
     /* Clamp out of range values */
     if (lfreq < BLADERF_FREQUENCY_MIN) {
@@ -1581,7 +1582,7 @@ int lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
     }
 
     /* Figure out freqsel */
-    uint8_t i = 0;
+
     while(i < 16) {
         if ((lfreq > bands[i].low) && (lfreq <= bands[i].high)) {
             freqsel = bands[i].value;
