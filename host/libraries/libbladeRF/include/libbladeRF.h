@@ -30,8 +30,8 @@
 extern "C" {
 #endif
 
-#if defined _WIN32 || defined _CYGWIN__
-#   include <Windows.h>
+#if defined _WIN32 || defined __CYGWIN__
+#   include <windows.h>
 #   define CALL_CONV __cdecl
 #   ifdef __GNUC__
 #       define API_EXPORT __attribute__ ((dllexport))
