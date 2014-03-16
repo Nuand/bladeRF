@@ -510,7 +510,7 @@ static void exec_running_state(struct bladerf_sync *s)
     int status;
     unsigned int i;
 
-    if (s->module == BLADERF_MODULE_TX) {
+    if (s->stream_config.module == BLADERF_MODULE_TX) {
         /* If we've previously timed out on a stream, we'll likely have some
          * stale buffers marked "in-flight" that have since been cancelled. */
         pthread_mutex_lock(&s->buf_mgmt.lock);
@@ -519,14 +519,10 @@ static void exec_running_state(struct bladerf_sync *s)
                 s->buf_mgmt.status[i] = SYNC_BUFFER_EMPTY;
             }
         }
-    }
 
-    /* sync_tx() may be blocked waiting for an empty buffer. Wake it so it
-     * can re-evaluate the state of the buffer it's waiting on */
-    if (s->stream_config.module == BLADERF_MODULE_TX) {
         pthread_cond_signal(&s->buf_mgmt.buf_consumed);
-    }
-    pthread_mutex_unlock(&s->buf_mgmt.lock);
+        pthread_mutex_unlock(&s->buf_mgmt.lock);
+    } /* TODO similar handling for RX */
 
     status = bladerf_stream(s->worker->stream, s->stream_config.module);
 
