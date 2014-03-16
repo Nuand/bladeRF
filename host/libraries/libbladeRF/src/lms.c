@@ -1935,6 +1935,55 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
         if (status != 0) {
             return status;
         }
+        /* Special decoding addressing case for RXVGA2 */
+        if (module == BLADERF_DC_CAL_RXVGA2) {
+            switch (i) {
+
+                case 0:
+                    /* Set to direct control signals: RXVGA2 Decode = 1 */
+                    status = bladerf_lms_read(dev, 0x64, &val);
+                    if (status != 0) {
+                        return status;
+                    }
+
+                    val |= 1;
+
+                    status = bladerf_lms_write(dev, 0x64, val);
+                    if (status != 0) {
+                        return status;
+                    }
+
+                    /* VGA2GAINA = 0110, VGA2GAINB = 0 */
+                    val = 6;
+                    status = bladerf_lms_write(dev, 0x68, val);
+                    if (status != 0) {
+                        return status;
+                    }
+
+                case 2:
+                    /* VGA2GAINA = 0, VGA2GAINB = 0110 */
+                    val = 6 << 4;
+                    status = bladerf_lms_write(dev, 0x68, val);
+                    if (status != 0) {
+                        return status;
+                    }
+
+                case 4:
+                    /* Set to decode control signals: RXVGA2 Decode = 0 */
+                    status = bladerf_lms_read(dev, 0x64, &val);
+                    if (status != 0) {
+                        return status;
+                    }
+
+                    val &= (~1);
+
+                    status = bladerf_lms_write(dev, 0x64, val);
+                    if (status != 0) {
+                        return status;
+                    }
+                    break;
+            }
+        }
     }
 
     /* Special case for LPF tuning module where results are

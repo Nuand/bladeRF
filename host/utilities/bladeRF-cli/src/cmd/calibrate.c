@@ -46,7 +46,7 @@ int cmd_calibrate(struct cli_state *state, int argc, char **argv)
     }
 
 
-    if  (argc == 1) {
+    if (argc == 1) {
 
         /* Ensure both TX and RX are enabled */
         status = bladerf_enable_module(state->dev, BLADERF_MODULE_TX, true);
@@ -103,10 +103,9 @@ int cmd_calibrate(struct cli_state *state, int argc, char **argv)
             return CLI_RET_INVPARAM;
         }
 
-        if (status != 0) {
-            /* Calibrate it */
-            status = bladerf_calibrate_dc(state->dev, module);
-        }
+        /* Calibrate it */
+        status = bladerf_calibrate_dc(state->dev, module);
+
     } else {
         return CLI_RET_INVPARAM;
     }
