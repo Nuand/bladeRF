@@ -137,7 +137,7 @@ int bladerf_init_device(struct bladerf *dev)
             return status;
         }
 
-        bladerf_set_sample_rate(dev, BLADERF_MODULE_RX, 1000000, NULL);
+        status = bladerf_set_sample_rate(dev, BLADERF_MODULE_RX, 1000000, NULL);
         if (status != 0) {
             return status;
         }
