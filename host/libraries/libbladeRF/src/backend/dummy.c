@@ -145,19 +145,6 @@ int dummy_get_correction(struct bladerf *dev, bladerf_module module,
     return 0;
 }
 
-static int dummy_tx(struct bladerf *dev, bladerf_format format, void *samples,
-                   int n, struct bladerf_metadata *metadata)
-{
-    return 0;
-}
-
-static int dummy_rx(struct bladerf *dev, bladerf_format format, void *samples,
-                   int n, struct bladerf_metadata *metadata)
-{
-    return 0;
-}
-
-
 static int dummy_stream_init(struct bladerf_stream *stream)
 {
     return 0;
@@ -215,8 +202,6 @@ const struct bladerf_fn bladerf_dummy_fn = {
     FIELD_INIT(.dac_write, dummy_dac_write),
 
     FIELD_INIT(.enable_module, dummy_enable_module),
-    FIELD_INIT(.rx, dummy_rx),
-    FIELD_INIT(.tx, dummy_tx),
 
     FIELD_INIT(.init_stream, dummy_stream_init),
     FIELD_INIT(.stream, dummy_stream),
