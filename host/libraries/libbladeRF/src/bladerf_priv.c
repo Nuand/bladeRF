@@ -64,7 +64,6 @@ size_t c16_samples_to_bytes(size_t n_samples)
 int bladerf_init_device(struct bladerf *dev)
 {
     int status;
-    unsigned int actual;
     uint32_t val;
 
     /* Readback the GPIO values to see if they are default or already set */
@@ -72,47 +71,95 @@ int bladerf_init_device(struct bladerf *dev)
     if (status != 0) {
         log_warning("Failed to read GPIO config, skipping device initialization: %s\n",
                     bladerf_strerror(status));
+
+        /* This has been left non-fatal due to some older FW/FPGA configs
+         * not supporting this call. However, it's questionable if such
+         * FW/FPGA configs will snowball into other errors after this anyway.
+         *
+         * TODO Revisit this when dropping support for older FW
+         */
         return 0;
     }
 
-    if ((val&0x7f) == 0) {
+    if ((val & 0x7f) == 0) {
         log_verbose( "Default GPIO value found - initializing device\n" );
 
         /* Set the GPIO pins to enable the LMS and select the low band */
-        bladerf_config_gpio_write( dev, 0x57 );
+        status = bladerf_config_gpio_write(dev, 0x57);
+        if (status != 0) {
+            return status;
+        }
 
         /* Disable the front ends */
-        lms_enable_rffe(dev, BLADERF_MODULE_TX, false);
-        lms_enable_rffe(dev, BLADERF_MODULE_RX, false);
+        status = lms_enable_rffe(dev, BLADERF_MODULE_TX, false);
+        if (status != 0) {
+            return status;
+        }
+
+        status = lms_enable_rffe(dev, BLADERF_MODULE_RX, false);
+        if (status != 0) {
+            return status;
+        }
 
         /* Set the internal LMS register to enable RX and TX */
-        bladerf_lms_write( dev, 0x05, 0x3e );
+        status = bladerf_lms_write(dev, 0x05, 0x3e);
+        if (status != 0) {
+            return status;
+        }
 
         /* LMS FAQ: Improve TX spurious emission performance */
-        bladerf_lms_write( dev, 0x47, 0x40 );
+        status = bladerf_lms_write(dev, 0x47, 0x40);
+        if (status != 0) {
+            return status;
+        }
 
         /* LMS FAQ: Improve ADC performance */
-        bladerf_lms_write( dev, 0x59, 0x29 );
+        status = bladerf_lms_write(dev, 0x59, 0x29);
+        if (status != 0) {
+            return status;
+        }
 
         /* LMS FAQ: Common mode voltage for ADC */
-        bladerf_lms_write( dev, 0x64, 0x36 );
+        status = bladerf_lms_write(dev, 0x64, 0x36);
+        if (status != 0) {
+            return status;
+        }
 
         /* LMS FAQ: Higher LNA Gain */
-        bladerf_lms_write( dev, 0x79, 0x37 );
+        status = bladerf_lms_write(dev, 0x79, 0x37);
+        if (status != 0) {
+            return status;
+        }
 
         /* Set a default saplerate */
-        bladerf_set_sample_rate( dev, BLADERF_MODULE_TX, 1000000, &actual );
-        bladerf_set_sample_rate( dev, BLADERF_MODULE_RX, 1000000, &actual );
+        status = bladerf_set_sample_rate(dev, BLADERF_MODULE_TX, 1000000, NULL);
+        if (status != 0) {
+            return status;
+        }
+
+        bladerf_set_sample_rate(dev, BLADERF_MODULE_RX, 1000000, NULL);
+        if (status != 0) {
+            return status;
+        }
 
         /* Set a default frequency of 1GHz */
-        bladerf_set_frequency( dev, BLADERF_MODULE_TX, 1000000000 );
-        bladerf_set_frequency( dev, BLADERF_MODULE_RX, 1000000000 );
+        status = bladerf_set_frequency(dev, BLADERF_MODULE_TX, 1000000000);
+        if (status != 0) {
+            return status;
+        }
+
+        status = bladerf_set_frequency(dev, BLADERF_MODULE_RX, 1000000000);
+        if (status != 0) {
+            return status;
+        }
 
         /* Set the calibrated VCTCXO DAC value */
-        bladerf_dac_write( dev, dev->dac_trim );
+        status = bladerf_dac_write(dev, dev->dac_trim);
+        if (status != 0) {
+            return status;
+        }
     }
 
-    /* TODO: Read this return from the SPI calls */
     return 0;
 }
 
