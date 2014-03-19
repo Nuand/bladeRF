@@ -100,8 +100,12 @@ int cmd_flash_init_cal(struct cli_state *state, int argc, char **argv)
             rv = 0;
         }
     } else {
+        char *filename;
         assert(argc == 4);
-        rv = bladerf_image_write(image, argv[3]);
+
+        filename = interactive_expand_path(argv[3]);
+        rv = bladerf_image_write(image, filename);
+        free(filename);
     }
 
 cmd_flash_init_cal_out:
