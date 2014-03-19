@@ -217,7 +217,9 @@ static int print_image_metadata(struct cli_state *s, struct params *p,
         } else {
             strncpy(datetime, "Invalid value", sizeof(datetime));
         }
+
         printf("Timestamp: %s\n", datetime);
+        printf("Serial #: %s\n", image->serial);
 
         switch (image->type) {
             case BLADERF_IMAGE_TYPE_RAW:
