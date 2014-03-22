@@ -48,6 +48,12 @@ int cmd_calibrate(struct cli_state *state, int argc, char **argv)
 
     if (argc == 1) {
 
+        /* Calibrate LPF Tuning Module */
+        status = bladerf_calibrate_dc(state->dev, BLADERF_DC_CAL_LPF_TUNING);
+        if (status != 0) {
+            goto cmd_calibrate_err;
+        }
+
         /* Ensure both TX and RX are enabled */
         status = bladerf_enable_module(state->dev, BLADERF_MODULE_TX, true);
         if (status != 0) {
@@ -55,12 +61,6 @@ int cmd_calibrate(struct cli_state *state, int argc, char **argv)
         }
 
         status = bladerf_enable_module(state->dev, BLADERF_MODULE_RX, true);
-        if (status != 0) {
-            goto cmd_calibrate_err;
-        }
-
-        /* Calibrate LPF Tuning Module */
-        status = bladerf_calibrate_dc(state->dev, BLADERF_DC_CAL_LPF_TUNING);
         if (status != 0) {
             goto cmd_calibrate_err;
         }
@@ -82,6 +82,10 @@ int cmd_calibrate(struct cli_state *state, int argc, char **argv)
         if (status != 0) {
             goto cmd_calibrate_err;
         }
+
+        /* Disable TX and RX modules */
+        status = bladerf_enable_module(state->dev, BLADERF_MODULE_TX, false);
+        status = bladerf_enable_module(state->dev, BLADERF_MODULE_RX, false);
 
     } else if (argc == 2) {
         bladerf_cal_module module;
@@ -105,6 +109,14 @@ int cmd_calibrate(struct cli_state *state, int argc, char **argv)
 
         /* Calibrate it */
         status = bladerf_calibrate_dc(state->dev, module);
+
+        if (module != BLADERF_DC_CAL_LPF_TUNING) {
+            if (module == BLADERF_DC_CAL_TX_LPF) {
+                status = bladerf_enable_module(state->dev, BLADERF_MODULE_TX, false);
+            } else {
+                status = bladerf_enable_module(state->dev, BLADERF_MODULE_RX, false);
+            }
+        }
 
     } else {
         return CLI_RET_INVPARAM;

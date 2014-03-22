@@ -1530,7 +1530,7 @@ static inline int tune_vcocap(struct bladerf *dev, uint8_t base, uint8_t data)
     stop_i -= 1;
     log_verbose( "Found upper limit VCOCAP: %d\n", stop_i );
 
-    vcocap = (start_i + stop_i) >> 1 ;
+    vcocap = (start_i + stop_i) >> 1;
 
     log_verbose( "Goldilocks VCOCAP: %d\n", vcocap );
 
@@ -1673,7 +1673,7 @@ int lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
     }
 
     data &= ~(0x1f);
-    data |= 3;
+    // data |= 3;
 
     status = bladerf_lms_write(dev, base + 7, data);
     if (status != 0) {
@@ -1686,6 +1686,7 @@ int lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
     }
 
     data &= ~(0x1f);
+    // data |= 3;
     status = bladerf_lms_write(dev, base + 8, data);
     if (status != 0) {
         goto lms_set_frequency_error;
