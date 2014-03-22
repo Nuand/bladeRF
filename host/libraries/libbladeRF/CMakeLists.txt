@@ -182,6 +182,7 @@ include_directories(${LIBBLADERF_INCLUDES})
 # Configure source files
 ################################################################################
 set(LIBBLADERF_SOURCE
+        src/async.c
         src/backend.c
         src/bladerf.c
         src/bladerf_priv.c

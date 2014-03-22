@@ -32,6 +32,7 @@
 #include <libusb.h>
 
 #include "bladerf_priv.h"
+#include "async.h"
 #include "backend/libusb.h"
 #include "conversions.h"
 #include "minmax.h"

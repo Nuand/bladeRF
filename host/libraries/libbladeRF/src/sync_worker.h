@@ -60,7 +60,7 @@ struct sync_worker {
                                      * change */
 
     /* The requests lock should always be acquired AFTER
-     * the sync->buf_mgmg.lock
+     * the sync->buf_mgmt.lock
      */
     unsigned int requests;
     pthread_cond_t requests_pending;

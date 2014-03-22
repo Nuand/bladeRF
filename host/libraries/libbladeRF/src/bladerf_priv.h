@@ -63,34 +63,6 @@ struct bladerf_error {
     int value;
 };
 
-typedef enum {
-    STREAM_IDLE,            /* Idle and initialized */
-    STREAM_RUNNING,         /* Currently running */
-    STREAM_SHUTTING_DOWN,   /* Currently tearing down.
-                             * See bladerf_stream->error_code to determine
-                             * whether or not the shutdown was a clean exit
-                             * or due to an error. */
-    STREAM_DONE             /* Done and deallocated */
-} bladerf_stream_state;
-
-struct bladerf_stream {
-    struct bladerf *dev;
-    bladerf_module module;
-    int error_code;
-    bladerf_stream_state state;
-
-    size_t samples_per_buffer;
-    size_t num_buffers;
-    size_t num_transfers;
-    bladerf_format format;
-
-    void **buffers;
-    void *backend_data;
-
-    bladerf_stream_cb cb;
-    void *user_data;
-};
-
 /* Forward declaration for the function table */
 struct bladerf;
 

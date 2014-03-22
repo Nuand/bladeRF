@@ -1152,9 +1152,10 @@ typedef void *(*bladerf_stream_cb)(struct bladerf *dev,
  *
  * @param[in]   format          Sample data format
  *
- * @param[in]   buffer_size     Size of allocated buffers, in samples.
- *                              Note that the physical size of the buffer
- *                              is a function of this and the format parameter.
+ * @param[in]   samples_per_buffer  Size of allocated buffers, in units of
+ *                                  samples Note that the physical size of the
+ *                                  buffer is a function of this and the format
+ *                                  parameter.
  *
  * @param[in]   num_transfers   Maximum number of transfers that may be
  *                              in-flight simultaneously. This must be <= the
@@ -1177,7 +1178,7 @@ int CALL_CONV bladerf_init_stream(struct bladerf_stream **stream,
                                   void ***buffers,
                                   size_t num_buffers,
                                   bladerf_format format,
-                                  size_t buffer_size,
+                                  size_t samples_per_buffer,
                                   size_t num_transfers,
                                   void *user_data);
 
