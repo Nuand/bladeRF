@@ -1057,8 +1057,11 @@ struct bladerf_stream;
 /**
  * Stream callback
  *
- * To avoid timeouts, stream callbacks should not block or perform long-running
- * operations. Callbacks should be handled quickly, with work offloaded to other
+ * Stream callbacks <b>must not</b> block or perform long-running operations.
+ * Otherwise, timeouts may occur and the callbacks for another module may be
+ * starved.
+ *
+ * Callbacks should be handled quickly, with work offloaded to other
  * threads.
  *
  * In most use-cases, stream callbacks will be executing in a thread that is

@@ -2041,6 +2041,8 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
     /* Currently unused - zero out for out own debugging sanity... */
     memset(&metadata, 0, sizeof(metadata));
 
+    pthread_mutex_lock(&stream->lock);
+
     /* Check to see if the transfer has been cancelled or errored */
     if( transfer->status != LIBUSB_TRANSFER_COMPLETED ) {
 
@@ -2144,6 +2146,8 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
             stream_data->libusb_completed = 1;
         }
     }
+
+    pthread_mutex_unlock(&stream->lock);
 }
 
 static int lusb_stream_init(struct bladerf_stream *stream)
@@ -2217,6 +2221,8 @@ static int lusb_stream(struct bladerf_stream *stream, bladerf_module module)
 
     /* Currently unused, so zero it out for a sanity check when debugging */
     memset(&metadata, 0, sizeof(metadata));
+
+    pthread_mutex_lock(&stream->lock);
 
     /* Set up initial set of buffers */
     for( i = 0; i < stream->num_transfers; i++ ) {
@@ -2298,6 +2304,7 @@ static int lusb_stream(struct bladerf_stream *stream, bladerf_module module)
         }
     }
 
+    pthread_mutex_unlock(&stream->lock);
     return 0;
 }
 

@@ -87,7 +87,7 @@ option(LIBUSB_DETACH_KERNEL_DRIVER
 
 option(ENABLE_LIBBLADERF_SYNC
     "Enable the libbladeRF synchronous data interface. Requires pthreads."
-    ${HAVE_THREADS}
+    ON
 )
 
 option(ENABLE_LIBBLADERF_SYNC_LOG_VERBOSE
@@ -146,6 +146,10 @@ set(LIBBLADERF_INCLUDES
 ################################################################################
 # Build dependencies
 ################################################################################
+if(NOT HAVE_THREADS)
+    message(FATAL_ERROR "Pthreads is required for libbladeRF")
+endif()
+
 if(ENABLE_BACKEND_LIBUSB)
     find_package(LibUSB)
     if(NOT LIBUSB_FOUND)
@@ -160,13 +164,9 @@ if(ENABLE_BACKEND_LIBUSB)
 endif(ENABLE_BACKEND_LIBUSB)
 
 if(ENABLE_LIBBLADERF_SYNC)
-    if(NOT HAVE_THREADS)
-        message(FATAL_ERROR "Pthreads is required for the libbladeRF sync interface")
-    endif()
-
     if(MSVC)
         set(LIBBLADERF_INCLUDES ${LIBBLADERF_INCLUDES}
-                ${LIBPTHREADSWIN32_INCLUDE_DIRS})
+            ${LIBPTHREADSWIN32_INCLUDE_DIRS})
     endif()
 
     add_definitions(-DENABLE_LIBBLADERF_SYNC)

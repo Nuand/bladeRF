@@ -21,6 +21,7 @@
 #ifndef BLADERF_ASYNC_H_
 #define BLADERF_ASYNC_H_
 
+#include <pthread.h>
 #include "libbladeRF.h"
 #include "bladerf_priv.h"
 
@@ -35,18 +36,22 @@ typedef enum {
 } bladerf_stream_state;
 
 struct bladerf_stream {
-    struct bladerf *dev;
 
+    /* These items are configured in async_init_stream() and should only be
+     * read (NOT MODIFIED) during the execution of the stream */
+    struct bladerf *dev;
     bladerf_module module;
     bladerf_format format;
     bladerf_stream_cb cb;
     void *user_data;
-
     size_t samples_per_buffer;
     size_t num_buffers;
     size_t num_transfers;
     void **buffers;
 
+    pthread_mutex_t lock;
+
+    /* The following items must be accessed atomically */
     int error_code;
     bladerf_stream_state state;
     void *backend_data;

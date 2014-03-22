@@ -55,6 +55,11 @@ int async_init_stream(struct bladerf_stream **stream,
         return BLADERF_ERR_MEM;
     }
 
+    if (pthread_mutex_init(&lstream->lock, NULL) != 0) {
+        free(lstream);
+        return BLADERF_ERR_UNEXPECTED;
+    }
+
     lstream->dev = dev;
     lstream->error_code = 0;
     lstream->state = STREAM_IDLE;
