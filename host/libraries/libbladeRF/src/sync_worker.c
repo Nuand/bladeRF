@@ -49,7 +49,6 @@ static void *rx_callback(struct bladerf *dev,
                          size_t num_samples,
                          void *user_data)
 {
-    int status = 0;
     unsigned int requests;      /* Pending requests */
     unsigned int next_idx;
     unsigned int samples_idx;
@@ -74,81 +73,30 @@ static void *rx_callback(struct bladerf *dev,
 
     pthread_mutex_lock(&b->lock);
 
-    /* Mark this buffer as full */
+    /* Get the index of the buffer we've been notified about having been
+     * completed */
     samples_idx = sync_buf2idx(b, samples);
-    assert(b->status[samples_idx] == SYNC_BUFFER_IN_FLIGHT);
-    b->status[samples_idx] = SYNC_BUFFER_FULL;
 
-    /* Update to our next buffer */
-    next_idx = b->prod_i;
-    next_buf = b->buffers[next_idx];
-
-    /* Wait for a buffer to free up, if needed */
-    if (s->stream_config.timeout_ms == 0) {
-        while (status == 0 &&
-                b->status[next_idx] != SYNC_BUFFER_EMPTY &&
-                (requests & SYNC_WORKER_STOP) == 0) {
-
-            log_verbose("%s worker: Infinite wait for buf[%u] to empty\n",
-                    MODULE_STR(s), next_idx);
-
-            status = pthread_cond_wait(&b->buf_consumed, &b->lock);
-
-            /* Fetch requests that we might have gotten while sleeping */
-            pthread_mutex_lock(&w->request_lock);
-            requests = w->requests;
-            pthread_mutex_unlock(&w->request_lock);
-        }
-    } else {
-        struct timespec timeout_abs;
-        status = populate_abs_timeout(&timeout_abs,
-                s->stream_config.timeout_ms);
-
-        while (status == 0 &&
-               b->status[next_idx] != SYNC_BUFFER_EMPTY &&
-               (requests & SYNC_WORKER_STOP) == 0) {
-
-            log_verbose("%s worker: Timed wait for buf[%u] to empty\n",
-                    MODULE_STR(s), next_idx);
-
-            status = pthread_cond_timedwait(&b->buf_consumed, &b->lock,
-                    &timeout_abs);
-
-            pthread_mutex_lock(&w->request_lock);
-            requests = w->requests;
-            pthread_mutex_unlock(&w->request_lock);
-        }
-    }
-
-    if (requests & SYNC_WORKER_STOP) {
-        next_buf = NULL;
-        log_verbose("%s worker: Got STOP request while waiting in callback. "
-                    "Ending stream.\n", MODULE_STR(s));
-    } else if (status == 0) {
-        b->status[next_idx] = SYNC_BUFFER_IN_FLIGHT;
+    if (b->status[b->prod_i] == SYNC_BUFFER_EMPTY) {
+        next_idx = b->prod_i;
         b->prod_i = (next_idx + 1) % b->num_buffers;
 
-        pthread_cond_signal(&b->buf_produced);
-    }
-
-
-    if (status == 0) {
-        log_verbose("%s worker: buf[%u] = full, buf[%u] = in_flight\n",
-                    MODULE_STR(s), samples_idx, next_idx);
+        b->status[samples_idx] = SYNC_BUFFER_FULL;
+        b->status[next_idx] = SYNC_BUFFER_IN_FLIGHT;
+        pthread_cond_signal(&b->buf_ready);
     } else {
-        next_buf = NULL;
-        if (status == ETIMEDOUT) {
-            log_debug("%s worker: Timed out. Shutting down.\n",
-                      MODULE_STR(s), status);
-        } else {
-            log_debug("%s worker: Unexpected error (%d), shutting down.\n",
-                      MODULE_STR(s), status);
-        }
 
-        /* The API caller may be blocked waiting on us to produce a buffer,
-         * so we need to wake them and let them figure out what to do */
-        pthread_cond_signal(&b->buf_produced);
+        /* TODO propgate back the RX Overrun to the sync_rx() caller */
+        log_warning("RX overrun @ buffer %u\r\n", samples_idx);
+
+        next_idx = samples_idx;
+        b->status[samples_idx] = SYNC_BUFFER_IN_FLIGHT;
     }
+
+    next_buf = b->buffers[next_idx];
+
+    log_verbose("%s worker: buf[%u] = full, buf[%u] = in_flight\n",
+                MODULE_STR(s), samples_idx, next_idx);
 
     pthread_mutex_unlock(&b->lock);
     return next_buf;
@@ -161,11 +109,8 @@ static void *tx_callback(struct bladerf *dev,
                          size_t num_samples,
                          void *user_data)
 {
-    int status = 0;
     unsigned int requests;      /* Pending requests */
     unsigned int completed_idx; /* Index of completed buffer */
-    unsigned int next_idx;      /* Index of next buffer to submit */
-    void *next_buf = NULL;      /* Next buffer to submit for transmission */
 
     struct bladerf_sync *s = (struct bladerf_sync *)user_data;
     struct sync_worker  *w = s->worker;
@@ -180,98 +125,29 @@ static void *tx_callback(struct bladerf *dev,
 
     if (requests & SYNC_WORKER_STOP) {
         log_verbose("%s worker: Got STOP request upon entering callback. "
-                    "Ending stream.\n", MODULE_STR(s));
+                    "Ending stream.\r\n", MODULE_STR(s));
         return NULL;
     }
 
-    pthread_mutex_lock(&b->lock);
 
     /* Mark the last transfer as being completed. Note that the first
      * callbacks we get have samples=NULL */
     if (samples != NULL) {
+
+        pthread_mutex_lock(&b->lock);
+
         completed_idx = sync_buf2idx(b, samples);
         assert(b->status[completed_idx] == SYNC_BUFFER_IN_FLIGHT);
         b->status[completed_idx] = SYNC_BUFFER_EMPTY;
-        pthread_cond_signal(&b->buf_consumed);
-    } else {
-        completed_idx = UINT_MAX;   /* Just for debug purposes */
+
+        pthread_cond_signal(&b->buf_ready);
+        pthread_mutex_unlock(&b->lock);
+
+        log_verbose("%s worker: Buffer %u emptied.\r\n",
+                    MODULE_STR(s), completed_idx);
     }
 
-    /* Wait for a full buffer to become available for consumption */
-    if (s->stream_config.timeout_ms == 0) {
-        while (status == 0 &&
-               b->status[b->cons_i] != SYNC_BUFFER_FULL &&
-               (requests & SYNC_WORKER_STOP) == 0) {
-
-            log_verbose("%s worker: Infinite wait for buf[%u] to fill\n",
-                    MODULE_STR(s), b->cons_i);
-
-            status = pthread_cond_wait(&b->buf_produced, &b->lock);
-
-            /* Fetch requests that we might have gotten while sleeping */
-            pthread_mutex_lock(&w->request_lock);
-            requests = w->requests;
-            pthread_mutex_unlock(&w->request_lock);
-
-            log_verbose("%s worker: Woke, requests are now: 0x%08x\n",
-                        MODULE_STR(s), requests);
-        }
-    } else {
-        struct timespec timeout_abs;
-        status = populate_abs_timeout(&timeout_abs,
-                s->stream_config.timeout_ms);
-
-        while (status == 0 &&
-               b->status[b->cons_i] != SYNC_BUFFER_FULL &&
-               (requests & SYNC_WORKER_STOP) == 0) {
-
-            log_verbose("%s worker: Timed wait for buf[%u] to fill\n",
-                    MODULE_STR(s), b->cons_i);
-
-            status = pthread_cond_timedwait(&b->buf_produced, &b->lock,
-                    &timeout_abs);
-
-            pthread_mutex_lock(&w->request_lock);
-            requests = w->requests;
-            pthread_mutex_unlock(&w->request_lock);
-        }
-    }
-
-    /* Mark this buffer as being sent and update our reference to the
-     * next buffer we'll use */
-    if (status == 0) {
-        next_idx = b->cons_i;
-        b->status[next_idx] = SYNC_BUFFER_IN_FLIGHT;
-        next_buf = b->buffers[next_idx];
-        b->cons_i = (b->cons_i + 1) % b->num_buffers;
-    }
-
-
-    if (requests & SYNC_WORKER_STOP) {
-        next_buf = NULL;
-        log_verbose("%s worker: Got STOP request while waiting in callback. "
-                    "Ending stream.\n", MODULE_STR(s));
-    } else if (status == 0) {
-        log_verbose("%s worker: buf[%u] = in_flight, buf[%u] = empty\n",
-                    MODULE_STR(s), next_idx, completed_idx);
-    } else {
-        next_buf = NULL;
-
-        if (status == ETIMEDOUT) {
-            log_debug("%s worker: Timed out. Shutting down.\n",
-                      MODULE_STR(s), status);
-        } else {
-            log_debug("%s worker: Unexpected error (%d), shutting down.\n",
-                      MODULE_STR(s), status);
-        }
-
-        /* The API caller may be blocked waiting on us to consume a buffer,
-         * so we need to wake them and let them figure out what to do */
-        pthread_cond_signal(&b->buf_consumed);
-    }
-
-    pthread_mutex_unlock(&b->lock);
-    return next_buf;
+    return BLADERF_STREAM_NO_DATA;
 }
 
 int sync_worker_init(struct bladerf_sync *s)
@@ -520,7 +396,7 @@ static void exec_running_state(struct bladerf_sync *s)
             }
         }
 
-        pthread_cond_signal(&s->buf_mgmt.buf_consumed);
+        pthread_cond_signal(&s->buf_mgmt.buf_ready);
         pthread_mutex_unlock(&s->buf_mgmt.lock);
     } /* TODO similar handling for RX */
 

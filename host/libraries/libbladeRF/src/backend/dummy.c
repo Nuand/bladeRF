@@ -155,6 +155,13 @@ static int dummy_stream(struct bladerf_stream *stream, bladerf_module module)
     return 0;
 }
 
+static int dummy_submit_stream_buffer(struct bladerf_stream *stream,
+                                      void *buffer,
+                                      unsigned int timeout_ms)
+{
+    return 0;
+}
+
 void dummy_deinit_stream(struct bladerf_stream *stream)
 {
     return;
@@ -205,5 +212,6 @@ const struct bladerf_fn bladerf_dummy_fn = {
 
     FIELD_INIT(.init_stream, dummy_stream_init),
     FIELD_INIT(.stream, dummy_stream),
+    FIELD_INIT(.submit_stream_buffer, dummy_submit_stream_buffer),
     FIELD_INIT(.deinit_stream, dummy_deinit_stream),
 };

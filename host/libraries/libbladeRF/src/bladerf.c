@@ -575,6 +575,13 @@ int bladerf_stream(struct bladerf_stream *stream, bladerf_module module)
     return async_run_stream(stream, module);
 }
 
+int bladerf_submit_stream_buffer(struct bladerf_stream *stream,
+                                 void *buffer,
+                                 unsigned int timeout_ms)
+{
+    return async_submit_stream_buffer(stream, buffer, timeout_ms);
+}
+
 void bladerf_deinit_stream(struct bladerf_stream *stream)
 {
     return async_deinit_stream(stream);

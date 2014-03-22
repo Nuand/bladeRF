@@ -46,7 +46,6 @@ struct bladerf_stream {
     void *user_data;
     size_t samples_per_buffer;
     size_t num_buffers;
-    size_t num_transfers;
     void **buffers;
 
     pthread_mutex_t lock;
@@ -54,6 +53,7 @@ struct bladerf_stream {
     /* The following items must be accessed atomically */
     int error_code;
     bladerf_stream_state state;
+    pthread_cond_t can_submit_buffer;
     void *backend_data;
 };
 
@@ -68,7 +68,15 @@ int async_init_stream(struct bladerf_stream **stream,
                       size_t num_transfers,
                       void *user_data);
 
+/* Backend code is responsible for acquiring stream->lock in thier callbacks */
 int async_run_stream(struct bladerf_stream *stream, bladerf_module module);
+
+
+/* This function WILL acquire stream->lock before calling backend code */
+int async_submit_stream_buffer(struct bladerf_stream *stream,
+                               void *buffer,
+                               unsigned int timeout_ms);
+
 
 void async_deinit_stream(struct bladerf_stream *stream);
 

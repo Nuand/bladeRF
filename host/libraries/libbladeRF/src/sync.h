@@ -58,15 +58,24 @@ struct buffer_mgmt {
     unsigned int partial_off;   /**< Current index into partial buffer */
 
     pthread_mutex_t lock;
-    pthread_cond_t  buf_consumed;
-    pthread_cond_t  buf_produced;
+    pthread_cond_t  buf_ready;  /** Buffer produced by RX callback, or
+                                 *  buffer emptied by TX callback */
 };
+
+/* State of API-side sync inferface */
+typedef enum {
+    SYNC_STATE_CHECK_AND_START_WORKER,
+    SYNC_STATE_WAIT_FOR_BUFFER,
+    SYNC_STATE_BUFFER_READY,
+    SYNC_STATE_USING_BUFFER
+} sync_state;
 
 struct bladerf_sync {
     struct bladerf *dev;
+    sync_state state;
     struct buffer_mgmt buf_mgmt;
-    struct sync_worker *worker;
     struct stream_config stream_config;
+    struct sync_worker *worker;
 };
 
 /**

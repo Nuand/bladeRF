@@ -60,12 +60,16 @@ int async_init_stream(struct bladerf_stream **stream,
         return BLADERF_ERR_UNEXPECTED;
     }
 
+    if (pthread_cond_init(&lstream->can_submit_buffer, NULL) != 0) {
+        free(lstream);
+        return BLADERF_ERR_UNEXPECTED;
+    }
+
     lstream->dev = dev;
     lstream->error_code = 0;
     lstream->state = STREAM_IDLE;
     lstream->samples_per_buffer = samples_per_buffer;
     lstream->num_buffers = num_buffers;
-    lstream->num_transfers = num_transfers;
     lstream->format = format;
     lstream->cb = callback;
     lstream->user_data = user_data;
@@ -109,7 +113,7 @@ int async_init_stream(struct bladerf_stream **stream,
         free(lstream);
     } else {
         /* Perform any backend-specific stream initialization */
-        status = dev->fn->init_stream(lstream);
+        status = dev->fn->init_stream(lstream, num_transfers);
 
         if (status < 0) {
             bladerf_deinit_stream(lstream);
@@ -141,6 +145,19 @@ int async_run_stream(struct bladerf_stream *stream, bladerf_module module)
 
     /* Backend return value takes precedence over stream error status */
     return status == 0 ? stream->error_code : status;
+}
+
+int async_submit_stream_buffer(struct bladerf_stream *stream,
+                               void *buffer,
+                               unsigned int timeout_ms)
+{
+    int status;
+
+    pthread_mutex_lock(&stream->lock);
+    status = stream->dev->fn->submit_stream_buffer(stream, buffer, timeout_ms);
+    pthread_mutex_unlock(&stream->lock);
+
+    return status;
 }
 
 void async_deinit_stream(struct bladerf_stream *stream)

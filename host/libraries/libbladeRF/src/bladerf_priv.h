@@ -128,8 +128,10 @@ struct bladerf_fn {
     /* Sample stream */
     int (*enable_module)(struct bladerf *dev, bladerf_module m, bool enable);
 
-    int (*init_stream)(struct bladerf_stream *stream);
+    int (*init_stream)(struct bladerf_stream *stream, size_t num_transfers);
     int (*stream)(struct bladerf_stream *stream, bladerf_module module);
+    int (*submit_stream_buffer)(struct bladerf_stream *stream, void *buffer,
+                                unsigned int timeout_ms);
     void (*deinit_stream)(struct bladerf_stream *stream);
 };
 
