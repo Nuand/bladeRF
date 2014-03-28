@@ -430,10 +430,14 @@ int sync_tx(struct bladerf *dev, void *samples, unsigned int num_samples,
                                 __FUNCTION__, b->prod_i);
 
                     b->status[b->prod_i] = SYNC_BUFFER_IN_FLIGHT;
+                    pthread_mutex_unlock(&b->lock);
+
                     status = bladerf_submit_stream_buffer(
                                                 s->worker->stream,
                                                 buf_dest,
                                                 s->stream_config.timeout_ms);
+
+                    pthread_mutex_lock(&b->lock);
 
                     if (status == 0) {
                         b->prod_i = (b->prod_i + 1) % b->num_buffers;
@@ -446,6 +450,7 @@ int sync_tx(struct bladerf *dev, void *samples, unsigned int num_samples,
                         } else {
                             s->state = SYNC_STATE_CHECK_AND_START_WORKER;
                         }
+
                     }
                 }
 
