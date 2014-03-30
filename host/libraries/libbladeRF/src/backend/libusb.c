@@ -560,15 +560,15 @@ static int access_peripheral(struct bladerf_lusb *lusb, int per, int dir,
     return access_peripheral_v(lusb, per, dir, cmd, 1);
 }
 
-static int lusb_fpga_version_read(struct bladerf *dev, uint32_t *version) {
+static int _read_bytes(struct bladerf *dev, int addr, int len, uint32_t *val) {
     int i = 0;
     int status = 0;
     struct uart_cmd cmd;
     struct bladerf_lusb *lusb = dev->backend;
-    *version = 0;
+    *val = 0;
 
     for (i = 0; i < 4; i++){
-        cmd.addr = i + UART_PKT_DEV_FGPA_VERSION_ID;
+        cmd.addr = addr + i;
         cmd.data = 0xff;
 
         status = access_peripheral(
@@ -582,7 +582,7 @@ static int lusb_fpga_version_read(struct bladerf *dev, uint32_t *version) {
             break;
         }
 
-        *version |= (cmd.data << (i * 8));
+        *val |= (cmd.data << (i * 8));
     }
 
     if (status < 0){
@@ -590,6 +590,35 @@ static int lusb_fpga_version_read(struct bladerf *dev, uint32_t *version) {
     }
 
     return status;
+}
+
+static int _write_bytes(struct bladerf *dev, int addr, int len, uint32_t val) {
+    int status;
+    struct uart_cmd cmd;
+    struct bladerf_lusb *lusb = dev->backend;
+
+    int i;
+    for (i = 0; i < len; i++) {
+        cmd.addr = addr + i;
+        cmd.data = (val >> (i * 8)) & 0xff ;
+        status = access_peripheral(lusb, UART_PKT_DEV_GPIO,
+                UART_PKT_MODE_DIR_WRITE, &cmd);
+
+        if (status < 0) {
+            bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
+            return status;
+        }
+    }
+
+    if (status < 0) {
+        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
+    }
+
+    return status;
+}
+
+static int lusb_fpga_version_read(struct bladerf *dev, uint32_t *version) {
+    return _read_bytes(dev, UART_PKT_DEV_FGPA_VERSION_ID, 4, version);
 }
 
 
@@ -1589,62 +1618,12 @@ static int lusb_get_device_speed(struct bladerf *dev,
 
 static int lusb_config_gpio_write(struct bladerf *dev, uint32_t val)
 {
-    int i = 0;
-    int status = 0;
-    struct uart_cmd cmd;
-    struct bladerf_lusb *lusb = dev->backend;
-
-    for (i = 0; status == 0 && i < 4; i++) {
-        cmd.addr = i;
-        cmd.data = (val>>(8*i))&0xff;
-        status = access_peripheral(
-                                    lusb,
-                                    UART_PKT_DEV_GPIO,
-                                    UART_PKT_MODE_DIR_WRITE,
-                                    &cmd
-                                  );
-
-        if (status < 0) {
-            break;
-        }
-    }
-
-    if (status < 0) {
-        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
-    }
-
-    return status;
+    return _write_bytes(dev, 0, 4, val);
 }
 
 static int lusb_config_gpio_read(struct bladerf *dev, uint32_t *val)
 {
-    int i = 0;
-    int status = 0;
-    struct uart_cmd cmd;
-    struct bladerf_lusb *lusb = dev->backend;
-
-    *val = 0;
-    for(i = UART_PKT_DEV_GPIO_ADDR; status == 0 && i < 4; i++) {
-        cmd.addr = i;
-        cmd.data = 0xff;
-        status = access_peripheral(
-                                    lusb,
-                                    UART_PKT_DEV_GPIO, UART_PKT_MODE_DIR_READ,
-                                    &cmd
-                                  );
-
-        if (status < 0) {
-            break;
-        }
-
-        *val |= (cmd.data << (8*i));
-    }
-
-    if (status < 0) {
-        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
-    }
-
-    return status;
+    return _read_bytes(dev, 0, 4, val);
 }
 
 static int lusb_si5338_write(struct bladerf *dev, uint8_t addr, uint8_t data)
