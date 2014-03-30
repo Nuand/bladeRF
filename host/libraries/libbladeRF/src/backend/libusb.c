@@ -1719,9 +1719,9 @@ static int lusb_dac_write(struct bladerf *dev, uint16_t value)
     struct uart_cmd cmd;
     struct bladerf_lusb *lusb = dev->backend;
 
-    cmd.addr = 0 ;
+    cmd.addr = 34 ;
     cmd.data = value & 0xff ;
-    status = access_peripheral(lusb, UART_PKT_DEV_VCTCXO,
+    status = access_peripheral(lusb, UART_PKT_DEV_GPIO,
                                UART_PKT_MODE_DIR_WRITE, &cmd);
 
     if (status < 0) {
@@ -1729,9 +1729,9 @@ static int lusb_dac_write(struct bladerf *dev, uint16_t value)
         return status;
     }
 
-    cmd.addr = 1 ;
+    cmd.addr = 35 ;
     cmd.data = (value>>8)&0xff ;
-    status = access_peripheral(lusb, UART_PKT_DEV_VCTCXO,
+    status = access_peripheral(lusb, UART_PKT_DEV_GPIO,
                                UART_PKT_MODE_DIR_WRITE, &cmd);
 
     if (status < 0) {
