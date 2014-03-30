@@ -1741,6 +1741,33 @@ static int lusb_dac_write(struct bladerf *dev, uint16_t value)
     return status;
 }
 
+static int lusb_xb_spi(struct bladerf *dev, uint32_t value)
+{
+    int status;
+    struct uart_cmd cmd;
+    struct bladerf_lusb *lusb = dev->backend;
+
+    int i;
+    for (i = 0; i < 4; i++) {
+        cmd.addr = 36 + i;
+        cmd.data = (value >> (i * 8)) & 0xff ;
+        status = access_peripheral(lusb, UART_PKT_DEV_GPIO,
+                UART_PKT_MODE_DIR_WRITE, &cmd);
+
+        if (status < 0) {
+            bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
+            return status;
+        }
+    }
+
+    if (status < 0) {
+        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
+    }
+
+    return status;
+}
+
+
 static const char * corr2str(bladerf_correction c)
 {
     switch (c) {
@@ -2565,6 +2592,7 @@ const struct bladerf_fn bladerf_lusb_fn = {
     FIELD_INIT(.lms_read, lusb_lms_read),
 
     FIELD_INIT(.dac_write, lusb_dac_write),
+    FIELD_INIT(.xb_spi, lusb_xb_spi),
 
     FIELD_INIT(.enable_module, lusb_enable_module),
 

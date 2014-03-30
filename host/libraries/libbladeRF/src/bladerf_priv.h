@@ -128,6 +128,9 @@ struct bladerf_fn {
     /* VCTCXO accessor */
     int (*dac_write)(struct bladerf *dev, uint16_t value);
 
+    /* Expansion board SPI */
+    int (*xb_spi)(struct bladerf *dev, uint32_t value);
+
     /* Sample stream */
     int (*enable_module)(struct bladerf *dev, bladerf_module m, bool enable);
 

@@ -2199,6 +2199,19 @@ int CALL_CONV bladerf_get_timestamp(struct bladerf *dev, bladerf_module mod, uin
 API_EXPORT
 int CALL_CONV bladerf_dac_write(struct bladerf *dev, uint16_t val);
 
+
+/**
+ * Write value to secondary XB SPI
+ *
+ * @param   dev         Device handle
+ * @param   val         Data to write to XB SPI
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_xb_spi_write(struct bladerf *dev, uint32_t val);
+
+
 /**
  * Perform DC calibration
  *

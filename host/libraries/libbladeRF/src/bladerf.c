@@ -1015,6 +1015,16 @@ int bladerf_dac_write(struct bladerf *dev, uint16_t val)
     return dev->fn->dac_write(dev,val);
 }
 
+
+/*------------------------------------------------------------------------------
+ * XB SPI register write
+ *----------------------------------------------------------------------------*/
+
+int bladerf_xb_spi_write(struct bladerf *dev, uint32_t val)
+{
+    return dev->fn->xb_spi(dev,val);
+}
+
 /*------------------------------------------------------------------------------
  * DC Calibration routines
  *----------------------------------------------------------------------------*/

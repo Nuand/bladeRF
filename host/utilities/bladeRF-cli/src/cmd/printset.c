@@ -68,6 +68,7 @@ PRINTSET_DECL(rxvga2)
 PRINTSET_DECL(samplerate)
 PRINTSET_DECL(sampling)
 PRINTSET_DECL(trimdac)
+PRINTSET_DECL(xb_spi)
 PRINTSET_DECL(txvga1)
 PRINTSET_DECL(txvga2)
 
@@ -90,6 +91,7 @@ struct printset_entry printset_table[] = {
     PRINTSET_ENTRY(samplerate),
     PRINTSET_ENTRY(sampling),
     PRINTSET_ENTRY(trimdac),
+    PRINTSET_ENTRY(xb_spi),
     PRINTSET_ENTRY(txvga1),
     PRINTSET_ENTRY(txvga2),
 
@@ -1057,6 +1059,36 @@ int set_trimdac(struct cli_state *state, int argc, char **argv)
             rv = CMD_RET_INVPARAM;
         } else {
             int status = bladerf_dac_write( state->dev, val );
+            if (status < 0) {
+                state->last_lib_error = status;
+                rv = CMD_RET_LIBBLADERF;
+            }
+        }
+    }
+    return rv;
+}
+
+int print_xb_spi(struct cli_state *state, int argc, char **argv)
+{
+    /* All of the SPI devices so far are write-only */
+    return CMD_RET_OK;
+}
+
+int set_xb_spi(struct cli_state *state, int argc, char **argv)
+{
+    int rv = CMD_RET_OK;
+    unsigned int val;
+
+    if( argc != 3) {
+        rv = CMD_RET_NARGS;
+    } else {
+        bool ok;
+        val = str2uint( argv[2], 0, -1, &ok );
+        if( !ok ) {
+            cli_err(state, argv[0], "Invalid XB SPI value (%s)", argv[2]);
+            rv = CMD_RET_INVPARAM;
+        } else {
+            int status = bladerf_xb_spi_write( state->dev, val );
             if (status < 0) {
                 state->last_lib_error = status;
                 rv = CMD_RET_LIBBLADERF;
