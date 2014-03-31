@@ -1636,6 +1636,16 @@ static int lusb_expansion_gpio_read(struct bladerf *dev, uint32_t *val)
     return _read_bytes(dev, 40, 4, val);
 }
 
+static int lusb_expansion_gpio_dir_write(struct bladerf *dev, uint32_t val)
+{
+    return _write_bytes(dev, 44, 4, val);
+}
+
+static int lusb_expansion_gpio_dir_read(struct bladerf *dev, uint32_t *val)
+{
+    return _read_bytes(dev, 44, 4, val);
+}
+
 static int lusb_si5338_write(struct bladerf *dev, uint8_t addr, uint8_t data)
 {
     int status;
@@ -2592,6 +2602,9 @@ const struct bladerf_fn bladerf_lusb_fn = {
 
     FIELD_INIT(.expansion_gpio_write, lusb_expansion_gpio_write),
     FIELD_INIT(.expansion_gpio_read, lusb_expansion_gpio_read),
+
+    FIELD_INIT(.expansion_gpio_dir_write, lusb_expansion_gpio_dir_write),
+    FIELD_INIT(.expansion_gpio_dir_read, lusb_expansion_gpio_dir_read),
 
     FIELD_INIT(.set_correction, lusb_set_correction),
     FIELD_INIT(.get_correction, lusb_get_correction),
