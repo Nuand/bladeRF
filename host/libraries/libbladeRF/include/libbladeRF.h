@@ -1061,6 +1061,9 @@ struct bladerf_metadata {
  *
  *   - Do not make API calls from stream callbacks.
  *
+ *   bladerf_submit_stream_buffer() is a special case, as this will acquire a
+ *   per-stream lock before submitting a buffer for transfer.
+ *
  * @{
  */
 
@@ -1100,18 +1103,18 @@ struct bladerf_stream;
  * When running in a full-duplex mode of operation with simultaneous TX and RX
  * stream threads, be aware that one module's callback may occur in the context
  * of another module's thread. The API user is responsible for ensuring their
- * callbacks are thread safe.
+ * callbacks are thread safe. For example, when managing access to sample
+ * buffers, the caller must ensure that if one thread is processing samples in a
+ * buffer, that this buffer is not returned via the callback's return value.
  *
  * As of libbladeRF v0.15.0, is guaranteed that only one callback from a module
  * will occur at a time. (i.e., a second TX callback will not fire while one is
- * currently being handled.)
+ * currently being handled.)  To achieve this, while a callback is executing, a
+ * per-stream lock is held. It is important to consider this when thinking about
+ * the order of lock acquisitions both in the callbacks, and the code
+ * surrounding bladerf_submit_stream_buffer().
  *
- * The API user is responsible for managing access to sample buffers, and
- * ensuring that if another thread is using a buffer, it is not returned via the
- * callback's return value.
- *
- * See the implementation of the \ref FN_DATA_SYNC interface for an example of
- * a simple thread-safe buffer management scheme.
+ * <b>Note:</b>Do not call bladerf_submit_stream_buffer() from a callback.
  *
  * For both RX and TX, the stream callback receives:
  *  - dev:          Device structure
@@ -1252,12 +1255,19 @@ int CALL_CONV bladerf_stream(struct bladerf_stream *stream,
 /**
  * Submit a buffer to a stream from outside of a stream callback function.
  * Use this only when returning BLADERF_STREAM_NO_DATA from callbacks. <b>Do
- * not</b> mix usage of this function with callbacks that do return buffers
- * for submission.
+ * not</b> use this function if the associated callback functions will be
+ * returning buffers for submission.
  *
  * This call may block if the device is not ready to submit a buffer for
  * transfer. Use the `timeout_ms` to place an upper limit on the time this
  * function can block.
+ *
+ * To safely submit buffers from outside the stream callback flow, this function
+ * internally acquires a per-stream lock (the same one that is held during the
+ * execution of a stream callback). Therefore, it is important to be aware of
+ * locks that may be held while making this call, especially those acquired
+ * during execution of the associated stream callback function. (i.e., be wary
+ * of the order of lock acquisitions, including the internal per-stream lock.)
  *
  * @param   stream      Stream to submit buffer to
  * @param   buffer      Buffer to fill (RX) or containing data (TX). This buffer
@@ -1292,7 +1302,7 @@ void CALL_CONV bladerf_deinit_stream(struct bladerf_stream *stream);
  *
  * @bug     This call is not threadsafe; this will be addressed in future
  *          versions of the library. Callers should ensure no other threads
- *          are accessing the specified device handle with this call is made.
+ *          are accessing the specified device handle when this call is made.
  *
  * @param   dev         Device handle
  * @param   module      Module to adjust
@@ -1311,7 +1321,7 @@ int CALL_CONV bladerf_set_stream_timeout(struct bladerf *dev,
  *
  * @bug     This call is not threadsafe; this will be addressed in future
  *          versions of the library. Callers should ensure no other threads
- *          are accessing the specified device handle with this call is made.
+ *          are accessing the specified device handle when this call is made.
  *
  * @param[in]   dev         Device handle
  * @param[in]   module      Module to adjust
@@ -1434,7 +1444,7 @@ int CALL_CONV bladerf_get_stream_timeout(struct bladerf *dev,
  *
  * @bug     This call is not threadsafe; this will be addressed in future
  *          versions of the library. Callers should ensure no other threads
- *          are accessing the specified device handle with this call is made.
+ *          are accessing the specified device handle when this call is made.
  *
  * @param   dev             Device to configure
  *
