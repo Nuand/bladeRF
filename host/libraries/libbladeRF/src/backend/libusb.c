@@ -2297,7 +2297,7 @@ error:
 static int lusb_stream(struct bladerf_stream *stream, bladerf_module module)
 {
     size_t i;
-    int status;
+    int status = 0;
     void *buffer;
     struct bladerf_metadata metadata;
     struct bladerf *dev = stream->dev;
@@ -2360,10 +2360,11 @@ static int lusb_stream(struct bladerf_stream *stream, bladerf_module module)
         if (status < 0 && status != LIBUSB_ERROR_INTERRUPTED) {
             log_warning("unexpected value from events processing: "
                         "%d: %s\n", status, libusb_error_name(status));
+            status = error_libusb2bladerf(status);
         }
     }
 
-    return error_libusb2bladerf(status);
+    return status;
 }
 
 /* The top-level code will have aquired the stream->lock for us */
