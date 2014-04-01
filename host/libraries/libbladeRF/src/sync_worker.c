@@ -87,7 +87,7 @@ static void *rx_callback(struct bladerf *dev,
     } else {
 
         /* TODO propgate back the RX Overrun to the sync_rx() caller */
-        log_warning("RX overrun @ buffer %u\r\n", samples_idx);
+        log_debug("RX overrun @ buffer %u\r\n", samples_idx);
 
         next_idx = samples_idx;
         b->status[samples_idx] = SYNC_BUFFER_IN_FLIGHT;
