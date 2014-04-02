@@ -16,7 +16,7 @@
    {
       datum baseAddress
       {
-         value = "37112";
+         value = "37144";
          type = "String";
       }
    }
@@ -24,7 +24,7 @@
    {
       datum baseAddress
       {
-         value = "37088";
+         value = "37120";
          type = "String";
       }
    }
@@ -32,7 +32,7 @@
    {
       datum baseAddress
       {
-         value = "37104";
+         value = "37136";
          type = "String";
       }
    }
@@ -108,11 +108,27 @@
          type = "int";
       }
    }
+   element pio_1
+   {
+      datum _sortIndex
+      {
+         value = "13";
+         type = "int";
+      }
+   }
+   element pio_2
+   {
+      datum _sortIndex
+      {
+         value = "14";
+         type = "int";
+      }
+   }
    element iq_corr_tx_phase_gain.s1
    {
       datum baseAddress
       {
-         value = "37056";
+         value = "37088";
          type = "String";
       }
    }
@@ -128,15 +144,31 @@
    {
       datum baseAddress
       {
+         value = "37104";
+         type = "String";
+      }
+   }
+   element pio_2.s1
+   {
+      datum baseAddress
+      {
+         value = "37056";
+         type = "String";
+      }
+   }
+   element pio_1.s1
+   {
+      datum baseAddress
+      {
          value = "37072";
          type = "String";
       }
    }
-   element pio_0.s1
+   element uart_0.s1
    {
       datum baseAddress
       {
-         value = "36928";
+         value = "36992";
          type = "String";
       }
    }
@@ -148,11 +180,11 @@
          type = "String";
       }
    }
-   element uart_0.s1
+   element pio_0.s1
    {
       datum baseAddress
       {
-         value = "36992";
+         value = "36928";
          type = "String";
       }
    }
@@ -262,6 +294,16 @@
  <interface
    name="time_tamer"
    internal="time_tamer_0.conduit_end"
+   type="conduit"
+   dir="end" />
+ <interface
+   name="xb_gpio"
+   internal="pio_1.external_connection"
+   type="conduit"
+   dir="end" />
+ <interface
+   name="xb_gpio_dir"
+   internal="pio_2.external_connection"
    type="conduit"
    dir="end" />
  <module kind="clock_source" version="13.1" enabled="1" name="clk_0">
@@ -385,7 +427,7 @@
   <parameter name="tightlyCoupledInstructionMaster2AddrWidth" value="1" />
   <parameter name="tightlyCoupledInstructionMaster3AddrWidth" value="1" />
   <parameter name="instSlaveMapParam"><![CDATA[<address-map><slave name='onchip_memory2_0.s1' start='0x4000' end='0x8000' /><slave name='nios2_qsys_0.jtag_debug_module' start='0x8800' end='0x9000' /></address-map>]]></parameter>
-  <parameter name="dataSlaveMapParam"><![CDATA[<address-map><slave name='onchip_memory2_0.s1' start='0x4000' end='0x8000' /><slave name='nios2_qsys_0.jtag_debug_module' start='0x8800' end='0x9000' /><slave name='timer_0.s1' start='0x9000' end='0x9040' /><slave name='pio_0.s1' start='0x9040' end='0x9060' /><slave name='spi_1.spi_control_port' start='0x9060' end='0x9080' /><slave name='uart_0.s1' start='0x9080' end='0x90A0' /><slave name='spi_0.spi_control_port' start='0x90A0' end='0x90C0' /><slave name='iq_corr_tx_phase_gain.s1' start='0x90C0' end='0x90D0' /><slave name='iq_corr_rx_phase_gain.s1' start='0x90D0' end='0x90E0' /><slave name='time_tamer_0.avalon_slave_0' start='0x90E0' end='0x90EA' /><slave name='bladerf_oc_i2c_master_0.bladerf_oc_i2c_master' start='0x90F0' end='0x90F8' /><slave name='jtag_uart_0.avalon_jtag_slave' start='0x90F8' end='0x9100' /></address-map>]]></parameter>
+  <parameter name="dataSlaveMapParam"><![CDATA[<address-map><slave name='onchip_memory2_0.s1' start='0x4000' end='0x8000' /><slave name='nios2_qsys_0.jtag_debug_module' start='0x8800' end='0x9000' /><slave name='timer_0.s1' start='0x9000' end='0x9040' /><slave name='pio_0.s1' start='0x9040' end='0x9060' /><slave name='spi_1.spi_control_port' start='0x9060' end='0x9080' /><slave name='uart_0.s1' start='0x9080' end='0x90A0' /><slave name='spi_0.spi_control_port' start='0x90A0' end='0x90C0' /><slave name='pio_2.s1' start='0x90C0' end='0x90D0' /><slave name='pio_1.s1' start='0x90D0' end='0x90E0' /><slave name='iq_corr_tx_phase_gain.s1' start='0x90E0' end='0x90F0' /><slave name='iq_corr_rx_phase_gain.s1' start='0x90F0' end='0x9100' /><slave name='time_tamer_0.avalon_slave_0' start='0x9100' end='0x910A' /><slave name='bladerf_oc_i2c_master_0.bladerf_oc_i2c_master' start='0x9110' end='0x9118' /><slave name='jtag_uart_0.avalon_jtag_slave' start='0x9118' end='0x9120' /></address-map>]]></parameter>
   <parameter name="clockFrequency" value="80000000" />
   <parameter name="deviceFamilyName" value="Cyclone IV E" />
   <parameter name="internalIrqMaskSystemInfo" value="127" />
@@ -497,7 +539,7 @@
   <parameter name="insertSync" value="false" />
   <parameter name="lsbOrderedFirst" value="false" />
   <parameter name="masterSPI" value="true" />
-  <parameter name="numberOfSlaves" value="1" />
+  <parameter name="numberOfSlaves" value="2" />
   <parameter name="syncRegDepth" value="2" />
   <parameter name="targetClockRate" value="9600000" />
   <parameter name="targetSlaveSelectToSClkDelay" value="0.0" />
@@ -566,6 +608,34 @@
   <parameter name="RESET_LEVEL" value="1" />
   <parameter name="AUTO_CLOCK_SINK_CLOCK_RATE" value="80000000" />
  </module>
+ <module kind="altera_avalon_pio" version="13.1" enabled="1" name="pio_1">
+  <parameter name="bitClearingEdgeCapReg" value="false" />
+  <parameter name="bitModifyingOutReg" value="false" />
+  <parameter name="captureEdge" value="false" />
+  <parameter name="direction" value="InOut" />
+  <parameter name="edgeType" value="RISING" />
+  <parameter name="generateIRQ" value="false" />
+  <parameter name="irqType" value="LEVEL" />
+  <parameter name="resetValue" value="0" />
+  <parameter name="simDoTestBenchWiring" value="false" />
+  <parameter name="simDrivenValue" value="0" />
+  <parameter name="width" value="32" />
+  <parameter name="clockRate" value="80000000" />
+ </module>
+ <module kind="altera_avalon_pio" version="13.1" enabled="1" name="pio_2">
+  <parameter name="bitClearingEdgeCapReg" value="false" />
+  <parameter name="bitModifyingOutReg" value="false" />
+  <parameter name="captureEdge" value="false" />
+  <parameter name="direction" value="Output" />
+  <parameter name="edgeType" value="RISING" />
+  <parameter name="generateIRQ" value="false" />
+  <parameter name="irqType" value="LEVEL" />
+  <parameter name="resetValue" value="0" />
+  <parameter name="simDoTestBenchWiring" value="false" />
+  <parameter name="simDrivenValue" value="0" />
+  <parameter name="width" value="32" />
+  <parameter name="clockRate" value="80000000" />
+ </module>
  <connection
    kind="avalon"
    version="13.1"
@@ -620,7 +690,7 @@
    start="nios2_qsys_0.data_master"
    end="jtag_uart_0.avalon_jtag_slave">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x90f8" />
+  <parameter name="baseAddress" value="0x9118" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -747,7 +817,7 @@
    start="nios2_qsys_0.data_master"
    end="iq_corr_rx_phase_gain.s1">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x90d0" />
+  <parameter name="baseAddress" value="0x90f0" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -766,7 +836,7 @@
    start="nios2_qsys_0.data_master"
    end="iq_corr_tx_phase_gain.s1">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x90c0" />
+  <parameter name="baseAddress" value="0x90e0" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -792,7 +862,7 @@
    start="nios2_qsys_0.data_master"
    end="bladerf_oc_i2c_master_0.bladerf_oc_i2c_master">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x90f0" />
+  <parameter name="baseAddress" value="0x9110" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -801,7 +871,7 @@
    start="nios2_qsys_0.data_master"
    end="time_tamer_0.avalon_slave_0">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x90e0" />
+  <parameter name="baseAddress" value="0x9100" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -820,6 +890,28 @@
    start="nios2_qsys_0.d_irq"
    end="time_tamer_0.interrupt_sender">
   <parameter name="irqNumber" value="6" />
+ </connection>
+ <connection kind="clock" version="13.1" start="clk_0.clk" end="pio_1.clk" />
+ <connection kind="reset" version="13.1" start="clk_0.clk_reset" end="pio_1.reset" />
+ <connection
+   kind="avalon"
+   version="13.1"
+   start="nios2_qsys_0.data_master"
+   end="pio_1.s1">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x90d0" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection kind="clock" version="13.1" start="clk_0.clk" end="pio_2.clk" />
+ <connection kind="reset" version="13.1" start="clk_0.clk_reset" end="pio_2.reset" />
+ <connection
+   kind="avalon"
+   version="13.1"
+   start="nios2_qsys_0.data_master"
+   end="pio_2.s1">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x90c0" />
+  <parameter name="defaultConnection" value="false" />
  </connection>
  <interconnectRequirement for="$system" name="qsys_mm.clockCrossingAdapter" value="HANDSHAKE" />
  <interconnectRequirement for="$system" name="qsys_mm.maxAdditionalLatency" value="1" />
