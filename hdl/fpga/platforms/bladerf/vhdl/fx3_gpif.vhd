@@ -100,8 +100,44 @@ architecture sample_shuffler of fx3_gpif is
     signal dma_downcount : signed(12 downto 0) ;
     signal meta_downcount : signed(12 downto 0) ;
 
+    signal underrun : std_logic;
+    signal underrun_set, underrun_set_r : std_logic;
+    signal underrun_clr, underrun_clr_r : std_logic;
+
+
     signal meta_buffer : std_logic_vector(127 downto 0);
+
+    attribute preserve: boolean;
+    attribute preserve of can_rx: signal is true;
+    attribute preserve of can_tx: signal is true;
+    attribute preserve of should_rx: signal is true;
+    attribute preserve of should_tx: signal is true;
+
+    attribute keep: boolean;
+    attribute keep of can_rx: signal is true;
+    attribute keep of can_tx: signal is true;
+    attribute keep of should_rx: signal is true;
+    attribute keep of should_tx: signal is true;
+
+
 begin
+
+    process ( reset, pclk )
+    begin
+        if (reset = '1') then
+            underrun <= '0';
+            underrun_set_r <= '0';
+            underrun_clr_r <= '0';
+        elsif (rising_edge(pclk)) then
+            underrun_set_r <= underrun_set;
+            underrun_clr_r <= underrun_clr;
+            if (underrun_set_r = '0' and underrun_set = '1') then
+                underrun <= '1';
+            elsif(underrun_clr_r = '0' and underrun_clr = '1') then
+                underrun <= '0';
+            end if;
+        end if;
+    end process;
 
     tx_meta_en <= meta_enable;
     rx_meta_en <= meta_enable;
@@ -156,7 +192,11 @@ begin
         if( state = SAMPLE_READ or (rx_meta_en = '0' and state = IDLE_RD) or state = IDLE_RD_1 or state = FINISHED ) then
             gpif_out <= rx_fifo_data ;
         elsif( state = META_READ or (rx_meta_en = '1' and state = IDLE_RD) ) then
-            gpif_out <= rx_meta_fifo_data;
+            if (meta_downcount = 0) then
+                gpif_out <= rx_meta_fifo_data(31 downto 16) & "00000000" & "0000" & (not underrun) & (not underrun) & underrun & underrun;
+            else
+                gpif_out <= rx_meta_fifo_data;
+            end if;
         else
             gpif_out <= (others =>'0');
         end if ;
@@ -244,9 +284,13 @@ begin
             dma_last_event <= DE_TX;
             meta_downcount <= (others => '0');
             gpif_oe <= '1';
+            underrun_set <= '0';
+            underrun_clr <= '0';
         elsif( rising_edge(pclk) ) then
             case state is
                 when IDLE =>
+                    underrun_set <= '0';
+                    underrun_clr <= '0';
                     if( dma_idle = '1' ) then
                         if( should_rx = '1' ) then
                             dma_downcount <= gpif_buf_size_cond - 2;
@@ -313,6 +357,7 @@ begin
                 when SAMPLE_WRITE_IGNORE =>
                     dma2_tx_ack <= '0';
                     dma3_tx_ack <= '0';
+                    underrun_set <= '1';
                     if( dma_downcount > 0 ) then
                         dma_downcount <= dma_downcount - 1;
                     else
@@ -352,6 +397,7 @@ begin
                         state <= SAMPLE_READ;
                     end if;
                 when SAMPLE_READ =>
+                    underrun_clr <= '1';
                     dma0_rx_ack <= '0';
                     dma1_rx_ack <= '0';
 
