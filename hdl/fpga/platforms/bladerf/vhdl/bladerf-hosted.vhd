@@ -36,7 +36,7 @@ architecture hosted_bladerf of bladerf is
         dac_MISO            : in  std_logic := 'X'; -- MISO
         dac_MOSI            : out std_logic;        -- MOSI
         dac_SCLK            : out std_logic;        -- SCLK
-        dac_SS_n            : out std_logic;        -- SS_n
+        dac_SS_n            : out std_logic_vector(1 downto 0);        -- SS_n
         spi_MISO            : in  std_logic := 'X'; -- MISO
         spi_MOSI            : out std_logic;        -- MOSI
         spi_SCLK            : out std_logic;        -- SCLK
@@ -51,6 +51,9 @@ architecture hosted_bladerf of bladerf is
         oc_i2c_arst_i       : in  std_logic;
         oc_i2c_scl_pad_i    : in  std_logic;
         gpio_export         : out std_logic_vector(31 downto 0);
+        xb_gpio_in_port                 : in  std_logic_vector(31 downto 0) := (others => 'X');
+        xb_gpio_out_port                : out std_logic_vector(31 downto 0);
+        xb_gpio_dir_export              : out std_logic_vector(31 downto 0);
         correction_rx_phase_gain_export : out std_logic_vector(31 downto 0);
         correction_tx_phase_gain_export : out std_logic_vector(31 downto 0);
         time_tamer_synchronize          : out std_logic;
@@ -72,6 +75,10 @@ architecture hosted_bladerf of bladerf is
     signal \80MHz locked\   : std_logic ;
 
     signal nios_gpio        : std_logic_vector(31 downto 0) ;
+    signal nios_xb_gpio_in  : std_logic_vector(31 downto 0) ;
+    signal nios_xb_gpio_out : std_logic_vector(31 downto 0) ;
+    signal nios_xb_gpio_dir : std_logic_vector(31 downto 0) ;
+    signal xb_gpio_dir      : std_logic_vector(31 downto 0) ;
 
     signal correction_rx_phase_gain :  std_logic_vector(31 downto 0);
     signal correction_tx_phase_gain :  std_logic_vector(31 downto 0);
@@ -213,6 +220,13 @@ architecture hosted_bladerf of bladerf is
     signal rx_sample_corrected_q : signed(15 downto 0);
     signal rx_sample_corrected_valid : std_logic;
 
+    signal nios_sdo : std_logic;
+    signal nios_sdio : std_logic;
+    signal nios_sclk : std_logic;
+    signal nios_ss_n : std_logic_vector(1 downto 0);
+
+    signal xb_mode  : std_logic_vector(1 downto 0);
+
     signal rx_sync_r            : std_logic_vector(7 downto 0);
     signal tx_sync_r            : std_logic_vector(7 downto 0);
 
@@ -308,6 +322,8 @@ begin
         async               =>  nios_gpio(16),
         sync                =>  meta_en_rx
       ) ;
+
+    xb_mode <= nios_gpio(31 downto 30);
 
     U_sys_reset_sync : entity work.reset_synchronizer
       generic map (
@@ -714,10 +730,10 @@ begin
       port map (
         clk_clk             => \80MHz\,
         reset_reset_n       => '1',
-        dac_MISO            => dac_sdo,
-        dac_MOSI            => dac_sdi,
-        dac_SCLK            => dac_sclk,
-        dac_SS_n            => dac_csx,
+        dac_MISO            => nios_sdo,
+        dac_MOSI            => nios_sdio,
+        dac_SCLK            => nios_sclk,
+        dac_SS_n            => nios_ss_n,
         spi_MISO            => lms_sdo,
         spi_MOSI            => lms_sdio,
         spi_SCLK            => lms_sclk,
@@ -725,6 +741,9 @@ begin
         uart_rxd            => nios_uart_txd,
         uart_txd            => nios_uart_rxd,
         gpio_export         => nios_gpio,
+        xb_gpio_in_port     => nios_xb_gpio_in,
+        xb_gpio_out_port    => nios_xb_gpio_out,
+        xb_gpio_dir_export  => nios_xb_gpio_dir,
         correction_tx_phase_gain_export    => correction_tx_phase_gain,
         correction_rx_phase_gain_export    => correction_rx_phase_gain,
         oc_i2c_scl_pad_o    => i2c_scl_out,
@@ -738,6 +757,48 @@ begin
         time_tamer_time_rx  => std_logic_vector(rx_timestamp),
         time_tamer_synchronize => timestamp_sync
       ) ;
+
+    xb_gpio_direction_proc : for i in 0 to 27 generate
+        process(xb_gpio_dir, nios_xb_gpio_out, nios_xb_gpio_in)
+        begin
+            if (xb_gpio_dir(i) = '1') then
+                nios_xb_gpio_in(i) <= nios_xb_gpio_out(i);
+                exp_gpio(i+2) <= nios_xb_gpio_out(i);
+            else
+                nios_xb_gpio_in(i) <= exp_gpio(i+2);
+                exp_gpio(i+2) <= 'Z';
+            end if;
+        end process;
+    end generate ;
+
+    nios_gpio(20 downto 19) <= nios_ss_n;
+    nios_gpio(22 downto 21) <= xb_mode;
+    process(all)
+    begin
+        if( xb_mode = "00" ) then
+            xb_gpio_dir <= "101" & nios_xb_gpio_dir(28 downto 0);
+            -- missing 30-32
+        elsif( xb_mode = "10" ) then
+            xb_gpio_dir <= "111" & nios_xb_gpio_dir(28 downto 0);
+            if (nios_ss_n(1 downto 0) = "10") then --
+                dac_sclk <= nios_sclk;
+                dac_csx <= '0';
+                nios_sdo <= dac_sdo;
+                dac_sdi <= nios_sdio;
+                exp_gpio(32) <= '1';
+            elsif (nios_ss_n(1 downto 0) = "01") then
+                exp_gpio(30) <= nios_sclk;
+                exp_gpio(31) <= nios_sdio;
+                exp_gpio(32) <= '0';
+                dac_csx <= '1';
+            else
+                exp_gpio(32) <= '1';
+                dac_csx <= '1';
+            end if;
+        else
+            xb_gpio_dir <= "011" & nios_xb_gpio_dir(28 downto 0)  ;
+        end if;
+    end process;
 
     -- IO for NIOS
     si_scl <= i2c_scl_out when i2c_scl_oen = '0' else 'Z' ;
@@ -798,7 +859,7 @@ begin
 
     exp_spi_clock           <= '0' ;
     exp_spi_mosi            <= '0' ;
-    exp_gpio                <= (others =>'Z') ;
+    --exp_gpio                <= (others =>'Z') ;
 
     mini_exp1               <= 'Z';
     mini_exp2               <= 'Z';
