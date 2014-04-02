@@ -95,7 +95,7 @@ int sync_init(struct bladerf *dev,
     }
 
     sync->dev = dev;
-    sync->state = SYNC_STATE_CHECK_AND_START_WORKER;
+    sync->state = SYNC_STATE_CHECK_WORKER;
 
     sync->buf_mgmt.num_buffers = num_buffers;
 
@@ -185,46 +185,6 @@ void sync_deinit(struct bladerf_sync *sync)
     }
 }
 
-static int check_and_start_worker(struct bladerf_sync *s)
-{
-    sync_worker_state state;
-    int status = 0;
-    const int max_retries = 4;
-    int retry = 0;
-
-    do {
-        state = sync_worker_get_state(s->worker);
-        if (state != SYNC_WORKER_STATE_RUNNING) {
-
-            /* We need to start up the worker */
-            log_debug("%s: Worker not running (state=%d)... %s\n",
-                        __FUNCTION__, state,
-                        retry == 0 ? "starting it." : "retrying.");
-
-            sync_worker_submit_request(s->worker, SYNC_WORKER_START);
-            status = sync_worker_wait_for_state(s->worker,
-                                                SYNC_WORKER_STATE_RUNNING, 250);
-            if (status == 0) {
-                state = SYNC_WORKER_STATE_RUNNING;
-                log_debug("%s: Worker is now running.\n", __FUNCTION__);
-            }
-        }
-    } while ((state != SYNC_WORKER_STATE_RUNNING) && (++retry <= max_retries));
-
-    /* By this point, our worker should be running */
-    if (status != 0 || state != SYNC_WORKER_STATE_RUNNING) {
-        if (status == 0) {
-            status = BLADERF_ERR_UNEXPECTED;
-        }
-
-        log_debug("%s: %s worker failed to start (state=%d): %s\n",
-                  __FUNCTION__, module2str(s->stream_config.module),
-                  state, bladerf_strerror(status));
-    }
-
-    return status;
-}
-
 static int wait_for_buffer(struct buffer_mgmt *b, unsigned int timeout_ms,
                            const char *dbg_name, unsigned int dbg_idx)
 {
@@ -251,6 +211,10 @@ static int wait_for_buffer(struct buffer_mgmt *b, unsigned int timeout_ms,
     return status;
 }
 
+#ifndef SYNC_WORKER_START_TIMEOUT_MS
+#   define SYNC_WORKER_START_TIMEOUT_MS 250
+#endif
+
 int sync_rx(struct bladerf *dev, void *samples, unsigned num_samples,
              struct bladerf_metadata *metadata, unsigned int timeout_ms)
 {
@@ -264,7 +228,6 @@ int sync_rx(struct bladerf *dev, void *samples, unsigned num_samples,
     unsigned int samples_to_copy;
     const unsigned int samples_per_buffer = s->stream_config.samples_per_buffer;
 
-
     if (s == NULL || samples == NULL) {
         return BLADERF_ERR_INVAL;
     }
@@ -272,10 +235,49 @@ int sync_rx(struct bladerf *dev, void *samples, unsigned num_samples,
     while (samples_returned < num_samples && status == 0) {
 
         switch (s->state) {
-            case SYNC_STATE_CHECK_AND_START_WORKER:
-                status = check_and_start_worker(s);
+            case SYNC_STATE_CHECK_WORKER: {
+                sync_worker_state worker_state = sync_worker_get_state(s->worker);
+
+                if (worker_state == SYNC_WORKER_STATE_IDLE) {
+                    log_debug("%s: Worker is idle. Going to reset buf mgmt.\n",
+                              __FUNCTION__);
+                    s->state = SYNC_STATE_RESET_BUF_MGMT;
+                } else if (worker_state == SYNC_WORKER_STATE_RUNNING) {
+                    s->state = SYNC_STATE_WAIT_FOR_BUFFER;
+                } else {
+                    status = BLADERF_ERR_UNEXPECTED;
+                    log_debug("%s: Unexpected worker state=%d\n",
+                              __FUNCTION__, worker_state);
+                }
+
+                break;
+            }
+
+            case SYNC_STATE_RESET_BUF_MGMT:
+                pthread_mutex_lock(&b->lock);
+                /* When the RX stream starts up, it will submit the first T
+                 * transfers, so the consumer index must be reset to 0 */
+                b->cons_i = 0;
+                pthread_mutex_unlock(&b->lock);
+                log_debug("%s: Reset buf_mgmt consumer index\n", __FUNCTION__);
+                s->state = SYNC_STATE_START_WORKER;
+                break;
+
+
+            case SYNC_STATE_START_WORKER:
+                sync_worker_submit_request(s->worker, SYNC_WORKER_START);
+
+                status = sync_worker_wait_for_state(
+                                                s->worker,
+                                                SYNC_WORKER_STATE_RUNNING,
+                                                SYNC_WORKER_START_TIMEOUT_MS);
+
                 if (status == 0) {
                     s->state = SYNC_STATE_WAIT_FOR_BUFFER;
+                    log_debug("%s: Worker is now running.\n", __FUNCTION__);
+                } else {
+                    log_debug("%s: Failed to start worker, (%d)\n",
+                              __FUNCTION__, status);
                 }
                 break;
 
@@ -289,6 +291,14 @@ int sync_rx(struct bladerf *dev, void *samples, unsigned num_samples,
                 } else {
                     status = wait_for_buffer(b, timeout_ms,
                                              __FUNCTION__, b->cons_i);
+
+                    if (status == BLADERF_ERR_TIMEOUT) {
+                        log_debug("%s: Timed out waiting for buffer %u\n",
+                                  __FUNCTION__, b->cons_i);
+
+                        status = 0;
+                        s->state = SYNC_STATE_CHECK_WORKER;
+                    }
                 }
 
                 pthread_mutex_unlock(&b->lock);
@@ -334,14 +344,7 @@ int sync_rx(struct bladerf *dev, void *samples, unsigned num_samples,
                     b->status[b->cons_i] = SYNC_BUFFER_EMPTY;
                     b->cons_i = (b->cons_i + 1) % b->num_buffers;
 
-                    /* Go handle the next buffer, if we have one available.
-                     * Otherwise, check up on the worker's state and restart
-                     * it if needed. */
-                    if (b->status[b->cons_i] == SYNC_BUFFER_FULL) {
-                        s->state = SYNC_STATE_BUFFER_READY;
-                    } else {
-                        s->state = SYNC_STATE_CHECK_AND_START_WORKER;
-                    }
+                    s->state = SYNC_STATE_WAIT_FOR_BUFFER;
                 }
 
                 pthread_mutex_unlock(&b->lock);
@@ -372,11 +375,33 @@ int sync_tx(struct bladerf *dev, void *samples, unsigned int num_samples,
     while (status == 0 && samples_written < num_samples) {
 
         switch (s->state) {
+            case SYNC_STATE_CHECK_WORKER: {
+                sync_worker_state worker_state = sync_worker_get_state(s->worker);
 
-            case SYNC_STATE_CHECK_AND_START_WORKER:
-                status = check_and_start_worker(s);
+                if (worker_state == SYNC_WORKER_STATE_IDLE) {
+                    /* No need to reset any buffer managment for TX since
+                     * the TX stream does not submit an initial set of buffers.
+                     * Therefore the RESET_BUF_MGMT state is skipped here. */
+                    s->state = SYNC_STATE_START_WORKER;
+                }
+                break;
+            }
+
+            case SYNC_STATE_RESET_BUF_MGMT:
+                assert(!"Bug");
+                break;
+
+            case SYNC_STATE_START_WORKER:
+                sync_worker_submit_request(s->worker, SYNC_WORKER_START);
+
+                status = sync_worker_wait_for_state(
+                        s->worker,
+                        SYNC_WORKER_STATE_RUNNING,
+                        SYNC_WORKER_START_TIMEOUT_MS);
+
                 if (status == 0) {
                     s->state = SYNC_STATE_WAIT_FOR_BUFFER;
+                    log_debug("%s: Worker is now running.\n", __FUNCTION__);
                 }
                 break;
 
@@ -455,7 +480,7 @@ int sync_tx(struct bladerf *dev, void *samples, unsigned int num_samples,
                         if (b->status[b->prod_i] == SYNC_BUFFER_EMPTY) {
                             s->state = SYNC_STATE_BUFFER_READY;
                         } else {
-                            s->state = SYNC_STATE_CHECK_AND_START_WORKER;
+                            s->state = SYNC_STATE_CHECK_WORKER;
                         }
 
                     }

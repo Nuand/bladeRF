@@ -41,7 +41,6 @@
 
 void *sync_worker_task(void *arg);
 
-
 static void *rx_callback(struct bladerf *dev,
                          struct bladerf_stream *stream,
                          struct bladerf_metadata *meta,
@@ -314,7 +313,7 @@ int sync_worker_wait_for_state(struct sync_worker *w, sync_worker_state state,
 
     if (status != 0) {
         log_debug("%s: Wait on state change failed: %s\n",
-                __FUNCTION__, strerror(status));
+                   __FUNCTION__, strerror(status));
 
         if (status == ETIMEDOUT) {
             status = BLADERF_ERR_TIMEOUT;
@@ -386,10 +385,11 @@ static void exec_running_state(struct bladerf_sync *s)
     int status;
     unsigned int i;
 
+    pthread_mutex_lock(&s->buf_mgmt.lock);
+
     if (s->stream_config.module == BLADERF_MODULE_TX) {
         /* If we've previously timed out on a stream, we'll likely have some
          * stale buffers marked "in-flight" that have since been cancelled. */
-        pthread_mutex_lock(&s->buf_mgmt.lock);
         for (i = 0; i < s->buf_mgmt.num_buffers; i++) {
             if (s->buf_mgmt.status[i] == SYNC_BUFFER_IN_FLIGHT) {
                 s->buf_mgmt.status[i] = SYNC_BUFFER_EMPTY;
@@ -397,8 +397,20 @@ static void exec_running_state(struct bladerf_sync *s)
         }
 
         pthread_cond_signal(&s->buf_mgmt.buf_ready);
-        pthread_mutex_unlock(&s->buf_mgmt.lock);
-    } /* TODO similar handling for RX */
+    } else {
+        assert(s->stream_config.module == BLADERF_MODULE_RX);
+        s->buf_mgmt.prod_i = s->stream_config.num_xfers;
+
+        for (i = 0; i < s->buf_mgmt.num_buffers; i++) {
+            if (i < s->stream_config.num_xfers) {
+                s->buf_mgmt.status[i] = SYNC_BUFFER_IN_FLIGHT;
+            } else if (s->buf_mgmt.status[i] == SYNC_BUFFER_IN_FLIGHT) {
+                s->buf_mgmt.status[i] = SYNC_BUFFER_EMPTY;
+            }
+        }
+    }
+
+    pthread_mutex_unlock(&s->buf_mgmt.lock);
 
     status = bladerf_stream(s->worker->stream, s->stream_config.module);
 

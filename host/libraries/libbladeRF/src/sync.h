@@ -62,9 +62,11 @@ struct buffer_mgmt {
                                  *  buffer emptied by TX callback */
 };
 
-/* State of API-side sync inferface */
+/* State of API-side sync interface */
 typedef enum {
-    SYNC_STATE_CHECK_AND_START_WORKER,
+    SYNC_STATE_CHECK_WORKER,
+    SYNC_STATE_RESET_BUF_MGMT,
+    SYNC_STATE_START_WORKER,
     SYNC_STATE_WAIT_FOR_BUFFER,
     SYNC_STATE_BUFFER_READY,
     SYNC_STATE_USING_BUFFER
