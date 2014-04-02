@@ -135,6 +135,28 @@ void dac_write( uint16_t val ) {
     return ;
 }
 
+// Transverter write
+void adf4351_write( uint32_t val ) {
+    union {
+        uint32_t val;
+        uint8_t byte[4];
+    } sval;
+
+    uint8_t t;
+    sval.val = val;
+
+    t = sval.byte[0];
+    sval.byte[0] = sval.byte[3];
+    sval.byte[3] = t;
+
+    t = sval.byte[1];
+    sval.byte[1] = sval.byte[2];
+    sval.byte[2] = t;
+
+    alt_avalon_spi_command( SPI_1_BASE, 1, 4, &sval.val, 0, 0, 0 ) ;
+    return ;
+}
+
 // SPI Read
 void lms_spi_read( uint8_t address, uint8_t *val )
 {
@@ -230,7 +252,7 @@ int main()
       unsigned char mode;
       unsigned char buf[14];
       struct uart_cmd *cmd_ptr;
-      uint16_t dacval;
+      uint32_t tmpvar = 0;
 
       state = LOOKING_FOR_MAGIC;
       while(1)
@@ -239,6 +261,8 @@ int main()
           if( IORD_ALTERA_AVALON_UART_STATUS(UART_0_BASE) & ALTERA_AVALON_UART_STATUS_RRDY_MSK )
           {
               uint8_t val ;
+              int isRead;
+              int isWrite;
 
               val = IORD_ALTERA_AVALON_UART_RXDATA(UART_0_BASE) ;
 
@@ -272,6 +296,9 @@ int main()
                   IOWR_ALTERA_AVALON_UART_TXDATA(UART_0_BASE,  val);
               }
 
+              isRead = (mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_READ;
+              isWrite = (mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_WRITE;
+
               if (state == EXECUTE_CMDS) {
                   write_uart(UART_PKT_MAGIC);
                   write_uart(mode);
@@ -281,9 +308,9 @@ int main()
 
                   if ((mode & UART_PKT_MODE_DEV_MASK) == UART_PKT_DEV_LMS) {
                       for (i = 0; i < cnt; i++) {
-                          if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_READ) {
+                          if (isRead) {
                               lms_spi_read(cmd_ptr->addr, &cmd_ptr->data);
-                          } else if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_WRITE) {
+                          } else if (isWrite) {
                               lms_spi_write(cmd_ptr->addr, cmd_ptr->data);
                               cmd_ptr->data = 0;
                           } else {
@@ -295,11 +322,11 @@ int main()
                   }
                   if ((mode & UART_PKT_MODE_DEV_MASK) == UART_PKT_DEV_SI5338) {
                       for (i = 0; i < cnt; i++) {
-                          if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_READ) {
+                          if (isRead) {
                               uint8_t tmpvar;
                               si5338_read(cmd_ptr->addr, &tmpvar);
                               cmd_ptr->data = tmpvar;
-                          } else if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_WRITE) {
+                          } else if (isWrite) {
                               si5338_write(cmd_ptr->addr, cmd_ptr->data);
                               cmd_ptr->data = 0;
                           } else {
@@ -309,61 +336,77 @@ int main()
                           cmd_ptr++;
                       }
                   }
+
+                  const struct {
+                      enum {
+                          GDEV_UNKNOWN,
+                          GDEV_GPIO,
+                          GDEV_IQ_CORR_RX,
+                          GDEV_IQ_CORR_TX,
+                          GDEV_FPGA_VERSION,
+                          GDEV_TIME_TIMER,
+                          GDEV_VCTXCO,
+                          GDEV_XB_LO,
+                          GDEV_EXPANSION,
+                          GDEV_EXPANSION_DIR,
+                      } gdev;
+                      int start, len;
+                  } gdev_lut[] = {
+                          {GDEV_GPIO,           0, 4},
+                          {GDEV_IQ_CORR_RX,     4, 4},
+                          {GDEV_IQ_CORR_TX,     8, 4},
+                          {GDEV_FPGA_VERSION,  12, 4},
+                          {GDEV_TIME_TIMER,    16, 16},
+                          {GDEV_VCTXCO,        34, 2},
+                          {GDEV_XB_LO,         36, 4},
+                          {GDEV_EXPANSION,     40, 4},
+                          {GDEV_EXPANSION_DIR, 44, 4},
+                  };
+#define ARRAY_SZ(x) (sizeof(x)/sizeof(x[0]))
+#define COLLECT_BYTES(x)       tmpvar &= ~ ( 0xff << ( 8 * cmd_ptr->addr));   \
+                              tmpvar |= cmd_ptr->data << (8 * cmd_ptr->addr); \
+                              if (lastByte) { x; tmpvar = 0; } \
+                              cmd_ptr->data = 0;
+
                   if ((mode & UART_PKT_MODE_DEV_MASK) == UART_PKT_DEV_GPIO) {
                     uint32_t device;
+                    int lut, lastByte;
                     for (i = 0; i < cnt; i++) {
-                        switch(cmd_ptr->addr)
-                        {
-                            case 0:case 1:case 2: case 3:
-                                device = PIO_0_BASE;break;
-                            case 4: case 5: case 6: case 7:
-                                device = IQ_CORR_RX_PHASE_GAIN_BASE;
-                                cmd_ptr->addr -= 4;
+                        device = GDEV_UNKNOWN;
+                        lastByte = 0;
+                        for (lut = 0; lut < ARRAY_SZ(gdev_lut); lut++) {
+                            if (gdev_lut[lut].start <= cmd_ptr->addr && (gdev_lut[lut].start + gdev_lut[lut].len) > cmd_ptr->addr) {
+                                cmd_ptr->addr -= gdev_lut[lut].start;
+                                device = gdev_lut[lut].gdev;
+                                lastByte = cmd_ptr->addr == (gdev_lut[lut].len - 1);
                                 break;
-                            case 8: case 9: case 10: case 11:
-                                device = IQ_CORR_TX_PHASE_GAIN_BASE;
-                                cmd_ptr->addr -= 8;
-                                break;
-                            case 12: case 13: case 14: case 15:
-                                device = FPGA_VERSION_ID;
-                                cmd_ptr->addr -= 12;
-                                break;
-
-                            case 16: case 17: case 18: case 19:
-                            case 20: case 21: case 22: case 23:
-                            case 24: case 25: case 26: case 27:
-                            case 28: case 29: case 30: case 31:
-                                cmd_ptr->addr -= 16;
-                                device = TIME_TAMER;
-                                break;
-                            default:
-                                //error
-                                device = PIO_0_BASE;
+                            }
                         }
 
-                        if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_READ) {
-                            if (device == FPGA_VERSION_ID)
-                            {
+                        if (isRead) {
+                            if (device == GDEV_FPGA_VERSION)
                                 cmd_ptr->data = (FPGA_VERSION >> (cmd_ptr->addr * 8));
-                            }
-                            else if (device == TIME_TAMER)
-                            {
+                            else if (device == GDEV_TIME_TIMER)
                                 cmd_ptr->data = IORD_8DIRECT(TIME_TAMER, cmd_ptr->addr);
-                            }
-                            else
-                            {
-                                cmd_ptr->data = (IORD_ALTERA_AVALON_PIO_DATA(device)) >> (cmd_ptr->addr * 8);
-                            }
-                        } else if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_WRITE) {
-                            if (device == TIME_TAMER) {
+                            else if (device == GDEV_GPIO)
+                                cmd_ptr->data = (IORD_ALTERA_AVALON_PIO_DATA(PIO_0_BASE)) >> (cmd_ptr->addr * 8);
+                            else if (device == GDEV_EXPANSION)
+                                cmd_ptr->data = (IORD_ALTERA_AVALON_PIO_DATA(PIO_1_BASE)) >> (cmd_ptr->addr * 8);
+                            else if (device == GDEV_EXPANSION_DIR)
+                                cmd_ptr->data = (IORD_ALTERA_AVALON_PIO_DATA(PIO_2_BASE)) >> (cmd_ptr->addr * 8);
+                        } else if (isWrite) {
+                            if (device == GDEV_TIME_TIMER) {
                                 IOWR_8DIRECT(TIME_TAMER, cmd_ptr->addr, 1) ;
-                            } else {
-                                uint32_t tmpvar;
-                                tmpvar = IORD_ALTERA_AVALON_PIO_DATA(device);
-                                tmpvar &= ~ (0xff << (8 * cmd_ptr->addr));
-                                tmpvar |= cmd_ptr->data << (8 * cmd_ptr->addr);
-                                IOWR_ALTERA_AVALON_PIO_DATA(device, tmpvar);
-                                cmd_ptr->data = 0;
+                            } else if (device == GDEV_GPIO){
+                                COLLECT_BYTES(IOWR_ALTERA_AVALON_PIO_DATA(PIO_0_BASE, tmpvar));
+                            } else if (device == GDEV_VCTXCO) {
+                                COLLECT_BYTES(dac_write(tmpvar));
+                            } else if (device == GDEV_XB_LO) {
+                                COLLECT_BYTES(adf4351_write(tmpvar));
+                            } else if (device == GDEV_EXPANSION) {
+                                COLLECT_BYTES(IOWR_ALTERA_AVALON_PIO_DATA(PIO_1_BASE, tmpvar));
+                            } else if (device == GDEV_EXPANSION_DIR) {
+                                COLLECT_BYTES(IOWR_ALTERA_AVALON_PIO_DATA(PIO_2_BASE, tmpvar));
                             }
                         } else {
                             cmd_ptr->addr = 0;
@@ -371,22 +414,7 @@ int main()
                         }
 
                         cmd_ptr++;
-                    }
-                  }
-                  if ((mode & UART_PKT_MODE_DEV_MASK) == UART_PKT_DEV_VCTCXO) {
-                      if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_READ) {
-                          cmd_ptr->data = dacval >> (cmd_ptr->addr * 8);
-                      } else if ((mode & UART_PKT_MODE_DIR_MASK) == UART_PKT_MODE_DIR_WRITE) {
-                          dacval &= ~ (0xff << (8 * cmd_ptr->addr));
-                          dacval |= cmd_ptr->data << (8 * cmd_ptr->addr);
-                          if (cmd_ptr->addr == 1) {
-                              dac_write(dacval);
-                          }
-                          cmd_ptr->data = 0;
-                      } else {
-                          cmd_ptr->addr = 0;
-                          cmd_ptr->data = 0;
-                      }
+                     }
                   }
 
                   cmd_ptr = (struct uart_cmd *)buf;
