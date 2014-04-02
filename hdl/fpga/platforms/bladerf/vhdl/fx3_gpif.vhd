@@ -247,23 +247,26 @@ begin
             if( can_rx = '1' ) then
                 if( can_tx = '0' ) then
                     should_rx <= '1' ;
-                elsif( dma_last_event = DE_TX ) then
-                    should_rx <= '1' ;
+--                elsif( dma_last_event = DE_TX ) then
+--                    should_rx <= '1' ;
+--                else
+--                    should_rx <= '0' ;
                 else
-                    should_rx <= '0' ;
+                    should_rx <= '1';
                 end if ;
             else
                 should_rx <= '0' ;
             end if ;
 
             if( can_tx = '1' ) then
-                if( can_rx = '0' ) then
-                    should_tx <= '1' ;
-                elsif( dma_last_event = DE_RX ) then
-                    should_tx <= '1' ;
-                else
-                    should_tx <= '0' ;
-                end if ;
+                should_tx <= '1';
+--                if( can_rx = '0' ) then
+--                    should_tx <= '1' ;
+--                elsif( dma_last_event = DE_RX ) then
+--                    should_tx <= '1' ;
+--                else
+--                    should_tx <= '0' ;
+--                end if ;
             else
                 should_tx <= '0' ;
             end if ;
