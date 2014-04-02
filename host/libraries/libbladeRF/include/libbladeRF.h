@@ -473,6 +473,33 @@ typedef enum
 } bladerf_module;
 
 /**
+ * Expansion boards
+ */
+typedef enum {
+    BLADERF_XB_NONE = 0,
+    BLADERF_XB_100,
+    BLADERF_XB_200
+} bladerf_xb ;
+
+/**
+ * XB 200 filterbanks
+ */
+typedef enum {
+    BLADERF_XB200_50M = 0,
+    BLADERF_XB200_144M,
+    BLADERF_XB200_222M,
+    BLADERF_XB200_CUSTOM
+} bladerf_xb200_filter;
+
+/**
+ * XB 200 signal paths
+ */
+typedef enum {
+    BLADERF_XB200_BYPASS = 0,
+    BLADERF_XB200_MIX
+} bladerf_xb200_path;
+
+/**
  * DC Calibration Modules
  */
 typedef enum
@@ -940,6 +967,85 @@ API_EXPORT
 int CALL_CONV bladerf_get_frequency(struct bladerf *dev,
                                     bladerf_module module,
                                     unsigned int *frequency);
+
+/**
+ * Attach and enable an expansion board's features
+ *
+ * @param       dev         Device handle
+ * @param       xb          Expansion board
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_expansion_attach(struct bladerf *dev, bladerf_xb xb);
+
+/**
+ * Determine which expansion board is attached
+ *
+ * @param       dev         Device handle
+ * @param       xb          Expansion board
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_expansion_get_attached(struct bladerf *dev, bladerf_xb *xb);
+
+/**
+ * XB-200 transveter board specific setup routine
+ *
+ * @param[in]   dev     Device handle
+ *
+ * @return 0 on success, BLADERF_ERR_* value on failure
+ */
+int bladerf_xb200_attach(struct bladerf *dev);
+
+/**
+ * Set XB-200 filterbank
+ *
+ * @param       dev         Device handle
+ * @param       mod         Module
+ * @param       filter      XB200 filterbank
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_xb200_set_filterbank(struct bladerf *dev, bladerf_module mod, bladerf_xb200_filter filter);
+
+/**
+ * Get current XB-200 filterbank
+ *
+ * @param       dev         Device handle
+ * @param       mod         Module
+ * @param       filter      Pointer to filterbank
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_xb200_get_filterbank(struct bladerf *dev, bladerf_module mod, bladerf_xb200_filter *filter);
+
+/**
+ * Set XB-200 signal path
+ *
+ * @param       dev         Device handle
+ * @param       mod         Module
+ * @param       filter      XB200 filterbank
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_xb200_set_path(struct bladerf *dev, bladerf_module mod, bladerf_xb200_path path);
+
+/**
+ * Get current XB-200 signal path
+ *
+ * @param       dev         Device handle
+ * @param       mod         Module
+ * @param       path        Pointer to XB200 signal path
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_xb200_get_path(struct bladerf *dev, bladerf_module mod, bladerf_xb200_path *path);
 
 /** @} (End of FN_CTRL) */
 

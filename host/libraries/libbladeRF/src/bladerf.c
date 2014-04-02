@@ -433,6 +433,23 @@ int bladerf_set_frequency(struct bladerf *dev,
                           bladerf_module module, unsigned int frequency)
 {
     int status;
+    bladerf_xb attached;
+
+    status = bladerf_expansion_get_attached(dev, &attached);
+    if (status)
+        return status;
+    if (attached == BLADERF_XB_200) {
+        if (frequency < BLADERF_FREQUENCY_MIN) {
+            status = bladerf_xb200_set_path(dev, module, BLADERF_XB200_MIX);
+            if (status)
+                return status;
+            frequency = 1248e6 - frequency;
+        } else {
+            status = bladerf_xb200_set_path(dev, module, BLADERF_XB200_BYPASS);
+            if (status)
+                return status;
+        }
+    }
 
     status = lms_set_frequency(dev, module, frequency);
     if (status != 0) {

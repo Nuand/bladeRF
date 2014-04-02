@@ -205,6 +205,7 @@ set(LIBBLADERF_SOURCE
         src/file_ops.c
         src/lms.c
         src/si5338.c
+        src/xb.c
         src/version.h
         src/device_identifier.c
         src/devinfo.c
