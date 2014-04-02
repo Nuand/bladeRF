@@ -69,6 +69,7 @@ PRINTSET_DECL(samplerate)
 PRINTSET_DECL(sampling)
 PRINTSET_DECL(trimdac)
 PRINTSET_DECL(xb_spi)
+PRINTSET_DECL(xb_gpio)
 PRINTSET_DECL(txvga1)
 PRINTSET_DECL(txvga2)
 
@@ -92,6 +93,7 @@ struct printset_entry printset_table[] = {
     PRINTSET_ENTRY(sampling),
     PRINTSET_ENTRY(trimdac),
     PRINTSET_ENTRY(xb_spi),
+    PRINTSET_ENTRY(xb_gpio),
     PRINTSET_ENTRY(txvga1),
     PRINTSET_ENTRY(txvga2),
 
@@ -481,6 +483,43 @@ int set_gpio(struct cli_state *state, int argc, char **argv)
     return rv;
 }
 
+int print_xb_gpio(struct cli_state *state, int argc, char **argv) {
+    int rv = CMD_RET_OK, status;
+    unsigned int val;
+
+    status = bladerf_expansion_gpio_read( state->dev, &val );
+
+    if (status < 0) {
+        state->last_lib_error = status;
+        rv = CMD_RET_LIBBLADERF;
+    } else {
+        printf( "\n" );
+        printf( "Expansion GPIO: 0x%8.8x\n", val );
+        printf( "\n" );
+    }
+    return rv;
+}
+
+int set_xb_gpio(struct cli_state *state, int argc, char **argv)
+{
+    /* set gpio <value> */
+    int rv = CMD_RET_OK;
+    uint32_t val;
+    bool ok;
+
+    if( argc == 3 ) {
+        val = str2uint( argv[2], 0, UINT_MAX, &ok );
+        if( !ok ) {
+            cli_err(state, argv[0], "Invalid xb gpio value (%s)", argv[2]);
+            rv = CMD_RET_INVPARAM;
+        } else {
+            bladerf_expansion_gpio_write ( state->dev,val );
+        }
+    } else {
+        rv = CMD_RET_NARGS;
+    }
+    return rv;
+}
 
 int print_lmsregs(struct cli_state *state, int argc, char **argv)
 {

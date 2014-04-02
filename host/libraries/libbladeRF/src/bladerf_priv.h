@@ -108,6 +108,10 @@ struct bladerf_fn {
     int (*config_gpio_write)(struct bladerf *dev, uint32_t val);
     int (*config_gpio_read)(struct bladerf *dev, uint32_t *val);
 
+    /* Expansion GPIO accessors */
+    int (*expansion_gpio_write)(struct bladerf *dev, uint32_t val);
+    int (*expansion_gpio_read)(struct bladerf *dev, uint32_t *val);
+
     /* IQ Calibration Settings */
     int (*set_correction)(struct bladerf *dev, bladerf_module,
                           bladerf_correction corr, int16_t value);

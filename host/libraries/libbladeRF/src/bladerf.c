@@ -984,6 +984,20 @@ int bladerf_config_gpio_write(struct bladerf *dev, uint32_t val)
 }
 
 /*------------------------------------------------------------------------------
+ * Expansion board GPIO register read / write functions
+ *----------------------------------------------------------------------------*/
+
+int bladerf_expansion_gpio_read(struct bladerf *dev, uint32_t *val)
+{
+    return dev->fn->expansion_gpio_read(dev,val);
+}
+
+int bladerf_expansion_gpio_write(struct bladerf *dev, uint32_t val)
+{
+    return dev->fn->expansion_gpio_write(dev,val);
+}
+
+/*------------------------------------------------------------------------------
  * IQ Calibration routines
  *----------------------------------------------------------------------------*/
 int bladerf_set_correction(struct bladerf *dev, bladerf_module module,
