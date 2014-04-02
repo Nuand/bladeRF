@@ -871,7 +871,7 @@ begin
             tx_sync_r <= (others => '0');
         elsif( rising_edge( tx_clock )) then
             tx_sync_r <= timestamp_sync & tx_sync_r(7 downto 1);
-            if (tx_sync_r(3 downto 0) = "1100") then
+            if (tx_sync_r(3 downto 0) = "1000") then
                 tx_timestamp <= (others => '0');
             else
                 if (meta_en_tx = '1') then
@@ -883,24 +883,7 @@ begin
         end if;
     end process;
 
-    process(rx_clock, rx_reset)
-    begin
-        if( rx_reset = '1') then
-            rx_timestamp <= (others => '0');
-            rx_sync_r <= (others => '0');
-        elsif( rising_edge( rx_clock )) then
-            rx_sync_r <= timestamp_sync & rx_sync_r(7 downto 1);
-            if (rx_sync_r(3 downto 0) = "1100") then
-                rx_timestamp <= (others => '0');
-            else
-                if (meta_en_rx = '1') then
-                    rx_timestamp <= rx_timestamp + 1;
-                else
-                    rx_timestamp <= (others => '0');
-                end if;
-            end if;
-        end if;
-    end process;
+    rx_timestamp <= tx_timestamp;
 
 end architecture ; -- arch
 
