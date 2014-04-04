@@ -66,9 +66,9 @@ architecture hosted_bladerf of bladerf is
     alias tx_clock  is c4_tx_clock ;
     alias rx_clock  is lms_rx_clock_out ;
 
-    type rx_mux_mode_t is (RX_MUX_NORMAL, RX_MUX_12BIT_COUNTER, RX_MUX_32BIT_COUNTER, RX_MUX_ENTROPY) ;
+    type rx_mux_mode_t is (RX_MUX_NORMAL, RX_MUX_12BIT_COUNTER, RX_MUX_32BIT_COUNTER, RX_MUX_ENTROPY, RX_MUX_DIGITAL_LOOPBACK) ;
 
-    signal rx_mux_sel       : unsigned(1 downto 0) ;
+    signal rx_mux_sel       : unsigned(2 downto 0) ;
     signal rx_mux_mode      : rx_mux_mode_t ;
 
     signal \80MHz\          : std_logic ;
@@ -688,6 +688,10 @@ begin
                     rx_mux_i <= rx_entropy_i ;
                     rx_mux_q <= rx_entropy_q ;
                     rx_mux_valid <= rx_entropy_valid ;
+                when RX_MUX_DIGITAL_LOOPBACK =>
+                    rx_mux_i <= tx_sample_raw_i ;
+                    rx_mux_q <= tx_sample_raw_q ;
+                    rx_mux_valid <= tx_sample_raw_valid ;
                 when others =>
                     rx_mux_i <= (others =>'0') ;
                     rx_mux_q <= (others =>'0') ;
