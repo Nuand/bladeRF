@@ -32,6 +32,13 @@ static CyU3PDmaChannel glChHandlebladeRFUARTtoU;   /* DMA Channel for U2P transf
 static CyU3PDmaChannel glChHandleUtoP;
 static CyU3PDmaChannel glChHandlePtoU;
 
+static int loopback = 0;
+static int loopback_when_created;
+
+void NuandRFLinkLoopBack(int lp) {
+    loopback = lp;
+}
+
 static void UartBridgeStart(void)
 {
     uint16_t size = 0;
@@ -307,6 +314,13 @@ static void NuandRFLinkStart(void)
     dmaCfg.consHeader = 0;
     dmaCfg.prodAvailCount = 0;
 
+    loopback_when_created = loopback;
+
+    if (loopback) {
+        dmaCfg.prodSckId = BLADE_RF_SAMPLE_EP_PRODUCER_USB_SOCKET;
+        dmaCfg.consSckId = BLADE_RF_SAMPLE_EP_CONSUMER_USB_SOCKET;
+    }
+
     apiRetStatus = CyU3PDmaChannelCreate(&glChHandleUtoP, CY_U3P_DMA_TYPE_AUTO, &dmaCfg);
 
     if (apiRetStatus != CY_U3P_SUCCESS) {
@@ -314,12 +328,14 @@ static void NuandRFLinkStart(void)
         CyFxAppErrorHandler(apiRetStatus);
     }
 
-    dmaCfg.prodSckId = CY_U3P_PIB_SOCKET_0;
-    dmaCfg.consSckId = BLADE_RF_SAMPLE_EP_CONSUMER_USB_SOCKET;
-    apiRetStatus = CyU3PDmaChannelCreate(&glChHandlePtoU, CY_U3P_DMA_TYPE_AUTO, &dmaCfg);
-    if (apiRetStatus != CY_U3P_SUCCESS) {
-        CyU3PDebugPrint(4, "CyU3PDmaMultiChannelCreate failed, Error code = %d\n", apiRetStatus);
-        CyFxAppErrorHandler(apiRetStatus);
+    if (!loopback) {
+        dmaCfg.prodSckId = CY_U3P_PIB_SOCKET_0;
+        dmaCfg.consSckId = BLADE_RF_SAMPLE_EP_CONSUMER_USB_SOCKET;
+        apiRetStatus = CyU3PDmaChannelCreate(&glChHandlePtoU, CY_U3P_DMA_TYPE_AUTO, &dmaCfg);
+        if (apiRetStatus != CY_U3P_SUCCESS) {
+            CyU3PDebugPrint(4, "CyU3PDmaMultiChannelCreate failed, Error code = %d\n", apiRetStatus);
+            CyFxAppErrorHandler(apiRetStatus);
+        }
     }
 
     /* Flush the Endpoint memory */
@@ -334,10 +350,12 @@ static void NuandRFLinkStart(void)
         CyFxAppErrorHandler(apiRetStatus);
     }
 
-    apiRetStatus = CyU3PDmaChannelSetXfer (&glChHandlePtoU, BLADE_DMA_TX_SIZE);
-    if (apiRetStatus != CY_U3P_SUCCESS) {
-        CyU3PDebugPrint(4, "CyU3PDmaChannelSetXfer Failed, Error code = %d\n", apiRetStatus);
-        CyFxAppErrorHandler(apiRetStatus);
+    if (!loopback) {
+        apiRetStatus = CyU3PDmaChannelSetXfer (&glChHandlePtoU, BLADE_DMA_TX_SIZE);
+        if (apiRetStatus != CY_U3P_SUCCESS) {
+            CyU3PDebugPrint(4, "CyU3PDmaChannelSetXfer Failed, Error code = %d\n", apiRetStatus);
+            CyFxAppErrorHandler(apiRetStatus);
+        }
     }
 
     UartBridgeStart();
@@ -363,7 +381,8 @@ static void NuandRFLinkStop (void)
 
     /* Destroy the channels */
     CyU3PDmaChannelDestroy(&glChHandleUtoP);
-    CyU3PDmaChannelDestroy(&glChHandlePtoU);
+    if (!loopback_when_created)
+        CyU3PDmaChannelDestroy(&glChHandlePtoU);
 
     /* Disable endpoints. */
     CyU3PMemSet ((uint8_t *)&epCfg, 0, sizeof (epCfg));

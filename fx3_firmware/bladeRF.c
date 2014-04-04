@@ -413,6 +413,11 @@ CyBool_t NuandHandleVendorRequest(
         CyU3PUsbSendRetCode(ret);
     break;
 
+    case BLADE_USB_CMD_SET_LOOPBACK:
+        NuandRFLinkLoopBack(wValue);
+        CyU3PUsbSendRetCode(wValue);
+    break;
+
     case BLADE_USB_CMD_READ_PAGE_BUFFER:
         if(wIndex + wLength > sizeof(glPageBuffer)) {
             apiRetStatus = CyU3PUsbStall(0x80, CyTrue, CyFalse);
