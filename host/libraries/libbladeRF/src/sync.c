@@ -296,7 +296,6 @@ int sync_rx(struct bladerf *dev, void *samples, unsigned num_samples,
                         log_debug("%s: Timed out waiting for buffer %u\n",
                                   __FUNCTION__, b->cons_i);
 
-                        status = 0;
                         s->state = SYNC_STATE_CHECK_WORKER;
                     }
                 }
