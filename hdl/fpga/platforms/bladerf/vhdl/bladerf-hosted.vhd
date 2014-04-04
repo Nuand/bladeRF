@@ -220,6 +220,8 @@ architecture hosted_bladerf of bladerf is
     signal rx_sample_corrected_q : signed(15 downto 0);
     signal rx_sample_corrected_valid : std_logic;
 
+    signal led1_blink : std_logic;
+
     signal nios_sdo : std_logic;
     signal nios_sdio : std_logic;
     signal nios_sclk : std_logic;
@@ -818,13 +820,14 @@ begin
             count := count - 1 ;
             if( count = 0 ) then
                 count := 100_000_00 ;
-                led(1) <= not led(1) ;
+                led1_blink <= not led1_blink;
             end if ;
         end if ;
     end process ;
 
-    led(2) <= tx_underflow_led ;
-    led(3) <= rx_overflow_led ;
+    led(1) <= led1_blink        when nios_gpio(15) = '0' else not nios_gpio(12);
+    led(2) <= tx_underflow_led  when nios_gpio(15) = '0' else not nios_gpio(13);
+    led(3) <= rx_overflow_led   when nios_gpio(15) = '0' else not nios_gpio(14);
 
 --    toggle_led2 : process(rx_clock)
 --        variable count : natural range 0 to 38_400_00 := 38_400_00 ;
