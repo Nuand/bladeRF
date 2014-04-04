@@ -137,6 +137,9 @@ struct bladerf_fn {
     /* Expansion board SPI */
     int (*xb_spi)(struct bladerf *dev, uint32_t value);
 
+    /* Configure firmware loopback */
+    int (*set_firmware_loopback)(struct bladerf *dev, bool enable);
+
     /* Sample stream */
     int (*enable_module)(struct bladerf *dev, bladerf_module m, bool enable);
 

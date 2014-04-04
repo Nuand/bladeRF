@@ -2237,6 +2237,17 @@ API_EXPORT
 int CALL_CONV bladerf_get_timestamp(struct bladerf *dev, bladerf_module mod, uint64_t *value);
 
 /**
+ * Configure firmware loopback mode
+ *
+ * @param   dev         Device handle
+ * @param   enable      Enable or disable firmware based loopback
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_firmware_loopback(struct bladerf *dev, bool enable);
+
+/**
  * Write value to VCTCXO DAC
  *
  * @param   dev         Device handle

@@ -1035,6 +1035,15 @@ int bladerf_get_timestamp(struct bladerf *dev, bladerf_module module, uint64_t *
 }
 
 /*------------------------------------------------------------------------------
+ * Configure firmware loopback mode
+ *----------------------------------------------------------------------------*/
+
+int bladerf_set_firmware_loopback(struct bladerf *dev, bool enable)
+{
+    return dev->fn->set_firmware_loopback(dev,enable);
+}
+
+/*------------------------------------------------------------------------------
  * VCTCXO DAC register write
  *----------------------------------------------------------------------------*/
 

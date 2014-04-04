@@ -947,6 +947,18 @@ static int lusb_close(struct bladerf *dev)
     return ret;
 }
 
+static int lusb_set_firmware_loopback(struct bladerf *dev, bool enable) {
+    int result;
+    int status = vendor_command_int_value(dev, BLADE_USB_CMD_SET_LOOPBACK, enable, &result);
+    status |= change_setting(dev, USB_IF_NULL);
+    status |= change_setting(dev, USB_IF_RF_LINK);
+
+    if (status) {
+        return status;
+    }
+    return 0;
+}
+
 static int lusb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size)
 {
     unsigned int wait_count;
@@ -2619,6 +2631,8 @@ const struct bladerf_fn bladerf_lusb_fn = {
 
     FIELD_INIT(.dac_write, lusb_dac_write),
     FIELD_INIT(.xb_spi, lusb_xb_spi),
+
+    FIELD_INIT(.set_firmware_loopback, lusb_set_firmware_loopback),
 
     FIELD_INIT(.enable_module, lusb_enable_module),
 
