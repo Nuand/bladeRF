@@ -562,13 +562,13 @@ static int access_peripheral(struct bladerf_lusb *lusb, int per, int dir,
 
 static int _read_bytes(struct bladerf *dev, int addr,
                        size_t len, uint32_t *val) {
-    int i = 0;
+    size_t i = 0;
     int status = 0;
     struct uart_cmd cmd;
     struct bladerf_lusb *lusb = dev->backend;
     *val = 0;
 
-    for (i = 0; i < 4; i++){
+    for (i = 0; i < len; i++){
         cmd.addr = addr + i;
         cmd.data = 0xff;
 
