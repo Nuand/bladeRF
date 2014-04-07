@@ -560,7 +560,8 @@ static int access_peripheral(struct bladerf_lusb *lusb, int per, int dir,
     return access_peripheral_v(lusb, per, dir, cmd, 1);
 }
 
-static int _read_bytes(struct bladerf *dev, int addr, int len, uint32_t *val) {
+static int _read_bytes(struct bladerf *dev, int addr,
+                       size_t len, uint32_t *val) {
     int i = 0;
     int status = 0;
     struct uart_cmd cmd;
@@ -592,12 +593,13 @@ static int _read_bytes(struct bladerf *dev, int addr, int len, uint32_t *val) {
     return status;
 }
 
-static int _write_bytes(struct bladerf *dev, int addr, int len, uint32_t val) {
-    int status;
+static int _write_bytes(struct bladerf *dev, int addr,
+                        size_t len, uint32_t val) {
+    int status = 0;
     struct uart_cmd cmd;
     struct bladerf_lusb *lusb = dev->backend;
 
-    int i;
+    size_t i;
     for (i = 0; i < len; i++) {
         cmd.addr = addr + i;
         cmd.data = (val >> (i * 8)) & 0xff ;
