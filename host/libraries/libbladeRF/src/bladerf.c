@@ -198,11 +198,16 @@ int bladerf_enable_module(struct bladerf *dev,
 
 int bladerf_set_loopback(struct bladerf *dev, bladerf_loopback l)
 {
-    return lms_set_loopback_mode(dev, l);
+    if (l == BLADERF_LB_FIRMWARE) {
+        return dev->fn->set_firmware_loopback(dev, true);
+    } else {
+        return lms_set_loopback_mode(dev, l);
+    }
 }
 
 int bladerf_get_loopback(struct bladerf *dev, bladerf_loopback *l)
 {
+    /* NOTE: Cannot detect firmware loopback mode yet */
     return lms_get_loopback_mode(dev, l);
 }
 
@@ -1032,15 +1037,6 @@ int bladerf_get_correction(struct bladerf *dev, bladerf_module module,
 int bladerf_get_timestamp(struct bladerf *dev, bladerf_module module, uint64_t *value)
 {
     return dev->fn->get_timestamp(dev,module,value);
-}
-
-/*------------------------------------------------------------------------------
- * Configure firmware loopback mode
- *----------------------------------------------------------------------------*/
-
-int bladerf_set_firmware_loopback(struct bladerf *dev, bool enable)
-{
-    return dev->fn->set_firmware_loopback(dev,enable);
 }
 
 /*------------------------------------------------------------------------------

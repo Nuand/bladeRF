@@ -358,9 +358,14 @@ bool CALL_CONV bladerf_devstr_matches(const char *dev_str,
 typedef enum {
 
     /**
+     * Firmware loopback inside of the FX3
+     */
+    BLADERF_LB_FIRMWARE = 1,
+
+    /**
      * Basband loopback. TXLPF output is connected to the RXVGA2 input.
      */
-    BLADERF_LB_BB_TXLPF_RXVGA2 = 2,
+    BLADERF_LB_BB_TXLPF_RXVGA2,
 
     /**
      * Baseband loopback. TXVGA1 output is connected to the RXVGA2 input.
@@ -2235,17 +2240,6 @@ int CALL_CONV bladerf_expansion_gpio_dir_write(struct bladerf *dev, uint32_t val
  */
 API_EXPORT
 int CALL_CONV bladerf_get_timestamp(struct bladerf *dev, bladerf_module mod, uint64_t *value);
-
-/**
- * Configure firmware loopback mode
- *
- * @param   dev         Device handle
- * @param   enable      Enable or disable firmware based loopback
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_set_firmware_loopback(struct bladerf *dev, bool enable);
 
 /**
  * Write value to VCTCXO DAC
