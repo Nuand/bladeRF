@@ -72,30 +72,43 @@ static void *rx_callback(struct bladerf *dev,
 
     pthread_mutex_lock(&b->lock);
 
-    /* Get the index of the buffer we've been notified about having been
-     * completed */
+    /* Get the index of the buffer that was just filled */
     samples_idx = sync_buf2idx(b, samples);
 
-    if (b->status[b->prod_i] == SYNC_BUFFER_EMPTY) {
-        next_idx = b->prod_i;
-        b->prod_i = (next_idx + 1) % b->num_buffers;
+    if (b->resubmit_count == 0) {
+        if (b->status[b->prod_i] == SYNC_BUFFER_EMPTY) {
 
-        b->status[samples_idx] = SYNC_BUFFER_FULL;
-        b->status[next_idx] = SYNC_BUFFER_IN_FLIGHT;
-        pthread_cond_signal(&b->buf_ready);
+            /* This buffer is now ready for the consumer */
+            b->status[samples_idx] = SYNC_BUFFER_FULL;
+            pthread_cond_signal(&b->buf_ready);
+
+            /* Update the state of the buffer being submitted next */
+            next_idx = b->prod_i;
+            b->status[next_idx] = SYNC_BUFFER_IN_FLIGHT;
+            next_buf = b->buffers[next_idx];
+
+            /* Advance to the next buffer for the next callback */
+            b->prod_i = (next_idx + 1) % b->num_buffers;
+
+            log_verbose("%s worker: buf[%u] = full, buf[%u] = in_flight\n",
+                        MODULE_STR(s), samples_idx, next_idx);
+
+        } else {
+            /* TODO propgate back the RX Overrun to the sync_rx() caller */
+            log_debug("RX overrun @ buffer %u\r\n", samples_idx);
+
+            next_buf = samples;
+            b->resubmit_count = s->stream_config.num_xfers - 1;
+        }
     } else {
-
-        /* TODO propgate back the RX Overrun to the sync_rx() caller */
-        log_debug("RX overrun @ buffer %u\r\n", samples_idx);
-
-        next_idx = samples_idx;
-        b->status[samples_idx] = SYNC_BUFFER_IN_FLIGHT;
+        /* We're still recovering from an overrun at this point. Just
+         * turn around and resubmit this buffer */
+        next_buf = samples;
+        b->resubmit_count--;
+        log_verbose("Resubmitting buffer %u (%u resubmissions left)\r\n",
+                    samples_idx, b->resubmit_count);
     }
 
-    next_buf = b->buffers[next_idx];
-
-    log_verbose("%s worker: buf[%u] = full, buf[%u] = in_flight\n",
-                MODULE_STR(s), samples_idx, next_idx);
 
     pthread_mutex_unlock(&b->lock);
     return next_buf;

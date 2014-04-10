@@ -98,6 +98,7 @@ int sync_init(struct bladerf *dev,
     sync->state = SYNC_STATE_CHECK_WORKER;
 
     sync->buf_mgmt.num_buffers = num_buffers;
+    sync->buf_mgmt.resubmit_count = 0;
 
     sync->stream_config.module = module;
     sync->stream_config.format = format;

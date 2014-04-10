@@ -57,9 +57,15 @@ struct buffer_mgmt {
     unsigned int cons_i;        /**< Consumer index - next buffer to empty */
     unsigned int partial_off;   /**< Current index into partial buffer */
 
+    /* In the event of a SW RX overrun, this count is used to determine
+     * how many more transfers should be considered invalid and require
+     * resubmission */
+    unsigned int resubmit_count;
+
+
     pthread_mutex_t lock;
-    pthread_cond_t  buf_ready;  /** Buffer produced by RX callback, or
-                                 *  buffer emptied by TX callback */
+    pthread_cond_t  buf_ready;  /**< Buffer produced by RX callback, or
+                                 *   buffer emptied by TX callback */
 };
 
 /* State of API-side sync interface */
