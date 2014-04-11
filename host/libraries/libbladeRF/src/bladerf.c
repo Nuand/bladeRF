@@ -589,7 +589,7 @@ int bladerf_submit_stream_buffer(struct bladerf_stream *stream,
 
 void bladerf_deinit_stream(struct bladerf_stream *stream)
 {
-    return async_deinit_stream(stream);
+    async_deinit_stream(stream);
 }
 
 
