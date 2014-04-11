@@ -1779,7 +1779,7 @@ static int lusb_dac_write(struct bladerf *dev, uint16_t value)
 
 static int lusb_xb_spi(struct bladerf *dev, uint32_t value)
 {
-    int status;
+    int status = 0;
     struct uart_cmd cmd;
     struct bladerf_lusb *lusb = dev->backend;
 
@@ -1794,10 +1794,6 @@ static int lusb_xb_spi(struct bladerf *dev, uint32_t value)
             bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
             return status;
         }
-    }
-
-    if (status < 0) {
-        bladerf_set_error(&dev->error, ETYPE_LIBBLADERF, status);
     }
 
     return status;
