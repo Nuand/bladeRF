@@ -783,6 +783,10 @@ begin
     begin
         if( xb_mode = "00" ) then
             xb_gpio_dir <= "101" & nios_xb_gpio_dir(28 downto 0);
+            dac_sclk <= nios_sclk;
+            dac_csx <= nios_ss_n(0);
+            nios_sdo <= dac_sdo;
+            dac_sdi <= nios_sdio;
             -- missing 30-32
         elsif( xb_mode = "10" ) then
             xb_gpio_dir <= "111" & nios_xb_gpio_dir(28 downto 0);
