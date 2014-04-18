@@ -669,8 +669,8 @@ int CALL_CONV bladerf_get_rational_sample_rate(struct bladerf *dev,
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int bladerf_set_correction(struct bladerf *dev, bladerf_module module,
-                           bladerf_correction corr, int16_t value);
+int CALL_CONV bladerf_set_correction(struct bladerf *dev, bladerf_module module,
+                                     bladerf_correction corr, int16_t value);
 
 /**
  * Obtain the current value of the specified configuration parameter
@@ -683,8 +683,8 @@ int bladerf_set_correction(struct bladerf *dev, bladerf_module module,
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int bladerf_get_correction(struct bladerf *dev, bladerf_module module,
-                           bladerf_correction corr, int16_t *value);
+int CALL_CONV bladerf_get_correction(struct bladerf *dev, bladerf_module module,
+                                     bladerf_correction corr, int16_t *value);
 /**
  * Set the PA gain in dB
  *
@@ -2233,8 +2233,8 @@ int CALL_CONV bladerf_expansion_gpio_dir_write(struct bladerf *dev, uint32_t val
 /**
  *
  * @param   dev         Device handle
- * @param   module      Module to perform streaming with
- * @param   val         Pointer to variable the data should be read into
+ * @param   mod         Module to perform streaming with
+ * @param   value       Pointer to variable the data should be read into
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
