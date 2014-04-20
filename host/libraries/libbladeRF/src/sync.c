@@ -159,26 +159,13 @@ void sync_deinit(struct bladerf_sync *sync)
 {
     if (sync != NULL) {
 
-        switch (sync->stream_config.module) {
-            case BLADERF_MODULE_RX:
-                sync_worker_deinit(sync->worker,
-                                   &sync->buf_mgmt.lock,
-                                   &sync->buf_mgmt.buf_ready);
-                break;
-
-            case BLADERF_MODULE_TX:
-                bladerf_submit_stream_buffer(sync->worker->stream,
-                                             BLADERF_STREAM_SHUTDOWN, 0);
-
-                sync_worker_deinit(sync->worker,
-                                   &sync->buf_mgmt.lock,
-                                   &sync->buf_mgmt.buf_ready);
-                break;
-
-            default:
-                assert(!"Invalid module encountered");
-                break;
+        if (sync->stream_config.module == BLADERF_MODULE_TX) {
+            bladerf_submit_stream_buffer(sync->worker->stream,
+                                         BLADERF_STREAM_SHUTDOWN, 0);
         }
+
+        sync_worker_deinit(sync->worker, &sync->buf_mgmt.lock,
+                           &sync->buf_mgmt.buf_ready);
 
          /* De-allocate our buffer management resources */
         free(sync->buf_mgmt.status);
