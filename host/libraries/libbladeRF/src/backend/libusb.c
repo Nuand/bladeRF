@@ -2264,7 +2264,8 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
                 break;
 
             default:
-                log_error( "Unexpected transfer status: %d\n", transfer->status );
+                log_error("Unexpected transfer status: %d\n", transfer->status);
+                stream->error_code = BLADERF_ERR_UNEXPECTED;
                 break;
         }
 
