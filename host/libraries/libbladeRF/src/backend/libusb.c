@@ -419,8 +419,10 @@ int lusb_enable_module(struct bladerf *dev, bladerf_module m, bool enable) {
                 val, &fx3_ret);
     }
     if(status) {
-        log_warning("Could not enable RF %s (%d): %s\n",
-                (m == BLADERF_MODULE_RX) ? "RX" : "TX", status, libusb_error_name(status) );
+        log_debug("Could not enable RF %s (%d): %s\n",
+                    (m == BLADERF_MODULE_RX) ? "RX" : "TX",
+                    status, libusb_error_name(status) );
+
         ret_status = BLADERF_ERR_UNEXPECTED;
     } else if(fx3_ret) {
         log_warning("Error enabling RF %s (%d)\n",
@@ -525,7 +527,7 @@ static int access_peripheral_v(struct bladerf_lusb *lusb, int per, int dir,
                                            CTRL_TIMEOUT);
 
     if (libusb_status < 0) {
-        log_error("Failed to access peripheral: %s\n",
+        log_debug("Failed to access peripheral: %s\n",
                   libusb_error_name(libusb_status));
         return BLADERF_ERR_IO;
     }
@@ -2127,8 +2129,8 @@ static inline void cancel_all_transfers(struct bladerf_stream *stream)
 
             status = libusb_cancel_transfer(stream_data->transfers[i]);
             if (status < 0 && status != LIBUSB_ERROR_NOT_FOUND) {
-                log_error("Error canceling transfer (%d): %s\r\n",
-                        status, libusb_error_name(status));
+                log_debug("Error canceling transfer (%d): %s\r\n",
+                          status, libusb_error_name(status));
             } else {
                 stream_data->transfer_status[i] = TRANSFER_CANCEL_PENDING;
             }
