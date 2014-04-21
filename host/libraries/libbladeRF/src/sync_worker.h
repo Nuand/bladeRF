@@ -53,7 +53,9 @@ struct sync_worker {
     struct bladerf_stream *stream;
     bladerf_stream_cb cb;
 
+    /* These items should be accessed while holding state_lock */
     sync_worker_state state;
+    int err_code;
     pthread_mutex_t state_lock;
     pthread_cond_t state_changed;   /* Worker thread uses this to inform a
                                      * waiting main thread about a state
@@ -107,11 +109,15 @@ int sync_worker_wait_for_state(struct sync_worker *w,
 /**
  * Get the worker's current state.
  *
- * @param   w       Worker to query
+ * @param[in]  w        Worker to query
+ * @param[out] err_code Stream error code (libbladeRF error code value).
+ *                      Querying this value will reset the interal
+ *                      error code value.
  *
  * @return Worker's current state
  */
-sync_worker_state sync_worker_get_state(struct sync_worker *w);
+sync_worker_state sync_worker_get_state(struct sync_worker *w,
+                                        int *err_code);
 
 /**
  * Submit a request to the worker task

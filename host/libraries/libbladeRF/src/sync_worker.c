@@ -173,6 +173,8 @@ int sync_worker_init(struct bladerf_sync *s)
     }
 
     s->worker->state = SYNC_WORKER_STATE_STARTUP;
+    s->worker->err_code = 0;
+
     s->worker->cb = s->stream_config.module == BLADERF_MODULE_RX ?
                         rx_callback : tx_callback;
 
@@ -338,12 +340,17 @@ int sync_worker_wait_for_state(struct sync_worker *w, sync_worker_state state,
     return status;
 }
 
-sync_worker_state sync_worker_get_state(struct sync_worker *w)
+sync_worker_state sync_worker_get_state(struct sync_worker *w,
+                                        int *err_code)
 {
     sync_worker_state ret;
 
     pthread_mutex_lock(&w->state_lock);
     ret = w->state;
+    if (err_code) {
+        *err_code = w->err_code;
+        w->err_code = 0;
+    }
     pthread_mutex_unlock(&w->state_lock);
 
     return ret;
@@ -430,8 +437,19 @@ static void exec_running_state(struct bladerf_sync *s)
     log_verbose("%s worker: stream ended with: %s\n",
                 MODULE_STR(s), bladerf_strerror(status));
 
-    /* Suppress warning if log_verbose is disabled */
-    (void)status;
+    /* Save off the result of running the stream so we can report what
+     * happened to the API caller */
+    pthread_mutex_lock(&s->worker->state_lock);
+    s->worker->err_code = status;
+    pthread_mutex_unlock(&s->worker->state_lock);
+
+    /* Wake the API-side if an error occurred, so that it can propagate
+     * the stream error code back to the API caller */
+    if (status != 0) {
+        pthread_mutex_lock(&s->buf_mgmt.lock);
+        pthread_cond_signal(&s->buf_mgmt.buf_ready);
+        pthread_mutex_unlock(&s->buf_mgmt.lock);
+    }
 }
 
 void *sync_worker_task(void *arg)

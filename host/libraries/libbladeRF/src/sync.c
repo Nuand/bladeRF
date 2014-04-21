@@ -227,18 +227,28 @@ int sync_rx(struct bladerf *dev, void *samples, unsigned num_samples,
 
         switch (s->state) {
             case SYNC_STATE_CHECK_WORKER: {
-                sync_worker_state worker_state = sync_worker_get_state(s->worker);
+                int stream_error;
+                sync_worker_state worker_state =
+                    sync_worker_get_state(s->worker, &stream_error);
 
-                if (worker_state == SYNC_WORKER_STATE_IDLE) {
-                    log_debug("%s: Worker is idle. Going to reset buf mgmt.\n",
-                              __FUNCTION__);
-                    s->state = SYNC_STATE_RESET_BUF_MGMT;
-                } else if (worker_state == SYNC_WORKER_STATE_RUNNING) {
-                    s->state = SYNC_STATE_WAIT_FOR_BUFFER;
+                /* Propagate stream error back to the caller.
+                 * They can call this function again to restart the stream and
+                 * try again.
+                 */
+                if (stream_error != 0) {
+                    status = stream_error;
                 } else {
-                    status = BLADERF_ERR_UNEXPECTED;
-                    log_debug("%s: Unexpected worker state=%d\n",
-                              __FUNCTION__, worker_state);
+                    if (worker_state == SYNC_WORKER_STATE_IDLE) {
+                        log_debug("%s: Worker is idle. Going to reset buf "
+                                  "mgmt.\n", __FUNCTION__);
+                        s->state = SYNC_STATE_RESET_BUF_MGMT;
+                    } else if (worker_state == SYNC_WORKER_STATE_RUNNING) {
+                        s->state = SYNC_STATE_WAIT_FOR_BUFFER;
+                    } else {
+                        status = BLADERF_ERR_UNEXPECTED;
+                        log_debug("%s: Unexpected worker state=%d\n",
+                                __FUNCTION__, worker_state);
+                    }
                 }
 
                 break;
@@ -283,11 +293,12 @@ int sync_rx(struct bladerf *dev, void *samples, unsigned num_samples,
                     status = wait_for_buffer(b, timeout_ms,
                                              __FUNCTION__, b->cons_i);
 
-                    if (status == BLADERF_ERR_TIMEOUT) {
-                        log_debug("%s: Timed out waiting for buffer %u\n",
-                                  __FUNCTION__, b->cons_i);
-
-                        s->state = SYNC_STATE_CHECK_WORKER;
+                    if (status == 0) {
+                        if (b->status[b->cons_i] != SYNC_BUFFER_FULL) {
+                            s->state = SYNC_STATE_CHECK_WORKER;
+                        } else {
+                            s->state = SYNC_STATE_BUFFER_READY;
+                        }
                     }
                 }
 
@@ -369,13 +380,20 @@ int sync_tx(struct bladerf *dev, void *samples, unsigned int num_samples,
 
         switch (s->state) {
             case SYNC_STATE_CHECK_WORKER: {
-                sync_worker_state worker_state = sync_worker_get_state(s->worker);
+                int stream_error;
+                sync_worker_state worker_state =
+                    sync_worker_get_state(s->worker, &stream_error);
 
-                if (worker_state == SYNC_WORKER_STATE_IDLE) {
-                    /* No need to reset any buffer managment for TX since
-                     * the TX stream does not submit an initial set of buffers.
-                     * Therefore the RESET_BUF_MGMT state is skipped here. */
-                    s->state = SYNC_STATE_START_WORKER;
+                if (stream_error != 0) {
+                    status = stream_error;
+                } else {
+                    if (worker_state == SYNC_WORKER_STATE_IDLE) {
+                        /* No need to reset any buffer managment for TX since
+                         * the TX stream does not submit an initial set of
+                         * buffers.  Therefore the RESET_BUF_MGMT state is
+                         * skipped here. */
+                        s->state = SYNC_STATE_START_WORKER;
+                    }
                 }
                 break;
             }
