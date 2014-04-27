@@ -17,7 +17,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 #ifndef BLADERF_H_
 #define BLADERF_H_
@@ -200,7 +200,8 @@ int CALL_CONV bladerf_open_with_devinfo(struct bladerf **device,
  *      - Device's serial number.
  *
  * @param[out]  device             Update with device handle on success
- * @param[in]   device_identifier  Device identifier, formatted as described above
+ * @param[in]   device_identifier  Device identifier, formatted as described
+ *                                 above
  *
  * @return 0 on success, or value from \ref RETCODES list on failure
  */
@@ -594,10 +595,11 @@ int CALL_CONV bladerf_set_sample_rate(struct bladerf *dev,
  *         or a value from \ref RETCODES list on other failures
  */
 API_EXPORT
-int CALL_CONV bladerf_set_rational_sample_rate(struct bladerf *dev,
-                                               bladerf_module module,
-                                               struct bladerf_rational_rate *rate,
-                                               struct bladerf_rational_rate *actual);
+int CALL_CONV bladerf_set_rational_sample_rate(
+                                        struct bladerf *dev,
+                                        bladerf_module module,
+                                        struct bladerf_rational_rate *rate,
+                                        struct bladerf_rational_rate *actual);
 
 /**
  * Configure the sampling of the LMS6002D to be either internal or
@@ -651,9 +653,10 @@ int CALL_CONV bladerf_get_sample_rate(struct bladerf *dev,
  * @return 0 on success, value from \ref RETCODES list upon failure
  */
 API_EXPORT
-int CALL_CONV bladerf_get_rational_sample_rate(struct bladerf *dev,
-                                               bladerf_module module,
-                                               struct bladerf_rational_rate *rate);
+int CALL_CONV bladerf_get_rational_sample_rate(
+                                        struct bladerf *dev,
+                                        bladerf_module module,
+                                        struct bladerf_rational_rate *rate);
 
 /**
  * Set the value of the specified configuration parameter
@@ -1347,7 +1350,7 @@ int CALL_CONV bladerf_get_stream_timeout(struct bladerf *dev,
  *
  * The synchronous interface is built atop the asynchronous interface, and is
  * generally less complex and easier to work with.  It alleviates the need to
- * explicity spawn threads (it is done under the hood) and manually manage
+ * explicitly spawn threads (it is done under the hood) and manually manage
  * sample buffers.
  *
  * Under the hood, this interface spawns worker threads to handle an
@@ -1756,7 +1759,7 @@ int CALL_CONV bladerf_device_reset(struct bladerf *dev);
 API_EXPORT
 int CALL_CONV bladerf_jump_to_bootloader(struct bladerf *dev);
 
-/* @} (End of FN_PROG) */
+/** @} (End of FN_PROG) */
 
 
 /**
@@ -1949,8 +1952,9 @@ struct bladerf_image * CALL_CONV bladerf_alloc_image(bladerf_image_type type,
  *         NULL on memory allocation failure
  */
 API_EXPORT
-struct bladerf_image * CALL_CONV bladerf_alloc_cal_image(bladerf_fpga_size fpga_size,
-                                                         uint16_t vctcxo_trim);
+struct bladerf_image * CALL_CONV bladerf_alloc_cal_image(
+                                                bladerf_fpga_size fpga_size,
+                                                uint16_t vctcxo_trim);
 
 /**
  * Free a bladerf_image previously obtained via bladerf_alloc_image.
@@ -2135,7 +2139,7 @@ int CALL_CONV bladerf_lms_write(struct bladerf *dev,
 /**
  * Switch to use RX low band (300M - 1.5GHz)
  *
- * @note THis is set using bladerf_set_frequency().
+ * @note This is set using bladerf_set_frequency().
  */
 #define BLADERF_GPIO_RX_LB_ENABLE   (2 << 5)
 
@@ -2215,7 +2219,8 @@ int CALL_CONV bladerf_expansion_gpio_write(struct bladerf *dev, uint32_t val);
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_expansion_gpio_dir_read(struct bladerf *dev, uint32_t *val);
+int CALL_CONV bladerf_expansion_gpio_dir_read(struct bladerf *dev,
+                                              uint32_t *val);
 
 /**
  * Write a expansion GPIO direction register. Callers should be sure to perform
@@ -2228,9 +2233,11 @@ int CALL_CONV bladerf_expansion_gpio_dir_read(struct bladerf *dev, uint32_t *val
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_expansion_gpio_dir_write(struct bladerf *dev, uint32_t val);
+int CALL_CONV bladerf_expansion_gpio_dir_write(struct bladerf *dev,
+                                               uint32_t val);
 
 /**
+ * Retrieve the current timestamp counter value from the FPGA
  *
  * @param   dev         Device handle
  * @param   mod         Module to perform streaming with
@@ -2239,7 +2246,8 @@ int CALL_CONV bladerf_expansion_gpio_dir_write(struct bladerf *dev, uint32_t val
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_get_timestamp(struct bladerf *dev, bladerf_module mod, uint64_t *value);
+int CALL_CONV bladerf_get_timestamp(struct bladerf *dev, bladerf_module mod,
+                                    uint64_t *value);
 
 /**
  * Write value to VCTCXO DAC
@@ -2277,7 +2285,7 @@ API_EXPORT
 int CALL_CONV bladerf_calibrate_dc(struct bladerf *dev,
                                    bladerf_cal_module module);
 
-/* @} (End of LOW_LEVEL) */
+/** @} (End of LOW_LEVEL) */
 
 /**
  * @defgroup FN_FLASH  Low-level flash routines
@@ -2368,7 +2376,7 @@ int CALL_CONV bladerf_erase_flash(struct bladerf *dev, uint32_t addr,
 /**
  * Read bytes from FX3 flash device
  *
- * @note Unline the `bladerf_erase_flash' function this function expects a
+ * @note Unlike the `bladerf_erase_flash' function this function expects a
  *       BLADERF_FLASH_PAGE_SIZE aligned address and length.
  *
  * @param   dev   Device handle
@@ -2389,7 +2397,7 @@ int CALL_CONV bladerf_read_flash(struct bladerf *dev, uint32_t addr,
  *
  * @param   dev   Device handle
  * @param   addr  Unaligned byte address of first byte to read
- * @param   pbuf  Buffer to read into, must be at least `len' bytes long
+ * @param   buf  Buffer to read into, must be at least `len' bytes long
  * @param   len   Number of bytes to write. (No alignment requirement)
  *
  * @return Positive number of bytes read on success, negative value from \ref
@@ -2397,12 +2405,12 @@ int CALL_CONV bladerf_read_flash(struct bladerf *dev, uint32_t addr,
  */
 API_EXPORT
 int CALL_CONV bladerf_read_flash_unaligned(struct bladerf *dev, uint32_t addr,
-                                           uint8_t *pbuf, uint32_t len);
+                                           uint8_t *buf, uint32_t len);
 
 /**
  * Write bytes to FX3 flash device
  *
- * @note Unline the `bladerf_erase_flash' function this function expects a
+ * @note Unlike the `bladerf_erase_flash' function this function expects a
  *       BLADERF_FLASH_PAGE_SIZE aligned address and length.
  *
  * @param   dev   Device handle
@@ -2438,7 +2446,7 @@ int CALL_CONV bladerf_program_flash_unaligned(struct bladerf *dev,
                                               uint8_t *buf,
                                               uint32_t len);
 
-/* @} (End of FN_FLASH) */
+/** @} (End of FN_FLASH) */
 
 
 #ifdef __cplusplus
