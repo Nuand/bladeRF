@@ -798,3 +798,10 @@ int cmd_handle(struct cli_state *s, const char *line)
 
     return ret;
 }
+
+void cmd_show_help_all() {
+    int i = 0;
+    for( i = 0; cmd_table[i].names != NULL; i++ )
+        printf("%s\n", cmd_table[i].help);
+}
+

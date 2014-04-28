@@ -72,4 +72,9 @@ static inline bool cmd_fatal(int status) { return status <= CMD_RETFATAL; }
  */
 const char * cmd_strerror(int error, int lib_error);
 
+/**
+ * Print help information for all interactive commands
+ */
+void cmd_show_help_all();
+
 #endif
