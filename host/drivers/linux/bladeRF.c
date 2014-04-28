@@ -383,7 +383,7 @@ static ssize_t bladerf_read(struct file *file, char __user *buf, size_t count, l
             break;
 
         } else {
-            ret = wait_event_interruptible_timeout(dev->data_in_wait, atomic_read(&dev->data_in_cnt), 2 * HZ);
+            ret = wait_event_interruptible(dev->data_in_wait, atomic_read(&dev->data_in_cnt));
             if (ret < 0) {
                 break;
             } else if (ret == 0) {
@@ -495,7 +495,7 @@ static ssize_t bladerf_write(struct file *file, const char *user_buf, size_t cou
 
     reread = atomic_read(&dev->data_out_used);
     if (reread >= NUM_DATA_URB) {
-        status = wait_event_interruptible_timeout(dev->data_out_wait, atomic_read(&dev->data_out_used) < NUM_DATA_URB, 2 * HZ);
+        status = wait_event_interruptible(dev->data_out_wait, atomic_read(&dev->data_out_used) < NUM_DATA_URB);
 
         if (status < 0) {
             return status;
