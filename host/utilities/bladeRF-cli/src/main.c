@@ -36,18 +36,19 @@
 #define OPTSTR "L:d:f:l:s:ipv:h"
 
 static const struct option longopts[] = {
-    { "flash-fpga",     required_argument,  0, 'L' },
-    { "device",         required_argument,  0, 'd' },
-    { "flash-firmware", required_argument,  0, 'f' },
-    { "load-fpga",      required_argument,  0, 'l' },
-    { "script",         required_argument,  0, 's' },
-    { "interactive",    no_argument,        0, 'i' },
-    { "probe",          no_argument,        0, 'p' },
-    { "lib-version",    no_argument,        0,  1  },
-    { "verbosity",      required_argument,  0, 'v' },
-    { "version",        no_argument,        0,  2  },
-    { "help",           no_argument,        0, 'h' },
-    { 0,                0,                  0,  0  },
+    { "flash-fpga",         required_argument,  0, 'L' },
+    { "device",             required_argument,  0, 'd' },
+    { "flash-firmware",     required_argument,  0, 'f' },
+    { "load-fpga",          required_argument,  0, 'l' },
+    { "script",             required_argument,  0, 's' },
+    { "interactive",        no_argument,        0, 'i' },
+    { "probe",              no_argument,        0, 'p' },
+    { "lib-version",        no_argument,        0,  1  },
+    { "verbosity",          required_argument,  0, 'v' },
+    { "version",            no_argument,        0,  2  },
+    { "help",               no_argument,        0, 'h' },
+    { "help-interactive",   no_argument,        0,  3  },
+    { 0,                    0,                  0,  0  },
 };
 
 /* Runtime configuration items */
@@ -58,6 +59,7 @@ struct rc_config {
     bool load_fpga;
     bool probe;
     bool show_help;
+    bool show_help_interactive;
     bool show_version;
     bool show_lib_version;
 
@@ -181,6 +183,10 @@ int get_rc_config(int argc, char *argv[], struct rc_config *rc)
                 rc->show_version = true;
                 break;
 
+            case 3:
+                rc->show_help_interactive = true;
+                break;
+
             default:
                 return -1;
         }
@@ -212,6 +218,8 @@ void usage(const char *argv0)
     printf("                                    info, debug, verbose\n");
     printf("      --version                    Print CLI version and exit.\n");
     printf("  -h, --help                       Show this help text.\n");
+    printf("      --help-interactive           Print help information for all interactive\n");
+    printf("                                   commands.\n");
     printf("\n");
     printf("Notes:\n");
     printf("  The -d option takes a device specifier string. See the bladerf_open()\n");
@@ -352,6 +360,10 @@ int main(int argc, char *argv[])
 
     if (rc.show_help) {
         usage(argv[0]);
+        exit_immediately = true;
+    } else if (rc.show_help_interactive) {
+        printf("Interactive Commands:\n\n");
+        cmd_show_help_all();
         exit_immediately = true;
     } else if (rc.show_version) {
         printf(BLADERF_CLI_VERSION "\n");
