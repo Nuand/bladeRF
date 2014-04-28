@@ -50,12 +50,19 @@ struct backend_fns {
     int (*load_fpga)(struct bladerf *dev, uint8_t *image, size_t image_size);
     int (*is_fpga_configured)(struct bladerf *dev);
 
+
     /* Flash operations */
-    int (*erase_flash)(struct bladerf *dev, uint32_t addr, size_t len);
-    int (*read_flash) (struct bladerf *dev,
-                       uint32_t addr, uint8_t *buf, size_t len);
-    int (*write_flash)(struct bladerf *dev,
-                       uint32_t addr, uint8_t *buf, size_t len);
+
+    /* Erase the specified number of erase blocks */
+    int (*erase_flash_blocks)(struct bladerf *dev, uint32_t eb, uint16_t count);
+
+    /* Read the specified number of pages */
+    int (*read_flash_pages)(struct bladerf *dev,
+                            uint16_t page, uint8_t *buf, uint16_t count);
+
+    /* Write the specified number of pages */
+    int (*write_flash_pages)(struct bladerf *dev,
+                             uint16_t page, uint8_t *buf, uint16_t count);
 
     /* Device startup and reset */
     int (*device_reset)(struct bladerf *dev);

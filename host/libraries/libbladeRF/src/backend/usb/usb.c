@@ -247,7 +247,13 @@ static inline int change_setting(struct bladerf *dev, uint8_t setting)
     void *driver;
     struct bladerf_usb *usb = usb_backend(dev, &driver);
 
+    log_verbose("Changing to USB alt setting %u\n", setting);
+
     status = usb->fn->change_setting(driver, setting);
+    if (status != 0) {
+        log_debug("Failed to change setting: %s\n", bladerf_strerror(status));
+    }
+
     return status;
 }
 
@@ -274,9 +280,6 @@ static inline int rflink_and_fpga_version_load(struct bladerf *dev)
         /* Read and store FPGA version info. This is only possible after
          * we've entered RF link mode */
         status = load_fpga_version(dev);
-    } else {
-        log_debug("Failed to switch to RF_LINK mode: %s\n",
-                  bladerf_strerror(status));
     }
 
     return status;
@@ -303,32 +306,6 @@ static int restore_post_flash_setting(struct bladerf *dev)
         log_debug("Failed to restore alt setting: %s\n",
                   bladerf_strerror(status));
     }
-    return status;
-}
-
-static int erase_sector(struct bladerf *dev, uint16_t sector)
-{
-    int status, erase_ret;
-    void *driver;
-    struct bladerf_usb *usb = usb_backend(dev, &driver);
-
-    status = usb->fn->control_transfer(driver,
-                                        USB_TARGET_INTERFACE,
-                                        USB_REQUEST_VENDOR,
-                                        USB_DIR_DEVICE_TO_HOST,
-                                        BLADE_USB_CMD_FLASH_ERASE,
-                                        0, sector,
-                                        &erase_ret, sizeof(erase_ret),
-                                        CTRL_TIMEOUT_MS);
-
-    if (status == 0) {
-        log_debug("Erased sector %03u (0x%08x)\n",
-                  sector, flash_from_sectors(sector));
-    } else {
-        log_debug("Failed to erase sector %03u (0x%08x):%s\n",
-                  sector, flash_from_sectors(sector), bladerf_strerror(status));
-    }
-
     return status;
 }
 
@@ -561,57 +538,66 @@ static int usb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size)
     return rflink_and_fpga_version_load(dev);
 }
 
-static int usb_erase_flash(struct bladerf *dev, uint32_t addr, size_t len)
+static inline int perform_erase(struct bladerf *dev, uint16_t block)
 {
-    int sector_addr, sector_len;
-    int i;
-    int status = 0;
+    int status, erase_ret;
+    void *driver;
+    struct bladerf_usb *usb = usb_backend(dev, &driver);
 
-    if (len > INT_MAX) {
-        return BLADERF_ERR_INVAL;
+    status = usb->fn->control_transfer(driver,
+                                        USB_TARGET_INTERFACE,
+                                        USB_REQUEST_VENDOR,
+                                        USB_DIR_DEVICE_TO_HOST,
+                                        BLADE_USB_CMD_FLASH_ERASE,
+                                        0, block,
+                                        &erase_ret, sizeof(erase_ret),
+                                        CTRL_TIMEOUT_MS);
+
+    if (status == 0) {
+        log_debug("Erased block %u\n", block);
+    } else {
+        log_debug("Failed to erase block %u: %s\n",
+                  block, bladerf_strerror(status));
     }
 
-    if (!flash_bounds_aligned(BLADERF_FLASH_ALIGNMENT_SECTOR, addr, len)) {
-        return BLADERF_ERR_MISALIGNED;
-    }
+    return status;
+}
 
-    if (len % BLADERF_FLASH_SECTOR_SIZE != 0) {
-        return BLADERF_ERR_INVAL;
-    }
-
-    sector_addr = flash_to_sectors(addr);
-    sector_len  = flash_to_sectors(len);
+static int usb_erase_flash_blocks(struct bladerf *dev,
+                                  uint32_t eb, uint16_t count)
+{
+    int status, restore_status;
+    uint16_t i;
 
     status = change_setting(dev, USB_IF_SPI_FLASH);
     if (status != 0) {
         return status;
     }
 
-    log_info("Erasing 0x%08x bytes starting at address 0x%08x.\n", len, addr);
+    log_info("Erasing %u blocks starting at block %u\n", count, eb);
 
-    for (i = 0; i < sector_len; i++) {
-        status = erase_sector(dev, sector_addr + i);
+    for (i = 0; i < count; i++) {
+        status = perform_erase(dev, eb + i);
         if (status != 0) {
             goto error;
         }
     }
 
 error:
-    status = restore_post_flash_setting(dev);
-    if (status != 0) {
-        return status;
-    } else {
-        return (int)len;
-    }
+    restore_status = restore_post_flash_setting(dev);
+    return status != 0 ? status : restore_status;
 }
 
-static int read_buffer(struct bladerf *dev, uint8_t request,
-                       uint8_t *buf, uint16_t len)
+static inline int read_page(struct bladerf *dev, uint16_t read_operation,
+                            uint16_t page, uint8_t *buf)
 {
     void *driver;
     struct bladerf_usb *usb = usb_backend(dev, &driver);
-    int status, read_size;
-    int buf_off;
+    int status;
+    int32_t op_status;
+    uint16_t read_size;
+    uint16_t offset;
+    uint16_t request;
 
     if (dev->usb_speed == BLADERF_DEVICE_SPEED_SUPER) {
         read_size = BLADERF_FLASH_PAGE_SIZE;
@@ -622,28 +608,43 @@ static int read_buffer(struct bladerf *dev, uint8_t request,
         return BLADERF_ERR_UNEXPECTED;
     }
 
-    /* only these two requests seem to use bytes in the control transfer
-     * parameters instead of pages/sectors so watch out! */
-    assert(request == BLADE_USB_CMD_READ_PAGE_BUFFER
-           || request == BLADE_USB_CMD_READ_CAL_CACHE);
+    if (read_operation == BLADE_USB_CMD_FLASH_READ ||
+        read_operation == BLADE_USB_CMD_READ_OTP) {
 
-    assert(len % read_size == 0);
+        status = vendor_cmd_int_windex(dev, read_operation, page, &op_status);
+        if (status != 0) {
+            return status;
+        } else if (op_status != 0) {
+            log_error("Firmware page read (op=%d) failed at page %u: %d\n",
+                    read_operation, page, op_status);
+            return BLADERF_ERR_UNEXPECTED;
+        }
 
-    for(buf_off = 0; buf_off < len; buf_off += read_size) {
+        /* Both of these operations require a read from the FW's page buffer */
+        request = BLADE_USB_CMD_READ_PAGE_BUFFER;
+
+    } else if (read_operation == BLADE_USB_CMD_READ_CAL_CACHE) {
+        request = read_operation;
+    } else {
+        assert(!"Bug - invalid read_operation value");
+    }
+
+    /* Retrieve data from the firmware page buffer */
+    for (offset = 0; offset < BLADERF_FLASH_PAGE_SIZE; offset += read_size) {
         status = usb->fn->control_transfer(driver,
-                                            USB_TARGET_INTERFACE,
-                                            USB_REQUEST_VENDOR,
-                                            USB_DIR_DEVICE_TO_HOST,
-                                            request,
-                                            0,
-                                            buf_off /* in bytes */,
-                                            &buf[buf_off],
-                                            read_size,
-                                            CTRL_TIMEOUT_MS);
+                                           USB_TARGET_INTERFACE,
+                                           USB_REQUEST_VENDOR,
+                                           USB_DIR_DEVICE_TO_HOST,
+                                           request,
+                                           0,
+                                           offset, /* in bytes */
+                                           buf + offset,
+                                           read_size,
+                                           CTRL_TIMEOUT_MS);
 
         if(status < 0) {
             log_debug("Failed to read page buffer at offset 0x%02x: %s\n",
-                      buf_off, bladerf_strerror(status));
+                      offset, bladerf_strerror(status));
             return status;
         }
     }
@@ -651,85 +652,42 @@ static int read_buffer(struct bladerf *dev, uint8_t request,
     return 0;
 }
 
-static inline int read_page_buffer(struct bladerf *dev, uint8_t *buf)
-{
-    return read_buffer(dev, BLADE_USB_CMD_READ_PAGE_BUFFER, buf,
-                       BLADERF_FLASH_PAGE_SIZE);
-}
-
-/* Assumes the device is already configured for USB_IF_SPI_FLASH */
-static int read_one_page(struct bladerf *dev, uint16_t page, uint8_t *buf)
-{
-    int32_t read_status = -1;
-    int status;
-
-    status = vendor_cmd_int_windex(dev, BLADE_USB_CMD_FLASH_READ,
-                                   page, &read_status);
-
-    if (status != 0) {
-        return status;
-    } else if (read_status != 0) {
-        log_error("Failed to read page %d: %d\n", page, read_status);
-        status = BLADERF_ERR_UNEXPECTED;
-    }
-
-    return read_page_buffer(dev, buf);
-}
-
-static int usb_read_flash(struct bladerf *dev,
-                          uint32_t addr, uint8_t *buf, size_t len)
+static int usb_read_flash_pages(struct bladerf *dev,
+                                uint16_t page, uint8_t *buf, uint16_t count)
 {
     int status;
-    unsigned int page_addr, page_len, i;
-    unsigned int read;
-
-    /* Need to be able to return bytes read as an int, which should be
-     * sufficient for our tiny flash size */
-    if (len > INT_MAX) {
-        return BLADERF_ERR_INVAL;
-    }
-
-    if (!flash_bounds_aligned(BLADERF_FLASH_ALIGNMENT_PAGE, addr, len))
-        return BLADERF_ERR_MISALIGNED;
-
-    page_addr = flash_to_pages(addr);
-    page_len  = flash_to_pages(len);
+    size_t i, n_read;
 
     status = change_setting(dev, USB_IF_SPI_FLASH);
-    if (status) {
+    if (status != 0) {
         return status;
     }
 
-    log_info("Reading 0x%08x bytes from address 0x%08x.\n", len, addr);
+    log_info("Reading %u pages starting at page %u\n", count, page);
 
-    read = 0;
-    for (i = 0; i < page_len; i++) {
-        log_debug("Reading page 0x%04x.\n", flash_from_pages(i));
-        status = read_one_page(dev, page_addr + i, buf + read);
+    for (i = n_read = 0; i < count; i++) {
+        log_debug("Reading page %u\n", page + i);
+
+        status = read_page(dev, BLADE_USB_CMD_FLASH_READ,
+                           page + i, buf + n_read);
         if (status != 0) {
             goto error;
         }
 
-        read += BLADERF_FLASH_PAGE_SIZE;
+        n_read += BLADERF_FLASH_PAGE_SIZE;
     }
 
 error:
     status = restore_post_flash_setting(dev);
-    if (status != 0) {
-        return status;
-    } else {
-        return read;
-    }
-
-    return 0;
+    return status;
 }
 
-static int write_buffer(struct bladerf *dev, uint8_t request,
-                        uint16_t page, uint8_t *buf)
+static int write_page(struct bladerf *dev, uint16_t page, uint8_t *buf)
 {
     int status;
-    uint32_t offset;
-    uint32_t write_size;
+    int32_t commit_status;
+    uint16_t offset;
+    uint16_t write_size;
     void *driver;
     struct bladerf_usb *usb = usb_backend(dev, &driver);
 
@@ -742,12 +700,13 @@ static int write_buffer(struct bladerf *dev, uint8_t request,
         return BLADERF_ERR_UNEXPECTED;
     }
 
+    /* write the data to the firmware's page buffer */
     for (offset = 0; offset < BLADERF_FLASH_PAGE_SIZE; offset += write_size) {
         status = usb->fn->control_transfer(driver,
                                             USB_TARGET_INTERFACE,
                                             USB_REQUEST_VENDOR,
                                             USB_DIR_HOST_TO_DEVICE,
-                                            request,
+                                            BLADE_USB_CMD_WRITE_PAGE_BUFFER,
                                             0,
                                             offset,
                                             &buf[offset],
@@ -756,36 +715,24 @@ static int write_buffer(struct bladerf *dev, uint8_t request,
 
         if(status < 0) {
             log_error("Failed to write page buffer at offset 0x%02x "
-                      "for page at 0x%02x: %s\n",
-                      offset, flash_from_pages(page), bladerf_strerror(status));
+                      "for page %u: %s\n",
+                      offset, page, bladerf_strerror(status));
             return status;
         }
     }
 
-    return 0;
-}
-
-static int write_one_page(struct bladerf *dev, uint16_t page, uint8_t *buf)
-{
-    int status;
-    int32_t write_status = -1;
-
-    status = write_buffer(dev, BLADE_USB_CMD_WRITE_PAGE_BUFFER, page, buf);
-    if(status != 0) {
-        return status;
-    }
-
+    /* Commit the page to flash */
     status = vendor_cmd_int_windex(dev, BLADE_USB_CMD_FLASH_WRITE,
-                                   page, &write_status);
+                                   page, &commit_status);
 
     if (status != 0) {
-        log_error("Failed to write page at 0x%02x: %s\n",
-                  flash_from_pages(page), bladerf_strerror(status));
+        log_error("Failed to commit page %u: %s\n", page,
+                  bladerf_strerror(status));
         return status;
 
-    } else if (write_status != 0) {
-        log_error("Failed to write page at 0x%02x: %d\n",
-                  flash_from_pages(page), write_status);
+    } else if (commit_status != 0) {
+        log_error("Failed to commit page %u, FW returned %d\n", page,
+                  commit_status);
 
          return BLADERF_ERR_UNEXPECTED;
     }
@@ -793,41 +740,31 @@ static int write_one_page(struct bladerf *dev, uint16_t page, uint8_t *buf)
     return 0;
 }
 
-
-static int usb_write_flash(struct bladerf *dev, uint32_t addr, uint8_t *buf,
-                           size_t len)
+static int usb_write_flash_pages(struct bladerf *dev,
+                                 uint16_t page, uint8_t *buf, uint16_t count)
 
 {
     int status, restore_status;
-    int page_addr, page_len, written, i;
-
-    if (len > INT_MAX) {
-        return BLADERF_ERR_INVAL;
-    }
-
-    if (!flash_bounds_aligned(BLADERF_FLASH_ALIGNMENT_PAGE, addr, len)) {
-        return BLADERF_ERR_MISALIGNED;
-    }
-
-    page_addr = flash_to_pages(addr);
-    page_len  = flash_to_pages(len);
+    uint16_t i;
+    size_t n_written;
 
     status = change_setting(dev, USB_IF_SPI_FLASH);
     if (status != 0) {
         return status;
     }
 
-    log_info("Writing 0x%08x bytes to address 0x%08x.\n", len, addr);
+    log_info("Writing %u pages starting at page %u\n", count, page);
 
-    written = 0;
-    for(i=0; i < page_len; i++) {
-        log_debug("Writing page at 0x%04x.\n", flash_from_pages(i));
-        status = write_one_page(dev, page_addr + i, buf + written);
+    n_written = 0;
+    for (i = 0; i < count; i++) {
+        log_debug("Writing page %u.\n", page + i);
+
+        status = write_page(dev, page + i, buf + n_written);
         if (status) {
             goto error;
         }
 
-        written += BLADERF_FLASH_PAGE_SIZE;
+        n_written += BLADERF_FLASH_PAGE_SIZE;
     }
 
 error:
@@ -837,7 +774,7 @@ error:
     } else if (restore_status != 0) {
         return restore_status;
     } else {
-        return written;
+        return 0;
     }
 }
 
@@ -868,31 +805,36 @@ static int usb_jump_to_bootloader(struct bladerf *dev)
 
 static int usb_get_cal(struct bladerf *dev, char *cal)
 {
-    return read_buffer(dev, BLADE_USB_CMD_READ_CAL_CACHE,
-                       (uint8_t*)cal, CAL_BUFFER_SIZE);
-}
+    const uint16_t dummy_page = 0;
+    int status, restore_status;
 
-static int usb_get_otp(struct bladerf *dev, char *otp)
-{
-    int status;
-    int otp_page = 0;
-    int32_t read_status = -1;
+    assert(CAL_BUFFER_SIZE == BLADERF_FLASH_PAGE_SIZE);
 
     status = change_setting(dev, USB_IF_SPI_FLASH);
     if (status) {
         return status;
     }
 
-    status = vendor_cmd_int_windex(dev, BLADE_USB_CMD_READ_OTP,
-                                   otp_page, &read_status);
-    if (status != 0) {
+    status = read_page(dev, BLADE_USB_CMD_READ_CAL_CACHE,
+                       dummy_page, (uint8_t*)cal);
+
+    restore_status = restore_post_flash_setting(dev);
+    return status == 0 ? restore_status : status;
+}
+
+static int usb_get_otp(struct bladerf *dev, char *otp)
+{
+    int status, restore_status;
+    const uint16_t dummy_page = 0;
+
+    status = change_setting(dev, USB_IF_SPI_FLASH);
+    if (status) {
         return status;
-    } else if (read_status != 0) {
-        log_error("Failed to read OTP page %d: %d\n", otp_page, read_status);
-        return BLADERF_ERR_UNEXPECTED;
-    } else {
-        return read_page_buffer(dev, (uint8_t*)otp);
     }
+
+    status = read_page(dev, BLADE_USB_CMD_READ_OTP, dummy_page, (uint8_t*)otp);
+    restore_status = restore_post_flash_setting(dev);
+    return status == 0 ? restore_status : status;
 }
 
 static int usb_get_device_speed(struct bladerf *dev, bladerf_dev_speed *speed)
@@ -1366,9 +1308,9 @@ const struct backend_fns backend_fns_usb = {
     FIELD_INIT(.load_fpga, usb_load_fpga),
     FIELD_INIT(.is_fpga_configured, usb_is_fpga_configured),
 
-    FIELD_INIT(.erase_flash, usb_erase_flash),
-    FIELD_INIT(.read_flash, usb_read_flash),
-    FIELD_INIT(.write_flash, usb_write_flash),
+    FIELD_INIT(.erase_flash_blocks, usb_erase_flash_blocks),
+    FIELD_INIT(.read_flash_pages, usb_read_flash_pages),
+    FIELD_INIT(.write_flash_pages, usb_write_flash_pages),
 
     FIELD_INIT(.device_reset, usb_device_reset),
     FIELD_INIT(.jump_to_bootloader, usb_jump_to_bootloader),

@@ -1701,7 +1701,7 @@ bladerf_dev_speed CALL_CONV bladerf_device_speed(struct bladerf *dev);
  */
 
 /**
- * Flash firmware onto the device
+ * Write FX3 firmware to the bladeRF's SPI flash
  *
  * @note This will require a power cycle to take effect
  *
@@ -1715,7 +1715,8 @@ int CALL_CONV bladerf_flash_firmware(struct bladerf *dev,
                                      const char *firmware);
 
 /**
- * Load device's FPGA
+ * Load device's FPGA. Note that this FPGA configuration will be reset
+ * at the next power cycle.
  *
  * @param   dev         Device handle
  * @param   fpga        Full path to FPGA bitstream
@@ -1726,7 +1727,8 @@ API_EXPORT
 int CALL_CONV bladerf_load_fpga(struct bladerf *dev, const char *fpga);
 
 /**
- * Flash FPGA image onto the device
+ * Write FPGA image onto the device and enable FPGA loading from SPI flash
+ * at power on (also referred to within this project as FPGA "autoloading").
  *
  * @param   dev         Device handle
  * @param   fpga_image  Full path to FPGA file
@@ -1736,6 +1738,14 @@ int CALL_CONV bladerf_load_fpga(struct bladerf *dev, const char *fpga);
 API_EXPORT
 int CALL_CONV bladerf_flash_fpga(struct bladerf *dev,
                                  const char *fpga_image);
+
+/**
+ * Erase the FPGA region of SPI flash, effectively disabling FPGA autoloading
+ *
+ * @param   dev         Device handle
+ */
+API_EXPORT
+int CALL_CONV bladerf_erase_stored_fpga(struct bladerf *dev);
 
 /**
  * Reset the device, causing it to reload its firmware from flash
@@ -2303,32 +2313,31 @@ int CALL_CONV bladerf_calibrate_dc(struct bladerf *dev,
  * in future revisions of the library. The caller is responsible for ensuring
  * these functions are called in a thread-safe manner.
  *
- *
  * @{
  */
-#define BLADERF_FLASH_PAGE_BITS   (8)  /**< 256bytes == 2^8  bytes */
-#define BLADERF_FLASH_SECTOR_BITS (16) /**< 64KiB    == 2^16 bytes */
-#define BLADERF_FLASH_SIZE_BITS   (22) /**< 32Mbit   == 2^22 bytes */
+#define BLADERF_FLASH_PAGE_BITS   (8)  /**< 256b writable page == 2^8 bytes */
+#define BLADERF_FLASH_EB_BITS     (16) /**< 64KiB Erase block == 2^16 bytes */
+#define BLADERF_FLASH_SIZE_BITS   (22) /**< 32Mbit == 2^22 bytes */
 
 /** Total size of bladeRF SPI flash */
-#define BLADERF_FLASH_TOTAL_SIZE  (1<<BLADERF_FLASH_SIZE_BITS)
+#define BLADERF_FLASH_TOTAL_SIZE  (1 << BLADERF_FLASH_SIZE_BITS)
 
 /** SPI flash page size */
-#define BLADERF_FLASH_PAGE_SIZE   (1<<BLADERF_FLASH_PAGE_BITS)
+#define BLADERF_FLASH_PAGE_SIZE   (1 << BLADERF_FLASH_PAGE_BITS)
 
-/** SPI flash sector size */
-#define BLADERF_FLASH_SECTOR_SIZE (1<<BLADERF_FLASH_SECTOR_BITS)
+/** SPI flash erase block size */
+#define BLADERF_FLASH_EB_SIZE     (1 << BLADERF_FLASH_EB_BITS)
 
 /** Size of the SPI flash, in bytes */
-#define BLADERF_FLASH_NUM_BYTES BLADERF_FLASH_TOTAL_SIZE
+#define BLADERF_FLASH_NUM_BYTES   BLADERF_FLASH_TOTAL_SIZE
 
 /** Size of the SPI flash, in pages */
 #define BLADERF_FLASH_NUM_PAGES \
     (BLADERF_FLASH_TOTAL_SIZE / BLADERF_FLASH_PAGE_SIZE)
 
-/** Size of the SPI flash, in sectors */
-#define BLADERF_FLASH_NUM_SECTORS \
-    (BLADERF_FLASH_TOTAL_SIZE / BLADERF_FLASH_SECTOR_SIZE)
+/** Size of the SPI flash, in 64KiB erase blocks */
+#define BLADERF_FLASH_NUM_EBS \
+    (BLADERF_FLASH_TOTAL_SIZE / BLADERF_FLASH_EB_SIZE)
 
 /** Address of firmware in flash */
 #define BLADERF_FLASH_ADDR_FIRMWARE     0x00000000
@@ -2355,23 +2364,22 @@ int CALL_CONV bladerf_calibrate_dc(struct bladerf *dev,
 #define BLADERF_FLASH_LEN_FPGA          0x003BFF00
 
 /**
- * Erase sectors from FX3 flash device
+ * Erase portions of the bladeRF's SPI flash
  *
- * @note Unlike the bladerf_read_flash/bladerf_write_flash functions this
- *       function expects a BLADERF_FLASH_SECTOR_SIZE aligned address and
- *       length.
+ * @note Unlike the bladerf_read_flash() ang bladerf_write_flash(), this
+ *       function expects an erase block-aligned address and length.
+ *       (See \ref BLADERF_FLASH_EB_SIZE for the erase-block size.)
  *
  * @param   dev     Device handle
- * @param   addr    Page aligned byte address of the first sector to erase
- * @param   len     Number of bytes to erase, must be a multiple of
- *                  BLADERF_FLASH_SECTOR_SIZE
+ * @param   addr    Bytes address to start erasing at. Must be a multibple
+ * @param   len     Number of bytes to erase. Must be a multiple of
+ *                  BLADERF_FLASH_EB_SIZE
  *
- * @return Positive number of bytes erased on success, negative value from \ref
- *         RETCODES list on failure
+ * @return 0 on success, or a value from \ref RETCODES list on failure
  */
 API_EXPORT
 int CALL_CONV bladerf_erase_flash(struct bladerf *dev, uint32_t addr,
-                                  uint32_t len);
+                                  size_t len);
 
 /**
  * Read bytes from FX3 flash device
@@ -2390,14 +2398,14 @@ int CALL_CONV bladerf_erase_flash(struct bladerf *dev, uint32_t addr,
  */
 API_EXPORT
 int CALL_CONV bladerf_read_flash(struct bladerf *dev, uint32_t addr,
-                                 uint8_t *buf, uint32_t len);
+                                 uint8_t *buf, size_t len);
 
 /**
  * Read an unaligned region of flash memory
  *
  * @param   dev   Device handle
  * @param   addr  Unaligned byte address of first byte to read
- * @param   buf  Buffer to read into, must be at least `len' bytes long
+ * @param   buf   Buffer to read into, must be at least `len' bytes long
  * @param   len   Number of bytes to write. (No alignment requirement)
  *
  * @return Positive number of bytes read on success, negative value from \ref
@@ -2405,10 +2413,10 @@ int CALL_CONV bladerf_read_flash(struct bladerf *dev, uint32_t addr,
  */
 API_EXPORT
 int CALL_CONV bladerf_read_flash_unaligned(struct bladerf *dev, uint32_t addr,
-                                           uint8_t *buf, uint32_t len);
+                                           uint8_t *buf, size_t len);
 
 /**
- * Write bytes to FX3 flash device
+ * Write data to the bladeRF's SPI flash device
  *
  * @note Unlike the `bladerf_erase_flash' function this function expects a
  *       BLADERF_FLASH_PAGE_SIZE aligned address and length.
@@ -2424,7 +2432,7 @@ int CALL_CONV bladerf_read_flash_unaligned(struct bladerf *dev, uint32_t addr,
  */
 API_EXPORT
 int CALL_CONV bladerf_write_flash(struct bladerf *dev, uint32_t addr,
-                                  uint8_t *buf, uint32_t len);
+                                  uint8_t *buf, size_t len);
 
 /**
  * Program an unaligned region of flash memory (read/erase/write/verify).
@@ -2437,14 +2445,11 @@ int CALL_CONV bladerf_write_flash(struct bladerf *dev, uint32_t addr,
  * @param   buf   Data to write to flash
  * @param   len   Number of bytes to write. (No alignment requirement)
  *
- * @return Positive number of bytes written on success, negative value from \ref
- *         RETCODES list on failure
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_program_flash_unaligned(struct bladerf *dev,
-                                              uint32_t addr,
-                                              uint8_t *buf,
-                                              uint32_t len);
+int CALL_CONV bladerf_write_flash_unaligned(struct bladerf *dev, uint32_t addr,
+                                            uint8_t *buf, size_t len);
 
 /** @} (End of FN_FLASH) */
 
