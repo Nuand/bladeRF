@@ -282,28 +282,28 @@ int bladerf_set_sampling(struct bladerf *dev, bladerf_sampling sampling)
         /* Turn on RXVGA2 */
         status = bladerf_lms_read( dev, 0x64, &val );
         if (status) {
-            log_warning( "Could not read LMS to disable RXVGA2\n" );
+            log_warning( "Could not read LMS to enable RXVGA2\n" );
             goto bladerf_set_sampling__done;
         }
 
         val |= (1<<1) ;
         status = bladerf_lms_write( dev, 0x64, val );
         if (status) {
-            log_warning( "Could not write LMS to disable RXVGA2\n" );
+            log_warning( "Could not write LMS to enable RXVGA2\n" );
             goto bladerf_set_sampling__done;
         }
     } else {
         /* Turn off RXVGA2 */
         status = bladerf_lms_read( dev, 0x64, &val );
         if (status) {
-            log_warning( "Could not read the LMS to enable RXVGA2\n" );
+            log_warning( "Could not read the LMS to disable RXVGA2\n" );
             goto bladerf_set_sampling__done;
         }
 
         val &= ~(1<<1) ;
         status = bladerf_lms_write( dev, 0x64, val );
         if (status) {
-            log_warning( "Could not write the LMS to enable RXVGA2\n" );
+            log_warning( "Could not write the LMS to disable RXVGA2\n" );
             goto bladerf_set_sampling__done;
         }
 
