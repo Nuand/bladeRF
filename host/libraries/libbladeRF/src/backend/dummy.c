@@ -1,6 +1,6 @@
 /*
  * Dummy backend to allow libbladeRF to build when no other backends are
- * disabled. This is intended for development purposes only, and should
+ * enabled. This is intended for development purposes only, and should
  * generally should not be enabled for libbladeRF releases.
  *
  * This file is part of the bladeRF project:

@@ -132,7 +132,7 @@ int async_init_stream(struct bladerf_stream **stream,
 }
 
 /* No device control calls may be made in this function and the associated
- * backend stream implementations, as the stream and control functionality are
+ * backend stream implementations, as the stream and control functionality
  * will generally be executed from separate thread contexts. */
 int async_run_stream(struct bladerf_stream *stream, bladerf_module module)
 {

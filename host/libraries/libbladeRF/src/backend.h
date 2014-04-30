@@ -28,7 +28,7 @@
 #include "bladerf_priv.h"
 
 /**
- * Open the device using the backend specified the provided info
+ * Open the device using the backend specified in bladerf_devinfo
  *
  * @param[out]  device  On success, updated with device handle
  * @param[in]   info    Filled-in device info
