@@ -81,8 +81,8 @@ int cmd_flash_init_cal(struct cli_state *state, int argc, char **argv)
             goto cmd_flash_init_cal_out;
         }
 
-        rv = bladerf_program_flash_unaligned(state->dev, image->address,
-                                             image->data, image->length);
+        rv = bladerf_write_flash_unaligned(state->dev, image->address,
+                                           image->data, image->length);
         if(rv < 0) {
             cli_err(state, argv[0],
             "Failed to write calibration data.\n"

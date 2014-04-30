@@ -27,7 +27,7 @@ int cmd_erase(struct cli_state *state, int argc, char **argv)
 {
     int status;
     int addr, len;
-    int sector_offset, n_sectors;
+    int eb_offset, n_ebs;
     bool ok;
 
     if (!cli_device_is_opened(state)) {
@@ -38,20 +38,20 @@ int cmd_erase(struct cli_state *state, int argc, char **argv)
         return CMD_RET_NARGS;
     }
 
-    sector_offset = str2uint(argv[1], 0, INT_MAX, &ok);
+    eb_offset = str2uint(argv[1], 0, INT_MAX, &ok);
     if(!ok) {
-        cli_err(state, argv[0], "Invalid value for \"sector_offset\" (%s)", argv[1]);
+        cli_err(state, argv[0], "Invalid value for \"eb_offset\" (%s)", argv[1]);
         return CMD_RET_INVPARAM;
     }
 
-    n_sectors = str2uint(argv[2], 0, INT_MAX, &ok);
+    n_ebs = str2uint(argv[2], 0, INT_MAX, &ok);
     if(!ok) {
-        cli_err(state, argv[0], "Invalid value for \"n_sectors\" (%s)", argv[2]);
+        cli_err(state, argv[0], "Invalid value for \"n_ebs\" (%s)", argv[2]);
         return CMD_RET_INVPARAM;
     }
 
-    addr = sector_offset * BLADERF_FLASH_SECTOR_SIZE;
-    len  = n_sectors * BLADERF_FLASH_SECTOR_SIZE;
+    addr = eb_offset * BLADERF_FLASH_EB_SIZE;
+    len  = n_ebs * BLADERF_FLASH_EB_SIZE;
 
     status = bladerf_erase_flash(state->dev, addr, len);
 

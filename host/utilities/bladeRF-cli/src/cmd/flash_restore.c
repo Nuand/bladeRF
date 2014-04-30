@@ -127,7 +127,7 @@ int cmd_flash_restore(struct cli_state *state, int argc, char **argv)
         len = image->length;
     }
 
-    rv = bladerf_program_flash_unaligned(state->dev, addr, image->data, len);
+    rv = bladerf_write_flash_unaligned(state->dev, addr, image->data, len);
     if (rv < 0) {
         cli_err(state, argv[0],
         "Failed to restore flash region.\n"

@@ -133,14 +133,14 @@ static const struct cmd cmd_table[] = {
     {
         FIELD_INIT(.names, cmd_names_erase),
         FIELD_INIT(.exec, cmd_erase),
-        FIELD_INIT(.desc, "Erase specified sectors of SPI flash"),
+        FIELD_INIT(.desc, "Erase specified erase blocks of SPI flash"),
         FIELD_INIT(.help,
             "erase <offset> <count>\n"
             "\n"
-            "Erase specified sectors of SPI flash\n"
+            "Erase specified erase blocks SPI flash\n"
             "\n"
-            "    <offset>       Starting sector to erase\n"
-            "    <count>        Number of sectors to erase\n"
+            "    <offset>       Erase block offset\n"
+            "    <count>        Number of erase blocks to erase\n"
         )
     },
     {
