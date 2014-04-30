@@ -54,7 +54,7 @@ bool bladerf_instance_matches(const struct bladerf_devinfo *a,
                               const struct bladerf_devinfo *b);
 
 /**
- * Do the serials match for the two provided device info structures match
+ * Do the serials for the two provided device info structures match
  * (taking wildcards into account)?
  *
  * @param   a   Device information to compare
@@ -66,7 +66,7 @@ bool bladerf_serial_matches(const struct bladerf_devinfo *a,
                             const struct bladerf_devinfo *b);
 
 /**
- * Do the bus and addr match for the two provided device info structures match
+ * Do the bus and addr for the two provided device info structures match
  * (taking wildcards into account)?
  *
  * @param   a   Device information to compare
@@ -91,7 +91,7 @@ struct bladerf_devinfo_list *
 bladerf_get_devinfo_list(struct bladerf_devinfo *devinfo);
 
 /**
- * Add and item to our internal devinfo list
+ * Add an item to our internal devinfo list
  *
  * @param   list    List to append to
  * @param   info    Info to copy into the list

@@ -364,7 +364,7 @@ typedef enum {
     BLADERF_LB_FIRMWARE = 1,
 
     /**
-     * Basband loopback. TXLPF output is connected to the RXVGA2 input.
+     * Baseband loopback. TXLPF output is connected to the RXVGA2 input.
      */
     BLADERF_LB_BB_TXLPF_RXVGA2,
 

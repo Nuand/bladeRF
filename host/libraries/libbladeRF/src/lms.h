@@ -109,7 +109,7 @@ struct lms_xcvr_config {
  * Convert an integer to a bandwidth selection.
  * If the actual bandwidth is not available, the closest
  * bandwidth greater than the requested bandwidth is selected.
- * If the provide value is greater than the maximum available bandwidth, the
+ * If the provided value is greater than the maximum available bandwidth, the
  * maximum available bandiwidth is returned.
  *
  * @param[in]   req     Requested bandwidth
@@ -258,7 +258,7 @@ int lms_rxvga1_enable(struct bladerf *dev, bool enable);
  * Set the gain value of RXVGA1 (in dB)
  *
  * @param[in]   dev     Device handle
- * @param[in]   gain    Gain value
+ * @param[in]   gain    Gain in dB (range: 5 to 30)
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
@@ -268,17 +268,14 @@ int lms_rxvga1_set_gain(struct bladerf *dev, int gain);
  * Get the RXVGA1 gain value (in dB)
  *
  * @param[in]   dev     Device handle
- * @param[out]  gain    Gain value
+ * @param[out]  gain    Gain in dB (range: 5 to 30)
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
 int lms_rxvga1_get_gain(struct bladerf *dev, int *gain);
 
 /**
- * Set the gain in dB and enable RXVGA2, or disable RXVGA2
- *
- * The range of gain values is from 0db to 60dB.
- * Anything above 30dB is not recommended as a gain setting.
+ * Enable or disable RXVGA2
  *
  * @param[in]   dev     Device handle
  * @param[in]   enable  Set to `true` to enable, `false` to disable
@@ -288,10 +285,10 @@ int lms_rxvga1_get_gain(struct bladerf *dev, int *gain);
 int lms_rxvga2_enable(struct bladerf *dev, bool enable);
 
 /**
- * Set the gain on RXVGA2 in dB.
+ * Set the gain value of RXVGA2 (in dB)
  *
  * The range of gain values is from 0dB to 60dB.
- * Anything above 30dB is not recommended as a gain setting.
+ * Anything above 30dB is not recommended as a gain setting and will be clamped.
  *
  * @param[in]   dev     Device handle
  * @param[in]   gain    Gain in dB (range: 0 to 30)
@@ -301,7 +298,7 @@ int lms_rxvga2_enable(struct bladerf *dev, bool enable);
 int lms_rxvga2_set_gain(struct bladerf *dev, int gain);
 
 /**
- * Get the gain on RXVGA2 in dB.
+ * Get the RXVGA2 gain value (in dB)
  *
  * @param[in]   dev     Device handle
  * @param[out]  gain    Gain in dB (range: 0 to 30)
