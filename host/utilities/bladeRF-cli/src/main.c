@@ -287,11 +287,16 @@ static int flash_fpga(struct rc_config *rc, struct cli_state *state, int status)
             print_error_need_devarg();
             status = -1;
         } else {
-            printf("Flashing fpga...\n");
-            status = bladerf_flash_fpga(state->dev, rc->flash_fpga_file);
+            if (!strcmp("X", rc->flash_fpga_file)) {
+                printf("Erasing stored FPGA to disable autoloading...\n");
+                status = bladerf_erase_stored_fpga(state->dev);
+            } else {
+                printf("Writing FPGA to flash for autoloading...\n");
+                status = bladerf_flash_fpga(state->dev, rc->flash_fpga_file);
+            }
+
             if (status) {
-                fprintf(stderr, "Error: failed to flash FPGA: %s\n",
-                        bladerf_strerror(status));
+                fprintf(stderr, "Error: %s\n", bladerf_strerror(status));
             } else {
                 printf("Done.\n");
             }
