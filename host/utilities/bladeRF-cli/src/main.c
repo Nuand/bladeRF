@@ -264,18 +264,13 @@ static int flash_fw(struct rc_config *rc, struct cli_state *state, int status)
                 fprintf(stderr, "Error: failed to flash firmware: %s\n",
                         bladerf_strerror(status));
             } else {
-                printf("Done.\n");
+                printf("Done. "
+                       "A power cycle is required for this to take effect.\n");
             }
-            bladerf_device_reset(state->dev);
-#if 0 // Need a workaround for this just in case
             bladerf_close(state->dev);
-#endif
             state->dev = NULL;
         }
     }
-
-    /* TODO Do we have to fire off some sort of reset after flashing
-     *      the firmware, and before loading the FPGA? */
 
     return status;
 }
