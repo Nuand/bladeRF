@@ -575,13 +575,15 @@ static int usb_erase_flash_blocks(struct bladerf *dev,
     for (i = 0; i < count; i++) {
         status = perform_erase(dev, eb + i);
         if (status == 0) {
-            log_info("Erased block %u\r", eb + i);
+            log_info("Erased block %u%c", eb + i, (i+1) == count ? '\n':'\r' );
         } else {
             log_debug("Failed to erase block %u: %s\n",
                     eb + i, bladerf_strerror(status));
             goto error;
         }
     }
+
+    log_info("Done erasing %u blocks\n", count);
 
 error:
     restore_status = restore_post_flash_setting(dev);
@@ -675,7 +677,7 @@ static int usb_read_flash_pages(struct bladerf *dev, uint8_t *buf,
     log_info("Reading %u pages starting at page %u\n", count, page);
 
     for (n_read = i = 0; i < count; i++) {
-        log_info("Reading page %u\r", page + i);
+        log_info("Reading page %u%c", page + i, (i+1) == count ? '\n':'\r' );
 
         status = read_page(dev, BLADE_USB_CMD_FLASH_READ,
                            page + i, buf + n_read);
@@ -685,6 +687,8 @@ static int usb_read_flash_pages(struct bladerf *dev, uint8_t *buf,
 
         n_read += BLADERF_FLASH_PAGE_SIZE;
     }
+
+    log_info("Done reading %u pages\n", count);
 
 error:
     status = restore_post_flash_setting(dev);
@@ -776,7 +780,7 @@ static int usb_write_flash_pages(struct bladerf *dev, const uint8_t *buf,
 
     n_written = 0;
     for (i = 0; i < count; i++) {
-        log_info("Writing page %u.\r", page + i);
+        log_info("Writing page %u%c", page + i, (i+1) == count ? '\n':'\r');
 
         status = write_page(dev, page + i, buf + n_written);
         if (status) {
@@ -785,6 +789,7 @@ static int usb_write_flash_pages(struct bladerf *dev, const uint8_t *buf,
 
         n_written += BLADERF_FLASH_PAGE_SIZE;
     }
+    log_info("Done writing %u pages\n", count );
 
 error:
     restore_status = restore_post_flash_setting(dev);
