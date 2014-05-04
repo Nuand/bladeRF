@@ -53,6 +53,7 @@ int cmd_flash_init_cal(struct cli_state *state, int argc, char **argv)
     uint16_t dac;
     bladerf_fpga_size fpga_size;
     struct bladerf_image *image = NULL;
+    uint32_t page, count;
 
     if(argc != 3 && argc != 4) {
         return CMD_RET_NARGS;
@@ -81,8 +82,16 @@ int cmd_flash_init_cal(struct cli_state *state, int argc, char **argv)
             goto cmd_flash_init_cal_out;
         }
 
-        rv = bladerf_write_flash_unaligned(state->dev, image->address,
-                                           image->data, image->length);
+        rv = bladerf_erase_flash(state->dev, BLADERF_FLASH_EB_CAL,
+                                 BLADERF_FLASH_EB_LEN_CAL);
+        if (rv != 0) {
+            goto cmd_flash_init_cal_out;
+        }
+
+        page = BLADERF_FLASH_TO_PAGES(image->address);
+        count = BLADERF_FLASH_TO_PAGES(image->length);
+
+        rv = bladerf_write_flash(state->dev, image->data, page, count);
         if(rv < 0) {
             cli_err(state, argv[0],
             "Failed to write calibration data.\n"

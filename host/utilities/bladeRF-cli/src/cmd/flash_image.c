@@ -89,21 +89,20 @@ static int handle_param(const char *param, char *val,
         } else if (!strcasecmp("cal", val)) {
 
             if (!p->override_address) {
-                p->address = BLADERF_FLASH_ADDR_CALIBRATION;
+                p->address = BLADERF_FLASH_ADDR_CAL;
             }
 
-            p->max_length = BLADERF_FLASH_LEN_CALIBRATION;
+            p->max_length = BLADERF_FLASH_BYTE_LEN_CAL;
             p->type = BLADERF_IMAGE_TYPE_CALIBRATION;
 
         } else if (!strcasecmp("fpga40", val) ||
                    !strcasecmp("fpga115", val)) {
 
             if (!p->override_address) {
-                p->address = BLADERF_FLASH_ADDR_FPGA_META;
+                p->address = BLADERF_FLASH_ADDR_FPGA;
             }
 
-            p->max_length = BLADERF_FLASH_LEN_FPGA_META +
-                            BLADERF_FLASH_LEN_FPGA;
+            p->max_length = BLADERF_FLASH_BYTE_LEN_FPGA;
 
             if (!strcasecmp("fpga40", val)) {
                 p->type = BLADERF_IMAGE_TYPE_FPGA_40KLE;
@@ -116,7 +115,7 @@ static int handle_param(const char *param, char *val,
                 p->address = BLADERF_FLASH_ADDR_FIRMWARE;
             }
 
-            p->max_length = BLADERF_FLASH_LEN_FIRMWARE;
+            p->max_length = BLADERF_FLASH_BYTE_LEN_FIRMWARE;
             p->type = BLADERF_IMAGE_TYPE_FIRMWARE;
 
         } else {

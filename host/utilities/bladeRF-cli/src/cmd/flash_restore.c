@@ -66,13 +66,13 @@ static int parse_argv(struct cli_state *state, int argc, char **argv,
 
     if (argc == 4) {
         opt->address = str2uint(argv[2], 0, UINT_MAX, &ok);
-        if (!ok) {
+        if (!ok || (opt->address % BLADERF_FLASH_PAGE_SIZE != 0)) {
             cli_err(state, argv[0], "Invalid address provided");
             return CMD_RET_INVPARAM;
         }
 
         opt->len = str2uint(argv[3], 0, UINT_MAX, &ok);
-        if (!ok) {
+        if (!ok || (opt->len % BLADERF_FLASH_PAGE_SIZE != 0)) {
             cli_err(state, argv[0], "Invalid length provided");
             return CMD_RET_INVPARAM;
         }
@@ -83,12 +83,45 @@ static int parse_argv(struct cli_state *state, int argc, char **argv,
     return 0;
 }
 
+static inline int erase_region(struct bladerf *dev, struct bladerf_image *img,
+                                uint32_t addr, uint32_t len)
+{
+    switch (img->type) {
+        case BLADERF_IMAGE_TYPE_FIRMWARE:
+            return bladerf_erase_flash(dev, BLADERF_FLASH_EB_FIRMWARE,
+                                       BLADERF_FLASH_EB_LEN_FIRMWARE);
+
+        case BLADERF_IMAGE_TYPE_FPGA_40KLE:
+        case BLADERF_IMAGE_TYPE_FPGA_115KLE:
+            return bladerf_erase_flash(dev, BLADERF_FLASH_EB_FPGA,
+                                       BLADERF_FLASH_EB_LEN_FPGA);
+
+        case BLADERF_IMAGE_TYPE_CALIBRATION:
+            return bladerf_erase_flash(dev, BLADERF_FLASH_EB_CAL,
+                                       BLADERF_FLASH_EB_LEN_CAL);
+
+        case BLADERF_IMAGE_TYPE_RAW:
+            if ((addr % BLADERF_FLASH_EB_SIZE) != 0 ||
+                (len % BLADERF_FLASH_EB_SIZE) != 0) {
+
+                return BLADERF_ERR_INVAL;
+            } else {
+                uint32_t eb = BLADERF_FLASH_TO_EB(addr);
+                uint32_t count = BLADERF_FLASH_TO_EB(len);
+                return bladerf_erase_flash(dev, eb, count);
+            }
+
+        default:
+            return BLADERF_ERR_INVAL;
+    }
+}
+
 int cmd_flash_restore(struct cli_state *state, int argc, char **argv)
 {
     int rv;
     struct bladerf_image *image = NULL;
     struct options opt;
-    uint32_t addr, len;
+    uint32_t addr, len, page, count;
 
     memset(&opt, 0, sizeof(opt));
 
@@ -127,7 +160,16 @@ int cmd_flash_restore(struct cli_state *state, int argc, char **argv)
         len = image->length;
     }
 
-    rv = bladerf_write_flash_unaligned(state->dev, addr, image->data, len);
+    rv = erase_region(state->dev, image, addr, len);
+    if (rv < 0) {
+        rv_error(rv, "Failed to erase flash.");
+        goto cmd_flash_restore_out;
+    }
+
+    page = BLADERF_FLASH_TO_PAGES(addr);
+    count = BLADERF_FLASH_TO_PAGES(len);
+
+    rv = bladerf_write_flash(state->dev, image->data, page, count);
     if (rv < 0) {
         cli_err(state, argv[0],
         "Failed to restore flash region.\n"
