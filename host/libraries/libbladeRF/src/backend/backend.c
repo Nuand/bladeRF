@@ -109,3 +109,36 @@ int backend_probe(struct bladerf_devinfo **devinfo_items, size_t *num_items)
 
     return status;
 }
+
+const char * backend2str(bladerf_backend backend)
+{
+    switch (backend) {
+        case BLADERF_BACKEND_LIBUSB:
+            return BACKEND_STR_LIBUSB;
+
+        case BLADERF_BACKEND_LINUX:
+            return BACKEND_STR_LINUX;
+
+        default:
+            return BACKEND_STR_ANY;
+    }
+}
+
+int str2backend(const char *str, bladerf_backend *backend)
+{
+    int status = 0;
+
+    if (!strcasecmp(BACKEND_STR_LIBUSB, str)) {
+        *backend = BLADERF_BACKEND_LIBUSB;
+    } else if (!strcasecmp(BACKEND_STR_LINUX, str)) {
+        *backend = BLADERF_BACKEND_LINUX;
+    } else if (!strcasecmp(BACKEND_STR_ANY, str)) {
+        *backend = BLADERF_BACKEND_ANY;
+    } else {
+        log_debug("Invalid backend: %s\n", str);
+        status = BLADERF_ERR_INVAL;
+        *backend = BLADERF_BACKEND_ANY;
+    }
+
+    return status;
+}

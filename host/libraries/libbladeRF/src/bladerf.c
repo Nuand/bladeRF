@@ -907,6 +907,11 @@ bool bladerf_devstr_matches(const char *dev_str,
     return ret;
 }
 
+const char * bladerf_backend_str(bladerf_backend backend)
+{
+    return backend2str(backend);
+}
+
 /*------------------------------------------------------------------------------
  * Si5338 register read / write functions
  *----------------------------------------------------------------------------*/

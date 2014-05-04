@@ -297,6 +297,20 @@ bool CALL_CONV bladerf_devinfo_matches(const struct bladerf_devinfo *a,
 API_EXPORT
 bool CALL_CONV bladerf_devstr_matches(const char *dev_str,
                                       struct bladerf_devinfo *info);
+
+/**
+ * Retrieve the backend string associated with the specified
+ * backend enumeration value.
+ *
+ * @warning Do not attempt to modify or free() the returned string.
+ *
+ * @return A string that can used to specify the `backend` portion of a device
+ *         identifier string. (See bladerf_open().)
+ */
+API_EXPORT
+const char * CALL_CONV bladerf_backend_str(bladerf_backend backend);
+
+
 /** @} (End of FN_DEVINFO) */
 
 

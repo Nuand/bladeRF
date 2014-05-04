@@ -31,6 +31,7 @@
 
 #include "device_identifier.h"
 #include "devinfo.h"
+#include "backend/backend.h"
 #include "conversions.h"
 #include "log.h"
 
@@ -39,7 +40,6 @@
 
 static int handle_backend(char *str, struct bladerf_devinfo *d)
 {
-    int status = 0;
     char *str_end;
 
     if (!str || strlen(str) == 0) {
@@ -57,16 +57,7 @@ static int handle_backend(char *str, struct bladerf_devinfo *d)
     while (str_end > str && isspace(*str_end)) { str_end--; };
     str_end[1] = '\0';
 
-    if (!strcasecmp("libusb", str)) {
-        d->backend = BLADERF_BACKEND_LIBUSB;
-    } else if (!strcasecmp("linux", str)) {
-        d->backend = BLADERF_BACKEND_LINUX;
-    } else {
-        log_debug("Invalid backend: %s\n", str);
-        status = BLADERF_ERR_INVAL;
-    }
-
-    return status;
+    return str2backend(str, &d->backend);
 }
 
 static int handle_device(struct bladerf_devinfo *d, char *value)

@@ -27,6 +27,10 @@
 
 #include "bladerf_priv.h"
 
+#define BACKEND_STR_ANY    "*"
+#define BACKEND_STR_LIBUSB "libusb"
+#define BACKEND_STR_LINUX  "linux"
+
 /**
  * Backend-specific function table
  */
@@ -139,6 +143,27 @@ int backend_open(struct bladerf *device, struct bladerf_devinfo *info);
  * @return 0 on success, BLADERF_ERR_* on failure
  */
 int backend_probe(struct bladerf_devinfo **devinfo_items, size_t *num_items);
+
+/**
+ * Convert a backend enumeration value to a string
+ *
+ * @param   backend     Value to convert to a string
+ *
+ * @return  A backend string for the associated enumeration value. An invalid
+ *          value will yield the "ANY" wildcard.
+ */
+const char * backend2str(bladerf_backend backend);
+
+/**
+ * Convert a string to a backend type value
+ *
+ * @param[in]   str         Backend type, as a string.
+ * @param[out]  backend     Associated backend, on success
+ *
+ * @return 0 on success, BLADERF_ERR_INVAL on invalid type string
+ */
+int str2backend(const char *str, bladerf_backend *backend);
+
 
 #endif
 
