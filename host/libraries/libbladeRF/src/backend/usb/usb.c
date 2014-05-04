@@ -64,12 +64,14 @@ static int access_peripheral(struct bladerf *dev, uint8_t peripheral,
     int status;
     size_t i;
     uint8_t buf[16] = { 0 };
+    const uint8_t pkt_mode_dir = (dir == USB_DIR_HOST_TO_DEVICE) ?
+                        UART_PKT_MODE_DIR_WRITE : UART_PKT_MODE_DIR_READ;
 
     assert(len <= ((sizeof(buf) - 2) / 2));
 
     /* Populate the buffer for transfer */
     buf[0] = UART_PKT_MAGIC;
-    buf[1] = dir | peripheral | len;
+    buf[1] = pkt_mode_dir | peripheral | (uint8_t)len;
 
     for (i = 0; i < len; i++) {
         buf[i * 2 + 2] = cmd[i].addr;
@@ -115,7 +117,7 @@ static inline int gpio_read(struct bladerf *dev, uint8_t addr, uint32_t *data)
         cmd.data = 0xff;
 
         status = access_peripheral(dev, UART_PKT_DEV_GPIO,
-                                   UART_PKT_MODE_DIR_READ, &cmd, 1);
+                                   USB_DIR_DEVICE_TO_HOST, &cmd, 1);
 
         if (status < 0) {
             return status;
@@ -139,7 +141,7 @@ static inline int gpio_write(struct bladerf *dev, uint8_t addr, uint32_t data)
         cmd.data = (data >> (i * 8)) & 0xff;
 
         status = access_peripheral(dev, UART_PKT_DEV_GPIO,
-                                   UART_PKT_MODE_DIR_WRITE, &cmd, 1);
+                                   USB_DIR_HOST_TO_DEVICE, &cmd, 1);
 
         if (status < 0) {
             return status;
@@ -159,7 +161,7 @@ static int load_fpga_version(struct bladerf *dev)
         cmd.data = 0xff;
 
         status = access_peripheral(dev, UART_PKT_DEV_GPIO,
-                                   UART_PKT_MODE_DIR_READ, &cmd, 1);
+                                   USB_DIR_DEVICE_TO_HOST, &cmd, 1);
 
         if (status != 0) {
             memset(&dev->fpga_version, 0, sizeof(dev->fpga_version));
@@ -372,7 +374,7 @@ static int usb_open(struct bladerf *dev, struct bladerf_devinfo *info)
 {
     int status;
     size_t i;
-    struct bladerf_usb *usb = malloc(sizeof(*usb));
+    struct bladerf_usb *usb = (struct bladerf_usb*) malloc(sizeof(*usb));
 
     if (usb == NULL) {
         return BLADERF_ERR_MEM;
@@ -588,7 +590,7 @@ error:
     return status != 0 ? status : restore_status;
 }
 
-static inline int read_page(struct bladerf *dev, uint16_t read_operation,
+static inline int read_page(struct bladerf *dev, uint8_t read_operation,
                             uint16_t page, uint8_t *buf)
 {
     void *driver;
@@ -597,7 +599,7 @@ static inline int read_page(struct bladerf *dev, uint16_t read_operation,
     int32_t op_status;
     uint16_t read_size;
     uint16_t offset;
-    uint16_t request;
+    uint8_t request;
 
     if (dev->usb_speed == BLADERF_DEVICE_SPEED_SUPER) {
         read_size = BLADERF_FLASH_PAGE_SIZE;
@@ -656,7 +658,8 @@ static int usb_read_flash_pages(struct bladerf *dev, uint8_t *buf,
                                 uint32_t page_u32, uint32_t count_u32)
 {
     int status;
-    size_t i, n_read;
+    size_t n_read;
+    uint16_t i;
 
     /* 16-bit control transfer fields are used for these.
      * The current bladeRF build only has a 4MiB flash, anyway. */
@@ -673,7 +676,7 @@ static int usb_read_flash_pages(struct bladerf *dev, uint8_t *buf,
 
     log_info("Reading %u pages starting at page %u\n", count, page);
 
-    for (i = n_read = 0; i < count; i++) {
+    for (n_read = i = 0; i < count; i++) {
         log_debug("Reading page %u\n", page + i);
 
         status = read_page(dev, BLADE_USB_CMD_FLASH_READ,
@@ -950,7 +953,7 @@ static int set_fpga_correction(struct bladerf *dev,
 
         cmd.data = (value >> (i * 8)) & 0xff;
         status = access_peripheral(dev, UART_PKT_DEV_GPIO,
-                                   UART_PKT_MODE_DIR_WRITE, &cmd, 1);
+                                   USB_DIR_HOST_TO_DEVICE, &cmd, 1);
     }
 
     return status;
@@ -967,7 +970,7 @@ static int usb_lms_write(struct bladerf *dev, uint8_t addr, uint8_t data)
     log_verbose( "%s: 0x%2.2x 0x%2.2x\n", __FUNCTION__, addr, data );
 
     status = access_peripheral(dev, UART_PKT_DEV_LMS,
-                               UART_PKT_MODE_DIR_WRITE, &cmd, 1);
+                               USB_DIR_HOST_TO_DEVICE, &cmd, 1);
 
     return status;
 }
@@ -981,7 +984,7 @@ static int usb_lms_read(struct bladerf *dev, uint8_t addr, uint8_t *data)
     cmd.data = 0xff;
 
     status = access_peripheral(dev, UART_PKT_DEV_LMS,
-                               UART_PKT_MODE_DIR_READ, &cmd, 1);
+                               USB_DIR_DEVICE_TO_HOST, &cmd, 1);
 
     if (status == 0) {
         *data = cmd.data;
@@ -1082,7 +1085,7 @@ static int get_fpga_correction(struct bladerf *dev,
         cmd.addr = i + addr;
         cmd.data = 0xff;
         status = access_peripheral(dev, UART_PKT_DEV_GPIO,
-                                   UART_PKT_MODE_DIR_READ, &cmd, 1);
+                                   USB_DIR_DEVICE_TO_HOST, &cmd, 1);
 
         *value |= (cmd.data << (i * 8));
     }
@@ -1158,7 +1161,7 @@ int usb_get_timestamp(struct bladerf *dev, bladerf_module mod, uint64_t *value)
     cmds[3].addr = (mod == BLADERF_MODULE_RX ? 19 : 27);
     cmds[0].data = cmds[1].data = cmds[2].data = cmds[3].data = 0xff;
 
-    status = access_peripheral(dev, UART_PKT_DEV_GPIO, UART_PKT_MODE_DIR_READ,
+    status = access_peripheral(dev, UART_PKT_DEV_GPIO, USB_DIR_DEVICE_TO_HOST,
                                cmds, ARRAY_SIZE(cmds));
     if (status != 0) {
         return status;
@@ -1174,7 +1177,7 @@ int usb_get_timestamp(struct bladerf *dev, bladerf_module mod, uint64_t *value)
     cmds[3].addr = (mod == BLADERF_MODULE_RX ? 23 : 31);
     cmds[0].data = cmds[1].data = cmds[2].data = cmds[3].data = 0xff;
 
-    status = access_peripheral(dev, UART_PKT_DEV_GPIO, UART_PKT_MODE_DIR_READ,
+    status = access_peripheral(dev, UART_PKT_DEV_GPIO, USB_DIR_DEVICE_TO_HOST,
                                cmds, ARRAY_SIZE(cmds));
 
     if (status) {
@@ -1200,7 +1203,7 @@ static int usb_si5338_write(struct bladerf *dev, uint8_t addr, uint8_t data)
     log_verbose( "%s: 0x%2.2x 0x%2.2x\n", __FUNCTION__, addr, data );
 
     return access_peripheral(dev, UART_PKT_DEV_SI5338,
-                             UART_PKT_MODE_DIR_WRITE, &cmd, 1);
+                             USB_DIR_HOST_TO_DEVICE, &cmd, 1);
 }
 
 static int usb_si5338_read(struct bladerf *dev, uint8_t addr, uint8_t *data)
@@ -1212,7 +1215,7 @@ static int usb_si5338_read(struct bladerf *dev, uint8_t addr, uint8_t *data)
     cmd.data = 0xff;
 
     status = access_peripheral(dev, UART_PKT_DEV_SI5338,
-                               UART_PKT_MODE_DIR_READ, &cmd, 1);
+                               USB_DIR_DEVICE_TO_HOST, &cmd, 1);
 
     if (status == 0) {
         *data = cmd.data;
@@ -1231,7 +1234,7 @@ static int usb_dac_write(struct bladerf *dev, uint16_t value)
     cmd.addr = 0;
     cmd.data = value & 0xff;
     status = access_peripheral(dev, UART_PKT_DEV_VCTCXO,
-                               UART_PKT_MODE_DIR_WRITE, &cmd, 1);
+                               USB_DIR_HOST_TO_DEVICE, &cmd, 1);
 
     if (status < 0) {
         return status;
@@ -1240,7 +1243,7 @@ static int usb_dac_write(struct bladerf *dev, uint16_t value)
     cmd.addr = 1;
     cmd.data = (value >> 8) & 0xff;
     status = access_peripheral(dev, UART_PKT_DEV_VCTCXO,
-                               UART_PKT_MODE_DIR_WRITE, &cmd, 1);
+                               USB_DIR_HOST_TO_DEVICE, &cmd, 1);
 
     return status;
 }

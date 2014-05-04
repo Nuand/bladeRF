@@ -132,21 +132,25 @@ int flash_write_fx3_fw(struct bladerf *dev, uint8_t **image, size_t len)
     int status;
     uint8_t *readback_buf;
     uint8_t *padded_image;
-    size_t padded_image_len;
+    uint32_t padded_image_len;
 
     /* Pad firwmare data out to a page size */
-    const size_t page_size = BLADERF_FLASH_PAGE_SIZE;
-    const size_t padding_len =
+    const uint32_t page_size = BLADERF_FLASH_PAGE_SIZE;
+    const uint32_t padding_len =
         (len % page_size == 0) ? 0 : page_size - (len % page_size);
 
-    padded_image_len = len + padding_len;
+    if (len >= (UINT32_MAX - padding_len)) {
+        return BLADERF_ERR_INVAL;
+    }
 
-    readback_buf = malloc(padded_image_len);
+    padded_image_len = (uint32_t) len + padding_len;
+
+    readback_buf = (uint8_t*) malloc(padded_image_len);
     if (readback_buf == NULL) {
         return BLADERF_ERR_MEM;
     }
 
-    padded_image = realloc(*image, padded_image_len);
+    padded_image = (uint8_t *) realloc(*image, padded_image_len);
     if (padded_image == NULL) {
         status = BLADERF_ERR_MEM;
         goto error;
@@ -215,24 +219,28 @@ int flash_write_fpga_bitstream(struct bladerf *dev,
     uint8_t *readback_buf;
     uint8_t *padded_bitstream;
     uint8_t metadata[BLADERF_FLASH_PAGE_SIZE];
-    size_t padded_bitstream_len;
+    uint32_t padded_bitstream_len;
 
     /* Pad data to be page-aligned */
-    const size_t page_size = BLADERF_FLASH_PAGE_SIZE;
-    const size_t padding_len =
+    const uint32_t page_size = BLADERF_FLASH_PAGE_SIZE;
+    const uint32_t padding_len =
         (len % page_size == 0) ? 0 : page_size - (len % page_size);
 
-    padded_bitstream_len = len + padding_len;
+    if (len >= (UINT32_MAX - padding_len)) {
+        return BLADERF_ERR_INVAL;
+    }
+
+    padded_bitstream_len = (uint32_t) len + padding_len;
 
     /* Fill in metadata with the *actual* FPGA bitstream length */
     fill_fpga_metadata_page(metadata, len);
 
-    readback_buf = malloc(padded_bitstream_len);
+    readback_buf = (uint8_t*) malloc(padded_bitstream_len);
     if (readback_buf == NULL) {
         return BLADERF_ERR_MEM;
     }
 
-    padded_bitstream = realloc(*bitstream, padded_bitstream_len);
+    padded_bitstream = (uint8_t*) realloc(*bitstream, padded_bitstream_len);
     if (padded_bitstream == NULL) {
         status = BLADERF_ERR_MEM;
         goto error;
