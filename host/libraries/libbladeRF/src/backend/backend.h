@@ -124,7 +124,8 @@ struct backend_fns {
 };
 
 /**
- * Open the device using the backend specified the provided info
+ * Open the device using the backend specified in the provided
+ * bladerf_devinfo structure.
  *
  * @param[in]   device  Device to fill in backend info for
  * @param[in]   info    Filled-in device info
