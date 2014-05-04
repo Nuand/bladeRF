@@ -20,6 +20,7 @@
  */
 #include <stdint.h>
 #include <stdlib.h>
+#include <errno.h>
 #include "async.h"
 #include "log.h"
 
@@ -61,6 +62,11 @@ int async_init_stream(struct bladerf_stream **stream,
     }
 
     if (pthread_cond_init(&lstream->can_submit_buffer, NULL) != 0) {
+        free(lstream);
+        return BLADERF_ERR_UNEXPECTED;
+    }
+
+    if (pthread_cond_init(&lstream->stream_started, NULL) != 0) {
         free(lstream);
         return BLADERF_ERR_UNEXPECTED;
     }
@@ -139,8 +145,12 @@ int async_run_stream(struct bladerf_stream *stream, bladerf_module module)
     int status;
     struct bladerf *dev = stream->dev;
 
+    pthread_mutex_lock(&stream->lock);
     stream->module = module;
     stream->state = STREAM_RUNNING;
+    pthread_cond_signal(&stream->stream_started);
+    pthread_mutex_unlock(&stream->lock);
+
     status = dev->fn->stream(stream, module);
 
     /* Backend return value takes precedence over stream error status */
@@ -151,12 +161,43 @@ int async_submit_stream_buffer(struct bladerf_stream *stream,
                                void *buffer,
                                unsigned int timeout_ms)
 {
-    int status;
+    int status = 0;
+    struct timespec timeout_abs;
 
     pthread_mutex_lock(&stream->lock);
-    status = stream->dev->fn->submit_stream_buffer(stream, buffer, timeout_ms);
-    pthread_mutex_unlock(&stream->lock);
 
+    if (stream->state != STREAM_RUNNING && timeout_ms != 0) {
+        status = populate_abs_timeout(&timeout_abs, timeout_ms);
+        if (status != 0) {
+            log_debug("Failed to populate timeout value\n");
+            goto error;
+        }
+    }
+
+    while (stream->state != STREAM_RUNNING) {
+        log_debug("Buffer submitted while stream's not running. "
+                  "Waiting for stream to start.\n");
+
+        if (timeout_ms == 0) {
+            status = pthread_cond_wait(&stream->stream_started, &stream->lock);
+        } else {
+            status = pthread_cond_timedwait(&stream->stream_started,
+                                            &stream->lock, &timeout_abs);
+        }
+
+        if (status == ETIMEDOUT) {
+            status = BLADERF_ERR_TIMEOUT;
+            goto error;
+        } else if (status != 0) {
+            status = BLADERF_ERR_UNEXPECTED;
+            goto error;
+        }
+    }
+
+    status = stream->dev->fn->submit_stream_buffer(stream, buffer, timeout_ms);
+
+error:
+    pthread_mutex_unlock(&stream->lock);
     return status;
 }
 

@@ -54,6 +54,7 @@ struct bladerf_stream {
     int error_code;
     bladerf_stream_state state;
     pthread_cond_t can_submit_buffer;
+    pthread_cond_t stream_started;
     void *backend_data;
 };
 
