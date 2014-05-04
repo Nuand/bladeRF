@@ -58,11 +58,11 @@ struct backend_fns {
 
     /* Read the specified number of pages */
     int (*read_flash_pages)(struct bladerf *dev,
-                            uint16_t page, uint8_t *buf, uint16_t count);
+                            uint8_t *buf, uint32_t page, uint32_t count);
 
     /* Write the specified number of pages */
-    int (*write_flash_pages)(struct bladerf *dev,
-                             uint16_t page, uint8_t *buf, uint16_t count);
+    int (*write_flash_pages)(struct bladerf *dev, const uint8_t *buf,
+                             uint32_t page, uint32_t count);
 
     /* Device startup and reset */
     int (*device_reset)(struct bladerf *dev);

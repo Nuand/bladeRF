@@ -305,6 +305,18 @@ int bladerf_image_write(struct bladerf_image *img, const char *file)
         return BLADERF_ERR_MEM;
     }
 
+    /* If the type is RAW, we should only allow erase-block aligned
+     * addresses and lengths */
+    if (img->type == BLADERF_IMAGE_TYPE_RAW) {
+        if (img->address % BLADERF_FLASH_EB_SIZE != 0) {
+            log_debug("Image address must be erase block-aligned for RAW.\n");
+            return BLADERF_ERR_INVAL;
+        } else if (img->length % BLADERF_FLASH_EB_SIZE != 0) {
+            log_debug("Image length must be erase block-aligned for RAW.\n");
+            return BLADERF_ERR_INVAL;
+        }
+    }
+
     pack_image(img, buf);
 
     f = fopen(file, "wb");
@@ -353,6 +365,24 @@ bladerf_image_read_out:
     return rv;
 }
 
+static inline bool is_page_aligned(uint32_t val)
+{
+    return val % BLADERF_FLASH_PAGE_SIZE == 0;
+}
+
+static inline bool is_valid_addr_len(uint32_t addr, uint32_t len)
+{
+    if (addr >= BLADERF_FLASH_TOTAL_SIZE) {
+        return false;
+    } else if (len > BLADERF_FLASH_TOTAL_SIZE) {
+        return false;
+    } else if ((addr + len) > BLADERF_FLASH_TOTAL_SIZE) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
 struct bladerf_image * bladerf_alloc_image(bladerf_image_type type,
                                            uint32_t address,
                                            uint32_t length)
@@ -360,6 +390,17 @@ struct bladerf_image * bladerf_alloc_image(bladerf_image_type type,
     struct bladerf_image *image;
 
     assert(BLADERF_IMAGE_MAGIC_LEN == (sizeof(image_magic) - 1));
+
+    if (!is_page_aligned(address)) {
+        log_debug("Address is not page-aligned: 0x%08x\n", address);
+        return NULL;
+    } else if (!is_page_aligned(length)) {
+        log_debug("Length is not page-aligned: 0x%08x\n", length);
+        return NULL;
+    } else if (!is_valid_addr_len(address, length)) {
+        log_debug("Invalid address=0x%08x or length=0x%08x\n", address, length);
+        return NULL;
+    }
 
     image = (struct bladerf_image *)calloc(1, sizeof(*image));
 
@@ -432,8 +473,8 @@ struct bladerf_image * bladerf_alloc_cal_image(bladerf_fpga_size fpga_size,
     int status;
 
     image = bladerf_alloc_image(BLADERF_IMAGE_TYPE_CALIBRATION,
-                                BLADERF_FLASH_ADDR_CALIBRATION,
-                                BLADERF_FLASH_LEN_CALIBRATION);
+                                BLADERF_FLASH_ADDR_CAL,
+                                BLADERF_FLASH_BYTE_LEN_CAL);
 
     if (!image) {
         return NULL;

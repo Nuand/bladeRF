@@ -653,33 +653,22 @@ bladerf_dev_speed bladerf_device_speed(struct bladerf *dev)
  * Device Programming
  *----------------------------------------------------------------------------*/
 
-int bladerf_erase_flash(struct bladerf *dev, uint32_t addr, size_t len)
+int bladerf_erase_flash(struct bladerf *dev,
+                        uint32_t erase_block, uint32_t count)
 {
-    return flash_erase(dev, addr, len);
+    return flash_erase(dev, erase_block, count);
 }
 
-int bladerf_read_flash(struct bladerf *dev, uint32_t addr,
-                       uint8_t *buf, size_t len)
+int bladerf_read_flash(struct bladerf *dev, uint8_t *buf,
+                       uint32_t page, uint32_t count)
 {
-    return flash_read(dev, addr, buf, len);
+    return flash_read(dev, buf, page, count);
 }
 
-int CALL_CONV bladerf_read_flash_unaligned(struct bladerf *dev, uint32_t addr,
-                                           uint8_t *buf, size_t len)
+int bladerf_write_flash(struct bladerf *dev, const uint8_t *buf,
+                        uint32_t page, uint32_t count)
 {
-    return flash_unaligned_read(dev, addr, buf, len);
-}
-
-int bladerf_write_flash(struct bladerf *dev, uint32_t addr,
-                        uint8_t *buf, size_t len)
-{
-    return flash_write(dev, addr, buf, len);
-}
-
-int CALL_CONV bladerf_write_flash_unaligned(struct bladerf *dev, uint32_t addr,
-                                            uint8_t *buf, size_t len)
-{
-    return flash_unaligned_write(dev, addr, buf, len);
+    return flash_write(dev, buf, page, count);
 }
 
 int bladerf_device_reset(struct bladerf *dev)
@@ -701,7 +690,7 @@ static inline bool valid_fw_size(size_t len)
     /* Simple FW applications generally are significantly larger than this */
     if (len < (50 * 1024)) {
         return false;
-    } else if (len > FLASH_FIRMWARE_SIZE) {
+    } else if (len > BLADERF_FLASH_BYTE_LEN_FIRMWARE) {
         return false;
     } else {
         return true;
@@ -739,9 +728,20 @@ int bladerf_flash_firmware(struct bladerf *dev, const char *firmware_file)
     return status;
 }
 
+static inline bool valid_fpga_size(size_t len)
+{
+    if (len < (1 * 1024 * 1024)) {
+        return false;
+    } else if (len > BLADERF_FLASH_BYTE_LEN_FPGA) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
 int bladerf_load_fpga(struct bladerf *dev, const char *fpga_file)
 {
-    uint8_t *buf;
+    uint8_t *buf = NULL;
     size_t  buf_size;
     int status;
 
@@ -751,28 +751,25 @@ int bladerf_load_fpga(struct bladerf *dev, const char *fpga_file)
      *  - Checksum/hash?
      */
     status = file_read_buffer(fpga_file, &buf, &buf_size);
-    if (!status) {
-        status = dev->fn->load_fpga(dev, buf, buf_size);
-        free(buf);
+    if (status != 0) {
+        goto error;
     }
 
-    if (!status) {
+    if (!valid_fpga_size(buf_size)) {
+        status = BLADERF_ERR_INVAL;
+        goto error;
+    }
+
+    status = dev->fn->load_fpga(dev, buf, buf_size);
+    if (status == 0) {
         status = bladerf_init_device(dev);
     }
 
+error:
+    free(buf);
     return status;
 }
 
-static inline bool valid_fpga_size(size_t len)
-{
-    if (len < (1 * 1024 * 1024)) {
-        return false;
-    } else if (len > FLASH_FPGA_BIT_SIZE) {
-        return false;
-    } else {
-        return true;
-    }
-}
 
 int bladerf_flash_fpga(struct bladerf *dev, const char *fpga_file)
 {

@@ -19,6 +19,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
+
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
@@ -29,224 +30,84 @@
 #include "flash.h"
 #include "log.h"
 
-
-static inline bool is_aligned(uint32_t alignment, uint32_t addr)
+static inline int check_eb_access(uint32_t erase_block, uint32_t count)
 {
-    return (addr & alignment) == addr;
-}
-
-static inline bool within_bounds(uint32_t addr, size_t len)
-{
-    if (len > BLADERF_FLASH_TOTAL_SIZE || addr >= BLADERF_FLASH_TOTAL_SIZE) {
-        return false;
+    if (erase_block >= BLADERF_FLASH_NUM_EBS) {
+        log_debug("Invalid erase block: %u\n", erase_block);
+        return BLADERF_ERR_INVAL;
+    } else if (count > BLADERF_FLASH_NUM_EBS) {
+        log_debug("Invalid number of erase blocks: %u\n", count);
+        return BLADERF_ERR_INVAL;
+    } else if ((erase_block + count) > BLADERF_FLASH_NUM_EBS) {
+        log_debug("Requested operation extends past end of flash: "
+                  "eb=%u, count=%u\n", erase_block, count);
+        return BLADERF_ERR_INVAL;
     } else {
-        return ((size_t)addr + len) <= ((size_t)BLADERF_FLASH_TOTAL_SIZE);
+        return 0;
     }
 }
 
-bool flash_is_valid_access(uint32_t addr_align, uint32_t len_align,
-                           uint32_t addr, size_t len)
+static inline int check_page_access(uint32_t page, uint32_t count)
 {
-    return is_aligned(addr_align, addr) &&
-           is_aligned(len_align, len) &&
-           within_bounds(addr, len);
-}
-
-uint16_t flash_bytes_to_eb(uint32_t byte_addr)
-{
-    uint32_t ret;
-
-    assert(byte_addr < BLADERF_FLASH_TOTAL_SIZE);
-    assert(is_aligned(FLASH_ALIGNMENT_EB, byte_addr));
-
-    ret = byte_addr / BLADERF_FLASH_EB_SIZE;
-    assert(ret <= UINT16_MAX);
-
-    return (uint16_t)ret;
-}
-
-uint16_t flash_bytes_to_pages(uint32_t byte_addr)
-{
-    uint32_t ret;
-
-    assert(is_aligned(FLASH_ALIGNMENT_PAGE, byte_addr));
-
-    ret = byte_addr / BLADERF_FLASH_PAGE_SIZE;
-    assert(ret <= UINT16_MAX);
-
-    return (uint16_t)ret;
-}
-
-uint32_t flash_pages_to_bytes(uint16_t page)
-{
-    assert(page < BLADERF_FLASH_NUM_PAGES);
-    return page * BLADERF_FLASH_PAGE_SIZE;
-}
-
-unsigned int flash_eb_to_bytes(uint32_t eb)
-{
-    assert(eb < BLADERF_FLASH_NUM_EBS);
-    return eb * BLADERF_FLASH_EB_SIZE;
-}
-
-
-static inline void align_and_check(uint32_t align,
-                                   uint32_t addr,
-                                   size_t   len,
-                                   uint32_t *aligned_addr,
-                                   size_t   *aligned_len)
-{
-    *aligned_addr = addr & align;
-
-    assert(len <= UINT32_MAX);
-    if (!is_aligned(align, (uint32_t)len)) {
-        /* TODO Make this more readable */
-        *aligned_len  = (~align) + 1 + (len & align);
-    } else
-        *aligned_len = len;
-
-    assert(flash_is_valid_access(align, align, *aligned_addr, *aligned_len));
-}
-
-int flash_erase(struct bladerf *dev, uint32_t addr, size_t len)
-{
-    uint16_t erase_block, count;
-    const uint32_t align = FLASH_ALIGNMENT_EB;
-
-    if (!flash_is_valid_access(align, align, addr, len)) {
-        log_debug("Invalid addr/len 0x%08x/%llu\n", addr,
-                  (unsigned long long) len);
+    if (page >= BLADERF_FLASH_NUM_PAGES) {
+        log_debug("Invalid page: %u\n", page);
         return BLADERF_ERR_INVAL;
-    }
-
-    erase_block = flash_bytes_to_eb(addr);
-    count = flash_bytes_to_eb(len);
-
-    return dev->fn->erase_flash_blocks(dev, erase_block, count);
-}
-
-int flash_read(struct bladerf *dev, uint32_t addr, uint8_t *buf, size_t len)
-{
-    uint16_t page, count;
-    const uint32_t align = FLASH_ALIGNMENT_PAGE;
-
-    if (!flash_is_valid_access(align, align, addr, len)) {
-        log_debug("Invalid addr/len 0x%08x/%llu\n", addr,
-                  (unsigned long long) len);
-
+    } else if (count > BLADERF_FLASH_NUM_PAGES) {
+        log_debug("Invalid number of pages: %u\n", count);
         return BLADERF_ERR_INVAL;
-    }
-
-    page = flash_bytes_to_pages(addr);
-    count = flash_bytes_to_pages(len);
-
-    return dev->fn->read_flash_pages(dev, page, buf, count);
-}
-
-int flash_write(struct bladerf *dev, uint32_t addr,
-                uint8_t *buf, size_t len)
-{
-    uint16_t page, count;
-    const uint32_t align = FLASH_ALIGNMENT_PAGE;
-
-    if (!flash_is_valid_access(align, align, addr, len)) {
-        log_debug("Invalid addr/len 0x%08x/%llu\n", addr,
-                  (unsigned long long) len);
-
+    } else if ((page + count) > BLADERF_FLASH_NUM_PAGES) {
+        log_debug("Requested operation extends past end of flash: "
+                  "page=%u, count=%u\n", page, count);
         return BLADERF_ERR_INVAL;
+    } else {
+        return 0;
     }
-
-    page = flash_bytes_to_pages(addr);
-    count = flash_bytes_to_pages(len);
-
-    return dev->fn->write_flash_pages(dev, page, buf, count);
 }
 
-
-int flash_unaligned_read(struct bladerf *dev,
-                         uint32_t addr, uint8_t *data, size_t len)
+int flash_erase(struct bladerf *dev, uint32_t erase_block, uint32_t count)
 {
-    int status;
-    uint32_t page_aligned_addr;
-    size_t page_aligned_len;
-    intptr_t addr_diff;
-    uint8_t *buf;
+    int status = check_eb_access(erase_block, count);
 
-    align_and_check(FLASH_ALIGNMENT_PAGE, addr, len,
-                    &page_aligned_addr, &page_aligned_len);
-
-    /* FIXME What is this nonsense? ---v */
-    /* MSVC complains about abs() for uint32_t params not being defined */
-    addr_diff = abs((long long)(addr - page_aligned_addr));
-
-    buf = (uint8_t*)malloc(page_aligned_len);
-    if (!buf) {
-        return BLADERF_ERR_MEM;
+    if (status == 0) {
+        status = dev->fn->erase_flash_blocks(dev, erase_block, count);
     }
 
-    status = flash_read(dev, page_aligned_addr, buf, page_aligned_len);
-    if (status < 0) {
-        goto out;
-    }
-
-    memcpy(data, buf + addr_diff, len);
-
-out:
-    free(buf);
     return status;
 }
 
-int flash_unaligned_write(struct bladerf *dev,
-                          uint32_t addr, uint8_t *data, size_t len)
+int flash_read(struct bladerf *dev, uint8_t *buf,
+               uint32_t page, uint32_t count)
 {
-    int status;
-    uint32_t eb_aligned_addr;
-    size_t eb_aligned_len;
-    uint8_t *buf = NULL;
-    intptr_t addr_diff;
+    int status = check_page_access(page, count);
 
-    align_and_check(FLASH_ALIGNMENT_EB, addr, len,
-                    &eb_aligned_addr, &eb_aligned_len);
-
-    if (addr != eb_aligned_addr || len != eb_aligned_len) {
-        /* FIXME What is this nonsense? ---v */
-        /* MSVC complains about abs(uint32_t) not being valid */
-        addr_diff = abs((long long)(addr - eb_aligned_addr));
-
-        buf = (uint8_t*)malloc(eb_aligned_len);
-        if (buf == NULL) {
-            return BLADERF_ERR_MEM;
-        }
-
-        status = flash_read(dev, eb_aligned_addr, buf, eb_aligned_len);
-        if (status < 0) {
-            goto out;
-        }
-
-        memcpy(buf + addr_diff, data, len);
+    if (status == 0) {
+        status = dev->fn->read_flash_pages(dev, buf, page, count);
     }
 
-    status = flash_erase(dev, eb_aligned_addr, eb_aligned_len);
-    if (status < 0) {
-        goto out;
+    return status;;
+}
+
+int flash_write(struct bladerf *dev, const uint8_t *buf,
+                uint32_t page, uint32_t count)
+{
+    int status = check_page_access(page, count);
+
+    if (status == 0) {
+        status = dev->fn->write_flash_pages(dev, buf, page, count);
     }
 
-    status = flash_write(dev, eb_aligned_addr, buf ? buf : data,
-                         eb_aligned_len);
-
-out:
-    free(buf);
     return status;
 }
 
 static inline int verify_flash(struct bladerf *dev, uint8_t *readback_buf,
-                               uint32_t addr, uint8_t *image, size_t len)
+                               uint8_t *image, uint32_t page, uint32_t count)
 {
     int status = 0;
     size_t i;
+    const size_t len = count * BLADERF_FLASH_PAGE_SIZE;
 
-    log_info("Verifying 0x%08x bytes at address 0x%08x\n", len, addr);
-    status = flash_read(dev, addr, readback_buf, len);
+    log_info("Verifying %u pages, starting at page %u\n", count, page);
+    status = flash_read(dev, readback_buf, page, count);
 
     if (status < 0) {
         log_debug("Failed to read from flash: %s\n", bladerf_strerror(status));
@@ -273,7 +134,7 @@ int flash_write_fx3_fw(struct bladerf *dev, uint8_t **image, size_t len)
     uint8_t *padded_image;
     size_t padded_image_len;
 
-    /* Pad firmare data out to an rase block size */
+    /* Pad firwmare data out to a page size */
     const size_t page_size = BLADERF_FLASH_PAGE_SIZE;
     const size_t padding_len =
         (len % page_size == 0) ? 0 : page_size - (len % page_size);
@@ -297,24 +158,31 @@ int flash_write_fx3_fw(struct bladerf *dev, uint8_t **image, size_t len)
     memset(padded_image + len, 0xFF, padded_image_len - len);
 
     /* Erase the entire firmware region */
-    status = flash_erase(dev, FLASH_FIRMWARE_ADDR, FLASH_FIRMWARE_SIZE);
+    status = flash_erase(dev, BLADERF_FLASH_EB_FIRMWARE,
+                         BLADERF_FLASH_EB_LEN_FIRMWARE);
+
     if (status != 0) {
         log_debug("Failed to erase firmware region: %s\n",
                   bladerf_strerror(status));
         goto error;
     }
 
+    /* Convert the image length to pages */
+    padded_image_len /= BLADERF_FLASH_PAGE_SIZE;
+
     /* Write the firmware image to flash */
-    status = flash_write(dev, FLASH_FIRMWARE_ADDR,
-                         padded_image, padded_image_len);
+    status = flash_write(dev, padded_image,
+                         BLADERF_FLASH_PAGE_FIRMWARE, padded_image_len);
+
     if (status < 0) {
         log_debug("Failed to write firmware: %s\n", bladerf_strerror(status));
         goto error;
     }
 
     /* Read back and double-check what we just wrote */
-    status = verify_flash(dev, readback_buf, FLASH_FIRMWARE_ADDR,
-                          padded_image, padded_image_len);
+    status = verify_flash(dev, readback_buf, padded_image,
+                          BLADERF_FLASH_PAGE_FIRMWARE, padded_image_len);
+
     if (status != 0) {
         log_debug("Flash verification failed: %s\n", bladerf_strerror(status));
     }
@@ -328,13 +196,14 @@ static inline void fill_fpga_metadata_page(uint8_t *metadata,
                                            size_t actual_bitstream_len)
 {
     char len_str[10];
-    int idx;
+    int idx = 0;
 
-    assert(actual_bitstream_len < INT_MAX);
-    snprintf(len_str, sizeof(len_str), "%u",
-             (unsigned int) actual_bitstream_len);
-
+    memset(len_str, 0, sizeof(len_str));
     memset(metadata, 0xff, BLADERF_FLASH_PAGE_SIZE);
+
+    snprintf(len_str, sizeof(len_str), "%u",
+             (unsigned int)actual_bitstream_len);
+
     encode_field((char *)metadata, BLADERF_FLASH_PAGE_SIZE,
                  &idx, "LEN", len_str);
 }
@@ -375,8 +244,7 @@ int flash_write_fpga_bitstream(struct bladerf *dev,
     memset(padded_bitstream + len, 0xFF, padded_bitstream_len - len);
 
     /* Erase FPGA metadata and bitstream region */
-    status = flash_erase(dev, FLASH_FPGA_META_ADDR,
-                         FLASH_FPGA_META_SIZE + FLASH_FPGA_BIT_SIZE);
+    status = flash_erase(dev, BLADERF_FLASH_EB_FPGA, BLADERF_FLASH_EB_LEN_FPGA);
     if (status != 0) {
         log_debug("Failed to erase FPGA meta & bitstream regions: %s\n",
                   bladerf_strerror(status));
@@ -384,16 +252,18 @@ int flash_write_fpga_bitstream(struct bladerf *dev,
     }
 
     /* Write the metadata page */
-    status = flash_write(dev, FLASH_FPGA_META_ADDR, metadata,
-                         BLADERF_FLASH_PAGE_SIZE);
+    status = flash_write(dev, metadata, BLADERF_FLASH_PAGE_FPGA, 1);
     if (status != 0) {
         log_debug("Failed to write FPGA metadata page: %s\n",
                   bladerf_strerror(status));
         goto error;
     }
 
+    /* Convert the padded bitstream length to pages */
+    padded_bitstream_len /= BLADERF_FLASH_PAGE_SIZE;
+
     /* Write the padded bitstream */
-    status = flash_write(dev, FLASH_FPGA_BIT_ADDR, padded_bitstream,
+    status = flash_write(dev, padded_bitstream, BLADERF_FLASH_PAGE_FPGA + 1,
                          padded_bitstream_len);
     if (status != 0) {
         log_debug("Failed to write bitstream: %s\n",
@@ -402,16 +272,16 @@ int flash_write_fpga_bitstream(struct bladerf *dev,
     }
 
     /* Read back and verify metadata */
-    status = verify_flash(dev, readback_buf, FLASH_FPGA_META_ADDR,
-                          metadata, sizeof(metadata));
+    status = verify_flash(dev, readback_buf, metadata,
+                          BLADERF_FLASH_PAGE_FPGA, 1);
     if (status != 0) {
         log_debug("Failed to verify metadata: %s\n", bladerf_strerror(status));
         goto error;
     }
 
     /* Read back and verify the bitstream data */
-    status = verify_flash(dev, readback_buf, FLASH_FPGA_BIT_ADDR,
-                          padded_bitstream, padded_bitstream_len);
+    status = verify_flash(dev, readback_buf, padded_bitstream,
+                          BLADERF_FLASH_PAGE_FPGA + 1, padded_bitstream_len);
 
     if (status != 0) {
         log_debug("Failed to verify bitstream data: %s\n",
@@ -426,6 +296,7 @@ error:
 
 int flash_erase_fpga(struct bladerf *dev)
 {
-    return flash_erase(dev, FLASH_FPGA_META_ADDR,
-                       FLASH_FPGA_META_SIZE + FLASH_FPGA_BIT_SIZE);
+    /* Erase the entire FPGA region, including both autoload metadata and the
+     * actual bitstream data */
+    return flash_erase(dev, BLADERF_FLASH_EB_FPGA, BLADERF_FLASH_EB_LEN_FPGA);
 }

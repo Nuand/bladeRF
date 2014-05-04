@@ -31,25 +31,6 @@
 #ifndef BLADERF_FLASH_H_
 #define BLADERF_FLASH_H_
 
-#define FLASH_ALIGNMENT_BYTE (~0)
-#define FLASH_ALIGNMENT_PAGE (~((1 << BLADERF_FLASH_PAGE_BITS) - 1))
-#define FLASH_ALIGNMENT_EB   (~((1 << BLADERF_FLASH_EB_BITS) - 1))
-
-
-/* Addresses and lengths of flash regions */
-
-#define FLASH_FIRMWARE_ADDR     0x0000000   /* Firmware region */
-#define FLASH_FIRMWARE_SIZE     0x0030000
-
-#define FLASH_CAL_ADDR          0x0030000   /* Calibration data region */
-#define FLASH_CAL_SIZE          0x0010000
-
-#define FLASH_FPGA_META_ADDR    0x0040000   /* FPGA autoload metadata region */
-#define FLASH_FPGA_META_SIZE    0x0000100
-
-#define FLASH_FPGA_BIT_ADDR     0x0040100   /* FPGA bitstream data region */
-#define FLASH_FPGA_BIT_SIZE     0x036FF00
-
 /**
  * Test if a flash access is valid, based upon the specified alignment
  * and whether the access extends past the end of available flash.
@@ -105,69 +86,47 @@ uint32_t flash_pages_to_bytes(uint16_t page);
 uint32_t flash_eb_to_bytes(unsigned int eb);
 
 /**
- * Erase flash, aligned on erase blocks
+ * Erase regions of SPI flash
  *
- * @param   dev             Handle to bladeRF to perform erase on
- * @param   addr            Byte address to begin erase. Must be aligned
- *                          on an erase block boundary.
- * @param   len             Number of bytes to erase. Must be a multiple
- *                          of erase blocks
+ * @param   dev             Device handle
+ * @param   erase_block     Erase block to start erasing at
+ * @param   count           Number of blocks to erase.
  *
- * @return 0 on success, BLADERF_ERR_* value on failure
+ * @return 0 on success, or BLADERF_ERR_INVAL on an invalid `erase_block` or
+ *         `count` value, or a value from \ref RETCODES list on other failures
  */
-int flash_erase(struct bladerf *dev, uint32_t addr, size_t len);
+int flash_erase(struct bladerf *dev, uint32_t erase_block, uint32_t count);
 
 /**
- * Read flash, aligned on pages
+ * Read data from flash
  *
- * @param[in]   dev         Handle to device to read from
- * @param[in]   addr        Byte address to start read. Must be page-aligned
- * @param[out]  buf         Buffer to store read data in
- * @param[in]   len         Number of bytes to read. Must be a multiple of pages
+ * @param   dev     Device handle
+ * @param   buf     Buffer to read data into. Must be
+ *                  `count` * BLADERF_FLASH_PAGE_SIZE bytes or larger.
  *
- * @return 0 on success, BLADERF_ERR_* value on failure
+ * @param   page    Page to begin reading from
+ * @param   count   Number of pages to read
+ *
+ * @return 0 on success, or BLADERF_ERR_INVAL on an invalid `page` or
+ *         `count` value, or a value from \ref RETCODES list on other failures.
  */
-int flash_read(struct bladerf *dev, uint32_t addr, uint8_t *buf, size_t len);
-
+int flash_read(struct bladerf *dev, uint8_t *buf,
+               uint32_t page, uint32_t count);
 /**
- * Write flash, aligned on pages
+ * Write data to flash
  *
- * @param[in]   dev         Handle to device to write to
- * @param[in]   addr        Byte address to start write. Must be page-aligned
- * @param[in]   buf         Buffer containing data to write
- * @param[in]   len         Number of bytes to write. Must be a
- *                          multiple of pages
+ * @param   dev   Device handle
+ * @param   buf   Data to write to flash. Must be
+ *                `page` * BLADERF_FLASH_PAGE_SIZE bytes or larger.
  *
- * @return 0 on success, BLADERF_ERR_* value on failure
+ * @param   page  Page to begin writing at
+ * @param   count
+ *
+ * @return 0 on success, or BLADERF_ERR_INVAL on an invalid `page` or
+ *         `count` value, or a value from \ref RETCODES list on other failures.
  */
-int flash_write(struct bladerf *dev, uint32_t addr,
-                uint8_t *buf, size_t len);
-
-/**
- * Perform an unaligned flash read
- *
- * @param[in]   dev         Handle to bladeRF to read flash data from
- * @param[in]   addr        Flash byte address
- * @param[out]  data        Buffer to store read data in
- * @param[in]   len         Length of read, in bytes
- *
- * @return 0 on success, BLADERF_ERR_* value on failure
- */
-int flash_unaligned_read(struct bladerf *dev,
-                         uint32_t addr, uint8_t *data, size_t len);
-
-/**
- * Perform an unaligned flash write via a read-modify-write on an erase block
- *
- * @param[in]   dev         Handle to bladeRF to read flash data from
- * @param[in]   addr        Flash byte address
- * @param[out]  data        Buffer to store read data in
- * @param[in]   len         Length of read, in bytes
- *
- * @return 0 on success, BLADERF_ERR_* value on failure
- */
-int flash_unaligned_write(struct bladerf *dev,
-                          uint32_t addr, uint8_t *data, size_t len);
+int flash_write(struct bladerf *dev, const uint8_t *buf,
+                uint32_t page, uint32_t count);
 
 /**
  * Write the provided data to the FX3 Firmware region to flash.
@@ -184,7 +143,8 @@ int flash_unaligned_write(struct bladerf *dev,
 int flash_write_fx3_fw(struct bladerf *dev, uint8_t **image, size_t len);
 
 /**
- * Write the provided FPGA bitstream and enable autoloading.
+ * Write the provided FPGA bitstream to flash and enable autoloading via
+ * writing the associated metadata.
  *
  * @param   dev             bladeRF handle
  * @param   bitstream       FPGA bitstream data. Buffer will be realloc'd as
@@ -197,7 +157,7 @@ int flash_write_fpga_bitstream(struct bladerf *dev,
                                uint8_t **bitstream, size_t len);
 
 /**
- * Erase FPGA metadata and bitstream region
+ * Erase FPGA metadata and bitstream regions of flash
  *
  * @param   dev             bladeRF handle
  *
