@@ -394,6 +394,10 @@ int main()
                                 cmd_ptr->data = (IORD_ALTERA_AVALON_PIO_DATA(PIO_1_BASE)) >> (cmd_ptr->addr * 8);
                             else if (device == GDEV_EXPANSION_DIR)
                                 cmd_ptr->data = (IORD_ALTERA_AVALON_PIO_DATA(PIO_2_BASE)) >> (cmd_ptr->addr * 8);
+                            else if (device == GDEV_IQ_CORR_RX)
+                                cmd_ptr->data = (IORD_ALTERA_AVALON_PIO_DATA(IQ_CORR_RX_PHASE_GAIN_BASE)) >> (cmd_ptr->addr * 8);
+                            else if (device == GDEV_IQ_CORR_TX)
+                                cmd_ptr->data = (IORD_ALTERA_AVALON_PIO_DATA(IQ_CORR_TX_PHASE_GAIN_BASE)) >> (cmd_ptr->addr * 8);
                         } else if (isWrite) {
                             if (device == GDEV_TIME_TIMER) {
                                 IOWR_8DIRECT(TIME_TAMER, cmd_ptr->addr, 1) ;
@@ -407,6 +411,10 @@ int main()
                                 COLLECT_BYTES(IOWR_ALTERA_AVALON_PIO_DATA(PIO_1_BASE, tmpvar));
                             } else if (device == GDEV_EXPANSION_DIR) {
                                 COLLECT_BYTES(IOWR_ALTERA_AVALON_PIO_DATA(PIO_2_BASE, tmpvar));
+                            } else if (device == GDEV_IQ_CORR_RX) {
+                                COLLECT_BYTES(IOWR_ALTERA_AVALON_PIO_DATA(IQ_CORR_RX_PHASE_GAIN_BASE, tmpvar));
+                            } else if (device == GDEV_IQ_CORR_TX) {
+                                COLLECT_BYTES(IOWR_ALTERA_AVALON_PIO_DATA(IQ_CORR_TX_PHASE_GAIN_BASE, tmpvar));
                             }
                         } else {
                             cmd_ptr->addr = 0;
