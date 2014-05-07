@@ -1235,18 +1235,18 @@ static int usb_dac_write(struct bladerf *dev, uint16_t value)
     int status;
     struct uart_cmd cmd;
 
-    cmd.addr = 0;
+    cmd.addr = 34;
     cmd.data = value & 0xff;
-    status = access_peripheral(dev, UART_PKT_DEV_VCTCXO,
+    status = access_peripheral(dev, UART_PKT_DEV_GPIO,
                                USB_DIR_HOST_TO_DEVICE, &cmd, 1);
 
     if (status < 0) {
         return status;
     }
 
-    cmd.addr = 1;
+    cmd.addr = 35;
     cmd.data = (value >> 8) & 0xff;
-    status = access_peripheral(dev, UART_PKT_DEV_VCTCXO,
+    status = access_peripheral(dev, UART_PKT_DEV_GPIO,
                                USB_DIR_HOST_TO_DEVICE, &cmd, 1);
 
     return status;
