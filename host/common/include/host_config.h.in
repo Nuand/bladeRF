@@ -52,6 +52,8 @@
  * LE32_TO_HOST         32-bit little endian to host endianness conversion
  * HOST_TO_BE32         32-bit host endianness to big endian conversion
  * BE32_TO_HOST         32-bit big endian to host endianness conversion
+ * HOST_TO_BE64         32-bit host endianness to big endian conversion
+ * BE64_TO_HOST         32-bit big endian to host endianness conversion
  ******************************************************************************/
 
 /*-----------------------
@@ -92,7 +94,7 @@
 #define BE32_TO_HOST(val) OSSwapBigToHostInt32(val)
 
 #define HOST_TO_LE64(val) OSSwapHostToLittleInt64(val)
-#define LE64_TO_HOST(val) OSSwapLittleInt64ToHost(val)
+#define LE64_TO_HOST(val) OSSwapLittleToHostInt64(val)
 #define HOST_TO_BE64(val) OSSwapHostToBigInt64(val)
 #define BE64_TO_HOST(val) OSSwapBigToHostInt64(val)
 
