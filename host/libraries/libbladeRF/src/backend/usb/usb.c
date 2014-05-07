@@ -1004,7 +1004,7 @@ static int set_lms_correction(struct bladerf *dev, bladerf_module module,
     uint8_t tmp;
 
     status = usb_lms_read(dev, addr, &tmp);
-    if (status < 0) {
+    if (status != 0) {
         return status;
     }
 
@@ -1191,7 +1191,8 @@ int usb_get_timestamp(struct bladerf *dev, bladerf_module mod, uint64_t *value)
         }
     }
 
-    *value = LE64_TO_HOST(*((uint64_t*)timestamp_bytes));
+    memcpy(value, timestamp_bytes, sizeof(*value));
+    *value = LE64_TO_HOST(*value);
 
     return 0;
 }
