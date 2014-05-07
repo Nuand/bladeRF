@@ -1234,19 +1234,24 @@ static int usb_dac_write(struct bladerf *dev, uint16_t value)
 {
     int status;
     struct uart_cmd cmd;
+    int base;
+    int legacy_location;
 
-    cmd.addr = 34;
+    legacy_location = (dev->fpga_version.major == 0 && dev->fpga_version.minor == 0 && dev->fpga_version.patch <= 3);
+    base = legacy_location ? 0 : 34;
+
+    cmd.addr = base;
     cmd.data = value & 0xff;
-    status = access_peripheral(dev, UART_PKT_DEV_GPIO,
+    status = access_peripheral(dev, legacy_location ? UART_PKT_DEV_VCTCXO : UART_PKT_DEV_GPIO,
                                USB_DIR_HOST_TO_DEVICE, &cmd, 1);
 
     if (status < 0) {
         return status;
     }
 
-    cmd.addr = 35;
+    cmd.addr = base + 1;
     cmd.data = (value >> 8) & 0xff;
-    status = access_peripheral(dev, UART_PKT_DEV_GPIO,
+    status = access_peripheral(dev, legacy_location ? UART_PKT_DEV_VCTCXO : UART_PKT_DEV_GPIO,
                                USB_DIR_HOST_TO_DEVICE, &cmd, 1);
 
     return status;
