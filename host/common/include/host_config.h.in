@@ -52,8 +52,8 @@
  * LE32_TO_HOST         32-bit little endian to host endianness conversion
  * HOST_TO_BE32         32-bit host endianness to big endian conversion
  * BE32_TO_HOST         32-bit big endian to host endianness conversion
- * HOST_TO_BE64         32-bit host endianness to big endian conversion
- * BE64_TO_HOST         32-bit big endian to host endianness conversion
+ * HOST_TO_BE64         64-bit host endianness to big endian conversion
+ * BE64_TO_HOST         64-bit big endian to host endianness conversion
  ******************************************************************************/
 
 /*-----------------------
