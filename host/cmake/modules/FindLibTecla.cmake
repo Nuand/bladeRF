@@ -4,9 +4,11 @@ endif()
 set(__INCLUDED_BLADERF_FINDLIBTECLA_CMAKE TRUE)
 
 find_package(PkgConfig)
+if(PKG_CONFIG_FOUND)
+    pkg_check_modules (LIBTECLA_PKG libtecla)
+endif(PKG_CONFIG_FOUND)
 
 if(NOT LIBTECLA_FOUND)
-  pkg_check_modules (LIBTECLA_PKG libtecla)
   find_path(LIBTECLA_INCLUDE_DIR NAMES libtecla.h
     PATHS
     ${LIBTECLA_PKG_INCLUDE_DIRS}
