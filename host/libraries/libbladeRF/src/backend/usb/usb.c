@@ -475,7 +475,7 @@ static int usb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size)
     struct bladerf_usb *usb = usb_backend(dev, &driver);
 
     unsigned int wait_count;
-    const unsigned int timeout_ms = 250;
+    const unsigned int timeout_ms = (2 * CTRL_TIMEOUT_MS);
     int status;
 
     /* Switch to the FPGA configuration interface */
