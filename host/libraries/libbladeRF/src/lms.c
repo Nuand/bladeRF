@@ -1984,39 +1984,38 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
                     }
                     break;
             }
+        } else if (module == BLADERF_DC_CAL_LPF_TUNING) {
+            /* Special case for LPF tuning module where results are
+             * written to TX/RX LPF DCCAL */
+
+            /* Set the DC level to RX and TX DCCAL modules */
+            status = bladerf_lms_read(dev, 0x35, &val);
+            if (status == 0) {
+                val &= ~(0x3f);
+                val |= dc_regval;
+                status = bladerf_lms_write(dev, 0x35, val);
+            }
+
+            if (status != 0) {
+                return status;
+            }
+
+            status = bladerf_lms_read(dev, 0x55, &val);
+            if (status == 0) {
+                val &= ~(0x3f);
+                val |= dc_regval;
+                status = bladerf_lms_write(dev, 0x55, val);
+            }
+
+            if (status != 0) {
+                return status;
+            }
         }
     }
 
-    /* Special case for LPF tuning module where results are
-     * written to TX/RX LPF DCCAL */
-    if (module == BLADERF_DC_CAL_LPF_TUNING) {
-
-        /* Set the DC level to RX and TX DCCAL modules */
-        status = bladerf_lms_read(dev, 0x35, &val);
-        if (status == 0) {
-            val &= ~(0x3f);
-            val |= dc_regval;
-            status = bladerf_lms_write(dev, 0x35, val);
-        }
-
-        if (status != 0) {
-            return status;
-        }
-
-        status = bladerf_lms_read(dev, 0x55, &val);
-        if (status == 0) {
-            val &= ~(0x3f);
-            val |= dc_regval;
-            status = bladerf_lms_write(dev, 0x55, val);
-        }
-
-        if (status != 0) {
-            return status;
-        }
-
     /* Special case for RX LPF or RX VGA2 */
-    } else if (module == BLADERF_DC_CAL_RX_LPF ||
-               module == BLADERF_DC_CAL_RXVGA2) {
+    if (module == BLADERF_DC_CAL_RX_LPF ||
+        module == BLADERF_DC_CAL_RXVGA2) {
 
         /* Restore previously saved LNA Gain, VGA1 gain and VGA2 gain */
         status = bladerf_set_rxvga2(dev, rxvga2);
