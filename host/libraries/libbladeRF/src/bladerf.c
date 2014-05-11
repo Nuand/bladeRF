@@ -402,7 +402,6 @@ int bladerf_set_bandwidth(struct bladerf *dev, bladerf_module module,
         log_info("Clamping bandwidth to %d Hz\n", bandwidth);
     }
 
-    *actual = 0;
     bw = lms_uint2bw(bandwidth);
 
     status = lms_lpf_enable(dev, module, true);
@@ -411,8 +410,12 @@ int bladerf_set_bandwidth(struct bladerf *dev, bladerf_module module,
     }
 
     status = lms_set_bandwidth(dev, module, bw);
-    if (status == 0) {
-        *actual = lms_bw2uint(bw);
+    if (actual != NULL) {
+        if (status == 0) {
+            *actual = lms_bw2uint(bw);
+        } else {
+            *actual = 0;
+        }
     }
 
     return status;

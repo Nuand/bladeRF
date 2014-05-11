@@ -578,7 +578,8 @@ int CALL_CONV bladerf_get_loopback(struct bladerf *dev, bladerf_loopback *l);
  * @param[in]   dev         Device handle
  * @param[in]   module      Module to change
  * @param[in]   rate        Sample rate
- * @param[out]  actual      Actual sample rate
+ * @param[out]  actual      If non-NULL. this is written with the actual
+ *                          sample rate achieved.
  *
  * @return 0 on success,
  *         BLADERF_ERR_INVAL for an invalid sample rate,
@@ -597,7 +598,8 @@ int CALL_CONV bladerf_set_sample_rate(struct bladerf *dev,
  * @param[in]   dev         Device handle
  * @param[in]   module      Module to change
  * @param[in]   rate        Rational sample rate
- * @param[out]  actual      Actual rational sample rate
+ * @param[out]  actual      If non-NULL, this is written with the actual
+ *                          rational sample rate achieved.
  *
  * The sample rate must be greater than or equal to \ref BLADERF_SAMPLERATE_MIN.
  * Values above \ref BLADERF_SAMPLERATE_REC_MAX are allowed, but not
@@ -838,7 +840,7 @@ int CALL_CONV bladerf_get_rxvga2(struct bladerf *dev, int *gain);
  * @param[in]   bandwidth           Desired bandwidth
  * @param[out]  actual              If non-NULL, written with the actual
  *                                  bandwidth that the device was able to
- *                                  achieve
+ *                                  achieve.
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
