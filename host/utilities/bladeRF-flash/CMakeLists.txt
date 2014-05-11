@@ -101,16 +101,6 @@ if(BUILD_BLADERF_FLASH_DOCUMENTATION)
             set(MAN_INSTALL_DIR share/man)
         endif(NOT DEFINED MAN_INSTALL_DIR)
 
-        # Build interactive commands summary, for inclusion in man page.
-        # bladeRF-flash doesn't have an interactive mode
-        #add_custom_command(
-        #    OUTPUT bladeRF-flash_auto.h2m
-        #    DEPENDS bladeRF-flash
-        #    COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/../doc/include_man/interrogate.py
-        #                   ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/bladeRF-flash > bladeRF-flash_auto.h2m
-        #    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        #)
-
         # Build actual man page
         add_custom_command(
             OUTPUT bladeRF-flash.1
