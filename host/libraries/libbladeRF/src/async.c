@@ -166,31 +166,34 @@ int async_submit_stream_buffer(struct bladerf_stream *stream,
 
     pthread_mutex_lock(&stream->lock);
 
-    if (stream->state != STREAM_RUNNING && timeout_ms != 0) {
-        status = populate_abs_timeout(&timeout_abs, timeout_ms);
-        if (status != 0) {
-            log_debug("Failed to populate timeout value\n");
-            goto error;
-        }
-    }
-
-    while (stream->state != STREAM_RUNNING) {
-        log_debug("Buffer submitted while stream's not running. "
-                  "Waiting for stream to start.\n");
-
-        if (timeout_ms == 0) {
-            status = pthread_cond_wait(&stream->stream_started, &stream->lock);
-        } else {
-            status = pthread_cond_timedwait(&stream->stream_started,
-                                            &stream->lock, &timeout_abs);
+    if (buffer != BLADERF_STREAM_SHUTDOWN) {
+        if (stream->state != STREAM_RUNNING && timeout_ms != 0) {
+            status = populate_abs_timeout(&timeout_abs, timeout_ms);
+            if (status != 0) {
+                log_debug("Failed to populate timeout value\n");
+                goto error;
+            }
         }
 
-        if (status == ETIMEDOUT) {
-            status = BLADERF_ERR_TIMEOUT;
-            goto error;
-        } else if (status != 0) {
-            status = BLADERF_ERR_UNEXPECTED;
-            goto error;
+        while (stream->state != STREAM_RUNNING) {
+            log_debug("Buffer submitted while stream's not running. "
+                    "Waiting for stream to start.\n");
+
+            if (timeout_ms == 0) {
+                status = pthread_cond_wait(&stream->stream_started,
+                                           &stream->lock);
+            } else {
+                status = pthread_cond_timedwait(&stream->stream_started,
+                        &stream->lock, &timeout_abs);
+            }
+
+            if (status == ETIMEDOUT) {
+                status = BLADERF_ERR_TIMEOUT;
+                goto error;
+            } else if (status != 0) {
+                status = BLADERF_ERR_UNEXPECTED;
+                goto error;
+            }
         }
     }
 
