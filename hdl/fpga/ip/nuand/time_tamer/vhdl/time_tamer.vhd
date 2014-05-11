@@ -46,14 +46,14 @@ begin
     process (clock)
     begin
         if( rising_edge( clock )) then
-            time_tx_r <= time_tx;
-            time_tx_rr <= time_tx_r;
+            --time_tx_r <= time_tx;
+            --time_tx_rr <= time_tx_r;
             if (addr = "1000" and read = '1') then
                 time_tx_snap <= time_tx_rr;
             end if;
 
-            time_rx_r <= time_rx;
-            time_rx_rr <= time_rx_r;
+            --time_rx_r <= time_rx;
+            --time_rx_rr <= time_rx_r;
             if (addr = "0000" and read = '1') then
                 time_rx_snap <= time_rx_rr;
             end if;

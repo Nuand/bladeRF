@@ -3,6 +3,7 @@ set here $::quartus(qip_path)
 
 # Altera IP
 set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/pll/pll.qip]]
+set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/fx3_pll/fx3_pll.qip]]
 set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/nios_system/synthesis/nios_system.qip]]
 set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/rx_fifo/rx_fifo.qip]]
 set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/tx_fifo/tx_fifo.qip]]

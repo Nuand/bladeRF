@@ -246,6 +246,9 @@ architecture hosted_bladerf of bladerf is
 
     constant FPGA_DC_CORRECTION :  signed(15 downto 0) := to_signed(integer(0), 16);
 
+    signal fx3_pclk_pll     :   std_logic ;
+    signal fx3_pll_locked   :   std_logic ;
+
 begin
 
     correction_tx_phase <= signed(correction_tx_phase_gain(31 downto 16));
@@ -263,13 +266,20 @@ begin
         locked              =>  \80MHz locked\
       ) ;
 
+    U_fx3_pll : entity work.fx3_pll
+      port map (
+        inclk0              =>  fx3_pclk,
+        c0                  =>  fx3_pclk_pll,
+        locked              =>  fx3_pll_locked
+      ) ;
+
     -- Cross domain synchronizer chains
     U_usb_speed : entity work.synchronizer
       generic map (
         RESET_LEVEL         =>  '0'
       ) port map (
         reset               =>  '0',
-        clock               =>  fx3_pclk,
+        clock               =>  fx3_pclk_pll,
         async               =>  nios_gpio(7),
         sync                =>  usb_speed
       ) ;
@@ -311,7 +321,7 @@ begin
         RESET_LEVEL         =>  '0'
       ) port map (
         reset               =>  '0',
-        clock               =>  fx3_pclk,
+        clock               =>  fx3_pclk_pll,
         async               =>  nios_gpio(16),
         sync                =>  meta_en_fx3
       ) ;
@@ -343,7 +353,7 @@ begin
         INPUT_LEVEL         =>  '1',
         OUTPUT_LEVEL        =>  '1'
       ) port map (
-        clock               =>  fx3_pclk,
+        clock               =>  fx3_pclk_pll,
         async               =>  sys_rst,
         sync                =>  sys_rst_sync
       ) ;
@@ -400,7 +410,7 @@ begin
 
     -- TX sample fifo
     tx_sample_fifo.aclr <= tx_reset ;
-    tx_sample_fifo.wclock <= fx3_pclk ;
+    tx_sample_fifo.wclock <= fx3_pclk_pll ;
     tx_sample_fifo.rclock <= tx_clock ;
     U_tx_sample_fifo : entity work.tx_fifo
       port map (
@@ -421,7 +431,7 @@ begin
 
     -- TX meta fifo
     tx_meta_fifo.aclr <= tx_reset ;
-    tx_meta_fifo.wclock <= fx3_pclk ;
+    tx_meta_fifo.wclock <= fx3_pclk_pll ;
     tx_meta_fifo.rclock <= tx_clock ;
     U_tx_meta_fifo : entity work.tx_meta_fifo
       port map (
@@ -442,7 +452,7 @@ begin
 
     -- RX sample fifo
     rx_sample_fifo.wclock <= rx_clock ;
-    rx_sample_fifo.rclock <= fx3_pclk ;
+    rx_sample_fifo.rclock <= fx3_pclk_pll ;
     U_rx_sample_fifo : entity work.rx_fifo
       port map (
         aclr                => rx_sample_fifo.aclr,
@@ -463,7 +473,7 @@ begin
     -- RX meta fifo
     rx_meta_fifo.aclr <= rx_reset ;
     rx_meta_fifo.wclock <= rx_clock ;
-    rx_meta_fifo.rclock <= fx3_pclk ;
+    rx_meta_fifo.rclock <= fx3_pclk_pll ;
     U_rx_meta_fifo : entity work.rx_meta_fifo
       port map (
         aclr                => rx_meta_fifo.aclr,
@@ -484,7 +494,7 @@ begin
     -- FX3 GPIF
     U_fx3_gpif : entity work.fx3_gpif
       port map (
-        pclk                =>  fx3_pclk,
+        pclk                =>  fx3_pclk_pll,
         reset               =>  sys_rst_sync,
 
         usb_speed           =>  usb_speed,
@@ -719,12 +729,12 @@ begin
     lms_rx_iq_select_reg    <= lms_rx_iq_select when rising_edge(rx_clock) ;
 
     -- FX3 GPIF bidirectional signals
-    register_gpif : process(sys_rst_sync, fx3_pclk)
+    register_gpif : process(sys_rst_sync, fx3_pclk_pll)
     begin
         if( sys_rst_sync = '1' ) then
             fx3_gpif <= (others =>'Z') ;
             fx3_gpif_in <= (others =>'0') ;
-        elsif( rising_edge(fx3_pclk) ) then
+        elsif( rising_edge(fx3_pclk_pll) ) then
             fx3_gpif_in <= fx3_gpif ;
             if( fx3_gpif_oe = '1' ) then
                 fx3_gpif <= fx3_gpif_out ;
@@ -832,10 +842,10 @@ begin
     i2c_scl_in <= si_scl ;
     i2c_sda_in <= si_sda ;
 
-    toggle_led1 : process(fx3_pclk)
+    toggle_led1 : process(fx3_pclk_pll)
         variable count : natural range 0 to 100_000_000 := 100_000_000 ;
     begin
-        if( rising_edge(fx3_pclk) ) then
+        if( rising_edge(fx3_pclk_pll) ) then
             count := count - 1 ;
             if( count = 0 ) then
                 count := 100_000_00 ;
