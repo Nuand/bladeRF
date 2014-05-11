@@ -82,6 +82,7 @@ static void init_rc_config(struct rc_config *rc)
     rc->show_help = false;
     rc->show_version = false;
     rc->show_lib_version = false;
+    rc->show_help_interactive = false;
 
     rc->verbosity = BLADERF_LOG_LEVEL_INFO;
 
