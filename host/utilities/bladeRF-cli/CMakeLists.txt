@@ -211,8 +211,8 @@ if(BUILD_BLADERF_CLI_DOCUMENTATION)
         add_custom_command(
             OUTPUT bladeRF-cli_auto.h2m
             DEPENDS bladeRF-cli
-            COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/../doc/include_man/interrogate.py
-                           ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/bladeRF-cli > bladeRF-cli_auto.h2m
+            COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/../doc/include_man/get-interactive-commands.bash
+                         ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/bladeRF-cli > bladeRF-cli_auto.h2m
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         )
 
