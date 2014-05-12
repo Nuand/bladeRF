@@ -43,7 +43,7 @@ option(ENABLE_LIBTECLA
 )
 
 option(BUILD_BLADERF_CLI_DOCUMENTATION
-        "Build bladeRF-cli man page. Requires help2man and python."
+        "Build bladeRF-cli man page. Requires help2man."
         ${BUILD_DOCUMENTATION})
 
 if(NOT ${BUILD_DOCUMENTATION})
