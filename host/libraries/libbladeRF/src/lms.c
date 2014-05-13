@@ -2028,3 +2028,71 @@ int lms_select_band(struct bladerf *dev, bladerf_module module,
 
     return status;
 }
+
+int lms_select_sampling(struct bladerf *dev, bladerf_sampling sampling)
+{
+    uint8_t val;
+    int status = 0;
+
+    if (sampling == BLADERF_SAMPLING_INTERNAL) {
+        /* Disconnect the ADC input from the outside world */
+        status = bladerf_lms_read( dev, 0x09, &val );
+        if (status) {
+            log_warning( "Could not read LMS to connect ADC to external pins\n" );
+            goto out;
+        }
+
+        val &= ~(1<<7);
+        status = bladerf_lms_write( dev, 0x09, val );
+        if (status) {
+            log_warning( "Could not write LMS to connect ADC to external pins\n" );
+            goto out;
+        }
+
+        /* Turn on RXVGA2 */
+        status = bladerf_lms_read( dev, 0x64, &val );
+        if (status) {
+            log_warning( "Could not read LMS to enable RXVGA2\n" );
+            goto out;
+        }
+
+        val |= (1<<1);
+        status = bladerf_lms_write( dev, 0x64, val );
+        if (status) {
+            log_warning( "Could not write LMS to enable RXVGA2\n" );
+            goto out;
+        }
+    } else if (sampling == BLADERF_SAMPLING_EXTERNAL) {
+        /* Turn off RXVGA2 */
+        status = bladerf_lms_read( dev, 0x64, &val );
+        if (status) {
+            log_warning( "Could not read the LMS to disable RXVGA2\n" );
+            goto out;
+        }
+
+        val &= ~(1<<1);
+        status = bladerf_lms_write( dev, 0x64, val );
+        if (status) {
+            log_warning( "Could not write the LMS to disable RXVGA2\n" );
+            goto out;
+        }
+
+        /* Connect the external ADC pins to the internal ADC input */
+        status = bladerf_lms_read( dev, 0x09, &val );
+        if (status) {
+            log_warning( "Could not read the LMS to connect ADC to internal pins\n" );
+            goto out;
+        }
+
+        val |= (1<<7);
+        status = bladerf_lms_write( dev, 0x09, val );
+        if (status) {
+            log_warning( "Could not write the LMS to connect ADC to internal pins\n" );
+        }
+    } else {
+        status = BLADERF_ERR_INVAL;
+    }
+
+out:
+    return status;
+}

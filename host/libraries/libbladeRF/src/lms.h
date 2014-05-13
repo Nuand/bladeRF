@@ -547,4 +547,14 @@ int lms_config_init(struct bladerf *dev, struct lms_xcvr_config *config);
 int lms_select_band(struct bladerf *dev, bladerf_module module,
                     unsigned int freq);
 
+/**
+ * Select internal or external sampling
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   sampling    Desired sampling mode
+ *
+ * @return 0 on succes, BLADERF_ERR_* value on failure
+ */
+int lms_select_sampling(struct bladerf *dev, bladerf_sampling sampling);
+
 #endif /* LMS_H_ */

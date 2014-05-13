@@ -274,67 +274,7 @@ bladerf_get_sampling__done:
 
 int bladerf_set_sampling(struct bladerf *dev, bladerf_sampling sampling)
 {
-    uint8_t val ;
-    int status = 0 ;
-    if (sampling == BLADERF_SAMPLING_INTERNAL) {
-        /* Disconnect the ADC input from the outside world */
-        status = bladerf_lms_read( dev, 0x09, &val );
-        if (status) {
-            log_warning( "Could not read LMS to connect ADC to external pins\n" );
-            goto bladerf_set_sampling__done ;
-        }
-
-        val &= ~(1<<7) ;
-        status = bladerf_lms_write( dev, 0x09, val );
-        if (status) {
-            log_warning( "Could not write LMS to connect ADC to external pins\n" );
-            goto bladerf_set_sampling__done;
-        }
-
-        /* Turn on RXVGA2 */
-        status = bladerf_lms_read( dev, 0x64, &val );
-        if (status) {
-            log_warning( "Could not read LMS to enable RXVGA2\n" );
-            goto bladerf_set_sampling__done;
-        }
-
-        val |= (1<<1) ;
-        status = bladerf_lms_write( dev, 0x64, val );
-        if (status) {
-            log_warning( "Could not write LMS to enable RXVGA2\n" );
-            goto bladerf_set_sampling__done;
-        }
-    } else {
-        /* Turn off RXVGA2 */
-        status = bladerf_lms_read( dev, 0x64, &val );
-        if (status) {
-            log_warning( "Could not read the LMS to disable RXVGA2\n" );
-            goto bladerf_set_sampling__done;
-        }
-
-        val &= ~(1<<1) ;
-        status = bladerf_lms_write( dev, 0x64, val );
-        if (status) {
-            log_warning( "Could not write the LMS to disable RXVGA2\n" );
-            goto bladerf_set_sampling__done;
-        }
-
-        /* Connect the external ADC pins to the internal ADC input */
-        status = bladerf_lms_read( dev, 0x09, &val );
-        if (status) {
-            log_warning( "Could not read the LMS to connect ADC to internal pins\n" );
-            goto bladerf_set_sampling__done;
-        }
-
-        val |= (1<<7) ;
-        status = bladerf_lms_write( dev, 0x09, val );
-        if (status) {
-            log_warning( "Could not write the LMS to connect ADC to internal pins\n" );
-        }
-    }
-
-bladerf_set_sampling__done:
-    return status;
+    return lms_select_sampling(dev, sampling);
 }
 
 int bladerf_set_txvga2(struct bladerf *dev, int gain)
