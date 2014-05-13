@@ -171,6 +171,10 @@ if(ENABLE_BACKEND_LIBUSB)
             add_definitions(-DHAVE_LIBUSB_GET_VERSION)
         endif(LIBUSB_HAVE_GET_VERSION)
 
+        if(NOT LIBUSB_HAVE_HANDLE_EVENTS_TIMEOUT)
+            MESSAGE(FATAL "The required function libusb_handle_events_timeout() is missing")
+        endif()
+
         set(LIBBLADERF_INCLUDES ${LIBBLADERF_INCLUDES} ${LIBUSB_INCLUDE_DIRS})
     endif(NOT LIBUSB_FOUND)
 endif(ENABLE_BACKEND_LIBUSB)

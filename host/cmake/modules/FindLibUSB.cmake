@@ -122,6 +122,14 @@ endif(LIBUSB_FOUND)
 
 if(LIBUSB_FOUND)
 
+    # Introduced in v1.0.9 - these functions are absolutely required
+    check_library_exists("${usb_LIBRARY}" libusb_error_name "" LIBUSB_HAVE_ERROR_NAME)
+    check_library_exists("${usb_LIBRARY}" libusb_get_device_speed "" LIBUSB_HAVE_GET_DEVICE_SPEED)
+
+    if(NOT LIBUSB_HAVE_ERROR_NAME OR NOT LIBUSB_HAVE_GET_DEVICE_SPEED)
+        message(FATAL "The installed version of libusb does not have required functions: libusb_error_name() or libusb_get_device_speed()")
+    endif()
+
     # Introduced in v1.0.10
     check_library_exists("${usb_LIBRARY}" libusb_get_version "" LIBUSB_HAVE_GET_VERSION)
 
@@ -135,5 +143,9 @@ if(LIBUSB_FOUND)
 
     # Provide a hook to check it hotplug support is provided (1.0.16)
     check_library_exists("${usb_LIBRARY}" libusb_hotplug_register_callback  "" LIBUSB_HAVE_HOTPLUG)
+
+    # Test for event handling routines
+    check_library_exists("${usb_LIBRARY}" libusb_handle_events_timeout "" LIBUSB_HAVE_HANDLE_EVENTS_TIMEOUT)
+    check_library_exists("${usb_LIBRARY}" libusb_handle_events_timeout_completed "" LIBUSB_HAVE_HANDLE_EVENTS_TIMEOUT_COMPLETED)
 
 endif(LIBUSB_FOUND)
