@@ -764,15 +764,23 @@ begin
         time_tamer_synchronize => timestamp_sync
       ) ;
 
-    xb_gpio_direction_proc : for i in 0 to 27 generate
-        process(xb_gpio_dir, nios_xb_gpio_out, nios_xb_gpio_in)
+    xb_gpio_direction_proc : for i in 0 to 31 generate
+        process(xb_gpio_dir, nios_xb_gpio_out, nios_xb_gpio_in, xb_mode, nios_ss_n)
         begin
             if (xb_gpio_dir(i) = '1') then
                 nios_xb_gpio_in(i) <= nios_xb_gpio_out(i);
-                exp_gpio(i+2) <= nios_xb_gpio_out(i);
+                if (xb_mode = "10" and i + 1 = 2) then
+                    exp_gpio(i+1) <= nios_ss_n(1);
+                elsif (i + 1 /= 1) then
+                    exp_gpio(i+1) <= nios_xb_gpio_out(i);
+                end if;
             else
-                nios_xb_gpio_in(i) <= exp_gpio(i+2);
-                exp_gpio(i+2) <= 'Z';
+                if (i + 1 = 1) then
+                    nios_xb_gpio_in(i) <= exp_clock_in;
+                else
+                    nios_xb_gpio_in(i) <= exp_gpio(i + 1);
+                    exp_gpio(i + 1) <= 'Z';
+                end if;
             end if;
         end process;
     end generate ;
@@ -782,31 +790,26 @@ begin
     process(all)
     begin
         if( xb_mode = "00" ) then
-            xb_gpio_dir <= "101" & nios_xb_gpio_dir(28 downto 0);
+            xb_gpio_dir <= nios_xb_gpio_dir(31 downto 0);
             dac_sclk <= nios_sclk;
             dac_csx <= nios_ss_n(0);
             nios_sdo <= dac_sdo;
             dac_sdi <= nios_sdio;
             -- missing 30-32
         elsif( xb_mode = "10" ) then
-            xb_gpio_dir <= "111" & nios_xb_gpio_dir(28 downto 0);
+            xb_gpio_dir <= nios_xb_gpio_dir(31 downto 0);
             if (nios_ss_n(1 downto 0) = "10") then --
                 dac_sclk <= nios_sclk;
                 dac_csx <= '0';
                 nios_sdo <= dac_sdo;
                 dac_sdi <= nios_sdio;
-                exp_gpio(32) <= '1';
             elsif (nios_ss_n(1 downto 0) = "01") then
-                exp_gpio(30) <= nios_sclk;
-                exp_gpio(31) <= nios_sdio;
-                exp_gpio(32) <= '0';
                 dac_csx <= '1';
             else
-                exp_gpio(32) <= '1';
                 dac_csx <= '1';
             end if;
         else
-            xb_gpio_dir <= "011" & nios_xb_gpio_dir(28 downto 0)  ;
+            xb_gpio_dir <= nios_xb_gpio_dir(31 downto 0)  ;
         end if;
     end process;
 
@@ -868,8 +871,8 @@ begin
     -- CTS and the SPI CSx are tied to the same signal.  When we are in reset, allow for SPI accesses
     fx3_uart_cts            <= '1' when sys_rst_sync = '0' else 'Z'  ;
 
-    exp_spi_clock           <= '0' ;
-    exp_spi_mosi            <= '0' ;
+    exp_spi_clock           <= nios_sclk when ( nios_ss_n(1 downto 0) = "01" ) else '0' ;
+    exp_spi_mosi            <= nios_sdio when ( nios_ss_n(1 downto 0) = "01" ) else '0' ;
     --exp_gpio                <= (others =>'Z') ;
 
     mini_exp1               <= 'Z';
