@@ -1480,7 +1480,7 @@ static inline int tune_vcocap(struct bladerf *dev, uint8_t base, uint8_t data)
     }
 
     start_i = stop_i = vcocap;
-    while (start_i > 0 && vtune == VCO_NORM) {
+    while (start_i > 0 && vtune != VCO_HIGH) {
         start_i -= 1;
 
         status = bladerf_lms_write(dev, base + 9, start_i | data);
@@ -1511,7 +1511,7 @@ static inline int tune_vcocap(struct bladerf *dev, uint8_t base, uint8_t data)
 
     vtune >>= 6;
 
-    while (stop_i < 64 && vtune == VCO_NORM) {
+    while (stop_i < 64 && vtune != VCO_LOW) {
         stop_i += 1;
 
         status = bladerf_lms_write(dev, base + 9, stop_i | data);
