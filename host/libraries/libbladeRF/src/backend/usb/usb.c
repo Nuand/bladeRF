@@ -629,6 +629,7 @@ static inline int read_page(struct bladerf *dev, uint8_t read_operation,
         request = read_operation;
     } else {
         assert(!"Bug - invalid read_operation value");
+        return BLADERF_ERR_UNEXPECTED;
     }
 
     /* Retrieve data from the firmware page buffer */
