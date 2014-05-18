@@ -1235,9 +1235,10 @@ static int usb_dac_write(struct bladerf *dev, uint16_t value)
     int status;
     struct uart_cmd cmd;
     int base;
-    int legacy_location;
 
-    legacy_location = (dev->fpga_version.major == 0 && dev->fpga_version.minor == 0 && dev->fpga_version.patch <= 3);
+    /* FPGA v0.0.4 introduced a change to the location of the DAC registers */
+    const bool legacy_location = version_less_than(&dev->fw_version, 0, 0, 4);
+
     base = legacy_location ? 0 : 34;
 
     cmd.addr = base;

@@ -226,4 +226,34 @@ int add_field(char *buf, int len, const char *field, const char *val);
  */
 int populate_abs_timeout(struct timespec *t_abs, unsigned int timeout_ms);
 
+/**
+ * Check if version in the provided structure is greater or equal to
+ * the version specified by the provided major, minor, and patch values
+ *
+ * @param       version     Version structure to check
+ * @param       major       Minor version
+ * @param       minor       Minor version
+ * @param       patch       Patch version
+ *
+ * @return true for greater or equal, false otherwise
+ */
+bool version_greater_or_equal(struct bladerf_version *version,
+                              unsigned int major, unsigned int minor,
+                              unsigned int patch);
+
+/**
+ * Check if version in the provided structure is less than
+ * the version specied by the provided major, minor, and patch values
+ *
+ * @param       version     Version structure to check
+ * @param       major       Minor version
+ * @param       minor       Minor version
+ * @param       patch       Patch version
+ *
+ * @return true for less than, false otherwise
+ */
+bool version_less_than(struct bladerf_version *version,
+                       unsigned int major, unsigned int minor,
+                       unsigned int patch);
+
 #endif
