@@ -741,12 +741,18 @@ int rxtx_handle_wait(struct cli_state *s, struct rxtx_data *rxtx,
         }
     }
 
+    /* Release the device lock (acquired in cmd_handle()) while we wait
+     * because we won't be doing device-control operations during this time.
+     * This ensures that when the associated rx/tx task completes, it will be
+     * able to acquire the device control lock to release this wait. */
+    pthread_mutex_unlock(&s->dev_lock);
+
     if (timeout_ms != 0) {
         const unsigned int timeout_sec = timeout_ms / 1000;
 
         status = clock_gettime(CLOCK_REALTIME, &timeout_abs);
         if (status != 0) {
-            return CMD_RET_UNKNOWN;
+            goto out;
         }
 
         timeout_abs.tv_sec += timeout_sec;
@@ -770,11 +776,6 @@ int rxtx_handle_wait(struct cli_state *s, struct rxtx_data *rxtx,
         }
         pthread_mutex_unlock(&rxtx->task_mgmt.lock);
 
-        /* Expected and OK condition */
-        if (status == ETIMEDOUT) {
-            status = 0;
-        }
-
     } else {
         pthread_mutex_lock(&rxtx->task_mgmt.lock);
         rxtx->task_mgmt.main_task_waiting = true;
@@ -783,6 +784,16 @@ int rxtx_handle_wait(struct cli_state *s, struct rxtx_data *rxtx,
                                        &rxtx->task_mgmt.lock);
         }
         pthread_mutex_unlock(&rxtx->task_mgmt.lock);
+    }
+
+out:
+    /* Re-acquire the device control lock, as the top-level command handler
+     * will be unlocking this when it's done */
+    pthread_mutex_lock(&s->dev_lock);
+
+    /* Expected and OK condition */
+    if (status == ETIMEDOUT) {
+        status = 0;
     }
 
     if (status != 0) {
