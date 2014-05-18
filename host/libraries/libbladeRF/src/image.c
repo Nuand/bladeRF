@@ -310,10 +310,12 @@ int bladerf_image_write(struct bladerf_image *img, const char *file)
     if (img->type == BLADERF_IMAGE_TYPE_RAW) {
         if (img->address % BLADERF_FLASH_EB_SIZE != 0) {
             log_debug("Image address must be erase block-aligned for RAW.\n");
-            return BLADERF_ERR_INVAL;
+            rv = BLADERF_ERR_INVAL;
+            goto error;
         } else if (img->length % BLADERF_FLASH_EB_SIZE != 0) {
             log_debug("Image length must be erase block-aligned for RAW.\n");
-            return BLADERF_ERR_INVAL;
+            rv = BLADERF_ERR_INVAL;
+            goto error;
         }
     }
 
@@ -323,12 +325,12 @@ int bladerf_image_write(struct bladerf_image *img, const char *file)
     if (!f) {
         log_debug("Failed to open \"%s\": %s\n", file, strerror(errno));
         rv = BLADERF_ERR_IO;
-        goto bladerf_image_write_out;
+        goto error;
     }
 
     rv = file_write(f, buf, buf_len);
 
-bladerf_image_write_out:
+error:
     if (f) {
         fclose(f);
     }
