@@ -211,7 +211,15 @@ int bladerf_enable_module(struct bladerf *dev,
 int bladerf_set_loopback(struct bladerf *dev, bladerf_loopback l)
 {
     if (l == BLADERF_LB_FIRMWARE) {
-        return dev->fn->set_firmware_loopback(dev, true);
+        /* Firmware loopback was implemented in FW v1.7.0 */
+        if (version_less_than(&dev->fw_version, 1, 7, 0)) {
+            log_warning("Firmware v1.7.0 or later is required "
+                        "for firmware loopback\n");
+            return BLADERF_ERR_UNSUPPORTED;
+        } else {
+            return dev->fn->set_firmware_loopback(dev, true);
+        }
+
     } else {
         return lms_set_loopback_mode(dev, l);
     }
