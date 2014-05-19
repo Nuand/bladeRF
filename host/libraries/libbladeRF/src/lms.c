@@ -1727,10 +1727,11 @@ int lms_dump_registers(struct bladerf *dev)
 
 /* Reference LMS6002D calibration guide, section 4.1 flow chart */
 static int lms_dc_cal_loop(struct bladerf *dev, uint8_t base,
-                           uint8_t cal_address, uint8_t *dc_regval)
+                           uint8_t cal_address, uint8_t dc_cntval,
+                           uint8_t *dc_regval)
 {
     int status;
-    uint8_t i, val, control;
+    uint8_t i, val;
     bool done = false;
     const unsigned int max_cal_count = 25;
 
@@ -1750,6 +1751,25 @@ static int lms_dc_cal_loop(struct bladerf *dev, uint8_t base,
         return status;
     }
 
+    /* Set and latch the DC_CNTVAL  */
+    status = bladerf_lms_write(dev, base + 0x02, dc_cntval);
+    if (status != 0) {
+        return status;
+    }
+
+    val |= (1 << 4);
+    status = bladerf_lms_write(dev, base + 0x03, val);
+    if (status != 0) {
+        return status;
+    }
+
+    val &= ~(1 << 4);
+    status = bladerf_lms_write(dev, base + 0x03, val);
+    if (status != 0) {
+        return status;
+    }
+
+
     /* Start the calibration by toggling DC_START_CLBR */
     val |= (1 << 5);
     status = bladerf_lms_write(dev, base + 0x03, val);
@@ -1763,52 +1783,31 @@ static int lms_dc_cal_loop(struct bladerf *dev, uint8_t base,
         return status;
     }
 
-    control = val;
-
     /* Main loop checking the calibration */
-    for (i = 0 ; i < max_cal_count; i++) {
+    for (i = 0 ; i < max_cal_count && !done; i++) {
         /* Read active low DC_CLBR_DONE */
         status = bladerf_lms_read(dev, base + 0x01, &val);
         if (status != 0) {
             return status;
         }
 
+        /* Check if calibration is done */
         if (((val >> 1) & 1) == 0) {
-            /* We think we're done, but we need to check DC_LOCK */
-            if (((val >> 2) & 7) != 0 && ((val >> 2) & 7) != 7) {
-                log_debug("Converged in %d iterations for %2x:%2x\n", i + 1,
-                          base, cal_address );
-                done = true;
-                break;
-            } else {
-                log_debug( "DC_CLBR_DONE but no DC_LOCK - rekicking\n" );
-
-                control |= (1 << 5);
-                status = bladerf_lms_write(dev, base + 0x03, control);
-                if (status != 0) {
-                    return status;
-                }
-
-                control &= ~(1 << 5);
-                status =bladerf_lms_write(dev, base + 0x03, control);
-                if (status != 0) {
-                    return status;
-                }
+            done = true;
+            /* Per LMS FAQ item 4.7, we should check DC_REG_VAL, as
+             * DC_LOCK is not a reliable indicator */
+            status = bladerf_lms_read(dev, base, dc_regval);
+            if (status == 0) {
+                *dc_regval &= 0x3f;
             }
         }
     }
 
     if (done == false) {
-        log_warning("Never converged - DC_CLBR_DONE: %d DC_LOCK: %d\n",
-                    (val >> 1) & 1, (val >> 2) & 7);
+        log_warning("DC calibration loop did not converge.\n");
         status = BLADERF_ERR_UNEXPECTED;
     } else {
-        /* See what the DC register value is and return it to the caller */
-        status = bladerf_lms_read(dev, base, dc_regval);
-        if (status == 0) {
-            *dc_regval &= 0x3f;
-            log_debug( "DC_REGVAL: %d\n", *dc_regval );
-        }
+        log_debug( "DC_REGVAL: %d\n", *dc_regval );
     }
 
     return status;
@@ -1871,7 +1870,36 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
     /* Special case for RX LPF or RX VGA2 */
     if (module == BLADERF_DC_CAL_RX_LPF || module == BLADERF_DC_CAL_RXVGA2) {
 
-        /* Connect LNA to the external pads and interally terminate */
+        /* FAQ 5.26 (rev 1.0r10) notes that the DC comparators should be powered
+         * up when performing DC calibration, and then powered down afterwards
+         * to improve receiver linearity */
+        if (module == BLADERF_DC_CAL_RXVGA2) {
+            status = bladerf_lms_read(dev, 0x6e, &val);
+            if (status != 0) {
+                return status;
+            }
+
+            val &= ~(3 << 6);
+
+            status = bladerf_lms_write(dev, 0x6e, val);
+            if (status != 0) {
+                return status;
+            }
+        } else {
+            status = bladerf_lms_read(dev, 0x5f, &val);
+            if (status != 0) {
+                return status;
+            }
+
+            val &= ~(1 << 7);
+
+            status = bladerf_lms_write(dev, 0x5f, val);
+            if (status != 0) {
+                return status;
+            }
+        }
+
+        /* Connect LNA to the external pads and internally terminate */
         status = bladerf_lms_read(dev, 0x71, &reg0x71);
         if (status != 0) {
             return status;
@@ -1928,14 +1956,42 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
        if (status != 0) {
            return status;
        }
+    } else if (module == BLADERF_DC_CAL_TX_LPF) {
+        /* FAQ item 4.1 notes that the DAC should be turned off or set
+         * to generate minimum DC */
+        status = bladerf_lms_read(dev, 0x36, &val);
+        if (status != 0) {
+            return status;
+        }
+
+        val |= (1 << 7);
+
+        status = bladerf_lms_write(dev, 0x36, val);
+        if (status != 0) {
+            return status;
+        }
     }
 
     /* Figure out number of addresses to calibrate based on module */
     for (i = 0; i < addrs ; i++) {
-        status = lms_dc_cal_loop(dev, base, i, &dc_regval) ;
+        status = lms_dc_cal_loop(dev, base, i, 31, &dc_regval);
         if (status != 0) {
             return status;
         }
+
+        if (dc_regval == 31) {
+            log_debug("DC_REGVAL suboptimal value - retrying DC cal loop.\n");
+
+            /* FAQ item 4.7 indcates that can retry with DC_CNTVAL reset */
+            status = lms_dc_cal_loop(dev, base, i, 0, &dc_regval);
+            if (status != 0) {
+                return status;
+            } else if (dc_regval == 0) {
+                log_warning("Bad DC_REGVAL detected. DC cal failed.\n");
+                return BLADERF_ERR_UNEXPECTED;
+            }
+        }
+
         /* Special decoding addressing case for RXVGA2 */
         if (module == BLADERF_DC_CAL_RXVGA2) {
             switch (i) {
@@ -2017,6 +2073,33 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
     if (module == BLADERF_DC_CAL_RX_LPF ||
         module == BLADERF_DC_CAL_RXVGA2) {
 
+        /* Disable DC comparators */
+        if (module == BLADERF_DC_CAL_RXVGA2) {
+            status = bladerf_lms_read(dev, 0x6e, &val);
+            if (status != 0) {
+                return status;
+            }
+
+            val |= (3 << 6);
+
+            status = bladerf_lms_write(dev, 0x6e, val);
+            if (status != 0) {
+                return status;
+            }
+        } else {
+            status = bladerf_lms_read(dev, 0x5f, &val);
+            if (status != 0) {
+                return status;
+            }
+
+            val |= (1 << 7);
+
+            status = bladerf_lms_write(dev, 0x5f, val);
+            if (status != 0) {
+                return status;
+            }
+        }
+
         /* Restore previously saved LNA Gain, VGA1 gain and VGA2 gain */
         status = bladerf_set_rxvga2(dev, rxvga2);
         if (status != 0) {
@@ -2039,6 +2122,19 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
         }
 
         status = bladerf_lms_write(dev, 0x7c, reg0x7c);
+        if (status != 0) {
+            return status;
+        }
+    } else if (module == BLADERF_DC_CAL_TX_LPF) {
+        /* Re-enable the DACs */
+        status = bladerf_lms_read(dev, 0x36, &val);
+        if (status != 0) {
+            return status;
+        }
+
+        val &= ~(1 << 7);
+
+        status = bladerf_lms_write(dev, 0x36, val);
         if (status != 0) {
             return status;
         }
