@@ -21,6 +21,7 @@
 #include <string.h>
 #include <libbladeRF.h>
 
+#include "calibrate.h"
 #include "common.h"
 #include "cmd.h"
 
@@ -48,81 +49,45 @@ int cmd_calibrate(struct cli_state *state, int argc, char **argv)
 
     if (argc == 1) {
 
-        /* Calibrate LPF Tuning Module */
-        status = bladerf_calibrate_dc(state->dev, BLADERF_DC_CAL_LPF_TUNING);
-        if (status != 0) {
-            goto cmd_calibrate_err;
-        }
-
-        /* Ensure both TX and RX are enabled */
-        status = bladerf_enable_module(state->dev, BLADERF_MODULE_TX, true);
-        if (status != 0) {
-            goto cmd_calibrate_err;
-        }
-
-        status = bladerf_enable_module(state->dev, BLADERF_MODULE_RX, true);
-        if (status != 0) {
-            goto cmd_calibrate_err;
-        }
-
-        /* Calibrate TX LPF Filter */
-        status = bladerf_calibrate_dc(state->dev, BLADERF_DC_CAL_TX_LPF);
-        if (status != 0) {
-            goto cmd_calibrate_err;
-        }
-
-        /* Calibrate RX LPF Filter */
-        status = bladerf_calibrate_dc(state->dev, BLADERF_DC_CAL_RX_LPF);
-        if (status != 0) {
-            goto cmd_calibrate_err;
-        }
-
-        /* Calibrate RX VGA2 */
-        status = bladerf_calibrate_dc(state->dev, BLADERF_DC_CAL_RXVGA2);
-        if (status != 0) {
-            goto cmd_calibrate_err;
-        }
-
-        /* Disable TX and RX modules */
-        status = bladerf_enable_module(state->dev, BLADERF_MODULE_TX, false);
-        status = bladerf_enable_module(state->dev, BLADERF_MODULE_RX, false);
+        printf("TO DO - autocalibration at the current gain & freq\n");
+        return 0;
 
     } else if (argc == 2) {
-        bladerf_cal_module module;
+        unsigned int ops = 0;
 
-        /* Figure out which module we are calibrating */
-        if (strcasecmp(argv[1], "tuning") == 0) {
-            module = BLADERF_DC_CAL_LPF_TUNING;
-        } else if (strcasecmp(argv[1], "txlpf") == 0) {
-            module = BLADERF_DC_CAL_TX_LPF;
-            status = bladerf_enable_module(state->dev, BLADERF_MODULE_TX, true);
-        } else if (strcasecmp(argv[1], "rxlpf") == 0) {
-            module = BLADERF_DC_CAL_RX_LPF;
-            status = bladerf_enable_module(state->dev, BLADERF_MODULE_RX, true);
-        } else if (strcasecmp(argv[1], "rxvga2") == 0) {
-            module = BLADERF_DC_CAL_RXVGA2;
-            status = bladerf_enable_module(state->dev, BLADERF_MODULE_RX, true);
+        if (strcasecmp(argv[1], "dc_lms_tuning") == 0) {
+            ops = CAL_DC_LMS_TUNING;
+        } else if (strcasecmp(argv[1], "dc_lms_txlpf") == 0) {
+            ops = CAL_DC_LMS_TXLPF;
+        } else if (strcasecmp(argv[1], "dc_lms_rxlpf") == 0) {
+            ops = CAL_DC_LMS_RXLPF;
+        } else if (strcasecmp(argv[1], "dc_lms_rxvga2") == 0) {
+            ops = CAL_DC_LMS_RXVGA2;
+        } else if (strcasecmp(argv[1], "dc_lms") == 0) {
+            ops = CAL_DC_LMS_ALL;
+        } else if (strcasecmp(argv[1], "dc_rx") == 0) {
+            ops = CAL_DC_AUTO_RX;
+        } else if (strcasecmp(argv[1], "dc_tx") == 0) {
+            ops = CAL_DC_AUTO_TX;
+        } else if (strcasecmp(argv[1], "dc") == 0) {
+            ops = CAL_DC_AUTO;
         } else {
-            cli_err(state, argv[0], "Invalid module provided (%s)", argv[1]);
+            cli_err(state, argv[0], "Invalid calibration option: %s", argv[1]);
             return CLI_RET_INVPARAM;
         }
 
-        /* Calibrate it */
-        status = bladerf_calibrate_dc(state->dev, module);
-
-        if (module != BLADERF_DC_CAL_LPF_TUNING) {
-            if (module == BLADERF_DC_CAL_TX_LPF) {
-                status = bladerf_enable_module(state->dev, BLADERF_MODULE_TX, false);
-            } else {
-                status = bladerf_enable_module(state->dev, BLADERF_MODULE_RX, false);
+        if (IS_DC_CAL(ops)) {
+            status = calibrate_dc(state->dev, ops);
+            if (status != 0) {
+                goto error;
             }
         }
 
     } else {
-        return CLI_RET_INVPARAM;
+        return CLI_RET_NARGS;
     }
 
-cmd_calibrate_err:
+error:
     if (status != 0) {
         state->last_lib_error = status;
         status = CLI_RET_LIBBLADERF;
