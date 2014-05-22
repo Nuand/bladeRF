@@ -26,8 +26,8 @@
 #define CAL_SAMPLERATE  24e5
 #define CAL_BANDWIDTH   15e5
 
-#define CAL_NUM_BUFS    16
-#define CAL_NUM_XFERS   4
+#define CAL_NUM_BUFS    2
+#define CAL_NUM_XFERS   1
 #define CAL_BUF_LEN     (16 * 1024) /* In samples (where a sample is (I, Q) */
 #define CAL_TIMEOUT     1000
 
@@ -76,7 +76,7 @@ static int rx_sample_avg(struct bladerf *dev, int16_t *samples,
     unsigned int i;
 
     /* Flush out samples and read a buffer's worth of data */
-    for (i = 0; i < 2 * CAL_NUM_BUFS + 1; i++) {
+    for (i = 0; i < 4 * CAL_NUM_BUFS + 1; i++) {
         status = bladerf_sync_rx(dev, samples, CAL_BUF_LEN, NULL, CAL_TIMEOUT);
         if (status != 0) {
             return status;
@@ -112,6 +112,14 @@ int calibrate_dc_rx(struct bladerf *dev,
     samples = (int16_t*) malloc(CAL_BUF_LEN * 2 * sizeof(samples[0]));
     if (samples == NULL) {
         status = BLADERF_ERR_MEM;;
+        goto out;
+    }
+
+    status = bladerf_sync_config(dev, BLADERF_MODULE_RX,
+                                 BLADERF_FORMAT_SC16_Q11,
+                                 CAL_NUM_BUFS, CAL_BUF_LEN,
+                                 CAL_NUM_XFERS, CAL_TIMEOUT);
+    if (status != 0) {
         goto out;
     }
 
@@ -184,7 +192,6 @@ static inline int dummy_rx(struct bladerf *dev)
                                  BLADERF_FORMAT_SC16_Q11,
                                  CAL_NUM_BUFS, buf_len,
                                  CAL_NUM_XFERS, CAL_TIMEOUT);
-
     if (status != 0) {
         goto error;
     }
@@ -287,6 +294,11 @@ int calibrate_dc(struct bladerf *dev, unsigned int ops)
     }
 
     if (IS_RX_CAL(ops)) {
+        status = set_rx_dc(dev, 0, 0);
+        if (status != 0) {
+            goto error;
+        }
+
         status = bladerf_enable_module(dev, BLADERF_MODULE_RX, true);
         if (status != 0) {
             goto error;
