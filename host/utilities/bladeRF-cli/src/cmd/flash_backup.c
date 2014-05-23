@@ -82,20 +82,20 @@ int cmd_flash_backup(struct cli_state *state, int argc, char **argv)
         } else {
             cli_err(state, argv[0], "Invalid image type provided.");
             status = CMD_RET_INVPARAM;
-            goto cmd_flash_backup_out;
+            goto out;
         }
     } else {
         assert(argc == 4);
         address = str2uint(argv[2], 0, UINT_MAX, &ok);
         if (!ok || (address % BLADERF_FLASH_EB_SIZE != 0)) {
             cli_err(state, argv[0], "Invalid address provided.");
-            goto cmd_flash_backup_out;
+            goto out;
         }
 
         length = str2uint(argv[3], 0, UINT_MAX, &ok);
         if (!ok || (length % BLADERF_FLASH_EB_SIZE != 0)) {
             cli_err(state, argv[0], "Invalid length provided.");
-            goto cmd_flash_backup_out;
+            goto out;
         }
 
         image_type = BLADERF_IMAGE_TYPE_RAW;
@@ -103,13 +103,14 @@ int cmd_flash_backup(struct cli_state *state, int argc, char **argv)
 
     image = bladerf_alloc_image(image_type, address, length);
     if (!image) {
-        return CMD_RET_MEM;
+        status = CMD_RET_MEM;
+        goto out;
     }
 
     status = bladerf_get_devinfo(state->dev, &info);
     if (status < 0) {
         lib_error(status, "Failed to get serial number");
-        goto cmd_flash_backup_out;
+        goto out;
     }
 
     strncpy(image->serial, info.serial, BLADERF_SERIAL_LENGTH);
@@ -121,16 +122,16 @@ int cmd_flash_backup(struct cli_state *state, int argc, char **argv)
     status = bladerf_read_flash(state->dev, image->data, page, count);
     if (status < 0) {
         lib_error(status, "Failed to read flash region");
-        goto cmd_flash_backup_out;
+        goto out;
     }
 
     status = bladerf_image_write(image, filename);
     if (status < 0) {
         lib_error(status, "Failed to write image file.");
-        goto cmd_flash_backup_out;
+        goto out;
     }
 
-cmd_flash_backup_out:
+out:
     if (image) {
         bladerf_free_image(image);
     }
