@@ -725,7 +725,7 @@ error:
 int bladerf_flash_fpga(struct bladerf *dev, const char *fpga_file)
 {
     int status;
-    uint8_t *buf;
+    uint8_t *buf = NULL;
     size_t buf_size;
     const char env_override[] = "BLADERF_SKIP_FPGA_SIZE_CHECK";
 
@@ -738,10 +738,10 @@ int bladerf_flash_fpga(struct bladerf *dev, const char *fpga_file)
             status = BLADERF_ERR_INVAL;
         } else {
             status = flash_write_fpga_bitstream(dev, &buf, buf_size);
-            free(buf);
         }
     }
 
+    free(buf);
     return status;
 }
 
