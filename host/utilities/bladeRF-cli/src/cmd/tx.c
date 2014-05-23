@@ -269,14 +269,19 @@ static int tx_csv_to_sc16q11(struct cli_state *s)
         line++;
     }
 
-    if (status == 0 && feof(csv)) {
-        tx->file_mgmt.format = RXTX_FMT_BIN_SC16Q11;
-        free(tx->file_mgmt.path);
-        tx->file_mgmt.path = bin_name;
+    if (status == 0) {
+        if (feof(csv)) {
+            tx->file_mgmt.format = RXTX_FMT_BIN_SC16Q11;
+            free(tx->file_mgmt.path);
+            tx->file_mgmt.path = bin_name;
 
-        if (n_clamped != 0) {
-            printf("    Warning: %u values clamped within DAC SC16 Q11 range "
-                   "of [%d, %d].\n", n_clamped, SC16Q11_IQ_MIN, SC16Q11_IQ_MAX);
+            if (n_clamped != 0) {
+                printf("    Warning: %u values clamped within DAC SC16 Q11 "
+                       "range of [%d, %d].\n",
+                       n_clamped, SC16Q11_IQ_MIN, SC16Q11_IQ_MAX);
+            }
+        } else {
+            status = CMD_RET_FILEOP;
         }
     }
 
