@@ -205,6 +205,7 @@ int cmd_recover(struct cli_state *state, int argc, char **argv)
     }
 
     status = perform_recovery(state, bus, addr, expanded_path);
+    free((void*)expanded_path);
 
     if (status == 0) {
         printf("\n");
