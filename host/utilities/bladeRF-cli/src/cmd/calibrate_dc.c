@@ -88,13 +88,20 @@ static inline int set_tx_dc(struct bladerf *dev, int16_t dc_i, int16_t dc_q)
     return set_dc(dev, BLADERF_MODULE_TX, dc_i, dc_q);
 }
 
-static inline int16_t interpolate(int16_t x0, int16_t x1,
-                                  int16_t y0, int16_t y1)
+/* Interpolate to find the point (x_result, 0) */
+static inline int interpolate(int16_t x0, int16_t x1,
+                                  int16_t y0, int16_t y1,
+                                  int16_t *x_result)
 {
     const int32_t denom = y1 - y0;
     const int32_t num   = (int32_t)y0 * (x1 - x0);
 
-    return x0 - (int16_t)((num + (denom / 2)) / denom);
+    if (denom == 0) {
+        return BLADERF_ERR_UNEXPECTED;
+    }
+
+    *x_result = x0 - (int16_t)((num + (denom / 2)) / denom);
+    return 0;
 }
 
 /* Find the intersection point the lines p0p1 and p2p3 */
@@ -225,8 +232,19 @@ int calibrate_dc_rx(struct bladerf *dev,
         goto out;
     }
 
-    *dc_i = interpolate(dc_i0, dc_i1, avg_i0, avg_i1);
-    *dc_q = interpolate(dc_q0, dc_q1, avg_q0, avg_q1);
+    status = interpolate(dc_i0, dc_i1, avg_i0, avg_i1, dc_i);
+    if (status != 0) {
+        fprintf(stderr, "%s: RX I values appear to be \"stuck\" @ %d\n",
+                __FUNCTION__, avg_i0);
+        goto out;
+    }
+
+    status = interpolate(dc_q0, dc_q1, avg_q0, avg_q1, dc_q);
+    if (status != 0) {
+        fprintf(stderr, "%s: RX Q values appear to be \"stuck\" @ %d\n",
+                __FUNCTION__, avg_q0);
+        goto out;
+    }
 
     if (*dc_i < CAL_DC_MIN) {
         *dc_i = CAL_DC_MIN;
