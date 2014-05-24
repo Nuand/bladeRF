@@ -196,7 +196,7 @@ if(LIBC_VERSION)
     endif()
 endif()
 
-target_link_libraries(bladeRF-cli ${CLI_LINK_LIBRARIES})
+target_link_libraries(bladeRF-cli ${CLI_LINK_LIBRARIES} -lm)
 
 ################################################################################
 # Man pages

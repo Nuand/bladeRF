@@ -40,7 +40,7 @@
 #define CAL_DC_LMS_ALL    (CAL_DC_LMS_TX_ALL | CAL_DC_LMS_RX_ALL)
 
 #define CAL_DC_AUTO_RX  (CAL_DC_AUTO_ | CAL_DC_LMS_RX_ALL)
-#define CAL_DC_AUTO_TX  (CAL_DC_AUTO_ | CAL_DC_LMS_TX_ALL)
+#define CAL_DC_AUTO_TX  (CAL_DC_AUTO_RX | CAL_DC_LMS_TX_ALL)
 #define CAL_DC_AUTO     (CAL_DC_AUTO_RX | CAL_DC_AUTO_TX)
 
 #define IS_CAL(cal, ops) ((ops & cal) == cal)
