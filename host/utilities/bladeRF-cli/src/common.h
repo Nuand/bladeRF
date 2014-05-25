@@ -146,7 +146,7 @@ char *to_path(FILE *f);
 /**
  * Open the file, expanding the path first, if possible.
  *
- * This is a wrapper around fopen() and interactive_expand_path()
+ * This is a wrapper around fopen() and input_expand_path()
  *
  * @note The value of errno IS NOT guarenteed to be assoicated with fopen()
  *       failures when this function returns.

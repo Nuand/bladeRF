@@ -61,7 +61,7 @@ endif()
 set(CLI_INCLUDE_DIRS
        ${CMAKE_CURRENT_SOURCE_DIR}/src
        ${CMAKE_CURRENT_SOURCE_DIR}/src/cmd
-       ${CMAKE_CURRENT_SOURCE_DIR}/src/interactive
+       ${CMAKE_CURRENT_SOURCE_DIR}/src/input
        ${CMAKE_CURRENT_BINARY_DIR}/src
        ${BLADERF_HOST_COMMON_INCLUDE_DIRS}
        ${libbladeRF_SOURCE_DIR}/include
@@ -99,7 +99,6 @@ include_directories(${CLI_INCLUDE_DIRS})
 set(BLADERF_CLI_SOURCE
         src/main.c
         src/common.c
-        src/script.c
         src/cmd/calibrate.c
         src/cmd/cmd.c
         src/cmd/erase.c
@@ -123,7 +122,8 @@ set(BLADERF_CLI_SOURCE
         src/cmd/jump_boot.c
         src/cmd/mimo.c
         src/cmd/correct.c
-        src/interactive/interactive.c
+        src/input/input.c
+        src/input/script.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/log.c
 )
@@ -135,11 +135,11 @@ if(LIBUSB_FOUND)
 )
 endif()
 
-# Select the interactive mode (and script handling) backend
+# Select the input mode (and script handling) backend
 if(ENABLE_LIBTECLA)
-    set(BLADERF_CLI_SOURCE ${BLADERF_CLI_SOURCE} src/interactive/tecla.c)
+    set(BLADERF_CLI_SOURCE ${BLADERF_CLI_SOURCE} src/input/tecla.c)
 else()
-    set(BLADERF_CLI_SOURCE ${BLADERF_CLI_SOURCE} src/interactive/fgets.c)
+    set(BLADERF_CLI_SOURCE ${BLADERF_CLI_SOURCE} src/input/fgets.c)
 endif()
 
 if(MSVC)

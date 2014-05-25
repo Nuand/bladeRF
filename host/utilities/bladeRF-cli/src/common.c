@@ -30,7 +30,7 @@
 #include "cmd.h"
 #include "cmd/rxtx.h"
 #include "script.h"
-#include "interactive.h"
+#include "input.h"
 
 /* There's currently only ever 1 active cli_state */
 static struct cli_state *cli_state;
@@ -47,9 +47,9 @@ static inline void ctrlc_handler_common(int signal)
         }
 
         if (!waiting) {
-            /* Let out interactive support know we got a ctrl-C if we weren't just
+            /* Let interactive support know we got a ctrl-C if we weren't just
              * waiting on an rx/tx wait command */
-            interactive_ctrlc();
+            input_ctrlc();
         }
     }
 }
@@ -239,7 +239,7 @@ FILE *expand_and_open(const char *filename, const char *mode)
     char *expanded_filename;
     FILE *ret;
 
-    expanded_filename = interactive_expand_path(filename);
+    expanded_filename = input_expand_path(filename);
     if (expanded_filename == NULL) {
         return NULL;
     }

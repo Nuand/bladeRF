@@ -29,7 +29,7 @@
 #include "conversions.h"
 #include "cmd.h"
 #include "flash_common.h"
-#include "interactive.h"
+#include "input.h"
 #include "minmax.h"
 #include "rel_assert.h"
 
@@ -112,7 +112,7 @@ int cmd_flash_init_cal(struct cli_state *state, int argc, char **argv)
         char *filename;
         assert(argc == 4);
 
-        filename = interactive_expand_path(argv[3]);
+        filename = input_expand_path(argv[3]);
         rv = bladerf_image_write(image, filename);
         free(filename);
     }

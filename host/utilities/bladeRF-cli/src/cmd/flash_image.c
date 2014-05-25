@@ -30,7 +30,7 @@
 #include "common.h"
 #include "conversions.h"
 #include "rel_assert.h"
-#include "interactive.h"
+#include "input.h"
 
 struct params
 {
@@ -54,7 +54,7 @@ static int handle_param(const char *param, char *val,
 
     if (!strcasecmp("data", param)) {
         free(p->data_file);
-        p->data_file = interactive_expand_path(val);
+        p->data_file = input_expand_path(val);
     } else if (!strcasecmp("serial", param)) {
         size_t i;
         size_t len = strlen(val);
@@ -152,7 +152,7 @@ int parse_cmdline(int argc, char **argv, struct params *p, struct cli_state *s)
                         "Only one image file parameter is permitted.");
                 status = CMD_RET_INVPARAM;
             } else {
-                p->img_file = interactive_expand_path(argv[i]);
+                p->img_file = input_expand_path(argv[i]);
             }
         } else {
             *sep = '\0';

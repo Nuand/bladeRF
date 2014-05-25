@@ -26,7 +26,7 @@
 #include <pthread.h>
 #include <string.h>
 #include <libbladeRF.h>
-#include "interactive.h"
+#include "input/input.h"
 #include "script.h"
 #include "common.h"
 #include "cmd.h"
@@ -425,7 +425,7 @@ main_issues:
         /* Drop into interactive mode or begin executing commands
          * from a script. If we're not requested to do either, exit cleanly */
         if (rc.interactive_mode || cli_script_loaded(state->scripts)) {
-            status = interactive(state, !rc.interactive_mode);
+            status = input_loop(state, !rc.interactive_mode);
         }
     }
 

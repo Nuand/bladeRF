@@ -25,7 +25,7 @@
 #include <libbladeRF.h>
 #include "conversions.h"
 #include "cmd.h"
-#include "interactive.h"
+#include "input.h"
 #include "bladeRF.h"
 
 #ifdef CLI_LIBUSB_ENABLED
@@ -198,7 +198,7 @@ int cmd_recover(struct cli_state *state, int argc, char **argv)
         return CMD_RET_INVPARAM;
     }
 
-    if ((expanded_path = interactive_expand_path(argv[3])) == NULL) {
+    if ((expanded_path = input_expand_path(argv[3])) == NULL) {
         cli_err(state,
                 "Unable to expand FX3 firmware file path: \"%s\"", argv[2]);
         return CMD_RET_INVPARAM;

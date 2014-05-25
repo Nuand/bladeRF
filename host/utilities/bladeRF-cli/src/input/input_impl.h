@@ -1,5 +1,5 @@
 /**
- * @file interactive_impl.h
+ * @file input_impl.h
  *
  * @brief This file defines the routines to be implemented by the
  *        interactive/script support code. These routines should only be called
@@ -23,10 +23,10 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-#ifndef INTERACTIVE_IMPL_H__
-#define INTERACTIVE_IMPL_H__
+#ifndef INPUT_IMPL_H__
+#define INPUT_IMPL_H__
 
-#include "interactive.h"
+#include "input.h"
 
 /** Maximum length of a user-input line */
 #ifndef CLI_MAX_LINE_LEN
@@ -51,12 +51,12 @@
  *
  * @return 0 on success, CMD_RET_* value on failure
  */
-int interactive_init();
+int input_init();
 
 /**
  * Deinitialize and deallocate resources for interactive/script support
  */
-void interactive_deinit();
+void input_deinit();
 
 /**
  * Get a line from the user or script. This should only be used within
@@ -71,7 +71,7 @@ void interactive_deinit();
  *
  * @return  Line from user on success, NULL on failure or EOF.
  */
-char * interactive_get_line(const char *prompt);
+char * input_get_line(const char *prompt);
 
 /**
  * Set the input source
@@ -80,15 +80,11 @@ char * interactive_get_line(const char *prompt);
  *
  * @return 0 on success CMD_RET_* value on failure
  */
-int interactive_set_input(FILE *input);
+int input_set_input(FILE *input);
 
 /**
  * Clear the terminal
  */
-void interactive_clear_terminal();
-
-/**
- *
- */
+void input_clear_terminal();
 
 #endif

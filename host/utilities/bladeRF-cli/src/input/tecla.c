@@ -22,7 +22,7 @@
 #include <libtecla.h>
 #include <string.h>
 #include <errno.h>
-#include "interactive_impl.h"
+#include "input_impl.h"
 
 static GetLine *gl = NULL;
 WordCompletion *tab_complete = NULL;
@@ -68,12 +68,12 @@ int tab_completion(WordCompletion *cpl, void *data, const char *line, int w_end)
     return cpl_file_completions(cpl, data, line, w_end);
 }
 
-int interactive_init()
+int input_init()
 {
     int status = CMD_RET_UNKNOWN;
 
     if (gl) {
-        interactive_deinit();
+        input_deinit();
     }
 
     gl = new_GetLine(CLI_MAX_LINE_LEN, CLI_MAX_HIST_LEN);
@@ -102,7 +102,7 @@ int interactive_init()
     return status;
 }
 
-void interactive_deinit()
+void input_deinit()
 {
     if (gl) {
         del_GetLine(gl);
@@ -114,12 +114,12 @@ void interactive_deinit()
     }
 }
 
-char * interactive_get_line(const char *prompt)
+char * input_get_line(const char *prompt)
 {
     return gl_get_line(gl, prompt, NULL, 0);
 }
 
-int interactive_set_input(FILE *file)
+int input_set_input(FILE *file)
 {
     int status;
 
@@ -131,7 +131,7 @@ int interactive_set_input(FILE *file)
     }
 }
 
-char * interactive_expand_path(const char *path)
+char * input_expand_path(const char *path)
 {
     ExpandFile *ef = NULL;
     FileExpansion *fe = NULL;
@@ -156,12 +156,12 @@ char * interactive_expand_path(const char *path)
     return ret;
 }
 
-void interactive_clear_terminal()
+void input_clear_terminal()
 {
     gl_erase_terminal(gl);
 }
 
 /* Nothing to do here, libtecla handles the signal if we're in a call */
-void interactive_ctrlc(void)
+void input_ctrlc(void)
 {
 }

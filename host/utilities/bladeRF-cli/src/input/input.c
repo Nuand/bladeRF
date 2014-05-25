@@ -19,8 +19,8 @@
  */
 #include <errno.h>
 #include <string.h>
-#include "interactive.h"
-#include "interactive_impl.h"
+#include "input.h"
+#include "input_impl.h"
 #include "cmd.h"
 #include "script.h"
 
@@ -36,7 +36,7 @@ static void exit_script(struct cli_state *s)
         }
 
         if (!cli_script_loaded(s->scripts)) {
-            status = interactive_set_input(stdin);
+            status = input_set_input(stdin);
 
             /* At least attempt to report something... */
             if (status < 0) {
@@ -47,13 +47,13 @@ static void exit_script(struct cli_state *s)
     }
 }
 
-int interactive(struct cli_state *s, bool script_only)
+int input_loop(struct cli_state *s, bool script_only)
 {
     char *line;
     int status;
     const char *error;
 
-    status = interactive_init();
+    status = input_init();
     if (status < 0) {
         return status;
     }
@@ -61,7 +61,7 @@ int interactive(struct cli_state *s, bool script_only)
     status = 0;
 
     if (cli_script_loaded(s->scripts)) {
-        status = interactive_set_input(cli_script_file(s->scripts));
+        status = input_set_input(cli_script_file(s->scripts));
         if (status < 0) {
             fprintf(stderr, "Failed to run script. Aborting!\n");
             status = CMD_RET_QUIT;
@@ -71,7 +71,7 @@ int interactive(struct cli_state *s, bool script_only)
     while (!cmd_fatal(status) && status != CMD_RET_QUIT) {
 
         /* TODO: Change the prompt based on which device is open */
-        line = interactive_get_line(CLI_DEFAULT_PROMPT);
+        line = input_get_line(CLI_DEFAULT_PROMPT);
 
         if (!line) {
             if (cli_script_loaded(s->scripts)) {
@@ -101,10 +101,10 @@ int interactive(struct cli_state *s, bool script_only)
             } else if (status > 0){
                 switch (status) {
                     case CMD_RET_CLEAR_TERM:
-                        interactive_clear_terminal();
+                        input_clear_terminal();
                         break;
                     case CMD_RET_RUN_SCRIPT:
-                        status = interactive_set_input(
+                        status = input_set_input(
                                     cli_script_file(s->scripts));
 
                         if (status < 0) {
@@ -120,7 +120,7 @@ int interactive(struct cli_state *s, bool script_only)
         cli_script_bump_line_count(s->scripts);
     }
 
-    interactive_deinit();
+    input_deinit();
 
     return 0;
 }

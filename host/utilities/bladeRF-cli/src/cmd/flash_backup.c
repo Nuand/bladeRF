@@ -27,7 +27,7 @@
 
 #include "cmd.h"
 #include "flash_common.h"
-#include "interactive.h"
+#include "input.h"
 #include "minmax.h"
 #include "conversions.h"
 #include "rel_assert.h"
@@ -57,7 +57,7 @@ int cmd_flash_backup(struct cli_state *state, int argc, char **argv)
         return status;
     }
 
-    filename = interactive_expand_path(argv[1]);
+    filename = input_expand_path(argv[1]);
     if (!filename) {
         return CMD_RET_MEM;
     }

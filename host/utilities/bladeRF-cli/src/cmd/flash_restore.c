@@ -28,7 +28,7 @@
 
 #include "flash_common.h"
 #include "cmd.h"
-#include "interactive.h"
+#include "input.h"
 #include "minmax.h"
 #include "conversions.h"
 
@@ -53,7 +53,7 @@ static int parse_argv(struct cli_state *state, int argc, char **argv,
         return CMD_RET_NARGS;
 
     if (argc >= 2) {
-        if ((opt->file = interactive_expand_path(argv[1])) == NULL) {
+        if ((opt->file = input_expand_path(argv[1])) == NULL) {
             cli_err(state, argv[0], "Unable to expand file path: \"%s\"",
                     argv[1]);
             return CMD_RET_INVPARAM;

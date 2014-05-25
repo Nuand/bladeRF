@@ -20,10 +20,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "cmd.h"
-
-/* FIXME Including interactive routines here is an indicator that this
-         design needs some refactoring? */
-#include "interactive.h"
+#include "input.h"
 
 static int load_fpga(struct cli_state *s, char *file)
 {
@@ -31,7 +28,7 @@ static int load_fpga(struct cli_state *s, char *file)
     int cmd_status = 0;
     int lib_status;
 
-    if ((expanded_path = interactive_expand_path(file)) == NULL) {
+    if ((expanded_path = input_expand_path(file)) == NULL) {
         cli_err(s, "Unable to expand FPGA file path: \"%s\"", file);
         cmd_status = CMD_RET_INVPARAM;
     } else {
@@ -57,7 +54,7 @@ static int load_fx3(struct cli_state *s, char *file)
     int cmd_status = 0;
     int lib_status;
 
-    if ((expanded_path = interactive_expand_path(file)) == NULL) {
+    if ((expanded_path = input_expand_path(file)) == NULL) {
         cli_err(s, "Unable to expand firmware file path: \"%s\"", file);
         cmd_status = CMD_RET_INVPARAM;
     } else {

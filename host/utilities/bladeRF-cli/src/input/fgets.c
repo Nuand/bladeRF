@@ -21,7 +21,7 @@
 #include <string.h>
 #include <signal.h>
 #include <errno.h>
-#include "interactive_impl.h"
+#include "input_impl.h"
 #include "host_config.h"
 
 static FILE *input = NULL;
@@ -36,18 +36,18 @@ static inline bool is_stdin(FILE *file)
     return file && fileno(file) == 0;
 }
 
-int interactive_init()
+int input_init()
 {
 
     if (input || line_buf) {
-        interactive_deinit();
+        input_deinit();
     }
 
     input = stdin;
 
     line_buf = calloc(line_buf_size, 1);
     if (!line_buf) {
-        interactive_deinit();
+        input_deinit();
         return CMD_RET_MEM;
     }
 
@@ -56,7 +56,7 @@ int interactive_init()
     return 0;
 }
 
-void interactive_deinit()
+void input_deinit()
 {
     if (input) {
         input = NULL;
@@ -68,13 +68,13 @@ void interactive_deinit()
     }
 }
 
-int interactive_set_input(FILE *new_input)
+int input_set_input(FILE *new_input)
 {
     input = new_input;
     return 0;
 }
 
-char * interactive_get_line(const char *prompt)
+char * input_get_line(const char *prompt)
 {
     char *eol;
     char *ret = NULL;
@@ -110,7 +110,7 @@ char * interactive_get_line(const char *prompt)
 }
 
 
-void interactive_clear_terminal()
+void input_clear_terminal()
 {
     /* If our input is a script, we should be nice and not clear the user's
      * terminal - only do this if our input's from stdin */
@@ -128,12 +128,12 @@ void interactive_clear_terminal()
 /* TODO: Linux/OSX: Expand ~/ to home directory, $<variables>
  *       Windows: %<varibles%
  */
-char * interactive_expand_path(const char *path)
+char * input_expand_path(const char *path)
 {
     return strdup(path);
 }
 
-void interactive_ctrlc(void)
+void input_ctrlc(void)
 {
     caught_signal = true;
 }
