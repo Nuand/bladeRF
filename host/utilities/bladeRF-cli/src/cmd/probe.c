@@ -49,7 +49,7 @@ int cmd_probe(struct cli_state *s, int argc, char *argv[])
         }
 
         s->last_lib_error = n_devices;
-        return CMD_RET_LIBBLADERF;
+        return CLI_RET_LIBBLADERF;
     }
 
     printf("\n");

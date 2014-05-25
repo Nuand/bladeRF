@@ -31,32 +31,32 @@ int cmd_info(struct cli_state *state, int argc, char **argv)
     bladerf_dev_speed usb_speed;
 
     if (!cli_device_is_opened(state)) {
-        return CMD_RET_NODEV;
+        return CLI_RET_NODEV;
     }
 
     status = bladerf_get_devinfo(state->dev, &info);
     if (status < 0) {
         state->last_lib_error = status;
-        return CMD_RET_LIBBLADERF;
+        return CLI_RET_LIBBLADERF;
     }
 
     status = bladerf_is_fpga_configured(state->dev);
     if (status < 0) {
         state->last_lib_error = status;
-        return CMD_RET_LIBBLADERF;
+        return CLI_RET_LIBBLADERF;
     }
     fpga_loaded = status != 0;
 
     status = bladerf_get_fpga_size(state->dev, &fpga_size);
     if (status < 0) {
         state->last_lib_error = status;
-        return CMD_RET_LIBBLADERF;
+        return CLI_RET_LIBBLADERF;
     }
 
     status = bladerf_get_vctcxo_trim(state->dev, &dac_trim);
     if (status < 0) {
         state->last_lib_error = status;
-        return CMD_RET_LIBBLADERF;
+        return CLI_RET_LIBBLADERF;
     }
 
     usb_speed = bladerf_device_speed(state->dev);

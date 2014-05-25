@@ -32,14 +32,14 @@ int cmd_poke(struct cli_state *state, int argc, char **argv)
         poke lms <address> <value>
         poke si  <address> <value>
     */
-    int rv = CMD_RET_OK;
+    int rv = CLI_RET_OK;
     int status;
     bool ok;
     int (*f)(struct bladerf *, uint8_t, uint8_t);
     unsigned int address, value;
 
     if (!cli_device_is_opened(state)) {
-        return CMD_RET_NODEV;
+        return CLI_RET_NODEV;
     }
 
     if( argc == 4 ) {
@@ -50,7 +50,7 @@ int cmd_poke(struct cli_state *state, int argc, char **argv)
             if( !ok ) {
                 cli_err(state, argv[0],
                         "Invalid number of addresses provided (%s)", argv[3]);
-                return CMD_RET_INVPARAM;
+                return CLI_RET_INVPARAM;
             }
         }
 
@@ -60,7 +60,7 @@ int cmd_poke(struct cli_state *state, int argc, char **argv)
             address = str2uint( argv[2], 0, DAC_MAX_ADDRESS, &ok );
             if( !ok ) {
                 invalid_address(state, argv[0], argv[2]);
-                rv = CMD_RET_INVPARAM;
+                rv = CLI_RET_INVPARAM;
             } else {
                 /* TODO: Point function pointer */
                 /* f = vctcxo_dac_write */
@@ -74,7 +74,7 @@ int cmd_poke(struct cli_state *state, int argc, char **argv)
             address = str2uint( argv[2], 0, LMS_MAX_ADDRESS, &ok );
             if( !ok ) {
                 invalid_address(state, argv[0], argv[2]);
-                rv = CMD_RET_INVPARAM;
+                rv = CLI_RET_INVPARAM;
             } else {
                 f = bladerf_lms_write;
             }
@@ -86,7 +86,7 @@ int cmd_poke(struct cli_state *state, int argc, char **argv)
             address = str2uint( argv[2], 0, SI_MAX_ADDRESS, &ok );
             if( !ok ) {
                 invalid_address(state, argv[0], argv[2]);
-                rv = CMD_RET_INVPARAM;
+                rv = CLI_RET_INVPARAM;
             } else {
                 f = bladerf_si5338_write;
             }
@@ -95,15 +95,15 @@ int cmd_poke(struct cli_state *state, int argc, char **argv)
         /* I guess we aren't reading from anything :( */
         else {
             cli_err(state, argv[0], "%s is not a pokeable device\n", argv[1] );
-            rv = CMD_RET_INVPARAM;
+            rv = CLI_RET_INVPARAM;
         }
 
         /* Write the value to the address */
-        if( rv == CMD_RET_OK && f ) {
+        if( rv == CLI_RET_OK && f ) {
             status = f( state->dev, (uint8_t)address, (uint8_t)value );
             if (status < 0) {
                 state->last_lib_error = status;
-                rv = CMD_RET_LIBBLADERF;
+                rv = CLI_RET_LIBBLADERF;
             } else {
                 printf( "  0x%2.2x: 0x%2.2x\n", address, value );
             }
@@ -111,7 +111,7 @@ int cmd_poke(struct cli_state *state, int argc, char **argv)
 
     } else {
         cli_err(state, argv[0], "Invalid number of arguments (%d)\n", argc);
-        rv = CMD_RET_INVPARAM;
+        rv = CLI_RET_INVPARAM;
     }
     return rv;
 }

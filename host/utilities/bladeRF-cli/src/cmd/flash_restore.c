@@ -35,7 +35,7 @@
 #define rv_error(rv, ...) do {                              \
         state->last_lib_error = (rv);                       \
         cli_err(state, argv[0], __VA_ARGS__);               \
-        rv = CMD_RET_LIBBLADERF;                            \
+        rv = CLI_RET_LIBBLADERF;                            \
     } while(0)
 
 struct options {
@@ -50,13 +50,13 @@ static int parse_argv(struct cli_state *state, int argc, char **argv,
     bool ok;
 
     if (argc != 2 && argc != 4)
-        return CMD_RET_NARGS;
+        return CLI_RET_NARGS;
 
     if (argc >= 2) {
         if ((opt->file = input_expand_path(argv[1])) == NULL) {
             cli_err(state, argv[0], "Unable to expand file path: \"%s\"",
                     argv[1]);
-            return CMD_RET_INVPARAM;
+            return CLI_RET_INVPARAM;
         }
 
         opt->address = CAL_PAGE;
@@ -68,13 +68,13 @@ static int parse_argv(struct cli_state *state, int argc, char **argv,
         opt->address = str2uint(argv[2], 0, UINT_MAX, &ok);
         if (!ok || (opt->address % BLADERF_FLASH_PAGE_SIZE != 0)) {
             cli_err(state, argv[0], "Invalid address provided");
-            return CMD_RET_INVPARAM;
+            return CLI_RET_INVPARAM;
         }
 
         opt->len = str2uint(argv[3], 0, UINT_MAX, &ok);
         if (!ok || (opt->len % BLADERF_FLASH_PAGE_SIZE != 0)) {
             cli_err(state, argv[0], "Invalid length provided");
-            return CMD_RET_INVPARAM;
+            return CLI_RET_INVPARAM;
         }
 
         opt->override_defaults = true;
@@ -136,7 +136,7 @@ int cmd_flash_restore(struct cli_state *state, int argc, char **argv)
 
     image = bladerf_alloc_image(BLADERF_IMAGE_TYPE_INVALID, 0, 0);
     if (!image) {
-        rv = CMD_RET_MEM;
+        rv = CLI_RET_MEM;
         goto cmd_flash_restore_out;
     }
 
@@ -181,7 +181,7 @@ int cmd_flash_restore(struct cli_state *state, int argc, char **argv)
         goto cmd_flash_restore_out;
     }
 
-    rv = CMD_RET_OK;
+    rv = CLI_RET_OK;
 
 cmd_flash_restore_out:
     free(opt.file);

@@ -33,13 +33,13 @@ int cmd_peek(struct cli_state *state, int argc, char **argv)
         peek lms <address> [num addresses]
         peek si  <address> [num addresses]
     */
-    int rv = CMD_RET_OK;
+    int rv = CLI_RET_OK;
     bool ok;
     int (*f)(struct bladerf *, uint8_t, uint8_t *);
     unsigned int count, address, max_address;
 
     if (!cli_device_is_opened(state)) {
-        return CMD_RET_NODEV;
+        return CLI_RET_NODEV;
     }
 
     if( argc == 3 || argc == 4 ) {
@@ -51,7 +51,7 @@ int cmd_peek(struct cli_state *state, int argc, char **argv)
             if( !ok ) {
                 cli_err(state, argv[0],
                         "Invalid number of addresses provided (%s)", argv[3]);
-                return CMD_RET_INVPARAM;
+                return CLI_RET_INVPARAM;
             }
         }
 
@@ -61,7 +61,7 @@ int cmd_peek(struct cli_state *state, int argc, char **argv)
             address = str2uint( argv[2], 0, DAC_MAX_ADDRESS, &ok );
             if( !ok ) {
                 invalid_address(state, argv[0], argv[2]);
-                rv = CMD_RET_INVPARAM;
+                rv = CLI_RET_INVPARAM;
             } else {
                 /* TODO: Point function pointer */
                 /* f = vctcxo_dac_read */
@@ -76,7 +76,7 @@ int cmd_peek(struct cli_state *state, int argc, char **argv)
             address = str2uint( argv[2], 0, LMS_MAX_ADDRESS, &ok );
             if( !ok ) {
                 invalid_address(state, argv[0], argv[2]);
-                rv = CMD_RET_INVPARAM;
+                rv = CLI_RET_INVPARAM;
             } else {
                 f = bladerf_lms_read;
                 max_address = LMS_MAX_ADDRESS;
@@ -89,7 +89,7 @@ int cmd_peek(struct cli_state *state, int argc, char **argv)
             address = str2uint( argv[2], 0, SI_MAX_ADDRESS, &ok );
             if( !ok ) {
                 invalid_address(state, argv[0], argv[2]);
-                rv = CMD_RET_INVPARAM;
+                rv = CLI_RET_INVPARAM;
             } else {
                 f = bladerf_si5338_read;
                 max_address = SI_MAX_ADDRESS;
@@ -99,18 +99,18 @@ int cmd_peek(struct cli_state *state, int argc, char **argv)
         /* I guess we aren't reading from anything :( */
         else {
             cli_err(state, argv[0], "%s is not a peekable device\n", argv[1]);
-            rv = CMD_RET_INVPARAM;
+            rv = CLI_RET_INVPARAM;
         }
 
         /* Loop over the addresses and output the values */
-        if( rv == CMD_RET_OK && f ) {
+        if( rv == CLI_RET_OK && f ) {
             int status;
             uint8_t val;
             for(; count > 0 && address < max_address; count-- ) {
                 status = f( state->dev, (uint8_t)address, &val );
                 if (status < 0) {
                     state->last_lib_error = status;
-                    rv = CMD_RET_LIBBLADERF;
+                    rv = CLI_RET_LIBBLADERF;
                 } else {
                     printf( "  0x%2.2x: 0x%2.2x\n", address++, val );
                 }
@@ -119,7 +119,7 @@ int cmd_peek(struct cli_state *state, int argc, char **argv)
 
     } else {
         cli_err(state, argv[0], "Invalid number of arguments (%d)\n",  argc);
-        rv = CMD_RET_INVPARAM;
+        rv = CLI_RET_INVPARAM;
     }
     return rv;
 }

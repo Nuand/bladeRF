@@ -35,7 +35,7 @@
 #define lib_error(status, ...) do { \
     state->last_lib_error = (status); \
     cli_err(state, argv[0], __VA_ARGS__); \
-    status = CMD_RET_LIBBLADERF; \
+    status = CLI_RET_LIBBLADERF; \
 } while (0)
 
 int cmd_flash_backup(struct cli_state *state, int argc, char **argv)
@@ -49,7 +49,7 @@ int cmd_flash_backup(struct cli_state *state, int argc, char **argv)
     bool ok;
 
     if (argc != 3 && argc != 4) {
-        return CMD_RET_NARGS;
+        return CLI_RET_NARGS;
     }
 
     status = flash_check_state(state, argv[0]);
@@ -59,7 +59,7 @@ int cmd_flash_backup(struct cli_state *state, int argc, char **argv)
 
     filename = input_expand_path(argv[1]);
     if (!filename) {
-        return CMD_RET_MEM;
+        return CLI_RET_MEM;
     }
 
     if (argc == 3) {
@@ -81,7 +81,7 @@ int cmd_flash_backup(struct cli_state *state, int argc, char **argv)
             length = BLADERF_FLASH_BYTE_LEN_FPGA;
         } else {
             cli_err(state, argv[0], "Invalid image type provided.");
-            status = CMD_RET_INVPARAM;
+            status = CLI_RET_INVPARAM;
             goto out;
         }
     } else {
@@ -103,7 +103,7 @@ int cmd_flash_backup(struct cli_state *state, int argc, char **argv)
 
     image = bladerf_alloc_image(image_type, address, length);
     if (!image) {
-        status = CMD_RET_MEM;
+        status = CLI_RET_MEM;
         goto out;
     }
 

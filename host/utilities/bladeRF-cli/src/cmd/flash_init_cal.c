@@ -42,7 +42,7 @@ int str2fpga(const char *str, bladerf_fpga_size *fpga_size)
         *fpga_size = BLADERF_FPGA_115KLE;
         return 0;
     } else {
-        return CMD_RET_INVPARAM;
+        return CLI_RET_INVPARAM;
     }
 }
 
@@ -56,7 +56,7 @@ int cmd_flash_init_cal(struct cli_state *state, int argc, char **argv)
     uint32_t page, count;
 
     if(argc != 3 && argc != 4) {
-        return CMD_RET_NARGS;
+        return CLI_RET_NARGS;
     }
 
     rv = str2fpga(argv[1], &fpga_size);
@@ -68,12 +68,12 @@ int cmd_flash_init_cal(struct cli_state *state, int argc, char **argv)
     dac = str2uint(argv[2], 0, 0xffff, &ok);
     if(!ok) {
         cli_err(state, argv[0], "Invalid VCTCXO trim value provided.");
-        return CMD_RET_INVPARAM;
+        return CLI_RET_INVPARAM;
     }
 
     image = bladerf_alloc_cal_image(fpga_size, dac);
     if (!image) {
-        return CMD_RET_MEM;
+        return CLI_RET_MEM;
     }
 
     if (argc == 3) {
@@ -104,7 +104,7 @@ int cmd_flash_init_cal(struct cli_state *state, int argc, char **argv)
             );
 
             state->last_lib_error = rv;
-            rv = CMD_RET_LIBBLADERF;
+            rv = CLI_RET_LIBBLADERF;
         } else {
             rv = 0;
         }

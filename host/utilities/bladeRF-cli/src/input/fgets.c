@@ -48,7 +48,7 @@ int input_init()
     line_buf = calloc(line_buf_size, 1);
     if (!line_buf) {
         input_deinit();
-        return CMD_RET_MEM;
+        return CLI_RET_MEM;
     }
 
     caught_signal = false;

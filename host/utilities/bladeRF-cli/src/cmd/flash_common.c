@@ -24,7 +24,7 @@
 int flash_check_state(struct cli_state *s, const char *cmd_name)
 {
     if (!cli_device_is_opened(s)) {
-        return CMD_RET_NODEV;
+        return CLI_RET_NODEV;
     }
 
     if (cli_device_is_streaming(s)) {
@@ -33,7 +33,7 @@ int flash_check_state(struct cli_state *s, const char *cmd_name)
 
         /* Technically not the error, but we want to suppress the more generic
          * error message... */
-        return CMD_RET_INVPARAM;
+        return CLI_RET_INVPARAM;
     }
 
     return 0;

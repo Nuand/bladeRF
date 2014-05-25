@@ -64,11 +64,11 @@ int input_loop(struct cli_state *s, bool script_only)
         status = input_set_input(cli_script_file(s->scripts));
         if (status < 0) {
             fprintf(stderr, "Failed to run script. Aborting!\n");
-            status = CMD_RET_QUIT;
+            status = CLI_RET_QUIT;
         }
     }
 
-    while (!cmd_fatal(status) && status != CMD_RET_QUIT) {
+    while (!cli_fatal(status) && status != CLI_RET_QUIT) {
 
         /* TODO: Change the prompt based on which device is open */
         line = input_get_line(CLI_DEFAULT_PROMPT);
@@ -80,7 +80,7 @@ int input_loop(struct cli_state *s, bool script_only)
                 /* Exit if we were run with a script, but not asked
                  * to drop into interactive mode */
                 if (script_only)
-                    status = CMD_RET_QUIT;
+                    status = CLI_RET_QUIT;
 
             } else {
                 /* Leaving interactivce mode */
@@ -90,7 +90,7 @@ int input_loop(struct cli_state *s, bool script_only)
             status = cmd_handle(s, line);
 
             if (status < 0) {
-                error = cmd_strerror(status, s->last_lib_error);
+                error = cli_strerror(status, s->last_lib_error);
                 if (error) {
                     cli_err(s, "Error", "%s", error);
                 }
@@ -100,10 +100,10 @@ int input_loop(struct cli_state *s, bool script_only)
 
             } else if (status > 0){
                 switch (status) {
-                    case CMD_RET_CLEAR_TERM:
+                    case CLI_RET_CLEAR_TERM:
                         input_clear_terminal();
                         break;
-                    case CMD_RET_RUN_SCRIPT:
+                    case CLI_RET_RUN_SCRIPT:
                         status = input_set_input(
                                     cli_script_file(s->scripts));
 

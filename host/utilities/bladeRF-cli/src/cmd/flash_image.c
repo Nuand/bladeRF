@@ -60,14 +60,14 @@ static int handle_param(const char *param, char *val,
         size_t len = strlen(val);
 
         if (len != BLADERF_SERIAL_LENGTH - 1) {
-            status = CMD_RET_INVPARAM;
+            status = CLI_RET_INVPARAM;
         } else {
             for (i = 0; i < len && status == 0; i++) {
                 if (val[i] >= 'a' || val[i] <= 'f') {
                     val[i] -= 'a' - 'A';
                 } else if (!((val[i] >= '0' && val[i] <= '9') ||
                              (val[i] >= 'A' && val[i] <= 'F'))) {
-                    status = CMD_RET_INVPARAM;
+                    status = CLI_RET_INVPARAM;
                 }
             }
         }
@@ -80,7 +80,7 @@ static int handle_param(const char *param, char *val,
         p->address = str2uint(param, 0, UINT_MAX, &ok);
         if (!ok) {
             cli_err(s, argv0, "Invalid address provided.");
-            status = CMD_RET_INVPARAM;
+            status = CLI_RET_INVPARAM;
         }
     } else if (!strcasecmp("type", param)) {
         if (!strcasecmp("raw", val)) {
@@ -120,11 +120,11 @@ static int handle_param(const char *param, char *val,
 
         } else {
             cli_err(s, argv0, "Invalid type provided.");
-            status = CMD_RET_INVPARAM;
+            status = CLI_RET_INVPARAM;
         }
     } else {
         cli_err(s, argv0, "Invalid parameter provided - \"%s\"", param);
-        status = CMD_RET_INVPARAM;
+        status = CLI_RET_INVPARAM;
     }
 
     return status;
@@ -150,7 +150,7 @@ int parse_cmdline(int argc, char **argv, struct params *p, struct cli_state *s)
             if (p->img_file) {
                 cli_err(s, argv[0],
                         "Only one image file parameter is permitted.");
-                status = CMD_RET_INVPARAM;
+                status = CLI_RET_INVPARAM;
             } else {
                 p->img_file = input_expand_path(argv[i]);
             }
@@ -164,16 +164,16 @@ int parse_cmdline(int argc, char **argv, struct params *p, struct cli_state *s)
     if (status == 0) {
         if (!p->img_file) {
             cli_err(s, argv[0], "An image file parameter is required.");
-            status = CMD_RET_INVPARAM;
+            status = CLI_RET_INVPARAM;
         } else if (p->type == BLADERF_IMAGE_TYPE_RAW &&
                 !(p->override_address || p->max_length == 0)) {
             cli_err(s, argv[0],
                     "An address and a length are required for type=raw.");
-            status = CMD_RET_INVPARAM;
+            status = CLI_RET_INVPARAM;
         } else if (argc > 2 && !p->data_file) {
             cli_err(s, argv[0],
                     "A data input file is required when creating an image.");
-            status = CMD_RET_INVPARAM;
+            status = CLI_RET_INVPARAM;
         }
     }
 
@@ -193,7 +193,7 @@ static int print_image_metadata(struct cli_state *s, struct params *p,
 
     image = bladerf_alloc_image(BLADERF_IMAGE_TYPE_INVALID, 0, 0);
     if (!image) {
-        return CMD_RET_MEM;
+        return CLI_RET_MEM;
     }
 
     status = bladerf_image_read(image, p->img_file);
@@ -254,11 +254,11 @@ static int print_image_metadata(struct cli_state *s, struct params *p,
     } else {
         if (status == BLADERF_ERR_INVAL) {
             cli_err(s, argv0, "Image contains invalid fields or data.");
-            status = CMD_RET_INVPARAM;
+            status = CLI_RET_INVPARAM;
         }
 
         s->last_lib_error = status;
-        status = CMD_RET_LIBBLADERF;
+        status = CLI_RET_LIBBLADERF;
     }
 
     bladerf_free_image(image);
@@ -274,39 +274,39 @@ static int write_image(struct cli_state *s, struct params *p, const char *argv0)
 
     f = expand_and_open(p->data_file, "rb");
     if (!f) {
-        return CMD_RET_FILEOP;
+        return CLI_RET_FILEOP;
     }
 
     if (fseek(f, 0, SEEK_END) != 0) {
-        status = CMD_RET_FILEOP;
+        status = CLI_RET_FILEOP;
         goto write_image_out;
     }
 
     data_size = ftell(f);
     if (data_size < 0) {
-        status = CMD_RET_FILEOP;
+        status = CLI_RET_FILEOP;
         goto write_image_out;
     }
 
     if ((uint32_t)data_size > p->max_length) {
-        status = CMD_RET_INVPARAM;
+        status = CLI_RET_INVPARAM;
         cli_err(s, argv0, "The provided data file is too large for the specified flash region.");
         goto write_image_out;
     }
 
     if (fseek(f, 0, SEEK_SET) != 0) {
-        status = CMD_RET_FILEOP;
+        status = CLI_RET_FILEOP;
         goto write_image_out;
     }
 
     image = bladerf_alloc_image(p->type, p->address, data_size);
     if (!image) {
-        status = CMD_RET_MEM;
+        status = CLI_RET_MEM;
         goto write_image_out;
     }
 
     if (fread(image->data, 1, data_size, f) != (size_t)data_size) {
-        status = CMD_RET_FILEOP;
+        status = CLI_RET_FILEOP;
         goto write_image_out;
     }
 
@@ -315,7 +315,7 @@ static int write_image(struct cli_state *s, struct params *p, const char *argv0)
     status = bladerf_image_write(image, p->img_file);
     if (status != 0) {
         s->last_lib_error = status;
-        status = CMD_RET_LIBBLADERF;
+        status = CLI_RET_LIBBLADERF;
     }
 
 write_image_out:
@@ -330,7 +330,7 @@ int cmd_flash_image(struct cli_state *state, int argc, char **argv)
     struct params p;
 
     if (argc < 2) {
-        return CMD_RET_NARGS;
+        return CLI_RET_NARGS;
     }
 
     status = parse_cmdline(argc, argv, &p, state);

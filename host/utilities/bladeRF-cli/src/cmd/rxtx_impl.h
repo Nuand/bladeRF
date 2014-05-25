@@ -181,7 +181,7 @@ enum rxtx_state rxtx_get_state(struct rxtx_data *rxtx);
  * @param   rxtx    RX/TX data handle
  * @param   path    Path to set
  *
- * @return 0 on success, CMD_RET_MEM on memory allocation error
+ * @return 0 on success, CLI_RET_MEM on memory allocation error
  */
 int rxtx_set_file_path(struct rxtx_data *rxtx, const char *path);
 
@@ -284,8 +284,8 @@ unsigned char rxtx_get_requests(struct rxtx_data *rxtx, unsigned char mask);
  * @param[out]      val         Set to point to value portion of parameter
  *
  * @return 0 if the param was not handled, 1 if it was,
- *         CMD_RET_* if an error occurs. This function will print an error
- *         for CMD_RET_INVALID. param and val are undefined for an error.
+ *         CLI_RET_* if an error occurs. This function will print an error
+ *         for CLI_RET_INVALID. param and val are undefined for an error.
  */
 int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
                              const char *argv0, char *param, char **val);
@@ -301,7 +301,7 @@ int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
  * @param   argc    Number of pararamters provided to rx/tx command
  * @param   argc    Pararamters provided to rx/tx command
  *
- * @return 0 on success, CMD_RET_* for any errors
+ * @return 0 on success, CLI_RET_* for any errors
  */
 int rxtx_handle_wait(struct cli_state *s, struct rxtx_data *rxtx,
                      int argc, char **argv);
@@ -313,8 +313,8 @@ int rxtx_handle_wait(struct cli_state *s, struct rxtx_data *rxtx,
  * @param[in]       rxtx        RX/TX data handle
  * @param[in]       argv0       argv[0] string (used to prefix error messages)
  *
- * @return 0 on success, CMD_RET_* for any errors. An error will be printed
- *         for CMD_RET_INVPARAM
+ * @return 0 on success, CLI_RET_* for any errors. An error will be printed
+ *         for CLI_RET_INVPARAM
  */
 int rxtx_cmd_start_check(struct cli_state *s, struct rxtx_data *rxtx,
                          const char *argv0);

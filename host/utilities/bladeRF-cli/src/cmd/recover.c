@@ -70,7 +70,7 @@ static int find_device(struct cli_state *s,
         cli_err(s, "Error", "libusb_get_device_list() failed: %d %s\n",
                 status_sz, libusb_error_name((int)status_sz));
 
-        return CMD_RET_UNKNOWN;
+        return CLI_RET_UNKNOWN;
     }
 
     for (i = 0; (dev = devs[i]) != NULL && found_dev == NULL; i++) {
@@ -92,13 +92,13 @@ static int find_device(struct cli_state *s,
 
     if (found_dev == NULL || (just_print && num_found == 0)) {
         s->last_lib_error =  BLADERF_ERR_NODEV;
-        return CMD_RET_LIBBLADERF;
+        return CLI_RET_LIBBLADERF;
     } else if (!just_print) {
         status = libusb_open(found_dev, handle);
 
         if (status != 0) {
             s->last_lib_error = BLADERF_ERR_IO;
-            return CMD_RET_LIBBLADERF;
+            return CLI_RET_LIBBLADERF;
         }
     }
 
@@ -117,7 +117,7 @@ static int perform_recovery(struct cli_state *state,
 
     status = libusb_init(&ctx);
     if (status != 0) {
-        return CMD_RET_UNKNOWN;
+        return CLI_RET_UNKNOWN;
     }
 
     status = find_device(state, ctx, bus, addr, &handle, false);
@@ -138,7 +138,7 @@ static int list_bootloader_devs(struct cli_state *state)
 
     status = libusb_init(&ctx);
     if (status != 0) {
-        return CMD_RET_UNKNOWN;
+        return CLI_RET_UNKNOWN;
     }
 
     status = find_device(state, ctx, 0, 0, NULL, true);
@@ -157,13 +157,13 @@ static int perform_recovery(struct cli_state *state,
                             const char *firmware_file)
 {
     state->last_lib_error = BLADERF_ERR_UNSUPPORTED;
-    return CMD_RET_LIBBLADERF;
+    return CLI_RET_LIBBLADERF;
 }
 
 struct int list_bootloader_devs(struct cli_state *state)
 {
     state->last_lib_error = BLADERF_ERR_UNSUPPORTED;
-    return CMD_RET_LIBBLADERF;
+    return CLI_RET_LIBBLADERF;
 }
 
 #endif
@@ -183,25 +183,25 @@ int cmd_recover(struct cli_state *state, int argc, char **argv)
     if (argc == 1) {
         return list_bootloader_devs(state);
     } else if (argc != 4) {
-        return CMD_RET_NARGS;
+        return CLI_RET_NARGS;
     }
 
     bus = str2uint(argv[1], 0, UINT8_MAX, &ok);
     if (!ok) {
         cli_err(state, argv[0], "Invalid bus: %s\n", bus);
-        return CMD_RET_INVPARAM;
+        return CLI_RET_INVPARAM;
     }
 
     addr = str2uint(argv[2], 0, UINT8_MAX, &ok);
     if (!ok) {
         cli_err(state, argv[0], "Invalid address: %s\n", addr);
-        return CMD_RET_INVPARAM;
+        return CLI_RET_INVPARAM;
     }
 
     if ((expanded_path = input_expand_path(argv[3])) == NULL) {
         cli_err(state,
                 "Unable to expand FX3 firmware file path: \"%s\"", argv[2]);
-        return CMD_RET_INVPARAM;
+        return CLI_RET_INVPARAM;
     }
 
     status = perform_recovery(state, bus, addr, expanded_path);
@@ -213,10 +213,10 @@ int cmd_recover(struct cli_state *state, int argc, char **argv)
         printf("Note that a \"load fx3 <firmware>\" is required to "
                "write the firmware to flash.\n");
         printf("\n");
-        return CMD_RET_OK;
-    } else if (status == CMD_RET_NODEV) {
+        return CLI_RET_OK;
+    } else if (status == CLI_RET_NODEV) {
         printf("No devices in bootloader mode were found.\n");
-        return CMD_RET_OK;
+        return CLI_RET_OK;
     } else {
         return status;
     }

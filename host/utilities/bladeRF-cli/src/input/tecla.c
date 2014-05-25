@@ -70,7 +70,7 @@ int tab_completion(WordCompletion *cpl, void *data, const char *line, int w_end)
 
 int input_init()
 {
-    int status = CMD_RET_UNKNOWN;
+    int status = CLI_RET_UNKNOWN;
 
     if (gl) {
         input_deinit();
@@ -125,7 +125,7 @@ int input_set_input(FILE *file)
 
     status = gl_change_terminal(gl, file, stdout, getenv("term"));
     if (status < 0) {
-        return CMD_RET_FILEOP;
+        return CLI_RET_FILEOP;
     } else {
         return 0;
     }

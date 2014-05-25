@@ -81,7 +81,7 @@ static inline void sc16q11_sample_fixup(int16_t *buf, size_t n)
 /*
  * @pre data_mgmt lock is held
  *
- * returns 0 on success, CMD_RET_* on failure (and calls set_last_error()) */
+ * returns 0 on success, CLI_RET_* on failure (and calls set_last_error()) */
 static int rx_write_bin_sc16q11(struct rxtx_data *rx,
                                 int16_t *samples, size_t n_samples)
 {
@@ -94,14 +94,14 @@ static int rx_write_bin_sc16q11(struct rxtx_data *rx,
     pthread_mutex_unlock(&rx->file_mgmt.file_lock);
 
     if (status != (2 * n_samples)) {
-        set_last_error(&rx->last_error, ETYPE_CLI, CMD_RET_FILEOP);
-        return CMD_RET_FILEOP;
+        set_last_error(&rx->last_error, ETYPE_CLI, CLI_RET_FILEOP);
+        return CLI_RET_FILEOP;
     } else {
         return 0;
     }
 }
 
-/* returns 0 on success, CMD_RET_* on failure (and calls set_last_error()) */
+/* returns 0 on success, CLI_RET_* on failure (and calls set_last_error()) */
 static int rx_write_csv_sc16q11(struct rxtx_data *rx,
                                 int16_t *samples, size_t n_samples)
 {
@@ -117,7 +117,7 @@ static int rx_write_csv_sc16q11(struct rxtx_data *rx,
 
         if (fputs(line, rx->file_mgmt.file) < 0) {
             set_last_error(&rx->last_error, ETYPE_ERRNO, errno);
-            status = CMD_RET_FILEOP;
+            status = CLI_RET_FILEOP;
             break;
         }
     }
@@ -234,7 +234,7 @@ void *rx_task(void *cli_state_arg)
                         break;
 
                     default:
-                        status = CMD_RET_INVPARAM;
+                        status = CLI_RET_INVPARAM;
                         set_last_error(&rx->last_error, ETYPE_CLI, status);
                         rxtx_set_state(rx, RXTX_STATE_IDLE);
                 }
@@ -322,7 +322,7 @@ static int rx_cmd_start(struct cli_state *s)
     }
     if (!s->rx->file_mgmt.file) {
         set_last_error(&s->rx->last_error, ETYPE_ERRNO, errno);
-        status = CMD_RET_FILEOP;
+        status = CLI_RET_FILEOP;
     } else {
         status = 0;
     }
@@ -341,7 +341,7 @@ static int rx_cmd_start(struct cli_state *s)
     if (status != 0) {
         s->last_lib_error = status;
         set_last_error(&s->rx->last_error, ETYPE_BLADERF, s->last_lib_error);
-        return CMD_RET_LIBBLADERF;
+        return CLI_RET_LIBBLADERF;
     }
 
     /* Request thread to start running */
@@ -352,7 +352,7 @@ static int rx_cmd_start(struct cli_state *s)
      * present in the rx task */
     if (status != 0) {
         cli_err(s, "rx", "RX did not start up in the alloted time\n");
-        status = CMD_RET_UNKNOWN;
+        status = CLI_RET_UNKNOWN;
     }
 
     return status;
@@ -416,12 +416,12 @@ static int rx_cmd_config(struct cli_state *s, int argc, char **argv)
                     pthread_mutex_unlock(&s->rx->param_lock);
                 } else {
                     cli_err(s, argv[0], RXTX_ERRMSG_VALUE(argv[1], val));
-                    return CMD_RET_INVPARAM;
+                    return CLI_RET_INVPARAM;
                 }
 
             } else {
                 cli_err(s, argv[0], "Unrecognized config parameter: %s", argv[i]);
-                return CMD_RET_INVPARAM;
+                return CLI_RET_INVPARAM;
             }
         }
     }
@@ -448,7 +448,7 @@ int cmd_rx(struct cli_state *s, int argc, char **argv)
         ret = rxtx_handle_wait(s, s->rx, argc, argv);
     } else {
         cli_err(s, argv[0], "Invalid command: \"%s\"", argv[1]);
-        ret = CMD_RET_INVPARAM;
+        ret = CLI_RET_INVPARAM;
     }
 
     return ret;

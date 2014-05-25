@@ -211,6 +211,47 @@ void cli_err(struct cli_state *s, const char *pfx, const char *format, ...)
     }
 }
 
+const char * cli_strerror(int error, int lib_error)
+{
+    switch (error) {
+        case CLI_RET_MEM:
+            return "A fatal memory allocation error has occurred";
+
+        case CLI_RET_UNKNOWN:
+            return "A fatal unknown error has occurred";
+
+        case CLI_RET_MAX_ARGC:
+            return "Number of arguments exceeds allowed maximum";
+
+        case CLI_RET_LIBBLADERF:
+            return bladerf_strerror(lib_error);
+
+        case CLI_RET_NODEV:
+            return "No devices are currently opened";
+
+        case CLI_RET_NARGS:
+            return "Invalid number of arguments provided";
+
+        case CLI_RET_NOFPGA:
+            return "Command requires FPGA to be loaded";
+
+        case CLI_RET_STATE:
+            return "Operation invalid in current state";
+
+        case CLI_RET_FILEOP:
+            return "File operation failed";
+
+        case CLI_RET_BUSY:
+            return "Could not complete operation - device is currently busy";
+
+        /* Other commands shall print out helpful info from within their
+         * implementation */
+        default:
+            return NULL;
+    }
+}
+
+
 void cli_error_init(struct cli_error *e)
 {
     pthread_mutex_init(&e->lock, NULL);

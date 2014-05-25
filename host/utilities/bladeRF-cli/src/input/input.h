@@ -27,16 +27,13 @@
 #include <libbladeRF.h>
 #include "common.h"
 
-/* TODO - Alleviate dependecny upon cmd. Change CMD_RET_*  to CLI_RET_* */
-#include "cmd.h"
-
 /**
  * Interactive mode or script execution 'main loop'
  *
  * @param   s           CLI state
  * @param   script_only Exit after script completes
  *
- * @return  0 on success, CMD_RET_* on failure
+ * @return  0 on success, CLI_RET_* on failure
  */
 int input_loop(struct cli_state *s, bool script_only);
 

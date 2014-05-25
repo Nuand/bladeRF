@@ -33,16 +33,16 @@ int cmd_calibrate(struct cli_state *state, int argc, char **argv)
     int fpga_status;
 
     if (!cli_device_is_opened(state)) {
-        return CMD_RET_NODEV;
+        return CLI_RET_NODEV;
     }
 
     /* The FPGA needs to be loaded */
     fpga_status = bladerf_is_fpga_configured(state->dev);
     if (fpga_status < 0) {
         state->last_lib_error = fpga_status;
-        return CMD_RET_LIBBLADERF;
+        return CLI_RET_LIBBLADERF;
     } else if (fpga_status != 1) {
-        return CMD_RET_NOFPGA;
+        return CLI_RET_NOFPGA;
     }
 
 
@@ -100,7 +100,7 @@ int cmd_calibrate(struct cli_state *state, int argc, char **argv)
             status = bladerf_enable_module(state->dev, BLADERF_MODULE_RX, true);
         } else {
             cli_err(state, argv[0], "Invalid module provided (%s)", argv[1]);
-            return CMD_RET_INVPARAM;
+            return CLI_RET_INVPARAM;
         }
 
         if (status != 0) {
@@ -108,13 +108,13 @@ int cmd_calibrate(struct cli_state *state, int argc, char **argv)
             status = bladerf_calibrate_dc(state->dev, module);
         }
     } else {
-        return CMD_RET_INVPARAM;
+        return CLI_RET_INVPARAM;
     }
 
 cmd_calibrate_err:
     if (status != 0) {
         state->last_lib_error = status;
-        status = CMD_RET_LIBBLADERF;
+        status = CLI_RET_LIBBLADERF;
     }
 
     return status;

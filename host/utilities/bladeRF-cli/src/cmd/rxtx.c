@@ -95,7 +95,7 @@ int rxtx_set_file_path(struct rxtx_data *rxtx, const char *file_path)
 
     rxtx->file_mgmt.path = strdup(file_path);
     if (!rxtx->file_mgmt.path) {
-        status = CMD_RET_MEM;
+        status = CLI_RET_MEM;
     }
 
     pthread_mutex_unlock(&rxtx->file_mgmt.file_meta_lock);
@@ -212,7 +212,7 @@ void rxtx_print_error(struct rxtx_data *rxtx,
                 break;
 
             case ETYPE_CLI:
-                printf("%s%s%s", prefix, cmd_strerror(val, 0), suffix);
+                printf("%s%s%s", prefix, cli_strerror(val, 0), suffix);
                 break;
 
             case ETYPE_BLADERF:
@@ -338,7 +338,7 @@ int rxtx_startup(struct cli_state *s, bladerf_module module)
     int status;
 
     if (module != BLADERF_MODULE_RX && module != BLADERF_MODULE_TX) {
-        return CMD_RET_INVPARAM;
+        return CLI_RET_INVPARAM;
     }
 
     if (module == BLADERF_MODULE_RX) {
@@ -363,7 +363,7 @@ int rxtx_startup(struct cli_state *s, bladerf_module module)
     }
 
     if (status < 0) {
-        status = CMD_RET_UNKNOWN;
+        status = CLI_RET_UNKNOWN;
     }
 
     return status;
@@ -400,14 +400,14 @@ int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
     bool ok;
 
     if (!param) {
-        return CMD_RET_MEM;
+        return CLI_RET_MEM;
     }
 
     *val = strchr(param, '=');
 
     if (!*val || strlen(&(*val)[1]) < 1) {
         cli_err(s, argv0, "No value provided for parameter \"%s\"", param);
-        status = CMD_RET_INVPARAM;
+        status = CLI_RET_INVPARAM;
     }
 
     if (status == 0) {
@@ -425,7 +425,7 @@ int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
 
             if (fmt == RXTX_FMT_INVALID) {
                 cli_err(s, argv0, RXTX_ERRMSG_VALUE(param, *val));
-                status = CMD_RET_INVPARAM;
+                status = CLI_RET_INVPARAM;
             } else {
                 rxtx_set_file_format(rxtx, fmt);
                 status = 1;
@@ -437,7 +437,7 @@ int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
 
             if (!ok) {
                 cli_err(s, argv0, RXTX_ERRMSG_VALUE(param, *val));
-                status = CMD_RET_INVPARAM;
+                status = CLI_RET_INVPARAM;
             } else {
                 pthread_mutex_lock(&rxtx->data_mgmt.lock);
                 rxtx->data_mgmt.num_buffers = tmp;
@@ -452,12 +452,12 @@ int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
 
             if (!ok) {
                 cli_err(s, argv0, RXTX_ERRMSG_VALUE(param, *val));
-                status = CMD_RET_INVPARAM;
+                status = CLI_RET_INVPARAM;
             } else if (tmp % RXTX_SAMPLES_MIN != 0) {
                 cli_err(s, argv0,
                         "The '%s' paramter must be a multiple of %u.",
                         param, RXTX_SAMPLES_MIN);
-                status = CMD_RET_INVPARAM;
+                status = CLI_RET_INVPARAM;
             } else {
                 pthread_mutex_lock(&rxtx->data_mgmt.lock);
                 rxtx->data_mgmt.samples_per_buffer= tmp;
@@ -471,7 +471,7 @@ int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
 
             if (!ok) {
                 cli_err(s, argv0, RXTX_ERRMSG_VALUE(param, *val));
-                status = CMD_RET_INVPARAM;
+                status = CLI_RET_INVPARAM;
             } else {
                 pthread_mutex_lock(&rxtx->data_mgmt.lock);
                 rxtx->data_mgmt.num_transfers= tmp;
@@ -484,7 +484,7 @@ int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
 
             if (!ok) {
                 cli_err(s, argv0, RXTX_ERRMSG_VALUE(param, *val));
-                status = CMD_RET_INVPARAM;
+                status = CLI_RET_INVPARAM;
             } else {
                 pthread_mutex_lock(&rxtx->data_mgmt.lock);
                 rxtx->data_mgmt.timeout_ms = tmp;
@@ -562,7 +562,7 @@ static int validate_stream_params(struct cli_state *s, struct rxtx_data *rxtx,
                 " parameter (%u).", rxtx->data_mgmt.num_transfers,
                 rxtx->data_mgmt.num_buffers);
 
-        status = CMD_RET_INVPARAM;
+        status = CLI_RET_INVPARAM;
     }
 
     pthread_mutex_unlock(&rxtx->data_mgmt.lock);
@@ -572,21 +572,21 @@ static int validate_stream_params(struct cli_state *s, struct rxtx_data *rxtx,
 int rxtx_cmd_start_check(struct cli_state *s, struct rxtx_data *rxtx,
                          const char *argv0)
 {
-    int status = CMD_RET_UNKNOWN;
+    int status = CLI_RET_UNKNOWN;
     int fpga_status;
     bool have_file;
 
     if (!cli_device_is_opened(s)) {
-        return CMD_RET_NODEV;
+        return CLI_RET_NODEV;
     } else if (rxtx_get_state(rxtx) != RXTX_STATE_IDLE) {
-        return CMD_RET_STATE;
+        return CLI_RET_STATE;
     } else {
         fpga_status = bladerf_is_fpga_configured(s->dev);
         if (fpga_status < 0) {
             s->last_lib_error = fpga_status;
-            status = CMD_RET_LIBBLADERF;
+            status = CLI_RET_LIBBLADERF;
         } else if (fpga_status != 1) {
-            status = CMD_RET_NOFPGA;
+            status = CLI_RET_NOFPGA;
         } else {
             pthread_mutex_lock(&rxtx->file_mgmt.file_meta_lock);
             have_file = (rxtx->file_mgmt.path != NULL);
@@ -594,7 +594,7 @@ int rxtx_cmd_start_check(struct cli_state *s, struct rxtx_data *rxtx,
 
             if (!have_file) {
                 cli_err(s, argv0, "File not configured");
-                status = CMD_RET_INVPARAM;
+                status = CLI_RET_INVPARAM;
             } else {
                 status = validate_stream_params(s, rxtx, argv0);
             }
@@ -613,9 +613,9 @@ int rxtx_cmd_stop(struct cli_state *s, struct rxtx_data *rxtx)
     int status;
 
     if (!cli_device_is_opened(s)) {
-        status = CMD_RET_NODEV;
+        status = CLI_RET_NODEV;
     } else if (rxtx_get_state(rxtx) != RXTX_STATE_RUNNING) {
-        status = CMD_RET_STATE;
+        status = CLI_RET_STATE;
     } else {
         rxtx_submit_request(rxtx, RXTX_TASK_REQ_STOP);
         status = 0;
@@ -722,7 +722,7 @@ int rxtx_handle_wait(struct cli_state *s, struct rxtx_data *rxtx,
     };
 
     if (argc < 2 || argc > 3) {
-        return CMD_RET_NARGS;
+        return CLI_RET_NARGS;
     }
 
     /* The start cmd should have waited until we entered the RUNNING state */
@@ -737,7 +737,7 @@ int rxtx_handle_wait(struct cli_state *s, struct rxtx_data *rxtx,
 
         if (!ok) {
             cli_err(s, argv[0], "Invalid wait timeout: \"%s\"\n", argv[2]);
-            return CMD_RET_INVPARAM;
+            return CLI_RET_INVPARAM;
         }
     }
 
@@ -797,7 +797,7 @@ out:
     }
 
     if (status != 0) {
-        status = CMD_RET_UNKNOWN;
+        status = CLI_RET_UNKNOWN;
     }
 
     return status;

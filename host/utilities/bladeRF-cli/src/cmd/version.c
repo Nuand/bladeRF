@@ -44,20 +44,20 @@ int cmd_version(struct cli_state *state, int argc, char **argv)
     status = bladerf_is_fpga_configured(state->dev);
     if (status < 0) {
         state->last_lib_error = status;
-        return CMD_RET_LIBBLADERF;
+        return CLI_RET_LIBBLADERF;
     } else if (status != 0) {
         fpga_loaded = true;
         status = bladerf_fpga_version(state->dev, &fpga_version);
         if (status < 0) {
             state->last_lib_error = status;
-            return CMD_RET_LIBBLADERF;
+            return CLI_RET_LIBBLADERF;
         }
     }
 
     status = bladerf_fw_version(state->dev, &fw_version);
     if (status < 0) {
         state->last_lib_error = status;
-        return CMD_RET_LIBBLADERF;
+        return CLI_RET_LIBBLADERF;
     }
 
 
@@ -70,6 +70,6 @@ int cmd_version(struct cli_state *state, int argc, char **argv)
     }
 
     printf("\n");
-    return CMD_RET_OK;
+    return CLI_RET_OK;
 }
 

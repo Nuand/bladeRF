@@ -672,7 +672,7 @@ const struct cmd *get_cmd( char *name )
 int cmd_help(struct cli_state *s, int argc, char **argv)
 {
     int i = 0;
-    int ret = CMD_RET_OK;
+    int ret = CLI_RET_OK;
     const struct cmd *cmd;
 
     /* Asking for general help */
@@ -697,58 +697,18 @@ int cmd_help(struct cli_state *s, int argc, char **argv)
         } else {
             /* Otherwise, print that we couldn't find it :( */
             cli_err(s, argv[0], "No help info available for \"%s\"", argv[1]);
-            ret = CMD_RET_INVPARAM;
+            ret = CLI_RET_INVPARAM;
         }
     } else {
-        ret = CMD_RET_NARGS;
+        ret = CLI_RET_NARGS;
     }
 
     return ret;
 }
 
-const char * cmd_strerror(int error, int lib_error)
-{
-    switch (error) {
-        case CMD_RET_MEM:
-            return "A fatal memory allocation error has occurred";
-
-        case CMD_RET_UNKNOWN:
-            return "A fatal unknown error has occurred";
-
-        case CMD_RET_MAX_ARGC:
-            return "Number of arguments exceeds allowed maximum";
-
-        case CMD_RET_LIBBLADERF:
-            return bladerf_strerror(lib_error);
-
-        case CMD_RET_NODEV:
-            return "No devices are currently opened";
-
-        case CMD_RET_NARGS:
-            return "Invalid number of arguments provided";
-
-        case CMD_RET_NOFPGA:
-            return "Command requires FPGA to be loaded";
-
-        case CMD_RET_STATE:
-            return "Operation invalid in current state";
-
-        case CMD_RET_FILEOP:
-            return "File operation failed";
-
-        case CMD_RET_BUSY:
-            return "Could not complete operation - device is currently busy";
-
-        /* Other commands shall print out helpful info from within their
-         * implementation */
-        default:
-            return NULL;
-    }
-}
-
 int cmd_clear(struct cli_state *s, int argc, char **argv)
 {
-    return CMD_RET_CLEAR_TERM;
+    return CLI_RET_CLEAR_TERM;
 }
 
 int cmd_run(struct cli_state *state, int argc, char **argv)
@@ -756,21 +716,21 @@ int cmd_run(struct cli_state *state, int argc, char **argv)
     int status;
 
     if (argc != 2) {
-        return CMD_RET_NARGS;
+        return CLI_RET_NARGS;
     }
 
     status = cli_open_script(&state->scripts, argv[1]);
 
     if (status == 0) {
-        return CMD_RET_RUN_SCRIPT;
+        return CLI_RET_RUN_SCRIPT;
     } else if (status == 1) {
         cli_err(state, "run", "Recursive loop detected in script");
-        return CMD_RET_INVPARAM;
+        return CLI_RET_INVPARAM;
     } else if (status < 0) {
-        return CMD_RET_FILEOP;
+        return CLI_RET_FILEOP;
     } else {
         /* Shouldn't happen */
-        return CMD_RET_UNKNOWN;
+        return CLI_RET_UNKNOWN;
     }
 }
 
@@ -807,18 +767,18 @@ int cmd_handle(struct cli_state *s, const char *line)
                 ret = cmd->exec(s, argc, argv);
                 pthread_mutex_unlock(&s->dev_lock);
             } else {
-                ret = CMD_RET_QUIT;
+                ret = CLI_RET_QUIT;
             }
         } else {
             cli_err(s, "Unrecognized command", "%s", argv[0]);
-            ret = CMD_RET_NOCMD;
+            ret = CLI_RET_NOCMD;
         }
 
         free_args(argc, argv);
     } else if (argc == 0) {
         free_args(argc, argv);
     } else {
-        ret = CMD_RET_UNKNOWN;
+        ret = CLI_RET_UNKNOWN;
     }
 
     return ret;

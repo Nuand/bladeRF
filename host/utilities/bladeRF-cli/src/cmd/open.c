@@ -38,7 +38,7 @@ int cmd_open(struct cli_state *state, int argc, char **argv)
 
     /* Disallow opening of a diffrent device if the current one is doing work */
     if (cli_device_is_streaming(state)) {
-        return CMD_RET_BUSY;
+        return CLI_RET_BUSY;
     }
 
     if (state->dev) {
@@ -58,7 +58,7 @@ int cmd_open(struct cli_state *state, int argc, char **argv)
 
         dev_ident = calloc(dev_ident_len, 1);
         if (!dev_ident) {
-            return CMD_RET_MEM;
+            return CLI_RET_MEM;
         }
 
         for (i = 1; i < argc; i++) {
@@ -75,7 +75,7 @@ int cmd_open(struct cli_state *state, int argc, char **argv)
     status = bladerf_open(&state->dev, dev_ident);
     if (status) {
         state->last_lib_error = status;
-        ret = CMD_RET_LIBBLADERF;
+        ret = CLI_RET_LIBBLADERF;
     } else {
         ret = 0;
     }

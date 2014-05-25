@@ -49,7 +49,7 @@
  * Perform any required initialization. SIGINT, SIGTERM and SIGQUIT are
  * trappper to allow for a clean exit.
  *
- * @return 0 on success, CMD_RET_* value on failure
+ * @return 0 on success, CLI_RET_* value on failure
  */
 int input_init();
 
@@ -78,7 +78,7 @@ char * input_get_line(const char *prompt);
  *
  * @param   input   Input file stream
  *
- * @return 0 on success CMD_RET_* value on failure
+ * @return 0 on success CLI_RET_* value on failure
  */
 int input_set_input(FILE *input);
 

@@ -56,7 +56,7 @@ print_correction_out:
 
     if (status != 0) {
         state->last_lib_error = status;
-        status = CMD_RET_LIBBLADERF;
+        status = CLI_RET_LIBBLADERF;
     } else {
         printf("\nCurrent Settings: DC Offset I=%d Q=%d, Phase=%d, Gain=%d\n\n",
                dc_i, dc_q, phase, gain);
@@ -75,7 +75,7 @@ static inline int set_phase_correction(struct cli_state *state,
 
     if (status != 0) {
         state->last_lib_error = status;
-        status = CMD_RET_LIBBLADERF;
+        status = CLI_RET_LIBBLADERF;
     }
 
     return status;
@@ -91,7 +91,7 @@ static inline int set_gain_correction(struct cli_state *state,
 
     if (status != 0) {
         state->last_lib_error = status;
-        status = CMD_RET_LIBBLADERF;
+        status = CLI_RET_LIBBLADERF;
     }
 
     return status;
@@ -111,7 +111,7 @@ static inline int set_dc_correction(struct cli_state *state,
 
     if (status != 0) {
         state->last_lib_error = status;
-        status = CMD_RET_LIBBLADERF;
+        status = CLI_RET_LIBBLADERF;
     }
 
     return status;
@@ -130,22 +130,22 @@ static inline int set_dc_correction(struct cli_state *state,
  */
 int cmd_correct(struct cli_state *state, int argc, char **argv)
 {
-    int rv = CMD_RET_OK;
+    int rv = CLI_RET_OK;
     int fpga_status;
     bool ok;
     bladerf_module module;
 
     if (!cli_device_is_opened(state)) {
-        return CMD_RET_NODEV;
+        return CLI_RET_NODEV;
     }
 
     /* The FPGA needs to be loaded */
     fpga_status = bladerf_is_fpga_configured(state->dev);
     if (fpga_status < 0) {
         state->last_lib_error = fpga_status;
-        return CMD_RET_LIBBLADERF;
+        return CLI_RET_LIBBLADERF;
     } else if (fpga_status != 1) {
-        return CMD_RET_NOFPGA;
+        return CLI_RET_NOFPGA;
     }
 
     /* Get the direction to print */
@@ -157,10 +157,10 @@ int cmd_correct(struct cli_state *state, int argc, char **argv)
         } else {
             cli_err(state, argv[0],
                     "Invalid module provided. Valid options are: 'rx' or 'tx'");
-            return CMD_RET_INVPARAM;
+            return CLI_RET_INVPARAM;
         }
     } else {
-        return CMD_RET_NARGS;
+        return CLI_RET_NARGS;
     }
 
     if (argc == 2) {
@@ -174,7 +174,7 @@ int cmd_correct(struct cli_state *state, int argc, char **argv)
             if (!ok) {
                 cli_err(state, argv[0], "Phase value must be in [%d, %d]",
                         -MAX_PHASE, MAX_PHASE);
-                rv = CMD_RET_INVPARAM;
+                rv = CLI_RET_INVPARAM;
             } else {
                 rv = set_phase_correction(state, module, value);
             }
@@ -185,7 +185,7 @@ int cmd_correct(struct cli_state *state, int argc, char **argv)
             if (!ok) {
                 cli_err(state, argv[0], "Gain value must be in [%d, %d]",
                         -MAX_GAIN, MAX_GAIN);
-                rv = CMD_RET_INVPARAM;
+                rv = CLI_RET_INVPARAM;
             } else {
                 rv = set_gain_correction(state, module, value);
             }
@@ -194,7 +194,7 @@ int cmd_correct(struct cli_state *state, int argc, char **argv)
             cli_err(state, argv[0],
                     "Invalid correction module for %d arguments: %s",
                     argc - 2, argv[2]);
-            rv = CMD_RET_INVPARAM;
+            rv = CLI_RET_INVPARAM;
         }
     } else if (argc == 5) {
 
@@ -209,14 +209,14 @@ int cmd_correct(struct cli_state *state, int argc, char **argv)
             val_i = str2int(argv[3], min, max, &ok);
             if (!ok) {
                 cli_err(state, argv[0], "I offset must be in [%d, %d]", min, max);
-                rv = CMD_RET_INVPARAM;
+                rv = CLI_RET_INVPARAM;
                 return rv;
             }
 
             val_q = str2int(argv[4], min, max, &ok);
             if (!ok) {
                 cli_err(state, argv[0], "Q offset must be in [%d, %d]", min, max);
-                rv = CMD_RET_INVPARAM;
+                rv = CLI_RET_INVPARAM;
                 return rv;
             }
 
@@ -226,10 +226,10 @@ int cmd_correct(struct cli_state *state, int argc, char **argv)
             cli_err(state, argv[0],
                     "Invalid correction module for %d arguments: %s",
                     argc - 2, argv[2]);
-            rv = CMD_RET_INVPARAM;
+            rv = CLI_RET_INVPARAM;
         }
     } else {
-        rv = CMD_RET_NARGS;
+        rv = CLI_RET_NARGS;
     }
 
     return rv;
