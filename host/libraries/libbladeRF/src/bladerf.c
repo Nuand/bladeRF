@@ -778,6 +778,8 @@ const char * bladerf_strerror(int error)
             return "Misaligned flash access";
         case BLADERF_ERR_CHECKSUM:
             return "Invalid checksum";
+        case BLADERF_ERR_NO_FILE:
+            return "File not found";
         case 0:
             return "Success";
         default:

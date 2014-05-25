@@ -103,8 +103,9 @@ int file_read_buffer(const char *filename, uint8_t **buf_ret, size_t *size_ret)
 
     f = fopen(filename, "rb");
     if (!f) {
+        int errno_val = errno;
         log_verbose("fopen failed: %s\n", strerror(errno));
-        return BLADERF_ERR_IO;
+        return errno_val == ENOENT ? BLADERF_ERR_NO_FILE : BLADERF_ERR_IO;
     }
 
     len = file_size(f);
