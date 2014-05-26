@@ -180,7 +180,7 @@ void cli_err(struct cli_state *s, const char *pfx, const char *format, ...)
     memset(lbuf, 0, sizeof(lbuf));
 
     /* If we're in a script, we can provide line number info */
-    if (cli_script_loaded(s->scripts)) {
+    if (!s->exec_from_cmdline && cli_script_loaded(s->scripts)) {
         ret = snprintf(lbuf, sizeof(lbuf), " (%s:%d)",
                        cli_script_file_name(s->scripts),
                        cli_script_line(s->scripts));

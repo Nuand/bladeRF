@@ -126,6 +126,7 @@ set(BLADERF_CLI_SOURCE
         src/input/script.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/log.c
+        ${BLADERF_HOST_COMMON_SOURCE_DIR}/str_queue.c
 )
 
 if(LIBUSB_FOUND)

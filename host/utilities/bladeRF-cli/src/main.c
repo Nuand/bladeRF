@@ -27,15 +27,17 @@
 #include <string.h>
 #include <libbladeRF.h>
 #include "input/input.h"
+#include "str_queue.h"
 #include "script.h"
 #include "common.h"
 #include "cmd.h"
 #include "version.h"
 
 
-#define OPTSTR "L:d:f:l:s:ipv:h"
+#define OPTSTR "e:L:d:f:l:s:ipv:h"
 
 static const struct option longopts[] = {
+    { "exec",               required_argument,  0, 'e' },
     { "flash-fpga",         required_argument,  0, 'L' },
     { "device",             required_argument,  0, 'd' },
     { "flash-firmware",     required_argument,  0, 'f' },
@@ -98,13 +100,20 @@ static void init_rc_config(struct rc_config *rc)
  *
  * Returns 0 on success, -1 on fatal error (and prints error msg to stderr)
  */
-int get_rc_config(int argc, char *argv[], struct rc_config *rc)
+int get_rc_config(int argc, char *argv[], struct rc_config *rc,
+                  struct str_queue *exec_list)
 {
     int optidx;
     int c = getopt_long(argc, argv, OPTSTR, longopts, &optidx);
 
     do {
         switch(c) {
+            case 'e':
+                if (str_queue_enq(exec_list, optarg) != 0) {
+                    return -1;
+                }
+                break;
+
             case 'f':
                 rc->fw_file = strdup(optarg);
                 if (!rc->fw_file) {
@@ -210,6 +219,9 @@ void usage(const char *argv0)
     printf("                                   autoloading. Use -L X or --flash-fpga X to\n");
     printf("                                   disable FPGA autoloading.\n");
     printf("  -p, --probe                      Probe for devices, print results, then exit.\n");
+    printf("  -e, --exec <command>             Execute the specified interactive mode command.\n");
+    printf("                                   Multiple -e flags may be specified. The commands\n");
+    printf("                                   will be executed in the provided order.\n");
     printf("  -s, --script <file>              Run provided script.\n");
     printf("  -i, --interactive                Enter interactive mode.\n");
     printf("      --lib-version                Print libbladeRF version and exit.\n");
@@ -229,6 +241,13 @@ void usage(const char *argv0)
     printf("  If the -d parameter is not provided, the first available device\n");
     printf("  will be used for the provided command, or will be opened prior\n");
     printf("  to entering interactive mode.\n");
+    printf("\n");
+    printf("  Commands are executed in the following order:\n");
+    printf("    Command line options, -e <command>, script commands, interactive mode commands.\n");
+    printf("\n");
+    printf("  When running 'rx/tx start' from a script or via -e, ensure these commands\n");
+    printf("  are later followed by 'rx/tx wait [timeout]' to ensure the program will\n");
+    printf("  not attempt to exit before reception/transmission is complete.\n");
     printf("\n");
 }
 
@@ -337,6 +356,7 @@ int main(int argc, char *argv[])
     struct rc_config rc;
     struct cli_state *state;
     bool exit_immediately = false;
+    struct str_queue exec_list;
 
     /* If no actions are specified, just show the usage text and exit */
     if (argc == 1) {
@@ -344,9 +364,10 @@ int main(int argc, char *argv[])
         return 0;
     }
 
+    str_queue_init(&exec_list);
     init_rc_config(&rc);
 
-    if (get_rc_config(argc, argv, &rc)) {
+    if (get_rc_config(argc, argv, &rc, &exec_list)) {
         return 1;
     }
 
@@ -357,6 +378,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    state->exec_list = &exec_list;
     bladerf_log_set_verbosity(rc.verbosity);
 
     if (rc.show_help) {
@@ -422,13 +444,16 @@ main_issues:
         free(rc.script_file);
         rc.script_file = NULL;
 
-        /* Drop into interactive mode or begin executing commands
-         * from a script. If we're not requested to do either, exit cleanly */
-        if (rc.interactive_mode || cli_script_loaded(state->scripts)) {
-            status = input_loop(state, !rc.interactive_mode);
+        /* Drop into interactive mode or begin executing commands from a a
+         * command-line list or a script. If we're not requested to do either,
+         * exit cleanly */
+        if (!str_queue_empty(&exec_list) || rc.interactive_mode ||
+            cli_script_loaded(state->scripts)) {
+            status = input_loop(state, rc.interactive_mode);
         }
     }
 
     cli_state_destroy(state);
+    str_queue_deinit(&exec_list);
     return status;
 }

@@ -23,6 +23,7 @@
 #include "input_impl.h"
 #include "cmd.h"
 #include "script.h"
+#include "rel_assert.h"
 
 static void exit_script(struct cli_state *s)
 {
@@ -47,7 +48,7 @@ static void exit_script(struct cli_state *s)
     }
 }
 
-int input_loop(struct cli_state *s, bool script_only)
+int input_loop(struct cli_state *s, bool interactive)
 {
     char *line;
     int status;
@@ -63,27 +64,36 @@ int input_loop(struct cli_state *s, bool script_only)
     if (cli_script_loaded(s->scripts)) {
         status = input_set_input(cli_script_file(s->scripts));
         if (status < 0) {
-            fprintf(stderr, "Failed to run script. Aborting!\n");
+            fprintf(stderr, "Failed to load script. Aborting!\n");
             status = CLI_RET_QUIT;
         }
     }
 
+    s->exec_from_cmdline = !str_queue_empty(s->exec_list);
+
     while (!cli_fatal(status) && status != CLI_RET_QUIT) {
 
-        /* TODO: Change the prompt based on which device is open */
-        line = input_get_line(CLI_DEFAULT_PROMPT);
+        if (s->exec_from_cmdline) {
+            line = str_queue_deq(s->exec_list);
+            assert(line != NULL);
+        } else {
+            line = input_get_line(CLI_DEFAULT_PROMPT);
+        }
 
-        if (!line) {
+        if (!line && !s->exec_from_cmdline) {
             if (cli_script_loaded(s->scripts)) {
-                exit_script(s);
+
+                if (!s->exec_from_cmdline) {
+                    exit_script(s);
+                }
 
                 /* Exit if we were run with a script, but not asked
                  * to drop into interactive mode */
-                if (script_only)
+                if (!interactive) {
                     status = CLI_RET_QUIT;
-
+                }
             } else {
-                /* Leaving interactivce mode */
+                /* Leaving interactive mode */
                 break;
             }
         } else {
@@ -95,8 +105,17 @@ int input_loop(struct cli_state *s, bool script_only)
                     cli_err(s, "Error", "%s", error);
                 }
 
-                /* Stop executing script if we're in one */
-                exit_script(s);
+                /* Stop executing script or command list */
+                if (s->exec_from_cmdline) {
+                    str_queue_clear(s->exec_list);
+                } else {
+                    exit_script(s);
+                }
+
+                /* Quit if we're not supposed to drop to a prompt */
+                if (!interactive) {
+                    status = CLI_RET_QUIT;
+                }
 
             } else if (status > 0){
                 switch (status) {
@@ -117,7 +136,21 @@ int input_loop(struct cli_state *s, bool script_only)
                 }
             }
         }
-        cli_script_bump_line_count(s->scripts);
+
+        if (s->exec_from_cmdline) {
+            free(line);
+            line = NULL;
+            s->exec_from_cmdline = !str_queue_empty(s->exec_list);
+
+            /* Nothing left to do here */
+            if (!interactive &&
+                !s->exec_from_cmdline && !cli_script_loaded(s->scripts)) {
+                status = CLI_RET_QUIT;
+            }
+
+        } else {
+            cli_script_bump_line_count(s->scripts);
+        }
     }
 
     input_deinit();

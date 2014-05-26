@@ -26,16 +26,20 @@
 
 #include <libbladeRF.h>
 #include "common.h"
+#include "str_queue.h"
 
 /**
  * Interactive mode or script execution 'main loop'
  *
  * @param   s           CLI state
- * @param   script_only Exit after script completes
+ * @param   interactive Enter interactive mode after completing script or
+ *                      commands provided via the command line
+ * @param   exec_list   Commands to executue prior to scripts or interactive
+ *                      mode
  *
  * @return  0 on success, CLI_RET_* on failure
  */
-int input_loop(struct cli_state *s, bool script_only);
+int input_loop(struct cli_state *s, bool interactive);
 
 /**
  * Expand a file path using the input mode support backend

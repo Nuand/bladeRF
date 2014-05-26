@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <libbladeRF.h>
 #include "host_config.h"
+#include "str_queue.h"
 
 /* Fatal errors */
 #define CLI_RETFATAL        (-1024)
@@ -86,6 +87,8 @@ struct cli_state {
 
     int last_lib_error;             /**< Last libbladeRF error */
 
+    bool exec_from_cmdline;         /**< Exec commands from cmd line list */
+    struct str_queue *exec_list;    /**< List of commands from the cmd line */
     struct script *scripts;         /**< Open script files */
 
     struct rxtx_data *rx;           /**< Data for sample reception */
