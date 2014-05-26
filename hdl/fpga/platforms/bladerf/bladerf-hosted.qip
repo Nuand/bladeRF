@@ -18,6 +18,7 @@ set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/
 set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/iq_correction.vhd]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/signal_generator.vhd]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/synchronizer.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/handshake.vhd]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/reset_synchronizer.vhd]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/fifo_reader.vhd]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/fifo_writer.vhd]]

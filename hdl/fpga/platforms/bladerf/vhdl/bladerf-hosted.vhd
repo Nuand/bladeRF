@@ -230,10 +230,6 @@ architecture hosted_bladerf of bladerf is
 
     signal xb_mode  : std_logic_vector(1 downto 0);
 
-    signal rx_sync_r            : std_logic_vector(7 downto 0);
-    signal tx_sync_r            : std_logic_vector(7 downto 0);
-
-    attribute keep of rx_sync_r : signal is true;
     attribute keep of timestamp_sync : signal is true;
     attribute keep of rx_clock : signal is true;
 
@@ -248,6 +244,10 @@ architecture hosted_bladerf of bladerf is
 
     signal fx3_pclk_pll     :   std_logic ;
     signal fx3_pll_locked   :   std_logic ;
+
+    signal timestamp_req    :   std_logic ;
+    signal timestamp_ack    :   std_logic ;
+    signal fx3_timestamp    :   unsigned(63 downto 0) ;
 
 begin
 
@@ -398,16 +398,6 @@ begin
         sync        =>  tx_enable
       ) ;
 
---    U_80MHz_reset : entity work.reset_synchronizer
---      generic map (
---        INPUT_LEVEL     => '1',
---        OUTPUT_LEVEL    => '0'
---      ) port map (
---        clock           => \80MHz\,
---        async           => sys_rst,
---        sync            => \80MHz reset\
---      ) ;
-
     -- TX sample fifo
     tx_sample_fifo.aclr <= tx_reset ;
     tx_sample_fifo.wclock <= fx3_pclk_pll ;
@@ -516,7 +506,7 @@ begin
         tx_fifo_usedw       =>  tx_sample_fifo.wused,
         tx_fifo_data        =>  tx_sample_fifo.wdata,
 
-        tx_timestamp        =>  tx_timestamp,
+        tx_timestamp        =>  fx3_timestamp,
         tx_meta_fifo_write  =>  tx_meta_fifo.wreq,
         tx_meta_fifo_full   =>  tx_meta_fifo.wfull,
         tx_meta_fifo_empty  =>  tx_meta_fifo.wempty,
@@ -900,26 +890,63 @@ begin
     mini_exp1               <= 'Z';
     mini_exp2               <= 'Z';
 
-    process(tx_clock, tx_reset)
+    increment_tx_time : process(tx_clock, tx_reset)
     begin
         if( tx_reset = '1') then
             tx_timestamp <= (others => '0');
-            tx_sync_r <= (others => '0');
         elsif( rising_edge( tx_clock )) then
-            tx_sync_r <= timestamp_sync & tx_sync_r(7 downto 1);
-            if (tx_sync_r(3 downto 0) = "1000") then
+            if (meta_en_tx = '0') then
                 tx_timestamp <= (others => '0');
             else
-                if (meta_en_tx = '1') then
-                    tx_timestamp <= tx_timestamp + 1;
-                else
-                    tx_timestamp <= (others => '0');
-                end if;
+                tx_timestamp <= tx_timestamp + 1;
             end if;
         end if;
     end process;
 
-    rx_timestamp <= tx_timestamp;
+    increment_rx_time : process(rx_clock, rx_reset)
+    begin
+        if( rx_reset = '1') then
+            rx_timestamp <= (others => '0');
+        elsif( rising_edge( rx_clock )) then
+            if (meta_en_rx = '0') then
+                rx_timestamp <= (others => '0');
+            else
+                rx_timestamp <= rx_timestamp + 1;
+            end if;
+        end if;
+    end process;
+
+    drive_handshake : process(fx3_pclk_pll, sys_rst_sync)
+    begin
+        if( sys_rst_sync = '1' ) then
+            timestamp_req <= '0' ;
+        elsif( rising_edge(fx3_pclk_pll) ) then
+            if( meta_en_fx3 = '0' ) then
+                timestamp_req <= '0' ;
+            else
+                if( timestamp_ack = '0' ) then
+                    timestamp_req <= '1' ;
+                elsif( timestamp_ack = '1' ) then
+                    timestamp_req <= '0' ;
+                end if ;
+            end if ;
+        end if ;
+    end process ;
+
+    U_timestamp_handshake : entity work.handshake
+      generic map (
+        DATA_WIDTH          =>  tx_timestamp'length
+      ) port map (
+        source_clock        =>  tx_clock,
+        source_reset        =>  tx_reset,
+        source_data         =>  std_logic_vector(tx_timestamp),
+
+        dest_clock          =>  fx3_pclk_pll,
+        dest_reset          =>  sys_rst_sync,
+        unsigned(dest_data) =>  fx3_timestamp,
+        dest_req            =>  timestamp_req,
+        dest_ack            =>  timestamp_ack
+      ) ;
 
 end architecture ; -- arch
 

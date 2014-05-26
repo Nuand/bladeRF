@@ -16,8 +16,9 @@ derive_pll_clocks
 derive_clock_uncertainty
 
 # First flop synchronizer false path
-set_false_path -from * -to [get_keepers synchronizer*reg0]
-set_false_path -from * -to [get_keepers reset_synchronizer*]
+set_false_path -from * -to [get_registers *synchronize:reg0]
+set_false_path -from * -to [get_registers reset_synchronizer*]
+set_false_path -from [get_registers {*source_holding[*]}] -to *
 
 ### Fast Interfaces ###
 
@@ -30,6 +31,7 @@ set_output_delay -clock [get_clocks fx3_virtual] -min 0.75 [get_ports {fx3_gpif*
 
 set_multicycle_path -from [get_clocks {fx3_virtual}] -to [get_clocks {U_fx3_pll|altpll_component|auto_generated|pll1|clk[0]}] -setup -start 2
 set_multicycle_path -from [get_clocks {fx3_virtual}] -to [get_clocks {U_fx3_pll|altpll_component|auto_generated|pll1|clk[0]}] -hold -start 2
+
 
 # LMS sample interface
 set_input_delay -clock [get_clocks lms_rx_virtual] -max  5.832 [get_ports {lms_rx_data* lms_rx_iq_select}]
@@ -86,9 +88,4 @@ set_output_delay -clock [get_clocks altera_reserved_tck] 20 [get_ports altera_re
 # The dcfifo which goes from the C4 TX domain to the PCLK domain seems to have an issue with the clear signal.  It isn't generally a issue so ignore it?
 set_false_path -from {reset_synchronizer:U_tx_reset|sync} -to {tx_*fifo:U_tx_*_fifo|dcfifo*:dcfifo_*|dcfifo_*:auto_generated|dffpipe_3dc:wraclr|dffe12a[0]}
 set_false_path -from {reset_synchronizer:U_tx_reset|sync} -to {tx_*fifo:U_tx_*_fifo|dcfifo*:dcfifo_*|dcfifo_*:auto_generated|dffpipe_3dc:wraclr|dffe13a[0]}
-
-# Time tamer registering
-set_false_path -from {rx_timestamp[*]} -to {nios_system:U_nios_system|time_tamer:time_tamer_0|time_rx_r[*]}
-set_false_path -from {tx_timestamp[*]} -to {nios_system:U_nios_system|time_tamer:time_tamer_0|time_tx_r[*]}
-set_false_path -from {nios_system:U_nios_system|time_tamer:time_tamer_0|*} -to {*x_sync_r[*]}
 

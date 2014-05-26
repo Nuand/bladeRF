@@ -89,8 +89,6 @@ architecture sample_shuffler of fx3_gpif is
     signal tx_fifo_enough : std_logic ;
     signal rx_fifo_enough : std_logic ;
 
-    signal tx_timestamp_r, tx_timestamp_rr : unsigned(63 downto 0);
-
     signal rx_next_dma : std_logic ;
     signal tx_next_dma : std_logic ;
 
@@ -211,17 +209,6 @@ begin
             tx_meta_fifo_data <= meta_buffer(127 downto 96);
         end if;
 
-    end process;
-
-    tx_tstamp_sync : process( pclk, reset )
-    begin
-        if( reset = '1' ) then
-            tx_timestamp_r <= (others => '0');
-            tx_timestamp_rr <= (others => '0');
-        elsif( rising_edge(pclk) ) then
-            tx_timestamp_r <= tx_timestamp;
-            tx_timestamp_rr <= tx_timestamp_r;
-        end if;
     end process;
 
     can_and_should : process( pclk, reset )
@@ -350,7 +337,7 @@ begin
                         meta_downcount <= meta_downcount - 1;
                     else
                         dma_downcount <= dma_downcount - 1;
-                        if (unsigned(meta_buffer(31 downto 0) & meta_buffer(63 downto 32)) < (tx_timestamp_rr + 32)) then
+                        if (unsigned(meta_buffer(31 downto 0) & meta_buffer(63 downto 32)) < (tx_timestamp + 32)) then
                            state <= SAMPLE_WRITE_IGNORE;
                         else
                            meta_downcount <= to_signed(3, 13);
