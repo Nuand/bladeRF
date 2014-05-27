@@ -186,7 +186,6 @@ static int tx_csv_to_sc16q11(struct cli_state *s)
         goto tx_csv_to_sc16q11_out;
     }
 
-    status = 0;
     bin_name = strdup(TMP_FILE_NAME);
     if (!bin_name) {
         status = CLI_RET_MEM;
@@ -284,7 +283,7 @@ static int tx_csv_to_sc16q11(struct cli_state *s)
     }
 
 tx_csv_to_sc16q11_out:
-    if (status < 0) {
+    if (status != 0) {
         free(bin_name);
     }
 

@@ -95,6 +95,14 @@ static void init_rc_config(struct rc_config *rc)
     rc->script_file = NULL;
 }
 
+static void deinit_rc_config(struct rc_config *rc)
+{
+    free(rc->device);
+    free(rc->fw_file);
+    free(rc->flash_fpga_file);
+    free(rc->fpga_file);
+    free(rc->script_file);
+}
 
 /* Fetch runtime-configuration info
  *
@@ -115,6 +123,12 @@ int get_rc_config(int argc, char *argv[], struct rc_config *rc,
                 break;
 
             case 'f':
+                if (rc->fw_file != NULL) {
+                    fprintf(stderr, "Error: Firmware file specified more "
+                            "than once.\n");
+                    return -1;
+                }
+
                 rc->fw_file = strdup(optarg);
                 if (!rc->fw_file) {
                     perror("strdup");
@@ -123,6 +137,12 @@ int get_rc_config(int argc, char *argv[], struct rc_config *rc,
                 break;
 
             case 'L':
+                if (rc->flash_fpga_file != NULL) {
+                    fprintf(stderr, "Error: FPGA file specified more "
+                            "than once.\n");
+                    return -1;
+                }
+
                 rc->flash_fpga_file = strdup(optarg);
                 if (!rc->flash_fpga_file) {
                     perror("strdup");
@@ -131,6 +151,12 @@ int get_rc_config(int argc, char *argv[], struct rc_config *rc,
                 break;
 
             case 'l':
+                if (rc->fpga_file != NULL) {
+                    fprintf(stderr, "Error: FPGA file specified more "
+                            "than once.\n");
+                    return -1;
+                }
+
                 rc->fpga_file = strdup(optarg);
                 if (!rc->fpga_file) {
                     perror("strdup");
@@ -139,6 +165,12 @@ int get_rc_config(int argc, char *argv[], struct rc_config *rc,
                 break;
 
             case 'd':
+                if (rc->device != NULL) {
+                    fprintf(stderr, "Error: FPGA file specified more "
+                            "than once.\n");
+                    return -1;
+                }
+
                 rc->device = strdup(optarg);
                 if (!rc->device) {
                     perror("strdup");
@@ -147,6 +179,11 @@ int get_rc_config(int argc, char *argv[], struct rc_config *rc,
                 break;
 
             case 's':
+                if (rc->script_file != NULL) {
+                    fprintf(stderr, "Error: Script file already specified.\n");
+                    return -1;
+                }
+
                 rc->script_file = strdup(optarg);
                 if (!rc->script_file) {
                     perror("strdup");
@@ -432,20 +469,6 @@ int main(int argc, char *argv[])
             }
         }
 
-main_issues:
-        /* These items are no longer needed */
-        free(rc.device);
-        rc.device = NULL;
-
-        free(rc.fw_file);
-        rc.fw_file = NULL;
-
-        free(rc.fpga_file);
-        rc.fpga_file = NULL;
-
-        free(rc.script_file);
-        rc.script_file = NULL;
-
         /* Drop into interactive mode or begin executing commands from a a
          * command-line list or a script. If we're not requested to do either,
          * exit cleanly */
@@ -455,7 +478,9 @@ main_issues:
         }
     }
 
+main_issues:
     cli_state_destroy(state);
     str_queue_deinit(&exec_list);
+    deinit_rc_config(&rc);
     return status;
 }

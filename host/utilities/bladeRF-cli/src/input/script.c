@@ -48,9 +48,6 @@ static int populate_file_info(struct script *s, FILE *f)
     HANDLE win_handle;
 
     int fd = fileno(f);
-    if (fd < 0) {
-        return -1;
-    }
 
     win_handle = (HANDLE)_get_osfhandle(fd);
     if (!win_handle) {
@@ -74,9 +71,6 @@ static inline bool file_info_matches(const struct script *a, const struct script
 static int populate_file_info(struct script *s, FILE *f)
 {
     int fd = fileno(f);
-    if (fd < 0) {
-        return -errno;
-    }
 
     if (fstat(fd, &s->info) < 0) {
         return -errno;
