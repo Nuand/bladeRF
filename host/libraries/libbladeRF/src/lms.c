@@ -2003,7 +2003,9 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
                         return status;
                     }
 
+                    /* XXX: Workaround for VCM getting wonky on us.  Revisit later */
                     val |= 1;
+                    val = 0x37;
 
                     status = bladerf_lms_write(dev, 0x64, val);
                     if (status != 0) {
@@ -2032,7 +2034,9 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
                         return status;
                     }
 
+                    /* XXX: Workaround for VCM getting wonky on us.  Revisit later */
                     val &= (~1);
+                    val = 0x36;
 
                     status = bladerf_lms_write(dev, 0x64, val);
                     if (status != 0) {
