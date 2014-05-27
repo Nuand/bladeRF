@@ -285,7 +285,7 @@ void * tx_task_run(void *repeater_)
 {
     int status;
     struct repeater *repeater = (struct repeater *)repeater_;
-    bool exit_early;
+    bool exit_early = false;
 
     /* Wait for RX task to buffer up some samples before we begin
      * consuming them */
@@ -295,9 +295,14 @@ void * tx_task_run(void *repeater_)
 
         status = pthread_cond_wait(&repeater->buf_mgmt.samples_available,
                           &repeater->buf_mgmt.lock);
+
+        if (status != 0) {
+            print_error(repeater, "TX startup wait failed (%d)\n", status);
+            exit_early = true;
+        }
     }
 
-    exit_early = repeater->buf_mgmt.tx_idx < 0;
+    exit_early |= repeater->buf_mgmt.tx_idx < 0;
     pthread_mutex_unlock(&repeater->buf_mgmt.lock);
 
     if (!exit_early) {

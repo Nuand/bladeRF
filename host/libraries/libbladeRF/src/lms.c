@@ -1832,7 +1832,6 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
     }
 
     val = clockenables;
-    cal_clock = 0 ;
     switch (module) {
         case BLADERF_DC_CAL_LPF_TUNING:
             cal_clock = (1 << 5);  /* CLK_EN[5] - LPF CAL Clock */

@@ -1266,8 +1266,14 @@ static int usb_xb_spi(struct bladerf *dev, uint32_t value)
 
 static int usb_set_firmware_loopback(struct bladerf *dev, bool enable) {
     int result;
-    int status = vendor_cmd_int_wvalue(dev, BLADE_USB_CMD_SET_LOOPBACK,
-                                       enable, &result);
+    int status;
+
+    status = vendor_cmd_int_wvalue(dev, BLADE_USB_CMD_SET_LOOPBACK,
+                                   enable, &result);
+    if (status != 0) {
+        return status;
+    }
+
 
     status = change_setting(dev, USB_IF_NULL);
     if (status == 0) {

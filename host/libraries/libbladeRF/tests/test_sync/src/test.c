@@ -199,14 +199,14 @@ initialize_device_out:
 void *rx_task(void *args)
 {
     int status;
-    uint8_t *samples;
+    int16_t *samples;
     unsigned int to_rx;
     struct task_args *task = (struct task_args*) args;
     struct test_params *p = task->p;
     bool done = false;
     size_t n;
 
-    samples = (uint8_t *)calloc(p->block_size, 2 * sizeof(int16_t));
+    samples = (int16_t *)calloc(p->block_size, 2 * sizeof(samples[0]));
     if (samples == NULL) {
         perror("calloc");
         return NULL;
@@ -246,7 +246,7 @@ void *rx_task(void *args)
             done = true;
         } else {
             log_verbose("RX'd %llu samples.\n", (unsigned long long)to_rx);
-            n = fwrite(samples, 2 * sizeof(int16_t), to_rx, p->out_file);
+            n = fwrite(samples, 2 * sizeof(samples[0]), to_rx, p->out_file);
 
             if (n != to_rx) {
                 done = true;
@@ -278,13 +278,13 @@ rx_task_out:
 void *tx_task(void *arg)
 {
     int status;
-    uint8_t *samples;
+    int16_t *samples;
     unsigned int to_tx;
     struct task_args *task = (struct task_args*) arg;
     struct test_params *p = task->p;
     bool done = false;
 
-    samples = (uint8_t *)calloc(p->block_size, 2 * sizeof(int16_t));
+    samples = (int16_t *)calloc(p->block_size, 2 * sizeof(samples[0]));
     if (samples == NULL) {
         perror("calloc");
         return NULL;
@@ -313,7 +313,7 @@ void *tx_task(void *arg)
     }
 
     while (!done && !task->quit) {
-        to_tx = (unsigned int) fread(samples, 2 * sizeof(int16_t),
+        to_tx = (unsigned int) fread(samples, 2 * sizeof(samples[0]),
                                      p->block_size, p->in_file);
 
         if (to_tx != 0) {

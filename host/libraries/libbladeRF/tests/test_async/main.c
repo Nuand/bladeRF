@@ -227,26 +227,20 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    status = 0;
-
-    if (!status) {
-        status = bladerf_set_frequency(dev, test_data.module, 1000000000);
-        if (status < 0) {
-            fprintf(stderr, "Failed to set frequency: %s\n",
-                    bladerf_strerror(status));
-            bladerf_close(dev);
-            return EXIT_FAILURE;
-        }
+    status = bladerf_set_frequency(dev, test_data.module, 1000000000);
+    if (status != 0) {
+        fprintf(stderr, "Failed to set frequency: %s\n",
+                bladerf_strerror(status));
+        bladerf_close(dev);
+        return EXIT_FAILURE;
     }
 
-    if (!status) {
-        status = bladerf_set_sample_rate(dev, test_data.module, 4000000, &actual);
-        if (status < 0) {
-            fprintf(stderr, "Failed to set sample rate: %s\n",
-                    bladerf_strerror(status));
-            bladerf_close(dev);
-            return EXIT_FAILURE;
-        }
+    status = bladerf_set_sample_rate(dev, test_data.module, 4000000, &actual);
+    if (status != 0) {
+        fprintf(stderr, "Failed to set sample rate: %s\n",
+                bladerf_strerror(status));
+        bladerf_close(dev);
+        return EXIT_FAILURE;
     }
 
     /* Initialize the stream */
@@ -261,6 +255,13 @@ int main(int argc, char *argv[])
                 test_data.num_buffers,
                 &test_data
              );
+
+    if (status != 0) {
+        fprintf(stderr, "Failed to init stream: %s\n",
+                bladerf_strerror(status));
+        bladerf_close(dev);
+        return EXIT_FAILURE;
+    }
 
     /* Populate buffers with test data */
     if( test_data.module == BLADERF_MODULE_TX ) {
@@ -285,15 +286,15 @@ int main(int argc, char *argv[])
     if (status < 0) {
         fprintf(stderr, "Failed to enable module: %s\n",
                 bladerf_strerror(status));
+        bladerf_deinit_stream(stream);
+        bladerf_close(dev);
+        return EXIT_FAILURE;
     }
 
-    if (!status) {
-        /* Start stream and stay there until we kill the stream */
-        status = bladerf_stream(stream, test_data.module);
-
-        if (status < 0) {
-            fprintf(stderr, "Stream error: %s\n", bladerf_strerror(status));
-        }
+    /* Start stream and stay there until we kill the stream */
+    status = bladerf_stream(stream, test_data.module);
+    if (status < 0) {
+        fprintf(stderr, "Stream error: %s\n", bladerf_strerror(status));
     }
 
     status = bladerf_enable_module(dev, test_data.module, false);

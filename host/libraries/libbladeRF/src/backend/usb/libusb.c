@@ -793,7 +793,8 @@ static int lusb_init_stream(void *driver, struct bladerf_stream *stream,
 
     /* Backend stream information */
     stream->backend_data = stream_data;
-
+    stream_data->transfers = NULL;
+    stream_data->transfer_status = NULL;
     stream_data->num_transfers = num_transfers;
     stream_data->num_avail_transfers = 0;
     stream_data->i = 0;
