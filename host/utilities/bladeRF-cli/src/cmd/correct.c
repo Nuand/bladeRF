@@ -24,10 +24,10 @@
 #include "cmd.h"
 #include "conversions.h"
 
-#define MAX_RX_DC_OFFSET 15
-#define MAX_TX_DC_OFFSET 127
-#define MAX_PHASE (2048)
-#define MAX_GAIN (2048)
+#define MAX_RX_DC_OFFSET 2048
+#define MAX_TX_DC_OFFSET 2048
+#define MAX_PHASE (4096)
+#define MAX_GAIN (4096)
 
 static int print_correction(struct cli_state *state, bladerf_module module)
 {
@@ -204,7 +204,7 @@ int cmd_correct(struct cli_state *state, int argc, char **argv)
                                     MAX_TX_DC_OFFSET : MAX_RX_DC_OFFSET;
 
             const int16_t min = module == BLADERF_MODULE_TX ?
-                                    -(MAX_TX_DC_OFFSET + 1) : -MAX_RX_DC_OFFSET;
+                                    -(MAX_TX_DC_OFFSET) : -MAX_RX_DC_OFFSET;
 
             val_i = str2int(argv[3], min, max, &ok);
             if (!ok) {
