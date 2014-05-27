@@ -124,14 +124,6 @@
          type = "int";
       }
    }
-   element iq_corr_tx_phase_gain.s1
-   {
-      datum baseAddress
-      {
-         value = "37088";
-         type = "String";
-      }
-   }
    element timer_0.s1
    {
       datum baseAddress
@@ -140,27 +132,11 @@
          type = "String";
       }
    }
-   element iq_corr_rx_phase_gain.s1
+   element iq_corr_tx_phase_gain.s1
    {
       datum baseAddress
       {
-         value = "37104";
-         type = "String";
-      }
-   }
-   element pio_2.s1
-   {
-      datum baseAddress
-      {
-         value = "37056";
-         type = "String";
-      }
-   }
-   element pio_1.s1
-   {
-      datum baseAddress
-      {
-         value = "37072";
+         value = "37088";
          type = "String";
       }
    }
@@ -172,11 +148,11 @@
          type = "String";
       }
    }
-   element onchip_memory2_0.s1
+   element iq_corr_rx_phase_gain.s1
    {
       datum baseAddress
       {
-         value = "16384";
+         value = "37104";
          type = "String";
       }
    }
@@ -185,6 +161,30 @@
       datum baseAddress
       {
          value = "36928";
+         type = "String";
+      }
+   }
+   element pio_1.s1
+   {
+      datum baseAddress
+      {
+         value = "37072";
+         type = "String";
+      }
+   }
+   element pio_2.s1
+   {
+      datum baseAddress
+      {
+         value = "37056";
+         type = "String";
+      }
+   }
+   element onchip_memory2_0.s1
+   {
+      datum baseAddress
+      {
+         value = "16384";
          type = "String";
       }
    }
@@ -443,8 +443,8 @@
   <parameter name="tightlyCoupledInstructionMaster3MapParam" value="" />
  </module>
  <module kind="altera_avalon_spi" version="13.1" enabled="1" name="spi_0">
-  <parameter name="clockPhase" value="0" />
-  <parameter name="clockPolarity" value="0" />
+  <parameter name="clockPhase" value="1" />
+  <parameter name="clockPolarity" value="1" />
   <parameter name="dataWidth" value="8" />
   <parameter name="disableAvalonFlowControl" value="false" />
   <parameter name="insertDelayBetweenSlaveSelectAndSClk" value="false" />
