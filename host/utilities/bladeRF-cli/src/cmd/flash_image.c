@@ -272,9 +272,9 @@ static int write_image(struct cli_state *s, struct params *p, const char *argv0)
     long data_size;
     struct bladerf_image *image = NULL;
 
-    f = expand_and_open(p->data_file, "rb");
-    if (!f) {
-        return CLI_RET_FILEOP;
+    status = expand_and_open(p->data_file, "rb", &f);
+    if (status != 0) {
+        return status;
     }
 
     if (fseek(f, 0, SEEK_END) != 0) {

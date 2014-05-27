@@ -244,6 +244,9 @@ const char * cli_strerror(int error, int lib_error)
         case CLI_RET_BUSY:
             return "Could not complete operation - device is currently busy";
 
+        case CLI_RET_NOFILE:
+            return "File not found";
+
         /* Other commands shall print out helpful info from within their
          * implementation */
         default:
@@ -275,17 +278,28 @@ void get_last_error(struct cli_error *e, enum error_type *type, int *error)
     pthread_mutex_unlock(&e->lock);
 }
 
-FILE *expand_and_open(const char *filename, const char *mode)
+int expand_and_open(const char *filename, const char *mode, FILE **file)
 {
+    int status;
     char *expanded_filename;
-    FILE *ret;
 
+    *file = NULL;
     expanded_filename = input_expand_path(filename);
     if (expanded_filename == NULL) {
-        return NULL;
+        return CLI_RET_UNKNOWN; /* Shouldn't really ever happen */
     }
 
-    ret = fopen(expanded_filename, mode);
+    *file = fopen(expanded_filename, mode);
+    if (*file == NULL) {
+        if (errno == ENOENT) {
+            status = CLI_RET_NOFILE;
+        } else {
+            status = CLI_RET_FILEOP;
+        }
+    } else {
+        status = 0;
+    }
+
     free(expanded_filename);
-    return ret;
+    return status;
 }

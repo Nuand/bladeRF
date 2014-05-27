@@ -97,9 +97,9 @@ int cli_open_script(struct script **s, const char *filename)
     int error;
     struct script *to_check, *new_script;
 
-    f = expand_and_open(filename, "r");
-    if (!f) {
-        error = -errno;
+    error = expand_and_open(filename, "r", &f);
+    if (error != 0) {
+        error = (error == CLI_RET_NOFILE) ? -ENOENT : -EIO;
         goto cli_open_script__file_err;
     }
 

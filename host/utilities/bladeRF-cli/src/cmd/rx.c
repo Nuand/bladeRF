@@ -315,16 +315,13 @@ static int rx_cmd_start(struct cli_state *s)
     /* Set up output file */
     pthread_mutex_lock(&s->rx->file_mgmt.file_lock);
     if(s->rx->file_mgmt.format == RXTX_FMT_CSV_SC16Q11) {
-        s->rx->file_mgmt.file = expand_and_open(s->rx->file_mgmt.path, "w");
+        status = expand_and_open(s->rx->file_mgmt.path, "w",
+                                 &s->rx->file_mgmt.file);
+
     } else {
         /* RXTX_FMT_BIN_SC16Q11, open file in binary mode */
-        s->rx->file_mgmt.file = expand_and_open(s->rx->file_mgmt.path, "wb");
-    }
-    if (!s->rx->file_mgmt.file) {
-        set_last_error(&s->rx->last_error, ETYPE_ERRNO, errno);
-        status = CLI_RET_FILEOP;
-    } else {
-        status = 0;
+        status = expand_and_open(s->rx->file_mgmt.path, "wb",
+                                 &s->rx->file_mgmt.file);
     }
     pthread_mutex_unlock(&s->rx->file_mgmt.file_lock);
 

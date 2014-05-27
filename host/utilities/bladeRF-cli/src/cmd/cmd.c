@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <errno.h>
 #include <pthread.h>
 
 #include "cmd.h"
@@ -727,7 +728,11 @@ int cmd_run(struct cli_state *state, int argc, char **argv)
         cli_err(state, "run", "Recursive loop detected in script");
         return CLI_RET_INVPARAM;
     } else if (status < 0) {
-        return CLI_RET_FILEOP;
+        if (-status == ENOENT) {
+            return CLI_RET_NOFILE;
+        } else {
+            return CLI_RET_FILEOP;
+        }
     } else {
         /* Shouldn't happen */
         return CLI_RET_UNKNOWN;

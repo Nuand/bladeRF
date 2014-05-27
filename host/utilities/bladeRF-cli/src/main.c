@@ -426,6 +426,8 @@ int main(int argc, char *argv[])
         if (rc.script_file) {
             status = cli_open_script(&state->scripts, rc.script_file);
             if (status != 0) {
+                fprintf(stderr, "Failed to open script file \"%s\": %s\n",
+                        rc.script_file, strerror(-status));
                 goto main_issues;
             }
         }

@@ -47,6 +47,7 @@
 #define CLI_RET_STATE       (-9)    /**< Operation invalid for current state */
 #define CLI_RET_FILEOP      (-10)   /**< File operation failed */
 #define CLI_RET_BUSY        (-11)   /**< Device is currently busy */
+#define CLI_RET_NOFILE      (-12)   /**< File not found */
 
 /** Command OK */
 #define CLI_RET_OK          0
@@ -190,16 +191,12 @@ char *to_path(FILE *f);
 /**
  * Open the file, expanding the path first, if possible.
  *
- * This is a wrapper around fopen() and input_expand_path()
+ * @param[in]   filename    Filename to expand and open
+ * @param[in]   mode        fopen() access mode string
+ * @param[out]  file        Opened file handle on success, NULL on failure
  *
- * @note The value of errno IS NOT guarenteed to be assoicated with fopen()
- *       failures when this function returns.
- *
- * @param   filename    Filename to expand and open
- * @param   mode        fopen() access mode string
- *
- * @return  File handle on success, NULL on failure.
+ * @return  0 on success, CMD_RET_* value on failure
  */
-FILE *expand_and_open(const char *filename, const char *mode);
+int expand_and_open(const char *filename, const char *mode, FILE **file);
 
 #endif
