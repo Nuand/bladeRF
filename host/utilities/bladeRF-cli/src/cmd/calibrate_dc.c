@@ -483,19 +483,12 @@ int calibrate_dc_tx(struct bladerf *dev,
     }
 
     *dc_i = (int16_t) roundf(result.x);
+    *error_i = result.y;
 
     status = set_tx_dc(dev, *dc_i, 0);
     if (status != 0) {
         goto out;
     }
-
-#if 0
-    printf("%f, %f\n", p0.x, p0.y);
-    printf("%f, %f\n", p1.x, p1.y);
-    printf("%f, %f\n", p2.x, p2.y);
-    printf("%f, %f\n", p3.x, p3.y);
-    printf("%f, %f\n", result.x, result.y);
-#endif
 
     /* Repeat for the Q channel */
     status = rx_avg_magnitude(dev, rx_samples, *dc_i, p0.x, &p0.y);
@@ -524,14 +517,7 @@ int calibrate_dc_tx(struct bladerf *dev,
     }
 
     *dc_q = (int16_t) roundf(result.x);
-
-#if 0
-    printf("%f, %f\n", p0.x, p0.y);
-    printf("%f, %f\n", p1.x, p1.y);
-    printf("%f, %f\n", p2.x, p2.y);
-    printf("%f, %f\n", p3.x, p3.y);
-    printf("%f, %f\n", result.x, result.y);
-#endif
+    *error_q = result.y;
 
     status = set_tx_dc(dev, *dc_i, *dc_q);
 
