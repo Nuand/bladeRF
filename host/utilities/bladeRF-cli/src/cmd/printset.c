@@ -52,52 +52,38 @@ static const int NUM_FREQ_SUFFIXES =
 
 /* Declarations */
 PRINTSET_DECL(bandwidth)
-PRINTSET_DECL(config)
 PRINTSET_DECL(frequency)
 PRINTSET_DECL(gpio)
-PRINTSET_DECL(lmsregs)
-PRINTSET_DECL(lna)
-PRINTSET_DECL(lnagain)
 PRINTSET_DECL(loopback)
-PRINTSET_DECL(mimo)
-PRINTSET_DECL(pa)
-PRINTSET_DECL(pps)
-PRINTSET_DECL(refclk)
+PRINTSET_DECL(lnagain)
 PRINTSET_DECL(rxvga1)
 PRINTSET_DECL(rxvga2)
-PRINTSET_DECL(samplerate)
+PRINTSET_DECL(txvga1)
+PRINTSET_DECL(txvga2)
 PRINTSET_DECL(sampling)
+PRINTSET_DECL(samplerate)
 PRINTSET_DECL(trimdac)
 PRINTSET_DECL(xb_spi)
 PRINTSET_DECL(xb_gpio)
 PRINTSET_DECL(xb_gpio_dir)
-PRINTSET_DECL(txvga1)
-PRINTSET_DECL(txvga2)
 
 /* print/set parameter table */
 struct printset_entry printset_table[] = {
     PRINTSET_ENTRY(bandwidth),
-    PRINTSET_ENTRY(config),
     PRINTSET_ENTRY(frequency),
     PRINTSET_ENTRY(gpio),
-    PRINTSET_ENTRY(lmsregs),
-    PRINTSET_ENTRY(lna),
-    PRINTSET_ENTRY(lnagain),
     PRINTSET_ENTRY(loopback),
-    PRINTSET_ENTRY(mimo),
-    PRINTSET_ENTRY(pa),
-    PRINTSET_ENTRY(pps),
-    PRINTSET_ENTRY(refclk),
+    PRINTSET_ENTRY(lnagain),
     PRINTSET_ENTRY(rxvga1),
     PRINTSET_ENTRY(rxvga2),
-    PRINTSET_ENTRY(samplerate),
+    PRINTSET_ENTRY(txvga1),
+    PRINTSET_ENTRY(txvga2),
     PRINTSET_ENTRY(sampling),
+    PRINTSET_ENTRY(samplerate),
     PRINTSET_ENTRY(trimdac),
     PRINTSET_ENTRY(xb_spi),
     PRINTSET_ENTRY(xb_gpio),
     PRINTSET_ENTRY(xb_gpio_dir),
-    PRINTSET_ENTRY(txvga1),
-    PRINTSET_ENTRY(txvga2),
 
     /* End of table marked by entry with NULL/empty fields */
     { FIELD_INIT(.print, NULL), FIELD_INIT(.set, NULL), FIELD_INIT(.name, "") }
@@ -284,16 +270,6 @@ int set_bandwidth(struct cli_state *state, int argc, char **argv)
 
 
     return rv;
-}
-
-int print_config(struct cli_state *state, int argc, char **argv)
-{
-    return CLI_RET_OK;
-}
-
-int set_config(struct cli_state *state, int argc, char **argv)
-{
-    return CLI_RET_OK;
 }
 
 int print_frequency(struct cli_state *state, int argc, char **argv)
@@ -561,26 +537,6 @@ int set_xb_gpio_dir(struct cli_state *state, int argc, char **argv)
     return rv;
 }
 
-int print_lmsregs(struct cli_state *state, int argc, char **argv)
-{
-    return CLI_RET_OK;
-}
-
-int set_lmsregs(struct cli_state *state, int argc, char **argv)
-{
-    return CLI_RET_OK;
-}
-
-int print_lna(struct cli_state *state, int argc, char **argv)
-{
-    return CLI_RET_OK;
-}
-
-int set_lna(struct cli_state *state, int argc, char **argv)
-{
-    return CLI_RET_OK;
-}
-
 int print_lnagain(struct cli_state *state, int argc, char **argv)
 {
     int rv = CLI_RET_OK, status;
@@ -591,23 +547,21 @@ int print_lnagain(struct cli_state *state, int argc, char **argv)
         state->last_lib_error = status;
         rv = CLI_RET_LIBBLADERF;
     } else {
-        printf( "\n" );
-        printf( "  LNA Gain: ");
         switch(gain) {
             case BLADERF_LNA_GAIN_UNKNOWN:
-                    printf( "BLADERF_LNA_GAIN_UNKNOWN\n" );
-                    break;
-
-            case BLADERF_LNA_GAIN_MID:
-                    printf( "BLADERF_LNA_GAIN_MID\n" );
+                    printf("LNA Gain: Unknown\n");
                     break;
 
             case BLADERF_LNA_GAIN_MAX:
-                    printf( "BLADERF_LNA_GAIN_MAX\n" );
+                    printf("LNA Gain: 6 dB\n");
+                    break;
+
+            case BLADERF_LNA_GAIN_MID:
+                    printf("LNA Gain: 3 dB\n");
                     break;
 
             case BLADERF_LNA_GAIN_BYPASS:
-                    printf( "BLADERF_LNA_GAIN_BYPASS\n");
+                    printf("LNA Gain: 0 dB\n");
                     break;
         }
         printf( "\n" ) ;
@@ -625,11 +579,11 @@ int set_lnagain(struct cli_state *state, int argc, char **argv)
         rv = CLI_RET_NARGS;
     } else {
         bladerf_lna_gain gain = BLADERF_LNA_GAIN_UNKNOWN;
-        if( strcasecmp( argv[2], "max" ) == 0 ) {
+        if( strcasecmp( argv[2], "6" ) == 0 ) {
             gain = BLADERF_LNA_GAIN_MAX;
-        } else if( strcasecmp( argv[2], "mid" ) == 0 ) {
+        } else if( strcasecmp( argv[2], "3" ) == 0 ) {
             gain = BLADERF_LNA_GAIN_MID;
-        } else if( strcasecmp( argv[2], "bypass" ) == 0 ) {
+        } else if( strcasecmp( argv[2], "0" ) == 0 ) {
             gain = BLADERF_LNA_GAIN_BYPASS;
         } else {
             invalid_gain(state, argv[0], argv[1], argv[2]);
@@ -757,46 +711,6 @@ int set_loopback(struct cli_state *state, int argc, char **argv)
     } else {
         return CLI_RET_OK;
     }
-}
-
-int print_mimo(struct cli_state *state, int argc, char **argv)
-{
-    return CLI_RET_OK;
-}
-
-int set_mimo(struct cli_state *state, int argc, char **argv)
-{
-    return CLI_RET_OK;
-}
-
-int print_pa(struct cli_state *state, int argc, char **argv)
-{
-    return CLI_RET_OK;
-}
-
-int set_pa(struct cli_state *state, int argc, char **argv)
-{
-    return CLI_RET_OK;
-}
-
-int print_pps(struct cli_state *state, int argc, char **argv)
-{
-    return CLI_RET_OK;
-}
-
-int set_pps(struct cli_state *state, int argc, char **argv)
-{
-    return CLI_RET_OK;
-}
-
-int print_refclk(struct cli_state *state, int argc, char **argv)
-{
-    return CLI_RET_OK;
-}
-
-int set_refclk(struct cli_state *state, int argc, char **argv)
-{
-    return CLI_RET_OK;
 }
 
 int print_rxvga1(struct cli_state *state, int argc, char **argv)
@@ -1110,7 +1024,18 @@ int print_sampling( struct cli_state *state, int argc, char **argv)
             state->last_lib_error = status;
             rv = CLI_RET_LIBBLADERF;
         } else {
-            printf( "  %-20s%-20s\n", "Sampling:", mode == BLADERF_SAMPLING_EXTERNAL ? "External" : mode == BLADERF_SAMPLING_INTERNAL ? "Internal" : "UNKNOWN" ) ;
+            switch (mode) {
+                case BLADERF_SAMPLING_EXTERNAL:
+                    printf("Sampling: External\n");
+                    break;
+
+                case BLADERF_SAMPLING_INTERNAL:
+                    printf("Sampling: Internal\n");
+                    break;
+
+                default:
+                    printf("Sampling: Unknown\n");
+            }
         }
     }
 
@@ -1119,7 +1044,8 @@ int print_sampling( struct cli_state *state, int argc, char **argv)
 
 int print_trimdac(struct cli_state *state, int argc, char **argv)
 {
-    /* TODO: Can't be implemented until dac_read() is written */
+    /* TODO cache values in firmware */
+    printf("VCTCXO readback is not currently supported.\n");
     return CLI_RET_OK;
 }
 
@@ -1213,8 +1139,6 @@ int set_txvga1(struct cli_state *state, int argc, char **argv)
             if (status < 0) {
                 state->last_lib_error = status;
                 rv = CLI_RET_LIBBLADERF;
-            } else {
-                printf( "  Set TXVGA1 to %d\n", gain );
             }
         }
     } else {
@@ -1283,25 +1207,6 @@ struct printset_entry *get_printset_entry( char *name)
 /* Set command */
 int cmd_set(struct cli_state *state, int argc, char **argv)
 {
-    /* Valid commands:
-        set bandwidth <rx|tx> <bw in Hz>
-        set frequency <rx|tx> <frequency in Hz>
-        set gpio <value>
-        set loopback [mode]
-        set mimo <master|slave|off>
-        set pa <lb|hb>
-        set pps <on|off>
-        set refclk <reference frequency> <comparison frequency>
-        set rxvga1 <gain in dB>
-        set rxvga2 <gain in dB>
-        set samplerate <integer Hz> [<num frac> <denom frac>]
-        set trimdac <value>
-        set txvga1 <gain in dB>
-        set txvga2 <gain in dB>
-
-       NOTE: Using set <parameter> with no other entries should print
-       a nice usage note for that specific setting.
-    */
     int rv = CLI_RET_OK;
     int fpga_configured;
 
@@ -1337,25 +1242,6 @@ int cmd_set(struct cli_state *state, int argc, char **argv)
 /* Print command */
 int cmd_print(struct cli_state *state, int argc, char **argv)
 {
-    /* Valid commands:
-        print bandwidth <rx|tx>
-        print config
-        print frequency
-        print gpio
-        print lmsregs
-        print lna
-        print loopback
-        print mimo
-        print pa
-        print pps
-        print refclk
-        print rxvga1
-        print rxvga2
-        print samplerate
-        print trimdac
-        print txvga1
-        print txvga2
-    */
     int rv = CLI_RET_OK;
     struct printset_entry *entry = NULL;
     int fpga_configured;
