@@ -111,6 +111,7 @@ set(BLADERF_CLI_SOURCE
         src/cmd/load.c
         src/cmd/open.c
         src/cmd/peek.c
+        src/cmd/peek_lms_info.c
         src/cmd/peekpoke.c
         src/cmd/poke.c
         src/cmd/printset.c

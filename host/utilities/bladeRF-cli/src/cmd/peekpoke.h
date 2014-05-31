@@ -37,5 +37,8 @@
 /* Convenience shared function */
 void invalid_address(struct cli_state *s, char *fn, char *addr);
 
+/* Print decoded LMS register fields and bit names */
+void lms_reg_info(unsigned int address, unsigned int value);
+
 #endif /* PEEKPOKE_H__ */
 
