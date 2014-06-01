@@ -540,6 +540,21 @@ int lms_select_lna(struct bladerf *dev, lms_lna lna)
     return bladerf_lms_write(dev, 0x75, data);
 }
 
+int lms_get_lna(struct bladerf *dev, lms_lna *lna)
+{
+    int status;
+    uint8_t data;
+
+    status = bladerf_lms_read(dev, 0x75, &data);
+    if (status != 0) {
+        *lna = LNA_NONE;
+        return status;
+    } else {
+        *lna = (lms_lna) (data >> 4) & 0x3;
+        return 0;
+    }
+}
+
 /* Enable bit is in reserved register documented in this thread:
  *  https://groups.google.com/forum/#!topic/limemicro-opensource/8iTannzlfzg
  */
@@ -1824,9 +1839,15 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
     uint8_t clockenables, reg0x71, reg0x7c;
     bladerf_lna_gain lna_gain;
     int rxvga1, rxvga2;
+    lms_lna lna;
 
-    /* Save off the top level clock enables */
+    /* Save off the top level clock enables and LNA state */
     status = bladerf_lms_read(dev, 0x09, &clockenables);
+    if (status != 0) {
+        return status;
+    }
+
+    status = lms_get_lna(dev, &lna);
     if (status != 0) {
         return status;
     }
@@ -1863,6 +1884,11 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
 
     /* Enable the appropriate clock based on the module */
     status = bladerf_lms_write(dev, 0x09, clockenables | cal_clock);
+    if (status != 0) {
+        return status;
+    }
+
+    status = lms_select_lna(dev, lna);
     if (status != 0) {
         return status;
     }
@@ -2144,8 +2170,17 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
         }
     }
 
-    /* Restore original clock enables */
+    /* Restore original clock enables and LNA */
+    status = lms_select_lna(dev, lna);
+    if (status != 0) {
+        return status;
+    }
+
     status = bladerf_lms_write(dev, 0x09, clockenables);
+    if (status != 0) {
+        return status;
+    }
+
     return status;
 }
 

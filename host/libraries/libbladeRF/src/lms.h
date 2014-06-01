@@ -245,6 +245,16 @@ int lms_lna_get_gain(struct bladerf *dev, bladerf_lna_gain *gain);
 int lms_select_lna(struct bladerf *dev, lms_lna lna);
 
 /**
+ * Get the currently selected LNA
+ *
+ * @param[in]   dev    Device handle
+ * @param[out]  lna    Currently selected LNA, according to device registers
+ *
+ * @return 0 on success, BLADERF_ERR_* value on failure
+ */
+int lms_get_lna(struct bladerf *dev, lms_lna *lna);
+
+/**
  * Enable or disable RXVGA1
  *
  * @param[in]   dev     Device handle
