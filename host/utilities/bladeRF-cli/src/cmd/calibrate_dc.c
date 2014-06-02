@@ -723,6 +723,11 @@ int calibrate_dc(struct bladerf *dev, unsigned int ops)
     if (IS_TX_CAL(ops)) {
         /* TODO disconnect TX from external output */
 
+        status = bladerf_enable_module(dev, BLADERF_MODULE_RX, true);
+        if (status != 0) {
+            goto error;
+        }
+
         status = bladerf_enable_module(dev, BLADERF_MODULE_TX, true);
         if (status != 0) {
             goto error;
@@ -803,6 +808,9 @@ error:
 
 
     if (IS_TX_CAL(ops)) {
+        status = bladerf_enable_module(dev, BLADERF_MODULE_RX, false);
+        retval = first_error(retval, status);
+
         status = bladerf_enable_module(dev, BLADERF_MODULE_TX, false);
         retval = first_error(retval, status);
 
