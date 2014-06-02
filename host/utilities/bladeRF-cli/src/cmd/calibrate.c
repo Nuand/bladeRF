@@ -67,9 +67,6 @@ int cmd_calibrate(struct cli_state *state, int argc, char **argv)
             ops = CAL_DC_LMS_ALL;
         } else if (strcasecmp(argv[1], "dc_rx") == 0) {
             ops = CAL_DC_AUTO_RX;
-        } else if (strcasecmp(argv[1], "dc_rx_skip_lms") == 0) {
-            /* This is generally only useful for development and debugging */
-            ops = CAL_DC_AUTO_ | CAL_DC_RX_;
         } else if (strcasecmp(argv[1], "dc_tx") == 0) {
             ops = CAL_DC_AUTO_TX;
         } else if (strcasecmp(argv[1], "dc") == 0) {

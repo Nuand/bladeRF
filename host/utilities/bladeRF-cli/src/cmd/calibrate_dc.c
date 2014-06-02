@@ -729,7 +729,7 @@ int calibrate_dc(struct bladerf *dev, unsigned int ops)
     }
 
 
-    if (IS_CAL(CAL_DC_AUTO_RX, ops) || IS_CAL(CAL_DC_AUTO_RX_SKIP_LMS, ops)) {
+    if (IS_CAL(CAL_DC_AUTO_RX, ops)) {
         int16_t avg_i, avg_q;
         status = calibrate_dc_rx(dev, &dc_i, &dc_q, &avg_i, &avg_q);
         if (status != 0) {
