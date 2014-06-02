@@ -194,6 +194,10 @@ int calibrate_dc_rx(struct bladerf *dev,
     int16_t dc_i0, dc_q0, dc_i1, dc_q1;
     int16_t avg_i0, avg_q0, avg_i1, avg_q1;
 
+    int16_t test_i[7], test_q[7];
+    int16_t tmp_i, tmp_q, min_i, min_q;
+    unsigned int min_i_idx, min_q_idx, n;
+
     samples = (int16_t*) malloc(CAL_BUF_LEN * 2 * sizeof(samples[0]));
     if (samples == NULL) {
         status = BLADERF_ERR_MEM;;
@@ -246,25 +250,66 @@ int calibrate_dc_rx(struct bladerf *dev,
         goto out;
     }
 
-    if (*dc_i < CAL_DC_MIN) {
-        *dc_i = CAL_DC_MIN;
-    } else if (*dc_i > CAL_DC_MAX) {
-        *dc_i = CAL_DC_MAX;
+    test_i[0] = *dc_i;
+    test_i[1] = test_i[0] + 96;
+    test_i[2] = test_i[0] + 64;
+    test_i[3] = test_i[0] + 32;
+    test_i[4] = test_i[0] - 32;
+    test_i[5] = test_i[0] - 64;
+    test_i[6] = test_i[0] - 96;
+
+    test_q[0] = *dc_q;
+    test_q[1] = test_q[0] + 96;
+    test_q[2] = test_q[0] + 64;
+    test_q[3] = test_q[0] + 32;
+    test_q[4] = test_q[0] - 32;
+    test_q[5] = test_q[0] - 64;
+    test_q[6] = test_q[0] - 96;
+
+    min_i_idx = min_q_idx = 0;
+
+    for (n = 0; n < 7; n++) {
+
+        if (test_i[n] > CAL_DC_MAX) {
+            test_i[n] = CAL_DC_MAX;
+        } else if (test_i[n] < CAL_DC_MIN) {
+            test_i[n] = CAL_DC_MIN;
+        }
+
+        if (test_q[n] > CAL_DC_MAX) {
+            test_q[n] = CAL_DC_MAX;
+        } else if (test_q[n] < CAL_DC_MIN) {
+            test_q[n] = CAL_DC_MIN;
+        }
+
+        /* See where we're at now... */
+        status = set_rx_dc(dev, test_i[n], test_q[n]);
+        if (status != 0) {
+            goto out;
+        }
+
+        status = rx_avg(dev, samples, &tmp_i, &tmp_q);
+        if (status != 0) {
+            goto out;
+        }
+
+        if (n == 0 || abs(tmp_i) < abs(min_i)) {
+            min_i = tmp_i;
+            min_i_idx = n;
+        }
+
+        if (n == 0 || abs(tmp_q) < abs(min_q)) {
+            min_q = tmp_q;
+            min_q_idx = n;
+        }
     }
 
-    if (*dc_q < CAL_DC_MIN) {
-        *dc_q = CAL_DC_MIN;
-    } else if (*dc_q > CAL_DC_MAX){
-        *dc_q = CAL_DC_MAX;
-    }
+    *dc_i = test_i[min_i_idx];
+    *dc_q = test_q[min_q_idx];
+    *avg_i = min_i;
+    *avg_q = min_q;
 
-    /* See where we're at now... */
     status = set_rx_dc(dev, *dc_i, *dc_q);
-    if (status != 0) {
-        goto out;
-    }
-
-    status = rx_avg(dev, samples, avg_i, avg_q);
     if (status != 0) {
         goto out;
     }
@@ -664,19 +709,12 @@ int calibrate_dc(struct bladerf *dev, unsigned int ops)
     }
 
     if (IS_RX_CAL(ops)) {
-        /* TODO Turn off LNA and switch INLOAD_LNA_RXFE */
-
         status = set_rx_dc(dev, 0, 0);
         if (status != 0) {
             goto error;
         }
 
         status = bladerf_enable_module(dev, BLADERF_MODULE_RX, true);
-        if (status != 0) {
-            goto error;
-        }
-
-        status = dummy_rx(dev);
         if (status != 0) {
             goto error;
         }
