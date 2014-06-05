@@ -443,7 +443,7 @@ int calibrate_dc_tx(struct bladerf *dev,
 
     rx_samples = malloc(CAL_BUF_LEN * 2 * sizeof(rx_samples[0]));
     if (rx_samples == NULL) {
-        goto out;
+        return BLADERF_ERR_MEM;
     }
 
     status = init_tx_task(dev, &tx_task);
