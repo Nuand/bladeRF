@@ -582,37 +582,6 @@ out:
     return retval;
 }
 
-static inline int dummy_rx(struct bladerf *dev)
-{
-    int status, i;
-    const size_t buf_len = CAL_BUF_LEN;
-    uint16_t *buf = malloc(2 * sizeof(buf[0]) * buf_len);
-
-    if (buf == NULL) {
-        return BLADERF_ERR_MEM;
-    }
-
-    status = bladerf_sync_config(dev, BLADERF_MODULE_RX,
-                                 BLADERF_FORMAT_SC16_Q11,
-                                 CAL_NUM_BUFS, buf_len,
-                                 CAL_NUM_XFERS, CAL_TIMEOUT);
-    if (status != 0) {
-        goto error;
-    }
-
-
-    for (i = 0; i < 4; i++) {
-        status = bladerf_sync_rx(dev, buf, buf_len, NULL, CAL_TIMEOUT);
-        if (status != 0) {
-            goto error;
-        }
-    }
-
-error:
-    free(buf);
-    return status;
-}
-
 static inline int dummy_tx(struct bladerf *dev)
 {
     int status;
