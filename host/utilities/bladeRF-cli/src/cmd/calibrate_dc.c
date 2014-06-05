@@ -267,6 +267,7 @@ int calibrate_dc_rx(struct bladerf *dev,
     test_q[6] = test_q[0] - 96;
 
     min_i_idx = min_q_idx = 0;
+    min_i = min_q = INT16_MAX;
 
     for (n = 0; n < 7; n++) {
 
@@ -293,12 +294,12 @@ int calibrate_dc_rx(struct bladerf *dev,
             goto out;
         }
 
-        if (n == 0 || abs(tmp_i) < abs(min_i)) {
+        if (abs(tmp_i) < abs(min_i)) {
             min_i = tmp_i;
             min_i_idx = n;
         }
 
-        if (n == 0 || abs(tmp_q) < abs(min_q)) {
+        if (abs(tmp_q) < abs(min_q)) {
             min_q = tmp_q;
             min_q_idx = n;
         }
