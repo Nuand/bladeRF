@@ -41,6 +41,7 @@ DECLARE_CMD(help);
 DECLARE_CMD(info);
 DECLARE_CMD(jump_to_bootloader);
 DECLARE_CMD(load);
+DECLARE_CMD(xb);
 DECLARE_CMD(mimo);
 DECLARE_CMD(open);
 DECLARE_CMD(peek);
@@ -78,6 +79,7 @@ static const char *cmd_names_help[] = { "help", "h", "?", NULL };
 static const char *cmd_names_info[] = { "info", "i", NULL };
 static const char *cmd_names_jump[] = { "jump_to_boot", "j", NULL };
 static const char *cmd_names_load[] = { "load", "ld", NULL };
+static const char *cmd_names_xb[] = { "xb", NULL };
 static const char *cmd_names_mimo[] = { "mimo", NULL };
 static const char *cmd_names_open[] = { "open", "op", "o", NULL };
 static const char *cmd_names_peek[] = { "peek", "pe", NULL };
@@ -282,6 +284,16 @@ static const struct cmd cmd_table[] = {
             "load <fpga|fx3> <filename>\n"
             "\n"
             "Load an FPGA bitstream or program the FX3's SPI flash.\n"
+        )
+    },
+    {
+        FIELD_INIT(.names, cmd_names_xb),
+        FIELD_INIT(.exec, cmd_xb),
+        FIELD_INIT(.desc, "Enable and configure expansion boards"),
+        FIELD_INIT(.help,
+            "xb enable [100|200]\n"
+            "\n"
+            "Enable and configure expansion boards\n"
         )
     },
     {
