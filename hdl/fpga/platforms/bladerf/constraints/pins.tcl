@@ -256,7 +256,7 @@ set_location_assignment PIN_C13 -to exp_present
 set_location_assignment PIN_G1 -to fx3_pclk
 set_location_assignment PIN_AA15 -to lms_sclk
 set_location_assignment PIN_B13 -to exp_spi_miso
-set_location_assignment PIN_E12 -to exp_spi_clock
+set_location_assignment PIN_E11 -to exp_spi_clock
 set_location_assignment PIN_AA7 -to led[1]
 set_location_assignment PIN_AB7 -to led[2]
 set_location_assignment PIN_AA21 -to lms_tx_v[1]
