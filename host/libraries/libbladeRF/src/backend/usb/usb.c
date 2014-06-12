@@ -453,22 +453,6 @@ static int begin_fpga_programming(struct bladerf *dev)
     }
 }
 
-static inline int end_fpga_programming(struct bladerf *dev)
-{
-    int32_t result;
-    int status = vendor_cmd_int(dev, BLADE_USB_CMD_QUERY_FPGA_STATUS,
-                                USB_DIR_DEVICE_TO_HOST, &result);
-
-    if (status != 0) {
-        return status;
-    } else if (result != 1) {
-        log_debug("End fpga programming, result = %d\n", result);
-        return BLADERF_ERR_UNEXPECTED;
-    } else {
-        return 0;
-    }
-}
-
 static int usb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size)
 {
     void *driver;
@@ -503,15 +487,6 @@ static int usb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size)
                   bladerf_strerror(status));
         return status;
     }
-
-    /* End programming */
-    status = end_fpga_programming(dev);
-    if (status) {
-        log_debug("Failed to complete FPGA programming: %s\n",
-                  bladerf_strerror(status));
-        return status;
-    }
-
 
     /* Poll FPGA status to determine if programming was a success */
     wait_count = 10;
