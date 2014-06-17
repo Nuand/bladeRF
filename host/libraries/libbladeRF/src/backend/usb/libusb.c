@@ -112,6 +112,7 @@ static int error_conv(int error)
     return ret;
 }
 
+/* Returns libusb error codes */
 static int get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
 {
     int status = 0;
@@ -565,7 +566,7 @@ static int lusb_get_string_descriptor(void *driver, uint8_t index,
         status = BLADERF_ERR_UNEXPECTED;
     }
 
-    return error_conv(status);
+    return status;
 }
 
 /* At the risk of being a little inefficient, just keep attempting to cancel
