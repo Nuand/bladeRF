@@ -100,18 +100,21 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.exec, cmd_calibrate),
         FIELD_INIT(.desc, "Calibrate transceiver"),
         FIELD_INIT(.help,
-            "calibrate [<module>]\n"
+            "calibrate <operation>\n"
             "\n"
-            "Calibrate the DC offset for both RX and TX\n"
+            "Perform the specified calibration operation."
             "\n"
-            "Available modules for calibration:\n"
+            "Available operations:\n"
             "\n"
-            "\ttuning\t\n"
-            "\ttxlpf\t\n"
-            "\trxlpf\t\n"
-            "\trxvga2\t\n"
+            "\tdc_lms_tuning\tDC calibration of LMS LPF Tuning\n"
+            "\tdc_lms_txlpf \tDC calibration of LMS TX LPF\n"
+            "\tdc_lms_rxlpf \tDC calibration of LMS RX LPF\n"
+            "\tdc_lms_rxvga2\tDC calibration of LMS RX VGA2\n"
+            "\tdc_lms       \tDC calibration of all of the above LMS items\n"
+            "\tdc_rx        \tDC calibration of LMS I and Q RX channels\n"
+            "\tdc_tx        \tDC calibration of LMS I and Q TX channels\n"
+            "\tdc           \tDC calibration of LMS I and Q RX+TX channels\n"
             "\n"
-            "Leave blank to calibrate all of the above.\n"
         )
     },
     {

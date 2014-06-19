@@ -31,6 +31,7 @@ int cmd_calibrate(struct cli_state *state, int argc, char **argv)
         calibrate [module]
     */
     int status = 0;
+    unsigned int ops = 0;
     int fpga_status;
 
     if (!cli_device_is_opened(state)) {
@@ -47,14 +48,7 @@ int cmd_calibrate(struct cli_state *state, int argc, char **argv)
     }
 
 
-    if (argc == 1) {
-
-        printf("TO DO - autocalibration at the current gain & freq\n");
-        return 0;
-
-    } else if (argc == 2) {
-        unsigned int ops = 0;
-
+    if (argc == 2) {
         if (strcasecmp(argv[1], "dc_lms_tuning") == 0) {
             ops = CAL_DC_LMS_TUNING;
         } else if (strcasecmp(argv[1], "dc_lms_txlpf") == 0) {
