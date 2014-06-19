@@ -443,7 +443,7 @@ int bladerf_set_frequency(struct bladerf *dev,
             status = bladerf_xb200_set_path(dev, module, BLADERF_XB200_MIX);
             if (status)
                 return status;
-            frequency = 1248e6 - frequency;
+            frequency = 1248000000 - frequency;
         } else {
             status = bladerf_xb200_set_path(dev, module, BLADERF_XB200_BYPASS);
             if (status)
