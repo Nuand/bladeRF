@@ -28,6 +28,7 @@
 #include "bladeRF.h"
 #include "lms.h"
 #include "log.h"
+#include "dc_cal_table.h"
 
 #define OTP_BUFFER_SIZE 256
 

@@ -202,6 +202,7 @@ set(LIBBLADERF_SOURCE
         src/backend/backend.c
         src/bladerf.c
         src/bladerf_priv.c
+        src/dc_cal_table.c
         src/file_ops.c
         src/lms.c
         src/si5338.c

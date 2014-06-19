@@ -36,6 +36,7 @@
 #include "device_identifier.h"
 #include "version.h"       /* Generated at build time */
 #include "conversions.h"
+#include "dc_cal_table.h"
 
 /*------------------------------------------------------------------------------
  * Device discovery & initialization/deinitialization
@@ -434,6 +435,9 @@ int bladerf_set_frequency(struct bladerf *dev,
 {
     int status;
     bladerf_xb attached;
+    int16_t dc_i, dc_q;
+    const struct dc_cal_tbl *dc_cal =
+        (module == BLADERF_MODULE_RX) ? dev->cal.dc_rx : dev->cal.dc_tx;
 
     status = bladerf_expansion_get_attached(dev, &attached);
     if (status)
@@ -454,9 +458,33 @@ int bladerf_set_frequency(struct bladerf *dev,
     status = lms_set_frequency(dev, module, frequency);
     if (status != 0) {
         return status;
-    } else {
-        return bladerf_select_band(dev, module, frequency);
     }
+
+    status = bladerf_select_band(dev, module, frequency);
+    if (status != 0) {
+        return status;
+    }
+
+    if (dc_cal != NULL) {
+        dc_cal_tbl_vals(dc_cal, frequency, &dc_i, &dc_q);
+
+        status = dev->fn->set_correction(dev, module,
+                                         BLADERF_CORR_LMS_DCOFF_I, dc_i);
+        if (status != 0) {
+            return status;
+        }
+
+        status = dev->fn->set_correction(dev, module,
+                                         BLADERF_CORR_LMS_DCOFF_Q, dc_q);
+        if (status != 0) {
+            return status;
+        }
+
+        log_verbose("Set %s DC I,Q to: %d, %d\n",
+                    (module == BLADERF_MODULE_RX) ? "RX" : "TX", dc_i, dc_q);
+    }
+
+    return status;
 }
 
 int bladerf_get_frequency(struct bladerf *dev,

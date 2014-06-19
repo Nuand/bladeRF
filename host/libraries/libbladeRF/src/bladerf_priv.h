@@ -77,6 +77,11 @@ struct bladerf;
 
 #define BLADERF_VERSION_STR_MAX 32
 
+struct calibrations {
+    struct dc_cal_tbl *dc_rx;
+    struct dc_cal_tbl *dc_tx;
+};
+
 struct bladerf {
 
     struct bladerf_devinfo ident;  /* Identifying information */
@@ -104,6 +109,9 @@ struct bladerf {
 
     /* Synchronous interface handles */
     struct bladerf_sync *sync[NUM_MODULES];
+
+    /* Calibration data */
+    struct calibrations cal;
 };
 
 /**
