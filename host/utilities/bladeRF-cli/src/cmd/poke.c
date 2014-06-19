@@ -106,6 +106,16 @@ int cmd_poke(struct cli_state *state, int argc, char **argv)
                 rv = CLI_RET_LIBBLADERF;
             } else {
                 printf( "  0x%2.2x: 0x%2.2x\n", address, value );
+                if (f == bladerf_lms_write) {
+                    uint8_t readback;
+                    int status = bladerf_lms_read(state->dev,
+                                                  (uint8_t)address,
+                                                  &readback);
+                    if (status == 0) {
+                        lms_reg_info(address, readback);
+                        putchar('\n'); /* To be consistent with peek output */
+                    }
+                }
             }
         }
 
