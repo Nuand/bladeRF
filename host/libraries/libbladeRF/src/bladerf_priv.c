@@ -152,48 +152,6 @@ int bladerf_init_device(struct bladerf *dev)
         if (status != 0) {
             return status;
         }
-
-        status = bladerf_enable_module(dev, BLADERF_MODULE_RX, true);
-        if (status != 0) {
-            return status;
-        }
-
-        /* TODO Disconnect TX from output, enable module */
-
-        /* Perform LMS DC calibrations */
-        status = lms_calibrate_dc(dev, BLADERF_DC_CAL_LPF_TUNING);
-        if (status != 0) {
-            log_error("LPF DC calibration failed.\n");
-            return status;
-        }
-
-        /* TODO
-        status = lms_calibrate_dc(dev, BLADERF_DC_CAL_TX_LPF);
-        if (status != 0) {
-            log_error("TX LPF  DC calibration failed.\n");
-            return status;
-        }
-        */
-
-        status = lms_calibrate_dc(dev, BLADERF_DC_CAL_RX_LPF);
-        if (status != 0) {
-            log_error("RX LPF calibration failed.\n");
-            return status;
-        }
-
-        status = lms_calibrate_dc(dev, BLADERF_DC_CAL_RXVGA2);
-        if (status != 0) {
-            log_error("RX VGA2 calibration failed.\n");
-            return status;
-        }
-
-        /* TODO Disable TX module and re-connect to output */
-
-        status = bladerf_enable_module(dev, BLADERF_MODULE_RX, false);
-        if (status != 0) {
-            return status;
-        }
-
     }
 
     return 0;
