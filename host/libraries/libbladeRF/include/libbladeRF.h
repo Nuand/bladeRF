@@ -2227,6 +2227,26 @@ int CALL_CONV bladerf_si5338_set_tx_freq(struct bladerf *dev, unsigned freq);
 API_EXPORT
 int CALL_CONV bladerf_si5338_set_rx_freq(struct bladerf *dev, unsigned freq);
 
+/**
+ * This structure is used to directly apply DC calibration register values to
+ * the LMS, rather than use the values resulting from an auto-calibration.
+ *
+ * A value < 0 is used to denote that the specified value should not
+ * be written.  If a value is to be written, it will be truncated to 8-bits.
+ */
+struct bladerf_lms_dc_cals
+{
+    int16_t lpf_tuning; /**< LPF tuning module */
+    int16_t tx_lpf_i;   /**< TX LPF I filter */
+    int16_t tx_lpf_q;   /**< TX LPF Q filter */
+    int16_t rx_lpf_i;   /**< RX LPF I filter */
+    int16_t rx_lpf_q;   /**< RX LPF Q filter */
+    int16_t dc_ref;     /**< RX VGA2 DC reference module */
+    int16_t rxvga2a_i;  /**< RX VGA2, I channel of first gain stage */
+    int16_t rxvga2a_q;  /**< RX VGA2, Q channel of first gain stage */
+    int16_t rxvga2b_i;  /**< RX VGA2, I channel of second gain stage */
+    int16_t rxvga2b_q;  /**< RX VGA2, Q channel of second gain stage */
+};
 
 /**
  * Read a LMS register
@@ -2253,6 +2273,34 @@ int CALL_CONV bladerf_lms_read(struct bladerf *dev,
 API_EXPORT
 int CALL_CONV bladerf_lms_write(struct bladerf *dev,
                                 uint8_t address, uint8_t val);
+
+/**
+ * Manually load values into LMS6002 DC calibration registers.
+ *
+ * This is generally intended for applying a set of known values resulting from
+ * a previous run of the LMS autocalibrations.
+ *
+ * @param   dev        Device handle
+ * @param   dc_cals    Calibration values to load. Values set to <0 will
+ *                     not be applied.
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_lms_set_dc_cals(struct bladerf *dev,
+                                     const struct bladerf_lms_dc_cals *dc_cals);
+
+/**
+ * Retrieve the current DC calibration values from the LMS6002
+ *
+ * @param[in]   dev        Device handle
+ * @param[out]  dc_cals    Populated with current values
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_lms_get_dc_cals(struct bladerf *dev,
+                                      struct bladerf_lms_dc_cals *dc_cals);
 
 /**
  * Enable LMS receive

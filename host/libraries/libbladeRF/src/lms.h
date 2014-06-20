@@ -532,6 +532,24 @@ int lms_dump_registers(struct bladerf *dev);
 int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module);
 
 /**
+ * Load DC calibration values directly via device registers instead of
+ * running autocalibration routines.
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   dc_cals     Calibration values to load
+ */
+int lms_set_dc_cals(struct bladerf *dev,
+                    const struct bladerf_lms_dc_cals *dc_cals);
+
+/**
+ * Retrieve the DC calibration values currently in use
+ *
+ * @param[in]   dev         Device handle
+ * @param[out]   dc_cals    Calibration values to load
+ */
+int lms_get_dc_cals(struct bladerf *dev, struct bladerf_lms_dc_cals *dc_cals);
+
+/**
  * Initialize and configure the LMS6002D given the transceiver
  * configuration passed in.
  *

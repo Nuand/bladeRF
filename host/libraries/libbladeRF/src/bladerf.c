@@ -925,7 +925,7 @@ int bladerf_si5338_write(struct bladerf *dev, uint8_t address, uint8_t val)
 }
 
 /*------------------------------------------------------------------------------
- * LMS register read / write functions
+ * LMS register access and low-level functions
  *----------------------------------------------------------------------------*/
 
 int bladerf_lms_read(struct bladerf *dev, uint8_t address, uint8_t *val)
@@ -936,6 +936,18 @@ int bladerf_lms_read(struct bladerf *dev, uint8_t address, uint8_t *val)
 int bladerf_lms_write(struct bladerf *dev, uint8_t address, uint8_t val)
 {
     return dev->fn->lms_write(dev,address,val);
+}
+
+int bladerf_lms_set_dc_cals(struct bladerf *dev,
+                            const struct bladerf_lms_dc_cals *dc_cals)
+{
+    return lms_set_dc_cals(dev, dc_cals);
+}
+
+int bladerf_lms_get_dc_cals(struct bladerf *dev,
+                            struct bladerf_lms_dc_cals *dc_cals)
+{
+    return lms_get_dc_cals(dev, dc_cals);
 }
 
 /*------------------------------------------------------------------------------
