@@ -1009,43 +1009,52 @@ int bladerf_xb200_attach(struct bladerf *dev);
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_xb200_set_filterbank(struct bladerf *dev, bladerf_module mod, bladerf_xb200_filter filter);
+int CALL_CONV bladerf_xb200_set_filterbank(struct bladerf *dev,
+                                           bladerf_module mod,
+                                           bladerf_xb200_filter filter);
 
 /**
  * Get current XB-200 filterbank
  *
- * @param       dev         Device handle
- * @param       mod         Module
- * @param       filter      Pointer to filterbank
+ * @param[in]    dev        Device handle
+ * @param[in]    module     Module to query
+ * @param[out]   filter     Pointer to filterbank, only updated if return
+ *                          value is 0.
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_xb200_get_filterbank(struct bladerf *dev, bladerf_module mod, bladerf_xb200_filter *filter);
+int CALL_CONV bladerf_xb200_get_filterbank(struct bladerf *dev,
+                                           bladerf_module module,
+                                           bladerf_xb200_filter *filter);
 
 /**
  * Set XB-200 signal path
  *
  * @param       dev         Device handle
- * @param       mod         Module
- * @param       filter      XB200 filterbank
+ * @param       module      Module to configure
+ * @param       path        Desired XB-200 signal path
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_xb200_set_path(struct bladerf *dev, bladerf_module mod, bladerf_xb200_path path);
+int CALL_CONV bladerf_xb200_set_path(struct bladerf *dev,
+                                     bladerf_module module,
+                                     bladerf_xb200_path path);
 
 /**
  * Get current XB-200 signal path
  *
  * @param       dev         Device handle
- * @param       mod         Module
+ * @param       module      Module to query
  * @param       path        Pointer to XB200 signal path
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_xb200_get_path(struct bladerf *dev, bladerf_module mod, bladerf_xb200_path *path);
+int CALL_CONV bladerf_xb200_get_path(struct bladerf *dev,
+                                     bladerf_module module,
+                                     bladerf_xb200_path *path);
 
 /** @} (End of FN_CTRL) */
 
