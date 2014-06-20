@@ -710,34 +710,72 @@ int calibrate_dc(struct bladerf *dev, unsigned int ops)
     }
 
     if (IS_CAL(CAL_DC_LMS_TUNING, ops)) {
-        printf ("Calibrating LMS bandwidth tuning\n");
+        printf ("Calibrating LMS LPF tuning module...\n");
         status = bladerf_calibrate_dc(dev, BLADERF_DC_CAL_LPF_TUNING);
         if (status != 0) {
             goto error;
+        } else {
+            struct bladerf_lms_dc_cals dc_cals;
+            status = bladerf_lms_get_dc_cals(dev, &dc_cals);
+            if (status != 0) {
+                goto error;
+            }
+
+            printf("    LPF tuning module: %d\n\n", dc_cals.lpf_tuning);
         }
     }
 
     if (IS_CAL(CAL_DC_LMS_TXLPF, ops)) {
-        printf ("Calibrating LMS txlpf\n");
+        printf ("Calibrating LMS TX LPF modules...\n");
         status = bladerf_calibrate_dc(dev, BLADERF_DC_CAL_TX_LPF);
         if (status != 0) {
             goto error;
+        } else {
+            struct bladerf_lms_dc_cals dc_cals;
+            status = bladerf_lms_get_dc_cals(dev, &dc_cals);
+            if (status != 0) {
+                goto error;
+            }
+
+            printf("    TX LPF I filter: %d\n", dc_cals.tx_lpf_i);
+            printf("    TX LPF Q filter: %d\n\n", dc_cals.tx_lpf_q);
         }
     }
 
     if (IS_CAL(CAL_DC_LMS_RXLPF, ops)) {
-        printf ("Calibrating LMS rxlpf\n");
+        printf ("Calibrating LMS RX LPF modules...\n");
         status = bladerf_calibrate_dc(dev, BLADERF_DC_CAL_RX_LPF);
         if (status != 0) {
             goto error;
+        } else {
+            struct bladerf_lms_dc_cals dc_cals;
+            status = bladerf_lms_get_dc_cals(dev, &dc_cals);
+            if (status != 0) {
+                goto error;
+            }
+
+            printf("    RX LPF I filter: %d\n", dc_cals.rx_lpf_i);
+            printf("    RX LPF Q filter: %d\n\n", dc_cals.rx_lpf_q);
         }
     }
 
     if (IS_CAL(CAL_DC_LMS_RXVGA2, ops)) {
-        printf ("Calibrating LMS rxvga2\n");
+        printf ("Calibrating LMS RXVGA2 modules...\n");
         status = bladerf_calibrate_dc(dev, BLADERF_DC_CAL_RXVGA2);
         if (status != 0) {
             goto error;
+        } else {
+            struct bladerf_lms_dc_cals dc_cals;
+            status = bladerf_lms_get_dc_cals(dev, &dc_cals);
+            if (status != 0) {
+                goto error;
+            }
+
+            printf("    RX VGA2 DC reference module: %d\n", dc_cals.dc_ref);
+            printf("    RX VGA2 stage 1, I channel: %d\n", dc_cals.rxvga2a_i);
+            printf("    RX VGA2 stage 1, Q channel: %d\n", dc_cals.rxvga2a_q);
+            printf("    RX VGA2 stage 2, I channel: %d\n", dc_cals.rxvga2b_i);
+            printf("    RX VGA2 stage 2, Q channel: %d\n\n", dc_cals.rxvga2b_q);
         }
     }
 
