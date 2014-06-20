@@ -468,6 +468,12 @@ int calibrate_dc_tx(struct bladerf *dev,
         goto out;
     }
 
+    status = bladerf_enable_module(dev, BLADERF_MODULE_TX, true);
+    if (status != 0) {
+        goto out;
+    }
+
+
     status = bladerf_sync_config(dev, BLADERF_MODULE_RX,
                                  BLADERF_FORMAT_SC16_Q11,
                                  CAL_NUM_BUFS, CAL_BUF_LEN,
@@ -576,6 +582,9 @@ out:
     free(rx_samples);
     free(tx_task.samples);
 
+    status = bladerf_enable_module(dev, BLADERF_MODULE_TX, false);
+    retval = first_error(retval, status);
+
     /* Restore RX frequency */
     status = bladerf_set_frequency(dev, BLADERF_MODULE_TX, tx_freq);
     retval = first_error(retval, status);
@@ -673,11 +682,6 @@ int calibrate_dc(struct bladerf *dev, unsigned int ops)
         return status;
     }
 
-    status = bladerf_set_loopback(dev, BLADERF_LB_NONE);
-    if (status != 0) {
-        goto error;
-    }
-
     if (IS_RX_CAL(ops)) {
         status = set_rx_dc(dev, 0, 0);
         if (status != 0) {
@@ -691,8 +695,6 @@ int calibrate_dc(struct bladerf *dev, unsigned int ops)
     }
 
     if (IS_TX_CAL(ops)) {
-        /* TODO disconnect TX from external output */
-
         status = bladerf_enable_module(dev, BLADERF_MODULE_RX, true);
         if (status != 0) {
             goto error;
@@ -703,11 +705,22 @@ int calibrate_dc(struct bladerf *dev, unsigned int ops)
             goto error;
         }
 
+        status = bladerf_set_loopback(dev, BLADERF_LB_BB_TXVGA1_RXVGA2);
+        if (status != 0) {
+            goto error;
+        }
+
         status = dummy_tx(dev);
         if (status != 0) {
             goto error;
         }
     }
+
+    status = bladerf_set_loopback(dev, BLADERF_LB_NONE);
+    if (status != 0) {
+        goto error;
+    }
+
 
     if (IS_CAL(CAL_DC_LMS_TUNING, ops)) {
         printf ("Calibrating LMS LPF tuning module...\n");
