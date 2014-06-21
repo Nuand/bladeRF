@@ -41,7 +41,7 @@ This technique can be seen with the different architectures:
 ## Building the Project ##
 The Quartus II build tools supports TCL as a scripting language which we utilize to not only create the project file, but build the system without requiring the need of the GUI. Currently, the `build_bladerf.sh` performs some environment checks, builds the NIOS BSP and software, and then kicks off TCL scripts to build the FPGA image.
 
-To support multiple versions of Quartus II on the same machine and to ensure the environment is appropriately setup, please use the `nios2_command_shell.sh` script to get into an appropriate Quartus II environment.  Note that this shell script is usually located in the `nios2eds` directory of your Quartus II install directory.  Also note that this is the preferred method regardless of using Windows or Linux to build.
+To support multiple versions of Quartus II on the same machine and to ensure the environment is appropriately setup, please use the `nios2_command_shell.sh` script to get into an appropriate Quartus II environment.  Note that this shell script is usually located in the `nios2eds` directory of your Quartus II install directory.  Also note that this is the preferred method regardless of using Windows or Linux to build.  If you're using pybombs, make sure you haven't run `setup_env.sh`, as it prevents `nios2_command_shell.sh` from working properly.
 
 1. Take note of which Altera Cyclone IV you have. (The EP4CE40 is 40 kLE, and the EP4CE115 is 115 kLE.)  You'll need this size below...
 2. Enter the `quartus` directory
