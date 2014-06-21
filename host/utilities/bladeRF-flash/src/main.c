@@ -235,7 +235,7 @@ static int init_event_counts(libusb_context *ctx,
             0,
             vender_id, product_id,
             LIBUSB_HOTPLUG_MATCH_ANY,
-            count_events,
+            (libusb_hotplug_callback_fn)count_events,
             data,
             NULL);
 
