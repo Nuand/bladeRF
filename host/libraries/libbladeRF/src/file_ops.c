@@ -25,7 +25,6 @@
 #include <sys/types.h>
 #include <string.h>
 #include <errno.h>
-#include <inttypes.h>
 #include <libbladeRF.h>
 #include "host_config.h"
 #include "file_ops.h"

@@ -21,9 +21,9 @@
 #include <limits.h>
 #include <pthread.h>
 #include <errno.h>
-#include <inttypes.h>
 
 #include "host_config.h"
+
 #if BLADERF_OS_WINDOWS || BLADERF_OS_OSX
 #include "clock_gettime.h"
 #else
