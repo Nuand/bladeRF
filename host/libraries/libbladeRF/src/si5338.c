@@ -19,10 +19,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include <string.h>
-#include <inttypes.h>
 #include "rel_assert.h"
 
 #include "libbladeRF.h"
+#include "host_config.h"
 #include "bladerf_priv.h"
 #include "log.h"
 

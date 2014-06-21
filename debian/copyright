@@ -122,7 +122,7 @@ License: BSD-2-clause
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-Files: host/common/include/windows/inttypes.h
+Files: host/common/include/windows/inttypes_msvc.h
 Copyright: 2006-2013 Alexander Chemeris
 Comment: Not used in building Debian packages
 License: BSD-3-clause

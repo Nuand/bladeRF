@@ -152,24 +152,28 @@
 #elif BLADERF_OS_WINDOWS
 
 /* Rename a few functions and types */
-#include <Windows.h>
-#define strtok_r    strtok_s
-#define strtoull    _strtoui64
-#define snprintf    _snprintf
-#define vsnprintf   _vsnprintf
-#define strcasecmp  _stricmp
-#define strncasecmp _strnicmp
-#define fileno      _fileno
-#define strdup      _strdup
+#include <windows.h>
 #define usleep(x)      Sleep((x+999)/1000)
 
+/* Changes specific to Microsoft Visual Studio and its C89-compliant ways */
+#if _MSC_VER
+#   define strtok_r    strtok_s
+#   define strtoull    _strtoui64
+#   define snprintf    _snprintf
+#   define vsnprintf   _vsnprintf
+#   define strcasecmp  _stricmp
+#   define strncasecmp _strnicmp
+#   define fileno      _fileno
+#   define strdup      _strdup
+
 /* ssize_t lives elsewhere */
-#include <BaseTsd.h>
-#define ssize_t SSIZE_T
+#   include <BaseTsd.h>
+#   define ssize_t SSIZE_T
 
 /* With msvc, inline is only available for C++. Otherwise we need to use __inline:
  *  http://msdn.microsoft.com/en-us/library/z8y1yy88.aspx */
-#define inline __inline
+#   define inline __inline
+#endif // _MSC_VER
 
 #endif
 
@@ -184,10 +188,17 @@
  * Here's a sample regexep you could use in vim to clean these up in your code:
  *  @\(\s\+\)\(\.[a-zA-Z0-9_]\+\)\s*=\s*\([a-zA-Z0-9_]\+\)\(,\)\?@\1FIELD_INIT(\2,\3)\4@gc
  */
-#if BLADERF_OS_WINDOWS
+#if _MSC_VER
 #   define FIELD_INIT(field, ...) __VA_ARGS__
 #else
 #   define FIELD_INIT(field, ...) field = __VA_ARGS__
-#endif
+#endif // _MSC_VER
+
+/* MSVC doesn't have inttypes.h.  We'll use a local version for this environment. */
+#if _MSC_VER
+#   include <inttypes_msvc.h>
+#else
+#   include <inttypes.h>
+#endif // _MSC_VER
 
 #endif

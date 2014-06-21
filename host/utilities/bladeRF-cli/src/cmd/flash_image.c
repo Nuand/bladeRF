@@ -23,9 +23,10 @@
 #include <stdio.h>
 #include <limits.h>
 #include <time.h>
-#include <inttypes.h>
+
 #include <libbladeRF.h>
 
+#include "host_config.h"
 #include "cmd.h"
 #include "common.h"
 #include "conversions.h"
