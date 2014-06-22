@@ -26,6 +26,10 @@
 
 #include <stdbool.h>
 #include "common.h"
+#include "conversions.h"
+
+#define NUM_FREQ_SUFFIXES 6
+extern const struct numeric_suffix freq_suffixes[NUM_FREQ_SUFFIXES];
 
 /**
  * Parse and execute the supplied command

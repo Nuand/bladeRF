@@ -25,11 +25,60 @@
 #include "common.h"
 #include "cmd.h"
 
+static int get_dc_tbl_args(struct cli_state *s, int argc, char **argv,
+                           unsigned int *f_low, unsigned int *f_inc,
+                           unsigned int *f_high)
+{
+    bool ok;
+    const unsigned int min = *f_low;
+
+    if (argc == 3) {
+        /* Just use the defaults */
+        return 0;
+    } else if (argc != 6) {
+        return CLI_RET_NARGS;
+    }
+
+    *f_low = str2uint_suffix(argv[3], min, BLADERF_FREQUENCY_MAX,
+                             freq_suffixes, NUM_FREQ_SUFFIXES, &ok);
+
+    if (!ok) {
+        cli_err(s, argv[0], "Invalid min frequency (%s)\n", argv[3]);
+        return CLI_RET_INVPARAM;
+    }
+
+    *f_inc = str2uint_suffix(argv[4], 1, BLADERF_FREQUENCY_MAX,
+                             freq_suffixes, NUM_FREQ_SUFFIXES, &ok);
+
+    if (!ok) {
+        cli_err(s, argv[0], "Invalid frequency increment (%s)\n", argv[4]);
+        return CLI_RET_INVPARAM;
+    }
+
+    *f_high = str2uint_suffix(argv[5], min, BLADERF_FREQUENCY_MAX,
+                              freq_suffixes, NUM_FREQ_SUFFIXES, &ok);
+
+    if (!ok) {
+        cli_err(s, argv[0], "Invalid max frequency (%s)\n", argv[5]);
+        return CLI_RET_INVPARAM;
+    }
+
+    if (*f_low >= *f_high) {
+        cli_err(s, argv[0], "Low frequency cannot be >= high frequency\n");
+        return CLI_RET_INVPARAM;
+    }
+
+    if ((*f_high - *f_low) / *f_inc == 0) {
+        cli_err(s, argv[0], "The specified frequency increment would yield "
+                            "an empty table.\n");
+        return CLI_RET_INVPARAM;
+    }
+
+    return 0;
+}
+
 int cmd_calibrate(struct cli_state *state, int argc, char **argv)
 {
-    /* Valid commands:
-        calibrate [module]
-    */
     int status = 0;
     unsigned int ops = 0;
     int fpga_status;
@@ -66,7 +115,9 @@ int cmd_calibrate(struct cli_state *state, int argc, char **argv)
         } else if (strcasecmp(argv[1], "dc") == 0) {
             ops = CAL_DC_AUTO;
         } else {
-            cli_err(state, argv[0], "Invalid calibration option: %s", argv[1]);
+            cli_err(state, argv[0],
+                    "Invalid calibration option or missing arguments: %s",
+                    argv[1]);
             return CLI_RET_INVPARAM;
         }
 
@@ -76,6 +127,31 @@ int cmd_calibrate(struct cli_state *state, int argc, char **argv)
                 goto error;
             }
         }
+    } else if (argc >=  3) {
+        /* TODO set the min based upon whether or not an XB200 is attached */
+        unsigned int f_low = BLADERF_FREQUENCY_MIN;
+        unsigned int f_inc = 10000000;
+        unsigned int f_high = BLADERF_FREQUENCY_MAX;
+        bladerf_module module;
+
+        status = get_dc_tbl_args(state, argc, argv,
+                                 &f_low, &f_inc, &f_high);
+        if (status != 0) {
+            return status;
+        }
+
+        if (strcasecmp(argv[1], "dc_rx_tbl") == 0) {
+            module = BLADERF_MODULE_RX;
+        } else if (strcasecmp(argv[1], "dc_tx_tbl") == 0) {
+            module = BLADERF_MODULE_TX;
+        } else {
+            cli_err(state, argv[0], "Invalid calibration option: %s", argv[1]);
+            return CLI_RET_INVPARAM;
+        }
+
+        status = calibrate_dc_gen_tbl(state->dev, module, argv[2],
+                                      f_low, f_inc, f_high);
+
 
     } else {
         return CLI_RET_NARGS;

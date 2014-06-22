@@ -38,18 +38,6 @@ struct printset_entry {
     const char *name;                   /*<< String associated with parameter */
 };
 
-static const struct numeric_suffix FREQ_SUFFIXES[] = {
-    { "G",      1000 * 1000 * 1000 },
-    { "GHz",    1000 * 1000 * 1000 },
-    { "M",      1000 * 1000 },
-    { "MHz",    1000 * 1000 },
-    { "k",      1000 } ,
-    { "kHz",    1000 }
-};
-
-static const int NUM_FREQ_SUFFIXES =
-        sizeof(FREQ_SUFFIXES) / sizeof(struct numeric_suffix);
-
 /* Declarations */
 PRINTSET_DECL(bandwidth)
 PRINTSET_DECL(frequency)
@@ -208,7 +196,7 @@ int set_bandwidth(struct cli_state *state, int argc, char **argv)
         /* Parse bandwidth */
         bw = str2uint_suffix( argv[3],
                               BLADERF_BANDWIDTH_MIN, BLADERF_BANDWIDTH_MAX,
-                              FREQ_SUFFIXES, NUM_FREQ_SUFFIXES, &ok );
+                              freq_suffixes, NUM_FREQ_SUFFIXES, &ok );
         if( !ok ) {
             cli_err(state, argv[0], "Invalid bandwidth (%s)", argv[3]);
             rv = CLI_RET_INVPARAM;
@@ -220,7 +208,7 @@ int set_bandwidth(struct cli_state *state, int argc, char **argv)
         bool ok;
         bw = str2uint_suffix( argv[2],
                               BLADERF_BANDWIDTH_MIN, BLADERF_BANDWIDTH_MAX,
-                              FREQ_SUFFIXES, NUM_FREQ_SUFFIXES, &ok );
+                              freq_suffixes, NUM_FREQ_SUFFIXES, &ok );
         if( !ok ) {
             cli_err(state, argv[0], "Invalid bandwidth (%s)", argv[2]);
             rv = CLI_RET_INVPARAM;
@@ -351,7 +339,7 @@ int set_frequency(struct cli_state *state, int argc, char **argv)
         /* Parse out frequency */
         freq = str2uint_suffix( argv[argc-1],
                                 BLADERF_FREQUENCY_MIN, BLADERF_FREQUENCY_MAX,
-                                FREQ_SUFFIXES, NUM_FREQ_SUFFIXES, &ok );
+                                freq_suffixes, NUM_FREQ_SUFFIXES, &ok );
 
         if( !ok ) {
             cli_err(state, argv[0], "Invalid frequency (%s)", argv[argc - 1]);
@@ -902,7 +890,7 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
         rate.integer = str2uint_suffix( argv[idx],
                                         BLADERF_SAMPLERATE_MIN,
                                         UINT_MAX,
-                                        FREQ_SUFFIXES, NUM_FREQ_SUFFIXES, &ok );
+                                        freq_suffixes, NUM_FREQ_SUFFIXES, &ok );
 
         /* Integer portion didn't make it */
         if( !ok ) {
@@ -914,7 +902,7 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
         if( rv == CLI_RET_OK && (argc == 5 || argc == 6) ) {
             idx++;
             rate.num = str2uint_suffix( argv[idx], 0, 999999999,
-                FREQ_SUFFIXES, NUM_FREQ_SUFFIXES, &ok );
+                freq_suffixes, NUM_FREQ_SUFFIXES, &ok );
             if( !ok ) {
                 cli_err(state, argv[0], "Invalid sample rate (%s %s/%s)",
                     argv[idx-1], argv[idx], argv[idx+1] );
@@ -924,7 +912,7 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
             if( ok ) {
                 idx++;
                 rate.den = str2uint_suffix( argv[idx], 1, 1000000000,
-                    FREQ_SUFFIXES, NUM_FREQ_SUFFIXES, &ok );
+                    freq_suffixes, NUM_FREQ_SUFFIXES, &ok );
                 if( !ok ) {
                     cli_err(state, argv[0], "Invalid sample rate (%s %s/%s)",
                         argv[idx-2], argv[idx-1], argv[idx] ) ;

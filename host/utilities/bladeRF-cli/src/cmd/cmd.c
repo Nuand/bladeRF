@@ -100,20 +100,27 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.exec, cmd_calibrate),
         FIELD_INIT(.desc, "Calibrate transceiver"),
         FIELD_INIT(.help,
-            "calibrate <operation>\n"
+            "calibrate <operation> [operation-specific arguments]\n"
             "\n"
             "Perform the specified calibration operation."
             "\n"
             "Available operations:\n"
             "\n"
-            "\tdc_lms_tuning\tDC calibration of LMS LPF Tuning\n"
-            "\tdc_lms_txlpf \tDC calibration of LMS TX LPF\n"
-            "\tdc_lms_rxlpf \tDC calibration of LMS RX LPF\n"
-            "\tdc_lms_rxvga2\tDC calibration of LMS RX VGA2\n"
-            "\tdc_lms       \tDC calibration of all of the above LMS items\n"
-            "\tdc_rx        \tDC calibration of LMS I and Q RX channels\n"
-            "\tdc_tx        \tDC calibration of LMS I and Q TX channels\n"
-            "\tdc           \tDC calibration of LMS I and Q RX+TX channels\n"
+            "\tdc_lms_tuning           \tDC calibration of LMS LPF Tuning\n"
+            "\tdc_lms_txlpf            \tDC calibration of LMS TX LPF\n"
+            "\tdc_lms_rxlpf            \tDC calibration of LMS RX LPF\n"
+            "\tdc_lms_rxvga2           \tDC calibration of LMS RX VGA2\n"
+            "\tdc_lms                  \tDC calibration of all of the above LMS items\n"
+            "\tdc_rx                   \tDC calibration of LMS I and Q RX channels\n"
+            "\tdc_tx                   \tDC calibration of LMS I and Q TX channels\n"
+            "\tdc                      \tDC calibration of LMS I and Q RX+TX channels\n"
+            "\tdc_rx_tbl <file> [range]\tGenerate a DC calibration table.\n"
+            "\n"
+            "Notes:\n"
+            "\tFor the dc_rx_tbl and dc_tx_tbl operations, the optional [range]\n"
+            "\tparameters may be used to specify the range and granularity of the\n"
+            "\tgenerated DC calibration tables. [range] is three values:\n"
+            "\t  [<min frequency> <frequnecy increment> <max frequency>]"
             "\n"
         )
     },
@@ -662,6 +669,15 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.desc, NULL),
         FIELD_INIT(.help, NULL),
     }
+};
+
+const struct numeric_suffix freq_suffixes[NUM_FREQ_SUFFIXES] = {
+    { "G",      1000 * 1000 * 1000 },
+    { "GHz",    1000 * 1000 * 1000 },
+    { "M",      1000 * 1000 },
+    { "MHz",    1000 * 1000 },
+    { "k",      1000 } ,
+    { "kHz",    1000 }
 };
 
 const struct cmd *get_cmd( char *name )

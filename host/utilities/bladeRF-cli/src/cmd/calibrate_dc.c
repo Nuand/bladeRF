@@ -25,8 +25,8 @@
 #include "common.h"
 #include "rel_assert.h"
 
-#define CAL_SAMPLERATE  24e5
-#define CAL_BANDWIDTH   15e5
+#define CAL_SAMPLERATE  3000000u
+#define CAL_BANDWIDTH   BLADERF_BANDWIDTH_MIN
 
 #define CAL_NUM_BUFS    2
 #define CAL_NUM_XFERS   1
@@ -51,6 +51,14 @@ struct cal_tx_task {
 
 struct point {
     float x, y;
+};
+
+/* Settings that need to be backed up and restored during DC cal */
+struct settings {
+    unsigned int bandwidth;
+    unsigned int frequency;
+    struct bladerf_rational_rate samplerate;
+    bladerf_loopback loopback;
 };
 
 /* Return "first" error, with precedence on error 1 */
@@ -307,8 +315,14 @@ int calibrate_dc_rx(struct bladerf *dev,
 
     *dc_i = test_i[min_i_idx];
     *dc_q = test_q[min_q_idx];
-    *avg_i = min_i;
-    *avg_q = min_q;
+
+    if (avg_i) {
+        *avg_i = min_i;
+    }
+
+    if (avg_q) {
+        *avg_q = min_q;
+    }
 
     status = set_rx_dc(dev, *dc_i, *dc_q);
     if (status != 0) {
@@ -618,60 +632,236 @@ error:
     return status;
 }
 
-static inline int backup_settings(struct bladerf *dev, bladerf_module module,
-                                  unsigned int *bandwidth,
-                                  struct bladerf_rational_rate *samplerate)
+static inline int backup_and_update_settings(struct bladerf *dev,
+                                            bladerf_module module,
+                                            struct settings *settings)
 {
     int status;
 
-    status = bladerf_get_bandwidth(dev, module, bandwidth);
+    status = bladerf_get_bandwidth(dev, module, &settings->bandwidth);
     if (status != 0) {
         return status;
-    } else {
-        status = bladerf_get_rational_sample_rate(dev, module, samplerate);
     }
+
+    status = bladerf_get_frequency(dev, module, &settings->frequency);
+    if (status != 0) {
+        return status;
+    }
+
+    status = bladerf_get_rational_sample_rate(dev, module,
+                                              &settings->samplerate);
+    if (status != 0) {
+        return status;
+    }
+
+    status = bladerf_set_bandwidth(dev, module, CAL_BANDWIDTH, NULL);
+    if (status != 0) {
+        return status;
+    }
+
+    status = bladerf_set_sample_rate(dev, module, CAL_SAMPLERATE, NULL);
 
     return status;
 }
 
 static inline int restore_settings(struct bladerf *dev, bladerf_module module,
-                                   unsigned int bandwidth,
-                                   struct bladerf_rational_rate *samplerate)
+                                   struct settings *settings)
 {
     int status;
 
-    status = bladerf_set_bandwidth(dev, module, bandwidth, NULL);
+    status = bladerf_set_bandwidth(dev, module, settings->bandwidth, NULL);
     if (status != 0) {
         return status;
-    } else {
-        status = bladerf_set_rational_sample_rate(dev, module,
-                                                  samplerate, NULL);
     }
+
+    status = bladerf_set_frequency(dev, module, settings->frequency);
+    if (status != 0) {
+        return status;
+    }
+
+    status = bladerf_set_rational_sample_rate(dev, module,
+                                              &settings->samplerate, NULL);
 
     return status;
 }
 
+/* See libbladeRF's dc_cal_table.c for the packed table data format */
+int calibrate_dc_gen_tbl(struct bladerf *dev, bladerf_module module,
+                         const char *filename, unsigned int f_low,
+                         unsigned f_inc, unsigned int f_high)
+{
+    int retval, status;
+    size_t off;
+    struct bladerf_lms_dc_cals lms_dc_cals;
+    unsigned int f;
+    struct settings settings;
+    bladerf_loopback loopback_backup;
+    struct bladerf_image *image = NULL;
+
+    const uint32_t tbl_version = HOST_TO_LE32(0x00000001);
+
+    const size_t lms_data_size = 10; /* 10 uint8_t register values */
+
+    const uint32_t n_frequencies = (f_high - f_low) / f_inc + 1;
+    const uint32_t n_frequencies_le = HOST_TO_LE32(n_frequencies);
+
+    const size_t entry_size = sizeof(uint32_t) +   /* Frequency */
+                              2 * sizeof(int16_t); /* DC I and Q valus */
+
+    const size_t table_size = n_frequencies * entry_size;
+
+    const size_t data_size = sizeof(tbl_version) + sizeof(n_frequencies_le) +
+                             lms_data_size + table_size;
+
+    status = backup_and_update_settings(dev, module, &settings);
+    if (status != 0) {
+        return status;
+    }
+
+    status = bladerf_get_loopback(dev, &loopback_backup);
+    if (status != 0) {
+        return status;
+    }
+
+    /* RX used for both TX and RX cal. TX module will be enabled as-needed */
+    status = bladerf_enable_module(dev, BLADERF_MODULE_RX, true);
+    if (status != 0) {
+        goto out;
+    }
+
+    status = bladerf_lms_get_dc_cals(dev, &lms_dc_cals);
+    if (status != 0) {
+        goto out;
+    }
+
+    if (module == BLADERF_MODULE_RX) {
+        image = bladerf_alloc_image(BLADERF_IMAGE_TYPE_RX_DC_CAL,
+                                    0xffffffff, data_size);
+    } else {
+        image = bladerf_alloc_image(BLADERF_IMAGE_TYPE_TX_DC_CAL,
+                                    0xffffffff, data_size);
+    }
+
+    if (image == NULL) {
+        status = BLADERF_ERR_MEM;
+        goto out;
+    }
+
+    printf("%d: %p\n", __LINE__, image->data);
+
+    status = bladerf_get_serial(dev, image->serial);
+    if (status != 0) {
+        goto out;
+    }
+
+    if (module == BLADERF_MODULE_RX) {
+        status = bladerf_set_loopback(dev, BLADERF_LB_NONE);
+        if (status != 0) {
+            goto out;
+        }
+    }
+
+    off = 0;
+    memcpy(&image->data[off], &tbl_version, sizeof(tbl_version));
+    off += sizeof(tbl_version);
+
+    memcpy(&image->data[off], &n_frequencies_le, sizeof(n_frequencies_le));
+    off += sizeof(n_frequencies_le);
+
+    printf("%d: %p\n", __LINE__, image->data);
+
+    image->data[off++] = (uint8_t)lms_dc_cals.lpf_tuning;
+    image->data[off++] = (uint8_t)lms_dc_cals.tx_lpf_i;
+    image->data[off++] = (uint8_t)lms_dc_cals.tx_lpf_q;
+    image->data[off++] = (uint8_t)lms_dc_cals.rx_lpf_i;
+    image->data[off++] = (uint8_t)lms_dc_cals.rx_lpf_q;
+    image->data[off++] = (uint8_t)lms_dc_cals.dc_ref;
+    image->data[off++] = (uint8_t)lms_dc_cals.rxvga2a_i;
+    image->data[off++] = (uint8_t)lms_dc_cals.rxvga2a_q;
+    image->data[off++] = (uint8_t)lms_dc_cals.rxvga2b_i;
+    image->data[off++] = (uint8_t)lms_dc_cals.rxvga2b_q;
+
+    printf("%d: %p\n", __LINE__, image->data);
+
+    for (f = f_low; f <= f_high; f += f_inc) {
+        const uint32_t frequency = HOST_TO_LE32((uint32_t)f);
+        int16_t dc_i, dc_q;
+
+        printf("  Calibrating @ %u Hz...\r", f);
+        fflush(stdout);
+
+        status = bladerf_set_frequency(dev, module, f);
+        if (status != 0) {
+            goto out;
+        }
+
+        if (module == BLADERF_MODULE_RX) {
+            status = calibrate_dc_rx(dev, &dc_i, &dc_q, NULL, NULL);
+        } else {
+            status = calibrate_dc_tx(dev, &dc_i, &dc_q, NULL, NULL);
+        }
+
+        if (status != 0) {
+            goto out;
+        }
+
+        dc_i = HOST_TO_LE16(dc_i);
+        dc_q = HOST_TO_LE16(dc_q);
+
+        memcpy(&image->data[off], &frequency, sizeof(frequency));
+        off += sizeof(frequency);
+
+        memcpy(&image->data[off], &dc_i, sizeof(dc_i));
+        off += sizeof(dc_i);
+
+        memcpy(&image->data[off], &dc_q, sizeof(dc_q));
+        off += sizeof(dc_q);
+    }
+    printf("%d: %p\n", __LINE__, image->data);
+
+
+    status = bladerf_image_write(image, filename);
+
+    printf("\nDone.\n");
+
+out:
+    retval = status;
+
+    if (module == BLADERF_MODULE_RX) {
+        status = bladerf_set_loopback(dev, loopback_backup);
+        retval = first_error(retval, status);
+    }
+
+    status = bladerf_enable_module(dev, BLADERF_MODULE_RX, false);
+    retval = first_error(retval, status);
+
+    status = restore_settings(dev, module, &settings);
+    retval = first_error(retval, status);
+
+    printf("%d: %p\n", __LINE__, image->data);
+    bladerf_free_image(image);
+    return retval;
+}
 
 int calibrate_dc(struct bladerf *dev, unsigned int ops)
 {
     int retval = 0;
     int status = BLADERF_ERR_UNEXPECTED;
-    unsigned int rx_bandwidth, tx_bandwidth;
-    struct bladerf_rational_rate rx_samplerate, tx_samplerate;
+    struct settings rx_settings, tx_settings;
     bladerf_loopback loopback;
     int16_t dc_i, dc_q;
 
     if (IS_RX_CAL(ops)) {
-        status = backup_settings(dev, BLADERF_MODULE_RX,
-                                 &rx_bandwidth, &rx_samplerate);
+        status = backup_and_update_settings(dev, BLADERF_MODULE_RX,
+                                            &rx_settings);
         if (status != 0) {
             return status;
         }
     }
 
     if (IS_TX_CAL(ops)) {
-        status = backup_settings(dev, BLADERF_MODULE_TX,
-                                 &tx_bandwidth, &tx_samplerate);
+        status = backup_and_update_settings(dev, BLADERF_MODULE_TX,
+                                            &tx_settings);
         if (status != 0) {
             return status;
         }
@@ -700,17 +890,22 @@ int calibrate_dc(struct bladerf *dev, unsigned int ops)
             goto error;
         }
 
-        status = bladerf_enable_module(dev, BLADERF_MODULE_TX, true);
-        if (status != 0) {
-            goto error;
-        }
-
         status = bladerf_set_loopback(dev, BLADERF_LB_BB_TXVGA1_RXVGA2);
         if (status != 0) {
             goto error;
         }
 
+        status = bladerf_enable_module(dev, BLADERF_MODULE_TX, true);
+        if (status != 0) {
+            goto error;
+        }
+
         status = dummy_tx(dev);
+        if (status != 0) {
+            goto error;
+        }
+
+        status = bladerf_enable_module(dev, BLADERF_MODULE_TX, false);
         if (status != 0) {
             goto error;
         }
@@ -822,8 +1017,7 @@ error:
         status = bladerf_enable_module(dev, BLADERF_MODULE_RX, false);
         retval = first_error(retval, status);
 
-        status = restore_settings(dev, BLADERF_MODULE_RX,
-                                  rx_bandwidth, &rx_samplerate);
+        status = restore_settings(dev, BLADERF_MODULE_RX, &rx_settings);
         retval = first_error(retval, status);
     }
 
@@ -835,8 +1029,7 @@ error:
         status = bladerf_enable_module(dev, BLADERF_MODULE_TX, false);
         retval = first_error(retval, status);
 
-        status = restore_settings(dev, BLADERF_MODULE_TX,
-                                  tx_bandwidth, &tx_samplerate);
+        status = restore_settings(dev, BLADERF_MODULE_TX, &tx_settings);
         retval = first_error(retval, status);
     }
 

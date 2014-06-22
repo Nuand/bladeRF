@@ -424,6 +424,8 @@ struct bladerf_image * bladerf_alloc_image(bladerf_image_type type,
             free(image);
             return NULL;
         }
+
+        printf("Data @ %p\n", image->data);
     }
 
     memcpy(image->magic, &image_magic, BLADERF_IMAGE_MAGIC_LEN);
@@ -504,6 +506,7 @@ struct bladerf_image * bladerf_alloc_cal_image(bladerf_fpga_size fpga_size,
 void bladerf_free_image(struct bladerf_image *image)
 {
     if (image) {
+        printf("Free @ %p\n", image->data);
         free(image->data);
         free(image);
     }
