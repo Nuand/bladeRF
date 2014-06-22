@@ -1018,6 +1018,60 @@ int bladerf_get_correction(struct bladerf *dev, bladerf_module module,
     return dev->fn->get_correction(dev, module, corr, value);
 }
 
+int bladerf_load_calibration_table(struct bladerf *dev, const char *filename)
+{
+    int status;
+    struct bladerf_image *image = NULL;
+    struct dc_cal_tbl *dc_tbl = NULL;
+
+    image = bladerf_alloc_image(BLADERF_IMAGE_TYPE_INVALID, 0xffffffff, 0);
+    if (image == NULL) {
+        return BLADERF_ERR_MEM;
+    }
+
+    status = bladerf_image_read(image, filename);
+    if (status == 0) {
+
+        if (image->type == BLADERF_IMAGE_TYPE_RX_DC_CAL ||
+            image->type == BLADERF_IMAGE_TYPE_TX_DC_CAL) {
+
+            dc_tbl = dc_cal_tbl_load(image->data, image->length);
+
+            if (dc_tbl == NULL) {
+                status = BLADERF_ERR_MEM;
+                goto out;
+            }
+
+            if (image->type == BLADERF_IMAGE_TYPE_RX_DC_CAL) {
+                free(dev->cal.dc_rx);
+                dev->cal.dc_rx = dc_tbl;
+            } else {
+                free(dev->cal.dc_tx);
+                dev->cal.dc_tx = dc_tbl;
+            }
+
+        } else if (image->type == BLADERF_IMAGE_TYPE_RX_IQ_CAL ||
+                   image->type == BLADERF_IMAGE_TYPE_TX_IQ_CAL) {
+
+            /* TODO: Not implemented */
+            status = BLADERF_ERR_UNSUPPORTED;
+            goto out;
+        } else {
+            status = BLADERF_ERR_INVAL;
+            log_debug("%s loaded nexpected image type: %d\n",
+                      __FUNCTION__, image->type);
+        }
+    }
+
+out:
+    if (status != 0) {
+        free(dc_tbl);
+    }
+
+    bladerf_free_image(image);
+    return status;
+}
+
 /*------------------------------------------------------------------------------
  * Get current timestamp counter
  *----------------------------------------------------------------------------*/

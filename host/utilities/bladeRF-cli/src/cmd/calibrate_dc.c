@@ -747,8 +747,6 @@ int calibrate_dc_gen_tbl(struct bladerf *dev, bladerf_module module,
         goto out;
     }
 
-    printf("%d: %p\n", __LINE__, image->data);
-
     status = bladerf_get_serial(dev, image->serial);
     if (status != 0) {
         goto out;
@@ -768,8 +766,6 @@ int calibrate_dc_gen_tbl(struct bladerf *dev, bladerf_module module,
     memcpy(&image->data[off], &n_frequencies_le, sizeof(n_frequencies_le));
     off += sizeof(n_frequencies_le);
 
-    printf("%d: %p\n", __LINE__, image->data);
-
     image->data[off++] = (uint8_t)lms_dc_cals.lpf_tuning;
     image->data[off++] = (uint8_t)lms_dc_cals.tx_lpf_i;
     image->data[off++] = (uint8_t)lms_dc_cals.tx_lpf_q;
@@ -780,8 +776,6 @@ int calibrate_dc_gen_tbl(struct bladerf *dev, bladerf_module module,
     image->data[off++] = (uint8_t)lms_dc_cals.rxvga2a_q;
     image->data[off++] = (uint8_t)lms_dc_cals.rxvga2b_i;
     image->data[off++] = (uint8_t)lms_dc_cals.rxvga2b_q;
-
-    printf("%d: %p\n", __LINE__, image->data);
 
     for (f = f_low; f <= f_high; f += f_inc) {
         const uint32_t frequency = HOST_TO_LE32((uint32_t)f);
@@ -817,8 +811,6 @@ int calibrate_dc_gen_tbl(struct bladerf *dev, bladerf_module module,
         memcpy(&image->data[off], &dc_q, sizeof(dc_q));
         off += sizeof(dc_q);
     }
-    printf("%d: %p\n", __LINE__, image->data);
-
 
     status = bladerf_image_write(image, filename);
 
@@ -838,7 +830,6 @@ out:
     status = restore_settings(dev, module, &settings);
     retval = first_error(retval, status);
 
-    printf("%d: %p\n", __LINE__, image->data);
     bladerf_free_image(image);
     return retval;
 }

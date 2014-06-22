@@ -23,6 +23,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include "bladerf_priv.h"
 
 struct dc_cal_entry {
     unsigned int freq;          /* Frequency (Hz) associated with this entry */
@@ -30,8 +31,12 @@ struct dc_cal_entry {
     int16_t dc_q;
 };
 
+
 struct dc_cal_tbl {
-    size_t n_entries;
+    uint32_t version;
+    uint32_t n_entries;
+    struct bladerf_lms_dc_cals reg_vals;
+
     unsigned int curr_idx;
     struct dc_cal_entry *entries;  /* Sorted (increasing) by freq */
 };

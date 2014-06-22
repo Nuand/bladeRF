@@ -732,6 +732,21 @@ int CALL_CONV bladerf_set_correction(struct bladerf *dev, bladerf_module module,
 API_EXPORT
 int CALL_CONV bladerf_get_correction(struct bladerf *dev, bladerf_module module,
                                      bladerf_correction corr, int16_t *value);
+
+/**
+ * Load a DC offset or IQ balance correction table from the specified file
+ *
+ * @param       dev         Device handle
+ * @param       filename    Path to correction table file. The type of data
+ *                          will be determined from the contents of the file,
+ *                          which is expected to be in the bladerf_image format.
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_load_calibration_table(struct bladerf *dev,
+                                             const char *filename);
+
 /**
  * Set the PA gain in dB
  *
