@@ -1970,7 +1970,11 @@ typedef enum {
     BLADERF_IMAGE_TYPE_FIRMWARE,      /**< Firmware data */
     BLADERF_IMAGE_TYPE_FPGA_40KLE,    /**< FPGA bitstream for 40 KLE device */
     BLADERF_IMAGE_TYPE_FPGA_115KLE,   /**< FPGA bitstream for 115  KLE device */
-    BLADERF_IMAGE_TYPE_CALIBRATION,   /**< Calibration data */
+    BLADERF_IMAGE_TYPE_CALIBRATION,   /**< Board calibration */
+    BLADERF_IMAGE_TYPE_RX_DC_CAL,     /**< RX DC offset calibration table */
+    BLADERF_IMAGE_TYPE_TX_DC_CAL,     /**< TX DC offset calibration table */
+    BLADERF_IMAGE_TYPE_RX_IQ_CAL,     /**< RX IQ balance calibration table */
+    BLADERF_IMAGE_TYPE_TX_IQ_CAL,     /**< TX IQ balance calibration table */
 } bladerf_image_type;
 
 /**
@@ -2116,7 +2120,7 @@ void CALL_CONV bladerf_free_image(struct bladerf_image *image);
  * This function will fill in the checksum field before writing the contents to
  * the specified file. The user-supplied contents of this field are ignored.
  *
- * @pre   `image` has been initialized using bladerf_image_init()
+ * @pre   `image` has been initialized using bladerf_alloc_image()
  * @post `image->checksum` will be populated if this function succeeds
  *
  * @param[in]    image       Flash image

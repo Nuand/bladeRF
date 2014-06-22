@@ -231,6 +231,22 @@ static int print_image_metadata(struct cli_state *s, struct params *p,
                 printf("Image type: Calibration data\n");
                 break;
 
+            case BLADERF_IMAGE_TYPE_RX_DC_CAL:
+                printf("Image type: RX DC offset calibration table\n");
+                break;
+
+            case BLADERF_IMAGE_TYPE_TX_DC_CAL:
+                printf("Image type: TX DC offset calibration table\n");
+                break;
+
+            case BLADERF_IMAGE_TYPE_RX_IQ_CAL:
+                printf("Image type: RX IQ balance calibration table\n");
+                break;
+
+            case BLADERF_IMAGE_TYPE_TX_IQ_CAL:
+                printf("Image type: TX IQ balance calibration table\n");
+                break;
+
             case BLADERF_IMAGE_TYPE_FIRMWARE:
                 printf("Image type: Firmware\n");
                 break;

@@ -127,6 +127,10 @@ static bool image_type_is_valid(bladerf_image_type type) {
         case BLADERF_IMAGE_TYPE_FPGA_40KLE:
         case BLADERF_IMAGE_TYPE_FPGA_115KLE:
         case BLADERF_IMAGE_TYPE_CALIBRATION:
+        case BLADERF_IMAGE_TYPE_RX_DC_CAL:
+        case BLADERF_IMAGE_TYPE_TX_DC_CAL:
+        case BLADERF_IMAGE_TYPE_RX_IQ_CAL:
+        case BLADERF_IMAGE_TYPE_TX_IQ_CAL:
             return true;
 
         default:
@@ -393,15 +397,19 @@ struct bladerf_image * bladerf_alloc_image(bladerf_image_type type,
 
     assert(BLADERF_IMAGE_MAGIC_LEN == (sizeof(image_magic) - 1));
 
-    if (!is_page_aligned(address)) {
-        log_debug("Address is not page-aligned: 0x%08x\n", address);
-        return NULL;
-    } else if (!is_page_aligned(length)) {
-        log_debug("Length is not page-aligned: 0x%08x\n", length);
-        return NULL;
-    } else if (!is_valid_addr_len(address, length)) {
-        log_debug("Invalid address=0x%08x or length=0x%08x\n", address, length);
-        return NULL;
+    /* 0xffffffff is a placeholder for images that use the format but don't
+     * currently have an address in flash to live in */
+    if (address != 0xffffffff) {
+        if (!is_page_aligned(address)) {
+            log_debug("Address is not page-aligned: 0x%08x\n", address);
+            return NULL;
+        } else if (!is_page_aligned(length)) {
+            log_debug("Length is not page-aligned: 0x%08x\n", length);
+            return NULL;
+        } else if (!is_valid_addr_len(address, length)) {
+            log_debug("Invalid address=0x%08x or length=0x%08x\n", address, length);
+            return NULL;
+        }
     }
 
     image = (struct bladerf_image *)calloc(1, sizeof(*image));
