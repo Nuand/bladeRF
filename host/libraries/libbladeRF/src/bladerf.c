@@ -480,7 +480,7 @@ int bladerf_set_frequency(struct bladerf *dev,
             return status;
         }
 
-        log_verbose("Set %s DC I,Q to: %d, %d\n",
+        log_verbose("Set %s DC offset cal (I, Q) to: (%d, %d)\n",
                     (module == BLADERF_MODULE_RX) ? "RX" : "TX", dc_i, dc_q);
     }
 
@@ -1035,6 +1035,9 @@ int bladerf_load_calibration_table(struct bladerf *dev, const char *filename)
         if (image->type == BLADERF_IMAGE_TYPE_RX_DC_CAL ||
             image->type == BLADERF_IMAGE_TYPE_TX_DC_CAL) {
 
+            bladerf_module module;
+            unsigned int frequency;
+
             dc_tbl = dc_cal_tbl_load(image->data, image->length);
 
             if (dc_tbl == NULL) {
@@ -1042,13 +1045,48 @@ int bladerf_load_calibration_table(struct bladerf *dev, const char *filename)
                 goto out;
             }
 
+            /* This appears to always come back as 23, so there should be
+             * no harm in setting it twice on both RX and TX. Warn if this
+             * assumption does not hold. */
+            if (dc_tbl->reg_vals.lpf_tuning != 23) {
+                log_warning("Table contains unexpected LPF tuning value: %d\n");
+            }
+
             if (image->type == BLADERF_IMAGE_TYPE_RX_DC_CAL) {
                 free(dev->cal.dc_rx);
+                module = BLADERF_MODULE_RX;
+
                 dev->cal.dc_rx = dc_tbl;
+                dev->cal.dc_rx->reg_vals.tx_lpf_i = -1;
+                dev->cal.dc_rx->reg_vals.tx_lpf_q = -1;
             } else {
                 free(dev->cal.dc_tx);
+                module = BLADERF_MODULE_TX;
+
                 dev->cal.dc_tx = dc_tbl;
+                dev->cal.dc_rx->reg_vals.rx_lpf_i = -1;
+                dev->cal.dc_rx->reg_vals.rx_lpf_q = -1;
+                dev->cal.dc_rx->reg_vals.dc_ref = -1;
+                dev->cal.dc_rx->reg_vals.rxvga2a_i = -1;
+                dev->cal.dc_rx->reg_vals.rxvga2a_q = -1;
+                dev->cal.dc_rx->reg_vals.rxvga2b_i = -1;
+                dev->cal.dc_rx->reg_vals.rxvga2b_q = -1;
             }
+
+            status = lms_set_dc_cals(dev, &dc_tbl->reg_vals);
+            if (status != 0) {
+                goto out;
+            }
+
+            /* Reset the module's frequency to kick off the application of the
+             * new table entries */
+            status = bladerf_get_frequency(dev, module, &frequency);
+            if (status != 0) {
+                goto out;
+            }
+
+            status = bladerf_set_frequency(dev, module, frequency);
+
 
         } else if (image->type == BLADERF_IMAGE_TYPE_RX_IQ_CAL ||
                    image->type == BLADERF_IMAGE_TYPE_TX_IQ_CAL) {
@@ -1064,10 +1102,6 @@ int bladerf_load_calibration_table(struct bladerf *dev, const char *filename)
     }
 
 out:
-    if (status != 0) {
-        free(dc_tbl);
-    }
-
     bladerf_free_image(image);
     return status;
 }
