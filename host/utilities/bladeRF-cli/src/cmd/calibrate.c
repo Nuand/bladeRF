@@ -130,7 +130,7 @@ int cmd_calibrate(struct cli_state *state, int argc, char **argv)
     } else if (argc >=  3) {
         /* TODO set the min based upon whether or not an XB200 is attached */
         unsigned int f_low = BLADERF_FREQUENCY_MIN;
-        unsigned int f_inc = 10000000;
+        unsigned int f_inc = 2500000;
         unsigned int f_high = BLADERF_FREQUENCY_MAX;
         bladerf_module module;
 
