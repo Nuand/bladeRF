@@ -22,24 +22,26 @@
 /* The binary DC calibration data is stored as follows. All values are
  * little-endian byte order.
  *
- * 0x0000 [uint32_t: Table format version]
- * 0x0004 [uint32_t: Number of entries]
- * 0x0008 [uint8_t:  LMS LPF tuning register value]
- * 0x0009 [uint8_t:  LMS TX LPF I register value]
- * 0x000a [uint8_t:  LMS TX LPF Q register value]
- * 0x000b [uint8_t:  LMS RX LPF I register value]
- * 0x000c [uint8_t:  LMS RX LPF Q register value]
- * 0x000d [uint8_t:  LMS DC REF register value]
- * 0x000e [uint8_t:  LMS RX VGA2a I register value]
- * 0x000f [uint8_t:  LMS RX VGA2a Q register value]
- * 0x0010 [uint8_t:  LMS RX VGA2b I register value]
- * 0x0011 [uint8_t:  LMS RX VGA2b Q register value]
- * 0x0012 [Start of table entries]
+ * 0x0000 [uint16_t: Fixed value of 0x9a51]
+ * 0x0002 [uint32_t: Reserved. Set to 0x00000000]
+ * 0x0006 [uint32_t: Table format version]
+ * 0x000a [uint32_t: Number of entries]
+ * 0x000e [uint8_t:  LMS LPF tuning register value]
+ * 0x000f [uint8_t:  LMS TX LPF I register value]
+ * 0x0010 [uint8_t:  LMS TX LPF Q register value]
+ * 0x0011 [uint8_t:  LMS RX LPF I register value]
+ * 0x0012 [uint8_t:  LMS RX LPF Q register value]
+ * 0x0013 [uint8_t:  LMS DC REF register value]
+ * 0x0014 [uint8_t:  LMS RX VGA2a I register value]
+ * 0x0015 [uint8_t:  LMS RX VGA2a Q register value]
+ * 0x0016 [uint8_t:  LMS RX VGA2b I register value]
+ * 0x0017 [uint8_t:  LMS RX VGA2b Q register value]
+ * 0x0018 [Start of table entries]
  *
  * Where a table entry is:
  *        [uint32_t: Frequency]
- *        [uint8_t:  DC I register value]
- *        [uint8_t:  DC Q register value]
+ *        [int16_t:  DC I correction value]
+ *        [int16_t:  DC Q correction value]
  */
 
 #include <stdlib.h>
@@ -61,8 +63,10 @@
 #   define WARN(str) log_warning(str)
 #endif
 
-#define DC_CAL_TBL_META_SIZE    0x12
-#define DC_CAL_TBL_ENTRY_SIZE   (sizeof(uint32_t) + 2 * sizeof(uint8_t))
+#define DC_CAL_TBL_MAGIC        0x1ab1
+
+#define DC_CAL_TBL_META_SIZE    0x18
+#define DC_CAL_TBL_ENTRY_SIZE   (sizeof(uint32_t) + 2 * sizeof(int16_t))
 #define DC_CAL_TBL_MIN_SIZE     (DC_CAL_TBL_META_SIZE + DC_CAL_TBL_ENTRY_SIZE)
 
 static inline bool entry_matches(const struct dc_cal_tbl *tbl,
@@ -141,16 +145,26 @@ unsigned int dc_cal_tbl_lookup(const struct dc_cal_tbl *tbl, unsigned int freq)
 struct dc_cal_tbl * dc_cal_tbl_load(uint8_t *buf, size_t buf_len)
 {
     struct dc_cal_tbl *ret;
-    size_t i, entry_idx, table_size;
+    uint32_t i;
+    uint16_t magic;
 
     if (buf_len < DC_CAL_TBL_MIN_SIZE) {
         return NULL;
     }
 
+    memcpy(&magic, buf, sizeof(magic));
+    if (LE16_TO_HOST(magic) != DC_CAL_TBL_MAGIC) {
+        log_debug("Invalid magic value in cal table: %d\n", magic);
+        return NULL;
+    }
+    buf += sizeof(magic);
+
     ret = malloc(sizeof(ret[0]));
     if (ret == NULL) {
         return NULL;
     }
+
+    buf += sizeof(uint32_t); /* Skip reserved bytes */
 
     memcpy(&ret->version, buf, sizeof(ret->version));
     ret->version = LE32_TO_HOST(ret->version);
@@ -185,17 +199,19 @@ struct dc_cal_tbl * dc_cal_tbl_load(uint8_t *buf, size_t buf_len)
     ret->reg_vals.rxvga2b_q = *buf++;
 
     ret->curr_idx = ret->n_entries / 2;
-    entry_idx = 0;
-    table_size = DC_CAL_TBL_ENTRY_SIZE * ret->n_entries;
+    for (i = 0; i < ret->n_entries; i++) {
+        memcpy(&ret->entries[i].freq, buf, sizeof(uint32_t));
+        buf += sizeof(uint32_t);
 
-    for (i = 0; i < table_size; i += DC_CAL_TBL_ENTRY_SIZE) {
-        memcpy(&ret->entries[entry_idx].freq, &buf[i], sizeof(uint32_t));
-        ret->entries[entry_idx].freq =
-            LE32_TO_HOST(ret->entries[entry_idx].freq);
+        memcpy(&ret->entries[i].dc_i, buf, sizeof(int16_t));
+        buf += sizeof(int16_t);
 
-        ret->entries[entry_idx].dc_i = buf[i + sizeof(uint32_t)];
-        ret->entries[entry_idx].dc_q = buf[i + sizeof(uint32_t) + 1];
-        entry_idx++;
+        memcpy(&ret->entries[i].dc_q, buf, sizeof(int16_t));
+        buf += sizeof(int16_t);
+
+        ret->entries[i].freq = LE32_TO_HOST(ret->entries[i].freq);
+        ret->entries[i].dc_i = LE32_TO_HOST(ret->entries[i].dc_i);
+        ret->entries[i].dc_q = LE32_TO_HOST(ret->entries[i].dc_q);
     }
 
     return ret;

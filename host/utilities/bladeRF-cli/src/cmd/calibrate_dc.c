@@ -698,6 +698,8 @@ int calibrate_dc_gen_tbl(struct bladerf *dev, bladerf_module module,
     bladerf_loopback loopback_backup;
     struct bladerf_image *image = NULL;
 
+    const uint16_t magic = HOST_TO_LE16(0x1ab1);
+    const uint32_t reserved = HOST_TO_LE32(0x00000000);
     const uint32_t tbl_version = HOST_TO_LE32(0x00000001);
 
     const size_t lms_data_size = 10; /* 10 uint8_t register values */
@@ -710,7 +712,8 @@ int calibrate_dc_gen_tbl(struct bladerf *dev, bladerf_module module,
 
     const size_t table_size = n_frequencies * entry_size;
 
-    const size_t data_size = sizeof(tbl_version) + sizeof(n_frequencies_le) +
+    const size_t data_size = sizeof(magic) + sizeof(reserved) +
+                             sizeof(tbl_version) + sizeof(n_frequencies_le) +
                              lms_data_size + table_size;
 
     status = backup_and_update_settings(dev, module, &settings);
@@ -760,6 +763,13 @@ int calibrate_dc_gen_tbl(struct bladerf *dev, bladerf_module module,
     }
 
     off = 0;
+
+    memcpy(&image->data[off], &magic, sizeof(magic));
+    off += sizeof(magic);
+
+    memcpy(&image->data[off], &reserved, sizeof(reserved));
+    off += sizeof(reserved);
+
     memcpy(&image->data[off], &tbl_version, sizeof(tbl_version));
     off += sizeof(tbl_version);
 
@@ -781,8 +791,7 @@ int calibrate_dc_gen_tbl(struct bladerf *dev, bladerf_module module,
         const uint32_t frequency = HOST_TO_LE32((uint32_t)f);
         int16_t dc_i, dc_q;
 
-        printf("  Calibrating @ %u Hz...\r", f);
-        fflush(stdout);
+        printf("  Calibrating @ %u Hz...", f);
 
         status = bladerf_set_frequency(dev, module, f);
         if (status != 0) {
@@ -798,6 +807,9 @@ int calibrate_dc_gen_tbl(struct bladerf *dev, bladerf_module module,
         if (status != 0) {
             goto out;
         }
+
+        printf(" I=%d, Q=%d\n", dc_i, dc_q);
+        fflush(stdout);
 
         dc_i = HOST_TO_LE16(dc_i);
         dc_q = HOST_TO_LE16(dc_q);
