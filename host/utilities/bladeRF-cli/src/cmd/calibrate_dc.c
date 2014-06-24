@@ -799,16 +799,21 @@ int calibrate_dc_gen_tbl(struct bladerf *dev, bladerf_module module,
         }
 
         if (module == BLADERF_MODULE_RX) {
-            status = calibrate_dc_rx(dev, &dc_i, &dc_q, NULL, NULL);
+            int16_t error_i, error_q;
+            status = calibrate_dc_rx(dev, &dc_i, &dc_q, &error_i, &error_q);
+            printf(" I=%-4d (avg. val: %-4d), Q=%-4d (avg. val: %-4d)\r",
+                    dc_i, error_i, dc_q, error_q);
         } else {
-            status = calibrate_dc_tx(dev, &dc_i, &dc_q, NULL, NULL);
+            float error_i, error_q;
+            status = calibrate_dc_tx(dev, &dc_i, &dc_q, &error_i, &error_q);
+            printf(" I=%-4d (avg. val: %3.3f), Q=%-4d (avg. val: %3.3f)\r",
+                    dc_i, error_i, dc_q, error_q);
         }
 
         if (status != 0) {
             goto out;
         }
 
-        printf(" I=%d, Q=%d\n", dc_i, dc_q);
         fflush(stdout);
 
         dc_i = HOST_TO_LE16(dc_i);
