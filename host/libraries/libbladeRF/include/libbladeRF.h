@@ -740,6 +740,8 @@ int CALL_CONV bladerf_get_correction(struct bladerf *dev, bladerf_module module,
  * @param       filename    Path to correction table file. The type of data
  *                          will be determined from the contents of the file,
  *                          which is expected to be in the bladerf_image format.
+ *                          Set to NULL to disable and clear all calibration
+ *                          tables currently in use.
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */

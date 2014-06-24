@@ -1024,6 +1024,11 @@ int bladerf_load_calibration_table(struct bladerf *dev, const char *filename)
     struct bladerf_image *image = NULL;
     struct dc_cal_tbl *dc_tbl = NULL;
 
+    if (filename == NULL) {
+        memset(&dev->cal, 0, sizeof(dev->cal));
+        return 0;
+    }
+
     image = bladerf_alloc_image(BLADERF_IMAGE_TYPE_INVALID, 0xffffffff, 0);
     if (image == NULL) {
         return BLADERF_ERR_MEM;
