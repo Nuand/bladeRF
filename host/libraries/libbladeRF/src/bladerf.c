@@ -1069,13 +1069,13 @@ int bladerf_load_calibration_table(struct bladerf *dev, const char *filename)
                 module = BLADERF_MODULE_TX;
 
                 dev->cal.dc_tx = dc_tbl;
-                dev->cal.dc_rx->reg_vals.rx_lpf_i = -1;
-                dev->cal.dc_rx->reg_vals.rx_lpf_q = -1;
-                dev->cal.dc_rx->reg_vals.dc_ref = -1;
-                dev->cal.dc_rx->reg_vals.rxvga2a_i = -1;
-                dev->cal.dc_rx->reg_vals.rxvga2a_q = -1;
-                dev->cal.dc_rx->reg_vals.rxvga2b_i = -1;
-                dev->cal.dc_rx->reg_vals.rxvga2b_q = -1;
+                dev->cal.dc_tx->reg_vals.rx_lpf_i = -1;
+                dev->cal.dc_tx->reg_vals.rx_lpf_q = -1;
+                dev->cal.dc_tx->reg_vals.dc_ref = -1;
+                dev->cal.dc_tx->reg_vals.rxvga2a_i = -1;
+                dev->cal.dc_tx->reg_vals.rxvga2a_q = -1;
+                dev->cal.dc_tx->reg_vals.rxvga2b_i = -1;
+                dev->cal.dc_tx->reg_vals.rxvga2b_q = -1;
             }
 
             status = lms_set_dc_cals(dev, &dc_tbl->reg_vals);
