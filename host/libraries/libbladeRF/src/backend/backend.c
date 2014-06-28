@@ -24,8 +24,6 @@
 #include "backend/backend_config.h"
 #include "log.h"
 
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
-
 static const struct backend_fns *backend_list[] = BLADERF_BACKEND_LIST;
 
 int open_with_any_backend(struct bladerf *device,

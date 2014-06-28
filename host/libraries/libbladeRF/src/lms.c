@@ -49,8 +49,6 @@
 #define MHz(x) (x * 1000000)
 #define GHz(x) (x * 1000000000)
 
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
-
 /* LPF conversion table */
 static const unsigned int uint_bandwidths[] = {
     MHz(28),

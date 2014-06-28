@@ -32,8 +32,6 @@
 #include "bladeRF.h"    /* Firmware interface */
 #include "log.h"
 
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
-
 typedef enum {
     CORR_INVALID,
     CORR_FPGA,
