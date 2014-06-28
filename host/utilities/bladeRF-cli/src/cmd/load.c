@@ -63,15 +63,6 @@ int cmd_load(struct cli_state *state, int argc, char **argv)
                 printf("Done. Cycle power on the device.\n");
             }
 
-        } else if (!strcasecmp(argv[1], "cal") ||
-                   !strcasecmp(argv[1], "calibration")) {
-
-            printf("Loading calibration table from %s...\n", expanded_path);
-            lib_status = bladerf_load_calibration_table(dev, expanded_path);
-            if (lib_status == 0) {
-                printf("Done.");
-            }
-
         } else {
             cli_err(state, argv[0], "Invalid type: %s\n", argv[1]);
             rv = CLI_RET_INVPARAM;
