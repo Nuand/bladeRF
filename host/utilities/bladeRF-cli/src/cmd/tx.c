@@ -98,7 +98,7 @@ static void *tx_callback(struct bladerf *dev,
     /* Keep reading from the file until we have enough data, or have a
      * a condition in which we'll just zero pad the rest of the buffer */
     while (n_read < (2 * tx->data_mgmt.samples_per_buffer) && !zero_pad) {
-        to_read = 2 * tx->data_mgmt.samples_per_buffer - n_read;
+        to_read = (2 * tx->data_mgmt.samples_per_buffer) - n_read;
         read_status = fread(samples_int16 + n_read, sizeof(int16_t),
                             to_read, tx->file_mgmt.file);
 
@@ -145,8 +145,11 @@ tx_callback_out:
     pthread_mutex_unlock(&tx->file_mgmt.file_lock);
 
     if (zero_pad) {
-        memset(samples_int16 + n_read, 0,
-               tx->data_mgmt.samples_per_buffer - n_read);
+        const size_t vals_per_buf = (2 * tx->data_mgmt.samples_per_buffer);
+        const size_t vals_leftover = vals_per_buf - n_read;
+        const size_t bytes_leftover = vals_leftover * sizeof(int16_t);
+
+        memset(&samples_int16[n_read], 0, bytes_leftover);
     }
 
     pthread_mutex_unlock(&tx->data_mgmt.lock);
