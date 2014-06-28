@@ -395,3 +395,89 @@ bool version_less_than(struct bladerf_version *version,
 {
     return !version_greater_or_equal(version, major, minor, patch);
 }
+
+int load_calibration_table(struct bladerf *dev, const char *filename)
+{
+    int status;
+    struct bladerf_image *image = NULL;
+    struct dc_cal_tbl *dc_tbl = NULL;
+
+    if (filename == NULL) {
+        memset(&dev->cal, 0, sizeof(dev->cal));
+        return 0;
+    }
+
+    image = bladerf_alloc_image(BLADERF_IMAGE_TYPE_INVALID, 0xffffffff, 0);
+    if (image == NULL) {
+        return BLADERF_ERR_MEM;
+    }
+
+    status = bladerf_image_read(image, filename);
+    if (status == 0) {
+
+        if (image->type == BLADERF_IMAGE_TYPE_RX_DC_CAL ||
+            image->type == BLADERF_IMAGE_TYPE_TX_DC_CAL) {
+
+            bladerf_module module;
+            unsigned int frequency;
+
+            dc_tbl = dc_cal_tbl_load(image->data, image->length);
+
+            if (dc_tbl == NULL) {
+                status = BLADERF_ERR_MEM;
+                goto out;
+            }
+
+            if (image->type == BLADERF_IMAGE_TYPE_RX_DC_CAL) {
+                free(dev->cal.dc_rx);
+                module = BLADERF_MODULE_RX;
+
+                dev->cal.dc_rx = dc_tbl;
+                dev->cal.dc_rx->reg_vals.tx_lpf_i = -1;
+                dev->cal.dc_rx->reg_vals.tx_lpf_q = -1;
+            } else {
+                free(dev->cal.dc_tx);
+                module = BLADERF_MODULE_TX;
+
+                dev->cal.dc_tx = dc_tbl;
+                dev->cal.dc_tx->reg_vals.rx_lpf_i = -1;
+                dev->cal.dc_tx->reg_vals.rx_lpf_q = -1;
+                dev->cal.dc_tx->reg_vals.dc_ref = -1;
+                dev->cal.dc_tx->reg_vals.rxvga2a_i = -1;
+                dev->cal.dc_tx->reg_vals.rxvga2a_q = -1;
+                dev->cal.dc_tx->reg_vals.rxvga2b_i = -1;
+                dev->cal.dc_tx->reg_vals.rxvga2b_q = -1;
+            }
+
+            status = lms_set_dc_cals(dev, &dc_tbl->reg_vals);
+            if (status != 0) {
+                goto out;
+            }
+
+            /* Reset the module's frequency to kick off the application of the
+             * new table entries */
+            status = bladerf_get_frequency(dev, module, &frequency);
+            if (status != 0) {
+                goto out;
+            }
+
+            status = bladerf_set_frequency(dev, module, frequency);
+
+
+        } else if (image->type == BLADERF_IMAGE_TYPE_RX_IQ_CAL ||
+                   image->type == BLADERF_IMAGE_TYPE_TX_IQ_CAL) {
+
+            /* TODO: Not implemented */
+            status = BLADERF_ERR_UNSUPPORTED;
+            goto out;
+        } else {
+            status = BLADERF_ERR_INVAL;
+            log_debug("%s loaded nexpected image type: %d\n",
+                      __FUNCTION__, image->type);
+        }
+    }
+
+out:
+    bladerf_free_image(image);
+    return status;
+}

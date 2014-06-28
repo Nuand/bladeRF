@@ -264,4 +264,14 @@ bool version_less_than(struct bladerf_version *version,
                        unsigned int major, unsigned int minor,
                        unsigned int patch);
 
+/**
+ * Load a calibration table and apply its settings
+ *
+ * @param       dev         Device handle
+ * @param       filename    Name (and path) of file to load
+ *
+ * @return 0 on success, BLADERF_ERR_* on failure
+ */
+int load_calibration_table(struct bladerf *dev, const char *filename);
+
 #endif
