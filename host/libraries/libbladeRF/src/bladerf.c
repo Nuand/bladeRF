@@ -1050,13 +1050,6 @@ int bladerf_load_calibration_table(struct bladerf *dev, const char *filename)
                 goto out;
             }
 
-            /* This appears to always come back as 23, so there should be
-             * no harm in setting it twice on both RX and TX. Warn if this
-             * assumption does not hold. */
-            if (dc_tbl->reg_vals.lpf_tuning != 23) {
-                log_warning("Table contains unexpected LPF tuning value: %d\n");
-            }
-
             if (image->type == BLADERF_IMAGE_TYPE_RX_DC_CAL) {
                 free(dev->cal.dc_rx);
                 module = BLADERF_MODULE_RX;
