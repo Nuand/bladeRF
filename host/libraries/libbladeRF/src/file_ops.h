@@ -29,6 +29,7 @@
 #ifndef FILE_OPS_H__
 #define FILE_OPS_H__
 
+#include <stdio.h>
 #include <stdint.h>
 
 /**
@@ -76,9 +77,32 @@ int file_read(FILE *f, char *buf, size_t len);
  *
  * @param[in]   f           Open file stream.
  *
- * @return poisitive size of file on success, negative BLADERF_ERR_* value on
+ * @return positive size of file on success, negative BLADERF_ERR_* value on
  * failure
  */
 ssize_t file_size(FILE *f);
+
+/**
+ * Search for the specified filename in bladeRF config directories. If found,
+ * the full path is returned. There is a chance that the file will be removed
+ * in between this call indicating it exists and attempting to open it.
+ *
+ * @param   filename    File to search for
+ *
+ * @return Full path if the file is found, NULL otherwise.
+ */
+char *file_find(const char *filename);
+
+/**
+ * Search for the specified filename in bladeRF config directories. If found,
+ * the file will be read and contents provided
+ *
+ * @param[in]   f           Filename
+ * @param[out]  buf         Written with file data
+ * @param[out]  size        Updated with file size
+ *
+ * @return 0 on success, negative BLADERF_ERR_* value on failure
+ */
+int file_find_and_read(const char *filename, uint8_t **buf, size_t *size);
 
 #endif

@@ -31,6 +31,7 @@
 #include "file_ops.h"
 #include "minmax.h"
 #include "log.h"
+#include "rel_assert.h"
 
 /* Paths to search for bladeRF files */
 struct search_path_entries {
@@ -111,7 +112,6 @@ int file_read_buffer(const char *filename, uint8_t **buf_ret, size_t *size_ret)
     f = fopen(filename, "rb");
     if (!f) {
         int errno_val = errno;
-        log_verbose("fopen failed: %s\n", strerror(errno));
         return errno_val == ENOENT ? BLADERF_ERR_NO_FILE : BLADERF_ERR_IO;
     }
 
@@ -148,10 +148,10 @@ out:
 
 
 #if BLADERF_OS_LINUX || BLADERF_OS_OSX
-#include <pwd.h>
+#define ACCESS_FILE_EXISTS F_OK
 
 static const struct search_path_entries search_paths[] = {
-    { true,  "/.config/nuand/bladeRF/" },
+    { true,  "/.config/Nuand/bladeRF/" },
     { true,  "/.Nuand/bladeRF/" },
     { false, "/etc/Nuand/bladeRF/" },
 };
@@ -165,41 +165,76 @@ static inline size_t get_home_dir(char *buf, size_t max_len)
 }
 
 #elif BLADERF_OS_WINDOWS
-#error "TO DO"
+#define ACCESS_FILE_EXISTS 0
+#include <ShlObj.h>
+static const struct search_path_entries search_paths[] = {
+    { true,  "/Nuand/bladeRF/" },
+};
+
+static inline size_t get_home_dir(char *buf, size_t max_len)
+{
+    const KNOWNFOLDERID folder_id = FOLDERID_RoamingAppData;
+    PWSTR path;
+    HRESULT status;
+
+    assert(max_len < INT_MAX);
+
+    status = SHGetKnownFolderPath(&folder_id, 0, NULL, &path);
+    if (status == S_OK) {
+        WideCharToMultiByte(CP_ACP, 0, path, -1, buf, (int)max_len, NULL, NULL);
+        CoTaskMemFree(path);
+    }
+
+    return strlen(buf);
+}
+
+#else
 #error "Unknown OS or missing BLADERF_OS_* definition"
 #endif
 
-int file_find_and_read(const char *filename, uint8_t **buf, size_t *size)
+/* We're not using functions that use the *nix PATH_MAX (which is known to be problematic),
+ * or the WIN32 MAX_PATH.  Therefore,  we'll just use this arbitrary, but "sufficiently"
+ * large max buffer size for paths */
+#define PATH_MAX_LEN    4096
+
+char *file_find(const char *filename)
 {
-    int status;
-    size_t i;
-    size_t max_len;
-    char *full_path;
-
-    *buf = NULL;
-    *size = 0;
-
-    full_path = malloc(PATH_MAX);
-    if (full_path == NULL) {
-        return BLADERF_ERR_MEM;
-    }
+    size_t i, max_len;
+    char *full_path = (char*) calloc(1, PATH_MAX_LEN + 1);
 
     for (i = 0; i < ARRAY_SIZE(search_paths); i++) {
-        memset(full_path, 0, PATH_MAX);
-        max_len = PATH_MAX - 1;
+        memset(full_path, 0, PATH_MAX_LEN);
+        max_len = PATH_MAX_LEN - 1;
 
         if (search_paths[i].prepend_home) {
             max_len -= get_home_dir(full_path, max_len);
         }
 
         strncat(full_path, search_paths[i].path, max_len);
-        status = file_read_buffer(full_path, buf, size);
-        if (status == 0) {
-            goto out;
+        max_len = PATH_MAX_LEN - strlen(full_path);
+        strncat(full_path, filename, max_len);
+
+        if (access(full_path, ACCESS_FILE_EXISTS) != -1) {
+            return full_path;
         }
     }
 
-out:
     free(full_path);
-    return status;
+    return NULL;
+}
+
+int file_find_and_read(const char *filename, uint8_t **buf, size_t *size)
+{
+    int status;
+    char *full_path = file_find(filename);
+    *buf = NULL;
+    *size = 0;
+
+    if (full_path != NULL) {
+        status = file_read_buffer(full_path, buf, size);
+        free(full_path);
+        return status;
+    } else {
+        return BLADERF_ERR_NO_FILE;
+    }
 }

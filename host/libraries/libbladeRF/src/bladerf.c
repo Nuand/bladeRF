@@ -37,6 +37,7 @@
 #include "version.h"       /* Generated at build time */
 #include "conversions.h"
 #include "dc_cal_table.h"
+#include "config.h"
 
 /*------------------------------------------------------------------------------
  * Device discovery & initialization/deinitialization
@@ -135,7 +136,14 @@ int bladerf_open_with_devinfo(struct bladerf **opened_device,
     status = bladerf_is_fpga_configured(dev);
     if (status > 0) {
         status = bladerf_init_device(dev);
+        if (status != 0) {
+            goto error;
+        }
     }
+
+    /* Load any configuration files or FPGA images that a user has stored
+     * for this device in their bladerf config directory */
+    status = config_load_all(dev);
 
 error:
     if (status < 0) {
