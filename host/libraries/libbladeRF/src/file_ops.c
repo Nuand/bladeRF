@@ -24,11 +24,19 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <string.h>
+#include <limits.h>
 #include <errno.h>
 #include <libbladeRF.h>
 #include "host_config.h"
 #include "file_ops.h"
+#include "minmax.h"
 #include "log.h"
+
+/* Paths to search for bladeRF files */
+struct search_path_entries {
+    bool prepend_home;
+    const char *path;
+};
 
 int file_write(FILE *f, uint8_t *buf, size_t len)
 {
@@ -135,5 +143,63 @@ out:
         fclose(f);
     }
 
+    return status;
+}
+
+
+#if BLADERF_OS_LINUX || BLADERF_OS_OSX
+#include <pwd.h>
+
+static const struct search_path_entries search_paths[] = {
+    { true,  "/.config/nuand/bladeRF/" },
+    { true,  "/.Nuand/bladeRF/" },
+    { false, "/etc/Nuand/bladeRF/" },
+};
+
+static inline size_t get_home_dir(char *buf, size_t max_len)
+{
+    const uid_t uid = getuid();
+    const struct passwd *p = getpwuid(uid);
+    strncat(buf, p->pw_dir, max_len);
+    return strlen(buf);
+}
+
+#elif BLADERF_OS_WINDOWS
+#error "TO DO"
+#error "Unknown OS or missing BLADERF_OS_* definition"
+#endif
+
+int file_find_and_read(const char *filename, uint8_t **buf, size_t *size)
+{
+    int status;
+    size_t i;
+    size_t max_len;
+    char *full_path;
+
+    *buf = NULL;
+    *size = 0;
+
+    full_path = malloc(PATH_MAX);
+    if (full_path == NULL) {
+        return BLADERF_ERR_MEM;
+    }
+
+    for (i = 0; i < ARRAY_SIZE(search_paths); i++) {
+        memset(full_path, 0, PATH_MAX);
+        max_len = PATH_MAX - 1;
+
+        if (search_paths[i].prepend_home) {
+            max_len -= get_home_dir(full_path, max_len);
+        }
+
+        strncat(full_path, search_paths[i].path, max_len);
+        status = file_read_buffer(full_path, buf, size);
+        if (status == 0) {
+            goto out;
+        }
+    }
+
+out:
+    free(full_path);
     return status;
 }
