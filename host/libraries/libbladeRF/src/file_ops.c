@@ -68,28 +68,28 @@ ssize_t file_size(FILE *f)
 
     if(fpos < 0) {
         log_verbose("ftell failed: %s\n", strerror(errno));
-        goto file_size_out;
+        goto out;
     }
 
     if(fseek(f, 0, SEEK_END)) {
         log_verbose("fseek failed: %s\n", strerror(errno));
-        goto file_size_out;
+        goto out;
     }
 
     len = ftell(f);
     if(len < 0) {
         log_verbose("ftell failed: %s\n", strerror(errno));
-        goto file_size_out;
+        goto out;
     }
 
     if(fseek(f, fpos, SEEK_SET)) {
         log_debug("fseek failed: %s\n", strerror(errno));
-        goto file_size_out;
+        goto out;
     }
 
     rv = len;
 
-file_size_out:
+out:
     return rv;
 }
 
@@ -97,7 +97,7 @@ int file_read_buffer(const char *filename, uint8_t **buf_ret, size_t *size_ret)
 {
     int status = BLADERF_ERR_UNEXPECTED;
     FILE *f;
-    uint8_t *buf;
+    uint8_t *buf = NULL;
     ssize_t len;
 
     f = fopen(filename, "rb");
@@ -110,28 +110,30 @@ int file_read_buffer(const char *filename, uint8_t **buf_ret, size_t *size_ret)
     len = file_size(f);
     if(len < 0) {
         status = BLADERF_ERR_IO;
-        goto os_file_read__err_size;
+        goto out;
     }
 
     buf = malloc(len);
     if (!buf) {
         status = BLADERF_ERR_MEM;
-        goto os_file_read__err_malloc;
+        goto out;
     }
 
     status = file_read(f, (char*)buf, len);
-    if (status < 0)
-        goto os_file_read__err_read;
+    if (status < 0) {
+        goto out;
+    }
 
     *buf_ret = buf;
     *size_ret = len;
     fclose(f);
     return 0;
 
-os_file_read__err_read:
+out:
     free(buf);
-os_file_read__err_size:
-os_file_read__err_malloc:
-    fclose(f);
+    if (f) {
+        fclose(f);
+    }
+
     return status;
 }
