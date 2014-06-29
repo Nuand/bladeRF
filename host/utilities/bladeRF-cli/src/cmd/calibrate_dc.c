@@ -20,6 +20,7 @@
 #include <pthread.h>
 #include <string.h>
 #include <math.h>
+#include <limits.h>
 
 #include "calibrate.h"
 #include "common.h"
@@ -184,11 +185,11 @@ static int rx_avg(struct bladerf *dev, int16_t *samples,
     accum_i /= CAL_BUF_LEN;
     accum_q /= CAL_BUF_LEN;
 
-    assert(abs(accum_i) < (1 << 12));
-    assert(abs(accum_q) < (1 << 12));
+    assert(accum_i < (1 << 12) && accum_i >= (-(1 << 12)) );
+    assert(accum_q < (1 << 12) && accum_i >= (-(1 << 12)) );
 
-    *avg_i = accum_i;
-    *avg_q = accum_q;
+    *avg_i = (int16_t) accum_i;
+    *avg_q = (int16_t) accum_q;
 
     return 0;
 }
@@ -374,7 +375,7 @@ static inline int init_tx_task(struct bladerf *dev, struct cal_tx_task *task)
     }
 
     /* Transmit the vector 0 + 0j */
-    task->samples = calloc(CAL_BUF_LEN * 2, sizeof(task->samples[0]));
+    task->samples = (int16_t*) calloc(CAL_BUF_LEN * 2, sizeof(task->samples[0]));
     if (task->samples == NULL) {
         return BLADERF_ERR_MEM;
     }
@@ -429,7 +430,7 @@ int rx_avg_magnitude(struct bladerf *dev, int16_t *samples,
     }
 
     variance(samples, &var_i, &var_q);
-    *avg_magnitude = sqrt(var_i + var_q);
+    *avg_magnitude = (float) sqrt(var_i + var_q);
     return status;
 }
 
@@ -455,7 +456,7 @@ int calibrate_dc_tx(struct bladerf *dev,
         return status;
     }
 
-    rx_samples = malloc(CAL_BUF_LEN * 2 * sizeof(rx_samples[0]));
+    rx_samples = (int16_t*) malloc(CAL_BUF_LEN * 2 * sizeof(rx_samples[0]));
     if (rx_samples == NULL) {
         return BLADERF_ERR_MEM;
     }
@@ -516,22 +517,22 @@ int calibrate_dc_tx(struct bladerf *dev,
     p2.x = 768;
     p3.x = 1024;
 
-    status = rx_avg_magnitude(dev, rx_samples, p0.x, 0, &p0.y);
+    status = rx_avg_magnitude(dev, rx_samples, (int16_t) p0.x, 0, &p0.y);
     if (status != 0) {
         goto out;
     }
 
-    status = rx_avg_magnitude(dev, rx_samples, p1.x, 0, &p1.y);
+    status = rx_avg_magnitude(dev, rx_samples, (int16_t) p1.x, 0, &p1.y);
     if (status != 0) {
         goto out;
     }
 
-    status = rx_avg_magnitude(dev, rx_samples, p2.x, 0, &p2.y);
+    status = rx_avg_magnitude(dev, rx_samples, (int16_t) p2.x, 0, &p2.y);
     if (status != 0) {
         goto out;
     }
 
-    status = rx_avg_magnitude(dev, rx_samples, p3.x, 0, &p3.y);
+    status = rx_avg_magnitude(dev, rx_samples, (int16_t) p3.x, 0, &p3.y);
     if (status != 0) {
         goto out;
     }
@@ -548,7 +549,7 @@ int calibrate_dc_tx(struct bladerf *dev,
         goto out;
     }
 
-    *dc_i = (int16_t) roundf(result.x);
+    *dc_i = (int16_t) (result.x + 0.5);
     *error_i = result.y;
 
     status = set_tx_dc(dev, *dc_i, 0);
@@ -557,22 +558,22 @@ int calibrate_dc_tx(struct bladerf *dev,
     }
 
     /* Repeat for the Q channel */
-    status = rx_avg_magnitude(dev, rx_samples, *dc_i, p0.x, &p0.y);
+    status = rx_avg_magnitude(dev, rx_samples, *dc_i, (int16_t) p0.x, &p0.y);
     if (status != 0) {
         goto out;
     }
 
-    status = rx_avg_magnitude(dev, rx_samples, *dc_i, p1.x, &p1.y);
+    status = rx_avg_magnitude(dev, rx_samples, *dc_i, (int16_t) p1.x, &p1.y);
     if (status != 0) {
         goto out;
     }
 
-    status = rx_avg_magnitude(dev, rx_samples, *dc_i, p2.x, &p2.y);
+    status = rx_avg_magnitude(dev, rx_samples, *dc_i, (int16_t) p2.x, &p2.y);
     if (status != 0) {
         goto out;
     }
 
-    status = rx_avg_magnitude(dev, rx_samples, *dc_i, p3.x, &p3.y);
+    status = rx_avg_magnitude(dev, rx_samples, *dc_i, (int16_t) p3.x, &p3.y);
     if (status != 0) {
         goto out;
     }
@@ -582,7 +583,7 @@ int calibrate_dc_tx(struct bladerf *dev,
         goto out;
     }
 
-    *dc_q = (int16_t) roundf(result.x);
+    *dc_q = (int16_t) (result.x + 0.5);
     *error_q = result.y;
 
     status = set_tx_dc(dev, *dc_i, *dc_q);
@@ -609,8 +610,8 @@ out:
 static inline int dummy_tx(struct bladerf *dev)
 {
     int status;
-    const size_t buf_len = CAL_BUF_LEN;
-    uint16_t *buf = calloc(2 * buf_len, sizeof(buf[0]));
+    const unsigned int buf_len = CAL_BUF_LEN;
+    uint16_t *buf = (uint16_t*) calloc(2 * buf_len, sizeof(buf[0]));
 
     if (buf == NULL) {
         return BLADERF_ERR_MEM;
@@ -716,6 +717,8 @@ int calibrate_dc_gen_tbl(struct bladerf *dev, bladerf_module module,
                              sizeof(tbl_version) + sizeof(n_frequencies_le) +
                              lms_data_size + table_size;
 
+    assert(data_size <= UINT_MAX);
+
     status = backup_and_update_settings(dev, module, &settings);
     if (status != 0) {
         return status;
@@ -739,10 +742,10 @@ int calibrate_dc_gen_tbl(struct bladerf *dev, bladerf_module module,
 
     if (module == BLADERF_MODULE_RX) {
         image = bladerf_alloc_image(BLADERF_IMAGE_TYPE_RX_DC_CAL,
-                                    0xffffffff, data_size);
+                                    0xffffffff, (unsigned int) data_size);
     } else {
         image = bladerf_alloc_image(BLADERF_IMAGE_TYPE_TX_DC_CAL,
-                                    0xffffffff, data_size);
+                                    0xffffffff, (unsigned int) data_size);
     }
 
     if (image == NULL) {

@@ -121,7 +121,7 @@ int file_read_buffer(const char *filename, uint8_t **buf_ret, size_t *size_ret)
         goto out;
     }
 
-    buf = malloc(len);
+    buf = (uint8_t*) malloc(len);
     if (!buf) {
         status = BLADERF_ERR_MEM;
         goto out;

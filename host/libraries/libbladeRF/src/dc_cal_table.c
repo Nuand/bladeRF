@@ -128,10 +128,10 @@ unsigned int dc_cal_tbl_lookup(const struct dc_cal_tbl *tbl, unsigned int freq)
      * when the frequecy change */
     if (tbl->n_entries > SHORT_SEARCH) {
         const unsigned int min_idx =
-            i64_max(0, tbl->curr_idx - (int64_t)SHORT_SEARCH / 2);
+            (unsigned int) i64_max(0, tbl->curr_idx - (int64_t)SHORT_SEARCH / 2);
 
         const unsigned int max_idx =
-            i64_min(tbl->n_entries - 1, tbl->curr_idx + SHORT_SEARCH / 2);
+            (unsigned int) i64_min(tbl->n_entries - 1, tbl->curr_idx + SHORT_SEARCH / 2);
 
         ret = find_entry(tbl, tbl->curr_idx, min_idx, max_idx, freq, &limit);
         if (!limit) {
