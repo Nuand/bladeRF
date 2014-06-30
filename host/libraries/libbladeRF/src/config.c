@@ -43,16 +43,20 @@ static inline void load_dc_cal(struct bladerf *dev, const char *file)
 
     switch (img->type) {
         case BLADERF_IMAGE_TYPE_RX_DC_CAL:
+            dc_cal_tbl_free(dev->cal.dc_rx);
             dev->cal.dc_rx = dc_cal_tbl_load(img->data, img->length);
             break;
 
         case BLADERF_IMAGE_TYPE_TX_DC_CAL:
+            dc_cal_tbl_free(dev->cal.dc_tx);
             dev->cal.dc_tx = dc_cal_tbl_load(img->data, img->length);
             break;
 
         default:
             log_debug("%s is not an RX DC calibration table.\n", file);
     }
+
+    bladerf_free_image(img);
 }
 
 static inline int load_fpga(struct bladerf *dev)

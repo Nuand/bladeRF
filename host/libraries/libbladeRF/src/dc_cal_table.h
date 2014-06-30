@@ -75,5 +75,11 @@ void dc_cal_tbl_vals(const struct dc_cal_tbl *tbl, unsigned int freq,
  */
 struct dc_cal_tbl * dc_cal_tbl_load(uint8_t *buf, size_t buf_len);
 
+/**
+ * Free a DC calibration table
+ *
+ * @param   tbl     Table to free
+ */
+void dc_cal_tbl_free(struct dc_cal_tbl *tbl);
 
 #endif

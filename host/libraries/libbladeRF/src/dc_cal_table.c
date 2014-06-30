@@ -270,6 +270,13 @@ void dc_cal_tbl_vals(const struct dc_cal_tbl *tbl, unsigned int freq,
     }
 }
 
+void dc_cal_tbl_free(struct dc_cal_tbl *tbl)
+{
+    if (tbl != NULL) {
+        free(tbl->entries);
+        free(tbl);
+    }
+}
 
 #ifdef TEST_DC_CAL_TABLE
 

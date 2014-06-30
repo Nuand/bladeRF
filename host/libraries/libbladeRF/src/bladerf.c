@@ -187,6 +187,9 @@ void bladerf_close(struct bladerf *dev)
         free((void *)dev->fpga_version.describe);
         free((void *)dev->fw_version.describe);
 
+        dc_cal_tbl_free(dev->cal.dc_rx);
+        dc_cal_tbl_free(dev->cal.dc_tx);
+
         free(dev);
     }
 }
