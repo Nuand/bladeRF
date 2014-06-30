@@ -61,27 +61,25 @@ static inline void load_dc_cal(struct bladerf *dev, const char *file)
 
 static inline int load_fpga(struct bladerf *dev)
 {
-    int status;
-    uint8_t *buf;
-    size_t buf_len;
+    int status = 0;
+    char *filename = NULL;
 
     if (dev->fpga_size == BLADERF_FPGA_40KLE) {
-        status = file_find_and_read("hostedx40.rbf", &buf, &buf_len);
+        filename = file_find("hostedx40.rbf");
     } else if (dev->fpga_size == BLADERF_FPGA_115KLE) {
-        status = file_find_and_read("hostedx115.rbf", &buf, &buf_len);
+        filename = file_find("hostedx115.rbf");
     } else {
         /* Unexpected, but this will be complained about elsewhere */
         return 0;
     }
 
-    if (status == 0) {
-        log_verbose("Loading FPGA config directory\n");
-        return dev->fn->load_fpga(dev, buf, buf_len);
-    } else if (status == BLADERF_ERR_NO_FILE) {
-        return 0;
-    } else {
-        return status;
+    if (filename != NULL) {
+        log_debug("Loading FPGA from: %s\n", filename);
+        status = bladerf_load_fpga(dev, filename);
     }
+
+    free(filename);
+    return status;
 }
 
 static inline int load_dc_cals(struct bladerf *dev)
@@ -98,7 +96,7 @@ static inline int load_dc_cals(struct bladerf *dev)
     strncat(filename, "_dc_rx.bin", FILENAME_MAX - BLADERF_SERIAL_LENGTH);
     full_path = file_find(filename);
     if (full_path != NULL) {
-        log_verbose("Loading %s\n", full_path);
+        log_debug("Loading %s\n", full_path);
         load_dc_cal(dev, full_path);
         free(full_path);
     }
@@ -108,7 +106,7 @@ static inline int load_dc_cals(struct bladerf *dev)
     strncat(filename, "_dc_tx.bin", FILENAME_MAX - BLADERF_SERIAL_LENGTH);
     full_path = file_find(filename);
     if (full_path != NULL) {
-        log_verbose("Loading %s\n", full_path);
+        log_debug("Loading %s\n", full_path);
         load_dc_cal(dev, full_path);
         free(full_path);
     }
@@ -126,7 +124,7 @@ int config_load_all(struct bladerf *dev)
         return status;
     }
 
-    status = dev->fn->is_fpga_configured(dev);
+    status = bladerf_is_fpga_configured(dev);
     if (status == 0) {
         status = load_fpga(dev);
     } else if (status > 0) {
