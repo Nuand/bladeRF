@@ -306,6 +306,8 @@ static int cal_table(struct cli_state *s, int argc, char **argv)
     int status;
     bool ok;
     bladerf_module module;
+    char *filename = NULL;
+    size_t filename_len = 1024;
 
     /* TODO set the min based upon whether or not an XB200 is attached */
     unsigned int f_min = BLADERF_FREQUENCY_MIN;
@@ -375,12 +377,33 @@ static int cal_table(struct cli_state *s, int argc, char **argv)
         return CLI_RET_INVPARAM;
     }
 
-    status = calibrate_dc_gen_tbl(s->dev, module, argv[3], f_min, f_inc, f_max);
+    filename = calloc(1, filename_len + 1);
+    if (filename == NULL) {
+        return CLI_RET_MEM;
+    }
+
+    status = bladerf_get_serial(s->dev, filename);
+    if (status != 0) {
+        goto out;
+    }
+
+    filename_len -= strlen(filename);
+    if (module == BLADERF_MODULE_RX) {
+        strncat(filename, "_dc_rx.bin", filename_len);
+    } else {
+        strncat(filename, "_dc_tx.bin", filename_len);
+    }
+
+    status = calibrate_dc_gen_tbl(s->dev, module, filename,
+                                  f_min, f_inc, f_max);
+
+out:
     if (status != 0) {
         s->last_lib_error = status;
         status = CLI_RET_LIBBLADERF;
     }
 
+    free(filename);
     return status;
 }
 
