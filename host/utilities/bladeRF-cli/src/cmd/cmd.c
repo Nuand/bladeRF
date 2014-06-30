@@ -792,6 +792,10 @@ int cmd_handle(struct cli_state *s, const char *line)
 
     ret = 0;
     argc = str2args(line, &argv);
+    if (argc == -2) {
+        fprintf(stderr, "Error: Input contains unterminated quote.\n");
+        return CLI_RET_INVPARAM;
+    }
 
     if (argc > 0) {
         cmd = get_cmd(argv[0]);

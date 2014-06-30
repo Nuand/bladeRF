@@ -183,7 +183,7 @@ int str2loopback(const char *str, bladerf_loopback *loopback);
  * @param[in]   str     String to break into args
  * @param[out]  argv    Will be updated to point to heap-allocated argv list
  *
- * @return argc on success, -1 on failure
+ * @return argc on success, -1 on failure, -2 on unterminated quote
  */
 int str2args(const char *line, char ***argv);
 

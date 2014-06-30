@@ -483,17 +483,16 @@ int str2args(const char *line, char ***argv_ret)
             *argv_ret = argv;
             break;
 
-        /* Unterminated quote or unexpexted state to end on */
         case PARSE_STATE_IN_QUOTE:
+            free_args(argc, argv);
+            argc = -2;
+            break;
+
         default:
-            state = PARSE_STATE_ERROR;
+            free_args(argc, argv);
+            argc = -1;
             break;
     }
 
-    if (state == PARSE_STATE_ERROR) {
-        free_args(argc, argv);
-        return -1;
-    } else {
-        return argc;
-    }
+    return argc;
 }
