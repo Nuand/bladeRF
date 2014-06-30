@@ -25,6 +25,12 @@
 #include "common.h"
 #include "cmd.h"
 
+#define MAX_PHASE   4096
+#define MIN_PHASE   (-MAX_PHASE)
+
+#define MAX_GAIN    4096
+#define MIN_GAIN    (-MAX_GAIN)
+
 static int cal_lms(struct cli_state *s, int argc, char **argv)
 {
     int status = 0;
@@ -242,9 +248,61 @@ static int cal_dc_correction_params(struct cli_state *s, int argc, char **argv)
     return 0;
 }
 
+static int cal_iq_correction_params(struct cli_state *s, int argc , char **argv)
+{
+    int status;
+    bladerf_module module;
+    bool ok;
+    int16_t value;
+
+    if (argc != 5) {
+        return CLI_RET_NARGS;
+    }
+
+    if (!strcasecmp(argv[2], "rx")) {
+        module = BLADERF_MODULE_RX;
+    } else if (!strcasecmp(argv[2], "tx")) {
+        module = BLADERF_MODULE_TX;
+    } else {
+        cli_err(s, argv[0], "Invalid module: %s\n", argv[2]);
+        return CLI_RET_INVPARAM;
+    }
+
+    if (!strcasecmp(argv[3], "phase")) {
+       value = str2int(argv[4], MIN_PHASE, MAX_PHASE, &ok);
+       if (ok) {
+           status = bladerf_set_correction(s->dev, module,
+                                           BLADERF_CORR_FPGA_PHASE, value);
+       } else {
+           cli_err(s, argv[0], "Phase value must be in [%d, %d]\n",
+                   MIN_PHASE, MAX_PHASE);
+           return CLI_RET_INVPARAM;
+       }
+    } else if (!strcasecmp(argv[3], "gain")) {
+        value = str2int(argv[4], MIN_GAIN, MAX_GAIN, &ok);
+        if (ok) {
+           status = bladerf_set_correction(s->dev, module,
+                                           BLADERF_CORR_FPGA_GAIN, value);
+        } else {
+           cli_err(s, argv[0], "Gain value must be in [%d, %d]\n",
+                   MIN_GAIN, MAX_GAIN);
+           return CLI_RET_INVPARAM;
+        }
+    } else {
+        cli_err(s, argv[0], "Invalid IQ correction parameter: %s\n", argv[3]);
+        return CLI_RET_INVPARAM;
+    }
+
+    if (status < 0) {
+        s->last_lib_error = status;
+        return CLI_RET_LIBBLADERF;
+    } else {
+        return 0;
+    }
+}
+
 static int cal_table(struct cli_state *s, int argc, char **argv)
 {
-
     int status;
     bool ok;
     bladerf_module module;
@@ -353,6 +411,8 @@ int cmd_calibrate(struct cli_state *state, int argc, char **argv)
             status = cal_table(state, argc, argv);
         } else if (!strcasecmp(argv[1], "dc")) {
             status = cal_dc_correction_params(state, argc, argv);
+        } else if (!strcasecmp(argv[1], "iq")) {
+            status = cal_iq_correction_params(state, argc, argv);
         } else {
             cli_err(state, argv[0], "Invalid operation: %s\n", argv[1]);
             status = CLI_RET_INVPARAM;

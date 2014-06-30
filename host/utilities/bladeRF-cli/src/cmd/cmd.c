@@ -30,7 +30,6 @@
 #define DECLARE_CMD(x) int cmd_##x (struct cli_state *, int, char **)
 DECLARE_CMD(calibrate);
 DECLARE_CMD(clear);
-DECLARE_CMD(correct);
 DECLARE_CMD(echo);
 DECLARE_CMD(erase);
 DECLARE_CMD(flash_backup);
@@ -66,7 +65,6 @@ struct cmd {
     const char  *help;
 };
 
-static const char *cmd_names_correct[] = { "correct", NULL };
 static const char *cmd_names_calibrate[] = { "calibrate", "cal", NULL };
 static const char *cmd_names_clear[] = { "clear", "cls", NULL };
 static const char *cmd_names_echo[] = { "echo", NULL };
@@ -98,7 +96,7 @@ static const struct cmd cmd_table[] = {
     {
         FIELD_INIT(.names, cmd_names_calibrate),
         FIELD_INIT(.exec, cmd_calibrate),
-        FIELD_INIT(.desc, "Perform transceiver calibrations"),
+        FIELD_INIT(.desc, "Perform transceiver and device calibrations"),
         FIELD_INIT(.help,
             "calibrate <operation> [options]"
             "\n"
@@ -126,6 +124,11 @@ static const struct cmd cmd_table[] = {
             "\tfrequency and gain settings. If a I/Q values are provided, they are\n"
             "\tapplied directly. 'cal rxtx' is shorthand for 'cal rx' followed\n"
             "\tby 'cal tx'.\n"
+            "\n"
+            "RX and TX I/Q balance correction parameter calibration:\n"
+            "\tiq <rx|tx> <gain|phase> <value>\n"
+            "\n"
+            "\tSet the specified IQ gain or phase balance parameters.\n"
             "\n"
             "Generate RX or TX I/Q DC correction parameter tables:\n"
             "\ttable dc <rx|tx> [ <f_min> <f_max> [f_inc] ]\n"
@@ -666,16 +669,6 @@ static const struct cmd cmd_table[] = {
             "version\n"
             "\n"
             "Prints version information for host software and the current device\n"
-        )
-    },
-    {
-        FIELD_INIT(.names, cmd_names_correct),
-        FIELD_INIT(.exec, cmd_correct),
-        FIELD_INIT(.desc, "Correct for IQ Imbalances"),
-        FIELD_INIT(.help,
-            "correct [tx|rx] [dc|phase|gain] [args]\n"
-            "\n"
-            "Correct for IQ Imbalances\n"
         )
     },
     /* Always terminate the command entry with a completely NULL entry */
