@@ -154,18 +154,22 @@ static int cal_lms(struct cli_state *s, int argc, char **argv)
     return status;
 }
 
-static int cal_correction_params(struct cli_state *s, int argc, char **argv)
+static int cal_dc_correction_params(struct cli_state *s, int argc, char **argv)
 {
     int status = 0;
 
-    if (argc == 2) {
+    if (argc < 3) {
+        return CLI_RET_NARGS;
+    }
+
+    if (argc == 3) {
         bool rx = false, tx = false;
 
-        if (!strcasecmp(argv[1], "rx") || !strcasecmp(argv[1], "rxtx")) {
+        if (!strcasecmp(argv[2], "rx") || !strcasecmp(argv[2], "rxtx")) {
             rx = true;
         }
 
-        if (!strcasecmp(argv[1], "tx") || !strcasecmp(argv[1], "rxtx")) {
+        if (!strcasecmp(argv[2], "tx") || !strcasecmp(argv[2], "rxtx")) {
             tx = true;
         }
 
@@ -189,29 +193,29 @@ static int cal_correction_params(struct cli_state *s, int argc, char **argv)
         }
 
 
-    } else if (argc == 4) {
+    } else if (argc == 5) {
         bladerf_module module;
         int16_t i, q;
         bool ok;
 
-        if (!strcasecmp(argv[1], "rx")) {
+        if (!strcasecmp(argv[2], "rx")) {
             module = BLADERF_MODULE_RX;
-        } else if (!strcasecmp(argv[1], "tx")) {
+        } else if (!strcasecmp(argv[2], "tx")) {
             module = BLADERF_MODULE_TX;
         } else {
-            cli_err(s, argv[0], "Invalid module: %s\n", argv[1]);
+            cli_err(s, argv[0], "Invalid module: %s\n", argv[2]);
             return CLI_RET_INVPARAM;
         }
 
-        i = (int16_t) str2int(argv[2], -2048, 2048, &ok);
+        i = (int16_t) str2int(argv[3], -2048, 2048, &ok);
         if (!ok) {
-            cli_err(s, argv[0], "Invalid I value: %s\n", argv[2]);
+            cli_err(s, argv[0], "Invalid I value: %s\n", argv[3]);
             return CLI_RET_INVPARAM;
         }
 
-        q = (int16_t) str2int(argv[3], -2048, 2048, &ok);
+        q = (int16_t) str2int(argv[4], -2048, 2048, &ok);
         if (!ok) {
-            cli_err(s, argv[0], "Invalid Q value: %s\n", argv[3]);
+            cli_err(s, argv[0], "Invalid Q value: %s\n", argv[4]);
             return CLI_RET_INVPARAM;
         }
 
@@ -251,9 +255,16 @@ static int cal_table(struct cli_state *s, int argc, char **argv)
     unsigned int f_max = BLADERF_FREQUENCY_MAX;
 
     if (argc == 4 || argc == 6 || argc == 7) {
-        if (!strcasecmp(argv[2], "rx")) {
+        /* Only DC tables are currently supported.
+         * IQ tables may be added in the future */
+        if (strcasecmp(argv[2], "dc")) {
+            cli_err(s, argv[0], "Invalid table type: %s\n", argv[2]);
+            return CLI_RET_INVPARAM;
+        }
+
+        if (!strcasecmp(argv[3], "rx")) {
             module = BLADERF_MODULE_RX;
-        } else if (!strcasecmp(argv[2], "tx")) {
+        } else if (!strcasecmp(argv[3], "tx")) {
             module = BLADERF_MODULE_TX;
         } else {
             cli_err(s, argv[0], "Invalid module: %s\n", argv[2]);
@@ -340,8 +351,11 @@ int cmd_calibrate(struct cli_state *state, int argc, char **argv)
             status = cal_lms(state, argc, argv);
         } else if (!strcasecmp(argv[1], "table")) {
             status = cal_table(state, argc, argv);
+        } else if (!strcasecmp(argv[1], "dc")) {
+            status = cal_dc_correction_params(state, argc, argv);
         } else {
-            status = cal_correction_params(state, argc, argv);
+            cli_err(state, argv[0], "Invalid operation: %s\n", argv[1]);
+            status = CLI_RET_INVPARAM;
         }
     } else {
         return CLI_RET_NARGS;
