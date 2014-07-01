@@ -389,9 +389,9 @@ static int cal_table(struct cli_state *s, int argc, char **argv)
 
     filename_len -= strlen(filename);
     if (module == BLADERF_MODULE_RX) {
-        strncat(filename, "_dc_rx.bin", filename_len);
+        strncat(filename, "_dc_rx.tbl", filename_len);
     } else {
-        strncat(filename, "_dc_tx.bin", filename_len);
+        strncat(filename, "_dc_tx.tbl", filename_len);
     }
 
     status = calibrate_dc_gen_tbl(s->dev, module, filename,

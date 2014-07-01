@@ -93,7 +93,7 @@ static inline int load_dc_cals(struct bladerf *dev)
     }
 
     strncat(filename, dev->ident.serial, FILENAME_MAX);
-    strncat(filename, "_dc_rx.bin", FILENAME_MAX - BLADERF_SERIAL_LENGTH);
+    strncat(filename, "_dc_rx.tbl", FILENAME_MAX - BLADERF_SERIAL_LENGTH);
     full_path = file_find(filename);
     if (full_path != NULL) {
         log_debug("Loading %s\n", full_path);
@@ -103,7 +103,7 @@ static inline int load_dc_cals(struct bladerf *dev)
 
     memset(filename, 0, FILENAME_MAX + 1);
     strncat(filename, dev->ident.serial, FILENAME_MAX);
-    strncat(filename, "_dc_tx.bin", FILENAME_MAX - BLADERF_SERIAL_LENGTH);
+    strncat(filename, "_dc_tx.tbl", FILENAME_MAX - BLADERF_SERIAL_LENGTH);
     full_path = file_find(filename);
     if (full_path != NULL) {
         log_debug("Loading %s\n", full_path);
