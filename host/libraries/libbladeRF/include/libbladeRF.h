@@ -366,7 +366,7 @@ const char * CALL_CONV bladerf_backend_str(bladerf_backend backend);
 #define BLADERF_FREQUENCY_MIN       232500000u
 
 /** Maximum tunable frequency, in Hz */
-#define BLADERF_FREQUENCY_MAX       3720000000u
+#define BLADERF_FREQUENCY_MAX       3800000000u
 
 /**
  * Loopback options

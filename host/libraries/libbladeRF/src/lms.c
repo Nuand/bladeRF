@@ -76,7 +76,9 @@ static const unsigned int uint_bandwidths[] = {
     FIELD_INIT(.value, value_), \
 }
 
-/* Frequency Range table. Corresponds to the LMS FREQSEL table */
+/* Frequency Range table. Corresponds to the LMS FREQSEL table.
+ * Per feedback from the LMS google group, the last entry, listed as 3.72G
+ * in the programming manual, can be applied up to 3.8G */
 static const struct freq_range {
     uint32_t    low;
     uint32_t    high;
@@ -97,7 +99,7 @@ static const struct freq_range {
     FREQ_RANGE(1860000000u, 2285000000u, 0x24),
     FREQ_RANGE(2285000000u, 2695000000u, 0x2c),
     FREQ_RANGE(2695000000u, 3240000000u, 0x34),
-    FREQ_RANGE(3240000000u, 3720000000u, 0x3c),
+    FREQ_RANGE(3240000000u, 3800000000u, 0x3c),
 };
 
  /*
