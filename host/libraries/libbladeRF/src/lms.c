@@ -943,8 +943,14 @@ static int loopback_tx(struct bladerf *dev, bladerf_loopback mode)
         {
             struct lms_freq f;
 
-            /* Re-enable the appropriate PA, based upon our current frequency */
+            /* Restore proper settings (PA) for this frequency */
             status = lms_get_frequency(dev, BLADERF_MODULE_TX, &f);
+            if (status != 0) {
+                return status;
+            }
+
+            status = lms_set_frequency(dev, BLADERF_MODULE_TX,
+                                       lms_frequency_to_hz(&f));
             if (status != 0) {
                 return status;
             }
@@ -1114,11 +1120,18 @@ static int loopback_rx(struct bladerf *dev, bladerf_loopback mode)
                 return status;
             }
 
-            /* Select the relevant LNA based upon our current frequency */
+            /* Restore proper settings (LNA, RX PLL) for this frequency */
             status = lms_get_frequency(dev, BLADERF_MODULE_RX, &f);
             if (status != 0) {
                 return status;
             }
+
+            status = lms_set_frequency(dev, BLADERF_MODULE_RX,
+                                       lms_frequency_to_hz(&f));
+            if (status != 0) {
+                return status;
+            }
+
 
             status = lms_select_band(dev, BLADERF_MODULE_RX,
                                      lms_frequency_to_hz(&f));
