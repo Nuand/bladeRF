@@ -8,6 +8,7 @@ entity fifo_reader is
     reset               :   in      std_logic ;
     enable              :   in      std_logic ;
 
+    usb_speed           :   in      std_logic ;
     meta_en             :   in      std_logic ;
     timestamp           :   in      unsigned(63 downto 0);
 
@@ -75,7 +76,11 @@ begin
             meta_time_hit <= (others => '0');
         elsif(rising_edge(clock)) then
             if (meta_time_eq = '1') then
-                meta_time_hit <= to_signed(1014, 16); --meta_time_hit'length);
+                if (usb_speed = '0') then
+                    meta_time_hit <= to_signed(1014, meta_time_hit'length);
+                else
+                    meta_time_hit <= to_signed(502, meta_time_hit'length);
+                end if;
             else
                 if (meta_time_hit > 0) then
                     meta_time_hit <= meta_time_hit - 1;

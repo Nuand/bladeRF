@@ -154,6 +154,7 @@ architecture hosted_bladerf of bladerf is
 
     signal usb_speed        : std_logic ;
     signal usb_speed_rx     : std_logic ;
+    signal usb_speed_tx     : std_logic ;
 
     signal tx_reset         : std_logic ;
     signal rx_reset         : std_logic ;
@@ -281,6 +282,16 @@ begin
         clock               =>  rx_clock,
         async               =>  nios_gpio(7),
         sync                =>  usb_speed_rx
+      ) ;
+
+    U_usb_speed_tx : entity work.synchronizer
+      generic map (
+        RESET_LEVEL         =>  '0'
+      ) port map (
+        reset               =>  '0',
+        clock               =>  tx_clock,
+        async               =>  nios_gpio(7),
+        sync                =>  usb_speed_tx
       ) ;
 
     generate_mux_sel : for i in rx_mux_sel'range generate
@@ -575,6 +586,7 @@ begin
         reset               =>  tx_reset,
         enable              =>  tx_enable,
 
+        usb_speed           =>  usb_speed_tx,
         meta_en             =>  meta_en_tx,
         timestamp           =>  tx_timestamp,
 
