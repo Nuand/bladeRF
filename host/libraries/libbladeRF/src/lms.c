@@ -369,14 +369,25 @@ int lms_lpf_set_mode(struct bladerf *dev, bladerf_module mod,
         return status;
     }
 
-    if (mode == BLADERF_LPF_DISABLED) {
-        data_l &= ~(1 << 1);    /* Power down LPF */
-    } else if (mode == BLADERF_LPF_BYPASSED) {
-        data_l |= (1 << 1);     /* Enable LPF */
-        data_h |= (1 << 6);     /* Enable LPF bypass */
-    } else {
-        data_l |= (1 << 1);     /* Enable LPF */
-        data_h &= ~(1 << 6);    /* Disable LPF bypass */
+    switch (mode) {
+        case BLADERF_LPF_NORMAL:
+            data_l |= (1 << 1);     /* Enable LPF */
+            data_h &= ~(1 << 6);    /* Disable LPF bypass */
+            break;
+
+        case BLADERF_LPF_BYPASSED:
+            data_l &= ~(1 << 1);    /* Power down LPF */
+            data_h |= (1 << 6);     /* Enable LPF bypass */
+            break;
+
+        case BLADERF_LPF_DISABLED:
+            data_l &= ~(1 << 1);    /* Power down LPF */
+            data_h &= ~(1 << 6);    /* Disable LPF bypass */
+            break;
+
+        default:
+            log_debug("Invalid LPF mode: %d\n", mode);
+            return BLADERF_ERR_INVAL;
     }
 
     status = bladerf_lms_write(dev, reg, data_l);
