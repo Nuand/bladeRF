@@ -2100,6 +2100,7 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
                     if (status != 0) {
                         return status;
                     }
+                    break;
 
                 case 2:
                     /* VGA2GAINA = 0, VGA2GAINB = 0110 */
@@ -2108,6 +2109,7 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
                     if (status != 0) {
                         return status;
                     }
+                    break;
 
                 case 4:
                     /* Set to decode control signals: RXVGA2 Decode = 0 */
