@@ -1211,7 +1211,7 @@ static int usb_dac_write(struct bladerf *dev, uint16_t value)
     int base;
 
     /* FPGA v0.0.4 introduced a change to the location of the DAC registers */
-    const bool legacy_location = version_less_than(&dev->fw_version, 0, 0, 4);
+    const bool legacy_location = version_less_than(&dev->fpga_version, 0, 0, 4);
 
     base = legacy_location ? 0 : 34;
 

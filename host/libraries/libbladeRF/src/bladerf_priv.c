@@ -377,12 +377,13 @@ bool version_greater_or_equal(struct bladerf_version *version,
                               unsigned int major, unsigned int minor,
                               unsigned int patch)
 {
-    if (major > version->major) {
+    if (version->major > major) {
         return true;
-    } else if (major == version->major && minor > version->minor) {
+    } else if ( (version->major == major) && (version->minor > minor) ) {
         return true;
-    } else if (major == version->major && minor == version->minor &&
-               patch >= version->patch) {
+    } else if ((version->major == major) &&
+               (version->minor == minor) &&
+               (version->patch >= patch) ) {
         return true;
     } else {
         return false;
