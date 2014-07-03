@@ -2487,25 +2487,7 @@ int lms_get_dc_cals(struct bladerf *dev, struct bladerf_lms_dc_cals *dc_cals)
 {
     int status;
 
-
-    status = enable_lpf_cal_clock(dev, true);
-    if (status != 0) {
-        return status;
-    }
-
     status = get_dc_cal_value(dev, 0x00, 0, &dc_cals->lpf_tuning);
-    if (status != 0) {
-        return status;
-    }
-
-    status = enable_lpf_cal_clock(dev, false);
-    if (status != 0) {
-        return status;
-    }
-
-
-
-    status = enable_txlpf_dccal_clock(dev, true);
     if (status != 0) {
         return status;
     }
@@ -2520,36 +2502,12 @@ int lms_get_dc_cals(struct bladerf *dev, struct bladerf_lms_dc_cals *dc_cals)
         return status;
     }
 
-    status = enable_txlpf_dccal_clock(dev, false);
-    if (status != 0) {
-        return status;
-    }
-
-
-
-    status = enable_rxlpf_dccal_clock(dev, true);
-    if (status != 0) {
-        return status;
-    }
-
     status = get_dc_cal_value(dev, 0x50, 0, &dc_cals->rx_lpf_i);
     if (status != 0) {
         return status;
     }
 
     status = get_dc_cal_value(dev, 0x50, 1, &dc_cals->rx_lpf_q);
-    if (status != 0) {
-        return status;
-    }
-
-    status = enable_rxlpf_dccal_clock(dev, false);
-    if (status != 0) {
-        return status;
-    }
-
-
-
-    status = enable_rxvga2_dccal_clock(dev, true);
     if (status != 0) {
         return status;
     }
@@ -2575,11 +2533,6 @@ int lms_get_dc_cals(struct bladerf *dev, struct bladerf_lms_dc_cals *dc_cals)
     }
 
     status = get_dc_cal_value(dev, 0x60, 4, &dc_cals->rxvga2b_q);
-    if (status != 0) {
-        return status;
-    }
-
-    status = enable_rxvga2_dccal_clock(dev, false);
     if (status != 0) {
         return status;
     }
