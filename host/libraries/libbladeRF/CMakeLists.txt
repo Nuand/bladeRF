@@ -213,6 +213,7 @@ set(LIBBLADERF_SOURCE
         src/devinfo.c
         src/flash.c
         src/image.c
+        src/version_compat.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/sha256.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/log.c

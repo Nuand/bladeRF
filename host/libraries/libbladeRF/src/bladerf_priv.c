@@ -373,30 +373,6 @@ int populate_abs_timeout(struct timespec *t, unsigned int timeout_ms)
     }
 }
 
-bool version_greater_or_equal(struct bladerf_version *version,
-                              unsigned int major, unsigned int minor,
-                              unsigned int patch)
-{
-    if (version->major > major) {
-        return true;
-    } else if ( (version->major == major) && (version->minor > minor) ) {
-        return true;
-    } else if ((version->major == major) &&
-               (version->minor == minor) &&
-               (version->patch >= patch) ) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-bool version_less_than(struct bladerf_version *version,
-                       unsigned int major, unsigned int minor,
-                       unsigned int patch)
-{
-    return !version_greater_or_equal(version, major, minor, patch);
-}
-
 int load_calibration_table(struct bladerf *dev, const char *filename)
 {
     int status;

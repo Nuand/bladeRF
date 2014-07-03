@@ -31,6 +31,7 @@
 #include "async.h"
 #include "bladeRF.h"    /* Firmware interface */
 #include "log.h"
+#include "version_compat.h"
 
 typedef enum {
     CORR_INVALID,
@@ -359,11 +360,14 @@ static inline int populate_fw_version(struct bladerf_usb *usb,
                                     (unsigned char *)version->describe,
                                     BLADERF_VERSION_STR_MAX);
 
-     if (status == 0) {
+    if (status == 0) {
         status = str2version(version->describe, version);
-        if (status != 0) {
-            status = BLADERF_ERR_UNEXPECTED;
-        }
+    } else {
+        log_warning("Failed to retrieve firmware version. This may be due "
+                    "to an old firmware version that does not support "
+                    "this request. A firmware update via the bootloader is "
+                    "required.\n\n");
+        status = BLADERF_ERR_UPDATE_FW;
     }
     return status;
 }

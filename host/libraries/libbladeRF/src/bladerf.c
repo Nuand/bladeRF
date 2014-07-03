@@ -38,6 +38,52 @@
 #include "conversions.h"
 #include "dc_cal_table.h"
 #include "config.h"
+#include "version_compat.h"
+
+static inline int fpga_version_check_and_warn(struct bladerf *dev)
+{
+    int status = version_check_fpga(dev);
+
+#if LOGGING_ENABLED
+    const unsigned int fw_maj = dev->fw_version.major;
+    const unsigned int fw_min = dev->fw_version.minor;
+    const unsigned int fw_pat = dev->fw_version.patch;
+    const unsigned int fpga_maj = dev->fpga_version.major;
+    const unsigned int fpga_min = dev->fpga_version.minor;
+    const unsigned int fpga_pat = dev->fpga_version.patch;
+    unsigned int req_maj, req_min, req_pat;
+    struct bladerf_version req;
+
+    if (status == BLADERF_ERR_UPDATE_FPGA) {
+        version_required_fpga(dev, &req);
+        req_maj = req.major;
+        req_min = req.minor;
+        req_pat = req.patch;
+
+        log_warning("FPGA v%u.%u.%u was detected. Firmware v%u.%u.%u "
+                    "requires FPGA v%u.%u.%u or later. Please load a "
+                    "different FPGA version before continuing.\n\n",
+                    fpga_maj, fpga_min, fpga_pat,
+                    fw_maj, fw_min, fw_pat,
+                    req_maj, req_min, req_pat);
+    } else if (status == BLADERF_ERR_UPDATE_FW) {
+        version_required_fw(dev, &req, true);
+        req_maj = req.major;
+        req_min = req.minor;
+        req_pat = req.patch;
+
+        log_warning("FPGA v%u.%u.%u was detected, which requires firmware "
+                    "v%u.%u.%u or later. The device firmware is currently "
+                    "v%u.%u.%u. Please upgrade the device firmware before "
+                    "continuing.\n\n",
+                    fpga_maj, fpga_min, fpga_pat,
+                    req_maj, req_min, req_pat,
+                    fw_maj, fw_min, fw_pat);
+    }
+#endif
+
+    return status;
+}
 
 /*------------------------------------------------------------------------------
  * Device discovery & initialization/deinitialization
@@ -118,6 +164,34 @@ int bladerf_open_with_devinfo(struct bladerf **opened_device,
         goto error;
     }
 
+    /* Verify that we have a sufficent firmware version before continuing. */
+    status = version_check_fw(dev);
+    if (status != 0) {
+#ifdef LOGGING_ENABLED
+        if (status == BLADERF_ERR_UPDATE_FW) {
+            struct bladerf_version req;
+            const unsigned int dev_maj = dev->fw_version.major;
+            const unsigned int dev_min = dev->fw_version.minor;
+            const unsigned int dev_pat = dev->fw_version.patch;
+            unsigned int req_maj, req_min, req_pat;
+
+            version_required_fw(dev, &req, false);
+            req_maj = req.major;
+            req_min = req.minor;
+            req_pat = req.patch;
+
+            log_warning("Firmware v%u.%u.%u was detected. libbladeRF v%s "
+                        "requires firmware v%u.%u.%u or later. An upgrade via "
+                        "the bootloader is required.\n\n",
+                        dev_maj, dev_min, dev_pat,
+                        LIBBLADERF_VERSION,
+                        req_maj, req_min, req_pat);
+        }
+#endif
+
+        goto error;
+    }
+
     /* VCTCXO trim and FPGA size are non-fatal indicators that we've
      * trashed the calibration region of flash. If these were made fatal,
      * we wouldn't be able to open the device to restore them. */
@@ -135,6 +209,13 @@ int bladerf_open_with_devinfo(struct bladerf **opened_device,
 
     status = bladerf_is_fpga_configured(dev);
     if (status > 0) {
+        /* If the FPGA version check fails, just warn, but don't error out.
+         *
+         * If an error code caused this function to bail out, it would prevent a
+         * user from being able to unload and reflash a bitstream being
+         * "autoloaded" from SPI flash. */
+        fpga_version_check_and_warn(dev);
+
         status = bladerf_init_device(dev);
         if (status != 0) {
             goto error;
@@ -226,8 +307,8 @@ int bladerf_set_loopback(struct bladerf *dev, bladerf_loopback l)
         /* Firmware loopback was implemented in FW v1.7.0 */
         if (version_less_than(&dev->fw_version, 1, 7, 0)) {
             log_warning("Firmware v1.7.0 or later is required "
-                        "for firmware loopback\n");
-            return BLADERF_ERR_UNSUPPORTED;
+                        "for firmware loopback.\n\n");
+            return BLADERF_ERR_UPDATE_FW;
         } else {
             return dev->fn->set_firmware_loopback(dev, true);
         }
@@ -768,8 +849,18 @@ int bladerf_load_fpga(struct bladerf *dev, const char *fpga_file)
     }
 
     status = dev->fn->load_fpga(dev, buf, buf_size);
-    if (status == 0) {
-        status = bladerf_init_device(dev);
+    if (status != 0) {
+        goto error;
+    }
+
+    status = fpga_version_check_and_warn(dev);
+    if (status != 0) {
+        goto error;
+    }
+
+    status = bladerf_init_device(dev);
+    if (status != 0) {
+        goto error;
     }
 
 error:
@@ -836,6 +927,10 @@ const char * bladerf_strerror(int error)
             return "Invalid checksum";
         case BLADERF_ERR_NO_FILE:
             return "File not found";
+        case BLADERF_ERR_UPDATE_FPGA:
+            return "An FPGA update is required";
+        case BLADERF_ERR_UPDATE_FW:
+            return "A firmware update is required";
         case 0:
             return "Success";
         default:

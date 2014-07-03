@@ -182,9 +182,37 @@ static inline bool device_is_fx3_bootloader(libusb_device *dev)
 
 static inline bool device_is_bladerf(libusb_device *dev)
 {
-    return device_has_vid_pid(dev,
-                              USB_NUAND_VENDOR_ID,
-                              USB_NUAND_BLADERF_PRODUCT_ID);
+    struct libusb_config_descriptor *cfg;
+    int status;
+
+    if(!device_has_vid_pid(dev, USB_NUAND_VENDOR_ID,
+                           USB_NUAND_BLADERF_PRODUCT_ID)) {
+
+        return false;
+    }
+
+    status = libusb_get_config_descriptor(dev, 0, &cfg);
+    if (status != 0) {
+        log_debug("Failed to get configuration descriptor: %s\n",
+                  libusb_error_name(status));
+        return false;
+    }
+
+    /* As of firmware v0.4, we expect there to be 4 altsettings on the
+     * first interface. */
+    if (cfg->interface->num_altsetting != 4) {
+        const uint8_t bus = libusb_get_bus_number(dev);
+        const uint8_t addr = libusb_get_device_address(dev);
+
+        log_warning("A bladeRF running incompatible firmware appears to be "
+                    "present on bus=%u, addr=%u. If this is true, a firmware "
+                    "update via the device's bootloader is required.\n\n",
+                    bus, addr);
+
+        return false;
+    } else {
+        return true;
+    }
 }
 
 static int lusb_probe(struct bladerf_devinfo_list *info_list)

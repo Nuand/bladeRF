@@ -24,6 +24,7 @@
 #include <limits.h>
 #include "rel_assert.h"
 #include "log.h"
+#include "version_compat.h"
 
 #include "libbladeRF.h"     /* Public API */
 #include "bladerf_priv.h"   /* Implementation-specific items ("private") */

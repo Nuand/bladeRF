@@ -76,6 +76,8 @@ extern "C" {
 #define BLADERF_ERR_MISALIGNED  (-9)  /**< Misaligned flash access */
 #define BLADERF_ERR_CHECKSUM    (-10) /**< Invalid checksum */
 #define BLADERF_ERR_NO_FILE     (-11) /**< File not found */
+#define BLADERF_ERR_UPDATE_FPGA (-12) /**< An FPGA update is required */
+#define BLADERF_ERR_UPDATE_FW   (-13) /**< A firmware update is requied */
 
 /** @} (End RETCODES) */
 
