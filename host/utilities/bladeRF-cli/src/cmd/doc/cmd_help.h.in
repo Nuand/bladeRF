@@ -27,7 +27,7 @@
  * Any manual modifications to this file will be overwritten!
  * To edit the content of help strings, please edit interactive-help.md
  *
- * Last generated: Fri Jul  4 16:45:04 EDT 2014 by rtucker@racer-x
+ * Last generated: Fri Jul  4 17:50:12 EDT 2014 by rtucker@racer-x
  */
 
 #ifndef BLADERF_CLI_DOC_CMD_HELP_H__
@@ -48,7 +48,8 @@
   "    -   calibrate lms tuning [value]\n" \
   "    -   calibrate lms txlpf [<I filter> <Q filter>]\n" \
   "    -   calibrate lms rxlpf [<I filter> <Q filter>]\n" \
-  "    -   calibrate lms rxvga2 [<DC ref> <stage 1 I> <stage 1 Q> <stage 2 I> <stage 2 Q>]\n" \
+  "    -   calibrate lms rxvga2\n" \
+  "        [<DC ref> <stage 1 I> <stage 1 Q> <stage 2 I> <stage 2 Q>]\n" \
   "\n" \
   "    Perform the specified auto-calibration, or all of them if none are\n" \
   "    provided. When values are provided, these are used instead of the\n" \
@@ -543,7 +544,7 @@
 #define CLI_CMD_HELPTEXT_version \
   "Usage: version\n" \
   "\n" \
-  "Prints version information for host software and the current device\n" \
+  "Prints version information for host software and the current device.\n" \
   "\n" \
 
 #endif // BLADERF_CLI_VERSION_H__
