@@ -19,7 +19,8 @@ LMS internal DC offset auto\-calibrations
 .IP \[bu] 2
 \f[C]calibrate\ lms\ rxlpf\ [<I\ filter>\ <Q\ filter>]\f[]
 .IP \[bu] 2
-\f[C]calibrate\ lms\ rxvga2\ [<DC\ ref>\ <stage\ 1\ I>\ <stage\ 1\ Q>\ <stage\ 2\ I>\ <stage\ 2\ Q>]\f[]
+\f[C]calibrate\ lms\ rxvga2\f[]
+\f[C][<DC\ ref>\ <stage\ 1\ I>\ <stage\ 1\ Q>\ <stage\ 2\ I>\ <stage\ 2\ Q>]\f[]
 .PP
 Perform the specified auto\-calibration, or all of them if none are
 provided.
@@ -101,15 +102,39 @@ Parameters:
 .PP
 This selects the appropriate address and length values based upon the
 selected type.
-Valid values are:
-.IP \[bu] 2
-\f[C]cal\f[] \- Calibration data
-.IP \[bu] 2
-\f[C]fw\f[] \- Firmware
-.IP \[bu] 2
-\f[C]fpga40\f[] \- Metadata and bitstream for a 40 kLE FPGA
-.IP \[bu] 2
-\f[C]fpga115\f[] \- Metadata and bitstream for a 115 kLE FPGA
+.PP
+Valid options are:
+.PP
+.TS
+tab(@);
+r l.
+T{
+Option
+T}@T{
+Description
+T}
+_
+T{
+\f[C]cal\f[]
+T}@T{
+Calibration data
+T}
+T{
+\f[C]fw\f[]
+T}@T{
+Firmware
+T}
+T{
+\f[C]fpga40\f[]
+T}@T{
+Metadata and bitstream for 40 kLE FPGA
+T}
+T{
+\f[C]fpga115\f[]
+T}@T{
+Metadata and bitstream for 115 kLE FPGA
+T}
+.TE
 .RE
 .IP \[bu] 2
 \f[C]<address>\f[] \- Address of data to back up.
@@ -164,18 +189,47 @@ Type of flash image.
 Defaults to "raw".
 .PP
 Valid options are:
-.IP \[bu] 2
-\f[C]cal\f[] \- Calibration data
-.IP \[bu] 2
-\f[C]fw\f[] \- Firmware
-.IP \[bu] 2
-\f[C]fpga40\f[] \- Metadata and bitstream for 40 kLE FPGA
-.IP \[bu] 2
-\f[C]fpga115\f[] \- Metadata and bitstream for 115 kLE FPGA
-.IP \[bu] 2
-\f[C]raw\f[] \- Raw data.
-The address and length parameters must be provided if this type is
-selected.
+.PP
+.TS
+tab(@);
+r l.
+T{
+Option
+T}@T{
+Description
+T}
+_
+T{
+\f[C]cal\f[]
+T}@T{
+Calibration data
+T}
+T{
+\f[C]fw\f[]
+T}@T{
+Firmware
+T}
+T{
+\f[C]fpga40\f[]
+T}@T{
+Metadata and bitstream for 40 kLE FPGA
+T}
+T{
+\f[C]fpga115\f[]
+T}@T{
+Metadata and bitstream for 115 kLE FPGA
+T}
+T{
+\f[C]raw\f[]
+T}@T{
+Raw data.
+The address and length parameters must be
+T}
+T{
+T}@T{
+provided if this type is selected.
+T}
+.TE
 .RE
 .IP \[bu] 2
 \f[C]serial=<serial>\f[]
@@ -295,12 +349,32 @@ If \f[C]num_addresses\f[] is supplied, the address is incremented by 1
 and another peek is performed.
 .PP
 Valid Address Ranges:
-.IP \[bu] 2
-\f[C]dac\f[]: 0 to 255
-.IP \[bu] 2
-\f[C]lms\f[]: 0 to 127
-.IP \[bu] 2
-\f[C]si\f[]: 0 to 255
+.PP
+.TS
+tab(@);
+r l.
+T{
+Device
+T}@T{
+Address Range
+T}
+_
+T{
+\f[C]dac\f[]
+T}@T{
+0 to 255
+T}
+T{
+\f[C]lms\f[]
+T}@T{
+0 to 127
+T}
+T{
+\f[C]si\f[]
+T}@T{
+0 to 255
+T}
+.TE
 .PP
 Example:
 .IP \[bu] 2
@@ -317,12 +391,32 @@ If \f[C]num_addresses\f[] is supplied, the address is incremented by 1
 and another poke is performed.
 .PP
 Valid Address Ranges:
-.IP \[bu] 2
-\f[C]dac\f[]: 0 to 255
-.IP \[bu] 2
-\f[C]lms\f[]: 0 to 127
-.IP \[bu] 2
-\f[C]si\f[]: 0 to 255
+.PP
+.TS
+tab(@);
+r l.
+T{
+Device
+T}@T{
+Address Range
+T}
+_
+T{
+\f[C]dac\f[]
+T}@T{
+0 to 255
+T}
+T{
+\f[C]lms\f[]
+T}@T{
+0 to 127
+T}
+T{
+\f[C]si\f[]
+T}@T{
+0 to 255
+T}
+.TE
 .PP
 Example:
 .IP \[bu] 2
@@ -333,30 +427,77 @@ Usage: \f[C]print\ <param>\f[]
 .PP
 The print command takes a parameter to print.
 The parameter is one of:
-.IP \[bu] 2
-\f[C]bandwidth\f[] \- Bandwidth settings
-.IP \[bu] 2
-\f[C]frequency\f[] \- Frequency settings
-.IP \[bu] 2
-\f[C]gpio\f[] \- FX3 <\-> FPGA GPIO state
-.IP \[bu] 2
-\f[C]loopback\f[] \- Loopback settings
-.IP \[bu] 2
-\f[C]lnagain\f[] \- Gain setting of the LNA, in dB
-.IP \[bu] 2
-\f[C]rxvga1\f[] \- Gain setting of RXVGA1, in dB
-.IP \[bu] 2
-\f[C]rxvga2\f[] \- Gain setting of RXVGA2, in dB
-.IP \[bu] 2
-\f[C]txvga1\f[] \- Gain setting of TXVGA1, in dB
-.IP \[bu] 2
-\f[C]txvga2\f[] \- Gain setting of TXVGA2, in dB
-.IP \[bu] 2
-\f[C]sampling\f[] \- External or internal sampling mode
-.IP \[bu] 2
-\f[C]samplerate\f[] \- Samplerate settings
-.IP \[bu] 2
-\f[C]trimdac\f[] \- VCTCXO Trim DAC settings
+.PP
+.TS
+tab(@);
+r l.
+T{
+Parameter
+T}@T{
+Description
+T}
+_
+T{
+\f[C]bandwidth\f[]
+T}@T{
+Bandwidth settings
+T}
+T{
+\f[C]frequency\f[]
+T}@T{
+Frequency settings
+T}
+T{
+\f[C]gpio\f[]
+T}@T{
+FX3 <\-> FPGA GPIO state
+T}
+T{
+\f[C]loopback\f[]
+T}@T{
+Loopback settings
+T}
+T{
+\f[C]lnagain\f[]
+T}@T{
+Gain setting of the LNA, in dB
+T}
+T{
+\f[C]rxvga1\f[]
+T}@T{
+Gain setting of RXVGA1, in dB
+T}
+T{
+\f[C]rxvga2\f[]
+T}@T{
+Gain setting of RXVGA2, in dB
+T}
+T{
+\f[C]txvga1\f[]
+T}@T{
+Gain setting of TXVGA1, in dB
+T}
+T{
+\f[C]txvga2\f[]
+T}@T{
+Gain setting of TXVGA2, in dB
+T}
+T{
+\f[C]sampling\f[]
+T}@T{
+External or internal sampling mode
+T}
+T{
+\f[C]samplerate\f[]
+T}@T{
+Samplerate settings
+T}
+T{
+\f[C]trimdac\f[]
+T}@T{
+VCTCXO Trim DAC settings
+T}
+.TE
 .SS probe
 .PP
 Usage: \f[C]probe\f[]
@@ -398,16 +539,46 @@ Usage:
 .PP
 Receive IQ samples and write them to the specified file.
 Reception is controlled and configured by one of the following:
-.IP \[bu] 2
-\f[C]start\f[] \- Start receiving samples
-.IP \[bu] 2
-\f[C]stop\f[] \- Stop Receiving samples
-.IP \[bu] 2
-\f[C]wait\f[] \- Wait for sample transmission to complete, or until a
+.PP
+.TS
+tab(@);
+r l.
+T{
+Command
+T}@T{
+Description
+T}
+_
+T{
+\f[C]start\f[]
+T}@T{
+Start receiving samples
+T}
+T{
+\f[C]stop\f[]
+T}@T{
+Stop Receiving samples
+T}
+T{
+\f[C]wait\f[]
+T}@T{
+Wait for sample transmission to complete, or until a
+T}
+T{
+T}@T{
 specified amount of time elapses
-.IP \[bu] 2
-\f[C]config\f[] \- Configure sample reception.
-If no parameters are provided, the current parameters are printed.
+T}
+T{
+\f[C]config\f[]
+T}@T{
+Configure sample reception.
+If no parameters are provided,
+T}
+T{
+T}@T{
+the current parameters are printed.
+T}
+.TE
 .PP
 Running \[aq]\f[C]rx\f[]\[aq] without any additional commands is valid
 shorthand for \[aq]\f[C]rx\ config\f[]\[aq].
@@ -423,35 +594,98 @@ Configuration parameters take the form \[aq]\f[C]param=value\[aq]\f[],
 and may be specified in a single or multiple
 \[aq]\f[C]rx\ config\f[]\[aq] invocations.
 Below is a list of available parameters.
-.IP \[bu] 2
-\f[C]n\f[] \- Number of samples to receive.
+.PP
+.TS
+tab(@);
+r l.
+T{
+Parameter
+T}@T{
+Description
+T}
+_
+T{
+\f[C]n\f[]
+T}@T{
+Number of samples to receive.
 0 = inf.
-.IP \[bu] 2
-\f[C]file\f[] \- Filename to write received samples to
-.IP \[bu] 2
-\f[C]format\f[] \- Output file format.
+T}
+T{
+\f[C]file\f[]
+T}@T{
+Filename to write received samples to
+T}
+T{
+\f[C]format\f[]
+T}@T{
+Output file format.
 One of the following:
-.IP \[bu] 2
-\f[C]csv\f[] \- CSV of SC16 Q11 samples
-.IP \[bu] 2
-\f[C]bin\f[] \- Raw SC16 Q11 DAC samples
-.IP \[bu] 2
-\f[C]samples\f[] \- Number of samples per buffer to use in the
+T}
+T{
+\f[C]csv\f[]
+T}@T{
+CSV of SC16 Q11 samples
+T}
+T{
+\f[C]bin\f[]
+T}@T{
+Raw SC16 Q11 DAC samples
+T}
+T{
+\f[C]samples\f[]
+T}@T{
+Number of samples per buffer to use in the
+T}
+T{
+T}@T{
 asynchronous stream.
-Must be divisible by 1024 and >= 1024.
-.IP \[bu] 2
-\f[C]buffers\f[] \- Number of sample buffers to use in the asynchronous
+Must be divisible by 1024 and
+T}
+T{
+T}@T{
+>= 1024.
+T}
+T{
+\f[C]buffers\f[]
+T}@T{
+Number of sample buffers to use in the asynchronous
+T}
+T{
+T}@T{
 stream.
 The min value is 4.
-.IP \[bu] 2
-\f[C]xfers\f[] \- Number of simultaneous transfers to allow the
+T}
+T{
+\f[C]xfers\f[]
+T}@T{
+Number of simultaneous transfers to allow the
+T}
+T{
+T}@T{
 asynchronous stream to use.
-This should be less than the \[aq]\f[C]buffers\f[]\[aq] parameter.
-.IP \[bu] 2
-\f[C]timeout\f[] \- Data stream timeout.
-With no suffix, the default unit is \f[C]ms\f[].
+This should be less than
+T}
+T{
+T}@T{
+the \[aq]\f[C]buffers\f[]\[aq] parameter.
+T}
+T{
+\f[C]timeout\f[]
+T}@T{
+Data stream timeout.
+With no suffix, the default unit
+T}
+T{
+T}@T{
+is \f[C]ms\f[].
 The default value is 1s.
-Valid suffixes are \[aq]\f[C]ms\f[]\[aq] and \[aq]\f[C]s\f[]\[aq].
+Valid suffixes are
+T}
+T{
+T}@T{
+\[aq]\f[C]ms\f[]\[aq] and \[aq]\f[C]s\f[]\[aq].
+T}
+.TE
 .PP
 Example:
 .IP \[bu] 2
@@ -486,16 +720,46 @@ Usage: \f[C]tx\ <start\ |\ stop\ |\ wait\ |\ config\ [parameters]>\f[]
 .PP
 Read IQ samples from the specified file and transmit them.
 Transmission is controlled and configured by one of the following:
-.IP \[bu] 2
-\f[C]start\f[] \- Start transmitting samples
-.IP \[bu] 2
-\f[C]stop\f[] \- Stop transmitting samples
-.IP \[bu] 2
-\f[C]wait\f[] \- Wait for sample transmission to complete, or until a
+.PP
+.TS
+tab(@);
+r l.
+T{
+Command
+T}@T{
+Description
+T}
+_
+T{
+\f[C]start\f[]
+T}@T{
+Start transmitting samples
+T}
+T{
+\f[C]stop\f[]
+T}@T{
+Stop transmitting samples
+T}
+T{
+\f[C]wait\f[]
+T}@T{
+Wait for sample transmission to complete, or until a
+T}
+T{
+T}@T{
 specified amount of time elapses
-.IP \[bu] 2
-\f[C]config\f[] \- Configure sample transmission .
-If no parameters are provided, the current parameters are printed.
+T}
+T{
+\f[C]config\f[]
+T}@T{
+Configure sample transmission .
+If no parameters are
+T}
+T{
+T}@T{
+provided, the current parameters are printed.
+T}
+.TE
 .PP
 Running \[aq]\f[C]tx\f[]\[aq] without any additional commands is valid
 shorthand for \[aq]\f[C]tx\ config\f[]\[aq].
@@ -511,40 +775,112 @@ Configuration parameters take the form \[aq]\f[C]param=value\f[]\[aq],
 and may be specified in a single or multiple
 \[aq]\f[C]tx\ config\f[]\[aq] invocations.
 Below is a list of available parameters.
-.IP \[bu] 2
-\f[C]file\f[] \- Filename to read samples from
-.IP \[bu] 2
-\f[C]format\f[] \- Output file format.
+.PP
+.TS
+tab(@);
+r l.
+T{
+Parameter
+T}@T{
+Description
+T}
+_
+T{
+\f[C]file\f[]
+T}@T{
+Filename to read samples from
+T}
+T{
+\f[C]format\f[]
+T}@T{
+Output file format.
 One of the following:
-.IP \[bu] 2
-\f[C]csv\f[] \- CSV of SC16 Q11 samples ([\-2048, 2047])
-.IP \[bu] 2
-\f[C]bin\f[] \- Raw SC16 Q11 DAC samples ([\-2048, 2047])
-.IP \[bu] 2
-\f[C]repeat\f[] \- The number of times the file contents should be
+T}
+T{
+\f[C]csv\f[]
+T}@T{
+CSV of SC16 Q11 samples ([\-2048, 2047])
+T}
+T{
+\f[C]bin\f[]
+T}@T{
+Raw SC16 Q11 DAC samples ([\-2048, 2047])
+T}
+T{
+\f[C]repeat\f[]
+T}@T{
+The number of times the file contents should be
+T}
+T{
+T}@T{
 transmitted.
 0 implies repeat until stopped.
-.IP \[bu] 2
-\f[C]delay\f[] \- The number of microseconds to delay between
+T}
+T{
+\f[C]delay\f[]
+T}@T{
+The number of microseconds to delay between
+T}
+T{
+T}@T{
 retransmitting file contents.
 0 implies no delay.
-.IP \[bu] 2
-\f[C]samples\f[] \- Number of samples per buffer to use in the
+T}
+T{
+\f[C]samples\f[]
+T}@T{
+Number of samples per buffer to use in the
+T}
+T{
+T}@T{
 asynchronous stream.
-Must be divisible by 1024 and >= 1024.
-.IP \[bu] 2
-\f[C]buffers\f[] \- Number of sample buffers to use in the asynchronous
+Must be divisible by 1024 and
+T}
+T{
+T}@T{
+>= 1024.
+T}
+T{
+\f[C]buffers\f[]
+T}@T{
+Number of sample buffers to use in the asynchronous
+T}
+T{
+T}@T{
 stream.
 The min value is 4.
-.IP \[bu] 2
-\f[C]xfers\f[] \- Number of simultaneous transfers to allow the
+T}
+T{
+\f[C]xfers\f[]
+T}@T{
+Number of simultaneous transfers to allow the
+T}
+T{
+T}@T{
 asynchronous stream to use.
-This should be < the \[aq]buffers\[aq] parameter.
-.IP \[bu] 2
-\f[C]timeout\f[] \- Data stream timeout.
-With no suffix, the default unit is ms.
+This should be < the
+T}
+T{
+T}@T{
+\[aq]\f[C]buffers\f[]\[aq] parameter.
+T}
+T{
+\f[C]timeout\f[]
+T}@T{
+Data stream timeout.
+With no suffix, the default unit
+T}
+T{
+T}@T{
+is ms.
 The default value is 1s.
-Valid suffixes are \[aq]ms\[aq] and \[aq]s\[aq].
+Valid suffixes are
+T}
+T{
+T}@T{
+\[aq]ms\[aq] and \[aq]s\[aq].
+T}
+.TE
 .PP
 Example:
 .IP \[bu] 2
@@ -581,37 +917,88 @@ Usage: \f[C]set\ <param>\ <arguments>\f[]
 The set command takes a parameter and an arbitrary number of arguments
 for that particular command.
 The parameter is one of:
-.IP \[bu] 2
-\f[C]bandwidth\f[] \- Bandwidth settings
-.IP \[bu] 2
-\f[C]frequency\f[] \- Frequency settings
-.IP \[bu] 2
-\f[C]gpio\f[] \- FX3 <\-> FPGA GPIO state
-.IP \[bu] 2
-\f[C]loopback\f[] \- Loopback settings
-.IP \[bu] 2
-\f[C]lnagain\f[] \- Gain setting of the LNA, in dB.
-Valid values are 0, 3, 6.
-.IP \[bu] 2
-\f[C]rxvga1\f[] \- Gain setting of RXVGA1, in dB.
+.PP
+.TS
+tab(@);
+r l.
+T{
+Parameter
+T}@T{
+Description
+T}
+_
+T{
+\f[C]bandwidth\f[]
+T}@T{
+Bandwidth settings
+T}
+T{
+\f[C]frequency\f[]
+T}@T{
+Frequency settings
+T}
+T{
+\f[C]gpio\f[]
+T}@T{
+FX3 <\-> FPGA GPIO state
+T}
+T{
+\f[C]loopback\f[]
+T}@T{
+Loopback settings
+T}
+T{
+\f[C]lnagain\f[]
+T}@T{
+Gain setting of the LNA, in dB.
+Valid values are 0,
+T}
+T{
+T}@T{
+3, and 6.
+T}
+T{
+\f[C]rxvga1\f[]
+T}@T{
+Gain setting of RXVGA1, in dB.
 Range: [5, 30]
-.IP \[bu] 2
-\f[C]rxvga2\f[] \- Gain setting of RXVGA2, in dB.
+T}
+T{
+\f[C]rxvga2\f[]
+T}@T{
+Gain setting of RXVGA2, in dB.
 Range: [0, 30]
-.IP \[bu] 2
-\f[C]txvga1\f[] \- Gain setting of TXVGA1, in dB.
+T}
+T{
+\f[C]txvga1\f[]
+T}@T{
+Gain setting of TXVGA1, in dB.
 Range: [\-35, \-4]
-.IP \[bu] 2
-\f[C]txvga2\f[] \- Gain setting of TXVGA2, in dB.
+T}
+T{
+\f[C]txvga2\f[]
+T}@T{
+Gain setting of TXVGA2, in dB.
 Range: [0, 25]
-.IP \[bu] 2
-\f[C]sampling\f[] \- External or internal sampling mode
-.IP \[bu] 2
-\f[C]samplerate\f[] \- Samplerate settings
-.IP \[bu] 2
-\f[C]trimdac\f[] \- VCTCXO Trim DAC settings
+T}
+T{
+\f[C]sampling\f[]
+T}@T{
+External or internal sampling mode
+T}
+T{
+\f[C]samplerate\f[]
+T}@T{
+Samplerate settings
+T}
+T{
+\f[C]trimdac\f[]
+T}@T{
+VCTCXO Trim DAC settings
+T}
+.TE
 .SS version
 .PP
 Usage: \f[C]version\f[]
 .PP
-Prints version information for host software and the current device
+Prints version information for host software and the current device.

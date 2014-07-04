@@ -27,7 +27,7 @@
  * Any manual modifications to this file will be overwritten!
  * To edit the content of help strings, please edit interactive-help.md
  *
- * Last generated: Fri Jul  4 17:50:12 EDT 2014 by rtucker@racer-x
+ * Last generated: Fri Jul  4 18:35:50 EDT 2014 by rtucker@racer-x
  */
 
 #ifndef BLADERF_CLI_DOC_CMD_HELP_H__
@@ -125,11 +125,14 @@
   "    This selects the appropriate address and length values based upon\n" \
   "    the selected type.\n" \
   "\n" \
-  "    Valid values are:\n" \
-  "    -   cal - Calibration data\n" \
-  "    -   fw - Firmware\n" \
-  "    -   fpga40 - Metadata and bitstream for a 40 kLE FPGA\n" \
-  "    -   fpga115 - Metadata and bitstream for a 115 kLE FPGA\n" \
+  "    Valid options are:\n" \
+  "\n" \
+  "         Option Description\n" \
+  "      --------- -----------------------------------------\n" \
+  "            cal Calibration data\n" \
+  "             fw Firmware\n" \
+  "         fpga40 Metadata and bitstream for 40 kLE FPGA\n" \
+  "        fpga115 Metadata and bitstream for 115 kLE FPGA\n" \
   "\n" \
   "-   <address> - Address of data to back up. Must be erase\n" \
   "    block-aligned.\n" \
@@ -173,12 +176,14 @@
   "\n" \
   "    Valid options are:\n" \
   "\n" \
-  "    -   cal - Calibration data\n" \
-  "    -   fw - Firmware\n" \
-  "    -   fpga40 - Metadata and bitstream for 40 kLE FPGA\n" \
-  "    -   fpga115 - Metadata and bitstream for 115 kLE FPGA\n" \
-  "    -   raw - Raw data. The address and length parameters must be\n" \
-  "        provided if this type is selected.\n" \
+  "         Option Description\n" \
+  "      --------- -----------------------------------------------------\n" \
+  "            cal Calibration data\n" \
+  "             fw Firmware\n" \
+  "         fpga40 Metadata and bitstream for 40 kLE FPGA\n" \
+  "        fpga115 Metadata and bitstream for 115 kLE FPGA\n" \
+  "            raw Raw data. The address and length parameters must be\n" \
+  "                provided if this type is selected.\n" \
   "\n" \
   "-   serial=<serial>\n" \
   "\n" \
@@ -296,9 +301,11 @@
   "\n" \
   "Valid Address Ranges:\n" \
   "\n" \
-  "-   dac: 0 to 255\n" \
-  "-   lms: 0 to 127\n" \
-  "-   si: 0 to 255\n" \
+  "    Device Address Range\n" \
+  "  -------- ---------------\n" \
+  "       dac 0 to 255\n" \
+  "       lms 0 to 127\n" \
+  "        si 0 to 255\n" \
   "\n" \
   "Example:\n" \
   "\n" \
@@ -318,9 +325,11 @@
   "\n" \
   "Valid Address Ranges:\n" \
   "\n" \
-  "-   dac: 0 to 255\n" \
-  "-   lms: 0 to 127\n" \
-  "-   si: 0 to 255\n" \
+  "    Device Address Range\n" \
+  "  -------- ---------------\n" \
+  "       dac 0 to 255\n" \
+  "       lms 0 to 127\n" \
+  "        si 0 to 255\n" \
   "\n" \
   "Example:\n" \
   "\n" \
@@ -333,18 +342,20 @@
   "\n" \
   "The print command takes a parameter to print. The parameter is one of:\n" \
   "\n" \
-  "-   bandwidth - Bandwidth settings\n" \
-  "-   frequency - Frequency settings\n" \
-  "-   gpio - FX3 <-> FPGA GPIO state\n" \
-  "-   loopback - Loopback settings\n" \
-  "-   lnagain - Gain setting of the LNA, in dB\n" \
-  "-   rxvga1 - Gain setting of RXVGA1, in dB\n" \
-  "-   rxvga2 - Gain setting of RXVGA2, in dB\n" \
-  "-   txvga1 - Gain setting of TXVGA1, in dB\n" \
-  "-   txvga2 - Gain setting of TXVGA2, in dB\n" \
-  "-   sampling - External or internal sampling mode\n" \
-  "-   samplerate - Samplerate settings\n" \
-  "-   trimdac - VCTCXO Trim DAC settings\n" \
+  "     Parameter Description\n" \
+  "  ------------ ------------------------------------\n" \
+  "     bandwidth Bandwidth settings\n" \
+  "     frequency Frequency settings\n" \
+  "          gpio FX3 <-> FPGA GPIO state\n" \
+  "      loopback Loopback settings\n" \
+  "       lnagain Gain setting of the LNA, in dB\n" \
+  "        rxvga1 Gain setting of RXVGA1, in dB\n" \
+  "        rxvga2 Gain setting of RXVGA2, in dB\n" \
+  "        txvga1 Gain setting of TXVGA1, in dB\n" \
+  "        txvga2 Gain setting of TXVGA2, in dB\n" \
+  "      sampling External or internal sampling mode\n" \
+  "    samplerate Samplerate settings\n" \
+  "       trimdac VCTCXO Trim DAC settings\n" \
   "\n" \
 
 
@@ -397,12 +408,14 @@
   "Receive IQ samples and write them to the specified file. Reception is\n" \
   "controlled and configured by one of the following:\n" \
   "\n" \
-  "-   start - Start receiving samples\n" \
-  "-   stop - Stop Receiving samples\n" \
-  "-   wait - Wait for sample transmission to complete, or until a\n" \
-  "    specified amount of time elapses\n" \
-  "-   config - Configure sample reception. If no parameters are\n" \
-  "    provided, the current parameters are printed.\n" \
+  "    Command Description\n" \
+  "  --------- ------------------------------------------------------------\n" \
+  "      start Start receiving samples\n" \
+  "       stop Stop Receiving samples\n" \
+  "       wait Wait for sample transmission to complete, or until a\n" \
+  "            specified amount of time elapses\n" \
+  "     config Configure sample reception. If no parameters are provided,\n" \
+  "            the current parameters are printed.\n" \
   "\n" \
   "Running 'rx' without any additional commands is valid shorthand for\n" \
   "'rx config'.\n" \
@@ -417,19 +430,24 @@
   "specified in a single or multiple 'rx config' invocations. Below is a\n" \
   "list of available parameters.\n" \
   "\n" \
-  "-   n - Number of samples to receive. 0 = inf.\n" \
-  "-   file - Filename to write received samples to\n" \
-  "-   format - Output file format. One of the following:\n" \
-  "-   csv - CSV of SC16 Q11 samples\n" \
-  "-   bin - Raw SC16 Q11 DAC samples\n" \
-  "-   samples - Number of samples per buffer to use in the asynchronous\n" \
-  "    stream. Must be divisible by 1024 and >= 1024.\n" \
-  "-   buffers - Number of sample buffers to use in the asynchronous\n" \
-  "    stream. The min value is 4.\n" \
-  "-   xfers - Number of simultaneous transfers to allow the asynchronous\n" \
-  "    stream to use. This should be less than the 'buffers' parameter.\n" \
-  "-   timeout - Data stream timeout. With no suffix, the default unit is\n" \
-  "    ms. The default value is 1s. Valid suffixes are 'ms' and 's'.\n" \
+  "    Parameter Description\n" \
+  "  ----------- -------------------------------------------------------\n" \
+  "            n Number of samples to receive. 0 = inf.\n" \
+  "         file Filename to write received samples to\n" \
+  "       format Output file format. One of the following:\n" \
+  "          csv CSV of SC16 Q11 samples\n" \
+  "          bin Raw SC16 Q11 DAC samples\n" \
+  "      samples Number of samples per buffer to use in the\n" \
+  "              asynchronous stream. Must be divisible by 1024 and\n" \
+  "              >= 1024.\n" \
+  "      buffers Number of sample buffers to use in the asynchronous\n" \
+  "              stream. The min value is 4.\n" \
+  "        xfers Number of simultaneous transfers to allow the\n" \
+  "              asynchronous stream to use. This should be less than\n" \
+  "              the 'buffers' parameter.\n" \
+  "      timeout Data stream timeout. With no suffix, the default unit\n" \
+  "              is ms. The default value is 1s. Valid suffixes are\n" \
+  "              'ms' and 's'.\n" \
   "\n" \
   "Example:\n" \
   "\n" \
@@ -458,12 +476,14 @@
   "Read IQ samples from the specified file and transmit them.\n" \
   "Transmission is controlled and configured by one of the following:\n" \
   "\n" \
-  "-   start - Start transmitting samples\n" \
-  "-   stop - Stop transmitting samples\n" \
-  "-   wait - Wait for sample transmission to complete, or until a\n" \
-  "    specified amount of time elapses\n" \
-  "-   config - Configure sample transmission . If no parameters are\n" \
-  "    provided, the current parameters are printed.\n" \
+  "    Command Description\n" \
+  "  --------- ------------------------------------------------------\n" \
+  "      start Start transmitting samples\n" \
+  "       stop Stop transmitting samples\n" \
+  "       wait Wait for sample transmission to complete, or until a\n" \
+  "            specified amount of time elapses\n" \
+  "     config Configure sample transmission . If no parameters are\n" \
+  "            provided, the current parameters are printed.\n" \
   "\n" \
   "Running 'tx' without any additional commands is valid shorthand for\n" \
   "'tx config'.\n" \
@@ -478,22 +498,27 @@
   "specified in a single or multiple 'tx config' invocations. Below is a\n" \
   "list of available parameters.\n" \
   "\n" \
-  "-   file - Filename to read samples from\n" \
-  "-   format - Output file format. One of the following:\n" \
-  "-   csv - CSV of SC16 Q11 samples ([-2048, 2047])\n" \
-  "-   bin - Raw SC16 Q11 DAC samples ([-2048, 2047])\n" \
-  "-   repeat - The number of times the file contents should be\n" \
-  "    transmitted. 0 implies repeat until stopped.\n" \
-  "-   delay - The number of microseconds to delay between retransmitting\n" \
-  "    file contents. 0 implies no delay.\n" \
-  "-   samples - Number of samples per buffer to use in the asynchronous\n" \
-  "    stream. Must be divisible by 1024 and >= 1024.\n" \
-  "-   buffers - Number of sample buffers to use in the asynchronous\n" \
-  "    stream. The min value is 4.\n" \
-  "-   xfers - Number of simultaneous transfers to allow the asynchronous\n" \
-  "    stream to use. This should be < the 'buffers' parameter.\n" \
-  "-   timeout - Data stream timeout. With no suffix, the default unit is\n" \
-  "    ms. The default value is 1s. Valid suffixes are 'ms' and 's'.\n" \
+  "    Parameter Description\n" \
+  "  ----------- -------------------------------------------------------\n" \
+  "         file Filename to read samples from\n" \
+  "       format Output file format. One of the following:\n" \
+  "          csv CSV of SC16 Q11 samples ([-2048, 2047])\n" \
+  "          bin Raw SC16 Q11 DAC samples ([-2048, 2047])\n" \
+  "       repeat The number of times the file contents should be\n" \
+  "              transmitted. 0 implies repeat until stopped.\n" \
+  "        delay The number of microseconds to delay between\n" \
+  "              retransmitting file contents. 0 implies no delay.\n" \
+  "      samples Number of samples per buffer to use in the\n" \
+  "              asynchronous stream. Must be divisible by 1024 and\n" \
+  "              >= 1024.\n" \
+  "      buffers Number of sample buffers to use in the asynchronous\n" \
+  "              stream. The min value is 4.\n" \
+  "        xfers Number of simultaneous transfers to allow the\n" \
+  "              asynchronous stream to use. This should be < the\n" \
+  "              'buffers' parameter.\n" \
+  "      timeout Data stream timeout. With no suffix, the default unit\n" \
+  "              is ms. The default value is 1s. Valid suffixes are\n" \
+  "              'ms' and 's'.\n" \
   "\n" \
   "Example:\n" \
   "\n" \
@@ -525,19 +550,21 @@
   "The set command takes a parameter and an arbitrary number of arguments\n" \
   "for that particular command. The parameter is one of:\n" \
   "\n" \
-  "-   bandwidth - Bandwidth settings\n" \
-  "-   frequency - Frequency settings\n" \
-  "-   gpio - FX3 <-> FPGA GPIO state\n" \
-  "-   loopback - Loopback settings\n" \
-  "-   lnagain - Gain setting of the LNA, in dB. Valid values are 0, 3,\n" \
-  "    6.\n" \
-  "-   rxvga1 - Gain setting of RXVGA1, in dB. Range: [5, 30]\n" \
-  "-   rxvga2 - Gain setting of RXVGA2, in dB. Range: [0, 30]\n" \
-  "-   txvga1 - Gain setting of TXVGA1, in dB. Range: [-35, -4]\n" \
-  "-   txvga2 - Gain setting of TXVGA2, in dB. Range: [0, 25]\n" \
-  "-   sampling - External or internal sampling mode\n" \
-  "-   samplerate - Samplerate settings\n" \
-  "-   trimdac - VCTCXO Trim DAC settings\n" \
+  "     Parameter Description\n" \
+  "  ------------ -----------------------------------------------------\n" \
+  "     bandwidth Bandwidth settings\n" \
+  "     frequency Frequency settings\n" \
+  "          gpio FX3 <-> FPGA GPIO state\n" \
+  "      loopback Loopback settings\n" \
+  "       lnagain Gain setting of the LNA, in dB. Valid values are 0,\n" \
+  "               3, and 6.\n" \
+  "        rxvga1 Gain setting of RXVGA1, in dB. Range: [5, 30]\n" \
+  "        rxvga2 Gain setting of RXVGA2, in dB. Range: [0, 30]\n" \
+  "        txvga1 Gain setting of TXVGA1, in dB. Range: [-35, -4]\n" \
+  "        txvga2 Gain setting of TXVGA2, in dB. Range: [0, 25]\n" \
+  "      sampling External or internal sampling mode\n" \
+  "    samplerate Samplerate settings\n" \
+  "       trimdac VCTCXO Trim DAC settings\n" \
   "\n" \
 
 
