@@ -1,0 +1,617 @@
+.PP
+[INTERACTIVE COMMANDS]
+.SS calibrate
+.PP
+Usage: \f[C]calibrate\ <operation>\ [options]\f[]
+.PP
+Perform the specified transceiver calibration operation.
+.PP
+Available operations:
+.IP \[bu] 2
+LMS internal DC offset auto\-calibrations
+.RS 2
+.IP \[bu] 2
+\f[C]calibrate\ lms\ [show]\f[]
+.IP \[bu] 2
+\f[C]calibrate\ lms\ tuning\ [value]\f[]
+.IP \[bu] 2
+\f[C]calibrate\ lms\ txlpf\ [<I\ filter>\ <Q\ filter>]\f[]
+.IP \[bu] 2
+\f[C]calibrate\ lms\ rxlpf\ [<I\ filter>\ <Q\ filter>]\f[]
+.IP \[bu] 2
+\f[C]calibrate\ lms\ rxvga2\ [<DC\ ref>\ <stage\ 1\ I>\ <stage\ 1\ Q>\ <stage\ 2\ I>\ <stage\ 2\ Q>]\f[]
+.PP
+Perform the specified auto\-calibration, or all of them if none are
+provided.
+When values are provided, these are used instead of the results of the
+auto\-calibration procedure.
+Use \[aq]\f[C]lms\ show\f[]\[aq] to read and print the current LMS
+calibration values.
+.RE
+.IP \[bu] 2
+RX and TX I/Q DC offset correction parameter calibration
+.RS 2
+.IP \[bu] 2
+\f[C]calibrate\ dc\ <rx|tx>\ [<I>\ <Q>]\f[]
+.IP \[bu] 2
+\f[C]calibrate\ dc\ <rxtx>\ dc\f[]
+.PP
+Calibrate the DC offset correction paremeters for the current frequency
+and gain settings.
+If a I/Q values are provided, they are applied directly.
+\[aq]\f[C]cal\ rxtx\f[]\[aq] is shorthand for \[aq]\f[C]cal\ rx\f[]\[aq]
+followed by \[aq]\f[C]cal\ tx\f[]\[aq].
+.RE
+.IP \[bu] 2
+RX and TX I/Q balance correction parameter calibration
+.RS 2
+.IP \[bu] 2
+\f[C]calibrate\ iq\ <rx|tx>\ <gain|phase>\ <value>\f[]
+.PP
+Set the specified IQ gain or phase balance parameters.
+.RE
+.IP \[bu] 2
+Generate RX or TX I/Q DC correction parameter tables
+.RS 2
+.IP \[bu] 2
+\f[C]calibrate\ table\ dc\ <rx|tx>\ [\ <f_min>\ <f_max>\ [f_inc]\ ]\f[]
+.PP
+Generate and write an I/Q correction parameter table to the current
+working directory, in a file named
+\[aq]\f[C]<serial>_dc_<rx|tx>.tbl\f[]\[aq].
+\[aq]\f[C]f_min\f[]\[aq] and \[aq]\f[C]f_max\f[]\[aq] are min and max
+frequencies to include in the table.
+\[aq]\f[C]f_inc\f[]\[aq] is the frequency increment.
+.PP
+By default, tables are generated over the entire frequency range, in 2
+MHz steps.
+.RE
+.SS clear
+.PP
+Usage: \f[C]clear\f[]
+.PP
+Clears the screen.
+.SS echo
+.PP
+Usage: \f[C]echo\ [arg\ 1]\ [arg\ 2]\ ...\ [arg\ n]\f[]
+.PP
+Echo each argument on a new line.
+.SS erase
+.PP
+Usage: \f[C]erase\ <offset>\ <count>\f[]
+.PP
+Erase specified erase blocks SPI flash.
+.IP \[bu] 2
+\f[C]<offset>\f[] \- Erase block offset
+.IP \[bu] 2
+\f[C]<count>\f[] \- Number of erase blocks to erase
+.SS flash_backup
+.PP
+Usage: \f[C]flash_backup\ <file>\ (<type>\ |\ <address>\ <length>)\f[]
+.PP
+Back up flash data to the specified file.
+This command takes either two or four arguments.
+The two\-argument invocation is generally recommended for
+non\-development use.
+.PP
+Parameters:
+.IP \[bu] 2
+\f[C]<type>\f[] \- Type of backup.
+.RS 2
+.PP
+This selects the appropriate address and length values based upon the
+selected type.
+Valid values are:
+.IP \[bu] 2
+\f[C]cal\f[] \- Calibration data
+.IP \[bu] 2
+\f[C]fw\f[] \- Firmware
+.IP \[bu] 2
+\f[C]fpga40\f[] \- Metadata and bitstream for a 40 kLE FPGA
+.IP \[bu] 2
+\f[C]fpga115\f[] \- Metadata and bitstream for a 115 kLE FPGA
+.RE
+.IP \[bu] 2
+\f[C]<address>\f[] \- Address of data to back up.
+Must be erase block\-aligned.
+.IP \[bu] 2
+\f[C]<len>\f[] \- Length of region to back up.
+Must be erase block\-aligned.
+.PP
+Note: When an address and length are provided, the image type will
+default to \[aq]\f[C]raw\f[]\[aq].
+.PP
+Examples:
+.IP \[bu] 2
+\f[C]flash_backup\ cal.bin\ cal\f[]
+.RS 2
+.PP
+Backs up the calibration data region.
+.RE
+.IP \[bu] 2
+\f[C]flash_backup\ cal_raw.bin\ 0x30000\ 0x10000\f[]
+.RS 2
+.PP
+Backs up the calibration region as a raw data image.
+.RE
+.SS flash_image
+.PP
+Usage: \f[C]flash_image\ <image>\ [output\ options]\f[]
+.PP
+Print a flash image\[aq]s metadata or create a new flash image.
+When provided with the name of a flash image file as the only argument,
+this command will print the metadata contents of the image.
+.PP
+The following options may be used to create a new flash image.
+.IP \[bu] 2
+\f[C]data=<file>\f[]
+.RS 2
+.PP
+File to containing data to store in the image.
+.RE
+.IP \[bu] 2
+\f[C]address=<addr>\f[]
+.RS 2
+.PP
+Flash address.
+Default depends upon \[aq]type\[aq] parameter.
+.RE
+.IP \[bu] 2
+\f[C]type=<type>\f[]
+.RS 2
+.PP
+Type of flash image.
+Defaults to "raw".
+.PP
+Valid options are:
+.IP \[bu] 2
+\f[C]cal\f[] \- Calibration data
+.IP \[bu] 2
+\f[C]fw\f[] \- Firmware
+.IP \[bu] 2
+\f[C]fpga40\f[] \- Metadata and bitstream for 40 kLE FPGA
+.IP \[bu] 2
+\f[C]fpga115\f[] \- Metadata and bitstream for 115 kLE FPGA
+.IP \[bu] 2
+\f[C]raw\f[] \- Raw data.
+The address and length parameters must be provided if this type is
+selected.
+.RE
+.IP \[bu] 2
+\f[C]serial=<serial>\f[]
+.RS 2
+.PP
+Serial # to store in image.
+Defaults to zeros.
+.RE
+.SS flash_init_cal
+.PP
+Usage:
+\f[C]flash_init_cal\ <fpga_size>\ <vctcxo_trim>\ [<output_file>]\f[]
+.PP
+Create and write a new calibration data region to the currently opened
+device, or to a file.
+Be sure to back up calibration data prior to running this command.
+(See the \f[C]flash_backup\f[] command.)
+.IP \[bu] 2
+\f[C]<fpga_size>\f[]
+.RS 2
+.PP
+Either 40 or 115, depending on the device model.
+.RE
+.IP \[bu] 2
+\f[C]<vctcxo_trim>\f[]
+.RS 2
+.PP
+VCTCXO/DAC trim value (\f[C]0x0\f[]\-\f[C]0xffff\f[])
+.RE
+.IP \[bu] 2
+\f[C]<output_file>\f[]
+.RS 2
+.PP
+File to write calibration data to.
+When this argument is provided, no data will be written to the
+device\[aq]s flash.
+.RE
+.SS flash_restore
+.PP
+Usage: \f[C]flash_restore\ <file>\ [<address>\ <length>]\f[]
+.PP
+Restore flash data from a file, optionally overriding values in the
+image metadata.
+.IP \[bu] 2
+\f[C]<address>\f[]
+.RS 2
+.PP
+Defaults to the address specified in the provided flash image file.
+.RE
+.IP \[bu] 2
+\f[C]<length>\f[]
+.RS 2
+.PP
+Defaults to length of the data in the provided image file.
+.RE
+.SS help
+.PP
+Usage: \f[C]help\ [<command>]\f[]
+.PP
+Provides extended help, like this, on any command.
+.SS info
+.PP
+Usage: \f[C]info\f[]
+.PP
+Prints the following information about an opened device:
+.IP \[bu] 2
+Serial number
+.IP \[bu] 2
+VCTCXO DAC calibration value
+.IP \[bu] 2
+FPGA size
+.IP \[bu] 2
+Whether or not the FPGA is loaded
+.IP \[bu] 2
+USB bus, address, and speed
+.IP \[bu] 2
+Backend (libusb or kernel module)
+.IP \[bu] 2
+Instance number
+.SS jump_to_boot
+.PP
+Usage: \f[C]jump_to_boot\f[]
+.PP
+Jumps to the FX3 bootloader.
+.SS load
+.PP
+Usage: \f[C]load\ <fpga|fx3>\ <filename>\f[]
+.PP
+Load an FPGA bitstream or program the FX3\[aq]s SPI flash.
+.SS xb
+.PP
+Usage: \f[C]xb\ enable\ [100|200]\f[]
+.PP
+Enable and configure XB100 and XB200 expansion boards
+.SS mimo
+.PP
+Usage: \f[C]mimo\ [master\ |\ slave]\f[]
+.PP
+Modify device MIMO operation
+.SS open
+.PP
+Usage: \f[C]open\ [device\ identifiers]\f[]
+.PP
+Open the specified device for use with successive commands.
+Any previously opened device will be closed.
+See the \f[C]bladerf_open()\f[] documentation for the device specifier
+format.
+.SS peek
+.PP
+Usage: \f[C]peek\ <dac|lms|si>\ <address>\ [num\ addresses]\f[]
+.PP
+The peek command can read any of the devices hanging off the FPGA which
+includes the LMS6002D transceiver, VCTCXO trim DAC or the Si5338 clock
+generator chip.
+.PP
+If \f[C]num_addresses\f[] is supplied, the address is incremented by 1
+and another peek is performed.
+.PP
+Valid Address Ranges:
+.IP \[bu] 2
+\f[C]dac\f[]: 0 to 255
+.IP \[bu] 2
+\f[C]lms\f[]: 0 to 127
+.IP \[bu] 2
+\f[C]si\f[]: 0 to 255
+.PP
+Example:
+.IP \[bu] 2
+\f[C]peek\ si\ ...\f[]
+.SS poke
+.PP
+Usage: \f[C]poke\ <dac|lms|si>\ <address>\ <data>\f[]
+.PP
+The poke command can write any of the devices hanging off the FPGA which
+includes the LMS6002D transceiver, VCTCXO trim DAC or the Si5338 clock
+generator chip.
+.PP
+If \f[C]num_addresses\f[] is supplied, the address is incremented by 1
+and another poke is performed.
+.PP
+Valid Address Ranges:
+.IP \[bu] 2
+\f[C]dac\f[]: 0 to 255
+.IP \[bu] 2
+\f[C]lms\f[]: 0 to 127
+.IP \[bu] 2
+\f[C]si\f[]: 0 to 255
+.PP
+Example:
+.IP \[bu] 2
+\f[C]poke\ lms\ ...\f[]
+.SS print
+.PP
+Usage: \f[C]print\ <param>\f[]
+.PP
+The print command takes a parameter to print.
+The parameter is one of:
+.IP \[bu] 2
+\f[C]bandwidth\f[] \- Bandwidth settings
+.IP \[bu] 2
+\f[C]frequency\f[] \- Frequency settings
+.IP \[bu] 2
+\f[C]gpio\f[] \- FX3 <\-> FPGA GPIO state
+.IP \[bu] 2
+\f[C]loopback\f[] \- Loopback settings
+.IP \[bu] 2
+\f[C]lnagain\f[] \- Gain setting of the LNA, in dB
+.IP \[bu] 2
+\f[C]rxvga1\f[] \- Gain setting of RXVGA1, in dB
+.IP \[bu] 2
+\f[C]rxvga2\f[] \- Gain setting of RXVGA2, in dB
+.IP \[bu] 2
+\f[C]txvga1\f[] \- Gain setting of TXVGA1, in dB
+.IP \[bu] 2
+\f[C]txvga2\f[] \- Gain setting of TXVGA2, in dB
+.IP \[bu] 2
+\f[C]sampling\f[] \- External or internal sampling mode
+.IP \[bu] 2
+\f[C]samplerate\f[] \- Samplerate settings
+.IP \[bu] 2
+\f[C]trimdac\f[] \- VCTCXO Trim DAC settings
+.SS probe
+.PP
+Usage: \f[C]probe\f[]
+.PP
+Search for attached bladeRF device and print a list of results.
+.SS quit
+.PP
+Usage: \f[C]quit\f[]
+.PP
+Exit the CLI.
+.SS recover
+.PP
+Usage: \f[C]recover\ [<bus>\ <address>\ <firmware\ file>]\f[]
+.PP
+Load firmware onto a device running in bootloader mode, or list all
+devices currently in bootloader mode.
+.PP
+With no arguments, this command lists the USB bus and address for
+FX3\-based devices running in bootloader mode.
+.PP
+When provided a bus, address, and path to a firmware file, the specified
+device will be loaded with and begin executing the provided firmware.
+.PP
+In most cases, after successfully loading firmware into the device\[aq]s
+RAM, users should open the device with the "\f[C]open\f[]" command, and
+write the firmware to flash via "\f[C]load\ fx3\ <firmware\ file>\f[]"
+.PP
+Note: This command is only available when \f[C]bladeRF\-cli\f[] is built
+with \f[C]libusb\f[] support.
+.SS run
+.PP
+Usage: \f[C]run\ <script>\f[]
+.PP
+Run the provided script.
+.SS rx
+.PP
+Usage:
+\f[C]rx\ <start\ |\ stop\ |\ wait\ |\ config\ [param=val\ [param=val\ [...]]>\f[]
+.PP
+Receive IQ samples and write them to the specified file.
+Reception is controlled and configured by one of the following:
+.IP \[bu] 2
+\f[C]start\f[] \- Start receiving samples
+.IP \[bu] 2
+\f[C]stop\f[] \- Stop Receiving samples
+.IP \[bu] 2
+\f[C]wait\f[] \- Wait for sample transmission to complete, or until a
+specified amount of time elapses
+.IP \[bu] 2
+\f[C]config\f[] \- Configure sample reception.
+If no parameters are provided, the current parameters are printed.
+.PP
+Running \[aq]\f[C]rx\f[]\[aq] without any additional commands is valid
+shorthand for \[aq]\f[C]rx\ config\f[]\[aq].
+.PP
+The \f[C]wait\f[] command takes an optional timeout parameter.
+This parameter defaults to units of milliseconds (\f[C]ms\f[]).
+The timeout unit may be specified using the \f[C]ms\f[], \f[C]s\f[],
+\f[C]m\f[], or \f[C]h\f[] suffixes.
+If this parameter is not provided, the command will wait until the
+reception completes or \f[C]Ctrl\-C\f[] is pressed.
+.PP
+Configuration parameters take the form \[aq]\f[C]param=value\[aq]\f[],
+and may be specified in a single or multiple
+\[aq]\f[C]rx\ config\f[]\[aq] invocations.
+Below is a list of available parameters.
+.IP \[bu] 2
+\f[C]n\f[] \- Number of samples to receive.
+0 = inf.
+.IP \[bu] 2
+\f[C]file\f[] \- Filename to write received samples to
+.IP \[bu] 2
+\f[C]format\f[] \- Output file format.
+One of the following:
+.IP \[bu] 2
+\f[C]csv\f[] \- CSV of SC16 Q11 samples
+.IP \[bu] 2
+\f[C]bin\f[] \- Raw SC16 Q11 DAC samples
+.IP \[bu] 2
+\f[C]samples\f[] \- Number of samples per buffer to use in the
+asynchronous stream.
+Must be divisible by 1024 and >= 1024.
+.IP \[bu] 2
+\f[C]buffers\f[] \- Number of sample buffers to use in the asynchronous
+stream.
+The min value is 4.
+.IP \[bu] 2
+\f[C]xfers\f[] \- Number of simultaneous transfers to allow the
+asynchronous stream to use.
+This should be less than the \[aq]\f[C]buffers\f[]\[aq] parameter.
+.IP \[bu] 2
+\f[C]timeout\f[] \- Data stream timeout.
+With no suffix, the default unit is \f[C]ms\f[].
+The default value is 1s.
+Valid suffixes are \[aq]\f[C]ms\f[]\[aq] and \[aq]\f[C]s\f[]\[aq].
+.PP
+Example:
+.IP \[bu] 2
+\f[C]rx\ config\ file=/tmp/data.bin\ format=bin\ n=10K\f[]
+.RS 2
+.PP
+Receive (10240 = 10 * 1024) samples, writing them to
+\f[C]/tmp/data.bin\f[] in the binary DAC format.
+.RE
+.PP
+Notes:
+.IP \[bu] 2
+The \f[C]n\f[], \f[C]samples\f[], \f[C]buffers\f[], and \f[C]xfers\f[]
+parameters support the suffixes \[aq]\f[C]K\f[]\[aq],
+\[aq]\f[C]M\f[]\[aq], and \[aq]\f[C]G\f[]\[aq], which are multiples of
+1024.
+.IP \[bu] 2
+An \[aq]\f[C]rx\ stop\f[]\[aq] followed by an
+\[aq]\f[C]rx\ start\f[]\[aq] will result in the samples file being
+truncated.
+If this is not desired, be sure to run \[aq]\f[C]rx\ config\f[]\[aq] to
+set another file before restarting the rx stream.
+.IP \[bu] 2
+For higher sample rates, it is advised that the binary output format be
+used, and the output file be written to RAM (e.g.
+\f[C]/tmp\f[], \f[C]/dev/shm\f[]), if space allows.
+For larger captures at higher sample rates, consider using an SSD
+instead of a HDD.
+.SS tx
+.PP
+Usage: \f[C]tx\ <start\ |\ stop\ |\ wait\ |\ config\ [parameters]>\f[]
+.PP
+Read IQ samples from the specified file and transmit them.
+Transmission is controlled and configured by one of the following:
+.IP \[bu] 2
+\f[C]start\f[] \- Start transmitting samples
+.IP \[bu] 2
+\f[C]stop\f[] \- Stop transmitting samples
+.IP \[bu] 2
+\f[C]wait\f[] \- Wait for sample transmission to complete, or until a
+specified amount of time elapses
+.IP \[bu] 2
+\f[C]config\f[] \- Configure sample transmission .
+If no parameters are provided, the current parameters are printed.
+.PP
+Running \[aq]\f[C]tx\f[]\[aq] without any additional commands is valid
+shorthand for \[aq]\f[C]tx\ config\f[]\[aq].
+.PP
+The wait command takes an optional timeout parameter.
+This parameter defaults to units of milliseconds (\f[C]ms\f[]).
+The timeout unit may be specified using the \f[C]ms\f[], \f[C]s\f[],
+\f[C]m\f[], or \f[C]h\f[] suffixes.
+If this parameter is not provided, the command will wait until the
+transmission completes or \f[C]Ctrl\-C\f[] is pressed.
+.PP
+Configuration parameters take the form \[aq]\f[C]param=value\f[]\[aq],
+and may be specified in a single or multiple
+\[aq]\f[C]tx\ config\f[]\[aq] invocations.
+Below is a list of available parameters.
+.IP \[bu] 2
+\f[C]file\f[] \- Filename to read samples from
+.IP \[bu] 2
+\f[C]format\f[] \- Output file format.
+One of the following:
+.IP \[bu] 2
+\f[C]csv\f[] \- CSV of SC16 Q11 samples ([\-2048, 2047])
+.IP \[bu] 2
+\f[C]bin\f[] \- Raw SC16 Q11 DAC samples ([\-2048, 2047])
+.IP \[bu] 2
+\f[C]repeat\f[] \- The number of times the file contents should be
+transmitted.
+0 implies repeat until stopped.
+.IP \[bu] 2
+\f[C]delay\f[] \- The number of microseconds to delay between
+retransmitting file contents.
+0 implies no delay.
+.IP \[bu] 2
+\f[C]samples\f[] \- Number of samples per buffer to use in the
+asynchronous stream.
+Must be divisible by 1024 and >= 1024.
+.IP \[bu] 2
+\f[C]buffers\f[] \- Number of sample buffers to use in the asynchronous
+stream.
+The min value is 4.
+.IP \[bu] 2
+\f[C]xfers\f[] \- Number of simultaneous transfers to allow the
+asynchronous stream to use.
+This should be < the \[aq]buffers\[aq] parameter.
+.IP \[bu] 2
+\f[C]timeout\f[] \- Data stream timeout.
+With no suffix, the default unit is ms.
+The default value is 1s.
+Valid suffixes are \[aq]ms\[aq] and \[aq]s\[aq].
+.PP
+Example:
+.IP \[bu] 2
+\f[C]tx\ config\ file=data.bin\ format=bin\ repeat=2\ delay=250000\f[]
+.RS 2
+.PP
+Transmitting the contents of \f[C]data.bin\f[] two times, with a ~250ms
+delay between transmissions.
+.RE
+.PP
+Notes:
+.IP \[bu] 2
+The \f[C]n\f[], \f[C]samples\f[], \f[C]buffers\f[], and \f[C]xfers\f[]
+parameters support the suffixes \[aq]\f[C]K\f[]\[aq],
+\[aq]\f[C]M\f[]\[aq], and \[aq]\f[C]G\f[]\[aq], which are multiples of
+1024.
+.IP \[bu] 2
+For higher sample rates, it is advised that the input file be stored in
+RAM (e.g.
+\f[C]/tmp\f[], \f[C]/dev/shm\f[]) or to an SSD, rather than a HDD.
+.IP \[bu] 2
+When providing CSV data, this command will first convert it to a binary
+format, stored in a file in the current working directory.
+During this process, out\-of\-range values will be clamped.
+.IP \[bu] 2
+When using a binary format, the user is responsible for ensuring that
+the provided data values are within the allowed range.
+This prerequisite alleviates the need for this program to perform range
+checks in time\-sensitive callbacks.
+.SS set
+.PP
+Usage: \f[C]set\ <param>\ <arguments>\f[]
+.PP
+The set command takes a parameter and an arbitrary number of arguments
+for that particular command.
+The parameter is one of:
+.IP \[bu] 2
+\f[C]bandwidth\f[] \- Bandwidth settings
+.IP \[bu] 2
+\f[C]frequency\f[] \- Frequency settings
+.IP \[bu] 2
+\f[C]gpio\f[] \- FX3 <\-> FPGA GPIO state
+.IP \[bu] 2
+\f[C]loopback\f[] \- Loopback settings
+.IP \[bu] 2
+\f[C]lnagain\f[] \- Gain setting of the LNA, in dB.
+Valid values are 0, 3, 6.
+.IP \[bu] 2
+\f[C]rxvga1\f[] \- Gain setting of RXVGA1, in dB.
+Range: [5, 30]
+.IP \[bu] 2
+\f[C]rxvga2\f[] \- Gain setting of RXVGA2, in dB.
+Range: [0, 30]
+.IP \[bu] 2
+\f[C]txvga1\f[] \- Gain setting of TXVGA1, in dB.
+Range: [\-35, \-4]
+.IP \[bu] 2
+\f[C]txvga2\f[] \- Gain setting of TXVGA2, in dB.
+Range: [0, 25]
+.IP \[bu] 2
+\f[C]sampling\f[] \- External or internal sampling mode
+.IP \[bu] 2
+\f[C]samplerate\f[] \- Samplerate settings
+.IP \[bu] 2
+\f[C]trimdac\f[] \- VCTCXO Trim DAC settings
+.SS version
+.PP
+Usage: \f[C]version\f[]
+.PP
+Prints version information for host software and the current device
