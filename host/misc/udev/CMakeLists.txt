@@ -13,6 +13,12 @@ option(INSTALL_UDEV_RULES
     ${UDEV_OPTION_DEFAULT}
 )
 
+set(UDEV_RULES_PATH
+    "/etc/udev/rules.d"
+    CACHE STRING
+    "Target directory for udev rule installation. Ensure you have permissions to write to this directory."
+)
+
 set(BLADERF_GROUP "plugdev" CACHE STRING "Group to associate bladeRF devices with in udev rules")
 
 if(SYSTEM_IS_LINUX)
@@ -22,9 +28,9 @@ if(SYSTEM_IS_LINUX)
                        @ONLY
                       )
 
-        message(STATUS  "nuand bladeRF udev rules will be installed upon running 'make install'")
+        message(STATUS  "nuand bladeRF udev rules will be installed to '${UDEV_RULES_PATH}' upon running 'make install'")
         install(FILES ${CMAKE_CURRENT_BINARY_DIR}/88-nuand.rules
-                DESTINATION /etc/udev/rules.d
+                DESTINATION ${UDEV_RULES_PATH}
                 COMPONENT "udev_rules")
     else()
         message(STATUS
