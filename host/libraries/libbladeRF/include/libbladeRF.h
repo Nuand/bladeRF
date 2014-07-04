@@ -992,15 +992,6 @@ API_EXPORT
 int CALL_CONV bladerf_expansion_get_attached(struct bladerf *dev, bladerf_xb *xb);
 
 /**
- * XB-200 transveter board specific setup routine
- *
- * @param[in]   dev     Device handle
- *
- * @return 0 on success, BLADERF_ERR_* value on failure
- */
-int bladerf_xb200_attach(struct bladerf *dev);
-
-/**
  * Set XB-200 filterbank
  *
  * @param       dev         Device handle

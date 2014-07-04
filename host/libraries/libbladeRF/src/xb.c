@@ -52,59 +52,7 @@
 #define BLADERF_XB_RX_MASK   0x30000000
 #define BLADERF_XB_RX_SHIFT  28
 
-int bladerf_expansion_attach(struct bladerf *dev, bladerf_xb xb) {
-    bladerf_xb attached;
-    int status;
-    status = bladerf_expansion_get_attached(dev, &attached);
-    if (status)
-        return status;
-
-    if (xb == BLADERF_XB_200) {
-        if (version_less_than(&dev->fpga_version, 0, 0, 5)) {
-            log_warning("%s: XB200 support requires FPGA v0.0.5 or later\n", __FUNCTION__);
-            return BLADERF_ERR_UNSUPPORTED;
-        }
-
-        if (attached != xb) {
-            return bladerf_xb200_attach(dev);
-        }
-    }
-    return 0;
-}
-
-int bladerf_expansion_get_attached(struct bladerf *dev, bladerf_xb *xb) {
-    int status;
-    uint32_t val;
-
-    status = bladerf_config_gpio_read(dev, &val);
-    if (status)
-        return status;
-
-    *xb = (val >> 30) & 0x3;
-    return 0;
-}
-
-int bladerf_xb200_enable(struct bladerf *dev, bool enable) {
-    int status;
-    uint32_t val, orig;
-
-    status = bladerf_expansion_gpio_read(dev, &orig);
-    if (status)
-        return status;
-
-    val = orig;
-    if (enable)
-        val |= BLADERF_XB_RF_ON;
-    else
-        val &= ~BLADERF_XB_RF_ON;
-
-    if (status || (val == orig))
-        return status;
-
-    return bladerf_expansion_gpio_write(dev, val);
-}
-
-int bladerf_xb200_attach(struct bladerf *dev) {
+static int xb200_attach(struct bladerf *dev) {
     int status = 0;
     uint32_t val;
     unsigned int muxout = 6;
@@ -167,6 +115,59 @@ int bladerf_xb200_attach(struct bladerf *dev) {
     status = bladerf_expansion_gpio_write(dev, 0x3C000800);
 
     return status;
+}
+
+
+int bladerf_expansion_attach(struct bladerf *dev, bladerf_xb xb) {
+    bladerf_xb attached;
+    int status;
+    status = bladerf_expansion_get_attached(dev, &attached);
+    if (status)
+        return status;
+
+    if (xb == BLADERF_XB_200) {
+        if (version_less_than(&dev->fpga_version, 0, 0, 5)) {
+            log_warning("%s: XB200 support requires FPGA v0.0.5 or later\n", __FUNCTION__);
+            return BLADERF_ERR_UNSUPPORTED;
+        }
+
+        if (attached != xb) {
+            return xb200_attach(dev);
+        }
+    }
+    return 0;
+}
+
+int bladerf_expansion_get_attached(struct bladerf *dev, bladerf_xb *xb) {
+    int status;
+    uint32_t val;
+
+    status = bladerf_config_gpio_read(dev, &val);
+    if (status)
+        return status;
+
+    *xb = (val >> 30) & 0x3;
+    return 0;
+}
+
+int bladerf_xb200_enable(struct bladerf *dev, bool enable) {
+    int status;
+    uint32_t val, orig;
+
+    status = bladerf_expansion_gpio_read(dev, &orig);
+    if (status)
+        return status;
+
+    val = orig;
+    if (enable)
+        val |= BLADERF_XB_RF_ON;
+    else
+        val &= ~BLADERF_XB_RF_ON;
+
+    if (status || (val == orig))
+        return status;
+
+    return bladerf_expansion_gpio_write(dev, val);
 }
 
 int bladerf_xb200_get_filterbank(struct bladerf *dev, bladerf_module module, bladerf_xb200_filter *filter) {
@@ -234,7 +235,7 @@ int bladerf_xb200_set_path(struct bladerf *dev, bladerf_module module, bladerf_x
         if (status)
             return status;
         if (!(val & BLADERF_XB_RF_ON)) {
-            status = bladerf_xb200_attach(dev);
+            status = xb200_attach(dev);
             if (status)
                 return status;
         }
