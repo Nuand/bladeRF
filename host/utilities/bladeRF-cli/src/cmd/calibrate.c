@@ -309,7 +309,7 @@ static int cal_table(struct cli_state *s, int argc, char **argv)
     char *filename = NULL;
     size_t filename_len = 1024;
 
-    /* TODO set the min based upon whether or not an XB200 is attached */
+    /* The XB-200 does not affect the minimum, as we're tuning the LMS here. */
     unsigned int f_min = BLADERF_FREQUENCY_MIN;
     unsigned int f_inc = 2500000;
     unsigned int f_max = BLADERF_FREQUENCY_MAX;
