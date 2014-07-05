@@ -1,0 +1,83 @@
+================================================================================
+bladeRF Project Change Log Summary
+
+For more detailed information, please see the git change log and issue tracker
+hosted on GitHub: https://github.com/nuand/bladeRF
+================================================================================
+
+2014.09-rc1 (2014-07-05)
+------------------------------------------------
+
+This is the first of two release candidates for a 2014-09 release. RC1 consists
+of the following component versions:
+
+    FPGA bitstream  v0.0.5
+    FX3 Firmware    v1.7.0
+    libbladeRF      v0.16.0
+    bladeRF-cli     v0.11.0
+
+This release candidate provides a majority of the functionality scheduled for
+the 2014.09 release. The remaining functionality, scheduled for RC2 is:
+
+    * Metadata/timestamp support for the libbladeRF synchronous interface
+    * Detection and reporting of incompatible firmware/FPGA versions
+    * Experimental Cypress driver-based libbladeRF backend for Windows
+
+The above items will add additional items to the libbladeRF API, but will not
+introduce any reverse-incompatible changes.
+
+
+The following items are schedule for deprecation and removal prior to the
+2014.09-rc2 release:
+
+    * bladeRF-flash utility
+        - A majority of the functionality provided in this program now overlaps
+          with bladeRF-cli. This program was used to ease the burden associated
+          with some very early firmware upgrades.
+
+          However, for firmware upgrade issues, the well-documented bootloader
+          approach is now preferred. This, combined with efforts to have
+          libbladeRF be more explicit about version mismatches, should eliminate
+          any remaining need for this program.
+
+    * libbladeRF's BLADERF_FORMAT SC16_Q12 reverse compatibility macro
+        - The format is now more appropriately named BLADERF_FORMAT_SC16_Q11.
+          Ensure you've replaced references to the old enumeration value.
+
+
+Outstanding tasks and known issues, as of RC1, are listed below. Note that not
+all of these are scheduled for resolution by 2014.09. Please see the milestone
+and tracker information GitHub for more information.
+
+    * Pull requests:
+        - #270: Markdown-ify the bladeRF-cli interactive help
+        - #267: Adjust nios simulation component so it matches the synthesis
+                version
+
+    * Bugs:
+        - #265: [hdl] Incorect metadata position in the RX Stream
+        - #260: [hdl] RX I Samples value 0
+        - #255: Avoid obsolete samples in the RX stream
+        - #224: Report error code for incompatible version sets
+        - #95:  Linux kernel/FX3: Not enough bandwidth for altsetting
+
+    * Enhancements:
+        - #252: [bladeRF-cli] Migrate rx/tx command implementations to
+                libbladeRF's sync i/f
+        - #250: [libbladeRF] Implement Cypress API-based backend
+        - #240: [libbladeRF] Prefer static assertion over assert() when possible
+        - #238: [libbladeRF] Integrate timestamp/metadata support
+        - #236: [libbladeRF] API calls for XB-100 required
+        - #221: Synchronized Tx/Rx of multiple bladeRFs for MIMO using Mini
+                Expansion Header
+        - #219: libbladeRF: bladerf_init_stream parameter order is inconsistent
+        - #213: CLI should show sample file information for TX
+        - #205: [FX3 Firmware] Code cleanup and potential improvements
+        - #200: Reserved addresses for firmware customization
+        - #199: Remove magic numbers for GPIO addresses from
+                lms_spi_controller.c
+        - #190: [libbladeRF] Refactor bladerf_priv.c
+        - #174: Task: Migrate FX3 build to CMake-generated Makefile
+        - #166: debian: Auto-download appropriate firmware/FPGA images from
+                nuand.com during install
+        - #105: Develop testing guidelines on new releases
