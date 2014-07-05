@@ -1,0 +1,40 @@
+================================================================================
+bladeRF HDL Change Log Summary
+
+For more detailed information, please see the git change log and issue tracker
+hosted on GitHub: https://github.com/nuand/bladeRF
+================================================================================
+
+v0.0.5 (2014-06-21)
+--------------------------------
+ * Added expansion board support for XB-200
+
+
+v0.0.4 (2014-05-07)
+--------------------------------
+ * Added metadata timestamp support
+    - Added RX/TX metadata FIFOs
+ * Added FPGA digital loopback
+
+
+v0.0.3 (2014-02-01)
+--------------------------------
+ * Tweaked constraints for FX3 interface drive strength
+ * Add 32-bit counter mode for RX performance testing
+
+
+v0.0.2 (2014-01-14)
+--------------------------------
+ * Tweaked constraints for the FX3 interface
+ * Fixed SPI/UART signal contention issue
+ * Fixed phase range for IQ correction block
+
+
+v0.0.1 (2013-12-28)
+--------------------------------
+ * Updated to use Quartus 13.1 tools
+    - Renamed OpenCores I2C Qsys core to not conflict
+ * Introduced faster UART bridge (4Mbps versus 115.2kbps)
+ * Added IQ correction block
+ * Added FPGA version numbering
+ * Made FX3 GPIF FSM more maintainable
