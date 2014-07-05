@@ -1,0 +1,164 @@
+================================================================================
+libbladeRF Change Log Summary
+
+For more detailed information, please see the git change log and issue tracker
+hosted on GitHub: https://github.com/nuand/bladeRF
+================================================================================
+
+
+v0.16.0 (2014-07-04)
+--------------------------------
+ * Added XB-200 support
+ * Added experimental DC calibration and DC calibration table support
+ * Added "software autoload" of FPGAs and DC cal tables from config directories
+    - In Linux & OSX the following directories are searched:
+        ~/.config/Nuand/bladeRF/, ~/.Nuand/bladeRF/, /etc/Nuand/bladeRF/
+    - In Windows, %APPDATA%/Nuand/bladeRF is searched
+ * Added "File not found" (BLADERF_ERR_NO_FILE) return code
+ * Allow tuning up to 3.8GHz
+ * Fixed incorrect version checks
+    - This resolves issue where VCTCXO value stored in SPI Flash
+      isn't loaded when using FPGA v0.0.3.
+ * Fixed intermittent FPGA load failures
+
+
+v0.15.0 (2014-05-17)
+--------------------------------
+ * API changes:
+    - Added functions:
+        + FPGA timestamp access (requires FPGA v0.0.4+)
+        + Expansion board GPIO and SPI accessors (requires FPGA v0.0.4+)
+    - Added firmware loopback option (requires FX3 FW v1.7.0+)
+    - Changed SPI flash access functions
+        + Functions now operate in units of erase blocks and pages
+    - Removed un-aligned accesses
+ * Overhauled backend interface to decouple device logic from libusb code.
+    - Moved code to a generic USB interface and libusb code under
+      that interface. This should allow host-specific drivers to be more
+      easily integrated.
+ * Addressed race conditions in the async RX/TX interface.
+    - pthreads is now a required dependency of libbladeRF.
+ * Bug fixes for the sync RX/TX interface
+ * Windows build and compatibility fixes
+
+
+v0.14.0 (2014-03-08)
+--------------------------------
+ * Added a new synchronous data transfer interface that operates atop the
+   existing asynchronous interface.
+ * Removed of bladerf_rx() and bladerf_tx() functions
+    - These have been replaced by bladerf_sync_rx() and bladerf_synx_tx()
+ * Renamed stream transfer timeout functions
+
+
+v0.13.1 (2014-02-27)
+--------------------------------
+ * Bug fixes for regressions introduced into LMS6002 code in v0.13.0
+
+
+v0.13.0 (2014-02-13)
+--------------------------------
+ * Refactored LMS code and loopback support
+ * Updated API calls to allow NULL for optional API parameters
+ * Added dummy backend
+    - This is intended for developers. It allows the library to build while
+      other backend code is disabled.
+ * Misc. minor bug fixes
+
+
+v0.12.1 (2014-01-19)
+--------------------------------
+ * Normalized DC offset functions to accept values in [-2048, 2048]
+    - Additional range checking added
+
+
+v0.12.0 (2014-01-18)
+--------------------------------
+ * API changes:
+    - Naming correction: BLADERF_IQ_CORR_* changed to BLADERF_CORR_*
+    - Removed unused bladerf_stats structure
+    - Fixed format misnomer: BLADERF_FORMAT_SC16_Q12 has been renamed to
+      BLADERF_FORMAT_SC16_Q11.
+    - Fixed names of transfer timeout functions:
+        get/set_transfer_timeout() -> bladerf_get/set_transfer_timeout()
+
+ * During initialization, the device is switched to USB_IF_NULL in order to
+   ensure it is in a known state.
+
+
+v0.11.2 (2014-01-14)
+--------------------------------
+ * Switch to USB_IF_NULL when closing a device to avoid issues when attempting
+   to reopen a device on OSX
+
+
+v0.11.1(.1) (2014-01-05)
+--------------------------------
+ * Fixed race conditions caused by use of bladerf_enable_module() in the
+   implementation of bladerf_stream(). Users are now responsible for
+   ensuring a module enabled before attempting to start a stream.
+
+
+v0.11.0 (2013-12-28)
+--------------------------------
+ * Added support for reading back an FPGA version number
+ * Explicitly define calling conventions on API functions (Windows)
+ * Fixed build for libusbx-1.0.9
+    - Misc build and code fixes for libusb detection and version checks
+ * Sped up SPI flash writes
+ * Decreased default library verbosity
+
+v0.10.0 (2013-11-28)
+--------------------------------
+ * Added API support for initializing, backing up, and restoring the
+   calibration data stored in SPI flash
+ * Fixed incorrect definition of FPGA region of SPI flash
+ * Fixed RPATH issue in OSX
+ * License changed to LGPLv2.1
+
+v0.9.0 (2013-10-21)
+--------------------------------
+ * Added option to disable log output at compile-time
+ * Added BLADERF_LOG_LEVEL_SILENT to disable log output at run-time
+
+v0.8.0 (2013-10-21)
+--------------------------------
+ * Added API functions to get/set stream transfer timeouts
+ * Fixed Win64 build issues
+ * Fixes for various bugs in LMS code
+
+v0.7.0 (2013-10-14)
+--------------------------------
+ * Added API function to flash FPGA image (to allow for autoloading)
+ * Improved frequency tuning algorithm
+ * Fixes for flash-related code
+
+v0.6.2 (2013-10-04)
+--------------------------------
+ * Fixed memory leaks
+
+v0.6.1 (2013-10-04)
+--------------------------------
+ * Corrected access of firmware version info
+
+v0.6.0 (2013-10-03)
+--------------------------------
+ * Added bladerf_version structure to API and modified version
+   accessors to use this structure.
+ * LMS bug fixes
+ * Backwards compatibility and MSVC compatibility fixes
+
+v0.5.0 (2013-09-22)
+--------------------------------
+ * Internal changes to support major refactoring of FX3 code
+ * Fixed sample count on initial TX callback
+
+v0.4.0 (2013-09-18)
+--------------------------------
+ * Added asynchronous data transfer interface to API
+ * Added device identifier matching routines to API
+
+v0.3.0 (2013-08-13)
+--------------------------------
+ * Transitioned to CMake-based build
+ * Introduced libusb support
