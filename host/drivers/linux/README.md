@@ -1,4 +1,7 @@
 # bladeRF Linux Kernel Driver #
+
+***Important note:*** This kernel module is very much out of date and should not be used in its current form. libbladeRF now utilizes libusb is now used to interface to the bladeRF.  In the future, this module will be revisited, with high-performance applications in mind.
+
 The linux kernel driver implements a USB device and has some buffering to be able to place multiple packets in flight at a time achieve the high datarates associated with USB 3.0 Superspeed.
 
 ## Requirements ##
