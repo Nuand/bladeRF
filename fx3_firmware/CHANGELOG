@@ -1,0 +1,99 @@
+================================================================================
+bladeRF FX3 firmware  Change Log Summary
+
+For more detailed information, please see the git change log and issue tracker
+hosted on GitHub: https://github.com/nuand/bladeRF
+================================================================================
+
+
+v1.7.0 (2014-07-04)
+--------------------------------
+ * Added firmware-based loopback mode
+
+
+v1.6.1 (2014-01-14)
+--------------------------------
+ * Fixed FPGA becoming reset duing flash operations
+ * Fixed defect that caused every other FPGA load to fail
+
+
+v1.6.0 (2013-10-20)
+--------------------------------
+ * Increased FPGA UART bridge speed (requires FPGA >= v0.0.1)
+ * Fixed issues with switching between RF_LINK and FPGA_CONFIG modes
+
+
+v1.5.3 (2013-10-15)
+--------------------------------
+ * Added FPGA autoloading support
+ * Fixed incorrect string descriptor index
+
+
+v1.5.2 (2013-10-04)
+--------------------------------
+ * Fixed build issue introduced by v1.5.1
+
+
+v1.5.1 (2013-10-04)
+--------------------------------
+ * Packed version structure to avoid potential struct padding issues
+ * Moved serial number initialization to avoid a race condition
+
+
+v1.5.0 (2013-09-28)
+--------------------------------
+ * Switched to major.minor.patch version numbering, with git string
+ * Fixed issues with U1/U2 transitions and endpoint halt
+ * Addred requests for reading/refreshing cached calibration data
+
+
+v1.4 (2013-09-22)
+--------------------------------
+ * Overhaul of firmware code and organization
+ * Moved FPGA config to altsetting 3
+    - altsetting 0 is now a NULL interface.
+ * Added bitflip LUT to speed up FPGA load
+ * Fixes for issues identified by USB30CV and USB20CV tests
+ * Handle "Select Exit Latency" Standard request
+
+
+v1.3 (2013-09-22)
+--------------------------------
+ * Fixed issue with RESET vendor request
+ * Added ability to jump to bootloader
+
+
+v1.2 (2013-09-03)
+--------------------------------
+ * Added support for serial number string request
+ * Fixed issues with HS descriptors
+
+
+v1.1 (2013-08-25)
+--------------------------------
+ * Cache calibration and OTP data in RAM
+ * Added device reset functionality
+ * Changed from 3 interfaces to 1 interface with 3 separate altsettings
+ * Added support for programming the SPI flash OTP region
+ * Disabled RX DMA multi-channel
+
+
+v1.0/v0.3 (2013-08-25)
+--------------------------------
+ * Disabled TX DMA multi-channel
+ * Added command-line build support
+ * Fixes for DMA channel and UART deinitialization
+ * Fixed USB 2.0 enumeration
+ * Added GPIO_ID and GPIO_LED I/Os
+
+
+v0.2 (2013-05-19)
+--------------------------------
+ * Enabled 32-bit GPIF
+ * Change USB VID/PID to 0x1d50/0x6066, courtesy of the OpenMoko project
+ * Slowed down UART speed
+
+
+v0.1 (2013-02-18)
+--------------------------------
+ * Initial firmware for FSK bridge test
