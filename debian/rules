@@ -6,7 +6,7 @@
 export DH_VERBOSE=1
 
 # Test to see if we're a snapshot build by looking for the word
-# "-git" in our version.  If so, infer our current version and inject
+# "SNAPSHOT" in our version.  If so, infer our current version and inject
 # it into the build process.
 DEB_VERSION_STRING ?= $(shell dpkg-parsechangelog | grep ^Version: | cut -d' ' -f2-)
 
@@ -18,6 +18,18 @@ ifneq (,$(findstring SNAPSHOT,$(DEB_VERSION_STRING)))
 	DEB_VERSION_SERIES := $(word 3,$(DVS_SPLIT))
 	# Produce a version suffix like: git-edc468d-ppasaucy
 	VERSION_INFO_OVERRIDE := git-$(DEB_VERSION_GITHASH)-ppa$(DEB_VERSION_SERIES)
+endif
+
+# For tagged PPA release builds, we have a slightly different format...
+ifneq (,$(findstring 1ppa,$(DEB_VERSION_STRING)))
+	# Format is like: 2014.09-rc1-1ppa1~saucy
+	DVS_SPLIT := $(subst ~, ,$(subst -1ppa, ,$(DEB_VERSION_STRING)))
+	# Format is like: 2014.09-rc1 1 saucy
+	DEB_VERSION_TAG := $(word 1,$(DVS_SPLIT))
+	DEB_VERSION_BUILD := $(word 2,$(DVS_SPLIT))
+	DEB_VERSION_SERIES := $(word 3,$(DVS_SPLIT))
+	# Produce a version suffix like: 2014.09-rc1-1-ppasaucy
+	VERSION_INFO_OVERRIDE := $(DEB_VERSION_TAG)-$(DEB_VERSION_BUILD)-ppa$(DEB_VERSION_SERIES)
 endif
 
 override_dh_auto_configure:
