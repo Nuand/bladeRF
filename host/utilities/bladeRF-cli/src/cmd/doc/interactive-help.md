@@ -15,13 +15,15 @@ Available operations:
      * `calibrate lms tuning [value]`
      * `calibrate lms txlpf [<I filter> <Q filter>]`
      * `calibrate lms rxlpf [<I filter> <Q filter>]`
-     * `calibrate lms rxvga2 `
-       `[<DC ref> <stage 1 I> <stage 1 Q> <stage 2 I> <stage 2 Q>]`
+     * `calibrate lms rxvga2 [<DC ref> <I1> <Q1> <I2> <Q2>]`
 
     Perform the specified auto-calibration, or all of them if none are
     provided. When values are provided, these are used instead of the
-    results of the auto-calibration procedure. Use '`lms show`' to read and
+    results of the auto-calibration procedure. Use `lms show` to read and
     print the current LMS calibration values.
+
+    For `rxvga2`, `I1` and `Q1` are the Stage 1 I and Q components
+    respectively, and `I2` and `Q2` are the Stage 2 I and Q components.
 
  * RX and TX I/Q DC offset correction parameter calibration
 
@@ -30,8 +32,8 @@ Available operations:
 
     Calibrate the DC offset correction parameters for the current frequency
     and gain settings. If a I/Q values are provided, they are applied
-    directly. '`cal rxtx`' is shorthand for '`cal rx`' followed by
-    '`cal tx`'.
+    directly. `cal rxtx` is shorthand for `cal rx` followed by
+    `cal tx`.
 
  * RX and TX I/Q balance correction parameter calibration
 
@@ -41,12 +43,12 @@ Available operations:
 
  * Generate RX or TX I/Q DC correction parameter tables
 
-     * `calibrate table dc <rx|tx> [ <f_min> <f_max> [f_inc] ]`
+     * `calibrate table dc <rx|tx> [<f_min> <f_max> [f_inc]]`
 
     Generate and write an I/Q correction parameter table to the current
-    working directory, in a file named '`<serial>_dc_<rx|tx>.tbl`'.
-    '`f_min`' and '`f_max`' are min and max frequencies to include in the
-    table. '`f_inc`' is the frequency increment.
+    working directory, in a file named `<serial>_dc_<rx|tx>.tbl`.
+    `f_min` and `f_max` are min and max frequencies to include in the
+    table. `f_inc` is the frequency increment.
 
     By default, tables are generated over the entire frequency range, in
     2 MHz steps.
@@ -113,7 +115,7 @@ Parameters:
  * `<len>` - Length of region to back up. Must be erase block-aligned.
 
 Note: When an address and length are provided, the image type will default
-to '`raw`'.
+to `raw`.
 
 Examples:
 
@@ -147,7 +149,7 @@ The following options may be used to create a new flash image.
 
  * `type=<type>`
 
-    Type of flash image. Defaults to '`raw`'.
+    Type of flash image. Defaults to `raw`.
 
     Valid options are:
 
@@ -437,16 +439,16 @@ controlled and configured by one of the following:
             provided, the current parameters are printed.
 ----------------------------------------------------------------------
 
-Running '`rx`' without any additional commands is valid shorthand for
-'`rx config`'.
+Running `rx` without any additional commands is valid shorthand for
+`rx config`.
 
 The `wait` command takes an optional `timeout` parameter. This parameter
 defaults to units of milliseconds (`ms`). The timeout unit may be specified
 using the `ms` or `s` suffixes. If this parameter is not provided, the
 command will wait until the reception completes or `Ctrl-C` is pressed.
 
-Configuration parameters take the form '`param=value'`, and may be specified
-in a single or multiple '`rx config`' invocations. Below is a list of
+Configuration parameters take the form `param=value`, and may be specified
+in a single or multiple `rx config` invocations. Below is a list of
 available parameters.
 
 ----------------------------------------------------------------------
@@ -471,11 +473,11 @@ available parameters.
 
 `xfers`         Number of simultaneous transfers to allow the
                 asynchronous stream to use. This should be less than
-                the '`buffers`' parameter.
+                the `buffers` parameter.
 
 `timeout`       Data stream timeout. With no suffix, the default
                 unit is `ms`. The default value is 1000 ms (1 s).
-                Valid suffixes are '`ms`' and '`s`'.
+                Valid suffixes are `ms` and `s`.
 ----------------------------------------------------------------------
 
 Example:
@@ -488,10 +490,10 @@ Example:
 Notes:
 
  * The `n`, `samples`, `buffers`, and `xfers` parameters support the
-   suffixes '`K`', '`M`', and '`G`', which are multiples of 1024.
- * An '`rx stop`' followed by an '`rx start`' will result in the samples
+   suffixes `K`, `M`, and `G`, which are multiples of 1024.
+ * An `rx stop` followed by an `rx start` will result in the samples
    file being truncated. If this is not desired, be sure to run
-   '`rx config`' to set another file before restarting the rx stream.
+   `rx config` to set another file before restarting the rx stream.
  * For higher sample rates, it is advised that the `bin`ary output format be
    used, and the output file be written to RAM (e.g. `/tmp`, `/dev/shm`), if
    space allows. For larger captures at higher sample rates, consider using
@@ -520,16 +522,16 @@ controlled and configured by one of the following:
             provided, the current parameters are printed.
 ----------------------------------------------------------------------
 
-Running '`tx`' without any additional commands is valid shorthand for
-'`tx config`'.
+Running `tx` without any additional commands is valid shorthand for
+`tx config`.
 
 The `wait` command takes an optional `timeout` parameter. This parameter
 defaults to units of milliseconds (`ms`). The timeout unit may be specified
 using the `ms` or `s` suffixes. If this parameter is not provided, the
 command will wait until the transmission completes or `Ctrl-C` is pressed.
 
-Configuration parameters take the form '`param=value`', and may be specified
-in a single or multiple '`tx config`' invocations. Below is a list of
+Configuration parameters take the form `param=value`, and may be specified
+in a single or multiple `tx config` invocations. Below is a list of
 available parameters.
 
 ----------------------------------------------------------------------
@@ -558,7 +560,7 @@ available parameters.
 
 `xfers`         Number of simultaneous transfers to allow the
                 asynchronous stream to use. This should be < the
-                '`buffers`' parameter.
+                `buffers` parameter.
 
 `timeout`       Data stream timeout. With no suffix, the default
                 unit is ms. The default value is 1000 ms (1 s).
@@ -575,7 +577,7 @@ Example:
 Notes:
 
  * The `n`, `samples`, `buffers`, and `xfers` parameters support the
-   suffixes '`K`', '`M`', and '`G`', which are multiples of 1024.
+   suffixes `K`, `M`, and `G`, which are multiples of 1024.
  * For higher sample rates, it is advised that the input file be stored in
    RAM (e.g. `/tmp`, `/dev/shm`) or to an SSD, rather than a HDD.
  * When providing CSV data, this command will first convert it to a binary
