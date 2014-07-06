@@ -28,7 +28,7 @@ Available operations:
      * `calibrate dc <rx|tx> [<I> <Q>]`
      * `calibrate dc <rxtx> dc`
 
-    Calibrate the DC offset correction paremeters for the current frequency
+    Calibrate the DC offset correction parameters for the current frequency
     and gain settings. If a I/Q values are provided, they are applied
     directly. '`cal rxtx`' is shorthand for '`cal rx`' followed by
     '`cal tx`'.
@@ -97,12 +97,17 @@ Parameters:
 
     Valid options are:
 
+    ------------------------------------------------------------------
          Option Description
     ----------- ------------------------------------------------------
     `cal`       Calibration data
+
     `fw`        Firmware
+
     `fpga40`    Metadata and bitstream for 40 kLE FPGA
+
     `fpga115`   Metadata and bitstream for 115 kLE FPGA
+    ------------------------------------------------------------------
 
  * `<address>` - Address of data to back up. Must be erase block-aligned.
  * `<len>` - Length of region to back up. Must be erase block-aligned.
@@ -138,22 +143,28 @@ The following options may be used to create a new flash image.
 
  * `address=<addr>`
 
-    Flash address. Default depends upon 'type' parameter.
+    Flash address. The default depends upon `type` parameter.
 
  * `type=<type>`
 
-    Type of flash image. Defaults to "raw".
+    Type of flash image. Defaults to '`raw`'.
 
     Valid options are:
 
+    ------------------------------------------------------------------
          Option Description
     ----------- ------------------------------------------------------
     `cal`       Calibration data
+
     `fw`        Firmware
+
     `fpga40`    Metadata and bitstream for 40 kLE FPGA
+
     `fpga115`   Metadata and bitstream for 115 kLE FPGA
+
     `raw`       Raw data. The address and length parameters must be
                 provided if this type is selected.
+    ------------------------------------------------------------------
 
  * `serial=<serial>`
 
@@ -245,7 +256,7 @@ xb
 
 Usage: `xb enable [100|200]`
 
-Enable and configure XB100 and XB200 expansion boards
+Enable and configure XB100 and XB200 expansion boards.
 
 
 mimo
@@ -253,7 +264,7 @@ mimo
 
 Usage: `mimo [master | slave]`
 
-Modify device MIMO operation
+Modify device MIMO operation.
 
 
 open
@@ -262,8 +273,14 @@ open
 Usage: `open [device identifiers]`
 
 Open the specified device for use with successive commands. Any previously
-opened device will be closed. See the `bladerf_open()` documentation for the
-device specifier format.
+opened device will be closed.
+
+The general form of the device identifier string is:
+
+`<backend>:[device=<bus>:<addr>] [instance=<n>] [serial=<serial>]`
+
+See the `bladerf_open()` documentation for the complete device specifier
+format.
 
 
 peek
@@ -281,7 +298,7 @@ peek is performed.
 Valid Address Ranges:
 
      Device Address Range
------------ ----------------------------------------------------------
+----------- ----------------
 `dac`       0 to 255
 `lms`       0 to 127
 `si`        0 to 255
@@ -306,7 +323,7 @@ poke is performed.
 Valid Address Ranges:
 
      Device Address Range
------------ ----------------------------------------------------------
+----------- ----------------
 `dac`       0 to 255
 `lms`       0 to 127
 `si`        0 to 255
@@ -323,20 +340,33 @@ Usage: `print <param>`
 
 The print command takes a parameter to print.  The parameter is one of:
 
+----------------------------------------------------------------------
     Parameter Description
 ------------- --------------------------------------------------------
 `bandwidth`   Bandwidth settings
+
 `frequency`   Frequency settings
+
 `gpio`        FX3 <-> FPGA GPIO state
+
 `loopback`    Loopback settings
+
 `lnagain`     Gain setting of the LNA, in dB
+
 `rxvga1`      Gain setting of RXVGA1, in dB
+
 `rxvga2`      Gain setting of RXVGA2, in dB
+
 `txvga1`      Gain setting of TXVGA1, in dB
+
 `txvga2`      Gain setting of TXVGA2, in dB
+
 `sampling`    External or internal sampling mode
+
 `samplerate`  Samplerate settings
+
 `trimdac`     VCTCXO Trim DAC settings
+----------------------------------------------------------------------
 
 
 probe
@@ -393,46 +423,60 @@ Usage: `rx <start | stop | wait | config [param=val [param=val [...]]>`
 Receive IQ samples and write them to the specified file. Reception is
 controlled and configured by one of the following:
 
+----------------------------------------------------------------------
     Command Description
 ----------- ----------------------------------------------------------
 `start`     Start receiving samples
-`stop`      Stop Receiving samples
+
+`stop`      Stop receiving samples
+
 `wait`      Wait for sample transmission to complete, or until a
             specified amount of time elapses
-`config`    Configure sample reception. If no parameters are provided,
-            the current parameters are printed.
+
+`config`    Configure sample reception. If no parameters are
+            provided, the current parameters are printed.
+----------------------------------------------------------------------
 
 Running '`rx`' without any additional commands is valid shorthand for
 '`rx config`'.
 
-The `wait` command takes an optional timeout parameter. This parameter
+The `wait` command takes an optional `timeout` parameter. This parameter
 defaults to units of milliseconds (`ms`). The timeout unit may be specified
-using the `ms`, `s`, `m`, or `h` suffixes. If this parameter is not
-provided, the command will wait until the reception completes or `Ctrl-C` is
-pressed.
+using the `ms` or `s` suffixes. If this parameter is not provided, the
+command will wait until the reception completes or `Ctrl-C` is pressed.
 
 Configuration parameters take the form '`param=value'`, and may be specified
 in a single or multiple '`rx config`' invocations. Below is a list of
 available parameters.
 
+----------------------------------------------------------------------
       Parameter Description
 --------------- ------------------------------------------------------
 `n`             Number of samples to receive. 0 = inf.
+
 `file`          Filename to write received samples to
+
 `format`        Output file format. One of the following:
-`csv`           CSV of SC16 Q11 samples
-`bin`           Raw SC16 Q11 DAC samples
+
+                `csv`: CSV of SC16 Q11 samples
+
+                `bin`: Raw SC16 Q11 DAC samples
+
 `samples`       Number of samples per buffer to use in the
                 asynchronous stream.  Must be divisible by 1024 and
                 >= 1024.
+
 `buffers`       Number of sample buffers to use in the asynchronous
                 stream. The min value is 4.
+
 `xfers`         Number of simultaneous transfers to allow the
                 asynchronous stream to use. This should be less than
                 the '`buffers`' parameter.
-`timeout`       Data stream timeout. With no suffix, the default unit
-                is `ms`. The default value is 1s. Valid suffixes are
-                '`ms`' and '`s`'.
+
+`timeout`       Data stream timeout. With no suffix, the default
+                unit is `ms`. The default value is 1000 ms (1 s).
+                Valid suffixes are '`ms`' and '`s`'.
+----------------------------------------------------------------------
 
 Example:
 
@@ -448,7 +492,7 @@ Notes:
  * An '`rx stop`' followed by an '`rx start`' will result in the samples
    file being truncated. If this is not desired, be sure to run
    '`rx config`' to set another file before restarting the rx stream.
- * For higher sample rates, it is advised that the binary output format be
+ * For higher sample rates, it is advised that the `bin`ary output format be
    used, and the output file be written to RAM (e.g. `/tmp`, `/dev/shm`), if
    space allows. For larger captures at higher sample rates, consider using
    an SSD instead of a HDD.
@@ -462,49 +506,64 @@ Usage: `tx <start | stop | wait | config [parameters]>`
 Read IQ samples from the specified file and transmit them. Transmission is
 controlled and configured by one of the following:
 
+----------------------------------------------------------------------
     Command Description
 ----------- ----------------------------------------------------------
 `start`     Start transmitting samples
+
 `stop`      Stop transmitting samples
+
 `wait`      Wait for sample transmission to complete, or until a
             specified amount of time elapses
-`config`    Configure sample transmission . If no parameters are
+
+`config`    Configure sample transmission. If no parameters are
             provided, the current parameters are printed.
+----------------------------------------------------------------------
 
 Running '`tx`' without any additional commands is valid shorthand for
 '`tx config`'.
 
-The wait command takes an optional timeout parameter. This parameter
+The `wait` command takes an optional `timeout` parameter. This parameter
 defaults to units of milliseconds (`ms`). The timeout unit may be specified
-using the `ms`, `s`, `m`, or `h` suffixes. If this parameter is not
-provided, the command will wait until the transmission completes or `Ctrl-C`
-is pressed.
+using the `ms` or `s` suffixes. If this parameter is not provided, the
+command will wait until the transmission completes or `Ctrl-C` is pressed.
 
 Configuration parameters take the form '`param=value`', and may be specified
 in a single or multiple '`tx config`' invocations. Below is a list of
 available parameters.
 
+----------------------------------------------------------------------
       Parameter Description
 --------------- ------------------------------------------------------
 `file`          Filename to read samples from
+
 `format`        Output file format. One of the following:
-`csv`           CSV of SC16 Q11 samples ([-2048, 2047])
-`bin`           Raw SC16 Q11 DAC samples ([-2048, 2047])
+
+                `csv`: CSV of SC16 Q11 samples ([-2048, 2047])
+
+                `bin`: Raw SC16 Q11 DAC samples ([-2048, 2047])
+
 `repeat`        The number of times the file contents should be
                 transmitted. 0 implies repeat until stopped.
+
 `delay`         The number of microseconds to delay between
                 retransmitting file contents. 0 implies no delay.
+
 `samples`       Number of samples per buffer to use in the
                 asynchronous stream. Must be divisible by 1024 and
                 >= 1024.
+
 `buffers`       Number of sample buffers to use in the asynchronous
                 stream. The min value is 4.
+
 `xfers`         Number of simultaneous transfers to allow the
                 asynchronous stream to use. This should be < the
                 '`buffers`' parameter.
-`timeout`       Data stream timeout. With no suffix, the default unit
-                is ms. The default value is 1s. Valid suffixes are
-                'ms' and 's'.
+
+`timeout`       Data stream timeout. With no suffix, the default
+                unit is ms. The default value is 1000 ms (1 s).
+                Valid suffixes are 'ms' and 's'.
+----------------------------------------------------------------------
 
 Example:
 
@@ -536,21 +595,33 @@ Usage: `set <param> <arguments>`
 The set command takes a parameter and an arbitrary number of arguments for
 that particular command.  The parameter is one of:
 
-      Parameter Description
---------------- ------------------------------------------------------
-`bandwidth`     Bandwidth settings
-`frequency`     Frequency settings
-`gpio`          FX3 <-> FPGA GPIO state
-`loopback`      Loopback settings
-`lnagain`       Gain setting of the LNA, in dB. Valid values are 0,
-                3, and 6.
-`rxvga1`        Gain setting of RXVGA1, in dB. Range: [5, 30]
-`rxvga2`        Gain setting of RXVGA2, in dB. Range: [0, 30]
-`txvga1`        Gain setting of TXVGA1, in dB. Range: [-35, -4]
-`txvga2`        Gain setting of TXVGA2, in dB. Range: [0, 25]
-`sampling`      External or internal sampling mode
-`samplerate`    Samplerate settings
-`trimdac`       VCTCXO Trim DAC settings
+----------------------------------------------------------------------
+    Parameter Description
+------------- --------------------------------------------------------
+`bandwidth`   Bandwidth settings
+
+`frequency`   Frequency settings
+
+`gpio`        FX3 <-> FPGA GPIO state
+
+`loopback`    Loopback settings
+
+`lnagain`     Gain setting of the LNA, in dB. Valid values: 0, 3, 6
+
+`rxvga1`      Gain setting of RXVGA1, in dB. Range: [5, 30]
+
+`rxvga2`      Gain setting of RXVGA2, in dB. Range: [0, 30]
+
+`txvga1`      Gain setting of TXVGA1, in dB. Range: [-35, -4]
+
+`txvga2`      Gain setting of TXVGA2, in dB. Range: [0, 25]
+
+`sampling`    External or internal sampling mode
+
+`samplerate`  Samplerate settings
+
+`trimdac`     VCTCXO Trim DAC settings
+----------------------------------------------------------------------
 
 
 version
