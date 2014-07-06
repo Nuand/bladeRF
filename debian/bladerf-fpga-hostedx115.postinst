@@ -1,0 +1,27 @@
+#!/bin/sh -e
+
+UPSTREAM='http://nuand.com/fpga/v0.0.5/hostedx115.rbf'
+CHECKSUM='d3ca5dc09115daf0bab731744b081165'
+RBFFILE=/usr/share/bladerf/fpga/hostedx115.rbf
+
+checkfile () {
+	md5sum --check <<- EOMD5SUM
+	$CHECKSUM  $RBFFILE
+	EOMD5SUM
+}
+
+# Fetch firmware if needed
+if [ ! -s $RBFFILE ] || ! checkfile ; then
+	echo "Downloading FPGA bitstream from nuand.com..."
+	rm -f $RBFFILE
+	wget -O $RBFFILE $UPSTREAM || cat <<- EOMSG 1>&2
+
+		Warning: Failed to download FPGA bitstream for bladeRF.
+		Please run "dpkg-reconfigure bladerf-fpga-hostedx115"
+		again when networking is up, or copy the firmware manually
+		to $RBFFILE
+
+	EOMSG
+fi
+
+#DEBHELPER#
