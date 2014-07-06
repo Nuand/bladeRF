@@ -22,6 +22,32 @@ configure_file(
 )
 
 ################################################################################
+# Regenerate interactive help
+################################################################################
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src/cmd/doc)
+find_program(PANDOC_EXECUTABLE pandoc)
+
+if(PANDOC_EXECUTABLE)
+    # Run the generation script
+    message(STATUS "Will use pandoc to generate interactive help")
+    add_custom_command(
+        OUTPUT src/cmd/doc/cmd_help.h src/cmd/doc/cmd_help.man
+        COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/src/cmd/doc/generate.bash ${CMAKE_CURRENT_SOURCE_DIR}/src/cmd/doc/interactive-help.md
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src/cmd/doc
+    )
+else(PANDOC_EXECUTABLE)
+    # Re-use old cmd_help.h and cmd_help.man
+    message(STATUS "Could not find pandoc.  Interactive help may be out of date.")
+    add_custom_command(
+        OUTPUT src/cmd/doc/cmd_help.h
+        COMMAND cp ${CMAKE_CURRENT_SOURCE_DIR}/src/cmd/doc/cmd_help.h.in ${CMAKE_CURRENT_BINARY_DIR}/src/cmd/doc/cmd_help.h
+    )
+    add_custom_command(
+        OUTPUT src/cmd/doc/cmd_help.man
+        COMMAND cp ${CMAKE_CURRENT_SOURCE_DIR}/src/cmd/doc/cmd_help.man.in ${CMAKE_CURRENT_BINARY_DIR}/src/cmd/doc/cmd_help.man
+    )
+endif(PANDOC_EXECUTABLE)
+################################################################################
 # Build dependencies
 ################################################################################
 find_package(LibTecla)
@@ -63,6 +89,7 @@ set(CLI_INCLUDE_DIRS
        ${CMAKE_CURRENT_SOURCE_DIR}/src/cmd
        ${CMAKE_CURRENT_SOURCE_DIR}/src/input
        ${CMAKE_CURRENT_BINARY_DIR}/src
+       ${CMAKE_CURRENT_BINARY_DIR}/src/cmd
        ${BLADERF_HOST_COMMON_INCLUDE_DIRS}
        ${libbladeRF_SOURCE_DIR}/include
        ${BLADERF_FW_COMMON_INCLUDE_DIR}
@@ -101,6 +128,7 @@ set(BLADERF_CLI_SOURCE
         src/common.c
         src/cmd/calibrate.c
         src/cmd/calibrate_dc.c
+        src/cmd/doc/cmd_help.h
         src/cmd/cmd.c
         src/cmd/erase.c
         src/cmd/flash_common.c
@@ -210,22 +238,13 @@ if(BUILD_BLADERF_CLI_DOCUMENTATION)
             set(MAN_INSTALL_DIR share/man)
         endif(NOT DEFINED MAN_INSTALL_DIR)
 
-        # Build interactive commands summary, for inclusion in man page
-        add_custom_command(
-            OUTPUT bladeRF-cli_auto.h2m
-            DEPENDS bladeRF-cli
-            COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/../doc/include_man/get-interactive-commands.bash
-                         ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/bladeRF-cli > bladeRF-cli_auto.h2m
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        )
-
         # Build actual man page
         add_custom_command(
             OUTPUT bladeRF-cli.1
-            DEPENDS bladeRF-cli bladeRF-cli_auto.h2m
+            DEPENDS bladeRF-cli src/cmd/doc/cmd_help.man
             COMMAND ${HELP2MAN_EXECUTABLE} --no-info
                                            --opt-include=${CMAKE_CURRENT_SOURCE_DIR}/../doc/include_man/bladeRF-cli.h2m
-                                           --opt-include=${CMAKE_CURRENT_BINARY_DIR}/bladeRF-cli_auto.h2m
+                                           --opt-include=${CMAKE_CURRENT_BINARY_DIR}/src/cmd/doc/cmd_help.man
                                            --opt-include=${CMAKE_CURRENT_SOURCE_DIR}/../doc/include_man/common.h2m
                                            --output=bladeRF-cli.1 ./bladeRF-cli
             WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
