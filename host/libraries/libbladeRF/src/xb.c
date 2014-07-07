@@ -129,7 +129,7 @@ int bladerf_expansion_attach(struct bladerf *dev, bladerf_xb xb) {
     if (xb == BLADERF_XB_200) {
         if (version_less_than(&dev->fpga_version, 0, 0, 5)) {
             log_warning("%s: XB200 support requires FPGA v0.0.5 or later\n", __FUNCTION__);
-            return BLADERF_ERR_UNSUPPORTED;
+            return BLADERF_ERR_UPDATE_FPGA;
         }
 
         if (attached != xb) {
