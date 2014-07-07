@@ -35,8 +35,9 @@ int cmd_xb(struct cli_state *state, int argc, char **argv)
             if (!strcmp(argv[2], "200")) {
                 printf("  Enabling transverter board\n");
                 status = bladerf_expansion_attach(state->dev, BLADERF_XB_200);
-                if (status) {
-                    return status;
+                if (status != 0) {
+                    state->last_lib_error = status;
+                    return CLI_RET_LIBBLADERF;
                 }
                 printf("  Transverter board successfully enabled\n");
             }
