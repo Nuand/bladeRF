@@ -40,11 +40,11 @@ else(PANDOC_EXECUTABLE)
     message(STATUS "Could not find pandoc.  Interactive help may be out of date.")
     add_custom_command(
         OUTPUT src/cmd/doc/cmd_help.h
-        COMMAND cp ${CMAKE_CURRENT_SOURCE_DIR}/src/cmd/doc/cmd_help.h.in ${CMAKE_CURRENT_BINARY_DIR}/src/cmd/doc/cmd_help.h
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/src/cmd/doc/cmd_help.h.in ${CMAKE_CURRENT_BINARY_DIR}/src/cmd/doc/cmd_help.h
     )
     add_custom_command(
         OUTPUT src/cmd/doc/cmd_help.man
-        COMMAND cp ${CMAKE_CURRENT_SOURCE_DIR}/src/cmd/doc/cmd_help.man.in ${CMAKE_CURRENT_BINARY_DIR}/src/cmd/doc/cmd_help.man
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/src/cmd/doc/cmd_help.man.in ${CMAKE_CURRENT_BINARY_DIR}/src/cmd/doc/cmd_help.man
     )
 endif(PANDOC_EXECUTABLE)
 ################################################################################
