@@ -2,7 +2,7 @@
 
 UPSTREAM='http://nuand.com/fx3/bladeRF_fw_v1.7.0.img'
 CHECKSUM='73ace21e693049e475cceb88bed900d7'
-IMGFILE=/usr/share/bladerf/firmware/bladeRF_fw.img
+IMGFILE=/usr/share/Nuand/bladeRF/bladeRF_fw.img
 
 checkfile () {
 	md5sum --check <<- EOMD5SUM

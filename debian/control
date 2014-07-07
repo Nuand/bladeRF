@@ -69,7 +69,7 @@ Description: nuand bladeRF FPGA bitstream downloader (hostedx40)
  This package will, at the time of installation, download an appropriate
  FPGA bitstream for using the nuand bladeRF in a hosted (USB-controlled)
  configuration.  The FPGA bitstream will be downloaded from
- http://nuand.com/fpga/ and saved to /usr/share/bladerf/fpga/.
+ http://nuand.com/fpga/ and saved to /usr/share/Nuand/bladeRF.
  .
  This bitstream is for the bladeRF x40 with the Altera Cyclone IV
  EP4CE40 FPGA.
@@ -88,7 +88,7 @@ Description: nuand bladeRF FPGA bitstream downloader (hostedx115)
  This package will, at the time of installation, download an appropriate
  FPGA bitstream for using the nuand bladeRF in a hosted (USB-controlled)
  configuration.  The FPGA bitstream will be downloaded from
- http://nuand.com/fpga/ and saved to /usr/share/bladerf/fpga/.
+ http://nuand.com/fpga/ and saved to /usr/share/Nuand/bladeRF.
  .
  This bitstream is for the bladeRF x115 with the Altera Cyclone IV
  EP4CE115 FPGA.
@@ -107,7 +107,7 @@ Description: nuand bladeRF firmware downloader (FX3)
  This package will, at the time of installation, download an appropriate
  firmware image for using the nuand bladeRF with a Cypress FX3 USB
  controller.  The image will be downloaded from http://nuand.com/fx3/
- and saved to /usr/share/bladerf/firmware/.
+ and saved to /usr/share/Nuand/bladeRF.
  .
  This bitstream will work for either the nuand bladeRF x40 or the x115.
  .

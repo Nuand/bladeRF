@@ -1,6 +1,6 @@
 #!/bin/sh -e
 
-RBFFILE=/usr/share/bladerf/fpga/hostedx115.rbf
+RBFFILE=/usr/share/Nuand/bladeRF/hostedx115.rbf
 
 if [ "$1" = "remove" -o "$1" = "purge" ]; then
 	echo "Deleting downloaded FPGA bitstream: $RBFFILE"

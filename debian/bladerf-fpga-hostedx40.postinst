@@ -2,7 +2,7 @@
 
 UPSTREAM='http://nuand.com/fpga/v0.0.5/hostedx40.rbf'
 CHECKSUM='a474050c832cbe528fb8635b36c36a34'
-RBFFILE=/usr/share/bladerf/fpga/hostedx40.rbf
+RBFFILE=/usr/share/Nuand/bladeRF/hostedx40.rbf
 
 checkfile () {
 	md5sum --check <<- EOMD5SUM
