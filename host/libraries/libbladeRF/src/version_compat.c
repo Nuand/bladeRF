@@ -57,6 +57,21 @@ static const struct compat fpga_compat_tbl[] = {
 static const struct compat * find_fw_match(const struct bladerf *dev)
 {
     size_t i;
+    const struct compat *newest_fw = &fw_compat_tbl[0];
+
+    /* Version is newer than what's in our table - complain */
+    if (version_less_than(&newest_fw->ver,
+                          dev->fw_version.major,
+                          dev->fw_version.minor,
+                          dev->fw_version.patch)) {
+
+        log_warning("New firmware version (v%u.%u.%u) detected. "
+                    "A developer needs to update the table in %s!\n",
+                    dev->fw_version.major, dev->fw_version.minor,
+                    dev->fw_version.patch, __FILE__);
+
+        return newest_fw;
+    }
 
     for (i = 0; i < ARRAY_SIZE(fw_compat_tbl); i++) {
         if (version_equal(&dev->fw_version, &fw_compat_tbl[i].ver)) {
@@ -70,6 +85,22 @@ static const struct compat * find_fw_match(const struct bladerf *dev)
 static const struct compat * find_fpga_match(const struct bladerf *dev)
 {
     size_t i;
+    const struct compat *newest_fpga = &fpga_compat_tbl[0];
+
+    /* Device's FPGA is newer than what's in our table - complain */
+    if (version_less_than(&newest_fpga->ver,
+                          dev->fpga_version.major,
+                          dev->fpga_version.minor,
+                          dev->fpga_version.patch)) {
+
+
+        log_warning("New FPGA version (v%u.%u.%u) detected. "
+                    "A developer needs to update the table in %s!\n",
+                    dev->fpga_version.major, dev->fpga_version.minor,
+                    dev->fpga_version.patch, __FILE__);
+
+        return newest_fpga;
+    }
 
     for (i = 0; i < ARRAY_SIZE(fpga_compat_tbl); i++) {
         if (version_equal(&dev->fpga_version, &fpga_compat_tbl[i].ver)) {
@@ -107,7 +138,15 @@ void version_required_fw(const struct bladerf *dev,
 {
     if (by_fpga) {
         const struct compat *fpga = find_fpga_match(dev);
-        memcpy(version, &fpga->requires, sizeof(version[0]));
+
+        if (fpga == NULL) {
+            log_debug("%s is missing FPGA version compat table entry?",
+                      __FUNCTION__);
+            memset(version, 0, sizeof(version[0]));
+            assert(!"BUG!");
+        } else {
+            memcpy(version, &fpga->requires, sizeof(version[0]));
+        }
 
     } else {
         const struct bladerf_version *required_version =
