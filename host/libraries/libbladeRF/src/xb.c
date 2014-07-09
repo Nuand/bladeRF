@@ -189,6 +189,14 @@ int bladerf_xb200_set_filterbank(struct bladerf *dev, bladerf_module module, bla
 
     bits = ((module == BLADERF_MODULE_RX) ? BLADERF_XB_RX_MASK : BLADERF_XB_TX_MASK);
 
+    if (filter == BLADERF_XB200_AUTO_1DB || filter == BLADERF_XB200_AUTO_3DB) {
+        if (module == BLADERF_MODULE_RX) {
+            dev->rx_filter = filter;
+        } else {
+            dev->tx_filter = filter;
+        }
+    }
+
     status = bladerf_expansion_gpio_read(dev, &orig);
     val = orig & ~bits;
     val |= filter << ((module == BLADERF_MODULE_RX) ? BLADERF_XB_RX_SHIFT : BLADERF_XB_TX_SHIFT);
@@ -196,6 +204,47 @@ int bladerf_xb200_set_filterbank(struct bladerf *dev, bladerf_module module, bla
         return status;
 
     return bladerf_expansion_gpio_write(dev, val);
+}
+
+int bladerf_xb200_auto_filter_selection(struct bladerf *dev, bladerf_module mod, unsigned int frequency) {
+    int status;
+    bladerf_xb200_filter filter;
+
+    status = 0;
+
+    if (frequency >= 300000000u) {
+        return 0;
+    }
+
+    if ((mod == BLADERF_MODULE_RX && dev->rx_filter == BLADERF_XB200_AUTO_1DB) ||
+          (mod == BLADERF_MODULE_TX && dev->tx_filter == BLADERF_XB200_AUTO_1DB)) {
+        if (37774405.153725 <= frequency && frequency <= 59535436.163001) {
+            filter = BLADERF_XB200_50M;
+        } else if (128326173.24804 <= frequency && frequency <= 166711171.69243) {
+            filter = BLADERF_XB200_144M;
+        } else if (187593160.70204 <= frequency && frequency <= 245346403.35808) {
+            filter = BLADERF_XB200_222M;
+        } else {
+            filter = BLADERF_XB200_CUSTOM;
+        }
+        status = bladerf_xb200_set_filterbank(dev, mod, filter);
+    }
+
+    if ((mod == BLADERF_MODULE_RX && dev->rx_filter == BLADERF_XB200_AUTO_3DB) ||
+          (mod == BLADERF_MODULE_TX && dev->tx_filter == BLADERF_XB200_AUTO_3DB)) {
+        if (34782924.100698 <= frequency && frequency <= 61899260.358339) {
+            filter = BLADERF_XB200_50M;
+        } else if (121956957.85646 <= frequency && frequency <= 178444099.21307) {
+            filter = BLADERF_XB200_144M;
+        } else if (177522675.91007 <= frequency && frequency <= 260140935.89263) {
+            filter = BLADERF_XB200_222M;
+        } else {
+            filter = BLADERF_XB200_CUSTOM;
+        }
+        status = bladerf_xb200_set_filterbank(dev, mod, filter);
+    }
+
+    return status;
 }
 
 int bladerf_xb200_set_path(struct bladerf *dev, bladerf_module module, bladerf_xb200_path path) {

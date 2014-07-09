@@ -499,10 +499,12 @@ typedef enum {
  * XB 200 filterbanks
  */
 typedef enum {
-    BLADERF_XB200_50M = 0,
-    BLADERF_XB200_144M,
-    BLADERF_XB200_222M,
-    BLADERF_XB200_CUSTOM
+    BLADERF_XB200_50M = 0,   /**< 50MHz filterbank */
+    BLADERF_XB200_144M,      /**< 144MHz filterbank */
+    BLADERF_XB200_222M,      /**< 222MHz filterbank */
+    BLADERF_XB200_CUSTOM,    /**< Custom filterbank */
+    BLADERF_XB200_AUTO_1DB,  /**< Selection based on filters' 1dB points */
+    BLADERF_XB200_AUTO_3DB   /**< Selection based on filters' 3dB points */
 } bladerf_xb200_filter;
 
 /**

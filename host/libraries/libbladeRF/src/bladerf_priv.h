@@ -112,6 +112,12 @@ struct bladerf {
 
     /* Calibration data */
     struct calibrations cal;
+
+    /* Track filterbank selection for RX autoselection */
+    bladerf_xb200_filter rx_filter;
+
+    /* Track filterbank selection for TX autoselection */
+    bladerf_xb200_filter tx_filter;
 };
 
 /**

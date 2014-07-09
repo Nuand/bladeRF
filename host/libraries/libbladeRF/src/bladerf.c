@@ -29,6 +29,7 @@
 #include "async.h"
 #include "sync.h"
 #include "lms.h"
+#include "xb.h"
 #include "si5338.h"
 #include "file_ops.h"
 #include "log.h"
@@ -221,6 +222,9 @@ int bladerf_open_with_devinfo(struct bladerf **opened_device,
             goto error;
         }
     }
+
+    dev->rx_filter = -1;
+    dev->tx_filter = -1;
 
     /* Load any configuration files or FPGA images that a user has stored
      * for this device in their bladerf config directory */
@@ -619,6 +623,9 @@ int bladerf_set_frequency(struct bladerf *dev,
     if (attached == BLADERF_XB_200) {
         if (frequency < BLADERF_FREQUENCY_MIN) {
             status = bladerf_xb200_set_path(dev, module, BLADERF_XB200_MIX);
+            if (status)
+                return status;
+            status = bladerf_xb200_auto_filter_selection(dev, module, frequency);
             if (status)
                 return status;
             frequency = 1248000000 - frequency;
