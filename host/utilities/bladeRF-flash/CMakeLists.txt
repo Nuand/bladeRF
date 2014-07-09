@@ -108,10 +108,9 @@ if(BUILD_BLADERF_FLASH_DOCUMENTATION)
         # Build actual man page
         add_custom_command(
             OUTPUT bladeRF-flash.1
-            DEPENDS bladeRF-flash #bladeRF-flash_auto.h2m
+            DEPENDS bladeRF-flash
             COMMAND ${HELP2MAN_EXECUTABLE} --no-info
                                            --opt-include=${CMAKE_CURRENT_SOURCE_DIR}/../doc/include_man/bladeRF-flash.h2m
-                                           #--opt-include=${CMAKE_CURRENT_BINARY_DIR}/bladeRF-flash_auto.h2m
                                            --opt-include=${CMAKE_CURRENT_SOURCE_DIR}/../doc/include_man/common.h2m
                                            --output=bladeRF-flash.1 ./bladeRF-flash
             WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
