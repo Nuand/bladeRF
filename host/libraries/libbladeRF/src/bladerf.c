@@ -671,6 +671,8 @@ int bladerf_set_frequency(struct bladerf *dev,
 int bladerf_get_frequency(struct bladerf *dev,
                             bladerf_module module, unsigned int *frequency)
 {
+    bladerf_xb attached;
+    bladerf_xb200_path path;
     struct lms_freq f;
     int rv = 0;
 
@@ -684,6 +686,20 @@ int bladerf_get_frequency(struct bladerf *dev,
         rv = BLADERF_ERR_INVAL;
     } else {
         *frequency = lms_frequency_to_hz(&f);
+    }
+
+    rv = bladerf_expansion_get_attached(dev, &attached);
+    if (rv != 0) {
+        return rv;
+    }
+    if (attached == BLADERF_XB_200) {
+        rv = bladerf_xb200_get_path(dev, module, &path);
+        if (rv != 0) {
+            return rv;
+        }
+        if (path == BLADERF_XB200_MIX) {
+            *frequency = 1248000000 - *frequency;
+        }
     }
 
     return rv;
