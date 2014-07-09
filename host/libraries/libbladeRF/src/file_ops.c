@@ -154,6 +154,7 @@ static const struct search_path_entries search_paths[] = {
     { true,  "/.config/Nuand/bladeRF/" },
     { true,  "/.Nuand/bladeRF/" },
     { false, "/etc/Nuand/bladeRF/" },
+    { false, "/usr/share/Nuand/bladeRF/" },
 };
 
 static inline size_t get_home_dir(char *buf, size_t max_len)

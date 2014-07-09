@@ -57,3 +57,59 @@ Description: nuand bladeRF software-defined radio device (tools)
  libraries and drivers to facilitate interaction with the device.
  .
  This package provides command-line tools for controlling the bladeRF.
+
+Package: bladerf-fpga-hostedx40
+Section: comm
+Architecture: any
+Depends: wget, ${shlibs:Depends}, ${misc:Depends}
+Recommends: bladerf
+Suggests: bladerf-firmware
+Provides: bladerf-fpga
+Description: nuand bladeRF FPGA bitstream downloader (hostedx40)
+ This package will, at the time of installation, download an appropriate
+ FPGA bitstream for using the nuand bladeRF in a hosted (USB-controlled)
+ configuration.  The FPGA bitstream will be downloaded from
+ http://nuand.com/fpga/ and saved to /usr/share/Nuand/bladeRF.
+ .
+ This bitstream is for the bladeRF x40 with the Altera Cyclone IV
+ EP4CE40 FPGA.
+ .
+ Note that this will not upgrade the bladeRF itself.  That can be done
+ with the bladeRF-cli utility.
+
+Package: bladerf-fpga-hostedx115
+Section: comm
+Architecture: any
+Depends: wget, ${shlibs:Depends}, ${misc:Depends}
+Recommends: bladerf
+Suggests: bladerf-firmware
+Provides: bladerf-fpga
+Description: nuand bladeRF FPGA bitstream downloader (hostedx115)
+ This package will, at the time of installation, download an appropriate
+ FPGA bitstream for using the nuand bladeRF in a hosted (USB-controlled)
+ configuration.  The FPGA bitstream will be downloaded from
+ http://nuand.com/fpga/ and saved to /usr/share/Nuand/bladeRF.
+ .
+ This bitstream is for the bladeRF x115 with the Altera Cyclone IV
+ EP4CE115 FPGA.
+ .
+ Note that this will not upgrade the bladeRF itself.  That can be done
+ with the bladeRF-cli utility.
+
+Package: bladerf-firmware-fx3
+Section: comm
+Architecture: any
+Depends: wget, ${shlibs:Depends}, ${misc:Depends}
+Recommends: bladerf
+Suggests: bladerf-fpga
+Provides: bladerf-firmware
+Description: nuand bladeRF firmware downloader (FX3)
+ This package will, at the time of installation, download an appropriate
+ firmware image for using the nuand bladeRF with a Cypress FX3 USB
+ controller.  The image will be downloaded from http://nuand.com/fx3/
+ and saved to /usr/share/Nuand/bladeRF.
+ .
+ This bitstream will work for either the nuand bladeRF x40 or the x115.
+ .
+ Note that this will not upgrade the bladeRF itself.  That can be done
+ with the bladeRF-cli utility.
