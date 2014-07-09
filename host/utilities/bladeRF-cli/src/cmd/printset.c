@@ -338,7 +338,7 @@ int set_frequency(struct cli_state *state, int argc, char **argv)
         bool ok;
         /* Parse out frequency */
         freq = str2uint_suffix( argv[argc-1],
-                                BLADERF_FREQUENCY_MIN, BLADERF_FREQUENCY_MAX,
+                                0, BLADERF_FREQUENCY_MAX,
                                 freq_suffixes, NUM_FREQ_SUFFIXES, &ok );
 
         if( !ok ) {
