@@ -307,13 +307,13 @@ int bladerf_xb200_get_path(struct bladerf *dev, bladerf_module module, bladerf_x
     int status;
     uint32_t val;
 
-    status = bladerf_config_gpio_read(dev, &val);
+    status = bladerf_expansion_gpio_read(dev, &val);
     if (status)
         return status;
     if (module == BLADERF_MODULE_RX)
-        *path = (val & BLADERF_XB_CONFIG_RX_BYPASS) ? BLADERF_XB200_BYPASS : BLADERF_XB200_MIX;
+        *path = (val & BLADERF_XB_CONFIG_RX_BYPASS) ? BLADERF_XB200_MIX : BLADERF_XB200_BYPASS;
     else if (module == BLADERF_MODULE_TX)
-        *path = (val & BLADERF_XB_CONFIG_TX_BYPASS) ? BLADERF_XB200_BYPASS : BLADERF_XB200_MIX;
+        *path = (val & BLADERF_XB_CONFIG_TX_BYPASS) ? BLADERF_XB200_MIX : BLADERF_XB200_BYPASS;
 
     return 0;
 }
