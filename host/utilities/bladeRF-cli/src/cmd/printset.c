@@ -710,8 +710,7 @@ int print_rxvga1(struct cli_state *state, int argc, char **argv)
         state->last_lib_error = status;
         rv = CLI_RET_LIBBLADERF;
     } else {
-        printf( "\n" );
-        printf( "  RXVGA1 Gain: %3ddB\n", gain );
+        printf( "RXVGA1 Gain: %3ddB\n", gain );
         printf( "\n" );
     }
 
@@ -750,8 +749,7 @@ int print_rxvga2(struct cli_state *state, int argc, char **argv)
         state->last_lib_error = status;
         rv = CLI_RET_LIBBLADERF;
     } else {
-        printf( "\n" );
-        printf( "  RXVGA2 Gain: %3ddB\n", gain );
+        printf( "RXVGA2 Gain: %3ddB\n", gain );
         printf( "\n" );
     }
 
