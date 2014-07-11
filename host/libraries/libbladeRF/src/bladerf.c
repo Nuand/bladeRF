@@ -687,6 +687,9 @@ int bladerf_get_frequency(struct bladerf *dev,
     } else {
         *frequency = lms_frequency_to_hz(&f);
     }
+    if (rv != 0) {
+        return rv;
+    }
 
     rv = bladerf_expansion_get_attached(dev, &attached);
     if (rv != 0) {
