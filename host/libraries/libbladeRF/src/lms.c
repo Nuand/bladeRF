@@ -84,22 +84,22 @@ static const struct freq_range {
     uint32_t    high;
     uint8_t     value;
 } bands[] = {
-    FREQ_RANGE(232500000,   285625000,   0x27),
-    FREQ_RANGE(285625000,   336875000,   0x2f),
-    FREQ_RANGE(336875000,   405000000,   0x37),
-    FREQ_RANGE(405000000,   465000000,   0x3f),
-    FREQ_RANGE(465000000,   571250000,   0x26),
-    FREQ_RANGE(571250000,   673750000,   0x2e),
-    FREQ_RANGE(673750000,   810000000,   0x36),
-    FREQ_RANGE(810000000,   930000000,   0x3e),
-    FREQ_RANGE(930000000,   1142500000,  0x25),
-    FREQ_RANGE(1142500000,  1347500000,  0x2d),
-    FREQ_RANGE(1347500000,  1620000000,  0x35),
-    FREQ_RANGE(1620000000,  1860000000,  0x3d),
-    FREQ_RANGE(1860000000u, 2285000000u, 0x24),
-    FREQ_RANGE(2285000000u, 2695000000u, 0x2c),
-    FREQ_RANGE(2695000000u, 3240000000u, 0x34),
-    FREQ_RANGE(3240000000u, 3800000000u, 0x3c),
+    FREQ_RANGE(BLADERF_FREQUENCY_MIN,   285625000,              0x27),
+    FREQ_RANGE(285625000,               336875000,              0x2f),
+    FREQ_RANGE(336875000,               405000000,              0x37),
+    FREQ_RANGE(405000000,               465000000,              0x3f),
+    FREQ_RANGE(465000000,               571250000,              0x26),
+    FREQ_RANGE(571250000,               673750000,              0x2e),
+    FREQ_RANGE(673750000,               810000000,              0x36),
+    FREQ_RANGE(810000000,               930000000,              0x3e),
+    FREQ_RANGE(930000000,               1142500000,             0x25),
+    FREQ_RANGE(1142500000,              1347500000,             0x2d),
+    FREQ_RANGE(1347500000,              1620000000,             0x35),
+    FREQ_RANGE(1620000000,              1860000000,             0x3d),
+    FREQ_RANGE(1860000000u,             2285000000u,            0x24),
+    FREQ_RANGE(2285000000u,             2695000000u,            0x2c),
+    FREQ_RANGE(2695000000u,             3240000000u,            0x34),
+    FREQ_RANGE(3240000000u,             BLADERF_FREQUENCY_MAX,  0x3c),
 };
 
  /*
@@ -1632,7 +1632,6 @@ int lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
     /* Select the base address based on which PLL we are configuring */
     const uint8_t base = (mod == BLADERF_MODULE_RX) ? 0x20 : 0x10;
     const uint64_t ref_clock = 38400000;
-    uint32_t lfreq = freq;
     uint8_t freqsel = bands[0].value;
     uint16_t nint;
     uint32_t nfrac;
@@ -1644,18 +1643,18 @@ int lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
     uint8_t i = 0;
 
     /* Clamp out of range values */
-    if (lfreq < BLADERF_FREQUENCY_MIN) {
-        lfreq = BLADERF_FREQUENCY_MIN;
-        log_info("Clamping frequency to: %u\n", lfreq);
-    } else if (lfreq > BLADERF_FREQUENCY_MAX) {
-        lfreq = BLADERF_FREQUENCY_MAX;
-        log_info("Clamping frequency to: %u\n", lfreq);
+    if (freq < BLADERF_FREQUENCY_MIN) {
+        freq = BLADERF_FREQUENCY_MIN;
+        log_info("Clamping frequency to %uHz\n", freq);
+    } else if (freq > BLADERF_FREQUENCY_MAX) {
+        freq = BLADERF_FREQUENCY_MAX;
+        log_info("Clamping frequency to %uHz\n", freq);
     }
 
     /* Figure out freqsel */
 
     while(i < 16) {
-        if ((lfreq > bands[i].low) && (lfreq <= bands[i].high)) {
+        if ((freq >= bands[i].low) && (freq <= bands[i].high)) {
             freqsel = bands[i].value;
             break;
         }

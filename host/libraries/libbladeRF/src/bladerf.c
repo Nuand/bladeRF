@@ -523,10 +523,10 @@ int bladerf_set_bandwidth(struct bladerf *dev, bladerf_module module,
 
     if (bandwidth < BLADERF_BANDWIDTH_MIN) {
         bandwidth = BLADERF_BANDWIDTH_MIN;
-        log_info("Clamping bandwidth to %d Hz\n", bandwidth);
+        log_info("Clamping bandwidth to %dHz\n", bandwidth);
     } else if (bandwidth > BLADERF_BANDWIDTH_MAX) {
         bandwidth = BLADERF_BANDWIDTH_MAX;
-        log_info("Clamping bandwidth to %d Hz\n", bandwidth);
+        log_info("Clamping bandwidth to %dHz\n", bandwidth);
     }
 
     bw = lms_uint2bw(bandwidth);
@@ -584,10 +584,10 @@ int bladerf_select_band(struct bladerf *dev, bladerf_module module,
 
     if (frequency < BLADERF_FREQUENCY_MIN) {
         frequency = BLADERF_FREQUENCY_MIN;
-        log_info("Clamping frequency to %u\n", frequency);
+        log_info("Clamping frequency to %uHz\n", frequency);
     } else if (frequency > BLADERF_FREQUENCY_MAX) {
         frequency = BLADERF_FREQUENCY_MAX;
-        log_info("Clamping frequency to %u\n", frequency);
+        log_info("Clamping frequency to %uHz\n", frequency);
     }
 
     band = (frequency >= BLADERF_BAND_HIGH) ? 1 : 2;
