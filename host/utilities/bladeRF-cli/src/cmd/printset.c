@@ -357,7 +357,14 @@ int set_frequency(struct cli_state *state, int argc, char **argv)
                     state->last_lib_error = status;
                     rv = CLI_RET_LIBBLADERF;
                 } else {
-                    printf( "  Set RX frequency: %10uHz\n", freq );
+                    status = bladerf_get_frequency( state->dev,
+                                                    BLADERF_MODULE_RX, &freq );
+                    if (status < 0) {
+                        state->last_lib_error = status;
+                        rv = CLI_RET_LIBBLADERF;
+                    } else {
+                        printf( "  Set RX frequency: %10uHz\n", freq );
+                    }
                 }
             }
 
@@ -370,7 +377,14 @@ int set_frequency(struct cli_state *state, int argc, char **argv)
                     state->last_lib_error = status;
                     rv = CLI_RET_LIBBLADERF;
                 } else {
-                    printf( "  Set TX frequency: %10uHz\n", freq );
+                    status = bladerf_get_frequency( state->dev,
+                                                    BLADERF_MODULE_TX, &freq );
+                    if (status < 0) {
+                        state->last_lib_error = status;
+                        rv = CLI_RET_LIBBLADERF;
+                    } else {
+                        printf( "  Set TX frequency: %10uHz\n", freq );
+                    }
                 }
             }
 
