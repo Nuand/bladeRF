@@ -206,7 +206,7 @@ bool version_equal(const struct bladerf_version *v1,
 {
     return v1->major == v2->major &&
            v1->minor == v2->minor &&
-           v1->patch == v1->patch;
+           v1->patch == v2->patch;
 }
 
 bool version_greater_or_equal(const struct bladerf_version *version,
