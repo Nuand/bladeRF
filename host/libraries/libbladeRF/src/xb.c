@@ -218,11 +218,11 @@ int bladerf_xb200_auto_filter_selection(struct bladerf *dev, bladerf_module mod,
 
     if ((mod == BLADERF_MODULE_RX && dev->rx_filter == BLADERF_XB200_AUTO_1DB) ||
           (mod == BLADERF_MODULE_TX && dev->tx_filter == BLADERF_XB200_AUTO_1DB)) {
-        if (37774405.153725 <= frequency && frequency <= 59535436.163001) {
+        if (37774405 <= frequency && frequency <= 59535436) {
             filter = BLADERF_XB200_50M;
-        } else if (128326173.24804 <= frequency && frequency <= 166711171.69243) {
+        } else if (128326173 <= frequency && frequency <= 166711171) {
             filter = BLADERF_XB200_144M;
-        } else if (187593160.70204 <= frequency && frequency <= 245346403.35808) {
+        } else if (187593160 <= frequency && frequency <= 245346403) {
             filter = BLADERF_XB200_222M;
         } else {
             filter = BLADERF_XB200_CUSTOM;
@@ -232,11 +232,11 @@ int bladerf_xb200_auto_filter_selection(struct bladerf *dev, bladerf_module mod,
 
     if ((mod == BLADERF_MODULE_RX && dev->rx_filter == BLADERF_XB200_AUTO_3DB) ||
           (mod == BLADERF_MODULE_TX && dev->tx_filter == BLADERF_XB200_AUTO_3DB)) {
-        if (34782924.100698 <= frequency && frequency <= 61899260.358339) {
+        if (34782924 <= frequency && frequency <= 61899260) {
             filter = BLADERF_XB200_50M;
-        } else if (121956957.85646 <= frequency && frequency <= 178444099.21307) {
+        } else if (121956957 <= frequency && frequency <= 178444099) {
             filter = BLADERF_XB200_144M;
-        } else if (177522675.91007 <= frequency && frequency <= 260140935.89263) {
+        } else if (177522675 <= frequency && frequency <= 260140935) {
             filter = BLADERF_XB200_222M;
         } else {
             filter = BLADERF_XB200_CUSTOM;
