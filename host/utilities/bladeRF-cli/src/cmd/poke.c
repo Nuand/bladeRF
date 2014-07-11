@@ -45,13 +45,11 @@ int cmd_poke(struct cli_state *state, int argc, char **argv)
     if( argc == 4 ) {
 
         /* Parse the value */
-        if( argc == 4 ) {
-            value = str2uint( argv[3], 0, MAX_VALUE, &ok );
-            if( !ok ) {
-                cli_err(state, argv[0],
-                        "Invalid number of addresses provided (%s)", argv[3]);
-                return CLI_RET_INVPARAM;
-            }
+        value = str2uint( argv[3], 0, MAX_VALUE, &ok );
+        if( !ok ) {
+            cli_err(state, argv[0],
+                    "Invalid value provided (%s)", argv[3]);
+            return CLI_RET_INVPARAM;
         }
 
         /* Are we reading from the DAC? */
