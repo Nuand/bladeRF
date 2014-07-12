@@ -672,9 +672,9 @@ int set_loopback(struct cli_state *state, int argc, char **argv)
         printf("  bb_txlpf_rxlpf    Baseband loopback: TXLPF output --> RXLPF input\n");
         printf("  bb_txvga1_rxvga2  Baseband loopback: TXVGA1 output --> RXVGA2 input.\n");
         printf("  bb_txvga1_rxlpf   Baseband loopback: TXVGA1 output --> RXLPF input\n");
-        printf("  rx_lna1           RF loopback: TXMIX --> RXMIX via LNA1 path.\n");
-        printf("  rx_lna2           RF loopback: TXMIX --> RXMIX via LNA2 path.\n");
-        printf("  rx_lna3           RF loopback: TXMIX --> RXMIX via LNA3 path.\n");
+        printf("  rf_lna1           RF loopback: TXMIX --> RXMIX via LNA1 path.\n");
+        printf("  rf_lna2           RF loopback: TXMIX --> RXMIX via LNA2 path.\n");
+        printf("  rf_lna3           RF loopback: TXMIX --> RXMIX via LNA3 path.\n");
         printf("  none              Loopback disabled - Normal operation.\n");
         printf("\n");
 
