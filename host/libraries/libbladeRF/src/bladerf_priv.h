@@ -31,6 +31,8 @@
 
 #include <limits.h>
 #include <libbladeRF.h>
+#include "bladeRF.h"
+#include <pthread.h>
 #include "host_config.h"
 
 #if BLADERF_OS_WINDOWS || BLADERF_OS_OSX
@@ -39,6 +41,7 @@
 #include <time.h>
 #endif
 
+#include "thread.h"
 #include "minmax.h"
 #include "conversions.h"
 #include "devinfo.h"
@@ -51,6 +54,14 @@
 /* For >= 1.5 GHz uses the high band should be used. Otherwise, the low
  * band should be selected */
 #define BLADERF_BAND_HIGH (1500000000)
+
+#define CONFIG_GPIO_WRITE(dev, val) dev->fn->config_gpio_write(dev, val)
+#define CONFIG_GPIO_READ(dev, val)  dev->fn->config_gpio_read(dev, val)
+
+#define CONFIG_GPIO_WRITE(dev, val) dev->fn->config_gpio_write(dev, val)
+#define CONFIG_GPIO_READ(dev, val)  dev->fn->config_gpio_read(dev, val)
+
+#define DAC_WRITE(dev, val) dev->fn->dac_write(dev, val)
 
 /* Forward declaration for the function table */
 struct bladerf;
@@ -71,6 +82,15 @@ struct calibrations {
 };
 
 struct bladerf {
+
+    /* Control lock - use this to ensure atomic access to control and
+     * configuration operations */
+    MUTEX ctrl_lock;
+
+    /* Ensure sync transfers occur atomically. If this is to be held in
+     * conjunction with ctrl_lock, ctrl_lock should be acquired BEFORE
+     * the relevant sync_lock[] */
+    MUTEX sync_lock[NUM_MODULES];
 
     struct bladerf_devinfo ident;  /* Identifying information */
 
@@ -109,98 +129,53 @@ struct bladerf {
  * Initialize device registers - required after power-up, but safe
  * to call multiple times after power-up (e.g., multiple close and reopens)
  */
-int bladerf_init_device(struct bladerf *dev);
+int init_device(struct bladerf *dev);
 
 /**
+ * Configure the device for operation in the high or low band, based
+ * upon the provided frequency
  *
+ * @param   dev         Device handle
+ * @param   module      Module to configure
+ * @param   frequency   Desired frequency
+ *
+ * @return 0 on success, BLADERF_ERR_* value on failure
+ */
+int select_band(struct bladerf *dev, bladerf_module module,
+                unsigned int frequency);
+
+/**
+ * Tune to the specified frequency
+ *
+ * @param   dev         Device handle
+ * @param   module      Module to configure
+ * @param   frequency   Desired frequency
+ *
+ * @return 0 on success, BLADERF_ERR_* value on failure
+ */
+int set_frequency(struct bladerf *dev, bladerf_module module,
+                  unsigned int frequency);
+/**
+ * Get the current frequency that the specified module is tuned to
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   module      Module to configure
+ * @param[out]  frequency   Desired frequency
+ *
+ * @return 0 on success, BLADERF_ERR_* value on failure
+ */
+int get_frequency(struct bladerf *dev, bladerf_module module,
+                  unsigned int *frequency);
+
+/*
+ * Convert bytes to SC16Q11 samples
  */
 size_t bytes_to_c16_samples(size_t n_bytes);
+
+/*
+ * Convert SC16A11 samples to bytes
+ */
 size_t c16_samples_to_bytes(size_t n_samples);
-
-/**
- * Read data from one-time-programmabe (OTP) section of flash
- *
- * @param[in]   dev         Device handle
- * @param[in]   field       OTP field
- * @param[out]  data        Populated with retrieved data
- * @param[in]   data_size   Size of the data to read
- *
- * 0 on success, BLADERF_ERR_* on failure
- */
-int bladerf_get_otp_field(struct bladerf *device, char *field,
-                            char *data, size_t data_size);
-
-/**
- * Read data from calibration ("cal") section of flash
- *
- * @param[in]   dev         Device handle
- * @param[in]   field       Cal field
- * @param[out]  data        Populated with retrieved data
- * @param[in]   data_size   Size of the data to read
- *
- * 0 on success, BLADERF_ERR_* on failure
- */
-int bladerf_get_otp_field(struct bladerf *device, char *field,
-                            char *data, size_t data_size);
-
-/**
- * Retrieve the device serial from flash and store it in the provided buffer.
- *
- * @pre The provided buffer is BLADERF_SERIAL_LENGTH in size
- *
- * @param[inout]   dev      Device handle. On success, serial field is updated
- *
- * 0 on success, BLADERF_ERR_* on failure
- */
-int bladerf_read_serial(struct bladerf *device, char *serial_buf);
-
-/**
- * Retrieve VCTCXO calibration value from flash and cache it in the
- * provided device structure
- *
- * @param[inout]   dev      Device handle. On success, trim field is updated
- *
- * 0 on success, BLADERF_ERR_* on failure
- */
-int bladerf_get_and_cache_vctcxo_trim(struct bladerf *device);
-
-/**
- * Retrieve FPGA size variant from flash and cache it in the provided
- * device structure
- *
- * @param[inout]   dev      Device handle.
- *                          On success, fpga_size field  is updated
- *
- * 0 on success, BLADERF_ERR_* on failure
- */
-int bladerf_get_and_cache_fpga_size(struct bladerf *device);
-
-/**
- * Create data that can be read by extract_field()
- *
- * @param[in]       ptr     Pointer to data buffer that will contain encoded data
- * @param[in]       len     Length of data buffer that will contain encoded data
- * @param[inout]    idx     Pointer indicating next free byte inside of data
- *                          buffer that will contain encoded data
- * @param[in]       field   Key of value to be stored in encoded data buffer
- * @param[in]       val     Value to be stored in encoded data buffer
- *
- * 0 on success, BLADERF_ERR_* on failure
- */
-int encode_field(char *ptr, int len, int *idx, const char *field,
-                 const char *val);
-
-/**
- * Add kv association to data region readable by extract_field()
- *
- * @param[in]    buf    Buffer to add field to
- * @param[in]    len    Length of `buf' in bytes
- * @param[in]    field  Key of value to be stored in encoded data buffer
- * @param[in]    val    Value associated with key `field'
- *
- * 0 on success, BLADERF_ERR_* on failure
- */
-int add_field(char *buf, int len, const char *field, const char *val);
 
 /**
  * Populate the provided timeval structure for the specified timeout
@@ -221,5 +196,14 @@ int populate_abs_timeout(struct timespec *t_abs, unsigned int timeout_ms);
  * @return 0 on success, BLADERF_ERR_* on failure
  */
 int load_calibration_table(struct bladerf *dev, const char *filename);
+
+/**
+ * Set system gain for the specified module
+ *
+ * @param   dev     Device handle
+ * @param   module  Module to configure
+ * @param   gain    Desired gain
+ */
+int set_gain(struct bladerf *dev, bladerf_module module, int gain);
 
 #endif

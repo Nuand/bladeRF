@@ -19,7 +19,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#if !defined(BLADERF_SYNC_H_) && defined(ENABLE_LIBBLADERF_SYNC)
+#ifndef BLADERF_SYNC_H_
 #define BLADERF_SYNC_H_
 
 #include <pthread.h>
@@ -63,7 +63,7 @@ struct buffer_mgmt {
     unsigned int resubmit_count;
 
 
-    pthread_mutex_t lock;
+    MUTEX lock;
     pthread_cond_t  buf_ready;  /**< Buffer produced by RX callback, or
                                  *   buffer emptied by TX callback */
 };

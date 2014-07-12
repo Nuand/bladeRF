@@ -26,6 +26,11 @@
 #define LMS_H_
 
 #include <libbladeRF.h>
+#include "bladerf_priv.h"
+
+#define LMS_WRITE(dev, addr, value) dev->fn->lms_write(dev, addr, value)
+#define LMS_READ(dev, addr, value)  dev->fn->lms_read(dev, addr, value)
+
 
 /**
  * Information about the frequency calculation for the LMS6002D PLL

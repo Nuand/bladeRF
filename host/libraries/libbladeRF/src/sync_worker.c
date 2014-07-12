@@ -15,10 +15,6 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
-#ifndef ENABLE_LIBBLADERF_SYNC
-#error "Build configuration bug: this file should not be included in the build."
-#endif
-
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,6 +31,7 @@
 
 #include "rel_assert.h"
 #include "bladerf_priv.h"
+#include "async.h"
 #include "sync.h"
 #include "sync_worker.h"
 #include "conversions.h"
@@ -60,9 +57,9 @@ static void *rx_callback(struct bladerf *dev,
     /* Check if the caller has requested us to shut down. We'll keep the
      * SHUTDOWN bit set through our transition into the IDLE state so we
      * can act on it there. */
-    pthread_mutex_lock(&w->request_lock);
+    MUTEX_LOCK(&w->request_lock);
     requests = w->requests;
-    pthread_mutex_unlock(&w->request_lock);
+    MUTEX_UNLOCK(&w->request_lock);
 
     if (requests & SYNC_WORKER_STOP) {
         log_verbose("%s worker: Got STOP request upon entering callback. "
@@ -70,7 +67,7 @@ static void *rx_callback(struct bladerf *dev,
         return NULL;
     }
 
-    pthread_mutex_lock(&b->lock);
+    MUTEX_LOCK(&b->lock);
 
     /* Get the index of the buffer that was just filled */
     samples_idx = sync_buf2idx(b, samples);
@@ -110,7 +107,7 @@ static void *rx_callback(struct bladerf *dev,
     }
 
 
-    pthread_mutex_unlock(&b->lock);
+    MUTEX_UNLOCK(&b->lock);
     return next_buf;
 }
 
@@ -131,9 +128,9 @@ static void *tx_callback(struct bladerf *dev,
     /* Check if the caller has requested us to shut down. We'll keep the
      * SHUTDOWN bit set through our transition into the IDLE state so we
      * can act on it there. */
-    pthread_mutex_lock(&w->request_lock);
+    MUTEX_LOCK(&w->request_lock);
     requests = w->requests;
-    pthread_mutex_unlock(&w->request_lock);
+    MUTEX_UNLOCK(&w->request_lock);
 
     if (requests & SYNC_WORKER_STOP) {
         log_verbose("%s worker: Got STOP request upon entering callback. "
@@ -146,14 +143,14 @@ static void *tx_callback(struct bladerf *dev,
      * callbacks we get have samples=NULL */
     if (samples != NULL) {
 
-        pthread_mutex_lock(&b->lock);
+        MUTEX_LOCK(&b->lock);
 
         completed_idx = sync_buf2idx(b, samples);
         assert(b->status[completed_idx] == SYNC_BUFFER_IN_FLIGHT);
         b->status[completed_idx] = SYNC_BUFFER_EMPTY;
 
         pthread_cond_signal(&b->buf_ready);
-        pthread_mutex_unlock(&b->lock);
+        MUTEX_UNLOCK(&b->lock);
 
         log_verbose("%s worker: Buffer %u emptied.\r\n",
                     MODULE_STR(s), completed_idx);
@@ -178,15 +175,15 @@ int sync_worker_init(struct bladerf_sync *s)
     s->worker->cb = s->stream_config.module == BLADERF_MODULE_RX ?
                         rx_callback : tx_callback;
 
-    status = bladerf_init_stream(&s->worker->stream,
-                                 s->dev,
-                                 s->worker->cb,
-                                 &s->buf_mgmt.buffers,
-                                 s->buf_mgmt.num_buffers,
-                                 s->stream_config.format,
-                                 s->stream_config.samples_per_buffer,
-                                 s->stream_config.num_xfers,
-                                 s);
+    status = async_init_stream(&s->worker->stream,
+                               s->dev,
+                               s->worker->cb,
+                               &s->buf_mgmt.buffers,
+                               s->buf_mgmt.num_buffers,
+                               s->stream_config.format,
+                               s->stream_config.samples_per_buffer,
+                               s->stream_config.num_xfers,
+                               s);
 
     if (status != 0) {
         log_debug("%s worker: Failed to init stream: %s\n", MODULE_STR(s),
@@ -195,19 +192,10 @@ int sync_worker_init(struct bladerf_sync *s)
     }
 
 
-    status = pthread_mutex_init(&s->worker->state_lock, NULL);
-    if (status != 0) {
-        status = BLADERF_ERR_UNEXPECTED;
-        goto worker_init_out;
-    }
+    MUTEX_INIT(&s->worker->state_lock);
+    MUTEX_INIT(&s->worker->request_lock);
 
     status = pthread_cond_init(&s->worker->state_changed, NULL);
-    if (status != 0) {
-        status = BLADERF_ERR_UNEXPECTED;
-        goto worker_init_out;
-    }
-
-    status = pthread_mutex_init(&s->worker->request_lock, NULL);
     if (status != 0) {
         status = BLADERF_ERR_UNEXPECTED;
         goto worker_init_out;
@@ -256,9 +244,9 @@ void sync_worker_deinit(struct sync_worker *w,
     sync_worker_submit_request(w, SYNC_WORKER_STOP);
 
     if (lock != NULL && cond != NULL) {
-        pthread_mutex_lock(lock);
+        MUTEX_LOCK(lock);
         pthread_cond_signal(cond);
-        pthread_mutex_unlock(lock);
+        MUTEX_UNLOCK(lock);
     }
 
     status = sync_worker_wait_for_state(w, SYNC_WORKER_STATE_STOPPED, 3000);
@@ -271,17 +259,17 @@ void sync_worker_deinit(struct sync_worker *w,
     pthread_join(w->thread, NULL);
     log_verbose("%s: Worker joined.\n", __FUNCTION__);
 
-    bladerf_deinit_stream(w->stream);
+    async_deinit_stream(w->stream);
 
     free(w);
 }
 
 void sync_worker_submit_request(struct sync_worker *w, unsigned int request)
 {
-    pthread_mutex_lock(&w->request_lock);
+    MUTEX_LOCK(&w->request_lock);
     w->requests |= request;
     pthread_cond_signal(&w->requests_pending);
-    pthread_mutex_unlock(&w->request_lock);
+    MUTEX_UNLOCK(&w->request_lock);
 }
 
 int sync_worker_wait_for_state(struct sync_worker *w, sync_worker_state state,
@@ -307,23 +295,23 @@ int sync_worker_wait_for_state(struct sync_worker *w, sync_worker_state state,
             timeout_abs.tv_nsec %= nsec_per_sec;
         }
 
-        pthread_mutex_lock(&w->state_lock);
+        MUTEX_LOCK(&w->state_lock);
         status = 0;
         while (w->state != state && status == 0) {
             status = pthread_cond_timedwait(&w->state_changed,
                                             &w->state_lock,
                                             &timeout_abs);
         }
-        pthread_mutex_unlock(&w->state_lock);
+        MUTEX_UNLOCK(&w->state_lock);
 
     } else {
-        pthread_mutex_lock(&w->state_lock);
+        MUTEX_LOCK(&w->state_lock);
         while (w->state != state) {
             log_verbose(": Waiting for state change, current = %d\n", w->state);
             status = pthread_cond_wait(&w->state_changed,
                                        &w->state_lock);
         }
-        pthread_mutex_unlock(&w->state_lock);
+        MUTEX_UNLOCK(&w->state_lock);
     }
 
     if (status != 0) {
@@ -345,23 +333,23 @@ sync_worker_state sync_worker_get_state(struct sync_worker *w,
 {
     sync_worker_state ret;
 
-    pthread_mutex_lock(&w->state_lock);
+    MUTEX_LOCK(&w->state_lock);
     ret = w->state;
     if (err_code) {
         *err_code = w->err_code;
         w->err_code = 0;
     }
-    pthread_mutex_unlock(&w->state_lock);
+    MUTEX_UNLOCK(&w->state_lock);
 
     return ret;
 }
 
 static void set_state(struct sync_worker *w, sync_worker_state state)
 {
-    pthread_mutex_lock(&w->state_lock);
+    MUTEX_LOCK(&w->state_lock);
     w->state = state;
     pthread_cond_signal(&w->state_changed);
-    pthread_mutex_unlock(&w->state_lock);
+    MUTEX_UNLOCK(&w->state_lock);
 }
 
 
@@ -371,7 +359,7 @@ static sync_worker_state exec_idle_state(struct bladerf_sync *s)
     unsigned int requests;
     unsigned int i;
 
-    pthread_mutex_lock(&s->worker->request_lock);
+    MUTEX_LOCK(&s->worker->request_lock);
 
     while (s->worker->requests == 0) {
         log_verbose("%s worker: Waiting for pending requests\n", MODULE_STR(s));
@@ -382,7 +370,7 @@ static sync_worker_state exec_idle_state(struct bladerf_sync *s)
 
     requests = s->worker->requests;
     s->worker->requests = 0;
-    pthread_mutex_unlock(&s->worker->request_lock);
+    MUTEX_UNLOCK(&s->worker->request_lock);
 
     if (requests & SYNC_WORKER_STOP) {
         log_verbose("%s worker: Got request to stop\n",
@@ -393,7 +381,7 @@ static sync_worker_state exec_idle_state(struct bladerf_sync *s)
     } else if (requests & SYNC_WORKER_START) {
         log_verbose("%s worker: Got request to start\n",
                 module2str(s->stream_config.module));
-        pthread_mutex_lock(&s->buf_mgmt.lock);
+        MUTEX_LOCK(&s->buf_mgmt.lock);
 
         if (s->stream_config.module == BLADERF_MODULE_TX) {
             /* If we've previously timed out on a stream, we'll likely have some
@@ -418,7 +406,7 @@ static sync_worker_state exec_idle_state(struct bladerf_sync *s)
             }
         }
 
-        pthread_mutex_unlock(&s->buf_mgmt.lock);
+        MUTEX_UNLOCK(&s->buf_mgmt.lock);
 
         next_state = SYNC_WORKER_STATE_RUNNING;
     } else {
@@ -433,23 +421,23 @@ static void exec_running_state(struct bladerf_sync *s)
 {
     int status;
 
-    status = bladerf_stream(s->worker->stream, s->stream_config.module);
+    status = async_run_stream(s->worker->stream, s->stream_config.module);
 
     log_verbose("%s worker: stream ended with: %s\n",
                 MODULE_STR(s), bladerf_strerror(status));
 
     /* Save off the result of running the stream so we can report what
      * happened to the API caller */
-    pthread_mutex_lock(&s->worker->state_lock);
+    MUTEX_LOCK(&s->worker->state_lock);
     s->worker->err_code = status;
-    pthread_mutex_unlock(&s->worker->state_lock);
+    MUTEX_UNLOCK(&s->worker->state_lock);
 
     /* Wake the API-side if an error occurred, so that it can propagate
      * the stream error code back to the API caller */
     if (status != 0) {
-        pthread_mutex_lock(&s->buf_mgmt.lock);
+        MUTEX_LOCK(&s->buf_mgmt.lock);
         pthread_cond_signal(&s->buf_mgmt.buf_ready);
-        pthread_mutex_unlock(&s->buf_mgmt.lock);
+        MUTEX_UNLOCK(&s->buf_mgmt.lock);
     }
 }
 

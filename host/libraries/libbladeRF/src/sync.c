@@ -15,10 +15,6 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
-#ifndef ENABLE_LIBBLADERF_SYNC
-#error "Build configuration bug: this file should not be included in the build."
-#endif
-
 #include <errno.h>
 
 /* Only switch on the verbose debug prints in this file when we *really* want
@@ -31,6 +27,7 @@
 #endif
 
 #include "bladerf_priv.h"
+#include "async.h"
 #include "sync.h"
 #include "sync_worker.h"
 #include "minmax.h"
@@ -108,7 +105,7 @@ int sync_init(struct bladerf *dev,
     sync->stream_config.bytes_per_sample = bytes_per_sample;
 
 
-    pthread_mutex_init(&sync->buf_mgmt.lock, NULL);
+    MUTEX_INIT(&sync->buf_mgmt.lock);
     pthread_cond_init(&sync->buf_mgmt.buf_ready, NULL);
 
     sync->buf_mgmt.status = (sync_buffer_status*) malloc(num_buffers * sizeof(sync_buffer_status));
@@ -160,8 +157,8 @@ void sync_deinit(struct bladerf_sync *sync)
     if (sync != NULL) {
 
         if (sync->stream_config.module == BLADERF_MODULE_TX) {
-            bladerf_submit_stream_buffer(sync->worker->stream,
-                                         BLADERF_STREAM_SHUTDOWN, 0);
+            async_submit_stream_buffer(sync->worker->stream,
+                                       BLADERF_STREAM_SHUTDOWN, 0);
         }
 
         sync_worker_deinit(sync->worker, &sync->buf_mgmt.lock,
@@ -255,11 +252,11 @@ int sync_rx(struct bladerf *dev, void *samples, unsigned num_samples,
             }
 
             case SYNC_STATE_RESET_BUF_MGMT:
-                pthread_mutex_lock(&b->lock);
+                MUTEX_LOCK(&b->lock);
                 /* When the RX stream starts up, it will submit the first T
                  * transfers, so the consumer index must be reset to 0 */
                 b->cons_i = 0;
-                pthread_mutex_unlock(&b->lock);
+                MUTEX_UNLOCK(&b->lock);
                 log_debug("%s: Reset buf_mgmt consumer index\n", __FUNCTION__);
                 s->state = SYNC_STATE_START_WORKER;
                 break;
@@ -283,7 +280,7 @@ int sync_rx(struct bladerf *dev, void *samples, unsigned num_samples,
                 break;
 
             case SYNC_STATE_WAIT_FOR_BUFFER:
-                pthread_mutex_lock(&b->lock);
+                MUTEX_LOCK(&b->lock);
 
                 /* Check the buffer state, as the worker may have produced one
                  * since we last queried the status */
@@ -302,20 +299,20 @@ int sync_rx(struct bladerf *dev, void *samples, unsigned num_samples,
                     }
                 }
 
-                pthread_mutex_unlock(&b->lock);
+                MUTEX_UNLOCK(&b->lock);
                 break;
 
             case SYNC_STATE_BUFFER_READY:
-                pthread_mutex_lock(&b->lock);
+                MUTEX_LOCK(&b->lock);
                 b->status[b->cons_i] = SYNC_BUFFER_PARTIAL;
                 b->partial_off = 0;
-                pthread_mutex_unlock(&b->lock);
+                MUTEX_UNLOCK(&b->lock);
 
                 s->state= SYNC_STATE_USING_BUFFER;
                 break;
 
             case SYNC_STATE_USING_BUFFER:
-                pthread_mutex_lock(&b->lock);
+                MUTEX_LOCK(&b->lock);
 
                 buf_src = (uint8_t*)b->buffers[b->cons_i];
 
@@ -348,7 +345,7 @@ int sync_rx(struct bladerf *dev, void *samples, unsigned num_samples,
                     s->state = SYNC_STATE_WAIT_FOR_BUFFER;
                 }
 
-                pthread_mutex_unlock(&b->lock);
+                MUTEX_UNLOCK(&b->lock);
                 break;
         }
     }
@@ -417,7 +414,7 @@ int sync_tx(struct bladerf *dev, void *samples, unsigned int num_samples,
                 break;
 
             case SYNC_STATE_WAIT_FOR_BUFFER:
-                pthread_mutex_lock(&b->lock);
+                MUTEX_LOCK(&b->lock);
 
                 /* Check the buffer state, as the worker may have consumed one
                  * since we last queried the status */
@@ -428,21 +425,21 @@ int sync_tx(struct bladerf *dev, void *samples, unsigned int num_samples,
                                              __FUNCTION__, b->prod_i);
                 }
 
-                pthread_mutex_unlock(&b->lock);
+                MUTEX_UNLOCK(&b->lock);
                 break;
 
             case SYNC_STATE_BUFFER_READY:
-                pthread_mutex_lock(&b->lock);
+                MUTEX_LOCK(&b->lock);
                 b->status[b->prod_i] = SYNC_BUFFER_PARTIAL;
                 b->partial_off = 0;
-                pthread_mutex_unlock(&b->lock);
+                MUTEX_UNLOCK(&b->lock);
 
                 s->state= SYNC_STATE_USING_BUFFER;
                 break;
 
 
             case SYNC_STATE_USING_BUFFER:
-                pthread_mutex_lock(&b->lock);
+                MUTEX_LOCK(&b->lock);
 
                 buf_dest = (uint8_t*)b->buffers[b->prod_i];
                 samples_to_copy = uint_min(num_samples - samples_written,
@@ -466,7 +463,7 @@ int sync_tx(struct bladerf *dev, void *samples, unsigned int num_samples,
                                 __FUNCTION__, b->prod_i);
 
                     b->status[b->prod_i] = SYNC_BUFFER_IN_FLIGHT;
-                    pthread_mutex_unlock(&b->lock);
+                    MUTEX_UNLOCK(&b->lock);
 
                     /* This call may block and it results in a per-stream lock
                      * being held, so the buffer lock must be dropped.
@@ -475,12 +472,12 @@ int sync_tx(struct bladerf *dev, void *samples, unsigned int num_samples,
                      * not touch the status for this this buffer, or the
                      * producer index.
                      */
-                    status = bladerf_submit_stream_buffer(
+                    status = async_submit_stream_buffer(
                                                 s->worker->stream,
                                                 buf_dest,
                                                 s->stream_config.timeout_ms);
 
-                    pthread_mutex_lock(&b->lock);
+                    MUTEX_LOCK(&b->lock);
 
                     if (status == 0) {
                         b->prod_i = (b->prod_i + 1) % b->num_buffers;
@@ -497,7 +494,7 @@ int sync_tx(struct bladerf *dev, void *samples, unsigned int num_samples,
                     }
                 }
 
-                pthread_mutex_unlock(&b->lock);
+                MUTEX_UNLOCK(&b->lock);
                 break;
         }
     }

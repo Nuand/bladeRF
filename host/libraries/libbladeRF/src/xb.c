@@ -22,12 +22,16 @@
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
-#include "rel_assert.h"
-#include "log.h"
-#include "version_compat.h"
 
 #include "libbladeRF.h"     /* Public API */
 #include "bladerf_priv.h"   /* Implementation-specific items ("private") */
+
+#include "si5338.h"
+#include "xb.h"
+#include "lms.h"
+#include "rel_assert.h"
+#include "log.h"
+#include "version_compat.h"
 
 #define BLADERF_CONFIG_RX_SWAP_IQ 0x20000000
 #define BLADERF_CONFIG_TX_SWAP_IQ 0x10000000
@@ -70,59 +74,59 @@ static int xb200_attach(struct bladerf *dev) {
 
 
     log_debug("  Attaching transverter board\n");
-    if ((status = bladerf_si5338_write(dev, 39, 2)))
+    if ((status = SI5338_WRITE(dev, 39, 2)))
         return status;
-    if ((status = bladerf_si5338_write(dev, 34, 0x22)))
+    if ((status = SI5338_WRITE(dev, 34, 0x22)))
         return status;
-    if ((status = bladerf_config_gpio_read(dev, &val)))
+    if ((status = CONFIG_GPIO_READ(dev, &val)))
         return status;
     val |= 0x80000000;
-    if ((status = bladerf_config_gpio_write(dev, val)))
+    if ((status = CONFIG_GPIO_WRITE(dev, val)))
         return status;
-    if ((status = bladerf_expansion_gpio_read(dev, &val)))
-        return status;
-
-    if ((status = bladerf_expansion_gpio_dir_write(dev, 0x3C003836)))
+    if ((status = XB_GPIO_READ(dev, &val)))
         return status;
 
-    if ((status = bladerf_expansion_gpio_write(dev, 0x800)))
+    if ((status = XB_GPIO_DIR_WRITE(dev, 0x3C003836)))
+        return status;
+
+    if ((status = XB_GPIO_WRITE(dev, 0x800)))
         return status;
 
     // Load ADF4351 registers via SPI
     // Refer to ADF4351 reference manual for register set
     // The LO is set to a Int-N 1248MHz +3dBm tone
     // Registers are written in order from 5 downto 0
-    if ((status = bladerf_xb_spi_write(dev, 0x580005)))
+    if ((status = XB_SPI_WRITE(dev, 0x580005)))
         return status;
-    if ((status = bladerf_xb_spi_write(dev, 0x99A16C)))
+    if ((status = XB_SPI_WRITE(dev, 0x99A16C)))
         return status;
-    if ((status = bladerf_xb_spi_write(dev, 0xC004B3)))
+    if ((status = XB_SPI_WRITE(dev, 0xC004B3)))
         return status;
     log_debug("  MUXOUT: %s\n", mux_lut[muxout]);
 
-    if ((status = bladerf_xb_spi_write(dev, 0x60008E42 | (1<<8) | (muxout << 26))))
+    if ((status = XB_SPI_WRITE(dev, 0x60008E42 | (1<<8) | (muxout << 26))))
         return status;
-    if ((status = bladerf_xb_spi_write(dev, 0x08008011)))
+    if ((status = XB_SPI_WRITE(dev, 0x08008011)))
         return status;
-    if ((status = bladerf_xb_spi_write(dev, 0x00410000)))
+    if ((status = XB_SPI_WRITE(dev, 0x00410000)))
         return status;
 
-    status = bladerf_expansion_gpio_read(dev, &val);
+    status = XB_GPIO_READ(dev, &val);
     if (!status && (val & 0x1))
         log_debug("  MUXOUT Bit set: OK\n");
     else {
         log_debug("  MUXOUT Bit not set: FAIL\n");
     }
-    status = bladerf_expansion_gpio_write(dev, 0x3C000800);
+    status = XB_GPIO_WRITE(dev, 0x3C000800);
 
     return status;
 }
 
 
-int bladerf_expansion_attach(struct bladerf *dev, bladerf_xb xb) {
+int xb_attach(struct bladerf *dev, bladerf_xb xb) {
     bladerf_xb attached;
     int status;
-    status = bladerf_expansion_get_attached(dev, &attached);
+    status = xb_get_attached(dev, &attached);
     if (status)
         return status;
 
@@ -139,11 +143,11 @@ int bladerf_expansion_attach(struct bladerf *dev, bladerf_xb xb) {
     return 0;
 }
 
-int bladerf_expansion_get_attached(struct bladerf *dev, bladerf_xb *xb) {
+int xb_get_attached(struct bladerf *dev, bladerf_xb *xb) {
     int status;
     uint32_t val;
 
-    status = bladerf_config_gpio_read(dev, &val);
+    status = CONFIG_GPIO_READ(dev, &val);
     if (status)
         return status;
 
@@ -151,11 +155,11 @@ int bladerf_expansion_get_attached(struct bladerf *dev, bladerf_xb *xb) {
     return 0;
 }
 
-int bladerf_xb200_enable(struct bladerf *dev, bool enable) {
+int xb200_enable(struct bladerf *dev, bool enable) {
     int status;
     uint32_t val, orig;
 
-    status = bladerf_expansion_gpio_read(dev, &orig);
+    status = XB_GPIO_READ(dev, &orig);
     if (status)
         return status;
 
@@ -168,14 +172,14 @@ int bladerf_xb200_enable(struct bladerf *dev, bool enable) {
     if (status || (val == orig))
         return status;
 
-    return bladerf_expansion_gpio_write(dev, val);
+    return XB_GPIO_WRITE(dev, val);
 }
 
-int bladerf_xb200_get_filterbank(struct bladerf *dev, bladerf_module module, bladerf_xb200_filter *filter) {
+int xb200_get_filterbank(struct bladerf *dev, bladerf_module module, bladerf_xb200_filter *filter) {
     int status;
     uint32_t val;
 
-    status = bladerf_expansion_gpio_read(dev, &val);
+    status = XB_GPIO_READ(dev, &val);
     if (status)
         return status;
 
@@ -183,7 +187,7 @@ int bladerf_xb200_get_filterbank(struct bladerf *dev, bladerf_module module, bla
     return 0;
 }
 
-int bladerf_xb200_set_filterbank(struct bladerf *dev, bladerf_module module, bladerf_xb200_filter filter) {
+int xb200_set_filterbank(struct bladerf *dev, bladerf_module module, bladerf_xb200_filter filter) {
     int status;
     uint32_t orig, val, bits;
 
@@ -197,16 +201,16 @@ int bladerf_xb200_set_filterbank(struct bladerf *dev, bladerf_module module, bla
         }
     }
 
-    status = bladerf_expansion_gpio_read(dev, &orig);
+    status = XB_GPIO_READ(dev, &orig);
     val = orig & ~bits;
     val |= filter << ((module == BLADERF_MODULE_RX) ? BLADERF_XB_RX_SHIFT : BLADERF_XB_TX_SHIFT);
     if (status || (orig == val))
         return status;
 
-    return bladerf_expansion_gpio_write(dev, val);
+    return XB_GPIO_WRITE(dev, val);
 }
 
-int bladerf_xb200_auto_filter_selection(struct bladerf *dev, bladerf_module mod, unsigned int frequency) {
+int xb200_auto_filter_selection(struct bladerf *dev, bladerf_module mod, unsigned int frequency) {
     int status;
     bladerf_xb200_filter filter;
 
@@ -227,7 +231,7 @@ int bladerf_xb200_auto_filter_selection(struct bladerf *dev, bladerf_module mod,
         } else {
             filter = BLADERF_XB200_CUSTOM;
         }
-        status = bladerf_xb200_set_filterbank(dev, mod, filter);
+        status = xb200_set_filterbank(dev, mod, filter);
     }
 
     if ((mod == BLADERF_MODULE_RX && dev->rx_filter == BLADERF_XB200_AUTO_3DB) ||
@@ -241,13 +245,13 @@ int bladerf_xb200_auto_filter_selection(struct bladerf *dev, bladerf_module mod,
         } else {
             filter = BLADERF_XB200_CUSTOM;
         }
-        status = bladerf_xb200_set_filterbank(dev, mod, filter);
+        status = xb200_set_filterbank(dev, mod, filter);
     }
 
     return status;
 }
 
-int bladerf_xb200_set_path(struct bladerf *dev, bladerf_module module, bladerf_xb200_path path) {
+int xb200_set_path(struct bladerf *dev, bladerf_module module, bladerf_xb200_path path) {
     int status;
     uint32_t val;
     bool enable;
@@ -256,7 +260,7 @@ int bladerf_xb200_set_path(struct bladerf *dev, bladerf_module module, bladerf_x
 
     enable = (path == BLADERF_XB200_MIX);
 
-    status = bladerf_lms_read( dev, 0x5A, &lorig );
+    status = LMS_READ( dev, 0x5A, &lorig );
     if (status)
         return status;
     lval = lorig;
@@ -272,16 +276,16 @@ int bladerf_xb200_set_path(struct bladerf *dev, bladerf_module module, bladerf_x
     if (status || (lorig == lval))
         return status;
 
-    status = bladerf_lms_write(dev, 0x5A, lval);
+    status = LMS_WRITE(dev, 0x5A, lval);
     if (status)
         return status;
 
-    status = bladerf_expansion_gpio_read(dev, &val);
+    status = XB_GPIO_READ(dev, &val);
     if (status)
         return status;
 
     if (enable) {
-        status = bladerf_expansion_gpio_read(dev, &val);
+        status = XB_GPIO_READ(dev, &val);
         if (status)
             return status;
         if (!(val & BLADERF_XB_RF_ON)) {
@@ -300,14 +304,14 @@ int bladerf_xb200_set_path(struct bladerf *dev, bladerf_module module, bladerf_x
     else
         val |= enable ? (BLADERF_XB_TX_ENABLE | BLADERF_XB_CONFIG_TX_BYPASS) : BLADERF_XB_CONFIG_TX_BYPASS_N;
 
-    return bladerf_expansion_gpio_write(dev, val);
+    return XB_GPIO_WRITE(dev, val);
 }
 
-int bladerf_xb200_get_path(struct bladerf *dev, bladerf_module module, bladerf_xb200_path *path) {
+int xb200_get_path(struct bladerf *dev, bladerf_module module, bladerf_xb200_path *path) {
     int status;
     uint32_t val;
 
-    status = bladerf_expansion_gpio_read(dev, &val);
+    status = XB_GPIO_READ(dev, &val);
     if (status)
         return status;
     if (module == BLADERF_MODULE_RX)

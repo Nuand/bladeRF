@@ -34,6 +34,7 @@
 #include "log.h"
 #include "minmax.h"
 #include "file_ops.h"
+#include "flash_fields.h"
 
 /* These two are used interchangeably - ensure they're the same! */
 #if SHA256_DIGEST_SIZE != BLADERF_IMAGE_CHECKSUM_LEN

@@ -652,7 +652,7 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
     /* Currently unused - zero out for out own debugging sanity... */
     memset(&metadata, 0, sizeof(metadata));
 
-    pthread_mutex_lock(&stream->lock);
+    MUTEX_LOCK(&stream->lock);
 
     transfer_i = transfer_idx(stream_data, transfer);
     assert(stream_data->transfer_status[transfer_i] == TRANSFER_IN_FLIGHT ||
@@ -758,7 +758,7 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
         }
     }
 
-    pthread_mutex_unlock(&stream->lock);
+    MUTEX_UNLOCK(&stream->lock);
 }
 
 /* Precondition: A transfer is available. */
@@ -899,7 +899,7 @@ static int lusb_stream(void *driver, struct bladerf_stream *stream,
     /* Currently unused, so zero it out for a sanity check when debugging */
     memset(&metadata, 0, sizeof(metadata));
 
-    pthread_mutex_lock(&stream->lock);
+    MUTEX_LOCK(&stream->lock);
 
     /* Set up initial set of buffers */
     for (i = 0; i < stream_data->num_transfers; i++) {
@@ -942,7 +942,7 @@ static int lusb_stream(void *driver, struct bladerf_stream *stream,
             }
         }
     }
-    pthread_mutex_unlock(&stream->lock);
+    MUTEX_UNLOCK(&stream->lock);
 
     /* This loop is required so libusb can do callbacks and whatnot */
     while (stream->state != STREAM_DONE) {

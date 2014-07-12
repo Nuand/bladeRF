@@ -28,6 +28,7 @@
 #include "bladerf_priv.h"
 #include "rel_assert.h"
 #include "flash.h"
+#include "flash_fields.h"
 #include "log.h"
 
 static inline int check_eb_access(uint32_t erase_block, uint32_t count)

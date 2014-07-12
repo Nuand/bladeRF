@@ -48,7 +48,7 @@ struct bladerf_stream {
     size_t num_buffers;
     void **buffers;
 
-    pthread_mutex_t lock;
+    MUTEX lock;
 
     /* The following items must be accessed atomically */
     int error_code;

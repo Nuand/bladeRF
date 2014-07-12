@@ -17,6 +17,10 @@ else(MSVC)
     endif()
 endif(MSVC)
 
+if (NOT HAVE_THREADS)
+    message(FATAL_ERROR "pthreads not found. This is required to build libbladeRF.")
+endif()
+
 ################################################################################
 # Version information
 ################################################################################
@@ -69,14 +73,14 @@ if(NOT ${BUILD_DOCUMENTATION})
     set(BUILD_LIBBLADERF_DOCUMENTATION OFF)
 endif()
 
-option(ENABLE_LIBBLADERF_SYNC
-    "Enable the libbladeRF synchronous data interface. Requires pthreads."
-    ${HAVE_THREADS}
-)
-
 option(ENABLE_LIBBLADERF_SYNC_LOG_VERBOSE
       "Enable log_verbose() calls in the sync interface's data path. Note that this may harm performance."
       OFF
+)
+
+option(ENABLE_LOCK_CHECKS
+       "Enable checks for lock acquisition failures (e.g., deadlock)"
+       OFF
 )
 
 ##############################
@@ -128,6 +132,9 @@ if(ENABLE_LIBBLADERF_LOGGING)
     add_definitions(-DLOGGING_ENABLED)
 endif()
 
+if(ENABLE_LOCK_CHECKS)
+    add_definitions(-DENABLE_LOCK_CHECKS)
+endif()
 
 if("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" OR
     "${CMAKE_C_COMPILER_ID}" STREQUAL "Clang" )
@@ -179,18 +186,9 @@ if(ENABLE_BACKEND_LIBUSB)
     endif(NOT LIBUSB_FOUND)
 endif(ENABLE_BACKEND_LIBUSB)
 
-if(ENABLE_LIBBLADERF_SYNC)
-    if(MSVC)
-        set(LIBBLADERF_INCLUDES ${LIBBLADERF_INCLUDES}
-            ${LIBPTHREADSWIN32_INCLUDE_DIRS})
-    endif()
-
-    add_definitions(-DENABLE_LIBBLADERF_SYNC)
-
-    if(ENABLE_LIBBLADERF_SYNC_LOG_VERBOSE AND ENABLE_LIBBLADERF_LOGGING)
-        add_definitions(-DENABLE_LIBBLADERF_SYNC_LOG_VERBOSE)
-    endif()
-endif(ENABLE_LIBBLADERF_SYNC)
+if(ENABLE_LIBBLADERF_SYNC_LOG_VERBOSE AND ENABLE_LIBBLADERF_LOGGING)
+    add_definitions(-DENABLE_LIBBLADERF_SYNC_LOG_VERBOSE)
+endif()
 
 include_directories(${LIBBLADERF_INCLUDES})
 
@@ -205,6 +203,7 @@ set(LIBBLADERF_SOURCE
         src/config.c
         src/dc_cal_table.c
         src/file_ops.c
+        src/fpga.c
         src/lms.c
         src/si5338.c
         src/xb.c
@@ -212,7 +211,10 @@ set(LIBBLADERF_SOURCE
         src/device_identifier.c
         src/devinfo.c
         src/flash.c
+        src/flash_fields.c
         src/image.c
+        src/sync.c
+        src/sync_worker.c
         src/version_compat.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/sha256.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
@@ -239,23 +241,16 @@ if(ENABLE_BACKEND_LINUX_DRIVER)
     set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend/linux.c)
 endif()
 
-if(ENABLE_LIBBLADERF_SYNC)
+if(BLADERF_OS_OSX)
     set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE}
-        src/sync.c
-        src/sync_worker.c
+        ${BLADERF_HOST_COMMON_SOURCE_DIR}/osx/clock_gettime.c
     )
+endif()
 
-    if(BLADERF_OS_OSX)
-       set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE}
-           ${BLADERF_HOST_COMMON_SOURCE_DIR}/osx/clock_gettime.c
-       )
-    endif()
-
-    if(MSVC)
-        set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE}
-            ${BLADERF_HOST_COMMON_SOURCE_DIR}/windows/clock_gettime.c
-        )
-    endif()
+if(MSVC)
+    set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE}
+        ${BLADERF_HOST_COMMON_SOURCE_DIR}/windows/clock_gettime.c
+    )
 endif()
 
 add_library(libbladerf_shared SHARED ${LIBBLADERF_SOURCE})

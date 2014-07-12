@@ -26,6 +26,10 @@
 #define SI5338_H__
 
 #include <libbladeRF.h>
+#include "bladerf_priv.h"
+
+#define SI5338_READ(dev, addr, value)   dev->fn->si5338_read(dev, addr, value)
+#define SI5338_WRITE(dev, addr, value)  dev->fn->si5338_write(dev, addr, value)
 
 // XXX document
 

@@ -211,14 +211,14 @@ static inline int lms_set(struct bladerf *dev, uint8_t addr, uint8_t mask)
     int status;
     uint8_t regval;
 
-    status = bladerf_lms_read(dev, addr, &regval);
+    status = LMS_READ(dev, addr, &regval);
     if (status != 0) {
         return status;
     }
 
     regval |= mask;
 
-    return bladerf_lms_write(dev, addr, regval);
+    return LMS_WRITE(dev, addr, regval);
 }
 
 static inline int lms_clr(struct bladerf *dev, uint8_t addr, uint8_t mask)
@@ -226,14 +226,14 @@ static inline int lms_clr(struct bladerf *dev, uint8_t addr, uint8_t mask)
     int status;
     uint8_t regval;
 
-    status = bladerf_lms_read(dev, addr, &regval);
+    status = LMS_READ(dev, addr, &regval);
     if (status != 0) {
         return status;
     }
 
     regval &= ~mask;
 
-    return bladerf_lms_write(dev, addr, regval);
+    return LMS_WRITE(dev, addr, regval);
 }
 
 
@@ -264,7 +264,7 @@ static int write_pll_config(struct bladerf *dev, bladerf_module module,
         addr = 0x25;
     }
 
-    status = bladerf_lms_read(dev, addr, &regval);
+    status = LMS_READ(dev, addr, &regval);
     if (status != 0) {
         return status;
     }
@@ -283,7 +283,7 @@ static int write_pll_config(struct bladerf *dev, bladerf_module module,
         regval = (regval & ~0xfc) | (freqsel << 2);
     }
 
-    return bladerf_lms_write(dev, addr, regval);
+    return LMS_WRITE(dev, addr, regval);
 }
 
 
@@ -293,7 +293,7 @@ int lms_lpf_enable(struct bladerf *dev, bladerf_module mod, bool enable)
     uint8_t data;
     const uint8_t reg = (mod == BLADERF_MODULE_RX) ? 0x54 : 0x34;
 
-    status = bladerf_lms_read(dev, reg, &data);
+    status = LMS_READ(dev, reg, &data);
     if (status != 0) {
         return status;
     }
@@ -304,19 +304,19 @@ int lms_lpf_enable(struct bladerf *dev, bladerf_module mod, bool enable)
         data &= ~(1 << 1);
     }
 
-    status = bladerf_lms_write(dev, reg, data);
+    status = LMS_WRITE(dev, reg, data);
     if (status != 0) {
         return status;
     }
 
     /* Check to see if we are bypassed */
-    status = bladerf_lms_read(dev, reg + 1, &data);
+    status = LMS_READ(dev, reg + 1, &data);
     if (status != 0) {
         return status;
     } else if (data & (1 << 6)) {
         /* Bypass is enabled; switch back to normal operation */
         data &= ~(1 << 6);
-        status = bladerf_lms_write(dev, reg + 1, data);
+        status = LMS_WRITE(dev, reg + 1, data);
     }
 
     return status;
@@ -330,12 +330,12 @@ int lms_lpf_get_mode(struct bladerf *dev, bladerf_module mod,
     uint8_t data_h, data_l;
     bool lpf_enabled, lpf_bypassed;
 
-    status = bladerf_lms_read(dev, reg, &data_l);
+    status = LMS_READ(dev, reg, &data_l);
     if (status != 0) {
         return status;
     }
 
-    status = bladerf_lms_read(dev, reg + 1, &data_h);
+    status = LMS_READ(dev, reg + 1, &data_h);
     if (status != 0) {
         return status;
     }
@@ -365,12 +365,12 @@ int lms_lpf_set_mode(struct bladerf *dev, bladerf_module mod,
     const uint8_t reg = (mod == BLADERF_MODULE_RX) ? 0x54 : 0x34;
     uint8_t data_l, data_h;
 
-    status = bladerf_lms_read(dev, reg, &data_l);
+    status = LMS_READ(dev, reg, &data_l);
     if (status != 0) {
         return status;
     }
 
-    status = bladerf_lms_read(dev, reg + 1, &data_h);
+    status = LMS_READ(dev, reg + 1, &data_h);
     if (status != 0) {
         return status;
     }
@@ -396,12 +396,12 @@ int lms_lpf_set_mode(struct bladerf *dev, bladerf_module mod,
             return BLADERF_ERR_INVAL;
     }
 
-    status = bladerf_lms_write(dev, reg, data_l);
+    status = LMS_WRITE(dev, reg, data_l);
     if (status != 0) {
         return status;
     }
 
-    status = bladerf_lms_write(dev, reg + 1, data_h);
+    status = LMS_WRITE(dev, reg + 1, data_h);
     return status;
 }
 
@@ -411,7 +411,7 @@ int lms_set_bandwidth(struct bladerf *dev, bladerf_module mod, lms_bw bw)
     uint8_t data;
     const uint8_t reg = (mod == BLADERF_MODULE_RX) ? 0x54 : 0x34;
 
-    status = bladerf_lms_read(dev, reg, &data);
+    status = LMS_READ(dev, reg, &data);
     if (status != 0) {
         return status;
     }
@@ -419,7 +419,7 @@ int lms_set_bandwidth(struct bladerf *dev, bladerf_module mod, lms_bw bw)
     data &= ~0x3c;      /* Clear out previous bandwidth setting */
     data |= (bw << 2);  /* Apply new bandwidth setting */
 
-    return bladerf_lms_write(dev, reg, data);
+    return LMS_WRITE(dev, reg, data);
 
 }
 
@@ -430,7 +430,7 @@ int lms_get_bandwidth(struct bladerf *dev, bladerf_module mod, lms_bw *bw)
     uint8_t data;
     const uint8_t reg = (mod == BLADERF_MODULE_RX) ? 0x54 : 0x34;
 
-    status = bladerf_lms_read(dev, reg, &data);
+    status = LMS_READ(dev, reg, &data);
     if (status != 0) {
         return status;
     }
@@ -492,7 +492,7 @@ int lms_dither_enable(struct bladerf *dev, bladerf_module mod,
     }
 
     /* Read what we currently have in there */
-    status = bladerf_lms_read(dev, reg, &data);
+    status = LMS_READ(dev, reg, &data);
     if (status != 0) {
         return status;
     }
@@ -513,7 +513,7 @@ int lms_dither_enable(struct bladerf *dev, bladerf_module mod,
     }
 
     /* Write it out */
-    status = bladerf_lms_write(dev, reg, data);
+    status = LMS_WRITE(dev, reg, data);
     return status;
 }
 
@@ -521,10 +521,10 @@ int lms_dither_enable(struct bladerf *dev, bladerf_module mod,
 int lms_soft_reset(struct bladerf *dev)
 {
 
-    int status = bladerf_lms_write(dev, 0x05, 0x12);
+    int status = LMS_WRITE(dev, 0x05, 0x12);
 
     if (status == 0) {
-        status = bladerf_lms_write(dev, 0x05, 0x32);
+        status = LMS_WRITE(dev, 0x05, 0x32);
     }
 
     return status;
@@ -539,11 +539,11 @@ int lms_lna_set_gain(struct bladerf *dev, bladerf_lna_gain gain)
     if (gain == BLADERF_LNA_GAIN_BYPASS || gain == BLADERF_LNA_GAIN_MID ||
         gain == BLADERF_LNA_GAIN_MAX) {
 
-        status = bladerf_lms_read(dev, 0x75, &data);
+        status = LMS_READ(dev, 0x75, &data);
         if (status == 0) {
             data &= ~(3 << 6);          /* Clear out previous gain setting */
             data |= ((gain & 3) << 6);  /* Update gain value */
-            status = bladerf_lms_write(dev, 0x75, data);
+            status = LMS_WRITE(dev, 0x75, data);
         }
 
     } else {
@@ -558,7 +558,7 @@ int lms_lna_get_gain(struct bladerf *dev, bladerf_lna_gain *gain)
     int status;
     uint8_t data;
 
-    status = bladerf_lms_read(dev, 0x75, &data);
+    status = LMS_READ(dev, 0x75, &data);
     if (status == 0) {
         data >>= 6;
         data &= 3;
@@ -578,7 +578,7 @@ int lms_select_lna(struct bladerf *dev, lms_lna lna)
     int status;
     uint8_t data;
 
-    status = bladerf_lms_read(dev, 0x75, &data);
+    status = LMS_READ(dev, 0x75, &data);
     if (status != 0) {
         return status;
     }
@@ -586,7 +586,7 @@ int lms_select_lna(struct bladerf *dev, lms_lna lna)
     data &= ~(3 << 4);
     data |= ((lna & 3) << 4);
 
-    return bladerf_lms_write(dev, 0x75, data);
+    return LMS_WRITE(dev, 0x75, data);
 }
 
 int lms_get_lna(struct bladerf *dev, lms_lna *lna)
@@ -594,7 +594,7 @@ int lms_get_lna(struct bladerf *dev, lms_lna *lna)
     int status;
     uint8_t data;
 
-    status = bladerf_lms_read(dev, 0x75, &data);
+    status = LMS_READ(dev, 0x75, &data);
     if (status != 0) {
         *lna = LNA_NONE;
         return status;
@@ -612,7 +612,7 @@ int lms_rxvga1_enable(struct bladerf *dev, bool enable)
     int status;
     uint8_t data;
 
-    status = bladerf_lms_read(dev, 0x7d, &data);
+    status = LMS_READ(dev, 0x7d, &data);
     if (status != 0) {
         return status;
     }
@@ -623,7 +623,7 @@ int lms_rxvga1_enable(struct bladerf *dev, bool enable)
         data |= (1 << 3);
     }
 
-    return bladerf_lms_write(dev, 0x7d, data);
+    return LMS_WRITE(dev, 0x7d, data);
 }
 
 /* Set the RFB_TIA_RXFE mixer gain */
@@ -637,14 +637,14 @@ int lms_rxvga1_set_gain(struct bladerf *dev, int gain)
         log_info("Clamping RXVGA1 gain to %ddB\n", gain);
     }
 
-    return bladerf_lms_write(dev, 0x76, rxvga1_lut_val2code[gain]);
+    return LMS_WRITE(dev, 0x76, rxvga1_lut_val2code[gain]);
 }
 
 /* Get the RFB_TIA_RXFE mixer gain */
 int lms_rxvga1_get_gain(struct bladerf *dev, int *gain)
 {
     uint8_t data;
-    int status = bladerf_lms_read(dev, 0x76, &data);
+    int status = LMS_READ(dev, 0x76, &data);
 
     if (status == 0) {
         data &= 0x7f;
@@ -664,7 +664,7 @@ int lms_rxvga2_enable(struct bladerf *dev, bool enable)
     int status;
     uint8_t data;
 
-    status = bladerf_lms_read(dev, 0x64, &data);
+    status = LMS_READ(dev, 0x64, &data);
     if (status != 0) {
         return status;
     }
@@ -675,7 +675,7 @@ int lms_rxvga2_enable(struct bladerf *dev, bool enable)
         data &= ~(1 << 1);
     }
 
-    return bladerf_lms_write(dev, 0x64, data);
+    return LMS_WRITE(dev, 0x64, data);
 }
 
 
@@ -691,14 +691,14 @@ int lms_rxvga2_set_gain(struct bladerf *dev, int gain)
     }
 
     /* 3 dB per register code */
-    return bladerf_lms_write(dev, 0x65, gain / 3);
+    return LMS_WRITE(dev, 0x65, gain / 3);
 }
 
 int lms_rxvga2_get_gain(struct bladerf *dev, int *gain)
 {
 
     uint8_t data;
-    const int status = bladerf_lms_read(dev, 0x65, &data);
+    const int status = LMS_READ(dev, 0x65, &data);
 
     if (status == 0) {
         /* 3 dB per code */
@@ -714,7 +714,7 @@ int lms_select_pa(struct bladerf *dev, lms_pa pa)
     int status;
     uint8_t data;
 
-    status = bladerf_lms_read(dev, 0x44, &data);
+    status = LMS_READ(dev, 0x44, &data);
 
     /* Disable PA1, PA2, and AUX PA - we'll enable as requested below. */
     data &= ~0x1C;
@@ -744,7 +744,7 @@ int lms_select_pa(struct bladerf *dev, lms_pa pa)
     }
 
     if (status == 0) {
-        status = bladerf_lms_write(dev, 0x44, data);
+        status = LMS_WRITE(dev, 0x44, data);
     }
 
     return status;
@@ -756,7 +756,7 @@ int lms_peakdetect_enable(struct bladerf *dev, bool enable)
     int status;
     uint8_t data;
 
-    status = bladerf_lms_read(dev, 0x44, &data);
+    status = LMS_READ(dev, 0x44, &data);
 
     if (status == 0) {
         if (enable) {
@@ -764,7 +764,7 @@ int lms_peakdetect_enable(struct bladerf *dev, bool enable)
         } else {
             data |= (1 << 0);
         }
-        status = bladerf_lms_write(dev, 0x44, data);
+        status = LMS_WRITE(dev, 0x44, data);
     }
 
     return status;
@@ -776,7 +776,7 @@ int lms_enable_rffe(struct bladerf *dev, bladerf_module module, bool enable)
     uint8_t data;
     uint8_t addr = (module == BLADERF_MODULE_TX ? 0x40 : 0x70);
 
-    status = bladerf_lms_read(dev, addr, &data);
+    status = LMS_READ(dev, addr, &data);
     if (status == 0) {
 
         if (module == BLADERF_MODULE_TX) {
@@ -793,7 +793,7 @@ int lms_enable_rffe(struct bladerf *dev, bladerf_module module, bool enable)
             }
         }
 
-        status = bladerf_lms_write(dev, addr, data);
+        status = LMS_WRITE(dev, addr, data);
     }
 
     return status;
@@ -815,11 +815,11 @@ int lms_txvga2_set_gain(struct bladerf *dev, int gain_int)
         gain = gain_int;
     }
 
-    status = bladerf_lms_read(dev, 0x45, &data);
+    status = LMS_READ(dev, 0x45, &data);
     if (status == 0) {
         data &= ~(0x1f << 3);
         data |= ((gain & 0x1f) << 3);
-        status = bladerf_lms_write(dev, 0x45, data);
+        status = LMS_WRITE(dev, 0x45, data);
     }
 
     return status;
@@ -830,7 +830,7 @@ int lms_txvga2_get_gain(struct bladerf *dev, int *gain)
     int status;
     uint8_t data;
 
-    status = bladerf_lms_read(dev, 0x45, &data);
+    status = LMS_READ(dev, 0x45, &data);
 
     if (status == 0) {
         *gain = (data >> 3) & 0x1f;
@@ -862,7 +862,7 @@ int lms_txvga1_set_gain(struct bladerf *dev, int gain_int)
     gain = (gain + 35);
 
     /* Since 0x41 is only VGA1GAIN, we don't need to RMW */
-    return bladerf_lms_write(dev, 0x41, gain);
+    return LMS_WRITE(dev, 0x41, gain);
 }
 
 int lms_txvga1_get_gain(struct bladerf *dev, int *gain)
@@ -870,7 +870,7 @@ int lms_txvga1_get_gain(struct bladerf *dev, int *gain)
     int status;
     uint8_t data;
 
-    status = bladerf_lms_read(dev, 0x41, &data);
+    status = LMS_READ(dev, 0x41, &data);
     if (status == 0) {
         /* Clamp to max value */
         data = data & 0x1f;
@@ -888,7 +888,7 @@ static inline int enable_lna_power(struct bladerf *dev, bool enable)
     uint8_t regval;
 
     /* Magic test register to power down LNAs */
-    status = bladerf_lms_read(dev, 0x7d, &regval);
+    status = LMS_READ(dev, 0x7d, &regval);
     if (status != 0) {
         return status;
     }
@@ -899,13 +899,13 @@ static inline int enable_lna_power(struct bladerf *dev, bool enable)
         regval |= (1 << 0);
     }
 
-    status = bladerf_lms_write(dev, 0x7d, regval);
+    status = LMS_WRITE(dev, 0x7d, regval);
     if (status != 0) {
         return status;
     }
 
     /* Decode test registers */
-    status = bladerf_lms_read(dev, 0x70, &regval);
+    status = LMS_READ(dev, 0x70, &regval);
     if (status != 0) {
         return status;
     }
@@ -916,7 +916,7 @@ static inline int enable_lna_power(struct bladerf *dev, bool enable)
         regval |= (1 << 1);
     }
 
-    return bladerf_lms_write(dev, 0x70, regval);
+    return LMS_WRITE(dev, 0x70, regval);
 }
 
 /* Power up/down RF loopback switch */
@@ -925,7 +925,7 @@ static inline int enable_rf_loopback_switch(struct bladerf *dev, bool enable)
     int status;
     uint8_t regval;
 
-    status = bladerf_lms_read(dev, 0x0b, &regval);
+    status = LMS_READ(dev, 0x0b, &regval);
     if (status != 0) {
         return status;
     }
@@ -936,7 +936,7 @@ static inline int enable_rf_loopback_switch(struct bladerf *dev, bool enable)
         regval &= ~(1 << 0);
     }
 
-    return bladerf_lms_write(dev, 0x0b, regval);
+    return LMS_WRITE(dev, 0x0b, regval);
 }
 
 
@@ -1078,7 +1078,7 @@ static int loopback_rx(struct bladerf *dev, bladerf_loopback mode)
             }
 
             /* Select output buffer in RX PLL and select the desired LNA */
-            status = bladerf_lms_read(dev, 0x25, &regval);
+            status = LMS_READ(dev, 0x25, &regval);
             if (status != 0) {
                 return status;
             }
@@ -1086,7 +1086,7 @@ static int loopback_rx(struct bladerf *dev, bladerf_loopback mode)
             regval &= ~0x03;
             regval |= lna;
 
-            status = bladerf_lms_write(dev, 0x25, regval);
+            status = LMS_WRITE(dev, 0x25, regval);
             if (status != 0) {
                 return status;
             }
@@ -1171,12 +1171,12 @@ static int loopback_path(struct bladerf *dev, bladerf_loopback mode)
     int status;
     uint8_t loopbben, lben_lbrf;
 
-    status = bladerf_lms_read(dev, 0x46, &loopbben);
+    status = LMS_READ(dev, 0x46, &loopbben);
     if (status != 0) {
         return status;
     }
 
-    status = bladerf_lms_read(dev, 0x08, &lben_lbrf);
+    status = LMS_READ(dev, 0x08, &lben_lbrf);
     if (status != 0) {
         return status;
     }
@@ -1227,9 +1227,9 @@ static int loopback_path(struct bladerf *dev, bladerf_loopback mode)
             return BLADERF_ERR_INVAL;
     }
 
-    status = bladerf_lms_write(dev, 0x46, loopbben);
+    status = LMS_WRITE(dev, 0x46, loopbben);
     if (status == 0) {
-        status = bladerf_lms_write(dev, 0x08, lben_lbrf);
+        status = LMS_WRITE(dev, 0x08, lben_lbrf);
     }
 
     return status;
@@ -1300,12 +1300,12 @@ int lms_get_loopback_mode(struct bladerf *dev, bladerf_loopback *loopback)
     uint8_t lben_lbrfen, loopbben;
 
 
-    status = bladerf_lms_read(dev, 0x08, &lben_lbrfen);
+    status = LMS_READ(dev, 0x08, &lben_lbrfen);
     if (status != 0) {
         return status;
     }
 
-    status = bladerf_lms_read(dev, 0x46, &loopbben);
+    status = LMS_READ(dev, 0x46, &loopbben);
     if (status != 0) {
         return status;
     }
@@ -1362,10 +1362,10 @@ int lms_power_down(struct bladerf *dev)
     int status;
     uint8_t data;
 
-    status = bladerf_lms_read(dev, 0x05, &data);
+    status = LMS_READ(dev, 0x05, &data);
     if (status == 0) {
         data &= ~(1 << 4);
-        status = bladerf_lms_write(dev, 0x05, data);
+        status = LMS_WRITE(dev, 0x05, data);
     }
 
     return status;
@@ -1378,14 +1378,14 @@ int lms_pll_enable(struct bladerf *dev, bladerf_module mod, bool enable)
     const uint8_t reg = (mod == BLADERF_MODULE_RX) ? 0x24 : 0x14;
     uint8_t data;
 
-    status = bladerf_lms_read(dev, reg, &data);
+    status = LMS_READ(dev, reg, &data);
     if (status == 0) {
         if (enable) {
             data |= (1 << 3);
         } else {
             data &= ~(1 << 3);
         }
-        status = bladerf_lms_write(dev, reg, data);
+        status = LMS_WRITE(dev, reg, data);
     }
 
     return status;
@@ -1397,14 +1397,14 @@ int lms_rx_enable(struct bladerf *dev, bool enable)
     int status;
     uint8_t data;
 
-    status = bladerf_lms_read(dev, 0x05, &data);
+    status = LMS_READ(dev, 0x05, &data);
     if (status == 0) {
         if (enable) {
             data |= (1 << 2);
         } else {
             data &= ~(1 << 2);
         }
-        status = bladerf_lms_write(dev, 0x05, data);
+        status = LMS_WRITE(dev, 0x05, data);
     }
 
     return status;
@@ -1416,7 +1416,7 @@ int lms_tx_enable(struct bladerf *dev, bool enable)
     int status;
     uint8_t data;
 
-    status = bladerf_lms_read(dev, 0x05, &data);
+    status = LMS_READ(dev, 0x05, &data);
 
     if (status == 0) {
         if (enable) {
@@ -1424,7 +1424,7 @@ int lms_tx_enable(struct bladerf *dev, bool enable)
         } else {
             data &= ~(1 << 3);
         }
-        status = bladerf_lms_write(dev, 0x05, data);
+        status = LMS_WRITE(dev, 0x05, data);
     }
 
     return status;
@@ -1462,14 +1462,14 @@ int lms_get_frequency(struct bladerf *dev, bladerf_module mod,
     int status;
     uint8_t data;
 
-    status = bladerf_lms_read(dev, base + 0, &data);
+    status = LMS_READ(dev, base + 0, &data);
     if (status != 0) {
         return status;
     }
 
     f->nint = ((uint16_t)data) << 1;
 
-    status = bladerf_lms_read(dev, base + 1, &data);
+    status = LMS_READ(dev, base + 1, &data);
     if (status != 0) {
         return status;
     }
@@ -1477,21 +1477,21 @@ int lms_get_frequency(struct bladerf *dev, bladerf_module mod,
     f->nint |= (data & 0x80) >> 7;
     f->nfrac = ((uint32_t)data & 0x7f) << 16;
 
-    status = bladerf_lms_read(dev, base + 2, &data);
+    status = LMS_READ(dev, base + 2, &data);
     if (status != 0) {
         return status;
     }
 
     f->nfrac |= ((uint32_t)data)<<8;
 
-    status = bladerf_lms_read(dev, base + 3, &data);
+    status = LMS_READ(dev, base + 3, &data);
     if (status != 0) {
         return status;
     }
 
     f->nfrac |= data;
 
-    status = bladerf_lms_read(dev, base + 5, &data);
+    status = LMS_READ(dev, base + 5, &data);
     if (status != 0) {
         return status;
     }
@@ -1515,19 +1515,19 @@ static inline int tune_vcocap(struct bladerf *dev, uint8_t base, uint8_t data)
     uint8_t vtune;
     int status;
 
-    status = bladerf_lms_read(dev, base + 9, &data);
+    status = LMS_READ(dev, base + 9, &data);
     if (status != 0) {
         return status;
     }
 
     data &= ~(0x3f);
     for (i = 0; i < 6; i++) {
-        status = bladerf_lms_write(dev, base + 9, vcocap | data);
+        status = LMS_WRITE(dev, base + 9, vcocap | data);
         if (status != 0) {
             return status;
         }
 
-        status = bladerf_lms_read(dev, base + 10, &vtune);
+        status = LMS_READ(dev, base + 10, &vtune);
         if (status != 0) {
             return status;
         }
@@ -1560,12 +1560,12 @@ static inline int tune_vcocap(struct bladerf *dev, uint8_t base, uint8_t data)
     while (start_i > 0 && vtune != VCO_HIGH) {
         start_i -= 1;
 
-        status = bladerf_lms_write(dev, base + 9, start_i | data);
+        status = LMS_WRITE(dev, base + 9, start_i | data);
         if (status != 0) {
             return status;
         }
 
-        status = bladerf_lms_read(dev, base + 10, &vtune);
+        status = LMS_READ(dev, base + 10, &vtune);
         if (status != 0) {
             return status;
         }
@@ -1576,12 +1576,12 @@ static inline int tune_vcocap(struct bladerf *dev, uint8_t base, uint8_t data)
     start_i += 1;
     log_verbose( "Found lower limit VCOCAP: %d\n", start_i );
 
-    status = bladerf_lms_write(dev, base + 9, vcocap | data );
+    status = LMS_WRITE(dev, base + 9, vcocap | data );
     if (status != 0) {
         return status;
     }
 
-    status = bladerf_lms_read(dev, base + 10, &vtune);
+    status = LMS_READ(dev, base + 10, &vtune);
     if (status != 0) {
         return status;
     }
@@ -1591,12 +1591,12 @@ static inline int tune_vcocap(struct bladerf *dev, uint8_t base, uint8_t data)
     while (stop_i < 64 && vtune != VCO_LOW) {
         stop_i += 1;
 
-        status = bladerf_lms_write(dev, base + 9, stop_i | data);
+        status = LMS_WRITE(dev, base + 9, stop_i | data);
         if (status != 0) {
             return status;
         }
 
-        status = bladerf_lms_read(dev, base + 10, &vtune);
+        status = LMS_READ(dev, base + 10, &vtune);
         if (status != 0) {
             return status;
         }
@@ -1611,12 +1611,12 @@ static inline int tune_vcocap(struct bladerf *dev, uint8_t base, uint8_t data)
 
     log_verbose( "Goldilocks VCOCAP: %d\n", vcocap );
 
-    status = bladerf_lms_write(dev, base + 9, vcocap | data );
+    status = LMS_WRITE(dev, base + 9, vcocap | data );
     if (status != 0) {
         return status;
     }
 
-    status = bladerf_lms_read(dev, base + 10, &vtune);
+    status = LMS_READ(dev, base + 10, &vtune);
     if (status != 0) {
         return status;
     }
@@ -1689,10 +1689,10 @@ int lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
     lms_print_frequency(&f);
 
     /* Turn on the DSMs */
-    status = bladerf_lms_read(dev, 0x09, &data);
+    status = LMS_READ(dev, 0x09, &data);
     if (status == 0) {
         data |= 0x05;
-        status = bladerf_lms_write(dev, 0x09, data);
+        status = LMS_WRITE(dev, 0x09, data);
     }
 
     if (status != 0) {
@@ -1706,31 +1706,31 @@ int lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
     }
 
     data = nint >> 1;
-    status = bladerf_lms_write(dev, base + 0, data);
+    status = LMS_WRITE(dev, base + 0, data);
     if (status != 0) {
         goto lms_set_frequency_error;
     }
 
     data = ((nint & 1) << 7) | ((nfrac >> 16) & 0x7f);
-    status = bladerf_lms_write(dev, base + 1, data);
+    status = LMS_WRITE(dev, base + 1, data);
     if (status != 0) {
         goto lms_set_frequency_error;
     }
 
     data = ((nfrac >> 8) & 0xff);
-    status = bladerf_lms_write(dev, base + 2, data);
+    status = LMS_WRITE(dev, base + 2, data);
     if (status != 0) {
         goto lms_set_frequency_error;
     }
 
     data = (nfrac & 0xff);
-    status = bladerf_lms_write(dev, base + 3, data);
+    status = LMS_WRITE(dev, base + 3, data);
     if (status != 0) {
         goto lms_set_frequency_error;
     }
 
     /* Set the PLL Ichp, Iup and Idn currents */
-    status = bladerf_lms_read(dev, base + 6, &data);
+    status = LMS_READ(dev, base + 6, &data);
     if (status != 0) {
         goto lms_set_frequency_error;
     }
@@ -1738,32 +1738,32 @@ int lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
     data &= ~(0x1f);
     data |= 0x0c;
 
-    status = bladerf_lms_write(dev, base + 6, data);
+    status = LMS_WRITE(dev, base + 6, data);
     if (status != 0) {
         goto lms_set_frequency_error;
     }
 
-    status = bladerf_lms_read(dev, base + 7, &data);
-    if (status != 0) {
-        goto lms_set_frequency_error;
-    }
-
-    data &= ~(0x1f);
-    // data |= 3;
-
-    status = bladerf_lms_write(dev, base + 7, data);
-    if (status != 0) {
-        goto lms_set_frequency_error;
-    }
-
-    status = bladerf_lms_read(dev, base + 8, &data);
+    status = LMS_READ(dev, base + 7, &data);
     if (status != 0) {
         goto lms_set_frequency_error;
     }
 
     data &= ~(0x1f);
     // data |= 3;
-    status = bladerf_lms_write(dev, base + 8, data);
+
+    status = LMS_WRITE(dev, base + 7, data);
+    if (status != 0) {
+        goto lms_set_frequency_error;
+    }
+
+    status = LMS_READ(dev, base + 8, &data);
+    if (status != 0) {
+        goto lms_set_frequency_error;
+    }
+
+    data &= ~(0x1f);
+    // data |= 3;
+    status = LMS_WRITE(dev, base + 8, data);
     if (status != 0) {
         goto lms_set_frequency_error;
     }
@@ -1773,10 +1773,10 @@ int lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
 
 lms_set_frequency_error:
     /* Turn off the DSMs */
-    dsm_status = bladerf_lms_read(dev, 0x09, &data);
+    dsm_status = LMS_READ(dev, 0x09, &data);
     if (dsm_status == 0) {
         data &= ~(0x05);
-        dsm_status = bladerf_lms_write(dev, 0x09, data);
+        dsm_status = LMS_WRITE(dev, 0x09, data);
     }
 
     return (status == 0) ? dsm_status : status;
@@ -1789,7 +1789,7 @@ int lms_dump_registers(struct bladerf *dev)
     const uint16_t num_reg = sizeof(lms_reg_dumpset);
 
     for (i = 0; i < num_reg; i++) {
-        status = bladerf_lms_read(dev, lms_reg_dumpset[i], &data);
+        status = LMS_READ(dev, lms_reg_dumpset[i], &data);
         if (status != 0) {
             log_debug("Failed to read LMS @ 0x%02x\n", lms_reg_dumpset[i]);
             return status;
@@ -1814,7 +1814,7 @@ static int lms_dc_cal_loop(struct bladerf *dev, uint8_t base,
     log_debug("Calibrating module %2.2x:%2.2x\n", base, cal_address);
 
     /* Set the calibration address for the block, and start it up */
-    status = bladerf_lms_read(dev, base + 0x03, &val);
+    status = LMS_READ(dev, base + 0x03, &val);
     if (status != 0) {
         return status;
     }
@@ -1822,25 +1822,25 @@ static int lms_dc_cal_loop(struct bladerf *dev, uint8_t base,
     val &= ~(0x07);
     val |= cal_address&0x07;
 
-    status = bladerf_lms_write(dev, base + 0x03, val);
+    status = LMS_WRITE(dev, base + 0x03, val);
     if (status != 0) {
         return status;
     }
 
     /* Set and latch the DC_CNTVAL  */
-    status = bladerf_lms_write(dev, base + 0x02, dc_cntval);
+    status = LMS_WRITE(dev, base + 0x02, dc_cntval);
     if (status != 0) {
         return status;
     }
 
     val |= (1 << 4);
-    status = bladerf_lms_write(dev, base + 0x03, val);
+    status = LMS_WRITE(dev, base + 0x03, val);
     if (status != 0) {
         return status;
     }
 
     val &= ~(1 << 4);
-    status = bladerf_lms_write(dev, base + 0x03, val);
+    status = LMS_WRITE(dev, base + 0x03, val);
     if (status != 0) {
         return status;
     }
@@ -1848,13 +1848,13 @@ static int lms_dc_cal_loop(struct bladerf *dev, uint8_t base,
 
     /* Start the calibration by toggling DC_START_CLBR */
     val |= (1 << 5);
-    status = bladerf_lms_write(dev, base + 0x03, val);
+    status = LMS_WRITE(dev, base + 0x03, val);
     if (status != 0) {
         return status;
     }
 
     val &= ~(1 << 5);
-    status = bladerf_lms_write(dev, base + 0x03, val);
+    status = LMS_WRITE(dev, base + 0x03, val);
     if (status != 0) {
         return status;
     }
@@ -1862,7 +1862,7 @@ static int lms_dc_cal_loop(struct bladerf *dev, uint8_t base,
     /* Main loop checking the calibration */
     for (i = 0 ; i < max_cal_count && !done; i++) {
         /* Read active low DC_CLBR_DONE */
-        status = bladerf_lms_read(dev, base + 0x01, &val);
+        status = LMS_READ(dev, base + 0x01, &val);
         if (status != 0) {
             return status;
         }
@@ -1872,7 +1872,7 @@ static int lms_dc_cal_loop(struct bladerf *dev, uint8_t base,
             done = true;
             /* Per LMS FAQ item 4.7, we should check DC_REG_VAL, as
              * DC_LOCK is not a reliable indicator */
-            status = bladerf_lms_read(dev, base, dc_regval);
+            status = LMS_READ(dev, base, dc_regval);
             if (status == 0) {
                 *dc_regval &= 0x3f;
             }
@@ -1912,7 +1912,7 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
     int rxvga2 = BLADERF_RXVGA2_GAIN_MIN;
 
     /* Save off the top level clock enables and LNA state */
-    status = bladerf_lms_read(dev, 0x09, &clockenables);
+    status = LMS_READ(dev, 0x09, &clockenables);
     if (status != 0) {
         return status;
     }
@@ -1953,7 +1953,7 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
     }
 
     /* Enable the appropriate clock based on the module */
-    status = bladerf_lms_write(dev, 0x09, clockenables | cal_clock);
+    status = LMS_WRITE(dev, 0x09, clockenables | cal_clock);
     if (status != 0) {
         return status;
     }
@@ -1970,33 +1970,33 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
          * up when performing DC calibration, and then powered down afterwards
          * to improve receiver linearity */
         if (module == BLADERF_DC_CAL_RXVGA2) {
-            status = bladerf_lms_read(dev, 0x6e, &val);
+            status = LMS_READ(dev, 0x6e, &val);
             if (status != 0) {
                 return status;
             }
 
             val &= ~(3 << 6);
 
-            status = bladerf_lms_write(dev, 0x6e, val);
+            status = LMS_WRITE(dev, 0x6e, val);
             if (status != 0) {
                 return status;
             }
         } else {
-            status = bladerf_lms_read(dev, 0x5f, &val);
+            status = LMS_READ(dev, 0x5f, &val);
             if (status != 0) {
                 return status;
             }
 
             val &= ~(1 << 7);
 
-            status = bladerf_lms_write(dev, 0x5f, val);
+            status = LMS_WRITE(dev, 0x5f, val);
             if (status != 0) {
                 return status;
             }
         }
 
         /* Connect LNA to the external pads and internally terminate */
-        status = bladerf_lms_read(dev, 0x71, &reg0x71);
+        status = LMS_READ(dev, 0x71, &reg0x71);
         if (status != 0) {
             return status;
         }
@@ -2004,12 +2004,12 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
         val = reg0x71;
         val &= ~(1 << 7);
 
-        status = bladerf_lms_write(dev, 0x71, val);
+        status = LMS_WRITE(dev, 0x71, val);
         if (status != 0) {
             return status;
         }
 
-        status = bladerf_lms_read(dev, 0x7c, &reg0x7c);
+        status = LMS_READ(dev, 0x7c, &reg0x7c);
         if (status != 0) {
             return status;
         }
@@ -2017,52 +2017,52 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
         val = reg0x7c;
         val |= (1 << 2);
 
-        status = bladerf_lms_write(dev, 0x7c, val);
+        status = LMS_WRITE(dev, 0x7c, val);
         if (status != 0) {
             return status;
         }
 
         /* Set maximum gain for everything, but save off current values */
-        status = bladerf_get_lna_gain(dev, &lna_gain);
+        status = lms_lna_get_gain(dev, &lna_gain);
         if (status != 0) {
             return status;
         }
 
-        status = bladerf_set_lna_gain(dev, BLADERF_LNA_GAIN_MAX);
+        status = lms_lna_set_gain(dev, BLADERF_LNA_GAIN_MAX);
         if (status != 0) {
             return status;
         }
 
-        status = bladerf_get_rxvga1(dev, &rxvga1);
+        status = lms_rxvga1_get_gain(dev, &rxvga1);
         if (status != 0) {
             return status;
         }
 
-        status = bladerf_set_rxvga1(dev, BLADERF_RXVGA1_GAIN_MAX);
+        status = lms_rxvga1_set_gain(dev, BLADERF_RXVGA1_GAIN_MAX);
         if (status != 0) {
             return status;
         }
 
-        status = bladerf_get_rxvga2(dev, &rxvga2);
+        status = lms_rxvga2_get_gain(dev, &rxvga2);
         if (status != 0) {
             return status;
         }
 
-       status = bladerf_set_rxvga2(dev, BLADERF_RXVGA2_GAIN_MAX);
+       status = lms_rxvga2_set_gain(dev, BLADERF_RXVGA2_GAIN_MAX);
        if (status != 0) {
            return status;
        }
     } else if (module == BLADERF_DC_CAL_TX_LPF) {
         /* FAQ item 4.1 notes that the DAC should be turned off or set
          * to generate minimum DC */
-        status = bladerf_lms_read(dev, 0x36, &val);
+        status = LMS_READ(dev, 0x36, &val);
         if (status != 0) {
             return status;
         }
 
         val |= (1 << 7);
 
-        status = bladerf_lms_write(dev, 0x36, val);
+        status = LMS_WRITE(dev, 0x36, val);
         if (status != 0) {
             return status;
         }
@@ -2094,7 +2094,7 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
 
                 case 0:
                     /* Set to direct control signals: RXVGA2 Decode = 1 */
-                    status = bladerf_lms_read(dev, 0x64, &val);
+                    status = LMS_READ(dev, 0x64, &val);
                     if (status != 0) {
                         return status;
                     }
@@ -2103,14 +2103,14 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
                     val |= 1;
                     val = 0x37;
 
-                    status = bladerf_lms_write(dev, 0x64, val);
+                    status = LMS_WRITE(dev, 0x64, val);
                     if (status != 0) {
                         return status;
                     }
 
                     /* VGA2GAINA = 0110, VGA2GAINB = 0 */
                     val = 6;
-                    status = bladerf_lms_write(dev, 0x68, val);
+                    status = LMS_WRITE(dev, 0x68, val);
                     if (status != 0) {
                         return status;
                     }
@@ -2119,7 +2119,7 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
                 case 2:
                     /* VGA2GAINA = 0, VGA2GAINB = 0110 */
                     val = 6 << 4;
-                    status = bladerf_lms_write(dev, 0x68, val);
+                    status = LMS_WRITE(dev, 0x68, val);
                     if (status != 0) {
                         return status;
                     }
@@ -2127,7 +2127,7 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
 
                 case 4:
                     /* Set to decode control signals: RXVGA2 Decode = 0 */
-                    status = bladerf_lms_read(dev, 0x64, &val);
+                    status = LMS_READ(dev, 0x64, &val);
                     if (status != 0) {
                         return status;
                     }
@@ -2136,7 +2136,7 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
                     val &= (~1);
                     val = 0x36;
 
-                    status = bladerf_lms_write(dev, 0x64, val);
+                    status = LMS_WRITE(dev, 0x64, val);
                     if (status != 0) {
                         return status;
                     }
@@ -2147,22 +2147,22 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
              * written to TX/RX LPF DCCAL */
 
             /* Set the DC level to RX and TX DCCAL modules */
-            status = bladerf_lms_read(dev, 0x35, &val);
+            status = LMS_READ(dev, 0x35, &val);
             if (status == 0) {
                 val &= ~(0x3f);
                 val |= dc_regval;
-                status = bladerf_lms_write(dev, 0x35, val);
+                status = LMS_WRITE(dev, 0x35, val);
             }
 
             if (status != 0) {
                 return status;
             }
 
-            status = bladerf_lms_read(dev, 0x55, &val);
+            status = LMS_READ(dev, 0x55, &val);
             if (status == 0) {
                 val &= ~(0x3f);
                 val |= dc_regval;
-                status = bladerf_lms_write(dev, 0x55, val);
+                status = LMS_WRITE(dev, 0x55, val);
             }
 
             if (status != 0) {
@@ -2176,66 +2176,66 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
 
         /* Disable DC comparators */
         if (module == BLADERF_DC_CAL_RXVGA2) {
-            status = bladerf_lms_read(dev, 0x6e, &val);
+            status = LMS_READ(dev, 0x6e, &val);
             if (status != 0) {
                 return status;
             }
 
             val |= (3 << 6);
 
-            status = bladerf_lms_write(dev, 0x6e, val);
+            status = LMS_WRITE(dev, 0x6e, val);
             if (status != 0) {
                 return status;
             }
         } else {
-            status = bladerf_lms_read(dev, 0x5f, &val);
+            status = LMS_READ(dev, 0x5f, &val);
             if (status != 0) {
                 return status;
             }
 
             val |= (1 << 7);
 
-            status = bladerf_lms_write(dev, 0x5f, val);
+            status = LMS_WRITE(dev, 0x5f, val);
             if (status != 0) {
                 return status;
             }
         }
 
         /* Restore previously saved LNA Gain, VGA1 gain and VGA2 gain */
-        status = bladerf_set_rxvga2(dev, rxvga2);
+        status = lms_rxvga2_set_gain(dev, rxvga2);
         if (status != 0) {
             return status;
         }
 
-        status = bladerf_set_rxvga1(dev, rxvga1);
+        status = lms_rxvga1_set_gain(dev, rxvga1);
         if (status != 0) {
             return status;
         }
 
-        status = bladerf_set_lna_gain(dev, lna_gain);
+        status = lms_lna_set_gain(dev, lna_gain);
         if (status != 0) {
             return status;
         }
 
-        status = bladerf_lms_write(dev, 0x71, reg0x71);
+        status = LMS_WRITE(dev, 0x71, reg0x71);
         if (status != 0) {
             return status;
         }
 
-        status = bladerf_lms_write(dev, 0x7c, reg0x7c);
+        status = LMS_WRITE(dev, 0x7c, reg0x7c);
         if (status != 0) {
             return status;
         }
     } else if (module == BLADERF_DC_CAL_TX_LPF) {
         /* Re-enable the DACs */
-        status = bladerf_lms_read(dev, 0x36, &val);
+        status = LMS_READ(dev, 0x36, &val);
         if (status != 0) {
             return status;
         }
 
         val &= ~(1 << 7);
 
-        status = bladerf_lms_write(dev, 0x36, val);
+        status = LMS_WRITE(dev, 0x36, val);
         if (status != 0) {
             return status;
         }
@@ -2247,7 +2247,7 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
         return status;
     }
 
-    status = bladerf_lms_write(dev, 0x09, clockenables);
+    status = LMS_WRITE(dev, 0x09, clockenables);
     if (status != 0) {
         return status;
     }
@@ -2307,31 +2307,31 @@ static int set_dc_cal_value(struct bladerf *dev, uint8_t base,
     uint8_t regval = (0x08 | dc_addr);
 
     /* Keep reset inactive, cal disable, load addr */
-    status = bladerf_lms_write(dev, base + 3, regval);
+    status = LMS_WRITE(dev, base + 3, regval);
     if (status != 0) {
         return status;
     }
 
     /* Update DC_CNTVAL */
-    status = bladerf_lms_write(dev, base + 2, new_value);
+    status = LMS_WRITE(dev, base + 2, new_value);
     if (status != 0) {
         return status;
     }
 
     /* Strobe DC_LOAD */
     regval |= (1 << 4);
-    status = bladerf_lms_write(dev, base + 3, regval);
+    status = LMS_WRITE(dev, base + 3, regval);
     if (status != 0) {
         return status;
     }
 
     regval &= ~(1 << 4);
-    status = bladerf_lms_write(dev, base + 3, regval);
+    status = LMS_WRITE(dev, base + 3, regval);
     if (status != 0) {
         return status;
     }
 
-    status = bladerf_lms_read(dev, base, &regval);
+    status = LMS_READ(dev, base, &regval);
     if (status != 0) {
         return status;
     }
@@ -2346,13 +2346,13 @@ static int get_dc_cal_value(struct bladerf *dev, uint8_t base,
     uint8_t regval;
 
     /* Keep reset inactive, cal disable, load addr */
-    status = bladerf_lms_write(dev, base + 3, (0x08 | dc_addr));
+    status = LMS_WRITE(dev, base + 3, (0x08 | dc_addr));
     if (status != 0) {
         return status;
     }
 
     /* Fetch value from DC_REGVAL */
-    status = bladerf_lms_read(dev, base, &regval);
+    status = LMS_READ(dev, base, &regval);
     if (status != 0) {
         *value = -1;
         return status;
@@ -2588,56 +2588,56 @@ int lms_select_sampling(struct bladerf *dev, bladerf_sampling sampling)
 
     if (sampling == BLADERF_SAMPLING_INTERNAL) {
         /* Disconnect the ADC input from the outside world */
-        status = bladerf_lms_read( dev, 0x09, &val );
+        status = LMS_READ( dev, 0x09, &val );
         if (status) {
             log_warning( "Could not read LMS to connect ADC to external pins\n" );
             goto out;
         }
 
         val &= ~(1<<7);
-        status = bladerf_lms_write( dev, 0x09, val );
+        status = LMS_WRITE( dev, 0x09, val );
         if (status) {
             log_warning( "Could not write LMS to connect ADC to external pins\n" );
             goto out;
         }
 
         /* Turn on RXVGA2 */
-        status = bladerf_lms_read( dev, 0x64, &val );
+        status = LMS_READ( dev, 0x64, &val );
         if (status) {
             log_warning( "Could not read LMS to enable RXVGA2\n" );
             goto out;
         }
 
         val |= (1<<1);
-        status = bladerf_lms_write( dev, 0x64, val );
+        status = LMS_WRITE( dev, 0x64, val );
         if (status) {
             log_warning( "Could not write LMS to enable RXVGA2\n" );
             goto out;
         }
     } else if (sampling == BLADERF_SAMPLING_EXTERNAL) {
         /* Turn off RXVGA2 */
-        status = bladerf_lms_read( dev, 0x64, &val );
+        status = LMS_READ( dev, 0x64, &val );
         if (status) {
             log_warning( "Could not read the LMS to disable RXVGA2\n" );
             goto out;
         }
 
         val &= ~(1<<1);
-        status = bladerf_lms_write( dev, 0x64, val );
+        status = LMS_WRITE( dev, 0x64, val );
         if (status) {
             log_warning( "Could not write the LMS to disable RXVGA2\n" );
             goto out;
         }
 
         /* Connect the external ADC pins to the internal ADC input */
-        status = bladerf_lms_read( dev, 0x09, &val );
+        status = LMS_READ( dev, 0x09, &val );
         if (status) {
             log_warning( "Could not read the LMS to connect ADC to internal pins\n" );
             goto out;
         }
 
         val |= (1<<7);
-        status = bladerf_lms_write( dev, 0x09, val );
+        status = LMS_WRITE( dev, 0x09, val );
         if (status) {
             log_warning( "Could not write the LMS to connect ADC to internal pins\n" );
         }
@@ -2654,14 +2654,14 @@ int lms_get_sampling(struct bladerf *dev, bladerf_sampling *sampling)
     int status = 0, external = 0;
     uint8_t val = 0;
 
-    status = bladerf_lms_read(dev, 0x09, &val);
+    status = LMS_READ(dev, 0x09, &val);
     if (status != 0) {
         log_warning("Could not read state of ADC pin connectivity\n");
         goto out;
     }
     external = (val & (1 << 7)) ? 1 : 0;
 
-    status = bladerf_lms_read(dev, 0x64, &val);
+    status = LMS_READ(dev, 0x64, &val);
     if (status != 0) {
         log_warning( "Could not read RXVGA2 state\n" );
         goto out;
@@ -2684,5 +2684,4 @@ int lms_get_sampling(struct bladerf *dev, bladerf_sampling *sampling)
 
 out:
     return status;
-
 }

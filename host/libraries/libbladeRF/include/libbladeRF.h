@@ -84,9 +84,10 @@ extern "C" {
 /**
  * @defgroup FN_INIT    Initialization/deinitialization
  *
- * @bug These functions are not currently thread-safe. This will be addressed
- * in future revisions of the library. The caller is responsible for ensuring
- * these functions are called in a thread-safe manner.
+ * The functions in this section provide the ability query available devices,
+ * initialize them, and deinitialize them. They are not guaranteed to be
+ * thread-safe; the caller is responsible for ensuring they are executed
+ * atomically.
  *
  * @{
  */
@@ -215,7 +216,7 @@ int CALL_CONV bladerf_open(struct bladerf **device,
 /**
  * Close device
  *
- * @note    Failing to close a device may result in memory leaks.
+ * @note    Failing to close a device will result in memory leaks.
  *
  * @post    device is deallocated and may no longer be used.
  *
@@ -229,6 +230,10 @@ void CALL_CONV bladerf_close(struct bladerf *device);
 
 /**
  * @defgroup FN_DEVINFO Device identifier information functions
+ *
+ * As the functions in this section do not operate on a device, there are no
+ * internal thread-safety concerns. The caller only needs to ensure the
+ * function parameters are not modified while these functions are executing.
  *
  * @{
  */
@@ -245,12 +250,9 @@ void CALL_CONV bladerf_init_devinfo(struct bladerf_devinfo *info);
 
 /**
  * Fill out a provided bladerf_devinfo structure, given an open device handle.
+ * This function is thread-safe.
  *
  * @pre dev must be a valid device handle.
- *
- * @bug This function is not currently thread-safe. This will be addressed
- * in future revisions of the library. The caller is responsible for ensuring
- * this function are called in a thread-safe manner.
  *
  * @param[in]    dev     Device handle previously obtained with bladerf_open()
  * @param[out]   info    Device information populated by this function
@@ -320,10 +322,8 @@ const char * CALL_CONV bladerf_backend_str(bladerf_backend backend);
 /**
  * @defgroup FN_CTRL    Device control and configuration
  *
- * @bug These functions are not currently thread-safe. This will be addressed
- * in future revisions of the library. The caller is responsible for ensuring
- * these functions are called in a thread-safe manner. Generally, this implies
- * locking access to a device handle when making control/configuration calls.
+ * This section provides functions pertaining to accessing, controlling, and
+ * configuring various device options and parameters.
  *
  * @{
  */
@@ -1101,7 +1101,10 @@ int CALL_CONV bladerf_xb200_get_path(struct bladerf *dev,
 /** @} (End of FN_CTRL) */
 
 /**
- * @defgroup FMT_META   Formats and Metadata
+ * @defgroup FMT_META   Sample Formats and Metadata
+ *
+ * This section defines the available sample formats and metadata flags.
+ *
  * @{
  */
 
@@ -1222,30 +1225,6 @@ struct bladerf_metadata {
  * and to only use this interface if the former is found to not yield suitable
  * performance.
  *
- * When using this interface, one must be aware of thread-safety implications.
- * Internally, this interface does not enforce thread-safe access to device
- * handles; API users are responsible for this.
- *
- * However, it easy to avoid thread-safety issues if the following guidelines are
- * adhered to:
- *   - Divide threads that access the bladeRF device into two types: control and
- *   data streaming.
- *
- *   - Only perform device configuration and control calls from the control
- *   thread(s). If multiple threads are performing control calls, lock accesses
- *   to device handles.  Here, "control calls" effectively includes all API
- *   calls take a bladerf device handle, except for: bladerf_init_stream(),
- *   bladerf_stream(), and bladerf_deinit_stream(). These three calls are "data
- *   streaming" calls.
- *
- *   - Only access a bladerf_stream within a streaming thread context, and only
- *     use the data streaming calls in this context.
- *
- *   - Do not make API calls from stream callbacks.
- *
- *   bladerf_submit_stream_buffer() is a special case, as this will acquire a
- *   per-stream lock before submitting a buffer for transfer.
- *
  * @{
  */
 
@@ -1275,12 +1254,6 @@ struct bladerf_stream;
  * bladerf_submit_stream_buffer(). However, callbacks should always take a
  * single approach of returning buffers <b>or</b> returning
  * BLADERF_STREAM_NO_DATA and submitting buffers later -- <b>but not both</b>.
- *
- * In most use-cases, stream callbacks will be executing in a thread that is
- * separate from the thread used to configure device parameters. Because this
- * interface <b>does not</b> currently ensure thread safe accesses to devices,
- * callbacks being handled in different threads <b>must not make make API
- * calls.</b>
  *
  * When running in a full-duplex mode of operation with simultaneous TX and RX
  * stream threads, be aware that one module's callback may occur in the context
@@ -1317,7 +1290,6 @@ struct bladerf_stream;
  *  - Return value:     The user specifies the next buffer to fill with RX data,
  *                      which should be `num_samples` in size,
  *                      BLADERF_STREAM_SHUTDOWN, or BLADERF_STREAM_NO_DATA.
- *
  *
  */
 typedef void *(*bladerf_stream_cb)(struct bladerf *dev,
@@ -1357,14 +1329,13 @@ typedef void *(*bladerf_stream_cb)(struct bladerf *dev,
  * Sample\ Rate > \frac{\#\ Transfers}{Timeout} \times Buffer\ Size
  * @f]
  *
+ * ...where Sample Rate is in samples per second, and Timeout is in seconds.
+ *
  * To account for general system overhead, it is recommended to multiply the
  * righthand side by 1.1 to 1.25.
  *
  * While increasing the number of buffers available provides additional
  * elasticity, be aware that it also increases latency.
- *
- * @bug This function is not currently thread-safe. Callers should ensure other
- * threads are not accessing the `dev` handle when this call is made.
  *
  * @param[out]  stream          Upon success, this will be updated to contain
  *                              a stream handle (i.e., address)
@@ -1482,10 +1453,6 @@ void CALL_CONV bladerf_deinit_stream(struct bladerf_stream *stream);
 /**
  * Set stream transfer timeout in milliseconds
  *
- * @bug     This call is not threadsafe; this will be addressed in future
- *          versions of the library. Callers should ensure no other threads
- *          are accessing the specified device handle when this call is made.
- *
  * @param   dev         Device handle
  * @param   module      Module to adjust
  * @param   timeout     Timeout in milliseconds
@@ -1500,10 +1467,6 @@ int CALL_CONV bladerf_set_stream_timeout(struct bladerf *dev,
 
 /**
  * Get transfer timeout in milliseconds
- *
- * @bug     This call is not threadsafe; this will be addressed in future
- *          versions of the library. Callers should ensure no other threads
- *          are accessing the specified device handle when this call is made.
  *
  * @param[in]   dev         Device handle
  * @param[in]   module      Module to adjust
@@ -1529,11 +1492,6 @@ int CALL_CONV bladerf_get_stream_timeout(struct bladerf *dev,
  *
  * Under the hood, this interface spawns worker threads to handle an
  * asynchronous stream and perform thread-safe buffer management.
- *
- * This interface requires libbladeRF to be built with pthreads support. Without
- * pthreads support, all functions in this section of the API will return an
- * BLADERF_ERR_UNSUPPORTED.
- *
  *
  * Below is the general process for using this interface:
  *
@@ -1600,6 +1558,8 @@ int CALL_CONV bladerf_get_stream_timeout(struct bladerf *dev,
  * to bladerf_sync_config() for the BLADERF_MODULE_TX module, enable the TX
  * module via bladerf_enable_module(), and then make calls to bladerf_sync_tx().
  *
+ * These functions are thread-safe.
+ *
  * @{
  */
 
@@ -1623,10 +1583,6 @@ int CALL_CONV bladerf_get_stream_timeout(struct bladerf *dev,
  * appropriate values for `buffers_size`, `num_transfers`, and `stream_timeout`.
  * The `num_buffers` parameter should generally be increased as the amount of
  * work done between bladerf_sync_rx() or bladerf_sync_tx() calls increases.
- *
- * @bug     This call is not threadsafe; this will be addressed in future
- *          versions of the library. Callers should ensure no other threads
- *          are accessing the specified device handle when this call is made.
  *
  * @param   dev             Device to configure
  *
@@ -1747,9 +1703,8 @@ int CALL_CONV bladerf_sync_rx(struct bladerf *dev,
 /**
  * @defgroup FN_INFO    Device info
  *
- * @bug These functions are not currently thread-safe. This will be addressed
- * in future revisions of the library. The caller is responsible for ensuring
- * these functions are called in a thread-safe manner.
+ * These functions provide the ability to query various pieces of information
+ * from an attached device. They are thread-safe.
  *
  * @{
  */
@@ -1867,9 +1822,8 @@ bladerf_dev_speed CALL_CONV bladerf_device_speed(struct bladerf *dev);
 /**
  * @defgroup FN_PROG  Device loading and programming
  *
- * @bug These functions are not currently thread-safe. This will be addressed
- * in future revisions of the library. The caller is responsible for ensuring
- * these functions are called in a thread-safe manner.
+ * These functions provide the ability to load and program devices
+ * on the bladeRF board. They are thread-safe.
  *
  * @{
  */
@@ -1935,8 +1889,6 @@ int CALL_CONV bladerf_device_reset(struct bladerf *dev);
 /**
  * Jump to FX3 bootloader
  *
- * @note This also causes the device to jump to the FX3 bootloader
- *
  * @param   dev         Device handle
  *
  * @return 0 on success, value from \ref RETCODES list on failure
@@ -2000,7 +1952,7 @@ void CALL_CONV bladerf_log_set_verbosity(bladerf_log_level level);
  * @defgroup FN_IMAGE Flash image format
  *
  * This section contains a file format and associated routines for storing
- * and loading flash contents with metadata
+ * and loading flash contents with metadata.
  *
  * @{
  */
@@ -2208,19 +2160,15 @@ int CALL_CONV bladerf_image_read(struct bladerf_image *image, const char *file);
  * @defgroup LOW_LEVEL Low-level development and testing routines
  *
  * In a most cases, higher-level routines should be used. These routines are
- * only intended to support development and testing.   Treat these routines as
- * if they may disappear in future revision of the API; do not depend on them
- * for any long-term software.
+ * only intended to support development and testing.
  *
  * Use these routines with great care, and be sure to reference the relevant
- * schematics, datasheets, and source code (e.g., firmware and hdl).
+ * schematics, data sheets, and source code (i.e., firmware and hdl).
  *
  * Be careful when mixing these calls with higher-level routines that manipulate
  * the same registers/settings.
  *
- * @bug These functions are not currently thread-safe. This will be addressed
- * in future revisions of the library. The caller is responsible for ensuring
- * these functions are called in a thread-safe manner.
+ * These functions are thread-safe.
  *
  * @{
  */
@@ -2544,9 +2492,7 @@ int CALL_CONV bladerf_calibrate_dc(struct bladerf *dev,
  * functions:
  *   https://github.com/nuand/bladeRF/wiki/FX3-Firmware#spi-flash-layout
  *
- * @bug These functions are not currently thread-safe. This will be addressed
- * in future revisions of the library. The caller is responsible for ensuring
- * these functions are called in a thread-safe manner.
+ * These functions are thread-safe.
  *
  * @{
  */

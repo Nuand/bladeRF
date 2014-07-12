@@ -25,12 +25,12 @@
 
 #include "bladerf_priv.h"
 #include "backend/backend.h"
-#include "bladeRF.h"
 #include "lms.h"
+#include "si5338.h"
 #include "log.h"
 #include "dc_cal_table.h"
+#include "xb.h"
 
-#define OTP_BUFFER_SIZE 256
 
 /* TODO Check for truncation (e.g., odd # bytes)? */
 size_t bytes_to_c16_samples(size_t n_bytes)
@@ -44,13 +44,13 @@ size_t c16_samples_to_bytes(size_t n_samples)
     return n_samples * 2 * sizeof(int16_t);
 }
 
-int bladerf_init_device(struct bladerf *dev)
+int init_device(struct bladerf *dev)
 {
     int status;
     uint32_t val;
 
     /* Readback the GPIO values to see if they are default or already set */
-    status = bladerf_config_gpio_read( dev, &val );
+    status = CONFIG_GPIO_READ( dev, &val );
     if (status != 0) {
         log_debug("Failed to read GPIO config %s\n", bladerf_strerror(status));
         return status;
@@ -60,7 +60,7 @@ int bladerf_init_device(struct bladerf *dev)
         log_verbose( "Default GPIO value found - initializing device\n" );
 
         /* Set the GPIO pins to enable the LMS and select the low band */
-        status = bladerf_config_gpio_write(dev, 0x57);
+        status = CONFIG_GPIO_WRITE(dev, 0x57);
         if (status != 0) {
             return status;
         }
@@ -77,59 +77,59 @@ int bladerf_init_device(struct bladerf *dev)
         }
 
         /* Set the internal LMS register to enable RX and TX */
-        status = bladerf_lms_write(dev, 0x05, 0x3e);
+        status = LMS_WRITE(dev, 0x05, 0x3e);
         if (status != 0) {
             return status;
         }
 
         /* LMS FAQ: Improve TX spurious emission performance */
-        status = bladerf_lms_write(dev, 0x47, 0x40);
+        status = LMS_WRITE(dev, 0x47, 0x40);
         if (status != 0) {
             return status;
         }
 
         /* LMS FAQ: Improve ADC performance */
-        status = bladerf_lms_write(dev, 0x59, 0x29);
+        status = LMS_WRITE(dev, 0x59, 0x29);
         if (status != 0) {
             return status;
         }
 
         /* LMS FAQ: Common mode voltage for ADC */
-        status = bladerf_lms_write(dev, 0x64, 0x36);
+        status = LMS_WRITE(dev, 0x64, 0x36);
         if (status != 0) {
             return status;
         }
 
         /* LMS FAQ: Higher LNA Gain */
-        status = bladerf_lms_write(dev, 0x79, 0x37);
+        status = LMS_WRITE(dev, 0x79, 0x37);
         if (status != 0) {
             return status;
         }
 
         /* Set a default samplerate */
-        status = bladerf_set_sample_rate(dev, BLADERF_MODULE_TX, 1000000, NULL);
+        status = si5338_set_sample_rate(dev, BLADERF_MODULE_TX, 1000000, NULL);
         if (status != 0) {
             return status;
         }
 
-        status = bladerf_set_sample_rate(dev, BLADERF_MODULE_RX, 1000000, NULL);
+        status = si5338_set_sample_rate(dev, BLADERF_MODULE_RX, 1000000, NULL);
         if (status != 0) {
             return status;
         }
 
         /* Set a default frequency of 1GHz */
-        status = bladerf_set_frequency(dev, BLADERF_MODULE_TX, 1000000000);
+        status = set_frequency(dev, BLADERF_MODULE_TX, 1000000000);
         if (status != 0) {
             return status;
         }
 
-        status = bladerf_set_frequency(dev, BLADERF_MODULE_RX, 1000000000);
+        status = set_frequency(dev, BLADERF_MODULE_RX, 1000000000);
         if (status != 0) {
             return status;
         }
 
         /* Set the calibrated VCTCXO DAC value */
-        status = bladerf_dac_write(dev, dev->dac_trim);
+        status = DAC_WRITE(dev, dev->dac_trim);
         if (status != 0) {
             return status;
         }
@@ -138,198 +138,137 @@ int bladerf_init_device(struct bladerf *dev)
     return 0;
 }
 
-/******
- * CRC16 implementation from http://softwaremonkey.org/Code/CRC16
- */
-typedef  unsigned char                   byte;    /*     8 bit unsigned       */
-typedef  unsigned short int              word;    /*    16 bit unsigned       */
+int select_band(struct bladerf *dev, bladerf_module module,
+                unsigned int frequency)
+{
+    int status;
+    uint32_t gpio;
+    uint32_t band;
 
-static word crc16mp(word crcval, void *data_p, word count) {
-    /* CRC-16 Routine for processing multiple part data blocks.
-     * Pass 0 into 'crcval' for first call for any given block; for
-     * subsequent calls pass the CRC returned by the previous call. */
-    word            xx;
-    byte            *ptr= (byte *)data_p;
-
-    while (count-- > 0) {
-        crcval=(word)(crcval^(word)(((word)*ptr++)<<8));
-        for (xx=0;xx<8;xx++) {
-            if(crcval&0x8000) { crcval=(word)((word)(crcval<<1)^0x1021); }
-            else              { crcval=(word)(crcval<<1);                }
-        }
+    if (frequency < BLADERF_FREQUENCY_MIN) {
+        frequency = BLADERF_FREQUENCY_MIN;
+        log_info("Clamping frequency to %uHz\n", frequency);
+    } else if (frequency > BLADERF_FREQUENCY_MAX) {
+        frequency = BLADERF_FREQUENCY_MAX;
+        log_info("Clamping frequency to %uHz\n", frequency);
     }
-    return(crcval);
+
+    band = (frequency >= BLADERF_BAND_HIGH) ? 1 : 2;
+
+    status = lms_select_band(dev, module, frequency);
+    if (status != 0) {
+        return status;
+    }
+
+    status = CONFIG_GPIO_READ(dev, &gpio);
+    if (status != 0) {
+        return status;
+    }
+
+    gpio &= ~(module == BLADERF_MODULE_TX ? (3 << 3) : (3 << 5));
+    gpio |= (module == BLADERF_MODULE_TX ? (band << 3) : (band << 5));
+
+    return CONFIG_GPIO_WRITE(dev, gpio);
 }
 
-static int extract_field(char *ptr, int len, char *field,
-                            char *val, size_t  maxlen) {
-    int c;
-    unsigned char *ub, *end;
-    unsigned short a1, a2;
-    size_t flen, wlen;
+int set_frequency(struct bladerf *dev, bladerf_module module,
+                  unsigned int frequency)
+{
+    int status;
+    bladerf_xb attached;
+    int16_t dc_i, dc_q;
+    const struct dc_cal_tbl *dc_cal =
+        (module == BLADERF_MODULE_RX) ? dev->cal.dc_rx : dev->cal.dc_tx;
 
-    flen = strlen(field);
-
-    ub = (unsigned char *)ptr;
-    end = ub + len;
-    while (ub < end) {
-        c = *ub;
-
-        if (c == 0xff) // flash and OTP are 0xff if they've never been written to
-            break;
-
-        a1 = LE16_TO_HOST(*(unsigned short *)(&ub[c+1]));  // read checksum
-        a2 = crc16mp(0, ub, c+1);  // calculated checksum
-
-        if (a1 == a2) {
-            if (!strncmp((char *)ub + 1, field, flen)) {
-                wlen = min_sz(c - flen, maxlen);
-                strncpy(val, (char *)ub + 1 + flen, wlen);
-                val[wlen] = 0;
-                return 0;
-            }
+    status = xb_get_attached(dev, &attached);
+    if (status)
+        return status;
+    if (attached == BLADERF_XB_200) {
+        if (frequency < BLADERF_FREQUENCY_MIN) {
+            status = xb200_set_path(dev, module, BLADERF_XB200_MIX);
+            if (status)
+                return status;
+            status = xb200_auto_filter_selection(dev, module, frequency);
+            if (status)
+                return status;
+            frequency = 1248000000 - frequency;
         } else {
-            log_debug( "%s: Field checksum mismatch\n", __FUNCTION__);
-            return BLADERF_ERR_INVAL;
+            status = xb200_set_path(dev, module, BLADERF_XB200_BYPASS);
+            if (status)
+                return status;
         }
-        ub += c + 3; //skip past `c' bytes, 2 byte CRC field, and 1 byte len field
-    }
-    return BLADERF_ERR_INVAL;
-}
-
-int encode_field(char *ptr, int len, int *idx,
-                 const char *field,
-                 const char *val)
-{
-    int vlen, flen, tlen;
-    flen = (int)strlen(field);
-    vlen = (int)strlen(val);
-    tlen = flen + vlen + 1;
-
-    if (tlen >= 256 || *idx + tlen >= len)
-        return BLADERF_ERR_MEM;
-
-    ptr[*idx] = flen + vlen;
-    strcpy(&ptr[*idx + 1], field);
-    strcpy(&ptr[*idx + 1 + flen], val);
-    *(unsigned short *)(&ptr[*idx + tlen ]) = HOST_TO_LE16(crc16mp(0, &ptr[*idx ], tlen));
-    *idx += tlen + 2;
-    return 0;
-}
-
-int add_field(char *buf, int buf_len, const char *field_name, const char *val)
-{
-    int dummy_idx = 0;
-    int i = 0;
-    int rv;
-
-    /* skip to the end, ignoring crc (don't want to further corrupt partially
-     * corrupt data) */
-    while(i < buf_len) {
-        uint8_t field_len = buf[i];
-
-        if(field_len == 0xff)
-            break;
-
-        /* skip past `field_len' bytes, 2 byte CRC field, and 1 byte len
-         * field */
-        i += field_len + 3;
     }
 
+    status = lms_set_frequency(dev, module, frequency);
+    if (status != 0) {
+        return status;
+    }
 
-    rv = encode_field(buf + i, buf_len - i, &dummy_idx, field_name, val);
-    if(rv < 0)
+    status = select_band(dev, module, frequency);
+    if (status != 0) {
+        return status;
+    }
+
+    if (dc_cal != NULL) {
+        dc_cal_tbl_vals(dc_cal, frequency, &dc_i, &dc_q);
+
+        status = dev->fn->set_correction(dev, module,
+                                         BLADERF_CORR_LMS_DCOFF_I, dc_i);
+        if (status != 0) {
+            return status;
+        }
+
+        status = dev->fn->set_correction(dev, module,
+                                         BLADERF_CORR_LMS_DCOFF_Q, dc_q);
+        if (status != 0) {
+            return status;
+        }
+
+        log_verbose("Set %s DC offset cal (I, Q) to: (%d, %d)\n",
+                    (module == BLADERF_MODULE_RX) ? "RX" : "TX", dc_i, dc_q);
+    }
+
+    return status;
+}
+
+int get_frequency(struct bladerf *dev, bladerf_module module,
+                  unsigned int *frequency)
+{
+    bladerf_xb attached;
+    bladerf_xb200_path path;
+    struct lms_freq f;
+    int rv = 0;
+
+    rv = lms_get_frequency( dev, module, &f );
+    if (rv != 0) {
         return rv;
-
-    return 0;
-}
-
-int bladerf_get_otp_field(struct bladerf *dev, char *field,
-                             char *data, size_t data_size)
-{
-    int status;
-    char otp[OTP_BUFFER_SIZE];
-
-    memset(otp, 0xff, OTP_BUFFER_SIZE);
-
-    status = dev->fn->get_otp(dev, otp);
-    if (status < 0)
-        return status;
-    else
-        return extract_field(otp, OTP_BUFFER_SIZE, field, data, data_size);
-}
-
-int bladerf_get_cal_field(struct bladerf *dev, char *field,
-                            char *data, size_t data_size)
-{
-    int status;
-    char cal[CAL_BUFFER_SIZE];
-
-    status = dev->fn->get_cal(dev, cal);
-    if (status < 0)
-        return status;
-    else
-        return extract_field(cal, CAL_BUFFER_SIZE, field, data, data_size);
-}
-
-int bladerf_read_serial(struct bladerf *dev, char *serial_buf)
-{
-    int status;
-
-    status = bladerf_get_otp_field(dev, "S", serial_buf,
-                                    BLADERF_SERIAL_LENGTH - 1);
-
-    if (status < 0) {
-        log_info("Unable to fetch serial number. Defaulting to 0's.\n");
-        memset(dev->ident.serial, '0', BLADERF_SERIAL_LENGTH - 1);
-
-        /* Treat this as non-fatal */
-        status = 0;
     }
 
-    serial_buf[BLADERF_SERIAL_LENGTH - 1] = '\0';
-
-    return status;
-}
-
-int bladerf_get_and_cache_vctcxo_trim(struct bladerf *dev)
-{
-    int status;
-    bool ok;
-    int16_t trim;
-    char tmp[7] = { 0 };
-
-    status = bladerf_get_cal_field(dev, "DAC", tmp, sizeof(tmp) - 1);
-    if (!status) {
-        trim = str2uint(tmp, 0, 0xffff, &ok);
-    }
-
-    if (!status && ok) {
-        dev->dac_trim = trim;
+    if( f.x == 0 ) {
+        *frequency = 0 ;
+        rv = BLADERF_ERR_INVAL;
     } else {
-        log_debug("Unable to fetch DAC trim. Defaulting to 0x8000\n");
-        dev->dac_trim = 0x8000;
+        *frequency = lms_frequency_to_hz(&f);
+    }
+    if (rv != 0) {
+        return rv;
     }
 
-    return status;
-}
-
-int bladerf_get_and_cache_fpga_size(struct bladerf *device)
-{
-    int status;
-    char tmp[7] = { 0 };
-
-    status = bladerf_get_cal_field(device, "B", tmp, sizeof(tmp) - 1);
-
-    if (!strcmp("40", tmp)) {
-        device->fpga_size = BLADERF_FPGA_40KLE;
-    } else if(!strcmp("115", tmp)) {
-        device->fpga_size = BLADERF_FPGA_115KLE;
-    } else {
-        device->fpga_size = BLADERF_FPGA_UNKNOWN;
+    rv = xb_get_attached(dev, &attached);
+    if (rv != 0) {
+        return rv;
+    }
+    if (attached == BLADERF_XB_200) {
+        rv = xb200_get_path(dev, module, &path);
+        if (rv != 0) {
+            return rv;
+        }
+        if (path == BLADERF_XB200_MIX) {
+            *frequency = 1248000000 - *frequency;
+        }
     }
 
-    return status;
+    return rv;
 }
 
 int populate_abs_timeout(struct timespec *t, unsigned int timeout_ms)
@@ -414,12 +353,12 @@ int load_calibration_table(struct bladerf *dev, const char *filename)
 
             /* Reset the module's frequency to kick off the application of the
              * new table entries */
-            status = bladerf_get_frequency(dev, module, &frequency);
+            status = get_frequency(dev, module, &frequency);
             if (status != 0) {
                 goto out;
             }
 
-            status = bladerf_set_frequency(dev, module, frequency);
+            status = set_frequency(dev, module, frequency);
 
 
         } else if (image->type == BLADERF_IMAGE_TYPE_RX_IQ_CAL ||
@@ -437,5 +376,104 @@ int load_calibration_table(struct bladerf *dev, const char *filename)
 
 out:
     bladerf_free_image(image);
+    return status;
+}
+
+static inline int set_rx_gain_combo(struct bladerf *dev,
+                                     bladerf_lna_gain lnagain,
+                                     int rxvga1, int rxvga2)
+{
+    int status;
+    status = lms_lna_set_gain(dev, lnagain);
+    if (status < 0) {
+        return status;
+    }
+
+    status = lms_rxvga1_set_gain(dev, rxvga1);
+    if (status < 0) {
+        return status;
+    }
+
+    return lms_rxvga2_set_gain(dev, rxvga2);
+}
+
+static int set_rx_gain(struct bladerf *dev, int gain)
+{
+    if (gain <= BLADERF_LNA_GAIN_MID_DB) {
+        return set_rx_gain_combo(dev,
+                                 BLADERF_LNA_GAIN_BYPASS,
+                                 BLADERF_RXVGA1_GAIN_MIN,
+                                 BLADERF_RXVGA2_GAIN_MIN);
+    } else if (gain <= BLADERF_LNA_GAIN_MID_DB + BLADERF_RXVGA1_GAIN_MIN) {
+        return set_rx_gain_combo(dev,
+                                 BLADERF_LNA_GAIN_MID_DB,
+                                 BLADERF_RXVGA1_GAIN_MIN,
+                                 BLADERF_RXVGA2_GAIN_MIN);
+    } else if (gain <= (BLADERF_LNA_GAIN_MAX_DB + BLADERF_RXVGA1_GAIN_MAX)) {
+        return set_rx_gain_combo(dev,
+                                 BLADERF_LNA_GAIN_MID,
+                                 gain - BLADERF_LNA_GAIN_MID_DB,
+                                 BLADERF_RXVGA2_GAIN_MIN);
+    } else if (gain < (BLADERF_LNA_GAIN_MAX_DB + BLADERF_RXVGA1_GAIN_MAX + BLADERF_RXVGA2_GAIN_MAX)) {
+        return set_rx_gain_combo(dev,
+                BLADERF_LNA_GAIN_MAX,
+                BLADERF_RXVGA1_GAIN_MAX,
+                gain - (BLADERF_LNA_GAIN_MAX_DB + BLADERF_RXVGA1_GAIN_MAX));
+    } else {
+        return set_rx_gain_combo(dev,
+                                 BLADERF_LNA_GAIN_MAX,
+                                 BLADERF_RXVGA1_GAIN_MAX,
+                                 BLADERF_RXVGA2_GAIN_MAX);
+    }
+}
+
+static inline int set_tx_gain_combo(struct bladerf *dev, int txvga1, int txvga2)
+{
+    int status;
+
+    status = lms_txvga1_set_gain(dev, txvga1);
+    if (status == 0) {
+        status = lms_txvga2_set_gain(dev, txvga2);
+    }
+
+    return status;
+}
+
+static int set_tx_gain(struct bladerf *dev, int gain)
+{
+    int status;
+    MUTEX_LOCK(&dev->ctrl_lock);
+
+    if (gain < 0) {
+        gain = 0;
+    }
+
+    if (gain <= BLADERF_TXVGA2_GAIN_MAX) {
+        status = set_tx_gain_combo(dev, BLADERF_TXVGA1_GAIN_MIN, gain);
+    } else if (gain <= ((BLADERF_TXVGA1_GAIN_MAX - BLADERF_TXVGA1_GAIN_MIN) + BLADERF_TXVGA2_GAIN_MAX)) {
+        status = set_tx_gain_combo(dev,
+                    BLADERF_TXVGA1_GAIN_MIN + gain - BLADERF_TXVGA2_GAIN_MAX,
+                    BLADERF_TXVGA2_GAIN_MAX);
+    } else {
+        status =set_tx_gain_combo(dev,
+                                  BLADERF_TXVGA1_GAIN_MAX,
+                                  BLADERF_TXVGA2_GAIN_MAX);
+    }
+
+    return status;
+}
+
+int set_gain(struct bladerf *dev, bladerf_module module, int gain)
+{
+    int status;
+
+    if (module == BLADERF_MODULE_TX) {
+        status = set_tx_gain(dev, gain);
+    } else if (module == BLADERF_MODULE_RX) {
+        status = set_rx_gain(dev, gain);
+    } else {
+        status = BLADERF_ERR_INVAL;
+    }
+
     return status;
 }

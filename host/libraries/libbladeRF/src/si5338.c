@@ -22,6 +22,7 @@
 #include "rel_assert.h"
 
 #include "libbladeRF.h"
+#include "si5338.h"
 #include "host_config.h"
 #include "bladerf_priv.h"
 #include "log.h"
@@ -220,7 +221,7 @@ static int si5338_write_multisynth(struct bladerf *dev, struct si5338_multisynth
     log_debug( "Writing MS%d\n", ms->index );
 
     /* Write out the enables */
-    status = bladerf_si5338_read(dev, 36 + ms->index, &val);
+    status = SI5338_READ(dev, 36 + ms->index, &val);
     if (status < 0) {
         si5338_read_error(status, bladerf_strerror(status));
         return status;
@@ -228,7 +229,7 @@ static int si5338_write_multisynth(struct bladerf *dev, struct si5338_multisynth
     val &= ~(7);
     val |= ms->enable;
     log_debug( "Wrote enable register: 0x%2.2x\n", val );
-    status = bladerf_si5338_write(dev, 36 + ms->index, val);
+    status = SI5338_WRITE(dev, 36 + ms->index, val);
     if (status < 0) {
         si5338_write_error(status, bladerf_strerror(status));
         return status;
@@ -236,7 +237,7 @@ static int si5338_write_multisynth(struct bladerf *dev, struct si5338_multisynth
 
     /* Write out the registers */
     for (i = 0 ; i < 10 ; i++) {
-        status = bladerf_si5338_write(dev, ms->base + i, *(ms->regs+i));
+        status = SI5338_WRITE(dev, ms->base + i, *(ms->regs+i));
         if (status < 0) {
             si5338_write_error(status, bladerf_strerror(status));
             return status;
@@ -258,7 +259,7 @@ static int si5338_write_multisynth(struct bladerf *dev, struct si5338_multisynth
 
     log_debug( "Wrote r register: 0x%2.2x\n", val );
 
-    status = bladerf_si5338_write(dev, 31 + ms->index, val);
+    status = SI5338_WRITE(dev, 31 + ms->index, val);
     if (status < 0) {
         si5338_write_error(status, bladerf_strerror(status));
     }
@@ -274,7 +275,7 @@ static int si5338_read_multisynth(struct bladerf *dev, struct si5338_multisynth 
     log_debug( "Reading MS%d\n", ms->index );
 
     /* Read the enable bits */
-    status = bladerf_si5338_read(dev, 36 + ms->index, &val);
+    status = SI5338_READ(dev, 36 + ms->index, &val);
     if (status < 0) {
         si5338_read_error(status, bladerf_strerror(status));
         return status ;
@@ -284,7 +285,7 @@ static int si5338_read_multisynth(struct bladerf *dev, struct si5338_multisynth 
 
     /* Read all of the multisynth registers */
     for (i = 0; i < 10; i++) {
-        status = bladerf_si5338_read(dev, ms->base + i, ms->regs+i);
+        status = SI5338_READ(dev, ms->base + i, ms->regs+i);
         if (status < 0) {
             si5338_read_error(status, bladerf_strerror(status));
             return status;
@@ -293,7 +294,7 @@ static int si5338_read_multisynth(struct bladerf *dev, struct si5338_multisynth 
     }
 
     /* Populate the RxDIV value from the register */
-    status = bladerf_si5338_read(dev, 31 + ms->index, &val);
+    status = SI5338_READ(dev, 31 + ms->index, &val);
     if (status < 0) {
         si5338_read_error(status, bladerf_strerror(status));
         return status;

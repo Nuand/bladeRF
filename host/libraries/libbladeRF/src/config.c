@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include "bladerf_priv.h"
 #include "dc_cal_table.h"
+#include "fpga.h"
 #include "file_ops.h"
 #include "log.h"
 
@@ -75,7 +76,7 @@ static inline int load_fpga(struct bladerf *dev)
 
     if (filename != NULL) {
         log_debug("Loading FPGA from: %s\n", filename);
-        status = bladerf_load_fpga(dev, filename);
+        status = fpga_load_from_file(dev, filename);
     }
 
     free(filename);
@@ -124,7 +125,7 @@ int config_load_all(struct bladerf *dev)
         return status;
     }
 
-    status = bladerf_is_fpga_configured(dev);
+    status = dev->fn->is_fpga_configured(dev);
     if (status == 0) {
         status = load_fpga(dev);
     } else if (status > 0) {

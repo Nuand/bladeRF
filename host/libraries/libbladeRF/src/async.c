@@ -56,10 +56,7 @@ int async_init_stream(struct bladerf_stream **stream,
         return BLADERF_ERR_MEM;
     }
 
-    if (pthread_mutex_init(&lstream->lock, NULL) != 0) {
-        free(lstream);
-        return BLADERF_ERR_UNEXPECTED;
-    }
+    MUTEX_INIT(&lstream->lock);
 
     if (pthread_cond_init(&lstream->can_submit_buffer, NULL) != 0) {
         free(lstream);
@@ -145,11 +142,11 @@ int async_run_stream(struct bladerf_stream *stream, bladerf_module module)
     int status;
     struct bladerf *dev = stream->dev;
 
-    pthread_mutex_lock(&stream->lock);
+    MUTEX_LOCK(&stream->lock);
     stream->module = module;
     stream->state = STREAM_RUNNING;
     pthread_cond_signal(&stream->stream_started);
-    pthread_mutex_unlock(&stream->lock);
+    MUTEX_UNLOCK(&stream->lock);
 
     status = dev->fn->stream(stream, module);
 
@@ -164,7 +161,7 @@ int async_submit_stream_buffer(struct bladerf_stream *stream,
     int status = 0;
     struct timespec timeout_abs;
 
-    pthread_mutex_lock(&stream->lock);
+    MUTEX_LOCK(&stream->lock);
 
     if (buffer != BLADERF_STREAM_SHUTDOWN) {
         if (stream->state != STREAM_RUNNING && timeout_ms != 0) {
@@ -200,7 +197,7 @@ int async_submit_stream_buffer(struct bladerf_stream *stream,
     status = stream->dev->fn->submit_stream_buffer(stream, buffer, timeout_ms);
 
 error:
-    pthread_mutex_unlock(&stream->lock);
+    MUTEX_UNLOCK(&stream->lock);
     return status;
 }
 

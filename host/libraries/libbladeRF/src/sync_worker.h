@@ -15,7 +15,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
-#if !defined(BLADERF_SYNC_WORKER_H_) && defined(ENABLE_LIBBLADERF_SYNC)
+#ifndef BLADERF_SYNC_WORKER_H_
 #define BLADERF_SYNC_WORKER_H_
 
 #include "host_config.h"
@@ -56,7 +56,7 @@ struct sync_worker {
     /* These items should be accessed while holding state_lock */
     sync_worker_state state;
     int err_code;
-    pthread_mutex_t state_lock;
+    MUTEX state_lock;
     pthread_cond_t state_changed;   /* Worker thread uses this to inform a
                                      * waiting main thread about a state
                                      * change */
@@ -66,7 +66,7 @@ struct sync_worker {
      */
     unsigned int requests;
     pthread_cond_t requests_pending;
-    pthread_mutex_t request_lock;
+    MUTEX request_lock;
 };
 
 /**
