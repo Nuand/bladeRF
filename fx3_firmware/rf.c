@@ -422,9 +422,39 @@ static uint8_t RF_status_bits[] = {
     [BLADE_UART_EP_CONSUMER] = 0,
 };
 
+CyU3PReturnStatus_t NuandRFLinkResetEndpoint(uint8_t endpoint)
+{
+    CyU3PReturnStatus_t status = CY_U3P_ERROR_BAD_ARGUMENT;
+
+    switch(endpoint) {
+        case BLADE_RF_SAMPLE_EP_PRODUCER:
+            status = ClearDMAChannel(endpoint, &glChHandleUtoP,
+                                     BLADE_DMA_TX_SIZE);
+            break;
+
+        case BLADE_RF_SAMPLE_EP_CONSUMER:
+            status = ClearDMAChannel(endpoint, &glChHandlePtoU,
+                                     BLADE_DMA_TX_SIZE);
+            break;
+
+        case BLADE_UART_EP_PRODUCER:
+            status = ClearDMAChannel(endpoint, &glChHandlebladeRFUtoUART,
+                                     BLADE_DMA_TX_SIZE);
+            break;
+
+        case BLADE_UART_EP_CONSUMER:
+            status = ClearDMAChannel(endpoint, &glChHandlebladeRFUARTtoU,
+                                     BLADE_DMA_TX_SIZE);
+            break;
+    }
+
+    return status;
+}
+
 CyBool_t NuandRFLinkHaltEndpoint(CyBool_t set, uint16_t endpoint)
 {
     CyBool_t isHandled = CyFalse;
+    CyU3PReturnStatus_t status = CY_U3P_ERROR_BAD_ARGUMENT;
 
     switch(endpoint) {
     case BLADE_RF_SAMPLE_EP_PRODUCER:
@@ -433,27 +463,18 @@ CyBool_t NuandRFLinkHaltEndpoint(CyBool_t set, uint16_t endpoint)
     case BLADE_UART_EP_CONSUMER:
         isHandled = !set;
         RF_status_bits[endpoint] = set;
+        status = NuandRFLinkResetEndpoint(endpoint);
         break;
     }
 
-    switch(endpoint) {
-    case BLADE_RF_SAMPLE_EP_PRODUCER:
-        ClearDMAChannel(endpoint, &glChHandleUtoP, BLADE_DMA_TX_SIZE, set);
-        break;
-    case BLADE_RF_SAMPLE_EP_CONSUMER:
-        ClearDMAChannel(endpoint, &glChHandlePtoU, BLADE_DMA_TX_SIZE, set);
-        break;
-    case BLADE_UART_EP_PRODUCER:
-        ClearDMAChannel(endpoint,
-                &glChHandlebladeRFUtoUART, BLADE_DMA_TX_SIZE, set);
-        break;
-    case BLADE_UART_EP_CONSUMER:
-        ClearDMAChannel(endpoint,
-                &glChHandlebladeRFUARTtoU, BLADE_DMA_TX_SIZE, set);
-        break;
+    if (status == CY_U3P_SUCCESS) {
+        CyU3PUsbStall (endpoint, CyFalse, CyTrue);
+        if(!set) {
+            CyU3PUsbAckSetup ();
+        }
     }
 
-    return isHandled;
+    return isHandled && status == CY_U3P_SUCCESS;
 }
 
 CyBool_t NuandRFLinkHalted(uint16_t endpoint, uint8_t * data)
@@ -478,4 +499,5 @@ const struct NuandApplication NuandRFLink = {
     .stop = NuandRFLinkStop,
     .halt_endpoint = NuandRFLinkHaltEndpoint,
     .halted = NuandRFLinkHalted,
+    .reset_endpoint = NuandRFLinkResetEndpoint,
 };

@@ -235,23 +235,28 @@ CyBool_t GetStatus(uint16_t endpoint) {
     return isHandled;
 }
 
-void ClearDMAChannel(uint8_t ep, CyU3PDmaChannel * handle, uint32_t count,
-                     CyBool_t stall_only) {
-
+CyU3PReturnStatus_t ClearDMAChannel(uint8_t ep,
+                                    CyU3PDmaChannel * handle,
+                                    uint32_t count)
+{
     CyU3PReturnStatus_t status;
 
-    CyU3PDmaChannelReset (handle);
-    CyU3PUsbFlushEp(ep);
-    CyU3PUsbResetEp(ep);
-    status = CyU3PDmaChannelSetXfer (handle, count);
-
-    if (status == CY_U3P_SUCCESS) {
-        CyU3PUsbStall (ep, CyFalse, CyTrue);
-
-        if(!stall_only) {
-            CyU3PUsbAckSetup ();
-        }
+    status = CyU3PDmaChannelReset(handle);
+    if (status != CY_U3P_SUCCESS) {
+        return status;
     }
+
+    status = CyU3PUsbFlushEp(ep);
+    if (status != CY_U3P_SUCCESS) {
+        return status;
+    }
+
+    status = CyU3PUsbResetEp(ep);
+    if (status != CY_U3P_SUCCESS) {
+        return status;
+    }
+
+    return CyU3PDmaChannelSetXfer (handle, count);
 }
 
 CyBool_t ClearHaltCondition(uint16_t endpoint) {
@@ -353,15 +358,6 @@ CyBool_t NuandHandleVendorRequest(
         apiRetStatus = CY_U3P_SUCCESS;
         use_feature = wValue;
 
-        if (!use_feature) {
-            apiRetStatus = CyU3PUsbResetEp(BLADE_RF_SAMPLE_EP_CONSUMER);
-            if(apiRetStatus != CY_U3P_SUCCESS) {
-                CyU3PDebugPrint (4,
-                        "Failed reset USB, error code = %d\n",
-                        apiRetStatus);
-            }
-        }
-
         CyU3PGpioGetValue(GPIO_TX_EN, &txen) ;
         CyU3PGpioGetValue(GPIO_RX_EN, &rxen) ;
         if (txen == CyFalse && rxen == CyFalse) {
@@ -370,21 +366,23 @@ CyBool_t NuandHandleVendorRequest(
         }
 
         CyU3PGpioSetValue(GPIO_RX_EN, use_feature ? CyTrue : CyFalse);
+
+        if (!use_feature) {
+            const uint8_t ep = BLADE_RF_SAMPLE_EP_CONSUMER;
+            apiRetStatus = NuandRFLink.reset_endpoint(ep);
+            if(apiRetStatus != CY_U3P_SUCCESS) {
+                CyU3PDebugPrint (4,
+                                 "Failed reset ep %u, error code = %d\n",
+                                 ep, apiRetStatus);
+            }
+        }
+
         CyU3PUsbSendRetCode(apiRetStatus);
     break;
 
     case BLADE_USB_CMD_RF_TX:
         apiRetStatus = CY_U3P_SUCCESS;
         use_feature = wValue;
-
-        if (!use_feature) {
-            apiRetStatus = CyU3PUsbResetEp(BLADE_RF_SAMPLE_EP_PRODUCER);
-            if(apiRetStatus != CY_U3P_SUCCESS) {
-                CyU3PDebugPrint (4,
-                        "Failed reset USB, error code = %d\n",
-                        apiRetStatus);
-            }
-        }
 
         CyU3PGpioGetValue(GPIO_TX_EN, &txen) ;
         CyU3PGpioGetValue(GPIO_RX_EN, &rxen) ;
@@ -394,6 +392,17 @@ CyBool_t NuandHandleVendorRequest(
         }
 
         CyU3PGpioSetValue(GPIO_TX_EN, use_feature ? CyTrue : CyFalse);
+
+        if (!use_feature) {
+            const uint8_t ep = BLADE_RF_SAMPLE_EP_PRODUCER;
+            apiRetStatus = NuandRFLink.reset_endpoint(ep);
+            if(apiRetStatus != CY_U3P_SUCCESS) {
+                CyU3PDebugPrint (4,
+                                 "Failed reset ep %u, error code = %d\n",
+                                 ep, apiRetStatus);
+            }
+        }
+
         CyU3PUsbSendRetCode(apiRetStatus);
     break;
 

@@ -235,21 +235,41 @@ uint8_t FPGA_status_bits[] = {
     [BLADE_FPGA_EP_PRODUCER] = 0,
 };
 
+CyU3PReturnStatus_t NuandFpgaConfigResetEndpoint(uint8_t endpoint)
+{
+    CyU3PReturnStatus_t status = CY_U3P_ERROR_BAD_ARGUMENT;
+
+    switch(endpoint) {
+        case BLADE_FPGA_EP_PRODUCER:
+            status = ClearDMAChannel(endpoint, &glChHandlebladeRFUtoP,
+                                    BLADE_DMA_TX_SIZE);
+            break;
+    }
+
+    return status;
+}
+
 CyBool_t NuandFpgaConfigHaltEndpoint(CyBool_t set, uint16_t endpoint)
 {
     CyBool_t isHandled = CyFalse;
+    CyU3PReturnStatus_t status = CY_U3P_ERROR_BAD_ARGUMENT;
 
     switch(endpoint) {
     case BLADE_FPGA_EP_PRODUCER:
         FPGA_status_bits[endpoint] = set;
-        ClearDMAChannel(endpoint, &glChHandlebladeRFUtoP,
-                        BLADE_DMA_TX_SIZE, set);
-
+        status = NuandFpgaConfigResetEndpoint(endpoint);
         isHandled = !set;
         break;
     }
 
-    return isHandled;
+    if (status == CY_U3P_SUCCESS) {
+        CyU3PUsbStall (endpoint, CyFalse, CyTrue);
+        if(!set) {
+            CyU3PUsbAckSetup ();
+        }
+    }
+
+    return isHandled && status == CY_U3P_SUCCESS;
 }
 
 CyBool_t NuandFpgaConfigHalted(uint16_t endpoint, uint8_t * data)
@@ -360,4 +380,5 @@ const struct NuandApplication NuandFpgaConfig = {
     .stop = NuandFpgaConfigStop,
     .halt_endpoint = NuandFpgaConfigHaltEndpoint,
     .halted = NuandFpgaConfigHalted,
+    .reset_endpoint = NuandFpgaConfigResetEndpoint
 };

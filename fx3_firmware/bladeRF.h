@@ -71,7 +71,8 @@ extern const uint8_t CyFxUSBProductDscr[];
 
 CyU3PReturnStatus_t CyFxSpiEraseSector(CyBool_t /* isErase */, uint8_t /* sector */);
 void NuandGPIOReconfigure(CyBool_t /* fullGpif */, CyBool_t /* warm */);
-void ClearDMAChannel(uint8_t ep, CyU3PDmaChannel * handle, uint32_t count, CyBool_t stall_only);
+CyU3PReturnStatus_t ClearDMAChannel(uint8_t ep, CyU3PDmaChannel * handle,
+                                    uint32_t count);
 void CyFxAppErrorHandler(CyU3PReturnStatus_t apiRetStatus);
 void NuandAllowSuspend(CyBool_t set_allow_suspend);
 
@@ -82,6 +83,7 @@ struct NuandApplication {
     void (*stop)(void);
     CyBool_t (*halt_endpoint)(CyBool_t set, uint16_t endpoint);
     CyBool_t (*halted)(uint16_t endpoint, uint8_t *data);
+    CyU3PReturnStatus_t (*reset_endpoint)(uint8_t endpoint);
 };
 
 #define GPIO_nSTATUS    52
