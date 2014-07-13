@@ -52,18 +52,6 @@
  * band should be selected */
 #define BLADERF_BAND_HIGH (1500000000)
 
-typedef enum {
-    ETYPE_ERRNO,
-    ETYPE_LIBBLADERF,
-    ETYPE_BACKEND,
-    ETYPE_OTHER = INT_MAX - 1
-} bladerf_error_type;
-
-struct bladerf_error {
-    bladerf_error_type type;
-    int value;
-};
-
 /* Forward declaration for the function table */
 struct bladerf;
 
@@ -94,9 +82,6 @@ struct bladerf {
     int legacy;
 
     bladerf_dev_speed usb_speed;
-
-    /* Last error encountered */
-    struct bladerf_error error;
 
     /* Backend's private data  */
     void *backend;
@@ -131,19 +116,6 @@ int bladerf_init_device(struct bladerf *dev);
  */
 size_t bytes_to_c16_samples(size_t n_bytes);
 size_t c16_samples_to_bytes(size_t n_samples);
-
-
-/**
- * Set an error and type
- */
-void bladerf_set_error(struct bladerf_error *error,
-                        bladerf_error_type type, int val);
-
-/**
- * Fetch an error and type
- */
-void bladerf_get_error(struct bladerf_error *error,
-                        bladerf_error_type *type, int *val);
 
 /**
  * Read data from one-time-programmabe (OTP) section of flash

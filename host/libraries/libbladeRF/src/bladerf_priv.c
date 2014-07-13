@@ -32,25 +32,6 @@
 
 #define OTP_BUFFER_SIZE 256
 
-void bladerf_set_error(struct bladerf_error *error,
-                        bladerf_error_type type, int val)
-{
-    error->type = type;
-    error->value = val;
-}
-
-void bladerf_get_error(struct bladerf_error *error,
-                        bladerf_error_type *type, int *val)
-{
-    if (type) {
-        *type = error->type;
-    }
-
-    if (val) {
-        *val = error->value;
-    }
-}
-
 /* TODO Check for truncation (e.g., odd # bytes)? */
 size_t bytes_to_c16_samples(size_t n_bytes)
 {
