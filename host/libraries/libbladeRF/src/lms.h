@@ -598,4 +598,14 @@ int lms_select_band(struct bladerf *dev, bladerf_module module,
  */
 int lms_select_sampling(struct bladerf *dev, bladerf_sampling sampling);
 
+/**
+ * Get the current sampling type
+ *
+ * @param[in]   dev         Device handle
+ * @param[out]  sampling    Desired sampling mode
+ *
+ * @return 0 on succes, BLADERF_ERR_* value on failure
+ */
+int lms_get_sampling(struct bladerf *dev, bladerf_sampling *sampling);
+
 #endif /* LMS_H_ */

@@ -400,31 +400,7 @@ int bladerf_get_sample_rate(struct bladerf *dev, bladerf_module module, unsigned
 
 int bladerf_get_sampling(struct bladerf *dev, bladerf_sampling *sampling)
 {
-    int status = 0, external = 0;
-    uint8_t val = 0;
-
-    status = bladerf_lms_read( dev, 0x09, &val );
-    if (status) {
-        log_warning( "Could not read state of ADC pin connectivity\n" );
-        goto bladerf_get_sampling__done;
-    }
-    external = val&(1<<7) ? 1 : 0;
-
-    status = bladerf_lms_read( dev, 0x64, &val );
-    if (status) {
-        log_warning( "Could not read RXVGA2 state\n" );
-        goto bladerf_get_sampling__done;
-    }
-    external |= val&(1<<1) ? 0 : 2;
-
-    switch(external) {
-        case 0  : *sampling = BLADERF_SAMPLING_INTERNAL; break;
-        case 3  : *sampling = BLADERF_SAMPLING_EXTERNAL; break;
-        default : *sampling = BLADERF_SAMPLING_UNKNOWN; break;
-    }
-
-bladerf_get_sampling__done:
-    return status;
+    return lms_get_sampling(dev, sampling);
 }
 
 int bladerf_set_sampling(struct bladerf *dev, bladerf_sampling sampling)

@@ -2640,3 +2640,41 @@ int lms_select_sampling(struct bladerf *dev, bladerf_sampling sampling)
 out:
     return status;
 }
+
+int lms_get_sampling(struct bladerf *dev, bladerf_sampling *sampling)
+{
+    int status = 0, external = 0;
+    uint8_t val = 0;
+
+    status = bladerf_lms_read(dev, 0x09, &val);
+    if (status != 0) {
+        log_warning("Could not read state of ADC pin connectivity\n");
+        goto out;
+    }
+    external = (val & (1 << 7)) ? 1 : 0;
+
+    status = bladerf_lms_read(dev, 0x64, &val);
+    if (status != 0) {
+        log_warning( "Could not read RXVGA2 state\n" );
+        goto out;
+    }
+    external |= (val & (1 << 1)) ? 0 : 2;
+
+    switch (external) {
+        case 0:
+            *sampling = BLADERF_SAMPLING_INTERNAL;
+            break;
+
+        case 3:
+            *sampling = BLADERF_SAMPLING_EXTERNAL;
+            break;
+
+        default:
+            *sampling = BLADERF_SAMPLING_UNKNOWN;
+            break;
+    }
+
+out:
+    return status;
+
+}
