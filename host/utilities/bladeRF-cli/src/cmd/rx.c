@@ -37,13 +37,6 @@
 #   define EOL "\n"
 #endif
 
-struct rx_callback_data {
-    int (*write_samples)(struct rxtx_data *rx, int16_t *samples, size_t n);
-    struct rxtx_data *rx;
-    size_t samples_left;
-    bool inf;
-};
-
 /**
  * Peform adjustments on received samples before writing them out:
  *  (1) Mask off FPGA markers
@@ -125,67 +118,89 @@ static int rx_write_csv_sc16q11(struct rxtx_data *rx,
     return status;
 }
 
-static void *rx_callback(struct bladerf *dev,
-                         struct bladerf_stream *stream,
-                         struct bladerf_metadata *meta,
-                         void *samples,
-                         size_t num_samples,
-                         void *user_data)
+static int rx_task_exec_running(struct rxtx_data *rx, struct cli_state *s)
 {
-    struct rx_callback_data *cb_data = (struct rx_callback_data *)user_data;
-    struct rxtx_data *rx = cb_data->rx;
-    unsigned char requests;
-    void *ret;
-    size_t n_to_write;
+    int status = 0;
+    int samples_per_buffer;
+    void *samples;
+    size_t num_samples;
+    size_t samples_read = 0;
+    int (*write_samples)(struct rxtx_data *rx, int16_t *samples, size_t n);
+    unsigned int timeout_ms;
 
-    /* Stop stream on STOP or SHUTDOWN, but only clear STOP. This will keep
-     * the SHUTDOWN request around so we can read it when determining
-     * our state transition */
-    requests = rxtx_get_requests(rx, RXTX_TASK_REQ_STOP);
-    if (requests & (RXTX_TASK_REQ_STOP | RXTX_TASK_REQ_SHUTDOWN)) {
-        return NULL;
-    }
-
+    /* Read the parameters that will be used for the sync transfers */
     pthread_mutex_lock(&rx->data_mgmt.lock);
-
-    if (!cb_data->inf) {
-        n_to_write = min_sz(cb_data->samples_left, num_samples);
-        cb_data->samples_left -= n_to_write;
-    } else {
-        n_to_write = num_samples;
-    }
-
-    /* We assume we have IQ pairs */
-    assert((n_to_write & 1) == 0);
-
-    if (n_to_write > 0) {
-        sc16q11_sample_fixup(samples, n_to_write);
-
-        /* Write the samples out */
-        cb_data->write_samples(rx, (int16_t*)samples, n_to_write);
-
-        /* Fetch the next buffer */
-        rx->data_mgmt.next_idx++;
-        rx->data_mgmt.next_idx %= rx->data_mgmt.num_buffers;
-        ret = rx->data_mgmt.buffers[rx->data_mgmt.next_idx];
-    } else {
-        /* We've already written the request number of samples */
-        ret = NULL;
-    }
-
+    timeout_ms = rx->data_mgmt.timeout_ms;
+    samples_per_buffer = rx->data_mgmt.samples_per_buffer;
     pthread_mutex_unlock(&rx->data_mgmt.lock);
-    return ret;
+
+    pthread_mutex_lock(&rx->param_lock);
+    num_samples = ((struct rx_params*)rx->params)->n_samples;
+    write_samples = ((struct rx_params*)rx->params)->write_samples;
+    pthread_mutex_unlock(&rx->param_lock);
+
+    /* Allocate a buffer for the block of samples */
+    samples = malloc(samples_per_buffer * sizeof(uint16_t) * 2);
+    if (samples == NULL) {
+        status = errno;
+        set_last_error(&rx->last_error, ETYPE_ERRNO, status);
+    }
+
+    /*
+     * Keep reading samples until a failure or until all requested samples
+     * have been read
+     */
+    while (status == 0 && (num_samples == 0 || samples_read < num_samples)) {
+        /*
+         * Stop stream on STOP or SHUTDOWN, but only clear STOP. This will keep
+         * the SHUTDOWN request around so we can read it when determining our
+         * state transition
+         */
+        unsigned char requests = rxtx_get_requests(rx, RXTX_TASK_REQ_STOP);
+        if (requests & (RXTX_TASK_REQ_STOP | RXTX_TASK_REQ_SHUTDOWN)) {
+            break;
+        }
+
+        /* Read the samples into the sample buffer */
+        status = bladerf_sync_rx(s->dev, samples, samples_per_buffer, NULL,
+                                 timeout_ms);
+
+        if (status != 0) {
+            set_last_error(&rx->last_error, ETYPE_BLADERF, status);
+        } else {
+            size_t to_write = min_sz(samples_per_buffer,
+                                     (num_samples - samples_read));
+
+            /* Write the samples to the output file */
+            sc16q11_sample_fixup(samples, to_write);
+            status = write_samples(rx, samples, to_write);
+
+            if (status != 0) {
+                set_last_error(&rx->last_error, ETYPE_CLI, status);
+            }
+        }
+
+        samples_read += samples_per_buffer;
+    }
+
+    /* Free the sample buffer */
+    if (samples != NULL) {
+        free(samples);
+    }
+
+    return status;
 }
 
 void *rx_task(void *cli_state_arg)
 {
     int status = 0;
+    int disable_status;
     unsigned char requests;
     enum rxtx_state task_state;
     struct cli_state *cli_state = (struct cli_state *) cli_state_arg;
     struct rxtx_data *rx = cli_state->rx;
     struct rx_params *rx_params = rx->params;
-    struct rx_callback_data cb_data;
+    pthread_mutex_t *dev_lock = &cli_state->dev_lock;
 
     task_state = rxtx_get_state(rx);
     assert(task_state == RXTX_STATE_INIT);
@@ -212,24 +227,16 @@ void *rx_task(void *cli_state_arg)
                 /* Clear the last error */
                 set_last_error(&rx->last_error, ETYPE_ERRNO, 0);
 
-                /* Set up count of samples to receive */
-                pthread_mutex_lock(&rx->param_lock);
-                cb_data.samples_left = rx_params->n_samples;
-                pthread_mutex_unlock(&rx->param_lock);
-
-                cb_data.rx = rx;
-                cb_data.inf = cb_data.samples_left == 0;
-
                 /* Choose the callback appropriate for the desired file type */
                 pthread_mutex_lock(&rx->file_mgmt.file_meta_lock);
 
                 switch (rx->file_mgmt.format) {
                     case RXTX_FMT_CSV_SC16Q11:
-                        cb_data.write_samples = rx_write_csv_sc16q11;
+                        rx_params->write_samples = rx_write_csv_sc16q11;
                         break;
 
                     case RXTX_FMT_BIN_SC16Q11:
-                        cb_data.write_samples = rx_write_bin_sc16q11;
+                        rx_params->write_samples = rx_write_bin_sc16q11;
                         break;
 
                     default:
@@ -249,17 +256,13 @@ void *rx_task(void *cli_state_arg)
                 if (status == 0) {
                     pthread_mutex_lock(&rx->data_mgmt.lock);
 
-                    rx->data_mgmt.next_idx = 0;
-
-                    status = bladerf_init_stream(&rx->data_mgmt.stream,
-                                cli_state->dev,
-                                rx_callback,
-                                &rx->data_mgmt.buffers,
-                                rx->data_mgmt.num_buffers,
-                                BLADERF_FORMAT_SC16_Q11,
-                                rx->data_mgmt.samples_per_buffer,
-                                rx->data_mgmt.num_transfers,
-                                &cb_data);
+                    status = bladerf_sync_config(cli_state->dev,
+                                                 BLADERF_MODULE_RX,
+                                                 BLADERF_FORMAT_SC16_Q11,
+                                                 rx->data_mgmt.num_buffers,
+                                                 rx->data_mgmt.samples_per_buffer,
+                                                 rx->data_mgmt.num_transfers,
+                                                 rx->data_mgmt.timeout_ms);
 
                     if (status < 0) {
                         err_type = ETYPE_BLADERF;
@@ -271,8 +274,6 @@ void *rx_task(void *cli_state_arg)
                 if (status == 0) {
                     rxtx_set_state(rx, RXTX_STATE_RUNNING);
                 } else {
-                    bladerf_deinit_stream(rx->data_mgmt.stream);
-                    rx->data_mgmt.stream = NULL;
                     set_last_error(&rx->last_error, err_type, status);
                     rxtx_set_state(rx, RXTX_STATE_IDLE);
                 }
@@ -280,7 +281,28 @@ void *rx_task(void *cli_state_arg)
             break;
 
             case RXTX_STATE_RUNNING:
-                rxtx_task_exec_running(rx, cli_state);
+
+                pthread_mutex_lock(dev_lock);
+                status = bladerf_enable_module(cli_state->dev,
+                                               rx->module, true);
+                pthread_mutex_unlock(dev_lock);
+
+                if (status < 0) {
+                    set_last_error(&rx->last_error, ETYPE_BLADERF, status);
+                } else {
+                    status = rx_task_exec_running(rx, cli_state);
+
+                    pthread_mutex_lock(dev_lock);
+                    disable_status = bladerf_enable_module(cli_state->dev,
+                                                           rx->module, false);
+                    pthread_mutex_unlock(dev_lock);
+
+                    if (status == 0 && disable_status < 0) {
+                        set_last_error(&rx->last_error, ETYPE_BLADERF, status);
+                    }
+                }
+
+                rxtx_set_state(rx, RXTX_STATE_STOP);
                 break;
 
             case RXTX_STATE_STOP:
@@ -326,18 +348,6 @@ static int rx_cmd_start(struct cli_state *s)
 
     if (status != 0) {
         return status;
-    }
-
-    /* Set our stream timeout */
-    pthread_mutex_lock(&s->rx->data_mgmt.lock);
-    status = bladerf_set_stream_timeout(s->dev, BLADERF_MODULE_RX,
-                                        s->rx->data_mgmt.timeout_ms);
-    pthread_mutex_unlock(&s->rx->data_mgmt.lock);
-
-    if (status != 0) {
-        s->last_lib_error = status;
-        set_last_error(&s->rx->last_error, ETYPE_BLADERF, s->last_lib_error);
-        return CLI_RET_LIBBLADERF;
     }
 
     /* Request thread to start running */

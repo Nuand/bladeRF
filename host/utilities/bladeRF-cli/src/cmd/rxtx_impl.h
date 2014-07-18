@@ -75,11 +75,6 @@ enum rxtx_state {
  * should be acquired first.*/
 struct data_mgmt
 {
-    /* These two items should not be modified outside of the running task */
-    struct bladerf_stream *stream;  /* Stream handle */
-    void **buffers;                 /* SC16 Q11 sample buffers*/
-    size_t next_idx;                /* Index of next buffer to use */
-
     pthread_mutex_t lock;           /* Should be acquired to change the
                                      *    the following items */
     size_t num_buffers;             /* # of buffers in 'buffers' list */
@@ -145,6 +140,7 @@ struct tx_params
 struct rx_params
 {
     size_t n_samples;           /* Number of samples to receive */
+    int (*write_samples)(struct rxtx_data *rx, int16_t *samples, size_t n);
 };
 
 /* Multipliers in units of 1024 */
