@@ -326,30 +326,36 @@ int lms_lpf_get_mode(struct bladerf *dev, bladerf_module mod,
                      bladerf_lpf_mode *mode)
 {
     int status;
-    uint8_t data;
     const uint8_t reg = (mod == BLADERF_MODULE_RX) ? 0x54 : 0x34;
+    uint8_t data_h, data_l;
+    bool lpf_enabled, lpf_bypassed;
 
-    status = bladerf_lms_read(dev, reg, &data);
+    status = bladerf_lms_read(dev, reg, &data_l);
     if (status != 0) {
         return status;
     }
 
-    if ((data & (1 << 1) ) == 0) {
-        *mode = BLADERF_LPF_DISABLED;
-    } else {
-        status = bladerf_lms_read(dev, reg + 1, &data);
-        if (status != 0) {
-            return status;
-        }
-
-        if (data & (1 << 6)) {
-            *mode = BLADERF_LPF_BYPASSED;
-        } else {
-            *mode = BLADERF_LPF_NORMAL;
-        }
+    status = bladerf_lms_read(dev, reg + 1, &data_h);
+    if (status != 0) {
+        return status;
     }
 
-    return 0;
+    lpf_enabled  = (data_l & (1 << 1)) != 0;
+    lpf_bypassed = (data_h & (1 << 6)) != 0;
+
+    if (lpf_enabled && !lpf_bypassed) {
+        *mode = BLADERF_LPF_NORMAL;
+    } else if (!lpf_enabled && lpf_bypassed) {
+        *mode = BLADERF_LPF_BYPASSED;
+    } else if (!lpf_enabled && !lpf_bypassed) {
+        *mode = BLADERF_LPF_DISABLED;
+    } else {
+        log_debug("Invalid LPF configuration: 0x%02x, 0x%02x\n",
+                  data_l, data_h);
+        status = BLADERF_ERR_INVAL;
+    }
+
+    return status;
 }
 
 int lms_lpf_set_mode(struct bladerf *dev, bladerf_module mod,
