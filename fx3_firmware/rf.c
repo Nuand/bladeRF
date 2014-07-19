@@ -39,6 +39,10 @@ void NuandRFLinkLoopBack(int lp) {
     loopback = lp;
 }
 
+int NuandRFLinkGetLoopBack() {
+    return loopback;
+}
+
 static void UartBridgeStart(void)
 {
     uint16_t size = 0;
