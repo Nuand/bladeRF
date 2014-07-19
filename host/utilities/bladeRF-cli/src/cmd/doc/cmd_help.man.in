@@ -109,7 +109,7 @@ Valid options are:
 .PP
 .TS
 tab(@);
-rw(11.67n) lw(52.50n).
+rw(11.7n) lw(52.5n).
 T{
 Option
 T}@T{
@@ -194,7 +194,7 @@ Valid options are:
 .PP
 .TS
 tab(@);
-rw(11.67n) lw(52.50n).
+rw(11.7n) lw(52.5n).
 T{
 Option
 T}@T{
@@ -434,7 +434,7 @@ The parameter is one of:
 .PP
 .TS
 tab(@);
-rw(13.61n) lw(54.44n).
+rw(13.6n) lw(54.4n).
 T{
 Parameter
 T}@T{
@@ -546,7 +546,7 @@ Reception is controlled and configured by one of the following:
 .PP
 .TS
 tab(@);
-rw(11.67n) lw(56.39n).
+rw(11.7n) lw(56.4n).
 T{
 Command
 T}@T{
@@ -593,7 +593,7 @@ Below is a list of available parameters.
 .PP
 .TS
 tab(@);
-rw(15.56n) lw(52.50n).
+rw(15.6n) lw(52.5n).
 T{
 Parameter
 T}@T{
@@ -688,7 +688,7 @@ Transmission is controlled and configured by one of the following:
 .PP
 .TS
 tab(@);
-rw(11.67n) lw(56.39n).
+rw(11.7n) lw(56.4n).
 T{
 Command
 T}@T{
@@ -735,7 +735,7 @@ Below is a list of available parameters.
 .PP
 .TS
 tab(@);
-rw(15.56n) lw(52.50n).
+rw(15.6n) lw(52.5n).
 T{
 Parameter
 T}@T{
@@ -840,7 +840,7 @@ The parameter is one of:
 .PP
 .TS
 tab(@);
-rw(13.61n) lw(54.44n).
+rw(13.6n) lw(54.4n).
 T{
 Parameter
 T}@T{
@@ -865,7 +865,8 @@ T}
 T{
 \f[C]loopback\f[]
 T}@T{
-Loopback settings
+Loopback settings.
+Run \[aq]set loopback\[aq] for available modes.
 T}
 T{
 \f[C]lnagain\f[]

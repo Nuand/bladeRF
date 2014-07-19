@@ -606,7 +606,7 @@ that particular command.  The parameter is one of:
 
 `gpio`        FX3 <-> FPGA GPIO state
 
-`loopback`    Loopback settings
+`loopback`    Loopback settings. Run 'set loopback' for available modes.
 
 `lnagain`     Gain setting of the LNA, in dB. Valid values: 0, 3, 6
 

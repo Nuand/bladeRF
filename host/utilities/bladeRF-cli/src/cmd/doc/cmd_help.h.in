@@ -27,7 +27,7 @@
  * Any manual modifications to this file will be overwritten!
  * To edit the content of help strings, please edit interactive-help.md
  *
- * Last generated: Sun Jul  6 17:03:08 EDT 2014 by rtucker@racer-x
+ * Last generated: Sat Jul 19 17:46:40 EDT 2014 by jynik
  */
 
 #ifndef BLADERF_CLI_DOC_CMD_HELP_H__
@@ -595,20 +595,34 @@
   "The set command takes a parameter and an arbitrary number of arguments\n" \
   "for that particular command. The parameter is one of:\n" \
   "\n" \
+  "  -----------------------------------------------------------------------\n" \
   "       Parameter Description\n" \
   "  -------------- --------------------------------------------------------\n" \
   "       bandwidth Bandwidth settings\n" \
+  "\n" \
   "       frequency Frequency settings\n" \
+  "\n" \
   "            gpio FX3 <-> FPGA GPIO state\n" \
-  "        loopback Loopback settings\n" \
+  "\n" \
+  "        loopback Loopback settings. Run 'set loopback' for available\n" \
+  "                 modes.\n" \
+  "\n" \
   "         lnagain Gain setting of the LNA, in dB. Valid values: 0, 3, 6\n" \
+  "\n" \
   "          rxvga1 Gain setting of RXVGA1, in dB. Range: [5, 30]\n" \
+  "\n" \
   "          rxvga2 Gain setting of RXVGA2, in dB. Range: [0, 30]\n" \
+  "\n" \
   "          txvga1 Gain setting of TXVGA1, in dB. Range: [-35, -4]\n" \
+  "\n" \
   "          txvga2 Gain setting of TXVGA2, in dB. Range: [0, 25]\n" \
+  "\n" \
   "        sampling External or internal sampling mode\n" \
+  "\n" \
   "      samplerate Samplerate settings\n" \
+  "\n" \
   "         trimdac VCTCXO Trim DAC settings\n" \
+  "  -----------------------------------------------------------------------\n" \
   "\n" \
 
 
