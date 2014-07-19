@@ -28,7 +28,6 @@ set_module_property AUTHOR "Nuand, LLC"
 set_module_property DISPLAY_NAME time_tamer
 set_module_property INSTANTIATE_IN_SYSTEM_MODULE true
 set_module_property EDITABLE true
-set_module_property ANALYZE_HDL AUTO
 set_module_property REPORT_TO_TALKBACK false
 set_module_property ALLOW_GREYBOX_GENERATION false
 
