@@ -1289,9 +1289,23 @@ static int usb_enable_module(struct bladerf *dev, bladerf_module m, bool enable)
                     status, bladerf_strerror(status));
 
     } else if (fx3_ret != 0) {
-        log_warning("Error enabling RF %s (fx3_ret=%d)\n",
-                        (m == BLADERF_MODULE_RX) ? "RX" : "TX", fx3_ret);
-        status = BLADERF_ERR_UNEXPECTED;
+        log_warning("FX3 reported error=0x%x when %s RF %s\n",
+                    fx3_ret,
+                    enable ? "enabling" : "disabling",
+                    (m == BLADERF_MODULE_RX) ? "RX" : "TX");
+
+        /* FIXME: Work around what seems to be a harmless failure.
+         *        It appears that in firmware or in the lib, we may be
+         *        attempting to disable an already disabled module, or
+         *        enabling an already enabled module.
+         *
+         *        Further investigation required
+         *
+         *        0x44 corresponds to CY_U3P_ERROR_ALREADY_STARTED
+         */
+        if (fx3_ret != 0x44) {
+            status = BLADERF_ERR_UNEXPECTED;
+        }
     }
 
     return status;
