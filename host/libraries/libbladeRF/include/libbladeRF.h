@@ -1350,7 +1350,7 @@ typedef void *(*bladerf_stream_cb)(struct bladerf *dev,
  * receive data without timeouts or dropped data.
  *
  * @f[
- * Sample\ Rate < \frac{\#\ Transfers}{Timeout} \times Buffer\ Size
+ * Sample\ Rate > \frac{\#\ Transfers}{Timeout} \times Buffer\ Size
  * @f]
  *
  * To account for general system overhead, it is recommended to multiply the
