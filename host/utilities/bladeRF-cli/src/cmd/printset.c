@@ -645,6 +645,10 @@ int print_loopback(struct cli_state *state, int argc, char **argv)
             printf("Loopback mode: rf_lna3\n");
             break;
 
+        case BLADERF_LB_FIRMWARE:
+            printf("Loopback mode: firmware\n");
+            break;
+
         case BLADERF_LB_NONE:
             printf("Loopback mode: none\n");
             break;
@@ -675,6 +679,7 @@ int set_loopback(struct cli_state *state, int argc, char **argv)
         printf("  rf_lna1           RF loopback: TXMIX --> RXMIX via LNA1 path.\n");
         printf("  rf_lna2           RF loopback: TXMIX --> RXMIX via LNA2 path.\n");
         printf("  rf_lna3           RF loopback: TXMIX --> RXMIX via LNA3 path.\n");
+        printf("  firmware          Firmware-based sample loopback.\n");
         printf("  none              Loopback disabled - Normal operation.\n");
         printf("\n");
 
@@ -698,6 +703,8 @@ int set_loopback(struct cli_state *state, int argc, char **argv)
         loopback = BLADERF_LB_RF_LNA2;
     } else if (!strcasecmp(argv[2], "rf_lna3")) {
         loopback = BLADERF_LB_RF_LNA3;
+    } else if (!strcasecmp(argv[2], "firmware")) {
+        loopback = BLADERF_LB_FIRMWARE;
     } else if (!strcasecmp(argv[2], "none")) {
         loopback = BLADERF_LB_NONE;
     } else {
