@@ -307,25 +307,75 @@ int bladerf_enable_module(struct bladerf *dev,
 
 int bladerf_set_loopback(struct bladerf *dev, bladerf_loopback l)
 {
+    int status;
+
     if (l == BLADERF_LB_FIRMWARE) {
-        /* Firmware loopback was implemented in FW v1.7.0 */
-        if (version_less_than(&dev->fw_version, 1, 7, 0)) {
-            log_warning("Firmware v1.7.0 or later is required "
-                        "for firmware loopback.\n\n");
+        /* Firmware loopback was fully implemented in FW v1.7.1
+         * (1.7.0 could enable it, but 1.7.1 also allowed readback,
+         * so we'll enforce 1.7.1 here. */
+        if (version_less_than(&dev->fw_version, 1, 7, 1)) {
+            log_warning("Firmware v1.7.1 or later is required "
+                        "to use firmware loopback.\n\n");
             return BLADERF_ERR_UPDATE_FW;
         } else {
+            /* Samples won't reach the LMS when the device is in firmware
+             * loopback mode. By placing the LMS into a loopback mode, we ensure
+             * that the PAs will be disabled, and remain enabled across
+             * frequency changes.
+             */
+            status = lms_set_loopback_mode(dev, BLADERF_LB_RF_LNA3);
+            if (status != 0) {
+                return status;
+            }
+
             return dev->fn->set_firmware_loopback(dev, true);
         }
 
     } else {
+
+        /* If applicable, ensure FW loopback is disabled */
+        if (version_greater_or_equal(&dev->fw_version, 1, 7, 1)) {
+            bool fw_lb_enabled = false;
+
+            /* Query first, as the implementation of setting the mode
+             * may interrupt running streams. The API don't guarantee that
+             * switching loopback modes on the fly to work, but we can at least
+             * try to avoid unnecessarily interrupting things...*/
+            status = dev->fn->get_firmware_loopback(dev, &fw_lb_enabled);
+            if (status != 0) {
+                return status;
+            }
+
+            if (fw_lb_enabled) {
+                status = dev->fn->set_firmware_loopback(dev, false);
+                if (status != 0) {
+                    return status;
+                }
+            }
+        }
+
         return lms_set_loopback_mode(dev, l);
     }
 }
 
 int bladerf_get_loopback(struct bladerf *dev, bladerf_loopback *l)
 {
-    /* NOTE: Cannot detect firmware loopback mode yet */
-    return lms_get_loopback_mode(dev, l);
+    int status = BLADERF_ERR_UNEXPECTED;
+    *l = BLADERF_LB_NONE;
+
+    if (version_greater_or_equal(&dev->fw_version, 1, 7, 1)) {
+        bool fw_lb_enabled;
+        status = dev->fn->get_firmware_loopback(dev, &fw_lb_enabled);
+        if (status == 0 && fw_lb_enabled) {
+            *l = BLADERF_LB_FIRMWARE;
+        }
+    }
+
+    if (*l == BLADERF_LB_NONE) {
+        status = lms_get_loopback_mode(dev, l);
+    }
+
+    return status;
 }
 
 int bladerf_set_rational_sample_rate(struct bladerf *dev, bladerf_module module, struct bladerf_rational_rate *rate, struct bladerf_rational_rate *actual)

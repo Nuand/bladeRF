@@ -112,6 +112,7 @@ struct backend_fns {
 
     /* Configure firmware loopback */
     int (*set_firmware_loopback)(struct bladerf *dev, bool enable);
+    int (*get_firmware_loopback)(struct bladerf *dev, bool *is_enabled);
 
     /* Sample stream */
     int (*enable_module)(struct bladerf *dev, bladerf_module m, bool enable);

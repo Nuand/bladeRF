@@ -592,6 +592,10 @@ int CALL_CONV bladerf_enable_module(struct bladerf *dev,
  * @param       l       Loopback mode. Note that BLADERF_LB_NONE disables the
  *                      use of loopback functionality.
  *
+ * @note Loopback modes should only be enabled or disabled while the RX and TX
+ *       modules are both disabled (and therefore, when no samples are being
+ *       actively streamed). Otherwise, unexpected behavior may occur.
+ *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT

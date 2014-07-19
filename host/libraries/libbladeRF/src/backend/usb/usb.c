@@ -1260,6 +1260,20 @@ static int usb_set_firmware_loopback(struct bladerf *dev, bool enable) {
     return status;
 }
 
+static int usb_get_firmware_loopback(struct bladerf *dev, bool *is_enabled)
+{
+    int status, result;
+
+    status = vendor_cmd_int(dev, BLADE_USB_CMD_GET_LOOPBACK,
+                            USB_DIR_DEVICE_TO_HOST, &result);
+
+    if (status == 0) {
+        *is_enabled = (result != 0);
+    }
+
+    return status;
+}
+
 static int usb_enable_module(struct bladerf *dev, bladerf_module m, bool enable)
 {
     int status;
@@ -1358,6 +1372,7 @@ const struct backend_fns backend_fns_usb = {
     FIELD_INIT(.xb_spi, usb_xb_spi),
 
     FIELD_INIT(.set_firmware_loopback, usb_set_firmware_loopback),
+    FIELD_INIT(.get_firmware_loopback, usb_get_firmware_loopback),
 
     FIELD_INIT(.enable_module, usb_enable_module),
 
