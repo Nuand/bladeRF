@@ -4,6 +4,9 @@ bladeRF HDL Change Log Summary
 For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
+v0.0.6 (2014-07-20)
+--------------------------------
+  * Fixed FPGA correction for gain/phase
 
 v0.0.5 (2014-06-21)
 --------------------------------
