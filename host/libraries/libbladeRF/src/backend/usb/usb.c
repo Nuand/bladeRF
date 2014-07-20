@@ -923,7 +923,7 @@ static int set_fpga_correction(struct bladerf *dev,
     int status;
     struct uart_cmd cmd;
 
-    /* If this ia a gain correction add in the 1.0 value so 0 correction yields
+    /* If this is a gain correction add in the 1.0 value so 0 correction yields
      * an unscaled gain */
     if (corr == BLADERF_CORR_FPGA_GAIN) {
         value += (int16_t)4096;
@@ -1054,7 +1054,7 @@ static int usb_set_correction(struct bladerf *dev, bladerf_module module,
     return 0;
 }
 
-static int get_fpga_correction(struct bladerf *dev,
+static int get_fpga_correction(struct bladerf *dev, bladerf_correction corr,
                                uint8_t addr, int16_t *value)
 {
     int i;
@@ -1069,6 +1069,11 @@ static int get_fpga_correction(struct bladerf *dev,
                                    USB_DIR_DEVICE_TO_HOST, &cmd, 1);
 
         *value |= (cmd.data << (i * 8));
+    }
+
+    /* Gain corrections have an offset that needs to be accounted for */
+    if (corr == BLADERF_CORR_FPGA_GAIN) {
+        *value -= 4096;
     }
 
     return status;
@@ -1118,7 +1123,7 @@ static int usb_get_correction(struct bladerf *dev, bladerf_module module,
             break;
 
         case CORR_FPGA:
-            status = get_fpga_correction(dev, addr, value);
+            status = get_fpga_correction(dev, corr, addr, value);
             break;
 
         default:
