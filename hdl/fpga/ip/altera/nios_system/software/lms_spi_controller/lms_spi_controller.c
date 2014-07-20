@@ -253,6 +253,7 @@ int main()
       unsigned char buf[14];
       struct uart_cmd *cmd_ptr;
       uint32_t tmpvar = 0;
+      uint32_t iovar = 0;
 
       state = LOOKING_FOR_MAGIC;
       while(1)
@@ -341,8 +342,10 @@ int main()
                       enum {
                           GDEV_UNKNOWN,
                           GDEV_GPIO,
-                          GDEV_IQ_CORR_RX,
-                          GDEV_IQ_CORR_TX,
+                          GDEV_IQ_CORR_RX_GAIN,
+                          GDEV_IQ_CORR_RX_PHASE,
+                          GDEV_IQ_CORR_TX_GAIN,
+                          GDEV_IQ_CORR_TX_PHASE,
                           GDEV_FPGA_VERSION,
                           GDEV_TIME_TIMER,
                           GDEV_VCTXCO,
@@ -353,8 +356,10 @@ int main()
                       int start, len;
                   } gdev_lut[] = {
                           {GDEV_GPIO,           0, 4},
-                          {GDEV_IQ_CORR_RX,     4, 4},
-                          {GDEV_IQ_CORR_TX,     8, 4},
+                          {GDEV_IQ_CORR_RX_GAIN,    4, 2},
+                          {GDEV_IQ_CORR_RX_PHASE,   6, 2},
+                          {GDEV_IQ_CORR_TX_GAIN,    8, 2},
+                          {GDEV_IQ_CORR_TX_PHASE,  10, 2},
                           {GDEV_FPGA_VERSION,  12, 4},
                           {GDEV_TIME_TIMER,    16, 16},
                           {GDEV_VCTXCO,        34, 2},
@@ -367,9 +372,15 @@ int main()
                               tmpvar |= cmd_ptr->data << (8 * cmd_ptr->addr); \
                               if (lastByte) { x; tmpvar = 0; } \
                               cmd_ptr->data = 0;
-
+#define SPLIT_WRITE(reg, shift)     ({                                   \
+                              iovar = IORD_ALTERA_AVALON_PIO_DATA(reg);  \
+                              iovar &= 0xffff << (16 - shift);           \
+                              iovar |= (tmpvar) << shift;                \
+                              IOWR_ALTERA_AVALON_PIO_DATA(reg, iovar);   \
+                         })
                   if ((mode & UART_PKT_MODE_DEV_MASK) == UART_PKT_DEV_GPIO) {
                     uint32_t device;
+                    volatile uint32_t lol, lol3;
                     int lut, lastByte;
                     for (i = 0; i < cnt; i++) {
                         device = GDEV_UNKNOWN;
@@ -394,10 +405,14 @@ int main()
                                 cmd_ptr->data = (IORD_ALTERA_AVALON_PIO_DATA(PIO_1_BASE)) >> (cmd_ptr->addr * 8);
                             else if (device == GDEV_EXPANSION_DIR)
                                 cmd_ptr->data = (IORD_ALTERA_AVALON_PIO_DATA(PIO_2_BASE)) >> (cmd_ptr->addr * 8);
-                            else if (device == GDEV_IQ_CORR_RX)
-                                cmd_ptr->data = (IORD_ALTERA_AVALON_PIO_DATA(IQ_CORR_RX_PHASE_GAIN_BASE)) >> (cmd_ptr->addr * 8);
-                            else if (device == GDEV_IQ_CORR_TX)
-                                cmd_ptr->data = (IORD_ALTERA_AVALON_PIO_DATA(IQ_CORR_TX_PHASE_GAIN_BASE)) >> (cmd_ptr->addr * 8);
+                            else if (device == GDEV_IQ_CORR_RX_GAIN)
+                            	cmd_ptr->data = (IORD_ALTERA_AVALON_PIO_DATA(IQ_CORR_RX_PHASE_GAIN_BASE)) >> (cmd_ptr->addr * 8);
+                            else if (device == GDEV_IQ_CORR_RX_PHASE)
+                            	cmd_ptr->data = (IORD_ALTERA_AVALON_PIO_DATA(IQ_CORR_RX_PHASE_GAIN_BASE)) >> ((cmd_ptr->addr + 2) * 8);
+                            else if (device == GDEV_IQ_CORR_TX_GAIN)
+                            	cmd_ptr->data = (IORD_ALTERA_AVALON_PIO_DATA(IQ_CORR_TX_PHASE_GAIN_BASE)) >> (cmd_ptr->addr * 8);
+                            else if (device == GDEV_IQ_CORR_TX_PHASE)
+                            	cmd_ptr->data = (IORD_ALTERA_AVALON_PIO_DATA(IQ_CORR_TX_PHASE_GAIN_BASE)) >> ((cmd_ptr->addr + 2) * 8);
                         } else if (isWrite) {
                             if (device == GDEV_TIME_TIMER) {
                                 IOWR_8DIRECT(TIME_TAMER, cmd_ptr->addr, 1) ;
@@ -411,10 +426,14 @@ int main()
                                 COLLECT_BYTES(IOWR_ALTERA_AVALON_PIO_DATA(PIO_1_BASE, tmpvar));
                             } else if (device == GDEV_EXPANSION_DIR) {
                                 COLLECT_BYTES(IOWR_ALTERA_AVALON_PIO_DATA(PIO_2_BASE, tmpvar));
-                            } else if (device == GDEV_IQ_CORR_RX) {
-                                COLLECT_BYTES(IOWR_ALTERA_AVALON_PIO_DATA(IQ_CORR_RX_PHASE_GAIN_BASE, tmpvar));
-                            } else if (device == GDEV_IQ_CORR_TX) {
-                                COLLECT_BYTES(IOWR_ALTERA_AVALON_PIO_DATA(IQ_CORR_TX_PHASE_GAIN_BASE, tmpvar));
+                            } else if (device == GDEV_IQ_CORR_RX_GAIN) {
+                                COLLECT_BYTES(SPLIT_WRITE(IQ_CORR_RX_PHASE_GAIN_BASE, 0));
+                            } else if (device == GDEV_IQ_CORR_RX_PHASE) {
+                                COLLECT_BYTES(SPLIT_WRITE(IQ_CORR_RX_PHASE_GAIN_BASE, 16));
+                            } else if (device == GDEV_IQ_CORR_TX_GAIN) {
+                                COLLECT_BYTES(SPLIT_WRITE(IQ_CORR_TX_PHASE_GAIN_BASE, 0));
+                            } else if (device == GDEV_IQ_CORR_TX_PHASE) {
+                                COLLECT_BYTES(SPLIT_WRITE(IQ_CORR_TX_PHASE_GAIN_BASE, 16));
                             }
                         } else {
                             cmd_ptr->addr = 0;
