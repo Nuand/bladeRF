@@ -5,6 +5,25 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v0.16.1 (2014-07-20)
+--------------------------------
+This version of libbladeRF is intended for use with:
+
+FX3 Firmware v1.7.1
+FPGA         v0.0.6
+
+Changes:
+ * Preliminary implementation of bladerf_set_gain() and XB-200 automatic
+   filterbank selection functions.
+ * Introduced FPGA and FX3 version compatibility checks and warnings messages
+   when incompatible/unknown versions are detected
+ * Fixed set/get loopback mode, with respect to firmware loopback functionality.
+   Firmware loopback now requires FW v1.7.1+
+ * Bug fixes for:
+    + Frequency readback (when XB-200 is attached)
+    + Read back of XB-200 path
+    + Samplerate-transfer relationship equation in API docs
+    + Version comparison routines
 
 v0.16.0 (2014-07-04)
 --------------------------------
