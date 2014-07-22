@@ -1,0 +1,41 @@
+@echo OFF
+rem ===========================================================================
+rem  This is a sample file for overriding environment variables used by the
+rem  other scripts in this directory.
+rem
+rem  Modify this as needed, and rename it to bladeRF-env.bat. Other
+rem  scripts will call it if present.
+rem
+rem  Below are some commented out sample definitions
+rem ===========================================================================
+
+echo Loading environment variables from external file...
+
+rem Upstream source
+rem set GIT_REPO=https://github.com/Nuand/bladeRF.git
+
+rem bladeRF git repo version to use
+rem set GIT_REV=HEAD
+
+rem Path to libusb binaries and headers
+rem set LIBUSB="C:\Program Files (x86)\libusb-1.0.19"
+
+rem Path to Win32 Pthreads
+rem set PTHREADS="C:\Program Files (x86)\pthreads-win32"
+
+rem Build type (Release vs Debug)
+rem set BUILD_TYPE=Release
+
+rem Visual Studio 10 build environment variables
+rem set VS_VARS="C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\vcvarsall.bat"
+
+rem CMake's name for its Visual Studio 10 generator
+rem set CMAKE_GENERATOR_32="Visual Studio 10"
+rem set CMAKE_GENERATOR_64="Visual Studio 10 Win64"
+
+rem Visual Studio 11 (2012) build environment variables
+rem set VS_VARS="C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\vcvarsall.bat"
+
+rem CMake's name for its Visual Studio 11 (2012) generator
+rem set CMAKE_GENERATOR_32="Visual Studio 11"
+rem set CMAKE_GENERATOR_64="Visual Studio 11 Win64"
