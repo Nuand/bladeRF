@@ -96,7 +96,7 @@ do
 
     # Find section headings by looking for at least two -- on the line
     # immediately following them.
-    if [ $(expr match "$line" "^\-\-") -gt 0 ]
+    if [ $(expr -- "$line" : "^\-\-") -gt 0 ]
     then
         section=$prevline
         skip_to_usage=1
@@ -108,7 +108,7 @@ do
     # Omit anything above the Usage: line
     elif [ "$skip_to_usage" -eq 1 ]
     then
-        if [ $(expr match "$line" "^Usage:") -gt 0 ]
+        if [ $(expr -- "$line" : "^Usage:") -gt 0 ]
         then
             skip_to_usage=0
             prevline=$line
