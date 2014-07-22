@@ -1,9 +1,0 @@
-[NAME]
-bladeRF-flash - flashing utility
-
-[DESCRIPTION]
-The \fBbladeRF-flash\fP utility is used when your bladeRF's firmware is
-having a bad problem and it does not want to work today\&.
-
-[SEE ALSO]
-bladeRF-cli(1)\&.
