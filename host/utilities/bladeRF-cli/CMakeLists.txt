@@ -196,6 +196,10 @@ set(CLI_LINK_LIBRARIES
     ${CMAKE_THREAD_LIBS_INIT}
 )
 
+if(NOT MSVC)
+    set(CLI_LINK_LIBRARIES ${CLI_LINK_LIBRARIES} m)
+endif()
+
 if(ENABLE_LIBTECLA)
     set(CLI_LINK_LIBRARIES ${CLI_LINK_LIBRARIES} ${LIBTECLA_LIBRARIES})
 
@@ -223,7 +227,7 @@ if(LIBC_VERSION)
     endif()
 endif()
 
-target_link_libraries(bladeRF-cli ${CLI_LINK_LIBRARIES} -lm)
+target_link_libraries(bladeRF-cli ${CLI_LINK_LIBRARIES})
 
 ################################################################################
 # Man pages
