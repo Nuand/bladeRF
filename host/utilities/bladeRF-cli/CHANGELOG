@@ -7,6 +7,8 @@ hosted on GitHub: https://github.com/nuand/bladeRF
 
 v0.11.0 (2014-07-04)
 --------------------------------
+This version depends upon libbladeRF v0.16.0.
+
  * Added experimental DC calibration table generation
     - Changed usage of 'calibrate' command
     - Move 'correct' functionality into 'calibrate' command
