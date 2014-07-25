@@ -5,6 +5,18 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v0.16.2 (2014-07-24)
+--------------------------------
+This version of libbladeRF is intended for use with:
+
+FX3 Firmware v1.7.1
+FPGA         v0.0.6
+
+Changes:
+ * Minor changes build with respect to OSX RPATH. This should not
+   affect Windows or Linux users.
+
+
 v0.16.1 (2014-07-20)
 --------------------------------
 This version of libbladeRF is intended for use with:
