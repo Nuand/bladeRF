@@ -1,4 +1,4 @@
-# bladeRF-cli: bladeRF Command Line Interface #
+# bladeRF Command Line Interface #
 This tool is intended to aid in development and testing.  bladeRF-cli can be used from the command line for simple operations, such as loading the bladeRF FPGA.  However, a majority of this tool's functionality is accessible when run in its interactive mode.
 
 ## Dependencies ##
@@ -19,7 +19,7 @@ For usage information, run:
 ./bladeRF-cli --help
 ```
 
-If you encounter issues and ask folks on IRC or in the forum assistance, it's always helpful to note the CLI and library versions:
+If you encounter issues and ask folks on IRC or in the forum for assistance, it's always helpful to note the CLI and library versions:
 
 ```
 bladeRF-cli --version
@@ -43,24 +43,24 @@ Pass in a script to setup a device in a specific way, but do not enter interacti
 ## Some Useful Interactive Commands ##
 The `help` command prints out the top level commands that are available. Using `help <cmd>` gives a more detailed help on that command.
 
-The most useful control commands are `peek` and `poke` for setting registers at a very basic level and `print` and `set` for performing system level tasks like setting gains, frequency, bandwidth or sample rate.
+The most useful control commands are `peek` and `poke` for setting registers at a very basic level and `print` and `set` for performing system level tasks like setting gains, frequency, bandwidth, or sample rate.
 
 The `rx` and `tx` commands allow data to be transmitted and received in the background, while the interactive console remains in the foreground.
 
 `rx config` and `tx config` are used to configure and view various RX and TX parameters. Note that `rx` and `tx` is a supported shorthand for viewing the RX/TX configuration. See `help rx` and `help tx` for more information about these parameters. Below are a few examples:
 
-Receive 10,000 samples to a binary file (host endianness):
+Receive 10,000 samples to a binary file (in the libbladeRF SC16Q11 format):
 ```
 rx config file=samples.bin format=bin n=10000
 rx start
 ```
 
-`rx` or `rx config` may be used to view the RX task status. When it no longer reports "Running", the samples should be available in the file. Note that for larger sample rate or small values of `n`, the RX task may finish before you can enter the `rx` command to view its state.
+`rx` or `rx config` may be used to view the RX task status. When it no longer reports "Running", the samples should be available in the file. Note that for larger sample rates or small values of `n`, the RX task may finish before you can enter the `rx` command to view its state.
 
 
-Receive 4096 samples to a CSV file:
+Receive (4 * 1024 * 1024) samples to a CSV file:
 ```
-rx config file=samples.csv format=csv n=4096
+rx config file=samples.csv format=csv n=4M
 rx start
 ```
 
@@ -78,45 +78,46 @@ tx config file=samples.bin repeat=100 delay=10000
 tx start
 ```
 
-While `format=csv` is valid for `tx`, note that the CLI will first convert the CSV to a temporary binary file:
+While `format=csv` is valid for `tx`, note that the CLI will first convert the CSV to a temporary binary file in the current working directory, named "bladeRF_samples_from_csv.bin", as shown below:
 
 ```
-bladeRF> tx config file=samples.txt format=csv repeat=10 delay=10000000
+bladeRF> tx config file=samples.csv format=csv repeat=10 delay=10000000
 bladeRF> tx start
-
-Converted CSV file to binary file. Using /tmp/bladeRF-ddLNmc
-Note that this program will not delete the temporary file.
+    Converted CSV to SC16 Q11 file and switched to converted file.
 
 bladeRF> tx
 
-    State: Running
-    File: /tmp/bladeRF-ddLNmc
-    Format: C16, Binary (Little Endian)
-    Repeat: 10 iterations
-    Repeat delay: 10000000 us
+    State: Idle
+    Last error: None
+    File: bladeRF_samples_from_csv.bin
+    File format: SC16 Q11, Binary
+    Repetitions: 1
+    Repetition delay: none
+    # Buffers: 32
+    # Samples per buffer: 32768
+    # Transfers: 16
+    Timeout (ms): 1000
 ```
 
-## Creating a setup.txt ##
-It is often useful in debugging to quickly get the device into a known state.  The bladeRF-cli supports script files to alleviate the need to write a small program or manually enter a number of commands. (Running scripts from within scripts or the interactive mode is comming soon!)
+## Running Scripts ##
+It is often useful in debugging to quickly put the device into a known state.  The bladeRF-cli supports script files to alleviate the need to write a small program or manually enter a number of commands.
 
-Below is a sample `setup.txt` file which can be provided via the -s command line option. Note that the syntax from the interactive mode is used, _#_ may be used to comment out the remainder of a line.
-
+Below is a sample script file which can be provided via the -s command line option. Scripts may also be run from within interactive mode, via the `run` command. Note that the syntax from the interactive mode is used.
 
 ```
-set frequency 1000000000  # Tune to 1 GHz on both RX and TX
-set samplerate 10000000   # Sample @ 10 MHz
-set bandwidth 28000000    # 28 MHz bandwidth
+set frequency 1000000000
+set samplerate 10000000
+set bandwidth 28000000
 
-# Configure gains
 set lnagain bypass
 set txvga1 -14
 set txvga2 20
 set rxvga1 20
 set rxvga2 20
 
-# Print out a few settings
-
 print frequency
 print samplerate
 print bandwidth
 ```
+
+When transmitting or receiving samples via scripts, be sure to use the `rx wait` or `tx wait` to ensure ongoing reception/transmission completes prior to exiting the script.
