@@ -24,6 +24,17 @@ The source is organized as follows:
 
 For more information, see the [bladeRF wiki]
 
+## Build Variables ##
+
+Below are global options to choose which parts of the bladeRF project should
+be built from the top level.  Please see the [fx3_firmware] and [host]
+subdirectories for more specific options.
+
+| Option                            | Description
+| --------------------------------- |:--------------------------------------------------------------------------|
+| -DENABLE_FX3_BUILD=\<ON/OFF\>     | Enables building the FX3 firmware. Default: OFF                           |                                   |
+| -DENABLE_HOST_BUILD=\<ON/OFF\>    | Enables building the host library and utilities overall. Default: ON      |
+
 [firmware_common]: ./firmware_common (Host-Firmware common files)
 [fx3_firmware]: ./fx3_firmware (FX3 Firmware)
 [hdl]: ./hdl (HDL)
