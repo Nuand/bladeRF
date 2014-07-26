@@ -539,7 +539,7 @@ available parameters.
 --------------- ------------------------------------------------------
 `file`          Filename to read samples from
 
-`format`        Output file format. One of the following:
+`format`        Input file format. One of the following:
 
                 `csv`: CSV of SC16 Q11 samples ([-2048, 2047])
 
