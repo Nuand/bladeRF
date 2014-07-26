@@ -21,3 +21,21 @@ make libbladeRF-doxygen
 The HTML documentation will be placed in **\<build dir\>/libraries/libbladerf/doc/doxygen/html**.  The **index.html** file is the "main" documentation page.
 
 Please see the [CHANGELOG](CHANGELOG) file for a summary of changes across libbladeRF versions.
+
+## Build Variables ##
+
+Below is a list of useful and project-specific CMake options. Please see the CMake [variable list] in CMake's documentation for
+more information.
+
+| Option                                            | Description
+| ------------------------------------------------- |:------------------------------------------------------------------------------------------------------------------|
+| -DBUILD_LIBBLADERF_DOCUMENTATION=\<ON/OFF\>       | Builds API documentation using Doxygen.  Default: equal to BUILD_DOCUMENTATION                                    |
+| -DENABLE_BACKEND_LIBUSB=\<ON/OFF\>                | Enables libusb backend in libbladeRF. Default: ON                                                                 |
+| -DENABLE_BACKEND_USB=\<ON/OFF\>                   | Enables USB backends in libbladeRF.  Default: ON                                                                  |
+| -DENABLE_BACKEND_LINUX_DRIVER=\<ON/OFF\>          | Enables Linux driver in libbladeRF. Default: OFF                                                                  |
+| -DENABLE_BACKEND_DUMMY=\<ON/OFF\>                 | Enables dummy backend support in libbladeRF.  Only useful for some developers.  Default: OFF                      |
+| -DENABLE_LIBBLADERF_LOGGING=\<ON/OFF\>            | Enable log messages in libbladeRF.  Default: ON                                                                   |
+| -DENABLE_LIBBLADERF_SYNC=\<ON/OFF\>               | Enable the libbladeRF synchronous data interface. Requires pthreads. Default: ON                                  |
+| -DENABLE_LIBBLADERF_SYNC_LOG_VERBOSE=\<ON/OFF\>   | Enable log_verbose() calls in the sync interface's data path. Note that this may harm performance. Default: OFF   |
+| -DLIBUSB_DETACH_KERNEL_DRIVER=\<ON/OFF\>          | Enable calls to libusb_detach_kernel_driver(). Not supported in Windows. Default: ON                              |
+| -DLIBUSB_PATH=\</path/to/libusb\>                 | Path to libusb files. (This is generally only needed for Windows users who downloaded binary distributions.)      |

@@ -3,14 +3,26 @@ This tool is intended to aid in development and testing.  bladeRF-cli can be use
 
 ## Dependencies ##
 - [libbladeRF][libbladeRF]
+- [help2man][help2man] (optional)
 - [libtecla][libtecla] (optional)
+- [pandoc][pandoc] (optional)
 
 [libbladeRF]: ../../libraries/libbladeRF (libbladeRF)
+[help2man]: https://www.gnu.org/software/help2man/ (help2man)
 [libtecla]: http://www.astro.caltech.edu/~mcs/tecla/ (libtecla)
+[pandoc]: http://johnmacfarlane.net/pandoc/ (pandoc)
 
+## Build Variables ##
 
-The bladeRF-cli build should detect whether libtecla is installed, and configure the ENABLE_LIBTECLA variable accordingly. You can override this when configuring the build with CMake via a ```-DENABLE_LIBTECLA=OFF``` argument.
+Below is a list of useful and project-specific CMake options. Please see the CMake [variable list] in CMake's documentation for
+more information.
 
+| Option                                        | Description
+| --------------------------------------------- |:---------------------------------------------------------------------------------------------------------|
+| -DENABLE_LIBTECLA=\<ON/OFF\>                  | Enable libtecla support in the bladeRF-cli program. Default: ON if libtecla is detected, OFF otherwise.  |
+| -DBUILD_BLADERF_CLI_DOCUMENTATION=\<ON/OFF\>  | Builds a man page for the bladeRF-cli utility, using help2man.  Default: equal to BUILD_DOCUMENTATION    |
+
+When pandoc is installed, the documentation for each bladeRF-cli command will be re-generated for the interactive 'help' command and the man page.
 
 ## Basic Usage ##
 For usage information, run:

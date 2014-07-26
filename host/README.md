@@ -38,18 +38,22 @@ Below is a list of useful and project-specific CMake options. Please see the CMa
 more information.
 
 | Option                                    | Description
-| ----------------------------------------- |:---------------------------------------------------------------------------------------------------------|
-| -DENABLE_HOST_BUILD=\<ON/OFF\>            | Enables building of the Host components overall. Default is ON.                                          |
-| -DCMAKE_BUILD_TYPE=\<type\>               | Set <type> to "Debug" to enable a debug build. "Release" is the default.                                 |
-| -DBUILD_DOCUMENTATION=\<ON/OFF\>          | Build libbladeRF API documentation and manpages for utilities. OFF by default.                           |
-| -DCMAKE_C_COMPILER=\<compiler\>           | Specify the compiler to use. Otherwise, CMake will determine a default.                                  |
-| -DENABLE_GDB_EXTENSIONS=\<ON/OFF\>        | GCC & GDB users may want to set this to use -ggdb3 instead of -g. Disabled by default.                   |
-| -DENABLE_BACKEND_LIBUSB=\<ON/OFF\>        | Enables libusb backend in libbladeRF. Enabled by default.                                                |
-| -DENABLE_BACKEND_LINUX_DRIVER=\<ON/OFF\>  | Enables Linux driver in libbladeRF. Disabled by default.                                                 |
-| -DENABLE_LIBTECLA=\<ON/OFF\>              | Enable libtecla support in the bladeRF-cli program. Default: ON if libtecla is detected, OFF otherwise.  |
-| -DINSTALL_UDEV_RULES=\<ON/OFF\>           | Install udev rules to /etc/udev/rules.d/. Default: ON for Linux, OFF default otherwise.                  |
-| -DBLADERF_GROUP=\<group\>                 | Sets the group associated with the bladeRF in the installed udev rules. The default is plugdev.          |
-| -DTREAT_WARNINGS_AS_ERRORS=\<Yes/No\>     | Treat compiler warnings as errors, defaults to Yes. Contributors should keep this enabled.               |
+| ----------------------------------------- |:----------------------------------------------------------------------------------------------------------|
+| -DCMAKE_BUILD_TYPE=\<type\>               | Set <type> to "Debug" to enable a debug build. Default: "Release"                                         |
+| -DBUILD_DOCUMENTATION=\<ON/OFF\>          | Build libbladeRF API documentation and manpages for utilities. Default: OFF                               |
+| -DCMAKE_C_COMPILER=\<compiler\>           | Specify the compiler to use. Otherwise, CMake will determine a default.                                   |
+| -DCMAKE_INSTALL_PREFIX=\</prefix/path\>   | Override system-specific path to install output files.  Default depends on system; see ```cmake -L```     |
+| -DENABLE_GDB_EXTENSIONS=\<ON/OFF\>        | GCC & GDB users may want to set this to use -ggdb3 instead of -g. Default: OFF                            |
+| -DENABLE_BACKEND_LIBUSB=\<ON/OFF\>        | Enables libusb backend in libbladeRF. Default: ON                                                         |
+| -DENABLE_BACKEND_USB=\<ON/OFF\>           | Enables USB backends in libbladeRF.  Default: ON                                                          |
+| -DENABLE_BACKEND_LINUX_DRIVER=\<ON/OFF\>  | Enables Linux driver in libbladeRF. Default: OFF                                                          |
+| -DENABLE_BACKEND_DUMMY=\<ON/OFF\>         | Enables dummy backend support in libbladeRF.  Only useful for some developers.  Default: OFF              |
+| -DENABLE_LIBTECLA=\<ON/OFF\>              | Enable libtecla support in the bladeRF-cli program. Default: ON if libtecla is detected, OFF otherwise.   |
+| -DINSTALL_UDEV_RULES=\<ON/OFF\>           | Install udev rules to /etc/udev/rules.d/. Default: ON for Linux, OFF default otherwise.                   |
+| -DUDEV_RULES_PATH=\</path/to/udev/rules\> | Override the path for installing udev rules.  Default: /etc/udev/rules.d                                  |
+| -DBLADERF_GROUP=\<group\>                 | Sets the group associated with the bladeRF in the installed udev rules. Default: ```plugdev```            |
+| -DTREAT_WARNINGS_AS_ERRORS=\<ON/OFF\>     | Treat compiler warnings as errors. Contributors should keep this enabled. Default: ON                     |
+| -DENABLE_LOG_FILE_INFO=\<ON/OFF\>         | Enable source file and line number information in log messages. Default: OFF                              |
 
 [cmake]: ./cmake (CMake scripts)
 [drivers]: ./drivers (Drivers)
