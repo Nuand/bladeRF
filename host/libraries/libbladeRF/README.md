@@ -15,7 +15,7 @@ Functionality provided by this library includes:
 
 For more information, please generate and view the doxygen documentation. From your host/build directory, run:
 ```
-cmake -DBUILD_DOCUMENTATION=Yes BUILD_LIBBLADERF_DOCUMENTATION=ON ../
+cmake -DBUILD_DOCUMENTATION=ON ../
 make libbladeRF-doxygen
 ```
 The HTML documentation will be placed in **\<build dir\>/libraries/libbladerf/doc/doxygen/html**.  The **index.html** file is the "main" documentation page.
