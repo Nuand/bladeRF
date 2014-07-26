@@ -78,6 +78,10 @@ endif()
 
 
 if(ENABLE_LIBTECLA)
+    if((NOT LIBTECLA_INCLUDE_DIR) OR (NOT LIBTECLA_LIBRARIES))
+        message(FATAL_ERROR "ENABLE_LIBTECLA was forced ON, but libtecla cannot be found!")
+    endif()
+
     message(STATUS "libtecla support enabled")
 endif()
 
@@ -259,7 +263,7 @@ if(BUILD_BLADERF_CLI_DOCUMENTATION)
         add_custom_target(bladeRF-cli-manpage ALL DEPENDS bladeRF-cli.1)
 
     else(HELP2MAN_EXECUTABLE)
-        message(WARNING "Could not find help2man. bladeRF-cli man page will not be built.")
+        message(FATAL_ERROR "Could not find help2man. bladeRF-cli man page cannot be built.")
     endif(HELP2MAN_EXECUTABLE)
 else(BUILD_BLADERF_CLI_DOCUMENTATION)
     message(STATUS "Not building man page for bladeRF-cli.  (BUILD_BLADERF_CLI_DOCUMENTATION is OFF)")
