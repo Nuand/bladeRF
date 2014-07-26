@@ -29,6 +29,3 @@ be automatically loaded on power-up.
 bladeRF-cli supports a scriptable interactive mode.  Run \fBbladeRF-cli --interactive\fP
 to enter this mode.  Type "\fBhelp\fP" for a listing of all commands, or
 "\fBhelp <command>\fP" for more information about <command>.
-
-[SEE ALSO]
-bladeRF-flash(1)\&.
