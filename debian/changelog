@@ -1,4 +1,47 @@
-bladerf (0~20131229-1) UNRELEASED; urgency=low
+bladerf (2014.09-rc2) unstable; urgency=low
+
+  * Tagged release 2014.09-rc2 at dddc72f
+  * Second of three release candidates for 2014.09 release
+  * FPGA bitstream v0.0.6, FX3 Firmware v1.7.1, libbladeRF v0.16.2, bladeRF-cli v0.11.1
+  * Closes #284: [hdl (nios)] Defects present in gain/phase correction bug
+  * Closes #271: Frequency readback is incorrect when using xb200 bug
+  * Closes #270: Markdown-ify the bladeRF-cli interactive help
+  * Closes #254: bladeRF-cli: Clean up print/set lnagain bug
+  * Closes #249: [libbladeRF] LMS VTUNE not locking occasionally bug
+  * Closes #248: [bladeRF-Cli] Fix 'correct' command parameter ranges, cleanup usage and help text bug
+  * Closes #243: [libbladeRF] Remove bladerf_* calls from lms.c enhancement
+  * Closes #234: [libbladeRF] Cleanup: Move bladerf_get/set_sampling to lms.c enhancement
+  * Closes #220: libbladeRF: LMS SELOUT[1:0] may be left in an invalid state upon exiting loopback mode bug
+  * Closes #210: [CLI] After a calibrate command is issued, the bladeRF transmits a carrier. bug
+
+ -- Ryan Tucker <rtucker@gmail.com>  Thu, 24 Jul 2014 22:59:24 -0400
+
+bladerf (2014.09-rc1) unstable; urgency=low
+
+  * Tagged release 2014.09-rc1 at 9c651b5
+  * First of two release candidates for 2014.09 release
+  * FPGA bitstream v0.0.5, FX3 Firmware v1.7.0, libbladeRF v0.16.0, bladeRF-cli v0.11.0
+  * Closes #268: [libbladeRF] Version check routines have flipped logic bug
+  * Closes #257: [libbladeRF] Remove incorrect error_conv() call(s).
+  * Closes #256: [libbladeRF] Intermittent FPGA load failures bug
+  * Closes #246: [libbladerRF] Added an error code for "File not found" errors enhancement
+  * Closes #245: [libbladeRF] bladerf_set_bandwidth() does not appropriately handle actual=NULL bug
+  * Closes #244: [libbladeRF] Lock-up occurs if sync TX is configured but not used
+  * Closes #241: TX Stream can lose initial buffers
+  * Closes #237: [libbladeRF] XB-200 support and API calls required bug
+  * Closes #235: [libbladeRF] Change API return values for flash calls - return 0, not >= 0. bug
+  * Closes #228: [libbladeRF] Additional libusb function checks required bug
+  * Closes #223: FPGA DC remover block enhancement
+  * Closes #217: Probe returns Backend Id's, bladerf_open wants a string for the backend. bug
+  * Closes #211: [bladeRF-cli] Text wraps around in man pages bug
+  * Closes #189: [libbladeRF] Refactor backend interface and libusb backend implementation enhancement
+  * Closes #176: [libbladeRF] Mixup between SPI flash "sector" and "erase block" enhancement
+  * Closes #55: CLI: A number of commands are still unimplemented stubs bug
+  * Closes #46: CLI: Add -e <cmd> support enhancement
+
+ -- Ryan Tucker <rtucker@gmail.com>  Sat, 05 Jul 2014 14:56:29 -0400
+
+bladerf (0~20131229-1) unstable; urgency=low
 
   * Rename libbladerf0-dev -> libbladerf-dev
 
