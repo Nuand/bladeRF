@@ -750,7 +750,7 @@ T}
 T{
 \f[C]format\f[]
 T}@T{
-Output file format.
+Input file format.
 One of the following:
 T}
 T{
