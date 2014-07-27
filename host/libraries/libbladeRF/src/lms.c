@@ -1898,9 +1898,18 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
 
     /* Saved values that are to be restored */
     uint8_t clockenables, reg0x71, reg0x7c;
-    bladerf_lna_gain lna_gain;
-    int rxvga1, rxvga2;
     lms_lna lna;
+
+    /* These are initialized to keep GCC 4.8 to avoid a false-positive
+     * warning about potentially uninitialized variables.
+     *
+     * FIXME If we're confusing the compiler such that it's generating such
+     *       warnings, it's an indicator that this huge function should be
+     *       cleaned up and simplified.
+     */
+    bladerf_lna_gain lna_gain = BLADERF_LNA_GAIN_BYPASS;
+    int rxvga1 = BLADERF_RXVGA1_GAIN_MIN;
+    int rxvga2 = BLADERF_RXVGA2_GAIN_MIN;
 
     /* Save off the top level clock enables and LNA state */
     status = bladerf_lms_read(dev, 0x09, &clockenables);
@@ -2163,8 +2172,7 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
     }
 
     /* Special case for RX LPF or RX VGA2 */
-    if (module == BLADERF_DC_CAL_RX_LPF ||
-        module == BLADERF_DC_CAL_RXVGA2) {
+    if (module == BLADERF_DC_CAL_RX_LPF || module == BLADERF_DC_CAL_RXVGA2) {
 
         /* Disable DC comparators */
         if (module == BLADERF_DC_CAL_RXVGA2) {
