@@ -369,6 +369,6 @@ if(BUILD_LIBBLADERF_DOCUMENTATION)
     add_custom_target(libbladeRF-doxygen ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/html/index.html)
 
     else(DOXYGEN_FOUND)
-        message(WARNING "Could not find Doxygen. libbladeRF API documentation will not be built.")
+        message(FATAL_ERROR "Could not find Doxygen. Unable to build libbladeRF API documentation.")
     endif(DOXYGEN_FOUND)
 endif(BUILD_LIBBLADERF_DOCUMENTATION)
