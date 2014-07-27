@@ -58,7 +58,7 @@ more information.
 [misc]: ./misc (Miscellaneous)
 [utilities]: ./utilities (Utilites)
 [libusb]: http://libusb.info/ (libusb project site)
-[libusb ChangeLog]: https://github.com/libusb/libusb/blob/master/ChangeLog (libusb ChangeLog)
+[libusb ChangeLog]: http://log.libusb.info (libusb ChangeLog)
 [CMake.org]: http://www.cmake.org/ (CMake)
 [variable list]: http://www.cmake.org/cmake/help/v2.8.11/cmake.html#section_Variables (CMake variables)
 [CMake documentation]: http://www.cmake.org/cmake/help/documentation.html (Cmake documentation)
