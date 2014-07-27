@@ -25,6 +25,8 @@
 #include "host_config.h"
 #include "test_ctrl.h"
 
+DECLARE_TEST_CASE(samplerate);
+
 static int set_and_check(struct bladerf *dev, bladerf_module m,
                          unsigned int rate)
 {
@@ -33,15 +35,15 @@ static int set_and_check(struct bladerf *dev, bladerf_module m,
 
     status = bladerf_set_sample_rate(dev, m, rate, &actual);
     if (status != 0) {
-        fprintf(stderr, "Failed to set sample rate: %s\n",
-                bladerf_strerror(status));
+        PR_ERROR("Failed to set sample rate: %s\n",
+                 bladerf_strerror(status));
         return status;
     }
 
     status = bladerf_get_sample_rate(dev, m, &readback);
     if (status != 0) {
-        fprintf(stderr, "Failed to read back sample rate: %s\n",
-                bladerf_strerror(status));
+        PR_ERROR("Failed to read back sample rate: %s\n",
+                 bladerf_strerror(status));
         return status;
     }
 
@@ -56,15 +58,15 @@ static int set_and_check_rational(struct bladerf *dev, bladerf_module m,
 
     status = bladerf_set_rational_sample_rate(dev, m, rate, &actual);
     if (status != 0) {
-        fprintf(stderr, "Failed to set rational sample rate: %s\n",
-                bladerf_strerror(status));
+        PR_ERROR("Failed to set rational sample rate: %s\n",
+                 bladerf_strerror(status));
         return status;
     }
 
     status = bladerf_get_rational_sample_rate(dev, m, &readback);
     if (status != 0) {
-        fprintf(stderr, "Failed to read back rational sample rate: %s\n",
-                bladerf_strerror(status));
+        PR_ERROR("Failed to read back rational sample rate: %s\n",
+                 bladerf_strerror(status));
         return status;
     }
 
@@ -72,12 +74,11 @@ static int set_and_check_rational(struct bladerf *dev, bladerf_module m,
         actual.num != readback.num          ||
         actual.den != readback.den          ) {
 
-        fprintf(stderr,
-                "Readback mismatch:\n"
-                " actual:   int=%"PRIu64" num=%"PRIu64" den=%"PRIu64"\n"
-                "  readback: int=%"PRIu64" num=%"PRIu64" den=%"PRIu64"\n",
-                actual.integer, actual.num, actual.den,
-                readback.integer, readback.num, readback.den);
+        PR_ERROR("Readback mismatch:\n"
+                 " actual:   int=%"PRIu64" num=%"PRIu64" den=%"PRIu64"\n"
+                 "  readback: int=%"PRIu64" num=%"PRIu64" den=%"PRIu64"\n",
+                 actual.integer, actual.num, actual.den,
+                 readback.integer, readback.num, readback.den);
 
         return status;
     }
@@ -85,7 +86,7 @@ static int set_and_check_rational(struct bladerf *dev, bladerf_module m,
     return 0;
 }
 
-static int sweep_samplerate(struct bladerf *dev, bladerf_module m)
+static int sweep_samplerate(struct bladerf *dev, bladerf_module m, bool quiet)
 {
     int status;
     unsigned int rate;
@@ -101,17 +102,18 @@ static int sweep_samplerate(struct bladerf *dev, bladerf_module m)
         if (status != 0) {
             failures++;
         } else if (n % 50 == 0) {
-            printf("\r  Sample rate currently set to %-10u Hz...", rate);
+            PRINT("\r  Sample rate currently set to %-10u Hz...", rate);
             fflush(stdout);
         }
     }
 
-    printf("\n");
+    PRINT("\n");
     fflush(stdout);
     return failures;
 }
 
-static int random_samplerates(struct bladerf *dev, bladerf_module m)
+static int random_samplerates(struct bladerf *dev, bladerf_module m,
+                              bool quiet)
 {
     int status;
     unsigned int i, n;
@@ -138,17 +140,18 @@ static int random_samplerates(struct bladerf *dev, bladerf_module m)
         if (status != 0) {
             failures++;
         } else if (n % 50 == 0) {
-            printf("\r  Sample rate currently set to %-10u Hz...", rate);
+            PRINT("\r  Sample rate currently set to %-10u Hz...", rate);
             fflush(stdout);
         }
     }
 
-    printf("\n");
+    PRINT("\n");
     fflush(stdout);
     return failures;
 }
 
-static int random_rational_samplerates(struct bladerf *dev, bladerf_module m)
+static int random_rational_samplerates(struct bladerf *dev, bladerf_module m,
+                                       bool quiet)
 {
     int status;
     unsigned int i, n;
@@ -191,39 +194,44 @@ static int random_rational_samplerates(struct bladerf *dev, bladerf_module m)
         if (status != 0) {
             failures++;
         } else if (n % 50 == 0) {
-            printf("\r  Sample rate currently set to "
+            PRINT("\r  Sample rate currently set to "
                    "%-10"PRIu64" %-10"PRIu64"/%-10"PRIu64" Hz...",
                    rate.integer, rate.num, rate.den);
             fflush(stdout);
         }
     }
 
-    printf("\n");
+    PRINT("\n");
     fflush(stdout);
     return failures;
 }
 
-int test_samplerate(struct bladerf *dev, struct app_params *p)
+unsigned int test_samplerate(struct bladerf *dev,
+                             struct app_params *p, bool quiet)
 {
     unsigned int failures = 0;
 
-    printf("%s: Sweeping RX sample rates...\n", __FUNCTION__);
-    failures += sweep_samplerate(dev, BLADERF_MODULE_RX);
+    PRINT("%s: Sweeping RX sample rates...\n", __FUNCTION__);
+    failures += sweep_samplerate(dev, BLADERF_MODULE_RX, quiet);
 
-    printf("%s: Applying random RX sample rates...\n", __FUNCTION__);
-    failures += random_samplerates(dev, BLADERF_MODULE_RX);
+    PRINT("%s: Applying random RX sample rates...\n", __FUNCTION__);
+    failures += random_samplerates(dev, BLADERF_MODULE_RX, quiet);
 
-    printf("%s: Applying random RX rational sample rates...\n", __FUNCTION__);
-    failures += random_rational_samplerates(dev, BLADERF_MODULE_RX);
+    PRINT("%s: Applying random RX rational sample rates...\n",
+          __FUNCTION__);
+    failures += random_rational_samplerates(dev, BLADERF_MODULE_RX, quiet);
 
-    printf("%s: Sweeping TX sample rates...\n", __FUNCTION__);
-    failures += sweep_samplerate(dev, BLADERF_MODULE_TX);
+    PRINT("%s: Sweeping TX sample rates...\n",
+          __FUNCTION__);
+    failures += sweep_samplerate(dev, BLADERF_MODULE_TX, quiet);
 
-    printf("%s: Applying random TX sample rates...\n", __FUNCTION__);
-    failures += random_samplerates(dev, BLADERF_MODULE_TX);
+    PRINT("%s: Applying random TX sample rates...\n",
+          __FUNCTION__);
+    failures += random_samplerates(dev, BLADERF_MODULE_TX, quiet);
 
-    printf("%s: Applying random TX rational sample rates...\n", __FUNCTION__);
-    failures += random_rational_samplerates(dev, BLADERF_MODULE_TX);
+    PRINT("%s: Applying random TX rational sample rates...\n",
+          __FUNCTION__);
+    failures += random_rational_samplerates(dev, BLADERF_MODULE_TX, quiet);
 
     return failures;
 }

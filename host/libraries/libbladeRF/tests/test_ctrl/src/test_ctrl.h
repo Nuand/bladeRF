@@ -32,7 +32,24 @@
 #include <libbladeRF.h>
 #include "host_config.h"
 
-#define ERR_PFX "\n(!) "
+#define DECLARE_TEST(name_) \
+    extern unsigned int test_##name_(struct bladerf *, struct app_params *p, \
+                                     bool quiet); \
+    extern const struct test_case test_case_##name_;
+#endif
+
+#define DECLARE_TEST_CASE(name_) \
+    const struct test_case test_case_##name_ = { #name_, &test_##name_ }
+
+#define PRINT(...) \
+    do { if (!quiet) { printf(__VA_ARGS__); fflush(stdout); } } while(0)
+
+#define PR_ERROR(...) fprintf(stderr, "\n(!) " __VA_ARGS__)
+
+#define DEFAULT_BUF_LEN     16384
+#define DEFAULT_NUM_BUFFERS 16
+#define DEFAULT_NUM_XFERS   8
+#define DEFAULT_TIMEOUT_MS  1000
 
 struct app_params {
     bool use_xb200;
@@ -41,16 +58,20 @@ struct app_params {
     unsigned int seed;
 };
 
-/* Run the test and return the number of failures */
-typedef unsigned int (test_fn)(struct bladerf *dev, struct app_params *p);
 
 struct test_case {
     const char *name;
-    test_fn *fn;
+    unsigned int (*fn)(struct bladerf *dev, struct app_params *p, bool quiet);
 };
 
-#define DECLARE_TEST(name_) \
-    extern test_fn test_##name_; \
-    const struct test_case test_case_##name_ = { #name_, &test_##name_ }
-
-#endif
+DECLARE_TEST(bandwidth);
+DECLARE_TEST(correction);
+DECLARE_TEST(enable_module);
+DECLARE_TEST(gain);
+DECLARE_TEST(frequency);
+DECLARE_TEST(loopback);
+DECLARE_TEST(lpf_mode);
+DECLARE_TEST(samplerate);
+DECLARE_TEST(sampling);
+DECLARE_TEST(threads);
+DECLARE_TEST(xb200);

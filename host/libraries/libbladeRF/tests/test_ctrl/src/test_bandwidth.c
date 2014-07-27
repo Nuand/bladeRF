@@ -24,6 +24,8 @@
  */
 #include "test_ctrl.h"
 
+DECLARE_TEST_CASE(bandwidth);
+
 static int set_and_check(struct bladerf *dev, bladerf_module m,
                          unsigned int bandwidth)
 {
@@ -32,22 +34,21 @@ static int set_and_check(struct bladerf *dev, bladerf_module m,
 
     status = bladerf_set_bandwidth(dev, m, bandwidth, &actual);
     if (status != 0) {
-        fprintf(stderr, ERR_PFX "Failed to set bandwidth: %s\n",
-                bladerf_strerror(status));
+        PR_ERROR("Failed to set bandwidth: %s\n",
+                 bladerf_strerror(status));
         return status;
     }
 
     status = bladerf_get_bandwidth(dev, m, &readback);
     if (status != 0) {
-        fprintf(stderr, ERR_PFX "Failed to read back bandwidth: %s\n",
-                bladerf_strerror(status));
+        PR_ERROR("Failed to read back bandwidth: %s\n",
+                 bladerf_strerror(status));
         return status;
     }
 
     if (readback != actual) {
-        fprintf(stderr, ERR_PFX "Unexpected bandwidth."
-                "requested=%u, actual=%u, readback=%u\n",
-                bandwidth, actual, readback);
+        PR_ERROR("Unexpected bandwidth. requested=%u, actual=%u, readback=%u\n",
+                 bandwidth, actual, readback);
         return -1;
     }
 
@@ -98,20 +99,21 @@ static unsigned int random_bandwidths(struct bladerf *dev, bladerf_module m)
     return failures;
 }
 
-unsigned int test_bandwidth(struct bladerf *dev, struct app_params *p)
+unsigned int test_bandwidth(struct bladerf *dev,
+                            struct app_params *p, bool quiet)
 {
     unsigned int failures = 0;
 
-    printf("%s: Sweeping RX bandwidths...\n", __FUNCTION__);
+    PRINT("%s: Sweeping RX bandwidths...\n", __FUNCTION__);
     failures += sweep_bandwidths(dev, BLADERF_MODULE_RX);
 
-    printf("%s: Applying random RX bandwidths...\n", __FUNCTION__);
+    PRINT("%s: Applying random RX bandwidths...\n", __FUNCTION__);
     failures += random_bandwidths(dev, BLADERF_MODULE_RX);
 
-    printf("%s: Sweeping TX bandwidths...\n", __FUNCTION__);
+    PRINT("%s: Sweeping TX bandwidths...\n", __FUNCTION__);
     failures += sweep_bandwidths(dev, BLADERF_MODULE_TX);
 
-    printf("%s: Applying random TX bandwidths...\n", __FUNCTION__);
+    PRINT("%s: Applying random TX bandwidths...\n", __FUNCTION__);
     failures += random_bandwidths(dev, BLADERF_MODULE_TX);
 
     return failures;

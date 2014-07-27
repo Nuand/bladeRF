@@ -24,6 +24,8 @@
  */
 #include "test_ctrl.h"
 
+DECLARE_TEST_CASE(sampling);
+
 static inline const char *sampling_str(bladerf_sampling s)
 {
     switch (s) {
@@ -43,16 +45,16 @@ static int set_and_check(struct bladerf *dev, bladerf_sampling s)
 
     status = bladerf_set_sampling(dev, s);
     if (status != 0) {
-        fprintf(stderr, "Failed to set sampling=%s: %s\n",
-                sampling_str(s), bladerf_strerror(status));
+        PR_ERROR("Failed to set sampling=%s: %s\n",
+                 sampling_str(s), bladerf_strerror(status));
 
         return status;
     }
 
     status = bladerf_get_sampling(dev, &readback);
     if (status != 0) {
-        fprintf(stderr, "Failed to read back sampling type: %s\n",
-                bladerf_strerror(status));
+        PR_ERROR("Failed to read back sampling type: %s\n",
+                 bladerf_strerror(status));
 
         /* Last ditch attempt to restore internal sampling */
         bladerf_set_sampling(dev, BLADERF_SAMPLING_INTERNAL);
@@ -60,20 +62,21 @@ static int set_and_check(struct bladerf *dev, bladerf_sampling s)
     }
 
     if (s != readback) {
-        fprintf(stderr, "Sampling mismatch -- readback=%s, expected=%s\n",
-                sampling_str(readback), sampling_str(s));
+        PR_ERROR("Sampling mismatch -- readback=%s, expected=%s\n",
+                 sampling_str(readback), sampling_str(s));
         return -1;
     }
 
     return 0;
 }
 
-int test_sampling(struct bladerf *dev, struct app_params *p)
+unsigned int test_sampling(struct bladerf *dev,
+                           struct app_params *p, bool quiet)
 {
     int status;
     unsigned int failures = 0;
 
-    printf("%s: Setting and reading back sampling modes...\n", __FUNCTION__);
+    PRINT("%s: Setting and reading back sampling modes...\n", __FUNCTION__);
 
     status = set_and_check(dev, BLADERF_SAMPLING_EXTERNAL);
     if (status != 0) {

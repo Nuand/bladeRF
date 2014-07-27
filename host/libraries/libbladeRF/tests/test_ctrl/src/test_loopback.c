@@ -24,6 +24,8 @@
  */
 #include "test_ctrl.h"
 
+DECLARE_TEST_CASE(loopback);
+
 static int set_and_check(struct bladerf *dev, bladerf_loopback l)
 {
     int status;
@@ -31,8 +33,8 @@ static int set_and_check(struct bladerf *dev, bladerf_loopback l)
 
     status = bladerf_set_loopback(dev, l);
     if (status != 0) {
-        fprintf(stderr, ERR_PFX "Failed to set loopback: %s\n",
-                bladerf_strerror(status));
+        PR_ERROR("Failed to set loopback: %s\n",
+                 bladerf_strerror(status));
 
         /* Try to ensure we don't leave the device in loopback */
         bladerf_set_loopback(dev, BLADERF_LB_NONE);
@@ -41,21 +43,22 @@ static int set_and_check(struct bladerf *dev, bladerf_loopback l)
 
     status = bladerf_get_loopback(dev, &readback);
     if (status != 0) {
-        fprintf(stderr, ERR_PFX "Failed to get loopback setting: %s\n",
-                bladerf_strerror(status));
+        PR_ERROR("Failed to get loopback setting: %s\n",
+                 bladerf_strerror(status));
         return status;
     }
 
     if (l != readback) {
-        fprintf(stderr, ERR_PFX "Unexpected loopback readback=%d, expected=%d\n",
-                readback, l);
+        PR_ERROR("Unexpected loopback readback=%d, expected=%d\n",
+                 readback, l);
         return -1;
     }
 
     return 0;
 }
 
-unsigned int test_loopback(struct bladerf *dev, struct app_params *p)
+unsigned int test_loopback(struct bladerf *dev,
+                           struct app_params *p, bool quiet)
 {
     int status;
     size_t i;
@@ -73,7 +76,7 @@ unsigned int test_loopback(struct bladerf *dev, struct app_params *p)
         BLADERF_LB_NONE,    /* Ensure we don't leave the device in loopback */
     };
 
-    printf("%s: Setting and checking loopback modes...\n", __FUNCTION__);
+    PRINT("%s: Setting and checking loopback modes...\n", __FUNCTION__);
 
     for (i = 0; i < ARRAY_SIZE(modes); i++) {
         status = set_and_check(dev, modes[i]);

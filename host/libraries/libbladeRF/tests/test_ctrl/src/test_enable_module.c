@@ -24,15 +24,17 @@
  */
 #include "test_ctrl.h"
 
+DECLARE_TEST_CASE(enable_module);
+
 static int enable_module(struct bladerf *dev, bladerf_module m, bool enable)
 {
     int status;
 
     status = bladerf_enable_module(dev, m, enable);
     if (status != 0) {
-        fprintf(stderr, ERR_PFX "Failed to %s module: %s\n",
-                enable ? "enable" : "disable",
-                bladerf_strerror(status));
+        PR_ERROR("Failed to %s module: %s\n",
+                 enable ? "enable" : "disable",
+                 bladerf_strerror(status));
 
         /* Try to avoid leaving a module on */
         bladerf_enable_module(dev, m, false);
@@ -43,12 +45,13 @@ static int enable_module(struct bladerf *dev, bladerf_module m, bool enable)
     return status;
 }
 
-unsigned int test_enable_module(struct bladerf *dev, struct app_params *p)
+unsigned int test_enable_module(struct bladerf *dev,
+                                struct app_params *p, bool quiet)
 {
     int status;
     unsigned int failures = 0;
 
-    printf("%s: Enabling and disabling modules...\n",__FUNCTION__);
+    PRINT("%s: Enabling and disabling modules...\n",__FUNCTION__);
 
     status = enable_module(dev, BLADERF_MODULE_RX, false);
     if (status != 0) {

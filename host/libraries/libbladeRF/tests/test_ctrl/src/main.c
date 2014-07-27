@@ -38,18 +38,6 @@
 #include "test_ctrl.h"
 #include "conversions.h"
 
-DECLARE_TEST(sampling);
-DECLARE_TEST(lpf_mode);
-DECLARE_TEST(enable_module);
-DECLARE_TEST(loopback);
-DECLARE_TEST(xb200);
-DECLARE_TEST(correction);
-DECLARE_TEST(samplerate);
-DECLARE_TEST(bandwidth);
-DECLARE_TEST(gain);
-DECLARE_TEST(frequency);
-
-
 static const struct test_case *tests[] = {
     &test_case_sampling,
     &test_case_lpf_mode,

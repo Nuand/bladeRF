@@ -24,6 +24,8 @@
  */
 #include "test_ctrl.h"
 
+DECLARE_TEST_CASE(gain);
+
 struct gain {
     const char *name;
     int min;
@@ -109,28 +111,28 @@ static inline int set_and_check(struct bladerf *dev, const struct gain *g,
 
     status = g->set(dev, gain);
     if (status != 0) {
-        fprintf(stderr, ERR_PFX "Failed to set %s gain: %s\n",
-                g->name, bladerf_strerror(status));
+        PR_ERROR("Failed to set %s gain: %s\n",
+                 g->name, bladerf_strerror(status));
         return status;
     }
 
     status = g->get(dev, &readback);
     if (status != 0) {
-        fprintf(stderr, ERR_PFX "Failed to read back %s gain: %s\n",
-                g->name, bladerf_strerror(status));
+        PR_ERROR("Failed to read back %s gain: %s\n",
+                 g->name, bladerf_strerror(status));
         return status;
     }
 
     if (gain != readback) {
-        fprintf(stderr, ERR_PFX "Erroneous %s gain readback=%d, expected=%d\n",
-                g->name, readback, gain);
+        PR_ERROR("Erroneous %s gain readback=%d, expected=%d\n",
+                 g->name, readback, gain);
         return -1;
     }
 
     return 0;
 }
 
-static unsigned int gain_sweep(struct bladerf *dev)
+static unsigned int gain_sweep(struct bladerf *dev, bool quiet)
 {
     int status;
     int gain;
@@ -138,7 +140,7 @@ static unsigned int gain_sweep(struct bladerf *dev)
     size_t i;
 
     for (i = 0; i < ARRAY_SIZE(gains); i++) {
-        printf("    %s\n", gains[i].name);
+        PRINT("    %s\n", gains[i].name);
         fflush(stdout);
         for (gain = gains[i].min; gain <= gains[i].max; gain += gains[i].inc) {
             status = set_and_check(dev, &gains[i], gain);
@@ -152,7 +154,7 @@ static unsigned int gain_sweep(struct bladerf *dev)
     return failures;
 }
 
-static int random_gains(struct bladerf *dev)
+static int random_gains(struct bladerf *dev, bool quiet)
 {
     int status, gain;
     unsigned int i, j;
@@ -161,7 +163,7 @@ static int random_gains(struct bladerf *dev)
 
     for (i = 0; i < ARRAY_SIZE(gains); i++) {
         const int n_incs = (gains[i].max - gains[i].min) / gains[i].inc;
-        printf("    %s\n", gains[i].name);
+        PRINT("    %s\n", gains[i].name);
 
         for (j = 0; j < iterations; j++) {
             gain = gains[i].min + (rand() % n_incs) * gains[i].inc;
@@ -182,15 +184,15 @@ static int random_gains(struct bladerf *dev)
     return failures;
 }
 
-unsigned int test_gain(struct bladerf *dev, struct app_params *p)
+unsigned int test_gain(struct bladerf *dev, struct app_params *p, bool quiet)
 {
     unsigned int failures = 0;
 
-    printf("%s: Performing gain sweep...\n", __FUNCTION__);
-    failures += gain_sweep(dev);
+    PRINT("%s: Performing gain sweep...\n", __FUNCTION__);
+    failures += gain_sweep(dev, quiet);
 
-    printf("%s: Applying random gains...\n", __FUNCTION__);
-    failures += random_gains(dev);
+    PRINT("%s: Applying random gains...\n", __FUNCTION__);
+    failures += random_gains(dev, quiet);
 
     return failures;
 }

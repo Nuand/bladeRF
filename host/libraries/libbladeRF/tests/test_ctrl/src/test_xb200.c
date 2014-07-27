@@ -24,6 +24,8 @@
  */
 #include "test_ctrl.h"
 
+DECLARE_TEST_CASE(xb200);
+
 static int set_and_check_paths(struct bladerf *dev,
                                bladerf_module m,
                                bladerf_xb200_path p)
@@ -33,20 +35,20 @@ static int set_and_check_paths(struct bladerf *dev,
 
     status = bladerf_xb200_set_path(dev, m, p);
     if (status != 0) {
-        fprintf(stderr, "Failed to set XB-200 path: %s\n",
-                bladerf_strerror(status));
+        PR_ERROR("Failed to set XB-200 path: %s\n",
+                 bladerf_strerror(status));
         return status;
     }
 
     status = bladerf_xb200_get_path(dev, m, &readback);
     if (status != 0) {
-        fprintf(stderr, "Failed to set XB-200 path: %s\n",
-                bladerf_strerror(status));
+        PR_ERROR("Failed to set XB-200 path: %s\n",
+                 bladerf_strerror(status));
         return status;
     }
 
     if (p != readback) {
-        fprintf(stderr, "Path mismatch -- path=%d, readback=%d\n", p, readback);
+        PR_ERROR("Path mismatch -- path=%d, readback=%d\n", p, readback);
         return -1;
     }
 
@@ -62,21 +64,21 @@ static int set_and_check_filterbank(struct bladerf *dev,
 
     status = bladerf_xb200_set_filterbank(dev, m, f);
     if (status != 0) {
-        fprintf(stderr, "Failed to set XB-200 filter bank: %s\n",
-                bladerf_strerror(status));
+        PR_ERROR("Failed to set XB-200 filter bank: %s\n",
+                 bladerf_strerror(status));
         return status;
     }
 
     status = bladerf_xb200_get_filterbank(dev, m, &readback);
     if (status != 0) {
-        fprintf(stderr, "Failed to read back filter bank: %s\n",
-                bladerf_strerror(status));
+        PR_ERROR("Failed to read back filter bank: %s\n",
+                 bladerf_strerror(status));
         return status;
     }
 
     if (f != readback) {
-        fprintf(stderr, "Mismatch detected -- fiterbank=%d, readback=%d\n",
-                f, readback);
+        PR_ERROR("Mismatch detected -- fiterbank=%d, readback=%d\n",
+                 f, readback);
         return -1;
     }
 
@@ -171,7 +173,7 @@ static int test_filterbanks(struct bladerf *dev)
     return failures;
 }
 
-int test_xb200(struct bladerf *dev, struct app_params *p)
+unsigned int test_xb200(struct bladerf *dev, struct app_params *p, bool quiet)
 {
     unsigned int failures = 0;
 
@@ -179,11 +181,11 @@ int test_xb200(struct bladerf *dev, struct app_params *p)
         return 0;
     }
 
-    printf("%s: Setting and reading back filter bank settings...\n",
+    PRINT("%s: Setting and reading back filter bank settings...\n",
            __FUNCTION__);
     failures += test_filterbanks(dev);
 
-    printf("%s: Setting and reading back path settings...\n", __FUNCTION__);
+    PRINT("%s: Setting and reading back path settings...\n", __FUNCTION__);
     failures += test_paths(dev);
 
     return failures;

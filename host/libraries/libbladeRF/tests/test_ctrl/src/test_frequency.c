@@ -24,6 +24,8 @@
  */
 #include "test_ctrl.h"
 
+DECLARE_TEST_CASE(frequency);
+
 /* Due to some known rounding issues, the readback may be +/- 1 Hz. We'll not
  * fail out on this for now... */
 static inline bool freq_match(unsigned int a, unsigned int b)
@@ -48,21 +50,21 @@ static int set_and_check(struct bladerf *dev, bladerf_module m,
 
     status = bladerf_set_frequency(dev, m, freq);
     if (status != 0) {
-        fprintf(stderr, ERR_PFX "Failed to set frequency: %u Hz: %s\n", freq,
-                bladerf_strerror(status));
+        PR_ERROR("Failed to set frequency: %u Hz: %s\n", freq,
+                 bladerf_strerror(status));
         return status;
     }
 
     status = bladerf_get_frequency(dev, m, &readback);
     if (status != 0) {
-        fprintf(stderr, ERR_PFX "Failed to get frequency: %s\n",
-                bladerf_strerror(status));
+        PR_ERROR("Failed to get frequency: %s\n",
+                 bladerf_strerror(status));
         return status;
     }
 
     if (!freq_match(freq, readback)) {
-        fprintf(stderr, "ERR_PFX Frequency (%u) != Readback value (%u)\n",
-                freq, readback);
+        PR_ERROR("Frequency (%u) != Readback value (%u)\n",
+                 freq, readback);
 
         return -1;
     }
@@ -71,7 +73,7 @@ static int set_and_check(struct bladerf *dev, bladerf_module m,
 }
 
 static unsigned int freq_sweep(struct bladerf *dev, bladerf_module m,
-                               unsigned int min)
+                               unsigned int min, bool quiet)
 {
     int status;
     unsigned int freq, n;
@@ -83,18 +85,18 @@ static unsigned int freq_sweep(struct bladerf *dev, bladerf_module m,
         if (status != 0) {
             failures++;
         } else if (n % 50 == 0) {
-            printf("\r  Currently tuned to %-10u Hz...", freq);
+            PRINT("\r  Currently tuned to %-10u Hz...", freq);
             fflush(stdout);
         }
     }
 
-    printf("\n");
+    PRINT("\n");
     fflush(stdout);
     return failures;
 }
 
 static int random_tuning(struct bladerf *dev, bladerf_module m,
-                         unsigned int min)
+                         unsigned int min, bool quiet)
 {
     int status = 0;
     unsigned int i, n;
@@ -117,34 +119,35 @@ static int random_tuning(struct bladerf *dev, bladerf_module m,
         if (status != 0) {
             failures++;
         } else if (n % 50 == 0) {
-            printf("\r  Currently tuned to %-10u Hz...", freq);
+            PRINT("\r  Currently tuned to %-10u Hz...", freq);
             fflush(stdout);
         }
     }
 
-    printf("\n");
+    PRINT("\n");
     fflush(stdout);
     return failures;
 }
 
-unsigned int test_frequency(struct bladerf *dev, struct app_params *p)
+unsigned int test_frequency(struct bladerf *dev, struct app_params *p,
+                            bool quiet)
 {
     unsigned int failures = 0;
     const unsigned int min = p->use_xb200 ?
                                 BLADERF_FREQUENCY_MIN_XB200 :
                                 BLADERF_FREQUENCY_MIN;
 
-    printf("%s: Performing RX frequency sweep...\n", __FUNCTION__);
-    failures += freq_sweep(dev, BLADERF_MODULE_RX, min);
+    PRINT("%s: Performing RX frequency sweep...\n", __FUNCTION__);
+    failures += freq_sweep(dev, BLADERF_MODULE_RX, min, quiet);
 
-    printf("%s: Performing random RX tuning...\n", __FUNCTION__);
-    failures += random_tuning(dev, BLADERF_MODULE_RX, min);
+    PRINT("%s: Performing random RX tuning...\n", __FUNCTION__);
+    failures += random_tuning(dev, BLADERF_MODULE_RX, min, quiet);
 
-    printf("%s: Performing TX frequency sweep...\n", __FUNCTION__);
-    failures += freq_sweep(dev, BLADERF_MODULE_TX, min);
+    PRINT("%s: Performing TX frequency sweep...\n", __FUNCTION__);
+    failures += freq_sweep(dev, BLADERF_MODULE_TX, min, quiet);
 
-    printf("%s: Performing random TX tuning...\n", __FUNCTION__);
-    failures += random_tuning(dev, BLADERF_MODULE_TX, min);
+    PRINT("%s: Performing random TX tuning...\n", __FUNCTION__);
+    failures += random_tuning(dev, BLADERF_MODULE_TX, min, quiet);
 
     return failures;
 }

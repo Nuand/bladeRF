@@ -24,6 +24,8 @@
  */
 #include "test_ctrl.h"
 
+DECLARE_TEST_CASE(correction);
+
 const struct correction {
     const char *name;
     bladerf_correction type;
@@ -67,16 +69,16 @@ static int set_and_check(struct bladerf *dev, const struct correction *c,
 
     status = bladerf_set_correction(dev, m, c->type, val);
     if (status != 0) {
-        fprintf(stderr, ERR_PFX "Failed to set %s correction: %s\n",
-                c->name, bladerf_strerror(status));
+        PR_ERROR("Failed to set %s correction: %s\n",
+                 c->name, bladerf_strerror(status));
 
         return status;
     }
 
     status = bladerf_get_correction(dev, m, c->type, &readback);
     if (status != 0) {
-        fprintf(stderr, ERR_PFX "Failed to get %s correction: %s\n",
-                c->name, bladerf_strerror(status));
+        PR_ERROR("Failed to get %s correction: %s\n",
+                 c->name, bladerf_strerror(status));
 
         return status;
     }
@@ -105,15 +107,15 @@ static int set_and_check(struct bladerf *dev, const struct correction *c,
     }
 
     if (scaled_val != scaled_readback) {
-        fprintf(stderr, "Correction mismatch, val=%d, readback=%d\n",
-                val, readback);
+        PR_ERROR("Correction mismatch, val=%d, readback=%d\n",
+                 val, readback);
         return -1;
     }
 
     return 0;
 }
 
-static int sweep_vals(struct bladerf *dev, bladerf_module m)
+static int sweep_vals(struct bladerf *dev, bladerf_module m, bool quiet)
 {
     int status;
     int val;
@@ -121,7 +123,7 @@ static int sweep_vals(struct bladerf *dev, bladerf_module m)
     unsigned int failures = 0;
 
     for (i = 0; i < ARRAY_SIZE(corrections); i++) {
-        printf("    %s\n", corrections[i].name);
+        PRINT("    %s\n", corrections[i].name);
 
         for (val = corrections[i].min; val <= corrections[i].max; val++) {
             status = set_and_check(dev, &corrections[i], m, val);
@@ -134,7 +136,7 @@ static int sweep_vals(struct bladerf *dev, bladerf_module m)
     return failures;
 }
 
-static unsigned random_vals(struct bladerf *dev, bladerf_module m)
+static unsigned random_vals(struct bladerf *dev, bladerf_module m, bool quiet)
 {
     int status;
     int val, j;
@@ -143,7 +145,7 @@ static unsigned random_vals(struct bladerf *dev, bladerf_module m)
     unsigned int failures = 0;
 
     for (i = 0; i < ARRAY_SIZE(corrections); i++) {
-        printf("    %s\n", corrections[i].name);
+        PRINT("    %s\n", corrections[i].name);
 
         for (j = 0; j < iterations; j++ ){
             val = corrections[i].min + (rand() % corrections[i].max);
@@ -165,21 +167,22 @@ static unsigned random_vals(struct bladerf *dev, bladerf_module m)
 }
 
 
-unsigned int test_correction(struct bladerf *dev, struct app_params *p)
+unsigned int test_correction(struct bladerf *dev,
+                             struct app_params *p, bool quiet)
 {
     unsigned int failures = 0;
 
-    printf("%s: Sweeping RX corrections...\n", __FUNCTION__);
-    failures += sweep_vals(dev, BLADERF_MODULE_RX);
+    PRINT("%s: Sweeping RX corrections...\n", __FUNCTION__);
+    failures += sweep_vals(dev, BLADERF_MODULE_RX, quiet);
 
-    printf("%s: Random RX corrections...\n", __FUNCTION__);
-    failures += random_vals(dev, BLADERF_MODULE_RX);
+    PRINT("%s: Random RX corrections...\n", __FUNCTION__);
+    failures += random_vals(dev, BLADERF_MODULE_RX, quiet);
 
-    printf("%s: Sweeping TX corrections...\n", __FUNCTION__);
-    failures += sweep_vals(dev, BLADERF_MODULE_TX);
+    PRINT("%s: Sweeping TX corrections...\n", __FUNCTION__);
+    failures += sweep_vals(dev, BLADERF_MODULE_TX, quiet);
 
-    printf("%s: Random TX corrections...\n", __FUNCTION__);
-    failures += random_vals(dev, BLADERF_MODULE_TX);
+    PRINT("%s: Random TX corrections...\n", __FUNCTION__);
+    failures += random_vals(dev, BLADERF_MODULE_TX, quiet);
 
     return failures;
 }
