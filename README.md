@@ -16,9 +16,9 @@ The source is organized as follows:
 2. Fetch the latest pre-built bladeRF [FPGA image]. See the README.md in the [hdl] directory for more information.
 3. Fetch the latest pre-built bladeRF [firmware image]. See the README.md in the [fx3_firmware] directory for more information.
 4. Follow the instructions in the [host] directory to build and install libbladeRF and the bladeRF-cli utility.
-5. Attach the bladeRF board to your fastest USB port. After flashing firmware, be sure to press the reset button or unplug/replug the device.
-6. If you haven't upgraded your firmware, run ```bladeRF-flash -f <path_to_prebuilt_firmware>```. This upgrade is required to utilize libusb support. Be sure to reset or power-cycle the board after flashing the firmware.
- - If your board is stuck in the FX3 bootloader or is at factory firmware or v1.2, see [bladeRF-flash] for additional details.
+5. Attach the bladeRF board to your fastest USB port.
+6. If you haven't upgraded your firmware, run ```bladeRF-cli -f <path_to_prebuilt_firmware>```. This upgrade is required to utilize libusb support. Be sure to reset or power-cycle the board after flashing the firmware.
+ - If your board is stuck in the FX3 bootloader or is at factory firmware or v1.2, see the ```recovery``` command in    bladeRF-cli    for additional details.
 7. You should now be able to see your device in the list output via ```bladeRF-cli -p```
 8. See the overview of the [bladeRF-cli] for more information about loading the FPGA and using the command line interface tool
 
