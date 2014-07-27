@@ -17,11 +17,11 @@ The source is organized as follows:
 3. Fetch the latest pre-built bladeRF [firmware image]. See the README.md in the [fx3_firmware] directory for more information.
 4. Follow the instructions in the [host] directory to build and install libbladeRF and the bladeRF-cli utility.
 5. Attach the bladeRF board to your fastest USB port.
-7. You should now be able to see your device in the list output via ```bladeRF-cli -p```
-8. You can view additional information about the device via ```bladeRF-cli -e info -e version```.
-9. If you see any warnings that indicate that you need to upgrade the device firmware, run ```bladeRF-cli -f <path_to_prebuilt_firmware>```. 
+6. You should now be able to see your device in the list output via ```bladeRF-cli -p```
+7. You can view additional information about the device via ```bladeRF-cli -e info -e version```.
+8. If any warnings indicate that a firmware update is needed, run:```bladeRF-cli -f <firmware_file>```. 
  - If you ever find the device booting into the FX3 bootloader (e.g., if you unplug the device in the middle of a firmware upgrade), see the ```recovery``` command in bladeRF-cli for additional details.
-10. See the overview of the [bladeRF-cli] for more information about loading the FPGA and using the command line interface tool
+9. See the overview of the [bladeRF-cli] for more information about loading the FPGA and using the command line interface tool
 
 For more information, see the [bladeRF wiki].
 
