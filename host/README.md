@@ -12,15 +12,12 @@ This directory contains the items outlined in the following table. Note that thi
 
 ## Dependencies ##
 
-### libUSB ###
-libusb-1.0 and its development headers are required. \>= v1.0.12 is recommended for Linux, and \>= v1.0.13 is recommended for Windows. Ideally, the
+### libusb ###
+[libusb] and its development headers are required. \>= v1.0.16 is recommended for Linux, and \>= v1.0.19 is recommended for Windows. Ideally, the
 latest released version is always recommended. Please see the [libusb ChangeLog] for more information.
 
 ### CMake ###
-[CMake][CMake.org] is used to build the items in this directory.  \>= v2.8.3 is required.
-
-#### Ubuntu/Debian: ####
-```sudo apt-get install libusb-1.0.0 libusb-1.0.0-dev cmake```
+[CMake][CMake.org] is used to build the items in this directory.  \>= v2.8.5 is required, but the latest available version is recommended.
 
 ## Build ##
 From this directory, create a 'build' directory. This is personal preference, of course. It allows for all build files to be cleaned up via a single ```rm -r build/``` command.
@@ -34,7 +31,7 @@ make
 sudo make install
 ```
 
-Below is a list of useful and project-specific CMake options. Please see the CMake [variable list] in CMake's documentation for
+Below is a list of useful and project-specific CMake options. Please see the [CMake documentation] for
 more information.
 
 | Option                                    | Description
@@ -60,6 +57,8 @@ more information.
 [libraries]: ./libraries (Libraries)
 [misc]: ./misc (Miscellaneous)
 [utilities]: ./utilities (Utilites)
-[libusb ChangeLog]: https://github.com/libusbx/libusbx/blob/master/ChangeLog (libusb ChangeLog)
+[libusb]: http://libusb.info/ (libusb project site)
+[libusb ChangeLog]: https://github.com/libusb/libusb/blob/master/ChangeLog (libusb ChangeLog)
 [CMake.org]: http://www.cmake.org/ (CMake)
 [variable list]: http://www.cmake.org/cmake/help/v2.8.11/cmake.html#section_Variables (CMake variables)
+[CMake documentation]: http://www.cmake.org/cmake/help/documentation.html (Cmake documentation)
