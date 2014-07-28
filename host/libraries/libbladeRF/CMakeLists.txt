@@ -1,26 +1,6 @@
 cmake_minimum_required(VERSION 2.8.5)
 project(libbladeRF C)
 
-if(MSVC)
-    find_package(LibPThreadsWin32 REQUIRED)
-    if(LIBPTHREADSWIN32_FOUND)
-        set(HAVE_THREADS true)
-    else()
-        set(HAVE_THREADS false)
-    endif()
-else(MSVC)
-    find_package(Threads REQUIRED)
-    if(Threads_FOUND)
-        set(HAVE_THREADS true)
-    else()
-        set(HAVE_THREADS false)
-    endif()
-endif(MSVC)
-
-if (NOT HAVE_THREADS)
-    message(FATAL_ERROR "pthreads not found. This is required to build libbladeRF.")
-endif()
-
 ################################################################################
 # Version information
 ################################################################################
@@ -160,8 +140,28 @@ set(LIBBLADERF_INCLUDES
 ################################################################################
 # Build dependencies
 ################################################################################
-if(NOT HAVE_THREADS)
-    message(FATAL_ERROR "Pthreads is required for libbladeRF")
+if(MSVC)
+    find_package(LibPThreadsWin32 REQUIRED)
+    if(LIBPTHREADSWIN32_FOUND)
+        set(HAVE_THREADS true)
+        set(LIBBLADERF_INCLUDES
+            ${LIBBLADERF_INCLUDES} ${LIBPTHREADSWIN32_INCLUDE_DIRS})
+        set(LIBBLADERF_LIBS
+            ${LIBBLADERF_LIBS} ${LIBPTHREADSWIN32_LIBRARIES})
+    else()
+        set(HAVE_THREADS false)
+    endif()
+else(MSVC)
+    find_package(Threads REQUIRED)
+    if(Threads_FOUND)
+        set(HAVE_THREADS true)
+    else()
+        set(HAVE_THREADS false)
+    endif()
+endif(MSVC)
+
+if (NOT HAVE_THREADS)
+    message(FATAL_ERROR "pthreads not found. This is required to build libbladeRF.")
 endif()
 
 if(NOT ENABLE_BACKEND_USB)

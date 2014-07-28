@@ -49,6 +49,7 @@ static const struct test_case *tests[] = {
     &test_case_bandwidth,
     &test_case_gain,
     &test_case_frequency,
+    &test_case_threads,
 };
 
 #define OPTARG  "d:t:s:v:hL"
@@ -246,7 +247,7 @@ int main(int argc, char *argv[])
         if (p.test_name == NULL || !strcasecmp(p.test_name, tests[i]->name)) {
             p.randval_state = p.randval_seed;
             stats[i].ran = true;
-            stats[i].failures = tests[i]->fn(dev, &p);
+            stats[i].failures = tests[i]->fn(dev, &p, false);
         }
     }
 

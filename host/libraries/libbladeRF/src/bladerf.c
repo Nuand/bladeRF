@@ -848,8 +848,9 @@ int bladerf_fpga_version(struct bladerf *dev, struct bladerf_version *version)
 
 bladerf_dev_speed bladerf_device_speed(struct bladerf *dev)
 {
+    bladerf_dev_speed speed;
     MUTEX_LOCK(&dev->ctrl_lock);
-    bladerf_dev_speed speed = dev->usb_speed;
+    speed = dev->usb_speed;
     MUTEX_UNLOCK(&dev->ctrl_lock);
     return speed;
 }

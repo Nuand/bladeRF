@@ -43,15 +43,27 @@ struct sync_task {
               struct bladerf_metadata *meata, unsigned int timeout_ms);
 };
 
+struct thread_test_case {
+    const unsigned int iterations;
+    const bool quiet;
+    const struct test_case *test;
+};
+
 struct thread_state {
     bool launched;
     struct bladerf *dev;
     struct app_params *p;
-    bool quiet;
-    unsigned int iterations;
     unsigned int failures;
+    const struct thread_test_case *tc;
     pthread_t thread;
-    const struct test_case *test;
+};
+
+static const struct thread_test_case tc[] = {
+    { 100,  true,   &test_case_xb200 },
+    { 75,   true,   &test_case_gain },
+    { 25,   true,   &test_case_bandwidth },
+    { 1,    true,   &test_case_correction },
+    { 1,    false,  &test_case_frequency },
 };
 
 static inline void get_sync_task_state(struct sync_task *t, bool *run)
@@ -93,6 +105,12 @@ static void * stream_task(void *arg)
     while (run && status == 0) {
         status = t->fn(t->dev, samples, DEFAULT_BUF_LEN, NULL,
                        DEFAULT_TIMEOUT_MS);
+
+        if (status != 0) {
+            PR_ERROR("%s failed with: %s\n",
+                     (t->module == BLADERF_MODULE_RX ? "RX" : "TX"),
+                     bladerf_strerror(status));
+        }
 
         get_sync_task_state(t, &run);
     }
@@ -154,8 +172,8 @@ void * run_test_fn(void *arg)
 {
     unsigned int i;
     struct thread_state *s = (struct thread_state *) arg;
-    for (i = 0; i < s->iterations; i++) {
-        s->failures += s->test->fn(s->dev, s->p, s->quiet);
+    for (i = 0; i < s->tc->iterations; i++) {
+        s->failures += s->tc->test->fn(s->dev, s->p, s->tc->quiet);
     }
     return NULL;
 }
@@ -166,19 +184,25 @@ unsigned int test_threads(struct bladerf *dev, struct app_params *p, bool quiet)
     unsigned int failures = 0;
     size_t i;
     struct sync_task rx, tx;
-
-    struct thread_state threads[] = {
-       { false, dev, p, true,  35,  0, (pthread_t) 0, &test_case_xb200 },
-       { false, dev, p, true,  25,  0, (pthread_t) 0, &test_case_gain },
-       { false, dev, p, true,  5,   0, (pthread_t) 0, &test_case_bandwidth },
-       { false, dev, p, true,  1,   0, (pthread_t) 0, &test_case_correction },
-       { false, dev, p, false, 1,   0, (pthread_t) 0, &test_case_frequency },
-       { false, dev, p, true,  1,   0, (pthread_t) 0, &test_case_samplerate },
-    };
+    struct thread_state *threads = NULL;
+    const size_t num_threads = ARRAY_SIZE(tc);
 
     PRINT("%s: Running full-duplex stream with multiple control threads...\n",
           __FUNCTION__);
     PRINT("  Printing output from test_frequency for status...\n");
+
+    threads = calloc(num_threads, sizeof(threads[0]));
+    if (threads == NULL) {
+        return 1;
+    }
+
+    for (i = 0; i < ARRAY_SIZE(tc); i++) {
+        threads[i].launched = false;
+        threads[i].dev = dev;
+        threads[i].p = p;
+        threads[i].failures = 0;
+        threads[i].tc = &tc[i];
+    }
 
     status = bladerf_set_loopback(dev, BLADERF_LB_BB_TXVGA1_RXVGA2);
     if (status != 0) {
@@ -199,8 +223,8 @@ unsigned int test_threads(struct bladerf *dev, struct app_params *p, bool quiet)
         goto out;
     }
 
-    for (i = 0; i < ARRAY_SIZE(threads); i++) {
-        if (!p->use_xb200 && threads[i].test->fn == test_xb200) {
+    for (i = 0; i < num_threads; i++) {
+        if (!p->use_xb200 && threads[i].tc->test->fn == test_xb200) {
             continue;
         }
 
@@ -208,19 +232,19 @@ unsigned int test_threads(struct bladerf *dev, struct app_params *p, bool quiet)
                                 run_test_fn, &threads[i]);
 
         if (status == 0) {
-            PRINT("  Started test_%s thread...\n", threads[i].test->name);
+            PRINT("  Started test_%s thread...\n", threads[i].tc->test->name);
             threads[i].launched = true;
         } else {
             PR_ERROR("  Failed to start test_%s thread...\n",
-                     threads[i].test->name);
+                     threads[i].tc->test->name);
             failures++;
         }
     }
 
-    for (i = 0; i < ARRAY_SIZE(threads); i++) {
+    for (i = 0; i < num_threads; i++) {
         if (threads[i].launched) {
             pthread_join(threads[i].thread, NULL);
-            PRINT("\n  Joined test_%s thread.\n", threads[i].test->name);
+            PRINT("\n  Joined test_%s thread.\n", threads[i].tc->test->name);
             failures += threads[i].failures;
         }
     }
@@ -236,5 +260,6 @@ out:
         goto out;
     }
 
+    free(threads);
     return failures;
 }

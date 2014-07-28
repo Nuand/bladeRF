@@ -6,6 +6,16 @@ set(INCLUDES
 )
 
 set(LIBS libbladerf_shared)
+
+if(MSVC)
+    find_package(LibPThreadsWin32 REQUIRED)
+    set(INCLUDES ${INCLUDES} ${LIBPTHREADSWIN32_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${LIBPTHREADSWIN32_LIBRARIES})
+else(MSVC)
+    find_package(Threads REQUIRED)
+    set(LIBS ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
+endif(MSVC)
+
 set(SRC
         src/main.c
         src/test_bandwidth.c
@@ -17,6 +27,7 @@ set(SRC
         src/test_sampling.c
         src/test_lpf_mode.c
         src/test_samplerate.c
+        src/test_threads.c
         src/test_xb200.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
 )
