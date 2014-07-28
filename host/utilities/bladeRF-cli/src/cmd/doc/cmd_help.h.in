@@ -27,7 +27,7 @@
  * Any manual modifications to this file will be overwritten!
  * To edit the content of help strings, please edit interactive-help.md
  *
- * Last generated: Sun Jul 27 15:18:53 EDT 2014 by jynik
+ * Last generated: Sun Jul 27 20:35:24 EDT 2014 by rtucker@racer-x
  */
 
 #ifndef BLADERF_CLI_DOC_CMD_HELP_H__
@@ -298,20 +298,20 @@
   "\n" \
   "<backend>:[device=<bus>:<addr>] [instance=<n>] [serial=<serial>]\n" \
   "\n" \
-  "See the bladerf_open() documentation for the complete device specifier\n" \
-  "format.\n" \
+  "See the bladerf_open() documentation in libbladeRF for the complete\n" \
+  "device specifier format.\n" \
   "\n" \
 
 
 #define CLI_CMD_HELPTEXT_peek \
-  "Usage: peek <dac|lms|si> <address> [num addresses]\n" \
+  "Usage: peek <dac|lms|si> <address> [num_addresses]\n" \
   "\n" \
   "The peek command can read any of the devices hanging off the FPGA\n" \
   "which includes the LMS6002D transceiver, VCTCXO trim DAC or the Si5338\n" \
   "clock generator chip.\n" \
   "\n" \
   "If num_addresses is supplied, the address is incremented by 1 and\n" \
-  "another peek is performed.\n" \
+  "another peek is performed for that many addresses.\n" \
   "\n" \
   "Valid Address Ranges:\n" \
   "\n" \
@@ -333,9 +333,6 @@
   "The poke command can write any of the devices hanging off the FPGA\n" \
   "which includes the LMS6002D transceiver, VCTCXO trim DAC or the Si5338\n" \
   "clock generator chip.\n" \
-  "\n" \
-  "If num_addresses is supplied, the address is incremented by 1 and\n" \
-  "another poke is performed.\n" \
   "\n" \
   "Valid Address Ranges:\n" \
   "\n" \
@@ -577,7 +574,7 @@
   "-   The n, samples, buffers, and xfers parameters support the suffixes\n" \
   "    K, M, and G, which are multiples of 1024.\n" \
   "-   For higher sample rates, it is advised that the input file be\n" \
-  "    stored in RAM (e.g. /tmp, /dev/shm) or to an SSD, rather than a\n" \
+  "    stored in RAM (e.g. /tmp, /dev/shm) or on an SSD, rather than a\n" \
   "    HDD.\n" \
   "-   When providing CSV data, this command will first convert it to a\n" \
   "    binary format, stored in a file in the current working directory.\n" \

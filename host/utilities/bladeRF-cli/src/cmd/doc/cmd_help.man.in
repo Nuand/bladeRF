@@ -109,7 +109,7 @@ Valid options are:
 .PP
 .TS
 tab(@);
-rw(11.7n) lw(52.5n).
+rw(11.67n) lw(52.50n).
 T{
 Option
 T}@T{
@@ -194,7 +194,7 @@ Valid options are:
 .PP
 .TS
 tab(@);
-rw(11.7n) lw(52.5n).
+rw(11.67n) lw(52.50n).
 T{
 Option
 T}@T{
@@ -339,18 +339,18 @@ The general form of the device identifier string is:
 .PP
 \f[C]<backend>:[device=<bus>:<addr>]\ [instance=<n>]\ [serial=<serial>]\f[]
 .PP
-See the \f[C]bladerf_open()\f[] documentation for the complete device
-specifier format.
+See the \f[C]bladerf_open()\f[] documentation in libbladeRF for the
+complete device specifier format.
 .SS peek
 .PP
-Usage: \f[C]peek\ <dac|lms|si>\ <address>\ [num\ addresses]\f[]
+Usage: \f[C]peek\ <dac|lms|si>\ <address>\ [num_addresses]\f[]
 .PP
 The peek command can read any of the devices hanging off the FPGA which
 includes the LMS6002D transceiver, VCTCXO trim DAC or the Si5338 clock
 generator chip.
 .PP
 If \f[C]num_addresses\f[] is supplied, the address is incremented by 1
-and another peek is performed.
+and another peek is performed for that many addresses.
 .PP
 Valid Address Ranges:
 .PP
@@ -390,9 +390,6 @@ Usage: \f[C]poke\ <dac|lms|si>\ <address>\ <data>\f[]
 The poke command can write any of the devices hanging off the FPGA which
 includes the LMS6002D transceiver, VCTCXO trim DAC or the Si5338 clock
 generator chip.
-.PP
-If \f[C]num_addresses\f[] is supplied, the address is incremented by 1
-and another poke is performed.
 .PP
 Valid Address Ranges:
 .PP
@@ -434,7 +431,7 @@ The parameter is one of:
 .PP
 .TS
 tab(@);
-rw(13.6n) lw(54.4n).
+rw(13.61n) lw(54.44n).
 T{
 Parameter
 T}@T{
@@ -546,7 +543,7 @@ Reception is controlled and configured by one of the following:
 .PP
 .TS
 tab(@);
-rw(11.7n) lw(56.4n).
+rw(11.67n) lw(56.39n).
 T{
 Command
 T}@T{
@@ -593,7 +590,7 @@ Below is a list of available parameters.
 .PP
 .TS
 tab(@);
-rw(15.6n) lw(52.5n).
+rw(15.56n) lw(52.50n).
 T{
 Parameter
 T}@T{
@@ -688,7 +685,7 @@ Transmission is controlled and configured by one of the following:
 .PP
 .TS
 tab(@);
-rw(11.7n) lw(56.4n).
+rw(11.67n) lw(56.39n).
 T{
 Command
 T}@T{
@@ -735,7 +732,7 @@ Below is a list of available parameters.
 .PP
 .TS
 tab(@);
-rw(15.6n) lw(52.5n).
+rw(15.56n) lw(52.50n).
 T{
 Parameter
 T}@T{
@@ -820,7 +817,7 @@ which are multiples of 1024.
 .IP \[bu] 2
 For higher sample rates, it is advised that the input file be stored in
 RAM (e.g.
-\f[C]/tmp\f[], \f[C]/dev/shm\f[]) or to an SSD, rather than a HDD.
+\f[C]/tmp\f[], \f[C]/dev/shm\f[]) or on an SSD, rather than a HDD.
 .IP \[bu] 2
 When providing CSV data, this command will first convert it to a binary
 format, stored in a file in the current working directory.
@@ -840,7 +837,7 @@ The parameter is one of:
 .PP
 .TS
 tab(@);
-rw(13.6n) lw(54.4n).
+rw(13.61n) lw(54.44n).
 T{
 Parameter
 T}@T{

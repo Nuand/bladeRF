@@ -281,21 +281,21 @@ The general form of the device identifier string is:
 
 `<backend>:[device=<bus>:<addr>] [instance=<n>] [serial=<serial>]`
 
-See the `bladerf_open()` documentation for the complete device specifier
-format.
+See the `bladerf_open()` documentation in libbladeRF for the complete
+device specifier format.
 
 
 peek
 ----
 
-Usage: `peek <dac|lms|si> <address> [num addresses]`
+Usage: `peek <dac|lms|si> <address> [num_addresses]`
 
 The peek command can read any of the devices hanging off the FPGA which
 includes the LMS6002D transceiver, VCTCXO trim DAC or the Si5338 clock
 generator chip.
 
-If `num_addresses` is supplied, the address is incremented by 1 and another
-peek is performed.
+If `num_addresses` is supplied, the address is incremented by 1 and
+another peek is performed for that many addresses.
 
 Valid Address Ranges:
 
@@ -318,9 +318,6 @@ Usage: `poke <dac|lms|si> <address> <data>`
 The poke command can write any of the devices hanging off the FPGA which
 includes the LMS6002D transceiver, VCTCXO trim DAC or the Si5338 clock
 generator chip.
-
-If `num_addresses` is supplied, the address is incremented by 1 and another
-poke is performed.
 
 Valid Address Ranges:
 
@@ -578,15 +575,16 @@ Notes:
 
  * The `n`, `samples`, `buffers`, and `xfers` parameters support the
    suffixes `K`, `M`, and `G`, which are multiples of 1024.
- * For higher sample rates, it is advised that the input file be stored in
-   RAM (e.g. `/tmp`, `/dev/shm`) or to an SSD, rather than a HDD.
- * When providing CSV data, this command will first convert it to a binary
-   format, stored in a file in the current working directory. During this
-   process, out-of-range values will be clamped.
- * When using a binary format, the user is responsible for ensuring that the
-   provided data values are within the allowed range. This prerequisite
-   alleviates the need for this program to perform range checks in
-   time-sensitive callbacks.
+ * For higher sample rates, it is advised that the input file be
+   stored in RAM (e.g. `/tmp`, `/dev/shm`) or on an SSD, rather than a
+   HDD.
+ * When providing CSV data, this command will first convert it to a
+   binary format, stored in a file in the current working directory.
+   During this process, out-of-range values will be clamped.
+ * When using a binary format, the user is responsible for ensuring
+   that the provided data values are within the allowed range. This
+   prerequisite alleviates the need for this program to perform range
+   checks in time-sensitive callbacks.
 
 
 set
