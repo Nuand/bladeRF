@@ -382,7 +382,9 @@ static int si5338_calculate_multisynth(struct si5338_multisynth *ms, struct blad
 
     /* Loss of precision if num or den are greater than 2^30-1 */
     while (abc.num > (1<<30) || abc.den > (1<<30) ) {
-        log_warning( "Loss of precision in reducing fraction from %"PRIu64"/%"PRIu64" to %"PRIu64"/%"PRIu64"\n", abc.num, abc.den, abc.num>>1, abc.den>>1);
+        log_debug("Loss of precision in reducing fraction from "
+                  "%"PRIu64"/%"PRIu64" to %"PRIu64"/%"PRIu64"\n",
+                  abc.num, abc.den, abc.num>>1, abc.den>>1);
         abc.num >>= 1;
         abc.den >>= 1;
     }
