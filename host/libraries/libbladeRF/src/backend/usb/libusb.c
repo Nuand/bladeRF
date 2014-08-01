@@ -184,6 +184,7 @@ static inline bool device_is_bladerf(libusb_device *dev)
 {
     struct libusb_config_descriptor *cfg;
     int status;
+    bool ret;
 
     if(!device_has_vid_pid(dev, USB_NUAND_VENDOR_ID,
                            USB_NUAND_BLADERF_PRODUCT_ID)) {
@@ -209,10 +210,13 @@ static inline bool device_is_bladerf(libusb_device *dev)
                     "update via the device's bootloader is required.\n\n",
                     bus, addr);
 
-        return false;
+        ret = false;
     } else {
-        return true;
+        ret = true;
     }
+
+    libusb_free_config_descriptor(cfg);
+    return ret;
 }
 
 static int lusb_probe(struct bladerf_devinfo_list *info_list)
