@@ -282,11 +282,11 @@ Valid subcommands:
 
 Examples:
 
- * `xb 100 enable`
+ * `xb enable 100`
 
       Enables the XB-100 GPIO expansion board
 
- * `xb 200 filter rx 144`
+ * `xb filter 200 rx 144`
 
       Selects the 144 MHz receive filter on the XB-200 LF/MF/HF/VHF transverter expansion board
 
