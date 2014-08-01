@@ -256,27 +256,27 @@ Load an FPGA bitstream or program the FX3's SPI flash.
 xb
 --
 
-Usage: xb [subcommand] [board_model] [parameters]
+Usage: `xb [subcommand] [board_model] [parameters]`
 
 Enable or configure an expansion board.
 
-Valid board models:
+Valid values for `board_model`:
 
-  - 100
+  - `100`
 
       XB-100 GPIO expansion board.
 
-  - 200
+  - `200`
 
       XB-200 LF/MF/HF/VHF transverter expansion board
 
 Valid subcommands:
 
-  - enable [board_model]
+  - `enable [board_model]`
 
       Enable the XB-100 or XB-200 expansion board.
 
-  - filter 200 [rx|tx] [50|144|222|custom|auto_1db|auto_3db]
+  - `filter 200 [rx|tx] [50|144|222|custom|auto_1db|auto_3db]`
 
       Selects the RX or TX filter on the XB-200 board
 

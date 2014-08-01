@@ -27,7 +27,7 @@
  * Any manual modifications to this file will be overwritten!
  * To edit the content of help strings, please edit interactive-help.md
  *
- * Last generated: Sun Jul 27 20:35:24 EDT 2014 by rtucker@racer-x
+ * Last generated: Fri Aug  1 15:50:47 EDT 2014 by cwiener@voyager.nj.crlabs.com
  */
 
 #ifndef BLADERF_CLI_DOC_CMD_HELP_H__
@@ -275,9 +275,40 @@
 
 
 #define CLI_CMD_HELPTEXT_xb \
-  "Usage: xb enable [100|200]\n" \
+  "Usage: xb [subcommand] [board_model] [parameters]\n" \
   "\n" \
-  "Enable and configure XB100 and XB200 expansion boards.\n" \
+  "Enable or configure an expansion board.\n" \
+  "\n" \
+  "Valid values for board_model:\n" \
+  "\n" \
+  "-   100\n" \
+  "\n" \
+  "    XB-100 GPIO expansion board.\n" \
+  "\n" \
+  "-   200\n" \
+  "\n" \
+  "    XB-200 LF/MF/HF/VHF transverter expansion board\n" \
+  "\n" \
+  "Valid subcommands:\n" \
+  "\n" \
+  "-   enable [board_model]\n" \
+  "\n" \
+  "    Enable the XB-100 or XB-200 expansion board.\n" \
+  "\n" \
+  "-   filter 200 [rx|tx] [50|144|222|custom|auto_1db|auto_3db]\n" \
+  "\n" \
+  "    Selects the RX or TX filter on the XB-200 board\n" \
+  "\n" \
+  "Examples:\n" \
+  "\n" \
+  "-   xb 100 enable\n" \
+  "\n" \
+  "    Enables the XB-100 GPIO expansion board\n" \
+  "\n" \
+  "-   xb 200 filter rx 144\n" \
+  "\n" \
+  "    Selects the 144 MHz receive filter on the XB-200 LF/MF/HF/VHF\n" \
+  "    transverter expansion board\n" \
   "\n" \
 
 
