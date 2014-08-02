@@ -77,7 +77,7 @@ void usage(const char *argv0)
     printf("  -d, --device <str>            Open the specified device.\n");
     printf("                                By default, any device is used.\n");
     printf("  -t, --test <name>             Run specified test.\n");
-    printf("  -s, --seed <seed>             Use specified rand() seed.\n");
+    printf("  -s, --seed <seed>             Use specified seed for PRNG.\n");
     printf("  -h, --help                    Show this text.\n");
     printf("  --xb200                       Test XB-200 functionality.\n");
     printf("                                Device must be present.\n");
@@ -104,6 +104,7 @@ int get_params(int argc, char *argv[], struct app_params *p)
     bladerf_log_level level;
 
     memset(p, 0, sizeof(p[0]));
+    p->randval_seed = 1;
 
     while((c = getopt_long(argc, argv, OPTARG, long_options, &idx)) != -1) {
         switch (c) {
@@ -134,9 +135,9 @@ int get_params(int argc, char *argv[], struct app_params *p)
                 break;
 
             case 's':
-                p->seed = str2uint(optarg, 0, UINT_MAX, &ok);
+                p->randval_seed = str2uint64(optarg, 1, UINT64_MAX, &ok);
                 if (!ok) {
-                    fprintf(stderr, "Invalid unsigned integer: %s\n", optarg);
+                    fprintf(stderr, "Invalid seed value: %s\n", optarg);
                     return -1;
                 }
                 break;
@@ -243,7 +244,7 @@ int main(int argc, char *argv[])
 
     for (i = 0; i < ARRAY_SIZE(tests); i++) {
         if (p.test_name == NULL || !strcasecmp(p.test_name, tests[i]->name)) {
-            srand(p.seed);
+            p.randval_state = p.randval_seed;
             stats[i].ran = true;
             stats[i].failures = tests[i]->fn(dev, &p);
         }

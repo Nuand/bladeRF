@@ -72,17 +72,17 @@ static unsigned int sweep_bandwidths(struct bladerf *dev, bladerf_module m)
     return failures;
 }
 
-static unsigned int random_bandwidths(struct bladerf *dev, bladerf_module m)
+static unsigned int random_bandwidths(struct bladerf *dev, bladerf_module m,
+                                      struct app_params *p)
 {
     int status;
     unsigned int bw, i;
     unsigned int failures = 0;
     const unsigned int iterations = 1500;
-    const unsigned int scaling = (BLADERF_BANDWIDTH_MAX / RAND_MAX) == 0 ?
-                                 1 : (BLADERF_BANDWIDTH_MAX / RAND_MAX);
 
     for (i = 0; i < iterations; i++) {
-        bw = BLADERF_BANDWIDTH_MIN + ((scaling * rand()) % BLADERF_BANDWIDTH_MAX);
+        randval_update(&p->randval_state);
+        bw = BLADERF_BANDWIDTH_MIN + (p->randval_state % BLADERF_BANDWIDTH_MAX);
 
         if (bw < BLADERF_BANDWIDTH_MIN) {
             bw = BLADERF_BANDWIDTH_MIN;
@@ -108,13 +108,13 @@ unsigned int test_bandwidth(struct bladerf *dev,
     failures += sweep_bandwidths(dev, BLADERF_MODULE_RX);
 
     PRINT("%s: Applying random RX bandwidths...\n", __FUNCTION__);
-    failures += random_bandwidths(dev, BLADERF_MODULE_RX);
+    failures += random_bandwidths(dev, BLADERF_MODULE_RX, p);
 
     PRINT("%s: Sweeping TX bandwidths...\n", __FUNCTION__);
     failures += sweep_bandwidths(dev, BLADERF_MODULE_TX);
 
     PRINT("%s: Applying random TX bandwidths...\n", __FUNCTION__);
-    failures += random_bandwidths(dev, BLADERF_MODULE_TX);
+    failures += random_bandwidths(dev, BLADERF_MODULE_TX, p);
 
     return failures;
 }

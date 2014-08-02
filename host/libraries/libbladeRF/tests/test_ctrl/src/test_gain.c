@@ -154,7 +154,7 @@ static unsigned int gain_sweep(struct bladerf *dev, bool quiet)
     return failures;
 }
 
-static int random_gains(struct bladerf *dev, bool quiet)
+static int random_gains(struct bladerf *dev, struct app_params *p, bool quiet)
 {
     int status, gain;
     unsigned int i, j;
@@ -166,7 +166,8 @@ static int random_gains(struct bladerf *dev, bool quiet)
         PRINT("    %s\n", gains[i].name);
 
         for (j = 0; j < iterations; j++) {
-            gain = gains[i].min + (rand() % n_incs) * gains[i].inc;
+            randval_update(&p->randval_state);
+            gain = gains[i].min + (p->randval_state % n_incs) * gains[i].inc;
 
             if (gain > gains[i].max) {
                 gain = gains[i].max;
@@ -192,7 +193,7 @@ unsigned int test_gain(struct bladerf *dev, struct app_params *p, bool quiet)
     failures += gain_sweep(dev, quiet);
 
     PRINT("%s: Applying random gains...\n", __FUNCTION__);
-    failures += random_gains(dev, quiet);
+    failures += random_gains(dev, p, quiet);
 
     return failures;
 }

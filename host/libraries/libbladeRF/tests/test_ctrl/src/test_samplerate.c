@@ -112,23 +112,21 @@ static int sweep_samplerate(struct bladerf *dev, bladerf_module m, bool quiet)
     return failures;
 }
 
-static int random_samplerates(struct bladerf *dev, bladerf_module m,
-                              bool quiet)
+static int random_samplerates(struct bladerf *dev,
+                              struct app_params *p,
+                              bladerf_module m, bool quiet)
 {
     int status;
     unsigned int i, n;
     const unsigned int interations = 2500;
-    unsigned int rate, scaling;
+    unsigned int rate;
     unsigned failures = 0;
 
-    scaling = BLADERF_SAMPLERATE_REC_MAX / RAND_MAX;
-    if (scaling == 0) {
-        scaling = 1;
-    }
-
     for (i = n = 0; i < interations; i++, n++) {
+        randval_update(&p->randval_state);
+
         rate = BLADERF_SAMPLERATE_MIN +
-                ((scaling * rand()) % BLADERF_SAMPLERATE_REC_MAX);
+                (p->randval_state % BLADERF_SAMPLERATE_REC_MAX);
 
         if (rate < BLADERF_SAMPLERATE_MIN) {
             rate = BLADERF_SAMPLERATE_MIN;
@@ -150,25 +148,22 @@ static int random_samplerates(struct bladerf *dev, bladerf_module m,
     return failures;
 }
 
-static int random_rational_samplerates(struct bladerf *dev, bladerf_module m,
-                                       bool quiet)
+static int random_rational_samplerates(struct bladerf *dev,
+                                       struct app_params *p,
+                                       bladerf_module m, bool quiet)
 {
     int status;
     unsigned int i, n;
     const unsigned int iterations = 2500;
     struct bladerf_rational_rate rate;
-    unsigned int scaling;
     unsigned failures = 0;
 
-    scaling = BLADERF_SAMPLERATE_REC_MAX / RAND_MAX;
-    if (scaling == 0) {
-        scaling = 1;
-    }
-
     for (i = n = 0; i < iterations; i++, n++) {
+        const uint64_t mod =
+                BLADERF_SAMPLERATE_REC_MAX - BLADERF_SAMPLERATE_MIN;
 
-        rate.integer = BLADERF_SAMPLERATE_MIN +
-                ((scaling * rand()) % BLADERF_SAMPLERATE_REC_MAX);
+        randval_update(&p->randval_state);
+        rate.integer = BLADERF_SAMPLERATE_MIN + (p->randval_state % mod);
 
         if (rate.integer < BLADERF_SAMPLERATE_MIN) {
             rate.integer = BLADERF_SAMPLERATE_MIN;
@@ -177,13 +172,24 @@ static int random_rational_samplerates(struct bladerf *dev, bladerf_module m,
         }
 
         if (rate.integer != BLADERF_SAMPLERATE_REC_MAX) {
-            rate.num = rand();
-            rate.den = rand();
+            randval_update(&p->randval_state);
+            rate.num = (p->randval_state % BLADERF_SAMPLERATE_REC_MAX);
+
+            randval_update(&p->randval_state);
+            rate.den = (p->randval_state % BLADERF_SAMPLERATE_REC_MAX);
 
             if (rate.den == 0) {
                 rate.den = 1;
             }
 
+            while ( (rate.num / rate.den) > BLADERF_SAMPLERATE_REC_MAX) {
+                rate.num /= 2;
+            }
+
+            while ( (1 + rate.integer + (rate.num / rate.den))
+                        > BLADERF_SAMPLERATE_REC_MAX) {
+                rate.num /= 2;
+            }
 
         } else {
             rate.num = 0;
@@ -215,11 +221,11 @@ unsigned int test_samplerate(struct bladerf *dev,
     failures += sweep_samplerate(dev, BLADERF_MODULE_RX, quiet);
 
     PRINT("%s: Applying random RX sample rates...\n", __FUNCTION__);
-    failures += random_samplerates(dev, BLADERF_MODULE_RX, quiet);
+    failures += random_samplerates(dev, p, BLADERF_MODULE_RX, quiet);
 
     PRINT("%s: Applying random RX rational sample rates...\n",
           __FUNCTION__);
-    failures += random_rational_samplerates(dev, BLADERF_MODULE_RX, quiet);
+    failures += random_rational_samplerates(dev, p, BLADERF_MODULE_RX, quiet);
 
     PRINT("%s: Sweeping TX sample rates...\n",
           __FUNCTION__);
@@ -227,11 +233,11 @@ unsigned int test_samplerate(struct bladerf *dev,
 
     PRINT("%s: Applying random TX sample rates...\n",
           __FUNCTION__);
-    failures += random_samplerates(dev, BLADERF_MODULE_TX, quiet);
+    failures += random_samplerates(dev, p, BLADERF_MODULE_TX, quiet);
 
     PRINT("%s: Applying random TX rational sample rates...\n",
           __FUNCTION__);
-    failures += random_rational_samplerates(dev, BLADERF_MODULE_TX, quiet);
+    failures += random_rational_samplerates(dev, p, BLADERF_MODULE_TX, quiet);
 
     return failures;
 }

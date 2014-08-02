@@ -31,6 +31,7 @@
 #include <stdbool.h>
 #include <libbladeRF.h>
 #include "host_config.h"
+#include "rel_assert.h"
 
 #define DECLARE_TEST(name_) \
     extern unsigned int test_##name_(struct bladerf *, struct app_params *p, \
@@ -55,7 +56,8 @@ struct app_params {
     bool use_xb200;
     char *device_str;
     char *test_name;
-    unsigned int seed;
+    uint64_t randval_seed;
+    uint64_t randval_state;
 };
 
 
@@ -75,3 +77,13 @@ DECLARE_TEST(samplerate);
 DECLARE_TEST(sampling);
 DECLARE_TEST(threads);
 DECLARE_TEST(xb200);
+
+/* Xorshift */
+static inline void randval_update(uint64_t *state)
+{
+    assert(*state != 0);
+    (*state) ^= (*state) >> 12;
+    (*state) ^= (*state) << 25;
+    (*state) ^= (*state) >> 27;
+    (*state) *= 0x2545f4914f6cdd1d;
+}

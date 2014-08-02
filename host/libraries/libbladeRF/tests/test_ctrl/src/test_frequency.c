@@ -95,19 +95,18 @@ static unsigned int freq_sweep(struct bladerf *dev, bladerf_module m,
     return failures;
 }
 
-static int random_tuning(struct bladerf *dev, bladerf_module m,
-                         unsigned int min, bool quiet)
+static int random_tuning(struct bladerf *dev, struct app_params *p,
+                         bladerf_module m, unsigned int min, bool quiet)
 {
     int status = 0;
     unsigned int i, n;
     const unsigned int num_iterations = 2500;
     unsigned int freq;
     unsigned int failures = 0;
-    const unsigned int scaling = (BLADERF_FREQUENCY_MAX / RAND_MAX) == 0 ?
-                                 1 : (BLADERF_FREQUENCY_MAX / RAND_MAX);
 
     for (i = n = 0; i < num_iterations; i++, n++) {
-        freq = min + ((scaling * rand()) % BLADERF_FREQUENCY_MAX);
+        randval_update(&p->randval_state);
+        freq = min + (p->randval_state % BLADERF_FREQUENCY_MAX);
 
         if (freq < min) {
             freq  = BLADERF_FREQUENCY_MIN;
@@ -141,13 +140,13 @@ unsigned int test_frequency(struct bladerf *dev, struct app_params *p,
     failures += freq_sweep(dev, BLADERF_MODULE_RX, min, quiet);
 
     PRINT("%s: Performing random RX tuning...\n", __FUNCTION__);
-    failures += random_tuning(dev, BLADERF_MODULE_RX, min, quiet);
+    failures += random_tuning(dev, p, BLADERF_MODULE_RX, min, quiet);
 
     PRINT("%s: Performing TX frequency sweep...\n", __FUNCTION__);
     failures += freq_sweep(dev, BLADERF_MODULE_TX, min, quiet);
 
     PRINT("%s: Performing random TX tuning...\n", __FUNCTION__);
-    failures += random_tuning(dev, BLADERF_MODULE_TX, min, quiet);
+    failures += random_tuning(dev, p, BLADERF_MODULE_TX, min, quiet);
 
     return failures;
 }

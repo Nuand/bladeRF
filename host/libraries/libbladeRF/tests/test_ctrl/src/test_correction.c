@@ -136,7 +136,8 @@ static int sweep_vals(struct bladerf *dev, bladerf_module m, bool quiet)
     return failures;
 }
 
-static unsigned random_vals(struct bladerf *dev, bladerf_module m, bool quiet)
+static unsigned random_vals(struct bladerf *dev, struct app_params *p,
+                            bladerf_module m, bool quiet)
 {
     int status;
     int val, j;
@@ -148,7 +149,8 @@ static unsigned random_vals(struct bladerf *dev, bladerf_module m, bool quiet)
         PRINT("    %s\n", corrections[i].name);
 
         for (j = 0; j < iterations; j++ ){
-            val = corrections[i].min + (rand() % corrections[i].max);
+            randval_update(&p->randval_state);
+            val = corrections[i].min + (p->randval_state % corrections[i].max);
 
             if (val < corrections[i].min) {
                 val = corrections[i].min;
@@ -176,13 +178,13 @@ unsigned int test_correction(struct bladerf *dev,
     failures += sweep_vals(dev, BLADERF_MODULE_RX, quiet);
 
     PRINT("%s: Random RX corrections...\n", __FUNCTION__);
-    failures += random_vals(dev, BLADERF_MODULE_RX, quiet);
+    failures += random_vals(dev, p, BLADERF_MODULE_RX, quiet);
 
     PRINT("%s: Sweeping TX corrections...\n", __FUNCTION__);
     failures += sweep_vals(dev, BLADERF_MODULE_TX, quiet);
 
     PRINT("%s: Random TX corrections...\n", __FUNCTION__);
-    failures += random_vals(dev, BLADERF_MODULE_TX, quiet);
+    failures += random_vals(dev, p, BLADERF_MODULE_TX, quiet);
 
     return failures;
 }
