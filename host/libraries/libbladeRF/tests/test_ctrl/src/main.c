@@ -189,6 +189,18 @@ int main(int argc, char *argv[])
         goto out;
     }
 
+    for (i = 0; i < ARRAY_SIZE(tests); i++) {
+        if (p.test_name == NULL || !strcasecmp(p.test_name, tests[i]->name)) {
+            break;
+        }
+    }
+
+    if (i >= ARRAY_SIZE(tests)) {
+        fprintf(stderr, "Invalid test: %s\n", p.test_name);
+        status = -1;
+        goto out;
+    }
+
     stats = calloc(ARRAY_SIZE(tests), sizeof(stats[0]));
     if (stats == NULL) {
         perror("calloc");
