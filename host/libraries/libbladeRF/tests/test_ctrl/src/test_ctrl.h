@@ -50,7 +50,8 @@
 #define DEFAULT_BUF_LEN     16384
 #define DEFAULT_NUM_BUFFERS 16
 #define DEFAULT_NUM_XFERS   8
-#define DEFAULT_TIMEOUT_MS  1000
+#define DEFAULT_TIMEOUT_MS  10000
+#define DEFAULT_SAMPLERATE  1000000
 
 struct app_params {
     bool use_xb200;

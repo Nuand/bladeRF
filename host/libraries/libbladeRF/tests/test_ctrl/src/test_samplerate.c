@@ -237,7 +237,13 @@ unsigned int test_samplerate(struct bladerf *dev,
 
     PRINT("%s: Applying random TX rational sample rates...\n",
           __FUNCTION__);
+
     failures += random_rational_samplerates(dev, p, BLADERF_MODULE_TX, quiet);
+
+    /* Restore the device back to a sane default sample rate, as not to
+     * interfere with later tests */
+    failures += set_and_check(dev, BLADERF_MODULE_RX, DEFAULT_SAMPLERATE);
+    failures += set_and_check(dev, BLADERF_MODULE_TX, DEFAULT_SAMPLERATE);
 
     return failures;
 }
