@@ -215,6 +215,7 @@ set(LIBBLADERF_SOURCE
         src/image.c
         src/sync.c
         src/sync_worker.c
+        src/tuning.c
         src/version_compat.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/sha256.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c

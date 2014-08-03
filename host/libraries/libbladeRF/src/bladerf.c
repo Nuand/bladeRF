@@ -28,6 +28,7 @@
 #include "bladerf_priv.h"   /* Implementation-specific items ("private") */
 #include "async.h"
 #include "sync.h"
+#include "tuning.h"
 #include "lms.h"
 #include "xb.h"
 #include "si5338.h"
@@ -630,7 +631,7 @@ int bladerf_select_band(struct bladerf *dev, bladerf_module module,
     int status;
     MUTEX_LOCK(&dev->ctrl_lock);
 
-    status = select_band(dev, module, frequency);
+    status = tuning_select_band(dev, module, frequency);
 
     MUTEX_UNLOCK(&dev->ctrl_lock);
     return status;
@@ -642,7 +643,7 @@ int bladerf_set_frequency(struct bladerf *dev,
     int status;
     MUTEX_LOCK(&dev->ctrl_lock);
 
-    status = set_frequency(dev, module, frequency);
+    status = tuning_set_freq(dev, module, frequency);
 
     MUTEX_UNLOCK(&dev->ctrl_lock);
     return status;
@@ -654,7 +655,7 @@ int bladerf_get_frequency(struct bladerf *dev,
     int status;
     MUTEX_LOCK(&dev->ctrl_lock);
 
-    status = get_frequency(dev, module, frequency);
+    status = tuning_get_freq(dev, module, frequency);
 
     MUTEX_UNLOCK(&dev->ctrl_lock);
     return status;

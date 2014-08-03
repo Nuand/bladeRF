@@ -131,42 +131,6 @@ struct bladerf {
  */
 int init_device(struct bladerf *dev);
 
-/**
- * Configure the device for operation in the high or low band, based
- * upon the provided frequency
- *
- * @param   dev         Device handle
- * @param   module      Module to configure
- * @param   frequency   Desired frequency
- *
- * @return 0 on success, BLADERF_ERR_* value on failure
- */
-int select_band(struct bladerf *dev, bladerf_module module,
-                unsigned int frequency);
-
-/**
- * Tune to the specified frequency
- *
- * @param   dev         Device handle
- * @param   module      Module to configure
- * @param   frequency   Desired frequency
- *
- * @return 0 on success, BLADERF_ERR_* value on failure
- */
-int set_frequency(struct bladerf *dev, bladerf_module module,
-                  unsigned int frequency);
-/**
- * Get the current frequency that the specified module is tuned to
- *
- * @param[in]   dev         Device handle
- * @param[in]   module      Module to configure
- * @param[out]  frequency   Desired frequency
- *
- * @return 0 on success, BLADERF_ERR_* value on failure
- */
-int get_frequency(struct bladerf *dev, bladerf_module module,
-                  unsigned int *frequency);
-
 /*
  * Convert bytes to SC16Q11 samples
  */
