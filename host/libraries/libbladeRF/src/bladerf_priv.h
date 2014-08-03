@@ -47,6 +47,7 @@
 #include "devinfo.h"
 #include "flash.h"
 #include "backend/backend.h"
+#include "rel_assert.h"
 
 /* 1 TX, 1 RX */
 #define NUM_MODULES 2
@@ -125,21 +126,31 @@ struct bladerf {
     bladerf_xb200_filter tx_filter;
 };
 
+/*
+ * Convert bytes to SC16Q11 samples
+ */
+static inline size_t bytes_to_sc16q11(size_t n_bytes)
+{
+    const size_t sample_size = 2 * sizeof(int16_t);
+    assert((n_bytes % sample_size) == 0);
+    return n_bytes / sample_size;
+}
+
+/*
+ * Convert SC16Q11 samples to bytes
+ */
+static inline size_t sc16q11_to_bytes(size_t n_samples)
+{
+    const size_t sample_size = 2 * sizeof(int16_t);
+    assert(n_samples <= (SIZE_MAX / sample_size));
+    return n_samples * sample_size;
+}
+
 /**
  * Initialize device registers - required after power-up, but safe
  * to call multiple times after power-up (e.g., multiple close and reopens)
  */
 int init_device(struct bladerf *dev);
-
-/*
- * Convert bytes to SC16Q11 samples
- */
-size_t bytes_to_c16_samples(size_t n_bytes);
-
-/*
- * Convert SC16A11 samples to bytes
- */
-size_t c16_samples_to_bytes(size_t n_samples);
 
 /**
  * Populate the provided timeval structure for the specified timeout

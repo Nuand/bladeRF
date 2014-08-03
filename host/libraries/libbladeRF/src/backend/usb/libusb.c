@@ -729,7 +729,7 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
                         stream,
                         &metadata,
                         transfer->buffer,
-                        bytes_to_c16_samples(transfer->actual_length),
+                        bytes_to_sc16q11(transfer->actual_length),
                         stream->user_data);
 
         if (next_buffer == BLADERF_STREAM_SHUTDOWN) {
@@ -777,7 +777,7 @@ static int submit_transfer(struct bladerf_stream *stream, void *buffer)
 
     switch (stream->format) {
         case BLADERF_FORMAT_SC16_Q11:
-            bytes_per_buffer = c16_samples_to_bytes(stream->samples_per_buffer);
+            bytes_per_buffer = sc16q11_to_bytes(stream->samples_per_buffer);
             break;
 
         default:
