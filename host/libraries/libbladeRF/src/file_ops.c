@@ -165,6 +165,28 @@ static inline size_t get_home_dir(char *buf, size_t max_len)
     return strlen(buf);
 }
 
+#elif BLADERF_OS_WINDOWS && __MINGW32__
+// Somewhat awful special case for mingw32 builds.
+// SHGetKnownFolderPath exists in the header files, but doesn't seem to
+// exist in the runtime.  So, we'll just hardcode a plausible path.
+// TODO: Bring this in from a cmake variable or something.
+#define ACCESS_FILE_EXISTS 0
+
+static const struct search_path_entries search_paths[] = {
+    { true,  "/Nuand/bladeRF/" },
+};
+
+static inline size_t get_home_dir(char *buf, size_t max_len)
+{
+    const char default_path[256] = "C:\\Users\\Default\\AppData\\Local";
+
+    assert(max_len < strlen(default_path));
+
+    strncat(buf, default_path, max_len);
+
+    return strlen(buf);
+}
+
 #elif BLADERF_OS_WINDOWS
 #define ACCESS_FILE_EXISTS 0
 #include <ShlObj.h>
