@@ -172,13 +172,4 @@ int populate_abs_timeout(struct timespec *t_abs, unsigned int timeout_ms);
  */
 int load_calibration_table(struct bladerf *dev, const char *filename);
 
-/**
- * Set system gain for the specified module
- *
- * @param   dev     Device handle
- * @param   module  Module to configure
- * @param   gain    Desired gain
- */
-int set_gain(struct bladerf *dev, bladerf_module module, int gain);
-
 #endif

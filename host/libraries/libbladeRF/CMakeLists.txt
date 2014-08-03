@@ -204,6 +204,7 @@ set(LIBBLADERF_SOURCE
         src/dc_cal_table.c
         src/file_ops.c
         src/fpga.c
+        src/gain.c
         src/lms.c
         src/si5338.c
         src/xb.c

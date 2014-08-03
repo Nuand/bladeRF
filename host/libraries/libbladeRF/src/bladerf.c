@@ -29,6 +29,7 @@
 #include "async.h"
 #include "sync.h"
 #include "tuning.h"
+#include "gain.h"
 #include "lms.h"
 #include "xb.h"
 #include "si5338.h"
@@ -537,7 +538,7 @@ int bladerf_set_gain(struct bladerf *dev, bladerf_module mod, int gain) {
     int status;
     MUTEX_LOCK(&dev->ctrl_lock);
 
-    status = set_gain(dev, mod, gain);
+    status = gain_set(dev, mod, gain);
 
     MUTEX_UNLOCK(&dev->ctrl_lock);
     return status;
