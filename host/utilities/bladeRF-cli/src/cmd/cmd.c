@@ -380,6 +380,9 @@ int cmd_handle(struct cli_state *s, const char *line)
     }
 
     if (argc > 0) {
+	/* ignore comments */
+	if (*argv[0] == '#') return ret;
+
         cmd = get_cmd(argv[0]);
 
         if (cmd) {
