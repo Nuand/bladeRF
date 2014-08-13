@@ -180,12 +180,13 @@ int str2loopback(const char *str, bladerf_loopback *loopback);
  * on whitespace. Double-quotes may be used to include whitespace in an
  * argument.  Backescapes are not supported.
  *
- * @param[in]   str     String to break into args
- * @param[out]  argv    Will be updated to point to heap-allocated argv list
+ * @param[in]   str         String to break into args
+ * @param[in]   eol_comm    End of line comment delimiter
+ * @param[out]  argv        Will be updated to point to heap-allocated argv list
  *
  * @return argc on success, -1 on failure, -2 on unterminated quote
  */
-int str2args(const char *line, char ***argv);
+int str2args(const char *line, char eol_comm, char ***argv);
 
 /**
  * Free argument list previously allocated by str2args

@@ -355,7 +355,7 @@ int str2loopback(const char *str, bladerf_loopback *loopback)
     return status;
 }
 
-int str2args(const char *line, char ***argv_ret)
+int str2args(const char *line, char comment_char, char ***argv_ret)
 {
     int line_i, arg_i;      /* Index into line and current argument */
     int argv_size = 10;     /* Initial # of allocated args */
@@ -364,6 +364,7 @@ int str2args(const char *line, char ***argv_ret)
     int argc;
     enum str2args_parse_state state = PARSE_STATE_IN_SPACE;
     const size_t line_len = strlen(line);
+    bool got_eol_comment = false;
 
 
     argc = arg_i = 0;
@@ -376,12 +377,19 @@ int str2args(const char *line, char ***argv_ret)
     arg_size = 0;
     line_i = 0;
 
-    while ((size_t)line_i < line_len && state != PARSE_STATE_ERROR) {
+    while ( ((size_t)line_i < line_len) &&
+            state != PARSE_STATE_ERROR  &&
+            !got_eol_comment) {
+
         switch (state) {
             case PARSE_STATE_IN_SPACE:
                 /* Found the start of the next argument */
                 if (!isspace(line[line_i])) {
-                    state = PARSE_STATE_START_ARG;
+                    if (line[line_i] == comment_char) {
+                        got_eol_comment = true;
+                    } else {
+                        state = PARSE_STATE_START_ARG;
+                    }
                 } else {
                     /* Gobble up space */
                     line_i++;
@@ -443,6 +451,8 @@ int str2args(const char *line, char ***argv_ret)
                     state = PARSE_STATE_IN_SPACE;
                 } else if (line[line_i] == '"') {
                     state = PARSE_STATE_IN_QUOTE;
+                } else if (line[line_i] == comment_char) {
+                    got_eol_comment = true;
                 } else {
                     /* Append this character to the argument and remain in
                      * PARSE_STATE_IN_ARG state */
