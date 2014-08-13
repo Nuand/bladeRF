@@ -59,6 +59,7 @@ DECLARE_CMD(tx);
 DECLARE_CMD(version);
 
 #define MAX_ARGS    10
+#define COMMENT_CHAR '#'
 
 struct cmd {
     const char **names;
@@ -373,7 +374,7 @@ int cmd_handle(struct cli_state *s, const char *line)
     char **argv = NULL;
 
     ret = 0;
-    argc = str2args(line, &argv);
+    argc = str2args(line, COMMENT_CHAR, &argv);
     if (argc == -2) {
         fprintf(stderr, "Error: Input contains unterminated quote.\n");
         return CLI_RET_INVPARAM;
