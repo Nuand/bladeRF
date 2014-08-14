@@ -59,12 +59,6 @@ TEST_BIG_ENDIAN(BLADERF_BIG_ENDIAN)
 #      location for this
 include(FindLibUSB)
 
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/common/include/host_config.h.in
-    ${CMAKE_CURRENT_BINARY_DIR}/common/include/host_config.h
-    @ONLY
-)
-
 ################################################################################
 # Compiler configuration
 ################################################################################
