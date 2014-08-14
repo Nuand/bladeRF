@@ -796,7 +796,7 @@ int rxtx_wait_for_state(struct rxtx_data *rxtx, enum rxtx_state req_state,
         }
 
         MUTEX_LOCK(&rxtx->task_mgmt.lock);
-        while (rxtx->task_mgmt.state != req_state) {
+        while (rxtx->task_mgmt.state != req_state && status == 0) {
             status = pthread_cond_timedwait(&rxtx->task_mgmt.signal_state_change,
                                             &rxtx->task_mgmt.lock,
                                             &timeout_abs);
