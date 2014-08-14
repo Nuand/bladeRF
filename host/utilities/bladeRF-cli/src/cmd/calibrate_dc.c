@@ -25,6 +25,7 @@
 #include "calibrate.h"
 #include "common.h"
 #include "rel_assert.h"
+#include "thread.h"
 
 #define CAL_SAMPLERATE  3000000u
 #define CAL_BANDWIDTH   BLADERF_BANDWIDTH_MIN
@@ -45,7 +46,7 @@ struct cal_tx_task {
     bool started;
 
     pthread_t thread;
-    pthread_mutex_t lock;
+    MUTEX lock;
     int status;
     bool run;
 };
@@ -340,23 +341,23 @@ static void * exec_tx_task(void *args)
     int status = 0;
     struct cal_tx_task *task = (struct cal_tx_task*) args;
 
-    pthread_mutex_lock(&task->lock);
+    MUTEX_LOCK(&task->lock);
     run = task->run;
-    pthread_mutex_unlock(&task->lock);
+    MUTEX_UNLOCK(&task->lock);
 
     while (run && status == 0) {
         status = bladerf_sync_tx(task->s->dev, task->samples, CAL_BUF_LEN,
                                  NULL, CAL_TIMEOUT);
 
 
-        pthread_mutex_lock(&task->lock);
+        MUTEX_LOCK(&task->lock);
         run = task->run;
-        pthread_mutex_unlock(&task->lock);
+        MUTEX_UNLOCK(&task->lock);
     }
 
-    pthread_mutex_lock(&task->lock);
+    MUTEX_LOCK(&task->lock);
     task->status = status;
-    pthread_mutex_unlock(&task->lock);
+    MUTEX_UNLOCK(&task->lock);
 
     return NULL;
 }
@@ -369,9 +370,7 @@ static inline int init_tx_task(struct cli_state *s, struct cal_tx_task *task)
     task->run = true;
     task->s = s;
 
-    if (pthread_mutex_init(&task->lock, NULL) != 0) {
-        return BLADERF_ERR_UNEXPECTED;
-    }
+    MUTEX_INIT(&task->lock);
 
     /* Transmit the vector 0 + 0j */
     task->samples = (int16_t*) calloc(CAL_BUF_LEN * 2, sizeof(task->samples[0]));
@@ -398,9 +397,9 @@ static inline int start_tx_task(struct cal_tx_task *task)
 static inline int stop_tx_task(struct cal_tx_task *task)
 {
     if (task->started) {
-        pthread_mutex_lock(&task->lock);
+        MUTEX_LOCK(&task->lock);
         task->run = false;
-        pthread_mutex_unlock(&task->lock);
+        MUTEX_UNLOCK(&task->lock);
 
         pthread_join(task->thread, NULL);
     }

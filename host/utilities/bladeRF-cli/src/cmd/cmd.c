@@ -26,6 +26,7 @@
 #include "cmd.h"
 #include "conversions.h"
 #include "script.h"
+#include "thread.h"
 
 #include "doc/cmd_help.h"
 
@@ -466,9 +467,9 @@ int cmd_handle(struct cli_state *s, const char *line)
                      * This is needed to prevent races on the device handle
                      * while the RX/TX make any necessary control calls while
                      * starting up or finishing up a stream() call*/
-                    pthread_mutex_lock(&s->dev_lock);
+                    MUTEX_LOCK(&s->dev_lock);
                     ret = cmd->exec(s, argc, argv);
-                    pthread_mutex_unlock(&s->dev_lock);
+                    MUTEX_UNLOCK(&s->dev_lock);
                 }
             } else {
                 ret = CLI_RET_QUIT;

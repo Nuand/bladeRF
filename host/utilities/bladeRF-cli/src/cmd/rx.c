@@ -79,11 +79,11 @@ static int rx_write_bin_sc16q11(struct rxtx_data *rx,
 {
     size_t status;
 
-    pthread_mutex_lock(&rx->file_mgmt.file_lock);
+    MUTEX_LOCK(&rx->file_mgmt.file_lock);
     status = fwrite(samples, sizeof(int16_t),
                     2 * n_samples,  /* I and Q are each an int16_t */
                     rx->file_mgmt.file);
-    pthread_mutex_unlock(&rx->file_mgmt.file_lock);
+    MUTEX_UNLOCK(&rx->file_mgmt.file_lock);
 
     if (status != (2 * n_samples)) {
         set_last_error(&rx->last_error, ETYPE_CLI, CLI_RET_FILEOP);
@@ -102,7 +102,7 @@ static int rx_write_csv_sc16q11(struct rxtx_data *rx,
     const size_t to_write = n_samples * 2;  /* int16_t for I, another for Q */
     char line[32] = { 0 };
 
-    pthread_mutex_lock(&rx->file_mgmt.file_lock);
+    MUTEX_LOCK(&rx->file_mgmt.file_lock);
 
     for (i = 0; i < to_write; i += 2) {
         snprintf(line, sizeof(line), "%d, %d" EOL, samples[i], samples[i + 1]);
@@ -114,7 +114,7 @@ static int rx_write_csv_sc16q11(struct rxtx_data *rx,
         }
     }
 
-    pthread_mutex_unlock(&rx->file_mgmt.file_lock);
+    MUTEX_UNLOCK(&rx->file_mgmt.file_lock);
     return status;
 }
 
@@ -129,15 +129,15 @@ static int rx_task_exec_running(struct rxtx_data *rx, struct cli_state *s)
     unsigned int timeout_ms;
 
     /* Read the parameters that will be used for the sync transfers */
-    pthread_mutex_lock(&rx->data_mgmt.lock);
+    MUTEX_LOCK(&rx->data_mgmt.lock);
     timeout_ms = rx->data_mgmt.timeout_ms;
     samples_per_buffer = rx->data_mgmt.samples_per_buffer;
-    pthread_mutex_unlock(&rx->data_mgmt.lock);
+    MUTEX_UNLOCK(&rx->data_mgmt.lock);
 
-    pthread_mutex_lock(&rx->param_lock);
+    MUTEX_LOCK(&rx->param_lock);
     num_samples = ((struct rx_params*)rx->params)->n_samples;
     write_samples = ((struct rx_params*)rx->params)->write_samples;
-    pthread_mutex_unlock(&rx->param_lock);
+    MUTEX_UNLOCK(&rx->param_lock);
 
     /* Allocate a buffer for the block of samples */
     samples = malloc(samples_per_buffer * sizeof(uint16_t) * 2);
@@ -200,7 +200,7 @@ void *rx_task(void *cli_state_arg)
     struct cli_state *cli_state = (struct cli_state *) cli_state_arg;
     struct rxtx_data *rx = cli_state->rx;
     struct rx_params *rx_params = rx->params;
-    pthread_mutex_t *dev_lock = &cli_state->dev_lock;
+    MUTEX *dev_lock = &cli_state->dev_lock;
 
     task_state = rxtx_get_state(rx);
     assert(task_state == RXTX_STATE_INIT);
@@ -228,7 +228,7 @@ void *rx_task(void *cli_state_arg)
                 set_last_error(&rx->last_error, ETYPE_ERRNO, 0);
 
                 /* Choose the callback appropriate for the desired file type */
-                pthread_mutex_lock(&rx->file_mgmt.file_meta_lock);
+                MUTEX_LOCK(&rx->file_mgmt.file_meta_lock);
 
                 switch (rx->file_mgmt.format) {
                     case RXTX_FMT_CSV_SC16Q11:
@@ -250,11 +250,11 @@ void *rx_task(void *cli_state_arg)
                     assert(rx->file_mgmt.path);
                 }
 
-                pthread_mutex_unlock(&rx->file_mgmt.file_meta_lock);
+                MUTEX_UNLOCK(&rx->file_mgmt.file_meta_lock);
 
                 /* Set up the reception stream and buffer information */
                 if (status == 0) {
-                    pthread_mutex_lock(&rx->data_mgmt.lock);
+                    MUTEX_LOCK(&rx->data_mgmt.lock);
 
                     status = bladerf_sync_config(cli_state->dev,
                                                  BLADERF_MODULE_RX,
@@ -268,7 +268,7 @@ void *rx_task(void *cli_state_arg)
                         err_type = ETYPE_BLADERF;
                     }
 
-                    pthread_mutex_unlock(&rx->data_mgmt.lock);
+                    MUTEX_UNLOCK(&rx->data_mgmt.lock);
                 }
 
                 if (status == 0) {
@@ -282,20 +282,20 @@ void *rx_task(void *cli_state_arg)
 
             case RXTX_STATE_RUNNING:
 
-                pthread_mutex_lock(dev_lock);
+                MUTEX_LOCK(dev_lock);
                 status = bladerf_enable_module(cli_state->dev,
                                                rx->module, true);
-                pthread_mutex_unlock(dev_lock);
+                MUTEX_UNLOCK(dev_lock);
 
                 if (status < 0) {
                     set_last_error(&rx->last_error, ETYPE_BLADERF, status);
                 } else {
                     status = rx_task_exec_running(rx, cli_state);
 
-                    pthread_mutex_lock(dev_lock);
+                    MUTEX_LOCK(dev_lock);
                     disable_status = bladerf_enable_module(cli_state->dev,
                                                            rx->module, false);
-                    pthread_mutex_unlock(dev_lock);
+                    MUTEX_UNLOCK(dev_lock);
 
                     if (status == 0 && disable_status < 0) {
                         set_last_error(&rx->last_error, ETYPE_BLADERF, status);
@@ -334,7 +334,7 @@ static int rx_cmd_start(struct cli_state *s)
     }
 
     /* Set up output file */
-    pthread_mutex_lock(&s->rx->file_mgmt.file_lock);
+    MUTEX_LOCK(&s->rx->file_mgmt.file_lock);
     if(s->rx->file_mgmt.format == RXTX_FMT_CSV_SC16Q11) {
         status = expand_and_open(s->rx->file_mgmt.path, "w",
                                  &s->rx->file_mgmt.file);
@@ -344,7 +344,7 @@ static int rx_cmd_start(struct cli_state *s)
         status = expand_and_open(s->rx->file_mgmt.path, "wb",
                                  &s->rx->file_mgmt.file);
     }
-    pthread_mutex_unlock(&s->rx->file_mgmt.file_lock);
+    MUTEX_UNLOCK(&s->rx->file_mgmt.file_lock);
 
     if (status != 0) {
         return status;
@@ -369,9 +369,9 @@ static void rx_print_config(struct rxtx_data *rx)
     size_t n_samples;
     struct rx_params *rx_params = rx->params;
 
-    pthread_mutex_lock(&rx->param_lock);
+    MUTEX_LOCK(&rx->param_lock);
     n_samples = rx_params->n_samples;
-    pthread_mutex_unlock(&rx->param_lock);
+    MUTEX_UNLOCK(&rx->param_lock);
 
     rxtx_print_state(rx, "\n  State: ", "\n");
     rxtx_print_error(rx, "  Last error: ", "\n");
@@ -417,9 +417,9 @@ static int rx_cmd_config(struct cli_state *s, int argc, char **argv)
                                     (int)rxtx_kmg_suffixes_len, &ok);
 
                 if (ok) {
-                    pthread_mutex_lock(&s->rx->param_lock);
+                    MUTEX_LOCK(&s->rx->param_lock);
                     rx_params->n_samples = n;
-                    pthread_mutex_unlock(&s->rx->param_lock);
+                    MUTEX_UNLOCK(&s->rx->param_lock);
                 } else {
                     cli_err(s, argv[0], RXTX_ERRMSG_VALUE(argv[1], val));
                     return CLI_RET_INVPARAM;

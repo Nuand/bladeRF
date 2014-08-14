@@ -35,6 +35,7 @@
 #include "cmd/cmd.h"
 #include "rel_assert.h"
 #include "minmax.h"
+#include "thread.h"
 
 /* A "seems good enough" arbitrary minimum */
 #define RXTX_BUFFERS_MIN 4
@@ -66,19 +67,19 @@ const size_t rxtx_kmg_suffixes_len = ARRAY_LEN(rxtx_kmg_suffixes);
 
 void rxtx_set_state(struct rxtx_data *rxtx, enum rxtx_state state)
 {
-    pthread_mutex_lock(&rxtx->task_mgmt.lock);
+    MUTEX_LOCK(&rxtx->task_mgmt.lock);
     rxtx->task_mgmt.state = state;
     pthread_cond_signal(&rxtx->task_mgmt.signal_state_change);
-    pthread_mutex_unlock(&rxtx->task_mgmt.lock);
+    MUTEX_UNLOCK(&rxtx->task_mgmt.lock);
 }
 
 enum rxtx_state rxtx_get_state(struct rxtx_data *rxtx)
 {
     enum rxtx_state ret;
 
-    pthread_mutex_lock(&rxtx->task_mgmt.lock);
+    MUTEX_LOCK(&rxtx->task_mgmt.lock);
     ret = rxtx->task_mgmt.state;
-    pthread_mutex_unlock(&rxtx->task_mgmt.lock);
+    MUTEX_UNLOCK(&rxtx->task_mgmt.lock);
 
     return ret;
 }
@@ -87,7 +88,7 @@ int rxtx_set_file_path(struct rxtx_data *rxtx, const char *file_path)
 {
     int status = 0;
 
-    pthread_mutex_lock(&rxtx->file_mgmt.file_meta_lock);
+    MUTEX_LOCK(&rxtx->file_mgmt.file_meta_lock);
 
     if (rxtx->file_mgmt.path) {
         free(rxtx->file_mgmt.path);
@@ -98,34 +99,34 @@ int rxtx_set_file_path(struct rxtx_data *rxtx, const char *file_path)
         status = CLI_RET_MEM;
     }
 
-    pthread_mutex_unlock(&rxtx->file_mgmt.file_meta_lock);
+    MUTEX_UNLOCK(&rxtx->file_mgmt.file_meta_lock);
 
     return status;
 }
 
 void rxtx_set_file_format(struct rxtx_data *rxtx, enum rxtx_fmt format)
 {
-    pthread_mutex_lock(&rxtx->file_mgmt.file_meta_lock);
+    MUTEX_LOCK(&rxtx->file_mgmt.file_meta_lock);
     rxtx->file_mgmt.format = format;
-    pthread_mutex_unlock(&rxtx->file_mgmt.file_meta_lock);
+    MUTEX_UNLOCK(&rxtx->file_mgmt.file_meta_lock);
 }
 
 void rxtx_submit_request(struct rxtx_data *rxtx, unsigned char req)
 {
-    pthread_mutex_lock(&rxtx->task_mgmt.lock);
+    MUTEX_LOCK(&rxtx->task_mgmt.lock);
     rxtx->task_mgmt.req |= req;
     pthread_cond_signal(&rxtx->task_mgmt.signal_req);
-    pthread_mutex_unlock(&rxtx->task_mgmt.lock);
+    MUTEX_UNLOCK(&rxtx->task_mgmt.lock);
 }
 
 unsigned char rxtx_get_requests(struct rxtx_data *rxtx, unsigned char mask)
 {
     unsigned char ret;
 
-    pthread_mutex_lock(&rxtx->task_mgmt.lock);
+    MUTEX_LOCK(&rxtx->task_mgmt.lock);
     ret = rxtx->task_mgmt.req;
     rxtx->task_mgmt.req &= ~mask;
-    pthread_mutex_unlock(&rxtx->task_mgmt.lock);
+    MUTEX_UNLOCK(&rxtx->task_mgmt.lock);
 
     return ret;
 }
@@ -168,12 +169,12 @@ void rxtx_print_state(struct rxtx_data *rxtx,
 void rxtx_print_file(struct rxtx_data *rxtx,
                      const char *prefix, const char *suffix)
 {
-    pthread_mutex_lock(&rxtx->file_mgmt.file_meta_lock);
+    MUTEX_LOCK(&rxtx->file_mgmt.file_meta_lock);
 
     printf("%s%s%s", prefix,rxtx->file_mgmt.path != NULL ?
            rxtx->file_mgmt.path : "Not configured", suffix);
 
-    pthread_mutex_unlock(&rxtx->file_mgmt.file_meta_lock);
+    MUTEX_UNLOCK(&rxtx->file_mgmt.file_meta_lock);
 }
 
 void rxtx_print_file_format(struct rxtx_data *rxtx,
@@ -181,9 +182,9 @@ void rxtx_print_file_format(struct rxtx_data *rxtx,
 {
     enum rxtx_fmt fmt;
 
-    pthread_mutex_lock(&rxtx->file_mgmt.file_meta_lock);
+    MUTEX_LOCK(&rxtx->file_mgmt.file_meta_lock);
     fmt = rxtx->file_mgmt.format;
-    pthread_mutex_unlock(&rxtx->file_mgmt.file_meta_lock);
+    MUTEX_UNLOCK(&rxtx->file_mgmt.file_meta_lock);
 
     switch (fmt) {
         case RXTX_FMT_CSV_SC16Q11:
@@ -232,12 +233,12 @@ void rxtx_print_stream_info(struct rxtx_data *rxtx,
 {
     unsigned int bufs, samps, xfers, timeout;
 
-    pthread_mutex_lock(&rxtx->data_mgmt.lock);
+    MUTEX_LOCK(&rxtx->data_mgmt.lock);
     bufs = (unsigned int)rxtx->data_mgmt.num_buffers;
     samps = (unsigned int)rxtx->data_mgmt.samples_per_buffer;
     xfers = (unsigned int)rxtx->data_mgmt.num_transfers;
     timeout = rxtx->data_mgmt.timeout_ms;
-    pthread_mutex_unlock(&rxtx->data_mgmt.lock);
+    MUTEX_UNLOCK(&rxtx->data_mgmt.lock);
 
     printf("%s# Buffers: %u%s", prefix, bufs, suffix);
     printf("%s# Samples per buffer: %u%s", prefix, samps, suffix);
@@ -297,7 +298,7 @@ struct rxtx_data *rxtx_data_alloc(bladerf_module module)
             ret->params = tx_params;
         }
     }
-    pthread_mutex_init(&ret->param_lock,NULL);
+    MUTEX_INIT(&ret->param_lock);
 
     /* Initialize data management items */
     ret->data_mgmt.num_buffers = 32;
@@ -305,20 +306,20 @@ struct rxtx_data *rxtx_data_alloc(bladerf_module module)
     ret->data_mgmt.num_transfers = 16;
     ret->data_mgmt.timeout_ms = 1000;
 
-    pthread_mutex_init(&ret->data_mgmt.lock, NULL);
+    MUTEX_INIT(&ret->data_mgmt.lock);
 
     /* Initialize file management items */
     ret->file_mgmt.file = NULL;
     ret->file_mgmt.path = NULL;
     ret->file_mgmt.format = RXTX_FMT_BIN_SC16Q11;
-    pthread_mutex_init(&ret->file_mgmt.file_lock, NULL);
-    pthread_mutex_init(&ret->file_mgmt.file_meta_lock, NULL);
+    MUTEX_INIT(&ret->file_mgmt.file_lock);
+    MUTEX_INIT(&ret->file_mgmt.file_meta_lock);
 
     /* Initialize task management */
     ret->task_mgmt.started = false;
     ret->task_mgmt.state = RXTX_STATE_IDLE;
     ret->task_mgmt.req = 0;
-    pthread_mutex_init(&ret->task_mgmt.lock, NULL);
+    MUTEX_INIT(&ret->task_mgmt.lock);
     pthread_cond_init(&ret->task_mgmt.signal_req, NULL);
     pthread_cond_init(&ret->task_mgmt.signal_done, NULL);
     pthread_cond_init(&ret->task_mgmt.signal_state_change, NULL);
@@ -443,9 +444,9 @@ int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
                 cli_err(s, argv0, RXTX_ERRMSG_VALUE(param, *val));
                 status = CLI_RET_INVPARAM;
             } else {
-                pthread_mutex_lock(&rxtx->data_mgmt.lock);
+                MUTEX_LOCK(&rxtx->data_mgmt.lock);
                 rxtx->data_mgmt.num_buffers = tmp;
-                pthread_mutex_unlock(&rxtx->data_mgmt.lock);
+                MUTEX_UNLOCK(&rxtx->data_mgmt.lock);
                 status = 1;
             }
 
@@ -463,9 +464,9 @@ int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
                         param, RXTX_SAMPLES_MIN);
                 status = CLI_RET_INVPARAM;
             } else {
-                pthread_mutex_lock(&rxtx->data_mgmt.lock);
+                MUTEX_LOCK(&rxtx->data_mgmt.lock);
                 rxtx->data_mgmt.samples_per_buffer= tmp;
-                pthread_mutex_unlock(&rxtx->data_mgmt.lock);
+                MUTEX_UNLOCK(&rxtx->data_mgmt.lock);
                 status = 1;
             }
         } else if (!strcasecmp("xfers", param)) {
@@ -477,9 +478,9 @@ int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
                 cli_err(s, argv0, RXTX_ERRMSG_VALUE(param, *val));
                 status = CLI_RET_INVPARAM;
             } else {
-                pthread_mutex_lock(&rxtx->data_mgmt.lock);
+                MUTEX_LOCK(&rxtx->data_mgmt.lock);
                 rxtx->data_mgmt.num_transfers= tmp;
-                pthread_mutex_unlock(&rxtx->data_mgmt.lock);
+                MUTEX_UNLOCK(&rxtx->data_mgmt.lock);
                 status = 1;
             }
         } else if (!strcasecmp("timeout", param)) {
@@ -490,9 +491,9 @@ int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
                 cli_err(s, argv0, RXTX_ERRMSG_VALUE(param, *val));
                 status = CLI_RET_INVPARAM;
             } else {
-                pthread_mutex_lock(&rxtx->data_mgmt.lock);
+                MUTEX_LOCK(&rxtx->data_mgmt.lock);
                 rxtx->data_mgmt.timeout_ms = tmp;
-                pthread_mutex_unlock(&rxtx->data_mgmt.lock);
+                MUTEX_UNLOCK(&rxtx->data_mgmt.lock);
                 status = 1;
             }
         }
@@ -517,11 +518,11 @@ static void check_samplerate(struct cli_state *s, struct rxtx_data *rxtx)
     unsigned int samplerate_dev;    /* Device's current sample rate */
     unsigned int n_xfers, samp_per_buf, timeout_ms;
 
-    pthread_mutex_lock(&rxtx->data_mgmt.lock);
+    MUTEX_LOCK(&rxtx->data_mgmt.lock);
     n_xfers = (unsigned int)rxtx->data_mgmt.num_transfers;
     samp_per_buf = (unsigned int)rxtx->data_mgmt.samples_per_buffer;
     timeout_ms = rxtx->data_mgmt.timeout_ms;
-    pthread_mutex_unlock(&rxtx->data_mgmt.lock);
+    MUTEX_UNLOCK(&rxtx->data_mgmt.lock);
 
     samplerate_min = (uint64_t)n_xfers * samp_per_buf * 1000 / timeout_ms;
     samplerate_min += (samplerate_min + 9) / 10;
@@ -553,7 +554,7 @@ static int validate_stream_params(struct cli_state *s, struct rxtx_data *rxtx,
                                   const char *argv0)
 {
     int status = 0;
-    pthread_mutex_lock(&rxtx->data_mgmt.lock);
+    MUTEX_LOCK(&rxtx->data_mgmt.lock);
 
     /* These items will have been checked when the parameter was set */
     assert(rxtx->data_mgmt.samples_per_buffer >= RXTX_SAMPLES_MIN);
@@ -569,7 +570,7 @@ static int validate_stream_params(struct cli_state *s, struct rxtx_data *rxtx,
         status = CLI_RET_INVPARAM;
     }
 
-    pthread_mutex_unlock(&rxtx->data_mgmt.lock);
+    MUTEX_UNLOCK(&rxtx->data_mgmt.lock);
     return status;
 };
 
@@ -582,9 +583,9 @@ int rxtx_cmd_start_check(struct cli_state *s, struct rxtx_data *rxtx,
     if (rxtx_get_state(rxtx) != RXTX_STATE_IDLE) {
         return CLI_RET_STATE;
     } else {
-        pthread_mutex_lock(&rxtx->file_mgmt.file_meta_lock);
+        MUTEX_LOCK(&rxtx->file_mgmt.file_meta_lock);
         have_file = (rxtx->file_mgmt.path != NULL);
-        pthread_mutex_unlock(&rxtx->file_mgmt.file_meta_lock);
+        MUTEX_UNLOCK(&rxtx->file_mgmt.file_meta_lock);
 
         if (!have_file) {
             cli_err(s, argv0, "File not configured\n");
@@ -620,10 +621,10 @@ void rxtx_task_exec_idle(struct rxtx_data *rxtx, unsigned char *requests)
     /* Wait until we're asked to start or shutdown */
     while (!(*requests & (RXTX_TASK_REQ_START | RXTX_TASK_REQ_SHUTDOWN))) {
 
-        pthread_mutex_lock(&rxtx->task_mgmt.lock);
+        MUTEX_LOCK(&rxtx->task_mgmt.lock);
         pthread_cond_wait(&rxtx->task_mgmt.signal_req, &rxtx->task_mgmt.lock);
         *requests = rxtx->task_mgmt.req;
-        pthread_mutex_unlock(&rxtx->task_mgmt.lock);
+        MUTEX_UNLOCK(&rxtx->task_mgmt.lock);
     }
 
     if (*requests & RXTX_TASK_REQ_SHUTDOWN) {
@@ -643,12 +644,12 @@ void rxtx_task_exec_stop(struct rxtx_data *rxtx, unsigned char *requests)
     *requests = rxtx_get_requests(rxtx,
                                   RXTX_TASK_REQ_STOP | RXTX_TASK_REQ_SHUTDOWN);
 
-    pthread_mutex_lock(&rxtx->file_mgmt.file_lock);
+    MUTEX_LOCK(&rxtx->file_mgmt.file_lock);
     if (rxtx->file_mgmt.file != NULL) {
         fclose(rxtx->file_mgmt.file);
         rxtx->file_mgmt.file = NULL;
     }
-    pthread_mutex_unlock(&rxtx->file_mgmt.file_lock);
+    MUTEX_UNLOCK(&rxtx->file_mgmt.file_lock);
 
     if (*requests & RXTX_TASK_REQ_SHUTDOWN) {
         rxtx_set_state(rxtx, RXTX_STATE_SHUTDOWN);
@@ -701,7 +702,7 @@ int rxtx_handle_wait(struct cli_state *s, struct rxtx_data *rxtx,
      * because we won't be doing device-control operations during this time.
      * This ensures that when the associated rx/tx task completes, it will be
      * able to acquire the device control lock to release this wait. */
-    pthread_mutex_unlock(&s->dev_lock);
+    MUTEX_UNLOCK(&s->dev_lock);
 
     if (timeout_ms != 0) {
         const unsigned int timeout_sec = timeout_ms / 1000;
@@ -719,7 +720,7 @@ int rxtx_handle_wait(struct cli_state *s, struct rxtx_data *rxtx,
             timeout_abs.tv_nsec %= NSEC_PER_SEC;
         }
 
-        pthread_mutex_lock(&rxtx->task_mgmt.lock);
+        MUTEX_LOCK(&rxtx->task_mgmt.lock);
         rxtx->task_mgmt.main_task_waiting = true;
         while (rxtx->task_mgmt.main_task_waiting) {
             status = pthread_cond_timedwait(&rxtx->task_mgmt.signal_done,
@@ -730,22 +731,22 @@ int rxtx_handle_wait(struct cli_state *s, struct rxtx_data *rxtx,
                 rxtx->task_mgmt.main_task_waiting = false;
             }
         }
-        pthread_mutex_unlock(&rxtx->task_mgmt.lock);
+        MUTEX_UNLOCK(&rxtx->task_mgmt.lock);
 
     } else {
-        pthread_mutex_lock(&rxtx->task_mgmt.lock);
+        MUTEX_LOCK(&rxtx->task_mgmt.lock);
         rxtx->task_mgmt.main_task_waiting = true;
         while (rxtx->task_mgmt.main_task_waiting) {
             status = pthread_cond_wait(&rxtx->task_mgmt.signal_done,
                                        &rxtx->task_mgmt.lock);
         }
-        pthread_mutex_unlock(&rxtx->task_mgmt.lock);
+        MUTEX_UNLOCK(&rxtx->task_mgmt.lock);
     }
 
 out:
     /* Re-acquire the device control lock, as the top-level command handler
      * will be unlocking this when it's done */
-    pthread_mutex_lock(&s->dev_lock);
+    MUTEX_LOCK(&s->dev_lock);
 
     /* Expected and OK condition */
     if (status == ETIMEDOUT) {
@@ -763,11 +764,11 @@ bool rxtx_release_wait(struct rxtx_data *rxtx)
 {
     bool was_waiting = false;
 
-    pthread_mutex_lock(&rxtx->task_mgmt.lock);
+    MUTEX_LOCK(&rxtx->task_mgmt.lock);
     was_waiting = rxtx->task_mgmt.main_task_waiting;
     rxtx->task_mgmt.main_task_waiting = false;
     pthread_cond_signal(&rxtx->task_mgmt.signal_done);
-    pthread_mutex_unlock(&rxtx->task_mgmt.lock);
+    MUTEX_UNLOCK(&rxtx->task_mgmt.lock);
 
     return was_waiting;
 }
@@ -794,21 +795,21 @@ int rxtx_wait_for_state(struct rxtx_data *rxtx, enum rxtx_state req_state,
             timeout_abs.tv_nsec %= NSEC_PER_SEC;
         }
 
-        pthread_mutex_lock(&rxtx->task_mgmt.lock);
+        MUTEX_LOCK(&rxtx->task_mgmt.lock);
         while (rxtx->task_mgmt.state != req_state) {
             status = pthread_cond_timedwait(&rxtx->task_mgmt.signal_state_change,
                                             &rxtx->task_mgmt.lock,
                                             &timeout_abs);
         }
-        pthread_mutex_unlock(&rxtx->task_mgmt.lock);
+        MUTEX_UNLOCK(&rxtx->task_mgmt.lock);
 
     } else {
-        pthread_mutex_lock(&rxtx->task_mgmt.lock);
+        MUTEX_LOCK(&rxtx->task_mgmt.lock);
         while (rxtx->task_mgmt.state != req_state) {
             status = pthread_cond_wait(&rxtx->task_mgmt.signal_state_change,
                                        &rxtx->task_mgmt.lock);
         }
-        pthread_mutex_unlock(&rxtx->task_mgmt.lock);
+        MUTEX_UNLOCK(&rxtx->task_mgmt.lock);
     }
 
     if (status == 0) {

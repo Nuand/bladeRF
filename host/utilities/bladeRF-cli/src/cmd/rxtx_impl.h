@@ -30,6 +30,7 @@
 #include <libbladeRF.h>
 #include "cmd.h"
 #include "conversions.h"
+#include "thread.h"
 
 #define RXTX_ERRMSG_VALUE(param, value) \
     "Invalid value for \"%s\" (%s)\n", param, value
@@ -75,7 +76,7 @@ enum rxtx_state {
  * should be acquired first.*/
 struct data_mgmt
 {
-    pthread_mutex_t lock;           /* Should be acquired to change the
+    MUTEX lock;                     /* Should be acquired to change the
                                      *    the following items */
     size_t num_buffers;             /* # of buffers in 'buffers' list */
     size_t samples_per_buffer;      /* Size of each buffer (in samples) */
@@ -88,10 +89,10 @@ struct data_mgmt
 struct file_mgmt
 {
     FILE *file;                 /* File to read/write samples from/to */
-    pthread_mutex_t file_lock;  /* Thread using 'file' must hold this lock */
+    MUTEX file_lock;            /* Thread using 'file' must hold this lock */
 
 
-    pthread_mutex_t file_meta_lock; /* Should be acquired when accessing any
+    MUTEX file_meta_lock;           /* Should be acquired when accessing any
                                      * of the following file metadata items */
     char *path;                     /* Path associated with 'file'. */
     enum rxtx_fmt format;           /* File format */
@@ -107,7 +108,7 @@ struct task_mgmt
     enum rxtx_state state;      /* Task state */
     uint8_t req;                /* Requests for state change. See
                                  *   RXTX_TASK_REQ_* bitmasks */
-    pthread_mutex_t lock;       /* Must be held to access 'req' or 'state' */
+    MUTEX lock;                 /* Must be held to access 'req' or 'state' */
     pthread_cond_t signal_req;  /* Signal when a request has been made */
     pthread_cond_t signal_done; /* Signal when task finishes work */
     pthread_cond_t signal_state_change; /* Signal after state change */
@@ -127,7 +128,7 @@ struct rxtx_data
     struct cli_error last_error;
 
     /* Must be held to access the following items */
-    pthread_mutex_t param_lock;
+    MUTEX param_lock;
     void *params;
 };
 

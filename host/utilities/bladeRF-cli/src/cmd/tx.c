@@ -54,17 +54,17 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
     enum state state = INIT;
 
     /* Fetch the parameters required for the TX operation */
-    pthread_mutex_lock(&tx->param_lock);
+    MUTEX_LOCK(&tx->param_lock);
     repeats_remaining = tx_params->repeat;
     delay_us = tx_params->repeat_delay;
-    pthread_mutex_unlock(&tx->param_lock);
+    MUTEX_UNLOCK(&tx->param_lock);
 
     repeat_infinite = (repeats_remaining == 0);
 
-    pthread_mutex_lock(&tx->data_mgmt.lock);
+    MUTEX_LOCK(&tx->data_mgmt.lock);
     samples_per_buffer = (unsigned int)tx->data_mgmt.samples_per_buffer;
     timeout_ms = tx->data_mgmt.timeout_ms;
-    pthread_mutex_unlock(&tx->data_mgmt.lock);
+    MUTEX_UNLOCK(&tx->data_mgmt.lock);
 
     status = bladerf_get_sample_rate(s->dev, tx->module, &sample_rate);
     if (status != 0) {
@@ -107,7 +107,7 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
                 case INIT:
                 case READ_FILE:
 
-                    pthread_mutex_lock(&tx->file_mgmt.file_lock);
+                    MUTEX_LOCK(&tx->file_mgmt.file_lock);
 
                     /* Read from the input file */
                     samples_populated = fread(tx_buffer_current,
@@ -142,7 +142,7 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
                         set_last_error(&tx->last_error, ETYPE_ERRNO, status);
                     }
 
-                    pthread_mutex_unlock(&tx->file_mgmt.file_lock);
+                    MUTEX_UNLOCK(&tx->file_mgmt.file_lock);
                     break;
 
                 case DELAY:
@@ -346,7 +346,7 @@ void *tx_task(void *cli_state_arg)
     enum rxtx_state task_state;
     struct cli_state *cli_state = (struct cli_state *) cli_state_arg;
     struct rxtx_data *tx = cli_state->tx;
-    pthread_mutex_t *dev_lock = &cli_state->dev_lock;
+    MUTEX *dev_lock = &cli_state->dev_lock;
 
     /* We expect to be in the IDLE state when this is kicked off. We could
      * also get into the shutdown state if the program exits before we
@@ -376,9 +376,9 @@ void *tx_task(void *cli_state_arg)
                 set_last_error(&tx->last_error, ETYPE_ERRNO, 0);
 
                 /* Bug catcher */
-                pthread_mutex_lock(&tx->file_mgmt.file_meta_lock);
+                MUTEX_LOCK(&tx->file_mgmt.file_meta_lock);
                 assert(tx->file_mgmt.file != NULL);
-                pthread_mutex_unlock(&tx->file_mgmt.file_meta_lock);
+                MUTEX_UNLOCK(&tx->file_mgmt.file_meta_lock);
 
                 /* Initialize the TX synchronous data configuration */
                 status = bladerf_sync_config(cli_state->dev,
@@ -403,10 +403,10 @@ void *tx_task(void *cli_state_arg)
             break;
 
             case RXTX_STATE_RUNNING:
-                pthread_mutex_lock(dev_lock);
+                MUTEX_LOCK(dev_lock);
                 status = bladerf_enable_module(cli_state->dev,
                                                tx->module, true);
-                pthread_mutex_unlock(dev_lock);
+                MUTEX_UNLOCK(dev_lock);
 
                 if (status < 0) {
                     set_last_error(&tx->last_error, ETYPE_BLADERF, status);
@@ -417,10 +417,10 @@ void *tx_task(void *cli_state_arg)
                         set_last_error(&tx->last_error, ETYPE_BLADERF, status);
                     }
 
-                    pthread_mutex_lock(dev_lock);
+                    MUTEX_LOCK(dev_lock);
                     disable_status = bladerf_enable_module(cli_state->dev,
                                                            tx->module, false);
-                    pthread_mutex_unlock(dev_lock);
+                    MUTEX_UNLOCK(dev_lock);
 
                     if (status == 0 && disable_status < 0) {
                         set_last_error(
@@ -460,7 +460,7 @@ static int tx_cmd_start(struct cli_state *s)
     }
 
     /* Perform file conversion (if needed) and open input file */
-    pthread_mutex_lock(&s->tx->file_mgmt.file_meta_lock);
+    MUTEX_LOCK(&s->tx->file_mgmt.file_meta_lock);
 
     if (s->tx->file_mgmt.format == RXTX_FMT_CSV_SC16Q11) {
         status = tx_csv_to_sc16q11(s);
@@ -472,15 +472,15 @@ static int tx_cmd_start(struct cli_state *s)
     }
 
     if (status == 0) {
-        pthread_mutex_lock(&s->tx->file_mgmt.file_lock);
+        MUTEX_LOCK(&s->tx->file_mgmt.file_lock);
 
         assert(s->tx->file_mgmt.format == RXTX_FMT_BIN_SC16Q11);
         status = expand_and_open(s->tx->file_mgmt.path, "rb",
                                  &s->tx->file_mgmt.file);
-        pthread_mutex_unlock(&s->tx->file_mgmt.file_lock);
+        MUTEX_UNLOCK(&s->tx->file_mgmt.file_lock);
     }
 
-    pthread_mutex_unlock(&s->tx->file_mgmt.file_meta_lock);
+    MUTEX_UNLOCK(&s->tx->file_mgmt.file_meta_lock);
 
     if (status != 0) {
         return status;
@@ -505,10 +505,10 @@ static void tx_print_config(struct rxtx_data *tx)
     unsigned int repetitions, repeat_delay;
     struct tx_params *tx_params = tx->params;
 
-    pthread_mutex_lock(&tx->param_lock);
+    MUTEX_LOCK(&tx->param_lock);
     repetitions = tx_params->repeat;
     repeat_delay = tx_params->repeat_delay;
-    pthread_mutex_unlock(&tx->param_lock);
+    MUTEX_UNLOCK(&tx->param_lock);
 
     printf("\n");
     rxtx_print_state(tx, "  State: ", "\n");
@@ -561,9 +561,9 @@ static int tx_config(struct cli_state *s, int argc, char **argv)
 
                 tmp = str2uint(val, 0, UINT_MAX, &ok);
                 if (ok) {
-                    pthread_mutex_lock(&s->tx->param_lock);
+                    MUTEX_LOCK(&s->tx->param_lock);
                     tx_params->repeat = tmp;
-                    pthread_mutex_unlock(&s->tx->param_lock);
+                    MUTEX_UNLOCK(&s->tx->param_lock);
                 } else {
                     cli_err(s, argv[0], RXTX_ERRMSG_VALUE(argv[1], val));
                     return CLI_RET_INVPARAM;
@@ -578,9 +578,9 @@ static int tx_config(struct cli_state *s, int argc, char **argv)
                 tmp = str2uint(val, 0, UINT_MAX, &ok);
 
                 if (ok) {
-                    pthread_mutex_lock(&s->tx->param_lock);
+                    MUTEX_LOCK(&s->tx->param_lock);
                     tx_params->repeat_delay = tmp;
-                    pthread_mutex_unlock(&s->tx->param_lock);
+                    MUTEX_UNLOCK(&s->tx->param_lock);
                 } else {
                     cli_err(s, argv[0], RXTX_ERRMSG_VALUE(argv[1], val));
                     return CLI_RET_INVPARAM;
