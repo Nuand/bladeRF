@@ -226,6 +226,7 @@ void *rx_task(void *cli_state_arg)
 
                 /* Clear the last error */
                 set_last_error(&rx->last_error, ETYPE_ERRNO, 0);
+                status = 0;
 
                 /* Choose the callback appropriate for the desired file type */
                 MUTEX_LOCK(&rx->file_mgmt.file_meta_lock);
@@ -245,7 +246,6 @@ void *rx_task(void *cli_state_arg)
                         rxtx_set_state(rx, RXTX_STATE_IDLE);
                 }
 
-                /* Open the specified file */
                 if (status == 0) {
                     assert(rx->file_mgmt.path);
                 }
