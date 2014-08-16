@@ -126,21 +126,45 @@ static int xb200_attach(struct bladerf *dev) {
 int xb_attach(struct bladerf *dev, bladerf_xb xb) {
     bladerf_xb attached;
     int status;
+
     status = xb_get_attached(dev, &attached);
-    if (status)
+    if (status != 0) {
         return status;
-
-    if (xb == BLADERF_XB_200) {
-        if (version_less_than(&dev->fpga_version, 0, 0, 5)) {
-            log_warning("%s: XB200 support requires FPGA v0.0.5 or later\n", __FUNCTION__);
-            return BLADERF_ERR_UPDATE_FPGA;
-        }
-
-        if (attached != xb) {
-            return xb200_attach(dev);
-        }
     }
-    return 0;
+
+    switch (xb) {
+        /* This requires support from the FPGA and FX3 firmware to be added */
+        case BLADERF_XB_100:
+            log_warning("%s: The XB-100 is not currently supported by "
+                        "libbladeRF\n", __FUNCTION__);
+            status = BLADERF_ERR_UNSUPPORTED;
+            break;
+
+        case BLADERF_XB_200:
+            if (version_less_than(&dev->fpga_version, 0, 0, 5)) {
+                log_warning("%s: XB200 support requires FPGA v0.0.5 or later\n",
+                            __FUNCTION__);
+                status = BLADERF_ERR_UPDATE_FPGA;
+            } else if (attached != xb) {
+                status = xb200_attach(dev);
+            }
+            break;
+
+        case BLADERF_XB_NONE:
+            /* FIXME We need to have a function to undo the changes
+             *       made by xb200_attach()! */
+            log_warning("%s: Disabling an attached XB is not yet supported.\n",
+                        __FUNCTION__);
+            status = BLADERF_ERR_UNSUPPORTED;
+            break;
+
+        default:
+            log_debug("%s: Unknown xb type: %d\n", __FUNCTION__, xb);
+            status = BLADERF_ERR_INVAL;
+            break;
+    }
+
+    return status;
 }
 
 int xb_get_attached(struct bladerf *dev, bladerf_xb *xb) {

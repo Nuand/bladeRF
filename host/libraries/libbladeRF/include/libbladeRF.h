@@ -490,10 +490,13 @@ typedef enum
  * Expansion boards
  */
 typedef enum {
-    BLADERF_XB_NONE = 0,
-    BLADERF_XB_100,
-    BLADERF_XB_200
-} bladerf_xb ;
+    BLADERF_XB_NONE = 0,    /**< No expansion boards attached */
+    BLADERF_XB_100,         /**< XB-100 GPIO expansion board.
+                             *   This device is not yet supported in
+                             *   libbladeRF, and is here as a placeholder
+                             *   for future support. */
+    BLADERF_XB_200          /**< XB-200 Transverter board */
+} bladerf_xb;
 
 /**
  * XB 200 filterbanks
