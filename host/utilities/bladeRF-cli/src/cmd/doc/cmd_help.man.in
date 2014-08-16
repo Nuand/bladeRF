@@ -320,7 +320,7 @@ Usage: \f[C]load\ <fpga|fx3>\ <filename>\f[]
 Load an FPGA bitstream or program the FX3\[aq]s SPI flash.
 .SS xb
 .PP
-Usage: \f[C]xb\ [subcommand]\ [board_model]\ [parameters]\f[]
+Usage: \f[C]xb\ [board_model]\ [subcommand]\ [parameters]\f[]
 .PP
 Enable or configure an expansion board.
 .PP
@@ -354,13 +354,13 @@ Selects the RX or TX filter on the XB\-200 board
 .PP
 Examples:
 .IP \[bu] 2
-\f[C]xb\ enable\ 100\f[]
+\f[C]xb\ 100\ enable\f[]
 .RS 2
 .PP
 Enables the XB\-100 GPIO expansion board
 .RE
 .IP \[bu] 2
-\f[C]xb\ filter\ 200\ rx\ 144\f[]
+\f[C]xb\ 200\ filter\ rx\ 144\f[]
 .RS 2
 .PP
 Selects the 144 MHz receive filter on the XB\-200 LF/MF/HF/VHF
