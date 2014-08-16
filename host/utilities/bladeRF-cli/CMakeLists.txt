@@ -150,6 +150,8 @@ set(BLADERF_CLI_SOURCE
         src/cmd/printset.c
         src/cmd/probe.c
         src/cmd/xb.c
+        src/cmd/xb100.c
+        src/cmd/xb200.c
         src/cmd/rx.c
         src/cmd/rxtx.c
         src/cmd/tx.c
