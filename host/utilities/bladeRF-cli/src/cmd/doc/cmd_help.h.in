@@ -27,7 +27,7 @@
  * Any manual modifications to this file will be overwritten!
  * To edit the content of help strings, please edit interactive-help.md
  *
- * Last generated: Fri Aug  1 16:08:45 EDT 2014 by cwiener@voyager.nj.crlabs.com
+ * Last generated: Sat Aug 16 15:47:30 EDT 2014 by cwiener@voyager.nj.crlabs.com
  */
 
 #ifndef BLADERF_CLI_DOC_CMD_HELP_H__
@@ -275,7 +275,7 @@
 
 
 #define CLI_CMD_HELPTEXT_xb \
-  "Usage: xb [subcommand] [board_model] [parameters]\n" \
+  "Usage: xb [board_model] [subcommand] [parameters]\n" \
   "\n" \
   "Enable or configure an expansion board.\n" \
   "\n" \
@@ -301,11 +301,11 @@
   "\n" \
   "Examples:\n" \
   "\n" \
-  "-   xb enable 100\n" \
+  "-   xb 100 enable\n" \
   "\n" \
   "    Enables the XB-100 GPIO expansion board\n" \
   "\n" \
-  "-   xb filter 200 rx 144\n" \
+  "-   xb 200 filter rx 144\n" \
   "\n" \
   "    Selects the 144 MHz receive filter on the XB-200 LF/MF/HF/VHF\n" \
   "    transverter expansion board\n" \

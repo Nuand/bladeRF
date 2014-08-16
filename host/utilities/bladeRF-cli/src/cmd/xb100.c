@@ -22,11 +22,8 @@
 #include <string.h>
 #include <xb.h>
 #include <xb100.h>
-#include <xb200.h>
 
-
-
-int cmd_xb(struct cli_state *state, int argc, char **argv)
+int cmd_xb100(struct cli_state *state, int argc, char **argv)
 {
     int status = 0;
 
@@ -35,33 +32,37 @@ int cmd_xb(struct cli_state *state, int argc, char **argv)
         return 0;
     }
 
-    if (argc >= 3) {
-        // xb <model> <subcommand> <args>
-        int modelnum = atoi(argv[1]);
-
-        switch (modelnum)
-        {
-            case MODEL_XB100:
-                status = cmd_xb100(state, argc, argv);
-                break;
-
-            case MODEL_XB200:
-                status = cmd_xb200(state, argc, argv);
-                break;
-
-            default:
-                return CLI_RET_INVPARAM;
-                break;
-        }
-
-        if ((status != 0) && (status != CLI_RET_INVPARAM) &&
-            (status != CLI_RET_NARGS)) {
-          return CLI_RET_LIBBLADERF;
-        }
-
-        return status;
+    if (argc < 3)
+    {
+        // incorrect number of arguments
+        return CLI_RET_NARGS;
     }
 
-    return CLI_RET_NARGS;
+    // xb 100 <subcommand> <args>
+    unsigned int modelnum = atoi(argv[1]);
+    const char *subcommand = argv[2];
+
+    if (modelnum != MODEL_XB100) {
+        return CLI_RET_INVPARAM;
+    }
+
+    // xb 100 enable
+    if (!strcmp(subcommand, "enable")) {
+        printf(" Enabling XB-100 GPIO expansion board\n");
+        status = bladerf_expansion_attach(state->dev, BLADERF_XB_100);
+        if (status != 0) {
+            state->last_lib_error = status;
+            return CLI_RET_LIBBLADERF;
+        }
+
+        printf("  XB-100 GPIO expansion board successfully enabled\n");
+    }
+
+    // unknown subcommand
+    else {
+        return CLI_RET_INVPARAM;
+    }
+
+    return status;
 }
 
