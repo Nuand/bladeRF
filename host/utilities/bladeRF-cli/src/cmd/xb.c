@@ -30,9 +30,8 @@ int cmd_xb(struct cli_state *state, int argc, char **argv)
 {
     int status = 0;
 
-    if (NULL == state->dev) {
-        printf("  No device is currently opened\n");
-        return 0;
+    if (!cli_device_is_opened(state)) {
+        return CLI_RET_NODEV;
     }
 
     if (argc >= 3) {
@@ -50,6 +49,7 @@ int cmd_xb(struct cli_state *state, int argc, char **argv)
                 break;
 
             default:
+                cli_err(state, argv[1], "Invalid expansion board model number\n");
                 return CLI_RET_INVPARAM;
                 break;
         }

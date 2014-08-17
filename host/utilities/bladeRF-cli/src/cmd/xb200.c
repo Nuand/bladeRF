@@ -18,6 +18,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 #include <stdio.h>
+#include <assert.h>
 #include "common.h"
 #include <string.h>
 #include <xb.h>
@@ -27,9 +28,8 @@ int cmd_xb200(struct cli_state *state, int argc, char **argv)
 {
     int status = 0;
 
-    if (NULL == state->dev) {
-        printf("  No device is currently opened\n");
-        return 0;
+    if (!cli_device_is_opened(state)) {
+        return CLI_RET_NODEV;
     }
 
     if (argc < 3) {
@@ -42,6 +42,7 @@ int cmd_xb200(struct cli_state *state, int argc, char **argv)
     const char *subcommand = argv[2];
 
     if (modelnum != MODEL_XB200) {
+        assert(0);  // developer error
         return CLI_RET_INVPARAM;
     }
  
@@ -74,6 +75,7 @@ int cmd_xb200(struct cli_state *state, int argc, char **argv)
 
     // unknown subcommand
     else {
+        cli_err(state, subcommand, "Invalid subcommand for xb %d\n", modelnum);
         status = CLI_RET_INVPARAM;
     }
 
@@ -85,6 +87,7 @@ int cmd_xb200_filter(struct cli_state *state, const char *modulename, const char
     int status = 0;
 
     if ( (NULL == state) || (NULL == modulename) || (NULL == filtername) ) {
+        assert(0);  // developer error
         return CLI_RET_INVPARAM;
     }
 
@@ -96,7 +99,10 @@ int cmd_xb200_filter(struct cli_state *state, const char *modulename, const char
         mod = BLADERF_MODULE_RX;
     else if (!strcasecmp(modulename, "tx"))
         mod = BLADERF_MODULE_TX;
-    else return CLI_RET_INVPARAM;
+    else {
+        cli_err(state, modulename, "Invalid module for xb 200 filter\n");
+        return CLI_RET_INVPARAM;
+    }
 
     // get which filter to set
     if (!strcmp(filtername, "50"))
@@ -111,7 +117,10 @@ int cmd_xb200_filter(struct cli_state *state, const char *modulename, const char
         filter = BLADERF_XB200_AUTO_1DB;
     else if (!strcmp(filtername, "auto_3db"))
         filter = BLADERF_XB200_AUTO_3DB;
-    else return CLI_RET_INVPARAM;
+    else {
+        cli_err(state, filtername, "Invalid filter for xb 200 filter\n", filtername);
+        return CLI_RET_INVPARAM;
+    }
 
     status = bladerf_xb200_set_filterbank(state->dev, mod, filter);
 
@@ -120,7 +129,8 @@ int cmd_xb200_filter(struct cli_state *state, const char *modulename, const char
         return CLI_RET_LIBBLADERF;
     }
 
-    printf(" XB-200 Transverter board %s filter successfully set to %s\n", modulename, filtername);
+    printf(" XB-200 Transverter board %s filter successfully set to %s\n",
+           modulename, filtername);
 
     return status;
 }

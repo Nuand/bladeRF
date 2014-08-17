@@ -17,6 +17,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
+#include <assert.h>
 #include <stdio.h>
 #include "common.h"
 #include <string.h>
@@ -27,9 +28,13 @@ int cmd_xb100(struct cli_state *state, int argc, char **argv)
 {
     int status = 0;
 
-    if (NULL == state->dev) {
-        printf("  No device is currently opened\n");
-        return 0;
+    if (NULL == state) {
+        assert(0);  // developer error
+        return CLI_RET_INVPARAM;
+    }
+
+    if (!cli_device_is_opened(state)) {
+        return CLI_RET_NODEV;
     }
 
     if (argc < 3)
@@ -43,6 +48,7 @@ int cmd_xb100(struct cli_state *state, int argc, char **argv)
     const char *subcommand = argv[2];
 
     if (modelnum != MODEL_XB100) {
+        assert(0);  // developer error
         return CLI_RET_INVPARAM;
     }
 
@@ -55,11 +61,12 @@ int cmd_xb100(struct cli_state *state, int argc, char **argv)
             return CLI_RET_LIBBLADERF;
         }
 
-        printf("  XB-100 GPIO expansion board successfully enabled\n");
+        printf(" XB-100 GPIO expansion board successfully enabled\n");
     }
 
     // unknown subcommand
     else {
+        cli_err(state, subcommand, "Invalid subcommand for xb %d\n", modelnum);
         return CLI_RET_INVPARAM;
     }
 

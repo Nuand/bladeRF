@@ -247,9 +247,6 @@ const char * cli_strerror(int error, int lib_error)
         case CLI_RET_NOFILE:
             return "File not found";
 
-        case CLI_RET_INVPARAM:
-            return "Invalid arguments provided";
-
         /* Other commands shall print out helpful info from within their
          * implementation */
         default:
