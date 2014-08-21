@@ -233,3 +233,18 @@ out:
     bladerf_free_image(image);
     return status;
 }
+
+int config_gpio_write(struct bladerf *dev, uint32_t val)
+{
+    /* If we're connected at HS, we need to use smaller DMA transfers */
+    if (dev->usb_speed == BLADERF_DEVICE_SPEED_HIGH   ) {
+        val |= BLADERF_GPIO_FEATURE_SMALL_DMA_XFER;
+    } else if (dev->usb_speed == BLADERF_DEVICE_SPEED_SUPER) {
+        val &= ~BLADERF_GPIO_FEATURE_SMALL_DMA_XFER;
+    } else {
+        assert(!"Encountered unknown USB speed");
+        return BLADERF_ERR_UNEXPECTED;
+    }
+
+   return dev->fn->config_gpio_write(dev, val);
+}
