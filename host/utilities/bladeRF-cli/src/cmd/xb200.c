@@ -41,7 +41,7 @@ int cmd_xb200(struct cli_state *state, int argc, char **argv)
 
     // xb 200 <subcommand> <args>
     modelnum = atoi(argv[1]);
-    *subcommand = argv[2];
+    subcommand = argv[2];
 
     if (modelnum != MODEL_XB200) {
         assert(0);  // developer error
