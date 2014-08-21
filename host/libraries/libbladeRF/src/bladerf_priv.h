@@ -56,10 +56,7 @@
  * band should be selected */
 #define BLADERF_BAND_HIGH (1500000000)
 
-#define CONFIG_GPIO_WRITE(dev, val) dev->fn->config_gpio_write(dev, val)
-#define CONFIG_GPIO_READ(dev, val)  dev->fn->config_gpio_read(dev, val)
-
-#define CONFIG_GPIO_WRITE(dev, val) dev->fn->config_gpio_write(dev, val)
+#define CONFIG_GPIO_WRITE(dev, val) config_gpio_write(dev, val)
 #define CONFIG_GPIO_READ(dev, val)  dev->fn->config_gpio_read(dev, val)
 
 #define DAC_WRITE(dev, val) dev->fn->dac_write(dev, val)
@@ -171,5 +168,15 @@ int populate_abs_timeout(struct timespec *t_abs, unsigned int timeout_ms);
  * @return 0 on success, BLADERF_ERR_* on failure
  */
 int load_calibration_table(struct bladerf *dev, const char *filename);
+
+/**
+ * Write a to the FPGA configuration GPIOs.
+ *
+ * @param   dev     Device handle
+ * @param   val     Value to write
+ *
+ * @return 0 on success, BLADERF_ERR_* on failure
+ */
+int config_gpio_write(struct bladerf *dev, uint32_t val);
 
 #endif

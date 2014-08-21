@@ -1220,20 +1220,8 @@ int bladerf_config_gpio_write(struct bladerf *dev, uint32_t val)
     int status;
     MUTEX_LOCK(&dev->ctrl_lock);
 
-    /* If we're connected at HS, we need to use smaller DMA transfers */
-    if (dev->usb_speed == BLADERF_DEVICE_SPEED_HIGH   ) {
-        val |= BLADERF_GPIO_FEATURE_SMALL_DMA_XFER;
-    } else if (dev->usb_speed == BLADERF_DEVICE_SPEED_SUPER) {
-        val &= ~BLADERF_GPIO_FEATURE_SMALL_DMA_XFER;
-    } else {
-        log_warning("Encountered unknown USB speed in %s\n", __FUNCTION__);
-        status = BLADERF_ERR_UNEXPECTED;
-        goto out;
-    }
-
     status = CONFIG_GPIO_WRITE(dev, val);
 
-out:
     MUTEX_UNLOCK(&dev->ctrl_lock);
     return status;
 
