@@ -1,7 +1,7 @@
 /*
  * This file is part of the bladeRF project
  *
- * Copyright (C) 2013 Nuand LLC
+ * Copyright (C) 2014 Nuand LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,30 +18,49 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 #include <stdio.h>
-#include "common.h"
 #include <string.h>
+#include "common.h"
+#include "xb.h"
+#include "xb100.h"
+#include "xb200.h"
 
 int cmd_xb(struct cli_state *state, int argc, char **argv)
 {
     int status = 0;
 
-    if (state->dev == NULL) {
-        printf("  No device is currently opened\n");
-        return 0;
+    if (!cli_device_is_opened(state)) {
+        return CLI_RET_NODEV;
     }
 
-    if (argc >= 2) {
-        if (argc >= 3 && !strcmp(argv[1], "enable")) {
-            if (!strcmp(argv[2], "200")) {
-                printf("  Enabling transverter board\n");
-                status = bladerf_expansion_attach(state->dev, BLADERF_XB_200);
-                if (status != 0) {
-                    state->last_lib_error = status;
-                    return CLI_RET_LIBBLADERF;
-                }
-                printf("  Transverter board successfully enabled\n");
-            }
+    if (argc >= 3) {
+        // xb <model> <subcommand> <args>
+        int modelnum = atoi(argv[1]);
+
+        switch (modelnum)
+        {
+            case MODEL_XB100:
+                status = cmd_xb100(state, argc, argv);
+                break;
+
+            case MODEL_XB200:
+                status = cmd_xb200(state, argc, argv);
+                break;
+
+            default:
+                cli_err(state, argv[1],
+                        "Invalid expansion board model number\n");
+                return CLI_RET_INVPARAM;
+                break;
         }
+
+        if ((status != 0) && (status != CLI_RET_INVPARAM) &&
+            (status != CLI_RET_NARGS)) {
+          return CLI_RET_LIBBLADERF;
+        }
+
+        return status;
     }
-    return status;
+
+    return CLI_RET_NARGS;
 }
+

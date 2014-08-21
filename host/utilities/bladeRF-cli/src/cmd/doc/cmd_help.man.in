@@ -109,7 +109,7 @@ Valid options are:
 .PP
 .TS
 tab(@);
-rw(11.67n) lw(52.50n).
+rw(11.7n) lw(52.5n).
 T{
 Option
 T}@T{
@@ -194,7 +194,7 @@ Valid options are:
 .PP
 .TS
 tab(@);
-rw(11.67n) lw(52.50n).
+rw(11.7n) lw(52.5n).
 T{
 Option
 T}@T{
@@ -320,9 +320,52 @@ Usage: \f[C]load\ <fpga|fx3>\ <filename>\f[]
 Load an FPGA bitstream or program the FX3\[aq]s SPI flash.
 .SS xb
 .PP
-Usage: \f[C]xb\ enable\ [100|200]\f[]
+Usage: \f[C]xb\ [board_model]\ [subcommand]\ [parameters]\f[]
 .PP
-Enable and configure XB100 and XB200 expansion boards.
+Enable or configure an expansion board.
+.PP
+Valid values for \f[C]board_model\f[]:
+.IP \[bu] 2
+\f[C]100\f[]
+.RS 2
+.PP
+XB\-100 GPIO expansion board.
+.RE
+.IP \[bu] 2
+\f[C]200\f[]
+.RS 2
+.PP
+XB\-200 LF/MF/HF/VHF transverter expansion board
+.RE
+.PP
+Valid subcommands:
+.IP \[bu] 2
+\f[C]enable\ [board_model]\f[]
+.RS 2
+.PP
+Enable the XB\-100 or XB\-200 expansion board.
+.RE
+.IP \[bu] 2
+\f[C]filter\ 200\ [rx|tx]\ [50|144|222|custom|auto_1db|auto_3db]\f[]
+.RS 2
+.PP
+Selects the RX or TX filter on the XB\-200 board
+.RE
+.PP
+Examples:
+.IP \[bu] 2
+\f[C]xb\ 100\ enable\f[]
+.RS 2
+.PP
+Enables the XB\-100 GPIO expansion board
+.RE
+.IP \[bu] 2
+\f[C]xb\ 200\ filter\ rx\ 144\f[]
+.RS 2
+.PP
+Selects the 144 MHz receive filter on the XB\-200 LF/MF/HF/VHF
+transverter expansion board
+.RE
 .SS mimo
 .PP
 Usage: \f[C]mimo\ [master\ |\ slave]\f[]
@@ -431,7 +474,7 @@ The parameter is one of:
 .PP
 .TS
 tab(@);
-rw(13.61n) lw(54.44n).
+rw(13.6n) lw(54.4n).
 T{
 Parameter
 T}@T{
@@ -543,7 +586,7 @@ Reception is controlled and configured by one of the following:
 .PP
 .TS
 tab(@);
-rw(11.67n) lw(56.39n).
+rw(11.7n) lw(56.4n).
 T{
 Command
 T}@T{
@@ -590,7 +633,7 @@ Below is a list of available parameters.
 .PP
 .TS
 tab(@);
-rw(15.56n) lw(52.50n).
+rw(15.6n) lw(52.5n).
 T{
 Parameter
 T}@T{
@@ -685,7 +728,7 @@ Transmission is controlled and configured by one of the following:
 .PP
 .TS
 tab(@);
-rw(11.67n) lw(56.39n).
+rw(11.7n) lw(56.4n).
 T{
 Command
 T}@T{
@@ -732,7 +775,7 @@ Below is a list of available parameters.
 .PP
 .TS
 tab(@);
-rw(15.56n) lw(52.50n).
+rw(15.6n) lw(52.5n).
 T{
 Parameter
 T}@T{
@@ -837,7 +880,7 @@ The parameter is one of:
 .PP
 .TS
 tab(@);
-rw(13.61n) lw(54.44n).
+rw(13.6n) lw(54.4n).
 T{
 Parameter
 T}@T{
