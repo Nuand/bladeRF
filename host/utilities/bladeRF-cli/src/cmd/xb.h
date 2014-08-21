@@ -17,7 +17,11 @@
 * with this program; if not, write to the Free Software Foundation, Inc.,
 * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
+#ifndef CMD_XB_H_
+#define CMD_XB_H_
 
-#define MODEL_XB100  100
-#define MODEL_XB200  200
+#define MODEL_INVALID  -1
+#define MODEL_XB100    100
+#define MODEL_XB200    200
 
+#endif

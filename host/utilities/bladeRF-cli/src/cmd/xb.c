@@ -18,13 +18,11 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 #include <stdio.h>
-#include "common.h"
 #include <string.h>
-#include <xb.h>
-#include <xb100.h>
-#include <xb200.h>
-
-
+#include "common.h"
+#include "xb.h"
+#include "xb100.h"
+#include "xb200.h"
 
 int cmd_xb(struct cli_state *state, int argc, char **argv)
 {
@@ -49,7 +47,8 @@ int cmd_xb(struct cli_state *state, int argc, char **argv)
                 break;
 
             default:
-                cli_err(state, argv[1], "Invalid expansion board model number\n");
+                cli_err(state, argv[1],
+                        "Invalid expansion board model number\n");
                 return CLI_RET_INVPARAM;
                 break;
         }

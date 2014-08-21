@@ -17,6 +17,9 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
+#ifndef CMD_XB100_H_
+#define CMD_XB100_H_
 
 int cmd_xb100(struct cli_state *state, int argc, char **argv);
 
+#endif

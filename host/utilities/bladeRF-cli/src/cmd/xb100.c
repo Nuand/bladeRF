@@ -19,10 +19,10 @@
  */
 #include <assert.h>
 #include <stdio.h>
-#include "common.h"
 #include <string.h>
-#include <xb.h>
-#include <xb100.h>
+#include "common.h"
+#include "xb.h"
+#include "xb100.h"
 
 int cmd_xb100(struct cli_state *state, int argc, char **argv)
 {
@@ -37,8 +37,7 @@ int cmd_xb100(struct cli_state *state, int argc, char **argv)
         return CLI_RET_NODEV;
     }
 
-    if (argc < 3)
-    {
+    if (argc < 3) {
         // incorrect number of arguments
         return CLI_RET_NARGS;
     }
@@ -54,18 +53,16 @@ int cmd_xb100(struct cli_state *state, int argc, char **argv)
 
     // xb 100 enable
     if (!strcmp(subcommand, "enable")) {
-        printf(" Enabling XB-100 GPIO expansion board\n");
+        printf("  Enabling XB-100 GPIO expansion board\n");
         status = bladerf_expansion_attach(state->dev, BLADERF_XB_100);
         if (status != 0) {
             state->last_lib_error = status;
             return CLI_RET_LIBBLADERF;
         }
 
-        printf(" XB-100 GPIO expansion board successfully enabled\n");
-    }
-
-    // unknown subcommand
-    else {
+        printf("  XB-100 GPIO expansion board successfully enabled\n");
+    } else {
+        // unknown subcommand
         cli_err(state, subcommand, "Invalid subcommand for xb %d\n", modelnum);
         return CLI_RET_INVPARAM;
     }

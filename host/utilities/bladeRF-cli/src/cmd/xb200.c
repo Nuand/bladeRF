@@ -19,14 +19,16 @@
  */
 #include <stdio.h>
 #include <assert.h>
-#include "common.h"
 #include <string.h>
-#include <xb.h>
-#include <xb200.h>
+#include "common.h"
+#include "xb.h"
+#include "xb200.h"
 
 int cmd_xb200(struct cli_state *state, int argc, char **argv)
 {
+    const char *subcommand = NULL;
     int status = 0;
+    int modelnum = MODEL_INVALID;
 
     if (!cli_device_is_opened(state)) {
         return CLI_RET_NODEV;
@@ -38,27 +40,27 @@ int cmd_xb200(struct cli_state *state, int argc, char **argv)
     }
 
     // xb 200 <subcommand> <args>
-    unsigned int modelnum = atoi(argv[1]);
-    const char *subcommand = argv[2];
+    modelnum = atoi(argv[1]);
+    *subcommand = argv[2];
 
     if (modelnum != MODEL_XB200) {
         assert(0);  // developer error
         return CLI_RET_INVPARAM;
     }
- 
+
     // xb 200 enable
     if (!strcasecmp(subcommand, "enable")) {
-        printf(" Enabling XB-200 transverter board\n");
+        printf("  Enabling XB-200 transverter board\n");
         status = bladerf_expansion_attach(state->dev, BLADERF_XB_200);
         if (status != 0) {
             state->last_lib_error = status;
             return CLI_RET_LIBBLADERF;
         }
-        printf(" XB-200 Transverter board successfully enabled\n");
-    }
+        printf("  XB-200 Transverter board successfully enabled\n");
 
-    // xb 200 filter xx yy  - where xx is tx or rx and yy is the filter to be selected
-    else if (!strcasecmp(subcommand, "filter")) {
+    } else if (!strcasecmp(subcommand, "filter")) {
+
+        // xb 200 filter <tx | rx> <filter>
         if (5 != argc) {
             return CLI_RET_NARGS;
         }
@@ -71,10 +73,9 @@ int cmd_xb200(struct cli_state *state, int argc, char **argv)
             state->last_lib_error = status;
             return CLI_RET_LIBBLADERF;
         }
-    }
 
-    // unknown subcommand
-    else {
+    } else {
+        // unknown subcommand
         cli_err(state, subcommand, "Invalid subcommand for xb %d\n", modelnum);
         status = CLI_RET_INVPARAM;
     }
@@ -82,7 +83,8 @@ int cmd_xb200(struct cli_state *state, int argc, char **argv)
     return status;
 }
 
-int cmd_xb200_filter(struct cli_state *state, const char *modulename, const char *filtername)
+int cmd_xb200_filter(struct cli_state *state, const char *modulename,
+                     const char *filtername)
 {
     int status = 0;
 
@@ -95,30 +97,31 @@ int cmd_xb200_filter(struct cli_state *state, const char *modulename, const char
     bladerf_module mod;
 
     // get which module to set filter for
-    if (!strcasecmp(modulename, "rx"))
+    if (!strcasecmp(modulename, "rx")) {
         mod = BLADERF_MODULE_RX;
-    else if (!strcasecmp(modulename, "tx"))
+    } else if (!strcasecmp(modulename, "tx")) {
         mod = BLADERF_MODULE_TX;
-    else {
+    } else {
         cli_err(state, modulename, "Invalid module for xb 200 filter\n");
         return CLI_RET_INVPARAM;
     }
 
     // get which filter to set
-    if (!strcmp(filtername, "50"))
+    if (!strcmp(filtername, "50")) {
         filter = BLADERF_XB200_50M;
-    else if (!strcmp(filtername, "144"))
+    } else if (!strcmp(filtername, "144")) {
         filter = BLADERF_XB200_144M;
-    else if (!strcmp(filtername, "222"))
+    } else if (!strcmp(filtername, "222")) {
         filter = BLADERF_XB200_222M;
-    else if (!strcmp(filtername, "custom"))
+    } else if (!strcmp(filtername, "custom")) {
         filter = BLADERF_XB200_CUSTOM;
-    else if (!strcmp(filtername, "auto_1db"))
+    } else if (!strcmp(filtername, "auto_1db")) {
         filter = BLADERF_XB200_AUTO_1DB;
-    else if (!strcmp(filtername, "auto_3db"))
+    } else if (!strcmp(filtername, "auto_3db")) {
         filter = BLADERF_XB200_AUTO_3DB;
-    else {
-        cli_err(state, filtername, "Invalid filter for xb 200 filter\n", filtername);
+    } else {
+        cli_err(state, filtername, "Invalid filter for xb 200 filter\n",
+                filtername);
         return CLI_RET_INVPARAM;
     }
 
@@ -129,9 +132,8 @@ int cmd_xb200_filter(struct cli_state *state, const char *modulename, const char
         return CLI_RET_LIBBLADERF;
     }
 
-    printf(" XB-200 Transverter board %s filter successfully set to %s\n",
+    printf("  XB-200 Transverter board %s filter successfully set to %s\n",
            modulename, filtername);
 
     return status;
 }
-
