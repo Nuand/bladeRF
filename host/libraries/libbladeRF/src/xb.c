@@ -132,11 +132,16 @@ int xb_attach(struct bladerf *dev, bladerf_xb xb) {
         return status;
     }
 
+    if (xb != attached && attached != BLADERF_XB_NONE) {
+        log_debug("%s: Switching XB types is not supported.\n", __FUNCTION__);
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
     switch (xb) {
         /* This requires support from the FPGA and FX3 firmware to be added */
         case BLADERF_XB_100:
-            log_warning("%s: The XB-100 is not currently supported by "
-                        "libbladeRF\n", __FUNCTION__);
+            log_debug("%s: The XB-100 is not currently supported by "
+                      "libbladeRF\n", __FUNCTION__);
             status = BLADERF_ERR_UNSUPPORTED;
             break;
 
@@ -151,10 +156,8 @@ int xb_attach(struct bladerf *dev, bladerf_xb xb) {
             break;
 
         case BLADERF_XB_NONE:
-            /* FIXME We need to have a function to undo the changes
-             *       made by xb200_attach()! */
-            log_warning("%s: Disabling an attached XB is not yet supported.\n",
-                        __FUNCTION__);
+            log_debug("%s: Disabling an attached XB is not supported.\n",
+                      __FUNCTION__);
             status = BLADERF_ERR_UNSUPPORTED;
             break;
 
