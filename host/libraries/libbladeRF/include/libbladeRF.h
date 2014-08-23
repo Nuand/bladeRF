@@ -499,23 +499,60 @@ typedef enum {
 } bladerf_xb;
 
 /**
- * XB 200 filterbanks
+ * XB-200 filter selection options
  */
 typedef enum {
-    BLADERF_XB200_50M = 0,   /**< 50MHz filterbank */
-    BLADERF_XB200_144M,      /**< 144MHz filterbank */
-    BLADERF_XB200_222M,      /**< 222MHz filterbank */
-    BLADERF_XB200_CUSTOM,    /**< Custom filterbank */
-    BLADERF_XB200_AUTO_1DB,  /**< Selection based on filters' 1dB points */
-    BLADERF_XB200_AUTO_3DB   /**< Selection based on filters' 3dB points */
+    /** 50-54 MHz (6 meter band) filterbank */
+    BLADERF_XB200_50M = 0,
+
+    /** 144-148 MHz (2 meter band) filterbank */
+    BLADERF_XB200_144M,
+
+    /**
+     * 222-225 MHz (1.25 meter band) filterbank.
+     *
+     * Note that this filter option is technically wider, covering 206-235 MHz.
+     */
+    BLADERF_XB200_222M,
+
+    /**
+     * This option enables the RX/TX module's custom filter bank path across the
+     * associated FILT and FILT-ANT SMA connectors on the XB-200 board.
+     *
+     * For reception, it is often possible to simply connect the RXFILT and
+     * RXFILT-ANT connectors with an SMA cable (effectively, "no filter"). This
+     * allows for reception of signals outside of the frequency range of the
+     * on-board filters, with some potential trade-off in signal quality.
+     *
+     * For transmission, <b>always</b> use an appropriate filter on the custom
+     * filter path to avoid spurious emissions.
+     *
+     */
+    BLADERF_XB200_CUSTOM,
+
+    /**
+     * When this option is selected, the other filter options are automatically
+     * selected depending on the RX or TX module's current frequency, based upon
+     * the 1dB points of the on-board filters.  For frequencies outside the
+     * range of the on-board filters, the custom path is selected.
+     */
+    BLADERF_XB200_AUTO_1DB,
+
+    /**
+     * When this option is selected, the other filter options are automatically
+     * selected depending on the RX or TX module's current frequency, based upon
+     * the 3dB points of the on-board filters.  For frequencies outside the
+     * range of the on-board filters, the custom path is selected.
+     */
+    BLADERF_XB200_AUTO_3DB
 } bladerf_xb200_filter;
 
 /**
- * XB 200 signal paths
+ * XB-200 signal paths
  */
 typedef enum {
-    BLADERF_XB200_BYPASS = 0,
-    BLADERF_XB200_MIX
+    BLADERF_XB200_BYPASS = 0,   /**< Bypass the XB-200 mixer */
+    BLADERF_XB200_MIX           /**< Pass signals through the XB-200 mixer */
 } bladerf_xb200_path;
 
 /**
