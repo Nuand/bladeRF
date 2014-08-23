@@ -27,7 +27,7 @@
  * Any manual modifications to this file will be overwritten!
  * To edit the content of help strings, please edit interactive-help.md
  *
- * Last generated: Fri Aug  1 16:08:45 EDT 2014 by cwiener@crlabs.com
+ * Last generated: Fri Aug 22 22:42:23 EDT 2014 by jynik
  */
 
 #ifndef BLADERF_CLI_DOC_CMD_HELP_H__
@@ -275,7 +275,7 @@
 
 
 #define CLI_CMD_HELPTEXT_xb \
-  "Usage: xb [board_model] [subcommand] [parameters]\n" \
+  "Usage: xb <board_model> <subcommand> [parameters]\n" \
   "\n" \
   "Enable or configure an expansion board.\n" \
   "\n" \
@@ -291,24 +291,59 @@
   "\n" \
   "Valid subcommands:\n" \
   "\n" \
-  "-   enable [board_model]\n" \
+  "-   enable <board_model>\n" \
   "\n" \
   "    Enable the XB-100 or XB-200 expansion board.\n" \
   "\n" \
   "-   filter 200 [rx|tx] [50|144|222|custom|auto_1db|auto_3db]\n" \
   "\n" \
-  "    Selects the RX or TX filter on the XB-200 board\n" \
+  "    Selects the specified RX or TX filter on the XB-200 board. Below\n" \
+  "    are descriptions of each of the filter options.\n" \
+  "\n" \
+  "    -   50\n" \
+  "\n" \
+  "            Selects the 50-54 MHz (6 meter band) filter\n" \
+  "\n" \
+  "    -   144\n" \
+  "\n" \
+  "            Selects the 144-148 MHz (2 meter band) filter\n" \
+  "\n" \
+  "    -   222\n" \
+  "\n" \
+  "            Selects 222-225 MHz (1.25 meter band) filter. Realistically,\n" \
+  "            this filter option is actually slightly wider, covering\n" \
+  "            206 MHz - 235 MHz.\n" \
+  "\n" \
+  "    -   custom\n" \
+  "\n" \
+  "            Selects the custom filter path. The user should connect a filter\n" \
+  "            along the corresponding FILT and FILT-ANT connections when using\n" \
+  "            this option.  Alternatively one may jumper the FILT and FILT-ANT\n" \
+  "            connections to achieve \"no filter\" for reception. (However, this is\n" \
+  "            _highly_ discouraged for transmissions.)\n" \
+  "\n" \
+  "    -   auto_1db\n" \
+  "\n" \
+  "            Automatically selects one of the above choices based upon frequency\n" \
+  "            and the filters' 1dB points. The custom path is used for cases\n" \
+  "            that are not associated with the on-board filters.\n" \
+  "\n" \
+  "    -   auto_3db\n" \
+  "\n" \
+  "            Automatically selects one of the above choices based upon frequency\n" \
+  "            and the filters' 3dB points. The custom path is used for cases\n" \
+  "            that are not associated with the on-board filters.\n" \
   "\n" \
   "Examples:\n" \
   "\n" \
   "-   xb 100 enable\n" \
   "\n" \
-  "    Enables the XB-100 GPIO expansion board\n" \
+  "    Enables the XB-100 GPIO expansion board.\n" \
   "\n" \
   "-   xb 200 filter rx 144\n" \
   "\n" \
-  "    Selects the 144 MHz receive filter on the XB-200 LF/MF/HF/VHF\n" \
-  "    transverter expansion board\n" \
+  "    Selects the 144-148 MHz receive filter on the XB-200 expansion\n" \
+  "    board.\n" \
   "\n" \
 
 
