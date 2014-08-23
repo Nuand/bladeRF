@@ -256,7 +256,7 @@ Load an FPGA bitstream or program the FX3's SPI flash.
 xb
 --
 
-Usage: `xb [board_model] [subcommand] [parameters]`
+Usage: `xb <board_model> <subcommand> [parameters]`
 
 Enable or configure an expansion board.
 
@@ -272,23 +272,58 @@ Valid values for `board_model`:
 
 Valid subcommands:
 
-  - `enable [board_model]`
+  - `enable <board_model>`
 
       Enable the XB-100 or XB-200 expansion board.
 
   - `filter 200 [rx|tx] [50|144|222|custom|auto_1db|auto_3db]`
 
-      Selects the RX or TX filter on the XB-200 board
+      Selects the specified RX or TX filter on the XB-200 board. Below
+      are descriptions of each of the filter options.
+
+      * 50
+
+            Selects the 50-54 MHz (6 meter band) filter
+
+      * 144
+
+            Selects the 144-148 MHz (2 meter band) filter
+
+      * 222
+
+            Selects 222-225 MHz (1.25 meter band) filter. Realistically,
+            this filter option is actually slightly wider, covering
+            206 MHz - 235 MHz.
+
+      * custom
+
+            Selects the custom filter path. The user should connect a filter
+            along the corresponding FILT and FILT-ANT connections when using
+            this option.  Alternatively one may jumper the FILT and FILT-ANT
+            connections to achieve "no filter" for reception. (However, this is
+            _highly_ discouraged for transmissions.)
+
+      * auto_1db
+
+            Automatically selects one of the above choices based upon frequency
+            and the filters' 1dB points. The custom path is used for cases
+            that are not associated with the on-board filters.
+
+      * auto_3db
+
+            Automatically selects one of the above choices based upon frequency
+            and the filters' 3dB points. The custom path is used for cases
+            that are not associated with the on-board filters.
 
 Examples:
 
  * `xb 100 enable`
 
-      Enables the XB-100 GPIO expansion board
+      Enables the XB-100 GPIO expansion board.
 
  * `xb 200 filter rx 144`
 
-      Selects the 144 MHz receive filter on the XB-200 LF/MF/HF/VHF transverter expansion board
+      Selects the 144-148 MHz receive filter on the XB-200 expansion board.
 
 
 mimo

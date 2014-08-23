@@ -320,7 +320,7 @@ Usage: \f[C]load\ <fpga|fx3>\ <filename>\f[]
 Load an FPGA bitstream or program the FX3\[aq]s SPI flash.
 .SS xb
 .PP
-Usage: \f[C]xb\ [board_model]\ [subcommand]\ [parameters]\f[]
+Usage: \f[C]xb\ <board_model>\ <subcommand>\ [parameters]\f[]
 .PP
 Enable or configure an expansion board.
 .PP
@@ -340,7 +340,7 @@ XB\-200 LF/MF/HF/VHF transverter expansion board
 .PP
 Valid subcommands:
 .IP \[bu] 2
-\f[C]enable\ [board_model]\f[]
+\f[C]enable\ <board_model>\f[]
 .RS 2
 .PP
 Enable the XB\-100 or XB\-200 expansion board.
@@ -349,7 +349,78 @@ Enable the XB\-100 or XB\-200 expansion board.
 \f[C]filter\ 200\ [rx|tx]\ [50|144|222|custom|auto_1db|auto_3db]\f[]
 .RS 2
 .PP
-Selects the RX or TX filter on the XB\-200 board
+Selects the specified RX or TX filter on the XB\-200 board.
+Below are descriptions of each of the filter options.
+.IP \[bu] 2
+50
+.RS 2
+.IP
+.nf
+\f[C]
+Selects\ the\ 50\-54\ MHz\ (6\ meter\ band)\ filter
+\f[]
+.fi
+.RE
+.IP \[bu] 2
+144
+.RS 2
+.IP
+.nf
+\f[C]
+Selects\ the\ 144\-148\ MHz\ (2\ meter\ band)\ filter
+\f[]
+.fi
+.RE
+.IP \[bu] 2
+222
+.RS 2
+.IP
+.nf
+\f[C]
+Selects\ 222\-225\ MHz\ (1.25\ meter\ band)\ filter.\ Realistically,
+this\ filter\ option\ is\ actually\ slightly\ wider,\ covering
+206\ MHz\ \-\ 235\ MHz.
+\f[]
+.fi
+.RE
+.IP \[bu] 2
+custom
+.RS 2
+.IP
+.nf
+\f[C]
+Selects\ the\ custom\ filter\ path.\ The\ user\ should\ connect\ a\ filter
+along\ the\ corresponding\ FILT\ and\ FILT\-ANT\ connections\ when\ using
+this\ option.\ \ Alternatively\ one\ may\ jumper\ the\ FILT\ and\ FILT\-ANT
+connections\ to\ achieve\ "no\ filter"\ for\ reception.\ (However,\ this\ is
+_highly_\ discouraged\ for\ transmissions.)
+\f[]
+.fi
+.RE
+.IP \[bu] 2
+auto_1db
+.RS 2
+.IP
+.nf
+\f[C]
+Automatically\ selects\ one\ of\ the\ above\ choices\ based\ upon\ frequency
+and\ the\ filters\[aq]\ 1dB\ points.\ The\ custom\ path\ is\ used\ for\ cases
+that\ are\ not\ associated\ with\ the\ on\-board\ filters.
+\f[]
+.fi
+.RE
+.IP \[bu] 2
+auto_3db
+.RS 2
+.IP
+.nf
+\f[C]
+Automatically\ selects\ one\ of\ the\ above\ choices\ based\ upon\ frequency
+and\ the\ filters\[aq]\ 3dB\ points.\ The\ custom\ path\ is\ used\ for\ cases
+that\ are\ not\ associated\ with\ the\ on\-board\ filters.
+\f[]
+.fi
+.RE
 .RE
 .PP
 Examples:
@@ -357,14 +428,13 @@ Examples:
 \f[C]xb\ 100\ enable\f[]
 .RS 2
 .PP
-Enables the XB\-100 GPIO expansion board
+Enables the XB\-100 GPIO expansion board.
 .RE
 .IP \[bu] 2
 \f[C]xb\ 200\ filter\ rx\ 144\f[]
 .RS 2
 .PP
-Selects the 144 MHz receive filter on the XB\-200 LF/MF/HF/VHF
-transverter expansion board
+Selects the 144\-148 MHz receive filter on the XB\-200 expansion board.
 .RE
 .SS mimo
 .PP
