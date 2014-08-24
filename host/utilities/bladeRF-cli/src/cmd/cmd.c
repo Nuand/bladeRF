@@ -314,8 +314,8 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.exec, NULL),
         FIELD_INIT(.desc, NULL),
         FIELD_INIT(.help, NULL),
-        FIELD_INIT(.requires_device, NULL),
-        FIELD_INIT(.requires_fpga, NULL),
+        FIELD_INIT(.requires_device, false),
+        FIELD_INIT(.requires_fpga, false),
     }
 };
 
