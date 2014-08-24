@@ -35,10 +35,6 @@ int cmd_xb100(struct cli_state *state, int argc, char **argv)
         return CLI_RET_INVPARAM;
     }
 
-    if (!cli_device_is_opened(state)) {
-        return CLI_RET_NODEV;
-    }
-
     if (argc < 3) {
         // incorrect number of arguments
         return CLI_RET_NARGS;

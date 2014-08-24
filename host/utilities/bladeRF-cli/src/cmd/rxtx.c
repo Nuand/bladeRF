@@ -1,7 +1,7 @@
 /*
  * This file is part of the bladeRF project
  *
- * Copyright (C) 2013 Nuand LLC
+ * Copyright (C) 2013-2014 Nuand LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -573,35 +573,24 @@ int rxtx_cmd_start_check(struct cli_state *s, struct rxtx_data *rxtx,
                          const char *argv0)
 {
     int status = CLI_RET_UNKNOWN;
-    int fpga_status;
     bool have_file;
 
-    if (!cli_device_is_opened(s)) {
-        return CLI_RET_NODEV;
-    } else if (rxtx_get_state(rxtx) != RXTX_STATE_IDLE) {
+    if (rxtx_get_state(rxtx) != RXTX_STATE_IDLE) {
         return CLI_RET_STATE;
     } else {
-        fpga_status = bladerf_is_fpga_configured(s->dev);
-        if (fpga_status < 0) {
-            s->last_lib_error = fpga_status;
-            status = CLI_RET_LIBBLADERF;
-        } else if (fpga_status != 1) {
-            status = CLI_RET_NOFPGA;
+        pthread_mutex_lock(&rxtx->file_mgmt.file_meta_lock);
+        have_file = (rxtx->file_mgmt.path != NULL);
+        pthread_mutex_unlock(&rxtx->file_mgmt.file_meta_lock);
+
+        if (!have_file) {
+            cli_err(s, argv0, "File not configured");
+            status = CLI_RET_INVPARAM;
         } else {
-            pthread_mutex_lock(&rxtx->file_mgmt.file_meta_lock);
-            have_file = (rxtx->file_mgmt.path != NULL);
-            pthread_mutex_unlock(&rxtx->file_mgmt.file_meta_lock);
+            status = validate_stream_params(s, rxtx, argv0);
+        }
 
-            if (!have_file) {
-                cli_err(s, argv0, "File not configured");
-                status = CLI_RET_INVPARAM;
-            } else {
-                status = validate_stream_params(s, rxtx, argv0);
-            }
-
-            if (status == 0) {
-                check_samplerate(s, rxtx);
-            }
+        if (status == 0) {
+            check_samplerate(s, rxtx);
         }
     }
 
@@ -612,9 +601,7 @@ int rxtx_cmd_stop(struct cli_state *s, struct rxtx_data *rxtx)
 {
     int status;
 
-    if (!cli_device_is_opened(s)) {
-        status = CLI_RET_NODEV;
-    } else if (rxtx_get_state(rxtx) != RXTX_STATE_RUNNING) {
+    if (rxtx_get_state(rxtx) != RXTX_STATE_RUNNING) {
         status = CLI_RET_STATE;
     } else {
         rxtx_submit_request(rxtx, RXTX_TASK_REQ_STOP);

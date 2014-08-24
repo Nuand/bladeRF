@@ -28,10 +28,6 @@ int cmd_xb(struct cli_state *state, int argc, char **argv)
 {
     int status = 0;
 
-    if (!cli_device_is_opened(state)) {
-        return CLI_RET_NODEV;
-    }
-
     if (argc >= 3) {
         // xb <model> <subcommand> <args>
         int modelnum = atoi(argv[1]);

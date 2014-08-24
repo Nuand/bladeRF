@@ -1,7 +1,7 @@
 /*
  * This file is part of the bladeRF project
  *
- * Copyright (C) 2013 Nuand LLC
+ * Copyright (C) 2013-2014 Nuand LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ int cmd_open(struct cli_state *state, int argc, char **argv)
     size_t dev_ident_len;
     int i;
     int status;
-	int ret;
+    int ret;
 
     /* Disallow opening of a diffrent device if the current one is doing work */
     if (cli_device_is_streaming(state)) {
