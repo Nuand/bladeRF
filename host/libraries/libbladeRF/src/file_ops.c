@@ -167,24 +167,53 @@ static inline size_t get_home_dir(char *buf, size_t max_len)
 
 #elif BLADERF_OS_WINDOWS
 #define ACCESS_FILE_EXISTS 0
-#include <ShlObj.h>
+#include <shlobj.h>
+
 static const struct search_path_entries search_paths[] = {
     { true,  "/Nuand/bladeRF/" },
 };
 
 static inline size_t get_home_dir(char *buf, size_t max_len)
 {
+    /* Explicitly link to a runtime DLL to get SHGetKnownFolderPath.
+     * This deals with the case where we might not be able to staticly
+     * link it at build time, e.g. mingw32.
+     *
+     * http://msdn.microsoft.com/en-us/library/784bt7z7.aspx
+     */
+    typedef HRESULT (CALLBACK* LPFNSHGKFP_T)(REFKNOWNFOLDERID, DWORD, HANDLE, PWSTR*);
+    HINSTANCE hDLL;                         // Handle to DLL
+    LPFNSHGKFP_T lpfnSHGetKnownFolderPath;  // Function pointer
+
     const KNOWNFOLDERID folder_id = FOLDERID_RoamingAppData;
     PWSTR path;
     HRESULT status;
 
     assert(max_len < INT_MAX);
 
-    status = SHGetKnownFolderPath(&folder_id, 0, NULL, &path);
+    hDLL = LoadLibrary("Shell32");
+    if (hDLL == NULL)
+    {
+        // DLL couldn't be loaded, bail out.
+        return 0;
+    }
+
+    lpfnSHGetKnownFolderPath = (LPFNSHGKFP_T)GetProcAddress(hDLL, "SHGetKnownFolderPath");
+
+    if (!lpfnSHGetKnownFolderPath)
+    {
+        // Can't find the procedure we want.  Free and bail.
+        FreeLibrary(hDLL);
+        return 0;
+    }
+
+    status = lpfnSHGetKnownFolderPath(&folder_id, 0, NULL, &path);
     if (status == S_OK) {
         WideCharToMultiByte(CP_ACP, 0, path, -1, buf, (int)max_len, NULL, NULL);
         CoTaskMemFree(path);
     }
+
+    FreeLibrary(hDLL);
 
     return strlen(buf);
 }
