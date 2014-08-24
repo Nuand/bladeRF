@@ -23,10 +23,6 @@
 
 int flash_check_state(struct cli_state *s, const char *cmd_name)
 {
-    if (!cli_device_is_opened(s)) {
-        return CLI_RET_NODEV;
-    }
-
     if (cli_device_is_streaming(s)) {
         cli_err(s, cmd_name, "Flash operations require that the device is not "
                              "actively streaming.");

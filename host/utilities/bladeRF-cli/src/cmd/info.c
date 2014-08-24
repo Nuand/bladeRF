@@ -1,7 +1,7 @@
 /*
  * This file is part of the bladeRF project
  *
- * Copyright (C) 2013 Nuand LLC
+ * Copyright (C) 2014 Nuand LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,10 +29,6 @@ int cmd_info(struct cli_state *state, int argc, char **argv)
     bool fpga_loaded;
     struct bladerf_devinfo info;
     bladerf_dev_speed usb_speed;
-
-    if (!cli_device_is_opened(state)) {
-        return CLI_RET_NODEV;
-    }
 
     status = bladerf_get_devinfo(state->dev, &info);
     if (status < 0) {

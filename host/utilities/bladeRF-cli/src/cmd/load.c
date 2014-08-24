@@ -1,7 +1,7 @@
 /*
  * This file is part of the bladeRF project
  *
- * Copyright (C) 2013 Nuand LLC
+ * Copyright (C) 2014 Nuand LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,9 +31,7 @@ int cmd_load(struct cli_state *state, int argc, char **argv)
     */
     int rv = CLI_RET_OK;
 
-    if (!cli_device_is_opened(state)) {
-        return CLI_RET_NODEV;
-    } else if (cli_device_is_streaming(state)) {
+    if (cli_device_is_streaming(state)) {
         return CLI_RET_BUSY;
     }
 

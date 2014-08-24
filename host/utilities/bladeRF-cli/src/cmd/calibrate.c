@@ -1,7 +1,7 @@
 /*
  * This file is part of the bladeRF project
  *
- * Copyright (C) 2013 Nuand LLC
+ * Copyright (C) 2014 Nuand LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -412,20 +412,6 @@ out:
 int cmd_calibrate(struct cli_state *state, int argc, char **argv)
 {
     int status;
-    int fpga_status;
-
-    if (!cli_device_is_opened(state)) {
-        return CLI_RET_NODEV;
-    }
-
-    /* The FPGA needs to be loaded */
-    fpga_status = bladerf_is_fpga_configured(state->dev);
-    if (fpga_status < 0) {
-        state->last_lib_error = fpga_status;
-        return CLI_RET_LIBBLADERF;
-    } else if (fpga_status != 1) {
-        return CLI_RET_NOFPGA;
-    }
 
     if (argc >= 2) {
         if (!strcasecmp(argv[1], "lms")) {

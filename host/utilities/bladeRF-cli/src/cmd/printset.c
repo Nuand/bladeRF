@@ -1,7 +1,7 @@
 /*
  * This file is part of the bladeRF project
  *
- * Copyright (C) 2013 Nuand LLC
+ * Copyright (C) 2014 Nuand LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -101,22 +101,6 @@ static inline void invalid_gain(struct cli_state *s, const char *cmd,
                                 const char *param, const char *gain)
 {
     cli_err(s, cmd, "Invalid gain setting for %s (%s)", param, gain);
-}
-
-static int is_fpga_configured(struct cli_state *state, const char *cmd)
-{
-    int status;
-
-    status = bladerf_is_fpga_configured(state->dev);
-    if (status < 0) {
-        cli_err(state, cmd, "Failed to determine if the FPGA is "
-                            "configured. Is the FX3 programmed?");
-
-        state->last_lib_error = status;
-        status = CLI_RET_LIBBLADERF;
-    }
-
-    return status;
 }
 
 int print_bandwidth(struct cli_state *state, int argc, char **argv)
@@ -1217,19 +1201,8 @@ struct printset_entry *get_printset_entry( char *name)
 int cmd_set(struct cli_state *state, int argc, char **argv)
 {
     int rv = CLI_RET_OK;
-    int fpga_configured;
 
-    if (!cli_device_is_opened(state)) {
-        return  CLI_RET_NODEV;
-    }
-
-    fpga_configured = is_fpga_configured(state, argv[0]);
-
-    if ( fpga_configured < 0) {
-        rv = fpga_configured;
-    } else if ( !fpga_configured ) {
-        rv = CLI_RET_NOFPGA;
-    } else if( argc > 1 ) {
+    if( argc > 1 ) {
         struct printset_entry *entry = NULL;
 
         entry = get_printset_entry( argv[1] );
@@ -1253,19 +1226,8 @@ int cmd_print(struct cli_state *state, int argc, char **argv)
 {
     int rv = CLI_RET_OK;
     struct printset_entry *entry = NULL;
-    int fpga_configured;
 
-    if (!cli_device_is_opened(state)) {
-        return  CLI_RET_NODEV;
-    }
-
-    fpga_configured = is_fpga_configured( state, argv[0] );
-
-    if ( fpga_configured < 0 ) {
-        rv = fpga_configured;
-    } else if( !fpga_configured ) {
-        rv = CLI_RET_NOFPGA;
-    } else if( argc > 1 ) {
+    if( argc > 1 ) {
 
         entry = get_printset_entry( argv[1] );
 

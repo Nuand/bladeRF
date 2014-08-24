@@ -1,7 +1,7 @@
 /*
  * This file is part of the bladeRF project
  *
- * Copyright (C) 2013 Nuand LLC
+ * Copyright (C) 2014 Nuand LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,11 +24,6 @@
 int cmd_mimo(struct cli_state *state, int argc, char **argv)
 {
     int status = 0;
-
-    if (state->dev == NULL) {
-        printf("  No device is currently opened\n");
-        return 0;
-    }
 
     if (argc >= 2) {
         if (argc >= 3 && !strcmp(argv[1], "clk")) {
