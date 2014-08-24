@@ -1,7 +1,7 @@
 /*
  * This file is part of the bladeRF project
  *
- * Copyright (C) 2013 Nuand LLC
+ * Copyright (C) 2014 Nuand LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -66,6 +66,8 @@ struct cmd {
     int (*exec)(struct cli_state *s, int argc, char **argv);
     const char  *desc;
     const char  *help;
+    bool        requires_device;
+    bool        requires_fpga;
 };
 
 static const char *cmd_names_calibrate[] = { "calibrate", "cal", NULL };
@@ -100,166 +102,220 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.names, cmd_names_calibrate),
         FIELD_INIT(.exec, cmd_calibrate),
         FIELD_INIT(.desc, "Perform transceiver and device calibrations"),
-        FIELD_INIT(.help, CLI_CMD_HELPTEXT_calibrate)
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_calibrate),
+        FIELD_INIT(.requires_device, true),
+        FIELD_INIT(.requires_fpga, true),
     },
     {
         FIELD_INIT(.names, cmd_names_clear),
         FIELD_INIT(.exec, cmd_clear),
         FIELD_INIT(.desc, "Clear the screen"),
-        FIELD_INIT(.help, CLI_CMD_HELPTEXT_clear)
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_clear),
+        FIELD_INIT(.requires_device, false),
+        FIELD_INIT(.requires_fpga, false),
     },
     {
         FIELD_INIT(.names, cmd_names_echo),
         FIELD_INIT(.exec, cmd_echo),
         FIELD_INIT(.desc, "Echo each argument on a new line"),
-        FIELD_INIT(.help, CLI_CMD_HELPTEXT_echo)
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_echo),
+        FIELD_INIT(.requires_device, false),
+        FIELD_INIT(.requires_fpga, false),
     },
     {
         FIELD_INIT(.names, cmd_names_erase),
         FIELD_INIT(.exec, cmd_erase),
         FIELD_INIT(.desc, "Erase specified erase blocks of SPI flash"),
-        FIELD_INIT(.help, CLI_CMD_HELPTEXT_erase)
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_erase),
+        FIELD_INIT(.requires_device, true),
+        FIELD_INIT(.requires_fpga, false),
     },
     {
         FIELD_INIT(.names, cmd_names_flash_backup),
         FIELD_INIT(.exec, cmd_flash_backup),
         FIELD_INIT(.desc, "Back up flash data to a file with metadata."),
-        FIELD_INIT(.help, CLI_CMD_HELPTEXT_flash_backup)
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_flash_backup),
+        FIELD_INIT(.requires_device, true),
+        FIELD_INIT(.requires_fpga, false),
     },
     {
         FIELD_INIT(.names, cmd_names_flash_image),
         FIELD_INIT(.exec, cmd_flash_image),
         FIELD_INIT(.desc, "Print a flash image's metadata or create a new flash image"),
-        FIELD_INIT(.help, CLI_CMD_HELPTEXT_flash_image)
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_flash_image),
+        FIELD_INIT(.requires_device, false),
+        FIELD_INIT(.requires_fpga, false),
     },
     {
         FIELD_INIT(.names, cmd_names_flash_init_cal),
         FIELD_INIT(.exec, cmd_flash_init_cal),
         FIELD_INIT(.desc, "Write new calibration data to a device or to a file"),
-        FIELD_INIT(.help, CLI_CMD_HELPTEXT_flash_init_cal)
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_flash_init_cal),
+        FIELD_INIT(.requires_device, true),
+        FIELD_INIT(.requires_fpga, true),
     },
     {
         FIELD_INIT(.names, cmd_names_flash_restore),
         FIELD_INIT(.exec, cmd_flash_restore),
         FIELD_INIT(.desc, "Restore flash data from a file"),
-        FIELD_INIT(.help, CLI_CMD_HELPTEXT_flash_restore)
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_flash_restore),
+        FIELD_INIT(.requires_device, true),
+        FIELD_INIT(.requires_fpga, false),
     },
     {
         FIELD_INIT(.names, cmd_names_help),
         FIELD_INIT(.exec, cmd_help),
         FIELD_INIT(.desc, "Provide information about specified command"),
-        FIELD_INIT(.help, CLI_CMD_HELPTEXT_help)
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_help),
+        FIELD_INIT(.requires_device, false),
+        FIELD_INIT(.requires_fpga, false),
     },
     {
         FIELD_INIT(.names, cmd_names_info),
         FIELD_INIT(.exec, cmd_info),
         FIELD_INIT(.desc, "Print information about the currently opened device"),
-        FIELD_INIT(.help, CLI_CMD_HELPTEXT_info)
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_info),
+        FIELD_INIT(.requires_device, true),
+        FIELD_INIT(.requires_fpga, false),
     },
     {
         FIELD_INIT(.names, cmd_names_jump),
         FIELD_INIT(.exec, cmd_jump_to_bootloader),
         FIELD_INIT(.desc, "Jump to FX3 bootloader"),
-        FIELD_INIT(.help, CLI_CMD_HELPTEXT_jump_to_boot)
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_jump_to_boot),
+        FIELD_INIT(.requires_device, true),
+        FIELD_INIT(.requires_fpga, false),
     },
     {
         FIELD_INIT(.names, cmd_names_load),
         FIELD_INIT(.exec, cmd_load),
         FIELD_INIT(.desc, "Load FPGA or FX3"),
-        FIELD_INIT(.help, CLI_CMD_HELPTEXT_load)
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_load),
+        FIELD_INIT(.requires_device, true),
+        FIELD_INIT(.requires_fpga, false),
     },
     {
         FIELD_INIT(.names, cmd_names_xb),
         FIELD_INIT(.exec, cmd_xb),
         FIELD_INIT(.desc, "Enable and configure expansion boards"),
-        FIELD_INIT(.help, CLI_CMD_HELPTEXT_xb)
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_xb),
+        FIELD_INIT(.requires_device, true),
+        FIELD_INIT(.requires_fpga, true),
     },
     {
         FIELD_INIT(.names, cmd_names_mimo),
         FIELD_INIT(.exec, cmd_mimo),
         FIELD_INIT(.desc, "Modify device MIMO operation"),
-        FIELD_INIT(.help, CLI_CMD_HELPTEXT_mimo)
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_mimo),
+        FIELD_INIT(.requires_device, true),
+        FIELD_INIT(.requires_fpga, true),
     },
     {
         FIELD_INIT(.names, cmd_names_open),
         FIELD_INIT(.exec, cmd_open),
         FIELD_INIT(.desc, "Open a bladeRF device"),
-        FIELD_INIT(.help, CLI_CMD_HELPTEXT_open)
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_open),
+        FIELD_INIT(.requires_device, false),
+        FIELD_INIT(.requires_fpga, false),
     },
     {
         FIELD_INIT(.names, cmd_names_peek),
         FIELD_INIT(.exec, cmd_peek),
         FIELD_INIT(.desc, "Peek a memory location"),
-        FIELD_INIT(.help, CLI_CMD_HELPTEXT_peek)
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_peek),
+        FIELD_INIT(.requires_device, true),
+        FIELD_INIT(.requires_fpga, true),
     },
     {
         FIELD_INIT(.names, cmd_names_poke),
         FIELD_INIT(.exec, cmd_poke),
         FIELD_INIT(.desc, "Poke a memory location"),
-        FIELD_INIT(.help, CLI_CMD_HELPTEXT_poke)
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_poke),
+        FIELD_INIT(.requires_device, true),
+        FIELD_INIT(.requires_fpga, true),
     },
     {
         FIELD_INIT(.names, cmd_names_print),
         FIELD_INIT(.exec, cmd_print),
         FIELD_INIT(.desc, "Print information about the device"),
-        FIELD_INIT(.help, CLI_CMD_HELPTEXT_print)
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_print),
+        FIELD_INIT(.requires_device, true),
+        FIELD_INIT(.requires_fpga, true),
     },
     {
         FIELD_INIT(.names, cmd_names_probe),
         FIELD_INIT(.exec, cmd_probe),
         FIELD_INIT(.desc, "List attached bladeRF devices"),
-        FIELD_INIT(.help, CLI_CMD_HELPTEXT_probe)
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_probe),
+        FIELD_INIT(.requires_device, false),
+        FIELD_INIT(.requires_fpga, false),
     },
     {
         FIELD_INIT(.names, cmd_names_quit),
         FIELD_INIT(.exec, NULL), /* Default action on NULL exec function is to quit */
         FIELD_INIT(.desc, "Exit the CLI"),
-        FIELD_INIT(.help, CLI_CMD_HELPTEXT_quit)
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_quit),
+        FIELD_INIT(.requires_device, false),
+        FIELD_INIT(.requires_fpga, false),
     },
 #ifdef CLI_LIBUSB_ENABLED
     {
         FIELD_INIT(.names, cmd_names_rec),
         FIELD_INIT(.exec, cmd_recover),
         FIELD_INIT(.desc, "Load firmware when operating in FX3 bootloader mode"),
-        FIELD_INIT(.help, CLI_CMD_HELPTEXT_recover)
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_recover),
+        FIELD_INIT(.requires_device, false),
+        FIELD_INIT(.requires_fpga, false),
     },
 #endif
     {
         FIELD_INIT(.names, cmd_names_run),
         FIELD_INIT(.exec, cmd_run),
         FIELD_INIT(.desc, "Run a script"),
-        FIELD_INIT(.help, CLI_CMD_HELPTEXT_run)
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_run),
+        FIELD_INIT(.requires_device, false),
+        FIELD_INIT(.requires_fpga, false),
     },
     {
         FIELD_INIT(.names, cmd_names_rx),
         FIELD_INIT(.exec, cmd_rx),
         FIELD_INIT(.desc, "Receive IQ samples"),
-        FIELD_INIT(.help, CLI_CMD_HELPTEXT_rx)
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_rx),
+        FIELD_INIT(.requires_device, true),
+        FIELD_INIT(.requires_fpga, true),
     },
     {
         FIELD_INIT(.names, cmd_names_tx),
         FIELD_INIT(.exec, cmd_tx),
         FIELD_INIT(.desc, "Transmit IQ samples"),
-        FIELD_INIT(.help, CLI_CMD_HELPTEXT_tx)
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_tx),
+        FIELD_INIT(.requires_device, true),
+        FIELD_INIT(.requires_fpga, true),
     },
     {
         FIELD_INIT(.names, cmd_names_set),
         FIELD_INIT(.exec, cmd_set),
         FIELD_INIT(.desc, "Set device settings"),
-        FIELD_INIT(.help, CLI_CMD_HELPTEXT_set)
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_set),
+        FIELD_INIT(.requires_device, true),
+        FIELD_INIT(.requires_fpga, true),
     },
     {
         FIELD_INIT(.names, cmd_names_ver),
         FIELD_INIT(.exec, cmd_version),
         FIELD_INIT(.desc, "Host software and device version information"),
-        FIELD_INIT(.help, CLI_CMD_HELPTEXT_version)
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_version),
+        FIELD_INIT(.requires_device, false),
+        FIELD_INIT(.requires_fpga, false),
     },
     /* Always terminate the command entry with a completely NULL entry */
     {
         FIELD_INIT(.names, NULL),
         FIELD_INIT(.exec, NULL),
         FIELD_INIT(.desc, NULL),
-        FIELD_INIT(.help, NULL)
+        FIELD_INIT(.help, NULL),
+        FIELD_INIT(.requires_device, false),
+        FIELD_INIT(.requires_fpga, false),
     }
 };
 
@@ -372,6 +428,7 @@ int cmd_handle(struct cli_state *s, const char *line)
     const struct cmd *cmd;
     int argc, ret;
     char **argv = NULL;
+    int fpga_status = -1;
 
     ret = 0;
     argc = str2args(line, COMMENT_CHAR, &argv);
@@ -385,6 +442,24 @@ int cmd_handle(struct cli_state *s, const char *line)
 
         if (cmd) {
             if (cmd->exec) {
+                // check if the command requires an opened device
+                if ( (cmd->requires_device) && !cli_device_is_opened(s) ) {
+                    return CLI_RET_NODEV;
+                }
+
+                // check if the command requires a loaded FPGA
+                if (cmd->requires_fpga) {
+                    fpga_status = bladerf_is_fpga_configured(s->dev);
+                    if (fpga_status < 0) {
+                        cli_err(s, argv[0], "Failed to determine if the FPGA is "
+                                            "configured. Is the FX3 programmed?");
+                        s->last_lib_error = fpga_status;
+                        return CLI_RET_LIBBLADERF;
+                    } else if (fpga_status != 1) {
+                        return CLI_RET_NOFPGA;
+                    }
+                }
+
                 /* Commands own the device handle while they're executing.
                  * This is needed to prevent races on the device handle while
                  * the RX/TX make any necessary control calls while
