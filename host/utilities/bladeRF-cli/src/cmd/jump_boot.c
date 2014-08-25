@@ -1,7 +1,7 @@
 /*
  * This file is part of the bladeRF project
  *
- * Copyright (C) 2013 Nuand LLC
+ * Copyright (C) 2014 Nuand LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,10 +26,6 @@
 int cmd_jump_to_bootloader(struct cli_state *state, int argc, char **argv)
 {
     int status;
-
-    if (!cli_device_is_opened(state)) {
-        return CLI_RET_NODEV;
-    }
 
     if (argc != 1) {
         return CLI_RET_NARGS;

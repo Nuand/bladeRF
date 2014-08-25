@@ -1,5 +1,5 @@
 /*
- * @file peek_lms_info.h
+ * @file lms_reg_info.c
  *
  * @brief Print additional LMS register information
  *

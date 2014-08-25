@@ -32,10 +32,6 @@ int cmd_xb200(struct cli_state *state, int argc, char **argv)
     const char *modulename = NULL;
     const char *filtername = NULL;
 
-    if (!cli_device_is_opened(state)) {
-        return CLI_RET_NODEV;
-    }
-
     if (argc < 3) {
         // incorrect number of arguments
         return CLI_RET_NARGS;
