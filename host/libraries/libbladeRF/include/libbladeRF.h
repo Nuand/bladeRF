@@ -2365,6 +2365,17 @@ int CALL_CONV bladerf_lms_get_dc_cals(struct bladerf *dev,
 #define BLADERF_GPIO_TX_HB_ENABLE   (1 << 3)
 
 /**
+ * Counter mode enable
+ *
+ * Setting this bit to 1 instructs the FPGA to replace the (I, Q) pair in
+ * sample data with an incrementing, little-endian, 32-bit counter value. A
+ * 0 in bit specifies that sample data should be sent (as normally done).
+ *
+ * This feature is useful when debugging issues involving dropped samples.
+ */
+#define BLADERF_GPIO_COUNTER_ENABLE (1 << 9)
+
+/**
  * Switch to use RX low band (300M - 1.5GHz)
  *
  * @note This is set using bladerf_set_frequency().
