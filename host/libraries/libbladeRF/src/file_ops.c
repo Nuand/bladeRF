@@ -165,6 +165,10 @@ static inline size_t get_home_dir(char *buf, size_t max_len)
     return strlen(buf);
 }
 
+static inline size_t get_install_dir(char *buf, size_t max_len){
+	return 0;
+}
+
 #elif BLADERF_OS_WINDOWS
 #define ACCESS_FILE_EXISTS 0
 #include <shlobj.h>
@@ -216,6 +220,70 @@ static inline size_t get_home_dir(char *buf, size_t max_len)
     return strlen(buf);
 }
 
+static inline size_t get_install_dir(char *buf, size_t max_len)
+{
+    typedef LONG (CALLBACK* LPFNREGOPEN_T)(HKEY, LPCTSTR, DWORD, REGSAM, PHKEY);
+    typedef LONG (CALLBACK* LPFNREGQUERY_T)(HKEY, LPCTSTR, LPDWORD, LPDWORD, LPBYTE, LPDWORD);
+    typedef LONG (CALLBACK* LPFNREGCLOSE_T)(HKEY);
+
+    HINSTANCE hDLL;                         // Handle to DLL
+    LPFNREGOPEN_T  lpfnRegOpenKeyEx;        // Function pointer
+    LPFNREGQUERY_T lpfnRegQueryValueEx;     // Function pointer
+    LPFNREGCLOSE_T lpfnRegCloseKey;         // Function pointer
+    HKEY hk;
+    DWORD len;
+
+    assert(max_len < INT_MAX);
+
+    memset(buf, 0, max_len);
+    hDLL = LoadLibrary("Advapi32");
+    if (hDLL == NULL) {
+        // DLL couldn't be loaded, bail out.
+        return 0;
+    }
+
+    lpfnRegOpenKeyEx = (LPFNREGOPEN_T)GetProcAddress(hDLL, "RegOpenKeyExA");
+    if (!lpfnRegOpenKeyEx) {
+        // Can't find the procedure we want.  Free and bail.
+        FreeLibrary(hDLL);
+        return 0;
+    }
+
+    lpfnRegQueryValueEx = (LPFNREGQUERY_T)GetProcAddress(hDLL, "RegQueryValueExA");
+    if (!lpfnRegQueryValueEx) {
+        // Can't find the procedure we want.  Free and bail.
+        FreeLibrary(hDLL);
+        return 0;
+    }
+
+    lpfnRegCloseKey = (LPFNREGCLOSE_T)GetProcAddress(hDLL, "RegCloseKey");
+    if (!lpfnRegCloseKey) {
+        // Can't find the procedure we want.  Free and bail.
+        FreeLibrary(hDLL);
+        return 0;
+    }
+
+    if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Nuand LLC", 0, KEY_READ, &hk)) {
+        FreeLibrary(hDLL);
+        return 0;
+    }
+
+    len = (DWORD)max_len;
+    if (RegQueryValueEx(hk, "Path", 0, NULL, buf, &len) == ERROR_SUCCESS) {
+        if (len > 0 && len < max_len && buf[len - 1] != '\\')
+            strcat(buf, "\\");
+    } else
+        len = 0;
+
+    if (len) {
+        lpfnRegCloseKey(hk);
+    }
+
+    FreeLibrary(hDLL);
+
+    return len;
+}
+
 #else
 #error "Unknown OS or missing BLADERF_OS_* definition"
 #endif
@@ -242,6 +310,14 @@ char *file_find(const char *filename)
         max_len = PATH_MAX_LEN - strlen(full_path);
         strncat(full_path, filename, max_len);
 
+        if (access(full_path, ACCESS_FILE_EXISTS) != -1) {
+            return full_path;
+        }
+    }
+
+    if (get_install_dir(full_path, PATH_MAX_LEN)) {
+        max_len = PATH_MAX_LEN - strlen(full_path);
+        strncat(full_path, filename, max_len);
         if (access(full_path, ACCESS_FILE_EXISTS) != -1) {
             return full_path;
         }
