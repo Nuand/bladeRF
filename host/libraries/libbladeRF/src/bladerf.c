@@ -710,6 +710,8 @@ int bladerf_sync_config(struct bladerf *dev,
     MUTEX_LOCK(&dev->ctrl_lock);
     MUTEX_LOCK(&dev->sync_lock[module]);
 
+    dev->transfer_timeout[module] = stream_timeout;
+
     status = sync_init(dev, module, format, num_buffers, buffer_size,
                        num_transfers, stream_timeout);
 
