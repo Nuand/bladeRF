@@ -119,10 +119,13 @@ endif(MSVC)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux" OR ${CMAKE_SYSTEM_NAME} MATCHES "BSD")
     set(BLADERF_OS_LINUX 1)
 
-    try_run(LIBC_VERSION_RUN_RESULT LIBC_VERSION_COMPILE_RESULT
-            ${CMAKE_CURRENT_BINARY_DIR}/cmake/helpers
-            ${CMAKE_CURRENT_SOURCE_DIR}/cmake/helpers/libc_version.c
-            RUN_OUTPUT_VARIABLE LIBC_VERSION)
+    if(NOT CMAKE_CROSSCOMPILING)
+        message(STATUS "Checking libc version...")
+        try_run(LIBC_VERSION_RUN_RESULT LIBC_VERSION_COMPILE_RESULT
+                ${CMAKE_CURRENT_BINARY_DIR}/cmake/helpers
+                ${CMAKE_CURRENT_SOURCE_DIR}/cmake/helpers/libc_version.c
+                RUN_OUTPUT_VARIABLE LIBC_VERSION)
+    endif(NOT CMAKE_CROSSCOMPILING)
 
     if(LIBC_VERSION)
         message(STATUS "libc version: ${LIBC_VERSION}")

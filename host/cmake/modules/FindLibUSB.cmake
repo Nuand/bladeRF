@@ -120,7 +120,7 @@ if(LIBUSB_FOUND)
     check_include_file("{LIBUSB_HEADER_FILE}" LIBUSB_FOUND)
 endif(LIBUSB_FOUND)
 
-if(LIBUSB_FOUND)
+if(LIBUSB_FOUND AND NOT CMAKE_CROSSCOMPILING)
 
     # Introduced in v1.0.9 - these functions are absolutely required
     check_library_exists("${usb_LIBRARY}" libusb_error_name "" LIBUSB_HAVE_ERROR_NAME)
