@@ -891,28 +891,38 @@ begin
     mini_exp2               <= 'Z';
 
     increment_tx_time : process(tx_clock, tx_reset)
+        variable tock : boolean := false ;
     begin
         if( tx_reset = '1') then
             tx_timestamp <= (others => '0');
+            tock := false ;
         elsif( rising_edge( tx_clock )) then
             if (meta_en_tx = '0') then
                 tx_timestamp <= (others => '0');
             else
-                tx_timestamp <= tx_timestamp + 1;
+                if( nios_gpio(17) = '0' or tock = true) then
+                    tx_timestamp <= tx_timestamp + 1;
+                end if ;
             end if;
+            tock := not tock ;
         end if;
     end process;
 
     increment_rx_time : process(rx_clock, rx_reset)
+        variable tock : boolean := false ;
     begin
         if( rx_reset = '1') then
             rx_timestamp <= (others => '0');
+            tock := false ;
         elsif( rising_edge( rx_clock )) then
             if (meta_en_rx = '0') then
                 rx_timestamp <= (others => '0');
             else
-                rx_timestamp <= rx_timestamp + 1;
+                if( nios_gpio(17) = '0' or tock = true ) then
+                    rx_timestamp <= rx_timestamp + 1;
+                end if ;
             end if;
+            tock := not tock ;
         end if;
     end process;
 
