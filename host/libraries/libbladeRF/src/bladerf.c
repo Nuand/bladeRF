@@ -769,12 +769,10 @@ int bladerf_init_stream(struct bladerf_stream **stream,
     return status;
 }
 
-/* Reminder: No device control calls may be made down through bladerf_stream or
- *           bladerf_submit_stream_buffer here downward, as we can't
- *           hold the control lock.
- */
 int bladerf_stream(struct bladerf_stream *stream, bladerf_module module)
 {
+    /* Reminder: as we're not holding the control lock, no control calls should
+     * be made from this point down through the backend code */
     return async_run_stream(stream, module);
 }
 
