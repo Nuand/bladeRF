@@ -788,9 +788,10 @@ int bladerf_submit_stream_buffer(struct bladerf_stream *stream,
 void bladerf_deinit_stream(struct bladerf_stream *stream)
 {
     if (stream && stream->dev) {
-        MUTEX_LOCK(&stream->dev->ctrl_lock);
+        struct bladerf *dev = stream->dev;
+        MUTEX_LOCK(&dev->ctrl_lock);
         async_deinit_stream(stream);
-        MUTEX_UNLOCK(&stream->dev->ctrl_lock);
+        MUTEX_UNLOCK(&dev->ctrl_lock);
     }
 }
 
