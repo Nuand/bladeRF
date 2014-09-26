@@ -119,7 +119,7 @@ int async_init_stream(struct bladerf_stream **stream,
         status = dev->fn->init_stream(lstream, num_transfers);
 
         if (status < 0) {
-            bladerf_deinit_stream(lstream);
+            async_deinit_stream(lstream);
             *stream = NULL;
         } else {
             /* Update the caller's pointers */
