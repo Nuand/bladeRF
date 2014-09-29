@@ -54,10 +54,11 @@ endif()
 include(TestBigEndian)
 TEST_BIG_ENDIAN(BLADERF_BIG_ENDIAN)
 
-# Test for libusb so warnings and such only occur at the top-level
-# TODO Once we enable other backends, we should revisit whether this is a good
-#      location for this
+# Search for backends
 include(FindLibUSB)
+if(WIN32)
+    include(FindCyApi)
+endif()
 
 ################################################################################
 # Compiler configuration
@@ -225,6 +226,47 @@ if(WIN32)
             COMMENT "Copying libusb-1.0.dll to output directory..."
         )
     endif(LIBUSB_FOUND)
+
+    if(CYAPI_FOUND)
+        set(WIN_POSTBUILD_ITEMS ${WIN_POSTBUILD_ITEMS}
+            "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/cyusb3.inf"
+            "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/cyusb3.sys"
+            "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/cyusb3.cat"
+            "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/WdfCoInstaller01009.dll"
+        )
+
+        add_custom_command(
+            OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/cyusb3.inf"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CMAKE_CURRENT_SOURCE_DIR}/drivers/windows/cyusb3/cyusb3.inf"
+                "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/"
+            COMMENT "Copying cyusb3.inf to output directory..."
+        )
+
+        add_custom_command(
+            OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/cyusb3.sys"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CYUSB3_DRIVER_DIR}/cyusb3.sys"
+                "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/"
+            COMMENT "Copying cyusb3.sys to output directory..."
+        )
+
+        add_custom_command(
+            OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/cyusb3.cat"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CYUSB3_DRIVER_DIR}/cyusb3.cat"
+                "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/"
+            COMMENT "Copying cyusb3.cat to output directory..."
+        )
+
+        add_custom_command(
+            OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/WdfCoInstaller01009.dll"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CYUSB3_DRIVER_DIR}/WdfCoInstaller01009.dll"
+                "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/"
+            COMMENT "Copying WdfCoInstaller01009.dll to output directory..."
+        )
+    endif()
 
     add_custom_target(win_postbuild ALL DEPENDS ${WIN_POSTBUILD_ITEMS})
 

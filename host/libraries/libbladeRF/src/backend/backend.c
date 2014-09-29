@@ -117,6 +117,9 @@ const char * backend2str(bladerf_backend backend)
         case BLADERF_BACKEND_LINUX:
             return BACKEND_STR_LINUX;
 
+        case BLADERF_BACKEND_CYPRESS:
+            return BACKEND_STR_CYPRESS;
+
         default:
             return BACKEND_STR_ANY;
     }
@@ -130,6 +133,8 @@ int str2backend(const char *str, bladerf_backend *backend)
         *backend = BLADERF_BACKEND_LIBUSB;
     } else if (!strcasecmp(BACKEND_STR_LINUX, str)) {
         *backend = BLADERF_BACKEND_LINUX;
+    } else if (!strcasecmp(BACKEND_STR_CYPRESS, str)) {
+        *backend = BLADERF_BACKEND_CYPRESS;
     } else if (!strcasecmp(BACKEND_STR_ANY, str)) {
         *backend = BLADERF_BACKEND_ANY;
     } else {

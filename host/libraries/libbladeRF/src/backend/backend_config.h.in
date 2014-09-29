@@ -27,6 +27,7 @@
 
 #cmakedefine ENABLE_BACKEND_USB
 #cmakedefine ENABLE_BACKEND_LIBUSB
+#cmakedefine ENABLE_BACKEND_CYAPI
 #cmakedefine ENABLE_BACKEND_DUMMY
 #cmakedefine ENABLE_BACKEND_LINUX_DRIVER
 
@@ -46,16 +47,25 @@
 
 #   ifdef ENABLE_BACKEND_LIBUSB
         extern const struct usb_driver usb_driver_libusb;
-#       define BACKEND_USB_LIBUSB &usb_driver_libusb
+#       define BACKEND_USB_LIBUSB &usb_driver_libusb,
 #   else
 #       define BACKEND_USB_LIBUSB
 #   endif
 
+#   ifdef ENABLE_BACKEND_CYAPI
+        extern const struct usb_driver usb_driver_cypress;
+#       define BACKEND_USB_CYAPI &usb_driver_cypress,
+#   else
+#       define BACKEND_USB_CYAPI
+#   endif
+
+
 #   define BLADERF_USB_BACKEND_LIST { \
             BACKEND_USB_LIBUSB \
+            BACKEND_USB_CYAPI \
     }
 
-#   if !defined(ENABLE_BACKEND_LIBUSB)
+#   if !defined(ENABLE_BACKEND_LIBUSB) && !defined(ENABLE_BACKEND_CYAPI)
 #       error "No USB backends are enabled. One or more must be enabled."
 #   endif
 #else

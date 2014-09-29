@@ -30,6 +30,7 @@
 #define BACKEND_STR_ANY    "*"
 #define BACKEND_STR_LIBUSB "libusb"
 #define BACKEND_STR_LINUX  "linux"
+#define BACKEND_STR_CYPRESS "cypress"
 
 /**
  * Backend-specific function table

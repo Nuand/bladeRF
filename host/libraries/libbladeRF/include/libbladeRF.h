@@ -103,6 +103,7 @@ typedef enum {
     BLADERF_BACKEND_ANY,    /**< "Don't Care" -- use any available backend */
     BLADERF_BACKEND_LINUX,  /**< Linux kernel driver */
     BLADERF_BACKEND_LIBUSB, /**< libusb */
+    BLADERF_BACKEND_CYPRESS, /**< CyAPI */
     BLADERF_BACKEND_DUMMY = 100, /**< Dummy used for development purposes */
 } bladerf_backend;
 
@@ -182,7 +183,7 @@ int CALL_CONV bladerf_open_with_devinfo(struct bladerf **device,
  * and may be one of the following:
  *   - libusb:  libusb (See libusb changelog notes for required version, given
  *   your OS and controller)
- *   - linux:   Linux Kernel Driver
+ *   - cypress: Cypress CyUSB/CyAPI backend (Windows only)
  *
  * If no arguments are provided after the backend, the first encountered
  * device on the specified backend will be opened. Note that a backend is

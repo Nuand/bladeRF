@@ -76,6 +76,11 @@ option(ENABLE_BACKEND_LIBUSB
     ON
 )
 
+option(ENABLE_BACKEND_CYAPI
+    "Enable CYAPI backend support."
+    OFF
+)
+
 option(ENABLE_BACKEND_DUMMY
     "Enable dummy backend support. This is only useful for some developers."
     OFF
@@ -93,7 +98,10 @@ option(ENABLE_BACKEND_LINUX_DRIVER
 
 
 # Ensure we've got at least one backend enabled
-if(NOT ENABLE_BACKEND_LIBUSB AND NOT ENABLE_BACKEND_LINUX_DRIVER AND NOT ENABLE_BACKEND_DUMMY)
+if(NOT ENABLE_BACKEND_LIBUSB
+   AND NOT ENABLE_BACKEND_LINUX_DRIVER
+   AND NOT ENABLE_BACKEND_CYAPI
+   AND NOT ENABLE_BACKEND_DUMMY)
     message(FATAL_ERROR
             "No libbladeRF backends are enabled. "
             "Please enable one or more backends." )
@@ -186,9 +194,23 @@ if(ENABLE_BACKEND_LIBUSB)
     endif(NOT LIBUSB_FOUND)
 endif(ENABLE_BACKEND_LIBUSB)
 
-if(ENABLE_LIBBLADERF_SYNC_LOG_VERBOSE AND ENABLE_LIBBLADERF_LOGGING)
-    add_definitions(-DENABLE_LIBBLADERF_SYNC_LOG_VERBOSE)
-endif()
+if(ENABLE_BACKEND_CYAPI)
+    find_package(CyAPI REQUIRED)
+    set(LIBBLADERF_INCLUDES ${LIBBLADERF_INCLUDES} ${CYAPI_INCLUDE_DIRS})
+endif(ENABLE_BACKEND_CYAPI)
+
+if(ENABLE_LIBBLADERF_SYNC)
+    if(MSVC)
+        set(LIBBLADERF_INCLUDES ${LIBBLADERF_INCLUDES}
+            ${LIBPTHREADSWIN32_INCLUDE_DIRS})
+    endif()
+
+    add_definitions(-DENABLE_LIBBLADERF_SYNC)
+
+    if(ENABLE_LIBBLADERF_SYNC_LOG_VERBOSE AND ENABLE_LIBBLADERF_LOGGING)
+        add_definitions(-DENABLE_LIBBLADERF_SYNC_LOG_VERBOSE)
+    endif()
+endif(ENABLE_LIBBLADERF_SYNC)
 
 include_directories(${LIBBLADERF_INCLUDES})
 
@@ -235,6 +257,12 @@ if(LIBUSB_FOUND AND ENABLE_BACKEND_LIBUSB)
     set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend//usb/libusb.c)
 endif()
 
+if(CYAPI_FOUND AND ENABLE_BACKEND_CYAPI)
+    set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend/usb/cyapi.c)
+    # CyAPI is C++
+    set_source_files_properties(src/backend/usb/cyapi.c PROPERTIES LANGUAGE CXX)
+endif()
+
 if(ENABLE_BACKEND_DUMMY)
     set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend/dummy.c)
 endif()
@@ -274,6 +302,10 @@ endif()
 if(ENABLE_BACKEND_LIBUSB)
     set(LIBBLADERF_LIBS ${LIBBLADERF_LIBS} ${LIBUSB_LIBRARIES})
 endif()
+
+if(ENABLE_BACKEND_CYAPI)
+    set(LIBBLADERF_LIBS ${LIBBLADERF_LIBS} ${CYAPI_LIBRARIES})
+endif(ENABLE_BACKEND_CYAPI)
 
 target_link_libraries(libbladerf_shared ${LIBBLADERF_LIBS})
 

@@ -314,7 +314,8 @@ static bool usb_matches(bladerf_backend backend)
 {
     return backend == BLADERF_BACKEND_ANY ||
            backend == BLADERF_BACKEND_LINUX ||
-           backend == BLADERF_BACKEND_LIBUSB;
+           backend == BLADERF_BACKEND_LIBUSB ||
+           backend == BLADERF_BACKEND_CYPRESS;
 }
 
 static int usb_probe(struct bladerf_devinfo_list *info_list)
