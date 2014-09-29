@@ -768,6 +768,7 @@ static int submit_transfer(struct bladerf_stream *stream, void *buffer)
     struct lusb_stream_data *stream_data = stream->backend_data;
     struct libusb_transfer *transfer;
     const size_t bytes_per_buffer = async_stream_buf_bytes(stream);
+    size_t prev_idx;
     const unsigned char ep =
         stream->module == BLADERF_MODULE_TX ? SAMPLE_EP_OUT : SAMPLE_EP_IN;
 
@@ -784,16 +785,41 @@ static int submit_transfer(struct bladerf_stream *stream, void *buffer)
                               stream,
                               stream->dev->transfer_timeout[stream->module]);
 
-    status = libusb_submit_transfer(transfer);
+    prev_idx = stream_data->i;
+    stream_data->transfer_status[stream_data->i] = TRANSFER_IN_FLIGHT;
+    stream_data->i = (stream_data->i + 1) % stream_data->num_transfers;
+    assert(stream_data->num_avail != 0);
+    stream_data->num_avail--;
 
-    if (status == 0) {
-        stream_data->transfer_status[stream_data->i] = TRANSFER_IN_FLIGHT;
-        stream_data->i = (stream_data->i + 1) % stream_data->num_transfers;
-        assert(stream_data->num_avail != 0);
-        stream_data->num_avail--;
-    } else {
+    /* FIXME We have an inherent issue here with lock ordering between
+     *       stream->lock and libusb's underlying event lock, so we
+     *       have to drop the stream->lock as a workaround.
+     *
+     *       This implies that a callback can potentially execute,
+     *       including a callback for this transfer. Therefore, the transfer
+     *       has been setup and its metadata logged.
+     *
+     *       Ultimately, we need to review our async scheme and associated
+     *       lock schemes.
+     */
+    MUTEX_UNLOCK(&stream->lock);
+    status = libusb_submit_transfer(transfer);
+    MUTEX_LOCK(&stream->lock);
+
+    if (status != 0) {
         log_error("Failed to submit transfer in %s: %s\n",
                   __FUNCTION__, libusb_error_name(status));
+
+        /* We need to undo the metadata we updated prior to dropping
+         * the lock and attempting to submit the transfer */
+        assert(stream_data->transfer_status[prev_idx] == TRANSFER_IN_FLIGHT);
+        stream_data->transfer_status[prev_idx] = TRANSFER_AVAIL;
+        stream_data->num_avail++;
+        if (stream_data->i == 0) {
+            stream_data->i = stream_data->num_transfers - 1;
+        } else {
+            stream_data->i--;
+        }
     }
 
     return error_conv(status);
