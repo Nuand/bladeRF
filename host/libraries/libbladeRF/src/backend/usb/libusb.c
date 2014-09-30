@@ -961,7 +961,7 @@ static int lusb_stream(void *driver, struct bladerf_stream *stream,
 int lusb_submit_stream_buffer(void *driver, struct bladerf_stream *stream,
                               void *buffer, unsigned int timeout_ms)
 {
-    int status;
+    int status = 0;
     struct lusb_stream_data *stream_data = stream->backend_data;
     struct timespec timeout_abs;
 
@@ -975,15 +975,22 @@ int lusb_submit_stream_buffer(void *driver, struct bladerf_stream *stream,
         return 0;
     }
 
-    status = populate_abs_timeout(&timeout_abs, timeout_ms);
-    if (status != 0) {
-        return BLADERF_ERR_UNEXPECTED;
-    }
+    if (timeout_ms != 0) {
+        status = populate_abs_timeout(&timeout_abs, timeout_ms);
+        if (status != 0) {
+            return BLADERF_ERR_UNEXPECTED;
+        }
 
-    while (stream_data->num_avail_transfers == 0 && status == 0) {
-        status = pthread_cond_timedwait(&stream->can_submit_buffer,
-                                        &stream->lock,
-                                        &timeout_abs);
+        while (stream_data->num_avail_transfers == 0 && status == 0) {
+            status = pthread_cond_timedwait(&stream->can_submit_buffer,
+                    &stream->lock,
+                    &timeout_abs);
+        }
+    } else {
+        while (stream_data->num_avail_transfers == 0 && status == 0) {
+            status = pthread_cond_wait(&stream->can_submit_buffer,
+                                       &stream->lock);
+        }
     }
 
     if (status == ETIMEDOUT) {
