@@ -155,6 +155,11 @@ set_interface_property conduit_end CMSIS_SVD_VARIABLES ""
 set_interface_property conduit_end SVD_ADDRESS_GROUP ""
 
 add_interface_port conduit_end synchronize export Output 1
-add_interface_port conduit_end time_tx export Input 64
-add_interface_port conduit_end time_rx export Input 64
+add_interface_port conduit_end tx_clock export Input 1
+add_interface_port conduit_end tx_reset export Input 1
+add_interface_port conduit_end tx_time export Input 64
+
+add_interface_port conduit_end rx_clock export Input 1
+add_interface_port conduit_end rx_reset export Input 1
+add_interface_port conduit_end rx_time export Input 64
 

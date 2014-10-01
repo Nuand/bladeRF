@@ -21,18 +21,31 @@ entity time_tamer is
     readack     :   out std_logic ;
     intr        :   out std_logic ;
 
-    -- Exported signals
+    -- Exported signalsa
     synchronize :   out std_logic ;
-    time_tx     :   in  std_logic_vector(63 downto 0) ;
-    time_rx     :   in  std_logic_vector(63 downto 0)
+    tx_clock    :   in  std_logic ;
+    tx_reset    :   in  std_logic ;
+    tx_time     :   in  std_logic_vector(63 downto 0) ;
 
+    rx_clock    :   in  std_logic ;
+    rx_reset    :   in  std_logic ;
+    rx_time     :   in  std_logic_vector(63 downto 0)
   ) ;
 end entity ;
 
 architecture arch of time_tamer is
 
-    signal time_tx_r, time_tx_rr, time_tx_snap : std_logic_vector(63 downto 0);
-    signal time_rx_r, time_rx_rr, time_rx_snap : std_logic_vector(63 downto 0);
+    signal ack          : std_logic ;
+    signal hold         : std_logic ;
+
+    signal tx_snap_time : std_logic_vector(63 downto 0);
+    signal rx_snap_time : std_logic_vector(63 downto 0);
+
+    signal rx_snap_req  : std_logic ;
+    signal tx_snap_req  : std_logic ;
+
+    signal rx_snap_ack  : std_logic ;
+    signal tx_snap_ack  : std_logic ;
 
     signal sync_counter : signed(15 downto 0);
     -- Registers
@@ -43,49 +56,97 @@ architecture arch of time_tamer is
 
 begin
 
-    process (clock)
+    readack <= ack ;
+    waitreq <= not ack ;
+
+    U_tx_handshake : entity work.handshake
+      generic map (
+        DATA_WIDTH      =>  tx_time'length
+      ) port map (
+        source_reset    =>  tx_reset,
+        source_clock    =>  tx_clock,
+        source_data     =>  tx_time,
+
+        dest_reset      =>  reset,
+        dest_clock      =>  clock,
+        dest_data       =>  tx_snap_time,
+        dest_req        =>  tx_snap_req,
+        dest_ack        =>  tx_snap_ack
+      ) ;
+
+    U_rx_handshake : entity work.handshake
+      generic map (
+        DATA_WIDTH      =>  rx_time'length
+      ) port map (
+        source_reset    =>  rx_reset,
+        source_clock    =>  rx_clock,
+        source_data     =>  rx_time,
+
+        dest_reset      =>  reset,
+        dest_clock      =>  clock,
+        dest_data       =>  rx_snap_time,
+        dest_req        =>  rx_snap_req,
+        dest_ack        =>  rx_snap_ack
+      ) ;
+
+    request : process(clock, reset)
     begin
-        if( rising_edge( clock )) then
-            --time_tx_r <= time_tx;
-            --time_tx_rr <= time_tx_r;
-            if (addr = "1000" and read = '1') then
-                time_tx_snap <= time_tx_rr;
-            end if;
+        if( reset = '1' ) then
+            rx_snap_req <= '0' ;
+            tx_snap_req <= '0' ;
+        elsif( rising_edge(clock) ) then
+            if( addr = "1000" and read = '1' ) then
+                tx_snap_req <= '1' ;
+            else
+                tx_snap_req <= '0' ;
+            end if ;
 
-            --time_rx_r <= time_rx;
-            --time_rx_rr <= time_rx_r;
-            if (addr = "0000" and read = '1') then
-                time_rx_snap <= time_rx_rr;
-            end if;
-        end if;
-    end process;
+            if( addr = "0000" and read = '1' ) then
+                rx_snap_req <= '1' ;
+            else
+                rx_snap_req <= '0' ;
+            end if ;
+        end if ;
+    end process ;
 
-    process (clock)
+    generate_ack : process(clock, reset)
     begin
-        if( rising_edge( clock )) then
-            case addr is
-                when "0000"  => dout <= time_rx_snap(7 downto 0);
-                when "0001"  => dout <= time_rx_snap(15 downto 8);
-                when "0010"  => dout <= time_rx_snap(23 downto 16);
-                when "0011"  => dout <= time_rx_snap(31 downto 24);
-                when "0100"  => dout <= time_rx_snap(39 downto 32);
-                when "0101"  => dout <= time_rx_snap(47 downto 40);
-                when "0110"  => dout <= time_rx_snap(55 downto 48);
-                when "0111"  => dout <= time_rx_snap(63 downto 56);
+        if( reset = '1' ) then
+            ack <= '0' ;
+        elsif( rising_edge(clock) ) then
+            if( addr = "1000" and read = '1' ) then
+                ack <= tx_snap_ack ;
+            elsif( addr = "0000" and read = '1' ) then
+                ack <= rx_snap_ack ;
+            else
+                ack <= read ;
+            end if ;
+        end if ;
+    end process ;
 
-                when "1000"  => dout <= time_tx_snap(7 downto 0);
-                when "1001"  => dout <= time_tx_snap(15 downto 8);
-                when "1010"  => dout <= time_tx_snap(23 downto 16);
-                when "1011"  => dout <= time_tx_snap(31 downto 24);
-                when "1100"  => dout <= time_tx_snap(39 downto 32);
-                when "1101"  => dout <= time_tx_snap(47 downto 40);
-                when "1110"  => dout <= time_tx_snap(55 downto 48);
-                when "1111"  => dout <= time_tx_snap(63 downto 56);
+    datamux : process(all)
+    begin
+        case addr is
+            when "0000"  => dout <= rx_snap_time(7 downto 0);
+            when "0001"  => dout <= rx_snap_time(15 downto 8);
+            when "0010"  => dout <= rx_snap_time(23 downto 16);
+            when "0011"  => dout <= rx_snap_time(31 downto 24);
+            when "0100"  => dout <= rx_snap_time(39 downto 32);
+            when "0101"  => dout <= rx_snap_time(47 downto 40);
+            when "0110"  => dout <= rx_snap_time(55 downto 48);
+            when "0111"  => dout <= rx_snap_time(63 downto 56);
 
-                when others  => dout <= (others => 'X');
-            end case;
-            readack <= read;
-        end if;
+            when "1000"  => dout <= tx_snap_time(7 downto 0);
+            when "1001"  => dout <= tx_snap_time(15 downto 8);
+            when "1010"  => dout <= tx_snap_time(23 downto 16);
+            when "1011"  => dout <= tx_snap_time(31 downto 24);
+            when "1100"  => dout <= tx_snap_time(39 downto 32);
+            when "1101"  => dout <= tx_snap_time(47 downto 40);
+            when "1110"  => dout <= tx_snap_time(55 downto 48);
+            when "1111"  => dout <= tx_snap_time(63 downto 56);
+
+            when others  => dout <= (others => 'X');
+        end case;
     end process;
 
     process (clock)
@@ -107,15 +168,6 @@ begin
 
     synchronize <= '1' when sync_counter > 0 else '0';
     intr <= '0';
-    waitreq <= '0';
-
-    -- Using address, din, dout, etc - make a register space
-
-    -- Double register the incoming timestamps for reading and put them in the local clock domain
-
-    -- Output the synchronize signal on write of a register such that the rising edge
-    -- can be caught by the counters and set to zero.  Make the long pulse into a single
-    -- pulse in the timers clock domain
 
 end architecture ;
 

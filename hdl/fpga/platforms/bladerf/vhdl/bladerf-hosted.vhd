@@ -31,34 +31,38 @@ architecture hosted_bladerf of bladerf is
 
     component nios_system is
       port (
-        clk_clk             : in  std_logic := 'X'; -- clk
-        reset_reset_n       : in  std_logic := 'X'; -- reset_n
-        dac_MISO            : in  std_logic := 'X'; -- MISO
-        dac_MOSI            : out std_logic;        -- MOSI
-        dac_SCLK            : out std_logic;        -- SCLK
-        dac_SS_n            : out std_logic_vector(1 downto 0);        -- SS_n
-        spi_MISO            : in  std_logic := 'X'; -- MISO
-        spi_MOSI            : out std_logic;        -- MOSI
-        spi_SCLK            : out std_logic;        -- SCLK
-        spi_SS_n            : out std_logic;        -- SS_n
-        uart_rxd            : in  std_logic;
-        uart_txd            : out std_logic;
-        oc_i2c_scl_pad_o    : out std_logic;
-        oc_i2c_scl_padoen_o : out std_logic;
-        oc_i2c_sda_pad_i    : in  std_logic;
-        oc_i2c_sda_pad_o    : out std_logic;
-        oc_i2c_sda_padoen_o : out std_logic;
-        oc_i2c_arst_i       : in  std_logic;
-        oc_i2c_scl_pad_i    : in  std_logic;
-        gpio_export         : out std_logic_vector(31 downto 0);
-        xb_gpio_in_port                 : in  std_logic_vector(31 downto 0) := (others => 'X');
-        xb_gpio_out_port                : out std_logic_vector(31 downto 0);
-        xb_gpio_dir_export              : out std_logic_vector(31 downto 0);
-        correction_rx_phase_gain_export : out std_logic_vector(31 downto 0);
-        correction_tx_phase_gain_export : out std_logic_vector(31 downto 0);
-        time_tamer_synchronize          : out std_logic;
-        time_tamer_time_tx              : in  std_logic_vector(63 downto 0);
-        time_tamer_time_rx              : in  std_logic_vector(63 downto 0)
+        clk_clk                         :   in  std_logic := 'X'; -- clk
+        reset_reset_n                   :   in  std_logic := 'X'; -- reset_n
+        dac_MISO                        :   in  std_logic := 'X'; -- MISO
+        dac_MOSI                        :   out std_logic;        -- MOSI
+        dac_SCLK                        :   out std_logic;        -- SCLK
+        dac_SS_n                        :   out std_logic_vector(1 downto 0);        -- SS_n
+        spi_MISO                        :   in  std_logic := 'X'; -- MISO
+        spi_MOSI                        :   out std_logic;        -- MOSI
+        spi_SCLK                        :   out std_logic;        -- SCLK
+        spi_SS_n                        :   out std_logic;        -- SS_n
+        uart_rxd                        :   in  std_logic;
+        uart_txd                        :   out std_logic;
+        oc_i2c_scl_pad_o                :   out std_logic;
+        oc_i2c_scl_padoen_o             :   out std_logic;
+        oc_i2c_sda_pad_i                :   in  std_logic;
+        oc_i2c_sda_pad_o                :   out std_logic;
+        oc_i2c_sda_padoen_o             :   out std_logic;
+        oc_i2c_arst_i                   :   in  std_logic;
+        oc_i2c_scl_pad_i                :   in  std_logic;
+        gpio_export                     :   out std_logic_vector(31 downto 0);
+        xb_gpio_in_port                 :   in  std_logic_vector(31 downto 0) := (others => 'X');
+        xb_gpio_out_port                :   out std_logic_vector(31 downto 0);
+        xb_gpio_dir_export              :   out std_logic_vector(31 downto 0);
+        correction_rx_phase_gain_export :   out std_logic_vector(31 downto 0);
+        correction_tx_phase_gain_export :   out std_logic_vector(31 downto 0);
+        time_tamer_synchronize          :   out std_logic;
+        time_tamer_tx_clock             :   in  std_logic ;
+        time_tamer_tx_reset             :   in  std_logic ;
+        time_tamer_tx_time              :   in  std_logic_vector(63 downto 0);
+        time_tamer_rx_clock             :   in  std_logic ;
+        time_tamer_rx_reset             :   in  std_logic ;
+        time_tamer_rx_time              :   in  std_logic_vector(63 downto 0)
       );
     end component nios_system;
 
@@ -746,34 +750,38 @@ begin
     -- NIOS control system for si5338, vctcxo trim and lms control
     U_nios_system : nios_system
       port map (
-        clk_clk             => \80MHz\,
-        reset_reset_n       => '1',
-        dac_MISO            => nios_sdo,
-        dac_MOSI            => nios_sdio,
-        dac_SCLK            => nios_sclk,
-        dac_SS_n            => nios_ss_n,
-        spi_MISO            => lms_sdo,
-        spi_MOSI            => lms_sdio,
-        spi_SCLK            => lms_sclk,
-        spi_SS_n            => lms_sen,
-        uart_rxd            => nios_uart_txd,
-        uart_txd            => nios_uart_rxd,
-        gpio_export         => nios_gpio,
-        xb_gpio_in_port     => nios_xb_gpio_in,
-        xb_gpio_out_port    => nios_xb_gpio_out,
-        xb_gpio_dir_export  => nios_xb_gpio_dir,
-        correction_tx_phase_gain_export    => correction_tx_phase_gain,
-        correction_rx_phase_gain_export    => correction_rx_phase_gain,
-        oc_i2c_scl_pad_o    => i2c_scl_out,
-        oc_i2c_scl_padoen_o => i2c_scl_oen,
-        oc_i2c_sda_pad_i    => i2c_sda_in,
-        oc_i2c_sda_pad_o    => i2c_sda_out,
-        oc_i2c_sda_padoen_o => i2c_sda_oen,
-        oc_i2c_arst_i       => '0',
-        oc_i2c_scl_pad_i    => i2c_scl_in,
-        time_tamer_time_tx  => std_logic_vector(tx_timestamp),
-        time_tamer_time_rx  => std_logic_vector(rx_timestamp),
-        time_tamer_synchronize => timestamp_sync
+        clk_clk                         => \80MHz\,
+        reset_reset_n                   => '1',
+        dac_MISO                        => nios_sdo,
+        dac_MOSI                        => nios_sdio,
+        dac_SCLK                        => nios_sclk,
+        dac_SS_n                        => nios_ss_n,
+        spi_MISO                        => lms_sdo,
+        spi_MOSI                        => lms_sdio,
+        spi_SCLK                        => lms_sclk,
+        spi_SS_n                        => lms_sen,
+        uart_rxd                        => nios_uart_txd,
+        uart_txd                        => nios_uart_rxd,
+        gpio_export                     => nios_gpio,
+        xb_gpio_in_port                 => nios_xb_gpio_in,
+        xb_gpio_out_port                => nios_xb_gpio_out,
+        xb_gpio_dir_export              => nios_xb_gpio_dir,
+        correction_tx_phase_gain_export => correction_tx_phase_gain,
+        correction_rx_phase_gain_export => correction_rx_phase_gain,
+        oc_i2c_scl_pad_o                => i2c_scl_out,
+        oc_i2c_scl_padoen_o             => i2c_scl_oen,
+        oc_i2c_sda_pad_i                => i2c_sda_in,
+        oc_i2c_sda_pad_o                => i2c_sda_out,
+        oc_i2c_sda_padoen_o             => i2c_sda_oen,
+        oc_i2c_arst_i                   => '0',
+        oc_i2c_scl_pad_i                => i2c_scl_in,
+        time_tamer_tx_clock             => tx_clock,
+        time_tamer_tx_reset             => tx_reset,
+        time_tamer_tx_time              => std_logic_vector(tx_timestamp),
+        time_tamer_rx_clock             => rx_clock,
+        time_tamer_rx_reset             => rx_reset,
+        time_tamer_rx_time              => std_logic_vector(rx_timestamp),
+        time_tamer_synchronize          => timestamp_sync
       ) ;
 
     xb_gpio_direction_proc : for i in 0 to 31 generate
