@@ -1618,6 +1618,9 @@ int CALL_CONV bladerf_get_stream_timeout(struct bladerf *dev,
 /**
  * @defgroup FN_DATA_SYNC  Synchronous data transmission and reception
  *
+ * This group of functions presents synchronous, blocking calls (with optional
+ * timeouts) for transmitting and receiving samples.
+ *
  * The synchronous interface is built atop the asynchronous interface, and is
  * generally less complex and easier to work with.  It alleviates the need to
  * explicitly spawn threads (it is done under the hood) and manually manage
@@ -1626,72 +1629,49 @@ int CALL_CONV bladerf_get_stream_timeout(struct bladerf *dev,
  * Under the hood, this interface spawns worker threads to handle an
  * asynchronous stream and perform thread-safe buffer management.
  *
- * Below is the general process for using this interface:
- *
- * @code{.c}
- *
- * // ...
- *
- * int status;
- * int16_t *buffer;
- * const size_t num_samples = 4096;
- *
- * // ...
- *
- * // Allocate a sample buffer.
- * // Note that 4096 samples = 4096 int16_t IQ pairs = 2 * 4096 int16_t values
- * buffer = malloc(num_samples * 2 * sizeof(int16_t));
- * if (buffer == NULL) {
- *     perror("malloc");
- *     return BLADERF_ERR_MEM;
- * }
- *
- * // Configure the device's RX module for use with the sync interface
- * status = bladerf_sync_config(dev, BLADERF_MODULE_RX, BLADERF_FORMAT_SC16_Q11,
- *                              64, 16384, 16, 3500);
- *
- * if (status != 0) {
- *     fprintf(stderr, "Failed to configure sync interface: %s\n",
- *             bladerf_strerror(status));
- *     return status;
- * }
- *
- * // We must always enable the RX module before attempting to RX samples
- * status = bladerf_enable_module(dev, BLADERF_MODULE_RX, true);
- * if (status != 0) {
- *     fprintf(stderr, "Failed to enable RX module: %s\n",
- *             bladerf_strerror(status));
- *     return status;
- * }
- *
- * // Receive samples and do work on them.
- * while (status == 0 && !done) {
- *     status = bladerf_sync_rx(dev, buffer, num_samples, NULL, 3500);
- *     if (status == 0) {
- *         done = do_work(buffer, num_samples);
- *     } else {
- *         fprintf(stderr, "Failed to RX samples: %s\n",
- *                 bladerf_strerror(status));
- *     }
- * }
- *
- * // Disable RX module, shutting down our underlying RX stream
- * status = bladerf_enable_module(dev, BLADERF_MODULE_RX, false);
- * if (status != 0) {
- *     fprintf(stderr, "Failed to disable RX module: %s\n",
- *             bladerf_strerror(status));
- * }
- *
- * // Free up our resources
- * free(buffer);
- *
- * @endcode
- *
- * To run in a full-duplex mode of operation, one must simply add another call
- * to bladerf_sync_config() for the BLADERF_MODULE_TX module, enable the TX
- * module via bladerf_enable_module(), and then make calls to bladerf_sync_tx().
- *
  * These functions are thread-safe.
+ *
+ * <H3>RX and TX without metadata </H3>
+ * Below is the general process for using this interface to transmit and receive
+ * SC16 Q11 samples, without metadata.
+ *
+ * @snippet sync_rxtx.c example_snippet
+ *
+ * To run in a half-duplex mode of operation, simply remove the RX or TX
+ * specific portions from the above example.
+ *
+ *
+ * <H3>RX with metadata</H3>
+ * By using the ::BLADERF_FORMAT_SC16_Q11_META format with the synchronous
+ * interface, one can read the timestamp associated with a received buffer of
+ * data, or schedule to read a specific number of samples at a desired
+ * timestamp.  Additionally, the metadata indicates if an overrun was detected,
+ * and the number of samples actually copied into the buffer before the
+ * discontinuity caused by the overrun.
+ *
+ * @snippet sync_rx_meta.c example_snippet
+ *
+ * <H3>TX with metadata</H3>
+ * Using the synchronous interface with the ::BLADERF_FORMAT_SC16_Q11_META
+ * format allows for bursts of samples to be scheduled for transmissions.
+ * Between these bursts, the device transmits I=0, Q=0.
+ *
+ * To begin a burst, call bladerf_sync_tx() with the metadata's
+ * ::BLADERF_META_FLAG_TX_BURST_START flag set, the desired timestamp set in the
+ * bladerf_metadata structure, and any number of samples.
+ *
+ * You may then continue calling bladerf_sync_tx(), without needing to update
+ * the timestamp field in the bladerf_metadata structure. For these calls,
+ * no flags should be set.
+ *
+ * On the final bladerf_sync_tx() call for the burst, set the
+ * ::BLADERF_META_FLAG_TX_BURST_END flag, and ensure the final two samples
+ * provided to this function are 0.
+ *
+ * It is valid to send the entire burst with a single function call, with both
+ * flags set.
+ *
+ * @snippet sync_tx_meta.c example_snippet
  *
  * @{
  */
