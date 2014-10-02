@@ -1177,7 +1177,7 @@ typedef enum {
     BLADERF_FORMAT_SC16_Q11,
 
     /**
-     * This format is the same as the BLADERF_FORMAT_SC16_Q11 format, except the
+     * This format is the same as the ::BLADERF_FORMAT_SC16_Q11 format, except the
      * first 4 samples (16 bytes) in every block of 1024 samples are replaced
      * with metadata, organized as follows, with all fields being little endian
      * byte order:
@@ -1289,7 +1289,7 @@ typedef enum {
 /**
  * Sample metadata
  *
- * This structure is used in conjunction with the BLADERF_FORMAT_SC16_Q11_META
+ * This structure is used in conjunction with the ::BLADERF_FORMAT_SC16_Q11_META
  * format to TX scheduled bursts or retrieve timestamp information about
  * received samples.
  */
@@ -1685,8 +1685,8 @@ int CALL_CONV bladerf_get_stream_timeout(struct bladerf *dev,
  * This function does not call bladerf_enable_module(). The API user is
  * responsible for enabling/disable modules when desired.
  *
- * Note that (re)configuring BLADERF_MODULE_TX does not affect the
- * BLADERF_MODULE_RX modules, and vice versa.  This call configures each module
+ * Note that (re)configuring ::BLADERF_MODULE_TX does not affect the
+ * ::BLADERF_MODULE_RX modules, and vice versa. This call configures each module
  * independently.
  *
  * Memory allocated by this function will be deallocated when bladerf_close()
@@ -1751,9 +1751,9 @@ int CALL_CONV bladerf_sync_config(struct bladerf *dev,
  * @param[in]   num_samples Number of samples to write
  *
  * @param[in]   metadata    Sample metadata. This must be provided when using
- *                          the BLADERF_FORMAT_SC16_Q11_META format, but may
+ *                          the ::BLADERF_FORMAT_SC16_Q11_META format, but may
  *                          be NULL when the interface is configured for
- *                          the BLADERF_FORMAT_SC16_Q11 format.
+ *                          the ::BLADERF_FORMAT_SC16_Q11 format.
  *
  * @param[in]   timeout_ms  Timeout (milliseconds) for this call to complete.
  *                          Zero implies "infinite."
@@ -1794,9 +1794,9 @@ int CALL_CONV bladerf_sync_tx(struct bladerf *dev,
  * @param[in]   num_samples Number of samples to read
  *
  * @param[out]  metadata    Sample metadata. This must be provided when using
- *                          the BLADERF_FORMAT_SC16_Q11_META format, but may
+ *                          the ::BLADERF_FORMAT_SC16_Q11_META format, but may
  *                          be NULL when the interface is configured for
- *                          the BLADERF_FORMAT_SC16_Q11 format.
+ *                          the ::BLADERF_FORMAT_SC16_Q11 format.
  *
  * @param[in]   timeout_ms  Timeout (milliseconds) for this call to complete.
  *                          Zero implies "infinite."
