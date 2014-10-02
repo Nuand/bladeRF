@@ -148,4 +148,4 @@ if(LIBUSB_FOUND AND NOT CMAKE_CROSSCOMPILING)
     check_library_exists("${usb_LIBRARY}" libusb_handle_events_timeout "" LIBUSB_HAVE_HANDLE_EVENTS_TIMEOUT)
     check_library_exists("${usb_LIBRARY}" libusb_handle_events_timeout_completed "" LIBUSB_HAVE_HANDLE_EVENTS_TIMEOUT_COMPLETED)
 
-endif(LIBUSB_FOUND)
+endif(LIBUSB_FOUND AND NOT CMAKE_CROSSCOMPILING)
