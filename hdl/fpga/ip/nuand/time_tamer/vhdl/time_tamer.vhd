@@ -35,11 +35,22 @@ end entity ;
 
 architecture arch of time_tamer is
 
+    attribute noprune : boolean ;
+
     signal ack          : std_logic ;
     signal hold         : std_logic ;
 
-    signal tx_snap_time : std_logic_vector(63 downto 0);
-    signal rx_snap_time : std_logic_vector(63 downto 0);
+    signal prev_tx      : unsigned(63 downto 0) ;
+    signal prev_rx      : unsigned(63 downto 0) ;
+
+    signal causal_tx    : std_logic ;
+    signal causal_rx    : std_logic ;
+
+    attribute noprune of causal_tx : signal is true ;
+    attribute noprune of causal_rx : signal is true ;
+
+    signal tx_snap_time : unsigned(63 downto 0);
+    signal rx_snap_time : unsigned(63 downto 0);
 
     signal rx_snap_req  : std_logic ;
     signal tx_snap_req  : std_logic ;
@@ -69,7 +80,7 @@ begin
 
         dest_reset      =>  reset,
         dest_clock      =>  clock,
-        dest_data       =>  tx_snap_time,
+        unsigned(dest_data)       =>  tx_snap_time,
         dest_req        =>  tx_snap_req,
         dest_ack        =>  tx_snap_ack
       ) ;
@@ -84,7 +95,7 @@ begin
 
         dest_reset      =>  reset,
         dest_clock      =>  clock,
-        dest_data       =>  rx_snap_time,
+        unsigned(dest_data)       =>  rx_snap_time,
         dest_req        =>  rx_snap_req,
         dest_ack        =>  rx_snap_ack
       ) ;
@@ -94,14 +105,32 @@ begin
         if( reset = '1' ) then
             rx_snap_req <= '0' ;
             tx_snap_req <= '0' ;
+            prev_tx <= (others =>'0') ;
+            prev_rx <= (others =>'0') ;
+            causal_rx <= '0' ;
+            causal_tx <= '0' ;
         elsif( rising_edge(clock) ) then
+            if( prev_rx > rx_snap_time ) then
+                causal_rx <= '1' ;
+            else
+                causal_rx <= '0' ;
+            end if ;
+
+            if( prev_tx > tx_snap_time ) then
+                causal_tx <= '1' ;
+            else
+                causal_tx <= '0' ;
+            end if ;
+
             if( addr = "1000" and read = '1' ) then
+                prev_tx <= tx_snap_time ;
                 tx_snap_req <= '1' ;
             else
                 tx_snap_req <= '0' ;
             end if ;
 
             if( addr = "0000" and read = '1' ) then
+                prev_rx <= rx_snap_time ;
                 rx_snap_req <= '1' ;
             else
                 rx_snap_req <= '0' ;
@@ -124,29 +153,31 @@ begin
         end if ;
     end process ;
 
-    datamux : process(all)
+    datamux : process(clock)
     begin
-        case addr is
-            when "0000"  => dout <= rx_snap_time(7 downto 0);
-            when "0001"  => dout <= rx_snap_time(15 downto 8);
-            when "0010"  => dout <= rx_snap_time(23 downto 16);
-            when "0011"  => dout <= rx_snap_time(31 downto 24);
-            when "0100"  => dout <= rx_snap_time(39 downto 32);
-            when "0101"  => dout <= rx_snap_time(47 downto 40);
-            when "0110"  => dout <= rx_snap_time(55 downto 48);
-            when "0111"  => dout <= rx_snap_time(63 downto 56);
+        if( rising_edge(clock) ) then
+            case addr is
+                when "0000"  => dout <= std_logic_vector(rx_snap_time(7 downto 0));
+                when "0001"  => dout <= std_logic_vector(rx_snap_time(15 downto 8));
+                when "0010"  => dout <= std_logic_vector(rx_snap_time(23 downto 16));
+                when "0011"  => dout <= std_logic_vector(rx_snap_time(31 downto 24));
+                when "0100"  => dout <= std_logic_vector(rx_snap_time(39 downto 32));
+                when "0101"  => dout <= std_logic_vector(rx_snap_time(47 downto 40));
+                when "0110"  => dout <= std_logic_vector(rx_snap_time(55 downto 48));
+                when "0111"  => dout <= std_logic_vector(rx_snap_time(63 downto 56));
 
-            when "1000"  => dout <= tx_snap_time(7 downto 0);
-            when "1001"  => dout <= tx_snap_time(15 downto 8);
-            when "1010"  => dout <= tx_snap_time(23 downto 16);
-            when "1011"  => dout <= tx_snap_time(31 downto 24);
-            when "1100"  => dout <= tx_snap_time(39 downto 32);
-            when "1101"  => dout <= tx_snap_time(47 downto 40);
-            when "1110"  => dout <= tx_snap_time(55 downto 48);
-            when "1111"  => dout <= tx_snap_time(63 downto 56);
+                when "1000"  => dout <= std_logic_vector(tx_snap_time(7 downto 0));
+                when "1001"  => dout <= std_logic_vector(tx_snap_time(15 downto 8));
+                when "1010"  => dout <= std_logic_vector(tx_snap_time(23 downto 16));
+                when "1011"  => dout <= std_logic_vector(tx_snap_time(31 downto 24));
+                when "1100"  => dout <= std_logic_vector(tx_snap_time(39 downto 32));
+                when "1101"  => dout <= std_logic_vector(tx_snap_time(47 downto 40));
+                when "1110"  => dout <= std_logic_vector(tx_snap_time(55 downto 48));
+                when "1111"  => dout <= std_logic_vector(tx_snap_time(63 downto 56));
 
-            when others  => dout <= (others => 'X');
-        end case;
+                when others  => dout <= (others => 'X');
+            end case;
+        end if ;
     end process;
 
     process (clock)
