@@ -32,8 +32,18 @@
 #include <stdio.h>
 #include "libbladeRF.h"
 
-#define _LOG_STRINGIFY__(x)         #x
-#define _LOG_STRINGIFY_(x)          _LOG_STRINGIFY__(x)
+#ifdef SHORT_FILE_
+#   define  THIS_FILE  SHORT_FILE_
+#else
+#   warning "SHORT_FILE_ was not defined. Using __FILE__ instead."
+#   define  THIS_FILE   __FILE__
+#endif
+
+#define LOG_STRINGIFY__(x)         #x
+#define LOG_STRINGIFY_(x)          LOG_STRINGIFY__(x)
+
+#define LOG_EXPAND__(x) #x
+#define LOG_EXPAND_(x) LOG_EXPAND__(x)
 
 /**
  * @defgroup LOG_MACROS Logging macros
@@ -69,7 +79,8 @@
 #ifdef LOG_INCLUDE_FILE_INFO
 #   define LOG_WRITE(LEVEL, LEVEL_STRING, ...) \
     do { log_write(LEVEL, LEVEL_STRING  \
-                     " @ "  __FILE__ ":" _LOG_STRINGIFY_(__LINE__) "] " \
+                     " @ "  LOG_EXPAND_(THIS_FILE) \
+                     ":" LOG_STRINGIFY_(__LINE__) "] " \
                      __VA_ARGS__); \
     } while (0)
 #else

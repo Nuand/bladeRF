@@ -34,7 +34,7 @@ set(BLADERF_HOST_COMMON_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/common/src)
 ###############################
 option(ENABLE_LOG_FILE_INFO
         "Enable source file and line number information in log messages."
-        OFF)
+        ON)
 
 option(BUILD_DOCUMENTATION
         "Enable build and install of manpages and other documentation."
