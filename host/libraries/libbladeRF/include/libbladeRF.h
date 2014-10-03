@@ -1176,15 +1176,6 @@ typedef enum {
     BLADERF_FORMAT_SC16_Q11,
 } bladerf_format;
 
-/**
- * Reverse compatibility for the sample format misnomer fix
- *
- * @warning This is scheduled to be removed in the future.
- */
-#define BLADERF_FORMAT_SC16_Q12 BLADERF_FORMAT_SC16_Q11
-
-
-
 /*
  * Metadata status bits
  */
