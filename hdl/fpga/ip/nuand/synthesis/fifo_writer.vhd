@@ -50,10 +50,12 @@ begin
             dma_downcount <= dma_buf_sz;
         elsif( rising_edge( clock ) ) then
             if (enable = '1' and meta_en = '1') then
-                if ( dma_downcount <= 0) then
+                if( dma_downcount > 0 ) then
+                    dma_downcount <= dma_downcount - 1 ;
+                elsif ( (signed('0'&fifo_usedw) - dma_buf_sz) > 0 ) then
+                    -- Guaranteed to be done downcounting here .. so only reset the downcount
+                    -- if we are able to store that amount of samples in the downstream FIFO
                     dma_downcount <= dma_buf_sz;
-                else
-                    dma_downcount <= dma_downcount - 1;
                 end if;
             else
                 dma_downcount <= dma_buf_sz;
