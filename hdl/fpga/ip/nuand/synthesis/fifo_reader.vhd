@@ -114,16 +114,28 @@ begin
     out_q <= resize(signed(fifo_data(27 downto 16)),out_q'length) when fifo_empty = '0' else (others =>'0') ;
 
     register_out_valid : process(clock, reset)
+        constant COUNT_RESET : natural := 11 ;
         variable prev_enable : std_logic := '0' ;
+        variable downcount : natural range 0 to COUNT_RESET := COUNT_RESET ;
     begin
         if( reset = '1' ) then
             out_valid <= '0' ;
             prev_enable := '0' ;
+            downcount := COUNT_RESET ;
         elsif( rising_edge(clock) ) then
-            if( prev_enable = '0' and enable = '1' ) then
-                out_valid <= '1' ;
+            if( enable = '1' ) then
+                if( downcount > 0 ) then
+                    if( downcount mod 2 = 1 ) then
+                        out_valid <= '1' ;
+                    else
+                        out_valid <= '0' ;
+                    end if ;
+                    downcount := downcount - 1 ;
+                else
+                    out_valid <= fifo_read ;
+                end if ;
             else
-                out_valid <= fifo_read ;
+                downcount := COUNT_RESET ;
             end if ;
             prev_enable := enable ;
         end if ;
