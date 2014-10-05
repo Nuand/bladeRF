@@ -69,7 +69,7 @@ begin
             end if;
         end if;
     end process;
-    meta_time_eq <= '1' when (enable = '1' and meta_loaded = '1' and (timestamp(63 downto 0) = (others =>'0') or timestamp(63 downto 0) >= meta_p_time)) else '0';
+    meta_time_eq <= '1' when (enable = '1' and meta_loaded = '1' and (timestamp(63 downto 0) = 0 or timestamp(63 downto 0) >= meta_p_time)) else '0';
     process(clock, reset)
     begin
         if (reset = '1') then

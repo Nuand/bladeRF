@@ -52,7 +52,7 @@ begin
             if (enable = '1' and meta_en = '1') then
                 if( dma_downcount > 0 ) then
                     dma_downcount <= dma_downcount - 1 ;
-                elsif ( (signed('0'&fifo_usedw) - dma_buf_sz) > 0 ) then
+                elsif ( to_signed(2**fifo_usedw'length,fifo_usedw'length+2) - (signed('0'&fifo_full&fifo_usedw)) > dma_buf_sz ) then
                     -- Guaranteed to be done downcounting here .. so only reset the downcount
                     -- if we are able to store that amount of samples in the downstream FIFO
                     dma_downcount <= dma_buf_sz;
