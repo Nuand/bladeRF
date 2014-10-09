@@ -1013,6 +1013,8 @@ int lusb_submit_stream_buffer(void *driver, struct bladerf_stream *stream,
     }
 
     if (status == ETIMEDOUT) {
+        log_debug("%s: Timed out waiting for a transfer to become availble.\n",
+                  __FUNCTION__);
         return BLADERF_ERR_TIMEOUT;
     } else if (status != 0) {
         return BLADERF_ERR_UNEXPECTED;

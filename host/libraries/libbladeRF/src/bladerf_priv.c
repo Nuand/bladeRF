@@ -31,6 +31,7 @@
 #include "log.h"
 #include "dc_cal_table.h"
 #include "xb.h"
+#include "version_compat.h"
 
 int init_device(struct bladerf *dev)
 {
@@ -247,4 +248,104 @@ int config_gpio_write(struct bladerf *dev, uint32_t val)
     }
 
    return dev->fn->config_gpio_write(dev, val);
+}
+
+static inline int requires_timestamps(bladerf_format format, bool *required)
+{
+    int status = 0;
+
+    switch (format) {
+        case BLADERF_FORMAT_SC16_Q11_META:
+            *required = true;
+            break;
+
+        case BLADERF_FORMAT_SC16_Q11:
+            *required = false;
+            break;
+
+        default:
+            return BLADERF_ERR_INVAL;
+    }
+
+    return status;
+}
+
+int perform_format_config(struct bladerf *dev, bladerf_module module,
+                          bladerf_format format)
+{
+    int status = 0;
+    bool use_timestamps;
+    bladerf_module other;
+    bool other_using_timestamps;
+    uint32_t gpio_val;
+
+    status = requires_timestamps(format, &use_timestamps);
+    if (status != 0) {
+        log_debug("%s: Invalid format: %d\n", __FUNCTION__, format);
+        return status;
+    }
+
+    if (use_timestamps && version_less_than(&dev->fpga_version, 0, 1, 0)) {
+        log_warning("Timestamp support requires FPGA v0.1.0 or later.\n");
+        return BLADERF_ERR_UPDATE_FPGA;
+    }
+
+    switch (module) {
+        case BLADERF_MODULE_RX:
+            other = BLADERF_MODULE_TX;
+            break;
+
+        case BLADERF_MODULE_TX:
+            other = BLADERF_MODULE_RX;
+            break;
+
+        default:
+            log_debug("Invalid module: %d\n", module);
+            return BLADERF_ERR_INVAL;
+    }
+
+    status = requires_timestamps(dev->module_format[other],
+                                 &other_using_timestamps);
+
+    if ((status == 0) && (other_using_timestamps != use_timestamps)) {
+        log_debug("Format conflict detected: RX=%d, TX=%d\n");
+        return BLADERF_ERR_INVAL;
+    }
+
+    status = CONFIG_GPIO_READ(dev, &gpio_val);
+    if (status != 0) {
+        return status;
+    }
+
+    if (use_timestamps) {
+        gpio_val |= (BLADERF_GPIO_TIMESTAMP | BLADERF_GPIO_TIMESTAMP_DIV2);
+    } else {
+        gpio_val &= ~(BLADERF_GPIO_TIMESTAMP | BLADERF_GPIO_TIMESTAMP_DIV2);
+    }
+
+    status = CONFIG_GPIO_WRITE(dev, gpio_val);
+
+    if (status == 0) {
+        dev->module_format[module] = format;
+    }
+
+    return status;
+}
+
+int perform_format_deconfig(struct bladerf *dev, bladerf_module module)
+{
+    switch (module) {
+        case BLADERF_MODULE_RX:
+        case BLADERF_MODULE_TX:
+            /* We'll reconfigure the HW when we call perform_format_config, so
+             * we just need to update our stored information */
+            dev->module_format[module] = -1;
+            break;
+
+        default:
+            log_debug("%s: Invalid module: %d\n", __FUNCTION__, module);
+            return BLADERF_ERR_INVAL;
+    }
+
+    return 0;
 }
