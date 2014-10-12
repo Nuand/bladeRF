@@ -73,29 +73,18 @@ option(ENABLE_BACKEND_USB
 
 option(ENABLE_BACKEND_LIBUSB
     "Enable libusb backend support."
-    ON
+    ${LIBUSB_FOUND}
 )
 
 option(ENABLE_BACKEND_CYAPI
     "Enable CYAPI backend support."
-    OFF
+    ${CYAPI_FOUND}
 )
 
 option(ENABLE_BACKEND_DUMMY
     "Enable dummy backend support. This is only useful for some developers."
     OFF
 )
-
-option(LIBUSB_DETACH_KERNEL_DRIVER
-    "Enable calls to libusb_detach_kernel_driver(). Not supported in Windows."
-    ON
-)
-
-option(ENABLE_BACKEND_LINUX_DRIVER
-    "Enable Linux driver backend support."
-    OFF
-)
-
 
 # Ensure we've got at least one backend enabled
 if(NOT ENABLE_BACKEND_LIBUSB
