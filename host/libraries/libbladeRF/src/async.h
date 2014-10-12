@@ -58,6 +58,10 @@ struct bladerf_stream {
     void *backend_data;
 };
 
+/* Get the number of bytes per stream buffer */
+static inline size_t async_stream_buf_bytes(struct bladerf_stream *s) {
+    return samples_to_bytes(s->format, s->samples_per_buffer);
+}
 
 int async_init_stream(struct bladerf_stream **stream,
                       struct bladerf *dev,

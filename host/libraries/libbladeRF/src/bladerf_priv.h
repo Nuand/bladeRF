@@ -143,6 +143,32 @@ static inline size_t sc16q11_to_bytes(size_t n_samples)
     return n_samples * sample_size;
 }
 
+/* Covert samples to bytes based upon the provided format */
+static inline size_t samples_to_bytes(bladerf_format format, size_t n)
+{
+    switch (format) {
+        case BLADERF_FORMAT_SC16_Q11:
+            return sc16q11_to_bytes(n);
+
+        default:
+            assert(!"Invalid format");
+            return 0;
+    }
+}
+
+/* Convert bytes to samples based upon the provided format */
+static inline size_t bytes_to_samples(bladerf_format format, size_t n)
+{
+    switch (format) {
+        case BLADERF_FORMAT_SC16_Q11:
+            return bytes_to_sc16q11(n);
+
+        default:
+            assert(!"Invalid format");
+            return 0;
+    }
+}
+
 /**
  * Initialize device registers - required after power-up, but safe
  * to call multiple times after power-up (e.g., multiple close and reopens)
