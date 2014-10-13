@@ -1,10 +1,10 @@
-# This file is from the www.vtk.org wiki:
+# This file is a modified version of the one from the www.vtk.org wiki:
 # http://www.vtk.org/Wiki/CMake_FAQ#Can_I_do_.22make_uninstall.22_with_CMake.3F
-if (NOT EXISTS "@CMAKE_CURRENT_BINARY_DIR@/install_manifest.txt")
-    message(FATAL_ERROR "Cannot find install manifest: \"@CMAKE_CURRENT_BINARY_DIR@/install_manifest.txt\".\nPossible reasons for this include: 'make install' has not yet been run, the build failed and the manifest was not generated, or the manifest has been removed.")
-endif(NOT EXISTS "@CMAKE_CURRENT_BINARY_DIR@/install_manifest.txt")
+if (NOT EXISTS "@CMAKE_BINARY_DIR@/install_manifest.txt")
+    message(FATAL_ERROR "Cannot find install manifest: \"@CMAKE_BINARY_DIR@/install_manifest.txt\".\nPossible reasons for this include: 'make install' has not yet been run, the build failed and the manifest was not generated, or the manifest has been removed.")
+endif(NOT EXISTS "@CMAKE_BINARY_DIR@/install_manifest.txt")
 
-file(READ "@CMAKE_CURRENT_BINARY_DIR@/install_manifest.txt" files)
+file(READ "@CMAKE_BINARY_DIR@/install_manifest.txt" files)
 string(REGEX REPLACE "\n" ";" files "${files}")
 
 # Remove trailing semi-colon to remove empty list item. This is intended to avoid 
