@@ -26,7 +26,7 @@ static inline const char *backend2str(bladerf_backend b)
         case BLADERF_BACKEND_LIBUSB:
             return "libusb";
         case BLADERF_BACKEND_CYPRESS:
-            return "Cypress CyAPI";
+            return "CyUSB driver";
         case BLADERF_BACKEND_LINUX:
             return "Linux kernel driver";
         default:

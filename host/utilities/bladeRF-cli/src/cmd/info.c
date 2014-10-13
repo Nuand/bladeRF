@@ -75,8 +75,12 @@ int cmd_info(struct cli_state *state, int argc, char **argv)
             printf("  Backend:                  libusb\n");
             break;
 
+        case BLADERF_BACKEND_CYPRESS:
+            printf("  Backend:                  CyUSB3 driver\n");
+            break;
+
         case BLADERF_BACKEND_LINUX:
-            printf("  Backend:                  Linux driver\n");
+            printf("  Backend:                  Linux kernel driver\n");
             break;
 
         default:
