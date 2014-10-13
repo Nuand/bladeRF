@@ -47,11 +47,11 @@ typedef enum {
 } transfer_status;
 
 struct lusb_stream_data {
-    size_t num_transfers;           /**< Total number of allocated transfers */
-    size_t num_avail_transfers;
-    size_t i;                           /**< Index to next transfer */
-    struct libusb_transfer **transfers;
-    transfer_status *transfer_status;   /**< Status of each transfer */
+    size_t num_transfers;               /* Total # of allocated transfers */
+    size_t num_avail;                   /* # of currently available transfers */
+    size_t i;                           /* Index to next transfer */
+    struct libusb_transfer **transfers; /* Array of transfer metadata */
+    transfer_status *transfer_status;   /* Status of each transfer */
 };
 
 static inline struct bladerf_lusb * lusb_backend(struct bladerf *dev)
@@ -667,7 +667,7 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
         stream->state = STREAM_SHUTTING_DOWN;
     } else {
         stream_data->transfer_status[transfer_i] = TRANSFER_AVAIL;
-        stream_data->num_avail_transfers++;
+        stream_data->num_avail++;
         pthread_cond_signal(&stream->can_submit_buffer);
     }
 
@@ -720,11 +720,6 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
         /* Sanity check for debugging purposes */
         if (transfer->length != transfer->actual_length) {
             log_warning( "Received short transfer\n" );
-
-            /* For the SC16Q11 format, we're 4 bytes per samples... */
-            if ((transfer->actual_length & 3) != 0) {
-                log_warning( "Fractional samples received - stream likely corrupt\n" );
-            }
         }
 
        /* Call user callback requesting more data to transmit */
@@ -755,7 +750,7 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
 
         /* We know we're done when all of our transfers have returned to their
          * "available" states */
-        if (stream_data->num_avail_transfers == stream_data->num_transfers) {
+        if (stream_data->num_avail == stream_data->num_transfers) {
             stream->state = STREAM_DONE;
         } else {
             cancel_all_transfers(stream);
@@ -772,22 +767,12 @@ static int submit_transfer(struct bladerf_stream *stream, void *buffer)
     struct bladerf_lusb *lusb = lusb_backend(stream->dev);
     struct lusb_stream_data *stream_data = stream->backend_data;
     struct libusb_transfer *transfer;
-    size_t bytes_per_buffer;
+    const size_t bytes_per_buffer = async_stream_buf_bytes(stream);
     const unsigned char ep =
         stream->module == BLADERF_MODULE_TX ? SAMPLE_EP_OUT : SAMPLE_EP_IN;
 
     assert(stream_data->transfer_status[stream_data->i] == TRANSFER_AVAIL);
     transfer = stream_data->transfers[stream_data->i];
-
-    switch (stream->format) {
-        case BLADERF_FORMAT_SC16_Q11:
-            bytes_per_buffer = sc16q11_to_bytes(stream->samples_per_buffer);
-            break;
-
-        default:
-            assert(!"Unexpected format");
-            return BLADERF_ERR_INVAL;
-    }
 
     assert(bytes_per_buffer <= INT_MAX);
     libusb_fill_bulk_transfer(transfer,
@@ -804,8 +789,8 @@ static int submit_transfer(struct bladerf_stream *stream, void *buffer)
     if (status == 0) {
         stream_data->transfer_status[stream_data->i] = TRANSFER_IN_FLIGHT;
         stream_data->i = (stream_data->i + 1) % stream_data->num_transfers;
-        assert(stream_data->num_avail_transfers != 0);
-        stream_data->num_avail_transfers--;
+        assert(stream_data->num_avail != 0);
+        stream_data->num_avail--;
     } else {
         log_error("Failed to submit transfer in %s: %s\n",
                   __FUNCTION__, libusb_error_name(status));
@@ -833,17 +818,21 @@ static int lusb_init_stream(void *driver, struct bladerf_stream *stream,
     stream_data->transfers = NULL;
     stream_data->transfer_status = NULL;
     stream_data->num_transfers = num_transfers;
-    stream_data->num_avail_transfers = 0;
+    stream_data->num_avail = 0;
     stream_data->i = 0;
 
-    stream_data->transfers = malloc(num_transfers * sizeof(struct libusb_transfer *));
+    stream_data->transfers =
+        malloc(num_transfers * sizeof(struct libusb_transfer *));
+
     if (stream_data->transfers == NULL) {
         log_error("Failed to allocate libusb tranfers\n");
         status = BLADERF_ERR_MEM;
         goto error;
     }
 
-    stream_data->transfer_status = calloc(num_transfers, sizeof(transfer_status));
+    stream_data->transfer_status =
+        calloc(num_transfers, sizeof(transfer_status));
+
     if (stream_data->transfer_status == NULL) {
         log_error("Failed to allocated libusb transfer status array\n");
         status = BLADERF_ERR_MEM;
@@ -865,7 +854,7 @@ static int lusb_init_stream(void *driver, struct bladerf_stream *stream,
                     libusb_free_transfer(stream_data->transfers[i]);
                     stream_data->transfers[i] = NULL;
                     stream_data->transfer_status[i] = TRANSFER_UNINITIALIZED;
-                    stream_data->num_avail_transfers--;
+                    stream_data->num_avail--;
                 }
             }
 
@@ -873,7 +862,7 @@ static int lusb_init_stream(void *driver, struct bladerf_stream *stream,
             break;
         } else {
             stream_data->transfer_status[i] = TRANSFER_AVAIL;
-            stream_data->num_avail_transfers++;
+            stream_data->num_avail++;
         }
     }
 
@@ -918,7 +907,7 @@ static int lusb_stream(void *driver, struct bladerf_stream *stream,
             if (buffer == BLADERF_STREAM_SHUTDOWN) {
                 /* If we have transfers in flight and the user prematurely
                  * cancels the stream, we'll start shutting down */
-                if (stream_data->num_avail_transfers != stream_data->num_transfers) {
+                if (stream_data->num_avail != stream_data->num_transfers) {
                     stream->state = STREAM_SHUTTING_DOWN;
                 } else {
                     /* No transfers have been shipped out yet so we can
@@ -970,7 +959,7 @@ int lusb_submit_stream_buffer(void *driver, struct bladerf_stream *stream,
     struct timespec timeout_abs;
 
     if (buffer == BLADERF_STREAM_SHUTDOWN) {
-        if (stream_data->num_avail_transfers == stream_data->num_transfers) {
+        if (stream_data->num_avail == stream_data->num_transfers) {
             stream->state = STREAM_DONE;
         } else {
             stream->state = STREAM_SHUTTING_DOWN;
@@ -985,13 +974,13 @@ int lusb_submit_stream_buffer(void *driver, struct bladerf_stream *stream,
             return BLADERF_ERR_UNEXPECTED;
         }
 
-        while (stream_data->num_avail_transfers == 0 && status == 0) {
+        while (stream_data->num_avail == 0 && status == 0) {
             status = pthread_cond_timedwait(&stream->can_submit_buffer,
                     &stream->lock,
                     &timeout_abs);
         }
     } else {
-        while (stream_data->num_avail_transfers == 0 && status == 0) {
+        while (stream_data->num_avail == 0 && status == 0) {
             status = pthread_cond_wait(&stream->can_submit_buffer,
                                        &stream->lock);
         }
