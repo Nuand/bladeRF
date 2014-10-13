@@ -245,7 +245,11 @@ static int lusb_probe(struct bladerf_devinfo_list *info_list)
             /* Open the USB device and get some information */
             status = get_devinfo(list[i], &info);
             if (status) {
-                log_error("Could not open bladeRF device: %s\n",
+                /* We may not be able to open the device if another
+                 * driver (e.g., CyUSB3) is associated with it. Therefore,
+                 * just log to the debug level and carry on. */
+                status = 0;
+                log_debug("Could not open bladeRF device: %s\n",
                           libusb_error_name(status) );
             } else {
                 info.instance = n++;
@@ -341,8 +345,8 @@ static int lusb_open(void **driver,
             if(status < 0) {
                 log_debug("Could not open bladeRF device: %s\n",
                           libusb_error_name(status) );
-                status = error_conv(status);
-                goto error;
+                status = 0;
+                continue; /* Continue trying the next devices */
             }
             thisinfo.instance = n++;
 
