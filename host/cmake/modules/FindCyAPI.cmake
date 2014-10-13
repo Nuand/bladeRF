@@ -18,7 +18,7 @@ if(NOT WIN32)
 endif()
 
 set(FX3_SDK_PATH
-    "C:/Program Files (x86)/Cypress/EZ-USB FX3 SDK/1.3/"
+    "$ENV{FX3_INSTALL_PATH}"
     CACHE
     PATH
     "Path to the Cypress FX3 SDK"
@@ -26,7 +26,7 @@ set(FX3_SDK_PATH
 
 if(NOT EXISTS "${FX3_SDK_PATH}")
     message(STATUS
-            "The following location does not exist: FX3_SDK_PATH=${FX3_SDK_PATH}")
+            "Cypress backend not available. The following location does not exist: FX3_SDK_PATH=${FX3_SDK_PATH}")
     return()
 endif()
 
