@@ -261,8 +261,24 @@ static inline int change_setting(struct bladerf *dev, uint8_t setting)
 static int usb_is_fpga_configured(struct bladerf *dev)
 {
     int result = -1;
-    int status = vendor_cmd_int(dev, BLADE_USB_CMD_QUERY_FPGA_STATUS,
-                                USB_DIR_DEVICE_TO_HOST, &result);
+    int status;
+
+    /* This environment variable provides a means to force libbladeRF to not
+     * attempt to access the FPGA.
+     *
+     * This provides a workaround for the situation where a user did not remove
+     * an FPGA in SPI flash prior to flashing new firmware and updating
+     * libbladeRF. Specifically, this has proven to be a problem with pre-v0.0.1
+     * FPGA images, as they do not provide version readback functionality.
+     */
+    if (getenv("BLADERF_FORCE_NO_FPGA_PRESENT")) {
+        log_debug("Reporting no FPGA present - "
+                  "BLADERF_FORCE_NO_FPGA_PRESENT is set.\n");
+        return 0;
+    }
+
+    status = vendor_cmd_int(dev, BLADE_USB_CMD_QUERY_FPGA_STATUS,
+                            USB_DIR_DEVICE_TO_HOST, &result);
 
     if (status < 0) {
         return status;
