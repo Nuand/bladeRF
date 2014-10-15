@@ -32,7 +32,7 @@
 #include "conversions.h"
 
 #define RXTX_ERRMSG_VALUE(param, value) \
-    "Invalid value for \"%s\" (%s)", param, value
+    "Invalid value for \"%s\" (%s)\n", param, value
 
 /* Minimum required unit of sample acceses */
 #define LIBBLADERF_SAMPLE_BLOCK_SIZE    1024

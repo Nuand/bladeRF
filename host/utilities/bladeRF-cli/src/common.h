@@ -127,7 +127,7 @@ bool cli_device_is_streaming(struct cli_state *s);
  *
  *
  * @param   s       CLI state.
- * @param   pfx     Error prefix. "Error: " is used if this is null
+ * @param   pfx     Error prefix.
  * @param   format  Printf-style format string, followed by args
  *
  */

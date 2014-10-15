@@ -32,17 +32,21 @@ int cmd_mimo(struct cli_state *state, int argc, char **argv)
                 status |= bladerf_si5338_write(state->dev, 28, 0x2b);
                 status |= bladerf_si5338_write(state->dev, 29, 0x28);
                 status |= bladerf_si5338_write(state->dev, 30, 0xa8);
-                if (status)
-                    printf("Could not set device to slave MIMO mode\n");
-                else
-                    printf("Successfully set device to slave MIMO mode\n");
+                if (status) {
+                   cli_err(state, argv[0],
+                           "Could not set device to slave MIMO mode.\n");
+                } else {
+                    printf("\n  Successfully set device to slave MIMO mode.\n\n");
+                }
             } else if (!strcmp(argv[2], "master")) {
                 status |= bladerf_si5338_write(state->dev, 39, 1);
                 status |= bladerf_si5338_write(state->dev, 34, 0x22);
-                if (status)
-                    printf("Could not set device to master MIMO mode\n");
-                else
-                    printf("Successfully set device to master MIMO mode\n");
+                if (status) {
+                    cli_err(state, argv[0],
+                            "Could not set device to master MIMO mode\n");
+                } else {
+                    printf("\n  Successfully set device to master MIMO mode.\n\n");
+                }
             }
         }
     }

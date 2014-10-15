@@ -22,6 +22,7 @@
 
 #include <stdint.h>
 #include <libbladeRF.h>
+#include "common.h"
 
 /* Calibration opereration bitmasks */
 #define CAL_DC_RX_      (1 << 0)
@@ -51,17 +52,17 @@
 /**
  * Perform DC offset calibrations
  *
- * @param   dev     Device handle
+ * @param   state   CLI state handle
  * @param   ops     Bitwise OR of CAL_DC_* values, describing desired operation
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
-int calibrate_dc(struct bladerf *dev, unsigned int ops);
+int calibrate_dc(struct cli_state *state, unsigned int ops);
 
 /**
  * Generate a DC offset calibration table
  *
- * @param   dev         Device handle
+ * @param   state       CLI state handle
  * @param   module      Module to calibrate
  * @param   filename    Output filename for table file
  * @param   f_low       Lowest frequency in the table to start at
@@ -70,7 +71,7 @@ int calibrate_dc(struct bladerf *dev, unsigned int ops);
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
-int calibrate_dc_gen_tbl(struct bladerf *dev, bladerf_module module,
+int calibrate_dc_gen_tbl(struct cli_state *state, bladerf_module module,
                          const char *filename, unsigned int f_low,
                          unsigned f_inc, unsigned int f_high);
 

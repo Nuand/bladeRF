@@ -370,7 +370,7 @@ int cmd_help(struct cli_state *s, int argc, char **argv)
             printf( "\n%s\n", cmd->help );
         } else {
             /* Otherwise, print that we couldn't find it :( */
-            cli_err(s, argv[0], "No help info available for \"%s\"", argv[1]);
+            cli_err(s, argv[0], "No help info available for \"%s\"\n", argv[1]);
             ret = CLI_RET_INVPARAM;
         }
     } else {
@@ -398,7 +398,7 @@ int cmd_run(struct cli_state *state, int argc, char **argv)
     if (status == 0) {
         return CLI_RET_RUN_SCRIPT;
     } else if (status == 1) {
-        cli_err(state, "run", "Recursive loop detected in script");
+        cli_err(state, "run", "Recursive loop detected in script.\n");
         return CLI_RET_INVPARAM;
     } else if (status < 0) {
         if (-status == ENOENT) {
@@ -433,7 +433,7 @@ int cmd_handle(struct cli_state *s, const char *line)
     ret = 0;
     argc = str2args(line, COMMENT_CHAR, &argv);
     if (argc == -2) {
-        fprintf(stderr, "Error: Input contains unterminated quote.\n");
+        cli_err(s, "Error", "Input contains unterminated quote.\n");
         return CLI_RET_INVPARAM;
     }
 
@@ -451,8 +451,9 @@ int cmd_handle(struct cli_state *s, const char *line)
                 if (cmd->requires_fpga) {
                     fpga_status = bladerf_is_fpga_configured(s->dev);
                     if (fpga_status < 0) {
-                        cli_err(s, argv[0], "Failed to determine if the FPGA is "
-                                            "configured. Is the FX3 programmed?");
+                        cli_err(s, argv[0], "Failed to determine if the FPGA is"
+                                            " configured. Is the FX3 "
+                                            " programmed?\n");
                         s->last_lib_error = fpga_status;
                         return CLI_RET_LIBBLADERF;
                     } else if (fpga_status != 1) {
@@ -471,7 +472,7 @@ int cmd_handle(struct cli_state *s, const char *line)
                 ret = CLI_RET_QUIT;
             }
         } else {
-            cli_err(s, "Unrecognized command", "%s", argv[0]);
+            cli_err(s, "Unrecognized command", "%s\n", argv[0]);
             ret = CLI_RET_NOCMD;
         }
 

@@ -36,13 +36,14 @@ int cmd_erase(struct cli_state *state, int argc, char **argv)
 
     eb_offset = str2uint(argv[1], 0, INT_MAX, &ok);
     if(!ok) {
-        cli_err(state, argv[0], "Invalid value for \"eb_offset\" (%s)", argv[1]);
+        cli_err(state, argv[0],
+                "Invalid value for \"eb_offset\" (%s)\n", argv[1]);
         return CLI_RET_INVPARAM;
     }
 
     n_ebs = str2uint(argv[2], 0, INT_MAX, &ok);
     if(!ok) {
-        cli_err(state, argv[0], "Invalid value for \"n_ebs\" (%s)", argv[2]);
+        cli_err(state, argv[0], "Invalid value for \"n_ebs\" (%s)\n", argv[2]);
         return CLI_RET_INVPARAM;
     }
 
@@ -52,7 +53,7 @@ int cmd_erase(struct cli_state *state, int argc, char **argv)
     status = bladerf_erase_flash(state->dev, addr, len);
 
     if (status >= 0) {
-        printf("Erased %d bytes at 0x%02x\n", status, addr);
+        printf("\n  Erased %d bytes at 0x%02x\n\n", status, addr);
         return CLI_RET_OK;
     } else {
         state->last_lib_error = status;

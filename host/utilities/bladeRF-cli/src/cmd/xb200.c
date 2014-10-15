@@ -46,6 +46,8 @@ int cmd_xb200(struct cli_state *state, int argc, char **argv)
         return CLI_RET_INVPARAM;
     }
 
+    putchar('\n');
+
     // xb 200 enable
     if (!strcasecmp(subcommand, "enable")) {
         printf("  Enabling XB-200 transverter board\n");
@@ -54,7 +56,7 @@ int cmd_xb200(struct cli_state *state, int argc, char **argv)
             state->last_lib_error = status;
             return CLI_RET_LIBBLADERF;
         }
-        printf("  XB-200 Transverter board successfully enabled\n");
+        printf("  XB-200 Transverter board successfully enabled\n\n");
 
     } else if (!strcasecmp(subcommand, "filter")) {
 
@@ -130,7 +132,7 @@ int cmd_xb200_filter(struct cli_state *state, const char *modulename,
         return CLI_RET_LIBBLADERF;
     }
 
-    printf("  XB-200 Transverter board %s filter successfully set to %s\n",
+    printf("  XB-200 Transverter board %s filter successfully set to %s\n\n",
            modulename, filtername);
 
     return status;

@@ -49,6 +49,8 @@ int cmd_xb100(struct cli_state *state, int argc, char **argv)
         return CLI_RET_INVPARAM;
     }
 
+    putchar('\n');
+
     // xb 100 enable
     if (!strcmp(subcommand, "enable")) {
         printf("  Enabling XB-100 GPIO expansion board\n");

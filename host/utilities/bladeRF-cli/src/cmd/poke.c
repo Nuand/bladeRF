@@ -99,7 +99,7 @@ int cmd_poke(struct cli_state *state, int argc, char **argv)
                 state->last_lib_error = status;
                 rv = CLI_RET_LIBBLADERF;
             } else {
-                printf( "  0x%2.2x: 0x%2.2x\n", address, value );
+                printf( "\n  0x%2.2x: 0x%2.2x\n", address, value );
                 if (f == bladerf_lms_write) {
                     uint8_t readback;
                     int status = bladerf_lms_read(state->dev,

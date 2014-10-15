@@ -406,7 +406,7 @@ int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
     *val = strchr(param, '=');
 
     if (!*val || strlen(&(*val)[1]) < 1) {
-        cli_err(s, argv0, "No value provided for parameter \"%s\"", param);
+        cli_err(s, argv0, "No value provided for parameter \"%s\"\n", param);
         status = CLI_RET_INVPARAM;
     }
 
@@ -455,7 +455,7 @@ int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
                 status = CLI_RET_INVPARAM;
             } else if (tmp % RXTX_SAMPLES_MIN != 0) {
                 cli_err(s, argv0,
-                        "The '%s' paramter must be a multiple of %u.",
+                        "The '%s' paramter must be a multiple of %u.\n",
                         param, RXTX_SAMPLES_MIN);
                 status = CLI_RET_INVPARAM;
             } else {
@@ -525,7 +525,7 @@ static void check_samplerate(struct cli_state *s, struct rxtx_data *rxtx)
     status = bladerf_get_sample_rate(s->dev, rxtx->module, &samplerate_dev);
     if (status < 0) {
         cli_err(s, "Error", "Failed read device's current sample rate. "
-                            "Unable to perform sanity check.");
+                            "Unable to perform sanity check.\n");
     } else if (samplerate_dev < samplerate_min) {
         if (samplerate_min <= 40000000) {
             printf("\n");
@@ -559,7 +559,7 @@ static int validate_stream_params(struct cli_state *s, struct rxtx_data *rxtx,
     if (rxtx->data_mgmt.num_transfers >= rxtx->data_mgmt.num_buffers) {
         cli_err(s, argv0,
                 "The 'xfers' parameter (%u) must be < the 'buffers'"
-                " parameter (%u).", rxtx->data_mgmt.num_transfers,
+                " parameter (%u).\n", rxtx->data_mgmt.num_transfers,
                 rxtx->data_mgmt.num_buffers);
 
         status = CLI_RET_INVPARAM;
@@ -583,7 +583,7 @@ int rxtx_cmd_start_check(struct cli_state *s, struct rxtx_data *rxtx,
         pthread_mutex_unlock(&rxtx->file_mgmt.file_meta_lock);
 
         if (!have_file) {
-            cli_err(s, argv0, "File not configured");
+            cli_err(s, argv0, "File not configured\n");
             status = CLI_RET_INVPARAM;
         } else {
             status = validate_stream_params(s, rxtx, argv0);

@@ -57,7 +57,7 @@ int cmd_peek(struct cli_state *state, int argc, char **argv)
             count = str2uint( argv[3], 0, MAX_NUM_ADDRESSES, &ok );
             if( !ok ) {
                 cli_err(state, argv[0],
-                        "Invalid number of addresses provided (%s)", argv[3]);
+                        "Invalid number of addresses provided (%s)\n", argv[3]);
                 return CLI_RET_INVPARAM;
             }
         }
@@ -98,6 +98,9 @@ int cmd_peek(struct cli_state *state, int argc, char **argv)
         if( rv == CLI_RET_OK && f ) {
             int status;
             uint8_t val;
+
+            putchar('\n');
+
             for(; count > 0 && address < max_address; count-- ) {
                 status = f( state->dev, (uint8_t)address, &val );
                 if (status < 0) {
@@ -108,10 +111,10 @@ int cmd_peek(struct cli_state *state, int argc, char **argv)
 
                     if (matches_lms6002d(argv[1])) {
                         lms_reg_info(address, val);
-                        printf("\n");
                     }
 
                     address++;
+                    putchar('\n');
                 }
             }
         }
