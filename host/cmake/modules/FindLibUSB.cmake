@@ -5,20 +5,24 @@
 # https://github.com/zuckschwerdt/openobex/blob/master/CMakeModules/FindLibUSB.cmake
 # http://dev.zuckschwerdt.org/openobex/
 #
-# Find libusb(x)-1.0
+# Find libusb-1.0
 #
 # It will use PkgConfig if present and supported, otherwise this
 # script searches for binary distribution in the path defined by
 # the LIBUSB_PATH variable.
 #
-# The following standard variables get defined:
-#  LIBUSB_FOUND:        true if LibUSB was found
-#  LIBUSB_HEADER_FILE:  the location of the C header file
-#  LIBUSB_INCLUDE_DIRS: the directorys that contain headers
-#  LIBUSB_LIBRARIES:    the library files
-#  LIBUSB_HAS_HOTPLUG   the library provides hotplug support
+# Define LIBUSB_SKIP_VERSION_CHECK=Yes to skip the execution of a program to fetch
+# libusb's version number. LIBUSB_VERSION will not be set if this if this is used.
+# To check the version number, this script expects CMAKE_HELPERS_SOURCE_DIR to
+# be defined with the path to libusb_version.c.
 #
-#  Set LIBUSB_SUPPRESS_WARNINGS to suppress warnings from this file
+# The following standard variables get defined:
+#  LIBUSB_FOUND:            true if LibUSB was found
+#  LIBUSB_HEADER_FILE:      the location of the C header file
+#  LIBUSB_INCLUDE_DIRS:     the directorys that contain headers
+#  LIBUSB_LIBRARIES:        the library files
+#  LIBUSB_VERSION           the detected libusb version
+#  LIBUSB_HAVE_GET_VERSION  True if libusb has libusb_get_version()
 
 if(DEFINED __INCLUDED_BLADERF_FINDLIBUSB_CMAKE)
     return()
@@ -43,7 +47,7 @@ set(LIBUSB_PATH
 
 find_package(PkgConfig)
 if(PKG_CONFIG_FOUND)
-    pkg_check_modules(PKGCONFIG_LIBUSB libusb-1.0)
+    pkg_check_modules(PKGCONFIG_LIBUSB libusb-1.0 QUIET)
 endif(PKG_CONFIG_FOUND)
 
 if(PKGCONFIG_LIBUSB_FOUND)
@@ -121,31 +125,44 @@ if(LIBUSB_FOUND)
 endif(LIBUSB_FOUND)
 
 if(LIBUSB_FOUND AND NOT CMAKE_CROSSCOMPILING)
+    if(LIBUSB_SKIP_VERSION_CHECK)
+        message(STATUS "Skipping libusb version number check.")
+        unset(LIBUSB_VERSION)
+    else()
+        message(STATUS "Checking libusb version...")
 
-    # Introduced in v1.0.9 - these functions are absolutely required
-    check_library_exists("${usb_LIBRARY}" libusb_error_name "" LIBUSB_HAVE_ERROR_NAME)
-    check_library_exists("${usb_LIBRARY}" libusb_get_device_speed "" LIBUSB_HAVE_GET_DEVICE_SPEED)
+        if(WIN32)
+            set(LIBUSB_GET_VERSION ${CMAKE_HELPERS_BINARY_DIR}/libusb_get_version.exe)
+            string(REPLACE ".lib" ".dll" LIBUSB_DLL "${LIBUSB_LIBRARIES}")
 
-    if(NOT LIBUSB_HAVE_ERROR_NAME OR NOT LIBUSB_HAVE_GET_DEVICE_SPEED)
-        message(FATAL "The installed version of libusb does not have required functions: libusb_error_name() or libusb_get_device_speed()")
+            # We'll need the DLL to run the version check
+            file(COPY ${LIBUSB_DLL} DESTINATION ${CMAKE_HELPERS_BINARY_DIR})
+        else()
+            set(LIBUSB_GET_VERSION ${CMAKE_HELPERS_BINARY_DIR}/libusb_get_version)
+        endif()
+
+        try_compile(LIBUSB_VERCHECK_COMPILED
+                    ${CMAKE_HELPERS_BINARY_DIR}
+                    ${CMAKE_HELPERS_SOURCE_DIR}/libusb_version.c
+                    CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${LIBUSB_INCLUDE_DIRS}"
+                    LINK_LIBRARIES ${LIBUSB_LIBRARIES}
+                    COPY_FILE ${LIBUSB_GET_VERSION}
+        )
+
+        if(NOT LIBUSB_VERCHECK_COMPILED)
+            set(LIBUSB_VERSION "0.0.0")
+            message(WARNING "\nFailed to compile libusb version check.\n"
+                            "This may occur if libusb is earlier than v1.0.10.\n"
+                            "Setting LIBUSB_VERSION to ${LIBUSB_VERSION}.\n")
+            return()
+        else()
+            execute_process(
+                    COMMAND ${LIBUSB_GET_VERSION}
+                    WORKING_DIRECTORY ${CMAKE_HELPERS_BINARY_DIR}
+                    OUTPUT_VARIABLE LIBUSB_VERSION
+            )
+
+            message(STATUS "libusb version: ${LIBUSB_VERSION}")
+        endif()
     endif()
-
-    # Introduced in v1.0.10
-    check_library_exists("${usb_LIBRARY}" libusb_get_version "" LIBUSB_HAVE_GET_VERSION)
-
-    # Introduced in 1.0.16
-    check_library_exists("${usb_LIBRARY}" libusb_strerror "" LIBUSB_HAVE_STRERROR)
-    if (NOT LIBUSB_HAVE_STRERROR)
-        if(NOT LIBUSB_SUPPRESS_WARNINGS)
-            message(WARNING "Detected libusb < 1.0.16. For best results, consider updating to a more recent libusb version.")
-        endif(NOT LIBUSB_SUPPRESS_WARNINGS)
-    endif(NOT LIBUSB_HAVE_STRERROR)
-
-    # Provide a hook to check it hotplug support is provided (1.0.16)
-    check_library_exists("${usb_LIBRARY}" libusb_hotplug_register_callback  "" LIBUSB_HAVE_HOTPLUG)
-
-    # Test for event handling routines
-    check_library_exists("${usb_LIBRARY}" libusb_handle_events_timeout "" LIBUSB_HAVE_HANDLE_EVENTS_TIMEOUT)
-    check_library_exists("${usb_LIBRARY}" libusb_handle_events_timeout_completed "" LIBUSB_HAVE_HANDLE_EVENTS_TIMEOUT_COMPLETED)
-
 endif(LIBUSB_FOUND AND NOT CMAKE_CROSSCOMPILING)
