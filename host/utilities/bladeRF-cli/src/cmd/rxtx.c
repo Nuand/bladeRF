@@ -318,19 +318,20 @@ struct rxtx_data *rxtx_data_alloc(bladerf_module module)
     pthread_mutex_init(&ret->file_mgmt.file_meta_lock, NULL);
 
     /* Initialize task management */
-   ret->task_mgmt.state = RXTX_STATE_IDLE;
-   ret->task_mgmt.req = 0;
-   pthread_mutex_init(&ret->task_mgmt.lock, NULL);
-   pthread_cond_init(&ret->task_mgmt.signal_req, NULL);
-   pthread_cond_init(&ret->task_mgmt.signal_done, NULL);
-   pthread_cond_init(&ret->task_mgmt.signal_state_change, NULL);
-   ret->task_mgmt.main_task_waiting = false;
+    ret->task_mgmt.started = false;
+    ret->task_mgmt.state = RXTX_STATE_IDLE;
+    ret->task_mgmt.req = 0;
+    pthread_mutex_init(&ret->task_mgmt.lock, NULL);
+    pthread_cond_init(&ret->task_mgmt.signal_req, NULL);
+    pthread_cond_init(&ret->task_mgmt.signal_done, NULL);
+    pthread_cond_init(&ret->task_mgmt.signal_state_change, NULL);
+    ret->task_mgmt.main_task_waiting = false;
 
-   cli_error_init(&ret->last_error);
+    cli_error_init(&ret->last_error);
 
-   ret->module = module;
+    ret->module = module;
 
-   return ret;
+    return ret;
 }
 
 int rxtx_startup(struct cli_state *s, bladerf_module module)
@@ -348,7 +349,10 @@ int rxtx_startup(struct cli_state *s, bladerf_module module)
         if (status < 0) {
             rxtx_set_state(s->rx, RXTX_STATE_FAIL);
         } else {
-            status = rxtx_wait_for_state(s->rx, RXTX_STATE_IDLE, 1000);
+            status = rxtx_wait_for_state(s->rx, RXTX_STATE_IDLE, 0);
+            if (status == 0) {
+                s->rx->task_mgmt.started = true;
+            }
         }
 
     } else {
@@ -358,7 +362,10 @@ int rxtx_startup(struct cli_state *s, bladerf_module module)
         if (status < 0) {
             rxtx_set_state(s->tx, RXTX_STATE_FAIL);
         } else {
-            status = rxtx_wait_for_state(s->tx, RXTX_STATE_IDLE, 1000);
+            status = rxtx_wait_for_state(s->tx, RXTX_STATE_IDLE, 0);
+            if (status == 0) {
+                s->tx->task_mgmt.started = true;
+            }
         }
     }
 
@@ -376,7 +383,7 @@ bool rxtx_task_running(struct rxtx_data *rxtx)
 
 void rxtx_shutdown(struct rxtx_data *rxtx)
 {
-    if (rxtx_get_state(rxtx) != RXTX_STATE_FAIL) {
+    if (rxtx->task_mgmt.started && rxtx_get_state(rxtx) != RXTX_STATE_FAIL) {
         rxtx_submit_request(rxtx, RXTX_TASK_REQ_SHUTDOWN);
         pthread_join(rxtx->task_mgmt.thread, NULL);
     }

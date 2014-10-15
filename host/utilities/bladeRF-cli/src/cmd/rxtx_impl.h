@@ -107,6 +107,7 @@ struct file_mgmt
 struct task_mgmt
 {
     pthread_t thread;           /* Handle to thread in which the task runs */
+    bool started;               /* Has the thread been started? */
 
     enum rxtx_state state;      /* Task state */
     uint8_t req;                /* Requests for state change. See
