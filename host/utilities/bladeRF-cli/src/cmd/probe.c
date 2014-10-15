@@ -45,13 +45,13 @@ int cmd_probe(struct cli_state *s, int argc, char *argv[])
     if (n_devices < 0) {
         if (n_devices == BLADERF_ERR_NODEV) {
             cli_err(s, argv[0], "No devices found.\n");
+            return 0;
         } else {
             cli_err(s, argv[0], "Failed to probe for devices: %s\n",
                     bladerf_strerror(n_devices));
+            s->last_lib_error = n_devices;
+            return CLI_RET_LIBBLADERF;
         }
-
-        s->last_lib_error = n_devices;
-        return CLI_RET_LIBBLADERF;
     }
 
     putchar('\n');
