@@ -267,6 +267,13 @@ if (MSVC)
 endif()
 
 if(ENABLE_BACKEND_USB)
+    # Useful when doing FX3, NIOS-II, or FPGA debugging
+    if(LIBBLADERF_DISABLE_USB_TIMEOUTS)
+        add_definitions("-DPERIPHERAL_TIMEOUT_MS=0")
+        add_definitions("-DCTRL_TIMEOUT_MS=0")
+        add_definitions("-DBULK_TIMEOUT_MS=0")
+    endif()
+
     set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend/usb/usb.c)
 endif()
 
