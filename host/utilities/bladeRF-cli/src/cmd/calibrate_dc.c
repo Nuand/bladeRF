@@ -1049,5 +1049,10 @@ error:
     status = bladerf_set_loopback(s->dev, loopback);
     retval = first_error(retval, status);
 
+    if (retval != 0) {
+        s->last_lib_error = retval;
+        retval = CLI_RET_LIBBLADERF;
+    }
+
     return retval;
 }
