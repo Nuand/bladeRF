@@ -341,11 +341,11 @@ begin
                         meta_downcount <= meta_downcount - 1;
                     else
                         dma_downcount <= dma_downcount - 1;
-                        if (unsigned(meta_buffer(31 downto 0) & meta_buffer(63 downto 32)) < (tx_timestamp + 32)) then
-                           state <= SAMPLE_WRITE_IGNORE;
-                        else
+                        if (unsigned(meta_buffer(63 downto 0)) = 0 or unsigned(meta_buffer(31 downto 0) & meta_buffer(63 downto 32)) > (tx_timestamp + 32)) then
                            meta_downcount <= to_signed(3, 13);
                            state <= SAMPLE_WRITE;
+                        else
+                           state <= SAMPLE_WRITE_IGNORE;
                         end if;
                     end if;
                 when SAMPLE_WRITE_IGNORE =>
