@@ -32,7 +32,7 @@
 #include "conversions.h"
 
 #define RXTX_ERRMSG_VALUE(param, value) \
-    "Invalid value for \"%s\" (%s)", param, value
+    "Invalid value for \"%s\" (%s)\n", param, value
 
 /* Minimum required unit of sample acceses */
 #define LIBBLADERF_SAMPLE_BLOCK_SIZE    1024
@@ -107,6 +107,7 @@ struct file_mgmt
 struct task_mgmt
 {
     pthread_t thread;           /* Handle to thread in which the task runs */
+    bool started;               /* Has the thread been started? */
 
     enum rxtx_state state;      /* Task state */
     uint8_t req;                /* Requests for state change. See

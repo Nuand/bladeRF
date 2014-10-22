@@ -48,6 +48,7 @@ static const struct compat fw_compat_tbl[] = {
 
 static const struct compat fpga_compat_tbl[] = {
     /*    FPGA          requires >=        Firmware */
+    { VERSION(0, 1, 0),                 VERSION(1, 6, 1) },
     { VERSION(0, 0, 6),                 VERSION(1, 6, 1) },
     { VERSION(0, 0, 5),                 VERSION(1, 6, 1) },
     { VERSION(0, 0, 4),                 VERSION(1, 6, 1) },
@@ -67,10 +68,12 @@ static const struct compat * find_fw_match(const struct bladerf *dev)
                           dev->fw_version.minor,
                           dev->fw_version.patch)) {
 
-        log_warning("New firmware version (v%u.%u.%u) detected. "
-                    "A developer needs to update the table in %s!\n",
-                    dev->fw_version.major, dev->fw_version.minor,
-                    dev->fw_version.patch, __FILE__);
+        log_info("Firmware version (v%u.%u.%u) is newer than entries in "
+                 "libbladeRF's compatibility table. Please update libbladeRF "
+                 "if problems arise.\n",
+                 dev->fw_version.major,
+                 dev->fw_version.minor,
+                 dev->fw_version.patch);
 
         return newest_fw;
     }
@@ -96,10 +99,12 @@ static const struct compat * find_fpga_match(const struct bladerf *dev)
                           dev->fpga_version.patch)) {
 
 
-        log_warning("New FPGA version (v%u.%u.%u) detected. "
-                    "A developer needs to update the table in %s!\n",
-                    dev->fpga_version.major, dev->fpga_version.minor,
-                    dev->fpga_version.patch, __FILE__);
+        log_info("FPGA version (v%u.%u.%u) is newer than entries in "
+                 "libbladeRF's compatibility table. Please update libbladeRF "
+                 "if problems arise.\n",
+                 dev->fpga_version.major,
+                 dev->fpga_version.minor,
+                 dev->fpga_version.patch);
 
         return newest_fpga;
     }

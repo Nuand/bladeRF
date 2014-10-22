@@ -32,12 +32,6 @@
 #include "minmax.h"
 #include "conversions.h"
 
-#define rv_error(rv, ...) do {                              \
-        state->last_lib_error = (rv);                       \
-        cli_err(state, argv[0], __VA_ARGS__);               \
-        rv = CLI_RET_LIBBLADERF;                            \
-    } while(0)
-
 struct options {
     char *file;
     uint32_t address, len;
@@ -54,7 +48,7 @@ static int parse_argv(struct cli_state *state, int argc, char **argv,
 
     if (argc >= 2) {
         if ((opt->file = input_expand_path(argv[1])) == NULL) {
-            cli_err(state, argv[0], "Unable to expand file path: \"%s\"",
+            cli_err(state, argv[0], "Unable to expand file path: \"%s\"\n",
                     argv[1]);
             return CLI_RET_INVPARAM;
         }
@@ -67,13 +61,13 @@ static int parse_argv(struct cli_state *state, int argc, char **argv,
     if (argc == 4) {
         opt->address = str2uint(argv[2], 0, UINT_MAX, &ok);
         if (!ok || (opt->address % BLADERF_FLASH_PAGE_SIZE != 0)) {
-            cli_err(state, argv[0], "Invalid address provided");
+            cli_err(state, argv[0], "Invalid address provided\n");
             return CLI_RET_INVPARAM;
         }
 
         opt->len = str2uint(argv[3], 0, UINT_MAX, &ok);
         if (!ok || (opt->len % BLADERF_FLASH_PAGE_SIZE != 0)) {
-            cli_err(state, argv[0], "Invalid length provided");
+            cli_err(state, argv[0], "Invalid length provided\n");
             return CLI_RET_INVPARAM;
         }
 
@@ -142,7 +136,8 @@ int cmd_flash_restore(struct cli_state *state, int argc, char **argv)
 
     rv = bladerf_image_read(image, opt.file);
     if (rv < 0) {
-        rv_error(rv, "Failed to read flash image from file.");
+        state->last_lib_error = rv;
+        rv = CLI_RET_LIBBLADERF;
         goto cmd_flash_restore_out;
     }
 
@@ -162,7 +157,8 @@ int cmd_flash_restore(struct cli_state *state, int argc, char **argv)
 
     rv = erase_region(state->dev, image, addr, len);
     if (rv < 0) {
-        rv_error(rv, "Failed to erase flash.");
+        state->last_lib_error = rv;
+        rv = CLI_RET_LIBBLADERF;
         goto cmd_flash_restore_out;
     }
 

@@ -219,7 +219,8 @@ static int tx_csv_to_sc16q11(struct cli_state *s)
             if (ok) {
                 tmp_iq[0] = tmp_int;
             } else {
-                cli_err(s, "tx", "Line %d: Encountered invalid I value", line);
+                cli_err(s, "tx",
+                        "Line %d: Encountered invalid I value.\n", line);
                 status = CLI_RET_INVPARAM;
                 break;
             }
@@ -241,13 +242,14 @@ static int tx_csv_to_sc16q11(struct cli_state *s)
                 if (ok) {
                     tmp_iq[1] = tmp_int;
                 } else {
-                    cli_err(s, "tx", "Line %d: encountered invalid Q value", line);
+                    cli_err(s, "tx",
+                            "Line %d: encountered invalid Q value.\n", line);
                     status = CLI_RET_INVPARAM;
                     break;
                 }
 
             } else {
-                cli_err(s, "tx", "Error: Q value missing");
+                cli_err(s, "tx", "Error: Q value missing.\n");
                 status = CLI_RET_INVPARAM;
                 break;
             }
@@ -260,7 +262,8 @@ static int tx_csv_to_sc16q11(struct cli_state *s)
                     break;
                 }
             } else {
-                cli_err(s, "tx", "Line (%d): Encountered extra token(s)", line);
+                cli_err(s, "tx",
+                        "Line (%d): Encountered extra token(s).\n", line);
                 status = CLI_RET_INVPARAM;
                 break;
             }
@@ -276,7 +279,7 @@ static int tx_csv_to_sc16q11(struct cli_state *s)
             tx->file_mgmt.path = bin_name;
 
             if (n_clamped != 0) {
-                printf("    Warning: %u values clamped within DAC SC16 Q11 "
+                printf("  Warning: %u values clamped within DAC SC16 Q11 "
                        "range of [%d, %d].\n",
                        n_clamped, SC16Q11_IQ_MIN, SC16Q11_IQ_MAX);
             }
@@ -422,7 +425,7 @@ static int tx_cmd_start(struct cli_state *s)
         status = tx_csv_to_sc16q11(s);
 
         if (status == 0) {
-            printf("    Converted CSV to SC16 Q11 file and "
+            printf("  Converted CSV to SC16 Q11 file and "
                     "switched to converted file.\n\n");
         }
     }
@@ -478,24 +481,24 @@ static void tx_print_config(struct rxtx_data *tx)
     pthread_mutex_unlock(&tx->param_lock);
 
     printf("\n");
-    rxtx_print_state(tx, "    State: ", "\n");
-    rxtx_print_error(tx, "    Last error: ", "\n");
-    rxtx_print_file(tx, "    File: ", "\n");
-    rxtx_print_file_format(tx, "    File format: ", "\n");
+    rxtx_print_state(tx, "  State: ", "\n");
+    rxtx_print_error(tx, "  Last error: ", "\n");
+    rxtx_print_file(tx, "  File: ", "\n");
+    rxtx_print_file_format(tx, "  File format: ", "\n");
 
     if (repetitions) {
-        printf("    Repetitions: %u\n", repetitions);
+        printf("  Repetitions: %u\n", repetitions);
     } else {
-        printf("    Repetitions: infinite\n");
+        printf("  Repetitions: infinite\n");
     }
 
     if (repeat_delay) {
-        printf("    Repetition delay: %u us\n", repeat_delay);
+        printf("  Repetition delay: %u us\n", repeat_delay);
     } else {
-        printf("    Repetition delay: none\n");
+        printf("  Repetition delay: none\n");
     }
 
-    rxtx_print_stream_info(tx, "    ", "\n");
+    rxtx_print_stream_info(tx, "  ", "\n");
 
     printf("\n");
 }
@@ -554,7 +557,8 @@ static int tx_config(struct cli_state *s, int argc, char **argv)
                 }
 
             } else {
-                cli_err(s, argv[0], "Unrecognized config parameter: %s", argv[i]);
+                cli_err(s, argv[0],
+                        "Unrecognized config parameter: %s\n", argv[i]);
                 return CLI_RET_INVPARAM;
             }
         }
@@ -581,7 +585,7 @@ int cmd_tx(struct cli_state *s, int argc, char **argv)
     } else if (!strcasecmp(argv[1], RXTX_CMD_WAIT)) {
         status = rxtx_handle_wait(s, s->tx, argc, argv);
     } else {
-        cli_err(s, argv[0], "Invalid command: \"%s\"", argv[1]);
+        cli_err(s, argv[0], "Invalid command: \"%s\"\n", argv[1]);
         status = CLI_RET_INVPARAM;
     }
 

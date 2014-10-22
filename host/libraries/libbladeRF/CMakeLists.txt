@@ -53,6 +53,11 @@ if(NOT ${BUILD_DOCUMENTATION})
     set(BUILD_LIBBLADERF_DOCUMENTATION OFF)
 endif()
 
+option(BUILD_LIBBLADERF_DOC_EXAMPLES "Compile examples that are included in Doxygen documentation (mainly for QA purposes)." ${BUILD_LIBBLADERF_DOCUMENTATION})
+if(NOT ${BUILD_LIBBLADERF_DOCUMENTATION})
+    set(BUILD_LIBBLADERF_DOCUMENTATION OFF)
+endif()
+
 option(ENABLE_LIBBLADERF_SYNC_LOG_VERBOSE
       "Enable log_verbose() calls in the sync interface's data path. Note that this may harm performance."
       OFF
@@ -73,7 +78,12 @@ option(ENABLE_BACKEND_USB
 
 option(ENABLE_BACKEND_LIBUSB
     "Enable libusb backend support."
-    ON
+    ${LIBUSB_FOUND}
+)
+
+option(ENABLE_BACKEND_CYAPI
+    "Enable CYAPI backend support."
+    ${CYAPI_FOUND}
 )
 
 option(ENABLE_BACKEND_DUMMY
@@ -81,19 +91,11 @@ option(ENABLE_BACKEND_DUMMY
     OFF
 )
 
-option(LIBUSB_DETACH_KERNEL_DRIVER
-    "Enable calls to libusb_detach_kernel_driver(). Not supported in Windows."
-    ON
-)
-
-option(ENABLE_BACKEND_LINUX_DRIVER
-    "Enable Linux driver backend support."
-    OFF
-)
-
-
 # Ensure we've got at least one backend enabled
-if(NOT ENABLE_BACKEND_LIBUSB AND NOT ENABLE_BACKEND_LINUX_DRIVER AND NOT ENABLE_BACKEND_DUMMY)
+if(NOT ENABLE_BACKEND_LIBUSB
+   AND NOT ENABLE_BACKEND_LINUX_DRIVER
+   AND NOT ENABLE_BACKEND_CYAPI
+   AND NOT ENABLE_BACKEND_DUMMY)
     message(FATAL_ERROR
             "No libbladeRF backends are enabled. "
             "Please enable one or more backends." )
@@ -170,21 +172,59 @@ if(NOT ENABLE_BACKEND_USB)
 endif()
 
 if(ENABLE_BACKEND_LIBUSB)
-    find_package(LibUSB)
     if(NOT LIBUSB_FOUND)
         message(FATAL_ERROR "libusb-1.0 not found. This is required to use the libbladeRF libusb backend. For binary releases, try setting LIBUSB_PATH.")
     else(NOT LIBUSB_FOUND)
-        if(LIBUSB_HAVE_GET_VERSION)
-            add_definitions(-DHAVE_LIBUSB_GET_VERSION)
-        endif(LIBUSB_HAVE_GET_VERSION)
+        if(LIBUSB_VERSION)
+            if(LIBUSB_HAVE_GET_VERSION)
+                add_definitions(-DHAVE_LIBUSB_GET_VERSION)
+            endif()
 
-        if(NOT LIBUSB_HAVE_HANDLE_EVENTS_TIMEOUT)
-            MESSAGE(FATAL "The required function libusb_handle_events_timeout() is missing")
+            if(WIN32)
+                # We require v1.0.19 because it provides Windows 8 USB 3.0
+                # speed detection fixes, additional AMD/Intel USB 3.0 root
+                # hub support, and some fixes to issues reported on v1.0.18
+                # that yielded corrupted samples.
+                if(${LIBUSB_VERSION} VERSION_LESS "1.0.19")
+                    message(FATAL_ERROR "libusb v1.0.19 is required in Windows.\n"
+                                        "Please update libusb or consider using the Cypress backend if this is not possible.\n"
+                                        "Detected version: ${LIBUSB_VERSION}\n")
+                endif()
+            elseif(APPLE)
+                # A number of important changes were included in libusb
+                # v1.0.16 hrough v1.0.18, including SuperSpeed support, 64-bit support,
+                # and various build and crash fixes.
+                if(${LIBUSB_VERSION} VERSION_LESS "1.0.18")
+                    message(FATAL_ERROR "libusb v1.0.18 is required in OS X. Please update libusb."
+                                        "Detected version: ${LIBUSB_VERSION}\n")
+                endif()
+            elseif(UNIX)
+                # A number of reported issues supposedly became resolved after
+                # updating to >= 1.0.16.
+                if(${LIBUSB_VERSION} VERSION_LESS "1.0.16")
+                    message(WARNING "\nlibusb >= 1.0.16 is HIGHLY recommended. "
+                                    "If you experience issues or poor performance, please try updating libusb.\n"
+                                    "Detected version: ${LIBUSB_VERSION}")
+                endif()
+            else()
+                message(WARNING "Unexpected system type. Please report this warning to developers.")
+            endif()
+        else()
+            message(WARNING "Not checking libbladeRF/libusb compatibility because LIBUSB_VERSION is not defined.")
         endif()
-
         set(LIBBLADERF_INCLUDES ${LIBBLADERF_INCLUDES} ${LIBUSB_INCLUDE_DIRS})
     endif(NOT LIBUSB_FOUND)
 endif(ENABLE_BACKEND_LIBUSB)
+
+if(ENABLE_BACKEND_CYAPI)
+    find_package(CyAPI REQUIRED)
+    set(LIBBLADERF_INCLUDES ${LIBBLADERF_INCLUDES} ${CYAPI_INCLUDE_DIRS})
+endif(ENABLE_BACKEND_CYAPI)
+
+if(MSVC)
+    set(LIBBLADERF_INCLUDES ${LIBBLADERF_INCLUDES}
+        ${LIBPTHREADSWIN32_INCLUDE_DIRS})
+endif()
 
 if(ENABLE_LIBBLADERF_SYNC_LOG_VERBOSE AND ENABLE_LIBBLADERF_LOGGING)
     add_definitions(-DENABLE_LIBBLADERF_SYNC_LOG_VERBOSE)
@@ -228,11 +268,24 @@ if (MSVC)
 endif()
 
 if(ENABLE_BACKEND_USB)
+    # Useful when doing FX3, NIOS-II, or FPGA debugging
+    if(LIBBLADERF_DISABLE_USB_TIMEOUTS)
+        add_definitions("-DPERIPHERAL_TIMEOUT_MS=0")
+        add_definitions("-DCTRL_TIMEOUT_MS=0")
+        add_definitions("-DBULK_TIMEOUT_MS=0")
+    endif()
+
     set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend/usb/usb.c)
 endif()
 
 if(LIBUSB_FOUND AND ENABLE_BACKEND_LIBUSB)
     set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend//usb/libusb.c)
+endif()
+
+if(CYAPI_FOUND AND ENABLE_BACKEND_CYAPI)
+    set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend/usb/cyapi.c)
+    # CyAPI is C++
+    set_source_files_properties(src/backend/usb/cyapi.c PROPERTIES LANGUAGE CXX)
 endif()
 
 if(ENABLE_BACKEND_DUMMY)
@@ -263,17 +316,19 @@ add_library(libbladerf_shared SHARED ${LIBBLADERF_SOURCE})
 # Build configuration
 ################################################################################
 
-if(ENABLE_LIBBLADERF_SYNC)
-    if(MSVC)
-        set(LIBBLADERF_LIBS ${LIBBLADERF_LIBS} ${LIBPTHREADSWIN32_LIBRARIES})
-    else()
-        set(LIBBLADERF_LIBS ${LIBBLADERF_LIBS} ${CMAKE_THREAD_LIBS_INIT})
-    endif(MSVC)
-endif()
+if(MSVC)
+    set(LIBBLADERF_LIBS ${LIBBLADERF_LIBS} ${LIBPTHREADSWIN32_LIBRARIES})
+else()
+    set(LIBBLADERF_LIBS ${LIBBLADERF_LIBS} ${CMAKE_THREAD_LIBS_INIT})
+endif(MSVC)
 
 if(ENABLE_BACKEND_LIBUSB)
     set(LIBBLADERF_LIBS ${LIBBLADERF_LIBS} ${LIBUSB_LIBRARIES})
 endif()
+
+if(ENABLE_BACKEND_CYAPI)
+    set(LIBBLADERF_LIBS ${LIBBLADERF_LIBS} ${CYAPI_LIBRARIES})
+endif(ENABLE_BACKEND_CYAPI)
 
 target_link_libraries(libbladerf_shared ${LIBBLADERF_LIBS})
 
@@ -351,6 +406,11 @@ if(BUILD_LIBBLADERF_DOCUMENTATION)
     find_package(Doxygen)
     if(DOXYGEN_FOUND)
         message(STATUS "Configured to build libbladeRF API documentation.")
+
+        if(BUILD_LIBBLADERF_DOC_EXAMPLES)
+            add_subdirectory(doc/examples)
+        endif()
+
         configure_file(
             ${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/Doxyfile.in
             ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/Doxyfile

@@ -111,18 +111,6 @@ struct cli_state *cli_state_create()
         if (!cli_state->tx) {
             goto cli_state_create_fail;
         }
-
-        if (rxtx_startup(cli_state, BLADERF_MODULE_RX)) {
-            rxtx_data_free(cli_state->rx);
-            cli_state->rx = NULL;
-            goto cli_state_create_fail;
-        }
-
-        if (rxtx_startup(cli_state, BLADERF_MODULE_TX)) {
-            rxtx_data_free(cli_state->tx);
-            cli_state->tx = NULL;
-            goto cli_state_create_fail;
-        }
     }
 
     init_signal_handling();
@@ -132,6 +120,25 @@ struct cli_state *cli_state_create()
 cli_state_create_fail:
     cli_state_destroy(cli_state);
     return NULL;
+}
+
+int cli_start_tasks(struct cli_state *s)
+{
+    int status;
+
+    status = rxtx_startup(cli_state, BLADERF_MODULE_RX);
+    if (status != 0) {
+        cli_err(s, "Error", "Failed to start RX task.\n");
+        return CLI_RET_UNKNOWN;
+    }
+
+    status = rxtx_startup(cli_state, BLADERF_MODULE_TX);
+    if (status != 0) {
+        cli_err(s, "Error", "Failed to start TX task.\n");
+        return CLI_RET_UNKNOWN;
+    }
+
+    return 0;
 }
 
 void cli_state_destroy(struct cli_state *s)
@@ -192,9 +199,10 @@ void cli_err(struct cli_state *s, const char *pfx, const char *format, ...)
         }
     }
 
-    /* +4 --> 1 newlines, 2 chars padding, NUL terminator */
-    err = calloc(strlen(lbuf) + strlen(pfx) + strlen(format) + 4, 1);
+    /* +7 --> 2 newlines, 4 chars padding, NUL terminator */
+    err = calloc(strlen(lbuf) + strlen(pfx) + strlen(format) + 7, 1);
     if (err) {
+        strcat(err, "\n  ");
         strcat(err, pfx);
         strcat(err, lbuf);
         strcat(err, ": ");

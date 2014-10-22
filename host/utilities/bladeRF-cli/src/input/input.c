@@ -33,7 +33,7 @@ static void exit_script(struct cli_state *s)
 
         status = cli_close_script(&s->scripts);
         if (status < 0) {
-            cli_err(s, "Error", "Failed to close script");
+            cli_err(s, "Error", "Failed to close script.\n");
         }
 
         if (!cli_script_loaded(s->scripts)) {
@@ -42,7 +42,7 @@ static void exit_script(struct cli_state *s)
             /* At least attempt to report something... */
             if (status < 0) {
                 cli_err(s, "Error",
-                        "Failed to reset terminal when exiting script");
+                        "Failed to reset terminal when exiting script.\n");
             }
         }
     }
@@ -64,7 +64,7 @@ int input_loop(struct cli_state *s, bool interactive)
     if (cli_script_loaded(s->scripts)) {
         status = input_set_input(cli_script_file(s->scripts));
         if (status < 0) {
-            fprintf(stderr, "Failed to load script. Aborting!\n");
+            cli_err(s, "Error", "Failed to load script. Aborting!\n");
             status = CLI_RET_QUIT;
         }
     }
@@ -102,7 +102,7 @@ int input_loop(struct cli_state *s, bool interactive)
             if (status < 0) {
                 error = cli_strerror(status, s->last_lib_error);
                 if (error) {
-                    cli_err(s, "Error", "%s", error);
+                    cli_err(s, "Error", "%s\n", error);
                 }
 
                 /* Stop executing script or command list */
@@ -128,11 +128,11 @@ int input_loop(struct cli_state *s, bool interactive)
 
                         if (status < 0) {
                             cli_err(s, "Error",
-                                    "Failed to begin executing script");
+                                    "Failed to begin executing script\n");
                         }
                         break;
                     default:
-                        printf("Unknown return code: %d\n", status);
+                        cli_err(s, "Error", "Unknown return code: %d\n", status);
                 }
             }
         }

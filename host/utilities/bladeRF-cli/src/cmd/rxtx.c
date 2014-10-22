@@ -318,19 +318,20 @@ struct rxtx_data *rxtx_data_alloc(bladerf_module module)
     pthread_mutex_init(&ret->file_mgmt.file_meta_lock, NULL);
 
     /* Initialize task management */
-   ret->task_mgmt.state = RXTX_STATE_IDLE;
-   ret->task_mgmt.req = 0;
-   pthread_mutex_init(&ret->task_mgmt.lock, NULL);
-   pthread_cond_init(&ret->task_mgmt.signal_req, NULL);
-   pthread_cond_init(&ret->task_mgmt.signal_done, NULL);
-   pthread_cond_init(&ret->task_mgmt.signal_state_change, NULL);
-   ret->task_mgmt.main_task_waiting = false;
+    ret->task_mgmt.started = false;
+    ret->task_mgmt.state = RXTX_STATE_IDLE;
+    ret->task_mgmt.req = 0;
+    pthread_mutex_init(&ret->task_mgmt.lock, NULL);
+    pthread_cond_init(&ret->task_mgmt.signal_req, NULL);
+    pthread_cond_init(&ret->task_mgmt.signal_done, NULL);
+    pthread_cond_init(&ret->task_mgmt.signal_state_change, NULL);
+    ret->task_mgmt.main_task_waiting = false;
 
-   cli_error_init(&ret->last_error);
+    cli_error_init(&ret->last_error);
 
-   ret->module = module;
+    ret->module = module;
 
-   return ret;
+    return ret;
 }
 
 int rxtx_startup(struct cli_state *s, bladerf_module module)
@@ -348,7 +349,10 @@ int rxtx_startup(struct cli_state *s, bladerf_module module)
         if (status < 0) {
             rxtx_set_state(s->rx, RXTX_STATE_FAIL);
         } else {
-            status = rxtx_wait_for_state(s->rx, RXTX_STATE_IDLE, 1000);
+            status = rxtx_wait_for_state(s->rx, RXTX_STATE_IDLE, 0);
+            if (status == 0) {
+                s->rx->task_mgmt.started = true;
+            }
         }
 
     } else {
@@ -358,7 +362,10 @@ int rxtx_startup(struct cli_state *s, bladerf_module module)
         if (status < 0) {
             rxtx_set_state(s->tx, RXTX_STATE_FAIL);
         } else {
-            status = rxtx_wait_for_state(s->tx, RXTX_STATE_IDLE, 1000);
+            status = rxtx_wait_for_state(s->tx, RXTX_STATE_IDLE, 0);
+            if (status == 0) {
+                s->tx->task_mgmt.started = true;
+            }
         }
     }
 
@@ -376,7 +383,7 @@ bool rxtx_task_running(struct rxtx_data *rxtx)
 
 void rxtx_shutdown(struct rxtx_data *rxtx)
 {
-    if (rxtx_get_state(rxtx) != RXTX_STATE_FAIL) {
+    if (rxtx->task_mgmt.started && rxtx_get_state(rxtx) != RXTX_STATE_FAIL) {
         rxtx_submit_request(rxtx, RXTX_TASK_REQ_SHUTDOWN);
         pthread_join(rxtx->task_mgmt.thread, NULL);
     }
@@ -406,7 +413,7 @@ int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
     *val = strchr(param, '=');
 
     if (!*val || strlen(&(*val)[1]) < 1) {
-        cli_err(s, argv0, "No value provided for parameter \"%s\"", param);
+        cli_err(s, argv0, "No value provided for parameter \"%s\"\n", param);
         status = CLI_RET_INVPARAM;
     }
 
@@ -455,7 +462,7 @@ int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
                 status = CLI_RET_INVPARAM;
             } else if (tmp % RXTX_SAMPLES_MIN != 0) {
                 cli_err(s, argv0,
-                        "The '%s' paramter must be a multiple of %u.",
+                        "The '%s' paramter must be a multiple of %u.\n",
                         param, RXTX_SAMPLES_MIN);
                 status = CLI_RET_INVPARAM;
             } else {
@@ -525,7 +532,7 @@ static void check_samplerate(struct cli_state *s, struct rxtx_data *rxtx)
     status = bladerf_get_sample_rate(s->dev, rxtx->module, &samplerate_dev);
     if (status < 0) {
         cli_err(s, "Error", "Failed read device's current sample rate. "
-                            "Unable to perform sanity check.");
+                            "Unable to perform sanity check.\n");
     } else if (samplerate_dev < samplerate_min) {
         if (samplerate_min <= 40000000) {
             printf("\n");
@@ -559,7 +566,7 @@ static int validate_stream_params(struct cli_state *s, struct rxtx_data *rxtx,
     if (rxtx->data_mgmt.num_transfers >= rxtx->data_mgmt.num_buffers) {
         cli_err(s, argv0,
                 "The 'xfers' parameter (%u) must be < the 'buffers'"
-                " parameter (%u).", rxtx->data_mgmt.num_transfers,
+                " parameter (%u).\n", rxtx->data_mgmt.num_transfers,
                 rxtx->data_mgmt.num_buffers);
 
         status = CLI_RET_INVPARAM;
@@ -583,7 +590,7 @@ int rxtx_cmd_start_check(struct cli_state *s, struct rxtx_data *rxtx,
         pthread_mutex_unlock(&rxtx->file_mgmt.file_meta_lock);
 
         if (!have_file) {
-            cli_err(s, argv0, "File not configured");
+            cli_err(s, argv0, "File not configured\n");
             status = CLI_RET_INVPARAM;
         } else {
             status = validate_stream_params(s, rxtx, argv0);

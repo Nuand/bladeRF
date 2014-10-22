@@ -245,7 +245,7 @@ int main(int argc, char *argv[])
 
     for (i = 0; i < ARRAY_SIZE(tests); i++) {
         if (p.test_name == NULL || !strcasecmp(p.test_name, tests[i]->name)) {
-            p.randval_state = p.randval_seed;
+            randval_init(&p.randval_state,  p.randval_seed);
             stats[i].ran = true;
             stats[i].failures = tests[i]->fn(dev, &p, false);
         }

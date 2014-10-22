@@ -347,7 +347,7 @@ static int rx_cmd_start(struct cli_state *s)
     /* This should never occur. If it does, there's likely a defect
      * present in the rx task */
     if (status != 0) {
-        cli_err(s, "rx", "RX did not start up in the alloted time\n");
+        cli_err(s, "rx", "RX did not start up in the allotted time.\n");
         status = CLI_RET_UNKNOWN;
     }
 
@@ -363,17 +363,17 @@ static void rx_print_config(struct rxtx_data *rx)
     n_samples = rx_params->n_samples;
     pthread_mutex_unlock(&rx->param_lock);
 
-    rxtx_print_state(rx, "    State: ", "\n");
-    rxtx_print_error(rx, "    Last error: ", "\n");
-    rxtx_print_file(rx, "    File: ", "\n");
-    rxtx_print_file_format(rx, "    File format: ", "\n");
+    rxtx_print_state(rx, "\n  State: ", "\n");
+    rxtx_print_error(rx, "  Last error: ", "\n");
+    rxtx_print_file(rx, "  File: ", "\n");
+    rxtx_print_file_format(rx, "  File format: ", "\n");
 
     if (n_samples) {
-        printf("    # Samples: %" PRIu64  "\n", (uint64_t)n_samples);
+        printf("  # Samples: %" PRIu64  "\n", (uint64_t)n_samples);
     } else {
-        printf("    # Samples: infinite\n");
+        printf("  # Samples: infinite\n");
     }
-    rxtx_print_stream_info(rx, "    ", "\n");
+    rxtx_print_stream_info(rx, "  ", "\n");
 
     printf("\n");
 }
@@ -416,7 +416,8 @@ static int rx_cmd_config(struct cli_state *s, int argc, char **argv)
                 }
 
             } else {
-                cli_err(s, argv[0], "Unrecognized config parameter: %s", argv[i]);
+                cli_err(s, argv[0],
+                        "Unrecognized config parameter: %s\n", argv[i]);
                 return CLI_RET_INVPARAM;
             }
         }
@@ -443,7 +444,7 @@ int cmd_rx(struct cli_state *s, int argc, char **argv)
     } else if (!strcasecmp(argv[1], RXTX_CMD_WAIT)) {
         ret = rxtx_handle_wait(s, s->rx, argc, argv);
     } else {
-        cli_err(s, argv[0], "Invalid command: \"%s\"", argv[1]);
+        cli_err(s, argv[0], "Invalid command: \"%s\"\n", argv[1]);
         ret = CLI_RET_INVPARAM;
     }
 

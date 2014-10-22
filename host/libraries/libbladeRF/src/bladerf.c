@@ -44,6 +44,7 @@
 #include "version_compat.h"
 #include "fpga.h"
 #include "flash_fields.h"
+#include "backend/usb/usb.h"
 
 /*------------------------------------------------------------------------------
  * Device discovery & initialization/deinitialization
@@ -122,10 +123,19 @@ int bladerf_open_with_devinfo(struct bladerf **opened_device,
         goto error;
     }
 
-    if (dev->usb_speed != BLADERF_DEVICE_SPEED_HIGH &&
-        dev->usb_speed != BLADERF_DEVICE_SPEED_SUPER) {
-        log_debug("Unsupported device speed: %d\n", dev->usb_speed);
-        goto error;
+    switch (dev->usb_speed) {
+        case BLADERF_DEVICE_SPEED_SUPER:
+            dev->msg_size = USB_MSG_SIZE_SS;
+            break;
+
+        case BLADERF_DEVICE_SPEED_HIGH:
+            dev->msg_size = USB_MSG_SIZE_HS;
+            break;
+
+        default:
+            status = BLADERF_ERR_UNEXPECTED;
+            log_error("Unsupported device speed: %d\n", dev->usb_speed);
+            goto error;
     }
 
     /* Verify that we have a sufficent firmware version before continuing. */
@@ -188,6 +198,9 @@ int bladerf_open_with_devinfo(struct bladerf **opened_device,
 
     dev->rx_filter = -1;
     dev->tx_filter = -1;
+
+    dev->module_format[BLADERF_MODULE_RX] = -1;
+    dev->module_format[BLADERF_MODULE_TX] = -1;
 
     /* Load any configuration files or FPGA images that a user has stored
      * for this device in their bladerf config directory */
@@ -260,6 +273,7 @@ int bladerf_enable_module(struct bladerf *dev,
     if (enable == false) {
         sync_deinit(dev->sync[m]);
         dev->sync[m] = NULL;
+        perform_format_deconfig(dev, m);
     }
 
     lms_enable_rffe(dev, m, enable);
@@ -698,26 +712,25 @@ int bladerf_sync_config(struct bladerf *dev,
 {
     int status;
 
-    switch (module) {
-        case BLADERF_MODULE_RX:
-        case BLADERF_MODULE_TX:
-            break;
+    MUTEX_LOCK(&dev->ctrl_lock);
 
-        default:
-            return BLADERF_ERR_INVAL;
+    status = perform_format_config(dev, module, format);
+    if (status == 0) {
+        MUTEX_LOCK(&dev->sync_lock[module]);
+
+        dev->transfer_timeout[module] = stream_timeout;
+
+        status = sync_init(dev, module, format, num_buffers, buffer_size,
+                num_transfers, stream_timeout);
+
+        if (status != 0) {
+            perform_format_deconfig(dev, module);
+        }
+
+        MUTEX_UNLOCK(&dev->sync_lock[module]);
     }
 
-    MUTEX_LOCK(&dev->ctrl_lock);
-    MUTEX_LOCK(&dev->sync_lock[module]);
-
-    dev->transfer_timeout[module] = stream_timeout;
-
-    status = sync_init(dev, module, format, num_buffers, buffer_size,
-                       num_transfers, stream_timeout);
-
-    MUTEX_UNLOCK(&dev->sync_lock[module]);
     MUTEX_UNLOCK(&dev->ctrl_lock);
-
     return status;
 }
 
@@ -769,13 +782,27 @@ int bladerf_init_stream(struct bladerf_stream **stream,
     return status;
 }
 
-/* Reminder: No device control calls may be made down through bladerf_stream or
- *           bladerf_submit_stream_buffer here downward, as we can't
- *           hold the control lock.
- */
 int bladerf_stream(struct bladerf_stream *stream, bladerf_module module)
 {
-    return async_run_stream(stream, module);
+    int stream_status, fmt_status;
+
+    MUTEX_LOCK(&stream->dev->ctrl_lock);
+    fmt_status = perform_format_config(stream->dev, module, stream->format);
+    MUTEX_UNLOCK(&stream->dev->ctrl_lock);
+
+    if (fmt_status != 0) {
+        return fmt_status;
+    }
+
+    /* Reminder: as we're not holding the control lock, no control calls should
+     * be made in asyn_run_stream down through the backend code */
+    stream_status = async_run_stream(stream, module);
+
+    MUTEX_LOCK(&stream->dev->ctrl_lock);
+    fmt_status = perform_format_deconfig(stream->dev, module);
+    MUTEX_UNLOCK(&stream->dev->ctrl_lock);
+
+    return stream_status == 0 ? fmt_status : stream_status;
 }
 
 int bladerf_submit_stream_buffer(struct bladerf_stream *stream,
@@ -1040,6 +1067,8 @@ const char * bladerf_strerror(int error)
             return "An FPGA update is required";
         case BLADERF_ERR_UPDATE_FW:
             return "A firmware update is required";
+        case BLADERF_ERR_TIME_PAST:
+            return "Requested timestamp is in the past";
         case 0:
             return "Success";
         default:

@@ -30,7 +30,7 @@ architecture arch of handshake_tb is
 
 begin
 
-    source_clock <= not source_clock after 10 ns ;
+    source_clock <= not source_clock after 100 ns ;
     dest_clock <= not dest_clock after 3 ns ;
 
     U_handshake : entity work.handshake
@@ -77,6 +77,9 @@ begin
             wait until rising_edge(dest_clock) and dest_ack = '1' ;
             dest_req <= '0' ;
             wait until rising_edge(dest_clock) and dest_ack = '0' ;
+            for x in 1 to 10 loop
+                wait until rising_edge(source_clock) ;
+            end loop ;
         end loop ;
 
         report "-- End of Simulation --" severity failure ;

@@ -47,6 +47,11 @@ typedef enum {
     SYNC_BUFFER_IN_FLIGHT,      /**< Currently being transferred */
 } sync_buffer_status;
 
+typedef enum {
+    SYNC_META_STATE_HEADER,       /**< Extract the metadata header */
+    SYNC_META_STATE_SAMPLES,      /**< Process samples */
+} sync_meta_state;
+
 struct buffer_mgmt {
     sync_buffer_status *status;
 
@@ -75,8 +80,39 @@ typedef enum {
     SYNC_STATE_START_WORKER,
     SYNC_STATE_WAIT_FOR_BUFFER,
     SYNC_STATE_BUFFER_READY,
-    SYNC_STATE_USING_BUFFER
+    SYNC_STATE_USING_BUFFER,
+    SYNC_STATE_USING_BUFFER_META
 } sync_state;
+
+struct sync_meta
+{
+    sync_meta_state state;        /* State of metadata processing */
+
+    uint8_t *curr_msg;            /* Points to current message in the buffer */
+    size_t   curr_msg_off;        /* Offset into current message (samples),
+                                   * ignoring the 4-samples worth of metadata */
+    unsigned int msg_per_buf;     /* Number of data messages per buffer */
+    unsigned int msg_num;         /* Which message within the buffer are we in?
+                                   * Range is: 0 to msg_per_buf   */
+    unsigned int samples_per_msg; /* Number of samples within a message */
+
+    union {
+        /* Used only for RX */
+        struct {
+            uint64_t msg_timestamp; /* Timestamp contained in the current message */
+            uint32_t msg_flags;     /* Flags for the current message */
+        };
+
+        /* Used only for TX */
+        struct {
+            bool in_burst;
+            bool now;
+        };
+    };
+
+    uint64_t curr_timestamp;    /* Timestamp at the sample we've
+                                 * consumed up to */
+};
 
 struct bladerf_sync {
     struct bladerf *dev;
@@ -84,6 +120,7 @@ struct bladerf_sync {
     struct buffer_mgmt buf_mgmt;
     struct stream_config stream_config;
     struct sync_worker *worker;
+    struct sync_meta meta;
 };
 
 /**

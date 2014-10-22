@@ -474,7 +474,11 @@ int main(int argc, char *argv[])
          * exit cleanly */
         if (!str_queue_empty(&exec_list) || rc.interactive_mode ||
             cli_script_loaded(state->scripts)) {
-            status = input_loop(state, rc.interactive_mode);
+
+            status = cli_start_tasks(state);
+            if (status == 0) {
+                status = input_loop(state, rc.interactive_mode);
+            }
         }
     }
 

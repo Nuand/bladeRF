@@ -18,6 +18,7 @@ function usage()
     echo ""
     echo "Supported revisions:"
     echo "    hosted"
+    echo "    atsc_tx"
     echo "    headless"
     echo "    fsk_bridge"
     echo "    qpsk_tx"
@@ -79,7 +80,7 @@ if [ "$rev" == "" ]; then
     exit 1
 fi
 
-if [ "$rev" != "hosted" ] && [ "$rev" != "headless" ] && \
+if [ "$rev" != "hosted" ] && [ "$rev" != "atsc_tx" ] && [ "$rev" != "headless" ] && \
    [ "$rev" != "fsk_bridge" ] && [ "$rev" != "qpsk_tx" ]; then
     echo -e "\nError: Invalid revision (\"$rev\")\n" >&2
     usage

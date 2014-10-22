@@ -1,0 +1,10 @@
+This directory contains example snippets to be included in Doxygen-generated
+documents. These are built when the host system has Doxygen installed and the
+following CMake variables are set:
+    BUILD_DOCUMENTATION=ON
+    BUILD_LIBBLADERF_DOCUMENATION=ON
+    BUILD_LIBBLADERF_DOC_EXAMPLES=ON
+
+
+For more involved programs, see the libbladeRF tests/ directory
+and the bladeRF-cli source code.

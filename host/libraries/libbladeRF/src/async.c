@@ -80,6 +80,7 @@ int async_init_stream(struct bladerf_stream **stream,
 
     switch(format) {
         case BLADERF_FORMAT_SC16_Q11:
+        case BLADERF_FORMAT_SC16_Q11_META:
             buffer_size_bytes = sc16q11_to_bytes(samples_per_buffer);
             break;
 
@@ -134,9 +135,6 @@ int async_init_stream(struct bladerf_stream **stream,
     return status;
 }
 
-/* No device control calls may be made in this function and the associated
- * backend stream implementations, as the stream and control functionality
- * will generally be executed from separate thread contexts. */
 int async_run_stream(struct bladerf_stream *stream, bladerf_module module)
 {
     int status;
@@ -186,6 +184,8 @@ int async_submit_stream_buffer(struct bladerf_stream *stream,
 
             if (status == ETIMEDOUT) {
                 status = BLADERF_ERR_TIMEOUT;
+                log_debug("%s: %u ms timeout expired",
+                          __FUNCTION__, timeout_ms);
                 goto error;
             } else if (status != 0) {
                 status = BLADERF_ERR_UNEXPECTED;

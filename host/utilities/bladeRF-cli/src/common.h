@@ -104,7 +104,16 @@ struct cli_state {
 struct cli_state *cli_state_create();
 
 /**
- * Deallocate and deinitlize state object
+ * Start up RX and TX worker tasks.
+ *
+ * @param   s       CLI state containing task handles
+ *
+ * @return 0 on success, nonzero on failure
+ */
+int cli_start_tasks(struct cli_state *s);
+
+/**
+ * Deallocate and deinitlize state object, including any running tasks
  */
 void cli_state_destroy(struct cli_state *s);
 
@@ -127,7 +136,7 @@ bool cli_device_is_streaming(struct cli_state *s);
  *
  *
  * @param   s       CLI state.
- * @param   pfx     Error prefix. "Error: " is used if this is null
+ * @param   pfx     Error prefix.
  * @param   format  Printf-style format string, followed by args
  *
  */

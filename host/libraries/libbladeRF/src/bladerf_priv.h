@@ -100,6 +100,8 @@ struct bladerf {
     int legacy;
 
     bladerf_dev_speed usb_speed;
+    size_t msg_size; /* Fundamental "chunk" size of the data the FPGA sends to
+                      * the host, in BYTES */
 
     /* Backend's private data  */
     void *backend;
@@ -121,6 +123,9 @@ struct bladerf {
 
     /* Track filterbank selection for TX autoselection */
     bladerf_xb200_filter tx_filter;
+
+    /* Format currently being used with a module, or -1 if module is not used */
+    bladerf_format module_format[NUM_MODULES];
 };
 
 /*
@@ -141,6 +146,34 @@ static inline size_t sc16q11_to_bytes(size_t n_samples)
     const size_t sample_size = 2 * sizeof(int16_t);
     assert(n_samples <= (SIZE_MAX / sample_size));
     return n_samples * sample_size;
+}
+
+/* Covert samples to bytes based upon the provided format */
+static inline size_t samples_to_bytes(bladerf_format format, size_t n)
+{
+    switch (format) {
+        case BLADERF_FORMAT_SC16_Q11:
+        case BLADERF_FORMAT_SC16_Q11_META:
+            return sc16q11_to_bytes(n);
+
+        default:
+            assert(!"Invalid format");
+            return 0;
+    }
+}
+
+/* Convert bytes to samples based upon the provided format */
+static inline size_t bytes_to_samples(bladerf_format format, size_t n)
+{
+    switch (format) {
+        case BLADERF_FORMAT_SC16_Q11:
+        case BLADERF_FORMAT_SC16_Q11_META:
+            return bytes_to_sc16q11(n);
+
+        default:
+            assert(!"Invalid format");
+            return 0;
+    }
 }
 
 /**
@@ -178,5 +211,30 @@ int load_calibration_table(struct bladerf *dev, const char *filename);
  * @return 0 on success, BLADERF_ERR_* on failure
  */
 int config_gpio_write(struct bladerf *dev, uint32_t val);
+
+/**
+ * Perform the neccessary device configuration for the specified format
+ * (e.g., enabling/disabling timestamp support), first checking that the
+ * requested format would not conflict with the other module.
+ *
+ * @param   dev     Device handle
+ * @param   module  Module that is currently being configured
+ * @param   format  Format the module is being configured for
+ *
+ * @return 0 on success, BLADERF_ERR_* on failure
+ */
+int perform_format_config(struct bladerf *dev, bladerf_module module,
+                          bladerf_format format);
+
+/**
+ * Deconfigure and update any state pertaining what a format that a module is no
+ * longer using
+ *
+ * @param   dev     Device handle
+ * @param   module  Module that is currently being deconfigured
+ *
+ * @return 0 on success, BLADERF_ERR_* on failure
+ */
+int perform_format_deconfig(struct bladerf *dev, bladerf_module module);
 
 #endif

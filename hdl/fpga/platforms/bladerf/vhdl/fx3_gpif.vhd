@@ -65,13 +65,15 @@ architecture sample_shuffler of fx3_gpif is
     alias dma3_tx_ack   is ctl_out(3) ;
     alias dma_rx_enable is ctl_in(4) ;
     alias dma_tx_enable is ctl_in(5) ;
-    alias dma_idle      is ctl_in(6) ;
+    --alias dma_idle      is ctl_in(6) ;
     alias dma0_rx_reqx  is ctl_in(8) ;
     alias dma1_rx_reqx  is ctl_in(12) ; -- due to 9 being connected to dclk
     alias dma2_tx_reqx  is ctl_in(10) ;
     alias dma3_tx_reqx  is ctl_in(11) ;
 
     constant CONTROL_OE : std_logic_vector := "0000000001111" ;
+
+    signal dma_idle     :   std_logic ;
 
     signal can_rx       :   std_logic ;
     signal can_tx       :   std_logic ;
@@ -218,7 +220,9 @@ begin
             can_tx <= '0' ;
             should_rx <= '0' ;
             should_tx <= '0' ;
+            dma_idle <= '0' ;
         elsif( rising_edge(pclk) ) then
+            dma_idle <= ctl_in(6) ;
             if( dma_rx_enable = '1' and rx_fifo_enough = '1' and (dma0_rx_reqx = '0' or dma1_rx_reqx = '0') ) then
                 can_rx <= '1' ;
             else
@@ -337,11 +341,11 @@ begin
                         meta_downcount <= meta_downcount - 1;
                     else
                         dma_downcount <= dma_downcount - 1;
-                        if (unsigned(meta_buffer(31 downto 0) & meta_buffer(63 downto 32)) < (tx_timestamp + 32)) then
-                           state <= SAMPLE_WRITE_IGNORE;
-                        else
+                        if (unsigned(meta_buffer(63 downto 0)) = 0 or unsigned(meta_buffer(31 downto 0) & meta_buffer(63 downto 32)) > (tx_timestamp + 32)) then
                            meta_downcount <= to_signed(3, 13);
                            state <= SAMPLE_WRITE;
+                        else
+                           state <= SAMPLE_WRITE_IGNORE;
                         end if;
                     end if;
                 when SAMPLE_WRITE_IGNORE =>

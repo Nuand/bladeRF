@@ -41,28 +41,29 @@ int cmd_load(struct cli_state *state, int argc, char **argv)
         char *expanded_path = input_expand_path(argv[2]);
 
         if (expanded_path == NULL) {
-            cli_err(state, "Unable to expand file path: \"%s\"", argv[2]);
+            cli_err(state, NULL,
+                    "Unable to expand file path: \"%s\"\n", argv[2]);
             return CLI_RET_INVPARAM;
         }
 
         if (!strcasecmp(argv[1], "fpga")) {
 
-            printf("Loading fpga from %s...\n", expanded_path);
+            printf("\n  Loading fpga from %s...\n", expanded_path);
             lib_status = bladerf_load_fpga(dev, expanded_path);
             if (lib_status == 0) {
-                printf("Done.\n");
+                printf("  Done.\n\n");
             }
 
         } else if (!strcasecmp(argv[1], "fx3")) {
 
-            printf("Flashing firmware from %s...\n", expanded_path);
+            printf("\n  Flashing firmware from %s...\n", expanded_path);
             lib_status = bladerf_flash_firmware(dev, expanded_path);
             if (lib_status == 0) {
-                printf("Done. Cycle power on the device.\n");
+                printf("  Done. Cycle power on the device.\n\n");
             }
 
         } else {
-            cli_err(state, argv[0], "Invalid type: %s\n", argv[1]);
+            cli_err(state, argv[0], "  Invalid type: %s\n", argv[1]);
             rv = CLI_RET_INVPARAM;
         }
 

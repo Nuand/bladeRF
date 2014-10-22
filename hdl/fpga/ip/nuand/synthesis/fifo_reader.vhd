@@ -69,7 +69,7 @@ begin
             end if;
         end if;
     end process;
-    meta_time_eq <= '1' when (enable = '1' and meta_loaded = '1' and timestamp(63 downto 0) >= meta_p_time) else '0';
+    meta_time_eq <= '1' when (enable = '1' and meta_loaded = '1' and (timestamp(63 downto 0) = 0 or timestamp(63 downto 0) >= meta_p_time)) else '0';
     process(clock, reset)
     begin
         if (reset = '1') then
@@ -112,8 +112,34 @@ begin
     -- Muxed values so empty reads come out as zeroes
     out_i <= resize(signed(fifo_data(11 downto  0)),out_i'length) when fifo_empty = '0' else (others =>'0') ;
     out_q <= resize(signed(fifo_data(27 downto 16)),out_q'length) when fifo_empty = '0' else (others =>'0') ;
-    out_valid <= '0' when reset = '1' else
-                 fifo_read when rising_edge(clock) ;
+
+    register_out_valid : process(clock, reset)
+        constant COUNT_RESET : natural := 11 ;
+        variable prev_enable : std_logic := '0' ;
+        variable downcount : natural range 0 to COUNT_RESET := COUNT_RESET ;
+    begin
+        if( reset = '1' ) then
+            out_valid <= '0' ;
+            prev_enable := '0' ;
+            downcount := COUNT_RESET ;
+        elsif( rising_edge(clock) ) then
+            if( enable = '1' ) then
+                if( downcount > 0 ) then
+                    if( downcount mod 2 = 1 ) then
+                        out_valid <= '1' ;
+                    else
+                        out_valid <= '0' ;
+                    end if ;
+                    downcount := downcount - 1 ;
+                else
+                    out_valid <= fifo_read ;
+                end if ;
+            else
+                downcount := COUNT_RESET ;
+            end if ;
+            prev_enable := enable ;
+        end if ;
+    end process ;
 
     -- Underflow detection
     detect_underflows : process( clock, reset )

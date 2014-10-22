@@ -74,13 +74,13 @@ static int handle_param(const char *param, char *val,
         }
 
         if (status != 0) {
-            cli_err(s, argv0, "Serial number must be %d hexadecimal digits.",
+            cli_err(s, argv0, "Serial number must be %d hexadecimal digits.\n",
                     BLADERF_SERIAL_LENGTH - 1);
         }
     } else if (!strcasecmp("address", param)) {
         p->address = str2uint(param, 0, UINT_MAX, &ok);
         if (!ok) {
-            cli_err(s, argv0, "Invalid address provided.");
+            cli_err(s, argv0, "Invalid address provided.\n");
             status = CLI_RET_INVPARAM;
         }
     } else if (!strcasecmp("type", param)) {
@@ -120,11 +120,11 @@ static int handle_param(const char *param, char *val,
             p->type = BLADERF_IMAGE_TYPE_FIRMWARE;
 
         } else {
-            cli_err(s, argv0, "Invalid type provided.");
+            cli_err(s, argv0, "Invalid type provided.\n");
             status = CLI_RET_INVPARAM;
         }
     } else {
-        cli_err(s, argv0, "Invalid parameter provided - \"%s\"", param);
+        cli_err(s, argv0, "Invalid parameter provided - \"%s\"\n", param);
         status = CLI_RET_INVPARAM;
     }
 
@@ -150,7 +150,7 @@ int parse_cmdline(int argc, char **argv, struct params *p, struct cli_state *s)
         if (!sep) {
             if (p->img_file) {
                 cli_err(s, argv[0],
-                        "Only one image file parameter is permitted.");
+                        "Only one image file parameter is permitted.\n");
                 status = CLI_RET_INVPARAM;
             } else {
                 p->img_file = input_expand_path(argv[i]);
@@ -164,16 +164,16 @@ int parse_cmdline(int argc, char **argv, struct params *p, struct cli_state *s)
 
     if (status == 0) {
         if (!p->img_file) {
-            cli_err(s, argv[0], "An image file parameter is required.");
+            cli_err(s, argv[0], "An image file parameter is required.\n");
             status = CLI_RET_INVPARAM;
         } else if (p->type == BLADERF_IMAGE_TYPE_RAW &&
                 !(p->override_address || p->max_length == 0)) {
             cli_err(s, argv[0],
-                    "An address and a length are required for type=raw.");
+                    "An address and a length are required for type=raw.\n");
             status = CLI_RET_INVPARAM;
         } else if (argc > 2 && !p->data_file) {
             cli_err(s, argv[0],
-                    "A data input file is required when creating an image.");
+                    "A data input file is required when creating an image.\n");
             status = CLI_RET_INVPARAM;
         }
     }
@@ -200,14 +200,14 @@ static int print_image_metadata(struct cli_state *s, struct params *p,
     status = bladerf_image_read(image, p->img_file);
 
     if (status == 0) {
-        printf("\n");
-        printf("Checksum: ");
+        putchar('\n');
 
+        printf("  Checksum: ");
         for (i = 0; i < BLADERF_IMAGE_CHECKSUM_LEN; i++) {
             printf("%02x", image->checksum[i]);
         }
 
-        printf("\nImage format version: %d.%d.%d\n", image->version.major,
+        printf("\n  Image format version: %d.%d.%d\n", image->version.major,
                image->version.minor, image->version.patch);
 
         time_tmp = image->timestamp;
@@ -219,58 +219,57 @@ static int print_image_metadata(struct cli_state *s, struct params *p,
             strncpy(datetime, "Invalid value", sizeof(datetime));
         }
 
-        printf("Timestamp: %s\n", datetime);
-        printf("Serial #: %s\n", image->serial);
+        printf("  Timestamp: %s\n", datetime);
+        printf("  Serial #: %s\n", image->serial);
 
         switch (image->type) {
             case BLADERF_IMAGE_TYPE_RAW:
-                printf("Image type: Raw\n");
+                printf("  Image type: Raw\n");
                 break;
 
             case BLADERF_IMAGE_TYPE_CALIBRATION:
-                printf("Image type: Calibration data\n");
+                printf("  Image type: Calibration data\n");
                 break;
 
             case BLADERF_IMAGE_TYPE_RX_DC_CAL:
-                printf("Image type: RX DC offset calibration table\n");
+                printf("  Image type: RX DC offset calibration table\n");
                 break;
 
             case BLADERF_IMAGE_TYPE_TX_DC_CAL:
-                printf("Image type: TX DC offset calibration table\n");
+                printf("  Image type: TX DC offset calibration table\n");
                 break;
 
             case BLADERF_IMAGE_TYPE_RX_IQ_CAL:
-                printf("Image type: RX IQ balance calibration table\n");
+                printf("  Image type: RX IQ balance calibration table\n");
                 break;
 
             case BLADERF_IMAGE_TYPE_TX_IQ_CAL:
-                printf("Image type: TX IQ balance calibration table\n");
+                printf("  Image type: TX IQ balance calibration table\n");
                 break;
 
             case BLADERF_IMAGE_TYPE_FIRMWARE:
-                printf("Image type: Firmware\n");
+                printf("  Image type: Firmware\n");
                 break;
 
             case BLADERF_IMAGE_TYPE_FPGA_40KLE:
-                printf("Image type: 40 kLE FPGA metadata and bitstream\n");
+                printf("  Image type: 40 kLE FPGA metadata and bitstream\n");
                 break;
 
             case BLADERF_IMAGE_TYPE_FPGA_115KLE:
-                printf("Image type: 115 kLE FPGA metadata and bitstream\n");
+                printf("  Image type: 115 kLE FPGA metadata and bitstream\n");
                 break;
 
             default:
-                printf("Type: Unknown\n");
+                printf("  Image Type: Unknown\n");
                 break;
         }
 
-        printf("Address: 0x%08" PRIx32 "\n", image->address);
-        printf("Length:  0x%08" PRIx32 "\n", image->length);
-
-        printf("\n");
+        printf("  Address: 0x%08" PRIx32 "\n", image->address);
+        printf("  Length:  0x%08" PRIx32 "\n", image->length);
+        putchar('\n');
     } else {
         if (status == BLADERF_ERR_INVAL) {
-            cli_err(s, argv0, "Image contains invalid fields or data.");
+            cli_err(s, argv0, "Image contains invalid fields or data.\n");
             status = CLI_RET_INVPARAM;
         }
 
@@ -307,7 +306,8 @@ static int write_image(struct cli_state *s, struct params *p, const char *argv0)
 
     if ((uint32_t)data_size > p->max_length) {
         status = CLI_RET_INVPARAM;
-        cli_err(s, argv0, "The provided data file is too large for the specified flash region.");
+        cli_err(s, argv0, "The provided data file is too large for the "
+                          "specified flash region.\n");
         goto write_image_out;
     }
 

@@ -40,6 +40,8 @@ architecture simple of fifo_writer is
     signal dma_downcount : signed(12 downto 0);
     signal overflow_recovering  :   std_logic ;
     signal overflow_detected    :   std_logic ;
+    signal meta_written : std_logic ;
+    signal meta_written_reg : std_logic ;
 
 begin
 
@@ -48,15 +50,24 @@ begin
     begin
         if( reset = '1') then
             dma_downcount <= dma_buf_sz;
+            meta_written <= '0' ;
         elsif( rising_edge( clock ) ) then
             if (enable = '1' and meta_en = '1') then
-                if ( dma_downcount <= 0) then
-                    dma_downcount <= dma_buf_sz;
+                if( dma_downcount > 0 ) then
+                    dma_downcount <= dma_downcount - 1 ;
+                elsif ( to_signed(2**fifo_usedw'length,fifo_usedw'length+2) - (signed('0'&fifo_full&fifo_usedw)) > dma_buf_sz ) then
+                    -- Guaranteed to be done downcounting here .. so only reset the downcount
+                    -- if we are able to store that amount of samples in the downstream FIFO
+                    if( meta_written = '1' or in_valid = '1' ) then
+                        dma_downcount <= dma_buf_sz;
+                        meta_written <= '1' ;
+                    end if ;
                 else
-                    dma_downcount <= dma_downcount - 1;
+                    meta_written <= '0' ;
                 end if;
             else
-                dma_downcount <= dma_buf_sz;
+                dma_downcount <= (others =>'0') ;
+                meta_written <= '0' ;
             end if;
         end if;
     end process;
@@ -66,9 +77,11 @@ begin
     meta_fifo_write <= '1' when (enable = '1' and meta_en = '1' and buf_enough = '1') else '0';
     meta_fifo_data <= x"FFFFFFFF" & std_logic_vector(timestamp) & x"12344321";
 
+    meta_written_reg <= '0' when reset = '1' else meta_written when rising_edge(clock) ;
+
     -- Simple concatenation of samples
     fifo_data   <= std_logic_vector(in_q & in_i) ;
-    fifo_write  <= in_valid when overflow_recovering = '0' and fifo_full = '0' else '0' ;
+    fifo_write  <= in_valid when overflow_recovering = '0' and fifo_full = '0' and (meta_en = '0' or meta_written_reg = '1') else '0' ;
 
     -- Clear out the contents when RX is disabled
     clear_fifo : process( clock, reset )

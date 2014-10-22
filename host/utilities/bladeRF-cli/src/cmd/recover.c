@@ -77,7 +77,7 @@ static int find_device(struct cli_state *s,
 
         if (just_print && is_bootloader_device(s, dev)) {
             if (num_found++ == 0) {
-                printf("\n");
+                putchar('\n');
             }
 
             printf("  Bootloader @ bus=%d, addr=%d\n",
@@ -143,7 +143,7 @@ static int list_bootloader_devs(struct cli_state *state)
 
     status = find_device(state, ctx, 0, 0, NULL, true);
     if (status == 0) {
-        printf("\n");
+        putchar('\n');
     }
 
     libusb_exit(ctx);
@@ -208,14 +208,14 @@ int cmd_recover(struct cli_state *state, int argc, char **argv)
     free((void*)expanded_path);
 
     if (status == 0) {
-        printf("\n");
-        printf("Success! Use \"open\" to switch to this device.\n");
-        printf("Note that a \"load fx3 <firmware>\" is required to "
+        putchar('\n');
+        printf("  Success! Use \"open\" to switch to this device.\n");
+        printf("  Note that a \"load fx3 <firmware>\" is required to "
                "write the firmware to flash.\n");
-        printf("\n");
+        putchar('\n');
         return CLI_RET_OK;
     } else if (status == CLI_RET_NODEV) {
-        printf("No devices in bootloader mode were found.\n");
+        printf("\n  No devices in bootloader mode were found.\n\n");
         return CLI_RET_OK;
     } else {
         return status;

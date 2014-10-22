@@ -25,6 +25,8 @@ static inline const char *backend2str(bladerf_backend b)
     switch (b) {
         case BLADERF_BACKEND_LIBUSB:
             return "libusb";
+        case BLADERF_BACKEND_CYPRESS:
+            return "CyUSB driver";
         case BLADERF_BACKEND_LINUX:
             return "Linux kernel driver";
         default:
@@ -42,34 +44,23 @@ int cmd_probe(struct cli_state *s, int argc, char *argv[])
 
     if (n_devices < 0) {
         if (n_devices == BLADERF_ERR_NODEV) {
-            cli_err(s, argv[0], "No devices found.");
+            cli_err(s, argv[0], "No devices found.\n");
+            return 0;
         } else {
-            cli_err(s, argv[0], "Failed to probe for devices: %s",
+            cli_err(s, argv[0], "Failed to probe for devices: %s\n",
                     bladerf_strerror(n_devices));
+            s->last_lib_error = n_devices;
+            return CLI_RET_LIBBLADERF;
         }
-
-        s->last_lib_error = n_devices;
-        return CLI_RET_LIBBLADERF;
     }
 
-    printf("\n");
+    putchar('\n');
     for (i = 0; i < n_devices; i++) {
-        printf("    Backend:        %s\n", backend2str(devices[i].backend));
-        /* printf("    Serial: 0x%016lX\n", devices[i].serial); */
-        /* TODO: Fix OTP support for serial readback! */
-        printf("    Serial:         %s\n", devices[i].serial);
-        printf("    USB Bus:        %d\n", devices[i].usb_bus);
-        printf("    USB Address:    %d\n", devices[i].usb_addr);
-        /*printf("    Firmware: v%d.%d\n", devices[i].fw_ver_maj,
-               devices[i].fw_ver_min);
-
-        if (devices[i].fpga_configured) {
-            printf("    FPGA: v%d.%d\n",
-                    devices[i].fpga_ver_maj, devices[i].fpga_ver_min);
-        } else {
-            printf("    FPGA: not configured\n");
-        }*/
-        printf("\n");
+        printf("  Backend:        %s\n", backend2str(devices[i].backend));
+        printf("  Serial:         %s\n", devices[i].serial);
+        printf("  USB Bus:        %d\n", devices[i].usb_bus);
+        printf("  USB Address:    %d\n", devices[i].usb_addr);
+        putchar('\n');
     }
 
     if (devices) {

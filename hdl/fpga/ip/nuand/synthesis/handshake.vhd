@@ -62,10 +62,10 @@ begin
             source_ack <= '0' ;
             prev_req := '0' ;
         elsif( rising_edge(source_clock) ) then
-            if( prev_req = '0' and source_req = '1' ) then
+            if( prev_req = '0' and source_req = '1' and source_ack = '0' ) then
                 source_holding <= source_data ;
                 source_ack <= '1' ;
-            elsif( prev_req = '1' and source_req = '0' ) then
+            elsif( source_req = '0' and source_ack = '1' ) then
                 source_ack <= '0' ;
             end if ;
             prev_req := source_req ;

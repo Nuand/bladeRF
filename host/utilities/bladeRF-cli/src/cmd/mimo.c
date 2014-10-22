@@ -25,26 +25,54 @@ int cmd_mimo(struct cli_state *state, int argc, char **argv)
 {
     int status = 0;
 
-    if (argc >= 2) {
-        if (argc >= 3 && !strcmp(argv[1], "clk")) {
-            if (!strcmp(argv[2], "slave")) {
-                status |= bladerf_si5338_write(state->dev, 6, 4);
-                status |= bladerf_si5338_write(state->dev, 28, 0x2b);
-                status |= bladerf_si5338_write(state->dev, 29, 0x28);
-                status |= bladerf_si5338_write(state->dev, 30, 0xa8);
-                if (status)
-                    printf("Could not set device to slave MIMO mode\n");
-                else
-                    printf("Successfully set device to slave MIMO mode\n");
-            } else if (!strcmp(argv[2], "master")) {
-                status |= bladerf_si5338_write(state->dev, 39, 1);
-                status |= bladerf_si5338_write(state->dev, 34, 0x22);
-                if (status)
-                    printf("Could not set device to master MIMO mode\n");
-                else
-                    printf("Successfully set device to master MIMO mode\n");
-            }
-        }
+    if (argc != 2) {
+        return CLI_RET_NARGS;
     }
+
+    if (!strcasecmp(argv[1], "slave")) {
+        status = bladerf_si5338_write(state->dev, 6, 4);
+        if (status != 0) {
+            goto out;
+        }
+
+        status |= bladerf_si5338_write(state->dev, 28, 0x2b);
+        if (status != 0) {
+            goto out;
+        }
+
+        status |= bladerf_si5338_write(state->dev, 29, 0x28);
+        if (status != 0) {
+            goto out;
+        }
+
+        status |= bladerf_si5338_write(state->dev, 30, 0xa8);
+        if (status != 0) {
+            goto out;
+        }
+
+        printf("\n  Successfully set device to slave MIMO mode.\n\n");
+
+    } else if (!strcmp(argv[1], "master")) {
+        status |= bladerf_si5338_write(state->dev, 39, 1);
+        if (status != 0) {
+            goto out;
+        }
+
+        status |= bladerf_si5338_write(state->dev, 34, 0x22);
+        if (status != 0) {
+            goto out;
+        }
+
+        printf("\n  Successfully set device to master MIMO mode.\n\n");
+    } else {
+        cli_err(state, argv[0], "Invalid mode: %s\n", argv[1]);
+    }
+
+out:
+    if (status != 0) {
+        state->last_lib_error = status;
+        status = CLI_RET_LIBBLADERF;
+    }
+
     return status;
 }

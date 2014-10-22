@@ -9,6 +9,8 @@ project(bladeRF C)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/output)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/output)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/output)
+set(CMAKE_HELPERS_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/cmake/helpers)
+set(CMAKE_HELPERS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cmake/helpers)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release")
@@ -54,10 +56,11 @@ endif()
 include(TestBigEndian)
 TEST_BIG_ENDIAN(BLADERF_BIG_ENDIAN)
 
-# Test for libusb so warnings and such only occur at the top-level
-# TODO Once we enable other backends, we should revisit whether this is a good
-#      location for this
+# Search for libraries and drivers
 include(FindLibUSB)
+if(WIN32)
+    include(FindCyApi)
+endif()
 
 ################################################################################
 # Compiler configuration
@@ -122,8 +125,8 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux" OR ${CMAKE_SYSTEM_NAME} MATCHES "BSD")
     if(NOT CMAKE_CROSSCOMPILING)
         message(STATUS "Checking libc version...")
         try_run(LIBC_VERSION_RUN_RESULT LIBC_VERSION_COMPILE_RESULT
-                ${CMAKE_CURRENT_BINARY_DIR}/cmake/helpers
-                ${CMAKE_CURRENT_SOURCE_DIR}/cmake/helpers/libc_version.c
+                ${CMAKE_HELPERS_BINARY_DIR}
+                ${CMAKE_HELPERS_SOURCE_DIR}/libc_version.c
                 RUN_OUTPUT_VARIABLE LIBC_VERSION)
     endif(NOT CMAKE_CROSSCOMPILING)
 
@@ -225,6 +228,47 @@ if(WIN32)
             COMMENT "Copying libusb-1.0.dll to output directory..."
         )
     endif(LIBUSB_FOUND)
+
+    if(CYAPI_FOUND)
+        set(WIN_POSTBUILD_ITEMS ${WIN_POSTBUILD_ITEMS}
+            "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/cyusb3.inf"
+            "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/cyusb3.sys"
+            "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/cyusb3.cat"
+            "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/WdfCoInstaller01009.dll"
+        )
+
+        add_custom_command(
+            OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/cyusb3.inf"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CMAKE_CURRENT_SOURCE_DIR}/drivers/windows/cyusb3/cyusb3.inf"
+                "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/"
+            COMMENT "Copying cyusb3.inf to output directory..."
+        )
+
+        add_custom_command(
+            OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/cyusb3.sys"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CYUSB3_DRIVER_DIR}/cyusb3.sys"
+                "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/"
+            COMMENT "Copying cyusb3.sys to output directory..."
+        )
+
+        add_custom_command(
+            OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/cyusb3.cat"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CYUSB3_DRIVER_DIR}/cyusb3.cat"
+                "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/"
+            COMMENT "Copying cyusb3.cat to output directory..."
+        )
+
+        add_custom_command(
+            OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/WdfCoInstaller01009.dll"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CYUSB3_DRIVER_DIR}/WdfCoInstaller01009.dll"
+                "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/"
+            COMMENT "Copying WdfCoInstaller01009.dll to output directory..."
+        )
+    endif()
 
     add_custom_target(win_postbuild ALL DEPENDS ${WIN_POSTBUILD_ITEMS})
 

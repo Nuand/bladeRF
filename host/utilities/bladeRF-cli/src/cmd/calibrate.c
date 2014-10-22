@@ -40,34 +40,36 @@ static int cal_lms(struct cli_state *s, int argc, char **argv)
         { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
 
     if (argc == 2) {
-       return calibrate_dc(s->dev, CAL_DC_LMS_ALL);
+       return calibrate_dc(s, CAL_DC_LMS_ALL);
     }
 
     if (argc == 3) {
         if (!strcasecmp(argv[2], "tuning")) {
-            status = calibrate_dc(s->dev, CAL_DC_LMS_TUNING);
+            status = calibrate_dc(s, CAL_DC_LMS_TUNING);
         } else if (!strcasecmp(argv[2], "txlpf")) {
-            status = calibrate_dc(s->dev, CAL_DC_LMS_TXLPF);
+            status = calibrate_dc(s, CAL_DC_LMS_TXLPF);
         } else if (!strcasecmp(argv[2], "rxlpf")) {
-            status = calibrate_dc(s->dev, CAL_DC_LMS_RXLPF);
+            status = calibrate_dc(s, CAL_DC_LMS_RXLPF);
         } else if (!strcasecmp(argv[2], "rxvga2")) {
-            status = calibrate_dc(s->dev, CAL_DC_LMS_RXVGA2);
+            status = calibrate_dc(s, CAL_DC_LMS_RXVGA2);
         } else if (!strcasecmp(argv[2], "show")) {
             status = bladerf_lms_get_dc_cals(s->dev, &lms_cals);
             if (status != 0) {
                 s->last_lib_error = status;
                 status = CLI_RET_LIBBLADERF;
             } else {
-                printf("    LPF tuning module: %d\n\n", lms_cals.lpf_tuning);
-                printf("    TX LPF I filter: %d\n", lms_cals.tx_lpf_i);
-                printf("    TX LPF Q filter: %d\n\n", lms_cals.tx_lpf_q);
-                printf("    RX LPF I filter: %d\n", lms_cals.rx_lpf_i);
-                printf("    RX LPF Q filter: %d\n\n", lms_cals.rx_lpf_q);
-                printf("    RX VGA2 DC reference module: %d\n", lms_cals.dc_ref);
-                printf("    RX VGA2 stage 1, I channel: %d\n", lms_cals.rxvga2a_i);
-                printf("    RX VGA2 stage 1, Q channel: %d\n", lms_cals.rxvga2a_q);
-                printf("    RX VGA2 stage 2, I channel: %d\n", lms_cals.rxvga2b_i);
-                printf("    RX VGA2 stage 2, Q channel: %d\n\n", lms_cals.rxvga2b_q);
+                putchar('\n');
+                printf("  LPF tuning module: %d\n\n", lms_cals.lpf_tuning);
+                printf("  TX LPF I filter: %d\n", lms_cals.tx_lpf_i);
+                printf("  TX LPF Q filter: %d\n\n", lms_cals.tx_lpf_q);
+                printf("  RX LPF I filter: %d\n", lms_cals.rx_lpf_i);
+                printf("  RX LPF Q filter: %d\n\n", lms_cals.rx_lpf_q);
+                printf("  RX VGA2 DC reference module: %d\n", lms_cals.dc_ref);
+                printf("  RX VGA2 stage 1, I channel: %d\n", lms_cals.rxvga2a_i);
+                printf("  RX VGA2 stage 1, Q channel: %d\n", lms_cals.rxvga2a_q);
+                printf("  RX VGA2 stage 2, I channel: %d\n", lms_cals.rxvga2b_i);
+                printf("  RX VGA2 stage 2, Q channel: %d\n", lms_cals.rxvga2b_q);
+                putchar('\n');
             }
         } else {
             cli_err(s, argv[0], "Invalid LMS module specified: %s\n", argv[2]);
@@ -180,14 +182,14 @@ static int cal_dc_correction_params(struct cli_state *s, int argc, char **argv)
         }
 
         if (rx) {
-            status = calibrate_dc(s->dev, CAL_DC_AUTO_RX);
+            status = calibrate_dc(s, CAL_DC_AUTO_RX);
             if (status != 0) {
                 return status;
             }
         }
 
         if (status == 0 && tx) {
-            status = calibrate_dc(s->dev, CAL_DC_AUTO_TX);
+            status = calibrate_dc(s, CAL_DC_AUTO_TX);
             if (status != 0) {
                 return status;
             }
@@ -373,7 +375,8 @@ static int cal_table(struct cli_state *s, int argc, char **argv)
 
     if (((f_max - f_min) / f_inc) == 0) {
         cli_err(s, argv[0], "The specified frequency increment would yield "
-                "an empty table.\n");
+                            "an empty table.\n");
+
         return CLI_RET_INVPARAM;
     }
 
@@ -394,8 +397,7 @@ static int cal_table(struct cli_state *s, int argc, char **argv)
         strncat(filename, "_dc_tx.tbl", filename_len);
     }
 
-    status = calibrate_dc_gen_tbl(s->dev, module, filename,
-                                  f_min, f_inc, f_max);
+    status = calibrate_dc_gen_tbl(s, module, filename, f_min, f_inc, f_max);
 
 out:
     if (status != 0) {

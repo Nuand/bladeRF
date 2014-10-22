@@ -78,6 +78,7 @@ extern "C" {
 #define BLADERF_ERR_NO_FILE     (-11) /**< File not found */
 #define BLADERF_ERR_UPDATE_FPGA (-12) /**< An FPGA update is required */
 #define BLADERF_ERR_UPDATE_FW   (-13) /**< A firmware update is requied */
+#define BLADERF_ERR_TIME_PAST   (-14) /**< Requested timestamp is in the past */
 
 /** @} (End RETCODES) */
 
@@ -103,6 +104,7 @@ typedef enum {
     BLADERF_BACKEND_ANY,    /**< "Don't Care" -- use any available backend */
     BLADERF_BACKEND_LINUX,  /**< Linux kernel driver */
     BLADERF_BACKEND_LIBUSB, /**< libusb */
+    BLADERF_BACKEND_CYPRESS, /**< CyAPI */
     BLADERF_BACKEND_DUMMY = 100, /**< Dummy used for development purposes */
 } bladerf_backend;
 
@@ -182,7 +184,7 @@ int CALL_CONV bladerf_open_with_devinfo(struct bladerf **device,
  * and may be one of the following:
  *   - libusb:  libusb (See libusb changelog notes for required version, given
  *   your OS and controller)
- *   - linux:   Linux Kernel Driver
+ *   - cypress: Cypress CyUSB/CyAPI backend (Windows only)
  *
  * If no arguments are provided after the backend, the first encountered
  * device on the specified backend will be opened. Note that a backend is
@@ -1152,79 +1154,144 @@ int CALL_CONV bladerf_xb200_get_path(struct bladerf *dev,
  * Sample format
  */
 typedef enum {
-    BLADERF_FORMAT_SC16_Q11, /**< Signed, Complex 16-bit Q11.
-                               *  This is the native format of the DAC data.
-                               *
-                               *  Samples are interleaved IQ value pairs, where
-                               *  each value in the pair is an int16_t. For each
-                               *  value, the data in the lower bits. The upper
-                               *  bits are reserved.
-                               *
-                               *  When using this format, note that buffers
-                               *  must be at least
-                               *       2 * num_samples * sizeof(int16_t)
-                               *  bytes large
-                               */
+    /**
+     * Signed, Complex 16-bit Q11. This is the native format of the DAC data.
+     *
+     * Values in the range [-2048, 2048) are used to represent [-1.0, 1.0).
+     * Note that the lower bound here is inclusive, and the upper bound is
+     * exclusive. Ensure that provided samples stay within [-2048, 2047].
+     *
+     * Samples consist of interleaved IQ value pairs, with I being the first
+     * value in the pair. Each value in the pair is a right-aligned,
+     * little-endian int16_t. The FPGA ensures that these values are
+     * sign-extended.
+     *
+     * When using this format the minimum required buffer size, in bytes, is:
+     * <pre>
+     *   buffer_size_min = [ 2 * num_samples * sizeof(int16_t) ]
+     * </pre>
+     *
+     * For example, to hold 2048 samples, a buffer must be at least 8192 bytes
+     * large.
+     */
+    BLADERF_FORMAT_SC16_Q11,
+
+    /**
+     * This format is the same as the ::BLADERF_FORMAT_SC16_Q11 format, except the
+     * first 4 samples (16 bytes) in every block of 1024 samples are replaced
+     * with metadata, organized as follows, with all fields being little endian
+     * byte order:
+     *
+     * <pre>
+     *  0x00 [uint32_t:  Reserved]
+     *  0x04 [uint64_t:  64-bit Timestamp]
+     *  0x0c [uint32_t:  BLADERF_META_FLAG_* flags]
+     * </pre>
+     *
+     * When using the bladerf_sync_rx() and bladerf_sync_tx() functions,
+     * this detail is transparent to caller. These functions take care of
+     * packing/unpacking the metadata into/from the data, via the
+     * bladerf_metadata structure.
+     *
+     * Currently, when using the asynchronous data transfer interface, the user
+     * is responsible for manually packing/unpacking this metadata into/from
+     * their sample data.
+     */
+    BLADERF_FORMAT_SC16_Q11_META,
 } bladerf_format;
-
-/**
- * Reverse compatibility for the sample format misnomer fix
- *
- * @warning This is scheduled to be removed in the future.
- */
-#define BLADERF_FORMAT_SC16_Q12 BLADERF_FORMAT_SC16_Q11
-
-
 
 /*
  * Metadata status bits
+ *
+ * These are used in conjunction with the bladerf_metadata structure's
+ * `status` field.
  */
 
 /**
- * The host-side data stream encountered an overrun failure
+ * A sample overrun has occurred. This indicates that either the host
+ * (more likely) or the FPGA is not keeping up with the incoming samples
  */
-#define BLADERF_META_STATUS_SW_OVERRUN  (1 << 0)
+#define BLADERF_META_STATUS_OVERRUN  (1 << 0)
 
 /**
- * The host-side data stream encountered an underrun failure
+ * A sample underrun has occurred. This generally only occurrs on the TX module
+ * when the FPGA is starved of samples.
+ *
+ * @note libbladeRF does not report this status. It is here for future use.
  */
-#define BLADERF_META_STATUS_SW_UNDERRUN (1 << 1)
-
-/**
- * An overrun failure occurred in the FPGA
- */
-#define BLADERF_META_STATUS_HW_OVERRUN  (1 << 8)
-
-/**
- * An underrrun failure occurred in the FPGA
- */
-#define BLADERF_META_STATUS_HW_UNDERRUN (1 << 9)
+#define BLADERF_META_STATUS_UNDERRUN (1 << 1)
 
 
 
 /*
  * Metadata flags
+ *
+ * These are used in conjunction with the bladerf_metadata structure's
+ * `flags` field.
  */
 
 /**
- * Mark the associated buffer as the start of a burst transfer
+ * Mark the associated buffer as the start of a burst transmission.
+ * This is only used for the bladerf_sync_tx() call.
  */
-#define BLADERF_META_FLAG_BURST_START   (1 << 0)
+#define BLADERF_META_FLAG_TX_BURST_START   (1 << 0)
 
 /**
- * Mark the associated buffer as the end of a burst transfer
+ * Mark the associated buffer as the end of a burst transmission. This will
+ * flush the remainder of the sync interfaces' current working buffer and
+ * enqueue samples into the transmit FIFO.
+ *
+ * When specifying this flag to bladerf_sync_tx(), the final two samples
+ * in the synchronous interface's internal working buffer <b>must</b> be zero.
+ * Unexpected results may occur if this is not the case. To ensure this
+ * requirement is met, API users should ensure the last two samples provided to
+ * bladerf_sync_tx() are zero when using ::BLADERF_META_FLAG_TX_BURST_END. One
+ * way to do this is to end bursts with a call of bladerf_sync_tx() with this
+ * flag set and a buffer of 2 or more zero samples.
+ *
+ * Flushing the sync interface's working buffer implies that after specifying
+ * this flag, the next timestamp that can be transmitted is the current
+ * timestamp plus the duration of the burst that this flag is ending <b>and</b>
+ * the remaining length of the remaining buffer that is flushed. (The buffer
+ * size, in this case, is the `buffer_size` value passed to the previous
+ * bladerf_sync_config() call.)
+ *
+ * Rather than attempting to keep track of the number of samples sent with
+ * respect to buffer sizes, it is easiest to always assume 1 buffer's worth of
+ * time is required between bursts. In this case "buffer" refers to the
+ * `buffer_size` parameter provided to bladerf_sync_config().) If this is too
+ * much time, consider combining multiple bursts and manually zero-padding
+ * samples between them.
+ *
+ * This is only used for the bladerf_sync_tx() call. It is ignored by the
+ * bladerf_sync_rx() call.
+ *
  */
-#define BLADERF_META_FLAG_BURST_END     (1 << 1)
+#define BLADERF_META_FLAG_TX_BURST_END     (1 << 1)
 
+/**
+ * Use this flag in conjunction with ::BLADERF_META_FLAG_TX_BURST_START to
+ * indicate that the burst should be transmitted as soon as possible, as opposed
+ * to waiting for a specific timestamp.
+ *
+ * When this flag is used, there is no need to set the
+ * bladerf_metadata::timestamp field.
+ */
+#define BLADERF_META_FLAG_TX_NOW           (1 << 2)
+
+/**
+ * This flag indicates that calls to bladerf_sync_rx should return any available
+ * samples, rather than wait until the timestamp indicated in the
+ * bladerf_metadata timestamp field.
+ */
+#define BLADERF_META_FLAG_RX_NOW           (1 << 31)
 
 /**
  * Sample metadata
  *
- * @bug Metadata support is not yet implemented. API users should not attempt
- *      to read or write to metadata structures.
- *
- *      The size of this structure may change when metadata support is
- *      completed, which may affect binary compatibility of library versions.
+ * This structure is used in conjunction with the ::BLADERF_FORMAT_SC16_Q11_META
+ * format to TX scheduled bursts or retrieve timestamp information about
+ * received samples.
  */
 struct bladerf_metadata {
 
@@ -1238,7 +1305,10 @@ struct bladerf_metadata {
      * structure is passed to. API calls read this field from the provided
      * data structure, and do not modify it.
      *
-     * See the BLADERF_META_FLAG_* values for available options.
+     * Valid flags include
+     *  ::BLADERF_META_FLAG_TX_BURST_START, ::BLADERF_META_FLAG_TX_BURST_END,
+     *  ::BLADERF_META_FLAG_TX_NOW, and ::BLADERF_META_FLAG_RX_NOW
+     *
      */
     uint32_t flags;
 
@@ -1246,9 +1316,32 @@ struct bladerf_metadata {
      * Output bit field to denoting the status of transmissions/receptions. API
      * calls will write this field.
      *
-     * See the BLADERF_META_STATUS_* values for possible status items.
+     * Possible status flags include ::BLADERF_META_STATUS_OVERRUN and
+     * ::BLADERF_META_STATUS_UNDERRUN;
+     *
      */
     uint32_t status;
+
+    /**
+     * This output parameter is updated to reflect the actual number of
+     * contiguous samples that have been populated in an RX buffer during
+     * a bladerf_sync_rx() call.
+     *
+     * This will not be equal to the requested count in the event of a
+     * discontinuity (i.e., when the status field has the
+     * ::BLADERF_META_STATUS_OVERRUN flag set). When an overrun occurs, it is
+     * important not to read past the number of samples specified by this
+     * value, as the remaining contents of the buffer are undefined.
+     *
+     * This parameter is not currently used by bladerf_sync_tx().
+     */
+    unsigned int actual_count;
+
+    /**
+     * Reserved for future use. This is not used by any functions.
+     * It is recommended that users zero out this field.
+     */
+    uint8_t reserved[32];
 };
 
 
@@ -1525,6 +1618,9 @@ int CALL_CONV bladerf_get_stream_timeout(struct bladerf *dev,
 /**
  * @defgroup FN_DATA_SYNC  Synchronous data transmission and reception
  *
+ * This group of functions presents synchronous, blocking calls (with optional
+ * timeouts) for transmitting and receiving samples.
+ *
  * The synchronous interface is built atop the asynchronous interface, and is
  * generally less complex and easier to work with.  It alleviates the need to
  * explicitly spawn threads (it is done under the hood) and manually manage
@@ -1533,72 +1629,49 @@ int CALL_CONV bladerf_get_stream_timeout(struct bladerf *dev,
  * Under the hood, this interface spawns worker threads to handle an
  * asynchronous stream and perform thread-safe buffer management.
  *
- * Below is the general process for using this interface:
- *
- * @code{.c}
- *
- * // ...
- *
- * int status;
- * int16_t *buffer;
- * const size_t num_samples = 4096;
- *
- * // ...
- *
- * // Allocate a sample buffer.
- * // Note that 4096 samples = 4096 int16_t IQ pairs = 2 * 4096 int16_t values
- * buffer = malloc(num_samples * 2 * sizeof(int16_t));
- * if (buffer == NULL) {
- *     perror("malloc");
- *     return BLADERF_ERR_MEM;
- * }
- *
- * // Configure the device's RX module for use with the sync interface
- * status = bladerf_sync_config(dev, BLADERF_MODULE_RX, BLADERF_FORMAT_SC16_Q11,
- *                              64, 16384, 16, 3500);
- *
- * if (status != 0) {
- *     fprintf(stderr, "Failed to configure sync interface: %s\n",
- *             bladerf_strerror(status));
- *     return status;
- * }
- *
- * // We must always enable the RX module before attempting to RX samples
- * status = bladerf_enable_module(dev, BLADERF_MODULE_RX, true);
- * if (status != 0) {
- *     fprintf(stderr, "Failed to enable RX module: %s\n",
- *             bladerf_strerror(status));
- *     return status;
- * }
- *
- * // Receive samples and do work on them.
- * while (status == 0 && !done) {
- *     status = bladerf_sync_rx(dev, buffer, num_samples, NULL, 3500);
- *     if (status == 0) {
- *         done = do_work(buffer, num_samples);
- *     } else {
- *         fprintf(stderr, "Failed to RX samples: %s\n",
- *                 bladerf_strerror(status));
- *     }
- * }
- *
- * // Disable RX module, shutting down our underlying RX stream
- * status = bladerf_enable_module(dev, BLADERF_MODULE_RX, false);
- * if (status != 0) {
- *     fprintf(stderr, "Failed to disable RX module: %s\n",
- *             bladerf_strerror(status));
- * }
- *
- * // Free up our resources
- * free(buffer);
- *
- * @endcode
- *
- * To run in a full-duplex mode of operation, one must simply add another call
- * to bladerf_sync_config() for the BLADERF_MODULE_TX module, enable the TX
- * module via bladerf_enable_module(), and then make calls to bladerf_sync_tx().
- *
  * These functions are thread-safe.
+ *
+ * <H3>RX and TX without metadata </H3>
+ * Below is the general process for using this interface to transmit and receive
+ * SC16 Q11 samples, without metadata.
+ *
+ * @snippet sync_rxtx.c example_snippet
+ *
+ * To run in a half-duplex mode of operation, simply remove the RX or TX
+ * specific portions from the above example.
+ *
+ *
+ * <H3>RX with metadata</H3>
+ * By using the ::BLADERF_FORMAT_SC16_Q11_META format with the synchronous
+ * interface, one can read the timestamp associated with a received buffer of
+ * data, or schedule to read a specific number of samples at a desired
+ * timestamp.  Additionally, the metadata indicates if an overrun was detected,
+ * and the number of samples actually copied into the buffer before the
+ * discontinuity caused by the overrun.
+ *
+ * @snippet sync_rx_meta.c example_snippet
+ *
+ * <H3>TX with metadata</H3>
+ * Using the synchronous interface with the ::BLADERF_FORMAT_SC16_Q11_META
+ * format allows for bursts of samples to be scheduled for transmissions.
+ * Between these bursts, the device transmits I=0, Q=0.
+ *
+ * To begin a burst, call bladerf_sync_tx() with the metadata's
+ * ::BLADERF_META_FLAG_TX_BURST_START flag set, the desired timestamp set in the
+ * bladerf_metadata structure, and any number of samples.
+ *
+ * You may then continue calling bladerf_sync_tx(), without needing to update
+ * the timestamp field in the bladerf_metadata structure. For these calls,
+ * no flags should be set.
+ *
+ * On the final bladerf_sync_tx() call for the burst, set the
+ * ::BLADERF_META_FLAG_TX_BURST_END flag, and ensure the final two samples
+ * provided to this function are 0.
+ *
+ * It is valid to send the entire burst with a single function call, with both
+ * flags set.
+ *
+ * @snippet sync_tx_meta.c example_snippet
  *
  * @{
  */
@@ -1612,8 +1685,8 @@ int CALL_CONV bladerf_get_stream_timeout(struct bladerf *dev,
  * This function does not call bladerf_enable_module(). The API user is
  * responsible for enabling/disable modules when desired.
  *
- * Note that (re)configuring BLADERF_MODULE_TX does not affect the
- * BLADERF_MODULE_RX modules, and vice versa.  This call configures each module
+ * Note that (re)configuring ::BLADERF_MODULE_TX does not affect the
+ * ::BLADERF_MODULE_RX modules, and vice versa. This call configures each module
  * independently.
  *
  * Memory allocated by this function will be deallocated when bladerf_close()
@@ -1672,9 +1745,16 @@ int CALL_CONV bladerf_sync_config(struct bladerf *dev,
  * parameter passed to bladerf_sync_config().
  *
  * @param[in]   dev         Device handle
+ *
  * @param[in]   samples     Array of samples
+ *
  * @param[in]   num_samples Number of samples to write
- * @param[in]   metadata    Sample metadata. (Currently not used.)
+ *
+ * @param[in]   metadata    Sample metadata. This must be provided when using
+ *                          the ::BLADERF_FORMAT_SC16_Q11_META format, but may
+ *                          be NULL when the interface is configured for
+ *                          the ::BLADERF_FORMAT_SC16_Q11 format.
+ *
  * @param[in]   timeout_ms  Timeout (milliseconds) for this call to complete.
  *                          Zero implies "infinite."
  *
@@ -1713,7 +1793,10 @@ int CALL_CONV bladerf_sync_tx(struct bladerf *dev,
  *
  * @param[in]   num_samples Number of samples to read
  *
- * @param[out]  metadata    Sample metadata. Currently not used. Pass NULL.
+ * @param[out]  metadata    Sample metadata. This must be provided when using
+ *                          the ::BLADERF_FORMAT_SC16_Q11_META format, but may
+ *                          be NULL when the interface is configured for
+ *                          the ::BLADERF_FORMAT_SC16_Q11 format.
  *
  * @param[in]   timeout_ms  Timeout (milliseconds) for this call to complete.
  *                          Zero implies "infinite."
@@ -2365,6 +2448,17 @@ int CALL_CONV bladerf_lms_get_dc_cals(struct bladerf *dev,
 #define BLADERF_GPIO_TX_HB_ENABLE   (1 << 3)
 
 /**
+ * Counter mode enable
+ *
+ * Setting this bit to 1 instructs the FPGA to replace the (I, Q) pair in
+ * sample data with an incrementing, little-endian, 32-bit counter value. A
+ * 0 in bit specifies that sample data should be sent (as normally done).
+ *
+ * This feature is useful when debugging issues involving dropped samples.
+ */
+#define BLADERF_GPIO_COUNTER_ENABLE (1 << 9)
+
+/**
  * Switch to use RX low band (300M - 1.5GHz)
  *
  * @note This is set using bladerf_set_frequency().
@@ -2389,6 +2483,22 @@ int CALL_CONV bladerf_lms_get_dc_cals(struct bladerf *dev,
  * do not need to be concerned with setting/clearing this bit.
  */
 #define BLADERF_GPIO_FEATURE_SMALL_DMA_XFER (1 << 7)
+
+/**
+ * Enable-bit for timestamp counter in the FPGA
+ */
+#define BLADERF_GPIO_TIMESTAMP      (1 << 16)
+
+/**
+ * Timestamp 2x divider control
+ *
+ * By default (value = 0), the sample counter is incremented with I and Q,
+ * yielding two counts per sample.
+ *
+ * Set this bit to 1 to enable a 2x timestamp divider, effectively
+ * achieving 1 timestamp count per sample.
+ * */
+#define BLADERF_GPIO_TIMESTAMP_DIV2 (1 << 17)
 
 /**
  * Read a configuration GPIO register

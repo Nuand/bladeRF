@@ -3,7 +3,9 @@ project(libbladeRF_test_ctrl C)
 
 set(INCLUDES
     ${libbladeRF_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/include
 )
+include_directories(${INCLUDES})
 
 set(LIBS libbladerf_shared)
 

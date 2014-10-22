@@ -69,7 +69,7 @@ int cmd_open(struct cli_state *state, int argc, char **argv)
             }
         }
 
-        printf("Using device string: %s\n", dev_ident);
+        printf("\n  Using device string: %s\n", dev_ident);
     }
 
     status = bladerf_open(&state->dev, dev_ident);
@@ -78,6 +78,7 @@ int cmd_open(struct cli_state *state, int argc, char **argv)
         ret = CLI_RET_LIBBLADERF;
     } else {
         ret = 0;
+        putchar('\n');
     }
 
     free(dev_ident);
