@@ -183,8 +183,17 @@ popd
 RBF="$rev"x"$size".rbf
 cp "work/output_files/$rev.rbf" $RBF
 
+md5sum $RBF > $RBF.md5sum
+sha256sum $RBF > $RBF.sha256sum
+
+MD5SUM=$(cat $RBF.md5sum | awk '{ print $1 }')
+SHA256SUM=$(cat $RBF.sha256sum  | awk '{ print $1 }')
+
 echo ""
 echo "##########################################################################"
-echo "    Done! Image copied to: $rev"x"$size.rbf"
+echo " Done! Image copied to: $rev"x"$size.rbf"
+echo " "
+echo " MD5:    $MD5SUM"
+echo " SHA256: $SHA256SUM"
 echo "##########################################################################"
 echo ""
