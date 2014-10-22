@@ -124,38 +124,6 @@
          type = "int";
       }
    }
-   element timer_0.s1
-   {
-      datum baseAddress
-      {
-         value = "36864";
-         type = "String";
-      }
-   }
-   element iq_corr_tx_phase_gain.s1
-   {
-      datum baseAddress
-      {
-         value = "37088";
-         type = "String";
-      }
-   }
-   element uart_0.s1
-   {
-      datum baseAddress
-      {
-         value = "36992";
-         type = "String";
-      }
-   }
-   element iq_corr_rx_phase_gain.s1
-   {
-      datum baseAddress
-      {
-         value = "37104";
-         type = "String";
-      }
-   }
    element pio_0.s1
    {
       datum baseAddress
@@ -169,6 +137,30 @@
       datum baseAddress
       {
          value = "37072";
+         type = "String";
+      }
+   }
+   element uart_0.s1
+   {
+      datum baseAddress
+      {
+         value = "36992";
+         type = "String";
+      }
+   }
+   element iq_corr_tx_phase_gain.s1
+   {
+      datum baseAddress
+      {
+         value = "37088";
+         type = "String";
+      }
+   }
+   element iq_corr_rx_phase_gain.s1
+   {
+      datum baseAddress
+      {
+         value = "37104";
          type = "String";
       }
    }
@@ -188,6 +180,14 @@
          type = "String";
       }
    }
+   element timer_0.s1
+   {
+      datum baseAddress
+      {
+         value = "36864";
+         type = "String";
+      }
+   }
    element spi_0
    {
       datum _sortIndex
@@ -204,19 +204,19 @@
          type = "int";
       }
    }
-   element spi_0.spi_control_port
-   {
-      datum baseAddress
-      {
-         value = "37024";
-         type = "String";
-      }
-   }
    element spi_1.spi_control_port
    {
       datum baseAddress
       {
          value = "36960";
+         type = "String";
+      }
+   }
+   element spi_0.spi_control_port
+   {
+      datum baseAddress
+      {
+         value = "37024";
          type = "String";
       }
    }
@@ -443,8 +443,8 @@
   <parameter name="tightlyCoupledInstructionMaster3MapParam" value="" />
  </module>
  <module kind="altera_avalon_spi" version="13.1" enabled="1" name="spi_0">
-  <parameter name="clockPhase" value="1" />
-  <parameter name="clockPolarity" value="1" />
+  <parameter name="clockPhase" value="0" />
+  <parameter name="clockPolarity" value="0" />
   <parameter name="dataWidth" value="8" />
   <parameter name="disableAvalonFlowControl" value="false" />
   <parameter name="insertDelayBetweenSlaveSelectAndSClk" value="false" />
@@ -453,8 +453,8 @@
   <parameter name="masterSPI" value="true" />
   <parameter name="numberOfSlaves" value="1" />
   <parameter name="syncRegDepth" value="2" />
-  <parameter name="targetClockRate" value="20000000" />
-  <parameter name="targetSlaveSelectToSClkDelay" value="0.0" />
+  <parameter name="targetClockRate" value="40000000" />
+  <parameter name="targetSlaveSelectToSClkDelay" value="2.0" />
   <parameter name="avalonSpec" value="2.0" />
   <parameter name="inputClockRate" value="80000000" />
  </module>

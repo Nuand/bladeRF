@@ -52,11 +52,11 @@ set_input_delay -clock [get_clocks {U_pll|altpll_component|auto_generated|pll1|c
 set_input_delay -clock [get_clocks {U_pll|altpll_component|auto_generated|pll1|clk[0]}] -min 0.0 [get_ports {fx3_uart_txd}] -add_delay
 
 # LMS SPI interface
-set_input_delay  -clock [get_clocks U_pll*0*] -min  1.0 [get_ports lms_sdo]
-set_input_delay  -clock [get_clocks U_pll*0*] -max  1.0 [get_ports lms_sdo] -add_delay
+set_input_delay  -clock [get_clocks U_pll*0*] -min  1.0 [get_ports {lms_sdo}]
+set_input_delay  -clock [get_clocks U_pll*0*] -max  9.0 [get_ports {lms_sdo}] -add_delay
 
 set_output_delay -clock [get_clocks U_pll*0*] -min  1.0 [get_ports {lms_sen lms_sdio lms_sclk}]
-set_output_delay -clock [get_clocks U_pll*0*] -max  1.0 [get_ports {lms_sen lms_sdio lms_sclk}] -add_delay
+set_output_delay -clock [get_clocks U_pll*0*] -max  4.0 [get_ports {lms_sen lms_sdio lms_sclk}] -add_delay
 
 # Si5338 interface
 set_input_delay -clock [get_clocks U_pll*0*] -min  1.0 [get_ports {si_scl si_sda}]
