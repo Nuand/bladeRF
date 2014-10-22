@@ -5,6 +5,12 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v0.1.1 (2014-10-22)
+--------------------------------
+ * Fixed timing errors that caused failures in SPI communication with the
+   LMS6002D. This addresses the LMS calbration failure assocaited with issue
+   #269.
+
 v0.1.0 (2014-10-21)
 --------------------------------
  * Backwards-compatible features introduced:

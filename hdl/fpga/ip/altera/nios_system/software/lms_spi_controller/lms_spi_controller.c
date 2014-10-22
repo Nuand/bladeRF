@@ -47,7 +47,7 @@
 #define FPGA_VERSION_ID         0x7777
 #define FPGA_VERSION_MAJOR      0
 #define FPGA_VERSION_MINOR      1
-#define FPGA_VERSION_PATCH      0
+#define FPGA_VERSION_PATCH      1
 #define FPGA_VERSION            (FPGA_VERSION_MAJOR | (FPGA_VERSION_MINOR << 8) | (FPGA_VERSION_PATCH << 16))
 
 #define TIME_TAMER              TIME_TAMER_0_BASE
