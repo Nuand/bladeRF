@@ -132,37 +132,35 @@ if(LIBUSB_FOUND AND NOT CMAKE_CROSSCOMPILING)
         message(STATUS "Checking libusb version...")
 
         if(WIN32)
-            set(LIBUSB_GET_VERSION ${CMAKE_HELPERS_BINARY_DIR}/libusb_get_version.exe)
             string(REPLACE ".lib" ".dll" LIBUSB_DLL "${LIBUSB_LIBRARIES}")
-
-            # We'll need the DLL to run the version check
-            file(COPY ${LIBUSB_DLL} DESTINATION ${CMAKE_HELPERS_BINARY_DIR})
-        else()
-            set(LIBUSB_GET_VERSION ${CMAKE_HELPERS_BINARY_DIR}/libusb_get_version)
-        endif()
-
-        try_compile(LIBUSB_VERCHECK_COMPILED
+            try_run(LIBUSB_VERCHECK_RUN_RESULT
+                    LIBUSB_VERCHECK_COMPILED
                     ${CMAKE_HELPERS_BINARY_DIR}
                     ${CMAKE_HELPERS_SOURCE_DIR}/libusb_version.c
                     CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${LIBUSB_INCLUDE_DIRS}"
-                    LINK_LIBRARIES ${LIBUSB_LIBRARIES}
-                    COPY_FILE ${LIBUSB_GET_VERSION}
-        )
-
-        if(NOT LIBUSB_VERCHECK_COMPILED)
-            set(LIBUSB_VERSION "0.0.0")
-            message(WARNING "\nFailed to compile libusb version check.\n"
-                            "This may occur if libusb is earlier than v1.0.10.\n"
-                            "Setting LIBUSB_VERSION to ${LIBUSB_VERSION}.\n")
-            return()
-        else()
-            execute_process(
-                    COMMAND ${LIBUSB_GET_VERSION}
-                    WORKING_DIRECTORY ${CMAKE_HELPERS_BINARY_DIR}
-                    OUTPUT_VARIABLE LIBUSB_VERSION
+                    RUN_OUTPUT_VARIABLE LIBUSB_VERSION
+                    ARGS "\"${LIBUSB_DLL}\""
             )
-
-            message(STATUS "libusb version: ${LIBUSB_VERSION}")
+        else()
+            try_run(LIBUSB_VERCHECK_RUN_RESULT
+                    LIBUSB_VERCHECK_COMPILED
+                    ${CMAKE_HELPERS_BINARY_DIR}
+                    ${CMAKE_HELPERS_SOURCE_DIR}/libusb_version.c
+                    CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${LIBUSB_INCLUDE_DIRS}" "-DLINK_LIBRARIES=${LIBUSB_LIBRARIES}"
+                    RUN_OUTPUT_VARIABLE LIBUSB_VERSION
+            )
         endif()
+
+
+        if (NOT LIBUSB_VERCHECK_COMPILED OR NOT LIBUSB_VERCHECK_RUN_RESULT EQUAL 0 )
+            message(STATUS "${LIBUSB_VERSION}")
+            set(LIBUSB_VERSION "0.0.0")
+            message(WARNING "\nFailed to compile (compiled=${LIBUSB_VERCHECK_COMPILED}) or run (retval=${LIBUSB_VERCHECK_RUN_RESULT}) libusb version check.\n"
+                             "This may occur if libusb is earlier than v1.0.10.\n"
+                             "Setting LIBUSB_VERSION to ${LIBUSB_VERSION}.\n")
+            return()
+        endif()
+
+        message(STATUS "libusb version: ${LIBUSB_VERSION}")
     endif()
 endif(LIBUSB_FOUND AND NOT CMAKE_CROSSCOMPILING)
