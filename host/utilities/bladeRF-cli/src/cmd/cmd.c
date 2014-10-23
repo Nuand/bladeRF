@@ -455,19 +455,21 @@ int cmd_handle(struct cli_state *s, const char *line)
                                             " configured. Is the FX3 "
                                             " programmed?\n");
                         s->last_lib_error = fpga_status;
-                        return CLI_RET_LIBBLADERF;
+                        ret = CLI_RET_LIBBLADERF;
                     } else if (fpga_status != 1) {
-                        return CLI_RET_NOFPGA;
+                        ret = CLI_RET_NOFPGA;
                     }
                 }
 
-                /* Commands own the device handle while they're executing.
-                 * This is needed to prevent races on the device handle while
-                 * the RX/TX make any necessary control calls while
-                 * starting up or finishing up a stream() call*/
-                pthread_mutex_lock(&s->dev_lock);
-                ret = cmd->exec(s, argc, argv);
-                pthread_mutex_unlock(&s->dev_lock);
+                if (ret == 0) {
+                    /* Commands own the device handle while they're executing.
+                     * This is needed to prevent races on the device handle
+                     * while the RX/TX make any necessary control calls while
+                     * starting up or finishing up a stream() call*/
+                    pthread_mutex_lock(&s->dev_lock);
+                    ret = cmd->exec(s, argc, argv);
+                    pthread_mutex_unlock(&s->dev_lock);
+                }
             } else {
                 ret = CLI_RET_QUIT;
             }
