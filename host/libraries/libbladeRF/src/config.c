@@ -39,7 +39,7 @@ static inline void load_dc_cal(struct bladerf *dev, const char *file)
     if (status != 0) {
         log_debug("Failed to open image file (%s): %s\n",
                   file, bladerf_strerror(status));
-        return;
+        goto out;
     }
 
     switch (img->type) {
@@ -57,6 +57,7 @@ static inline void load_dc_cal(struct bladerf *dev, const char *file)
             log_debug("%s is not an RX DC calibration table.\n", file);
     }
 
+out:
     bladerf_free_image(img);
 }
 
