@@ -180,20 +180,38 @@ else
 fi
 popd
 
-RBF="$rev"x"$size".rbf
-cp "work/output_files/$rev.rbf" $RBF
+BUILD_TIME_DONE="$(cat work/output_files/$rev.done)"
+BUILD_TIME_DONE=$(date -d"$BUILD_TIME_DONE" '+%F_%H.%M.%S')
 
+BUILD_NAME="$rev"x"$size"
+BUILD_OUTPUT_DIR="$BUILD_NAME"-"$BUILD_TIME_DONE"
+RBF=$BUILD_NAME.rbf
+
+mkdir -p "$BUILD_OUTPUT_DIR"
+cp "work/output_files/$rev.rbf" "$BUILD_OUTPUT_DIR/$RBF"
+
+for file in work/output_files/*rpt work/output_files/*summary; do
+    new_file=$(basename $file | sed -e s/$rev/"$BUILD_NAME"/)
+    cp $file "$BUILD_OUTPUT_DIR/$new_file"
+done
+
+pushd $BUILD_OUTPUT_DIR
 md5sum $RBF > $RBF.md5sum
 sha256sum $RBF > $RBF.sha256sum
-
 MD5SUM=$(cat $RBF.md5sum | awk '{ print $1 }')
 SHA256SUM=$(cat $RBF.sha256sum  | awk '{ print $1 }')
+popd
+
 
 echo ""
 echo "##########################################################################"
-echo " Done! Image copied to: $rev"x"$size.rbf"
-echo " "
-echo " MD5:    $MD5SUM"
-echo " SHA256: $SHA256SUM"
+echo " Done! Image, reports, and checksums copied to:"
+echo "   $BUILD_OUTPUT_DIR"
+echo ""
+echo " $RBF checksums:"
+echo "  MD5:    $MD5SUM"
+echo "  SHA256: $SHA256SUM"
+echo ""
+cat "$BUILD_OUTPUT_DIR/$BUILD_NAME.fit.summary" | sed -e 's/^\(.\)/ \1/g'
 echo "##########################################################################"
 echo ""
