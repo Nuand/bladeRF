@@ -81,12 +81,13 @@ static unsigned int random_bandwidths(struct bladerf *dev, bladerf_module m,
     const unsigned int iterations = 1500;
 
     for (i = 0; i < iterations; i++) {
-        randval_update(&p->randval_state);
-        bw = BLADERF_BANDWIDTH_MIN + (p->randval_state % BLADERF_BANDWIDTH_MAX);
+        const unsigned int mod =
+            BLADERF_BANDWIDTH_MAX - BLADERF_BANDWIDTH_MIN + 1;
 
-        if (bw < BLADERF_BANDWIDTH_MIN) {
-            bw = BLADERF_BANDWIDTH_MIN;
-        } else if (bw > BLADERF_BANDWIDTH_MAX) {
+        randval_update(&p->randval_state);
+
+        bw = BLADERF_BANDWIDTH_MIN + (p->randval_state % mod);
+        if (bw > BLADERF_BANDWIDTH_MAX) {
             bw = BLADERF_BANDWIDTH_MAX;
         }
 
