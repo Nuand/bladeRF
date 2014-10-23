@@ -208,7 +208,7 @@ unsigned int test_threads(struct bladerf *dev, struct app_params *p, bool quiet)
     if (status != 0) {
         PR_ERROR("Failed to enable loopback: %s\n", bladerf_strerror(status));
         failures++;
-        return status;
+        goto out;
     }
 
     init_task(&rx, dev, BLADERF_MODULE_RX);
