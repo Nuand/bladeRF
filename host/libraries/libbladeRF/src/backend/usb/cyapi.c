@@ -122,7 +122,7 @@ static int cyapi_open(void **driver,
                      struct bladerf_devinfo *info_in,
                      struct bladerf_devinfo *info_out)
 {
-    int status = BLADERF_ERR_IO;
+    int status;
     bool success;
     int instance = -1;
     struct bladerf_devinfo_list info_list;
@@ -138,30 +138,31 @@ static int cyapi_open(void **driver,
     for (unsigned int i = 0; i < info_list.num_elt; i++) {
         if (bladerf_devinfo_matches(&info_list.elt[i], info_in)) {
             instance = info_list.elt[i].instance;
-            break;
+
+            success = dev->Open(instance);
+            if (success && dev->SetAltIntfc(1)) {
+                struct bladerf_cyapi *cyapi_data =
+                    (struct bladerf_cyapi *) calloc(1, sizeof(cyapi_data[0]));
+
+                cyapi_data->dev = dev;
+                *driver = cyapi_data;
+                memcpy(info_out, &info_list.elt[instance], sizeof(info_out[0]));
+                status = 0;
+                break;
+            } else {
+                if (success) {
+                    dev->Close();
+                }
+                instance = -1;
+            }
         }
     }
 
     if (instance < 0) {
-        status = BLADERF_ERR_NODEV;
-        goto out;
-    }
-
-    success = dev->Open(instance) && dev->SetAltIntfc(1);
-    if (success) {
-        struct bladerf_cyapi *cyapi_data =
-            (struct bladerf_cyapi *) calloc(1, sizeof(struct bladerf_cyapi));
-
-        cyapi_data->dev = dev;
-        *driver = cyapi_data;
-        memcpy(info_out, &info_list.elt[instance], sizeof(info_out[0]));
-        status = 0;
-    } else {
-        status = BLADERF_ERR_UNEXPECTED;
         delete dev;
+        status = BLADERF_ERR_NODEV;
     }
 
-out:
     free(info_list.elt);
     return status;
 }

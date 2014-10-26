@@ -358,7 +358,7 @@ static int lusb_open(void **driver,
                     log_debug("Skipping instance %d due to failed allocation\n",
                               thisinfo.instance);
                     lusb = NULL;
-                    continue;
+                    continue;   /* Try the next device */
                 }
 
                 lusb->context = context;
@@ -366,16 +366,27 @@ static int lusb_open(void **driver,
 
                 status = libusb_open(list[i], &lusb->handle);
                 if (status < 0) {
-                    status = error_conv(status);
-                    goto error;
+                    log_debug("Skipping - could not open device: %s\n",
+                               libusb_error_name(status));
+
+                    /* Keep trying other devices */
+                    status = 0;
+                    free(lusb);
+                    lusb = NULL;
+                    continue;
                 }
 
                 status = libusb_claim_interface(lusb->handle, 0);
                 if(status < 0) {
-                    log_debug("Could not claim interface: %s\n",
+                    log_debug("Skipping - could not claim interface: %s\n",
                               libusb_error_name(status));
-                    status = error_conv(status);
-                    goto error;
+
+                    /* Keep trying other devices */
+                    status = 0;
+                    libusb_close(lusb->handle);
+                    free(lusb);
+                    lusb = NULL;
+                    continue;
                 }
 
                 memcpy(info_out, &thisinfo, sizeof(struct bladerf_devinfo));
