@@ -79,10 +79,16 @@ void bladerf_free_device_list(struct bladerf_devinfo *devices)
 }
 
 int bladerf_open_with_devinfo(struct bladerf **opened_device,
-                                struct bladerf_devinfo *devinfo)
+                              struct bladerf_devinfo *devinfo)
 {
     struct bladerf *dev;
+    struct bladerf_devinfo any_device;
     int status;
+
+    if (devinfo == NULL) {
+        bladerf_init_devinfo(&any_device);
+        devinfo = &any_device;
+    }
 
     *opened_device = NULL;
 

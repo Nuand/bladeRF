@@ -171,7 +171,8 @@ void CALL_CONV bladerf_free_device_list(struct bladerf_devinfo *devices);
  * @snippet open_via_serial.c example_snippet
  *
  * @param[out]  device      Update with device handle on success
- * @param[in]   devinfo     Device specification
+ * @param[in]   devinfo     Device specification. If NULL, any available
+ *                          device will be opened.
  *
  * @return 0 on success, or value from \ref RETCODES list on failure
  */
