@@ -38,12 +38,14 @@ include(CheckIncludeFile)
 # likely want to fetch a binary distribution, hence the Windows-oriented default.
 #
 # See http://www.libusb.org/wiki/windows_backend#LatestBinarySnapshots
-set(LIBUSB_PATH
-    "C:/Program Files (x86)/libusb-1.0.19"
-    CACHE
-    PATH
-    "Path to libusb files. (This is generally only needed for Windows users who downloaded binary distributions.)"
-   )
+if(WIN32)
+    set(LIBUSB_PATH
+        "C:/Program Files (x86)/libusb-1.0.19"
+        CACHE
+        PATH
+        "Path to libusb files. (This is generally only needed for Windows users who downloaded binary distributions.)"
+       )
+endif()
 
 find_package(PkgConfig)
 if(PKG_CONFIG_FOUND)
