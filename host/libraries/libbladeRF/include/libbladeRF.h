@@ -158,7 +158,17 @@ void CALL_CONV bladerf_free_device_list(struct bladerf_devinfo *devices);
 /**
  * Opens device specified by provided bladerf_devinfo structure
  *
- * @pre devinfo has been populated via a call to bladerf_get_device_list
+ * This function is generally preferred over bladerf_open() when a device
+ * identifier string is not already provided.
+ *
+ * The most common uses of this function are to:
+ *  - Open a device based upon the results of bladerf_get_device_list()
+ *  - Open a specific device based upon its serial number
+ *
+ * Below is an example of how to use this function to open a device with a
+ * specific serial number:
+ *
+ * @snippet open_via_serial.c example_snippet
  *
  * @param[out]  device      Update with device handle on success
  * @param[in]   devinfo     Device specification
@@ -170,7 +180,9 @@ int CALL_CONV bladerf_open_with_devinfo(struct bladerf **device,
                                         struct bladerf_devinfo *devinfo);
 
 /**
- * Open specified device using a device identifier string
+ * Open specified device using a device identifier string. See
+ * bladerf_open_with_devinfo() if a device identifier string is not readily
+ * available.
  *
  * The general form of the device identifier string is;
  * @code
