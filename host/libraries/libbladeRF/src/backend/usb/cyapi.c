@@ -92,12 +92,14 @@ static int open_device(CCyUSBDevice *dev, int instance, HANDLE *mutex)
     int status = 0;
     bool success;
     DWORD last_error;
-    const char suffix[] = "-bladeRF";
-    const size_t mutex_name_len = strlen(suffix) + BLADERF_SERIAL_LENGTH;
+    const char prefix[] = "Global\\bladeRF-";
+    const size_t mutex_name_len = strlen(prefix) + BLADERF_SERIAL_LENGTH;
     char *mutex_name = (char *) calloc(mutex_name_len, 1);
 
     if (mutex_name == NULL) {
         return BLADERF_ERR_MEM;
+    } else {
+        strcpy(mutex_name, prefix);
     }
 
     success = dev->Open(instance);
@@ -106,8 +108,8 @@ static int open_device(CCyUSBDevice *dev, int instance, HANDLE *mutex)
         goto out;
     }
 
-    wcstombs(mutex_name, dev->SerialNumber, BLADERF_SERIAL_LENGTH - 1);
-    strncat(mutex_name, suffix, sizeof(mutex_name) - BLADERF_SERIAL_LENGTH - 1);
+    wcstombs(mutex_name + strlen(prefix), dev->SerialNumber, sizeof(mutex_name) - BLADERF_SERIAL_LENGTH - 1);
+    log_verbose("Mutex name: %s\n", mutex_name);
 
     SetLastError(0);
     *mutex = CreateMutex(NULL, true, mutex_name);
