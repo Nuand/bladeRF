@@ -55,6 +55,15 @@ elseif(CMAKE_COMPILER_IS_GNUCC)
     endif(CMAKE_SIZEOF_VOID_P EQUAL 8)
 endif()
 
+if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "AMD64")
+    set(CYUSB_ARCH "x64")
+elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "i386")
+    set(CYUSB_ARCH "x86")
+else()
+    # We shouldn't see PPC here, as CyAPI/CYUSB3 is Windows-only
+    message(FATAL_ERROR "Unexpected CMAKE_SYSTEM_PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR}")
+endif()
+
 find_library(CYAPI_LIBRARY
     NAMES
         CyAPI
@@ -69,16 +78,17 @@ if(CYAPI_LIBRARY)
 endif()
 
 if(${CMAKE_SYSTEM_VERSION} LESS 6.0)
-    set(CYUSB3_DRIVER_DIR "${FX3_SDK_PATH}/driver/bin/wxp/${CYAPI_ARCH}")
+    set(CYUSB3_DRIVER_DIR "${FX3_SDK_PATH}/driver/bin/wxp/${CYUSB_ARCH}")
 elseif(${CMAKE_SYSTEM_VERSION} EQUAL 6.0)
-    set(CYUSB3_DRIVER_DIR "${FX3_SDK_PATH}/driver/bin/vista/${CYAPI_ARCH}")
+    set(CYUSB3_DRIVER_DIR "${FX3_SDK_PATH}/driver/bin/vista/${CYUSB_ARCH}")
 elseif(${CMAKE_SYSTEM_VERSION} EQUAL 6.1)
-    set(CYUSB3_DRIVER_DIR "${FX3_SDK_PATH}/driver/bin/win7/${CYAPI_ARCH}")
+    set(CYUSB3_DRIVER_DIR "${FX3_SDK_PATH}/driver/bin/win7/${CYUSB_ARCH}")
 elseif(${CMAKE_SYSTEM_VERSION} EQUAL 6.2)
-    set(CYUSB3_DRIVER_DIR "${FX3_SDK_PATH}/driver/bin/win8/${CYAPI_ARCH}")
+    set(CYUSB3_DRIVER_DIR "${FX3_SDK_PATH}/driver/bin/win8/${CYUSB_ARCH}")
 else()
     message(FATAL_ERROR "Unsupported CMAKE_SYSTEM_VERSION: ${CMAKE_SYSTEM_VERSION}")
 endif()
+
 
 if(EXISTS ${CYUSB3_DRIVER_DIR})
     if(CYAPI_INCLUDE_DIRS AND CYAPI_LIBRARIES)
