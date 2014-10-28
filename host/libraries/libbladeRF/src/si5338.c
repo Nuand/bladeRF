@@ -215,7 +215,8 @@ static void si5338_pack_regs(struct si5338_multisynth *ms)
     return ;
 }
 
-static int si5338_write_multisynth(struct bladerf *dev, struct si5338_multisynth *ms)
+static int si5338_write_multisynth(struct bladerf *dev,
+                                   struct si5338_multisynth *ms)
 {
     int i, status;
     uint8_t r_power, r_count, val;
@@ -269,7 +270,8 @@ static int si5338_write_multisynth(struct bladerf *dev, struct si5338_multisynth
     return status ;
 }
 
-static int si5338_read_multisynth(struct bladerf *dev, struct si5338_multisynth *ms)
+static int si5338_read_multisynth(struct bladerf *dev,
+                                  struct si5338_multisynth *ms)
 {
     int i, status;
     uint8_t val;
@@ -312,7 +314,8 @@ static int si5338_read_multisynth(struct bladerf *dev, struct si5338_multisynth 
     return 0;
 }
 
-static void si5338_calculate_samplerate(struct si5338_multisynth *ms, struct bladerf_rational_rate *rate)
+static void si5338_calculate_samplerate(struct si5338_multisynth *ms,
+                                        struct bladerf_rational_rate *rate)
 {
     struct bladerf_rational_rate abc;
     abc.integer = ms->a;
@@ -330,7 +333,8 @@ static void si5338_calculate_samplerate(struct si5338_multisynth *ms, struct bla
     return;
 }
 
-static int si5338_calculate_multisynth(struct si5338_multisynth *ms, struct bladerf_rational_rate *rate)
+static int si5338_calculate_multisynth(struct si5338_multisynth *ms,
+                                       struct bladerf_rational_rate *rate)
 {
 
     struct bladerf_rational_rate req;
@@ -412,7 +416,9 @@ static int si5338_calculate_multisynth(struct si5338_multisynth *ms, struct blad
     return 0;
 }
 
-int si5338_set_rational_sample_rate(struct bladerf *dev, bladerf_module module, struct bladerf_rational_rate *rate, struct bladerf_rational_rate *actual_ret)
+int si5338_set_rational_sample_rate(struct bladerf *dev, bladerf_module module,
+                                    struct bladerf_rational_rate *rate,
+                                    struct bladerf_rational_rate *actual_ret)
 {
     struct si5338_multisynth ms;
     struct bladerf_rational_rate req;
@@ -460,7 +466,8 @@ int si5338_set_rational_sample_rate(struct bladerf *dev, bladerf_module module, 
     return status ;
 }
 
-int si5338_set_sample_rate(struct bladerf *dev, bladerf_module module, uint32_t rate, uint32_t *actual)
+int si5338_set_sample_rate(struct bladerf *dev, bladerf_module module,
+                           uint32_t rate, uint32_t *actual)
 {
     struct bladerf_rational_rate req, act;
     int status;
@@ -488,7 +495,8 @@ int si5338_set_sample_rate(struct bladerf *dev, bladerf_module module, uint32_t 
     return status ;
 }
 
-int si5338_get_rational_sample_rate(struct bladerf *dev, bladerf_module module, struct bladerf_rational_rate *rate)
+int si5338_get_rational_sample_rate(struct bladerf *dev, bladerf_module module,
+                                    struct bladerf_rational_rate *rate)
 {
 
     struct si5338_multisynth ms;
@@ -513,7 +521,8 @@ int si5338_get_rational_sample_rate(struct bladerf *dev, bladerf_module module, 
     return 0;
 }
 
-int si5338_get_sample_rate(struct bladerf *dev, bladerf_module module, unsigned int *rate)
+int si5338_get_sample_rate(struct bladerf *dev, bladerf_module module,
+                           unsigned int *rate)
 {
     struct bladerf_rational_rate actual;
     int status;
