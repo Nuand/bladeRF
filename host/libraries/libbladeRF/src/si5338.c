@@ -62,13 +62,13 @@ struct si5338_multisynth {
 
 void si5338_read_error(int error, const char *s)
 {
-    log_error( "Could not read from si5338 (%d): %s\n", error, s );
+    log_debug("Could not read from si5338 (%d): %s\n", error, s);
     return;
 }
 
 void si5338_write_error(int error, const char *s)
 {
-    log_error( "Could not write to si5338 (%d): %s\n", error, s );
+    log_debug("Could not write to si5338 (%d): %s\n", error, s);
     return;
 }
 
@@ -142,7 +142,8 @@ static void si5338_unpack_regs(struct si5338_multisynth *ms)
     ms->p2 = (ms->regs[5]<<22)          |       (ms->regs[4]<<14) | (ms->regs[3]<<6) | ((ms->regs[2]>>2)&0x3f);
     ms->p3 = ((ms->regs[9]&0x3f)<<24)   |       (ms->regs[8]<<16) | (ms->regs[7]<<8) | (ms->regs[6]);
 
-    log_debug( "Unpacked P1: 0x%8.8x (%u) P2: 0x%8.8x (%u) P3: 0x%8.8x (%u)\n", ms->p1, ms->p1, ms->p2, ms->p2, ms->p3, ms->p3 );
+    log_verbose("Unpacked P1: 0x%8.8x (%u) P2: 0x%8.8x (%u) P3: 0x%8.8x (%u)\n",
+                ms->p1, ms->p1, ms->p2, ms->p2, ms->p3, ms->p3);
 
     /* c = p3 */
     ms->c = ms->p3;
@@ -160,8 +161,8 @@ static void si5338_unpack_regs(struct si5338_multisynth *ms)
     assert(temp <= UINT32_MAX);
     ms->b = (uint32_t)temp;
 
-    log_debug( "Unpacked a + b/c: %d + %d/%d\n", ms->a, ms->b, ms->c );
-    log_debug( "Unpacked r: %d\n", ms->r );
+    log_verbose("Unpacked a + b/c: %d + %d/%d\n", ms->a, ms->b, ms->c);
+    log_verbose("Unpacked r: %d\n", ms->r);
 }
 
 /*
@@ -196,7 +197,8 @@ static void si5338_pack_regs(struct si5338_multisynth *ms)
     /* p3 = c */
     ms->p3 = ms->c;
 
-    log_debug( "MSx P1: 0x%8.8x (%u) P2: 0x%8.8x (%u) P3: 0x%8.8x (%u)\n", ms->p1, ms->p1, ms->p2, ms->p2, ms->p3, ms->p3 );
+    log_verbose("MSx P1: 0x%8.8x (%u) P2: 0x%8.8x (%u) P3: 0x%8.8x (%u)\n",
+                ms->p1, ms->p1, ms->p2, ms->p2, ms->p3, ms->p3);
 
     /* Regs */
     ms->regs[0] = ms->p1 & 0xff;
@@ -218,7 +220,7 @@ static int si5338_write_multisynth(struct bladerf *dev, struct si5338_multisynth
     int i, status;
     uint8_t r_power, r_count, val;
 
-    log_debug( "Writing MS%d\n", ms->index );
+    log_verbose("Writing MS%d\n", ms->index);
 
     /* Write out the enables */
     status = SI5338_READ(dev, 36 + ms->index, &val);
@@ -228,7 +230,7 @@ static int si5338_write_multisynth(struct bladerf *dev, struct si5338_multisynth
     }
     val &= ~(7);
     val |= ms->enable;
-    log_debug( "Wrote enable register: 0x%2.2x\n", val );
+    log_verbose("Wrote enable register: 0x%2.2x\n", val);
     status = SI5338_WRITE(dev, 36 + ms->index, val);
     if (status < 0) {
         si5338_write_error(status, bladerf_strerror(status));
@@ -242,7 +244,7 @@ static int si5338_write_multisynth(struct bladerf *dev, struct si5338_multisynth
             si5338_write_error(status, bladerf_strerror(status));
             return status;
         }
-        log_debug( "Wrote regs[%d]: 0x%2.2x\n", i, *(ms->regs+i) );
+        log_verbose("Wrote regs[%d]: 0x%2.2x\n", i, *(ms->regs+i));
     }
 
     /* Calculate r_power from c_count */
@@ -257,7 +259,7 @@ static int si5338_write_multisynth(struct bladerf *dev, struct si5338_multisynth
     val = 0xc0;
     val |= (r_power<<2);
 
-    log_debug( "Wrote r register: 0x%2.2x\n", val );
+    log_verbose("Wrote r register: 0x%2.2x\n", val);
 
     status = SI5338_WRITE(dev, 31 + ms->index, val);
     if (status < 0) {
@@ -272,7 +274,7 @@ static int si5338_read_multisynth(struct bladerf *dev, struct si5338_multisynth 
     int i, status;
     uint8_t val;
 
-    log_debug( "Reading MS%d\n", ms->index );
+    log_verbose("Reading MS%d\n", ms->index);
 
     /* Read the enable bits */
     status = SI5338_READ(dev, 36 + ms->index, &val);
@@ -281,7 +283,7 @@ static int si5338_read_multisynth(struct bladerf *dev, struct si5338_multisynth 
         return status ;
     }
     ms->enable = val&7;
-    log_debug( "Read enable register: 0x%2.2x\n", val );
+    log_verbose("Read enable register: 0x%2.2x\n", val);
 
     /* Read all of the multisynth registers */
     for (i = 0; i < 10; i++) {
@@ -290,7 +292,7 @@ static int si5338_read_multisynth(struct bladerf *dev, struct si5338_multisynth 
             si5338_read_error(status, bladerf_strerror(status));
             return status;
         }
-        log_debug( "Read regs[%d]: 0x%2.2x\n", i, *(ms->regs+i) );
+        log_verbose("Read regs[%d]: 0x%2.2x\n", i, *(ms->regs+i));
     }
 
     /* Populate the RxDIV value from the register */
@@ -300,7 +302,7 @@ static int si5338_read_multisynth(struct bladerf *dev, struct si5338_multisynth 
         return status;
     }
     /* RxDIV is stored as a power of 2, so restore it on readback */
-    log_debug( "Read r register: 0x%2.2x\n", val );
+    log_verbose("Read r register: 0x%2.2x\n", val);
     val = (val>>2)&7;
     ms->r = (1<<val);
 
@@ -322,7 +324,8 @@ static void si5338_calculate_samplerate(struct si5338_multisynth *ms, struct bla
     rate->den = (uint64_t)ms->r*2*(abc.integer * abc.den + abc.num);
     si5338_rational_reduce(rate);
 
-    log_debug( "Calculated samplerate: %"PRIu64" + %"PRIu64"/%"PRIu64"\n", rate->integer, rate->num, rate->den );
+    log_verbose("Calculated samplerate: %"PRIu64" + %"PRIu64"/%"PRIu64"\n",
+                rate->integer, rate->num, rate->den);
 
     return;
 }
@@ -350,10 +353,10 @@ static int si5338_calculate_multisynth(struct si5338_multisynth *ms, struct blad
     }
 
     if (r_value == 32 && req.integer < 5000000) {
-        log_info( "Sample rate requires r > 32\n" );
+        log_debug("Sample rate requires r > 32\n");
         return BLADERF_ERR_INVAL;
     } else {
-        log_debug( "Found r value of: %d\n", r_value );
+        log_verbose("Found r value of: %d\n", r_value);
     }
 
     /* Find suitable MS (a, b, c) values */
@@ -362,7 +365,8 @@ static int si5338_calculate_multisynth(struct si5338_multisynth *ms, struct blad
     abc.den = req.integer * req.den + req.num;
     si5338_rational_reduce(&abc);
 
-    log_debug( "MSx a + b/c: %"PRIu64" + %"PRIu64"/%"PRIu64"\n", abc.integer, abc.num, abc.den );
+    log_verbose("MSx a + b/c: %"PRIu64" + %"PRIu64"/%"PRIu64"\n",
+                abc.integer, abc.num, abc.den);
 
     /* Check values to make sure they are OK */
     if (abc.integer < 8) {
@@ -373,11 +377,11 @@ static int si5338_calculate_multisynth(struct si5338_multisynth *ms, struct blad
             case 3:
             case 5:
             case 7:
-                log_error( "Integer portion too small: %"PRIu64"\n", abc.integer );
+                log_debug("Integer portion too small: %"PRIu64"\n", abc.integer);
                 return BLADERF_ERR_INVAL;
         }
     } else if (abc.integer > 567) {
-        log_error( "Integer portion too large: %"PRIu64"\n", abc.integer );
+        log_debug("Integer portion too large: %"PRIu64"\n", abc.integer);
         return BLADERF_ERR_INVAL;
     }
 
@@ -390,7 +394,8 @@ static int si5338_calculate_multisynth(struct si5338_multisynth *ms, struct blad
         abc.den >>= 1;
     }
 
-    log_debug( "MSx a + b/c: %"PRIu64" + %"PRIu64"/%"PRIu64"\n", abc.integer, abc.num, abc.den );
+    log_verbose("MSx a + b/c: %"PRIu64" + %"PRIu64"/%"PRIu64"\n",
+                abc.integer, abc.num, abc.den);
 
     /* Set it in the multisynth */
     assert(abc.integer <= UINT32_MAX);
@@ -461,7 +466,7 @@ int si5338_set_sample_rate(struct bladerf *dev, bladerf_module module, uint32_t 
     int status;
 
     memset(&act, 0, sizeof(act));
-    log_debug( "Setting integer sample rate: %d\n", rate );
+    log_verbose("Setting integer sample rate: %d\n", rate);
     req.integer = rate;
     req.num = 0;
     req.den = 1;
@@ -469,7 +474,8 @@ int si5338_set_sample_rate(struct bladerf *dev, bladerf_module module, uint32_t 
     status = si5338_set_rational_sample_rate(dev, module, &req, &act);
 
     if (status == 0 && act.num != 0) {
-        log_warning( "Non-integer sample rate set from integer sample rate, truncating output.\n" );
+        log_info("Non-integer sample rate set from integer sample rate, "
+                 "truncating output.\n");
     }
 
     assert(act.integer <= UINT32_MAX);
@@ -477,7 +483,7 @@ int si5338_set_sample_rate(struct bladerf *dev, bladerf_module module, uint32_t 
     if (actual) {
         *actual = (uint32_t)act.integer;
     }
-    log_debug( "Set actual integer sample rate: %d\n", act.integer );
+    log_verbose("Set actual integer sample rate: %d\n", act.integer);
 
     return status ;
 }
@@ -498,7 +504,7 @@ int si5338_get_rational_sample_rate(struct bladerf *dev, bladerf_module module, 
     status = si5338_read_multisynth(dev, &ms);
 
     if (status) {
-        si5338_read_error( status, bladerf_strerror(status) );
+        si5338_read_error(status, bladerf_strerror(status));
         return status;
     }
 
@@ -515,12 +521,13 @@ int si5338_get_sample_rate(struct bladerf *dev, bladerf_module module, unsigned 
     status = si5338_get_rational_sample_rate(dev, module, &actual);
 
     if (status) {
-        si5338_read_error( status, bladerf_strerror(status) );
+        si5338_read_error(status, bladerf_strerror(status));
         return status;
     }
 
     if (actual.num != 0) {
-        log_warning( "Fractional sample rate truncated during integer sample rate retrieval\n" );
+        log_debug("Fractional sample rate truncated during integer sample rate"
+                  "retrieval\n");
     }
 
     assert(actual.integer <= UINT_MAX);
