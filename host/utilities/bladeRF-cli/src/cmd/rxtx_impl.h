@@ -78,9 +78,9 @@ struct data_mgmt
 {
     MUTEX lock;                     /* Should be acquired to change the
                                      *    the following items */
-    size_t num_buffers;             /* # of buffers in 'buffers' list */
-    size_t samples_per_buffer;      /* Size of each buffer (in samples) */
-    size_t num_transfers;           /* # of transfers to use in the stream */
+    unsigned int num_buffers;       /* # of buffers in 'buffers' list */
+    unsigned int samples_per_buffer;/* Size of each buffer (in samples) */
+    unsigned int num_transfers;     /* # of transfers to use in the stream */
     unsigned int timeout_ms;        /* Stream timeout, in ms */
 };
 

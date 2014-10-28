@@ -115,6 +115,8 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
                                               buffer_samples_remaining,
                                               tx->file_mgmt.file);
 
+                    assert(samples_populated <= UINT_MAX);
+
                     /* If the end of the file was reached, determine whether
                      * to delay, re-read from the file, or pad the rest of the
                      * buffer and finish */
@@ -154,7 +156,7 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
                     memset(tx_buffer_current, 0,
                            samples_populated * 2 * sizeof(uint16_t));
 
-                    delay_samples_remaining -= samples_populated;
+                    delay_samples_remaining -= (unsigned int)samples_populated;
 
                     if (delay_samples_remaining == 0) {
                         state = READ_FILE;
@@ -176,7 +178,7 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
 
             /* Advance the buffer pointer.
              * Remember, two int16_t's make up 1 sample in the SC16Q11 format */
-            buffer_samples_remaining -= samples_populated;
+            buffer_samples_remaining -= (unsigned int)samples_populated;
             tx_buffer_current += (2 * samples_populated);
         }
 
