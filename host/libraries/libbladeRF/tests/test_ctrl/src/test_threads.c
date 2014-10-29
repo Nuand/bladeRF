@@ -132,8 +132,6 @@ out:
 
 static void init_task(struct sync_task *t, struct bladerf *dev, bladerf_module m)
 {
-    int status;
-
     t->dev = dev;
     pthread_mutex_init(&t->lock, NULL);
     t->launched = false;
@@ -146,13 +144,17 @@ static void init_task(struct sync_task *t, struct bladerf *dev, bladerf_module m
     } else {
         t->fn = bladerf_sync_tx;
     }
+}
 
-    status = pthread_create(&t->thread, NULL, stream_task, t);
+static int launch_task(struct sync_task *t)
+{
+    int status = pthread_create(&t->thread, NULL, stream_task, t);
     if (status == 0) {
         t->launched = true;
     }
-}
 
+    return status;
+}
 
 static inline int deinit_task(struct sync_task *t)
 {
@@ -191,6 +193,9 @@ unsigned int test_threads(struct bladerf *dev, struct app_params *p, bool quiet)
           __FUNCTION__);
     PRINT("  Printing output from test_frequency for status...\n");
 
+    init_task(&rx, dev, BLADERF_MODULE_RX);
+    init_task(&tx, dev, BLADERF_MODULE_TX);
+
     threads = calloc(num_threads, sizeof(threads[0]));
     if (threads == NULL) {
         return 1;
@@ -211,14 +216,12 @@ unsigned int test_threads(struct bladerf *dev, struct app_params *p, bool quiet)
         goto out;
     }
 
-    init_task(&rx, dev, BLADERF_MODULE_RX);
-    if (!rx.launched) {
+    if (launch_task(&rx) != 0) {
         PR_ERROR("%s: Failed to launch RX thread\n", __FUNCTION__);
         goto out;
     }
 
-    init_task(&tx, dev, BLADERF_MODULE_TX);
-    if (!tx.launched) {
+    if(launch_task(&tx) != 0) {
         PR_ERROR("%s: Failed to launch TX thread\n", __FUNCTION__);
         goto out;
     }
