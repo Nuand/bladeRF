@@ -129,9 +129,7 @@ static int random_samplerates(struct bladerf *dev,
         randval_update(&p->randval_state);
 
         rate = BLADERF_SAMPLERATE_MIN + (p->randval_state % mod);
-        if (rate > BLADERF_SAMPLERATE_REC_MAX) {
-            rate = BLADERF_SAMPLERATE_REC_MAX;
-        }
+        assert(rate <= BLADERF_SAMPLERATE_REC_MAX);
 
         status = set_and_check(dev, m, rate);
         if (status != 0) {
