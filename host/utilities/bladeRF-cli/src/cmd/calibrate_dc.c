@@ -215,10 +215,22 @@ int calibrate_dc_rx(struct cli_state *s,
         goto out;
     }
 
+    /* Ensure old samples are flushed */
+    status = bladerf_enable_module(s->dev, BLADERF_MODULE_RX, false);
+    if (status != 0) {
+        goto out;
+    }
+
+
     status = bladerf_sync_config(s->dev, BLADERF_MODULE_RX,
                                  BLADERF_FORMAT_SC16_Q11,
                                  CAL_NUM_BUFS, CAL_BUF_LEN,
                                  CAL_NUM_XFERS, CAL_TIMEOUT);
+    if (status != 0) {
+        goto out;
+    }
+
+    status = bladerf_enable_module(s->dev, BLADERF_MODULE_RX, true);
     if (status != 0) {
         goto out;
     }
@@ -481,11 +493,16 @@ int calibrate_dc_tx(struct cli_state *s,
         goto out;
     }
 
-    status = bladerf_enable_module(s->dev, BLADERF_MODULE_TX, true);
+    /* Ensure old samples are flushed */
+    status = bladerf_enable_module(s->dev, BLADERF_MODULE_RX, false);
     if (status != 0) {
         goto out;
     }
 
+    status = bladerf_enable_module(s->dev, BLADERF_MODULE_TX, false);
+    if (status != 0) {
+        goto out;
+    }
 
     status = bladerf_sync_config(s->dev, BLADERF_MODULE_RX,
                                  BLADERF_FORMAT_SC16_Q11,
@@ -499,6 +516,16 @@ int calibrate_dc_tx(struct cli_state *s,
                                  BLADERF_FORMAT_SC16_Q11,
                                  CAL_NUM_BUFS, CAL_BUF_LEN,
                                  CAL_NUM_XFERS, CAL_TIMEOUT);
+    if (status != 0) {
+        goto out;
+    }
+
+    status = bladerf_enable_module(s->dev, BLADERF_MODULE_RX, true);
+    if (status != 0) {
+        goto out;
+    }
+
+    status = bladerf_enable_module(s->dev, BLADERF_MODULE_TX, true);
     if (status != 0) {
         goto out;
     }
@@ -725,12 +752,6 @@ int calibrate_dc_gen_tbl(struct cli_state *s, bladerf_module module,
     status = bladerf_get_loopback(s->dev, &loopback_backup);
     if (status != 0) {
         return status;
-    }
-
-    /* RX used for both TX and RX cal. TX module will be enabled as-needed */
-    status = bladerf_enable_module(s->dev, BLADERF_MODULE_RX, true);
-    if (status != 0) {
-        goto out;
     }
 
     status = bladerf_lms_get_dc_cals(s->dev, &lms_dc_cals);
@@ -1026,24 +1047,21 @@ error:
     retval = status;
 
     if (IS_RX_CAL(ops)) {
-        status = bladerf_enable_module(s->dev, BLADERF_MODULE_RX, false);
-        retval = first_error(retval, status);
-
         status = restore_settings(s->dev, BLADERF_MODULE_RX, &rx_settings);
         retval = first_error(retval, status);
     }
 
 
     if (IS_TX_CAL(ops)) {
-        status = bladerf_enable_module(s->dev, BLADERF_MODULE_RX, false);
-        retval = first_error(retval, status);
-
-        status = bladerf_enable_module(s->dev, BLADERF_MODULE_TX, false);
-        retval = first_error(retval, status);
-
         status = restore_settings(s->dev, BLADERF_MODULE_TX, &tx_settings);
         retval = first_error(retval, status);
     }
+
+    status = bladerf_enable_module(s->dev, BLADERF_MODULE_RX, false);
+    retval = first_error(retval, status);
+
+    status = bladerf_enable_module(s->dev, BLADERF_MODULE_TX, false);
+    retval = first_error(retval, status);
 
     status = bladerf_set_loopback(s->dev, loopback);
     retval = first_error(retval, status);
