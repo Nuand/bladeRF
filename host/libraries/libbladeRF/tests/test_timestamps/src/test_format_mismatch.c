@@ -288,7 +288,7 @@ static int deinit_if(struct bladerf *dev, bladerf_module m, bool sync,
             pthread_mutex_lock(&t->lock);
             state = t->state;
             pthread_mutex_unlock(&t->lock);
-        } while (state == TASK_SHUTDOWN_REQUESTED);
+        }
 
         pthread_join(t->thread, NULL);
 
