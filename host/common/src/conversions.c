@@ -384,7 +384,7 @@ int str2args(const char *line, char comment_char, char ***argv_ret)
         switch (state) {
             case PARSE_STATE_IN_SPACE:
                 /* Found the start of the next argument */
-                if (!isspace(line[line_i])) {
+                if (!isspace((unsigned char) line[line_i])) {
                     if (line[line_i] == comment_char) {
                         got_eol_comment = true;
                     } else {
@@ -447,7 +447,7 @@ int str2args(const char *line, char comment_char, char ***argv_ret)
                 break;
 
             case PARSE_STATE_IN_ARG:
-                if (isspace(line[line_i])) {
+                if (isspace((unsigned char) line[line_i])) {
                     state = PARSE_STATE_IN_SPACE;
                 } else if (line[line_i] == '"') {
                     state = PARSE_STATE_IN_QUOTE;

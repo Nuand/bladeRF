@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 2.8.4)
 project(bladeRF C)
 
 ################################################################################
@@ -30,6 +30,9 @@ set(BLADERF_HOST_COMMON_INCLUDE_DIRS
 )
 
 set(BLADERF_HOST_COMMON_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/common/src)
+
+# CMake >= 2.8.4 no longer defines WIN32. Acknowledge this change.
+set(CMAKE_LEGACY_CYGWIN_WIN32 0)
 
 ###############################
 # Misc. options
@@ -119,7 +122,7 @@ endif(MSVC)
 ################################################################################
 
 # Linux (TODO determine if this will actually be sufficient for BSD)
-if(${CMAKE_SYSTEM_NAME} MATCHES "Linux" OR ${CMAKE_SYSTEM_NAME} MATCHES "BSD")
+if(${CMAKE_SYSTEM_NAME} MATCHES "Linux" OR ${CMAKE_SYSTEM_NAME} MATCHES "BSD" OR CYGWIN)
     set(BLADERF_OS_LINUX 1)
 
     if(NOT CMAKE_CROSSCOMPILING)

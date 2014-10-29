@@ -48,13 +48,13 @@ static int handle_backend(char *str, struct bladerf_devinfo *d)
 
 
     /* Gobble up any leading whitespace */
-    while (*str && isspace(*str)) {
+    while (*str && isspace((unsigned char) *str)) {
         str++;
     };
 
     /* Likewise for trailing whitespace */
     str_end = str + strlen(str) - 1;
-    while (str_end > str && isspace(*str_end)) { str_end--; };
+    while (str_end > str && isspace((unsigned char) *str_end)) { str_end--; };
     str_end[1] = '\0';
 
     return str2backend(str, &d->backend);
@@ -113,7 +113,7 @@ static int handle_serial(struct bladerf_devinfo *d, char *value)
     for (i = 0; i < 32; i++) {
         c = value[i];
         if (c >= 'A' && c <='F') {
-            value[i] = tolower(c);
+            value[i] = tolower((unsigned char) c);
         }
         if ((c < 'a' || c > 'f') && (c < '0' || c > '9')) {
             log_debug("Bad serial: %s\n", value);
