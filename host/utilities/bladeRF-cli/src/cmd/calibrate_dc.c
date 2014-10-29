@@ -537,10 +537,10 @@ int calibrate_dc_tx(struct cli_state *s,
 
     /* Sample the results of 4 points, which should yield 2 intersecting lines,
      * for 4 different DC offset settings of the I channel */
-    p0.x = -1024;
-    p1.x = -768;
-    p2.x = 768;
-    p3.x = 1024;
+    p0.x = -2048;
+    p1.x = -512;
+    p2.x = 512;
+    p3.x = 2048;
 
     status = rx_avg_magnitude(s->dev, rx_samples, (int16_t) p0.x, 0, &p0.y);
     if (status != 0) {
