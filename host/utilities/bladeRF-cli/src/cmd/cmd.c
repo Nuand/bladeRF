@@ -443,13 +443,13 @@ int cmd_handle(struct cli_state *s, const char *line)
 
         if (cmd) {
             if (cmd->exec) {
-                // check if the command requires an opened device
-                if ( (cmd->requires_device) && !cli_device_is_opened(s) ) {
-                    return CLI_RET_NODEV;
+                /* Check if the command requires an opened device */
+                if ((cmd->requires_device) && !cli_device_is_opened(s)) {
+                    ret = CLI_RET_NODEV;
                 }
 
-                // check if the command requires a loaded FPGA
-                if (cmd->requires_fpga) {
+                /* Check if the command requires a loaded FPGA */
+                if (ret == 0 && cmd->requires_fpga) {
                     fpga_status = bladerf_is_fpga_configured(s->dev);
                     if (fpga_status < 0) {
                         cli_err(s, argv[0], "Failed to determine if the FPGA is"
