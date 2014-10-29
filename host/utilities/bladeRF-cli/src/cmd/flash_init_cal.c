@@ -28,7 +28,6 @@
 
 #include "conversions.h"
 #include "cmd.h"
-#include "flash_common.h"
 #include "input.h"
 #include "minmax.h"
 #include "rel_assert.h"
@@ -77,11 +76,6 @@ int cmd_flash_init_cal(struct cli_state *state, int argc, char **argv)
     }
 
     if (argc == 3) {
-        rv = flash_check_state(state, argv[0]);
-        if (rv != 0) {
-            goto cmd_flash_init_cal_out;
-        }
-
         rv = bladerf_erase_flash(state->dev, BLADERF_FLASH_EB_CAL,
                                  BLADERF_FLASH_EB_LEN_CAL);
         if (rv != 0) {

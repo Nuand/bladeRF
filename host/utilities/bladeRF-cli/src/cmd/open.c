@@ -36,11 +36,6 @@ int cmd_open(struct cli_state *state, int argc, char **argv)
     int status;
     int ret;
 
-    /* Disallow opening of a diffrent device if the current one is doing work */
-    if (cli_device_is_streaming(state)) {
-        return CLI_RET_BUSY;
-    }
-
     if (state->dev) {
         bladerf_close(state->dev);
     }

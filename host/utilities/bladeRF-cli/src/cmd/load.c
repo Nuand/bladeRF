@@ -31,10 +31,6 @@ int cmd_load(struct cli_state *state, int argc, char **argv)
     */
     int rv = CLI_RET_OK;
 
-    if (cli_device_is_streaming(state)) {
-        return CLI_RET_BUSY;
-    }
-
     if ( argc == 3 ) {
         int lib_status = 0;
         struct bladerf *dev = state->dev;

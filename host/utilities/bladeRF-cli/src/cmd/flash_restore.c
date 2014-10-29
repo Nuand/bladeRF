@@ -26,7 +26,6 @@
 #include <libbladeRF.h>
 #include <bladeRF.h>
 
-#include "flash_common.h"
 #include "cmd.h"
 #include "input.h"
 #include "minmax.h"
@@ -122,11 +121,6 @@ int cmd_flash_restore(struct cli_state *state, int argc, char **argv)
     rv = parse_argv(state, argc, argv, &opt);
     if (rv < 0)
         return rv;
-
-    rv = flash_check_state(state, argv[0]);
-    if (rv != 0) {
-        goto cmd_flash_restore_out;
-    }
 
     image = bladerf_alloc_image(BLADERF_IMAGE_TYPE_INVALID, 0, 0);
     if (!image) {

@@ -69,6 +69,7 @@ struct cmd {
     const char  *help;
     bool        requires_device;
     bool        requires_fpga;
+    bool        allow_while_streaming;
 };
 
 static const char *cmd_names_calibrate[] = { "calibrate", "cal", NULL };
@@ -106,6 +107,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.help, CLI_CMD_HELPTEXT_calibrate),
         FIELD_INIT(.requires_device, true),
         FIELD_INIT(.requires_fpga, true),
+        FIELD_INIT(.allow_while_streaming, false),
     },
     {
         FIELD_INIT(.names, cmd_names_clear),
@@ -114,6 +116,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.help, CLI_CMD_HELPTEXT_clear),
         FIELD_INIT(.requires_device, false),
         FIELD_INIT(.requires_fpga, false),
+        FIELD_INIT(.allow_while_streaming, true),
     },
     {
         FIELD_INIT(.names, cmd_names_echo),
@@ -122,6 +125,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.help, CLI_CMD_HELPTEXT_echo),
         FIELD_INIT(.requires_device, false),
         FIELD_INIT(.requires_fpga, false),
+        FIELD_INIT(.allow_while_streaming, true),
     },
     {
         FIELD_INIT(.names, cmd_names_erase),
@@ -130,6 +134,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.help, CLI_CMD_HELPTEXT_erase),
         FIELD_INIT(.requires_device, true),
         FIELD_INIT(.requires_fpga, false),
+        FIELD_INIT(.allow_while_streaming, false),
     },
     {
         FIELD_INIT(.names, cmd_names_flash_backup),
@@ -138,6 +143,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.help, CLI_CMD_HELPTEXT_flash_backup),
         FIELD_INIT(.requires_device, true),
         FIELD_INIT(.requires_fpga, false),
+        FIELD_INIT(.allow_while_streaming, false),
     },
     {
         FIELD_INIT(.names, cmd_names_flash_image),
@@ -146,6 +152,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.help, CLI_CMD_HELPTEXT_flash_image),
         FIELD_INIT(.requires_device, false),
         FIELD_INIT(.requires_fpga, false),
+        FIELD_INIT(.allow_while_streaming, false),
     },
     {
         FIELD_INIT(.names, cmd_names_flash_init_cal),
@@ -154,6 +161,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.help, CLI_CMD_HELPTEXT_flash_init_cal),
         FIELD_INIT(.requires_device, true),
         FIELD_INIT(.requires_fpga, true),
+        FIELD_INIT(.allow_while_streaming, false),
     },
     {
         FIELD_INIT(.names, cmd_names_flash_restore),
@@ -162,6 +170,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.help, CLI_CMD_HELPTEXT_flash_restore),
         FIELD_INIT(.requires_device, true),
         FIELD_INIT(.requires_fpga, false),
+        FIELD_INIT(.allow_while_streaming, false),
     },
     {
         FIELD_INIT(.names, cmd_names_help),
@@ -170,6 +179,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.help, CLI_CMD_HELPTEXT_help),
         FIELD_INIT(.requires_device, false),
         FIELD_INIT(.requires_fpga, false),
+        FIELD_INIT(.allow_while_streaming, true),
     },
     {
         FIELD_INIT(.names, cmd_names_info),
@@ -178,6 +188,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.help, CLI_CMD_HELPTEXT_info),
         FIELD_INIT(.requires_device, true),
         FIELD_INIT(.requires_fpga, false),
+        FIELD_INIT(.allow_while_streaming, true),
     },
     {
         FIELD_INIT(.names, cmd_names_jump),
@@ -186,6 +197,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.help, CLI_CMD_HELPTEXT_jump_to_boot),
         FIELD_INIT(.requires_device, true),
         FIELD_INIT(.requires_fpga, false),
+        FIELD_INIT(.allow_while_streaming, false),
     },
     {
         FIELD_INIT(.names, cmd_names_load),
@@ -194,6 +206,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.help, CLI_CMD_HELPTEXT_load),
         FIELD_INIT(.requires_device, true),
         FIELD_INIT(.requires_fpga, false),
+        FIELD_INIT(.allow_while_streaming, false),
     },
     {
         FIELD_INIT(.names, cmd_names_xb),
@@ -202,6 +215,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.help, CLI_CMD_HELPTEXT_xb),
         FIELD_INIT(.requires_device, true),
         FIELD_INIT(.requires_fpga, true),
+        FIELD_INIT(.allow_while_streaming, false),
     },
     {
         FIELD_INIT(.names, cmd_names_mimo),
@@ -210,6 +224,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.help, CLI_CMD_HELPTEXT_mimo),
         FIELD_INIT(.requires_device, true),
         FIELD_INIT(.requires_fpga, true),
+        FIELD_INIT(.allow_while_streaming, false),
     },
     {
         FIELD_INIT(.names, cmd_names_open),
@@ -218,6 +233,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.help, CLI_CMD_HELPTEXT_open),
         FIELD_INIT(.requires_device, false),
         FIELD_INIT(.requires_fpga, false),
+        FIELD_INIT(.allow_while_streaming, false),
     },
     {
         FIELD_INIT(.names, cmd_names_peek),
@@ -226,6 +242,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.help, CLI_CMD_HELPTEXT_peek),
         FIELD_INIT(.requires_device, true),
         FIELD_INIT(.requires_fpga, true),
+        FIELD_INIT(.allow_while_streaming, true),
     },
     {
         FIELD_INIT(.names, cmd_names_poke),
@@ -234,6 +251,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.help, CLI_CMD_HELPTEXT_poke),
         FIELD_INIT(.requires_device, true),
         FIELD_INIT(.requires_fpga, true),
+        FIELD_INIT(.allow_while_streaming, true),
     },
     {
         FIELD_INIT(.names, cmd_names_print),
@@ -242,6 +260,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.help, CLI_CMD_HELPTEXT_print),
         FIELD_INIT(.requires_device, true),
         FIELD_INIT(.requires_fpga, true),
+        FIELD_INIT(.allow_while_streaming, true),
     },
     {
         FIELD_INIT(.names, cmd_names_probe),
@@ -250,6 +269,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.help, CLI_CMD_HELPTEXT_probe),
         FIELD_INIT(.requires_device, false),
         FIELD_INIT(.requires_fpga, false),
+        FIELD_INIT(.allow_while_streaming, true),
     },
     {
         FIELD_INIT(.names, cmd_names_quit),
@@ -258,6 +278,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.help, CLI_CMD_HELPTEXT_quit),
         FIELD_INIT(.requires_device, false),
         FIELD_INIT(.requires_fpga, false),
+        FIELD_INIT(.allow_while_streaming, true),
     },
 #ifdef CLI_LIBUSB_ENABLED
     {
@@ -267,6 +288,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.help, CLI_CMD_HELPTEXT_recover),
         FIELD_INIT(.requires_device, false),
         FIELD_INIT(.requires_fpga, false),
+        FIELD_INIT(.allow_while_streaming, false),
     },
 #endif
     {
@@ -276,6 +298,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.help, CLI_CMD_HELPTEXT_run),
         FIELD_INIT(.requires_device, false),
         FIELD_INIT(.requires_fpga, false),
+        FIELD_INIT(.allow_while_streaming, true),
     },
     {
         FIELD_INIT(.names, cmd_names_rx),
@@ -284,6 +307,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.help, CLI_CMD_HELPTEXT_rx),
         FIELD_INIT(.requires_device, true),
         FIELD_INIT(.requires_fpga, true),
+        FIELD_INIT(.allow_while_streaming, true),   /* Can rx while tx'ing */
     },
     {
         FIELD_INIT(.names, cmd_names_tx),
@@ -292,6 +316,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.help, CLI_CMD_HELPTEXT_tx),
         FIELD_INIT(.requires_device, true),
         FIELD_INIT(.requires_fpga, true),
+        FIELD_INIT(.allow_while_streaming, true),   /* Can tx while rx'ing */
     },
     {
         FIELD_INIT(.names, cmd_names_set),
@@ -300,6 +325,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.help, CLI_CMD_HELPTEXT_set),
         FIELD_INIT(.requires_device, true),
         FIELD_INIT(.requires_fpga, true),
+        FIELD_INIT(.allow_while_streaming, true),
     },
     {
         FIELD_INIT(.names, cmd_names_ver),
@@ -308,6 +334,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.help, CLI_CMD_HELPTEXT_version),
         FIELD_INIT(.requires_device, false),
         FIELD_INIT(.requires_fpga, false),
+        FIELD_INIT(.allow_while_streaming, true),
     },
     /* Always terminate the command entry with a completely NULL entry */
     {
@@ -317,6 +344,7 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.help, NULL),
         FIELD_INIT(.requires_device, false),
         FIELD_INIT(.requires_fpga, false),
+        FIELD_INIT(.allow_while_streaming, true),
     }
 };
 
@@ -461,6 +489,13 @@ int cmd_handle(struct cli_state *s, const char *line)
                     } else if (fpga_status != 1) {
                         ret = CLI_RET_NOFPGA;
                     }
+                }
+
+                /* Test if this command may be run while the device is
+                 * actively running an RX/TX stream */
+                if (ret == 0 &&
+                    cli_device_is_streaming(s) && !cmd->allow_while_streaming) {
+                    ret = CLI_RET_BUSY;
                 }
 
                 if (ret == 0) {
