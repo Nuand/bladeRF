@@ -452,9 +452,10 @@ int cmd_handle(struct cli_state *s, const char *line)
                 if (ret == 0 && cmd->requires_fpga) {
                     fpga_status = bladerf_is_fpga_configured(s->dev);
                     if (fpga_status < 0) {
-                        cli_err(s, argv[0], "Failed to determine if the FPGA is"
-                                            " configured. Is the FX3 "
-                                            " programmed?\n");
+                        cli_err(s, argv[0],
+                                "Failed to determine if the FPGA is configured:"
+                                " %s\n", bladerf_strerror(fpga_status));
+
                         s->last_lib_error = fpga_status;
                         ret = CLI_RET_LIBBLADERF;
                     } else if (fpga_status != 1) {
