@@ -119,11 +119,6 @@ int test_fn_readback(struct bladerf *dev, struct app_params *p)
     unsigned int i;
     struct readings *readings;
 
-    readings = calloc(iterations, sizeof(readings[0]));
-    if (readings == NULL) {
-        perror("malloc");
-    }
-
     status = bladerf_get_loopback(dev, &lb_backup);
     if (status != 0) {
         fprintf(stderr, "Failed to get current loopback mode.\n");
@@ -144,10 +139,10 @@ int test_fn_readback(struct bladerf *dev, struct app_params *p)
         return status;
     }
 
-    status = bladerf_get_sample_rate(dev, BLADERF_MODULE_RX,
+    status = bladerf_get_sample_rate(dev, BLADERF_MODULE_TX,
                                      &samplerate_tx_backup);
     if (status != 0) {
-        fprintf(stderr, "Failed to get current RX sample rate: %s\n",
+        fprintf(stderr, "Failed to get current TX sample rate: %s\n",
                 bladerf_strerror(status));
         return status;
     }
@@ -155,6 +150,12 @@ int test_fn_readback(struct bladerf *dev, struct app_params *p)
     samplerate_tx = 2 * samplerate_rx;
     if (samplerate_tx > BLADERF_SAMPLERATE_REC_MAX) {
         samplerate_tx = samplerate_rx / 2;
+    }
+
+    readings = calloc(iterations, sizeof(readings[0]));
+    if (readings == NULL) {
+        perror("malloc");
+        return BLADERF_ERR_MEM;
     }
 
     status = bladerf_set_sample_rate(dev, BLADERF_MODULE_TX,
