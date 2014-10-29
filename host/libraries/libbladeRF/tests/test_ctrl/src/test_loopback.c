@@ -28,7 +28,7 @@ DECLARE_TEST_CASE(loopback);
 
 static int set_and_check(struct bladerf *dev, bladerf_loopback l)
 {
-    int status;
+    int status, status_disable_lb;
     bladerf_loopback readback;
 
     status = bladerf_set_loopback(dev, l);
@@ -37,7 +37,11 @@ static int set_and_check(struct bladerf *dev, bladerf_loopback l)
                  bladerf_strerror(status));
 
         /* Try to ensure we don't leave the device in loopback */
-        bladerf_set_loopback(dev, BLADERF_LB_NONE);
+        status_disable_lb = bladerf_set_loopback(dev, BLADERF_LB_NONE);
+        if (status_disable_lb) {
+            PR_ERROR("Failed to restore loopback to 'none': %s\n",
+                     bladerf_strerror(status_disable_lb));
+        }
         return status;
     }
 
