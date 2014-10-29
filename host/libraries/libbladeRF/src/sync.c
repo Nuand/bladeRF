@@ -554,7 +554,7 @@ int sync_rx(struct bladerf *dev, void *samples, unsigned num_samples,
                                 target_timestamp - s->meta.curr_timestamp;
 
                             uint64_t left_in_buffer =
-                                s->meta.samples_per_msg *
+                                (uint64_t) s->meta.samples_per_msg *
                                     (s->meta.msg_per_buf - s->meta.msg_num);
 
                             /* Account for current position in buffer */
