@@ -79,8 +79,9 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
     /* Allocate a buffer to hold each block of samples to transmit */
     tx_buffer = malloc(samples_per_buffer * 2 * sizeof(int16_t));
     if (tx_buffer == NULL) {
-        status = errno;
-        set_last_error(&tx->last_error, ETYPE_ERRNO, status);
+        status = CLI_RET_MEM;
+        set_last_error(&tx->last_error, ETYPE_ERRNO,
+                       errno == 0 ? ENOMEM : errno);
     }
 
     /* Keep writing samples while there is more data to send and no failures
