@@ -40,7 +40,7 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
 {
     int status = 0;
     unsigned int samples_per_buffer;
-    void *tx_buffer;
+    int16_t *tx_buffer;
     struct tx_params *tx_params = tx->params;
     unsigned int repeats_remaining;
     unsigned int delay_us;
@@ -77,7 +77,7 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
     delay_samples_remaining = delay_samples;
 
     /* Allocate a buffer to hold each block of samples to transmit */
-    tx_buffer = malloc(samples_per_buffer * 2 * sizeof(int16_t));
+    tx_buffer = (int16_t*) malloc(samples_per_buffer * 2 * sizeof(int16_t));
     if (tx_buffer == NULL) {
         status = CLI_RET_MEM;
         set_last_error(&tx->last_error, ETYPE_ERRNO,
