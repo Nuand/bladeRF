@@ -33,6 +33,104 @@
 #include "xb.h"
 #include "version_compat.h"
 
+static inline int apply_lms_dc_cals(struct bladerf *dev)
+{
+    int status = 0;
+    struct bladerf_lms_dc_cals cals;
+    const bool have_rx = BLADERF_HAS_RX_DC_CAL(dev);
+    const bool have_tx = BLADERF_HAS_TX_DC_CAL(dev);
+
+    cals.lpf_tuning = -1;
+    cals.tx_lpf_i   = -1;
+    cals.tx_lpf_q   = -1;
+    cals.rx_lpf_i   = -1;
+    cals.rx_lpf_q   = -1;
+    cals.dc_ref     = -1;
+    cals.rxvga2a_i  = -1;
+    cals.rxvga2a_q  = -1;
+    cals.rxvga2b_i  = -1;
+    cals.rxvga2b_q  = -1;
+
+    if (have_rx) {
+        const struct bladerf_lms_dc_cals *reg_vals = &dev->cal.dc_rx->reg_vals;
+
+        cals.lpf_tuning = reg_vals->lpf_tuning;
+        cals.rx_lpf_i   = reg_vals->rx_lpf_i;
+        cals.rx_lpf_q   = reg_vals->rx_lpf_q;
+        cals.dc_ref     = reg_vals->dc_ref;
+        cals.rxvga2a_i  = reg_vals->rxvga2a_i;
+        cals.rxvga2a_q  = reg_vals->rxvga2a_q;
+        cals.rxvga2b_i  = reg_vals->rxvga2b_i;
+        cals.rxvga2b_q  = reg_vals->rxvga2b_q;
+    }
+
+    if (have_tx) {
+        const struct bladerf_lms_dc_cals *reg_vals = &dev->cal.dc_tx->reg_vals;
+
+        cals.tx_lpf_i = reg_vals->tx_lpf_i;
+        cals.tx_lpf_q = reg_vals->tx_lpf_q;
+
+        if (have_rx) {
+            if (cals.lpf_tuning != reg_vals->lpf_tuning) {
+                log_warning("LPF tuning mismatch in tables. "
+                            "RX=0x%04x, TX=0x%04x",
+                            cals.lpf_tuning, reg_vals->lpf_tuning);
+            }
+        } else {
+            /* Have TX cal but no RX cal -- use the RX values that came along
+             * for the ride when the TX table was generated */
+            cals.rx_lpf_i   = reg_vals->rx_lpf_i;
+            cals.rx_lpf_q   = reg_vals->rx_lpf_q;
+            cals.dc_ref     = reg_vals->dc_ref;
+            cals.rxvga2a_i  = reg_vals->rxvga2a_i;
+            cals.rxvga2a_q  = reg_vals->rxvga2a_q;
+            cals.rxvga2b_i  = reg_vals->rxvga2b_i;
+            cals.rxvga2b_q  = reg_vals->rxvga2b_q;
+        }
+    }
+
+    /* No TX table was loaded, so load LMS TX register cals from the RX table,
+     * if available */
+    if (have_rx && !have_tx) {
+        const struct bladerf_lms_dc_cals *reg_vals = &dev->cal.dc_rx->reg_vals;
+
+        cals.tx_lpf_i   = reg_vals->tx_lpf_i;
+        cals.tx_lpf_q   = reg_vals->tx_lpf_q;
+    }
+
+    if (have_rx || have_tx) {
+        status = lms_set_dc_cals(dev, &cals);
+
+        /* Force a re-tune so that we can apply the appropriate I/Q DC offset
+         * values from our calibration table */
+        if (status == 0) {
+            int rx_status = 0;
+            int tx_status = 0;
+
+            if (have_rx) {
+                unsigned int rx_f;
+                rx_status = tuning_get_freq(dev, BLADERF_MODULE_RX, &rx_f);
+                if (rx_status == 0) {
+                    rx_status = tuning_set_freq(dev, BLADERF_MODULE_RX, rx_f);
+                }
+            }
+
+            if (have_tx) {
+                unsigned int rx_f;
+                rx_status = tuning_get_freq(dev, BLADERF_MODULE_RX, &rx_f);
+                if (rx_status == 0) {
+                    rx_status = tuning_set_freq(dev, BLADERF_MODULE_RX, rx_f);
+                }
+            }
+
+            /* Report the first of any failures */
+            status = (rx_status == 0) ? tx_status : rx_status;
+        }
+    }
+
+    return status;
+}
+
 int init_device(struct bladerf *dev)
 {
     int status;
@@ -122,9 +220,13 @@ int init_device(struct bladerf *dev)
         if (status != 0) {
             return status;
         }
+
+        /* Set up LMS DC offset register calibration and initial IQ settings,
+         * if any tables have been loaded already */
+        status = apply_lms_dc_cals(dev);
     }
 
-    return 0;
+    return status;
 }
 
 int populate_abs_timeout(struct timespec *t, unsigned int timeout_ms)
@@ -147,92 +249,6 @@ int populate_abs_timeout(struct timespec *t, unsigned int timeout_ms)
 
         return 0;
     }
-}
-
-int load_calibration_table(struct bladerf *dev, const char *filename)
-{
-    int status;
-    struct bladerf_image *image = NULL;
-    struct dc_cal_tbl *dc_tbl = NULL;
-
-    if (filename == NULL) {
-        memset(&dev->cal, 0, sizeof(dev->cal));
-        return 0;
-    }
-
-    image = bladerf_alloc_image(BLADERF_IMAGE_TYPE_INVALID, 0xffffffff, 0);
-    if (image == NULL) {
-        return BLADERF_ERR_MEM;
-    }
-
-    status = bladerf_image_read(image, filename);
-    if (status == 0) {
-
-        if (image->type == BLADERF_IMAGE_TYPE_RX_DC_CAL ||
-            image->type == BLADERF_IMAGE_TYPE_TX_DC_CAL) {
-
-            bladerf_module module;
-            unsigned int frequency;
-
-            dc_tbl = dc_cal_tbl_load(image->data, image->length);
-
-            if (dc_tbl == NULL) {
-                status = BLADERF_ERR_MEM;
-                goto out;
-            }
-
-            if (image->type == BLADERF_IMAGE_TYPE_RX_DC_CAL) {
-                free(dev->cal.dc_rx);
-                module = BLADERF_MODULE_RX;
-
-                dev->cal.dc_rx = dc_tbl;
-                dev->cal.dc_rx->reg_vals.tx_lpf_i = -1;
-                dev->cal.dc_rx->reg_vals.tx_lpf_q = -1;
-            } else {
-                free(dev->cal.dc_tx);
-                module = BLADERF_MODULE_TX;
-
-                dev->cal.dc_tx = dc_tbl;
-                dev->cal.dc_tx->reg_vals.rx_lpf_i = -1;
-                dev->cal.dc_tx->reg_vals.rx_lpf_q = -1;
-                dev->cal.dc_tx->reg_vals.dc_ref = -1;
-                dev->cal.dc_tx->reg_vals.rxvga2a_i = -1;
-                dev->cal.dc_tx->reg_vals.rxvga2a_q = -1;
-                dev->cal.dc_tx->reg_vals.rxvga2b_i = -1;
-                dev->cal.dc_tx->reg_vals.rxvga2b_q = -1;
-            }
-
-            status = lms_set_dc_cals(dev, &dc_tbl->reg_vals);
-            if (status != 0) {
-                goto out;
-            }
-
-            /* Reset the module's frequency to kick off the application of the
-             * new table entries */
-            status = tuning_get_freq(dev, module, &frequency);
-            if (status != 0) {
-                goto out;
-            }
-
-            status = tuning_set_freq(dev, module, frequency);
-
-
-        } else if (image->type == BLADERF_IMAGE_TYPE_RX_IQ_CAL ||
-                   image->type == BLADERF_IMAGE_TYPE_TX_IQ_CAL) {
-
-            /* TODO: Not implemented */
-            status = BLADERF_ERR_UNSUPPORTED;
-            goto out;
-        } else {
-            status = BLADERF_ERR_INVAL;
-            log_debug("%s loaded nexpected image type: %d\n",
-                      __FUNCTION__, image->type);
-        }
-    }
-
-out:
-    bladerf_free_image(image);
-    return status;
 }
 
 int config_gpio_write(struct bladerf *dev, uint32_t val)

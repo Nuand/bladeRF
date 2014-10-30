@@ -110,19 +110,6 @@ struct lms_xcvr_config {
     lms_bw rx_bw;                       /**< Receive Bandwidth */
 };
 
-struct lms_dc_reg_vals {
-    uint8_t lpf_tuning;
-    uint8_t tx_lpf_i;
-    uint8_t tx_lpf_q;
-    uint8_t rx_lpf_i;
-    uint8_t rx_lpf_q;
-    uint8_t dc_ref;
-    uint8_t rxvga2a_i;
-    uint8_t rxvga2a_q;
-    uint8_t rxvga2b_i;
-    uint8_t rxvga2b_q;
-};
-
 /**
  * Convert an integer to a bandwidth selection.
  * If the actual bandwidth is not available, the closest

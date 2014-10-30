@@ -24,6 +24,7 @@
 #include "fpga.h"
 #include "file_ops.h"
 #include "log.h"
+#include "config.h"
 
 static inline void load_dc_cal(struct bladerf *dev, const char *file)
 {
@@ -61,7 +62,7 @@ out:
     bladerf_free_image(img);
 }
 
-static inline int load_fpga(struct bladerf *dev)
+int config_load_fpga(struct bladerf *dev)
 {
     int status = 0;
     char *filename = NULL;
@@ -84,7 +85,7 @@ static inline int load_fpga(struct bladerf *dev)
     return status;
 }
 
-static inline int load_dc_cals(struct bladerf *dev)
+int config_load_dc_cals(struct bladerf *dev)
 {
     char *filename;
     char *full_path;
@@ -115,23 +116,4 @@ static inline int load_dc_cals(struct bladerf *dev)
 
     free(filename);
     return 0;
-}
-
-int config_load_all(struct bladerf *dev)
-{
-    int status;
-
-    status = load_dc_cals(dev);
-    if (status != 0) {
-        return status;
-    }
-
-    status = dev->fn->is_fpga_configured(dev);
-    if (status == 0) {
-        status = load_fpga(dev);
-    } else if (status > 0) {
-        status = 0;
-    }
-
-    return status;
 }

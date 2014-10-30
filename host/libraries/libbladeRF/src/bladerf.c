@@ -187,6 +187,19 @@ int bladerf_open_with_devinfo(struct bladerf **opened_device,
                     bladerf_strerror(status));
     }
 
+    dev->rx_filter = -1;
+    dev->tx_filter = -1;
+
+    dev->module_format[BLADERF_MODULE_RX] = -1;
+    dev->module_format[BLADERF_MODULE_TX] = -1;
+
+    /* Load any available calibration tables so that the LMS DC register
+     * configurations may be loaded in init_device */
+    status = config_load_dc_cals(dev);
+    if (status != 0) {
+        goto error;
+    }
+
     status = FPGA_IS_CONFIGURED(dev);
     if (status > 0) {
         /* If the FPGA version check fails, just warn, but don't error out.
@@ -200,17 +213,10 @@ int bladerf_open_with_devinfo(struct bladerf **opened_device,
         if (status != 0) {
             goto error;
         }
+    } else {
+        /* Try searching for an FPGA in the config search path */
+        status = config_load_fpga(dev);
     }
-
-    dev->rx_filter = -1;
-    dev->tx_filter = -1;
-
-    dev->module_format[BLADERF_MODULE_RX] = -1;
-    dev->module_format[BLADERF_MODULE_TX] = -1;
-
-    /* Load any configuration files or FPGA images that a user has stored
-     * for this device in their bladerf config directory */
-    status = config_load_all(dev);
 
 error:
     if (status < 0) {

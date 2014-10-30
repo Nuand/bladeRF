@@ -74,6 +74,10 @@ struct bladerf;
 
 #define BLADERF_VERSION_STR_MAX 32
 
+#define BLADERF_HAS_CAL_(dev, name)  (dev->cal.name != NULL)
+#define BLADERF_HAS_RX_DC_CAL(dev)   (BLADERF_HAS_CAL_(dev, dc_rx))
+#define BLADERF_HAS_TX_DC_CAL(dev)   (BLADERF_HAS_CAL_(dev, dc_tx))
+
 struct calibrations {
     struct dc_cal_tbl *dc_rx;
     struct dc_cal_tbl *dc_tx;

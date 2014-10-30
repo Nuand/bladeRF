@@ -25,15 +25,29 @@
 #ifndef BLADERF_CONFIG_H_
 #define BLADERF_CONFIG_H_
 
-
-#include "config.h"
+/**
+ * Load DC calibration tables from their associated files, if available.
+ *
+ * Note that successful return value doesn't imply that tables were found and
+ * loaded. Use the BLADERF_HAS_RX_DC_CAL() and BLADERF_HAS_TX_DC_CAL() macros to
+ * ensure the device has calibration tables before attempting to use thea
+ *
+ * @return  0 on success, BLADERF_ERR_MEM on memory allocation error.  *
+ */
+int config_load_dc_cals(struct bladerf *dev);
 
 /**
- * Load all configurations files and FPGA images from a bladeRF config
- * directory, if available.
+ * Load the FPGA from the associated image, by name.
  *
- * @return 0 on success, BLADERF_ERR_* on failure
+ * @pre     dev->fpga_size is populated
+ *
+ * @param   dev     Handle to device to load FPGA on
+ *
+ * @return  0 on success,
+ *          BLADERF_ERR_TIMEOUT generally occurs when attempting to load
+ *                              the wrong size FPGA image.
+ *          BLADERF_ERR_* values on other failures
  */
-int config_load_all(struct bladerf *dev);
+int config_load_fpga(struct bladerf *dev);
 
 #endif
