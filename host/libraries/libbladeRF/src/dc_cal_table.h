@@ -78,8 +78,10 @@ struct dc_cal_tbl * dc_cal_tbl_load(uint8_t *buf, size_t buf_len);
 /**
  * Free a DC calibration table
  *
- * @param   tbl     Table to free
+ * @param   tbl     Pointer to table to free
+ *
+ * The table pointer will be set to NULL after freeing it.
  */
-void dc_cal_tbl_free(struct dc_cal_tbl *tbl);
+void dc_cal_tbl_free(struct dc_cal_tbl **tbl);
 
 #endif
