@@ -125,19 +125,19 @@ endif(MSVC)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux" OR ${CMAKE_SYSTEM_NAME} MATCHES "BSD" OR CYGWIN)
     set(BLADERF_OS_LINUX 1)
 
-    if(NOT CMAKE_CROSSCOMPILING)
+    if(NOT CMAKE_CROSSCOMPILING AND NOT CYGWIN)
         message(STATUS "Checking libc version...")
         try_run(LIBC_VERSION_RUN_RESULT LIBC_VERSION_COMPILE_RESULT
                 ${CMAKE_HELPERS_BINARY_DIR}
                 ${CMAKE_HELPERS_SOURCE_DIR}/libc_version.c
                 RUN_OUTPUT_VARIABLE LIBC_VERSION)
-    endif(NOT CMAKE_CROSSCOMPILING)
 
-    if(LIBC_VERSION)
-        message(STATUS "libc version: ${LIBC_VERSION}")
-    else()
-        message(WARNING "Unable to determine libc version")
-    endif()
+        if(LIBC_VERSION)
+            message(STATUS "libc version: ${LIBC_VERSION}")
+        else()
+            message(WARNING "Unable to determine libc version")
+        endif()
+    endif(NOT CMAKE_CROSSCOMPILING AND NOT CYGWIN)
 
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(BLADERF_OS_OSX 1)

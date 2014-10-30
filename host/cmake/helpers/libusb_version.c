@@ -3,7 +3,7 @@
 #include <string.h>
 #include <libusb.h>
 
-#if WIN32
+#if defined(WIN32) && !defined(__CYGWIN__)
 #include <winbase.h>
 typedef const struct libusb_version * (__stdcall * version_fn)(void);
 #endif
@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
     int status = 0;
     const struct libusb_version *ver;
 
-#if WIN32
+#if defined(WIN32) && !defined(__CYGWIN__)
     if (argc > 1) {
         HINSTANCE dll;
         version_fn get_version;
