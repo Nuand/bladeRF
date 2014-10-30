@@ -6,6 +6,145 @@ hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
 --------------------------------------------------------------------------------
+ 2014.11-rc3 (2014-10-30)
+--------------------------------------------------------------------------------
+
+This 2014.11-rc3 release candidate introduces the remaining functionality
+originally intended for a 2014.09 release, as well as a number of improvements
+and bug fixes. As denoted by the name, the release has been rescheduled for
+November 2014.
+
+This release candidate consists of the following versions:
+    * FPGA bitstream v0.1.1
+    * FX3 firmware v1.7.1
+    * libbladeRF v0.17.0
+    * bladeRF-cli v0.12.0
+
+Major changes and additions include:
+    * Timestamp metadata support for the libbladeRF synchronous interface
+        - Example code is included in the API documentation and available
+          in the libbladeRF/doc/examples directory.
+        - This is tightly-coupled with functionality and fixes introduced
+          by FPGA v0.1.1.
+
+    * A majority of libbladeRF functions have been made thread-safe.
+
+    * libbladeRF support for a Cypress CyUSB3/CyAPI-based backend
+        - This backend has been found to be a useful alternative on some
+          systems with USB3 controllers that exhibit issues with the libusb
+          backend implementation.
+
+    * Fixes for LMS DC calibration issues
+        - FPGA fixes in v0.1.1 have addressed a timing issue that corrupted
+          LMS register readbacks. This fixes issue #269, in which LMS DC
+          calibration registers would become corrupted and read back as 31's.
+        - A bladeRF-cli change in v0.12.0 fixed issue #304, where TX DC
+          calibration would fail, reporting that invalid values were
+          encountered.
+
+The remaining window of time up to the first official release is intended for
+documentation improvements and bug fixes. New features or major changes will be
+held off until the following cycle; they may be staged in a master-next branch
+if needed.
+
+The following issue tracker items have been closed since 2014.09-rc2. Issues
+are listed first, with associated pull request items second, if relevant.
+
+    * Pull requests:
+        - #326: only use the relative path for logging .c filenames; enable it
+                by default
+        - #308: Allow #-style comments in bladeRF-cli
+        - #303: libbladeRF: update README cmake options
+        - #293: debian: update changelog w/ 2014.09-rc{1,2}
+
+    * Bugs:
+        - #336: [libbladeRF] Loading calibration tables does not set LMS DC cal
+                registers
+        - #333: [Cygwin] libusb and libc version checks fail to compil
+        - #332: Build fails in Cygwin
+        - #331: [libbladeRF] Enforce exclusive device access in Cypress backend
+        - #330: [libbladeRF] Cannot open multiple devices via 'open any' request
+        - #329: [cmake] 34151f6 breaks configuration for some CMake versions
+        - #327: [libbladeRF] It is possible to get "stuck" with an FPGA < v0.0.1
+        - #325: Calibration issue: "cal: Invalid module provided (lms)"[Invalid]
+        - #324: [libbladeRF] Deadlock in bladerf_sync_tx on Windows
+        - #323: [libbladeRF] bladerf_sync_config() does not set
+                dev->transfer_timeout[module]
+        - #322: [libbladeRF] libusb.c doesn't check for timeout_ms = 0 in buffer
+                submission
+        - #320: BladeRF USB crashes on Beaglebone Black, Ubuntu 14.04 [Invalid]
+        - #318: Board occasionally fails to boot on computer power
+                up [Invalid]
+        - #309: [libbladeRF] XB-100 attach shouldn't succeed
+        - #305/#306,#315: mingwbuild of libbladeRF fails on file_ops.c(ShlObj.h)
+        - #304: [bladeRF-cli] TX DC autocalibration/correction fails
+        - #295/#296: Update references to bladeRF-flash in top-level README.md
+                     and man page(s)
+        - #292/#296: cmake ignores user input
+        - #291: Missing RX Samples
+        - #290/#294: [bladeRF-cli] TX help typo
+        - #285/#298: [libbladeRF] Update CMake options in README.md
+        - #283: "bladeRF-cli --version" hangs and segfaults on Debian 7 in
+                Virtualbox
+        - #279: [libbladeRF] MACOSX_RPATH is not specified
+        - #278: cmd_help.h generator breaks osx build
+        - #277: bladeRF-cli: Make 'print <parameter>' output more consistent
+        - #269: [libbladeRF] RXVGA2 DC autocalibration intermittently returns 31
+                for all values
+        - #260: [hdl] RX I Samples value 0
+        - #255: Avoid obsolete samples in the RX Stream
+
+    * Enhancement Requests:
+        - #314: "make uninstall" cannot find install manifest
+        - #312: [libbladeRF] Regression in USB 2.0 operation
+        - #311/316: [bladeRF-cli] Move FPGA and device handle checks to common
+                    code in cmd.c
+        - #310: [libbladeRF] Add suport for disabling an XB [Won't Fix]
+        - #299: Task: Provide .md5 and .sha256sum files with pre-built binaries
+        - #289: libusb/windows. (Version compatibity)
+        - #288/#302: [bladeRF-cli] XB-200 Filterbank Control
+        - #252: [bladeRF-cli] Migrate rx/tx command implementations to
+                libbladeRF's sync i/f
+        - #250: [libbladeRF] Implement Cypress API-based backend
+
+Outstanding pull requests, tasks, enhancement requests, and known issues as
+of RC3 listed below. Please see the issue tracker for up-to-date information on
+these and their associated schedules.
+
+    * Pull requests:
+        - #313: merge dev-quartus14 branch
+        - #267: Adjust nios simulation component so it matches the synthesis
+                version
+
+    * Bugs:
+        - #335: [hdl] Initial bursts with TX_NOW corrupted
+        - #334: [hdl] Bursts corrupted when switching between TX_NOW and
+                      scheduled bursts
+        - #317: FPGA autoload fails when USB device is open before FPGA is
+                fully configured
+        - #307: [hdl] RX and TX timestamp offset variation
+        - #301: Direct sampling with XB-200 needs additional improvements
+        - #265: [hdl] Incorect metadata position in the RX Stream
+        - #95:  Linux kernel/FX3: Not enough bandwidth for altsetting
+
+    * Enhancement Requests:
+        - #328: [libbladeRF] Review and evaluate use of stream lock WRT libusb
+        - #321: How about a switch for bladeRF-cli to emit calibration in a
+                format bladeRF-cli can later read?
+        - #319: [bladeRF-cli] Add libedit and libreadline support
+        - #282: [libbladeRF] Move get/set_lms_correction() and
+                get/set_fpga_correction() logic
+        - #240: [libbladeRF] Prefer static assertion over assert() when possible
+        - #236: [libbladeRF] API calls for XB-100 required
+        - #221: Synchronized Tx/Rx of multiple bladeRFs for MIMO using Mini
+                Expansion Header
+        - #213: CLI should show sample file information for TX
+        - #205: [FX3 Firmware] Code cleanup and potential improvements
+        - #200: Reserved addresses for firmware customization
+        - #174: Task: Migrate FX3 build to CMake-generated Makefile
+        - #105: Develop testing guidelines on new releases
+
+--------------------------------------------------------------------------------
  2014.09-rc2 (2014-07-24)
 --------------------------------------------------------------------------------
 
@@ -19,10 +158,10 @@ milestone has been been renamed to `2014.09-rc3`. The objectives for the
 late-August and September and milestones remain.
 
 This release candidate consists of the following versions:
-* FPGA bitstream v0.0.6
-* FX3 firmware v1.7.1
-* libbladeRF v0.16.2
-* bladeRF-cli v0.11.1
+    * FPGA bitstream v0.0.6
+    * FX3 firmware v1.7.1
+    * libbladeRF v0.16.2
+    * bladeRF-cli v0.11.1
 
 In addition to continued fixes and minor improvements, the remaining
 major functionality, now scheduled for RC3 is:
