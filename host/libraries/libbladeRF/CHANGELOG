@@ -5,6 +5,36 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v0.17.0 (2014-10-30)
+--------------------------------
+This version of libbladeRF is intended for use with:
+
+FX3 Firmware v1.7.1
+FPGA         v0.1.1
+
+Changes:
+ * Added support for CyUSB3/CyAPI backend
+ * Added timestamp metadata support to synchronous interface. This includes
+    modifications to the bladerf_metadata structure and the introduction of the
+    BLADERF_FORMAT_SC16_Q11_META format.
+ * libbladeRF functions have been made thread-safe.
+ * The Windows installation directory is now searched when performing
+    host-based FPGA and DC calibration file auto-loading.
+ * Improved log output; moved output to more appropriate levels and included
+    filename and line number log messages.
+ * Removed BLADERF_FORMAT_SC16Q12 reverse compatibility macro.
+ * Added macro definitions for FPGA configuration bits:
+    - BLADERF_GPIO_COUNTER_ENABLE
+    - BLADERF_GPIO_TIMESTAMP
+    - BLADERF_GPIO_TIMESTAMP_DIV2
+ * Fixed bugs that caused deadlocks and crashes.
+ * Fixed device probe/open functions to continue searching for devices
+    if a failing or busy device is encountered.
+ * Improved API documentation and included more complete example usages
+    of the synchronous interface. Snippets from programs in doc/examples are
+    now included in the Doxygen output.
+
+
 v0.16.2 (2014-07-24)
 --------------------------------
 This version of libbladeRF is intended for use with:
