@@ -377,7 +377,6 @@ void *tx_task(void *cli_state_arg)
 
                 /* Clear out the last error */
                 set_last_error(&tx->last_error, ETYPE_ERRNO, 0);
-                status = 0;
 
                 /* Bug catcher */
                 MUTEX_LOCK(&tx->file_mgmt.file_meta_lock);
