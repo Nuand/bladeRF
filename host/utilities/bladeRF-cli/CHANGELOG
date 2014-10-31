@@ -5,6 +5,17 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v0.12.0 (2014-10-30)
+--------------------------------
+This version depends upon libbladeRF v0.17.0.
+
+ * Migrated rx/tx commands to libbladeRF's synchronous interface
+ * Introduced support of '#' line comments
+ * Changed argument order of xb command to be more intuitive
+ * Cleaned up help text and addressed discrepancies between help text and
+    associated commands
+ * Misc. minor bug fixes.
+
 v0.11.1 (2014-07-24)
 --------------------------------
 This version depends upon libbladeRF v0.16.2.
