@@ -1,18 +1,20 @@
-The various portions of this project are licensed as outlined below.
+The various portions of the bladeRF project are licensed as outlined below.
 
-Please see the legal/license directory for the text of each of the license.
-
-HDL: MIT
+FPGA HDL: MIT
 FX3 Firmware: MIT
-Linux Driver (host/drivers/linux): GPLv2
-Host Libraries (host/lib): LGPLv2.1
-Host Utilities (host/utilities): GPLv2
+libbladeRF: LGPLv2.1
+bladeRF-cli: GPLv2
+Linux kernel driver: GPLv2
 
-Note that the misc. source files in host/common and host/utilities/common vary
-in their licenses (but are compatible with above items they are linked with.)
-Please see the individual files and/or their associated files in the
-legal/license directory for additional information.
+Please see the legal/licenses directory in the source tree for the text of each
+license. You can find this online at:
 
+    https://github.com/Nuand/bladeRF/tree/master/legal/licenses
+
+Note that the misc. source files in the host/common and host/utilities/common
+source directories vary in their licenses (but are compatible with above items
+they are linked with). Please see the individual files and/or their associated
+files in the legal/licenses directory for additional information.
 
 All metadata and build scripts are MIT license unless otherwise stated.
 
