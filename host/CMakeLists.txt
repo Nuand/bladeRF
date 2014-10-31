@@ -256,10 +256,10 @@ if(WIN32)
     if(CYAPI_FOUND)
         set(WIN_RUNTIME_ITEMS ${WIN_RUNTIME_ITEMS}
             "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/Cypress/license.txt"
-            "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/cyusb3.inf"
-            "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/cyusb3.sys"
-            "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/cyusb3.cat"
-            "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/WdfCoInstaller01009.dll"
+            "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/drivers/CyUSB3/cyusb3.inf"
+            "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/drivers/CyUSB3/cyusb3.sys"
+            "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/drivers/CyUSB3/cyusb3.cat"
+            "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/drivers/CyUSB3/WdfCoInstaller01009.dll"
         )
 
         add_custom_command(
@@ -271,34 +271,34 @@ if(WIN32)
         )
 
         add_custom_command(
-            OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/cyusb3.inf"
+            OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/drivers/CyUSB3/cyusb3.inf"
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${CMAKE_CURRENT_SOURCE_DIR}/drivers/windows/cyusb3/cyusb3.inf"
-                "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/"
+                "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/drivers/CyUSB3/"
             COMMENT "Copying cyusb3.inf to output directory..."
         )
 
         add_custom_command(
-            OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/cyusb3.sys"
+            OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/drivers/CyUSB3/cyusb3.sys"
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${CYUSB3_DRIVER_DIR}/cyusb3.sys"
-                "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/"
+                "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/drivers/CyUSB3/"
             COMMENT "Copying cyusb3.sys to output directory..."
         )
 
         add_custom_command(
-            OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/cyusb3.cat"
+            OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/drivers/CyUSB3/cyusb3.cat"
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${CYUSB3_DRIVER_DIR}/cyusb3.cat"
-                "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/"
+                "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/drivers/CyUSB3/"
             COMMENT "Copying cyusb3.cat to output directory..."
         )
 
         add_custom_command(
-            OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/WdfCoInstaller01009.dll"
+            OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/drivers/CyUSB3/WdfCoInstaller01009.dll"
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${CYUSB3_DRIVER_DIR}/WdfCoInstaller01009.dll"
-                "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/"
+                "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/drivers/CyUSB3/"
             COMMENT "Copying WdfCoInstaller01009.dll to output directory..."
         )
     endif()
