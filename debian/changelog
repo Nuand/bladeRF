@@ -1,3 +1,13 @@
+bladerf (2014.11-rc3) unstable; urgency=low
+
+  * Second of three release candidates for rescheduled 2014.11 release
+  * FPGA bitstream v0.1.1, FX3 Firmware v1.7.1, libbladeRF v0.17.0, bladeRF-cli v0.12.0
+  * Introduced timestamp metadata support in libbladeRF's synchronous interface
+  * A majority of libbladeRF functions have been made thread-safe.
+  * Fixes for DC calibration issues, deadlocks, crashes, and various defects.
+
+ -- Jon Szymaniak <jon.szymaniak@gmail.com>  Thu, 30 Oct 2014 21:59:38 -0400
+
 bladerf (2014.09-rc2) unstable; urgency=low
 
   * Tagged release 2014.09-rc2 at dddc72f
