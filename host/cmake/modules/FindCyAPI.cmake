@@ -5,8 +5,8 @@
 #   CYAPI_HEADER_FILE   The location of the API header
 #   CYAPI_INCLUDE_DIRS  The location of header files
 #   CYAPI_LIBRARIES     The Cypress library files
-#   CYUSB3_DRIVER_DIR    Directory containing CyUSB3 driver files
-#
+#   CYUSB3_DRIVER_DIR   Directory containing CyUSB3 driver files
+#   CYPRESS_LICENSE     Path to Cypress license shipped with FX3 SDK
 
 if(DEFINED __INCLUDED_BLADERF_FIND_CYAPI_CMAKE)
     return()
@@ -89,6 +89,7 @@ else()
     message(FATAL_ERROR "Unsupported CMAKE_SYSTEM_VERSION: ${CMAKE_SYSTEM_VERSION}")
 endif()
 
+set(CYPRESS_LICENSE "${FX3_SDK_PATH}/license/license.txt")
 
 if(EXISTS ${CYUSB3_DRIVER_DIR})
     if(CYAPI_INCLUDE_DIRS AND CYAPI_LIBRARIES)

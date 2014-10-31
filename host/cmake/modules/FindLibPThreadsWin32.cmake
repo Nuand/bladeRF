@@ -16,6 +16,7 @@
 #  LIBPTHREADSWIN32_HEADER_FILE:  the location of the C header file
 #  LIBPTHREADSWIN32_INCLUDE_DIRS: the directories that contain headers
 #  LIBPTHREADSWIN32_LIBRARIES:    the library files
+#  LIBPTHREADSWIN32_LIB_COPYING:  the license associated with the library
 
 if(DEFINED __INCLUDED_BLADERF_FINDLIBPTHREADSWIN32_CMAKE)
     return()
@@ -75,6 +76,12 @@ if ( WIN32 )
 else ( WIN32 )
     message(FATAL_ERROR "This file only supports Windows")
 endif ( WIN32 )
+
+set ( LIBPTHREADSWIN32_LIB_COPYING
+      "${LIBPTHREADSWIN32_PATH}/COPYING.LIB" )
+if ( NOT EXISTS "${LIBPTHREADSWIN32_LIB_COPYING}" )
+    message(FATAL_ERROR "Unable to find pthread-win32 COPYING.LIB file")
+endif ()
 
 if ( LIBPTHREADSWIN32_INCLUDE_DIRS AND LIBPTHREADSWIN32_LIBRARIES )
     set ( LIBPTHREADSWIN32_FOUND true )

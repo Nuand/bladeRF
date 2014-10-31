@@ -207,8 +207,17 @@ add_custom_target(uninstall
 if(WIN32)
     find_package(LibPThreadsWin32)
     if(LIBPTHREADSWIN32_FOUND)
-        set(WIN_POSTBUILD_ITEMS ${WIN_POSTBUILD_ITEMS}
+        set(WIN_RUNTIME_ITEMS ${WIN_RUNTIME_ITEMS}
+                "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/pthreads-win32/COPYING.LIB.txt"
                 "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/pthreadVC2.dll")
+
+        add_custom_command(
+            OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/pthreads-win32/COPYING.LIB.txt"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${LIBPTHREADSWIN32_LIB_COPYING}"
+                "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/pthreads-win32/COPYING.LIB.txt"
+            COMMENT "Copying pthreads-win32 license to output directory..."
+        )
 
         add_custom_command(
             OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/pthreadVC2.dll"
@@ -220,8 +229,20 @@ if(WIN32)
     endif(LIBPTHREADSWIN32_FOUND)
 
     if(LIBUSB_FOUND)
-        set(WIN_POSTBUILD_ITEMS ${WIN_POSTBUILD_ITEMS}
+        set(WIN_RUNTIME_ITEMS ${WIN_RUNTIME_ITEMS}
+            "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/libusb/COPYING"
             "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/libusb-1.0.dll")
+
+        # The libusb Windows release does not appear to include a COPYING file.
+        # Since it's LGPLv2.1, we'll copy the equivalent license from our
+        # license directory
+        add_custom_command(
+            OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/libusb/COPYING"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CMAKE_CURRENT_SOURCE_DIR}/../legal/licenses/LICENSE.LGPLv2.1"
+                "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/libusb/COPYING"
+            COMMENT "Copying libusb license to output directory..."
+        )
 
         add_custom_command(
             OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/libusb-1.0.dll"
@@ -233,11 +254,20 @@ if(WIN32)
     endif(LIBUSB_FOUND)
 
     if(CYAPI_FOUND)
-        set(WIN_POSTBUILD_ITEMS ${WIN_POSTBUILD_ITEMS}
+        set(WIN_RUNTIME_ITEMS ${WIN_RUNTIME_ITEMS}
+            "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/Cypress/license.txt"
             "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/cyusb3.inf"
             "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/cyusb3.sys"
             "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/cyusb3.cat"
             "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/WdfCoInstaller01009.dll"
+        )
+
+        add_custom_command(
+            OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/Cypress/license.txt"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CYPRESS_LICENSE}"
+                "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/Cypress/license.txt"
+            COMMENT "Copying Cypress License to output directory..."
         )
 
         add_custom_command(
@@ -273,6 +303,74 @@ if(WIN32)
         )
     endif()
 
-    add_custom_target(win_postbuild ALL DEPENDS ${WIN_POSTBUILD_ITEMS})
+    set(WIN_RUNTIME_ITEMS ${WIN_RUNTIME_ITEMS}
+        "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/bladeRF/COPYING"
+        "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/bladeRF/LICENSE.MIT.nuand"
+        "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/bladeRF/LICENSE.BSD.nuand"
+        "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/bladeRF/LICENSE.LGPLv2.1"
+        "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/bladeRF/LICENSE.GPLv2"
+        "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/bladeRF/LICENSE.BSD.vlfeat"
+        "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/bladeRF/LICENSE.BSD.msc_inttypes"
+    )
+
+    add_custom_command(
+        OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/bladeRF/COPYING"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/../COPYING"
+            "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/bladeRF/COPYING"
+        COMMENT "Copying bladeRF COPYING file to output directory..."
+    )
+
+    add_custom_command(
+        OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/bladeRF/LICENSE.MIT.nuand"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/../legal/licenses/LICENSE.MIT.nuand"
+            "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/bladeRF/LICENSE.MIT.nuand"
+        COMMENT "Copying bladeRF LICENSE.MIT.nuand files to output directory..."
+    )
+
+    add_custom_command(
+        OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/bladeRF/LICENSE.BSD.nuand"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/../legal/licenses/LICENSE.BSD.nuand"
+            "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/bladeRF/LICENSE.BSD.nuand"
+        COMMENT "Copying bladeRF LICENSE.BSD.nuand file to output directory..."
+    )
+
+    add_custom_command(
+        OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/bladeRF/LICENSE.LGPLv2.1"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/../legal/licenses/LICENSE.LGPLv2.1"
+            "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/bladeRF/LICENSE.LGPLv2.1"
+        COMMENT "Copying bladeRF LICENSE.LGPLv2.1 file to output directory..."
+    )
+
+    add_custom_command(
+        OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/bladeRF/LICENSE.GPLv2"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/../legal/licenses/LICENSE.GPLv2"
+            "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/bladeRF/LICENSE.GPLv2"
+        COMMENT "Copying bladeRF LICENSE.GPLv2 file to output directory..."
+    )
+
+    add_custom_command(
+        OUTPUT
+        "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/bladeRF/LICENSE.BSD.vlfeat"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/../legal/licenses/LICENSE.BSD.vlfeat"
+            "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/bladeRF/LICENSE.BSD.vlfeat"
+        COMMENT "Copying bladeRF LICENSE.BSD.vlfeat file to output directory..."
+    )
+
+    add_custom_command(
+        OUTPUT
+        "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/bladeRF/LICENSE.BSD.msc_inttypes"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/../legal/licenses/LICENSE.BSD.msc_inttypes"
+            "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/bladeRF/LICENSE.BSD.msc_inttypes"
+        COMMENT "Copying bladeRF LICENSE.BSD.vlfeat file to output directory..."
+    )
+
+    add_custom_target(win_runtime ALL DEPENDS ${WIN_RUNTIME_ITEMS})
 
 endif(WIN32)
