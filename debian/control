@@ -1,8 +1,10 @@
 Source: bladerf
 Priority: extra
 Maintainer: Ryan Tucker <rtucker@gmail.com>
-Build-Depends: debhelper (>=9), cmake (>= 2.8.5), pkg-config, doxygen, libusb-1.0-0-dev (>= 1.0.12), libtecla1-dev, libncurses5-dev, git, help2man, pandoc
-Standards-Version: 3.9.4
+Build-Depends: debhelper (>=9), cmake (>= 2.8.5), pkg-config, doxygen,
+ libusb-1.0-0-dev (>= 1.0.12), libtecla-dev | libtecla1-dev, libncurses5-dev,
+ git, help2man, pandoc
+Standards-Version: 3.9.5
 Section: comm
 Homepage: http://www.nuand.com/bladeRF
 Vcs-Git: git://github.com/Nuand/bladeRF.git
