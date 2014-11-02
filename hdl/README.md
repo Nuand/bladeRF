@@ -18,11 +18,14 @@ Some FPGA binaries are available for [download][download].  Please note the md5 
 [download]: http://nuand.com/fpga (nuand/FPGA Images)
 
 ## Required Software ##
-We use an [Altera][altera] [Cyclone IV E FPGA][cive].  The size of the FPGA is the only difference between the x40 and x115 models.  Altera provides their [Quartus II software][quartus] for synthesizing designs for their FPGAs.  It is free of charge, but not open source and may require registering on their site to download the software.
+We use an [Altera][altera] [Cyclone IV E FPGA][cive].  The size of the FPGA is the only difference between the x40 and x115 models.  Altera provides their [Quartus II][quartus] software for synthesizing designs for their FPGAs.  It is free of charge, but not open source and may require registering on their site to download the software.
+
+**Important Note:** Be sure to download [Quartus II version 13.1][quartus] with [update 4], which the bladeRF project files are based upon. Quartus II version 14.0 is **not** currently reverse-compatible with [Quartus II version 13.1][quartus].
 
 [altera]: http://www.altera.com (Altera)
-[quartus]: http://www.altera.com/products/software/quartus-ii/web-edition/qts-we-index.html (Quartus II Web Edition Software)
+[quartus]: http://dl.altera.com/13.1/?edition=web (Quartus II Web Edition 13.1 Software)
 [cive]: http://www.altera.com/devices/fpga/cyclone-iv/overview/cyiv-overview.html
+[update 4]: http://www.altera.com/literature/rn/archives/rn_qts_131up4_dev_support.pdf (Quartus II 13.1 Update 4)
 
 ## HDL Structure ##
 Since the FPGA is connected and soldered down to the board, it makes sense to have a single top level which defines where the pins go, their IO levels and their genera directionality.  We use a single `bladerf.vhd` top level to define a VHDL entity called `bladerf` that defines these pins.
