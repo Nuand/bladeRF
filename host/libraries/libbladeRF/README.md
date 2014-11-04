@@ -35,6 +35,7 @@ more information.
 | -DENABLE_BACKEND_CYAPI=\<ON/OFF\>a                | Enables (Windows-only) Cypress driver/library based backend. Default: ON if the FX3 SDK is available, OFF otherwise. |
 | -DENABLE_BACKEND_DUMMY=\<ON/OFF\>                 | Enables dummy backend support.  Only useful for some developers.  Default: OFF                                       |
 | -DENABLE_LIBBLADERF_LOGGING=\<ON/OFF\>            | Enable log messages.  Default: ON                                                                                    |
+| -DENABLE_LIBBLADERF_SYSLOG=\<ON/OFF\>             | Enable log messages to syslog. Non Windows systems only and if ENABLE_LIBBLADERF_LOGGING  Default: OFF               |
 | -DENABLE_LIBBLADERF_SYNC_LOG_VERBOSE=\<ON/OFF\>   | Enable log_verbose() calls in the sync interface's data path. Note that this may harm performance. Default: OFF      |
 | -DENABLE_LOCK_CHECKS=\<ON/OFF\>                   | Enable checks for lock acquistion failures (e.g., deadlock). Default: OFF                                            |
 | -DLIBUSB_PATH=\</path/to/libusb\>                 | Path to libusb files. This is generally only needed for Windows users who downloaded binary distributions.           |
