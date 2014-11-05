@@ -1898,7 +1898,6 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
 
     /* Saved values that are to be restored */
     uint8_t clockenables, reg0x71, reg0x7c;
-    lms_lna lna;
 
     /* These are initialized to keep GCC 4.8 to avoid a false-positive
      * warning about potentially uninitialized variables.
@@ -1913,11 +1912,6 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
 
     /* Save off the top level clock enables and LNA state */
     status = LMS_READ(dev, 0x09, &clockenables);
-    if (status != 0) {
-        return status;
-    }
-
-    status = lms_get_lna(dev, &lna);
     if (status != 0) {
         return status;
     }
@@ -1954,11 +1948,6 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
 
     /* Enable the appropriate clock based on the module */
     status = LMS_WRITE(dev, 0x09, clockenables | cal_clock);
-    if (status != 0) {
-        return status;
-    }
-
-    status = lms_select_lna(dev, lna);
     if (status != 0) {
         return status;
     }
@@ -2237,12 +2226,7 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
         }
     }
 
-    /* Restore original clock enables and LNA */
-    status = lms_select_lna(dev, lna);
-    if (status != 0) {
-        return status;
-    }
-
+    /* Restore original clock enables */
     status = LMS_WRITE(dev, 0x09, clockenables);
     if (status != 0) {
         return status;
