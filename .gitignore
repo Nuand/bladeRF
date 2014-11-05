@@ -24,6 +24,8 @@ tags
 TAGS
 
 hdl/quartus/work/*
+hdl/quartus/hostedx*
+hdl/quartus/atsc_txx*
 
 fx3_firmware/make/toolchain.mk
 fx3_firmware/build/*
