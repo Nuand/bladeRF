@@ -5,11 +5,17 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.8.0 (2014-11-6)
+--------------------------------
+ * Added "device ready" query to denote when operations such as flash-based
+   FPGA loading have completed.
+
 v1.7.1 (2014-07-19)
 --------------------------------
  * DMA buffers are now cleared when disabling a module. This fixes an issue
    where stale samples were left in DMA buffers.
  * Added missing support for reading back the state of the firmware loopback
+
 
 v1.7.0 (2014-07-04)
 --------------------------------
