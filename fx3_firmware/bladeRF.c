@@ -52,6 +52,9 @@ uint8_t glPageBuffer[FLASH_PAGE_SIZE] __attribute__ ((aligned (32)));
 CyBool_t glCalCacheValid = CyFalse;
 uint8_t glCal[CAL_BUFFER_SIZE] __attribute__ ((aligned (32)));
 
+CyBool_t glDeviceReady   = CyFalse;         /* Used to denote that the device
+                                             * can't be accessed until the FPGA
+                                             * autoload is finished */
 CyBool_t glAutoLoadValid = CyFalse;
 uint8_t glAutoLoad[CAL_BUFFER_SIZE] __attribute__ ((aligned (32)));
 
@@ -346,6 +349,11 @@ CyBool_t NuandHandleVendorRequest(
     txen = rxen = CyFalse ;
     isHandled = CyTrue;
 
+    /* Device is not ready to handle requests */
+    if (!glDeviceReady && bRequest != BLADE_USB_CMD_QUERY_DEVICE_READY) {
+        return -1;
+    }
+
     switch (bRequest)
     {
     case BLADE_USB_CMD_QUERY_VERSION:
@@ -419,6 +427,11 @@ CyBool_t NuandHandleVendorRequest(
             ret = -1;
         }
 
+        CyU3PUsbSendRetCode(ret);
+    break;
+
+    case BLADE_USB_CMD_QUERY_DEVICE_READY:
+        ret = glDeviceReady ? 1 : 0;
         CyU3PUsbSendRetCode(ret);
     break;
 
@@ -946,8 +959,9 @@ void bladeRFAppThread_Entry( uint32_t input)
             FpgaBeginProgram();
             NuandLoadFromFlash(atoi(fpga_len));
         }
-
     }
+
+    glDeviceReady = CyTrue;
 
     while ( 1 ) {
         /* Additional application-specific code can go here */

@@ -57,6 +57,7 @@
 #define BLADE_USB_CMD_END_PROG                  3
 #define BLADE_USB_CMD_RF_RX                     4
 #define BLADE_USB_CMD_RF_TX                     5
+#define BLADE_USB_CMD_QUERY_DEVICE_READY        6
 #define BLADE_USB_CMD_FLASH_READ              100
 #define BLADE_USB_CMD_FLASH_WRITE             101
 #define BLADE_USB_CMD_FLASH_ERASE             102
