@@ -926,28 +926,32 @@ void bladeRFInit(void)
 /* Entry function for the bladeRFAppThread. */
 void bladeRFAppThread_Entry( uint32_t input)
 {
-    uint8_t state;
-    int cnt;
     CyFxGpioInit();
 
     populateVersionString();
     extractSerialAndCal();
 
     bladeRFInit();
+    /* XXX Why do we need an 800ms delay here? It appears required for the FPGA
+     * load...
+     *
+     * Is there an I/O or state variable that we could instead poll?
+     */
+    CyU3PThreadSleep(800);
 
-    FpgaBeginProgram();
-    for (cnt = 0;;cnt++) {
-        CyU3PThreadSleep (100);
-        if (cnt == 8 && glAutoLoadValid) {
-            char fpga_len[11];
-            if (!NuandExtractField((void*)glAutoLoad, 0x100, "LEN", (char *)&fpga_len, 10)) {
-                fpga_len[10] = 0;
-                NuandLoadFromFlash(atoi(fpga_len));
-            }
-
+    if (glAutoLoadValid) {
+        char fpga_len[11] = {0};
+        if (!NuandExtractField((void*)glAutoLoad, 0x100, "LEN", (char *)&fpga_len, 10)) {
+            fpga_len[10] = 0;
+            FpgaBeginProgram();
+            NuandLoadFromFlash(atoi(fpga_len));
         }
 
-        CyU3PGpifGetSMState(&state);
+    }
+
+    while ( 1 ) {
+        /* Additional application-specific code can go here */
+        CyU3PThreadSleep(1000);
     }
 }
 
