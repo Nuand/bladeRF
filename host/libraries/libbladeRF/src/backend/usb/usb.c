@@ -433,7 +433,44 @@ static int usb_open(struct bladerf *dev, struct bladerf_devinfo *info)
     if (status < 0) {
         log_debug("Failed to populate FW version: %s\n",
                   bladerf_strerror(status));
-        goto error;
+        return status;
+    }
+
+    /* Wait for SPI flash autoloading to complete, if needed */
+    if (version_greater_or_equal(&dev->fw_version, 1, 8, 0)) {
+        const unsigned int max_retries = 30;
+        unsigned int i;
+        int status;
+        int32_t device_ready = 0;
+
+        for (i = 0; (device_ready != 1) && i < max_retries; i++) {
+            status = vendor_cmd_int(dev, BLADE_USB_CMD_QUERY_DEVICE_READY,
+                                         USB_DIR_DEVICE_TO_HOST, &device_ready);
+
+            if (status != 0 || (device_ready != 1)) {
+                if (i == 0) {
+                    log_info("Waiting for device to become ready...\n");
+                } else {
+                    log_debug("Retry %02u/%02u.\n", i + 1, max_retries);
+                }
+
+                usleep(1000000);
+            }
+        }
+
+        if (i >= max_retries) {
+            log_debug("Timed out while waiting for device.\n");
+            return BLADERF_ERR_TIMEOUT;
+        }
+    } else {
+        const unsigned int major = dev->fw_version.major;
+        const unsigned int minor = dev->fw_version.minor;
+        const unsigned int patch = dev->fw_version.patch;
+
+        log_info("FX3 FW v%u.%u.%u does not support the \"device ready\" query.\n"
+                 "\tEnsure flash-autoloading completes before opening a device.\n"
+                 "\tUpgrade the FX3 firmware to avoid this message in the future.\n"
+                 "\n", major, minor, patch);
     }
 
     /* Just out of paranoia, put the device into a known state */
