@@ -1,0 +1,45 @@
+# This sample .gdbinit file based upon the one provided in Cypress's
+# FX3 Programmer's Manual, found here:
+#   http://www.cypress.com/?rID=57990
+#
+# Symlink or rename this file to ".gdbinit" in the directory from
+# which you're running arm-none-eabi-gdb.
+set prompt (arm-gdb)
+
+# Segger J-Link
+target remote localhost:2331
+
+# OpenOCD
+# target remote localhost:3333
+# monitor halt
+
+monitor speed 1000
+monitor endian little
+set endian little
+monitor reset
+
+# Set the processor to SVC mode
+monitor reg cpsr =0xd3
+
+# Disable all interrupts
+monitor memU32 0xFFFFF014 =0xFFFFFFFF
+
+# Enable the TCMs
+monitor memU32 0x40000000 =0xE3A00015
+monitor memU32 0x40000004 =0xEE090F31
+monitor memU32 0x40000008 =0xE240024F
+monitor memU32 0x4000000C =0xEE090F11
+
+# Configure the FX3 SYSCLK
+monitor memU32 0xE0052000 = 0x00080115
+
+# Add a delay to let the clock stabilize.
+monitor sleep 1000
+set $pc =0x40000000
+si
+si
+si
+si
+
+load
+break main
