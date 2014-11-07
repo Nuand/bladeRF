@@ -219,7 +219,6 @@ static const uint8_t lms_reg_dumpset[] = {
 #define LOOPBBEN_ENVPK  (3 << 2)
 #define LOOBBBEN_MASK   (3 << 2)
 
-/* TODO migrate some RMW calls to use these set/clr functions */
 static inline int lms_set(struct bladerf *dev, uint8_t addr, uint8_t mask)
 {
     int status;
@@ -2001,26 +2000,12 @@ static inline int dc_cal_module_init(struct bladerf *dev,
              * powered up when performing DC calibration, and then powered down
              * afterwards to improve receiver linearity */
             if (module == BLADERF_DC_CAL_RXVGA2) {
-                status = LMS_READ(dev, 0x6e, &val);
-                if (status != 0) {
-                    return status;
-                }
-
-                val &= ~(3 << 6);
-
-                status = LMS_WRITE(dev, 0x6e, val);
+                status = lms_clr(dev, 0x6e, (3 << 6));
                 if (status != 0) {
                     return status;
                 }
             } else {
-                status = LMS_READ(dev, 0x5f, &val);
-                if (status != 0) {
-                    return status;
-                }
-
-                val &= ~(1 << 7);
-
-                status = LMS_WRITE(dev, 0x5f, val);
+                lms_clr(dev, 0x5f, (1 << 7));
                 if (status != 0) {
                     return status;
                 }
@@ -2061,14 +2046,7 @@ static inline int dc_cal_module_init(struct bladerf *dev,
         case BLADERF_DC_CAL_TX_LPF:
             /* FAQ item 4.1 notes that the DAC should be turned off or set
              * to generate minimum DC */
-            status = LMS_READ(dev, 0x36, &val);
-            if (status != 0) {
-                return status;
-            }
-
-            val |= (1 << 7);
-
-            status = LMS_WRITE(dev, 0x36, val);
+            status = lms_set(dev, 0x36, (1 << 7));
             if (status != 0) {
                 return status;
             }
@@ -2107,14 +2085,7 @@ static inline int dc_cal_submodule(struct bladerf *dev,
                  */
 
                 /* Disable RXVGA2 DECODE */
-                status = LMS_READ(dev, 0x64, &val);
-                if (status != 0) {
-                    return status;
-                }
-
-                val &= ~(1 << 0);
-
-                status = LMS_WRITE(dev, 0x64, val);
+                status = lms_clr(dev, 0x64, (1 << 0));
                 if (status != 0) {
                     return status;
                 }
@@ -2130,14 +2101,7 @@ static inline int dc_cal_submodule(struct bladerf *dev,
                 /* Setup for Stage 1 I and Q channels (submodules 1 and 2) */
 
                 /* Set to direct control signals: RXVGA2 Decode = 1 */
-                status = LMS_READ(dev, 0x64, &val);
-                if (status != 0) {
-                    return status;
-                }
-
-                val |= 1;
-
-                status = LMS_WRITE(dev, 0x64, val);
+                status = lms_set(dev, 0x64, (1 << 0));
                 if (status != 0) {
                     return status;
                 }
@@ -2232,7 +2196,6 @@ static inline int dc_cal_module_deinit(struct bladerf *dev,
                                        struct dc_cal_state *state)
 {
     int status = 0;
-    uint8_t val;
 
     switch (module) {
         case BLADERF_DC_CAL_LPF_TUNING:
@@ -2240,14 +2203,7 @@ static inline int dc_cal_module_deinit(struct bladerf *dev,
             break;
 
         case BLADERF_DC_CAL_RX_LPF:
-            status = LMS_READ(dev, 0x5f, &val);
-            if (status != 0) {
-                return status;
-            }
-
-            val |= (1 << 7);
-
-            status = LMS_WRITE(dev, 0x5f, val);
+            status = lms_set(dev, 0x5f, (1 << 7));
             if (status != 0) {
                 return status;
             }
@@ -2261,43 +2217,21 @@ static inline int dc_cal_module_deinit(struct bladerf *dev,
             }
 
             /* Disable decode control signals: RXVGA2 Decode = 0 */
-            status = LMS_READ(dev, 0x64, &val);
-            if (status != 0) {
-                return status;
-            }
-
-            val &= (~1);
-
-            status = LMS_WRITE(dev, 0x64, val);
+            status = lms_clr(dev, 0x64, (1 << 0));
             if (status != 0) {
                 return status;
             }
 
             /* Power DC comparitors down, per FAQ 5.26 (rev 1.0r10) */
-            status = LMS_READ(dev, 0x6e, &val);
+            status = lms_set(dev, 0x6e, (3 << 6));
             if (status != 0) {
                 return status;
             }
-
-            val |= (3 << 6);
-
-            status = LMS_WRITE(dev, 0x6e, val);
-            if (status != 0) {
-                return status;
-            }
-
             break;
 
         case BLADERF_DC_CAL_TX_LPF:
             /* Re-enable the DACs */
-            status = LMS_READ(dev, 0x36, &val);
-            if (status != 0) {
-                return status;
-            }
-
-            val &= ~(1 << 7);
-
-            status = LMS_WRITE(dev, 0x36, val);
+            status = lms_clr(dev, 0x36, (1 << 7));
             if (status != 0) {
                 return status;
             }
