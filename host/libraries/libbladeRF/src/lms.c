@@ -237,7 +237,7 @@ static inline int lms_set(struct bladerf *dev, uint8_t addr, uint8_t mask)
     return LMS_WRITE(dev, addr, regval);
 }
 
-static inline int lms_clr(struct bladerf *dev, uint8_t addr, uint8_t mask)
+static inline int lms_clear(struct bladerf *dev, uint8_t addr, uint8_t mask)
 {
     int status;
     uint8_t regval;
@@ -2003,12 +2003,12 @@ static inline int dc_cal_module_init(struct bladerf *dev,
              * powered up when performing DC calibration, and then powered down
              * afterwards to improve receiver linearity */
             if (module == BLADERF_DC_CAL_RXVGA2) {
-                status = lms_clr(dev, 0x6e, (3 << 6));
+                status = lms_clear(dev, 0x6e, (3 << 6));
                 if (status != 0) {
                     return status;
                 }
             } else {
-                lms_clr(dev, 0x5f, (1 << 7));
+                lms_clear(dev, 0x5f, (1 << 7));
                 if (status != 0) {
                     return status;
                 }
@@ -2093,7 +2093,7 @@ static inline int dc_cal_submodule(struct bladerf *dev,
                  */
 
                 /* Disable RXVGA2 DECODE */
-                status = lms_clr(dev, 0x64, (1 << 0));
+                status = lms_clear(dev, 0x64, (1 << 0));
                 if (status != 0) {
                     return status;
                 }
@@ -2278,7 +2278,7 @@ static inline int dc_cal_module_deinit(struct bladerf *dev,
             }
 
             /* Disable decode control signals: RXVGA2 Decode = 0 */
-            status = lms_clr(dev, 0x64, (1 << 0));
+            status = lms_clear(dev, 0x64, (1 << 0));
             if (status != 0) {
                 return status;
             }
@@ -2292,7 +2292,7 @@ static inline int dc_cal_module_deinit(struct bladerf *dev,
 
         case BLADERF_DC_CAL_TX_LPF:
             /* Re-enable the DACs */
-            status = lms_clr(dev, 0x36, (1 << 7));
+            status = lms_clear(dev, 0x36, (1 << 7));
             if (status != 0) {
                 return status;
             }
@@ -2415,7 +2415,7 @@ static inline int enable_lpf_cal_clock(struct bladerf *dev, bool enable)
     if (enable) {
         return lms_set(dev, 0x09, mask);
     } else {
-        return lms_clr(dev, 0x09, mask);
+        return lms_clear(dev, 0x09, mask);
     }
 }
 
@@ -2426,7 +2426,7 @@ static inline int enable_rxvga2_dccal_clock(struct bladerf *dev, bool enable)
     if (enable) {
         return lms_set(dev, 0x09, mask);
     } else {
-        return lms_clr(dev, 0x09, mask);
+        return lms_clear(dev, 0x09, mask);
     }
 }
 
@@ -2437,7 +2437,7 @@ static inline int enable_rxlpf_dccal_clock(struct bladerf *dev, bool enable)
     if (enable) {
         return lms_set(dev, 0x09, mask);
     } else {
-        return lms_clr(dev, 0x09, mask);
+        return lms_clear(dev, 0x09, mask);
     }
 }
 
@@ -2448,7 +2448,7 @@ static inline int enable_txlpf_dccal_clock(struct bladerf *dev, bool enable)
     if (enable) {
         return lms_set(dev, 0x09, mask);
     } else {
-        return lms_clr(dev, 0x09, mask);
+        return lms_clear(dev, 0x09, mask);
     }
 }
 
