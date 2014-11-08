@@ -61,6 +61,9 @@ struct dc_cal_state {
 
     uint8_t base_addr;              /* Base address of DC cal regs */
     unsigned int num_submodules;    /* # of DC cal submodules to operate on */
+
+    int rxvga1_curr_gain;           /* Current gains used in retry loops */
+    int rxvga2_curr_gain;
 };
 
 /* LPF conversion table */
@@ -2030,14 +2033,16 @@ static inline int dc_cal_module_init(struct bladerf *dev,
                 return status;
             }
 
-            status = lms_rxvga1_set_gain(dev, BLADERF_RXVGA1_GAIN_MAX);
+            state->rxvga1_curr_gain = BLADERF_RXVGA1_GAIN_MAX;
+            status = lms_rxvga1_set_gain(dev, state->rxvga1_curr_gain);
             if (status != 0) {
                 return status;
             }
 
-            status = lms_rxvga2_set_gain(dev, BLADERF_RXVGA2_GAIN_MAX);
+            state->rxvga2_curr_gain = BLADERF_RXVGA2_GAIN_MAX;
+            status = lms_rxvga2_set_gain(dev, state->rxvga2_curr_gain);
             if (status != 0) {
-                    return status;
+                return status;
             }
 
             break;
@@ -2070,10 +2075,13 @@ static inline int dc_cal_module_init(struct bladerf *dev,
 static inline int dc_cal_submodule(struct bladerf *dev,
                                    bladerf_cal_module module,
                                    unsigned int submodule,
-                                   struct dc_cal_state *state)
+                                   struct dc_cal_state *state,
+                                   bool *converged)
 {
     int status;
     uint8_t val, dc_regval;
+
+    *converged = false;
 
     if (module == BLADERF_DC_CAL_RXVGA2) {
         switch (submodule) {
@@ -2154,8 +2162,8 @@ static inline int dc_cal_submodule(struct bladerf *dev,
         if (status != 0) {
             return status;
         } else if (dc_regval == 0) {
-            log_warning("Bad DC_REGVAL detected. DC cal failed.\n");
-            return BLADERF_ERR_UNEXPECTED;
+            log_debug("Bad DC_REGVAL detected. DC cal failed.\n");
+            return 0;
         }
     }
 
@@ -2187,9 +2195,62 @@ static inline int dc_cal_submodule(struct bladerf *dev,
         }
     }
 
+    *converged = true;
     return 0;
 }
 
+static inline int dc_cal_retry_adjustment(struct bladerf *dev,
+                                          bladerf_cal_module module,
+                                          struct dc_cal_state *state,
+                                          bool *limit_reached)
+{
+    int status = 0;
+
+    switch (module) {
+        case BLADERF_DC_CAL_LPF_TUNING:
+        case BLADERF_DC_CAL_TX_LPF:
+            /* Nothing to adjust here */
+            *limit_reached = true;
+            break;
+
+        case BLADERF_DC_CAL_RX_LPF:
+            if (state->rxvga1_curr_gain > BLADERF_RXVGA1_GAIN_MIN) {
+                state->rxvga1_curr_gain -= 1;
+                log_debug("Retrying DC cal with RXVGA1=%d\n",
+                          state->rxvga1_curr_gain);
+                status = lms_rxvga1_set_gain(dev, state->rxvga1_curr_gain);
+            } else {
+                *limit_reached = true;
+            }
+            break;
+
+        case BLADERF_DC_CAL_RXVGA2:
+            if (state->rxvga1_curr_gain > BLADERF_RXVGA1_GAIN_MIN) {
+                state->rxvga1_curr_gain -= 1;
+                log_debug("Retrying DC cal with RXVGA1=%d\n",
+                          state->rxvga1_curr_gain);
+                status = lms_rxvga1_set_gain(dev, state->rxvga1_curr_gain);
+            } else if (state->rxvga2_curr_gain > BLADERF_RXVGA2_GAIN_MIN) {
+                state->rxvga2_curr_gain -= 3;
+                log_debug("Retrying DC cal with RXVGA2=%d\n",
+                          state->rxvga2_curr_gain);
+                status = lms_rxvga2_set_gain(dev, state->rxvga2_curr_gain);
+            } else {
+                *limit_reached = true;
+            }
+            break;
+
+        default:
+            *limit_reached = true;
+            assert(!"Invalid module");
+            status = BLADERF_ERR_UNEXPECTED;
+    }
+
+    if (*limit_reached) {
+        log_debug("DC Cal retry limit reached\n");
+    }
+    return status;
+}
 
 static inline int dc_cal_module_deinit(struct bladerf *dev,
                                        bladerf_cal_module module,
@@ -2287,12 +2348,28 @@ static inline int dc_cal_restore(struct bladerf *dev,
     return ret;
 }
 
+static inline int dc_cal_module(struct bladerf *dev,
+                                bladerf_cal_module module,
+                                struct dc_cal_state *state,
+                                bool *converged)
+{
+    unsigned int i;
+    int status = 0;
+
+    *converged = true;
+
+    for (i = 0; i < state->num_submodules && *converged && status == 0; i++) {
+        status = dc_cal_submodule(dev, module, i, state, converged);
+    }
+
+    return status;
+}
 
 int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
 {
     int status, tmp_status;
-    unsigned int i;
     struct dc_cal_state state;
+    bool converged, limit_reached;
 
     status = dc_cal_backup(dev, module, &state);
     if (status != 0) {
@@ -2304,9 +2381,21 @@ int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
         goto error;
     }
 
-    /* Figure out number of addresses to calibrate based on module */
-    for (i = 0; i < state.num_submodules && status == 0; i++) {
-        status = dc_cal_submodule(dev, module, i, &state);
+    converged = false;
+    limit_reached = false;
+
+    while (!converged && !limit_reached && status == 0) {
+        status = dc_cal_module(dev, module, &state, &converged);
+
+        if (status == 0 && !converged) {
+            status = dc_cal_retry_adjustment(dev, module, &state,
+                                             &limit_reached);
+        }
+    }
+
+    if (!converged && status == 0) {
+        log_warning("DC Calibration (module=%d) failed to converge.\n", module);
+        status = BLADERF_ERR_UNEXPECTED;
     }
 
 error:
