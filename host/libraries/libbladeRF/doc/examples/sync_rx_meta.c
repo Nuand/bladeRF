@@ -30,7 +30,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <unistd.h>
 #include <libbladeRF.h>
 #include "example_common.h"
 
@@ -45,7 +44,7 @@ int sync_rx_meta_example(struct bladerf *dev, unsigned int samplerate)
      * associated size, in units of samples. Recall that one sample = two
      * int16_t values. */
     int16_t *samples;
-    const size_t samples_len = 4096;
+    const unsigned int samples_len = 4096;
 
     /* These items configure the underlying asynch stream used by the the sync
      * interface. The "buffer" here refers to those used internally by worker
