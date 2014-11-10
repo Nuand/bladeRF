@@ -54,9 +54,6 @@ if(NOT ${BUILD_DOCUMENTATION})
 endif()
 
 option(BUILD_LIBBLADERF_DOC_EXAMPLES "Compile examples that are included in Doxygen documentation (mainly for QA purposes)." ${BUILD_LIBBLADERF_DOCUMENTATION})
-if(NOT ${BUILD_LIBBLADERF_DOCUMENTATION})
-    set(BUILD_LIBBLADERF_DOCUMENTATION OFF)
-endif()
 
 option(ENABLE_LIBBLADERF_SYNC_LOG_VERBOSE
       "Enable log_verbose() calls in the sync interface's data path. Note that this may harm performance."
@@ -402,14 +399,14 @@ add_subdirectory(tests)
 ################################################################################
 # Doxygen documentation
 ################################################################################
+if(BUILD_LIBBLADERF_DOC_EXAMPLES)
+    add_subdirectory(doc/examples)
+endif()
+
 if(BUILD_LIBBLADERF_DOCUMENTATION)
     find_package(Doxygen)
     if(DOXYGEN_FOUND)
         message(STATUS "Configured to build libbladeRF API documentation.")
-
-        if(BUILD_LIBBLADERF_DOC_EXAMPLES)
-            add_subdirectory(doc/examples)
-        endif()
 
         configure_file(
             ${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/Doxyfile.in
