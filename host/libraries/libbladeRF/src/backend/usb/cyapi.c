@@ -271,37 +271,37 @@ static int cyapi_control_transfer(void *driver,
 
     switch (dir) {
         case USB_DIR_DEVICE_TO_HOST:
-            dev->ControlEndPt->Direction = (CTL_XFER_DIR_TYPE::DIR_FROM_DEVICE);
+            dev->ControlEndPt->Direction = DIR_FROM_DEVICE;
             break;
         case USB_DIR_HOST_TO_DEVICE:
-            dev->ControlEndPt->Direction = (CTL_XFER_DIR_TYPE::DIR_TO_DEVICE);
+            dev->ControlEndPt->Direction = DIR_TO_DEVICE;
             break;
     }
 
     switch (req_type) {
         case USB_REQUEST_CLASS:
-            dev->ControlEndPt->ReqType = CTL_XFER_REQ_TYPE::REQ_CLASS;
+            dev->ControlEndPt->ReqType = REQ_CLASS;
             break;
         case USB_REQUEST_STANDARD:
-            dev->ControlEndPt->ReqType = CTL_XFER_REQ_TYPE::REQ_STD;
+            dev->ControlEndPt->ReqType = REQ_STD;
             break;
         case USB_REQUEST_VENDOR:
-            dev->ControlEndPt->ReqType = CTL_XFER_REQ_TYPE::REQ_VENDOR;
+            dev->ControlEndPt->ReqType = REQ_VENDOR;
             break;
     }
 
     switch (target_type) {
         case USB_TARGET_DEVICE:
-            dev->ControlEndPt->Target =  CTL_XFER_TGT_TYPE::TGT_DEVICE;
+            dev->ControlEndPt->Target = TGT_DEVICE;
             break;
         case USB_TARGET_ENDPOINT:
-            dev->ControlEndPt->Target =  CTL_XFER_TGT_TYPE::TGT_ENDPT;
+            dev->ControlEndPt->Target = TGT_ENDPT;
             break;
         case USB_TARGET_INTERFACE:
-            dev->ControlEndPt->Target =  CTL_XFER_TGT_TYPE::TGT_INTFC;
+            dev->ControlEndPt->Target = TGT_INTFC;
             break;
         case USB_TARGET_OTHER:
-            dev->ControlEndPt->Target =  CTL_XFER_TGT_TYPE::TGT_OTHER;
+            dev->ControlEndPt->Target = TGT_OTHER;
             break;
     }
 
@@ -556,7 +556,7 @@ static int cyapi_stream(void *driver, struct bladerf_stream *stream,
         return BLADERF_ERR_UNEXPECTED;
     }
 
-    data->ep->XferMode = XFER_MODE_TYPE::XMODE_DIRECT;
+    data->ep->XferMode = XMODE_DIRECT;
     data->ep->Abort();
     data->ep->Reset();
 
