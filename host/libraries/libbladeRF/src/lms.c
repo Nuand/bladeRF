@@ -2008,7 +2008,7 @@ static inline int dc_cal_module_init(struct bladerf *dev,
                     return status;
                 }
             } else {
-                lms_clear(dev, 0x5f, (1 << 7));
+                status = lms_clear(dev, 0x5f, (1 << 7));
                 if (status != 0) {
                     return status;
                 }
