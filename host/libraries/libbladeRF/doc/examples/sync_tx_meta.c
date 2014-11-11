@@ -235,7 +235,6 @@ int main(int argc, char *argv[])
     dev = example_init(devstr);
     if (dev) {
 
-        option = 0;
         do {
             printf("Enter (s) for (s)cheduled transmissions, "
                     "or (n) to use the (n)ow flag.\n");
