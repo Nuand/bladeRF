@@ -5,6 +5,11 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v0.1.2 (2014-10-22)
+--------------------------------
+ * Fixed issues with TX_NOW and dropped messages. This fixes issues
+   #334 and #335.
+
 v0.1.1 (2014-10-22)
 --------------------------------
  * Fixed timing errors that caused failures in SPI communication with the
