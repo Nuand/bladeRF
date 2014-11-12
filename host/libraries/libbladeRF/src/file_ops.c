@@ -309,7 +309,7 @@ char *file_find(const char *filename)
 
     for (i = 0; i < ARRAY_SIZE(search_paths); i++) {
         memset(full_path, 0, PATH_MAX_LEN);
-        max_len = PATH_MAX_LEN - 1;
+        max_len = PATH_MAX_LEN;
 
         if (search_paths[i].prepend_home) {
             max_len -= get_home_dir(full_path, max_len);
