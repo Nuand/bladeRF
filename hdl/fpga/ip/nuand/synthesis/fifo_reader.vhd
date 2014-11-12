@@ -41,8 +41,6 @@ architecture simple of fifo_reader is
     signal meta_p_time          :   unsigned(63 downto 0);
     signal meta_p_sec           :   unsigned(31 downto 0);
     signal meta_loaded          :   std_logic;
-    signal meta_loading         :   std_logic;
-    signal meta_load_idx        :   unsigned(1 downto 0);
 
 
 begin
@@ -51,13 +49,12 @@ begin
     begin
         if (reset = '1') then
             meta_loaded   <= '0';
-            meta_loading  <= '0';
-            meta_load_idx <= (others => '0');
             meta_p_time <= (others => '0');
+            meta_fifo_read <= '0' ;
         elsif( rising_edge(clock) ) then
             meta_fifo_read <= '0';
             if( meta_loaded = '0' ) then
-                if( unsigned(meta_fifo_usedw) > 0) then
+                if( meta_fifo_empty = '0' ) then
                     meta_p_time <= unsigned(meta_fifo_data(95 downto 32));
                     meta_loaded <= '1';
                     meta_fifo_read <= '1';
@@ -69,7 +66,7 @@ begin
             end if;
         end if;
     end process;
-    meta_time_eq <= '1' when (enable = '1' and meta_loaded = '1' and (timestamp(63 downto 0) = 0 or timestamp(63 downto 0) >= meta_p_time)) else '0';
+    meta_time_eq <= '1' when (enable = '1' and meta_loaded = '1' and ((meta_p_time = 0 and meta_time_hit = 0) or (timestamp >= meta_p_time and meta_p_time /= 0))) else '0';
     process(clock, reset)
     begin
         if (reset = '1') then
