@@ -73,7 +73,7 @@ ssize_t file_size(FILE *f)
 {
     ssize_t rv = BLADERF_ERR_IO;
     long int fpos = ftell(f);
-    ssize_t len;
+    long len;
 
     if(fpos < 0) {
         log_verbose("ftell failed: %s\n", strerror(errno));
@@ -89,6 +89,9 @@ ssize_t file_size(FILE *f)
     if(len < 0) {
         log_verbose("ftell failed: %s\n", strerror(errno));
         goto out;
+    } else if (len == LONG_MAX) {
+        log_debug("ftell called with a directory?\n");
+        goto out;
     }
 
     if(fseek(f, fpos, SEEK_SET)) {
@@ -96,7 +99,8 @@ ssize_t file_size(FILE *f)
         goto out;
     }
 
-    rv = len;
+    rv = (ssize_t) len;
+    assert(rv == len);
 
 out:
     return rv;
