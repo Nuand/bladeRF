@@ -2,7 +2,7 @@
  * This file is part of the bladeRF project:
  *   http://www.github.com/nuand/bladeRF
  *
- * Copyright (C) 2013 Nuand LLC
+ * Copyright (C) 2013-2014 Nuand LLC
  * Copyright (C) 2013 Daniel Gröber <dxld ÄT darkboxed DOT org>
  *
  * This library is free software; you can redistribute it and/or
@@ -297,9 +297,9 @@ static inline size_t get_install_dir(char *buf, size_t max_len)
 #error "Unknown OS or missing BLADERF_OS_* definition"
 #endif
 
-/* We're not using functions that use the *nix PATH_MAX (which is known to be problematic),
- * or the WIN32 MAX_PATH.  Therefore,  we'll just use this arbitrary, but "sufficiently"
- * large max buffer size for paths */
+/* We're not using functions that use the *nix PATH_MAX (which is known to be
+ * problematic), or the WIN32 MAX_PATH.  Therefore,  we'll just use this
+ * arbitrary, but "sufficiently" large max buffer size for paths */
 #define PATH_MAX_LEN    4096
 
 char *file_find(const char *filename)
