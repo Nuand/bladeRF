@@ -159,9 +159,18 @@ static const struct search_path_entries search_paths[] = {
 
 static inline size_t get_home_dir(char *buf, size_t max_len)
 {
-    const uid_t uid = getuid();
-    const struct passwd *p = getpwuid(uid);
-    strncat(buf, p->pw_dir, max_len);
+    const char *home;
+
+    home = getenv("HOME");
+    if (home != NULL && strlen(home) > 0 && strlen(home) < max_len) {
+        strncat(buf, home, max_len);
+    } else {
+        const struct passwd *passwd;
+        const uid_t uid = getuid();
+        passwd = getpwuid(uid);
+        strncat(buf, passwd->pw_dir, max_len);
+    }
+
     return strlen(buf);
 }
 
