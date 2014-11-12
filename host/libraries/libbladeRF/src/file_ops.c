@@ -305,7 +305,7 @@ static inline size_t get_install_dir(char *buf, size_t max_len)
 char *file_find(const char *filename)
 {
     size_t i, max_len;
-    char *full_path = (char*) calloc(1, PATH_MAX_LEN + 1);
+    char *full_path = (char*) calloc(PATH_MAX_LEN + 1, 1);
 
     for (i = 0; i < ARRAY_SIZE(search_paths); i++) {
         memset(full_path, 0, PATH_MAX_LEN);
