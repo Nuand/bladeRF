@@ -3,9 +3,9 @@ project(libbladeRF_test_ctrl C)
 
 set(INCLUDES
     ${libbladeRF_SOURCE_DIR}/include
+    ${BLADERF_HOST_COMMON_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/include
 )
-include_directories(${INCLUDES})
 
 if(MSVC)
     set(INCLUDES ${INCLUDES} ${MSVC_C99_INCLUDES})
@@ -44,5 +44,6 @@ if(MSVC)
     )
 endif()
 
+include_directories(${INCLUDES})
 add_executable(libbladeRF_test_ctrl ${SRC})
 target_link_libraries(libbladeRF_test_ctrl ${LIBS})

@@ -3,7 +3,7 @@ project(libbladeRF_test_sync C)
 
 set(TEST_SYNC_INCLUDES
     ${libbladeRF_SOURCE_DIR}/include
-    ${libbladeRF_sync_SOURCE_DIR}/include
+    ${BLADERF_HOST_COMMON_INCLUDE_DIRS}
 )
 
 if(MSVC)
@@ -21,6 +21,8 @@ else(MSVC)
     set(TEST_SYNC_LIBS ${TEST_SYNC_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 endif(MSVC)
 
+add_definitions(-DLOGGING_ENABLED=1)
+
 set(SRC
         src/main.c
         src/test.c
@@ -36,5 +38,7 @@ endif()
 
 set(SRC_TO_SHORTEN ${SRC})
 include(ShortFileMacro)
+
+include_directories(${TEST_SYNC_INCLUDES})
 add_executable(libbladeRF_test_sync ${SRC})
 target_link_libraries(libbladeRF_test_sync ${TEST_SYNC_LIBS})
