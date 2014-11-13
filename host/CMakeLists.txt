@@ -115,6 +115,12 @@ if(MSVC)
     if(TREAT_WARNINGS_AS_ERRORS)
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /WX")
     endif()
+
+    # Prior to V12.0 2013, certain C99 headers we use were not supported.
+    # We have to supply our own.
+    if(MSVC_VERSION LESS 1800)
+        set(MSVC_C99_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/common/include/windows/c99)
+    endif()
 endif(MSVC)
 
 ################################################################################
@@ -306,6 +312,7 @@ if(WIN32)
     set(WIN_RUNTIME_ITEMS ${WIN_RUNTIME_ITEMS}
         "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/bladeRF/COPYING"
         "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/bladeRF/LICENSE.MIT.nuand"
+        "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/bladeRF/LICENSE.MIT.msc_stdbool"
         "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/bladeRF/LICENSE.BSD.nuand"
         "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/bladeRF/LICENSE.LGPLv2.1"
         "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/bladeRF/LICENSE.GPLv2"
@@ -327,6 +334,15 @@ if(WIN32)
             "${CMAKE_CURRENT_SOURCE_DIR}/../legal/licenses/LICENSE.MIT.nuand"
             "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/bladeRF/LICENSE.MIT.nuand"
         COMMENT "Copying bladeRF LICENSE.MIT.nuand files to output directory..."
+    )
+
+    add_custom_command(
+        OUTPUT
+        "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/bladeRF/LICENSE.MIT.msc_stdbool"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/../legal/licenses/LICENSE.MIT.msc_stdbool"
+            "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/bladeRF/LICENSE.MIT.msc_stdbool"
+        COMMENT "Copying bladeRF LICENSE.MIT.msc_stdbool file to output directory..."
     )
 
     add_custom_command(

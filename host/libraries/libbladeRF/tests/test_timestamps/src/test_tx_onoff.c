@@ -28,6 +28,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <limits.h>
+#include <inttypes.h>
 #include <libbladeRF.h>
 #include "test_timestamps.h"
 #include "minmax.h"

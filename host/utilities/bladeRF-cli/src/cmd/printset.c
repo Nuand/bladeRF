@@ -20,6 +20,7 @@
 #include <limits.h>
 #include <stdint.h>
 #include <string.h>
+#include <inttypes.h>
 #include "host_config.h"
 #include "cmd.h"
 #include "conversions.h"

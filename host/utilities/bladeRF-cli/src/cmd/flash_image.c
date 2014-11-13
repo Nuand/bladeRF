@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <limits.h>
 #include <time.h>
+#include <inttypes.h>
 
 #include <libbladeRF.h>
 

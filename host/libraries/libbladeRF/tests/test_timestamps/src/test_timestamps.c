@@ -24,6 +24,7 @@
  */
 #include <stdlib.h>
 #include <stdio.h>
+#include <inttypes.h>
 #include <libbladeRF.h>
 #include "test_timestamps.h"
 

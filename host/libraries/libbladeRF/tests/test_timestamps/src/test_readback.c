@@ -29,6 +29,7 @@
 #include <stdint.h>
 #include <errno.h>
 #include <string.h>
+#include <inttypes.h>
 #include <libbladeRF.h>
 #include "test_timestamps.h"
 

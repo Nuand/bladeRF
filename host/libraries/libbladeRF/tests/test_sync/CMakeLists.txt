@@ -6,6 +6,10 @@ set(TEST_SYNC_INCLUDES
     ${libbladeRF_sync_SOURCE_DIR}/include
 )
 
+if(MSVC)
+    set(TEST_SYNC_INCLUDES ${TEST_SYNC_INCLUDES} ${MSVC_C99_INCLUDES})
+endif()
+
 set(TEST_SYNC_LIBS libbladerf_shared)
 
 if(MSVC)

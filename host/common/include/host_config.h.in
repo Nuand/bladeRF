@@ -198,13 +198,6 @@
 #   define FIELD_INIT(field, ...) field = __VA_ARGS__
 #endif // _MSC_VER
 
-/* MSVC doesn't have inttypes.h.  We'll use a local version for this environment. */
-#if _MSC_VER
-#   include <inttypes_msvc.h>
-#else
-#   include <inttypes.h>
-#endif // _MSC_VER
-
 /*******************************************************************************
  * Miscellaneous utility macros
  ******************************************************************************/

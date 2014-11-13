@@ -136,10 +136,14 @@ set(LIBBLADERF_INCLUDES
     ${CMAKE_CURRENT_BINARY_DIR}/src
 )
 
+
+
 ################################################################################
 # Build dependencies
 ################################################################################
 if(MSVC)
+    set(LIBBLADERF_INCLUDES ${LIBBLADERF_INCLUDES} ${MSVC_C99_INCLUDES})
+
     find_package(LibPThreadsWin32 REQUIRED)
     if(LIBPTHREADSWIN32_FOUND)
         set(HAVE_THREADS true)

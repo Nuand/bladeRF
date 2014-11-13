@@ -32,6 +32,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <limits.h>
+#include <inttypes.h>
 #include <pthread.h>
 #include <libbladeRF.h>
 #include "test_timestamps.h"

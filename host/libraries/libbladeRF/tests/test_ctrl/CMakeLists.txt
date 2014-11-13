@@ -7,6 +7,10 @@ set(INCLUDES
 )
 include_directories(${INCLUDES})
 
+if(MSVC)
+    set(INCLUDES ${INCLUDES} ${MSVC_C99_INCLUDES})
+endif()
+
 set(LIBS libbladerf_shared)
 
 if(MSVC)

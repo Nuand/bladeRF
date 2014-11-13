@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <limits.h>
+#include <inttypes.h>
 #include <libbladeRF.h>
 #include "test_timestamps.h"
 #include "rel_assert.h"

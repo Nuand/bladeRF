@@ -25,6 +25,7 @@
 #include <limits.h>
 #include <errno.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "rel_assert.h"
 #include "host_config.h"
