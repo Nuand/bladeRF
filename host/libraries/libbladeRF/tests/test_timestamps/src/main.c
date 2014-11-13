@@ -50,6 +50,7 @@ struct test {
 DECLARE_TEST(rx_gaps);
 DECLARE_TEST(rx_scheduled);
 DECLARE_TEST(tx_onoff);
+DECLARE_TEST(tx_onoff_nowsched);
 DECLARE_TEST(tx_gmsk_bursts);
 DECLARE_TEST(loopback_onoff);
 DECLARE_TEST(format_mismatch);
@@ -59,6 +60,7 @@ static const struct test *tests[] = {
     TEST(rx_gaps),
     TEST(rx_scheduled),
     TEST(tx_onoff),
+    TEST(tx_onoff_nowsched),
     TEST(tx_gmsk_bursts),
     TEST(loopback_onoff),
     TEST(format_mismatch),
@@ -116,6 +118,9 @@ static void usage(const char *argv0)
     printf("         rx_gaps              Check for unexpected gaps in samples.\n");
     printf("         rx_scheduled         Perform reads at specific timestamps.\n");
     printf("         tx_onoff             Transmits ON-OFF bursts.\n");
+    printf("                                Requires external verification.\n");
+    printf("         tx_onoff_nowsched    Transmits ON-OFF bursts, switching between\n");
+    printf("                                TX_NOW and scheduled transmissions.\n");
     printf("                                Requires external verification.\n");
     printf("         tx_gmsk_bursts       Transmits GMSK bursts.\n");
     printf("                                Requires external verification.\n");

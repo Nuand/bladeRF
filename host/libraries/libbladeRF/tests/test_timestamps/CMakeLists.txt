@@ -24,6 +24,7 @@ set(SRC
     src/test_rx_gaps.c
     src/test_rx_scheduled.c
     src/test_tx_onoff.c
+    src/test_tx_onoff_nowsched.c
     src/test_tx_gmsk_bursts.c
     src/test_loopback_onoff.c
     src/test_format_mismatch.c
