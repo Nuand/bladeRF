@@ -3,7 +3,7 @@
  *
  * @brief bladeRF library
  *
- * Copyright (C) 2013 Nuand LLC
+ * Copyright (C) 2013-2014 Nuand LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,11 +23,19 @@
 #define BLADERF_H_
 
 #include <stdint.h>
-#include <stdbool.h>
 #include <stdlib.h>
 
 #ifdef __cplusplus
 extern "C" {
+#else
+/* stdbool.h is not applicable for C++ programs, as the language inherently
+ * provides the bool type.
+ *
+ * Users of Visual Studio 2012 and earlier will need to supply a stdbool.h
+ * implementation, as it is not included with the toolchain. One is provided
+ * with the bladeRF source code. Visual Studio 2013 onward supplies this header.
+ */
+#include <stdbool.h>
 #endif
 
 #if defined _WIN32 || defined __CYGWIN__
