@@ -7,9 +7,7 @@ set(INCLUDES
 )
 set(LIBS libbladerf_shared)
 
-if(NOT MSVC)
-    set (LIBS ${LIBS} m)
-else()
+if(MSVC)
     set(INCLUDES ${INCLUDES} ${MSVC_C99_INCLUDES})
 endif()
 

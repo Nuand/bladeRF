@@ -29,7 +29,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <math.h>
 #include <inttypes.h>
 #include <libbladeRF.h>
 #include "example_common.h"
