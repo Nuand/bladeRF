@@ -45,7 +45,7 @@ struct test_data {
 static int send_bursts(struct bladerf *dev, struct app_params *p,
                        struct test_data *t)
 {
-    int status;
+    int status = 0;
     unsigned int i;
     struct bladerf_metadata meta;
     uint64_t curr_time, next_time;
