@@ -281,7 +281,7 @@ int test_handle_args(int argc, char **argv,
                     fprintf(stderr, "Invalid frequency: %s\n", optarg);
                     return -1;
                 } else {
-
+                    config->tx_frequency = config->rx_frequency;
                 }
                 break;
 
@@ -365,7 +365,7 @@ int test_handle_args(int argc, char **argv,
                     fprintf(stderr, "Invalid bandwidth: %s\n", optarg);
                     return -1;
                 } else {
-                    config->rx_bandwidth = config->tx_bandwidth;
+                    config->tx_bandwidth = config->rx_bandwidth;
                 }
                 break;
 
