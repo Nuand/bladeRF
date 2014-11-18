@@ -189,6 +189,17 @@ int str2loopback(const char *str, bladerf_loopback *loopback);
 int str2args(const char *line, char eol_comm, char ***argv);
 
 /**
+ * Convert RX LNA gain strings to their associated enum values
+ *
+ * @param[in]   str         Gain string to convert
+ * @param[out]  gain        Associated LNA gain string. Set to
+ *                          BLADERF_LNA_GAIN_UNKNOWN on error.
+ *
+ * @return 0 on success, -1 on invalid string
+ */
+int str2lnagain(const char *str, bladerf_lna_gain *gain);
+
+/**
  * Free argument list previously allocated by str2args
  *
  * @param       argc    Number of arguments
