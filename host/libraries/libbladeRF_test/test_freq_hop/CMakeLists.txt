@@ -17,6 +17,12 @@ set(SRC
     ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
 )
 
+if(MSVC)
+    set(SRC ${SRC}
+        ${BLADERF_HOST_COMMON_SOURCE_DIR}/windows/getopt_long.c
+    )
+endif()
+
 include_directories(${INCLUDES})
 add_executable(libbladeRF_test_freq_hop ${SRC})
 target_link_libraries(libbladeRF_test_freq_hop libbladerf_shared)
