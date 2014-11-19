@@ -34,6 +34,8 @@
 #include "conversions.h"
 #include "test_common.h"
 
+#define TEST_OPTIONS_STR    TEST_OPTIONS_BASE"i:S:"
+
 struct app_params {
     struct device_config dev_config;
     bool rx;
@@ -58,7 +60,7 @@ int app_handle_args(int argc, char **argv,
     bool ok;
 
     optind = 1;
-    c = getopt_long(argc, argv, TEST_OPTIONS_BASE"i:", long_options, NULL);
+    c = getopt_long(argc, argv, TEST_OPTIONS_STR, long_options, NULL);
     while (c >= 0) {
 
         switch (c) {
@@ -87,7 +89,7 @@ int app_handle_args(int argc, char **argv,
                 break;
         }
 
-        c = getopt_long(argc, argv, TEST_OPTIONS_BASE, long_options, NULL);
+        c = getopt_long(argc, argv, TEST_OPTIONS_STR, long_options, NULL);
     }
 
     return 0;
@@ -281,7 +283,7 @@ int main(int argc, char *argv[])
     }
 
     status = test_handle_args(argc, argv,
-                              TEST_OPTIONS_BASE, options,
+                              TEST_OPTIONS_STR, options,
                               &params.dev_config);
     if (status < 0) {
         status = -1;
