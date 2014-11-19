@@ -384,7 +384,7 @@ if(WIN32)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${CMAKE_CURRENT_SOURCE_DIR}/../legal/licenses/LICENSE.BSD.msc_inttypes"
             "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/licenses/bladeRF/LICENSE.BSD.msc_inttypes"
-        COMMENT "Copying bladeRF LICENSE.BSD.vlfeat file to output directory..."
+        COMMENT "Copying bladeRF LICENSE.BSD.msc_inttypes file to output directory..."
     )
 
     add_custom_target(win_runtime ALL DEPENDS ${WIN_RUNTIME_ITEMS})
