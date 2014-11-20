@@ -52,6 +52,12 @@ struct lusb_stream_data {
     size_t i;                           /* Index to next transfer */
     struct libusb_transfer **transfers; /* Array of transfer metadata */
     transfer_status *transfer_status;   /* Status of each transfer */
+
+   /* Warn the first time we get a transfer callback out of order.
+    * This shouldn't happen normaly, but we've seen it intermittently on
+    * libusb 1.0.19 for Windows. Further investigation required...
+    */
+    bool out_of_order_event;
 };
 
 static inline struct bladerf_lusb * lusb_backend(struct bladerf *dev)
@@ -771,6 +777,33 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
     MUTEX_UNLOCK(&stream->lock);
 }
 
+static inline struct libusb_transfer *
+get_next_available_transfer(struct lusb_stream_data *stream_data)
+{
+    unsigned int n;
+    size_t i = stream_data->i;
+
+    for (n = 0; n < stream_data->num_transfers; n++) {
+        if (stream_data->transfer_status[i] == TRANSFER_AVAIL) {
+
+            if (stream_data->i != i &&
+                stream_data->out_of_order_event == false) {
+
+                log_warning("Transfer callback occurred out of order. "
+                            "(Warning only this time.)\r\n");
+                stream_data->out_of_order_event = true;
+            }
+
+            stream_data->i = i;
+            return stream_data->transfers[i];
+        }
+
+        i = (i + 1) % stream_data->num_transfers;
+    }
+
+    return NULL;
+}
+
 /* Precondition: A transfer is available. */
 static int submit_transfer(struct bladerf_stream *stream, void *buffer)
 {
@@ -783,8 +816,8 @@ static int submit_transfer(struct bladerf_stream *stream, void *buffer)
     const unsigned char ep =
         stream->module == BLADERF_MODULE_TX ? SAMPLE_EP_OUT : SAMPLE_EP_IN;
 
-    assert(stream_data->transfer_status[stream_data->i] == TRANSFER_AVAIL);
-    transfer = stream_data->transfers[stream_data->i];
+    transfer = get_next_available_transfer(stream_data);
+    assert(transfer != NULL);
 
     assert(bytes_per_buffer <= INT_MAX);
     libusb_fill_bulk_transfer(transfer,
@@ -857,6 +890,7 @@ static int lusb_init_stream(void *driver, struct bladerf_stream *stream,
     stream_data->num_transfers = num_transfers;
     stream_data->num_avail = 0;
     stream_data->i = 0;
+    stream_data->out_of_order_event = false;
 
     stream_data->transfers =
         malloc(num_transfers * sizeof(struct libusb_transfer *));
