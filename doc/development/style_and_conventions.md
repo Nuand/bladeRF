@@ -189,7 +189,7 @@ int mymodule_perform_device_operation(struct bladerf *dev,
 
         while (!done) {
             status = process_entry(dev, flags, new_value, &results[i]);
-            done = (results[i] == COMPLETION_VALUE) || (status != 0);
+            done = (status != 0) || (results[i] == COMPLETION_VALUE);
         }
 
         /* Use log_debug() to help developers understand why error values are
