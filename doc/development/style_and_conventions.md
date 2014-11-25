@@ -143,7 +143,7 @@ single statement. This is intended to avoid mistakes when other developers
 modify the code, add debug statements, etc.
 
 -------------------------------------------------------------------------------
-<pre><code>
+```c
 int mymodule_perform_device_operation(struct bladerf *dev,
                                       const uint8_t *input_array,
                                       uint8_t **output_array,
@@ -218,7 +218,8 @@ out:
     }
 
     return status;
-}</code></pre>
+}
+```
 --------------------------------------------------------------------------------
 
 ### Use of `goto` ###
