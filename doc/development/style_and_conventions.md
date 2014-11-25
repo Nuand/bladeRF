@@ -501,7 +501,7 @@ All associations shall be named associations and nothing is positional.  The
 associations shall be aligned on a 4-tab character boundary
 
 Instantiation via entity is preferred:
-<pre><code>
+```vhdl
     U_sample_fifo : entity work.fifo(rtl)
       generic map (
         WIDTH       =>  32,
@@ -519,7 +519,7 @@ Instantiation via entity is preferred:
         dout        =>  sample_fifo_dout,
         re          =>  sample_fifo_re
       ) ;
-</code></pre>
+```
 
 ### Testbenching ###
 
