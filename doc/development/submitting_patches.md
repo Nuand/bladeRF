@@ -2,7 +2,7 @@ bladeRF Patch Submission Guidelines
 ================================================================================
 
 In order to ensure your patches are accepted and merged in a timely fashion,
-please follow the guidlines presented in this document. 
+please follow the guidlines presented in this document.
 
 Do not be surprised or discouraged if you are asked to iteratively change or
 improve portions of your patches before they are accepted. This is simply
@@ -15,7 +15,7 @@ For significant changes/fixes, please feel free to include an update to the
 CONTRIBUTORS file, or provide the information you would like included in an
 email to bladeRF@nuand.com.
 
-If you have not already, please review the 
+If you have not already, please review the
 [bladeRF Style and Coding Conventions](style_and_conventions.md).
 
 --------------------------------------------------------------------------------
@@ -32,7 +32,7 @@ to Nuand, LLC. This is intended to allow Nuand to:
    coordinate and confirm with every single contributor.
 
 Please use the [Individual CAA](../../legal/bladerf_icaa.txt) if you are
-representing yourself as an individual, or otherwise, the 
+representing yourself as an individual, or otherwise, the
 [Entity CAA](../../legal/bladerf_ecaa.txt).
 
 If have you have quesions or concerns, or if it is not possible for you to
@@ -79,7 +79,7 @@ Or if you made a change to the FPGA:
 #### Detailed Description ####
 
 In the remainder of the commit message, describe *why* the change is necessary,
-and *what* is addressing. 
+and *what* is addressing.
 
 Describe the underlying problem you are addressing, referencing the appropriate
 issue tracker item or describing associated symptoms/observables.
@@ -94,7 +94,7 @@ information will be used when tracking down newly discovered defects.  In
 general, your commit message should provide a sense of:
 
  * What portions of the code have been changed
- * How your changes affect device operation 
+ * How your changes affect device operation
 
 
 ### One objective per commit ###
@@ -106,7 +106,7 @@ changes should be submitted as two separate commits: one for
 resolving the defect, and another for introducing the new feature.
 
 The rationale is that it is easier to bisect the codebase to track down changes
-(and any new defects associated with them) when commits are cohesive and of a 
+(and any new defects associated with them) when commits are cohesive and of a
 smaller scope.  Following the above example, if a new defect were introduced by
 one of the two commits, it would be easier to determine which of
 the two were responsible via `git bisect`.
@@ -135,18 +135,18 @@ this operation in a staging branch, allowing you to easily get back to your
 original set of changes, should you make a mistake.
 
 While micro-committing is certainly helpful when developing, there is generally
-no reason to introduce a history of partial implementations or fixes in 
+no reason to introduce a history of partial implementations or fixes in
 upstream repository. Just submit the final, complete, and fully-functional
 changesets.
 
 For example, consider the following set of changes.
 
-<pre><code> 
+<pre><code>
 bladeRF-cli: Renamed command 'do_x' to 'do_y'                           (8)
 libbladeRF: Updated X to Y in API header example snippet                (7)
 libbladeRF: Renamed functionality X to Y                                (6)
-libbladeRF: Fixed off-by-one bugs in functionality X                    (5) 
-libbladeRF: Added sample usage of X to the API header file              (4) 
+libbladeRF: Fixed off-by-one bugs in functionality X                    (5)
+libbladeRF: Added sample usage of X to the API header file              (4)
 libbladeRF: Fixed typos in functionality X                              (3)
 bladeRF-cli: Added command 'do_x' to support libbladeRF functionality X (2)
 libbladeRF: Added functionality X                                       (1)
@@ -188,7 +188,7 @@ were introduced.
 
 For example, if an FPGA change introduces a new feature for use by libbladeRF,
 we would want that feature committed first, and then the associated libbladeRF
-functionality added afterwards. 
+functionality added afterwards.
 
 
 ## Submitting Patches ##
@@ -197,7 +197,7 @@ Patches can be emailed to bladeRF@nuand.com. Please include `[PATCH]` in
 the subject line.
 
 Patches may also be submitted via GitHub pull requests. Please use a separate
-pull request per patch set, and stage each patch set in a separate branch. 
+pull request per patch set, and stage each patch set in a separate branch.
 
 **Do not** continue committing changes to the branch you created a pull request from.
 If you find that additional changes are required after submitting your pull request:
