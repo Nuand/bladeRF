@@ -53,6 +53,8 @@ int input_loop(struct cli_state *s, bool interactive)
     char *line;
     int status;
     const char *error;
+    const char* delim = ";";
+    char* command;
 
     status = input_init();
     if (status < 0) {
@@ -97,43 +99,49 @@ int input_loop(struct cli_state *s, bool interactive)
                 break;
             }
         } else {
-            status = cmd_handle(s, line);
+            command = strtok(line, delim);
 
-            if (status < 0) {
-                error = cli_strerror(status, s->last_lib_error);
-                if (error) {
-                    cli_err(s, "Error", "%s\n", error);
-                }
+            while(command != NULL) {
+                status = cmd_handle(s, command);
 
-                /* Stop executing script or command list */
-                if (s->exec_from_cmdline) {
-                    str_queue_clear(s->exec_list);
-                } else {
-                    exit_script(s);
-                }
+                if (status < 0) {
+                    error = cli_strerror(status, s->last_lib_error);
+                    if (error) {
+                        cli_err(s, "Error", "%s\n", error);
+                    }
 
-                /* Quit if we're not supposed to drop to a prompt */
-                if (!interactive) {
-                    status = CLI_RET_QUIT;
-                }
+                    /* Stop executing script or command list */
+                    if (s->exec_from_cmdline) {
+                        str_queue_clear(s->exec_list);
+                    } else {
+                        exit_script(s);
+                    }
 
-            } else if (status > 0){
-                switch (status) {
-                    case CLI_RET_CLEAR_TERM:
-                        input_clear_terminal();
-                        break;
-                    case CLI_RET_RUN_SCRIPT:
-                        status = input_set_input(
+                    /* Quit if we're not supposed to drop to a prompt */
+                    if (!interactive) {
+                        status = CLI_RET_QUIT;
+                    }
+
+                } else if (status > 0){
+                    switch (status) {
+                        case CLI_RET_CLEAR_TERM:
+                            input_clear_terminal();
+                            break;
+                        case CLI_RET_RUN_SCRIPT:
+                            status = input_set_input(
                                     cli_script_file(s->scripts));
 
-                        if (status < 0) {
-                            cli_err(s, "Error",
-                                    "Failed to begin executing script\n");
-                        }
-                        break;
-                    default:
-                        cli_err(s, "Error", "Unknown return code: %d\n", status);
+                            if (status < 0) {
+                                cli_err(s, "Error",
+                                        "Failed to begin executing script\n");
+                            }
+                            break;
+                        default:
+                            cli_err(s, "Error", "Unknown return code: %d\n", status);
+                    }
                 }
+
+                command = strtok(NULL, delim);
             }
         }
 
