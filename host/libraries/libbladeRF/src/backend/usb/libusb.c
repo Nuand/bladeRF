@@ -454,7 +454,9 @@ error:
 static int lusb_change_setting(void *driver, uint8_t setting)
 {
     struct bladerf_lusb *lusb = (struct bladerf_lusb *) driver;
+
     int status = libusb_set_interface_alt_setting(lusb->handle, 0, setting);
+
     return error_conv(status);
 }
 

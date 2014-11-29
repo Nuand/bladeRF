@@ -202,7 +202,7 @@ static inline int vendor_cmd_int_windex(struct bladerf *dev, uint8_t cmd,
     struct bladerf_usb *usb = usb_backend(dev, &driver);
 
     return usb->fn->control_transfer(driver,
-                                      USB_TARGET_INTERFACE,
+                                      USB_TARGET_DEVICE,
                                       USB_REQUEST_VENDOR,
                                       USB_DIR_DEVICE_TO_HOST,
                                       cmd, 0, windex,
@@ -218,7 +218,7 @@ static inline int vendor_cmd_int_wvalue(struct bladerf *dev, uint8_t cmd,
     struct bladerf_usb *usb = usb_backend(dev, &driver);
 
     return usb->fn->control_transfer(driver,
-                                      USB_TARGET_INTERFACE,
+                                      USB_TARGET_DEVICE,
                                       USB_REQUEST_VENDOR,
                                       USB_DIR_DEVICE_TO_HOST,
                                       cmd, wvalue, 0,
@@ -235,7 +235,7 @@ static inline int vendor_cmd_int(struct bladerf *dev, uint8_t cmd,
     struct bladerf_usb *usb = usb_backend(dev, &driver);
 
     return usb->fn->control_transfer(driver,
-                                      USB_TARGET_INTERFACE,
+                                      USB_TARGET_DEVICE,
                                       USB_REQUEST_VENDOR,
                                       dir, cmd, 0, 0,
                                       val, sizeof(int32_t),
@@ -578,7 +578,7 @@ static inline int perform_erase(struct bladerf *dev, uint16_t block)
     struct bladerf_usb *usb = usb_backend(dev, &driver);
 
     status = usb->fn->control_transfer(driver,
-                                        USB_TARGET_INTERFACE,
+                                        USB_TARGET_DEVICE,
                                         USB_REQUEST_VENDOR,
                                         USB_DIR_DEVICE_TO_HOST,
                                         BLADE_USB_CMD_FLASH_ERASE,
@@ -666,7 +666,7 @@ static inline int read_page(struct bladerf *dev, uint8_t read_operation,
     /* Retrieve data from the firmware page buffer */
     for (offset = 0; offset < BLADERF_FLASH_PAGE_SIZE; offset += read_size) {
         status = usb->fn->control_transfer(driver,
-                                           USB_TARGET_INTERFACE,
+                                           USB_TARGET_DEVICE,
                                            USB_REQUEST_VENDOR,
                                            USB_DIR_DEVICE_TO_HOST,
                                            request,
@@ -750,7 +750,7 @@ static int write_page(struct bladerf *dev, uint16_t page, const uint8_t *buf)
      * will not be written to on an out transfer. */
     for (offset = 0; offset < BLADERF_FLASH_PAGE_SIZE; offset += write_size) {
         status = usb->fn->control_transfer(driver,
-                                            USB_TARGET_INTERFACE,
+                                            USB_TARGET_DEVICE,
                                             USB_REQUEST_VENDOR,
                                             USB_DIR_HOST_TO_DEVICE,
                                             BLADE_USB_CMD_WRITE_PAGE_BUFFER,
@@ -839,7 +839,7 @@ static int usb_device_reset(struct bladerf *dev)
     void *driver;
     struct bladerf_usb *usb = usb_backend(dev, &driver);
 
-    return usb->fn->control_transfer(driver, USB_TARGET_INTERFACE,
+    return usb->fn->control_transfer(driver, USB_TARGET_DEVICE,
                                       USB_REQUEST_VENDOR,
                                       USB_DIR_HOST_TO_DEVICE,
                                       BLADE_USB_CMD_RESET,
@@ -852,7 +852,7 @@ static int usb_jump_to_bootloader(struct bladerf *dev)
     void *driver;
     struct bladerf_usb *usb = usb_backend(dev, &driver);
 
-    return usb->fn->control_transfer(driver, USB_TARGET_INTERFACE,
+    return usb->fn->control_transfer(driver, USB_TARGET_DEVICE,
                                       USB_REQUEST_VENDOR,
                                       USB_DIR_HOST_TO_DEVICE,
                                       BLADE_USB_CMD_JUMP_TO_BOOTLOADER,
