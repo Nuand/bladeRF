@@ -5,6 +5,22 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.0.0 (2014-11-29)
+--------------------------------
+This version of libbladeRF is intended for use with:
+
+FX3 Firmware v1.8.0
+FPGA         v0.1.2
+
+Changes:
+ * Major version number bumped to indicate stable API.
+ * Removed stdbool.h inclusion for C++ code in API header.
+ * Fixed USB control transfer issue that caused SPI flash corruption
+   in Windows when using libusb with the WinUSB driver.
+ * When an FPGA is autoloading from SPI flash, the bladerf_open() and
+   bladerf_open_with_devinfo() calls now wait for the autoload to complete.
+     * This requires FW v1.8.0.
+
 v0.17.0 (2014-10-30)
 --------------------------------
 This version of libbladeRF is intended for use with:
