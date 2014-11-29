@@ -16,6 +16,8 @@ Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends}
 Depends: ${shlibs:Depends}, ${misc:Depends}, libusb-1.0-0 (>= 1.0.12)
+Recommends: bladerf-fpga
+Suggests: bladerf-firmware
 Description: nuand bladeRF software-defined radio device
  The nuand bladeRF is an open-source software-defined radio (SDR) system,
  comprised of an RF transceiver, a field-programmable gate array (FPGA),
@@ -29,8 +31,6 @@ Section: libdevel
 Architecture: any
 Multi-Arch: same
 Depends: libbladerf1 (= ${binary:Version}), libc6-dev | libc-dev, ${misc:Depends}
-Replaces: libbladerf0-dev (<< 0.11.0+1SNAPSHOT20131229)
-Breaks: libbladerf0-dev (<< 0.11.0+1SNAPSHOT20131229)
 Description: nuand bladeRF software-defined radio device (header files)
  The nuand bladeRF is an open-source software-defined radio (SDR) system,
  comprised of an RF transceiver, a field-programmable gate array (FPGA),
@@ -40,18 +40,14 @@ Description: nuand bladeRF software-defined radio device (header files)
  This package contains the header files required for compiling bladeRF
  applications.
 
-Package: libbladerf0-dev
-Depends: libbladerf-dev, ${misc:Depends}
-Architecture: all
-Section: oldlibs
-Description: transitional dummy package
- This is a transitional dummy package.  It can safely be removed.
-
 Package: bladerf
 Section: comm
 Architecture: any
 Multi-Arch: foreign
 Depends: libbladerf1 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Provides: bladerf-host
+Conflicts: bladerf-host
+Replaces: bladerf-host
 Description: nuand bladeRF software-defined radio device (tools)
  The nuand bladeRF is an open-source software-defined radio (SDR) system,
  comprised of an RF transceiver, a field-programmable gate array (FPGA),
