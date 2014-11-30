@@ -1,3 +1,10 @@
+bladerf (2014.11) unstable; urgency=low
+
+  * First stable libbladeRF API release
+  * FPGA bitstream v0.1.2, FX3 Firmware v1.8.0, libbladeRF v1.0.0, bladeRF-cli v1.0.0
+
+ -- Jon Szymaniak <jon.szymaniak@gmail.com>  Sun, 30 Nov 2014 16:18:33 -0500
+
 bladerf (2014.11-rc3) unstable; urgency=low
 
   * Second of three release candidates for rescheduled 2014.11 release
