@@ -155,6 +155,7 @@ out:
 #define ACCESS_FILE_EXISTS F_OK
 
 static const struct search_path_entries search_paths[] = {
+    { false, "" },
     { true,  "/.config/Nuand/bladeRF/" },
     { true,  "/.Nuand/bladeRF/" },
     { false, "/etc/Nuand/bladeRF/" },
@@ -187,6 +188,7 @@ static inline size_t get_install_dir(char *buf, size_t max_len){
 #include <shlobj.h>
 
 static const struct search_path_entries search_paths[] = {
+    { false, "" },
     { true,  "/Nuand/bladeRF/" },
 };
 
