@@ -177,7 +177,7 @@ if(ENABLE_BACKEND_LIBUSB)
         message(FATAL_ERROR "libusb-1.0 not found. This is required to use the libbladeRF libusb backend. For binary releases, try setting LIBUSB_PATH.")
     else(NOT LIBUSB_FOUND)
         if(LIBUSB_VERSION)
-            if(LIBUSB_HAVE_GET_VERSION)
+            if(NOT LIBUSB_VERSION VERSION_LESS "1.0.10")
                 add_definitions(-DHAVE_LIBUSB_GET_VERSION)
             endif()
 
