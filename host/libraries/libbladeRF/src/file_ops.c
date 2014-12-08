@@ -335,7 +335,14 @@ char *file_find(const char *filename)
         max_len = PATH_MAX_LEN;
 
         if (search_paths[i].prepend_home) {
-            max_len -= get_home_dir(full_path, max_len);
+            const size_t len = get_home_dir(full_path, max_len);
+
+            if (len != 0)  {
+                max_len -= len;
+            } else {
+                continue;
+            }
+
         }
 
         strncat(full_path, search_paths[i].path, max_len);
