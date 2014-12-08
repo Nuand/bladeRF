@@ -312,7 +312,24 @@ char *file_find(const char *filename)
 {
     size_t i, max_len;
     char *full_path = (char*) calloc(PATH_MAX_LEN + 1, 1);
+    const char *env_var = getenv("BLADERF_SEARCH_DIR");
 
+    /* Check directory specified by environment variable */
+    if (env_var != NULL) {
+        strncat(full_path, env_var, PATH_MAX_LEN - 1);
+        full_path[strlen(full_path)] = '/';
+
+        max_len = PATH_MAX_LEN - strlen(full_path);
+
+        if (max_len >= strlen(filename)) {
+            strncat(full_path, filename, max_len);
+            if (access(full_path, ACCESS_FILE_EXISTS) != -1) {
+                return full_path;
+            }
+        }
+    }
+
+    /* Search our list of pre-determined paths */
     for (i = 0; i < ARRAY_SIZE(search_paths); i++) {
         memset(full_path, 0, PATH_MAX_LEN);
         max_len = PATH_MAX_LEN;
@@ -337,6 +354,7 @@ char *file_find(const char *filename)
         }
     }
 
+    /* Search the installation directory, if applicable */
     if (get_install_dir(full_path, PATH_MAX_LEN)) {
         max_len = PATH_MAX_LEN - strlen(full_path);
 
