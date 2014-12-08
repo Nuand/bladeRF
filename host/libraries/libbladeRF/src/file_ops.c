@@ -150,9 +150,23 @@ out:
     return status;
 }
 
+/* Remove the last entry in a path. This is used to strip the executable name
+* from a path to get the directory that the executable resides in. */
+static size_t strip_last_path_entry(char *buf, char dir_delim)
+{
+    size_t len = strlen(buf);
+
+    while (len > 0 && buf[len - 1] != dir_delim) {
+        buf[len - 1] = '\0';
+        len--;
+    }
+
+    return len;
+}
 
 #if BLADERF_OS_LINUX || BLADERF_OS_OSX
 #define ACCESS_FILE_EXISTS F_OK
+#define DIR_DELIMETER '/'
 
 static const struct search_path_entries search_paths[] = {
     { false, "" },
@@ -179,12 +193,41 @@ static inline size_t get_home_dir(char *buf, size_t max_len)
     return strlen(buf);
 }
 
-static inline size_t get_install_dir(char *buf, size_t max_len){
+static inline size_t get_install_dir(char *buf, size_t max_len)
+{
 	return 0;
 }
 
+#if BLADERF_OS_LINUX
+static inline size_t get_binary_dir(char *buf, size_t max_len)
+{
+    ssize_t result = readlink("/proc/self/exe", buf, max_len);
+
+    if (result > 0) {
+        return strip_last_path_entry(buf, DIR_DELIMETER);
+    } else {
+        return 0;
+    }
+}
+#elif BLADERF_OS_OSX
+#include <mach-o/dyld.h>
+static inline size_t get_binary_dir(char *buf, size_t max_len)
+{
+    uint32_t buf_size = max_len;
+    int status = _NSGetExecutablePath(buf, &buf_size);
+
+    if (status == 0) {
+        return strip_last_path_entry(buf, DIR_DELIMETER);
+    } else {
+        return 0;
+    }
+
+}
+#endif
+
 #elif BLADERF_OS_WINDOWS
 #define ACCESS_FILE_EXISTS 0
+#define DIR_DELIMETER '\\'
 #include <shlobj.h>
 
 static const struct search_path_entries search_paths[] = {
@@ -233,6 +276,20 @@ static inline size_t get_home_dir(char *buf, size_t max_len)
     FreeLibrary(hDLL);
 
     return strlen(buf);
+}
+
+static inline size_t get_binary_dir(char *buf, size_t max_len)
+{
+    DWORD status;
+
+    assert(max_len <= MAXDWORD);
+    status = GetModuleFileName(NULL, buf, (DWORD) max_len);
+
+    if (status > 0) {
+        return strip_last_path_entry(buf, DIR_DELIMETER);
+    } else {
+        return 0;
+    }
 }
 
 static inline size_t get_install_dir(char *buf, size_t max_len)
@@ -317,7 +374,7 @@ char *file_find(const char *filename)
     /* Check directory specified by environment variable */
     if (env_var != NULL) {
         strncat(full_path, env_var, PATH_MAX_LEN - 1);
-        full_path[strlen(full_path)] = '/';
+        full_path[strlen(full_path)] = DIR_DELIMETER;
 
         max_len = PATH_MAX_LEN - strlen(full_path);
 
@@ -328,6 +385,26 @@ char *file_find(const char *filename)
             }
         }
     }
+
+    /* Check the directory containing the currently running binary */
+    memset(full_path, 0, PATH_MAX_LEN);
+    max_len = PATH_MAX_LEN - 1;
+
+    if (get_binary_dir(full_path, max_len) != 0) {
+        max_len -= strlen(full_path);
+
+        if (max_len >= strlen(filename)) {
+            strncat(full_path, filename, max_len);
+            if (access(full_path, ACCESS_FILE_EXISTS) != -1) {
+                return full_path;
+            }
+        } else {
+            log_debug("Skipping search for %s in %s. "
+                      "Path would be truncated.\n",
+                      filename, full_path);
+        }
+    }
+
 
     /* Search our list of pre-determined paths */
     for (i = 0; i < ARRAY_SIZE(search_paths); i++) {
