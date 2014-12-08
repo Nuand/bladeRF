@@ -323,18 +323,32 @@ char *file_find(const char *filename)
 
         strncat(full_path, search_paths[i].path, max_len);
         max_len = PATH_MAX_LEN - strlen(full_path);
-        strncat(full_path, filename, max_len);
 
-        if (access(full_path, ACCESS_FILE_EXISTS) != -1) {
-            return full_path;
+        if (max_len >= strlen(filename)) {
+            strncat(full_path, filename, max_len);
+
+            if (access(full_path, ACCESS_FILE_EXISTS) != -1) {
+                return full_path;
+            }
+        } else {
+            log_debug("Skipping search for %s in %s. "
+                      "Path would be truncated.\n",
+                      filename, full_path);
         }
     }
 
     if (get_install_dir(full_path, PATH_MAX_LEN)) {
         max_len = PATH_MAX_LEN - strlen(full_path);
-        strncat(full_path, filename, max_len);
-        if (access(full_path, ACCESS_FILE_EXISTS) != -1) {
-            return full_path;
+
+        if (max_len >= strlen(filename)) {
+            strncat(full_path, filename, max_len);
+            if (access(full_path, ACCESS_FILE_EXISTS) != -1) {
+                return full_path;
+            }
+        } else {
+            log_debug("Skipping search for %s in %s. "
+                      "Path would be truncated.\n",
+                      filename, full_path);
         }
     }
 
