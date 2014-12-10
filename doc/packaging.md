@@ -161,8 +161,8 @@ run CMake with ```-DTAGGED_RELEASE=Yes``` when building from the top-level, or
 ```-DVERSION_INFO_EXTRA=""``` otherwise.
 
 If you would like to append package information to version numbers, you may use
-the aforementioned ```VERSION_INFO_EXTRA``` option. For example:
-    ```-DVERSION_INFO_EXTRA="-buildbot-2014.11.30"```
+the aforementioned ```VERSION_INFO_OVERRIDE``` option. For example:
+    ```-DVERSION_INFO_OVERRIDE="buildbot-2014.11.30"```
 
 If you forget to clear the "extra" version info field, you will wind up with
 a Git changeset appended to components' version strings, or ```-git-unknown```
