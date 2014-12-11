@@ -242,7 +242,6 @@ static int run(struct bladerf *dev, struct app_params *p,
             timestamp = meta.timestamp;
         }
 
-        assert((timestamp - tscount_diff) <= UINT32_MAX);
         status = check_data(samples, &meta, timestamp,
                             (uint32_t) (timestamp - tscount_diff),
                             gap, &suppress_overrun_msg);
