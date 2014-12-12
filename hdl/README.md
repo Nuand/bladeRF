@@ -32,14 +32,12 @@ Since the FPGA is connected and soldered down to the board, it makes sense to ha
 
 We realize people will want to change the internal guts of the FPGA for their own programmable logic reasons.  Because of this, we decided to differentiate the implementations using a feature of the Quartus II project file called Revisions.  Revisions can take a base design (top level entity, a part and pins) and duplicate that project, recording any source level changes you wish to make to the project.  This way, a user must only create their own architecture that is the new implementation of the `bladerf` top level.
 
-This technique can be seen with the different architectures:
+This technique can be seen with the currently supported architectures:
 
-| Architecture  | Description                                                                           |
-| :------------ | :------------------------------------------------------------------------------------ |
-| fsk_bridge    | Implements a serial device which is connected via FSK to another bladeRF              |
-| headless      | Does not require a USB connection to a host and is fully autonomous                   |
-| hosted        | Listens for commands from the USB connection to perform operations or send/receive RF |
-| qpsk_tx       | A debug implementation which just transmits 3.84Msps QPSK which has been RRC filtered |
+| Architecture  | Description                                                                                                       |
+| :------------ | :---------------------------------------------------------------------------------------------------------------- |
+| hosted        | Listens for commands from the USB connection to perform operations or send/receive RF.                            |
+| atsc_tx       | ATSC transmittter - Reads 4-bit ATSC symbols via USB and performs pilot insertion, filtering, and baseband shift. |
 
 ## Building the Project ##
 The Quartus II build tools supports TCL as a scripting language which we utilize to not only create the project file, but build the system without requiring the need of the GUI. Currently, the `build_bladerf.sh` performs some environment checks, builds the NIOS BSP and software, and then kicks off TCL scripts to build the FPGA image.
