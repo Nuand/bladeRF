@@ -109,6 +109,25 @@ int backend_probe(backend_probe_target probe_target,
     return status;
 }
 
+int backend_load_fw_from_bootloader(bladerf_backend backend,
+                                    uint8_t bus, uint8_t addr,
+                                    struct fx3_firmware *fw)
+{
+    int status = BLADERF_ERR_NODEV;
+    size_t i;
+    const size_t n_backends = ARRAY_SIZE(backend_list);
+
+    for (i = 0; i < n_backends; i++) {
+        if (backend_list[i]->matches(backend)) {
+            status = backend_list[i]->load_fw_from_bootloader(backend, bus,
+                                                              addr, fw);
+            break;
+        }
+    }
+
+    return status;
+}
+
 const char * backend2str(bladerf_backend backend)
 {
     switch (backend) {

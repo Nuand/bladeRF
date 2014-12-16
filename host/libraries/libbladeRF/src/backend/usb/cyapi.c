@@ -126,7 +126,33 @@ out:
     return status;
 }
 
-static int cyapi_probe(struct bladerf_devinfo_list *info_list)
+static bool device_matches_target(CCyUSBDevice *dev,
+                                  backend_probe_target target)
+{
+    bool matches = false;
+
+    switch (target) {
+        case BACKEND_PROBE_BLADERF:
+            matches = (dev->VendorID == USB_NUAND_VENDOR_ID) &&
+                      (dev->ProductID == USB_NUAND_BLADERF_PRODUCT_ID);
+            break;
+
+        case BACKEND_PROBE_FX3_BOOTLOADER:
+            matches = (dev->VendorID == USB_CYPRESS_VENDOR_ID) &&
+                      (dev->ProductID == USB_FX3_PRODUCT_ID);
+
+            if (!matches) {
+                matches = (dev->VendorID == USB_NUAND_VENDOR_ID) &&
+                          (dev->ProductID == USB_NUAND_BLADERF_BOOT_PRODUCT_ID);
+            }
+            break;
+    }
+
+    return matches;
+}
+
+static int cyapi_probe(backend_probe_target probe_target,
+                       struct bladerf_devinfo_list *info_list)
 {
     int status = 0;
     CCyUSBDevice *dev = new CCyUSBDevice(NULL, driver_guid);
@@ -140,20 +166,24 @@ static int cyapi_probe(struct bladerf_devinfo_list *info_list)
 
         status = open_device(dev, i, &mutex);
         if (status == 0) {
-            info.instance = i;
-            memset(info.serial, 0, sizeof(info.serial));
-            wcstombs(info.serial, dev->SerialNumber, sizeof(info.serial) - 1);
-            info.usb_addr = dev->USBAddress;
-            info.usb_bus = 0; /* CyAPI doesn't provide a means to fetch this */
-            info.backend = BLADERF_BACKEND_CYPRESS;
-            status = bladerf_devinfo_list_add(info_list, &info);
-            if (status) {
-                log_error("Could not add device to list: %s\n",
-                          bladerf_strerror(status));
-            } else {
-                log_verbose("Added instance %d to device list\n",
-                    info.instance);
+            if (device_matches_target(dev, probe_target)) {
+                const size_t max_serial = sizeof(info.serial) - 1;
+                info.instance = i;
+                memset(info.serial, 0, sizeof(info.serial));
+                wcstombs(info.serial, dev->SerialNumber, max_serial);
+                info.usb_addr = dev->USBAddress;
+                info.usb_bus = 0; /* CyAPI doesn't provide this */
+                info.backend = BLADERF_BACKEND_CYPRESS;
+                status = bladerf_devinfo_list_add(info_list, &info);
+                if (status) {
+                    log_error("Could not add device to list: %s\n",
+                              bladerf_strerror(status));
+                } else {
+                    log_verbose("Added instance %d to device list\n",
+                        info.instance);
+                }
             }
+
             dev->Close();
             CloseHandle(mutex);
         }
@@ -163,9 +193,10 @@ static int cyapi_probe(struct bladerf_devinfo_list *info_list)
     return status;
 
 }
-static int cyapi_open(void **driver,
-                     struct bladerf_devinfo *info_in,
-                     struct bladerf_devinfo *info_out)
+
+static int open_via_info(void **driver, backend_probe_target probe_target,
+                         struct bladerf_devinfo *info_in,
+                         struct bladerf_devinfo *info_out)
 {
     int status;
     int instance = -1;
@@ -185,9 +216,11 @@ static int cyapi_open(void **driver,
     }
 
     bladerf_devinfo_list_init(&info_list);
-    status = cyapi_probe(&info_list);
+    status = cyapi_probe(probe_target, &info_list);
 
     for (unsigned int i = 0; i < info_list.num_elt && status == 0; i++) {
+
+
         if (bladerf_devinfo_matches(&info_list.elt[i], info_in)) {
             instance = info_list.elt[i].instance;
 
@@ -195,7 +228,11 @@ static int cyapi_open(void **driver,
             if (status == 0) {
                 cyapi_data->dev = dev;
                 *driver = cyapi_data;
-                memcpy(info_out, &info_list.elt[instance], sizeof(info_out[0]));
+                if (info_out != NULL) {
+                    memcpy(info_out,
+                           &info_list.elt[instance],
+                           sizeof(info_out[0]));
+                }
                 status = 0;
                 break;
             }
@@ -207,12 +244,20 @@ static int cyapi_open(void **driver,
     }
 
     if (status != 0) {
-       delete dev;
-       CloseHandle(cyapi_data->mutex);
+        delete dev;
+        CloseHandle(cyapi_data->mutex);
     }
 
     free(info_list.elt);
     return status;
+}
+
+
+static int cyapi_open(void **driver,
+                     struct bladerf_devinfo *info_in,
+                     struct bladerf_devinfo *info_out)
+{
+    return open_via_info(driver, BACKEND_PROBE_BLADERF, info_in, info_out);
 }
 
 static int cyapi_change_setting(void *driver, uint8_t setting)
@@ -722,6 +767,18 @@ int cyapi_submit_stream_buffer(void *driver, struct bladerf_stream *stream,
     }
 }
 
+int cyapi_open_bootloader(void **driver, uint8_t bus, uint8_t addr)
+{
+    struct bladerf_devinfo info;
+
+    bladerf_init_devinfo(&info);
+    info.backend = BLADERF_BACKEND_CYPRESS;
+    info.usb_bus = bus;
+    info.usb_addr = addr;
+
+    return open_via_info(driver, BACKEND_PROBE_FX3_BOOTLOADER, &info, NULL);
+}
+
 extern "C" {
     static const struct usb_fns cypress_fns = {
         FIELD_INIT(.probe, cyapi_probe),
@@ -735,7 +792,9 @@ extern "C" {
         FIELD_INIT(.init_stream, cyapi_init_stream),
         FIELD_INIT(.stream, cyapi_stream),
         FIELD_INIT(.submit_stream_buffer, cyapi_submit_stream_buffer),
-        FIELD_INIT(.deinit_stream, cyapi_deinit_stream)
+        FIELD_INIT(.deinit_stream, cyapi_deinit_stream),
+        FIELD_INIT(.open_bootloader, cyapi_open_bootloader),
+        FIELD_INIT(.close_bootloader, cyapi_close),
     };
 
     struct usb_driver usb_driver_cypress = {

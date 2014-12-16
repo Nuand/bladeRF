@@ -23,6 +23,7 @@
 #define BACKEND_USB_H_
 
 #include "bladerf_priv.h"
+#include "fx3_fw.h"
 
 #ifndef SAMPLE_EP_IN
 #   define SAMPLE_EP_IN 0x81
@@ -125,6 +126,9 @@ struct usb_fns {
                                 void *buffer, unsigned int timeout_ms);
 
     int (*deinit_stream)(void *driver, struct bladerf_stream *stream);
+
+    int (*open_bootloader)(void **driver, uint8_t bus, uint8_t addr);
+    void (*close_bootloader)(void *driver);
 };
 
 struct usb_driver {

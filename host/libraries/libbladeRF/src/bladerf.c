@@ -45,19 +45,17 @@
 #include "fpga.h"
 #include "flash_fields.h"
 #include "backend/usb/usb.h"
+#include "fx3_fw.h"
 
-/*------------------------------------------------------------------------------
- * Device discovery & initialization/deinitialization
- *----------------------------------------------------------------------------*/
-
-int bladerf_get_device_list(struct bladerf_devinfo **devices)
+static int probe(backend_probe_target target_device,
+                 struct bladerf_devinfo **devices)
 {
     int ret;
     size_t num_devices;
     struct bladerf_devinfo *devices_local;
     int status;
 
-    status = backend_probe(BACKEND_PROBE_BLADERF, &devices_local, &num_devices);
+    status = backend_probe(target_device, &devices_local, &num_devices);
 
     if (status < 0) {
         ret = status;
@@ -68,6 +66,15 @@ int bladerf_get_device_list(struct bladerf_devinfo **devices)
     }
 
     return ret;
+}
+
+/*------------------------------------------------------------------------------
+ * Device discovery & initialization/deinitialization
+ *----------------------------------------------------------------------------*/
+
+int bladerf_get_device_list(struct bladerf_devinfo **devices)
+{
+    return probe(BACKEND_PROBE_BLADERF, devices);
 }
 
 void bladerf_free_device_list(struct bladerf_devinfo *devices)
@@ -1484,5 +1491,50 @@ int bladerf_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
     status = lms_calibrate_dc(dev, module);
 
     MUTEX_UNLOCK(&dev->ctrl_lock);
+    return status;
+}
+
+/*------------------------------------------------------------------------------
+ * Bootloader recovery
+ *----------------------------------------------------------------------------*/
+
+int bladerf_get_bootloader_list(struct bladerf_devinfo **devices)
+{
+    return probe(BACKEND_PROBE_FX3_BOOTLOADER, devices);
+}
+
+int bladerf_load_fw_from_bootloader(const char *device_identifier,
+                                    bladerf_backend backend,
+                                    uint8_t bus, uint8_t addr,
+                                    const char *file)
+{
+    int status;
+    struct fx3_firmware *fw = NULL;
+    struct bladerf_devinfo devinfo;
+
+    if (device_identifier == NULL) {
+        bladerf_init_devinfo(&devinfo);
+        devinfo.backend = backend;
+        devinfo.usb_bus = bus;
+        devinfo.usb_addr = addr;
+    } else {
+        status = str2devinfo(device_identifier, &devinfo);
+        if (status != 0) {
+            return status;
+        }
+    }
+
+    status = fx3_fw_read(file, &fw);
+    if (status != 0) {
+        return status;
+    }
+
+    assert(fw != NULL);
+
+    status = backend_load_fw_from_bootloader(devinfo.backend, devinfo.usb_bus,
+                                             devinfo.usb_addr, fw);
+
+
+    fx3_fw_deinit(fw);
     return status;
 }

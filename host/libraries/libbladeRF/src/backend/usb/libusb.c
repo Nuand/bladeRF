@@ -490,6 +490,114 @@ static void lusb_close(void *driver)
     free(lusb);
 }
 
+static void lusb_close_bootloader(void *driver)
+{
+    int status;
+    struct bladerf_lusb *lusb = (struct bladerf_lusb *) driver;
+
+    if (lusb != NULL) {
+        if (lusb->handle != NULL) {
+            status = libusb_release_interface(lusb->handle, 0);
+            if (status < 0) {
+                log_debug("Failed to release interface: %s\n",
+                           libusb_error_name(status));
+            }
+
+            libusb_close(lusb->handle);
+        }
+
+        if (lusb->context != NULL) {
+            libusb_exit(lusb->context);
+        }
+
+        free(lusb);
+    }
+}
+
+static inline bool bus_matches(uint8_t bus, struct libusb_device *d)
+{
+    return (bus == DEVINFO_BUS_ANY) ||
+           (bus == libusb_get_bus_number(d));
+}
+
+static inline bool addr_matches(uint8_t addr, struct libusb_device *d)
+{
+    return (addr == DEVINFO_BUS_ANY) ||
+           (addr == libusb_get_device_address(d));
+}
+
+static int lusb_open_bootloader(void **driver, uint8_t bus, uint8_t addr)
+{
+    int status;
+    struct libusb_device **dev_list = NULL;
+    ssize_t dev_list_size, i;
+    struct bladerf_lusb *lusb;
+
+    *driver = NULL;
+
+    lusb = calloc(1, sizeof(lusb[0]));
+    if (lusb == NULL) {
+        return BLADERF_ERR_MEM;
+    }
+
+    status = libusb_init(&lusb->context);
+    if (status != 0) {
+        log_debug("Failed to initialize libusb context: %s\n",
+                  libusb_error_name(status));
+        goto error;
+    }
+
+    dev_list_size = libusb_get_device_list(lusb->context, &dev_list);
+    if (dev_list_size < 0) {
+        log_debug("Failed to get device list: %s\n", libusb_error_name(status));
+        status = (int) dev_list_size;
+        goto error;
+    }
+
+    for (i = 0; i < dev_list_size; i++) {
+        if (device_is_fx3_bootloader(dev_list[i]) &&
+            bus_matches(bus, dev_list[i]) &&
+            addr_matches(addr, dev_list[i])) {
+
+
+            status = libusb_open(dev_list[i], &lusb->handle);
+            if (status != 0) {
+                log_debug("Failed to open device: %s\n",
+                          libusb_error_name(status));
+                goto error;
+            } else {
+                status = libusb_claim_interface(lusb->handle, 0);
+                if (status < 0) {
+                    log_debug("Failed to claim interface: %s\n",
+                              libusb_error_name(status));
+
+                    goto error;
+                } else {
+                    log_verbose("Opened bootloader at %u:%u\n",
+                                libusb_get_bus_number(dev_list[i]),
+                                libusb_get_device_address(dev_list[i]));
+                    *driver = lusb;
+                }
+                break;
+            }
+        }
+    }
+
+error:
+    if (dev_list != NULL) {
+        libusb_free_device_list(dev_list, 1);
+    }
+
+    if (status != 0) {
+        status = error_conv(status);
+        lusb_close_bootloader(lusb);
+    } else if (*driver == NULL) {
+        status = BLADERF_ERR_NODEV;
+    }
+
+    return status;
+}
+
 static int lusb_get_speed(void *driver,
                           bladerf_dev_speed *device_speed)
 {
@@ -1114,7 +1222,9 @@ static const struct usb_fns libusb_fns = {
     FIELD_INIT(.init_stream, lusb_init_stream),
     FIELD_INIT(.stream, lusb_stream),
     FIELD_INIT(.submit_stream_buffer, lusb_submit_stream_buffer),
-    FIELD_INIT(.deinit_stream, lusb_deinit_stream)
+    FIELD_INIT(.deinit_stream, lusb_deinit_stream),
+    FIELD_INIT(.open_bootloader, lusb_open_bootloader),
+    FIELD_INIT(.close_bootloader, lusb_close_bootloader),
 };
 
 const struct usb_driver usb_driver_libusb = {

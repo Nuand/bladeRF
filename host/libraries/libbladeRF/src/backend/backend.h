@@ -26,6 +26,7 @@
 #define BACKEND_H__
 
 #include "bladerf_priv.h"
+#include "fx3_fw.h"
 
 #define BACKEND_STR_ANY    "*"
 #define BACKEND_STR_LIBUSB "libusb"
@@ -132,6 +133,11 @@ struct backend_fns {
     int (*submit_stream_buffer)(struct bladerf_stream *stream, void *buffer,
                                 unsigned int timeout_ms);
     void (*deinit_stream)(struct bladerf_stream *stream);
+
+    /* Load firmware from FX3 bootloader */
+    int (*load_fw_from_bootloader)(bladerf_backend backend,
+                                   uint8_t bus, uint8_t addr,
+                                   struct fx3_firmware *fw);
 };
 
 /**
@@ -157,6 +163,21 @@ int backend_open(struct bladerf *device, struct bladerf_devinfo *info);
  */
 int backend_probe(backend_probe_target probe_target,
                   struct bladerf_devinfo **devinfo_items, size_t *num_items);
+
+/**
+ * Search for bootloader via provided specification, download firmware,
+ * and boot it.
+ *
+ * @param   backend     Backend to use for this operation
+ * @param   bus         USB bus the device is connected to
+ * @param   addr        USB addr associated with the device
+ *
+ * @return 0 on success, BLADERF_ERR_* on failure
+ */
+int backend_load_fw_from_bootloader(bladerf_backend backend,
+                                    uint8_t bus, uint8_t addr,
+                                    struct fx3_firmware *fw);
+
 
 /**
  * Convert a backend enumeration value to a string

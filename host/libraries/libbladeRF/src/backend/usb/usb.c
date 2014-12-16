@@ -23,6 +23,7 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "usb.h"
 #include "rel_assert.h"
 #include "bladerf_priv.h"
 #include "backend/backend.h"
@@ -32,6 +33,7 @@
 #include "bladeRF.h"    /* Firmware interface */
 #include "log.h"
 #include "version_compat.h"
+#include "minmax.h"
 
 typedef enum {
     CORR_INVALID,
@@ -1400,6 +1402,170 @@ static void usb_deinit_stream(struct bladerf_stream *stream)
     usb->fn->deinit_stream(driver, stream);
 }
 
+/*
+ * Information about the boot image format and boot over USB caan be found in
+ * Cypress AN76405: EZ-USB (R) FX3 (TM) Boot Options:
+ *  http://www.cypress.com/?docID=49862
+ *
+ *  There's a request (bRequset = 0xc0) for the bootloader revision.
+ *  However, there doesn't appear to be any documented reason to check this and
+ *  behave differently depending upon the returned value.
+ */
+
+/* Command fields for FX3 firmware upload vendor requests */
+#define FX3_BOOTLOADER_LOAD_BREQUEST     0xa0
+#define FX3_BOOTLOADER_ADDR_WVALUE(addr) (HOST_TO_LE16(addr & 0xffff))
+#define FX3_BOOTLOADER_ADDR_WINDEX(addr) (HOST_TO_LE16(((addr >> 16) & 0xffff)))
+#define FX3_BOOTLOADER_MAX_LOAD_LEN      4096
+
+static int write_and_verify_fw_chunk(struct bladerf_usb *usb, uint32_t addr,
+                                     uint8_t *data, uint32_t len,
+                                     uint8_t *readback_buf) {
+
+    int status;
+    log_verbose("Writing %u bytes to bootloader @ 0x%08x\n", len, addr);
+    status = usb->fn->control_transfer(usb->driver,
+                                       USB_TARGET_DEVICE,
+                                       USB_REQUEST_VENDOR,
+                                       USB_DIR_HOST_TO_DEVICE,
+                                       FX3_BOOTLOADER_LOAD_BREQUEST,
+                                       FX3_BOOTLOADER_ADDR_WVALUE(addr),
+                                       FX3_BOOTLOADER_ADDR_WINDEX(addr),
+                                       data,
+                                       len,
+                                       CTRL_TIMEOUT_MS);
+
+    if (status != 0) {
+        log_debug("Failed to write FW chunk (%d)\n", status);
+        return status;
+    }
+
+    log_verbose("Reading back %u bytes from bootloader @ 0x%08x\n", len, addr);
+    status = usb->fn->control_transfer(usb->driver,
+                                       USB_TARGET_DEVICE,
+                                       USB_REQUEST_VENDOR,
+                                       USB_DIR_DEVICE_TO_HOST,
+                                       FX3_BOOTLOADER_LOAD_BREQUEST,
+                                       FX3_BOOTLOADER_ADDR_WVALUE(addr),
+                                       FX3_BOOTLOADER_ADDR_WINDEX(addr),
+                                       readback_buf,
+                                       len,
+                                       CTRL_TIMEOUT_MS);
+
+    if (status != 0) {
+        log_debug("Failed to read back FW chunk (%d)\n", status);
+        return status;
+    }
+
+    if (memcmp(data, readback_buf, len) != 0) {
+        log_debug("Readback did match written data.\n");
+        status = BLADERF_ERR_UNEXPECTED;
+    }
+
+    return status;
+}
+
+static int execute_fw_from_bootloader(struct bladerf_usb *usb, uint32_t addr)
+{
+    int status;
+
+    status = usb->fn->control_transfer(usb->driver,
+                                       USB_TARGET_DEVICE,
+                                       USB_REQUEST_VENDOR,
+                                       USB_DIR_HOST_TO_DEVICE,
+                                       FX3_BOOTLOADER_LOAD_BREQUEST,
+                                       FX3_BOOTLOADER_ADDR_WVALUE(addr),
+                                       FX3_BOOTLOADER_ADDR_WINDEX(addr),
+                                       NULL,
+                                       0,
+                                       CTRL_TIMEOUT_MS);
+
+    if (status != 0 && status != BLADERF_ERR_IO) {
+        log_debug("Failed to exec firmware: %s\n:",
+                  bladerf_strerror(status));
+
+    } else if (status == BLADERF_ERR_IO) {
+        /* The device might drop out from underneath us as it starts executing
+         * the new firmware */
+        log_verbose("Device returned IO error due to FW boot.\n");
+        status = 0;
+    } else {
+        log_verbose("Booting new FW.\n");
+    }
+
+    return status;
+}
+
+static int write_fw_to_bootloader(void *driver, struct fx3_firmware *fw)
+{
+    int status = 0;
+    uint32_t to_write;
+    uint32_t data_len;
+    uint32_t addr;
+    uint8_t *data;
+    bool got_section;
+
+    uint8_t *readback = malloc(FX3_BOOTLOADER_MAX_LOAD_LEN);
+    if (readback == NULL) {
+        return BLADERF_ERR_MEM;
+    }
+
+    do {
+        got_section = fx3_fw_next_section(fw, &addr, &data, &data_len);
+        if (got_section) {
+            /* data_len should never be zero, as fw->num_sections should NOT
+             * include the terminating section in its count */
+            assert(data_len != 0);
+
+            do {
+                to_write = u32_min(data_len, FX3_BOOTLOADER_MAX_LOAD_LEN);
+
+                status = write_and_verify_fw_chunk(driver,
+                                                   addr, data, to_write,
+                                                   readback);
+
+                data_len -= to_write;
+                addr += to_write;
+                data += to_write;
+            } while (data_len != 0 && status == 0);
+        }
+    } while (got_section && status == 0);
+
+    if (status == 0) {
+        status = execute_fw_from_bootloader(driver, fx3_fw_entry_point(fw));
+    }
+
+    free(readback);
+    return status;
+}
+
+static int usb_load_fw_from_bootloader(bladerf_backend backend,
+                                       uint8_t bus, uint8_t addr,
+                                       struct fx3_firmware *fw)
+{
+    int status;
+    size_t i;
+    struct bladerf_usb usb;
+
+    for (i = 0; i < ARRAY_SIZE(usb_driver_list); i++) {
+
+        if ((backend == BLADERF_BACKEND_ANY) ||
+            (usb_driver_list[i]->id == backend)) {
+
+            usb.fn = usb_driver_list[i]->fn;
+            status = usb.fn->open_bootloader(&usb.driver, bus, addr);
+            if (status == 0) {
+                status = write_fw_to_bootloader(&usb, fw);
+                usb.fn->close_bootloader(usb.driver);
+                break;
+            }
+        }
+    }
+
+    return status;
+}
+
+
 const struct backend_fns backend_fns_usb = {
     FIELD_INIT(.matches, usb_matches),
 
@@ -1453,5 +1619,7 @@ const struct backend_fns backend_fns_usb = {
     FIELD_INIT(.init_stream, usb_init_stream),
     FIELD_INIT(.stream, usb_stream),
     FIELD_INIT(.submit_stream_buffer, usb_submit_stream_buffer),
-    FIELD_INIT(.deinit_stream, usb_deinit_stream)
+    FIELD_INIT(.deinit_stream, usb_deinit_stream),
+
+    FIELD_INIT(.load_fw_from_bootloader, usb_load_fw_from_bootloader),
 };
