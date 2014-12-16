@@ -244,6 +244,7 @@ set(LIBBLADERF_SOURCE
         src/config.c
         src/dc_cal_table.c
         src/file_ops.c
+        src/fx3_fw.c
         src/fpga.c
         src/gain.c
         src/lms.c
