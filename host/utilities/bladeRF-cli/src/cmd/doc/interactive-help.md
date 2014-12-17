@@ -436,9 +436,17 @@ The print command takes a parameter to print.  The parameter is one of:
 probe
 -----
 
-Usage: `probe`
+Usage: `probe [strict]`
 
 Search for attached bladeRF device and print a list of results.
+
+Without specifying `strict`, the lack of any available devices is not considered
+an error.
+
+When provided the optional `strict` argument, this command will treat the
+situation where no devices are found as an error, resulting in scripts or
+lists of commands provided via the `-e` command line argument to terminate
+immediately.
 
 
 quit

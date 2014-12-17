@@ -256,6 +256,8 @@ void usage(const char *argv0)
     printf("                                   autoloading. Use -L X or --flash-fpga X to\n");
     printf("                                   disable FPGA autoloading.\n");
     printf("  -p, --probe                      Probe for devices, print results, then exit.\n");
+    printf("                                    A non-zero return status will be returned if no\n");
+    printf("                                    devices are found.\n");
     printf("  -e, --exec <command>             Execute the specified interactive mode command.\n");
     printf("                                   Multiple -e flags may be specified. The commands\n");
     printf("                                   will be executed in the provided order.\n");
@@ -434,7 +436,7 @@ int main(int argc, char *argv[])
         printf("%s\n", version.describe);
         exit_immediately = true;
     } else if (rc.probe) {
-        status = cmd_handle(state, "probe");
+        status = cmd_handle(state, "probe strict");
         exit_immediately = true;
     }
 

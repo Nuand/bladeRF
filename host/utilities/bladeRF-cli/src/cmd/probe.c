@@ -17,6 +17,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
+#include <string.h>
 #include "rel_assert.h"
 #include "cmd.h"
 
@@ -37,15 +38,24 @@ static inline const char *backend2str(bladerf_backend b)
 /* Todo move to cmd_probe.c */
 int cmd_probe(struct cli_state *s, int argc, char *argv[])
 {
+    bool error_on_no_dev = false;
     struct bladerf_devinfo *devices = NULL;
     int n_devices, i;
 
     n_devices = bladerf_get_device_list(&devices);
 
+    if (argc > 1 && !strcasecmp(argv[1], "strict")) {
+        error_on_no_dev = true;
+    }
+
     if (n_devices < 0) {
         if (n_devices == BLADERF_ERR_NODEV) {
             cli_err(s, argv[0], "No devices found.\n");
-            return 0;
+            if (error_on_no_dev) {
+                return CLI_RET_CMD_HANDLED;
+            } else {
+                return 0;
+            }
         } else {
             cli_err(s, argv[0], "Failed to probe for devices: %s\n",
                     bladerf_strerror(n_devices));

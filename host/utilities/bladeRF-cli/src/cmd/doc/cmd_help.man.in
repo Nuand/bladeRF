@@ -614,9 +614,17 @@ T}
 .TE
 .SS probe
 .PP
-Usage: \f[C]probe\f[]
+Usage: \f[C]probe\ [strict]\f[]
 .PP
 Search for attached bladeRF device and print a list of results.
+.PP
+Without specifying \f[C]strict\f[], the lack of any available devices is
+not considered an error.
+.PP
+When provided the optional \f[C]strict\f[] argument, this command will
+treat the situation where no devices are found as an error, resulting in
+scripts or lists of commands provided via the \f[C]\-e\f[] command line
+argument to terminate immediately.
 .SS quit
 .PP
 Usage: \f[C]quit\f[]
