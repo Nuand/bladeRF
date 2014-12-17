@@ -334,13 +334,14 @@ static bool usb_matches(bladerf_backend backend)
            backend == BLADERF_BACKEND_CYPRESS;
 }
 
-static int usb_probe(struct bladerf_devinfo_list *info_list)
+static int usb_probe(backend_probe_target probe_target,
+                     struct bladerf_devinfo_list *info_list)
 {
     int status;
     size_t i;
 
     for (i = status = 0; i < ARRAY_SIZE(usb_driver_list); i++) {
-        status = usb_driver_list[i]->fn->probe(info_list);
+        status = usb_driver_list[i]->fn->probe(probe_target, info_list);
     }
 
     return status;

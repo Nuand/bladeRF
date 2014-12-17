@@ -33,6 +33,14 @@
 #define BACKEND_STR_CYPRESS "cypress"
 
 /**
+ * Specifies what to probe for
+ */
+typedef enum {
+    BACKEND_PROBE_BLADERF,
+    BACKEND_PROBE_FX3_BOOTLOADER,
+} backend_probe_target;
+
+/**
  * Backend-specific function table
  */
 struct backend_fns {
@@ -43,7 +51,8 @@ struct backend_fns {
 
     /* Backends probe for devices and append entries to this list using
      * bladerf_devinfo_list_append() */
-    int (*probe)(struct bladerf_devinfo_list *info_list);
+    int (*probe)(backend_probe_target probe_target,
+                 struct bladerf_devinfo_list *info_list);
 
     /* Opening device based upon specified device info */
     int (*open)(struct bladerf *device,  struct bladerf_devinfo *info);
@@ -140,12 +149,14 @@ int backend_open(struct bladerf *device, struct bladerf_devinfo *info);
  * Probe for devices, filling in the provided devinfo list and size of
  * the list that gets populated
  *
- * @param[out]  devinfo_items
- * @param[out]  num_items
+ * @param[in]   probe_target    Device type to probe for
+ * @param[out]  devinfo_items   Device info for identified devices
+ * @param[out]  num_items       Number of items in the devinfo list.
  *
  * @return 0 on success, BLADERF_ERR_* on failure
  */
-int backend_probe(struct bladerf_devinfo **devinfo_items, size_t *num_items);
+int backend_probe(backend_probe_target probe_target,
+                  struct bladerf_devinfo **devinfo_items, size_t *num_items);
 
 /**
  * Convert a backend enumeration value to a string

@@ -83,7 +83,8 @@ typedef enum {
  * value on failure
  */
 struct usb_fns {
-    int (*probe)(struct bladerf_devinfo_list *info_list);
+    int (*probe)(backend_probe_target probe_target,
+                 struct bladerf_devinfo_list *info_list);
 
     /* Populates the `driver` pointer with a handle for the specific USB driver.
      * `info_in` describes the device to open, and may contain wildcards.

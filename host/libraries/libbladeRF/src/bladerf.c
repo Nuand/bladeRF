@@ -57,7 +57,7 @@ int bladerf_get_device_list(struct bladerf_devinfo **devices)
     struct bladerf_devinfo *devices_local;
     int status;
 
-    status = backend_probe(&devices_local, &num_devices);
+    status = backend_probe(BACKEND_PROBE_BLADERF, &devices_local, &num_devices);
 
     if (status < 0) {
         ret = status;

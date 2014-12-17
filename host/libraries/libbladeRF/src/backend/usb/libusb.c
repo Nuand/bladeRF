@@ -225,7 +225,35 @@ static bool device_is_bladerf(libusb_device *dev)
     return ret;
 }
 
-static int lusb_probe(struct bladerf_devinfo_list *info_list)
+static bool device_is_probe_target(backend_probe_target probe_target,
+                                   libusb_device *dev)
+{
+    bool is_probe_target = false;
+
+    switch (probe_target) {
+        case BACKEND_PROBE_BLADERF:
+            is_probe_target = device_is_bladerf(dev);
+            if (is_probe_target) {
+                log_verbose("Found a bladeRF\n");
+            }
+            break;
+
+        case BACKEND_PROBE_FX3_BOOTLOADER:
+            is_probe_target = device_is_fx3_bootloader(dev);
+            if (is_probe_target) {
+                log_verbose("Found an FX3 bootloader.\n");
+            }
+            break;
+
+        default:
+            assert(!"Invalid probe target");
+    }
+
+    return is_probe_target;
+}
+
+static int lusb_probe(backend_probe_target probe_target,
+                      struct bladerf_devinfo_list *info_list)
 {
     int status, i, n;
     ssize_t count;
@@ -245,8 +273,7 @@ static int lusb_probe(struct bladerf_devinfo_list *info_list)
     count = libusb_get_device_list(context, &list);
     /* Iterate through all the USB devices */
     for (i = 0, n = 0; i < count && status == 0; i++) {
-        if (device_is_bladerf(list[i])) {
-            log_verbose("Found bladeRF (based upon VID/PID)\n");
+        if (device_is_probe_target(probe_target, list[i])) {
 
             /* Open the USB device and get some information */
             status = get_devinfo(list[i], &info);
@@ -255,7 +282,7 @@ static int lusb_probe(struct bladerf_devinfo_list *info_list)
                  * driver (e.g., CyUSB3) is associated with it. Therefore,
                  * just log to the debug level and carry on. */
                 status = 0;
-                log_debug("Could not open bladeRF device: %s\n",
+                log_debug("Could not open device: %s\n",
                           libusb_error_name(status) );
             } else {
                 info.instance = n++;
@@ -268,20 +295,6 @@ static int lusb_probe(struct bladerf_devinfo_list *info_list)
                                 info.instance);
                 }
             }
-        }
-
-        if (device_is_fx3_bootloader(list[i])) {
-            status = get_devinfo(list[i], &info);
-            if (status) {
-                log_error("Could not open bladeRF device: %s\n",
-                          libusb_error_name(status) );
-                continue;
-            }
-
-            log_info("Found FX3 bootloader device on bus=%d addr=%d. This may "
-                     "be a bladeRF.\nUse the bladeRF-cli command \"recover"
-                     " %d %d <FX3 firmware>\" to boot the bladeRF firmware.\n",
-                     info.usb_bus, info.usb_addr, info.usb_bus, info.usb_addr);
         }
     }
 

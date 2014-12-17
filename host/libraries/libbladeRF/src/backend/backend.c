@@ -60,7 +60,8 @@ int backend_open(struct bladerf *device, struct bladerf_devinfo *info) {
     return status;
 }
 
-int backend_probe(struct bladerf_devinfo **devinfo_items, size_t *num_items)
+int backend_probe(backend_probe_target probe_target,
+                  struct bladerf_devinfo **devinfo_items, size_t *num_items)
 {
     int status;
     int first_backend_error = 0;
@@ -79,7 +80,7 @@ int backend_probe(struct bladerf_devinfo **devinfo_items, size_t *num_items)
     }
 
     for (i = 0; i < n_backends; i++) {
-        status = backend_list[i]->probe(&list);
+        status = backend_list[i]->probe(probe_target, &list);
 
         if (status < 0 && status != BLADERF_ERR_NODEV) {
             log_debug("Probe failed on backend %d: %s\n",
