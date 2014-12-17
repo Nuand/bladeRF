@@ -25,29 +25,27 @@
 #include "bladerf_priv.h"
 #include "backend.h"
 
-static bool dummy_matches(bladerf_backend backend)
-{
-    return false;
-}
-
-static int dummy_is_fpga_configured(struct bladerf *dev)
+/* We never "find" dummy devices */
+int dummy_probe(backend_probe_target probe_target,
+                struct bladerf_devinfo_list *info_list)
 {
     return 0;
 }
 
-int dummy_enable_module(struct bladerf *dev, bladerf_module m, bool enable)
-{
-    return 0;
-}
-
-static int dummy_open(struct bladerf **device, struct bladerf_devinfo *info)
+static int dummy_open(struct bladerf *device, struct bladerf_devinfo *info)
 {
     return BLADERF_ERR_NODEV;
 }
 
-static int dummy_close(struct bladerf *dev)
+
+static void dummy_close(struct bladerf *dev)
 {
-    return 0;
+    /* Nothing to do */
+}
+
+static bool dummy_matches(bladerf_backend backend)
+{
+    return false;
 }
 
 static int dummy_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size)
@@ -55,30 +53,25 @@ static int dummy_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_siz
     return 0;
 }
 
-static int dummy_erase_flash(struct bladerf *dev, uint32_t addr, uint32_t len)
-{
-    return 0;
-
-}
-
-static int dummy_get_cal(struct bladerf *dev, char *cal) {
-    return 0;
-}
-
-static int dummy_read_flash(struct bladerf *dev, uint32_t addr,
-                           uint8_t *buf, uint32_t len)
+static int dummy_is_fpga_configured(struct bladerf *dev)
 {
     return 0;
 }
 
-static int dummy_write_flash(struct bladerf *dev, uint32_t addr,
-                        uint8_t *buf, uint32_t len)
+static int dummy_erase_flash_blocks(struct bladerf *dev,
+                                    uint32_t eb, uint16_t count)
 {
     return 0;
 }
 
-static int dummy_flash_firmware(struct bladerf *dev,
-                               uint8_t *image, size_t image_size)
+static int dummy_read_flash_pages(struct bladerf *dev, uint8_t *buf,
+                                  uint32_t page, uint32_t count)
+{
+    return 0;
+}
+
+static int dummy_write_flash_pages(struct bladerf *dev, const uint8_t *buf,
+                                   uint32_t page, uint32_t count)
 {
     return 0;
 }
@@ -89,6 +82,11 @@ static int dummy_device_reset(struct bladerf *dev)
 }
 
 static int dummy_jump_to_bootloader(struct bladerf *dev)
+{
+    return 0;
+}
+
+static int dummy_get_cal(struct bladerf *dev, char *cal)
 {
     return 0;
 }
@@ -114,12 +112,50 @@ static int dummy_config_gpio_read(struct bladerf *dev, uint32_t *val)
     return 0;
 }
 
-static int dummy_si5338_write(struct bladerf *dev, uint8_t addr, uint8_t data)
+static int dummy_expansion_gpio_write(struct bladerf *dev, uint32_t val)
 {
     return 0;
 }
 
+static int dummy_expansion_gpio_read(struct bladerf *dev, uint32_t *val)
+{
+    return 0;
+}
+
+static int dummy_expansion_gpio_dir_write(struct bladerf *dev, uint32_t val)
+{
+    return 0;
+}
+
+static int dummy_expansion_gpio_dir_read(struct bladerf *dev, uint32_t *val)
+{
+    return 0;
+}
+
+int dummy_set_correction(struct bladerf *dev, bladerf_module module,
+                          bladerf_correction corr, int16_t value)
+{
+    return 0;
+}
+
+int dummy_get_correction(struct bladerf *dev, bladerf_module module,
+                          bladerf_correction corr, int16_t *value)
+{
+    return 0;
+}
+
+int dummy_get_timestamp(struct bladerf *dev, bladerf_module mod, uint64_t *val)
+{
+    return 0;
+}
+
+
 static int dummy_si5338_read(struct bladerf *dev, uint8_t addr, uint8_t *data)
+{
+    return 0;
+}
+
+static int dummy_si5338_write(struct bladerf *dev, uint8_t addr, uint8_t data)
 {
     return 0;
 }
@@ -139,19 +175,28 @@ static int dummy_dac_write(struct bladerf *dev, uint16_t value)
     return 0;
 }
 
-int dummy_set_correction(struct bladerf *dev, bladerf_module module,
-                          bladerf_correction corr, int16_t value)
+static int dummy_xb_spi(struct bladerf *dev, uint32_t value)
 {
     return 0;
 }
 
-int dummy_get_correction(struct bladerf *dev, bladerf_module module,
-                          bladerf_correction corr, int16_t *value)
+static int dummy_set_firmware_loopback(struct bladerf *dev, bool enable)
 {
     return 0;
 }
 
-static int dummy_stream_init(struct bladerf_stream *stream)
+static int dummy_get_firmware_loopback(struct bladerf *dev, bool *is_enabled)
+{
+    *is_enabled = false;
+    return 0;
+}
+
+int dummy_enable_module(struct bladerf *dev, bladerf_module m, bool enable)
+{
+    return 0;
+}
+
+static int dummy_init_stream(struct bladerf_stream *stream, size_t num_transfers)
 {
     return 0;
 }
@@ -173,8 +218,10 @@ void dummy_deinit_stream(struct bladerf_stream *stream)
     return;
 }
 
-/* We never "find" dummy devices */
-int dummy_probe(struct bladerf_devinfo_list *info_list)
+
+int dummy_load_fw_from_bootloader(bladerf_backend backend,
+                                  uint8_t bus, uint8_t addr,
+                                  struct fx3_firmware *fw)
 {
     return 0;
 }
@@ -190,11 +237,10 @@ const struct backend_fns backend_fns_dummy = {
     FIELD_INIT(.load_fpga, dummy_load_fpga),
     FIELD_INIT(.is_fpga_configured, dummy_is_fpga_configured),
 
-    FIELD_INIT(.flash_firmware, dummy_flash_firmware),
+    FIELD_INIT(.erase_flash_blocks, dummy_erase_flash_blocks),
+    FIELD_INIT(.read_flash_pages, dummy_read_flash_pages),
+    FIELD_INIT(.write_flash_pages, dummy_write_flash_pages),
 
-    FIELD_INIT(.erase_flash, dummy_erase_flash),
-    FIELD_INIT(.read_flash, dummy_read_flash),
-    FIELD_INIT(.write_flash, dummy_write_flash),
     FIELD_INIT(.device_reset, dummy_device_reset),
     FIELD_INIT(.jump_to_bootloader, dummy_jump_to_bootloader),
 
@@ -205,8 +251,15 @@ const struct backend_fns backend_fns_dummy = {
     FIELD_INIT(.config_gpio_write, dummy_config_gpio_write),
     FIELD_INIT(.config_gpio_read, dummy_config_gpio_read),
 
+    FIELD_INIT(.expansion_gpio_write, dummy_expansion_gpio_write),
+    FIELD_INIT(.expansion_gpio_read, dummy_expansion_gpio_read),
+    FIELD_INIT(.expansion_gpio_dir_write, dummy_expansion_gpio_dir_write),
+    FIELD_INIT(.expansion_gpio_dir_read, dummy_expansion_gpio_dir_read),
+
     FIELD_INIT(.set_correction, dummy_set_correction),
     FIELD_INIT(.get_correction, dummy_get_correction),
+
+    FIELD_INIT(.get_timestamp, dummy_get_timestamp),
 
     FIELD_INIT(.si5338_write, dummy_si5338_write),
     FIELD_INIT(.si5338_read, dummy_si5338_read),
@@ -216,10 +269,17 @@ const struct backend_fns backend_fns_dummy = {
 
     FIELD_INIT(.dac_write, dummy_dac_write),
 
+    FIELD_INIT(.xb_spi, dummy_xb_spi),
+
+    FIELD_INIT(.set_firmware_loopback, dummy_set_firmware_loopback),
+    FIELD_INIT(.get_firmware_loopback, dummy_get_firmware_loopback),
+
     FIELD_INIT(.enable_module, dummy_enable_module),
 
-    FIELD_INIT(.init_stream, dummy_stream_init),
+    FIELD_INIT(.init_stream, dummy_init_stream),
     FIELD_INIT(.stream, dummy_stream),
     FIELD_INIT(.submit_stream_buffer, dummy_submit_stream_buffer),
     FIELD_INIT(.deinit_stream, dummy_deinit_stream),
+
+    FIELD_INIT(.load_fw_from_bootloader, dummy_load_fw_from_bootloader),
 };
