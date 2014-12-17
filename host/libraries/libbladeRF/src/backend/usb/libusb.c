@@ -179,14 +179,14 @@ static bool device_has_vid_pid(libusb_device *dev, uint16_t vid, uint16_t pid)
     return match;
 }
 
-static inline bool device_is_fx3_bootloader(libusb_device *dev)
+static bool device_is_fx3_bootloader(libusb_device *dev)
 {
     return device_has_vid_pid(dev, USB_CYPRESS_VENDOR_ID, USB_FX3_PRODUCT_ID) ||
            device_has_vid_pid(dev, USB_NUAND_VENDOR_ID,
                               USB_NUAND_BLADERF_BOOT_PRODUCT_ID);
 }
 
-static inline bool device_is_bladerf(libusb_device *dev)
+static bool device_is_bladerf(libusb_device *dev)
 {
     struct libusb_config_descriptor *cfg;
     int status;
