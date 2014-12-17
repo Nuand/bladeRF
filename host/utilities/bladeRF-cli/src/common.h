@@ -48,6 +48,13 @@
 #define CLI_RET_FILEOP      (-10)   /**< File operation failed */
 #define CLI_RET_BUSY        (-11)   /**< Device is currently busy */
 #define CLI_RET_NOFILE      (-12)   /**< File not found */
+#define CLI_RET_CMD_HANDLED (-255)  /**< A command-specific error has occurred,
+                                     *   and the associated command has already
+                                     *   printed to the user. This should be
+                                     *   used when it is not desirable for the
+                                     *   cmd handling loop to print an error
+                                     *   message for one of the more generic
+                                     *   errors. */
 
 /** Command OK */
 #define CLI_RET_OK          0
