@@ -326,7 +326,6 @@ static int lusb_open(void **driver,
                      struct bladerf_devinfo *info_out)
 {
     int status, i, n;
-    int fx3_status;
     ssize_t count;
     struct bladerf_lusb *lusb = NULL;
     libusb_device **list = NULL;
@@ -419,23 +418,6 @@ static int lusb_open(void **driver,
                             bladerf_serial_matches(&thisinfo, info_in),
                             bladerf_bus_addr_matches(&thisinfo, info_in));
             }
-        }
-
-        if (device_is_fx3_bootloader(list[i])) {
-            fx3_status = get_devinfo(list[i], &thisinfo);
-            if (fx3_status != 0) {
-                log_debug("Could not open FX3 bootloader device: %s\n",
-                          libusb_error_name(fx3_status));
-                continue;
-            }
-
-            log_info("Found FX3 bootloader device on bus=%d addr=%d. "
-                     "This may be a bladeRF.\n",
-                     thisinfo.usb_bus, thisinfo.usb_addr);
-
-            log_info("Use bladeRF-cli command \"recover %d %d "
-                     "<FX3 firmware>\" to boot the bladeRF firmware.\n",
-                     thisinfo.usb_bus, thisinfo.usb_addr);
         }
     }
 
