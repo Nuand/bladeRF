@@ -26,151 +26,40 @@
 #include "conversions.h"
 #include "cmd.h"
 #include "input.h"
-#include "bladeRF.h"
 
-#ifdef CLI_LIBUSB_ENABLED
-#include <libusb.h>
-#include "ezusb.h"
+#define MSG_NO_DEV "\n  No devices in bootloader mode were found.\n\n"
 
-static bool is_bootloader_device(struct cli_state *s, libusb_device *dev)
+static int list_bootloader_devs(struct cli_state *s)
 {
-    int status;
-    bool ret = false;
-    struct libusb_device_descriptor desc;
+    int i, num_devs;
+    struct bladerf_devinfo *list;
 
-    status = libusb_get_device_descriptor(dev, &desc);
-    if (status < 0) {
-        cli_err(s, "Warning", "Failed to open libusb device: %s\n",
-                libusb_error_name(status));
-    } else {
-        if((desc.idVendor == USB_CYPRESS_VENDOR_ID &&
-            desc.idProduct == USB_FX3_PRODUCT_ID) ||
-           (desc.idVendor == USB_NUAND_VENDOR_ID &&
-            desc.idProduct == USB_NUAND_BLADERF_BOOT_PRODUCT_ID)) {
-            ret = true;
-        }
-    }
-    return ret;
-}
-
-static int find_device(struct cli_state *s,
-                       libusb_context * context,
-                       uint8_t bus, uint8_t addr,
-                       libusb_device_handle **handle,
-                       bool just_print)
-{
-    int status, i;
-    libusb_device *dev, **devs;
-    libusb_device *found_dev = NULL;
-    ssize_t status_sz;
-    size_t num_found = 0;
-
-    status_sz = libusb_get_device_list(context, &devs);
-    if (status_sz < 0) {
-        cli_err(s, "Error", "libusb_get_device_list() failed: %d %s\n",
-                status_sz, libusb_error_name((int)status_sz));
-
-        return CLI_RET_UNKNOWN;
-    }
-
-    for (i = 0; (dev = devs[i]) != NULL && found_dev == NULL; i++) {
-
-        if (just_print && is_bootloader_device(s, dev)) {
-            if (num_found++ == 0) {
-                putchar('\n');
-            }
-
-            printf("  Bootloader @ bus=%d, addr=%d\n",
-                   libusb_get_bus_number(dev), libusb_get_device_address(dev));
-
-        } else if (is_bootloader_device(s, dev) &&
-                   bus == libusb_get_bus_number(dev) &&
-                   addr == libusb_get_device_address(dev)) {
-            found_dev = dev;
-        }
-    }
-
-    if (found_dev == NULL || (just_print && num_found == 0)) {
-        s->last_lib_error =  BLADERF_ERR_NODEV;
+    num_devs = bladerf_get_bootloader_list(&list);
+    if (num_devs == BLADERF_ERR_NODEV || num_devs == 0) {
+        printf("%s", MSG_NO_DEV);
+        return 0;
+    } else if (num_devs < 0) {
+        s->last_lib_error = num_devs;
         return CLI_RET_LIBBLADERF;
-    } else if (!just_print) {
-        status = libusb_open(found_dev, handle);
-
-        if (status != 0) {
-            s->last_lib_error = BLADERF_ERR_IO;
-            return CLI_RET_LIBBLADERF;
-        }
     }
 
-    libusb_free_device_list(devs, 1);
+    printf("\n  FX3 bootloader devices:\n");
+    printf("  ---------------------------------------------------------\n");
+
+    for (i = 0; i < num_devs; i++) {
+        printf("    Backend:    %s\n", backend_description(list[i].backend));
+        printf("    Bus:        %u\n", list[i].usb_bus);
+        printf("    Address:    %u\n", list[i].usb_addr);
+    }
+
+    printf("\n  Use 'recover <bus> <addr> <firmware>' to download and boot\n"
+           "  firmware to the specified device.\n\n");
+
     return 0;
 }
 
-
-static int perform_recovery(struct cli_state *state,
-                            uint8_t bus, uint8_t addr,
-                            const char *firmware_file)
-{
-    int status;
-    libusb_context *ctx;
-    libusb_device_handle *handle = NULL;
-
-    status = libusb_init(&ctx);
-    if (status != 0) {
-        return CLI_RET_UNKNOWN;
-    }
-
-    status = find_device(state, ctx, bus, addr, &handle, false);
-    if (status == 0) {
-        status = ezusb_load_ram(handle, firmware_file,
-                                FX_TYPE_FX3, IMG_TYPE_IMG, 0);
-    }
-
-    libusb_close(handle);
-    libusb_exit(ctx);
-    return status;
-}
-
-static int list_bootloader_devs(struct cli_state *state)
-{
-    int status;
-    libusb_context *ctx;
-
-    status = libusb_init(&ctx);
-    if (status != 0) {
-        return CLI_RET_UNKNOWN;
-    }
-
-    status = find_device(state, ctx, 0, 0, NULL, true);
-    if (status == 0) {
-        putchar('\n');
-    }
-
-    libusb_exit(ctx);
-    return status;
-}
-
-#else
-
-static int perform_recovery(struct cli_state *state,
-                            struct bladerf_devinfo *devinfo,
-                            const char *firmware_file)
-{
-    state->last_lib_error = BLADERF_ERR_UNSUPPORTED;
-    return CLI_RET_LIBBLADERF;
-}
-
-struct int list_bootloader_devs(struct cli_state *state)
-{
-    state->last_lib_error = BLADERF_ERR_UNSUPPORTED;
-    return CLI_RET_LIBBLADERF;
-}
-
-#endif
-
-
 /* Usage:
- *      recover <devinfo> <FX3 firmware>
+ *      recover <bus> <addr> <FX3 firmware>
  *      recover
  */
 int cmd_recover(struct cli_state *state, int argc, char **argv)
@@ -204,7 +93,10 @@ int cmd_recover(struct cli_state *state, int argc, char **argv)
         return CLI_RET_INVPARAM;
     }
 
-    status = perform_recovery(state, bus, addr, expanded_path);
+    status = bladerf_load_fw_from_bootloader(NULL,
+                                             BLADERF_BACKEND_ANY,
+                                             bus, addr,
+                                             expanded_path);
     free((void*)expanded_path);
 
     if (status == 0) {
@@ -215,9 +107,10 @@ int cmd_recover(struct cli_state *state, int argc, char **argv)
         putchar('\n');
         return CLI_RET_OK;
     } else if (status == CLI_RET_NODEV) {
-        printf("\n  No devices in bootloader mode were found.\n\n");
+        printf("%s", MSG_NO_DEV);
         return CLI_RET_OK;
     } else {
-        return status;
+        state->last_lib_error  = status;
+        return CLI_RET_LIBBLADERF;
     }
 }

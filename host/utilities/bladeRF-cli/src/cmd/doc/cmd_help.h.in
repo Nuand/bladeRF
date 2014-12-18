@@ -475,9 +475,6 @@
   "RAM, users should open the device with the \"open\" command, and write\n" \
   "the firmware to flash via \"load fx3 <firmware file>\"\n" \
   "\n" \
-  "Note: This command is only available when bladeRF-cli is built with\n" \
-  "libusb support.\n" \
-  "\n" \
 
 
 #define CLI_CMD_HELPTEXT_run \

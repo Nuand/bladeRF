@@ -646,9 +646,6 @@ device will be loaded with and begin executing the provided firmware.
 In most cases, after successfully loading firmware into the device\[aq]s
 RAM, users should open the device with the "\f[C]open\f[]" command, and
 write the firmware to flash via "\f[C]load\ fx3\ <firmware\ file>\f[]"
-.PP
-Note: This command is only available when \f[C]bladeRF\-cli\f[] is built
-with \f[C]libusb\f[] support.
 .SS run
 .PP
 Usage: \f[C]run\ <script>\f[]

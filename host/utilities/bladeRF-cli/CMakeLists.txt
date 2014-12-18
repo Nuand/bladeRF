@@ -51,7 +51,6 @@ endif(PANDOC_EXECUTABLE)
 # Build dependencies
 ################################################################################
 find_package(LibTecla)
-find_package(LibUSB)
 
 if(MSVC)
     find_package(LibPThreadsWin32 REQUIRED)
@@ -97,7 +96,6 @@ set(CLI_INCLUDE_DIRS
        ${BLADERF_HOST_COMMON_INCLUDE_DIRS}
        ${libbladeRF_SOURCE_DIR}/include
        ${BLADERF_FW_COMMON_INCLUDE_DIR}
-       ${UTILITIES_COMMON_INC_DIR}
 )
 
 if(MSVC)
@@ -107,10 +105,6 @@ endif()
 
 if(ENABLE_LIBTECLA)
     set(CLI_INCLUDE_DIRS ${CLI_INCLUDE_DIRS} ${LIBTECLA_INCLUDE_DIR})
-endif()
-
-if(LIBUSB_FOUND)
-    set(CLI_INCLUDE_DIRS ${CLI_INCLUDE_DIRS} ${LIBUSB_INCLUDE_DIRS})
 endif()
 
 if(MSVC)
@@ -155,6 +149,7 @@ set(BLADERF_CLI_SOURCE
         src/cmd/xb.c
         src/cmd/xb100.c
         src/cmd/xb200.c
+        src/cmd/recover.c
         src/cmd/rx.c
         src/cmd/rxtx.c
         src/cmd/tx.c
@@ -167,13 +162,6 @@ set(BLADERF_CLI_SOURCE
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/log.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/str_queue.c
 )
-
-if(LIBUSB_FOUND)
-  set(BLADERF_CLI_SOURCE ${BLADERF_CLI_SOURCE}
-          src/cmd/recover.c
-          ${UTILITIES_COMMON_SRC}/ezusb.c
-)
-endif()
 
 # Select the input mode (and script handling) backend
 if(ENABLE_LIBTECLA)
@@ -221,11 +209,6 @@ if(ENABLE_LIBTECLA)
     endif(CMAKE_HOST_APPLE)
 
 endif(ENABLE_LIBTECLA)
-
-if(LIBUSB_FOUND)
-    add_definitions(-DCLI_LIBUSB_ENABLED)
-    set(CLI_LINK_LIBRARIES ${CLI_LINK_LIBRARIES} ${LIBUSB_LIBRARIES})
-endif()
 
 if(LIBPTHREADSWIN32_FOUND)
     set(CLI_LINK_LIBRARIES ${CLI_LINK_LIBRARIES} ${LIBPTHREADSWIN32_LIBRARIES})

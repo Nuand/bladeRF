@@ -475,9 +475,6 @@ In most cases, after successfully loading firmware into the device's RAM,
 users should open the device with the "`open`" command, and write the
 firmware to flash via "`load fx3 <firmware file>`"
 
-Note: This command is only available when `bladeRF-cli` is built with
-`libusb` support.
-
 
 run
 ---
