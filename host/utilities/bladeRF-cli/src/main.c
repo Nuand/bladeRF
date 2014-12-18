@@ -389,6 +389,27 @@ static int load_fpga(struct rc_config *rc, struct cli_state *state, int status)
     return status;
 }
 
+void check_for_bootloader_devs()
+{
+    int num_devs;
+    struct bladerf_devinfo *list;
+
+    num_devs = bladerf_get_bootloader_list(&list);
+
+    if (num_devs <= 0) {
+        if (num_devs != BLADERF_ERR_NODEV) {
+            fprintf(stderr, "Error: failed to check for bootloader devices.\n");
+        }
+
+        return;
+    }
+
+    bladerf_free_device_list(list);
+    printf("NOTE: One or more FX3-based devices operating in bootloader mode\n"
+           "      were detected. Run 'help recover' to view information about\n"
+           "      downloading firmware to the device(s).\n\n");
+}
+
 int main(int argc, char *argv[])
 {
     int status = 0;
@@ -441,6 +462,8 @@ int main(int argc, char *argv[])
     }
 
     if (!exit_immediately) {
+        check_for_bootloader_devs();
+
         /* Conditionally performed items, depending on runtime config */
         status = open_device(&rc, state, status);
         if (status) {
