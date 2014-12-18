@@ -1543,7 +1543,7 @@ static int usb_load_fw_from_bootloader(bladerf_backend backend,
                                        uint8_t bus, uint8_t addr,
                                        struct fx3_firmware *fw)
 {
-    int status;
+    int status = 0;
     size_t i;
     struct bladerf_usb usb;
 
