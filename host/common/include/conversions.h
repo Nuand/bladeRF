@@ -207,4 +207,13 @@ int str2lnagain(const char *str, bladerf_lna_gain *gain);
  */
 void free_args(int argc, char **argv);
 
+/**
+ * Get a string description of the specified bladeRF backend
+ *
+ * @param  b       Backend to get a string for
+ *
+ * @return NUL-terminated string
+ */
+const char *backend_description(bladerf_backend b);
+
 #endif

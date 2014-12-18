@@ -29,12 +29,15 @@ int cmd_info(struct cli_state *state, int argc, char **argv)
     bool fpga_loaded;
     struct bladerf_devinfo info;
     bladerf_dev_speed usb_speed;
+    const char *backend_str;
 
     status = bladerf_get_devinfo(state->dev, &info);
     if (status < 0) {
         state->last_lib_error = status;
         return CLI_RET_LIBBLADERF;
     }
+
+    backend_str = backend_description(info.backend);
 
     status = bladerf_is_fpga_configured(state->dev);
     if (status < 0) {
@@ -69,23 +72,7 @@ int cmd_info(struct cli_state *state, int argc, char **argv)
     printf("  USB bus:                  %d\n", info.usb_bus);
     printf("  USB address:              %d\n", info.usb_addr);
     printf("  USB speed:                %s\n", devspeed2str(usb_speed));
-
-    switch(info.backend) {
-        case BLADERF_BACKEND_LIBUSB:
-            printf("  Backend:                  libusb\n");
-            break;
-
-        case BLADERF_BACKEND_CYPRESS:
-            printf("  Backend:                  CyUSB3 driver\n");
-            break;
-
-        case BLADERF_BACKEND_LINUX:
-            printf("  Backend:                  Linux kernel driver\n");
-            break;
-
-        default:
-            printf("  Backend:                  Unknown\n");
-    }
+    printf("  Backend:                  %s\n", backend_str);
     printf("  Instance:                 %d\n", info.instance);
 
     printf("\n");

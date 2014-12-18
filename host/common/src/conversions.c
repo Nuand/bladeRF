@@ -528,3 +528,26 @@ int str2lnagain(const char *str, bladerf_lna_gain *gain)
         return -1;
     }
 }
+
+const char *backend_description(bladerf_backend b)
+{
+    switch (b) {
+        case BLADERF_BACKEND_ANY:
+            return "Any";
+
+        case BLADERF_BACKEND_LINUX:
+            return "Linux kernel driver";
+
+        case BLADERF_BACKEND_LIBUSB:
+            return "libusb";
+
+        case BLADERF_BACKEND_CYPRESS:
+            return "Cypress driver";
+
+        case BLADERF_BACKEND_DUMMY:
+            return "Dummy";
+
+        default:
+            return "Unknown";
+    }
+}

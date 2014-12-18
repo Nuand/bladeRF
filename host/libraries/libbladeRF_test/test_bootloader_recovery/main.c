@@ -5,28 +5,6 @@
 #include "rel_assert.h"
 #include "conversions.h"
 
-static const char *backend_str(bladerf_backend b) {
-    switch (b) {
-        case BLADERF_BACKEND_ANY:
-            return "Any";
-
-        case BLADERF_BACKEND_LINUX:
-            return "Linux kernel driver";
-
-        case BLADERF_BACKEND_LIBUSB:
-            return "libusb";
-
-        case BLADERF_BACKEND_CYPRESS:
-            return "Cypress driver\n";
-
-        case BLADERF_BACKEND_DUMMY:
-            return "Dummy";
-
-        default:
-            return "Unknown";
-    }
-}
-
 /* Returns list size or negative error */
 static int get_and_show_bootloader_list(struct bladerf_devinfo **list_out)
 {
@@ -50,7 +28,7 @@ static int get_and_show_bootloader_list(struct bladerf_devinfo **list_out)
 
     for (i = 0; i < list_size; i++) {
         printf(" Option %d:\n", i);
-        printf("   Backend:     %s\n", backend_str(list[i].backend));
+        printf("   Backend:     %s\n", backend_description(list[i].backend));
         printf("   Serial:      %s\n", list[i].serial);
         printf("   USB Bus:     %u\n", list[i].usb_bus);
         printf("   USB Address: %u\n", list[i].usb_addr);
