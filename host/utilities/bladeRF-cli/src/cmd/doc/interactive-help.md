@@ -233,7 +233,7 @@ Prints the following information about an opened device:
  * FPGA size
  * Whether or not the FPGA is loaded
  * USB bus, address, and speed
- * Backend (libusb or kernel module)
+ * Backend (Denotes which device interface code is being used.)
  * Instance number
 
 

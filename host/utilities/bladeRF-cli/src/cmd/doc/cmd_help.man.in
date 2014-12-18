@@ -305,7 +305,7 @@ Whether or not the FPGA is loaded
 .IP \[bu] 2
 USB bus, address, and speed
 .IP \[bu] 2
-Backend (libusb or kernel module)
+Backend (Denotes which device interface code is being used.)
 .IP \[bu] 2
 Instance number
 .SS jump_to_boot

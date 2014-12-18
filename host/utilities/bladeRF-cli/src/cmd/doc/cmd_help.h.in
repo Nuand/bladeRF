@@ -27,7 +27,7 @@
  * Any manual modifications to this file will be overwritten!
  * To edit the content of help strings, please edit interactive-help.md
  *
- * Last generated: Thu Dec 18 15:24:39 EST 2014 by jynik
+ * Last generated: Thu Dec 18 17:47:58 EST 2014 by jynik
  */
 
 #ifndef BLADERF_CLI_DOC_CMD_HELP_H__
@@ -255,7 +255,7 @@
   "-   FPGA size\n" \
   "-   Whether or not the FPGA is loaded\n" \
   "-   USB bus, address, and speed\n" \
-  "-   Backend (libusb or kernel module)\n" \
+  "-   Backend (Denotes which device interface code is being used.)\n" \
   "-   Instance number\n" \
   "\n" \
 
