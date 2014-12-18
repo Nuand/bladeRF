@@ -622,7 +622,7 @@ Without specifying \f[C]strict\f[], the lack of any available devices is
 not considered an error.
 .PP
 When provided the optional \f[C]strict\f[] argument, this command will
-treat the situation where no devices are found as an error, resulting in
+treat the situation where no devices are found as an error, causing
 scripts or lists of commands provided via the \f[C]\-e\f[] command line
 argument to terminate immediately.
 .SS quit

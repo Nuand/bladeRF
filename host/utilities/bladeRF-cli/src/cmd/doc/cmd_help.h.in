@@ -27,7 +27,7 @@
  * Any manual modifications to this file will be overwritten!
  * To edit the content of help strings, please edit interactive-help.md
  *
- * Last generated: Thu Dec 18 15:10:52 EST 2014 by jynik
+ * Last generated: Thu Dec 18 15:24:39 EST 2014 by jynik
  */
 
 #ifndef BLADERF_CLI_DOC_CMD_HELP_H__
@@ -445,9 +445,9 @@
   "considered an error.\n" \
   "\n" \
   "When provided the optional strict argument, this command will treat\n" \
-  "the situation where no devices are found as an error, resulting in\n" \
-  "scripts or lists of commands provided via the -e command line argument\n" \
-  "to terminate immediately.\n" \
+  "the situation where no devices are found as an error, causing scripts\n" \
+  "or lists of commands provided via the -e command line argument to\n" \
+  "terminate immediately.\n" \
   "\n" \
 
 

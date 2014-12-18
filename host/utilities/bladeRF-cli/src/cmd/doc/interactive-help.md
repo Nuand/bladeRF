@@ -444,7 +444,7 @@ Without specifying `strict`, the lack of any available devices is not considered
 an error.
 
 When provided the optional `strict` argument, this command will treat the
-situation where no devices are found as an error, resulting in scripts or
+situation where no devices are found as an error, causing scripts or
 lists of commands provided via the `-e` command line argument to terminate
 immediately.
 
