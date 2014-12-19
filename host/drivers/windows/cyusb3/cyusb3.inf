@@ -141,7 +141,7 @@ CYUSB3_Description = "Cypress Generic USB3.0 Driver"
 CYUSB3_DisplayName = "Cypress USB3.0 Generic"
 CYUSB3_Install     = "Cypress CYUSB3.0 Driver Installation Disk"
 
-VID_1D50&PID_6066.DeviceDesc="Nuand bladeRF"
+VID_1D50&PID_6066.DeviceDesc="bladeRF"
 VID_04B4&PID_00F3.DeviceDesc="Cypress USB BootLoader"
 
 CYUSB3.GUID="{35D5D3F1-9D0E-4F62-BCFB-B0D48EA63416}"
