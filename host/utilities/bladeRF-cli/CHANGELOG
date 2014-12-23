@@ -5,6 +5,25 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.1.0 (2014-12-23)
+--------------------------------
+This version depends upon libbladeRF v1.1.0.
+
+ * The -p/--probe command line option now causes bladeRF-cli to return a
+    non-zero return value if no devices are found. This is intended to allow
+    shell scripts to easily check if devices are (not) present.
+
+ * The 'probe' command now takes an optional 'strict' argument to specify that
+    the lack of any identified devices should be treated as an error, which
+    would cause scripts or a list of '-e' command line arguments to terminate
+    immediately.
+
+ * Before entering interactive mode, script parsing, or '-e' option execution,
+    bladeRF-cli now searches for devices in bootloader modes and prompts the
+    user to run 'help recover' for instructions on loading firmware onto these
+    devices. This replaces the [INFO] log message previously printed by
+    lower-level libbladeRF code.
+
 v1.0.0 (2014-11-29)
 --------------------------------
 This version depends upon libbladeRF v1.0.0.
