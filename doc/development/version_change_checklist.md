@@ -96,8 +96,8 @@ Project-wide items
 
 * [ ] Update the top-level CHANGELOG file.
 
-* [ ] Apply the tag: YYYY-MM[-rcN]
-
 * [ ] Update the ```debian/CHANGELOG``` file
+
+* [ ] Apply the tag: YYYY-MM[-rcN]
 
 * [ ] Prepare the API docs and binary packages
