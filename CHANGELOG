@@ -6,6 +6,86 @@ hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
 --------------------------------------------------------------------------------
+ 2014.12-rc1 (2014-12-23)
+--------------------------------------------------------------------------------
+
+This release candidate introduces some minor additions to libbladeRF and the
+bladeRF-cli program. See the CHANGELOG items associated with these items for
+more details.
+
+This release consists of the following versions:
+    * FPGA bitstream v0.1.2
+    * FX3 firmware v1.8.0
+    * libbladeRF v1.1.0
+    * bladeRF-cli v1.1.0
+
+Major changes include:
+    * Introduction of libbladeRF support for bootloader detection and recovery.
+      With this change, the Cypress backend should now be fully-functional.
+    * Added libbladeRF file search path options (e.g., for host-based FPGA
+      autoloading).
+    * Moved message about detecting devices in bootloader mode to bladeRF-cli.
+      This was original printed by some lower-level libbladeRF code, and deemed
+      more appropriately located in the bladeRF-cli program.
+
+The following tracker items have been closed since the 2014.11 release:
+
+    * Enhancement requests:
+        - #361: Make bladeRF-cli --probe vary its exit status based on whether
+                a device was found or not
+        - #359: [libbladeRF] Migrate bootloader recovery support to libbladeRF
+        - #349: [libbladeRF] Add current directory and env vars to file search
+                path
+
+
+Outstanding pull requests, tasks, enhancement requests, and known issues are
+listed below. Please see the issue tracker for up-to-date information on
+these and their associated schedules.
+
+    * Pull Requests:
+        - #358: bladeRF-cli: Can now specify multiple commands separated by
+                semicolon
+        - #340: On non-Windows systems, send logs to syslog & stderr.
+        - #313: merge dev-quartus14 branch
+        - #266: Adjust nios simulation component so it matches the synthesis
+                version
+
+    * Bugs:
+        - #360: [hdl] Older FPGA revisions no longer build
+        - #354: [hdl] failure to include STP file due to talkback req ought to
+                be fatal
+        - #352: [libbladeRF] Intermittent out-of-order transfer callbacks
+                with Windows & libusb 1.0.19
+        - #342: [Installer] Windows installer doesn't ship 32-bit MATLAB
+                support
+        - #301: Direct sampling with XB-200 needs additional improvements
+        - #95:  linux kernel/FX3: Not enough bandwidth for altsetting
+
+    * Enhancement Requests:
+        - #353: [bladeRF-cli, libbladeRF] Improve jump_to_boot docs and
+                implementation
+        - #345: [bladeRF-cli] Accept semi-colon command delimeters
+        - #344: [fx3] Investigate/fix field checksums
+        - #343: [libbladeRF] Name worker threads
+        - #328: [libbladeRF] Review and evaluate use of stream lock WRT libusb
+        - #321: How about a switch for bladeRF-cli to emit calibration in a
+                format bladeRF-cli can later read?
+        - #319: [bladeRF-cli] Add libedit and libreadline support
+        - #282: [libbladeRF] Move get/set_lms_correction() and
+                 get/set_fpga_correction() logic
+        - #240: [libbladeRF] Prefer static assertion over assert() when
+                possible
+        - #236: [libbladeRF] API calls for XB-100 required
+        - #221: Synchronized Tx/Rx of multiple bladeRFs for MIMO using
+                MiniExpansion Header
+        - #213: CLI should show sample file information for TX
+        - #205: [FX3 Firmware] Code cleanup and potential improvements
+        - #200: Reserved addresses for firmware customization
+        - #174: Task: Migrate FX3 build to CMake-generated Makefile
+
+
+
+--------------------------------------------------------------------------------
  2014.11 (2014-11-30)
 --------------------------------------------------------------------------------
 

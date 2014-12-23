@@ -1,3 +1,12 @@
+bladerf (2014.12-rc1) unstable; urgency=low
+
+  * Added libbladeRF API functions for finding and recovering devices in bootloader mode
+  * Added BLADERF_SEARCH_DIR, current working directory, and binary dir to libbladeRF file search path
+  * The bladeRF-cli -p/--probe option now returns a non-zero return code if no devices were found.
+  * FPGA bitstream v0.1.2, FX3 Firmware v1.8.0, libbladeRF v1.1.0, bladeRF-cli v1.1.0
+
+ -- Jon Szymaniak <jon.szymaniak@gmail.com>  Tue, 22 Dec 2014 14:06:49 -0500
+
 bladerf (2014.11) unstable; urgency=low
 
   * First stable libbladeRF API release
