@@ -55,11 +55,23 @@ The project-wide version number is based upon the release date. The rationale
 for this is that the individual components are already versioned; A number
 with major, minor, and patch values would not add additional value.
 
-The project-wide version number takes the format `YYYY.MM[-rcN]` where:
+The project-wide version number takes the format ```YYYY.MM[-rcN]``` where:
 
 * ```YYYY``` is a four digit year
 * ```MM``` is a two-digit month
 * ```-rcN``` is a release-candidate suffix
+
+Items marked with the `-rcN` should be regarded as betas. While more stable
+than nightly builds, these may contain new functionality still undergoing
+review and testing.
+
+As of Dec 2014, the `YYYY-MM` portions correspond to the date of the release
+(candidate).  Prior to this, these values were set to the scheduled release,
+which caused confusion and issues with systems trying to sort tags.
+
+For example, an release candidate in Dec 2014 will now be marked
+```2014-12-rc1```, whereas it might have been labeled ```2014-02-rc1` in the
+past.
 
 
 Tagging Scheme
@@ -88,5 +100,4 @@ Below is the list of ```<component>``` values to use:
 
 ## Project-wide Tags ##
 
-The project-wide tags are the same as the project-wide version number:
-```YYYY.MM[-rcN]```
+The project-wide tags are the same as the project-wide version number: ```YYYY.MM[-rcN]```
