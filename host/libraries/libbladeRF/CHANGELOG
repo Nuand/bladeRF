@@ -5,6 +5,29 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.1.0 (2014-12-23)
+--------------------------------
+This version of libbladeRF is intended for use with:
+
+FX3 Firmware v1.8.0
+FPGA         v0.1.2
+
+Changes:
+  * Added bladerf_get_bootloader_list() API function to allow applications to
+     detect devices in bootloader mode.
+  * Added bladerf_load_fw_from_bootloader() API function to allow applications
+     to download firmware to devices in bootloader mode.
+  * File searching (e.g., for host-based FPGA loading) now searches the
+     following, prior to the currently search paths:
+       - The directory specified by the BLADERF_SEARCH_DIR environment variable
+       - The current working directory
+       - The directory containing the running executable
+  * Removed library [INFO] message about detected devices in bootloader mode.
+     This is now done in the bladeRF-cli program.
+  * Fixed build issue that resulted in libusb version not being reported
+     correctly in verbose log output.
+
+
 v1.0.0 (2014-11-29)
 --------------------------------
 This version of libbladeRF is intended for use with:
