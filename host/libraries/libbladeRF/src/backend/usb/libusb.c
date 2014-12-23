@@ -575,6 +575,7 @@ error:
         lusb_close_bootloader(lusb);
     } else if (*driver == NULL) {
         status = BLADERF_ERR_NODEV;
+        lusb_close_bootloader(lusb);
     }
 
     return status;
