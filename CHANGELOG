@@ -47,7 +47,7 @@ these and their associated schedules.
                 semicolon
         - #340: On non-Windows systems, send logs to syslog & stderr.
         - #313: merge dev-quartus14 branch
-        - #266: Adjust nios simulation component so it matches the synthesis
+        - #267: Adjust nios simulation component so it matches the synthesis
                 version
 
     * Bugs:
