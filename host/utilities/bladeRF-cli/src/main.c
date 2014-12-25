@@ -113,12 +113,20 @@ int get_rc_config(int argc, char *argv[], struct rc_config *rc,
 {
     int optidx;
     int c = getopt_long(argc, argv, OPTSTR, longopts, &optidx);
+    const char *delim = ";";
+    char *command;
 
     do {
         switch(c) {
             case 'e':
-                if (str_queue_enq(exec_list, optarg) != 0) {
-                    return -1;
+                command = strtok(optarg, delim);
+
+                while (command != NULL) {
+                    if (str_queue_enq(exec_list, command) != 0) {
+                        return -1;
+                    }
+
+                    command = strtok(NULL, delim);
                 }
                 break;
 
