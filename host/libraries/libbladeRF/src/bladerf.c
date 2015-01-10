@@ -274,6 +274,19 @@ void bladerf_close(struct bladerf *dev)
     }
 }
 
+void bladerf_set_usb_reset_on_open(bool enabled)
+{
+#   if ENABLE_USB_DEV_RESET_ON_OPEN
+    bladerf_usb_reset_device_on_open = enabled;
+
+    log_verbose("USB reset on open %s\n", enabled ? "enabled" : "disabled");
+#   else
+    log_verbose("%s has no effect. "
+                "ENABLE_USB_DEV_RESET_ON_OPEN not set at compile-time.\n",
+                __FUNCTION__);
+#   endif
+}
+
 int bladerf_enable_module(struct bladerf *dev,
                             bladerf_module m, bool enable)
 {

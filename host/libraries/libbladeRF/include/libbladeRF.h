@@ -249,6 +249,22 @@ int CALL_CONV bladerf_open(struct bladerf **device,
 API_EXPORT
 void CALL_CONV bladerf_close(struct bladerf *device);
 
+/**
+ * Enable or disable USB device reset operation upon opening a device for
+ * future bladerf_open() and bladerf_open_with_devinfo() calls.
+ *
+ * This operation has been found to be necessary on Linux-based systems for
+ * some USB 3.0 controllers on Linux.
+ *
+ * This <b>does not</b> reset the state of the device in terms of its frequency,
+ * gain, samplerate, etc. settings.
+ *
+ * @param   enabled     Set true to enable the use of the USB device reset,
+ *                      and false otherwise.
+ */
+API_EXPORT
+void bladerf_set_usb_reset_on_open(bool enabled);
+
 /** @} (End FN_INIT) */
 
 /**

@@ -65,6 +65,11 @@ option(ENABLE_LOCK_CHECKS
        OFF
 )
 
+option(ENABLE_USB_DEV_RESET_ON_OPEN
+       "Perform a USB port reset when opening a device. This works around an issue on some Linux USB 3.0 setups that prevents a device from being opened after an application crash or unclean exit."
+       ${BLADERF_OS_LINUX}
+)
+
 ##############################
 # Backend Support
 ##############################
@@ -229,6 +234,10 @@ endif()
 
 if(ENABLE_LIBBLADERF_SYNC_LOG_VERBOSE AND ENABLE_LIBBLADERF_LOGGING)
     add_definitions(-DENABLE_LIBBLADERF_SYNC_LOG_VERBOSE)
+endif()
+
+if(ENABLE_USB_DEV_RESET_ON_OPEN)
+    add_definitions(-DENABLE_USB_DEV_RESET_ON_OPEN=1)
 endif()
 
 include_directories(${LIBBLADERF_INCLUDES})

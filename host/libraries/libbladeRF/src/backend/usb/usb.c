@@ -35,6 +35,10 @@
 #include "version_compat.h"
 #include "minmax.h"
 
+#if ENABLE_USB_DEV_RESET_ON_OPEN
+bool bladerf_usb_reset_device_on_open = true;
+#endif
+
 typedef enum {
     CORR_INVALID,
     CORR_FPGA,

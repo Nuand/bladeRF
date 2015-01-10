@@ -25,6 +25,10 @@
 #include "bladerf_priv.h"
 #include "fx3_fw.h"
 
+#if ENABLE_USB_DEV_RESET_ON_OPEN
+extern bool bladerf_usb_reset_device_on_open;
+#endif
+
 #ifndef SAMPLE_EP_IN
 #   define SAMPLE_EP_IN 0x81
 #endif
