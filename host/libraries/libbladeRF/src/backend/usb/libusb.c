@@ -431,6 +431,11 @@ static int find_and_open_device(libusb_context *context,
         }
     }
 
+    if (status == 0) {
+        /* Returning 0 indicates this function is providing a device */
+        assert(*dev_out != NULL);
+    }
+
     libusb_free_device_list(list, 1);
     return status;
 }
