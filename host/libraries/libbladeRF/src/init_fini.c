@@ -21,15 +21,17 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <limits.h>
+#include <string.h>
+#include "version.h"
 #if !defined(WIN32) && !defined(__CYGWIN__) && defined(LOG_SYSLOG_ENABLED)
 #include <syslog.h>
 #endif
 #include "log.h"
 
 #if !defined(WIN32) && !defined(__CYGWIN__)
-#  if !defined(__clang__) && !defined(__GNUC__)
-#  error init/fini mechanism not known to work for your compiler.
-#  endif
+#if !defined(__clang__) && !defined(__GNUC__)
+#error init/fini mechanism not known to work for your compiler.
+#endif
 #define __init __attribute__((constructor))
 #define __fini __attribute__((destructor))
 #else
@@ -37,6 +39,9 @@
 #define __init
 #define __fini
 #endif
+
+#define DEF_LOG_LEVEL BLADERF_LOG_LEVEL_WARNING
+#define ENV_LOG_LEVEL "BLADERF_LOG_LEVEL"
 
 /* Module initializers/deinitializers. When used as library (who don't have
  * a natural entry/exit function) these are used to initialize
@@ -50,20 +55,45 @@
  * the mechanism works.
  */
 
-void __init __bladerf_init(void) {
-#if !defined(WIN32) && !defined(__CYGWIN__) && defined(LOG_SYSLOG_ENABLED)
-    openlog("bladeRF",
-        LOG_CONS | LOG_NDELAY  | LOG_NOWAIT | LOG_PERROR | LOG_PID, LOG_USER);
-    bladerf_log_set_verbosity(BLADERF_LOG_LEVEL_INFO);
-#endif
+static int get_loglevel(void) {
+	int log_level = DEF_LOG_LEVEL;
 
-    log_info("BladeRF host software initializing");
+	if ((getenv(ENV_LOG_LEVEL) != NULL)
+	    && (strlen(getenv(ENV_LOG_LEVEL)) > 0)) {
+
+		log_level = atoi(getenv(ENV_LOG_LEVEL));
+
+		if ((log_level < BLADERF_LOG_LEVEL_VERBOSE) ||
+		    (log_level > BLADERF_LOG_LEVEL_SILENT)) {
+			log_level = DEF_LOG_LEVEL;
+		}
+	}
+	return log_level;
 }
 
-void __fini __bladerf_fini(void) {
-    log_info("BladeRF host software deinitializing");
+void __init __bladerf_init(void)
+{
+	int log_level = get_loglevel();
+
+#if !defined(WIN32) && !defined(__CYGWIN__) && defined(LOG_SYSLOG_ENABLED)
+	openlog("bladeRF",
+		LOG_CONS | LOG_NDELAY | LOG_NOWAIT | LOG_PERROR | LOG_PID,
+		LOG_USER);
+#endif
+
+	bladerf_log_set_verbosity(log_level);
+	log_debug("BladeRF %s: host software initializing", LIBBLADERF_VERSION);
+}
+
+void __fini __bladerf_fini(void)
+{
+	int log_level = get_loglevel();
+
+	bladerf_log_set_verbosity(log_level);
+	log_debug("BladeRF %s: host software deinitializing",
+		  LIBBLADERF_VERSION);
 	fflush(NULL);
 #if !defined(WIN32) && !defined(__CYGWIN__) && defined(LOG_SYSLOG_ENABLED)
-    closelog();
+	closelog();
 #endif
 }
