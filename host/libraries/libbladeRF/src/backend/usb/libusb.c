@@ -392,7 +392,13 @@ static int find_and_open_device(libusb_context *context,
 
     count = libusb_get_device_list(context, &list);
     if (count < 0) {
-        return error_conv((int)count);
+        if (count < INT_MIN) {
+            /* Ensure we don't have a situation where we accidentally return 0
+             * due to a narrowing coversion */
+            return BLADERF_ERR_UNEXPECTED;
+        } else {
+            return error_conv((int) count);
+        }
     }
 
     for (i = 0, n = 0; (i < count) && (*dev_out == NULL); i++) {
