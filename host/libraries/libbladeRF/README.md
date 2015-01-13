@@ -37,4 +37,5 @@ more information.
 | -DENABLE_LIBBLADERF_LOGGING=\<ON/OFF\>            | Enable log messages.  Default: ON                                                                                    |
 | -DENABLE_LIBBLADERF_SYNC_LOG_VERBOSE=\<ON/OFF\>   | Enable log_verbose() calls in the sync interface's data path. Note that this may harm performance. Default: OFF      |
 | -DENABLE_LOCK_CHECKS=\<ON/OFF\>                   | Enable checks for lock acquistion failures (e.g., deadlock). Default: OFF                                            |
+| -DENABLE_USB_DEV_RESET_ON_OPEN=\<ON/OFF\>         | Enable USB port reset when opening a device. Defaults to ON for Linux, OFF otherwise.                                |
 | -DLIBUSB_PATH=\</path/to/libusb\>                 | Path to libusb files. This is generally only needed for Windows users who downloaded binary distributions.           |
