@@ -176,7 +176,10 @@
 
 /* With msvc, inline is only available for C++. Otherwise we need to use __inline:
  *  http://msdn.microsoft.com/en-us/library/z8y1yy88.aspx */
-#   define inline __inline
+#   if !defined(__cplusplus)
+#       define inline __inline
+#   endif
+
 #endif // _MSC_VER
 
 #endif
