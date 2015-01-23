@@ -175,7 +175,7 @@ static int cyapi_probe(backend_probe_target probe_target,
                 info.usb_bus = 0; /* CyAPI doesn't provide this */
                 info.backend = BLADERF_BACKEND_CYPRESS;
                 status = bladerf_devinfo_list_add(info_list, &info);
-                if (status) {
+                if (status != 0) {
                     log_error("Could not add device to list: %s\n",
                               bladerf_strerror(status));
                 } else {
@@ -190,7 +190,6 @@ static int cyapi_probe(backend_probe_target probe_target,
 
     delete dev;
     return 0;
-
 }
 
 static int open_via_info(void **driver, backend_probe_target probe_target,
