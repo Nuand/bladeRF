@@ -193,6 +193,25 @@ int init_device(struct bladerf *dev)
             return status;
         }
 
+        /* Power down DC calibration comparators until they are need, as they
+         * have been shown to introduce undesirable artifacts into our signals.
+         * (This is documented in the LMS6 FAQ). */
+
+        status = lms_set(dev, 0x3f, 0x80);  /* TX LPF DC cal comparator */
+        if (status != 0) {
+            return status;
+        }
+
+        status = lms_set(dev, 0x5f, 0x80);  /* RX LPF DC cal comparator */
+        if (status != 0) {
+            return status;
+        }
+
+        status = lms_set(dev, 0x6e, 0xc0);  /* RXVGA2A/B DC cal comparators */
+        if (status != 0) {
+            return status;
+        }
+
         /* Set a default samplerate */
         status = si5338_set_sample_rate(dev, BLADERF_MODULE_TX, 1000000, NULL);
         if (status != 0) {
