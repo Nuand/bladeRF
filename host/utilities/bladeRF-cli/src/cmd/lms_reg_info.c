@@ -356,7 +356,8 @@ void lms_reg_info(unsigned int address, unsigned int value)
             break;
 
         case 0x3f:
-            PRINT_BITS("SPARE1[7:0]", 7, 0, value);
+            PRINT_BITS("PD_DCOCMP_LPF", 7, 7, value);
+            PRINT_BITS("SPARE1[6:0]", 6, 0, value);
             break;
 
         case 0x40:
@@ -435,7 +436,8 @@ void lms_reg_info(unsigned int address, unsigned int value)
             break;
 
         case 0x4e:
-            PRINT_BITS("SPARE0[7:0]", 7, 0, value);
+            PRINT_BITS("PD_PKDET", 7, 7, value);
+            PRINT_BITS("SPARE0[6:0]", 6, 0, value);
             break;
 
         case 0x4f:
@@ -549,7 +551,8 @@ void lms_reg_info(unsigned int address, unsigned int value)
             break;
 
         case 0x5f:
-            PRINT_BITS("SPARE00[7:5]", 7, 5, value);
+            PRINT_BITS("PD_DCOCMP_LP", 7, 7, value);
+            PRINT_BITS("SPARE00[6:5]", 6, 5, value);
             PRINT_BITS("MISC_CTRL[4] Enable DAC", 4, 4, value);
             PRINT_BITS("MISC_CTRL[3] Enable ADC1", 3, 3, value);
             PRINT_BITS("MISC_CTRL[2] Enable ADC2", 2, 2, value);
@@ -618,7 +621,9 @@ void lms_reg_info(unsigned int address, unsigned int value)
             break;
 
         case 0x6e:
-            PRINT_BITS("SPARE0[7:0]", 7, 0, value);
+            PRINT_BITS("PD[7] DC cal comparitor for VGA2B", 7, 7, value);
+            PRINT_BITS("PD[6] DC cal comparitor for VGA2A", 6, 6, value);
+            PRINT_BITS("SPARE0[5:0]", 5, 0, value);
             break;
 
         case 0x6f:
