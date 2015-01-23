@@ -154,18 +154,18 @@ static bool device_matches_target(CCyUSBDevice *dev,
 static int cyapi_probe(backend_probe_target probe_target,
                        struct bladerf_devinfo_list *info_list)
 {
-    int status = 0;
     CCyUSBDevice *dev = new CCyUSBDevice(NULL, driver_guid);
     if (dev == NULL) {
         return BLADERF_ERR_MEM;
     }
 
-    for (int i = 0; i < dev->DeviceCount() && status == 0; i++) {
+    for (int i = 0; i < dev->DeviceCount(); i++) {
         struct bladerf_devinfo info;
-        HANDLE mutex;
+        bool opened;
+        int status;
 
-        status = open_device(dev, i, &mutex);
-        if (status == 0) {
+        opened = dev->Open(i);
+        if (opened) {
             if (device_matches_target(dev, probe_target)) {
                 const size_t max_serial = sizeof(info.serial) - 1;
                 info.instance = i;
@@ -185,12 +185,11 @@ static int cyapi_probe(backend_probe_target probe_target,
             }
 
             dev->Close();
-            CloseHandle(mutex);
         }
     }
 
     delete dev;
-    return status;
+    return 0;
 
 }
 
