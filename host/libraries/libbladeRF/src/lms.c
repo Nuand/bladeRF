@@ -222,37 +222,6 @@ static const uint8_t lms_reg_dumpset[] = {
 #define LOOPBBEN_ENVPK  (3 << 2)
 #define LOOBBBEN_MASK   (3 << 2)
 
-static inline int lms_set(struct bladerf *dev, uint8_t addr, uint8_t mask)
-{
-    int status;
-    uint8_t regval;
-
-    status = LMS_READ(dev, addr, &regval);
-    if (status != 0) {
-        return status;
-    }
-
-    regval |= mask;
-
-    return LMS_WRITE(dev, addr, regval);
-}
-
-static inline int lms_clear(struct bladerf *dev, uint8_t addr, uint8_t mask)
-{
-    int status;
-    uint8_t regval;
-
-    status = LMS_READ(dev, addr, &regval);
-    if (status != 0) {
-        return status;
-    }
-
-    regval &= ~mask;
-
-    return LMS_WRITE(dev, addr, regval);
-}
-
-
 static inline int is_loopback_enabled(struct bladerf *dev)
 {
     bladerf_loopback loopback;

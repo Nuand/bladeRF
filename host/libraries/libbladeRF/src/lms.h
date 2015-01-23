@@ -133,6 +133,54 @@ lms_bw lms_uint2bw(unsigned int req);
 unsigned int lms_bw2uint(lms_bw bw);
 
 /**
+ * Wrapper for setting bits in an LMS6002 register via a RMW operation
+ *
+ * @param   dev         Device to operate on
+ * @param   addr        Register address
+ * @param   mask        Bits to set should be '1'
+ *
+ * @return BLADERF_ERR_* value
+ */
+static inline int lms_set(struct bladerf *dev, uint8_t addr, uint8_t mask)
+{
+    int status;
+    uint8_t regval;
+
+    status = LMS_READ(dev, addr, &regval);
+    if (status != 0) {
+        return status;
+    }
+
+    regval |= mask;
+
+    return LMS_WRITE(dev, addr, regval);
+}
+
+/*
+ * Wrapper for clearing bits in an LMS6002 register via a RMW operation
+ *
+ * @param   dev         Device to operate on
+ * @param   addr        Register address
+ * @param   mask        Bits to clear should be '1'
+ *
+ * @return BLADERF_ERR_* value
+ */
+static inline int lms_clear(struct bladerf *dev, uint8_t addr, uint8_t mask)
+{
+    int status;
+    uint8_t regval;
+
+    status = LMS_READ(dev, addr, &regval);
+    if (status != 0) {
+        return status;
+    }
+
+    regval &= ~mask;
+
+    return LMS_WRITE(dev, addr, regval);
+}
+
+/**
  * Enable or disable the low-pass filter on the specified module
  *
  * @param[in]   dev     Device handle
