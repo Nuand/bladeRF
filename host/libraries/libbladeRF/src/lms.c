@@ -2056,6 +2056,12 @@ static inline int dc_cal_module_init(struct bladerf *dev,
             if (status != 0) {
                 return status;
             }
+
+            /* Ensure TX LPF DC calibration comparator is powered up */
+            status = lms_clear(dev, 0x3f, (1 << 7));
+            if (status != 0) {
+                return status;
+            }
             break;
 
         default:
@@ -2293,6 +2299,12 @@ static inline int dc_cal_module_deinit(struct bladerf *dev,
             break;
 
         case BLADERF_DC_CAL_TX_LPF:
+            /* Power down TX LPF DC calibration comparator */
+            status = lms_set(dev, 0x3f, (1 << 7));
+            if (status != 0) {
+                return status;
+            }
+
             /* Re-enable the DACs */
             status = lms_clear(dev, 0x36, (1 << 7));
             if (status != 0) {
