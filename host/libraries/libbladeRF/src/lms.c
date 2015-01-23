@@ -2008,6 +2008,7 @@ static inline int dc_cal_module_init(struct bladerf *dev,
                     return status;
                 }
             } else {
+                /* Power up RX LPF DC calibration comparator */
                 status = lms_clear(dev, 0x5f, (1 << 7));
                 if (status != 0) {
                     return status;
@@ -2264,6 +2265,7 @@ static inline int dc_cal_module_deinit(struct bladerf *dev,
             break;
 
         case BLADERF_DC_CAL_RX_LPF:
+            /* Power down RX LPF calibration comparator */
             status = lms_set(dev, 0x5f, (1 << 7));
             if (status != 0) {
                 return status;
