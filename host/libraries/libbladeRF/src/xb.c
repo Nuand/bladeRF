@@ -36,9 +36,13 @@
 #define BLADERF_CONFIG_RX_SWAP_IQ 0x20000000
 #define BLADERF_CONFIG_TX_SWAP_IQ 0x10000000
 
+#define BLADERF_XB_CONFIG_TX_PATH_MIX     0x04
+#define BLADERF_XB_CONFIG_TX_PATH_BYPASS  0x08
 #define BLADERF_XB_CONFIG_TX_BYPASS       0x04
 #define BLADERF_XB_CONFIG_TX_BYPASS_N     0x08
 #define BLADERF_XB_CONFIG_TX_BYPASS_MASK  0x0C
+#define BLADERF_XB_CONFIG_RX_PATH_MIX     0x10
+#define BLADERF_XB_CONFIG_RX_PATH_BYPASS  0x20
 #define BLADERF_XB_CONFIG_RX_BYPASS       0x10
 #define BLADERF_XB_CONFIG_RX_BYPASS_N     0x20
 #define BLADERF_XB_CONFIG_RX_BYPASS_MASK  0x30
@@ -122,6 +126,25 @@ static int xb200_attach(struct bladerf *dev) {
     return status;
 }
 
+int xb200_enable(struct bladerf *dev, bool enable) {
+    int status;
+    uint32_t val, orig;
+
+    status = XB_GPIO_READ(dev, &orig);
+    if (status)
+        return status;
+
+    val = orig;
+    if (enable)
+        val |= BLADERF_XB_RF_ON;
+    else
+        val &= ~BLADERF_XB_RF_ON;
+
+    if (status || (val == orig))
+        return status;
+
+    return XB_GPIO_WRITE(dev, val);
+}
 
 int xb_attach(struct bladerf *dev, bladerf_xb xb) {
     bladerf_xb attached;
@@ -151,7 +174,23 @@ int xb_attach(struct bladerf *dev, bladerf_xb xb) {
                             __FUNCTION__);
                 status = BLADERF_ERR_UPDATE_FPGA;
             } else if (attached != xb) {
+                log_verbose( "Attaching XB200\n" );
                 status = xb200_attach(dev);
+                if (status != 0) {
+                    break;
+                }
+                log_verbose( "Enabling XB200\n" );
+                status = xb200_enable(dev,true);
+                if (status != 0) {
+                    break;
+                }
+                log_verbose( "Setting RX path\n" );
+                status = xb200_set_path(dev, BLADERF_MODULE_RX, BLADERF_XB200_BYPASS);
+                if (status != 0) {
+                    break;
+                }
+                log_verbose( "Setting TX path\n" );
+                status = xb200_set_path(dev, BLADERF_MODULE_TX, BLADERF_XB200_BYPASS);
             }
             break;
 
@@ -180,26 +219,6 @@ int xb_get_attached(struct bladerf *dev, bladerf_xb *xb) {
 
     *xb = (val >> 30) & 0x3;
     return 0;
-}
-
-int xb200_enable(struct bladerf *dev, bool enable) {
-    int status;
-    uint32_t val, orig;
-
-    status = XB_GPIO_READ(dev, &orig);
-    if (status)
-        return status;
-
-    val = orig;
-    if (enable)
-        val |= BLADERF_XB_RF_ON;
-    else
-        val &= ~BLADERF_XB_RF_ON;
-
-    if (status || (val == orig))
-        return status;
-
-    return XB_GPIO_WRITE(dev, val);
 }
 
 int xb200_get_filterbank(struct bladerf *dev, bladerf_module module, bladerf_xb200_filter *filter) {
@@ -281,11 +300,8 @@ int xb200_auto_filter_selection(struct bladerf *dev, bladerf_module mod, unsigne
 int xb200_set_path(struct bladerf *dev, bladerf_module module, bladerf_xb200_path path) {
     int status;
     uint32_t val;
-    bool enable;
 
     uint8_t lval, lorig = 0;
-
-    enable = (path == BLADERF_XB200_MIX);
 
     status = LMS_READ( dev, 0x5A, &lorig );
     if (status)
@@ -295,12 +311,12 @@ int xb200_set_path(struct bladerf *dev, bladerf_module module, bladerf_xb200_pat
 #define LMS_RX_SWAP 0x40
 #define LMS_TX_SWAP 0x08
 
-    if (enable)
+    if (path == BLADERF_XB200_MIX)
         lval |= (module == BLADERF_MODULE_RX) ? LMS_RX_SWAP : LMS_TX_SWAP;
     else
         lval &= ~((module == BLADERF_MODULE_RX) ? LMS_RX_SWAP : LMS_TX_SWAP);
 
-    if (status || (lorig == lval))
+    if (status)
         return status;
 
     status = LMS_WRITE(dev, 0x5A, lval);
@@ -311,25 +327,21 @@ int xb200_set_path(struct bladerf *dev, bladerf_module module, bladerf_xb200_pat
     if (status)
         return status;
 
-    if (enable) {
-        status = XB_GPIO_READ(dev, &val);
+    status = XB_GPIO_READ(dev, &val);
+    if (status)
+        return status;
+    if (!(val & BLADERF_XB_RF_ON)) {
+        status = xb200_attach(dev);
         if (status)
             return status;
-        if (!(val & BLADERF_XB_RF_ON)) {
-            status = xb200_attach(dev);
-            if (status)
-                return status;
-        }
-        val |= BLADERF_XB_RF_ON;
     }
-    else
-        val &= ~BLADERF_XB_RF_ON;
+    val |= BLADERF_XB_RF_ON;
 
     val &= ~((module == BLADERF_MODULE_RX) ? (BLADERF_XB_CONFIG_RX_BYPASS_MASK | BLADERF_XB_RX_ENABLE) : (BLADERF_XB_CONFIG_TX_BYPASS_MASK | BLADERF_XB_TX_ENABLE));
     if (module == BLADERF_MODULE_RX)
-        val |= enable ? (BLADERF_XB_RX_ENABLE | BLADERF_XB_CONFIG_RX_BYPASS) : BLADERF_XB_CONFIG_RX_BYPASS_N;
+        val |= (path == BLADERF_XB200_MIX) ? (BLADERF_XB_RX_ENABLE | BLADERF_XB_CONFIG_RX_PATH_MIX) : BLADERF_XB_CONFIG_RX_PATH_BYPASS;
     else
-        val |= enable ? (BLADERF_XB_TX_ENABLE | BLADERF_XB_CONFIG_TX_BYPASS) : BLADERF_XB_CONFIG_TX_BYPASS_N;
+        val |= (path == BLADERF_XB200_MIX) ? (BLADERF_XB_TX_ENABLE | BLADERF_XB_CONFIG_TX_PATH_MIX) : BLADERF_XB_CONFIG_TX_PATH_BYPASS;
 
     return XB_GPIO_WRITE(dev, val);
 }

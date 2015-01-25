@@ -910,6 +910,7 @@ static int usb_get_device_speed(struct bladerf *dev, bladerf_dev_speed *speed)
 
 static int usb_config_gpio_write(struct bladerf *dev, uint32_t val)
 {
+    log_verbose( "config_gpio_write: 0x%8.8x\n", val );
     return gpio_write(dev, 0, val);
 }
 
@@ -920,6 +921,7 @@ static int usb_config_gpio_read(struct bladerf *dev, uint32_t *val)
 
 static int usb_expansion_gpio_write(struct bladerf *dev, uint32_t val)
 {
+    log_verbose( "expansion_gpio_write: 0x%8.8x\n", val );
     return gpio_write(dev, 40, val);
 }
 
@@ -930,6 +932,7 @@ static int usb_expansion_gpio_read(struct bladerf *dev, uint32_t *val)
 
 static int usb_expansion_gpio_dir_write(struct bladerf *dev, uint32_t val)
 {
+    log_verbose( "expansion_gpio_dir_write: 0x%8.8x\n", val );
     return gpio_write(dev, 44, val);
 }
 
@@ -1304,6 +1307,7 @@ static int usb_dac_write(struct bladerf *dev, uint16_t value)
 
 static int usb_xb_spi(struct bladerf *dev, uint32_t value)
 {
+    log_verbose("xb_spi: 0x%8.8x\n", value);
     return gpio_write(dev, 36, value);
 }
 
