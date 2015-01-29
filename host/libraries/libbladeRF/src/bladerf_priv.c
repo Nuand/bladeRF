@@ -62,6 +62,8 @@ static inline int apply_lms_dc_cals(struct bladerf *dev)
         cals.rxvga2a_q  = reg_vals->rxvga2a_q;
         cals.rxvga2b_i  = reg_vals->rxvga2b_i;
         cals.rxvga2b_q  = reg_vals->rxvga2b_q;
+
+        log_verbose("Fetched register values from RX DC cal table.\n");
     }
 
     if (have_tx) {
@@ -87,6 +89,8 @@ static inline int apply_lms_dc_cals(struct bladerf *dev)
             cals.rxvga2b_i  = reg_vals->rxvga2b_i;
             cals.rxvga2b_q  = reg_vals->rxvga2b_q;
         }
+
+        log_verbose("Fetched register values from TX DC cal table.\n");
     }
 
     /* No TX table was loaded, so load LMS TX register cals from the RX table,
