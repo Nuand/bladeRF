@@ -240,10 +240,16 @@ int init_device(struct bladerf *dev)
             return status;
         }
 
-        /* Set up LMS DC offset register calibration and initial IQ settings,
-         * if any tables have been loaded already */
-        status = apply_lms_dc_cals(dev);
     }
+
+    /* Set up LMS DC offset register calibration and initial IQ settings,
+     * if any tables have been loaded already.
+     *
+     * This is done every time the device is opened (with an FPGA loaded),
+     * as the user may change/update DC calibration tables without reloading the
+     * FPGA.
+     */
+    status = apply_lms_dc_cals(dev);
 
     return status;
 }
