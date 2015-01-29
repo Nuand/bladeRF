@@ -240,7 +240,7 @@ if(BUILD_BLADERF_CLI_DOCUMENTATION)
         add_custom_command(
             OUTPUT bladeRF-cli.1
             DEPENDS bladeRF-cli src/cmd/doc/cmd_help.man
-            COMMAND ${HELP2MAN_EXECUTABLE} --no-info
+            COMMAND ${HELP2MAN_EXECUTABLE} --no-info --no-discard-stderr
                                            --opt-include=${CMAKE_CURRENT_SOURCE_DIR}/../doc/include_man/bladeRF-cli.h2m
                                            --opt-include=${CMAKE_CURRENT_BINARY_DIR}/src/cmd/doc/cmd_help.man
                                            --opt-include=${CMAKE_CURRENT_SOURCE_DIR}/../doc/include_man/common.h2m
