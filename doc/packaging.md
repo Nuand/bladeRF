@@ -171,7 +171,7 @@ if a git repository was not found.
 
 #### Documentation ####
 
-Use ```-DBUILD_DOCUMENTATION=On``` to enable the generation of documentation.
+Use ```-DBUILD_DOCUMENTATION=ON``` to enable the generation of documentation.
 
 When necessary tools (Doxygen, pandoc, help2man) are found, the above
 configuration option will default the libbladeRF API docs and the bladeRF-cli
