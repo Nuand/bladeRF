@@ -5,6 +5,35 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.2.0 (2015-01-31)
+--------------------------------
+This version of libbladeRF is intended for use with:
+
+FX3 Firmware v1.8.0
+FPGA         v0.1.2
+
+Changes:
+  * Added support for BLADERF_LOG_LEVEL environment variable. This controls
+     the default verbosity of libbladeRF and may be set to one of the following
+     strings: critical, error, warning, info, debug, verbose.
+  * Syslog support has been introduced to aid in debugging of applications that
+     suppress libbladeRF's stderr output. This can be enabled at compile-time
+     via the ENABLE_LIBBLADERF_SYSLOG CMake option, which defaults to OFF.
+  * Linux: A port reset is now performed when opening a device. This addresses
+     an issue where the bladeRF could not be opened after an application
+     crashes. (Fixes issue #95.)
+  * Fixed signal quality issues caused by LPF DC calibration comparators
+     being left on. Prior to the associated changes, significant images in the
+     spectrum could be observed prior to performing DC calibration routines.
+  * Fixed XB-200 signal attenuation issues that occurred when bypassing the
+     XB-200 mixer (i.e., operating in the normal bladeRF tuning range with
+     an XB-200 attached).
+  * LMS DC cal registers are now loaded from tables at every device open()
+     rather than just during the post-FPGA load initialization. This ensures
+     that values from updated tables are used.
+  * Fixed probe() implementation in Cypress backend to correctly report
+     devices that are already opened.
+
 v1.1.0 (2014-12-23)
 --------------------------------
 This version of libbladeRF is intended for use with:
