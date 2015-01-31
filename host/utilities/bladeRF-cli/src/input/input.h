@@ -57,7 +57,4 @@ char * input_expand_path(const char *path);
  * implementation.
  */
 void input_ctrlc(void);
-
-int split_on_delim(char *line, char ***commands, int *no_cmds);
-
 #endif  /* INTERACTICE_H__ */

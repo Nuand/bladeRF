@@ -97,16 +97,46 @@ int input_loop(struct cli_state *s, bool interactive)
                 break;
             }
         } else {
-            int no_cmds = 0;
-            char **commands;
-            status = split_on_delim(line, &commands, &no_cmds);
-            if(status < 0) {
-                return status;
-            }
+			int no_cmds = 0;
+			int max_cmds = 1;
+			int k = 0;
+			while(line[k] != '\0') {
+				if(line[k] == ';') {
+					max_cmds++;
+				}
+				k++;
+			}
 
-            int k = 0;
-            while(k < no_cmds){
-                status = cmd_handle(s, commands[k]);
+			char *commands[max_cmds];
+
+			no_cmds = 0;
+			commands[0] = line;
+			no_cmds++;
+
+			bool in_quote = false;
+			k = 0;
+
+			int len = strlen(line);
+			while(k < len) {
+				switch(line[k]) {
+					case '"':
+						in_quote = !in_quote;
+						break;
+					case ';':
+						if(in_quote == false) {
+							line[k] = '\0';
+							commands[no_cmds] = line+k+1;
+							no_cmds++;
+
+							break; 
+						} 
+				} 
+				k++;
+			}
+
+			k = 0;
+			while(k < no_cmds){
+				status = cmd_handle(s, commands[k]);
 
                 if (status < 0) {
                     error = cli_strerror(status, s->last_lib_error);
@@ -147,13 +177,6 @@ int input_loop(struct cli_state *s, bool interactive)
 
                 k++;
             }
-
-            int i;
-            for(i = 0; i < no_cmds; i++) {
-                free(commands[i]);
-            }
-
-            free(commands);
         }
 
         if (s->exec_from_cmdline) {
@@ -173,67 +196,6 @@ int input_loop(struct cli_state *s, bool interactive)
     }
 
     input_deinit();
-
-    return 0;
-}
-
-int split_on_delim(char *line, char ***commands, int *no_cmds) {
-    *no_cmds = 1;
-    bool in_quote = false;
-    int cmd_index = 0;
-    int cmd_len = 0;
-    int max_cmds = 1;
-
-    int k = 0;
-    while(line[k] != '\0') {
-        if(line[k] == ';') {
-            max_cmds++;
-        }
-        k++;
-    }
-
-    *commands = calloc(max_cmds, sizeof(char*));
-    if(*commands == NULL) {
-        return CLI_RET_MEM;
-    }
-
-    (*commands)[0] = calloc(strlen(line), sizeof(char));
-    if((*commands)[0] == NULL) {
-        free(*commands);
-        return CLI_RET_MEM;
-    }
-
-
-    k = 0;
-    while(line[k] != '\0') {
-        switch(line[k]) {
-            case '"':
-                in_quote = !in_quote;
-                break;
-            case ';':
-                if(in_quote == false) {
-                    cmd_index++;
-
-                    (*commands)[cmd_index] = calloc(strlen(line), sizeof(char));
-                    if((*commands)[cmd_index] == NULL) {
-                        int i;
-                        for(i = 0; i <= cmd_index; i++) {
-                            free((*commands)[i]);
-                        }
-                        free(*commands);
-                        return CLI_RET_MEM;
-                    }
-
-                    cmd_len = 0;
-                    break; 
-                } 
-                // Fallthrough
-            default:
-                cmd_len += sprintf((*commands)[cmd_index] + cmd_len, "%c", line[k]);
-        } 
-        k++;
-    }
-    *no_cmds = cmd_index + 1;
 
     return 0;
 }
