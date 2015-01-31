@@ -5,6 +5,16 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.1.1 (2015-01-31)
+--------------------------------
+This version depends upon libbladeRF v1.2.0.
+
+ * Updated LMS bit definitions for 'peek/poke lms' commands to include bits
+   previously marked "spare."
+
+ * Fixed a documentation build issue caused by help2man usage.
+
+
 v1.1.0 (2014-12-23)
 --------------------------------
 This version depends upon libbladeRF v1.1.0.
