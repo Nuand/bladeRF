@@ -6,6 +6,93 @@ hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
 --------------------------------------------------------------------------------
+ 2015.01-rc2 (2015-01-31)
+--------------------------------------------------------------------------------
+
+This release candidate introduces a number of libbladeRF fixes and
+improvements, as well as some minor bladeRF-cli fixes. See the CHANGELOG files
+associated with these items for more details.
+
+This release consists of the following versions:
+    * FPGA bitstream v0.1.2
+    * FX3 firmware v1.8.0
+    * libbladeRF v1.2.0
+    * bladeRF-cli v1.1.1
+
+Major changes include:
+    * libbladeRF fix for issue #95, in which device required power-on reset
+      after an application crashed without properly closing the device handle.
+    * libbladeRF changes to initial LMS state address signal quality issues
+    * BLADERF_LOG_LEVEL environment variable and optional syslog support have
+      been added to libbladeRF.
+    * Documentation build fix for bladeRF-cli.
+
+The following tracker items have been closed since the 2014.12-rc1 release:
+    * Pull Requests:
+        - #371: NixOS distro build fixes
+        - #340: On non-Windows systems, send logs to syslog & stderr.
+
+    * Bugs:
+        - #372: [libbladeRF] Signal attenuation with XB-200
+        - #370: [libbladeRF] LMS DC calibration settings stored in calibration
+                tables only gets loaded once
+        - #366: [libbladeRF] Power down DC calibration comparators to improve
+                signal quality
+        - #365: host: Don't redefine inline unless __cplusplus is defined
+        - #364: libbladeRF: Can't probe for already opened device when using
+                CyUSB backend
+        - #95: linux kernel/FX3: Not enough bandwidth for altsetting
+
+    * Enhancement Requests:
+        - #343: [libbladeRF] Name worker threads (wontfix)
+
+    * Other:
+        - #368: Make BLADERF_ERR_* a enum type (wontfix)
+        - #367: Make FPGA Autoloading fault tolerant (invalid)
+        - #363: FPGA bitstream autoload fails occasionally (invalid)
+
+Outstanding pull requests, tasks, enhancement requests, and known issues are
+listed below. Please see the issue tracker for up-to-date information on
+these and their associated schedules.
+
+    * Pull Requests:
+        - #358: bladeRF-cli: Can now specify multiple commands separated by
+                semicolon
+        - #313: merge dev-quartus14 branch
+        - #267: Adjust nios simulation component so it matches the synthesis
+                version
+
+    * Bugs:
+        - #360: [hdl] Older FPGA revisions no longer build
+        - #354: [hdl] failure to include STP file due to talkback req ought to
+                be fatal
+        - #352: [libbladeRF] Intermittent out-of-order transfer callbacks with
+                Windows & libusb 1.0.19
+        - #342: [Installer] Windows installer doesn't ship 32-bit MATLAB support
+        - #301: Direct sampling with XB-200 needs additional improvements
+
+    * Enhancement Requests:
+        - #353: [bladeRF-cli, libbladeRF] Improve jump_to_boot docs and
+                implementation
+        - #345: [bladeRF-cli] Accept semi-colon command delimeters
+        - #344: [fx3] Investigate/fix field checksums
+        - #328: [libbladeRF] Review and evaluate use of stream lock WRT libusb
+        - #321: How about a switch for bladeRF-cli to emit calibration in a
+                format bladeRF-cli can later read?
+        - #319: [bladeRF-cli] Add libedit and libreadline support
+        - #282: [libbladeRF] Move get/set_lms_correction() and
+                 get/set_fpga_correction() logic
+        - #240: [libbladeRF] Prefer static assertion over assert() when
+                possible
+        - #236: [libbladeRF] API calls for XB-100 required
+        - #221: Synchronized Tx/Rx of multiple bladeRFs for MIMO using
+                MiniExpansion Header
+        - #213: CLI should show sample file information for TX
+        - #205: [FX3 Firmware] Code cleanup and potential improvements
+        - #200: Reserved addresses for firmware customization
+        - #174: Task: Migrate FX3 build to CMake-generated Makefile
+
+--------------------------------------------------------------------------------
  2014.12-rc1 (2014-12-23)
 --------------------------------------------------------------------------------
 
