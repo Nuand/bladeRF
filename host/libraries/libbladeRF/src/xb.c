@@ -90,7 +90,7 @@ static int xb200_attach(struct bladerf *dev) {
     if ((status = XB_GPIO_READ(dev, &val)))
         return status;
 
-    if ((status = XB_GPIO_DIR_WRITE(dev, 0x3C003836)))
+    if ((status = XB_GPIO_DIR_WRITE(dev, 0x3C00383E)))
         return status;
 
     if ((status = XB_GPIO_WRITE(dev, 0x800)))
