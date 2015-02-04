@@ -444,3 +444,28 @@ if(BUILD_LIBBLADERF_DOCUMENTATION)
         message(FATAL_ERROR "Could not find Doxygen. Unable to build libbladeRF API documentation.")
     endif(DOXYGEN_FOUND)
 endif(BUILD_LIBBLADERF_DOCUMENTATION)
+
+###############################################################################
+# Auto RPM packaging
+###############################################################################
+set(CPACK_PACKAGE_VERSION ${VERSION_INFO})
+set(CPACK_GENERATOR "RPM")
+
+set(CPACK_PACKAGE_NAME "bladeRF")
+set(CPACK_PACKAGE_RELEASE ${VERSION_INFO_MAJOR})
+set(CPACK_PACKAGE_CONTACT "Edward O'Callaghan")
+set(CPACK_PACKAGE_VENDOR "Nuand bladeRF")
+set(CPACK_RPM_PACKAGE_SUMMARY "The bladeRF SDR utilities and supporting libraries.")
+set(CPACK_RPM_PACKAGE_LICENSE "GPLv2, LGPLv2.1, MIT")
+set(CPACK_RPM_PACKAGE_DESCRIPTION "\
+ The software required to program and interact with a bladeRF platform,
+ including firmware for the Cypress FX3 USB controller, HDL for the Altera
+ Cyclone IV FPGA, and C code for the host side libraries, drivers, and
+ utilities.")
+set(CPACK_RPM_PACKAGE_REQUIRES "libusbx")
+set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
+# XXX: See http://public.kitware.com/Bug/view.php?id=13609
+set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION /etc/udev /etc/udev/rules.d /usr/lib64/pkgconfig /usr/local /usr/local/bin /usr/local/lib64 /usr/local/include)
+#.
+set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_PACKAGE_RELEASE}.${CMAKE_SYSTEM_PROCESSOR}")
+include(CPack)
