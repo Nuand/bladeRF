@@ -121,7 +121,7 @@ static int run(struct bladerf *dev, struct app_params *p,
         buf = samples;
 
 
-        printf("Sending burst @ %llu\n", (unsigned long long) meta.timestamp);
+        printf("Sending burst @ %"PRIu64"\n", meta.timestamp);
 
         while (samples_left && status == 0) {
             unsigned int to_send = uint_min(p->buf_size, samples_left);

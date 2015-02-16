@@ -94,9 +94,9 @@ bool counter_data_is_valid(int16_t *samples, size_t n_samples, uint32_t ctr)
     for (i = 0; i < 2 * n_samples; i += 2, ctr++) {
         const uint32_t val = extract_counter_val((uint8_t*) &samples[i]);
         if (val != ctr) {
-            fprintf(stderr, "Invalid counter value @ sample %llu. "
+            fprintf(stderr, "Invalid counter value @ sample %"PRIu64". "
                     "Expected 0x%"PRIx32", got 0x%"PRIx32"\n",
-                    (unsigned long long) i, ctr, val);
+                    (uint64_t) i, ctr, val);
 
             return false;
         }
