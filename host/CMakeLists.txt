@@ -62,7 +62,7 @@ TEST_BIG_ENDIAN(BLADERF_BIG_ENDIAN)
 # Search for libraries and drivers
 include(FindLibUSB)
 if(WIN32)
-    include(FindCyApi)
+    include(FindCyAPI)
 endif()
 
 ################################################################################
