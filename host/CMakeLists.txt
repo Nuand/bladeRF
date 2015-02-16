@@ -210,7 +210,7 @@ add_custom_target(uninstall
 ################################################################################
 # Windows-only, Post build: Copy libraries to our build output directory
 ################################################################################
-if(WIN32)
+if(WIN32 AND NOT CMAKE_CROSSCOMPILING)
     find_package(LibPThreadsWin32)
     if(LIBPTHREADSWIN32_FOUND)
         set(WIN_RUNTIME_ITEMS ${WIN_RUNTIME_ITEMS}
@@ -389,4 +389,4 @@ if(WIN32)
 
     add_custom_target(win_runtime ALL DEPENDS ${WIN_RUNTIME_ITEMS})
 
-endif(WIN32)
+endif(WIN32 AND NOT CMAKE_CROSSCOMPILING)
