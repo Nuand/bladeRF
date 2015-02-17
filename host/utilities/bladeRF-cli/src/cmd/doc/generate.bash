@@ -88,43 +88,46 @@ cat > cmd_help.h <<EOF
 
 EOF
 
-while read -r line
-do
-    # Escape backslash and double-quote characters
-    line=$(sed 's/\\/\\\\/g' <<< "$line")
-    line=$(sed 's/\"/\\"/g' <<< "$line")
+# Lines whith command-words alone that are to be removed from stream, are
+# built up as a string of regexps for grep to use.
+REMOVE_PATT=$(
+	grep -E '^Usage' cmd_help.txt | \
+	awk '
+		{
+			printf("\\|^%s$",$2);
+		}
+		END{
+			printf("\n")
+		}' | \
+	sed -e 's/..//')
 
-    # Find section headings by looking for at least two -- on the line
-    # immediately following them.
-    if [ $(grep -c "^--" <<< "$line") -gt 0 ]
-    then
-        section=$prevline
-        skip_to_usage=1
-        skip_to_first_header=0
-        echo ""
-        echo ""
-        echo "#define CLI_CMD_HELPTEXT_$section \\"
-
-    # Omit anything above the Usage: line
-    elif [ "$skip_to_usage" -eq 1 ]
-    then
-        if [ $(grep -c "^Usage:" <<< "$line") -gt 0 ]
-        then
-            skip_to_usage=0
-            prevline=$line
-        fi
-
-    # Omit anything above the first heading
-    elif [ "$skip_to_first_header" -eq 0 ]
-    then
-        echo "  \"$prevline\\n\" \\"
-        prevline=$line
-
-    # Just save the line for the next time around...
-    else
-        prevline=$line
-    fi
-done < cmd_help.txt >> cmd_help.h
+grep  -ve "${REMOVE_PATT}"  cmd_help.txt | \
+	grep -vE '^-{2,}$' | \
+	sed -e 's/"/\\"/g' | \
+	grep -v '^\[.*\]$' | \
+	awk '
+		# Remove more than one consecutive empty line
+		BEGIN{empty=1}
+		{
+			if ($1==""){
+				empty++;
+				if (empty<=1){
+					print $0;
+				}
+			} else {
+				empty=0;
+				print $0
+			}
+		} ' | \
+	awk '
+		# Main code generator engine
+		/^Usage:/{
+			printf("\n\n#define CLI_CMD_HELPTEXT_%s \\\n",$2);
+		}
+		{
+			print "  \""$0"\\n\" \\"
+		}
+	' >> cmd_help.h
 
 # We end with a \, so throw an extra line in there to keep the preprocessor
 # from exploding.  Also close out our wrapper.
