@@ -6,8 +6,8 @@
 #
 # This file is part of the bladeRF project
 #
-# Copyright (C) 2014 Ryan Tucker <bladerf@ryantucker.us>
-# Copyright (C) 2014 Nuand LLC
+# Copyright (C) 2014-2015 Ryan Tucker <bladerf@ryantucker.us>
+# Copyright (C) 2014-2015 Nuand LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -51,7 +51,7 @@ cat > cmd_help.h <<EOF
  *
  * This file is part of the bladeRF project
  *
- * Copyright (C) 2014 Nuand LLC
+ * Copyright (C) 2014-2015 Nuand LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
