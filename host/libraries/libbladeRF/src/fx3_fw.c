@@ -89,15 +89,6 @@ static inline bool is_valid_fx3_ram_addr(uint32_t addr, uint32_t len) {
     const uint32_t sysmem_len  = 0x80000;
     const uint32_t sysmem_end  = sysmem_base + sysmem_len;
 
-
-    /* In lieu of compilers issuing warnings over the fact that the condition
-     * (addr >= itcm_base) is always true, this condition has been removed.
-     *
-     * Instead, an assertion has been added to catch the attention of anyone
-     * making a change to the above itcm_base definition, albeit a *very*
-     * unlikely change to make. */
-    assert(itcm_base == 0); /* (addr >= itcm_base) guaranteed */
-
     const bool in_itcm   = (addr <  itcm_end) &&
                            (len  <= itcm_len) &&
                            ((addr + len) < itcm_end);
@@ -106,6 +97,14 @@ static inline bool is_valid_fx3_ram_addr(uint32_t addr, uint32_t len) {
                            (addr <  sysmem_end) &&
                            (len  <= sysmem_len) &&
                            ((addr + len) < sysmem_end);
+
+    /* In lieu of compilers issuing warnings over the fact that the condition
+     * (addr >= itcm_base) is always true, this condition has been removed.
+     *
+     * Instead, an assertion has been added to catch the attention of anyone
+     * making a change to the above itcm_base definition, albeit a *very*
+     * unlikely change to make. */
+    assert(itcm_base == 0); /* (addr >= itcm_base) guaranteed */
 
     valid = in_itcm || in_sysmem;
 #   endif
