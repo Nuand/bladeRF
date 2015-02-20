@@ -16,6 +16,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 #include <errno.h>
+#include <inttypes.h>
 
 /* Only switch on the verbose debug prints in this file when we *really* want
  * them. Otherwise, compile them out to avoid excessive log level checks
@@ -644,24 +645,27 @@ static int advance_tx_buffer(struct bladerf_sync *s, struct buffer_mgmt *b)
     return status;
 }
 
-int sync_tx(struct bladerf *dev, void *samples, unsigned int num_samples,
-             struct bladerf_metadata *user_meta, unsigned int timeout_ms)
+static inline bool timestamp_in_past(struct bladerf_metadata *user_meta,
+                                     struct bladerf_sync *s)
 {
-    struct bladerf_sync *s = dev->sync[BLADERF_MODULE_TX];
-    struct buffer_mgmt *b = NULL;
+    const bool in_past = user_meta->timestamp < s->meta.curr_timestamp;
 
-    int status = 0;
-    unsigned int samples_written = 0;
-    unsigned int samples_to_copy = 0;
-    unsigned int samples_per_buffer = 0;
-    uint8_t *samples_src = (uint8_t*)samples;
-    uint8_t *buf_dest = NULL;
-    bool flush = false;
-
-    if (s == NULL || samples == NULL) {
-        return BLADERF_ERR_INVAL;
+    if (in_past) {
+        log_debug("Provided timestamp=%"PRIu64" is in past: current=%"PRIu64"\n",
+                  user_meta->timestamp, s->meta.curr_timestamp);
     }
 
+    return in_past;
+}
+
+struct tx_options {
+    bool flush;
+};
+
+static inline int handle_tx_parameters(struct bladerf_metadata *user_meta,
+                                       struct bladerf_sync *s,
+                                       struct tx_options *options)
+{
     if (s->stream_config.format == BLADERF_FORMAT_SC16_Q11_META) {
         if (user_meta == NULL) {
             log_debug("NULL metadata pointer passed to %s\n", __FUNCTION__);
@@ -677,34 +681,29 @@ int sync_tx(struct bladerf *dev, void *samples, unsigned int num_samples,
                 log_debug("%s: BURST_START provided while already in a burst.\n",
                           __FUNCTION__);
                 return BLADERF_ERR_INVAL;
-            } else if (!now && user_meta->timestamp < s->meta.curr_timestamp) {
-                log_debug("Provided timestamp=%llu is in past: "
-                          "current=%llu\n",
-                          (unsigned long long)user_meta->timestamp,
-                          (unsigned long long)s->meta.curr_timestamp);
-
+            } else if (!now && timestamp_in_past(user_meta, s)) {
                 return BLADERF_ERR_TIME_PAST;
-            } else {
-                s->meta.in_burst = true;
-                if (now) {
-                    s->meta.now = true;
-                    log_verbose("%s: Starting burst \"now\"\n",
-                                __FUNCTION__);
-                } else {
-                    s->meta.curr_timestamp = user_meta->timestamp;
-                    log_verbose("%s: Starting burst @ %llu\n", __FUNCTION__,
-                                (unsigned long long)s->meta.curr_timestamp);
-                }
             }
+
+            s->meta.in_burst = true;
+            if (now) {
+                s->meta.now = true;
+                log_verbose("%s: Starting burst \"now\"\n", __FUNCTION__);
+            } else {
+                s->meta.curr_timestamp = user_meta->timestamp;
+                log_verbose("%s: Starting burst @ %llu\n", __FUNCTION__,
+                            (unsigned long long)s->meta.curr_timestamp);
+            }
+
         } else if (user_meta->flags & BLADERF_META_FLAG_TX_NOW) {
-            log_debug("%s: The TX_NOW was specified without BURST_START.\n",
+            log_debug("%s: TX_NOW was specified without BURST_START.\n",
                     __FUNCTION__);
             return BLADERF_ERR_INVAL;
         }
 
         if (user_meta->flags & BLADERF_META_FLAG_TX_BURST_END) {
             if (s->meta.in_burst) {
-                flush = true;
+                options->flush = true;
             } else {
                 log_debug("%s: BURST_END provided while not in a burst.\n",
                           __FUNCTION__);
@@ -715,10 +714,38 @@ int sync_tx(struct bladerf *dev, void *samples, unsigned int num_samples,
         user_meta->status = 0;
     }
 
+    return 0;
+}
+
+int sync_tx(struct bladerf *dev, void *samples, unsigned int num_samples,
+             struct bladerf_metadata *user_meta, unsigned int timeout_ms)
+{
+    struct bladerf_sync *s = dev->sync[BLADERF_MODULE_TX];
+    struct buffer_mgmt *b = NULL;
+
+    int status = 0;
+    unsigned int samples_written = 0;
+    unsigned int samples_to_copy = 0;
+    unsigned int samples_per_buffer = 0;
+    uint8_t *samples_src = (uint8_t*)samples;
+    uint8_t *buf_dest = NULL;
+    struct tx_options op = {
+        FIELD_INIT(.flush, false),
+    };
+
+    if (s == NULL || samples == NULL) {
+        return BLADERF_ERR_INVAL;
+    }
+
+    status = handle_tx_parameters(user_meta, s, &op);
+    if (status != 0) {
+        return status;
+    }
+
     b = &s->buf_mgmt;
     samples_per_buffer = s->stream_config.samples_per_buffer;
 
-    while (status == 0 && ((samples_written < num_samples) || flush) ) {
+    while (status == 0 && ((samples_written < num_samples) || op.flush) ) {
 
         switch (s->state) {
             case SYNC_STATE_CHECK_WORKER: {
@@ -879,7 +906,7 @@ int sync_tx(struct bladerf *dev, void *samples, unsigned int num_samples,
 
                         }
 
-                        if (left_in_msg(s) != 0 && flush) {
+                        if (left_in_msg(s) != 0 && op.flush) {
                             /* We're ending this buffer early and need to
                              * flush the remaining samples by setting all
                              * samples in the messages to (0 + 0j) */
@@ -925,7 +952,8 @@ int sync_tx(struct bladerf *dev, void *samples, unsigned int num_samples,
                             /* We want to clear the flush flag if we've written
                              * all of our data, but keep it set if we have more
                              * data and need wrap around to another buffer */
-                            flush = flush && (samples_written != num_samples);
+                            op.flush =
+                                op.flush && (samples_written != num_samples);
                         }
 
                         break;
