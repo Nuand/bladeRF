@@ -1258,6 +1258,15 @@ typedef enum {
 /**
  * Mark the associated buffer as the start of a burst transmission.
  * This is only used for the bladerf_sync_tx() call.
+ *
+ * When using this flag, the bladerf_metadata::timestamp field should contain
+ * the timestamp at which samples should be sent.
+ *
+ * Between specifying the ::BLADERF_META_FLAG_TX_BURST_START and
+ * ::BLADERF_META_FLAG_TX_BURST_END flags, there is no need for the user to the
+ * bladerf_metadata::timestamp field because the library will ensure the
+ * correct value is used, based upon the timestamp initially provided and
+ * the number of samples that have been sent.
  */
 #define BLADERF_META_FLAG_TX_BURST_START   (1 << 0)
 
@@ -1305,6 +1314,26 @@ typedef enum {
 #define BLADERF_META_FLAG_TX_NOW           (1 << 2)
 
 /**
+ * Use this flag within a burst (i.e., between the use of
+ * ::BLADERF_META_FLAG_TX_BURST_START and ::BLADERF_META_FLAG_TX_BURST_END) to
+ * specify that bladerf_sync_tx() should read the bladerf_metadata::timestamp
+ * field and zero-pad samples up to the specified timestamp. The provided
+ * samples will then be transmitted at that timestamp.
+ *
+ * Use this flag when potentially flushing an entire buffer via the
+ * ::BLADERF_META_FLAG_TX_BURST_END would yield an unacceptably large gap in
+ * the transmitted samples.
+ *
+ * In some applications where a transmitter is constantly transmitting
+ * with extremely small gaps (less than a buffer), users may end up using a
+ * single ::BLADERF_META_FLAG_TX_BURST_START, and then numerous calls to
+ * bladerf_sync_tx() with the ::BLADERF_META_FLAG_TX_UPDATE_TIMESTAMP
+ * flag set.  The ::BLADERF_META_FLAG_TX_BURST_END would only be used to end
+ * the stream when shutting down.
+ */
+#define BLADERF_META_FLAG_TX_UPDATE_TIMESTAMP (1 << 3)
+
+/**
  * This flag indicates that calls to bladerf_sync_rx should return any available
  * samples, rather than wait until the timestamp indicated in the
  * bladerf_metadata timestamp field.
@@ -1332,7 +1361,8 @@ struct bladerf_metadata {
      *
      * Valid flags include
      *  ::BLADERF_META_FLAG_TX_BURST_START, ::BLADERF_META_FLAG_TX_BURST_END,
-     *  ::BLADERF_META_FLAG_TX_NOW, and ::BLADERF_META_FLAG_RX_NOW
+     *  ::BLADERF_META_FLAG_TX_NOW, ::BLADERF_META_FLAG_TX_UPDATE_TIMESTAMP,
+     *  and ::BLADERF_META_FLAG_RX_NOW
      *
      */
     uint32_t flags;
