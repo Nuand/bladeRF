@@ -364,6 +364,10 @@ void *loopback_burst_rx_task (void *args)
         pthread_mutex_unlock(&t->lock);
     }
 
+    if (status < 0) {
+        fprintf(stderr, "RX: Shutting down due to error.\n");
+    }
+
     free(samples);
 
 #if LOOPBACK_RX_TO_FILE
