@@ -33,7 +33,7 @@
 #include "conversions.h"
 #include "test_timestamps.h"
 
-#define OPTSTR "hd:s:S:t:B:v:"
+#define OPTSTR "hd:s:S:t:B:v:n:x:T:"
 
 
 #define DECLARE_TEST(name) \
@@ -77,6 +77,9 @@ static const struct option long_options[] = {
     { "device",             required_argument,  0,      'd' },
     { "samplerate",         required_argument,  0,      's' },
     { "buflen",             required_argument,  0,      'B' },
+    { "num-bufs",           required_argument,  0,      'n' },
+    { "num-xfers",          required_argument,  0,      'x' },
+    { "timeout",            required_argument,  0,      'T' },
 
     /* Test configuration */
     { "test",               required_argument,  0,      't' },
@@ -114,6 +117,9 @@ static void usage(const char *argv0)
     printf("    -s, --samplerate <rate>   Set the specified sample rate.\n");
     printf("                              Default = %u\n", DEFAULT_SAMPLERATE);
     printf("    -B, --buflen <value>      Buffer length. Must be multiple of 1024.\n");
+    printf("    -n, --num-bufs <value>    Number of buffers to use.\n");
+    printf("    -x, --num-xfers <value>   Number of transfers to use.\n");
+    printf("    -T, --timeout <value>     Timeout value (ms)\n\n");
 
     printf("Test configuration:\n");
     printf("    -t, --test <name>         Test name to run. Options are:\n");
@@ -148,7 +154,6 @@ static void init_app_params(struct app_params *p)
     p->samplerate = 1000000;
     p->prng_seed = 1;
 
-    /* TODO Make sync params configurable */
     p->num_buffers = 16;
     p->num_xfers = 8;
     p->buf_size = 64 * 1024;
@@ -229,6 +234,30 @@ static int handle_args(int argc, char *argv[], struct app_params *p)
 
                 break;
 
+            case 'n':
+                p->num_buffers = str2uint(optarg, 2, UINT_MAX, &ok);
+                if (!ok) {
+                    fprintf(stderr, "Invalid number of buffers: %s\n", optarg);
+                    return -1;
+                }
+                break;
+
+            case 'x':
+                p->num_xfers = str2uint(optarg, 1, UINT_MAX, &ok);
+                if (!ok) {
+                    fprintf(stderr, "Invalid number of transfers: %s\n", optarg);
+                    return -1;
+                }
+                break;
+
+            case 'T':
+                p->timeout_ms = str2uint(optarg, 0, UINT_MAX, &ok);
+                if (!ok) {
+                    fprintf(stderr, "Invalid timeout: %s\n", optarg);
+                    return -1;
+                }
+                break;
+
             case 't':
                 p->test_name = strdup(optarg);
                 if (p->test_name == NULL) {
@@ -248,6 +277,11 @@ static int handle_args(int argc, char *argv[], struct app_params *p)
             default:
                 return -1;
         }
+    }
+
+    if (p->num_buffers < (p->num_xfers + 1)) {
+        fprintf(stderr, "Too many xfers, or too few buffers specified.\n");
+        return -1;
     }
 
     return 0;
