@@ -5,6 +5,14 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.1.2 (2015-02-28)
+--------------------------------
+This version depends upon libbladeRF v1.2.1.
+
+ * Fixed and improved help text and manual page generation.The doc generation
+   scripts should now be compatible with formats used by pandoc 1.12.x and
+   1.13.x.
+
 v1.1.1 (2015-01-31)
 --------------------------------
 This version depends upon libbladeRF v1.2.0.
