@@ -5,6 +5,16 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.2.1 (2015-02-28)
+--------------------------------
+This version of libbladeRF is intended for use with:
+
+FX3 Firmware v1.8.0
+FPGA         v0.1.2
+
+Changes:
+  * Build fixes for MinGW (cross-compilation) and OSX
+
 v1.2.0 (2015-01-31)
 --------------------------------
 This version of libbladeRF is intended for use with:
