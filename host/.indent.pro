@@ -1,3 +1,6 @@
+/* Derived from GNU Indent for the "-linux" option */
+/* Divergence marked by keeping old setting in preceding comment */
+
 --no-blank-lines-after-declarations
 --blank-lines-after-procedures
 --no-blank-lines-after-commas
@@ -15,7 +18,8 @@
 --line-comments-indentation0
 --declaration-indentation1
 --dont-format-first-column-comments
---indent-level8
+/* --indent-level8 */
+--indent-level4
 --parameter-indentation0
 --line-length80
 --continue-at-parentheses
@@ -32,5 +36,11 @@
 --dont-format-comments
 --else-endif-column33
 --space-special-semicolon
---tab-size8
---indent-label1
+/* --tab-size8 */
+--tab-size4
+/* --indent-label1 */
+
+/* Additional Indent options */
+--leave-preprocessor-space
+--no-tabs
+
