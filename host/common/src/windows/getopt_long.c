@@ -1,3 +1,4 @@
+/* *INDENT-OFF* */
 /** @file getopt_long.c
  ** @brief getopt_long - Definition
  ** @author Andrea Vedaldi
@@ -324,3 +325,5 @@ getopt_long(int argc, char *const argv[],
 
   return ret_val ;
 }
+/* *INDENT-ON* */
+
