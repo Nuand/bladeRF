@@ -48,7 +48,9 @@
 --leave-preprocessor-space
 --no-tabs
 --preserve-mtime
+--case-indentation4
 
+-T bladerf
 -T libusb_version
 -T version_fn
 -T numeric_suffix
