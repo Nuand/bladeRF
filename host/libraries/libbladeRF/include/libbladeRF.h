@@ -967,11 +967,13 @@ API_EXPORT
 int CALL_CONV bladerf_get_rxvga2(struct bladerf *dev, int *gain);
 
 /**
- * Set a combined pre and post LPF RX gain
+ * Set combined gain values
  *
  * This function computes the optimal LNA, RXVGA1, and RVGA2 gains for a
  * requested amount of RX gain, and computes the optimal TXVGA1 and TXVGA2 gains
- * for a requested amount of TX gain
+ * for a requested amount of TX gain.
+ *
+ * Values outside the valid gain range will be clipped.
  *
  * @param       dev         Device handle
  * @param       mod         Module
