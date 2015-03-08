@@ -316,9 +316,6 @@ int xb200_set_path(struct bladerf *dev, bladerf_module module, bladerf_xb200_pat
     else
         lval &= ~((module == BLADERF_MODULE_RX) ? LMS_RX_SWAP : LMS_TX_SWAP);
 
-    if (status)
-        return status;
-
     status = LMS_WRITE(dev, 0x5A, lval);
     if (status)
         return status;
