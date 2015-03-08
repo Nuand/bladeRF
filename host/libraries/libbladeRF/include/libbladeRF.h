@@ -1885,7 +1885,10 @@ typedef enum {
  * Query a device's serial number
  *
  * @param[in]   dev     Device handle
- * @param[out]  serial  Will be updated with serial number. If an error occurs,
+ * @param[out]  serial  This user-supplied buffer, which <b>must be at least
+ *                      ::BLADERF_SERIAL_LENGTH bytes</b>, will be updated to
+ *                      contain a NUL-terminated serial number string. If an
+ *                      error occurs (as indicated by a non-zero return value),
  *                      no data will be written to this pointer.
  *
  * @return 0 on success, value from \ref RETCODES list on failure
@@ -2176,9 +2179,9 @@ struct bladerf_image {
      * Serial number of the device that the image was obtained from. This
      * field should be all '\0' if irrelevant.
      *
-     * Note that an extra character is added to store a NUL-terminator,
-     * to allow this field to be printed. This NUL-terminator is *NOT*
-     * written in the serialized image.
+     * The +1 here is actually extraneous; BLADERF_SERIAL_LENGTH already
+     * accounts for a NUL terminator. However, this is left here to avoid
+     * breaking backwards compatibility.
      */
     char serial[BLADERF_SERIAL_LENGTH + 1];
 
