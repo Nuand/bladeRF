@@ -885,20 +885,6 @@ API_EXPORT
 int CALL_CONV bladerf_get_txvga1(struct bladerf *dev, int *gain);
 
 /**
- * Set a combined VGA TX gain
- *
- * This function computes the optimal TXVGA1 and TXVGA2 gains for a requested
- * amount of gain
- *
- * @param       dev         Device handle
- * @param       gain        Desired gain
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_set_tx_gain(struct bladerf *dev, int gain);
-
-/**
  * Set the LNA gain
  *
  * @param       dev         Device handle
