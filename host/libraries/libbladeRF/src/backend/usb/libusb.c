@@ -529,10 +529,10 @@ static int lusb_open(void **driver,
     } else {
         assert(lusb != NULL);
 
-        /* Marian from Null Team (null.ro) and YateBTS(.com) found that it is
-         * possible to recover from "Issue #95: Not enough bandwidth for
-         * altsetting" by performing a USB port reset prior to actually trying
-         * to use the device.
+        /* Cosmin and Marian from Null Team (null.ro) and YateBTS(.com) found
+         * that it is possible to recover from "Issue #95: Not enough bandwidth
+         * for altsetting" by performing a USB port reset prior to actually
+         * trying to use the device.
          */
 #       if ENABLE_USB_DEV_RESET_ON_OPEN
         if (bladerf_usb_reset_device_on_open) {
