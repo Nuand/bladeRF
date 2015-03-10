@@ -2506,7 +2506,7 @@ int CALL_CONV bladerf_lms_get_dc_cals(struct bladerf *dev,
  * when the device is not connected at Super Speed (i.e., when
  * it is connected at High Speed).
  *
- * However, the caller need not set this in gpio_set() calls.
+ * However, the caller need not set this in bladerf_config_gpio_write() calls.
  * The library will set this as needed; callers generally
  * do not need to be concerned with setting/clearing this bit.
  */
