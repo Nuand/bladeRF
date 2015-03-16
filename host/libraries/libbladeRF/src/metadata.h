@@ -69,6 +69,11 @@
  *       |                 |   |
  *       +-----------------+ <-+---------- buffer
  *
+ *
+ * When intentionally transmitting discontinuous groups of samples (such
+ * as bursts), it is important that the last two samples within a message
+ * be (0 + 0j). Otherwise, the DAC will not properly hold its output
+ * at (0 + 0j) for the duration of the discontinuity.
  */
 
 /* Components of the metadata header */
