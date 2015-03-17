@@ -42,6 +42,12 @@ struct settings {
     int txvga1, txvga2;
 };
 
+enum tx_mode {
+    TX_MODE_SCHEDULED_BURST,
+    TX_MODE_NOW_FLAG,
+    TX_MODE_UPDATE_TIMESTAMP_FLAG,
+};
+
 static int backup_settings(struct bladerf *dev, struct app_params *p,
                            struct settings *s)
 {
@@ -224,7 +230,7 @@ static int restore_settings(struct bladerf *dev, struct app_params *p,
 }
 
 static int transmit_bursts(struct bladerf *dev, struct app_params *p,
-                           bool use_tx_now)
+                           enum tx_mode mode)
 {
     int status, status_out;
     unsigned int i;
@@ -249,16 +255,18 @@ static int transmit_bursts(struct bladerf *dev, struct app_params *p,
 
     memset(&meta, 0, sizeof(meta));
 
-    meta.flags = BLADERF_META_FLAG_TX_BURST_START |
-                 BLADERF_META_FLAG_TX_BURST_END;
+    meta.flags = BLADERF_META_FLAG_TX_BURST_START;
 
+    if (mode != TX_MODE_UPDATE_TIMESTAMP_FLAG) {
+        meta.flags |= BLADERF_META_FLAG_TX_BURST_END;
+    }
 
     status = perform_sync_init(dev, BLADERF_MODULE_TX, buf_len, p);
     if (status != 0) {
         goto out;
     }
 
-    if (use_tx_now) {
+    if (mode == TX_MODE_NOW_FLAG) {
         meta.flags |= BLADERF_META_FLAG_TX_NOW;
 
         /* Use a value that would induce timeouts if the API were to actually
@@ -285,13 +293,28 @@ static int transmit_bursts(struct bladerf *dev, struct app_params *p,
 
 
     for (i = status = 0; i < iterations && status == 0; i++) {
+
+        if (mode == TX_MODE_UPDATE_TIMESTAMP_FLAG) {
+            if (i != 0) {
+                /* Use the "Update timestamp" flag on everything after the
+                 * first iteration */
+                meta.flags = BLADERF_META_FLAG_TX_UPDATE_TIMESTAMP;
+            }
+
+            if (i == (iterations - 1)) {
+                /* End the burst on the last iteration */
+                meta.flags |= BLADERF_META_FLAG_TX_BURST_END;
+            }
+
+        }
+
         status = bladerf_sync_tx(dev, samples, to_tx, &meta, p->timeout_ms);
         if (status != 0) {
             fprintf(stderr, "TX failed at iteration %u: %s\n", i,
                     bladerf_strerror(status));
         }
 
-        if (!use_tx_now) {
+        if (mode != TX_MODE_NOW_FLAG) {
             /* Distance between beginning of each burst is 5k samples */
             meta.timestamp += 5000 - burst_len;
         }
@@ -312,23 +335,30 @@ int test_fn_tx_gmsk_bursts(struct bladerf *dev, struct app_params *p)
 {
     int status, status_restore;
     struct settings dev_settings;
-    bool use_now_flag;
+    enum tx_mode mode;
     int c = 0;
 
-    printf("Enter 's' to use scheduled bursts or 'n' to use the "
-           "TX_NOW flag.\n");
+    printf("Enter one of the following:\n"
+           "  's' to use scheduled bursts\n"
+           "  'n' to use the TX_NOW flag\n"
+           "  'u' to use the UPDATE_TIMESTAMP flag\n\n");
     printf("> ");
 
     c = getchar();
     switch (c) {
         case 's':
         case 'S':
-            use_now_flag = false;
+            mode = TX_MODE_SCHEDULED_BURST;
             break;
 
         case 'n':
         case 'N':
-            use_now_flag = true;
+            mode = TX_MODE_NOW_FLAG;
+            break;
+
+        case 'u':
+        case 'U':
+            mode = TX_MODE_UPDATE_TIMESTAMP_FLAG;
             break;
 
         default:
@@ -343,7 +373,7 @@ int test_fn_tx_gmsk_bursts(struct bladerf *dev, struct app_params *p)
 
     status = setup_device(dev, p);
     if (status == 0) {
-        status = transmit_bursts(dev, p, use_now_flag);
+        status = transmit_bursts(dev, p, mode);
     }
 
     status_restore = restore_settings(dev, p, &dev_settings);
