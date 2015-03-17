@@ -113,8 +113,8 @@ static int setup_device(struct bladerf *dev, struct app_params *p)
     struct bladerf_rational_rate sample_rate = GMSK_SAMPLERATE_INITIALIZER;
     const unsigned int frequency = 1000000000;
     const unsigned int bandwidth = 1500000;
-    const int txvga1 = -4;
-    const int txvga2 = 10;
+    const int txvga1 = -15;
+    const int txvga2 = 0;
 
     printf("\nApplying device settings...\n");
 
