@@ -93,6 +93,41 @@ static const unsigned int uint_bandwidths[] = {
     FIELD_INIT(.value, value_), \
 }
 
+/* Here we define more conservative band ranges than those in the
+ * LMS FAQ (5.24), with the intent of avoiding the use of "edges" that might
+ * cause the PLLs to lose lock over temperature changes */
+#define VCO4_LOW    3800000000ull
+#define VCO4_HIGH   4620000000ull
+
+#define VCO3_LOW    VCO4_HIGH
+#define VCO3_HIGH   5408000000ull
+
+#define VCO2_LOW    VCO3_HIGH
+#define VCO2_HIGH   6480000000ull
+
+#define VCO1_LOW    VCO2_HIGH
+#define VCO1_HIGH   7600000000ull
+
+#if VCO4_LOW/16 != BLADERF_FREQUENCY_MIN
+#   error "BLADERF_FREQUENCY_MIN is not actual VCO4_LOW/16 minimum"
+#endif
+
+#if VCO1_HIGH/2 != BLADERF_FREQUENCY_MAX
+#   error "BLADERF_FREQUENCY_MAX is not actual VCO1_HIGH/2 maximum"
+#endif
+
+/* SELVCO values */
+#define VCO4 (4 << 3)
+#define VCO3 (5 << 3)
+#define VCO2 (6 << 3)
+#define VCO1 (7 << 3)
+
+/* FRANGE values */
+#define DIV2  0x4
+#define DIV4  0x5
+#define DIV8  0x6
+#define DIV16 0x7
+
 /* Frequency Range table. Corresponds to the LMS FREQSEL table.
  * Per feedback from the LMS google group, the last entry, listed as 3.72G
  * in the programming manual, can be applied up to 3.8G */
@@ -101,22 +136,22 @@ static const struct freq_range {
     uint32_t    high;
     uint8_t     value;
 } bands[] = {
-    FREQ_RANGE(BLADERF_FREQUENCY_MIN,   285625000,              0x27),
-    FREQ_RANGE(285625000,               336875000,              0x2f),
-    FREQ_RANGE(336875000,               405000000,              0x37),
-    FREQ_RANGE(405000000,               465000000,              0x3f),
-    FREQ_RANGE(465000000,               571250000,              0x26),
-    FREQ_RANGE(571250000,               673750000,              0x2e),
-    FREQ_RANGE(673750000,               810000000,              0x36),
-    FREQ_RANGE(810000000,               930000000,              0x3e),
-    FREQ_RANGE(930000000,               1142500000,             0x25),
-    FREQ_RANGE(1142500000,              1347500000,             0x2d),
-    FREQ_RANGE(1347500000,              1620000000,             0x35),
-    FREQ_RANGE(1620000000,              1860000000,             0x3d),
-    FREQ_RANGE(1860000000u,             2285000000u,            0x24),
-    FREQ_RANGE(2285000000u,             2695000000u,            0x2c),
-    FREQ_RANGE(2695000000u,             3240000000u,            0x34),
-    FREQ_RANGE(3240000000u,             BLADERF_FREQUENCY_MAX,  0x3c),
+    FREQ_RANGE(BLADERF_FREQUENCY_MIN,   VCO4_HIGH/16,           VCO4 | DIV16),
+    FREQ_RANGE(VCO3_LOW/16,             VCO3_HIGH/16,           VCO3 | DIV16),
+    FREQ_RANGE(VCO2_LOW/16,             VCO2_HIGH/16,           VCO2 | DIV16),
+    FREQ_RANGE(VCO1_LOW/16,             VCO1_HIGH/16,           VCO1 | DIV16),
+    FREQ_RANGE(VCO4_LOW/8,              VCO4_HIGH/8,            VCO4 | DIV8),
+    FREQ_RANGE(VCO3_LOW/8,              VCO3_HIGH/8,            VCO3 | DIV8),
+    FREQ_RANGE(VCO2_LOW/8,              VCO2_HIGH/8,            VCO2 | DIV8),
+    FREQ_RANGE(VCO1_LOW/8,              VCO1_HIGH/8,            VCO1 | DIV8),
+    FREQ_RANGE(VCO4_LOW/4,              VCO4_HIGH/4,            VCO4 | DIV4),
+    FREQ_RANGE(VCO3_LOW/4,              VCO3_HIGH/4,            VCO3 | DIV4),
+    FREQ_RANGE(VCO2_LOW/4,              VCO2_HIGH/4,            VCO2 | DIV4),
+    FREQ_RANGE(VCO1_LOW/4,              VCO1_HIGH/4,            VCO1 | DIV4),
+    FREQ_RANGE(VCO4_LOW/2,              VCO4_HIGH/2,            VCO4 | DIV2),
+    FREQ_RANGE(VCO3_LOW/2,              VCO3_HIGH/2,            VCO3 | DIV2),
+    FREQ_RANGE(VCO2_LOW/2,              VCO2_HIGH/2,            VCO2 | DIV2),
+    FREQ_RANGE(VCO1_LOW/2,              BLADERF_FREQUENCY_MAX,  VCO1 | DIV2),
 };
 
  /*
