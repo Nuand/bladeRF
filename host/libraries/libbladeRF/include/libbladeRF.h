@@ -404,7 +404,7 @@ const char * CALL_CONV bladerf_backend_str(bladerf_backend backend);
 #define BLADERF_BANDWIDTH_MAX       28000000u
 
 /** Minimum tunable frequency (without an XB-200 attached), in Hz */
-#define BLADERF_FREQUENCY_MIN       232500000u
+#define BLADERF_FREQUENCY_MIN       237500000u
 
 /**
  * Minimum tunable frequency (with an XB-200 attached), in HZ.
