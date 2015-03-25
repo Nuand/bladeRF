@@ -424,6 +424,32 @@ if(BUILD_LIBBLADERF_DOCUMENTATION)
     if(DOXYGEN_FOUND)
         message(STATUS "Configured to build libbladeRF API documentation.")
 
+        # Attempt to download logo. If we can't don't fill in the LOGO section
+        # of the Doxyfile input
+        set(LOGO_IMAGE "${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/logo.png")
+        if(NOT SKIP_DOWNLOADS)
+            message(STATUS "Downloading logo image...")
+            file(DOWNLOAD "https://www.nuand.com/libbladeRF-doc/logo-padded.png"
+                 ${LOGO_IMAGE}
+                 TIMEOUT 30
+                 INACTIVITY_TIMEOUT 10
+                 EXPECTED_HASH_ALGO ALGO=SHA256
+                 EXPECTED_HASH SHA256=04ed0e0906bb7683b162c7d4ec3ee853325c76082f20d936b89cc1b444bad13d
+                 TLS_VERIFY ON
+                 STATUS DOWNLOAD_STATUS_LIST
+            ) 
+        
+            list(GET DOWNLOAD_STATUS_LIST 0 DOWNLOAD_STATUS)
+            if(NOT DOWNLOAD_STATUS EQUAL 0)
+                message(FATAL_ERROR "Failed to download logo image. Set -DSKIP_DOWNLOADS=Yes to continue without it.")
+            else()
+                set(LOGO_IMAGE logo.png)
+            endif()
+        else()
+            unset(LOGO_IMAGE)
+        endif()
+
+
         configure_file(
             ${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/Doxyfile.in
             ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/Doxyfile
