@@ -2840,11 +2840,10 @@ int CALL_CONV bladerf_read_flash(struct bladerf *dev, uint8_t *buf,
  * Write data to the bladeRF's SPI flash device
  *
  * @param   dev   Device handle
- * @param   buf   Data to write to flash. Must be
- *                `page` * BLADERF_FLASH_PAGE_SIZE bytes or larger.
+ * @param   buf   Data to write to flash
  *
  * @param   page  Page to begin writing at
- * @param   count
+ * @param   count Number of pages to write
  *
  * @return 0 on success, or BLADERF_ERR_INVAL on an invalid `page` or
  *         `count` value, or a value from \ref RETCODES list on other failures.
