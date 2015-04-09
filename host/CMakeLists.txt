@@ -70,27 +70,18 @@ endif()
 ################################################################################
 
 ###############################
-# GCC
+# GCC and Clang
 ###############################
-option(ENABLE_GDB_EXTENSIONS
-       "When performing a debug build with GCC, this will enable -ggdb instead of -g"
-       OFF)
+option(ENABLE_GDB_EXTENSIONS "Build with -ggdb instead of -g" OFF)
 
-if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug" AND
-   "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
+if("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" OR
+   "${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
 
     # Personal preference - as much debug info as possible with GDB
     if(${ENABLE_GDB_EXTENSIONS})
         string(REGEX REPLACE "^-g$" "-ggdb3" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
     endif(${ENABLE_GDB_EXTENSIONS})
 
-endif()
-
-###############################
-# GCC and Clang
-###############################
-if("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" OR
-   "${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
 
     add_definitions(-Wall)
     add_definitions(-Wextra)
