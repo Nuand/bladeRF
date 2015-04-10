@@ -551,3 +551,23 @@ const char *backend_description(bladerf_backend b)
             return "Unknown";
     }
 }
+
+void sc16q11_to_float(const int16_t *in, float *out, unsigned int n)
+{
+    unsigned int i;
+
+    for (i = 0; i < (2 * n); i += 2) {
+        out[i]   = (float) in[i] / 2048.0;
+        out[i+1] = (float) in[i+1] / 2048.0;
+    }
+}
+
+void float_to_sc16q11(const float *in, int16_t *out, unsigned int n)
+{
+    unsigned int i;
+
+    for (i = 0; i < (2 * n); i += 2) {
+        out[i]   = (int16_t) (in[i]   * 2048.0);
+        out[i+1] = (int16_t) (in[i+1] * 2048.0);
+    }
+}

@@ -216,4 +216,37 @@ void free_args(int argc, char **argv);
  */
 const char *backend_description(bladerf_backend b);
 
+/**
+ * Convert bladeRF SC16Q11 DAC/ADC samples to floats
+ *
+ * Note that the both the input and output buffers contain interleaved, where
+ * 1 sample is associated with two array elements:
+ *                       [I, Q, I, Q, ... I, Q]
+ *
+ * Therefore, the caller must ensure the output buffer large enough to contain
+ * 2*n floats (or 2*n*sizeof(float) bytes).
+ *
+ * @param[in]   in      Input buffer containing SC16Q11 samples
+ * @param[out]  out     Output buffer of float values
+ * @param[in]   n       Number of samples to convert
+ */
+void sc16q11_to_float(const int16_t *in, float * out, unsigned int n);
+
+/**
+ * Convert float samples to bladeRF SC16Q11 DAC/ADC format
+ *
+ * Note that the both the input and output buffers contain interleaved, where
+ * 1 sample is associated with two array elements:
+ *                       [I, Q, I, Q, ... I, Q]
+ *
+ * Therefore, the caller must ensure the output buffer large enough to contain
+ * 2*n int16_t's (or 2*n*sizeof(int16_t) bytes).
+ *
+ * @param[in]   in      Input buffer containing float samples
+ * @param[out]  out     Output buffer of int16_t values
+ * @param[in]   n       Number of samples to convert
+ */
+void float_to_sc16q11(const float *in, int16_t *out, unsigned int n);
+
+
 #endif
