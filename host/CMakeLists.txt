@@ -72,7 +72,7 @@ endif()
 ###############################
 # GCC and Clang
 ###############################
-option(ENABLE_GDB_EXTENSIONS "Build with -ggdb instead of -g" OFF)
+option(ENABLE_GDB_EXTENSIONS "Build with -ggdb3 instead of -g" OFF)
 
 if("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" OR
    "${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
