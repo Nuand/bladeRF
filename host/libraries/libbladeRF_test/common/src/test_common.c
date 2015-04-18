@@ -404,10 +404,10 @@ int test_handle_args(int argc, char **argv,
                 break;
 
             case OPTION_RXVGA1:
-                config->rxvga1 = str2uint(optarg,
-                                          BLADERF_RXVGA1_GAIN_MIN,
-                                          BLADERF_RXVGA1_GAIN_MAX,
-                                          &ok);
+                config->rxvga1 = str2int(optarg,
+                                         BLADERF_RXVGA1_GAIN_MIN,
+                                         BLADERF_RXVGA1_GAIN_MAX,
+                                         &ok);
 
                 if (!ok) {
                     fprintf(stderr, "Invalid RXVGA1 gain: %s\n", optarg);
@@ -416,10 +416,10 @@ int test_handle_args(int argc, char **argv,
                 break;
 
             case OPTION_RXVGA2:
-                config->rxvga2 = str2uint(optarg,
-                                          BLADERF_RXVGA2_GAIN_MIN,
-                                          BLADERF_RXVGA2_GAIN_MAX,
-                                          &ok);
+                config->rxvga2 = str2int(optarg,
+                                         BLADERF_RXVGA2_GAIN_MIN,
+                                         BLADERF_RXVGA2_GAIN_MAX,
+                                         &ok);
 
                 if (!ok) {
                     fprintf(stderr, "Invalid RXVGA1 gain: %s\n", optarg);
@@ -428,10 +428,10 @@ int test_handle_args(int argc, char **argv,
                 break;
 
             case OPTION_TXVGA1:
-                config->txvga1 = str2uint(optarg,
-                                          BLADERF_TXVGA1_GAIN_MIN,
-                                          BLADERF_TXVGA1_GAIN_MAX,
-                                          &ok);
+                config->txvga1 = str2int(optarg,
+                                         BLADERF_TXVGA1_GAIN_MIN,
+                                         BLADERF_TXVGA1_GAIN_MAX,
+                                         &ok);
 
                 if (!ok) {
                     fprintf(stderr, "Invalid TXVGA1 gain: %s\n", optarg);
@@ -440,10 +440,10 @@ int test_handle_args(int argc, char **argv,
                 break;
 
             case OPTION_TXVGA2:
-                config->txvga2 = str2uint(optarg,
-                                          BLADERF_TXVGA2_GAIN_MIN,
-                                          BLADERF_TXVGA2_GAIN_MAX,
-                                          &ok);
+                config->txvga2 = str2int(optarg,
+                                         BLADERF_TXVGA2_GAIN_MIN,
+                                         BLADERF_TXVGA2_GAIN_MAX,
+                                         &ok);
 
                 if (!ok) {
                     fprintf(stderr, "Invalid TXVGA2 gain: %s\n", optarg);
