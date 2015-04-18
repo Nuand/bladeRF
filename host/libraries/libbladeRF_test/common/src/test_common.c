@@ -178,12 +178,12 @@ void test_print_common_help()
     printf("  --rx-bandwidth <bw>       Set RX to the specified bandwidth.\n");
     printf("  --tx-bandwidth <bw>       Set TX to the specified bandwidth.\n");
     printf("\n");
-    printf("  --gain-lna <gain>         Set the RX LNA to the specified gain.\n");
-    printf("                                Options are: bypass, mid, max\n");
-    printf("  --gain-rxvga1 <gain>      Set RX VGA1 to the specified gain.\n");
-    printf("  --gain-rxvga2 <gain>      Set RX VGA2 to the specified gain.\n");
-    printf("  --gain-txvga1 <gain>      Set TX VGA1 to the specified gain.\n");
-    printf("  --gain-txvga2 <gain>      Set TX VGA2 to the specified gain.\n");
+    printf("  --lna-gain <gain>         Set the RX LNA to the specified gain.\n");
+    printf("                               Options are: bypass, mid, max\n");
+    printf("  --rxvga1-gain <gain>      Set RX VGA1 to the specified gain.\n");
+    printf("  --rxvga2-gain <gain>      Set RX VGA2 to the specified gain.\n");
+    printf("  --txvga1-gain <gain>      Set TX VGA1 to the specified gain.\n");
+    printf("  --txvga2-gain <gain>      Set TX VGA2 to the specified gain.\n");
     printf("\n");
     printf("  --num-buffers <n>         Allocate <n> sample buffers.\n");
     printf("  --samples-per-buffer <n>  Allocate <n> samples in each sample buffer.\n");
