@@ -19,7 +19,7 @@ function [ signal, signal_i, signal_q ] = load_sc16q11(filename)
         signal_i = data(1:2:end, :) ./ 2048.0;
         signal_q = data(2:2:end, :) ./ 2048.0;
         
-        signal = signal_i + 1i .* signal_q;
+        signal = signal_i + 1j .* signal_q;
         
         fclose(f);
     else
