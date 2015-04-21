@@ -57,5 +57,4 @@ char * input_expand_path(const char *path);
  * implementation.
  */
 void input_ctrlc(void);
-
 #endif  /* INTERACTICE_H__ */

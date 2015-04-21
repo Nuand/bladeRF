@@ -97,43 +97,85 @@ int input_loop(struct cli_state *s, bool interactive)
                 break;
             }
         } else {
-            status = cmd_handle(s, line);
+			int no_cmds = 0;
+			int max_cmds = 1;
+			int k = 0;
+			while(line[k] != '\0') {
+				if(line[k] == ';') {
+					max_cmds++;
+				}
+				k++;
+			}
 
-            if (status < 0) {
-                error = cli_strerror(status, s->last_lib_error);
-                if (error) {
-                    cli_err(s, "Error", "%s\n", error);
-                }
+			char *commands[max_cmds];
 
-                /* Stop executing script or command list */
-                if (s->exec_from_cmdline) {
-                    str_queue_clear(s->exec_list);
-                } else {
-                    exit_script(s);
-                }
+			no_cmds = 0;
+			commands[0] = line;
+			no_cmds++;
 
-                /* Quit if we're not supposed to drop to a prompt */
-                if (!interactive) {
-                    status = CLI_RET_QUIT;
-                }
+			bool in_quote = false;
+			k = 0;
 
-            } else if (status > 0){
-                switch (status) {
-                    case CLI_RET_CLEAR_TERM:
-                        input_clear_terminal();
-                        break;
-                    case CLI_RET_RUN_SCRIPT:
-                        status = input_set_input(
+			int len = strlen(line);
+			while(k < len) {
+				switch(line[k]) {
+					case '"':
+						in_quote = !in_quote;
+						break;
+					case ';':
+						if(in_quote == false) {
+							line[k] = '\0';
+							commands[no_cmds] = line+k+1;
+							no_cmds++;
+
+							break; 
+						} 
+				} 
+				k++;
+			}
+
+			k = 0;
+			while(k < no_cmds){
+				status = cmd_handle(s, commands[k]);
+
+                if (status < 0) {
+                    error = cli_strerror(status, s->last_lib_error);
+                    if (error) {
+                        cli_err(s, "Error", "%s\n", error);
+                    }
+
+                    /* Stop executing script or command list */
+                    if (s->exec_from_cmdline) {
+                        str_queue_clear(s->exec_list);
+                    } else {
+                        exit_script(s);
+                    }
+
+                    /* Quit if we're not supposed to drop to a prompt */
+                    if (!interactive) {
+                        status = CLI_RET_QUIT;
+                    }
+
+                } else if (status > 0){
+                    switch (status) {
+                        case CLI_RET_CLEAR_TERM:
+                            input_clear_terminal();
+                            break;
+                        case CLI_RET_RUN_SCRIPT:
+                            status = input_set_input(
                                     cli_script_file(s->scripts));
 
-                        if (status < 0) {
-                            cli_err(s, "Error",
-                                    "Failed to begin executing script\n");
-                        }
-                        break;
-                    default:
-                        cli_err(s, "Error", "Unknown return code: %d\n", status);
+                            if (status < 0) {
+                                cli_err(s, "Error",
+                                        "Failed to begin executing script\n");
+                            }
+                            break;
+                        default:
+                            cli_err(s, "Error", "Unknown return code: %d\n", status);
+                    }
                 }
+
+                k++;
             }
         }
 

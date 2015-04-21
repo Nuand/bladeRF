@@ -120,6 +120,7 @@ int get_rc_config(int argc, char *argv[], struct rc_config *rc,
                 if (str_queue_enq(exec_list, optarg) != 0) {
                     return -1;
                 }
+
                 break;
 
             case 'f':
