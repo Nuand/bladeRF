@@ -109,6 +109,7 @@ int input_loop(struct cli_state *s, bool interactive)
 
     status = 0;
 
+    /* Set input source to script, if we have any */
     if (cli_script_loaded(s->scripts)) {
         status = input_set_input(cli_script_file(s->scripts));
         if (status < 0) {
@@ -117,10 +118,12 @@ int input_loop(struct cli_state *s, bool interactive)
         }
     }
 
+    /* Do we have a queue of commands provided by the '-e' cmdline option? */
     s->exec_from_cmdline = !str_queue_empty(s->exec_list);
 
     while (!cli_fatal(status) && status != CLI_RET_QUIT) {
 
+        /* Give priority to commands issued via the '-e' cmdline option */
         if (s->exec_from_cmdline) {
             line = str_queue_deq(s->exec_list);
             assert(line != NULL);
@@ -196,24 +199,30 @@ int input_loop(struct cli_state *s, bool interactive)
                             }
                             break;
                         default:
-                            cli_err(s, "Error", "Unknown return code: %d\n", status);
+                            cli_err(s, "Error", "Unknown return code: %d\n",
+                                    status);
                     }
                 }
             } while (next_cmd != NULL && stop_execing_line == false);
         }
 
         if (s->exec_from_cmdline) {
+            /* Fetch the next item from the queue of commands provided from
+             * the '-e' cmdline argument. */
             free(line);
             line = NULL;
             s->exec_from_cmdline = !str_queue_empty(s->exec_list);
 
-            /* Nothing left to do here */
+            /* Nothing left to do here if we aren't dropping into a script
+             * next, or entering interactive mode. */
             if (!interactive &&
                 !s->exec_from_cmdline && !cli_script_loaded(s->scripts)) {
                 status = CLI_RET_QUIT;
             }
 
         } else {
+            /* Keep track our our script line count so we can report where
+             * an error occurred. */
             cli_script_bump_line_count(s->scripts);
         }
     }
