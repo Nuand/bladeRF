@@ -25,6 +25,8 @@
 #include "script.h"
 #include "rel_assert.h"
 
+#define COMMAND_DELIMITER ';'
+
 static void exit_script(struct cli_state *s)
 {
     int status;
@@ -46,6 +48,52 @@ static void exit_script(struct cli_state *s)
             }
         }
     }
+}
+
+/* Terminate the current command, as denoted by any delmiters,  with a '\0' and
+ * return a pointer to the next command.
+ *
+ * Returns NULL if the end of the line was hit */
+static inline char * zeroize_next_delimiter(char *line)
+{
+    size_t len, i;
+    char * next_cmd = NULL;
+    bool got_delimeter = false;
+    bool in_quote = false;
+
+    assert(line != NULL);
+
+    len = strlen(line);
+
+    for (i = 0; i < len && got_delimeter == false; i++) {
+        switch(line[i]) {
+            case '"':
+                in_quote = !in_quote;
+                break;
+
+            case COMMAND_DELIMITER:
+                if (in_quote == false) {
+                    got_delimeter = true;
+                    line[i] = '\0';
+
+                    /* Is there more after this delimiter? */
+                    if ((i + 1) < len) {
+                        next_cmd = &line[i + 1];
+                    }
+                    break;
+                }
+
+            default:
+                /* Skip past any other character */
+                break;
+        }
+    }
+
+    /* We don't need to worry about the state of in_quote before returning,
+     * as the next stage of command execution will check for and report
+     * unterminated quotes. */
+
+    return next_cmd;
 }
 
 int input_loop(struct cli_state *s, bool interactive)
@@ -97,48 +145,27 @@ int input_loop(struct cli_state *s, bool interactive)
                 break;
             }
         } else {
-			int no_cmds = 0;
-			int max_cmds = 1;
-			int k = 0;
-			while(line[k] != '\0') {
-				if(line[k] == ';') {
-					max_cmds++;
-				}
-				k++;
-			}
+            char *next_cmd = line;
+            char *cmd;
+            bool stop_execing_line = false;
 
-			char *commands[max_cmds];
+            do {
+                cmd = next_cmd;
+                next_cmd = zeroize_next_delimiter(cmd);
 
-			no_cmds = 0;
-			commands[0] = line;
-			no_cmds++;
-
-			bool in_quote = false;
-			k = 0;
-
-			int len = strlen(line);
-			while(k < len) {
-				switch(line[k]) {
-					case '"':
-						in_quote = !in_quote;
-						break;
-					case ';':
-						if(in_quote == false) {
-							line[k] = '\0';
-							commands[no_cmds] = line+k+1;
-							no_cmds++;
-
-							break;
-						}
-				}
-				k++;
-			}
-
-			k = 0;
-			while(k < no_cmds){
-				status = cmd_handle(s, commands[k]);
+				status = cmd_handle(s, cmd);
 
                 if (status < 0) {
+                    /* Unlike a shell, we'll stop processing at the first
+                     * command in a line that returned an error, as
+                     * this is generally most appropriate. For example:
+                     *   rx config ffile=samples.bin n=1M; rx start; rx wait 5s;
+                     *
+                     * Here it wouldn't make sense to try to execute 'rx start'
+                     * if since the rx config was bogus.
+                     */
+                    stop_execing_line = true;
+
                     error = cli_strerror(status, s->last_lib_error);
                     if (error) {
                         cli_err(s, "Error", "%s\n", error);
@@ -174,9 +201,7 @@ int input_loop(struct cli_state *s, bool interactive)
                             cli_err(s, "Error", "Unknown return code: %d\n", status);
                     }
                 }
-
-                k++;
-            }
+            } while (next_cmd != NULL && stop_execing_line == false);
         }
 
         if (s->exec_from_cmdline) {
