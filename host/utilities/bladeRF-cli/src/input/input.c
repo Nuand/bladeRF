@@ -130,10 +130,8 @@ int input_loop(struct cli_state *s, bool interactive)
 
         if (!line && !s->exec_from_cmdline) {
             if (cli_script_loaded(s->scripts)) {
-
-                if (!s->exec_from_cmdline) {
-                    exit_script(s);
-                }
+                /* We've completed a script */
+                exit_script(s);
 
                 /* Exit if we were run with a script, but not asked
                  * to drop into interactive mode */
