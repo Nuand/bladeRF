@@ -58,6 +58,29 @@ static inline struct bladerf_usb *usb_backend(struct bladerf *dev, void **driver
     return ret;
 }
 
+#ifdef PRINT_PERIPHERAL_BUFFERS
+static void print_buf(const char *msg, const uint8_t *buf, size_t len)
+{
+    size_t i;
+    if (msg != NULL) {
+        puts(msg);
+    }
+
+    for (i = 0; i < len; i++) {
+        if (i == 0) {
+            printf("  0x%02x,", buf[i]);
+        } else if ((i + 1) % 8 == 0) {
+            printf(" 0x%02x,\n ", buf[i]);
+        } else {
+            printf(" 0x%02x,", buf[i]);
+        }
+    }
+
+    putchar('\n');
+}
+#else
+#define print_buf(msg, data, len)
+#endif
 
 static int access_peripheral(struct bladerf *dev, uint8_t peripheral,
                              usb_direction dir, struct uart_cmd *cmd,
@@ -83,6 +106,8 @@ static int access_peripheral(struct bladerf *dev, uint8_t peripheral,
         buf[i * 2 + 3] = cmd[i].data;
     }
 
+    print_buf("Peripheral access request:", buf, 16);
+
     /* Send the command */
     status = usb->fn->bulk_transfer(driver, PERIPHERAL_EP_OUT,
                                      buf, sizeof(buf),
@@ -104,6 +129,8 @@ static int access_peripheral(struct bladerf *dev, uint8_t peripheral,
             cmd[i].data = buf[i * 2 + 3];
         }
     }
+
+    print_buf("Peripheral access response:", buf, 16);
 
     return status;
 }
