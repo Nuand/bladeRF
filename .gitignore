@@ -47,7 +47,7 @@ host/misc/windows/scripts/work
 hdl/fpga/ip/altera/nios_system/.qsys_edit
 hdl/fpga/ip/altera/nios_system/nios_system.html
 hdl/fpga/ip/altera/nios_system/nios_system.sopcinfo
-hdl/fpga/ip/altera/nios_system/software/lms_spi_controller/mem_init
-hdl/fpga/ip/altera/nios_system/software/lms_spi_controller/obj
-hdl/fpga/ip/altera/nios_system/software/lms_spi_controller_bsp
+hdl/fpga/ip/altera/nios_system/software/bladeRF_nios/mem_init
+hdl/fpga/ip/altera/nios_system/software/bladeRF_nios/obj
+hdl/fpga/ip/altera/nios_system/software/bladeRF_nios_bsp
 hdl/fpga/ip/altera/nios_system/synthesis/
