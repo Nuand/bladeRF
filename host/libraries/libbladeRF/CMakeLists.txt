@@ -263,7 +263,6 @@ set(LIBBLADERF_SOURCE
         src/fx3_fw.c
         src/fpga.c
         src/gain.c
-        src/lms.c
         src/si5338.c
         src/xb.c
         src/version.h
@@ -280,6 +279,7 @@ set(LIBBLADERF_SOURCE
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/sha256.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/log.c
+        ${BLADERF_FPGA_COMMON_SOURCE_DIR}/lms.c
 )
 
 if (MSVC)

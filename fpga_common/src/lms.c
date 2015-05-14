@@ -2,21 +2,25 @@
  * This file is part of the bladeRF project:
  *   http://www.github.com/nuand/bladeRF
  *
- * Copyright (C) 2013-2014 Nuand LLC
+ * Copyright (C) 2013-2015 Nuand LLC
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  */
 
 /*
@@ -39,11 +43,23 @@
  *  http://www.limemicro.com/download/FAQ_v1.0r10.pdf
  *
  */
+
+#include <stdint.h>
+#include <string.h>
 #include <libbladeRF.h>
 #include "lms.h"
-#include "bladerf_priv.h"
-#include "log.h"
-#include "rel_assert.h"
+
+#ifndef BLADERF_NIOS_BUILD
+#   include "bladerf_priv.h"
+#   include "log.h"
+#   include "rel_assert.h"
+
+    /* Unneeded, due to USB transfer duration */
+#   define VTUNE_BUSY_WAIT(us) do{} while(0)
+#else
+#   include <unistd.h>
+#   define VTUNE_BUSY_WAIT(us) usleep(15)
+#endif
 
 #define kHz(x) (x * 1000)
 #define MHz(x) (x * 1000000)
@@ -306,7 +322,7 @@ static int write_pll_config(struct bladerf *dev, bladerf_module module,
     return LMS_WRITE(dev, addr, regval);
 }
 
-
+#ifndef BLADERF_NIOS_BUILD
 int lms_lpf_enable(struct bladerf *dev, bladerf_module mod, bool enable)
 {
     int status;
@@ -341,7 +357,9 @@ int lms_lpf_enable(struct bladerf *dev, bladerf_module mod, bool enable)
 
     return status;
 }
+#endif
 
+#ifndef BLADERF_NIOS_BUILD
 int lms_lpf_get_mode(struct bladerf *dev, bladerf_module mod,
                      bladerf_lpf_mode *mode)
 {
@@ -377,7 +395,9 @@ int lms_lpf_get_mode(struct bladerf *dev, bladerf_module mod,
 
     return status;
 }
+#endif
 
+#ifndef BLADERF_NIOS_BUILD
 int lms_lpf_set_mode(struct bladerf *dev, bladerf_module mod,
                      bladerf_lpf_mode mode)
 {
@@ -424,7 +444,9 @@ int lms_lpf_set_mode(struct bladerf *dev, bladerf_module mod,
     status = LMS_WRITE(dev, reg + 1, data_h);
     return status;
 }
+#endif
 
+#ifndef BLADERF_NIOS_BUILD
 int lms_set_bandwidth(struct bladerf *dev, bladerf_module mod, lms_bw bw)
 {
     int status;
@@ -442,8 +464,10 @@ int lms_set_bandwidth(struct bladerf *dev, bladerf_module mod, lms_bw bw)
     return LMS_WRITE(dev, reg, data);
 
 }
+#endif
 
 
+#ifndef BLADERF_NIOS_BUILD
 int lms_get_bandwidth(struct bladerf *dev, bladerf_module mod, lms_bw *bw)
 {
     int status;
@@ -463,7 +487,9 @@ int lms_get_bandwidth(struct bladerf *dev, bladerf_module mod, lms_bw *bw)
     *bw = (lms_bw)data;
     return 0;
 }
+#endif
 
+#ifndef BLADERF_NIOS_BUILD
 lms_bw lms_uint2bw(unsigned int req)
 {
     lms_bw ret;
@@ -487,7 +513,9 @@ lms_bw lms_uint2bw(unsigned int req)
 
     return ret;
 }
+#endif
 
+#ifndef BLADERF_NIOS_BUILD
 /* Return the table entry */
 unsigned int lms_bw2uint(lms_bw bw)
 {
@@ -495,8 +523,10 @@ unsigned int lms_bw2uint(lms_bw bw)
     assert(idx < ARRAY_SIZE(uint_bandwidths));
     return uint_bandwidths[idx];
 }
+#endif
 
 /* Enable dithering on the module PLL */
+#ifndef BLADERF_NIOS_BUILD
 int lms_dither_enable(struct bladerf *dev, bladerf_module mod,
                       uint8_t nbits, bool enable)
 {
@@ -536,8 +566,10 @@ int lms_dither_enable(struct bladerf *dev, bladerf_module mod,
     status = LMS_WRITE(dev, reg, data);
     return status;
 }
+#endif
 
 /* Soft reset of the LMS */
+#ifndef BLADERF_NIOS_BUILD
 int lms_soft_reset(struct bladerf *dev)
 {
 
@@ -549,8 +581,10 @@ int lms_soft_reset(struct bladerf *dev)
 
     return status;
 }
+#endif
 
 /* Set the gain on the LNA */
+#ifndef BLADERF_NIOS_BUILD
 int lms_lna_set_gain(struct bladerf *dev, bladerf_lna_gain gain)
 {
     int status;
@@ -572,7 +606,9 @@ int lms_lna_set_gain(struct bladerf *dev, bladerf_lna_gain gain)
 
     return status;
 }
+#endif
 
+#ifndef BLADERF_NIOS_BUILD
 int lms_lna_get_gain(struct bladerf *dev, bladerf_lna_gain *gain)
 {
     int status;
@@ -591,6 +627,7 @@ int lms_lna_get_gain(struct bladerf *dev, bladerf_lna_gain *gain)
 
     return status;
 }
+#endif
 
 /* Select which LNA to enable */
 int lms_select_lna(struct bladerf *dev, lms_lna lna)
@@ -609,6 +646,7 @@ int lms_select_lna(struct bladerf *dev, lms_lna lna)
     return LMS_WRITE(dev, 0x75, data);
 }
 
+#ifndef BLADERF_NIOS_BUILD
 int lms_get_lna(struct bladerf *dev, lms_lna *lna)
 {
     int status;
@@ -623,10 +661,12 @@ int lms_get_lna(struct bladerf *dev, lms_lna *lna)
         return 0;
     }
 }
+#endif
 
 /* Enable bit is in reserved register documented in this thread:
  *  https://groups.google.com/forum/#!topic/limemicro-opensource/8iTannzlfzg
  */
+#ifndef BLADERF_NIOS_BUILD
 int lms_rxvga1_enable(struct bladerf *dev, bool enable)
 {
     int status;
@@ -645,8 +685,10 @@ int lms_rxvga1_enable(struct bladerf *dev, bool enable)
 
     return LMS_WRITE(dev, 0x7d, data);
 }
+#endif
 
 /* Set the RFB_TIA_RXFE mixer gain */
+#ifndef BLADERF_NIOS_BUILD
 int lms_rxvga1_set_gain(struct bladerf *dev, int gain)
 {
     if (gain > BLADERF_RXVGA1_GAIN_MAX) {
@@ -659,8 +701,10 @@ int lms_rxvga1_set_gain(struct bladerf *dev, int gain)
 
     return LMS_WRITE(dev, 0x76, rxvga1_lut_val2code[gain]);
 }
+#endif
 
 /* Get the RFB_TIA_RXFE mixer gain */
+#ifndef BLADERF_NIOS_BUILD
 int lms_rxvga1_get_gain(struct bladerf *dev, int *gain)
 {
     uint8_t data;
@@ -677,8 +721,10 @@ int lms_rxvga1_get_gain(struct bladerf *dev, int *gain)
 
     return status;
 }
+#endif
 
 /* Enable RXVGA2 */
+#ifndef BLADERF_NIOS_BUILD
 int lms_rxvga2_enable(struct bladerf *dev, bool enable)
 {
     int status;
@@ -697,9 +743,11 @@ int lms_rxvga2_enable(struct bladerf *dev, bool enable)
 
     return LMS_WRITE(dev, 0x64, data);
 }
+#endif
 
 
 /* Set the gain on RXVGA2 */
+#ifndef BLADERF_NIOS_BUILD
 int lms_rxvga2_set_gain(struct bladerf *dev, int gain)
 {
     if (gain > BLADERF_RXVGA2_GAIN_MAX) {
@@ -713,7 +761,9 @@ int lms_rxvga2_set_gain(struct bladerf *dev, int gain)
     /* 3 dB per register code */
     return LMS_WRITE(dev, 0x65, gain / 3);
 }
+#endif
 
+#ifndef BLADERF_NIOS_BUILD
 int lms_rxvga2_get_gain(struct bladerf *dev, int *gain)
 {
 
@@ -728,6 +778,7 @@ int lms_rxvga2_get_gain(struct bladerf *dev, int *gain)
 
     return status;
 }
+#endif
 
 int lms_select_pa(struct bladerf *dev, lms_pa pa)
 {
@@ -771,6 +822,7 @@ int lms_select_pa(struct bladerf *dev, lms_pa pa)
 
 };
 
+#ifndef BLADERF_NIOS_BUILD
 int lms_peakdetect_enable(struct bladerf *dev, bool enable)
 {
     int status;
@@ -789,7 +841,9 @@ int lms_peakdetect_enable(struct bladerf *dev, bool enable)
 
     return status;
 }
+#endif
 
+#ifndef BLADERF_NIOS_BUILD
 int lms_enable_rffe(struct bladerf *dev, bladerf_module module, bool enable)
 {
     int status;
@@ -818,7 +872,9 @@ int lms_enable_rffe(struct bladerf *dev, bladerf_module module, bool enable)
 
     return status;
 }
+#endif
 
+#ifndef BLADERF_NIOS_BUILD
 int lms_txvga2_set_gain(struct bladerf *dev, int gain_int)
 {
     int status;
@@ -844,7 +900,9 @@ int lms_txvga2_set_gain(struct bladerf *dev, int gain_int)
 
     return status;
 }
+#endif
 
+#ifndef BLADERF_NIOS_BUILD
 int lms_txvga2_get_gain(struct bladerf *dev, int *gain)
 {
     int status;
@@ -863,7 +921,9 @@ int lms_txvga2_get_gain(struct bladerf *dev, int *gain)
 
     return status;
 }
+#endif
 
+#ifndef BLADERF_NIOS_BUILD
 int lms_txvga1_set_gain(struct bladerf *dev, int gain_int)
 {
     int8_t gain;
@@ -884,7 +944,9 @@ int lms_txvga1_set_gain(struct bladerf *dev, int gain_int)
     /* Since 0x41 is only VGA1GAIN, we don't need to RMW */
     return LMS_WRITE(dev, 0x41, gain);
 }
+#endif
 
+#ifndef BLADERF_NIOS_BUILD
 int lms_txvga1_get_gain(struct bladerf *dev, int *gain)
 {
     int status;
@@ -901,7 +963,9 @@ int lms_txvga1_get_gain(struct bladerf *dev, int *gain)
 
     return status;
 }
+#endif
 
+#ifndef BLADERF_NIOS_BUILD
 static inline int enable_lna_power(struct bladerf *dev, bool enable)
 {
     int status;
@@ -938,8 +1002,10 @@ static inline int enable_lna_power(struct bladerf *dev, bool enable)
 
     return LMS_WRITE(dev, 0x70, regval);
 }
+#endif
 
 /* Power up/down RF loopback switch */
+#ifndef BLADERF_NIOS_BUILD
 static inline int enable_rf_loopback_switch(struct bladerf *dev, bool enable)
 {
     int status;
@@ -958,9 +1024,11 @@ static inline int enable_rf_loopback_switch(struct bladerf *dev, bool enable)
 
     return LMS_WRITE(dev, 0x0b, regval);
 }
+#endif
 
 
 /* Configure TX-side of loopback */
+#ifndef BLADERF_NIOS_BUILD
 static int loopback_tx(struct bladerf *dev, bladerf_loopback mode)
 {
     int status = 0;
@@ -1004,8 +1072,10 @@ static int loopback_tx(struct bladerf *dev, bladerf_loopback mode)
 
     return status;
 }
+#endif
 
 /* Configure RX-side of loopback */
+#ifndef BLADERF_NIOS_BUILD
 static int loopback_rx(struct bladerf *dev, bladerf_loopback mode)
 {
     int status;
@@ -1180,8 +1250,10 @@ static int loopback_rx(struct bladerf *dev, bladerf_loopback mode)
 
     return status;
 }
+#endif
 
 /* Configure "switches" in loopback path */
+#ifndef BLADERF_NIOS_BUILD
 static int loopback_path(struct bladerf *dev, bladerf_loopback mode)
 {
     int status;
@@ -1250,8 +1322,9 @@ static int loopback_path(struct bladerf *dev, bladerf_loopback mode)
 
     return status;
 }
+#endif
 
-
+#ifndef BLADERF_NIOS_BUILD
 int lms_set_loopback_mode(struct bladerf *dev, bladerf_loopback mode)
 {
     int status;
@@ -1309,6 +1382,7 @@ int lms_set_loopback_mode(struct bladerf *dev, bladerf_loopback mode)
 
     return 0;
 }
+#endif
 
 int lms_get_loopback_mode(struct bladerf *dev, bladerf_loopback *loopback)
 {
@@ -1373,6 +1447,7 @@ int lms_get_loopback_mode(struct bladerf *dev, bladerf_loopback *loopback)
 }
 
 /* Top level power down of the LMS */
+#ifndef BLADERF_NIOS_BUILD
 int lms_power_down(struct bladerf *dev)
 {
     int status;
@@ -1386,8 +1461,10 @@ int lms_power_down(struct bladerf *dev)
 
     return status;
 }
+#endif
 
 /* Enable the PLL of a module */
+#ifndef BLADERF_NIOS_BUILD
 int lms_pll_enable(struct bladerf *dev, bladerf_module mod, bool enable)
 {
     int status;
@@ -1406,8 +1483,10 @@ int lms_pll_enable(struct bladerf *dev, bladerf_module mod, bool enable)
 
     return status;
 }
+#endif
 
 /* Enable the RX subsystem */
+#ifndef BLADERF_NIOS_BUILD
 int lms_rx_enable(struct bladerf *dev, bool enable)
 {
     int status;
@@ -1425,8 +1504,10 @@ int lms_rx_enable(struct bladerf *dev, bool enable)
 
     return status;
 }
+#endif
 
 /* Enable the TX subsystem */
+#ifndef BLADERF_NIOS_BUILD
 int lms_tx_enable(struct bladerf *dev, bool enable)
 {
     int status;
@@ -1445,8 +1526,10 @@ int lms_tx_enable(struct bladerf *dev, bool enable)
 
     return status;
 }
+#endif
 
 /* Converts frequency structure to Hz */
+#ifndef BLADERF_NIOS_BUILD
 uint32_t lms_frequency_to_hz(struct lms_freq *f)
 {
     uint64_t pll_coeff;
@@ -1457,8 +1540,10 @@ uint32_t lms_frequency_to_hz(struct lms_freq *f)
 
     return (uint32_t)(((f->reference * pll_coeff) + (div >> 1)) / div);
 }
+#endif
 
 /* Print a frequency structure */
+#ifndef BLADERF_NIOS_BUILD
 void lms_print_frequency(struct lms_freq *f)
 {
     log_verbose("---- Frequency ----\n");
@@ -1469,8 +1554,13 @@ void lms_print_frequency(struct lms_freq *f)
     log_verbose("  reference: %u\n", f->reference);
     log_verbose("  freq     : %u\n", f->freq_hz);
 }
+#define PRINT_FREQUENCY lms_print_frequency
+#else
+#define PRINT_FREQUENCY(f)
+#endif
 
 /* Get the frequency structure */
+#ifndef BLADERF_NIOS_BUILD
 int lms_get_frequency(struct bladerf *dev, bladerf_module mod,
                       struct lms_freq *f)
 {
@@ -1519,6 +1609,7 @@ int lms_get_frequency(struct bladerf *dev, bladerf_module mod,
 
     return status;
 }
+#endif
 
 #define VCO_HIGH 0x02
 #define VCO_NORM 0x00
@@ -1543,6 +1634,8 @@ static inline int tune_vcocap(struct bladerf *dev, uint8_t base, uint8_t data)
         if (status != 0) {
             return status;
         }
+
+        VTUNE_BUSY_WAIT();
 
         status = LMS_READ(dev, base + 10, &vtune);
         if (status != 0) {
@@ -1582,6 +1675,8 @@ static inline int tune_vcocap(struct bladerf *dev, uint8_t base, uint8_t data)
             return status;
         }
 
+        VTUNE_BUSY_WAIT();
+
         status = LMS_READ(dev, base + 10, &vtune);
         if (status != 0) {
             return status;
@@ -1598,6 +1693,8 @@ static inline int tune_vcocap(struct bladerf *dev, uint8_t base, uint8_t data)
         return status;
     }
 
+    VTUNE_BUSY_WAIT();
+
     status = LMS_READ(dev, base + 10, &vtune);
     if (status != 0) {
         return status;
@@ -1612,6 +1709,8 @@ static inline int tune_vcocap(struct bladerf *dev, uint8_t base, uint8_t data)
         if (status != 0) {
             return status;
         }
+
+        VTUNE_BUSY_WAIT();
 
         status = LMS_READ(dev, base + 10, &vtune);
         if (status != 0) {
@@ -1633,6 +1732,8 @@ static inline int tune_vcocap(struct bladerf *dev, uint8_t base, uint8_t data)
         return status;
     }
 
+    VTUNE_BUSY_WAIT();
+
     status = LMS_READ(dev, base + 10, &vtune);
     if (status != 0) {
         return status;
@@ -1648,6 +1749,35 @@ static inline int tune_vcocap(struct bladerf *dev, uint8_t base, uint8_t data)
 
     return status;
 }
+
+int lms_select_band(struct bladerf *dev, bladerf_module module,
+                    unsigned int freq)
+{
+    int status;
+    lms_lna lna;
+    lms_pa pa;
+
+    /* If loopback mode disabled, avoid changing the PA or LNA selection,
+     * as these need to remain are powered down or disabled */
+    status = is_loopback_enabled(dev);
+    if (status < 0) {
+        return status;
+    } else if (status > 0) {
+        return 0;
+    }
+
+    lna = (freq >= BLADERF_BAND_HIGH) ? LNA_2 : LNA_1;
+    pa  = (freq >= BLADERF_BAND_HIGH) ? PA_2 : PA_1;
+
+    if (module == BLADERF_MODULE_TX) {
+        status = lms_select_pa(dev, pa);
+    } else {
+        status = lms_select_lna(dev, lna);
+    }
+
+    return status;
+}
+
 
 static inline uint8_t calculate_tuning_params(uint32_t freq, struct lms_freq *f)
 {
@@ -1699,7 +1829,7 @@ static inline uint8_t calculate_tuning_params(uint32_t freq, struct lms_freq *f)
     f->reference = (uint32_t)ref_clock;
     f->freq_hz = freq;
 
-    lms_print_frequency(f);
+    PRINT_FREQUENCY(f);
 
     return freqsel;
 }
@@ -1815,6 +1945,7 @@ int lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
     return lms_set_precomputed_freq(dev, mod, &f);
 }
 
+#ifndef BLADERF_NIOS_BUILD
 int lms_dump_registers(struct bladerf *dev)
 {
     int status = 0;
@@ -1833,8 +1964,10 @@ int lms_dump_registers(struct bladerf *dev)
 
     return status;
 }
+#endif
 
 /* Reference LMS6002D calibration guide, section 4.1 flow chart */
+#ifndef BLADERF_NIOS_BUILD
 static int lms_dc_cal_loop(struct bladerf *dev, uint8_t base,
                            uint8_t cal_address, uint8_t dc_cntval,
                            uint8_t *dc_regval)
@@ -1921,7 +2054,9 @@ static int lms_dc_cal_loop(struct bladerf *dev, uint8_t base,
 
     return status;
 }
+#endif
 
+#ifndef BLADERF_NIOS_BUILD
 static inline int dc_cal_backup(struct bladerf *dev,
                                 bladerf_cal_module module,
                                 struct dc_cal_state *state)
@@ -1964,7 +2099,9 @@ static inline int dc_cal_backup(struct bladerf *dev,
 
     return 0;
 }
+#endif
 
+#ifndef BLADERF_NIOS_BUILD
 static inline int dc_cal_module_init(struct bladerf *dev,
                                      bladerf_cal_module module,
                                      struct dc_cal_state *state)
@@ -2088,6 +2225,7 @@ static inline int dc_cal_module_init(struct bladerf *dev,
 
     return status;
 }
+#endif
 
 /* The RXVGA2 items here are based upon Lime Microsystems' recommendations
  * in their "Improving RxVGA2 DC Offset Calibration Stability" Document:
@@ -2096,6 +2234,7 @@ static inline int dc_cal_module_init(struct bladerf *dev,
  * This function assumes that the submodules are preformed in a consecutive
  * and increasing order, as outlined in the above document.
  */
+#ifndef BLADERF_NIOS_BUILD
 static inline int dc_cal_submodule(struct bladerf *dev,
                                    bladerf_cal_module module,
                                    unsigned int submodule,
@@ -2222,7 +2361,9 @@ static inline int dc_cal_submodule(struct bladerf *dev,
     *converged = true;
     return 0;
 }
+#endif
 
+#ifndef BLADERF_NIOS_BUILD
 static inline int dc_cal_retry_adjustment(struct bladerf *dev,
                                           bladerf_cal_module module,
                                           struct dc_cal_state *state,
@@ -2275,7 +2416,9 @@ static inline int dc_cal_retry_adjustment(struct bladerf *dev,
     }
     return status;
 }
+#endif
 
+#ifndef BLADERF_NIOS_BUILD
 static inline int dc_cal_module_deinit(struct bladerf *dev,
                                        bladerf_cal_module module,
                                        struct dc_cal_state *state)
@@ -2336,7 +2479,9 @@ static inline int dc_cal_module_deinit(struct bladerf *dev,
 
     return status;
 }
+#endif
 
+#ifndef BLADERF_NIOS_BUILD
 static inline int dc_cal_restore(struct bladerf *dev,
                                  bladerf_cal_module module,
                                  struct dc_cal_state *state)
@@ -2378,7 +2523,9 @@ static inline int dc_cal_restore(struct bladerf *dev,
 
     return ret;
 }
+#endif
 
+#ifndef BLADERF_NIOS_BUILD
 static inline int dc_cal_module(struct bladerf *dev,
                                 bladerf_cal_module module,
                                 struct dc_cal_state *state,
@@ -2395,7 +2542,9 @@ static inline int dc_cal_module(struct bladerf *dev,
 
     return status;
 }
+#endif
 
+#ifndef BLADERF_NIOS_BUILD
 int lms_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
 {
     int status, tmp_status;
@@ -2438,7 +2587,9 @@ error:
 
     return status;
 }
+#endif
 
+#ifndef BLADERF_NIOS_BUILD
 static inline int enable_lpf_cal_clock(struct bladerf *dev, bool enable)
 {
     const uint8_t mask = (1 << 5);
@@ -2449,7 +2600,9 @@ static inline int enable_lpf_cal_clock(struct bladerf *dev, bool enable)
         return lms_clear(dev, 0x09, mask);
     }
 }
+#endif
 
+#ifndef BLADERF_NIOS_BUILD
 static inline int enable_rxvga2_dccal_clock(struct bladerf *dev, bool enable)
 {
     const uint8_t mask = (1 << 4);
@@ -2460,7 +2613,9 @@ static inline int enable_rxvga2_dccal_clock(struct bladerf *dev, bool enable)
         return lms_clear(dev, 0x09, mask);
     }
 }
+#endif
 
+#ifndef BLADERF_NIOS_BUILD
 static inline int enable_rxlpf_dccal_clock(struct bladerf *dev, bool enable)
 {
     const uint8_t mask = (1 << 3);
@@ -2471,7 +2626,9 @@ static inline int enable_rxlpf_dccal_clock(struct bladerf *dev, bool enable)
         return lms_clear(dev, 0x09, mask);
     }
 }
+#endif
 
+#ifndef BLADERF_NIOS_BUILD
 static inline int enable_txlpf_dccal_clock(struct bladerf *dev, bool enable)
 {
     const uint8_t mask = (1 << 1);
@@ -2482,7 +2639,9 @@ static inline int enable_txlpf_dccal_clock(struct bladerf *dev, bool enable)
         return lms_clear(dev, 0x09, mask);
     }
 }
+#endif
 
+#ifndef BLADERF_NIOS_BUILD
 static int set_dc_cal_value(struct bladerf *dev, uint8_t base,
                              uint8_t dc_addr, int16_t value)
 {
@@ -2522,7 +2681,9 @@ static int set_dc_cal_value(struct bladerf *dev, uint8_t base,
 
     return 0;
 }
+#endif
 
+#ifndef BLADERF_NIOS_BUILD
 static int get_dc_cal_value(struct bladerf *dev, uint8_t base,
                              uint8_t dc_addr, int16_t *value)
 {
@@ -2545,7 +2706,9 @@ static int get_dc_cal_value(struct bladerf *dev, uint8_t base,
     *value = regval;
     return 0;
 }
+#endif
 
+#ifndef BLADERF_NIOS_BUILD
 int lms_set_dc_cals(struct bladerf *dev,
                      const struct bladerf_lms_dc_cals *dc_cals)
 {
@@ -2679,7 +2842,9 @@ int lms_set_dc_cals(struct bladerf *dev,
 
     return 0;
 }
+#endif
 
+#ifndef BLADERF_NIOS_BUILD
 int lms_get_dc_cals(struct bladerf *dev, struct bladerf_lms_dc_cals *dc_cals)
 {
     int status;
@@ -2736,35 +2901,9 @@ int lms_get_dc_cals(struct bladerf *dev, struct bladerf_lms_dc_cals *dc_cals)
 
     return 0;
 }
+#endif
 
-int lms_select_band(struct bladerf *dev, bladerf_module module,
-                    unsigned int freq)
-{
-    int status;
-    lms_lna lna;
-    lms_pa pa;
-
-    /* If loopback mode disabled, avoid changing the PA or LNA selection,
-     * as these need to remain are powered down or disabled */
-    status = is_loopback_enabled(dev);
-    if (status < 0) {
-        return status;
-    } else if (status > 0) {
-        return 0;
-    }
-
-    lna = (freq >= BLADERF_BAND_HIGH) ? LNA_2 : LNA_1;
-    pa  = (freq >= BLADERF_BAND_HIGH) ? PA_2 : PA_1;
-
-    if (module == BLADERF_MODULE_TX) {
-        status = lms_select_pa(dev, pa);
-    } else {
-        status = lms_select_lna(dev, lna);
-    }
-
-    return status;
-}
-
+#ifndef BLADERF_NIOS_BUILD
 int lms_select_sampling(struct bladerf *dev, bladerf_sampling sampling)
 {
     uint8_t val;
@@ -2832,7 +2971,9 @@ int lms_select_sampling(struct bladerf *dev, bladerf_sampling sampling)
 out:
     return status;
 }
+#endif
 
+#ifndef BLADERF_NIOS_BUILD
 int lms_get_sampling(struct bladerf *dev, bladerf_sampling *sampling)
 {
     int status = 0, external = 0;
@@ -2869,3 +3010,4 @@ int lms_get_sampling(struct bladerf *dev, bladerf_sampling *sampling)
 out:
     return status;
 }
+#endif

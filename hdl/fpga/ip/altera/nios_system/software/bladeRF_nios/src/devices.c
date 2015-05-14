@@ -29,6 +29,7 @@
 #include "devices.h"
 #include "debug.h"
 #include "fpga_version.h"
+#include "lms.h"
 
 #if 0   /* Removed until we plan to use this at a later time */
 
@@ -221,7 +222,7 @@ void adf4351_write(uint32_t val)
     alt_avalon_spi_command(SPI_1_BASE, 1, 4, (uint8_t*)&sval.val, 0, 0, 0);
 }
 
-static inline uint32_t module_to_iqcorr_base(enum bladerf_module m)
+static inline uint32_t module_to_iqcorr_base(bladerf_module m)
 {
     if (m == BLADERF_MODULE_RX) {
         return IQ_CORR_RX_PHASE_GAIN_BASE;
@@ -230,14 +231,14 @@ static inline uint32_t module_to_iqcorr_base(enum bladerf_module m)
     }
 }
 
-uint16_t iqbal_get_gain(enum bladerf_module m)
+uint16_t iqbal_get_gain(bladerf_module m)
 {
     const uint32_t base = module_to_iqcorr_base(m);
     const uint32_t regval = IORD_ALTERA_AVALON_PIO_DATA(base);
     return (uint16_t) regval;
 }
 
-void iqbal_set_gain(enum bladerf_module m, uint16_t value)
+void iqbal_set_gain(bladerf_module m, uint16_t value)
 {
     const uint32_t base = module_to_iqcorr_base(m);
     uint32_t regval = IORD_ALTERA_AVALON_PIO_DATA(base);
@@ -248,7 +249,7 @@ void iqbal_set_gain(enum bladerf_module m, uint16_t value)
     IOWR_ALTERA_AVALON_PIO_DATA(base, regval);
 }
 
-uint16_t iqbal_get_phase(enum bladerf_module m)
+uint16_t iqbal_get_phase(bladerf_module m)
 {
     uint32_t regval;
 
@@ -261,7 +262,7 @@ uint16_t iqbal_get_phase(enum bladerf_module m)
     return (uint16_t) (regval >> 16);
 }
 
-void iqbal_set_phase(enum bladerf_module m, uint16_t value)
+void iqbal_set_phase(bladerf_module m, uint16_t value)
 {
     const uint32_t base = module_to_iqcorr_base(m);
     uint32_t regval = IORD_ALTERA_AVALON_PIO_DATA(base);
@@ -272,7 +273,7 @@ void iqbal_set_phase(enum bladerf_module m, uint16_t value)
     IOWR_ALTERA_AVALON_PIO_DATA(base, regval);
 }
 
-uint64_t time_tamer_read(enum bladerf_module m)
+uint64_t time_tamer_read(bladerf_module m)
 {
     uint8_t offset = (m == BLADERF_MODULE_RX) ? 0 : 8;
     uint64_t value = 0;

@@ -86,7 +86,7 @@ INLINE void expansion_port_set_direction(uint32_t dir)
     IOWR_ALTERA_AVALON_PIO_DATA(PIO_2_BASE, dir);
 }
 
-INLINE void time_tamer_reset(enum bladerf_module m)
+INLINE void time_tamer_reset(bladerf_module m)
 {
     /* A single write is sufficient to clear the timestamp counter */
     if (m == BLADERF_MODULE_RX) {

@@ -470,7 +470,7 @@ static const struct test_case test_cases[] = {
 
   };
 
-const char *module2str(enum bladerf_module m)
+const char *module2str(bladerf_module m)
 {
     switch (m) {
         case BLADERF_MODULE_RX:
@@ -616,7 +616,7 @@ void control_reg_write(uint32_t value)
     ASSERT(value == 0x80402057);
 }
 
-uint16_t iqbal_get_gain(enum bladerf_module m)
+uint16_t iqbal_get_gain(bladerf_module m)
 {
     uint16_t ret = 0xffff;
 
@@ -640,7 +640,7 @@ uint16_t iqbal_get_gain(enum bladerf_module m)
     return ret;
 }
 
-void iqbal_set_gain(enum bladerf_module m, uint16_t value)
+void iqbal_set_gain(bladerf_module m, uint16_t value)
 {
     switch (m) {
         case BLADERF_MODULE_RX:
@@ -659,7 +659,7 @@ void iqbal_set_gain(enum bladerf_module m, uint16_t value)
     DBG("%s: module=%s, value=0x%04x\n", __FUNCTION__, module2str(m), value);
 }
 
-uint16_t iqbal_get_phase(enum bladerf_module m)
+uint16_t iqbal_get_phase(bladerf_module m)
 {
     uint16_t ret = 0xffff;
 
@@ -683,7 +683,7 @@ uint16_t iqbal_get_phase(enum bladerf_module m)
     return ret;
 }
 
-void iqbal_set_phase(enum bladerf_module m, uint16_t value)
+void iqbal_set_phase(bladerf_module m, uint16_t value)
 {
     switch (m) {
         case BLADERF_MODULE_RX:
@@ -727,7 +727,7 @@ void expansion_port_set_direction(uint32_t dir)
     DBG("%s: dir=0x%08x\n", __FUNCTION__, dir);
 }
 
-uint64_t time_tamer_read(enum bladerf_module m)
+uint64_t time_tamer_read(bladerf_module m)
 {
     uint64_t ret = (uint64_t) -1;
 
@@ -752,7 +752,7 @@ uint64_t time_tamer_read(enum bladerf_module m)
     return ret;
 }
 
-void time_tamer_reset(enum bladerf_module m)
+void time_tamer_reset(bladerf_module m)
 {
     switch (m) {
         case BLADERF_MODULE_RX:

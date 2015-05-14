@@ -3,10 +3,12 @@
 #------------------------------------------------------------------------------
 
 FPGA_COMMON_DIR := ../../../../../../../fpga_common
+LIBBLADERF_DIR := ../../../../../../../host/libraries/libbladeRF
+
 
 # List of include directories for -I compiler option (-I added when used).
 # Includes the BSP.
-ALT_INCLUDE_DIRS := $(FPGA_COMMON_DIR)/include
+ALT_INCLUDE_DIRS := -I src -I $(FPGA_COMMON_DIR)/include -I $(LIBBLADERF_DIR)/include
 
 # List of library directories for -L linker option (-L added when used).
 # Includes the BSP.
@@ -31,7 +33,7 @@ ALT_LDDEPS :=
 MAKEABLE_LIBRARY_ROOT_DIRS :=
 
 # Generic flags passed to the compiler for different types of input files.
-ALT_CFLAGS :=
+ALT_CFLAGS := -DBLADERF_NIOS_BUILD
 ALT_CXXFLAGS :=
 ALT_CPPFLAGS :=
 ALT_ASFLAGS :=
@@ -153,6 +155,7 @@ C_SRCS += src/pkt_8x64.c
 C_SRCS += src/pkt_retune.c
 C_SRCS += src/pkt_legacy.c
 C_SRCS += src/devices_sim.c
+C_SRCS += $(FPGA_COMMON_DIR)/src/lms.c
 CXX_SRCS :=
 ASM_SRCS :=
 

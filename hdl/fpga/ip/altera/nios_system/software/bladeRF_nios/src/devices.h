@@ -27,10 +27,11 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <libbladeRF.h>
 #include "fpga_version.h"
 
 /* Detect if we are in NIOS Build tools */
-#ifdef __hal__
+#ifdef BLADERF_NIOS_BUILD
 #   ifdef BLADERF_NIOS_PC_SIMULATION
 #       error "When compiling for the NIOS II, you cannot define BLADERF_NIOS_PC_SIMULATION."
 #   endif
@@ -86,11 +87,6 @@
 #   define INLINE
     void SIMULATION_FLUSH_UART();
 #endif
-
-enum bladerf_module {
-    BLADERF_MODULE_RX,
-    BLADERF_MODULE_TX,
-};
 
 /**
  * Initialize NIOS II device interfaces.
@@ -192,7 +188,7 @@ INLINE void control_reg_write(uint32_t value);
  * @param m         Which module to query
  * @return RX IQ gain correction value
  */
-uint16_t iqbal_get_gain(enum bladerf_module m);
+uint16_t iqbal_get_gain(bladerf_module m);
 
 /**
  * Set IQ balance gain correction value
@@ -200,7 +196,7 @@ uint16_t iqbal_get_gain(enum bladerf_module m);
  * @param m         Which module to configure
  * @param value     Gain correction value
  */
-void iqbal_set_gain(enum bladerf_module m, uint16_t value);
+void iqbal_set_gain(bladerf_module m, uint16_t value);
 
 /**
  * Get IQ balance phase value
@@ -208,7 +204,7 @@ void iqbal_set_gain(enum bladerf_module m, uint16_t value);
  * @param m         Which module to query
  * @return IQ phase correction value
  */
-uint16_t iqbal_get_phase(enum bladerf_module m);
+uint16_t iqbal_get_phase(bladerf_module m);
 
 /**
  * Set IQ balance phase correction value
@@ -216,7 +212,7 @@ uint16_t iqbal_get_phase(enum bladerf_module m);
  * @param m         Which module to configure
  * @param value     Phase correction value
  */
-void iqbal_set_phase(enum bladerf_module m, uint16_t value);
+void iqbal_set_phase(bladerf_module m, uint16_t value);
 
 /**
  * Read from GPIO expansion port
@@ -260,12 +256,12 @@ INLINE void expansion_port_set_direction(uint32_t dir);
 /**
  * Read timestamp from time tamer
  */
-uint64_t time_tamer_read(enum bladerf_module m);
+uint64_t time_tamer_read(bladerf_module m);
 
 /**
  * Reset one of the time tamer's timestamp counters to 0
  */
-INLINE void time_tamer_reset(enum bladerf_module m);
+INLINE void time_tamer_reset(bladerf_module m);
 
 /**
  * @return FPGA version
