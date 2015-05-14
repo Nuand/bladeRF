@@ -56,6 +56,7 @@ DECLARE_TEST(loopback_onoff);
 DECLARE_TEST(loopback_onoff_zp);
 DECLARE_TEST(format_mismatch);
 DECLARE_TEST(readback);
+DECLARE_TEST(print);
 
 static const struct test *tests[] = {
     TEST(rx_gaps),
@@ -67,6 +68,7 @@ static const struct test *tests[] = {
     TEST(loopback_onoff_zp),
     TEST(format_mismatch),
     TEST(readback),
+    TEST(print),
 };
 
 
@@ -137,7 +139,10 @@ static void usage(const char *argv0)
     printf("                                which are verified via baseband loopback\n");
     printf("                                to the RX module.\n");
     printf("         format_mismatch      Exercise checking of conflicting formats.\n");
-    printf("         readback             Read back and print timestamps.\n");
+    printf("         readback             Read back timestamps for 10-20s to determine\n");
+    printf("                                mean intra-readback time and look for any\n");
+    printf("                                unexpected gaps.\n");
+    printf("         print                Read and print timestamps for ~2 hours.\n");
     printf("\n");
     printf("    -S, --seed <value>        Seed to use for PRNG-based test cases.\n");
     printf("\n");
