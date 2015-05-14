@@ -988,14 +988,12 @@ static int loopback_tx(struct bladerf *dev, bladerf_loopback mode)
                 return status;
             }
 
-            status = lms_set_frequency(dev, BLADERF_MODULE_TX,
-                                       lms_frequency_to_hz(&f));
+            status = lms_set_frequency(dev, BLADERF_MODULE_TX, f.freq_hz);
             if (status != 0) {
                 return status;
             }
 
-            status = lms_select_band(dev, BLADERF_MODULE_TX,
-                                     lms_frequency_to_hz(&f));
+            status = lms_select_band(dev, BLADERF_MODULE_TX, f.freq_hz);
             break;
         }
 
@@ -1165,15 +1163,13 @@ static int loopback_rx(struct bladerf *dev, bladerf_loopback mode)
                 return status;
             }
 
-            status = lms_set_frequency(dev, BLADERF_MODULE_RX,
-                                       lms_frequency_to_hz(&f));
+            status = lms_set_frequency(dev, BLADERF_MODULE_RX, f.freq_hz);
             if (status != 0) {
                 return status;
             }
 
 
-            status = lms_select_band(dev, BLADERF_MODULE_RX,
-                                     lms_frequency_to_hz(&f));
+            status = lms_select_band(dev, BLADERF_MODULE_RX, f.freq_hz);
             break;
         }
 
@@ -1471,7 +1467,7 @@ void lms_print_frequency(struct lms_freq *f)
     log_verbose("  nfrac    : %u\n", f->nfrac);
     log_verbose("  freqsel  : 0x%02x\n", f->freqsel);
     log_verbose("  reference: %u\n", f->reference);
-    log_verbose("  freq     : %u\n", lms_frequency_to_hz(f));
+    log_verbose("  freq     : %u\n", f->freq_hz);
 }
 
 /* Get the frequency structure */
@@ -1519,6 +1515,7 @@ int lms_get_frequency(struct bladerf *dev, bladerf_module mod,
     f->freqsel = (data>>2);
     f->x = 1 << ((f->freqsel & 7) - 3);
     f->reference = 38400000;
+    f->freq_hz = lms_frequency_to_hz(f);
 
     return status;
 }
@@ -1652,21 +1649,15 @@ static inline int tune_vcocap(struct bladerf *dev, uint8_t base, uint8_t data)
     return status;
 }
 
-/* Set the frequency of a module */
-int lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
+static inline uint8_t calculate_tuning_params(uint32_t freq, struct lms_freq *f)
 {
-    /* Select the base address based on which PLL we are configuring */
-    const uint8_t base = (mod == BLADERF_MODULE_RX) ? 0x20 : 0x10;
-    const uint64_t ref_clock = 38400000;
-    uint8_t freqsel = bands[0].value;
-    uint16_t nint;
-    uint32_t nfrac;
-    struct lms_freq f;
-    uint8_t data;
     uint64_t vco_x;
     uint64_t temp;
-    int status, dsm_status;
+    uint16_t nint;
+    uint32_t nfrac;
+    uint8_t freqsel = bands[0].value;
     uint8_t i = 0;
+    const uint64_t ref_clock = 38400000;
 
     /* Clamp out of range values */
     if (freq < BLADERF_FREQUENCY_MIN) {
@@ -1700,13 +1691,26 @@ int lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
     nfrac = (uint32_t)temp;
 
     assert(vco_x <= UINT8_MAX);
-    f.x = (uint8_t)vco_x;
-    f.nint = nint;
-    f.nfrac = nfrac;
-    f.freqsel = freqsel;
+    f->x = (uint8_t)vco_x;
+    f->nint = nint;
+    f->nfrac = nfrac;
+    f->freqsel = freqsel;
     assert(ref_clock <= UINT32_MAX);
-    f.reference = (uint32_t)ref_clock;
-    lms_print_frequency(&f);
+    f->reference = (uint32_t)ref_clock;
+    f->freq_hz = freq;
+
+    lms_print_frequency(f);
+
+    return freqsel;
+}
+
+int lms_set_precomputed_freq(struct bladerf *dev, bladerf_module mod,
+                             struct lms_freq *f)
+{
+    /* Select the base address based on which PLL we are configuring */
+    const uint8_t base = (mod == BLADERF_MODULE_RX) ? 0x20 : 0x10;
+    uint8_t data;
+    int status, dsm_status;
 
     /* Turn on the DSMs */
     status = LMS_READ(dev, 0x09, &data);
@@ -1720,39 +1724,39 @@ int lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
         return status;
     }
 
-    status = write_pll_config(dev, mod, freq, freqsel);
+    status = write_pll_config(dev, mod, f->freq_hz, f->freqsel);
     if (status != 0) {
-        goto lms_set_frequency_error;
+        goto error;
     }
 
-    data = nint >> 1;
+    data = f->nint >> 1;
     status = LMS_WRITE(dev, base + 0, data);
     if (status != 0) {
-        goto lms_set_frequency_error;
+        goto error;
     }
 
-    data = ((nint & 1) << 7) | ((nfrac >> 16) & 0x7f);
+    data = ((f->nint & 1) << 7) | ((f->nfrac >> 16) & 0x7f);
     status = LMS_WRITE(dev, base + 1, data);
     if (status != 0) {
-        goto lms_set_frequency_error;
+        goto error;
     }
 
-    data = ((nfrac >> 8) & 0xff);
+    data = ((f->nfrac >> 8) & 0xff);
     status = LMS_WRITE(dev, base + 2, data);
     if (status != 0) {
-        goto lms_set_frequency_error;
+        goto error;
     }
 
-    data = (nfrac & 0xff);
+    data = (f->nfrac & 0xff);
     status = LMS_WRITE(dev, base + 3, data);
     if (status != 0) {
-        goto lms_set_frequency_error;
+        goto error;
     }
 
     /* Set the PLL Ichp, Iup and Idn currents */
     status = LMS_READ(dev, base + 6, &data);
     if (status != 0) {
-        goto lms_set_frequency_error;
+        goto error;
     }
 
     data &= ~(0x1f);
@@ -1760,12 +1764,12 @@ int lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
 
     status = LMS_WRITE(dev, base + 6, data);
     if (status != 0) {
-        goto lms_set_frequency_error;
+        goto error;
     }
 
     status = LMS_READ(dev, base + 7, &data);
     if (status != 0) {
-        goto lms_set_frequency_error;
+        goto error;
     }
 
     data &= ~(0x1f);
@@ -1773,25 +1777,25 @@ int lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
 
     status = LMS_WRITE(dev, base + 7, data);
     if (status != 0) {
-        goto lms_set_frequency_error;
+        goto error;
     }
 
     status = LMS_READ(dev, base + 8, &data);
     if (status != 0) {
-        goto lms_set_frequency_error;
+        goto error;
     }
 
     data &= ~(0x1f);
     // data |= 3;
     status = LMS_WRITE(dev, base + 8, data);
     if (status != 0) {
-        goto lms_set_frequency_error;
+        goto error;
     }
 
     /* Loop through the VCOCAP to figure out optimal values */
     status = tune_vcocap(dev, base, data);
 
-lms_set_frequency_error:
+error:
     /* Turn off the DSMs */
     dsm_status = LMS_READ(dev, 0x09, &data);
     if (dsm_status == 0) {
@@ -1800,6 +1804,15 @@ lms_set_frequency_error:
     }
 
     return (status == 0) ? dsm_status : status;
+}
+
+/* Set the frequency of a module */
+int lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
+{
+    struct lms_freq f;
+
+    calculate_tuning_params(freq, &f);
+    return lms_set_precomputed_freq(dev, mod, &f);
 }
 
 int lms_dump_registers(struct bladerf *dev)

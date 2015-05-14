@@ -43,6 +43,7 @@ struct lms_freq {
     uint32_t    nfrac;     /**< Fractional portion of f_LO given nint and f_REF */
     uint8_t     freqsel;   /**< Choice of VCO and dision ratio */
     uint32_t    reference; /**< Reference frequency going to the LMS6002D */
+    uint32_t    freq_hz;   /**< Frequency in Hz */
 };
 
 /**
@@ -561,6 +562,18 @@ int lms_get_frequency(struct bladerf *dev, bladerf_module mod,
  */
 int lms_set_frequency(struct bladerf *dev,
                       bladerf_module mod, uint32_t freq);
+
+/**
+ * Set the frequency of a module, given the lms_freq structure
+ *
+ * @param[in]   dev     Device handle
+ * @param[in]   mod     Module to tune
+ * @param[in]   f       lms_freq structure contaning desired tuning parameters
+ *
+ * @return 0 on success, BLADERF_ERR_* value on failure
+ */
+int lms_set_precomputed_freq(struct bladerf *dev, bladerf_module mod,
+                             struct lms_freq *f);
 
 /**
  * Read back every register from the LMS6002D device.
