@@ -130,7 +130,7 @@ int tuning_set_mode(struct bladerf *dev, bladerf_tuning_mode mode)
     if (fpga_supports_tuning_mode(dev, mode)) {
         dev->tuning_mode = mode;
     } else {
-        status = BLADERF_ERR_INVAL;
+        status = BLADERF_ERR_UNSUPPORTED;
 
         log_debug("The loaded FPGA version (%u.%u.%u) does not support the "
                   "provided tuning mode (%d)\n",
