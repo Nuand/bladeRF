@@ -25,51 +25,39 @@
 #include <stdbool.h>
 #include "pkt_handler.h"
 #include "pkt_retune.h"
+#include "nios_pkt_retune.h"    /* Packet format definition */
 #include "devices.h"
 #include "debug.h"
 
-/*
- * Retune word looks a little something like this:
- *  Bytes       Description
- *  0           Magic
- *  8:1         64-bit unsigned time
- *  12:9        32-bit unsigned frequency
- *  13          VCOCAP Hint
- *  14          Status flags
- *  15          Reserved
- */
-
-struct retune_config {
-    uint64_t    timestamp ;
-    uint32_t    frequency ;
-    uint8_t     vcocap_hint ;
-    uint8_t     status_flags ;
-} ;
 
 void pkt_retune(struct pkt_buf *b)
 {
-    /* Fill in the retune config structure */
-    struct retune_config config = { .timestamp = 0, .frequency = 0, .vcocap_hint = 0, .status_flags = 0 } ;
-    int i ;
-    uint8_t const *data = b->req;
+    bladerf_module module;
+    uint64_t timestamp;
+    struct lms_freq f;
 
-    /* Timestamp */
-    for( i = 1 ; i < 9 ; i++ ) {
-        config.timestamp |= ((uint64_t)data[i]) << ((i-1)*8) ;
+    nios_pkt_retune_unpack(b->req, &module, &timestamp,
+                           &f.nint, &f.nfrac, &f.freqsel, &f.low_band);
+
+    if (timestamp == NIOS_PKT_RETUNE_NOW) {
+        /* Fire off this retune operation now */
+
+        switch (module) {
+            case BLADERF_MODULE_RX:
+            case BLADERF_MODULE_TX:
+                lms_set_precalculated_frequency(NULL, module, &f);
+                break;
+
+            default:
+                /* TODO Mark a failure in the response */
+                goto out;
+        }
+
+    } else {
+        /* TODO Schedule the retune operation in our queue */
     }
 
-    /* Frequency */
-    for( i = 9 ; i < 13 ; i++ ) {
-        config.frequency |= ((uint32_t)data[i]) << ((i-9)*8) ;
-    }
-
-    /* VCOCAP Hint */
-    config.vcocap_hint = data[13] ;
-
-    /* TODO: Schedule the retune here */
-
-    /* Response is the same as the request */
-    memcpy(b->resp, data, PKT_BUFLEN) ;
-
-    return;
+out:
+    /* TODO Have a success/failure in the response */
+    memcpy(b->resp, b->req, sizeof(b->req));
 }

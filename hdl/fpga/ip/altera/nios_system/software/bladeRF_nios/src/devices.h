@@ -27,7 +27,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <libbladeRF.h>
+#include "libbladeRF_nios_compat.h"
 #include "fpga_version.h"
 
 /* Detect if we are in NIOS Build tools */
@@ -282,5 +282,11 @@ static inline  uint32_t fpga_version(void)
 #ifndef BLADERF_NIOS_PC_SIMULATION
 #   include "devices_inline.h"
 #endif
+
+
+/* The LMS6002 header contains a few inline functions which contain
+ * macros that utilize lms6_read/write, so we need thes declared before
+ * including this header */
+#include "lms.h"
 
 #endif

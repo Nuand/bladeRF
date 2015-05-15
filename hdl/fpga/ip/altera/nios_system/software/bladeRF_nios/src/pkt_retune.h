@@ -27,7 +27,7 @@
 #include <stdint.h>
 #include "pkt_handler.h"
 
-#define PKT_RETUNE_MAGIC            ((uint8_t) 'Q')
+#define PKT_RETUNE_MAGIC            ((uint8_t) NIOS_PKT_RETUNE_MAGIC)
 #define PKT_RETUNE_REQUIRED_BYTES   15
 
 void pkt_retune(struct pkt_buf *b);

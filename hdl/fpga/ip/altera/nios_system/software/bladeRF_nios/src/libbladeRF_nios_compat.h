@@ -27,7 +27,6 @@
 #define LIBBLADERF_COMPAT_H_
 
 #include "libbladeRF.h"
-#include "devices.h"
 #include "debug.h"
 
 /* Use our debug assert */

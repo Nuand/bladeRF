@@ -38,6 +38,7 @@
 #   define LMS_READ(dev, addr, value)  dev->fn->lms_read(dev, addr, value)
 #else
 #   include "libbladeRF_nios_compat.h"
+#   include "devices.h"
 #endif
 
 

@@ -29,7 +29,6 @@
 #include "devices.h"
 #include "debug.h"
 #include "fpga_version.h"
-#include "lms.h"
 
 #if 0   /* Removed until we plan to use this at a later time */
 
