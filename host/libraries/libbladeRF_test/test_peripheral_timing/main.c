@@ -33,18 +33,9 @@
 #include <stdint.h>
 #include <time.h>
 #include <libbladeRF.h>
+#include "test_common.h"
 
 #define ITERATIONS 10000
-
-/* Return duration, in seconds */
-double calc_duration(const struct timespec *start, const struct timespec *end,
-                     double iterations)
-{
-    double start_d = start->tv_sec + start->tv_nsec * 1e-9;
-    double end_d   = end->tv_sec   + end->tv_nsec * 1e-9;
-
-    return (end_d - start_d) / iterations;
-}
 
 int time_lms_reads(struct bladerf *dev, double *duration)
 {
@@ -74,7 +65,7 @@ int time_lms_reads(struct bladerf *dev, double *duration)
         return -1;
     }
 
-    *duration = calc_duration(&start, &end, ITERATIONS);
+    *duration = calc_avg_duration(&start, &end, ITERATIONS);
     return 0;
 }
 
@@ -105,7 +96,7 @@ int time_lms_writes(struct bladerf *dev, double *duration)
         return -1;
     }
 
-    *duration = calc_duration(&start, &end, ITERATIONS);
+    *duration = calc_avg_duration(&start, &end, ITERATIONS);
     return 0;
 }
 
@@ -137,7 +128,7 @@ int time_si5338_reads(struct bladerf *dev, double *duration)
         return -1;
     }
 
-    *duration = calc_duration(&start, &end, ITERATIONS);
+    *duration = calc_avg_duration(&start, &end, ITERATIONS);
     return 0;
 }
 
@@ -168,7 +159,7 @@ int time_si5338_writes(struct bladerf *dev, double *duration)
         return -1;
     }
 
-    *duration = calc_duration(&start, &end, ITERATIONS);
+    *duration = calc_avg_duration(&start, &end, ITERATIONS);
     return 0;
 }
 

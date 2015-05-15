@@ -628,3 +628,13 @@ int test_perform_sync_config(struct bladerf *dev, bladerf_module module,
 
     return 0;
 }
+
+double calc_avg_duration(const struct timespec *start,
+                         const struct timespec *end,
+                         double iterations)
+{
+    double start_d = start->tv_sec + start->tv_nsec * 1e-9;
+    double end_d   = end->tv_sec   + end->tv_nsec * 1e-9;
+
+    return (end_d - start_d) / iterations;
+}

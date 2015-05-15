@@ -178,4 +178,17 @@ static inline uint64_t randval_update(uint64_t *state)
     return *state;
 }
 
+/**
+ * Calculate an average duration
+ *
+ * @param   start           Start time
+ * @param   end             End time
+ * @param   iteratations    Number of iterations performed timed
+ *
+ * @return average duration, in seconds
+ */
+double calc_avg_duration(const struct timespec *start,
+                         const struct timespec *end,
+                         double iterations);
+
 #endif
