@@ -227,6 +227,8 @@ int init_device(struct bladerf *dev)
             return status;
         }
 
+        dev->tuning_mode = tuning_get_default_mode(dev);
+
         /* Set a default frequency of 1GHz */
         status = tuning_set_freq(dev, BLADERF_MODULE_TX, 1000000000);
         if (status != 0) {
@@ -243,7 +245,8 @@ int init_device(struct bladerf *dev)
         if (status != 0) {
             return status;
         }
-
+    } else {
+        dev->tuning_mode = tuning_get_default_mode(dev);
     }
 
     /* Set up LMS DC offset register calibration and initial IQ settings,

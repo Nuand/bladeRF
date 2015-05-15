@@ -200,6 +200,10 @@ int bladerf_open_with_devinfo(struct bladerf **opened_device,
     dev->module_format[BLADERF_MODULE_RX] = -1;
     dev->module_format[BLADERF_MODULE_TX] = -1;
 
+    /* This will be set in init_device() after we can determine which
+     * methods the FPGA supports (based upon version number). */
+    dev->tuning_mode = BLADERF_TUNING_MODE_INVALID;
+
     /* Load any available calibration tables so that the LMS DC register
      * configurations may be loaded in init_device */
     status = config_load_dc_cals(dev);
@@ -696,6 +700,24 @@ int bladerf_set_frequency(struct bladerf *dev,
     return status;
 }
 
+
+int bladerf_schedule_retune(struct bladerf *dev,
+                            bladerf_module module,
+                            uint64_t timestamp,
+                            unsigned int frequency,
+                            uint8_t flags,
+                            uint16_t hint)
+
+{
+    int status;
+    MUTEX_LOCK(&dev->ctrl_lock);
+
+    status = tuning_schedule(dev, module, timestamp, frequency, flags, hint);
+
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+    return status;
+}
+
 int bladerf_get_frequency(struct bladerf *dev,
                             bladerf_module module, unsigned int *frequency)
 {
@@ -703,6 +725,18 @@ int bladerf_get_frequency(struct bladerf *dev,
     MUTEX_LOCK(&dev->ctrl_lock);
 
     status = tuning_get_freq(dev, module, frequency);
+
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+    return status;
+}
+
+int bladerf_set_tuning_mode(struct bladerf *dev,
+                            bladerf_tuning_mode mode)
+{
+    int status;
+    MUTEX_LOCK(&dev->ctrl_lock);
+
+    status = tuning_set_mode(dev, mode);
 
     MUTEX_UNLOCK(&dev->ctrl_lock);
     return status;

@@ -26,8 +26,8 @@
 #include "backend.h"
 
 /* We never "find" dummy devices */
-int dummy_probe(backend_probe_target probe_target,
-                struct bladerf_devinfo_list *info_list)
+static int dummy_probe(backend_probe_target probe_target,
+                       struct bladerf_devinfo_list *info_list)
 {
     return 0;
 }
@@ -132,23 +132,23 @@ static int dummy_expansion_gpio_dir_read(struct bladerf *dev, uint32_t *val)
     return 0;
 }
 
-int dummy_set_correction(struct bladerf *dev, bladerf_module module,
-                          bladerf_correction corr, int16_t value)
+static int dummy_set_correction(struct bladerf *dev, bladerf_module module,
+                                bladerf_correction corr, int16_t value)
 {
     return 0;
 }
 
-int dummy_get_correction(struct bladerf *dev, bladerf_module module,
-                          bladerf_correction corr, int16_t *value)
+static int dummy_get_correction(struct bladerf *dev, bladerf_module module,
+                                bladerf_correction corr, int16_t *value)
 {
     return 0;
 }
 
-int dummy_get_timestamp(struct bladerf *dev, bladerf_module mod, uint64_t *val)
+static int dummy_get_timestamp(struct bladerf *dev, bladerf_module mod,
+                               uint64_t *val)
 {
     return 0;
 }
-
 
 static int dummy_si5338_read(struct bladerf *dev, uint8_t addr, uint8_t *data)
 {
@@ -191,7 +191,8 @@ static int dummy_get_firmware_loopback(struct bladerf *dev, bool *is_enabled)
     return 0;
 }
 
-int dummy_enable_module(struct bladerf *dev, bladerf_module m, bool enable)
+static int dummy_enable_module(struct bladerf *dev, bladerf_module m,
+                               bool enable)
 {
     return 0;
 }
@@ -213,15 +214,22 @@ static int dummy_submit_stream_buffer(struct bladerf_stream *stream,
     return 0;
 }
 
-void dummy_deinit_stream(struct bladerf_stream *stream)
+static void dummy_deinit_stream(struct bladerf_stream *stream)
 {
     return;
 }
 
+static int dummy_retune(struct bladerf *dev, bladerf_module module,
+                        uint64_t timestamp, unsigned int frequency,
+                        uint8_t flags, uint16_t hint)
+{
+    return 0;
+}
 
-int dummy_load_fw_from_bootloader(bladerf_backend backend,
-                                  uint8_t bus, uint8_t addr,
-                                  struct fx3_firmware *fw)
+
+static int dummy_load_fw_from_bootloader(bladerf_backend backend,
+                                         uint8_t bus, uint8_t addr,
+                                         struct fx3_firmware *fw)
 {
     return 0;
 }
@@ -280,6 +288,8 @@ const struct backend_fns backend_fns_dummy = {
     FIELD_INIT(.stream, dummy_stream),
     FIELD_INIT(.submit_stream_buffer, dummy_submit_stream_buffer),
     FIELD_INIT(.deinit_stream, dummy_deinit_stream),
+
+    FIELD_INIT(.retune, dummy_retune),
 
     FIELD_INIT(.load_fw_from_bootloader, dummy_load_fw_from_bootloader),
 };

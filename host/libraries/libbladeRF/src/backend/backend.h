@@ -88,7 +88,7 @@ struct backend_fns {
     int (*get_otp)(struct bladerf *dev, char *otp);
     int (*get_device_speed)(struct bladerf *dev, bladerf_dev_speed *speed);
 
-    /* Configuration GPIO accessors */
+    /* Configuration GPIO (NIOS II <-> logic) accessors */
     int (*config_gpio_write)(struct bladerf *dev, uint32_t val);
     int (*config_gpio_read)(struct bladerf *dev, uint32_t *val);
 
@@ -133,6 +133,11 @@ struct backend_fns {
     int (*submit_stream_buffer)(struct bladerf_stream *stream, void *buffer,
                                 unsigned int timeout_ms);
     void (*deinit_stream)(struct bladerf_stream *stream);
+
+    /* Schedule a frequency retune operation */
+    int (*retune)(struct bladerf *dev, bladerf_module module,
+                  uint64_t timestamp, unsigned int frequency,
+                  uint8_t flags, uint16_t hint);
 
     /* Load firmware from FX3 bootloader */
     int (*load_fw_from_bootloader)(bladerf_backend backend,

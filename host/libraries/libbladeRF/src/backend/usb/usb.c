@@ -31,7 +31,7 @@
 #include "backend/usb/usb.h"
 #include "async.h"
 #include "bladeRF.h"    /* Firmware interface */
-#include "nios_pkt_legacy.h"
+#include "nios_pkt_formats.h"
 #include "log.h"
 #include "version_compat.h"
 #include "minmax.h"
@@ -59,6 +59,7 @@ static inline struct bladerf_usb *usb_backend(struct bladerf *dev, void **driver
     return ret;
 }
 
+//#define PRINT_PERIPHERAL_BUFFERS
 #ifdef PRINT_PERIPHERAL_BUFFERS
 static void print_buf(const char *msg, const uint8_t *buf, size_t len)
 {
@@ -1438,6 +1439,62 @@ static void usb_deinit_stream(struct bladerf_stream *stream)
     usb->fn->deinit_stream(driver, stream);
 }
 
+static int usb_retune(struct bladerf *dev, bladerf_module module,
+                      uint64_t timestamp, unsigned int frequency,
+                      uint8_t flags, uint16_t hint)
+{
+    int status;
+    void *driver;
+    struct bladerf_usb *usb = usb_backend(dev, &driver);
+    uint8_t buf[NIOS_PKT_LEN] = { 0x00 };
+
+    switch (module) {
+        case BLADERF_MODULE_RX:
+            flags &= ~NIOS_PKT_RETUNE_FLAG_TX;
+            flags |= NIOS_PKT_RETUNE_FLAG_RX;
+            break;
+
+        case BLADERF_MODULE_TX:
+            flags &= ~NIOS_PKT_RETUNE_FLAG_RX;
+            flags |= NIOS_PKT_RETUNE_FLAG_TX;
+            break;
+
+        default:
+            log_debug("Invalid module provided to %s(): %d\n",
+                      __FUNCTION__, module);
+            return BLADERF_ERR_INVAL;
+    }
+
+    nios_pkt_retune_pack(buf, timestamp, frequency, flags, hint);
+
+    print_buf("Retune request:", buf, 16);
+
+    /* Send the command */
+    status = usb->fn->bulk_transfer(driver, PERIPHERAL_EP_OUT,
+                                    buf, sizeof(buf),
+                                    PERIPHERAL_TIMEOUT_MS);
+    if (status != 0) {
+        log_debug("Failed to write retune command: %s\n",
+                  bladerf_strerror(status));
+        return status;
+    }
+
+    /* Wait for the response */
+    status = usb->fn->bulk_transfer(driver, PERIPHERAL_EP_IN,
+                                    buf, sizeof(buf),
+                                    PERIPHERAL_TIMEOUT_MS);
+
+    if (status != 0) {
+        log_debug("Failed to read retune response: %s\n",
+                  bladerf_strerror(status));
+        return status;
+    }
+
+    print_buf("Retune response:", buf, 16);
+
+    return status;
+}
+
 /*
  * Information about the boot image format and boot over USB caan be found in
  * Cypress AN76405: EZ-USB (R) FX3 (TM) Boot Options:
@@ -1656,6 +1713,8 @@ const struct backend_fns backend_fns_usb = {
     FIELD_INIT(.stream, usb_stream),
     FIELD_INIT(.submit_stream_buffer, usb_submit_stream_buffer),
     FIELD_INIT(.deinit_stream, usb_deinit_stream),
+
+    FIELD_INIT(.retune, usb_retune),
 
     FIELD_INIT(.load_fw_from_bootloader, usb_load_fw_from_bootloader),
 };

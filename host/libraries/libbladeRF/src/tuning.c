@@ -23,6 +23,7 @@
 #include "xb.h"
 #include "dc_cal_table.h"
 #include "log.h"
+#include "version_compat.h"
 
 
 int tuning_select_band(struct bladerf *dev, bladerf_module module,
@@ -56,6 +57,102 @@ int tuning_select_band(struct bladerf *dev, bladerf_module module,
     gpio |= (module == BLADERF_MODULE_TX ? (band << 3) : (band << 5));
 
     return CONFIG_GPIO_WRITE(dev, gpio);
+}
+
+static bool fpga_supports_tuning_mode(struct bladerf *dev,
+                                      bladerf_tuning_mode mode)
+{
+    switch (mode) {
+        case BLADERF_TUNING_MODE_HOST:
+            return true;
+
+        case BLADERF_TUNING_MODE_FPGA:
+            return version_greater_or_equal(&dev->fpga_version, 0, 2, 0);
+
+        default:
+            return false;
+    }
+}
+
+bladerf_tuning_mode tuning_get_default_mode(struct bladerf *dev)
+{
+    bladerf_tuning_mode mode = BLADERF_TUNING_MODE_INVALID;
+    const char *str = getenv("BLADERF_DEFAULT_TUNING_MODE");
+
+    if (str != NULL) {
+        if (!strcasecmp("host", str)) {
+            mode = BLADERF_TUNING_MODE_HOST;
+        } else if (!strcasecmp("fpga", str)) {
+            mode = BLADERF_TUNING_MODE_FPGA;
+
+            /* Just a friendly reminder... */
+            if (!fpga_supports_tuning_mode(dev, mode)) {
+                log_warning("The loaded FPGA version (%u.%u.%u) does not "
+                            "support the tuning mode being used to override "
+                            "the default.\n",
+                            dev->fpga_version.major, dev->fpga_version.minor,
+                            dev->fpga_version.patch);
+            }
+        } else {
+            log_debug("Invalid tuning mode override: %s\n", str);
+        }
+    }
+
+    if (mode == BLADERF_TUNING_MODE_INVALID) {
+        if (fpga_supports_tuning_mode(dev, BLADERF_TUNING_MODE_FPGA)) {
+            mode = BLADERF_TUNING_MODE_FPGA;
+        } else {
+            mode = BLADERF_TUNING_MODE_HOST;
+        }
+    }
+
+    switch (mode) {
+        case BLADERF_TUNING_MODE_HOST:
+            log_debug("Default tuning mode: host\n");
+            break;
+
+        case BLADERF_TUNING_MODE_FPGA:
+            log_debug("Default tuning mode: FPGA\n");
+            break;
+
+        default:
+            assert(!"Bug encountered.");
+            mode = BLADERF_TUNING_MODE_HOST;
+    }
+
+    return mode;
+}
+
+int tuning_set_mode(struct bladerf *dev, bladerf_tuning_mode mode)
+{
+    int status = 0;
+
+    if (fpga_supports_tuning_mode(dev, mode)) {
+        dev->tuning_mode = mode;
+    } else {
+        status = BLADERF_ERR_INVAL;
+
+        log_debug("The loaded FPGA version (%u.%u.%u) does not support the "
+                  "provided tuning mode (%d)\n",
+                  dev->fpga_version.major, dev->fpga_version.minor,
+                  dev->fpga_version.patch, mode);
+    }
+
+    switch (dev->tuning_mode) {
+        case BLADERF_TUNING_MODE_HOST:
+            log_debug("Tuning mode: host\n");
+            break;
+
+        case BLADERF_TUNING_MODE_FPGA:
+            log_debug("Tuning mode: FPGA\n");
+            break;
+
+        default:
+            assert(!"Bug encountered.");
+            status = BLADERF_ERR_INVAL;
+    }
+
+    return status;
 }
 
 int tuning_set_freq(struct bladerf *dev, bladerf_module module,
@@ -95,11 +192,27 @@ int tuning_set_freq(struct bladerf *dev, bladerf_module module,
         }
     }
 
-    status = lms_set_frequency(dev, module, frequency);
+    switch (dev->tuning_mode) {
+        case BLADERF_TUNING_MODE_HOST:
+            status = lms_set_frequency(dev, module, frequency);
+            break;
+
+        case BLADERF_TUNING_MODE_FPGA:
+            status = tuning_schedule(dev, module, BLADERF_RETUNE_NOW,
+                                     frequency, 0, BLADERF_NO_RETUNE_HINT);
+            break;
+
+        default:
+            log_debug("Invalid tuning mode: %d\n", dev->tuning_mode);
+            status = BLADERF_ERR_INVAL;
+            break;
+    }
+
     if (status != 0) {
         return status;
     }
 
+    /* TODO: This needs to be moved into the NIOS II */
     status = tuning_select_band(dev, module, frequency);
     if (status != 0) {
         return status;

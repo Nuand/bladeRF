@@ -25,6 +25,8 @@
 #ifndef BLADERF_TUNING_H_
 #define BLADERF_TUNING_H_
 
+#include "bladerf_priv.h"
+
 /**
  * Configure the device for operation in the high or low band, based
  * upon the provided frequency
@@ -49,6 +51,30 @@ int tuning_select_band(struct bladerf *dev, bladerf_module module,
  */
 int tuning_set_freq(struct bladerf *dev, bladerf_module module,
                     unsigned int frequency);
+
+/**
+ * Schedule a frequency retune to occur at specified sample timestamp value
+ *
+ * @param       dev         Device handle
+ * @param       module      Which module to retune
+ * @param       timestamp   Module's sample timestamp to perform the retune at.
+ *                          If this value is in the past, the retune will
+ *                          occur immediately.
+ * @param       hint        Tuning hint value. Set to BLADERF_NO_RETUNE_HINT to
+ *                          specify that this hint value should not be used.
+ *
+ * @return 0 on success, BLADERF_ERR_* value on failure
+ */
+static inline int tuning_schedule(struct bladerf *dev,
+                                  bladerf_module module,
+                                  uint64_t timestamp,
+                                  unsigned int frequency,
+                                  uint8_t flags,
+                                  uint16_t hint)
+{
+    return dev->fn->retune(dev, module, timestamp, frequency, flags, hint);
+}
+
 /**
  * Get the current frequency that the specified module is tuned to
  *
@@ -60,6 +86,27 @@ int tuning_set_freq(struct bladerf *dev, bladerf_module module,
  */
 int tuning_get_freq(struct bladerf *dev, bladerf_module module,
                     unsigned int *frequency);
+
+/**
+ * Get default tuning mode, which depends upon the FPGA version or the
+ * BLADERF_DEFAULT_TUNING_MODE environment variable
+ *
+ * @param   dev     Device handle
+ *
+ * @return  Default mode
+ */
+bladerf_tuning_mode tuning_get_default_mode(struct bladerf *dev);
+
+/**
+ * Set tuning mode
+ *
+ * @param       dev         Device handle
+ * @param       mode        Desired tuning mode. Note that the available modes
+ *                          depends on the FPGA version.
+ *
+ * @return 0 on success, BLADERF_ERR_* value on failure
+ */
+int tuning_set_mode(struct bladerf *dev, bladerf_tuning_mode mode);
 
 
 #endif

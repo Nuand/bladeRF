@@ -432,6 +432,40 @@ const char * CALL_CONV bladerf_backend_str(bladerf_backend backend);
 #define BLADERF_FREQUENCY_MAX       3800000000u
 
 /**
+ * Frequency tuning modes
+ *
+ * BLADERF_TUNING_MODE_HOST is the default if either of the following conditions
+ * are true:
+ *   - libbladeRF < v1.3.0
+ *   - FPGA       < v0.2.0
+ *
+ * BLADERF_TUNING_MODE_FPGA is the default if both of the following conditions
+ * are true:
+ *  - libbladeRF >= v1.3.0
+ *  - FPGA       >= v0.2.0
+ *
+ * The default mode can be overridden by setting a BLADERF_DEFAULT_TUNING_MODE
+ * environment variable to "host" or "fpga". Overriding this value with a mode
+ * not supported by the FPGA will result in failures or unexpected behavior.
+ */
+typedef enum {
+    /** Indicates an invalid mode is set */
+    BLADERF_TUNING_MODE_INVALID = -1,
+
+    /**
+     * Perform tuning algorithm on the host. This is slower, but provides
+     * easier accessiblity to diagnostic information.
+     */
+    BLADERF_TUNING_MODE_HOST,
+
+    /**
+     * Perform tuning algorithm on the FPGA for faster tuning.
+     *
+     */
+    BLADERF_TUNING_MODE_FPGA,
+} bladerf_tuning_mode;
+
+/**
  * Loopback options
  */
 typedef enum {
@@ -1093,11 +1127,26 @@ int CALL_CONV bladerf_set_frequency(struct bladerf *dev,
  * @param       dev         Device handle
  * @param       module      Module to configure
  * @param       frequency   Pointer to the returned frequency
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
 int CALL_CONV bladerf_get_frequency(struct bladerf *dev,
                                     bladerf_module module,
                                     unsigned int *frequency);
+
+/**
+ * Set the device's tuning mode
+ *
+ * @param       dev         Device handle
+ * @param       mode        Desired tuning mode. Note that the available modes
+ *                          depends on the FPGA version.
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_tuning_mode(struct bladerf *dev,
+                                      bladerf_tuning_mode mode);
 
 /**
  * Attach and enable an expansion board's features

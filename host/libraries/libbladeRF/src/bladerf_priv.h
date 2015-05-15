@@ -9,7 +9,7 @@
  * This file is part of the bladeRF project:
  *   http://www.github.com/nuand/bladeRF
  *
- * Copyright (C) 2013 Nuand LLC
+ * Copyright (C) 2013-2015 Nuand LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -130,6 +130,9 @@ struct bladerf {
 
     /* Format currently being used with a module, or -1 if module is not used */
     bladerf_format module_format[NUM_MODULES];
+
+    /* Which mode of operation we use for tuning */
+    bladerf_tuning_mode tuning_mode;
 };
 
 /*
