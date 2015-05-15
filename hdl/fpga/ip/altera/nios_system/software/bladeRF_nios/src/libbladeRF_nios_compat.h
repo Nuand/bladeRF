@@ -30,7 +30,11 @@
 #include "debug.h"
 
 /* Use our debug assert */
-#define assert ASSERT
+#ifndef BLADERF_NIOS_PC_SIMULATION
+#   define assert ASSERT
+#else
+#   define ASSERT assert
+#endif
 
 /* libbladeRF code uses a FIELD_INIT macro as an MSVC workaround */
 #define FIELD_INIT(param, val) param = val

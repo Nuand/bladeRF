@@ -31,7 +31,7 @@
 
 #include <stdint.h>
 
-#ifndef BLADERF_NIOS_BUILD
+#if !defined(BLADERF_NIOS_BUILD) && !defined(BLADERF_NIOS_PC_SIMULATION)
 #   include <libbladeRF.h>
 #   include "bladerf_priv.h"
 #   define LMS_WRITE(dev, addr, value) dev->fn->lms_write(dev, addr, value)

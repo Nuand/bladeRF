@@ -41,12 +41,12 @@ static size_t msg_idx = 0;
 static size_t test_case_idx = 0;
 
 static size_t write_idx = 0;
-static uint8_t write_buf[PKT_BUFLEN] = { 0 };
+static uint8_t write_buf[NIOS_PKT_LEN] = { 0 };
 
 struct test_case {
     const char *desc;
-    const uint8_t req[PKT_BUFLEN];
-    const uint8_t resp[PKT_BUFLEN];
+    const uint8_t req[NIOS_PKT_LEN];
+    const uint8_t resp[NIOS_PKT_LEN];
 };
 
 static const struct test_case test_cases[] = {
@@ -554,7 +554,7 @@ uint8_t fx3_uart_read(void)
     }
 
     ret = test_cases[test_case_idx].req[msg_idx++];
-    if (msg_idx >= PKT_BUFLEN) {
+    if (msg_idx >= NIOS_PKT_LEN) {
         msg_idx = 0;
         test_case_idx++;
 
@@ -573,7 +573,7 @@ uint8_t fx3_uart_read(void)
 void fx3_uart_write(uint8_t data)
 {
     DBG("%s: data=0x%02x\n", __FUNCTION__, data);
-    if (write_idx > PKT_BUFLEN) {
+    if (write_idx > NIOS_PKT_LEN) {
         DBG("Overrun in simulated FX3 UART buffer detected!\n");
         ASSERT(0);
     } else {
@@ -766,6 +766,13 @@ void time_tamer_reset(bladerf_module m)
     }
 
     DBG("%s: module=%s\n", __FUNCTION__, module2str(m));
+}
+
+int lms_set_frequency(struct bladerf *dev,
+                      bladerf_module m, unsigned int frequency)
+{
+    DBG("%s: module=%s, f=%u\n", __FUNCTION__, module2str(m), frequency);
+    return 0;
 }
 
 #endif

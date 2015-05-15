@@ -1,8 +1,9 @@
 FPGA_COMMON_DIR := ../../../../../../../fpga_common
-INCLUDES := -I $(FPGA_COMMON_DIR)/include
+INCLUDES := -I $(FPGA_COMMON_DIR)/include -I src
 
 CFLAGS := -Wall -Wextra -Wno-unused-parameter \
-          -O0 -ggdb3 -DBLADERF_NIOS_PC_SIMULATION $(INCLUDES)
+          -O0 -ggdb3 -DBLADERF_NIOS_PC_SIMULATION \
+          $(INCLUDES)
 
 SRC := $(wildcard src/*.c)
 
