@@ -1,6 +1,4 @@
-/* This file is part of the bladeRF project:
- *   http://www.github.com/nuand/bladeRF
- *
+/*
  * Copyright (c) 2015 Nuand LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,21 +19,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef PKT_LEGACY_PKT_H_
-#define PKT_LEGACY_PKT_H_
+#ifndef BLADERF_NIOS_PKT_FORMATS_H_
+#define BLADERF_NIOS_PKT_FORMATS_H_
 
-#include <stdint.h>
-#include "pkt_handler.h"
-#include "nios_pkt_formats.h"
+#include "nios_pkt_legacy.h"
+#include "nios_pkt_retune.h"
 
-#define PKT_LEGACY_MAGIC              ((uint8_t) UART_PKT_MAGIC)
-#define PKT_LEGACY_REQUIRED_BYTES     NIOS_PKT_LEN
-
-void pkt_legacy(struct pkt_buf *b);
-
-#define PKT_LEGACY { \
-    .magic          = PKT_LEGACY_MAGIC, \
-    .bytes_required = PKT_LEGACY_REQUIRED_BYTES, \
-    .exec           = pkt_legacy }
+#define NIOS_PKT_LEN 16
 
 #endif

@@ -26,6 +26,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include "nios_pkt_formats.h"
 
 #ifndef ARRAY_SIZE
 #   define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
@@ -33,11 +34,10 @@
 
 #define PKT_MAGIC_IDX 0
 #define PKT_CFG_IDX   1
-#define PKT_BUFLEN    16
 
 struct pkt_buf {
-    const uint8_t req[PKT_BUFLEN];      /* Request */
-    uint8_t       resp[PKT_BUFLEN];     /* Response */
+    const uint8_t req[NIOS_PKT_LEN];      /* Request */
+    uint8_t       resp[NIOS_PKT_LEN];     /* Response */
 };
 
 

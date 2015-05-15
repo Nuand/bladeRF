@@ -99,7 +99,7 @@ int main(void)
         }
 
         /* Receive the rest of the message */
-        while (count < PKT_BUFLEN) {
+        while (count < NIOS_PKT_LEN) {
             while (!fx3_uart_has_data());
             set_request(&pkt, count++, fx3_uart_read());
         }
