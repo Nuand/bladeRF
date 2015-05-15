@@ -705,7 +705,8 @@ int bladerf_set_frequency(struct bladerf *dev,
 int bladerf_schedule_retune(struct bladerf *dev,
                             bladerf_module module,
                             uint64_t timestamp,
-                            unsigned int frequency)
+                            unsigned int frequency,
+                            struct bladerf_quick_tune *quick_tune)
 
 {
     int status;
@@ -713,8 +714,22 @@ int bladerf_schedule_retune(struct bladerf *dev,
 
     MUTEX_LOCK(&dev->ctrl_lock);
 
-    lms_calculate_tuning_params(frequency, &f);
-    status = tuning_schedule(dev, module, timestamp, &f);
+    /* TODO Verify FPGA has this feature */
+
+    if (quick_tune == NULL) {
+        lms_calculate_tuning_params(frequency, &f);
+        status = tuning_schedule(dev, module, timestamp, &f);
+    } else {
+        f.freqsel = quick_tune->freqsel;
+        f.vcocap  = quick_tune->vcocap;
+        f.nint    = quick_tune->nint;
+        f.nfrac   = quick_tune->nfrac;
+        f.flags   = quick_tune->flags;
+        f.x       = 0;
+        f.vcocap_result = 0;
+
+        status = tuning_schedule(dev, module, timestamp, &f);
+    }
 
     MUTEX_UNLOCK(&dev->ctrl_lock);
     return status;
@@ -727,6 +742,19 @@ int bladerf_get_frequency(struct bladerf *dev,
     MUTEX_LOCK(&dev->ctrl_lock);
 
     status = tuning_get_freq(dev, module, frequency);
+
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+    return status;
+}
+
+int bladerf_get_quick_tune(struct bladerf *dev,
+                           bladerf_module module,
+                           struct bladerf_quick_tune *quick_tune)
+{
+    int status;
+    MUTEX_LOCK(&dev->ctrl_lock);
+
+    status = lms_get_quick_tune(dev, module, quick_tune);
 
     MUTEX_UNLOCK(&dev->ctrl_lock);
     return status;

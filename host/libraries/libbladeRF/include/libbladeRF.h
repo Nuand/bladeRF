@@ -432,6 +432,12 @@ const char * CALL_CONV bladerf_backend_str(bladerf_backend backend);
 #define BLADERF_FREQUENCY_MAX       3800000000u
 
 /**
+ * Specifies that scheduled retune should occur immediately when using
+ * bladerf_schedule_retune().
+ */
+#define BLADERF_RETUNE_NOW  0
+
+/**
  * Frequency tuning modes
  *
  * BLADERF_TUNING_MODE_HOST is the default if either of the following conditions
@@ -640,6 +646,21 @@ typedef enum {
     BLADERF_XB200_BYPASS = 0,   /**< Bypass the XB-200 mixer */
     BLADERF_XB200_MIX           /**< Pass signals through the XB-200 mixer */
 } bladerf_xb200_path;
+
+/**
+ * Quick Re-tune parameters. Note that these parameters, which are associated
+ * with LMS6002D register values, are sensitive to changes in the operating
+ * environment (e.g., temperature).
+ *
+ * This structure should be filled in via bladerf_get_quick_tune().
+ */
+struct bladerf_quick_tune {
+    uint8_t freqsel;    /**< Choice of VCO and VCO division factor */
+    uint8_t vcocap;     /**< VCOCAP value */
+    uint16_t nint;      /**< Integer portion of LO frequency value */
+    uint32_t nfrac;     /**< Fractional portion of LO frequency value */
+    uint8_t  flags;     /**< Flag bits used internally by libbladeRF */
+};
 
 /**
  * DC Calibration Modules
@@ -1120,6 +1141,37 @@ int CALL_CONV bladerf_set_frequency(struct bladerf *dev,
                                     unsigned int frequency);
 
 /**
+ * Schedule a frequency retune to occur at specified sample timestamp value.
+ *
+ *
+ * @param       dev             Device handle
+ *
+ * @param       module          Module to retune
+ *
+ * @param       timestamp       Module's sample timestamp to perform the retune
+ *                              operation. If this value is in the past, the
+ *                              retune will occur immediately. To perform the
+ *                              retune immediately, specify BLADERF_RETUNE_NOW.
+ *
+ * @param       frequency       Desired frequency, in Hz.
+ *
+ * @param       quick_tune      If NULL, the `frequency` parameter will be used.
+ *                              If non-NULL, the provided "quick retune" values
+ *                              will be applied to the transceiver to tune it
+ *                              according to a previous state retrieved via
+ *                              bladerf_get_quick_tune().
+ *
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_schedule_retune(struct bladerf *dev,
+                                      bladerf_module module,
+                                      uint64_t timestamp,
+                                      unsigned int frequency,
+                                      struct bladerf_quick_tune *quick_tune);
+
+/**
  * Get module's current frequency in Hz
  *
  * @param       dev         Device handle
@@ -1132,6 +1184,29 @@ API_EXPORT
 int CALL_CONV bladerf_get_frequency(struct bladerf *dev,
                                     bladerf_module module,
                                     unsigned int *frequency);
+
+/**
+ * Fetch parameters used to tune the transceiver to the current frequency for
+ * use with bladerf_schedule_retune() to perform a "quick retune."
+ *
+ * This allows for a faster retune, with a potential trade off of
+ * increased phase noise.  Note that these parameters are sensitive to
+ * changes in the operating environment, and should be "refreshed" if planning
+ * to use the "quick retune" functionality over a long period of time.
+ *
+ * @pre bladerf_set_frequency() or bladerf_schedule_retune() have previously
+ *      been used to retune to the desired frequency.
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   module      Module to query
+ * @param[out]  quick_tune  Quick retune parameters
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_quick_tune(struct bladerf *dev,
+                                     bladerf_module module,
+                                     struct bladerf_quick_tune *quick_tune);
 
 /**
  * Set the device's tuning mode
