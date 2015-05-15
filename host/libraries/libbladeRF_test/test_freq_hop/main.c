@@ -110,22 +110,6 @@ void print_usage(const char *argv0)
     printf("\n");
 }
 
-static unsigned int next_freq(struct app_params *p)
-{
-    uint64_t tmp;
-    unsigned int min_freq;
-
-    if (p->dev_config.enable_xb200) {
-        min_freq = BLADERF_FREQUENCY_MIN_XB200;
-    } else {
-        min_freq = BLADERF_FREQUENCY_MIN;
-    }
-
-    tmp = randval_update(&p->randval_state);
-    tmp = min_freq + tmp % (BLADERF_FREQUENCY_MAX - BLADERF_FREQUENCY_MIN);
-    return (unsigned int) tmp;
-}
-
 int run_test(struct bladerf *dev, struct app_params *p)
 {
     int status = 0;
@@ -177,7 +161,9 @@ int run_test(struct bladerf *dev, struct app_params *p)
         /* Tune the RX module if we're RX'ing data, or if no data
          * reception/transmission has been requested */
         if (p->rx || (!p->rx && !p->tx)) {
-            unsigned int freq = next_freq(p);
+            unsigned int freq = get_rand_freq(&p->randval_state,
+                                              p->dev_config.enable_xb200);
+
             status = bladerf_set_frequency(dev, BLADERF_MODULE_RX, freq);
             if (status != 0) {
                 fprintf(stderr,
@@ -204,7 +190,9 @@ int run_test(struct bladerf *dev, struct app_params *p)
         }
 
         if (p->tx) {
-            unsigned int freq = next_freq(p);
+            unsigned int freq = get_rand_freq(&p->randval_state,
+                                              p->dev_config.enable_xb200);
+
             const unsigned int to_tx = p->dev_config.samples_per_buffer;
 
             status = bladerf_set_frequency(dev, BLADERF_MODULE_TX, freq);

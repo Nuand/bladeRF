@@ -638,3 +638,19 @@ double calc_avg_duration(const struct timespec *start,
 
     return (end_d - start_d) / iterations;
 }
+
+unsigned int get_rand_freq(uint64_t *prng_state, bool xb200_enabled)
+{
+    uint64_t tmp;
+    unsigned int min_freq;
+
+    if (xb200_enabled) {
+        min_freq = BLADERF_FREQUENCY_MIN_XB200;
+    } else {
+        min_freq = BLADERF_FREQUENCY_MIN;
+    }
+
+    tmp = randval_update(prng_state);
+    tmp = min_freq + tmp % (BLADERF_FREQUENCY_MAX - BLADERF_FREQUENCY_MIN);
+    return (unsigned int) tmp;
+}

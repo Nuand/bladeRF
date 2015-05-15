@@ -191,4 +191,12 @@ double calc_avg_duration(const struct timespec *start,
                          const struct timespec *end,
                          double iterations);
 
+/**
+ * Get a random frequency
+ *
+ * @param[in]
+ * @param[inout]    This function updates this PRNG state it with randval_update()
+ */
+unsigned int get_rand_freq(uint64_t *prng_state, bool xb200_enabled);
+
 #endif
