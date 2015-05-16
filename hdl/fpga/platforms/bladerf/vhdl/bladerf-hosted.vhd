@@ -748,7 +748,7 @@ begin
     fx3_uart_rxd <= nios_uart_rxd when sys_rst_sync = '0' else 'Z' ;
 
     -- NIOS control system for si5338, vctcxo trim and lms control
-    U_nios_system : nios_system
+    U_nios_system : component nios_system
       port map (
         clk_clk                         => \80MHz\,
         reset_reset_n                   => '1',

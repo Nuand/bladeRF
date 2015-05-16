@@ -1,5 +1,5 @@
 # bladeRF HDL Source #
-The Cyclone IV FPGA is at the heart of the bladeRF.  It interfaces to the Cypress FX3, Lime Micro LMS6002D RF transceiver, Si5338 clock generator chip and VCTCXO trim DAC.  It has an input to read NMEA from a GPS as well as a 1pps input for time synchronization of signals and has a reference input for a reference clock to tame the VCTCXO.  Lastly, it connects directly to the expansion header for controlling GPIO or any other interfaces that may reside on the expansion board.
+The Cyclone IV FPGA is at the heart of the bladeRF.  It interfaces to the Cypress FX3, Lime Micro LMS6002D RF transceiver, Si5338 clock generator chip, and VCTCXO trim DAC.  It has an input to read NMEA from a GPS as well as a 1pps input for time synchronization of signals and has a reference input for a reference clock to tame the VCTCXO.  Lastly, it connects directly to the expansion header for controlling GPIO or any other interfaces that may reside on the expansion board.
 
 The HDL is separated out into two different sections:
 
@@ -20,12 +20,11 @@ Some FPGA binaries are available for [download][download].  Please note the md5 
 ## Required Software ##
 We use an [Altera][altera] [Cyclone IV E FPGA][cive].  The size of the FPGA is the only difference between the x40 and x115 models.  Altera provides their [Quartus II][quartus] software for synthesizing designs for their FPGAs.  It is free of charge, but not open source and may require registering on their site to download the software.
 
-**Important Note:** Be sure to download [Quartus II version 13.1][quartus] with [update 4], which the bladeRF project files are based upon. Quartus II version 14.0 is **not** currently reverse-compatible with [Quartus II version 13.1][quartus].
+**Important Note:** Be sure to download [Quartus II version 15.0][quartus], which the bladeRF project files are based upon. The updates to Quartus II 15.0 are not reverse-compatible with earlier Quartus versions (e.g., 14.0, 13.1).
 
 [altera]: http://www.altera.com (Altera)
-[quartus]: http://dl.altera.com/13.1/?edition=web (Quartus II Web Edition 13.1 Software)
+[quartus]: http://dl.altera.com/15.0/?edition=web (Quartus II Web Edition 15.0 Software)
 [cive]: http://www.altera.com/devices/fpga/cyclone-iv/overview/cyiv-overview.html
-[update 4]: http://www.altera.com/literature/rn/archives/rn_qts_131up4_dev_support.pdf (Quartus II 13.1 Update 4)
 
 ## HDL Structure ##
 Since the FPGA is connected and soldered down to the board, it makes sense to have a single top level which defines where the pins go, their IO levels and their genera directionality.  We use a single `bladerf.vhd` top level to define a VHDL entity called `bladerf` that defines these pins.
@@ -60,26 +59,3 @@ quartus_sh -t ../build.tcl -rev hosted -size 115 -stp ../signaltap/debug_rx.stp
 ```
 
 Note that to use Signal Tap with the Quartus II Web Edition software, Altera requires that the TalkBack feature be enabled.  The build script tries to 'fake' this out by setting the TalkBack feature to be on, compiling the project, then turning it off immediately.  If this behavior is not desired, don't try to add a Signal Tap file to the project.
-
-## Troubleshooting ##
-### /opt/altera/12.1sp1/nios2eds/bin/sh_jar.sh: 6: Bad substitution ###
-Most of the build tools are hardcoded to use /bin/sh, expecting that it will point to the bash shell.  However, with Ubuntu systems in particular, /bin/sh is linked to the dash shell, which is almost but not quite compatible.  There are two workarounds, choose the best for your situation.
-
-The first workaround involves pointing /bin/sh at bash instead of dash. See the [DashAsBinSh page on the Ubuntu Wiki](https://wiki.ubuntu.com/DashAsBinSh) for more details.
-
-```
-sudo dpkg-reconfigure dash
-```
-
-The second workaround is to edit the scripts that call sh_jar.sh to use /bin/bash:
-
-```
-cd /path/to/altera/12.1sp1/nios2eds/bin
-grep sh_jar.sh *
-# Returns all the files containing calls to sh_jar.sh
-sensible-editor bin2flash
-# Change the first line from #!/bin/sh to #!/bin/bash
-sensible-editor elf2flash
-# Lather, rinse, repeat for each file returned by grep...
-```
-

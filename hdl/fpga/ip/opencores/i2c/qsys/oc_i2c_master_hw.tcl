@@ -31,7 +31,6 @@ set_module_property AUTHOR OpenCores
 set_module_property DISPLAY_NAME "BladeRF OpenCores I2C Master"
 set_module_property INSTANTIATE_IN_SYSTEM_MODULE true
 set_module_property EDITABLE true
-set_module_property ANALYZE_HDL AUTO
 set_module_property REPORT_TO_TALKBACK false
 set_module_property ALLOW_GREYBOX_GENERATION false
 
@@ -109,13 +108,13 @@ set_interface_property conduit_end PORT_NAME_MAP ""
 #set_interface_property conduit_end CMSIS_SVD_VARIABLES ""
 #set_interface_property conduit_end SVD_ADDRESS_GROUP ""
 
-add_interface_port conduit_end scl_pad_o export Output 1
-add_interface_port conduit_end scl_padoen_o export Output 1
-add_interface_port conduit_end sda_pad_i export Input 1
-add_interface_port conduit_end sda_pad_o export Output 1
-add_interface_port conduit_end sda_padoen_o export Output 1
-add_interface_port conduit_end arst_i export Input 1
-add_interface_port conduit_end scl_pad_i export Input 1
+add_interface_port conduit_end scl_pad_o scl_pad_o Output 1
+add_interface_port conduit_end scl_padoen_o scl_padoen_o Output 1
+add_interface_port conduit_end sda_pad_i sda_pad_i Input 1
+add_interface_port conduit_end sda_pad_o sda_pad_o Output 1
+add_interface_port conduit_end sda_padoen_o sda_padoen_o Output 1
+add_interface_port conduit_end arst_i arst_i Input 1
+add_interface_port conduit_end scl_pad_i scl_pad_i Input 1
 
 
 # 
