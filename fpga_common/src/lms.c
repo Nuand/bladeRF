@@ -287,7 +287,7 @@ static inline int is_loopback_enabled(struct bladerf *dev)
 }
 
 static int write_pll_config(struct bladerf *dev, bladerf_module module,
-                                     uint32_t frequency, uint8_t freqsel)
+                            uint8_t freqsel, bool low_band)
 {
     int status;
     uint8_t regval;
@@ -312,7 +312,7 @@ static int write_pll_config(struct bladerf *dev, bladerf_module module,
 
     if (status == 0) {
         /* Loopback not enabled - update the PLL output buffer. */
-        selout = (frequency < BLADERF_BAND_HIGH ? 1 : 2);
+        selout = low_band ? 1 : 2;
         regval = (freqsel << 2) | selout;
     } else {
         /* Loopback is enabled - don't touch PLL output buffer. */
@@ -1828,6 +1828,7 @@ void lms_calculate_tuning_params(uint32_t freq, struct lms_freq *f)
     assert(ref_clock <= UINT32_MAX);
     f->reference = (uint32_t)ref_clock;
     f->freq_hz = freq;
+    f->low_band = (freq < BLADERF_BAND_HIGH);
 
     PRINT_FREQUENCY(f);
 }
@@ -1852,7 +1853,7 @@ int lms_set_precalculated_frequency(struct bladerf *dev, bladerf_module mod,
         return status;
     }
 
-    status = write_pll_config(dev, mod, f->freq_hz, f->freqsel);
+    status = write_pll_config(dev, mod, f->freqsel, f->low_band);
     if (status != 0) {
         goto error;
     }

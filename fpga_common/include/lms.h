@@ -29,6 +29,7 @@
 #ifndef LMS_H_
 #define LMS_H_
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #if !defined(BLADERF_NIOS_BUILD) && !defined(BLADERF_NIOS_PC_SIMULATION)
@@ -54,6 +55,7 @@ struct lms_freq {
     uint8_t     freqsel;   /**< Choice of VCO and dision ratio */
     uint32_t    reference; /**< Reference frequency going to the LMS6002D */
     uint32_t    freq_hz;   /**< Frequency in Hz */
+    bool        low_band;  /**< Which PLL output buffer are we using? */
 };
 
 /**
