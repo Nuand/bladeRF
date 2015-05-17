@@ -61,6 +61,8 @@
 #   define VTUNE_BUSY_WAIT(us) usleep(15)
 #endif
 
+#define LMS_REFERENCE_HZ    (38400000u)
+
 #define kHz(x) (x * 1000)
 #define MHz(x) (x * 1000000)
 #define GHz(x) (x * 1000000000)
@@ -1538,7 +1540,7 @@ uint32_t lms_frequency_to_hz(struct lms_freq *f)
     pll_coeff = (((uint64_t)f->nint) << 23) + f->nfrac;
     div = (f->x << 23);
 
-    return (uint32_t)(((f->reference * pll_coeff) + (div >> 1)) / div);
+    return (uint32_t)(((LMS_REFERENCE_HZ * pll_coeff) + (div >> 1)) / div);
 }
 #endif
 
@@ -1551,7 +1553,7 @@ void lms_print_frequency(struct lms_freq *f)
     log_verbose("  nint     : %d\n", f->nint);
     log_verbose("  nfrac    : %u\n", f->nfrac);
     log_verbose("  freqsel  : 0x%02x\n", f->freqsel);
-    log_verbose("  reference: %u\n", f->reference);
+    log_verbose("  reference: %u\n", LMS_REFERENCE_HZ);
     log_verbose("  freq     : %u\n", f->freq_hz);
 }
 #define PRINT_FREQUENCY lms_print_frequency
@@ -1604,7 +1606,6 @@ int lms_get_frequency(struct bladerf *dev, bladerf_module mod,
 
     f->freqsel = (data>>2);
     f->x = 1 << ((f->freqsel & 7) - 3);
-    f->reference = 38400000;
     f->freq_hz = lms_frequency_to_hz(f);
 
     return status;
@@ -1787,7 +1788,7 @@ void lms_calculate_tuning_params(uint32_t freq, struct lms_freq *f)
     uint32_t nfrac;
     uint8_t freqsel = bands[0].value;
     uint8_t i = 0;
-    const uint64_t ref_clock = 38400000;
+    const uint64_t ref_clock = LMS_REFERENCE_HZ;
 
     /* Clamp out of range values */
     if (freq < BLADERF_FREQUENCY_MIN) {
@@ -1826,7 +1827,6 @@ void lms_calculate_tuning_params(uint32_t freq, struct lms_freq *f)
     f->nfrac = nfrac;
     f->freqsel = freqsel;
     assert(ref_clock <= UINT32_MAX);
-    f->reference = (uint32_t)ref_clock;
     f->freq_hz = freq;
     f->low_band = (freq < BLADERF_BAND_HIGH);
 

@@ -53,7 +53,6 @@ struct lms_freq {
     uint16_t    nint;      /**< Integer portion of f_LO given f_REF */
     uint32_t    nfrac;     /**< Fractional portion of f_LO given nint and f_REF */
     uint8_t     freqsel;   /**< Choice of VCO and dision ratio */
-    uint32_t    reference; /**< Reference frequency going to the LMS6002D */
     uint32_t    freq_hz;   /**< Frequency in Hz */
     bool        low_band;  /**< Which PLL output buffer are we using? */
 };
