@@ -1058,12 +1058,14 @@ static int loopback_tx(struct bladerf *dev, bladerf_loopback mode)
                 return status;
             }
 
-            status = lms_set_frequency(dev, BLADERF_MODULE_TX, f.freq_hz);
+            status = lms_set_frequency(dev, BLADERF_MODULE_TX,
+                                       lms_frequency_to_hz(&f));
             if (status != 0) {
                 return status;
             }
 
-            status = lms_select_band(dev, BLADERF_MODULE_TX, f.freq_hz);
+            status = lms_select_band(dev, BLADERF_MODULE_TX,
+                                     lms_frequency_to_hz(&f));
             break;
         }
 
@@ -1235,13 +1237,15 @@ static int loopback_rx(struct bladerf *dev, bladerf_loopback mode)
                 return status;
             }
 
-            status = lms_set_frequency(dev, BLADERF_MODULE_RX, f.freq_hz);
+            status = lms_set_frequency(dev, BLADERF_MODULE_RX,
+                                       lms_frequency_to_hz(&f));
             if (status != 0) {
                 return status;
             }
 
 
-            status = lms_select_band(dev, BLADERF_MODULE_RX, f.freq_hz);
+            status = lms_select_band(dev, BLADERF_MODULE_RX,
+                                     lms_frequency_to_hz(&f));
             break;
         }
 
@@ -1554,7 +1558,7 @@ void lms_print_frequency(struct lms_freq *f)
     log_verbose("  nfrac    : %u\n", f->nfrac);
     log_verbose("  freqsel  : 0x%02x\n", f->freqsel);
     log_verbose("  reference: %u\n", LMS_REFERENCE_HZ);
-    log_verbose("  freq     : %u\n", f->freq_hz);
+    log_verbose("  freq     : %u\n", lms_frequency_to_hz(f));
 }
 #define PRINT_FREQUENCY lms_print_frequency
 #else
@@ -1606,7 +1610,6 @@ int lms_get_frequency(struct bladerf *dev, bladerf_module mod,
 
     f->freqsel = (data>>2);
     f->x = 1 << ((f->freqsel & 7) - 3);
-    f->freq_hz = lms_frequency_to_hz(f);
 
     return status;
 }
@@ -1779,7 +1782,7 @@ int lms_select_band(struct bladerf *dev, bladerf_module module,
     return status;
 }
 
-
+#ifndef BLADERF_NIOS_BUILD
 void lms_calculate_tuning_params(uint32_t freq, struct lms_freq *f)
 {
     uint64_t vco_x;
@@ -1827,11 +1830,11 @@ void lms_calculate_tuning_params(uint32_t freq, struct lms_freq *f)
     f->nfrac = nfrac;
     f->freqsel = freqsel;
     assert(ref_clock <= UINT32_MAX);
-    f->freq_hz = freq;
     f->low_band = (freq < BLADERF_BAND_HIGH);
 
     PRINT_FREQUENCY(f);
 }
+#endif
 
 int lms_set_precalculated_frequency(struct bladerf *dev, bladerf_module mod,
                                     struct lms_freq *f)

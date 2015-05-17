@@ -49,12 +49,14 @@
  * version 1.1r1.
  */
 struct lms_freq {
-    uint8_t     x;         /**< VCO division ratio */
     uint16_t    nint;      /**< Integer portion of f_LO given f_REF */
     uint32_t    nfrac;     /**< Fractional portion of f_LO given nint and f_REF */
     uint8_t     freqsel;   /**< Choice of VCO and dision ratio */
-    uint32_t    freq_hz;   /**< Frequency in Hz */
     bool        low_band;  /**< Which PLL output buffer are we using? */
+
+#ifndef BLADERF_NIOS_BUILD
+    uint8_t     x;         /**< VCO division ratio */
+#endif
 };
 
 /**
