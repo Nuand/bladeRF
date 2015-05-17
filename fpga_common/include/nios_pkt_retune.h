@@ -145,9 +145,6 @@ static inline void nios_pkt_retune_pack(uint8_t *buf,
             break;
 
         /* TODO case BLADERF_MODULE_RXTX: */
-
-        default:
-            assert(!"Invalid module encountered");
     }
 
     if (low_band) {

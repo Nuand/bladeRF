@@ -768,10 +768,13 @@ void time_tamer_reset(bladerf_module m)
     DBG("%s: module=%s\n", __FUNCTION__, module2str(m));
 }
 
-int lms_set_frequency(struct bladerf *dev,
-                      bladerf_module m, unsigned int frequency)
+int lms_set_precalculated_frequency(struct bladerf *dev, bladerf_module mod,
+                                    struct lms_freq *f)
 {
-    DBG("%s: module=%s, f=%u\n", __FUNCTION__, module2str(m), frequency);
+    DBG("%s: module=%s, nint=0x%04x, nfrac=0x%08x, freqsel=0x%02x, band=%s\n",
+        __FUNCTION__, module2str(mod), f->nint, f->nfrac, f->freqsel,
+        f->low_band ? "low" : "high");
+
     return 0;
 }
 
