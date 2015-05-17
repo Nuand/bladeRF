@@ -1779,7 +1779,7 @@ int lms_select_band(struct bladerf *dev, bladerf_module module,
 }
 
 
-static inline uint8_t calculate_tuning_params(uint32_t freq, struct lms_freq *f)
+void lms_calculate_tuning_params(uint32_t freq, struct lms_freq *f)
 {
     uint64_t vco_x;
     uint64_t temp;
@@ -1830,12 +1830,10 @@ static inline uint8_t calculate_tuning_params(uint32_t freq, struct lms_freq *f)
     f->freq_hz = freq;
 
     PRINT_FREQUENCY(f);
-
-    return freqsel;
 }
 
-int lms_set_precomputed_freq(struct bladerf *dev, bladerf_module mod,
-                             struct lms_freq *f)
+int lms_set_precalculated_frequency(struct bladerf *dev, bladerf_module mod,
+                                    struct lms_freq *f)
 {
     /* Select the base address based on which PLL we are configuring */
     const uint8_t base = (mod == BLADERF_MODULE_RX) ? 0x20 : 0x10;
@@ -1934,15 +1932,6 @@ error:
     }
 
     return (status == 0) ? dsm_status : status;
-}
-
-/* Set the frequency of a module */
-int lms_set_frequency(struct bladerf *dev, bladerf_module mod, uint32_t freq)
-{
-    struct lms_freq f;
-
-    calculate_tuning_params(freq, &f);
-    return lms_set_precomputed_freq(dev, mod, &f);
 }
 
 #ifndef BLADERF_NIOS_BUILD

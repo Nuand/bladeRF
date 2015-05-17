@@ -562,16 +562,12 @@ int lms_get_frequency(struct bladerf *dev, bladerf_module mod,
                       struct lms_freq *freq);
 
 /**
- * Set the frequency of a module in Hz
+ * Calculate the parameters to tune to a specified frequency
  *
- * @param[in]   dev     Device handle
- * @param[in]   mod     Module to change
- * @param[in]   freq    Frequency in Hz to tune
- *
- * @return 0 on success, BLADERF_ERR_* value on failure
+ * @param[in]   freq    Desired frequency
+ * @param[out]  f       Computed tuning parameters
  */
-int lms_set_frequency(struct bladerf *dev,
-                      bladerf_module mod, uint32_t freq);
+void lms_calculate_tuning_params(unsigned int freq, struct lms_freq *f);
 
 /**
  * Set the frequency of a module, given the lms_freq structure
@@ -582,8 +578,25 @@ int lms_set_frequency(struct bladerf *dev,
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
-int lms_set_precomputed_freq(struct bladerf *dev, bladerf_module mod,
-                             struct lms_freq *f);
+int lms_set_precalculated_frequency(struct bladerf *dev, bladerf_module mod,
+                                    struct lms_freq *f);
+
+/**
+ * Set the frequency of a module in Hz
+ *
+ * @param[in]   dev     Device handle
+ * @param[in]   mod     Module to change
+ * @param[in]   freq    Frequency in Hz to tune
+ *
+ * @return 0 on success, BLADERF_ERR_* value on failure
+ */
+static inline int lms_set_frequency(struct bladerf *dev,
+                                    bladerf_module mod, uint32_t freq)
+{
+    struct lms_freq f;
+    lms_calculate_tuning_params(freq, &f);
+    return lms_set_precalculated_frequency(dev, mod, &f);
+}
 
 /**
  * Read back every register from the LMS6002D device.
