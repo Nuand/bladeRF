@@ -53,12 +53,32 @@
 #   include "bladerf_priv.h"
 #   include "log.h"
 #   include "rel_assert.h"
-
     /* Unneeded, due to USB transfer duration */
-#   define VTUNE_BUSY_WAIT(us) do{} while(0)
+#   define VTUNE_BUSY_WAIT(us) do{ INC_BUSY_WAIT_COUNT(); } while(0)
 #else
 #   include <unistd.h>
-#   define VTUNE_BUSY_WAIT(us) usleep(15)
+#   define VTUNE_BUSY_WAIT(us) { usleep(15); INC_BUSY_WAIT_COUNT(); }
+#endif
+
+/* By counting the busy waits between a VCOCAP write and VTUNE read, we can
+ * get a sense of how good/bad our initial VCOCAP guess is */
+//#define LMS_COUNT_BUSY_WAITS
+#ifdef LMS_COUNT_BUSY_WAITS
+    static volatile uint32_t busy_wait_count = 0;
+#   define INC_BUSY_WAIT_COUNT() do { busy_wait_count++; } while (0)
+#   define RESET_BUSY_WAIT_COUNT() do { busy_wait_count = 0; } while (0)
+    static inline void PRINT_BUSY_WAIT_INFO()
+    {
+        if (busy_wait_count > 7) {
+            log_warning("Busy wait count: %u\n", busy_wait_count);
+        } else {
+            log_debug("Busy wait count: %u\n", busy_wait_count);
+        }
+    }
+#else
+#   define INC_BUSY_WAIT_COUNT() do {} while (0)
+#   define RESET_BUSY_WAIT_COUNT() do {} while (0)
+#   define PRINT_BUSY_WAIT_INFO()
 #endif
 
 #define LMS_REFERENCE_HZ    (38400000u)
@@ -1627,6 +1647,8 @@ static inline int tune_vcocap(struct bladerf *dev, uint8_t base, uint8_t data)
     uint8_t vtune;
     int status;
 
+    RESET_BUSY_WAIT_COUNT();
+
     status = LMS_READ(dev, base + 9, &data);
     if (status != 0) {
         return status;
@@ -1750,6 +1772,8 @@ static inline int tune_vcocap(struct bladerf *dev, uint8_t base, uint8_t data)
         log_warning("VCOCAP could not converge and VTUNE is not locked - %d\n",
                     vtune);
     }
+
+    PRINT_BUSY_WAIT_INFO();
 
     return status;
 }
