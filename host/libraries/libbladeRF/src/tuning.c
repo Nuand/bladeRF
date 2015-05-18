@@ -20,44 +20,11 @@
 #include "tuning.h"
 #include "bladerf_priv.h"
 #include "lms.h"
+#include "band_select.h"
 #include "xb.h"
 #include "dc_cal_table.h"
 #include "log.h"
 #include "version_compat.h"
-
-
-int tuning_select_band(struct bladerf *dev, bladerf_module module,
-                       unsigned int frequency)
-{
-    int status;
-    uint32_t gpio;
-    uint32_t band;
-
-    if (frequency < BLADERF_FREQUENCY_MIN) {
-        frequency = BLADERF_FREQUENCY_MIN;
-        log_info("Clamping frequency to %uHz\n", frequency);
-    } else if (frequency > BLADERF_FREQUENCY_MAX) {
-        frequency = BLADERF_FREQUENCY_MAX;
-        log_info("Clamping frequency to %uHz\n", frequency);
-    }
-
-    band = (frequency >= BLADERF_BAND_HIGH) ? 1 : 2;
-
-    status = lms_select_band(dev, module, frequency);
-    if (status != 0) {
-        return status;
-    }
-
-    status = CONFIG_GPIO_READ(dev, &gpio);
-    if (status != 0) {
-        return status;
-    }
-
-    gpio &= ~(module == BLADERF_MODULE_TX ? (3 << 3) : (3 << 5));
-    gpio |= (module == BLADERF_MODULE_TX ? (band << 3) : (band << 5));
-
-    return CONFIG_GPIO_WRITE(dev, gpio);
-}
 
 static bool fpga_supports_tuning_mode(struct bladerf *dev,
                                       bladerf_tuning_mode mode)
@@ -195,11 +162,19 @@ int tuning_set_freq(struct bladerf *dev, bladerf_module module,
     switch (dev->tuning_mode) {
         case BLADERF_TUNING_MODE_HOST:
             status = lms_set_frequency(dev, module, frequency);
+            if (status != 0) {
+                return status;
+            }
+
+            status = band_select(dev, module, frequency < BLADERF_BAND_HIGH);
             break;
 
         case BLADERF_TUNING_MODE_FPGA: {
             struct lms_freq f;
+
             lms_calculate_tuning_params(frequency, &f);
+
+            /* The band selection will occur in the NIOS II */
             status = tuning_schedule(dev, module, BLADERF_RETUNE_NOW, &f);
             break;
         }
@@ -210,12 +185,6 @@ int tuning_set_freq(struct bladerf *dev, bladerf_module module,
             break;
     }
 
-    if (status != 0) {
-        return status;
-    }
-
-    /* TODO: This needs to be moved into the NIOS II */
-    status = tuning_select_band(dev, module, frequency);
     if (status != 0) {
         return status;
     }

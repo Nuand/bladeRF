@@ -1065,7 +1065,7 @@ static int loopback_tx(struct bladerf *dev, bladerf_loopback mode)
             }
 
             status = lms_select_band(dev, BLADERF_MODULE_TX,
-                                     lms_frequency_to_hz(&f));
+                                     lms_frequency_to_hz(&f) < BLADERF_BAND_HIGH);
             break;
         }
 
@@ -1754,12 +1754,9 @@ static inline int tune_vcocap(struct bladerf *dev, uint8_t base, uint8_t data)
     return status;
 }
 
-int lms_select_band(struct bladerf *dev, bladerf_module module,
-                    unsigned int freq)
+int lms_select_band(struct bladerf *dev, bladerf_module module, bool low_band)
 {
     int status;
-    lms_lna lna;
-    lms_pa pa;
 
     /* If loopback mode disabled, avoid changing the PA or LNA selection,
      * as these need to remain are powered down or disabled */
@@ -1770,12 +1767,11 @@ int lms_select_band(struct bladerf *dev, bladerf_module module,
         return 0;
     }
 
-    lna = (freq >= BLADERF_BAND_HIGH) ? LNA_2 : LNA_1;
-    pa  = (freq >= BLADERF_BAND_HIGH) ? PA_2 : PA_1;
-
     if (module == BLADERF_MODULE_TX) {
+        lms_pa pa = low_band ? PA_1 : PA_2;
         status = lms_select_pa(dev, pa);
     } else {
+        lms_lna lna = low_band ? LNA_1 : LNA_2;
         status = lms_select_lna(dev, lna);
     }
 

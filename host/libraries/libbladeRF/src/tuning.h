@@ -29,16 +29,17 @@
 #include "lms.h"
 
 /**
- * Configure the device for operation in the high or low band, based * upon the provided frequency
+ * Configure the device for operation in the high or low band, based
+ * upon the provided frequency
  *
  * @param   dev         Device handle
  * @param   module      Module to configure
- * @param   frequency   Desired frequency
+ * @param   low_band    Select the low band (true), or high band (false)
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
 int tuning_select_band(struct bladerf *dev, bladerf_module module,
-                       unsigned int frequency);
+                       bool low_band);
 
 /**
  * Tune to the specified frequency

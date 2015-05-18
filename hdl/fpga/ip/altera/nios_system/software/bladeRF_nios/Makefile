@@ -156,6 +156,7 @@ C_SRCS += src/pkt_retune.c
 C_SRCS += src/pkt_legacy.c
 C_SRCS += src/devices_sim.c
 C_SRCS += $(FPGA_COMMON_DIR)/src/lms.c
+C_SRCS += $(FPGA_COMMON_DIR)/src/band_select.c
 CXX_SRCS :=
 ASM_SRCS :=
 

@@ -5,7 +5,7 @@ CFLAGS := -Wall -Wextra -Wno-unused-parameter \
           -O0 -ggdb3 -DBLADERF_NIOS_PC_SIMULATION \
           $(INCLUDES)
 
-SRC := $(wildcard src/*.c)
+SRC := $(wildcard src/*.c) $(FPGA_COMMON_DIR)/src/band_select.c
 
 all: bladeRF_nios.sim
 

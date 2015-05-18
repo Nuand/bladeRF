@@ -658,14 +658,13 @@ int lms_config_init(struct bladerf *dev, struct lms_xcvr_config *config);
  * @note This is band selection is specific to how the bladeRF is connected
  *       to the LNA and PA blocks.
  *
- * @param[in]   dev     Device handle
- * @param[in]   module  Module to configure
- * @parma[in]   freq    Frequency
+ * @param[in]   dev         Device handle
+ * @param[in]   module      Module to configure
+ * @parma[in]   low_band    Select the low band
  *
  * @return 0 on succes, BLADERF_ERR_* value on failure
  */
-int lms_select_band(struct bladerf *dev, bladerf_module module,
-                    unsigned int freq);
+int lms_select_band(struct bladerf *dev, bladerf_module module, bool low_band);
 
 /**
  * Select internal or external sampling

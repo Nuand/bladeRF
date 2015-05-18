@@ -66,4 +66,15 @@ struct bladerf;
         0; /* "Return" 0 */ \
     })
 
+#   define CONFIG_GPIO_READ(dev, data_ptr) ({ \
+        *(data_ptr) = control_reg_read(); \
+        0; /* "Return" 0 */ \
+    })
+
+#   define CONFIG_GPIO_WRITE(dev, data) ({ \
+        control_reg_write(data); \
+        0; /* "Return" 0 */ \
+    })
+
 #endif
+

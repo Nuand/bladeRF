@@ -778,4 +778,12 @@ int lms_set_precalculated_frequency(struct bladerf *dev, bladerf_module mod,
     return 0;
 }
 
+int lms_select_band(struct bladerf *dev, bladerf_module module, bool low_band)
+{
+    DBG("%s: module=%s, low_band=%s\n", __FUNCTION__, module2str(module),
+        low_band ? "true" : "false");
+
+    return 0;
+}
+
 #endif

@@ -1,7 +1,8 @@
-/* This file is part of the bladeRF project:
+/*
+ * This file is part of the bladeRF project:
  *   http://www.github.com/nuand/bladeRF
  *
- * Copyright (c) 2015 Nuand LLC
+ * Copyright (C) 2015 Nuand LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,44 +23,29 @@
  * THE SOFTWARE.
  */
 #include <stdint.h>
-#include <stdbool.h>
-#include "pkt_handler.h"
-#include "pkt_retune.h"
-#include "nios_pkt_retune.h"    /* Packet format definition */
-#include "devices.h"
 #include "band_select.h"
-#include "debug.h"
+#include "lms.h"
 
-
-void pkt_retune(struct pkt_buf *b)
+int band_select(struct bladerf *dev, bladerf_module module, bool low_band)
 {
-    bladerf_module module;
-    uint64_t timestamp;
-    struct lms_freq f;
+    int status;
+    uint32_t gpio;
+    const uint32_t band = low_band ? 2 : 1;
 
-    nios_pkt_retune_unpack(b->req, &module, &timestamp,
-                           &f.nint, &f.nfrac, &f.freqsel, &f.low_band);
+    log_debug("Selecting %s band.\n", low_band ? "low" : "high");
 
-    if (timestamp == NIOS_PKT_RETUNE_NOW) {
-        /* Fire off this retune operation now */
-
-        switch (module) {
-            case BLADERF_MODULE_RX:
-            case BLADERF_MODULE_TX:
-                lms_set_precalculated_frequency(NULL, module, &f);
-                band_select(NULL, module, f.low_band);
-                break;
-
-            default:
-                /* TODO Mark a failure in the response */
-                goto out;
-        }
-
-    } else {
-        /* TODO Schedule the retune operation in our queue */
+    status = lms_select_band(dev, module, low_band);
+    if (status != 0) {
+        return status;
     }
 
-out:
-    /* TODO Have a success/failure in the response */
-    memcpy(b->resp, b->req, sizeof(b->req));
+    status = CONFIG_GPIO_READ(dev, &gpio);
+    if (status != 0) {
+        return status;
+    }
+
+    gpio &= ~(module == BLADERF_MODULE_TX ? (3 << 3) : (3 << 5));
+    gpio |= (module == BLADERF_MODULE_TX ? (band << 3) : (band << 5));
+
+    return CONFIG_GPIO_WRITE(dev, gpio);
 }

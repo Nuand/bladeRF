@@ -31,6 +31,7 @@
 #include "tuning.h"
 #include "gain.h"
 #include "lms.h"
+#include "band_select.h"
 #include "xb.h"
 #include "si5338.h"
 #include "file_ops.h"
@@ -682,7 +683,7 @@ int bladerf_select_band(struct bladerf *dev, bladerf_module module,
     int status;
     MUTEX_LOCK(&dev->ctrl_lock);
 
-    status = tuning_select_band(dev, module, frequency);
+    status = band_select(dev, module, frequency < BLADERF_BAND_HIGH);
 
     MUTEX_UNLOCK(&dev->ctrl_lock);
     return status;
