@@ -33,6 +33,22 @@
          type = "int";
       }
    }
+   element command_uart_0
+   {
+      datum _sortIndex
+      {
+         value = "15";
+         type = "int";
+      }
+   }
+   element command_uart_0.avalon_slave
+   {
+      datum baseAddress
+      {
+         value = "37376";
+         type = "String";
+      }
+   }
    element iq_corr_rx_phase_gain
    {
       datum _sortIndex
@@ -236,9 +252,9 @@
 }
 ]]></parameter>
  <parameter name="clockCrossingAdapter" value="HANDSHAKE" />
- <parameter name="device" value="EP4CE40F23C8" />
+ <parameter name="device" value="Unknown" />
  <parameter name="deviceFamily" value="Cyclone IV E" />
- <parameter name="deviceSpeedGrade" value="8" />
+ <parameter name="deviceSpeedGrade" value="Unknown" />
  <parameter name="fabricMode" value="QSYS" />
  <parameter name="generateLegacySim" value="false" />
  <parameter name="generationId" value="0" />
@@ -255,6 +271,11 @@
  <parameter name="useTestBenchNamingPattern" value="false" />
  <instanceScript></instanceScript>
  <interface name="clk" internal="clk_0.clk_in" type="clock" dir="end" />
+ <interface
+   name="command"
+   internal="command_uart_0.rs232"
+   type="conduit"
+   dir="end" />
  <interface
    name="correction_rx_phase_gain"
    internal="iq_corr_rx_phase_gain.external_connection"
@@ -311,6 +332,7 @@
   <parameter name="inputClockFrequency" value="0" />
   <parameter name="resetSynchronousEdges" value="DEASSERT" />
  </module>
+ <module name="command_uart_0" kind="command_uart" version="1.0" enabled="1" />
  <module
    name="iq_corr_rx_phase_gain"
    kind="altera_avalon_pio"
@@ -373,8 +395,8 @@
    enabled="1">
   <parameter name="AUTO_CLK_CLOCK_DOMAIN" value="1" />
   <parameter name="AUTO_CLK_RESET_DOMAIN" value="1" />
-  <parameter name="AUTO_DEVICE" value="EP4CE40F23C8" />
-  <parameter name="AUTO_DEVICE_SPEEDGRADE" value="8" />
+  <parameter name="AUTO_DEVICE" value="Unknown" />
+  <parameter name="AUTO_DEVICE_SPEEDGRADE" value="Unknown" />
   <parameter name="bht_ramBlockType" value="Automatic" />
   <parameter name="breakOffset" value="32" />
   <parameter name="breakSlave">nios2_qsys_0.jtag_debug_module</parameter>
@@ -390,7 +412,7 @@
   <parameter name="dataAddrWidth" value="16" />
   <parameter name="dataMasterHighPerformanceAddrWidth" value="1" />
   <parameter name="dataMasterHighPerformanceMapParam" value="" />
-  <parameter name="dataSlaveMapParam"><![CDATA[<address-map><slave name='onchip_memory2_0.s1' start='0x4000' end='0x8000' /><slave name='nios2_qsys_0.debug_mem_slave' start='0x8800' end='0x9000' /><slave name='timer_0.s1' start='0x9000' end='0x9040' /><slave name='pio_0.s1' start='0x9040' end='0x9060' /><slave name='spi_1.spi_control_port' start='0x9060' end='0x9080' /><slave name='uart_0.s1' start='0x9080' end='0x90A0' /><slave name='spi_0.spi_control_port' start='0x90A0' end='0x90C0' /><slave name='pio_2.s1' start='0x90C0' end='0x90D0' /><slave name='pio_1.s1' start='0x90D0' end='0x90E0' /><slave name='iq_corr_tx_phase_gain.s1' start='0x90E0' end='0x90F0' /><slave name='iq_corr_rx_phase_gain.s1' start='0x90F0' end='0x9100' /><slave name='time_tamer_0.avalon_slave_0' start='0x9100' end='0x9110' /><slave name='bladerf_oc_i2c_master_0.bladerf_oc_i2c_master' start='0x9110' end='0x9118' /><slave name='jtag_uart_0.avalon_jtag_slave' start='0x9118' end='0x9120' /></address-map>]]></parameter>
+  <parameter name="dataSlaveMapParam"><![CDATA[<address-map><slave name='onchip_memory2_0.s1' start='0x4000' end='0x8000' /><slave name='nios2_qsys_0.debug_mem_slave' start='0x8800' end='0x9000' /><slave name='timer_0.s1' start='0x9000' end='0x9040' /><slave name='pio_0.s1' start='0x9040' end='0x9060' /><slave name='spi_1.spi_control_port' start='0x9060' end='0x9080' /><slave name='uart_0.s1' start='0x9080' end='0x90A0' /><slave name='spi_0.spi_control_port' start='0x90A0' end='0x90C0' /><slave name='pio_2.s1' start='0x90C0' end='0x90D0' /><slave name='pio_1.s1' start='0x90D0' end='0x90E0' /><slave name='iq_corr_tx_phase_gain.s1' start='0x90E0' end='0x90F0' /><slave name='iq_corr_rx_phase_gain.s1' start='0x90F0' end='0x9100' /><slave name='time_tamer_0.avalon_slave_0' start='0x9100' end='0x9110' /><slave name='bladerf_oc_i2c_master_0.bladerf_oc_i2c_master' start='0x9110' end='0x9118' /><slave name='jtag_uart_0.avalon_jtag_slave' start='0x9118' end='0x9120' /><slave name='command_uart_0.avalon_slave' start='0x9200' end='0x9210' /></address-map>]]></parameter>
   <parameter name="data_master_high_performance_paddr_base" value="0" />
   <parameter name="data_master_high_performance_paddr_size" value="0" />
   <parameter name="data_master_paddr_base" value="0" />
@@ -436,7 +458,7 @@
   <parameter name="instruction_master_high_performance_paddr_size" value="0" />
   <parameter name="instruction_master_paddr_base" value="0" />
   <parameter name="instruction_master_paddr_size" value="0" />
-  <parameter name="internalIrqMaskSystemInfo" value="127" />
+  <parameter name="internalIrqMaskSystemInfo" value="255" />
   <parameter name="io_regionbase" value="0" />
   <parameter name="io_regionsize" value="0" />
   <parameter name="master_addr_map" value="false" />
@@ -693,6 +715,15 @@
    kind="avalon"
    version="15.0"
    start="nios2_qsys_0.data_master"
+   end="command_uart_0.avalon_slave">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x9200" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection
+   kind="avalon"
+   version="15.0"
+   start="nios2_qsys_0.data_master"
    end="time_tamer_0.avalon_slave_0">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x9100" />
@@ -852,12 +883,24 @@
    kind="clock"
    version="15.0"
    start="clk_0.clk"
+   end="command_uart_0.clock" />
+ <connection
+   kind="clock"
+   version="15.0"
+   start="clk_0.clk"
    end="bladerf_oc_i2c_master_0.clock_sink" />
  <connection
    kind="clock"
    version="15.0"
    start="clk_0.clk"
    end="time_tamer_0.clock_sink" />
+ <connection
+   kind="interrupt"
+   version="15.0"
+   start="nios2_qsys_0.irq"
+   end="command_uart_0.interrupt">
+  <parameter name="irqNumber" value="7" />
+ </connection>
  <connection
    kind="interrupt"
    version="15.0"
@@ -947,6 +990,11 @@
    end="time_tamer_0.reset" />
  <connection kind="reset" version="15.0" start="clk_0.clk_reset" end="pio_1.reset" />
  <connection kind="reset" version="15.0" start="clk_0.clk_reset" end="pio_2.reset" />
+ <connection
+   kind="reset"
+   version="15.0"
+   start="clk_0.clk_reset"
+   end="command_uart_0.reset" />
  <connection
    kind="reset"
    version="15.0"

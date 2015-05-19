@@ -1,4 +1,5 @@
 <library>
 	<path path="../../opencores/i2c/**/*"/>
 	<path path="../../nuand/time_tamer/**/*"/>
+	<path path="../../nuand/command_uart/**/*"/>
 </library>
