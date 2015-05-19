@@ -308,6 +308,40 @@ static inline int is_loopback_enabled(struct bladerf *dev)
     return loopback != BLADERF_LB_NONE;
 }
 
+/* VCOCAP estimation. The MIN/MAX values were determined experimentally by
+ * sampling the VCOCAP values over frequency, for each of the VCOs and finding
+ * these to be in the "middle" of a linear regression. Although the curve
+ * isn't actually linear, the linear approximation yields satisfactory error. */
+#define VCOCAP_MAX_VALUE 0x3f
+#define VCOCAP_EST_MIN 15
+#define VCOCAP_EST_MAX 55
+#define VCOCAP_EST_RANGE (VCOCAP_EST_MAX - VCOCAP_EST_MIN)
+#define VCOCAP_EST_THRESH 7 /* Complain if we're +/- 7 on our guess */
+
+/* This is a linear interpolation of our experimentally identified
+ * mean VCOCAP min and VCOCAP max values:
+ */
+static inline uint8_t estimate_vcocap(unsigned int f_target,
+                                      unsigned int f_low, unsigned int f_high)
+{
+    unsigned int vcocap;
+    const float denom = f_high - f_low;
+    const float num = VCOCAP_EST_RANGE;
+    const float f_diff = (f_target - f_low);
+
+    vcocap = (num / denom * f_diff) + 0.5 + VCOCAP_EST_MIN;
+
+    if (vcocap > VCOCAP_MAX_VALUE) {
+        unsigned int vcocap_bad = vcocap;
+        vcocap = VCOCAP_MAX_VALUE;
+        log_warning("Clamping VCOCAP estimate from %u to %u\n",
+                    vcocap_bad, vcocap);
+    } else {
+        log_verbose("VCOCAP estimate: %u\n", vcocap);
+    }
+    return (uint8_t) vcocap;
+}
+
 static int write_pll_config(struct bladerf *dev, bladerf_module module,
                             uint8_t freqsel, bool low_band)
 {
@@ -1638,13 +1672,15 @@ int lms_get_frequency(struct bladerf *dev, bladerf_module mod,
 #define VCO_HIGH 0x02
 #define VCO_NORM 0x00
 #define VCO_LOW 0x01
-static inline int tune_vcocap(struct bladerf *dev, uint8_t base, uint8_t data)
+static inline int tune_vcocap(struct bladerf *dev, uint8_t vcocap_est,
+                              uint8_t base, uint8_t data)
 {
     int start_i = -1, stop_i = -1;
     int i;
     uint8_t vcocap = 32;
     uint8_t step = vcocap >> 1;
     uint8_t vtune;
+    int8_t vcocap_diff;
     int status;
 
     RESET_BUSY_WAIT_COUNT();
@@ -1775,6 +1811,14 @@ static inline int tune_vcocap(struct bladerf *dev, uint8_t base, uint8_t data)
 
     PRINT_BUSY_WAIT_INFO();
 
+    vcocap_diff = vcocap - vcocap_est;
+
+    if (vcocap_diff < VCOCAP_EST_THRESH && vcocap_diff > -VCOCAP_EST_THRESH) {
+        log_verbose("VCOCAP estimate error: %d\n", vcocap_diff);
+    } else {
+        log_warning("VCOCAP estimate error: %d\n", vcocap_diff);
+    }
+
     return status;
 }
 
@@ -1831,6 +1875,9 @@ void lms_calculate_tuning_params(uint32_t freq, struct lms_freq *f)
         }
         i++;
     }
+
+    /* Estimate our target VCOCAP value. */
+    f->vcocap_est = estimate_vcocap(freq, bands[i].low, bands[i].high);
 
     /* Calculate integer portion of the frequency value */
     vco_x = ((uint64_t)1) << ((freqsel & 7) - 3);
@@ -1945,7 +1992,7 @@ int lms_set_precalculated_frequency(struct bladerf *dev, bladerf_module mod,
     }
 
     /* Loop through the VCOCAP to figure out optimal values */
-    status = tune_vcocap(dev, base, data);
+    status = tune_vcocap(dev, f->vcocap_est, base, data);
 
 error:
     /* Turn off the DSMs */
