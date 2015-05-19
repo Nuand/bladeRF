@@ -196,6 +196,14 @@ static inline int lms_clear(struct bladerf *dev, uint8_t addr, uint8_t mask)
 }
 
 /**
+ * Configure charge pump offset currents
+ *
+ * @param[in]   dev     Device handle
+ * @param[in]   mod     Module to change
+ */
+int lms_config_charge_pumps(struct bladerf *dev, bladerf_module module);
+
+/**
  * Enable or disable the low-pass filter on the specified module
  *
  * @param[in]   dev     Device handle

@@ -379,6 +379,59 @@ static int write_pll_config(struct bladerf *dev, bladerf_module module,
 }
 
 #ifndef BLADERF_NIOS_BUILD
+
+/* TODO: Investigate why the OFFUP and OFFDOWN values were changed
+ *       from 30uA to 0uA (via the commented out data |= 3). */
+int lms_config_charge_pumps(struct bladerf *dev, bladerf_module module)
+{
+    int status;
+    uint8_t data;
+    const uint8_t base = (module == BLADERF_MODULE_RX) ? 0x20 : 0x10;
+
+    /* Set the PLL Ichp, Iup and Idn currents */
+    status = LMS_READ(dev, base + 6, &data);
+    if (status != 0) {
+        return status;
+    }
+
+    data &= ~(0x1f);
+    data |= 0x0c;
+
+    status = LMS_WRITE(dev, base + 6, data);
+    if (status != 0) {
+        return status;
+    }
+
+    status = LMS_READ(dev, base + 7, &data);
+    if (status != 0) {
+        return status;
+    }
+
+    data &= ~(0x1f);
+    // data |= 3;
+
+    status = LMS_WRITE(dev, base + 7, data);
+    if (status != 0) {
+        return status;
+    }
+
+    status = LMS_READ(dev, base + 8, &data);
+    if (status != 0) {
+        return status;
+    }
+
+    data &= ~(0x1f);
+    // data |= 3;
+    status = LMS_WRITE(dev, base + 8, data);
+    if (status != 0) {
+        return status;
+    }
+
+    return 0;
+}
+#endif
+
+#ifndef BLADERF_NIOS_BUILD
 int lms_lpf_enable(struct bladerf *dev, bladerf_module mod, bool enable)
 {
     int status;
@@ -1948,45 +2001,6 @@ int lms_set_precalculated_frequency(struct bladerf *dev, bladerf_module mod,
 
     data = (f->nfrac & 0xff);
     status = LMS_WRITE(dev, base + 3, data);
-    if (status != 0) {
-        goto error;
-    }
-
-    /* Set the PLL Ichp, Iup and Idn currents */
-    status = LMS_READ(dev, base + 6, &data);
-    if (status != 0) {
-        goto error;
-    }
-
-    data &= ~(0x1f);
-    data |= 0x0c;
-
-    status = LMS_WRITE(dev, base + 6, data);
-    if (status != 0) {
-        goto error;
-    }
-
-    status = LMS_READ(dev, base + 7, &data);
-    if (status != 0) {
-        goto error;
-    }
-
-    data &= ~(0x1f);
-    // data |= 3;
-
-    status = LMS_WRITE(dev, base + 7, data);
-    if (status != 0) {
-        goto error;
-    }
-
-    status = LMS_READ(dev, base + 8, &data);
-    if (status != 0) {
-        goto error;
-    }
-
-    data &= ~(0x1f);
-    // data |= 3;
-    status = LMS_WRITE(dev, base + 8, data);
     if (status != 0) {
         goto error;
     }

@@ -216,6 +216,17 @@ int init_device(struct bladerf *dev)
             return status;
         }
 
+        /* Configure charge pump current offsets */
+        status = lms_config_charge_pumps(dev, BLADERF_MODULE_TX);
+        if (status != 0) {
+            return status;
+        }
+
+        status = lms_config_charge_pumps(dev, BLADERF_MODULE_RX);
+        if (status != 0) {
+            return status;
+        }
+
         /* Set a default samplerate */
         status = si5338_set_sample_rate(dev, BLADERF_MODULE_TX, 1000000, NULL);
         if (status != 0) {
