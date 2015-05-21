@@ -408,7 +408,7 @@ int lms_config_charge_pumps(struct bladerf *dev, bladerf_module module)
     }
 
     data &= ~(0x1f);
-    // data |= 3;
+    data |= 3;
 
     status = LMS_WRITE(dev, base + 7, data);
     if (status != 0) {
@@ -421,7 +421,7 @@ int lms_config_charge_pumps(struct bladerf *dev, bladerf_module module)
     }
 
     data &= ~(0x1f);
-    // data |= 3;
+    data |= 3;
     status = LMS_WRITE(dev, base + 8, data);
     if (status != 0) {
         return status;
