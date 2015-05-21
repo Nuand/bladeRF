@@ -188,7 +188,7 @@ APP_LIBRARY_NAMES :=
 BUILD_PRE_PROCESS :=
 BUILD_POST_PROCESS :=
 
-QUARTUS_PROJECT_DIR := ../../
+QUARTUS_PROJECT_DIR := ../../../../../../quartus/work/output_files
 
 
 #END GENERATED
