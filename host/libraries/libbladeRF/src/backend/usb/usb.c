@@ -1442,7 +1442,7 @@ static void usb_deinit_stream(struct bladerf_stream *stream)
 
 static int usb_retune(struct bladerf *dev, bladerf_module module,
                       uint64_t timestamp, uint16_t nint, uint32_t nfrac,
-                      uint8_t freqsel, bool low_band)
+                      uint8_t freqsel, bool low_band, uint8_t vcocap_hint)
 {
     int status;
     void *driver;
@@ -1450,13 +1450,13 @@ static int usb_retune(struct bladerf *dev, bladerf_module module,
     uint8_t buf[NIOS_PKT_LEN] = { 0x00 };
 
     log_verbose("Retune: module=%s, ts=0x%016"PRIx64", nint=0x%04x, "
-                "nfrac=0x%08x, freqsel=0x%02x, band=%s\n",
+                "nfrac=0x%08x, freqsel=0x%02x, band=%s, vcocap hint=0x%02x\n",
                 module2str(module), timestamp, nint, nfrac, freqsel,
-                low_band ? "low" : "high");
+                low_band ? "low" : "high", vcocap_hint);
 
 
     nios_pkt_retune_pack(buf, module, timestamp,
-                         nint, nfrac, freqsel, low_band);
+                         nint, nfrac, freqsel, low_band, vcocap_hint);
 
     print_buf("Retune request:", buf, 16);
 

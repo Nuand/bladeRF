@@ -38,7 +38,8 @@ void pkt_retune(struct pkt_buf *b)
     struct lms_freq f;
 
     nios_pkt_retune_unpack(b->req, &module, &timestamp,
-                           &f.nint, &f.nfrac, &f.freqsel, &f.low_band);
+                           &f.nint, &f.nfrac, &f.freqsel, &f.low_band,
+                           &f.vcocap_est);
 
     if (timestamp == NIOS_PKT_RETUNE_NOW) {
         /* Fire off this retune operation now */

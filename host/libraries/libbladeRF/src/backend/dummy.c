@@ -221,7 +221,7 @@ static void dummy_deinit_stream(struct bladerf_stream *stream)
 
 static int dummy_retune(struct bladerf *dev, bladerf_module module,
                         uint64_t timestamp, uint16_t nint, uint32_t nfrac,
-                        uint8_t  freqsel, bool low_band)
+                        uint8_t  freqsel, bool low_band, uint8_t vcocap_hint)
 {
     return 0;
 }

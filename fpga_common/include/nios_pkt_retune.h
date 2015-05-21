@@ -49,7 +49,9 @@
  * +----------------+---------------------------------------------------------+
  * |       13       | RX/TX bit, FREQSEL LMS6002D reg value  (Note 2)         |
  * +----------------+---------------------------------------------------------+
- * |       14       | Band-selection bit [7], Reserved[6:0] = 0 (Note 3)      |
+ * |       14       | Bit 7:        Band-selection (Note 3)                   |
+ * |                | Bit 6:        Reserved (Set to 0)                       |
+ * |                | Bits [5:0]    VCOCAP[5:0] Hint                          |
  * +----------------+---------------------------------------------------------+
  * |       15       | 8-bit reserved word. Should be set to 0x00.             |
  * +----------------+---------------------------------------------------------+
@@ -114,7 +116,8 @@ static inline void nios_pkt_retune_pack(uint8_t *buf,
                                         uint16_t nint,
                                         uint32_t nfrac,
                                         uint8_t  freqsel,
-                                        bool     low_band)
+                                        bool     low_band,
+                                        uint8_t  vcocap_hint)
 {
     buf[NIOS_PKT_RETUNE_IDX_MAGIC] = NIOS_PKT_RETUNE_MAGIC;
 
@@ -153,6 +156,8 @@ static inline void nios_pkt_retune_pack(uint8_t *buf,
         buf[NIOS_PKT_RETUNE_IDX_BANDSEL] = 0x00;
     }
 
+    buf[NIOS_PKT_RETUNE_IDX_BANDSEL] |= vcocap_hint;
+
     buf[NIOS_PKT_RETUNE_IDX_RESV]     = 0x00;
 }
 
@@ -163,7 +168,8 @@ static inline void nios_pkt_retune_unpack(const uint8_t *buf,
                                           uint16_t *nint,
                                           uint32_t *nfrac,
                                           uint8_t  *freqsel,
-                                          bool     *low_band)
+                                          bool     *low_band,
+                                          uint8_t  *vcocap_hint)
 {
     *timestamp  = ( ((uint64_t) buf[NIOS_PKT_RETUNE_IDX_TIME + 0]) <<  0);
     *timestamp |= ( ((uint64_t) buf[NIOS_PKT_RETUNE_IDX_TIME + 1]) <<  8);
@@ -192,6 +198,7 @@ static inline void nios_pkt_retune_unpack(const uint8_t *buf,
     }
 
     *low_band = (buf[NIOS_PKT_RETUNE_IDX_BANDSEL] & 0x80) != 0;
+    *vcocap_hint = buf[NIOS_PKT_RETUNE_IDX_BANDSEL] & 0x3f;
 }
 
 
