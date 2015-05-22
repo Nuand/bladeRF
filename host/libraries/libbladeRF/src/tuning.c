@@ -141,8 +141,10 @@ int tuning_get_freq(struct bladerf *dev, bladerf_module module,
     }
 
     if( f.x == 0 ) {
+        /* If we see this, it's most often an indication that communication
+         * with the LMS6002D is not occuring correctly */
         *frequency = 0 ;
-        rv = BLADERF_ERR_INVAL;
+        rv = BLADERF_ERR_IO;
     } else {
         *frequency = lms_frequency_to_hz(&f);
     }
