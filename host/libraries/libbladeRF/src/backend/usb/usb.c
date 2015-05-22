@@ -61,6 +61,7 @@ static inline struct bladerf_usb *usb_backend(struct bladerf *dev, void **driver
     return ret;
 }
 
+//#define PRINT_PERIPHERAL_BUFFERS
 #ifdef PRINT_PERIPHERAL_BUFFERS
 static void print_buf(const char *msg, const uint8_t *buf, size_t len)
 {
@@ -1449,8 +1450,14 @@ static int usb_retune(struct bladerf *dev, bladerf_module module,
     struct bladerf_usb *usb = usb_backend(dev, &driver);
     uint8_t buf[NIOS_PKT_LEN] = { 0x00 };
 
-    log_verbose("Retune: module=%s, ts=0x%016"PRIx64", nint=0x%04x, "
-                "nfrac=0x%08x, freqsel=0x%02x, band=%s, vcocap hint=0x%02x\n",
+#ifdef LOGGING_ENABLED
+    uint8_t flags;
+    uint64_t duration;
+    uint8_t vcocap;
+#endif
+
+    log_verbose("Retuning %s: ts=%"PRIu64", nint=%u, "
+                "nfrac=%u, freqsel=0x%02x, band=%s, vcocap_est=0x%02x\n",
                 module2str(module), timestamp, nint, nfrac, freqsel,
                 low_band ? "low" : "high", vcocap_hint);
 
@@ -1482,6 +1489,23 @@ static int usb_retune(struct bladerf *dev, bladerf_module module,
     }
 
     print_buf("Retune response:", buf, 16);
+
+#   ifdef LOGGING_ENABLED
+    nios_pkt_retune_resp_unpack(buf, &duration, &vcocap, &flags);
+    if (flags & NIOS_PKT_RETUNERESP_FLAG_TSVTUNE_VALID) {
+            log_verbose("%s retune operation: vcocap=%u, duration=%"PRIu64"\n",
+                        module2str(module), vcocap, duration);
+    } else {
+        log_verbose("%s retune does not provide duration or VCOCAP.\n",
+                    module2str(module));
+    }
+
+    if ((flags & NIOS_PKT_RETUNERESP_FLAG_SUCCESS) == 0) {
+        log_debug("FPGA tuning reported failure.\n");
+        status = BLADERF_ERR_UNEXPECTED;
+    }
+
+#   endif
 
     return status;
 }
