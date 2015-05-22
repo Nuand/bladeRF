@@ -887,7 +887,8 @@ int calibrate_dc(struct cli_state *s, unsigned int ops)
         status = backup_and_update_settings(s->dev, BLADERF_MODULE_RX,
                                             &rx_settings);
         if (status != 0) {
-            return status;
+            s->last_lib_error = status;
+            return CLI_RET_LIBBLADERF;
         }
     }
 
@@ -895,13 +896,15 @@ int calibrate_dc(struct cli_state *s, unsigned int ops)
         status = backup_and_update_settings(s->dev, BLADERF_MODULE_TX,
                                             &tx_settings);
         if (status != 0) {
-            return status;
+            s->last_lib_error = status;
+            return CLI_RET_LIBBLADERF;
         }
     }
 
     status = bladerf_get_loopback(s->dev, &loopback);
     if (status != 0) {
-        return status;
+        s->last_lib_error = status;
+        return CLI_RET_LIBBLADERF;
     }
 
     if (IS_RX_CAL(ops)) {
