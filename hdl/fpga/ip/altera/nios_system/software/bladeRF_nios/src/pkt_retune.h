@@ -38,6 +38,8 @@ void pkt_retune(struct pkt_buf *b);
     .magic          = PKT_RETUNE_MAGIC, \
     .bytes_required = PKT_RETUNE_REQUIRED_BYTES, \
     .init           = NULL, \
-    .exec           = pkt_retune }
+    .exec           = pkt_retune, \
+    .do_work        = NULL, \
+}
 
 #endif

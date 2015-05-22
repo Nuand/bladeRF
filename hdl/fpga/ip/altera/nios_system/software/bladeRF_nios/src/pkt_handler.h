@@ -69,6 +69,11 @@ struct pkt_handler {
      * data.
      */
     void (*exec)(struct pkt_buf *b);
+
+    /**
+     * Perform any deferred work from a previous request
+     */
+    void (*do_work)(void);
 };
 
 static inline void reset_response_buf(struct pkt_buf *b)
