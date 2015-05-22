@@ -1937,7 +1937,8 @@ static inline int vtune_low_to_norm(struct bladerf *dev, uint8_t base,
  * the voltage changes.
  */
 static inline int tune_vcocap(struct bladerf *dev, uint8_t vcocap_est,
-                              uint8_t base, uint8_t vcocap_reg_state)
+                              uint8_t base, uint8_t vcocap_reg_state,
+                              uint8_t *vcocap_result)
 {
     int status;
     uint8_t vcocap = vcocap_est;
@@ -2042,6 +2043,9 @@ static inline int tune_vcocap(struct bladerf *dev, uint8_t vcocap_est,
         if (status != 0) {
             return status;
         }
+
+        /* Inform the caller of what we converged to */
+        *vcocap_result = vcocap;
 
         status = get_vtune(dev, base, VTUNE_DELAY_SMALL, &vtune);
         if (status != 0) {
@@ -2380,6 +2384,8 @@ int lms_set_precalculated_frequency(struct bladerf *dev, bladerf_module mod,
     uint8_t vcocap_reg_state;
     int status, dsm_status;
 
+    f->vcocap_result = 0xff;
+
     /* Turn on the DSMs */
     status = LMS_READ(dev, 0x09, &data);
     if (status == 0) {
@@ -2437,7 +2443,8 @@ int lms_set_precalculated_frequency(struct bladerf *dev, bladerf_module mod,
     }
 
     /* Walk down VCOCAP values find an optimal values */
-    status = tune_vcocap(dev, f->vcocap_est, base, vcocap_reg_state);
+    status = tune_vcocap(dev, f->vcocap_est, base, vcocap_reg_state,
+                         &f->vcocap_result);
 
 error:
     /* Turn off the DSMs */

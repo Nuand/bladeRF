@@ -58,6 +58,9 @@ struct lms_freq {
 #ifndef BLADERF_NIOS_BUILD
     uint8_t     x;         /**< VCO division ratio */
 #endif
+
+    uint8_t     vcocap_result;  /**< Filled in by retune operation to denote
+                                     which VCOCAP value was used */
 };
 
 /**
