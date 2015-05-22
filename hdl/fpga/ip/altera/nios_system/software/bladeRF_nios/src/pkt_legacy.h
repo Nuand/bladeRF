@@ -36,6 +36,7 @@ void pkt_legacy(struct pkt_buf *b);
 #define PKT_LEGACY { \
     .magic          = PKT_LEGACY_MAGIC, \
     .bytes_required = PKT_LEGACY_REQUIRED_BYTES, \
+    .init           = NULL, \
     .exec           = pkt_legacy }
 
 #endif

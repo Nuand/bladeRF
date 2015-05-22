@@ -84,6 +84,13 @@ int main(void)
 
     bladerf_nios_init();
 
+    /* Initialize packet handlers */
+    for (i = 0; i < ARRAY_SIZE(pkt_handlers); i++) {
+        if (pkt_handlers[i].init != NULL) {
+            pkt_handlers[i].init();
+        }
+    }
+
     while (run_nios) {
 
         handler = NULL;

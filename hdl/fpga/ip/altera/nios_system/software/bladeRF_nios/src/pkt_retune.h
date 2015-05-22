@@ -30,11 +30,14 @@
 #define PKT_RETUNE_MAGIC            ((uint8_t) NIOS_PKT_RETUNE_MAGIC)
 #define PKT_RETUNE_REQUIRED_BYTES   15
 
+void pkt_retune_init(void);
+
 void pkt_retune(struct pkt_buf *b);
 
 #define PKT_RETUNE { \
     .magic          = PKT_RETUNE_MAGIC, \
     .bytes_required = PKT_RETUNE_REQUIRED_BYTES, \
+    .init           = NULL, \
     .exec           = pkt_retune }
 
 #endif

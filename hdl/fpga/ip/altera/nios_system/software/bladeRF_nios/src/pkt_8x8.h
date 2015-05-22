@@ -35,6 +35,7 @@ void pkt_8x8(struct pkt_buf *b);
 #define PKT_8x8 { \
     .magic          = PKT_8x8_MAGIC, \
     .bytes_required = PKT_8x8_REQUIRED_BYTES, \
+    .init           = NULL, \
     .exec           = pkt_8x8 }
 
 #endif

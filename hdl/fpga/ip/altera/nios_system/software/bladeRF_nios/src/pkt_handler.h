@@ -59,6 +59,11 @@ struct pkt_handler {
     const uint8_t bytes_required;
 
     /**
+     * Perform any required initializations
+     */
+    void (*init)(void);
+
+    /**
      * Execute packet handler actions, provided a buffer containing the request
      * data. The packet handler is to fill out the entirety of the response
      * data.
