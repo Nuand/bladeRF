@@ -252,9 +252,9 @@
 }
 ]]></parameter>
  <parameter name="clockCrossingAdapter" value="HANDSHAKE" />
- <parameter name="device" value="Unknown" />
+ <parameter name="device" value="EP4CE115F23C8" />
  <parameter name="deviceFamily" value="Cyclone IV E" />
- <parameter name="deviceSpeedGrade" value="Unknown" />
+ <parameter name="deviceSpeedGrade" value="8" />
  <parameter name="fabricMode" value="QSYS" />
  <parameter name="generateLegacySim" value="false" />
  <parameter name="generationId" value="0" />
@@ -324,7 +324,7 @@
    kind="bladerf_oc_i2c_master"
    version="1.0"
    enabled="1">
-  <parameter name="ARST_LVL" value="0" />
+  <parameter name="ARST_LVL" value="1" />
  </module>
  <module name="clk_0" kind="clock_source" version="15.0" enabled="1">
   <parameter name="clockFrequency" value="80000000" />
@@ -395,8 +395,8 @@
    enabled="1">
   <parameter name="AUTO_CLK_CLOCK_DOMAIN" value="1" />
   <parameter name="AUTO_CLK_RESET_DOMAIN" value="1" />
-  <parameter name="AUTO_DEVICE" value="Unknown" />
-  <parameter name="AUTO_DEVICE_SPEEDGRADE" value="Unknown" />
+  <parameter name="AUTO_DEVICE" value="EP4CE115F23C8" />
+  <parameter name="AUTO_DEVICE_SPEEDGRADE" value="8" />
   <parameter name="bht_ramBlockType" value="Automatic" />
   <parameter name="breakOffset" value="32" />
   <parameter name="breakSlave">nios2_qsys_0.jtag_debug_module</parameter>
