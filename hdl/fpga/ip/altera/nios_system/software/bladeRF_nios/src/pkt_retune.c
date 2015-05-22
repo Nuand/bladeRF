@@ -33,13 +33,22 @@
 
 void pkt_retune(struct pkt_buf *b)
 {
+    int status;
     bladerf_module module;
-    uint64_t timestamp;
+    uint8_t flags;
     struct lms_freq f;
+    uint64_t timestamp;
+    uint64_t retune_start;
+    uint64_t retune_end;
+    uint64_t retune_duration = 0;
+
+    flags = NIOS_PKT_RETUNERESP_FLAG_SUCCESS;
 
     nios_pkt_retune_unpack(b->req, &module, &timestamp,
                            &f.nint, &f.nfrac, &f.freqsel, &f.low_band,
                            &f.vcocap_est);
+
+    f.vcocap_result = 0xff;
 
     if (timestamp == NIOS_PKT_RETUNE_NOW) {
         /* Fire off this retune operation now */
@@ -47,20 +56,33 @@ void pkt_retune(struct pkt_buf *b)
         switch (module) {
             case BLADERF_MODULE_RX:
             case BLADERF_MODULE_TX:
-                lms_set_precalculated_frequency(NULL, module, &f);
-                band_select(NULL, module, f.low_band);
+                retune_start = time_tamer_read(module);
+
+                status = lms_set_precalculated_frequency(NULL, module, &f);
+                if (status == 0) {
+                    flags |= NIOS_PKT_RETUNERESP_FLAG_TSVTUNE_VALID;
+
+                    status = band_select(NULL, module, f.low_band);
+                    if (status != 0) {
+                        flags &= ~(NIOS_PKT_RETUNERESP_FLAG_SUCCESS);
+                    }
+
+                } else {
+                    flags &= ~(NIOS_PKT_RETUNERESP_FLAG_SUCCESS);
+                }
+
+                retune_end = time_tamer_read(module);
+                retune_duration = retune_end - retune_start;
                 break;
 
             default:
-                /* TODO Mark a failure in the response */
-                goto out;
+                flags &= ~(NIOS_PKT_RETUNERESP_FLAG_SUCCESS);
         }
 
     } else {
         /* TODO Schedule the retune operation in our queue */
+        retune_duration = 0;
     }
 
-out:
-    /* TODO Have a success/failure in the response */
-    memcpy(b->resp, b->req, sizeof(b->req));
+    nios_pkt_retune_resp_pack(b->resp, retune_duration, f.vcocap_result, flags);
 }
