@@ -152,7 +152,8 @@ void pkt_retune_work(void)
             if (lms_set_precalculated_frequency(NULL, e->module, &e->freq)) {
                 INCREMENT_ERROR_COUNT();
             } else {
-                if (band_select(NULL, e->module, e->freq.low_band)) {
+                bool low_band = (e->freq.flags & LMS_FREQ_FLAGS_LOW_BAND) != 0;
+                if (band_select(NULL, e->module, low_band)) {
                     INCREMENT_ERROR_COUNT();
                 }
             }
@@ -177,14 +178,26 @@ void pkt_retune(struct pkt_buf *b)
     uint64_t retune_start;
     uint64_t retune_end;
     uint64_t retune_duration = 0;
+    bool low_band;
+    bool quick_tune;
 
     flags = NIOS_PKT_RETUNERESP_FLAG_SUCCESS;
 
     nios_pkt_retune_unpack(b->req, &module, &timestamp,
-                           &f.nint, &f.nfrac, &f.freqsel, &f.low_band,
-                           &f.vcocap_est);
+                           &f.nint, &f.nfrac, &f.freqsel, &f.vcocap,
+                           &low_band, &quick_tune);
 
     f.vcocap_result = 0xff;
+
+    if (low_band) {
+        f.flags = LMS_FREQ_FLAGS_LOW_BAND;
+    } else {
+        f.flags = 0;
+    }
+
+    if (quick_tune) {
+        f.flags |= LMS_FREQ_FLAGS_FORCE_VCOCAP;
+    }
 
     if (timestamp == NIOS_PKT_RETUNE_NOW) {
         /* Fire off this retune operation now */
@@ -200,7 +213,7 @@ void pkt_retune(struct pkt_buf *b)
 
                 flags |= NIOS_PKT_RETUNERESP_FLAG_TSVTUNE_VALID;
 
-                status = band_select(NULL, module, f.low_band);
+                status = band_select(NULL, module, low_band);
                 if (status != 0) {
                     goto out;
                 }
