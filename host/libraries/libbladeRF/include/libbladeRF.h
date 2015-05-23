@@ -644,8 +644,7 @@ typedef enum {
 /**
  * DC Calibration Modules
  */
-typedef enum
-{
+typedef enum {
     BLADERF_DC_CAL_LPF_TUNING,
     BLADERF_DC_CAL_TX_LPF,
     BLADERF_DC_CAL_RX_LPF,
@@ -661,8 +660,7 @@ typedef enum
  * correction parameter.
  *
  */
-typedef enum
-{
+typedef enum {
     /**
      * Adjusts the in-phase DC offset via controls provided by the LMS6002D
      * front end. Valid values are [-2048, 2048], which are scaled to the
