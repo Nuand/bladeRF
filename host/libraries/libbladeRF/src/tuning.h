@@ -73,7 +73,8 @@ static inline int tuning_schedule(struct bladerf *dev,
 {
     return dev->fn->retune(dev, module, timestamp,
                            f->nint, f->nfrac, f->freqsel, f->vcocap,
-                           f->flags);
+                           (f->flags & LMS_FREQ_FLAGS_LOW_BAND) != 0,
+                           (f->flags & LMS_FREQ_FLAGS_FORCE_VCOCAP) != 0);
 }
 
 /**
