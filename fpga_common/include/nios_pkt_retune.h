@@ -50,7 +50,7 @@
  * |       13       | RX/TX bit, FREQSEL LMS6002D reg value  (Note 2)         |
  * +----------------+---------------------------------------------------------+
  * |       14       | Bit 7:        Band-selection (Note 3)                   |
- * |                | Bit 6:        Reserved (Set to 0)                       |
+ * |                | Bit 6:        1=Quick tune, 0=Normal tune               |
  * |                | Bits [5:0]    VCOCAP[5:0] Hint                          |
  * +----------------+---------------------------------------------------------+
  * |       15       | 8-bit reserved word. Should be set to 0x00.             |
@@ -94,11 +94,12 @@
 
 #define NIOS_PKT_RETUNE_MAGIC        'T'
 
-/* The retune operation should be applied to the RX module */
-#define NIOS_PKT_RETUNE_FLAG_RX      (1 << 6)
 
-/* The retune operations should be applied to the TX module */
-#define NIOS_PKT_RETUNE_FLAG_TX      (1 << 7)
+#define FLAG_QUICK_TUNE (1 << 6)
+#define FLAG_RX (1 << 6)
+#define FLAG_TX (1 << 7)
+#define FLAG_LOW_BAND (1 << 7)
+
 
 /* Denotes no tune word is supplied. */
 #define NIOS_PKT_RETUNE_NO_HINT      0xff
@@ -117,6 +118,7 @@ static inline void nios_pkt_retune_pack(uint8_t *buf,
                                         uint32_t nfrac,
                                         uint8_t  freqsel,
                                         bool     low_band,
+                                        bool     quick_tune,
                                         uint8_t  vcocap_hint)
 {
     buf[NIOS_PKT_RETUNE_IDX_MAGIC] = NIOS_PKT_RETUNE_MAGIC;
@@ -140,20 +142,24 @@ static inline void nios_pkt_retune_pack(uint8_t *buf,
 
     switch (module) {
         case BLADERF_MODULE_TX:
-            buf[NIOS_PKT_RETUNE_IDX_FREQSEL] |= NIOS_PKT_RETUNE_FLAG_TX;
+            buf[NIOS_PKT_RETUNE_IDX_FREQSEL] |= FLAG_TX;
             break;
 
         case BLADERF_MODULE_RX:
-            buf[NIOS_PKT_RETUNE_IDX_FREQSEL] |= NIOS_PKT_RETUNE_FLAG_RX;
+            buf[NIOS_PKT_RETUNE_IDX_FREQSEL] |= FLAG_RX;
             break;
 
         /* TODO case BLADERF_MODULE_RXTX: */
     }
 
     if (low_band) {
-        buf[NIOS_PKT_RETUNE_IDX_BANDSEL] = 0x80;
+        buf[NIOS_PKT_RETUNE_IDX_BANDSEL] = FLAG_LOW_BAND;
     } else {
         buf[NIOS_PKT_RETUNE_IDX_BANDSEL] = 0x00;
+    }
+
+    if (quick_tune) {
+        buf[NIOS_PKT_RETUNE_IDX_BANDSEL] |= FLAG_QUICK_TUNE;
     }
 
     buf[NIOS_PKT_RETUNE_IDX_BANDSEL] |= vcocap_hint;
@@ -168,8 +174,9 @@ static inline void nios_pkt_retune_unpack(const uint8_t *buf,
                                           uint16_t *nint,
                                           uint32_t *nfrac,
                                           uint8_t  *freqsel,
+                                          uint8_t  *vcocap,
                                           bool     *low_band,
-                                          uint8_t  *vcocap_hint)
+                                          bool     *quick_tune)
 {
     *timestamp  = ( ((uint64_t) buf[NIOS_PKT_RETUNE_IDX_TIME + 0]) <<  0);
     *timestamp |= ( ((uint64_t) buf[NIOS_PKT_RETUNE_IDX_TIME + 1]) <<  8);
@@ -191,14 +198,15 @@ static inline void nios_pkt_retune_unpack(const uint8_t *buf,
 
     *module = -1;
 
-    if (buf[NIOS_PKT_RETUNE_IDX_FREQSEL] & NIOS_PKT_RETUNE_FLAG_TX) {
+    if (buf[NIOS_PKT_RETUNE_IDX_FREQSEL] & FLAG_TX) {
         *module = BLADERF_MODULE_TX;
-    } else if (buf[NIOS_PKT_RETUNE_IDX_FREQSEL] & NIOS_PKT_RETUNE_FLAG_RX) {
+    } else if (buf[NIOS_PKT_RETUNE_IDX_FREQSEL] & FLAG_RX) {
         *module = BLADERF_MODULE_RX;
     }
 
-    *low_band = (buf[NIOS_PKT_RETUNE_IDX_BANDSEL] & 0x80) != 0;
-    *vcocap_hint = buf[NIOS_PKT_RETUNE_IDX_BANDSEL] & 0x3f;
+    *low_band = (buf[NIOS_PKT_RETUNE_IDX_BANDSEL] & FLAG_LOW_BAND) != 0;
+    *quick_tune = (buf[NIOS_PKT_RETUNE_IDX_BANDSEL] & FLAG_QUICK_TUNE) != 0;
+    *vcocap = buf[NIOS_PKT_RETUNE_IDX_BANDSEL] & 0x3f;
 }
 
 
