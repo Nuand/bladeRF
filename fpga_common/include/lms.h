@@ -595,6 +595,19 @@ int lms_get_frequency(struct bladerf *dev, bladerf_module mod,
                       struct lms_freq *freq);
 
 /**
+ * Fetch "Quick tune" parameters
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   module      Module to query
+ * @param[out]  quick_tune  Quick retune parameters
+ *
+ * @return 0 on success, BLADERF_ERR_* value on failure
+ */
+int lms_get_quick_tune(struct bladerf *dev,
+                       bladerf_module module,
+                       struct bladerf_quick_tune *quick_tune);
+
+/**
  * Calculate the parameters to tune to a specified frequency
  *
  * @param[in]   freq    Desired frequency

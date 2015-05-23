@@ -1731,6 +1731,37 @@ int lms_get_frequency(struct bladerf *dev, bladerf_module mod,
     f->freqsel = (data>>2);
     f->x = 1 << ((f->freqsel & 7) - 3);
 
+    status = LMS_READ(dev, base + 9, &data);
+    if (status != 0) {
+        return status;
+    }
+
+    f->vcocap = data & 0x3f;
+
+    return status;
+}
+#endif
+
+#ifndef BLADERF_NIOS_BUILD
+int lms_get_quick_tune(struct bladerf *dev,
+                       bladerf_module mod,
+                       struct bladerf_quick_tune *quick_tune)
+{
+    struct lms_freq f;
+    int status = lms_get_frequency(dev, mod, &f);
+    if (status == 0) {
+        quick_tune->freqsel = f.freqsel;
+        quick_tune->vcocap  = f.vcocap;
+        quick_tune->nint    = f.nint;
+        quick_tune->nfrac   = f.nfrac;
+
+        quick_tune->flags = LMS_FREQ_FLAGS_FORCE_VCOCAP;
+
+        if (lms_frequency_to_hz(&f) < BLADERF_BAND_HIGH) {
+            quick_tune->flags |= LMS_FREQ_FLAGS_LOW_BAND;
+        }
+    }
+
     return status;
 }
 #endif
