@@ -260,6 +260,12 @@ int init_device(struct bladerf *dev)
         dev->tuning_mode = tuning_get_default_mode(dev);
     }
 
+    /* Check if we have an expansion board attached */
+    status = xb_get_attached(dev, &dev->xb);
+    if (status != 0) {
+        return status;
+    }
+
     /* Set up LMS DC offset register calibration and initial IQ settings,
      * if any tables have been loaded already.
      *

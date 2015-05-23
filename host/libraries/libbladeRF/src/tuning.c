@@ -126,15 +126,10 @@ int tuning_set_freq(struct bladerf *dev, bladerf_module module,
                     unsigned int frequency)
 {
     int status;
-    bladerf_xb attached;
+    const bladerf_xb attached = dev->xb;
     int16_t dc_i, dc_q;
     const struct dc_cal_tbl *dc_cal =
         (module == BLADERF_MODULE_RX) ? dev->cal.dc_rx : dev->cal.dc_tx;
-
-    status = xb_get_attached(dev, &attached);
-    if (status) {
-        return status;
-    }
 
     if (attached == BLADERF_XB_200) {
 

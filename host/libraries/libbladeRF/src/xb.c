@@ -206,6 +206,12 @@ int xb_attach(struct bladerf *dev, bladerf_xb xb) {
             break;
     }
 
+    /* Cache what we have attached in our device handle to alleviate the
+     * need to go read the device state */
+    if (status == 0) {
+        dev->xb = xb;
+    }
+
     return status;
 }
 

@@ -103,6 +103,9 @@ struct bladerf {
     struct bladerf_version fw_version;
     int legacy;
 
+    /* Which, if any XB do we have attached? */
+    bladerf_xb xb;
+
     bladerf_dev_speed usb_speed;
     size_t msg_size; /* Fundamental "chunk" size of the data the FPGA sends to
                       * the host, in BYTES */

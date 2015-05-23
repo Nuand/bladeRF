@@ -1377,7 +1377,18 @@ int bladerf_expansion_get_attached(struct bladerf *dev, bladerf_xb *xb)
     int status;
     MUTEX_LOCK(&dev->ctrl_lock);
 
-    status = xb_get_attached(dev, xb);
+    switch (dev->xb) {
+        case BLADERF_XB_NONE:
+        case BLADERF_XB_100:
+        case BLADERF_XB_200:
+            status = 0;
+            *xb = dev->xb;
+            break;
+
+        default:
+            log_debug("Device handle contains invalid XB id: %d\n", dev->xb);
+            status = BLADERF_ERR_UNEXPECTED;
+    }
 
     MUTEX_UNLOCK(&dev->ctrl_lock);
     return status;
