@@ -1443,7 +1443,7 @@ static void usb_deinit_stream(struct bladerf_stream *stream)
 
 static int usb_retune(struct bladerf *dev, bladerf_module module,
                       uint64_t timestamp, uint16_t nint, uint32_t nfrac,
-                      uint8_t freqsel, bool low_band, uint8_t vcocap_hint)
+                      uint8_t freqsel, uint8_t vcocap, uint8_t flags)
 {
     int status;
     void *driver;
@@ -1451,19 +1451,17 @@ static int usb_retune(struct bladerf *dev, bladerf_module module,
     uint8_t buf[NIOS_PKT_LEN] = { 0x00 };
 
 #ifdef LOGGING_ENABLED
-    uint8_t flags;
+    uint8_t resp_flags;
     uint64_t duration;
-    uint8_t vcocap;
 #endif
 
-    log_verbose("Retuning %s: ts=%"PRIu64", nint=%u, "
-                "nfrac=%u, freqsel=0x%02x, band=%s, vcocap_est=0x%02x\n",
-                module2str(module), timestamp, nint, nfrac, freqsel,
-                low_band ? "low" : "high", vcocap_hint);
+    log_verbose("Retuning %s: ts=%"PRIu64", nint=%u, nfrac=%u, freqsel=0x%02x, "
+                "vcocap=0x%02x, flags=0x%02x\n", module2str(module), timestamp,
+                nint, nfrac, freqsel, vcocap, flags);
 
 
     nios_pkt_retune_pack(buf, module, timestamp,
-                         nint, nfrac, freqsel, low_band, vcocap_hint);
+                         nint, nfrac, freqsel, vcocap, flags);
 
     print_buf("Retune request:", buf, 16);
 
@@ -1491,8 +1489,8 @@ static int usb_retune(struct bladerf *dev, bladerf_module module,
     print_buf("Retune response:", buf, 16);
 
 #   ifdef LOGGING_ENABLED
-    nios_pkt_retune_resp_unpack(buf, &duration, &vcocap, &flags);
-    if (flags & NIOS_PKT_RETUNERESP_FLAG_TSVTUNE_VALID) {
+    nios_pkt_retune_resp_unpack(buf, &duration, &vcocap, &resp_flags);
+    if (resp_flags & NIOS_PKT_RETUNERESP_FLAG_TSVTUNE_VALID) {
             log_verbose("%s retune operation: vcocap=%u, duration=%"PRIu64"\n",
                         module2str(module), vcocap, duration);
     } else {
@@ -1500,7 +1498,7 @@ static int usb_retune(struct bladerf *dev, bladerf_module module,
                     module2str(module));
     }
 
-    if ((flags & NIOS_PKT_RETUNERESP_FLAG_SUCCESS) == 0) {
+    if ((resp_flags & NIOS_PKT_RETUNERESP_FLAG_SUCCESS) == 0) {
         log_debug("FPGA tuning reported failure.\n");
         status = BLADERF_ERR_UNEXPECTED;
     }
