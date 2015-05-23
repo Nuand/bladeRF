@@ -42,6 +42,23 @@
 #   include "devices.h"
 #endif
 
+/*
+ * lms_freq.flags values
+ */
+
+/**
+ * If this bit is set, configure PLL output buffers for operation in the
+ * bladeRF's "low band." Otherwise, configure the device for operation in the
+ * "high band."
+ */
+#define LMS_FREQ_FLAGS_LOW_BAND     (1 << 0)
+
+/**
+ * Use VCOCAP value as-is, rather as using it as a starting point hint
+ * to the tuning algorithm.  This offers a faster retune, with a potential
+ * trade-off in phase noise.
+ */
+#define LMS_FREQ_FLAGS_FORCE_VCOCAP   (1 << 1)
 
 /**
  * Information about the frequency calculation for the LMS6002D PLL
@@ -50,10 +67,11 @@
  */
 struct lms_freq {
     uint8_t     freqsel;    /**< Choice of VCO and dision ratio */
-    uint8_t     vcocap_est; /**< Estimated VCOCAP value */
+    uint8_t     vcocap;     /**< VCOCAP hint */
     uint16_t    nint;       /**< Integer portion of f_LO given f_REF */
     uint32_t    nfrac;      /**< Fractional portion of f_LO given nint and f_REF */
-    bool        low_band;   /**< Which PLL output buffer are we using? */
+    uint8_t     flags;      /**< Additional parameters defining the tuning
+                                 configuration. See LMFS_FREQ_FLAGS_* values */
 
 #ifndef BLADERF_NIOS_BUILD
     uint8_t     x;         /**< VCO division ratio */

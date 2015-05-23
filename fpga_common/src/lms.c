@@ -2350,7 +2350,7 @@ void lms_calculate_tuning_params(uint32_t freq, struct lms_freq *f)
     }
 
     /* Estimate our target VCOCAP value. */
-    f->vcocap_est = estimate_vcocap(freq, bands[i].low, bands[i].high);
+    f->vcocap = estimate_vcocap(freq, bands[i].low, bands[i].high);
 
     /* Calculate integer portion of the frequency value */
     vco_x = ((uint64_t)1) << ((freqsel & 7) - 3);
@@ -2369,7 +2369,12 @@ void lms_calculate_tuning_params(uint32_t freq, struct lms_freq *f)
     f->nfrac = nfrac;
     f->freqsel = freqsel;
     assert(ref_clock <= UINT32_MAX);
-    f->low_band = (freq < BLADERF_BAND_HIGH);
+
+    f->flags = 0;
+
+    if (freq < BLADERF_BAND_HIGH) {
+        f->flags |= LMS_FREQ_FLAGS_LOW_BAND;
+    }
 
     PRINT_FREQUENCY(f);
 }
@@ -2408,12 +2413,13 @@ int lms_set_precalculated_frequency(struct bladerf *dev, bladerf_module mod,
 
     vcocap_reg_state &= ~(0x3f);
 
-    status = write_vcocap(dev, base, f->vcocap_est, vcocap_reg_state);
+    status = write_vcocap(dev, base, f->vcocap, vcocap_reg_state);
     if (status != 0) {
         goto error;
     }
 
-    status = write_pll_config(dev, mod, f->freqsel, f->low_band);
+    status = write_pll_config(dev, mod, f->freqsel,
+                              (f->flags & LMS_FREQ_FLAGS_LOW_BAND) != 0);
     if (status != 0) {
         goto error;
     }
@@ -2442,9 +2448,15 @@ int lms_set_precalculated_frequency(struct bladerf *dev, bladerf_module mod,
         goto error;
     }
 
-    /* Walk down VCOCAP values find an optimal values */
-    status = tune_vcocap(dev, f->vcocap_est, base, vcocap_reg_state,
-                         &f->vcocap_result);
+    /* Perform tuning algorithm unless we've been instructed to just use
+     * the VCOCAP hint as-is. */
+    if (f->flags & LMS_FREQ_FLAGS_FORCE_VCOCAP) {
+        f->vcocap_result = f->vcocap;
+    } else {
+        /* Walk down VCOCAP values find an optimal values */
+        status = tune_vcocap(dev, f->vcocap, base, vcocap_reg_state,
+                             &f->vcocap_result);
+    }
 
 error:
     /* Turn off the DSMs */
