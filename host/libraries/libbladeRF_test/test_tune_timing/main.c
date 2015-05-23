@@ -102,6 +102,69 @@ double random_retune(struct bladerf *dev)
     return calc_avg_duration(&start, &end, ITERATIONS);
 }
 
+double quick_retune(struct bladerf *dev)
+{
+    int status;
+    struct bladerf_quick_tune f1, f2;
+    struct timespec start, end;
+    unsigned int i;
+
+    /* Choosing frequencies that cross the low/high band threshold */
+    status = bladerf_set_frequency(dev, BLADERF_MODULE_RX, 1.499e9);
+    if (status != 0) {
+        return -1;
+    }
+
+    status = bladerf_get_quick_tune(dev, BLADERF_MODULE_RX, &f1);
+    if (status != 0) {
+        return -1;
+    }
+
+    status = bladerf_set_frequency(dev, BLADERF_MODULE_RX, 1.501e9);
+    if (status != 0) {
+        return -1;
+    }
+
+    status = bladerf_get_quick_tune(dev, BLADERF_MODULE_RX, &f2);
+    if (status != 0) {
+        return -1;
+    }
+
+    status = clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+    if (status != 0) {
+        fprintf(stderr, "Failed to get end time. Erroring out.\n");
+        return -1;
+    }
+
+    for (i = 0; i < (ITERATIONS / 2); i++) {
+        status = bladerf_schedule_retune(dev, BLADERF_MODULE_RX,
+                                         BLADERF_RETUNE_NOW,
+                                         0, &f1);
+        if (status != 0) {
+            fprintf(stderr, "Failed to tune to f1: %s\n",
+                    bladerf_strerror(status));
+            return -1;
+        }
+
+        status = bladerf_schedule_retune(dev, BLADERF_MODULE_RX,
+                                         BLADERF_RETUNE_NOW,
+                                         0, &f2);
+        if (status != 0) {
+            fprintf(stderr, "Failed to tune to f2: %s\n",
+                    bladerf_strerror(status));
+            return -1;
+        }
+    }
+
+    status = clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+    if (status != 0) {
+        fprintf(stderr, "Failed to get end time. Erroring out.\n");
+        return -1;
+    }
+
+    return calc_avg_duration(&start, &end, ITERATIONS);
+}
+
 int main(int argc, char *argv[])
 {
     int status;
@@ -189,6 +252,44 @@ int main(int argc, char *argv[])
         goto out;
     } else {
         duration_fpga = fixed_retune(dev);
+
+        if (duration_fpga < 0) {
+            status = (int) duration_fpga;
+            goto out;
+        } else {
+            printf("  FPGA tuning:    %fs\n", duration_fpga);
+        }
+
+        printf("  Speedup factor: %f\n\n", duration_host / duration_fpga);
+    }
+
+    printf("Performing quick-tune...\n");
+
+    status = bladerf_set_tuning_mode(dev, BLADERF_TUNING_MODE_HOST);
+    if (status != 0) {
+        fprintf(stderr, "Failed to switch to host-based tuning mode: %s\n",
+                bladerf_strerror(status));
+        status = -1;
+        goto out;
+    }
+
+    duration_host = quick_retune(dev);
+
+    if (duration_host < 0) {
+        status = (int) duration_host;
+        goto out;
+    } else {
+        printf("  Host tuning:    %fs\n", duration_host);
+    }
+
+    status = bladerf_set_tuning_mode(dev, BLADERF_TUNING_MODE_FPGA);
+    if (status != 0) {
+        fprintf(stderr, "Failed to switch to fpga-based tuning mode: %s\n",
+                bladerf_strerror(status));
+        status = -1;
+        goto out;
+    } else {
+        duration_fpga = quick_retune(dev);
 
         if (duration_fpga < 0) {
             status = (int) duration_fpga;
