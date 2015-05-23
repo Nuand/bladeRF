@@ -117,9 +117,9 @@ static inline void nios_pkt_retune_pack(uint8_t *buf,
                                         uint16_t nint,
                                         uint32_t nfrac,
                                         uint8_t  freqsel,
+                                        uint8_t  vcocap,
                                         bool     low_band,
-                                        bool     quick_tune,
-                                        uint8_t  vcocap_hint)
+                                        bool     quick_tune)
 {
     buf[NIOS_PKT_RETUNE_IDX_MAGIC] = NIOS_PKT_RETUNE_MAGIC;
 
@@ -162,7 +162,7 @@ static inline void nios_pkt_retune_pack(uint8_t *buf,
         buf[NIOS_PKT_RETUNE_IDX_BANDSEL] |= FLAG_QUICK_TUNE;
     }
 
-    buf[NIOS_PKT_RETUNE_IDX_BANDSEL] |= vcocap_hint;
+    buf[NIOS_PKT_RETUNE_IDX_BANDSEL] |= vcocap;
 
     buf[NIOS_PKT_RETUNE_IDX_RESV]     = 0x00;
 }
