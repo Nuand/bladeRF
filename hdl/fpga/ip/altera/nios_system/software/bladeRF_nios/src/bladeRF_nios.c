@@ -135,10 +135,6 @@ int main(void)
         /* Process data and execute requested actions */
         handler->exec(&pkt);
 
-        /* Response must start with same magic value and config word */
-        pkt.resp[PKT_MAGIC_IDX] = pkt.req[PKT_MAGIC_IDX];
-        pkt.resp[PKT_CFG_IDX]   = pkt.req[PKT_CFG_IDX];
-
         /* Write response to host */
         for (j = 0; j < sizeof(pkt.resp); j++) {
             fx3_uart_write(pkt.resp[j]);

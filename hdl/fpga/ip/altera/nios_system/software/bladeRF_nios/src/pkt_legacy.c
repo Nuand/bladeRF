@@ -386,6 +386,10 @@ void pkt_legacy(struct pkt_buf *b)
     const uint8_t dev_id = (cfg & UART_PKT_MODE_DEV_MASK);
     const uint8_t count = (cfg & UART_PKT_MODE_CNT_MASK);
 
+    /* Response must start with same magic value and config word */
+    b->resp[PKT_MAGIC_IDX] = b->req[PKT_MAGIC_IDX];
+    b->resp[PKT_CFG_IDX]   = b->req[PKT_CFG_IDX];
+
     DBG("%s: read=%s, write=%s, dev_id=0x%x, cfg=%x, count=%d\n", __FUNCTION__,
         is_read ? "true" : "false", is_write ? "true" : "false", dev_id, cfg, count);
 
