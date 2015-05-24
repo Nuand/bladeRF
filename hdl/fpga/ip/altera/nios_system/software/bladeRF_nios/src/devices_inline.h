@@ -49,11 +49,11 @@ static inline uint8_t fx3_uart_read(void) {
 
 static inline void fx3_uart_write(uint8_t data)
 {
-	while (!(IORD_ALTERA_AVALON_UART_STATUS(FX3_UART) &
+    while (!(IORD_ALTERA_AVALON_UART_STATUS(FX3_UART) &
                 ALTERA_AVALON_UART_STATUS_TRDY_MSK)
           );
 
-	IOWR_ALTERA_AVALON_UART_TXDATA(FX3_UART, data);
+    IOWR_ALTERA_AVALON_UART_TXDATA(FX3_UART, data);
 }
 
 static inline uint32_t control_reg_read(void)
@@ -94,6 +94,29 @@ INLINE void time_tamer_reset(bladerf_module m)
     } else {
         IOWR_8DIRECT(TIME_TAMER_0_BASE, 8, 0);
     }
+}
+
+INLINE void command_uart_read_request(uint8_t *req) {
+    int i, x ;
+    uint32_t val ;
+    for( x = 0 ; x < 16 ; x+=4 ) {
+        val = IORD_32DIRECT(COMMAND_UART_0_BASE, x) ;
+        for( i = 0 ; i < 4 ; i++ ) {
+            req[x+i] = val&0xff ;
+            val >>= 8 ;
+        }
+    }
+    return ;
+}
+
+INLINE void command_uart_write_response(uint8_t *resp) {
+    int i ;
+    uint32_t val ;
+    for( i = 0 ; i < 16 ; i+=4 ) {
+        val = ((uint32_t)resp[i+0]) | (((uint32_t)resp[i+1])<<8) | (((uint32_t)resp[i+2])<<16) | (((uint32_t)resp[i+3])<<24) ;
+        IOWR_32DIRECT(COMMAND_UART_0_BASE, i, val) ;
+    }
+    return ;
 }
 
 #endif

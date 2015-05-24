@@ -87,21 +87,52 @@ static void fx3_uart_isr(void *context)
 }
 #endif
 
-void bladerf_nios_init(void) {
-	/* Set the prescaler for 400kHz with an 80MHz clock:
+static void command_uart_enable_isr(bool enable) {
+    uint32_t val = enable ? 1 : 0 ;
+    IOWR_32DIRECT(COMMAND_UART_0_BASE, 16, val) ;
+    return ;
+}
+
+static void command_uart_isr(void *context) {
+    struct pkt_buf *pkt = (struct pkt_buf *)context ;
+
+    /* Reading the request should clear the interrupt */
+    command_uart_read_request((uint8_t *)pkt->req) ;
+
+    /* Tell the main loop that there is a request pending */
+    pkt->ready = true ;
+
+    return ;
+}
+
+void bladerf_nios_init(struct pkt_buf *pkt) {
+    /* Set the prescaler for 400kHz with an 80MHz clock:
      *      (prescaler = clock / (5*desired) - 1)
      */
-	IOWR_16DIRECT(I2C, OC_I2C_PRESCALER, 39);
-	IOWR_8DIRECT(I2C, OC_I2C_CTRL, OC_I2C_ENABLE);
+    IOWR_16DIRECT(I2C, OC_I2C_PRESCALER, 39);
+    IOWR_8DIRECT(I2C, OC_I2C_CTRL, OC_I2C_ENABLE);
 
-	/* Set the FX3 UART connection divisor to 14 to get 4000000bps UART:
+    /* Set the FX3 UART connection divisor to 14 to get 4000000bps UART:
      *      (baud rate = clock/(divisor + 1))
      */
-	IOWR_ALTERA_AVALON_UART_DIVISOR(FX3_UART, 19);
+    IOWR_ALTERA_AVALON_UART_DIVISOR(FX3_UART, 19);
 
-	/* Set the IQ Correction parameters to 0 */
-	IOWR_ALTERA_AVALON_PIO_DATA(IQ_CORR_RX_PHASE_GAIN_BASE, DEFAULT_CORRECTION);
-	IOWR_ALTERA_AVALON_PIO_DATA(IQ_CORR_TX_PHASE_GAIN_BASE, DEFAULT_CORRECTION);
+    /* Set the IQ Correction parameters to 0 */
+    IOWR_ALTERA_AVALON_PIO_DATA(IQ_CORR_RX_PHASE_GAIN_BASE, DEFAULT_CORRECTION);
+    IOWR_ALTERA_AVALON_PIO_DATA(IQ_CORR_TX_PHASE_GAIN_BASE, DEFAULT_CORRECTION);
+
+    /* Register Command UART ISR */
+    alt_ic_isr_register(
+        COMMAND_UART_0_IRQ_INTERRUPT_CONTROLLER_ID,
+        COMMAND_UART_0_IRQ,
+        command_uart_isr,
+        pkt,
+        NULL
+    ) ;
+
+    /* Enable interrupts */
+    command_uart_enable_isr(true) ;
+    alt_ic_irq_enable(COMMAND_UART_0_IRQ_INTERRUPT_CONTROLLER_ID, COMMAND_UART_0_IRQ);
 
 #if 0
     /* Register FX3 UART ISR */

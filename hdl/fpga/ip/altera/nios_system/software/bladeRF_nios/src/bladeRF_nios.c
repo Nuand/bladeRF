@@ -59,30 +59,21 @@ static const struct pkt_handler pkt_handlers[] = {
     PKT_LEGACY,
 };
 
-/* The request buffer is const to help avoid bugs in the handlers
- * However, we have to assign it, so we cast away the const here... */
-static inline void set_request(struct pkt_buf *b, uint8_t idx, uint8_t val)
-{
-    uint8_t *req = (uint8_t *) &b->req[idx];
-    *req = val;
-}
-
 int main(void)
 {
-    uint8_t i, j;
-    uint8_t count;
+    uint8_t i;
 
     /* Pointer to currently active packet handler */
     const struct pkt_handler *handler;
 
-    struct pkt_buf pkt;
+    volatile struct pkt_buf pkt;
 
     /* Sanity check */
     ASSERT(PKT_MAGIC_IDX == 0);
 
     memset(&pkt, 0, sizeof(pkt));
-
-    bladerf_nios_init();
+    pkt.ready = false;
+    bladerf_nios_init(&pkt);
 
     /* Initialize packet handlers */
     for (i = 0; i < ARRAY_SIZE(pkt_handlers); i++) {
@@ -90,59 +81,48 @@ int main(void)
             pkt_handlers[i].init();
         }
     }
-
     while (run_nios) {
 
         handler = NULL;
-        set_request(&pkt, PKT_MAGIC_IDX, 0x00);
-        count = 1;
 
-        /* Wait until we've seen a request magic value. We expect to see
-         * garbage 0x00 values when the FX3 switches between its UART and
-         * SPI interfaces (which are muxed on the same pins) */
-        while(pkt.req[PKT_MAGIC_IDX] == 0x00) {
-            while (!fx3_uart_has_data());
-            set_request(&pkt, PKT_MAGIC_IDX, fx3_uart_read());
-        }
+        /* Wait until we have a command in the UART */
+        if(pkt.ready == true) {
+            pkt.ready = false;
 
-        /* Receive the rest of the message */
-        while (count < NIOS_PKT_LEN) {
-            while (!fx3_uart_has_data());
-            set_request(&pkt, count++, fx3_uart_read());
-        }
-
-        /* Determine which packet handler should receive this message */
-        for (i = 0; i < ARRAY_SIZE(pkt_handlers); i++) {
-            if (pkt_handlers[i].magic == pkt.req[PKT_MAGIC_IDX]) {
-                handler = &pkt_handlers[i];
-                //bytes_required = sm_curr->bytes_required;
+            /* Determine which packet handler should receive this message */
+            for (i = 0; i < ARRAY_SIZE(pkt_handlers); i++) {
+                if (pkt_handlers[i].magic == pkt.req[PKT_MAGIC_IDX]) {
+                    handler = &pkt_handlers[i];
+                }
             }
+
+            if (handler == NULL) {
+                /* We somehow got out of sync. Throw away request data until
+                 * we hit a magic value */
+                DBG("Got invalid -magic value: 0x%02x\n", pkt.req[PKT_MAGIC_IDX]);
+                continue;
+            }
+
+            print_bytes("Request data:", pkt.req, NIOS_PKT_LEN);
+
+            /* Reset response buffer contents to ensure unused
+             * values are known values */
+            reset_response_buf(&pkt);
+
+            /* Process data and execute requested actions */
+            handler->exec(&pkt);
+
+            /* Response must start with same magic value and config word */
+            pkt.resp[PKT_MAGIC_IDX] = pkt.req[PKT_MAGIC_IDX];
+            pkt.resp[PKT_CFG_IDX]   = pkt.req[PKT_CFG_IDX];
+
+            /* Write response to host */
+            command_uart_write_response(pkt.resp);
+
+            /* Flush simulated UART buffer */
+            SIMULATION_FLUSH_UART();
         }
-
-        if (handler == NULL) {
-            /* We somehow got out of sync. Throw away request data until
-             * we hit a magic value */
-            DBG("Got invalid -magic value: 0x%02x\n", pkt.req[PKT_MAGIC_IDX]);
-            continue;
-        }
-
-        print_bytes("Request data:", pkt.req, count);
-
-        /* Reset response buffer contents to ensure unused
-         * values are known values */
-        reset_response_buf(&pkt);
-
-        /* Process data and execute requested actions */
-        handler->exec(&pkt);
-
-        /* Write response to host */
-        for (j = 0; j < sizeof(pkt.resp); j++) {
-            fx3_uart_write(pkt.resp[j]);
-        }
-
-        /* Flush simulated UART buffer */
-        SIMULATION_FLUSH_UART();
     }
 
-  return 0;
+    return 0;
 }

@@ -484,7 +484,7 @@ const char *module2str(bladerf_module m)
     }
 }
 
-void bladerf_nios_init(void)
+void bladerf_nios_init(struct pkt_buf *pkt)
 {
     DBG("%s()\n", __FUNCTION__);
 }
@@ -786,4 +786,15 @@ int lms_select_band(struct bladerf *dev, bladerf_module module, bool low_band)
     return 0;
 }
 
+void command_uart_read_request(uint8_t *req) {
+    /* XXX: I don't know how to put this interrupt based stuff into
+     * the PC simulation */
+    return ;
+}
+
+void command_uart_write_response(uint8_t *resp) {
+    /* XXX: I don't know how to put this interrupt based stuff into
+     * the PC simulation */
+    return ;
+}
 #endif

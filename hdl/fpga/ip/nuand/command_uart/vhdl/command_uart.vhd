@@ -33,7 +33,7 @@ entity command_uart is
     rs232_sin       :   in  std_logic ;
 
     -- Avalon-MM interface
-    addr            :   in  std_logic_vector(3 downto 0) ;
+    addr            :   in  std_logic_vector(4 downto 0) ;
     dout            :   out std_logic_vector(31 downto 0) ;
     din             :   in  std_logic_vector(31 downto 0) ;
     read            :   in  std_logic ;
@@ -82,6 +82,10 @@ architecture arch of command_uart is
 
     signal command_in : std_logic ;
 
+    signal control  :   std_logic_vector(7 downto 0) := (0 => '1', others =>'0') ;
+
+    alias isr_enable is control(0) ;
+
 begin
 
     readack <= ack ;
@@ -98,7 +102,7 @@ begin
                     when  4| 5| 6| 7 => reg_response( 63 downto  32) <= din ;
                     when  8| 9|10|11 => reg_response( 95 downto  64) <= din ;
                     when 12|13|14|15 => reg_response(127 downto  96) <= din ; command_in <= '1' ;
-                    when others => report "Bad access" ;
+                    when others => control(7 downto 0) <= din(7 downto 0) ;
                 end case ;
             end if ;
         end if ;
@@ -155,7 +159,7 @@ begin
                     when  4| 5| 6| 7 => dout <= reg_request( 63 downto 32) ;
                     when  8| 9|10|11 => dout <= reg_request( 95 downto 64) ;
                     when 12|13|14|15 => dout <= reg_request(127 downto 96) ;
-                    when others => report "Bad access" ;
+                    when others => dout(7 downto 0) <= control ;
                 end case ;
             end if ;
         end if ;
@@ -197,7 +201,11 @@ begin
                             count := count + 1 ;
                         else
                             count := 0 ;
-                            state := INTERRUPT ;
+                            if( isr_enable = '1' ) then
+                                state := INTERRUPT ;
+                            else
+                                state := WAIT_FOR_MAGIC ;
+                            end if ;
                         end if ;
                     end if ;
 

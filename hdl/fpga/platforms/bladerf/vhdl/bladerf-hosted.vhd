@@ -54,6 +54,8 @@ architecture hosted_bladerf of bladerf is
         xb_gpio_in_port                 :   in  std_logic_vector(31 downto 0) := (others => 'X');
         xb_gpio_out_port                :   out std_logic_vector(31 downto 0);
         xb_gpio_dir_export              :   out std_logic_vector(31 downto 0);
+        command_serial_in               :   in  std_logic ;
+        command_serial_out              :   out std_logic ;
         correction_rx_phase_gain_export :   out std_logic_vector(31 downto 0);
         correction_tx_phase_gain_export :   out std_logic_vector(31 downto 0);
         time_tamer_synchronize          :   out std_logic;
@@ -64,7 +66,7 @@ architecture hosted_bladerf of bladerf is
         time_tamer_rx_reset             :   in  std_logic ;
         time_tamer_rx_time              :   in  std_logic_vector(63 downto 0)
       );
-    end component nios_system;
+    end component;
 
     alias sys_rst   is fx3_ctl(7) ;
     alias tx_clock  is c4_tx_clock ;
@@ -243,6 +245,9 @@ architecture hosted_bladerf of bladerf is
     signal correction_tx_gain  :  signed(15 downto 0);--to_signed(integer(round(real(2**Q_SCALE) * DC_OFFSET_REAL)),DC_WIDTH);
     signal correction_rx_phase :  signed(15 downto 0);--to_signed(integer(round(real(2**Q_SCALE) * PHASE_OFFSET)),DC_WIDTH);
     signal correction_rx_gain  :  signed(15 downto 0);--to_signed(integer(round(real(2**Q_SCALE) * DC_OFFSET_REAL)),DC_WIDTH);
+
+    signal command_serial_in    :   std_logic ;
+    signal command_serial_out   :   std_logic ;
 
     constant FPGA_DC_CORRECTION :  signed(15 downto 0) := to_signed(integer(0), 16);
 
@@ -744,8 +749,11 @@ begin
 
     fx3_ctl_in <= fx3_ctl ;
 
-    nios_uart_txd <= fx3_uart_txd when sys_rst_sync = '0' else '1' ;
-    fx3_uart_rxd <= nios_uart_rxd when sys_rst_sync = '0' else 'Z' ;
+    -- nios_uart_txd <= fx3_uart_txd when sys_rst_sync = '0' else '1' ;
+    -- fx3_uart_rxd <= nios_uart_rxd when sys_rst_sync = '0' else 'Z' ;
+
+    command_serial_in <= fx3_uart_txd when sys_rst_sync = '0' else '1' ;
+    fx3_uart_rxd <= command_serial_out when sys_rst_sync = '0' else 'Z' ;
 
     -- NIOS control system for si5338, vctcxo trim and lms control
     U_nios_system : component nios_system
@@ -766,6 +774,8 @@ begin
         xb_gpio_in_port                 => nios_xb_gpio_in,
         xb_gpio_out_port                => nios_xb_gpio_out,
         xb_gpio_dir_export              => nios_xb_gpio_dir,
+        command_serial_in               => command_serial_in,
+        command_serial_out              => command_serial_out,
         correction_tx_phase_gain_export => correction_tx_phase_gain,
         correction_rx_phase_gain_export => correction_rx_phase_gain,
         oc_i2c_scl_pad_o                => i2c_scl_out,

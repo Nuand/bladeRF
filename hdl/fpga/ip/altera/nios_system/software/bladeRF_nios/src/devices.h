@@ -29,6 +29,7 @@
 #include <stdbool.h>
 #include "libbladeRF_nios_compat.h"
 #include "fpga_version.h"
+#include "pkt_handler.h"
 
 /* Detect if we are in NIOS Build tools */
 #ifdef BLADERF_NIOS_BUILD
@@ -93,7 +94,7 @@
  *
  * This should be called prior to any other device access function.
  */
-void bladerf_nios_init(void);
+void bladerf_nios_init(struct pkt_buf *pkt);
 
 /**
  * Read from an LMS6002D register
@@ -262,6 +263,16 @@ uint64_t time_tamer_read(bladerf_module m);
  * Reset one of the time tamer's timestamp counters to 0
  */
 INLINE void time_tamer_reset(bladerf_module m);
+
+/**
+ * Read the command UART request buffer
+ */
+INLINE void command_uart_read_request(uint8_t *command);
+
+/**
+ * Write the command UART response buffer
+ */
+INLINE void command_uart_write_response(uint8_t *command);
 
 /**
  * @return FPGA version

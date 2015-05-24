@@ -21,7 +21,7 @@ entity time_tamer is
     readack     :   out std_logic ;
     intr        :   out std_logic ;
 
-    -- Exported signalsa
+    -- Exported signals
     synchronize :   out std_logic ;
     tx_clock    :   in  std_logic ;
     tx_reset    :   in  std_logic ;
