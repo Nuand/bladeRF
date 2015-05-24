@@ -41,8 +41,6 @@ architecture hosted_bladerf of bladerf is
         spi_MOSI                        :   out std_logic;        -- MOSI
         spi_SCLK                        :   out std_logic;        -- SCLK
         spi_SS_n                        :   out std_logic;        -- SS_n
-        uart_rxd                        :   in  std_logic;
-        uart_txd                        :   out std_logic;
         oc_i2c_scl_pad_o                :   out std_logic;
         oc_i2c_scl_padoen_o             :   out std_logic;
         oc_i2c_sda_pad_i                :   in  std_logic;
@@ -206,9 +204,6 @@ architecture hosted_bladerf of bladerf is
     signal fx3_ctl_in       : std_logic_vector(12 downto 0) ;
     signal fx3_ctl_out      : std_logic_vector(12 downto 0) ;
     signal fx3_ctl_oe       : std_logic_vector(12 downto 0) ;
-
-    signal nios_uart_rxd    :   std_logic ;
-    signal nios_uart_txd    :   std_logic ;
 
     signal tx_underflow_led     :   std_logic ;
     signal tx_underflow_count   :   unsigned(63 downto 0) ;
@@ -749,9 +744,6 @@ begin
 
     fx3_ctl_in <= fx3_ctl ;
 
-    -- nios_uart_txd <= fx3_uart_txd when sys_rst_sync = '0' else '1' ;
-    -- fx3_uart_rxd <= nios_uart_rxd when sys_rst_sync = '0' else 'Z' ;
-
     command_serial_in <= fx3_uart_txd when sys_rst_sync = '0' else '1' ;
     fx3_uart_rxd <= command_serial_out when sys_rst_sync = '0' else 'Z' ;
 
@@ -768,8 +760,6 @@ begin
         spi_MOSI                        => lms_sdio,
         spi_SCLK                        => lms_sclk,
         spi_SS_n                        => lms_sen,
-        uart_rxd                        => nios_uart_txd,
-        uart_txd                        => nios_uart_rxd,
         gpio_export                     => nios_gpio,
         xb_gpio_in_port                 => nios_xb_gpio_in,
         xb_gpio_out_port                => nios_xb_gpio_out,

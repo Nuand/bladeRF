@@ -45,15 +45,13 @@
 #ifndef BLADERF_NIOS_PC_SIMULATION
 #   include "system.h"
 #   include "altera_avalon_spi.h"
-#   include "altera_avalon_uart_regs.h"
 #   include "altera_avalon_jtag_uart_regs.h"
 #   include "altera_avalon_pio_regs.h"
 #   include "sys/alt_irq.h"
 #   define INLINE static inline
 #   define SIMULATION_FLUSH_UART()
 
-#   define FX3_UART            UART_0_BASE
-#   define I2C                 BLADERF_OC_I2C_MASTER_0_BASE
+#   define I2C                 OPENCORES_I2C_BASE
 
 /* Time tamer register offsets from the base */
 #   define OC_I2C_PRESCALER    0
@@ -143,27 +141,6 @@ void vctcxo_trim_dac_write(uint16_t val);
  * @param   val     Value to write
  */
 void adf4351_write(uint32_t val);
-
-/**
- * Determine if the FX3 UART has a byte availble for a read
- *
- * @return true if a byte is available, false otherwise
- */
-INLINE bool fx3_uart_has_data(void);
-
-/**
- * Read a byte from the FX3 UART
- *
- * @return byte value
- */
-INLINE uint8_t fx3_uart_read(void);
-
-/**
- * Write a byte to the FX3 UART
- *
- * @param   data    Data byte to write
- */
-INLINE void fx3_uart_write(uint8_t data);
 
 /**
  * Read bladeRF device control register
