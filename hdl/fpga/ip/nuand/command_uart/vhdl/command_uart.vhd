@@ -76,8 +76,8 @@ architecture arch of command_uart is
 
     -- These are all the magic header characters
     constant magics : magics_t := (
-        std_logic_vector(to_unsigned(character'pos('N'),8)),
-        std_logic_vector(to_unsigned(character'pos('Q'),8))
+        std_logic_vector(to_unsigned(character'pos('N'),8)),    -- Legacy
+        std_logic_vector(to_unsigned(character'pos('T'),8))     -- Retune
     ) ;
 
     signal command_in : std_logic ;

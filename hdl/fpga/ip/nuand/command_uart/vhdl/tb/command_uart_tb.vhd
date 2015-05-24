@@ -16,7 +16,7 @@ architecture arch of command_uart_tb is
     signal host_sin     :   std_logic ;
     signal host_sout    :   std_logic ;
 
-    signal host_addr    :   std_logic_vector(3 downto 0) ;
+    signal host_addr    :   std_logic_vector(4 downto 0) ;
     signal host_dout    :   std_logic_vector(31 downto 0) ;
     signal host_din     :   std_logic_vector(31 downto 0) ;
     signal host_read    :   std_logic                       := '0' ;
@@ -25,7 +25,7 @@ architecture arch of command_uart_tb is
     signal host_waitreq :   std_logic ;
     signal host_irq     :   std_logic ;
 
-    signal dev_addr     :   std_logic_vector(3 downto 0) ;
+    signal dev_addr     :   std_logic_vector(4 downto 0) ;
     signal dev_dout     :   std_logic_vector(31 downto 0) ;
     signal dev_din      :   std_logic_vector(31 downto 0) ;
     signal dev_read     :   std_logic                        := '0' ;
@@ -43,7 +43,7 @@ architecture arch of command_uart_tb is
 
     procedure write_command(
         signal clock : in std_logic ;
-        signal addr : out std_logic_vector(3 downto 0) ;
+        signal addr : out std_logic_vector(4 downto 0) ;
         signal din : out std_logic_vector(31 downto 0) ;
         signal write : out std_logic ;
                command : in std_logic_vector(127 downto 0)
@@ -61,7 +61,7 @@ architecture arch of command_uart_tb is
 
     procedure read_command(
         signal clock : in std_logic ;
-        signal addr : out std_logic_vector(3 downto 0) ;
+        signal addr : out std_logic_vector(4 downto 0) ;
         signal dout : in std_logic_vector(31 downto 0) ;
         signal read : out std_logic ;
                command : out std_logic_vector(127 downto 0)
@@ -81,7 +81,7 @@ architecture arch of command_uart_tb is
 
     procedure send_retune(
         signal clock        :   in      std_logic ;
-        signal addr         :   out     std_logic_vector(3 downto 0) ;
+        signal addr         :   out     std_logic_vector(4 downto 0) ;
         signal din          :   out     std_logic_vector(31 downto 0) ;
         signal write        :   out     std_logic ;
                timestamp    :   in      std_logic_vector(63 downto 0) ;
@@ -99,7 +99,7 @@ architecture arch of command_uart_tb is
         constant freqsel_slv : std_logic_vector(5 downto 0) := std_logic_vector(to_unsigned(freqsel,6)) ;
         constant vcocap_slv : std_logic_vector(5 downto 0) := std_logic_vector(to_unsigned(vcocap,6)) ;
     begin
-        data( 0*8+7 downto  0*8)    := std_logic_vector(to_unsigned(character'pos('Q'),8)) ;
+        data( 0*8+7 downto  0*8)    := std_logic_vector(to_unsigned(character'pos('T'),8)) ;
         data( 8*8+7 downto  1*8)    := timestamp ;
         data(12*8+7 downto  9*8)    := nfrac_slv(7 downto 0) & nfrac_slv(15 downto 8) & nint_slv(0) & nfrac_slv(22 downto 16) & nint_slv(8 downto 1) ;
         data(13*8+7 downto 13*8)    := tx & rx & freqsel_slv ;
@@ -125,6 +125,8 @@ begin
         dout        =>  host_dout,
         read        =>  host_read,
         write       =>  host_write,
+        readack     =>  host_readack,
+        waitreq     =>  host_waitreq,
         irq         =>  host_irq
       ) ;
 
@@ -141,6 +143,8 @@ begin
         dout        =>  dev_dout,
         read        =>  dev_read,
         write       =>  dev_write,
+        readack     =>  dev_readack,
+        waitreq     =>  dev_waitreq,
         irq         =>  dev_irq
       ) ;
 
