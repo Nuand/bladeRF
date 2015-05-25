@@ -1923,7 +1923,7 @@ static int vtune_low_to_norm(struct bladerf *dev, uint8_t base,
 
         if (vcocap == 0) {
             *vtune_low_limit = VCOCAP_MAX_VALUE;
-            log_warning("!VCOCAP hit max value.\n");
+            log_warning("VCOCAP hit max value.\n");
             return 0;
         }
 
@@ -2033,7 +2033,6 @@ static int tune_vcocap(struct bladerf *dev, uint8_t vcocap_est,
 
         status = vtune_norm_to_low(dev, base, vcocap, vcocap_reg_state,
                                    &vtune_low_limit);
-        if( vtune_low_limit == VCOCAP_MAX_VALUE ) log_warning( "!!: %d\n", vcocap ) ;
     } else {
         /* We determined our VTUNE LOW limit, now find the high limit */
 
