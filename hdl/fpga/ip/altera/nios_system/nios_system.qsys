@@ -392,7 +392,7 @@
   <parameter name="dataAddrWidth" value="16" />
   <parameter name="dataMasterHighPerformanceAddrWidth" value="1" />
   <parameter name="dataMasterHighPerformanceMapParam" value="" />
-  <parameter name="dataSlaveMapParam"><![CDATA[<address-map><slave name='ram.s1' start='0x4000' end='0x8000' /><slave name='nios2.debug_mem_slave' start='0x8800' end='0x9000' /><slave name='control.s1' start='0x9040' end='0x9060' /><slave name='peripheral_spi.spi_control_port' start='0x9060' end='0x9080' /><slave name='lms_spi.spi_control_port' start='0x9080' end='0x90A0' /><slave name='xb_gpio_dir.s1' start='0x90A0' end='0x90B0' /><slave name='xb_gpio.s1' start='0x90B0' end='0x90C0' /><slave name='iq_corr_tx_phase_gain.s1' start='0x90C0' end='0x90D0' /><slave name='iq_corr_rx_phase_gain.s1' start='0x90D0' end='0x90E0' /><slave name='time_tamer.avalon_slave_0' start='0x90E0' end='0x90F0' /><slave name='opencores_i2c.bladerf_oc_i2c_master' start='0x90F0' end='0x90F8' /><slave name='jtag_uart.avalon_jtag_slave' start='0x90F8' end='0x9100' /><slave name='command_uart.avalon_slave' start='0x9100' end='0x9114' /></address-map>]]></parameter>
+  <parameter name="dataSlaveMapParam"><![CDATA[<address-map><slave name='ram.s1' start='0x4000' end='0x8000' /><slave name='nios2.debug_mem_slave' start='0x8800' end='0x9000' /><slave name='control.s1' start='0x9040' end='0x9060' /><slave name='peripheral_spi.spi_control_port' start='0x9060' end='0x9080' /><slave name='lms_spi.spi_control_port' start='0x9080' end='0x90A0' /><slave name='xb_gpio_dir.s1' start='0x90A0' end='0x90B0' /><slave name='xb_gpio.s1' start='0x90B0' end='0x90C0' /><slave name='iq_corr_tx_phase_gain.s1' start='0x90C0' end='0x90D0' /><slave name='iq_corr_rx_phase_gain.s1' start='0x90D0' end='0x90E0' /><slave name='time_tamer.avalon_slave_0' start='0x90E0' end='0x90F0' /><slave name='opencores_i2c.bladerf_oc_i2c_master' start='0x90F0' end='0x90F8' /><slave name='jtag_uart.avalon_jtag_slave' start='0x9100' end='0x9108' /><slave name='command_uart.avalon_slave' start='0x9120' end='0x9134' /></address-map>]]></parameter>
   <parameter name="data_master_high_performance_paddr_base" value="0" />
   <parameter name="data_master_high_performance_paddr_size" value="0" />
   <parameter name="data_master_paddr_base" value="0" />
@@ -429,7 +429,7 @@
   <parameter name="icache_ramBlockType" value="Automatic" />
   <parameter name="icache_size" value="2048" />
   <parameter name="icache_tagramBlockType" value="Automatic" />
-  <parameter name="impl" value="Tiny" />
+  <parameter name="impl" value="Fast" />
   <parameter name="instAddrWidth" value="16" />
   <parameter name="instSlaveMapParam"><![CDATA[<address-map><slave name='ram.s1' start='0x4000' end='0x8000' /><slave name='nios2.debug_mem_slave' start='0x8800' end='0x9000' /></address-map>]]></parameter>
   <parameter name="instructionMasterHighPerformanceAddrWidth" value="1" />
@@ -651,7 +651,7 @@
    start="nios2.data_master"
    end="jtag_uart.avalon_jtag_slave">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x90f8" />
+  <parameter name="baseAddress" value="0x9100" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -660,7 +660,7 @@
    start="nios2.data_master"
    end="command_uart.avalon_slave">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x9100" />
+  <parameter name="baseAddress" value="0x9120" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection

@@ -1794,7 +1794,7 @@ static inline int write_vcocap(struct bladerf *dev, uint8_t base,
 #define VCO_NORM 0x00
 #define VCO_LOW  0x01
 
-static inline int vtune_high_to_norm(struct bladerf *dev, uint8_t base,
+static int vtune_high_to_norm(struct bladerf *dev, uint8_t base,
                                      uint8_t vcocap, uint8_t vcocap_reg_state,
                                      uint8_t *vtune_high_limit)
 {
@@ -1833,7 +1833,7 @@ static inline int vtune_high_to_norm(struct bladerf *dev, uint8_t base,
     return BLADERF_ERR_UNEXPECTED;
 }
 
-static inline int vtune_norm_to_high(struct bladerf *dev, uint8_t base,
+static int vtune_norm_to_high(struct bladerf *dev, uint8_t base,
                                      uint8_t vcocap, uint8_t vcocap_reg_state,
                                      uint8_t *vtune_high_limit)
 {
@@ -1872,7 +1872,7 @@ static inline int vtune_norm_to_high(struct bladerf *dev, uint8_t base,
     return BLADERF_ERR_UNEXPECTED;
 }
 
-static inline int vtune_norm_to_low(struct bladerf *dev, uint8_t base,
+static int vtune_norm_to_low(struct bladerf *dev, uint8_t base,
                                     uint8_t vcocap, uint8_t vcocap_reg_state,
                                     uint8_t *vtune_low_limit)
 {
@@ -1911,7 +1911,7 @@ static inline int vtune_norm_to_low(struct bladerf *dev, uint8_t base,
     return BLADERF_ERR_UNEXPECTED;
 }
 
-static inline int vtune_low_to_norm(struct bladerf *dev, uint8_t base,
+static int vtune_low_to_norm(struct bladerf *dev, uint8_t base,
                                     uint8_t vcocap, uint8_t vcocap_reg_state,
                                     uint8_t *vtune_low_limit)
 {
@@ -1923,7 +1923,7 @@ static inline int vtune_low_to_norm(struct bladerf *dev, uint8_t base,
 
         if (vcocap == 0) {
             *vtune_low_limit = VCOCAP_MAX_VALUE;
-            log_warning("VCOCAP hit max value.\n");
+            log_warning("!VCOCAP hit max value.\n");
             return 0;
         }
 
@@ -1967,7 +1967,7 @@ static inline int vtune_low_to_norm(struct bladerf *dev, uint8_t base,
  * you should be able to see the relationship between VCOCAP changes and
  * the voltage changes.
  */
-static inline int tune_vcocap(struct bladerf *dev, uint8_t vcocap_est,
+static int tune_vcocap(struct bladerf *dev, uint8_t vcocap_est,
                               uint8_t base, uint8_t vcocap_reg_state,
                               uint8_t *vcocap_result)
 {
@@ -2033,6 +2033,7 @@ static inline int tune_vcocap(struct bladerf *dev, uint8_t vcocap_est,
 
         status = vtune_norm_to_low(dev, base, vcocap, vcocap_reg_state,
                                    &vtune_low_limit);
+        if( vtune_low_limit == VCOCAP_MAX_VALUE ) log_warning( "!!: %d\n", vcocap ) ;
     } else {
         /* We determined our VTUNE LOW limit, now find the high limit */
 
@@ -2487,6 +2488,13 @@ int lms_set_precalculated_frequency(struct bladerf *dev, bladerf_module mod,
         /* Walk down VCOCAP values find an optimal values */
         status = tune_vcocap(dev, f->vcocap, base, vcocap_reg_state,
                              &f->vcocap_result);
+
+        if( f->vcocap_result <= 10 ) {
+            log_verbose( "Low VCOCAP for frequency %9d\n", lms_frequency_to_hz(f) ) ;
+        } else if( f-> vcocap_result >= 58 ) {
+            log_verbose( "High VCOCAP for frequency %9d\n", lms_frequency_to_hz(f) ) ;
+        }
+
     }
 
 error:
@@ -2657,7 +2665,7 @@ static inline int dc_cal_backup(struct bladerf *dev,
 #endif
 
 #ifndef BLADERF_NIOS_BUILD
-static inline int dc_cal_module_init(struct bladerf *dev,
+static int dc_cal_module_init(struct bladerf *dev,
                                      bladerf_cal_module module,
                                      struct dc_cal_state *state)
 {
@@ -2790,7 +2798,7 @@ static inline int dc_cal_module_init(struct bladerf *dev,
  * and increasing order, as outlined in the above document.
  */
 #ifndef BLADERF_NIOS_BUILD
-static inline int dc_cal_submodule(struct bladerf *dev,
+static int dc_cal_submodule(struct bladerf *dev,
                                    bladerf_cal_module module,
                                    unsigned int submodule,
                                    struct dc_cal_state *state,
@@ -2919,7 +2927,7 @@ static inline int dc_cal_submodule(struct bladerf *dev,
 #endif
 
 #ifndef BLADERF_NIOS_BUILD
-static inline int dc_cal_retry_adjustment(struct bladerf *dev,
+static int dc_cal_retry_adjustment(struct bladerf *dev,
                                           bladerf_cal_module module,
                                           struct dc_cal_state *state,
                                           bool *limit_reached)
@@ -2974,7 +2982,7 @@ static inline int dc_cal_retry_adjustment(struct bladerf *dev,
 #endif
 
 #ifndef BLADERF_NIOS_BUILD
-static inline int dc_cal_module_deinit(struct bladerf *dev,
+static int dc_cal_module_deinit(struct bladerf *dev,
                                        bladerf_cal_module module,
                                        struct dc_cal_state *state)
 {

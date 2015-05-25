@@ -98,10 +98,10 @@ begin
             command_in <= '0' ;
             if( write = '1' ) then
                 case to_integer(unsigned(addr)) is
-                    when  0| 1| 2| 3 => reg_response( 31 downto   0) <= din ;
+                    when  0| 1| 2| 3 => reg_response( 31 downto   0) <= din ; command_in <= '1' ;
                     when  4| 5| 6| 7 => reg_response( 63 downto  32) <= din ;
                     when  8| 9|10|11 => reg_response( 95 downto  64) <= din ;
-                    when 12|13|14|15 => reg_response(127 downto  96) <= din ; command_in <= '1' ;
+                    when 12|13|14|15 => reg_response(127 downto  96) <= din ;
                     when others => control(7 downto 0) <= din(7 downto 0) ;
                 end case ;
             end if ;
