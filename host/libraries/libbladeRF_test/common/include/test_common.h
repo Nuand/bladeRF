@@ -31,6 +31,10 @@
 #include "rel_assert.h"
 #include "host_config.h"
 
+#if BLADERF_OS_WINDOWS
+#   include "clock_gettime.h"
+#endif
+
 #define TEST_OPTIONS_BASE   "hd:l:v:s:b:f:"
 
 /**

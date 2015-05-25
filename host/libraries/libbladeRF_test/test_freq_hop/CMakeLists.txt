@@ -7,8 +7,13 @@ set(INCLUDES
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/include
 )
 
+set(LIBS libbladerf_shared)
+
 if(MSVC)
     set(INCLUDES ${INCLUDES} ${MSVC_C99_INCLUDES})
+    find_package(LibPThreadsWin32 REQUIRED)
+    set(INCLUDES ${INCLUDES} ${LIBPTHREADSWIN32_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${LIBPTHREADSWIN32_LIBRARIES})
 endif()
 
 set(SRC
@@ -25,4 +30,4 @@ endif()
 
 include_directories(${INCLUDES})
 add_executable(libbladeRF_test_freq_hop ${SRC})
-target_link_libraries(libbladeRF_test_freq_hop libbladerf_shared)
+target_link_libraries(libbladeRF_test_freq_hop ${LIBS})
