@@ -107,15 +107,14 @@ int main(void)
             print_bytes("Request data:", pkt.req, NIOS_PKT_LEN);
 
             /* Reset response buffer contents to ensure unused
-             * values are known values */
-            //reset_response_buf(&pkt);
+             * values are known values.
+             *
+             * TODO Make this a compile-time option
+             */
+            reset_response_buf(&pkt);
 
             /* Process data and execute requested actions */
             handler->exec(&pkt);
-
-            /* Response must start with same magic value and config word */
-            //pkt.resp[PKT_MAGIC_IDX] = pkt.req[PKT_MAGIC_IDX];
-            //pkt.resp[PKT_CFG_IDX]   = pkt.req[PKT_CFG_IDX];
 
             /* Write response to host */
             command_uart_write_response(pkt.resp);
