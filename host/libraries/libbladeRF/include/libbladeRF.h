@@ -1143,6 +1143,10 @@ int CALL_CONV bladerf_set_frequency(struct bladerf *dev,
 /**
  * Schedule a frequency retune to occur at specified sample timestamp value.
  *
+ * @pre bladerf_sync_config() must have been called with the
+ *      BLADERF_FORMAT_SC16_Q11_META format for the associated module in order
+ *      to enable timestamps. (The timestamped metadata format must be enabled
+ *      in order to use this function.)
  *
  * @param       dev             Device handle
  *
