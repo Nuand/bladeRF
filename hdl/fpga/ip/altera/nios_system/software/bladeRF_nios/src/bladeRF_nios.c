@@ -66,7 +66,11 @@ int main(void)
     /* Pointer to currently active packet handler */
     const struct pkt_handler *handler;
 
-    volatile struct pkt_buf pkt;
+    struct pkt_buf pkt;
+
+    /* Marked volatile to ensure we actually read the byte populated by
+     * the UART ISR */
+    const volatile uint8_t *magic = &pkt.req[PKT_MAGIC_IDX];
 
     /* Sanity check */
     ASSERT(PKT_MAGIC_IDX == 0);
@@ -84,44 +88,43 @@ int main(void)
 
     while (run_nios) {
 
+        /* Wait until we have a command in the UART */
+        while (pkt.ready == false);
+
+        pkt.ready = false;
         handler = NULL;
 
-        /* Wait until we have a command in the UART */
-        if(pkt.ready == true) {
-            pkt.ready = false;
-
-            /* Determine which packet handler should receive this message */
-            for (i = 0; i < ARRAY_SIZE(pkt_handlers); i++) {
-                if (pkt_handlers[i].magic == pkt.req[PKT_MAGIC_IDX]) {
-                    handler = &pkt_handlers[i];
-                }
+        /* Determine which packet handler should receive this message */
+        for (i = 0; i < ARRAY_SIZE(pkt_handlers); i++) {
+            if (pkt_handlers[i].magic == *magic) {
+                handler = &pkt_handlers[i];
             }
-
-            if (handler == NULL) {
-                /* We somehow got out of sync. Throw away request data until
-                 * we hit a magic value */
-                DBG("Got invalid -magic value: 0x%02x\n", pkt.req[PKT_MAGIC_IDX]);
-                continue;
-            }
-
-            print_bytes("Request data:", pkt.req, NIOS_PKT_LEN);
-
-            /* Reset response buffer contents to ensure unused
-             * values are known values.
-             *
-             * TODO Make this a compile-time option
-             */
-            reset_response_buf(&pkt);
-
-            /* Process data and execute requested actions */
-            handler->exec(&pkt);
-
-            /* Write response to host */
-            command_uart_write_response(pkt.resp);
-
-            /* Flush simulated UART buffer */
-            SIMULATION_FLUSH_UART();
         }
+
+        if (handler == NULL) {
+            /* We somehow got out of sync. Throw away request data until
+             * we hit a magic value */
+            DBG("Got invalid -magic value: 0x%02x\n", pkt.req[PKT_MAGIC_IDX]);
+            continue;
+        }
+
+        print_bytes("Request data:", pkt.req, NIOS_PKT_LEN);
+
+        /* Reset response buffer contents to ensure unused
+         * values are known values.
+         *
+         * TODO Make this a compile-time option
+         */
+        reset_response_buf(&pkt);
+
+        /* Process data and execute requested actions */
+        handler->exec(&pkt);
+
+        /* Write response to host */
+        command_uart_write_response(pkt.resp);
+
+        /* Flush simulated UART buffer */
+        SIMULATION_FLUSH_UART();
     }
 
     return 0;

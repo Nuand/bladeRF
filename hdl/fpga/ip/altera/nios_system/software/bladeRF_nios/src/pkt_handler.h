@@ -38,7 +38,7 @@
 struct pkt_buf {
     const uint8_t req[NIOS_PKT_LEN];      /* Request */
     uint8_t       resp[NIOS_PKT_LEN];     /* Response */
-    bool          ready;                  /* Ready flag */
+    volatile bool ready;                  /* Ready flag */
 };
 
 struct pkt_handler {
