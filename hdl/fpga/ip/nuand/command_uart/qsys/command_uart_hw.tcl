@@ -124,7 +124,7 @@ set_interface_property avalon_slave associatedReset reset
 set_interface_property avalon_slave bitsPerSymbol 8
 set_interface_property avalon_slave burstOnBurstBoundariesOnly false
 set_interface_property avalon_slave burstcountUnits SYMBOLS
-set_interface_property avalon_slave explicitAddressSpan 20
+set_interface_property avalon_slave explicitAddressSpan 32
 set_interface_property avalon_slave holdTime 0
 set_interface_property avalon_slave linewrapBursts false
 set_interface_property avalon_slave maximumPendingReadTransactions 1
@@ -140,7 +140,7 @@ set_interface_property avalon_slave PORT_NAME_MAP ""
 set_interface_property avalon_slave CMSIS_SVD_VARIABLES ""
 set_interface_property avalon_slave SVD_ADDRESS_GROUP ""
 
-add_interface_port avalon_slave addr address Input 4
+add_interface_port avalon_slave addr address Input 5
 add_interface_port avalon_slave dout readdata Output 32
 add_interface_port avalon_slave din writedata Input 32
 add_interface_port avalon_slave read read Input 1
