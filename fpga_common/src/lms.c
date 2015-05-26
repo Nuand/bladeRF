@@ -151,7 +151,7 @@ static const unsigned int uint_bandwidths[] = {
  * LMS FAQ (5.24), with the intent of avoiding the use of "edges" that might
  * cause the PLLs to lose lock over temperature changes */
 #define VCO4_LOW    3800000000ull
-#define VCO4_HIGH   4620000000ull
+#define VCO4_HIGH   4590000000ull
 
 #define VCO3_LOW    VCO4_HIGH
 #define VCO3_HIGH   5408000000ull
@@ -1884,7 +1884,7 @@ static int vtune_norm_to_low(struct bladerf *dev, uint8_t base,
 
         if (vcocap >= VCOCAP_MAX_VALUE) {
             *vtune_low_limit = VCOCAP_MAX_VALUE;
-            log_warning("%s: VCOCAP hit min value.\n", __FUNCTION__);
+            log_warning("%s: VCOCAP hit max value.\n", __FUNCTION__);
             return 0;
         }
 
@@ -1922,8 +1922,8 @@ static int vtune_low_to_norm(struct bladerf *dev, uint8_t base,
     for (i = 0; i < VTUNE_MAX_ITERATIONS; i++) {
 
         if (vcocap == 0) {
-            *vtune_low_limit = VCOCAP_MAX_VALUE;
-            log_warning("VCOCAP hit max value.\n");
+            *vtune_low_limit = 0;
+            log_warning("VCOCAP hit min value.\n");
             return 0;
         }
 
@@ -2487,13 +2487,6 @@ int lms_set_precalculated_frequency(struct bladerf *dev, bladerf_module mod,
         /* Walk down VCOCAP values find an optimal values */
         status = tune_vcocap(dev, f->vcocap, base, vcocap_reg_state,
                              &f->vcocap_result);
-
-        if( f->vcocap_result <= 10 ) {
-            log_verbose( "Low VCOCAP for frequency %9d\n", lms_frequency_to_hz(f) ) ;
-        } else if( f-> vcocap_result >= 58 ) {
-            log_verbose( "High VCOCAP for frequency %9d\n", lms_frequency_to_hz(f) ) ;
-        }
-
     }
 
 error:
