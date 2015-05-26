@@ -37,11 +37,7 @@
 /* This global is used to flag the end of a simulation */
 bool run_nios = true;
 
-static size_t msg_idx = 0;
 static size_t test_case_idx = 0;
-
-static size_t write_idx = 0;
-static uint8_t write_buf[NIOS_PKT_LEN] = { 0 };
 
 struct test_case {
     const char *desc;
@@ -530,79 +526,6 @@ void adf4351_write(uint32_t val)
     ASSERT(0x580005);
 }
 
-bool fx3_uart_has_data(void)
-{
-    bool has_data = test_case_idx < ARRAY_SIZE(test_cases);
-    DBG("%s = %s()\n", has_data ? "true" : "false", __FUNCTION__);
-    return has_data;
-}
-
-uint8_t fx3_uart_read(void)
-{
-    uint8_t ret;
-
-    if (msg_idx == 0) {
-        printf("\nTest case %-2zd: %s\n", test_case_idx + 1,
-                test_cases[test_case_idx].desc);
-        printf("--------------------------------------------------------\n");
-    }
-
-    DBG("%s()\n", __FUNCTION__);
-
-    if (test_case_idx >= ARRAY_SIZE(test_cases)) {
-        return 0xff;
-    }
-
-    ret = test_cases[test_case_idx].req[msg_idx++];
-    if (msg_idx >= NIOS_PKT_LEN) {
-        msg_idx = 0;
-        test_case_idx++;
-
-        if (test_case_idx < ARRAY_SIZE(test_cases)) {
-            DBG("Consumed test case data. Incrementing test case to idx=%zd "
-                "for the next read(s).\n", test_case_idx);
-        } else {
-            DBG("Consumed data for final test case.\n");
-            run_nios = false;
-        }
-    }
-
-    return ret;
-}
-
-void fx3_uart_write(uint8_t data)
-{
-    DBG("%s: data=0x%02x\n", __FUNCTION__, data);
-    if (write_idx > NIOS_PKT_LEN) {
-        DBG("Overrun in simulated FX3 UART buffer detected!\n");
-        ASSERT(0);
-    } else {
-        write_buf[write_idx++] = data;
-    }
-}
-
-void SIMULATION_FLUSH_UART()
-{
-    print_bytes("Response data:", write_buf, sizeof(write_buf));
-
-    /* At this point, we'll already have incremented the test_case_idx past
-     * this test. */
-    ASSERT(test_case_idx > 0);
-
-    if (memcmp(write_buf, test_cases[test_case_idx - 1].resp, sizeof(write_buf))) {
-        printf("Failed.\n");
-        if (!getenv("CONTINUE_ON_FAIL")) {
-                ASSERT(!"Aborting due to failed test case.\n");
-        }
-    } else {
-        printf("Pass.\n\n");
-    }
-
-    memset(write_buf, 0, sizeof(write_buf));
-    write_idx = 0;
-}
-
-
 uint32_t control_reg_read(void)
 {
     uint32_t ret = 0x8abcde57;
@@ -771,9 +694,8 @@ void time_tamer_reset(bladerf_module m)
 int lms_set_precalculated_frequency(struct bladerf *dev, bladerf_module mod,
                                     struct lms_freq *f)
 {
-    DBG("%s: module=%s, nint=0x%04x, nfrac=0x%08x, freqsel=0x%02x, band=%s\n",
-        __FUNCTION__, module2str(mod), f->nint, f->nfrac, f->freqsel,
-        f->low_band ? "low" : "high");
+    DBG("%s: module=%s, nint=0x%04x, nfrac=0x%08x, freqsel=0x%02x, flags=0x%02x\n",
+        __FUNCTION__, module2str(mod), f->nint, f->nfrac, f->freqsel, f->flags);
 
     return 0;
 }
@@ -787,14 +709,39 @@ int lms_select_band(struct bladerf *dev, bladerf_module module, bool low_band)
 }
 
 void command_uart_read_request(uint8_t *req) {
-    /* XXX: I don't know how to put this interrupt based stuff into
-     * the PC simulation */
-    return ;
+
+    printf("\nTest case %-2zd: %s\n", test_case_idx + 1,
+            test_cases[test_case_idx].desc);
+    printf("--------------------------------------------------------\n");
+
+    if (test_case_idx < ARRAY_SIZE(test_cases)) {
+        memcpy(req, &test_cases[test_case_idx].req, NIOS_PKT_LEN);
+        test_case_idx++;
+
+        if (test_case_idx == ARRAY_SIZE(test_cases)) {
+            run_nios = false;
+        }
+    } else {
+        memset(req, 0xff, NIOS_PKT_LEN);
+        DBG("Read past test case array.\n");
+        return;
+    }
 }
 
 void command_uart_write_response(uint8_t *resp) {
-    /* XXX: I don't know how to put this interrupt based stuff into
-     * the PC simulation */
-    return ;
+    print_bytes("Response data:", resp, NIOS_PKT_LEN);
+
+    /* At this point, we'll already have incremented the test_case_idx past
+     * this test. */
+    ASSERT(test_case_idx > 0);
+
+    if (memcmp(resp, test_cases[test_case_idx - 1].resp, NIOS_PKT_LEN)) {
+        printf("Failed.\n");
+        if (!getenv("CONTINUE_ON_FAIL")) {
+                ASSERT(!"Aborting due to failed test case.\n");
+        }
+    } else {
+        printf("Pass.\n\n");
+    }
 }
 #endif

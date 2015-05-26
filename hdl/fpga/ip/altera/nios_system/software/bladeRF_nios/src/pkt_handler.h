@@ -76,9 +76,5 @@ struct pkt_handler {
     void (*do_work)(void);
 };
 
-static inline void reset_response_buf(struct pkt_buf *b)
-{
-    memset(b->resp, 0xff, sizeof(b->resp));
-}
 
 #endif

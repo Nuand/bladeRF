@@ -46,8 +46,27 @@
 
 #ifdef BLADERF_NIOS_PC_SIMULATION
     extern bool run_nios;
+#   define WAIT_FOR_REQUEST() do { \
+        command_uart_read_request( (uint8_t*) pkt.req); \
+    } while (0)
+
+    /* We need to reset the response buffer to known values so we can
+     * compare against expected test case responses */
+#   define RESET_RESPONSE_BUF
+
 #else
 #   define run_nios true
+#   define WAIT_FOR_REQUEST() while (pkt.ready == false)
+#endif
+
+#ifdef RESET_RESPONSE_BUF
+#   undef RESET_RESPONSE_BUF
+#   define RESET_RESPONSE_BUF() do { \
+        memset(pkt.resp, 0xff, NIOS_PKT_LEN); \
+    } while (0)
+
+#else
+#   define RESET_RESPONSE_BUF() do {} while (0)
 #endif
 
 static const struct pkt_handler pkt_handlers[] = {
@@ -89,7 +108,7 @@ int main(void)
     while (run_nios) {
 
         /* Wait until we have a command in the UART */
-        while (pkt.ready == false);
+        WAIT_FOR_REQUEST();
 
         pkt.ready = false;
         handler = NULL;
@@ -104,27 +123,21 @@ int main(void)
         if (handler == NULL) {
             /* We somehow got out of sync. Throw away request data until
              * we hit a magic value */
-            DBG("Got invalid -magic value: 0x%02x\n", pkt.req[PKT_MAGIC_IDX]);
+            DBG("Got invalid magic value: 0x%02x\n", pkt.req[PKT_MAGIC_IDX]);
             continue;
         }
 
         print_bytes("Request data:", pkt.req, NIOS_PKT_LEN);
 
-        /* Reset response buffer contents to ensure unused
-         * values are known values.
-         *
-         * TODO Make this a compile-time option
-         */
-        reset_response_buf(&pkt);
+        /* If building with RESET_RESPONSE_BUF defined, reset response buffer
+         * contents to ensure unused values are known values. */
+        RESET_RESPONSE_BUF();
 
         /* Process data and execute requested actions */
         handler->exec(&pkt);
 
         /* Write response to host */
         command_uart_write_response(pkt.resp);
-
-        /* Flush simulated UART buffer */
-        SIMULATION_FLUSH_UART();
     }
 
     return 0;
