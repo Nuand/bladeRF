@@ -246,9 +246,14 @@ static inline void nios_pkt_retune_unpack(const uint8_t *buf,
  *
  *
  *      flags[1]: 1 = Operation completed successfully.
- *                0 = Failed to queue scheduled retune request (queue full).
+ *                0 = Operation failed.
  *
- *                Ignore for "Tune NOW" requests.
+ *                For "Tune NOW" requests, a failure may occur as the result
+ *                of the tuning algorithm failing to occur, and such other
+ *                unexpected failurs.
+ *
+ *                The scheduled tune request will failure if the retune queue
+ *                is full.
  *
  *      flags[7:2]    Reserved. Set to 0.
  */
