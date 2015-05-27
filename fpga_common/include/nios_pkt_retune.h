@@ -31,6 +31,9 @@
 
 #include <stdint.h>
 
+/* Specify this value instead of a timestamp to clear the retune queue */
+#define NIOS_PKT_RETUNE_CLEAR_QUEUE ((uint64_t) -1)
+
 /* This file defines the Host <-> FPGA (NIOS II) packet formats for
  * retune messages. This packet is formatted, as follows. All values are
  * little-endian.
@@ -43,20 +46,28 @@
  * +================+=========================================================+
  * |        0       | Magic Value                                             |
  * +----------------+---------------------------------------------------------+
- * |        1       | 64-bit timestamp denoting when to retune.               |
+ * |        1       | 64-bit timestamp denoting when to retune. (Note 1)      |
  * +----------------+---------------------------------------------------------+
- * |        9       | 32-bit LMS6002D n_int & n_frac register values (Note 1) |
+ * |        9       | 32-bit LMS6002D n_int & n_frac register values (Note 2) |
  * +----------------+---------------------------------------------------------+
- * |       13       | RX/TX bit, FREQSEL LMS6002D reg value  (Note 2)         |
+ * |       13       | RX/TX bit, FREQSEL LMS6002D reg value  (Note 3)         |
  * +----------------+---------------------------------------------------------+
- * |       14       | Bit 7:        Band-selection (Note 3)                   |
+ * |       14       | Bit 7:        Band-selection (Note 4)                   |
  * |                | Bit 6:        1=Quick tune, 0=Normal tune               |
  * |                | Bits [5:0]    VCOCAP[5:0] Hint                          |
  * +----------------+---------------------------------------------------------+
  * |       15       | 8-bit reserved word. Should be set to 0x00.             |
  * +----------------+---------------------------------------------------------+
  *
- * (Note 1) Packed as follows:
+ * (Note 1) Special Timestamp Values:
+ *
+ * Tune "Now":          0x0000000000000000
+ * Clear Retune Queue:  0xffffffffffffffff
+ *
+ * When the "Clear Retune Queue" value is used, all of the other tuning
+ * parameters are ignored.
+ *
+ * (Note 2) Packed as follows:
  *
  * +================+=======================+
  * |   Byte offset  | (MSB)   Value    (LSB)|
@@ -70,7 +81,7 @@
  * |       3        |       NFRAC[7:0]      |
  * +----------------+-----------------------+
  *
- * (Note 2) Packed as follows:
+ * (Note 3) Packed as follows:
  *
  * +================+=======================+
  * |      Bit(s)    |         Value         |
@@ -82,7 +93,7 @@
  * |      [5:0]     |        FREQSEL        |
  * +----------------+-----------------------+
  *
- * (Notes 3) Band-selection bit = 1 implies "Low band". 0 = "High band"
+ * (Notes 4) Band-selection bit = 1 implies "Low band". 0 = "High band"
  */
 
 #define NIOS_PKT_RETUNE_IDX_MAGIC    0
@@ -223,9 +234,9 @@ static inline void nios_pkt_retune_unpack(const uint8_t *buf,
  * |                | complete, in units of timestamp ticks. (Note 1)         |
  * +----------------+---------------------------------------------------------+
  * |        9       | Bits [7:6]    Reserved, set to 0.                       |
- * |                | Bits [5:0]    VCOCAP value used.                        |
+ * |                | Bits [5:0]    VCOCAP value used. (Note 2)               |
  * +----------------+---------------------------------------------------------+
- * |       10       | Status Flags (Note 2)                                   |
+ * |       10       | Status Flags (Note 3)                                   |
  * +----------------+---------------------------------------------------------+
  * |      11-15     | Reserved. All bits set to 0.                            |
  * +----------------+---------------------------------------------------------+
@@ -233,7 +244,10 @@ static inline void nios_pkt_retune_unpack(const uint8_t *buf,
  * (Note 1) This value will be zero if timestamps are not running for the
  *          associated module.
  *
- * (Note 2) Description of Status Flags:
+ * (Note 2) This field's value should be ignored when reading a response for
+ *          a request to clear the retune queue.
+ *
+ * (Note 3) Description of Status Flags:
  *
  *      flags[0]: 1 = Timestamp and VCOCAP are valid. This is only the case for
  *                    "Tune NOW" requests. It is not possible to return this
