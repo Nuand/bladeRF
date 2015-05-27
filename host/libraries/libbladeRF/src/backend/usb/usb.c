@@ -1490,8 +1490,8 @@ static int usb_retune(struct bladerf *dev, bladerf_module module,
             log_verbose("%s retune operation: vcocap=%u, duration=%"PRIu64"\n",
                         module2str(module), vcocap, duration);
     } else {
-        log_verbose("%s retune does not provide duration or VCOCAP.\n",
-                    module2str(module));
+        log_verbose("%s retune operation duration: %"PRIu64"\n",
+                    module2str(module), duration);
     }
 
     if ((resp_flags & NIOS_PKT_RETUNERESP_FLAG_SUCCESS) == 0) {
