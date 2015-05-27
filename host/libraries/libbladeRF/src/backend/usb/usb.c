@@ -1495,8 +1495,14 @@ static int usb_retune(struct bladerf *dev, bladerf_module module,
     }
 
     if ((resp_flags & NIOS_PKT_RETUNERESP_FLAG_SUCCESS) == 0) {
-        log_debug("FPGA tuning reported failure.\n");
-        status = BLADERF_ERR_UNEXPECTED;
+        if (timestamp == BLADERF_RETUNE_NOW) {
+            log_debug("FPGA tuning reported failure.\n");
+            status = BLADERF_ERR_UNEXPECTED;
+        } else {
+            log_debug("The FPGA's retune queue is full. Try again after "
+                      "a previous request has completed.\n");
+            status = BLADERF_ERR_QUEUE_FULL;
+        }
     }
 
 #   endif

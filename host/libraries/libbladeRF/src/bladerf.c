@@ -1165,6 +1165,8 @@ const char * bladerf_strerror(int error)
             return "A firmware update is required";
         case BLADERF_ERR_TIME_PAST:
             return "Requested timestamp is in the past";
+        case BLADERF_ERR_QUEUE_FULL:
+            return "Could not enqueue data into full queue";
         case 0:
             return "Success";
         default:

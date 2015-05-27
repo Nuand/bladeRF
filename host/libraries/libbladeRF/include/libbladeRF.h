@@ -87,6 +87,8 @@ extern "C" {
 #define BLADERF_ERR_UPDATE_FPGA (-12) /**< An FPGA update is required */
 #define BLADERF_ERR_UPDATE_FW   (-13) /**< A firmware update is requied */
 #define BLADERF_ERR_TIME_PAST   (-14) /**< Requested timestamp is in the past */
+#define BLADERF_ERR_QUEUE_FULL  (-15) /**< Could not enqueue data into
+                                       *   full queue */
 
 /** @} (End RETCODES) */
 
@@ -1166,7 +1168,11 @@ int CALL_CONV bladerf_set_frequency(struct bladerf *dev,
  *                              bladerf_get_quick_tune().
  *
  *
- * @return 0 on success, value from \ref RETCODES list on failure
+ * @return 0 on success, value from \ref RETCODES list on failure. If the
+ *         underlying queue of scheduled retune requests becomes full,
+ *         BLADERF_ERR_QUEUE_FULL will be returned. In this case, it should be
+ *         possible to schedule a retune after the timestamp of one of the
+ *         earlier requests occurs.
  */
 API_EXPORT
 int CALL_CONV bladerf_schedule_retune(struct bladerf *dev,
