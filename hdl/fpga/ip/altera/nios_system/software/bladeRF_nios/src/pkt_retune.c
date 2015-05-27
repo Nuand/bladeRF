@@ -175,9 +175,9 @@ void pkt_retune(struct pkt_buf *b)
     uint8_t flags;
     struct lms_freq f;
     uint64_t timestamp;
-    uint64_t retune_start;
-    uint64_t retune_end;
-    uint64_t retune_duration = 0;
+    uint64_t start_time;
+    uint64_t end_time;
+    uint64_t duration;
     bool low_band;
     bool quick_tune;
 
@@ -199,13 +199,13 @@ void pkt_retune(struct pkt_buf *b)
         f.flags |= LMS_FREQ_FLAGS_FORCE_VCOCAP;
     }
 
+    start_time = time_tamer_read(module);
+
     if (timestamp == NIOS_PKT_RETUNE_NOW) {
         /* Fire off this retune operation now */
         switch (module) {
             case BLADERF_MODULE_RX:
             case BLADERF_MODULE_TX:
-                retune_start = time_tamer_read(module);
-
                 status = lms_set_precalculated_frequency(NULL, module, &f);
                 if (status != 0) {
                     goto out;
@@ -218,8 +218,6 @@ void pkt_retune(struct pkt_buf *b)
                     goto out;
                 }
 
-                retune_end = time_tamer_read(module);
-                retune_duration = retune_end - retune_start;
                 status = 0;
                 break;
 
@@ -229,7 +227,6 @@ void pkt_retune(struct pkt_buf *b)
 
     } else {
         uint8_t queue_size = enqueue_retune(&f, module);
-        retune_duration = 0;
 
         if (queue_size == QUEUE_FULL) {
             status = -1;
@@ -238,10 +235,13 @@ void pkt_retune(struct pkt_buf *b)
         }
     }
 
+    end_time = time_tamer_read(module);
+    duration = end_time - start_time;
+
 out:
     if (status != 0) {
         flags &= ~(NIOS_PKT_RETUNERESP_FLAG_SUCCESS);
     }
 
-    nios_pkt_retune_resp_pack(b->resp, retune_duration, f.vcocap_result, flags);
+    nios_pkt_retune_resp_pack(b->resp, duration, f.vcocap_result, flags);
 }

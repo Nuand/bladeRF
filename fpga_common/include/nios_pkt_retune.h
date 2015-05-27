@@ -219,7 +219,7 @@ static inline void nios_pkt_retune_unpack(const uint8_t *buf,
  * +================+=========================================================+
  * |        0       | Magic Value                                             |
  * +----------------+---------------------------------------------------------+
- * |        1       | 64-bit duration denoting how long the retune took to    |
+ * |        1       | 64-bit duration denoting how long the operation took to |
  * |                | complete, in units of timestamp ticks. (Note 1)         |
  * +----------------+---------------------------------------------------------+
  * |        9       | Bits [7:6]    Reserved, set to 0.                       |
@@ -231,8 +231,7 @@ static inline void nios_pkt_retune_unpack(const uint8_t *buf,
  * +----------------+---------------------------------------------------------+
  *
  * (Note 1) This value will be zero if timestamps are not running for the
- *          associated module. This only includes the duration LMS6002D
- *          retune procedure, not NIOS II message handling overhead.
+ *          associated module.
  *
  * (Note 2) Description of Status Flags:
  *
