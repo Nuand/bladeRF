@@ -46,7 +46,7 @@
 #include "hop_set.h"
 
 #define TIMEOUT_MS  2500
-#define ITERATIONS  10000
+#define ITERATIONS  40
 #define SAMPLE_RATE 2000000
 
 #define NUM_SAMPLES 2000
@@ -59,6 +59,7 @@ int run_test(struct bladerf *dev, struct hop_set *hops, bool quick_tune)
     int16_t *samples = NULL;
     struct bladerf_metadata meta;
     unsigned int i;
+    uint64_t retune_ts;
 
     memset(&meta, 0, sizeof(meta));
 
@@ -85,6 +86,8 @@ int run_test(struct bladerf *dev, struct hop_set *hops, bool quick_tune)
     meta.flags = BLADERF_META_FLAG_TX_BURST_START |
                  BLADERF_META_FLAG_TX_BURST_END;
 
+    retune_ts = meta.timestamp + RETUNE_INC;
+
     /* Set initial frequency */
     status = bladerf_set_frequency(dev, BLADERF_MODULE_TX,
                                    hop_set_next(hops, NULL));
@@ -100,9 +103,11 @@ int run_test(struct bladerf *dev, struct hop_set *hops, bool quick_tune)
             fprintf(stderr, "Failed to TX @ iteration %u: %s\n",
                     i + 1, bladerf_strerror(status));
             goto out;
+        } else {
+            /* Update timestamp for next transmission */
+            meta.timestamp += TS_INC;
         }
 
-        /* Schedule retune during off-time */
         if (quick_tune) {
             struct hop_params p;
             hop_set_next(hops, &p);
@@ -118,14 +123,17 @@ int run_test(struct bladerf *dev, struct hop_set *hops, bool quick_tune)
                                              freq, NULL);
         }
 
-        if (status != 0) {
+        if (status == 0) {
+            /* Update the retune timestamp for the next off-time */
+            retune_ts += TS_INC;
+        } else if (status == BLADERF_ERR_QUEUE_FULL) {
+            printf("Retune queue full @ iteration %u. Trying again next "
+                   "iteration.\n", i);
+        } else {
             fprintf(stderr, "Failed to schedule retune @ %"PRIu64": %s\n",
                     meta.timestamp + RETUNE_INC, bladerf_strerror(status));
             goto out;
         }
-
-        /* Update timestamp for next transmission */
-        meta.timestamp += TS_INC;
     }
 
 out:
