@@ -27,6 +27,7 @@
 
 #include "bladerf_priv.h"
 #include "lms.h"
+#include "nios_pkt_retune.h"
 
 /**
  * Configure the device for operation in the high or low band, based
@@ -75,6 +76,20 @@ static inline int tuning_schedule(struct bladerf *dev,
                            f->nint, f->nfrac, f->freqsel, f->vcocap,
                            (f->flags & LMS_FREQ_FLAGS_LOW_BAND) != 0,
                            (f->flags & LMS_FREQ_FLAGS_FORCE_VCOCAP) != 0);
+}
+
+/**
+ * Clear scheduled retunes for the specified module
+ *
+ * @param   dev         Device handle
+ * @param   module      Module to clear.
+ */
+static inline int tuning_cancel_scheduled(struct bladerf *dev,
+                                          bladerf_module module)
+{
+    return dev->fn->retune(dev, module, NIOS_PKT_RETUNE_CLEAR_QUEUE,
+                           0, 0, 0, 0, false, false);
+
 }
 
 /**

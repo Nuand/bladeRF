@@ -1182,6 +1182,22 @@ int CALL_CONV bladerf_schedule_retune(struct bladerf *dev,
                                       struct bladerf_quick_tune *quick_tune);
 
 /**
+ * Cancel all pending scheduled retune operations for the specified module.
+ *
+ * This will be done automatically during bladerf_close() to ensure that
+ * previously queued retunes do not continue to occur after closing and then
+ * later re-opening a device.
+ *
+ * @param   dev     Device handle
+ * @param   module  Module to cancel pending operations on
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure.
+ */
+API_EXPORT
+int CALL_CONV bladerf_cancel_scheduled_retunes(struct bladerf *dev,
+                                               bladerf_module module);
+
+/**
  * Get module's current frequency in Hz
  *
  * @param       dev         Device handle

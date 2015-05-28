@@ -266,6 +266,22 @@ void bladerf_close(struct bladerf *dev)
         sync_deinit(dev->sync[BLADERF_MODULE_RX]);
         sync_deinit(dev->sync[BLADERF_MODULE_TX]);
 
+        /* TODO Check FPGA capabilities before attempting to cancel scheduled
+         *      retunes, as older FPGAs may not support it. */
+
+        /* We cancel schedule retunes here to avoid the device retuning
+         * underneath the user, should they open it again in the future.
+         *
+         * This is intended to help developers avoid a situation during
+         * debugging where they schedule "far" into the future, but then
+         * hit a case where their program abort or exit early. If we didn't
+         * cancel these scheduled retunes, they could potentially be left
+         * wondering why the device is starting up or "unexpectedly" switching
+         * to a different frequency later.
+         */
+        tuning_cancel_scheduled(dev, BLADERF_MODULE_RX);
+        tuning_cancel_scheduled(dev, BLADERF_MODULE_TX);
+
         dev->fn->close(dev);
 
         free((void *)dev->fpga_version.describe);
@@ -730,6 +746,19 @@ int bladerf_schedule_retune(struct bladerf *dev,
 
         status = tuning_schedule(dev, module, timestamp, &f);
     }
+
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+    return status;
+}
+
+int bladerf_cancel_scheduled_retunes(struct bladerf *dev, bladerf_module m)
+{
+    int status;
+
+    MUTEX_LOCK(&dev->ctrl_lock);
+
+    /* TODO verify FPGA capabilities */
+    status = tuning_cancel_scheduled(dev, m);
 
     MUTEX_UNLOCK(&dev->ctrl_lock);
     return status;
