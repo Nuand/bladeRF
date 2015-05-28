@@ -46,9 +46,14 @@
 
 #ifdef BLADERF_NIOS_PC_SIMULATION
     extern bool run_nios;
-#   define WAIT_FOR_REQUEST() do { \
-        command_uart_read_request( (uint8_t*) pkt.req); \
-    } while (0)
+    static bool have_request = false;
+#   define HAVE_REQUEST() ({ \
+        have_request = !have_request; \
+        if (have_request) { \
+            command_uart_read_request( (uint8_t*) pkt.req); \
+        } \
+        have_request; \
+    })
 
     /* We need to reset the response buffer to known values so we can
      * compare against expected test case responses */
@@ -56,7 +61,7 @@
 
 #else
 #   define run_nios true
-#   define WAIT_FOR_REQUEST() while (pkt.ready == false)
+#   define HAVE_REQUEST() (pkt.ready == true)
 #endif
 
 #ifdef RESET_RESPONSE_BUF
@@ -106,38 +111,45 @@ int main(void)
     }
 
     while (run_nios) {
+        volatile bool have_request = HAVE_REQUEST();
 
-        /* Wait until we have a command in the UART */
-        WAIT_FOR_REQUEST();
+        /* We have a command in the UART */
+        if (have_request) {
+            pkt.ready = false;
+            handler = NULL;
 
-        pkt.ready = false;
-        handler = NULL;
+            /* Determine which packet handler should receive this message */
+            for (i = 0; i < ARRAY_SIZE(pkt_handlers); i++) {
+                if (pkt_handlers[i].magic == *magic) {
+                    handler = &pkt_handlers[i];
+                }
+            }
 
-        /* Determine which packet handler should receive this message */
-        for (i = 0; i < ARRAY_SIZE(pkt_handlers); i++) {
-            if (pkt_handlers[i].magic == *magic) {
-                handler = &pkt_handlers[i];
+            if (handler == NULL) {
+                /* We somehow got out of sync. Throw away request data until
+                 * we hit a magic value */
+                DBG("Got invalid magic value: 0x%02x\n", pkt.req[PKT_MAGIC_IDX]);
+                continue;
+            }
+
+            print_bytes("Request data:", pkt.req, NIOS_PKT_LEN);
+
+            /* If building with RESET_RESPONSE_BUF defined, reset response buffer
+             * contents to ensure unused values are known values. */
+            RESET_RESPONSE_BUF();
+
+            /* Process data and execute requested actions */
+            handler->exec(&pkt);
+
+            /* Write response to host */
+            command_uart_write_response(pkt.resp);
+        } else {
+            for (i = 0; i < ARRAY_SIZE(pkt_handlers); i++) {
+                if (pkt_handlers[i].do_work != NULL) {
+                    pkt_handlers[i].do_work();
+                }
             }
         }
-
-        if (handler == NULL) {
-            /* We somehow got out of sync. Throw away request data until
-             * we hit a magic value */
-            DBG("Got invalid magic value: 0x%02x\n", pkt.req[PKT_MAGIC_IDX]);
-            continue;
-        }
-
-        print_bytes("Request data:", pkt.req, NIOS_PKT_LEN);
-
-        /* If building with RESET_RESPONSE_BUF defined, reset response buffer
-         * contents to ensure unused values are known values. */
-        RESET_RESPONSE_BUF();
-
-        /* Process data and execute requested actions */
-        handler->exec(&pkt);
-
-        /* Write response to host */
-        command_uart_write_response(pkt.resp);
     }
 
     return 0;
