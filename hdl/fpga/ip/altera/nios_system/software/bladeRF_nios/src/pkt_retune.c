@@ -271,6 +271,22 @@ void pkt_retune(struct pkt_buf *b)
                 status = -1;
         }
 
+    } else if (timestamp == NIOS_PKT_RETUNE_CLEAR_QUEUE) {
+        switch (module) {
+            case BLADERF_MODULE_RX:
+                reset_queue(&rx_queue);
+                status = 0;
+                break;
+
+            case BLADERF_MODULE_TX:
+                reset_queue(&tx_queue);
+                status = 0;
+                break;
+
+            default:
+                INCREMENT_ERROR_COUNT();
+                status = -1;
+        }
     } else {
         uint8_t queue_size;
 
