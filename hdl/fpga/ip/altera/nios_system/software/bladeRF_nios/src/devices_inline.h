@@ -71,9 +71,9 @@ INLINE void time_tamer_reset(bladerf_module m)
 {
     /* A single write is sufficient to clear the timestamp counter */
     if (m == BLADERF_MODULE_RX) {
-        IOWR_8DIRECT(TIME_TAMER_BASE, 0, 0);
+        IOWR_8DIRECT(RX_TAMER_BASE, 0, 0);
     } else {
-        IOWR_8DIRECT(TIME_TAMER_BASE, 8, 0);
+        IOWR_8DIRECT(TX_TAMER_BASE, 0, 0);
     }
 }
 

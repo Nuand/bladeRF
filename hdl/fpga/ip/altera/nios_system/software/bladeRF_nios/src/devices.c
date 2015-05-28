@@ -48,6 +48,25 @@ static void command_uart_isr(void *context) {
     return ;
 }
 
+void tamer_schedule(bladerf_module m, uint64_t time) {
+    uint32_t base = (m == BLADERF_MODULE_RX) ? RX_TAMER_BASE : TX_TAMER_BASE ;
+
+    /* Set the holding time */
+    IOWR_8DIRECT(base, 0, (time>> 0)&0xff) ;
+    IOWR_8DIRECT(base, 1, (time>> 8)&0xff) ;
+    IOWR_8DIRECT(base, 2, (time>>16)&0xff) ;
+    IOWR_8DIRECT(base, 3, (time>>24)&0xff) ;
+    IOWR_8DIRECT(base, 4, (time>>32)&0xff) ;
+    IOWR_8DIRECT(base, 5, (time>>40)&0xff) ;
+    IOWR_8DIRECT(base, 6, (time>>48)&0xff) ;
+    IOWR_8DIRECT(base, 7, (time>>54)&0xff) ;
+
+    /* Commit it and arm the comparison */
+    IOWR_8DIRECT(base, 8, 0) ;
+
+    return ;
+}
+
 void bladerf_nios_init(struct pkt_buf *pkt) {
     /* Set the prescaler for 400kHz with an 80MHz clock:
      *      (prescaler = clock / (5*desired) - 1)
@@ -230,7 +249,7 @@ void iqbal_set_phase(bladerf_module m, uint16_t value)
 
 uint64_t time_tamer_read(bladerf_module m)
 {
-    uint32_t base = (m == BLADERF_MODULE_RX) ? TIME_TAMER_BASE : TIME_TAMER_BASE + 8;
+    uint32_t base = (m == BLADERF_MODULE_RX) ? RX_TAMER_BASE : TX_TAMER_BASE ;
     uint8_t offset = 0;
     uint64_t value = 0;
 

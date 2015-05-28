@@ -56,13 +56,18 @@ architecture hosted_bladerf of bladerf is
         command_serial_out              :   out std_logic ;
         correction_rx_phase_gain_export :   out std_logic_vector(31 downto 0);
         correction_tx_phase_gain_export :   out std_logic_vector(31 downto 0);
-        time_tamer_synchronize          :   out std_logic;
-        time_tamer_tx_clock             :   in  std_logic ;
-        time_tamer_tx_reset             :   in  std_logic ;
-        time_tamer_tx_time              :   in  std_logic_vector(63 downto 0);
-        time_tamer_rx_clock             :   in  std_logic ;
-        time_tamer_rx_reset             :   in  std_logic ;
-        time_tamer_rx_time              :   in  std_logic_vector(63 downto 0)
+        rx_tamer_ts_sync_in             :   in  std_logic;
+        rx_tamer_ts_sync_out            :   out std_logic ;
+        rx_tamer_ts_pps                 :   in  std_logic ;
+        rx_tamer_ts_clock               :   in  std_logic ;
+        rx_tamer_ts_reset               :   in  std_logic;
+        rx_tamer_ts_time                :   out std_logic_vector(63 downto 0) ;
+        tx_tamer_ts_sync_in             :   in  std_logic;
+        tx_tamer_ts_sync_out            :   out std_logic ;
+        tx_tamer_ts_pps                 :   in  std_logic ;
+        tx_tamer_ts_clock               :   in  std_logic ;
+        tx_tamer_ts_reset               :   in  std_logic;
+        tx_tamer_ts_time                :   out std_logic_vector(63 downto 0)
       );
     end component;
 
@@ -252,6 +257,9 @@ architecture hosted_bladerf of bladerf is
     signal timestamp_req    :   std_logic ;
     signal timestamp_ack    :   std_logic ;
     signal fx3_timestamp    :   unsigned(63 downto 0) ;
+
+    signal rx_ts_reset      :   std_logic ;
+    signal tx_ts_reset      :   std_logic ;
 
 begin
 
@@ -775,13 +783,18 @@ begin
         oc_i2c_sda_padoen_o             => i2c_sda_oen,
         oc_i2c_arst_i                   => '0',
         oc_i2c_scl_pad_i                => i2c_scl_in,
-        time_tamer_tx_clock             => tx_clock,
-        time_tamer_tx_reset             => tx_reset,
-        time_tamer_tx_time              => std_logic_vector(tx_timestamp),
-        time_tamer_rx_clock             => rx_clock,
-        time_tamer_rx_reset             => rx_reset,
-        time_tamer_rx_time              => std_logic_vector(rx_timestamp),
-        time_tamer_synchronize          => timestamp_sync
+        rx_tamer_ts_sync_in             => '0',
+        rx_tamer_ts_sync_out            => open,
+        rx_tamer_ts_pps                 => '0',
+        rx_tamer_ts_clock               => rx_clock,
+        rx_tamer_ts_reset               => rx_ts_reset,
+        unsigned(rx_tamer_ts_time)      => rx_timestamp,
+        tx_tamer_ts_sync_in             => '0',
+        tx_tamer_ts_sync_out            => open,
+        tx_tamer_ts_pps                 => '0',
+        tx_tamer_ts_clock               => tx_clock,
+        tx_tamer_ts_reset               => tx_ts_reset,
+        unsigned(tx_tamer_ts_time)      => tx_timestamp
       ) ;
 
     xb_gpio_direction_proc : for i in 0 to 31 generate
@@ -898,41 +911,67 @@ begin
     mini_exp1               <= 'Z';
     mini_exp2               <= 'Z';
 
-    increment_tx_time : process(tx_clock, tx_reset)
-        variable tock : boolean := false ;
+    set_tx_ts_reset : process(tx_clock, tx_reset)
     begin
-        if( tx_reset = '1') then
-            tx_timestamp <= (others => '0');
-            tock := false ;
-        elsif( rising_edge( tx_clock )) then
-            if (meta_en_tx = '0') then
-                tx_timestamp <= (others => '0');
+        if( tx_reset = '1' ) then
+            tx_ts_reset <= '1' ;
+        elsif( rising_edge(tx_clock) ) then
+            if( meta_en_tx = '1' ) then
+                tx_ts_reset <= '0' ;
             else
-                if( nios_gpio(17) = '0' or tock = true) then
-                    tx_timestamp <= tx_timestamp + 1;
-                end if ;
-            end if;
-            tock := not tock ;
-        end if;
-    end process;
+                tx_ts_reset <= '1' ;
+            end if ;
+        end if ;
+    end process ;
 
-    increment_rx_time : process(rx_clock, rx_reset)
-        variable tock : boolean := false ;
+    set_rx_ts_reset : process(rx_clock, rx_reset)
     begin
-        if( rx_reset = '1') then
-            rx_timestamp <= (others => '0');
-            tock := false ;
-        elsif( rising_edge( rx_clock )) then
-            if (meta_en_rx = '0') then
-                rx_timestamp <= (others => '0');
+        if( rx_reset = '1' ) then
+            rx_ts_reset <= '1' ;
+        elsif( rising_edge(rx_clock) ) then
+            if( meta_en_rx = '1' ) then
+                rx_ts_reset <= '0' ;
             else
-                if( nios_gpio(17) = '0' or tock = true ) then
-                    rx_timestamp <= rx_timestamp + 1;
-                end if ;
-            end if;
-            tock := not tock ;
-        end if;
-    end process;
+                rx_ts_reset <= '1' ;
+            end if ;
+        end if ;
+    end process ;
+
+--    increment_tx_time : process(tx_clock, tx_reset)
+--        variable tock : boolean := false ;
+--    begin
+--        if( tx_reset = '1') then
+--            tx_timestamp <= (others => '0');
+--            tock := false ;
+--        elsif( rising_edge( tx_clock )) then
+--            if (meta_en_tx = '0') then
+--                tx_timestamp <= (others => '0');
+--            else
+--                if( nios_gpio(17) = '0' or tock = true) then
+--                    tx_timestamp <= tx_timestamp + 1;
+--                end if ;
+--            end if;
+--            tock := not tock ;
+--        end if;
+--    end process;
+--
+--    increment_rx_time : process(rx_clock, rx_reset)
+--        variable tock : boolean := false ;
+--    begin
+--        if( rx_reset = '1') then
+--            rx_timestamp <= (others => '0');
+--            tock := false ;
+--        elsif( rising_edge( rx_clock )) then
+--            if (meta_en_rx = '0') then
+--                rx_timestamp <= (others => '0');
+--            else
+--                if( nios_gpio(17) = '0' or tock = true ) then
+--                    rx_timestamp <= rx_timestamp + 1;
+--                end if ;
+--            end if;
+--            tock := not tock ;
+--        end if;
+--    end process;
 
     drive_handshake : process(fx3_pclk_pll, sys_rst_sync)
     begin

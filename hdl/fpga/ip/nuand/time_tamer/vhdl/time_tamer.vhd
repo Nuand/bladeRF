@@ -3,16 +3,13 @@ library ieee ;
     use ieee.numeric_std.all ;
 
 entity time_tamer is
-  generic (
-    RESET_LEVEL :   std_logic       := '1'
-  ) ;
   port (
     -- Control signals
     clock       :   in  std_logic ;
     reset       :   in  std_logic ;
 
     -- Memory mapped interface
-    addr        :   in  std_logic_vector(3 downto 0) ;
+    addr        :   in  std_logic_vector(4 downto 0) ;
     din         :   in  std_logic_vector(7 downto 0) ;
     dout        :   out std_logic_vector(7 downto 0) ;
     write       :   in  std_logic ;
@@ -21,119 +18,178 @@ entity time_tamer is
     readack     :   out std_logic ;
     intr        :   out std_logic ;
 
-    -- Exported signals
-    synchronize :   out std_logic ;
-    tx_clock    :   in  std_logic ;
-    tx_reset    :   in  std_logic ;
-    tx_time     :   in  std_logic_vector(63 downto 0) ;
+    -- Sync signals
+    ts_sync_in  :   in  std_logic ;
+    ts_sync_out :   out std_logic ;
 
-    rx_clock    :   in  std_logic ;
-    rx_reset    :   in  std_logic ;
-    rx_time     :   in  std_logic_vector(63 downto 0)
+    -- Exported signals
+    ts_pps      :   in  std_logic ;
+    ts_clock    :   in  std_logic ;
+    ts_reset    :   in  std_logic ;
+    ts_time     :   out std_logic_vector(63 downto 0)
   ) ;
 end entity ;
 
 architecture arch of time_tamer is
 
-    attribute noprune : boolean ;
-
     signal ack          : std_logic ;
-    signal hold         : std_logic ;
 
-    signal prev_tx      : unsigned(63 downto 0) ;
-    signal prev_rx      : unsigned(63 downto 0) ;
+    signal snap_time : unsigned(63 downto 0);
 
-    signal causal_tx    : std_logic ;
-    signal causal_rx    : std_logic ;
+    signal snap_req  : std_logic ;
 
-    attribute noprune of causal_tx : signal is true ;
-    attribute noprune of causal_rx : signal is true ;
+    signal snap_ack  : std_logic ;
 
-    signal tx_snap_time : unsigned(63 downto 0);
-    signal rx_snap_time : unsigned(63 downto 0);
+    signal hold_time    :   unsigned(63 downto 0) ;
 
-    signal rx_snap_req  : std_logic ;
-    signal tx_snap_req  : std_logic ;
+    signal uaddr    :   unsigned(addr'range) ;
 
-    signal rx_snap_ack  : std_logic ;
-    signal tx_snap_ack  : std_logic ;
+    signal status   :   std_logic_vector(7 downto 0) ;
 
-    signal sync_counter : signed(15 downto 0);
-    -- Registers
-    --  Address     Name            Description
-    --  00 - 07     RXTIME          RX Time taken at the snapshot
-    --  08 - 0f     TXTIME          TX Time taken at the snapshot
-    --  00          SYNC            Writing this register will synchronize the timers
+    signal intr_clear   :   std_logic ;
+    signal intr_set     :   std_logic ;
+
+    signal timestamp    :   unsigned(63 downto 0) ;
+
+    signal compare_time         :   unsigned(63 downto 0) ;
+
+    signal mm_clear_compare     :   std_logic ;
+    signal mm_compare_cleared   :   std_logic ;
+
+    signal ts_clear_compare     :   std_logic ;
+    signal ts_compare_cleared   :   std_logic ;
+
+    signal ts_time_trigger      :   std_logic ;
+    signal mm_time_trigger      :   std_logic ;
+
+    signal current_time         :   unsigned(63 downto 0) ;
+    signal current_req          :   std_logic ;
+    signal current_ack          :   std_logic ;
+
+    signal status_past          :   std_logic ;
+
+    signal mm_compare_load      :   std_logic ;
+    signal ts_compare_load      :   std_logic ;
+
+    signal mm_compare_loaded    :   std_logic ;
+    signal ts_compare_loaded    :   std_logic ;
 
 begin
 
+    uaddr <= unsigned(addr) ;
+
     readack <= ack ;
-    waitreq <= not ack ;
+    waitreq <= not(ack or write) ;
 
-    U_tx_handshake : entity work.handshake
+    ts_sync_out <= '0' ;
+
+    status <= (0 => status_past, others =>'0') ;
+
+    U_sync_load : entity work.synchronizer
       generic map (
-        DATA_WIDTH      =>  tx_time'length
+        RESET_LEVEL =>  '0'
       ) port map (
-        source_reset    =>  tx_reset,
-        source_clock    =>  tx_clock,
-        source_data     =>  tx_time,
-
-        dest_reset      =>  reset,
-        dest_clock      =>  clock,
-        unsigned(dest_data)       =>  tx_snap_time,
-        dest_req        =>  tx_snap_req,
-        dest_ack        =>  tx_snap_ack
+        reset       =>  ts_reset,
+        clock       =>  ts_clock,
+        async       =>  mm_compare_load,
+        sync        =>  ts_compare_load
       ) ;
 
-    U_rx_handshake : entity work.handshake
+    U_sync_loaded : entity work.synchronizer
       generic map (
-        DATA_WIDTH      =>  rx_time'length
+        RESET_LEVEL =>  '0'
       ) port map (
-        source_reset    =>  rx_reset,
-        source_clock    =>  rx_clock,
-        source_data     =>  rx_time,
+        reset       =>  reset,
+        clock       =>  clock,
+        async       =>  ts_compare_loaded,
+        sync        =>  mm_compare_loaded
+      ) ;
 
-        dest_reset      =>  reset,
-        dest_clock      =>  clock,
-        unsigned(dest_data)       =>  rx_snap_time,
-        dest_req        =>  rx_snap_req,
-        dest_ack        =>  rx_snap_ack
+    U_sync_clear : entity work.synchronizer
+      generic map (
+        RESET_LEVEL =>  '0'
+      ) port map (
+        reset       =>  ts_reset,
+        clock       =>  ts_clock,
+        async       =>  mm_clear_compare,
+        sync        =>  ts_clear_compare
+      ) ;
+
+    U_sync_cleared : entity work.synchronizer
+      generic map (
+        RESET_LEVEL =>  '0'
+      ) port map (
+        reset       =>  reset,
+        clock       =>  clock,
+        async       =>  ts_compare_cleared,
+        sync        =>  mm_compare_cleared
+      ) ;
+
+    U_sync_trigger : entity work.synchronizer
+      generic map (
+        RESET_LEVEL =>  '0'
+      ) port map (
+        reset       =>  reset,
+        clock       =>  clock,
+        async       =>  ts_time_trigger,
+        sync        =>  mm_time_trigger
+      ) ;
+
+    ts_time <= std_logic_vector(timestamp) ;
+
+    increment_time : process(ts_clock, ts_reset)
+        variable tick : std_logic := '0' ;
+    begin
+        if( ts_reset = '1' ) then
+            tick := '1' ;
+            timestamp <= (others =>'0') ;
+        elsif( rising_edge(ts_clock) ) then
+            if( tick = '0' ) then
+                timestamp <= timestamp + 1 ;
+            end if ;
+            tick := not tick ;
+        end if ;
+    end process ;
+
+    U_snap : entity work.handshake
+      generic map (
+        DATA_WIDTH          =>  ts_time'length
+      ) port map (
+        source_reset        =>  ts_reset,
+        source_clock        =>  ts_clock,
+        source_data         =>  std_logic_vector(timestamp),
+
+        dest_reset          =>  reset,
+        dest_clock          =>  clock,
+        unsigned(dest_data) =>  snap_time,
+        dest_req            =>  snap_req,
+        dest_ack            =>  snap_ack
+      ) ;
+
+    U_current : entity work.handshake
+      generic map (
+        DATA_WIDTH          =>  ts_time'length
+      ) port map (
+        source_reset        =>  ts_reset,
+        source_clock        =>  ts_clock,
+        source_data         =>  std_logic_vector(timestamp),
+
+        dest_reset          =>  reset,
+        dest_clock          =>  clock,
+        unsigned(dest_data) =>  current_time,
+        dest_req            =>  current_req,
+        dest_ack            =>  current_ack
       ) ;
 
     request : process(clock, reset)
     begin
         if( reset = '1' ) then
-            rx_snap_req <= '0' ;
-            tx_snap_req <= '0' ;
-            prev_tx <= (others =>'0') ;
-            prev_rx <= (others =>'0') ;
-            causal_rx <= '0' ;
-            causal_tx <= '0' ;
+            snap_req <= '0' ;
         elsif( rising_edge(clock) ) then
-            if( prev_rx > rx_snap_time ) then
-                causal_rx <= '1' ;
+            if( uaddr = 0 and read = '1' ) then
+                snap_req <= '1' ;
             else
-                causal_rx <= '0' ;
-            end if ;
-
-            if( prev_tx > tx_snap_time ) then
-                causal_tx <= '1' ;
-            else
-                causal_tx <= '0' ;
-            end if ;
-
-            if( addr = "1000" and read = '1' ) then
-                prev_tx <= tx_snap_time ;
-                tx_snap_req <= '1' ;
-            else
-                tx_snap_req <= '0' ;
-            end if ;
-
-            if( addr = "0000" and read = '1' ) then
-                prev_rx <= rx_snap_time ;
-                rx_snap_req <= '1' ;
-            else
-                rx_snap_req <= '0' ;
+                snap_req <= '0' ;
             end if ;
         end if ;
     end process ;
@@ -143,62 +199,185 @@ begin
         if( reset = '1' ) then
             ack <= '0' ;
         elsif( rising_edge(clock) ) then
-            if( addr = "1000" and read = '1' ) then
-                ack <= tx_snap_ack ;
-            elsif( addr = "0000" and read = '1' ) then
-                ack <= rx_snap_ack ;
+            if( uaddr = 0 and read = '1' ) then
+                ack <= snap_ack ;
             else
                 ack <= read ;
             end if ;
         end if ;
     end process ;
 
-    datamux : process(clock)
+    mm_read : process(clock)
     begin
         if( rising_edge(clock) ) then
-            case addr is
-                when "0000"  => dout <= std_logic_vector(rx_snap_time(7 downto 0));
-                when "0001"  => dout <= std_logic_vector(rx_snap_time(15 downto 8));
-                when "0010"  => dout <= std_logic_vector(rx_snap_time(23 downto 16));
-                when "0011"  => dout <= std_logic_vector(rx_snap_time(31 downto 24));
-                when "0100"  => dout <= std_logic_vector(rx_snap_time(39 downto 32));
-                when "0101"  => dout <= std_logic_vector(rx_snap_time(47 downto 40));
-                when "0110"  => dout <= std_logic_vector(rx_snap_time(55 downto 48));
-                when "0111"  => dout <= std_logic_vector(rx_snap_time(63 downto 56));
+            case to_integer(uaddr) is
+                when 0  => dout <= std_logic_vector(snap_time(7 downto 0));
+                when 1  => dout <= std_logic_vector(snap_time(15 downto 8));
+                when 2  => dout <= std_logic_vector(snap_time(23 downto 16));
+                when 3  => dout <= std_logic_vector(snap_time(31 downto 24));
+                when 4  => dout <= std_logic_vector(snap_time(39 downto 32));
+                when 5  => dout <= std_logic_vector(snap_time(47 downto 40));
+                when 6  => dout <= std_logic_vector(snap_time(55 downto 48));
+                when 7  => dout <= std_logic_vector(snap_time(63 downto 56));
 
-                when "1000"  => dout <= std_logic_vector(tx_snap_time(7 downto 0));
-                when "1001"  => dout <= std_logic_vector(tx_snap_time(15 downto 8));
-                when "1010"  => dout <= std_logic_vector(tx_snap_time(23 downto 16));
-                when "1011"  => dout <= std_logic_vector(tx_snap_time(31 downto 24));
-                when "1100"  => dout <= std_logic_vector(tx_snap_time(39 downto 32));
-                when "1101"  => dout <= std_logic_vector(tx_snap_time(47 downto 40));
-                when "1110"  => dout <= std_logic_vector(tx_snap_time(55 downto 48));
-                when "1111"  => dout <= std_logic_vector(tx_snap_time(63 downto 56));
+                when 9  => dout <= status ;
 
-                when others  => dout <= (others => 'X');
+                when others  => dout <= x"13";
             end case;
         end if ;
     end process;
 
-    process (clock)
+    mm_write : process(clock)
     begin
-        if( rising_edge( clock )) then
-            if( reset = '1' ) then
-                sync_counter <= (others => '0');
-            else
-                if( write = '1' ) then
-                    sync_counter <= to_signed(15000, sync_counter'length);
-                else
-                    if( sync_counter > 0 ) then
-                        sync_counter <= sync_counter - 1;
-                    end if;
-                end if;
-            end if;
-        end if;
-    end process;
+        if( rising_edge(clock) ) then
+            intr_set <= '0' ;
+            intr_clear <= '0' ;
+            case to_integer(uaddr) is
+                when 0 => hold_time( 7 downto  0) <= unsigned(din) ;
+                when 1 => hold_time(15 downto  8) <= unsigned(din) ;
+                when 2 => hold_time(23 downto 16) <= unsigned(din) ;
+                when 3 => hold_time(31 downto 24) <= unsigned(din) ;
+                when 4 => hold_time(39 downto 32) <= unsigned(din) ;
+                when 5 => hold_time(47 downto 40) <= unsigned(din) ;
+                when 6 => hold_time(55 downto 48) <= unsigned(din) ;
+                when 7 => hold_time(63 downto 56) <= unsigned(din) ;
 
-    synchronize <= '1' when sync_counter > 0 else '0';
-    intr <= '0';
+                when 8 =>
+                    -- Command coming in!
+                    case to_integer(unsigned(din)) is
+                        when 0 =>
+                            -- Set interrupt
+                            intr_set <= '1' ;
+
+                        when 1 =>
+                            -- Clear interrupt
+                            intr_clear <= '1' ;
+
+                        when 2 =>
+                            -- Latch time manual
+
+                        when 3 =>
+                            -- Latch time next PPS
+
+                        when others =>
+                            null ;
+
+                    end case ;
+
+                when others => null ;
+            end case ;
+        end if ;
+    end process ;
+
+    check_compare : process(ts_clock, ts_reset)
+        type fsm_t is (WAIT_FOR_LOAD, WAIT_FOR_COMPARE, WAIT_FOR_CLEAR) ;
+        variable fsm : fsm_t := WAIT_FOR_LOAD ;
+    begin
+        if( ts_reset = '1' ) then
+            fsm := WAIT_FOR_LOAD ;
+            ts_compare_loaded <= '0' ;
+            ts_compare_cleared <= '0' ;
+            ts_time_trigger <= '0' ;
+        elsif(rising_edge(ts_clock)) then
+            case fsm is
+
+                when WAIT_FOR_LOAD =>
+                    if( ts_compare_load = '1' ) then
+                        ts_compare_loaded <= '1' ;
+                        compare_time <= hold_time ;
+                        fsm := WAIT_FOR_COMPARE ;
+                        ts_compare_cleared <= '0' ;
+                    end if ;
+
+                when WAIT_FOR_COMPARE =>
+                    if( compare_time <= timestamp ) then
+                        ts_time_trigger <= '1' ;
+                        ts_compare_loaded <= '0' ;
+                        fsm := WAIT_FOR_CLEAR ;
+                    end if ;
+
+                when WAIT_FOR_CLEAR =>
+                    if( ts_clear_compare = '1' ) then
+                        ts_time_trigger <= '0' ;
+                        ts_compare_cleared <= '1' ;
+                        fsm := WAIT_FOR_LOAD ;
+                    end if ;
+
+                when others =>
+                    null ;
+
+            end case ;
+        end if ;
+    end process ;
+
+    interrupt : process(clock, reset)
+        type fsm_t is (WAIT_FOR_ARM, CHECK_CURRENT_TIME, SET_COMPARE_TIME, PAST_TIME, WAIT_FOR_COMPARE, WAIT_FOR_INTR_CLEAR, WAIT_FOR_COMPARE_CLEAR) ;
+        variable fsm : fsm_t := WAIT_FOR_ARM ;
+    begin
+        if( reset = '1' ) then
+            intr <= '0' ;
+            fsm := WAIT_FOR_ARM ;
+            mm_clear_compare <= '0' ;
+            mm_compare_load <= '0' ;
+            current_req <= '0' ;
+            status_past <= '0' ;
+        elsif( rising_edge(clock) ) then
+            case fsm is
+                when WAIT_FOR_ARM =>
+                    current_req <= '0' ;
+                    status_past <= '0' ;
+                    mm_clear_compare <= '0' ;
+                    mm_compare_load <= '0' ;
+                    if( intr_set = '1' ) then
+                        fsm := CHECK_CURRENT_TIME ;
+                    end if ;
+
+                when CHECK_CURRENT_TIME =>
+                    current_req <= '1' ;
+                    if( current_ack = '1' ) then
+                        current_req <= '0' ;
+                        if( compare_time < current_time ) then
+                            fsm := PAST_TIME ;
+                            status_past <= '1' ;
+                        else
+                            fsm := SET_COMPARE_TIME ;
+                        end if ;
+                    end if ;
+
+                when SET_COMPARE_TIME =>
+                        mm_compare_load <= '1' ;
+                        if( mm_compare_loaded = '1' ) then
+                            mm_compare_load <= '0' ;
+                            fsm := WAIT_FOR_COMPARE ;
+                        end if ;
+
+                when PAST_TIME =>
+                    intr <= '1' ;
+                    fsm := WAIT_FOR_INTR_CLEAR ;
+
+                when WAIT_FOR_COMPARE =>
+                    if( mm_time_trigger = '1' ) then
+                        intr <= '1' ;
+                        fsm := WAIT_FOR_INTR_CLEAR ;
+                    end if ;
+
+                when WAIT_FOR_INTR_CLEAR =>
+                    mm_clear_compare <= '1' ;
+                    if( intr_clear = '1' ) then
+                        intr <= '0' ;
+                        fsm := WAIT_FOR_COMPARE_CLEAR ;
+                    end if ;
+
+                when WAIT_FOR_COMPARE_CLEAR =>
+                    if( mm_compare_cleared = '1' ) then
+                        mm_clear_compare <= '0' ;
+                        fsm := WAIT_FOR_ARM ;
+                    end if ;
+
+                when others => null ;
+            end case ;
+        end if ;
+    end process ;
 
 end architecture ;
 

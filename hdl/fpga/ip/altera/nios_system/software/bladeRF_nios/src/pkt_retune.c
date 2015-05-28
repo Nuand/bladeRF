@@ -150,12 +150,20 @@ static inline void retune_isr(struct queue *q)
 
 static void retune_rx(void *context)
 {
+	/* Handle the ISR */
     retune_isr(&rx_queue);
+
+    /* Clear the interrupt */
+    IOWR_8DIRECT(RX_TAMER_BASE, 8, 1) ;
 }
 
 static void retune_tx(void *context)
 {
+	/* Handle the ISR */
     retune_isr(&tx_queue);
+
+    /* Clear the interrupt */
+    IOWR_8DIRECT(TX_TAMER_BASE, 8, 1) ;
 }
 
 
@@ -163,6 +171,24 @@ void pkt_retune_init()
 {
     reset_queue(&rx_queue);
     reset_queue(&tx_queue);
+
+    /* Register RX Time Tamer ISR */
+    alt_ic_isr_register(
+        RX_TAMER_IRQ_INTERRUPT_CONTROLLER_ID,
+        RX_TAMER_IRQ,
+        retune_rx,
+        NULL,
+        NULL
+    ) ;
+
+    /* Register TX Time Tamer ISR */
+    alt_ic_isr_register(
+        TX_TAMER_IRQ_INTERRUPT_CONTROLLER_ID,
+        TX_TAMER_IRQ,
+        retune_tx,
+        NULL,
+        NULL
+    ) ;
 }
 
 static inline void perform_work(struct queue *q, bladerf_module module)
