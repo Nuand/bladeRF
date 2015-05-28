@@ -23,6 +23,26 @@ architecture arch of time_tamer_tb is
     signal ts_reset     :   std_logic       := '1' ;
     signal ts_time      :   std_logic_vector(63 downto 0) ;
 
+    procedure read_time(
+        signal clock    :   in  std_logic ;
+        signal addr     :   out std_logic_vector(4 downto 0) ;
+        signal dout     :   in std_logic_vector(7 downto 0) ;
+        signal read     :   out std_logic ;
+        signal readack  :   in  std_logic ;
+               ts       :   out unsigned(63 downto 0)
+    ) is
+    begin
+        for i in 0 to 7 loop
+            addr <= std_logic_vector(to_unsigned(i, addr'length)) ;
+            read <= '1' ;
+            wait until rising_edge(clock) and readack = '1' ;
+            ts(8*i+7 downto 8*i) := unsigned(dout) ;
+            read <= '0' ;
+            wait until rising_edge(clock) ;
+            wait until rising_edge(clock) ;
+        end loop ;
+    end procedure ;
+
     procedure write_time(
         signal clock    :   in  std_logic ;
         signal addr     :   out std_logic_vector(4 downto 0) ;
@@ -110,12 +130,16 @@ begin
       ) ;
 
     tb : process
+        variable ts : unsigned(63 downto 0) := (others =>'0') ;
     begin
         reset <= '1' ;
         nop( clock, 100 ) ;
 
         reset <= '0' ;
         nop( clock, 100 ) ;
+
+        nop( clock, 1000 ) ;
+        read_time( clock, addr, dout, read, readack, ts ) ;
 
         -- Write a comparison time in the future
         write_time( clock, addr, din, write, x"0000_0000_0000_0400" ) ;
@@ -138,6 +162,11 @@ begin
 
         -- Clear the interrupt
         clear_intr( clock, addr, din, write ) ;
+
+        nop( clock, 1000 ) ;
+
+        -- Read the time back
+        read_time( clock, addr, dout, read, readack, ts ) ;
 
         nop( clock, 1000 ) ;
 

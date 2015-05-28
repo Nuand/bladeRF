@@ -199,7 +199,7 @@ begin
         if( reset = '1' ) then
             ack <= '0' ;
         elsif( rising_edge(clock) ) then
-            if( uaddr = 0 and read = '1' ) then
+            if( uaddr = 0 and read = '1' and ts_reset = '0' ) then
                 ack <= snap_ack ;
             else
                 ack <= read ;
