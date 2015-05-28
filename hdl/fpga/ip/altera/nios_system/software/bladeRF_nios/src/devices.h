@@ -242,6 +242,15 @@ uint64_t time_tamer_read(bladerf_module m);
 INLINE void time_tamer_reset(bladerf_module m);
 
 /**
+ * Schedule a timer interrupt on the specified module
+ *
+ * @param   m       Module to schedule interrupt for
+ * @param   time    Timestamp to schedule interrupt to occur at.
+ *                  If this is in the past, the interrupt will file immediately.
+ */
+void tamer_schedule(bladerf_module m, uint64_t time);
+
+/**
  * Read the command UART request buffer
  */
 INLINE void command_uart_read_request(uint8_t *command);

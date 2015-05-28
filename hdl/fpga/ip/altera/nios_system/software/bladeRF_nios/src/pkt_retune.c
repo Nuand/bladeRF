@@ -55,6 +55,7 @@ enum entry_state {
 struct queue_entry {
     volatile enum entry_state state;
     struct lms_freq freq;
+    uint64_t timestamp;
 };
 
 static struct queue {
@@ -67,7 +68,9 @@ static struct queue {
 
 /* Returns queue size after enqueue operation, or QUEUE_FULL if we could
  * not enqueue the requested item */
-static inline uint8_t enqueue_retune(struct queue *q, const struct lms_freq *f)
+static inline uint8_t enqueue_retune(struct queue *q,
+                                     const struct lms_freq *f,
+                                     uint64_t timestamp)
 {
     uint8_t ret;
 
@@ -78,6 +81,7 @@ static inline uint8_t enqueue_retune(struct queue *q, const struct lms_freq *f)
     memcpy(&q->entries[q->ins_idx].freq, f, sizeof(f[0]));
 
     q->entries[q->ins_idx].state = ENTRY_STATE_NEW;
+    q->entries[q->ins_idx].timestamp = timestamp;
 
     q->ins_idx = (q->ins_idx + 1) & (RETUNE_QUEUE_MAX - 1);
 
@@ -202,8 +206,7 @@ static inline void perform_work(struct queue *q, bladerf_module module)
     switch (e->state) {
         case ENTRY_STATE_NEW:
             e->state = ENTRY_STATE_SCHEDULED;
-
-            /* TODO: Schedule the timer ISR */
+            tamer_schedule(module, e->timestamp);
             break;
 
         case ENTRY_STATE_SCHEDULED:
@@ -318,11 +321,11 @@ void pkt_retune(struct pkt_buf *b)
 
         switch (module) {
             case BLADERF_MODULE_RX:
-                queue_size = enqueue_retune(&rx_queue, &f);
+                queue_size = enqueue_retune(&rx_queue, &f, timestamp);
                 break;
 
             case BLADERF_MODULE_TX:
-                queue_size = enqueue_retune(&tx_queue, &f);
+                queue_size = enqueue_retune(&tx_queue, &f, timestamp);
                 break;
 
             default:
