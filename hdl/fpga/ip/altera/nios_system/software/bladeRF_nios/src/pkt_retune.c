@@ -38,7 +38,7 @@
 #endif
 
 /* The enqueue/dequeue routines require that this be a power of two */
-#define RETUNE_QUEUE_MAX    32
+#define RETUNE_QUEUE_MAX    16
 #define QUEUE_FULL          0xff
 #define QUEUE_EMPTY         0xfe
 
@@ -54,7 +54,6 @@ enum entry_state {
 
 struct queue_entry {
     volatile enum entry_state state;
-    bladerf_module module;
     struct lms_freq freq;
 };
 
@@ -64,71 +63,111 @@ static struct queue {
     uint8_t rem_idx;    /* Removal index */
 
     struct queue_entry entries[RETUNE_QUEUE_MAX];
-} q;
+} rx_queue, tx_queue;
 
 /* Returns queue size after enqueue operation, or QUEUE_FULL if we could
  * not enqueue the requested item */
-static inline uint8_t enqueue_retune(const struct lms_freq *f, bladerf_module m)
+static inline uint8_t enqueue_retune(struct queue *q, const struct lms_freq *f)
 {
     uint8_t ret;
 
-    if (q.count >= RETUNE_QUEUE_MAX) {
+    if (q->count >= RETUNE_QUEUE_MAX) {
         return QUEUE_FULL;
     }
 
-    memcpy(&q.entries[q.ins_idx].freq, f, sizeof(f[0]));
+    memcpy(&q->entries[q->ins_idx].freq, f, sizeof(f[0]));
 
-    q.entries[q.ins_idx].state = ENTRY_STATE_NEW;
-    q.entries[q.ins_idx].module = m;
+    q->entries[q->ins_idx].state = ENTRY_STATE_NEW;
 
-    q.ins_idx = (q.ins_idx + 1) & (RETUNE_QUEUE_MAX - 1);
+    q->ins_idx = (q->ins_idx + 1) & (RETUNE_QUEUE_MAX - 1);
 
-    q.count++;
-    ret = q.count;
+    q->count++;
+    ret = q->count;
 
     return ret;
 }
 
 /* Retune number of items left in the queue after the dequeue operation,
  * or QUEUE_EMPTY if there was nothing to dequeue */
-static inline uint8_t dequeue_retune(struct queue_entry *e)
+static inline uint8_t dequeue_retune(struct queue *q, struct queue_entry *e)
 {
     uint8_t ret;
 
-    if (q.count == 0) {
+    if (q->count == 0) {
         return QUEUE_EMPTY;
     }
 
     if (e != NULL) {
-        memcpy(&e, &q.entries[q.rem_idx], sizeof(e[0]));
+        memcpy(&e, &q->entries[q->rem_idx], sizeof(e[0]));
     }
 
-    q.rem_idx = (q.rem_idx + 1) & (RETUNE_QUEUE_MAX - 1);
+    q->rem_idx = (q->rem_idx + 1) & (RETUNE_QUEUE_MAX - 1);
 
-    q.count--;
-    ret = q.count;
+    q->count--;
+    ret = q->count;
 
     return ret;
 }
 
 /* Get the state of the next item in the retune queue */
-static inline struct queue_entry * peek_next_retune()
+static inline struct queue_entry * peek_next_retune(struct queue *q)
 {
-    if (q.count == 0) {
+    if (q->count == 0) {
         return NULL;
     } else {
-        return &q.entries[q.rem_idx];
+        return &q->entries[q->rem_idx];
     }
 }
 
-void pkt_retune_init()
+/* The retune interrupt may fire while this call is occuring, so we should
+ * perform these operations in an order that minimizes the race window, and
+ * does not cause the race to be problematic. It's fine if the last retune
+ * occurs before we can cancel it. */
+static void reset_queue(struct queue *q)
 {
-    memset(&q, 0, sizeof(q));
+    unsigned int i;
+
+    q->count = 0;
+
+    for (i = 0; i < RETUNE_QUEUE_MAX; i++) {
+        q->entries[i].state = ENTRY_STATE_INVALID;
+    }
+
+    q->rem_idx = q->ins_idx = 0;
 }
 
-void pkt_retune_work(void)
+static inline void retune_isr(struct queue *q)
 {
-    struct queue_entry *e = peek_next_retune();
+    struct queue_entry *e = peek_next_retune(q);
+    if (e != NULL) {
+        if (e->state == ENTRY_STATE_SCHEDULED) {
+            e->state = ENTRY_STATE_READY;
+        } else {
+            INCREMENT_ERROR_COUNT();
+        }
+    }
+}
+
+static void retune_rx(void *context)
+{
+    retune_isr(&rx_queue);
+}
+
+static void retune_tx(void *context)
+{
+    retune_isr(&tx_queue);
+}
+
+
+void pkt_retune_init()
+{
+    reset_queue(&rx_queue);
+    reset_queue(&tx_queue);
+}
+
+static inline void perform_work(struct queue *q, bladerf_module module)
+{
+    struct queue_entry *e = peek_next_retune(q);
 
     if (e == NULL) {
         return;
@@ -149,23 +188,29 @@ void pkt_retune_work(void)
         case ENTRY_STATE_READY:
 
             /* Perform our retune */
-            if (lms_set_precalculated_frequency(NULL, e->module, &e->freq)) {
+            if (lms_set_precalculated_frequency(NULL, module, &e->freq)) {
                 INCREMENT_ERROR_COUNT();
             } else {
                 bool low_band = (e->freq.flags & LMS_FREQ_FLAGS_LOW_BAND) != 0;
-                if (band_select(NULL, e->module, low_band)) {
+                if (band_select(NULL, module, low_band)) {
                     INCREMENT_ERROR_COUNT();
                 }
             }
 
             /* Drop the item from the queue */
-            dequeue_retune(NULL);
+            dequeue_retune(q, NULL);
             break;
 
         default:
             INCREMENT_ERROR_COUNT();
             break;
     }
+}
+
+void pkt_retune_work(void)
+{
+    perform_work(&rx_queue, BLADERF_MODULE_RX);
+    perform_work(&tx_queue, BLADERF_MODULE_TX);
 }
 
 void pkt_retune(struct pkt_buf *b)
@@ -177,7 +222,7 @@ void pkt_retune(struct pkt_buf *b)
     uint64_t timestamp;
     uint64_t start_time;
     uint64_t end_time;
-    uint64_t duration;
+    uint64_t duration = 0;
     bool low_band;
     bool quick_tune;
 
@@ -222,11 +267,27 @@ void pkt_retune(struct pkt_buf *b)
                 break;
 
             default:
+                INCREMENT_ERROR_COUNT();
                 status = -1;
         }
 
     } else {
-        uint8_t queue_size = enqueue_retune(&f, module);
+        uint8_t queue_size;
+
+        switch (module) {
+            case BLADERF_MODULE_RX:
+                queue_size = enqueue_retune(&rx_queue, &f);
+                break;
+
+            case BLADERF_MODULE_TX:
+                queue_size = enqueue_retune(&tx_queue, &f);
+                break;
+
+            default:
+                INCREMENT_ERROR_COUNT();
+                queue_size = QUEUE_FULL;
+
+        }
 
         if (queue_size == QUEUE_FULL) {
             status = -1;
