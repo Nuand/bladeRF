@@ -221,6 +221,24 @@ int bladerf_open_with_devinfo(struct bladerf **opened_device,
          * "autoloaded" from SPI flash. */
         fpga_check_version(dev);
 
+        /* TODO: Check FPGA capabilities before attempting to cancel
+         *       scheduled retunes */
+
+        /* Cancel any pending re-tunes that may have been left over as the
+         * result of a user application crashing or forgetting to call
+         * bladerf_close() */
+        status = tuning_cancel_scheduled(dev, BLADERF_MODULE_RX);
+        if (status != 0) {
+            log_warning("Failed to cancel any pending RX retunes: %s\n",
+                        bladerf_strerror(status));
+        }
+
+        status = tuning_cancel_scheduled(dev, BLADERF_MODULE_TX);
+        if (status != 0) {
+            log_warning("Failed to cancel any pending TX retunes: %s\n",
+                        bladerf_strerror(status));
+        }
+
         status = init_device(dev);
         if (status != 0) {
             goto error;
