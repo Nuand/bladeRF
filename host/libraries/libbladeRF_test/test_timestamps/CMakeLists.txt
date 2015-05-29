@@ -38,6 +38,7 @@ set(SRC
     src/test_format_mismatch.c
     src/test_readback.c
     src/test_print_timestamps.c
+    ../common/src/test_common.c
     ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
 )
 

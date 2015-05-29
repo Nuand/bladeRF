@@ -203,4 +203,18 @@ double calc_avg_duration(const struct timespec *start,
  */
 unsigned int get_rand_freq(uint64_t *prng_state, bool xb200_enabled);
 
+/**
+ * Wait for the specified timestamp to occur/pass
+ *
+ * @param[in]       dev         Device handle
+ * @param[in]       module      Module to wait on
+ * @param[in]       timestamp   Time to wait for
+ * @param[in]       timeout_ms  Approximate max time to wait, in milliseconds
+ *
+ * @return 0 on success, BLADERF_ERR_TIMEOUT if timeout_ms expires,
+ *           and return values from bladerf_get_timestamp() if non-zero.
+ */
+int wait_for_timestamp(struct bladerf *dev, bladerf_module module,
+                       uint64_t timestamp, unsigned int timeout_ms);
+
 #endif

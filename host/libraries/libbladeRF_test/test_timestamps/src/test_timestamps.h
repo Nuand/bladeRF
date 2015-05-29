@@ -85,20 +85,6 @@ int enable_counter_mode(struct bladerf *dev, bool enable);
 bool counter_data_is_valid(int16_t *samples, size_t n_samples, uint32_t ctr);
 
 /**
- * Wait for the specified timestamp to occur/pass
- *
- * @param[in]       dev         Device handle
- * @param[in]       module      Module to wait on
- * @param[in]       timestamp   Time to wait for
- * @param[in]       timeout_ms  Approximate max time to wait, in milliseconds
- *
- * @return 0 on success, BLADERF_ERR_TIMEOUT if timeout_ms expires,
- *           and return values from bladerf_get_timestamp() if non-zero.
- */
-int wait_for_timestamp(struct bladerf *dev, bladerf_module module,
-                       uint64_t timestamp, unsigned int timeout_ms);
-
-/**
  * Get the earlier of two error codes
  *
  * @return

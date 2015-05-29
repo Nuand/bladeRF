@@ -654,3 +654,33 @@ unsigned int get_rand_freq(uint64_t *prng_state, bool xb200_enabled)
     tmp = min_freq + tmp % (BLADERF_FREQUENCY_MAX - BLADERF_FREQUENCY_MIN);
     return (unsigned int) tmp;
 }
+
+int wait_for_timestamp(struct bladerf *dev, bladerf_module module,
+                       uint64_t timestamp, unsigned int timeout_ms)
+{
+    int status;
+    uint64_t curr_ts = 0;
+    unsigned int slept_ms = 0;
+    bool done;
+
+    //printf("Waiting for 0x%"PRIx64"\r\n", timestamp);
+
+    do {
+        status = bladerf_get_timestamp(dev, module, &curr_ts);
+        done = (status != 0) || curr_ts >= timestamp;
+
+        //printf("Now = 0x%"PRIx64", done = %d\r\n", curr_ts , done);
+
+        if (!done) {
+            if (slept_ms > timeout_ms) {
+                done = true;
+                status = BLADERF_ERR_TIMEOUT;
+            } else {
+                usleep(10000);
+                slept_ms += 10;
+            }
+        }
+    } while (!done);
+
+    return status;
+}
