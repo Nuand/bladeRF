@@ -48,7 +48,7 @@
 #include "hop_set.h"
 
 #define TIMEOUT_MS  2500
-#define ITERATIONS  40
+#define ITERATIONS  500
 #define SAMPLE_RATE 2000000
 
 #define NUM_SAMPLES 2000
@@ -94,8 +94,6 @@ int run_test(struct bladerf *dev, bladerf_module module,
                 bladerf_strerror(status));
         goto out;
     }
-
-    fprintf( stderr, "First timestamp: %"PRIu64"\n", meta.timestamp ) ;
 
     /* Add some initial startup delay */
     meta.timestamp += (SAMPLE_RATE / 50);
@@ -150,7 +148,6 @@ int run_test(struct bladerf *dev, bladerf_module module,
             struct hop_params p;
             hop_set_next(hops, &p);
 
-            fprintf( stderr, "Hop timestamp: %"PRIu64"\n", meta.timestamp + RETUNE_INC ) ;
             status = bladerf_schedule_retune(dev, BLADERF_MODULE_TX,
                                              meta.timestamp + RETUNE_INC,
                                              0, &p.qt);
@@ -177,15 +174,19 @@ int run_test(struct bladerf *dev, bladerf_module module,
 
     /* If transmitting, wait until we read back a timestamp that is in the
      * future past our scheduled transmissions*/
-    if( module == BLADERF_MODULE_TX ) {
-        do {
-            status = bladerf_get_timestamp(dev, BLADERF_MODULE_TX, &retune_ts ) ;
-        } while( retune_ts < meta.timestamp + RETUNE_INC*2 && status == 0 ) ;
-        if( status != 0 ) {
-            fprintf( stderr, "Issue waiting for stuff to be done\n" ) ;
-            goto out ;
+    if (module == BLADERF_MODULE_TX) {
+        fprintf(stderr, "Waiting for transmission to complete...\n");
+        status = wait_for_timestamp(dev, BLADERF_MODULE_TX,
+                                    meta.timestamp, 2500);
+
+        if (status == BLADERF_ERR_TIMEOUT) {
+            fprintf(stderr, "Wait timed out.\n");
+        } else if (status != 0) {
+            fprintf(stderr, "Wait failed: %s\n", bladerf_strerror(status));
+        } else {
+            fprintf(stderr, "Done waiting.\n");
         }
-        fprintf( stderr, "Done waiting!\n" ) ;
+
     }
 
 out:
@@ -303,7 +304,8 @@ int main(int argc, char *argv[])
         goto out;
     }
 
-    printf("Running...\n");
+    printf("Running test with %s module...\n",
+            module == BLADERF_MODULE_RX ? "RX" : "TX");
     fflush(stdout);
 
     status = run_test(dev, module, hops, quick_tune);
