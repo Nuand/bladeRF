@@ -55,6 +55,29 @@
 #define TS_INC      20000
 #define RETUNE_INC  (NUM_SAMPLES + (TS_INC - NUM_SAMPLES) / 10)
 
+#define SCHEDULE_AHEAD 4
+
+int schedule_retune(struct bladerf *dev, bladerf_module m, struct hop_set *hops,
+                    bool quick_tune, uint64_t *hop_ts)
+{
+    int status;
+
+    if (quick_tune) {
+        struct hop_params p;
+        hop_set_next(hops, &p);
+        status = bladerf_schedule_retune(dev, m, *hop_ts, 0, &p.qt);
+    } else {
+        unsigned int freq = hop_set_next(hops, NULL);
+        status = bladerf_schedule_retune(dev, m, *hop_ts, freq, NULL);
+    }
+
+    if (status == 0) {
+        *hop_ts += TS_INC;
+    }
+
+    return status;
+}
+
 int run_test(struct bladerf *dev, bladerf_module module,
              struct hop_set *hops, bool quick_tune)
 
@@ -115,6 +138,16 @@ int run_test(struct bladerf *dev, bladerf_module module,
         goto out;
     }
 
+    /* Schedule first N hops */
+    for (i = 0; i < SCHEDULE_AHEAD; i++) {
+        status = schedule_retune(dev, module, hops, quick_tune, &retune_ts);
+        if (status != 0) {
+            fprintf(stderr, "Failed to schedule initial retune #%u: %s\n",
+                    i, bladerf_strerror(status));
+            goto out;
+        }
+    }
+
     for (i = 0; i < ITERATIONS; i++) {
         if (module == BLADERF_MODULE_TX) {
             status = bladerf_sync_tx(dev, samples, NUM_SAMPLES, &meta, TIMEOUT_MS);
@@ -144,28 +177,13 @@ int run_test(struct bladerf *dev, bladerf_module module,
         /* Update timestamp for next transmission */
         meta.timestamp += TS_INC;
 
-        if (quick_tune) {
-            struct hop_params p;
-            hop_set_next(hops, &p);
+        /* Schedule an additional retune */
+        status = schedule_retune(dev, module, hops, quick_tune, &retune_ts);
 
-            status = bladerf_schedule_retune(dev, BLADERF_MODULE_TX,
-                                             meta.timestamp + RETUNE_INC,
-                                             0, &p.qt);
-        } else {
-            unsigned int freq = hop_set_next(hops, NULL);
-
-            status = bladerf_schedule_retune(dev, BLADERF_MODULE_TX,
-                                             meta.timestamp + RETUNE_INC,
-                                             freq, NULL);
-        }
-
-        if (status == 0) {
-            /* Update the retune timestamp for the next off-time */
-            retune_ts += TS_INC;
-        } else if (status == BLADERF_ERR_QUEUE_FULL) {
+        if (status == BLADERF_ERR_QUEUE_FULL) {
             printf("Retune queue full @ iteration %u. Trying again next "
                    "iteration.\n", i);
-        } else {
+        } else if (status != 0) {
             fprintf(stderr, "Failed to schedule retune @ %"PRIu64": %s\n",
                     meta.timestamp + RETUNE_INC, bladerf_strerror(status));
             goto out;
