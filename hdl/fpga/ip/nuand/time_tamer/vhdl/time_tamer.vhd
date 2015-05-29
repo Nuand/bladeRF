@@ -74,6 +74,8 @@ architecture arch of time_tamer is
     signal mm_compare_loaded    :   std_logic ;
     signal ts_compare_loaded    :   std_logic ;
 
+    signal mm_ts_reset          :   std_logic ;
+
 begin
 
     uaddr <= unsigned(addr) ;
@@ -84,6 +86,16 @@ begin
     ts_sync_out <= '0' ;
 
     status <= (0 => status_past, others =>'0') ;
+
+    U_sync_ts_reset : entity work.synchronizer
+      generic map (
+        RESET_LEVEL =>  '1'
+      ) port map (
+        reset       =>  reset,
+        clock       =>  clock,
+        async       =>  ts_reset,
+        sync        =>  mm_ts_reset
+      ) ;
 
     U_sync_load : entity work.synchronizer
       generic map (
@@ -199,7 +211,7 @@ begin
         if( reset = '1' ) then
             ack <= '0' ;
         elsif( rising_edge(clock) ) then
-            if( uaddr = 0 and read = '1' and ts_reset = '0' ) then
+            if( uaddr = 0 and read = '1' and mm_ts_reset = '0' ) then
                 ack <= snap_ack ;
             else
                 ack <= read ;
@@ -232,40 +244,42 @@ begin
         if( rising_edge(clock) ) then
             intr_set <= '0' ;
             intr_clear <= '0' ;
-            case to_integer(uaddr) is
-                when 0 => hold_time( 7 downto  0) <= unsigned(din) ;
-                when 1 => hold_time(15 downto  8) <= unsigned(din) ;
-                when 2 => hold_time(23 downto 16) <= unsigned(din) ;
-                when 3 => hold_time(31 downto 24) <= unsigned(din) ;
-                when 4 => hold_time(39 downto 32) <= unsigned(din) ;
-                when 5 => hold_time(47 downto 40) <= unsigned(din) ;
-                when 6 => hold_time(55 downto 48) <= unsigned(din) ;
-                when 7 => hold_time(63 downto 56) <= unsigned(din) ;
+            if( write = '1' ) then
+                case to_integer(uaddr) is
+                    when 0 => hold_time( 7 downto  0) <= unsigned(din) ;
+                    when 1 => hold_time(15 downto  8) <= unsigned(din) ;
+                    when 2 => hold_time(23 downto 16) <= unsigned(din) ;
+                    when 3 => hold_time(31 downto 24) <= unsigned(din) ;
+                    when 4 => hold_time(39 downto 32) <= unsigned(din) ;
+                    when 5 => hold_time(47 downto 40) <= unsigned(din) ;
+                    when 6 => hold_time(55 downto 48) <= unsigned(din) ;
+                    when 7 => hold_time(63 downto 56) <= unsigned(din) ;
 
-                when 8 =>
-                    -- Command coming in!
-                    case to_integer(unsigned(din)) is
-                        when 0 =>
-                            -- Set interrupt
-                            intr_set <= '1' ;
+                    when 8 =>
+                        -- Command coming in!
+                        case to_integer(unsigned(din)) is
+                            when 0 =>
+                                -- Set interrupt
+                                intr_set <= '1' ;
 
-                        when 1 =>
-                            -- Clear interrupt
-                            intr_clear <= '1' ;
+                            when 1 =>
+                                -- Clear interrupt
+                                intr_clear <= '1' ;
 
-                        when 2 =>
-                            -- Latch time manual
+                            when 2 =>
+                                -- Latch time manual
 
-                        when 3 =>
-                            -- Latch time next PPS
+                            when 3 =>
+                                -- Latch time next PPS
 
-                        when others =>
-                            null ;
+                            when others =>
+                                null ;
 
-                    end case ;
+                        end case ;
 
-                when others => null ;
-            end case ;
+                    when others => null ;
+                end case ;
+            end if ;
         end if ;
     end process ;
 
@@ -285,8 +299,8 @@ begin
                     if( ts_compare_load = '1' ) then
                         ts_compare_loaded <= '1' ;
                         compare_time <= hold_time ;
-                        fsm := WAIT_FOR_COMPARE ;
                         ts_compare_cleared <= '0' ;
+                        fsm := WAIT_FOR_COMPARE ;
                     end if ;
 
                 when WAIT_FOR_COMPARE =>
@@ -322,60 +336,73 @@ begin
             current_req <= '0' ;
             status_past <= '0' ;
         elsif( rising_edge(clock) ) then
-            case fsm is
-                when WAIT_FOR_ARM =>
-                    current_req <= '0' ;
-                    status_past <= '0' ;
-                    mm_clear_compare <= '0' ;
-                    mm_compare_load <= '0' ;
-                    if( intr_set = '1' ) then
-                        fsm := CHECK_CURRENT_TIME ;
-                    end if ;
-
-                when CHECK_CURRENT_TIME =>
-                    current_req <= '1' ;
-                    if( current_ack = '1' ) then
+            if( mm_ts_reset = '1' ) then
+                intr <= '0' ;
+                fsm := WAIT_FOR_ARM ;
+                mm_clear_compare <= '0' ;
+                mm_compare_load <= '0' ;
+                current_req <= '0' ;
+                status_past <= '0' ;
+            else
+                case fsm is
+                    when WAIT_FOR_ARM =>
                         current_req <= '0' ;
-                        if( compare_time < current_time ) then
-                            fsm := PAST_TIME ;
-                            status_past <= '1' ;
-                        else
-                            fsm := SET_COMPARE_TIME ;
-                        end if ;
-                    end if ;
-
-                when SET_COMPARE_TIME =>
-                        mm_compare_load <= '1' ;
-                        if( mm_compare_loaded = '1' ) then
-                            mm_compare_load <= '0' ;
-                            fsm := WAIT_FOR_COMPARE ;
+                        status_past <= '0' ;
+                        mm_clear_compare <= '0' ;
+                        mm_compare_load <= '0' ;
+                        if( intr_set = '1' ) then
+                            fsm := CHECK_CURRENT_TIME ;
                         end if ;
 
-                when PAST_TIME =>
-                    intr <= '1' ;
-                    fsm := WAIT_FOR_INTR_CLEAR ;
+                    when CHECK_CURRENT_TIME =>
+                        current_req <= '1' ;
+                        if( current_ack = '1' ) then
+                            current_req <= '0' ;
+                            if( hold_time < current_time ) then
+                                fsm := PAST_TIME ;
+                                status_past <= '1' ;
+                            else
+                                fsm := SET_COMPARE_TIME ;
+                            end if ;
+                        end if ;
 
-                when WAIT_FOR_COMPARE =>
-                    if( mm_time_trigger = '1' ) then
+                    when SET_COMPARE_TIME =>
+                            mm_compare_load <= '1' ;
+                            if( mm_compare_loaded = '1' ) then
+                                mm_compare_load <= '0' ;
+                                fsm := WAIT_FOR_COMPARE ;
+                            end if ;
+
+                    when PAST_TIME =>
                         intr <= '1' ;
                         fsm := WAIT_FOR_INTR_CLEAR ;
-                    end if ;
 
-                when WAIT_FOR_INTR_CLEAR =>
-                    mm_clear_compare <= '1' ;
-                    if( intr_clear = '1' ) then
-                        intr <= '0' ;
-                        fsm := WAIT_FOR_COMPARE_CLEAR ;
-                    end if ;
+                    when WAIT_FOR_COMPARE =>
+                        if( mm_time_trigger = '1' ) then
+                            intr <= '1' ;
+                            fsm := WAIT_FOR_INTR_CLEAR ;
+                        end if ;
 
-                when WAIT_FOR_COMPARE_CLEAR =>
-                    if( mm_compare_cleared = '1' ) then
-                        mm_clear_compare <= '0' ;
-                        fsm := WAIT_FOR_ARM ;
-                    end if ;
+                    when WAIT_FOR_INTR_CLEAR =>
+                        mm_clear_compare <= '1' ;
+                        if( intr_clear = '1' ) then
+                            intr <= '0' ;
+                            if( status_past = '1' ) then
+                                fsm := WAIT_FOR_ARM ;
+                            else
+                                fsm := WAIT_FOR_COMPARE_CLEAR ;
+                            end if ;
+                        end if ;
 
-                when others => null ;
-            end case ;
+                    when WAIT_FOR_COMPARE_CLEAR =>
+                        if( mm_compare_cleared = '1' ) then
+                            mm_clear_compare <= '0' ;
+                            fsm := WAIT_FOR_ARM ;
+                        end if ;
+
+                    when others => null ;
+                end case ;
+            end if ;
         end if ;
     end process ;
 

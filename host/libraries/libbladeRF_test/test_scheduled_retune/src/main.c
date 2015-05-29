@@ -95,6 +95,8 @@ int run_test(struct bladerf *dev, bladerf_module module,
         goto out;
     }
 
+    fprintf( stderr, "First timestamp: %"PRIu64"\n", meta.timestamp ) ;
+
     /* Add some initial startup delay */
     meta.timestamp += (SAMPLE_RATE / 50);
 
@@ -148,6 +150,7 @@ int run_test(struct bladerf *dev, bladerf_module module,
             struct hop_params p;
             hop_set_next(hops, &p);
 
+            fprintf( stderr, "Hop timestamp: %"PRIu64"\n", meta.timestamp + RETUNE_INC ) ;
             status = bladerf_schedule_retune(dev, BLADERF_MODULE_TX,
                                              meta.timestamp + RETUNE_INC,
                                              0, &p.qt);
@@ -170,6 +173,19 @@ int run_test(struct bladerf *dev, bladerf_module module,
                     meta.timestamp + RETUNE_INC, bladerf_strerror(status));
             goto out;
         }
+    }
+
+    /* If transmitting, wait until we read back a timestamp that is in the
+     * future past our scheduled transmissions*/
+    if( module == BLADERF_MODULE_TX ) {
+        do {
+            status = bladerf_get_timestamp(dev, BLADERF_MODULE_TX, &retune_ts ) ;
+        } while( retune_ts < meta.timestamp + RETUNE_INC*2 && status == 0 ) ;
+        if( status != 0 ) {
+            fprintf( stderr, "Issue waiting for stuff to be done\n" ) ;
+            goto out ;
+        }
+        fprintf( stderr, "Done waiting!\n" ) ;
     }
 
 out:
