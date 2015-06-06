@@ -1,0 +1,157 @@
+/**
+
+\page sync_tx_meta_bursts Synchronous Interface: Scheduled TX bursts
+
+This page describes how to use the bladeRF <a class="el"
+href="group___f_n___d_a_t_a___s_y_n_c.html">Synchronous Interface</a> to
+transmit bursts of samples at a specified timestamp. The timestamp is a
+free-running counter in the FPGA, incrementing at the sample rate specified by
+bladerf_set_sample_rate(), with each outgoing sample.
+
+<h2>Configuring the Synchronous Interface</h2>
+When timestamps are desired, one must enable metadata support. This is done
+through the `format` parameter of the bladerf_sync_config() function:
+
+\snippet sync_tx_meta.c sync_config
+
+Descriptions of the other parameters may be found in the
+<a class="el" href="sync_no_meta.html">Synchronous Interface: Basic usage without metadata</a>
+page.
+
+Remember to enable the module via bladerf_enable_module() <i>after</i> calling
+bladerf_sync_config(), and <i>before</i> attempting to call bladerf_sync_tx().
+
+Also ensure that bladerf_sync_config() has been called before attempting to read
+timestamps via bladerf_get_timestamp().
+
+<h2>Burst Transmissions</h2>
+The synchronous interface allows a burst of samples to be transmitted at
+a specified timestamp value. The hardware will output zeros after the burst.
+
+The general procedure for transmitting a burst is as follows
+
+<ul>
+    <li>Call bladerf_sync_tx() with ::bladerf_metadata.flags set to
+        ::BLADERF_META_FLAG_TX_BURST_START and ::bladerf_metadata.timestamp
+        set to the timestamp at which samples should be transmitted.
+
+    <li>Make successive bladerf_sync_tx() calls with ::bladerf_metadata.flags
+        set to 0. These samples will be contiguously appended to the
+        previous samples. The ::bladerf_metadata.timestamp field is not used
+        at this point; the caller does not need to worry about advancing it.
+
+    <li>Call bladerf_sync_tx() with the final samples in the burst and the
+       ::bladerf_metadata.flags set to ::BLADERF_META_FLAG_TX_BURST_END.
+       This will complete the burst, flush any remaining samples in the
+       synchronous interface's current internal buffer, and write the
+       buffer to the device. Similar to the previous step, any samples
+       provided at this points will be contiguously appended to prior
+       samples, and the ::bladerf_metadata.timestamp field will not be used.
+</ul>
+
+The above procedure is useful when the samples for the burst are actively
+being produced.
+
+If all the samples for the burst are available ahead of time, all of the above
+steps can be performed with a single function call, with:
+<ul>
+    <li>::bladerf_metadata.flags set to:
+        <code>(BLADERF_META_FLAG_TX_BURST_START | BLADERF_META_FLAG_TX_BURST_END)</code>
+    </li>
+
+    <li>
+    ::bladerf_metadata.timestamp set to the timestamp at which the samples
+    should be transmitted.
+    </li>
+</ul>
+
+The final samples in a burst should be zeros to ensure that the analog front-end
+DACs will be held at zeros between bursts. The synchronous interface takes care
+of this for the caller, but it is a good practice to include two or more zero
+samples when using the ::BLADERF_META_FLAG_TX_BURST_END flag.
+
+Note that when completing a burst with ::BLADERF_META_FLAG_TX_BURST_END, up
+to one of the synchronous interface's buffers may be flushed.  This is important
+to consider, since this defines the minimum value of the next timestamp
+can be provided.
+
+If small bursts need to be scheduled back to back, consider either manually
+zero-padding between them, or using the ::BLADERF_META_FLAG_TX_UPDATE_TIMESTAMP
+flag, as described in one of the following sections.
+
+<br>
+<h2>Waiting for TX to complete</h2>
+When scheduling transmissions, one must ensure the samples have reached the
+RF front end before shutting the stream down and disabling the TX module.
+
+This can be achieved by polling the TX timestamp and waiting for it to exceed
+the value of the last sample. Generally, one should wait some additional time
+to account for some group delay in the signal path.
+
+Below is an example `wait_for_timestamp()` function that provides this
+functionality, with a simple timeout:
+
+\snippet sync_tx_meta.c wait_for_timestamp
+
+<br>
+<h2>Scheduled Burst Example</h2>
+This example illustrates transmitting scheduled bursts, via a single function
+call.
+
+\snippet sync_tx_meta.c tx_meta_sched
+
+<br>
+<h2>Using the TX_NOW flag</h2>
+In some cases, one may wish to transmit a burst immediately while using the
+::BLADERF_FORMAT_SC16_Q11_META format. As shown in the below example, this
+is possible by setting the ::BLADERF_META_FLAG_TX_NOW flag.  When using this
+flag the ::bladerf_metadata.timestamp field is not used.
+
+\snippet sync_tx_meta.c tx_meta_now
+
+<br>
+<h2>Using the UPDATE_TIMESTAMP flag</h2>
+In some applications, flushing an entire buffer ::BLADERF_META_FLAG_TX_BURST_END
+may result in too long of a delay between bursts. As suggested earlier in this
+page, a user may instead manually zero pad their samples to achieve short
+discontinuities, or have libbladeRF do this for them using the
+::BLADERF_META_FLAG_TX_UPDATE_TIMESTAMP flag.
+
+The general usage of this is:
+<ul>
+    <li>
+    Set ::bladerf_metadata.timestamp to the desired start of transmission, and
+    ::bladerf_metadata.flags to ::BLADERF_META_FLAG_TX_BURST_START. Call
+    bladerf_sync_tx() with the initial samples in
+    the burst.
+    </li>
+
+    <li>
+    <i>Optional:</i> Call bladerf_sync_tx() with ::bladerf_metadata.flags as
+    needed to transmit samples that are contiguous with the previous samples. 
+    ::bladerf_metadata.timestamp is not used in this state.
+    </li>
+
+    <li>
+    Call bladerf_sync_tx() with ::bladerf_metadata.flags set to ::BLADERF_META_FLAG_TX_UPDATE_TIMESTAMP and ::bladerf_metadata.timestamp set to the desired timestamp. libbladeRF will schedule
+    the provided samples for the specified timestamp, manually zero-padding a buffer if needed.
+    </li>
+
+    <li>
+    <i>Optional:</i> Call bladerf_sync_tx() with ::bladerf_metadata.flags as
+    needed to transmit samples that are contiguous with the newly scheduled samples. 
+    ::bladerf_metadata.timestamp is not used in this state.
+    </li>
+
+    <li>
+    When done transmitting, call bladerf_sync_tx() with
+    ::bladerf_metadata.flags set to ::BLADERF_META_FLAG_TX_BURST_END and two or
+    more zero samples. This will ensure the analog front end DACs are held at a
+    zero value.
+    </li>
+</ul>
+
+The above procedure is shown in the below example:
+
+\snippet sync_tx_meta.c tx_meta_update
+*/

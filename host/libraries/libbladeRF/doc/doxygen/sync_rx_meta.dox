@@ -1,0 +1,87 @@
+/**
+
+\page sync_rx_meta    Synchronous Interface: RX with Metadata
+
+This page describes how to use the bladeRF <a class="el"
+href="group___f_n___d_a_t_a___s_y_n_c.html">Synchronous Interface</a> to
+receive samples with their associated timestamp, and scheduling reception at a
+specific timestamp. 
+
+The timestamp value is associated with free-running counter in the FPGA,
+incrementing at the sample rate specified by bladerf_set_sample_rate(), with
+each incoming sample.
+
+<br>
+<h2>Configuring the Synchronous Interface</h2>
+When timestamps are desired, one must enable metadata support. This is done
+through the `format` parameter of the bladerf_sync_config() function:
+
+\snippet sync_rx_meta.c sync_config
+
+Descriptions of the other parameters may be found in the
+<a class="el" href="sync_no_meta.html">Synchronous Interface: Basic usage without metadata</a>
+page.
+
+Remember to enable the module via bladerf_enable_module() <i>after</i> calling
+bladerf_sync_config(), and <i>before</i> attempting to call bladerf_sync_rx().
+
+Also ensure that bladerf_sync_config() has been called before attempting to read
+timestamps via bladerf_get_timestamp().
+
+When using the ::BLADERF_FORMAT_SC16_Q11_META format, a ::bladerf_metadata
+structure must be passed to bladerf_sync_rx(). One should zeroize the contents
+of this structure prior to using it.
+
+<br>
+<h2>Receiving Samples Immediately with Timestamps</h2>
+
+As shown in the following snippet, the ::bladerf_metadata structure (`meta`) is
+first zeroed out, and then the metadata flags (`meta.flags`) are set to
+::BLADERF_META_FLAG_RX_NOW. This flag denotes that RX samples should returned
+immediately, rather than scheduled for a specific RX timestamp.
+
+Once bladerf_sync_rx() returns, the ::bladerf_metadata.timestamp field may
+be read (`meta.timestamp`). Under normal conditions, this timestamp is
+associated with the first sample in the provided buffer, with the remaining
+samples in the buffer being contiguous (i.e., there is no timestamp gap between
+them). The ::bladerf_metadata.actual_count field should indicate
+that the requested number of samples have been read into the supplied buffer.
+
+However, if an RX overrun has occurred, as indicated by the
+::BLADERF_META_STATUS_OVERRUN bit being set in the ::bladerf_metadata.status
+field (`meta.status`), a sample discontinuity will have occurred. Generally,
+this overrun condition may occur if the time between calls to bladerf_sync_rx()
+is too long, or too few/small buffers were provided to bladerf_sync_config().
+
+In the case of an overrun, the ::bladerf_metadata's `actual_count` value
+is set to the number of contiguous samples read into the supplied buffer.
+This value will be less than the requested number of samples, so be sure
+not to read past this number of samples.
+
+
+\snippet sync_rx_meta.c rx_meta_now_example
+
+<br>
+<h2>Receiving Samples at a Specified Timestamps</h2>
+
+To schedule reception at a specific timestamp, set the ::bladerf_metadata.flags
+field to 0, and write the desired timestamp to the ::bladerf_metadata.timestamp field.
+
+A call to bladerf_sync_rx() may then be used to read the specified number of samples
+at the timestamp indicated in metadata structure. Ensure that the timeout provided to
+bladerf_sync_rx() is sufficiently large, such that the function call does not time
+out before the desired timestamp occurs.
+
+When scheduling the first RX, it is generally helpful to first read the module's
+timestamp counter and advance it by a known duration. This is shown in the below
+example code.
+
+Note that the caller is responsible for advancing the timestamp field each
+time bladerf_sync_rx() is called.
+
+\snippet sync_rx_meta.c rx_meta_sched_example
+
+The description of the ::BLADERF_META_STATUS_OVERRUN flag and the the
+::bladerf_metadata.actual_count field from the previous section applies here as well.
+
+*/

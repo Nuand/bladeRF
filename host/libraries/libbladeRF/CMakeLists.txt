@@ -437,8 +437,8 @@ if(BUILD_LIBBLADERF_DOCUMENTATION)
                  EXPECTED_HASH SHA256=04ed0e0906bb7683b162c7d4ec3ee853325c76082f20d936b89cc1b444bad13d
                  TLS_VERIFY ON
                  STATUS DOWNLOAD_STATUS_LIST
-            ) 
-        
+            )
+
             list(GET DOWNLOAD_STATUS_LIST 0 DOWNLOAD_STATUS)
             if(NOT DOWNLOAD_STATUS EQUAL 0)
                 message(FATAL_ERROR "Failed to download logo image. Set -DSKIP_DOWNLOADS=Yes to continue without it.")

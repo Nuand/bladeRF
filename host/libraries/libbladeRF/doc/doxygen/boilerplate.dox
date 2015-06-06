@@ -1,0 +1,121 @@
+/**
+
+\page boilerplate Device Configuration
+
+This page presents an overview on how to configure a bladeRF device via the
+libbladeRF API. A complete boilerplate code listing may be found at the end of this page.
+
+<h2>Acquiring a device handle</h2>
+
+First, one must acquire a handle to a bladeRF device. Four common approaches to this are:
+<ul>
+<li>Open the first available device.</li>
+<li>Open a device with a specified serial number.</li>
+<li>Open a device with the specified USB bus and address values.</li>
+<li>Choose a device from a list of all available devices.</li>
+</ul>
+
+The first three approaches can be implemented via a call to bladerf_open() or
+bladerf_open_with_devinfo().  Both of these functions offer the same functionality,
+but through a slightly different interface. Note that per the documentation
+of each of these functions, NULL can be specified as one of the arguments to
+specify, "open any available bladeRF device."
+
+bladerf_open() takes a specially formatted "device identifier" string as an
+argument. This provides a simple means to give the user full control over how
+the desired device is specified, perhaps through a command-line argument or GUI
+text field.
+
+bladerf_open_with_devinfo() uses a ::bladerf_devinfo structure to identify the
+device to open. This is generally a better choice when programatically deciding
+which device to open, as it alleviates the need to craft a device identifier
+string. This approach is taken in the below snippet, where argv[1] may contain
+a serial number string.  In the case when argc < 2, the `dev_info.serial` field
+is left as its wildcard ("any value") field from the bladerf_init_devinfo() call.
+
+\snippet boilerplate.c Opening a device
+
+The last approach in the beginning of this section is a good choice for
+programs that need to present a list of available devices to a user. A list of
+connected bladeRF devices may be retrieved via bladerf_get_device_list(). The
+contents of each ::bladerf_devinfo could then be presented to a user for
+selection, and the desired device's ::bladerf_devinfo can then be passed to
+bladerf_open_with_devinfo(). The device list can then be freed using
+bladerf_free_device_list().
+
+<br>
+
+<h2>Configuring Device parameters</h2>
+After acquiring a handle to a bladeRF device, the following must be configured
+prior to transmitting or receiving samples.
+
+<ul>
+    <li>Frequency</li>
+    <li>Gains</li>
+    <li>Sample Rate</li>
+    <li>Bandwidth</li>
+</ul>
+
+Note that all of the above are configured on a per-module (i.e, RX or TX) basis.
+
+<h3> Selecting Appropriate Values </h3>
+
+To better understand each of the available gains controls, see Figures 1, 2, and
+3 in the <a class="el" href="http://www.limemicro.com/download/lms6002dr2-datasheet-1.2r0.pdf">LMS6002D datasheet</a>.  In general, one stage should be increased prior
+to increasing the following stage.  For RX, increase the LNA gain, followed by
+RX VGA1, then RX VGA2.  Similarly, increase TX VGA1 first, then TX VGA2.
+
+The selection of sample rate and bandwidth are tightly coupled. In general, the
+sample rate must be high enough to ensure that all desired signals can be
+sampled without aliasing. However, note that the LMS6002D provides a discrete
+set of bandwidth options. This implies that one's sample rate selection will
+largely be influenced by the bandwidth option that most closely matches the
+desired value.
+
+The bandwidth parameter controls the LMS6002D's RF front-end (RFFE) low-pass
+filter (LPF) setting. This should be configured to be less than the sample rate
+to ensure that the filter has reached maximum attenuation before reaching the
+desired sample rate value. Otherwise, noise and aliases may "fold"
+into the frequency range of interest.
+
+Consult the plots in Figure 5 of the <a class="el" href="http://www.limemicro.com/download/lms6002dr2-datasheet-1.2r0.pdf">LMS6002D datasheet</a>
+for the RX/TX filter responses.  Note that the filter ranges are listed in the datasheet
+are listed in terms of 0 to Fs/2, whereas bladerf_set_bandwidth() assumes the
+total bandwidth (-Fs/2 to Fs/2) is being specified. Consider the plot for the 0.75
+MHz filter (which corresponds to 1.5 MHz of total BW). At 1 MHz (2 MHZ of total
+BW), this filter offers over -45 dB of rejection.  At ~1.8 MHz (3.6 MHz
+of total BW), this filter offers over -60 dB of rejection.
+
+Therefore, when calling bladerf_set_bandwidth() with a value of 1.5 MHz, a
+sample rate 2 MHz would be a preferred minimum, and a sample rate >= 3.6 MHz
+would be an even better choice.
+
+<h3>Applying a set of values</h3>
+It is common for a program to apply all of these settings during its initialization.
+Therefore, the example in this page groups these parameters into a structure and then
+uses a `configure_module()` helper function to apply them:
+
+\snippet boilerplate.c struct module_config
+
+As shown in the below implementation of `configure_module()`, the general procedure
+for applying a parameter involves calling the corresponding function and checking
+the return value.
+
+Note that some functions, such as bladerf_set_sample_rate() and bladerf_set_bandwidth(),
+have optional `actual` output parameters that are set to NULL in this example. These
+`actual` values are used to provide feedback about the differences between the requested
+value and the actual value applied. Some error may occur in converting the sample
+rate into a rational fraction, as required by the underlying hardware.  As previously,
+mentioned, the LMS600D provides a discrete set of RFFE LPF bandwidth settings.
+bladerf_set_bandwidth() will choose the closest bandwidth setting, and report this
+via the optional `actual` parameter.
+
+\snippet boilerplate.c configure_module
+
+
+<br>
+<h2>Complete listing</h2>
+
+\snippet boilerplate.c Full listing
+
+*/

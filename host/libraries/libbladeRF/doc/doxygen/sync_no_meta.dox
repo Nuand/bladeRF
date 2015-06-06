@@ -1,0 +1,113 @@
+/**
+
+\page sync_no_meta bladeRF Synchronous Interface: Basic Usage Without Metadata
+
+This page describes how to use the bladeRF <a class="el"
+href="group___f_n___d_a_t_a___s_y_n_c.html">Synchronous Interface</a> to
+transmit and receive samples.
+
+The example listed here configures and uses both the RX and TX modules. To use
+just one or the other, simply remove the code for the unneeded module.
+
+<h2>Initialization and Configuration</h2>
+
+<h3>User buffers</h3>
+First, one must allocate any "working buffers" in which samples will be stored.
+These are the `rx_samples` and `tx_samples` buffers shown in the below snippet.
+The `samples_len` variable defines the length of these buffers, in units of
+samples.  Remember, when using the SC16 Q11 format, one sample consists of two
+`int16_t` values: I and Q.
+
+\snippet sync_rxtx.c user_buffers
+
+<h3>Configuring the Synchronous Interface</h3>
+libbladeRF's synchronous interface maintains its own set of internal buffers,
+which it uses to keep an underlying asynchronous data stream running. This
+alleviates the need for the user to handle asynchronous callbacks and managing
+buffer transfers. Instead, the synchronous interface simply copies data
+to/from the aforementioned "user" buffers, for arbitrary request lengths.
+
+It is important to note, however, that users of the synchronous interface
+should still be conscious of the workings of the underlying <a class="el"
+href="group___f_n___d_a_t_a___a_s_y_n_c.html">Asynchronous Interface</a>.
+
+Before making calls to bladerf_sync_rx() and bladerf_sync_tx(), one must
+configure the underlying stream using the bladerf_sync_init() function,
+as shown in the following snippet.
+
+If one forgets to configure the synchronous interface before attempting
+to call bladerf_sync_rx() or bladerf_sync_tx(), a ::BLADERF_ERR_INVAL status
+will be returned.
+
+\snippet sync_rxtx.c sync_init
+
+The `buffer_size` parameter configures the size of the buffers, in units of
+samples, that are sent to/from the hardware via the USB interface. These must
+be a multiple of 1024. Smaller values will help minimize latency, but will
+require that the user can process samples quickly. If one does not have
+low-latency constraints, buffer sizes of 8192 or 16384 are generally good
+starting points.
+
+The `num_buffers` parameter defines how many internal samples buffers should be
+allocated and used by the interface.  A large number of buffers ensures that
+the buffers can continue to be filled/consumed while the user operates
+on samples, with a potential trade-off of increased latency. If this number
+is too small one may risk overrunning RX buffers, or underrunning TX buffers.
+
+The `num_transfers` parameter defines how many of these buffers may be
+in-flight at any given point in time. As a rule of thumb, a value that
+is less than or equal to half the number of buffers is a good starting value.
+Note that the maximum value may be limited by the underlying (USB) layer.
+It is generally not necessary (or sometimes even possible) to exceed a
+value of 32 transfers.
+
+The `timeout_ms` parameter defines a maximum amount of time that is
+allowed between completion of the synchronous interface's underlying stream
+buffers. Take care to ensure that this value is sufficiently large, considering
+the sample rate being used and the desired size of stream buffers.
+
+<h3>Enabling and Disabling modules Modules</h3>
+After configuring the synchronous interface, one must also enable
+the RF front end of the associated module(s), via bladerf_enable_module():
+
+\snippet sync_rxtx.c enable_modules
+
+<h2>Receiving and Transmitting Samples</h2>
+The bladerf_sync_rx() and bladerf_sync_tx() functions are used to receive
+and transmit an arbitrary number of samples.
+
+Remember that when transmitting, the samples will only be sent to the hardware
+once an underlying stream buffer has been filled (whose size was defined by the
+`buffer_size` parameter provided to bladerf_sync_config()).  Therefore, when
+transmitting a small number of samples, one may need to zero-pad or configure
+the interface to use small buffers.
+
+Below is an example loop that receives samples, processes them, and occasionally
+transmits a response.
+
+Since metadata is not being used, a `NULL` pointer is provided to the ::bladerf_metadata
+parameter of the bladerf_sync_rx and bladerf_sync_tx calls.
+
+The timeout (in ms) parameter defines how long bladerf_sync_rx() and bladerf_sync_tx()
+may block.  This value should be greater than the timeout provided to bladerf_sync_config()
+to ensure these functions do not time out before the underlying data stream times out
+(or completes).
+
+\snippet sync_rxtx.c rxtx_loop
+
+At the end of this loop, a `usleep()` call is made to ensure buffers of transmitted samples
+finally reach the RF front end. Note that the lower bound this delay is determined by the
+number of buffers that may have been filled by bladerf_sync_tx() and the sample rate.
+
+<h2>Deinitializing and De-allocating Resources</h2>
+When finished using a module, bladerf_enable_module() may be used to turn
+off the associated RF front. This will also de-initialize and deallocate
+the underlying data stream associated with the module.
+
+\snippet sync_rxtx.c disable_modules
+
+<br><hr><br>
+<h2>Complete listing</h2>
+\snippet sync_rxtx.c example_snippet
+
+*/

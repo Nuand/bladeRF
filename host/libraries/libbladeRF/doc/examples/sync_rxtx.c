@@ -35,7 +35,7 @@
 
 /* Just retransmit the received samples */
 bool do_work(int16_t *rx, unsigned int rx_len,
-             int16_t *tx, unsigned int tx_len)
+             bool *have_tx_data, int16_t *tx, unsigned int tx_len)
 {
     static unsigned int call_no = 0;
 
@@ -46,25 +46,74 @@ bool do_work(int16_t *rx, unsigned int rx_len,
 }
 
 /** [example_snippet] */
+/** [sync_init] */
+static int init_sync(struct bladerf *dev)
+{
+    int status;
+
+    /* These items configure the underlying asynch stream used by the sync
+     * interface. The "buffer" here refers to those used internally by worker
+     * threads, not the user's sample buffers.
+     *
+     * It is important to remember that TX buffers will not be submitted to
+     * the hardware until `buffer_size` samples are provided via the
+     * bladerf_sync_tx call.  Similarly, samples will not be available to
+     * RX via bladerf_sync_rx() until a block of `buffer_size` samples has been
+     * received.
+     */
+    const unsigned int num_buffers   = 16;
+    const unsigned int buffer_size   = 8192;  /* Must be a multiple of 1024 */
+    const unsigned int num_transfers = 8;
+    const unsigned int timeout_ms    = 3500;
+
+
+    /* Configure both the device's RX and TX modules for use with the synchronous
+     * interface. SC16 Q11 samples *without* metadata are used. */
+    status = bladerf_sync_config(dev,
+                                 BLADERF_MODULE_RX,
+                                 BLADERF_FORMAT_SC16_Q11,
+                                 num_buffers,
+                                 buffer_size,
+                                 num_transfers,
+                                 timeout_ms);
+
+    if (status != 0) {
+        fprintf(stderr, "Failed to configure RX sync interface: %s\n",
+                bladerf_strerror(status));
+        return status;
+    }
+
+    status = bladerf_sync_config(dev,
+                                 BLADERF_MODULE_TX,
+                                 BLADERF_FORMAT_SC16_Q11,
+                                 num_buffers,
+                                 buffer_size,
+                                 num_transfers,
+                                 timeout_ms);
+
+    if (status != 0) {
+        fprintf(stderr, "Failed to configure TX sync interface: %s\n",
+                bladerf_strerror(status));
+    }
+
+    return status;
+}
+
+/** [sync_init] */
+
 int sync_rx_example(struct bladerf *dev)
 {
     int status, ret;
     bool done = false;
+    bool have_tx_data = false;
+
+    /** [user_buffers] */
 
     /* "User" samples buffers and their associated sizes, in units of samples.
      * Recall that one sample = two int16_t values. */
     int16_t *rx_samples = NULL;
     int16_t *tx_samples = NULL;
     const unsigned int samples_len = 10000; /* May be any (reasonable) size */
-
-    /* These items configure the underlying asynch stream used by the sync
-     * interface. The "buffer" here refers to those used internally by worker
-     * threads, not the `samples` buffer above. */
-    const unsigned int num_buffers = 16;
-    const unsigned int buffer_size = 8192;  /* Must be a multiple of 1024 */
-    const unsigned int num_transfers = 8;
-    const unsigned int timeout_ms  = 3500;
-
 
     /* Allocate a buffer to store received samples in */
     rx_samples = malloc(samples_len * 2 * sizeof(int16_t));
@@ -81,38 +130,16 @@ int sync_rx_example(struct bladerf *dev)
         return BLADERF_ERR_MEM;
     }
 
-    /* Configure both the device's RX and TX modules for use with the synchronous
-     * interface. SC16 Q11 samples *without* metadata are used. */
-    status = bladerf_sync_config(dev,
-            BLADERF_MODULE_RX,
-            BLADERF_FORMAT_SC16_Q11,
-            num_buffers,
-            buffer_size,
-            num_transfers,
-            timeout_ms);
+    /** [user_buffers] */
 
+    /* Initialize synch interface on RX and TX modules */
+    status = init_sync(dev);
     if (status != 0) {
-        fprintf(stderr, "Failed to configure RX sync interface: %s\n",
-                bladerf_strerror(status));
         goto out;
     }
 
-    status = bladerf_sync_config(dev,
-                                 BLADERF_MODULE_TX,
-                                 BLADERF_FORMAT_SC16_Q11,
-                                 num_buffers,
-                                 buffer_size,
-                                 num_transfers,
-                                 timeout_ms);
+    /** [enable_modules] */
 
-    if (status != 0) {
-        fprintf(stderr, "Failed to configure TX sync interface: %s\n",
-                bladerf_strerror(status));
-        goto out;
-    }
-
-    /* We must always enable the modules *after* calling bladerf_sync_config(),
-     * and *before* attempting to RX or TX samples. */
     status = bladerf_enable_module(dev, BLADERF_MODULE_RX, true);
     if (status != 0) {
         fprintf(stderr, "Failed to enable RX module: %s\n",
@@ -127,22 +154,23 @@ int sync_rx_example(struct bladerf *dev)
         goto out;
     }
 
-    /* Receive samples and do work on them and then transmit a response.
-     *
-     * Note we transmit more than `buffer_size` samples to ensure that our
-     * samples are written to the FPGA. (The samples are sent when the
-     * synchronous interface's internal buffer of `buffer_size` samples is
-     * filled.) This is generally not nececssary if you are continuously
-     * streaming TX data. Otherwise, you may need to zero-pad your TX data to
-     * achieve this.
-     */
+    /** [enable_modules] */
+    /** [rxtx_loop] */
+
     while (status == 0 && !done) {
+
+        /* Receive samples */
         status = bladerf_sync_rx(dev, rx_samples, samples_len, NULL, 5000);
         if (status == 0) {
-            done = do_work(rx_samples, samples_len,
-                           tx_samples, samples_len);
 
-            if (!done) {
+            /* Process these samples, and potentially produce a response
+             * to transmit */
+            done = do_work(rx_samples, samples_len,
+                           &have_tx_data, tx_samples, samples_len);
+
+            if (!done && have_tx_data) {
+
+                /* Transmit a response */
                 status = bladerf_sync_tx(dev, tx_samples, samples_len,
                                          NULL, 5000);
 
@@ -158,13 +186,17 @@ int sync_rx_example(struct bladerf *dev)
     }
 
     if (status == 0) {
-        /* Wait a few seconds for any remaining TX samples to finish */
+        /* Wait a few seconds for any remaining TX samples to finish
+         * reaching the RF front-end */
         usleep(2000000);
     }
 
+    /** [rxtx_loop] */
 
 out:
     ret = status;
+
+    /** [disable_modules] */
 
     /* Disable RX module, shutting down our underlying RX stream */
     status = bladerf_enable_module(dev, BLADERF_MODULE_RX, false);
@@ -180,9 +212,12 @@ out:
                 bladerf_strerror(status));
     }
 
+
     /* Free up our resources */
     free(rx_samples);
     free(tx_samples);
+
+    /** [disable_modules] */
 
     return ret;
 }

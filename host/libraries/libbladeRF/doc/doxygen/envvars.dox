@@ -1,0 +1,78 @@
+/**
+\page envvars Environment Variables
+
+libbladeRF uses a few environment variables to allow users and developers
+to modify behavior at runtime. These enviroment variables should be treated
+as diagnostic features, rather than part of the API. They may be modified
+or removed in future versions of the library.
+
+<h3>BLADERF_LOG_LEVEL</h3>
+This enviroment variable controls the default log level setting, which is
+usually ::BLADERF_LOG_LEVEL_INFO.
+
+This may be useful when a program using libbladeRF is encountering errors.
+Setting the log level to `debug` or `verbose` often yields information that
+allows the reason for failures to be identified.
+
+Note that this environment variable may not help if a program overrides the
+default log level by calling bladerf_log_set_verbosity().
+
+The values supplied to this environment variable correspond directly with
+the ::bladerf_log_level values of the same name. The available values are
+listed below, and are handled in a case-insensitive manner.
+
+<ul>
+    <li>critical</li>
+    <li>error</li>
+    <li>warning</li>
+    <li>info</li>
+    <li>debug</li>
+    <li>verbose</li>
+</ul>
+
+<br>
+<h3>BLADERF_SEARCH_DIR</h3>
+Usually, libbladeRF searches the following directories for files,
+such as FPGA bitstreams for software-based autoloading.
+
+<b>Linux and OSX:</b>
+<ul>
+    <li>The current working directory</li>
+    <li>The directory containing the program being executed</li>
+    <li><code>~/.config/Nuand/bladeRF</code></li>
+    <li><code>~/.Nuand/bladeRF</code></li>
+    <li><code>/etc/Nuand/bladeRF</code></li>
+    <li><code>/usr/share/Nuand/bladeRF</code></li>
+</ul>
+
+<b>Windows:</b>
+<ul>
+    <li>The current working directory</li>
+    <li>The directory containing the program being executed</li>
+    <li><code>C:\\Users\\USERNAME\\AppData\\Roaming\\Nuand\\bladeRF</code>
+        (via <a class="el" href="https://msdn.microsoft.com/en-us/library/windows/desktop/dd378457%28v=vs.85%29.aspx">FOLDERID_RoamingAppData</a>)</li>
+    <li>The installation path, via <code>HKEY_LOCAL_MACHINE\\Software\\Nuand LLC\\Path</code></li>
+</ul>
+
+This environment variable may be used to specify a path to search prior
+to those listed above.
+
+<br>
+<h3>BLADERF_FORCE_NO_FPGA_PRESENT</h3>
+Defining this forces libbladeRF to behave as if it does not detect that
+an FPGA is loaded. This prevents it from attempting to initialize the device.
+
+This was added as a means to allow users to remove an incompatible FPGA
+from flash, should they have forgotten to do so prior to updating libbladeRF
+and FX3 firmware.
+
+<br>
+<h3>BLADERF_SKIP_FPGA_SIZE_CHECK</h3>
+Defining this overrides a check for a "sane" FPGA size when writing an FPGA to
+flash, and is only intended for use with testing. Users should never
+need to use this.
+
+If the size check is reporting an error, the most likely
+scenario is that in incorrect or corrupted FPGA bitstream is being provided.
+
+*/

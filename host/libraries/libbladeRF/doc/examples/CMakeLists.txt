@@ -24,3 +24,6 @@ target_link_libraries(libbladeRF_example_sync_tx_meta ${LIBS})
 
 add_executable(libbladeRF_example_open_via_serial open_via_serial.c example_common.c)
 target_link_libraries(libbladeRF_example_open_via_serial ${LIBS})
+
+add_executable(libbladeRF_example_boilerplate boilerplate.c)
+target_link_libraries(libbladeRF_example_boilerplate ${LIBS})

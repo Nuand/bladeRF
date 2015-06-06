@@ -194,7 +194,7 @@ int CALL_CONV bladerf_open_with_devinfo(struct bladerf **device,
  * available.
  *
  * The general form of the device identifier string is;
- * @code
+ * @code{.txt}
  *      <backend>:[device=<bus>:<addr>] [instance=<n>] [serial=<serial>]
  * @endcode
  *
@@ -225,6 +225,19 @@ int CALL_CONV bladerf_open_with_devinfo(struct bladerf **device,
  *      - Nth instance encountered, 0-indexed
  *   - serial=\<serial\>
  *      - Device's serial number.
+ *
+ * Below is an example of how to open a device with a specific serial
+ * number, using any avaiable backend supported by libbladeRF:
+ *
+ * @code {.c}
+ * struct bladerf *dev;
+ * int status = bladerf_open(&dev, "*:serial=f12ce1037830a1b27f3ceeba1f521413");
+ * if (status != 0) {
+ *      fprintf(stderr, "Unable to open device: %s\n",
+ *              bladerf_strerror(status));
+ *      return status;
+ * }
+ * @endcode
  *
  * @param[out]  device             Update with device handle on success
  * @param[in]   device_identifier  Device identifier, formatted as described
@@ -1686,47 +1699,24 @@ int CALL_CONV bladerf_get_stream_timeout(struct bladerf *dev,
  *
  * These functions are thread-safe.
  *
- * <H3>RX and TX without metadata </H3>
- * Below is the general process for using this interface to transmit and receive
- * SC16 Q11 samples, without metadata.
- *
- * @snippet sync_rxtx.c example_snippet
- *
- * To run in a half-duplex mode of operation, simply remove the RX or TX
- * specific portions from the above example.
- *
- *
- * <H3>RX with metadata</H3>
- * By using the ::BLADERF_FORMAT_SC16_Q11_META format with the synchronous
- * interface, one can read the timestamp associated with a received buffer of
- * data, or schedule to read a specific number of samples at a desired
- * timestamp.  Additionally, the metadata indicates if an overrun was detected,
- * and the number of samples actually copied into the buffer before the
- * discontinuity caused by the overrun.
- *
- * @snippet sync_rx_meta.c example_snippet
- *
- * <H3>TX with metadata</H3>
- * Using the synchronous interface with the ::BLADERF_FORMAT_SC16_Q11_META
- * format allows for bursts of samples to be scheduled for transmissions.
- * Between these bursts, the device transmits I=0, Q=0.
- *
- * To begin a burst, call bladerf_sync_tx() with the metadata's
- * ::BLADERF_META_FLAG_TX_BURST_START flag set, the desired timestamp set in the
- * bladerf_metadata structure, and any number of samples.
- *
- * You may then continue calling bladerf_sync_tx(), without needing to update
- * the timestamp field in the bladerf_metadata structure. For these calls,
- * no flags should be set.
- *
- * On the final bladerf_sync_tx() call for the burst, set the
- * ::BLADERF_META_FLAG_TX_BURST_END flag, and ensure the final two samples
- * provided to this function are 0.
- *
- * It is valid to send the entire burst with a single function call, with both
- * flags set.
- *
- * @snippet sync_tx_meta.c example_snippet
+ * The following pages provide additional information and example usage:
+ *  <ul>
+ *      <li>
+ *          <a class="el" href="sync_no_meta.html">
+ *              Synchronous Interface: Basic usage without metadata
+ *          </a>
+ *      </li>
+ *      <li>
+ *          <a class="el" href="sync_rx_meta.html">
+ *             Synchronous Interface: RX with metadata
+ *          </a>
+ *      </li>
+ *      <li>
+            <a class="el" href="sync_tx_meta_bursts.html">
+ *             Synchronous Interface: TX with metadata
+ *          </a>
+ *      </li>
+ *  </ul>
  *
  * @{
  */

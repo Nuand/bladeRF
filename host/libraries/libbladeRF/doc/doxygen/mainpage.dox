@@ -1,5 +1,109 @@
 /**
-  @mainpage
+@mainpage
 
-  This library supports the Nuand bladeRF. See our <a class="el" href="https://www.nuand.com">website</a> and <a class="el" href="https://github.com/nuand/bladerf">GitHub project page</a> for more information.
+<h1>Introduction</h1>
+
+This library supports the <a class="el" href="https://www.nuand.com">Nuand bladeRF</a>
+USB 3.0 Software Defined Radio (SDR). It is intended to support developers looking to:
+<ul>
+    <li>
+    Build both generic SDR software and domain-specific applications atop of the bladeRF.
+    </li>
+    <li>
+    Evaluate and experiment with the hardware, using routines that provide
+    low-level access to device settings and registers.
+    </li>
+</ul>
+
+The libbladeRF source code is hosted on our <a class="el" href="https://github.com/Nuand/bladeRF">GitHub project page</a>,
+and the latest release of this documentation may be found <a class="el" href="https://www.nuand.com/libbladeRF-doc">here</a>.
+
+A few avenues for support are available, including the <a class="el" href="https://wwww.nuand.com/forums">Nuand forums</a>,
+the \#bladeRF IRC channel on <a class="el" href="https://freenode.net">Freenode</a>, or
+<a class="el" href="#" onclick="location.href='mai'+'lto:'+'bla'+'de'+'RF@'+'Nu'+'and'+'.c'+'om'; return false;">email</a>.
+The forums are generally preferred over email because they allow a publicly
+accessible knowledge base of common questions and answers to be developed.
+
+Bugs, both in libbladeRF and this documentation, may be reported on the
+<a class="el" href="https://www.github.com/Nuand/bladeRF/issues">GitHub issue tracker</a>
+
+<h1>Application Programming Interface</h1>
+The libbladeRF API provides the ability to:
+<ul>
+    <li>
+    Query and connect to bladeRF devices connected to a system
+    </li>
+    <li>
+    Configure device properties, such as:
+        <ul>
+            <li>Frequency tuning</li>
+            <li>Hardware Low Pass Filter (LPF) bandwidth</li>
+            <li>Sample rate</li>
+            <li>Gain stages</li>
+            <li>Expansion board settings</li>
+        </ul>
+    </li>
+    <li>
+    Read device attributes, including:
+        <ul>
+            <li>Serial number and calibration values</li>
+        <li>Firmware and FPGA version numbers</li>
+        </ul>
+    </li>
+    <li>
+    Steam sample data through either a simple synchronous interface, or a
+    callback-based asynchronous interface.
+    </li>
+    <li>
+    Access and manipulate low-level parameters and device registers.
+    </li>
+    <li>
+    Load FPGA images
+    </li>
+    <li>
+    Update FX3 firmware
+    </li>
+    <li>
+    Recover from FX3 bootloader mode
+    </li>
+
+</ul>
+
+The <a class="el" href="modules.html">Modules</a> presents the various groups
+of API functions that correspond to the above features.
+
+Most functions return an integer <a class="el" href="group___r_e_t_c_o_d_e_s.html">error code</a>
+that indicates success or failure. As commonly found in *nix system libraries,
+a status value of 0 is used to indicate success.Some functions provide a value
+greater than or equal to 0 upon success, such as a count value.
+
+Negative values are used to specify the type of error that occurred. These
+values may be passed to bladerf_strerror() to retrieve a
+<code>const char*</code> message suitable for printing in error messages.
+
+<h1>Additional Topics and Examples</h1>
+
+<ul>
+    <li>
+    <a class="el" href="boilerplate.html">Device configuration boilerplate</a>
+    </li>
+    <li>
+    RX and TX via the Synchronous Interface
+    </li>
+    <ul>
+        <li>
+        <a class="el" href="sync_no_meta.html">Basic usage without metadata</a>
+        </li>
+        <li>
+        <a class="el" href="sync_rx_meta.html">RX with metadata</a>
+        </li>
+        <li>
+        <a class="el" href="sync_tx_meta_bursts.html">TX with metadata</a>
+        </li>
+    </ul>
+    <li>
+        <a class="el" href="envvars.html">Environment variables</a>
+    </li>
+</ul>
+
 */
