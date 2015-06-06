@@ -31,6 +31,11 @@ I: engidea
 G: Engidea
 D: si5338 sample rate functionality, misc. bugfixes
 
+N: Edward O'Callaghan
+E: eocallaghan@alterapraxis.com
+I: funfunctor
+D: Haskell libbladeRF binding, NixOS & RedHat packaging, misc. bugfixes
+
 N: Robert Ghilduta
 E: robert.ghilduta@nuand.com
 F: robertghilduta
