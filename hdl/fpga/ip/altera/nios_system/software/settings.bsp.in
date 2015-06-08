@@ -4,7 +4,7 @@
         <BspVersion>default</BspVersion>
         <BspGeneratedTimeStamp>Jun 8, 2013 3:36:00 PM</BspGeneratedTimeStamp>
         <BspGeneratedUnixTimeStamp>1370730960890</BspGeneratedUnixTimeStamp>
-        <BspGeneratedLocation>Z:\work\release\hdl\fpga\ip\altera\nios_system\software\lms_spi_controller_bsp</BspGeneratedLocation>
+        <BspGeneratedLocation>Z:\work\release\hdl\fpga\ip\altera\nios_system\software\bladeRF_nios_bsp</BspGeneratedLocation>
         <BspSettingsFile>settings.bsp</BspSettingsFile>
         <SopcDesignFile>..\..\nios_system.sopcinfo</SopcDesignFile>
         <JdiFile>default</JdiFile>

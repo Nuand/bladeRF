@@ -11,7 +11,7 @@ set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/a
 set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/rx_meta_fifo/rx_meta_fifo.qip]]
 
 # Explicitly include Nios mem_init
-set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/nios_system/software/lms_spi_controller/mem_init/meminit.qip]]
+set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/nios_system/software/bladeRF_nios/mem_init/meminit.qip]]
 
 # Implementation details
 set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/tan_table.vhd]]

@@ -151,11 +151,11 @@ echo "    Building BSP and sample application..."
 echo "##########################################################################"
 echo ""
 
-pushd $nios_system/software/lms_spi_controller_bsp
+pushd $nios_system/software/bladeRF_nios_bsp
 cp ../settings.bsp.in ./settings.bsp
 nios2-bsp-generate-files --settings=settings.bsp --bsp-dir=.
 make
-cd ../lms_spi_controller
+cd ../bladeRF_nios
 make clean all
 
 # Encountered issues on Ubuntu 13.04 with the SDK's scripts not resolving
