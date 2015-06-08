@@ -22,35 +22,6 @@
 #ifndef _BLADERF_FIRMWARE_COMMON_H_
 #define _BLADERF_FIRMWARE_COMMON_H_
 
-#define BLADERF_IOCTL_BASE      'N'
-#define BLADE_QUERY_VERSION     _IOR(BLADERF_IOCTL_BASE, 0, struct bladerf_fx3_version)
-#define BLADE_QUERY_FPGA_STATUS     _IOR(BLADERF_IOCTL_BASE, 1, unsigned int)
-#define BLADE_BEGIN_PROG        _IOR(BLADERF_IOCTL_BASE, 2, unsigned int)
-#define BLADE_END_PROG          _IOR(BLADERF_IOCTL_BASE, 3, unsigned int)
-#define BLADE_CHECK_PROG        _IOR(BLADERF_IOCTL_BASE, 4, unsigned int)
-#define BLADE_RF_RX             _IOR(BLADERF_IOCTL_BASE, 5, unsigned int)
-#define BLADE_RF_TX             _IOR(BLADERF_IOCTL_BASE, 6, unsigned int)
-#define BLADE_LMS_WRITE         _IOR(BLADERF_IOCTL_BASE, 20, unsigned int)
-#define BLADE_LMS_READ          _IOR(BLADERF_IOCTL_BASE, 21, unsigned int)
-#define BLADE_SI5338_WRITE      _IOR(BLADERF_IOCTL_BASE, 22, unsigned int)
-#define BLADE_SI5338_READ       _IOR(BLADERF_IOCTL_BASE, 23, unsigned int)
-#define BLADE_VCTCXO_WRITE      _IOR(BLADERF_IOCTL_BASE, 24, unsigned int)
-#define BLADE_GPIO_WRITE        _IOR(BLADERF_IOCTL_BASE, 25, unsigned int)
-#define BLADE_GPIO_READ         _IOR(BLADERF_IOCTL_BASE, 26, unsigned int)
-#define BLADE_GET_SPEED         _IOR(BLADERF_IOCTL_BASE, 27, unsigned int)
-#define BLADE_GET_BUS           _IOR(BLADERF_IOCTL_BASE, 28, unsigned int)
-#define BLADE_GET_ADDR          _IOR(BLADERF_IOCTL_BASE, 29, unsigned int)
-
-#define BLADE_FLASH_READ        _IOR(BLADERF_IOCTL_BASE, 40, unsigned int)
-#define BLADE_FLASH_WRITE       _IOR(BLADERF_IOCTL_BASE, 41, unsigned int)
-#define BLADE_FLASH_ERASE       _IOR(BLADERF_IOCTL_BASE, 42, unsigned int)
-#define BLADE_OTP_READ          _IOR(BLADERF_IOCTL_BASE, 43, unsigned int)
-
-#define BLADE_UPGRADE_FW        _IOR(BLADERF_IOCTL_BASE, 50, unsigned int)
-#define BLADE_CAL               _IOR(BLADERF_IOCTL_BASE, 51, unsigned int)
-#define BLADE_OTP               _IOR(BLADERF_IOCTL_BASE, 52, unsigned int)
-#define BLADE_DEVICE_RESET      _IOR(BLADERF_IOCTL_BASE, 53, unsigned int)
-
 #define BLADE_USB_CMD_QUERY_VERSION             0
 #define BLADE_USB_CMD_QUERY_FPGA_STATUS         1
 #define BLADE_USB_CMD_BEGIN_PROG                2
