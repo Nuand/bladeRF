@@ -759,7 +759,14 @@ int bladerf_schedule_retune(struct bladerf *dev,
 
     MUTEX_LOCK(&dev->ctrl_lock);
 
-    /* TODO Verify FPGA has this feature */
+    if (!have_cap(dev, BLADERF_CAP_SCHEDULED_RETUNE)) {
+        log_debug("This FPGA version (%u.%u.%u) does not support "
+                  "scheduled retunes.\n",  dev->fpga_version.major,
+                  dev->fpga_version.minor, dev->fpga_version.patch);
+
+        status = BLADERF_ERR_UNSUPPORTED;
+        goto out;
+    }
 
     if (quick_tune == NULL) {
         lms_calculate_tuning_params(frequency, &f);
@@ -776,6 +783,7 @@ int bladerf_schedule_retune(struct bladerf *dev,
         status = tuning_schedule(dev, module, timestamp, &f);
     }
 
+out:
     MUTEX_UNLOCK(&dev->ctrl_lock);
     return status;
 }
@@ -786,8 +794,15 @@ int bladerf_cancel_scheduled_retunes(struct bladerf *dev, bladerf_module m)
 
     MUTEX_LOCK(&dev->ctrl_lock);
 
-    /* TODO verify FPGA capabilities */
-    status = tuning_cancel_scheduled(dev, m);
+    if (have_cap(dev, BLADERF_CAP_SCHEDULED_RETUNE)) {
+        status = tuning_cancel_scheduled(dev, m);
+    } else {
+        log_debug("This FPGA version (%u.%u.%u) does not support "
+                  "scheduled retunes.\n",  dev->fpga_version.major,
+                  dev->fpga_version.minor, dev->fpga_version.patch);
+
+        status = BLADERF_ERR_UNSUPPORTED;
+    }
 
     MUTEX_UNLOCK(&dev->ctrl_lock);
     return status;
