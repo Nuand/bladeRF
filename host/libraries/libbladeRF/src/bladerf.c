@@ -230,22 +230,21 @@ int bladerf_open_with_devinfo(struct bladerf **opened_device,
         /* Determine device capabilities based upon FPGA version */
         capabilities_init_post_fpga_load(dev);
 
-        /* TODO: Check FPGA capabilities before attempting to cancel
-         *       scheduled retunes */
-
-        /* Cancel any pending re-tunes that may have been left over as the
-         * result of a user application crashing or forgetting to call
-         * bladerf_close() */
-        status = tuning_cancel_scheduled(dev, BLADERF_MODULE_RX);
-        if (status != 0) {
-            log_warning("Failed to cancel any pending RX retunes: %s\n",
+        if (have_cap(dev, BLADERF_CAP_SCHEDULED_RETUNE)) {
+            /* Cancel any pending re-tunes that may have been left over as the
+             * result of a user application crashing or forgetting to call
+             * bladerf_close() */
+            status = tuning_cancel_scheduled(dev, BLADERF_MODULE_RX);
+            if (status != 0) {
+                log_warning("Failed to cancel any pending RX retunes: %s\n",
                         bladerf_strerror(status));
-        }
+            }
 
-        status = tuning_cancel_scheduled(dev, BLADERF_MODULE_TX);
-        if (status != 0) {
-            log_warning("Failed to cancel any pending TX retunes: %s\n",
+            status = tuning_cancel_scheduled(dev, BLADERF_MODULE_TX);
+            if (status != 0) {
+                log_warning("Failed to cancel any pending TX retunes: %s\n",
                         bladerf_strerror(status));
+            }
         }
 
         status = init_device(dev);
@@ -296,9 +295,7 @@ void bladerf_close(struct bladerf *dev)
         sync_deinit(dev->sync[BLADERF_MODULE_TX]);
 
         status = FPGA_IS_CONFIGURED(dev);
-        if (status == 1) {
-            /* TODO Check FPGA capabilities before attempting to cancel
-             *      scheduled retunes, as older FPGAs may not support it. */
+        if (status == 1 && have_cap(dev, BLADERF_CAP_SCHEDULED_RETUNE)) {
 
             /* We cancel schedule retunes here to avoid the device retuning
              * underneath the user, should they open it again in the future.
