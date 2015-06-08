@@ -197,10 +197,12 @@ int tuning_set_freq(struct bladerf *dev, bladerf_module module,
             status = lms_set_frequency(dev, module, frequency);
             break;
 
-        case BLADERF_TUNING_MODE_FPGA:
-            status = tuning_schedule(dev, module, BLADERF_RETUNE_NOW,
-                                     frequency, 0, BLADERF_NO_RETUNE_HINT);
+        case BLADERF_TUNING_MODE_FPGA: {
+            struct lms_freq f;
+            lms_calculate_tuning_params(frequency, &f);
+            status = tuning_schedule(dev, module, BLADERF_RETUNE_NOW, &f);
             break;
+        }
 
         default:
             log_debug("Invalid tuning mode: %d\n", dev->tuning_mode);
@@ -281,6 +283,3 @@ int tuning_get_freq(struct bladerf *dev, bladerf_module module,
 
     return rv;
 }
-
-
-

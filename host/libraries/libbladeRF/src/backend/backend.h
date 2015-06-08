@@ -136,8 +136,8 @@ struct backend_fns {
 
     /* Schedule a frequency retune operation */
     int (*retune)(struct bladerf *dev, bladerf_module module,
-                  uint64_t timestamp, unsigned int frequency,
-                  uint8_t flags, uint16_t hint);
+                  uint64_t timestamp, uint16_t nint, uint32_t nfrac,
+                  uint8_t  freqsel, bool low_band);
 
     /* Load firmware from FX3 bootloader */
     int (*load_fw_from_bootloader)(bladerf_backend backend,

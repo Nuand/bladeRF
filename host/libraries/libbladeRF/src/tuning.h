@@ -26,10 +26,10 @@
 #define BLADERF_TUNING_H_
 
 #include "bladerf_priv.h"
+#include "lms.h"
 
 /**
- * Configure the device for operation in the high or low band, based
- * upon the provided frequency
+ * Configure the device for operation in the high or low band, based * upon the provided frequency
  *
  * @param   dev         Device handle
  * @param   module      Module to configure
@@ -68,11 +68,10 @@ int tuning_set_freq(struct bladerf *dev, bladerf_module module,
 static inline int tuning_schedule(struct bladerf *dev,
                                   bladerf_module module,
                                   uint64_t timestamp,
-                                  unsigned int frequency,
-                                  uint8_t flags,
-                                  uint16_t hint)
+                                  struct lms_freq *f)
 {
-    return dev->fn->retune(dev, module, timestamp, frequency, flags, hint);
+    return dev->fn->retune(dev, module, timestamp,
+                           f->nint, f->nfrac, f->freqsel, f->low_band);
 }
 
 /**

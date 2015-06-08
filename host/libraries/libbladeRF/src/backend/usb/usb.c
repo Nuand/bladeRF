@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "usb.h"
 #include "rel_assert.h"
@@ -35,6 +36,7 @@
 #include "log.h"
 #include "version_compat.h"
 #include "minmax.h"
+#include "conversions.h"
 
 #if ENABLE_USB_DEV_RESET_ON_OPEN
 bool bladerf_usb_reset_device_on_open = true;
@@ -59,7 +61,6 @@ static inline struct bladerf_usb *usb_backend(struct bladerf *dev, void **driver
     return ret;
 }
 
-//#define PRINT_PERIPHERAL_BUFFERS
 #ifdef PRINT_PERIPHERAL_BUFFERS
 static void print_buf(const char *msg, const uint8_t *buf, size_t len)
 {
@@ -1440,32 +1441,22 @@ static void usb_deinit_stream(struct bladerf_stream *stream)
 }
 
 static int usb_retune(struct bladerf *dev, bladerf_module module,
-                      uint64_t timestamp, unsigned int frequency,
-                      uint8_t flags, uint16_t hint)
+                      uint64_t timestamp, uint16_t nint, uint32_t nfrac,
+                      uint8_t freqsel, bool low_band)
 {
     int status;
     void *driver;
     struct bladerf_usb *usb = usb_backend(dev, &driver);
     uint8_t buf[NIOS_PKT_LEN] = { 0x00 };
 
-    switch (module) {
-        case BLADERF_MODULE_RX:
-            flags &= ~NIOS_PKT_RETUNE_FLAG_TX;
-            flags |= NIOS_PKT_RETUNE_FLAG_RX;
-            break;
+    log_verbose("Retune: module=%s, ts=0x%016"PRIx64", nint=0x%04x, "
+                "nfrac=0x%08x, freqsel=0x%02x, band=%s\n",
+                module2str(module), timestamp, nint, nfrac, freqsel,
+                low_band ? "low" : "high");
 
-        case BLADERF_MODULE_TX:
-            flags &= ~NIOS_PKT_RETUNE_FLAG_RX;
-            flags |= NIOS_PKT_RETUNE_FLAG_TX;
-            break;
 
-        default:
-            log_debug("Invalid module provided to %s(): %d\n",
-                      __FUNCTION__, module);
-            return BLADERF_ERR_INVAL;
-    }
-
-    nios_pkt_retune_pack(buf, timestamp, frequency, flags, hint);
+    nios_pkt_retune_pack(buf, module, timestamp,
+                         nint, nfrac, freqsel, low_band);
 
     print_buf("Retune request:", buf, 16);
 

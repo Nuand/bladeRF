@@ -704,15 +704,16 @@ int bladerf_set_frequency(struct bladerf *dev,
 int bladerf_schedule_retune(struct bladerf *dev,
                             bladerf_module module,
                             uint64_t timestamp,
-                            unsigned int frequency,
-                            uint8_t flags,
-                            uint16_t hint)
+                            unsigned int frequency)
 
 {
     int status;
+    struct lms_freq f;
+
     MUTEX_LOCK(&dev->ctrl_lock);
 
-    status = tuning_schedule(dev, module, timestamp, frequency, flags, hint);
+    lms_calculate_tuning_params(frequency, &f);
+    status = tuning_schedule(dev, module, timestamp, &f);
 
     MUTEX_UNLOCK(&dev->ctrl_lock);
     return status;
