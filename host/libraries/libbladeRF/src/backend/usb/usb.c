@@ -34,7 +34,7 @@
 #include "bladeRF.h"    /* Firmware interface */
 #include "nios_pkt_formats.h"
 #include "log.h"
-#include "version_compat.h"
+#include "capabilities.h"
 #include "minmax.h"
 #include "conversions.h"
 
@@ -478,7 +478,7 @@ static int usb_open(struct bladerf *dev, struct bladerf_devinfo *info)
     capabilities_init_pre_fpga_load(dev);
 
     /* Wait for SPI flash autoloading to complete, if needed */
-    if (version_greater_or_equal(&dev->fw_version, 1, 8, 0)) {
+    if (have_cap(dev, BLADERF_CAP_QUERY_DEVICE_READY)) {
         const unsigned int max_retries = 30;
         unsigned int i;
         int status;
@@ -1318,7 +1318,7 @@ static int usb_dac_write(struct bladerf *dev, uint16_t value)
     int base;
 
     /* FPGA v0.0.4 introduced a change to the location of the DAC registers */
-    const bool legacy_location = version_less_than(&dev->fpga_version, 0, 0, 4);
+    const bool legacy_location = !have_cap(dev, BLADERF_CAP_UPDATED_DAC_ADDR);
 
     base = legacy_location ? 0 : 34;
 
