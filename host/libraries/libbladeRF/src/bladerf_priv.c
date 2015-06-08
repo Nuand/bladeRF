@@ -31,7 +31,7 @@
 #include "log.h"
 #include "dc_cal_table.h"
 #include "xb.h"
-#include "version_compat.h"
+#include "capabilities.h"
 
 static inline int apply_lms_dc_cals(struct bladerf *dev)
 {
@@ -350,7 +350,7 @@ int perform_format_config(struct bladerf *dev, bladerf_module module,
         return status;
     }
 
-    if (use_timestamps && version_less_than(&dev->fpga_version, 0, 1, 0)) {
+    if (use_timestamps && !have_cap(dev, BLADERF_CAP_TIMESTAMPS)) {
         log_warning("Timestamp support requires FPGA v0.1.0 or later.\n");
         return BLADERF_ERR_UPDATE_FPGA;
     }
