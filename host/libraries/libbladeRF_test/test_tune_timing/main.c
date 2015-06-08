@@ -210,6 +210,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Failed to switch to FPGA-based tuning mode: %s\n",
                 bladerf_strerror(status));
         status = -1;
+        goto out;
     } else {
         duration_fpga = fixed_retune(dev);
 
