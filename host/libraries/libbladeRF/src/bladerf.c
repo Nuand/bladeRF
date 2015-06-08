@@ -374,7 +374,7 @@ int bladerf_set_loopback(struct bladerf *dev, bladerf_loopback l)
         /* Firmware loopback was fully implemented in FW v1.7.1
          * (1.7.0 could enable it, but 1.7.1 also allowed readback,
          * so we'll enforce 1.7.1 here. */
-        if (version_less_than(&dev->fw_version, 1, 7, 1)) {
+        if (!have_cap(dev, BLADERF_CAP_FW_LOOPBACK)) {
             log_warning("Firmware v1.7.1 or later is required "
                         "to use firmware loopback.\n\n");
             status = BLADERF_ERR_UPDATE_FW;
@@ -396,7 +396,7 @@ int bladerf_set_loopback(struct bladerf *dev, bladerf_loopback l)
     } else {
 
         /* If applicable, ensure FW loopback is disabled */
-        if (version_greater_or_equal(&dev->fw_version, 1, 7, 1)) {
+        if (have_cap(dev, BLADERF_CAP_FW_LOOPBACK)) {
             bool fw_lb_enabled = false;
 
             /* Query first, as the implementation of setting the mode
@@ -431,7 +431,7 @@ int bladerf_get_loopback(struct bladerf *dev, bladerf_loopback *l)
 
     MUTEX_LOCK(&dev->ctrl_lock);
 
-    if (version_greater_or_equal(&dev->fw_version, 1, 7, 1)) {
+    if (have_cap(dev, BLADERF_CAP_FW_LOOPBACK)) {
         bool fw_lb_enabled;
         status = dev->fn->get_firmware_loopback(dev, &fw_lb_enabled);
         if (status == 0 && fw_lb_enabled) {
