@@ -24,7 +24,7 @@
 #include "xb.h"
 #include "dc_cal_table.h"
 #include "log.h"
-#include "version_compat.h"
+#include "capabilities.h"
 
 static bool fpga_supports_tuning_mode(struct bladerf *dev,
                                       bladerf_tuning_mode mode)
@@ -34,7 +34,7 @@ static bool fpga_supports_tuning_mode(struct bladerf *dev,
             return true;
 
         case BLADERF_TUNING_MODE_FPGA:
-            return version_greater_or_equal(&dev->fpga_version, 0, 2, 0);
+            return have_cap(dev, BLADERF_CAP_FPGA_TUNING);
 
         default:
             return false;
