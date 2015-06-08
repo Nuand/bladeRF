@@ -25,13 +25,13 @@
 
 #include "libbladeRF.h"     /* Public API */
 #include "bladerf_priv.h"   /* Implementation-specific items ("private") */
+#include "capabilities.h"
 
 #include "si5338.h"
 #include "xb.h"
 #include "lms.h"
 #include "rel_assert.h"
 #include "log.h"
-#include "version_compat.h"
 
 #define BLADERF_CONFIG_RX_SWAP_IQ 0x20000000
 #define BLADERF_CONFIG_TX_SWAP_IQ 0x10000000
@@ -169,7 +169,7 @@ int xb_attach(struct bladerf *dev, bladerf_xb xb) {
             break;
 
         case BLADERF_XB_200:
-            if (version_less_than(&dev->fpga_version, 0, 0, 5)) {
+            if (!have_cap(dev, BLADERF_CAP_XB200)) {
                 log_warning("%s: XB200 support requires FPGA v0.0.5 or later\n",
                             __FUNCTION__);
                 status = BLADERF_ERR_UPDATE_FPGA;
