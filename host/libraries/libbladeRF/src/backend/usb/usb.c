@@ -31,6 +31,7 @@
 #include "backend/usb/usb.h"
 #include "async.h"
 #include "bladeRF.h"    /* Firmware interface */
+#include "nios_pkt_legacy.h"
 #include "log.h"
 #include "version_compat.h"
 #include "minmax.h"
@@ -148,7 +149,7 @@ static inline int gpio_read(struct bladerf *dev, uint8_t addr, uint32_t *data)
         cmd.addr = (uint8_t)(addr + i);
         cmd.data = 0xff;
 
-        status = access_peripheral(dev, UART_PKT_DEV_GPIO,
+        status = access_peripheral(dev, UART_PKT_DEV_CONFIG,
                                    USB_DIR_DEVICE_TO_HOST, &cmd, 1);
 
         if (status < 0) {
@@ -172,7 +173,7 @@ static inline int gpio_write(struct bladerf *dev, uint8_t addr, uint32_t data)
         cmd.addr = (uint8_t)(addr + i);
         cmd.data = (data >> (i * 8)) & 0xff;
 
-        status = access_peripheral(dev, UART_PKT_DEV_GPIO,
+        status = access_peripheral(dev, UART_PKT_DEV_CONFIG,
                                    USB_DIR_HOST_TO_DEVICE, &cmd, 1);
 
         if (status < 0) {
@@ -192,7 +193,7 @@ static int load_fpga_version(struct bladerf *dev)
         cmd.addr = UART_PKT_DEV_FGPA_VERSION_ID + i;
         cmd.data = 0xff;
 
-        status = access_peripheral(dev, UART_PKT_DEV_GPIO,
+        status = access_peripheral(dev, UART_PKT_DEV_CONFIG,
                                    USB_DIR_DEVICE_TO_HOST, &cmd, 1);
 
         if (status != 0) {
@@ -1024,7 +1025,7 @@ static int set_fpga_correction(struct bladerf *dev,
         cmd.addr = i + addr;
 
         cmd.data = (value >> (i * 8)) & 0xff;
-        status = access_peripheral(dev, UART_PKT_DEV_GPIO,
+        status = access_peripheral(dev, UART_PKT_DEV_CONFIG,
                                    USB_DIR_HOST_TO_DEVICE, &cmd, 1);
     }
 
@@ -1156,7 +1157,7 @@ static int get_fpga_correction(struct bladerf *dev, bladerf_correction corr,
     for (i = status = 0; status == 0 && i < 2; i++) {
         cmd.addr = i + addr;
         cmd.data = 0xff;
-        status = access_peripheral(dev, UART_PKT_DEV_GPIO,
+        status = access_peripheral(dev, UART_PKT_DEV_CONFIG,
                                    USB_DIR_DEVICE_TO_HOST, &cmd, 1);
 
         *value |= (cmd.data << (i * 8));
@@ -1238,7 +1239,7 @@ int usb_get_timestamp(struct bladerf *dev, bladerf_module mod, uint64_t *value)
     cmds[3].addr = (mod == BLADERF_MODULE_RX ? 19 : 27);
     cmds[0].data = cmds[1].data = cmds[2].data = cmds[3].data = 0xff;
 
-    status = access_peripheral(dev, UART_PKT_DEV_GPIO, USB_DIR_DEVICE_TO_HOST,
+    status = access_peripheral(dev, UART_PKT_DEV_CONFIG, USB_DIR_DEVICE_TO_HOST,
                                cmds, ARRAY_SIZE(cmds));
     if (status != 0) {
         return status;
@@ -1254,7 +1255,7 @@ int usb_get_timestamp(struct bladerf *dev, bladerf_module mod, uint64_t *value)
     cmds[3].addr = (mod == BLADERF_MODULE_RX ? 23 : 31);
     cmds[0].data = cmds[1].data = cmds[2].data = cmds[3].data = 0xff;
 
-    status = access_peripheral(dev, UART_PKT_DEV_GPIO, USB_DIR_DEVICE_TO_HOST,
+    status = access_peripheral(dev, UART_PKT_DEV_CONFIG, USB_DIR_DEVICE_TO_HOST,
                                cmds, ARRAY_SIZE(cmds));
 
     if (status) {
@@ -1317,7 +1318,7 @@ static int usb_dac_write(struct bladerf *dev, uint16_t value)
 
     cmd.addr = base;
     cmd.data = value & 0xff;
-    status = access_peripheral(dev, legacy_location ? UART_PKT_DEV_VCTCXO : UART_PKT_DEV_GPIO,
+    status = access_peripheral(dev, legacy_location ? UART_PKT_DEV_VCTCXO : UART_PKT_DEV_CONFIG,
                                USB_DIR_HOST_TO_DEVICE, &cmd, 1);
 
     if (status < 0) {
@@ -1326,7 +1327,7 @@ static int usb_dac_write(struct bladerf *dev, uint16_t value)
 
     cmd.addr = base + 1;
     cmd.data = (value >> 8) & 0xff;
-    status = access_peripheral(dev, legacy_location ? UART_PKT_DEV_VCTCXO : UART_PKT_DEV_GPIO,
+    status = access_peripheral(dev, legacy_location ? UART_PKT_DEV_VCTCXO : UART_PKT_DEV_CONFIG,
                                USB_DIR_HOST_TO_DEVICE, &cmd, 1);
 
     return status;

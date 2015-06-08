@@ -23,6 +23,11 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/modules)
 # Firmware <--> Host common files
 set(BLADERF_FW_COMMON_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/../firmware_common)
 
+# FPGA NIOS II <--> Host common files
+set(BLADERF_FPGA_COMMON_DIR ${CMAKE_CURRENT_LIST_DIR}/../fpga_common)
+set(BLADERF_FPGA_COMMON_INCLUDE_DIR ${BLADERF_FPGA_COMMON_DIR}/include)
+set(BLADERF_FPGA_COMMON_SRC_DIR ${BLADERF_FPGA_COMMON_DIR}/src)
+
 # Source and headers common amongst host software
 set(BLADERF_HOST_COMMON_INCLUDE_DIRS
         ${CMAKE_CURRENT_LIST_DIR}/common/include

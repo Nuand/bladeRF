@@ -29,20 +29,6 @@
 #include "fpga_version.h"
 #include "debug.h"
 
-#define UART_PKT_MODE_CNT_MASK   0x7
-#define UART_PKT_MODE_CNT_SHIFT  0
-
-#define UART_PKT_MODE_DEV_MASK   0x30
-#define UART_PKT_MODE_DEV_SHIFT  4
-#define UART_PKT_DEV_CONFIG      (0 << UART_PKT_MODE_DEV_SHIFT)
-#define UART_PKT_DEV_LMS         (1 << UART_PKT_MODE_DEV_SHIFT)
-#define UART_PKT_DEV_SI5338      (3 << UART_PKT_MODE_DEV_SHIFT)
-
-#define UART_PKT_MODE_DIR_MASK   0xC0
-#define UART_PKT_MODE_DIR_SHIFT  6
-#define UART_PKT_MODE_DIR_READ   (2 << UART_PKT_MODE_DIR_SHIFT)
-#define UART_PKT_MODE_DIR_WRITE  (1 << UART_PKT_MODE_DIR_SHIFT)
-
 #define PAYLOAD_IDX 2
 #define ADDR_IDX    PAYLOAD_IDX
 #define DATA_IDX    (ADDR_IDX + 1)

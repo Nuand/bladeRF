@@ -26,7 +26,7 @@
 
 #include <stdint.h>
 #include "pkt_handler.h"
-#include "legacy_nios_pkt.h"    /* Shared definitions between NIOII & host */
+#include "nios_pkt_legacy.h"    /* Shared definitions between NIOII & host */
 
 #define PKT_LEGACY_MAGIC              ((uint8_t) UART_PKT_MAGIC)
 #define PKT_LEGACY_REQUIRED_BYTES     PKT_BUFLEN

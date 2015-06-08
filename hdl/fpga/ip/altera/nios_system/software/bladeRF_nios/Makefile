@@ -2,9 +2,11 @@
 #              VARIABLES APPENDED TO BY INCLUDED MAKEFILE FRAGMENTS
 #------------------------------------------------------------------------------
 
+FPGA_COMMON_DIR := ../../../../../../../fpga_common
+
 # List of include directories for -I compiler option (-I added when used).
 # Includes the BSP.
-ALT_INCLUDE_DIRS :=
+ALT_INCLUDE_DIRS := $(FPGA_COMMON_DIR)/include
 
 # List of library directories for -L linker option (-L added when used).
 # Includes the BSP.

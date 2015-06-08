@@ -101,45 +101,6 @@ struct bladeRF_sector {
 #define NUM_DATA_URB    (1024)
 #define DATA_BUF_SZ     (1024*4)
 
-#define UART_PKT_DEV_GPIO_ADDR          0
-#define UART_PKT_DEV_RX_GAIN_ADDR       4
-#define UART_PKT_DEV_RX_PHASE_ADDR      6
-#define UART_PKT_DEV_TX_GAIN_ADDR       8
-#define UART_PKT_DEV_TX_PHASE_ADDR      10
-#define UART_PKT_DEV_FGPA_VERSION_ID    12
-
-struct uart_pkt {
-    unsigned char magic;
-#define UART_PKT_MAGIC          'N'
-
-    //  | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
-    //  |  dir  |  dev  |     cnt       |
-    unsigned char mode;
-#define UART_PKT_MODE_CNT_MASK   0xF
-#define UART_PKT_MODE_CNT_SHIFT  0
-
-#define UART_PKT_MODE_DEV_MASK   0x30
-#define UART_PKT_MODE_DEV_SHIFT  4
-#define UART_PKT_DEV_GPIO        (0<<UART_PKT_MODE_DEV_SHIFT)
-#define UART_PKT_DEV_LMS         (1<<UART_PKT_MODE_DEV_SHIFT)
-#define UART_PKT_DEV_VCTCXO      (2<<UART_PKT_MODE_DEV_SHIFT)
-#define UART_PKT_DEV_SI5338      (3<<UART_PKT_MODE_DEV_SHIFT)
-
-#define UART_PKT_MODE_DIR_MASK   0xC0
-#define UART_PKT_MODE_DIR_SHIFT  6
-#define UART_PKT_MODE_DIR_READ   (2<<UART_PKT_MODE_DIR_SHIFT)
-#define UART_PKT_MODE_DIR_WRITE  (1<<UART_PKT_MODE_DIR_SHIFT)
-};
-
-struct uart_cmd {
-    union {
-        struct {
-            unsigned char addr;
-            unsigned char data;
-        };
-        unsigned short word;
-    };
-};
 
 /* Interface numbers */
 #define USB_IF_LEGACY_CONFIG    0
