@@ -43,6 +43,7 @@
 #include "dc_cal_table.h"
 #include "config.h"
 #include "version_compat.h"
+#include "capabilities.h"
 #include "fpga.h"
 #include "flash_fields.h"
 #include "backend/usb/usb.h"
@@ -122,6 +123,11 @@ int bladerf_open_with_devinfo(struct bladerf **opened_device,
         return BLADERF_ERR_MEM;
     }
 
+    dev->capabilities = 0;
+
+    /* The backend open function should call capabilities_init_pre_fpga_load(),
+     * as it may need this information while opening the device
+     */
     status = backend_open(dev, devinfo);
     if (status != 0) {
         free((void*)dev->fw_version.describe);
@@ -220,6 +226,9 @@ int bladerf_open_with_devinfo(struct bladerf **opened_device,
          * user from being able to unload and reflash a bitstream being
          * "autoloaded" from SPI flash. */
         fpga_check_version(dev);
+
+        /* Determine device capabilities based upon FPGA version */
+        capabilities_init_post_fpga_load(dev);
 
         /* TODO: Check FPGA capabilities before attempting to cancel
          *       scheduled retunes */

@@ -474,6 +474,9 @@ static int usb_open(struct bladerf *dev, struct bladerf_devinfo *info)
         return status;
     }
 
+    /* Fetch initial device capabilities based upon firmware version */
+    capabilities_init_pre_fpga_load(dev);
+
     /* Wait for SPI flash autoloading to complete, if needed */
     if (version_greater_or_equal(&dev->fw_version, 1, 8, 0)) {
         const unsigned int max_retries = 30;

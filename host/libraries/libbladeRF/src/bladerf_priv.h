@@ -103,6 +103,9 @@ struct bladerf {
     struct bladerf_version fw_version;
     int legacy;
 
+    /* Bitmask of capabilities determined by version numbers */
+    uint64_t capabilities;
+
     /* Which, if any XB do we have attached? */
     bladerf_xb xb;
 

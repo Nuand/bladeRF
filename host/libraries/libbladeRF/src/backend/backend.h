@@ -55,8 +55,14 @@ struct backend_fns {
     int (*probe)(backend_probe_target probe_target,
                  struct bladerf_devinfo_list *info_list);
 
-    /* Opening device based upon specified device info */
-    int (*open)(struct bladerf *device,  struct bladerf_devinfo *info);
+    /* Opening device based upon specified device info.
+     *
+     * The backend open implementation must call
+     * capabilities_init_pre_fpga_load(), as it may need this information while
+     * opening the device, and will definitely be needed by core code after
+     * the handle is put to use.
+     */
+    int (*open)(struct bladerf *device, struct bladerf_devinfo *info);
 
     /* Closing of the device and freeing of the data */
     void (*close)(struct bladerf *dev);
