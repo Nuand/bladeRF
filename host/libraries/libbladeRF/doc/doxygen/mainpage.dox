@@ -88,6 +88,9 @@ values may be passed to bladerf_strerror() to retrieve a
     <a class="el" href="boilerplate.html">Device configuration boilerplate</a>
     </li>
     <li>
+    <a class="el" href="tuning.html">Frequency tuning</a>
+    </li>
+    <li>
     RX and TX via the Synchronous Interface
     </li>
     <ul>

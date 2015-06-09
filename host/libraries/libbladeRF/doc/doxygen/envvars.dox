@@ -58,6 +58,25 @@ This environment variable may be used to specify a path to search prior
 to those listed above.
 
 <br>
+<h3>BLADERF_DEFAULT_TUNING_MODE</h3>
+Normally, the default tuning mode is set per the conditions described in the
+documentation of the ::bladerf_tuning_mode enumeration.
+
+This environment variable allows this default to be overridden at runtime
+and is intended to facilitate debugging. Valid values are: <code>host</code> and
+<code>fpga</code>.
+
+Generally this environment variable is most useful when set to <code>host</code>
+and used in conjunction with setting the BLADERF_LOG_LEVEL environment
+variable to <code>verbose</code>. This allows low-level information about the
+frequency tuning operation to be observed, even though a program may not
+provide a means to change the log level or tuning mode.
+
+Attempting to force the tuning mode to <code>fpga</code> on FPGA versions
+that do not support this will yield unexpected (and likely undesirable)
+behavior.
+
+<br>
 <h3>BLADERF_FORCE_NO_FPGA_PRESENT</h3>
 Defining this forces libbladeRF to behave as if it does not detect that
 an FPGA is loaded. This prevents it from attempting to initialize the device.

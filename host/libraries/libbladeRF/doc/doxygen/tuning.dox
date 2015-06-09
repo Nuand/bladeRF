@@ -1,0 +1,213 @@
+/**
+
+\page tuning Frequency tuning
+
+The simplest means of tuning the bladeRF's RX or TX module to a specified frequency is
+the bladerf_set_frequency() function. This page provides an overview of the underlying
+frequency tuning procedure and details the following functionality introduced in libbladeRF
+v0.3.0 and FPGA v0.2.0:
+
+<ul>
+    <li>Execution of LMS6002D tuning algorithm on host or FPGA</li>
+    <li>Scheduling retunes using sample timestamp values</li>
+    <li>Quick retune via saved LMS6002D register states</li>
+</ul>
+
+<br>
+<h2>Frequency Tuning on the bladeRF</h2>
+At a high level, setting the frequency on the bladeRF consists of two major steps:
+<ul>
+    <li>Tuning the LMS6002D transceiver</li>
+    <li>Switching between the bladeRF's low frequency band and high frequency band baluns, as needed.</li>
+</ul>
+
+libbladeRF performs the band selection step via a bit in a configuration
+word in the FPGA. The FPGA switches between the baluns via an I/O pin.
+
+Tuning the LMS6002D PLLs involves a few steps:
+<ul>
+    <li>
+        Selecting a VCO and divider setting
+    </li>
+    <li>
+        Calculating and applying integer and fractional parameters to yield the
+        desired VCO frequency
+    </li>
+    <li>
+        Adjusting a "Vtune" voltage to be within 0.5V to 2.5V to guarantee PLL
+        lock. To minimize phase noise, this is adjusted to be close to 1.5V. This
+        is done by adjusting a "VCOCAP" code, and using a voltage comparator to
+        determine when the Vtune high or low limit has been reached.
+    </li>
+    </ul>
+
+Empirical data indicates that the relationship between a frequency's
+offset in a VCO band and its nominal VCOCAP value could be approximated by a
+linear interpolation.  Although this linear approximation does not hold true
+near the extremes of VCO ranges, the error is small enough to yield a
+sufficient starting point. From this staring point, the VCOCAP could be
+increased to find the Vtune upper limit, or decreased to find the Vtune lower limit.
+After establishing these limits, the VCOCAP value halfway between these limits should
+yield a Vtune voltage near 1.5V.
+
+See the <a class="el" href="http://www.limemicro.com/wp-content/uploads/2015/04/LMS6002Dr2-Programming-and-Calibration-Guide-1_1r5.pdf">LMS6002D Programming and Calibration Guide</a> for more information on this procedure.
+
+
+<br>
+<h2>Tuning Mode</h2>
+The combination of libbladeRF >= v0.3.0 and FPGA >= v0.2.0 introduces two options for
+how frequency tuning functions, such as bladerf_set_frequency(), operate. The
+tuning mode may be selected through the API, via bladerf_set_tuning_mode().
+Additionally, a BLADERF_DEFAULT_TUNING_MODE enviromnent variable may be defined
+to change the default at runtime.
+
+The ::BLADERF_TUNING_MODE_HOST mode is the mode of operation used in previous versions
+of libbladeRF. The entire turning procedure, outlined above, is carried out on the host machine,
+using the USB interface to perform LMS6002D register accesses. With verbose log output
+enabled, the state of the LMS6002D and its registers can be easily observed throughout
+the tuning procedure.
+
+The Vtune/VCOCAP portion of the tuning procedure involves a fairly large number
+of LMS6002D register accesses.  By carrying out this part of the procedure in
+the NIOS II core in the FPGA, the USB and FX3 UART overhead for every single LMS6002D
+register access can be removed, yielding a faster tuning operation.
+
+When using ::BLADERF_TUNING_MODE_FPGA, the host determines and writes the following to the
+device in a single request:
+<ul>
+    <li>VCO selection and divider</li>
+    <li>VCOCAP starting point guess</li>
+    <li>Integer and fractional parameters used to derive desired frequency from selected VCO</li>
+</ul>
+
+The NIOS II running the FPGA then applies these values and then performs the VCOCAP search.
+To alleviate the need to perform additional USB (and FX3 UART) requests for the tuning
+operation, the band selection is also perfomed by the NIOS II.
+
+The tuning speedup acheived by using ::BLADERF_TUNING_MODE_FPGA can be quantified using the
+<i>libbladeRF_test_tune_timing</i> program included in the libbladeRF build. Below is
+sample output for two differen NIOS II core implementations.
+
+<pre>
+========================================
+  NIOS II/f
+========================================
+
+Re-tuning with fixed frequency...
+  Host tuning:    0.005302s
+  FPGA tuning:    0.000617s
+  Speedup factor: 8.589610
+
+Re-tuning with random frequencies...
+  Host tuning:    0.004526s
+  FPGA tuning:    0.000572s
+  Speedup factor: 7.908094
+
+Performing quick-tune...
+  Host tuning:    0.000205s
+  FPGA tuning:    0.000196s
+  Speedup factor: 1.047156
+
+========================================
+  NIOS II/e
+========================================
+
+Re-tuning with fixed frequency...
+  Host tuning:    0.007657s
+  FPGA tuning:    0.001187s
+  Speedup factor: 6.449782
+
+Re-tuning with random frequencies...
+  Host tuning:    0.007002s
+  FPGA tuning:    0.001189s
+  Speedup factor: 5.888479
+
+Performing quick-tune...
+  Host tuning:    0.000431s
+  FPGA tuning:    0.000428s
+  Speedup factor: 1.007370
+</pre>
+
+As shown above, performance significantly changes depending on which
+NIOS II core implementation is used. (More information about the NIOS II cores
+can be found in Altera's <a class="el" href="https://www.altera.com/en_US/pdfs/literature/hb/nios2/n2cpu_nii51015.pdf">Nios II Core Implementation Details</a> document.
+
+The NIOS II/e is the default implementation in bladeRF FPGA builds, as this can
+be built with the free Quartus II 15.0 Web Edition software.
+
+<br>
+<h2>Scheduled Retune</h2>
+When using timestamps (i.e., the <a class="el" href="group___f_n___d_a_t_a___s_y_n_c.html">synchronous interface</a> with the
+::BLADERF_FORMAT_SC16_Q11_META format), one can schedule retune operations
+that are synchronized with the sample timestamp counter.
+
+The bladerf_schedule_retune() function writes the requested tuning parameters to the
+FPGA's NIOS II core, which enqueues the request and schedules an interrupt at the
+specified timestamp.  When the timestamp occurs, the interrupt fires, and the NIOS II
+dequeues the requesting tuning configuration and applies it.
+
+If a non-zero frequency was supplied to the bladerf_schedule_retune() function,
+this implies that the the device will perform the algorithm to identify a
+nominal VCOCAP value. Note that this operation takes time, and should be accounted for
+when scheduling an RX (or TX) operation after the re-tune. Some tips for this
+are provided at the end of this page.
+
+If a <i>quick_tune</i> parameter is used, this will be applied directly, as
+described in the following section.
+
+One may wish to cancel scheduled retunes as the result of the user requesting
+a configuration change. This can be achieved via bladerf_cancel_scheduled_retunes().
+
+bladerf_open(), bladerf_open_with_devinfo(), and bladerf_close() all cancel
+pending re-tunes.  This is done to ensure that the device does not unexpectedly
+retune as the result of "stale" requests from previous usage.
+
+<br>
+<h2>Quick Re-tune</h2>
+As shown by the tune timing results, the "quick tune" option provides
+even faster re-tuning. This functionality writes previously identified tuning
+parameters, including the nominal VCOCAP value, directly to the LMS6002D registers
+instead of searching for the VCOCAP value. It does, however, verify that the LMS6002D
+reports the Vtune voltage is within the required range for the associated PLL
+to maintain lock.
+
+As noted in the description of bladerf_get_quick_tune(), there is a trade-off
+for this quicker tuning. Since the PLL and tuning parameters (e.g., VCOCAP) are
+sensitive to changes in the environment, using this quick tune feature for an
+extended period of time can result in increased phase noise.  This requires
+that a user "refresh" their quick tune parameters for long operations.
+
+The basic procedure for using the quick re-tune functionality is outlined
+in the below snippet.  First, the bladeRF is tuned to each desired frequency,
+and the "quick tune" parameters are retrieved.
+
+\snippet quick_tune.c example
+
+When using the ::BLADERF_RETUNE_NOW flag, consider that samples from a previous
+frequency may already be in libbladeRF's buffers. It is often better to
+schedule the retune and then the reception/transmission at specific timestamps.
+
+For example, if a retune is scheduled at timestamp <i>t</i>, bladerf_sync_rx() can
+be called for <i>t +delta</i>. Samples that may be in libbladeRF's buffers prior
+to the retune will be dropped.
+
+<br>
+<h2>Measuring Settling Time</h2>
+Users looking to achieve fast retuning times are encouraged to measure the amount
+of time it takes for the LMS6002D's Vtune pins to settle. By observing the upper
+bound on this time, one can establish the required time delta between
+scheduling a re-tune operation and scheduling to RX samples from the new
+frequency, for example.
+
+This can be done by measuring the voltages on the following resistors,
+and identifying how long it takes for Vtune to settle to approximately 1.5V.
+<ul>
+    <li>RX: R263</li>
+    <li>TX: R265</li>
+</ul>
+
+These resistors may be found under the removable can that covers the LMS6002D.
+See the <a class="el" href="http://nuand.com/bladerf.pdf">bladeRF schematic</a> to further
+review how these are connected to the Vtune pins.
+
+*/

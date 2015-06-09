@@ -27,3 +27,6 @@ target_link_libraries(libbladeRF_example_open_via_serial ${LIBS})
 
 add_executable(libbladeRF_example_boilerplate boilerplate.c)
 target_link_libraries(libbladeRF_example_boilerplate ${LIBS})
+
+add_executable(libbladeRF_example_quick_tune quick_tune.c)
+target_link_libraries(libbladeRF_example_quick_tune ${LIBS})
