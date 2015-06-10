@@ -33,6 +33,7 @@ D: si5338 sample rate functionality, misc. bugfixes
 
 N: Cameron Karlsson
 D: NIOS II redesign, refactoring, and clean-up
+G: ckgt
 
 N: Robert Ghilduta
 E: robert.ghilduta@nuand.com
