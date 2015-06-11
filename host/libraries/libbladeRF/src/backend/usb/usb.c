@@ -193,7 +193,7 @@ static int load_fpga_version(struct bladerf *dev)
     struct uart_cmd cmd;
 
     for (i = 0; i < 4; i++) {
-        cmd.addr = UART_PKT_DEV_FGPA_VERSION_ID + i;
+        cmd.addr = UART_PKT_DEV_FPGA_VERSION_ID + i;
         cmd.data = 0xff;
 
         status = access_peripheral(dev, UART_PKT_DEV_CONFIG,
