@@ -50,27 +50,32 @@
  *
  * Note 1: Configuration byte:
  *
- * +================+========================+
- * |      Bit(s)    |         Value          |
- * +================+========================+
- * |        7       |   1 = Read operation   |
- * +----------------+------------------------+
- * |        6       |   1 = Write operation  |
- * +----------------+------------------------+
- * |       5:4      | Device:                |
- * |                |   00 - Config PIO      |
- * |                |   01 - LMS register    |
- * |                |   10 - VCTCXO Trim DAC |
- * |                |   11 - SI5338 register |
- * +----------------+------------------------+
- * |        3       | Unused                 |
- * +----------------+------------------------+
- * |       2:0      | Addr/Data pair count   |
- * |                | (Note 2)               |
- * +----------------+------------------------+
+ * +================+============================+
+ * |      Bit(s)    |         Value              |
+ * +================+============================+
+ * |        7       |   1 = Read operation       |
+ * +----------------+----------------------------+
+ * |        6       |   1 = Write operation      |
+ * +----------------+----------------------------+
+ * |       5:4      | Device:                    |
+ * |                |   00 - Config PIO (Note 2) |
+ * |                |   01 - LMS register        |
+ * |                |   10 - VCTCXO Trim DAC     |
+ * |                |   11 - SI5338 register     |
+ * +----------------+----------------------------+
+ * |        3       | Unused                     |
+ * +----------------+----------------------------+
+ * |       2:0      | Addr/Data pair count       |
+ * |                | (Note 2)                   |
+ * +----------------+----------------------------+
  *
+ * Note 2: Config PIO addresses
  *
- * Note 2: "Count" field
+ * The NIOS II core and modules in the FPGA's programmable fabric are connected
+ * via parallel IO (PIO). See the NIOS_PKT_LEGACY_PIO_ADDR_* definitions
+ * in this file contain a virtual "register map" for these modules.
+ *
+ * Note 3: "Count" field
  *
  * The original intent of this field was to allow multiple register
  * accesses to be requested at once.
@@ -116,29 +121,107 @@
  *
  */
 
-#define UART_PKT_MAGIC                  'N'
+#define NIOS_PKT_LEGACY_MAGIC                  'N'
 
-#define UART_PKT_DEV_GPIO_ADDR          0
-#define UART_PKT_DEV_RX_GAIN_ADDR       4
-#define UART_PKT_DEV_RX_PHASE_ADDR      6
-#define UART_PKT_DEV_TX_GAIN_ADDR       8
-#define UART_PKT_DEV_TX_PHASE_ADDR      10
-#define UART_PKT_DEV_FPGA_VERSION_ID    12
+#define NIOS_PKT_LEGACY_DEV_GPIO_ADDR          0
+#define NIOS_PKT_LEGACY_DEV_RX_GAIN_ADDR       4
+#define NIOS_PKT_LEGACY_DEV_RX_PHASE_ADDR      6
+#define NIOS_PKT_LEGACY_DEV_TX_GAIN_ADDR       8
+#define NIOS_PKT_LEGACY_DEV_TX_PHASE_ADDR      10
+#define NIOS_PKT_LEGACY_DEV_FPGA_VERSION_ID    12
 
-#define UART_PKT_MODE_CNT_MASK   0x7
-#define UART_PKT_MODE_CNT_SHIFT  0
-#define UART_PKT_MODE_DEV_MASK   0x30
-#define UART_PKT_MODE_DEV_SHIFT  4
+#define NIOS_PKT_LEGACY_MODE_CNT_MASK   0x7
+#define NIOS_PKT_LEGACY_MODE_CNT_SHIFT  0
+#define NIOS_PKT_LEGACY_MODE_DEV_MASK   0x30
+#define NIOS_PKT_LEGACY_MODE_DEV_SHIFT  4
 
-#define UART_PKT_DEV_CONFIG      (0<<UART_PKT_MODE_DEV_SHIFT)
-#define UART_PKT_DEV_LMS         (1<<UART_PKT_MODE_DEV_SHIFT)
-#define UART_PKT_DEV_VCTCXO      (2<<UART_PKT_MODE_DEV_SHIFT)
-#define UART_PKT_DEV_SI5338      (3<<UART_PKT_MODE_DEV_SHIFT)
+#define NIOS_PKT_LEGACY_DEV_CONFIG      (0 << NIOS_PKT_LEGACY_MODE_DEV_SHIFT)
+#define NIOS_PKT_LEGACY_DEV_LMS         (1 << NIOS_PKT_LEGACY_MODE_DEV_SHIFT)
+#define NIOS_PKT_LEGACY_DEV_VCTCXO      (2 << NIOS_PKT_LEGACY_MODE_DEV_SHIFT)
+#define NIOS_PKT_LEGACY_DEV_SI5338      (3 << NIOS_PKT_LEGACY_MODE_DEV_SHIFT)
 
-#define UART_PKT_MODE_DIR_MASK   0xC0
-#define UART_PKT_MODE_DIR_SHIFT  6
-#define UART_PKT_MODE_DIR_READ   (2<<UART_PKT_MODE_DIR_SHIFT)
-#define UART_PKT_MODE_DIR_WRITE  (1<<UART_PKT_MODE_DIR_SHIFT)
+#define NIOS_PKT_LEGACY_MODE_DIR_MASK   0xC0
+#define NIOS_PKT_LEGACY_MODE_DIR_SHIFT  6
+#define NIOS_PKT_LEGACY_MODE_DIR_READ   (2 << NIOS_PKT_LEGACY_MODE_DIR_SHIFT)
+#define NIOS_PKT_LEGACY_MODE_DIR_WRITE  (1 << NIOS_PKT_LEGACY_MODE_DIR_SHIFT)
+
+
+/* PIO address space */
+
+/*
+ * 32-bit Device control register.
+ *
+ * This is register accessed via the libbladeRF functions,
+ * bladerf_config_gpio_write() and bladerf_config_gpio_read().
+ */
+#define NIOS_PKT_LEGACY_PIO_ADDR_CONTROL       0
+#define NIOS_PKT_LEGACY_PIO_LEN_CONTROL        4
+
+/*
+ * IQ Correction: 16-bit RX Gain value
+ */
+#define NIOS_PKT_LEGACY_PIO_ADDR_IQ_RX_GAIN    4
+#define NIOS_PKT_LEGACY_PIO_LEN_IQ_RX_GAIN     2
+
+/*
+ * IQ Correction: 16-bit RX Phase value
+ */
+#define NIOS_PKT_LEGACY_PIO_ADDR_IQ_RX_PHASE   6
+#define NIOS_PKT_LEGACY_PIO_LEN_IQ_RX_PHASE    2
+
+/*
+ * IQ Correction: 16-bit TX Gain value
+ */
+#define NIOS_PKT_LEGACY_PIO_ADDR_IQ_TX_GAIN    8
+#define NIOS_PKT_LEGACY_PIO_LEN_IQ_TX_GAIN     2
+
+/*
+ * IQ Correction: 16-bit TX Phase value
+ */
+#define NIOS_PKT_LEGACY_PIO_ADDR_IQ_TX_PHASE   10
+#define NIOS_PKT_LEGACY_PIO_LEN_IQ_TX_PHASE    2
+
+/*
+ * 32-bit FPGA Version (read-only)
+ */
+#define NIOS_PKT_LEGACY_PIO_ADDR_FPGA_VERSION  12
+#define NIOS_PKT_LEGACY_PIO_LEN_FPGA_VERSION   4
+
+/*
+ * 64-bit RX timestamp
+ */
+#define NIOS_PKT_LEGACY_PIO_ADDR_RX_TIMESTAMP  16
+#define NIOS_PKT_LEGACY_PIO_LEN_RX_TIMESTAMP   8
+
+/*
+ * 64-bit TX timestamp
+ */
+#define NIOS_PKT_LEGACY_PIO_ADDR_TX_TIMESTAMP  24
+#define NIOS_PKT_LEGACY_PIO_LEN_TX_TIMESTAMP   8
+
+/*
+ * VCTCXO Trim DAC value
+ */
+#define NIOS_PKT_LEGACY_PIO_ADDR_VCTCXO        34
+#define NIOS_PKT_LEGACY_PIO_LEN_VCTCXO         2
+
+/*
+ * XB-200 ADF4351 Synthesizer
+ */
+#define NIOS_PKT_LEGACY_PIO_ADDR_XB200_SYNTH   36
+#define NIOS_PKT_LEGACY_PIO_LEN_XB200_SYNTH    4
+
+/*
+ * Expansion IO
+ */
+#define NIOS_PKT_LEGACY_PIO_ADDR_EXP            40
+#define NIOS_PKT_LEGACY_PIO_LEN_EXP             4
+
+/*
+ * Expansion IO Direction
+ */
+#define NIOS_PKT_LEGACY_PIO_ADDR_EXP_DIR       44
+#define NIOS_PKT_LEGACY_PIO_LEN_EXP_DIR        4
 
 struct uart_cmd {
     unsigned char addr;

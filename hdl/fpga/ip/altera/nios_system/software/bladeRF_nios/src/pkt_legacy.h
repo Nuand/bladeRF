@@ -28,7 +28,7 @@
 #include "pkt_handler.h"
 #include "nios_pkt_formats.h"
 
-#define PKT_LEGACY_MAGIC              ((uint8_t) UART_PKT_MAGIC)
+#define PKT_LEGACY_MAGIC              ((uint8_t) NIOS_PKT_LEGACY_MAGIC)
 #define PKT_LEGACY_REQUIRED_BYTES     NIOS_PKT_LEN
 
 void pkt_legacy(struct pkt_buf *b);

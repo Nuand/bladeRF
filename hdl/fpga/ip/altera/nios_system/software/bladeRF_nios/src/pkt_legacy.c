@@ -67,19 +67,43 @@ struct config_param_info {
 
 /* Lookup-table for the legacy config parameters' address ranges */
 static const struct config_param_info config_params[] = {
-    [CONFIG_CONTROL_REG]        = { 0,   4 },
-    [CONFIG_IQ_CORR_RX_GAIN]    = { 4,   2 },
-    [CONFIG_IQ_CORR_RX_PHASE]   = { 6,   2 },
-    [CONFIG_IQ_CORR_TX_GAIN]    = { 8,   2 },
-    [CONFIG_IQ_CORR_TX_PHASE]   = { 10,  2 },
-    [CONFIG_FPGA_VERSION]       = { 12,  4 },
-    [CONFIG_RX_TIMESTAMP]       = { 16,  8 },
-    [CONFIG_TX_TIMESTAMP]       = { 24,  8 },
-    [CONFIG_VCTXCO]             = { 34,  2 },
-    [CONFIG_XB200_SYNTH]        = { 36,  4 },
-    [CONFIG_EXPANSION]          = { 40,  4 },
-    [CONFIG_EXPANSION_DIR]      = { 44,  4 },
-    [CONFIG_UNKNOWN]            = { 255, 0 },
+    [CONFIG_CONTROL_REG]      = { NIOS_PKT_LEGACY_PIO_ADDR_CONTROL,
+                                  NIOS_PKT_LEGACY_PIO_LEN_CONTROL },
+
+    [CONFIG_IQ_CORR_RX_GAIN]  = { NIOS_PKT_LEGACY_PIO_ADDR_IQ_RX_GAIN,
+                                  NIOS_PKT_LEGACY_PIO_LEN_IQ_RX_PHASE },
+
+    [CONFIG_IQ_CORR_RX_PHASE] = { NIOS_PKT_LEGACY_PIO_ADDR_IQ_RX_PHASE,
+                                  NIOS_PKT_LEGACY_PIO_LEN_IQ_RX_PHASE },
+
+    [CONFIG_IQ_CORR_TX_GAIN]  = { NIOS_PKT_LEGACY_PIO_ADDR_IQ_TX_GAIN,
+                                  NIOS_PKT_LEGACY_PIO_LEN_IQ_TX_GAIN },
+
+    [CONFIG_IQ_CORR_TX_PHASE] = { NIOS_PKT_LEGACY_PIO_ADDR_IQ_TX_PHASE,
+                                  NIOS_PKT_LEGACY_PIO_LEN_IQ_TX_GAIN },
+
+    [CONFIG_FPGA_VERSION]     = { NIOS_PKT_LEGACY_PIO_ADDR_FPGA_VERSION,
+                                  NIOS_PKT_LEGACY_PIO_LEN_FPGA_VERSION },
+
+    [CONFIG_RX_TIMESTAMP]     = { NIOS_PKT_LEGACY_PIO_ADDR_RX_TIMESTAMP,
+                                  NIOS_PKT_LEGACY_PIO_LEN_RX_TIMESTAMP },
+
+    [CONFIG_TX_TIMESTAMP]     = { NIOS_PKT_LEGACY_PIO_ADDR_TX_TIMESTAMP,
+                                  NIOS_PKT_LEGACY_PIO_LEN_TX_TIMESTAMP },
+
+    [CONFIG_VCTXCO]           = { NIOS_PKT_LEGACY_PIO_ADDR_VCTCXO,
+                                  NIOS_PKT_LEGACY_PIO_LEN_VCTCXO },
+
+    [CONFIG_XB200_SYNTH]      = { NIOS_PKT_LEGACY_PIO_ADDR_XB200_SYNTH,
+                                  NIOS_PKT_LEGACY_PIO_LEN_XB200_SYNTH },
+
+    [CONFIG_EXPANSION]        = { NIOS_PKT_LEGACY_PIO_ADDR_EXP,
+                                  NIOS_PKT_LEGACY_PIO_LEN_EXP },
+
+    [CONFIG_EXPANSION_DIR]    = { NIOS_PKT_LEGACY_PIO_ADDR_EXP_DIR,
+                                  NIOS_PKT_LEGACY_PIO_LEN_EXP_DIR },
+
+    [CONFIG_UNKNOWN]          = { 255, 0 },
 };
 
 static inline enum config_param lookup_param(uint8_t addr)
@@ -224,19 +248,19 @@ static inline void legacy_pkt_read(uint8_t dev_id, uint8_t count,
 {
 
     switch (dev_id) {
-        case UART_PKT_DEV_LMS:
+        case NIOS_PKT_LEGACY_DEV_LMS:
             DBG("%s: Performing LMS6 read.\n", __FUNCTION__);
             b->resp[ADDR_IDX] = b->req[ADDR_IDX];
             b->resp[DATA_IDX] = lms6_read(b->req[ADDR_IDX]);
             break;
 
-        case UART_PKT_DEV_SI5338:
+        case NIOS_PKT_LEGACY_DEV_SI5338:
             DBG("%s: Performing SI5338 read.\n", __FUNCTION__);
             b->resp[ADDR_IDX] = b->req[ADDR_IDX];
             b->resp[DATA_IDX] = si5338_read(b->req[ADDR_IDX]);
             break;
 
-        case UART_PKT_DEV_CONFIG:
+        case NIOS_PKT_LEGACY_DEV_CONFIG:
             DBG("%s: Performing config read.\n", __FUNCTION__);
             legacy_config_read(count, b);
             break;
@@ -353,21 +377,21 @@ static inline void legacy_pkt_write(uint8_t dev_id, uint8_t count,
 
 {
     switch (dev_id) {
-        case UART_PKT_DEV_LMS:
+        case NIOS_PKT_LEGACY_DEV_LMS:
             lms6_write(b->req[ADDR_IDX], b->req[DATA_IDX]);
 
             b->resp[ADDR_IDX] = b->req[ADDR_IDX];
             b->resp[DATA_IDX] = 0;
             break;
 
-        case UART_PKT_DEV_SI5338:
+        case NIOS_PKT_LEGACY_DEV_SI5338:
             si5338_write(b->req[ADDR_IDX], b->req[DATA_IDX]);
 
             b->resp[ADDR_IDX] = b->req[ADDR_IDX];
             b->resp[DATA_IDX] = 0;
             break;
 
-        case UART_PKT_DEV_CONFIG:
+        case NIOS_PKT_LEGACY_DEV_CONFIG:
             legacy_config_write(count, b);
             break;
 
@@ -381,10 +405,10 @@ void pkt_legacy(struct pkt_buf *b)
 {
     /* Parse configuration word */
     const uint8_t cfg = b->req[PKT_CFG_IDX];
-    const bool is_read = (cfg & (UART_PKT_MODE_DIR_READ)) != 0;
-    const bool is_write = (cfg & (UART_PKT_MODE_DIR_WRITE)) != 0;
-    const uint8_t dev_id = (cfg & UART_PKT_MODE_DEV_MASK);
-    const uint8_t count = (cfg & UART_PKT_MODE_CNT_MASK);
+    const bool is_read = (cfg & (NIOS_PKT_LEGACY_MODE_DIR_READ)) != 0;
+    const bool is_write = (cfg & (NIOS_PKT_LEGACY_MODE_DIR_WRITE)) != 0;
+    const uint8_t dev_id = (cfg & NIOS_PKT_LEGACY_MODE_DEV_MASK);
+    const uint8_t count = (cfg & NIOS_PKT_LEGACY_MODE_CNT_MASK);
 
     /* Response must start with same magic value and config word */
     b->resp[PKT_MAGIC_IDX] = b->req[PKT_MAGIC_IDX];
