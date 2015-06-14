@@ -33,6 +33,9 @@ fx3_firmware/build/*
 build/*
 
 host/build/*
+
+host/examples/gnuradio/frs/bladeRF_frs.py
+
 host/libraries/libbladeRF/doc/doxygen/html
 host/libraries/libbladeRF/doc/doxygen/Doxyfile
 host/libraries/libbladeRF/lib
