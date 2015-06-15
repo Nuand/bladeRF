@@ -242,6 +242,11 @@ uint64_t time_tamer_read(bladerf_module m);
 INLINE void time_tamer_reset(bladerf_module m);
 
 /**
+ * Clear the interrupt for the specified timer tamer module
+ */
+INLINE void timer_tamer_clear_interrupt(bladerf_module m);
+
+/**
  * Schedule a timer interrupt on the specified module
  *
  * @param   m       Module to schedule interrupt for

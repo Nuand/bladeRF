@@ -46,7 +46,6 @@
 
 #ifdef BLADERF_NIOS_PC_SIMULATION
     extern bool run_nios;
-    static bool have_request = false;
 #   define HAVE_REQUEST() ({ \
         have_request = !have_request; \
         if (have_request) { \
@@ -96,6 +95,8 @@ int main(void)
      * the UART ISR */
     const volatile uint8_t *magic = &pkt.req[PKT_MAGIC_IDX];
 
+    volatile bool have_request = false;
+
     /* Sanity check */
     ASSERT(PKT_MAGIC_IDX == 0);
 
@@ -111,7 +112,7 @@ int main(void)
     }
 
     while (run_nios) {
-        volatile bool have_request = HAVE_REQUEST();
+        have_request = HAVE_REQUEST();
 
         /* We have a command in the UART */
         if (have_request) {

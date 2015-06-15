@@ -691,6 +691,26 @@ void time_tamer_reset(bladerf_module m)
     DBG("%s: module=%s\n", __FUNCTION__, module2str(m));
 }
 
+void time_tamer_clear_interrupt(bladerf_module m)
+{
+    switch (m) {
+        case BLADERF_MODULE_RX:
+        case BLADERF_MODULE_TX:
+            break;
+
+        default:
+            DBG("%s: Invalid module %u\n", __FUNCTION__, m);
+            ASSERT(0);
+            break;
+    }
+
+    DBG("%s: module=%s\n", __FUNCTION__, module2str(m));
+}
+
+void tamer_schedule(bladerf_module m, uint64_t time) {
+    DBG("%s: module=%s, time=%"PRIu64"\n", __FUNCTION__, module2str(m), time);
+}
+
 int lms_set_precalculated_frequency(struct bladerf *dev, bladerf_module mod,
                                     struct lms_freq *f)
 {

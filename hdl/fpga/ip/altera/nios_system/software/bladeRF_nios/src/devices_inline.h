@@ -77,6 +77,15 @@ INLINE void time_tamer_reset(bladerf_module m)
     }
 }
 
+INLINE void timer_tamer_clear_interrupt(bladerf_module m)
+{
+    if (m == BLADERF_MODULE_RX) {
+        IOWR_8DIRECT(RX_TAMER_BASE, 8, 1) ;
+    } else {
+        IOWR_8DIRECT(TX_TAMER_BASE, 8, 1) ;
+    }
+}
+
 INLINE void command_uart_read_request(uint8_t *req) {
     int i, x ;
     uint32_t val ;
