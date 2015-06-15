@@ -132,15 +132,33 @@ static int dummy_expansion_gpio_dir_read(struct bladerf *dev, uint32_t *val)
     return 0;
 }
 
-static int dummy_set_correction(struct bladerf *dev, bladerf_module module,
-                                bladerf_correction corr, int16_t value)
+static int dummy_set_iq_gain_correction(struct bladerf *dev,
+                                        bladerf_module module,
+                                        int16_t value)
 {
     return 0;
 }
 
-static int dummy_get_correction(struct bladerf *dev, bladerf_module module,
-                                bladerf_correction corr, int16_t *value)
+static int dummy_set_iq_phase_correction(struct bladerf *dev,
+                                         bladerf_module module,
+                                         int16_t value)
 {
+    return 0;
+}
+
+static int dummy_get_iq_gain_correction(struct bladerf *dev,
+                                        bladerf_module module,
+                                        int16_t *value)
+{
+    *value = 0;
+    return 0;
+}
+
+static int dummy_get_iq_phase_correction(struct bladerf *dev,
+                                         bladerf_module module,
+                                         int16_t *value)
+{
+    *value = 0;
     return 0;
 }
 
@@ -265,8 +283,10 @@ const struct backend_fns backend_fns_dummy = {
     FIELD_INIT(.expansion_gpio_dir_write, dummy_expansion_gpio_dir_write),
     FIELD_INIT(.expansion_gpio_dir_read, dummy_expansion_gpio_dir_read),
 
-    FIELD_INIT(.set_correction, dummy_set_correction),
-    FIELD_INIT(.get_correction, dummy_get_correction),
+    FIELD_INIT(.set_iq_gain_correction, dummy_set_iq_gain_correction),
+    FIELD_INIT(.set_iq_phase_correction, dummy_set_iq_phase_correction),
+    FIELD_INIT(.get_iq_gain_correction, dummy_get_iq_gain_correction),
+    FIELD_INIT(.get_iq_phase_correction, dummy_get_iq_phase_correction),
 
     FIELD_INIT(.get_timestamp, dummy_get_timestamp),
 

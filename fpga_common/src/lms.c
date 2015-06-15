@@ -3566,3 +3566,172 @@ out:
     return status;
 }
 #endif
+
+#ifndef BLADERF_NIOS_BUILD
+static inline uint8_t scale_dc_offset(bladerf_module module, int16_t value)
+{
+    uint8_t ret;
+
+    switch (module) {
+        case BLADERF_MODULE_RX:
+            /* RX only has 6 bits of scale to work with, remove normalization */
+            value >>= 5;
+
+            if (value < 0) {
+                if (value <= -64) {
+                    /* Clamp */
+                    value = 0x3f;
+                } else {
+                    value = (-value) & 0x3f;
+                }
+
+                /* This register uses bit 6 to denote a negative value */
+                value |= (1 << 6);
+            } else {
+                if (value >= 64) {
+                    /* Clamp */
+                    value = 0x3f;
+                } else {
+                    value = value & 0x3f;
+                }
+            }
+
+            ret = (uint8_t) value;
+            break;
+
+        case BLADERF_MODULE_TX:
+            /* TX only has 7 bits of scale to work with, remove normalization */
+            value >>= 4;
+
+            /* LMS6002D 0x00 = -16, 0x80 = 0, 0xff = 15.9375 */
+            if (value >= 0) {
+                ret = (uint8_t) (value >= 128) ? 0x7f : (value & 0x7f);
+
+                /* Assert bit 7 for positive numbers */
+                ret = (1 << 7) | ret;
+            } else {
+                ret = (uint8_t) (value <= -128) ? 0x00 : (value & 0x7f);
+            }
+            break;
+
+        default:
+            assert(!"Invalid module provided");
+            ret = 0x00;
+    }
+
+    return ret;
+}
+#endif
+
+#ifndef BLADERF_NIOS_BUILD
+static int set_dc_offset_reg(struct bladerf *dev, bladerf_module module,
+                             uint8_t addr, int16_t value)
+{
+    int status;
+    uint8_t regval, tmp;
+
+    switch (module) {
+        case BLADERF_MODULE_RX:
+            status = LMS_READ(dev, addr, &tmp);
+            if (status != 0) {
+                return status;
+            }
+
+            /* Bit 7 is unrelated to lms dc correction, save its state */
+            tmp = tmp & (1 << 7);
+            regval = scale_dc_offset(module, value) | tmp;
+            break;
+
+        case BLADERF_MODULE_TX:
+            regval = scale_dc_offset(module, value);
+            break;
+
+        default:
+            return BLADERF_ERR_INVAL;
+    }
+
+    status = LMS_WRITE(dev, addr, regval);
+    return status;
+}
+#endif
+
+#ifndef BLADERF_NIOS_BUILD
+int lms_set_dc_offset_i(struct bladerf *dev,
+                        bladerf_module module, uint16_t value)
+{
+    const uint8_t addr = (module == BLADERF_MODULE_TX) ? 0x42 : 0x71;
+    return set_dc_offset_reg(dev, module, addr, value);
+}
+#endif
+
+#ifndef BLADERF_NIOS_BUILD
+int lms_set_dc_offset_q(struct bladerf *dev,
+                        bladerf_module module, int16_t value)
+{
+    const uint8_t addr = (module == BLADERF_MODULE_TX) ? 0x43 : 0x72;
+    return set_dc_offset_reg(dev, module, addr, value);
+}
+#endif
+
+#ifndef BLADERF_NIOS_BUILD
+int get_dc_offset(struct bladerf *dev, bladerf_module module,
+                  uint8_t addr, int16_t *value)
+{
+    int status;
+    uint8_t tmp;
+
+    status = LMS_READ(dev, addr, &tmp);
+    if (status != 0) {
+        return status;
+    }
+
+    switch (module) {
+        case BLADERF_MODULE_RX:
+
+            /* Mask out an unrelated control bit */
+            tmp = tmp & 0x7f;
+
+            /* Determine sign */
+            if (tmp & (1 << 6)) {
+                *value = -(int16_t)(tmp & 0x3f);
+            } else {
+                *value = (int16_t)(tmp & 0x3f);
+            }
+
+            /* Renormalize to 2048 */
+            *value <<= 5;
+            break;
+
+        case BLADERF_MODULE_TX:
+            *value = (int16_t) tmp;
+
+            /* Renormalize to 2048 */
+            *value <<= 4;
+            break;
+
+        default:
+            return BLADERF_ERR_INVAL;
+    }
+
+    return 0;
+}
+#endif
+
+#ifndef BLADERF_NIOS_BUILD
+int lms_get_dc_offset_i(struct bladerf *dev,
+                        bladerf_module module, int16_t *value)
+{
+    const uint8_t addr = (module == BLADERF_MODULE_TX) ? 0x42 : 0x71;
+    return get_dc_offset(dev, module, addr, value);
+}
+#endif
+
+
+#ifndef BLADERF_NIOS_BUILD
+int lms_get_dc_offset_q(struct bladerf *dev,
+                        bladerf_module module, int16_t *value)
+{
+    const uint8_t addr = (module == BLADERF_MODULE_TX) ? 0x43 : 0x72;
+    return get_dc_offset(dev, module, addr, value);
+}
+#endif

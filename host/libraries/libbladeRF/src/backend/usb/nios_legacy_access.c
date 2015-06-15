@@ -392,10 +392,7 @@ int nios_legacy_vctcxo_trim_dac_write(struct bladerf *dev, uint16_t value)
     return status;
 }
 
-
-int nios_legacy_get_fpga_correction(struct bladerf *dev,
-                                    bladerf_correction corr,
-                                    uint8_t addr, int16_t *value)
+static int get_iq_correction(struct bladerf *dev, uint8_t addr, int16_t *value)
 {
     int i;
     int status;
@@ -411,27 +408,14 @@ int nios_legacy_get_fpga_correction(struct bladerf *dev,
         *value |= (cmd.data << (i * 8));
     }
 
-    /* Gain corrections have an offset that needs to be accounted for */
-    if (corr == BLADERF_CORR_FPGA_GAIN) {
-        *value -= 4096;
-    }
-
     return status;
 }
 
-int nios_legacy_set_fpga_correction(struct bladerf *dev,
-                                    bladerf_correction corr,
-                                    uint8_t addr, int16_t value)
+static int set_iq_correction(struct bladerf *dev, uint8_t addr, int16_t value)
 {
     int i;
     int status;
     struct uart_cmd cmd;
-
-    /* If this is a gain correction add in the 1.0 value so 0 correction yields
-     * an unscaled gain */
-    if (corr == BLADERF_CORR_FPGA_GAIN) {
-        value += (int16_t)4096;
-    }
 
     for (i = status = 0; status == 0 && i < 2; i++) {
         cmd.addr = i + addr;
@@ -442,6 +426,117 @@ int nios_legacy_set_fpga_correction(struct bladerf *dev,
     }
 
     return status;
+}
+
+
+int nios_legacy_get_iq_gain_correction(struct bladerf *dev,
+                                       bladerf_module module, int16_t *value)
+{
+    int status;
+    uint8_t addr;
+
+    switch (module) {
+        case BLADERF_MODULE_RX:
+            addr = NIOS_PKT_LEGACY_DEV_RX_GAIN_ADDR;
+            break;
+
+        case BLADERF_MODULE_TX:
+            addr = NIOS_PKT_LEGACY_DEV_TX_GAIN_ADDR;
+            break;
+
+        default:
+            log_debug("%s: invalid module provided (%d)\n",
+                      __FUNCTION__, module);
+
+            return BLADERF_ERR_INVAL;
+    }
+
+    status = get_iq_correction(dev, addr, value);
+
+    /* Gain corrections have an offset that needs to be accounted for */
+    if (status == 0) {
+        *value -= 4096;
+    }
+
+    return status;
+}
+
+int nios_legacy_get_iq_phase_correction(struct bladerf *dev,
+                                        bladerf_module module, int16_t *value)
+{
+    uint8_t addr;
+
+    switch (module) {
+        case BLADERF_MODULE_RX:
+            addr = NIOS_PKT_LEGACY_DEV_RX_PHASE_ADDR;
+            break;
+
+        case BLADERF_MODULE_TX:
+            addr = NIOS_PKT_LEGACY_DEV_TX_PHASE_ADDR;
+            break;
+
+        default:
+            log_debug("%s: invalid module provided (%d)\n",
+                      __FUNCTION__, module);
+
+            return BLADERF_ERR_INVAL;
+    }
+
+    return get_iq_correction(dev, addr, value);
+}
+
+int nios_legacy_set_iq_gain_correction(struct bladerf *dev,
+                                       bladerf_module module, int16_t value)
+{
+    uint8_t addr;
+
+    switch (module) {
+        case BLADERF_MODULE_RX:
+            addr = NIOS_PKT_LEGACY_DEV_RX_GAIN_ADDR;
+            break;
+
+        case BLADERF_MODULE_TX:
+            addr = NIOS_PKT_LEGACY_DEV_TX_GAIN_ADDR;
+            break;
+
+        default:
+            log_debug("%s: invalid module provided (%d)\n",
+                      __FUNCTION__, module);
+
+            return BLADERF_ERR_INVAL;
+    }
+
+    log_verbose("%s:  %s, %d\n", __FUNCTION__, module2str(module), value);
+
+    /* Gain correction requires than an offset be applied */
+    value += (int16_t) 4096;
+
+    return set_iq_correction(dev, addr, value);
+}
+
+int nios_legacy_set_iq_phase_correction(struct bladerf *dev,
+                                        bladerf_module module, int16_t value)
+{
+    uint8_t addr;
+
+    switch (module) {
+        case BLADERF_MODULE_RX:
+            addr = NIOS_PKT_LEGACY_DEV_RX_PHASE_ADDR;
+            break;
+
+        case BLADERF_MODULE_TX:
+            addr = NIOS_PKT_LEGACY_DEV_TX_PHASE_ADDR;
+            break;
+
+        default:
+            log_debug("%s: invalid module provided (%d)\n",
+                      __FUNCTION__, module);
+
+            return BLADERF_ERR_INVAL;
+    }
+
+    log_verbose("%s: %s, %d\n", __FUNCTION__, module2str(module), value);
+    return set_iq_correction(dev, addr, value);
 }
 
 int nios_legacy_xb200_synth_write(struct bladerf *dev, uint32_t value)

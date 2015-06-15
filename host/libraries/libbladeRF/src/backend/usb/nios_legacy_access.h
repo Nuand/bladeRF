@@ -163,32 +163,52 @@ int nios_legacy_lms6_write(struct bladerf *dev, uint8_t addr, uint8_t data);
 int nios_legacy_vctcxo_trim_dac_write(struct bladerf *dev, uint16_t value);
 
 /**
- * Read a value from an FPGA correction block
+ * Read a IQ gain correction value
  *
  * @param[in]   dev         Device handle
- * @param[in]   corr        Correction type
- * @param[in]   addr        Address to write to target correction module
- * @param[out]  value       On success, updated with read value
+ * @param[in]   module      Module to read from
+ * @param[out]  value       On success, updated with phase correction value
  *
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
-int nios_legacy_get_fpga_correction(struct bladerf *dev,
-                                    bladerf_correction corr,
-                                    uint8_t addr, int16_t *value);
+int nios_legacy_get_iq_gain_correction(struct bladerf *dev,
+                                       bladerf_module module, int16_t *value);
 
 /**
- * Write a value to an FPGA correction block
+ * Read a IQ phase correction value
  *
  * @param[in]   dev         Device handle
- * @param[in]   corr        Correction type
- * @param[in]   addr        Address to write to target correction module
+ * @param[in]   module      Module to read from
+ * @param[out]  value       On success, updated with phase correction value
+ *
+ * @return 0 on success, BLADERF_ERR_* code on error.
+ */
+int nios_legacy_get_iq_phase_correction(struct bladerf *dev,
+                                        bladerf_module module, int16_t *value);
+
+/**
+ * Write an IQ gain correction value
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   module      Module to write to
  * @param[in]   value       Correction value to write
  *
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
-int nios_legacy_set_fpga_correction(struct bladerf *dev,
-                                    bladerf_correction corr,
-                                    uint8_t addr, int16_t value);
+int nios_legacy_set_iq_gain_correction(struct bladerf *dev,
+                                       bladerf_module module, int16_t value);
+
+/**
+ * Write an IQ phase correction value
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   module      Module to write to
+ * @param[in]   value       Correction value to write
+ *
+ * @return 0 on success, BLADERF_ERR_* code on error.
+ */
+int nios_legacy_set_iq_phase_correction(struct bladerf *dev,
+                                        bladerf_module module, int16_t value);
 
 /**
  * Write a value to the XB-200's ADF4351 synthesizer

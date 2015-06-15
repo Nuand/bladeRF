@@ -187,14 +187,12 @@ int tuning_set_freq(struct bladerf *dev, bladerf_module module,
     if (dc_cal != NULL) {
         dc_cal_tbl_vals(dc_cal, frequency, &dc_i, &dc_q);
 
-        status = dev->fn->set_correction(dev, module,
-                                         BLADERF_CORR_LMS_DCOFF_I, dc_i);
+        status = lms_set_dc_offset_i(dev, module, dc_i);
         if (status != 0) {
             return status;
         }
 
-        status = dev->fn->set_correction(dev, module,
-                                         BLADERF_CORR_LMS_DCOFF_Q, dc_q);
+        status = lms_set_dc_offset_q(dev, module, dc_q);
         if (status != 0) {
             return status;
         }

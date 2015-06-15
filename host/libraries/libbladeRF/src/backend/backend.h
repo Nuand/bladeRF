@@ -104,11 +104,18 @@ struct backend_fns {
     int (*expansion_gpio_dir_write)(struct bladerf *dev, uint32_t val);
     int (*expansion_gpio_dir_read)(struct bladerf *dev, uint32_t *val);
 
-    /* IQ Calibration Settings */
-    int (*set_correction)(struct bladerf *dev, bladerf_module,
-                          bladerf_correction corr, int16_t value);
-    int (*get_correction)(struct bladerf *dev, bladerf_module module,
-                          bladerf_correction corr, int16_t *value);
+    /* IQ Correction Settings */
+    int (*set_iq_gain_correction)(struct bladerf *dev, bladerf_module module,
+                                  int16_t value);
+
+    int (*set_iq_phase_correction)(struct bladerf *dev, bladerf_module module,
+                                   int16_t value);
+
+    int (*get_iq_gain_correction)(struct bladerf *dev, bladerf_module module,
+                                  int16_t *value);
+
+    int (*get_iq_phase_correction)(struct bladerf *dev, bladerf_module module,
+                                   int16_t *value);
 
     /* Get current timestamp counter values */
     int (*get_timestamp)(struct bladerf *dev, bladerf_module mod, uint64_t *value);

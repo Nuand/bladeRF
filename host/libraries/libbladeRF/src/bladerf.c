@@ -1583,7 +1583,28 @@ int bladerf_set_correction(struct bladerf *dev, bladerf_module module,
     int status;
     MUTEX_LOCK(&dev->ctrl_lock);
 
-    status = dev->fn->set_correction(dev, module, corr, value);
+    switch (corr) {
+        case BLADERF_CORR_FPGA_PHASE:
+            status = dev->fn->set_iq_phase_correction(dev, module, value);
+            break;
+
+        case BLADERF_CORR_FPGA_GAIN:
+            status = dev->fn->set_iq_gain_correction(dev, module, value);
+            break;
+
+        case BLADERF_CORR_LMS_DCOFF_I:
+            status = lms_set_dc_offset_i(dev, module, value);
+            break;
+
+        case BLADERF_CORR_LMS_DCOFF_Q:
+            status = lms_set_dc_offset_q(dev, module, value);
+            break;
+
+        default:
+            status = BLADERF_ERR_INVAL;
+            log_debug("Invalid correction type: %d\n", corr);
+            break;
+    }
 
     MUTEX_UNLOCK(&dev->ctrl_lock);
     return status;
@@ -1595,8 +1616,28 @@ int bladerf_get_correction(struct bladerf *dev, bladerf_module module,
     int status;
     MUTEX_LOCK(&dev->ctrl_lock);
 
-    status = dev->fn->get_correction(dev, module, corr, value);
+    switch (corr) {
+        case BLADERF_CORR_FPGA_PHASE:
+            status = dev->fn->get_iq_phase_correction(dev, module, value);
+            break;
 
+        case BLADERF_CORR_FPGA_GAIN:
+            status = dev->fn->get_iq_gain_correction(dev, module, value);
+            break;
+
+        case BLADERF_CORR_LMS_DCOFF_I:
+            status = lms_get_dc_offset_i(dev, module, value);
+            break;
+
+        case BLADERF_CORR_LMS_DCOFF_Q:
+            status = lms_get_dc_offset_q(dev, module, value);
+            break;
+
+        default:
+            status = BLADERF_ERR_INVAL;
+            log_debug("Invalid correction type: %d\n", corr);
+            break;
+    }
     MUTEX_UNLOCK(&dev->ctrl_lock);
     return status;
 }

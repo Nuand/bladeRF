@@ -729,4 +729,64 @@ int lms_select_sampling(struct bladerf *dev, bladerf_sampling sampling);
  */
 int lms_get_sampling(struct bladerf *dev, bladerf_sampling *sampling);
 
+/**
+ * Set the DC offset value on the I channel
+ *
+ * For consistency with other bladeRF correction values,
+ * this value is scaled to [-2048, 2048].
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   module      Module to adjust
+ * @param[in]   value       DC offset adjustment value to write
+ *
+ * @return 0 on succes, BLADERF_ERR_* value on failure
+ */
+int lms_set_dc_offset_i(struct bladerf *dev,
+                        bladerf_module module, uint16_t value);
+
+/**
+ * Get the DC offset value on the I channel
+ *
+ * For consistency with other bladeRF correction values,
+ * this value is scaled to [-2048, 2048].
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   module      Module to adjust
+ * @param[out]  value       On success, the DC offset value on the I channel
+ *
+ * @return 0 on succes, BLADERF_ERR_* value on failure
+ */
+int lms_get_dc_offset_i(struct bladerf *dev,
+                        bladerf_module module, int16_t *value);
+
+/**
+ * Set the DC offset value on the Q channel.
+ *
+ * For consistency with other bladeRF correction values,
+ * this value is scaled to [-2048, 2048].
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   module      Module to adjust
+ * @param[in]   value       DC offset adjustment value to write
+ *
+ * @return 0 on succes, BLADERF_ERR_* value on failure
+ */
+int lms_set_dc_offset_q(struct bladerf *dev,
+                        bladerf_module module, int16_t value);
+
+/**
+ * Get the DC offset value on the Q channel
+ *
+ * For consistency with other bladeRF correction values,
+ * this value is scaled to [-2048, 2048].
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   module      Module to adjust
+ * @param[out]  value       On success, the DC offset value on the I channel
+ *
+ * @return 0 on succes, BLADERF_ERR_* value on failure
+ */
+int lms_get_dc_offset_q(struct bladerf *dev,
+                        bladerf_module module, int16_t *value);
+
 #endif /* LMS_H_ */
