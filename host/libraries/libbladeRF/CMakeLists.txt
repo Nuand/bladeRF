@@ -296,7 +296,10 @@ if(ENABLE_BACKEND_USB)
         add_definitions("-DBULK_TIMEOUT_MS=0")
     endif()
 
-    set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend/usb/usb.c)
+    set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE}
+        src/backend/usb/nios_legacy_access.c
+        src/backend/usb/usb.c
+    )
 endif()
 
 if(LIBUSB_FOUND AND ENABLE_BACKEND_LIBUSB)

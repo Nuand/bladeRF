@@ -32,11 +32,12 @@
 #include "backend/usb/usb.h"
 #include "async.h"
 #include "bladeRF.h"    /* Firmware interface */
-#include "nios_pkt_formats.h"
 #include "log.h"
 #include "capabilities.h"
 #include "minmax.h"
 #include "conversions.h"
+#include "nios_pkt_formats.h"
+#include "nios_legacy_access.h"
 
 #if ENABLE_USB_DEV_RESET_ON_OPEN
 bool bladerf_usb_reset_device_on_open = true;
@@ -51,185 +52,6 @@ typedef enum {
 static const struct usb_driver *usb_driver_list[] = BLADERF_USB_BACKEND_LIST;
 
 struct backend_fns_usb;
-
-static inline struct bladerf_usb *usb_backend(struct bladerf *dev, void **driver)
-{
-    struct bladerf_usb *ret = (struct bladerf_usb*)dev->backend;
-    if (driver) {
-        *driver = ret->driver;
-    }
-    return ret;
-}
-
-//#define PRINT_PERIPHERAL_BUFFERS
-#ifdef PRINT_PERIPHERAL_BUFFERS
-static void print_buf(const char *msg, const uint8_t *buf, size_t len)
-{
-    size_t i;
-    if (msg != NULL) {
-        puts(msg);
-    }
-
-    for (i = 0; i < len; i++) {
-        if (i == 0) {
-            printf("  0x%02x,", buf[i]);
-        } else if ((i + 1) % 8 == 0) {
-            printf(" 0x%02x,\n ", buf[i]);
-        } else {
-            printf(" 0x%02x,", buf[i]);
-        }
-    }
-
-    putchar('\n');
-}
-#else
-#define print_buf(msg, data, len)
-#endif
-
-static int access_peripheral(struct bladerf *dev, uint8_t peripheral,
-                             usb_direction dir, struct uart_cmd *cmd,
-                             size_t len)
-{
-    void *driver;
-    struct bladerf_usb *usb = usb_backend(dev, &driver);
-
-    int status;
-    size_t i;
-    uint8_t buf[16] = { 0 };
-    const uint8_t pkt_mode_dir = (dir == USB_DIR_HOST_TO_DEVICE) ?
-                        NIOS_PKT_LEGACY_MODE_DIR_WRITE : NIOS_PKT_LEGACY_MODE_DIR_READ;
-
-    assert(len <= ((sizeof(buf) - 2) / 2));
-
-    /* Populate the buffer for transfer */
-    buf[0] = NIOS_PKT_LEGACY_MAGIC;
-    buf[1] = pkt_mode_dir | peripheral | (uint8_t)len;
-
-    for (i = 0; i < len; i++) {
-        buf[i * 2 + 2] = cmd[i].addr;
-        buf[i * 2 + 3] = cmd[i].data;
-    }
-
-    print_buf("Peripheral access request:", buf, 16);
-
-    /* Send the command */
-    status = usb->fn->bulk_transfer(driver, PERIPHERAL_EP_OUT,
-                                     buf, sizeof(buf),
-                                     PERIPHERAL_TIMEOUT_MS);
-    if (status != 0) {
-        log_debug("Failed to write perperial access command: %s\n",
-                  bladerf_strerror(status));
-        return status;
-    }
-
-    /* Read back the ACK. The command data is only used for a read operation,
-     * and is thrown away otherwise */
-    status = usb->fn->bulk_transfer(driver, PERIPHERAL_EP_IN,
-                                    buf, sizeof(buf),
-                                    PERIPHERAL_TIMEOUT_MS);
-
-    if (dir == NIOS_PKT_LEGACY_MODE_DIR_READ && status == 0) {
-        for (i = 0; i < len; i++) {
-            cmd[i].data = buf[i * 2 + 3];
-        }
-    }
-
-    print_buf("Peripheral access response:", buf, 16);
-
-    return status;
-}
-
-static inline int gpio_read(struct bladerf *dev, uint8_t addr, uint32_t *data)
-{
-    int status;
-    size_t i;
-    struct uart_cmd cmd;
-
-    *data = 0;
-
-    for (i = 0; i < sizeof(*data); i++) {
-        assert((addr + i) <= UINT8_MAX);
-        cmd.addr = (uint8_t)(addr + i);
-        cmd.data = 0xff;
-
-        status = access_peripheral(dev, NIOS_PKT_LEGACY_DEV_CONFIG,
-                                   USB_DIR_DEVICE_TO_HOST, &cmd, 1);
-
-        if (status < 0) {
-            return status;
-        }
-
-        *data |= (cmd.data << (i * 8));
-    }
-
-    return 0;
-}
-
-static inline int gpio_write(struct bladerf *dev, uint8_t addr, uint32_t data)
-{
-    int status;
-    size_t i;
-    struct uart_cmd cmd;
-
-    for (i = 0; i < sizeof(data); i++) {
-        assert((addr + i) <= UINT8_MAX);
-        cmd.addr = (uint8_t)(addr + i);
-        cmd.data = (data >> (i * 8)) & 0xff;
-
-        status = access_peripheral(dev, NIOS_PKT_LEGACY_DEV_CONFIG,
-                                   USB_DIR_HOST_TO_DEVICE, &cmd, 1);
-
-        if (status < 0) {
-            return status;
-        }
-    }
-
-    return 0;
-}
-
-static int load_fpga_version(struct bladerf *dev)
-{
-    int i, status;
-    struct uart_cmd cmd;
-
-    for (i = 0; i < 4; i++) {
-        cmd.addr = NIOS_PKT_LEGACY_DEV_FPGA_VERSION_ID + i;
-        cmd.data = 0xff;
-
-        status = access_peripheral(dev, NIOS_PKT_LEGACY_DEV_CONFIG,
-                                   USB_DIR_DEVICE_TO_HOST, &cmd, 1);
-
-        if (status != 0) {
-            memset(&dev->fpga_version, 0, sizeof(dev->fpga_version));
-            log_debug("Failed to read FPGA version[%d]: %s\n", i,
-                        bladerf_strerror(status));
-            return status;
-        }
-
-        switch (i) {
-            case 0:
-                dev->fpga_version.major = cmd.data;
-                break;
-            case 1:
-                dev->fpga_version.minor = cmd.data;
-                break;
-            case 2:
-                dev->fpga_version.patch = cmd.data;
-                break;
-            case 3:
-                dev->fpga_version.patch |= (cmd.data << 8);
-                break;
-            default:
-                assert(!"Bug");
-        }
-    }
-
-    snprintf((char*)dev->fpga_version.describe, BLADERF_VERSION_STR_MAX,
-             "%d.%d.%d", dev->fpga_version.major, dev->fpga_version.minor,
-             dev->fpga_version.patch);
-
-    return status;
-}
 
 /* Vendor command wrapper to gets a 32-bit integer and supplies a wIndex */
 static inline int vendor_cmd_int_windex(struct bladerf *dev, uint8_t cmd,
@@ -333,7 +155,7 @@ static inline int rflink_and_fpga_version_load(struct bladerf *dev)
     if (status == 0) {
         /* Read and store FPGA version info. This is only possible after
          * we've entered RF link mode */
-        status = load_fpga_version(dev);
+        status = nios_legacy_get_fpga_version(dev, &dev->fpga_version);
     }
 
     return status;
@@ -942,38 +764,6 @@ static int usb_get_device_speed(struct bladerf *dev, bladerf_dev_speed *speed)
     return usb->fn->get_speed(driver, speed);
 }
 
-static int usb_config_gpio_write(struct bladerf *dev, uint32_t val)
-{
-    log_verbose( "config_gpio_write: 0x%8.8x\n", val );
-    return gpio_write(dev, 0, val);
-}
-
-static int usb_config_gpio_read(struct bladerf *dev, uint32_t *val)
-{
-    return gpio_read(dev, 0, val);
-}
-
-static int usb_expansion_gpio_write(struct bladerf *dev, uint32_t val)
-{
-    log_verbose( "expansion_gpio_write: 0x%8.8x\n", val );
-    return gpio_write(dev, 40, val);
-}
-
-static int usb_expansion_gpio_read(struct bladerf *dev, uint32_t *val)
-{
-    return gpio_read(dev, 40, val);
-}
-
-static int usb_expansion_gpio_dir_write(struct bladerf *dev, uint32_t val)
-{
-    log_verbose( "expansion_gpio_dir_write: 0x%8.8x\n", val );
-    return gpio_write(dev, 44, val);
-}
-
-static int usb_expansion_gpio_dir_read(struct bladerf *dev, uint32_t *val)
-{
-    return gpio_read(dev, 44, val);
-}
 
 static inline void get_correction_addr_type(bladerf_module module,
                                             bladerf_correction corr,
@@ -1013,65 +803,6 @@ static inline void get_correction_addr_type(bladerf_module module,
     }
 }
 
-static int set_fpga_correction(struct bladerf *dev,
-                               bladerf_correction corr,
-                               uint8_t addr, int16_t value)
-{
-    int i;
-    int status;
-    struct uart_cmd cmd;
-
-    /* If this is a gain correction add in the 1.0 value so 0 correction yields
-     * an unscaled gain */
-    if (corr == BLADERF_CORR_FPGA_GAIN) {
-        value += (int16_t)4096;
-    }
-
-    for (i = status = 0; status == 0 && i < 2; i++) {
-        cmd.addr = i + addr;
-
-        cmd.data = (value >> (i * 8)) & 0xff;
-        status = access_peripheral(dev, NIOS_PKT_LEGACY_DEV_CONFIG,
-                                   USB_DIR_HOST_TO_DEVICE, &cmd, 1);
-    }
-
-    return status;
-}
-
-static int usb_lms_write(struct bladerf *dev, uint8_t addr, uint8_t data)
-{
-    int status;
-    struct uart_cmd cmd;
-
-    cmd.addr = addr;
-    cmd.data = data;
-
-    log_verbose( "%s: 0x%2.2x 0x%2.2x\n", __FUNCTION__, addr, data );
-
-    status = access_peripheral(dev, NIOS_PKT_LEGACY_DEV_LMS,
-                               USB_DIR_HOST_TO_DEVICE, &cmd, 1);
-
-    return status;
-}
-
-static int usb_lms_read(struct bladerf *dev, uint8_t addr, uint8_t *data)
-{
-    int status;
-    struct uart_cmd cmd;
-
-    cmd.addr = addr;
-    cmd.data = 0xff;
-
-    status = access_peripheral(dev, NIOS_PKT_LEGACY_DEV_LMS,
-                               USB_DIR_DEVICE_TO_HOST, &cmd, 1);
-
-    if (status == 0) {
-        *data = cmd.data;
-        log_verbose( "%s: 0x%2.2x 0x%2.2x\n", __FUNCTION__, addr, *data );
-    }
-
-    return status;
-}
 
 static int set_lms_correction(struct bladerf *dev, bladerf_module module,
                               uint8_t addr, int16_t value)
@@ -1079,7 +810,7 @@ static int set_lms_correction(struct bladerf *dev, bladerf_module module,
     int status;
     uint8_t tmp;
 
-    status = usb_lms_read(dev, addr, &tmp);
+    status = nios_legacy_lms6_read(dev, addr, &tmp);
     if (status != 0) {
         return status;
     }
@@ -1117,7 +848,7 @@ static int set_lms_correction(struct bladerf *dev, bladerf_module module,
         }
     }
 
-    status = usb_lms_write(dev, addr, (uint8_t)value);
+    status = nios_legacy_lms6_write(dev, addr, (uint8_t)value);
     if (status < 0) {
         return status;
     }
@@ -1136,7 +867,7 @@ static int usb_set_correction(struct bladerf *dev, bladerf_module module,
 
     switch (type) {
         case CORR_FPGA:
-            status = set_fpga_correction(dev, corr, addr, value);
+            status = nios_legacy_set_fpga_correction(dev, corr, addr, value);
             break;
 
         case CORR_LMS:
@@ -1152,31 +883,6 @@ static int usb_set_correction(struct bladerf *dev, bladerf_module module,
     return 0;
 }
 
-static int get_fpga_correction(struct bladerf *dev, bladerf_correction corr,
-                               uint8_t addr, int16_t *value)
-{
-    int i;
-    int status;
-    struct uart_cmd cmd;
-
-    *value = 0;
-    for (i = status = 0; status == 0 && i < 2; i++) {
-        cmd.addr = i + addr;
-        cmd.data = 0xff;
-        status = access_peripheral(dev, NIOS_PKT_LEGACY_DEV_CONFIG,
-                                   USB_DIR_DEVICE_TO_HOST, &cmd, 1);
-
-        *value |= (cmd.data << (i * 8));
-    }
-
-    /* Gain corrections have an offset that needs to be accounted for */
-    if (corr == BLADERF_CORR_FPGA_GAIN) {
-        *value -= 4096;
-    }
-
-    return status;
-}
-
 static int get_lms_correction(struct bladerf *dev,
                                 bladerf_module module,
                                 uint8_t addr, int16_t *value)
@@ -1184,7 +890,7 @@ static int get_lms_correction(struct bladerf *dev,
     uint8_t tmp;
     int status;
 
-    status = usb_lms_read(dev, addr, &tmp);
+    status = nios_legacy_lms6_read(dev, addr, &tmp);
     if (status == 0) {
         /* Mask out any control bits in the RX DC correction area */
         if (module == BLADERF_MODULE_RX) {
@@ -1221,7 +927,7 @@ static int usb_get_correction(struct bladerf *dev, bladerf_module module,
             break;
 
         case CORR_FPGA:
-            status = get_fpga_correction(dev, corr, addr, value);
+            status = nios_legacy_get_fpga_correction(dev, corr, addr, value);
             break;
 
         default:
@@ -1229,120 +935,6 @@ static int usb_get_correction(struct bladerf *dev, bladerf_module module,
     }
 
     return status;
-}
-
-int usb_get_timestamp(struct bladerf *dev, bladerf_module mod, uint64_t *value)
-{
-    int status = 0;
-    struct uart_cmd cmds[4];
-    uint8_t timestamp_bytes[8];
-    size_t i;
-
-    /* Offset 16 is the time tamer according to the Nios firmware */
-    cmds[0].addr = (mod == BLADERF_MODULE_RX ? 16 : 24);
-    cmds[1].addr = (mod == BLADERF_MODULE_RX ? 17 : 25);
-    cmds[2].addr = (mod == BLADERF_MODULE_RX ? 18 : 26);
-    cmds[3].addr = (mod == BLADERF_MODULE_RX ? 19 : 27);
-    cmds[0].data = cmds[1].data = cmds[2].data = cmds[3].data = 0xff;
-
-    status = access_peripheral(dev, NIOS_PKT_LEGACY_DEV_CONFIG, USB_DIR_DEVICE_TO_HOST,
-                               cmds, ARRAY_SIZE(cmds));
-    if (status != 0) {
-        return status;
-    } else {
-        for (i = 0; i < 4; i++) {
-            timestamp_bytes[i] = cmds[i].data;
-        }
-    }
-
-    cmds[0].addr = (mod == BLADERF_MODULE_RX ? 20 : 28);
-    cmds[1].addr = (mod == BLADERF_MODULE_RX ? 21 : 29);
-    cmds[2].addr = (mod == BLADERF_MODULE_RX ? 22 : 30);
-    cmds[3].addr = (mod == BLADERF_MODULE_RX ? 23 : 31);
-    cmds[0].data = cmds[1].data = cmds[2].data = cmds[3].data = 0xff;
-
-    status = access_peripheral(dev, NIOS_PKT_LEGACY_DEV_CONFIG, USB_DIR_DEVICE_TO_HOST,
-                               cmds, ARRAY_SIZE(cmds));
-
-    if (status) {
-        return status;
-    } else {
-        for (i = 0; i < 4; i++) {
-            timestamp_bytes[i + 4] = cmds[i].data;
-        }
-    }
-
-    memcpy(value, timestamp_bytes, sizeof(*value));
-    *value = LE64_TO_HOST(*value);
-
-    return 0;
-}
-
-static int usb_si5338_write(struct bladerf *dev, uint8_t addr, uint8_t data)
-{
-    struct uart_cmd cmd;
-
-    cmd.addr = addr;
-    cmd.data = data;
-
-    log_verbose( "%s: 0x%2.2x 0x%2.2x\n", __FUNCTION__, addr, data );
-
-    return access_peripheral(dev, NIOS_PKT_LEGACY_DEV_SI5338,
-                             USB_DIR_HOST_TO_DEVICE, &cmd, 1);
-}
-
-static int usb_si5338_read(struct bladerf *dev, uint8_t addr, uint8_t *data)
-{
-    int status;
-    struct uart_cmd cmd;
-
-    cmd.addr = addr;
-    cmd.data = 0xff;
-
-    status = access_peripheral(dev, NIOS_PKT_LEGACY_DEV_SI5338,
-                               USB_DIR_DEVICE_TO_HOST, &cmd, 1);
-
-    if (status == 0) {
-        *data = cmd.data;
-        log_verbose("%s: 0x%2.2x 0x%2.2x\n", __FUNCTION__, addr, *data);
-    }
-
-    return status;
-}
-
-
-static int usb_dac_write(struct bladerf *dev, uint16_t value)
-{
-    int status;
-    struct uart_cmd cmd;
-    int base;
-
-    /* FPGA v0.0.4 introduced a change to the location of the DAC registers */
-    const bool legacy_location = !have_cap(dev, BLADERF_CAP_UPDATED_DAC_ADDR);
-
-    base = legacy_location ? 0 : 34;
-
-    cmd.addr = base;
-    cmd.data = value & 0xff;
-    status = access_peripheral(dev, legacy_location ? NIOS_PKT_LEGACY_DEV_VCTCXO : NIOS_PKT_LEGACY_DEV_CONFIG,
-                               USB_DIR_HOST_TO_DEVICE, &cmd, 1);
-
-    if (status < 0) {
-        return status;
-    }
-
-    cmd.addr = base + 1;
-    cmd.data = (value >> 8) & 0xff;
-    status = access_peripheral(dev, legacy_location ? NIOS_PKT_LEGACY_DEV_VCTCXO : NIOS_PKT_LEGACY_DEV_CONFIG,
-                               USB_DIR_HOST_TO_DEVICE, &cmd, 1);
-
-    return status;
-}
-
-static int usb_xb_spi(struct bladerf *dev, uint32_t value)
-{
-    log_verbose("xb_spi: 0x%8.8x\n", value);
-    return gpio_write(dev, 36, value);
 }
 
 static int usb_set_firmware_loopback(struct bladerf *dev, bool enable) {
@@ -1462,8 +1054,6 @@ static int usb_retune(struct bladerf *dev, bladerf_module module,
     nios_pkt_retune_pack(buf, module, timestamp,
                          nint, nfrac, freqsel, vcocap, low_band, quick_tune);
 
-    print_buf("Retune request:", buf, 16);
-
     /* Send the command */
     status = usb->fn->bulk_transfer(driver, PERIPHERAL_EP_OUT,
                                     buf, sizeof(buf),
@@ -1484,8 +1074,6 @@ static int usb_retune(struct bladerf *dev, bladerf_module module,
                   bladerf_strerror(status));
         return status;
     }
-
-    print_buf("Retune response:", buf, 16);
 
 #   ifdef LOGGING_ENABLED
     nios_pkt_retune_resp_unpack(buf, &duration, &vcocap, &resp_flags);
@@ -1677,6 +1265,7 @@ static int usb_load_fw_from_bootloader(bladerf_backend backend,
 }
 
 
+/* USB backend that used legacy format for communicating with NIOS II */
 const struct backend_fns backend_fns_usb = {
     FIELD_INIT(.matches, usb_matches),
 
@@ -1699,28 +1288,28 @@ const struct backend_fns backend_fns_usb = {
     FIELD_INIT(.get_otp, usb_get_otp),
     FIELD_INIT(.get_device_speed, usb_get_device_speed),
 
-    FIELD_INIT(.config_gpio_write, usb_config_gpio_write),
-    FIELD_INIT(.config_gpio_read, usb_config_gpio_read),
+    FIELD_INIT(.config_gpio_write, nios_legacy_config_write),
+    FIELD_INIT(.config_gpio_read, nios_legacy_config_read),
 
-    FIELD_INIT(.expansion_gpio_write, usb_expansion_gpio_write),
-    FIELD_INIT(.expansion_gpio_read, usb_expansion_gpio_read),
-    FIELD_INIT(.expansion_gpio_dir_write, usb_expansion_gpio_dir_write),
-    FIELD_INIT(.expansion_gpio_dir_read, usb_expansion_gpio_dir_read),
+    FIELD_INIT(.expansion_gpio_write, nios_legacy_expansion_gpio_write),
+    FIELD_INIT(.expansion_gpio_read, nios_legacy_expansion_gpio_read),
+    FIELD_INIT(.expansion_gpio_dir_write, nios_legacy_expansion_gpio_dir_write),
+    FIELD_INIT(.expansion_gpio_dir_read, nios_legacy_expansion_gpio_dir_read),
 
     FIELD_INIT(.set_correction, usb_set_correction),
     FIELD_INIT(.get_correction, usb_get_correction),
 
-    FIELD_INIT(.get_timestamp, usb_get_timestamp),
+    FIELD_INIT(.get_timestamp, nios_legacy_get_timestamp),
 
-    FIELD_INIT(.si5338_write, usb_si5338_write),
-    FIELD_INIT(.si5338_read, usb_si5338_read),
+    FIELD_INIT(.si5338_write, nios_legacy_si5338_write),
+    FIELD_INIT(.si5338_read, nios_legacy_si5338_read),
 
-    FIELD_INIT(.lms_write, usb_lms_write),
-    FIELD_INIT(.lms_read, usb_lms_read),
+    FIELD_INIT(.lms_write, nios_legacy_lms6_write),
+    FIELD_INIT(.lms_read, nios_legacy_lms6_read),
 
-    FIELD_INIT(.dac_write, usb_dac_write),
+    FIELD_INIT(.dac_write, nios_legacy_vctcxo_trim_dac_write),
 
-    FIELD_INIT(.xb_spi, usb_xb_spi),
+    FIELD_INIT(.xb_spi, nios_legacy_xb200_synth_write),
 
     FIELD_INIT(.set_firmware_loopback, usb_set_firmware_loopback),
     FIELD_INIT(.get_firmware_loopback, usb_get_firmware_loopback),

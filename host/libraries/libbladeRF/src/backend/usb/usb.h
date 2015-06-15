@@ -81,6 +81,7 @@ typedef enum {
     USB_DIR_DEVICE_TO_HOST = 0x80
 } usb_direction;
 
+
 /**
  * USB backend driver function table
  *
@@ -144,5 +145,14 @@ struct bladerf_usb {
     const struct usb_fns *fn;
     void *driver;
 };
+
+static inline struct bladerf_usb *usb_backend(struct bladerf *dev, void **driver)
+{
+    struct bladerf_usb *ret = (struct bladerf_usb*)dev->backend;
+    if (driver) {
+        *driver = ret->driver;
+    }
+    return ret;
+}
 
 #endif
