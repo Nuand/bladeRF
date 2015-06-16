@@ -107,16 +107,14 @@ uint8_t lms6_read(uint8_t addr)
 {
     uint8_t data;
 
-    alt_avalon_spi_command(LMS_SPI_BASE, 0, 1, &addr, 0, 0, ALT_AVALON_SPI_COMMAND_MERGE);
-    alt_avalon_spi_command(LMS_SPI_BASE, 0, 0, 0, 1, &data, 0);
+    data = IORD_8DIRECT(LMS_SPI_BASE, addr);
 
     return data;
 }
 
 void lms6_write(uint8_t addr, uint8_t data)
 {
-    uint8_t msg[2] = { addr | LMS6002D_WRITE_BIT, data};
-    alt_avalon_spi_command(LMS_SPI_BASE, 0, 2, msg, 0, 0, 0 ) ;
+    IOWR_8DIRECT(LMS_SPI_BASE, addr, data);
 }
 
 uint8_t si5338_read(uint8_t addr)

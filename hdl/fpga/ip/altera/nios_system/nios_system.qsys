@@ -7,7 +7,7 @@
    description=""
    tags=""
    categories="System" />
- <parameter name="bonusData"><![CDATA[bonusData 
+ <parameter name="bonusData"><![CDATA[bonusData
 {
    element $${FILENAME}
    {
@@ -21,7 +21,7 @@
    {
       datum _sortIndex
       {
-         value = "12";
+         value = "11";
          type = "int";
       }
    }
@@ -37,7 +37,7 @@
    {
       datum _sortIndex
       {
-         value = "6";
+         value = "5";
          type = "int";
       }
    }
@@ -53,7 +53,7 @@
    {
       datum _sortIndex
       {
-         value = "7";
+         value = "6";
          type = "int";
       }
    }
@@ -69,7 +69,7 @@
    {
       datum _sortIndex
       {
-         value = "8";
+         value = "7";
          type = "int";
       }
    }
@@ -85,7 +85,7 @@
    {
       datum _sortIndex
       {
-         value = "3";
+         value = "2";
          type = "int";
       }
    }
@@ -101,16 +101,8 @@
    {
       datum _sortIndex
       {
-         value = "2";
+         value = "14";
          type = "int";
-      }
-   }
-   element lms_spi.spi_control_port
-   {
-      datum baseAddress
-      {
-         value = "37024";
-         type = "String";
       }
    }
    element nios2
@@ -121,11 +113,27 @@
          type = "int";
       }
    }
+   element nios_system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element nios_system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
    element opencores_i2c
    {
       datum _sortIndex
       {
-         value = "9";
+         value = "8";
          type = "int";
       }
    }
@@ -133,7 +141,7 @@
    {
       datum _sortIndex
       {
-         value = "5";
+         value = "4";
          type = "int";
       }
    }
@@ -149,7 +157,7 @@
    {
       datum _sortIndex
       {
-         value = "4";
+         value = "3";
          type = "int";
       }
    }
@@ -165,7 +173,7 @@
    {
       datum _sortIndex
       {
-         value = "14";
+         value = "13";
          type = "int";
       }
    }
@@ -189,7 +197,7 @@
    {
       datum _sortIndex
       {
-         value = "13";
+         value = "12";
          type = "int";
       }
    }
@@ -205,7 +213,7 @@
    {
       datum _sortIndex
       {
-         value = "10";
+         value = "9";
          type = "int";
       }
    }
@@ -221,7 +229,7 @@
    {
       datum _sortIndex
       {
-         value = "11";
+         value = "10";
          type = "int";
       }
    }
@@ -291,7 +299,7 @@
    internal="rx_tamer.conduit_end"
    type="conduit"
    dir="end" />
- <interface name="spi" internal="lms_spi.external" type="conduit" dir="end" />
+ <interface name="spi" internal="lms_spi.conduit_end" type="conduit" dir="end" />
  <interface
    name="tx_tamer"
    internal="tx_tamer.conduit_end"
@@ -377,21 +385,10 @@
   <parameter name="writeBufferDepth" value="64" />
   <parameter name="writeIRQThreshold" value="8" />
  </module>
- <module name="lms_spi" kind="altera_avalon_spi" version="15.0" enabled="1">
-  <parameter name="avalonSpec" value="2.0" />
-  <parameter name="clockPhase" value="0" />
-  <parameter name="clockPolarity" value="0" />
-  <parameter name="dataWidth" value="8" />
-  <parameter name="disableAvalonFlowControl" value="false" />
-  <parameter name="inputClockRate" value="80000000" />
-  <parameter name="insertDelayBetweenSlaveSelectAndSClk" value="false" />
-  <parameter name="insertSync" value="false" />
-  <parameter name="lsbOrderedFirst" value="false" />
-  <parameter name="masterSPI" value="true" />
-  <parameter name="numberOfSlaves" value="1" />
-  <parameter name="syncRegDepth" value="2" />
-  <parameter name="targetClockRate" value="40000000" />
-  <parameter name="targetSlaveSelectToSClkDelay" value="2.0" />
+ <module name="lms_spi" kind="spi" version="1.0" enabled="1">
+  <parameter name="ADDR_WIDTH" value="7" />
+  <parameter name="CLOCK_DIV" value="2" />
+  <parameter name="DATA_WIDTH" value="8" />
  </module>
  <module name="nios2" kind="altera_nios2_gen2" version="15.0" enabled="1">
   <parameter name="AUTO_CLK_CLOCK_DOMAIN" value="1" />
@@ -413,7 +410,7 @@
   <parameter name="dataAddrWidth" value="16" />
   <parameter name="dataMasterHighPerformanceAddrWidth" value="1" />
   <parameter name="dataMasterHighPerformanceMapParam" value="" />
-  <parameter name="dataSlaveMapParam"><![CDATA[<address-map><slave name='ram.s1' start='0x4000' end='0x8000' /><slave name='nios2.debug_mem_slave' start='0x8800' end='0x9000' /><slave name='control.s1' start='0x9040' end='0x9060' /><slave name='peripheral_spi.spi_control_port' start='0x9060' end='0x9080' /><slave name='lms_spi.spi_control_port' start='0x9080' end='0x90A0' /><slave name='xb_gpio_dir.s1' start='0x90A0' end='0x90B0' /><slave name='xb_gpio.s1' start='0x90B0' end='0x90C0' /><slave name='iq_corr_tx_phase_gain.s1' start='0x90C0' end='0x90D0' /><slave name='iq_corr_rx_phase_gain.s1' start='0x90D0' end='0x90E0' /><slave name='opencores_i2c.bladerf_oc_i2c_master' start='0x90F0' end='0x90F8' /><slave name='jtag_uart.avalon_jtag_slave' start='0x9100' end='0x9108' /><slave name='command_uart.avalon_slave' start='0x9120' end='0x9140' /><slave name='tx_tamer.avalon_slave_0' start='0x9140' end='0x9160' /><slave name='rx_tamer.avalon_slave_0' start='0x9160' end='0x9180' /></address-map>]]></parameter>
+  <parameter name="dataSlaveMapParam"><![CDATA[<address-map><slave name='ram.s1' start='0x4000' end='0x8000' /><slave name='nios2.debug_mem_slave' start='0x8800' end='0x9000' /><slave name='control.s1' start='0x9040' end='0x9060' /><slave name='peripheral_spi.spi_control_port' start='0x9060' end='0x9080' /><slave name='xb_gpio_dir.s1' start='0x90A0' end='0x90B0' /><slave name='xb_gpio.s1' start='0x90B0' end='0x90C0' /><slave name='iq_corr_tx_phase_gain.s1' start='0x90C0' end='0x90D0' /><slave name='iq_corr_rx_phase_gain.s1' start='0x90D0' end='0x90E0' /><slave name='opencores_i2c.bladerf_oc_i2c_master' start='0x90F0' end='0x90F8' /><slave name='jtag_uart.avalon_jtag_slave' start='0x9100' end='0x9108' /><slave name='command_uart.avalon_slave' start='0x9120' end='0x9140' /><slave name='tx_tamer.avalon_slave_0' start='0x9140' end='0x9160' /><slave name='rx_tamer.avalon_slave_0' start='0x9160' end='0x9180' /><slave name='lms_spi.avalon_slave_0' start='0x9200' end='0x9280' /></address-map>]]></parameter>
   <parameter name="data_master_high_performance_paddr_base" value="0" />
   <parameter name="data_master_high_performance_paddr_size" value="0" />
   <parameter name="data_master_paddr_base" value="0" />
@@ -459,7 +456,7 @@
   <parameter name="instruction_master_high_performance_paddr_size" value="0" />
   <parameter name="instruction_master_paddr_base" value="0" />
   <parameter name="instruction_master_paddr_size" value="0" />
-  <parameter name="internalIrqMaskSystemInfo" value="191" />
+  <parameter name="internalIrqMaskSystemInfo" value="190" />
   <parameter name="io_regionbase" value="0" />
   <parameter name="io_regionsize" value="0" />
   <parameter name="master_addr_map" value="false" />
@@ -705,6 +702,15 @@
    kind="avalon"
    version="15.0"
    start="nios2.data_master"
+   end="lms_spi.avalon_slave_0">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x9200" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection
+   kind="avalon"
+   version="15.0"
+   start="nios2.data_master"
    end="opencores_i2c.bladerf_oc_i2c_master">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x90f0" />
@@ -773,15 +779,6 @@
    kind="avalon"
    version="15.0"
    start="nios2.data_master"
-   end="lms_spi.spi_control_port">
-  <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x9080" />
-  <parameter name="defaultConnection" value="false" />
- </connection>
- <connection
-   kind="avalon"
-   version="15.0"
-   start="nios2.data_master"
    end="peripheral_spi.spi_control_port">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x9060" />
@@ -806,11 +803,6 @@
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection kind="clock" version="15.0" start="system_clock.clk" end="nios2.clk" />
- <connection
-   kind="clock"
-   version="15.0"
-   start="system_clock.clk"
-   end="lms_spi.clk" />
  <connection
    kind="clock"
    version="15.0"
@@ -868,6 +860,11 @@
    start="system_clock.clk"
    end="rx_tamer.clock_sink" />
  <connection
+   kind="clock"
+   version="15.0"
+   start="system_clock.clk"
+   end="lms_spi.clock_sink" />
+ <connection
    kind="interrupt"
    version="15.0"
    start="nios2.irq"
@@ -895,9 +892,6 @@
    end="rx_tamer.interrupt_sender">
   <parameter name="irqNumber" value="3" />
  </connection>
- <connection kind="interrupt" version="15.0" start="nios2.irq" end="lms_spi.irq">
-  <parameter name="irqNumber" value="0" />
- </connection>
  <connection kind="interrupt" version="15.0" start="nios2.irq" end="jtag_uart.irq">
   <parameter name="irqNumber" value="1" />
  </connection>
@@ -913,11 +907,6 @@
    version="15.0"
    start="system_clock.clk_reset"
    end="nios2.reset" />
- <connection
-   kind="reset"
-   version="15.0"
-   start="system_clock.clk_reset"
-   end="lms_spi.reset" />
  <connection
    kind="reset"
    version="15.0"
@@ -978,6 +967,11 @@
    version="15.0"
    start="system_clock.clk_reset"
    end="opencores_i2c.reset_sink" />
+ <connection
+   kind="reset"
+   version="15.0"
+   start="system_clock.clk_reset"
+   end="lms_spi.reset_sink" />
  <interconnectRequirement for="$system" name="qsys_mm.clockCrossingAdapter" value="HANDSHAKE" />
  <interconnectRequirement for="$system" name="qsys_mm.maxAdditionalLatency" value="1" />
 </system>
