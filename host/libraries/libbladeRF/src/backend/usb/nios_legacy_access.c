@@ -52,7 +52,7 @@ static void print_buf(const char *msg, const uint8_t *buf, size_t len)
 
     for (i = 0; i < len; i++) {
         if (i == 0) {
-            fprintf(stderr"  0x%02x,", buf[i]);
+            fprintf(stderr, "  0x%02x,", buf[i]);
         } else if ((i + 1) % 8 == 0) {
             fprintf(stderr, " 0x%02x,\n ", buf[i]);
         } else {
@@ -60,7 +60,7 @@ static void print_buf(const char *msg, const uint8_t *buf, size_t len)
         }
     }
 
-    fputchar('\n', stderr);
+    fputc('\n', stderr);
 }
 #else
 #define print_buf(msg, data, len) do {} while(0)
@@ -92,7 +92,7 @@ static int nios_access(struct bladerf *dev, uint8_t peripheral,
         buf[i * 2 + 3] = cmd[i].data;
     }
 
-    print_buf("NIOS II access request:", buf, 16);
+    print_buf("NIOS II access request:\n", buf, 16);
 
     /* Send the command */
     status = usb->fn->bulk_transfer(driver, PERIPHERAL_EP_OUT,
@@ -117,7 +117,7 @@ static int nios_access(struct bladerf *dev, uint8_t peripheral,
     }
 
     if (status == 0) {
-        print_buf("NIOS II access response:", buf, 16);
+        print_buf("NIOS II access response:\n", buf, 16);
     } else {
         log_debug("Failed to receice NIOS II response: %s\n",
                   bladerf_strerror(status));
