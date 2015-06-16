@@ -230,11 +230,11 @@ uint64_t time_tamer_read(bladerf_module m)
 
     switch (m) {
         case BLADERF_MODULE_RX:
-            ret = 0x0a1b2c3d;
+            ret = 0x123456780a1b2c3d;
             break;
 
         case BLADERF_MODULE_TX:
-            ret = 0xa1b2c3d4;
+            ret = 0x87654321a1b2c3d4;
             break;
 
         default:
