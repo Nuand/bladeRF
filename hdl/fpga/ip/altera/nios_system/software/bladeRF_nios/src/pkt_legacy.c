@@ -199,6 +199,13 @@ static uint64_t perform_config_read(enum config_param param)
     return payload;
 }
 
+/* Perform read on first request and return a byte from the payload
+ * on each successive request.
+ *
+ * Although this legacy format includes a (addr, data) tuple per request, we
+ * always request data "in order" from the host, from LSB to MSB, so we won't
+ * bother checking the successive addresses, which should just be incrementing.
+ */
 static inline void legacy_config_read(uint8_t count, struct pkt_buf *b)
 
 {
@@ -206,22 +213,23 @@ static inline void legacy_config_read(uint8_t count, struct pkt_buf *b)
     static uint8_t n = 0;
     static uint64_t payload = 0;
     static enum config_param param = CONFIG_UNKNOWN;
+    static enum config_param last_param = CONFIG_UNKNOWN;
 
     const uint8_t *req_data = &b->req[PAYLOAD_IDX];
     uint8_t *resp_data = &b->resp[PAYLOAD_IDX];
 
+    param = lookup_param(b->req[PAYLOAD_IDX]);
+
     for (i = 0; i < count; i++) {
-        if (n == 0) {
-            /* Perform read on first request and return a byte from the payload
-             * on each successive request.
-             *
-             * Although this legacy format includes a (addr, data) tuple per
-             * request, we always request data "in order" from the host, from
-             * LSB to MSB, so we won't bother checking the successive addresses,
-             * which should just be incrementing.
-             */
-            param = lookup_param(b->req[PAYLOAD_IDX]);
+
+        /* Reset if we're at the beggining of a requst, or if it appears
+         * that we got a different request while in the middle of the previous
+         * series of accesses. */
+        if (n == 0 || (param != last_param)) {
+            DBG("Resetting read state for param=%d with n=%d\n", param, n);
+            n = 0;
             payload = perform_config_read(param);
+            last_param = param;
         }
 
         /* Copy address offset from request to response buffer */
@@ -235,12 +243,12 @@ static inline void legacy_config_read(uint8_t count, struct pkt_buf *b)
 
         /* We've finished returning data for this request - reset and quit . */
         if (n >= config_params[param].len) {
-            param = CONFIG_UNKNOWN;
             n = 0;
-            payload = 0;
+            param = CONFIG_UNKNOWN;
             break;
         }
     }
+
 }
 
 static inline void legacy_pkt_read(uint8_t dev_id, uint8_t count,
@@ -328,27 +336,35 @@ static inline void perform_config_write(enum config_param p, uint64_t payload)
     }
 }
 
+
+/* In the legacy format, we receive write data as (addr, data) tuples,
+ * where addr just advances by one in each successive tuple.
+ *
+ * Since we know we don't do any weird ordering with these from the
+ * host side, we're just assuming that we write these from LSB to MSB.
+ *
+ * Therefore, we'll just use the address from the first request.
+ */
 static inline void legacy_config_write(uint8_t count, struct pkt_buf *b)
 {
     uint8_t i;
     static uint64_t payload = 0;
     static uint8_t n = 0;
-    static enum config_param param;
+    static enum config_param param = CONFIG_UNKNOWN;
+    static enum config_param last_param = CONFIG_UNKNOWN;
 
     const uint8_t *req_data = &b->req[PAYLOAD_IDX];
     uint8_t *resp_data = &b->resp[PAYLOAD_IDX];
 
-    /* In the legacy format, we receive write data as (addr, data) tuples,
-     * where addr just advances by one in each successive tuple.
-     *
-     * Since we know we don't do any weird ordering with these from the
-     * host side, we're just assuming that we write these from LSB to MSB.
-     *
-     * Therefore, we'll just use the address from the first request.
-     */
+    param = lookup_param(b->req[PAYLOAD_IDX]);
 
-    if (n == 0) {
-        param = lookup_param(b->req[PAYLOAD_IDX]);
+    /* Reset if we're at the beggining of a requst, or if it appears
+     * that we got a different request while in the middle of the previous
+     * series of accesses. */
+    if (n == 0 || (param != last_param)) {
+        DBG("Resetting write state for param=%d with n=%d\n", param, n);
+        payload = 0;
+        n = 0;
     }
 
     for (i = 0; i < count && n < config_params[param].len; i++) {
@@ -366,9 +382,11 @@ static inline void legacy_config_write(uint8_t count, struct pkt_buf *b)
     /* We aggregated all the data we need - perform the write and reset */
     if (n >= config_params[param].len) {
         perform_config_write(param, payload);
-        payload = 0;
         n = 0;
+        param = CONFIG_UNKNOWN;
     }
+
+    last_param = param;
 }
 
 

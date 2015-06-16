@@ -137,6 +137,17 @@ static const struct test_case test_cases[] = {
                  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff },
     },
 
+
+    /* Partial read to execericse code to detect this and reset
+     * when the next request occurs in the middle of the other */
+    {
+        .desc = "Partial read of RX IQ phase correction",
+        .req  = { 0x4e, 0x81, 0x06, 0xff, 0x00, 0x00, 0x00, 0x00,
+                  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+        .resp = { 0x4e, 0x81, 0x00, 0x1c, 0xff, 0xff, 0xff, 0xff,
+                  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff },
+    },
+
     {
         .desc = "Legacy read of RX IQ gain correction 1/2",
         .req  = { 0x4e, 0x81, 0x04, 0xff, 0x00, 0x00, 0x00, 0x00,
@@ -300,7 +311,6 @@ static const struct test_case test_cases[] = {
                   0xff },
     },
 
-#if 0
     /* Invalid, Partial Legacy FPGA version # write attempt 1/4.
      * A write to this address has no effect, but would required 4 writes to
      * complete.  Only 1 of 4 writes is done to exercise the config
@@ -313,10 +323,8 @@ static const struct test_case test_cases[] = {
         .resp = { 0x4e, 0x41, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff,
                   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff },
     },
-#endif
 
     /* TODO: Legacy RX and TX timestamps reads */
-
 
     {
         .desc = "VCTCXO trim dac write 1/2",
