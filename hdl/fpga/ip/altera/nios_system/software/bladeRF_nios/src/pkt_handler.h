@@ -49,16 +49,6 @@ struct pkt_handler {
     const uint8_t magic;
 
     /**
-     * Number of bytes that need to be a provided buffer before the state
-     * machine can begin executing on the data.
-     *
-     * This allows a packet handler to begin responding with data while
-     * the host is still providing dummy bytes at the end of a message
-     * (due to DMA alignment constraints).
-     */
-    const uint8_t bytes_required;
-
-    /**
      * Perform any required initializations
      */
     void (*init)(void);

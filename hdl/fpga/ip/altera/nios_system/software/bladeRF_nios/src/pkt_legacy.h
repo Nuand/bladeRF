@@ -29,13 +29,11 @@
 #include "nios_pkt_formats.h"
 
 #define PKT_LEGACY_MAGIC              ((uint8_t) NIOS_PKT_LEGACY_MAGIC)
-#define PKT_LEGACY_REQUIRED_BYTES     NIOS_PKT_LEN
 
 void pkt_legacy(struct pkt_buf *b);
 
 #define PKT_LEGACY { \
     .magic          = PKT_LEGACY_MAGIC, \
-    .bytes_required = PKT_LEGACY_REQUIRED_BYTES, \
     .init           = NULL, \
     .exec           = pkt_legacy, \
     .do_work        = NULL, \

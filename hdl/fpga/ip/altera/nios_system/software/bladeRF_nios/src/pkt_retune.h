@@ -28,7 +28,6 @@
 #include "pkt_handler.h"
 
 #define PKT_RETUNE_MAGIC            ((uint8_t) NIOS_PKT_RETUNE_MAGIC)
-#define PKT_RETUNE_REQUIRED_BYTES   15
 
 void pkt_retune_init(void);
 
@@ -38,7 +37,6 @@ void pkt_retune_work(void);
 
 #define PKT_RETUNE { \
     .magic          = PKT_RETUNE_MAGIC, \
-    .bytes_required = PKT_RETUNE_REQUIRED_BYTES, \
     .init           = pkt_retune_init, \
     .exec           = pkt_retune, \
     .do_work        = pkt_retune_work, \

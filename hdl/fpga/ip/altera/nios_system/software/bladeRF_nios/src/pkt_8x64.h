@@ -28,13 +28,11 @@
 #include "pkt_handler.h"
 
 #define PKT_8x64_MAGIC              ((uint8_t) 'D')
-#define PKT_8x64_REQUIRED_BYTES     9
 
 void pkt_8x64(struct pkt_buf *b);
 
 #define PKT_8x64 { \
     .magic          = PKT_8x64_MAGIC, \
-    .bytes_required = PKT_8x64_REQUIRED_BYTES, \
     .init           = NULL, \
     .exec           = pkt_8x64, \
     .do_work        = NULL, \
