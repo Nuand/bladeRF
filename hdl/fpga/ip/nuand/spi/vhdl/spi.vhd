@@ -53,7 +53,7 @@ architecture lms_spi_master of spi is
 
     -- State of internal signals
     type state_t is record
-        fsm             : fsm_t;
+        state           : fsm_t;
         clock_count     : unsigned(integer(log2(real(CLOCK_DIV)))-1 downto 0);
         shift_en        : std_logic;
         shift_count     : natural range 0 to MSG_LENGTH;
@@ -66,7 +66,7 @@ architecture lms_spi_master of spi is
     end record;
 
     constant reset_value : state_t := (
-        fsm             => IDLE,
+        state           => IDLE,
         clock_count     => (others => '0'),
         shift_en        => '0',
         shift_count     => 0,
@@ -112,7 +112,7 @@ begin
         future.shift_en         <= '0';
         future.rd_data_valid    <= '0';
 
-        case( current.fsm ) is
+        case( current.state ) is
 
             when IDLE =>
 
@@ -123,7 +123,7 @@ begin
                 mm_busy                 <= '0';
 
                 if( (mm_read xor mm_write) = '1' ) then
-                    future.fsm  <= SHIFT;
+                    future.state <= SHIFT;
                 end if;
 
             when SHIFT =>
@@ -145,7 +145,7 @@ begin
 
                     if( current.shift_count = MSG_LENGTH-1 ) then
                         future.rd_data_valid <= current.read_op;    -- will only assert read valid if a read command was issued
-                        future.fsm <= IDLE;
+                        future.state <= IDLE;
                     end if;
                 end if;
 
