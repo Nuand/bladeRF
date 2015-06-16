@@ -24,45 +24,81 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "pkt_handler.h"
+#include "nios_pkt_8x8.h"
 #include "pkt_8x8.h"
 #include "devices.h"
 #include "debug.h"
 
-#define CFG_DIR_READ    (1<<7)
-#define CFG_DEV_MASK    (0x3f)
+static inline bool perform_read(uint8_t id, uint8_t addr, uint8_t *data)
+{
+    switch (id) {
+        case NIOS_PKT_8x8_TARGET_LMS6:
+            *data = lms6_read(addr);
+            break;
 
-/*
- * Devices which use 8x8 addressing:
- *  ID          Device
- *  0           LMS6002D
- *                  Addressing and data scheme just like the SPI register map
- *
- *  1           Si5338
- *                  Addressing and data scheme just like the I2C register map
- */
+        case NIOS_PKT_8x8_TARGET_SI5338:
+            *data = si5338_read(addr);
+            break;
 
-static inline void pkt_read(uint8_t dev, struct pkt_buf *b) {
-    /* TODO: Fill this in */
-    return;
+        /* Add user customizations here
+
+        case NIOS_PKT_8x8_TARGET_USR1:
+        ...
+        case NIOS_PKT_8x8_TARGET_USR128:
+
+        */
+
+        default:
+            DBG("%s: Invalid ID: 0x%02x\n", __FUNCTION__, id);
+            *data = 0xff;
+            return false;
+    }
+
+    return true;
 }
 
-static inline void pkt_write(uint8_t dev, struct pkt_buf *b) {
-    /* TODO: Fill this in */
-    return;
+static inline bool perform_write(uint8_t id, uint8_t addr, uint8_t data)
+{
+    switch (id) {
+        case NIOS_PKT_8x8_TARGET_LMS6:
+            lms6_write(addr, data);
+            break;
+
+        case NIOS_PKT_8x8_TARGET_SI5338:
+            si5338_write(addr, data);
+            break;
+
+        /* Add user customizations here
+
+        case NIOS_PKT_8x8_TARGET_USR1:
+        ...
+        case NIOS_PKT_8x8_TARGET_USR128:
+
+        */
+
+        default:
+            DBG("%s: Invalid ID: 0x%02x\n", __FUNCTION__, id);
+            return false;
+    }
+
+    return true;
 }
 
 void pkt_8x8(struct pkt_buf *b)
 {
-    /* Parse configuration word */
-    const uint8_t cfg = b->req[PKT_CFG_IDX];
-    const bool is_read = (cfg & (CFG_DIR_READ)) != 0;
-    const uint8_t dev_id = (cfg & CFG_DEV_MASK);
+    uint8_t id;
+    uint8_t addr;
+    uint8_t data;
+    bool    is_write;
+    bool    success;
 
-    if (is_read) {
-        pkt_read(dev_id, b);
-    } else /* is_write */ {
-        pkt_write(dev_id, b);
+    nios_pkt_8x8_unpack(b->req, &id, &is_write, &addr, &data);
+
+    if (is_write) {
+        success = perform_write(id, addr, data);
+    } else {
+        success = perform_read(id, addr, &data);
     }
 
-    return;
+    nios_pkt_8x8_resp_pack(b->resp, id, is_write, addr, data, success);
 }

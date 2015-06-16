@@ -93,11 +93,11 @@
 /* Request packet indices */
 #define NIOS_PKT_8x8_IDX_MAGIC      0
 #define NIOS_PKT_8x8_IDX_TARGET_ID  1
-#define NIOS_PKT_8x8_IDX_FLAGS      1
+#define NIOS_PKT_8x8_IDX_FLAGS      2
 #define NIOS_PKT_8x8_IDX_RESV1      3
 #define NIOS_PKT_8x8_IDX_ADDR       4
 #define NIOS_PKT_8x8_IDX_DATA       5
-#define NIOS_PKT_8x8_IDX_RESV1      6
+#define NIOS_PKT_8x8_IDX_RESV2      6
 
 /* Target IDs */
 #define NIOS_PKT_8x8_TARGET_LMS6    0x00    /* LMS6002D register access */

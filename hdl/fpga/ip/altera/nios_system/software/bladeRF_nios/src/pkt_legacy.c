@@ -315,7 +315,14 @@ static inline void perform_config_write(enum config_param p, uint64_t payload)
             break;
 
         case CONFIG_VCTXCO:
-            vctcxo_trim_dac_write((uint16_t) payload);
+            /* The legacy packet format only supported writing a value,
+             * yielding writes for these specific commands:
+             *
+             * Command 0x28: Set device to write-through mode
+             * Command 0x08: Write value to channel 0
+             */
+            vctcxo_trim_dac_write(0x28, 0);
+            vctcxo_trim_dac_write(0x08, (uint16_t) payload);
             break;
 
         case CONFIG_XB200_SYNTH:

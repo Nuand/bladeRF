@@ -137,6 +137,14 @@ void si5338_write(uint8_t addr, uint8_t data);
 void vctcxo_trim_dac_write(uint8_t cmd, uint16_t val);
 
 /**
+ * Read from the VCTCXO trim DAC
+ *
+ * @param   cmd     DAC command
+ * @param   data    Read data
+ */
+void vctcxo_trim_dac_read(uint8_t cmd, uint16_t *val);
+
+/**
  * Write a value to the ADF4351 synthesizer (on the XB-200)
  *
  * @param   val     Value to write
