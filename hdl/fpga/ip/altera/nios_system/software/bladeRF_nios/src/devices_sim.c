@@ -60,9 +60,9 @@ void bladerf_nios_init(struct pkt_buf *pkt)
 }
 
 uint8_t lms6_read(uint8_t addr) {
-    const uint8_t ret = 0x00;
+    const uint8_t ret = 0x17;
     DBG("%s: addr=0x%02x, returning 0x%02x\n", __FUNCTION__, addr, ret);
-    ASSERT(0x2f);
+    ASSERT(addr == 0x2f);
     return ret;
 }
 
@@ -88,10 +88,11 @@ void si5338_write(uint8_t addr, uint8_t data)
     ASSERT(data == 0xab);
 }
 
-void vctcxo_trim_dac_write(uint16_t val)
+void vctcxo_trim_dac_write(uint8_t cmd, uint16_t val)
 {
-    DBG("%s: val=0x%04x\n", __FUNCTION__, val);
-    ASSERT(val == 0x8012);
+    DBG("%s: cmd=0x%02x val=0x%04x\n", __FUNCTION__, cmd, val);
+    ASSERT(cmd == 0x28   || cmd == 0x08);
+    ASSERT(val == 0x0000 || val == 0x8012);
 }
 
 void adf4351_write(uint32_t val)

@@ -160,18 +160,14 @@ void si5338_write(uint8_t addr, uint8_t data)
     si5338_complete_transfer(0);
 }
 
-void vctcxo_trim_dac_write(uint16_t val)
+void vctcxo_trim_dac_write(uint8_t cmd, uint16_t val)
 {
-    uint8_t data[3];
+    uint8_t data[3] = {
+        cmd,
+        (val >> 8) & 0xff,
+        val & 0xff,
+    };
 
-    data[0] = 0x28;
-    data[1] = 0;
-    data[2] = 0;
-    alt_avalon_spi_command(PERIPHERAL_SPI_BASE, 0, 3, data, 0, 0, 0);
-
-    data[0] = 0x08;
-    data[1] = (val >> 8) & 0xff;
-    data[2] = val & 0xff;
     alt_avalon_spi_command(PERIPHERAL_SPI_BASE, 0, 3, data, 0, 0, 0) ;
 }
 
