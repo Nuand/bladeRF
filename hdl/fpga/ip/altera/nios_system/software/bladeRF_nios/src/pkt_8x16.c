@@ -28,13 +28,71 @@
 #include "devices.h"
 #include "debug.h"
 
+static inline bool iq_corr_read(uint8_t addr, uint16_t *data)
+{
+    switch (addr) {
+        case NIOS_PKT_8x16_ADDR_IQ_CORR_RX_GAIN:
+            *data = iqbal_get_gain(BLADERF_MODULE_RX);
+            break;
+
+        case NIOS_PKT_8x16_ADDR_IQ_CORR_RX_PHASE:
+            *data = iqbal_get_phase(BLADERF_MODULE_RX);
+            break;
+
+        case NIOS_PKT_8x16_ADDR_IQ_CORR_TX_GAIN:
+            *data = iqbal_get_gain(BLADERF_MODULE_TX);
+            break;
+
+        case NIOS_PKT_8x16_ADDR_IQ_CORR_TX_PHASE:
+            *data = iqbal_get_phase(BLADERF_MODULE_TX);
+            break;
+
+        default:
+            DBG("%s: Invalid IQ corr addr: 0x%02x\n", __FUNCTION__, addr);
+            return false;
+    }
+
+    return true;
+}
+
+static inline bool iq_corr_write(uint8_t addr, uint16_t data)
+{
+    switch (addr) {
+        case NIOS_PKT_8x16_ADDR_IQ_CORR_RX_GAIN:
+            iqbal_set_gain(BLADERF_MODULE_RX, data);
+            break;
+
+        case NIOS_PKT_8x16_ADDR_IQ_CORR_RX_PHASE:
+            iqbal_set_phase(BLADERF_MODULE_RX, data);
+            break;
+
+        case NIOS_PKT_8x16_ADDR_IQ_CORR_TX_GAIN:
+            iqbal_set_gain(BLADERF_MODULE_TX, data);
+            break;
+
+        case NIOS_PKT_8x16_ADDR_IQ_CORR_TX_PHASE:
+            iqbal_set_phase(BLADERF_MODULE_TX, data);
+            break;
+
+        default:
+            DBG("%s: Invalid IQ corr addr: 0x%02x\n", __FUNCTION__, addr);
+            return false;
+    }
+
+    return true;
+}
+
 static inline bool perform_read(uint8_t id, uint8_t addr, uint16_t *data)
 {
+    bool success = true;
+
     switch (id) {
         case NIOS_PKT_8x16_TARGET_VCTCXO_DAC:
+            vctcxo_trim_dac_read(addr, data);
             break;
 
         case NIOS_PKT_8x16_TARGET_IQ_CORR:
+            iq_corr_read(addr, data);
             break;
 
         /* Add user customizations here
@@ -50,7 +108,7 @@ static inline bool perform_read(uint8_t id, uint8_t addr, uint16_t *data)
             return false;
     }
 
-    return true;
+    return success;
 }
 
 

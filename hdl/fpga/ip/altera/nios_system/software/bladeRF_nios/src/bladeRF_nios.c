@@ -40,6 +40,7 @@
 #include "pkt_8x16.h"
 #include "pkt_8x32.h"
 #include "pkt_8x64.h"
+#include "pkt_32x32.h"
 #include "pkt_retune.h"
 #include "pkt_legacy.h"
 #include "debug.h"
@@ -74,11 +75,12 @@
 #endif
 
 static const struct pkt_handler pkt_handlers[] = {
+    PKT_RETUNE,
     PKT_8x8,
     PKT_8x16,
     PKT_8x32,
     PKT_8x64,
-    PKT_RETUNE,
+    PKT_32x32,
     PKT_LEGACY,
 };
 

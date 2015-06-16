@@ -24,55 +24,74 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "pkt_handler.h"
+#include "nios_pkt_8x32.h"
 #include "pkt_8x32.h"
 #include "devices.h"
 #include "debug.h"
 
-#define CFG_DIR_READ    (1<<7)
-#define CFG_DEV_MASK    (0x3f)
+static inline bool perform_read(uint8_t id, uint8_t addr, uint32_t *data)
+{
+    switch (id) {
+        case NIOS_PKT_8x32_TARGET_VERSION:
+            *data = fpga_version();
+            break;
 
-/*
- * Devices which use 8x32 addressing:
- *  ID          Device
- *  0           FPGA Config Registers
- *
- *                  Address     Description
- *                  0           GPIO Config
- *                  1           FPGA Version
- *                  2           Expansion Direction
- *                  3           Expandion Bits
- *
- * 1            XB200 ADF4351
- *                  Address overrides the lower 3 bits of the 32-bit access
- *                  as per the ADF4351 datasheet having C[2:0] control bits
- *                  select the register and be part of the 32-bit total field.
- *
- *                  Readbacks of this address will always yield 0's since the
- *                  ADF4351 is a write-only device.
- */
+        case NIOS_PKT_8x32_TARGET_CONTROL:
+            *data = control_reg_read();
+            break;
 
-static inline void pkt_read(uint8_t dev, struct pkt_buf *b) {
-    /* TODO: Fill this in */
-    return;
+        case NIOS_PKT_8x32_TARGET_ADF4351:
+            DBG("Illegal read from ADF4351.\n");
+            *data = 0x00;
+            return false;
+
+        default:
+            DBG("Invalid id: 0x%02x\n", id);
+            *data = 0x00;
+            return false;
+    }
+
+    return true;
 }
 
-static inline void pkt_write(uint8_t dev, struct pkt_buf *b) {
-    /* TODO: Fill this in */
-    return;
+static inline bool perform_write(uint8_t id, uint8_t addr, uint32_t data)
+{
+    switch (id) {
+        case NIOS_PKT_8x32_TARGET_VERSION:
+            DBG("Invalid write to version register.\n");
+            return false;
+
+        case NIOS_PKT_8x32_TARGET_CONTROL:
+            control_reg_write(data);
+            break;
+
+        case NIOS_PKT_8x32_TARGET_ADF4351:
+            adf4351_write(data);
+            break;
+
+        default:
+            DBG("Invalid id: 0x%02x\n", id);
+            return false;
+    }
+
+    return true;
 }
 
 void pkt_8x32(struct pkt_buf *b)
 {
-    /* Parse configuration word */
-    const uint8_t cfg = b->req[PKT_CFG_IDX];
-    const bool is_read = (cfg & (CFG_DIR_READ)) != 0;
-    const uint8_t dev_id = (cfg & CFG_DEV_MASK);
+    uint8_t id;
+    uint8_t addr;
+    uint32_t data;
+    bool is_write;
+    bool success;
 
-    if (is_read) {
-        pkt_read(dev_id, b);
-    } else /* is_write */ {
-        pkt_write(dev_id, b);
+    nios_pkt_8x32_unpack(b->req, &id, &is_write, &addr, &data);
+
+    if (is_write) {
+        success = perform_write(id, addr, data);
+    } else {
+        success = perform_read(id, addr, &data);
     }
 
-    return;
+    nios_pkt_8x32_resp_pack(b->resp, id, is_write, addr, data, success);
 }

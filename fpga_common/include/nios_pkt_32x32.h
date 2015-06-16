@@ -48,7 +48,7 @@
  * +----------------+---------------------------------------------------------+
  * |       7:4      | 32-bit address                                           |
  * +----------------+---------------------------------------------------------+
- * |      11:8      | 16-bit data, little-endian                              |
+ * |      11:8      | 32-bit data, little-endian                              |
  * +----------------+---------------------------------------------------------+
  * |      15:12     | Reserved. Set to 0.                                     |
  * +----------------+---------------------------------------------------------+
@@ -93,13 +93,18 @@
 /* Request packet indices */
 #define NIOS_PKT_32x32_IDX_MAGIC      0
 #define NIOS_PKT_32x32_IDX_TARGET_ID  1
-#define NIOS_PKT_32x32_IDX_FLAGS      1
+#define NIOS_PKT_32x32_IDX_FLAGS      2
 #define NIOS_PKT_32x32_IDX_RESV1      3
 #define NIOS_PKT_32x32_IDX_ADDR       4
-#define NIOS_PKT_32x32_IDX_DATA       5
-#define NIOS_PKT_32x32_IDX_RESV1      9
+#define NIOS_PKT_32x32_IDX_DATA       8
+#define NIOS_PKT_32x32_IDX_RESV2      12
 
 /* Target IDs */
+
+/* For the EXP and EXP_DIR targets, the address is a bitmask of values
+ * to read/write */
+#define NIOS_PKT_32x32_TARGET_EXP     0x00 /* Expansion I/O */
+#define NIOS_PKT_32x32_TARGET_EXP_DIR 0x01 /* Expansion I/O Direction reg */
 
 /* IDs 0x80 through 0xff will not be assigned by Nuand. These are reserved
  * for user customizations */
@@ -129,7 +134,7 @@ static inline void nios_pkt_32x32_pack(uint8_t *buf, uint8_t target, bool write,
     buf[NIOS_PKT_32x32_IDX_ADDR + 0] = (addr >> 0);
     buf[NIOS_PKT_32x32_IDX_ADDR + 1] = (addr >> 8);
     buf[NIOS_PKT_32x32_IDX_ADDR + 2] = (addr >> 16);
-    buf[NIOS_PKT_32x32_IDX_ADDR + 3] = (addr >> 16);
+    buf[NIOS_PKT_32x32_IDX_ADDR + 3] = (addr >> 24);
 
     buf[NIOS_PKT_32x32_IDX_DATA + 0] = (data >> 0);
     buf[NIOS_PKT_32x32_IDX_DATA + 1] = (data >> 8);
@@ -154,18 +159,18 @@ static inline void nios_pkt_32x32_unpack(const uint8_t *buf, uint8_t *target,
     *addr   = (buf[NIOS_PKT_32x32_IDX_ADDR + 0] << 0)  |
               (buf[NIOS_PKT_32x32_IDX_ADDR + 1] << 8)  |
               (buf[NIOS_PKT_32x32_IDX_ADDR + 2] << 16) |
-              (buf[NIOS_PKT_32x32_IDX_ADDR + 2] << 24);
+              (buf[NIOS_PKT_32x32_IDX_ADDR + 3] << 24);
 
 
     *data   = (buf[NIOS_PKT_32x32_IDX_DATA + 0] << 0)  |
               (buf[NIOS_PKT_32x32_IDX_DATA + 1] << 8)  |
               (buf[NIOS_PKT_32x32_IDX_DATA + 2] << 16) |
-              (buf[NIOS_PKT_32x32_IDX_DATA + 2] << 24);
+              (buf[NIOS_PKT_32x32_IDX_DATA + 3] << 24);
 }
 
 /* Pack the response buffer */
 static inline void nios_pkt_32x32_resp_pack(uint8_t *buf, uint8_t target,
-                                            bool write, uint8_t addr,
+                                            bool write, uint32_t addr,
                                             uint32_t data, bool success)
 {
     nios_pkt_32x32_pack(buf, target, write, addr, data);
@@ -178,7 +183,7 @@ static inline void nios_pkt_32x32_resp_pack(uint8_t *buf, uint8_t target,
 /* Unpack the response buffer */
 static inline void nios_pkt_32x32_resp_unpack(const uint8_t *buf,
                                              uint8_t *target, bool *write,
-                                             uint8_t *addr, uint32_t *data,
+                                             uint32_t *addr, uint32_t *data,
                                              bool *success)
 {
     nios_pkt_32x32_unpack(buf, target, write, addr, data);

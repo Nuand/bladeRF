@@ -28,38 +28,87 @@
 #include "devices.h"
 #include "debug.h"
 
-#define CFG_DIR_READ    (1<<7)
-#define CFG_DEV_MASK    (0x3f)
+static inline bool perform_write(uint8_t id, uint8_t addr, uint64_t data)
+{
+    switch (id) {
+        case NIOS_PKT_8x64_TARGET_TIMESTAMP:
+            DBG("Invalid write acess to timestamp: 0x%02x\n", addr);
+            return false;
 
-/*
- * Devices which use 8x64 addressing:
- *  ID          Device
- *  0           Time Tamer RX
- *  1           Time Tamer TX
- */
+        /* Add user customizations here
 
-static inline void pkt_read(uint8_t dev, struct pkt_buf *b) {
-    /* TODO: Fill this in */
-    return;
+        case NIOS_PKT_8x64_TARGET_USR1:
+        ...
+        case NIOS_PKT_8x64_TARGET_USR128:
+
+        */
+
+        default:
+            DBG("Unknown ID: 0x%02x\n", id);
+            return false;
+    }
 }
 
-static inline void pkt_write(uint8_t dev, struct pkt_buf *b) {
-    /* TODO: Fill this in */
-    return;
+static inline bool read_timestamp(uint8_t addr, uint64_t *data)
+{
+    switch (addr) {
+        case NIOS_PKT_8x64_TIMESTAMP_RX:
+            *data = time_tamer_read(BLADERF_MODULE_RX);
+            break;
+
+        case NIOS_PKT_8x64_TIMESTAMP_TX:
+            *data = time_tamer_read(BLADERF_MODULE_TX);
+            break;
+
+        default:
+            DBG("Invalid addr: 0x%02x\n", addr);
+            return false;
+    }
+
+    return true;
+}
+
+static inline bool perform_read(uint8_t id, uint8_t addr, uint64_t *data)
+{
+    bool success;
+
+    switch (id) {
+        case NIOS_PKT_8x64_TARGET_TIMESTAMP:
+            success = read_timestamp(addr, data);
+            break;
+
+        /* Add user customizations here
+
+        case NIOS_PKT_8x64_TARGET_USR1:
+        ...
+        case NIOS_PKT_8x64_TARGET_USR128:
+
+        */
+
+        default:
+            DBG("Invalid ID: 0x%02x\n", id);
+            success = false;
+
+    }
+
+    return success;
 }
 
 void pkt_8x64(struct pkt_buf *b)
 {
-    /* Parse configuration word */
-    const uint8_t cfg = b->req[PKT_CFG_IDX];
-    const bool is_read = (cfg & (CFG_DIR_READ)) != 0;
-    const uint8_t dev_id = (cfg & CFG_DEV_MASK);
+    uint8_t id;
+    uint8_t addr;
+    uint64_t data;
+    bool    is_write;
+    bool    success;
 
-    if (is_read) {
-        pkt_read(dev_id, b);
-    } else /* is_write */ {
-        pkt_write(dev_id, b);
+    nios_pkt_8x64_unpack(b->req, &id, &is_write, &addr, &data);
+
+    if (is_write) {
+        success = perform_write(id, addr, data);
+    } else {
+        success = perform_read(id, addr, &data);
     }
 
-    return;
+    nios_pkt_8x64_resp_pack(b->resp, id, is_write, addr, data, success);
 }

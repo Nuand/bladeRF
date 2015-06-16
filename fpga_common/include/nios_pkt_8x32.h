@@ -93,13 +93,17 @@
 /* Request packet indices */
 #define NIOS_PKT_8x32_IDX_MAGIC      0
 #define NIOS_PKT_8x32_IDX_TARGET_ID  1
-#define NIOS_PKT_8x32_IDX_FLAGS      1
+#define NIOS_PKT_8x32_IDX_FLAGS      2
 #define NIOS_PKT_8x32_IDX_RESV1      3
 #define NIOS_PKT_8x32_IDX_ADDR       4
 #define NIOS_PKT_8x32_IDX_DATA       5
-#define NIOS_PKT_8x32_IDX_RESV1      9
+#define NIOS_PKT_8x32_IDX_RESV2      9
 
 /* Target IDs */
+#define NIOS_PKT_8x32_TARGET_VERSION 0x00   /* FPGA version (read only) */
+#define NIOS_PKT_8x32_TARGET_CONTROL 0x01   /* FPGA control/config register */
+#define NIOS_PKT_8x32_TARGET_ADF4351 0x02   /* XB-200 ADF4351 register access
+                                             * (write-only) */
 
 /* IDs 0x80 through 0xff will not be assigned by Nuand. These are reserved
  * for user customizations */
@@ -109,7 +113,6 @@
 /* Flag bits */
 #define NIOS_PKT_8x32_FLAG_WRITE     (1 << 0)
 #define NIOS_PKT_8x32_FLAG_SUCCESS   (1 << 1)
-
 
 /* Pack the request buffer */
 static inline void nios_pkt_8x32_pack(uint8_t *buf, uint8_t target, bool write,
@@ -128,7 +131,7 @@ static inline void nios_pkt_8x32_pack(uint8_t *buf, uint8_t target, bool write,
 
     buf[NIOS_PKT_8x32_IDX_ADDR] = addr;
 
-    buf[NIOS_PKT_8x32_IDX_DATA]     = data & 0xff;
+    buf[NIOS_PKT_8x32_IDX_DATA + 0] = data & 0xff;
     buf[NIOS_PKT_8x32_IDX_DATA + 1] = (data >> 8);
     buf[NIOS_PKT_8x32_IDX_DATA + 2] = (data >> 16);
     buf[NIOS_PKT_8x32_IDX_DATA + 3] = (data >> 24);
@@ -156,7 +159,7 @@ static inline void nios_pkt_8x32_unpack(const uint8_t *buf, uint8_t *target,
     *data   = (buf[NIOS_PKT_8x32_IDX_DATA + 0] << 0)  |
               (buf[NIOS_PKT_8x32_IDX_DATA + 1] << 8)  |
               (buf[NIOS_PKT_8x32_IDX_DATA + 2] << 16) |
-              (buf[NIOS_PKT_8x32_IDX_DATA + 2] << 24);
+              (buf[NIOS_PKT_8x32_IDX_DATA + 3] << 24);
 }
 
 /* Pack the response buffer */

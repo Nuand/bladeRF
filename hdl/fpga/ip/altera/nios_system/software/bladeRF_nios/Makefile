@@ -152,6 +152,7 @@ C_SRCS += src/pkt_8x8.c
 C_SRCS += src/pkt_8x16.c
 C_SRCS += src/pkt_8x32.c
 C_SRCS += src/pkt_8x64.c
+C_SRCS += src/pkt_32x32.c
 C_SRCS += src/pkt_retune.c
 C_SRCS += src/pkt_legacy.c
 C_SRCS += src/devices_sim.c
