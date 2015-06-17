@@ -99,7 +99,7 @@ static int nios_access(struct bladerf *dev, uint8_t peripheral,
                                      buf, sizeof(buf),
                                      PERIPHERAL_TIMEOUT_MS);
     if (status != 0) {
-        log_debug("Failed to NIOS II request: %s\n",
+        log_debug("Failed to submit NIOS II request: %s\n",
                   bladerf_strerror(status));
         return status;
     }
@@ -119,7 +119,7 @@ static int nios_access(struct bladerf *dev, uint8_t peripheral,
     if (status == 0) {
         print_buf("NIOS II access response:\n", buf, 16);
     } else {
-        log_debug("Failed to receice NIOS II response: %s\n",
+        log_debug("Failed to receive NIOS II response: %s\n",
                   bladerf_strerror(status));
     }
 

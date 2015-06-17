@@ -61,6 +61,11 @@
  */
 #define BLADERF_CAP_SCHEDULED_RETUNE    (1 << 3)
 
+/**
+ * FPGA version 0.3.0 introduced new packet handler formats that pack
+ * operations into a single requests.
+ */
+#define BLADERF_CAP_PKT_HANDLER_FMT     (1 << 4)
 
 
 /**

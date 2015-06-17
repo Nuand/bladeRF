@@ -125,9 +125,6 @@ int bladerf_open_with_devinfo(struct bladerf **opened_device,
 
     dev->capabilities = 0;
 
-    /* The backend open function should call capabilities_init_pre_fpga_load(),
-     * as it may need this information while opening the device
-     */
     status = backend_open(dev, devinfo);
     if (status != 0) {
         free((void*)dev->fw_version.describe);
@@ -1237,6 +1234,8 @@ const char * bladerf_strerror(int error)
             return "Requested timestamp is in the past";
         case BLADERF_ERR_QUEUE_FULL:
             return "Could not enqueue data into full queue";
+        case BLADERF_ERR_FPGA_OP:
+            return "An FPGA operation reported a failure";
         case 0:
             return "Success";
         default:

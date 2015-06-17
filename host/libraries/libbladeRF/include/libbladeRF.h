@@ -89,6 +89,7 @@ extern "C" {
 #define BLADERF_ERR_TIME_PAST   (-14) /**< Requested timestamp is in the past */
 #define BLADERF_ERR_QUEUE_FULL  (-15) /**< Could not enqueue data into
                                        *   full queue */
+#define BLADERF_ERR_FPGA_OP     (-16) /**< An FPGA operation reported failure */
 
 /** @} (End RETCODES) */
 

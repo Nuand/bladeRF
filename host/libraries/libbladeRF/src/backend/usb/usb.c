@@ -38,6 +38,7 @@
 #include "conversions.h"
 #include "nios_pkt_formats.h"
 #include "nios_legacy_access.h"
+#include "nios_access.h"
 
 #if ENABLE_USB_DEV_RESET_ON_OPEN
 bool bladerf_usb_reset_device_on_open = true;
@@ -51,7 +52,8 @@ typedef enum {
 
 static const struct usb_driver *usb_driver_list[] = BLADERF_USB_BACKEND_LIST;
 
-struct backend_fns_usb;
+/* FW declaration of fn table declated at the end of this file */
+const struct backend_fns backend_fns_usb_legacy;
 
 /* Vendor command wrapper to gets a 32-bit integer and supplies a wIndex */
 static inline int vendor_cmd_int_windex(struct bladerf *dev, uint8_t cmd,
@@ -163,12 +165,22 @@ static int post_fpga_load_init(struct bladerf *dev)
         status = nios_legacy_get_fpga_version(dev, &dev->fpga_version);
         if (status != 0) {
             return status;
+        } else {
+            log_verbose("Read FPGA version: %s\n", dev->fpga_version.describe);
         }
     }
 
     /* Update device capabilities mask based upon FPGA version number */
     capabilities_init_post_fpga_load(dev);
 
+    /* Switch to our newer NIOS II request/response packet format
+     * if the FPGA supports it */
+    if (have_cap(dev, BLADERF_CAP_PKT_HANDLER_FMT)) {
+        log_verbose("Using current packet handler formats\n");
+        dev->fn = &backend_fns_usb;
+    } else {
+        log_verbose("Using legacy current packet handler format\n");
+    }
 
     return status;
 }
@@ -271,7 +283,9 @@ static int usb_open(struct bladerf *dev, struct bladerf_devinfo *info)
         return BLADERF_ERR_MEM;
     }
 
-    dev->fn = &backend_fns_usb;
+    /* Default to legacy-mode access until we determine the FPGA is
+     * capable of handling newer request formats */
+    dev->fn = &backend_fns_usb_legacy;
     dev->backend = usb;
 
     status = BLADERF_ERR_NODEV;
@@ -875,71 +889,6 @@ static void usb_deinit_stream(struct bladerf_stream *stream)
     usb->fn->deinit_stream(driver, stream);
 }
 
-static int usb_retune(struct bladerf *dev, bladerf_module module,
-                      uint64_t timestamp, uint16_t nint, uint32_t nfrac,
-                      uint8_t freqsel, uint8_t vcocap, bool low_band,
-                      bool quick_tune)
-{
-    int status;
-    void *driver;
-    struct bladerf_usb *usb = usb_backend(dev, &driver);
-    uint8_t buf[NIOS_PKT_LEN] = { 0x00 };
-
-#ifdef LOGGING_ENABLED
-    uint8_t resp_flags;
-    uint64_t duration;
-#endif
-
-    nios_pkt_retune_pack(buf, module, timestamp,
-                         nint, nfrac, freqsel, vcocap, low_band, quick_tune);
-
-    /* Send the command */
-    status = usb->fn->bulk_transfer(driver, PERIPHERAL_EP_OUT,
-                                    buf, sizeof(buf),
-                                    PERIPHERAL_TIMEOUT_MS);
-    if (status != 0) {
-        log_debug("Failed to write retune command: %s\n",
-                  bladerf_strerror(status));
-        return status;
-    }
-
-    /* Wait for the response */
-    status = usb->fn->bulk_transfer(driver, PERIPHERAL_EP_IN,
-                                    buf, sizeof(buf),
-                                    PERIPHERAL_TIMEOUT_MS);
-
-    if (status != 0) {
-        log_debug("Failed to read retune response: %s\n",
-                  bladerf_strerror(status));
-        return status;
-    }
-
-#   ifdef LOGGING_ENABLED
-    nios_pkt_retune_resp_unpack(buf, &duration, &vcocap, &resp_flags);
-    if (resp_flags & NIOS_PKT_RETUNERESP_FLAG_TSVTUNE_VALID) {
-            log_verbose("%s retune operation: vcocap=%u, duration=%"PRIu64"\n",
-                        module2str(module), vcocap, duration);
-    } else {
-        log_verbose("%s retune operation duration: %"PRIu64"\n",
-                    module2str(module), duration);
-    }
-
-    if ((resp_flags & NIOS_PKT_RETUNERESP_FLAG_SUCCESS) == 0) {
-        if (timestamp == BLADERF_RETUNE_NOW) {
-            log_debug("FPGA tuning reported failure.\n");
-            status = BLADERF_ERR_UNEXPECTED;
-        } else {
-            log_debug("The FPGA's retune queue is full. Try again after "
-                      "a previous request has completed.\n");
-            status = BLADERF_ERR_QUEUE_FULL;
-        }
-    }
-
-#   endif
-
-    return status;
-}
-
 /*
  * Information about the boot image format and boot over USB caan be found in
  * Cypress AN76405: EZ-USB (R) FX3 (TM) Boot Options:
@@ -1105,7 +1054,7 @@ static int usb_load_fw_from_bootloader(bladerf_backend backend,
 
 
 /* USB backend that used legacy format for communicating with NIOS II */
-const struct backend_fns backend_fns_usb = {
+const struct backend_fns backend_fns_usb_legacy = {
     FIELD_INIT(.matches, usb_matches),
 
     FIELD_INIT(.probe, usb_probe),
@@ -1162,7 +1111,70 @@ const struct backend_fns backend_fns_usb = {
     FIELD_INIT(.submit_stream_buffer, usb_submit_stream_buffer),
     FIELD_INIT(.deinit_stream, usb_deinit_stream),
 
-    FIELD_INIT(.retune, usb_retune),
+    FIELD_INIT(.retune, nios_legacy_retune),
+
+    FIELD_INIT(.load_fw_from_bootloader, usb_load_fw_from_bootloader),
+};
+
+/* USB backend for use with FPGA supporting update NIOS II packet formats */
+const struct backend_fns backend_fns_usb = {
+    FIELD_INIT(.matches, usb_matches),
+
+    FIELD_INIT(.probe, usb_probe),
+
+    FIELD_INIT(.open, usb_open),
+    FIELD_INIT(.close, usb_close),
+
+    FIELD_INIT(.load_fpga, usb_load_fpga),
+    FIELD_INIT(.is_fpga_configured, usb_is_fpga_configured),
+
+    FIELD_INIT(.erase_flash_blocks, usb_erase_flash_blocks),
+    FIELD_INIT(.read_flash_pages, usb_read_flash_pages),
+    FIELD_INIT(.write_flash_pages, usb_write_flash_pages),
+
+    FIELD_INIT(.device_reset, usb_device_reset),
+    FIELD_INIT(.jump_to_bootloader, usb_jump_to_bootloader),
+
+    FIELD_INIT(.get_cal, usb_get_cal),
+    FIELD_INIT(.get_otp, usb_get_otp),
+    FIELD_INIT(.get_device_speed, usb_get_device_speed),
+
+    FIELD_INIT(.config_gpio_write, nios_config_write),
+    FIELD_INIT(.config_gpio_read, nios_config_read),
+
+    FIELD_INIT(.expansion_gpio_write, nios_expansion_gpio_write),
+    FIELD_INIT(.expansion_gpio_read, nios_expansion_gpio_read),
+    FIELD_INIT(.expansion_gpio_dir_write, nios_expansion_gpio_dir_write),
+    FIELD_INIT(.expansion_gpio_dir_read, nios_expansion_gpio_dir_read),
+
+    FIELD_INIT(.set_iq_gain_correction, nios_set_iq_gain_correction),
+    FIELD_INIT(.set_iq_phase_correction, nios_set_iq_phase_correction),
+    FIELD_INIT(.get_iq_gain_correction, nios_get_iq_gain_correction),
+    FIELD_INIT(.get_iq_phase_correction, nios_get_iq_phase_correction),
+
+    FIELD_INIT(.get_timestamp, nios_get_timestamp),
+
+    FIELD_INIT(.si5338_write, nios_si5338_write),
+    FIELD_INIT(.si5338_read, nios_si5338_read),
+
+    FIELD_INIT(.lms_write, nios_lms6_write),
+    FIELD_INIT(.lms_read, nios_lms6_read),
+
+    FIELD_INIT(.dac_write, nios_vctcxo_trim_dac_write),
+
+    FIELD_INIT(.xb_spi, nios_xb200_synth_write),
+
+    FIELD_INIT(.set_firmware_loopback, usb_set_firmware_loopback),
+    FIELD_INIT(.get_firmware_loopback, usb_get_firmware_loopback),
+
+    FIELD_INIT(.enable_module, usb_enable_module),
+
+    FIELD_INIT(.init_stream, usb_init_stream),
+    FIELD_INIT(.stream, usb_stream),
+    FIELD_INIT(.submit_stream_buffer, usb_submit_stream_buffer),
+    FIELD_INIT(.deinit_stream, usb_deinit_stream),
+
+    FIELD_INIT(.retune, nios_retune),
 
     FIELD_INIT(.load_fw_from_bootloader, usb_load_fw_from_bootloader),
 };

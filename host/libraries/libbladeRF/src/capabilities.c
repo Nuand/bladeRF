@@ -60,6 +60,10 @@ void capabilities_init_post_fpga_load(struct bladerf *dev)
         dev->capabilities |= BLADERF_CAP_SCHEDULED_RETUNE;
     }
 
+    if (version_greater_or_equal(&dev->fpga_version, 0, 3, 0)) {
+        dev->capabilities |= BLADERF_CAP_PKT_HANDLER_FMT;
+    }
+
     log_verbose("Capability mask after FPGA load: 0x%016"PRIx64"\n",
                  dev->capabilities);
 }

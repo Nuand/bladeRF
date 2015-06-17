@@ -74,6 +74,10 @@
 #   define RESET_RESPONSE_BUF() do {} while (0)
 #endif
 
+/* When adding packet handlers here, you must also ensure that you update
+ * the bladeRF/hdl/fpga/ip/nuand/command_uart/vhdl/command_uart.vhd
+ * to include the magic header byte value in the `magics` array.
+ */
 static const struct pkt_handler pkt_handlers[] = {
     PKT_RETUNE,
     PKT_8x8,

@@ -152,20 +152,28 @@ static inline void nios_pkt_32x32_unpack(const uint8_t *buf, uint8_t *target,
                                         bool *write, uint32_t *addr,
                                         uint32_t *data)
 {
-    *target = buf[NIOS_PKT_32x32_IDX_TARGET_ID];
+    if (target != NULL) {
+        *target = buf[NIOS_PKT_32x32_IDX_TARGET_ID];
+    }
 
-    *write  = (buf[NIOS_PKT_32x32_IDX_FLAGS] & NIOS_PKT_32x32_FLAG_WRITE) != 0;
+    if (write != NULL) {
+        *write  = (buf[NIOS_PKT_32x32_IDX_FLAGS] & NIOS_PKT_32x32_FLAG_WRITE) != 0;
+    }
 
-    *addr   = (buf[NIOS_PKT_32x32_IDX_ADDR + 0] << 0)  |
-              (buf[NIOS_PKT_32x32_IDX_ADDR + 1] << 8)  |
-              (buf[NIOS_PKT_32x32_IDX_ADDR + 2] << 16) |
-              (buf[NIOS_PKT_32x32_IDX_ADDR + 3] << 24);
+    if (addr != NULL) {
+        *addr   = (buf[NIOS_PKT_32x32_IDX_ADDR + 0] << 0)  |
+                  (buf[NIOS_PKT_32x32_IDX_ADDR + 1] << 8)  |
+                  (buf[NIOS_PKT_32x32_IDX_ADDR + 2] << 16) |
+                  (buf[NIOS_PKT_32x32_IDX_ADDR + 3] << 24);
+    }
 
 
-    *data   = (buf[NIOS_PKT_32x32_IDX_DATA + 0] << 0)  |
-              (buf[NIOS_PKT_32x32_IDX_DATA + 1] << 8)  |
-              (buf[NIOS_PKT_32x32_IDX_DATA + 2] << 16) |
-              (buf[NIOS_PKT_32x32_IDX_DATA + 3] << 24);
+    if (data != NULL) {
+        *data   = (buf[NIOS_PKT_32x32_IDX_DATA + 0] << 0)  |
+                  (buf[NIOS_PKT_32x32_IDX_DATA + 1] << 8)  |
+                  (buf[NIOS_PKT_32x32_IDX_DATA + 2] << 16) |
+                  (buf[NIOS_PKT_32x32_IDX_DATA + 3] << 24);
+    }
 }
 
 /* Pack the response buffer */

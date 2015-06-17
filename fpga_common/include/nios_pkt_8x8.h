@@ -148,10 +148,21 @@ static inline void nios_pkt_8x8_unpack(const uint8_t *buf, uint8_t *target,
                                        bool *write, uint8_t *addr,
                                        uint8_t *data)
 {
-    *target = buf[NIOS_PKT_8x8_IDX_TARGET_ID];
-    *write  = (buf[NIOS_PKT_8x8_IDX_FLAGS] & NIOS_PKT_8x8_FLAG_WRITE) != 0;
-    *addr   = buf[NIOS_PKT_8x8_IDX_ADDR];
-    *data   = buf[NIOS_PKT_8x8_IDX_DATA];
+    if (target != NULL) {
+        *target = buf[NIOS_PKT_8x8_IDX_TARGET_ID];
+    }
+
+    if (write != NULL) {
+        *write  = (buf[NIOS_PKT_8x8_IDX_FLAGS] & NIOS_PKT_8x8_FLAG_WRITE) != 0;
+    }
+
+    if (addr != NULL) {
+        *addr   = buf[NIOS_PKT_8x8_IDX_ADDR];
+    }
+
+    if (data != NULL) {
+        *data   = buf[NIOS_PKT_8x8_IDX_DATA];
+    }
 }
 
 /* Pack the response buffer */
