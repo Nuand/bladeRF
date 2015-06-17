@@ -24,7 +24,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "pkt_handler.h"
-#include "nios_pkt_8x16.h"
 #include "pkt_8x16.h"
 #include "devices.h"
 #include "debug.h"

@@ -26,14 +26,12 @@
 
 #include <stdint.h>
 #include "pkt_handler.h"
-#include "nios_pkt_formats.h"
-
-#define PKT_LEGACY_MAGIC              ((uint8_t) NIOS_PKT_LEGACY_MAGIC)
+#include "nios_pkt_legacy.h"
 
 void pkt_legacy(struct pkt_buf *b);
 
 #define PKT_LEGACY { \
-    .magic          = PKT_LEGACY_MAGIC, \
+    .magic          = NIOS_PKT_LEGACY_MAGIC, \
     .init           = NULL, \
     .exec           = pkt_legacy, \
     .do_work        = NULL, \

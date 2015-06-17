@@ -26,13 +26,12 @@
 
 #include <stdint.h>
 #include "pkt_handler.h"
-
-#define PKT_8x64_MAGIC              ((uint8_t) 'D')
+#include "nios_pkt_8x64.h"
 
 void pkt_8x64(struct pkt_buf *b);
 
 #define PKT_8x64 { \
-    .magic          = PKT_8x64_MAGIC, \
+    .magic          = NIOS_PKT_8x64_MAGIC, \
     .init           = NULL, \
     .exec           = pkt_8x64, \
     .do_work        = NULL, \
