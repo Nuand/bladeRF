@@ -43,6 +43,12 @@ typedef enum {
 
 /**
  * Backend-specific function table
+ *
+ * The backend is responsible for making calls to
+ * capabilities_init_pre_fpga_load() and capabilities_init_post_fpga_load() when
+ * opening a device and after loading an FPGA, or detecting an FPGA is already
+ * loaded.
+ *
  */
 struct backend_fns {
 

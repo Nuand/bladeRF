@@ -21,7 +21,6 @@
 #include "bladerf_priv.h"
 #include "fpga.h"
 #include "version_compat.h"
-#include "capabilities.h"
 #include "file_ops.h"
 #include "log.h"
 #include "flash.h"
@@ -112,9 +111,6 @@ int fpga_load_from_file(struct bladerf *dev, const char *fpga_file)
     if (status != 0) {
         goto error;
     }
-
-    /* Update device capabilities mask based upon FPGA version number */
-    capabilities_init_post_fpga_load(dev);
 
     status = init_device(dev);
     if (status != 0) {

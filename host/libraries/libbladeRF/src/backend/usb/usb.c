@@ -149,14 +149,26 @@ static int usb_is_fpga_configured(struct bladerf *dev)
     }
 }
 
-static inline int rflink_and_fpga_version_load(struct bladerf *dev)
+/* Switch to RF link mode, fetch the FPGA version, and determine the
+ * device's capabiliities */
+static int post_fpga_load_init(struct bladerf *dev)
 {
     int status = change_setting(dev, USB_IF_RF_LINK);
     if (status == 0) {
         /* Read and store FPGA version info. This is only possible after
-         * we've entered RF link mode */
+         * we've entered RF link mode.
+         *
+         * The legacy mode is used here since we can't yet determine if
+         * the FPGA is capable of using the newer packet formats. */
         status = nios_legacy_get_fpga_version(dev, &dev->fpga_version);
+        if (status != 0) {
+            return status;
+        }
     }
+
+    /* Update device capabilities mask based upon FPGA version number */
+    capabilities_init_post_fpga_load(dev);
+
 
     return status;
 }
@@ -345,7 +357,7 @@ static int usb_open(struct bladerf *dev, struct bladerf_devinfo *info)
 
     status = usb_is_fpga_configured(dev);
     if (status > 0) {
-        status = rflink_and_fpga_version_load(dev);
+        status = post_fpga_load_init(dev);
     }
 
 error:
@@ -431,7 +443,7 @@ static int usb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size)
         return BLADERF_ERR_TIMEOUT;
     }
 
-    return rflink_and_fpga_version_load(dev);
+    return post_fpga_load_init(dev);
 }
 
 static inline int perform_erase(struct bladerf *dev, uint16_t block)

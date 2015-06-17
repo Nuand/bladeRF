@@ -227,9 +227,6 @@ int bladerf_open_with_devinfo(struct bladerf **opened_device,
          * "autoloaded" from SPI flash. */
         fpga_check_version(dev);
 
-        /* Determine device capabilities based upon FPGA version */
-        capabilities_init_post_fpga_load(dev);
-
         if (have_cap(dev, BLADERF_CAP_SCHEDULED_RETUNE)) {
             /* Cancel any pending re-tunes that may have been left over as the
              * result of a user application crashing or forgetting to call
