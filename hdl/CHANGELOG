@@ -5,6 +5,26 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v0.2.0 (2015-06-17)
+--------------------------------
+ This version is part of development series of changes, not an official release.
+
+ * Redesigned control/configuration program running on NIOS II
+    - This introduces support for different packet formats for
+      NIOS II <-> host communication.
+    - Readability and performance improvements
+
+ * The time tamers have been separated and now have programmable interrupts.
+
+ * Added tuning support:
+    - The LMS6 VCOCAP search can now be performed in the NIOS,
+      cutting out overhead incurred when performing all register accesses
+      via the host.
+    - A "Quick tune" option allows the LMS6 to be tuned using previously
+      determined settings, instead of running the full tuning algorithm.
+    - Introduced scheduled retune support
+
+
 v0.1.2 (2014-10-22)
 --------------------------------
  * Fixed issues with TX_NOW and dropped messages. This fixes issues
