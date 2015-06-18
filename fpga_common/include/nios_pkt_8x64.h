@@ -23,6 +23,10 @@
 #ifndef BLADERF_NIOS_PKT_8x64_H_
 #define BLADERF_NIOS_PKT_8x64_H_
 
+#include <stdint.h>
+#include <stdbool.h>
+#include <string.h>
+
 /*
  * This file defines the Host <-> FPGA (NIOS II) packet formats for accesses
  * to devices/blocks with 8-bit addresses and 64-bit data
