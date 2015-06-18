@@ -1585,6 +1585,8 @@ int bladerf_set_correction(struct bladerf *dev, bladerf_module module,
             break;
 
         case BLADERF_CORR_FPGA_GAIN:
+            /* Gain correction requires than an offset be applied */
+            value += (int16_t) 4096;
             status = dev->fn->set_iq_gain_correction(dev, module, value);
             break;
 
@@ -1619,6 +1621,11 @@ int bladerf_get_correction(struct bladerf *dev, bladerf_module module,
 
         case BLADERF_CORR_FPGA_GAIN:
             status = dev->fn->get_iq_gain_correction(dev, module, value);
+
+            /* Undo the gain control offset */
+            if (status == 0) {
+                *value -= 4096;
+            }
             break;
 
         case BLADERF_CORR_LMS_DCOFF_I:

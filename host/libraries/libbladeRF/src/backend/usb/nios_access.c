@@ -449,11 +449,13 @@ int nios_set_iq_gain_correction(struct bladerf *dev, bladerf_module module,
 
     switch (module) {
         case BLADERF_MODULE_RX:
+            log_verbose("Setting RX IQ Correction gain: %d\n", value);
             status = nios_8x16_write(dev, NIOS_PKT_8x16_TARGET_IQ_CORR,
                                      NIOS_PKT_8x16_ADDR_IQ_CORR_RX_GAIN, value);
             break;
 
         case BLADERF_MODULE_TX:
+            log_verbose("Setting TX IQ Correction gain: %d\n", value);
             status = nios_8x16_write(dev, NIOS_PKT_8x16_TARGET_IQ_CORR,
                                      NIOS_PKT_8x16_ADDR_IQ_CORR_TX_GAIN, value);
             break;
@@ -472,11 +474,13 @@ int nios_set_iq_phase_correction(struct bladerf *dev, bladerf_module module,
 
     switch (module) {
         case BLADERF_MODULE_RX:
+            log_verbose("Setting RX IQ Correction phase: %d\n", value);
             status = nios_8x16_write(dev, NIOS_PKT_8x16_TARGET_IQ_CORR,
                                      NIOS_PKT_8x16_ADDR_IQ_CORR_RX_PHASE, value);
             break;
 
         case BLADERF_MODULE_TX:
+            log_verbose("Setting TX IQ Correction phase: %d\n", value);
             status = nios_8x16_write(dev, NIOS_PKT_8x16_TARGET_IQ_CORR,
                                      NIOS_PKT_8x16_ADDR_IQ_CORR_TX_PHASE, value);
             break;

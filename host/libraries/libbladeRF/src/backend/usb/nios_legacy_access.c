@@ -453,11 +453,6 @@ int nios_legacy_get_iq_gain_correction(struct bladerf *dev,
 
     status = get_iq_correction(dev, addr, value);
 
-    /* Gain corrections have an offset that needs to be accounted for */
-    if (status == 0) {
-        *value -= 4096;
-    }
-
     return status;
 }
 
@@ -493,10 +488,12 @@ int nios_legacy_set_iq_gain_correction(struct bladerf *dev,
     switch (module) {
         case BLADERF_MODULE_RX:
             addr = NIOS_PKT_LEGACY_DEV_RX_GAIN_ADDR;
+            log_verbose("Setting RX IQ Correction phase: %d\n", value);
             break;
 
         case BLADERF_MODULE_TX:
             addr = NIOS_PKT_LEGACY_DEV_TX_GAIN_ADDR;
+            log_verbose("Setting TX IQ Correction phase: %d\n", value);
             break;
 
         default:
@@ -505,11 +502,6 @@ int nios_legacy_set_iq_gain_correction(struct bladerf *dev,
 
             return BLADERF_ERR_INVAL;
     }
-
-    log_verbose("%s:  %s, %d\n", __FUNCTION__, module2str(module), value);
-
-    /* Gain correction requires than an offset be applied */
-    value += (int16_t) 4096;
 
     return set_iq_correction(dev, addr, value);
 }
@@ -521,10 +513,12 @@ int nios_legacy_set_iq_phase_correction(struct bladerf *dev,
 
     switch (module) {
         case BLADERF_MODULE_RX:
+            log_verbose("Setting RX IQ Correction phase: %d\n", value);
             addr = NIOS_PKT_LEGACY_DEV_RX_PHASE_ADDR;
             break;
 
         case BLADERF_MODULE_TX:
+            log_verbose("Setting TX IQ Correction phase: %d\n", value);
             addr = NIOS_PKT_LEGACY_DEV_TX_PHASE_ADDR;
             break;
 
@@ -535,7 +529,6 @@ int nios_legacy_set_iq_phase_correction(struct bladerf *dev,
             return BLADERF_ERR_INVAL;
     }
 
-    log_verbose("%s: %s, %d\n", __FUNCTION__, module2str(module), value);
     return set_iq_correction(dev, addr, value);
 }
 
