@@ -2,7 +2,7 @@
  * This file is part of the bladeRF project:
  *   http://www.github.com/nuand/bladeRF
  *
- * Copyright (C) 2014 Nuand LLC
+ * Copyright (C) 2014-2015 Nuand LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -49,6 +49,7 @@ static const struct compat fw_compat_tbl[] = {
 
 static const struct compat fpga_compat_tbl[] = {
     /*    FPGA          requires >=        Firmware */
+    { VERSION(0, 3, 1),                 VERSION(1, 6, 1) },
     { VERSION(0, 3, 0),                 VERSION(1, 6, 1) },
     { VERSION(0, 2, 0),                 VERSION(1, 6, 1) },
     { VERSION(0, 1, 2),                 VERSION(1, 6, 1) },
