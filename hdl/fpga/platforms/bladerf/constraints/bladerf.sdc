@@ -2,7 +2,6 @@
 create_clock -period "100.0 MHz" -waveform {0.6 5.6} [get_ports fx3_pclk]
 create_clock -period "38.4 MHz"  [get_ports c4_clock]
 create_clock -period "38.4 MHz"  [get_ports lms_pll_out]
-create_clock -period "19.2 MHz"  [get_ports lms_sclk]
 create_clock -period "80.0 MHz"  [get_ports lms_rx_clock_out]
 create_clock -period "80.0 MHz"  -waveform {0.34 6.59} [get_ports c4_tx_clock]
 
@@ -52,11 +51,21 @@ set_input_delay -clock [get_clocks {U_pll|altpll_component|auto_generated|pll1|c
 set_input_delay -clock [get_clocks {U_pll|altpll_component|auto_generated|pll1|clk[0]}] -min 0.0 [get_ports {fx3_uart_txd}] -add_delay
 
 # LMS SPI interface
-set_input_delay  -clock [get_clocks U_pll*0*] -min  1.0 [get_ports {lms_sdo}]
-set_input_delay  -clock [get_clocks U_pll*0*] -max  9.0 [get_ports {lms_sdo}] -add_delay
 
-set_output_delay -clock [get_clocks U_pll*0*] -min  1.0 [get_ports {lms_sen lms_sdio lms_sclk}]
-set_output_delay -clock [get_clocks U_pll*0*] -max  4.0 [get_ports {lms_sen lms_sdio lms_sclk}] -add_delay
+# Create SPI generated clock
+create_generated_clock -name lms_sclk_reg -source [get_pins {U_pll|altpll_component|auto_generated|pll1|clk[0]}] -divide_by 2 [get_registers {*lms_spi*current.sclk}]
+create_generated_clock -name lms_sclk_pin -source [get_registers -no_duplicates {*lms_spi*current.sclk}] [get_ports {lms_sclk}]
+
+set_input_delay  -clock_fall -clock lms_sclk_pin -min  1.0 [get_ports {lms_sdo}]
+set_input_delay  -clock_fall -clock lms_sclk_pin -max  9.0 [get_ports {lms_sdo}] -add_delay
+
+set_output_delay -clock lms_sclk_pin -min  1.0 [get_ports {lms_sen lms_sdio}]
+set_output_delay -clock lms_sclk_pin -max  2.0 [get_ports {lms_sen lms_sdio}] -add_delay
+
+set_multicycle_path -setup -start -from [get_clocks {U_pll*clk[0]}] -to [get_clocks lms_sclk_pin] 1
+set_multicycle_path -hold -start -from [get_clocks {U_pll*clk[0]}] -to [get_clocks lms_sclk_pin] 1
+set_multicycle_path -setup -end -from [get_clocks lms_sclk_pin] -to [get_clocks {U_pll*clk[0]}] 1
+set_multicycle_path -hold -end -from [get_clocks lms_sclk_pin] -to [get_clocks {U_pll*clk[0]}] 1
 
 # Si5338 interface
 set_input_delay -clock [get_clocks U_pll*0*] -min  1.0 [get_ports {si_scl si_sda}]
