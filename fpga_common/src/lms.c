@@ -341,11 +341,11 @@ static inline uint8_t estimate_vcocap(unsigned int f_target,
                                       unsigned int f_low, unsigned int f_high)
 {
     unsigned int vcocap;
-    const float denom = f_high - f_low;
+    const float denom = (float) (f_high - f_low);
     const float num = VCOCAP_EST_RANGE;
-    const float f_diff = (f_target - f_low);
+    const float f_diff = (float) (f_target - f_low);
 
-    vcocap = (num / denom * f_diff) + 0.5 + VCOCAP_EST_MIN;
+    vcocap = (unsigned int) ((num / denom * f_diff) + 0.5 + VCOCAP_EST_MIN);
 
     if (vcocap > VCOCAP_MAX_VALUE) {
         log_warning("Clamping VCOCAP estimate from %u to %u\n",
@@ -779,7 +779,7 @@ int lms_get_lna(struct bladerf *dev, lms_lna *lna)
         *lna = LNA_NONE;
         return status;
     } else {
-        *lna = (lms_lna) (data >> 4) & 0x3;
+        *lna = (lms_lna) ((data >> 4) & 0x3);
         return 0;
     }
 }
@@ -1303,7 +1303,7 @@ static int loopback_rx(struct bladerf *dev, bladerf_loopback mode)
                 return status;
             }
 
-            status = lms_select_lna(dev, lna);
+            status = lms_select_lna(dev, (lms_lna) lna);
             if (status != 0) {
                 return status;
             }

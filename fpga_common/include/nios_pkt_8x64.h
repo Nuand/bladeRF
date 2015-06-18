@@ -133,14 +133,14 @@ static inline void nios_pkt_8x64_pack(uint8_t *buf, uint8_t target, bool write,
 
     buf[NIOS_PKT_8x64_IDX_ADDR] = addr;
 
-    buf[NIOS_PKT_8x64_IDX_DATA + 0] = data & 0xff;
-    buf[NIOS_PKT_8x64_IDX_DATA + 1] = (data >> 8);
-    buf[NIOS_PKT_8x64_IDX_DATA + 2] = (data >> 16);
-    buf[NIOS_PKT_8x64_IDX_DATA + 3] = (data >> 24);
-    buf[NIOS_PKT_8x64_IDX_DATA + 4] = (data >> 32);
-    buf[NIOS_PKT_8x64_IDX_DATA + 5] = (data >> 40);
-    buf[NIOS_PKT_8x64_IDX_DATA + 6] = (data >> 48);
-    buf[NIOS_PKT_8x64_IDX_DATA + 7] = (data >> 56);
+    buf[NIOS_PKT_8x64_IDX_DATA + 0] = (data >> 0)  & 0xff;
+    buf[NIOS_PKT_8x64_IDX_DATA + 1] = (data >> 8)  & 0xff;
+    buf[NIOS_PKT_8x64_IDX_DATA + 2] = (data >> 16) & 0xff;
+    buf[NIOS_PKT_8x64_IDX_DATA + 3] = (data >> 24) & 0xff;
+    buf[NIOS_PKT_8x64_IDX_DATA + 4] = (data >> 32) & 0xff;
+    buf[NIOS_PKT_8x64_IDX_DATA + 5] = (data >> 40) & 0xff;
+    buf[NIOS_PKT_8x64_IDX_DATA + 6] = (data >> 48) & 0xff;
+    buf[NIOS_PKT_8x64_IDX_DATA + 7] = (data >> 56) & 0xff;
 
     buf[NIOS_PKT_8x64_IDX_RESV2 + 0] = 0x00;
     buf[NIOS_PKT_8x64_IDX_RESV2 + 1] = 0x00;
