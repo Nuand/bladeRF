@@ -32,12 +32,12 @@
 #define INC 16
 
 static const struct numeric_suffix freq_suffix[] = {
-    { .suffix = "k", .multiplier = 1000 },
-    { .suffix = "K", .multiplier = 1000 },
-    { .suffix = "m", .multiplier = 1000 * 1000 },
-    { .suffix = "M", .multiplier = 1000 * 1000 },
-    { .suffix = "g", .multiplier = 1000 * 1000 * 1000 },
-    { .suffix = "G", .multiplier = 1000 * 1000 * 1000 },
+    { FIELD_INIT(.suffix, "k"), FIELD_INIT(.multiplier, 1000) },
+    { FIELD_INIT(.suffix, "K"), FIELD_INIT(.multiplier, 1000) },
+    { FIELD_INIT(.suffix, "m"), FIELD_INIT(.multiplier, 1000 * 1000) },
+    { FIELD_INIT(.suffix, "M"), FIELD_INIT(.multiplier, 1000 * 1000) },
+    { FIELD_INIT(.suffix, "g"), FIELD_INIT(.multiplier, 1000 * 1000 * 1000) },
+    { FIELD_INIT(.suffix, "G"), FIELD_INIT(.multiplier, 1000 * 1000 * 1000) },
 };
 
 static const size_t freq_suffix_count =
