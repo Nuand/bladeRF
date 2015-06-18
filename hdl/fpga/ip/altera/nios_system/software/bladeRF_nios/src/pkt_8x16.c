@@ -116,9 +116,11 @@ static inline bool perform_write(uint8_t id, uint8_t addr, uint16_t data)
 {
     switch (id) {
         case NIOS_PKT_8x16_TARGET_VCTCXO_DAC:
+            vctcxo_trim_dac_write(addr, data);
             break;
 
         case NIOS_PKT_8x16_TARGET_IQ_CORR:
+            iq_corr_write(addr, data);
             break;
 
         /* Add user customizations here
