@@ -77,6 +77,11 @@ that do not support this will yield unexpected (and likely undesirable)
 behavior.
 
 <br>
+<h3>BLADERF_FORCE_LEGACY_NIOS_PKT</h3>
+If defined, this forces libbladeRF to use the legacy packet format when
+communicating with the FPGA. This is intended for development and debugging.
+
+<br>
 <h3>BLADERF_FORCE_NO_FPGA_PRESENT</h3>
 Defining this forces libbladeRF to behave as if it does not detect that
 an FPGA is loaded. This prevents it from attempting to initialize the device.
