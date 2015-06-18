@@ -261,27 +261,4 @@ int nios_legacy_expansion_gpio_dir_read(struct bladerf *dev, uint32_t *val);
  */
 int nios_legacy_expansion_gpio_dir_write(struct bladerf *dev, uint32_t val);
 
-/**
- * Dummy handler for a retune request, which is not supported on
- * earlier FPGA versions.
- *
- * All of the following parameters are ignored.
- *
- * @param[in]   dev         Device handle
- * @param[in]   module      Module to retune
- * @param[in]   timestamp   Time to schedule retune at
- * @param[in]   nint        Integer portion of frequency multiplier
- * @param[in]   nfrac       Fractional portion of frequency multiplier
- * @param[in]   freqsel     VCO and divider selection
- * @param[in]   low_band    High vs low band selection
- * @param[in]   quick_tune  Denotes quick tune should be used instead of
- *                          tuning algorithm
- *
- * @return BLADERF_ERR_UNSUPPORTED
- */
-int nios_legacy_retune(struct bladerf *dev, bladerf_module module,
-                       uint64_t timestamp, uint16_t nint, uint32_t nfrac,
-                       uint8_t freqsel, uint8_t vcocap, bool low_band,
-                       bool quick_tune);
-
 #endif

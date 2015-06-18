@@ -580,14 +580,3 @@ int nios_legacy_expansion_gpio_dir_write(struct bladerf *dev, uint32_t val)
     log_verbose("%s: 0x%08\n", __FUNCTION__, val);
     return nios_legacy_pio_write(dev, NIOS_PKT_LEGACY_PIO_ADDR_EXP_DIR, val);
 }
-
-int nios_legacy_retune(struct bladerf *dev, bladerf_module module,
-                       uint64_t timestamp, uint16_t nint, uint32_t nfrac,
-                       uint8_t freqsel, uint8_t vcocap, bool low_band,
-                       bool quick_tune)
-{
-    log_debug("%s: The selected NIOS access routines do not support this.",
-               __FUNCTION__);
-
-    return BLADERF_ERR_UNSUPPORTED;
-}

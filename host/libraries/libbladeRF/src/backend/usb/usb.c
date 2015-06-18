@@ -173,13 +173,18 @@ static int post_fpga_load_init(struct bladerf *dev)
     /* Update device capabilities mask based upon FPGA version number */
     capabilities_init_post_fpga_load(dev);
 
-    /* Switch to our newer NIOS II request/response packet format
-     * if the FPGA supports it */
-    if (have_cap(dev, BLADERF_CAP_PKT_HANDLER_FMT)) {
-        log_verbose("Using current packet handler formats\n");
-        dev->fn = &backend_fns_usb;
+    if (!getenv("BLADERF_FORCE_LEGACY_NIOS_PKT")) {
+        /* Switch to our newer NIOS II request/response packet format
+         * if the FPGA supports it */
+        if (have_cap(dev, BLADERF_CAP_PKT_HANDLER_FMT)) {
+            log_verbose("Using current packet handler formats\n");
+            dev->fn = &backend_fns_usb;
+        } else {
+            log_verbose("Using legacy packet handler format\n");
+        }
     } else {
-        log_verbose("Using legacy current packet handler format\n");
+        dev->capabilities &= ~(BLADERF_CAP_PKT_HANDLER_FMT);
+        log_verbose("Using legacy packet handler format due to env var\n");
     }
 
     return status;
@@ -1111,7 +1116,7 @@ const struct backend_fns backend_fns_usb_legacy = {
     FIELD_INIT(.submit_stream_buffer, usb_submit_stream_buffer),
     FIELD_INIT(.deinit_stream, usb_deinit_stream),
 
-    FIELD_INIT(.retune, nios_legacy_retune),
+    FIELD_INIT(.retune, nios_retune),
 
     FIELD_INIT(.load_fw_from_bootloader, usb_load_fw_from_bootloader),
 };
