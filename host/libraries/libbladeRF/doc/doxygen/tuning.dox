@@ -5,7 +5,7 @@
 The simplest means of tuning the bladeRF's RX or TX module to a specified frequency is
 the bladerf_set_frequency() function. This page provides an overview of the underlying
 frequency tuning procedure and details the following functionality introduced in libbladeRF
-v0.3.0 and FPGA v0.2.0:
+v1.3.0 and FPGA v0.3.1:
 
 <ul>
     <li>Execution of LMS6002D tuning algorithm on host or FPGA</li>
@@ -89,43 +89,49 @@ The tuning speedup acheived by using ::BLADERF_TUNING_MODE_FPGA can be quantifie
 sample output for two differen NIOS II core implementations.
 
 <pre>
+
+Test machine:
+ i7-4790K (4 GHz)
+ Intel 9 Series XHCI
+
 ========================================
   NIOS II/f
 ========================================
 
 Re-tuning with fixed frequency...
-  Host tuning:    0.005302s
-  FPGA tuning:    0.000617s
-  Speedup factor: 8.589610
+  Host tuning:    0.004224s
+  FPGA tuning:    0.000449s
+  Speedup factor: 9.401454
 
 Re-tuning with random frequencies...
-  Host tuning:    0.004526s
-  FPGA tuning:    0.000572s
-  Speedup factor: 7.908094
+  Host tuning:    0.003781s
+  FPGA tuning:    0.000440s
+  Speedup factor: 8.586363
 
 Performing quick-tune...
-  Host tuning:    0.000205s
-  FPGA tuning:    0.000196s
-  Speedup factor: 1.047156
+  Host tuning:    0.000135s
+  FPGA tuning:    0.000125s
+  Speedup factor: 1.079900
 
 ========================================
   NIOS II/e
 ========================================
 
 Re-tuning with fixed frequency...
-  Host tuning:    0.007657s
-  FPGA tuning:    0.001187s
-  Speedup factor: 6.449782
+  Host tuning:    0.005490s
+  FPGA tuning:    0.000671s
+  Speedup factor: 8.178385
 
 Re-tuning with random frequencies...
-  Host tuning:    0.007002s
-  FPGA tuning:    0.001189s
-  Speedup factor: 5.888479
+  Host tuning:    0.005320s
+  FPGA tuning:    0.000667s
+  Speedup factor: 7.973849
 
 Performing quick-tune...
-  Host tuning:    0.000431s
-  FPGA tuning:    0.000428s
-  Speedup factor: 1.007370
+  Host tuning:    0.000225s
+  FPGA tuning:    0.000219s
+  Speedup factor: 1.027703
+
 </pre>
 
 As shown above, performance significantly changes depending on which
