@@ -5,6 +5,23 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.3.0 (2015-06-18)
+--------------------------------
+
+FX3 Firmware v1.8.0
+FPGA         v0.3.1
+
+Changes:
+  * Added API calls for new frequency tuning support:
+    - bladerf_schedule_retune()
+    - bladerf_get_quick_tune()
+    - bladerf_set_tuning_mode()
+
+  * Added error code: BLADERF_ERR_FPGA_OP
+    - Denotes failure in operation performed on FPGA
+
+  * Logo included in repo for documentation build
+
 v1.2.1 (2015-02-28)
 --------------------------------
 This version of libbladeRF is intended for use with:
