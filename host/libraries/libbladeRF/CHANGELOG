@@ -5,8 +5,20 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.3.1 (2015-06-18)
+--------------------------------
+This version of libbladeRF is intended for use with:
+
+FX3 Firmware v1.8.0
+FPGA         v0.3.1
+
+Changes:
+  * Added support for new NIOS II packet handlers introduced in FPGA v0.3.x
+
+
 v1.3.0 (2015-06-18)
 --------------------------------
+This version of libbladeRF is intended for use with:
 
 FX3 Firmware v1.8.0
 FPGA         v0.3.1
