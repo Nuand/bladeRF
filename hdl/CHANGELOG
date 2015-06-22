@@ -29,6 +29,9 @@ v0.2.0 (2015-06-17)
 --------------------------------
  This version is part of development series of changes, not an official release.
 
+ * Build updated for Quartus II 15.0
+    - Earlier Quartus versions are not compatible.
+
  * Redesigned control/configuration program running on NIOS II
     - This introduces support for different packet formats for
       NIOS II <-> host communication.
