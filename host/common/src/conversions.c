@@ -139,13 +139,14 @@ double str2double(const char *str, double min, double max, bool *ok)
     return value;
 }
 
-unsigned int str2uint_suffix(const char *str, unsigned int min,
-        unsigned int max, const struct numeric_suffix suffixes[],
-        int num_suffixes, bool *ok)
+unsigned int str2uint_suffix(const char *str,
+                             unsigned int min, unsigned int max,
+                             const struct numeric_suffix suffixes[],
+                             size_t num_suffixes, bool *ok)
 {
     double value;
     char *endptr;
-    int i;
+    size_t i;
 
     errno = 0;
     value = strtod(str, &endptr);

@@ -115,9 +115,10 @@ double str2double(const char *str, double min, double max, bool *ok);
  *
  * @return  Converted value on success, 0 on failure
  */
-unsigned int str2uint_suffix(const char *str, unsigned int min,
-        unsigned int max, const struct numeric_suffix suffixes[],
-        int num_suffixes, bool *ok);
+unsigned int str2uint_suffix(const char *str,
+                             unsigned int min, unsigned int max,
+                             const struct numeric_suffix suffixes[],
+                             size_t num_suffixes, bool *ok);
 
 /**
  * Convert a string to a bladerf_version
