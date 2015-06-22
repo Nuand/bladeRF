@@ -455,3 +455,22 @@ int check_xb200_filter(bladerf_xb200_filter f)
 
     return status;
 }
+
+int check_xb200_path(bladerf_xb200_path p)
+{
+    int status;
+
+    switch (p) {
+        case BLADERF_XB200_BYPASS:
+        case BLADERF_XB200_MIX:
+            status = 0;
+            break;
+
+        default:
+            status = BLADERF_ERR_INVAL;
+            log_debug("Invalid XB200 path: %d\n", p);
+            break;
+    }
+
+    return status;
+}

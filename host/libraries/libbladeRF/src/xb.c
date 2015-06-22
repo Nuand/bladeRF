@@ -353,63 +353,111 @@ int xb200_auto_filter_selection(struct bladerf *dev, bladerf_module mod,
     return status;
 }
 
-int xb200_set_path(struct bladerf *dev, bladerf_module module, bladerf_xb200_path path) {
-    int status;
-    uint32_t val;
-
-    uint8_t lval, lorig = 0;
-
-    status = LMS_READ( dev, 0x5A, &lorig );
-    if (status)
-        return status;
-    lval = lorig;
 
 #define LMS_RX_SWAP 0x40
 #define LMS_TX_SWAP 0x08
 
-    if (path == BLADERF_XB200_MIX)
+int xb200_set_path(struct bladerf *dev,
+                   bladerf_module module, bladerf_xb200_path path) {
+    int status;
+    uint32_t val;
+    uint32_t mask;
+    uint8_t lval, lorig = 0;
+
+    status = check_module(module);
+    if (status != 0) {
+        return status;
+    }
+
+    status = check_xb200_path(path);
+    if (status != 0) {
+        return status;
+    }
+
+    status = LMS_READ( dev, 0x5A, &lorig );
+    if (status != 0) {
+        return status;
+    }
+
+    lval = lorig;
+
+    if (path == BLADERF_XB200_MIX) {
         lval |= (module == BLADERF_MODULE_RX) ? LMS_RX_SWAP : LMS_TX_SWAP;
-    else
+    } else {
         lval &= ~((module == BLADERF_MODULE_RX) ? LMS_RX_SWAP : LMS_TX_SWAP);
+    }
 
     status = LMS_WRITE(dev, 0x5A, lval);
-    if (status)
+    if (status != 0) {
         return status;
+    }
 
     status = XB_GPIO_READ(dev, &val);
-    if (status)
+    if (status != 0) {
         return status;
+    }
 
     status = XB_GPIO_READ(dev, &val);
-    if (status)
+    if (status != 0) {
         return status;
+    }
+
     if (!(val & BLADERF_XB_RF_ON)) {
         status = xb200_attach(dev);
-        if (status)
+        if (status != 0) {
             return status;
+        }
     }
-    val |= BLADERF_XB_RF_ON;
 
-    val &= ~((module == BLADERF_MODULE_RX) ? (BLADERF_XB_CONFIG_RX_BYPASS_MASK | BLADERF_XB_RX_ENABLE) : (BLADERF_XB_CONFIG_TX_BYPASS_MASK | BLADERF_XB_TX_ENABLE));
-    if (module == BLADERF_MODULE_RX)
-        val |= (path == BLADERF_XB200_MIX) ? (BLADERF_XB_RX_ENABLE | BLADERF_XB_CONFIG_RX_PATH_MIX) : BLADERF_XB_CONFIG_RX_PATH_BYPASS;
-    else
-        val |= (path == BLADERF_XB200_MIX) ? (BLADERF_XB_TX_ENABLE | BLADERF_XB_CONFIG_TX_PATH_MIX) : BLADERF_XB_CONFIG_TX_PATH_BYPASS;
+    if (module == BLADERF_MODULE_RX) {
+        mask = (BLADERF_XB_CONFIG_RX_BYPASS_MASK | BLADERF_XB_RX_ENABLE);
+    } else {
+        mask = (BLADERF_XB_CONFIG_TX_BYPASS_MASK | BLADERF_XB_TX_ENABLE);
+    }
+
+    val |= BLADERF_XB_RF_ON;
+    val &= ~mask;
+
+    if (module == BLADERF_MODULE_RX) {
+        if (path == BLADERF_XB200_MIX) {
+            val |= (BLADERF_XB_RX_ENABLE | BLADERF_XB_CONFIG_RX_PATH_MIX);
+        } else {
+            val |= BLADERF_XB_CONFIG_RX_PATH_BYPASS;
+        }
+    } else {
+        if (path == BLADERF_XB200_MIX) {
+            val |= (BLADERF_XB_TX_ENABLE | BLADERF_XB_CONFIG_TX_PATH_MIX);
+        } else {
+            val |= BLADERF_XB_CONFIG_TX_PATH_BYPASS;
+        }
+    }
 
     return XB_GPIO_WRITE(dev, val);
 }
 
-int xb200_get_path(struct bladerf *dev, bladerf_module module, bladerf_xb200_path *path) {
+int xb200_get_path(struct bladerf *dev,
+                   bladerf_module module, bladerf_xb200_path *path) {
     int status;
     uint32_t val;
 
-    status = XB_GPIO_READ(dev, &val);
-    if (status)
+    status = check_module(module);
+    if (status != 0) {
         return status;
-    if (module == BLADERF_MODULE_RX)
-        *path = (val & BLADERF_XB_CONFIG_RX_BYPASS) ? BLADERF_XB200_MIX : BLADERF_XB200_BYPASS;
-    else if (module == BLADERF_MODULE_TX)
-        *path = (val & BLADERF_XB_CONFIG_TX_BYPASS) ? BLADERF_XB200_MIX : BLADERF_XB200_BYPASS;
+    }
+
+    status = XB_GPIO_READ(dev, &val);
+    if (status != 0) {
+        return status;
+    }
+
+    if (module == BLADERF_MODULE_RX) {
+        *path = (val & BLADERF_XB_CONFIG_RX_BYPASS) ?
+                    BLADERF_XB200_MIX : BLADERF_XB200_BYPASS;
+
+    } else if (module == BLADERF_MODULE_TX) {
+        *path = (val & BLADERF_XB_CONFIG_TX_BYPASS) ?
+                    BLADERF_XB200_MIX : BLADERF_XB200_BYPASS;
+    }
 
     return 0;
 }
