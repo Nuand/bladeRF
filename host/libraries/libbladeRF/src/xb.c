@@ -227,53 +227,104 @@ int xb_get_attached(struct bladerf *dev, bladerf_xb *xb) {
     return 0;
 }
 
-int xb200_get_filterbank(struct bladerf *dev, bladerf_module module, bladerf_xb200_filter *filter) {
+int xb200_get_filterbank(struct bladerf *dev, bladerf_module module,
+                         bladerf_xb200_filter *filter) {
     int status;
     uint32_t val;
+    unsigned int shift;
+
+    status = check_module(module);
+    if (status != 0) {
+        return status;
+    }
 
     status = XB_GPIO_READ(dev, &val);
-    if (status)
+    if (status != 0) {
         return status;
+    }
 
-    *filter = (val >> ((module == BLADERF_MODULE_RX) ? BLADERF_XB_RX_SHIFT : BLADERF_XB_TX_SHIFT)) & 3;
-    return 0;
+    if (module == BLADERF_MODULE_RX) {
+        shift = BLADERF_XB_RX_SHIFT;
+    } else {
+        shift = BLADERF_XB_TX_SHIFT;
+    }
+
+    *filter = (val >> shift) & 3;
+
+    status = check_xb200_filter(*filter);
+    if (status != 0) {
+        log_debug("Read back invalid GPIO state: 0x%08x\n", val);
+        status = BLADERF_ERR_UNEXPECTED;
+    }
+
+    return status;
 }
 
-int xb200_set_filterbank(struct bladerf *dev, bladerf_module module, bladerf_xb200_filter filter) {
+int xb200_set_filterbank(struct bladerf *dev,
+                         bladerf_module module, bladerf_xb200_filter filter) {
     int status;
-    uint32_t orig, val, bits;
+    uint32_t orig, val, mask;
+    unsigned int shift;
 
-    bits = ((module == BLADERF_MODULE_RX) ? BLADERF_XB_RX_MASK : BLADERF_XB_TX_MASK);
+    status = check_module(module);
+    if (status != 0) {
+        return status;
+    }
 
-    if (filter == BLADERF_XB200_AUTO_1DB || filter == BLADERF_XB200_AUTO_3DB) {
-        if (module == BLADERF_MODULE_RX) {
-            dev->rx_filter = filter;
-        } else {
-            dev->tx_filter = filter;
-        }
+    status = check_xb200_filter(filter);
+    if (status != 0) {
+        return status;
+    }
+
+    if (module == BLADERF_MODULE_RX) {
+        mask = BLADERF_XB_RX_MASK;
+        shift = BLADERF_XB_RX_SHIFT;
+    } else {
+        mask = BLADERF_XB_TX_MASK;
+        shift = BLADERF_XB_TX_SHIFT;
     }
 
     status = XB_GPIO_READ(dev, &orig);
-    val = orig & ~bits;
-    val |= filter << ((module == BLADERF_MODULE_RX) ? BLADERF_XB_RX_SHIFT : BLADERF_XB_TX_SHIFT);
-    if (status || (orig == val))
+    if (status != 0) {
         return status;
+    }
 
-    return XB_GPIO_WRITE(dev, val);
+    val = orig & ~mask;
+    val |= filter << shift;
+
+    if (orig != val) {
+        status = XB_GPIO_WRITE(dev, val);
+        if (status != 0) {
+            return status;
+        }
+    }
+
+    /* Update state information regarding automatically selected filter.
+     * Invalidate the entry if we're not performing automatic selection. */
+    if (filter == BLADERF_XB200_AUTO_1DB || filter == BLADERF_XB200_AUTO_3DB) {
+        dev->auto_filter[module] = filter;
+    } else {
+        dev->auto_filter[module] = -1;
+    }
+
+    return 0;
 }
 
-int xb200_auto_filter_selection(struct bladerf *dev, bladerf_module mod, unsigned int frequency) {
+int xb200_auto_filter_selection(struct bladerf *dev, bladerf_module mod,
+                                unsigned int frequency) {
     int status;
     bladerf_xb200_filter filter;
-
-    status = 0;
 
     if (frequency >= 300000000u) {
         return 0;
     }
 
-    if ((mod == BLADERF_MODULE_RX && dev->rx_filter == BLADERF_XB200_AUTO_1DB) ||
-          (mod == BLADERF_MODULE_TX && dev->tx_filter == BLADERF_XB200_AUTO_1DB)) {
+    status = check_module(mod);
+    if (status != 0) {
+        return status;
+    }
+
+    if (dev->auto_filter[mod] == BLADERF_XB200_AUTO_1DB) {
         if (37774405 <= frequency && frequency <= 59535436) {
             filter = BLADERF_XB200_50M;
         } else if (128326173 <= frequency && frequency <= 166711171) {
@@ -283,11 +334,9 @@ int xb200_auto_filter_selection(struct bladerf *dev, bladerf_module mod, unsigne
         } else {
             filter = BLADERF_XB200_CUSTOM;
         }
-        status = xb200_set_filterbank(dev, mod, filter);
-    }
 
-    if ((mod == BLADERF_MODULE_RX && dev->rx_filter == BLADERF_XB200_AUTO_3DB) ||
-          (mod == BLADERF_MODULE_TX && dev->tx_filter == BLADERF_XB200_AUTO_3DB)) {
+        status = xb200_set_filterbank(dev, mod, filter);
+    } else if (dev->auto_filter[mod] == BLADERF_XB200_AUTO_3DB) {
         if (34782924 <= frequency && frequency <= 61899260) {
             filter = BLADERF_XB200_50M;
         } else if (121956957 <= frequency && frequency <= 178444099) {
@@ -297,6 +346,7 @@ int xb200_auto_filter_selection(struct bladerf *dev, bladerf_module mod, unsigne
         } else {
             filter = BLADERF_XB200_CUSTOM;
         }
+
         status = xb200_set_filterbank(dev, mod, filter);
     }
 

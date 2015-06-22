@@ -198,8 +198,8 @@ int bladerf_open_with_devinfo(struct bladerf **opened_device,
                     bladerf_strerror(status));
     }
 
-    dev->rx_filter = -1;
-    dev->tx_filter = -1;
+    dev->auto_filter[BLADERF_MODULE_RX] = -1;
+    dev->auto_filter[BLADERF_MODULE_TX] = -1;
 
     dev->module_format[BLADERF_MODULE_RX] = -1;
     dev->module_format[BLADERF_MODULE_TX] = -1;

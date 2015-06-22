@@ -128,11 +128,8 @@ struct bladerf {
     /* Calibration data */
     struct calibrations cal;
 
-    /* Track filterbank selection for RX autoselection */
-    bladerf_xb200_filter rx_filter;
-
-    /* Track filterbank selection for TX autoselection */
-    bladerf_xb200_filter tx_filter;
+    /* Track filterbank selection for RX and TX auto-selection */
+    bladerf_xb200_filter auto_filter[NUM_MODULES];
 
     /* Format currently being used with a module, or -1 if module is not used */
     bladerf_format module_format[NUM_MODULES];
@@ -259,5 +256,15 @@ int perform_format_deconfig(struct bladerf *dev, bladerf_module module);
  * @return 0 for valid enumeration value, BLADERF_ERR_INVAL otherwise.
  */
 int check_module(bladerf_module m);
+
+/**
+ * Validate XB-200 filter selection
+ *
+ * @param   f       Filter supplied by API user.
+ *                  May not be a valid enumeration value.
+ *
+ * @return 0 for a valid enumeration value, BLADERF_ERR_INVAL otherwise.
+ */
+int check_xb200_filter(bladerf_xb200_filter f);
 
 #endif

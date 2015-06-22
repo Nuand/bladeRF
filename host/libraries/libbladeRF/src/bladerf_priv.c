@@ -432,3 +432,26 @@ int check_module(bladerf_module m)
 
     return status;
 }
+
+int check_xb200_filter(bladerf_xb200_filter f)
+{
+    int status;
+
+    switch (f) {
+        case BLADERF_XB200_50M:
+        case BLADERF_XB200_144M:
+        case BLADERF_XB200_222M:
+        case BLADERF_XB200_CUSTOM:
+        case BLADERF_XB200_AUTO_3DB:
+        case BLADERF_XB200_AUTO_1DB:
+            status = 0;
+            break;
+
+        default:
+            log_debug("Invalid XB200 filter: %d\n", f);
+            status = BLADERF_ERR_INVAL;
+            break;
+    }
+
+    return status;
+}
