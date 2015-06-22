@@ -439,7 +439,7 @@ int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
         } else if (!strcasecmp("buffers", param)) {
             tmp = str2uint_suffix(*val, RXTX_BUFFERS_MIN,
                                   UINT_MAX, rxtx_kmg_suffixes,
-                                  (int)rxtx_kmg_suffixes_len, &ok);
+                                  rxtx_kmg_suffixes_len, &ok);
 
             if (!ok) {
                 cli_err(s, argv0, RXTX_ERRMSG_VALUE(param, *val));
@@ -454,7 +454,7 @@ int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
         } else if (!strcasecmp("samples", param)) {
             tmp = str2uint_suffix(*val, RXTX_BUFFERS_MIN,
                                   UINT_MAX, rxtx_kmg_suffixes,
-                                  (int)rxtx_kmg_suffixes_len, &ok);
+                                  rxtx_kmg_suffixes_len, &ok);
 
             if (!ok) {
                 cli_err(s, argv0, RXTX_ERRMSG_VALUE(param, *val));
@@ -472,7 +472,7 @@ int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
             }
         } else if (!strcasecmp("xfers", param)) {
             tmp = str2uint_suffix(*val, RXTX_BUFFERS_MIN - 1, UINT_MAX,
-                                  rxtx_kmg_suffixes, (int)rxtx_kmg_suffixes_len,
+                                  rxtx_kmg_suffixes, rxtx_kmg_suffixes_len,
                                   &ok);
 
             if (!ok) {
@@ -486,7 +486,7 @@ int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
             }
         } else if (!strcasecmp("timeout", param)) {
             tmp = str2uint_suffix(*val, 1, UINT_MAX, rxtx_time_suffixes,
-                                  (int)rxtx_time_suffixes_len, &ok);
+                                  rxtx_time_suffixes_len, &ok);
 
             if (!ok) {
                 cli_err(s, argv0, RXTX_ERRMSG_VALUE(param, *val));
