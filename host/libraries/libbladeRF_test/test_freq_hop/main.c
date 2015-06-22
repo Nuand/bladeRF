@@ -31,13 +31,15 @@
 #include <getopt.h>
 #include <inttypes.h>
 #include <libbladeRF.h>
+
 #include "conversions.h"
 #include "test_common.h"
+#include "devcfg.h"
 
-#define TEST_OPTIONS_STR    TEST_OPTIONS_BASE"i:S:"
+#define TEST_OPTIONS_STR    DEVCFG_OPTIONS_BASE"i:S:"
 
 struct app_params {
-    struct device_config dev_config;
+    struct devcfg dev_config;
     bool rx;
     bool tx;
     uint64_t iterations;
@@ -106,7 +108,7 @@ void print_usage(const char *argv0)
     printf("  --tx                      Enable bladerf_sync_tx() calls.\n");
     printf("                             Requires device to be in loopback mode.\n");
     printf("\n");
-    test_print_common_help();
+    devcfg_print_common_help("Device configuration arguments\n");
     printf("\n");
 }
 
@@ -126,7 +128,7 @@ int run_test(struct bladerf *dev, struct app_params *p)
             goto out;
         }
 
-        status = test_perform_sync_config(dev, BLADERF_MODULE_RX,
+        status = devcfg_perform_sync_config(dev, BLADERF_MODULE_RX,
                                           BLADERF_FORMAT_SC16_Q11,
                                           &p->dev_config, true);
         if (status != 0) {
@@ -142,7 +144,7 @@ int run_test(struct bladerf *dev, struct app_params *p)
             goto out;
         }
 
-        status = test_perform_sync_config(dev, BLADERF_MODULE_RX,
+        status = devcfg_perform_sync_config(dev, BLADERF_MODULE_RX,
                                           BLADERF_FORMAT_SC16_Q11,
                                           &p->dev_config, true);
         if (status != 0) {
@@ -258,21 +260,21 @@ int main(int argc, char *argv[])
     struct app_params params;
     struct option *options = NULL;
 
-    test_init_device_config(&params.dev_config);
+    devcfg_init(&params.dev_config);
     params.iterations = 5000;
     params.randval_seed = 1;
     params.rx = false;
     params.tx = false;
 
-    options = test_get_long_options(app_long_options);
+    options = devcfg_get_long_options(app_long_options);
     if (options == NULL) {
         status = -1;
         goto error_no_dev;
     }
 
-    status = test_handle_args(argc, argv,
-                              TEST_OPTIONS_STR, options,
-                              &params.dev_config);
+    status = devcfg_handle_args(argc, argv,
+                                TEST_OPTIONS_STR, options,
+                                &params.dev_config);
     if (status < 0) {
         status = -1;
         goto error_no_dev;
@@ -304,7 +306,7 @@ int main(int argc, char *argv[])
         goto error_no_dev;
     }
 
-    status = test_apply_device_config(dev, &params.dev_config);
+    status = devcfg_apply(dev, &params.dev_config);
     if (status == 0) {
         status = run_test(dev, &params);
     }
@@ -313,7 +315,7 @@ int main(int argc, char *argv[])
     bladerf_close(dev);
 
 error_no_dev:
-    test_deinit_device_config(&params.dev_config);
+    devcfg_deinit(&params.dev_config);
     free(options);
     return status;
 }

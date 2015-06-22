@@ -27,6 +27,7 @@ set(SRC
     src/main.c
     src/hop_set.c
     ../common/src/test_common.c
+    ${BLADERF_HOST_COMMON_SOURCE_DIR}/devcfg.c
     ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
 )
 

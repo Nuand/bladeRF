@@ -45,6 +45,7 @@
 #include <libbladeRF.h>
 
 #include "test_common.h"
+#include "devcfg.h"
 #include "hop_set.h"
 
 #define TIMEOUT_MS  2500
@@ -225,7 +226,7 @@ int main(int argc, char *argv[])
     const char *mode = NULL;
     const char *module_str;
     struct hop_set *hops;
-    struct device_config config;
+    struct devcfg config;
     bladerf_module module;
     bool quick_tune;
     size_t i;
@@ -277,7 +278,7 @@ int main(int argc, char *argv[])
         goto out;
     }
 
-    test_init_device_config(&config);
+    devcfg_init(&config);
 
     config.tx_samplerate = SAMPLE_RATE;
     config.tx_bandwidth  = 1500000;
@@ -286,7 +287,7 @@ int main(int argc, char *argv[])
     config.num_buffers = 16;
     config.num_transfers = 8;
 
-    status = test_apply_device_config(dev, &config);
+    status = devcfg_apply(dev, &config);
     if (status != 0) {
         fprintf(stderr, "Failed to configure device.\n");
         goto out;
@@ -315,9 +316,9 @@ int main(int argc, char *argv[])
     hops->idx = 0;
     printf("\n");
 
-    status = test_perform_sync_config(dev, module,
-                                      BLADERF_FORMAT_SC16_Q11_META,
-                                      &config, true);
+    status = devcfg_perform_sync_config(dev, module,
+                                        BLADERF_FORMAT_SC16_Q11_META,
+                                        &config, true);
     if (status != 0) {
         goto out;
     }
