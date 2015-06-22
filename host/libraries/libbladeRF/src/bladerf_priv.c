@@ -414,3 +414,21 @@ int perform_format_deconfig(struct bladerf *dev, bladerf_module module)
 
     return 0;
 }
+
+int check_module(bladerf_module m)
+{
+    int status;
+
+    switch (m) {
+        case BLADERF_MODULE_RX:
+        case BLADERF_MODULE_TX:
+            status = 0;
+            break;
+
+        default:
+            log_debug("Invalid module: %d\n", m);
+            status = BLADERF_ERR_INVAL;
+    }
+
+    return status;
+}

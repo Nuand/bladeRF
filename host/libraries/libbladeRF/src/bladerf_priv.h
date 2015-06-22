@@ -250,4 +250,14 @@ int perform_format_config(struct bladerf *dev, bladerf_module module,
  */
 int perform_format_deconfig(struct bladerf *dev, bladerf_module module);
 
+/**
+ * Validate module selection
+ *
+ * @param   m       Module supplied by API user.
+ *                  May not be a valid enumeration value.
+ *
+ * @return 0 for valid enumeration value, BLADERF_ERR_INVAL otherwise.
+ */
+int check_module(bladerf_module m);
+
 #endif
