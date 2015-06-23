@@ -1044,8 +1044,27 @@ int print_sampling( struct cli_state *state, int argc, char **argv)
 
 int print_trimdac(struct cli_state *state, int argc, char **argv)
 {
-    state->last_lib_error = BLADERF_ERR_UNSUPPORTED;
-    return CLI_RET_LIBBLADERF;
+    int status;
+    uint16_t curr, cal;
+
+    status = bladerf_get_vctcxo_trim(state->dev, &cal);
+    if (status != 0) {
+        state->last_lib_error = status;
+        return CLI_RET_LIBBLADERF;
+    }
+
+    status = bladerf_dac_read(state->dev, &curr);
+    if (status != 0) {
+        state->last_lib_error = status;
+        return CLI_RET_LIBBLADERF;
+    }
+
+    printf("\n");
+    printf("  Current VCTCXO trim DAC value: 0x%04x\n", curr);
+    printf("  Calibration data in flash:     0x%04x\n", cal);
+    printf("\n");
+
+    return 0;
 }
 
 int set_trimdac(struct cli_state *state, int argc, char **argv)
