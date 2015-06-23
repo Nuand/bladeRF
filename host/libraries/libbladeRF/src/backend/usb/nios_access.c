@@ -392,6 +392,18 @@ int nios_vctcxo_trim_dac_write(struct bladerf *dev, uint16_t value)
     return status;
 }
 
+int nios_vctcxo_trim_dac_read(struct bladerf *dev, uint16_t *value)
+{
+    int status;
+
+    status = nios_8x16_read(dev, NIOS_PKT_8x16_TARGET_VCTCXO_DAC, 0x98, value);
+    if (status != 0) {
+        *value = 0;
+    }
+
+    return status;
+}
+
 int nios_get_iq_gain_correction(struct bladerf *dev, bladerf_module module,
                                 int16_t *value)
 {

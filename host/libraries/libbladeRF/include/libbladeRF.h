@@ -2785,16 +2785,26 @@ int CALL_CONV bladerf_get_timestamp(struct bladerf *dev, bladerf_module mod,
                                     uint64_t *value);
 
 /**
- * Write value to VCTCXO DAC
+ * Write value to VCTCXO trim DAC
  *
  * @param   dev         Device handle
- * @param   val         Data to write to DAC register
+ * @param   val         Value to write to VCTCXO trim DAC
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
 int CALL_CONV bladerf_dac_write(struct bladerf *dev, uint16_t val);
 
+/**
+ * Read value from VCTCXO trim DAC
+ *
+ * @param[in]   dev     Device handle
+ * @param[out]  val     Value to read from VCTCXO trim DAC
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_dac_read(struct bladerf *dev, uint16_t *val);
 
 /**
  * Write value to secondary XB SPI

@@ -59,7 +59,8 @@
 #define CONFIG_GPIO_WRITE(dev, val) config_gpio_write(dev, val)
 #define CONFIG_GPIO_READ(dev, val)  dev->fn->config_gpio_read(dev, val)
 
-#define DAC_WRITE(dev, val) dev->fn->dac_write(dev, val)
+#define VCTCXO_DAC_WRITE(dev, val) dev->fn->vctcxo_dac_write(dev, val)
+#define VCTCXO_DAC_READ(dev, val_ptr) dev->fn->vctcxo_dac_read(dev, val_ptr)
 
 /* Forward declaration for the function table */
 struct bladerf;

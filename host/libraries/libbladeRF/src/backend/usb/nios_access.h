@@ -137,6 +137,16 @@ int nios_lms6_write(struct bladerf *dev, uint8_t addr, uint8_t data);
 int nios_vctcxo_trim_dac_write(struct bladerf *dev, uint16_t value);
 
 /**
+ * Read the current VCTCXO trim DAC value
+ *
+ * @param[in]   dev         Device handle
+ * @param[out]  value       On success, updated with VCTCXO value
+ *
+ * @return 0 on success, BLADERF_ERR_* code on error.
+ */
+int nios_vctcxo_trim_dac_read(struct bladerf *dev, uint16_t *value);
+
+/**
  * Read a IQ gain correction value
  *
  * @param[in]   dev         Device handle

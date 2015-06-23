@@ -134,8 +134,9 @@ struct backend_fns {
     int (*lms_write)(struct bladerf *dev, uint8_t addr, uint8_t data);
     int (*lms_read)(struct bladerf *dev, uint8_t addr, uint8_t *data);
 
-    /* VCTCXO accessor */
-    int (*dac_write)(struct bladerf *dev, uint16_t value);
+    /* VCTCXO accessors */
+    int (*vctcxo_dac_write)(struct bladerf *dev, uint16_t value);
+    int (*vctcxo_dac_read)(struct bladerf *dev, uint16_t *value);
 
     /* Expansion board SPI */
     int (*xb_spi)(struct bladerf *dev, uint32_t value);

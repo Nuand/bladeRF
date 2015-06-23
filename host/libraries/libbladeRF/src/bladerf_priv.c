@@ -252,7 +252,7 @@ int init_device(struct bladerf *dev)
         }
 
         /* Set the calibrated VCTCXO DAC value */
-        status = DAC_WRITE(dev, dev->dac_trim);
+        status = VCTCXO_DAC_WRITE(dev, dev->dac_trim);
         if (status != 0) {
             return status;
         }

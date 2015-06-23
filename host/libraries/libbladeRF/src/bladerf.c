@@ -1660,7 +1660,7 @@ int bladerf_get_timestamp(struct bladerf *dev, bladerf_module module, uint64_t *
 }
 
 /*------------------------------------------------------------------------------
- * VCTCXO DAC register write
+ * VCTCXO trim DAC access
  *----------------------------------------------------------------------------*/
 
 int bladerf_dac_write(struct bladerf *dev, uint16_t val)
@@ -1668,12 +1668,22 @@ int bladerf_dac_write(struct bladerf *dev, uint16_t val)
     int status;
     MUTEX_LOCK(&dev->ctrl_lock);
 
-    status = DAC_WRITE(dev, val);
+    status = VCTCXO_DAC_WRITE(dev, val);
 
     MUTEX_UNLOCK(&dev->ctrl_lock);
     return status;
 }
 
+int bladerf_dac_read(struct bladerf *dev, uint16_t *val)
+{
+    int status;
+    MUTEX_LOCK(&dev->ctrl_lock);
+
+    status = VCTCXO_DAC_READ(dev, val);
+
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+    return status;
+}
 
 /*------------------------------------------------------------------------------
  * XB SPI register write
