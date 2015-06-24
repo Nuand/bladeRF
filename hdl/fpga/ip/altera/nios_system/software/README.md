@@ -6,7 +6,7 @@ The [bladeRF_nios](./bladeRF_nios) directory contains the bladeRF program that e
 Packet Formats
 ========================
 
-Requests and responses are sent/received in 16-byte packets.  The first byte in the p is a "magic" value that denotes the packet format type. The following bytes are specific to the packet format.  See the pkt_*.h files in the[fpga_common/include/](../../../../../../fpga_common/include) directory for complete descriptions of these formats.
+Requests and responses are sent/received in 16-byte packets.  The first byte in the p is a "magic" value that denotes the packet format type. The following bytes are specific to the packet format.  See the pkt_*.h files in the [fpga_common/include/](../../../../../../fpga_common/include) directory for complete descriptions of these formats.
 
 IDs and "Magic" header byte values are reserved for user customization; official releases will not use these IDs. The below tables briefly describe the IDs used for each of the packet formats.
 
