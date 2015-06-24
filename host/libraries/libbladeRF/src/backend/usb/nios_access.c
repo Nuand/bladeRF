@@ -292,12 +292,24 @@ static int nios_32x32_masked_write(struct bladerf *dev, uint8_t id,
 
 int nios_config_read(struct bladerf *dev, uint32_t *val)
 {
-    return nios_8x32_read(dev, NIOS_PKT_8x32_TARGET_CONTROL, 0, val);
+    int status = nios_8x32_read(dev, NIOS_PKT_8x32_TARGET_CONTROL, 0, val);
+
+    if (status == 0) {
+        log_verbose("%s: Read 0x%08x\n", __FUNCTION__, *val);
+    }
+
+    return status;
 }
 
 int nios_config_write(struct bladerf *dev, uint32_t val)
 {
-    return nios_8x32_write(dev, NIOS_PKT_8x32_TARGET_CONTROL, 0, val);
+    int status = nios_8x32_write(dev, NIOS_PKT_8x32_TARGET_CONTROL, 0, val);
+
+    if (status == 0) {
+        log_verbose("%s: Wrote 0x%08x\n", __FUNCTION__, val);
+    }
+
+    return status;
 }
 
 int nios_get_fpga_version(struct bladerf *dev, struct bladerf_version *ver)
@@ -306,6 +318,9 @@ int nios_get_fpga_version(struct bladerf *dev, struct bladerf_version *ver)
     int status = nios_8x32_read(dev, NIOS_PKT_8x32_TARGET_VERSION, 0, &regval);
 
     if (status == 0) {
+        log_verbose("%s: Read FPGA version word: 0x%08x\n",
+                    __FUNCTION__, regval);
+
         ver->major = (regval >> 24) & 0xff;
         ver->minor = (regval >> 16) & 0xff;
         ver->patch = LE16_TO_HOST(regval & 0xffff);
@@ -351,6 +366,8 @@ int nios_get_timestamp(struct bladerf *dev, bladerf_module module,
     nios_pkt_8x64_resp_unpack(buf, NULL, NULL, NULL, timestamp, &success);
 
     if (success) {
+        log_verbose("%s: Read %s timstamp: 0x%"PRIu64"\n",
+                    __FUNCTION__, module2str(module), timestamp);
         return 0;
     } else {
         log_debug("%s: response packet reported failure.\n", __FUNCTION__);
@@ -361,22 +378,50 @@ int nios_get_timestamp(struct bladerf *dev, bladerf_module module,
 
 int nios_si5338_read(struct bladerf *dev, uint8_t addr, uint8_t *data)
 {
-    return nios_8x8_read(dev, NIOS_PKT_8x8_TARGET_SI5338, addr, data);
+    int status = nios_8x8_read(dev, NIOS_PKT_8x8_TARGET_SI5338, addr, data);
+
+    if (status == 0) {
+        log_verbose("%s: Read 0x%02x from addr 0x%02x\n",
+                    __FUNCTION__, addr, *data);
+    }
+
+    return status;
 }
 
 int nios_si5338_write(struct bladerf *dev, uint8_t addr, uint8_t data)
 {
-    return nios_8x8_write(dev, NIOS_PKT_8x8_TARGET_SI5338, addr, data);
+    int status = nios_8x8_write(dev, NIOS_PKT_8x8_TARGET_SI5338, addr, data);
+
+    if (status == 0) {
+        log_verbose("%s: Wrote 0x%02x to addr 0x%02x\n",
+                    __FUNCTION__, addr, data);
+    }
+
+    return status;
 }
 
 int nios_lms6_read(struct bladerf *dev, uint8_t addr, uint8_t *data)
 {
-    return nios_8x8_read(dev, NIOS_PKT_8x8_TARGET_LMS6, addr, data);
+    int status = nios_8x8_read(dev, NIOS_PKT_8x8_TARGET_LMS6, addr, data);
+
+    if (status == 0) {
+        log_verbose("%s: Read 0x%02x from addr 0x%02x\n",
+                    __FUNCTION__, addr, *data);
+    }
+
+    return status;
 }
 
 int nios_lms6_write(struct bladerf *dev, uint8_t addr, uint8_t data)
 {
-    return nios_8x8_write(dev, NIOS_PKT_8x8_TARGET_LMS6, addr, data);
+    int status = nios_8x8_write(dev, NIOS_PKT_8x8_TARGET_LMS6, addr, data);
+
+    if (status == 0) {
+        log_verbose("%s: Wrote 0x%02x to addr 0x%02x\n",
+                    __FUNCTION__, addr, data);
+    }
+
+    return status;
 }
 
 int nios_vctcxo_trim_dac_write(struct bladerf *dev, uint16_t value)
@@ -389,6 +434,8 @@ int nios_vctcxo_trim_dac_write(struct bladerf *dev, uint16_t value)
         /* Write DAC value to channel 0 */
         status = nios_8x16_write(dev, NIOS_PKT_8x16_TARGET_VCTCXO_DAC,
                                  0x08, value);
+
+        log_verbose("%s: Wrote 0x%04x\n", __FUNCTION__, value);
     }
 
     return status;
@@ -410,6 +457,8 @@ int nios_vctcxo_trim_dac_read(struct bladerf *dev, uint16_t *value)
     status = nios_8x16_read(dev, NIOS_PKT_8x16_TARGET_VCTCXO_DAC, 0x98, value);
     if (status != 0) {
         *value = 0;
+    } else {
+        log_verbose("%s: Read 0x%04x\n", __FUNCTION__, *value);
     }
 
     return status;
@@ -437,6 +486,12 @@ int nios_get_iq_gain_correction(struct bladerf *dev, bladerf_module module,
     }
 
     *value = (int16_t) tmp;
+
+    if (status == 0) {
+        log_verbose("%s: Read %s %d\n",
+                    __FUNCTION__, module2str(module), *value);
+    }
+
     return status;
 }
 
@@ -462,6 +517,12 @@ int nios_get_iq_phase_correction(struct bladerf *dev, bladerf_module module,
     }
 
     *value = (int16_t) tmp;
+
+    if (status == 0) {
+        log_verbose("%s: Read %s %d\n",
+                    __FUNCTION__, module2str(module), *value);
+    }
+
     return status;
 }
 
@@ -485,6 +546,11 @@ int nios_set_iq_gain_correction(struct bladerf *dev, bladerf_module module,
 
         default:
             log_debug("Invalid module: %d\n", module);
+    }
+
+    if (status == 0) {
+        log_verbose("%s: Wrote %s %d\n",
+                    __FUNCTION__, module2str(module), value);
     }
 
     return status;
@@ -512,12 +578,24 @@ int nios_set_iq_phase_correction(struct bladerf *dev, bladerf_module module,
             log_debug("Invalid module: %d\n", module);
     }
 
+    if (status == 0) {
+        log_verbose("%s: Wrote %s %d\n",
+                    __FUNCTION__, module2str(module), value);
+    }
+
+
     return status;
 }
 
 int nios_xb200_synth_write(struct bladerf *dev, uint32_t value)
 {
-    return nios_8x32_write(dev, NIOS_PKT_8x32_TARGET_ADF4351, 0, value);
+    int status = nios_8x32_write(dev, NIOS_PKT_8x32_TARGET_ADF4351, 0, value);
+
+    if (status == 0) {
+        log_verbose("%s: Wrote 0x%08x\n", __FUNCTION__, value);
+    }
+
+    return status;
 }
 
 /* The update format for GPIO (and the GPIO direction register) accesses allows
@@ -525,26 +603,50 @@ int nios_xb200_synth_write(struct bladerf *dev, uint32_t value)
  * of the GPIO bank. */
 int nios_expansion_gpio_read(struct bladerf *dev, uint32_t *val)
 {
-    return nios_32x32_masked_read(dev, NIOS_PKT_32x32_TARGET_EXP,
-                                  0xffffffff, val);
+    int status = nios_32x32_masked_read(dev, NIOS_PKT_32x32_TARGET_EXP,
+                                        0xffffffff, val);
+
+    if (status == 0) {
+        log_verbose("%s: Read 0x08x\n", __FUNCTION__, *val);
+    }
+
+    return status;
 }
 
 int nios_expansion_gpio_write(struct bladerf *dev, uint32_t val)
 {
-    return nios_32x32_masked_write(dev, NIOS_PKT_32x32_TARGET_EXP,
-                                   0xffffffff, val);
+    int status = nios_32x32_masked_write(dev, NIOS_PKT_32x32_TARGET_EXP,
+                                         0xffffffff, val);
+
+    if (status == 0) {
+        log_verbose("%s: Wrote 0x08x\n", __FUNCTION__, val);
+    }
+
+    return status;
 }
 
 int nios_expansion_gpio_dir_read(struct bladerf *dev, uint32_t *val)
 {
-    return nios_32x32_masked_read(dev, NIOS_PKT_32x32_TARGET_EXP_DIR,
-                                  0xffffffff, val);
+    int status = nios_32x32_masked_read(dev, NIOS_PKT_32x32_TARGET_EXP_DIR,
+                                        0xffffffff, val);
+
+    if (status == 0) {
+        log_verbose("%s: Read 0x08x\n", __FUNCTION__, *val);
+    }
+
+    return status;
 }
 
 int nios_expansion_gpio_dir_write(struct bladerf *dev, uint32_t val)
 {
-    return nios_32x32_masked_write(dev, NIOS_PKT_32x32_TARGET_EXP_DIR,
-                                   0xffffffff, val);
+    int status = nios_32x32_masked_write(dev, NIOS_PKT_32x32_TARGET_EXP_DIR,
+                                         0xffffffff, val);
+
+    if (status == 0) {
+        log_verbose("%s: Wrote 0x08x\n", __FUNCTION__, val);
+    }
+
+    return status;
 }
 
 int nios_retune(struct bladerf *dev, bladerf_module module,
@@ -557,6 +659,11 @@ int nios_retune(struct bladerf *dev, bladerf_module module,
 
     uint8_t resp_flags;
     uint64_t duration;
+
+    log_verbose("%s: module=%s timestamp=%"PRIu64" nint=%u nfrac=%u\n\t\t\t\t"
+                "freqsel=0x%02x vcocap=0x%02x low_band=%d quick_tune=%d\n",
+                __FUNCTION__, module2str(module), timestamp, nint, nfrac,
+                freqsel, vcocap, low_band, quick_tune);
 
     nios_pkt_retune_pack(buf, module, timestamp,
                          nint, nfrac, freqsel, vcocap, low_band, quick_tune);
