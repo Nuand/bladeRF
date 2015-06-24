@@ -166,7 +166,7 @@ static inline void nios_pkt_8x16_unpack(const uint8_t *buf, uint8_t *target,
         *addr   = buf[NIOS_PKT_8x16_IDX_ADDR];
     }
 
-    if (addr != NULL) {
+    if (data != NULL) {
         *data   = (buf[NIOS_PKT_8x16_IDX_DATA + 0] << 0) |
                   (buf[NIOS_PKT_8x16_IDX_DATA + 1] << 8);
     }
