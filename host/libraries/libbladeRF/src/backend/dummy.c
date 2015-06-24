@@ -302,6 +302,7 @@ const struct backend_fns backend_fns_dummy = {
     FIELD_INIT(.lms_read, dummy_lms_read),
 
     FIELD_INIT(.vctcxo_dac_write, dummy_vctcxo_dac_write),
+    FIELD_INIT(.vctcxo_dac_read,  dummy_vctcxo_dac_read),
 
     FIELD_INIT(.xb_spi, dummy_xb_spi),
 
