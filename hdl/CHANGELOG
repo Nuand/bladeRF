@@ -5,6 +5,12 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+--------------------------------
+v0.3.2 (2015-06-23)
+--------------------------------
+ * Fixed VCTCXO readback
+
+--------------------------------
 v0.3.1 (2015-06-17)
 --------------------------------
  * Added faster, custom SPI block for LMS6 communication.
