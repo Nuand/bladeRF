@@ -155,6 +155,7 @@ int nios_8x16_read(struct bladerf *dev, uint8_t id,
     nios_pkt_8x16_resp_unpack(buf, NULL, NULL, NULL, &tmp, &success);
 
     if (success) {
+        *data = tmp;
         return 0;
     } else {
         *data = 0;
