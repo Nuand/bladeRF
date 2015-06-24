@@ -173,8 +173,8 @@ void vctcxo_trim_dac_read(uint8_t cmd, uint16_t *val)
 {
     uint8_t data[2];
 
-    alt_avalon_spi_command(LMS_SPI_BASE, 0, 1, &cmd, 0, 0, ALT_AVALON_SPI_COMMAND_MERGE);
-    alt_avalon_spi_command(LMS_SPI_BASE, 0, 0, 0, 2, &data, 0);
+    alt_avalon_spi_command(PERIPHERAL_SPI_BASE, 0, 1, &cmd, 0, 0, ALT_AVALON_SPI_COMMAND_MERGE);
+    alt_avalon_spi_command(PERIPHERAL_SPI_BASE, 0, 0, 0, 2, &data, 0);
 
     *val = (data[0] << 8) | data[1];
 }
