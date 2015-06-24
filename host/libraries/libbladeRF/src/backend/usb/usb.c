@@ -1057,13 +1057,6 @@ static int usb_load_fw_from_bootloader(bladerf_backend backend,
     return status;
 }
 
-static int unsupported_trim_dac_read(struct bladerf *dev, uint16_t *val)
-{
-    *val = 0x800;
-    log_debug("VCTCXO readback requires FPGA >= v0.3.x\n");
-    return BLADERF_ERR_UNSUPPORTED;
-}
-
 /* USB backend that used legacy format for communicating with NIOS II */
 const struct backend_fns backend_fns_usb_legacy = {
     FIELD_INIT(.matches, usb_matches),
@@ -1109,7 +1102,7 @@ const struct backend_fns backend_fns_usb_legacy = {
     FIELD_INIT(.lms_read, nios_legacy_lms6_read),
 
     FIELD_INIT(.vctcxo_dac_write, nios_legacy_vctcxo_trim_dac_write),
-    FIELD_INIT(.vctcxo_dac_read, unsupported_trim_dac_read),
+    FIELD_INIT(.vctcxo_dac_read, nios_vctcxo_trim_dac_read),
 
     FIELD_INIT(.xb_spi, nios_legacy_xb200_synth_write),
 

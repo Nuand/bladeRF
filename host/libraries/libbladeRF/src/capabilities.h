@@ -67,6 +67,12 @@
  */
 #define BLADERF_CAP_PKT_HANDLER_FMT     (1 << 4)
 
+/**
+ * A bug fix in FPGA version 0.3.2 allowed support for reading back
+ * the current VCTCXO trim dac value.
+ */
+#define BLADERF_CAP_VCTCXO_TRIMDAC_READ (1 << 5)
+
 
 /**
  * Firmware 1.7.1 introduced firmware-based loopback

@@ -29,6 +29,7 @@
 #include "usb.h"
 #include "nios_access.h"
 #include "nios_pkt_formats.h"
+#include "capabilities.h"
 #include "log.h"
 
 //#define PRINT_BUFFERS
@@ -396,6 +397,15 @@ int nios_vctcxo_trim_dac_write(struct bladerf *dev, uint16_t value)
 int nios_vctcxo_trim_dac_read(struct bladerf *dev, uint16_t *value)
 {
     int status;
+
+    if (!have_cap(dev, BLADERF_CAP_VCTCXO_TRIMDAC_READ)) {
+        *value = 0x0000;
+
+        log_debug("FPGA %s does not support VCTCXO trimdac readback.\n",
+                  dev->fpga_version.describe);
+
+        return BLADERF_ERR_UNSUPPORTED;
+    }
 
     status = nios_8x16_read(dev, NIOS_PKT_8x16_TARGET_VCTCXO_DAC, 0x98, value);
     if (status != 0) {
