@@ -2796,7 +2796,14 @@ API_EXPORT
 int CALL_CONV bladerf_dac_write(struct bladerf *dev, uint16_t val);
 
 /**
- * Read value from VCTCXO trim DAC
+ * Read value from VCTCXO trim DAC.
+ *
+ * This is similar to bladerf_get_vctcxo_trim(), except that it returns the
+ * current trim DAC value, as opposed to the calibration value read from
+ * flash.
+ *
+ * Use this if you are trying to query the value after having previously
+ * made calls to bladerf_dac_write().
  *
  * @param[in]   dev     Device handle
  * @param[out]  val     Value to read from VCTCXO trim DAC
