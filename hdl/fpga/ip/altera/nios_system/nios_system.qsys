@@ -7,7 +7,7 @@
    description=""
    tags=""
    categories="System" />
- <parameter name="bonusData"><![CDATA[bonusData
+ <parameter name="bonusData"><![CDATA[bonusData 
 {
    element $${FILENAME}
    {
@@ -111,6 +111,14 @@
       {
          value = "1";
          type = "int";
+      }
+   }
+   element nios_system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
       }
    }
    element nios_system
@@ -387,7 +395,7 @@
  </module>
  <module name="lms_spi" kind="spi" version="1.0" enabled="1">
   <parameter name="ADDR_WIDTH" value="7" />
-  <parameter name="CLOCK_DIV" value="2" />
+  <parameter name="CLOCK_DIV" value="4" />
   <parameter name="DATA_WIDTH" value="8" />
  </module>
  <module name="nios2" kind="altera_nios2_gen2" version="15.0" enabled="1">
