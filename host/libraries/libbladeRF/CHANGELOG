@@ -5,6 +5,22 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.4.0 (2015-06-30)
+--------------------------------
+
+This version of libbladeRF is intended for use with:
+
+FX3 Firmware v1.8.0
+FPGA         v0.3.3
+
+Changes:
+  * Fix bug in read NIOS 8x16 packet value
+
+  * Added API function for readback of current VCTCXO trim DAC value
+    (as opposed to calibration data from flash).
+        - bladerf_dac_read()
+
+
 v1.3.1 (2015-06-18)
 --------------------------------
 This version of libbladeRF is intended for use with:
