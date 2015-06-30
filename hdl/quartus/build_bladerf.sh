@@ -35,6 +35,44 @@ function usage()
     echo ""
 }
 
+# Returns:
+#   0 on compatible version
+#   1 on incompatible version or unable to detemine version
+check_quartus_version()
+{
+    local readonly VERSION_FILE="$QUARTUS_ROOTDIR/version.txt"
+
+    if [ ! -f "$VERSION_FILE" ]; then
+        echo "Could not find Quartus version file." >&2
+        return 1
+    fi
+
+    local readonly VERSION=$( \
+        grep -m 1 Version $QUARTUS_ROOTDIR/version.txt | \
+        sed -e 's/Version=//' \
+    )
+
+    echo "Detected Quartus II $VERSION"
+
+    local readonly VERSION_MAJOR=$( \
+        echo "$VERSION" | \
+        sed -e 's/\([[:digit:]]\+\).*/\1/g' \
+    )
+
+    if [ -z "$VERSION_MAJOR" ]; then
+        echo "Failed to retrieve Quartus version number." >&2
+        return 1
+    fi
+
+    if [ "$VERSION_MAJOR" -lt "15" ]; then
+        echo "The bladeRF FPGA design requires Quartus II version 15" >&2
+        echo "The installed version is: $VERSION" >&2
+        return 1
+    fi
+
+    return 0
+}
+
 if [ $# -eq 0 ]; then
     usage
     exit 0
@@ -101,6 +139,14 @@ fi
 quartus_sh="`which quartus_sh`"
 if [ $? -ne 0 ] || [ ! -f "$quartus_sh" ]; then
     echo -e "\nError: quartus_sh (Quartus 'bin' directory) does not appear to be in your PATH\n" >&2
+    exit 1
+fi
+
+
+# Complain early about an unsupported version. Otherwise, the user
+# may get some unintuitive error messages.
+check_quartus_version
+if [ $? -ne 0 ]; then
     exit 1
 fi
 
