@@ -6,6 +6,12 @@ hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
 --------------------------------
+v0.3.3 (2015-06-30)
+--------------------------------
+ * Addressed timing constraint issue by reducing LMS SPI clock rate.
+ * Renamed SPI controller module
+
+--------------------------------
 v0.3.2 (2015-06-23)
 --------------------------------
  * Fixed VCTCXO readback
