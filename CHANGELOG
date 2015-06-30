@@ -6,6 +6,113 @@ hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
 --------------------------------------------------------------------------------
+ 2015.06 (2015-06-30)
+--------------------------------------------------------------------------------
+
+This release introduces new features and bug fixes.  It consists of the
+following versions:
+
+    * FPGA bitstream v0.3.3
+    * FX3 firmware   v1.8.0
+    * libbladeRF     v1.4.0
+    * bladeRF-cli    v1.2.0
+
+New Features:
+
+    * FPGA & libbladeRF:
+        - Configurable tuning modes: host and fpga
+        - Scheduled retune: retune module at specified sample timestamp
+        - Quick retune: retune using previously identified tuning parameters
+        - Readback of current VCTCXO trim DAC setting
+
+    * bladeRF-cli:
+        - Semicolon command separators
+        - Added 'print trimdac' implementation
+
+
+The following tracker items have been closed since the 2015.02 release:
+
+    * Pull Requests:
+        - #383: rm dead code from xb.c
+        - #358: bladeRF-cli: Can now specify multiple commands separated by
+                semicolon
+        - #313: merge dev-quartus14 branch
+
+    * Bugs:
+        - #394: Cannot switch from XB-200 "auto" back to a specific band
+        - #385: libbladeRF: TX PLL Instability @ 1.8602 GHz
+        - #384: Documentation bug
+        - #380: bladerf_set_tx_gain() is a deprecated symbol
+
+    * Enhancements:
+        - #398: [libbladeRF] VCTCXO readback support
+        - #393; [libbladeRF] Migrate to new NIOS packet handler formats
+        - #392: [nios] Implement pkt_<addr width>x<data width> handlers.
+        - #391: [FPGA] Custom LMS6002D SPI controller
+        - #380: bladerf_set_tx_gain() is a deprecated symbol
+        - #378: [libbladeRF] Support zero-padding within a timestamped burst
+        - #345: [bladeRF-cli] Accept semi-colon command delimeters
+        - #282: [libbladeRF] Move get/set_lms_correction() and
+                 get/set_fpga_correction() logic
+        - #213: CLI should show sample file information for TX [wontfix]
+        - #200: Reserved addresses for firmware customization
+
+    * Other:
+        - #389: libbladeRF: Investigate LMS6002D OFFUP/OFFDOWN values
+        - #377: Timeout trying to update from firmware 1.5.3
+
+
+Outstanding issue tracker items:
+
+    * Pull Requests:
+        - #381: RPM packaging
+        - #379: Indent 
+        - #267: Adjust nios simulation component so it matches the
+                synthesis version 
+
+    * Bugs:
+        - #401: libusb detection fails when x-compiling for Android
+        - #400: [hdl] ATSC FPGA build broken
+        - #399: Update libbladeRF and FX3 FIrmware for Cypress FX3 SDK 1.3.3
+                support
+        - #395: [hdl] Timing Closure on LMS6 SPI interface
+        - #390: Warning after running rx start when loopback=firmware
+        - #373: "trap divide error" while generating calibration table in
+                CLI: cal table dc rx
+        - #362: Calibration table generation hangs, performance issues
+        - #360: [hdl] Older FPGA revisions no longer build
+        - #354: [hdl] failure to include STP file due to talkback req ought to
+                be fatal
+        - #352: [libbladeRF] Intermittent out-of-order transfer callbacks with
+                Windows & libusb 1.0.19
+        - #342: [Installer] Windows installer doesn't ship 32-bit MATLAB support
+        - #321: How about a switch for bladeRF-cli to emit calibration in a
+                format bladeRF-cli can later read?
+        - #301: Direct sampling with XB-200 needs additional improvements
+
+    * Enhancements:
+        - #397: [libbladeRF] API call to reset timestamps
+        - #396: [libbladeRF] Match a subset of serial number
+        - #387: FPGA GPIO Bindings to BladeRF / Osmocom Library
+        - #382: 'bladerf_get_serial()' fixed buffer size should be ideally
+                handled in the API
+        - #386: android usb bindings
+        - #353: [bladeRF-cli, libbladeRF] Improve jump_to_boot docs and
+                implementation
+        - #344: [fx3] Investigate/fix field checksums
+        - #328: [libbladeRF] Review and evaluate use of stream lock WRT libusb
+        - #319: [bladeRF-cli] Add libedit and libreadline support
+        - #240: [libbladeRF] Prefer static assertion over assert() when possible
+        - #236: [libbladeRF] API calls for XB-100 required
+        - #221: Synchronized Tx/Rx of multiple bladeRFs for MIMO using Mini
+                Expansion Header
+        - #205: [FX3 Firmware] Code cleanup and potential improvements
+        - #174: Migrate FX3 build to CMake-generated Makefile
+
+    * Other:
+        - #388: [FX3 Firmware] Investigate USB3 drive controls
+
+--------------------------------------------------------------------------------
  2015.02 (2015-02-28)
 --------------------------------------------------------------------------------
 
@@ -50,7 +157,7 @@ Outstanding issue tracker items:
         - #342: [Installer] Windows installer doesn't ship 32-bit MATLAB support
         - #301: Direct sampling with XB-200 needs additional improvements
 
-    * Enhancement Requests:
+    * Enhancements:
         - #378: [libbladeRF] Support zero-padding within a timestamped burst
         - #353: [bladeRF-cli, libbladeRF] Improve jump_to_boot docs and
                 implementation
@@ -110,7 +217,7 @@ The following tracker items have been closed since the 2014.12-rc1 release:
                 CyUSB backend
         - #95: linux kernel/FX3: Not enough bandwidth for altsetting
 
-    * Enhancement Requests:
+    * Enhancements:
         - #343: [libbladeRF] Name worker threads (wontfix)
 
     * Other:
@@ -138,7 +245,7 @@ these and their associated schedules.
         - #342: [Installer] Windows installer doesn't ship 32-bit MATLAB support
         - #301: Direct sampling with XB-200 needs additional improvements
 
-    * Enhancement Requests:
+    * Enhancements:
         - #353: [bladeRF-cli, libbladeRF] Improve jump_to_boot docs and
                 implementation
         - #345: [bladeRF-cli] Accept semi-colon command delimeters
@@ -215,7 +322,7 @@ these and their associated schedules.
         - #301: Direct sampling with XB-200 needs additional improvements
         - #95:  linux kernel/FX3: Not enough bandwidth for altsetting
 
-    * Enhancement Requests:
+    * Enhancements:
         - #353: [bladeRF-cli, libbladeRF] Improve jump_to_boot docs and
                 implementation
         - #345: [bladeRF-cli] Accept semi-colon command delimeters
@@ -302,7 +409,7 @@ release:
         - #291: Missing RX Samples
         - #265: [hdl] Incorect metadata position in the RX Stream
 
-    * Enhancement Requests:
+    * Enhancements:
         - #105: Develop testing guidelines on new releases
 
 Outstanding pull requests, tasks, enhancement requests, and known issues are
@@ -327,7 +434,7 @@ these and their associated schedules.
         - #301: Direct sampling with XB-200 needs additional improvements
         - #95: linux kernel/FX3: Not enough bandwidth for altsetting
 
-    * Enhancement Requests:
+    * Enhancements:
         - #353: [bladeRF-cli, libbladeRF] Improve jump_to_boot docs and
                 implementation
         - #349: [libbladeRF] Add current directory and env vars to file search
@@ -438,7 +545,7 @@ are listed first, with associated pull request items second, if relevant.
         - #260: [hdl] RX I Samples value 0
         - #255: Avoid obsolete samples in the RX Stream
 
-    * Enhancement Requests:
+    * Enhancements:
         - #314: "make uninstall" cannot find install manifest
         - #312: [libbladeRF] Regression in USB 2.0 operation
         - #311/316: [bladeRF-cli] Move FPGA and device handle checks to common
@@ -471,7 +578,7 @@ these and their associated schedules.
         - #265: [hdl] Incorect metadata position in the RX Stream
         - #95:  Linux kernel/FX3: Not enough bandwidth for altsetting
 
-    * Enhancement Requests:
+    * Enhancements:
         - #328: [libbladeRF] Review and evaluate use of stream lock WRT libusb
         - #321: How about a switch for bladeRF-cli to emit calibration in a
                 format bladeRF-cli can later read?

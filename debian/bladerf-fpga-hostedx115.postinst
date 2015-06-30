@@ -1,7 +1,7 @@
 #!/bin/sh -e
 
-UPSTREAM='https://nuand.com/fpga/v0.1.2/hostedx115.rbf'
-CHECKSUM='899da656cfb73789febe515b9d82f67e'
+UPSTREAM='https://nuand.com/fpga/v0.3.3/hostedx115.rbf'
+CHECKSUM='0607f024beb4e3ccda5d672b7f75f283'
 RBFFILE=/usr/share/Nuand/bladeRF/hostedx115.rbf
 
 checkfile () {
