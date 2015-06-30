@@ -46,7 +46,7 @@ begin
         mem_hold        => mem_hold         -- in  std_logic
     );
 
-    uut : entity work.spi(lms_spi_master)
+    uut : entity work.lms6_spi_controller(lms6)
     generic map(
         CLOCK_DIV       => CLOCK_DIV,
         ADDR_WIDTH      => ADDR_WIDTH,

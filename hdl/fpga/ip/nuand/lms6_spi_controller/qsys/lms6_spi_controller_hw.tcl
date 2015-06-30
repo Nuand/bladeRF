@@ -3,29 +3,29 @@
 # DO NOT MODIFY
 
 
-# 
-# spi "spi" v1.0
+#
+# lms6_spi_controller "lms6_spi_controller" v1.0
 # Nuand, LLC 2015.06.25.21:35:07
 # SPI Controller for LMS6002D
-# 
+#
 
-# 
+#
 # request TCL package from ACDS 15.0
-# 
+#
 package require -exact qsys 15.0
 
 
-# 
-# module spi
-# 
+#
+# module lms6_spi_controller
+#
 set_module_property DESCRIPTION "SPI Controller for LMS6002D"
-set_module_property NAME spi
+set_module_property NAME lms6_spi_controller
 set_module_property VERSION 1.0
 set_module_property INTERNAL false
 set_module_property OPAQUE_ADDRESS_MAP true
 set_module_property GROUP "Interface Protocols/Serial"
 set_module_property AUTHOR "Nuand, LLC"
-set_module_property DISPLAY_NAME spi
+set_module_property DISPLAY_NAME lms6_spi_controller
 set_module_property INSTANTIATE_IN_SYSTEM_MODULE true
 set_module_property EDITABLE true
 set_module_property REPORT_TO_TALKBACK false
@@ -33,19 +33,19 @@ set_module_property ALLOW_GREYBOX_GENERATION false
 set_module_property REPORT_HIERARCHY false
 
 
-# 
+#
 # file sets
-# 
+#
 add_fileset QUARTUS_SYNTH QUARTUS_SYNTH "" ""
-set_fileset_property QUARTUS_SYNTH TOP_LEVEL spi
+set_fileset_property QUARTUS_SYNTH TOP_LEVEL lms6_spi_controller
 set_fileset_property QUARTUS_SYNTH ENABLE_RELATIVE_INCLUDE_PATHS false
 set_fileset_property QUARTUS_SYNTH ENABLE_FILE_OVERWRITE_MODE false
-add_fileset_file spi.vhd VHDL PATH ../vhdl/spi.vhd TOP_LEVEL_FILE
+add_fileset_file lms6_spi_controller.vhd VHDL PATH ../vhdl/lms6_spi_controller.vhd TOP_LEVEL_FILE
 
 
-# 
+#
 # parameters
-# 
+#
 add_parameter CLOCK_DIV INTEGER 2
 set_parameter_property CLOCK_DIV DEFAULT_VALUE 2
 set_parameter_property CLOCK_DIV DISPLAY_NAME CLOCK_DIV
@@ -71,14 +71,14 @@ set_parameter_property DATA_WIDTH ALLOWED_RANGES 1:2147483647
 set_parameter_property DATA_WIDTH HDL_PARAMETER true
 
 
-# 
+#
 # display items
-# 
+#
 
 
-# 
+#
 # connection point reset_sink
-# 
+#
 add_interface reset_sink reset end
 set_interface_property reset_sink associatedClock clock_sink
 set_interface_property reset_sink synchronousEdges DEASSERT
@@ -91,9 +91,9 @@ set_interface_property reset_sink SVD_ADDRESS_GROUP ""
 add_interface_port reset_sink mm_reset reset Input 1
 
 
-# 
+#
 # connection point clock_sink
-# 
+#
 add_interface clock_sink clock end
 set_interface_property clock_sink clockRate 80000000
 set_interface_property clock_sink ENABLED true
@@ -105,9 +105,9 @@ set_interface_property clock_sink SVD_ADDRESS_GROUP ""
 add_interface_port clock_sink mm_clock clk Input 1
 
 
-# 
+#
 # connection point conduit_end
-# 
+#
 add_interface conduit_end conduit end
 set_interface_property conduit_end associatedClock clock_sink
 set_interface_property conduit_end associatedReset reset_sink
@@ -123,9 +123,9 @@ add_interface_port conduit_end mosi mosi Output 1
 add_interface_port conduit_end cs_n ss_n Output 1
 
 
-# 
+#
 # connection point avalon_slave_0
-# 
+#
 add_interface avalon_slave_0 avalon end
 set_interface_property avalon_slave_0 addressUnits SYMBOLS
 set_interface_property avalon_slave_0 associatedClock clock_sink

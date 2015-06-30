@@ -7,7 +7,7 @@
    description=""
    tags=""
    categories="System" />
- <parameter name="bonusData"><![CDATA[bonusData 
+ <parameter name="bonusData"><![CDATA[bonusData
 {
    element $${FILENAME}
    {
@@ -393,7 +393,7 @@
   <parameter name="writeBufferDepth" value="64" />
   <parameter name="writeIRQThreshold" value="8" />
  </module>
- <module name="lms_spi" kind="spi" version="1.0" enabled="1">
+ <module name="lms_spi" kind="lms6_spi_controller" version="1.0" enabled="1">
   <parameter name="ADDR_WIDTH" value="7" />
   <parameter name="CLOCK_DIV" value="4" />
   <parameter name="DATA_WIDTH" value="8" />

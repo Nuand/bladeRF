@@ -4,7 +4,7 @@ set vcom_opts {-2008}
 vlib ${vcom_lib}
 
 # UUT
-vcom {*}$vcom_opts -work ${vcom_lib} ../vhdl/spi.vhd
+vcom {*}$vcom_opts -work ${vcom_lib} ../vhdl/lms6_spi_controller.vhd
 
 # Models
 vcom {*}$vcom_opts -work ${vcom_lib} ../vhdl/tb/lms6002d_model.vhd

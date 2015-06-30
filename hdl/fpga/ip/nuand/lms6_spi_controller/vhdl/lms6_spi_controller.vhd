@@ -7,15 +7,13 @@ library ieee;
     use ieee.math_real.log2;
 
 -- -----------------------------------------------------------------------------
--- Entity:      spi
--- Description: Avalon Memory-Mapped SPI module. Originally written for the
---              LMS6002D SPI interface. Support for other devices and operation
---              modes may be added in the future.
+-- Entity:      lms6_spi_controller
+-- Description: Avalon Memory-Mapped SPI controller for the LMS6002D.
 -- Standard:    VHDL-2008
 --
 -- WARNING:     This module has not been tested with non-default generics.
 -- -----------------------------------------------------------------------------
-entity spi is
+entity lms6_spi_controller is
     generic(
         CLOCK_DIV       :   positive  range 2 to 16 := 2;   -- Ratio of system clock to SPI clock
         ADDR_WIDTH      :   positive                := 7;   -- Number of address bits in an operation
@@ -41,7 +39,7 @@ entity spi is
     );
 end entity;
 
-architecture lms_spi_master of spi is
+architecture lms6 of lms6_spi_controller is
 
     constant    MSG_LENGTH  : positive := 1 + ADDR_WIDTH + DATA_WIDTH;
 
