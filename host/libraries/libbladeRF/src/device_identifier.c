@@ -28,6 +28,7 @@
 #include "rel_assert.h"
 #include <stdbool.h>
 #include <stdint.h>
+#include <inttypes.h>
 
 #include "device_identifier.h"
 #include "devinfo.h"
@@ -104,27 +105,36 @@ static int handle_instance(struct bladerf_devinfo *d, char *value)
 static int handle_serial(struct bladerf_devinfo *d, char *value)
 {
     char c;
-    int i;
+    size_t i;
+    const size_t len = strlen(value);
 
-    if (strlen(value) != 32) {
+    if (len > (BLADERF_SERIAL_LENGTH - 1)) {
+        log_debug("Provided serial # string too long: %"PRIu64"\n",
+                  (uint64_t) len);
+
         return BLADERF_ERR_INVAL;
     }
 
-    for (i = 0; i < 32; i++) {
+    for (i = 0; i < len; i++) {
         c = value[i];
         if (c >= 'A' && c <='F') {
             value[i] = tolower((unsigned char) c);
         }
+
         if ((c < 'a' || c > 'f') && (c < '0' || c > '9')) {
             log_debug("Bad serial: %s\n", value);
             return BLADERF_ERR_INVAL;
         }
     }
 
-    strncpy(d->serial, value, 32);
-    d->serial[32] = 0;
+    memset(d->serial, 0, sizeof(d->serial));
+    strncpy(d->serial, value, len);
 
-    log_debug("Serial 0x%s\n", d->serial);
+    if (len == (BLADERF_SERIAL_LENGTH - 1)) {
+        log_verbose("Requested serial number: %s\n", d->serial);
+    } else {
+        log_verbose("Requested serial number subset: %s\n", d->serial);
+    }
     return 0;
 }
 

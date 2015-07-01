@@ -31,9 +31,23 @@ bool bladerf_instance_matches(const struct bladerf_devinfo *a,
 bool bladerf_serial_matches(const struct bladerf_devinfo *a,
                             const struct bladerf_devinfo *b)
 {
-    return !strcmp(a->serial, DEVINFO_SERIAL_ANY) ||
-           !strcmp(b->serial, DEVINFO_SERIAL_ANY) ||
-           !strcmp(a->serial, b->serial);
+    /* User specified a "Any serial number" so just report a match */
+    const bool wildcard_match = !strcmp(a->serial, DEVINFO_SERIAL_ANY) ||
+                                !strcmp(b->serial, DEVINFO_SERIAL_ANY);
+
+    if (wildcard_match) {
+        return true;
+    } else {
+        /* The user-supplied serial number matches the a subset of the
+         * entire serial number, starting at the beginning.
+         *
+         * i.e., "abc01234" can be used to match "abc0123456789def..."
+         */
+        bool subset_match = (strstr(a->serial, b->serial) == a->serial) ||
+                            (strstr(b->serial, a->serial) == b->serial);
+
+        return subset_match;
+    }
 }
 
 bool bladerf_bus_addr_matches(const struct bladerf_devinfo *a,
