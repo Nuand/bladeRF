@@ -1,6 +1,5 @@
 bladerf (2015.06-rc1) unstable; urgency=low
 
-bladerf (2015.02) unstable; urgency=low
   * FPGA, libbladeRF: Configurable tuning modes: host and fpga
   * FPGA, libbladeRF: Scheduled retune: retune module at specified sample timestamp
   * FPGA, libbladeRF: Quick retune: retune using previously identified tuning parameters
@@ -8,7 +7,7 @@ bladerf (2015.02) unstable; urgency=low
   * bladeRF-cli: Added semicolon command separator support
   * bladeRF-cli: Added 'print trimdac' implementation
 
- -- Jon Szymaniak <jon.szymaniak@gmail.com>  Tue, 30 Jun 2015 19:04:23 -0400
+ -- Jon Szymaniak <jon.szymaniak@gmail.com>  Tue, 30 Jun 2015 22:11:06 -0400
 
 bladerf (2015.01-rc2) unstable; urgency=low
   * Fixed issue #95, which prevented device from being opened after an application crash
