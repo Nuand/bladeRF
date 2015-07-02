@@ -21,7 +21,7 @@
    {
       datum _sortIndex
       {
-         value = "11";
+         value = "13";
          type = "int";
       }
    }
@@ -117,7 +117,7 @@
    {
       datum _sortIndex
       {
-         value = "14";
+         value = "16";
          type = "int";
       }
    }
@@ -205,7 +205,7 @@
    {
       datum _sortIndex
       {
-         value = "13";
+         value = "15";
          type = "int";
       }
    }
@@ -214,6 +214,22 @@
       datum baseAddress
       {
          value = "37216";
+         type = "String";
+      }
+   }
+   element rx_trigger_ctl
+   {
+      datum _sortIndex
+      {
+         value = "11";
+         type = "int";
+      }
+   }
+   element rx_trigger_ctl.s1
+   {
+      datum baseAddress
+      {
+         value = "37888";
          type = "String";
       }
    }
@@ -229,7 +245,7 @@
    {
       datum _sortIndex
       {
-         value = "12";
+         value = "14";
          type = "int";
       }
    }
@@ -238,6 +254,22 @@
       datum baseAddress
       {
          value = "37184";
+         type = "String";
+      }
+   }
+   element tx_trigger_ctl
+   {
+      datum _sortIndex
+      {
+         value = "12";
+         type = "int";
+      }
+   }
+   element tx_trigger_ctl.s1
+   {
+      datum baseAddress
+      {
+         value = "37920";
          type = "String";
       }
    }
@@ -336,10 +368,20 @@
    internal="rx_tamer.conduit_end"
    type="conduit"
    dir="end" />
+ <interface
+   name="rx_trigger_ctl"
+   internal="rx_trigger_ctl.external_connection"
+   type="conduit"
+   dir="end" />
  <interface name="spi" internal="lms_spi.conduit_end" type="conduit" dir="end" />
  <interface
    name="tx_tamer"
    internal="tx_tamer.conduit_end"
+   type="conduit"
+   dir="end" />
+ <interface
+   name="tx_trigger_ctl"
+   internal="tx_trigger_ctl.external_connection"
    type="conduit"
    dir="end" />
  <interface
@@ -448,7 +490,7 @@
   <parameter name="dataAddrWidth" value="16" />
   <parameter name="dataMasterHighPerformanceAddrWidth" value="1" />
   <parameter name="dataMasterHighPerformanceMapParam" value="" />
-  <parameter name="dataSlaveMapParam"><![CDATA[<address-map><slave name='ram.s1' start='0x4000' end='0x8000' /><slave name='nios2.debug_mem_slave' start='0x8800' end='0x9000' /><slave name='control.s1' start='0x9040' end='0x9060' /><slave name='peripheral_spi.spi_control_port' start='0x9060' end='0x9080' /><slave name='xb_gpio_dir.s1' start='0x90A0' end='0x90B0' /><slave name='xb_gpio.s1' start='0x90B0' end='0x90C0' /><slave name='iq_corr_tx_phase_gain.s1' start='0x90C0' end='0x90D0' /><slave name='iq_corr_rx_phase_gain.s1' start='0x90D0' end='0x90E0' /><slave name='opencores_i2c.bladerf_oc_i2c_master' start='0x90F0' end='0x90F8' /><slave name='jtag_uart.avalon_jtag_slave' start='0x9100' end='0x9108' /><slave name='command_uart.avalon_slave' start='0x9120' end='0x9140' /><slave name='tx_tamer.avalon_slave_0' start='0x9140' end='0x9160' /><slave name='rx_tamer.avalon_slave_0' start='0x9160' end='0x9180' /><slave name='lms_spi.avalon_slave_0' start='0x9200' end='0x9300' /><slave name='vctcxo_tamer_0.avalon_slave_0' start='0x9300' end='0x9400' /></address-map>]]></parameter>
+  <parameter name="dataSlaveMapParam"><![CDATA[<address-map><slave name='ram.s1' start='0x4000' end='0x8000' /><slave name='nios2.debug_mem_slave' start='0x8800' end='0x9000' /><slave name='control.s1' start='0x9040' end='0x9060' /><slave name='peripheral_spi.spi_control_port' start='0x9060' end='0x9080' /><slave name='xb_gpio_dir.s1' start='0x90A0' end='0x90B0' /><slave name='xb_gpio.s1' start='0x90B0' end='0x90C0' /><slave name='iq_corr_tx_phase_gain.s1' start='0x90C0' end='0x90D0' /><slave name='iq_corr_rx_phase_gain.s1' start='0x90D0' end='0x90E0' /><slave name='opencores_i2c.bladerf_oc_i2c_master' start='0x90F0' end='0x90F8' /><slave name='jtag_uart.avalon_jtag_slave' start='0x9100' end='0x9108' /><slave name='command_uart.avalon_slave' start='0x9120' end='0x9140' /><slave name='tx_tamer.avalon_slave_0' start='0x9140' end='0x9160' /><slave name='rx_tamer.avalon_slave_0' start='0x9160' end='0x9180' /><slave name='lms_spi.avalon_slave_0' start='0x9200' end='0x9300' /><slave name='vctcxo_tamer_0.avalon_slave_0' start='0x9300' end='0x9400' /><slave name='rx_trigger_ctl.s1' start='0x9400' end='0x9420' /><slave name='tx_trigger_ctl.s1' start='0x9420' end='0x9440' /></address-map>]]></parameter>
   <parameter name="data_master_high_performance_paddr_base" value="0" />
   <parameter name="data_master_high_performance_paddr_size" value="0" />
   <parameter name="data_master_paddr_base" value="0" />
@@ -661,6 +703,24 @@
   <parameter name="writable" value="true" />
  </module>
  <module name="rx_tamer" kind="time_tamer" version="1.0" enabled="1" />
+ <module
+   name="rx_trigger_ctl"
+   kind="altera_avalon_pio"
+   version="15.0"
+   enabled="1">
+  <parameter name="bitClearingEdgeCapReg" value="false" />
+  <parameter name="bitModifyingOutReg" value="true" />
+  <parameter name="captureEdge" value="false" />
+  <parameter name="clockRate" value="80000000" />
+  <parameter name="direction" value="InOut" />
+  <parameter name="edgeType" value="RISING" />
+  <parameter name="generateIRQ" value="false" />
+  <parameter name="irqType" value="LEVEL" />
+  <parameter name="resetValue" value="0" />
+  <parameter name="simDoTestBenchWiring" value="false" />
+  <parameter name="simDrivenValue" value="0" />
+  <parameter name="width" value="8" />
+ </module>
  <module name="system_clock" kind="clock_source" version="15.0" enabled="1">
   <parameter name="clockFrequency" value="80000000" />
   <parameter name="clockFrequencyKnown" value="true" />
@@ -668,6 +728,24 @@
   <parameter name="resetSynchronousEdges" value="DEASSERT" />
  </module>
  <module name="tx_tamer" kind="time_tamer" version="1.0" enabled="1" />
+ <module
+   name="tx_trigger_ctl"
+   kind="altera_avalon_pio"
+   version="15.0"
+   enabled="1">
+  <parameter name="bitClearingEdgeCapReg" value="false" />
+  <parameter name="bitModifyingOutReg" value="true" />
+  <parameter name="captureEdge" value="false" />
+  <parameter name="clockRate" value="80000000" />
+  <parameter name="direction" value="InOut" />
+  <parameter name="edgeType" value="RISING" />
+  <parameter name="generateIRQ" value="false" />
+  <parameter name="irqType" value="LEVEL" />
+  <parameter name="resetValue" value="0" />
+  <parameter name="simDoTestBenchWiring" value="false" />
+  <parameter name="simDrivenValue" value="0" />
+  <parameter name="width" value="8" />
+ </module>
  <module name="xb_gpio" kind="altera_avalon_pio" version="15.0" enabled="1">
   <parameter name="bitClearingEdgeCapReg" value="false" />
   <parameter name="bitModifyingOutReg" value="false" />
@@ -826,6 +904,24 @@
    kind="avalon"
    version="15.0"
    start="nios2.data_master"
+   end="tx_trigger_ctl.s1">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x9420" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection
+   kind="avalon"
+   version="15.0"
+   start="nios2.data_master"
+   end="rx_trigger_ctl.s1">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x9400" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection
+   kind="avalon"
+   version="15.0"
+   start="nios2.data_master"
    end="peripheral_spi.spi_control_port">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x9060" />
@@ -885,6 +981,16 @@
    version="15.0"
    start="system_clock.clk"
    end="xb_gpio_dir.clk" />
+ <connection
+   kind="clock"
+   version="15.0"
+   start="system_clock.clk"
+   end="rx_trigger_ctl.clk" />
+ <connection
+   kind="clock"
+   version="15.0"
+   start="system_clock.clk"
+   end="tx_trigger_ctl.clk" />
  <connection kind="clock" version="15.0" start="system_clock.clk" end="ram.clk1" />
  <connection
    kind="clock"
@@ -1016,6 +1122,16 @@
    version="15.0"
    start="system_clock.clk_reset"
    end="rx_tamer.reset" />
+ <connection
+   kind="reset"
+   version="15.0"
+   start="system_clock.clk_reset"
+   end="rx_trigger_ctl.reset" />
+ <connection
+   kind="reset"
+   version="15.0"
+   start="system_clock.clk_reset"
+   end="tx_trigger_ctl.reset" />
  <connection
    kind="reset"
    version="15.0"
