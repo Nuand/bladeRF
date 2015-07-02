@@ -69,7 +69,11 @@ architecture hosted_bladerf of bladerf is
         tx_tamer_ts_reset               :   in  std_logic;
         tx_tamer_ts_time                :   out std_logic_vector(63 downto 0);
         vctcxo_tamer_tune_ref           :   in  std_logic;
-        vctcxo_tamer_vctcxo_clock       :   in  std_logic
+        vctcxo_tamer_vctcxo_clock       :   in  std_logic;
+        tx_trigger_ctl_in_port          :   in std_logic_vector(7 downto 0);
+        tx_trigger_ctl_out_port         :   out std_logic_vector(7 downto 0);
+        rx_trigger_ctl_in_port          :   in std_logic_vector(7 downto 0);
+        rx_trigger_ctl_out_port         :   out std_logic_vector(7 downto 0)
       );
     end component;
 
@@ -269,6 +273,39 @@ architecture hosted_bladerf of bladerf is
     signal rx_ts_reset      :   std_logic ;
     signal tx_ts_reset      :   std_logic ;
 
+    -- Trigger Control interfaces
+    signal rx_trigger_ctl       : std_logic_vector(7 downto 0);
+    signal tx_trigger_ctl       : std_logic_vector(7 downto 0);
+
+    -- Trigger Control breakdown
+    alias rx_trigger_arm        : std_logic is rx_trigger_ctl(0);
+    alias rx_trigger_fire       : std_logic is rx_trigger_ctl(1);
+    alias rx_trigger_master     : std_logic is rx_trigger_ctl(2);
+    alias rx_trigger_line       : std_logic is mini_exp1;
+
+    alias tx_trigger_arm        : std_logic is tx_trigger_ctl(0);
+    alias tx_trigger_fire       : std_logic is tx_trigger_ctl(1);
+    alias tx_trigger_master     : std_logic is tx_trigger_ctl(2);
+    alias tx_trigger_line       : std_logic is mini_exp1;
+
+    -- Trigger Control readback interfaces
+    signal rx_trigger_ctl_rb    : std_logic_vector(7 downto 0);
+    signal tx_trigger_ctl_rb    : std_logic_vector(7 downto 0);
+
+    -- Trigger Control readback breakdown
+    alias rx_trigger_arm_rb         : std_logic is rx_trigger_ctl_rb(0);
+    alias rx_trigger_fire_rb        : std_logic is rx_trigger_ctl_rb(1);
+    alias rx_trigger_master_rb      : std_logic is rx_trigger_ctl_rb(2);
+    alias rx_trigger_line_rb        : std_logic is rx_trigger_ctl_rb(3);
+
+    alias tx_trigger_arm_rb         : std_logic is tx_trigger_ctl_rb(0);
+    alias tx_trigger_fire_rb        : std_logic is tx_trigger_ctl_rb(1);
+    alias tx_trigger_master_rb      : std_logic is tx_trigger_ctl_rb(2);
+    alias tx_trigger_line_rb        : std_logic is tx_trigger_ctl_rb(3);
+
+    -- Trigger Outputs
+    signal lms_rx_enable_untriggered                : std_logic;
+    signal tx_sample_fifo_rempty_untriggered        : std_logic;
 begin
 
     correction_tx_phase <= signed(correction_tx_phase_gain(31 downto 16));
@@ -431,7 +468,8 @@ begin
         wrclk               => tx_sample_fifo.wclock,
         wrreq               => tx_sample_fifo.wreq,
         q                   => tx_sample_fifo.rdata,
-        rdempty             => tx_sample_fifo.rempty,
+        --rdempty             => tx_sample_fifo.rempty,
+        rdempty             => tx_sample_fifo_rempty_untriggered,
         rdfull              => tx_sample_fifo.rfull,
         rdusedw             => tx_sample_fifo.rused,
         wrempty             => tx_sample_fifo.wempty,
@@ -696,6 +734,44 @@ begin
         correction_valid    => correction_valid
       );
 
+    -- RX Trigger
+    rxtrig : entity work.trigger(async)
+        generic map (
+            DEFAULT_OUTPUT => '0'
+        ) port map (
+            armed => rx_trigger_arm,
+            fired => rx_trigger_fire,
+            master => rx_trigger_master,
+            trigger_in => rx_trigger_line,
+            trigger_out => rx_trigger_line,
+            signal_in => lms_rx_enable_untriggered,
+            signal_out => lms_rx_enable
+        );
+
+    rx_trigger_arm_rb <= rx_trigger_arm;
+    rx_trigger_fire_rb <= rx_trigger_fire;
+    rx_trigger_master_rb <= rx_trigger_master;
+    rx_trigger_line_rb <= rx_trigger_line;
+
+    -- TX Trigger
+    txtrig : entity work.trigger(async)
+        generic map (
+            DEFAULT_OUTPUT => '1'
+        ) port map (
+            armed => tx_trigger_arm,
+            fired => tx_trigger_fire,
+            master => tx_trigger_master,
+            trigger_in => tx_trigger_line,
+            trigger_out => tx_trigger_line,
+            signal_in => tx_sample_fifo_rempty_untriggered,
+            signal_out => tx_sample_fifo.rempty
+        );
+
+    tx_trigger_arm_rb <= tx_trigger_arm;
+    tx_trigger_fire_rb <= tx_trigger_fire;
+    tx_trigger_master_rb <= tx_trigger_master;
+    tx_trigger_line_rb <= tx_trigger_line;
+
     -- LMS6002D IQ interface
     rx_sample_i(15 downto 12) <= (others => rx_sample_i(11)) ;
     rx_sample_q(15 downto 12) <= (others => rx_sample_q(11)) ;
@@ -849,7 +925,11 @@ begin
         tx_tamer_ts_reset               => tx_ts_reset,
         unsigned(tx_tamer_ts_time)      => tx_timestamp,
         vctcxo_tamer_tune_ref           => ref_vctcxo_tune,
-        vctcxo_tamer_vctcxo_clock       => c4_clock
+        vctcxo_tamer_vctcxo_clock       => c4_clock,
+        rx_trigger_ctl_out_port         => rx_trigger_ctl,
+        tx_trigger_ctl_out_port         => tx_trigger_ctl,
+        rx_trigger_ctl_in_port          => rx_trigger_ctl_rb,
+        tx_trigger_ctl_in_port          => tx_trigger_ctl_rb
       ) ;
 
     xb_gpio_direction : process(all)
@@ -924,8 +1004,8 @@ begin
 
     lms_reset               <= nios_gpio(0) ;
 
-    lms_rx_enable           <= nios_gpio(1) ;
-    lms_tx_enable           <= nios_gpio(2) ;
+    lms_rx_enable_untriggered   <= nios_gpio(1) ;
+    lms_tx_enable               <= nios_gpio(2) ;
 
     lms_tx_v                <= nios_gpio(4 downto 3) ;
     lms_rx_v                <= nios_gpio(6 downto 5) ;
@@ -936,7 +1016,7 @@ begin
     exp_spi_clock           <= nios_sclk when ( nios_ss_n(1 downto 0) = "01" ) else '0' ;
     exp_spi_mosi            <= nios_sdio when ( nios_ss_n(1 downto 0) = "01" ) else '0' ;
 
-    mini_exp1               <= 'Z';
+    --mini_exp1               <= 'Z';
     mini_exp2               <= 'Z';
 
     set_tx_ts_reset : process(tx_clock, tx_reset)
