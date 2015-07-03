@@ -225,6 +225,10 @@ void bladerf_nios_init(struct pkt_buf *pkt, struct vctcxo_tamer_pkt_buf *vctcxo_
     IOWR_ALTERA_AVALON_PIO_DATA(IQ_CORR_RX_PHASE_GAIN_BASE, DEFAULT_CORRECTION);
     IOWR_ALTERA_AVALON_PIO_DATA(IQ_CORR_TX_PHASE_GAIN_BASE, DEFAULT_CORRECTION);
 
+    /* Disable all triggering */
+    IOWR_ALTERA_AVALON_PIO_DATA(TX_TRIGGER_CTL_BASE, 0x00);
+    IOWR_ALTERA_AVALON_PIO_DATA(RX_TRIGGER_CTL_BASE, 0x00);
+
     /* Register Command UART ISR */
     alt_ic_isr_register(
         COMMAND_UART_IRQ_INTERRUPT_CONTROLLER_ID,
@@ -412,6 +416,26 @@ void iqbal_set_phase(bladerf_module m, uint16_t value)
     regval |= ((uint32_t) value) << 16;
 
     IOWR_ALTERA_AVALON_PIO_DATA(base, regval);
+}
+
+void tx_trigger_ctl_write(uint8_t data)
+{
+  IOWR_ALTERA_AVALON_PIO_DATA(TX_TRIGGER_CTL_BASE, data);
+}
+
+uint8_t tx_trigger_ctl_read(void)
+{
+  return IORD_ALTERA_AVALON_PIO_DATA(TX_TRIGGER_CTL_BASE);
+}
+
+void rx_trigger_ctl_write(uint8_t data)
+{
+  IOWR_ALTERA_AVALON_PIO_DATA(RX_TRIGGER_CTL_BASE, data);
+}
+
+uint8_t rx_trigger_ctl_read(void)
+{
+  return IORD_ALTERA_AVALON_PIO_DATA(RX_TRIGGER_CTL_BASE);
 }
 
 uint64_t time_tamer_read(bladerf_module m)

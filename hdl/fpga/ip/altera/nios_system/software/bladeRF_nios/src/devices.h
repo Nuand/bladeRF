@@ -367,6 +367,35 @@ static inline  uint32_t fpga_version(void)
     return FPGA_VERSION;
 };
 
+/* Trigger Control Functions */
+
+/**
+ * Write the Tx trigger control register
+ *
+ * @param   data    Data to write
+ */
+void tx_trigger_ctl_write(uint8_t data);
+
+/**
+ * Read the Tx trigger control register
+ *
+ * @return Value of Tx trigger control register
+ */
+uint8_t tx_trigger_ctl_read(void);
+
+/**
+ * Write the Rx trigger control register
+ *
+ * @param   data    Data to write
+ */
+void rx_trigger_ctl_write(uint8_t data);
+
+/**
+ * Read the Rx trigger control register
+ *
+ * @return Value of Rx trigger control register
+ */
+uint8_t rx_trigger_ctl_read(void);
 
 /* A number of rountines define here are implemented as just a register
  * access, where incurring function call overhead is wasteful. Therefore,
