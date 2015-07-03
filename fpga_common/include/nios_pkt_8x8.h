@@ -103,6 +103,8 @@
 #define NIOS_PKT_8x8_TARGET_LMS6            0x00 /* LMS6002D register access */
 #define NIOS_PKT_8x8_TARGET_SI5338          0x01 /* Si5338 register access */
 #define NIOS_PKT_8x8_TARGET_VCTCXO_TAMER    0x02 /* VCTCXO Tamer control */
+#define NIOS_PKT_8x8_TX_TRIGGER_CTL         0x03 /* TX trigger control */
+#define NIOS_PKT_8x8_RX_TRIGGER_CTL         0x04 /* RX trigger control */
 
 /* IDs 0x80 through 0xff will not be assigned by Nuand. These are reserved
  * for user customizations */
