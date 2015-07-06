@@ -52,6 +52,14 @@ static inline bool perform_read(uint8_t id, uint8_t addr, uint8_t *data)
             }
             break;
 
+        case NIOS_PKT_8x8_TX_TRIGGER_CTL:
+            *data = tx_trigger_ctl_read();
+            break;
+
+        case NIOS_PKT_8x8_RX_TRIGGER_CTL:
+            *data = rx_trigger_ctl_read();
+            break;
+
         /* Add user customizations here
 
         case NIOS_PKT_8x8_TARGET_USR1:
@@ -92,6 +100,14 @@ static inline bool perform_write(uint8_t id, uint8_t addr, uint8_t data)
                     /* Throw away data for unused subaddress values */
                     break;
             }
+            break;
+
+        case NIOS_PKT_8x8_TX_TRIGGER_CTL:
+            tx_trigger_ctl_write(data);
+            break;
+
+        case NIOS_PKT_8x8_RX_TRIGGER_CTL:
+            rx_trigger_ctl_write(data);
             break;
 
         /* Add user customizations here
