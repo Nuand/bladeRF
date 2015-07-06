@@ -280,6 +280,19 @@ static int dummy_read_fw_log(struct bladerf *dev, logger_entry *e)
     return 0;
 }
 
+int dummy_read_trigger(struct bladerf *dev, bladerf_module m,
+                       bladerf_trigger_signal trigger, uint8_t * value)
+{
+    *value = 0;
+    return 0;
+}
+
+int dummy_write_trigger(struct bladerf *dev, bladerf_module m,
+                        bladerf_trigger_signal trigger, uint8_t value)
+{
+    return 0;
+}
+
 const struct backend_fns backend_fns_dummy = {
     FIELD_INIT(.matches, dummy_matches),
 
@@ -346,4 +359,7 @@ const struct backend_fns backend_fns_dummy = {
     FIELD_INIT(.load_fw_from_bootloader, dummy_load_fw_from_bootloader),
 
     FIELD_INIT(.read_fw_log, dummy_read_fw_log),
+
+    FIELD_INIT(.read_trigger, dummy_read_trigger),
+    FIELD_INIT(.write_trigger, dummy_write_trigger),
 };

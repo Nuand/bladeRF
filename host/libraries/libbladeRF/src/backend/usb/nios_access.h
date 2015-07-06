@@ -291,4 +291,32 @@ int nios_expansion_gpio_dir_write(struct bladerf *dev,
 int nios_retune(struct bladerf *dev, bladerf_module module, uint64_t timestamp,
                 uint16_t nint, uint32_t nfrac, uint8_t freqsel, uint8_t vcocap,
                 bool low_band, bool quick_tune);
+
+/**
+ * Read trigger register value
+ *
+ * @param[in]   dev        Device handle
+ * @param[in]   module     Module to configure
+ * @param[in]   trigger    Trigger to read from
+ * @param[out]  value      On success, updated with register value
+ *
+ *
+ * @return 0 on success, BLADERF_ERR_* code on error
+ */
+int nios_read_trigger(struct bladerf *dev, bladerf_module module,
+                      bladerf_trigger_signal trigger, uint8_t * value);
+
+/**
+ * Write trigger register value
+ *
+ * @param[in]   dev        Device handle
+ * @param[in]   module     Module to configure
+ * @param[in]   trigger    Trigger to read
+ * @param[in]   value      Value to write
+ *
+ * @return 0 on success, BLADERF_ERR_* code on error
+ */
+int nios_write_trigger(struct bladerf *dev, bladerf_module module,
+                       bladerf_trigger_signal trigger, uint8_t value);
+
 #endif

@@ -759,3 +759,79 @@ int nios_retune(struct bladerf *dev, bladerf_module module,
 
     return status;
 }
+
+int nios_read_trigger(struct bladerf *dev, bladerf_module module,
+                      bladerf_trigger_signal trigger, uint8_t * value)
+{
+    int status;
+    uint8_t nios_id;
+
+    switch (module) {
+        case BLADERF_MODULE_TX:
+            nios_id = NIOS_PKT_8x8_TX_TRIGGER_CTL;
+            break;
+
+        case BLADERF_MODULE_RX:
+            nios_id = NIOS_PKT_8x8_RX_TRIGGER_CTL;
+            break;
+
+        default:
+            log_debug("Invalid module: %d\n", module);
+            return BLADERF_ERR_INVAL;
+    }
+
+    /* Only 1 external trigger is currently supported */
+    switch (trigger) {
+        case BLADERF_TRIGGER_J71_4:
+            break;
+
+        default:
+            log_debug("Invalid trigger: %d\n", trigger);
+            return BLADERF_ERR_INVAL;
+    }
+
+    status = nios_8x8_read(dev, nios_id, 0, value);
+    if (status == 0) {
+        log_verbose("%s trigger read value %u\n", module2str(module), value);
+    }
+
+    return status;
+}
+
+int nios_write_trigger(struct bladerf *dev, bladerf_module module,
+                       bladerf_trigger_signal trigger, uint8_t value)
+{
+    int status;
+    uint8_t nios_id;
+
+    switch (module) {
+        case BLADERF_MODULE_TX:
+            nios_id = NIOS_PKT_8x8_TX_TRIGGER_CTL;
+            break;
+
+        case BLADERF_MODULE_RX:
+            nios_id = NIOS_PKT_8x8_RX_TRIGGER_CTL;
+            break;
+
+        default:
+            log_debug("Invalid module: %d\n", module);
+            return BLADERF_ERR_INVAL;
+    }
+
+    /* Only 1 external trigger is currently supported */
+    switch (trigger) {
+        case BLADERF_TRIGGER_J71_4:
+            break;
+
+        default:
+            log_debug("Invalid trigger: %d\n", trigger);
+            return BLADERF_ERR_INVAL;
+    }
+
+    status = nios_8x8_write(dev, nios_id, 0, value);
+    if (status == 0) {
+        log_verbose("%s trigger write value %u\n", module2str(module), value);
+    }
+
+    return status;
+}

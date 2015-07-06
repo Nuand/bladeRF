@@ -179,6 +179,12 @@ struct backend_fns {
 
     /* Read a log entry from the FX3 firmware */
     int (*read_fw_log)(struct bladerf *dev, logger_entry *e);
+
+    /* Read and Write access to trigger registers */
+    int (*read_trigger)(struct bladerf *dev, bladerf_module module,
+                        bladerf_trigger_signal trigger, uint8_t *val);
+    int (*write_trigger)(struct bladerf *dev, bladerf_module module,
+                         bladerf_trigger_signal trigger, uint8_t val);
 };
 
 /**

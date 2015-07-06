@@ -2047,3 +2047,34 @@ int bladerf_get_fw_log(struct bladerf *dev, const char *filename)
 
     return status;
 }
+
+/*------------------------------------------------------------------------------
+ * Trigger Control
+ *----------------------------------------------------------------------------*/
+int bladerf_read_trigger(struct bladerf *dev,
+                         bladerf_module module,
+                         bladerf_trigger_signal trigger,
+                         uint8_t *val)
+{
+    int status;
+
+    MUTEX_LOCK(&dev->ctrl_lock);
+    status = dev->fn->read_trigger(dev, module, trigger, val);
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+
+    return status;
+}
+
+int bladerf_write_trigger(struct bladerf *dev,
+                          bladerf_module module,
+                          bladerf_trigger_signal trigger,
+                          uint8_t val)
+{
+    int status;
+
+    MUTEX_LOCK(&dev->ctrl_lock);
+    status = dev->fn->write_trigger(dev, module, trigger, val);
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+
+    return status;
+}
