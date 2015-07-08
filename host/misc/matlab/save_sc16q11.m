@@ -26,8 +26,8 @@ function [ret] = save_sc16q11(filename, signal)
         assert(length(sig_i) == length(sig_q));
         sig_len = 2 * length(sig_i);
 
-        sig_out(1:2:sig_len) = sig_i;
-        sig_out(2:2:sig_len) = sig_q;
+        sig_out(1:2:sig_len - 1) = sig_i;
+        sig_out(2:2:sig_len)     = sig_q;
 
         count = fwrite(f, sig_out, 'int16');
         fclose(f);
