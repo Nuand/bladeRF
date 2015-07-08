@@ -158,6 +158,7 @@ set(BLADERF_CLI_SOURCE
         src/cmd/version.c
         src/cmd/jump_boot.c
         src/cmd/mimo.c
+        src/cmd/trigger.c
         src/input/input.c
         src/input/script.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c

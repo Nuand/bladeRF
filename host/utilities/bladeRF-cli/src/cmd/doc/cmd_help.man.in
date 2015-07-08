@@ -892,6 +892,138 @@ format be used, and the output file be written to RAM (e.g.
 \f[C]/tmp\f[], \f[C]/dev/shm\f[]), if space allows.
 For larger captures at higher sample rates, consider using an SSD
 instead of a HDD.
+.SS trigger
+.PP
+Usage:
+\f[C]trigger\ [<trigger>\ <tx\ |\ rx>\ [<off\ slave\ master\ fire>]]\f[]
+.PP
+If used without parameters, this command prints the state of all
+triggers.
+When aand and supplied, the specified trigger is printed.
+.PP
+Below are the available options for :
+.PP
+.TS
+tab(@);
+rw(11.7n) lw(56.4n).
+T{
+Trigger
+T}@T{
+Description
+T}
+_
+T{
+\f[C]J71\-4\f[]
+T}@T{
+Trigger signal is on \f[C]mini_exp1\f[] (J71, pin 4).
+T}
+.TE
+.PP
+The trigger is controlled and configured by providing the last argument,
+which may be one of the following:
+.PP
+.TS
+tab(@);
+rw(11.7n) lw(56.4n).
+T{
+Command
+T}@T{
+Description
+T}
+_
+T{
+\f[C]off\f[]
+T}@T{
+Clears fire request and disables trigger functionality.
+T}
+T{
+\f[C]slave\f[]
+T}@T{
+Configures trigger as slave, clears fire request, and arms the device.
+T}
+T{
+\f[C]master\f[]
+T}@T{
+Configures trigger as master, clears fire request, and arms the device.
+T}
+T{
+\f[C]fire\f[]
+T}@T{
+Sets fire request.
+Only applicable to the master.
+T}
+.TE
+.PP
+A trigger chain consists of a single or multiple bladeRF units and may
+contain TX and RX modules.
+If multiple bladeRF units are used they need to be connected via the
+signal specified by and a common ground.
+.PP
+The following sequence of commands should be used to ensure proper
+synchronization.
+It is assumed that all triggers are off initially.
+.IP "1." 3
+Configure designated trigger master
+.RS 4
+.PP
+\f[B]IMPORTANT\f[]
+.IP
+.nf
+\f[C]
+Never\ configure\ two\ devices\ as\ trigger\ masters\ on\ a\ single\ chain.
+Contention\ on\ the\ same\ signal\ could\ damage\ the\ devices.
+\f[]
+.fi
+.RE
+.IP "2." 3
+Configure all other devices as trigger slaves
+.IP "3." 3
+Configure and start transmit or receive streams.
+.RS 4
+.IP
+.nf
+\f[C]
+The\ operation\ will\ stall\ until\ the\ triggers\ fire.\ As\ such,\ sufficiently
+large\ timeouts\ should\ be\ used\ to\ allow\ the\ trigger\ signal\ to\ be\ emitted
+by\ the\ master\ and\ received\ by\ the\ slaves\ prior\ to\ libbladeRF\ returning
+BLADERF_ERR_TIMEOUT.
+\f[]
+.fi
+.RE
+.IP "4." 3
+Set fire\-request on master trigger
+.RS 4
+.IP
+.nf
+\f[C]
+All\ devices\ will\ synchronously\ start\ transmitting\ or\ receiving\ data.
+\f[]
+.fi
+.RE
+.IP "5." 3
+Finish the transmit and receive tasks as usual
+.IP "6." 3
+Re\-configure the master and slaves to clear fire requests and re\-arm.
+.RS 4
+.IP
+.nf
+\f[C]
+Steps\ 1\ through\ 5\ may\ be\ repeated\ as\ neccessary.
+\f[]
+.fi
+.RE
+.IP "7." 3
+Disable triggering on all slaves
+.IP "8." 3
+Disable triggering on master
+.PP
+Notes:
+.IP \[bu] 2
+Synchronizing transmitters and receivers on a single chain will cause an
+offset of 11 samples between TX and RX; these samples should be
+discarded.
+This is caused by different processing pipeline lengths of TX and RX.
+This value might change if the FPGA code is updated in the future.
 .SS tx
 .PP
 Usage: \f[C]tx\ <start\ |\ stop\ |\ wait\ |\ config\ [parameters]>\f[]

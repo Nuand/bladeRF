@@ -27,7 +27,7 @@
  * Any manual modifications to this file will be overwritten!
  * To edit the content of help strings, please edit interactive-help.md
  *
- * Last generated: Thu Mar 17 16:46:10 2016 -0700 by Robert Ghilduta <robert.ghilduta@nuand.com>
+ * Last generated: Sun May  8 23:35:58 EDT 2016 by jynik
  */
 
 #ifndef BLADERF_CLI_DOC_CMD_HELP_H__
@@ -50,10 +50,10 @@
   "    -   calibrate lms rxlpf [<I filter> <Q filter>]\n" \
   "    -   calibrate lms rxvga2 [<DC ref> <I1> <Q1> <I2> <Q2>]\n" \
   "\n" \
-  "    Perform the specified auto-calibration, or all of them if none are\n" \
-  "    provided. When values are provided, these are used instead of the\n" \
-  "    results of the auto-calibration procedure. Use lms show to read\n" \
-  "    and print the current LMS calibration values.\n" \
+  "    Perform the specified auto-calibration, or all of them if none\n" \
+  "    are provided. When values are provided, these are used instead of\n" \
+  "    the results of the auto-calibration procedure. Use lms show to\n" \
+  "    read and print the current LMS calibration values.\n" \
   "\n" \
   "    For rxvga2, I1 and Q1 are the Stage 1 I and Q components\n" \
   "    respectively, and I2 and Q2 are the Stage 2 I and Q components.\n" \
@@ -81,8 +81,8 @@
   "    Generate and write an I/Q correction parameter table to the\n" \
   "    current working directory, in a file named\n" \
   "    <serial>_dc_<rx|tx>.tbl. f_min and f_max are min and max\n" \
-  "    frequencies to include in the table. f_inc is the frequency\n" \
-  "    increment.\n" \
+  "    frequencies to include in the table. f_inc is the\n" \
+  "    frequency increment.\n" \
   "\n" \
   "    By default, tables are generated over the entire frequency range,\n" \
   "    in 2 MHz steps.\n" \
@@ -136,8 +136,8 @@
   "            fpga40 Metadata and bitstream for 40 kLE FPGA\n" \
   "           fpga115 Metadata and bitstream for 115 kLE FPGA\n" \
   "\n" \
-  "-   <address> - Address of data to back up. Must be erase\n" \
-  "    block-aligned.\n" \
+  "-   <address> - Address of data to back up. Must be\n" \
+  "    erase block-aligned.\n" \
   "-   <len> - Length of region to back up. Must be erase block-aligned.\n" \
   "\n" \
   "Note: When an address and length are provided, the image type will\n" \
@@ -229,8 +229,8 @@
   "\n" \
   "-   <address>\n" \
   "\n" \
-  "    Defaults to the address specified in the provided flash image\n" \
-  "    file.\n" \
+  "    Defaults to the address specified in the provided flash\n" \
+  "    image file.\n" \
   "\n" \
   "-   <length>\n" \
   "\n" \
@@ -356,9 +356,9 @@
   "\n" \
   "-   <pa|lna|aux> [on|off]\n" \
   "\n" \
-  "    Enable or disable the power amplifier (PA), low-noise amplifier\n" \
-  "    (lna) or auxillary LNA (aux). The current state if the specified\n" \
-  "    device is printed if [on|off] is not specified.\n" \
+  "    Enable or disable the power amplifier (PA), low-noise\n" \
+  "    amplifier (lna) or auxillary LNA (aux). The current state if the\n" \
+  "    specified device is printed if [on|off] is not specified.\n" \
   "\n" \
   "    Note: The auxillary path on the XB-300 is not populated with\n" \
   "    components by default; the aux control will have no effect upon\n" \
@@ -375,8 +375,8 @@
   "    The default XB-300 hardware configuration includes separate RX and\n" \
   "    TX paths. However, users wishing to use only a single antenna for\n" \
   "    TRX can do so via a modification to resistor population options on\n" \
-  "    the XB-300 and use this command to switch between RX an TX\n" \
-  "    operation. (See R8, R10, and R23 on the schematic.)\n" \
+  "    the XB-300 and use this command to switch between RX an\n" \
+  "    TX operation. (See R8, R10, and R23 on the schematic.)\n" \
   "\n" \
   "Examples:\n" \
   "\n" \
@@ -391,8 +391,8 @@
   "\n" \
   "-   xb 300 enable\n" \
   "\n" \
-  "    Enables and configures the use of GPIOs to interact with the\n" \
-  "    XB-300. The PA and LNA will disabled by default.\n" \
+  "    Enables and configures the use of GPIOs to interact with\n" \
+  "    the XB-300. The PA and LNA will disabled by default.\n" \
   "\n" \
   "-   xb 300 lna on\n" \
   "\n" \
@@ -632,6 +632,83 @@
   "\n" \
 
 
+#define CLI_CMD_HELPTEXT_trigger \
+  "Usage: trigger [<trigger> <tx | rx> [<off slave master fire>]]\n" \
+  "\n" \
+  "If used without parameters, this command prints the state of all\n" \
+  "triggers. When aand and supplied, the specified trigger is printed.\n" \
+  "\n" \
+  "Below are the available options for :\n" \
+  "\n" \
+  "       Trigger Description\n" \
+  "  ------------ ----------------------------------------------------------\n" \
+  "         J71-4 Trigger signal is on mini_exp1 (J71, pin 4).\n" \
+  "\n" \
+  "The trigger is controlled and configured by providing the last\n" \
+  "argument, which may be one of the following:\n" \
+  "\n" \
+  "  -----------------------------------------------------------------------\n" \
+  "       Command Description\n" \
+  "  ------------ ----------------------------------------------------------\n" \
+  "           off Clears fire request and disables trigger functionality.\n" \
+  "\n" \
+  "         slave Configures trigger as slave, clears fire request, and arms\n" \
+  "               the device.\n" \
+  "\n" \
+  "        master Configures trigger as master, clears fire request, and\n" \
+  "               arms the device.\n" \
+  "\n" \
+  "          fire Sets fire request. Only applicable to the master.\n" \
+  "  -----------------------------------------------------------------------\n" \
+  "\n" \
+  "A trigger chain consists of a single or multiple bladeRF units and may\n" \
+  "contain TX and RX modules. If multiple bladeRF units are used they\n" \
+  "need to be connected via the signal specified by and a common ground.\n" \
+  "\n" \
+  "The following sequence of commands should be used to ensure proper\n" \
+  "synchronization. It is assumed that all triggers are off initially.\n" \
+  "\n" \
+  "1.  Configure designated trigger master\n" \
+  "\n" \
+  "    IMPORTANT\n" \
+  "\n" \
+  "        Never configure two devices as trigger masters on a single chain.\n" \
+  "        Contention on the same signal could damage the devices.\n" \
+  "\n" \
+  "2.  Configure all other devices as trigger slaves\n" \
+  "\n" \
+  "3.  Configure and start transmit or receive streams.\n" \
+  "\n" \
+  "        The operation will stall until the triggers fire. As such, sufficiently\n" \
+  "        large timeouts should be used to allow the trigger signal to be emitted\n" \
+  "        by the master and received by the slaves prior to libbladeRF returning\n" \
+  "        BLADERF_ERR_TIMEOUT.\n" \
+  "\n" \
+  "4.  Set fire-request on master trigger\n" \
+  "\n" \
+  "        All devices will synchronously start transmitting or receiving data.\n" \
+  "\n" \
+  "5.  Finish the transmit and receive tasks as usual\n" \
+  "\n" \
+  "6.  Re-configure the master and slaves to clear fire requests\n" \
+  "    and re-arm.\n" \
+  "\n" \
+  "        Steps 1 through 5 may be repeated as neccessary.\n" \
+  "\n" \
+  "7.  Disable triggering on all slaves\n" \
+  "\n" \
+  "8.  Disable triggering on master\n" \
+  "\n" \
+  "Notes:\n" \
+  "\n" \
+  "-   Synchronizing transmitters and receivers on a single chain will\n" \
+  "    cause an offset of 11 samples between TX and RX; these samples\n" \
+  "    should be discarded. This is caused by different processing\n" \
+  "    pipeline lengths of TX and RX. This value might change if the FPGA\n" \
+  "    code is updated in the future.\n" \
+  "\n" \
+
+
 #define CLI_CMD_HELPTEXT_tx \
   "Usage: tx <start | stop | wait | config [parameters]>\n" \
   "\n" \
@@ -710,8 +787,8 @@
   "-   The n, samples, buffers, and xfers parameters support the suffixes\n" \
   "    K, M, and G, which are multiples of 1024.\n" \
   "-   For higher sample rates, it is advised that the input file be\n" \
-  "    stored in RAM (e.g. /tmp, /dev/shm) or on an SSD, rather than a\n" \
-  "    HDD.\n" \
+  "    stored in RAM (e.g. /tmp, /dev/shm) or on an SSD, rather than\n" \
+  "    a HDD.\n" \
   "-   When providing CSV data, this command will first convert it to a\n" \
   "    binary format, stored in a file in the current working directory.\n" \
   "    During this process, out-of-range values will be clamped.\n" \

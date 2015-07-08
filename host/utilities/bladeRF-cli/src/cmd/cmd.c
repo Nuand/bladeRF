@@ -54,6 +54,7 @@ DECLARE_CMD(recover);
 DECLARE_CMD(run);
 DECLARE_CMD(set);
 DECLARE_CMD(rx);
+DECLARE_CMD(trigger);
 DECLARE_CMD(tx);
 DECLARE_CMD(version);
 
@@ -94,6 +95,7 @@ static const char *cmd_names_quit[] = { "quit", "q", "exit", "x", NULL };
 static const char *cmd_names_rec[] = { "recover", "r", NULL };
 static const char *cmd_names_run[] = { "run", NULL };
 static const char *cmd_names_rx[] = { "rx", "receive", NULL };
+static const char *cmd_names_trigger[] = { "trigger", "tr", NULL};
 static const char *cmd_names_tx[] = { "tx", "transmit", NULL };
 static const char *cmd_names_set[] = { "set", "s", NULL };
 static const char *cmd_names_ver[] = { "version", "ver", "v", NULL };
@@ -314,6 +316,15 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.requires_device, true),
         FIELD_INIT(.requires_fpga, true),
         FIELD_INIT(.allow_while_streaming, true),   /* Can rx while tx'ing */
+    },
+    {
+        FIELD_INIT(.names, cmd_names_trigger),
+        FIELD_INIT(.exec, cmd_trigger),
+        FIELD_INIT(.desc, "Control triggering"),
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_trigger),
+        FIELD_INIT(.requires_device, true),
+        FIELD_INIT(.requires_fpga, true),
+        FIELD_INIT(.allow_while_streaming, true),   /* Can control trigger while running */
     },
     {
         FIELD_INIT(.names, cmd_names_tx),

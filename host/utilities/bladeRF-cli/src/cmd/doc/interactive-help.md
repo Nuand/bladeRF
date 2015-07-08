@@ -635,6 +635,84 @@ Notes:
    an SSD instead of a HDD.
 
 
+trigger
+-------
+
+Usage: `trigger [<tx | rx> <trigger> [<off slave master fire stop>]]`
+
+If used without parameters, this command prints the state of all triggers.
+When <tx | rx> and <trigger> are supplied, the specified trigger is printed.
+
+Below are the available options for <trigger>:
+
+----------------------------------------------------------------------
+    Trigger Description
+----------- ----------------------------------------------------------
+ `J71-4`    Trigger signal is on `mini_exp1` (J71 pin 4).
+----------- ----------------------------------------------------------
+
+The trigger is controlled and configured by providing the last argument,
+which may be one of the following:
+
+----------------------------------------------------------------------
+    Command Description
+----------- ----------------------------------------------------------
+`off`       Clears fire request and disable trigger functionality.
+
+`slave`     Configures trigger as slave, clears fire request, and
+            arms the device.
+
+`master`    Configures trigger as master, clears fire request, and
+            arms the device.
+
+`fire`      Sets fire request. Only applicable to the master.
+
+----------------------------------------------------------------------
+
+A trigger chain consists of a single or multiple bladeRF units and
+may contain TX and RX modules. If multiple bladeRF units are used
+they need to be connected via the signal specified by <trigger> and
+a common ground.
+
+The following sequence of commands should be used to ensure proper
+synchronization. It is assumed that all triggers are off initially.
+
+1.   Configure designated trigger master
+
+     __IMPORTANT__
+
+        Never configure two devices as triggers masters on a single chain.
+        Contention on the same signal could damage the devices.
+
+2.   Configure all other devices as trigger slaves
+
+3.   Configure and start transmit or receive streams.
+
+        The operation will stall until the triggers fire. As such, sufficiently
+        timeouts should be used to ensure the operations do not time out before
+        the trigger signal is emitted by the master and received by the slaves.
+
+4.   Set fire-request on master trigger
+
+        All devices will synchronously start transmitting or receiving data.
+
+5.   Finish the transmit and receive tasks as usual
+
+6.   Clear fire-request on master trigger
+
+        Steps 3 through may be repeated as neccessary.
+
+7.   Disable triggering on all slaves
+
+8.   Disable triggering on master
+
+Notes:
+
+ * Synchronizing transmitters and receivers on a single chain will cause an
+   offset of 11 samples between TX and RX; these samples should be discarded.
+   This is caused by different processing pipeline lengths of TX and RX. This
+   value might change if the FPGA code is updated in the future.
+
 tx
 --
 
