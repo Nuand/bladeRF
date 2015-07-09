@@ -190,6 +190,21 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
         }
     }
 
+    /* Flush zero samples through the device to ensure samples reach the RFFE
+     * before we exit and then disable the TX module.
+     *
+     * This is a bit excessive, but sufficient for the time being. */
+    if (status == 0) {
+        const unsigned int num_buffers = tx->data_mgmt.num_buffers;
+        unsigned int i;
+
+        memset(tx_buffer, 0, samples_per_buffer * 2 * sizeof(int16_t));
+        for (i = 0; i < (num_buffers + 1) && status == 0; i++) {
+            bladerf_sync_tx(s->dev, tx_buffer, samples_per_buffer, NULL,
+                            timeout_ms);
+        }
+    }
+
     free(tx_buffer);
     return status;
 }
