@@ -138,6 +138,7 @@ architecture hosted_bladerf of bladerf is
         rfull   :   std_logic ;
         rused   :   std_logic_vector(2 downto 0) ;
     end record ;
+
     signal tx_meta_fifo     : meta_fifo_tx_t ;
 
     type meta_fifo_rx_t is record
@@ -157,6 +158,7 @@ architecture hosted_bladerf of bladerf is
         rfull   :   std_logic ;
         rused   :   std_logic_vector(6 downto 0) ;
     end record ;
+
     signal rx_meta_fifo     : meta_fifo_rx_t ;
 
     signal sys_rst_sync     : std_logic ;
@@ -235,9 +237,6 @@ architecture hosted_bladerf of bladerf is
     signal nios_ss_n : std_logic_vector(1 downto 0);
 
     signal xb_mode  : std_logic_vector(1 downto 0);
-
-    attribute keep of timestamp_sync : signal is true;
-    attribute keep of rx_clock : signal is true;
 
     signal correction_valid : std_logic;
 
@@ -869,30 +868,6 @@ begin
     led(2) <= tx_underflow_led  when nios_gpio(15) = '0' else not nios_gpio(13);
     led(3) <= rx_overflow_led   when nios_gpio(15) = '0' else not nios_gpio(14);
 
---    toggle_led2 : process(rx_clock)
---        variable count : natural range 0 to 38_400_00 := 38_400_00 ;
---    begin
---        if( rising_edge(rx_clock) ) then
---            count := count - 1 ;
---            if( count = 0 ) then
---                count := 38_400_00 ;
---                led(2) <= not led(2) ;
---            end if ;
---        end if ;
---    end process ;
---
---    toggle_led3 : process(rx_clock)
---        variable count : natural range 0 to 19_200_000 := 19_200_000 ;
---    begin
---        if( rising_edge(rx_clock) ) then
---            count := count - 1 ;
---            if( count = 0 ) then
---                count := 19_200_000 ;
---                led(3) <= not led(3) ;
---            end if ;
---        end if ;
---    end process ;
-
     lms_reset               <= nios_gpio(0) ;
 
     lms_rx_enable           <= nios_gpio(1) ;
@@ -906,7 +881,6 @@ begin
 
     exp_spi_clock           <= nios_sclk when ( nios_ss_n(1 downto 0) = "01" ) else '0' ;
     exp_spi_mosi            <= nios_sdio when ( nios_ss_n(1 downto 0) = "01" ) else '0' ;
-    --exp_gpio                <= (others =>'Z') ;
 
     mini_exp1               <= 'Z';
     mini_exp2               <= 'Z';
@@ -936,42 +910,6 @@ begin
             end if ;
         end if ;
     end process ;
-
---    increment_tx_time : process(tx_clock, tx_reset)
---        variable tock : boolean := false ;
---    begin
---        if( tx_reset = '1') then
---            tx_timestamp <= (others => '0');
---            tock := false ;
---        elsif( rising_edge( tx_clock )) then
---            if (meta_en_tx = '0') then
---                tx_timestamp <= (others => '0');
---            else
---                if( nios_gpio(17) = '0' or tock = true) then
---                    tx_timestamp <= tx_timestamp + 1;
---                end if ;
---            end if;
---            tock := not tock ;
---        end if;
---    end process;
---
---    increment_rx_time : process(rx_clock, rx_reset)
---        variable tock : boolean := false ;
---    begin
---        if( rx_reset = '1') then
---            rx_timestamp <= (others => '0');
---            tock := false ;
---        elsif( rising_edge( rx_clock )) then
---            if (meta_en_rx = '0') then
---                rx_timestamp <= (others => '0');
---            else
---                if( nios_gpio(17) = '0' or tock = true ) then
---                    rx_timestamp <= rx_timestamp + 1;
---                end if ;
---            end if;
---            tock := not tock ;
---        end if;
---    end process;
 
     drive_handshake : process(fx3_pclk_pll, sys_rst_sync)
     begin

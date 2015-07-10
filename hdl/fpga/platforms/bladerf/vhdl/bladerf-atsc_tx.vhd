@@ -31,40 +31,63 @@ architecture atsc_tx of bladerf is
 
     component nios_system is
       port (
-        clk_clk             : in  std_logic := 'X'; -- clk
-        reset_reset_n       : in  std_logic := 'X'; -- reset_n
-        dac_MISO            : in  std_logic := 'X'; -- MISO
-        dac_MOSI            : out std_logic;        -- MOSI
-        dac_SCLK            : out std_logic;        -- SCLK
-        dac_SS_n            : out std_logic;        -- SS_n
-        spi_MISO            : in  std_logic := 'X'; -- MISO
-        spi_MOSI            : out std_logic;        -- MOSI
-        spi_SCLK            : out std_logic;        -- SCLK
-        spi_SS_n            : out std_logic;        -- SS_n
-        uart_rxd            : in  std_logic;
-        uart_txd            : out std_logic;
-        oc_i2c_scl_pad_o    : out std_logic;
-        oc_i2c_scl_padoen_o : out std_logic;
-        oc_i2c_sda_pad_i    : in  std_logic;
-        oc_i2c_sda_pad_o    : out std_logic;
-        oc_i2c_sda_padoen_o : out std_logic;
-        oc_i2c_arst_i       : in  std_logic;
-        oc_i2c_scl_pad_i    : in  std_logic;
-        gpio_export         : out std_logic_vector(31 downto 0);
-        correction_rx_phase_gain_export : out std_logic_vector(31 downto 0);
-        correction_tx_phase_gain_export : out std_logic_vector(31 downto 0)
+        clk_clk                         :   in  std_logic := 'X'; -- clk
+        reset_reset_n                   :   in  std_logic := 'X'; -- reset_n
+        dac_MISO                        :   in  std_logic := 'X'; -- MISO
+        dac_MOSI                        :   out std_logic;        -- MOSI
+        dac_SCLK                        :   out std_logic;        -- SCLK
+        dac_SS_n                        :   out std_logic_vector(1 downto 0);        -- SS_n
+        spi_MISO                        :   in  std_logic := 'X'; -- MISO
+        spi_MOSI                        :   out std_logic;        -- MOSI
+        spi_SCLK                        :   out std_logic;        -- SCLK
+        spi_SS_n                        :   out std_logic;        -- SS_n
+        oc_i2c_scl_pad_o                :   out std_logic;
+        oc_i2c_scl_padoen_o             :   out std_logic;
+        oc_i2c_sda_pad_i                :   in  std_logic;
+        oc_i2c_sda_pad_o                :   out std_logic;
+        oc_i2c_sda_padoen_o             :   out std_logic;
+        oc_i2c_arst_i                   :   in  std_logic;
+        oc_i2c_scl_pad_i                :   in  std_logic;
+        gpio_export                     :   out std_logic_vector(31 downto 0);
+        xb_gpio_in_port                 :   in  std_logic_vector(31 downto 0) := (others => 'X');
+        xb_gpio_out_port                :   out std_logic_vector(31 downto 0);
+        xb_gpio_dir_export              :   out std_logic_vector(31 downto 0);
+        command_serial_in               :   in  std_logic ;
+        command_serial_out              :   out std_logic ;
+        correction_rx_phase_gain_export :   out std_logic_vector(31 downto 0);
+        correction_tx_phase_gain_export :   out std_logic_vector(31 downto 0);
+        rx_tamer_ts_sync_in             :   in  std_logic;
+        rx_tamer_ts_sync_out            :   out std_logic ;
+        rx_tamer_ts_pps                 :   in  std_logic ;
+        rx_tamer_ts_clock               :   in  std_logic ;
+        rx_tamer_ts_reset               :   in  std_logic;
+        rx_tamer_ts_time                :   out std_logic_vector(63 downto 0) ;
+        tx_tamer_ts_sync_in             :   in  std_logic;
+        tx_tamer_ts_sync_out            :   out std_logic ;
+        tx_tamer_ts_pps                 :   in  std_logic ;
+        tx_tamer_ts_clock               :   in  std_logic ;
+        tx_tamer_ts_reset               :   in  std_logic;
+        tx_tamer_ts_time                :   out std_logic_vector(63 downto 0)
       );
-    end component nios_system;
+    end component;
 
     alias sys_rst   is fx3_ctl(7) ;
     alias tx_clock  is c4_tx_clock ;
     alias rx_clock  is lms_rx_clock_out ;
 
+    type rx_mux_mode_t is (RX_MUX_NORMAL, RX_MUX_12BIT_COUNTER, RX_MUX_32BIT_COUNTER, RX_MUX_ENTROPY, RX_MUX_DIGITAL_LOOPBACK) ;
+
+    signal rx_mux_sel       : unsigned(2 downto 0) ;
+    signal rx_mux_mode      : rx_mux_mode_t ;
+
     signal \80MHz\          : std_logic ;
     signal \80MHz locked\   : std_logic ;
-    signal \80MHz reset\    : std_logic ;
 
     signal nios_gpio        : std_logic_vector(31 downto 0) := x"0000_00d7" ;
+    signal nios_xb_gpio_in  : std_logic_vector(31 downto 0) ;
+    signal nios_xb_gpio_out : std_logic_vector(31 downto 0) ;
+    signal nios_xb_gpio_dir : std_logic_vector(31 downto 0) ;
+    signal xb_gpio_dir      : std_logic_vector(31 downto 0) ;
 
 
     signal correction_rx_phase_gain :  std_logic_vector(31 downto 0);
@@ -99,6 +122,46 @@ architecture atsc_tx of bladerf is
     signal rx_sample_fifo   : fifo_t ;
     signal tx_sample_fifo   : fifo_t ;
 
+    type meta_fifo_tx_t is record
+        aclr    :   std_logic ;
+
+        wclock  :   std_logic ;
+        wdata   :   std_logic_vector(31 downto 0) ;
+        wreq    :   std_logic ;
+        wempty  :   std_logic ;
+        wfull   :   std_logic ;
+        wused   :   std_logic_vector(4 downto 0) ;
+
+        rclock  :   std_logic ;
+        rdata   :   std_logic_vector(127 downto 0) ;
+        rreq    :   std_logic ;
+        rempty  :   std_logic ;
+        rfull   :   std_logic ;
+        rused   :   std_logic_vector(2 downto 0) ;
+    end record ;
+
+    signal tx_meta_fifo     : meta_fifo_tx_t ;
+
+    type meta_fifo_rx_t is record
+        aclr    :   std_logic ;
+
+        wclock  :   std_logic ;
+        wdata   :   std_logic_vector(127 downto 0) ;
+        wreq    :   std_logic ;
+        wempty  :   std_logic ;
+        wfull   :   std_logic ;
+        wused   :   std_logic_vector(4 downto 0) ;
+
+        rclock  :   std_logic ;
+        rdata   :   std_logic_vector(31 downto 0) ;
+        rreq    :   std_logic ;
+        rempty  :   std_logic ;
+        rfull   :   std_logic ;
+        rused   :   std_logic_vector(6 downto 0) ;
+    end record ;
+
+    signal rx_meta_fifo     : meta_fifo_rx_t ;
+
     signal sys_rst_sync     : std_logic ;
 
     signal usb_speed        : std_logic ;
@@ -114,17 +177,25 @@ architecture atsc_tx of bladerf is
     signal tx_enable        : std_logic ;
     signal rx_enable        : std_logic ;
 
-    signal rx_sample_raw_i  : signed(11 downto 0);
-    signal rx_sample_raw_q  : signed(11 downto 0);
-    signal rx_sample_raw_valid : std_logic;
+    signal meta_en_tx       : std_logic ;
+    signal meta_en_rx       : std_logic ;
+    signal meta_en_fx3      : std_logic ;
+    signal tx_timestamp     : unsigned(63 downto 0) ;
+    signal rx_timestamp     : unsigned(63 downto 0) ;
+    signal timestamp_sync   : std_logic ;
 
-    signal rx_sample_i      : signed(11 downto 0) ;
-    signal rx_sample_q      : signed(11 downto 0) ;
+    signal rx_sample_i      : signed(15 downto 0) ;
+    signal rx_sample_q      : signed(15 downto 0) ;
     signal rx_sample_valid  : std_logic ;
 
-    signal rx_gen_i         : signed(11 downto 0) ;
-    signal rx_gen_q         : signed(11 downto 0) ;
+    signal rx_gen_mode      : std_logic ;
+    signal rx_gen_i         : signed(15 downto 0) ;
+    signal rx_gen_q         : signed(15 downto 0) ;
     signal rx_gen_valid     : std_logic ;
+
+    signal rx_entropy_i     : signed(15 downto 0) := (others =>'0') ;
+    signal rx_entropy_q     : signed(15 downto 0) := (others =>'0') ;
+    signal rx_entropy_valid : std_logic := '0' ;
 
     signal tx_sample_raw_i : signed(15 downto 0);
     signal tx_sample_raw_q : signed(15 downto 0);
@@ -142,9 +213,6 @@ architecture atsc_tx of bladerf is
     signal fx3_ctl_out      : std_logic_vector(12 downto 0) ;
     signal fx3_ctl_oe       : std_logic_vector(12 downto 0) ;
 
-    signal nios_uart_rxd    :   std_logic ;
-    signal nios_uart_txd    :   std_logic ;
-
     signal tx_underflow_led     :   std_logic ;
     signal tx_underflow_count   :   unsigned(63 downto 0) ;
 
@@ -154,16 +222,22 @@ architecture atsc_tx of bladerf is
     signal lms_rx_data_reg      :   signed(11 downto 0) ;
     signal lms_rx_iq_select_reg :   std_logic ;
 
-    signal rx_mux_sel           :   std_logic ;
-
-    signal rx_mux_i             :   signed(11 downto 0) ;
-    signal rx_mux_q             :   signed(11 downto 0) ;
+    signal rx_mux_i             :   signed(15 downto 0) ;
+    signal rx_mux_q             :   signed(15 downto 0) ;
     signal rx_mux_valid         :   std_logic ;
 
     signal rx_sample_corrected_i : signed(15 downto 0);
     signal rx_sample_corrected_q : signed(15 downto 0);
     signal rx_sample_corrected_valid : std_logic;
 
+    signal led1_blink : std_logic;
+
+    signal nios_sdo : std_logic;
+    signal nios_sdio : std_logic;
+    signal nios_sclk : std_logic;
+    signal nios_ss_n : std_logic_vector(1 downto 0);
+
+    signal xb_mode  : std_logic_vector(1 downto 0);
 
     signal correction_valid : std_logic;
 
@@ -172,10 +246,20 @@ architecture atsc_tx of bladerf is
     signal correction_rx_phase :  signed(15 downto 0);--to_signed(integer(round(real(2**Q_SCALE) * PHASE_OFFSET)),DC_WIDTH);
     signal correction_rx_gain  :  signed(15 downto 0);--to_signed(integer(round(real(2**Q_SCALE) * DC_OFFSET_REAL)),DC_WIDTH);
 
+    signal command_serial_in    :   std_logic ;
+    signal command_serial_out   :   std_logic ;
+
     constant FPGA_DC_CORRECTION :  signed(15 downto 0) := to_signed(integer(0), 16);
 
     signal fx3_pclk_pll     :   std_logic ;
     signal fx3_pll_locked   :   std_logic ;
+
+    signal timestamp_req    :   std_logic ;
+    signal timestamp_ack    :   std_logic ;
+    signal fx3_timestamp    :   unsigned(63 downto 0) ;
+
+    signal rx_ts_reset      :   std_logic ;
+    signal tx_ts_reset      :   std_logic ;
 
     --atsc signals
     signal tx_data : std_logic_vector(31 downto 0);
@@ -238,16 +322,49 @@ begin
         sync                =>  usb_speed_tx
       ) ;
 
+    generate_mux_sel : for i in rx_mux_sel'range generate
+        U_rx_source : entity work.synchronizer
+          generic map (
+            RESET_LEVEL         =>  '0'
+          ) port map (
+            reset               =>  '0',
+            clock               =>  rx_clock,
+            async               =>  nios_gpio(8+i),
+            sync                =>  rx_mux_sel(i)
+          ) ;
+    end generate ;
 
-    U_rx_source : entity work.synchronizer
+    U_meta_sync_fx3 : entity work.synchronizer
+      generic map (
+        RESET_LEVEL         =>  '0'
+      ) port map (
+        reset               =>  '0',
+        clock               =>  fx3_pclk_pll,
+        async               =>  nios_gpio(16),
+        sync                =>  meta_en_fx3
+      ) ;
+
+    U_meta_sync_tx : entity work.synchronizer
+      generic map (
+        RESET_LEVEL         =>  '0'
+      ) port map (
+        reset               =>  '0',
+        clock               =>  tx_clock,
+        async               =>  nios_gpio(16),
+        sync                =>  meta_en_tx
+      ) ;
+
+    U_meta_sync_rx : entity work.synchronizer
       generic map (
         RESET_LEVEL         =>  '0'
       ) port map (
         reset               =>  '0',
         clock               =>  rx_clock,
-        async               =>  nios_gpio(8),
-        sync                =>  rx_mux_sel
+        async               =>  nios_gpio(16),
+        sync                =>  meta_en_rx
       ) ;
+
+    xb_mode <= nios_gpio(31 downto 30);
 
     U_sys_reset_sync : entity work.reset_synchronizer
       generic map (
@@ -299,16 +416,6 @@ begin
         sync        =>  tx_enable
       ) ;
 
---    U_80MHz_reset : entity work.reset_synchronizer
---      generic map (
---        INPUT_LEVEL     => '1',
---        OUTPUT_LEVEL    => '0'
---      ) port map (
---        clock           => \80MHz\,
---        async           => sys_rst,
---        sync            => \80MHz reset\
---      ) ;
-
     -- TX sample fifo
     tx_sample_fifo.aclr <= tx_reset ;
     tx_sample_fifo.wclock <= fx3_pclk_pll ;
@@ -328,6 +435,27 @@ begin
         wrempty             => tx_sample_fifo.wempty,
         wrfull              => tx_sample_fifo.wfull,
         wrusedw             => tx_sample_fifo.wused
+      );
+
+    -- TX meta fifo
+    tx_meta_fifo.aclr <= tx_reset ;
+    tx_meta_fifo.wclock <= fx3_pclk_pll ;
+    tx_meta_fifo.rclock <= tx_clock ;
+    U_tx_meta_fifo : entity work.tx_meta_fifo
+      port map (
+        aclr                => tx_meta_fifo.aclr,
+        data                => tx_meta_fifo.wdata,
+        rdclk               => tx_meta_fifo.rclock,
+        rdreq               => tx_meta_fifo.rreq,
+        wrclk               => tx_meta_fifo.wclock,
+        wrreq               => tx_meta_fifo.wreq,
+        q                   => tx_meta_fifo.rdata,
+        rdempty             => tx_meta_fifo.rempty,
+        rdfull              => tx_meta_fifo.rfull,
+        rdusedw             => tx_meta_fifo.rused,
+        wrempty             => tx_meta_fifo.wempty,
+        wrfull              => tx_meta_fifo.wfull,
+        wrusedw             => tx_meta_fifo.wused
       );
 
     -- RX sample fifo
@@ -350,6 +478,27 @@ begin
         wrusedw             => rx_sample_fifo.wused
       );
 
+    -- RX meta fifo
+    rx_meta_fifo.aclr <= rx_reset ;
+    rx_meta_fifo.wclock <= rx_clock ;
+    rx_meta_fifo.rclock <= fx3_pclk_pll ;
+    U_rx_meta_fifo : entity work.rx_meta_fifo
+      port map (
+        aclr                => rx_meta_fifo.aclr,
+        data                => rx_meta_fifo.wdata,
+        rdclk               => rx_meta_fifo.rclock,
+        rdreq               => rx_meta_fifo.rreq,
+        wrclk               => rx_meta_fifo.wclock,
+        wrreq               => rx_meta_fifo.wreq,
+        q                   => rx_meta_fifo.rdata,
+        rdempty             => rx_meta_fifo.rempty,
+        rdfull              => rx_meta_fifo.rfull,
+        rdusedw             => rx_meta_fifo.rused,
+        wrempty             => rx_meta_fifo.wempty,
+        wrfull              => rx_meta_fifo.wfull,
+        wrusedw             => rx_meta_fifo.wused
+      );
+
     -- FX3 GPIF
     U_fx3_gpif : entity work.fx3_gpif
       port map (
@@ -358,7 +507,7 @@ begin
 
         usb_speed           =>  usb_speed,
 
-        meta_enable         =>  '0',
+        meta_enable         =>  meta_en_fx3,
         rx_enable           =>  pclk_rx_enable,
         tx_enable           =>  pclk_tx_enable,
 
@@ -375,12 +524,13 @@ begin
         tx_fifo_usedw       =>  tx_sample_fifo.wused,
         tx_fifo_data        =>  tx_sample_fifo.wdata,
 
-        tx_timestamp        =>  (others => '0'),
-        tx_meta_fifo_write  =>  open,
-        tx_meta_fifo_full   =>  '0',
-        tx_meta_fifo_empty  =>  '0',
-        tx_meta_fifo_usedw  =>  "00",
-        tx_meta_fifo_data   =>  open,
+        tx_timestamp        =>  fx3_timestamp,
+        tx_meta_fifo_write  =>  tx_meta_fifo.wreq,
+        tx_meta_fifo_full   =>  tx_meta_fifo.wfull,
+        tx_meta_fifo_empty  =>  tx_meta_fifo.wempty,
+        tx_meta_fifo_usedw  =>  tx_meta_fifo.wused,
+        tx_meta_fifo_data   =>  tx_meta_fifo.wdata,
+
 
         rx_fifo_read        =>  rx_sample_fifo.rreq,
         rx_fifo_full        =>  rx_sample_fifo.rfull,
@@ -388,11 +538,11 @@ begin
         rx_fifo_usedw       =>  rx_sample_fifo.rused,
         rx_fifo_data        =>  rx_sample_fifo.rdata,
 
-        rx_meta_fifo_read   =>  open,
-        rx_meta_fifo_full   =>  '0',
-        rx_meta_fifo_empty  =>  '0',
-        rx_meta_fifo_usedr  =>  "00",
-        rx_meta_fifo_data   =>  (others => '0')
+        rx_meta_fifo_read   =>  rx_meta_fifo.rreq,
+        rx_meta_fifo_full   =>  rx_meta_fifo.rfull,
+        rx_meta_fifo_empty  =>  rx_meta_fifo.rempty,
+        rx_meta_fifo_usedr  =>  rx_meta_fifo.rused,
+        rx_meta_fifo_data   =>  rx_meta_fifo.rdata
       ) ;
 
     -- Sample bridges
@@ -488,13 +638,12 @@ begin
     end process;
 
     U_atsc_transmitter : entity work.atsc_tx(arch)
-        generic map(
-            INPUT_WIDTH => tx_sample_fifo.rdata'length,
-            OUTPUT_WIDTH => tx_sample_i'length
-        )
-        port map (
-        reset => tx_reset,
-        clock => tx_clock,
+      generic map(
+        INPUT_WIDTH         => tx_sample_fifo.rdata'length,
+        OUTPUT_WIDTH        => tx_sample_i'length
+      ) port map (
+        reset               => tx_reset,
+        clock               => tx_clock,
 
         tx_enable           => tx_enable,
         data_in             => tx_sample_fifo.rdata,
@@ -504,7 +653,7 @@ begin
         sample_out_i        => tx_sample_raw_i,
         sample_out_q        => tx_sample_raw_q,
         sample_out_valid    => tx_sample_raw_valid
-    );
+      );
 
     U_tx_iq_correction : entity work.iq_correction(tx)
       generic map (
@@ -529,6 +678,8 @@ begin
       );
 
     -- LMS6002D IQ interface
+    rx_sample_i(15 downto 12) <= (others => rx_sample_i(11)) ;
+    rx_sample_q(15 downto 12) <= (others => rx_sample_q(11)) ;
     U_lms6002d : entity work.lms6002d
       port map (
         rx_clock            =>  rx_clock,
@@ -539,8 +690,8 @@ begin
         rx_lms_iq_sel       =>  lms_rx_iq_select_reg,
         rx_lms_enable       =>  open,
 
-        rx_sample_i         =>  rx_sample_i,
-        rx_sample_q         =>  rx_sample_q,
+        rx_sample_i         =>  rx_sample_i(11 downto 0),
+        rx_sample_q         =>  rx_sample_q(11 downto 0),
         rx_sample_valid     =>  rx_sample_valid,
 
         tx_clock            =>  tx_clock,
@@ -556,22 +707,56 @@ begin
         tx_lms_enable       =>  open
       ) ;
 
+    U_rx_siggen : entity work.signal_generator
+      port map (
+        clock           =>  rx_clock,
+        reset           =>  rx_reset,
+        enable          =>  rx_enable,
+
+        mode            =>  rx_gen_mode,
+
+        sample_i        =>  rx_gen_i,
+        sample_q        =>  rx_gen_q,
+        sample_valid    =>  rx_gen_valid
+      ) ;
+
+    rx_mux_mode <= rx_mux_mode_t'val(to_integer(rx_mux_sel)) ;
+
     rx_mux : process(rx_reset, rx_clock)
     begin
         if( rx_reset = '1' ) then
             rx_mux_i <= (others =>'0') ;
             rx_mux_q <= (others =>'0') ;
             rx_mux_valid <= '0' ;
+            rx_gen_mode <= '0' ;
         elsif( rising_edge(rx_clock) ) then
-            if( rx_mux_sel = '0' ) then
-                rx_mux_i <= rx_sample_i ;
-                rx_mux_q <= rx_sample_q ;
-                rx_mux_valid <= rx_sample_valid ;
-            else
-                rx_mux_i <= rx_gen_i ;
-                rx_mux_q <= rx_gen_q ;
-                rx_mux_valid <= rx_gen_valid ;
-            end if ;
+            case rx_mux_mode is
+                when RX_MUX_NORMAL =>
+                    rx_mux_i <= rx_sample_i ;
+                    rx_mux_q <= rx_sample_q ;
+                    rx_mux_valid <= rx_sample_valid ;
+                when RX_MUX_12BIT_COUNTER | RX_MUX_32BIT_COUNTER =>
+                    rx_mux_i <= rx_gen_i ;
+                    rx_mux_q <= rx_gen_q ;
+                    rx_mux_valid <= rx_gen_valid ;
+                    if( rx_mux_mode = RX_MUX_32BIT_COUNTER ) then
+                        rx_gen_mode <= '1' ;
+                    else
+                        rx_gen_mode <= '0' ;
+                    end if ;
+                when RX_MUX_ENTROPY =>
+                    rx_mux_i <= rx_entropy_i ;
+                    rx_mux_q <= rx_entropy_q ;
+                    rx_mux_valid <= rx_entropy_valid ;
+                when RX_MUX_DIGITAL_LOOPBACK =>
+                    rx_mux_i <= tx_sample_raw_i ;
+                    rx_mux_q <= tx_sample_raw_q ;
+                    rx_mux_valid <= tx_sample_raw_valid ;
+                when others =>
+                    rx_mux_i <= (others =>'0') ;
+                    rx_mux_q <= (others =>'0') ;
+                    rx_mux_valid <= '0' ;
+            end case ;
         end if ;
     end process ;
 
@@ -600,35 +785,100 @@ begin
 
     fx3_ctl_in <= fx3_ctl ;
 
-    nios_uart_txd <= fx3_uart_txd when sys_rst_sync = '0' else '1' ;
-    fx3_uart_rxd <= nios_uart_rxd when sys_rst_sync = '0' else 'Z' ;
+    command_serial_in <= fx3_uart_txd when sys_rst_sync = '0' else '1' ;
+    fx3_uart_rxd <= command_serial_out when sys_rst_sync = '0' else 'Z' ;
 
     -- NIOS control system for si5338, vctcxo trim and lms control
-    U_nios_system : nios_system
+    U_nios_system : component nios_system
       port map (
-        clk_clk             => \80MHz\,
-        reset_reset_n       => '1',
-        dac_MISO            => dac_sdo,
-        dac_MOSI            => dac_sdi,
-        dac_SCLK            => dac_sclk,
-        dac_SS_n            => dac_csx,
-        spi_MISO            => lms_sdo,
-        spi_MOSI            => lms_sdio,
-        spi_SCLK            => lms_sclk,
-        spi_SS_n            => lms_sen,
-        uart_rxd            => fx3_uart_txd,
-        uart_txd            => fx3_uart_rxd,
-        gpio_export         => nios_gpio,
-        correction_tx_phase_gain_export    => correction_tx_phase_gain,
-        correction_rx_phase_gain_export    => correction_rx_phase_gain,
-        oc_i2c_scl_pad_o    => i2c_scl_out,
-        oc_i2c_scl_padoen_o => i2c_scl_oen,
-        oc_i2c_sda_pad_i    => i2c_sda_in,
-        oc_i2c_sda_pad_o    => i2c_sda_out,
-        oc_i2c_sda_padoen_o => i2c_sda_oen,
-        oc_i2c_arst_i       => '0',
-        oc_i2c_scl_pad_i    => i2c_scl_in
+        clk_clk                         => \80MHz\,
+        reset_reset_n                   => '1',
+        dac_MISO                        => nios_sdo,
+        dac_MOSI                        => nios_sdio,
+        dac_SCLK                        => nios_sclk,
+        dac_SS_n                        => nios_ss_n,
+        spi_MISO                        => lms_sdo,
+        spi_MOSI                        => lms_sdio,
+        spi_SCLK                        => lms_sclk,
+        spi_SS_n                        => lms_sen,
+        gpio_export                     => nios_gpio,
+        xb_gpio_in_port                 => nios_xb_gpio_in,
+        xb_gpio_out_port                => nios_xb_gpio_out,
+        xb_gpio_dir_export              => nios_xb_gpio_dir,
+        command_serial_in               => command_serial_in,
+        command_serial_out              => command_serial_out,
+        correction_tx_phase_gain_export => correction_tx_phase_gain,
+        correction_rx_phase_gain_export => correction_rx_phase_gain,
+        oc_i2c_scl_pad_o                => i2c_scl_out,
+        oc_i2c_scl_padoen_o             => i2c_scl_oen,
+        oc_i2c_sda_pad_i                => i2c_sda_in,
+        oc_i2c_sda_pad_o                => i2c_sda_out,
+        oc_i2c_sda_padoen_o             => i2c_sda_oen,
+        oc_i2c_arst_i                   => '0',
+        oc_i2c_scl_pad_i                => i2c_scl_in,
+        rx_tamer_ts_sync_in             => '0',
+        rx_tamer_ts_sync_out            => open,
+        rx_tamer_ts_pps                 => '0',
+        rx_tamer_ts_clock               => rx_clock,
+        rx_tamer_ts_reset               => rx_ts_reset,
+        unsigned(rx_tamer_ts_time)      => rx_timestamp,
+        tx_tamer_ts_sync_in             => '0',
+        tx_tamer_ts_sync_out            => open,
+        tx_tamer_ts_pps                 => '0',
+        tx_tamer_ts_clock               => tx_clock,
+        tx_tamer_ts_reset               => tx_ts_reset,
+        unsigned(tx_tamer_ts_time)      => tx_timestamp
       ) ;
+
+    xb_gpio_direction_proc : for i in 0 to 31 generate
+        process(xb_gpio_dir, nios_xb_gpio_out, nios_xb_gpio_in, xb_mode, nios_ss_n)
+        begin
+            if (xb_gpio_dir(i) = '1') then
+                nios_xb_gpio_in(i) <= nios_xb_gpio_out(i);
+                if (xb_mode = "10" and i + 1 = 2) then
+                    exp_gpio(i+1) <= nios_ss_n(1);
+                elsif (i + 1 /= 1) then
+                    exp_gpio(i+1) <= nios_xb_gpio_out(i);
+                end if;
+            else
+                if (i + 1 = 1) then
+                    nios_xb_gpio_in(i) <= exp_clock_in;
+                else
+                    nios_xb_gpio_in(i) <= exp_gpio(i + 1);
+                    exp_gpio(i + 1) <= 'Z';
+                end if;
+            end if;
+        end process;
+    end generate ;
+
+    nios_gpio(20 downto 19) <= nios_ss_n;
+    nios_gpio(22 downto 21) <= xb_mode;
+
+    process(all)
+    begin
+        if( xb_mode = "00" ) then
+            xb_gpio_dir <= nios_xb_gpio_dir(31 downto 0);
+            dac_sclk <= nios_sclk;
+            dac_csx <= nios_ss_n(0);
+            nios_sdo <= dac_sdo;
+            dac_sdi <= nios_sdio;
+            -- missing 30-32
+        elsif( xb_mode = "10" ) then
+            xb_gpio_dir <= nios_xb_gpio_dir(31 downto 0);
+            if (nios_ss_n(1 downto 0) = "10") then --
+                dac_sclk <= nios_sclk;
+                dac_csx <= '0';
+                nios_sdo <= dac_sdo;
+                dac_sdi <= nios_sdio;
+            elsif (nios_ss_n(1 downto 0) = "01") then
+                dac_csx <= '1';
+            else
+                dac_csx <= '1';
+            end if;
+        else
+            xb_gpio_dir <= nios_xb_gpio_dir(31 downto 0)  ;
+        end if;
+    end process;
 
     -- IO for NIOS
     si_scl <= i2c_scl_out when i2c_scl_oen = '0' else 'Z' ;
@@ -652,30 +902,6 @@ begin
     led(2) <= tx_underflow_led ;
     led(3) <= rx_overflow_led ;
 
---    toggle_led2 : process(rx_clock)
---        variable count : natural range 0 to 38_400_00 := 38_400_00 ;
---    begin
---        if( rising_edge(rx_clock) ) then
---            count := count - 1 ;
---            if( count = 0 ) then
---                count := 38_400_00 ;
---                led(2) <= not led(2) ;
---            end if ;
---        end if ;
---    end process ;
---
---    toggle_led3 : process(rx_clock)
---        variable count : natural range 0 to 19_200_000 := 19_200_000 ;
---    begin
---        if( rising_edge(rx_clock) ) then
---            count := count - 1 ;
---            if( count = 0 ) then
---                count := 19_200_000 ;
---                led(3) <= not led(3) ;
---            end if ;
---        end if ;
---    end process ;
-
     lms_reset               <= nios_gpio(0) ;
 
     lms_rx_enable           <= nios_gpio(1) ;
@@ -687,11 +913,68 @@ begin
     -- CTS and the SPI CSx are tied to the same signal.  When we are in reset, allow for SPI accesses
     fx3_uart_cts            <= '1' when sys_rst_sync = '0' else 'Z'  ;
 
-    exp_spi_clock           <= '0' ;
-    exp_spi_mosi            <= '0' ;
-    exp_gpio                <= (others =>'Z') ;
+    exp_spi_clock           <= nios_sclk when ( nios_ss_n(1 downto 0) = "01" ) else '0' ;
+    exp_spi_mosi            <= nios_sdio when ( nios_ss_n(1 downto 0) = "01" ) else '0' ;
 
     mini_exp1               <= 'Z';
     mini_exp2               <= 'Z';
+
+    set_tx_ts_reset : process(tx_clock, tx_reset)
+    begin
+        if( tx_reset = '1' ) then
+            tx_ts_reset <= '1' ;
+        elsif( rising_edge(tx_clock) ) then
+            if( meta_en_tx = '1' ) then
+                tx_ts_reset <= '0' ;
+            else
+                tx_ts_reset <= '1' ;
+            end if ;
+        end if ;
+    end process ;
+
+    set_rx_ts_reset : process(rx_clock, rx_reset)
+    begin
+        if( rx_reset = '1' ) then
+            rx_ts_reset <= '1' ;
+        elsif( rising_edge(rx_clock) ) then
+            if( meta_en_rx = '1' ) then
+                rx_ts_reset <= '0' ;
+            else
+                rx_ts_reset <= '1' ;
+            end if ;
+        end if ;
+    end process ;
+
+    drive_handshake : process(fx3_pclk_pll, sys_rst_sync)
+    begin
+        if( sys_rst_sync = '1' ) then
+            timestamp_req <= '0' ;
+        elsif( rising_edge(fx3_pclk_pll) ) then
+            if( meta_en_fx3 = '0' ) then
+                timestamp_req <= '0' ;
+            else
+                if( timestamp_ack = '0' ) then
+                    timestamp_req <= '1' ;
+                elsif( timestamp_ack = '1' ) then
+                    timestamp_req <= '0' ;
+                end if ;
+            end if ;
+        end if ;
+    end process ;
+
+    U_timestamp_handshake : entity work.handshake
+      generic map (
+        DATA_WIDTH          =>  tx_timestamp'length
+      ) port map (
+        source_clock        =>  tx_clock,
+        source_reset        =>  tx_reset,
+        source_data         =>  std_logic_vector(tx_timestamp),
+
+        dest_clock          =>  fx3_pclk_pll,
+        dest_reset          =>  sys_rst_sync,
+        unsigned(dest_data) =>  fx3_timestamp,
+        dest_req            =>  timestamp_req,
+        dest_ack            =>  timestamp_ack
+      ) ;
 
 end architecture ; -- arch
