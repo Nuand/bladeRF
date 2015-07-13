@@ -260,8 +260,9 @@ int xb200_get_filterbank(struct bladerf *dev, bladerf_module module,
     return status;
 }
 
-int xb200_set_filterbank(struct bladerf *dev,
-                         bladerf_module module, bladerf_xb200_filter filter) {
+static int set_filterbank(struct bladerf *dev, bool update_auto_filt,
+                          bladerf_module module, bladerf_xb200_filter filter)
+{
     int status;
     uint32_t orig, val, mask;
     unsigned int shift;
@@ -299,15 +300,30 @@ int xb200_set_filterbank(struct bladerf *dev,
         }
     }
 
-    /* Update state information regarding automatically selected filter.
-     * Invalidate the entry if we're not performing automatic selection. */
-    if (filter == BLADERF_XB200_AUTO_1DB || filter == BLADERF_XB200_AUTO_3DB) {
-        dev->auto_filter[module] = filter;
-    } else {
-        dev->auto_filter[module] = -1;
+
+    /*
+     * Update state information regarding automatically selected filter.
+     * Invalidate the entry if we're not entering automatic selection mode.
+     *
+     * We'll suppress this update when we know we're calling this function
+     * from xb200_auto_filter_selection for an automatic update so that we
+     * don't clobber our auto_filter mode.
+     */
+    if (update_auto_filt) {
+        if (filter == BLADERF_XB200_AUTO_1DB || filter == BLADERF_XB200_AUTO_3DB) {
+            dev->auto_filter[module] = filter;
+        } else {
+            dev->auto_filter[module] = -1;
+        }
     }
 
     return 0;
+}
+
+int xb200_set_filterbank(struct bladerf *dev,
+                         bladerf_module module, bladerf_xb200_filter filter) {
+
+    return set_filterbank(dev, true, module, filter);
 }
 
 int xb200_auto_filter_selection(struct bladerf *dev, bladerf_module mod,
@@ -335,7 +351,7 @@ int xb200_auto_filter_selection(struct bladerf *dev, bladerf_module mod,
             filter = BLADERF_XB200_CUSTOM;
         }
 
-        status = xb200_set_filterbank(dev, mod, filter);
+        status = set_filterbank(dev, false, mod, filter);
     } else if (dev->auto_filter[mod] == BLADERF_XB200_AUTO_3DB) {
         if (34782924 <= frequency && frequency <= 61899260) {
             filter = BLADERF_XB200_50M;
@@ -347,7 +363,7 @@ int xb200_auto_filter_selection(struct bladerf *dev, bladerf_module mod,
             filter = BLADERF_XB200_CUSTOM;
         }
 
-        status = xb200_set_filterbank(dev, mod, filter);
+        status = set_filterbank(dev, false, mod, filter);
     }
 
     return status;
