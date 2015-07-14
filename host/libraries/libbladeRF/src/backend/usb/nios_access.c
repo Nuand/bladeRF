@@ -660,10 +660,14 @@ int nios_retune(struct bladerf *dev, bladerf_module module,
     uint8_t resp_flags;
     uint64_t duration;
 
-    log_verbose("%s: module=%s timestamp=%"PRIu64" nint=%u nfrac=%u\n\t\t\t\t"
-                "freqsel=0x%02x vcocap=0x%02x low_band=%d quick_tune=%d\n",
-                __FUNCTION__, module2str(module), timestamp, nint, nfrac,
-                freqsel, vcocap, low_band, quick_tune);
+    if (timestamp == NIOS_PKT_RETUNE_CLEAR_QUEUE) {
+        log_verbose("Clearing %s retune queue.\n", module2str(module));
+    } else {
+        log_verbose("%s: module=%s timestamp=%"PRIu64" nint=%u nfrac=%u\n\t\t\t\t"
+                    "freqsel=0x%02x vcocap=0x%02x low_band=%d quick_tune=%d\n",
+                    __FUNCTION__, module2str(module), timestamp, nint, nfrac,
+                    freqsel, vcocap, low_band, quick_tune);
+    }
 
     nios_pkt_retune_pack(buf, module, timestamp,
                          nint, nfrac, freqsel, vcocap, low_band, quick_tune);
