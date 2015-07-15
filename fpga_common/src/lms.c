@@ -1365,7 +1365,7 @@ static int loopback_rx(struct bladerf *dev, bladerf_loopback mode)
 
 
             status = lms_select_band(dev, BLADERF_MODULE_RX,
-                                     lms_frequency_to_hz(&f));
+                                     lms_frequency_to_hz(&f) < BLADERF_BAND_HIGH);
             break;
         }
 
