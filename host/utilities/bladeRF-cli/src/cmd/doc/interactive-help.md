@@ -264,34 +264,36 @@ Valid values for `board_model`:
 
   - `100`
 
-      XB-100 GPIO expansion board.
+      XB-100 GPIO expansion board
 
   - `200`
 
       XB-200 LF/MF/HF/VHF transverter expansion board
 
-Valid subcommands:
+Common subcommands:
 
-  - `enable <board_model>`
+  - `enable`
 
       Enable the XB-100 or XB-200 expansion board.
 
-  - `filter 200 [rx|tx] [50|144|222|custom|auto_1db|auto_3db]`
+XB-200 subcommands:
+
+  - `filter [rx|tx] [50|144|222|custom|auto_1db|auto_3db]`
 
       Selects the specified RX or TX filter on the XB-200 board. Below
       are descriptions of each of the filter options.
 
       * 50
 
-            Selects the 50-54 MHz (6 meter band) filter
+            Select the 50-54 MHz (6 meter band) filter.
 
       * 144
 
-            Selects the 144-148 MHz (2 meter band) filter
+            Select the 144-148 MHz (2 meter band) filter.
 
       * 222
 
-            Selects 222-225 MHz (1.25 meter band) filter. Realistically,
+            Select the 222-225 MHz (1.25 meter band) filter. Realistically,
             this filter option is actually slightly wider, covering
             206 MHz - 235 MHz.
 
@@ -317,13 +319,14 @@ Valid subcommands:
 
 Examples:
 
- * `xb 100 enable`
+ * `xb 200 enable`
 
-      Enables the XB-100 GPIO expansion board.
+      Enables and configures the XB-200 transverter expansion board.
 
  * `xb 200 filter rx 144`
 
-      Selects the 144-148 MHz receive filter on the XB-200 expansion board.
+      Selects the 144-148 MHz receive filter on the XB-200 transverter
+      expansion board.
 
 
 mimo
@@ -688,7 +691,7 @@ that particular command.  The parameter is one of:
 
 `sampling`    External or internal sampling mode
 
-`samplerate`  Samplerate settings
+`samplerate`  Sample rate settings
 
 `trimdac`     VCTCXO Trim DAC settings
 ----------------------------------------------------------------------

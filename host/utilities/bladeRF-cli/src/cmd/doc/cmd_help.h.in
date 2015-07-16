@@ -5,7 +5,7 @@
  *
  * This file is part of the bladeRF project
  *
- * Copyright (C) 2014 Nuand LLC
+ * Copyright (C) 2014-2015 Nuand LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
  * Any manual modifications to this file will be overwritten!
  * To edit the content of help strings, please edit interactive-help.md
  *
- * Last generated: Thu Dec 18 17:47:58 EST 2014 by jynik
+ * Last generated: Wed Jul 15 22:24:41 EDT 2015 by jynik
  */
 
 #ifndef BLADERF_CLI_DOC_CMD_HELP_H__
@@ -283,34 +283,36 @@
   "\n" \
   "-   100\n" \
   "\n" \
-  "    XB-100 GPIO expansion board.\n" \
+  "    XB-100 GPIO expansion board\n" \
   "\n" \
   "-   200\n" \
   "\n" \
   "    XB-200 LF/MF/HF/VHF transverter expansion board\n" \
   "\n" \
-  "Valid subcommands:\n" \
+  "Common subcommands:\n" \
   "\n" \
-  "-   enable <board_model>\n" \
+  "-   enable\n" \
   "\n" \
   "    Enable the XB-100 or XB-200 expansion board.\n" \
   "\n" \
-  "-   filter 200 [rx|tx] [50|144|222|custom|auto_1db|auto_3db]\n" \
+  "XB-200 subcommands:\n" \
+  "\n" \
+  "-   filter [rx|tx] [50|144|222|custom|auto_1db|auto_3db]\n" \
   "\n" \
   "    Selects the specified RX or TX filter on the XB-200 board. Below\n" \
   "    are descriptions of each of the filter options.\n" \
   "\n" \
   "    -   50\n" \
   "\n" \
-  "            Selects the 50-54 MHz (6 meter band) filter\n" \
+  "            Select the 50-54 MHz (6 meter band) filter.\n" \
   "\n" \
   "    -   144\n" \
   "\n" \
-  "            Selects the 144-148 MHz (2 meter band) filter\n" \
+  "            Select the 144-148 MHz (2 meter band) filter.\n" \
   "\n" \
   "    -   222\n" \
   "\n" \
-  "            Selects 222-225 MHz (1.25 meter band) filter. Realistically,\n" \
+  "            Select the 222-225 MHz (1.25 meter band) filter. Realistically,\n" \
   "            this filter option is actually slightly wider, covering\n" \
   "            206 MHz - 235 MHz.\n" \
   "\n" \
@@ -336,14 +338,14 @@
   "\n" \
   "Examples:\n" \
   "\n" \
-  "-   xb 100 enable\n" \
+  "-   xb 200 enable\n" \
   "\n" \
-  "    Enables the XB-100 GPIO expansion board.\n" \
+  "    Enables and configures the XB-200 transverter expansion board.\n" \
   "\n" \
   "-   xb 200 filter rx 144\n" \
   "\n" \
-  "    Selects the 144-148 MHz receive filter on the XB-200 expansion\n" \
-  "    board.\n" \
+  "    Selects the 144-148 MHz receive filter on the XB-200 transverter\n" \
+  "    expansion board.\n" \
   "\n" \
 
 
@@ -687,7 +689,7 @@
   "\n" \
   "        sampling External or internal sampling mode\n" \
   "\n" \
-  "      samplerate Samplerate settings\n" \
+  "      samplerate Sample rate settings\n" \
   "\n" \
   "         trimdac VCTCXO Trim DAC settings\n" \
   "  -----------------------------------------------------------------------\n" \

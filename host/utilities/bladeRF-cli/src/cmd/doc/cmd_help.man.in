@@ -329,7 +329,7 @@ Valid values for \f[C]board_model\f[]:
 \f[C]100\f[]
 .RS 2
 .PP
-XB\-100 GPIO expansion board.
+XB\-100 GPIO expansion board
 .RE
 .IP \[bu] 2
 \f[C]200\f[]
@@ -338,15 +338,17 @@ XB\-100 GPIO expansion board.
 XB\-200 LF/MF/HF/VHF transverter expansion board
 .RE
 .PP
-Valid subcommands:
+Common subcommands:
 .IP \[bu] 2
-\f[C]enable\ <board_model>\f[]
+\f[C]enable\f[]
 .RS 2
 .PP
 Enable the XB\-100 or XB\-200 expansion board.
 .RE
+.PP
+XB\-200 subcommands:
 .IP \[bu] 2
-\f[C]filter\ 200\ [rx|tx]\ [50|144|222|custom|auto_1db|auto_3db]\f[]
+\f[C]filter\ [rx|tx]\ [50|144|222|custom|auto_1db|auto_3db]\f[]
 .RS 2
 .PP
 Selects the specified RX or TX filter on the XB\-200 board.
@@ -357,7 +359,7 @@ Below are descriptions of each of the filter options.
 .IP
 .nf
 \f[C]
-Selects\ the\ 50\-54\ MHz\ (6\ meter\ band)\ filter
+Select\ the\ 50\-54\ MHz\ (6\ meter\ band)\ filter.
 \f[]
 .fi
 .RE
@@ -367,7 +369,7 @@ Selects\ the\ 50\-54\ MHz\ (6\ meter\ band)\ filter
 .IP
 .nf
 \f[C]
-Selects\ the\ 144\-148\ MHz\ (2\ meter\ band)\ filter
+Select\ the\ 144\-148\ MHz\ (2\ meter\ band)\ filter.
 \f[]
 .fi
 .RE
@@ -377,7 +379,7 @@ Selects\ the\ 144\-148\ MHz\ (2\ meter\ band)\ filter
 .IP
 .nf
 \f[C]
-Selects\ 222\-225\ MHz\ (1.25\ meter\ band)\ filter.\ Realistically,
+Select\ the\ 222\-225\ MHz\ (1.25\ meter\ band)\ filter.\ Realistically,
 this\ filter\ option\ is\ actually\ slightly\ wider,\ covering
 206\ MHz\ \-\ 235\ MHz.
 \f[]
@@ -425,16 +427,17 @@ that\ are\ not\ associated\ with\ the\ on\-board\ filters.
 .PP
 Examples:
 .IP \[bu] 2
-\f[C]xb\ 100\ enable\f[]
+\f[C]xb\ 200\ enable\f[]
 .RS 2
 .PP
-Enables the XB\-100 GPIO expansion board.
+Enables and configures the XB\-200 transverter expansion board.
 .RE
 .IP \[bu] 2
 \f[C]xb\ 200\ filter\ rx\ 144\f[]
 .RS 2
 .PP
-Selects the 144\-148 MHz receive filter on the XB\-200 expansion board.
+Selects the 144\-148 MHz receive filter on the XB\-200 transverter
+expansion board.
 .RE
 .SS mimo
 .PP
@@ -1021,7 +1024,7 @@ T}
 T{
 \f[C]samplerate\f[]
 T}@T{
-Samplerate settings
+Sample rate settings
 T}
 T{
 \f[C]trimdac\f[]
