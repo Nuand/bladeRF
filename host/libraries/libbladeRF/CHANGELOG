@@ -5,6 +5,23 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.4.1 (2015-07-16)
+--------------------------------
+
+This version of libbladeRF is intended for use with:
+
+FX3 Firmware v1.8.0
+FPGA         v0.3.3
+
+Changes:
+  * bladerf_open() and bladerf_open_with_devinfo() now support matching
+    a subset of a serial number.
+
+  * Fixed regression in XB-200 filter bank selection (#404)
+
+  * Fixed regression in exiting loopback mode (#405)
+
+
 v1.4.0 (2015-06-30)
 --------------------------------
 
