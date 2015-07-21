@@ -10,6 +10,8 @@ export DH_VERBOSE=1
 # it into the build process.
 DEB_VERSION_STRING ?= $(shell dpkg-parsechangelog | grep ^Version: | cut -d' ' -f2-)
 
+DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
+
 ifneq (,$(findstring SNAPSHOT,$(DEB_VERSION_STRING)))
 	# Format is like: 0.9.0+1SNAPSHOT20131027041813-gitedc468d~saucy
 	DVS_SPLIT := $(subst ~, ,$(subst -git, ,$(DEB_VERSION_STRING)))
@@ -34,6 +36,7 @@ endif
 
 override_dh_auto_configure:
 	dh_auto_configure -- 	-DVERSION_INFO_OVERRIDE:STRING=$(VERSION_INFO_OVERRIDE) \
+							-DCMAKE_INSTALL_LIBDIR="lib/${DEB_HOST_MULTIARCH}" \
 							-DENABLE_HOST_BUILD=ON \
 							-DENABLE_FX3_BUILD=OFF \
 							-DBUILD_DOCUMENTATION=ON \

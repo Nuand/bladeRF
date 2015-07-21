@@ -31,8 +31,9 @@ if(MSVC)
     )
 endif()
 
-
+if (NOT CMAKE_INSTALL_LIBDIR)
 include(GNUInstallDirs)
+endif (NOT CMAKE_INSTALL_LIBDIR)
 
 # Fall back to just "lib" if the item provided by GNUInstallDirs doesn't exist
 # For example, on Ubuntu 13.10 with CMake 2.8.11.2,
