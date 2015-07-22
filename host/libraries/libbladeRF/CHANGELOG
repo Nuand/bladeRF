@@ -5,6 +5,26 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.4.2 (2015-07-22)
+--------------------------------
+
+This version of libbladeRF is intended for use with:
+
+FX3 Firmware v1.8.0
+FPGA         v0.3.3
+
+Changes:
+  * Paths within the ${CMAKE_INSTALL_PREFIX} are now searched when looking
+    for an FPGA bitstream to autoload.
+
+    LIBBLADERF_SEARCH_PREFIX_OVERRIDE may be defined in the CMake invocation
+    to override the ${CMAKE_INSTALL_PREFIX}, which may be needed during
+    cross-builds.
+
+    The previously hard-coded locations have been kept in the search list,
+    but at a lower priority, to avoid breaking existing packaging scripts.
+
+
 v1.4.1 (2015-07-16)
 --------------------------------
 
