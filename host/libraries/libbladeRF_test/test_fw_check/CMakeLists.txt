@@ -24,6 +24,7 @@ include(ShortFileMacro)
 
 add_definitions(-DLOGGING_ENABLED)
 add_definitions(-DTEST_FX3_FW_VALIDATION)
+add_definitions(-DLIBBLADERF_SEARCH_PREFIX="${CMAKE_INSTALL_PREFIX}")
 
 include_directories(${INCLUDES})
 add_executable(libbladeRF_test_fw_check ${SRC})

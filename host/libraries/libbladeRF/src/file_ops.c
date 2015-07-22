@@ -172,6 +172,23 @@ static const struct search_path_entries search_paths[] = {
     { false, "" },
     { true,  "/.config/Nuand/bladeRF/" },
     { true,  "/.Nuand/bladeRF/" },
+
+    /* LIBBLADERF_SEARCH_PATH_PREFIX is defined in the libbladeRF
+     * CMakeLists.txt file. It defaults to ${CMAKE_INSTALL_PREFIX}, but
+     * can be overridden via -DLIBBLADERF_SEARCH_PATH_OVERRIDE
+     */
+    { false, LIBBLADERF_SEARCH_PREFIX "/etc/Nuand/bladeRF/" },
+    { false, LIBBLADERF_SEARCH_PREFIX "/share/Nuand/bladeRF/" },
+
+    /* These two entries are here for reverse compatibility.
+     *
+     * We failed to prefix ${CMAKE_INSTALL_PREFIX} on these from the beginning,
+     * forcing package maintainers to hard-code one of these locations,
+     * despite having a different ${CMAKE_INSTALL_PREFIX}.
+     *
+     * We'll keep these around for some time as fall-backs, as not to break
+     * existing packaging scripts.
+     */
     { false, "/etc/Nuand/bladeRF/" },
     { false, "/usr/share/Nuand/bladeRF/" },
 };

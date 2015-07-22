@@ -137,6 +137,19 @@ if("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" OR
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
 endif()
 
+# We define LIBBLADERF_SEARCH_PREFIX to specify where libbladeRF should look
+# for files, such as FPGA bitstreams to autoload.
+#
+# This defaults to the value of ${CMAKE_INSTALL_PREFIX}. However,
+# users may wish to override when cross compiling.
+if(LIBBLADERF_SEARCH_PREFIX_OVERRIDE)
+    add_definitions(-DLIBBLADERF_SEARCH_PREFIX="${LIBBLADERF_SEARCH_PREFIX_OVERRIDE}")
+else()
+    add_definitions(-DLIBBLADERF_SEARCH_PREFIX="${CMAKE_INSTALL_PREFIX}")
+endif()
+
+
+
 ################################################################################
 # Include paths
 ################################################################################

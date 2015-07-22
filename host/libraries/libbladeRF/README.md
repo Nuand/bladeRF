@@ -40,3 +40,4 @@ more information.
 | -DENABLE_LOCK_CHECKS=\<ON/OFF\>                   | Enable checks for lock acquistion failures (e.g., deadlock). Default: OFF                                            |
 | -DENABLE_USB_DEV_RESET_ON_OPEN=\<ON/OFF\>         | Enable USB port reset when opening a device. Defaults to ON for Linux, OFF otherwise.                                |
 | -DLIBUSB_PATH=\</path/to/libusb\>                 | Path to libusb files. This is generally only needed for Windows users who downloaded binary distributions.           |
+| -DLIBBLADERF_SEARCH_PREFIX_OVERRIDE=\<path\>      | Override path prefix used by libbladeRF to search for files (e.g., FPGA bitstreams). If not specified, ${CMAKE_INSTALL_PREFIX} is used as the default search prefix. This may be required when cross-compiling. |
