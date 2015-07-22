@@ -1,3 +1,13 @@
+bladerf (2015.07) unstable; urgency=low
+
+  * FPGA: Fixed bug where TX_NOW bursts could cause metadata/sample FIFO slips
+  * libbladeRF: Devices can now be opened using only a subset of a serial number
+  * libbladeRF: Fixed regressions in XB-200 filterbank selection and loopback support
+  * libbladeRF: Corrected zero-padding at end of TX burst
+  * FPGA bitstream v0.3.4, FX3 Firmware v1.8.0, libbladeRF v1.4.3, bladeRF-cli v1.2.1
+
+ -- Jon Szymaniak <jon.szymaniak@gmail.com>  Sat, 25 Jul 2015 16:35:38 -0400
+
 bladerf (2015.06-rc1) unstable; urgency=low
 
   [ Jon Szymaniak ]

@@ -6,7 +6,113 @@ hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
 --------------------------------------------------------------------------------
- 2015.06 (2015-06-30)
+ 2015.07 (2015-07-25)
+--------------------------------------------------------------------------------
+
+This release introduces minor feature additions and bug fixes.  It consists of
+the following versions:
+
+    * FPGA bitstream v0.3.4
+    * FX3 firmware   v1.8.0
+    * libbladeRF     v1.4.3
+    * bladeRF-cli    v1.2.1
+
+
+New Features:
+
+    * libbladeRF:
+         - bladerf_open() and bladerf_open_with_devinfo() support matching a
+           device via a subset of its serial number.
+
+           For example, the bladeRF-cli uses bladerf_open() to open a specifed
+           device, so the following can now be used to open a device with the
+           serial number, f12ce1037830a1b27f3ceeba1f521413:
+
+                bladeRF-cli -i -d "*:serial=f12"
+
+    * Miscellaneous
+        - Added Octave/MATLAB routines to import/export data from files
+          containing complex samples from GNU Radio.
+
+
+The following tracker items have been closed since the 2015.06-rc1 release:
+
+    * Pull Requests:
+        - #402: fixup debian/changelog
+
+    * Bugs:
+        - #413: [libbladeRF] Bursts must end with 3 zero samples, not 2.
+        - #411: [libbladeRF] File search uses hardcoded /usr/share and /etc,
+                should use install prefix
+        - #405: lms.c: Fail to correctly exit loopback mode for f >= 1.5 GHz
+        - #404: [libbladeRF] XB-200 filter bank selection regression in 41476cb
+        - #400: [hdl] ATSC FPGA build broken
+
+    * Enhancements:
+        - #396: [libbladeRF] Match a subset of serial number
+
+    * Other:
+        - #407: Setting Loopback resets/changes Rx module frequency [duplicate]
+        - #406: Persistent timeouts after using API [invalid]
+        - #397: [libbladeRF] API call to reset timestamps [wontfix]
+
+
+Outstanding issue tracker items:
+
+    * Pull Requests:
+        - #381: RPM packaging
+        - #379: Indent
+        - #267: Adjust nios simulation component so it matches the
+                synthesis version
+
+    * Bugs:
+        - #412: [bladeRF-cli] Calibration often fails
+        - #408: [libbladeRF] Device hangs after repeated open/stream/close
+        - #401: libusb detection fails when x-compiling for Android
+        - #400: [hdl] ATSC FPGA build broken
+        - #399: Update libbladeRF and FX3 Firmware for Cypress FX3 SDK 1.3.3
+                support
+        - #395: [hdl] Timing Closure on LMS6 SPI interface
+        - #390: Warning after running rx start when loopback=firmware
+        - #373: "trap divide error" while generating calibration table in
+                CLI: cal table dc rx
+        - #362: Calibration table generation hangs, performance issues
+        - #360: [hdl] Older FPGA revisions no longer build
+        - #354: [hdl] failure to include STP file due to talkback req ought to
+                be fatal
+        - #352: [libbladeRF] Intermittent out-of-order transfer callbacks with
+                Windows & libusb 1.0.19
+        - #342: [Installer] Windows installer doesn't ship 32-bit MATLAB support
+        - #321: How about a switch for bladeRF-cli to emit calibration in a
+                format bladeRF-cli can later read?
+        - #301: Direct sampling with XB-200 needs additional improvements
+
+    * Enhancements:
+        - #410: [libbladeRF] Provide a separate "Access denied" error code
+        - #409: [bladeRF-cli] Report file access issues prior to DC cal table
+                procedure
+        - #403: LibbladeRF support for setting MIMO mode
+        - #387: FPGA GPIO Bindings to BladeRF / Osmocom Library
+        - #382: 'bladerf_get_serial()' fixed buffer size should be ideally
+                handled in the API
+        - #386: android usb bindings
+        - #353: [bladeRF-cli, libbladeRF] Improve jump_to_boot docs and
+                implementation
+        - #344: [fx3] Investigate/fix field checksums
+        - #328: [libbladeRF] Review and evaluate use of stream lock WRT libusb
+        - #319: [bladeRF-cli] Add libedit and libreadline support
+        - #240: [libbladeRF] Prefer static assertion over assert() when possible
+        - #236: [libbladeRF] API calls for XB-100 required
+        - #221: Synchronized Tx/Rx of multiple bladeRFs for MIMO using Mini
+                Expansion Header
+        - #205: [FX3 Firmware] Code cleanup and potential improvements
+        - #174: Migrate FX3 build to CMake-generated Makefile
+
+    * Other:
+        - #388: [FX3 Firmware] Investigate USB3 drive controls
+
+--------------------------------------------------------------------------------
+ 2015.06-rc1 (2015-06-30)
 --------------------------------------------------------------------------------
 
 This release introduces new features and bug fixes.  It consists of the
@@ -66,9 +172,9 @@ Outstanding issue tracker items:
 
     * Pull Requests:
         - #381: RPM packaging
-        - #379: Indent 
+        - #379: Indent
         - #267: Adjust nios simulation component so it matches the
-                synthesis version 
+                synthesis version
 
     * Bugs:
         - #401: libusb detection fails when x-compiling for Android
