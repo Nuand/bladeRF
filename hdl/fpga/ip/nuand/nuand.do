@@ -33,5 +33,17 @@ proc compile_nuand { root } {
 
     vcom -work nuand -2008 [file join $root ./simulation/fx3_model.vhd]
     vcom -work nuand -2008 [file join $root ./simulation/lms6002d_model.vhd]
+
+    vcom -work nuand -2008 [file join $root ./synthesis/lms6002d/vhdl/lms6002d.vhd]
+    vcom -work nuand -2008 [file join $root ./synthesis/lms6002d/vhdl/tb/lms6002d_tb.vhd]
+
+    vcom -work nuand -2008 [file join $root ../altera/rx_fifo/rx_fifo.vhd]
+    vcom -work nuand -2008 [file join $root ../altera/tx_fifo/tx_fifo.vhd]
+    vcom -work nuand -2008 [file join $root ../altera/rx_meta_fifo/rx_meta_fifo.vhd]
+    vcom -work nuand -2008 [file join $root ../altera/tx_meta_fifo/tx_meta_fifo.vhd]
+
+    vcom -work nuand -2008 [file join $root ./synthesis/fifo_reader.vhd]
+    vcom -work nuand -2008 [file join $root ./synthesis/fifo_writer.vhd]
+    vcom -work nuand -2008 [file join $root ./simulation/sample_stream_tb.vhd]
 }
 

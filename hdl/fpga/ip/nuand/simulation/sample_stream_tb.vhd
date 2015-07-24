@@ -21,8 +21,8 @@ architecture arch of sample_stream_tb is
 
     -- Clock half periods
     constant FX3_HALF_PERIOD    :   time        := 1.0/(100.0e6)/2.0*1 sec ;
-    constant TX_HALF_PERIOD     :   time        := 1.0/(40.0e6)/2.0*1 sec ;
-    constant RX_HALF_PERIOD     :   time        := 1.0/(40.0e6)/2.0*1 sec ;
+    constant TX_HALF_PERIOD     :   time        := 1.0/(9.0e6)/2.0*1 sec ;
+    constant RX_HALF_PERIOD     :   time        := 1.0/(9.0e6)/2.0*1 sec ;
 
     -- Clocks
     signal fx3_clock            :   std_logic   := '1' ;
@@ -30,6 +30,12 @@ architecture arch of sample_stream_tb is
     signal rx_clock             :   std_logic   := '1' ;
 
     signal reset                :   std_logic   := '1' ;
+
+    -- Configuration
+    signal usb_speed            :   std_logic ;
+    signal meta_en              :   std_logic ;
+    signal rx_timestamp         :   unsigned(63 downto 0)       := (others =>'0') ;
+    signal tx_timestamp         :   unsigned(63 downto 0)       := (others =>'0') ;
 
     -- TX Signalling
     signal tx_enable            :   std_logic ;
@@ -69,12 +75,12 @@ architecture arch of sample_stream_tb is
     -- FIFO type
     type fifo_t is record
         aclr    :   std_logic ;
-        data    :   std_logic_vector(31 downto 0) ;
+        data    :   std_logic_vector ;
         rdclk   :   std_logic ;
         rdreq   :   std_logic ;
         wrclk   :   std_logic ;
         wrreq   :   std_logic ;
-        q       :   std_logic_vector(31 downto 0) ;
+        q       :   std_logic_vector ;
         rdempty :   std_logic ;
         rdfull  :   std_logic ;
         rdusedw :   std_logic_vector ;
@@ -83,14 +89,41 @@ architecture arch of sample_stream_tb is
         wrusedw :   std_logic_vector ;
     end record ;
 
-    -- TX FIFO
-    signal txfifo       :   fifo_t( rdusedw(11 downto 0), wrusedw(11 downto 0) ) ;
-    signal rxfifo       :   fifo_t( rdusedw( 9 downto 0), wrusedw( 9 downto 0) ) ;
+    -- FIFOs
+    signal txfifo       :   fifo_t( data( 31 downto 0), q( 31 downto 0), rdusedw(11 downto 0), wrusedw(11 downto 0) ) ;
+    signal rxfifo       :   fifo_t( data( 31 downto 0), q( 31 downto 0), rdusedw(11 downto 0), wrusedw(11 downto 0) ) ;
+    signal txmeta       :   fifo_t( data( 31 downto 0), q(127 downto 0), rdusedw( 2 downto 0), wrusedw( 4 downto 0) ) ;
+    signal rxmeta       :   fifo_t( data(127 downto 0), q( 31 downto 0), rdusedw( 6 downto 0), wrusedw( 4 downto 0) ) ;
 
     alias lms_tx_clock  :   std_logic is tx_clock ;
     alias lms_rx_clock  :   std_logic is rx_clock ;
 
 begin
+
+    usb_speed <= '0' ;
+    meta_en <= '1' ;
+
+    increment_tx_ts : process(tx_clock)
+        variable ping : boolean := true ;
+    begin
+        if( rising_edge(tx_clock) ) then
+            ping := not ping ;
+            if( ping = true ) then
+                tx_timestamp <= tx_timestamp + 1 ;
+            end if ;
+        end if ;
+    end process ;
+
+    increment_rx_ts : process(rx_clock)
+        variable ping : boolean := true ;
+    begin
+        if( rising_edge(rx_clock) ) then
+            ping := not ping ;
+            if( ping = true ) then
+                rx_timestamp <= rx_timestamp + 1 ;
+            end if ;
+        end if ;
+    end process ;
 
     -- Clock creation
     fx3_clock   <= not fx3_clock after FX3_HALF_PERIOD ;
@@ -118,6 +151,26 @@ begin
         wrusedw             =>  txfifo.wrusedw
       ) ;
 
+    -- TX Meta FIFO
+    txmeta.rdclk <= tx_clock ;
+    txmeta.wrclk <= fx3_clock ;
+    U_tx_meta_fifo : entity work.tx_meta_fifo
+      port map (
+        aclr                =>  txmeta.aclr,
+        data                =>  txmeta.data,
+        rdclk               =>  txmeta.rdclk,
+        rdreq               =>  txmeta.rdreq,
+        wrclk               =>  txmeta.wrclk,
+        wrreq               =>  txmeta.wrreq,
+        q                   =>  txmeta.q,
+        rdempty             =>  txmeta.rdempty,
+        rdfull              =>  txmeta.rdfull,
+        rdusedw             =>  txmeta.rdusedw,
+        wrempty             =>  txmeta.wrempty,
+        wrfull              =>  txmeta.wrfull,
+        wrusedw             =>  txmeta.wrusedw
+      ) ;
+
     -- RX FIFO
     rxfifo.rdclk <= fx3_clock ;
     rxfifo.wrclk <= rx_clock ;
@@ -138,6 +191,26 @@ begin
         wrusedw             =>  rxfifo.wrusedw
       ) ;
 
+    -- RX Meta FIFO
+    rxmeta.rdclk <= fx3_clock ;
+    rxmeta.wrclk <= rx_clock ;
+    U_rx_meta_fifo : entity work.rx_meta_fifo
+      port map (
+        aclr                =>  rxmeta.aclr,
+        data                =>  rxmeta.data,
+        rdclk               =>  rxmeta.rdclk,
+        rdreq               =>  rxmeta.rdreq,
+        wrclk               =>  rxmeta.wrclk,
+        wrreq               =>  rxmeta.wrreq,
+        q                   =>  rxmeta.q,
+        rdempty             =>  rxmeta.rdempty,
+        rdfull              =>  rxmeta.rdfull,
+        rdusedw             =>  rxmeta.rdusedw,
+        wrempty             =>  rxmeta.wrempty,
+        wrfull              =>  rxmeta.wrfull,
+        wrusedw             =>  rxmeta.wrusedw
+      ) ;
+
     -- TX FIFO Reader
     U_fifo_reader : entity work.fifo_reader
       port map (
@@ -145,9 +218,19 @@ begin
         reset               =>  reset,
         enable              =>  tx_enable,
 
+        usb_speed           =>  usb_speed,
+        meta_en             =>  meta_en,
+        timestamp           =>  tx_timestamp,
+
+        fifo_usedw          =>  txfifo.rdusedw,
         fifo_read           =>  txfifo.rdreq,
         fifo_empty          =>  txfifo.rdempty,
         fifo_data           =>  txfifo.q,
+
+        meta_fifo_usedw     =>  txmeta.rdusedw,
+        meta_fifo_read      =>  txmeta.rdreq,
+        meta_fifo_empty     =>  txmeta.rdempty,
+        meta_fifo_data      =>  txmeta.q,
 
         out_i               =>  tx_sample_i,
         out_q               =>  tx_sample_q,
@@ -157,12 +240,17 @@ begin
         underflow_count     =>  underflow_count,
         underflow_duration  =>  underflow_duration
       ) ;
+
     -- RX FIFO Writer
     U_fifo_writer : entity work.fifo_writer
       port map (
         clock               =>  rx_clock,
         reset               =>  reset,
         enable              =>  rx_enable,
+
+        usb_speed           =>  usb_speed,
+        meta_en             =>  meta_en,
+        timestamp           =>  rx_timestamp,
 
         in_i                =>  rx_sample_i,
         in_q                =>  rx_sample_q,
@@ -172,6 +260,12 @@ begin
         fifo_write          =>  rxfifo.wrreq,
         fifo_full           =>  rxfifo.wrfull,
         fifo_data           =>  rxfifo.data,
+        fifo_usedw          =>  rxfifo.wrusedw,
+
+        meta_fifo_full      =>  rxmeta.wrfull,
+        meta_fifo_usedw     =>  rxmeta.wrusedw,
+        meta_fifo_data      =>  rxmeta.data,
+        meta_fifo_write     =>  rxmeta.wrreq,
 
         overflow_led        =>  overflow_led,
         overflow_count      =>  overflow_count,
@@ -243,27 +337,57 @@ begin
         variable dang       :   real  := MATH_PI/100.0 ;
         variable sample_i   :   signed(15 downto 0) ;
         variable sample_q   :   signed(15 downto 0) ;
+        variable ts         :   integer ;
     begin
         if( reset = '1' ) then
             txfifo.data <= (others =>'0') ;
             txfifo.wrreq <= '0' ;
             wait until reset = '0' ;
         end if ;
-        while true loop
-            wait until rising_edge(fx3_clock) and unsigned(txfifo.wrusedw) < 512 ;
-            for i in 1 to 512 loop
-                sample_i := to_signed(integer(2047.0*cos(ang)),sample_i'length);
-                sample_q := to_signed(integer(2047.0*sin(ang)),sample_q'length);
-                txfifo.data <= std_logic_vector(sample_q & sample_i) ;
-                txfifo.wrreq <= '1' ;
-                nop( fx3_clock, 1 );
-                ang := (ang + dang) mod MATH_2_PI ;
-            end loop ;
-            txfifo.wrreq <= '0' ;
-            if( CHECK_UNDERFLOW ) then
-                nop( fx3_clock, 3000 ) ;
-            end if ;
+        for i in 1 to 100 loop
+            wait until rising_edge(fx3_clock) ;
         end loop ;
+        for j in 1 to 5 loop
+            ts := 16#1000# + (j-1)*10000 ;
+            for i in 1 to 5 loop
+                wait until rising_edge(fx3_clock) and unsigned(txfifo.wrusedw) < 512 ;
+                txmeta.data <= (others =>'0') ;
+                txmeta.data <= x"12345678" ;
+                txmeta.wrreq <= '1' ;
+                wait until rising_edge(fx3_clock) ;
+                txmeta.data <= x"00000000" ;
+                wait until rising_edge(fx3_clock) ;
+                txmeta.data <= std_logic_vector(to_unsigned(ts,txmeta.data'length)) ;
+                ts := ts + 508 ;
+                wait until rising_edge(fx3_clock) ;
+                txmeta.data <= x"00000000" ;
+                wait until rising_edge(fx3_clock) ;
+                txmeta.wrreq <= '0' ;
+                txmeta.data <= (others =>'0') ;
+                for r in 1 to 508 loop
+                    if( r = 1 or r = 508 ) then
+                        sample_i := (others =>'0') ;
+                        sample_q := (others =>'0') ;
+                    else
+                        sample_i := to_signed(2047, sample_i'length) ;
+                        sample_q := to_signed(2047, sample_q'length) ;
+                    end if ;
+                    --sample_i := to_signed(integer(2047.0*cos(ang)),sample_i'length);
+                    --sample_q := to_signed(integer(2047.0*sin(ang)),sample_q'length);
+                    txfifo.data <= std_logic_vector(sample_q & sample_i) after 0.1 ns ;
+                    txfifo.wrreq <= '1' after 0.1 ns ;
+                    nop( fx3_clock, 1 );
+                    txfifo.wrreq <= '0' after 0.1 ns ;
+                    ang := (ang + dang) mod MATH_2_PI ;
+                end loop ;
+                if( CHECK_UNDERFLOW ) then
+                    nop( fx3_clock, 3000 ) ;
+                end if ;
+                txfifo.data <= (others =>'X') after 0.1 ns ;
+            end loop ;
+            nop(fx3_clock, 100000) ;
+        end loop ;
+        wait ;
     end process ;
 
     -- RX FIFO Reader
@@ -299,7 +423,7 @@ begin
         nop( fx3_clock, 10 ) ;
         rx_enable <= '1' ;
         tx_enable <= '1' ;
-        nop( fx3_clock, 100000 ) ;
+        nop( fx3_clock, 2000000 ) ;
         report "-- End of Simulation --" ;
         stop(2) ;
         wait ;

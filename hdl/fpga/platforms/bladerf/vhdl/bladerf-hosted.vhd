@@ -797,7 +797,7 @@ begin
       ) ;
 
     xb_gpio_direction_proc : for i in 0 to 31 generate
-        process(xb_gpio_dir, nios_xb_gpio_out, nios_xb_gpio_in, xb_mode, nios_ss_n)
+        process(all)
         begin
             if (xb_gpio_dir(i) = '1') then
                 nios_xb_gpio_in(i) <= nios_xb_gpio_out(i);
@@ -821,20 +821,16 @@ begin
     nios_gpio(22 downto 21) <= xb_mode;
     process(all)
     begin
+        dac_sclk <= nios_sclk ;
+        dac_sdi <= nios_sdio ;
+        nios_sdo <= dac_sdo ;
         if( xb_mode = "00" ) then
             xb_gpio_dir <= nios_xb_gpio_dir(31 downto 0);
-            dac_sclk <= nios_sclk;
             dac_csx <= nios_ss_n(0);
-            nios_sdo <= dac_sdo;
-            dac_sdi <= nios_sdio;
-            -- missing 30-32
         elsif( xb_mode = "10" ) then
             xb_gpio_dir <= nios_xb_gpio_dir(31 downto 0);
             if (nios_ss_n(1 downto 0) = "10") then --
-                dac_sclk <= nios_sclk;
                 dac_csx <= '0';
-                nios_sdo <= dac_sdo;
-                dac_sdi <= nios_sdio;
             elsif (nios_ss_n(1 downto 0) = "01") then
                 dac_csx <= '1';
             else
@@ -842,6 +838,7 @@ begin
             end if;
         else
             xb_gpio_dir <= nios_xb_gpio_dir(31 downto 0)  ;
+            dac_csx <= nios_ss_n(0) ;
         end if;
     end process;
 

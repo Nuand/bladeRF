@@ -122,10 +122,10 @@ BEGIN
 		lpm_type => "dcfifo",
 		lpm_width => 32,
 		lpm_widthu => 12,
-		overflow_checking => "OFF",
+		overflow_checking => "ON",
 		rdsync_delaypipe => 5,
 		read_aclr_synch => "ON",
-		underflow_checking => "OFF",
+		underflow_checking => "ON",
 		use_eab => "ON",
 		write_aclr_synch => "ON",
 		wrsync_delaypipe => 5

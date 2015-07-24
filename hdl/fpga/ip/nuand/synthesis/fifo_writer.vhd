@@ -49,7 +49,7 @@ begin
     process( clock, reset)
     begin
         if( reset = '1') then
-            dma_downcount <= dma_buf_sz;
+            dma_downcount <= (others =>'0') ;
             meta_written <= '0' ;
         elsif( rising_edge( clock ) ) then
             if (enable = '1' and meta_en = '1') then

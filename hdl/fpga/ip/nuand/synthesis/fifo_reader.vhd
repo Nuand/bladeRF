@@ -39,7 +39,6 @@ architecture simple of fifo_reader is
     signal meta_time_eq         :   std_logic ;
     signal meta_time_hit        :   signed(15 downto 0) ;
     signal meta_p_time          :   unsigned(63 downto 0);
-    signal meta_p_sec           :   unsigned(31 downto 0);
     signal meta_loaded          :   std_logic;
 
 
@@ -74,9 +73,9 @@ begin
         elsif(rising_edge(clock)) then
             if (meta_time_eq = '1') then
                 if (usb_speed = '0') then
-                    meta_time_hit <= to_signed(1014, meta_time_hit'length);
+                    meta_time_hit <= to_signed(1015, meta_time_hit'length);
                 else
-                    meta_time_hit <= to_signed(502, meta_time_hit'length);
+                    meta_time_hit <= to_signed(503, meta_time_hit'length);
                 end if;
             else
                 if (meta_time_hit > 0) then
@@ -106,10 +105,6 @@ begin
         end if ;
     end process ;
 
-    -- Muxed values so empty reads come out as zeroes
-    out_i <= resize(signed(fifo_data(11 downto  0)),out_i'length) when fifo_empty = '0' else (others =>'0') ;
-    out_q <= resize(signed(fifo_data(27 downto 16)),out_q'length) when fifo_empty = '0' else (others =>'0') ;
-
     register_out_valid : process(clock, reset)
         constant COUNT_RESET : natural := 11 ;
         variable prev_enable : std_logic := '0' ;
@@ -120,6 +115,13 @@ begin
             prev_enable := '0' ;
             downcount := COUNT_RESET ;
         elsif( rising_edge(clock) ) then
+            if( fifo_empty = '1' ) then
+                out_i <= (others =>'0') ;
+                out_q <= (others =>'0') ;
+            else
+                out_i <= resize(signed(fifo_data(11 downto 0)),out_i'length) ;
+                out_q <= resize(signed(fifo_data(27 downto 16)),out_q'length) ;
+            end if ;
             if( enable = '1' ) then
                 if( downcount > 0 ) then
                     if( downcount mod 2 = 1 ) then
