@@ -65,11 +65,6 @@ steps can be performed with a single function call, with:
     </li>
 </ul>
 
-The final samples in a burst should be zeros to ensure that the analog front-end
-DACs will be held at zeros between bursts. The synchronous interface takes care
-of this for the caller, but it is a good practice to include two or more zero
-samples when using the ::BLADERF_META_FLAG_TX_BURST_END flag.
-
 Note that when completing a burst with ::BLADERF_META_FLAG_TX_BURST_END, up
 to one of the synchronous interface's buffers may be flushed.  This is important
 to consider, since this defines the minimum value of the next timestamp
