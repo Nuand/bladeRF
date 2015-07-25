@@ -305,7 +305,7 @@ int sync_tx_meta_update_example(struct bladerf *dev,
     int status = 0;
     unsigned int i;
     struct bladerf_metadata meta;
-    int16_t zeros[] = { 0, 0, 0, 0 }; /* Two 0+0j samples */
+    int16_t zero_sample[] = { 0, 0 }; /* A 0+0j sample */
 
     memset(&meta, 0, sizeof(meta));
 
@@ -314,7 +314,8 @@ int sync_tx_meta_update_example(struct bladerf *dev,
      *
      * In successive calls, we'll break this long "burst" up into shorter bursts
      * by using the BLADERF_META_FLAG_TX_UPDATE_TIMESTAMP flag with new
-     * timestamps.  The discontinuities will be zero-padded.
+     * timestamps.  libbladeRF will zero-pad discontinuities and/or schedule
+     * timestamps for us, as needed.
      */
     meta.flags = BLADERF_META_FLAG_TX_BURST_START;
 
@@ -355,9 +356,11 @@ int sync_tx_meta_update_example(struct bladerf *dev,
 
     }
 
-    /* End the burst and flush remaining samples. */
+    /* For simplicity, we use a single zero sample to end the burst and request
+     * that all pending samples be flushed to the hardware. */
     meta.flags = BLADERF_META_FLAG_TX_BURST_END;
-    status = bladerf_sync_tx(dev, zeros, 2, &meta, timeout_ms);
+    status = bladerf_sync_tx(dev, zero_sample, 1, &meta, timeout_ms);
+    meta.timestamp++;
 
     /* Wait for samples to finish being transmitted. */
     if (status == 0) {
