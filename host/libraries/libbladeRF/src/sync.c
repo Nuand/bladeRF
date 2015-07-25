@@ -930,19 +930,25 @@ int sync_tx(struct bladerf *dev, void *samples, unsigned int num_samples,
                             s->meta.curr_msg_off += to_zero;
 
                             /* If we're going to supply the FPGA with a
-                             * discontinuity, it is required that the last two
+                             * discontinuity, it is required that the last three
                              * samples provided be zero in order to hold the
-                             * DAC @ (0 + 0j). If we're ending a burst with only
-                             * a single sample at the end of the message, we'll
-                             * need to continue onto the next message. At this
-                             * next message, we'll either encounter the
-                             * requested timestamp or zero-fill the message to
-                             * fulfil this "two zero sample" requirement, and
-                             * set the timestamp appropriately at the following
-                             * message. */
-                            if (to_zero == 1 && left_in_msg(s) == 0) {
+                             * DAC @ (0 + 0j).
+                             *
+                             * See "Figure 9: TX data interface" in the LMS6002D
+                             * data sheet for the register stages that create
+                             * this requirement.
+                             *
+                             * If we're ending a burst with < 3 zeros samples at
+                             * the end of the message, we'll need to continue
+                             * onto the next message. At this next message,
+                             * we'll either encounter the requested timestamp or
+                             * zero-fill the message to fulfil this "three zero
+                             * sample" requirement, and set the timestamp
+                             * appropriately at the following message.
+                             */
+                            if (to_zero < 3 && left_in_msg(s) == 0) {
                                 s->meta.curr_timestamp += to_zero;
-                                log_verbose("Ended msg with single zero sample. "
+                                log_verbose("Ended msg with < 3 zero samples. "
                                             "Padding into next message.\n");
                             } else {
                                 s->meta.curr_timestamp = user_meta->timestamp;
