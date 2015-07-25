@@ -1453,8 +1453,8 @@ typedef enum {
  * respect to buffer sizes, it is easiest to always assume 1 buffer's worth of
  * time is required between bursts. In this case "buffer" refers to the
  * `buffer_size` parameter provided to bladerf_sync_config().) If this is too
- * much time, consider combining multiple bursts and manually zero-padding
- * samples between them.
+ * much time, consider using the ::BLADERF_META_FLAG_TX_UPDATE_TIMESTAMP
+ * flag.
  *
  * This is only used for the bladerf_sync_tx() call. It is ignored by the
  * bladerf_sync_rx() call.
