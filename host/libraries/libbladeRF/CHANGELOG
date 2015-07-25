@@ -5,6 +5,19 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.4.3 (2015-07-25)
+--------------------------------
+
+This version of libbladeRF is intended for use with:
+
+FX3 Firmware v1.8.0
+FPGA         v0.3.4
+
+Changes:
+  * Fixed zero-padding on end of bursts (#413)
+  * API documentation updates
+
+
 v1.4.2 (2015-07-22)
 --------------------------------
 
