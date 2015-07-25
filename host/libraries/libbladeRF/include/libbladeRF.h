@@ -1434,23 +1434,20 @@ typedef enum {
 
 /**
  * Mark the associated buffer as the end of a burst transmission. This will
- * flush the remainder of the sync interfaces' current working buffer and
- * enqueue samples into the transmit FIFO.
+ * flush the remainder of the sync interface's current working buffer and
+ * enqueue samples into the hardware's transmit FIFO.
  *
- * When specifying this flag to bladerf_sync_tx(), the final two samples
- * in the synchronous interface's internal working buffer <b>must</b> be zero.
- * Unexpected results may occur if this is not the case. To ensure this
- * requirement is met, API users should ensure the last two samples provided to
- * bladerf_sync_tx() are zero when using ::BLADERF_META_FLAG_TX_BURST_END. One
- * way to do this is to end bursts with a call of bladerf_sync_tx() with this
- * flag set and a buffer of 2 or more zero samples.
+ * As of libbladeRF v1.3.0, it is no longer necessary for the API user to
+ * ensure that the final 3 samples of a burst are 0+0j. libbladeRF now ensures
+ * this hardware requirement (driven by the LMS6002D's pre-DAC register stages)
+ * is upheld.
  *
- * Flushing the sync interface's working buffer implies that after specifying
- * this flag, the next timestamp that can be transmitted is the current
- * timestamp plus the duration of the burst that this flag is ending <b>and</b>
- * the remaining length of the remaining buffer that is flushed. (The buffer
- * size, in this case, is the `buffer_size` value passed to the previous
- * bladerf_sync_config() call.)
+ * Specifying this flag and flushing the sync interface's working buffer implies
+ * that the next timestamp that can be transmitted is the current timestamp plus
+ * the duration of the burst that this flag is ending <b>and</b> the remaining
+ * length of the remaining buffer that is flushed. (The buffer size, in this
+ * case, is the `buffer_size` value passed to the previous bladerf_sync_config()
+ * call.)
  *
  * Rather than attempting to keep track of the number of samples sent with
  * respect to buffer sizes, it is easiest to always assume 1 buffer's worth of
