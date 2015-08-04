@@ -382,7 +382,7 @@ int nios_si5338_read(struct bladerf *dev, uint8_t addr, uint8_t *data)
 
     if (status == 0) {
         log_verbose("%s: Read 0x%02x from addr 0x%02x\n",
-                    __FUNCTION__, addr, *data);
+                    __FUNCTION__, *data, addr);
     }
 
     return status;
@@ -394,7 +394,7 @@ int nios_si5338_write(struct bladerf *dev, uint8_t addr, uint8_t data)
 
     if (status == 0) {
         log_verbose("%s: Wrote 0x%02x to addr 0x%02x\n",
-                    __FUNCTION__, addr, data);
+                    __FUNCTION__, data, addr);
     }
 
     return status;
@@ -406,7 +406,7 @@ int nios_lms6_read(struct bladerf *dev, uint8_t addr, uint8_t *data)
 
     if (status == 0) {
         log_verbose("%s: Read 0x%02x from addr 0x%02x\n",
-                    __FUNCTION__, addr, *data);
+                    __FUNCTION__, *data, addr);
     }
 
     return status;
@@ -418,7 +418,7 @@ int nios_lms6_write(struct bladerf *dev, uint8_t addr, uint8_t data)
 
     if (status == 0) {
         log_verbose("%s: Wrote 0x%02x to addr 0x%02x\n",
-                    __FUNCTION__, addr, data);
+                    __FUNCTION__, data, addr);
     }
 
     return status;
