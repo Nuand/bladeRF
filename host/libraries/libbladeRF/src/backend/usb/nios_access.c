@@ -607,7 +607,7 @@ int nios_expansion_gpio_read(struct bladerf *dev, uint32_t *val)
                                         0xffffffff, val);
 
     if (status == 0) {
-        log_verbose("%s: Read 0x08x\n", __FUNCTION__, *val);
+        log_verbose("%s: Read 0x%08x\n", __FUNCTION__, *val);
     }
 
     return status;
@@ -619,7 +619,7 @@ int nios_expansion_gpio_write(struct bladerf *dev, uint32_t val)
                                          0xffffffff, val);
 
     if (status == 0) {
-        log_verbose("%s: Wrote 0x08x\n", __FUNCTION__, val);
+        log_verbose("%s: Wrote 0x%08x\n", __FUNCTION__, val);
     }
 
     return status;
@@ -631,7 +631,7 @@ int nios_expansion_gpio_dir_read(struct bladerf *dev, uint32_t *val)
                                         0xffffffff, val);
 
     if (status == 0) {
-        log_verbose("%s: Read 0x08x\n", __FUNCTION__, *val);
+        log_verbose("%s: Read 0x%08x\n", __FUNCTION__, *val);
     }
 
     return status;
@@ -643,7 +643,7 @@ int nios_expansion_gpio_dir_write(struct bladerf *dev, uint32_t val)
                                          0xffffffff, val);
 
     if (status == 0) {
-        log_verbose("%s: Wrote 0x08x\n", __FUNCTION__, val);
+        log_verbose("%s: Wrote 0x%08x\n", __FUNCTION__, val);
     }
 
     return status;
