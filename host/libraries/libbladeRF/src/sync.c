@@ -385,7 +385,6 @@ int sync_rx(struct bladerf *dev, void *samples, unsigned num_samples,
                 MUTEX_LOCK(&b->lock);
                 b->status[b->cons_i] = SYNC_BUFFER_PARTIAL;
                 b->partial_off = 0;
-                MUTEX_UNLOCK(&b->lock);
 
                 switch (s->stream_config.format) {
                     case BLADERF_FORMAT_SC16_Q11:
@@ -402,6 +401,8 @@ int sync_rx(struct bladerf *dev, void *samples, unsigned num_samples,
                         assert(!"Invalid stream format");
                         status = BLADERF_ERR_UNEXPECTED;
                 }
+
+                MUTEX_UNLOCK(&b->lock);
                 break;
 
             case SYNC_STATE_USING_BUFFER: /* SC16Q11 buffers w/o metadata */
@@ -816,7 +817,6 @@ int sync_tx(struct bladerf *dev, void *samples, unsigned int num_samples,
                 MUTEX_LOCK(&b->lock);
                 b->status[b->prod_i] = SYNC_BUFFER_PARTIAL;
                 b->partial_off = 0;
-                MUTEX_UNLOCK(&b->lock);
 
                 switch (s->stream_config.format) {
                     case BLADERF_FORMAT_SC16_Q11:
@@ -833,6 +833,8 @@ int sync_tx(struct bladerf *dev, void *samples, unsigned int num_samples,
                         assert(!"Invalid stream format");
                         status = BLADERF_ERR_UNEXPECTED;
                 }
+
+                MUTEX_UNLOCK(&b->lock);
                 break;
 
 
