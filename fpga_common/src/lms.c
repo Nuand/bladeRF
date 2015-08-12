@@ -151,7 +151,7 @@ static const unsigned int uint_bandwidths[] = {
  * LMS FAQ (5.24), with the intent of avoiding the use of "edges" that might
  * cause the PLLs to lose lock over temperature changes */
 #define VCO4_LOW    3800000000ull
-#define VCO4_HIGH   4590000000ull
+#define VCO4_HIGH   4555000000ull
 
 #define VCO3_LOW    VCO4_HIGH
 #define VCO3_HIGH   5408000000ull
