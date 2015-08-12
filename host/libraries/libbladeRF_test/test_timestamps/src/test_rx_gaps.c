@@ -61,14 +61,16 @@ static const struct test_case tests[] = {
     { RANDOM_GAP_SIZE, 500 },
 };
 
-static inline unsigned int get_gap(struct app_params *p, const struct test_case *t)
+static inline unsigned int get_gap(struct app_params *p,
+                                   const struct test_case *t,
+                                   unsigned int buf_len)
 {
     uint64_t gap;
 
     if (t->gap == 0) {
-        const uint64_t tmp = randval_update(&p->prng_state) % p->buf_size;
+        const uint64_t tmp = randval_update(&p->prng_state) % buf_len;
         if (tmp == 0) {
-            gap = p->buf_size;
+            gap = buf_len;
         } else {
             gap = tmp;
         }
@@ -77,7 +79,7 @@ static inline unsigned int get_gap(struct app_params *p, const struct test_case 
     }
 
     assert(gap <= UINT_MAX);
-    assert(gap <= p->buf_size);
+    assert(gap <= buf_len);
 
     return (unsigned int) gap;
 }
@@ -159,10 +161,11 @@ static inline enum check_result check_data(int16_t *samples,
 }
 
 static int run(struct bladerf *dev, struct app_params *p,
-               int16_t *samples, const struct test_case *t)
+               const struct test_case *t)
 {
     int status, status_out;
     struct bladerf_metadata meta;
+    int16_t *samples;
     uint64_t timestamp;
     unsigned int gap;
     uint32_t counter;
@@ -171,6 +174,15 @@ static int run(struct bladerf *dev, struct app_params *p,
     bool suppress_overrun_msg = false;
     unsigned int overruns = 0;
     bool prev_iter_overrun = false;
+    const unsigned int buf_len = (t->gap == RANDOM_GAP_SIZE) ?
+                                    (128 * 1024) : t->gap;
+
+    samples = calloc(buf_len, 2 * sizeof(int16_t));
+    if (samples == NULL) {
+        perror("calloc");
+        status = -1;
+        goto out;
+    }
 
     /* Clear out metadata and request that we just received any available
      * samples, with the timestamp filled in for us */
@@ -188,7 +200,7 @@ static int run(struct bladerf *dev, struct app_params *p,
     }
 
     /* Initial read to get a starting timestamp, and counter value */
-    gap = get_gap(p, t);
+    gap = get_gap(p, t, buf_len);
     status = bladerf_sync_rx(dev, samples, gap, &meta, p->timeout_ms);
     if (status != 0) {
         fprintf(stderr, "Intial RX failed: %s\n", bladerf_strerror(status));
@@ -228,7 +240,7 @@ static int run(struct bladerf *dev, struct app_params *p,
     for (i = 0; i < t->iterations && status == 0; i++) {
 
         timestamp = meta.timestamp + gap;
-        gap = get_gap(p, t);
+        gap = get_gap(p, t, buf_len);
 
         status = bladerf_sync_rx(dev, samples, gap, &meta, p->timeout_ms);
         if (status != 0) {
@@ -264,6 +276,8 @@ static int run(struct bladerf *dev, struct app_params *p,
     }
 
 out:
+    free(samples);
+
     status_out = bladerf_enable_module(dev, BLADERF_MODULE_RX, false);
     if (status_out != 0) {
         fprintf(stderr, "Failed to disable RX module: %s\n",
@@ -281,25 +295,16 @@ out:
 int test_fn_rx_gaps(struct bladerf *dev, struct app_params *p)
 {
     int status = 0;
-    int16_t *samples;
     size_t i;
     unsigned int failures = 0;
 
-    samples = (int16_t*) malloc(p->buf_size * 2 * sizeof(int16_t));
-    if (samples == NULL) {
-        perror("malloc");
-        return BLADERF_ERR_MEM;
-    }
-
     for (i = 0; i < ARRAY_SIZE(tests); i++) {
-        status = run(dev, p, samples, &tests[i]);
+        status = run(dev, p, &tests[i]);
         if (status != 0) {
             failures++;
         }
     }
 
     printf("\n%u test cases failed.\n", failures);
-
-    free(samples);
     return status;
 }
