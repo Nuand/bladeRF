@@ -289,6 +289,11 @@ static int handle_args(int argc, char *argv[], struct app_params *p)
         return -1;
     }
 
+    if (p->test_name == NULL) {
+        fprintf(stderr, "A test name must be specified via -t <test>.\n");
+        return -1;
+    }
+
     return 0;
 }
 
