@@ -200,8 +200,8 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
 
         memset(tx_buffer, 0, samples_per_buffer * 2 * sizeof(int16_t));
         for (i = 0; i < (num_buffers + 1) && status == 0; i++) {
-            bladerf_sync_tx(s->dev, tx_buffer, samples_per_buffer, NULL,
-                            timeout_ms);
+            status = bladerf_sync_tx(s->dev, tx_buffer, samples_per_buffer,
+                                     NULL, timeout_ms);
         }
     }
 
