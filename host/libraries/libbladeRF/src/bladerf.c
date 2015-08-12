@@ -763,8 +763,10 @@ int bladerf_schedule_retune(struct bladerf *dev,
     }
 
     if (quick_tune == NULL) {
-        lms_calculate_tuning_params(frequency, &f);
-        status = tuning_schedule(dev, module, timestamp, &f);
+        status = lms_calculate_tuning_params(frequency, &f);
+        if (status == 0) {
+            status = tuning_schedule(dev, module, timestamp, &f);
+        }
     } else {
         f.freqsel = quick_tune->freqsel;
         f.vcocap  = quick_tune->vcocap;

@@ -167,10 +167,11 @@ int tuning_set_freq(struct bladerf *dev, bladerf_module module,
         case BLADERF_TUNING_MODE_FPGA: {
             struct lms_freq f;
 
-            lms_calculate_tuning_params(frequency, &f);
-
-            /* The band selection will occur in the NIOS II */
-            status = tuning_schedule(dev, module, BLADERF_RETUNE_NOW, &f);
+            status = lms_calculate_tuning_params(frequency, &f);
+            if (status == 0) {
+                /* The band selection will occur in the NIOS II */
+                status = tuning_schedule(dev, module, BLADERF_RETUNE_NOW, &f);
+            }
             break;
         }
 

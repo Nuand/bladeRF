@@ -612,8 +612,10 @@ int lms_get_quick_tune(struct bladerf *dev,
  *
  * @param[in]   freq    Desired frequency
  * @param[out]  f       Computed tuning parameters
+ *
+ * @return 0 on success, BLADERF_ERR_* value on failure
  */
-void lms_calculate_tuning_params(unsigned int freq, struct lms_freq *f);
+int lms_calculate_tuning_params(unsigned int freq, struct lms_freq *f);
 
 /**
  * Set the frequency of a module, given the lms_freq structure

@@ -2351,7 +2351,7 @@ int lms_select_band(struct bladerf *dev, bladerf_module module, bool low_band)
 }
 
 #ifndef BLADERF_NIOS_BUILD
-void lms_calculate_tuning_params(uint32_t freq, struct lms_freq *f)
+int lms_calculate_tuning_params(uint32_t freq, struct lms_freq *f)
 {
     uint64_t vco_x;
     uint64_t temp;
@@ -2372,12 +2372,20 @@ void lms_calculate_tuning_params(uint32_t freq, struct lms_freq *f)
 
     /* Figure out freqsel */
 
-    while(i < 16) {
+    while (i < ARRAY_SIZE(bands)) {
         if ((freq >= bands[i].low) && (freq <= bands[i].high)) {
             freqsel = bands[i].value;
             break;
         }
         i++;
+    }
+
+    /* This condition should never occur. There's a bug if it does. */
+    if (i >= ARRAY_SIZE(bands)) {
+        log_critical("BUG: Failed to find frequency band information. "
+                     "Setting frequency to %u Hz.\n", BLADERF_FREQUENCY_MIN);
+
+        return BLADERF_ERR_UNEXPECTED;
     }
 
     /* Estimate our target VCOCAP value. */
@@ -2408,6 +2416,8 @@ void lms_calculate_tuning_params(uint32_t freq, struct lms_freq *f)
     }
 
     PRINT_FREQUENCY(f);
+
+    return 0;
 }
 #endif
 
