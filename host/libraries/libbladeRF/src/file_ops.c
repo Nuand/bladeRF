@@ -172,7 +172,7 @@ static size_t strip_last_path_entry(char *buf, char dir_delim)
     return len;
 }
 
-#if BLADERF_OS_LINUX || BLADERF_OS_OSX
+#if BLADERF_OS_LINUX || BLADERF_OS_OSX || BLADERF_OS_FREEBSD
 #define ACCESS_FILE_EXISTS F_OK
 #define DIR_DELIMETER '/'
 
@@ -227,6 +227,22 @@ static inline size_t get_install_dir(char *buf, size_t max_len)
 static inline size_t get_binary_dir(char *buf, size_t max_len)
 {
     ssize_t result = readlink("/proc/self/exe", buf, max_len);
+
+    if (result > 0) {
+        return strip_last_path_entry(buf, DIR_DELIMETER);
+    } else {
+        return 0;
+    }
+}
+#elif BLADERF_OS_FREEBSD
+static inline size_t get_binary_dir(char *buf, size_t max_len)
+{
+    int mib[4];
+    mib[0] = CTL_KERN;
+    mib[1] = KERN_PROC;
+    mib[2] = KERN_PROC_PATHNAME;
+    mib[3] = -1;
+    ssize_t result = sysctl(mib, 4, buf, &max_len, NULL, 0);
 
     if (result > 0) {
         return strip_last_path_entry(buf, DIR_DELIMETER);

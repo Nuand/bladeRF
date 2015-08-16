@@ -28,15 +28,16 @@
 #define HOST_CONFIG_H__
 
 #cmakedefine01  BLADERF_OS_LINUX
+#cmakedefine01  BLADERF_OS_FREEBSD
 #cmakedefine01  BLADERF_OS_OSX
 #cmakedefine01  BLADERF_OS_WINDOWS
 #cmakedefine01  BLADERF_BIG_ENDIAN
 
-#if !(BLADERF_OS_LINUX || BLADERF_OS_OSX || BLADERF_OS_WINDOWS)
+#if !(BLADERF_OS_LINUX || BLADERF_OS_OSX || BLADERF_OS_WINDOWS || BLADERF_OS_FREEBSD)
 #   error "Build not configured for any supported operating systems"
 #endif
 
-#if 1 < (BLADERF_OS_LINUX + BLADERF_OS_OSX + BLADERF_OS_WINDOWS)
+#if 1 < (BLADERF_OS_LINUX + BLADERF_OS_OSX + BLADERF_OS_WINDOWS + BLADERF_OS_FREEBSD)
 #error "Build configured for multiple operating systems"
 #endif
 
@@ -61,6 +62,27 @@
  *---------------------*/
 #if BLADERF_OS_LINUX
 #include <endian.h>
+
+#define HOST_TO_LE16(val) htole16(val)
+#define LE16_TO_HOST(val) le16toh(val)
+#define HOST_TO_BE16(val) htobe16(val)
+#define BE16_TO_HOST(val) be16toh(val)
+
+#define HOST_TO_LE32(val) htole32(val)
+#define LE32_TO_HOST(val) le32toh(val)
+#define HOST_TO_BE32(val) htobe32(val)
+#define BE32_TO_HOST(val) be32toh(val)
+
+#define HOST_TO_LE64(val) htole64(val)
+#define LE64_TO_HOST(val) le64toh(val)
+#define HOST_TO_BE64(val) be64toh(val)
+#define BE64_TO_HOST(val) be64toh(val)
+
+/*-----------------------
+ * FREEBSD
+ *---------------------*/
+#elif BLADERF_OS_FREEBSD
+#include <sys/endian.h>
 
 #define HOST_TO_LE16(val) htole16(val)
 #define LE16_TO_HOST(val) le16toh(val)
@@ -139,6 +161,15 @@
  * a few Windows replacements for unistd.h items. */
 #include <unistd.h>
 #include <pwd.h>
+
+/*******************************************************************************
+ * Miscellaneous FREEBSD fixups
+ ******************************************************************************/
+#elif BLADERF_OS_FREEBSD
+
+#include <unistd.h>
+#include <pwd.h>
+#include <sys/sysctl.h>
 
 /*******************************************************************************
  * Miscellaneous OSX fixups
