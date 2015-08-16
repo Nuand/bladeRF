@@ -123,9 +123,10 @@ endif(MSVC)
 # System configuration
 ################################################################################
 
-# Linux (TODO determine if this will actually be sufficient for BSD)
-if(${CMAKE_SYSTEM_NAME} MATCHES "Linux" OR ${CMAKE_SYSTEM_NAME} MATCHES "BSD" OR CYGWIN)
-    set(BLADERF_OS_LINUX 1)
+if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
+    set(BLADERF_OS_FREEBSD 1)
+# Linux 
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux" OR CYGWIN ${CMAKE_SYSTEM_NAME} MATCHES "BSD")
 
     if(NOT CMAKE_CROSSCOMPILING AND NOT CYGWIN)
         message(STATUS "Checking libc version...")
