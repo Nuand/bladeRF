@@ -97,7 +97,7 @@ static inline int first_error(int earlier_status, int later_status)
 static inline uint32_t extract_counter_val(uint8_t *samples)
 {
 #if BLADERF_BIG_ENDIAN
-    const uint32_t val = (LE32_TO_HOST(((uint32_t *)samples)[0]);
+    const uint32_t val = LE32_TO_HOST(((uint32_t *)samples)[0]);
 #else
     //const uint32_t val = (samples[1] << 16) | samples[0];
     const uint32_t val = ((uint32_t *)samples)[0];
