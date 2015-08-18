@@ -8,7 +8,7 @@ entity nios_system is
     dac_MISO            :   in  std_logic ;
     dac_MOSI            :   out std_logic ;
     dac_SCLK            :   out std_logic ;
-    dac_SS_n            :   out std_logic ;
+    dac_SS_n            :   out std_logic_vector(1 downto 0) ;
     spi_MISO            :   in  std_logic ;
     spi_MOSI            :   out std_logic ;
     spi_SCLK            :   out std_logic ;
@@ -27,7 +27,10 @@ entity nios_system is
     correction_tx_phase_gain_export : out std_logic_vector(31 downto 0) ;
     time_tamer_time_rx  :   in  std_logic_vector(63 downto 0) ;
     time_tamer_time_tx  :   in  std_logic_vector(63 downto 0) ;
-    time_tamer_synchronize  : out std_logic
+    time_tamer_synchronize  : out std_logic ;
+    xb_gpio_dir_export  :   out std_logic_vector(31 downto 0) ;
+    xb_gpio_out_port    :   out std_logic_vector(31 downto 0) ;
+    xb_gpio_in_port     :   in std_logic_vector(31 downto 0)
   ) ;
 end entity ;
 
@@ -37,7 +40,7 @@ begin
 
     dac_MOSI <= '0' ;
     dac_SCLK <= '0' ;
-    dac_SS_n <= '1' ;
+    dac_SS_n <= (others =>'1') ;
 
     spi_MOSI <= '0' ;
     spi_SCLK <= '0' ;
