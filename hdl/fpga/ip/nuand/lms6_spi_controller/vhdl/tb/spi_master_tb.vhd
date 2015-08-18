@@ -8,7 +8,7 @@ end entity;
 architecture tb of spi_master_tb is
 
     constant    CLOCK_DIV       :   positive  range 2 to 16 := 2;   -- Ratio of system clock to SPI clock
-    constant    ADDR_WIDTH      :   positive                := 7;   -- Number of address bits in an operation
+    constant    ADDR_WIDTH      :   positive                := 8;   -- Number of address bits in an operation
     constant    DATA_WIDTH      :   positive                := 8;   -- Number of data bits in an operation
 
     signal      clock           :   std_logic;

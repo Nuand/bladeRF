@@ -394,7 +394,7 @@
   <parameter name="writeIRQThreshold" value="8" />
  </module>
  <module name="lms_spi" kind="lms6_spi_controller" version="1.0" enabled="1">
-  <parameter name="ADDR_WIDTH" value="7" />
+  <parameter name="ADDR_WIDTH" value="8" />
   <parameter name="CLOCK_DIV" value="4" />
   <parameter name="DATA_WIDTH" value="8" />
  </module>

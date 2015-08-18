@@ -53,8 +53,8 @@ set_parameter_property CLOCK_DIV TYPE INTEGER
 set_parameter_property CLOCK_DIV UNITS None
 set_parameter_property CLOCK_DIV ALLOWED_RANGES -2147483648:2147483647
 set_parameter_property CLOCK_DIV HDL_PARAMETER true
-add_parameter ADDR_WIDTH POSITIVE 7
-set_parameter_property ADDR_WIDTH DEFAULT_VALUE 7
+add_parameter ADDR_WIDTH POSITIVE 8
+set_parameter_property ADDR_WIDTH DEFAULT_VALUE 8
 set_parameter_property ADDR_WIDTH DISPLAY_NAME ADDR_WIDTH
 set_parameter_property ADDR_WIDTH TYPE POSITIVE
 set_parameter_property ADDR_WIDTH ENABLED false

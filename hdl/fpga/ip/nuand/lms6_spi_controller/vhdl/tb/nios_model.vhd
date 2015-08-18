@@ -18,7 +18,7 @@ library std;
 
 entity nios_model is
     generic(
-        ADDR_WIDTH      :   positive := 7;   -- Number of address bits in an operation
+        ADDR_WIDTH      :   positive := 8;   -- Number of address bits in an operation
         DATA_WIDTH      :   positive := 8    -- Number of data bits in an operation
     );
     port(
@@ -43,6 +43,7 @@ architecture arch of nios_model is
     end function;
 
     constant    SYS_CLK_PER : time      := half_clk_per( 80e6 );
+    constant    SPI_CLK_DIV : positive  := 2;
 
     type command_t is ( READ, WRITE );
 
@@ -55,13 +56,29 @@ architecture arch of nios_model is
     type operations_t is array(natural range<>) of operation_t;
 
     constant operations : operations_t := (
-        (cmd => READ,  addr => 7x"55", data => (others => '0') ),
-        (cmd => READ,  addr => 7x"7C", data => (others => '0') ),
-        (cmd => WRITE, addr => 7x"27", data => 8x"42" ),
-        (cmd => READ,  addr => 7x"27", data => (others => '0') )
+        (cmd => READ,  addr => 8x"55", data => (others => '1') ),
+        (cmd => READ,  addr => 8x"7C", data => (others => '1') ),
+        (cmd => WRITE, addr => 8x"27", data => 8x"42" ),
+        (cmd => READ,  addr => 8x"27", data => 8x"42" ),
+        (cmd => WRITE, addr => 8x"90", data => 8x"10" ),
+        (cmd => WRITE, addr => 8x"91", data => 8x"11" ),
+        (cmd => WRITE, addr => 8x"92", data => 8x"12" ),
+        (cmd => WRITE, addr => 8x"93", data => 8x"13" ),
+        (cmd => WRITE, addr => 8x"A0", data => 8x"20" ),
+        (cmd => WRITE, addr => 8x"A1", data => 8x"21" ),
+        (cmd => WRITE, addr => 8x"A2", data => 8x"22" ),
+        (cmd => WRITE, addr => 8x"A3", data => 8x"23" ),
+        (cmd => READ,  addr => 8x"10", data => 8x"10" ),
+        (cmd => READ,  addr => 8x"11", data => 8x"11" ),
+        (cmd => READ,  addr => 8x"12", data => 8x"12" ),
+        (cmd => READ,  addr => 8x"13", data => 8x"13" ),
+        (cmd => READ,  addr => 8x"20", data => 8x"20" ),
+        (cmd => READ,  addr => 8x"21", data => 8x"21" ),
+        (cmd => READ,  addr => 8x"22", data => 8x"22" ),
+        (cmd => READ,  addr => 8x"23", data => 8x"23" )
     );
 
-    type state_t is ( IDLE, RUN, HOLD );
+    type state_t is ( IDLE, RUN, CHECK_READ, NEXT_CMD );
 
     signal state    : state_t   := IDLE;
 
@@ -101,7 +118,7 @@ begin
 
                 when IDLE =>
 
-                    if( mem_hold = '0' and clock_count >= operations'length*2*(ADDR_WIDTH+DATA_WIDTH)+10 ) then
+                    if( mem_hold = '0' and clock_count >= operations'length*SPI_CLK_DIV*(ADDR_WIDTH+DATA_WIDTH)+10 ) then
                         stop(0);
                     end if;
 
@@ -111,26 +128,35 @@ begin
 
                     if( mem_hold = '0' ) then
                         case (operations(op).cmd) is
-                            when READ  => rd_req <= '1';
-                            when WRITE => wr_req <= '1';
+                            when READ  =>
+                                rd_req <= '1';
+                                state  <= CHECK_READ;
+                            when WRITE =>
+                                wr_req <= '1';
+                                state  <= NEXT_CMD;
                         end case;
+
                         addr    <= operations(op).addr;
                         wr_data <= operations(op).data;
 
-                        if( op = operations'high ) then
-                            state   <= IDLE;
-                        else
-                            op      := op + 1;
-                            state   <= HOLD;
-                        end if;
-                    else
-                        state <= HOLD;
                     end if;
 
-                when HOLD =>
+                when CHECK_READ =>
+
+                    if( rd_data_val = '1' ) then
+                        assert (operations(op).data = rd_data) report "Read data does not match expected!" severity failure;
+                        state <= NEXT_CMD;
+                    end if;
+
+                when NEXT_CMD =>
 
                     if( mem_hold = '0' and clock_count >= 64 ) then
-                        state <= RUN;
+                        if( op = operations'high ) then
+                            state <= IDLE;
+                        else
+                            op    := op + 1;
+                            state <= RUN;
+                        end if;
                     end if;
 
             end case;
