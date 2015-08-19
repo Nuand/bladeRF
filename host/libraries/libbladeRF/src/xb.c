@@ -266,6 +266,8 @@ static int set_filterbank(struct bladerf *dev, bool update_auto_filt,
     int status;
     uint32_t orig, val, mask;
     unsigned int shift;
+    unsigned int frequency;
+    const char *filters[] = { "50M", "144M", "222M", "custom" };
 
     status = check_module(module);
     if (status != 0) {
@@ -294,6 +296,9 @@ static int set_filterbank(struct bladerf *dev, bool update_auto_filt,
     val |= filter << shift;
 
     if (orig != val) {
+        log_debug("Engaging %s band XB-200 %s filter\n", filters[filter], 
+            mask == BLADERF_XB_TX_MASK ? "TX" : "RX");
+
         status = XB_GPIO_WRITE(dev, val);
         if (status != 0) {
             return status;
