@@ -796,9 +796,9 @@ begin
         unsigned(tx_tamer_ts_time)      => tx_timestamp
       ) ;
 
-    xb_gpio_direction_proc : for i in 0 to 31 generate
-        process(all)
-        begin
+    xb_gpio_direction : process(all)
+    begin
+        for i in 0 to 31 loop
             if (xb_gpio_dir(i) = '1') then
                 nios_xb_gpio_in(i) <= nios_xb_gpio_out(i);
                 if (xb_mode = "10" and i + 1 = 2) then
@@ -814,12 +814,13 @@ begin
                     exp_gpio(i + 1) <= 'Z';
                 end if;
             end if;
-        end process;
-    end generate ;
+        end loop ;
+    end process ;
 
     nios_gpio(20 downto 19) <= nios_ss_n;
     nios_gpio(22 downto 21) <= xb_mode;
-    process(all)
+
+    dac_cs_selection : process(all)
     begin
         dac_sclk <= nios_sclk ;
         dac_sdi <= nios_sdio ;
