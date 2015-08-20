@@ -193,6 +193,16 @@ int xb_attach(struct bladerf *dev, bladerf_xb xb) {
                 log_verbose( "Setting TX path\n" );
                 status = xb200_set_path(dev, BLADERF_MODULE_TX, BLADERF_XB200_BYPASS);
             }
+            if (status != 0) {
+                break;
+            }
+            log_verbose( "Setting RX filter\n" );
+            status = xb200_set_filterbank(dev, BLADERF_MODULE_RX, BLADERF_XB200_AUTO_1DB);
+            if (status != 0) {
+                break;
+            }
+            log_verbose( "Setting TX filter\n" );
+            status = xb200_set_filterbank(dev, BLADERF_MODULE_TX, BLADERF_XB200_AUTO_1DB);
             break;
 
         case BLADERF_XB_NONE:
