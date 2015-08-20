@@ -56,17 +56,22 @@ if { $opts(size) != 115 && $opts(size) != 40 } {
 }
 
 # Add signaltap file
+set forced_talkback 0
 if { $opts(stp) != "" } {
-    if { [get_user_option -name TALKBACK_ENABLED] == on || $opts(force) } {
+    if { [get_user_option -name TALKBACK_ENABLED] == off && $opts(force) } {
         puts "Enabling TalkBack to include SignalTap file"
         set_user_option -name TALKBACK_ENABLED on
+        set forced_talkback 1
+    }
+    if { [get_user_option -name TALKBACK_ENABLED] == on } {
         puts "Adding SignalTap file: [file normalize $opts(stp)]"
         set_global_assignment -name ENABLE_SIGNALTAP on
         set_global_assignment -name USE_SIGNALTAP_FILE [file normalize $opts(stp)]
         set_global_assignment -name SIGNALTAP_FILE [file normalize $opts(stp)]
     } else {
-        puts stderr "WARNING: Cannot add $opts(stp) to project without enabling TalkBack."
+        puts stderr "ERROR: Cannot add $opts(stp) to project without enabling TalkBack."
         puts stderr "         Use -force to enable and add SignalTap to project."
+        exit 1
     }
 } else {
     set_global_assignment -name ENABLE_SIGNALTAP off
@@ -120,6 +125,10 @@ if { $failed == 0 && [catch {execute_module -tool asm} result] } {
 #}
 
 # If we were forced to turn on TALKBACK .. turn it back off
+if { $forced_talkback == 1 } {
+    puts "Disabling TalkBack back to original state"
+    set_user_option -name TALKBACK_ENABLED off
+}
 
 project_close
 

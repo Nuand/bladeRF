@@ -14,6 +14,7 @@ function usage()
     echo "    -r <rev>       FPGA revision"
     echo "    -s <size>      FPGA size"
     echo "    -a <stp>       SignalTap STP file"
+    echo "    -f             Force STP insertion"
     echo "    -h             Show this text"
     echo ""
     echo "Supported revisions:"
@@ -78,7 +79,7 @@ if [ $# -eq 0 ]; then
     exit 0
 fi
 
-while getopts ":a:s:r:h" opt; do
+while getopts ":fa:s:r:h" opt; do
     case $opt in
         h)
             usage
@@ -98,7 +99,12 @@ while getopts ":a:s:r:h" opt; do
             stp=$(readlink -f $OPTARG)
             ;;
 
-        *)
+        f)
+            echo "Forcing STP insertion"
+            force="-force"
+            ;;
+
+        \?)
             echo "Unrecognized option: -$OPTARG" >&2
             usage
             exit 1
@@ -227,7 +233,7 @@ $quartus_sh -t ../bladerf.tcl
 if [ "$stp" == "" ]; then
     $quartus_sh -t ../build.tcl -rev $rev -size $size
 else
-    $quartus_sh -t ../build.tcl -rev $rev -size $size -stp $stp
+    $quartus_sh -t ../build.tcl -rev $rev -size $size -stp $stp $force
 fi
 popd
 
