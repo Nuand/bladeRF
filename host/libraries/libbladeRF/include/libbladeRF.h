@@ -2517,28 +2517,6 @@ int CALL_CONV bladerf_si5338_write(struct bladerf *dev,
                                    uint8_t address, uint8_t val);
 
 /**
- * Set frequency for TX clocks
- *
- * @param   dev         Device handle
- * @param   freq        Desired TX frequency in Hz
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_si5338_set_tx_freq(struct bladerf *dev, unsigned freq);
-
-/**
- * Set frequency for RX clocks
- *
- * @param   dev         Device handle
- * @param   freq        Desired RX frequency in Hz
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_si5338_set_rx_freq(struct bladerf *dev, unsigned freq);
-
-/**
  * This structure is used to directly apply DC calibration register values to
  * the LMS, rather than use the values resulting from an auto-calibration.
  *
