@@ -76,17 +76,20 @@ static unsigned int freq_sweep(struct bladerf *dev, bladerf_module m,
                                unsigned int min, bool quiet)
 {
     int status;
-    unsigned int freq, n;
-    const unsigned int inc = 2500000;
+    unsigned int freq, n, r;
+    const unsigned int repetitions = 3;
+    const unsigned int inc = 1000000;
     unsigned int failures = 0;
 
-    for (freq = min, n = 0; freq <= BLADERF_FREQUENCY_MAX; freq += inc, n++) {
-        status = set_and_check(dev, m, freq);
-        if (status != 0) {
-            failures++;
-        } else if (n % 50 == 0) {
-            PRINT("\r  Currently tuned to %-10u Hz...", freq);
-            fflush(stdout);
+    for (r = 0; r < repetitions; r++) {
+        for (freq = min, n = 0; freq <= BLADERF_FREQUENCY_MAX; freq += inc, n++) {
+            status = set_and_check(dev, m, freq);
+            if (status != 0) {
+                failures++;
+            } else if (n % 50 == 0) {
+                PRINT("\r  Currently tuned to %-10u Hz...", freq);
+                fflush(stdout);
+            }
         }
     }
 
@@ -100,7 +103,7 @@ static int random_tuning(struct bladerf *dev, struct app_params *p,
 {
     int status = 0;
     unsigned int i, n;
-    const unsigned int num_iterations = 2500;
+    const unsigned int num_iterations = 10000;
     unsigned int freq;
     unsigned int failures = 0;
 
@@ -121,6 +124,7 @@ static int random_tuning(struct bladerf *dev, struct app_params *p,
             PRINT("\r  Currently tuned to %-10u Hz...", freq);
             fflush(stdout);
         }
+
     }
 
     PRINT("\n");
