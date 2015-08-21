@@ -43,15 +43,15 @@ static inline bool freq_match(unsigned int a, unsigned int b)
 
 
 static int set_and_check(struct bladerf *dev, bladerf_module m,
-                         unsigned int freq)
+                         unsigned int freq, unsigned int prev_freq)
 {
     int status;
     unsigned int readback;
 
     status = bladerf_set_frequency(dev, m, freq);
     if (status != 0) {
-        PR_ERROR("Failed to set frequency: %u Hz: %s\n", freq,
-                 bladerf_strerror(status));
+        PR_ERROR("Failed to set frequency: %u Hz (Prev: %u Hz): %s\n",
+                 freq, prev_freq, bladerf_strerror(status));
         return status;
     }
 
@@ -76,20 +76,23 @@ static unsigned int freq_sweep(struct bladerf *dev, bladerf_module m,
                                unsigned int min, bool quiet)
 {
     int status;
-    unsigned int freq, n, r;
+    unsigned int freq, prev_freq = 0;
+    unsigned int n, r;
     const unsigned int repetitions = 3;
     const unsigned int inc = 1000000;
     unsigned int failures = 0;
 
     for (r = 0; r < repetitions; r++) {
         for (freq = min, n = 0; freq <= BLADERF_FREQUENCY_MAX; freq += inc, n++) {
-            status = set_and_check(dev, m, freq);
+            status = set_and_check(dev, m, freq, prev_freq);
             if (status != 0) {
                 failures++;
             } else if (n % 50 == 0) {
                 PRINT("\r  Currently tuned to %-10u Hz...", freq);
                 fflush(stdout);
             }
+
+            prev_freq = freq;
         }
     }
 
@@ -104,7 +107,7 @@ static int random_tuning(struct bladerf *dev, struct app_params *p,
     int status = 0;
     unsigned int i, n;
     const unsigned int num_iterations = 10000;
-    unsigned int freq;
+    unsigned int freq, prev_freq = 0;
     unsigned int failures = 0;
 
     for (i = n = 0; i < num_iterations; i++, n++) {
@@ -117,7 +120,7 @@ static int random_tuning(struct bladerf *dev, struct app_params *p,
             freq = BLADERF_FREQUENCY_MAX;
         }
 
-        status = set_and_check(dev, m, freq);
+        status = set_and_check(dev, m, freq, prev_freq);
         if (status != 0) {
             failures++;
         } else if (n % 50 == 0) {
@@ -125,6 +128,7 @@ static int random_tuning(struct bladerf *dev, struct app_params *p,
             fflush(stdout);
         }
 
+        prev_freq = freq;
     }
 
     PRINT("\n");
