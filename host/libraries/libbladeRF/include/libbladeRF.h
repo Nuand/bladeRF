@@ -436,6 +436,14 @@ const char * CALL_CONV bladerf_backend_str(bladerf_backend backend);
 /** Maximum tunable frequency, in Hz */
 #define BLADERF_FREQUENCY_MAX       3800000000u
 
+/** Maximum output frequency on SMB connector, if no expansion board attached.
+ */
+#define BLADERF_SMB_FREQUENCY_MAX   (38400000UL * 66UL)
+
+/** Minimum output frequency on SMB connector, if no expansion board attached.
+ */
+#define BLADERF_SMB_FREQUENCY_MIN   (BLADERF_SMB_FREQUENCY_MAX / (32 * 567))
+
 /**
  * Specifies that scheduled retune should occur immediately when using
  * bladerf_schedule_retune().
@@ -871,6 +879,75 @@ int CALL_CONV bladerf_get_rational_sample_rate(
                                         struct bladerf *dev,
                                         bladerf_module module,
                                         struct bladerf_rational_rate *rate);
+
+/**
+ * Set the SMB connector output frequency in rational Hz
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   rate        Rational frequency
+ * @param[out]  actual      If non-NULL, this is written with the actual
+ *                          rational frequency achieved.
+ *
+ * This clock should not be set if an expansion board is connected.
+ * The frequency must be between \ref BLADERF_SMB_FREQUENCY_MIN and
+ * \ref BLADERF_SMB_FREQUENCY_MAX.
+ *
+ * @return 0 on success,
+ *         BLADERF_ERR_INVAL for an invalid frequency,
+ *         or a value from \ref RETCODES list on failure.
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_rational_smb_frequency(
+                                        struct bladerf *dev,
+                                        struct bladerf_rational_rate *rate,
+                                        struct bladerf_rational_rate *actual);
+
+/**
+ * Set the SMB connector output frequency in Hz. Note that this requires the
+ * frequency is an integer value of Hz. Use
+ * bladerf_set_rational_smb_frequency() for more arbitrary values.
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   rate        Frequency
+ * @param[out]  actual      If non-NULL. this is written with the actual
+ *                          frequency achieved.
+ *
+ * This clock should not be set if an expansion board is connected.
+ * The frequency must be between \ref BLADERF_SMB_FREQUENCY_MIN and
+ * \ref BLADERF_SMB_FREQUENCY_MAX.
+ *
+ * @return 0 on success,
+ *         BLADERF_ERR_INVAL for an invalid frequency,
+ *         or a value from \ref RETCODES list on other failures
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_smb_frequency(struct bladerf *dev,
+                                        uint32_t rate, uint32_t *actual);
+
+/**
+ * Read the SMB connector output frequency in rational Hz
+ *
+ * @param[in]   dev         Device handle
+ * @param[out]  rate        Pointer to returned rational frequency
+ *
+ * @return 0 on success, value from \ref RETCODES list upon failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_rational_smb_frequency(
+                                        struct bladerf *dev,
+                                        struct bladerf_rational_rate *rate);
+
+/**
+ * Read the SMB connector output frequency in Hz
+ *
+ * @param[in]   dev         Device handle
+ * @param[out]  rate        Pointer to returned frequency
+ *
+ * @return 0 on success, value from \ref RETCODES list upon failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_smb_frequency(struct bladerf *dev,
+                                        unsigned int *rate);
 
 /**
  * Set the value of the specified configuration parameter

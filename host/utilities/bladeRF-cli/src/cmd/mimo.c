@@ -20,16 +20,18 @@
 #include <stdio.h>
 #include "common.h"
 #include <string.h>
+#include "conversions.h"
+#include "cmd.h"
 
 int cmd_mimo(struct cli_state *state, int argc, char **argv)
 {
     int status = 0;
 
-    if (argc != 2) {
-        return CLI_RET_NARGS;
-    }
-
     if (!strcasecmp(argv[1], "slave")) {
+        if (argc != 2) {
+            return CLI_RET_NARGS;
+        }
+
         status = bladerf_si5338_write(state->dev, 6, 4);
         if (status != 0) {
             goto out;
@@ -53,17 +55,45 @@ int cmd_mimo(struct cli_state *state, int argc, char **argv)
         printf("\n  Successfully set device to slave MIMO mode.\n\n");
 
     } else if (!strcmp(argv[1], "master")) {
-        status |= bladerf_si5338_write(state->dev, 39, 1);
-        if (status != 0) {
-            goto out;
+        if (argc == 2) {
+            /* Output the 38.4MHz clock on the SMB connector. */
+
+            status |= bladerf_si5338_write(state->dev, 39, 1);
+            if (status != 0) {
+                goto out;
+            }
+
+            status |= bladerf_si5338_write(state->dev, 34, 0x22);
+            if (status != 0) {
+                goto out;
+            }
+
+            printf("\n  Successfully set device to master MIMO mode.\n\n");
+        } else if (argc == 3) {
+            /* Output a specific frequency on the SMB connector. */
+
+            unsigned int freq, actual;
+            bool ok;
+            freq = str2uint_suffix(argv[2], BLADERF_SMB_FREQUENCY_MIN, 
+                                   BLADERF_SMB_FREQUENCY_MAX, freq_suffixes,
+                                   NUM_FREQ_SUFFIXES, &ok); 
+            if (!ok) {
+                cli_err(state, argv[0], "Invalid SMB frequency (%s)\n",
+                        argv[2]);
+                status = CLI_RET_INVPARAM;
+            } else {
+                status |= bladerf_set_smb_frequency(state->dev, freq, &actual);
+                if(status >= 0) {
+                    printf("\n  Set device to master MIMO, "
+                           "req freq:%9uHz, actual:%9uHz\n\n", freq, actual);
+                } else {
+                    goto out;
+                }
+            }
+        } else {
+            return CLI_RET_NARGS;
         }
 
-        status |= bladerf_si5338_write(state->dev, 34, 0x22);
-        if (status != 0) {
-            goto out;
-        }
-
-        printf("\n  Successfully set device to master MIMO mode.\n\n");
     } else {
         cli_err(state, argv[0], "Invalid mode: %s\n", argv[1]);
     }
