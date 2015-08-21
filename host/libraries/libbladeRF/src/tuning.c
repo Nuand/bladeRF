@@ -135,6 +135,8 @@ int tuning_set_freq(struct bladerf *dev, bladerf_module module,
     const struct dc_cal_tbl *dc_cal =
         (module == BLADERF_MODULE_RX) ? dev->cal.dc_rx : dev->cal.dc_tx;
 
+    log_debug("Setting %s frequency to %u\n", module2str(module), frequency);
+
     if (attached == BLADERF_XB_200) {
 
         if (frequency < BLADERF_FREQUENCY_MIN) {
