@@ -34,6 +34,15 @@
 #define SI5338_F_VCO    (38400000UL * 66UL)
 
 /**
+ * Configure a multisynth for either the RX/TX sample clocks (index=1 or 2)
+ * or for the SMB output (index=3).
+ */
+int si5338_set_rational_multisynth(struct bladerf *dev,
+                                   uint8_t index, uint8_t channel,
+                                   struct bladerf_rational_rate *rate,
+                                   struct bladerf_rational_rate *actual);
+
+/**
  * This is used set or recreate the si5338 frequency
  * Each si5338 multisynth module can be set independently
  */
@@ -315,8 +324,8 @@ static int si5338_read_multisynth(struct bladerf *dev,
     return 0;
 }
 
-static void si5338_calculate_samplerate(struct si5338_multisynth *ms,
-                                        struct bladerf_rational_rate *rate)
+static void si5338_calculate_ms_freq(struct si5338_multisynth *ms,
+                                     struct bladerf_rational_rate *rate)
 {
     struct bladerf_rational_rate abc;
     abc.integer = ms->a;
@@ -325,10 +334,17 @@ static void si5338_calculate_samplerate(struct si5338_multisynth *ms,
 
     rate->integer = 0;
     rate->num = SI5338_F_VCO * abc.den;
-    rate->den = (uint64_t)ms->r*2*(abc.integer * abc.den + abc.num);
+    rate->den = (uint64_t)ms->r*(abc.integer * abc.den + abc.num);
+
+    /* Compensate for doubling of frequency for LMS sampling clocks */
+    if(ms->index == 1 || ms->index == 2) {
+        rate->den *= 2;
+    }
+
     si5338_rational_reduce(rate);
 
-    log_verbose("Calculated samplerate: %"PRIu64" + %"PRIu64"/%"PRIu64"\n",
+    log_verbose("Calculated multisynth frequency: %"
+                PRIu64" + %"PRIu64"/%"PRIu64"\n",
                 rate->integer, rate->num, rate->den);
 
     return;
@@ -345,8 +361,12 @@ static int si5338_calculate_multisynth(struct si5338_multisynth *ms,
     /* Don't muss with the users data */
     req = *rate;
 
-    /* Double requested frequency since LMS requires 2:1 clock:sample rate */
-    si5338_rational_double(&req);
+    /* Double requested frequency for sample clocks since LMS requires
+     * 2:1 clock:sample rate
+     */
+    if(ms->index == 1 || ms->index == 2) {
+        si5338_rational_double(&req);
+    }
 
     /* Find a suitable R value */
     r_value = 1;
@@ -419,12 +439,10 @@ static int si5338_calculate_multisynth(struct si5338_multisynth *ms,
 
 int si5338_set_rational_sample_rate(struct bladerf *dev, bladerf_module module,
                                     struct bladerf_rational_rate *rate,
-                                    struct bladerf_rational_rate *actual_ret)
+                                    struct bladerf_rational_rate *actual)
 {
-    struct si5338_multisynth ms;
-    struct bladerf_rational_rate req;
-    struct bladerf_rational_rate actual;
-    int status;
+    uint8_t index = (module == BLADERF_MODULE_RX) ? 1 : 2;
+    uint8_t channel = SI5338_EN_A;
 
     /* Enforce minimum sample rate */
     si5338_rational_reduce(rate);
@@ -433,17 +451,48 @@ int si5338_set_rational_sample_rate(struct bladerf *dev, bladerf_module module,
         return BLADERF_ERR_INVAL;
     }
 
+    if (module == BLADERF_MODULE_TX) {
+        channel |= SI5338_EN_B;
+    }
+
+    return si5338_set_rational_multisynth(dev, index, channel, rate, actual);
+}
+
+int si5338_set_rational_smb_freq(struct bladerf *dev,
+                                 struct bladerf_rational_rate *rate,
+                                 struct bladerf_rational_rate *actual)
+{
+    /* Enforce minimum and maximum frequencies */
+    si5338_rational_reduce(rate);
+    if (rate->integer < BLADERF_SMB_FREQUENCY_MIN) {
+        log_debug("%s: provided SMB freq violates minimum\n", __FUNCTION__);
+        return BLADERF_ERR_INVAL;
+    } else if (rate->integer > BLADERF_SMB_FREQUENCY_MAX) {
+        log_debug("%s: provided SMB freq violates maximum\n", __FUNCTION__);
+        return BLADERF_ERR_INVAL;
+    }
+
+    return si5338_set_rational_multisynth(dev, 3, SI5338_EN_A, rate, actual);
+}
+
+int si5338_set_rational_multisynth(struct bladerf *dev,
+                                   uint8_t index, uint8_t channel,
+                                   struct bladerf_rational_rate *rate,
+                                   struct bladerf_rational_rate *actual_ret)
+{
+    struct si5338_multisynth ms;
+    struct bladerf_rational_rate req;
+    struct bladerf_rational_rate actual;
+    int status;
+
+    si5338_rational_reduce(rate);
+
     /* Save off the value */
     req = *rate;
 
     /* Setup the multisynth enables and index */
-    ms.enable = SI5338_EN_A;
-    if (module == BLADERF_MODULE_TX) {
-        ms.enable |= SI5338_EN_B;
-    }
-
-    /* Set the multisynth module we're dealing with */
-    ms.index = (module == BLADERF_MODULE_RX) ? 1 : 2;
+    ms.index = index;
+    ms.enable = channel;
 
     /* Update the base address register */
     si5338_update_base(&ms);
@@ -455,7 +504,7 @@ int si5338_set_rational_sample_rate(struct bladerf *dev, bladerf_module module,
     }
 
     /* Get the actual rate */
-    si5338_calculate_samplerate(&ms, &actual);
+    si5338_calculate_ms_freq(&ms, &actual);
     if (actual_ret) {
         memcpy(actual_ret, &actual, sizeof(*actual_ret));
     }
@@ -496,6 +545,34 @@ int si5338_set_sample_rate(struct bladerf *dev, bladerf_module module,
     return status ;
 }
 
+int si5338_set_smb_freq(struct bladerf *dev, uint32_t rate, uint32_t *actual)
+{
+    struct bladerf_rational_rate req, act;
+    int status;
+
+    memset(&act, 0, sizeof(act));
+    log_verbose("Setting integer SMB frequency: %d\n", rate);
+    req.integer = rate;
+    req.num = 0;
+    req.den = 1;
+
+    status = si5338_set_rational_smb_freq(dev, &req, &act);
+
+    if (status == 0 && act.num != 0) {
+        log_info("Non-integer SMB frequency set from integer frequency, "
+                 "truncating output.\n");
+    }
+
+    assert(act.integer <= UINT32_MAX);
+
+    if (actual) {
+        *actual = (uint32_t)act.integer;
+    }
+    log_verbose("Set actual integer SMB frequency: %d\n", act.integer);
+
+    return status;
+}
+
 int si5338_get_rational_sample_rate(struct bladerf *dev, bladerf_module module,
                                     struct bladerf_rational_rate *rate)
 {
@@ -517,7 +594,29 @@ int si5338_get_rational_sample_rate(struct bladerf *dev, bladerf_module module,
         return status;
     }
 
-    si5338_calculate_samplerate(&ms, rate);
+    si5338_calculate_ms_freq(&ms, rate);
+
+    return 0;
+}
+
+int si5338_get_rational_smb_freq(struct bladerf *dev,
+                                 struct bladerf_rational_rate *rate)
+{
+    struct si5338_multisynth ms;
+    int status;
+
+    /* Select MS3 for the SMB output */
+    ms.index = 3;
+    si5338_update_base(&ms);
+
+    status = si5338_read_multisynth(dev, &ms);
+
+    if (status) {
+        si5338_read_error(status, bladerf_strerror(status));
+        return status;
+    }
+
+    si5338_calculate_ms_freq(&ms, rate);
 
     return 0;
 }
@@ -546,3 +645,25 @@ int si5338_get_sample_rate(struct bladerf *dev, bladerf_module module,
     return 0;
 }
 
+int si5338_get_smb_freq(struct bladerf *dev, unsigned int *rate)
+{
+    struct bladerf_rational_rate actual;
+    int status;
+
+    status = si5338_get_rational_smb_freq(dev, &actual);
+
+    if (status) {
+        si5338_read_error(status, bladerf_strerror(status));
+        return status;
+    }
+
+    if (actual.num != 0) {
+        log_debug("Fractional SMB frequency truncated during integer SMB"
+                  " frequency retrieval\n");
+    }
+
+    assert(actual.integer <= UINT_MAX);
+    *rate = (unsigned int)actual.integer;
+
+    return 0;
+}

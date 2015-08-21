@@ -350,7 +350,7 @@
 
 
 #define CLI_CMD_HELPTEXT_mimo \
-  "Usage: mimo [master | slave]\n" \
+  "Usage: mimo [master [frequency] | slave]\n" \
   "\n" \
   "Modify device MIMO operation.\n" \
   "\n" \
