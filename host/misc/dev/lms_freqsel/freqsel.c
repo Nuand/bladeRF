@@ -64,7 +64,7 @@ static const struct vco_range vco[] = {
  * LMS FAQ (5.24), with the intent of avoiding the use of "edges" that might
  * cause the PLLs to lose lock over temperature changes */
 #define VCO4_LOW    3800000000ull
-#define VCO4_HIGH   4555000000ull
+#define VCO4_HIGH   4535000000ull
 
 #define VCO3_LOW    VCO4_HIGH
 #define VCO3_HIGH   5408000000ull
@@ -295,8 +295,8 @@ int main(void)
 {
     print_table();
 
-    /* Check the ranges, with 5.0% on either end of a band marked "keep out" */
-    check_vco_ranges(5.0);
+    /* Check the ranges, with 2.5% on either end of a band marked "keep out" */
+    check_vco_ranges(2.5);
 
     return 0;
 }
