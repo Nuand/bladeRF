@@ -53,7 +53,9 @@
 #   include "bladerf_priv.h"
 #   include "log.h"
 #   include "rel_assert.h"
-//#define LMS_COUNT_BUSY_WAITS
+
+//  #define LMS_COUNT_BUSY_WAITS
+
     /* Unneeded, due to USB transfer duration */
 #   define VTUNE_BUSY_WAIT(us) \
         do { \
@@ -1771,7 +1773,9 @@ static inline int get_vtune(struct bladerf *dev, uint8_t base, uint8_t delay,
 {
     int status;
 
-    VTUNE_BUSY_WAIT(delay);
+    if (delay != 0) {
+        VTUNE_BUSY_WAIT(delay);
+    }
 
     status = LMS_READ(dev, base + 10, vtune);
     *vtune >>= 6;
@@ -1782,8 +1786,18 @@ static inline int get_vtune(struct bladerf *dev, uint8_t base, uint8_t delay,
 static inline int write_vcocap(struct bladerf *dev, uint8_t base,
                                uint8_t vcocap, uint8_t vcocap_reg_state)
 {
+    int status;
+
+    assert(vcocap <= VCOCAP_MAX_VALUE);
     log_verbose("Writing VCOCAP=%u\n", vcocap);
-    return LMS_WRITE(dev, base + 9, vcocap | vcocap_reg_state);
+
+    status = LMS_WRITE(dev, base + 9, vcocap | vcocap_reg_state);
+
+    if (status != 0) {
+        log_debug("VCOCAP write failed: %d\n", status);
+    }
+
+    return status;
 }
 
 #define VTUNE_DELAY_LARGE 50
@@ -1793,6 +1807,24 @@ static inline int write_vcocap(struct bladerf *dev, uint8_t base,
 #define VCO_HIGH 0x02
 #define VCO_NORM 0x00
 #define VCO_LOW  0x01
+
+#ifdef LOGGING_ENABLED
+static const char *vtune_str(uint8_t value) {
+    switch (value) {
+        case VCO_HIGH:
+            return "HIGH";
+
+        case VCO_NORM:
+            return "NORM";
+
+        case VCO_LOW:
+            return "LOW";
+
+        default:
+            return "INVALID";
+    }
+}
+#endif
 
 static int vtune_high_to_norm(struct bladerf *dev, uint8_t base,
                                      uint8_t vcocap, uint8_t vcocap_reg_state,
@@ -1824,7 +1856,8 @@ static int vtune_high_to_norm(struct bladerf *dev, uint8_t base,
 
         if (vtune == VCO_NORM) {
             *vtune_high_limit = vcocap - 1;
-            log_verbose("VTUNE high @ VCOCAP=%u\n", *vtune_high_limit);
+            log_verbose("VTUNE NORM @ VCOCAP=%u\n", vcocap);
+            log_verbose("VTUNE HIGH @ VCOCAP=%u\n", *vtune_high_limit);
             return 0;
         }
     }
@@ -1872,45 +1905,6 @@ static int vtune_norm_to_high(struct bladerf *dev, uint8_t base,
     return BLADERF_ERR_UNEXPECTED;
 }
 
-static int vtune_norm_to_low(struct bladerf *dev, uint8_t base,
-                                    uint8_t vcocap, uint8_t vcocap_reg_state,
-                                    uint8_t *vtune_low_limit)
-{
-    int status;
-    unsigned int i;
-    uint8_t vtune = 0xff;
-
-    for (i = 0; i < VTUNE_MAX_ITERATIONS; i++) {
-
-        if (vcocap >= VCOCAP_MAX_VALUE) {
-            *vtune_low_limit = VCOCAP_MAX_VALUE;
-            log_warning("%s: VCOCAP hit max value.\n", __FUNCTION__);
-            return 0;
-        }
-
-        vcocap++;
-
-        status = write_vcocap(dev, base, vcocap, vcocap_reg_state);
-        if (status != 0) {
-            return status;
-        }
-
-        status = get_vtune(dev, base, VTUNE_DELAY_SMALL, &vtune);
-        if (status != 0) {
-            return status;
-        }
-
-        if (vtune == VCO_LOW) {
-            *vtune_low_limit = vcocap;
-            log_verbose("VTUNE low @ VCOCAP=%u\n", *vtune_low_limit);
-            return 0;
-        }
-    }
-
-    log_error("VTUNE Norm->Low loop failed to converge.\n");
-    return BLADERF_ERR_UNEXPECTED;
-}
-
 static int vtune_low_to_norm(struct bladerf *dev, uint8_t base,
                                     uint8_t vcocap, uint8_t vcocap_reg_state,
                                     uint8_t *vtune_low_limit)
@@ -1941,7 +1935,8 @@ static int vtune_low_to_norm(struct bladerf *dev, uint8_t base,
 
         if (vtune == VCO_NORM) {
             *vtune_low_limit = vcocap + 1;
-            log_verbose("VTUNE low @ VCOCAP=%u\n", *vtune_low_limit);
+            log_verbose("VTUNE NORM @ VCOCAP=%u\n", vcocap);
+            log_verbose("VTUNE LOW @ VCOCAP=%u\n", *vtune_low_limit);
             return 0;
         }
     }
@@ -1950,6 +1945,66 @@ static int vtune_low_to_norm(struct bladerf *dev, uint8_t base,
     return BLADERF_ERR_UNEXPECTED;
 }
 
+/* Wait for VTUNE to reach HIGH or LOW. NORM is not a valid option here */
+static int wait_for_vtune_value(struct bladerf *dev,
+                                uint8_t base, uint8_t target_value,
+                                uint8_t *vcocap, uint8_t vcocap_reg_state)
+{
+    uint8_t vtune;
+    unsigned int i;
+    int status = 0;
+    const unsigned int max_retries = 15;
+    const uint8_t limit = (target_value == VCO_HIGH) ? 0 : VCOCAP_MAX_VALUE;
+    int8_t inc = (target_value == VCO_HIGH) ? -1 : 1;
+
+    assert(target_value == VCO_HIGH || target_value == VCO_LOW);
+
+    for (i = 0; i < max_retries; i++) {
+        status = get_vtune(dev, base, 0, &vtune);
+        if (status != 0) {
+            return status;
+        }
+
+        if (vtune == target_value) {
+            log_verbose("VTUNE reached %s at iteration %u\n",
+                        vtune_str(target_value), i);
+            return 0;
+        } else {
+            log_verbose("VTUNE was %s. Waiting and retrying...\n",
+                        vtune_str(vtune));
+
+            VTUNE_BUSY_WAIT(10);
+        }
+    }
+
+    log_warning("Timed out while waiting for VTUNE=%s. Walking VCOCAP...\n",
+                vtune_str(target_value));
+
+    while (*vcocap != limit) {
+        *vcocap += inc;
+
+        status = write_vcocap(dev, base, *vcocap, vcocap_reg_state);
+        if (status != 0) {
+            return status;
+        }
+
+        status = get_vtune(dev, base, VTUNE_DELAY_SMALL, &vtune);
+        if (status != 0) {
+            return status;
+        } else if (vtune == target_value) {
+            log_debug("VTUNE=%s reached with VCOCAP=%u\n",
+                      vtune_str(vtune), *vcocap);
+            return 0;
+        }
+    }
+
+    log_debug("VTUNE did not converge!\n");
+    return BLADERF_ERR_UNEXPECTED;
+}
+
+/* These values are the max counts we've seen (experimentally) between
+ * VCOCAP values that converged */
+#define VCOCAP_MAX_LOW_HIGH  12
 
 /* This function assumes an initial VCOCAP estimate has already been written.
  *
@@ -1968,8 +2023,8 @@ static int vtune_low_to_norm(struct bladerf *dev, uint8_t base,
  * the voltage changes.
  */
 static int tune_vcocap(struct bladerf *dev, uint8_t vcocap_est,
-                              uint8_t base, uint8_t vcocap_reg_state,
-                              uint8_t *vcocap_result)
+                       uint8_t base, uint8_t vcocap_reg_state,
+                       uint8_t *vcocap_result)
 {
     int status;
     uint8_t vcocap = vcocap_est;
@@ -2010,18 +2065,21 @@ static int tune_vcocap(struct bladerf *dev, uint8_t vcocap_est,
     if (status != 0) {
         return status;
     } else if (vtune_high_limit != VCOCAP_MAX_VALUE) {
-        /* We determined our VTUNE HIGH limit. Now find the low limit */
+
+        /* We determined our VTUNE HIGH limit. Try to force ourselves to the
+         * LOW limit and then walk back up to norm from there.
+         *
+         * Reminder - There's an inverse relationship between VTUNE and VCOCAP
+         */
         switch (vtune) {
             case VCO_HIGH:
-                /* Our initial estimate was HIGH, so our limit+1 was normal,
-                 * and therefore, limit+3 is in the direction of LOW */
-                vcocap = vtune_high_limit + 3;
-                break;
-
             case VCO_NORM:
-                /* Our initial estimate was normal so start in the
-                 * opposite direction this time */
-                vcocap = vcocap_est + 2;
+                if ( ((int) vtune_high_limit + VCOCAP_MAX_LOW_HIGH) < VCOCAP_MAX_VALUE) {
+                    vcocap = vtune_high_limit + VCOCAP_MAX_LOW_HIGH;
+                } else {
+                    vcocap = VCOCAP_MAX_VALUE;
+                    log_verbose("Clamping VCOCAP to %u.\n", vcocap);
+                }
                 break;
 
             default:
@@ -2029,24 +2087,36 @@ static int tune_vcocap(struct bladerf *dev, uint8_t vcocap_est,
                 return BLADERF_ERR_UNEXPECTED;
         }
 
-        log_verbose("Searching for VTUNE LOW, starting @ VCOCAP=%u,\n", vcocap);
+        status = write_vcocap(dev, base, vcocap, vcocap_reg_state);
+        if (status != 0) {
+            return status;
+        }
 
-        status = vtune_norm_to_low(dev, base, vcocap, vcocap_reg_state,
-                                   &vtune_low_limit);
+        log_verbose("Waiting for VTUNE LOW @ VCOCAP=%u,\n", vcocap);
+        status = wait_for_vtune_value(dev, base, VCO_LOW,
+                                      &vcocap, vcocap_reg_state);
+
+        if (status == 0) {
+            log_verbose("Walking VTUNE LOW to NORM from VCOCAP=%u,\n", vcocap);
+            status = vtune_low_to_norm(dev, base, vcocap, vcocap_reg_state,
+                                       &vtune_low_limit);
+        }
     } else {
-        /* We determined our VTUNE LOW limit, now find the high limit */
 
+        /* We determined our VTUNE LOW limit. Try to force ourselves up to
+         * the HIGH limit and then walk down to NORM from there
+         *
+         * Reminder - There's an inverse relationship between VTUNE and VCOCAP
+         */
         switch (vtune) {
             case VCO_LOW:
-                /* Our initial estimate was LOW, so our limit-1 was normal,
-                 * and therefore, limit-3 is in the direction of HIGH */
-                vcocap = vtune_low_limit - 3;
-                break;
-
             case VCO_NORM:
-                /* Our initial estimate was normal so start in the
-                 * opposite direction this time */
-                vcocap = vcocap_est - 2;
+                if ( ((int) vtune_low_limit - VCOCAP_MAX_LOW_HIGH) > 0) {
+                    vcocap = vtune_low_limit - VCOCAP_MAX_LOW_HIGH;
+                } else {
+                    vcocap = 0;
+                    log_verbose("Clamping VCOCAP to %u.\n", vcocap);
+                }
                 break;
 
             default:
@@ -2054,11 +2124,20 @@ static int tune_vcocap(struct bladerf *dev, uint8_t vcocap_est,
                 return BLADERF_ERR_UNEXPECTED;
         }
 
+        status = write_vcocap(dev, base, vcocap, vcocap_reg_state);
+        if (status != 0) {
+            return status;
+        }
 
-        log_verbose("Searching for VTUNE HIGH, starting @ VCOCAP=%u,\n", vcocap);
+        log_verbose("Waiting for VTUNE HIGH @ VCOCAP=%u\n", vcocap);
+        status = wait_for_vtune_value(dev, base, VCO_HIGH,
+                                      &vcocap, vcocap_reg_state);
 
-        status = vtune_norm_to_high(dev, base, vcocap, vcocap_reg_state,
-                                    &vtune_high_limit);
+        if (status == 0) {
+            log_verbose("Walking VTUNE HIGH to NORM from VCOCAP=%u,\n", vcocap);
+            status = vtune_high_to_norm(dev, base, vcocap, vcocap_reg_state,
+                                        &vtune_high_limit);
+        }
     }
 
     if (status == 0) {
@@ -2069,6 +2148,11 @@ static int tune_vcocap(struct bladerf *dev, uint8_t vcocap_est,
         log_verbose("VTUNE Est:   %u (%d)\n",
                      vcocap_est, (int) vcocap_est - vcocap);
         log_verbose("VTUNE HIGH:  %u\n", vtune_high_limit);
+
+#       if LMS_COUNT_BUSY_WAITS
+        log_verbose("Busy waits:  %u\n", busy_wait_count);
+        log_verbose("Busy us:     %u\n", busy_wait_duration);
+#       endif
 
         status = write_vcocap(dev, base, vcocap, vcocap_reg_state);
         if (status != 0) {
