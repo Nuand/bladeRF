@@ -11,11 +11,14 @@ function usage()
     echo "Usage: `basename $0` -r <rev> -s <size>"
     echo ""
     echo "Options:"
-    echo "    -r <rev>       FPGA revision"
-    echo "    -s <size>      FPGA size"
-    echo "    -a <stp>       SignalTap STP file"
-    echo "    -f             Force STP insertion"
-    echo "    -h             Show this text"
+    echo "    -r <rev>              FPGA revision"
+    echo "    -s <size>             FPGA size"
+    echo "    -a <stp>              SignalTap STP file"
+    echo "    -f                    Force STP insertion"
+    echo "    -n <Tiny|Small|Fast>  Select NIOS II revision. Tiny is the"
+    echo "                            default and can be built with"
+    echo "                            Quartus Web Edition."
+    echo "    -h                    Show this text"
     echo ""
     echo "Supported revisions:"
     echo "    hosted"
@@ -79,7 +82,10 @@ if [ $# -eq 0 ]; then
     exit 0
 fi
 
-while getopts ":fa:s:r:h" opt; do
+# Default to NIOS II E (Tiny)
+nios_rev="Tiny"
+
+while getopts ":fa:s:r:n:h" opt; do
     case $opt in
         h)
             usage
@@ -102,6 +108,9 @@ while getopts ":fa:s:r:h" opt; do
         f)
             echo "Forcing STP insertion"
             force="-force"
+            ;;
+
+        n)  nios_rev=$OPTARG
             ;;
 
         \?)
@@ -141,6 +150,11 @@ if [ "$stp" != "" ] && [ ! -f "$stp" ]; then
     exit 1
 fi
 
+if [ "$nios_rev" != "Tiny" ] && [ "$nios_rev" != "Small" ] && [ "$nios_rev" != "Fast" ]; then
+    echo -e "\nInvalid NIOS II revision: $nios_rev\n" >&2
+    exit 1
+fi
+
 # quartus_sh script gives a reference point to the quartus bin dir
 quartus_sh="`which quartus_sh`"
 if [ $? -ne 0 ] || [ ! -f "$quartus_sh" ]; then
@@ -175,6 +189,10 @@ echo "    Generating NIOS II Qsys for bladeRF ..."
 echo "##########################################################################"
 echo ""
 
+# Switch out the NIOS II implementation in nios_system.qsys
+echo "Selecting NIOS II implementation: $nios_rev"
+sed -ri "s/name=\"impl\" value=\"(Tiny|Small|Fast)\"/name=\"impl\" value=\"$nios_rev\"/" $nios_system/nios_system.qsys
+
 ip-generate \
     --project-directory=$nios_system \
     --output-directory=$nios_system \
@@ -202,6 +220,7 @@ echo "##########################################################################
 echo "    Building BSP and sample application..."
 echo "##########################################################################"
 echo ""
+
 
 pushd $nios_system/software/bladeRF_nios_bsp
 cp ../settings.bsp.in ./settings.bsp
@@ -259,6 +278,9 @@ MD5SUM=$(cat $RBF.md5sum | awk '{ print $1 }')
 SHA256SUM=$(cat $RBF.sha256sum  | awk '{ print $1 }')
 popd
 
+# Restore NIOS II implementation to Tiny to avoid accidentally committing this change
+echo "Restoring NIOS II implementation to Tiny..."
+sed -ri "s/name=\"impl\" value=\"(Tiny|Small|Fast)\"/name=\"impl\" value=\"Tiny\"/" $nios_system/nios_system.qsys
 
 echo ""
 echo "##########################################################################"

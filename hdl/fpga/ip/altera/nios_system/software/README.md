@@ -147,20 +147,6 @@ NIOS II Core Implementation
 
 By default, the FPGA build is configured for use with a NIOS II/e implementation, which can be built with the Quartus II Web Edition.
 
-Users with licenses for the NIOS II/s or II/f implementations will need to change the following line from the [nios_system.qsys](../nios_system.qsys) file:
+Users with licenses for the NIOS II/s or II/f implementations can pass `-n Small` or `-n Fast` (respectively) to `build_bladerf.sh` to configure the build for the associated NIOS II core. Otherwise, `-n Tiny` is assumed.
 
-```
-<parameter name="impl" value="Tiny" />
-```
-
-*For the Nios II/s:*
-```
-<parameter name="impl" value="Small" />
-```
-
-*For the Nios II/f:*
-```
-<parameter name="impl" value="Fast" />
-```
-
-Information about the NIOS II core implementations can be found in Altera's [Nios II Core Implementation Details](https://www.altera.com/en_US/pdfs/literature/hb/nios2/n2cpu_nii51015.pdf) document.
+For more information, see Altera's [Nios II Core Implementation Details](https://www.altera.com/en_US/pdfs/literature/hb/nios2/n2cpu_nii51015.pdf) document.
