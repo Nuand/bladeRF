@@ -140,7 +140,7 @@ bool cli_device_is_streaming(struct cli_state *s);
 
 /**
  * Print an error message, with a line number, if running from a script.
- *
+ * This function adds preceeding and following new lines.
  *
  * @param   s       CLI state.
  * @param   pfx     Error prefix.
@@ -148,6 +148,17 @@ bool cli_device_is_streaming(struct cli_state *s);
  *
  */
 void cli_err(struct cli_state *s, const char *pfx, const char *format, ...);
+
+/**
+ * Print an error message, with a line number, if running from a script.
+ * This function DOES NOT add additional newlines. (nnl="now newlines")
+ *
+ * @param   s       CLI state.
+ * @param   pfx     Error prefix.
+ * @param   format  Printf-style format string, followed by args
+ *
+ */
+void cli_err_nnl(struct cli_state *s, const char *pfx, const char *format, ...);
 
 /**
  * @return true if provided return code is fatal, false otherwise
