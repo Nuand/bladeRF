@@ -27,7 +27,7 @@
  * Any manual modifications to this file will be overwritten!
  * To edit the content of help strings, please edit interactive-help.md
  *
- * Last generated: Wed Jul 15 22:24:41 EDT 2015 by jynik
+ * Last generated: Sun Aug 23 03:24:08 EDT 2015 by jynik
  */
 
 #ifndef BLADERF_CLI_DOC_CMD_HELP_H__
@@ -417,9 +417,11 @@
 
 
 #define CLI_CMD_HELPTEXT_print \
-  "Usage: print <param>\n" \
+  "Usage: print [parameter]\n" \
   "\n" \
-  "The print command takes a parameter to print. The parameter is one of:\n" \
+  "The print command takes a parameter to print. Available parameters are\n" \
+  "listed below. If no paremeter is specified, all parameters are\n" \
+  "printed.\n" \
   "\n" \
   "       Parameter Description\n" \
   "  -------------- --------------------------------------------------------\n" \
@@ -427,7 +429,7 @@
   "       frequency Frequency settings\n" \
   "            gpio FX3 <-> FPGA GPIO state\n" \
   "        loopback Loopback settings\n" \
-  "         lnagain Gain setting of the LNA, in dB\n" \
+  "         lnagain Gain setting of the RX LNA, in dB\n" \
   "          rxvga1 Gain setting of RXVGA1, in dB\n" \
   "          rxvga2 Gain setting of RXVGA2, in dB\n" \
   "          txvga1 Gain setting of TXVGA1, in dB\n" \
@@ -435,6 +437,8 @@
   "        sampling External or internal sampling mode\n" \
   "      samplerate Samplerate settings\n" \
   "         trimdac VCTCXO Trim DAC settings\n" \
+  "         xb_gpio Expansion board GPIO values\n" \
+  "     xb_gpio_dir Expansion board GPIO direction (1=output, 0=input)\n" \
   "\n" \
 
 
@@ -660,39 +664,27 @@
 
 
 #define CLI_CMD_HELPTEXT_set \
-  "Usage: set <param> <arguments>\n" \
+  "Usage: set <parameter> <arguments>\n" \
   "\n" \
   "The set command takes a parameter and an arbitrary number of arguments\n" \
-  "for that particular command. The parameter is one of:\n" \
+  "for that particular parameter. The parameter is one of:\n" \
   "\n" \
-  "  -----------------------------------------------------------------------\n" \
   "       Parameter Description\n" \
   "  -------------- --------------------------------------------------------\n" \
   "       bandwidth Bandwidth settings\n" \
-  "\n" \
   "       frequency Frequency settings\n" \
-  "\n" \
   "            gpio FX3 <-> FPGA GPIO state\n" \
-  "\n" \
-  "        loopback Loopback settings. Run 'set loopback' for available\n" \
-  "                 modes.\n" \
-  "\n" \
-  "         lnagain Gain setting of the LNA, in dB. Valid values: 0, 3, 6\n" \
-  "\n" \
+  "        loopback Loopback settings. Run 'set loopback' to list modes.\n" \
+  "         lnagain Gain setting of the RX LNA, in dB. Values: 0, 3, 6\n" \
   "          rxvga1 Gain setting of RXVGA1, in dB. Range: [5, 30]\n" \
-  "\n" \
   "          rxvga2 Gain setting of RXVGA2, in dB. Range: [0, 30]\n" \
-  "\n" \
   "          txvga1 Gain setting of TXVGA1, in dB. Range: [-35, -4]\n" \
-  "\n" \
   "          txvga2 Gain setting of TXVGA2, in dB. Range: [0, 25]\n" \
-  "\n" \
   "        sampling External or internal sampling mode\n" \
-  "\n" \
   "      samplerate Sample rate settings\n" \
-  "\n" \
   "         trimdac VCTCXO Trim DAC settings\n" \
-  "  -----------------------------------------------------------------------\n" \
+  "         xb_gpio Expansion board GPIO values\n" \
+  "     xb_gpio_dir Expansion board GPIO direction (1=output, 0=input)\n" \
   "\n" \
 
 

@@ -403,9 +403,10 @@ Example:
 print
 -----
 
-Usage: `print <param>`
+Usage: `print [parameter]`
 
-The print command takes a parameter to print.  The parameter is one of:
+The print command takes a parameter to print. Available parameters are listed
+below. If no paremeter is specified, all parameters are printed.
 
 ----------------------------------------------------------------------
     Parameter Description
@@ -418,7 +419,7 @@ The print command takes a parameter to print.  The parameter is one of:
 
 `loopback`    Loopback settings
 
-`lnagain`     Gain setting of the LNA, in dB
+`lnagain`     Gain setting of the RX LNA, in dB
 
 `rxvga1`      Gain setting of RXVGA1, in dB
 
@@ -433,6 +434,10 @@ The print command takes a parameter to print.  The parameter is one of:
 `samplerate`  Samplerate settings
 
 `trimdac`     VCTCXO Trim DAC settings
+
+`xb_gpio`     Expansion board GPIO values
+
+`xb_gpio_dir` Expansion board GPIO direction (1=output, 0=input)
 ----------------------------------------------------------------------
 
 
@@ -663,10 +668,10 @@ Notes:
 set
 ---
 
-Usage: `set <param> <arguments>`
+Usage: `set <parameter> <arguments>`
 
 The set command takes a parameter and an arbitrary number of arguments for
-that particular command.  The parameter is one of:
+that particular parameter. The parameter is one of:
 
 ----------------------------------------------------------------------
     Parameter Description
@@ -677,9 +682,9 @@ that particular command.  The parameter is one of:
 
 `gpio`        FX3 <-> FPGA GPIO state
 
-`loopback`    Loopback settings. Run 'set loopback' for available modes.
+`loopback`    Loopback settings. Run 'set loopback' to list modes.
 
-`lnagain`     Gain setting of the LNA, in dB. Valid values: 0, 3, 6
+`lnagain`     Gain setting of the RX LNA, in dB. Values: 0, 3, 6
 
 `rxvga1`      Gain setting of RXVGA1, in dB. Range: [5, 30]
 
@@ -694,6 +699,10 @@ that particular command.  The parameter is one of:
 `samplerate`  Sample rate settings
 
 `trimdac`     VCTCXO Trim DAC settings
+
+`xb_gpio`     Expansion board GPIO values
+
+`xb_gpio_dir` Expansion board GPIO direction (1=output, 0=input)
 ----------------------------------------------------------------------
 
 
