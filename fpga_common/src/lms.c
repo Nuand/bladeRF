@@ -1977,8 +1977,8 @@ static int wait_for_vtune_value(struct bladerf *dev,
         }
     }
 
-    log_warning("Timed out while waiting for VTUNE=%s. Walking VCOCAP...\n",
-                vtune_str(target_value));
+    log_debug("Timed out while waiting for VTUNE=%s. Walking VCOCAP...\n",
+               vtune_str(target_value));
 
     while (*vcocap != limit) {
         *vcocap += inc;
@@ -1998,8 +1998,14 @@ static int wait_for_vtune_value(struct bladerf *dev,
         }
     }
 
-    log_debug("VTUNE did not converge!\n");
-    return BLADERF_ERR_UNEXPECTED;
+    log_warning("VTUNE did not reach %s. Tuning may not be nominal.\n",
+                vtune_str(target_value));
+
+#   ifdef ERROR_ON_NO_VTUNE_LIMIT
+        return BLADERF_ERR_UNEXPECTED;
+#   else
+        return 0;
+#   endif
 }
 
 /* These values are the max counts we've seen (experimentally) between
