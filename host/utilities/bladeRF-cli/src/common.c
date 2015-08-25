@@ -283,6 +283,9 @@ const char * cli_strerror(int error, int lib_error)
         case CLI_RET_NOFILE:
             return "File not found";
 
+        case CLI_RET_PERMISSION:
+            return "Insufficient permissions for the requested operation";
+
         /* Other commands shall print out helpful info from within their
          * implementation */
         default:
@@ -327,10 +330,17 @@ int expand_and_open(const char *filename, const char *mode, FILE **file)
 
     *file = fopen(expanded_filename, mode);
     if (*file == NULL) {
-        if (errno == ENOENT) {
-            status = CLI_RET_NOFILE;
-        } else {
-            status = CLI_RET_FILEOP;
+        switch (errno) {
+            case ENOENT:
+                status = CLI_RET_NOFILE;
+                break;
+
+            case EACCES:
+                status = CLI_RET_PERMISSION;
+                break;
+
+            default:
+                status = CLI_RET_FILEOP;
         }
     } else {
         status = 0;
