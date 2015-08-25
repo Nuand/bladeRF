@@ -21,6 +21,7 @@
 #include <string.h>
 #include <math.h>
 #include <limits.h>
+#include <errno.h>
 
 #include "calibrate.h"
 #include "common.h"
@@ -723,6 +724,7 @@ int calibrate_dc_gen_tbl(struct cli_state *s, bladerf_module module,
     struct settings settings;
     bladerf_loopback loopback_backup;
     struct bladerf_image *image = NULL;
+    FILE *write_check;
 
     const uint16_t magic = HOST_TO_LE16(0x1ab1);
     const uint32_t reserved = HOST_TO_LE32(0x00000000);
@@ -743,6 +745,22 @@ int calibrate_dc_gen_tbl(struct cli_state *s, bladerf_module module,
                              lms_data_size + table_size;
 
     assert(data_size <= UINT_MAX);
+
+    /* This operation may take a bit of time, so let's make sure we
+     * actually have write access before kicking things off.  Note that
+     * access is checked later when the file is actually written.
+     */
+    write_check = fopen(filename, "wb");
+    if (write_check == NULL) {
+        if (errno == EACCES) {
+            return BLADERF_ERR_PERMISSION;
+        } else {
+            return BLADERF_ERR_IO;
+        }
+    } else {
+        fclose(write_check);
+        remove(filename);
+    }
 
     status = backup_and_update_settings(s->dev, module, &settings);
     if (status != 0) {
