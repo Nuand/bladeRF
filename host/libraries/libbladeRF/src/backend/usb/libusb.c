@@ -411,8 +411,17 @@ static int find_and_open_device(libusb_context *context,
             /* Open the USB device and get some information */
             status = get_devinfo(list[i], &curr_info);
             if (status < 0) {
-                log_debug("Could not open bladeRF device: %s\n",
-                        libusb_error_name(status) );
+
+                /* Give the user a helpful hint in case the have forgotten
+                 * to update their udev rules */
+                if (status == LIBUSB_ERROR_ACCESS) {
+                    log_info("Found a bladeRF but could not query its "
+                             "information due to insufficient permissions.\n");
+                } else {
+                    log_debug("Could not open bladeRF device: %s\n",
+                               libusb_error_name(status) );
+                }
+
                 status = BLADERF_ERR_NODEV;
                 continue; /* Continue trying the next devices */
             } else {
