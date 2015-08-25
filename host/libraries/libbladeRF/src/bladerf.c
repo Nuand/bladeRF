@@ -1238,6 +1238,8 @@ const char * bladerf_strerror(int error)
             return "Could not enqueue data into full queue";
         case BLADERF_ERR_FPGA_OP:
             return "An FPGA operation reported a failure";
+        case BLADERF_ERR_PERMISSION:
+            return "Insufficient permissions for the requested operation";
         case 0:
             return "Success";
         default:

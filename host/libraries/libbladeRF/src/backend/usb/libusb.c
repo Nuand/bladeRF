@@ -106,10 +106,13 @@ static int error_conv(int error)
             ret = BLADERF_ERR_UNSUPPORTED;
             break;
 
+        case LIBUSB_ERROR_ACCESS:
+            ret = BLADERF_ERR_PERMISSION;
+            break;
+
         case LIBUSB_ERROR_OVERFLOW:
         case LIBUSB_ERROR_PIPE:
         case LIBUSB_ERROR_INTERRUPTED:
-        case LIBUSB_ERROR_ACCESS:
         case LIBUSB_ERROR_NOT_FOUND:
         default:
             ret = BLADERF_ERR_UNEXPECTED;
