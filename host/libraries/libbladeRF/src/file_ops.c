@@ -115,8 +115,16 @@ int file_read_buffer(const char *filename, uint8_t **buf_ret, size_t *size_ret)
 
     f = fopen(filename, "rb");
     if (!f) {
-        int errno_val = errno;
-        return errno_val == ENOENT ? BLADERF_ERR_NO_FILE : BLADERF_ERR_IO;
+        switch (errno) {
+            case ENOENT:
+                return BLADERF_ERR_NO_FILE;
+
+            case EACCES:
+                return BLADERF_ERR_PERMISSION;
+
+            default:
+                return BLADERF_ERR_IO;
+        }
     }
 
     len = file_size(f);

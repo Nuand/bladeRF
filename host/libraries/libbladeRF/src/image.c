@@ -328,8 +328,14 @@ int bladerf_image_write(struct bladerf_image *img, const char *file)
 
     f = fopen(file, "wb");
     if (!f) {
+        if (errno == EACCES) {
+            rv = BLADERF_ERR_PERMISSION;
+        } else {
+            rv = BLADERF_ERR_IO;
+        }
+
         log_debug("Failed to open \"%s\": %s\n", file, strerror(errno));
-        rv = BLADERF_ERR_IO;
+
         goto error;
     }
 
