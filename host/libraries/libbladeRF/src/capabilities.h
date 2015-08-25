@@ -73,6 +73,11 @@
  */
 #define BLADERF_CAP_VCTCXO_TRIMDAC_READ (1 << 5)
 
+/**
+ * FPGA v0.4.0 introduced the ability to write LMS6002D TX/RX PLL
+ * NINT & NFRAC regiters atomically.
+ */
+#define BLADERF_CAP_ATOMIC_NINT_NFRAC_WRITE (1 << 6)
 
 /**
  * Firmware 1.7.1 introduced firmware-based loopback

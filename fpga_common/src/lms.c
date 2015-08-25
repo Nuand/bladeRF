@@ -51,6 +51,7 @@
 
 #ifndef BLADERF_NIOS_BUILD
 #   include "bladerf_priv.h"
+#   include "capabilities.h"
 #   include "log.h"
 #   include "rel_assert.h"
 
@@ -2284,9 +2285,20 @@ int lms_set_precalculated_frequency(struct bladerf *dev, bladerf_module mod,
 {
     /* Select the base address based on which PLL we are configuring */
     const uint8_t base = (mod == BLADERF_MODULE_RX) ? 0x20 : 0x10;
+
     uint8_t data;
     uint8_t vcocap_reg_state;
     int status, dsm_status;
+
+    /* Utilize atomic writes to the PLL registers, if possible. This
+     * "multiwrite" is indicated by the MSB being set. */
+#   ifdef BLADERF_NIOS_BUILD
+    const uint8_t pll_base = base | 0x80;
+#   else
+    const uint8_t pll_base =
+        have_cap(dev, BLADERF_CAP_ATOMIC_NINT_NFRAC_WRITE) ?
+            (base | 0x80) : base;
+#   endif
 
     f->vcocap_result = 0xff;
 
@@ -2324,25 +2336,25 @@ int lms_set_precalculated_frequency(struct bladerf *dev, bladerf_module mod,
     }
 
     data = f->nint >> 1;
-    status = LMS_WRITE(dev, base + 0, data);
+    status = LMS_WRITE(dev, pll_base + 0, data);
     if (status != 0) {
         goto error;
     }
 
     data = ((f->nint & 1) << 7) | ((f->nfrac >> 16) & 0x7f);
-    status = LMS_WRITE(dev, base + 1, data);
+    status = LMS_WRITE(dev, pll_base + 1, data);
     if (status != 0) {
         goto error;
     }
 
     data = ((f->nfrac >> 8) & 0xff);
-    status = LMS_WRITE(dev, base + 2, data);
+    status = LMS_WRITE(dev, pll_base + 2, data);
     if (status != 0) {
         goto error;
     }
 
     data = (f->nfrac & 0xff);
-    status = LMS_WRITE(dev, base + 3, data);
+    status = LMS_WRITE(dev, pll_base + 3, data);
     if (status != 0) {
         goto error;
     }
