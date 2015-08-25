@@ -67,11 +67,7 @@ bladerf_tuning_mode tuning_get_default_mode(struct bladerf *dev)
 
     if (mode == BLADERF_TUNING_MODE_INVALID) {
         if (fpga_supports_tuning_mode(dev, BLADERF_TUNING_MODE_FPGA)) {
-            /* Defaulting to host tuning mode until issue #417 is resolved
-             *
-             * mode = BLADERF_TUNING_MODE_FPGA;
-             */
-            mode = BLADERF_TUNING_MODE_HOST;
+            mode = BLADERF_TUNING_MODE_FPGA;
         } else {
             mode = BLADERF_TUNING_MODE_HOST;
         }
