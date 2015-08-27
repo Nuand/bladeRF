@@ -438,11 +438,11 @@ const char * CALL_CONV bladerf_backend_str(bladerf_backend backend);
 
 /** Maximum output frequency on SMB connector, if no expansion board attached.
  */
-#define BLADERF_SMB_FREQUENCY_MAX   (38400000UL * 66UL)
+#define BLADERF_SMB_FREQUENCY_MAX   200000000u
 
 /** Minimum output frequency on SMB connector, if no expansion board attached.
  */
-#define BLADERF_SMB_FREQUENCY_MIN   (BLADERF_SMB_FREQUENCY_MAX / (32 * 567))
+#define BLADERF_SMB_FREQUENCY_MIN   ((38400000u * 66u) / (32 * 567))
 
 /**
  * Specifies that scheduled retune should occur immediately when using
