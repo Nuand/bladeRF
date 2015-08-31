@@ -34,7 +34,7 @@ static inline bool perform_write(uint8_t id, uint32_t addr, uint32_t data)
         /* The address is used as a bitmask for the expansion IO registers.
          * We'll skip RMWs if all bits are being written */
         case NIOS_PKT_32x32_TARGET_EXP:
-            if (addr == 0xffffffff) {
+            if (addr != 0xffffffff) {
                 uint32_t tmp = expansion_port_read();
                 tmp &= ~(addr);
                 tmp |= (data & addr);
@@ -45,7 +45,7 @@ static inline bool perform_write(uint8_t id, uint32_t addr, uint32_t data)
             break;
 
         case NIOS_PKT_32x32_TARGET_EXP_DIR:
-            if (addr == 0xffffffff) {
+            if (addr != 0xffffffff) {
                 uint32_t tmp = expansion_port_get_direction();
                 tmp &= ~(addr);
                 tmp |= (data & addr);
