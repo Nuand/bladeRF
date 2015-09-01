@@ -164,15 +164,41 @@ int xb_attach(struct bladerf *dev, bladerf_xb xb) {
     switch (xb) {
         /* This requires support from the FPGA and FX3 firmware to be added */
         case BLADERF_XB_100:
-            log_debug("%s: The XB-100 is not currently supported by "
-                      "libbladeRF\n", __FUNCTION__);
-            status = BLADERF_ERR_UNSUPPORTED;
+            if (!have_cap(dev, BLADERF_CAP_MASKED_XBIO_WRITE)) {
+                log_debug("%s: XB100 support requires FPGA v0.4.1 or later.\n",
+                          __FUNCTION__);
+                return BLADERF_ERR_UNSUPPORTED;
+            } else {
+                const uint32_t mask =
+                    BLADERF_XB100_LED_D1        |
+                    BLADERF_XB100_LED_D2        |
+                    BLADERF_XB100_LED_D3        |
+                    BLADERF_XB100_LED_D4        |
+                    BLADERF_XB100_LED_D5        |
+                    BLADERF_XB100_LED_D6        |
+                    BLADERF_XB100_LED_D7        |
+                    BLADERF_XB100_LED_D8        |
+                    BLADERF_XB100_TLED_RED      |
+                    BLADERF_XB100_TLED_GREEN    |
+                    BLADERF_XB100_TLED_BLUE;
+
+                const uint32_t outputs = mask;
+                const uint32_t default_values = mask;
+
+                status = XB_GPIO_DIR_WRITE(dev, 0xffffffff, outputs);
+                if (status != 0) {
+                    break;
+                }
+
+                status = XB_GPIO_WRITE(dev, mask, default_values);
+            }
+
             break;
 
         case BLADERF_XB_200:
             if (!have_cap(dev, BLADERF_CAP_XB200)) {
-                log_warning("%s: XB200 support requires FPGA v0.0.5 or later\n",
-                            __FUNCTION__);
+                log_debug("%s: XB200 support requires FPGA v0.0.5 or later\n",
+                          __FUNCTION__);
                 status = BLADERF_ERR_UPDATE_FPGA;
             } else if (attached != xb) {
                 log_verbose( "Attaching XB200\n" );
