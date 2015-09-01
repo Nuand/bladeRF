@@ -185,12 +185,10 @@ int xb_attach(struct bladerf *dev, bladerf_xb xb) {
                 const uint32_t outputs = mask;
                 const uint32_t default_values = mask;
 
-                status = XB_GPIO_DIR_WRITE(dev, 0xffffffff, outputs);
-                if (status != 0) {
-                    break;
+                status = XB_GPIO_DIR_WRITE(dev, mask, outputs);
+                if (status == 0) {
+                    status = XB_GPIO_WRITE(dev, mask, default_values);
                 }
-
-                status = XB_GPIO_WRITE(dev, mask, default_values);
             }
 
             break;
