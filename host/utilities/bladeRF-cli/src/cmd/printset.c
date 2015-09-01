@@ -1,7 +1,7 @@
 /*
  * This file is part of the bladeRF project
  *
- * Copyright (C) 2013-2014 Nuand LLC
+ * Copyright (C) 2013-2015 Nuand LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -449,77 +449,384 @@ int set_gpio(struct cli_state *state, int argc, char **argv)
     return rv;
 }
 
-int print_xb_gpio(struct cli_state *state, int argc, char **argv) {
-    int rv = CLI_RET_OK, status;
-    unsigned int val;
+struct xb_gpio_lut {
+    const char *name;
+    uint32_t bitmask;
+};
 
-    status = bladerf_expansion_gpio_read( state->dev, &val );
+static const struct xb_gpio_lut xb_pins[] = {
+    { "GPIO_1",          BLADERF_XB_GPIO_01 },
+    { "GPIO_2",          BLADERF_XB_GPIO_02 },
+    { "GPIO_3",          BLADERF_XB_GPIO_03 },
+    { "GPIO_4",          BLADERF_XB_GPIO_04 },
+    { "GPIO_5",          BLADERF_XB_GPIO_05 },
+    { "GPIO_6",          BLADERF_XB_GPIO_06 },
+    { "GPIO_7",          BLADERF_XB_GPIO_07 },
+    { "GPIO_8",          BLADERF_XB_GPIO_08 },
+    { "GPIO_9",          BLADERF_XB_GPIO_09 },
+    { "GPIO_10",         BLADERF_XB_GPIO_10 },
+    { "GPIO_11",         BLADERF_XB_GPIO_11 },
+    { "GPIO_12",         BLADERF_XB_GPIO_12 },
+    { "GPIO_13",         BLADERF_XB_GPIO_13 },
+    { "GPIO_14",         BLADERF_XB_GPIO_14 },
+    { "GPIO_15",         BLADERF_XB_GPIO_15 },
+    { "GPIO_16",         BLADERF_XB_GPIO_16 },
+    { "GPIO_17",         BLADERF_XB_GPIO_17 },
+    { "GPIO_18",         BLADERF_XB_GPIO_18 },
+    { "GPIO_19",         BLADERF_XB_GPIO_19 },
+    { "GPIO_20",         BLADERF_XB_GPIO_20 },
+    { "GPIO_21",         BLADERF_XB_GPIO_21 },
+    { "GPIO_22",         BLADERF_XB_GPIO_22 },
+    { "GPIO_23",         BLADERF_XB_GPIO_23 },
+    { "GPIO_24",         BLADERF_XB_GPIO_24 },
+    { "GPIO_25",         BLADERF_XB_GPIO_25 },
+    { "GPIO_26",         BLADERF_XB_GPIO_26 },
+    { "GPIO_27",         BLADERF_XB_GPIO_27 },
+    { "GPIO_28",         BLADERF_XB_GPIO_28 },
+    { "GPIO_29",         BLADERF_XB_GPIO_29 },
+    { "GPIO_30",         BLADERF_XB_GPIO_30 },
+    { "GPIO_31",         BLADERF_XB_GPIO_31 },
+    { "GPIO_32",         BLADERF_XB_GPIO_32 },
+};
+
+static const struct xb_gpio_lut xb200_pins[] = {
+    { "J7_1",         BLADERF_XB200_PIN_J7_1 },
+    { "J7_2",         BLADERF_XB200_PIN_J7_2 },
+    { "J7_6",         BLADERF_XB200_PIN_J7_6 },
+    { "J13_1",        BLADERF_XB200_PIN_J13_1 },
+    { "J13_2",        BLADERF_XB200_PIN_J13_2 },
+    { "J16_1",        BLADERF_XB200_PIN_J16_1 },
+    { "J16_2",        BLADERF_XB200_PIN_J16_2 },
+    { "J16_3",        BLADERF_XB200_PIN_J16_3 },
+    { "J16_4",        BLADERF_XB200_PIN_J16_4 },
+    { "J16_5",        BLADERF_XB200_PIN_J16_5 },
+    { "J16_6",        BLADERF_XB200_PIN_J16_6 },
+};
+
+static const struct xb_gpio_lut xb100_pins[] = {
+    { "J2_3",         BLADERF_XB100_PIN_J2_3 },
+    { "J2_4",         BLADERF_XB100_PIN_J2_4 },
+    { "J3_3",         BLADERF_XB100_PIN_J3_3 },
+    { "J3_4",         BLADERF_XB100_PIN_J3_4 },
+    { "J4_3",         BLADERF_XB100_PIN_J4_3 },
+    { "J4_4",         BLADERF_XB100_PIN_J4_4 },
+    { "J5_3",         BLADERF_XB100_PIN_J5_3 },
+    { "J5_4",         BLADERF_XB100_PIN_J5_4 },
+    { "J11_2",        BLADERF_XB100_PIN_J11_2 },
+    { "J11_3",        BLADERF_XB100_PIN_J11_3 },
+    { "J11_4",        BLADERF_XB100_PIN_J11_4 },
+    { "J11_5",        BLADERF_XB100_PIN_J11_5 },
+    { "J12_5",        BLADERF_XB100_PIN_J12_5 },
+    { "LED_D1",       BLADERF_XB100_LED_D1 },
+    { "LED_D2",       BLADERF_XB100_LED_D2 },
+    { "LED_D3",       BLADERF_XB100_LED_D3 },
+    { "LED_D4",       BLADERF_XB100_LED_D4 },
+    { "LED_D5",       BLADERF_XB100_LED_D5 },
+    { "LED_D6",       BLADERF_XB100_LED_D6 },
+    { "LED_D7",       BLADERF_XB100_LED_D7 },
+    { "LED_D8",       BLADERF_XB100_LED_D8 },
+    { "TLED_RED",     BLADERF_XB100_TLED_RED },
+    { "TLED_GREEN",   BLADERF_XB100_TLED_GREEN },
+    { "TLED_BLUE",    BLADERF_XB100_TLED_BLUE },
+    { "DIP_SW1",      BLADERF_XB100_DIP_SW1 },
+    { "DIP_SW2",      BLADERF_XB100_DIP_SW2 },
+    { "DIP_SW3",      BLADERF_XB100_DIP_SW3 },
+    { "DIP_SW4",      BLADERF_XB100_DIP_SW4 },
+    { "BTN_J6",       BLADERF_XB100_BTN_J6 },
+    { "BTN_J7",       BLADERF_XB100_BTN_J7 },
+    { "BTN_J8",       BLADERF_XB100_BTN_J8 },
+};
+
+static int get_xb_lut(struct cli_state *s,
+                      const struct xb_gpio_lut **lut, size_t *len)
+{
+    int status;
+    bladerf_xb xb_type;
+
+    status = bladerf_expansion_get_attached(s->dev, &xb_type);
+    if (status < 0) {
+        return status;
+    }
+
+    switch (xb_type) {
+        case BLADERF_XB_100:
+            *lut = xb100_pins;
+            *len = ARRAY_SIZE(xb100_pins);
+            break;
+
+        case BLADERF_XB_200:
+            *lut = xb200_pins;
+            *len = ARRAY_SIZE(xb200_pins);
+            break;
+
+        default:
+            *lut = xb_pins;
+            *len = ARRAY_SIZE(xb_pins);
+    }
+
+    return 0;
+}
+
+static int str2xbgpio(struct cli_state *s, const char *str,
+                      const struct xb_gpio_lut **io, bool nnl_on_error)
+{
+    int status;
+    const struct xb_gpio_lut *lut;
+    size_t lut_len;
+    size_t i;
+
+    *io = NULL;
+
+    status = get_xb_lut(s, &lut, &lut_len);
+    if (status != 0) {
+        s->last_lib_error = status;
+        return CLI_RET_LIBBLADERF;
+
+    }
+
+    for (i = 0; i < lut_len; i++) {
+        if (!strcasecmp(str, lut[i].name)) {
+            *io = &lut[i];
+            return 0;
+        }
+    }
+
+    if (nnl_on_error) {
+        cli_err_nnl(s, str, "Invalid pin name or option.\n");
+    } else {
+        cli_err(s, str, "Invalid pin name or option.\n");
+    }
+    return CLI_RET_INVPARAM;
+}
+
+static int print_xbio_base(struct cli_state *state, int argc, char **argv,
+                           bool is_dir)
+{
+    int rv = CLI_RET_OK, status;
+    uint32_t val;
+
+    enum {
+        PRINT_LIST,
+        PRINT_ALL,
+        PRINT_REGISTER,
+        PRINT_PIN,
+    } action;
+
+    const struct xb_gpio_lut *lut = NULL;
+    const struct xb_gpio_lut *pin = NULL;
+    size_t lut_len, i;
+
+    if (argc <= 2) {
+        printf("Usage: print xb_gpio%s <name>\n\n", is_dir ? "dir" : "");
+
+        printf("<name> describes what to print. "
+               "It may be one of the following:\n\n");
+
+        printf("  \"all\" - Print the register value and the state of\n"
+               "  individual pins. Note that the pin names shown\n"
+               "  is dependent upon which expansion board has been\n"
+               "  enabled.\n\n");
+
+        printf("  \"reg\" or \"register\" - Print the GPIO%s register value.\n\n",
+               is_dir ? " direction" : "");
+
+        printf("  \"list\" - Display available pins to print.\n\n");
+
+        printf("  One of the pin names from the aforementioned list.\n");
+
+        return 0;
+
+    } else if (argc > 3) {
+        return CLI_RET_NARGS;
+    }
+
+    if (is_dir) {
+        status = bladerf_expansion_gpio_dir_read(state->dev, &val);
+    } else {
+        status = bladerf_expansion_gpio_read(state->dev, &val);
+    }
 
     if (status < 0) {
         state->last_lib_error = status;
-        rv = CLI_RET_LIBBLADERF;
-    } else {
-        printf( "  Expansion GPIO: 0x%8.8x\n", val );
+        return CLI_RET_LIBBLADERF;
     }
+
+    status = get_xb_lut(state, &lut, &lut_len);
+    if (status < 0) {
+        state->last_lib_error = status;
+        return CLI_RET_LIBBLADERF;
+    }
+
+    if (!strcasecmp(argv[2], "all")) {
+        action = PRINT_ALL;
+    } else if (!strcasecmp(argv[2], "list")) {
+        action = PRINT_LIST;
+    } else if (!strcasecmp(argv[2], "reg") || !strcasecmp(argv[2], "register")) {
+        action = PRINT_REGISTER;
+    } else {
+        status = str2xbgpio(state, argv[2], &pin, true);
+        if (status != 0) {
+            return status;
+        }
+
+        action = PRINT_PIN;
+    }
+
+    if (action == PRINT_ALL || action == PRINT_REGISTER) {
+        printf("  Expansion GPIO%s register: 0x%8.8x\n",
+               is_dir ? " direction" : "", val);
+    }
+
+    if (action == PRINT_ALL) {
+        printf("\n");
+
+        for (i = 0; i < lut_len; i++) {
+            uint32_t bit = (val & lut[i].bitmask) ? 1 : 0;
+
+            if (is_dir) {
+                printf("%12s: %s\n", lut[i].name, bit ? "output" : "input");
+            } else {
+                printf("%12s: %u\n", lut[i].name, bit);
+            }
+        }
+    } else if (action == PRINT_LIST) {
+        for (i = 0; i < lut_len; i++) {
+            printf("%12s\n", lut[i].name);
+        }
+    } else if (action == PRINT_PIN) {
+        uint32_t bit = (val & pin->bitmask) ? 1 : 0;
+
+        if (is_dir) {
+            printf("%12s: %s\n", pin->name, bit ? "output" : "input");
+        } else {
+            printf("%12s: %u\n", pin->name, bit);
+        }
+    }
+
     return rv;
+}
+
+int set_xbio_base(struct cli_state *state, int argc, char **argv,
+                  bool is_dir)
+{
+    int rv = CLI_RET_OK;
+    uint32_t val;
+    bool ok;
+    const struct xb_gpio_lut *pin;
+    const char *suffix = is_dir ? "_dir" : "";
+
+
+    switch (argc) {
+        case 0:
+        case 1:
+        case 2:
+            printf("\n");
+            printf("Usage: set xb_gpio%s <register value>\n"
+                   "       set xb_gpio%s <pin name> <pin value>\n\n",
+                   suffix, suffix);
+
+            if (is_dir) {
+                printf("       0 -> input\n"
+                       "       1 -> output\n\n");
+            }
+
+            printf("Run 'print xb_gpio%s list' for availabe pin names.\n",
+                    suffix);
+
+
+            printf("\n");
+            break;
+
+        case 3:
+            val = str2uint(argv[2], 0, UINT_MAX, &ok);
+            if (!ok) {
+                cli_err(state, argv[2], "Invalid register value.\n");
+                rv = CLI_RET_INVPARAM;
+            } else {
+                if (is_dir) {
+                    rv = bladerf_expansion_gpio_dir_write(state->dev, val);
+                } else {
+                    rv = bladerf_expansion_gpio_write(state->dev, val);
+                }
+
+                if (rv < 0) {
+                    state->last_lib_error = rv;
+                    rv = CLI_RET_LIBBLADERF;
+                }
+            }
+            break;
+
+        case 4:
+            rv = str2xbgpio(state, argv[2], &pin, false);
+            if (rv == 0) {
+                val = UINT32_MAX;
+
+                if (is_dir) {
+                    if (!strcasecmp(argv[3], "in") ||
+                        !strcasecmp(argv[3], "input")) {
+                        val = 0;
+                    } else if (!strcasecmp(argv[3], "out") ||
+                               !strcasecmp(argv[3], "output")) {
+                        val = 1;
+                    }
+                }
+
+                if (!is_dir || val == UINT32_MAX) {
+                    val = str2uint(argv[3], 0, 1, &ok);
+                    if (!ok) {
+                        cli_err(state, argv[2], "Invalid value.\n");
+                        return CLI_RET_INVPARAM;
+                    }
+                }
+
+                if (val == 1) {
+                    val = pin->bitmask;
+                }
+
+                if (is_dir) {
+                    rv = bladerf_expansion_gpio_dir_masked_write(state->dev,
+                                                                 pin->bitmask,
+                                                                 val);
+                } else {
+                    rv = bladerf_expansion_gpio_masked_write(state->dev,
+                                                             pin->bitmask,
+                                                             val);
+                }
+
+                if (rv < 0) {
+                    state->last_lib_error = rv;
+                    rv = CLI_RET_LIBBLADERF;
+                }
+            }
+            break;
+
+
+        default:
+            rv = CLI_RET_NARGS;
+    }
+
+    return rv;
+}
+
+
+int print_xb_gpio(struct cli_state *state, int argc, char **argv)
+{
+    return print_xbio_base(state, argc, argv, false);
 }
 
 int set_xb_gpio(struct cli_state *state, int argc, char **argv)
 {
-    /* set gpio <value> */
-    int rv = CLI_RET_OK;
-    uint32_t val;
-    bool ok;
-
-    if( argc == 3 ) {
-        val = str2uint( argv[2], 0, UINT_MAX, &ok );
-        if( !ok ) {
-            cli_err(state, argv[0], "Invalid xb gpio value (%s)\n", argv[2]);
-            rv = CLI_RET_INVPARAM;
-        } else {
-            bladerf_expansion_gpio_write ( state->dev,val );
-        }
-    } else {
-        rv = CLI_RET_NARGS;
-    }
-    return rv;
+    return set_xbio_base(state, argc, argv, false);
 }
 
-int print_xb_gpio_dir(struct cli_state *state, int argc, char **argv) {
-    int rv = CLI_RET_OK, status;
-    unsigned int val;
-
-    status = bladerf_expansion_gpio_dir_read( state->dev, &val );
-
-    if (status < 0) {
-        state->last_lib_error = status;
-        rv = CLI_RET_LIBBLADERF;
-    } else {
-        printf( "  Expansion GPIO direction: 0x%8.8x (1=output, 0=input)\n", val );
-    }
-    return rv;
+int print_xb_gpio_dir(struct cli_state *state, int argc, char **argv)
+{
+    return print_xbio_base(state, argc, argv, true);
 }
 
 int set_xb_gpio_dir(struct cli_state *state, int argc, char **argv)
 {
-    /* set gpio <value> */
-    int rv = CLI_RET_OK;
-    uint32_t val;
-    bool ok;
-
-    if( argc == 3 ) {
-        val = str2uint( argv[2], 0, UINT_MAX, &ok );
-        if( !ok ) {
-            cli_err(state, argv[0],
-                    "Invalid xb gpio dir value (%s)\n", argv[2]);
-            rv = CLI_RET_INVPARAM;
-        } else {
-            bladerf_expansion_gpio_dir_write ( state->dev,val );
-        }
-    } else {
-        rv = CLI_RET_NARGS;
-    }
-    return rv;
+    return set_xbio_base(state, argc, argv, true);
 }
 
 int print_lnagain(struct cli_state *state, int argc, char **argv)
@@ -1235,7 +1542,8 @@ int cmd_print(struct cli_state *state, int argc, char **argv)
 {
     int rv = CLI_RET_OK;
     struct printset_entry *entry = NULL;
-    char *empty_argv[2];
+    char *empty_argv[3];
+    int empty_argc;
 
     printf( "\n" );
 
@@ -1260,10 +1568,20 @@ int cmd_print(struct cli_state *state, int argc, char **argv)
         entry = &printset_table[0];
 
         while (entry->print != NULL) {
+
             if (entry->pa_option != PRINTALL_OPTION_SKIP) {
                 empty_argv[1] = (char *) entry->name;
 
-                rv = entry->print(state, 2, (char **)empty_argv);
+                if (!strcasecmp(entry->name, "xb_gpio_dir") ||
+                    !strcasecmp(entry->name, "xb_gpio")) {
+                    empty_argv[2] = "register";
+                    empty_argc = 3;
+                } else {
+                    empty_argv[2] = NULL;
+                    empty_argc = 2;
+                }
+
+                rv = entry->print(state, empty_argc, (char **)empty_argv);
                 if (rv != CLI_RET_OK) {
                     if (cli_fatal(rv)) {
                         return rv;
