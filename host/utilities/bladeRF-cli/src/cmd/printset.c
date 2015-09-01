@@ -601,7 +601,7 @@ static int str2xbgpio(struct cli_state *s, const char *str,
     if (nnl_on_error) {
         cli_err_nnl(s, str, "Invalid pin name or option.\n");
     } else {
-        cli_err_nnl(s, str, "Invalid pin name or option.\n");
+        cli_err(s, str, "Invalid pin name or option.\n");
     }
     return CLI_RET_INVPARAM;
 }
