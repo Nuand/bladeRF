@@ -235,11 +235,13 @@ int nios_legacy_expansion_gpio_read(struct bladerf *dev, uint32_t *val);
  * Write to expansion GPIO
  *
  * @param[in]   dev         Device handle
- * @param[in]   value       Write value
+ * @param[in[   mask        Mask denoting bits to write
+ * @param[in]   value       Value to write
  *
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
-int nios_legacy_expansion_gpio_write(struct bladerf *dev, uint32_t val);
+int nios_legacy_expansion_gpio_write(struct bladerf *dev,
+                                     uint32_t mask, uint32_t val);
 
 /**
  * Read from expansion GPIO direction register
@@ -255,10 +257,12 @@ int nios_legacy_expansion_gpio_dir_read(struct bladerf *dev, uint32_t *val);
  * Write to expansion GPIO direction register
  *
  * @param[in]   dev         Device handle
- * @param[in]   value       Write value
+ * @param[in]   mask        Mask denoting bits to configure
+ * @param[in]   output      '1' bit denotes an output, '0' bit denotes an input
  *
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
-int nios_legacy_expansion_gpio_dir_write(struct bladerf *dev, uint32_t val);
+int nios_legacy_expansion_gpio_dir_write(struct bladerf *dev,
+                                         uint32_t mask, uint32_t outputs);
 
 #endif

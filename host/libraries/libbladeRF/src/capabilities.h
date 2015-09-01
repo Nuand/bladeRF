@@ -80,6 +80,16 @@
 #define BLADERF_CAP_ATOMIC_NINT_NFRAC_WRITE (1 << 6)
 
 /**
+ * FPGA v0.4.1 fixed an issue with masked writes to the expansion GPIO
+ * and expansion GPIO direction registers.
+ *
+ * To help users avoid getting bitten by this bug, we'll mark this
+ * as a capability and disallow masked writes unless an FPGA with the
+ * fix is being used.
+ */
+#define BLADERF_CAP_MASKED_XBIO_WRITE   (1 << 7)
+
+/**
  * Firmware 1.7.1 introduced firmware-based loopback
  */
 #define BLADERF_CAP_FW_LOOPBACK         (((uint64_t) 1) << 32)

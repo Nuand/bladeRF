@@ -1542,7 +1542,26 @@ int bladerf_expansion_gpio_write(struct bladerf *dev, uint32_t val)
     int status;
     MUTEX_LOCK(&dev->ctrl_lock);
 
-    status = XB_GPIO_WRITE(dev, val);
+    status = XB_GPIO_WRITE(dev, 0xffffffff, val);
+
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+    return status;
+}
+
+int bladerf_expansion_gpio_masked_write(struct bladerf *dev,
+                                        uint32_t mask, uint32_t val)
+{
+    int status;
+    MUTEX_LOCK(&dev->ctrl_lock);
+
+    /* Impose FPGA version requirements to ensure users aren't attempting
+     * to use a version with a known issue on the masked write */
+    if (!have_cap(dev, BLADERF_CAP_MASKED_XBIO_WRITE) && val != 0xffffffff) {
+        log_debug("FPGA >= v0.4.1 is required for masked XB GPIO writes.\n");
+        status = BLADERF_ERR_UNSUPPORTED;
+    } else {
+        status = XB_GPIO_WRITE(dev, mask, val);
+    }
 
     MUTEX_UNLOCK(&dev->ctrl_lock);
     return status;
@@ -1565,10 +1584,23 @@ int bladerf_expansion_gpio_dir_read(struct bladerf *dev, uint32_t *val)
 
 int bladerf_expansion_gpio_dir_write(struct bladerf *dev, uint32_t val)
 {
+    return bladerf_expansion_gpio_dir_masked_write(dev, 0xffffffff, val);
+}
+
+int bladerf_expansion_gpio_dir_masked_write(struct bladerf *dev,
+                                            uint32_t mask, uint32_t val)
+{
     int status;
     MUTEX_LOCK(&dev->ctrl_lock);
 
-    status = XB_GPIO_DIR_WRITE(dev, val);
+    /* Impose FPGA version requirements to ensure users aren't attempting
+     * to use a version with a known issue on the masked write */
+    if (!have_cap(dev, BLADERF_CAP_MASKED_XBIO_WRITE) && val != 0xffffffff) {
+        log_debug("FPGA >= v0.4.1 is required for masked XB GPIO dir writes.\n");
+        status = BLADERF_ERR_UNSUPPORTED;
+    } else {
+        status = XB_GPIO_DIR_WRITE(dev, mask, val);
+    }
 
     MUTEX_UNLOCK(&dev->ctrl_lock);
     return status;

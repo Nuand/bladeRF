@@ -28,11 +28,20 @@
 #include <libbladeRF.h>
 #include "bladerf_priv.h"
 
-#define XB_SPI_WRITE(dev, val)      dev->fn->xb_spi(dev, val)
-#define XB_GPIO_READ(dev, val)      dev->fn->expansion_gpio_read(dev, val)
-#define XB_GPIO_WRITE(dev, val)     dev->fn->expansion_gpio_write(dev, val)
-#define XB_GPIO_DIR_READ(dev, val)  dev->fn->expansion_gpio_dir_read(dev, val)
-#define XB_GPIO_DIR_WRITE(dev, val) dev->fn->expansion_gpio_dir_write(dev, val)
+#define XB_SPI_WRITE(dev, val) \
+    dev->fn->xb_spi(dev, val)
+
+#define XB_GPIO_READ(dev, val) \
+    dev->fn->expansion_gpio_read(dev, val)
+
+#define XB_GPIO_WRITE(dev, mask, val) \
+    dev->fn->expansion_gpio_write(dev, mask, val)
+
+#define XB_GPIO_DIR_READ(dev, val) \
+    dev->fn->expansion_gpio_dir_read(dev, val)
+
+#define XB_GPIO_DIR_WRITE(dev, mask, val) \
+    dev->fn->expansion_gpio_dir_write(dev, mask, val)
 
 /**
  * Attach and enable an expansion board's features

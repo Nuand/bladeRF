@@ -105,10 +105,15 @@ struct backend_fns {
     int (*config_gpio_read)(struct bladerf *dev, uint32_t *val);
 
     /* Expansion GPIO accessors */
-    int (*expansion_gpio_write)(struct bladerf *dev, uint32_t val);
+    int (*expansion_gpio_write)(struct bladerf *dev,
+                                uint32_t mask, uint32_t val);
+
     int (*expansion_gpio_read)(struct bladerf *dev, uint32_t *val);
-    int (*expansion_gpio_dir_write)(struct bladerf *dev, uint32_t val);
-    int (*expansion_gpio_dir_read)(struct bladerf *dev, uint32_t *val);
+
+    int (*expansion_gpio_dir_write)(struct bladerf *dev,
+                                    uint32_t mask, uint32_t outputs);
+
+    int (*expansion_gpio_dir_read)(struct bladerf *dev, uint32_t *outputs);
 
     /* IQ Correction Settings */
     int (*set_iq_gain_correction)(struct bladerf *dev, bladerf_module module,

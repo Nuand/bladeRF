@@ -550,8 +550,23 @@ int nios_legacy_expansion_gpio_read(struct bladerf *dev, uint32_t *val)
     return status;
 }
 
-int nios_legacy_expansion_gpio_write(struct bladerf *dev, uint32_t val)
+int nios_legacy_expansion_gpio_write(struct bladerf *dev,
+                                     uint32_t mask, uint32_t val)
 {
+    int status;
+    uint32_t tmp;
+
+    if (mask != 0xffffffff) {
+        status = nios_legacy_pio_read(dev, NIOS_PKT_LEGACY_PIO_ADDR_EXP, &tmp);
+        if (status != 0) {
+            return status;
+        }
+
+       tmp &= ~mask;
+       tmp |= (val & mask);
+       val = tmp;
+    }
+
     log_verbose("%s: 0x%08x\n", __FUNCTION__, val);
     return nios_legacy_pio_write(dev, NIOS_PKT_LEGACY_PIO_ADDR_EXP, val);
 }
@@ -568,8 +583,25 @@ int nios_legacy_expansion_gpio_dir_read(struct bladerf *dev, uint32_t *val)
     return status;
 }
 
-int nios_legacy_expansion_gpio_dir_write(struct bladerf *dev, uint32_t val)
+int nios_legacy_expansion_gpio_dir_write(struct bladerf *dev,
+                                         uint32_t mask, uint32_t val)
 {
+    int status;
+    uint32_t tmp;
+
+    if (mask != 0xffffffff) {
+        status = nios_legacy_pio_read(dev,
+                                      NIOS_PKT_LEGACY_PIO_ADDR_EXP_DIR, &tmp);
+
+        if (status != 0) {
+            return status;
+        }
+
+        tmp &= ~mask;
+        tmp |= (val & mask);
+        val = tmp;
+    }
+
     log_verbose("%s: 0x%08\n", __FUNCTION__, val);
     return nios_legacy_pio_write(dev, NIOS_PKT_LEGACY_PIO_ADDR_EXP_DIR, val);
 }

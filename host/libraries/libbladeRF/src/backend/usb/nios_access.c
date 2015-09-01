@@ -598,9 +598,6 @@ int nios_xb200_synth_write(struct bladerf *dev, uint32_t value)
     return status;
 }
 
-/* The update format for GPIO (and the GPIO direction register) accesses allows
- * a bitmask to be provided.  For this interface, we just want to read all bits
- * of the GPIO bank. */
 int nios_expansion_gpio_read(struct bladerf *dev, uint32_t *val)
 {
     int status = nios_32x32_masked_read(dev, NIOS_PKT_32x32_TARGET_EXP,
@@ -613,13 +610,14 @@ int nios_expansion_gpio_read(struct bladerf *dev, uint32_t *val)
     return status;
 }
 
-int nios_expansion_gpio_write(struct bladerf *dev, uint32_t val)
+int nios_expansion_gpio_write(struct bladerf *dev, uint32_t mask, uint32_t val)
 {
     int status = nios_32x32_masked_write(dev, NIOS_PKT_32x32_TARGET_EXP,
-                                         0xffffffff, val);
+                                         mask, val);
 
     if (status == 0) {
-        log_verbose("%s: Wrote 0x%08x\n", __FUNCTION__, val);
+        log_verbose("%s: Wrote 0x%08x (with mask 0x%08x)\n",
+                    __FUNCTION__, val, mask);
     }
 
     return status;
@@ -637,13 +635,15 @@ int nios_expansion_gpio_dir_read(struct bladerf *dev, uint32_t *val)
     return status;
 }
 
-int nios_expansion_gpio_dir_write(struct bladerf *dev, uint32_t val)
+int nios_expansion_gpio_dir_write(struct bladerf *dev,
+                                  uint32_t mask, uint32_t val)
 {
     int status = nios_32x32_masked_write(dev, NIOS_PKT_32x32_TARGET_EXP_DIR,
-                                         0xffffffff, val);
+                                         mask, val);
 
     if (status == 0) {
-        log_verbose("%s: Wrote 0x%08x\n", __FUNCTION__, val);
+        log_verbose("%s: Wrote 0x%08x (with mask 0x%08x)\n",
+                    __FUNCTION__, val, mask);
     }
 
     return status;

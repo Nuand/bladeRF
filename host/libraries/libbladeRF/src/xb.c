@@ -91,10 +91,10 @@ static int xb200_attach(struct bladerf *dev) {
     if ((status = XB_GPIO_READ(dev, &val)))
         return status;
 
-    if ((status = XB_GPIO_DIR_WRITE(dev, 0x3C00383E)))
+    if ((status = XB_GPIO_DIR_WRITE(dev, 0xffffffff, 0x3C00383E)))
         return status;
 
-    if ((status = XB_GPIO_WRITE(dev, 0x800)))
+    if ((status = XB_GPIO_WRITE(dev, 0xffffffff, 0x800)))
         return status;
 
     // Load ADF4351 registers via SPI
@@ -122,7 +122,7 @@ static int xb200_attach(struct bladerf *dev) {
     else {
         log_debug("  MUXOUT Bit not set: FAIL\n");
     }
-    status = XB_GPIO_WRITE(dev, 0x3C000800);
+    status = XB_GPIO_WRITE(dev, 0xffffffff, 0x3C000800);
 
     return status;
 }
@@ -144,7 +144,7 @@ int xb200_enable(struct bladerf *dev, bool enable) {
     if (status || (val == orig))
         return status;
 
-    return XB_GPIO_WRITE(dev, val);
+    return XB_GPIO_WRITE(dev, 0xffffffff, val);
 }
 
 int xb_attach(struct bladerf *dev, bladerf_xb xb) {
@@ -301,7 +301,7 @@ static int set_filterbank_mux(struct bladerf *dev, bladerf_module module, blader
         log_debug("Engaging %s band XB-200 %s filter\n", filters[filter],
             mask == BLADERF_XB_TX_MASK ? "TX" : "RX");
 
-        status = XB_GPIO_WRITE(dev, val);
+        status = XB_GPIO_WRITE(dev, 0xffffffff, val);
         if (status != 0) {
             return status;
         }
@@ -467,7 +467,7 @@ int xb200_set_path(struct bladerf *dev,
         }
     }
 
-    return XB_GPIO_WRITE(dev, val);
+    return XB_GPIO_WRITE(dev, 0xffffffff, val);
 }
 
 int xb200_get_path(struct bladerf *dev,
