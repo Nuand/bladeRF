@@ -60,7 +60,7 @@ int cmd_xb100(struct cli_state *state, int argc, char **argv)
             return CLI_RET_LIBBLADERF;
         }
 
-        printf("  XB-100 GPIO expansion board successfully enabled\n");
+        printf("  XB-100 GPIO expansion board successfully enabled\n\n");
     } else {
         // unknown subcommand
         cli_err(state, subcommand, "Invalid subcommand for xb %d\n", modelnum);

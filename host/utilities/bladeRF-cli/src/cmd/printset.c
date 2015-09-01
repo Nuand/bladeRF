@@ -119,13 +119,13 @@ bladerf_module get_module( char *mod, bool *ok )
 static inline void invalid_module(struct cli_state *s, const char *cmd,
                                   const char *module)
 {
-    cli_err(s, cmd, "Invalid module (%s)\n", module);
+    cli_err_nnl(s, cmd, "Invalid module (%s)\n", module);
 }
 
 static inline void invalid_gain(struct cli_state *s, const char *cmd,
                                 const char *param, const char *gain)
 {
-    cli_err(s, cmd, "Invalid gain setting for %s (%s)\n", param, gain);
+    cli_err_nnl(s, cmd, "Invalid gain setting for %s (%s)\n", param, gain);
 }
 
 int print_bandwidth(struct cli_state *state, int argc, char **argv)
@@ -201,7 +201,7 @@ int set_bandwidth(struct cli_state *state, int argc, char **argv)
                               BLADERF_BANDWIDTH_MIN, BLADERF_BANDWIDTH_MAX,
                               freq_suffixes, NUM_FREQ_SUFFIXES, &ok );
         if( !ok ) {
-            cli_err(state, argv[0], "Invalid bandwidth (%s)\n", argv[3]);
+            cli_err_nnl(state, argv[0], "Invalid bandwidth (%s)\n", argv[3]);
             rv = CLI_RET_INVPARAM;
         }
     }
@@ -213,7 +213,7 @@ int set_bandwidth(struct cli_state *state, int argc, char **argv)
                               BLADERF_BANDWIDTH_MIN, BLADERF_BANDWIDTH_MAX,
                               freq_suffixes, NUM_FREQ_SUFFIXES, &ok );
         if( !ok ) {
-            cli_err(state, argv[0], "Invalid bandwidth (%s)\n", argv[2]);
+            cli_err_nnl(state, argv[0], "Invalid bandwidth (%s)\n", argv[2]);
             rv = CLI_RET_INVPARAM;
         }
     }
@@ -334,7 +334,8 @@ int set_frequency(struct cli_state *state, int argc, char **argv)
                                 freq_suffixes, NUM_FREQ_SUFFIXES, &ok );
 
         if( !ok ) {
-            cli_err(state, argv[0], "Invalid frequency (%s)\n", argv[argc - 1]);
+            cli_err_nnl(state, argv[0],
+                        "Invalid frequency (%s)\n", argv[argc - 1]);
             rv = CLI_RET_INVPARAM;
         } else {
 
@@ -438,10 +439,16 @@ int set_gpio(struct cli_state *state, int argc, char **argv)
     if( argc == 3 ) {
         val = str2uint( argv[2], 0, UINT_MAX, &ok );
         if( !ok ) {
-            cli_err(state, argv[0], "Invalid gpio value (%s)\n", argv[2]);
+            cli_err_nnl(state, argv[0], "Invalid gpio value (%s)\n", argv[2]);
             rv = CLI_RET_INVPARAM;
         } else {
-            bladerf_config_gpio_write( state->dev,val );
+            rv = bladerf_config_gpio_write(state->dev, val);
+            if (rv != 0) {
+                state->last_lib_error = rv;
+                rv = CLI_RET_LIBBLADERF;
+            } else {
+                rv = print_gpio(state, argc, argv);
+            }
         }
     } else {
         rv = CLI_RET_NARGS;
@@ -594,7 +601,7 @@ static int str2xbgpio(struct cli_state *s, const char *str,
     if (nnl_on_error) {
         cli_err_nnl(s, str, "Invalid pin name or option.\n");
     } else {
-        cli_err(s, str, "Invalid pin name or option.\n");
+        cli_err_nnl(s, str, "Invalid pin name or option.\n");
     }
     return CLI_RET_INVPARAM;
 }
@@ -720,40 +727,19 @@ int set_xbio_base(struct cli_state *state, int argc, char **argv,
         case 0:
         case 1:
         case 2:
-            printf("\n");
-            printf("Usage: set xb_gpio%s <register value>\n"
-                   "       set xb_gpio%s <pin name> <pin value>\n\n",
-                   suffix, suffix);
+            printf("Usage: set xb_gpio%s <name> <value>\n\n", suffix);
+
+            printf("<name> describes what to set. It may be one of the following:\n\n");
+
+            printf("  \"reg\" or \"register\" - Set the entire GPIO%s register value.\n\n",
+                    is_dir ? " direction" : "");
+
+            printf("  One of the pin names listed by: \"print xb_gpio%s list\"\n\n", suffix);
 
             if (is_dir) {
-                printf("       0 -> input\n"
-                       "       1 -> output\n\n");
+                printf("Specify <value> as \"input\" (0) or \"output\" (1).\n");
             }
 
-            printf("Run 'print xb_gpio%s list' for availabe pin names.\n",
-                    suffix);
-
-
-            printf("\n");
-            break;
-
-        case 3:
-            val = str2uint(argv[2], 0, UINT_MAX, &ok);
-            if (!ok) {
-                cli_err(state, argv[2], "Invalid register value.\n");
-                rv = CLI_RET_INVPARAM;
-            } else {
-                if (is_dir) {
-                    rv = bladerf_expansion_gpio_dir_write(state->dev, val);
-                } else {
-                    rv = bladerf_expansion_gpio_write(state->dev, val);
-                }
-
-                if (rv < 0) {
-                    state->last_lib_error = rv;
-                    rv = CLI_RET_LIBBLADERF;
-                }
-            }
             break;
 
         case 4:
@@ -774,7 +760,7 @@ int set_xbio_base(struct cli_state *state, int argc, char **argv,
                 if (!is_dir || val == UINT32_MAX) {
                     val = str2uint(argv[3], 0, 1, &ok);
                     if (!ok) {
-                        cli_err(state, argv[2], "Invalid value.\n");
+                        cli_err_nnl(state, argv[2], "Invalid value.\n");
                         return CLI_RET_INVPARAM;
                     }
                 }
@@ -796,6 +782,8 @@ int set_xbio_base(struct cli_state *state, int argc, char **argv,
                 if (rv < 0) {
                     state->last_lib_error = rv;
                     rv = CLI_RET_LIBBLADERF;
+                } else {
+                    rv = print_xbio_base(state, 3, argv, is_dir);
                 }
             }
             break;
@@ -886,6 +874,8 @@ int set_lnagain(struct cli_state *state, int argc, char **argv)
             if (status < 0) {
                 state->last_lib_error = status;
                 rv = CLI_RET_LIBBLADERF;
+            } else {
+                rv = print_lnagain(state, 2, argv);
             }
         } else {
             rv = CLI_RET_INVPARAM;
@@ -944,8 +934,9 @@ int print_loopback(struct cli_state *state, int argc, char **argv)
             break;
 
         default:
-            cli_err(state, argv[0], "Read back unexpected loopback mode: %d\n",
-                    (int)loopback);
+            cli_err_nnl(state, argv[0],
+                        "Read back unexpected loopback mode: %d\n",
+                        (int)loopback);
             return CLI_RET_INVPARAM;
     }
 
@@ -996,8 +987,8 @@ int set_loopback(struct cli_state *state, int argc, char **argv)
     } else if (!strcasecmp(argv[2], "none")) {
         loopback = BLADERF_LB_NONE;
     } else {
-        cli_err(state, argv[0],
-                "Invalid loopback mode provided: %s\n", argv[2]);
+        cli_err_nnl(state, argv[0],
+                    "Invalid loopback mode provided: %s\n", argv[2]);
         return CLI_RET_INVPARAM;
     }
 
@@ -1006,7 +997,7 @@ int set_loopback(struct cli_state *state, int argc, char **argv)
         state->last_lib_error = status;
         return CLI_RET_LIBBLADERF;
     } else {
-        return CLI_RET_OK;
+        return print_loopback(state, 2, argv);
     }
 }
 
@@ -1042,6 +1033,8 @@ int set_rxvga1(struct cli_state *state, int argc, char **argv)
             if (status < 0) {
                 state->last_lib_error = status;
                 rv = CLI_RET_LIBBLADERF;
+            } else {
+                rv = print_rxvga1(state, 2, argv);
             }
         }
     }
@@ -1082,6 +1075,8 @@ int set_rxvga2(struct cli_state *state, int argc, char **argv)
             if (status < 0) {
                 state->last_lib_error = status;
                 rv = CLI_RET_LIBBLADERF;
+            } else {
+                rv = print_rxvga2(state, 2, argv);
             }
         }
     }
@@ -1203,7 +1198,7 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
 
         /* Integer portion didn't make it */
         if( !ok ) {
-            cli_err(state, argv[0], "Invalid sample rate (%s)\n", argv[idx]);
+            cli_err_nnl(state, argv[0], "Invalid sample rate (%s)\n", argv[idx]);
             rv = CLI_RET_INVPARAM;
         }
 
@@ -1213,7 +1208,7 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
             rate.num = str2uint_suffix( argv[idx], 0, 999999999,
                 freq_suffixes, NUM_FREQ_SUFFIXES, &ok );
             if( !ok ) {
-                cli_err(state, argv[0], "Invalid sample rate (%s %s/%s)\n",
+                cli_err_nnl(state, argv[0], "Invalid sample rate (%s %s/%s)\n",
                     argv[idx-1], argv[idx], argv[idx+1] );
                 rv = CLI_RET_INVPARAM;
             }
@@ -1223,8 +1218,8 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
                 rate.den = str2uint_suffix( argv[idx], 1, 1000000000,
                     freq_suffixes, NUM_FREQ_SUFFIXES, &ok );
                 if( !ok ) {
-                    cli_err(state, argv[0], "Invalid sample rate (%s %s/%s)\n",
-                        argv[idx-2], argv[idx-1], argv[idx] ) ;
+                    cli_err_nnl(state, argv[0], "Invalid sample rate (%s %s/%s)\n",
+                                argv[idx-2], argv[idx-1], argv[idx] ) ;
                     rv = CLI_RET_INVPARAM;
                 }
             }
@@ -1243,8 +1238,6 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
                        "           rate are recommended.\n",
                        devspeed2str(usb_speed));
             }
-
-            printf( "\n" );
 
             if( argc == 3 || argc == 5 || module == BLADERF_MODULE_RX ) {
                 status = bladerf_set_rational_sample_rate( state->dev,
@@ -1272,8 +1265,6 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
                             "actual: %9"PRIu64" %"PRIu64"/%"PRIu64"Hz\n", rate.integer, rate.num, rate.den, actual.integer, actual.num, actual.den );
                 }
             }
-            printf( "\n" );
-
         }
     }
 
@@ -1285,24 +1276,26 @@ int set_sampling(struct cli_state *state, int argc, char **argv)
     /* Usage: set sampling [internal|external] */
     int rv = CLI_RET_OK;
     int status = 0;
+    bladerf_sampling mode = BLADERF_SAMPLING_UNKNOWN;
+
     if( argc != 3 ) {
         rv = CLI_RET_NARGS ;
     } else {
         if( strcasecmp( "internal", argv[2] ) == 0 ) {
-            status = bladerf_set_sampling( state->dev, BLADERF_SAMPLING_INTERNAL );
-            if (status) {
-                state->last_lib_error = status;
-                rv = CLI_RET_LIBBLADERF;
-            }
+            mode = BLADERF_SAMPLING_INTERNAL;
         } else if( strcasecmp( "external", argv[2] ) == 0 ) {
-            status = bladerf_set_sampling( state->dev, BLADERF_SAMPLING_EXTERNAL );
-            if (status) {
-                state->last_lib_error = status;
-                rv = CLI_RET_LIBBLADERF;
-            }
+            mode = BLADERF_SAMPLING_EXTERNAL;
         } else {
-            cli_err(state, argv[0], "Invalid sampling mode (%s)\n", argv[2]);
-            rv = CLI_RET_INVPARAM;
+            cli_err_nnl(state, argv[0], "Invalid sampling mode (%s)\n", argv[2]);
+            return CLI_RET_INVPARAM;
+        }
+
+        status = bladerf_set_sampling(state->dev, mode);
+        if (status) {
+            state->last_lib_error = status;
+            rv = CLI_RET_LIBBLADERF;
+        } else {
+            print_sampling(state, 2, argv);
         }
     }
     return rv;
@@ -1373,13 +1366,15 @@ int set_trimdac(struct cli_state *state, int argc, char **argv)
         bool ok;
         val = str2uint( argv[2], 0, 65535, &ok );
         if( !ok ) {
-            cli_err(state, argv[0], "Invalid VCTCXO DAC value (%s)\n", argv[2]);
+            cli_err_nnl(state, argv[0], "Invalid VCTCXO DAC value (%s)\n", argv[2]);
             rv = CLI_RET_INVPARAM;
         } else {
             int status = bladerf_dac_write( state->dev, val );
             if (status < 0) {
                 state->last_lib_error = status;
                 rv = CLI_RET_LIBBLADERF;
+            } else {
+                rv = print_trimdac(state, 2, argv);
             }
         }
     }
@@ -1403,7 +1398,7 @@ int set_xb_spi(struct cli_state *state, int argc, char **argv)
         bool ok;
         val = str2uint( argv[2], 0, -1, &ok );
         if( !ok ) {
-            cli_err(state, argv[0], "Invalid XB SPI value (%s)\n", argv[2]);
+            cli_err_nnl(state, argv[0], "Invalid XB SPI value (%s)\n", argv[2]);
             rv = CLI_RET_INVPARAM;
         } else {
             int status = bladerf_xb_spi_write( state->dev, val );
@@ -1450,6 +1445,8 @@ int set_txvga1(struct cli_state *state, int argc, char **argv)
             if (status < 0) {
                 state->last_lib_error = status;
                 rv = CLI_RET_LIBBLADERF;
+            } else {
+                rv = print_txvga1(state, 2, argv);
             }
         }
     } else {
@@ -1495,6 +1492,8 @@ int set_txvga2(struct cli_state *state, int argc, char **argv)
             if (status < 0) {
                 state->last_lib_error = status;
                 rv = CLI_RET_LIBBLADERF;
+            } else {
+                rv = print_txvga2(state, 2, argv);
             }
         }
     }
@@ -1524,8 +1523,12 @@ int cmd_set(struct cli_state *state, int argc, char **argv)
         entry = get_printset_entry( argv[1] );
 
         if( entry ) {
+            printf("\n");
+
             /* Call the parameter setting function */
             rv = entry->set(state, argc, argv);
+
+            printf("\n");
         } else {
             /* Incorrect parameter to print */
             cli_err(state, argv[0], "Invalid parameter (%s)\n", argv[1]);
