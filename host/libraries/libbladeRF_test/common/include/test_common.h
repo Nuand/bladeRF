@@ -6,7 +6,7 @@
 #include "rel_assert.h"
 
 #if BLADERF_OS_WINDOWS
-#   include "clocK_gettime.h"
+#   include "clock_gettime.h"
 #endif
 
 /**
