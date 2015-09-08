@@ -39,8 +39,12 @@ int FpgaBeginProgram(void)
     CyBool_t value;
 
     unsigned tEnd;
-    CyU3PReturnStatus_t apiRetStatus = CY_U3P_SUCCESS;
+    CyU3PReturnStatus_t apiRetStatus;
     apiRetStatus = CyU3PGpioSetValue(GPIO_nCONFIG, CyFalse);
+    if (apiRetStatus != CY_U3P_SUCCESS) {
+        return apiRetStatus;
+    }
+
     tEnd = CyU3PGetTime() + 10;
     while (CyU3PGetTime() < tEnd);
     apiRetStatus = CyU3PGpioSetValue(GPIO_nCONFIG, CyTrue);
@@ -305,7 +309,10 @@ CyBool_t NuandLoadFromFlash(int fpga_len)
     CyFxSpiFastRead(CyTrue);
     apiRetStatus = CyU3PSpiSetClock(30000000);
 
-    FpgaBeginProgram();
+    if (FpgaBeginProgram() != CY_U3P_SUCCESS) {
+        goto out;
+    }
+
     nleft = fpga_len;
 
     while(nleft) {
@@ -365,6 +372,8 @@ CyBool_t NuandLoadFromFlash(int fpga_len)
             break;
         }
     }
+
+out:
 
     CyU3PDmaBufferFree(ptr);
     CyU3PSpiDeInit();

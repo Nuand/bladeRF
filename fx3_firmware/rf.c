@@ -228,7 +228,6 @@ static void NuandRFLinkStart(void)
     uint16_t size = 0;
     CyU3PEpConfig_t epCfg;
     CyU3PDmaChannelConfig_t dmaCfg;
-    CyU3PDmaMultiChannelConfig_t dmaMultiConfig;
     CyU3PReturnStatus_t apiRetStatus = CY_U3P_SUCCESS;
     CyU3PUSBSpeed_t usbSpeed = CyU3PUsbGetSpeed();
 
@@ -289,22 +288,6 @@ static void NuandRFLinkStart(void)
         CyFxAppErrorHandler (apiRetStatus);
     }
 
-    // multi variant
-    dmaMultiConfig.size = size * 2;
-    dmaMultiConfig.count = 22;
-    dmaMultiConfig.validSckCount = 2;
-    dmaMultiConfig.prodSckId[0] = BLADE_RF_SAMPLE_EP_PRODUCER_USB_SOCKET;
-    dmaMultiConfig.consSckId[0] = CY_U3P_PIB_SOCKET_2;
-    dmaMultiConfig.consSckId[1] = CY_U3P_PIB_SOCKET_3;
-    dmaMultiConfig.dmaMode = CY_U3P_DMA_MODE_BYTE;
-    dmaMultiConfig.notification = 0;
-    dmaMultiConfig.cb = 0;
-    dmaMultiConfig.prodHeader = 0;
-    dmaMultiConfig.prodFooter = 0;
-    dmaMultiConfig.consHeader = 0;
-    dmaMultiConfig.prodAvailCount = 0;
-
-    // non multi variant
     CyU3PMemSet((uint8_t *)&dmaCfg, 0, sizeof(dmaCfg));
     dmaCfg.size  = size * 2;
     dmaCfg.count = 22;

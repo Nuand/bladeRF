@@ -29,7 +29,7 @@ CyU3PReturnStatus_t NuandReadOtp(size_t offset, size_t size, void *buf);
 CyU3PReturnStatus_t NuandWriteOtp(size_t offset, size_t size, void *buf);
 CyU3PReturnStatus_t NuandLockOtp();
 
-void NuandFlashInit();
+CyU3PReturnStatus_t NuandFlashInit();
 void NuandFlashDeinit();
 
 int NuandExtractField(char *ptr, int len, char *field,

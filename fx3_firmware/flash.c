@@ -115,14 +115,16 @@ CyU3PReturnStatus_t NuandWriteOtp(size_t offset, size_t size, void *buf) {
     return status;
 }
 
-void NuandFlashInit() {
-    CyU3PReturnStatus_t status = CY_U3P_SUCCESS;
+CyU3PReturnStatus_t NuandFlashInit() {
+    CyU3PReturnStatus_t status;
 
     NuandGPIOReconfigure(CyFalse, CyTrue);
 
     status = CyFxSpiInit();
 
     glAppMode = MODE_FW_CONFIG;
+
+    return status;
 }
 
 void NuandFlashDeinit() {
