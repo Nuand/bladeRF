@@ -5,6 +5,11 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.8.1 (2015-09-08)
+--------------------------------
+ * Updated build for FX3 SDK v1.3.3
+ * Addressed a few minor build warnings
+
 v1.8.0 (2014-11-6)
 --------------------------------
  * Added "device ready" query to denote when operations such as flash-based
