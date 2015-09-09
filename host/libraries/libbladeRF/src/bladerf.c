@@ -490,6 +490,54 @@ int bladerf_get_sample_rate(struct bladerf *dev, bladerf_module module,
     return status;
 }
 
+int bladerf_set_rational_smb_frequency(struct bladerf *dev,
+                                       struct bladerf_rational_rate *rate,
+                                       struct bladerf_rational_rate *actual)
+{
+    int status;
+    MUTEX_LOCK(&dev->ctrl_lock);
+
+    status = si5338_set_rational_smb_freq(dev, rate, actual);
+
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+    return status;
+}
+
+int bladerf_set_smb_frequency(struct bladerf *dev,
+                              uint32_t rate, uint32_t *actual)
+{
+    int status;
+    MUTEX_LOCK(&dev->ctrl_lock);
+
+    status = si5338_set_smb_freq(dev, rate, actual);
+
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+    return status;
+}
+
+int bladerf_get_rational_smb_frequency(struct bladerf *dev,
+                                       struct bladerf_rational_rate *rate)
+{
+    int status;
+    MUTEX_LOCK(&dev->ctrl_lock);
+
+    status = si5338_get_rational_smb_freq(dev, rate);
+
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+    return status;
+}
+
+int bladerf_get_smb_frequency(struct bladerf *dev, unsigned int *rate)
+{
+    int status;
+    MUTEX_LOCK(&dev->ctrl_lock);
+
+    status = si5338_get_smb_freq(dev, rate);
+
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+    return status;
+}
+
 int bladerf_get_sampling(struct bladerf *dev, bladerf_sampling *sampling)
 {
     int status = 0;
