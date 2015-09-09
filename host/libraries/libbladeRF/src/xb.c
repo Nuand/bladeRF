@@ -65,6 +65,7 @@
 static int xb200_attach(struct bladerf *dev) {
     int status = 0;
     uint32_t val;
+    uint8_t val8;
     unsigned int muxout = 6;
     const char *mux_lut[] = {
         "THREE-STATE OUTPUT",
@@ -79,7 +80,12 @@ static int xb200_attach(struct bladerf *dev) {
 
 
     log_debug("  Attaching transverter board\n");
-    if ((status = SI5338_WRITE(dev, 39, 2)))
+    status = SI5338_READ(dev, 39, &val8);
+    if (status < 0) {
+        return status;
+    }
+    val8 |= 2;
+    if ((status = SI5338_WRITE(dev, 39, val8)))
         return status;
     if ((status = SI5338_WRITE(dev, 34, 0x22)))
         return status;

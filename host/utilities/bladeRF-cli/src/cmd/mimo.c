@@ -28,6 +28,7 @@ int cmd_mimo(struct cli_state *state, int argc, char **argv)
     int status = 0;
 
     if (!strcasecmp(argv[1], "slave")) {
+        uint8_t val;
         if (argc != 2) {
             return CLI_RET_NARGS;
         }
@@ -37,17 +38,29 @@ int cmd_mimo(struct cli_state *state, int argc, char **argv)
             goto out;
         }
 
-        status |= bladerf_si5338_write(state->dev, 28, 0x2b);
+        status = bladerf_si5338_write(state->dev, 28, 0x2b);
         if (status != 0) {
             goto out;
         }
 
-        status |= bladerf_si5338_write(state->dev, 29, 0x28);
+        status = bladerf_si5338_write(state->dev, 29, 0x28);
         if (status != 0) {
             goto out;
         }
 
-        status |= bladerf_si5338_write(state->dev, 30, 0xa8);
+        status = bladerf_si5338_write(state->dev, 30, 0xa8);
+        if (status != 0) {
+            goto out;
+        }
+
+        /* Turn off any SMB connector output */
+        status = bladerf_si5338_read(state->dev, 39, &val);
+        if (status != 0) {
+            goto out;
+        }
+
+        val &= ~(1);
+        status = bladerf_si5338_write(state->dev, 39, val);
         if (status != 0) {
             goto out;
         }
@@ -57,13 +70,20 @@ int cmd_mimo(struct cli_state *state, int argc, char **argv)
     } else if (!strcmp(argv[1], "master")) {
         if (argc == 2) {
             /* Output the 38.4MHz clock on the SMB connector. */
+            uint8_t val ;
+            status = bladerf_si5338_read(state->dev, 39, &val);
 
-            status |= bladerf_si5338_write(state->dev, 39, 1);
             if (status != 0) {
                 goto out;
             }
 
-            status |= bladerf_si5338_write(state->dev, 34, 0x22);
+            val |= 1;
+            status = bladerf_si5338_write(state->dev, 39, val);
+            if (status != 0) {
+                goto out;
+            }
+
+            status = bladerf_si5338_write(state->dev, 34, 0x22);
             if (status != 0) {
                 goto out;
             }
@@ -74,15 +94,15 @@ int cmd_mimo(struct cli_state *state, int argc, char **argv)
 
             unsigned int freq, actual;
             bool ok;
-            freq = str2uint_suffix(argv[2], BLADERF_SMB_FREQUENCY_MIN, 
+            freq = str2uint_suffix(argv[2], BLADERF_SMB_FREQUENCY_MIN,
                                    BLADERF_SMB_FREQUENCY_MAX, freq_suffixes,
-                                   NUM_FREQ_SUFFIXES, &ok); 
+                                   NUM_FREQ_SUFFIXES, &ok);
             if (!ok) {
                 cli_err(state, argv[0], "Invalid SMB frequency (%s)\n",
                         argv[2]);
-                status = CLI_RET_INVPARAM;
+                return CLI_RET_INVPARAM;
             } else {
-                status |= bladerf_set_smb_frequency(state->dev, freq, &actual);
+                status = bladerf_set_smb_frequency(state->dev, freq, &actual);
                 if(status >= 0) {
                     printf("\n  Set device to master MIMO, "
                            "req freq:%9uHz, actual:%9uHz\n\n", freq, actual);
@@ -95,7 +115,7 @@ int cmd_mimo(struct cli_state *state, int argc, char **argv)
         }
 
     } else {
-        cli_err(state, argv[0], "Invalid mode: %s\n", argv[1]);
+        cli_err(state, argv[0], "Invalid mode: %s\n", argv[2]);
     }
 
 out:

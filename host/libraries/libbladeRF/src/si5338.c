@@ -239,7 +239,6 @@ static int si5338_write_multisynth(struct bladerf *dev,
         si5338_read_error(status, bladerf_strerror(status));
         return status;
     }
-    val &= ~(7);
     val |= ms->enable;
     log_verbose("Wrote enable register: 0x%2.2x\n", val);
     status = SI5338_WRITE(dev, 36 + ms->index, val);
