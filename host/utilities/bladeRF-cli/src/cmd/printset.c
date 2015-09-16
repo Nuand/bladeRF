@@ -1191,10 +1191,10 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
             idx = 3;
         }
 
-        rate.integer = str2uint_suffix( argv[idx],
-                                        BLADERF_SAMPLERATE_MIN,
-                                        UINT_MAX,
-                                        freq_suffixes, NUM_FREQ_SUFFIXES, &ok );
+        rate.integer = str2uint64_suffix(argv[idx],
+                                         BLADERF_SAMPLERATE_MIN, UINT64_MAX,
+                                         freq_suffixes, NUM_FREQ_SUFFIXES,
+                                         &ok);
 
         /* Integer portion didn't make it */
         if( !ok ) {
@@ -1205,8 +1205,10 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
         /* Take in num/den if they are present */
         if( rv == CLI_RET_OK && (argc == 5 || argc == 6) ) {
             idx++;
-            rate.num = str2uint_suffix( argv[idx], 0, 999999999,
-                freq_suffixes, NUM_FREQ_SUFFIXES, &ok );
+            rate.num = str2uint64_suffix(argv[idx],
+                                         0, UINT64_MAX,
+                                         freq_suffixes, NUM_FREQ_SUFFIXES,
+                                         &ok);
             if( !ok ) {
                 cli_err_nnl(state, argv[0], "Invalid sample rate (%s %s/%s)\n",
                     argv[idx-1], argv[idx], argv[idx+1] );
@@ -1215,8 +1217,10 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
 
             if( ok ) {
                 idx++;
-                rate.den = str2uint_suffix( argv[idx], 1, 1000000000,
-                    freq_suffixes, NUM_FREQ_SUFFIXES, &ok );
+                rate.den = str2uint64_suffix(argv[idx],
+                                             1, UINT64_MAX,
+                                             freq_suffixes, NUM_FREQ_SUFFIXES,
+                                             &ok);
                 if( !ok ) {
                     cli_err_nnl(state, argv[0], "Invalid sample rate (%s %s/%s)\n",
                                 argv[idx-2], argv[idx-1], argv[idx] ) ;
