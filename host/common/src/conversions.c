@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <errno.h>
+#include <math.h>
 #include "conversions.h"
 
 enum str2args_parse_state {
@@ -139,10 +140,17 @@ double str2double(const char *str, double min, double max, bool *ok)
     return value;
 }
 
-unsigned int str2uint_suffix(const char *str,
-                             unsigned int min, unsigned int max,
-                             const struct numeric_suffix suffixes[],
-                             size_t num_suffixes, bool *ok)
+/* Workaround for MSVC 2012 support */
+#if _MSC_VER
+#   ifndef INFINITY
+#   define INFINITY (_HUGE * _HUGE)
+#endif
+#endif
+
+double str2dbl_suffix(const char *str,
+                      double min, double max,
+                      const struct numeric_suffix suffixes[],
+                      size_t num_suffixes, bool *ok)
 {
     double value;
     char *endptr;
@@ -170,6 +178,15 @@ unsigned int str2uint_suffix(const char *str,
         }
     }
 
+    /* Test for overflow */
+    if (value == INFINITY || value == -INFINITY) {
+        if (ok) {
+            *ok = false;
+        }
+
+        return 0;
+    }
+
     /* Check that the resulting value is in bounds */
     if (value > max || value < min) {
         if (ok) {
@@ -183,10 +200,28 @@ unsigned int str2uint_suffix(const char *str,
         *ok = true;
     }
 
-    /* Truncate the floating point value to an integer and return it */
-    return (unsigned int)value;
+    return value;
 }
 
+
+unsigned int str2uint_suffix(const char *str,
+                             unsigned int min, unsigned int max,
+                             const struct numeric_suffix suffixes[],
+                             size_t num_suffixes, bool *ok)
+{
+    return (unsigned int) str2dbl_suffix(str, min, max,
+                                         suffixes, num_suffixes, ok);
+}
+
+uint64_t str2uint64_suffix(const char *str,
+                           uint64_t min, uint64_t max,
+                           const struct numeric_suffix suffixes[],
+                           size_t num_suffixes, bool *ok)
+{
+    /* FIXME: Potential loss of precision on min/max here */
+    return (uint64_t) str2dbl_suffix(str, (double) min, (double) max,
+                                     suffixes, num_suffixes, ok);
+}
 int str2version(const char *str, struct bladerf_version *version)
 {
     unsigned long tmp;
