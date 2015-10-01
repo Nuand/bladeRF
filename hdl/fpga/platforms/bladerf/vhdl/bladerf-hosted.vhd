@@ -67,7 +67,9 @@ architecture hosted_bladerf of bladerf is
         tx_tamer_ts_pps                 :   in  std_logic ;
         tx_tamer_ts_clock               :   in  std_logic ;
         tx_tamer_ts_reset               :   in  std_logic;
-        tx_tamer_ts_time                :   out std_logic_vector(63 downto 0)
+        tx_tamer_ts_time                :   out std_logic_vector(63 downto 0);
+        ppscal_ref_1pps                 :   in  std_logic;
+        ppscal_tcxo_clock               :   in  std_logic
       );
     end component;
 
@@ -845,7 +847,9 @@ begin
         tx_tamer_ts_pps                 => '0',
         tx_tamer_ts_clock               => tx_clock,
         tx_tamer_ts_reset               => tx_ts_reset,
-        unsigned(tx_tamer_ts_time)      => tx_timestamp
+        unsigned(tx_tamer_ts_time)      => tx_timestamp,
+        ppscal_ref_1pps                 => ref_1pps,
+        ppscal_tcxo_clock               => c4_clock
       ) ;
 
     xb_gpio_direction : process(all)

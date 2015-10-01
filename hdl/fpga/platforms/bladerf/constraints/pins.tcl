@@ -311,3 +311,4 @@ set_instance_assignment -name SLEW_RATE 0 -to fx3_gpif[*]
 #set_instance_assignment -name CURRENT_STRENGTH_NEW 16MA -to fx3_gpif[*]
 set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to fx3_uart_rxd
 
+#set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to ref_1pps

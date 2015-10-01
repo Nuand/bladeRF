@@ -96,6 +96,7 @@ int main(void)
     const struct pkt_handler *handler;
 
     struct pkt_buf pkt;
+    struct ppscal_pkt_buf ppscal_pkt;
 
     /* Marked volatile to ensure we actually read the byte populated by
      * the UART ISR */
@@ -103,12 +104,21 @@ int main(void)
 
     volatile bool have_request = false;
 
+    // PPS Calibration variables
+    const uint64_t pps_1s_count_exp   = 1*38.4e6;
+    const uint64_t pps_10s_count_exp  = 10*38.4e6;
+    const uint64_t pps_100s_count_exp = 100*38.4e6;
+    uint16_t trim_dac_value;
+    //double   trim_dac_voltage;
+    uint16_t trim_dac_next_value;
+    //double   trim_dac_next_voltage;
+
     /* Sanity check */
     ASSERT(PKT_MAGIC_IDX == 0);
 
     memset(&pkt, 0, sizeof(pkt));
     pkt.ready = false;
-    bladerf_nios_init(&pkt);
+    bladerf_nios_init(&pkt, &ppscal_pkt);
 
     /* Initialize packet handlers */
     for (i = 0; i < ARRAY_SIZE(pkt_handlers); i++) {
@@ -151,6 +161,39 @@ int main(void)
             /* Write response to host */
             command_uart_write_response(pkt.resp);
         } else {
+
+            // Temporarily putting the PPS Calibration stuff here for testing purposes.
+            // TODO: figure out a better (more fair) way of handling interrupts.
+            if( ppscal_pkt.ready ) {
+
+                // Get the current VCTCXO trim DAC value
+                //    void vctcxo_trim_dac_write(uint8_t cmd, uint16_t val)
+                //    void vctcxo_trim_dac_read(uint8_t cmd, uint16_t *val)
+                vctcxo_trim_dac_read( 0x88 , &trim_dac_value);
+
+                // New DAC value
+                trim_dac_value += trim_dac_value + 0x10;
+                if( trim_dac_value < 0xF000 ) {
+                    vctcxo_trim_dac_write( 0x08, &trim_dac_value );
+                }
+
+                // compute deltas from target
+                // pick a value higher or lower than current dac value
+                // get next delta
+                // worse? go in the opposite direction
+                // better? keep going...
+                // repeat
+
+
+                // probably don't need to compue the actual voltage
+
+                // Compute the voltage that the DAC is outputting
+                //trim_dac_voltage = ((3.3-0.0)/(uint16t)(0xFFFF))*trim_dac_value;
+
+                // Enable interrupts
+                //                ppscal_enable_isr(true);
+            }
+
             for (i = 0; i < ARRAY_SIZE(pkt_handlers); i++) {
                 if (pkt_handlers[i].do_work != NULL) {
                     pkt_handlers[i].do_work();

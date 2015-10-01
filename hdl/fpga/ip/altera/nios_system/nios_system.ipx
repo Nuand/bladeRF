@@ -2,5 +2,6 @@
 	<path path="../../opencores/i2c/**/*"/>
 	<path path="../../nuand/time_tamer/**/*"/>
 	<path path="../../nuand/command_uart/**/*"/>
-	<path path="../../nuand/lms6_spi_controller/**/*"/>
+        <path path="../../nuand/lms6_spi_controller/**/*"/>
+        <path path="../../nuand/ppscal/**/*"/>
 </library>

@@ -48,6 +48,30 @@ static void command_uart_isr(void *context) {
     return ;
 }
 
+static void ppscal_enable_isr(bool enable) {
+    uint8_t val = enable ? 1 : 0;
+    //    IOWR_8DIRECT(PPSCAL_0_BASE, 0x28, val);
+    ppscal_write(0x28, val);
+    return;
+}
+
+static void ppscal_isr(void *context) {
+    struct ppscal_pkt_buf *pkt = (struct ppscal_pkt_buf *)context;
+
+    /* Clear interrupt, keeping interrupts enabled */
+    ppscal_write(0x28, 0x11);
+
+    /* Read the current count values */
+    pkt->pps_1s_count   = ppscal_read(0x00);
+    pkt->pps_10s_count  = ppscal_read(0x08);
+    pkt->pps_100s_count = ppscal_read(0x10);
+
+    /* Tell the main loop that there is a request pending */
+    pkt->ready = true;
+
+    return;
+}
+
 void tamer_schedule(bladerf_module m, uint64_t time) {
     uint32_t base = (m == BLADERF_MODULE_RX) ? RX_TAMER_BASE : TX_TAMER_BASE ;
 
@@ -67,7 +91,7 @@ void tamer_schedule(bladerf_module m, uint64_t time) {
     return ;
 }
 
-void bladerf_nios_init(struct pkt_buf *pkt) {
+void bladerf_nios_init(struct pkt_buf *pkt, struct ppscal_pkt_buf *ppscal_pkt) {
     /* Set the prescaler for 400kHz with an 80MHz clock:
      *      (prescaler = clock / (5*desired) - 1)
      */
@@ -87,9 +111,23 @@ void bladerf_nios_init(struct pkt_buf *pkt) {
         NULL
     ) ;
 
+    /* Register ppscal ISR */
+    alt_ic_isr_register(
+        PPSCAL_0_IRQ_INTERRUPT_CONTROLLER_ID,
+        PPSCAL_0_IRQ,
+        ppscal_isr,
+        ppscal_pkt,
+        NULL
+    );
+
     /* Enable interrupts */
     command_uart_enable_isr(true) ;
     alt_ic_irq_enable(COMMAND_UART_IRQ_INTERRUPT_CONTROLLER_ID, COMMAND_UART_IRQ);
+    ppscal_enable_isr(true);
+    alt_ic_irq_enable(PPSCAL_0_IRQ_INTERRUPT_CONTROLLER_ID, PPSCAL_0_IRQ);
+
+    /* Enable the PPSCAL TCXO Counters */
+    ppscal_write(0x20, 0x00);
 }
 
 static void si5338_complete_transfer(uint8_t check_rxack)
@@ -267,6 +305,29 @@ uint64_t time_tamer_read(bladerf_module m)
     value |= ((uint64_t) IORD_8DIRECT(base, offset++)) << 56;
 
     return value;
+}
+
+uint64_t ppscal_read(uint8_t addr)
+{
+    uint32_t base = PPSCAL_0_BASE;
+    uint8_t offset = 0;
+    uint64_t value = 0;
+
+    value  = IORD_8DIRECT(base, offset++);
+    value |= ((uint64_t) IORD_8DIRECT(base, offset++)) << 8;
+    value |= ((uint64_t) IORD_8DIRECT(base, offset++)) << 16;
+    value |= ((uint64_t) IORD_8DIRECT(base, offset++)) << 24;
+    value |= ((uint64_t) IORD_8DIRECT(base, offset++)) << 32;
+    value |= ((uint64_t) IORD_8DIRECT(base, offset++)) << 40;
+    value |= ((uint64_t) IORD_8DIRECT(base, offset++)) << 48;
+    value |= ((uint64_t) IORD_8DIRECT(base, offset++)) << 56;
+
+    return value;
+}
+
+void ppscal_write(uint8_t addr, uint8_t data)
+{
+    IOWR_8DIRECT(PPSCAL_0_BASE, addr, data);
 }
 
 #endif

@@ -41,6 +41,14 @@ struct pkt_buf {
     volatile bool ready;                  /* Ready flag */
 };
 
+// This is temporary until we figure out where to put it
+struct ppscal_pkt_buf {
+    volatile bool ready;
+    uint64_t pps_1s_count;
+    uint64_t pps_10s_count;
+    uint64_t pps_100s_count;
+};
+
 struct pkt_handler {
     /**
      * Associates a message from the host with a particular packet handler

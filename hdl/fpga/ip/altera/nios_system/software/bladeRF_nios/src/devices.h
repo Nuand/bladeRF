@@ -92,7 +92,7 @@
  *
  * This should be called prior to any other device access function.
  */
-void bladerf_nios_init(struct pkt_buf *pkt);
+void bladerf_nios_init(struct pkt_buf *pkt, struct ppscal_pkt_buf *ppscal_pkt);
 
 /**
  * Read from an LMS6002D register
@@ -273,6 +273,30 @@ INLINE void command_uart_read_request(uint8_t *command);
  * Write the command UART response buffer
  */
 INLINE void command_uart_write_response(uint8_t *command);
+
+/**
+ * Read PPS calibration counter values
+ *
+ * @param   addr    Address, can be one of:
+ *                  0x00: TCXO counts in 1 second
+ *                  0x08: TCXO counts in 10 seconds
+ *                  0x10: TCXO counts in 100 seconds
+ * @return  TCXO counts
+ */
+uint64_t ppscal_read(uint8_t addr);
+
+/**
+ * Write PPS calibration registers
+ *
+ * @param   addr    Address, can be one of:
+ *                  0x20: Control register, where bit:
+ *                    0  : reset 1-second counter
+ *                    1  : reset 10-second counter
+ *                    2  : reset 100-second counter
+ *                    3-7: Reserved
+ * @param   data    Value to write at the specified address.
+ */
+void ppscal_write(uint8_t addr, uint8_t data);
 
 /**
  * @return FPGA version

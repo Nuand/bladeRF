@@ -7,7 +7,7 @@
    description=""
    tags=""
    categories="System" />
- <parameter name="bonusData"><![CDATA[bonusData
+ <parameter name="bonusData"><![CDATA[bonusData 
 {
    element $${FILENAME}
    {
@@ -46,6 +46,22 @@
       datum baseAddress
       {
          value = "36928";
+         type = "String";
+      }
+   }
+   element ppscal_0
+   {
+      datum _sortIndex
+      {
+         value = "15";
+         type = "int";
+      }
+   }
+   element ppscal_0.avalon_slave_0
+   {
+      datum baseAddress
+      {
+         value = "37632";
          type = "String";
       }
    }
@@ -111,6 +127,14 @@
       {
          value = "1";
          type = "int";
+      }
+   }
+   element nios_system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
       }
    }
    element nios_system
@@ -259,7 +283,7 @@
  <parameter name="generateLegacySim" value="false" />
  <parameter name="generationId" value="0" />
  <parameter name="globalResetBus" value="false" />
- <parameter name="hdlLanguage" value="VERILOG" />
+ <parameter name="hdlLanguage" value="Verilog" />
  <parameter name="hideFromIPCatalog" value="false" />
  <parameter name="lockedInterfaceDefinition" value="" />
  <parameter name="maxAdditionalLatency" value="1" />
@@ -290,6 +314,11 @@
  <interface
    name="gpio"
    internal="control.external_connection"
+   type="conduit"
+   dir="end" />
+ <interface
+   name="ppscal"
+   internal="ppscal_0.conduit_end"
    type="conduit"
    dir="end" />
  <interface
@@ -338,6 +367,7 @@
   <parameter name="simDrivenValue" value="0" />
   <parameter name="width" value="32" />
  </module>
+ <module name="ppscal_0" kind="ppscal" version="1.0" enabled="1" />
  <module
    name="iq_corr_rx_phase_gain"
    kind="altera_avalon_pio"
@@ -418,7 +448,7 @@
   <parameter name="dataAddrWidth" value="16" />
   <parameter name="dataMasterHighPerformanceAddrWidth" value="1" />
   <parameter name="dataMasterHighPerformanceMapParam" value="" />
-  <parameter name="dataSlaveMapParam"><![CDATA[<address-map><slave name='ram.s1' start='0x4000' end='0x8000' /><slave name='nios2.debug_mem_slave' start='0x8800' end='0x9000' /><slave name='control.s1' start='0x9040' end='0x9060' /><slave name='peripheral_spi.spi_control_port' start='0x9060' end='0x9080' /><slave name='xb_gpio_dir.s1' start='0x90A0' end='0x90B0' /><slave name='xb_gpio.s1' start='0x90B0' end='0x90C0' /><slave name='iq_corr_tx_phase_gain.s1' start='0x90C0' end='0x90D0' /><slave name='iq_corr_rx_phase_gain.s1' start='0x90D0' end='0x90E0' /><slave name='opencores_i2c.bladerf_oc_i2c_master' start='0x90F0' end='0x90F8' /><slave name='jtag_uart.avalon_jtag_slave' start='0x9100' end='0x9108' /><slave name='command_uart.avalon_slave' start='0x9120' end='0x9140' /><slave name='tx_tamer.avalon_slave_0' start='0x9140' end='0x9160' /><slave name='rx_tamer.avalon_slave_0' start='0x9160' end='0x9180' /><slave name='lms_spi.avalon_slave_0' start='0x9200' end='0x9280' /></address-map>]]></parameter>
+  <parameter name="dataSlaveMapParam"><![CDATA[<address-map><slave name='ram.s1' start='0x4000' end='0x8000' /><slave name='nios2.debug_mem_slave' start='0x8800' end='0x9000' /><slave name='control.s1' start='0x9040' end='0x9060' /><slave name='peripheral_spi.spi_control_port' start='0x9060' end='0x9080' /><slave name='xb_gpio_dir.s1' start='0x90A0' end='0x90B0' /><slave name='xb_gpio.s1' start='0x90B0' end='0x90C0' /><slave name='iq_corr_tx_phase_gain.s1' start='0x90C0' end='0x90D0' /><slave name='iq_corr_rx_phase_gain.s1' start='0x90D0' end='0x90E0' /><slave name='opencores_i2c.bladerf_oc_i2c_master' start='0x90F0' end='0x90F8' /><slave name='jtag_uart.avalon_jtag_slave' start='0x9100' end='0x9108' /><slave name='command_uart.avalon_slave' start='0x9120' end='0x9140' /><slave name='tx_tamer.avalon_slave_0' start='0x9140' end='0x9160' /><slave name='rx_tamer.avalon_slave_0' start='0x9160' end='0x9180' /><slave name='lms_spi.avalon_slave_0' start='0x9200' end='0x9300' /><slave name='ppscal_0.avalon_slave_0' start='0x9300' end='0x9400' /></address-map>]]></parameter>
   <parameter name="data_master_high_performance_paddr_base" value="0" />
   <parameter name="data_master_high_performance_paddr_size" value="0" />
   <parameter name="data_master_paddr_base" value="0" />
@@ -464,7 +494,7 @@
   <parameter name="instruction_master_high_performance_paddr_size" value="0" />
   <parameter name="instruction_master_paddr_base" value="0" />
   <parameter name="instruction_master_paddr_size" value="0" />
-  <parameter name="internalIrqMaskSystemInfo" value="190" />
+  <parameter name="internalIrqMaskSystemInfo" value="191" />
   <parameter name="io_regionbase" value="0" />
   <parameter name="io_regionsize" value="0" />
   <parameter name="master_addr_map" value="false" />
@@ -719,6 +749,15 @@
    kind="avalon"
    version="15.0"
    start="nios2.data_master"
+   end="ppscal_0.avalon_slave_0">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x9300" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection
+   kind="avalon"
+   version="15.0"
+   start="nios2.data_master"
    end="opencores_i2c.bladerf_oc_i2c_master">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x90f0" />
@@ -873,6 +912,11 @@
    start="system_clock.clk"
    end="lms_spi.clock_sink" />
  <connection
+   kind="clock"
+   version="15.0"
+   start="system_clock.clk"
+   end="ppscal_0.clock_sink" />
+ <connection
    kind="interrupt"
    version="15.0"
    start="nios2.irq"
@@ -899,6 +943,13 @@
    start="nios2.irq"
    end="rx_tamer.interrupt_sender">
   <parameter name="irqNumber" value="3" />
+ </connection>
+ <connection
+   kind="interrupt"
+   version="15.0"
+   start="nios2.irq"
+   end="ppscal_0.interrupt_sender">
+  <parameter name="irqNumber" value="0" />
  </connection>
  <connection kind="interrupt" version="15.0" start="nios2.irq" end="jtag_uart.irq">
   <parameter name="irqNumber" value="1" />
@@ -980,6 +1031,11 @@
    version="15.0"
    start="system_clock.clk_reset"
    end="lms_spi.reset_sink" />
+ <connection
+   kind="reset"
+   version="15.0"
+   start="system_clock.clk_reset"
+   end="ppscal_0.reset_sink" />
  <interconnectRequirement for="$system" name="qsys_mm.clockCrossingAdapter" value="HANDSHAKE" />
  <interconnectRequirement for="$system" name="qsys_mm.maxAdditionalLatency" value="1" />
 </system>
