@@ -545,6 +545,46 @@ typedef enum {
 
 } bladerf_loopback;
 
+/**
+ * RX Mux modes
+ *
+ * These values describe the source of samples to the RX FIFOs in the FPGA.
+ * They map directly to rx_mux_mode_t inside the FPGA's source code.
+ */
+typedef enum {
+    /**
+     * Invalid RX Mux mode selection
+     */
+    BLADERF_RX_MUX_INVALID = -1,
+
+    /**
+     * Read baseband samples from the LMS6002D. This is the default mode
+     * of operation.
+     */
+    BLADERF_RX_MUX_BASEBAND_LMS  = 0x0,
+
+    /**
+     * Read samples from 12 bit counters.
+     *
+     * The I channel counts up while the Q channel counts down.
+     */
+    BLADERF_RX_MUX_12BIT_COUNTER = 0x1,
+
+    /**
+     * Read samples from a 32 bit up-counter.
+     *
+     * I and Q form a little-endian value.
+     */
+    BLADERF_RX_MUX_32BIT_COUNTER = 0x2,
+
+    /* RX_MUX setting 0x3 is reserved for future use */
+
+    /**
+     * Read samples from the baseband TX input to the FPGA (from the host)
+     */
+    BLADERF_RX_MUX_DIGITAL_LOOPBACK = 0x4,
+
+} bladerf_rx_mux;
 
 /**
  * Rational sample rate representation
@@ -774,6 +814,31 @@ int CALL_CONV bladerf_set_loopback(struct bladerf *dev, bladerf_loopback l);
  */
 API_EXPORT
 int CALL_CONV bladerf_get_loopback(struct bladerf *dev, bladerf_loopback *l);
+
+
+/**
+ * Set the current RX Mux mode
+ *
+ * @param       dev     Device handle
+ * @param       mux     Mux mode.
+ *
+ * @returns 0 on success, value from \ref RETCODES list on failure.
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_rx_mux(struct bladerf *dev, bladerf_rx_mux mux);
+
+
+/**
+ * Gets the current RX Mux mode
+ *
+ * @param[in]   dev     Device handle
+ * @param[out]  mode    Current RX Mux mode
+ *
+ * @returns 0 on success, value from \ref RETCODES list on failure.
+ */
+
+API_EXPORT
+int CALL_CONV bladerf_get_rx_mux(struct bladerf *dev, bladerf_rx_mux *mode);
 
 /**
  * Configure the device's sample rate, in Hz.  Note this requires the sample
@@ -3124,6 +3189,19 @@ int CALL_CONV bladerf_lms_get_dc_cals(struct bladerf *dev,
  * This feature is useful when debugging issues involving dropped samples.
  */
 #define BLADERF_GPIO_COUNTER_ENABLE (1 << 9)
+
+
+/**
+ * Bit mask representing the rx mux selection
+ *
+ * @note These bits are set using bladerf_set_rx_mux()
+ */
+#define BLADERF_GPIO_RX_MUX_MASK (0x7 << BLADERF_GPIO_RX_MUX_SHIFT)
+
+/**
+ * Starting bit index of the RX mux values in FX3 <-> FPGA GPIO bank
+ */
+#define BLADERF_GPIO_RX_MUX_SHIFT 8
 
 /**
  * Switch to use RX low band (300M - 1.5GHz)

@@ -43,6 +43,7 @@ static const struct test_case *tests[] = {
     &test_case_lpf_mode,
     &test_case_enable_module,
     &test_case_loopback,
+    &test_case_rx_mux,
     &test_case_xb200,
     &test_case_correction,
     &test_case_samplerate,

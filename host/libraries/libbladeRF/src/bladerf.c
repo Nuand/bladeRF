@@ -441,6 +441,82 @@ int bladerf_get_loopback(struct bladerf *dev, bladerf_loopback *l)
     return status;
 }
 
+
+int bladerf_set_rx_mux(struct bladerf *dev, bladerf_rx_mux mux) {
+    uint32_t rx_mux_val;
+    uint32_t config_gpio;
+    int status;
+
+    /* Validate desired mux mode */
+    switch (mux) {
+        case BLADERF_RX_MUX_BASEBAND_LMS:
+        case BLADERF_RX_MUX_12BIT_COUNTER:
+        case BLADERF_RX_MUX_32BIT_COUNTER:
+        case BLADERF_RX_MUX_DIGITAL_LOOPBACK:
+            rx_mux_val = ((uint32_t) mux) << BLADERF_GPIO_RX_MUX_SHIFT;
+            break;
+
+        default:
+            log_debug("Invalid RX mux mode setting passed to %s(): %d\n",
+                      mux, __FUNCTION__);
+            return BLADERF_ERR_INVAL;
+    }
+
+    MUTEX_LOCK(&dev->ctrl_lock);
+
+    if ((status = CONFIG_GPIO_READ(dev, &config_gpio))) {
+        goto out;
+    }
+
+    /* Clear out and assign the associated RX mux bits */
+    config_gpio &= ~BLADERF_GPIO_RX_MUX_MASK;
+    config_gpio |= rx_mux_val;
+
+    status = CONFIG_GPIO_WRITE(dev, config_gpio);
+
+out:
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+    return status;
+}
+
+
+int bladerf_get_rx_mux(struct bladerf *dev, bladerf_rx_mux *mux) {
+    bladerf_rx_mux val;
+    uint32_t config_gpio;
+    int status;
+
+    MUTEX_LOCK(&dev->ctrl_lock);
+
+    if ((status = CONFIG_GPIO_READ(dev, &config_gpio))) {
+        goto out;
+    }
+
+    /* Extract RX mux bits */
+    config_gpio &= BLADERF_GPIO_RX_MUX_MASK;
+    config_gpio >>= BLADERF_GPIO_RX_MUX_SHIFT;
+    val = (bladerf_rx_mux) (config_gpio);
+
+    /* Enure it's a valid/supported value */
+    switch (val) {
+        case BLADERF_RX_MUX_BASEBAND_LMS:
+        case BLADERF_RX_MUX_12BIT_COUNTER:
+        case BLADERF_RX_MUX_32BIT_COUNTER:
+        case BLADERF_RX_MUX_DIGITAL_LOOPBACK:
+            *mux = val;
+            break;
+
+        default:
+            *mux = BLADERF_RX_MUX_INVALID;
+            status = BLADERF_ERR_UNEXPECTED;
+            log_debug("Invalid rx mux mode %d read from config gpio\n", val);
+    }
+
+out:
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+    return status;
+}
+
+
 int bladerf_set_rational_sample_rate(struct bladerf *dev, bladerf_module module,
                                      struct bladerf_rational_rate *rate,
                                      struct bladerf_rational_rate *actual)
