@@ -441,6 +441,46 @@ int bladerf_get_loopback(struct bladerf *dev, bladerf_loopback *l)
     return status;
 }
 
+
+int bladerf_set_rx_mux(struct bladerf *dev, bladerf_rx_mux mux) {
+    uint32_t config_gpio;
+    int status;
+
+    if ((status = bladerf_config_gpio_read(dev, &config_gpio))) {
+        return status;
+    }
+
+    // rx_mux_sel is a 3-bit value starting at bit 8
+    // clear value
+    config_gpio &= ~((1 << 8) | (1 << 9) | (1 << 10));
+    // set value
+    config_gpio |= mux << 8;
+
+    return bladerf_config_gpio_write(dev, config_gpio);
+}
+
+
+int bladerf_get_rx_mux(struct bladerf *dev, bladerf_rx_mux *mux) {
+    uint32_t config_gpio;
+    int status;
+
+    if ((status = bladerf_config_gpio_read(dev, &config_gpio))) {
+        return status;
+    }
+
+    // rx_mux_sel is a 3-bit value starting at bit 8
+    // pick the right bits
+    config_gpio &= ((1 << 8) | (1 << 9) | (1 << 10));
+
+    // right shift to the right position
+    config_gpio >>= 8;
+
+    *mux = (bladerf_rx_mux)config_gpio;
+
+    return status;
+}
+
+
 int bladerf_set_rational_sample_rate(struct bladerf *dev, bladerf_module module,
                                      struct bladerf_rational_rate *rate,
                                      struct bladerf_rational_rate *actual)
