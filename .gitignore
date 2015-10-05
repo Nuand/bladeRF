@@ -51,3 +51,8 @@ hdl/fpga/ip/altera/nios_system/software/bladeRF_nios/mem_init
 hdl/fpga/ip/altera/nios_system/software/bladeRF_nios/obj
 hdl/fpga/ip/altera/nios_system/software/bladeRF_nios_bsp
 hdl/fpga/ip/altera/nios_system/synthesis/
+
+**/modelsim/transcript
+**/modelsim/vsim.wlf
+**/modelsim/work/
+**/modelsim/nuand/
