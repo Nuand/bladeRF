@@ -1239,17 +1239,6 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
             int status = 0;
             bladerf_dev_speed usb_speed = bladerf_device_speed(state->dev);
 
-            /* Discontinuities have been reported for 2.0 on Intel controllers
-             * above 6MHz. */
-            if (usb_speed != BLADERF_DEVICE_SPEED_SUPER && rate.integer > 6000000) {
-                printf("\n  Warning: The provided sample rate may "
-                       "result in timeouts with the current\n"
-                       "           %s connection. "
-                       "A SuperSpeed connection or a lower sample\n"
-                       "           rate are recommended.\n",
-                       devspeed2str(usb_speed));
-            }
-
             if( argc == 3 || argc == 5 || module == BLADERF_MODULE_RX ) {
                 status = bladerf_set_rational_sample_rate( state->dev,
                                                            BLADERF_MODULE_RX,
@@ -1279,6 +1268,19 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
             } else if (status != 0) {
                 state->last_lib_error = status;
                 rv = CLI_RET_LIBBLADERF;
+            } else if (usb_speed != BLADERF_DEVICE_SPEED_SUPER) {
+                /* Discontinuities have been reported for 2.0 on Intel
+                 * controllers above 6MHz. */
+                if (actual.integer > 6000000 ||
+                    ((actual.integer == 6000000) && (actual.num != 0))) {
+                    printf("\n  Warning: The provided sample rate may "
+                            "result in timeouts with the current\n"
+                            "           %s connection. "
+                            "A SuperSpeed connection or a lower sample\n"
+                            "           rate are recommended.\n",
+                            devspeed2str(usb_speed));
+                }
+
             }
         }
     }
