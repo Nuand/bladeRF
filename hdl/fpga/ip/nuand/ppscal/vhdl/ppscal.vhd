@@ -31,9 +31,9 @@ library ieee;
 -- Standard:    VHDL-2008
 -- -----------------------------------------------------------------------------
 entity ppscal is
---    generic(
---
---    );
+    generic(
+        SIMULATION      : boolean := false -- speed up simulations
+    );
     port(
         -- Physical Interface
         ref_1pps        :   in  std_logic;
@@ -78,10 +78,6 @@ architecture arch of ppscal is
         reset         : std_logic;
     end record;
 
-    -- to_signed(7,64)
-    -- to_signed(77,64)
-    -- to_signed(768,64)
-
     signal pps_1s   : count_t := ( target        => x"0000_0000_0249_F000", --384e5
                                    count         => (others => '0'),
                                    count_mm_hold => (others => '0'),
@@ -108,6 +104,16 @@ architecture arch of ppscal is
     signal mm_uaddr : unsigned(mm_addr'range);
 
 begin
+
+    sim_count_target : if( SIMULATION = true ) generate
+        --pps_1s.target   <= to_signed(7,   pps_1s.target'length);
+        --pps_10s.target  <= to_signed(77,  pps_10s.target'length);
+        --pps_100s.target <= to_signed(768, pps_100s.target'length);
+        pps_1s.target   <= to_signed(38400,   pps_1s.target'length);
+        pps_10s.target  <= to_signed(384000,  pps_10s.target'length);
+        pps_100s.target <= to_signed(3840000, pps_100s.target'length);
+    end generate;
+
 
     -- Bring the 1PPS signal into the TCXO clock domain
     U_pps_sync : entity work.synchronizer
@@ -197,50 +203,32 @@ begin
         -- Calculated for a goal of < 10 PPB
         -- err_counts = (seconds * nominal_tcxo_freq) * (10 * 10e-9)
         -- TODO: Make this a function?
-        constant PPS_1S_ERROR_TOL   : natural := 1;
-        constant PPS_10S_ERROR_TOL  : natural := 3;
-        constant PPS_100S_ERROR_TOL : natural := 38;
+        constant PPS_1S_ERROR_TOL   : signed(pps_1s.target'range)   := to_signed(1  , pps_1s.target'length);
+        constant PPS_10S_ERROR_TOL  : signed(pps_10s.target'range)  := to_signed(3  , pps_10s.target'length);
+        constant PPS_100S_ERROR_TOL : signed(pps_100s.target'range) := to_signed(38 , pps_100s.target'length);
 
-        variable pps_1s_error   : signed(pps_1s.target'range);
-        variable pps_10s_error  : signed(pps_10s.target'range);
-        variable pps_100s_error : signed(pps_100s.target'range);
-
-        variable updated  : std_logic := '0';
     begin
         if( rising_edge(mm_clock) ) then
 
-            -- We have a new count to check
-            updated := pps_1s.count_v or pps_10s.count_v or pps_100s.count_v;
-
-            -- Update errors only when a new count value is present
-            if( pps_1s.count_v = '1' ) then
-                pps_1s_error   := abs(pps_1s.target - pps_1s.count);
-            end if;
-
-            if( pps_10s.count_v = '1' ) then
-                pps_10s_error  := abs(pps_10s.target  - pps_10s.count);
-            end if;
-
-            if( pps_100s.count_v = '1' ) then
-                pps_100s_error := abs(pps_100s.target - pps_100s.count);
-            end if;
-
-            -- Generate an interrupt
-            if( (pps_irq_enable = '1') and (updated = '1') ) then
-                if( pps_1s_error > PPS_1S_ERROR_TOL ) then
+            if( (pps_1s.count_v = '1') and (pps_irq_enable = '1') ) then
+                if( abs(pps_1s.target - pps_1s.count) > PPS_1S_ERROR_TOL ) then
                     mm_irq <= '1';
-                elsif( pps_10s_error > PPS_10S_ERROR_TOL ) then
-                    mm_irq <= '1';
-                elsif( pps_100s_error > PPS_100S_ERROR_TOL ) then
-                    mm_irq <= '1';
---                else
---                    mm_irq <= '0';
                 end if;
---            else
---                mm_irq <= '0';
             end if;
 
-            -- Force a clear, if needed
+            if( (pps_10s.count_v = '1') and (pps_irq_enable = '1') ) then
+                if( abs(pps_10s.target - pps_10s.count) > PPS_10S_ERROR_TOL ) then
+                    mm_irq <= '1';
+                end if;
+            end if;
+
+            if( (pps_100s.count_v = '1') and (pps_irq_enable = '1') ) then
+                if( abs(pps_100s.target - pps_100s.count) > PPS_100S_ERROR_TOL ) then
+                    mm_irq <= '1';
+                end if;
+            end if;
+
+            -- Clear an IRQ
             if( pps_irq_clear = '1' ) then
                 mm_irq <= '0';
             end if;
