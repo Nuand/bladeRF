@@ -281,6 +281,7 @@ INLINE void command_uart_write_response(uint8_t *command);
  *                  0x00: TCXO counts in 1 second
  *                  0x08: TCXO counts in 10 seconds
  *                  0x10: TCXO counts in 100 seconds
+ *                  0x18: Reserved / No Op
  * @return  TCXO counts
  */
 uint64_t ppscal_read(uint8_t addr);
@@ -289,11 +290,18 @@ uint64_t ppscal_read(uint8_t addr);
  * Write PPS calibration registers
  *
  * @param   addr    Address, can be one of:
+ *                  0x00-0x10: No Op
+ *                  0x18: Reserved / No Op
  *                  0x20: Control register, where bit:
  *                    0  : reset 1-second counter
  *                    1  : reset 10-second counter
  *                    2  : reset 100-second counter
  *                    3-7: Reserved
+ *                  0x28: Interrupt control/status register:
+ *                    0  : IRQ enable
+ *                    1-3: Reserved
+ *                    4  : IRQ clear
+ *                    5-7: Reserved
  * @param   data    Value to write at the specified address.
  */
 void ppscal_write(uint8_t addr, uint8_t data);
