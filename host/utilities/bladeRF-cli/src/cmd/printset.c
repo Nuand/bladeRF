@@ -1171,7 +1171,12 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
         printf( "\n" );
         printf( "    set samplerate rx 40M\n" );
         printf( "\n" );
-        rv = CLI_RET_NARGS;
+
+        if (argc == 2) {
+            return 0;
+        } else {
+            return CLI_RET_NARGS;
+        }
     }
 
     if( argc > 2 && rv == CLI_RET_OK ) {
@@ -1201,7 +1206,7 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
 
         /* Integer portion didn't make it */
         if( !ok ) {
-            cli_err_nnl(state, argv[0], "Invalid sample rate (%s)\n", argv[idx]);
+            cli_err_nnl(state, argv[0], "Invalid integer value in specified sample rate (%s)\n", argv[idx]);
             rv = CLI_RET_INVPARAM;
         }
 
@@ -1213,8 +1218,7 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
                                          freq_suffixes, NUM_FREQ_SUFFIXES,
                                          &ok);
             if( !ok ) {
-                cli_err_nnl(state, argv[0], "Invalid sample rate (%s %s/%s)\n",
-                    argv[idx-1], argv[idx], argv[idx+1] );
+                cli_err_nnl(state, argv[0], "Invalid numerator value in specified sample rate (%s)\n", argv[idx]);
                 rv = CLI_RET_INVPARAM;
             }
 
@@ -1225,14 +1229,14 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
                                              freq_suffixes, NUM_FREQ_SUFFIXES,
                                              &ok);
                 if( !ok ) {
-                    cli_err_nnl(state, argv[0], "Invalid sample rate (%s %s/%s)\n",
-                                argv[idx-2], argv[idx-1], argv[idx] ) ;
+                    cli_err_nnl(state, argv[0], "Invalid denominator value in specified sample rate (%s)\n", argv[idx]);
                     rv = CLI_RET_INVPARAM;
                 }
             }
         }
+
         if( rv == CLI_RET_OK ) {
-            int status;
+            int status = 0;
             bladerf_dev_speed usb_speed = bladerf_device_speed(state->dev);
 
             /* Discontinuities have been reported for 2.0 on Intel controllers
@@ -1251,26 +1255,30 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
                                                            BLADERF_MODULE_RX,
                                                            &rate, &actual );
 
-                if (status < 0) {
-                    state->last_lib_error = status;
-                    rv = CLI_RET_LIBBLADERF;
-                } else {
+                if (status == 0) {
                     printf( "  Setting RX sample rate - req: %9"PRIu64" %"PRIu64"/%"PRIu64"Hz, "
                             "actual: %9"PRIu64" %"PRIu64"/%"PRIu64"Hz\n", rate.integer, rate.num, rate.den, actual.integer, actual.num, actual.den );
                 }
             }
 
-            if( argc == 3 || argc == 5 || module == BLADERF_MODULE_TX ) {
+            if( status == 0 && (argc == 3 || argc == 5 || module == BLADERF_MODULE_TX) ) {
                 status = bladerf_set_rational_sample_rate( state->dev,
                                                            BLADERF_MODULE_TX,
                                                            &rate, &actual );
-                if (status < 0) {
-                    state->last_lib_error = status;
-                    rv = CLI_RET_LIBBLADERF;
-                } else {
+                if (status == 0) {
                     printf( "  Setting TX sample rate - req: %9"PRIu64" %"PRIu64"/%"PRIu64"Hz, "
                             "actual: %9"PRIu64" %"PRIu64"/%"PRIu64"Hz\n", rate.integer, rate.num, rate.den, actual.integer, actual.num, actual.den );
                 }
+            }
+
+            /* Print a slightly more explicit error message the libbladeRF
+             * function was provided an invalid value */
+            if (status == BLADERF_ERR_INVAL) {
+                cli_err_nnl(state, argv[0], "The specified sample rate is invalid.\n");
+                rv = CLI_RET_INVPARAM;
+            } else if (status != 0) {
+                state->last_lib_error = status;
+                rv = CLI_RET_LIBBLADERF;
             }
         }
     }
