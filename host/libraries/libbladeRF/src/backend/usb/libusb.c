@@ -129,10 +129,8 @@ static int get_devinfo(libusb_device *dev, struct bladerf_devinfo *info)
     struct libusb_device_descriptor desc;
 
     status = libusb_open(dev, &handle);
-    if( status ) {
-        log_debug("Couldn't populate devinfo - %s\n",
-                  libusb_error_name(status));
-    } else {
+
+    if (status == 0) {
         /* Populate device info */
         info->backend = BLADERF_BACKEND_LIBUSB;
         info->usb_bus = libusb_get_bus_number(dev);
@@ -262,6 +260,7 @@ static int lusb_probe(backend_probe_target probe_target,
     ssize_t count;
     libusb_device **list;
     struct bladerf_devinfo info;
+    bool printed_access_warning = false;
 
     libusb_context *context;
 
@@ -284,9 +283,17 @@ static int lusb_probe(backend_probe_target probe_target,
                 /* We may not be able to open the device if another
                  * driver (e.g., CyUSB3) is associated with it. Therefore,
                  * just log to the debug level and carry on. */
-                status = 0;
                 log_debug("Could not open device: %s\n",
                           libusb_error_name(status) );
+
+                if (status == LIBUSB_ERROR_ACCESS && !printed_access_warning) {
+                    printed_access_warning = true;
+                    log_warning("Found a bladeRF via VID/PID, but could not "
+                                "open it due to insufficient permissions.\n");
+                }
+
+                /* Don't stop probing because one device was "problematic" */
+                status = 0;
             } else {
                 info.instance = n++;
                 status = bladerf_devinfo_list_add(info_list, &info);
@@ -390,6 +397,7 @@ static int find_and_open_device(libusb_context *context,
     ssize_t count;
     struct libusb_device **list;
     struct bladerf_devinfo curr_info;
+    bool printed_access_warning = false;
 
     *dev_out = NULL;
 
@@ -414,9 +422,10 @@ static int find_and_open_device(libusb_context *context,
 
                 /* Give the user a helpful hint in case the have forgotten
                  * to update their udev rules */
-                if (status == LIBUSB_ERROR_ACCESS) {
-                    log_info("Found a bladeRF but could not query its "
-                             "information due to insufficient permissions.\n");
+                if (status == LIBUSB_ERROR_ACCESS && !printed_access_warning) {
+                    printed_access_warning = true;
+                    log_warning("Found a bladeRF via VID/PID, but could not "
+                                "open it due to insufficient permissions.\n");
                 } else {
                     log_debug("Could not open bladeRF device: %s\n",
                                libusb_error_name(status) );
