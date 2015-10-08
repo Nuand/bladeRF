@@ -87,6 +87,13 @@
     void SIMULATION_FLUSH_UART();
 #endif
 
+/* Define a global variable containing the current VCTCXO DAC setting.
+ * This is a 'cached' value of what is written to the DAC and is used
+ * for the PPS calibration algorithm to avoid constant read requests
+ * going out to the DAC.
+ */
+extern uint16_t vctcxo_trim_dac_value;
+
 /**
  * Initialize NIOS II device interfaces.
  *
@@ -284,7 +291,7 @@ INLINE void command_uart_write_response(uint8_t *command);
  *                  0x18: Reserved / No Op
  * @return  TCXO counts
  */
-uint64_t ppscal_read(uint8_t addr);
+int64_t ppscal_read(uint8_t addr);
 
 /**
  * Write PPS calibration registers

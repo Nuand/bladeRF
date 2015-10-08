@@ -104,14 +104,26 @@ int main(void)
 
     volatile bool have_request = false;
 
-    // PPS Calibration variables
-    const uint64_t pps_1s_count_exp   = 1*38.4e6;
-    const uint64_t pps_10s_count_exp  = 10*38.4e6;
-    const uint64_t pps_100s_count_exp = 100*38.4e6;
-    uint16_t trim_dac_value;
-    //double   trim_dac_voltage;
-    uint16_t trim_dac_next_value;
-    //double   trim_dac_next_voltage;
+    // PPS Calibration constants
+    const int64_t pps_1s_target      = 1   * (int64_t)384e5;
+    const int64_t pps_10s_target     = 10  * (int64_t)384e5;
+    const int64_t pps_100s_target    = 100 * (int64_t)384e5;
+
+    // Maximum tolerated VCTCXO error, calculated for 10 PPB.
+    const int64_t pps_1s_max_error   = 1;
+    const int64_t pps_10s_max_error  = 3;
+    const int64_t pps_100s_max_error = 38;
+
+    // PPS Calibration
+    int64_t pps_1s_error          = 0;
+    int64_t pps_10s_error         = 0;
+    int64_t pps_100s_error        = 0;
+    int64_t pps_1s_prev_error     = 0;
+    int64_t pps_10s_prev_error    = 0;
+    int64_t pps_100s_prev_error   = 0;
+
+    uint16_t trim_dac_error       = 0;
+    uint16_t trim_dac_prev_error  = 0;
 
     /* Sanity check */
     ASSERT(PKT_MAGIC_IDX == 0);
@@ -166,32 +178,48 @@ int main(void)
             // TODO: figure out a better (more fair) way of handling interrupts.
             if( ppscal_pkt.ready ) {
 
-                // Get the current VCTCXO trim DAC value
-                //    void vctcxo_trim_dac_write(uint8_t cmd, uint16_t val)
-                //    void vctcxo_trim_dac_read(uint8_t cmd, uint16_t *val)
-                vctcxo_trim_dac_read( 0x88 , &trim_dac_value);
+                ppscal_pkt.ready = false;
 
-                // New DAC value
-                trim_dac_value += trim_dac_value + 0x10;
-                if( trim_dac_value < 0xF000 ) {
-                    vctcxo_trim_dac_write( 0x08, &trim_dac_value );
+                /* Update the error counts as long as the PPS count is greater
+                 * than zero. If the count is zero, it's unlikely to be valid
+                 * (i.e. the bladeRF has not been running long enough). */
+                if( ppscal_pkt.pps_1s_count != 0 ) {
+                    pps_1s_error = ppscal_pkt.pps_1s_count - pps_1s_target;
+                }
+                if( ppscal_pkt.pps_10s_count != 0 ) {
+                    pps_10s_error = ppscal_pkt.pps_10s_count - pps_10s_target;
+                }
+                if( ppscal_pkt.pps_100s_count != 0 ) {
+                    pps_100s_error = ppscal_pkt.pps_100s_count - pps_100s_target;
                 }
 
-                // compute deltas from target
-                // pick a value higher or lower than current dac value
-                // get next delta
-                // worse? go in the opposite direction
-                // better? keep going...
-                // repeat
+                /* Check the magnitude of the errors, starting with the 1-second count.
+                 * If an error is greater than the maxium tolerated error, adjust the
+                 * trim DAC some fixed amount up or down. */
+                if( abs(pps_1s_error) > pps_1s_max_error ) {
+                    if( pps_1s_error < 0 ) {
+                        vctcxo_trim_dac_write( 0x08, vctcxo_trim_dac_value+0x0010);
+                    } else {
+                        vctcxo_trim_dac_write( 0x08, vctcxo_trim_dac_value-0x0010);
+                    }
+                } else if( abs(pps_10s_error) > pps_10s_max_error ) {
+                    if( pps_10s_error < 0 ) {
+                        vctcxo_trim_dac_write( 0x08, vctcxo_trim_dac_value+0x0004);
+                    } else {
+                        vctcxo_trim_dac_write( 0x08, vctcxo_trim_dac_value-0x0004);
+                    }
+                } else if( abs(pps_100s_error) > pps_100s_max_error ) {
+                    if( pps_100s_error < 0 ) {
+                        vctcxo_trim_dac_write( 0x08, vctcxo_trim_dac_value+0x0001);
+                    } else {
+                        vctcxo_trim_dac_write( 0x08, vctcxo_trim_dac_value-0x0001);
+                    }
+                }
 
-
-                // probably don't need to compue the actual voltage
-
-                // Compute the voltage that the DAC is outputting
-                //trim_dac_voltage = ((3.3-0.0)/(uint16t)(0xFFFF))*trim_dac_value;
-
-                // Enable interrupts
-                //                ppscal_enable_isr(true);
+                // Update previous errors for next iteration
+                pps_1s_prev_error   = pps_1s_error;
+                pps_10s_prev_error  = pps_10s_error;
+                pps_100s_prev_error = pps_100s_error;
             }
 
             for (i = 0; i < ARRAY_SIZE(pkt_handlers); i++) {

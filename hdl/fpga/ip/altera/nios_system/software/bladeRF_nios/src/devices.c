@@ -30,6 +30,13 @@
 #include "debug.h"
 #include "fpga_version.h"
 
+/* Define a global variable containing the current VCTCXO DAC setting.
+ * This is a 'cached' value of what is written to the DAC and is used
+ * for the PPS calibration algorithm to avoid constant read requests
+ * going out to the DAC. Initial power-up state of the DAC is mid-scale.
+ */
+uint16_t vctcxo_trim_dac_value = 0x7FFF;
+
 static void command_uart_enable_isr(bool enable) {
     uint32_t val = enable ? 1 : 0 ;
     IOWR_32DIRECT(COMMAND_UART_BASE, 16, val) ;
@@ -204,6 +211,9 @@ void vctcxo_trim_dac_write(uint8_t cmd, uint16_t val)
         val & 0xff,
     };
 
+    /* Update cached value of trim DAC setting */
+    vctcxo_trim_dac_value = val;
+
     alt_avalon_spi_command(PERIPHERAL_SPI_BASE, 0, 3, data, 0, 0, 0) ;
 }
 
@@ -307,20 +317,20 @@ uint64_t time_tamer_read(bladerf_module m)
     return value;
 }
 
-uint64_t ppscal_read(uint8_t addr)
+int64_t ppscal_read(uint8_t addr)
 {
     uint32_t base = PPSCAL_0_BASE;
-    uint8_t offset = 0;
-    uint64_t value = 0;
+    uint8_t offset = addr;
+    int64_t value = 0;
 
     value  = IORD_8DIRECT(base, offset++);
-    value |= ((uint64_t) IORD_8DIRECT(base, offset++)) << 8;
-    value |= ((uint64_t) IORD_8DIRECT(base, offset++)) << 16;
-    value |= ((uint64_t) IORD_8DIRECT(base, offset++)) << 24;
-    value |= ((uint64_t) IORD_8DIRECT(base, offset++)) << 32;
-    value |= ((uint64_t) IORD_8DIRECT(base, offset++)) << 40;
-    value |= ((uint64_t) IORD_8DIRECT(base, offset++)) << 48;
-    value |= ((uint64_t) IORD_8DIRECT(base, offset++)) << 56;
+    value |= ((int64_t) IORD_8DIRECT(base, offset++)) << 8;
+    value |= ((int64_t) IORD_8DIRECT(base, offset++)) << 16;
+    value |= ((int64_t) IORD_8DIRECT(base, offset++)) << 24;
+    value |= ((int64_t) IORD_8DIRECT(base, offset++)) << 32;
+    value |= ((int64_t) IORD_8DIRECT(base, offset++)) << 40;
+    value |= ((int64_t) IORD_8DIRECT(base, offset++)) << 48;
+    value |= ((int64_t) IORD_8DIRECT(base, offset++)) << 56;
 
     return value;
 }
