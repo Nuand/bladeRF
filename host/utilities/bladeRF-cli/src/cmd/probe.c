@@ -50,7 +50,13 @@ int cmd_probe(struct cli_state *s, int argc, char *argv[])
 
     if (n_devices < 0) {
         if (n_devices == BLADERF_ERR_NODEV) {
-            cli_err(s, argv[0], "No devices found.\n");
+            cli_err(s, argv[0],
+                    "No devices are available. If one is attached, ensure it\n"
+                    "         "
+                    "is not in use by another program and that the current\n"
+                    "         "
+                    "user has permission to access it.\n");
+
             if (error_on_no_dev) {
                 return CLI_RET_CMD_HANDLED;
             } else {
