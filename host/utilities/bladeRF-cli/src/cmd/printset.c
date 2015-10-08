@@ -1191,8 +1191,11 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
             idx = 3;
         }
 
+        /* Allow a value of zero to be specified for the interger portion
+         * so that the entire value can be specified in num/den.  libbladeRF
+         * will return an error if the sample rate is invalid */
         rate.integer = str2uint64_suffix(argv[idx],
-                                         BLADERF_SAMPLERATE_MIN, UINT64_MAX,
+                                         0, UINT64_MAX,
                                          freq_suffixes, NUM_FREQ_SUFFIXES,
                                          &ok);
 
