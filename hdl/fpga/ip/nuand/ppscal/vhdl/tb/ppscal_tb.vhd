@@ -32,9 +32,11 @@ architecture tb of ppscal_tb is
     end function;
 
     constant    SYS_CLK_PER     : time      := half_clk_per( 80.0e6 );
-    constant    REF_1PPS_PER    : time      := half_clk_per( 5.0e6 );
+    constant    REF_1PPS_PER    : time      := half_clk_per( 1.0e3 ); --5.0e6 );
+    constant    IDEAL_384_PER   : time      := half_clk_per( 38.4e6 );
 
     signal      ref_1pps        : std_logic := '1';
+    signal      ideal_38p4      : std_logic := '1';
 
     signal      sys_clk         : std_logic := '1';
     signal      sys_rst         : std_logic;
@@ -48,15 +50,75 @@ architecture tb of ppscal_tb is
     signal      irq             : std_logic;
     signal      tcxo_clock      : std_logic;
 
+    signal      dac_count       : unsigned(15 downto 0) := x"7FFF";
+    signal      tcxo_vcon       : real := 1.4;
+
+--    alias uut_pps_1s_target   is << signal .ppscal_tb.uut.pps_1s.target   : signed(63 downto 0) >>;
+--    alias uut_pps_10s_target  is << signal .ppscal_tb.uut.pps_10s.target  : signed(63 downto 0) >>;
+--    alias uut_pps_100s_target is << signal .ppscal_tb.uut.pps_100s.target : signed(63 downto 0) >>;
+--
+--    alias drv_pps_1s_target   is << signal .ppscal_tb.driver.PPS_1S_TARGET   : signed(63 downto 0) >>;
+--    alias drv_pps_10s_target  is << signal .ppscal_tb.driver.PPS_10S_TARGET  : signed(63 downto 0) >>;
+--    alias drv_pps_100s_target is << signal .ppscal_tb.driver.PPS_100S_TARGET : signed(63 downto 0) >>;
+--
+--    constant PPS_1S_TARGET      : signed(63 downto 0) := x"0000_0000_0000_0F00";--12_2C00";
+--    constant PPS_10S_TARGET     : signed(63 downto 0) := x"0000_0000_0000_9600";--B_B800";
+--    constant PPS_100S_TARGET    : signed(63 downto 0) := x"0000_0000_0005_DC00";--75_3000";
+
 begin
+
+    --process
+    --begin
+    --    uut_pps_1s_target <= force PPS_1S_TARGET;
+    --    drv_pps_1s_target <= force PPS_1S_TARGET;
+    --
+    --    uut_pps_10s_target <= force PPS_10S_TARGET;
+    --    drv_pps_10s_target <= force PPS_10S_TARGET;
+    --
+    --    uut_pps_100s_target <= force PPS_100S_TARGET;
+    --    drv_pps_100s_target <= force PPS_100S_TARGET;
+    --    wait;
+    --end process;
+
 
     sys_clk <= not sys_clk after SYS_CLK_PER;
     sys_rst <= '1', '0' after SYS_CLK_PER*5;
 
     ref_1pps <= not ref_1pps after REF_1PPS_PER;
 
+    ideal_38p4 <= not ideal_38p4 after IDEAL_384_PER;
+
+--    process
+--    begin
+--        dac_count <= (others => '0');
+--        wait for 10 us;
+--        dac_count <= dac_count + x"1000";
+--        wait for 10 us;
+--        dac_count <= dac_count + x"1000";
+--        wait for 10 us;
+--        dac_count <= dac_count + x"1000";
+--        wait for 10 us;
+--        dac_count <= dac_count + x"1000";
+--        wait for 10 us;
+--        dac_count <= dac_count + x"1000";
+--        wait for 10 us;
+--        dac_count <= dac_count + x"1000";
+--        wait for 10 us;
+--        dac_count <= dac_count + x"1000";
+--        wait for 10 us;
+--        dac_count <= dac_count + x"1000";
+--        wait for 10 us;
+--        dac_count <= dac_count + x"1000";
+--        wait for 10 us;
+--        dac_count <= dac_count + x"1000";
+--        wait;
+--    end process;
+
 
     uut : entity work.ppscal(arch)
+        generic map (
+            SIMULATION      => true
+        )
         port map(
             -- Physical Interface
             ref_1pps        => ref_1pps,
@@ -92,7 +154,33 @@ begin
 
             mm_irq          => irq,
 
-            tcxo_clock      => tcxo_clock
+            dac_count       => dac_count,
+            tcxo_clock      => open --tcxo_clock
+        );
+
+    dac : entity work.dac161s055_model
+        generic map (
+            DIRECT_CONTROL  => true
+        )
+        port map (
+            -- SPI Control interface
+            --sclk            : in  std_logic;
+            --sen             : in  std_logic;
+            --sdi             : in  std_logic;
+            --sdo             : out std_logic;
+
+            -- Direct control interface
+            dac_count       => dac_count, -- in  unsigned(DAC_WIDTH-1 downto 0);
+            ldacb           => '0',       -- in  std_logic := '0';
+
+            -- Analog output
+            vout            => tcxo_vcon -- out real
+        );
+
+    vctcxo : entity work.asvtx12a384m_model
+        port map (
+            vcon  => tcxo_vcon, -- in  real;      -- control voltage
+            clock => tcxo_clock -- out std_logic  -- output clock
         );
 
 end architecture;

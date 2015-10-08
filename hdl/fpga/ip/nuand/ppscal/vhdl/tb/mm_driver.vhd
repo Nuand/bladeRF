@@ -38,6 +38,7 @@ entity mm_driver is
 
         mm_irq          :   in  std_logic;
 
+        dac_count       :   out unsigned(15 downto 0);
         tcxo_clock      :   out std_logic
     );
 end entity;
@@ -49,9 +50,25 @@ architecture arch of mm_driver is
         return ( (0.5 sec) / real(freq) );
     end function;
 
-    constant TCXO_START_FREQ   : real    := 20.4e6;
-    constant TCXO_TARGET_FREQ  : real    := 38.4e6;
-    constant TCXO_INCR_FREQ    : real    := 1.0e6;
+    constant TCXO_START_FREQ    : real := 20.4e6;
+    constant TCXO_TARGET_FREQ   : real := 38.4e6;
+    constant TCXO_INCR_FREQ     : real := 1.0e6;
+
+    --constant PPS_1S_TARGET      : signed(63 downto 0) := to_signed(7, 64);
+    --constant PPS_10S_TARGET     : signed(63 downto 0) := to_signed(77, 64);
+    --constant PPS_100S_TARGET    : signed(63 downto 0) := to_signed(768, 64);
+    --
+    --constant PPS_1S_MAX_ERROR   : signed(63 downto 0) := to_signed(1, 64);
+    --constant PPS_10S_MAX_ERROR  : signed(63 downto 0) := to_signed(5, 64);
+    --constant PPS_100S_MAX_ERROR : signed(63 downto 0) := to_signed(10, 64);
+
+    constant PPS_1S_TARGET      : signed(63 downto 0) := x"0000_0000_0000_9600";--12_2C00";
+    constant PPS_10S_TARGET     : signed(63 downto 0) := x"0000_0000_0005_DC00";--B_B800";
+    constant PPS_100S_TARGET    : signed(63 downto 0) := x"0000_0000_003A_9800";--75_3000";
+
+    constant PPS_1S_MAX_ERROR   : signed(63 downto 0) := to_signed(1, 64);
+    constant PPS_10S_MAX_ERROR  : signed(63 downto 0) := to_signed(3, 64);
+    constant PPS_100S_MAX_ERROR : signed(63 downto 0) := to_signed(38, 64);
 
     -- FSM States
     type fsm_t is (
@@ -65,30 +82,43 @@ architecture arch of mm_driver is
         TERMINATE_SIMULATION
     );
 
+    type error_t is record
+        error : signed(63 downto 0);
+    end record;
+
+
     -- State of internal signals
     type state_t is record
-        state           : fsm_t;
-        holdoff_count   : natural;
-        pps_1s_count    : std_logic_vector(63 downto 0);
-        pps_10s_count   : std_logic_vector(63 downto 0);
-        pps_100s_count  : std_logic_vector(63 downto 0);
-        tcxo_half_per   : time;
-        tcxo_freq       : real;
+        state                 : fsm_t;
+        holdoff_count         : natural;
+        pps_1s_count          : std_logic_vector(63 downto 0);
+        pps_10s_count         : std_logic_vector(63 downto 0);
+        pps_100s_count        : std_logic_vector(63 downto 0);
+        tcxo_half_per         : time;
+        tcxo_freq             : real;
+        pid_1s                : error_t;
+        pid_10s               : error_t;
+        pid_100s              : error_t;
+        dac                   : unsigned(dac_count'range);
     end record;
 
     constant RESET_VALUE : state_t := (
-        state           => RESET_COUNTERS,
-        holdoff_count   => 0,
-        pps_1s_count    => (others => '-'),
-        pps_10s_count   => (others => '-'),
-        pps_100s_count  => (others => '-'),
-        tcxo_half_per   => half_clk_per( TCXO_START_FREQ ),
-        tcxo_freq       => TCXO_START_FREQ
+        state                 => RESET_COUNTERS,
+        holdoff_count         => 0,
+        pps_1s_count          => (others => '-'),
+        pps_10s_count         => (others => '-'),
+        pps_100s_count        => (others => '-'),
+        tcxo_half_per         => half_clk_per( TCXO_START_FREQ ),
+        tcxo_freq             => TCXO_START_FREQ,
+        pid_1s                => ( error => (others => '0') ),
+        pid_10s               => ( error => (others => '0') ),
+        pid_100s              => ( error => (others => '0') ),
+        dac                   => x"7FFF"
     );
 
     constant RESET_TIME  : natural := 50;
     constant DEAD_TIME   : natural := 1000;
-    constant IRQ_TIMEOUT : natural := 20000;
+    constant IRQ_TIMEOUT : natural := 2**30; --40000;
 
     constant PPS_CNT_1S_ADDR   : natural := 0*8;
     constant PPS_CNT_10S_ADDR  : natural := 1*8;
@@ -116,11 +146,16 @@ begin
     end process;
 
     comb_proc : process( all )
+        variable pps_1s_error   : signed(63 downto 0) := (others => '0');
+        variable pps_10s_error  : signed(63 downto 0) := (others => '0');
+        variable pps_100s_error : signed(63 downto 0) := (others => '0');
     begin
         mm_rd_req   <= '0';
         mm_wr_req   <= '0';
         mm_addr     <= (others => '0');
         mm_wr_data  <= (others => '0');
+
+        dac_count <= current.dac;
 
         case (current.state) is
             when RESET_COUNTERS =>
@@ -150,9 +185,8 @@ begin
                 if( mm_irq = '1' ) then
                     future.holdoff_count <= 0;
                     mm_wr_req <= '1';
-                    mm_wr_data <= x"11"; -- clear and disable interrupts
+                    mm_wr_data <= x"11"; -- clear the interrupt
                     mm_addr <= std_logic_vector(to_unsigned(INTERRUPT_ADDR,mm_addr'length));
-                    --future.state <= READ_PPS_1S;
                     future.state <= READ_COUNTS;
                 else
                     future.holdoff_count <= current.holdoff_count + 1;
@@ -207,6 +241,47 @@ begin
                 end if;
 
             when FREQ_ADJUST =>
+
+                -- Current error (only valid if the count is > 0)
+                if( unsigned(current.pps_1s_count) /= to_unsigned(0,current.pps_1s_count'length) ) then
+                    pps_1s_error   := signed(current.pps_1s_count)-PPS_1S_TARGET;
+                end if;
+
+                if( unsigned(current.pps_10s_count) /= to_unsigned(0,current.pps_10s_count'length) ) then
+                    pps_10s_error  := signed(current.pps_10s_count)-PPS_10S_TARGET;
+                end if;
+
+                if( unsigned(current.pps_100s_count) /= to_unsigned(0,current.pps_100s_count'length) ) then
+                    pps_100s_error := signed(current.pps_100s_count)-PPS_100S_TARGET;
+                end if;
+
+                -- Save current error off for next time "previous error"
+                future.pid_1s.error   <= pps_1s_error;
+                future.pid_10s.error  <= pps_10s_error;
+                future.pid_100s.error <= pps_100s_error;
+
+                if( abs(pps_1s_error) > PPS_1S_MAX_ERROR ) then
+                    if( pps_1s_error < 0 ) then -- too slow, increase DAC
+                        future.dac <= current.dac + to_unsigned(1024,current.dac'length);
+                    else -- too fast, lower the DAC
+                        future.dac <= current.dac - to_unsigned(1024,current.dac'length);
+                    end if;
+                elsif( abs(pps_10s_error) > PPS_10S_MAX_ERROR ) then
+                    if( pps_10s_error < 0 ) then -- too slow, increase DAC
+                        future.dac <= current.dac + to_unsigned(512,current.dac'length);
+                    else -- too fast, lower the DAC
+                        future.dac <= current.dac - to_unsigned(512,current.dac'length);
+                    end if;
+                elsif( abs(pps_100s_error) > PPS_100S_MAX_ERROR ) then
+                    if( pps_100s_error < 0 ) then -- too slow, increase DAC
+                        future.dac <= current.dac + to_unsigned(128,current.dac'length);
+                    else -- too fast, lower the DAC
+                        future.dac <= current.dac - to_unsigned(128,current.dac'length);
+                    end if;
+                end if;
+
+
+
                 future.tcxo_half_per <= half_clk_per(current.tcxo_freq+TCXO_INCR_FREQ);
                 future.tcxo_freq     <= current.tcxo_freq + TCXO_INCR_FREQ;
                 future.state <= HOLDOFF;
@@ -219,7 +294,7 @@ begin
                 end if;
 
             when TERMINATE_SIMULATION =>
-                --stop(0);
+                stop(0);
                 null;
 
         end case;

@@ -24,20 +24,20 @@ library ieee;
 entity dac161s055_model is
     generic (
         -- Defaults chosen to match bladerf.pdf
-        BIT_WIDTH       : positive := 16;
+        DAC_WIDTH       : positive := 16;
         VREF            : real     := 2.5;
-        MZB             : boolean  := true -- power on mid-scale?
-        --bypass_spi      : boolean  := true
-    )
+        MZB             : boolean  := true; -- power on mid-scale?
+        DIRECT_CONTROL  : boolean  := true
+    );
     port (
-        -- Control interface
+        -- SPI Control interface
         --sclk            : in  std_logic;
         --sen             : in  std_logic;
         --sdi             : in  std_logic;
         --sdo             : out std_logic;
 
-        -- Direct control interface (if bypassing SPI)
-        dac_count       : in  unsigned(BIT_WIDTH-1 downto 0);
+        -- Direct control interface
+        dac_count       : in  unsigned(DAC_WIDTH-1 downto 0);
         ldacb           : in  std_logic := '0';
 
         -- Analog output
@@ -45,59 +45,59 @@ entity dac161s055_model is
     );
 end entity;
 
-architecture arch of mm_driver is
+architecture arch of dac161s055_model is
 
-    constant DAC_MID_SCALE : unsigned(BIT_WIDTH-1 downto 0) :=
-        to_unsigned( ((2**(BIT_WIDTH))/2) , BIT_WIDTH );
+    constant DAC_MID_SCALE : unsigned(DAC_WIDTH-1 downto 0) :=
+        to_unsigned( ((2**(DAC_WIDTH))/2)-1 , DAC_WIDTH );
 
-    constant DAC_LSB_VOLTAGE : real := ( (VREF) / (2**BIT_WIDTH) );
+    constant DAC_LSB_VOLTAGE : real := ( (VREF) / real(2**DAC_WIDTH) );
 
     -- Given a DAC value, get the analog output voltage
     function get_voltage( dac : unsigned ) return real is
     begin
-        return ( real(to_integer(dac)) * DAC_LSB_VOLTAGE;
+        return ( real(to_integer(dac)) * DAC_LSB_VOLTAGE );
     end function;
 
 
     -- FSM States
-    type fsm_t is (
-    );
+    --type fsm_t is (     );
 
     -- State of internal signals
-    type state_t is record
-        state           : fsm_t;
+    --type state_t is record
+    --    state           : fsm_t;
+    --end record;
 
-    end record;
-
-    constant RESET_VALUE : state_t := (
-        state           => RESET_COUNTERS,
-
-    );
+    --constant RESET_VALUE : state_t := (
+    --    state           => RESET_COUNTERS,
+    --);
 
 
-    signal   current           : state_t := RESET_VALUE;
-    signal   future            : state_t := RESET_VALUE;
+    --signal   current           : state_t := RESET_VALUE;
+    --signal   future            : state_t := RESET_VALUE;
+
+    signal   powered_up        : boolean := false;
 
 begin
 
-    comb_proc : process( all )
-    begin
+    dac_guts : if( DIRECT_CONTROL = true ) generate
+        comb_proc : process( all )
+        begin
 
-        -- Power-up voltage output
-        if( MZB ) then
-            vout <= DAC_MID_SCALE;
-        else
-            vout <= 0.0;
-        end if;
+            if( powered_up = false ) then
+                -- Power-up voltage output
+                if( MZB ) then
+                    vout <= get_voltage(DAC_MID_SCALE);
+                else
+                    vout <= 0.0;
+                end if;
+                powered_up <= true;
+            end if;
 
-        -- Continuously load the DAC
-        load_dac : while( ldacb = '0' ) loop
-            vout <= get_voltage(dac_count);
-        end loop;
+            if( ldacb = '0' ) then
+                vout <= get_voltage(dac_count);
+            end if;
 
-        report "dac161s055 completed." severity warning;
-        wait;
-
-    end process;
+        end process;
+    end generate;
 
 end architecture;
