@@ -204,7 +204,7 @@ begin
         -- err_counts = (seconds * nominal_tcxo_freq) * (10 * 10e-9)
         -- TODO: Make this a function?
         constant PPS_1S_ERROR_TOL   : signed(pps_1s.target'range)   := to_signed(1  , pps_1s.target'length);
-        constant PPS_10S_ERROR_TOL  : signed(pps_10s.target'range)  := to_signed(3  , pps_10s.target'length);
+        constant PPS_10S_ERROR_TOL  : signed(pps_10s.target'range)  := to_signed(4  , pps_10s.target'length);
         constant PPS_100S_ERROR_TOL : signed(pps_100s.target'range) := to_signed(38 , pps_100s.target'length);
 
     begin

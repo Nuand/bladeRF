@@ -88,6 +88,28 @@ static const struct pkt_handler pkt_handlers[] = {
     PKT_LEGACY,
 };
 
+/* A structure that represents a point on a line. Used for calibrating
+ * the VCTCXO */
+typedef struct point {
+    int32_t  x; // Error counts
+    uint16_t y; // DAC count
+} point_t;
+
+typedef struct line {
+    point_t  point[2];
+    uint32_t slope;
+    uint16_t y_intercept; // in DAC counts
+} line_t;
+
+/* State machine for VCTCXO tuning */
+typedef enum state {
+    COARSE_TUNE_MIN,
+    COARSE_TUNE_MAX,
+    COARSE_TUNE_DONE,
+    FINE_TUNE,
+    DO_NOTHING
+} state_t;
+
 int main(void)
 {
     uint8_t i;
@@ -104,26 +126,36 @@ int main(void)
 
     volatile bool have_request = false;
 
+    // Trim DAC constants
+    const uint16_t trimdac_min       = 0x28F5;
+    const uint16_t trimdac_max       = 0xF5C3;
+
+    // Trim DAC calibration line
+    line_t trimdac_cal_line;
+
     // PPS Calibration constants
-    const int64_t pps_1s_target      = 1   * (int64_t)384e5;
-    const int64_t pps_10s_target     = 10  * (int64_t)384e5;
-    const int64_t pps_100s_target    = 100 * (int64_t)384e5;
+    const int64_t pps_1s_target      = 1   * 384e5L;
+    const int64_t pps_10s_target     = 10  * 384e5L;
+    const int64_t pps_100s_target    = 100 * 384e5L;
 
     // Maximum tolerated VCTCXO error, calculated for 10 PPB.
     const int64_t pps_1s_max_error   = 1;
-    const int64_t pps_10s_max_error  = 3;
+    const int64_t pps_10s_max_error  = 4;
     const int64_t pps_100s_max_error = 38;
 
     // PPS Calibration
     int64_t pps_1s_error          = 0;
     int64_t pps_10s_error         = 0;
     int64_t pps_100s_error        = 0;
-    int64_t pps_1s_prev_error     = 0;
-    int64_t pps_10s_prev_error    = 0;
-    int64_t pps_100s_prev_error   = 0;
 
-    uint16_t trim_dac_error       = 0;
-    uint16_t trim_dac_prev_error  = 0;
+    // VCTCXO Tune State machine
+    state_t tune_state = COARSE_TUNE_MIN;
+
+    // Set the known values of the trim DAC cal line
+    trimdac_cal_line.point[0].y = trimdac_min;
+    trimdac_cal_line.point[1].y = trimdac_max;
+    trimdac_cal_line.point[0].x = 0;
+    trimdac_cal_line.point[1].x = 0;
 
     /* Sanity check */
     ASSERT(PKT_MAGIC_IDX == 0);
@@ -193,34 +225,103 @@ int main(void)
                     pps_100s_error = ppscal_pkt.pps_100s_count - pps_100s_target;
                 }
 
-                /* Check the magnitude of the errors, starting with the 1-second count.
-                 * If an error is greater than the maxium tolerated error, adjust the
-                 * trim DAC some fixed amount up or down. */
-                if( abs(pps_1s_error) > pps_1s_max_error ) {
-                    if( pps_1s_error < 0 ) {
-                        vctcxo_trim_dac_write( 0x08, vctcxo_trim_dac_value+0x0010);
-                    } else {
-                        vctcxo_trim_dac_write( 0x08, vctcxo_trim_dac_value-0x0010);
-                    }
-                } else if( abs(pps_10s_error) > pps_10s_max_error ) {
-                    if( pps_10s_error < 0 ) {
-                        vctcxo_trim_dac_write( 0x08, vctcxo_trim_dac_value+0x0004);
-                    } else {
-                        vctcxo_trim_dac_write( 0x08, vctcxo_trim_dac_value-0x0004);
-                    }
-                } else if( abs(pps_100s_error) > pps_100s_max_error ) {
-                    if( pps_100s_error < 0 ) {
-                        vctcxo_trim_dac_write( 0x08, vctcxo_trim_dac_value+0x0001);
-                    } else {
-                        vctcxo_trim_dac_write( 0x08, vctcxo_trim_dac_value-0x0001);
-                    }
-                }
+                switch(tune_state) {
 
-                // Update previous errors for next iteration
-                pps_1s_prev_error   = pps_1s_error;
-                pps_10s_prev_error  = pps_10s_error;
-                pps_100s_prev_error = pps_100s_error;
-            }
+                case COARSE_TUNE_MIN:
+
+                    /* Clear out the PPS counts because any existing PPS counts will
+                     * be invalid once we change the DAC setting */
+                    ppscal_write(0x00, 0x07);
+
+                    /* Tune to the minimum DAC value */
+                    vctcxo_trim_dac_write( 0x08, trimdac_min );
+
+                    /* Next state */
+                    tune_state = COARSE_TUNE_MAX;
+
+                    /* Take PPS counters out of reset */
+                    ppscal_write(0x00, 0x00);
+                    break;
+
+                case COARSE_TUNE_MAX:
+
+                    /* Clear out the PPS counts because any existing PPS counts will
+                     * be invalid once we change the DAC setting */
+                    ppscal_write(0x00, 0x07);
+
+                    /* We have the error from the minimum DAC setting, store it
+                     * as the 'x' coordinate for the first point */
+                    trimdac_cal_line.point[0].x = pps_1s_error;
+
+                    /* Tune to the maximum DAC value */
+                    vctcxo_trim_dac_write( 0x08, trimdac_max );
+
+                    /* Next state */
+                    tune_state = COARSE_TUNE_DONE;
+
+                    /* Take PPS counters out of reset */
+                    ppscal_write(0x00, 0x00);
+                    break;
+
+                case COARSE_TUNE_DONE:
+
+                    /* Clear out the PPS counts because any existing PPS counts will
+                     * be invalid once we change the DAC setting */
+                    ppscal_write(0x00, 0x07);
+
+                    /* We have the error from the maximum DAC setting, store it
+                     * as the 'x' coordinate for the second point */
+                    trimdac_cal_line.point[1].x = pps_1s_error;
+
+                    /* We now have two points, so we can calculate the equation
+                     * for a line plotted with DAC counts on the Y axis and
+                     * error on the X axis. We want a PPM of zero, which ideally
+                     * corresponds to the y-intercept of the line. */
+                    trimdac_cal_line.slope = ( (trimdac_cal_line.point[1].y - trimdac_cal_line.point[0].y) /
+                                               (trimdac_cal_line.point[1].x - trimdac_cal_line.point[0].x) );
+                    trimdac_cal_line.y_intercept = ( trimdac_cal_line.point[0].y -
+                                                     (trimdac_cal_line.slope * trimdac_cal_line.point[0].x) );
+
+                    /* Set the trim DAC count to the y-intercept */
+                    vctcxo_trim_dac_write( 0x08, trimdac_cal_line.y_intercept );
+
+                    /* Next state */
+                    tune_state = FINE_TUNE;
+
+                    /* Take PPS counter out of reset */
+                    ppscal_write(0x00, 0x00);
+                    break;
+
+                case FINE_TUNE:
+
+                    /* We should be extremely close to a perfectly tuned
+                     * VCTCXO, but some minor adjustments need to be made */
+
+                    /* Check the magnitude of the errors, starting with the
+                     * one second count. If an error is greater than the maxium
+                     * tolerated error, adjust the trim DAC by the error
+                     * multiplied by the slope (in counts/Hz) and scale the
+                     * result by the precision interval (e.g. 1s, 10s, 100s). */
+                    if( abs(pps_1s_error) > pps_1s_max_error ) {
+                        vctcxo_trim_dac_write( 0x08, vctcxo_trim_dac_value-((pps_1s_error*trimdac_cal_line.slope)/1) );
+                    } else if( abs(pps_10s_error) > pps_10s_max_error ) {
+                        vctcxo_trim_dac_write( 0x08, vctcxo_trim_dac_value-((pps_10s_error*trimdac_cal_line.slope)/10) );
+                    } else if( abs(pps_100s_error) > pps_100s_max_error ) {
+                        vctcxo_trim_dac_write( 0x08, vctcxo_trim_dac_value-((pps_100s_error*trimdac_cal_line.slope)/100) );
+                        /*if( pps_100s_error < 0 ) {
+                            vctcxo_trim_dac_write( 0x08, vctcxo_trim_dac_value+0x0001);
+                        } else {
+                            vctcxo_trim_dac_write( 0x08, vctcxo_trim_dac_value-0x0001);
+                            }*/
+                    }
+
+                    break;
+                default:
+                    break;
+                    /* Do nothing */
+                } /* switch */
+
+            } /* PPM interrupt */
 
             for (i = 0; i < ARRAY_SIZE(pkt_handlers); i++) {
                 if (pkt_handlers[i].do_work != NULL) {
