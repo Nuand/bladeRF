@@ -229,25 +229,15 @@ int main(void)
 
                 case COARSE_TUNE_MIN:
 
-                    /* Clear out the PPS counts because any existing PPS counts will
-                     * be invalid once we change the DAC setting */
-                    ppscal_write(0x00, 0x07);
-
                     /* Tune to the minimum DAC value */
                     vctcxo_trim_dac_write( 0x08, trimdac_min );
 
                     /* Next state */
                     tune_state = COARSE_TUNE_MAX;
 
-                    /* Take PPS counters out of reset */
-                    ppscal_write(0x00, 0x00);
                     break;
 
                 case COARSE_TUNE_MAX:
-
-                    /* Clear out the PPS counts because any existing PPS counts will
-                     * be invalid once we change the DAC setting */
-                    ppscal_write(0x00, 0x07);
 
                     /* We have the error from the minimum DAC setting, store it
                      * as the 'x' coordinate for the first point */
@@ -259,15 +249,9 @@ int main(void)
                     /* Next state */
                     tune_state = COARSE_TUNE_DONE;
 
-                    /* Take PPS counters out of reset */
-                    ppscal_write(0x00, 0x00);
                     break;
 
                 case COARSE_TUNE_DONE:
-
-                    /* Clear out the PPS counts because any existing PPS counts will
-                     * be invalid once we change the DAC setting */
-                    ppscal_write(0x00, 0x07);
 
                     /* We have the error from the maximum DAC setting, store it
                      * as the 'x' coordinate for the second point */
@@ -288,8 +272,6 @@ int main(void)
                     /* Next state */
                     tune_state = FINE_TUNE;
 
-                    /* Take PPS counter out of reset */
-                    ppscal_write(0x00, 0x00);
                     break;
 
                 case FINE_TUNE:
@@ -297,9 +279,9 @@ int main(void)
                     /* We should be extremely close to a perfectly tuned
                      * VCTCXO, but some minor adjustments need to be made */
 
-                    /* Check the magnitude of the errors, starting with the
+                    /* Check the magnitude of the errors starting with the
                      * one second count. If an error is greater than the maxium
-                     * tolerated error, adjust the trim DAC by the error
+                     * tolerated error, adjust the trim DAC by the error (Hz)
                      * multiplied by the slope (in counts/Hz) and scale the
                      * result by the precision interval (e.g. 1s, 10s, 100s). */
                     if( abs(pps_1s_error) > pps_1s_max_error ) {
@@ -308,11 +290,6 @@ int main(void)
                         vctcxo_trim_dac_write( 0x08, vctcxo_trim_dac_value-((pps_10s_error*trimdac_cal_line.slope)/10) );
                     } else if( abs(pps_100s_error) > pps_100s_max_error ) {
                         vctcxo_trim_dac_write( 0x08, vctcxo_trim_dac_value-((pps_100s_error*trimdac_cal_line.slope)/100) );
-                        /*if( pps_100s_error < 0 ) {
-                            vctcxo_trim_dac_write( 0x08, vctcxo_trim_dac_value+0x0001);
-                        } else {
-                            vctcxo_trim_dac_write( 0x08, vctcxo_trim_dac_value-0x0001);
-                            }*/
                     }
 
                     break;
@@ -320,6 +297,12 @@ int main(void)
                     break;
                     /* Do nothing */
                 } /* switch */
+
+                /* Take PPS counters out of reset */
+                ppscal_reset_counters( false );
+
+                /* Enable interrupts */
+                ppscal_enable_isr( true );
 
             } /* PPM interrupt */
 
