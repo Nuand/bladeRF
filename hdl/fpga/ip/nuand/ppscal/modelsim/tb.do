@@ -17,8 +17,6 @@ vcom {*}$vcom_opts -work ${vcom_lib} ../vhdl/tb/dac161s055_model.vhd
 vcom {*}$vcom_opts -work ${vcom_lib} ../vhdl/tb/mm_driver.vhd
 vcom {*}$vcom_opts -work ${vcom_lib} ../vhdl/tb/ppscal_tb.vhd
 
-vcom {*}$vcom_opts -work ${vcom_lib} ../vhdl/tb/dacxo_tb.vhd
-
 vsim ${vcom_lib}.ppscal_tb
 #vsim ${vcom_lib}.dacxo_tb
 
