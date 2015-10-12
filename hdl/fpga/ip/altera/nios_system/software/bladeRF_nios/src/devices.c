@@ -55,23 +55,34 @@ static void command_uart_isr(void *context) {
     return ;
 }
 
-static void ppscal_enable_isr(bool enable) {
-    uint8_t val = enable ? 1 : 0;
-    //    IOWR_8DIRECT(PPSCAL_0_BASE, 0x28, val);
+void ppscal_enable_isr(bool enable) {
+    uint8_t val = enable ? 0x01 : 0x00;
     ppscal_write(0x28, val);
+    return;
+}
+
+void ppscal_reset_counters( bool reset ) {
+    uint8_t val = reset ? 0x07 : 0x00;
+    ppscal_write(0x20, val);
     return;
 }
 
 static void ppscal_isr(void *context) {
     struct ppscal_pkt_buf *pkt = (struct ppscal_pkt_buf *)context;
 
-    /* Clear interrupt, keeping interrupts enabled */
-    ppscal_write(0x28, 0x11);
+    /* Disable interrupts */
+    ppscal_enable_isr( false );
+
+    /* Clear interrupt */
+    ppscal_write(0x28, 0x10);
 
     /* Read the current count values */
     pkt->pps_1s_count   = ppscal_read(0x00);
     pkt->pps_10s_count  = ppscal_read(0x08);
     pkt->pps_100s_count = ppscal_read(0x10);
+
+    /* Reset the counters */
+    ppscal_reset_counters( true );
 
     /* Tell the main loop that there is a request pending */
     pkt->ready = true;

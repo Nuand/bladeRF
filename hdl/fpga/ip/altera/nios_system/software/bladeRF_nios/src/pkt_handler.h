@@ -43,10 +43,10 @@ struct pkt_buf {
 
 // This is temporary until we figure out where to put it
 struct ppscal_pkt_buf {
-    volatile bool ready;
-    int64_t pps_1s_count;
-    int64_t pps_10s_count;
-    int64_t pps_100s_count;
+    volatile bool    ready;
+    volatile int64_t pps_1s_count;
+    volatile int64_t pps_10s_count;
+    volatile int64_t pps_100s_count;
 };
 
 struct pkt_handler {

@@ -314,6 +314,21 @@ int64_t ppscal_read(uint8_t addr);
 void ppscal_write(uint8_t addr, uint8_t data);
 
 /**
+ * Enable interrupts from the PPS calibration module
+ *
+ * @param   enable  true or false
+ */
+void ppscal_enable_isr(bool enable);
+
+/**
+ * Reset the counters in the PPS calibration module. Setting is sticky,
+ * so counters must be explicitly taken out of reset
+ *
+ * @maram   reset   true or false
+ */
+void ppscal_reset_counters( bool reset );
+
+/**
  * @return FPGA version
  */
 static inline  uint32_t fpga_version(void)
