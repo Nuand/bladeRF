@@ -57,14 +57,36 @@ architecture arch of pps_counter is
     signal current            : state_t;
     signal future             : state_t;
 
+    signal counter_reset      : std_logic := '1';
     signal handshake_ack      : std_logic := '0';
     signal count_strobe_pulse : std_logic := '0';
 
 begin
 
-    sync_proc : process( tcxo_clock, reset )
+    -- Counter reset control process. When the counter is reset, it may have
+    -- been because of a trim DAC retune. Need to keep the counter FSM in reset
+    -- until the trim DAC settles out to its new value. The worst-case
+    -- (min-to-max) transition time is approximately 800 us.
+    reset_proc : process( clock, reset )
+        -- Number of system clock cycles before releasing the counter reset.
+        variable rst_cnt_v : integer range 0 to 64000; -- For 80 MHz sys clock
     begin
         if( reset = '1' ) then
+            rst_cnt_v     := 64000;
+            counter_reset <= '1';
+        elsif( rising_edge( clock ) ) then
+            if( rst_cnt_v /= 0 ) then
+                rst_cnt_v := rst_cnt_v - 1;
+                counter_reset <= '1';
+            else
+                counter_reset <= '0';
+            end if;
+        end if;
+    end process;
+
+    sync_proc : process( tcxo_clock, counter_reset )
+    begin
+        if( counter_reset = '1' ) then
             current <= reset_value;
         elsif( rising_edge(tcxo_clock) ) then
             current <= future;
@@ -109,7 +131,7 @@ begin
         generic map (
             DATA_WIDTH          =>  COUNT_WIDTH
         ) port map (
-            source_reset        =>  reset,
+            source_reset        =>  counter_reset,
             source_clock        =>  tcxo_clock,
             source_data         =>  std_logic_vector(current.handshake_d),
 
