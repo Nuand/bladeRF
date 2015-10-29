@@ -261,7 +261,7 @@ if(WIN32 AND NOT CMAKE_CROSSCOMPILING)
             "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/drivers/CyUSB3/cyusb3.inf"
             "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/drivers/CyUSB3/cyusb3.sys"
             "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/drivers/CyUSB3/cyusb3.cat"
-            "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/drivers/CyUSB3/WdfCoInstaller01009.dll"
+            "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/drivers/CyUSB3/${CYUSB3_WDF_COINSTALLER}"
         )
 
         add_custom_command(
@@ -297,11 +297,11 @@ if(WIN32 AND NOT CMAKE_CROSSCOMPILING)
         )
 
         add_custom_command(
-            OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/drivers/CyUSB3/WdfCoInstaller01009.dll"
+            OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/drivers/CyUSB3/${CYUSB3_WDF_COINSTALLER}"
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${CYUSB3_DRIVER_DIR}/WdfCoInstaller01009.dll"
+                "${CYUSB3_DRIVER_DIR}/${CYUSB3_WDF_COINSTALLER}"
                 "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/drivers/CyUSB3/"
-            COMMENT "Copying WdfCoInstaller01009.dll to output directory..."
+            COMMENT "Copying ${CYUSB3_WDF_COINSTALLER} to output directory..."
         )
     endif()
 

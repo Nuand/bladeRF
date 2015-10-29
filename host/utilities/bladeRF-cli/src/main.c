@@ -257,7 +257,7 @@ void usage(const char *argv0)
     printf("                                   disable FPGA autoloading.\n");
     printf("  -p, --probe                      Probe for devices, print results, then exit.\n");
     printf("                                    A non-zero return status will be returned if no\n");
-    printf("                                    devices are found.\n");
+    printf("                                    devices are available.\n");
     printf("  -e, --exec <command>             Execute the specified interactive mode command.\n");
     printf("                                   Multiple -e flags may be specified. The commands\n");
     printf("                                   will be executed in the provided order.\n");
@@ -304,7 +304,12 @@ static int open_device(struct rc_config *rc, struct cli_state *state, int status
 
             /* Just warn if no device is attached; don't error out */
             if (!rc->device && status == BLADERF_ERR_NODEV) {
-                fprintf(stderr, "No device(s) attached.\n");
+                fprintf(stderr, "\n");
+                fprintf(stderr, "No bladeRF device(s) available.\n");
+                fprintf(stderr, "\n");
+                fprintf(stderr, "If one is attached, ensure it is not in use by another program\n");
+                fprintf(stderr, "and that the current user has permission to access it.\n");
+                fprintf(stderr, "\n");
                 status = 0;
             } else {
                 fprintf(stderr, "Failed to open device (%s): %s\n",

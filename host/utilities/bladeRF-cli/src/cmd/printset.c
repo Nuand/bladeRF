@@ -1171,7 +1171,12 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
         printf( "\n" );
         printf( "    set samplerate rx 40M\n" );
         printf( "\n" );
-        rv = CLI_RET_NARGS;
+
+        if (argc == 2) {
+            return 0;
+        } else {
+            return CLI_RET_NARGS;
+        }
     }
 
     if( argc > 2 && rv == CLI_RET_OK ) {
@@ -1191,79 +1196,91 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
             idx = 3;
         }
 
-        rate.integer = str2uint_suffix( argv[idx],
-                                        BLADERF_SAMPLERATE_MIN,
-                                        UINT_MAX,
-                                        freq_suffixes, NUM_FREQ_SUFFIXES, &ok );
+        /* Allow a value of zero to be specified for the interger portion
+         * so that the entire value can be specified in num/den.  libbladeRF
+         * will return an error if the sample rate is invalid */
+        rate.integer = str2uint64_suffix(argv[idx],
+                                         0, UINT64_MAX,
+                                         freq_suffixes, NUM_FREQ_SUFFIXES,
+                                         &ok);
 
         /* Integer portion didn't make it */
         if( !ok ) {
-            cli_err_nnl(state, argv[0], "Invalid sample rate (%s)\n", argv[idx]);
+            cli_err_nnl(state, argv[0], "Invalid integer value in specified sample rate (%s)\n", argv[idx]);
             rv = CLI_RET_INVPARAM;
         }
 
         /* Take in num/den if they are present */
         if( rv == CLI_RET_OK && (argc == 5 || argc == 6) ) {
             idx++;
-            rate.num = str2uint_suffix( argv[idx], 0, 999999999,
-                freq_suffixes, NUM_FREQ_SUFFIXES, &ok );
+            rate.num = str2uint64_suffix(argv[idx],
+                                         0, UINT64_MAX,
+                                         freq_suffixes, NUM_FREQ_SUFFIXES,
+                                         &ok);
             if( !ok ) {
-                cli_err_nnl(state, argv[0], "Invalid sample rate (%s %s/%s)\n",
-                    argv[idx-1], argv[idx], argv[idx+1] );
+                cli_err_nnl(state, argv[0], "Invalid numerator value in specified sample rate (%s)\n", argv[idx]);
                 rv = CLI_RET_INVPARAM;
             }
 
             if( ok ) {
                 idx++;
-                rate.den = str2uint_suffix( argv[idx], 1, 1000000000,
-                    freq_suffixes, NUM_FREQ_SUFFIXES, &ok );
+                rate.den = str2uint64_suffix(argv[idx],
+                                             1, UINT64_MAX,
+                                             freq_suffixes, NUM_FREQ_SUFFIXES,
+                                             &ok);
                 if( !ok ) {
-                    cli_err_nnl(state, argv[0], "Invalid sample rate (%s %s/%s)\n",
-                                argv[idx-2], argv[idx-1], argv[idx] ) ;
+                    cli_err_nnl(state, argv[0], "Invalid denominator value in specified sample rate (%s)\n", argv[idx]);
                     rv = CLI_RET_INVPARAM;
                 }
             }
         }
-        if( rv == CLI_RET_OK ) {
-            int status;
-            bladerf_dev_speed usb_speed = bladerf_device_speed(state->dev);
 
-            /* Discontinuities have been reported for 2.0 on Intel controllers
-             * above 6MHz. */
-            if (usb_speed != BLADERF_DEVICE_SPEED_SUPER && rate.integer > 6000000) {
-                printf("\n  Warning: The provided sample rate may "
-                       "result in timeouts with the current\n"
-                       "           %s connection. "
-                       "A SuperSpeed connection or a lower sample\n"
-                       "           rate are recommended.\n",
-                       devspeed2str(usb_speed));
-            }
+        if( rv == CLI_RET_OK ) {
+            int status = 0;
+            bladerf_dev_speed usb_speed = bladerf_device_speed(state->dev);
 
             if( argc == 3 || argc == 5 || module == BLADERF_MODULE_RX ) {
                 status = bladerf_set_rational_sample_rate( state->dev,
                                                            BLADERF_MODULE_RX,
                                                            &rate, &actual );
 
-                if (status < 0) {
-                    state->last_lib_error = status;
-                    rv = CLI_RET_LIBBLADERF;
-                } else {
+                if (status == 0) {
                     printf( "  Setting RX sample rate - req: %9"PRIu64" %"PRIu64"/%"PRIu64"Hz, "
                             "actual: %9"PRIu64" %"PRIu64"/%"PRIu64"Hz\n", rate.integer, rate.num, rate.den, actual.integer, actual.num, actual.den );
                 }
             }
 
-            if( argc == 3 || argc == 5 || module == BLADERF_MODULE_TX ) {
+            if( status == 0 && (argc == 3 || argc == 5 || module == BLADERF_MODULE_TX) ) {
                 status = bladerf_set_rational_sample_rate( state->dev,
                                                            BLADERF_MODULE_TX,
                                                            &rate, &actual );
-                if (status < 0) {
-                    state->last_lib_error = status;
-                    rv = CLI_RET_LIBBLADERF;
-                } else {
+                if (status == 0) {
                     printf( "  Setting TX sample rate - req: %9"PRIu64" %"PRIu64"/%"PRIu64"Hz, "
                             "actual: %9"PRIu64" %"PRIu64"/%"PRIu64"Hz\n", rate.integer, rate.num, rate.den, actual.integer, actual.num, actual.den );
                 }
+            }
+
+            /* Print a slightly more explicit error message the libbladeRF
+             * function was provided an invalid value */
+            if (status == BLADERF_ERR_INVAL) {
+                cli_err_nnl(state, argv[0], "The specified sample rate is invalid.\n");
+                rv = CLI_RET_INVPARAM;
+            } else if (status != 0) {
+                state->last_lib_error = status;
+                rv = CLI_RET_LIBBLADERF;
+            } else if (usb_speed != BLADERF_DEVICE_SPEED_SUPER) {
+                /* Discontinuities have been reported for 2.0 on Intel
+                 * controllers above 6MHz. */
+                if (actual.integer > 6000000 ||
+                    ((actual.integer == 6000000) && (actual.num != 0))) {
+                    printf("\n  Warning: The provided sample rate may "
+                            "result in timeouts with the current\n"
+                            "           %s connection. "
+                            "A SuperSpeed connection or a lower sample\n"
+                            "           rate are recommended.\n",
+                            devspeed2str(usb_speed));
+                }
+
             }
         }
     }
