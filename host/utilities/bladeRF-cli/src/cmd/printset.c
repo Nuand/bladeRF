@@ -598,11 +598,6 @@ static int str2xbgpio(struct cli_state *s, const char *str,
         }
     }
 
-    if (nnl_on_error) {
-        cli_err_nnl(s, str, "Invalid pin name or option.\n");
-    } else {
-        cli_err(s, str, "Invalid pin name or option.\n");
-    }
     return CLI_RET_INVPARAM;
 }
 
@@ -673,7 +668,8 @@ static int print_xbio_base(struct cli_state *state, int argc, char **argv,
     } else {
         status = str2xbgpio(state, argv[2], &pin, true);
         if (status != 0) {
-            return status;
+            cli_err_nnl(state, "Invalid pin name or option", "%s\n", argv[2]);
+            return CLI_RET_INVPARAM;
         }
 
         action = PRINT_PIN;
@@ -743,6 +739,7 @@ int set_xbio_base(struct cli_state *state, int argc, char **argv,
             break;
 
         case 4:
+            /* Specifying a pin by name */
             rv = str2xbgpio(state, argv[2], &pin, false);
             if (rv == 0) {
                 val = UINT32_MAX;
@@ -760,7 +757,7 @@ int set_xbio_base(struct cli_state *state, int argc, char **argv,
                 if (!is_dir || val == UINT32_MAX) {
                     val = str2uint(argv[3], 0, 1, &ok);
                     if (!ok) {
-                        cli_err_nnl(state, argv[2], "Invalid value.\n");
+                        cli_err_nnl(state, "Invalid pin value", "%s\n", argv[3]);
                         return CLI_RET_INVPARAM;
                     }
                 }
@@ -785,6 +782,32 @@ int set_xbio_base(struct cli_state *state, int argc, char **argv,
                 } else {
                     rv = print_xbio_base(state, 3, argv, is_dir);
                 }
+            } else if (!strcasecmp("reg", argv[2]) || !strcasecmp("register", argv[2])) {
+
+                /* Specifying a write of the entire XB GPIO (Direction) register */
+
+                val = str2uint(argv[3], 0, UINT32_MAX, &ok);
+                if (!ok) {
+                    cli_err_nnl(state, "Invalid register value", "%s\n", argv[3]);
+                    return CLI_RET_INVPARAM;
+                }
+
+                if (is_dir) {
+                    rv = bladerf_expansion_gpio_dir_write(state->dev, val);
+                } else {
+                    rv = bladerf_expansion_gpio_write(state->dev, val);
+                }
+
+                if (rv < 0) {
+                    state->last_lib_error = rv;
+                    rv = CLI_RET_LIBBLADERF;
+                } else {
+                    rv = print_xbio_base(state, 3, argv, is_dir);
+                }
+
+            } else {
+                cli_err_nnl(state, "Invalid pin name or option", "%s\n", argv[2]);
+                rv = CLI_RET_INVPARAM;
             }
             break;
 
