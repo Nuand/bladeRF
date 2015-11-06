@@ -624,7 +624,7 @@ static int print_xbio_base(struct cli_state *state, int argc, char **argv,
     size_t lut_len, i;
 
     if (argc <= 2) {
-        printf("Usage: print xb_gpio%s <name>\n\n", is_dir ? "dir" : "");
+        printf("Usage: print xb_gpio%s <name>\n\n", is_dir ? "_dir" : "");
 
         printf("<name> describes what to print. "
                "It may be one of the following:\n\n");
