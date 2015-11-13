@@ -716,9 +716,8 @@ typedef enum {
     BLADERF_CORR_FPGA_PHASE,
 
     /**
-     * Adjusts FPGA-based gain correction of [0.0, 2.0], via provided
-     * values in the range of [-4096, 4096], where a value of 0 corresponds to
-     * a gain of 1.0.
+     * Adjusts FPGA-based gain correction value in [-1.0, 1.0], via provided
+     * values in the range of [-4096, 4096].
      */
     BLADERF_CORR_FPGA_GAIN
 } bladerf_correction;
