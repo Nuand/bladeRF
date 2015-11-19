@@ -561,15 +561,9 @@ typedef enum {
     BLADERF_RX_MUX_32BIT_COUNTER,
 
     /**
-     * Unused
-     */
-    BLADERF_RX_MUX_ENTROPY,
-
-    /**
      * Read samples from the current tx sample.
-     * Warning: there is no clock synchronization mechanism between the tx and rx side, use with caution.
      */
-    BLADERF_RX_MUX_DIGITAL_LOOPBACK
+    BLADERF_RX_MUX_DIGITAL_LOOPBACK = 4
 
 } bladerf_rx_mux;
 
