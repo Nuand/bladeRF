@@ -92,6 +92,11 @@ extern "C" {
 #define BLADERF_ERR_FPGA_OP     (-16) /**< An FPGA operation reported failure */
 #define BLADERF_ERR_PERMISSION  (-17) /**< Insufficient permissions for the
                                        *   requested operation */
+#define BLADERF_ERR_WOULD_BLOCK (-18) /**< Operation would block, but has been
+                                       *   requested to be non-blocking. This
+                                       *   indicates to a caller that it may
+                                       *   need to retry the operation later.
+                                       */
 
 /** @} (End RETCODES) */
 

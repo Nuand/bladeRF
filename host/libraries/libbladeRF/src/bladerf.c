@@ -1288,6 +1288,8 @@ const char * bladerf_strerror(int error)
             return "An FPGA operation reported a failure";
         case BLADERF_ERR_PERMISSION:
             return "Insufficient permissions for the requested operation";
+        case BLADERF_ERR_WOULD_BLOCK:
+            return "The operation would block, but has been requested to be non-blocking";
         case 0:
             return "Success";
         default:
