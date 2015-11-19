@@ -446,17 +446,23 @@ int bladerf_set_rx_mux(struct bladerf *dev, bladerf_rx_mux mux) {
     uint32_t config_gpio;
     int status;
 
-    if ((status = bladerf_config_gpio_read(dev, &config_gpio))) {
-        return status;
+    MUTEX_LOCK(&dev->ctrl_lock);
+
+    if ((status = CONFIG_GPIO_READ(dev, &config_gpio))) {
+        goto out;
     }
 
-    // rx_mux_sel is a 3-bit value starting at bit 8
     // clear value
-    config_gpio &= ~((1 << 8) | (1 << 9) | (1 << 10));
-    // set value
-    config_gpio |= mux << 8;
+    config_gpio &= ~BLADERF_GPIO_RX_MUX_MASK;
 
-    return bladerf_config_gpio_write(dev, config_gpio);
+    // set value
+    config_gpio |= mux << BLADERF_GPIO_RX_MUX_INDEX;
+
+    status = CONFIG_GPIO_WRITE(dev, config_gpio);
+
+out:
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+    return status;
 }
 
 
@@ -464,19 +470,22 @@ int bladerf_get_rx_mux(struct bladerf *dev, bladerf_rx_mux *mux) {
     uint32_t config_gpio;
     int status;
 
-    if ((status = bladerf_config_gpio_read(dev, &config_gpio))) {
-        return status;
+    MUTEX_LOCK(&dev->ctrl_lock);
+
+    if ((status = CONFIG_GPIO_READ(dev, &config_gpio))) {
+        goto out;
     }
 
-    // rx_mux_sel is a 3-bit value starting at bit 8
     // pick the right bits
-    config_gpio &= ((1 << 8) | (1 << 9) | (1 << 10));
+    config_gpio &= BLADERF_GPIO_RX_MUX_MASK;
 
     // right shift to the right position
-    config_gpio >>= 8;
+    config_gpio >>= BLADERF_GPIO_RX_MUX_INDEX;
 
     *mux = (bladerf_rx_mux)config_gpio;
 
+out:
+    MUTEX_UNLOCK(&dev->ctrl_lock);
     return status;
 }
 

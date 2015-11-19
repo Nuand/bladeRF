@@ -3155,6 +3155,19 @@ int CALL_CONV bladerf_lms_get_dc_cals(struct bladerf *dev,
  */
 #define BLADERF_GPIO_COUNTER_ENABLE (1 << 9)
 
+
+/**
+ * Bit mask representing the rx mux selection
+ *
+ * @note This is set using bladerf_set_rx_mux()
+ */
+#define BLADERF_GPIO_RX_MUX_MASK ((1 << 8) | (1 << 9) | (1 << 10))
+
+/**
+ * Starting bit index of the rx mux value
+ */
+#define BLADERF_GPIO_RX_MUX_INDEX 8
+
 /**
  * Switch to use RX low band (300M - 1.5GHz)
  *
