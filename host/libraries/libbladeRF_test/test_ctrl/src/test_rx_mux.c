@@ -71,7 +71,6 @@ unsigned int test_rx_mux(struct bladerf *dev,
         BLADERF_RX_MUX_NORMAL,
         BLADERF_RX_MUX_12BIT_COUNTER,
         BLADERF_RX_MUX_32BIT_COUNTER,
-        BLADERF_RX_MUX_ENTROPY,
         BLADERF_RX_MUX_DIGITAL_LOOPBACK,
         BLADERF_RX_MUX_NORMAL    /* Ensure we don't leave the device in loopback */
     };

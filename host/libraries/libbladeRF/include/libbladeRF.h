@@ -563,8 +563,10 @@ typedef enum {
     /**
      * Read samples from the current tx sample.
      */
-    BLADERF_RX_MUX_DIGITAL_LOOPBACK = 4
+    BLADERF_RX_MUX_DIGITAL_LOOPBACK = 4,
 
+
+    BLADERF_RX_MUX_INVALID
 } bladerf_rx_mux;
 
 /**

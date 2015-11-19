@@ -446,6 +446,11 @@ int bladerf_set_rx_mux(struct bladerf *dev, bladerf_rx_mux mux) {
     uint32_t config_gpio;
     int status;
 
+    if (mux >= BLADERF_RX_MUX_INVALID) {
+        log_debug("Invalid rx mux mode %d passed to bladerf_set_rx_mux()\n", (int)mux);
+        return BLADERF_ERR_RANGE;
+    }
+
     MUTEX_LOCK(&dev->ctrl_lock);
 
     if ((status = CONFIG_GPIO_READ(dev, &config_gpio))) {
@@ -481,6 +486,11 @@ int bladerf_get_rx_mux(struct bladerf *dev, bladerf_rx_mux *mux) {
 
     // right shift to the right position
     config_gpio >>= BLADERF_GPIO_RX_MUX_INDEX;
+
+    if (config_gpio >= BLADERF_RX_MUX_INVALID) {
+        log_debug("Invalid rx mux mode %d read from config gpio\n", (int)config_gpio);
+        return BLADERF_ERR_RANGE;
+    }
 
     *mux = (bladerf_rx_mux)config_gpio;
 
