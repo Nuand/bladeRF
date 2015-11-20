@@ -128,7 +128,8 @@ struct usb_fns {
                   bladerf_module module);
 
     int (*submit_stream_buffer)(void *driver, struct bladerf_stream *stream,
-                                void *buffer, unsigned int timeout_ms);
+                                void *buffer, unsigned int timeout_ms,
+                                bool nonblock);
 
     int (*deinit_stream)(void *driver, struct bladerf_stream *stream);
 

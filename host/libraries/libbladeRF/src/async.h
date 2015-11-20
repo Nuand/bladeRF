@@ -77,10 +77,15 @@ int async_init_stream(struct bladerf_stream **stream,
 int async_run_stream(struct bladerf_stream *stream, bladerf_module module);
 
 
-/* This function WILL acquire stream->lock before calling backend code */
+/* This function WILL acquire stream->lock before calling backend code.
+ *
+ * If nonblock=true and no transfers are available, this function shall return
+ * BLADERF_ERR_WOULD_BLOCK.
+ */
 int async_submit_stream_buffer(struct bladerf_stream *stream,
                                void *buffer,
-                               unsigned int timeout_ms);
+                               unsigned int timeout_ms,
+                               bool nonblock);
 
 
 void async_deinit_stream(struct bladerf_stream *stream);

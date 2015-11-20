@@ -153,8 +153,8 @@ int async_run_stream(struct bladerf_stream *stream, bladerf_module module)
 }
 
 int async_submit_stream_buffer(struct bladerf_stream *stream,
-                               void *buffer,
-                               unsigned int timeout_ms)
+                               void *buffer, unsigned int timeout_ms,
+                               bool nonblock)
 {
     int status = 0;
     struct timespec timeout_abs;
@@ -194,7 +194,8 @@ int async_submit_stream_buffer(struct bladerf_stream *stream,
         }
     }
 
-    status = stream->dev->fn->submit_stream_buffer(stream, buffer, timeout_ms);
+    status = stream->dev->fn->submit_stream_buffer(stream, buffer,
+                                                   timeout_ms, nonblock);
 
 error:
     MUTEX_UNLOCK(&stream->lock);

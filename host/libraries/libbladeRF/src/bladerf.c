@@ -1022,7 +1022,7 @@ int bladerf_submit_stream_buffer(struct bladerf_stream *stream,
                                  void *buffer,
                                  unsigned int timeout_ms)
 {
-    return async_submit_stream_buffer(stream, buffer, timeout_ms);
+    return async_submit_stream_buffer(stream, buffer, timeout_ms, false);
 }
 
 void bladerf_deinit_stream(struct bladerf_stream *stream)

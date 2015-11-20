@@ -722,7 +722,8 @@ out:
 }
 /* The top-level code will have aquired the stream->lock for us */
 int cyapi_submit_stream_buffer(void *driver, struct bladerf_stream *stream,
-                              void *buffer, unsigned int timeout_ms)
+                               void *buffer, unsigned int timeout_ms,
+                               bool nonblock)
 {
     int status = 0;
     struct timespec timeout_abs;
@@ -738,21 +739,30 @@ int cyapi_submit_stream_buffer(void *driver, struct bladerf_stream *stream,
         return 0;
     }
 
-    if (timeout_ms != 0) {
-        status = populate_abs_timeout(&timeout_abs, timeout_ms);
-        if (status != 0) {
-            return BLADERF_ERR_UNEXPECTED;
+    if (data->num_avail == 0) {
+        if (nonblock) {
+            log_debug("Non-blocking buffer submission requested, but no "
+                      "transfers are currently available.");
+
+            return BLADERF_ERR_WOULD_BLOCK;
         }
 
-        while (data->num_avail == 0 && status == 0) {
-            status = pthread_cond_timedwait(&stream->can_submit_buffer,
-                    &stream->lock,
-                    &timeout_abs);
-        }
-    } else {
-        while (data->num_avail == 0 && status == 0) {
-            status = pthread_cond_wait(&stream->can_submit_buffer,
-                                       &stream->lock);
+        if (timeout_ms != 0) {
+            status = populate_abs_timeout(&timeout_abs, timeout_ms);
+            if (status != 0) {
+                return BLADERF_ERR_UNEXPECTED;
+            }
+
+            while (data->num_avail == 0 && status == 0) {
+                status = pthread_cond_timedwait(&stream->can_submit_buffer,
+                                                &stream->lock,
+                                                &timeout_abs);
+            }
+        } else {
+            while (data->num_avail == 0 && status == 0) {
+                status = pthread_cond_wait(&stream->can_submit_buffer,
+                                           &stream->lock);
+            }
         }
     }
 

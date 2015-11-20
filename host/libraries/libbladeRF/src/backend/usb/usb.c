@@ -880,11 +880,12 @@ static int usb_stream(struct bladerf_stream *stream, bladerf_module module)
 }
 
 int usb_submit_stream_buffer(struct bladerf_stream *stream, void *buffer,
-                             unsigned int timeout_ms)
+                             unsigned int timeout_ms, bool nonblock)
 {
     void *driver;
     struct bladerf_usb *usb = usb_backend(stream->dev, &driver);
-    return usb->fn->submit_stream_buffer(driver, stream, buffer, timeout_ms);
+    return usb->fn->submit_stream_buffer(driver, stream, buffer,
+                                         timeout_ms, nonblock);
 }
 
 static void usb_deinit_stream(struct bladerf_stream *stream)

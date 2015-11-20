@@ -1252,7 +1252,8 @@ static int lusb_stream(void *driver, struct bladerf_stream *stream,
 }
 /* The top-level code will have aquired the stream->lock for us */
 int lusb_submit_stream_buffer(void *driver, struct bladerf_stream *stream,
-                              void *buffer, unsigned int timeout_ms)
+                              void *buffer, unsigned int timeout_ms,
+                              bool nonblock)
 {
     int status = 0;
     struct lusb_stream_data *stream_data = stream->backend_data;
@@ -1268,21 +1269,30 @@ int lusb_submit_stream_buffer(void *driver, struct bladerf_stream *stream,
         return 0;
     }
 
-    if (timeout_ms != 0) {
-        status = populate_abs_timeout(&timeout_abs, timeout_ms);
-        if (status != 0) {
-            return BLADERF_ERR_UNEXPECTED;
+    if (stream_data->num_avail == 0) {
+        if (nonblock) {
+            log_debug("Non-blocking buffer submission requested, but no "
+                      "transfers are currently available.");
+
+            return BLADERF_ERR_WOULD_BLOCK;
         }
 
-        while (stream_data->num_avail == 0 && status == 0) {
-            status = pthread_cond_timedwait(&stream->can_submit_buffer,
-                    &stream->lock,
-                    &timeout_abs);
-        }
-    } else {
-        while (stream_data->num_avail == 0 && status == 0) {
-            status = pthread_cond_wait(&stream->can_submit_buffer,
-                                       &stream->lock);
+        if (timeout_ms != 0) {
+            status = populate_abs_timeout(&timeout_abs, timeout_ms);
+            if (status != 0) {
+                return BLADERF_ERR_UNEXPECTED;
+            }
+
+            while (stream_data->num_avail == 0 && status == 0) {
+                status = pthread_cond_timedwait(&stream->can_submit_buffer,
+                        &stream->lock,
+                        &timeout_abs);
+            }
+        } else {
+            while (stream_data->num_avail == 0 && status == 0) {
+                status = pthread_cond_wait(&stream->can_submit_buffer,
+                        &stream->lock);
+            }
         }
     }
 

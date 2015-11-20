@@ -195,7 +195,7 @@ void sync_deinit(struct bladerf_sync *sync)
 
         if (sync->stream_config.module == BLADERF_MODULE_TX) {
             async_submit_stream_buffer(sync->worker->stream,
-                                       BLADERF_STREAM_SHUTDOWN, 0);
+                                       BLADERF_STREAM_SHUTDOWN, 0, false);
         }
 
         sync_worker_deinit(sync->worker, &sync->buf_mgmt.lock,
@@ -625,7 +625,8 @@ static int advance_tx_buffer(struct bladerf_sync *s, struct buffer_mgmt *b)
     MUTEX_UNLOCK(&b->lock);
     status = async_submit_stream_buffer(s->worker->stream,
                                         b->buffers[b->prod_i],
-                                        s->stream_config.timeout_ms);
+                                        s->stream_config.timeout_ms,
+                                        false);
     MUTEX_LOCK(&b->lock);
 
     if (status == 0) {
