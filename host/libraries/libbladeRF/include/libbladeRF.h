@@ -1868,6 +1868,28 @@ int CALL_CONV bladerf_submit_stream_buffer(struct bladerf_stream *stream,
                                            unsigned int timeout_ms);
 
 /**
+ * This is a non-blocking variant of bladerf_submit_stream_buffer(). All of the
+ * caveats and important notes from bladerf_submit_stream_buffer() apply.
+ *
+ * In the event that this call would need to block in order to submit a buffer,
+ * it returns BLADERF_ERR_WOULD_BLOCK. In this case, the caller could either
+ * wait and try again or defer buffer submission to the asynchronous callback.
+ *
+ * @param   stream      Stream to submit buffer to
+ * @param   buffer      Buffer to fill (RX) or containing data (TX). This buffer
+ *                      is assumed to be the size specified in the associated
+ *                      bladerf_init_stream() call.
+ *
+ * @return  0 on success,
+ *          BLADERF_ERR_WOULD_BLOCK if the call would have to block to succeed,
+ *          or another value from \ref RETCODES upon other failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_submit_stream_buffer_nb(struct bladerf_stream *stream,
+                                              void *buffer);
+
+
+/**
  * Deinitialize and deallocate stream resources.
  *
  * @pre    Stream is no longer being used (via bladerf_submit_stream_buffer() or
