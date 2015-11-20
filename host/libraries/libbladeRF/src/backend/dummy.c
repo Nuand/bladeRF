@@ -112,7 +112,8 @@ static int dummy_config_gpio_read(struct bladerf *dev, uint32_t *val)
     return 0;
 }
 
-static int dummy_expansion_gpio_write(struct bladerf *dev, uint32_t val)
+static int dummy_expansion_gpio_write(struct bladerf *dev,
+                                      uint32_t mask, uint32_t val)
 {
     return 0;
 }
@@ -122,7 +123,8 @@ static int dummy_expansion_gpio_read(struct bladerf *dev, uint32_t *val)
     return 0;
 }
 
-static int dummy_expansion_gpio_dir_write(struct bladerf *dev, uint32_t val)
+static int dummy_expansion_gpio_dir_write(struct bladerf *dev,
+                                          uint32_t mask, uint32_t val)
 {
     return 0;
 }
@@ -232,7 +234,8 @@ static int dummy_stream(struct bladerf_stream *stream, bladerf_module module)
 
 static int dummy_submit_stream_buffer(struct bladerf_stream *stream,
                                       void *buffer,
-                                      unsigned int timeout_ms)
+                                      unsigned int timeout_ms,
+                                      bool nonblock)
 {
     return 0;
 }
