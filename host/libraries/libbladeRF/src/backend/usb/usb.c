@@ -52,7 +52,7 @@ typedef enum {
 
 static const struct usb_driver *usb_driver_list[] = BLADERF_USB_BACKEND_LIST;
 
-/* FW declaration of fn table declated at the end of this file */
+/* FW declaration of fn table declared at the end of this file */
 const struct backend_fns backend_fns_usb_legacy;
 
 /* Vendor command wrapper to gets a 32-bit integer and supplies a wIndex */
@@ -152,7 +152,7 @@ static int usb_is_fpga_configured(struct bladerf *dev)
 }
 
 /* Switch to RF link mode, fetch the FPGA version, and determine the
- * device's capabiliities */
+ * device's capabilities */
 static int post_fpga_load_init(struct bladerf *dev)
 {
     int status = change_setting(dev, USB_IF_RF_LINK);

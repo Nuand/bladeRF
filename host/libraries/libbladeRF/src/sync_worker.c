@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Nuand LLC
+ * Copyright (C) 2014-2015 Nuand LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -91,7 +91,7 @@ static void *rx_callback(struct bladerf *dev,
                         MODULE_STR(s), samples_idx, next_idx);
 
         } else {
-            /* TODO propgate back the RX Overrun to the sync_rx() caller */
+            /* TODO propagate back the RX Overrun to the sync_rx() caller */
             log_debug("RX overrun @ buffer %u\r\n", samples_idx);
 
             next_buf = samples;
@@ -476,7 +476,7 @@ void *sync_worker_task(void *arg)
 
         switch (state) {
             case SYNC_WORKER_STATE_STARTUP:
-                assert(!"Worker in unexepected state, shutting down. (STARTUP)");
+                assert(!"Worker in unexpected state, shutting down. (STARTUP)");
                 set_state(s->worker, SYNC_WORKER_STATE_SHUTTING_DOWN);
                 break;
 
@@ -499,11 +499,11 @@ void *sync_worker_task(void *arg)
                 break;
 
             case SYNC_WORKER_STATE_STOPPED:
-                assert(!"Worker in unexepected state: STOPPED");
+                assert(!"Worker in unexpected state: STOPPED");
                 break;
 
             default:
-                assert(!"Worker in unexepected state, shutting down. (UNKNOWN)");
+                assert(!"Worker in unexpected state, shutting down. (UNKNOWN)");
                 set_state(s->worker, SYNC_WORKER_STATE_SHUTTING_DOWN);
                 break;
         }

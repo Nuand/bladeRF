@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Nuand LLC
+ * Copyright (C) 2014-2015 Nuand LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -651,7 +651,7 @@ static int advance_tx_buffer(struct bladerf_sync *s, struct buffer_mgmt *b)
             b->submitter = SYNC_TX_SUBMITTER_CALLBACK;
             b->cons_i = idx;
 
-            /* This is expected and we are handling it. Don't propogate this
+            /* This is expected and we are handling it. Don't propagate this
              * status back up */
             status = 0;
         } else {
@@ -801,7 +801,7 @@ int sync_tx(struct bladerf *dev, void *samples, unsigned int num_samples,
                     status = stream_error;
                 } else {
                     if (worker_state == SYNC_WORKER_STATE_IDLE) {
-                        /* No need to reset any buffer managment for TX since
+                        /* No need to reset any buffer management for TX since
                          * the TX stream does not submit an initial set of
                          * buffers.  Therefore the RESET_BUF_MGMT state is
                          * skipped here. */

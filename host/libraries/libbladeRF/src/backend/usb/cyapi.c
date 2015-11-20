@@ -2,7 +2,7 @@
  * This file is part of the bladeRF project:
  *   http://www.github.com/nuand/bladeRF
  *
- * Copyright (C) 2013-2014 Nuand LLC
+ * Copyright (C) 2013-2015 Nuand LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -720,7 +720,7 @@ out:
 
     return 0;
 }
-/* The top-level code will have aquired the stream->lock for us */
+/* The top-level code will have acquired the stream->lock for us */
 int cyapi_submit_stream_buffer(void *driver, struct bladerf_stream *stream,
                                void *buffer, unsigned int timeout_ms,
                                bool nonblock)

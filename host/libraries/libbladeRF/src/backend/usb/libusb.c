@@ -2,7 +2,7 @@
  * This file is part of the bladeRF project:
  *   http://www.github.com/nuand/bladeRF
  *
- * Copyright (C) 2013 Nuand LLC
+ * Copyright (C) 2013-2015 Nuand LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -54,7 +54,7 @@ struct lusb_stream_data {
     transfer_status *transfer_status;   /* Status of each transfer */
 
    /* Warn the first time we get a transfer callback out of order.
-    * This shouldn't happen normaly, but we've seen it intermittently on
+    * This shouldn't happen normally, but we've seen it intermittently on
     * libusb 1.0.19 for Windows. Further investigation required...
     */
     bool out_of_order_event;
@@ -405,7 +405,7 @@ static int find_and_open_device(libusb_context *context,
     if (count < 0) {
         if (count < INT_MIN) {
             /* Ensure we don't have a situation where we accidentally return 0
-             * due to a narrowing coversion */
+             * due to a narrowing conversion */
             return BLADERF_ERR_UNEXPECTED;
         } else {
             return error_conv((int) count);
@@ -1297,7 +1297,7 @@ int lusb_submit_stream_buffer(void *driver, struct bladerf_stream *stream,
     }
 
     if (status == ETIMEDOUT) {
-        log_debug("%s: Timed out waiting for a transfer to become availble.\n",
+        log_debug("%s: Timed out waiting for a transfer to become available.\n",
                   __FUNCTION__);
         return BLADERF_ERR_TIMEOUT;
     } else if (status != 0) {
