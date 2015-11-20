@@ -125,6 +125,8 @@ static void *tx_callback(struct bladerf *dev,
     struct sync_worker  *w = s->worker;
     struct buffer_mgmt  *b = &s->buf_mgmt;
 
+    void *ret = BLADERF_STREAM_NO_DATA;
+
     /* Check if the caller has requested us to shut down. We'll keep the
      * SHUTDOWN bit set through our transition into the IDLE state so we
      * can act on it there. */
@@ -138,25 +140,45 @@ static void *tx_callback(struct bladerf *dev,
         return NULL;
     }
 
-
-    /* Mark the last transfer as being completed. Note that the first
-     * callbacks we get have samples=NULL */
+    /* The initial set of callbacks will do not provide us with any
+     * completed sample buffers */
     if (samples != NULL) {
-
         MUTEX_LOCK(&b->lock);
 
+        /* Mark the completed buffer as being empty */
         completed_idx = sync_buf2idx(b, samples);
         assert(b->status[completed_idx] == SYNC_BUFFER_IN_FLIGHT);
         b->status[completed_idx] = SYNC_BUFFER_EMPTY;
-
         pthread_cond_signal(&b->buf_ready);
+
+        /* If the callback is assigned to be the submitter, there are
+         * buffers pending submission */
+        if (b->submitter == SYNC_TX_SUBMITTER_CALLBACK) {
+            assert(b->cons_i != BUFFER_MGMT_INVALID_INDEX);
+            if (b->status[b->cons_i] == SYNC_BUFFER_FULL) {
+                /* This buffer is ready to ship out ("consume") */
+                log_verbose("%s: Submitting deferred buf[%u]\n",
+                            __FUNCTION__, b->cons_i);
+
+                ret = b->buffers[b->cons_i];
+                b->status[b->cons_i] = SYNC_BUFFER_IN_FLIGHT;
+                b->cons_i = (b->cons_i + 1) % b->num_buffers;
+            } else {
+                log_verbose("%s: No deferred buffer available. "
+                            "Assigning submitter=FN\n", __FUNCTION__);
+
+                b->submitter = SYNC_TX_SUBMITTER_FN;
+                b->cons_i = BUFFER_MGMT_INVALID_INDEX;
+            }
+        }
+
         MUTEX_UNLOCK(&b->lock);
 
         log_verbose("%s worker: Buffer %u emptied.\r\n",
                     MODULE_STR(s), completed_idx);
     }
 
-    return BLADERF_STREAM_NO_DATA;
+    return ret;
 }
 
 int sync_worker_init(struct bladerf_sync *s)

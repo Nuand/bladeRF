@@ -52,6 +52,19 @@ typedef enum {
     SYNC_META_STATE_SAMPLES,      /**< Process samples */
 } sync_meta_state;
 
+typedef enum {
+    /** Invalid selection */
+    SYNC_TX_SUBMITTER_INVALID = -1,
+
+    /** sync_tx() is repsonsible for submitting buffers for async transfer */
+    SYNC_TX_SUBMITTER_FN,
+
+    /** The TX worker callbacks should be returning buffers for submission  */
+    SYNC_TX_SUBMITTER_CALLBACK
+} sync_tx_submitter;
+
+#define BUFFER_MGMT_INVALID_INDEX (UINT_MAX)
+
 struct buffer_mgmt {
     sync_buffer_status *status;
 
@@ -66,6 +79,10 @@ struct buffer_mgmt {
      * how many more transfers should be considered invalid and require
      * resubmission */
     unsigned int resubmit_count;
+
+    /* Applicable to TX only. Denotes which context is responsible for
+     * submitting full buffers to the underlying async system */
+    sync_tx_submitter submitter;
 
 
     MUTEX lock;

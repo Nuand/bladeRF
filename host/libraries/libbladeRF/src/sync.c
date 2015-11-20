@@ -71,6 +71,11 @@ int sync_init(struct bladerf *dev,
         return BLADERF_ERR_INVAL;
     }
 
+    if (module != BLADERF_MODULE_TX && module != BLADERF_MODULE_RX) {
+        log_debug("Invalid bladerf_module value encountered: %d", module);
+        status = BLADERF_ERR_INVAL;
+    }
+
     switch (format) {
         case BLADERF_FORMAT_SC16_Q11:
         case BLADERF_FORMAT_SC16_Q11_META:
@@ -88,25 +93,23 @@ int sync_init(struct bladerf *dev,
     }
 
     /* Deallocate any existing sync handle for this module */
-    switch (module) {
-        case BLADERF_MODULE_TX:
-        case BLADERF_MODULE_RX:
-            sync_deinit(dev->sync[module]);
-            sync = dev->sync[module] =
-                (struct bladerf_sync *) calloc(1, sizeof(struct bladerf_sync));
+    sync_deinit(dev->sync[module]);
 
-            if (dev->sync[module] == NULL) {
-                status = BLADERF_ERR_MEM;
-            }
-            break;
+    sync = dev->sync[module] =
+        (struct bladerf_sync *) calloc(1, sizeof(struct bladerf_sync));
 
-        default:
-            log_debug("Invalid bladerf_module value encountered: %d", module);
-            status = BLADERF_ERR_INVAL;
+    if (dev->sync[module] == NULL) {
+        return BLADERF_ERR_MEM;
     }
 
-    if (status != 0) {
-        return status;
+    switch (module) {
+        case BLADERF_MODULE_TX:
+            sync->buf_mgmt.submitter = SYNC_TX_SUBMITTER_FN;
+            break;
+
+        case BLADERF_MODULE_RX:
+            sync->buf_mgmt.submitter = SYNC_TX_SUBMITTER_INVALID;
+            break;
     }
 
     sync->dev = dev;
@@ -165,7 +168,7 @@ int sync_init(struct bladerf *dev,
 
             case BLADERF_MODULE_TX:
                 sync->buf_mgmt.prod_i = 0;
-                sync->buf_mgmt.cons_i = 0;
+                sync->buf_mgmt.cons_i = BUFFER_MGMT_INVALID_INDEX;
                 sync->buf_mgmt.partial_off = 0;
 
                 for (i = 0; i < num_buffers; i++) {
@@ -611,37 +614,64 @@ int sync_rx(struct bladerf *dev, void *samples, unsigned num_samples,
 /* Assumes buffer lock is held */
 static int advance_tx_buffer(struct bladerf_sync *s, struct buffer_mgmt *b)
 {
-    int status;
+    int status = 0;
+    const unsigned int idx = b->prod_i;
 
-    log_verbose("%s: Marking buf[%u] full\n", __FUNCTION__, b->prod_i);
-    b->status[b->prod_i] = SYNC_BUFFER_IN_FLIGHT;
+    /* Mark buffer full */
+    log_verbose("%s: Marking buf[%u] full\n", __FUNCTION__, idx);
+    b->status[idx] = SYNC_BUFFER_FULL;
 
-    /* This call may block and it results in a per-stream lock being held, so
-     * the buffer lock must be dropped.
-     *
-     * A callback may occur in the meantime, but this will not touch the status
-     * for this this buffer, or the producer index.
-     */
-    MUTEX_UNLOCK(&b->lock);
-    status = async_submit_stream_buffer(s->worker->stream,
-                                        b->buffers[b->prod_i],
-                                        s->stream_config.timeout_ms,
-                                        false);
-    MUTEX_LOCK(&b->lock);
+    if (b->submitter == SYNC_TX_SUBMITTER_FN) {
+        /* This call may block and it results in a per-stream lock being held, so
+         * the buffer lock must be dropped.
+         *
+         * A callback may occur in the meantime, but this will not touch the status
+         * for this this buffer, or the producer index.
+         */
+        MUTEX_UNLOCK(&b->lock);
+        status = async_submit_stream_buffer(s->worker->stream,
+                                            b->buffers[idx],
+                                            s->stream_config.timeout_ms,
+                                            true);
+        MUTEX_LOCK(&b->lock);
 
-    if (status == 0) {
-        b->prod_i = (b->prod_i + 1) % b->num_buffers;
+        if (status == 0) {
+            log_verbose("%s: buf[%u] submitted. Marking in-flight.\n",
+                        __FUNCTION__, idx);
 
-        /* Go handle the next buffer, if we have one available.  Otherwise,
-         * check up on the worker's state and restart it if needed. */
-        if (b->status[b->prod_i] == SYNC_BUFFER_EMPTY) {
-            s->state = SYNC_STATE_BUFFER_READY;
+            b->status[idx] = SYNC_BUFFER_IN_FLIGHT;
+
+        } else if (status == BLADERF_ERR_WOULD_BLOCK) {
+            log_verbose("%s: Deferring buf[%u] submission to worker callback.\n",
+                        __FUNCTION__, idx);
+
+            /* Assign callback the duty of submitting deferred buffers,
+             * and use buffer_mgmt.cons_i to denote which it should submit
+             * (i.e., consume). */
+            b->submitter = SYNC_TX_SUBMITTER_CALLBACK;
+            b->cons_i = idx;
+
+            /* This is expected and we are handling it. Don't propogate this
+             * status back up */
+            status = 0;
         } else {
-            s->state = SYNC_STATE_CHECK_WORKER;
-        }
+            log_debug("%s: Failed to submit buf[%u].\n", __FUNCTION__, idx);
+            return status;
+       }
+    }
+
+    /* Advance "producer" insertion index. */
+    b->prod_i = (idx + 1) % b->num_buffers;
+
+    /* Determine our next state based upon the state of the next buffer we
+     * want to use. */
+    if (b->status[b->prod_i] == SYNC_BUFFER_EMPTY) {
+        /* Buffer is empty and ready for use */
+        s->state = SYNC_STATE_BUFFER_READY;
     } else {
-        log_debug("%s: Failed to advance buffer: %s\n",
-                  __FUNCTION__, bladerf_strerror(status));
+        /* We'll have to wait on this buffer to become ready. First, we'll
+         * verify that the worker is running. */
+        s->state = SYNC_STATE_CHECK_WORKER;
     }
 
     return status;
@@ -776,6 +806,10 @@ int sync_tx(struct bladerf *dev, void *samples, unsigned int num_samples,
                          * buffers.  Therefore the RESET_BUF_MGMT state is
                          * skipped here. */
                         s->state = SYNC_STATE_START_WORKER;
+                    } else {
+                        /* Worker is running - continue onto checking for and
+                         * potentially waiting for an available buffer */
+                        s->state = SYNC_STATE_WAIT_FOR_BUFFER;
                     }
                 }
                 break;
