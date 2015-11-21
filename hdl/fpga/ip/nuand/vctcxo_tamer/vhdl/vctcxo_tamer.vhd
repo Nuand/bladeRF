@@ -26,11 +26,11 @@ library ieee;
     use ieee.numeric_std.all;
 
 -- -----------------------------------------------------------------------------
--- Entity:      ppscal
+-- Entity:      vctcxo_tamer
 -- Description:
 -- Standard:    VHDL-2008
 -- -----------------------------------------------------------------------------
-entity ppscal is
+entity vctcxo_tamer is
     port(
         -- Physical Interface
         tune_ref        :   in  std_logic;
@@ -52,7 +52,7 @@ entity ppscal is
     );
 end entity;
 
-architecture arch of ppscal is
+architecture arch of vctcxo_tamer is
 
     -- Register Addresses
     constant PPS_CNT_1S_ADDR0   : natural := 16#00#;

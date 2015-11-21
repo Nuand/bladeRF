@@ -89,7 +89,7 @@
 
 /* Define a global variable containing the current VCTCXO DAC setting.
  * This is a 'cached' value of what is written to the DAC and is used
- * for the PPS calibration algorithm to avoid constant read requests
+ * for the calibration algorithm to avoid unnecessary read requests
  * going out to the DAC.
  */
 extern uint16_t vctcxo_trim_dac_value;
@@ -99,7 +99,7 @@ extern uint16_t vctcxo_trim_dac_value;
  *
  * This should be called prior to any other device access function.
  */
-void bladerf_nios_init(struct pkt_buf *pkt, struct ppscal_pkt_buf *ppscal_pkt);
+void bladerf_nios_init(struct pkt_buf *pkt, struct vctcxo_tamer_pkt_buf *vctcxo_tamer_pkt);
 
 /**
  * Read from an LMS6002D register
@@ -282,19 +282,19 @@ INLINE void command_uart_read_request(uint8_t *command);
 INLINE void command_uart_write_response(uint8_t *command);
 
 /**
- * Read PPS calibration counter values
+ * Read VCTCXO Tamer registers
  *
  * @param   addr    Address, can be one of:
  *                  0x00: TCXO counts in 1 second
  *                  0x08: TCXO counts in 10 seconds
  *                  0x10: TCXO counts in 100 seconds
  *                  0x18: Reserved / No Op
- * @return  TCXO counts
+ * @return  VCTCXO counts
  */
-int64_t ppscal_read(uint8_t addr);
+int64_t vctcxo_tamer_read(uint8_t addr);
 
 /**
- * Write PPS calibration registers
+ * Write VCTCXO Tamer registers
  *
  * @param   addr    Address, can be one of:
  *                  0x00-0x10: No Op
@@ -311,22 +311,22 @@ int64_t ppscal_read(uint8_t addr);
  *                    5-7: Reserved
  * @param   data    Value to write at the specified address.
  */
-void ppscal_write(uint8_t addr, uint8_t data);
+void vctcxo_tamer_write(uint8_t addr, uint8_t data);
 
 /**
- * Enable interrupts from the PPS calibration module
+ * Enable interrupts from the VCTCXO Tamer module
  *
  * @param   enable  true or false
  */
-void ppscal_enable_isr(bool enable);
+void vctcxo_tamer_enable_isr(bool enable);
 
 /**
- * Reset the counters in the PPS calibration module. Setting is sticky,
- * so counters must be explicitly taken out of reset
+ * Reset the counters in the VCTCXO Tamer module. Setting is sticky,
+ * so counters must be explicitly taken out of reset.
  *
  * @maram   reset   true or false
  */
-void ppscal_reset_counters( bool reset );
+void vctcxo_tamer_reset_counters( bool reset );
 
 /**
  * @return FPGA version

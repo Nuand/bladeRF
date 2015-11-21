@@ -42,7 +42,7 @@ struct pkt_buf {
 };
 
 // This is temporary until we figure out where to put it
-struct ppscal_pkt_buf {
+struct vctcxo_tamer_pkt_buf {
     volatile bool    ready;
     volatile int64_t pps_1s_count;
     volatile int64_t pps_10s_count;

@@ -141,7 +141,7 @@ begin
         fx3_uart_cts        => fx3_uart.cts,
 
         -- Reference signals
-        ref_1pps            => refexp_1pps,
+        ref_vctcxo_tune     => refexp_1pps,
         ref_sma_clock       => '0',
 
         -- Mini expansion

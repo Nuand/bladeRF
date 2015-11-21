@@ -32,7 +32,7 @@
 
 /* Define a global variable containing the current VCTCXO DAC setting.
  * This is a 'cached' value of what is written to the DAC and is used
- * for the PPS calibration algorithm to avoid constant read requests
+ * by the VCTCXO calibration algorithm to avoid constant read requests
  * going out to the DAC. Initial power-up state of the DAC is mid-scale.
  */
 uint16_t vctcxo_trim_dac_value = 0x7FFF;
@@ -55,34 +55,34 @@ static void command_uart_isr(void *context) {
     return ;
 }
 
-void ppscal_enable_isr(bool enable) {
+void vctcxo_tamer_enable_isr(bool enable) {
     uint8_t val = enable ? 0x01 : 0x00;
-    ppscal_write(0x28, val);
+    vctcxo_tamer_write(0x28, val);
     return;
 }
 
-void ppscal_reset_counters( bool reset ) {
+void vctcxo_tamer_reset_counters( bool reset ) {
     uint8_t val = reset ? 0x07 : 0x00;
-    ppscal_write(0x20, val);
+    vctcxo_tamer_write(0x20, val);
     return;
 }
 
-static void ppscal_isr(void *context) {
-    struct ppscal_pkt_buf *pkt = (struct ppscal_pkt_buf *)context;
+static void vctcxo_tamer_isr(void *context) {
+    struct vctcxo_tamer_pkt_buf *pkt = (struct vctcxo_tamer_pkt_buf *)context;
 
     /* Disable interrupts */
-    ppscal_enable_isr( false );
+    vctcxo_tamer_enable_isr( false );
 
     /* Clear interrupt */
-    ppscal_write(0x28, 0x10);
+    vctcxo_tamer_write(0x28, 0x10);
 
     /* Read the current count values */
-    pkt->pps_1s_count   = ppscal_read(0x00);
-    pkt->pps_10s_count  = ppscal_read(0x08);
-    pkt->pps_100s_count = ppscal_read(0x10);
+    pkt->pps_1s_count   = vctcxo_tamer_read(0x00);
+    pkt->pps_10s_count  = vctcxo_tamer_read(0x08);
+    pkt->pps_100s_count = vctcxo_tamer_read(0x10);
 
     /* Reset the counters */
-    ppscal_reset_counters( true );
+    vctcxo_tamer_reset_counters( true );
 
     /* Tell the main loop that there is a request pending */
     pkt->ready = true;
@@ -109,7 +109,7 @@ void tamer_schedule(bladerf_module m, uint64_t time) {
     return ;
 }
 
-void bladerf_nios_init(struct pkt_buf *pkt, struct ppscal_pkt_buf *ppscal_pkt) {
+void bladerf_nios_init(struct pkt_buf *pkt, struct vctcxo_tamer_pkt_buf *vctcxo_tamer_pkt) {
     /* Set the prescaler for 400kHz with an 80MHz clock:
      *      (prescaler = clock / (5*desired) - 1)
      */
@@ -129,23 +129,23 @@ void bladerf_nios_init(struct pkt_buf *pkt, struct ppscal_pkt_buf *ppscal_pkt) {
         NULL
     ) ;
 
-    /* Register ppscal ISR */
+    /* Register the VCTCXO Tamer ISR */
     alt_ic_isr_register(
-        PPSCAL_0_IRQ_INTERRUPT_CONTROLLER_ID,
-        PPSCAL_0_IRQ,
-        ppscal_isr,
-        ppscal_pkt,
+        VCTCXO_TAMER_0_IRQ_INTERRUPT_CONTROLLER_ID,
+        VCTCXO_TAMER_0_IRQ,
+        vctcxo_tamer_isr,
+        vctcxo_tamer_pkt,
         NULL
     );
 
     /* Enable interrupts */
     command_uart_enable_isr(true) ;
     alt_ic_irq_enable(COMMAND_UART_IRQ_INTERRUPT_CONTROLLER_ID, COMMAND_UART_IRQ);
-    ppscal_enable_isr(true);
-    alt_ic_irq_enable(PPSCAL_0_IRQ_INTERRUPT_CONTROLLER_ID, PPSCAL_0_IRQ);
+    vctcxo_tamer_enable_isr(true);
+    alt_ic_irq_enable(VCTCXO_TAMER_0_IRQ_INTERRUPT_CONTROLLER_ID, VCTCXO_TAMER_0_IRQ);
 
-    /* Enable the PPSCAL TCXO Counters */
-    ppscal_write(0x20, 0x00);
+    /* Enable the VCTCXO Counters */
+    vctcxo_tamer_write(0x20, 0x00);
 }
 
 static void si5338_complete_transfer(uint8_t check_rxack)
@@ -328,9 +328,9 @@ uint64_t time_tamer_read(bladerf_module m)
     return value;
 }
 
-int64_t ppscal_read(uint8_t addr)
+int64_t vctcxo_tamer_read(uint8_t addr)
 {
-    uint32_t base = PPSCAL_0_BASE;
+    uint32_t base = VCTCXO_TAMER_0_BASE;
     uint8_t offset = addr;
     int64_t value = 0;
 
@@ -346,9 +346,9 @@ int64_t ppscal_read(uint8_t addr)
     return value;
 }
 
-void ppscal_write(uint8_t addr, uint8_t data)
+void vctcxo_tamer_write(uint8_t addr, uint8_t data)
 {
-    IOWR_8DIRECT(PPSCAL_0_BASE, addr, data);
+    IOWR_8DIRECT(VCTCXO_TAMER_0_BASE, addr, data);
 }
 
 #endif

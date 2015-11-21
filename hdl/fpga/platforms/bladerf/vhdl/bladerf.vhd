@@ -75,7 +75,7 @@ entity bladerf is
     fx3_uart_cts        :   out     std_logic ;
 
     -- Reference signals
-    ref_1pps            :   in      std_logic ;
+    ref_vctcxo_tune     :   in      std_logic ;
     ref_sma_clock       :   in      std_logic ;
 
     -- Mini expansion

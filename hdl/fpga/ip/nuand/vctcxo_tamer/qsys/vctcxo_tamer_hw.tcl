@@ -4,9 +4,9 @@
 
 
 # 
-# ppscal "ppscal" v1.0
+# vctcxo_tamer "vctcxo_tamer" v1.0
 # Nuand, LLC 2015.09.29.16:41:23
-# PPS TCXO Calibration
+# VCTCXO Calibration
 # 
 
 # 
@@ -16,16 +16,16 @@ package require -exact qsys 15.0
 
 
 # 
-# module ppscal
+# module vctcxo_tamer
 # 
-set_module_property DESCRIPTION "PPS TCXO Calibration"
-set_module_property NAME ppscal
+set_module_property DESCRIPTION "VCTCXO Calibration"
+set_module_property NAME vctcxo_tamer
 set_module_property VERSION 1.0
 set_module_property INTERNAL false
 set_module_property OPAQUE_ADDRESS_MAP true
 set_module_property GROUP Nuand
 set_module_property AUTHOR "Nuand, LLC"
-set_module_property DISPLAY_NAME ppscal
+set_module_property DISPLAY_NAME vctcxo_tamer
 set_module_property INSTANTIATE_IN_SYSTEM_MODULE true
 set_module_property EDITABLE true
 set_module_property REPORT_TO_TALKBACK false
@@ -37,10 +37,10 @@ set_module_property REPORT_HIERARCHY false
 # file sets
 # 
 add_fileset QUARTUS_SYNTH QUARTUS_SYNTH "" ""
-set_fileset_property QUARTUS_SYNTH TOP_LEVEL ppscal
+set_fileset_property QUARTUS_SYNTH TOP_LEVEL vctcxo_tamer
 set_fileset_property QUARTUS_SYNTH ENABLE_RELATIVE_INCLUDE_PATHS false
 set_fileset_property QUARTUS_SYNTH ENABLE_FILE_OVERWRITE_MODE false
-add_fileset_file ppscal.vhd VHDL PATH ../vhdl/ppscal.vhd TOP_LEVEL_FILE
+add_fileset_file vctcxo_tamer.vhd VHDL PATH ../vhdl/vctcxo_tamer.vhd TOP_LEVEL_FILE
 add_fileset_file pps_counter.vhd VHDL PATH ../vhdl/pps_counter.vhd
 add_fileset_file synchronizer.vhd VHDL PATH ../../synthesis/synchronizer.vhd
 add_fileset_file handshake.vhd VHDL PATH ../../synthesis/handshake.vhd
@@ -97,8 +97,8 @@ set_interface_property conduit_end PORT_NAME_MAP ""
 set_interface_property conduit_end CMSIS_SVD_VARIABLES ""
 set_interface_property conduit_end SVD_ADDRESS_GROUP ""
 
-add_interface_port conduit_end ref_1pps ref_1pps Input 1
-add_interface_port conduit_end tcxo_clock tcxo_clock Input 1
+add_interface_port conduit_end tune_ref tune_ref Input 1
+add_interface_port conduit_end vctcxo_clock vctcxo_clock Input 1
 
 
 # 

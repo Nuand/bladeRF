@@ -21,10 +21,10 @@ library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
 
-entity ppscal_tb is
+entity vctcxo_tamer_tb is
 end entity;
 
-architecture tb of ppscal_tb is
+architecture tb of vctcxo_tamer_tb is
 
     function half_clk_per( freq : real ) return time is
     begin
@@ -53,13 +53,13 @@ architecture tb of ppscal_tb is
     signal      dac_count       : unsigned(15 downto 0) := x"7FFF";
     signal      tcxo_vcon       : real := 1.4;
 
---    alias uut_pps_1s_target   is << signal .ppscal_tb.uut.pps_1s.target   : signed(63 downto 0) >>;
---    alias uut_pps_10s_target  is << signal .ppscal_tb.uut.pps_10s.target  : signed(63 downto 0) >>;
---    alias uut_pps_100s_target is << signal .ppscal_tb.uut.pps_100s.target : signed(63 downto 0) >>;
+--    alias uut_pps_1s_target   is << signal .vctcxo_tamer_tb.uut.pps_1s.target   : signed(63 downto 0) >>;
+--    alias uut_pps_10s_target  is << signal .vctcxo_tamer_tb.uut.pps_10s.target  : signed(63 downto 0) >>;
+--    alias uut_pps_100s_target is << signal .vctcxo_tamer_tb.uut.pps_100s.target : signed(63 downto 0) >>;
 --
---    alias drv_pps_1s_target   is << signal .ppscal_tb.driver.PPS_1S_TARGET   : signed(63 downto 0) >>;
---    alias drv_pps_10s_target  is << signal .ppscal_tb.driver.PPS_10S_TARGET  : signed(63 downto 0) >>;
---    alias drv_pps_100s_target is << signal .ppscal_tb.driver.PPS_100S_TARGET : signed(63 downto 0) >>;
+--    alias drv_pps_1s_target   is << signal .vctcxo_tamer_tb.driver.PPS_1S_TARGET   : signed(63 downto 0) >>;
+--    alias drv_pps_10s_target  is << signal .vctcxo_tamer_tb.driver.PPS_10S_TARGET  : signed(63 downto 0) >>;
+--    alias drv_pps_100s_target is << signal .vctcxo_tamer_tb.driver.PPS_100S_TARGET : signed(63 downto 0) >>;
 --
 --    constant PPS_1S_TARGET      : signed(63 downto 0) := x"0000_0000_0000_0F00";--12_2C00";
 --    constant PPS_10S_TARGET     : signed(63 downto 0) := x"0000_0000_0000_9600";--B_B800";
@@ -115,7 +115,7 @@ begin
 --    end process;
 
 
-    uut : entity work.ppscal(arch)
+    uut : entity work.vctcxo_tamer(arch)
         port map(
             -- Physical Interface
             tune_ref        => ref_1pps,

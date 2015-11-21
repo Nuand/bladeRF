@@ -135,7 +135,7 @@ set_instance_assignment -name IO_STANDARD "1.8 V" -to exp_gpio[17]
 set_instance_assignment -name IO_STANDARD "1.8 V" -to si_sda
 set_instance_assignment -name IO_STANDARD "1.8 V" -to mini_exp1
 set_instance_assignment -name IO_STANDARD "1.8 V" -to mini_exp2
-set_instance_assignment -name IO_STANDARD "1.8 V" -to ref_1pps
+set_instance_assignment -name IO_STANDARD "1.8 V" -to ref_vctcxo_tune
 set_instance_assignment -name IO_STANDARD "1.8 V" -to ref_sma_clock
 set_instance_assignment -name IO_STANDARD "1.8 V" -to si_scl
 set_instance_assignment -name IO_STANDARD "1.8 V" -to fx3_pclk
@@ -282,7 +282,7 @@ set_location_assignment PIN_C17 -to exp_gpio[22]
 set_location_assignment PIN_AB10 -to led[3]
 set_location_assignment PIN_AB8 -to mini_exp1
 set_location_assignment PIN_AB9 -to mini_exp2
-set_location_assignment PIN_AB11 -to ref_1pps
+set_location_assignment PIN_AB11 -to ref_vctcxo_tune
 set_location_assignment PIN_AB12 -to ref_sma_clock
 set_location_assignment PIN_A6 -to si_scl
 set_location_assignment PIN_A7 -to si_sda
@@ -310,5 +310,3 @@ set_global_assignment -name RESERVE_DCLK_AFTER_CONFIGURATION "USE AS REGULAR IO"
 set_instance_assignment -name SLEW_RATE 0 -to fx3_gpif[*]
 #set_instance_assignment -name CURRENT_STRENGTH_NEW 16MA -to fx3_gpif[*]
 set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to fx3_uart_rxd
-
-#set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to ref_1pps

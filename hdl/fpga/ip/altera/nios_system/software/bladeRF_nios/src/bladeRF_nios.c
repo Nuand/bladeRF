@@ -118,7 +118,7 @@ int main(void)
     const struct pkt_handler *handler;
 
     struct pkt_buf pkt;
-    struct ppscal_pkt_buf ppscal_pkt;
+    struct vctcxo_tamer_pkt_buf vctcxo_tamer_pkt;
 
     /* Marked volatile to ensure we actually read the byte populated by
      * the UART ISR */
@@ -152,17 +152,17 @@ int main(void)
     state_t tune_state = COARSE_TUNE_MIN;
 
     // Set the known values of the trim DAC cal line
-    trimdac_cal_line.point[0].y = trimdac_min;
-    trimdac_cal_line.point[1].y = trimdac_max;
     trimdac_cal_line.point[0].x = 0;
+    trimdac_cal_line.point[0].y = trimdac_min;
     trimdac_cal_line.point[1].x = 0;
+    trimdac_cal_line.point[1].y = trimdac_max;
 
     /* Sanity check */
     ASSERT(PKT_MAGIC_IDX == 0);
 
     memset(&pkt, 0, sizeof(pkt));
     pkt.ready = false;
-    bladerf_nios_init(&pkt, &ppscal_pkt);
+    bladerf_nios_init(&pkt, &vctcxo_tamer_pkt);
 
     /* Initialize packet handlers */
     for (i = 0; i < ARRAY_SIZE(pkt_handlers); i++) {
@@ -206,23 +206,23 @@ int main(void)
             command_uart_write_response(pkt.resp);
         } else {
 
-            // Temporarily putting the PPS Calibration stuff here for testing purposes.
+            // Temporarily putting the VCTCXO Calibration stuff here for testing purposes.
             // TODO: figure out a better (more fair) way of handling interrupts.
-            if( ppscal_pkt.ready ) {
+            if( vctcxo_tamer_pkt.ready ) {
 
-                ppscal_pkt.ready = false;
+                vctcxo_tamer_pkt.ready = false;
 
                 /* Update the error counts as long as the PPS count is greater
                  * than zero. If the count is zero, it's unlikely to be valid
                  * (i.e. the bladeRF has not been running long enough). */
-                if( ppscal_pkt.pps_1s_count != 0 ) {
-                    pps_1s_error = ppscal_pkt.pps_1s_count - pps_1s_target;
+                if( vctcxo_tamer_pkt.pps_1s_count != 0 ) {
+                    pps_1s_error = vctcxo_tamer_pkt.pps_1s_count - pps_1s_target;
                 }
-                if( ppscal_pkt.pps_10s_count != 0 ) {
-                    pps_10s_error = ppscal_pkt.pps_10s_count - pps_10s_target;
+                if( vctcxo_tamer_pkt.pps_10s_count != 0 ) {
+                    pps_10s_error = vctcxo_tamer_pkt.pps_10s_count - pps_10s_target;
                 }
-                if( ppscal_pkt.pps_100s_count != 0 ) {
-                    pps_100s_error = ppscal_pkt.pps_100s_count - pps_100s_target;
+                if( vctcxo_tamer_pkt.pps_100s_count != 0 ) {
+                    pps_100s_error = vctcxo_tamer_pkt.pps_100s_count - pps_100s_target;
                 }
 
                 switch(tune_state) {
@@ -299,12 +299,12 @@ int main(void)
                 } /* switch */
 
                 /* Take PPS counters out of reset */
-                ppscal_reset_counters( false );
+                vctcxo_tamer_reset_counters( false );
 
                 /* Enable interrupts */
-                ppscal_enable_isr( true );
+                vctcxo_tamer_enable_isr( true );
 
-            } /* PPM interrupt */
+            } /* VCTCXO Tamer interrupt */
 
             for (i = 0; i < ARRAY_SIZE(pkt_handlers); i++) {
                 if (pkt_handlers[i].do_work != NULL) {

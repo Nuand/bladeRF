@@ -65,14 +65,16 @@ begin
 
     -- Counter reset control process. When the counter is reset, it may have
     -- been because of a trim DAC retune. Need to keep the counter FSM in reset
-    -- until the trim DAC settles out to its new value. The worst-case
-    -- (min-to-max) transition time is approximately 800 us.
+    -- for a period of time to allow the trim DAC to settle into its new value.
+    -- This takes about 800 us for a full swing transition.
     reset_proc : process( clock, reset )
         -- Number of system clock cycles before releasing the counter reset.
-        variable rst_cnt_v : integer range 0 to 64000; -- For 80 MHz sys clock
+        -- Exact number doesn't matter as long as it's more than 800 us.
+        -- A 16-bit counter starting at 0xFFFF will take ~820 us at 80 MHz.
+        variable rst_cnt_v : unsigned(15 downto 0) := (others => '1');
     begin
         if( reset = '1' ) then
-            rst_cnt_v     := 64000;
+            rst_cnt_v     := (others => '1');
             counter_reset <= '1';
         elsif( rising_edge( clock ) ) then
             if( rst_cnt_v /= 0 ) then
