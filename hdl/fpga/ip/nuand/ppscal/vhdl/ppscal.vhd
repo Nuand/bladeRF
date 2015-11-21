@@ -31,13 +31,10 @@ library ieee;
 -- Standard:    VHDL-2008
 -- -----------------------------------------------------------------------------
 entity ppscal is
-    generic(
-        SIMULATION      : boolean := false -- speed up simulations
-    );
     port(
         -- Physical Interface
-        ref_1pps        :   in  std_logic;
-        tcxo_clock      :   in  std_logic;
+        tune_ref        :   in  std_logic;
+        vctcxo_clock    :   in  std_logic;
 
         -- Avalon-MM Interface
         mm_clock        :   in  std_logic;
@@ -48,26 +45,60 @@ entity ppscal is
         mm_wr_data      :   in  std_logic_vector(7 downto 0);
         mm_rd_data      :   out std_logic_vector(7 downto 0);
         mm_rd_datav     :   out std_logic;
-        mm_wait_req     :   out std_logic;
+        mm_wait_req     :   out std_logic := '0';
 
         -- Avalon Interrupts
         mm_irq          :   out std_logic := '0'
-
     );
 end entity;
 
 architecture arch of ppscal is
 
-    -- Register Map
-    constant PPS_CNT_1S_ADDR   : natural := 0*8;
-    constant PPS_CNT_10S_ADDR  : natural := 1*8;
-    constant PPS_CNT_100S_ADDR : natural := 2*8;
-    constant CONTROL_ADDR      : natural := 4*8;
-    constant INTERRUPT_ADDR    : natural := 5*8;
+    -- Register Addresses
+    constant PPS_CNT_1S_ADDR0   : natural := 16#00#;
+    constant PPS_CNT_1S_ADDR1   : natural := 16#01#;
+    constant PPS_CNT_1S_ADDR2   : natural := 16#02#;
+    constant PPS_CNT_1S_ADDR3   : natural := 16#03#;
+    constant PPS_CNT_1S_ADDR4   : natural := 16#04#;
+    constant PPS_CNT_1S_ADDR5   : natural := 16#05#;
+    constant PPS_CNT_1S_ADDR6   : natural := 16#06#;
+    constant PPS_CNT_1S_ADDR7   : natural := 16#07#;
+    constant PPS_CNT_10S_ADDR0  : natural := 16#08#;
+    constant PPS_CNT_10S_ADDR1  : natural := 16#09#;
+    constant PPS_CNT_10S_ADDR2  : natural := 16#0A#;
+    constant PPS_CNT_10S_ADDR3  : natural := 16#0B#;
+    constant PPS_CNT_10S_ADDR4  : natural := 16#0C#;
+    constant PPS_CNT_10S_ADDR5  : natural := 16#0D#;
+    constant PPS_CNT_10S_ADDR6  : natural := 16#0E#;
+    constant PPS_CNT_10S_ADDR7  : natural := 16#0F#;
+    constant PPS_CNT_100S_ADDR0 : natural := 16#10#;
+    constant PPS_CNT_100S_ADDR1 : natural := 16#11#;
+    constant PPS_CNT_100S_ADDR2 : natural := 16#12#;
+    constant PPS_CNT_100S_ADDR3 : natural := 16#13#;
+    constant PPS_CNT_100S_ADDR4 : natural := 16#14#;
+    constant PPS_CNT_100S_ADDR5 : natural := 16#15#;
+    constant PPS_CNT_100S_ADDR6 : natural := 16#16#;
+    constant PPS_CNT_100S_ADDR7 : natural := 16#17#;
+    -- Reserved: 0x18 - 0x1F
+    constant CONTROL_ADDR      : natural  := 16#20#;
+    -- Reserved: 0x21 - 0x27
+    constant INTERRUPT_ADDR    : natural  := 16#28#;
+    -- Reserved: 0x29 - 0xFF
 
-    -- Internal variants of 1PPS input
-    signal ref_1pps_sync    : std_logic := '0';
-    signal ref_1pps_pulse   : std_logic := '0';
+
+    type tune_mode_t is ( DISABLED, PPS, \10MHZ\ );
+
+    function unpack( x : std_logic_vector(1 downto 0) ) return tune_mode_t is
+        variable rv : tune_mode_t := DISABLED;
+    begin
+        case( x ) is
+            when "01"   => rv := PPS;
+            when "10"   => rv := \10MHZ\;
+            when others => rv := DISABLED;
+        end case;
+        return rv;
+    end function;
+
 
     -- Counter data
     type count_t is record
@@ -96,44 +127,61 @@ architecture arch of ppscal is
                                    count_v       => '0',
                                    reset         => '1' );
 
-    -- Interrupt signals
-    signal pps_irq_enable   : std_logic := '0';
-    signal pps_irq_clear    : std_logic := '0';
-
-    -- Unsigned version of Avalon-MM address
-    signal mm_uaddr : unsigned(mm_addr'range);
+    signal ref_1pps         : std_logic   := '0';
+    signal ref_10mhz_pps    : std_logic   := '0';
+    signal ref_1pps_sync    : std_logic   := '0';
+    signal ref_1pps_pulse   : std_logic   := '0';
+    signal pps_irq_enable   : std_logic   := '0';
+    signal pps_irq_clear    : std_logic   := '0';
+    signal tune_mode        : tune_mode_t := DISABLED;
 
 begin
 
-    sim_count_target : if( SIMULATION = true ) generate
-        --pps_1s.target   <= to_signed(7,   pps_1s.target'length);
-        --pps_10s.target  <= to_signed(77,  pps_10s.target'length);
-        --pps_100s.target <= to_signed(768, pps_100s.target'length);
-        pps_1s.target   <= to_signed(38400,   pps_1s.target'length);
-        pps_10s.target  <= to_signed(384000,  pps_10s.target'length);
-        pps_100s.target <= to_signed(3840000, pps_100s.target'length);
-    end generate;
+    -- If the input reference is 10 MHz, use it as a clock to increment a
+    -- counter that will generate a single pulse every second.
+    ref_10mhz_count_proc : process( tune_ref, mm_reset )
+        constant REF_10MHZ_RESET_VAL : natural range 0 to 2**24-1 := 10e6;
+        variable ref_10mhz_count     : natural range 0 to 2**24-1 := 10e6;
+    begin
+        if( mm_reset = '1' ) then
+            ref_10mhz_pps <= '0';
+            ref_10mhz_count := REF_10MHZ_RESET_VAL;
+        elsif( rising_edge(tune_ref) ) then
+            ref_10mhz_pps <= '0';
+            if( tune_mode = \10MHZ\ ) then
+                ref_10mhz_count := ref_10mhz_count - 1;
+                if( ref_10mhz_count = 0 ) then
+                    ref_10mhz_pps   <= '1';
+                    ref_10mhz_count := REF_10MHZ_RESET_VAL;
+                end if;
+            end if;
+        end if;
+    end process;
 
+    -- Tuning reference MUX
+    ref_1pps <= tune_ref      when ( tune_mode = PPS     ) else
+                ref_10mhz_pps when ( tune_mode = \10MHZ\ ) else
+                '0';
 
-    -- Bring the 1PPS signal into the TCXO clock domain
+    -- Bring the 1PPS into the VCTCXO clock domain
     U_pps_sync : entity work.synchronizer
         generic map (
             RESET_LEVEL =>  '0'
         ) port map (
             reset       =>  mm_reset,
-            clock       =>  tcxo_clock,
+            clock       =>  vctcxo_clock,
             async       =>  ref_1pps,
             sync        =>  ref_1pps_sync
         );
 
     -- Generate a single-cycle version of the 1PPS signal
-    pps_pulse : process( tcxo_clock, mm_reset )
+    pps_pulse : process( vctcxo_clock, mm_reset )
         variable armed : boolean := true;
     begin
         if( mm_reset = '1' ) then
             ref_1pps_pulse <= '0';
             armed := true;
-        elsif( rising_edge(tcxo_clock) ) then
+        elsif( rising_edge(vctcxo_clock) ) then
             ref_1pps_pulse <= '0';
             if( armed = true ) then
                 if( ref_1pps_sync = '1' ) then
@@ -148,7 +196,7 @@ begin
         end if;
     end process;
 
-    -- Keep track of how many TCXO clock pulses have occurred during
+    -- Keep track of how many VCTCXO clock pulses have occurred during
     -- the previous 1 second.
     U_1s_counter : entity work.pps_counter
         generic map (
@@ -160,11 +208,11 @@ begin
             reset           => pps_1s.reset,
             count           => pps_1s.count,
             count_strobe    => pps_1s.count_v,
-            tcxo_clock      => tcxo_clock,
+            vctcxo_clock    => vctcxo_clock,
             pps             => ref_1pps_pulse
         );
 
-    -- Keep track of how many TCXO clock pulses have occurred during
+    -- Keep track of how many VCTCXO clock pulses have occurred during
     -- the previous 10 seconds.
     U_10s_counter : entity work.pps_counter
         generic map (
@@ -176,11 +224,11 @@ begin
             reset           => pps_10s.reset,
             count           => pps_10s.count,
             count_strobe    => pps_10s.count_v,
-            tcxo_clock      => tcxo_clock,
+            vctcxo_clock    => vctcxo_clock,
             pps             => ref_1pps_pulse
         );
 
-    -- Keep track of how many TCXO clock pulses have occurred during
+    -- Keep track of how many VCTCXO clock pulses have occurred during
     -- the previous 100 seconds.
     U_100s_counter : entity work.pps_counter
         generic map (
@@ -192,7 +240,7 @@ begin
             reset           => pps_100s.reset,
             count           => pps_100s.count,
             count_strobe    => pps_100s.count_v,
-            tcxo_clock      => tcxo_clock,
+            vctcxo_clock    => vctcxo_clock,
             pps             => ref_1pps_pulse
         );
 
@@ -201,7 +249,7 @@ begin
     int_req_proc : process( mm_clock )
         -- Error tolerance on each clock count
         -- Calculated for a goal of < 10 PPB
-        -- err_counts = (seconds * nominal_tcxo_freq) * (10 * 10e-9)
+        -- err_counts = (seconds * nominal_vctcxo_freq) * (10 * 10e-9)
         -- TODO: Make this a function?
         constant PPS_1S_ERROR_TOL   : signed(pps_1s.target'range)   := to_signed(1  , pps_1s.target'length);
         constant PPS_10S_ERROR_TOL  : signed(pps_10s.target'range)  := to_signed(4  , pps_10s.target'length);
@@ -236,8 +284,6 @@ begin
         end if;
     end process;
 
-    mm_uaddr    <= unsigned(mm_addr);
-    mm_wait_req <= '0';
 
     -- Avalon-MM Read Process
     mm_read_proc : process( mm_clock )
@@ -246,44 +292,45 @@ begin
 
             -- Data valid is just a one-cycle delay of read request
             mm_rd_datav <= mm_rd_req;
+            mm_wait_req <= '0';
 
-            case to_integer(mm_uaddr) is
+            case to_integer(unsigned(mm_addr)) is
 
                 -- 1 Second Count
-                when PPS_CNT_1S_ADDR+0 =>
+                when PPS_CNT_1S_ADDR0 =>
                     pps_1s.count_mm_hold <= std_logic_vector(pps_1s.count);
                     mm_rd_data <= std_logic_vector(pps_1s.count(7 downto 0));
-                when PPS_CNT_1S_ADDR+1 => mm_rd_data <= pps_1s.count_mm_hold(15 downto 8);
-                when PPS_CNT_1S_ADDR+2 => mm_rd_data <= pps_1s.count_mm_hold(23 downto 16);
-                when PPS_CNT_1S_ADDR+3 => mm_rd_data <= pps_1s.count_mm_hold(31 downto 24);
-                when PPS_CNT_1S_ADDR+4 => mm_rd_data <= pps_1s.count_mm_hold(39 downto 32);
-                when PPS_CNT_1S_ADDR+5 => mm_rd_data <= pps_1s.count_mm_hold(47 downto 40);
-                when PPS_CNT_1S_ADDR+6 => mm_rd_data <= pps_1s.count_mm_hold(55 downto 48);
-                when PPS_CNT_1S_ADDR+7 => mm_rd_data <= pps_1s.count_mm_hold(63 downto 56);
+                when PPS_CNT_1S_ADDR1 => mm_rd_data <= pps_1s.count_mm_hold(15 downto 8);
+                when PPS_CNT_1S_ADDR2 => mm_rd_data <= pps_1s.count_mm_hold(23 downto 16);
+                when PPS_CNT_1S_ADDR3 => mm_rd_data <= pps_1s.count_mm_hold(31 downto 24);
+                when PPS_CNT_1S_ADDR4 => mm_rd_data <= pps_1s.count_mm_hold(39 downto 32);
+                when PPS_CNT_1S_ADDR5 => mm_rd_data <= pps_1s.count_mm_hold(47 downto 40);
+                when PPS_CNT_1S_ADDR6 => mm_rd_data <= pps_1s.count_mm_hold(55 downto 48);
+                when PPS_CNT_1S_ADDR7 => mm_rd_data <= pps_1s.count_mm_hold(63 downto 56);
 
                 -- 10 Second Count
-                when PPS_CNT_10S_ADDR+0 =>
+                when PPS_CNT_10S_ADDR0 =>
                     pps_10s.count_mm_hold <= std_logic_vector(pps_10s.count);
                     mm_rd_data <= std_logic_vector(pps_10s.count(7 downto 0));
-                when PPS_CNT_10S_ADDR+1 => mm_rd_data <= pps_10s.count_mm_hold(15 downto 8);
-                when PPS_CNT_10S_ADDR+2 => mm_rd_data <= pps_10s.count_mm_hold(23 downto 16);
-                when PPS_CNT_10S_ADDR+3 => mm_rd_data <= pps_10s.count_mm_hold(31 downto 24);
-                when PPS_CNT_10S_ADDR+4 => mm_rd_data <= pps_10s.count_mm_hold(39 downto 32);
-                when PPS_CNT_10S_ADDR+5 => mm_rd_data <= pps_10s.count_mm_hold(47 downto 40);
-                when PPS_CNT_10S_ADDR+6 => mm_rd_data <= pps_10s.count_mm_hold(55 downto 48);
-                when PPS_CNT_10S_ADDR+7 => mm_rd_data <= pps_10s.count_mm_hold(63 downto 56);
+                when PPS_CNT_10S_ADDR1 => mm_rd_data <= pps_10s.count_mm_hold(15 downto 8);
+                when PPS_CNT_10S_ADDR2 => mm_rd_data <= pps_10s.count_mm_hold(23 downto 16);
+                when PPS_CNT_10S_ADDR3 => mm_rd_data <= pps_10s.count_mm_hold(31 downto 24);
+                when PPS_CNT_10S_ADDR4 => mm_rd_data <= pps_10s.count_mm_hold(39 downto 32);
+                when PPS_CNT_10S_ADDR5 => mm_rd_data <= pps_10s.count_mm_hold(47 downto 40);
+                when PPS_CNT_10S_ADDR6 => mm_rd_data <= pps_10s.count_mm_hold(55 downto 48);
+                when PPS_CNT_10S_ADDR7 => mm_rd_data <= pps_10s.count_mm_hold(63 downto 56);
 
                 -- 100 Second Count
-                when PPS_CNT_100S_ADDR+0 =>
+                when PPS_CNT_100S_ADDR0 =>
                     pps_100s.count_mm_hold <= std_logic_vector(pps_100s.count);
                     mm_rd_data <= std_logic_vector(pps_100s.count(7 downto 0));
-                when PPS_CNT_100S_ADDR+1 => mm_rd_data <= pps_100s.count_mm_hold(15 downto 8);
-                when PPS_CNT_100S_ADDR+2 => mm_rd_data <= pps_100s.count_mm_hold(23 downto 16);
-                when PPS_CNT_100S_ADDR+3 => mm_rd_data <= pps_100s.count_mm_hold(31 downto 24);
-                when PPS_CNT_100S_ADDR+4 => mm_rd_data <= pps_100s.count_mm_hold(39 downto 32);
-                when PPS_CNT_100S_ADDR+5 => mm_rd_data <= pps_100s.count_mm_hold(47 downto 40);
-                when PPS_CNT_100S_ADDR+6 => mm_rd_data <= pps_100s.count_mm_hold(55 downto 48);
-                when PPS_CNT_100S_ADDR+7 => mm_rd_data <= pps_100s.count_mm_hold(63 downto 56);
+                when PPS_CNT_100S_ADDR1 => mm_rd_data <= pps_100s.count_mm_hold(15 downto 8);
+                when PPS_CNT_100S_ADDR2 => mm_rd_data <= pps_100s.count_mm_hold(23 downto 16);
+                when PPS_CNT_100S_ADDR3 => mm_rd_data <= pps_100s.count_mm_hold(31 downto 24);
+                when PPS_CNT_100S_ADDR4 => mm_rd_data <= pps_100s.count_mm_hold(39 downto 32);
+                when PPS_CNT_100S_ADDR5 => mm_rd_data <= pps_100s.count_mm_hold(47 downto 40);
+                when PPS_CNT_100S_ADDR6 => mm_rd_data <= pps_100s.count_mm_hold(55 downto 48);
+                when PPS_CNT_100S_ADDR7 => mm_rd_data <= pps_100s.count_mm_hold(63 downto 56);
 
                 when others => null;
             end case;
@@ -298,16 +345,20 @@ begin
             pps_irq_clear <= '0';
 
             if( mm_wr_req = '1' ) then
-                case to_integer(mm_uaddr) is
+                case to_integer(unsigned(mm_addr)) is
                     when CONTROL_ADDR =>
-                        pps_1s.reset   <= mm_wr_data(0);
-                        pps_10s.reset  <= mm_wr_data(1);
+                        -- Reserved    <= mm_wr_data(7 downto 6);
+                        tune_mode      <= unpack(mm_wr_data(5 downto 4));
+                        -- Reserved    <= mm_wr_data(3);
                         pps_100s.reset <= mm_wr_data(2);
+                        pps_10s.reset  <= mm_wr_data(1);
+                        pps_1s.reset   <= mm_wr_data(0);
 
                     when INTERRUPT_ADDR =>
-                        pps_irq_enable <= mm_wr_data(0);
-
+                        -- Reserved    <= mm_wr_data(7 downto 5);
                         pps_irq_clear  <= mm_wr_data(4);
+                        -- Reserved    <= mm_wr_data(3 downto 1);
+                        pps_irq_enable <= mm_wr_data(0);
 
                     when others =>
                         null;

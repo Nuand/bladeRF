@@ -7,7 +7,7 @@ library ieee;
 
 -- -----------------------------------------------------------------------------
 -- Entity:      pps_counter
--- Description: Counts number of TCXO clock cycles that have occurred between
+-- Description: Counts number of VCTCXO clock cycles that have occurred between
 --              the specified number of 1PPS pulses. The count is output
 --              in the system clock domain along with a valid signal.
 -- Standard:    VHDL-2008
@@ -25,7 +25,7 @@ entity pps_counter is
         count_strobe    : out std_logic;
 
         -- Measurement signals
-        tcxo_clock      : in  std_logic;
+        vctcxo_clock    : in  std_logic;
         pps             : in  std_logic
     );
 end entity;
@@ -84,11 +84,11 @@ begin
         end if;
     end process;
 
-    sync_proc : process( tcxo_clock, counter_reset )
+    sync_proc : process( vctcxo_clock, counter_reset )
     begin
         if( counter_reset = '1' ) then
             current <= reset_value;
-        elsif( rising_edge(tcxo_clock) ) then
+        elsif( rising_edge(vctcxo_clock) ) then
             current <= future;
         end if;
     end process;
@@ -132,7 +132,7 @@ begin
             DATA_WIDTH          =>  COUNT_WIDTH
         ) port map (
             source_reset        =>  counter_reset,
-            source_clock        =>  tcxo_clock,
+            source_clock        =>  vctcxo_clock,
             source_data         =>  std_logic_vector(current.handshake_d),
 
             dest_reset          =>  reset,

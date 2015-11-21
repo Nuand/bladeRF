@@ -116,13 +116,10 @@ begin
 
 
     uut : entity work.ppscal(arch)
-        generic map (
-            SIMULATION      => true
-        )
         port map(
             -- Physical Interface
-            ref_1pps        => ref_1pps,
-            tcxo_clock      => tcxo_clock,
+            tune_ref        => ref_1pps,
+            vctcxo_clock    => tcxo_clock,
 
             -- Avalon-MM Interface
             mm_clock        => sys_clk,         -- in  std_logic;
