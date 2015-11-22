@@ -7,10 +7,10 @@ library ieee;
 
 -- -----------------------------------------------------------------------------
 -- Entity:      pps_counter
+-- Standard:    VHDL-2008
 -- Description: Counts number of VCTCXO clock cycles that have occurred between
 --              the specified number of 1PPS pulses. The count is output
 --              in the system clock domain along with a valid signal.
--- Standard:    VHDL-2008
 -- -----------------------------------------------------------------------------
 entity pps_counter is
     generic(
@@ -66,17 +66,18 @@ begin
     -- Counter reset control process. When the counter is reset, it may have
     -- been because of a trim DAC retune. Need to keep the counter FSM in reset
     -- for a period of time to allow the trim DAC to settle into its new value.
-    -- This takes about 800 us for a full swing transition.
-    reset_proc : process( clock, reset )
-        -- Number of system clock cycles before releasing the counter reset.
-        -- Exact number doesn't matter as long as it's more than 800 us.
-        -- A 16-bit counter starting at 0xFFFF will take ~820 us at 80 MHz.
-        variable rst_cnt_v : unsigned(15 downto 0) := (others => '1');
+    -- A retune takes about 800 us for a full swing transition. Using the VCTCXO
+    -- clock here because it's slower (easier to meet timing, fewer counter
+    -- bits), and the change in precision during a retune doesn't matter here.
+    reset_proc : process( vctcxo_clock, reset )
+        -- Number of VCTCXO clock cycles before releasing the counter reset.
+        -- A 15-bit counter starting at 0x7FFF will take ~850 us at 38.4 MHz.
+        variable rst_cnt_v : unsigned(14 downto 0) := (others => '1');
     begin
         if( reset = '1' ) then
             rst_cnt_v     := (others => '1');
             counter_reset <= '1';
-        elsif( rising_edge( clock ) ) then
+        elsif( rising_edge( vctcxo_clock ) ) then
             if( rst_cnt_v /= 0 ) then
                 rst_cnt_v := rst_cnt_v - 1;
                 counter_reset <= '1';
@@ -144,29 +145,17 @@ begin
             dest_ack            =>  handshake_ack
         );
 
-
-    count_strobe_proc : process( clock, reset )
-        variable armed : boolean := true;
-    begin
-        if( reset = '1' ) then
-            count_strobe_pulse <= '0';
-            armed := true;
-        elsif( rising_edge(clock) ) then
-            count_strobe_pulse <= '0';
-            if( armed = true ) then
-                if( handshake_ack = '1' ) then
-                    count_strobe_pulse <= '1';
-                    armed := false;
-                end if;
-            else
-                if( handshake_ack = '0' ) then
-                    armed := true;
-                end if;
-            end if;
-        end if;
-    end process;
-
-    -- Output to application
-    count_strobe <= count_strobe_pulse;
+    -- Generate a single-cycle 'count valid' pulse
+    U_pulse_gen_count_strobe : entity work.pulse_gen
+        generic map (
+            EDGE_RISE       => '1',
+            EDGE_FALL       => '0'
+        )
+        port map (
+            clock           => clock,
+            reset           => reset,
+            sync_in         => handshake_ack,
+            pulse_out       => count_strobe
+        );
 
 end architecture;

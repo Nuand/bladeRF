@@ -6,6 +6,7 @@ vlib ${vcom_lib}
 # Support
 vcom {*}$vcom_opts -work ${vcom_lib} ../../synthesis/synchronizer.vhd
 vcom {*}$vcom_opts -work ${vcom_lib} ../../synthesis/handshake.vhd
+vcom {*}$vcom_opts -work ${vcom_lib} ../../synthesis/pulse_gen.vhd
 
 # UUT
 vcom {*}$vcom_opts -work ${vcom_lib} ../vhdl/pps_counter.vhd
@@ -28,13 +29,16 @@ radix -hexadecimal
 # Change radixes for a select few signals
 radix signal sim:/vctcxo_tamer_tb/uut/pps_1s.count decimal
 radix signal sim:/vctcxo_tamer_tb/uut/pps_1s.target decimal
-radix signal sim:/vctcxo_tamer_tb/uut/pps_1s.count_mm_hold decimal
+radix signal sim:/vctcxo_tamer_tb/uut/pps_1s.error decimal
+radix signal sim:/vctcxo_tamer_tb/uut/pps_1s.error_mm_hold decimal
 radix signal sim:/vctcxo_tamer_tb/uut/pps_10s.count decimal
 radix signal sim:/vctcxo_tamer_tb/uut/pps_10s.target decimal
-radix signal sim:/vctcxo_tamer_tb/uut/pps_10s.count_mm_hold decimal
+radix signal sim:/vctcxo_tamer_tb/uut/pps_10s.error decimal
+radix signal sim:/vctcxo_tamer_tb/uut/pps_10s.error_mm_hold decimal
 radix signal sim:/vctcxo_tamer_tb/uut/pps_100s.count decimal
 radix signal sim:/vctcxo_tamer_tb/uut/pps_100s.target decimal
-radix signal sim:/vctcxo_tamer_tb/uut/pps_100s.count_mm_hold decimal
+radix signal sim:/vctcxo_tamer_tb/uut/pps_100s.error decimal
+radix signal sim:/vctcxo_tamer_tb/uut/pps_100s.error_mm_hold decimal
 
 radix signal sim:/vctcxo_tamer_tb/driver/current.pps_1s_count decimal
 radix signal sim:/vctcxo_tamer_tb/driver/current.pps_10s_count decimal
