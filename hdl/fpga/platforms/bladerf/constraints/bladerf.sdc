@@ -14,6 +14,11 @@ create_clock -period "80 MHz" -name lms_rx_virtual
 derive_pll_clocks
 derive_clock_uncertainty
 
+# Create a clock for the VCTCXO Tuning Reference, which can be
+# either 10 MHz or 1PPS. Could use multifrequency analysis,
+# but shouldn't need to if the 1PPS pulse is active for >100ns.
+create_clock -period "10 MHz" [get_ports ref_vctcxo_tune]
+
 # First flop synchronizer false path
 set_false_path -from * -to [get_registers *synchronize:reg0]
 set_false_path -from * -to [get_registers reset_synchronizer*]
