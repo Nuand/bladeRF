@@ -37,6 +37,9 @@
  */
 uint16_t vctcxo_trim_dac_value = 0x7FFF;
 
+/* Define a cached version of the VCTCXO tamer control register */
+uint8_t vctcxo_tamer_ctrl_reg = 0x00;
+
 static void command_uart_enable_isr(bool enable) {
     uint32_t val = enable ? 1 : 0 ;
     IOWR_32DIRECT(COMMAND_UART_BASE, 16, val) ;
@@ -55,39 +58,112 @@ static void command_uart_isr(void *context) {
     return ;
 }
 
-void vctcxo_tamer_enable_isr(bool enable) {
-    uint8_t val = enable ? 0x01 : 0x00;
-    vctcxo_tamer_write(0x28, val);
-    return;
-}
-
-void vctcxo_tamer_reset_counters( bool reset ) {
-    uint8_t val = reset ? 0x07 : 0x00;
-    vctcxo_tamer_write(0x20, val);
-    return;
-}
-
 static void vctcxo_tamer_isr(void *context) {
     struct vctcxo_tamer_pkt_buf *pkt = (struct vctcxo_tamer_pkt_buf *)context;
+    uint8_t error_status = 0x00;
 
     /* Disable interrupts */
     vctcxo_tamer_enable_isr( false );
 
-    /* Clear interrupt */
-    vctcxo_tamer_write(0x28, 0x10);
+    /* Reset (stop) the counters */
+    vctcxo_tamer_reset_counters( true );
 
     /* Read the current count values */
-    pkt->pps_1s_count   = vctcxo_tamer_read(0x00);
-    pkt->pps_10s_count  = vctcxo_tamer_read(0x08);
-    pkt->pps_100s_count = vctcxo_tamer_read(0x10);
+    pkt->pps_1s_error   = vctcxo_tamer_read_count(VT_ERR_1S_ADDR);
+    pkt->pps_10s_error  = vctcxo_tamer_read_count(VT_ERR_10S_ADDR);
+    pkt->pps_100s_error = vctcxo_tamer_read_count(VT_ERR_100S_ADDR);
 
-    /* Reset the counters */
-    vctcxo_tamer_reset_counters( true );
+    /* Read the error status register */
+    error_status = vctcxo_tamer_read(VT_STAT_ADDR);
+
+    /* Set the appropriate flags in the packet buffer */
+    pkt->pps_1s_error_flag   = (error_status & VT_STAT_ERR_1S)   ? true : false;
+    pkt->pps_10s_error_flag  = (error_status & VT_STAT_ERR_10S)  ? true : false;
+    pkt->pps_100s_error_flag = (error_status & VT_STAT_ERR_100S) ? true : false;
+
+    /* Clear interrupt */
+    vctcxo_tamer_clear_isr();
 
     /* Tell the main loop that there is a request pending */
     pkt->ready = true;
 
     return;
+}
+
+void vctcxo_tamer_enable_isr(bool enable) {
+    if( enable ) {
+        vctcxo_tamer_ctrl_reg |= VT_CTRL_IRQ_EN;
+    } else {
+        vctcxo_tamer_ctrl_reg &= ~VT_CTRL_IRQ_EN;
+    }
+
+    vctcxo_tamer_write(VT_CTRL_ADDR, vctcxo_tamer_ctrl_reg);
+    return;
+}
+
+void vctcxo_tamer_clear_isr() {
+    vctcxo_tamer_write(VT_CTRL_ADDR, vctcxo_tamer_ctrl_reg | VT_CTRL_IRQ_CLR);
+    return;
+}
+
+void vctcxo_tamer_reset_counters(bool reset) {
+    if( reset ) {
+        vctcxo_tamer_ctrl_reg |= VT_CTRL_RESET;
+    } else {
+        vctcxo_tamer_ctrl_reg &= ~VT_CTRL_RESET;
+    }
+
+    vctcxo_tamer_write(VT_CTRL_ADDR, vctcxo_tamer_ctrl_reg);
+    return;
+}
+
+/* Sets the VCTCXO Tamer Tuning Mode
+ *
+ * TODO/FIXME:
+ *   CHANGE THE PARAMETER TO AN ENUM COMPATIBLE WTIH LIBBLADERF!
+ *
+ * Available modes:
+ *   DISABLED : mode = 0x00
+ *   1PPS     : mode = 0x01
+ *   10 MHZ   : mode = 0x02
+ */
+void vctcxo_tamer_set_tune_mode(uint8_t mode) {
+
+    /* Set tuning mode */
+    vctcxo_tamer_ctrl_reg &= ~VT_CTRL_TUNE_MODE;
+    vctcxo_tamer_ctrl_reg |= (mode << 6);
+    vctcxo_tamer_write(VT_CTRL_ADDR, vctcxo_tamer_ctrl_reg);
+
+    /* Reset the counters */
+    vctcxo_tamer_reset_counters( true );
+
+    /* Take counters out of reset if tuning mode is not DISABLED */
+    if( mode != 0x00 ) {
+        vctcxo_tamer_reset_counters( false );
+    }
+
+    return;
+}
+
+int32_t vctcxo_tamer_read_count(uint8_t addr) {
+    uint32_t base = VCTCXO_TAMER_0_BASE;
+    uint8_t offset = addr;
+    int32_t value = 0;
+
+    value  = IORD_8DIRECT(base, offset++);
+    value |= ((int32_t) IORD_8DIRECT(base, offset++)) << 8;
+    value |= ((int32_t) IORD_8DIRECT(base, offset++)) << 16;
+    value |= ((int32_t) IORD_8DIRECT(base, offset++)) << 24;
+
+    return value;
+}
+
+uint8_t vctcxo_tamer_read(uint8_t addr) {
+    return (uint8_t)IORD_8DIRECT(VCTCXO_TAMER_0_BASE, addr);
+}
+
+void vctcxo_tamer_write(uint8_t addr, uint8_t data) {
+    IOWR_8DIRECT(VCTCXO_TAMER_0_BASE, addr, data);
 }
 
 void tamer_schedule(bladerf_module m, uint64_t time) {
@@ -144,8 +220,8 @@ void bladerf_nios_init(struct pkt_buf *pkt, struct vctcxo_tamer_pkt_buf *vctcxo_
     vctcxo_tamer_enable_isr(true);
     alt_ic_irq_enable(VCTCXO_TAMER_0_IRQ_INTERRUPT_CONTROLLER_ID, VCTCXO_TAMER_0_IRQ);
 
-    /* Enable the VCTCXO Counters */
-    vctcxo_tamer_write(0x20, 0x00);
+    /* Set VCTCXO Tamer Tuning Mode to 1PPS */
+    vctcxo_tamer_set_tune_mode(0x01);
 }
 
 static void si5338_complete_transfer(uint8_t check_rxack)
@@ -326,29 +402,6 @@ uint64_t time_tamer_read(bladerf_module m)
     value |= ((uint64_t) IORD_8DIRECT(base, offset++)) << 56;
 
     return value;
-}
-
-int64_t vctcxo_tamer_read(uint8_t addr)
-{
-    uint32_t base = VCTCXO_TAMER_0_BASE;
-    uint8_t offset = addr;
-    int64_t value = 0;
-
-    value  = IORD_8DIRECT(base, offset++);
-    value |= ((int64_t) IORD_8DIRECT(base, offset++)) << 8;
-    value |= ((int64_t) IORD_8DIRECT(base, offset++)) << 16;
-    value |= ((int64_t) IORD_8DIRECT(base, offset++)) << 24;
-    value |= ((int64_t) IORD_8DIRECT(base, offset++)) << 32;
-    value |= ((int64_t) IORD_8DIRECT(base, offset++)) << 40;
-    value |= ((int64_t) IORD_8DIRECT(base, offset++)) << 48;
-    value |= ((int64_t) IORD_8DIRECT(base, offset++)) << 56;
-
-    return value;
-}
-
-void vctcxo_tamer_write(uint8_t addr, uint8_t data)
-{
-    IOWR_8DIRECT(VCTCXO_TAMER_0_BASE, addr, data);
 }
 
 #endif

@@ -133,29 +133,16 @@ int main(void)
     // Trim DAC calibration line
     line_t trimdac_cal_line;
 
-    // PPS Calibration constants
-    const int64_t pps_1s_target      = 1   * 384e5L;
-    const int64_t pps_10s_target     = 10  * 384e5L;
-    const int64_t pps_100s_target    = 100 * 384e5L;
-
-    // Maximum tolerated VCTCXO error, calculated for 10 PPB.
-    const int64_t pps_1s_max_error   = 1;
-    const int64_t pps_10s_max_error  = 4;
-    const int64_t pps_100s_max_error = 38;
-
-    // PPS Calibration
-    int64_t pps_1s_error          = 0;
-    int64_t pps_10s_error         = 0;
-    int64_t pps_100s_error        = 0;
-
     // VCTCXO Tune State machine
     state_t tune_state = COARSE_TUNE_MIN;
 
-    // Set the known values of the trim DAC cal line
-    trimdac_cal_line.point[0].x = 0;
-    trimdac_cal_line.point[0].y = trimdac_min;
-    trimdac_cal_line.point[1].x = 0;
-    trimdac_cal_line.point[1].y = trimdac_max;
+    // Set the known/default values of the trim DAC cal line
+    trimdac_cal_line.point[0].x  = 0;
+    trimdac_cal_line.point[0].y  = trimdac_min;
+    trimdac_cal_line.point[1].x  = 0;
+    trimdac_cal_line.point[1].y  = trimdac_max;
+    trimdac_cal_line.slope       = 0;
+    trimdac_cal_line.y_intercept = 0;
 
     /* Sanity check */
     ASSERT(PKT_MAGIC_IDX == 0);
@@ -206,24 +193,10 @@ int main(void)
             command_uart_write_response(pkt.resp);
         } else {
 
-            // Temporarily putting the VCTCXO Calibration stuff here for testing purposes.
-            // TODO: figure out a better (more fair) way of handling interrupts.
+            /* Temporarily putting the VCTCXO Calibration stuff here. */
             if( vctcxo_tamer_pkt.ready ) {
 
                 vctcxo_tamer_pkt.ready = false;
-
-                /* Update the error counts as long as the PPS count is greater
-                 * than zero. If the count is zero, it's unlikely to be valid
-                 * (i.e. the bladeRF has not been running long enough). */
-                if( vctcxo_tamer_pkt.pps_1s_count != 0 ) {
-                    pps_1s_error = vctcxo_tamer_pkt.pps_1s_count - pps_1s_target;
-                }
-                if( vctcxo_tamer_pkt.pps_10s_count != 0 ) {
-                    pps_10s_error = vctcxo_tamer_pkt.pps_10s_count - pps_10s_target;
-                }
-                if( vctcxo_tamer_pkt.pps_100s_count != 0 ) {
-                    pps_100s_error = vctcxo_tamer_pkt.pps_100s_count - pps_100s_target;
-                }
 
                 switch(tune_state) {
 
@@ -232,7 +205,7 @@ int main(void)
                     /* Tune to the minimum DAC value */
                     vctcxo_trim_dac_write( 0x08, trimdac_min );
 
-                    /* Next state */
+                    /* State to enter upon the next interrupt */
                     tune_state = COARSE_TUNE_MAX;
 
                     break;
@@ -241,12 +214,12 @@ int main(void)
 
                     /* We have the error from the minimum DAC setting, store it
                      * as the 'x' coordinate for the first point */
-                    trimdac_cal_line.point[0].x = pps_1s_error;
+                    trimdac_cal_line.point[0].x = vctcxo_tamer_pkt.pps_1s_error;
 
                     /* Tune to the maximum DAC value */
                     vctcxo_trim_dac_write( 0x08, trimdac_max );
 
-                    /* Next state */
+                    /* State to enter upon the next interrupt */
                     tune_state = COARSE_TUNE_DONE;
 
                     break;
@@ -255,7 +228,7 @@ int main(void)
 
                     /* We have the error from the maximum DAC setting, store it
                      * as the 'x' coordinate for the second point */
-                    trimdac_cal_line.point[1].x = pps_1s_error;
+                    trimdac_cal_line.point[1].x = vctcxo_tamer_pkt.pps_1s_error;
 
                     /* We now have two points, so we can calculate the equation
                      * for a line plotted with DAC counts on the Y axis and
@@ -269,7 +242,7 @@ int main(void)
                     /* Set the trim DAC count to the y-intercept */
                     vctcxo_trim_dac_write( 0x08, trimdac_cal_line.y_intercept );
 
-                    /* Next state */
+                    /* State to enter upon the next interrupt */
                     tune_state = FINE_TUNE;
 
                     break;
@@ -284,18 +257,22 @@ int main(void)
                      * tolerated error, adjust the trim DAC by the error (Hz)
                      * multiplied by the slope (in counts/Hz) and scale the
                      * result by the precision interval (e.g. 1s, 10s, 100s). */
-                    if( abs(pps_1s_error) > pps_1s_max_error ) {
-                        vctcxo_trim_dac_write( 0x08, vctcxo_trim_dac_value-((pps_1s_error*trimdac_cal_line.slope)/1) );
-                    } else if( abs(pps_10s_error) > pps_10s_max_error ) {
-                        vctcxo_trim_dac_write( 0x08, vctcxo_trim_dac_value-((pps_10s_error*trimdac_cal_line.slope)/10) );
-                    } else if( abs(pps_100s_error) > pps_100s_max_error ) {
-                        vctcxo_trim_dac_write( 0x08, vctcxo_trim_dac_value-((pps_100s_error*trimdac_cal_line.slope)/100) );
+                    if( vctcxo_tamer_pkt.pps_1s_error_flag ) {
+                        vctcxo_trim_dac_write( 0x08, (vctcxo_trim_dac_value -
+                            ((vctcxo_tamer_pkt.pps_1s_error * trimdac_cal_line.slope)/1)) );
+                    } else if( vctcxo_tamer_pkt.pps_10s_error_flag ) {
+                        vctcxo_trim_dac_write( 0x08, (vctcxo_trim_dac_value -
+                            ((vctcxo_tamer_pkt.pps_10s_error * trimdac_cal_line.slope)/10)) );
+                    } else if( vctcxo_tamer_pkt.pps_100s_error_flag ) {
+                        vctcxo_trim_dac_write( 0x08, (vctcxo_trim_dac_value -
+                            ((vctcxo_tamer_pkt.pps_100s_error * trimdac_cal_line.slope)/100)) );
                     }
 
                     break;
+
                 default:
                     break;
-                    /* Do nothing */
+
                 } /* switch */
 
                 /* Take PPS counters out of reset */

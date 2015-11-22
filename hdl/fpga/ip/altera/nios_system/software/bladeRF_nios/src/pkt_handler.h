@@ -44,9 +44,12 @@ struct pkt_buf {
 // This is temporary until we figure out where to put it
 struct vctcxo_tamer_pkt_buf {
     volatile bool    ready;
-    volatile int64_t pps_1s_count;
-    volatile int64_t pps_10s_count;
-    volatile int64_t pps_100s_count;
+    volatile int32_t pps_1s_error;
+    volatile bool    pps_1s_error_flag;
+    volatile int32_t pps_10s_error;
+    volatile bool    pps_10s_error_flag;
+    volatile int32_t pps_100s_error;
+    volatile bool    pps_100s_error_flag;
 };
 
 struct pkt_handler {

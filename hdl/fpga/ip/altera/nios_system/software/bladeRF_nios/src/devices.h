@@ -81,6 +81,22 @@
 /* LMS6002D SPI interface */
 #define LMS6002D_WRITE_BIT  (1 << 7)
 
+/* VCTCXO tamer register offsets */
+#   define VT_CTRL_ADDR      (0x00)
+#   define VT_STAT_ADDR      (0x01)
+#   define VT_ERR_1S_ADDR    (0x04)
+#   define VT_ERR_10S_ADDR   (0x0C)
+#   define VT_ERR_100S_ADDR  (0x14)
+
+/* VCTCXO tamer control/status bits */
+#   define VT_CTRL_RESET     (0x07)
+#   define VT_CTRL_IRQ_EN    (1<<4)
+#   define VT_CTRL_IRQ_CLR   (1<<5)
+#   define VT_CTRL_TUNE_MODE (0xC0)
+
+#   define VT_STAT_ERR_1S    (0x01)
+#   define VT_STAT_ERR_10S   (1<<1)
+#   define VT_STAT_ERR_100S  (1<<2)
 
 #else
 #   define INLINE
@@ -93,6 +109,9 @@
  * going out to the DAC.
  */
 extern uint16_t vctcxo_trim_dac_value;
+
+/* Define a cached version of the VCTCXO tamer control register */
+extern uint8_t vctcxo_tamer_ctrl_reg;
 
 /**
  * Initialize NIOS II device interfaces.
@@ -282,38 +301,6 @@ INLINE void command_uart_read_request(uint8_t *command);
 INLINE void command_uart_write_response(uint8_t *command);
 
 /**
- * Read VCTCXO Tamer registers
- *
- * @param   addr    Address, can be one of:
- *                  0x00: TCXO counts in 1 second
- *                  0x08: TCXO counts in 10 seconds
- *                  0x10: TCXO counts in 100 seconds
- *                  0x18: Reserved / No Op
- * @return  VCTCXO counts
- */
-int64_t vctcxo_tamer_read(uint8_t addr);
-
-/**
- * Write VCTCXO Tamer registers
- *
- * @param   addr    Address, can be one of:
- *                  0x00-0x10: No Op
- *                  0x18: Reserved / No Op
- *                  0x20: Control register, where bit:
- *                    0  : reset 1-second counter
- *                    1  : reset 10-second counter
- *                    2  : reset 100-second counter
- *                    3-7: Reserved
- *                  0x28: Interrupt control/status register:
- *                    0  : IRQ enable
- *                    1-3: Reserved
- *                    4  : IRQ clear
- *                    5-7: Reserved
- * @param   data    Value to write at the specified address.
- */
-void vctcxo_tamer_write(uint8_t addr, uint8_t data);
-
-/**
  * Enable interrupts from the VCTCXO Tamer module
  *
  * @param   enable  true or false
@@ -321,12 +308,54 @@ void vctcxo_tamer_write(uint8_t addr, uint8_t data);
 void vctcxo_tamer_enable_isr(bool enable);
 
 /**
+ * Clear interrupts from the VCTCXO Tamer module
+ */
+void vctcxo_tamer_clear_isr();
+
+/**
  * Reset the counters in the VCTCXO Tamer module. Setting is sticky,
  * so counters must be explicitly taken out of reset.
  *
- * @maram   reset   true or false
+ * @param   reset   true or false
  */
 void vctcxo_tamer_reset_counters( bool reset );
+
+/**
+ *  Sets the VCTCXO Tamer Tuning Mode
+ *
+ * TODO/FIXME:
+ *   CHANGE THE PARAMETER TO AN ENUM COMPATIBLE WTIH LIBBLADERF!
+ *
+ * Available modes:
+ *   DISABLED : mode = 0x00
+ *   1PPS     : mode = 0x01
+ *   10 MHZ   : mode = 0x02
+ */
+void vctcxo_tamer_set_tune_mode(uint8_t mode);
+
+/**
+ * Read VCTCXO tamer count error registers
+ *
+ * @param   addr    Address of byte 0 of error count register
+ * @return  VCTCXO  count error
+ */
+int32_t vctcxo_tamer_read_count(uint8_t addr);
+
+/**
+ * Read single VCTCXO tamer register (e.g. control/status)
+ *
+ * @param   addr    Address of register to read
+ * @return  data    Register contents
+ */
+uint8_t vctcxo_tamer_read(uint8_t addr);
+
+/**
+ * Write single VCTCXO tamer register
+ *
+ * @param   addr    Address of register to write
+ * @param   data    Value to write at the specified address
+ */
+void vctcxo_tamer_write(uint8_t addr, uint8_t data);
 
 /**
  * @return FPGA version
