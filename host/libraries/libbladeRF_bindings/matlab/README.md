@@ -35,6 +35,9 @@ directory, as well as on the various object properties contained in these files.
 | `bladeRF_VCTCXO.m`       | A submodule of `bladeRF.m` that provides access to the VCTCXO trim DAC settings.                                                                                     |
 | `bladeRF_IQCorr.m`       | A submodule of `bladeRF.m` that provides access to IQ DC offset and gain imbalance correction functionality.                                                         |
 | `bladeRF_StreamConfig.m` | An object that encapsulates bladeRF stream parameters.                                                                                                               |
+# Supported Versions #
+
+These bindings have been tested on MATLAB 2014b and 2015b. Earlier versions may be compatible, but this is not guarenteed.
 
 # License #
 
