@@ -165,7 +165,7 @@ classdef bladeRF < handle
             pdevlist = libpointer('bladerf_devinfoPtr');
             [count, ~] = calllib('libbladeRF', 'bladerf_get_device_list', pdevlist);
             if count < 0
-                error('bladeRF:devices', strcat('Error retrieving devices: ', calllib('libbladeRF', 'bladerf_strerror', rv)));
+                error('bladeRF:devices', ['Error retrieving devices: ', calllib('libbladeRF', 'bladerf_strerror', count)]);
             end
 
             if count > 0
