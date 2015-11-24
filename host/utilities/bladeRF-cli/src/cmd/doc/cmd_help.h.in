@@ -27,7 +27,7 @@
  * Any manual modifications to this file will be overwritten!
  * To edit the content of help strings, please edit interactive-help.md
  *
- * Last generated: Wed Dec  9 22:46:24 EST 2015 by jynik
+ * Last generated: Fri Dec 11 12:34:22 EST 2015 by jynik
  */
 
 #ifndef BLADERF_CLI_DOC_CMD_HELP_H__
@@ -438,6 +438,7 @@
   "        sampling External or internal sampling mode\n" \
   "      samplerate Samplerate settings\n" \
   "         trimdac VCTCXO Trim DAC settings\n" \
+  "    vctcxo_tamer Current VCTCXO tamer mode.\n" \
   "         xb_gpio Expansion board GPIO values\n" \
   "     xb_gpio_dir Expansion board GPIO direction (1=output, 0=input)\n" \
   "\n" \
@@ -683,6 +684,8 @@
   "\n" \
   "         lnagain Gain setting of the RX LNA, in dB. Values: 0, 3, 6\n" \
   "\n" \
+  "          rxvga1 Gain setting of RXVGA1, in dB. Range: [5, 30]\n" \
+  "\n" \
   "          rx_mux FPGA RX FIFO input mux mode. Options are: BASEBAND_LMS,\n" \
   "                 12BIT_COUNTER, 32BIT_COUNTER, DIGITAL_LOOPBACK\n" \
   "\n" \
@@ -698,7 +701,9 @@
   "\n" \
   "      samplerate Sample rate settings\n" \
   "\n" \
-  "         trimdac VCTCXO Trim DAC settings\n" \
+  "         trimdac VCTCXO trim DAC settings\n" \
+  "\n" \
+  "    vctcxo_tamer VCTCXO tamer mode. Options: Disabled, 1PPS, 10MHz\n" \
   "\n" \
   "         xb_gpio Expansion board GPIO values\n" \
   "\n" \

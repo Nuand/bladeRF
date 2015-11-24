@@ -621,6 +621,11 @@ T}@T{
 VCTCXO Trim DAC settings
 T}
 T{
+\f[C]vctcxo_tamer\f[]
+T}@T{
+Current VCTCXO tamer mode.
+T}
+T{
 \f[C]xb_gpio\f[]
 T}@T{
 Expansion board GPIO values
@@ -1009,6 +1014,12 @@ Gain setting of the RX LNA, in dB.
 Values: 0, 3, 6
 T}
 T{
+\f[C]rxvga1\f[]
+T}@T{
+Gain setting of RXVGA1, in dB.
+Range: [5, 30]
+T}
+T{
 \f[C]rx_mux\f[]
 T}@T{
 FPGA RX FIFO input mux mode.
@@ -1052,7 +1063,13 @@ T}
 T{
 \f[C]trimdac\f[]
 T}@T{
-VCTCXO Trim DAC settings
+VCTCXO trim DAC settings
+T}
+T{
+\f[C]vctcxo_tamer\f[]
+T}@T{
+VCTCXO tamer mode.
+Options: Disabled, 1PPS, 10MHz
 T}
 T{
 \f[C]xb_gpio\f[]
