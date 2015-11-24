@@ -39,6 +39,19 @@ static inline bool perform_read(uint8_t id, uint8_t addr, uint8_t *data)
             *data = si5338_read(addr);
             break;
 
+        case NIOS_PKT_8x8_TARGET_VCTCXO_TAMER:
+            switch (addr) {
+                /* Using 0xff for mode selection operation so that we can
+                 * reserve lower values for register-level access */
+                case 0xff:
+                    *data = (uint8_t) vctcxo_tamer_get_tune_mode();
+                    break;
+
+                default:
+                    *data = 0x00;
+            }
+            break;
+
         /* Add user customizations here
 
         case NIOS_PKT_8x8_TARGET_USR1:
@@ -65,6 +78,20 @@ static inline bool perform_write(uint8_t id, uint8_t addr, uint8_t data)
 
         case NIOS_PKT_8x8_TARGET_SI5338:
             si5338_write(addr, data);
+            break;
+
+        case NIOS_PKT_8x8_TARGET_VCTCXO_TAMER:
+            switch (addr) {
+                /* Using 0xff for mode selection operation so that we can
+                 * reserve lower values for register-level access */
+                case 0xff:
+                    vctcxo_tamer_set_tune_mode((bladerf_vctcxo_tamer_mode) data);
+                    break;
+
+                default:
+                    /* Throw away data for unused subaddress values */
+                    break;
+            }
             break;
 
         /* Add user customizations here
