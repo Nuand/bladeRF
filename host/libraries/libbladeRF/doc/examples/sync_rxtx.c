@@ -41,6 +41,7 @@ bool do_work(int16_t *rx, unsigned int rx_len,
 
     assert(tx_len == rx_len);
     memcpy(tx, rx, rx_len * 2 * sizeof(int16_t));
+    *have_tx_data = true;
 
     return (++call_no >= 5000);
 }
