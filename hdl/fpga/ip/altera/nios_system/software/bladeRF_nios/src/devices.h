@@ -329,6 +329,13 @@ void vctcxo_tamer_reset_counters( bool reset );
 void vctcxo_tamer_set_tune_mode(bladerf_vctcxo_tamer_mode mode);
 
 /**
+ * Gets the current VCTCXO Tamer mode
+ *
+ * @return Current mode or BLADERF_VCTCXO_TAMER_MODE_INVALID on failure.
+ */
+bladerf_vctcxo_tamer_mode vctcxo_tamer_get_tune_mode();
+
+/**
  * Read VCTCXO tamer count error registers
  *
  * @param   addr    Address of byte 0 of error count register

@@ -158,6 +158,22 @@ void vctcxo_tamer_set_tune_mode(bladerf_vctcxo_tamer_mode mode) {
     return;
 }
 
+bladerf_vctcxo_tamer_mode vctcxo_tamer_get_tune_mode()
+{
+    uint8_t tmp = vctcxo_tamer_read(VT_CTRL_ADDR);
+    tmp = (tmp & VT_CTRL_TUNE_MODE) >> 6;
+
+    switch (tmp) {
+        case BLADERF_VCTCXO_TAMER_DISABLED:
+        case BLADERF_VCTCXO_TAMER_1_PPS:
+        case BLADERF_VCTCXO_TAMER_10_MHZ:
+            return (bladerf_vctcxo_tamer_mode) tmp;
+
+        default:
+            return BLADERF_VCTCXO_TAMER_INVALID;
+    }
+}
+
 int32_t vctcxo_tamer_read_count(uint8_t addr) {
     uint32_t base = VCTCXO_TAMER_0_BASE;
     uint8_t offset = addr;
