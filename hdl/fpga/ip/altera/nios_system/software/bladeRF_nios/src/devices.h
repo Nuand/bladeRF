@@ -89,7 +89,7 @@
 #   define VT_ERR_100S_ADDR  (0x14)
 
 /* VCTCXO tamer control/status bits */
-#   define VT_CTRL_RESET     (0x07)
+#   define VT_CTRL_RESET     (0x01)
 #   define VT_CTRL_IRQ_EN    (1<<4)
 #   define VT_CTRL_IRQ_CLR   (1<<5)
 #   define VT_CTRL_TUNE_MODE (0xC0)
