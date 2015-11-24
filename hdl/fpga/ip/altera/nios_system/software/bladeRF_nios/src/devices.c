@@ -117,21 +117,23 @@ void vctcxo_tamer_reset_counters(bool reset) {
     return;
 }
 
-/* Sets the VCTCXO Tamer Tuning Mode
- *
- * TODO/FIXME:
- *   CHANGE THE PARAMETER TO AN ENUM COMPATIBLE WTIH LIBBLADERF!
- *
- * Available modes:
- *   DISABLED : mode = 0x00
- *   1PPS     : mode = 0x01
- *   10 MHZ   : mode = 0x02
- */
-void vctcxo_tamer_set_tune_mode(uint8_t mode) {
+void vctcxo_tamer_set_tune_mode(bladerf_vctcxo_tamer_mode mode) {
+
+    switch (mode) {
+        case BLADERF_VCTCXO_TAMER_DISABLED:
+        case BLADERF_VCTCXO_TAMER_1_PPS:
+        case BLADERF_VCTCXO_TAMER_10_MHZ:
+            /* Valid entry */
+            break;
+
+        default:
+            /* Erroneous value */
+            return;
+    }
 
     /* Set tuning mode */
     vctcxo_tamer_ctrl_reg &= ~VT_CTRL_TUNE_MODE;
-    vctcxo_tamer_ctrl_reg |= (mode << 6);
+    vctcxo_tamer_ctrl_reg |= (((uint8_t) mode) << 6);
     vctcxo_tamer_write(VT_CTRL_ADDR, vctcxo_tamer_ctrl_reg);
 
     /* Reset the counters */
