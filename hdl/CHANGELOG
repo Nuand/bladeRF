@@ -6,6 +6,13 @@ hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
 --------------------------------
+v0.5.0 (2015-11-23)
+--------------------------------
+ * Added support for 1 PPS and 10 MHz input to tame VCTCXO
+ * Added FIFO between TX and RX for digital loopback mode for clock
+   synchronization and additional sample buffering.
+
+--------------------------------
 v0.4.1 (2015-09-01)
 --------------------------------
  * Fixed bug in XB GPIO masked writes introduced in v0.4.0
