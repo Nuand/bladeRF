@@ -1853,6 +1853,34 @@ int bladerf_dac_read(struct bladerf *dev, uint16_t *val)
 }
 
 /*------------------------------------------------------------------------------
+ * VCTCXO tamer control
+ *----------------------------------------------------------------------------*/
+
+int bladerf_set_vctcxo_tamer_mode(struct bladerf *dev,
+                                  bladerf_vctcxo_tamer_mode mode)
+{
+    int status;
+    MUTEX_LOCK(&dev->ctrl_lock);
+
+    status = dev->fn->set_vctcxo_tamer_mode(dev, mode);
+
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+    return status;
+}
+
+int bladerf_get_vctcxo_tamer_mode(struct bladerf *dev,
+                                  bladerf_vctcxo_tamer_mode *mode)
+{
+    int status;
+    MUTEX_LOCK(&dev->ctrl_lock);
+
+    status = dev->fn->get_vctcxo_tamer_mode(dev, mode);
+
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+    return status;
+}
+
+/*------------------------------------------------------------------------------
  * XB SPI register write
  *----------------------------------------------------------------------------*/
 

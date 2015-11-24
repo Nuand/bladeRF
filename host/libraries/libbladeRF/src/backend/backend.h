@@ -143,6 +143,12 @@ struct backend_fns {
     int (*vctcxo_dac_write)(struct bladerf *dev, uint16_t value);
     int (*vctcxo_dac_read)(struct bladerf *dev, uint16_t *value);
 
+    int (*set_vctcxo_tamer_mode)(struct bladerf *dev,
+                                 bladerf_vctcxo_tamer_mode mode);
+
+    int (*get_vctcxo_tamer_mode)(struct bladerf *dev,
+                                 bladerf_vctcxo_tamer_mode *mode);
+
     /* Expansion board SPI */
     int (*xb_spi)(struct bladerf *dev, uint32_t value);
 

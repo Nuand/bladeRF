@@ -464,6 +464,65 @@ int nios_vctcxo_trim_dac_read(struct bladerf *dev, uint16_t *value)
     return status;
 }
 
+int nios_set_vctcxo_tamer_mode(struct bladerf *dev,
+                               bladerf_vctcxo_tamer_mode mode)
+{
+    int status;
+
+    if (!have_cap(dev, BLADERF_CAP_VCTCXO_TAMING_MODE)) {
+        log_debug("FPGA %s does not support VCTCXO taming via an input source\n",
+                  dev->fpga_version.describe);
+
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+
+    status = nios_8x8_write(dev,
+                            NIOS_PKT_8x8_TARGET_VCTCXO_TAMER, 0xff,
+                            (uint8_t) mode);
+
+    if (status == 0) {
+        log_verbose("%s: Wrote mode=0x%02x\n", __FUNCTION__, mode);
+    }
+
+    return status;
+}
+
+int nios_get_vctcxo_tamer_mode(struct bladerf *dev,
+                               bladerf_vctcxo_tamer_mode *mode)
+{
+    int status;
+    uint8_t tmp;
+
+    *mode = BLADERF_VCTCXO_TAMER_INVALID;
+
+    if (!have_cap(dev, BLADERF_CAP_VCTCXO_TAMING_MODE)) {
+        log_debug("FPGA %s does not support VCTCXO taming via an input source\n",
+                  dev->fpga_version.describe);
+
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    status = nios_8x8_read(dev, NIOS_PKT_8x8_TARGET_VCTCXO_TAMER, 0xff, &tmp);
+    if (status == 0) {
+        log_verbose("%s: Read mode=0x%02x\n", __FUNCTION__, tmp);
+
+        switch ((bladerf_vctcxo_tamer_mode) tmp) {
+            case BLADERF_VCTCXO_TAMER_DISABLED:
+            case BLADERF_VCTCXO_TAMER_1_PPS:
+            case BLADERF_VCTCXO_TAMER_10_MHZ:
+                *mode = (bladerf_vctcxo_tamer_mode) tmp;
+                break;
+
+            default:
+                status = BLADERF_ERR_UNEXPECTED;
+        }
+    }
+
+    return status;
+}
+
+
 int nios_get_iq_gain_correction(struct bladerf *dev, bladerf_module module,
                                 int16_t *value)
 {

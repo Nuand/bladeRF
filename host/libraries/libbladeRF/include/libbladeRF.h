@@ -1491,6 +1491,32 @@ int CALL_CONV bladerf_xb200_get_path(struct bladerf *dev,
                                      bladerf_module module,
                                      bladerf_xb200_path *path);
 
+/**
+ * Set the VCTCXO tamer mode.
+ *
+ * @param       dev         Device handle
+ * @param       mode        VCTCXO taming mode
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_vctcxo_tamer_mode(struct bladerf *dev,
+                                             bladerf_vctcxo_tamer_mode mode);
+
+/**
+ * Get the current VCTCXO tamer mode
+ *
+ * @param[in]       dev         Device handle
+ * @param[out]      mode        Current VCTCXO taming mode or
+ *                              BLADERF_VCTCXO_TAMER_INVALID if a failure
+ *                              occurs.
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_vctcxo_tamer_mode(struct bladerf *dev,
+                                             bladerf_vctcxo_tamer_mode *mode);
+
 /** @} (End of FN_CTRL) */
 
 /**

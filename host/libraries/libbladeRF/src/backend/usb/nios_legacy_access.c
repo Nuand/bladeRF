@@ -392,6 +392,21 @@ int nios_legacy_vctcxo_trim_dac_write(struct bladerf *dev, uint16_t value)
     return status;
 }
 
+int nios_legacy_set_vctcxo_tamer_mode(struct bladerf *dev,
+                                      bladerf_vctcxo_tamer_mode mode)
+{
+    log_debug("This operation is not supported by the legacy NIOS packet format\n");
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
+int nios_legacy_get_vctcxo_tamer_mode(struct bladerf *dev,
+                                      bladerf_vctcxo_tamer_mode *mode)
+{
+    log_debug("This operation is not supported by the legacy NIOS packet format\n");
+    *mode = BLADERF_VCTCXO_TAMER_INVALID;
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
 static int get_iq_correction(struct bladerf *dev, uint8_t addr, int16_t *value)
 {
     int i;

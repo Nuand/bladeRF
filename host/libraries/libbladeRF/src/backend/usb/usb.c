@@ -1058,6 +1058,23 @@ static int usb_load_fw_from_bootloader(bladerf_backend backend,
     return status;
 }
 
+/* Default handlers for operations unsupported by the NIOS II legacy packet
+ * format */
+static int set_vctcxo_tamer_mode_unsupported(struct bladerf *dev,
+                                             bladerf_vctcxo_tamer_mode mode)
+{
+    log_debug("Operation not supported with legacy NIOS packet format.\n");
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
+static int get_vctcxo_tamer_mode_unsupported(struct bladerf *dev,
+                                             bladerf_vctcxo_tamer_mode *mode)
+{
+    *mode = BLADERF_VCTCXO_TAMER_INVALID;
+    log_debug("Operation not supported with legacy NIOS packet format.\n");
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
 /* USB backend that used legacy format for communicating with NIOS II */
 const struct backend_fns backend_fns_usb_legacy = {
     FIELD_INIT(.matches, usb_matches),
@@ -1104,6 +1121,9 @@ const struct backend_fns backend_fns_usb_legacy = {
 
     FIELD_INIT(.vctcxo_dac_write, nios_legacy_vctcxo_trim_dac_write),
     FIELD_INIT(.vctcxo_dac_read, nios_vctcxo_trim_dac_read),
+
+    FIELD_INIT(.set_vctcxo_tamer_mode, set_vctcxo_tamer_mode_unsupported),
+    FIELD_INIT(.get_vctcxo_tamer_mode, get_vctcxo_tamer_mode_unsupported),
 
     FIELD_INIT(.xb_spi, nios_legacy_xb200_synth_write),
 
@@ -1168,6 +1188,9 @@ const struct backend_fns backend_fns_usb = {
 
     FIELD_INIT(.vctcxo_dac_write, nios_vctcxo_trim_dac_write),
     FIELD_INIT(.vctcxo_dac_read, nios_vctcxo_trim_dac_read),
+
+    FIELD_INIT(.set_vctcxo_tamer_mode, nios_set_vctcxo_tamer_mode),
+    FIELD_INIT(.get_vctcxo_tamer_mode, nios_get_vctcxo_tamer_mode),
 
     FIELD_INIT(.xb_spi, nios_xb200_synth_write),
 

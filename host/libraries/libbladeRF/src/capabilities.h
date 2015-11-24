@@ -90,6 +90,12 @@
 #define BLADERF_CAP_MASKED_XBIO_WRITE   (1 << 7)
 
 /**
+ * FPGA v0.5.0 introduces the ability to tame the VCTCXO via a 1 pps or 10 MHz
+ * input source on the mini expansion header.
+ */
+#define BLADERF_CAP_VCTCXO_TAMING_MODE  (1 << 8)
+
+/**
  * Firmware 1.7.1 introduced firmware-based loopback
  */
 #define BLADERF_CAP_FW_LOOPBACK         (((uint64_t) 1) << 32)

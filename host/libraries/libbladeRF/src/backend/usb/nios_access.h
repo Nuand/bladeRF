@@ -147,6 +147,29 @@ int nios_vctcxo_trim_dac_write(struct bladerf *dev, uint16_t value);
 int nios_vctcxo_trim_dac_read(struct bladerf *dev, uint16_t *value);
 
 /**
+ * Write VCTCXO tamer mode selection
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   mode        Tamer mode to use, or BLADERF_VCTCXO_TAMER_DISABLED
+ *                          to disable the tamer.
+ *
+ * @return 0 on success, BLADERF_ERR_* code on error.
+ */
+int nios_set_vctcxo_tamer_mode(struct bladerf *dev,
+                               bladerf_vctcxo_tamer_mode mode);
+
+/**
+ * Read the current VCTCXO mode selection
+ *
+ * @param[in]   dev         Device handle
+ * @param[out]  mode        Current tamer mode in use.
+ *
+ * @return 0 on success, BLADERF_ERR_* code on error.
+ */
+int nios_get_vctcxo_tamer_mode(struct bladerf *dev,
+                               bladerf_vctcxo_tamer_mode *mode);
+
+/**
  * Read a IQ gain correction value
  *
  * @param[in]   dev         Device handle

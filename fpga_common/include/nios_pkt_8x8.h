@@ -192,5 +192,4 @@ static inline void nios_pkt_8x8_resp_unpack(const uint8_t *buf, uint8_t *target,
     }
 }
 
-
 #endif
