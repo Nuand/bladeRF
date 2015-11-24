@@ -356,9 +356,9 @@ begin
                 -- PPS Error Status
                 when PPS_ERR_STATUS =>
                     mm_rd_data(7 downto 3) <= (others => '0');
-                    mm_rd_data(2)          <= pps_1s.error_v;
+                    mm_rd_data(2)          <= pps_100s.error_v;
                     mm_rd_data(1)          <= pps_10s.error_v;
-                    mm_rd_data(0)          <= pps_100s.error_v;
+                    mm_rd_data(0)          <= pps_1s.error_v;
 
                 when others =>
                     null;
