@@ -108,58 +108,74 @@ architecture arch of vctcxo_tamer is
         error   : signed(31 downto 0);
         error_v : std_logic;
         count_v : std_logic;
-        reset   : std_logic;
     end record;
 
     signal pps_1s   : count_t := ( target  => x"0000_0000_0249_F000", --384e5
                                    count   => (others => '0'),
                                    error   => (others => '0'),
                                    error_v => '0',
-                                   count_v => '0',
-                                   reset   => '1' );
+                                   count_v => '0' );
 
     signal pps_10s  : count_t := ( target  => x"0000_0000_16E3_6000", -- 384e6
                                    count   => (others => '0'),
                                    error   => (others => '0'),
                                    error_v => '0',
-                                   count_v => '0',
-                                   reset   => '1' );
+                                   count_v => '0' );
 
     signal pps_100s : count_t := ( target  => x"0000_0000_E4E1_C000", -- 384e7
                                    count   => (others => '0'),
                                    error   => (others => '0'),
                                    error_v => '0',
-                                   count_v => '0',
-                                   reset   => '1' );
+                                   count_v => '0' );
 
-    signal ref_1pps         : std_logic   := '0';
-    signal ref_10mhz_pps    : std_logic   := '0';
-    signal ref_1pps_sync    : std_logic   := '0';
-    signal ref_1pps_pulse   : std_logic   := '0';
-    signal pps_irq_enable   : std_logic   := '0';
-    signal pps_irq_clear    : std_logic   := '0';
-    signal tune_mode        : tune_mode_t := DISABLED;
+    -- Asynchronous
+    signal ref_1pps             : std_logic   := '0';
+
+    -- Tune_ref-synchronous signals
+    signal tune_ref_reset       : std_logic   := '1';
+    signal ref_10mhz_pps        : std_logic   := '0';
+
+    -- VCTCXO-synchronous signals
+    signal ref_1pps_sync        : std_logic   := '0';
+    signal ref_1pps_pulse       : std_logic   := '0';
+    signal vctcxo_reset         : std_logic   := '1';
+    signal tune_mode_update_req : std_logic   := '0';
+    signal tune_mode_update_ack : std_logic   := '0';
+    signal tune_mode            : tune_mode_t := DISABLED;
+    signal tune_mode_hs         : tune_mode_t := DISABLED;
+
+    -- System-synchronous signals
+    signal mm_control_reg       : std_logic_vector(7 downto 0) := x"21";
+    alias  mm_tune_mode         : std_logic_vector(1 downto 0) is mm_control_reg(7 downto 6);
+    alias  mm_pps_irq_clear     : std_logic                    is mm_control_reg(5);
+    alias  mm_pps_irq_enable    : std_logic                    is mm_control_reg(4);
+    alias  mm_vctcxo_reset      : std_logic                    is mm_control_reg(0);
 
 begin
 
     -- If the input reference is 10 MHz, use it as a clock to increment a
     -- counter that will generate a single pulse every second.
-    ref_10mhz_count_proc : process( tune_ref, mm_reset )
+    ref_10mhz_count_proc : process( tune_ref, tune_ref_reset )
         constant REF_10MHZ_RESET_VAL : natural range 0 to 2**24-1 := 10e6;
         variable ref_10mhz_count     : natural range 0 to 2**24-1 := 10e6;
+        variable v_tune_mode         : tune_mode_t := DISABLED;
     begin
-        if( mm_reset = '1' ) then
-            ref_10mhz_pps <= '0';
+        if( tune_ref_reset = '1' ) then
+            ref_10mhz_pps   <= '0';
             ref_10mhz_count := REF_10MHZ_RESET_VAL;
+            v_tune_mode     := DISABLED;
         elsif( rising_edge(tune_ref) ) then
             ref_10mhz_pps <= '0';
-            if( tune_mode = \10MHZ\ ) then
+            if( v_tune_mode /= tune_mode ) then
+                ref_10mhz_count := REF_10MHZ_RESET_VAL;
+            elsif( tune_mode = \10MHZ\ ) then
                 ref_10mhz_count := ref_10mhz_count - 1;
                 if( ref_10mhz_count = 0 ) then
                     ref_10mhz_pps   <= '1';
                     ref_10mhz_count := REF_10MHZ_RESET_VAL;
                 end if;
             end if;
+            v_tune_mode := tune_mode;
         end if;
     end process;
 
@@ -173,7 +189,7 @@ begin
         generic map (
             RESET_LEVEL =>  '0'
         ) port map (
-            reset       =>  mm_reset,
+            reset       =>  vctcxo_reset,
             clock       =>  vctcxo_clock,
             async       =>  ref_1pps,
             sync        =>  ref_1pps_sync
@@ -187,7 +203,7 @@ begin
         )
         port map (
             clock           => vctcxo_clock,
-            reset           => mm_reset,
+            reset           => vctcxo_reset,
             sync_in         => ref_1pps_sync,
             pulse_out       => ref_1pps_pulse
         );
@@ -199,12 +215,13 @@ begin
             PPS_PULSES      => 1
         )
         port map (
-            clock           => mm_clock,
-            reset           => pps_1s.reset,
-            count           => pps_1s.count,
-            count_strobe    => pps_1s.count_v,
+            sys_clock       => mm_clock,
+            sys_reset       => mm_reset or mm_vctcxo_reset,
+            sys_count       => pps_1s.count,
+            sys_count_v     => pps_1s.count_v,
             vctcxo_clock    => vctcxo_clock,
-            pps             => ref_1pps_pulse
+            vctcxo_reset    => vctcxo_reset,
+            vctcxo_pps      => ref_1pps_pulse
         );
 
     -- Count number of VCTCXO clock cycles in the last 10 seconds
@@ -214,12 +231,13 @@ begin
             PPS_PULSES      => 10
         )
         port map (
-            clock           => mm_clock,
-            reset           => pps_10s.reset,
-            count           => pps_10s.count,
-            count_strobe    => pps_10s.count_v,
+            sys_clock       => mm_clock,
+            sys_reset       => mm_reset or mm_vctcxo_reset,
+            sys_count       => pps_10s.count,
+            sys_count_v     => pps_10s.count_v,
             vctcxo_clock    => vctcxo_clock,
-            pps             => ref_1pps_pulse
+            vctcxo_reset    => vctcxo_reset,
+            vctcxo_pps      => ref_1pps_pulse
         );
 
     -- Count number of VCTCXO clock cycles in the last 100 seconds
@@ -229,12 +247,13 @@ begin
             PPS_PULSES      => 100
         )
         port map (
-            clock           => mm_clock,
-            reset           => pps_100s.reset,
-            count           => pps_100s.count,
-            count_strobe    => pps_100s.count_v,
+            sys_clock       => mm_clock,
+            sys_reset       => mm_reset or mm_vctcxo_reset,
+            sys_count       => pps_100s.count,
+            sys_count_v     => pps_100s.count_v,
             vctcxo_clock    => vctcxo_clock,
-            pps             => ref_1pps_pulse
+            vctcxo_reset    => vctcxo_reset,
+            vctcxo_pps      => ref_1pps_pulse
         );
 
     -- Interrupt Request
@@ -245,7 +264,7 @@ begin
     begin
         if( rising_edge(mm_clock) ) then
 
-            if( (pps_1s.count_v = '1') and (pps_irq_enable = '1') ) then
+            if( (pps_1s.count_v = '1') and (mm_pps_irq_enable = '1') ) then
                 tmp_1s_err   := resize( (pps_1s.target - pps_1s.count), 32 );
                 pps_1s.error <= tmp_1s_err;
                 if( abs(tmp_1s_err) > PPS_1S_ERROR_TOL ) then
@@ -254,7 +273,7 @@ begin
                 end if;
             end if;
 
-            if( (pps_10s.count_v = '1') and (pps_irq_enable = '1') ) then
+            if( (pps_10s.count_v = '1') and (mm_pps_irq_enable = '1') ) then
                 tmp_10s_err   := resize( (pps_10s.target - pps_10s.count), 32 );
                 pps_10s.error <= tmp_10s_err;
                 if( abs(tmp_10s_err) > PPS_10S_ERROR_TOL ) then
@@ -263,7 +282,7 @@ begin
                 end if;
             end if;
 
-            if( (pps_100s.count_v = '1') and (pps_irq_enable = '1') ) then
+            if( (pps_100s.count_v = '1') and (mm_pps_irq_enable = '1') ) then
                 tmp_100s_err   := resize( (pps_100s.target - pps_100s.count), 32 );
                 pps_100s.error <= tmp_100s_err;
                 if( abs(tmp_100s_err) > PPS_100S_ERROR_TOL ) then
@@ -272,7 +291,7 @@ begin
                 end if;
             end if;
 
-            if( pps_irq_clear = '1' ) then
+            if( mm_pps_irq_clear = '1' ) then
                 -- Don't need to clear out the error count
                 -- because we are invalidating it here.
                 pps_1s.error_v   <= '0';
@@ -283,7 +302,6 @@ begin
 
         end if;
     end process;
-
 
     -- Avalon-MM Read Process
     mm_read_proc : process( mm_clock )
@@ -353,27 +371,72 @@ begin
     mm_write_proc : process( mm_clock )
     begin
         if( rising_edge(mm_clock) ) then
-
-            pps_irq_clear <= '0';
-
+            mm_pps_irq_clear <= '0';
             if( mm_wr_req = '1' ) then
                 case to_integer(unsigned(mm_addr)) is
-
                     when CONTROL_ADDR =>
-                        tune_mode      <= unpack(mm_wr_data(7 downto 6));
-                        pps_irq_clear  <= mm_wr_data(5);
-                        pps_irq_enable <= mm_wr_data(4);
-                        -- Reserved    <= mm_wr_data(3);
-                        pps_100s.reset <= mm_wr_data(2);
-                        pps_10s.reset  <= mm_wr_data(1);
-                        pps_1s.reset   <= mm_wr_data(0);
-
+                        mm_control_reg <= mm_wr_data;
                     when others =>
                         null;
-
                 end case;
             end if;
         end if;
     end process;
+
+    -- Asynchronous reset, synchronous deassertion of reset
+    U_reset_sync_0 : entity work.reset_synchronizer
+        generic map (
+            INPUT_LEVEL     => '1',
+            OUTPUT_LEVEL    => '1'
+        )
+        port map (
+            clock           => vctcxo_clock,
+            async           => mm_vctcxo_reset or mm_reset,
+            sync            => vctcxo_reset
+        );
+
+    -- Asynchronous reset, synchronous deassertion of reset
+    U_reset_sync_1 : entity work.reset_synchronizer
+        generic map (
+            INPUT_LEVEL     => '1',
+            OUTPUT_LEVEL    => '1'
+        )
+        port map (
+            clock           => tune_ref,
+            async           => mm_vctcxo_reset or mm_reset,
+            sync            => tune_ref_reset
+        );
+
+    -- Tune Mode Updater: Keep requesting tune_mode updates
+    tune_mode_updater_proc : process( tune_ref, tune_ref_reset )
+    begin
+        if( tune_ref_reset = '1' ) then
+            tune_mode_update_req <= '0';
+            tune_mode            <= DISABLED;
+        elsif( rising_edge(tune_ref) ) then
+            if( tune_mode_update_ack = '1' ) then
+                tune_mode_update_req <= '0';
+                tune_mode            <= tune_mode_hs;
+            else
+                tune_mode_update_req <= '1';
+            end if;
+        end if;
+    end process;
+
+    -- Get the tune mode into the tune_ref clock domain
+    U_handshake_tune_mode : entity work.handshake
+        generic map (
+            DATA_WIDTH        => 2
+        )
+        port map (
+            source_reset      => mm_reset or mm_vctcxo_reset,
+            source_clock      => mm_clock,
+            source_data       => mm_tune_mode,
+            dest_reset        => tune_ref_reset,
+            dest_clock        => tune_ref,
+            unpack(dest_data) => tune_mode_hs,
+            dest_req          => tune_mode_update_req,
+            dest_ack          => tune_mode_update_ack
+        );
 
 end architecture;

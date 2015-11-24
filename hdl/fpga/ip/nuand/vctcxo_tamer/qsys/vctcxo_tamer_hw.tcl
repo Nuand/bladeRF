@@ -45,6 +45,7 @@ add_fileset_file pps_counter.vhd VHDL PATH ../vhdl/pps_counter.vhd
 add_fileset_file synchronizer.vhd VHDL PATH ../../synthesis/synchronizer.vhd
 add_fileset_file handshake.vhd VHDL PATH ../../synthesis/handshake.vhd
 add_fileset_file pulse_gen.vhd VHDL PATH ../../synthesis/pulse_gen.vhd
+add_fileset_file reset_synchronizer.vhd VHDL PATH ../../synthesis/reset_synchronizer.vhd
 
 
 # 

@@ -7,6 +7,7 @@ vlib ${vcom_lib}
 vcom {*}$vcom_opts -work ${vcom_lib} ../../synthesis/synchronizer.vhd
 vcom {*}$vcom_opts -work ${vcom_lib} ../../synthesis/handshake.vhd
 vcom {*}$vcom_opts -work ${vcom_lib} ../../synthesis/pulse_gen.vhd
+vcom {*}$vcom_opts -work ${vcom_lib} ../../synthesis/reset_synchronizer.vhd
 
 # UUT
 vcom {*}$vcom_opts -work ${vcom_lib} ../vhdl/pps_counter.vhd

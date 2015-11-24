@@ -14,19 +14,20 @@ library ieee;
 -- -----------------------------------------------------------------------------
 entity pps_counter is
     generic(
-        COUNT_WIDTH     : positive := 64;
-        PPS_PULSES      : positive range 1 to 1023
+        COUNT_WIDTH  : positive := 64;
+        PPS_PULSES   : positive range 1 to 1023
     );
     port(
         -- System-synchronous signals
-        clock           : in  std_logic;
-        reset           : in  std_logic;
-        count           : out signed(COUNT_WIDTH-1 downto 0);
-        count_strobe    : out std_logic;
+        sys_clock    : in  std_logic;
+        sys_reset    : in  std_logic;
+        sys_count    : out signed(COUNT_WIDTH-1 downto 0);
+        sys_count_v  : out std_logic;
 
         -- Measurement signals
-        vctcxo_clock    : in  std_logic;
-        pps             : in  std_logic
+        vctcxo_clock : in  std_logic;
+        vctcxo_reset : in  std_logic;
+        vctcxo_pps   : in  std_logic
     );
 end entity;
 
@@ -57,9 +58,13 @@ architecture arch of pps_counter is
     signal current            : state_t;
     signal future             : state_t;
 
-    signal counter_reset      : std_logic := '1';
-    signal handshake_ack      : std_logic := '0';
-    signal count_strobe_pulse : std_logic := '0';
+    -- System clock domain
+    signal sys_hs_req         : std_logic := '0';
+    signal sys_hs_ack         : std_logic := '0';
+
+    -- VCTCXO clock domain
+    signal vctcxo_reset_hold  : std_logic := '1';
+    signal vctcxo_hs_ack      : std_logic := '0';
 
 begin
 
@@ -69,27 +74,27 @@ begin
     -- A retune takes about 800 us for a full swing transition. Using the VCTCXO
     -- clock here because it's slower (easier to meet timing, fewer counter
     -- bits), and the change in precision during a retune doesn't matter here.
-    reset_proc : process( vctcxo_clock, reset )
+    reset_proc : process( vctcxo_clock, vctcxo_reset )
         -- Number of VCTCXO clock cycles before releasing the counter reset.
         -- A 15-bit counter starting at 0x7FFF will take ~850 us at 38.4 MHz.
         variable rst_cnt_v : unsigned(14 downto 0) := (others => '1');
     begin
-        if( reset = '1' ) then
-            rst_cnt_v     := (others => '1');
-            counter_reset <= '1';
+        if( vctcxo_reset = '1' ) then
+            rst_cnt_v := (others => '1');
+            vctcxo_reset_hold <= '1';
         elsif( rising_edge( vctcxo_clock ) ) then
             if( rst_cnt_v /= 0 ) then
                 rst_cnt_v := rst_cnt_v - 1;
-                counter_reset <= '1';
+                vctcxo_reset_hold <= '1';
             else
-                counter_reset <= '0';
+                vctcxo_reset_hold <= '0';
             end if;
         end if;
     end process;
 
-    sync_proc : process( vctcxo_clock, counter_reset )
+    sync_proc : process( vctcxo_clock, vctcxo_reset_hold )
     begin
-        if( counter_reset = '1' ) then
+        if( vctcxo_reset_hold = '1' ) then
             current <= reset_value;
         elsif( rising_edge(vctcxo_clock) ) then
             current <= future;
@@ -107,11 +112,11 @@ begin
             when IDLE =>
                 future.handshake_d <= (others => '0');
                 future.pps_count   <= 0;
-                if( pps = '1' ) then
+                if( vctcxo_pps = '1' ) then
                     future.state <= INCREMENT;
                 end if;
             when INCREMENT =>
-                if( pps = '1' ) then
+                if( vctcxo_pps = '1' ) then
                     future.pps_count <= current.pps_count + 1;
                 end if;
                 if( current.pps_count < PPS_PULSES ) then
@@ -122,40 +127,61 @@ begin
                 end if;
             when HANDSHAKE_REQ =>
                 future.handshake_dv <= '1';
-                if( handshake_ack = '1' ) then
+                if( vctcxo_hs_ack = '1' ) then
                     future.handshake_dv <= '0';
                     future.state        <= IDLE;
                 end if;
         end case;
     end process;
 
+    -- Bring the handshake ack into VCTCXO clock domain
+    U_sync_hs_ack : entity work.synchronizer
+        generic map (
+            RESET_LEVEL =>  '0'
+        ) port map (
+            reset       =>  vctcxo_reset,
+            clock       =>  vctcxo_clock,
+            async       =>  sys_hs_ack,
+            sync        =>  vctcxo_hs_ack
+        );
+
+    -- Bring the handshake req into System clock domain
+    U_sync_hs_req : entity work.synchronizer
+        generic map (
+            RESET_LEVEL =>  '0'
+        ) port map (
+            reset       =>  sys_reset,
+            clock       =>  sys_clock,
+            async       =>  current.handshake_dv,
+            sync        =>  sys_hs_req
+        );
+
     -- Use handshaking to get the clock count value into the system clock domain
     U_handshake : entity work.handshake
         generic map (
             DATA_WIDTH          =>  COUNT_WIDTH
         ) port map (
-            source_reset        =>  counter_reset,
+            source_reset        =>  vctcxo_reset_hold,
             source_clock        =>  vctcxo_clock,
             source_data         =>  std_logic_vector(current.handshake_d),
-
-            dest_reset          =>  reset,
-            dest_clock          =>  clock,
-            signed(dest_data)   =>  count,
-            dest_req            =>  current.handshake_dv,
-            dest_ack            =>  handshake_ack
+            dest_reset          =>  sys_reset,
+            dest_clock          =>  sys_clock,
+            signed(dest_data)   =>  sys_count,
+            dest_req            =>  sys_hs_req,
+            dest_ack            =>  sys_hs_ack
         );
 
     -- Generate a single-cycle 'count valid' pulse
-    U_pulse_gen_count_strobe : entity work.pulse_gen
+    U_pulse_gen_count_v : entity work.pulse_gen
         generic map (
             EDGE_RISE       => '1',
             EDGE_FALL       => '0'
         )
         port map (
-            clock           => clock,
-            reset           => reset,
-            sync_in         => handshake_ack,
-            pulse_out       => count_strobe
+            clock           => sys_clock,
+            reset           => sys_reset,
+            sync_in         => sys_hs_ack,
+            pulse_out       => sys_count_v
         );
 
 end architecture;
