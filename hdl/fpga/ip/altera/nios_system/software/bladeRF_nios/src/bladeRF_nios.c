@@ -97,7 +97,7 @@ typedef struct point {
 
 typedef struct line {
     point_t  point[2];
-    uint32_t slope;
+    int32_t  slope;
     uint16_t y_intercept; // in DAC counts
 } line_t;
 
