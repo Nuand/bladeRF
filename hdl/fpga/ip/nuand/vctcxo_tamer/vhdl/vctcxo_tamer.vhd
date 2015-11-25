@@ -156,23 +156,26 @@ begin
     -- If the input reference is 10 MHz, use it as a clock to increment a
     -- counter that will generate a single pulse every second.
     ref_10mhz_count_proc : process( tune_ref, tune_ref_reset )
-        constant REF_10MHZ_RESET_VAL : natural range 0 to 2**24-1 := 10e6;
-        variable ref_10mhz_count     : natural range 0 to 2**24-1 := 10e6;
-        variable v_tune_mode         : tune_mode_t := DISABLED;
+        constant REF_10MHZ_RESET_VAL      : natural range 0 to 2**24-1 := 10e6;
+        constant REF_10MHZ_PULSE_DURATION : natural range 0 to 2**24-1 := 1e3;
+        variable v_10mhz_count : natural range 0 to 2**24-1 := 10e6;
+        variable v_tune_mode   : tune_mode_t                := DISABLED;
     begin
         if( tune_ref_reset = '1' ) then
-            ref_10mhz_pps   <= '0';
-            ref_10mhz_count := REF_10MHZ_RESET_VAL;
-            v_tune_mode     := DISABLED;
+            ref_10mhz_pps <= '0';
+            v_10mhz_count := REF_10MHZ_RESET_VAL;
+            v_tune_mode   := DISABLED;
         elsif( rising_edge(tune_ref) ) then
             ref_10mhz_pps <= '0';
             if( v_tune_mode /= tune_mode ) then
-                ref_10mhz_count := REF_10MHZ_RESET_VAL;
+                v_10mhz_count := REF_10MHZ_RESET_VAL;
             elsif( tune_mode = \10MHZ\ ) then
-                ref_10mhz_count := ref_10mhz_count - 1;
-                if( ref_10mhz_count = 0 ) then
+                v_10mhz_count := v_10mhz_count - 1;
+                if( v_10mhz_count = 0 ) then
+                    v_10mhz_count := REF_10MHZ_RESET_VAL;
+                end if;
+                if( v_10mhz_count <= REF_10MHZ_PULSE_DURATION ) then
                     ref_10mhz_pps   <= '1';
-                    ref_10mhz_count := REF_10MHZ_RESET_VAL;
                 end if;
             end if;
             v_tune_mode := tune_mode;
@@ -265,7 +268,7 @@ begin
         if( rising_edge(mm_clock) ) then
 
             if( (pps_1s.count_v = '1') and (mm_pps_irq_enable = '1') ) then
-                tmp_1s_err   := resize( (pps_1s.target - pps_1s.count), 32 );
+                tmp_1s_err   := resize( (pps_1s.count - pps_1s.target), 32 );
                 pps_1s.error <= tmp_1s_err;
                 if( abs(tmp_1s_err) > PPS_1S_ERROR_TOL ) then
                     pps_1s.error_v <= '1';
@@ -274,7 +277,7 @@ begin
             end if;
 
             if( (pps_10s.count_v = '1') and (mm_pps_irq_enable = '1') ) then
-                tmp_10s_err   := resize( (pps_10s.target - pps_10s.count), 32 );
+                tmp_10s_err   := resize( (pps_10s.count - pps_10s.target), 32 );
                 pps_10s.error <= tmp_10s_err;
                 if( abs(tmp_10s_err) > PPS_10S_ERROR_TOL ) then
                     pps_10s.error_v <= '1';
@@ -283,7 +286,7 @@ begin
             end if;
 
             if( (pps_100s.count_v = '1') and (mm_pps_irq_enable = '1') ) then
-                tmp_100s_err   := resize( (pps_100s.target - pps_100s.count), 32 );
+                tmp_100s_err   := resize( (pps_100s.count - pps_100s.target), 32 );
                 pps_100s.error <= tmp_100s_err;
                 if( abs(tmp_100s_err) > PPS_100S_ERROR_TOL ) then
                     pps_100s.error_v <= '1';
