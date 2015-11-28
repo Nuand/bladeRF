@@ -10,7 +10,7 @@ if(MSVC)
     set(INCLUDES ${INCLUDES} ${MSVC_C99_INCLUDES})
 endif()
 
-set(SRC src/main.c)
+set(SRC src/main.c ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c)
 
 if(MSVC)
     set(SRC ${SRC}
