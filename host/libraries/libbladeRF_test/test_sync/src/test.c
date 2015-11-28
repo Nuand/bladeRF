@@ -38,7 +38,6 @@
 
 static struct task_args {
     struct bladerf *dev;
-    pthread_mutex_t *dev_lock;
 
     struct test_params *p;
     pthread_t thread;
@@ -226,9 +225,7 @@ void *rx_task(void *args)
         goto rx_task_out;
     }
 
-    pthread_mutex_lock(task->dev_lock);
     status = bladerf_enable_module(task->dev, BLADERF_MODULE_RX, true);
-    pthread_mutex_unlock(task->dev_lock);
     if (status != 0) {
         log_error("Failed to enable RX module: %s\n", bladerf_strerror(status));
         goto rx_task_out;
@@ -265,9 +262,7 @@ void *rx_task(void *args)
 rx_task_out:
     free(samples);
 
-    pthread_mutex_lock(task->dev_lock);
     status = bladerf_enable_module(task->dev, BLADERF_MODULE_RX, false);
-    pthread_mutex_unlock(task->dev_lock);
     if (status != 0) {
         log_error("Failed to disable RX module: %s\n", bladerf_strerror(status));
     }
@@ -304,9 +299,7 @@ void *tx_task(void *arg)
         goto tx_task_out;
     }
 
-    pthread_mutex_lock(task->dev_lock);
     status = bladerf_enable_module(task->dev, BLADERF_MODULE_TX, true);
-    pthread_mutex_unlock(task->dev_lock);
     if (status != 0) {
         log_error("Failed to enable RX module: %s\n", bladerf_strerror(status));
         goto tx_task_out;
@@ -342,9 +335,7 @@ void *tx_task(void *arg)
 tx_task_out:
     free(samples);
 
-    pthread_mutex_lock(task->dev_lock);
     status = bladerf_enable_module(task->dev, BLADERF_MODULE_TX, false);
-    pthread_mutex_unlock(task->dev_lock);
     if (status != 0) {
         log_error("Failed to disable TX module: %s\n", bladerf_strerror(status));
     }
@@ -359,21 +350,7 @@ int test_run(struct test_params *p)
     int status;
     struct bladerf *dev;
 
-    /* We must be sure to only make control calls
-     * (e.g., bladerf_enable_module()) from a single context. This is done
-     * by locking access to dev in such cases.
-     *
-     * We do not need to be holding the lock when making calls to
-     * bladerf_sync_rx/tx, since we're only calling each of these functions from
-     * a single context (as opposed to two threads both calling sync_rx).
-     */
-    pthread_mutex_t dev_lock;
-
     init_signal_handling();
-
-    if (pthread_mutex_init(&dev_lock, NULL) != 0) {
-        return -1;
-    }
 
     dev = initialize_device(p);
     if (dev == NULL) {
@@ -383,7 +360,6 @@ int test_run(struct test_params *p)
 
     if (p->in_file != NULL) {
         tx_args.dev = dev;
-        tx_args.dev_lock = &dev_lock;
         tx_args.p = p;
         tx_args.status = 0;
         tx_args.quit = false;
@@ -397,7 +373,6 @@ int test_run(struct test_params *p)
 
     if (p->out_file != NULL) {
         rx_args.dev = dev;
-        rx_args.dev_lock = &dev_lock;
         rx_args.p = p;
         rx_args.status = 0;
         rx_args.quit = false;

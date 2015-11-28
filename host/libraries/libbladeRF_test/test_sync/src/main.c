@@ -36,12 +36,6 @@
 #include "log.h"
 #include "test.h"
 
-/* FIXME these should be provided in libbladeRF.h */
-#define SAMPLERATE_MIN          160000u
-#define SAMPLERATE_MAX          40000000u
-#define FREQ_MIN                300000000u
-#define FREQ_MAX                3000000000u
-
 #define OPTSTR "hd:s:f:l:i:o:r:c:b:X:B:C:T:"
 const struct option long_options[] = {
     { "help",           no_argument,        0,  'h' },
@@ -200,7 +194,8 @@ int handle_cmdline(int argc, char *argv[], struct test_params *p)
 
             case 's':
                 p->samplerate = str2uint_suffix(optarg,
-                                                SAMPLERATE_MIN, SAMPLERATE_MAX,
+                                                BLADERF_SAMPLERATE_MIN,
+                                                BLADERF_SAMPLERATE_REC_MAX,
                                                 freq_suffixes,
                                                 num_freq_suffixes,
                                                 &ok);
@@ -212,7 +207,8 @@ int handle_cmdline(int argc, char *argv[], struct test_params *p)
 
             case 'f':
                 p->frequency = str2uint_suffix(optarg,
-                                               FREQ_MIN, FREQ_MAX,
+                                               BLADERF_FREQUENCY_MIN,
+                                               BLADERF_FREQUENCY_MAX,
                                                freq_suffixes,
                                                num_freq_suffixes,
                                                &ok);
