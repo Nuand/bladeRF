@@ -118,7 +118,7 @@ int devcfg_handle_args(int argc, char **argv,
 int devcfg_perform_sync_config(struct bladerf *dev,
                                bladerf_module module,
                                bladerf_format format,
-                               struct devcfg *config,
+                               const struct devcfg *config,
                                bool enable_module);
 
 

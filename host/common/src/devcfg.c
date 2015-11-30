@@ -601,8 +601,10 @@ int devcfg_apply(struct bladerf *dev, const struct devcfg *c)
     return 0;
 }
 
-int devcfg_perform_sync_config(struct bladerf *dev, bladerf_module module,
-                               bladerf_format format, struct devcfg *config,
+int devcfg_perform_sync_config(struct bladerf *dev,
+                               bladerf_module module,
+                               bladerf_format format,
+                               const struct devcfg *config,
                                bool enable_module)
 {
     int status = bladerf_sync_config(dev, module, format,
