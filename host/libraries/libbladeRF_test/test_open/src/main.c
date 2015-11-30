@@ -103,6 +103,7 @@ int main(int argc, char *argv[])
         } else {
             usleep(wait);
             bladerf_close(dev);
+            printf("Iteration %u complete.\n", i + 1);
         }
     }
 
