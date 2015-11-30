@@ -628,7 +628,7 @@ classdef bladeRF < handle
         % timestamp, the stream will be "padded" with 0+0j up to that
         % timestamp.
         %
-        % bladeRF.transmit(samples, 3000, 0, 1, 1) immediately transmits
+        % bladeRF.transmit(samples, 3000, 0, true, true) immediately transmits
         % a single burst of samples with a 3s timeout. The use of the
         % sob and eob flags ensures the end of the burst will be
         % zero padded by libbladeRF in order to hold the TX DAC at
@@ -649,16 +649,17 @@ classdef bladeRF < handle
         %   timestamp   Timestamp counter value at which to transmit samples.
         %               0 implies "now."
         %
-        %   sob         "Start of burst" flag. Should be `true` or `false`.
-        %               This informs libbladeRF to consider all provided
-        %               samples to be within a burst until an eob flags
-        %               is provided. This value should be `true` or `false`.
+        %   sob         "Start of burst" flag.  This informs libbladeRF to
+        %               consider all provided samples to be within a burst
+        %               until an eob flags is provided. This value should be
+        %               `true` or `false`.
         %
         %   eob         "End of burst" flag. This informs libbladeRF
         %               that after the provided samples, the burst
         %               should be ended. libbladeRF will zero-pad
         %               the remainder of a buffer to ensure that
-        %               TX DAC is held at 0+0j after a burst. This
+        %               TX DAC is held at 0+0j after a burst. This value
+        %               should be `true` or `false`
         %
         % For more information about utilizing timestamps and bursts, see the
         % "TX with metadata" topic in the libbladeRF API documentation:
