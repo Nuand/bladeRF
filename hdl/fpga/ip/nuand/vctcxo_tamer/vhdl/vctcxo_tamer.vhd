@@ -129,20 +129,20 @@ architecture arch of vctcxo_tamer is
                                    count_v => '0' );
 
     -- Asynchronous
-    signal ref_1pps             : std_logic   := '0';
+    signal ref_1pps                 : std_logic   := '0';
 
     -- Tune_ref-synchronous signals
-    signal tune_ref_reset       : std_logic   := '1';
-    signal ref_10mhz_pps        : std_logic   := '0';
+    signal tune_ref_reset           : std_logic   := '1';
+    signal ref_10mhz_pps            : std_logic   := '0';
+    signal tune_ref_mode_update_req : std_logic   := '0';
+    signal tune_ref_mode_update_ack : std_logic   := '0';
+    signal tune_ref_mode            : tune_mode_t := DISABLED;
+    signal tune_ref_mode_hs         : tune_mode_t := DISABLED;
 
     -- VCTCXO-synchronous signals
-    signal ref_1pps_sync        : std_logic   := '0';
-    signal ref_1pps_pulse       : std_logic   := '0';
-    signal vctcxo_reset         : std_logic   := '1';
-    signal tune_mode_update_req : std_logic   := '0';
-    signal tune_mode_update_ack : std_logic   := '0';
-    signal tune_mode            : tune_mode_t := DISABLED;
-    signal tune_mode_hs         : tune_mode_t := DISABLED;
+    signal ref_1pps_sync            : std_logic   := '0';
+    signal ref_1pps_pulse           : std_logic   := '0';
+    signal vctcxo_reset             : std_logic   := '1';
 
     -- System-synchronous signals
     signal mm_control_reg       : std_logic_vector(7 downto 0) := x"21";
@@ -167,9 +167,9 @@ begin
             v_tune_mode   := DISABLED;
         elsif( rising_edge(tune_ref) ) then
             ref_10mhz_pps <= '0';
-            if( v_tune_mode /= tune_mode ) then
+            if( v_tune_mode /= tune_ref_mode ) then
                 v_10mhz_count := REF_10MHZ_RESET_VAL;
-            elsif( tune_mode = \10MHZ\ ) then
+            elsif( tune_ref_mode = \10MHZ\ ) then
                 v_10mhz_count := v_10mhz_count - 1;
                 if( v_10mhz_count = 0 ) then
                     v_10mhz_count := REF_10MHZ_RESET_VAL;
@@ -178,13 +178,13 @@ begin
                     ref_10mhz_pps   <= '1';
                 end if;
             end if;
-            v_tune_mode := tune_mode;
+            v_tune_mode := tune_ref_mode;
         end if;
     end process;
 
     -- Tuning reference MUX
-    ref_1pps <= tune_ref      when ( tune_mode = PPS     ) else
-                ref_10mhz_pps when ( tune_mode = \10MHZ\ ) else
+    ref_1pps <= tune_ref      when ( unpack(mm_tune_mode) = PPS     ) else
+                ref_10mhz_pps when ( unpack(mm_tune_mode) = \10MHZ\ ) else
                 '0';
 
     -- Bring the 1PPS into the VCTCXO clock domain
@@ -317,6 +317,17 @@ begin
 
             case to_integer(unsigned(mm_addr)) is
 
+                -- Control Register
+                when CONTROL_ADDR =>
+                    mm_rd_data <= mm_control_reg;
+
+                -- PPS Error Status
+                when PPS_ERR_STATUS =>
+                    mm_rd_data(7 downto 3) <= (others => '0');
+                    mm_rd_data(2)          <= pps_100s.error_v;
+                    mm_rd_data(1)          <= pps_10s.error_v;
+                    mm_rd_data(0)          <= pps_1s.error_v;
+
                 -- 1 Second Count Error
                 when PPS_ERR_1S_ADDR0 =>
                     mm_rd_data <= std_logic_vector(pps_1s.error(7 downto 0));
@@ -356,13 +367,6 @@ begin
                 when PPS_ERR_100S_ADDR3 =>
                     mm_rd_data <= std_logic_vector(pps_100s.error(31 downto 24));
 
-                -- PPS Error Status
-                when PPS_ERR_STATUS =>
-                    mm_rd_data(7 downto 3) <= (others => '0');
-                    mm_rd_data(2)          <= pps_100s.error_v;
-                    mm_rd_data(1)          <= pps_10s.error_v;
-                    mm_rd_data(0)          <= pps_1s.error_v;
-
                 when others =>
                     null;
 
@@ -387,7 +391,7 @@ begin
     end process;
 
     -- Asynchronous reset, synchronous deassertion of reset
-    U_reset_sync_0 : entity work.reset_synchronizer
+    U_reset_sync_vctcxo : entity work.reset_synchronizer
         generic map (
             INPUT_LEVEL     => '1',
             OUTPUT_LEVEL    => '1'
@@ -399,7 +403,7 @@ begin
         );
 
     -- Asynchronous reset, synchronous deassertion of reset
-    U_reset_sync_1 : entity work.reset_synchronizer
+    U_reset_sync_tune_ref : entity work.reset_synchronizer
         generic map (
             INPUT_LEVEL     => '1',
             OUTPUT_LEVEL    => '1'
@@ -414,14 +418,14 @@ begin
     tune_mode_updater_proc : process( tune_ref, tune_ref_reset )
     begin
         if( tune_ref_reset = '1' ) then
-            tune_mode_update_req <= '0';
-            tune_mode            <= DISABLED;
+            tune_ref_mode_update_req <= '0';
+            tune_ref_mode            <= DISABLED;
         elsif( rising_edge(tune_ref) ) then
-            if( tune_mode_update_ack = '1' ) then
-                tune_mode_update_req <= '0';
-                tune_mode            <= tune_mode_hs;
+            if( tune_ref_mode_update_ack = '1' ) then
+                tune_ref_mode_update_req <= '0';
+                tune_ref_mode            <= tune_ref_mode_hs;
             else
-                tune_mode_update_req <= '1';
+                tune_ref_mode_update_req <= '1';
             end if;
         end if;
     end process;
@@ -437,9 +441,9 @@ begin
             source_data       => mm_tune_mode,
             dest_reset        => tune_ref_reset,
             dest_clock        => tune_ref,
-            unpack(dest_data) => tune_mode_hs,
-            dest_req          => tune_mode_update_req,
-            dest_ack          => tune_mode_update_ack
+            unpack(dest_data) => tune_ref_mode_hs,
+            dest_req          => tune_ref_mode_update_req,
+            dest_ack          => tune_ref_mode_update_ack
         );
 
 end architecture;
