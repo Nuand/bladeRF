@@ -26,6 +26,8 @@
 #include "spi_flash_lib.h"
 #include "flash.h"
 
+#define THIS_FILE LOGGER_ID_FLASH_C
+
 static CyU3PReturnStatus_t FlashReadStatus(uint8_t *val)
 {
     int status;

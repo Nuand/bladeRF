@@ -26,6 +26,8 @@
 #include "gpif.h"
 #include "rf.h"
 
+#define THIS_FILE LOGGER_ID_RF_C
+
 static CyU3PDmaChannel glChHandlebladeRFUtoUART;   /* DMA Channel for U2P transfers */
 static CyU3PDmaChannel glChHandlebladeRFUARTtoU;   /* DMA Channel for U2P transfers */
 
@@ -104,7 +106,7 @@ static void UartBridgeStart(void)
             break;
 
         default:
-            CyU3PDebugPrint (4, "Error! Invalid USB speed.\n");
+            LOG_ERROR(usbSpeed);
             CyFxAppErrorHandler (CY_U3P_ERROR_FAILURE);
             break;
     }
@@ -119,14 +121,14 @@ static void UartBridgeStart(void)
     /* Producer endpoint configuration */
     apiRetStatus = CyU3PSetEpConfig(BLADE_UART_EP_PRODUCER, &epCfg);
     if (apiRetStatus != CY_U3P_SUCCESS) {
-        CyU3PDebugPrint (4, "CyU3PSetEpConfig failed, Error code = %d\n", apiRetStatus);
+        LOG_ERROR(apiRetStatus);
         CyFxAppErrorHandler (apiRetStatus);
     }
 
     /* Consumer endpoint configuration */
     apiRetStatus = CyU3PSetEpConfig(BLADE_UART_EP_CONSUMER, &epCfg);
     if (apiRetStatus != CY_U3P_SUCCESS) {
-        CyU3PDebugPrint (4, "CyU3PSetEpConfig failed, Error code = %d\n", apiRetStatus);
+        LOG_ERROR(apiRetStatus);
         CyFxAppErrorHandler (apiRetStatus);
     }
 
@@ -146,7 +148,7 @@ static void UartBridgeStart(void)
     apiRetStatus = CyU3PDmaChannelCreate(&glChHandlebladeRFUtoUART,
             CY_U3P_DMA_TYPE_AUTO, &dmaCfg);
     if (apiRetStatus != CY_U3P_SUCCESS) {
-        CyU3PDebugPrint (4, "CyU3PDmaChannelCreate failed, Error code = %d\n", apiRetStatus);
+        LOG_ERROR(apiRetStatus);
         CyFxAppErrorHandler(apiRetStatus);
     }
 
@@ -155,7 +157,7 @@ static void UartBridgeStart(void)
     apiRetStatus = CyU3PDmaChannelCreate(&glChHandlebladeRFUARTtoU,
             CY_U3P_DMA_TYPE_AUTO, &dmaCfg);
     if (apiRetStatus != CY_U3P_SUCCESS) {
-        CyU3PDebugPrint (4, "CyU3PDmaChannelCreate failed, Error code = %d\n", apiRetStatus);
+        LOG_ERROR(apiRetStatus);
         CyFxAppErrorHandler(apiRetStatus);
     }
 
@@ -166,13 +168,13 @@ static void UartBridgeStart(void)
     /* Set DMA channel transfer size */
     apiRetStatus = CyU3PDmaChannelSetXfer(&glChHandlebladeRFUtoUART, BLADE_DMA_TX_SIZE);
     if (apiRetStatus != CY_U3P_SUCCESS) {
-        CyU3PDebugPrint (4, "CyU3PDmaChannelSetXfer Failed, Error code = %d\n", apiRetStatus);
+        LOG_ERROR(apiRetStatus);
         CyFxAppErrorHandler(apiRetStatus);
     }
 
     apiRetStatus = CyU3PDmaChannelSetXfer(&glChHandlebladeRFUARTtoU, BLADE_DMA_TX_SIZE);
     if (apiRetStatus != CY_U3P_SUCCESS) {
-        CyU3PDebugPrint (4, "CyU3PDmaChannelSetXfer Failed, Error code = %d\n", apiRetStatus);
+        LOG_ERROR(apiRetStatus);
         CyFxAppErrorHandler(apiRetStatus);
     }
 
@@ -208,13 +210,13 @@ static void UartBridgeStop(void)
     /* Producer endpoint configuration. */
     apiRetStatus = CyU3PSetEpConfig(BLADE_UART_EP_PRODUCER, &epCfg);
     if (apiRetStatus != CY_U3P_SUCCESS) {
-        CyU3PDebugPrint (4, "CyU3PSetEpConfig failed, Error code = %d\n", apiRetStatus);
+        LOG_ERROR(apiRetStatus);
         CyFxAppErrorHandler (apiRetStatus);
     }
 
     apiRetStatus = CyU3PSetEpConfig(BLADE_UART_EP_CONSUMER, &epCfg);
     if (apiRetStatus != CY_U3P_SUCCESS) {
-        CyU3PDebugPrint (4, "CyU3PSetEpConfig failed, Error code = %d\n", apiRetStatus);
+        LOG_ERROR(apiRetStatus);
         CyFxAppErrorHandler (apiRetStatus);
     }
     CyU3PUartDeInit();
@@ -241,8 +243,7 @@ static void NuandRFLinkStart(void)
 
     apiRetStatus = NuandConfigureGpif(GPIF_CONFIG_RF_LINK);
     if (apiRetStatus != CY_U3P_SUCCESS) {
-        CyU3PDebugPrint(4, "Failed to configure GPIF, Error code = %d\n",
-                        apiRetStatus);
+        LOG_ERROR(apiRetStatus);
         CyFxAppErrorHandler(apiRetStatus);
     }
 
@@ -262,7 +263,7 @@ static void NuandRFLinkStart(void)
             break;
 
         default:
-            CyU3PDebugPrint (4, "Error! Invalid USB speed.\n");
+            LOG_ERROR(usbSpeed);
             CyFxAppErrorHandler (CY_U3P_ERROR_FAILURE);
             break;
     }
@@ -277,14 +278,14 @@ static void NuandRFLinkStart(void)
     /* Producer endpoint configuration */
     apiRetStatus = CyU3PSetEpConfig(BLADE_RF_SAMPLE_EP_PRODUCER, &epCfg);
     if (apiRetStatus != CY_U3P_SUCCESS) {
-        CyU3PDebugPrint(4, "CyU3PSetEpConfig failed, Error code = %d\n", apiRetStatus);
+        LOG_ERROR(apiRetStatus);
         CyFxAppErrorHandler (apiRetStatus);
     }
 
     /* Consumer endpoint configuration */
     apiRetStatus = CyU3PSetEpConfig(BLADE_RF_SAMPLE_EP_CONSUMER, &epCfg);
     if (apiRetStatus != CY_U3P_SUCCESS) {
-        CyU3PDebugPrint(4, "CyU3PSetEpConfig failed, Error code = %d\n", apiRetStatus);
+        LOG_ERROR(apiRetStatus);
         CyFxAppErrorHandler (apiRetStatus);
     }
 
@@ -311,7 +312,7 @@ static void NuandRFLinkStart(void)
     apiRetStatus = CyU3PDmaChannelCreate(&glChHandleUtoP, CY_U3P_DMA_TYPE_AUTO, &dmaCfg);
 
     if (apiRetStatus != CY_U3P_SUCCESS) {
-        CyU3PDebugPrint(4, "CyU3PDmaMultiChannelCreate failed, Error code = %d\n", apiRetStatus);
+        LOG_ERROR(apiRetStatus);
         CyFxAppErrorHandler(apiRetStatus);
     }
 
@@ -320,7 +321,7 @@ static void NuandRFLinkStart(void)
         dmaCfg.consSckId = BLADE_RF_SAMPLE_EP_CONSUMER_USB_SOCKET;
         apiRetStatus = CyU3PDmaChannelCreate(&glChHandlePtoU, CY_U3P_DMA_TYPE_AUTO, &dmaCfg);
         if (apiRetStatus != CY_U3P_SUCCESS) {
-            CyU3PDebugPrint(4, "CyU3PDmaMultiChannelCreate failed, Error code = %d\n", apiRetStatus);
+            LOG_ERROR(apiRetStatus);
             CyFxAppErrorHandler(apiRetStatus);
         }
     }
@@ -333,14 +334,14 @@ static void NuandRFLinkStart(void)
 
     apiRetStatus = CyU3PDmaChannelSetXfer (&glChHandleUtoP, BLADE_DMA_TX_SIZE);
     if (apiRetStatus != CY_U3P_SUCCESS) {
-        CyU3PDebugPrint(4, "CyU3PDmaChannelSetXfer Failed, Error code = %d\n", apiRetStatus);
+        LOG_ERROR(apiRetStatus);
         CyFxAppErrorHandler(apiRetStatus);
     }
 
     if (!loopback) {
         apiRetStatus = CyU3PDmaChannelSetXfer (&glChHandlePtoU, BLADE_DMA_TX_SIZE);
         if (apiRetStatus != CY_U3P_SUCCESS) {
-            CyU3PDebugPrint(4, "CyU3PDmaChannelSetXfer Failed, Error code = %d\n", apiRetStatus);
+            LOG_ERROR(apiRetStatus);
             CyFxAppErrorHandler(apiRetStatus);
         }
     }
@@ -378,22 +379,21 @@ static void NuandRFLinkStop (void)
     /* Disable producer endpoint */
     apiRetStatus = CyU3PSetEpConfig(BLADE_RF_SAMPLE_EP_PRODUCER, &epCfg);
     if (apiRetStatus != CY_U3P_SUCCESS) {
-        CyU3PDebugPrint(4, "CyU3PSetEpConfig failed, Error code = %d\n", apiRetStatus);
+        LOG_ERROR(apiRetStatus);
         CyFxAppErrorHandler(apiRetStatus);
     }
 
     /* Disable consumer endpoint */
     apiRetStatus = CyU3PSetEpConfig(BLADE_RF_SAMPLE_EP_CONSUMER, &epCfg);
     if (apiRetStatus != CY_U3P_SUCCESS) {
-        CyU3PDebugPrint(4, "CyU3PSetEpConfig failed, Error code = %d\n", apiRetStatus);
+        LOG_ERROR(apiRetStatus);
         CyFxAppErrorHandler(apiRetStatus);
     }
 
     /* Reset the GPIF */
     apiRetStatus = NuandConfigureGpif(GPIF_CONFIG_DISABLED);
     if (apiRetStatus != CY_U3P_SUCCESS) {
-        CyU3PDebugPrint(4, "Failed to deinitialize GPIF. Error code = %d\n",
-                        apiRetStatus);
+        LOG_ERROR(apiRetStatus);
         CyFxAppErrorHandler(apiRetStatus);
     }
 

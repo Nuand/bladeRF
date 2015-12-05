@@ -27,6 +27,8 @@
 #include "gpif.h"
 #include "spi_flash_lib.h"
 
+#define THIS_FILE LOGGER_ID_FPGA_C
+
 /* DMA Channel for RF U2P (USB to P-port) transfers */
 static CyU3PDmaChannel glChHandlebladeRFUtoP;
 
@@ -99,7 +101,7 @@ static void bladeRFConfigUtoPDmaCallback(CyU3PDmaChannel *chHandle, CyU3PDmaCbTy
         }
         status = CyU3PDmaChannelCommitBuffer (chHandle, input->buffer_p.count * 2, 0);
         if (status != CY_U3P_SUCCESS) {
-            CyU3PDebugPrint (4, "CyU3PDmaChannelCommitBuffer failed, Error code = %d\n", status);
+            LOG_ERROR(status);
         }
 
         /* Increment the counter. */
@@ -123,8 +125,7 @@ static void NuandFpgaConfigStart(void)
 
     apiRetStatus = NuandConfigureGpif(GPIF_CONFIG_FPGA_LOAD);
     if (apiRetStatus != CY_U3P_SUCCESS) {
-        CyU3PDebugPrint(4, "Failed to configure GPIF, Error Code = %d\n",
-                        apiRetStatus);
+        LOG_ERROR(apiRetStatus);
         CyFxAppErrorHandler(apiRetStatus);
     }
 
@@ -144,7 +145,7 @@ static void NuandFpgaConfigStart(void)
             break;
 
         default:
-            CyU3PDebugPrint(4, "Error! Invalid USB speed.\n");
+            LOG_ERROR(usbSpeed);
             CyFxAppErrorHandler(CY_U3P_ERROR_FAILURE);
             break;
     }
@@ -158,7 +159,7 @@ static void NuandFpgaConfigStart(void)
 
     apiRetStatus = CyU3PSetEpConfig(BLADE_FPGA_EP_PRODUCER, &epCfg);
     if (apiRetStatus != CY_U3P_SUCCESS) {
-        CyU3PDebugPrint(4, "CyU3PSetEpConfig failed, Error code = %d\n", apiRetStatus);
+        LOG_ERROR(apiRetStatus);
         CyFxAppErrorHandler (apiRetStatus);
     }
 
@@ -181,7 +182,7 @@ static void NuandFpgaConfigStart(void)
             CY_U3P_DMA_TYPE_MANUAL, &dmaCfg);
 
     if (apiRetStatus != CY_U3P_SUCCESS) {
-        CyU3PDebugPrint(4, "CyU3PDmaChannelCreate failed, Error code = %d\n", apiRetStatus);
+        LOG_ERROR(apiRetStatus);
         CyFxAppErrorHandler(apiRetStatus);
     }
 
@@ -191,7 +192,7 @@ static void NuandFpgaConfigStart(void)
     /* Set DMA channel transfer size. */
     apiRetStatus = CyU3PDmaChannelSetXfer(&glChHandlebladeRFUtoP, BLADE_DMA_TX_SIZE);
     if (apiRetStatus != CY_U3P_SUCCESS) {
-        CyU3PDebugPrint(4, "CyU3PDmaChannelSetXfer Failed, Error code = %d\n", apiRetStatus);
+        LOG_ERROR(apiRetStatus);
         CyFxAppErrorHandler(apiRetStatus);
     }
 
@@ -219,14 +220,13 @@ void NuandFpgaConfigStop(void)
     /* Producer endpoint configuration. */
     apiRetStatus = CyU3PSetEpConfig(BLADE_FPGA_EP_PRODUCER, &epCfg);
     if (apiRetStatus != CY_U3P_SUCCESS) {
-        CyU3PDebugPrint (4, "CyU3PSetEpConfig failed, Error code = %d\n", apiRetStatus);
+        LOG_ERROR(apiRetStatus);
         CyFxAppErrorHandler (apiRetStatus);
     }
 
     apiRetStatus = NuandConfigureGpif(GPIF_CONFIG_DISABLED);
     if (apiRetStatus != CY_U3P_SUCCESS) {
-        CyU3PDebugPrint(4, "Failed to disable GPIF, Error Code = %d\n",
-                        apiRetStatus);
+        LOG_ERROR(apiRetStatus);
         CyFxAppErrorHandler(apiRetStatus);
     }
 

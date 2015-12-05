@@ -35,6 +35,7 @@
 #include "cyu3spi.h"
 #include "spi_flash_lib.h"
 
+#define THIS_FILE LOGGER_ID_SPI_FLASH_LIB_C
 
 /* SPI initialization for application. */
 CyU3PReturnStatus_t CyFxSpiInit(void)
@@ -85,7 +86,7 @@ CyU3PReturnStatus_t CyFxSpiWaitForStatus(void)
         status = CyU3PSpiTransmitWords (buf, 1);
         CyU3PSpiSetSsnLine(CyTrue);
         if (status != CY_U3P_SUCCESS) {
-            CyU3PDebugPrint (2, "SPI WR_ENABLE command failed\n\r");
+            LOG_ERROR(status);
             return status;
         }
 
@@ -94,7 +95,7 @@ CyU3PReturnStatus_t CyFxSpiWaitForStatus(void)
         CyU3PSpiSetSsnLine(CyFalse);
         status = CyU3PSpiTransmitWords(buf, 1);
         if (status != CY_U3P_SUCCESS) {
-            CyU3PDebugPrint(2, "SPI READ_STATUS command failed\n\r");
+            LOG_ERROR(status);
             CyU3PSpiSetSsnLine(CyTrue);
             return status;
         }
@@ -102,7 +103,7 @@ CyU3PReturnStatus_t CyFxSpiWaitForStatus(void)
         status = CyU3PSpiReceiveWords(rd_buf, 2);
         CyU3PSpiSetSsnLine(CyTrue);
         if(status != CY_U3P_SUCCESS) {
-            CyU3PDebugPrint(2, "SPI status read failed\n\r");
+            LOG_ERROR(status);
             return status;
         }
 
@@ -152,7 +153,7 @@ CyU3PReturnStatus_t CyFxSpiTransfer(uint16_t pageAddress, uint16_t byteCount, ui
             status = CyU3PSpiTransmitWords(location, 4);
 
             if (status != CY_U3P_SUCCESS) {
-                CyU3PDebugPrint (2, "SPI READ command failed\r\n");
+                LOG_ERROR(status);
                 CyU3PSpiSetSsnLine (CyTrue);
                 return status;
             }
@@ -174,7 +175,7 @@ CyU3PReturnStatus_t CyFxSpiTransfer(uint16_t pageAddress, uint16_t byteCount, ui
             CyU3PSpiSetSsnLine(CyFalse);
             status = CyU3PSpiTransmitWords(location, 4);
             if (status != CY_U3P_SUCCESS) {
-                CyU3PDebugPrint(2, "SPI WRITE command failed\r\n");
+                LOG_ERROR(status);
                 CyU3PSpiSetSsnLine(CyTrue);
                 return status;
             }

@@ -30,6 +30,8 @@
 #include "cyfxgpif_C4loader.h"
 #include "cyfxgpif_RFlink.h"
 
+#define THIS_FILE LOGGER_ID_GPIF_C
+
 CyU3PReturnStatus_t NuandConfigureGpif(NuandGpifConfig config)
 {
     CyU3PReturnStatus_t status;

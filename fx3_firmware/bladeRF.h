@@ -28,6 +28,8 @@
 #include "cyu3usbconst.h"
 #include "cyu3dma.h"
 #include "../firmware_common/bladeRF.h"
+#include "../firmware_common/logger_id.h"
+#include "logger.h"
 
 #define BLADE_GPIF_16_32BIT_CONF_SELECT (0)
 
