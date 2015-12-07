@@ -1,5 +1,4 @@
-/*
- * This file is part of the bladeRF project
+/* * This file is part of the bladeRF project
  *
  * Copyright (C) 2013-2014 Nuand LLC
  *
@@ -39,6 +38,7 @@ DECLARE_CMD(flash_backup);
 DECLARE_CMD(flash_image);
 DECLARE_CMD(flash_init_cal);
 DECLARE_CMD(flash_restore);
+DECLARE_CMD(fw_log);
 DECLARE_CMD(help);
 DECLARE_CMD(info);
 DECLARE_CMD(jump_to_bootloader);
@@ -78,6 +78,7 @@ static const char *cmd_names_flash_backup[] = { "flash_backup", "fb",  NULL };
 static const char *cmd_names_flash_image[] = { "flash_image", "fi", NULL };
 static const char *cmd_names_flash_init_cal[] = { "flash_init_cal", "fic", NULL };
 static const char *cmd_names_flash_restore[] = { "flash_restore", "fr", NULL };
+static const char *cmd_names_fw_log[] = { "fw_log", NULL };
 static const char *cmd_names_help[] = { "help", "h", "?", NULL };
 static const char *cmd_names_info[] = { "info", "i", NULL };
 static const char *cmd_names_jump[] = { "jump_to_boot", "j", NULL };
@@ -151,6 +152,15 @@ static const struct cmd cmd_table[] = {
         FIELD_INIT(.requires_device, false),
         FIELD_INIT(.requires_fpga, false),
         FIELD_INIT(.allow_while_streaming, false),
+    },
+    {
+        FIELD_INIT(.names, cmd_names_fw_log),
+        FIELD_INIT(.exec, cmd_fw_log),
+        FIELD_INIT(.desc, "Read firmware log contents"),
+        FIELD_INIT(.help, CLI_CMD_HELPTEXT_fw_log),
+        FIELD_INIT(.requires_device, true),
+        FIELD_INIT(.requires_fpga, false),
+        FIELD_INIT(.allow_while_streaming, true),
     },
     {
         FIELD_INIT(.names, cmd_names_flash_init_cal),

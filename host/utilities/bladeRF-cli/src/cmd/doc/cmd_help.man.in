@@ -284,6 +284,13 @@ Defaults to the address specified in the provided flash image file.
 .PP
 Defaults to length of the data in the provided image file.
 .RE
+.SS fw_log
+.PP
+Usage: \f[C]fw_log\f[] [filename]
+.PP
+Read the contents of the device\[aq]s firmware log and write it to the
+specified file.
+If no filename is specified, the log content is written to stdout.
 .SS help
 .PP
 Usage: \f[C]help\ [<command>]\f[]

@@ -27,7 +27,7 @@
  * Any manual modifications to this file will be overwritten!
  * To edit the content of help strings, please edit interactive-help.md
  *
- * Last generated: Fri Dec 11 12:34:22 EST 2015 by jynik
+ * Last generated: Mon Dec 28 15:52:10 EST 2015 by jynik
  */
 
 #ifndef BLADERF_CLI_DOC_CMD_HELP_H__
@@ -235,6 +235,15 @@
   "-   <length>\n" \
   "\n" \
   "    Defaults to length of the data in the provided image file.\n" \
+  "\n" \
+
+
+#define CLI_CMD_HELPTEXT_fw_log \
+  "Usage: fw_log [filename]\n" \
+  "\n" \
+  "Read the contents of the device's firmware log and write it to the\n" \
+  "specified file. If no filename is specified, the log content is\n" \
+  "written to stdout.\n" \
   "\n" \
 
 

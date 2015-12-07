@@ -138,6 +138,7 @@ set(BLADERF_CLI_SOURCE
         src/cmd/flash_image.c
         src/cmd/flash_init_cal.c
         src/cmd/flash_restore.c
+        src/cmd/fw_log.c
         src/cmd/info.c
         src/cmd/load.c
         src/cmd/open.c

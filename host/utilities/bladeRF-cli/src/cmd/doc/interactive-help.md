@@ -213,6 +213,16 @@ metadata.
     Defaults to length of the data in the provided image file.
 
 
+fw_log
+------
+
+Usage: `fw_log` [filename]
+
+Read the contents of the device's firmware log and write it to the
+specified file. If no filename is specified, the log content is written
+to stdout.
+
+
 help
 ----
 
