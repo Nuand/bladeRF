@@ -62,7 +62,7 @@ classdef bladeRF_Simulink < matlab.System & ...
                             matlab.system.mixin.CustomIcon
     %% Properties
     properties
-        verbosity           = 'info'    % libbladeRF verbosity
+        verbosity           = 'Info'    % libbladeRF verbosity
 
         rx_frequency        = 915e6;    % Frequency [230e6, 3.8e9]
         rx_lna              = 6         % LNA Gain  [0, 3, 6]
@@ -320,7 +320,7 @@ classdef bladeRF_Simulink < matlab.System & ...
             if obj.enable_tx == true
                 varargout{1} = 'TX Samples';
             else
-                varargout = [];
+                varargout = {};
             end
         end
 
