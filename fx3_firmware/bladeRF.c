@@ -607,6 +607,10 @@ CyBool_t NuandHandleVendorRequest(
         CyU3PDeviceReset(CyFalse);
     break;
 
+    case BLADE_USB_CMD_READ_LOG_ENTRY:
+        CyU3PUsbSendRetCode(logger_read());
+    break;
+
     default:
         isHandled = CyFalse;
     }

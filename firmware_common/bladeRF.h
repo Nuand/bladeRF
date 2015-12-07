@@ -44,6 +44,7 @@
 #define BLADE_USB_CMD_REFRESH_CAL_CACHE       112
 #define BLADE_USB_CMD_SET_LOOPBACK            113
 #define BLADE_USB_CMD_GET_LOOPBACK            114
+#define BLADE_USB_CMD_READ_LOG_ENTRY          115
 
 /* String descriptor indices */
 #define BLADE_USB_STR_INDEX_MFR     1   /* Manufacturer */
