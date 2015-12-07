@@ -271,7 +271,9 @@ classdef bladeRF < handle
             delete 'delete_this_file.m'
 
             if isempty(notfound) == false
-                error('Failed to find functions in libbladeRF.');
+                fprintf('\nMissing functions:\n');
+                disp(notfound.');
+                error('Failed to find the above functions in libbladeRF.');
             end
 
             if isempty(warnings) == false
