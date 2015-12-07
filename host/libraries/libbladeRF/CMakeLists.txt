@@ -274,23 +274,24 @@ set(LIBBLADERF_SOURCE
         src/capabilities.c
         src/config.c
         src/dc_cal_table.c
-        src/file_ops.c
-        src/fx3_fw.c
-        src/fpga.c
-        src/gain.c
-        src/si5338.c
-        src/xb.c
-        src/version.h
         src/device_identifier.c
         src/devinfo.c
+        src/file_ops.c
         src/flash.c
         src/flash_fields.c
+        src/fpga.c
+        src/fx3_fw.c
+        src/fx3_fw_log.c
+        src/gain.c
         src/image.c
+        src/init_fini.c
+        src/si5338.c
         src/sync.c
         src/sync_worker.c
         src/tuning.c
+        src/version.h
         src/version_compat.c
-        src/init_fini.c
+        src/xb.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/sha256.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/log.c

@@ -109,6 +109,12 @@
 #define BLADERF_CAP_QUERY_DEVICE_READY  (((uint64_t) 1) << 33)
 
 /**
+ * FX3 firmware v1.9.0 introduced a vendor request by which firmware log
+ * events could be retrieved.
+ */
+#define BLADERF_CAP_READ_FW_LOG_ENTRY   (((uint64_t) 1) << 34)
+
+/**
  * Convenience wrapper for testing capabilities mask
  */
 static inline bool have_cap(struct bladerf *dev, uint64_t capability)

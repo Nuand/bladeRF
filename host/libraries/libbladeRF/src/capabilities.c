@@ -37,6 +37,10 @@ void capabilities_init_pre_fpga_load(struct bladerf *dev)
         dev->capabilities |= BLADERF_CAP_QUERY_DEVICE_READY;
     }
 
+    if (version_greater_or_equal(&dev->fw_version, 1, 9, 0)) {
+        dev->capabilities |= BLADERF_CAP_READ_FW_LOG_ENTRY;
+    }
+
     log_verbose("Capability mask before FPGA load: 0x%016"PRIx64"\n",
                  dev->capabilities);
 }

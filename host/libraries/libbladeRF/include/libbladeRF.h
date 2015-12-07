@@ -2486,6 +2486,18 @@ void CALL_CONV bladerf_version(struct bladerf_version *version);
 API_EXPORT
 void CALL_CONV bladerf_log_set_verbosity(bladerf_log_level level);
 
+/**
+ * Read firmware log data and write it to the specified file
+ *
+ * @param   dev         Device to read firmware log from
+ * @param   filename    Filename to write log information to. If set to NULL,
+ *                      log data will be printed to stdout.
+ *
+ * @return 0 upon success, or a value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_fw_log(struct bladerf *dev, const char *filename);
+
 /** @} (End of FN_MISC) */
 
 /**

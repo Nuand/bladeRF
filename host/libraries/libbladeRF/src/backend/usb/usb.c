@@ -1075,6 +1075,24 @@ static int get_vctcxo_tamer_mode_unsupported(struct bladerf *dev,
     return BLADERF_ERR_UNSUPPORTED;
 }
 
+static int usb_read_fw_log(struct bladerf *dev, logger_entry *e)
+{
+    int status;
+    *e = LOG_EOF;
+
+    if (have_cap(dev, BLADERF_CAP_READ_FW_LOG_ENTRY)) {
+        status = vendor_cmd_int(dev, BLADE_USB_CMD_READ_LOG_ENTRY,
+                                USB_DIR_DEVICE_TO_HOST, (int32_t*) e);
+    } else {
+        log_debug("FX3 FW v%s does not support log retrieval.\n",
+                  dev->fw_version.describe);
+        status = BLADERF_ERR_UNSUPPORTED;
+    }
+
+    return status;
+}
+
+
 /* USB backend that used legacy format for communicating with NIOS II */
 const struct backend_fns backend_fns_usb_legacy = {
     FIELD_INIT(.matches, usb_matches),
@@ -1140,6 +1158,8 @@ const struct backend_fns backend_fns_usb_legacy = {
     FIELD_INIT(.retune, nios_retune),
 
     FIELD_INIT(.load_fw_from_bootloader, usb_load_fw_from_bootloader),
+
+    FIELD_INIT(.read_fw_log, usb_read_fw_log),
 };
 
 /* USB backend for use with FPGA supporting update NIOS II packet formats */
@@ -1207,4 +1227,6 @@ const struct backend_fns backend_fns_usb = {
     FIELD_INIT(.retune, nios_retune),
 
     FIELD_INIT(.load_fw_from_bootloader, usb_load_fw_from_bootloader),
+
+    FIELD_INIT(.read_fw_log, usb_read_fw_log),
 };

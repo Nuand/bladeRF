@@ -27,6 +27,7 @@
 
 #include "bladerf_priv.h"
 #include "fx3_fw.h"
+#include "logger_entry.h"
 
 #define BACKEND_STR_ANY    "*"
 #define BACKEND_STR_LIBUSB "libusb"
@@ -175,6 +176,9 @@ struct backend_fns {
     int (*load_fw_from_bootloader)(bladerf_backend backend,
                                    uint8_t bus, uint8_t addr,
                                    struct fx3_firmware *fw);
+
+    /* Read a log entry from the FX3 firmware */
+    int (*read_fw_log)(struct bladerf *dev, logger_entry *e);
 };
 
 /**

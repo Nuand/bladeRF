@@ -274,6 +274,12 @@ static int dummy_load_fw_from_bootloader(bladerf_backend backend,
     return 0;
 }
 
+static int dummy_read_fw_log(struct bladerf *dev, logger_entry *e)
+{
+    *e = LOG_EOF;
+    return 0;
+}
+
 const struct backend_fns backend_fns_dummy = {
     FIELD_INIT(.matches, dummy_matches),
 
@@ -338,4 +344,6 @@ const struct backend_fns backend_fns_dummy = {
     FIELD_INIT(.retune, dummy_retune),
 
     FIELD_INIT(.load_fw_from_bootloader, dummy_load_fw_from_bootloader),
+
+    FIELD_INIT(.read_fw_log, dummy_read_fw_log),
 };

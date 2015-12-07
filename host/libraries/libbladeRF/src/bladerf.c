@@ -48,6 +48,7 @@
 #include "flash_fields.h"
 #include "backend/usb/usb.h"
 #include "fx3_fw.h"
+#include "fx3_fw_log.h"
 
 static int probe(backend_probe_target target_device,
                  struct bladerf_devinfo **devices)
@@ -1951,5 +1952,20 @@ int bladerf_load_fw_from_bootloader(const char *device_identifier,
 
 
     fx3_fw_deinit(fw);
+    return status;
+}
+
+/*------------------------------------------------------------------------------
+ * Firmware log
+ *----------------------------------------------------------------------------*/
+
+int bladerf_get_fw_log(struct bladerf *dev, const char *filename)
+{
+    int status;
+
+    MUTEX_LOCK(&dev->ctrl_lock);
+    status = fx3_fw_log_dump(dev, filename);
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+
     return status;
 }
