@@ -545,6 +545,34 @@ typedef enum {
 
 } bladerf_loopback;
 
+/** 
+ * RX Mux modes
+ * Those values map directly to rx_mux_mode_t inside the FPGA's source
+ */
+typedef enum {
+    /**
+     * Normal operation
+     */
+    BLADERF_RX_MUX_NORMAL = 0,
+
+    /**
+     * Read samples from a 12 bit counter
+     */
+    BLADERF_RX_MUX_12BIT_COUNTER,
+
+    /**
+     * Read samples from a 32 bit counter
+     */
+    BLADERF_RX_MUX_32BIT_COUNTER,
+
+    /**
+     * Read samples from the current tx sample.
+     */
+    BLADERF_RX_MUX_DIGITAL_LOOPBACK = 4,
+
+
+    BLADERF_RX_MUX_INVALID
+} bladerf_rx_mux;
 
 /**
  * Rational sample rate representation
@@ -774,6 +802,30 @@ int CALL_CONV bladerf_set_loopback(struct bladerf *dev, bladerf_loopback l);
  */
 API_EXPORT
 int CALL_CONV bladerf_get_loopback(struct bladerf *dev, bladerf_loopback *l);
+
+
+/**
+ * Set the current RX Mux mode
+ * 
+ * @param       dev     Device handle
+ * @param       mux     Mux mode. 
+ *
+ * @returns 0 on success, value from \ref RETCODES list on failure.
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_rx_mux(struct bladerf *dev, bladerf_rx_mux mux);
+
+
+/**
+ * Gets the current RX Mux mode
+ * 
+ * @param[in]   dev     Device handle
+ * @param[out]  l       Current RX Mux mode
+ * @returns 0 on success, value from \ref RETCODES list on failure.
+ */
+
+API_EXPORT
+int CALL_CONV bladerf_get_rx_mux(struct bladerf *dev, bladerf_rx_mux *mux);
 
 /**
  * Configure the device's sample rate, in Hz.  Note this requires the sample
@@ -3124,6 +3176,19 @@ int CALL_CONV bladerf_lms_get_dc_cals(struct bladerf *dev,
  * This feature is useful when debugging issues involving dropped samples.
  */
 #define BLADERF_GPIO_COUNTER_ENABLE (1 << 9)
+
+
+/**
+ * Bit mask representing the rx mux selection
+ *
+ * @note This is set using bladerf_set_rx_mux()
+ */
+#define BLADERF_GPIO_RX_MUX_MASK ((1 << 8) | (1 << 9) | (1 << 10))
+
+/**
+ * Starting bit index of the rx mux value
+ */
+#define BLADERF_GPIO_RX_MUX_INDEX 8
 
 /**
  * Switch to use RX low band (300M - 1.5GHz)

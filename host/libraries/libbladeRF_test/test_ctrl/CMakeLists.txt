@@ -30,6 +30,7 @@ set(SRC
         src/test_frequency.c
         src/test_gain.c
         src/test_loopback.c
+        src/test_rx_mux.c
         src/test_sampling.c
         src/test_lpf_mode.c
         src/test_samplerate.c
