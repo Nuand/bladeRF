@@ -852,5 +852,45 @@ classdef bladeRF < handle
             bladeRF.check_status('bladerf_set_loopback', status);
             mode = strrep(mode, 'BLADERF_LB_', '');
         end
+
+        function calibrate(obj, module)
+        % Perform the specified calibration.
+        %
+        % RX and TX should not be running when this is done.
+        %
+        % bladeRF/calibrate(module)
+        %
+        % Where `module` is one of:
+        %   - 'LPF_TUNING'  - Calibrate the DC offset of the LPF Tuning module
+        %   - 'RX_LPF'      - Calibrate the DC offset of the RX LPF
+        %   - 'TX_LPF'      - Calibrate the DC offset of the TX LPF
+        %   - 'RXVGA2'      - Calibrate the DC offset of RX VGA2
+        %   - 'ALL'         - Perform all of the above
+        %
+            if obj.rx.running ==  true || obj.tx.running == true
+                error('Calibration cannot be performed while the device is streaming.')
+            end
+
+            if nargin < 2
+                module = 'ALL';
+            else
+                module = upper(module);
+            end
+
+            switch module
+                case { 'LPF_TUNING' 'RX_LPF', 'TX_LPF', 'RXVGA2' }
+                    module = strcat('BLADERF_DC_CAL_', module);
+                    status = calllib('libbladeRF', 'bladerf_calibrate_dc', obj.device, module);
+                    bladeRF.check_status('bladerf_calibrate_dc', status);
+                case { 'ALL' }
+                    calibrate(obj, 'LPF_TUNING')
+                    calibrate(obj, 'RX_LPF')
+                    calibrate(obj, 'RXVGA2')
+                    calibrate(obj, 'TX_LPF')
+                otherwise
+                    error(['Invalid module specified: ' module])
+            end
+
+        end
     end
 end
