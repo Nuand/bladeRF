@@ -430,6 +430,18 @@ classdef bladeRF_XCVR < handle
                 if obj.sob == false && obj.eob == false
                     obj.eob = true;
                     obj.bladerf.transmit(0, 0, obj.sob, obj.eob);
+
+                    % Ensure these zeros are transmitted by waiting for
+                    % any remaining data in buffers to flush
+                    max_buffered =  obj.bladerf.tx.config.num_buffers * ...
+                                    obj.bladerf.tx.config.buffer_size;
+
+                    target_time = obj.bladerf.tx.timestamp + ...
+                                  max_buffered;
+
+                    while obj.bladerf.tx.timestamp <= target_time
+                        pause(1e-3);
+                    end
                 end
             end
 
