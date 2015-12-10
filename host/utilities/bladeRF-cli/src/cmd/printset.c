@@ -69,6 +69,7 @@ PRINTSET_DECL(frequency)
 PRINTSET_DECL(gpio)
 PRINTSET_DECL(loopback)
 PRINTSET_DECL(lnagain)
+PRINTSET_DECL(rx_mux)
 PRINTSET_DECL(rxvga1)
 PRINTSET_DECL(rxvga2)
 PRINTSET_DECL(txvga1)
@@ -86,6 +87,7 @@ struct printset_entry printset_table[] = {
     PRINTSET_ENTRY(frequency,   PRINTALL_OPTION_APPEND_NEWLINE),
     PRINTSET_ENTRY(gpio,        PRINTALL_OPTION_APPEND_NEWLINE),
     PRINTSET_ENTRY(loopback,    PRINTALL_OPTION_APPEND_NEWLINE),
+    PRINTSET_ENTRY(rx_mux,      PRINTALL_OPTION_APPEND_NEWLINE),
     PRINTSET_ENTRY(lnagain,     PRINTALL_OPTION_NONE),
     PRINTSET_ENTRY(rxvga1,      PRINTALL_OPTION_NONE),
     PRINTSET_ENTRY(rxvga2,      PRINTALL_OPTION_NONE),
@@ -1022,6 +1024,72 @@ int set_loopback(struct cli_state *state, int argc, char **argv)
     } else {
         return print_loopback(state, 2, argv);
     }
+}
+
+int print_rx_mux(struct cli_state *state, int argc, char **argv)
+{
+    int status;
+    const char *mux_str;
+    bladerf_rx_mux mux_setting;
+
+    status = bladerf_get_rx_mux(state->dev, &mux_setting);
+    if (status < 0) {
+        state->last_lib_error = status;
+        return CLI_RET_LIBBLADERF;
+    }
+
+    switch (mux_setting) {
+        case BLADERF_RX_MUX_BASEBAND_LMS:
+            mux_str = "BASEBAND_LMS - Baseband samples from LMS6002D";
+            break;
+        case BLADERF_RX_MUX_12BIT_COUNTER:
+            mux_str = "12BIT_COUNTER - 12-bit Up-Count I, Down-Count Q";
+            break;
+        case BLADERF_RX_MUX_32BIT_COUNTER:
+            mux_str = "32BIT_COUNTER - 32-bit Up-Counter";
+            break;
+        case BLADERF_RX_MUX_DIGITAL_LOOPBACK:
+            mux_str = "DIGITAL_LOOPBACK: Digital Loopback of TX->RX in the FPGA";
+            break;
+        default:
+            mux_str = "Unknown";
+    }
+
+    printf("  RX mux: %s\n", mux_str);
+    return 0;
+}
+
+int set_rx_mux(struct cli_state *state, int argc, char **argv)
+{
+    int status;
+    bladerf_rx_mux mux_val;
+
+    if (argc != 3) {
+        return CLI_RET_NARGS;
+    }
+
+    if (!strcasecmp(argv[2], "BASEBAND_LMS")) {
+        mux_val = BLADERF_RX_MUX_BASEBAND_LMS;
+    } else if (!strcasecmp(argv[2], "12BIT_COUNTER")) {
+        mux_val = BLADERF_RX_MUX_12BIT_COUNTER;
+    } else if (!strcasecmp(argv[2], "32BIT_COUNTER")) {
+        mux_val = BLADERF_RX_MUX_32BIT_COUNTER;
+    } else if (!strcasecmp(argv[2], "DIGITAL_LOOPBACK")) {
+        mux_val = BLADERF_RX_MUX_DIGITAL_LOOPBACK;
+    } else {
+        cli_err_nnl(state, "Invalid RX mux mode", "%s\n", argv[2]);
+        return CLI_RET_INVPARAM;
+    }
+
+    status = bladerf_set_rx_mux(state->dev, mux_val);
+    if (status < 0) {
+        state->last_lib_error = status;
+        status = CLI_RET_LIBBLADERF;
+    } else {
+        status = print_rx_mux(state, 2, argv);
+    }
+
+    return status;
 }
 
 int print_rxvga1(struct cli_state *state, int argc, char **argv)

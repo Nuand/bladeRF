@@ -27,7 +27,7 @@
  * Any manual modifications to this file will be overwritten!
  * To edit the content of help strings, please edit interactive-help.md
  *
- * Last generated: Sun Aug 23 03:24:08 EDT 2015 by jynik
+ * Last generated: Wed Dec  9 22:46:24 EST 2015 by jynik
  */
 
 #ifndef BLADERF_CLI_DOC_CMD_HELP_H__
@@ -350,7 +350,7 @@
 
 
 #define CLI_CMD_HELPTEXT_mimo \
-  "Usage: mimo [master [frequency] | slave]\n" \
+  "Usage: mimo [master | slave]\n" \
   "\n" \
   "Modify device MIMO operation.\n" \
   "\n" \
@@ -430,6 +430,7 @@
   "            gpio FX3 <-> FPGA GPIO state\n" \
   "        loopback Loopback settings\n" \
   "         lnagain Gain setting of the RX LNA, in dB\n" \
+  "          rx_mux FPGA RX FIFO input mux setting\n" \
   "          rxvga1 Gain setting of RXVGA1, in dB\n" \
   "          rxvga2 Gain setting of RXVGA2, in dB\n" \
   "          txvga1 Gain setting of TXVGA1, in dB\n" \
@@ -669,22 +670,40 @@
   "The set command takes a parameter and an arbitrary number of arguments\n" \
   "for that particular parameter. The parameter is one of:\n" \
   "\n" \
+  "  -----------------------------------------------------------------------\n" \
   "       Parameter Description\n" \
   "  -------------- --------------------------------------------------------\n" \
   "       bandwidth Bandwidth settings\n" \
+  "\n" \
   "       frequency Frequency settings\n" \
+  "\n" \
   "            gpio FX3 <-> FPGA GPIO state\n" \
+  "\n" \
   "        loopback Loopback settings. Run 'set loopback' to list modes.\n" \
+  "\n" \
   "         lnagain Gain setting of the RX LNA, in dB. Values: 0, 3, 6\n" \
+  "\n" \
+  "          rx_mux FPGA RX FIFO input mux mode. Options are: BASEBAND_LMS,\n" \
+  "                 12BIT_COUNTER, 32BIT_COUNTER, DIGITAL_LOOPBACK\n" \
+  "\n" \
   "          rxvga1 Gain setting of RXVGA1, in dB. Range: [5, 30]\n" \
+  "\n" \
   "          rxvga2 Gain setting of RXVGA2, in dB. Range: [0, 30]\n" \
+  "\n" \
   "          txvga1 Gain setting of TXVGA1, in dB. Range: [-35, -4]\n" \
+  "\n" \
   "          txvga2 Gain setting of TXVGA2, in dB. Range: [0, 25]\n" \
+  "\n" \
   "        sampling External or internal sampling mode\n" \
+  "\n" \
   "      samplerate Sample rate settings\n" \
+  "\n" \
   "         trimdac VCTCXO Trim DAC settings\n" \
+  "\n" \
   "         xb_gpio Expansion board GPIO values\n" \
+  "\n" \
   "     xb_gpio_dir Expansion board GPIO direction (1=output, 0=input)\n" \
+  "  -----------------------------------------------------------------------\n" \
   "\n" \
 
 

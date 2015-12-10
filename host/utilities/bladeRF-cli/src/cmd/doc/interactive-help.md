@@ -421,6 +421,8 @@ below. If no paremeter is specified, all parameters are printed.
 
 `lnagain`     Gain setting of the RX LNA, in dB
 
+`rx_mux`      FPGA RX FIFO input mux setting
+
 `rxvga1`      Gain setting of RXVGA1, in dB
 
 `rxvga2`      Gain setting of RXVGA2, in dB
@@ -685,6 +687,9 @@ that particular parameter. The parameter is one of:
 `loopback`    Loopback settings. Run 'set loopback' to list modes.
 
 `lnagain`     Gain setting of the RX LNA, in dB. Values: 0, 3, 6
+
+`rx_mux`      FPGA RX FIFO input mux mode. Options are:
+                BASEBAND_LMS, 12BIT_COUNTER, 32BIT_COUNTER, DIGITAL_LOOPBACK
 
 `rxvga1`      Gain setting of RXVGA1, in dB. Range: [5, 30]
 
