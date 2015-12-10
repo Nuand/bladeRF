@@ -102,6 +102,12 @@ fcns.thunkname{fcnNum}='int32voidPtrbladerf_loopbackThunk';fcns.name{fcnNum}='bl
 % int bladerf_get_loopback ( struct bladerf * dev , bladerf_loopback * l );
 fcns.thunkname{fcnNum}='int32voidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_loopback'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_loopbackPtr'};fcnNum=fcnNum+1;
 
+% int bladerf_set_rx_mux ( struct bladerf * dev , bladerf_rx_mux mux );
+fcns.thunkname{fcnNum}='int32voidPtrbladerf_rx_muxThunk';fcns.name{fcnNum}='bladerf_set_rx_mux'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_rx_mux'};fcnNum=fcnNum+1;
+
+% int bladerf_get_rx_mux ( struct bladerf * dev , bladerf_rx_mux * mux );
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get_rx_mux'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_rx_muxPtr'};fcnNum=fcnNum+1;
+
 % int bladerf_set_sample_rate ( struct bladerf * dev , bladerf_module module , unsigned int rate , unsigned int * actual );
 fcns.thunkname{fcnNum}='int32voidPtrbladerf_moduleuint32voidPtrThunk';fcns.name{fcnNum}='bladerf_set_sample_rate'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_module', 'uint32', 'uint32Ptr'};fcnNum=fcnNum+1;
 
@@ -526,6 +532,12 @@ enuminfo.bladerf_image_type=struct('BLADERF_IMAGE_TYPE_INVALID',       -1, ...
                                    'BLADERF_IMAGE_TYPE_RX_IQ_CAL',      7, ...
                                    'BLADERF_IMAGE_TYPE_TX_IQ_CAL',      8);
 
+enuminfo.bladerf_rx_mux=struct('BLADERF_RX_MUX_INVALID',            -1, ...
+                               'BLADERF_RX_MUX_BASEBAND_LMS',        0, ...
+                               'BLADERF_RX_MUX_12BIT_COUNTER',       1, ...
+                               'BLADERF_RX_MUX_32BIT_COUNTER',       2, ...
+                               'BLADERF_RX_MUX_DIGITAL_LOOPBACK',    4);
+                               % Value 3 is reserved for future use
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Output

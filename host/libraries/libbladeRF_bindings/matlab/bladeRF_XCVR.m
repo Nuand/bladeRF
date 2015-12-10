@@ -42,6 +42,7 @@ classdef bladeRF_XCVR < handle
         vga2            % VGA2 gain. RX range: [0, 30], TX range: [0, 25]
         lna             % RX LNA gain. Values: { 'BYPASS', 'MID', 'MAX' }
         xb200_filter    % XB200 Filter selection. Only valid when an XB200 is attached. Options are: '50M', '144M', '222M', 'AUTO_1DB', 'AUTO_3DB', 'CUSTOM'
+        mux             % FPGA sample FIFO mux mode. Only valid for RX, with options 'BASEBAND_LMS', '12BIT_COUNTER', '32BIT_COUNTER', 'DIGITAL_LOOPBACK'
     end
 
     properties(SetAccess = immutable, Hidden=true)
@@ -299,6 +300,38 @@ classdef bladeRF_XCVR < handle
             bladeRF.check_status('bladerf_xb200_get_filterbank', status);
 
             filter_val = strrep(filter_val, 'BLADERF_XB200_', '');
+        end
+
+        % Set the RX mux mode setting
+        function set.mux(obj, mode)
+            if strcmpi(obj.direction, 'TX') == true
+                error('FPGA sample mux mode configuration is only applicable to the RX module.');
+            end
+
+            mode = upper(mode);
+            switch mode
+                case { 'BASEBAND_LMS', '12BIT_COUNTER', '32BIT_COUNTER', 'DIGITAL_LOOPBACK' }
+                    mode = ['BLADERF_RX_MUX_' mode ];
+                otherwise
+                    error(['Invalid RX mux mode: ' mode]);
+            end
+
+            status = calllib('libbladeRF', 'bladerf_set_rx_mux', obj.bladerf.device, mode);
+            bladeRF.check_status('bladerf_set_rx_mux', status);
+        end
+
+        % Get the current RX mux mode setting
+        function mode = get.mux(obj)
+            if strcmpi(obj.direction, 'TX') == true
+                error('FPGA sample mux mode configuration is only applicable to the RX module.');
+            end
+
+            mode = 'BLADERF_RX_MUX_INVALID';
+
+            [status, ~, mode] = calllib('libbladeRF', 'bladerf_get_rx_mux', obj.bladerf.device, mode);
+            bladeRF.check_status('bladerf_get_rx_mux', status);
+
+            mode = strrep(mode, 'BLADERF_RX_MUX_', '');
         end
 
         % Constructor
