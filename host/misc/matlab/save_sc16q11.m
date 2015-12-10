@@ -20,7 +20,7 @@ function [ret] = save_sc16q11(filename, signal)
         sig_i(sig_i < -2048) = -2048;
 
         sig_q = round(imag(signal) .* 2048.0);
-        sig_q(sig_q > 2048)  = 2047;
+        sig_q(sig_q > 2047)  = 2047;
         sig_q(sig_q < -2048) = -2048;
 
         assert(length(sig_i) == length(sig_q));
