@@ -123,7 +123,7 @@ void vctcxo_tamer_set_tune_mode(bladerf_vctcxo_tamer_mode mode) {
         case BLADERF_VCTCXO_TAMER_DISABLED:
         case BLADERF_VCTCXO_TAMER_1_PPS:
         case BLADERF_VCTCXO_TAMER_10_MHZ:
-            /* Valid entry */
+            vctcxo_tamer_enable_isr(false);
             break;
 
         default:
@@ -142,6 +142,17 @@ void vctcxo_tamer_set_tune_mode(bladerf_vctcxo_tamer_mode mode) {
     /* Take counters out of reset if tuning mode is not DISABLED */
     if( mode != 0x00 ) {
         vctcxo_tamer_reset_counters( false );
+    }
+
+    switch (mode) {
+        case BLADERF_VCTCXO_TAMER_1_PPS:
+        case BLADERF_VCTCXO_TAMER_10_MHZ:
+            vctcxo_tamer_enable_isr(true);
+            break;
+
+        default:
+            /* Leave ISR disabled otherwise */
+            break;
     }
 
     return;
@@ -216,14 +227,13 @@ void bladerf_nios_init(struct pkt_buf *pkt, struct vctcxo_tamer_pkt_buf *vctcxo_
         NULL
     );
 
+    /* Default VCTCXO Tamer and its interrupts to be disabled. */
+    vctcxo_tamer_set_tune_mode(BLADERF_VCTCXO_TAMER_DISABLED);
+
     /* Enable interrupts */
     command_uart_enable_isr(true) ;
     alt_ic_irq_enable(COMMAND_UART_IRQ_INTERRUPT_CONTROLLER_ID, COMMAND_UART_IRQ);
-    vctcxo_tamer_enable_isr(true);
     alt_ic_irq_enable(VCTCXO_TAMER_0_IRQ_INTERRUPT_CONTROLLER_ID, VCTCXO_TAMER_0_IRQ);
-
-    /* Default VCTCXO Tamer to be disabled. */
-    vctcxo_tamer_set_tune_mode(BLADERF_VCTCXO_TAMER_DISABLED);
 }
 
 static void si5338_complete_transfer(uint8_t check_rxack)
