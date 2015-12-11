@@ -222,8 +222,8 @@ void bladerf_nios_init(struct pkt_buf *pkt, struct vctcxo_tamer_pkt_buf *vctcxo_
     vctcxo_tamer_enable_isr(true);
     alt_ic_irq_enable(VCTCXO_TAMER_0_IRQ_INTERRUPT_CONTROLLER_ID, VCTCXO_TAMER_0_IRQ);
 
-    /* Set VCTCXO Tamer Tuning Mode to 1PPS */
-    vctcxo_tamer_set_tune_mode(0x01);
+    /* Default VCTCXO Tamer to be disabled. */
+    vctcxo_tamer_set_tune_mode(BLADERF_VCTCXO_TAMER_DISABLED);
 }
 
 static void si5338_complete_transfer(uint8_t check_rxack)
