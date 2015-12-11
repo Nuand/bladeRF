@@ -6,6 +6,33 @@ hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
 --------------------------------
+v0.4.1 (2015-09-01)
+--------------------------------
+ * Fixed bug in XB GPIO masked writes introduced in v0.4.0
+
+--------------------------------
+v0.4.0 (2015-08-27)
+--------------------------------
+ * Added support for multi-write of TX and RX NINT/NFRAC registers
+    - LMS6002D PLL registers are written atomically to allow for
+      slightly cleaner retuning.
+
+--------------------------------
+v0.3.5 (2015-08-25)
+--------------------------------
+ * Build and simulation fixes
+
+--------------------------------
+v0.3.4 (2015-07-24)
+--------------------------------
+ * Fixed a bug where multiple TX NOW bursts would accumulate samples
+   in the RX FIFO and was causing a slip in metadata headers versus samples.
+ * Modified sample FIFOs to have under/overflow checking
+ * Register FIFO reader output
+ * Addressed some warnings about latches.
+ * Build fixes for atsc_tx image 
+
+--------------------------------
 v0.3.3 (2015-06-30)
 --------------------------------
  * Addressed timing constraint issue by reducing LMS SPI clock rate.
