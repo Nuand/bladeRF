@@ -1501,7 +1501,7 @@ int set_vctcxo_tamer(struct cli_state *state, int argc, char **argv)
         return CLI_RET_NARGS;
     }
 
-    if (!strcasecmp(argv[2], "diabled")      || !strcasecmp(argv[2], "off")) {
+    if (!strcasecmp(argv[2], "disabled")      || !strcasecmp(argv[2], "off")) {
         mode = BLADERF_VCTCXO_TAMER_DISABLED;
     } else if (!strcasecmp(argv[2], "1PPS")  || !strcasecmp(argv[2], "1 PPS")) {
         mode = BLADERF_VCTCXO_TAMER_1_PPS;
