@@ -76,6 +76,10 @@ void capabilities_init_post_fpga_load(struct bladerf *dev)
         dev->capabilities |= BLADERF_CAP_MASKED_XBIO_WRITE;
     }
 
+    if (version_greater_or_equal(&dev->fpga_version, 0, 5, 0)) {
+        dev->capabilities |= BLADERF_CAP_VCTCXO_TAMING_MODE;
+    }
+
     log_verbose("Capability mask after FPGA load: 0x%016"PRIx64"\n",
                  dev->capabilities);
 }
