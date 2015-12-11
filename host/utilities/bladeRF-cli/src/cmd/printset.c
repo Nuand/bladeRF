@@ -1560,7 +1560,7 @@ int print_vctcxo_tamer(struct cli_state *state, int argc, char *argv[])
             break;
     }
 
-    printf("VCTCXO tamer mode: %s\n", mode_str);
+    printf("  VCTCXO tamer mode: %s\n", mode_str);
     return CLI_RET_OK;
 }
 
