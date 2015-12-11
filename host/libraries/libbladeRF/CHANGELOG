@@ -5,6 +5,58 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.5.0 (2015-12-31)
+--------------------------------
+
+This version of libbladeRF is intended for use with:
+
+FX3 Firmware v1.9.0
+FPGA         v0.5.0
+
+Changes:
+ * Added LIBBLADERF_API_VERSION macro to libbladeRF.h
+    - This is intended to assist with compile-time feature checks.
+
+ * Added VCTCXO taming control via 1 PPS or 10 MHz source
+    - bladerf_vctcxo_tamer_mode enumeration
+    - bladerf_set_vctcxo_tamer_mode(), bladerf_get_vctcxo_tamer_mode()
+
+ * Added API functions to set SMB clock to arbitrary frequency:
+    - bladerf_set_rational_smb_frequency()
+    - bladerf_get_rational_smb_frequency()
+    - bladerf_set_smb_frequency()
+    - bladerf_get_smb_frequency()
+
+ * Added non-blocking async buffer submission API function:
+    - bladerf_submit_stream_buffer_nb()
+
+ * Added API call to retreive firmware log and write it to a file:
+    - bladerf_get_fw_log()
+
+ * Added XB-100 pin/button/LED macro definitions and support via
+   bladerf_expansion_attach().
+
+ * Added BLADERF_ERR_PERMISSION. This is now returned in associated file
+   and device access failures.
+
+ * Added enumeration value entries:
+    - BLADERF_MODULE_INVALID, BLADERF_DC_CAL_INVALID
+
+ * Changed default frequencies
+    - RX: 2.447 GHz
+    - TX: 2.484 GHz
+
+ * Removed function prototypes for si5338 functions that removed long ago
+
+ * Fixed an issue where bladerf_sync_tx() was not using all available
+   host-side buffers; host-side buffering was only limited to the
+   number of requested transfers. This now uses all requested buffers.
+
+ * Fixed #415, #416, #417
+
+ * Misc. API documentation and example fixes.
+
+
 v1.4.3 (2015-07-25)
 --------------------------------
 

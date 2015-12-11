@@ -1379,6 +1379,23 @@ const char * bladerf_strerror(int error)
     }
 }
 
+/* Sanity checks for version reporting mismatches */
+#ifndef LIBBLADERF_API_VERSION
+#   error LIBBLADERF_API_VERSION is missing
+#endif
+
+#if LIBBLADERF_VERSION_MAJOR != ((LIBBLADERF_API_VERSION >> 24) & 0xff)
+#   error LIBBLADERF_API_VERSION: Major version mispatch
+#endif
+
+#if LIBBLADERF_VERSION_MINOR != ((LIBBLADERF_API_VERSION >> 16) & 0xff)
+#   error LIBBLADERF_API_VERSION: Minor version mispatch
+#endif
+
+#if LIBBLADERF_VERSION_PATCH != ((LIBBLADERF_API_VERSION >> 8) & 0xff)
+#   error LIBBLADERF_API_VERSION: Patch version mispatch
+#endif
+
 void bladerf_version(struct bladerf_version *version)
 {
     version->major = LIBBLADERF_VERSION_MAJOR;
