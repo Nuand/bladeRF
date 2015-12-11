@@ -1517,10 +1517,12 @@ int set_vctcxo_tamer(struct cli_state *state, int argc, char **argv)
     status = bladerf_set_vctcxo_tamer_mode(state->dev, mode);
     if (status != 0) {
         state->last_lib_error = status;
-        return CLI_RET_LIBBLADERF;
+        status = CLI_RET_LIBBLADERF;
+    } else {
+        status = print_vctcxo_tamer(state, 2, argv);
     }
 
-    return CLI_RET_OK;
+    return status;
 }
 
 int print_vctcxo_tamer(struct cli_state *state, int argc, char *argv[])
