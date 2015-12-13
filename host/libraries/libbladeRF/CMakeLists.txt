@@ -413,10 +413,17 @@ configure_file(
     @ONLY
 )
 
+if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
+install(
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/libbladeRF.pc
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/libdata/pkgconfig
+)
+else()
 install(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/libbladeRF.pc
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig/
 )
+endif(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
 
 ################################################################################
 # Library installation information
