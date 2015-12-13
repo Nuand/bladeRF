@@ -874,23 +874,61 @@ classdef bladeRF < handle
             if nargin < 2
                 module = 'ALL';
             else
-                module = upper(module);
+                module = strcat('BLADERF_DC_CAL_', upper(module));
             end
 
             switch module
-                case { 'LPF_TUNING' 'RX_LPF', 'TX_LPF', 'RXVGA2' }
-                    module = strcat('BLADERF_DC_CAL_', module);
-                    status = calllib('libbladeRF', 'bladerf_calibrate_dc', obj.device, module);
-                    bladeRF.check_status('bladerf_calibrate_dc', status);
-                case { 'ALL' }
-                    calibrate(obj, 'LPF_TUNING')
-                    calibrate(obj, 'RX_LPF')
-                    calibrate(obj, 'RXVGA2')
-                    calibrate(obj, 'TX_LPF')
+                case { 'BLADERF_DC_CAL_LPF_TUNING', ...
+                       'BLADERF_DC_CAL_RX_LPF',     ...
+                       'BLADERF_DC_CAL_RXVGA2',     ...
+                       'BLADERF_DC_CAL_TX_LPF' }
+
+                   perform_calibration(obj, module);
+
+                case { 'BLADERF_DC_CAL_ALL' }
+
+                    perform_calibration(obj, 'BLADERF_DC_CAL_LPF_TUNING');
+                    perform_calibration(obj, 'BLADERF_DC_CAL_RX_LPF');
+                    perform_calibration(obj, 'BLADERF_DC_CAL_RXVGA2');
+                    perform_calibration(obj, 'BLADERF_DC_CAL_TX_LPF');
+
                 otherwise
                     error(['Invalid module specified: ' module])
             end
 
+        end
+    end
+
+    methods(Access = private)
+
+        function perform_calibration(obj, cal)
+            if strcmpi(cal, 'BLADERF_DC_CAL_TX_LPF') == true
+                samplerate_backup  = obj.tx.samplerate;
+                config_backup      = obj.tx.config;
+                loopback_backup    = obj.loopback;
+
+                obj.loopback = 'BB_TXVGA1_RXVGA2';
+
+                obj.tx.config.num_buffers   = 16;
+                obj.tx.config.num_transfers = 8;
+                obj.tx.config.buffer_size   = 8192;
+                obj.tx.samplerate           = 3e6;
+
+                obj.loopback = 'BB_TXLPF_RXLPF';
+
+                dummy_samples = zeros(obj.tx.config.buffer_size * obj.tx.config.num_buffers, 1);
+                obj.tx.start();
+                obj.transmit(dummy_samples);
+                obj.tx.stop();
+
+                obj.tx.config = config_backup;
+                obj.tx.samplerate = samplerate_backup;
+
+                obj.loopback = loopback_backup;
+            end
+
+            status = calllib('libbladeRF', 'bladerf_calibrate_dc', obj.device, cal);
+            bladeRF.check_status('bladerf_calibrate_dc', status);
         end
     end
 end
