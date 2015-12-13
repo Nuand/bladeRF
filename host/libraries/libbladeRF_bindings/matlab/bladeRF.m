@@ -914,8 +914,6 @@ classdef bladeRF < handle
                 obj.tx.config.buffer_size   = 8192;
                 obj.tx.samplerate           = 3e6;
 
-                obj.loopback = 'BB_TXLPF_RXLPF';
-
                 dummy_samples = zeros(obj.tx.config.buffer_size * obj.tx.config.num_buffers, 1);
                 obj.tx.start();
                 obj.transmit(dummy_samples);
