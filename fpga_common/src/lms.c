@@ -109,8 +109,7 @@
 struct dc_cal_state {
     uint8_t clk_en;                 /* Backup of clock enables */
 
-    uint8_t reg0x71;                /* Backup of registers */
-    uint8_t reg0x7c;
+    uint8_t reg0x72;                /* Register backup */
 
     bladerf_lna_gain lna_gain;      /* Backup of gain values */
     int rxvga1_gain;
@@ -2506,12 +2505,7 @@ static inline int dc_cal_backup(struct bladerf *dev,
     }
 
     if (module == BLADERF_DC_CAL_RX_LPF || module == BLADERF_DC_CAL_RXVGA2) {
-        status = LMS_READ(dev, 0x71, &state->reg0x71);
-        if (status != 0) {
-            return status;
-        }
-
-        status = LMS_READ(dev, 0x7c, &state->reg0x7c);
+        status = LMS_READ(dev, 0x72, &state->reg0x72);
         if (status != 0) {
             return status;
         }
@@ -2604,15 +2598,11 @@ static int dc_cal_module_init(struct bladerf *dev,
                 }
             }
 
-            /* Connect LNA to the external pads and internally terminate */
-            val = state->reg0x71 & ~(1 << 7);
-            status = LMS_WRITE(dev, 0x71, val);
-            if (status != 0) {
-                return status;
-            }
-
-            val = state->reg0x7c | (1 << 2);
-            status = LMS_WRITE(dev, 0x7c, val);
+            /* Disconnect LNA from the RXMIX input by opening up the
+             * INLOAD_LNA_RXFE switch. This should help reduce external
+             * interference while calibrating */
+            val = state->reg0x72 & ~(1 << 7);
+            status = LMS_WRITE(dev, 0x72, val);
             if (status != 0) {
                 return status;
             }
@@ -2930,12 +2920,7 @@ static inline int dc_cal_restore(struct bladerf *dev,
     }
 
     if (module == BLADERF_DC_CAL_RX_LPF || module == BLADERF_DC_CAL_RXVGA2) {
-        status = LMS_WRITE(dev, 0x71, state->reg0x71);
-        if (status != 0 && ret == 0) {
-            ret = status;
-        }
-
-        status = LMS_WRITE(dev, 0x7c, state->reg0x7c);
+        status = LMS_WRITE(dev, 0x72, state->reg0x72);
         if (status != 0 && ret == 0) {
             ret = status;
         }
