@@ -96,12 +96,32 @@ classdef bladeRF_StreamConfig < handle
             end
         end
 
-        function obj = bladeRF_StreamConfig
+        function obj = bladeRF_StreamConfig(num_buffers, buffer_size, num_transfers, timeout_ms)
             obj.locked          = false;
-            obj.num_buffers     = 64;
-            obj.buffer_size     = 16384;
-            obj.num_transfers   = 16;
-            obj.timeout_ms      = 5000;
+
+            if nargin < 1
+                obj.num_buffers     = 64;
+            else
+                obj.num_buffers     = num_buffers;
+            end
+
+            if nargin < 2
+                obj.buffer_size     = 16384;
+            else
+                obj.buffer_size     = buffer_size;
+            end
+
+            if nargin < 3
+                obj.num_transfers   = 16;
+            else
+                obj.num_transfers   = num_transfers;
+            end
+
+            if nargin < 4
+                obj.timeout_ms      = 5000;
+            else
+                obj.timeout_ms      = timeout_ms;
+            end
         end
     end
 end
