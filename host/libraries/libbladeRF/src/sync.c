@@ -73,7 +73,7 @@ int sync_init(struct bladerf *dev,
 
     if (module != BLADERF_MODULE_TX && module != BLADERF_MODULE_RX) {
         log_debug("Invalid bladerf_module value encountered: %d", module);
-        status = BLADERF_ERR_INVAL;
+        return BLADERF_ERR_INVAL;
     }
 
     switch (format) {
