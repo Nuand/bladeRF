@@ -1,3 +1,4 @@
+/* *INDENT-OFF* */
 /** @file getopt_long.h
  ** @brief getopt_long
  ** @author Andrea Vedaldi
@@ -44,3 +45,4 @@ VL_EXPORT int getopt_long(int argc, char * const argv[],
 
 /* VL_GETOPT_LONG_H */
 #endif
+/* *INDENT-OFF* */

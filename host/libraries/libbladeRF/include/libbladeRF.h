@@ -3566,12 +3566,14 @@ int CALL_CONV bladerf_get_bootloader_list(struct bladerf_devinfo **list);
  *
  *
  */
+/* *INDENT-OFF* */
 API_EXPORT
 int CALL_CONV bladerf_load_fw_from_bootloader(const char *device_identifier,
                                               bladerf_backend backend,
                                               uint8_t bus, uint8_t addr,
                                               const char *file);
 
+/* *INDENT-ON* */
 /** @} (End of FN_BOOTLOADER) */
 
 #ifdef __cplusplus
