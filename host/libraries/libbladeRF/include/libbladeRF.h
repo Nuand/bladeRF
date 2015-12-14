@@ -767,7 +767,13 @@ typedef enum {
     BLADERF_CORR_FPGA_GAIN
 } bladerf_correction;
 
-/** VCTCXO Tamer mode selection */
+/**
+ * VCTCXO Tamer mode selection
+ *
+ * These values control the use of header J71 pin 1 for taming the
+ * on-board VCTCXO. When supplying input ito the VCTCXO tamer, a 1.8V signal
+ * must be provided.
+ */
 typedef enum {
     /** Denotes an invalid selection or state */
     BLADERF_VCTCXO_TAMER_INVALID = -1,
@@ -775,10 +781,10 @@ typedef enum {
     /** Do not attempt to tame the VCTCXO with an input source. */
     BLADERF_VCTCXO_TAMER_DISABLED = 0,
 
-    /** Use a 1 pps input source to tame the VCTCXO */
+    /** Use a 1 pps input source to tame the VCTCXO. */
     BLADERF_VCTCXO_TAMER_1_PPS = 1,
 
-    /** Use a 10 MHz input source to tame the VCTCXO */
+    /** Use a 10 MHz input source to tame the VCTCXO. */
     BLADERF_VCTCXO_TAMER_10_MHZ = 2
 } bladerf_vctcxo_tamer_mode;
 
