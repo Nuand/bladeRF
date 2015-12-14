@@ -759,7 +759,10 @@ int calibrate_dc_gen_tbl(struct cli_state *s, bladerf_module module,
         }
     } else {
         fclose(write_check);
-        remove(filename);
+
+        /* Not much we care to do if this fails. Throw away the return value
+         * to make this explicit to our static analysis tools */
+        (void) remove(filename);
     }
 
     status = backup_and_update_settings(s->dev, module, &settings);
