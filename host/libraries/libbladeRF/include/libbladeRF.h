@@ -771,8 +771,13 @@ typedef enum {
  * VCTCXO Tamer mode selection
  *
  * These values control the use of header J71 pin 1 for taming the
- * on-board VCTCXO. When supplying input ito the VCTCXO tamer, a 1.8V signal
+ * on-board VCTCXO. When supplying input into the VCTCXO tamer, a 1.8V signal
  * must be provided.
+ *
+ * <b>
+ * IMPORTANT: Exceeding 1.8V on J71-1 can damage the associated FPGA I/O bank.
+ * Ensure that you provide only a 1.8V signal!
+ * </b>
  */
 typedef enum {
     /** Denotes an invalid selection or state */
