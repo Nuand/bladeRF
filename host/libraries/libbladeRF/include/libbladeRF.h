@@ -724,6 +724,7 @@ struct bladerf_quick_tune {
  * DC Calibration Modules
  */
 typedef enum {
+    BLADERF_DC_CAL_INVALID = -1,
     BLADERF_DC_CAL_LPF_TUNING,
     BLADERF_DC_CAL_TX_LPF,
     BLADERF_DC_CAL_RX_LPF,
