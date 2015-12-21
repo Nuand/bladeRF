@@ -221,6 +221,15 @@ bladerf_log_level str2loglevel(const char *str, bool *ok);
 const char * module2str(bladerf_module m);
 
 /**
+ * Convert a string to a module enumeration value. This is case-insensitive.
+ *
+ * @param   str         Module as a string. Should be "rx" or "tx".
+ *
+ * @return  BLADERF_MODULE_RX, BLADERF_MODULE_TX, or BLADERF_MODULE_INVALID
+ */
+bladerf_module str2module(const char *str);
+
+/**
  * Convert a string to a loopback mode
  *
  * @param[in]   str         String to convert
@@ -304,5 +313,14 @@ void sc16q11_to_float(const int16_t *in, float * out, unsigned int n);
  */
 void float_to_sc16q11(const float *in, int16_t *out, unsigned int n);
 
+/**
+ * Convert a string to a bladerf_cal_module value
+ *
+ * @param[in]   str     String to convert
+ *
+ * @return A bladerf_cal_module value. This will be set to
+ *         BLADERF_DC_CAL_INVALID if the provided string is invalid.
+ */
+bladerf_cal_module str_to_bladerf_cal_module(const char *str);
 
 #endif

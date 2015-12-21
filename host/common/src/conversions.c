@@ -364,6 +364,17 @@ const char * module2str(bladerf_module m)
     }
 }
 
+bladerf_module str2module(const char *str)
+{
+    if (!strcasecmp(str, "RX")) {
+        return BLADERF_MODULE_RX;
+    } else if (!strcasecmp(str, "TX")) {
+        return BLADERF_MODULE_TX;
+    } else {
+        return BLADERF_MODULE_INVALID;
+    }
+}
+
 int str2loopback(const char *str, bladerf_loopback *loopback)
 {
     int status = 0;
@@ -606,4 +617,22 @@ void float_to_sc16q11(const float *in, int16_t *out, unsigned int n)
         out[i]   = (int16_t) (in[i]   * 2048.0f);
         out[i+1] = (int16_t) (in[i+1] * 2048.0f);
     }
+}
+
+bladerf_cal_module str_to_bladerf_cal_module(const char *str)
+{
+    bladerf_cal_module module = BLADERF_DC_CAL_INVALID;
+
+    if (!strcasecmp(str, "lpf_tuning") || !strcasecmp(str, "lpftuning") ||
+        !strcasecmp(str, "tuning")) {
+        module = BLADERF_DC_CAL_LPF_TUNING;
+    } else if (!strcasecmp(str, "tx_lpf")  || !strcasecmp(str, "txlpf")) {
+        module = BLADERF_DC_CAL_TX_LPF;
+    } else if (!strcasecmp(str, "rx_lpf")  || !strcasecmp(str, "rxlpf")) {
+        module = BLADERF_DC_CAL_RX_LPF;
+    } else if (!strcasecmp(str, "rx_vga2") || !strcasecmp(str, "rxvga2")) {
+        module = BLADERF_DC_CAL_RXVGA2;
+    }
+
+    return module;
 }
