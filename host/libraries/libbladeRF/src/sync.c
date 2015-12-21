@@ -110,6 +110,10 @@ int sync_init(struct bladerf *dev,
         case BLADERF_MODULE_RX:
             sync->buf_mgmt.submitter = SYNC_TX_SUBMITTER_INVALID;
             break;
+
+        default:
+            log_debug("Invalid module provided: %d\n", module);
+            return BLADERF_ERR_INVAL;
     }
 
     sync->dev = dev;
@@ -177,8 +181,10 @@ int sync_init(struct bladerf *dev,
 
                 sync->meta.in_burst = false;
                 sync->meta.now = false;
-
                 break;
+
+            default:
+                return BLADERF_ERR_INVAL;
         }
 
         status = sync_worker_init(sync);

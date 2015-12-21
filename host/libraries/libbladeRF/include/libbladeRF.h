@@ -632,8 +632,9 @@ typedef enum {
  */
 typedef enum
 {
-    BLADERF_MODULE_RX,  /**< Receive Module */
-    BLADERF_MODULE_TX   /**< Transmit Module */
+    BLADERF_MODULE_INVALID = -1,    /**< Invalid module entry */
+    BLADERF_MODULE_RX,              /**< Receive Module */
+    BLADERF_MODULE_TX               /**< Transmit Module */
 } bladerf_module;
 
 /**

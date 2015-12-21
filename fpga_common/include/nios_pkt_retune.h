@@ -160,7 +160,9 @@ static inline void nios_pkt_retune_pack(uint8_t *buf,
             buf[NIOS_PKT_RETUNE_IDX_FREQSEL] |= FLAG_RX;
             break;
 
-        /* TODO case BLADERF_MODULE_RXTX: */
+        default:
+            /* Erroneous case - should not occur */
+            break;
     }
 
     if (low_band) {
