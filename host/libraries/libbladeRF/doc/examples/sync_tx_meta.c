@@ -242,6 +242,12 @@ int sync_tx_meta_sched_example(struct bladerf *dev,
     unsigned int i;
     struct bladerf_metadata meta;
 
+    /* 5 ms timestamp increment */
+    const uint64_t ts_inc_5ms = ((uint64_t) samplerate) * 5 / 1000;
+
+    /* 150 ms timestamp increment */
+    const uint64_t ts_inc_150ms = ((uint64_t) samplerate) * 150 / 1000;
+
     memset(&meta, 0, sizeof(meta));
 
     /* Send entire burst worth of samples in one function call */
@@ -259,12 +265,12 @@ int sync_tx_meta_sched_example(struct bladerf *dev,
         printf("Current TX timestamp: %016"PRIu64"\n", meta.timestamp);
     }
 
+    /* Set initial timestamp ~150 ms in the future */
+    meta.timestamp += ts_inc_150ms;
+
     for (i = 0; i < tx_count && status == 0; i++) {
         /* Get sample to transmit... */
         produce_samples(samples, num_samples);
-
-        /* Schedule burst 5 ms into the future */
-        meta.timestamp += samplerate / 200;
 
         status = bladerf_sync_tx(dev, samples, num_samples, &meta, timeout_ms);
         if (status != 0) {
@@ -273,6 +279,9 @@ int sync_tx_meta_sched_example(struct bladerf *dev,
         } else {
             printf("TX'd @ t=%016"PRIu64"\n", meta.timestamp);
         }
+
+        /* Schedule next burst 5 ms into the future */
+        meta.timestamp += ts_inc_5ms;
     }
 
     /* Wait for samples to finish being transmitted. */
@@ -307,6 +316,12 @@ int sync_tx_meta_update_example(struct bladerf *dev,
     struct bladerf_metadata meta;
     int16_t zero_sample[] = { 0, 0 }; /* A 0+0j sample */
 
+    /* 5 ms timestamp increment */
+    const uint64_t ts_inc_5ms = ((uint64_t) samplerate) * 5 / 1000;
+
+    /* 1.25 ms timestmap increment */
+    const uint64_t ts_inc_1_25ms = ((uint64_t) samplerate) * 125 / 100000;
+
     memset(&meta, 0, sizeof(meta));
 
     /* The first call to bladerf_sync_tx() will start our long "burst" at
@@ -331,7 +346,7 @@ int sync_tx_meta_update_example(struct bladerf *dev,
     }
 
     /* Start 5 ms in the future */
-    meta.timestamp += samplerate / 200;
+    meta.timestamp += ts_inc_5ms;
 
     for (i = 0; i < tx_count && status == 0; i++) {
         /* Get sample to transmit... */
@@ -352,7 +367,7 @@ int sync_tx_meta_update_example(struct bladerf *dev,
 
         /* Schedule samples to be transmitted 1.25 ms after the completion of
          * the previous burst */
-        meta.timestamp += num_samples + samplerate / 800;
+        meta.timestamp += num_samples + ts_inc_1_25ms;
 
     }
 

@@ -181,6 +181,12 @@ int sync_rx_meta_sched_example(struct bladerf *dev,
     struct bladerf_metadata meta;
     unsigned int i;
 
+    /* 150 ms timestamp increment */
+    const uint64_t ts_inc_150ms = ((uint64_t) samplerate) * 150 / 1000;
+
+    /* 1 ms timestamp increment */
+    const uint64_t ts_inc_1ms = samplerate / 1000;
+
     memset(&meta, 0, sizeof(meta));
 
     /* Perform scheduled RXs by having meta.timestamp set appropriately
@@ -196,11 +202,11 @@ int sync_rx_meta_sched_example(struct bladerf *dev,
         printf("Current RX timestamp: 0x%016"PRIx64"\n", meta.timestamp);
     }
 
+    /* Schedule first RX to be 150 ms in the future */
+    meta.timestamp += ts_inc_150ms;
+
     /* Receive samples and do work on them */
     for (i = 0; i < rx_count && status == 0; i++) {
-
-        /* Schedule the RX to be ~150 ms in the future */
-        meta.timestamp += samplerate / 150;
 
         status = bladerf_sync_rx(dev, samples, samples_len,
                                  &meta, 2 * timeout_ms);
@@ -219,6 +225,10 @@ int sync_rx_meta_sched_example(struct bladerf *dev,
             fflush(stdout);
 
             /* ... Process samples here ... */
+
+            /* Schedule the next RX to be 1 ms after the end of the samples we
+             * just processed */
+            meta.timestamp += samples_len + ts_inc_1ms;
         }
     }
 
