@@ -1,7 +1,7 @@
 /*
  * This file is part of the bladeRF project
  *
- * Copyright (C) 2013-2014 Nuand LLC
+ * Copyright (C) 2013-2015 Nuand LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,8 +19,12 @@
  */
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
+#include <limits.h>
 #include <libbladeRF.h>
 
+#include "dc_calibration.h"
+#include "rel_assert.h"
 #include "calibrate.h"
 #include "common.h"
 #include "cmd.h"
@@ -31,6 +35,34 @@
 #define MAX_GAIN    4096
 #define MIN_GAIN    (-MAX_GAIN)
 
+static int show_lms_cals(struct cli_state *s)
+{
+    int status = 0;
+    struct bladerf_lms_dc_cals lms_cals =
+        { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
+
+    status = bladerf_lms_get_dc_cals(s->dev, &lms_cals);
+    if (status != 0) {
+        s->last_lib_error = status;
+        status = CLI_RET_LIBBLADERF;
+    } else {
+        putchar('\n');
+        printf("  LPF tuning module: %d\n\n", lms_cals.lpf_tuning);
+        printf("  TX LPF I filter: %d\n", lms_cals.tx_lpf_i);
+        printf("  TX LPF Q filter: %d\n\n", lms_cals.tx_lpf_q);
+        printf("  RX LPF I filter: %d\n", lms_cals.rx_lpf_i);
+        printf("  RX LPF Q filter: %d\n\n", lms_cals.rx_lpf_q);
+        printf("  RX VGA2 DC reference module: %d\n", lms_cals.dc_ref);
+        printf("  RX VGA2 stage 1, I channel: %d\n", lms_cals.rxvga2a_i);
+        printf("  RX VGA2 stage 1, Q channel: %d\n", lms_cals.rxvga2a_q);
+        printf("  RX VGA2 stage 2, I channel: %d\n", lms_cals.rxvga2b_i);
+        printf("  RX VGA2 stage 2, Q channel: %d\n", lms_cals.rxvga2b_q);
+        putchar('\n');
+    }
+
+    return status;
+}
+
 static int cal_lms(struct cli_state *s, int argc, char **argv)
 {
     int status = 0;
@@ -40,43 +72,32 @@ static int cal_lms(struct cli_state *s, int argc, char **argv)
         { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
 
     if (argc == 2) {
-       return calibrate_dc(s, CAL_DC_LMS_ALL);
+       status = dc_calibration_lms6(s->dev, "all");
+       if (status == 0) {
+           status = show_lms_cals(s);
+       }
+
+       return status;
     }
 
     if (argc == 3) {
-        if (!strcasecmp(argv[2], "tuning")) {
-            status = calibrate_dc(s, CAL_DC_LMS_TUNING);
-        } else if (!strcasecmp(argv[2], "txlpf")) {
-            status = calibrate_dc(s, CAL_DC_LMS_TXLPF);
-        } else if (!strcasecmp(argv[2], "rxlpf")) {
-            status = calibrate_dc(s, CAL_DC_LMS_RXLPF);
-        } else if (!strcasecmp(argv[2], "rxvga2")) {
-            status = calibrate_dc(s, CAL_DC_LMS_RXVGA2);
-        } else if (!strcasecmp(argv[2], "show")) {
-            status = bladerf_lms_get_dc_cals(s->dev, &lms_cals);
-            if (status != 0) {
+        if (!strcasecmp(argv[2], "show")) {
+            status = show_lms_cals(s);
+        } else {
+            status = dc_calibration_lms6(s->dev, argv[2]);
+            if (status == BLADERF_ERR_INVAL) {
+                cli_err(s, argv[0], "Invalid LMS module specified: %s\n", argv[2]);
+                status = CLI_RET_INVPARAM;
+            } else if (status != 0) {
                 s->last_lib_error = status;
                 status = CLI_RET_LIBBLADERF;
-            } else {
-                putchar('\n');
-                printf("  LPF tuning module: %d\n\n", lms_cals.lpf_tuning);
-                printf("  TX LPF I filter: %d\n", lms_cals.tx_lpf_i);
-                printf("  TX LPF Q filter: %d\n\n", lms_cals.tx_lpf_q);
-                printf("  RX LPF I filter: %d\n", lms_cals.rx_lpf_i);
-                printf("  RX LPF Q filter: %d\n\n", lms_cals.rx_lpf_q);
-                printf("  RX VGA2 DC reference module: %d\n", lms_cals.dc_ref);
-                printf("  RX VGA2 stage 1, I channel: %d\n", lms_cals.rxvga2a_i);
-                printf("  RX VGA2 stage 1, Q channel: %d\n", lms_cals.rxvga2a_q);
-                printf("  RX VGA2 stage 2, I channel: %d\n", lms_cals.rxvga2b_i);
-                printf("  RX VGA2 stage 2, Q channel: %d\n", lms_cals.rxvga2b_q);
-                putchar('\n');
             }
-        } else {
-            cli_err(s, argv[0], "Invalid LMS module specified: %s\n", argv[2]);
-            status = CLI_RET_INVPARAM;
         }
 
-    } else if (argc == 4 && !strcasecmp(argv[2], "tuning")) {
+        return status;
+    }
+
+    if (argc == 4 && !strcasecmp(argv[2], "tuning")) {
         lms_cals.lpf_tuning = (int16_t) str2int(argv[3], 0, UINT8_MAX, &ok);
         if (!ok) {
             cli_err(s, argv[0], "Invalid LPF tuning value: %s\n", argv[3]);
@@ -162,6 +183,22 @@ static int cal_lms(struct cli_state *s, int argc, char **argv)
     return status;
 }
 
+static void print_cal_params(const char *m,
+                             const struct dc_calibration_params *p,
+                             bool prepend_newline, bool append_newline)
+{
+    if (prepend_newline) {
+        putchar('\n');
+    }
+
+    printf("%s DC I: Value = %5d, Error = % 2.3f\n", m, p->corr_i, p->error_i);
+    printf("%s DC Q: Value = %5d, Error = % 2.3f\n", m, p->corr_q, p->error_q);
+
+    if (append_newline) {
+        putchar('\n');
+    }
+}
+
 static int cal_dc_correction_params(struct cli_state *s, int argc, char **argv)
 {
     int status = 0;
@@ -171,6 +208,7 @@ static int cal_dc_correction_params(struct cli_state *s, int argc, char **argv)
     }
 
     if (argc == 3) {
+        struct dc_calibration_params cal_params;
         bool rx = false, tx = false;
 
         if (!strcasecmp(argv[2], "rx") || !strcasecmp(argv[2], "rxtx")) {
@@ -182,17 +220,40 @@ static int cal_dc_correction_params(struct cli_state *s, int argc, char **argv)
         }
 
         if (rx) {
-            status = calibrate_dc(s, CAL_DC_AUTO_RX);
+            memset(&cal_params, 0, sizeof(cal_params));
+            status = bladerf_get_frequency(s->dev, BLADERF_MODULE_RX,
+                                           &cal_params.frequency);
             if (status != 0) {
-                return status;
+                s->last_lib_error = status;
+                return CLI_RET_LIBBLADERF;
             }
+
+
+            status = dc_calibration_rx(s->dev, &cal_params, 1, false);
+            if (status != 0) {
+                s->last_lib_error = status;
+                return CLI_RET_LIBBLADERF;
+            }
+
+            print_cal_params("RX", &cal_params, true, !tx);
         }
 
         if (status == 0 && tx) {
-            status = calibrate_dc(s, CAL_DC_AUTO_TX);
+            memset(&cal_params, 0, sizeof(cal_params));
+            status = bladerf_get_frequency(s->dev, BLADERF_MODULE_TX,
+                                           &cal_params.frequency);
             if (status != 0) {
-                return status;
+                s->last_lib_error = status;
+                return CLI_RET_LIBBLADERF;
             }
+
+            status = dc_calibration_tx(s->dev, &cal_params, 1, false);
+            if (status != 0) {
+                s->last_lib_error = status;
+                return CLI_RET_LIBBLADERF;
+            }
+
+            print_cal_params("TX", &cal_params, true, true);
         }
 
         if (!rx && !tx) {
@@ -303,6 +364,123 @@ static int cal_iq_correction_params(struct cli_state *s, int argc , char **argv)
     }
 }
 
+static struct dc_calibration_params * prepare_dc_cal_params(unsigned int f_min,
+                                                            unsigned int f_max,
+                                                            unsigned int f_inc,
+                                                            size_t *num_freqs)
+{
+    struct dc_calibration_params *p = NULL;
+    const unsigned int len = ((f_max - f_min + 1) + (f_inc - 1)) / f_inc;
+    unsigned int f, n;
+
+    p = calloc(len, sizeof(p[0]));
+    if (p == NULL) {
+        return NULL;
+    }
+
+    for (f = f_min, n = 0; f <= f_max && n < len; n++, f += f_inc) {
+        p[n].frequency = f;
+    }
+
+    assert(n == len);
+    *num_freqs = len;
+
+    return p;
+}
+
+static int save_table_results(const char *filename,
+                              struct bladerf *dev, bladerf_module module,
+                              const struct dc_calibration_params *params,
+                              size_t num_params)
+{
+    int status = 0;
+    struct bladerf_lms_dc_cals lms_dc_cals;
+    struct bladerf_image *image = NULL;
+    size_t i;
+    size_t off = 0;
+
+    static const uint16_t magic = HOST_TO_LE16(0x1ab1);
+    static const uint32_t reserved = HOST_TO_LE32(0x00000000);
+    static const uint32_t tbl_version = HOST_TO_LE32(0x00000001);
+    static const size_t lms_data_size = 10; /* 10 uint8_t register values */
+
+    const uint32_t n_frequencies_le = HOST_TO_LE32((uint32_t) num_params);
+
+    const size_t entry_size = sizeof(uint32_t) +   /* Frequency */
+                              2 * sizeof(int16_t); /* DC I and Q valus */
+
+    const size_t table_size = num_params * entry_size;
+
+    const size_t data_size = sizeof(magic) + sizeof(reserved) +
+                             sizeof(tbl_version) + sizeof(n_frequencies_le) +
+                             lms_data_size + table_size;
+
+    assert(num_params < UINT32_MAX);
+    assert(data_size <= UINT_MAX);
+
+    status = bladerf_lms_get_dc_cals(dev, &lms_dc_cals);
+    if (status != 0) {
+        return status;
+    }
+
+    if (module == BLADERF_MODULE_RX) {
+        image = bladerf_alloc_image(BLADERF_IMAGE_TYPE_RX_DC_CAL,
+                                    0xffffffff, (unsigned int) data_size);
+    } else {
+        image = bladerf_alloc_image(BLADERF_IMAGE_TYPE_TX_DC_CAL,
+                                    0xffffffff, (unsigned int) data_size);
+    }
+
+    if (image == NULL) {
+        return BLADERF_ERR_MEM;
+    }
+
+    /* Fill in header */
+    memcpy(&image->data[off], &magic, sizeof(magic));
+    off += sizeof(magic);
+
+    memcpy(&image->data[off], &reserved, sizeof(reserved));
+    off += sizeof(reserved);
+
+    memcpy(&image->data[off], &tbl_version, sizeof(tbl_version));
+    off += sizeof(tbl_version);
+
+    memcpy(&image->data[off], &n_frequencies_le, sizeof(n_frequencies_le));
+    off += sizeof(n_frequencies_le);
+
+    image->data[off++] = (uint8_t)lms_dc_cals.lpf_tuning;
+    image->data[off++] = (uint8_t)lms_dc_cals.tx_lpf_i;
+    image->data[off++] = (uint8_t)lms_dc_cals.tx_lpf_q;
+    image->data[off++] = (uint8_t)lms_dc_cals.rx_lpf_i;
+    image->data[off++] = (uint8_t)lms_dc_cals.rx_lpf_q;
+    image->data[off++] = (uint8_t)lms_dc_cals.dc_ref;
+    image->data[off++] = (uint8_t)lms_dc_cals.rxvga2a_i;
+    image->data[off++] = (uint8_t)lms_dc_cals.rxvga2a_q;
+    image->data[off++] = (uint8_t)lms_dc_cals.rxvga2b_i;
+    image->data[off++] = (uint8_t)lms_dc_cals.rxvga2b_q;
+
+    for (i = 0; i < num_params; i++) {
+        const uint32_t freq  = HOST_TO_LE32((uint32_t) params[i].frequency);
+        const int16_t corr_i = HOST_TO_LE16(params[i].corr_i);
+        const int16_t corr_q = HOST_TO_LE16(params[i].corr_q);
+
+        memcpy(&image->data[off], &freq, sizeof(freq));
+        off += sizeof(freq);
+
+        memcpy(&image->data[off], &corr_i, sizeof(corr_i));
+        off += sizeof(corr_q);
+
+        memcpy(&image->data[off], &corr_q, sizeof(corr_q));
+        off += sizeof(corr_q);
+    }
+
+    status = bladerf_image_write(image, filename);
+
+    bladerf_free_image(image);
+    return status;
+}
+
+/* See libbladeRF's dc_cal_table.c for the packed table data format */
 static int cal_table(struct cli_state *s, int argc, char **argv)
 {
     int status;
@@ -310,10 +488,14 @@ static int cal_table(struct cli_state *s, int argc, char **argv)
     bladerf_module module;
     char *filename = NULL;
     size_t filename_len = 1024;
+    FILE *write_check = NULL;
+
+    struct dc_calibration_params *params = NULL;
+    size_t num_params = 0;
 
     /* The XB-200 does not affect the minimum, as we're tuning the LMS here. */
     unsigned int f_min = BLADERF_FREQUENCY_MIN;
-    unsigned int f_inc = 2500000;
+    unsigned int f_inc = 10000000;
     unsigned int f_max = BLADERF_FREQUENCY_MAX;
 
     if (argc == 4 || argc == 6 || argc == 7) {
@@ -397,7 +579,42 @@ static int cal_table(struct cli_state *s, int argc, char **argv)
         strncat(filename, "_dc_tx.tbl", filename_len);
     }
 
-    status = calibrate_dc_gen_tbl(s, module, filename, f_min, f_inc, f_max);
+    /* This operation may take a bit of time, so let's make sure we
+     * actually have write access before kicking things off.  Note that
+     * access is inherently checked later when the file is actually written,
+     * should permissions change in the meantime. */
+    write_check = fopen(filename, "wb");
+    if (!write_check) {
+        if (errno == EACCES) {
+            status = BLADERF_ERR_PERMISSION;
+        } else {
+            status = BLADERF_ERR_IO;
+        }
+        goto out;
+    }
+
+    fclose(write_check);
+    write_check = NULL;
+
+    /* Not much we care to do if this fails. Throw away the return value
+     * to make this explicit to our static analysis tools */
+    (void) remove(filename);
+
+    params = prepare_dc_cal_params(f_min, f_max, f_inc, &num_params);
+    if (params == NULL) {
+        status = BLADERF_ERR_MEM;;
+        goto out;
+    }
+
+    status = dc_calibration(s->dev, module, params, num_params, true);
+    if (status != 0) {
+        goto out;
+    }
+
+    status = save_table_results(filename, s->dev, module, params, num_params);
+    if (status == 0) {
+        printf("\n  Done.\n\n");
+    }
 
 out:
     if (status != 0) {
@@ -406,10 +623,10 @@ out:
     }
 
     free(filename);
+    free(params);
+
     return status;
 }
-
-
 
 int cmd_calibrate(struct cli_state *state, int argc, char **argv)
 {

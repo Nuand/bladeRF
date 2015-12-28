@@ -130,7 +130,6 @@ set(BLADERF_CLI_SOURCE
         src/main.c
         src/common.c
         src/cmd/calibrate.c
-        src/cmd/calibrate_dc.c
         src/cmd/doc/cmd_help.h
         src/cmd/cmd.c
         src/cmd/erase.c
@@ -161,6 +160,7 @@ set(BLADERF_CLI_SOURCE
         src/input/input.c
         src/input/script.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
+        ${BLADERF_HOST_COMMON_SOURCE_DIR}/dc_calibration.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/log.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/str_queue.c
 )
