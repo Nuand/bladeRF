@@ -28,7 +28,7 @@ Available operations:
  * RX and TX I/Q DC offset correction parameter calibration
 
      * `calibrate dc <rx|tx> [<I> <Q>]`
-     * `calibrate dc <rxtx> dc`
+     * `calibrate dc <rxtx>`
 
     Calibrate the DC offset correction parameters for the current frequency
     and gain settings. If a I/Q values are provided, they are applied

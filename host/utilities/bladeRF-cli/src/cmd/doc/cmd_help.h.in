@@ -27,7 +27,7 @@
  * Any manual modifications to this file will be overwritten!
  * To edit the content of help strings, please edit interactive-help.md
  *
- * Last generated: Mon Dec 28 15:52:10 EST 2015 by jynik
+ * Last generated: Mon Dec 28 22:46:24 EST 2015 by jynik
  */
 
 #ifndef BLADERF_CLI_DOC_CMD_HELP_H__
@@ -61,7 +61,7 @@
   "-   RX and TX I/Q DC offset correction parameter calibration\n" \
   "\n" \
   "    -   calibrate dc <rx|tx> [<I> <Q>]\n" \
-  "    -   calibrate dc <rxtx> dc\n" \
+  "    -   calibrate dc <rxtx>\n" \
   "\n" \
   "    Calibrate the DC offset correction parameters for the current\n" \
   "    frequency and gain settings. If a I/Q values are provided, they\n" \

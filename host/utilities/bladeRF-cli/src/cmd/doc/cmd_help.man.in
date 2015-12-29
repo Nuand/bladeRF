@@ -38,7 +38,7 @@ RX and TX I/Q DC offset correction parameter calibration
 .IP \[bu] 2
 \f[C]calibrate\ dc\ <rx|tx>\ [<I>\ <Q>]\f[]
 .IP \[bu] 2
-\f[C]calibrate\ dc\ <rxtx>\ dc\f[]
+\f[C]calibrate\ dc\ <rxtx>\f[]
 .PP
 Calibrate the DC offset correction parameters for the current frequency
 and gain settings.
