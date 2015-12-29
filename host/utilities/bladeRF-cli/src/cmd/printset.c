@@ -328,6 +328,21 @@ int set_frequency(struct cli_state *state, int argc, char **argv)
     } else if( argc != 3 ) {
         /* Assume both RX & TX if not specified */
         rv = CLI_RET_NARGS;
+    } else if (argc == 3) {
+        /* This is marked deprecated and will be removed in
+         * future bladeRF-cli revisions */
+        printf(
+            "For best results, it is not recommended to set both RX and TX to\n"
+            "to the same frequency. Instead, consider offsetting them by at\n"
+            "least 1 MHz and mixing digitally.\n"
+            "\n"
+            "For the above reason, 'set frequency <value>` is deprecated\n"
+            "and scheduled for removal in future bladeRF-cli versions.\n"
+            "\n"
+            "Please use 'set frequency rx' and 'set frequency tx' to configure\n"
+            "modules individually.\n"
+            "\n"
+        );
     }
 
     if( argc > 2 && rv == CLI_RET_OK ) {
