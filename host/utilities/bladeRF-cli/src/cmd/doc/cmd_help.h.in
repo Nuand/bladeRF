@@ -27,7 +27,7 @@
  * Any manual modifications to this file will be overwritten!
  * To edit the content of help strings, please edit interactive-help.md
  *
- * Last generated: Mon Dec 28 22:46:24 EST 2015 by jynik
+ * Last generated: Mon Dec 28 23:17:01 EST 2015 by jynik
  */
 
 #ifndef BLADERF_CLI_DOC_CMD_HELP_H__
@@ -272,7 +272,10 @@
 #define CLI_CMD_HELPTEXT_jump_to_boot \
   "Usage: jump_to_boot\n" \
   "\n" \
-  "Jumps to the FX3 bootloader.\n" \
+  "Clear out a FW signature word in flash and jump to FX3 bootloader.\n" \
+  "\n" \
+  "The device will continue to boot into the FX3 bootloader across power\n" \
+  "cycles until new firmware is written to the device.\n" \
   "\n" \
 
 

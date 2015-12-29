@@ -201,7 +201,7 @@ static const struct cmd cmd_table[] = {
     {
         FIELD_INIT(.names, cmd_names_jump),
         FIELD_INIT(.exec, cmd_jump_to_bootloader),
-        FIELD_INIT(.desc, "Jump to FX3 bootloader"),
+        FIELD_INIT(.desc, "Clear FW signature in flash and jump to FX3 bootloader"),
         FIELD_INIT(.help, CLI_CMD_HELPTEXT_jump_to_boot),
         FIELD_INIT(.requires_device, true),
         FIELD_INIT(.requires_fpga, false),

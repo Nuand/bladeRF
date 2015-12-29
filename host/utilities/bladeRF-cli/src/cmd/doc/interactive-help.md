@@ -252,7 +252,10 @@ jump_to_boot
 
 Usage: `jump_to_boot`
 
-Jumps to the FX3 bootloader.
+Clear out a FW signature word in flash and jump to FX3 bootloader.
+
+The device will continue to boot into the FX3 bootloader across power cycles
+until new firmware is written to the device.
 
 
 load
