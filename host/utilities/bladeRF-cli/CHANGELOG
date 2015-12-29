@@ -5,6 +5,21 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.3.0 (2015-12-31)
+--------------------------------
+This version depends upon libbladeRF v1.5.0.
+
+ * Marked 'set frequency <value>' deprecated.
+    - Use 'set frequency rx <value>' or 'set frequency tx <value>'
+ * Updated DC calibration routines for improved accuracy and to avoid lockups
+ * Added print/set support for VCTCXO tamer mode
+ * Added fw_log command
+ * Added ability to set SMB master frequency
+ * Added print/set support FPGA RX FIFO input mux (rx_mux)
+ * Fixed regression in set xb_gpio[_dir] register-level access
+ * Fixed issues with validating and applying rational sample rates
+ * Output formatting cleanup
+
 v1.2.1 (2015-07-16)
 --------------------------------
 This version depends upon libbladeRF v1.4.1.
