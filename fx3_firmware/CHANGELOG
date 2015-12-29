@@ -5,6 +5,10 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.9.0 (2015-12-13)
+--------------------------------
+ * Added simple logging mechanism
+
 v1.8.1 (2015-09-08)
 --------------------------------
  * Updated build for FX3 SDK v1.3.3
