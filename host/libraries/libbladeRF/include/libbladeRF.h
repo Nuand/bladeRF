@@ -1283,6 +1283,9 @@ int CALL_CONV bladerf_get_lpf_mode(struct bladerf *dev, bladerf_module module,
 /**
  * Select the appropriate band path given a frequency in Hz.
  *
+ * Most API users will not need to use this function, as bladerf_set_frequency()
+ * calls this internally after tuning the device.
+ *
  * The high band (LNA2 and PA2) is used for `frequency` >= 1.5 GHz. Otherwise,
  * The low band (LNA1 and PA1) is used.
  *
@@ -1306,6 +1309,10 @@ int CALL_CONV bladerf_select_band(struct bladerf *dev, bladerf_module module,
  * Values outside the range of
  * [ \ref BLADERF_FREQUENCY_MIN, \ref BLADERF_FREQUENCY_MAX ]
  * will be clamped.
+ *
+ * For best results, it is recommended to keep the RX and TX frequencies at
+ * least 1 MHz apart, and to digitally mix on the RX side if reception closer
+ * to the TX frequency is required.
  *
  * This calls bladerf_select_band() internally.
  *
@@ -2429,7 +2436,10 @@ API_EXPORT
 int CALL_CONV bladerf_device_reset(struct bladerf *dev);
 
 /**
- * Jump to FX3 bootloader
+ * Clear out a firmware signature word in flash and jump to FX3 bootloader.
+ *
+ * The device will continue to boot into the FX3 bootloader across power cycles
+ * until new firmware is written to the device.
  *
  * @param   dev         Device handle
  *
