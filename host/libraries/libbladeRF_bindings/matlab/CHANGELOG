@@ -1,0 +1,15 @@
+================================================================================
+MATLAB & Simulink libbladeRF Bindings: Change Log Summary
+
+For more detailed information, please see the git change log and issue tracker
+hosted on GitHub: https://github.com/nuand/bladeRF
+================================================================================
+
+v0.1.0 (2015-12-31)
+--------------------------------
+
+This version is intended for use with libbladeRF v1.5.0.
+
+Changes:
+  * Initial release of Object-oriented MATLAB bindings and
+    Simulink System Object.
