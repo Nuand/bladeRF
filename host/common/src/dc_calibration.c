@@ -120,11 +120,13 @@ static inline int tx_lpf_dummy_tx(struct bladerf *dev)
 {
     int status;
     int retval = 0;
-    struct bladerf_metadata meta = { 0 };
+    struct bladerf_metadata meta;
     int16_t zero_sample[] = { 0, 0 };
 
     bladerf_loopback loopback_backup;
     struct bladerf_rational_rate sample_rate_backup;
+
+    memset(&meta, 0, sizeof(meta));
 
     status = bladerf_get_loopback(dev, &loopback_backup);
     if (status != 0) {
@@ -254,11 +256,12 @@ static int rx_samples(struct bladerf *dev, int16_t *samples,
                       unsigned int count, uint64_t *ts, uint64_t ts_inc)
 {
     int status = 0;
-    struct bladerf_metadata meta = { 0 };
+    struct bladerf_metadata meta;
     int retry = 0;
     const int max_retries = 10;
     bool overrun = true;
 
+    memset(&meta, 0, sizeof(meta));
     meta.timestamp = *ts;
 
     while (status == 0 && overrun && retry < max_retries) {
@@ -1088,7 +1091,9 @@ static int tx_cal_tx_init(struct bladerf *dev)
 {
     int status;
     int16_t zero_sample[] = { 0, 0 };
-    struct bladerf_metadata meta = { 0 };
+    struct bladerf_metadata meta;
+
+    memset(&meta, 0, sizeof(meta));
 
     status = bladerf_sync_config(dev, BLADERF_MODULE_TX,
                                  BLADERF_FORMAT_SC16_Q11_META,
