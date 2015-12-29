@@ -423,6 +423,14 @@ static inline void sample_mean(int16_t *samples, size_t count,
 
     size_t n;
 
+
+    if (count == 0) {
+        assert(!"Invalid count (0) provided to sample_mean()");
+        *mean_i = 0;
+        *mean_q = 0;
+        return;
+    }
+
     for (n = 0; n < (2 * count); n += 2) {
         accum_i += samples[n];
         accum_q += samples[n + 1];
