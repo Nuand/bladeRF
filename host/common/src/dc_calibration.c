@@ -264,20 +264,24 @@ static int rx_samples(struct bladerf *dev, int16_t *samples,
     while (status == 0 && overrun && retry < max_retries) {
         meta.timestamp = *ts;
         status = bladerf_sync_rx(dev, samples, count, &meta, 2000);
-        if (status != 0) {
-            return status;
-        }
 
         if (status == BLADERF_ERR_TIME_PAST) {
-            *ts += count + 10 * ts_inc;
-            retry++;
-            status = 0;
-        } else {
+            status = bladerf_get_timestamp(dev, BLADERF_MODULE_RX, ts);
+            if (status != 0) {
+                return status;
+            } else {
+                *ts += 20 * ts_inc;
+                retry++;
+                status = 0;
+            }
+        } else if (status == 0) {
             overrun = (meta.flags & BLADERF_META_STATUS_OVERRUN) != 0;
             if (overrun) {
                 *ts += count + ts_inc;
                 retry++;
             }
+        } else {
+            return status;
         }
     }
 
