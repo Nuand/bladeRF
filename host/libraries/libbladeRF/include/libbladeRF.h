@@ -25,6 +25,33 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+/**
+ * @ingroup FN_MISC
+ *
+ * libbladeRF API version
+ *
+ * As of libbladeRF v1.5.0, this macro is defined to assist with feature
+ * detection. Generally, this will be used as follows:
+ *
+ * @code
+ * #if defined(LIBBLADERF_API_VERSION) && (LIBBLADERF_API_VERSION >= 0x01050000)
+ *      // ...  Use features added in libbladeRF v1.5.0 ...
+ * #endif
+ * @endcode
+ *
+ * This value is defined as follows:
+ *      `(major << 24) | (minor << 16) | (patch << 8) | (reserved << 0)`
+ *
+ * The reserved field may be used at a later date to denote additions between
+ * releases. It will be set to zero when not used.
+ *
+ * This value is intended to track the values returned by bladerf_version().
+ * Fields are updated per the scheme defined here:
+ *
+ *  https://github.com/Nuand/bladeRF/blob/master/doc/development/versioning.md
+ */
+#define LIBBLADERF_API_VERSION (0x01050000)
+
 #ifdef __cplusplus
 extern "C" {
 #else
