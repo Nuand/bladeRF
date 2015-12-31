@@ -6,7 +6,7 @@ includedir=@LIBBLADERF_PC_INCLUDEDIR@
 Name: bladeRF Library
 Description: C Library for the nuand bladeRF
 Version: @LIBBLADERF_PC_VERSION@
-URL: http://nuand.com
+URL: https://nuand.com
 Cflags: -I${includedir}/ @LIBBLADERF_PC_CFLAGS@
 Libs: -L${libdir}/ @LIBBLADERF_PC_LIBS@
 Libs.private: @LIBBLADERF_PC_PRIV_LIBS@

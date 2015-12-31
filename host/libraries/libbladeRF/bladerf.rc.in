@@ -24,7 +24,7 @@ FILETYPE 1
 			VALUE "OriginalFilename", "bladeRF.dll"
 			VALUE "CompanyName", "Nuand LLC"
 			VALUE "FileVersion", VER_FILEVERSION_STR
-			VALUE "LegalCopyright", "Copyright (c) 2013, Nuand LLC"
+			VALUE "LegalCopyright", "Copyright (c) 2013-2015, Nuand LLC"
 			VALUE "ProductName", "bladeRF"
 			VALUE "ProductVersion", VER_PRODUCTVERSION_STR
 		}
