@@ -240,12 +240,12 @@ int init_device(struct bladerf *dev)
 
         dev->tuning_mode = tuning_get_default_mode(dev);
 
-        status = tuning_set_freq(dev, BLADERF_MODULE_TX, 2447000000);
+        status = tuning_set_freq(dev, BLADERF_MODULE_TX, 2447000000U);
         if (status != 0) {
             return status;
         }
 
-        status = tuning_set_freq(dev, BLADERF_MODULE_RX, 2484000000);
+        status = tuning_set_freq(dev, BLADERF_MODULE_RX, 2484000000U);
         if (status != 0) {
             return status;
         }
