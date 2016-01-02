@@ -1,0 +1,148 @@
+; Installation INF for the Cypress Generic USB Driver,
+; modified to associate the CYUSB3 driver to the Nuand bladeRF
+;
+; (c) Copyright 2014 Nuand LLC
+; (c) Copyright 2012, 2013 Cypress Semiconductor Corporation
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=USB
+ClassGUID={36FC9E60-C465-11CF-8056-444553540000}
+provider=%CYUSB3_Provider%
+CatalogFile=CYUSB3.cat
+DriverVer=08/21/2014,1.2.3.10
+
+[SourceDisksNames]
+1=%CYUSB3_Install%,,,
+
+[SourceDisksFiles]
+CYUSB3.sys = 1
+
+[DestinationDirs]
+CYUSB3.Files.Ext = 10,System32\Drivers
+
+[ControlFlags]
+ExcludeFromSelect = *
+
+[Manufacturer]
+%CYUSB3_Provider%=Device,NT,NTx86,NTamd64
+
+;for all platforms
+[Device.NT]
+%VID_1D50&PID_6066.DeviceDesc%=CyUsb3, USB\VID_1D50&PID_6066
+%VID_04B4&PID_00F3.DeviceDesc%=CyUsb3, USB\VID_04B4&PID_00F3
+
+
+;for x86 platforms
+[Device.NTx86]
+%VID_1D50&PID_6066.DeviceDesc%=CyUsb3, USB\VID_1D50&PID_6066
+%VID_04B4&PID_00F3.DeviceDesc%=CyUsb3, USB\VID_04B4&PID_00F3
+
+
+;for x64 platforms
+[Device.NTamd64]
+%VID_1D50&PID_6066.DeviceDesc%=CyUsb3, USB\VID_1D50&PID_6066
+%VID_04B4&PID_00F3.DeviceDesc%=CyUsb3, USB\VID_04B4&PID_00F3
+
+
+[CYUSB3.NT]
+CopyFiles=CYUSB3.Files.Ext
+AddReg=CyUsb3.AddReg
+
+[CYUSB3.NT.HW]
+AddReg=CYUSB3.AddReg.Guid
+
+[CYUSB3.NT.Services]
+Addservice = CYUSB3,2,CYUSB3.AddService
+
+
+[CYUSB3.NTx86]
+CopyFiles=CYUSB3.Files.Ext
+AddReg=CyUsb3.AddReg
+
+[CYUSB3.NTx86.HW]
+AddReg=CYUSB3.AddReg.Guid
+
+[CYUSB3.NTx86.Services]
+Addservice = CYUSB3,2,CYUSB3.AddService
+
+[CYUSB3.NTamd64]
+CopyFiles=CYUSB3.Files.Ext
+AddReg=CyUsb3.AddReg
+
+[CYUSB3.NTamd64.HW]
+AddReg=CYUSB3.AddReg.Guid
+
+[CYUSB3.NTamd64.Services]
+Addservice = CYUSB3,2,CYUSB3.AddService
+
+
+[CYUSB3.AddReg]
+; Deprecating - do not use in new apps to identify a CYUSB3 driver
+HKR,,DevLoader,,*ntkern
+HKR,,NTMPDriver,,CYUSB3.sys
+; You may optionally include a check for DriverBase in your application to check for a CYUSB3 driver
+HKR,,DriverBase,,CYUSB3.sys
+HKR,"Parameters","MaximumTransferSize",0x10001,4096
+HKR,"Parameters","DebugLevel",0x10001,2
+HKR,,FriendlyName,,%CYUSB3_Description%
+
+[CYUSB3.AddService]
+DisplayName    = %CYUSB3_Description%
+ServiceType    = 1                  ; SERVICE_KERNEL_DRIVER
+StartType      = 3                  ; SERVICE_DEMAND_START
+ErrorControl   = 1                  ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %10%\System32\Drivers\CYUSB3.sys
+AddReg         = CYUSB3.AddReg
+LoadOrderGroup = Base
+
+[CYUSB3.Files.Ext]
+CYUSB3.sys
+
+[CYUSB3.AddReg.Guid]
+HKR,,DriverGUID,,%CYUSB3.GUID%
+
+;-------------- WDF Coinstaller installation
+[SourceDisksFiles]
+WdfCoInstaller01009.dll=1 ; make sure the number matches with SourceDisksNames
+
+[DestinationDirs]
+CoInstaller_CopyFiles = 11
+
+[CYUSB3.NTamd64.CoInstallers]
+AddReg=CoInstaller_AddReg
+CopyFiles=CoInstaller_CopyFiles
+
+[CYUSB3.NTx86.CoInstallers]
+AddReg=CoInstaller_AddReg
+CopyFiles=CoInstaller_CopyFiles
+
+[CoInstaller_CopyFiles]
+WdfCoInstaller01009.dll
+
+[CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller01009.dll,WdfCoInstaller"
+
+[CYUSB3.NTamd64.Wdf]
+KmdfService = CYUSB3, CYUSB3_wdfsect
+
+[CYUSB3.NTx86.Wdf]
+KmdfService = CYUSB3, CYUSB3_wdfsect
+
+[CYUSB3_wdfsect]
+KmdfLibraryVersion = 1.9
+
+
+[Strings]
+CYUSB3_Provider    = "Cypress"
+CYUSB3_Company     = "Cypress Semiconductor Corporation"
+CYUSB3_Description = "Cypress Generic USB3.0 Driver"
+CYUSB3_DisplayName = "Cypress USB3.0 Generic"
+CYUSB3_Install     = "Cypress CYUSB3.0 Driver Installation Disk"
+
+VID_1D50&PID_6066.DeviceDesc="bladeRF"
+VID_04B4&PID_00F3.DeviceDesc="Cypress USB BootLoader"
+
+CYUSB3.GUID="{35D5D3F1-9D0E-4F62-BCFB-B0D48EA63416}"
+CYUSB3_Unused      = "."
