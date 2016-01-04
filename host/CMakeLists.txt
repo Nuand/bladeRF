@@ -278,7 +278,7 @@ if(WIN32 AND NOT CMAKE_CROSSCOMPILING)
         add_custom_command(
             OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/drivers/CyUSB3/cyusb3.inf"
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${CMAKE_CURRENT_SOURCE_DIR}/drivers/windows/cyusb3/cyusb3.inf"
+                "${CMAKE_CURRENT_SOURCE_DIR}/${CYUSB3_INF}"
                 "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/drivers/CyUSB3/"
             COMMENT "Copying cyusb3.inf to output directory..."
         )
