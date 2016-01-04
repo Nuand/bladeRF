@@ -92,6 +92,10 @@ static int handle_instance(struct bladerf_devinfo *d, char *value)
 {
     bool ok;
 
+    if (value == NULL) {
+        return BLADERF_ERR_INVAL;
+    }
+
     d->instance = str2uint(value, 0, DEVINFO_INST_ANY - 1, &ok);
     if (!ok) {
         log_debug("Bad instance: %s\n", value);
@@ -106,8 +110,13 @@ static int handle_serial(struct bladerf_devinfo *d, char *value)
 {
     char c;
     size_t i;
-    const size_t len = strlen(value);
+    size_t len;
 
+    if (value == NULL) {
+        return BLADERF_ERR_INVAL;
+    }
+
+    len = strlen(value);
     if (len > (BLADERF_SERIAL_LENGTH - 1)) {
         log_debug("Provided serial # string too long: %"PRIu64"\n",
                   (uint64_t) len);
@@ -157,6 +166,7 @@ static int next_arg(char **saveptr, char **arg, char **value)
     *arg = strtok_r(token, "=", &saveptr_local);
 
     if (!*arg) {
+        *value = NULL;
         return BLADERF_ERR_INVAL;
     }
 
@@ -172,8 +182,13 @@ static int next_arg(char **saveptr, char **arg, char **value)
 
 int str2devinfo(const char *dev_id_const, struct bladerf_devinfo *d)
 {
-    char *dev_id, *token, *arg, *val, *saveptr;
-    int status, arg_status;
+    char *dev_id    = NULL;
+    char *token     = NULL;
+    char *arg       = NULL;
+    char *val       = NULL;
+    char *saveptr   = NULL;
+    int status      = BLADERF_ERR_UNEXPECTED;
+    int arg_status  = BLADERF_ERR_UNEXPECTED;
 
     assert(d);
 
