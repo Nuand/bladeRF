@@ -597,8 +597,8 @@ static int str2xbgpio(struct cli_state *s, const char *str,
                       const struct xb_gpio_lut **io, bool nnl_on_error)
 {
     int status;
-    const struct xb_gpio_lut *lut;
-    size_t lut_len;
+    const struct xb_gpio_lut *lut = NULL;
+    size_t lut_len = 0;
     size_t i;
 
     *io = NULL;
@@ -607,7 +607,11 @@ static int str2xbgpio(struct cli_state *s, const char *str,
     if (status != 0) {
         s->last_lib_error = status;
         return CLI_RET_LIBBLADERF;
+    }
 
+    /* Should not occur - would be indicative of a bug */
+    if (lut == NULL || lut_len == 0) {
+        return CLI_RET_UNKNOWN;
     }
 
     for (i = 0; i < lut_len; i++) {
@@ -635,7 +639,8 @@ static int print_xbio_base(struct cli_state *state, int argc, char **argv,
 
     const struct xb_gpio_lut *lut = NULL;
     const struct xb_gpio_lut *pin = NULL;
-    size_t lut_len, i;
+    size_t lut_len = 0;
+    size_t i;
 
     if (argc <= 2) {
         printf("Usage: print xb_gpio%s <name>\n\n", is_dir ? "_dir" : "");
@@ -676,6 +681,11 @@ static int print_xbio_base(struct cli_state *state, int argc, char **argv,
     if (status < 0) {
         state->last_lib_error = status;
         return CLI_RET_LIBBLADERF;
+    }
+
+    /* Should not occur - indicative of a bug */
+    if (lut == NULL || lut_len == 0) {
+        return CLI_RET_UNKNOWN;
     }
 
     if (!strcasecmp(argv[2], "all")) {
