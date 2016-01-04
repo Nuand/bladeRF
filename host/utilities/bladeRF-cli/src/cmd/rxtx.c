@@ -666,7 +666,7 @@ void rxtx_task_exec_stop(struct rxtx_data *rxtx, unsigned char *requests)
 int rxtx_handle_wait(struct cli_state *s, struct rxtx_data *rxtx,
                      int argc, char **argv)
 {
-    int status;
+    int status = CLI_RET_UNKNOWN;
     bool ok;
     unsigned int timeout_ms = 0;
     struct timespec timeout_abs;
