@@ -526,6 +526,8 @@ static int rx_cal_coarse_estimate(struct rx_cal *cal,
 
     status = rx_cal_coarse_means(cal, &x1, &y1i, &y1q);
     if (status != 0) {
+        *i_est = 0;
+        *q_est = 0;
         return status;
     }
 
@@ -533,6 +535,8 @@ static int rx_cal_coarse_estimate(struct rx_cal *cal,
 
     status = rx_cal_coarse_means(cal, &x2, &y2i, &y2q);
     if (status != 0) {
+        *i_est = 0;
+        *q_est = 0;
         return status;
     }
 
