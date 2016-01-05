@@ -5,6 +5,12 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.3.1 (2016-01-05)
+--------------------------------
+This version depends upon libbladeRF v1.5.1.
+
+  * Addressed warnings that occur with GCC -Os flag.
+
 v1.3.0 (2015-12-31)
 --------------------------------
 This version depends upon libbladeRF v1.5.0.
