@@ -32,26 +32,49 @@ structs=[];
 enuminfo=[];
 fcnNum=1;
 fcns=struct('name',ival,'calltype',ival,'LHS',ival,'RHS',ival,'alias',ival,'thunkname', ival);
-MfilePath=fileparts(mfilename('fullpath'));
 
 arch = computer('arch');
-is64_bit = true;
 switch arch
     case 'glnxa64'
         libname   = 'libbladeRF_thunk_glnxa64';
+        libsuffix = '.so';
+        pathsep   = ':';
         bool_arg  = 'bool';
         bool_ret  = '_Bool';
         u64_type  = 'ulong';
+
     case 'win64'
         libname   = 'libbladeRF_thunk_pcwin64';
+        libsuffix = '.dll';
         bool_arg  = 'uint8';
         bool_ret  = 'uint8';
         u64_type  = 'uint64';
+        pathsep   = ';';
+
+    case 'imac64'
+        % Additionaly type changes for this may be required for OSX support
+        libsuffix = '.dylib';
+        pathsep   = ':';
+
     otherwise
         error(['Unsupported architecture: ' arch]);
 end
 
-ThunkLibName=fullfile(MfilePath, libname);
+search_path = [ '.'; strsplit(path, pathsep)'];
+for n = 1:length(search_path)
+    to_check = fullfile(search_path{n}, [libname libsuffix]);
+    if exist(to_check, 'file')
+        %fprintf('Found %s\n', to_check);
+        ThunkLibName = to_check;
+        break
+    else
+        %fprintf('%s does not exist.\n', to_check);
+    end
+end
+
+if ~exist('ThunkLibName', 'var')
+    error(['Failed to find ' [libname libsuffix] '. Check path().']);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Functions
