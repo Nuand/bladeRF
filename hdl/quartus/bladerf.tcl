@@ -81,6 +81,9 @@ make_revision qpsk_tx
 # Create ATSC transmitter
 make_revision atsc_tx
 
+# Create ADSB receiver
+make_revision adsb
+
 # Projects created!
 puts "bladeRF projects created.  Please use the build.tcl script to build images.\n"
 puts "Revisions:"

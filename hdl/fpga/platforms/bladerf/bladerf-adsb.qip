@@ -1,0 +1,39 @@
+# Convenience variable
+set here $::quartus(qip_path)
+
+# Altera IP
+set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/pll/pll.qip]]
+set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/fx3_pll/fx3_pll.qip]]
+set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/nios_system/synthesis/nios_system.qip]]
+set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/rx_fifo/rx_fifo.qip]]
+set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/tx_fifo/tx_fifo.qip]]
+set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/tx_meta_fifo/tx_meta_fifo.qip]]
+set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/rx_meta_fifo/rx_meta_fifo.qip]]
+set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/adsbfifo/adsbfifo.qip]]
+
+# Explicitly include Nios mem_init
+set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/nios_system/software/bladeRF_nios/mem_init/meminit.qip]]
+
+# Implementation details
+set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/constellation_mapper.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/fir_filter.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/tan_table.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/iq_correction.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/signal_generator.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/synchronizer.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/handshake.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/reset_synchronizer.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/fifo_reader.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/fifo_writer.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/lms6002d/vhdl/lms6002d.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/fx3_gpif.vhd]]
+
+set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/nuand/adsb/quartus/adsb_decoder.qip]]
+
+set here $::quartus(qip_path)
+set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/bladerf-adsb.vhd]]
+
+# SDC Constraints
+set_global_assignment -name SDC_FILE [file normalize [file join $here constraints/bladerf.sdc]]
+
+

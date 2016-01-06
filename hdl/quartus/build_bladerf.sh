@@ -139,7 +139,7 @@ if [ "$rev" == "" ]; then
     exit 1
 fi
 
-if [ "$rev" != "hosted" ] && [ "$rev" != "atsc_tx" ]; then
+if [ "$rev" != "hosted" ] && [ "$rev" != "atsc_tx" ] && [ "$rev" != "adsb" ] ; then
     echo -e "\nError: Invalid revision (\"$rev\")\n" >&2
     usage
     exit 1

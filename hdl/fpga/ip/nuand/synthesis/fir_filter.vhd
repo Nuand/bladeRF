@@ -77,9 +77,9 @@ begin
 
                 for i in accum'range loop
                     if i = accum'high then
-                        accum(i) <= COEF(i)*in_sample;
+                        accum(i) <= resize(COEF(i)*in_sample, accum(i)'length);
                     else
-                        accum(i) <= accum(i+1) + COEF(i)*in_sample;
+                        accum(i) <= accum(i+1) + resize(COEF(i)*in_sample, accum(i)'length);
                     end if;
                 end loop;
 
