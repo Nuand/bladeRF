@@ -6,6 +6,142 @@ hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
 --------------------------------------------------------------------------------
+ 2016.01-rc1 (2016-01-07)
+--------------------------------------------------------------------------------
+
+This release introduces new functionality and bug fixes. It consists of the
+following versions:
+
+    * FPGA bitstream                v0.5.0
+    * FX3 firmware                  v1.9.0
+    * libbladeRF                    v1.5.1
+    * bladeRF-cli                   v1.3.1
+    * MATLAB & Simulink bindings    v0.1.1
+
+New Features:
+
+* MATLAB & Simulink
+    - An object-oriented MATLAB interface has been introduced. This is
+      implemented as bindings atop of libbladeRF, and will be maintained
+      alongside libbladeRF in the libbladeRF_bindings/matlab directory.
+
+    - Simulink support is provided via the above MATLAB interface
+      and the Simulink System Object block.
+
+* libbladeRF, bladeRF-cli:
+    - XB-100 support added
+
+* FPGA, libbladeRF, bladeRF-cli:
+    - A 1.8V 1 PPS or 10 MHz input may be supplied to the device to
+      tame the on-board VCTCXO
+
+* FX3 Firmware, libbladeRF, bladeRF-cli:
+    - A simple logging mechanism has been introduced. This allows the
+      host to retrieve error codes and the source lines at which they occurred.
+
+* FX3 Firmware:
+    - Updated for Cypress FX3 SDK v1.3.3
+
+* Miscellaneous:
+    - Revised and MIT-licensed DC calibration routines are now available
+      in host/common/.
+
+
+The following issue tracker items have been closed since the 2015.07 release:
+
+    * Pull Requests:
+        - #437: debian: firmware to v1.8.1, fpga to v0.4.1
+        - #433: Add a libbladeRF helper function for setting the `rx_mux`
+                setting in the FPGA
+        - #424: Add support for setting SMB clock output to arbitrary
+                frequency
+        - #421: bladeRF-cli improvement and xb-200 filter fixes
+        - #419: Minimal changeset for bladeRF to build on freebsd
+        - #381: Rpm packaing [CAA Needed]
+        - #379: Indent [wontfix]
+        - #267: Adjust nios simulation component so it matches the
+                synthesis version
+
+    * Bugs:
+        - #438: [libbladeRF] bladerf_sync_tx() is limited by # xfers,
+                not # buffers
+        - #436: [bladeRF-cli][libbladeRF] `cal dc tx` crashes when using
+                Cypress backend
+        - #426: XB-200 Reference Clock and MIMO Master clock are mutually
+                exclusive
+        - #425: [bladeRF-cli] Perform DC Cal with RX/TX frequencies separated
+                by >= 1 MHz
+        - #423: [bladeRF-cli] Add 'xb_spi', 'xb_gpio', and 'xb_gpio_dir' to
+                print/set help text
+        - #422: [bladeRF-cli] Make 'help print' and 'help set' formatting match
+        - #420: libbladeRF_test: Build broken for big endian hosts
+        - #417: libbladeRF: Tuning warnings and failures
+        - #416: [libbladeRF] Format specifier typos in nios_access.c
+        - #415: [libbladeRF] add/data mismatch in nio_access.c verbose log
+                messages
+        - #412: [bladeRF-cli] Calibration often fails
+        - #373: "trap divide error" while generating calibration table in CLI:
+                cal table dc rx
+        - #362: Calibration table generation hangs, performance issues
+
+    * Enhancements:
+        - #414: 10 MHz reference clock support
+        - #410: [libbladeRF] Provide a separate "Access denied" error code
+        - #409: [bladeRF-cli] Report file access issues prior to DC cal table
+                procedure
+        - #387: FPGA GPIO Bindings to BladeRF / Osmocom Library
+        - #353: [bladeRF-cli, libbladeRF] Improve jump_to_boot docs
+                and implementation
+        - #236: [libbladeRF] API calls for XB-100 required
+        - #205: [FX3 Firmware] Code cleanup and potential improvements
+
+    * Other:
+        - #399: Update libbladeRF and FX3 FIrmware for Cypress FX3 SDK 1.3.3
+                support
+        - #342: [Installer] Windows installer doesn't ship 32-bit MATLAB
+                support [wontfix]
+        - #240: [libbladeRF] Prefer static assertion over assert() when
+                possible
+
+Outstanding issue tracker items:
+
+    * Bugs:
+        - #443: [libbladeRF] Cypress backend receiving NULL buffers upon
+                transfer completion
+        - #442: [FX3 Firmware] Jump to bootloader after NULL interface is restored
+        - #427: [libbladeRF] Cannot set some samplerates returned by
+                bladerf_set_rational_rate()
+        - #408: [libbladeRF] Device hangs after repeated open/stream/close
+        - #401: libusb detection fails when x-compiling for Android
+        - #390: Warning after running rx start when loopback=firmware
+        - #360: [hdl] Older FPGA revisions no longer build
+        - #354: [hdl] failure to include STP file due to talkback req ought to
+                be fatal
+        - #352: [libbladeRF] Intermittent out-of-order transfer callbacks with
+                Windows & libusb 1.0.19
+        - #301: Direct sampling with XB-200 needs additional improvements
+
+    * Enhancements:
+        - #439: [libbladeRF] Move submit_stream_buffer implementations up a layer
+        - #431: Halfband filtering
+        - #430: Fs/4 Mix
+        - #428: Low-rate stream formats
+        - #418: Add CMake project config files
+        - #403: LibbladeRF support for setting MIMO mode
+        - #395: [hdl] Timing Closure on LMS6 SPI interface
+        - #388: [FX3 Firmware] Investigate USB3 drive controls
+        - #382: 'bladerf_get_serial()' fixed buffer size should be
+                ideally handled in the API
+        - #344: [fx3] Investigate/fix field checksums
+        - #328: [libbladeRF] Review and evaluate use of stream lock WRT libusb
+        - #321: How about a switch for bladeRF-cli to emit calibration in a
+                format bladeRF-cli can later read?
+        - #319: [bladeRF-cli] Add libedit and libreadline support
+        - #221: Synchronized Tx/Rx of multiple bladeRFs for MIMO
+                using Mini Expansion Header
+        - #174: Migrate FX3 build to CMake-generated Makefile
+
+--------------------------------------------------------------------------------
  2015.07 (2015-07-25)
 --------------------------------------------------------------------------------
 

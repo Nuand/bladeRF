@@ -1,3 +1,16 @@
+bladerf (2016.01-rc1); urgency=low
+
+  * Added support for VCTCXO taming using 1.8V 1 PPS or 10 MHz input signal
+  * Revised DC offset correction algorithm; fixes lockups
+  * Added firmware logging mechanism
+  * Updated firmware to FX3 SDK 1.3.3
+  * Added libbladeRF support for setting SMB clock to arbitrary frequency
+  * Added XB-100 host support
+  * Fixed TX undderrun issues (now correctly uses all available buffers)
+  * FPGA bitstream v0.5.0, FX3 FW v1.9.0, libbladeRF v1.5.1, bladeRF-cli v1.3.1
+
+ -- Jon Szymaniak <jon.szymaniak@nuand.com>  Thu, 07 Jan 2016 16:35:09 -0500
+
 bladerf (2015.07) unstable; urgency=low
 
   * FPGA: Fixed bug where TX_NOW bursts could cause metadata/sample FIFO slips

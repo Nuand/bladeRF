@@ -1,7 +1,7 @@
 #!/bin/sh -e
 
-UPSTREAM='https://www.nuand.com/fx3/bladeRF_fw_v1.8.1.img'
-CHECKSUM='81cb33ced14bcd2942c8236fb6b533f5'
+UPSTREAM='https://www.nuand.com/fx3/bladeRF_fw_v1.9.0.img'
+CHECKSUM='9fd35cdced2a33a08a724ee5162ee6b9'
 IMGFILE=/usr/share/Nuand/bladeRF/bladeRF_fw.img
 
 checkfile () {
