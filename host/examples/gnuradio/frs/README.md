@@ -1,5 +1,5 @@
-The `bladeRF_frs.grc` flowgraph implements an FRS transceiver capable of
-operating on any subset of the FRS channels. More information may be found in
-the paper, [An SDR-Based FRS Transceiver: Prototyping a multi-channel FRS transceiver with CTCSS support via GNU Radio and the Nuand bladeRF](https://github.com/Nuand/nuand-papers/releases/download/20151029/bladeRF_frs.pdf), from the
-[nuand-papers](https://www.github.com/nuand/nuand-papers/) repository.
+The `bladeRF_frs.grc` flowgraph implements a full-duplex FRS transceiver with CTCSS support and the ability to
+operate on any subset of the standard FRS channels. More information may be found in the paper,
+[An SDR-Based FRS Transceiver](https://www.nuand.com/bladeRF-doc/examples/bladeRF_frs.pdf). The source of this document
+may be found in the [nuand-papers](https://www.github.com/nuand/nuand-papers/) repository.
 
