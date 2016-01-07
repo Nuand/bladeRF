@@ -138,7 +138,7 @@ classdef bladeRF < handle
         %
             major = 0;
             minor = 1;
-            patch = 0;
+            patch = 1;
         end
 
         function [major, minor, patch, version_string] = library_version()

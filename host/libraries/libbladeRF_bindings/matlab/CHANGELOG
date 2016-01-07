@@ -5,6 +5,16 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v0.1.1 (2016-01-07)
+--------------------------------
+
+This version is intended for use with libbladeRF v1.5.1.
+
+Changes:
+  * libbladeRF-proto.m now searches the current working directory and
+    MATLABPATH for the neccessary THUNK library file.
+
+
 v0.1.0 (2015-12-31)
 --------------------------------
 
