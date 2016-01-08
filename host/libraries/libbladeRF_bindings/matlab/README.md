@@ -31,13 +31,16 @@ directory, as well as on the various object properties contained in these files.
 | `bladeRF.m`              | Top-level object for MATLAB libbladeRF bindings. See `doc bladeRF` for information about the available properties and methods.                                       |
 | `bladeRF_Simulink.m`     | MATLAB System Object implementation for Simulink. This exposes `bladeRF.m` to Simulink, allowing the device to be used to receive, transmit, or operate full duplex. |
 | `bladeRF_rx_gui.m`       | A configurable demo GUI that receives and plots samples in real-time.                                                                                                |
+| `bladeRF_rx_gui.fig`     | GUI layout for `bladeRF_rx_gui.m`                                                                                                                                    |
 | `bladeRF_XCVR.m`         | A submodule of `bladeRF.m` that provides parameter-based access to RX and TX module configuration items.                                                             |
 | `bladeRF_VCTCXO.m`       | A submodule of `bladeRF.m` that provides access to the VCTCXO trim DAC settings.                                                                                     |
 | `bladeRF_IQCorr.m`       | A submodule of `bladeRF.m` that provides access to IQ DC offset and gain imbalance correction functionality.                                                         |
 | `bladeRF_StreamConfig.m` | An object that encapsulates bladeRF stream parameters.                                                                                                               |
+| `libbladeRF_proto.m`     | This file establishes the bindings and mappings to libbladeRF.                                                                                                       |
+
 # Supported Versions #
 
-These bindings have been tested on MATLAB 2014b and 2015b. Earlier versions may be compatible, but this is not guarenteed.
+These bindings have been tested on MATLAB 2014b and 2015b. Earlier versions may be compatible, but this is not guaranteed.
 
 # License #
 
