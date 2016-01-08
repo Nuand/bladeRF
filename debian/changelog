@@ -1,4 +1,4 @@
-bladerf (2016.01-rc1); urgency=low
+bladerf (2016.01-rc1) unstable; urgency=low
 
   * Added support for VCTCXO taming using 1.8V 1 PPS or 10 MHz input signal
   * Revised DC offset correction algorithm; fixes lockups
