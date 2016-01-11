@@ -193,8 +193,12 @@
 #if _MSC_VER
 #   define strtok_r    strtok_s
 #   define strtoull    _strtoui64
+#if _MSC_VER < 1900
 #   define snprintf    _snprintf
 #   define vsnprintf   _vsnprintf
+#else
+#define STDC99
+#endif
 #   define strcasecmp  _stricmp
 #   define strncasecmp _strnicmp
 #   define fileno      _fileno
