@@ -398,13 +398,13 @@ static int save_table_results(const char *filename,
     struct bladerf_image *image = NULL;
     size_t i;
     size_t off = 0;
+    uint32_t n_frequencies_le = 0;
 
-    static const uint16_t magic = HOST_TO_LE16(0x1ab1);
-    static const uint32_t reserved = HOST_TO_LE32(0x00000000);
-    static const uint32_t tbl_version = HOST_TO_LE32(0x00000001);
+    static const uint16_t magic = HOST_TO_LE16_CONST(0x1ab1);
+    static const uint32_t reserved = HOST_TO_LE32_CONST(0x00000000);
+    static const uint32_t tbl_version = HOST_TO_LE32_CONST(0x00000001);
     static const size_t lms_data_size = 10; /* 10 uint8_t register values */
 
-    const uint32_t n_frequencies_le = HOST_TO_LE32((uint32_t) num_params);
 
     const size_t entry_size = sizeof(uint32_t) +   /* Frequency */
                               2 * sizeof(int16_t); /* DC I and Q valus */
@@ -417,6 +417,8 @@ static int save_table_results(const char *filename,
 
     assert(num_params < UINT32_MAX);
     assert(data_size <= UINT_MAX);
+
+    n_frequencies_le = HOST_TO_LE32((uint32_t) num_params);
 
     status = bladerf_lms_get_dc_cals(dev, &lms_dc_cals);
     if (status != 0) {
@@ -460,9 +462,12 @@ static int save_table_results(const char *filename,
     image->data[off++] = (uint8_t)lms_dc_cals.rxvga2b_q;
 
     for (i = 0; i < num_params; i++) {
-        const uint32_t freq  = HOST_TO_LE32((uint32_t) params[i].frequency);
-        const int16_t corr_i = HOST_TO_LE16(params[i].corr_i);
-        const int16_t corr_q = HOST_TO_LE16(params[i].corr_q);
+        uint32_t freq;
+        int16_t corr_i, corr_q;
+
+        freq   = HOST_TO_LE32((uint32_t) params[i].frequency);
+        corr_i = HOST_TO_LE16(params[i].corr_i);
+        corr_q = HOST_TO_LE16(params[i].corr_q);
 
         memcpy(&image->data[off], &freq, sizeof(freq));
         off += sizeof(freq);
