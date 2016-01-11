@@ -41,7 +41,6 @@
 #error "Build configured for multiple operating systems"
 #endif
 
-
 /*******************************************************************************
  * Endianness conversions
  *
@@ -150,6 +149,63 @@
  *---------------------*/
 #else
 #error "Encountered an OS that we do not have endian wrappers for?"
+#endif
+
+/*******************************************************************************
+ * Endianness conversions for constants
+ *
+ * We shouldn't be using the above items for assigning constants because the
+ * implementations may be functions [1].
+ *
+ * [1] https://sourceware.org/bugzilla/show_bug.cgi?id=17679#c7
+ ******************************************************************************/
+
+#define BLADERF_BYTESWAP16(x) ((((x) & 0xff00) >> 8) | (((x) & 0x00ff) << 8))
+
+#define BLADERF_BYTESWAP32(x) ((((x) & 0xff000000) >> 24) | \
+                               (((x) & 0x00ff0000) >>  8) | \
+                               (((x) & 0x0000ff00) <<  8) | \
+                               (((x) & 0x000000ff) << 24) )
+
+#define BLADERF_BYTESWAP64(x) ((((x) & 0xff00000000000000llu) >> 56) | \
+                               (((x) & 0x00ff000000000000llu) >> 40) | \
+                               (((x) & 0x0000ff0000000000llu) >> 24) | \
+                               (((x) & 0x000000ff00000000llu) >>  8) | \
+                               (((x) & 0x00000000ff000000llu) <<  8) | \
+                               (((x) & 0x0000000000ff0000llu) << 24) | \
+                               (((x) & 0x000000000000ff00llu) << 40) | \
+                               (((x) & 0x00000000000000ffllu) << 56) | \
+
+#if BLADERF_BIG_ENDIAN
+#   define HOST_TO_LE16_CONST(x) (BLADERF_BYTESWAP16(x))
+#   define LE16_TO_HOST_CONST(x) (BLADERF_BYTESWAP16(x))
+#   define HOST_TO_BE16_CONST(x) (x)
+#   define BE16_TO_HOST_CONST(x) (x)
+
+#   define HOST_TO_LE32_CONST(x) (BLADERF_BYTESWAP32(x))
+#   define LE32_TO_HOST_CONST(x) (BLADERF_BYTESWAP32(x))
+#   define HOST_TO_BE32_CONST(x) (x)
+#   define BE32_TO_HOST_CONST(x) (x)
+
+#   define HOST_TO_LE64_CONST(x) (BLADERF_BYTESWAP64(x))
+#   define LE64_TO_HOST_CONST(x) (BLADERF_BYTESWAP64(x))
+#   define HOST_TO_BE64_CONST(x) (x)
+#   define BE64_TO_HOST_CONST(x) (x)
+#else
+#   define HOST_TO_LE16_CONST(x) (x)
+#   define LE16_TO_HOST_CONST(x) (x)
+#   define HOST_TO_BE16_CONST(x) (BLADERF_BYTESWAP16(x))
+#   define BE16_TO_HOST_CONST(x) (BLADERF_BYTESWAP16(x))
+
+#   define HOST_TO_LE32_CONST(x) (x)
+#   define LE32_TO_HOST_CONST(x) (x)
+#   define HOST_TO_BE32_CONST(x) (BLADERF_BYTESWAP32(x))
+#   define BE32_TO_HOST_CONST(x) (BLADERF_BYTESWAP32(x))
+
+#   define HOST_TO_LE64_CONST(x) (x)
+#   define LE64_TO_HOST_CONST(x) (x)
+#   define HOST_TO_BE64_CONST(x) (BLADERF_BYTESWAP64(x))
+#   define BE64_TO_HOST_CONST(x) (BLADERF_BYTESWAP64(x))
 #endif
 
 /*******************************************************************************
