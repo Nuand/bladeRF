@@ -18,7 +18,7 @@ USB 3.0 Software Defined Radio (SDR). It is intended to support developers looki
 The libbladeRF source code is hosted on our <a class="el" href="https://github.com/Nuand/bladeRF">GitHub project page</a>,
 and the latest release of this documentation may be found <a class="el" href="https://www.nuand.com/libbladeRF-doc">here</a>.
 
-A few avenues for support are available, including the <a class="el" href="https://wwww.nuand.com/forums">Nuand forums</a>,
+A few avenues for support are available, including the <a class="el" href="https://www.nuand.com/forums">Nuand forums</a>,
 the \#bladeRF IRC channel on <a class="el" href="https://freenode.net">Freenode</a>, or
 <a class="el" href="#" onclick="location.href='mai'+'lto:'+'bla'+'de'+'RF@'+'Nu'+'and'+'.c'+'om'; return false;">email</a>.
 The forums are generally preferred over email because they allow a publicly
