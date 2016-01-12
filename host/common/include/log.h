@@ -32,6 +32,10 @@
 #include <stdio.h>
 #include "libbladeRF.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef SHORT_FILE_
 #   define  THIS_FILE  SHORT_FILE_
 #else
@@ -118,5 +122,9 @@ void log_set_verbosity(bladerf_log_level level);
 #define log_set_verbosity(level) do {} while (0)
 #endif
 
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

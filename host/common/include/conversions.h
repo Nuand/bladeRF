@@ -33,6 +33,10 @@
 #include <libbladeRF.h>
 #include "host_config.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Represents an association between a string suffix for a numeric value and
  * its multiplier. For example, "k" might correspond to 1000.
@@ -322,5 +326,10 @@ void float_to_sc16q11(const float *in, int16_t *out, unsigned int n);
  *         BLADERF_DC_CAL_INVALID if the provided string is invalid.
  */
 bladerf_cal_module str_to_bladerf_cal_module(const char *str);
+
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

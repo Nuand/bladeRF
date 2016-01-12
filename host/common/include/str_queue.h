@@ -31,6 +31,10 @@
 
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct str_queue_entry;
 
 struct str_queue {
@@ -80,5 +84,10 @@ char * str_queue_deq(struct str_queue *q);
  * @return true if the queue is empty
  */
 bool str_queue_empty(struct str_queue *q);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
 
 #endif

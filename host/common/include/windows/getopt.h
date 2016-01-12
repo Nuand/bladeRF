@@ -14,6 +14,10 @@ the terms of the BSD license (see legal/licenses/LICENSE.BSD.vlfeat)
 #ifndef VL_GETOPT_LONG_H
 #define VL_GETOPT_LONG_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* #include "generic.h" */
 
 /* Added to avoid further modifying this source */
@@ -41,6 +45,10 @@ struct option
 VL_EXPORT int getopt_long(int argc, char * const argv[],
                           const char * optstring,
                           const struct option * longopts, int * longindex);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 /* VL_GETOPT_LONG_H */
 #endif

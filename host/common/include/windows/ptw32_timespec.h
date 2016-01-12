@@ -52,6 +52,10 @@
 #include "host_config.h"
 #include "pthread.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * time between jan 1, 1601 and jan 1, 1970 in units of 100 nanoseconds
  */
@@ -90,5 +94,9 @@ ptw32_filetime_to_timespec (const FILETIME * ft, struct timespec *ts)
     (int) ((*(int64_t *) ft - PTW32_TIMESPEC_TO_FILETIME_OFFSET -
 	    ((int64_t) ts->tv_sec * (int64_t) 10000000)) * 100);
 }
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

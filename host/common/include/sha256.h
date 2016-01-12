@@ -33,6 +33,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define SHA256_DIGEST_SIZE 32
 
 typedef struct SHA256Context {
@@ -48,5 +52,10 @@ void	SHA256_Final(unsigned char [32], SHA256_CTX *);
 /* char   *SHA256_File(const char *, char *); */
 /* char   *SHA256_FileChunk(const char *, char *, off_t, off_t); */
 /* char   *SHA256_Data(const void *, unsigned int, char *); */
+
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif /* !_SHA256_H_ */

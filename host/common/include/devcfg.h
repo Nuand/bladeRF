@@ -31,6 +31,10 @@
 #include "rel_assert.h"
 #include "host_config.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define DEVCFG_OPTIONS_BASE   "hd:l:v:s:b:f:"
 
 /**
@@ -138,5 +142,10 @@ int devcfg_apply(struct bladerf *dev, const struct devcfg *c);
  * @param   title   Optional title to print before usage information
  */
 void devcfg_print_common_help(const char *title);
+
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif
