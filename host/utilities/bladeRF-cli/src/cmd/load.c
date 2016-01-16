@@ -52,7 +52,7 @@ int cmd_load(struct cli_state *state, int argc, char **argv)
 
         } else if (!strcasecmp(argv[1], "fx3")) {
 
-            printf("\n  Flashing firmware from %s...\n", expanded_path);
+            printf("\n  Flashing firmware from %s...\n\n", expanded_path);
             lib_status = bladerf_flash_firmware(dev, expanded_path);
             if (lib_status == 0) {
                 printf("  Done. Cycle power on the device.\n\n");
