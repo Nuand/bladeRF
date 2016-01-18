@@ -4,7 +4,7 @@
 # Title: Simple bladeRF RX GUI
 # Author: Nuand, LLC <bladeRF@nuand.com>
 # Description: A simple RX-only GUI that demonstrates the usage of various RX controls.
-# Generated: Fri Nov  6 15:32:16 2015
+# Generated: Sun Jan 17 21:00:48 2016
 ##################################################
 
 if __name__ == '__main__':
@@ -80,7 +80,7 @@ class bladeRF_rx(gr.top_block, Qt.QWidget):
         ##################################################
         self.bladerf_selection = bladerf_selection = str(instance) if serial == "" else serial
         self.bladerf_args = bladerf_args = "bladerf=" + bladerf_selection + ",buffers=" + str(num_buffers) + ",buflen=" + str(buflen) + ",num_xfers=" + str(num_xfers) + ",verbosity="+verbosity
-        self.gui_rx_vga_gain = gui_rx_vga_gain = 25
+        self.gui_rx_vga_gain = gui_rx_vga_gain = rx_vga_gain
         self.gui_rx_sample_rate = gui_rx_sample_rate = rx_sample_rate
         self.gui_rx_lna_gain = gui_rx_lna_gain = rx_lna_gain
         self.gui_rx_frequency = gui_rx_frequency = rx_frequency
@@ -92,7 +92,7 @@ class bladeRF_rx(gr.top_block, Qt.QWidget):
         ##################################################
         # Blocks
         ##################################################
-        self._gui_rx_vga_gain_range = Range(5, 60, 1, 25, 200)
+        self._gui_rx_vga_gain_range = Range(5, 60, 1, rx_vga_gain, 200)
         self._gui_rx_vga_gain_win = RangeWidget(self._gui_rx_vga_gain_range, self.set_gui_rx_vga_gain, "RX VGA1 + VGA2 Gain", "counter_slider", float)
         self.top_grid_layout.addWidget(self._gui_rx_vga_gain_win, 0, 5, 1, 4)
         self._gui_rx_sample_rate_range = Range(1.5e6, 40e6, 500e3, rx_sample_rate, 200)
@@ -108,7 +108,7 @@ class bladeRF_rx(gr.top_block, Qt.QWidget):
         self._gui_rx_lna_gain_callback = lambda i: Qt.QMetaObject.invokeMethod(self._gui_rx_lna_gain_combo_box, "setCurrentIndex", Qt.Q_ARG("int", self._gui_rx_lna_gain_options.index(i)))
         self._gui_rx_lna_gain_callback(self.gui_rx_lna_gain)
         self._gui_rx_lna_gain_combo_box.currentIndexChanged.connect(
-		lambda i: self.set_gui_rx_lna_gain(self._gui_rx_lna_gain_options[i]))
+                lambda i: self.set_gui_rx_lna_gain(self._gui_rx_lna_gain_options[i]))
         self.top_grid_layout.addWidget(self._gui_rx_lna_gain_tool_bar, 0, 9, 1, 1)
         self._gui_rx_frequency_range = Range(0, 3.8e9, 1e6, rx_frequency, 200)
         self._gui_rx_frequency_win = RangeWidget(self._gui_rx_frequency_range, self.set_gui_rx_frequency, "Frequency", "counter_slider", float)
@@ -123,11 +123,11 @@ class bladeRF_rx(gr.top_block, Qt.QWidget):
         self._gui_dc_offset_i_win = RangeWidget(self._gui_dc_offset_i_range, self.set_gui_dc_offset_i, "I DC Offset", "counter_slider", float)
         self.top_grid_layout.addWidget(self._gui_dc_offset_i_win, 1, 4, 1, 2)
         self.qtgui_waterfall_sink_x_0 = qtgui.waterfall_sink_c(
-		8192, #size
-		firdes.WIN_BLACKMAN_hARRIS, #wintype
-		gui_rx_frequency, #fc
-		gui_rx_sample_rate, #bw
-		"", #name
+                8192, #size
+                firdes.WIN_BLACKMAN_hARRIS, #wintype
+                gui_rx_frequency, #fc
+                gui_rx_sample_rate, #bw
+                "", #name
                 1 #number of inputs
         )
         self.qtgui_waterfall_sink_x_0.set_update_time(0.10)
@@ -158,10 +158,10 @@ class bladeRF_rx(gr.top_block, Qt.QWidget):
         self._qtgui_waterfall_sink_x_0_win = sip.wrapinstance(self.qtgui_waterfall_sink_x_0.pyqwidget(), Qt.QWidget)
         self.top_grid_layout.addWidget(self._qtgui_waterfall_sink_x_0_win, 2, 5, 5, 5)
         self.qtgui_time_sink_x_0 = qtgui.time_sink_c(
-		8192, #size
-		rx_sample_rate, #samp_rate
-		"", #name
-		1 #number of inputs
+                8192, #size
+                rx_sample_rate, #samp_rate
+                "", #name
+                1 #number of inputs
         )
         self.qtgui_time_sink_x_0.set_update_time(0.10)
         self.qtgui_time_sink_x_0.set_y_axis(-1, 1)
@@ -207,12 +207,12 @@ class bladeRF_rx(gr.top_block, Qt.QWidget):
         self._qtgui_time_sink_x_0_win = sip.wrapinstance(self.qtgui_time_sink_x_0.pyqwidget(), Qt.QWidget)
         self.top_grid_layout.addWidget(self._qtgui_time_sink_x_0_win, 7, 0, 3, 10)
         self.qtgui_freq_sink_x_0 = qtgui.freq_sink_c(
-		8192, #size
-		firdes.WIN_BLACKMAN_hARRIS, #wintype
-		gui_rx_frequency, #fc
-		gui_rx_sample_rate, #bw
-		"", #name
-		1 #number of inputs
+                8192, #size
+                firdes.WIN_BLACKMAN_hARRIS, #wintype
+                gui_rx_frequency, #fc
+                gui_rx_sample_rate, #bw
+                "", #name
+                1 #number of inputs
         )
         self.qtgui_freq_sink_x_0.set_update_time(0.10)
         self.qtgui_freq_sink_x_0.set_y_axis(-140, 10)
@@ -370,6 +370,7 @@ class bladeRF_rx(gr.top_block, Qt.QWidget):
 
     def set_rx_vga_gain(self, rx_vga_gain):
         self.rx_vga_gain = rx_vga_gain
+        self.set_gui_rx_vga_gain(self.rx_vga_gain)
 
     def get_serial(self):
         return self.serial
@@ -411,9 +412,9 @@ class bladeRF_rx(gr.top_block, Qt.QWidget):
 
     def set_gui_rx_sample_rate(self, gui_rx_sample_rate):
         self.gui_rx_sample_rate = gui_rx_sample_rate
+        self.osmosdr_source_0.set_sample_rate(self.gui_rx_sample_rate)
         self.qtgui_freq_sink_x_0.set_frequency_range(self.gui_rx_frequency, self.gui_rx_sample_rate)
         self.qtgui_waterfall_sink_x_0.set_frequency_range(self.gui_rx_frequency, self.gui_rx_sample_rate)
-        self.osmosdr_source_0.set_sample_rate(self.gui_rx_sample_rate)
 
     def get_gui_rx_lna_gain(self):
         return self.gui_rx_lna_gain
@@ -428,9 +429,9 @@ class bladeRF_rx(gr.top_block, Qt.QWidget):
 
     def set_gui_rx_frequency(self, gui_rx_frequency):
         self.gui_rx_frequency = gui_rx_frequency
+        self.osmosdr_source_0.set_center_freq(self.gui_rx_frequency, 0)
         self.qtgui_freq_sink_x_0.set_frequency_range(self.gui_rx_frequency, self.gui_rx_sample_rate)
         self.qtgui_waterfall_sink_x_0.set_frequency_range(self.gui_rx_frequency, self.gui_rx_sample_rate)
-        self.osmosdr_source_0.set_center_freq(self.gui_rx_frequency, 0)
 
     def get_gui_rx_bandwidth(self):
         return self.gui_rx_bandwidth
