@@ -58,7 +58,7 @@ if { $opts(size) != 115 && $opts(size) != 40 } {
 # Add signaltap file
 set forced_talkback 0
 if { $opts(stp) != "" } {
-    if { [get_user_option -name TALKBACK_ENABLED] == off && $opts(force) } {
+    if { ([get_user_option -name TALKBACK_ENABLED] == off || [get_user_option -name TALKBACK_ENABLED] == "") && $opts(force) } {
         puts "Enabling TalkBack to include SignalTap file"
         set_user_option -name TALKBACK_ENABLED on
         set forced_talkback 1
