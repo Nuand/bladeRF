@@ -704,6 +704,13 @@ static int perform_rx_cal(struct rx_cal *cal, struct dc_calibration_params *p)
                           &p->corr_i, &p->corr_q,
                           &p->error_i, &p->error_q);
 
+    if (status != 0) {
+        return status;
+    }
+
+    /* Apply the nominal correction values */
+    status = set_rx_dc_corr(cal->dev, p->corr_i, p->corr_q);
+
     return status;
 }
 
@@ -906,6 +913,21 @@ static const float tx_cal_filt[] = {
 
 static const unsigned int tx_cal_filt_num_taps =
     (sizeof(tx_cal_filt) / sizeof(tx_cal_filt[0]));
+
+static inline int set_tx_dc_corr(struct bladerf *dev, int16_t i, int16_t q)
+{
+    int status;
+
+    status = bladerf_set_correction(dev, BLADERF_MODULE_TX,
+                                    BLADERF_CORR_LMS_DCOFF_I, i);
+    if (status != 0) {
+        return status;
+    }
+
+    status = bladerf_set_correction(dev, BLADERF_MODULE_TX,
+                                    BLADERF_CORR_LMS_DCOFF_Q, q);
+    return status;
+}
 
 static int get_tx_cal_backup(struct bladerf *dev, struct tx_cal_backup *b)
 {
@@ -1476,6 +1498,9 @@ static int perform_tx_cal(struct tx_cal *state, struct dc_calibration_params *p)
     if (status != 0) {
         return status;
     }
+
+    /* Apply the resulting nominal values */
+    status = set_tx_dc_corr(state->dev, p->corr_i, p->corr_q);
 
     return status;
 }
