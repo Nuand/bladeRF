@@ -7,13 +7,14 @@ DESCRIPT='FPGA bitstream'
 MYNAMEIS='bladerf-fpga-hostedx40'
 
 checkfile () {
+	[ -z "$1" ] && exit 3
 	md5sum --check <<- EOMD5SUM
-	${CHECKSUM}  ${DATAFILE}
+	${CHECKSUM}  $1
 	EOMD5SUM
 }
 
 # Fetch firmware if needed
-if [ ! -s ${DATAFILE} ] || ! checkfile ; then
+if [ ! -s ${DATAFILE} ] || ! checkfile ${DATAFILE}; then
 	echo "Either your ${DESCRIPT} is missing, or it is out-of-date."
 	echo "Downloading ${DESCRIPT} from ${UPSTREAM}..."
 
@@ -21,7 +22,7 @@ if [ ! -s ${DATAFILE} ] || ! checkfile ; then
 	NEWFILE=$(mktemp)
 	[ -z "${NEWFILE}" ] && (echo "Unable to create temporary file!"; exit 2)
 
-	if wget -O ${NEWFILE} ${UPSTREAM} ; then
+	if wget -O ${NEWFILE} ${UPSTREAM} && checkfile ${NEWFILE}; then
 		# We're good!  Copy it to its new home.
 		echo "Download successful, copying to ${DATAFILE}"
 		mv ${NEWFILE} ${DATAFILE}
