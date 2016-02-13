@@ -2,26 +2,45 @@
 
 UPSTREAM='https://www.nuand.com/fpga/v0.5.0/hostedx40.rbf'
 CHECKSUM='af8ea27b4f545113db3d9b6d986f6525'
-RBFFILE=/usr/share/Nuand/bladeRF/hostedx40.rbf
+DATAFILE='/usr/share/Nuand/bladeRF/hostedx40.rbf'
+DESCRIPT='FPGA bitstream'
+MYNAMEIS='bladerf-fpga-hostedx40'
 
 checkfile () {
 	md5sum --check <<- EOMD5SUM
-	$CHECKSUM  $RBFFILE
+	${CHECKSUM}  ${DATAFILE}
 	EOMD5SUM
 }
 
 # Fetch firmware if needed
-if [ ! -s $RBFFILE ] || ! checkfile ; then
-	echo "Downloading FPGA bitstream from nuand.com..."
-	rm -f $RBFFILE
-	wget -O $RBFFILE $UPSTREAM || cat <<- EOMSG 1>&2
+if [ ! -s ${DATAFILE} ] || ! checkfile ; then
+	echo "Either your ${DESCRIPT} is missing, or it is out-of-date."
+	echo "Downloading ${DESCRIPT} from ${UPSTREAM}..."
 
-		Warning: Failed to download FPGA bitstream for bladeRF.
-		Please run "dpkg-reconfigure bladerf-fpga-hostedx40"
-		again when networking is up, or copy the firmware manually
-		to $RBFFILE
+	# Try downloading it
+	NEWFILE=$(mktemp)
+	[ -z "${NEWFILE}" ] && (echo "Unable to create temporary file!"; exit 2)
 
-	EOMSG
+	if wget -O ${NEWFILE} ${UPSTREAM} ; then
+		# We're good!  Copy it to its new home.
+		echo "Download successful, copying to ${DATAFILE}"
+		mv ${NEWFILE} ${DATAFILE}
+	else
+		# It failed!  Print an error and nuke the temporary file.
+		rm -f ${NEWFILE}
+		cat <<- EOMSG 1>&2
+
+		Warning: Failed to download ${DESCRIPT}.
+		Please run "dpkg-reconfigure ${MYNAMEIS}"
+		again when networking is up, or download the file manually:
+
+		    URL:  ${UPSTREAM}
+		    File: ${DATAFILE}
+
+		EOMSG
+
+		exit 1
+	fi
 fi
 
 #DEBHELPER#
