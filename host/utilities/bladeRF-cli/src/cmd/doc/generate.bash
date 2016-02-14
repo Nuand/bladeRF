@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # @file generate.bash
 #
@@ -6,8 +6,8 @@
 #
 # This file is part of the bladeRF project
 #
-# Copyright (C) 2014-2015 Ryan Tucker <bladerf@ryantucker.us>
-# Copyright (C) 2014-2015 Nuand LLC
+# Copyright (C) 2014-2016 Ryan Tucker <bladerf@ryantucker.us>
+# Copyright (C) 2014-2016 Nuand LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,14 +26,31 @@
 
 [ -z "$1" ] && echo "usage: $0 inputfile.md" && exit 1
 
+INPUTPATH=$(dirname $1)
+
 echo "Generating HTML doc..."
-pandoc --standalone --self-contained --toc -f markdown -t html5 -o cmd_help.html $1
+pandoc --standalone --self-contained --toc -f markdown -t html5 -o cmd_help.html.new $1 && mv cmd_help.html.new cmd_help.html
+
+if [ ! -s "cmd_help.html" ]; then
+    echo "Failed to generate HTML help!"
+fi
 
 echo "Generating man page snippet..."
-pandoc -f markdown -t man -o cmd_help.man $1
+pandoc -f markdown -t man -o cmd_help.man.new $1 && mv cmd_help.man.new cmd_help.man
+
+if [ ! -s "cmd_help.man" ]; then
+    echo "Failed to generate man page!  Using canned version."
+    cp ${INPUTPATH}/cmd_help.man.in cmd_help.man
+fi
 
 echo "Generating text version..."
-pandoc --ascii --columns=70 -f markdown -t plain -o cmd_help.txt $1
+pandoc --ascii --columns=70 -f markdown -t plain -o cmd_help.txt.new $1 && mv cmd_help.txt.new cmd_help.txt
+
+if [ ! -s "cmd_help.txt" ]; then
+    echo "Failed to generate text version!  Using canned header file."
+    cp ${INPUTPATH}/cmd_help.h.in cmd_help.h
+    exit 0
+fi
 
 echo "Generating include file..."
 
@@ -43,7 +60,7 @@ echo >> cmd_help.txt
 echo >> cmd_help.txt
 
 # Heading!
-cat > cmd_help.h <<EOF
+cat > cmd_help.h.new <<EOF
 /**
  * @file cmd_help.h
  *
@@ -51,7 +68,7 @@ cat > cmd_help.h <<EOF
  *
  * This file is part of the bladeRF project
  *
- * Copyright (C) 2014-2015 Nuand LLC
+ * Copyright (C) 2014-2016 Nuand LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -120,10 +137,12 @@ grep -vEe "${REMOVE_PATT}" cmd_help.txt | \
         {
             print "  \""$0"\\n\" \\"
         }
-    ' >> cmd_help.h
+    ' >> cmd_help.h.new
 
 # We end with a \, so throw an extra line in there to keep the preprocessor
 # from exploding.  Also close out our wrapper.
-echo >> cmd_help.h
-echo "#endif // BLADERF_CLI_VERSION_H__" >> cmd_help.h
+echo >> cmd_help.h.new
+echo "#endif // BLADERF_CLI_VERSION_H__" >> cmd_help.h.new
+
+mv cmd_help.h.new cmd_help.h
 
