@@ -2,26 +2,46 @@
 
 UPSTREAM='https://www.nuand.com/fx3/bladeRF_fw_v1.9.0.img'
 CHECKSUM='9fd35cdced2a33a08a724ee5162ee6b9'
-IMGFILE=/usr/share/Nuand/bladeRF/bladeRF_fw.img
+DATAFILE='/usr/share/Nuand/bladeRF/bladeRF_fw.img'
+DESCRIPT='firmware'
+MYNAMEIS='bladerf-firmware-fx3'
 
 checkfile () {
+	[ -z "$1" ] && exit 3
 	md5sum --check <<- EOMD5SUM
-	$CHECKSUM  $IMGFILE
+	${CHECKSUM}  $1
 	EOMD5SUM
 }
 
 # Fetch firmware if needed
-if [ ! -s $IMGFILE ] || ! checkfile ; then
-	echo "Downloading firmware from nuand.com..."
-	rm -f $IMGFILE
-	wget -O $IMGFILE $UPSTREAM || cat <<- EOMSG 1>&2
+if [ ! -s ${DATAFILE} ] || ! checkfile ${DATAFILE}; then
+	echo "Either your ${DESCRIPT} is missing, or it is out-of-date."
+	echo "Downloading ${DESCRIPT} from ${UPSTREAM}..."
 
-		Warning: Failed to download firmware for bladeRF.
-		Please run "dpkg-reconfigure bladerf-firmware-fx3"
-		again when networking is up, or copy the firmware manually
-		to $IMGFILE
+	# Try downloading it
+	NEWFILE=$(mktemp)
+	[ -z "${NEWFILE}" ] && (echo "Unable to create temporary file!"; exit 2)
 
-	EOMSG
+	if wget -O ${NEWFILE} ${UPSTREAM} && checkfile ${NEWFILE}; then
+		# We're good!  Copy it to its new home.
+		echo "Download successful, copying to ${DATAFILE}"
+		mv ${NEWFILE} ${DATAFILE}
+	else
+		# It failed!  Print an error and nuke the temporary file.
+		rm -f ${NEWFILE}
+		cat <<- EOMSG 1>&2
+
+		Warning: Failed to download ${DESCRIPT}.
+		Please run "dpkg-reconfigure ${MYNAMEIS}"
+		again when networking is up, or download the file manually:
+
+		    URL:  ${UPSTREAM}
+		    File: ${DATAFILE}
+
+		EOMSG
+
+		exit 1
+	fi
 fi
 
 #DEBHELPER#
