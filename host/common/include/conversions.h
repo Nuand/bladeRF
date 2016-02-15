@@ -225,13 +225,36 @@ bladerf_log_level str2loglevel(const char *str, bool *ok);
 const char * module2str(bladerf_module m);
 
 /**
- * Convert a string to a module enumeration value. This is case-insensitive.
+ * Convert a string to a module enumeration value.
+ *
+ * This is case-insensitive.
  *
  * @param   str         Module as a string. Should be "rx" or "tx".
  *
  * @return  BLADERF_MODULE_RX, BLADERF_MODULE_TX, or BLADERF_MODULE_INVALID
  */
 bladerf_module str2module(const char *str);
+
+/**
+ * Convert a trigger signal enumeration value to a string
+ *
+ * @param   trigger     Trigger item
+ *
+ * @return  String representation or "Unknown"
+ */
+const char * trigger2str(bladerf_trigger_signal trigger);
+
+/**
+ * Conver a string to a trigger signal enumeration value.
+ *
+ * This is case-insensitive.
+ *
+ * @param   str         Trigger as a string. Should be:
+ *                      "J71-4"
+ *
+ * @return BLADERF_TRIGGER_J71_4 or BLADERF_TRIGGER_INVALID
+ */
+bladerf_trigger_signal str2trigger(const char *str);
 
 /**
  * Convert a string to a loopback mode
