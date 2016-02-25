@@ -1083,8 +1083,10 @@ int sync_tx(struct bladerf *dev, void *samples, unsigned int num_samples,
         }
     }
 
-    if (s->stream_config.format == BLADERF_FORMAT_SC16_Q11_META &&
+    if (status == 0 &&
+        s->stream_config.format == BLADERF_FORMAT_SC16_Q11_META &&
         (user_meta->flags & BLADERF_META_FLAG_TX_BURST_END)) {
+
         s->meta.in_burst = false;
         s->meta.now = false;
     }
