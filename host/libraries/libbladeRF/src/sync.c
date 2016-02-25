@@ -623,9 +623,10 @@ static int advance_tx_buffer(struct bladerf_sync *s, struct buffer_mgmt *b)
     int status = 0;
     const unsigned int idx = b->prod_i;
 
-    /* Mark buffer full */
-    log_verbose("%s: Marking buf[%u] full\n", __FUNCTION__, idx);
-    b->status[idx] = SYNC_BUFFER_FULL;
+    /* Mark buffer in flight because we're going to send it out.
+     * This ensures that if the callback fires before this function completes,
+     * its state will be correct. */
+    b->status[idx] = SYNC_BUFFER_IN_FLIGHT;
 
     if (b->submitter == SYNC_TX_SUBMITTER_FN) {
         /* This call may block and it results in a per-stream lock being held, so
@@ -642,14 +643,15 @@ static int advance_tx_buffer(struct bladerf_sync *s, struct buffer_mgmt *b)
         MUTEX_LOCK(&b->lock);
 
         if (status == 0) {
-            log_verbose("%s: buf[%u] submitted. Marking in-flight.\n",
+            log_verbose("%s: buf[%u] submitted.\n",
                         __FUNCTION__, idx);
-
-            b->status[idx] = SYNC_BUFFER_IN_FLIGHT;
 
         } else if (status == BLADERF_ERR_WOULD_BLOCK) {
             log_verbose("%s: Deferring buf[%u] submission to worker callback.\n",
                         __FUNCTION__, idx);
+
+            /* Mark this buffer as being full of data, but not in flight */
+            b->status[idx] = SYNC_BUFFER_FULL;
 
             /* Assign callback the duty of submitting deferred buffers,
              * and use buffer_mgmt.cons_i to denote which it should submit
@@ -661,6 +663,9 @@ static int advance_tx_buffer(struct bladerf_sync *s, struct buffer_mgmt *b)
              * status back up */
             status = 0;
         } else {
+            /* Unmark this as being in flight */
+            b->status[idx] = SYNC_BUFFER_FULL;
+
             log_debug("%s: Failed to submit buf[%u].\n", __FUNCTION__, idx);
             return status;
        }
