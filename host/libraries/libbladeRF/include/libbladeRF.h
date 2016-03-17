@@ -673,7 +673,8 @@ typedef enum {
                              *   This device is not yet supported in
                              *   libbladeRF, and is here as a placeholder
                              *   for future support. */
-    BLADERF_XB_200          /**< XB-200 Transverter board */
+    BLADERF_XB_200,         /**< XB-200 Transverter board */
+    BLADERF_XB_300          /**< XB-300 Amplifier board */
 } bladerf_xb;
 
 /**
@@ -732,6 +733,26 @@ typedef enum {
     BLADERF_XB200_BYPASS = 0,   /**< Bypass the XB-200 mixer */
     BLADERF_XB200_MIX           /**< Pass signals through the XB-200 mixer */
 } bladerf_xb200_path;
+
+/**
+ * XB-300 TRX setting
+ */
+typedef enum {
+    BLADERF_XB300_TRX_INVAL = -1,   /**< Invalid TRX selection */
+    BLADERF_XB300_TRX_TX = 0,       /**< TRX antenna operates as TX */
+    BLADERF_XB300_TRX_RX,           /**< TRX antenna operates as RX */
+    BLADERF_XB300_TRX_UNSET         /**< TRX antenna unset */
+} bladerf_xb300_trx;
+
+/**
+ * XB-300 Amplifier selection
+ */
+typedef enum {
+    BLADERF_XB300_AMP_INVAL = -1,   /**< Invalid amplifier selection */
+    BLADERF_XB300_AMP_PA = 0,       /**< TX Power amplifier */
+    BLADERF_XB300_AMP_LNA,          /**< RX LNA */
+    BLADERF_XB300_AMP_PA_AUX        /**< Auxillary Power amplifier */
+} bladerf_xb300_amplifier;
 
 /**
  * Quick Re-tune parameters. Note that these parameters, which are associated
@@ -1537,6 +1558,65 @@ API_EXPORT
 int CALL_CONV bladerf_xb200_get_path(struct bladerf *dev,
                                      bladerf_module module,
                                      bladerf_xb200_path *path);
+
+/**
+ * Configure the XB-300 TRX path
+ *
+ * @param       dev         Device handle
+ * @param       trx         Desired XB-300 TRX setting
+ *
+ * @return 0 on success, BLADERF_ERR_* on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_xb300_set_trx(struct bladerf *dev,
+                   bladerf_xb300_trx trx);
+/**
+ * Get the current XB-300 signal path
+ *
+ * @param       dev         Device handle
+ * @param       trx         XB300 TRX antenna setting
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_xb300_get_trx(struct bladerf *dev,
+                   bladerf_xb300_trx *trx);
+/**
+ * Enable or disable selected XB-300 amplifier
+ *
+ * @param       dev         Device handle
+ * @param       amp         XB-300 amplifier
+ * @param       enable      Set true to enable or false to disable
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_xb300_set_amplifier_enable(struct bladerf *dev,
+                   bladerf_xb300_amplifier amp,
+                   bool enable);
+/**
+ * Get state of selected XB-300 amplifier
+ *
+ * @param       dev         Device handle
+ * @param       amp         XB-300 amplifier
+ * @param       enable      Set true to enable or false to disable
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_xb300_get_amplifier_enable(struct bladerf *dev,
+                   bladerf_xb300_amplifier amp,
+                   bool *enable);
+/**
+ * Get current PA PDET output power in dBm
+ *
+ * @param       dev         Device handle
+ * @param       val         Output power in dBm
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_xb300_get_output_power(struct bladerf *dev, float *val);
 
 /**
  * Set the VCTCXO tamer mode.

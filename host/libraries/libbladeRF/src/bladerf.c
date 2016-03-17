@@ -1605,6 +1605,7 @@ int bladerf_expansion_get_attached(struct bladerf *dev, bladerf_xb *xb)
         case BLADERF_XB_NONE:
         case BLADERF_XB_100:
         case BLADERF_XB_200:
+        case BLADERF_XB_300:
             status = 0;
             *xb = dev->xb;
             break;
@@ -1665,6 +1666,66 @@ int bladerf_xb200_get_path(struct bladerf *dev,
     MUTEX_LOCK(&dev->ctrl_lock);
 
     status = xb200_get_path(dev, module, path);
+
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+    return status;
+}
+
+int bladerf_xb300_set_trx(struct bladerf *dev, bladerf_xb300_trx trx)
+{
+    int status;
+    MUTEX_LOCK(&dev->ctrl_lock);
+
+    status = xb300_set_trx(dev, trx);
+
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+    return status;
+}
+
+int bladerf_xb300_get_trx(struct bladerf *dev, bladerf_xb300_trx *trx)
+{
+    int status;
+    MUTEX_LOCK(&dev->ctrl_lock);
+
+    status = xb300_get_trx(dev, trx);
+
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+    return status;
+}
+
+int bladerf_xb300_set_amplifier_enable(struct bladerf *dev,
+                   bladerf_xb300_amplifier amp,
+                   bool enable)
+{
+    int status;
+    MUTEX_LOCK(&dev->ctrl_lock);
+
+    status = xb300_set_amplifier_enable(dev, amp, enable);
+
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+    return status;
+}
+
+int bladerf_xb300_get_amplifier_enable(struct bladerf *dev,
+                   bladerf_xb300_amplifier amp,
+                   bool *enable)
+{
+    int status;
+    MUTEX_LOCK(&dev->ctrl_lock);
+
+    status = xb300_get_amplifier_enable(dev, amp, enable);
+
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+    return status;
+}
+
+int bladerf_xb300_get_output_power(struct bladerf *dev,
+                   float *val)
+{
+    int status;
+    MUTEX_LOCK(&dev->ctrl_lock);
+
+    status = xb300_get_output_power(dev, val);
 
     MUTEX_UNLOCK(&dev->ctrl_lock);
     return status;
