@@ -347,13 +347,19 @@ XB\-100 GPIO expansion board
 .PP
 XB\-200 LF/MF/HF/VHF transverter expansion board
 .RE
+.IP \[bu] 2
+\f[C]300\f[]
+.RS 2
+.PP
+XB\-300 amplifier board
+.RE
 .PP
 Common subcommands:
 .IP \[bu] 2
 \f[C]enable\f[]
 .RS 2
 .PP
-Enable the XB\-100 or XB\-200 expansion board.
+Enable the XB\-100, XB\-200, or XB\-300 expansion board.
 .RE
 .PP
 XB\-200 subcommands:
@@ -435,6 +441,41 @@ that\ are\ not\ associated\ with\ the\ on\-board\ filters.
 .RE
 .RE
 .PP
+XB\-300 subcommands:
+.IP \[bu] 2
+\f[C]<pa|lna|aux>\ [on|off]\f[]
+.RS 2
+.PP
+Enable or disable the power amplifier (PA), low\-noise amplifier (lna)
+or auxillary LNA (aux).
+The current state if the specified device is printed if [on|off] is not
+specified.
+.PP
+Note: The auxillary path on the XB\-300 is not populated with components
+by default; the \f[C]aux\f[] control will have no effect upon the RX
+signal.
+This option is available for users to modify their board with custom
+hardware.
+.RE
+.IP \[bu] 2
+\f[C]<pwr>\f[]
+.RS 2
+.PP
+Read the current Power Detect (PDET) voltage and compute the output
+power.
+.RE
+.IP \[bu] 2
+\f[C]trx\ <rx|tx>\f[]
+.RS 2
+.PP
+The default XB\-300 hardware configuration includes separate RX and TX
+paths.
+However, users wishing to use only a single antenna for TRX can do so
+via a modification to resistor population options on the XB\-300 and use
+this command to switch between RX an TX operation.
+(See R8, R10, and R23 on the schematic.)
+.RE
+.PP
 Examples:
 .IP \[bu] 2
 \f[C]xb\ 200\ enable\f[]
@@ -448,6 +489,29 @@ Enables and configures the XB\-200 transverter expansion board.
 .PP
 Selects the 144\-148 MHz receive filter on the XB\-200 transverter
 expansion board.
+.RE
+.IP \[bu] 2
+\f[C]xb\ 300\ enable\f[]
+.RS 2
+.PP
+Enables and configures the use of GPIOs to interact with the XB\-300.
+The PA and LNA will disabled by default.
+.RE
+.IP \[bu] 2
+\f[C]xb\ 300\ lna\ on\f[]
+.RS 2
+.PP
+Enables the RX LNA on the XB\-300.
+LED D1 (green) is illuminated when the LNA is enabled, and off when it
+is disabled.
+.RE
+.IP \[bu] 2
+\f[C]xb\ 300\ pa\ off\f[]
+.RS 2
+.PP
+Disables the TX PA on the XB\-300.
+LED D2 (blue) is illuminated when the PA is enabled, and off when it is
+disabled.
 .RE
 .SS mimo
 .PP

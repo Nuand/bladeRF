@@ -1,7 +1,7 @@
 /*
  * This file is part of the bladeRF project
  *
- * Copyright (C) 2014 Nuand LLC
+ * Copyright (C) 2014, 2016 Nuand LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 #include "xb.h"
 #include "xb100.h"
 #include "xb200.h"
+#include "xb300.h"
 
 int cmd_xb(struct cli_state *state, int argc, char **argv)
 {
@@ -40,6 +41,10 @@ int cmd_xb(struct cli_state *state, int argc, char **argv)
 
             case MODEL_XB200:
                 status = cmd_xb200(state, argc, argv);
+                break;
+
+            case MODEL_XB300:
+                status = cmd_xb300(state, argc, argv);
                 break;
 
             default:

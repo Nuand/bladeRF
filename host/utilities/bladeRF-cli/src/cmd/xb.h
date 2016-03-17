@@ -23,5 +23,6 @@
 #define MODEL_INVALID  -1
 #define MODEL_XB100    100
 #define MODEL_XB200    200
+#define MODEL_XB300    300
 
 #endif

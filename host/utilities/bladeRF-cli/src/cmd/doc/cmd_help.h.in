@@ -5,7 +5,7 @@
  *
  * This file is part of the bladeRF project
  *
- * Copyright (C) 2014-2015 Nuand LLC
+ * Copyright (C) 2014-2016 Nuand LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
  * Any manual modifications to this file will be overwritten!
  * To edit the content of help strings, please edit interactive-help.md
  *
- * Last generated: Mon Dec 28 23:17:01 EST 2015 by jynik
+ * Last generated: Thu Mar 17 16:46:10 2016 -0700 by Robert Ghilduta <robert.ghilduta@nuand.com>
  */
 
 #ifndef BLADERF_CLI_DOC_CMD_HELP_H__
@@ -301,11 +301,15 @@
   "\n" \
   "    XB-200 LF/MF/HF/VHF transverter expansion board\n" \
   "\n" \
+  "-   300\n" \
+  "\n" \
+  "    XB-300 amplifier board\n" \
+  "\n" \
   "Common subcommands:\n" \
   "\n" \
   "-   enable\n" \
   "\n" \
-  "    Enable the XB-100 or XB-200 expansion board.\n" \
+  "    Enable the XB-100, XB-200, or XB-300 expansion board.\n" \
   "\n" \
   "XB-200 subcommands:\n" \
   "\n" \
@@ -348,6 +352,32 @@
   "            and the filters' 3dB points. The custom path is used for cases\n" \
   "            that are not associated with the on-board filters.\n" \
   "\n" \
+  "XB-300 subcommands:\n" \
+  "\n" \
+  "-   <pa|lna|aux> [on|off]\n" \
+  "\n" \
+  "    Enable or disable the power amplifier (PA), low-noise amplifier\n" \
+  "    (lna) or auxillary LNA (aux). The current state if the specified\n" \
+  "    device is printed if [on|off] is not specified.\n" \
+  "\n" \
+  "    Note: The auxillary path on the XB-300 is not populated with\n" \
+  "    components by default; the aux control will have no effect upon\n" \
+  "    the RX signal. This option is available for users to modify their\n" \
+  "    board with custom hardware.\n" \
+  "\n" \
+  "-   <pwr>\n" \
+  "\n" \
+  "    Read the current Power Detect (PDET) voltage and compute the\n" \
+  "    output power.\n" \
+  "\n" \
+  "-   trx <rx|tx>\n" \
+  "\n" \
+  "    The default XB-300 hardware configuration includes separate RX and\n" \
+  "    TX paths. However, users wishing to use only a single antenna for\n" \
+  "    TRX can do so via a modification to resistor population options on\n" \
+  "    the XB-300 and use this command to switch between RX an TX\n" \
+  "    operation. (See R8, R10, and R23 on the schematic.)\n" \
+  "\n" \
   "Examples:\n" \
   "\n" \
   "-   xb 200 enable\n" \
@@ -358,6 +388,21 @@
   "\n" \
   "    Selects the 144-148 MHz receive filter on the XB-200 transverter\n" \
   "    expansion board.\n" \
+  "\n" \
+  "-   xb 300 enable\n" \
+  "\n" \
+  "    Enables and configures the use of GPIOs to interact with the\n" \
+  "    XB-300. The PA and LNA will disabled by default.\n" \
+  "\n" \
+  "-   xb 300 lna on\n" \
+  "\n" \
+  "    Enables the RX LNA on the XB-300. LED D1 (green) is illuminated\n" \
+  "    when the LNA is enabled, and off when it is disabled.\n" \
+  "\n" \
+  "-   xb 300 pa off\n" \
+  "\n" \
+  "    Disables the TX PA on the XB-300. LED D2 (blue) is illuminated\n" \
+  "    when the PA is enabled, and off when it is disabled.\n" \
   "\n" \
 
 

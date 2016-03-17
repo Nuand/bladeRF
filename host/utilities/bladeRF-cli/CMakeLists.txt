@@ -150,6 +150,7 @@ set(BLADERF_CLI_SOURCE
         src/cmd/xb.c
         src/cmd/xb100.c
         src/cmd/xb200.c
+        src/cmd/xb300.c
         src/cmd/recover.c
         src/cmd/rx.c
         src/cmd/rxtx.c

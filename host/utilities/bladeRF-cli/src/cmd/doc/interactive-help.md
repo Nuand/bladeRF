@@ -283,11 +283,16 @@ Valid values for `board_model`:
 
       XB-200 LF/MF/HF/VHF transverter expansion board
 
+  - `300`
+
+      XB-300 amplifier board
+
+
 Common subcommands:
 
   - `enable`
 
-      Enable the XB-100 or XB-200 expansion board.
+      Enable the XB-100, XB-200, or XB-300 expansion board.
 
 XB-200 subcommands:
 
@@ -330,6 +335,30 @@ XB-200 subcommands:
             and the filters' 3dB points. The custom path is used for cases
             that are not associated with the on-board filters.
 
+XB-300 subcommands:
+
+  - `<pa|lna|aux> [on|off]`
+
+    Enable or disable the power amplifier (PA), low-noise amplifier (lna) or
+    auxillary LNA (aux). The current state if the specified device is printed
+    if [on|off] is not specified.
+
+    Note: The auxillary path on the XB-300 is not populated with components by
+          default; the `aux` control will have no effect upon the RX signal.
+          This option is available for users to modify their board with custom
+          hardware.
+
+  - `<pwr>`
+
+    Read the current Power Detect (PDET) voltage and compute the output power.
+
+  - `trx <rx|tx>`
+
+    The default XB-300 hardware configuration includes separate RX and TX paths.
+    However, users wishing to use only a single antenna for TRX can do so via a
+    modification to resistor population options on the XB-300 and use this command
+    to switch between RX an TX operation. (See R8, R10, and R23 on the schematic.)
+
 Examples:
 
  * `xb 200 enable`
@@ -341,6 +370,20 @@ Examples:
       Selects the 144-148 MHz receive filter on the XB-200 transverter
       expansion board.
 
+ * `xb 300 enable`
+
+      Enables and configures the use of GPIOs to interact with the XB-300. The
+      PA and LNA will disabled by default.
+
+ * `xb 300 lna on`
+
+      Enables the RX LNA on the XB-300. LED D1 (green) is illuminated when the
+      LNA is enabled, and off when it is disabled.
+
+ *  `xb 300 pa off`
+
+      Disables the TX PA on the XB-300. LED D2 (blue) is illuminated when the
+      PA is enabled, and off when it is disabled.
 
 mimo
 ----
@@ -706,7 +749,7 @@ that particular parameter. The parameter is one of:
 `rxvga1`        Gain setting of RXVGA1, in dB. Range: [5, 30]
 
 `rx_mux`        FPGA RX FIFO input mux mode. Options are:
-                    BASEBAND_LMS, 12BIT_COUNTER, 
+                    BASEBAND_LMS, 12BIT_COUNTER,
                     32BIT_COUNTER, DIGITAL_LOOPBACK
 
 `rxvga1`        Gain setting of RXVGA1, in dB. Range: [5, 30]
