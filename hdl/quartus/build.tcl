@@ -57,19 +57,22 @@ if { $opts(size) != 115 && $opts(size) != 40 } {
 
 # Add signaltap file
 set forced_talkback 0
+set enable_stp 0
 if { $opts(stp) != "" } {
     if { ([get_user_option -name TALKBACK_ENABLED] == off || [get_user_option -name TALKBACK_ENABLED] == "") && $opts(force) } {
         puts "Enabling TalkBack to include SignalTap file"
         set_user_option -name TALKBACK_ENABLED on
         set forced_talkback 1
     }
-    if { [get_user_option -name TALKBACK_ENABLED] == on } {
+    # SignalTap requires either TalkBack to be enabled or a non-Web Edition of Quartus (e.g. Standard, Pro)
+    if { ([get_user_option -name TALKBACK_ENABLED] == on) || (![string match "*Web Edition*" $quartus(version)]) } {
         puts "Adding SignalTap file: [file normalize $opts(stp)]"
         set_global_assignment -name ENABLE_SIGNALTAP on
         set_global_assignment -name USE_SIGNALTAP_FILE [file normalize $opts(stp)]
         set_global_assignment -name SIGNALTAP_FILE [file normalize $opts(stp)]
+        set enable_stp 1
     } else {
-        puts stderr "ERROR: Cannot add $opts(stp) to project without enabling TalkBack."
+        puts stderr "\nERROR: Cannot add $opts(stp) to project without enabling TalkBack."
         puts stderr "         Use -force to enable and add SignalTap to project."
         exit 1
     }
@@ -84,11 +87,22 @@ set failed 0
 export_assignments
 project_close
 
+# The quartus_stp executable creates/edits a Quartus Setting File (.qsf)
+# based on the SignalTap II File specified if enabled. It must be run
+# successfully before running Analysis & Synthesis.
+if { $enable_stp == 1 } {
+    if { $failed == 0 && [catch {qexec "quartus_stp --stp_file [file normalize $opts(stp)] --enable bladerf --rev $opts(rev)"} result] } {
+        puts "Result: $result"
+        puts stderr "ERROR: Adding SignalTap settings to QSF failed."
+        set failed 1
+    }
+}
+
 # Open the project with the specific revision
 project_open -revision $opts(rev) bladerf
 
 # Run Analysis and Synthesis
-if { [catch {execute_module -tool map} result] } {
+if { $failed == 0 && [catch {execute_module -tool map} result] } {
     puts "Result: $result"
     puts stderr "ERROR: Analysis & Synthesis Failed"
     set failed 1
@@ -131,4 +145,3 @@ if { $forced_talkback == 1 } {
 }
 
 project_close
-
