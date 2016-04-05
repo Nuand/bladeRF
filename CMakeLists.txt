@@ -9,7 +9,7 @@ option(ENABLE_HOST_BUILD
 )
 
 option(ENABLE_FX3_BUILD
-       "Build the Cypress FX3 firmware component"
+       "Build the Cypress FX3 firmware component. Be sure to define FX3_SDK_PATH"
        OFF
 )
 
@@ -37,7 +37,15 @@ else()
 endif()
 
 if(ENABLE_FX3_BUILD)
-    add_subdirectory(fx3_firmware)
+    include(ExternalProject)
+    ExternalProject_Add(fx3_firmware
+        DOWNLOAD_COMMAND ""
+        SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/fx3_firmware"
+        CMAKE_ARGS "-DFX3_SDK_PATH=${FX3_SDK_PATH};-DCMAKE_TOOLCHAIN_FILE=${CMAKE_CURRENT_SOURCE_DIR}/fx3_firmware/cmake/fx3-toolchain.cmake"
+        BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/fx3_firmware"
+        PREFIX     "${CMAKE_CURRENT_BINARY_DIR}/fx3_firmware"
+        INSTALL_COMMAND ""
+    )
 else()
     message(STATUS "Skipping FX3 firmware build")
 endif()
