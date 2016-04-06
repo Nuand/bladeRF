@@ -1,7 +1,7 @@
 ; Installation INF for the Cypress Generic USB Driver,
 ; modified to associate the CYUSB3 driver to the Nuand bladeRF
 ;
-; (c) Copyright 2014 Nuand LLC
+; (c) Copyright 2014, 2016 Nuand LLC
 ; (c) Copyright 2012, 2013 Cypress Semiconductor Corporation
 ;
 
@@ -30,18 +30,21 @@ ExcludeFromSelect = *
 
 ;for all platforms
 [Device.NT]
+%VID_2CF0&PID_5246.DeviceDesc%=CyUsb3, USB\VID_2CF0&PID_5246
 %VID_1D50&PID_6066.DeviceDesc%=CyUsb3, USB\VID_1D50&PID_6066
 %VID_04B4&PID_00F3.DeviceDesc%=CyUsb3, USB\VID_04B4&PID_00F3
 
 
 ;for x86 platforms
 [Device.NTx86]
+%VID_2CF0&PID_5246.DeviceDesc%=CyUsb3, USB\VID_2CF0&PID_5246
 %VID_1D50&PID_6066.DeviceDesc%=CyUsb3, USB\VID_1D50&PID_6066
 %VID_04B4&PID_00F3.DeviceDesc%=CyUsb3, USB\VID_04B4&PID_00F3
 
 
 ;for x64 platforms
 [Device.NTamd64]
+%VID_2CF0&PID_5246.DeviceDesc%=CyUsb3, USB\VID_2CF0&PID_5246
 %VID_1D50&PID_6066.DeviceDesc%=CyUsb3, USB\VID_1D50&PID_6066
 %VID_04B4&PID_00F3.DeviceDesc%=CyUsb3, USB\VID_04B4&PID_00F3
 
@@ -141,7 +144,8 @@ CYUSB3_Description = "Cypress Generic USB3.0 Driver"
 CYUSB3_DisplayName = "Cypress USB3.0 Generic"
 CYUSB3_Install     = "Cypress CYUSB3.0 Driver Installation Disk"
 
-VID_1D50&PID_6066.DeviceDesc="bladeRF"
+VID_2CF0&PID_5246.DeviceDesc="Nuand bladeRF"
+VID_1D50&PID_6066.DeviceDesc="Nuand bladeRF (Legacy VID/PID)"
 VID_04B4&PID_00F3.DeviceDesc="Cypress USB BootLoader"
 
 CYUSB3.GUID="{35D5D3F1-9D0E-4F62-BCFB-B0D48EA63416}"
