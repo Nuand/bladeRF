@@ -2,7 +2,7 @@
  * This file is part of the bladeRF project:
  *   http://www.github.com/nuand/bladeRF
  *
- * Copyright (C) 2013-2015 Nuand LLC
+ * Copyright (C) 2013-2016 Nuand LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -126,6 +126,19 @@ out:
     return status;
 }
 
+static inline bool has_bladerf_ids(CCyUSBDevice *dev)
+{
+    return ((dev->VendorID == USB_NUAND_VENDOR_ID)          && (dev->ProductID == USB_NUAND_BLADERF_PRODUCT_ID)) ||
+           ((dev->VendorID == USB_NUAND_LEGACY_VENDOR_ID)   && (dev->ProductID == USB_NUAND_BLADERF_LEGACY_PRODUCT_ID));
+}
+
+static inline bool has_boot_ids(CCyUSBDevice *dev)
+{
+    return ((dev->VendorID == USB_CYPRESS_VENDOR_ID)        && (dev->ProductID == USB_FX3_PRODUCT_ID)) ||
+           ((dev->VendorID == USB_NUAND_VENDOR_ID)          && (dev->ProductID == USB_NUAND_BLADERF_BOOT_PRODUCT_ID)) ||
+           ((dev->VendorID == USB_NUAND_LEGACY_VENDOR_ID)   && (dev->ProductID == USB_NUAND_BLADERF_LEGACY_BOOT_PRODUCT_ID));
+}
+
 static bool device_matches_target(CCyUSBDevice *dev,
                                   backend_probe_target target)
 {
@@ -133,18 +146,11 @@ static bool device_matches_target(CCyUSBDevice *dev,
 
     switch (target) {
         case BACKEND_PROBE_BLADERF:
-            matches = (dev->VendorID == USB_NUAND_VENDOR_ID) &&
-                      (dev->ProductID == USB_NUAND_BLADERF_PRODUCT_ID);
+            matches = has_bladerf_ids(dev);
             break;
 
         case BACKEND_PROBE_FX3_BOOTLOADER:
-            matches = (dev->VendorID == USB_CYPRESS_VENDOR_ID) &&
-                      (dev->ProductID == USB_FX3_PRODUCT_ID);
-
-            if (!matches) {
-                matches = (dev->VendorID == USB_NUAND_VENDOR_ID) &&
-                          (dev->ProductID == USB_NUAND_BLADERF_BOOT_PRODUCT_ID);
-            }
+            matches = has_boot_ids(dev);
             break;
     }
 
