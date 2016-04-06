@@ -5,6 +5,10 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.9.1 (2016-04-06)
+--------------------------------
+ * Migrated build to CMake. See README.md for updated build instructions.
+
 v1.9.0 (2015-12-13)
 --------------------------------
  * Added simple logging mechanism
