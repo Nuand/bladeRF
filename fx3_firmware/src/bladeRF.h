@@ -104,5 +104,4 @@ struct NuandApplication {
 #define MODE_RF_CONFIG   2
 #define MODE_FW_CONFIG   3
 
-
 #endif

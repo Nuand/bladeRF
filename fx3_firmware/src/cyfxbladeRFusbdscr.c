@@ -19,44 +19,53 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#include "bladeRF.h"
 #include "cyfxbladeRF.h"
+
+/* Nuand VID */
+#define VID_LOW             (USB_NUAND_VENDOR_ID & 0xff)
+#define VID_HIGH            (USB_NUAND_VENDOR_ID >> 8)
+
+/* Nuand bladeRF PID */
+#define BLADERF_PID_LOW     (USB_NUAND_BLADERF_PRODUCT_ID & 0xff)
+#define BLADERF_PID_HIGH    (USB_NUAND_BLADERF_PRODUCT_ID >> 8)
 
 /* Standard device descriptor for USB 3.0 */
 const uint8_t CyFxUSB30DeviceDscr[] __attribute__ ((aligned (32))) =
 {
-    0x12,                           /* Descriptor size */
-    CY_U3P_USB_DEVICE_DESCR,        /* Device descriptor type */
-    0x00,0x03,                      /* USB 3.0 */
-    0x00,                           /* Device class */
-    0x00,                           /* Device sub-class */
-    0x00,                           /* Device protocol */
-    0x09,                           /* Maxpacket size for EP0 : 2^9 */
-    0x50,0x1D,                      /* Vendor ID */
-    0x66,0x60,                      /* Product ID */
-    0x00,0x00,                      /* Device release number */
-    0x01,                           /* Manufacture string index */
-    0x02,                           /* Product string index */
-    0x03,                           /* Serial number string index */
-    0x01                            /* Number of configurations */
+    0x12,                                   /* Descriptor size */
+    CY_U3P_USB_DEVICE_DESCR,                /* Device descriptor type */
+    0x00,0x03,                              /* USB 3.0 */
+    0x00,                                   /* Device class */
+    0x00,                                   /* Device sub-class */
+    0x00,                                   /* Device protocol */
+    0x09,                                   /* Maxpacket size for EP0 : 2^9 */
+    VID_LOW, VID_HIGH,                      /* Vendor ID */
+    BLADERF_PID_LOW, BLADERF_PID_HIGH,      /* Product ID */
+    0x00,0x00,                              /* Device release number */
+    0x01,                                   /* Manufacture string index */
+    0x02,                                   /* Product string index */
+    0x03,                                   /* Serial number string index */
+    0x01                                    /* Number of configurations */
 };
 
 /* Standard device descriptor for USB 2.0 */
 const uint8_t CyFxUSB20DeviceDscr[] __attribute__ ((aligned (32))) =
 {
-    0x12,                           /* Descriptor size */
-    CY_U3P_USB_DEVICE_DESCR,        /* Device descriptor type */
-    0x10,0x02,                      /* USB 2.10 */
-    0x00,                           /* Device class */
-    0x00,                           /* Device sub-class */
-    0x00,                           /* Device protocol */
-    0x40,                           /* Maxpacket size for EP0 : 64 bytes */
-    0x50,0x1D,                      /* Vendor ID */
-    0x66,0x60,                      /* Product ID */
-    0x00,0x00,                      /* Device release number */
-    0x01,                           /* Manufacture string index */
-    0x02,                           /* Product string index */
-    0x03,                           /* Serial number string index */
-    0x01                            /* Number of configurations */
+    0x12,                                   /* Descriptor size */
+    CY_U3P_USB_DEVICE_DESCR,                /* Device descriptor type */
+    0x10,0x02,                              /* USB 2.10 */
+    0x00,                                   /* Device class */
+    0x00,                                   /* Device sub-class */
+    0x00,                                   /* Device protocol */
+    0x40,                                   /* Maxpacket size for EP0 : 64 bytes */
+    VID_LOW, VID_HIGH,                      /* Vendor ID */
+    BLADERF_PID_LOW, BLADERF_PID_HIGH,      /* Product ID */
+    0x00,0x00,                              /* Device release number */
+    0x01,                                   /* Manufacture string index */
+    0x02,                                   /* Product string index */
+    0x03,                                   /* Serial number string index */
+    0x01                                    /* Number of configurations */
 };
 
 /* Binary device object store descriptor */
