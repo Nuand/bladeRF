@@ -19,8 +19,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef _INCLUDED_BLADE_H_
-#define _INCLUDED_BLADE_H_
+#ifndef _INCLUDED_CYFXBLADERF_H_
+#define _INCLUDED_CYFXBLADERF_H_
 
 #include "cyu3externcstart.h"
 #include "cyu3types.h"
