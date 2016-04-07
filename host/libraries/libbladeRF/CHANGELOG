@@ -5,6 +5,17 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.6.0 (2016-04-07)
+--------------------------------
+
+This version of libbladeRF is intended for use with:
+
+FX3 Firmware v2.0.0
+FPGA         v0.5.0
+
+Changes:
+ * Updated to detect devices running firmware with new VID (2cf0) and PID (5246)
+
 v1.5.3 (2016-04-06)
 --------------------------------
 
