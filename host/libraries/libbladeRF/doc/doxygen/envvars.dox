@@ -103,6 +103,6 @@ libbladeRF.
 
 If the size check is reporting an error, the most likely scenario is that an
 incorrect or corrupted FPGA bitstream is being provided. Check that the
-bitstream file is apporpriate for the target device.
+bitstream file is appropriate for the target device.
 
 */
