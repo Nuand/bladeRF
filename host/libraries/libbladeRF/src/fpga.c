@@ -70,15 +70,56 @@ int fpga_check_version(struct bladerf *dev)
     return status;
 }
 
-static inline bool valid_fpga_size(size_t len)
+/* We do not build FPGAs with compression enabled. Therfore, they
+ * will always have a fixed file size.
+ */
+#define FPGA_SIZE_X40   (1191788)
+#define FPGA_SIZE_X115  (3571462)
+
+static bool valid_fpga_size(bladerf_fpga_size fpga, size_t len)
 {
-    if (len < (1 * 1024 * 1024)) {
-        return false;
-    } else if (len > BLADERF_FLASH_BYTE_LEN_FPGA) {
-        return false;
-    } else {
-        return true;
+    static const char env_override[] = "BLADERF_SKIP_FPGA_SIZE_CHECK";
+    bool valid;
+
+    switch (fpga) {
+        case BLADERF_FPGA_40KLE:
+            valid = (len == FPGA_SIZE_X40);
+            break;
+
+        case BLADERF_FPGA_115KLE:
+            valid = (len == FPGA_SIZE_X115);
+            break;
+
+        default:
+            log_debug("Unknown FPGA type (%d). Using relaxed size criteria.\n",
+                      fpga);
+
+            if (len < (1 * 1024 * 1024)) {
+                valid = false;
+            } else if (len > BLADERF_FLASH_BYTE_LEN_FPGA) {
+                valid = false;
+            } else {
+                valid = true;
+            }
     }
+
+    /* Provide a means to override this check. This is intended to allow
+     * folks who know what they're doing to work around this quickly without
+     * needing to make a code change. (e.g., someone building a custom FPGA
+     * image that enables compressoin) */
+    if (getenv(env_override)) {
+        log_info("Overriding FPGA size check per %s\n", env_override);
+        valid = true;
+    }
+
+    if (!valid) {
+        log_warning("Detected potentially incorrect FPGA file.\n");
+
+        log_debug("If you are certain this file is valid, you may define\n"
+                  "BLADERF_SKIP_FPGA_SIZE_CHECK in your environment to skip this check.\n\n");
+    }
+
+    return valid;
 }
 
 int fpga_load_from_file(struct bladerf *dev, const char *fpga_file)
@@ -87,17 +128,12 @@ int fpga_load_from_file(struct bladerf *dev, const char *fpga_file)
     size_t  buf_size;
     int status;
 
-    /* TODO sanity check FPGA:
-     *  - Check for x40 vs x115 and verify FPGA image size
-     *  - Known header/footer on images?
-     *  - Checksum/hash?
-     */
     status = file_read_buffer(fpga_file, &buf, &buf_size);
     if (status != 0) {
         goto error;
     }
 
-    if (!valid_fpga_size(buf_size)) {
+    if (!valid_fpga_size(dev->fpga_size, buf_size)) {
         status = BLADERF_ERR_INVAL;
         goto error;
     }
@@ -127,18 +163,10 @@ int fpga_write_to_flash(struct bladerf *dev, const char *fpga_file)
     int status;
     size_t buf_size;
     uint8_t *buf = NULL;
-    const char env_override[] = "BLADERF_SKIP_FPGA_SIZE_CHECK";
 
     status = file_read_buffer(fpga_file, &buf, &buf_size);
     if (status == 0) {
-        if (!getenv(env_override) && !valid_fpga_size(buf_size)) {
-            log_warning("Detected potentially invalid firmware file.\n");
-
-            /* You probably don't want to do this unless you know what you're
-             * doing. Only show this to users who have gone hunting for
-             * more information... */
-            log_debug("Define BLADERF_SKIP_FPGA_SIZE_CHECK in your evironment "
-                      "to skip this check.\n");
+        if (!valid_fpga_size(dev->fpga_size, buf_size)) {
             status = BLADERF_ERR_INVAL;
         } else {
             status = flash_write_fpga_bitstream(dev, &buf, buf_size);

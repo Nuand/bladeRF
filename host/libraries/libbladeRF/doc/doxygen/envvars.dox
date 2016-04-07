@@ -92,11 +92,17 @@ and FX3 firmware.
 
 <br>
 <h3>BLADERF_SKIP_FPGA_SIZE_CHECK</h3>
-Defining this overrides a check for a "sane" FPGA size when writing an FPGA to
-flash, and is only intended for use with testing. Users should never
-need to use this.
+Defining this overrides a check for the correct FPGA bitstream size when
+loading an FPGA bitstream from the host or writing it to flash for headless
+loading.
 
-If the size check is reporting an error, the most likely
-scenario is that in incorrect or corrupted FPGA bitstream is being provided.
+Under normal circumstances, users should <b>not</b> need to use this.
+This is intended to allow developers and those making customizations (e.g.,
+adding FPGA compression) to skip this check without needing to rebuild
+libbladeRF.
+
+If the size check is reporting an error, the most likely scenario is that an
+incorrect or corrupted FPGA bitstream is being provided. Check that the
+bitstream file is apporpriate for the target device.
 
 */
