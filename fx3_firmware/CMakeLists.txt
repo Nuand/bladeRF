@@ -137,6 +137,7 @@ set(ELF2IMG_OUTPUT "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${BLADERF_FW}.img")
 add_custom_command(
     OUTPUT ${ELF2IMG_OUTPUT}
     COMMAND ${ELF2IMG} -i ${ELF2IMG_INPUT} -o ${ELF2IMG_OUTPUT}
+    DEPENDS ${ELF2IMG_INPUT}
     COMMENT "Creating ${BLADERF_FW}.img. Interrupt vector removal note is expected."
 )
 
