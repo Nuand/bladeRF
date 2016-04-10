@@ -739,6 +739,20 @@ static int lusb_get_speed(void *driver,
     return status;
 }
 
+static size_t lusb_get_num_avail(struct bladerf_stream *stream)
+{
+    assert(stream && stream->backend_data);
+    struct lusb_stream_data *data = stream->backend_data;
+    return data->num_avail;
+}
+
+static size_t lusb_get_num_transfers(struct bladerf_stream *stream)
+{
+    assert(stream && stream->backend_data);
+    struct lusb_stream_data *data = stream->backend_data;
+    return data->num_transfers;
+}
+
 static inline uint8_t bm_request_type(usb_target target_type,
                                       usb_request req_type,
                                       usb_direction direction)
@@ -894,7 +908,7 @@ static inline size_t transfer_idx(struct lusb_stream_data *stream_data,
     return UINT_MAX;
 }
 
-static int submit_transfer(struct bladerf_stream *stream, void *buffer);
+static int lusb_submit_transfer(struct bladerf_stream *stream, void *buffer);
 
 static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
 {
@@ -985,7 +999,7 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
         if (next_buffer == BLADERF_STREAM_SHUTDOWN) {
             stream->state = STREAM_SHUTTING_DOWN;
         } else if (next_buffer != BLADERF_STREAM_NO_DATA) {
-            int status = submit_transfer(stream, next_buffer);
+            int status = lusb_submit_transfer(stream, next_buffer);
             if (status != 0) {
                 /* If this fails, we probably have a serious problem...so just
                  * shut it down. */
@@ -1039,7 +1053,7 @@ get_next_available_transfer(struct lusb_stream_data *stream_data)
 }
 
 /* Precondition: A transfer is available. */
-static int submit_transfer(struct bladerf_stream *stream, void *buffer)
+static int lusb_submit_transfer(struct bladerf_stream *stream, void *buffer)
 {
     int status;
     struct bladerf_lusb *lusb = lusb_backend(stream->dev);
@@ -1229,7 +1243,7 @@ static int lusb_stream(void *driver, struct bladerf_stream *stream,
         }
 
         if (buffer != BLADERF_STREAM_NO_DATA) {
-            status = submit_transfer(stream, buffer);
+            status = lusb_submit_transfer(stream, buffer);
 
             /* If we failed to submit any transfers, cancel everything in
              * flight.  We'll leave the stream in the running state so we can
@@ -1254,62 +1268,6 @@ static int lusb_stream(void *driver, struct bladerf_stream *stream,
     }
 
     return status;
-}
-/* The top-level code will have aquired the stream->lock for us */
-int lusb_submit_stream_buffer(void *driver, struct bladerf_stream *stream,
-                              void *buffer, unsigned int timeout_ms,
-                              bool nonblock)
-{
-    int status = 0;
-    struct lusb_stream_data *stream_data = stream->backend_data;
-    struct timespec timeout_abs;
-
-    if (buffer == BLADERF_STREAM_SHUTDOWN) {
-        if (stream_data->num_avail == stream_data->num_transfers) {
-            stream->state = STREAM_DONE;
-        } else {
-            stream->state = STREAM_SHUTTING_DOWN;
-        }
-
-        return 0;
-    }
-
-    if (stream_data->num_avail == 0) {
-        if (nonblock) {
-            log_debug("Non-blocking buffer submission requested, but no "
-                      "transfers are currently available.");
-
-            return BLADERF_ERR_WOULD_BLOCK;
-        }
-
-        if (timeout_ms != 0) {
-            status = populate_abs_timeout(&timeout_abs, timeout_ms);
-            if (status != 0) {
-                return BLADERF_ERR_UNEXPECTED;
-            }
-
-            while (stream_data->num_avail == 0 && status == 0) {
-                status = pthread_cond_timedwait(&stream->can_submit_buffer,
-                        &stream->lock,
-                        &timeout_abs);
-            }
-        } else {
-            while (stream_data->num_avail == 0 && status == 0) {
-                status = pthread_cond_wait(&stream->can_submit_buffer,
-                        &stream->lock);
-            }
-        }
-    }
-
-    if (status == ETIMEDOUT) {
-        log_debug("%s: Timed out waiting for a transfer to become available.\n",
-                  __FUNCTION__);
-        return BLADERF_ERR_TIMEOUT;
-    } else if (status != 0) {
-        return BLADERF_ERR_UNEXPECTED;
-    } else {
-        return submit_transfer(stream, buffer);
-    }
 }
 
 static int lusb_deinit_stream(void *driver, struct bladerf_stream *stream)
@@ -1336,13 +1294,15 @@ static const struct usb_fns libusb_fns = {
     FIELD_INIT(.open, lusb_open),
     FIELD_INIT(.close, lusb_close),
     FIELD_INIT(.get_speed, lusb_get_speed),
+    FIELD_INIT(.get_num_avail, lusb_get_num_avail),
+    FIELD_INIT(.get_num_transfers, lusb_get_num_transfers),
+    FIELD_INIT(.submit_transfer, lusb_submit_transfer),
     FIELD_INIT(.change_setting, lusb_change_setting),
     FIELD_INIT(.control_transfer, lusb_control_transfer),
     FIELD_INIT(.bulk_transfer, lusb_bulk_transfer),
     FIELD_INIT(.get_string_descriptor, lusb_get_string_descriptor),
     FIELD_INIT(.init_stream, lusb_init_stream),
     FIELD_INIT(.stream, lusb_stream),
-    FIELD_INIT(.submit_stream_buffer, lusb_submit_stream_buffer),
     FIELD_INIT(.deinit_stream, lusb_deinit_stream),
     FIELD_INIT(.open_bootloader, lusb_open_bootloader),
     FIELD_INIT(.close_bootloader, lusb_close_bootloader),

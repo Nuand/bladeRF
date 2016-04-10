@@ -305,6 +305,20 @@ static int cyapi_get_speed(void *driver,
     return status;
 }
 
+static size_t cyapi_get_num_avail(struct bladerf_stream *stream)
+{
+    assert(stream && stream->backend_data);
+    struct stream_data *data = stream->backend_data;
+    return data->num_avail;
+}
+
+static size_t cyapi_get_num_transfers(struct bladerf_stream *stream)
+{
+    assert(stream && stream->backend_data);
+    struct stream_data *data = stream->backend_data;
+    return data->num_transfers;
+}
+
 static int cyapi_control_transfer(void *driver,
                                  usb_target target_type, usb_request req_type,
                                  usb_direction dir, uint8_t request,
@@ -533,7 +547,7 @@ static inline size_t next_idx(struct stream_data *data, size_t i)
 }
 
 /* Assumes a transfer is available and the stream lock is being held */
-static int submit_transfer(struct bladerf_stream *stream, void *buffer)
+static int cyapi_submit_transfer(struct bladerf_stream *stream, void *buffer)
 {
     int status = 0;
     PUCHAR xfer;
@@ -632,7 +646,7 @@ static int cyapi_stream(void *driver, struct bladerf_stream *stream,
             next_buffer = stream->buffers[i];
         }
 
-        status = submit_transfer(stream, next_buffer);
+        status = cyapi_submit_transfer(stream, next_buffer);
     }
 
     MUTEX_UNLOCK(&stream->lock);
@@ -686,7 +700,7 @@ static int cyapi_stream(void *driver, struct bladerf_stream *stream,
         if (next_buffer == BLADERF_STREAM_SHUTDOWN) {
             done = true;
         } else if (next_buffer != BLADERF_STREAM_NO_DATA) {
-            status = submit_transfer(stream, next_buffer);
+            status = cyapi_submit_transfer(stream, next_buffer);
             done = (status != 0);
         }
 
@@ -726,60 +740,6 @@ out:
 
     return 0;
 }
-/* The top-level code will have acquired the stream->lock for us */
-int cyapi_submit_stream_buffer(void *driver, struct bladerf_stream *stream,
-                               void *buffer, unsigned int timeout_ms,
-                               bool nonblock)
-{
-    int status = 0;
-    struct timespec timeout_abs;
-    struct stream_data *data = get_stream_data(stream);
-
-    if (buffer == BLADERF_STREAM_SHUTDOWN) {
-        if (data->num_avail == data->num_transfers) {
-            stream->state = STREAM_DONE;
-        } else {
-            stream->state = STREAM_SHUTTING_DOWN;
-        }
-
-        return 0;
-    }
-
-    if (data->num_avail == 0) {
-        if (nonblock) {
-            log_debug("Non-blocking buffer submission requested, but no "
-                      "transfers are currently available.");
-
-            return BLADERF_ERR_WOULD_BLOCK;
-        }
-
-        if (timeout_ms != 0) {
-            status = populate_abs_timeout(&timeout_abs, timeout_ms);
-            if (status != 0) {
-                return BLADERF_ERR_UNEXPECTED;
-            }
-
-            while (data->num_avail == 0 && status == 0) {
-                status = pthread_cond_timedwait(&stream->can_submit_buffer,
-                                                &stream->lock,
-                                                &timeout_abs);
-            }
-        } else {
-            while (data->num_avail == 0 && status == 0) {
-                status = pthread_cond_wait(&stream->can_submit_buffer,
-                                           &stream->lock);
-            }
-        }
-    }
-
-    if (status == ETIMEDOUT) {
-        return BLADERF_ERR_TIMEOUT;
-    } else if (status != 0) {
-        return BLADERF_ERR_UNEXPECTED;
-    } else {
-        return submit_transfer(stream, buffer);
-    }
-}
 
 int cyapi_open_bootloader(void **driver, uint8_t bus, uint8_t addr)
 {
@@ -799,13 +759,15 @@ extern "C" {
         FIELD_INIT(.open, cyapi_open),
         FIELD_INIT(.close, cyapi_close),
         FIELD_INIT(.get_speed, cyapi_get_speed),
+        FIELD_INIT(.get_num_avail, cyapi_get_num_avail),
+        FIELD_INIT(.get_num_transfers, cyapi_get_num_transfers),
+        FIELD_INIT(.submit_transfer, cyapi_submit_transfer),
         FIELD_INIT(.change_setting, cyapi_change_setting),
         FIELD_INIT(.control_transfer, cyapi_control_transfer),
         FIELD_INIT(.bulk_transfer, cyapi_bulk_transfer),
         FIELD_INIT(.get_string_descriptor, cyapi_get_string_descriptor),
         FIELD_INIT(.init_stream, cyapi_init_stream),
         FIELD_INIT(.stream, cyapi_stream),
-        FIELD_INIT(.submit_stream_buffer, cyapi_submit_stream_buffer),
         FIELD_INIT(.deinit_stream, cyapi_deinit_stream),
         FIELD_INIT(.open_bootloader, cyapi_open_bootloader),
         FIELD_INIT(.close_bootloader, cyapi_close),
