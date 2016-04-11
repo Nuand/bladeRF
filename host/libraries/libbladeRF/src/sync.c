@@ -223,10 +223,12 @@ static int wait_for_buffer(struct buffer_mgmt *b, unsigned int timeout_ms,
     struct timespec timeout;
 
     if (timeout_ms == 0) {
-        log_verbose("%s: Infinite wait for [%d] to fill.\n", dbg_name, dbg_idx);
+        log_verbose("%s: Infinite wait for buffer[%d] (status: %d).\n",
+                    dbg_name, dbg_idx, b->status[dbg_idx]);
         status = pthread_cond_wait(&b->buf_ready, &b->lock);
     } else {
-        log_verbose("%s: Timed wait for [%d] to fill.\n", dbg_name, dbg_idx);
+        log_verbose("%s: Timed wait for buffer[%d] (status: %d).\n",
+                    dbg_name, dbg_idx, b->status[dbg_idx]);
         status = populate_abs_timeout(&timeout, timeout_ms);
         if (status == 0) {
             status = pthread_cond_timedwait(&b->buf_ready, &b->lock, &timeout);
