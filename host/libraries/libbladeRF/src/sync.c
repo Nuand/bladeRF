@@ -625,17 +625,17 @@ static int advance_tx_buffer(struct bladerf_sync *s, struct buffer_mgmt *b)
     int status = 0;
     const unsigned int idx = b->prod_i;
 
-    /* Mark buffer in flight because we're going to send it out.
-     * This ensures that if the callback fires before this function completes,
-     * its state will be correct. */
-    b->status[idx] = SYNC_BUFFER_IN_FLIGHT;
-
     if (b->submitter == SYNC_TX_SUBMITTER_FN) {
-        /* This call may block and it results in a per-stream lock being held, so
-         * the buffer lock must be dropped.
+        /* Mark buffer in flight because we're going to send it out.
+         * This ensures that if the callback fires before this function
+         * completes, its state will be correct. */
+        b->status[idx] = SYNC_BUFFER_IN_FLIGHT;
+
+        /* This call may block and it results in a per-stream lock being held,
+         * so the buffer lock must be dropped.
          *
-         * A callback may occur in the meantime, but this will not touch the status
-         * for this this buffer, or the producer index.
+         * A callback may occur in the meantime, but this will not touch the
+         * status for this this buffer, or the producer index.
          */
         MUTEX_UNLOCK(&b->lock);
         status = async_submit_stream_buffer(s->worker->stream,
@@ -671,6 +671,10 @@ static int advance_tx_buffer(struct bladerf_sync *s, struct buffer_mgmt *b)
             log_debug("%s: Failed to submit buf[%u].\n", __FUNCTION__, idx);
             return status;
        }
+    } else {
+        /* We are not submitting this buffer; this is deffered to the worker
+         * call back. Just update its state to being full of sample */
+        b->status[idx] = SYNC_BUFFER_FULL;
     }
 
     /* Advance "producer" insertion index. */
