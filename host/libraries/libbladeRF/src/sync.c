@@ -673,7 +673,7 @@ static int advance_tx_buffer(struct bladerf_sync *s, struct buffer_mgmt *b)
        }
     } else {
         /* We are not submitting this buffer; this is deffered to the worker
-         * call back. Just update its state to being full of sample */
+         * call back. Just update its state to being full of samples. */
         b->status[idx] = SYNC_BUFFER_FULL;
     }
 
