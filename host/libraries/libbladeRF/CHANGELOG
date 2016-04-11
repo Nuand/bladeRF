@@ -14,7 +14,6 @@ FX3 Firmware v2.0.0
 FPGA         v0.5.0
 
 Changes:
- * Updated to detect devices running firmware with new VID (2cf0) and PID (5246)
  * Fixes for issues #465 and #458 (TX timeouts and assert() failures)
 
 v1.6.0 (2016-04-07)
