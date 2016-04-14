@@ -76,7 +76,7 @@ int cmd_open(struct cli_state *state, int argc, char **argv)
     if (status) {
         if (update_required) {
             /* LibbladeRF will print a warning. No need to show an error. */
-            status = 0;
+            ret = 0;
         } else {
             state->last_lib_error = status;
             ret = CLI_RET_LIBBLADERF;
