@@ -35,6 +35,7 @@ int cmd_open(struct cli_state *state, int argc, char **argv)
     int i;
     int status;
     int ret;
+    bool update_required;
 
     if (state->dev) {
         bladerf_close(state->dev);
@@ -68,9 +69,18 @@ int cmd_open(struct cli_state *state, int argc, char **argv)
     }
 
     status = bladerf_open(&state->dev, dev_ident);
+
+    update_required = (status == BLADERF_ERR_UPDATE_FPGA) ||
+                      (status == BLADERF_ERR_UPDATE_FW);
+
     if (status) {
-        state->last_lib_error = status;
-        ret = CLI_RET_LIBBLADERF;
+        if (update_required) {
+            /* LibbladeRF will print a warning. No need to show an error. */
+            status = 0;
+        } else {
+            state->last_lib_error = status;
+            ret = CLI_RET_LIBBLADERF;
+        }
     } else {
         ret = 0;
         putchar('\n');

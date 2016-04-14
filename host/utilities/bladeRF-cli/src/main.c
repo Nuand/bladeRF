@@ -301,6 +301,8 @@ static int open_device(struct rc_config *rc, struct cli_state *state, int status
     if (!status) {
         status = bladerf_open(&state->dev, rc->device);
         if (status) {
+            bool update_required = (status == BLADERF_ERR_UPDATE_FPGA) ||
+                                   (status == BLADERF_ERR_UPDATE_FW);
 
             /* Just warn if no device is attached; don't error out */
             if (!rc->device && status == BLADERF_ERR_NODEV) {
@@ -310,6 +312,10 @@ static int open_device(struct rc_config *rc, struct cli_state *state, int status
                 fprintf(stderr, "If one is attached, ensure it is not in use by another program\n");
                 fprintf(stderr, "and that the current user has permission to access it.\n");
                 fprintf(stderr, "\n");
+                status = 0;
+            } else if (update_required) {
+                /* Allow users to enter the console so they can perform
+                 * an update. */
                 status = 0;
             } else {
                 fprintf(stderr, "Failed to open device (%s): %s\n",
