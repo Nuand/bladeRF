@@ -196,7 +196,7 @@ int nios_8x32_read(struct bladerf *dev, uint8_t id,
     uint8_t buf[NIOS_PKT_LEN];
     bool success;
 
-    nios_pkt_8x32_pack(buf, id, false, 0, 0);
+    nios_pkt_8x32_pack(buf, id, false, addr, 0);
 
     status = nios_access(dev, buf);
     if (status != 0) {
