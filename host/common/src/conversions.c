@@ -144,7 +144,7 @@ double str2double(const char *str, double min, double max, bool *ok)
 
 /* MSVC workarounds */
 
-#if _MSC_VER   
+#if _MSC_VER
     /* This appears to be missing <= 2012 */
 #   ifndef INFINITY
 #       define INFINITY (_HUGE * _HUGE)
