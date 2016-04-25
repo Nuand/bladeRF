@@ -29,7 +29,9 @@
 #include <ctype.h>
 #include <errno.h>
 #include <math.h>
+
 #include "conversions.h"
+#include "rel_assert.h"
 
 enum str2args_parse_state {
     PARSE_STATE_IN_SPACE,
@@ -650,4 +652,31 @@ bladerf_cal_module str_to_bladerf_cal_module(const char *str)
     }
 
     return module;
+}
+
+int str2bool(const char *str, bool *val)
+{
+    static const char *t_vals[] = { "true",  "t", "enable",  "en",  "e", "on",  "1" };
+    static const char *f_vals[] = { "false", "f", "disable", "dis", "d", "off", "0" };
+
+    static const size_t t_vals_len = sizeof(t_vals) / sizeof(t_vals[0]);
+    static const size_t f_vals_len = sizeof(f_vals) / sizeof(f_vals[0]);
+
+    size_t i;
+
+    assert(t_vals_len == f_vals_len);
+
+    for (i = 0; i < sizeof(t_vals) / sizeof(t_vals[0]); i++) {
+        if (!strcasecmp(str, t_vals[i])) {
+            *val = true;
+            return 0;
+        } else if (!strcasecmp(str, f_vals[i])) {
+            *val = false;
+            return 0;
+        }
+    }
+
+    /* No match */
+    *val = false;
+    return -1;
 }

@@ -327,6 +327,22 @@ void float_to_sc16q11(const float *in, int16_t *out, unsigned int n);
  */
 bladerf_cal_module str_to_bladerf_cal_module(const char *str);
 
+/**
+ * Convert a string to a boolean value.
+ *
+ * Valid `true` strings:
+ *  "true",  "t", "enable",  "en",  "e", "on", "1"
+ *
+ * Valid `false` strings:
+ *  "false", "f", "disable", "dis", "d", "off", "0"
+ *
+ * @param[in]   str         Input string. This comparison is case-insensitive.
+ * @param[out]  val         Converted boolean value. This is set to `false`
+ *                          for invalid input.
+ *
+ * @return 0 on success, or non-zero for an invalid string.
+ */
+int str2bool(const char *string, bool *val);
 
 #ifdef __cplusplus
 } /* extern "C" */
