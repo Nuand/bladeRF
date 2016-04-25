@@ -23,6 +23,7 @@
 #include "common.h"
 #include "xb.h"
 #include "xb300.h"
+#include "conversions.h"
 
 static int enable_xb300(struct cli_state *state)
 {
@@ -83,7 +84,7 @@ static int set_trx_mode(struct cli_state *state, const char *trxmode)
     } else if (!strcasecmp(trxmode, "rx")) {
         status = bladerf_xb300_set_trx(state->dev, BLADERF_XB300_TRX_RX);
     } else {
-        cli_err(state, trxmode, "Invalid TRX option.\n");
+        cli_err(state, trxmode, "Invalid TRX option.");
         status = CLI_RET_INVPARAM;
     }
 
@@ -111,7 +112,13 @@ static int set_enable(struct cli_state *state,
                       bladerf_xb300_amplifier amp, const char *enable_str)
 {
     int status;
-    const bool enable = !strcasecmp(enable_str, "on");
+    bool enable;
+
+    status = str2bool(enable_str, &enable);
+    if (status != 0) {
+        cli_err(state, enable_str, "Invalid enable/disable string.\n\n");
+        return CLI_RET_INVPARAM;
+    }
 
     status = bladerf_xb300_set_amplifier_enable(state->dev, amp, enable);
     if (status != 0) {
