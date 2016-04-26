@@ -3419,7 +3419,14 @@ int CALL_CONV bladerf_lms_get_dc_cals(struct bladerf *dev,
 #define BLADERF_GPIO_TIMESTAMP      (1 << 16)
 
 /**
- * Timestamp 2x divider control
+ * Timestamp 2x divider control.
+ *
+ * @note <b>Important</b>: This bit has no effect and is always enabled (1) in
+ *                         FPGA versions >= v0.3.0.
+ *
+ * @note The remainder of the description of this bit is presented here for
+ *       historical purposes only. It is relevant to FPGA versions <= v0.1.2.
+ *
  *
  * By default (value = 0), the sample counter is incremented with I and Q,
  * yielding two counts per sample.
