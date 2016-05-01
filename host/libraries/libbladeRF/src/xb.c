@@ -790,11 +790,11 @@ int xb300_get_output_power(struct bladerf *dev, float *pwr)
     volt3 = volt2 * volt;
     volt4 = volt3 * volt;
 
-    *pwr =  -503.933  * volt4 +
-            1409.489  * volt3 -
-            1487.84   * volt2 +
-             722.9793 * volt  -
-             114.7529;
+    *pwr =  -503.933f  * volt4 +
+            1409.489f  * volt3 -
+            1487.84f   * volt2 +
+             722.9793f * volt  -
+             114.7529f;
 
     return 0;
 
