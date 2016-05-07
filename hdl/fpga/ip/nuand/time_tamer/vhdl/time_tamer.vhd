@@ -150,7 +150,7 @@ begin
     ts_time <= std_logic_vector(timestamp) ;
 
     increment_time : process(ts_clock, ts_reset)
-        variable tick : std_logic := '0' ;
+        variable tick : std_logic := '1' ;
     begin
         if( ts_reset = '1' ) then
             tick := '1' ;

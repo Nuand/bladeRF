@@ -170,6 +170,7 @@ architecture hosted_bladerf of bladerf is
     signal rx_meta_fifo     : meta_fifo_rx_t ;
 
     signal sys_rst_sync     : std_logic ;
+    signal sys_rst_80M      : std_logic ;
 
     signal usb_speed        : std_logic ;
     signal usb_speed_rx     : std_logic ;
@@ -208,6 +209,7 @@ architecture hosted_bladerf of bladerf is
     signal rx_loopback_q     : signed(15 downto 0) := (others =>'0') ;
     signal rx_loopback_valid : std_logic := '0' ;
     signal rx_loopback_enabled : std_logic := '0' ;
+    signal tx_loopback_enabled : std_logic := '0' ;
 
     signal tx_sample_raw_i : signed(15 downto 0);
     signal tx_sample_raw_q : signed(15 downto 0);
@@ -287,6 +289,8 @@ architecture hosted_bladerf of bladerf is
     alias tx_trigger_fire       : std_logic is tx_trigger_ctl(1);
     alias tx_trigger_master     : std_logic is tx_trigger_ctl(2);
     alias tx_trigger_line       : std_logic is mini_exp1;
+
+    signal tx_trigger_arm_sync  :   std_logic ;
 
     -- Trigger Control readback interfaces
     signal rx_trigger_ctl_rb    : std_logic_vector(7 downto 0);
@@ -415,6 +419,16 @@ begin
         sync                =>  sys_rst_sync
       ) ;
 
+    U_80M_reset_sync : entity work.reset_synchronizer
+      generic map (
+        INPUT_LEVEL         =>  '1',
+        OUTPUT_LEVEL        =>  '1'
+      ) port map (
+        clock               =>  \80MHz\,
+        async               =>  sys_rst,
+        sync                =>  sys_rst_80M
+      ) ;
+
     U_tx_reset : entity work.reset_synchronizer
       generic map (
         INPUT_LEVEL         =>  '1',
@@ -503,7 +517,7 @@ begin
     rx_sample_fifo.rclock <= fx3_pclk_pll ;
     U_rx_sample_fifo : entity work.rx_fifo
       port map (
-        aclr                => rx_sample_fifo.aclr,
+        aclr                => "not"(pclk_rx_enable),
         data                => rx_sample_fifo.wdata,
         rdclk               => rx_sample_fifo.rclock,
         rdreq               => rx_sample_fifo.rreq,
@@ -524,7 +538,7 @@ begin
     rx_meta_fifo.rclock <= fx3_pclk_pll ;
     U_rx_meta_fifo : entity work.rx_meta_fifo
       port map (
-        aclr                => rx_meta_fifo.aclr,
+        aclr                => "not"(pclk_rx_enable),
         data                => rx_meta_fifo.wdata,
         rdclk               => rx_meta_fifo.rclock,
         rdreq               => rx_meta_fifo.rreq,
@@ -541,10 +555,10 @@ begin
 
 
     -- RX loopback fifo
-    rx_loopback_fifo.aclr <= '1' when rx_reset = '1' or tx_reset = '1' or rx_loopback_enabled = '0' else '0' ;
+    rx_loopback_fifo.aclr <= '1' when tx_reset = '1' or tx_loopback_enabled = '0' else '0' ;
     rx_loopback_fifo.wclock <= tx_clock ;
-    rx_loopback_fifo.wdata <= std_logic_vector(tx_sample_i & tx_sample_q) when rx_loopback_enabled = '1' else (others => '0') ;
-    rx_loopback_fifo.wreq <= tx_sample_valid when rx_loopback_enabled = '1' else '0';
+    rx_loopback_fifo.wdata <= std_logic_vector(tx_sample_i & tx_sample_q) when tx_loopback_enabled = '1' else (others => '0') ;
+    rx_loopback_fifo.wreq <= tx_sample_valid when tx_loopback_enabled = '1' else '0';
 
     rx_loopback_fifo.rclock <= rx_clock ;
     rx_loopback_fifo.rreq <= '1' when rx_loopback_enabled = '1' and rx_loopback_fifo.rempty = '0' else '0' ;
@@ -566,12 +580,22 @@ begin
         wrusedw             => rx_loopback_fifo.wused
       );
 
-      rx_loopback_enabled <= '1' when rx_enable = '1' and tx_enable = '1' and rx_mux_mode = RX_MUX_DIGITAL_LOOPBACK else '0' ;
-      rx_loopback_i <= resize(signed(rx_loopback_fifo.rdata(31 downto 16)), rx_loopback_i'length) ;
-      rx_loopback_q <= resize(signed(rx_loopback_fifo.rdata(15 downto 0)), rx_loopback_q'length) ;
+    U_loopback_sync : entity work.reset_synchronizer
+      generic map (
+        INPUT_LEVEL         => '0',
+        OUTPUT_LEVEL        => '0'
+      ) port map (
+        clock               =>  tx_clock,
+        async               =>  rx_loopback_enabled,
+        sync                =>  tx_loopback_enabled
+      ) ;
 
-      loopback_valid : process(rx_reset, rx_clock)
-      begin
+    rx_loopback_enabled <= '1' when rx_enable = '1' and rx_mux_mode = RX_MUX_DIGITAL_LOOPBACK else '0' ;
+    rx_loopback_i <= resize(signed(rx_loopback_fifo.rdata(31 downto 16)), rx_loopback_i'length) ;
+    rx_loopback_q <= resize(signed(rx_loopback_fifo.rdata(15 downto 0)), rx_loopback_q'length) ;
+
+    loopback_valid : process(rx_reset, rx_clock)
+    begin
         if (rx_reset = '1') then
             rx_loopback_valid <= '0';
         elsif rising_edge(rx_clock) then
@@ -736,41 +760,51 @@ begin
 
     -- RX Trigger
     rxtrig : entity work.trigger(async)
-        generic map (
-            DEFAULT_OUTPUT => '0'
-        ) port map (
-            armed => rx_trigger_arm,
-            fired => rx_trigger_fire,
-            master => rx_trigger_master,
-            trigger_in => rx_trigger_line,
-            trigger_out => rx_trigger_line,
-            signal_in => lms_rx_enable_untriggered,
-            signal_out => lms_rx_enable
-        );
+      generic map (
+        DEFAULT_OUTPUT  => '0'
+      ) port map (
+        armed           => rx_trigger_arm,
+        fired           => rx_trigger_fire,
+        master          => rx_trigger_master,
+        trigger_in      => rx_trigger_line,
+        trigger_out     => rx_trigger_line,
+        signal_in       => lms_rx_enable_untriggered,
+        signal_out      => lms_rx_enable
+      );
 
-    rx_trigger_arm_rb <= rx_trigger_arm;
-    rx_trigger_fire_rb <= rx_trigger_fire;
+    rx_trigger_arm_rb    <= rx_trigger_arm;
+    rx_trigger_fire_rb   <= rx_trigger_fire;
     rx_trigger_master_rb <= rx_trigger_master;
-    rx_trigger_line_rb <= rx_trigger_line;
+    rx_trigger_line_rb   <= rx_trigger_line;
 
     -- TX Trigger
-    txtrig : entity work.trigger(async)
-        generic map (
-            DEFAULT_OUTPUT => '1'
-        ) port map (
-            armed => tx_trigger_arm,
-            fired => tx_trigger_fire,
-            master => tx_trigger_master,
-            trigger_in => tx_trigger_line,
-            trigger_out => tx_trigger_line,
-            signal_in => tx_sample_fifo_rempty_untriggered,
-            signal_out => tx_sample_fifo.rempty
-        );
+    U_tx_arm_sync : entity work.reset_synchronizer
+      generic map (
+        INPUT_LEVEL     =>  '0',
+        OUTPUT_LEVEL    =>  '0'
+      ) port map (
+        clock           =>  tx_clock,
+        async           =>  tx_trigger_arm,
+        sync            =>  tx_trigger_arm_sync
+      ) ;
 
-    tx_trigger_arm_rb <= tx_trigger_arm;
-    tx_trigger_fire_rb <= tx_trigger_fire;
+    txtrig : entity work.trigger(async)
+      generic map (
+        DEFAULT_OUTPUT  => '1'
+      ) port map (
+        armed           => tx_trigger_arm_sync,
+        fired           => tx_trigger_fire,
+        master          => tx_trigger_master,
+        trigger_in      => tx_trigger_line,
+        trigger_out     => tx_trigger_line,
+        signal_in       => tx_sample_fifo_rempty_untriggered,
+        signal_out      => tx_sample_fifo.rempty
+      );
+
+    tx_trigger_arm_rb    <= tx_trigger_arm;
+    tx_trigger_fire_rb   <= tx_trigger_fire;
     tx_trigger_master_rb <= tx_trigger_master;
-    tx_trigger_line_rb <= tx_trigger_line;
+    tx_trigger_line_rb   <= tx_trigger_line;
 
     -- LMS6002D IQ interface
     rx_sample_i(15 downto 12) <= (others => rx_sample_i(11)) ;
@@ -881,8 +915,8 @@ begin
 
     fx3_ctl_in <= fx3_ctl ;
 
-    command_serial_in <= fx3_uart_txd when sys_rst_sync = '0' else '1' ;
-    fx3_uart_rxd <= command_serial_out when sys_rst_sync = '0' else 'Z' ;
+    command_serial_in <= fx3_uart_txd when sys_rst_80M = '0' else '1' ;
+    fx3_uart_rxd <= command_serial_out when sys_rst_80M = '0' else 'Z' ;
 
     -- NIOS control system for si5338, vctcxo trim and lms control
     U_nios_system : component nios_system

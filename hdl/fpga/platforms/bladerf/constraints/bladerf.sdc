@@ -51,9 +51,9 @@ set_output_delay -clock [get_clocks c4_tx_virtual] -max  1.185 [get_ports {lms_t
 #set_false_path -from * -to [get_ports fx3_uart_rxd]
 #set_false_path -from [get_ports fx3_uart_txd] -to *
 #set_false_path -from * -to [get_ports fx3_uart_cts]
-set_output_delay -clock [get_clocks {U_pll|altpll_component|auto_generated|pll1|clk[0]}] -max 5.0 [get_ports {fx3_uart_rxd}]
+set_output_delay -clock [get_clocks {U_pll|altpll_component|auto_generated|pll1|clk[0]}] -max 1.0 [get_ports {fx3_uart_rxd}]
 set_output_delay -clock [get_clocks {U_pll|altpll_component|auto_generated|pll1|clk[0]}] -min 0.0 [get_ports {fx3_uart_rxd}] -add_delay
-set_input_delay -clock [get_clocks {U_pll|altpll_component|auto_generated|pll1|clk[0]}] -max 5.0 [get_ports {fx3_uart_txd}]
+set_input_delay -clock [get_clocks {U_pll|altpll_component|auto_generated|pll1|clk[0]}] -max 1.0 [get_ports {fx3_uart_txd}]
 set_input_delay -clock [get_clocks {U_pll|altpll_component|auto_generated|pll1|clk[0]}] -min 0.0 [get_ports {fx3_uart_txd}] -add_delay
 
 # LMS SPI interface
@@ -82,7 +82,7 @@ set_output_delay -clock [get_clocks U_pll*0*] -max  1.0 [get_ports {si_scl si_sd
 
 # VCTCXO trimdac
 set_output_delay -clock [get_clocks U_pll*0*] -min 0.0 [get_ports {dac_csx dac_sclk dac_sdi}]
-set_output_delay -clock [get_clocks U_pll*0*] -max 1.0 [get_ports {dac_csx dac_sclk dac_sdi}] -add_delay
+set_output_delay -clock [get_clocks U_pll*0*] -max 0.2 [get_ports {dac_csx dac_sclk dac_sdi}] -add_delay
 
 set_input_delay -clock [get_clocks U_pll*0*] -min 1.0 [get_ports dac_sdo]
 set_input_delay -clock [get_clocks U_pll*0*] -max 1.0 [get_ports dac_sdo] -add_delay
@@ -108,3 +108,9 @@ set_output_delay -clock [get_clocks altera_reserved_tck] 20 [get_ports altera_re
 set_false_path -from {reset_synchronizer:U_tx_reset|sync} -to {tx_*fifo:U_tx_*_fifo|dcfifo*:dcfifo_*|dcfifo_*:auto_generated|dffpipe_3dc:wraclr|dffe12a[0]}
 set_false_path -from {reset_synchronizer:U_tx_reset|sync} -to {tx_*fifo:U_tx_*_fifo|dcfifo*:dcfifo_*|dcfifo_*:auto_generated|dffpipe_3dc:wraclr|dffe13a[0]}
 
+# False path between hold_time and compare_time due to the way the FSM is setup
+set_false_path -from {*x_tamer|hold_time[*]} -to {*x_tamer|compare_time[*]}
+
+# Asynchronous clear on the RX FIFO when disabling RX
+set_false_path -from {fx3_gpif*rx_enable} -to {rx_meta_fifo*:wraclr|*}
+set_false_path -from {fx3_gpif*rx_enable} -to {rx_fifo*:wraclr|*}

@@ -146,8 +146,8 @@ begin
     ctl_out(12 downto 4) <= (others =>'0') ;
 
     -- Enable signals going out
-    rx_enable <= dma_rx_enable ;
-    tx_enable <= dma_tx_enable ;
+    rx_enable <= '0' when reset = '1' else dma_rx_enable when rising_edge(pclk) ;
+    tx_enable <= '0' when reset = '1' else dma_tx_enable when rising_edge(pclk) ;
 
     -- Constant drivers
     ctl_oe <= CONTROL_OE ;
