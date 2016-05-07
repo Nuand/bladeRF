@@ -3,7 +3,7 @@
  *
  * @brief bladeRF library
  *
- * Copyright (C) 2013-2015 Nuand LLC
+ * Copyright (C) 2013-2016 Nuand LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -2356,19 +2356,269 @@ int CALL_CONV bladerf_sync_rx(struct bladerf *dev,
 /**
  * @defgroup FN_TRIG    Trigger Control
  *
+ * Trigger functionality introduced in bladeRF FPGA v0.6.0 allows TX and/or RX
+ * samples to be gated via a trigger signal. This allows multiple devices to
+ * synchronize their TX/RX operations upon the reception of a trigger event.
+ *
+ * The set of functions presented in this section of the API provides control
+ * over this triggering functionality. It is intended that these functions be
+ * used <b>prior</b> to starting sample streams. Attempting to use these
+ * functions while streaming may yield undefined and undesirable behavior.
+ *
+ * For devices running at the same sample rate, the trigger event should
+ * achieve synchronization within +/- 1 sample on each device in the chain.
+ *
+ * As of FPGA v0.6.0, J71 pin 4 (mini_exp_1) has been allocated as the
+ * trigger signal. However, this API section is designed to allow future
+ * signals to be added, including users' software and hardware customizations.
+ *
+ * The standard usage of these functions is shown below. This example
+ * assumes two devices are connected such they share a common ground and
+ * their J71-4 pins are connected. It is also assumed that both devices
+ * are configured to share a single clock via the external SMB connection.
+ * (This may be achieved with an external 38.4 MHz clock source, or by
+ *  configuring one device as a MIMO master and the other a MIMO slave.)
+ *
+ * @code{.c}
+ *
+ * int status;
+ * bladerf_module module = BLADERF_MODULE_RX;
+ * bladerf_trigger_signal = BLADERF_TRIGGER_J71_4;
+ *
+ * // Allocate and initialize a bladerf_trigger structure for each
+ * // trigger in the system.
+ * struct bladerf_trigger trig_master, trig_slave;
+ *
+ * status = bladerf_trigger_init(dev_master, module, signal, &trig_master);
+ * if (status == 0) {
+ *     trig_master.role = BLADERF_TRIGGER_ROLE_MASTER;
+ * } else {
+ *     goto handle_error;
+ * }
+ *
+ * status = bladerf_trigger_init(dev_slave1, module, signal, &trig_slave);
+ * if (status == 0) {
+ *     master_rx.role = BLADERF_TRIGGER_ROLE_SLAVE;
+ * } else {
+ *     goto handle_error;
+ * }
+ *
+ * // Arm the triggering functionality on each device
+ * status = bladerf_trigger_arm(dev_master, &trig_master, true, 0, 0);
+ * if (status != 0) {
+ *     goto handle_error;
+ * }
+ *
+ * status = bladerf_trigger_arm(dev_slave, &trig_slave, true, 0, 0);
+ * if (status != 0) {
+ *     goto handle_error;
+ * }
+ *
+ * // Call bladerf_sync_config() and bladerf_sync_rx() on each device.
+ * // Ensure the timeout parameters used are long enough to accommodate
+ * // the expected time until the trigger will be fired.
+ * status = start_rx_streams(dev_master, dev_slave);
+ * if (status != 0) {
+ *     goto handle_error;
+ * }
+ *
+ * // Fire the trigger signal
+ * status = bladerf_trigger_fire(dev_master, &trig_master);
+ * if (status != 0) {
+ *     goto handle_error;
+ * }
+ *
+ * // Handle RX signals and then shut down streams.
+ * // Synchronized samples should now be reaching the host following the
+ * // reception of the external trigger signal.
+ * status = handle_rx_operations(dev_master, dev_slave);
+ * if (status != 0) {
+ *     goto handle_error;
+ * }
+ *
+ * // Disable triggering on all devices to restore normal RX operation
+ * trig_master.role = BLADERF_TRIGGER_ROLE_DISABLED;
+ * status = bladerf_trigger_arm(dev_master, &trig_master, false, 0, 0);
+ * if (status != 0) {
+ *     goto handle_error;
+ * }
+ *
+ * trig_slave.role  = BLADERF_TRIGGER_ROLE_DISABLED;
+ * status = bladerf_trigger_arm(dev_master, &trig_slave, false, 0, 0);
+ * if (status != 0) {
+ *     goto handle_error;
+ * }
+ *
+ * @endcode
+ *
  * @{
  */
 
 /**
- * Trigger signal selection
- *
- * This selects pin or signal used for the trigger. This is primarily for
- * future use; BLADERF_TRIGGER_J71_4 is the only valid option.
+ * This value denotes the role of a device in a trigger chain.
  */
 typedef enum  {
-    BLADERF_TRIGGER_INVALID = -1,   /**< Invalid selection */
-    BLADERF_TRIGGER_J71_4,          /**< J71 pin 4 (mini_exp_1) */
+    BLADERF_TRIGGER_ROLE_INVALID = -1,  /**< Invalid role selection */
+
+    BLADERF_TRIGGER_ROLE_DISABLED,      /**< Triggering functionality is
+                                         *   disabled on this device. Samples
+                                         *   are not gated and the trigger
+                                         *   signal is an input.
+                                         */
+
+    BLADERF_TRIGGER_ROLE_MASTER,        /**< This device is the trigger master.
+                                         *   Its trigger signal will be an
+                                         *   output and this device will
+                                         *   determine when all devices shall
+                                         *   trigger.
+                                         */
+
+    BLADERF_TRIGGER_ROLE_SLAVE,         /**< This device is the trigger slave.
+                                         *   This device's trigger signal will
+                                         *   be an input and this devices will
+                                         *   wait for the master's trigger
+                                         *   signal assertion.
+                                         */
+} bladerf_trigger_role;
+
+/**
+ * Trigger signal selection
+ *
+ * This selects pin or signal used for the trigger.
+ *
+ * ::BLADERF_TRIGGER_J71_4 is the only valid option as of FPGA v0.6.0.
+ *
+ * The BLADERF_TRIGGER_USER_* values have been added to allow users to modify
+ * both hardware and software implementations to add custom triggers, while
+ * maintaining libbladeRF API compatibility. Official bladeRF releases will
+ * not utilize these user signal IDs.
+ */
+typedef enum  {
+    BLADERF_TRIGGER_INVALID = -1, /**< Invalid selection */
+    BLADERF_TRIGGER_J71_4,        /**< J71 pin 4 (mini_exp_1) */
+
+    BLADERF_TRIGGER_USER_0 = 128, /**< Reserved for user SW/HW customizations */
+    BLADERF_TRIGGER_USER_1,       /**< Reserved for user SW/HW customizations */
+    BLADERF_TRIGGER_USER_2,       /**< Reserved for user SW/HW customizations */
+    BLADERF_TRIGGER_USER_3,       /**< Reserved for user SW/HW customizations */
+    BLADERF_TRIGGER_USER_4,       /**< Reserved for user SW/HW customizations */
+    BLADERF_TRIGGER_USER_5,       /**< Reserved for user SW/HW customizations */
+    BLADERF_TRIGGER_USER_6,       /**< Reserved for user SW/HW customizations */
+    BLADERF_TRIGGER_USER_7,       /**< Reserved for user SW/HW customizations */
 } bladerf_trigger_signal;
+
+/**
+ * Trigger configuration
+ *
+ * It is <b>highly recommended</b> to keep a 1:1 relationship between triggers
+ * in the physical setup and instances of this structure. (i.e., do not
+ * re-use and change the same bladerf_trigger) for multiple triggers.)
+ */
+struct bladerf_trigger
+{
+    bladerf_module module;         /**< RX/TX module associated with trigger */
+    bladerf_trigger_role role;     /**< Role of the device in a trigger chain */
+    bladerf_trigger_signal signal; /**< Pin or signal being used */
+    uint64_t options;              /**< Reserved field for future options. This
+                                    *   is unused and should be set to 0.
+                                    */
+};
+
+/**
+ * Initialize a bladerf_trigger structure based upon the current configuration
+ * of the specified trigger signal.
+ *
+ * While it is possible to simply declare and manually fill in a
+ * bladerf_trigger structure, it is recommended to use this function to
+ * retrieve the current `role` and `options` values.
+ *
+ * @param[in]   dev         Device to query
+ * @param[in]   module      Module to query
+ * @param[in]   signal      Trigger signal to query
+ * @param[out]  trigger     Updated to describe trigger
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_trigger_init(struct bladerf *dev,
+                                   bladerf_module module,
+                                   bladerf_trigger_signal signal,
+                                   struct bladerf_trigger *trigger);
+
+/**
+ * Configure and (dis)arm a trigger on the specified device.
+ *
+ * @note If trigger->role is set to ::BLADERF_TRIGGER_ROLE_DISABLED,
+ *       this will inherently disarm an armed trigger and clear any fire
+ *       requests, regardless of the value of `arm`.
+ *
+ * @param[in]   dev     Device to configure
+ * @param[in]   trigger Trigger configure
+ * @param[in]   arm     (Re)Arm trigger if true, disarm if false
+ * @param[in]   resv1   Reserved for future use. Set to 0.
+ * @param[in]   resv2   Reserved for future use. Set to 0.
+ *
+ * @warning Configuring two devices in the trigger chain (or both RX and
+ *          TX on a single device) as masters can damage the associated FPGA
+ *          pins, as this would cause contention over the trigger signal.<b>
+ *          Ensure only one device in the chain is configured as the master!
+ *          </b>
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_trigger_arm(struct bladerf *dev,
+                                  const struct bladerf_trigger *trigger,
+                                  bool arm, uint64_t resv1, uint64_t resv2);
+
+/**
+ * Fire a trigger event.
+ *
+ * Calling this functiona with a trigger whose role is anything other than
+ * ::BLADERF_TRIGGER_REG_MASTER will yield a BLADERF_ERR_INVAL return value.
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   trigger     Trigger to assert
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_trigger_fire(struct bladerf *dev,
+                                   const struct bladerf_trigger *trigger);
+
+/**
+ * Query the fire request status of a master trigger
+ *
+ * @param[in]   dev             Device handle
+ *
+ * @param[in]   trigger         Trigger to query
+ *
+ * @param[out]  is_armed        Set to true if the trigger is armed, and false
+ *                              otherwise. May be NULL.
+ *
+ * @param[out]  has_fired       Set to true if the trigger has fired, and false
+ *                              otherwise. May be NULL.
+ *
+ * @param[out]  fire_requested  Only applicable to a trigger master.
+ *                              Set to true if a fire request has been
+ *                              previously submitted. May be NULL.
+ *
+ * @param[out]  resv1           Reserved for future use.
+ *                              This field is written as 0 if not set to NULL.
+ *
+ * @param[out]  resv2           Reserved for future use.
+ *                              This field is written as 0 if not set to NULL.
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_trigger_state(struct bladerf *dev,
+                                    const struct bladerf_trigger *trigger,
+                                    bool *is_armed,
+                                    bool *has_fired,
+                                    bool *fire_requested,
+                                    uint64_t *resv1,
+                                    uint64_t *resv2);
 
 /** @} (End of FN_TRIG) */
 
@@ -2576,7 +2826,6 @@ API_EXPORT
 int CALL_CONV bladerf_jump_to_bootloader(struct bladerf *dev);
 
 /** @} (End of FN_PROG) */
-
 
 /**
  * @defgroup FN_MISC Miscellaneous
@@ -3588,36 +3837,36 @@ int CALL_CONV bladerf_calibrate_dc(struct bladerf *dev,
 /**
  * Read trigger control register
  *
- * @param   dev         Device handle
- * @param   module      Module to read from
- * @param   trigger     Trigger to read from
- * @param   val         Pointer to variable that register is read into
- *                      See the BLADERF_TRIGGER_REG_* macros for the meaning
- *                      of each bit.
+ * @param   dev             Device handle
+ * @param   module          Module to read from
+ * @param   signal          Trigger signal (control register) to read from
+ * @param   val             Pointer to variable that register is read into
+ *                          See the BLADERF_TRIGGER_REG_* macros for the meaning
+ *                          of each bit.
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
 int CALL_CONV bladerf_read_trigger(struct bladerf *dev,
                                    bladerf_module module,
-                                   bladerf_trigger_signal trigger,
+                                   bladerf_trigger_signal signal,
                                    uint8_t *val);
 
 /**
  * Write trigger control register
  *
- * @param   dev         Device handle
- * @param   module      Module to configure
- * @param   trigger     Triger to configure
- * @param   val         Data to write into the trigger control register.
- *                      See the BLADERF_TRIGGER_REG_* macros for options.
+ * @param   dev             Device handle
+ * @param   module          Module to configure
+ * @param   signal          Trigger signal to configure
+ * @param   val             Data to write into the trigger control register.
+ *                          See the BLADERF_TRIGGER_REG_* macros for options.
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
 int CALL_CONV bladerf_write_trigger(struct bladerf *dev,
                                     bladerf_module module,
-                                    bladerf_trigger_signal trigger,
+                                    bladerf_trigger_signal signal,
                                     uint8_t val);
 
 /** @} (End of LOW_LEVEL) */

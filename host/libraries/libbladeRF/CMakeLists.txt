@@ -288,6 +288,7 @@ set(LIBBLADERF_SOURCE
         src/si5338.c
         src/sync.c
         src/sync_worker.c
+        src/trigger.c
         src/tuning.c
         src/version.h
         src/version_compat.c

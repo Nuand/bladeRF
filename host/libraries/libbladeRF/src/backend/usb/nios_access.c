@@ -761,7 +761,7 @@ int nios_retune(struct bladerf *dev, bladerf_module module,
 }
 
 int nios_read_trigger(struct bladerf *dev, bladerf_module module,
-                      bladerf_trigger_signal trigger, uint8_t * value)
+                      bladerf_trigger_signal trigger, uint8_t *value)
 {
     int status;
     uint8_t nios_id;
@@ -792,7 +792,7 @@ int nios_read_trigger(struct bladerf *dev, bladerf_module module,
 
     status = nios_8x8_read(dev, nios_id, 0, value);
     if (status == 0) {
-        log_verbose("%s trigger read value %u\n", module2str(module), value);
+        log_verbose("%s trigger read value 0x%02x\n", module2str(module), *value);
     }
 
     return status;
@@ -830,7 +830,7 @@ int nios_write_trigger(struct bladerf *dev, bladerf_module module,
 
     status = nios_8x8_write(dev, nios_id, 0, value);
     if (status == 0) {
-        log_verbose("%s trigger write value %u\n", module2str(module), value);
+        log_verbose("%s trigger write value 0x%02x\n", module2str(module), value);
     }
 
     return status;

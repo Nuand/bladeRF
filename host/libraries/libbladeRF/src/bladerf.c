@@ -2,7 +2,7 @@
  * This file is part of the bladeRF project:
  *   http://www.github.com/nuand/bladeRF
  *
- * Copyright (C) 2013 Nuand LLC
+ * Copyright (C) 2013-2016 Nuand LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -49,6 +49,7 @@
 #include "backend/usb/usb.h"
 #include "fx3_fw.h"
 #include "fx3_fw_log.h"
+#include "trigger.h"
 
 static int probe(backend_probe_target target_device,
                  struct bladerf_devinfo **devices)
@@ -2049,7 +2050,80 @@ int bladerf_get_fw_log(struct bladerf *dev, const char *filename)
 }
 
 /*------------------------------------------------------------------------------
- * Trigger Control
+ * Trigger control
+ *----------------------------------------------------------------------------*/
+int bladerf_trigger_init(struct bladerf *dev,
+                         bladerf_module module,
+                         bladerf_trigger_signal signal,
+                         struct bladerf_trigger *trigger)
+{
+    int status;
+
+    MUTEX_LOCK(&dev->ctrl_lock);
+    status = trigger_init(dev, module, signal, trigger);
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+
+    return status;
+}
+
+int bladerf_trigger_arm(struct bladerf *dev,
+                        const struct bladerf_trigger *trigger,
+                        bool arm, uint64_t resv1, uint64_t resv2)
+{
+    int status;
+
+    /* resv1 & resv2 unused - may be allocated for use as timestamp and
+     * other flags in the future */
+
+    MUTEX_LOCK(&dev->ctrl_lock);
+    status = trigger_arm(dev, trigger, arm);
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+
+    return status;
+}
+
+int bladerf_trigger_fire(struct bladerf *dev,
+                         const struct bladerf_trigger *trigger)
+{
+    int status;
+
+    MUTEX_LOCK(&dev->ctrl_lock);
+    status = trigger_fire(dev, trigger);
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+
+    return status;
+}
+
+int bladerf_trigger_state(struct bladerf *dev,
+                          const struct bladerf_trigger *trigger,
+                          bool *is_armed,
+                          bool *has_fired,
+                          bool *fire_requested,
+                          uint64_t *reserved1,
+                          uint64_t *reserved2)
+{
+    int status;
+
+    MUTEX_LOCK(&dev->ctrl_lock);
+    status = trigger_state(dev, trigger, is_armed, has_fired, fire_requested);
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+
+    /* Reserved for future metadata (e.g., trigger counts, timestamp) */
+    if (reserved1 != NULL) {
+        *reserved1 = 0;
+    }
+
+    if (reserved2 != NULL) {
+        *reserved2 = 0;
+    }
+
+    return status;
+}
+
+
+
+/*------------------------------------------------------------------------------
+ * Low-level trigger control register access
  *----------------------------------------------------------------------------*/
 int bladerf_read_trigger(struct bladerf *dev,
                          bladerf_module module,
@@ -2059,7 +2133,7 @@ int bladerf_read_trigger(struct bladerf *dev,
     int status;
 
     MUTEX_LOCK(&dev->ctrl_lock);
-    status = dev->fn->read_trigger(dev, module, trigger, val);
+    status = trigger_read(dev, module, trigger, val);
     MUTEX_UNLOCK(&dev->ctrl_lock);
 
     return status;
@@ -2073,7 +2147,7 @@ int bladerf_write_trigger(struct bladerf *dev,
     int status;
 
     MUTEX_LOCK(&dev->ctrl_lock);
-    status = dev->fn->write_trigger(dev, module, trigger, val);
+    status = trigger_write(dev, module, trigger, val);
     MUTEX_UNLOCK(&dev->ctrl_lock);
 
     return status;
