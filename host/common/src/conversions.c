@@ -398,6 +398,30 @@ const char * trigger2str(bladerf_trigger_signal trigger)
         case BLADERF_TRIGGER_J71_4:
             return "J71-4";
 
+        case BLADERF_TRIGGER_USER_0:
+            return "User-0";
+
+        case BLADERF_TRIGGER_USER_1:
+            return "User-1";
+
+        case BLADERF_TRIGGER_USER_2:
+            return "User-2";
+
+        case BLADERF_TRIGGER_USER_3:
+            return "User-3";
+
+        case BLADERF_TRIGGER_USER_4:
+            return "User-4";
+
+        case BLADERF_TRIGGER_USER_5:
+            return "User-5";
+
+        case BLADERF_TRIGGER_USER_6:
+            return "User-6";
+
+        case BLADERF_TRIGGER_USER_7:
+            return "User-7";
+
         default:
             return "Unknown";
     }
@@ -407,8 +431,50 @@ bladerf_trigger_signal str2trigger(const char *str)
 {
     if (!strcasecmp("J71-4", str)) {
         return BLADERF_TRIGGER_J71_4;
+    } else if (!strcasecmp("User-0", str)) {
+        return BLADERF_TRIGGER_USER_0;
+    } else if (!strcasecmp("User-1", str)) {
+        return BLADERF_TRIGGER_USER_1;
+    } else if (!strcasecmp("User-2", str)) {
+        return BLADERF_TRIGGER_USER_2;
+    } else if (!strcasecmp("User-3", str)) {
+        return BLADERF_TRIGGER_USER_3;
+    } else if (!strcasecmp("User-4", str)) {
+        return BLADERF_TRIGGER_USER_4;
+    } else if (!strcasecmp("User-5", str)) {
+        return BLADERF_TRIGGER_USER_5;
+    } else if (!strcasecmp("User-6", str)) {
+        return BLADERF_TRIGGER_USER_6;
+    } else if (!strcasecmp("User-7", str)) {
+        return BLADERF_TRIGGER_USER_7;
     } else {
         return BLADERF_TRIGGER_INVALID;
+    }
+}
+
+const char *triggerrole2str(bladerf_trigger_role role)
+{
+    switch (role) {
+        case BLADERF_TRIGGER_ROLE_MASTER:
+            return "Master";
+        case BLADERF_TRIGGER_ROLE_SLAVE:
+            return "Slave";
+        case BLADERF_TRIGGER_ROLE_DISABLED:
+            return "Disabled";
+        default:
+            return "Unknown";
+    }
+}
+
+bladerf_trigger_role str2triggerrole(const char *str) {
+    if (!strcasecmp("Master", str)) {
+        return BLADERF_TRIGGER_ROLE_MASTER;
+    } else if (!strcasecmp("Slave", str)) {
+        return BLADERF_TRIGGER_ROLE_SLAVE;
+    } else if (!strcasecmp("Disabled", str) || !strcasecmp("Off", str)) {
+        return BLADERF_TRIGGER_ROLE_DISABLED;
+    } else {
+        return BLADERF_TRIGGER_ROLE_INVALID;
     }
 }
 

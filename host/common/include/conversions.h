@@ -257,6 +257,24 @@ const char * trigger2str(bladerf_trigger_signal trigger);
 bladerf_trigger_signal str2trigger(const char *str);
 
 /**
+ * Convert a trigger role enumeration value to a string
+ *
+ * @param   role    Role value
+ *
+ * @return  String representation or "Unknown"
+ */
+const char *triggerrole2str(bladerf_trigger_role role);
+
+/**
+ * Convert a string to a trigger role enumeration value
+ *
+ * @param   role    Role value
+ *
+ * @return  String representation or "Unknown"
+ */
+bladerf_trigger_role str2triggerrole(const char *str);
+
+/**
  * Convert a string to a loopback mode
  *
  * @param[in]   str         String to convert
