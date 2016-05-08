@@ -308,7 +308,8 @@ architecture hosted_bladerf of bladerf is
     alias tx_trigger_line_rb        : std_logic is tx_trigger_ctl_rb(3);
 
     -- Trigger Outputs
-    signal lms_rx_enable_untriggered                : std_logic;
+    signal lms_rx_enable_sig                        : std_logic;
+    signal lms_rx_enable_qualified                  : std_logic;
     signal tx_sample_fifo_rempty_untriggered        : std_logic;
 begin
 
@@ -768,8 +769,8 @@ begin
         master          => rx_trigger_master,
         trigger_in      => rx_trigger_line,
         trigger_out     => rx_trigger_line,
-        signal_in       => lms_rx_enable_untriggered,
-        signal_out      => lms_rx_enable
+        signal_in       => lms_rx_enable_sig,
+        signal_out      => lms_rx_enable_qualified
       );
 
     rx_trigger_arm_rb    <= rx_trigger_arm;
@@ -863,7 +864,11 @@ begin
                 when RX_MUX_NORMAL =>
                     rx_mux_i <= rx_sample_i ;
                     rx_mux_q <= rx_sample_q ;
-                    rx_mux_valid <= rx_sample_valid ;
+                    if( lms_rx_enable_qualified = '1' ) then
+                        rx_mux_valid <= rx_sample_valid ;
+                    else
+                        rx_mux_valid <= '0' ;
+                    end if ;
                 when RX_MUX_12BIT_COUNTER | RX_MUX_32BIT_COUNTER =>
                     rx_mux_i <= rx_gen_i ;
                     rx_mux_q <= rx_gen_q ;
@@ -1038,7 +1043,8 @@ begin
 
     lms_reset               <= nios_gpio(0) ;
 
-    lms_rx_enable_untriggered   <= nios_gpio(1) ;
+    lms_rx_enable_sig           <= nios_gpio(1) ;
+    lms_rx_enable               <= nios_gpio(1) ;
     lms_tx_enable               <= nios_gpio(2) ;
 
     lms_tx_v                <= nios_gpio(4 downto 3) ;
