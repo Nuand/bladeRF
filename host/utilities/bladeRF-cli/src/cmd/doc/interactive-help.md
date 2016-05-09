@@ -638,17 +638,17 @@ Notes:
 trigger
 -------
 
-Usage: `trigger [<tx | rx> <trigger> [<off slave master fire stop>]]`
+Usage: `trigger [<trigger> <tx | rx> [<off slave master fire>]]`
 
 If used without parameters, this command prints the state of all triggers.
-When <tx | rx> and <trigger> are supplied, the specified trigger is printed.
+When <trigger> aand <tx | rx> and supplied, the specified trigger is printed.
 
 Below are the available options for <trigger>:
 
 ----------------------------------------------------------------------
     Trigger Description
 ----------- ----------------------------------------------------------
- `J71-4`    Trigger signal is on `mini_exp1` (J71 pin 4).
+ `J71-4`    Trigger signal is on `mini_exp1` (J71, pin 4).
 ----------- ----------------------------------------------------------
 
 The trigger is controlled and configured by providing the last argument,
@@ -657,7 +657,7 @@ which may be one of the following:
 ----------------------------------------------------------------------
     Command Description
 ----------- ----------------------------------------------------------
-`off`       Clears fire request and disable trigger functionality.
+`off`       Clears fire request and disables trigger functionality.
 
 `slave`     Configures trigger as slave, clears fire request, and
             arms the device.
@@ -681,7 +681,7 @@ synchronization. It is assumed that all triggers are off initially.
 
      __IMPORTANT__
 
-        Never configure two devices as triggers masters on a single chain.
+        Never configure two devices as trigger masters on a single chain.
         Contention on the same signal could damage the devices.
 
 2.   Configure all other devices as trigger slaves
@@ -689,8 +689,9 @@ synchronization. It is assumed that all triggers are off initially.
 3.   Configure and start transmit or receive streams.
 
         The operation will stall until the triggers fire. As such, sufficiently
-        timeouts should be used to ensure the operations do not time out before
-        the trigger signal is emitted by the master and received by the slaves.
+        large timeouts should be used to allow the trigger signal to be emitted
+        by the master and received by the slaves prior to libbladeRF returning
+        BLADERF_ERR_TIMEOUT.
 
 4.   Set fire-request on master trigger
 
@@ -698,9 +699,9 @@ synchronization. It is assumed that all triggers are off initially.
 
 5.   Finish the transmit and receive tasks as usual
 
-6.   Clear fire-request on master trigger
+6.   Re-configure the master and slaves to clear fire requests and re-arm.
 
-        Steps 3 through may be repeated as neccessary.
+        Steps 1 through 5 may be repeated as neccessary.
 
 7.   Disable triggering on all slaves
 
