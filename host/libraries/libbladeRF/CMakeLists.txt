@@ -286,6 +286,7 @@ set(LIBBLADERF_SOURCE
         src/image.c
         src/init_fini.c
         src/si5338.c
+        src/smb_clock.c
         src/sync.c
         src/sync_worker.c
         src/trigger.c

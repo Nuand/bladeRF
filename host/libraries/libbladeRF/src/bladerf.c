@@ -50,6 +50,7 @@
 #include "fx3_fw.h"
 #include "fx3_fw_log.h"
 #include "trigger.h"
+#include "smb_clock.h"
 
 static int probe(backend_probe_target target_device,
                  struct bladerf_devinfo **devices)
@@ -563,54 +564,6 @@ int bladerf_get_sample_rate(struct bladerf *dev, bladerf_module module,
     MUTEX_LOCK(&dev->ctrl_lock);
 
     status = si5338_get_sample_rate(dev, module, rate);
-
-    MUTEX_UNLOCK(&dev->ctrl_lock);
-    return status;
-}
-
-int bladerf_set_rational_smb_frequency(struct bladerf *dev,
-                                       struct bladerf_rational_rate *rate,
-                                       struct bladerf_rational_rate *actual)
-{
-    int status;
-    MUTEX_LOCK(&dev->ctrl_lock);
-
-    status = si5338_set_rational_smb_freq(dev, rate, actual);
-
-    MUTEX_UNLOCK(&dev->ctrl_lock);
-    return status;
-}
-
-int bladerf_set_smb_frequency(struct bladerf *dev,
-                              uint32_t rate, uint32_t *actual)
-{
-    int status;
-    MUTEX_LOCK(&dev->ctrl_lock);
-
-    status = si5338_set_smb_freq(dev, rate, actual);
-
-    MUTEX_UNLOCK(&dev->ctrl_lock);
-    return status;
-}
-
-int bladerf_get_rational_smb_frequency(struct bladerf *dev,
-                                       struct bladerf_rational_rate *rate)
-{
-    int status;
-    MUTEX_LOCK(&dev->ctrl_lock);
-
-    status = si5338_get_rational_smb_freq(dev, rate);
-
-    MUTEX_UNLOCK(&dev->ctrl_lock);
-    return status;
-}
-
-int bladerf_get_smb_frequency(struct bladerf *dev, unsigned int *rate)
-{
-    int status;
-    MUTEX_LOCK(&dev->ctrl_lock);
-
-    status = si5338_get_smb_freq(dev, rate);
 
     MUTEX_UNLOCK(&dev->ctrl_lock);
     return status;
@@ -2046,6 +1999,76 @@ int bladerf_get_fw_log(struct bladerf *dev, const char *filename)
     status = fx3_fw_log_dump(dev, filename);
     MUTEX_UNLOCK(&dev->ctrl_lock);
 
+    return status;
+}
+
+/*------------------------------------------------------------------------------
+ * SMB Clock port control
+ *----------------------------------------------------------------------------*/
+
+int bladerf_set_smb_mode(struct bladerf *dev, bladerf_smb_mode mode)
+{
+    int status;
+    MUTEX_LOCK(&dev->ctrl_lock);
+    status = smb_clock_set_mode(dev, mode);
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+    return status;
+}
+
+int bladerf_get_smb_mode(struct bladerf *dev, bladerf_smb_mode *mode)
+{
+    int status;
+    MUTEX_LOCK(&dev->ctrl_lock);
+    status = smb_clock_get_mode(dev, mode);
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+    return status;
+}
+
+int bladerf_set_rational_smb_frequency(struct bladerf *dev,
+                                       struct bladerf_rational_rate *rate,
+                                       struct bladerf_rational_rate *actual)
+{
+    int status;
+    MUTEX_LOCK(&dev->ctrl_lock);
+
+    status = si5338_set_rational_smb_freq(dev, rate, actual);
+
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+    return status;
+}
+
+int bladerf_set_smb_frequency(struct bladerf *dev,
+                              uint32_t rate, uint32_t *actual)
+{
+    int status;
+    MUTEX_LOCK(&dev->ctrl_lock);
+
+    status = si5338_set_smb_freq(dev, rate, actual);
+
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+    return status;
+}
+
+int bladerf_get_rational_smb_frequency(struct bladerf *dev,
+                                       struct bladerf_rational_rate *rate)
+{
+    int status;
+    MUTEX_LOCK(&dev->ctrl_lock);
+
+    status = si5338_get_rational_smb_freq(dev, rate);
+
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+    return status;
+}
+
+int bladerf_get_smb_frequency(struct bladerf *dev, unsigned int *rate)
+{
+    int status;
+    MUTEX_LOCK(&dev->ctrl_lock);
+
+    status = si5338_get_smb_freq(dev, rate);
+
+    MUTEX_UNLOCK(&dev->ctrl_lock);
     return status;
 }
 

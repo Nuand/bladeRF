@@ -468,14 +468,6 @@ const char * CALL_CONV bladerf_backend_str(bladerf_backend backend);
 /** Maximum tunable frequency, in Hz */
 #define BLADERF_FREQUENCY_MAX       3800000000u
 
-/** Maximum output frequency on SMB connector, if no expansion board attached.
- */
-#define BLADERF_SMB_FREQUENCY_MAX   200000000u
-
-/** Minimum output frequency on SMB connector, if no expansion board attached.
- */
-#define BLADERF_SMB_FREQUENCY_MIN   ((38400000u * 66u) / (32 * 567))
-
 /**
  * Specifies that scheduled retune should occur immediately when using
  * bladerf_schedule_retune().
@@ -843,7 +835,6 @@ typedef enum {
     BLADERF_VCTCXO_TAMER_10_MHZ = 2
 } bladerf_vctcxo_tamer_mode;
 
-
 /**
  * Enable or disable the specified RX/TX module.
  *
@@ -1026,74 +1017,6 @@ int CALL_CONV bladerf_get_rational_sample_rate(
                                         bladerf_module module,
                                         struct bladerf_rational_rate *rate);
 
-/**
- * Set the SMB connector output frequency in rational Hz
- *
- * @param[in]   dev         Device handle
- * @param[in]   rate        Rational frequency
- * @param[out]  actual      If non-NULL, this is written with the actual
- *                          rational frequency achieved.
- *
- * This clock should not be set if an expansion board is connected.
- * The frequency must be between \ref BLADERF_SMB_FREQUENCY_MIN and
- * \ref BLADERF_SMB_FREQUENCY_MAX.
- *
- * @return 0 on success,
- *         BLADERF_ERR_INVAL for an invalid frequency,
- *         or a value from \ref RETCODES list on failure.
- */
-API_EXPORT
-int CALL_CONV bladerf_set_rational_smb_frequency(
-                                        struct bladerf *dev,
-                                        struct bladerf_rational_rate *rate,
-                                        struct bladerf_rational_rate *actual);
-
-/**
- * Set the SMB connector output frequency in Hz. Note that this requires the
- * frequency is an integer value of Hz. Use
- * bladerf_set_rational_smb_frequency() for more arbitrary values.
- *
- * @param[in]   dev         Device handle
- * @param[in]   rate        Frequency
- * @param[out]  actual      If non-NULL. this is written with the actual
- *                          frequency achieved.
- *
- * This clock should not be set if an expansion board is connected.
- * The frequency must be between \ref BLADERF_SMB_FREQUENCY_MIN and
- * \ref BLADERF_SMB_FREQUENCY_MAX.
- *
- * @return 0 on success,
- *         BLADERF_ERR_INVAL for an invalid frequency,
- *         or a value from \ref RETCODES list on other failures
- */
-API_EXPORT
-int CALL_CONV bladerf_set_smb_frequency(struct bladerf *dev,
-                                        uint32_t rate, uint32_t *actual);
-
-/**
- * Read the SMB connector output frequency in rational Hz
- *
- * @param[in]   dev         Device handle
- * @param[out]  rate        Pointer to returned rational frequency
- *
- * @return 0 on success, value from \ref RETCODES list upon failure
- */
-API_EXPORT
-int CALL_CONV bladerf_get_rational_smb_frequency(
-                                        struct bladerf *dev,
-                                        struct bladerf_rational_rate *rate);
-
-/**
- * Read the SMB connector output frequency in Hz
- *
- * @param[in]   dev         Device handle
- * @param[out]  rate        Pointer to returned frequency
- *
- * @return 0 on success, value from \ref RETCODES list upon failure
- */
-API_EXPORT
-int CALL_CONV bladerf_get_smb_frequency(struct bladerf *dev,
-                                        unsigned int *rate);
 
 /**
  * Set the value of the specified configuration parameter
@@ -2352,6 +2275,170 @@ int CALL_CONV bladerf_sync_rx(struct bladerf *dev,
 
 
 /** @} (End of FN_DATA_SYNC) */
+
+/**
+ * @defgroup FN_SMB_CLOCK SMB clock port control
+ *
+ * The SMB clock port (J62) may be used to synchronize sampling on multiple
+ * devices, or to generate an arbitrary clock output for a different device.
+ *
+ * For MIMO configurations, one device is the clock "master" and outputs
+ * its 38.4 MHz reference on this port.  The clock "slave" devices configure
+ * the SMB port as an input and expect to see this 38.4 MHz reference on this
+ * port. This implies that the "master" must be configured first.
+ *
+ * Alternatively, this port may be used to generate an arbitrary clock signal
+ * for use with other devices via the bladerf_set_smb_frequency() and
+ * bladerf_set_rational_smb_frequency() functions.
+ *
+ * @warning <b>Do not</b> use these functions when operating an expansion board.
+ *          A different clock configuration is required for the XB devices
+ *          which cannot be used simultaneously with the SMB clock port.
+ * @{
+ */
+
+/**
+ * Maximum output frequency on SMB connector, if no expansion board attached.
+ */
+#define BLADERF_SMB_FREQUENCY_MAX   200000000u
+
+/**
+ * Minimum output frequency on SMB connector, if no expansion board attached.
+ */
+#define BLADERF_SMB_FREQUENCY_MIN   ((38400000u * 66u) / (32 * 567))
+
+
+/**
+ * SMB clock port mode of operation
+ */
+typedef enum {
+    BLADERF_SMB_MODE_INVALID = -1,  /**< Invalid selection */
+
+    BLADERF_SMB_MODE_DISABLED,      /**< Not in use. Device operates from
+                                     *   its onboard clock and does not
+                                     *   use J62. */
+
+    BLADERF_SMB_MODE_OUTPUT,        /**< Device outputs a 38.4 MHz reference
+                                     *   clock on J62. This may be used to
+                                     *   drive another device that is
+                                     *   configured with
+                                     *   ::BLADERF_SMB_MODE_INPUT.
+                                     */
+
+    BLADERF_SMB_MODE_INPUT,         /**< Device configures J62 as an input
+                                     *   and expects a 38.4 MHz reference
+                                     *   to be available when this setting
+                                     *   is applied.
+                                     */
+
+    BLADERF_SMB_MODE_UNAVAILBLE,    /**< SMB port is unavailable for use due
+                                     *   the underlying clock being used
+                                     *   elsewhere (e.g., for and expansion
+                                     *   board).
+                                     */
+
+} bladerf_smb_mode;
+
+/**
+ * Set the current mode of operation of the SMB clock port
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   mode        Desired mode
+ *
+ * @return 0 on success, or a value from \ref RETCODES list on failure.
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_smb_mode(struct bladerf *dev, bladerf_smb_mode mode);
+
+/**
+ * Get the current mode of operation of the SMB clock port
+ *
+ * @param[in]   dev         Device handle
+ * @param[out]  mode        Desired mode
+ *
+ * @return 0 on success, or a value from \ref RETCODES list on failure.
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_smb_mode(struct bladerf *dev, bladerf_smb_mode *mode);
+
+/**
+ * Set the SMB clock port frequency in rational Hz
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   rate        Rational frequency
+ * @param[out]  actual      If non-NULL, this is written with the actual
+ *
+ * The frequency must be between \ref BLADERF_SMB_FREQUENCY_MIN and
+ * \ref BLADERF_SMB_FREQUENCY_MAX.
+ *
+ * This function inherently configures the SMB clock port as an output. Do not
+ * call bladerf_set_smb_mode() with ::BLADERF_SMB_MODE_OUTPUT, as this will
+ * reset the output frequency to the 38.4 MHz reference.
+ *
+ * @warning This clock should not be set if an expansion board is connected.
+ *
+ * @return 0 on success,
+ *         BLADERF_ERR_INVAL for an invalid frequency,
+ *         or a value from \ref RETCODES list on failure.
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_rational_smb_frequency(
+                                        struct bladerf *dev,
+                                        struct bladerf_rational_rate *rate,
+                                        struct bladerf_rational_rate *actual);
+
+/**
+ * Set the SMB connector output frequency in Hz.
+ * Use bladerf_set_rational_smb_frequency() for more arbitrary values.
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   rate        Frequency
+ * @param[out]  actual      If non-NULL. this is written with the actual
+ *                          frequency achieved.
+ *
+ * This function inherently configures the SMB clock port as an output. Do not
+ * call bladerf_set_smb_mode() with ::BLADERF_SMB_MODE_OUTPUT, as this will
+ * reset the output frequency to the 38.4 MHz reference.
+ *
+ * The frequency must be between \ref BLADERF_SMB_FREQUENCY_MIN and
+ * \ref BLADERF_SMB_FREQUENCY_MAX.
+ *
+ * @warning This clock should not be set if an expansion board is connected.
+ *
+ * @return 0 on success,
+ *         BLADERF_ERR_INVAL for an invalid frequency,
+ *         or a value from \ref RETCODES list on other failures
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_smb_frequency(struct bladerf *dev,
+                                        uint32_t rate, uint32_t *actual);
+
+/**
+ * Read the SMB connector output frequency in rational Hz
+ *
+ * @param[in]   dev         Device handle
+ * @param[out]  rate        Pointer to returned rational frequency
+ *
+ * @return 0 on success, value from \ref RETCODES list upon failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_rational_smb_frequency(
+                                        struct bladerf *dev,
+                                        struct bladerf_rational_rate *rate);
+
+/**
+ * Read the SMB connector output frequency in Hz
+ *
+ * @param[in]   dev         Device handle
+ * @param[out]  rate        Pointer to returned frequency
+ *
+ * @return 0 on success, value from \ref RETCODES list upon failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_smb_frequency(struct bladerf *dev,
+                                        unsigned int *rate);
+
+/** @} (End of FN_SMB_CLOCK) */
 
 /**
  * @defgroup FN_TRIG    Trigger Control
