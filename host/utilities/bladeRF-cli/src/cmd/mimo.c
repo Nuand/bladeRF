@@ -123,7 +123,7 @@ int cmd_mimo(struct cli_state *state, int argc, char **argv)
         }
 
     } else {
-        cli_err(state, argv[0], "Invalid mode: %s\n", argv[2]);
+        cli_err(state, argv[0], "Invalid mode: %s\n", argv[1]);
     }
 
 out:
