@@ -752,6 +752,10 @@ int xb300_get_output_power(struct bladerf *dev, float *pwr)
     float volt, volt2, volt3, volt4;
 
     status = XB_GPIO_READ(dev, &val);
+    if (status) {
+        return status;
+    }
+
     val &= ~(BLADERF_XB_CS | BLADERF_XB_SCLK | BLADERF_XB_CSEL);
 
     status = XB_GPIO_WRITE(dev, 0xffffffff, BLADERF_XB_SCLK | val);
