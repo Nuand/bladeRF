@@ -385,6 +385,26 @@ bladerf_cal_module str_to_bladerf_cal_module(const char *str);
  */
 int str2bool(const char *string, bool *val);
 
+/**
+ * Convert a bladerf_smb_mode enumeration value to a string
+ *
+ * @param[in]   mode        Mode enum value
+ *
+ * @return      String representation of enumeration, or "Unknown" for an
+ *              invalid value.
+ */
+const char * smb_mode_to_str(bladerf_smb_mode mode);
+
+/**
+ * Convert a string to bladerf_smb_mode value
+ *
+ * @param[in]   str         String to convert
+ *
+ * @return      A BLADERF_SMB_MODE_* value. BLADERF_SMB_MODE_INVALID will
+ *              returned for an invalid string.
+ */
+bladerf_smb_mode str_to_smb_mode(const char *str);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

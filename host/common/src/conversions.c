@@ -766,3 +766,38 @@ int str2bool(const char *str, bool *val)
     *val = false;
     return -1;
 }
+
+const char * smb_mode_to_str(bladerf_smb_mode mode)
+{
+    switch (mode) {
+        case BLADERF_SMB_MODE_DISABLED:
+            return "Disabled";
+
+        case BLADERF_SMB_MODE_OUTPUT:
+            return "Output";
+
+        case BLADERF_SMB_MODE_INPUT:
+            return "Input";
+
+        case BLADERF_SMB_MODE_UNAVAILBLE:
+            return "Unavailable";
+
+        default:
+            return "Unknown";
+    }
+};
+
+bladerf_smb_mode str_to_smb_mode(const char *str)
+{
+    if (!strcasecmp(str, "disabled") || !strcasecmp(str, "off")) {
+        return BLADERF_SMB_MODE_DISABLED;
+    } else if (!strcasecmp(str, "output")) {
+        return BLADERF_SMB_MODE_OUTPUT;
+    } else if (!strcasecmp(str, "input")) {
+        return BLADERF_SMB_MODE_INPUT;
+    } else if (!strcasecmp(str, "unavailable")) {
+        return BLADERF_SMB_MODE_UNAVAILBLE;
+    } else {
+        return BLADERF_SMB_MODE_INVALID;
+    }
+}
