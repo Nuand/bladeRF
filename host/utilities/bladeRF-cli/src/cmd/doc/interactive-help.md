@@ -392,6 +392,9 @@ Usage: `mimo [master | slave]`
 
 Modify device MIMO operation.
 
+IMPORTANT: This command is deprecated and has been superseded by
+           `"print/set smb_mode"`. For usage text, run: "`set smb_mode`"
+
 
 open
 ----

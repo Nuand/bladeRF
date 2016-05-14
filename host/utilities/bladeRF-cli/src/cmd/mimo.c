@@ -27,6 +27,10 @@ int cmd_mimo(struct cli_state *state, int argc, char **argv)
 {
     int status = 0;
 
+    printf("\n");
+    printf("  IMPORTANT: This command is deprecated and has been superseded\n");
+    printf("             by `print|set smb_mode`. Run `set smb_mode` for usage.\n");
+
     if (argc < 2) {
         printf("\n");
         printf("  Usage: %s <slave>\n", argv[0]);

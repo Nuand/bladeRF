@@ -518,6 +518,10 @@ disabled.
 Usage: \f[C]mimo\ [master\ |\ slave]\f[]
 .PP
 Modify device MIMO operation.
+.PP
+IMPORTANT: This command is deprecated and has been superseded by
+\f[C]"print/set\ smb_mode"\f[].
+For usage text, run: "\f[C]set\ smb_mode\f[]"
 .SS open
 .PP
 Usage: \f[C]open\ [device\ identifiers]\f[]

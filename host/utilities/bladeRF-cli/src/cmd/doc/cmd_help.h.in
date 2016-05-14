@@ -27,7 +27,7 @@
  * Any manual modifications to this file will be overwritten!
  * To edit the content of help strings, please edit interactive-help.md
  *
- * Last generated: Sat May 14 15:24:44 EDT 2016 by jynik
+ * Last generated: Sat May 14 15:52:03 EDT 2016 by jynik
  */
 
 #ifndef BLADERF_CLI_DOC_CMD_HELP_H__
@@ -410,6 +410,9 @@
   "Usage: mimo [master | slave]\n" \
   "\n" \
   "Modify device MIMO operation.\n" \
+  "\n" \
+  "IMPORTANT: This command is deprecated and has been superseded by\n" \
+  "\"print/set smb_mode\". For usage text, run: \"set smb_mode\"\n" \
   "\n" \
 
 
