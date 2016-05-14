@@ -690,6 +690,11 @@ T}@T{
 Samplerate settings
 T}
 T{
+\f[C]smb_mode\f[]
+T}@T{
+SMB clock port mode of operation
+T}
+T{
 \f[C]trimdac\f[]
 T}@T{
 VCTCXO Trim DAC settings
@@ -1265,6 +1270,11 @@ T{
 \f[C]samplerate\f[]
 T}@T{
 Sample rate settings
+T}
+T{
+\f[C]smb_mode\f[]
+T}@T{
+SMB clock port mode of operation
 T}
 T{
 \f[C]trimdac\f[]

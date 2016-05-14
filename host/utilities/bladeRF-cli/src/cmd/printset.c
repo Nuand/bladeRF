@@ -76,6 +76,7 @@ PRINTSET_DECL(txvga1)
 PRINTSET_DECL(txvga2)
 PRINTSET_DECL(sampling)
 PRINTSET_DECL(samplerate)
+PRINTSET_DECL(smb_mode)
 PRINTSET_DECL(trimdac)
 PRINTSET_DECL(vctcxo_tamer)
 PRINTSET_DECL(xb_spi)
@@ -96,6 +97,7 @@ struct printset_entry printset_table[] = {
     PRINTSET_ENTRY(txvga2,          PRINTALL_OPTION_APPEND_NEWLINE),
     PRINTSET_ENTRY(sampling,        PRINTALL_OPTION_APPEND_NEWLINE),
     PRINTSET_ENTRY(samplerate,      PRINTALL_OPTION_APPEND_NEWLINE),
+    PRINTSET_ENTRY(smb_mode,        PRINTALL_OPTION_APPEND_NEWLINE),
     PRINTSET_ENTRY(trimdac,         PRINTALL_OPTION_APPEND_NEWLINE),
     PRINTSET_ENTRY(vctcxo_tamer,    PRINTALL_OPTION_APPEND_NEWLINE),
     PRINTSET_ENTRY(xb_spi,          PRINTALL_OPTION_SKIP),
@@ -1466,6 +1468,147 @@ int print_sampling( struct cli_state *state, int argc, char **argv)
 
     return rv;
 }
+
+int print_smb_mode(struct cli_state *state, int argc, char **argv)
+{
+    int status;
+    bladerf_smb_mode mode;
+    const char *mode_str;
+
+    status = bladerf_get_smb_mode(state->dev, &mode);
+
+    mode_str = smb_mode_to_str(mode);
+
+    printf("  Mode:      %s\n", mode_str);
+
+    if (mode == BLADERF_SMB_MODE_OUTPUT) {
+        struct bladerf_rational_rate rate;
+
+        status = bladerf_get_rational_smb_frequency(state->dev, &rate);
+        if (status != 0) {
+            goto out;
+        }
+
+        /* If the user has not set a custom output frequency, the rate will be
+         * zero. Just note the reference clock frequency in this case. */
+        if (rate.integer == 0 && rate.num == 0 && rate.den == 0) {
+            printf("  Frequency: 38.4 MHz (reference clock)\n");
+        } else {
+            /* Otherwise, show the custom frequency in use */
+            printf("  Frequency: %"PRIu64" + %"PRIu64"/%"PRIu64" Hz\n",
+                    rate.integer, rate.num, rate.den);
+        }
+    }
+
+out:
+    if (status != 0) {
+        state->last_lib_error = status;
+        return CLI_RET_LIBBLADERF;
+    }
+
+    return 0;
+}
+
+int set_smb_mode(struct cli_state *state, int argc, char **argv)
+{
+    int status;
+    bladerf_smb_mode mode, curr_mode;
+    struct bladerf_rational_rate rate;
+    bool ok;
+
+    /* Usage:
+     *  3: set smb_mode <mode>
+     *  4: set smb_mode output <freq integer>
+     *  6: set smb_mode output <freq integer> <freq num> <freq denom>
+     */
+    if (argc != 3 && argc != 4 && argc != 6) {
+        if (argc == 2) {
+            printf("Usage: %s %s <mode>\n", argv[0], argv[1]);
+            printf("       %s %s output [frequency]\n", argv[0], argv[1]);
+            printf("\n  <mode> values:\n");
+            printf("      disabled, input, output\n");
+            return 0;
+        } else {
+            return CLI_RET_NARGS;
+        }
+    }
+
+    mode = str_to_smb_mode(argv[2]);
+    if (mode == BLADERF_SMB_MODE_INVALID) {
+        cli_err(state, argv[1], "Invalid SMB clock port mode.\n");
+        return CLI_RET_INVPARAM;
+    }
+
+    status = bladerf_get_smb_mode(state->dev, &curr_mode);
+    if (status != 0) {
+        goto out;
+    }
+
+    /* Help folks avoid shooting themselves in the foot when an XB-200 is
+     * connected and enabled. */
+    if (curr_mode == BLADERF_SMB_MODE_UNAVAILBLE) {
+        cli_err_nnl(state, argv[1],
+                    "The SMB clock port mode is not available to be changed.\n"
+                    "            "
+                    "(This is the case when an XB-200 is in use.)\n");
+        return CLI_RET_INVPARAM;
+    }
+
+    if (argc == 3) {
+        status = bladerf_set_smb_mode(state->dev, mode);
+    } else {
+        if (mode != BLADERF_SMB_MODE_OUTPUT) {
+            cli_err(state, argv[2],
+                    "Additional arguments may not be used with this mode.\n");
+            return CLI_RET_INVPARAM;
+        }
+
+
+        rate.integer = str2uint64_suffix(argv[3],
+                                         0, UINT64_MAX,
+                                         freq_suffixes, NUM_FREQ_SUFFIXES,
+                                         &ok);
+        if (!ok) {
+            cli_err(state, argv[3], "Invalid integer frequency value.\n");
+            return CLI_RET_INVPARAM;
+        }
+
+        if (argc == 6) {
+            rate.num = str2uint64_suffix(argv[4],
+                                         0, UINT64_MAX,
+                                         freq_suffixes, NUM_FREQ_SUFFIXES,
+                                         &ok);
+            if (!ok) {
+                cli_err(state, argv[4], "Invalid frequency numerator value.\n");
+                return CLI_RET_INVPARAM;
+            }
+
+            rate.den = str2uint64_suffix(argv[5],
+                                         1, UINT64_MAX,
+                                         freq_suffixes, NUM_FREQ_SUFFIXES,
+                                         &ok);
+            if (!ok) {
+                cli_err(state, argv[5], "Invalid frequency denominator value.\n");
+                return CLI_RET_INVPARAM;
+            }
+        } else {
+            printf("Ignoring numden\n");
+            rate.num = 0;
+            rate.den = 1;
+        }
+
+        status = bladerf_set_rational_smb_frequency(state->dev, &rate, NULL);
+    }
+
+out:
+    if (status != 0) {
+        state->last_lib_error = status;
+        return CLI_RET_LIBBLADERF;
+    } else {
+        return print_smb_mode(state, 2, argv);
+    }
+}
+
 
 int print_trimdac(struct cli_state *state, int argc, char **argv)
 {

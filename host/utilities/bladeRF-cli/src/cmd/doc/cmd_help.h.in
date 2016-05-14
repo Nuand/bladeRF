@@ -27,7 +27,7 @@
  * Any manual modifications to this file will be overwritten!
  * To edit the content of help strings, please edit interactive-help.md
  *
- * Last generated: Sun May  8 23:35:58 EDT 2016 by jynik
+ * Last generated: Sat May 14 15:24:44 EDT 2016 by jynik
  */
 
 #ifndef BLADERF_CLI_DOC_CMD_HELP_H__
@@ -494,6 +494,7 @@
   "          txvga2 Gain setting of TXVGA2, in dB\n" \
   "        sampling External or internal sampling mode\n" \
   "      samplerate Samplerate settings\n" \
+  "        smb_mode SMB clock port mode of operation\n" \
   "         trimdac VCTCXO Trim DAC settings\n" \
   "    vctcxo_tamer Current VCTCXO tamer mode.\n" \
   "         xb_gpio Expansion board GPIO values\n" \
@@ -834,6 +835,8 @@
   "        sampling External or internal sampling mode\n" \
   "\n" \
   "      samplerate Sample rate settings\n" \
+  "\n" \
+  "        smb_mode SMB clock port mode of operation\n" \
   "\n" \
   "         trimdac VCTCXO trim DAC settings\n" \
   "\n" \

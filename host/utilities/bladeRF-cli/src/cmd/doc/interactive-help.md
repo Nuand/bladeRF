@@ -491,6 +491,8 @@ below. If no paremeter is specified, all parameters are printed.
 
 `samplerate`    Samplerate settings
 
+`smb_mode`      SMB clock port mode of operation
+
 `trimdac`       VCTCXO Trim DAC settings
 
 `vctcxo_tamer`  Current VCTCXO tamer mode.
@@ -842,6 +844,8 @@ that particular parameter. The parameter is one of:
 `sampling`      External or internal sampling mode
 
 `samplerate`    Sample rate settings
+
+`smb_mode`      SMB clock port mode of operation
 
 `trimdac`       VCTCXO trim DAC settings
 
