@@ -27,6 +27,14 @@ int cmd_mimo(struct cli_state *state, int argc, char **argv)
 {
     int status = 0;
 
+    if (argc < 2) {
+        printf("\n");
+        printf("  Usage: %s <slave>\n", argv[0]);
+        printf("         %s <master> [frequency]\n", argv[0]);
+        printf("\n");
+        return 0;
+    }
+
     if (!strcasecmp(argv[1], "slave")) {
         uint8_t val;
         if (argc != 2) {
