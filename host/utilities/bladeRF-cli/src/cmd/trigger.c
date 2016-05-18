@@ -109,7 +109,7 @@ static inline int config_trigger(struct cli_state *state,
             goto out;
         }
 
-        printf("\n %s %s trigger successfully disabled\n\n", sig_str, module_str);
+        printf("\n %s %s trigger disabled\n\n", sig_str, module_str);
 
     } else if (!strcasecmp(cmd, "slave")) {
         if (fired) {
@@ -126,7 +126,7 @@ static inline int config_trigger(struct cli_state *state,
             goto out;
         }
 
-        printf("\n  %s %s trigger successfully armed as a slave.\n\n",
+        printf("\n  %s %s trigger armed as a slave.\n\n",
                sig_str, module_str);
 
     } else if (!strcasecmp(cmd, "master")) {
@@ -140,7 +140,7 @@ static inline int config_trigger(struct cli_state *state,
             goto out;
         }
 
-        printf("\n %s %s trigger successfully armed as master.\n\n",
+        printf("\n  %s %s trigger armed as master.\n\n",
                sig_str, module_str);
 
     } else if (!strcasecmp(cmd, "fire")) {
