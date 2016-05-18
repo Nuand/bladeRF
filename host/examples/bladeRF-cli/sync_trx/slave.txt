@@ -1,0 +1,30 @@
+# Set up device parameters
+set frequency rx 922M
+set frequency tx 922M
+set samplerate 6M
+set bandwidth 3M
+set lnagain 6
+set rxvga1  10
+set rxvga2  0
+
+# Configure RX & TX operations
+rx config file=slave_rx.csv format=csv n=60000 timeout=60s
+
+# Use reference clock input from master.
+# This assumes the master is already outputting this reference.
+set smb_mode input
+
+# Arm the trigger
+trigger j71-4 rx slave
+
+# Start streaming sampling 
+rx start
+
+# Inform user how to fire trigger
+echo "  ---------------------------------------------------------------"
+echo "   Ready. Fire the trigger on the master device."
+echo "  ---------------------------------------------------------------"
+
+# Wait for the RX to complete and then finish up.
+rx wait
+

@@ -1,0 +1,32 @@
+# Set up device parameters
+set frequency rx 922M
+set frequency tx 923M
+set samplerate 6M
+set bandwidth 3M
+set txvga1 -15
+set txvga2 0
+set lnagain 6
+set rxvga1  10
+set rxvga2  0
+
+# Configure TX & RX operations
+tx config file=master_tx.csv format=csv repeat=25 timeout=60s
+rx config file=master_rx.csv format=csv n=60000 timeout=60s
+
+# Output reference clock
+set smb_mode output
+
+# Arm the triggers
+trigger j71-4 tx master
+trigger j71-4 rx slave
+
+# Start streaming sampling 
+rx start
+tx start
+
+# Inform user how to fire trigger
+echo "  ---------------------------------------------------------------"
+echo "   Run the slave.txt script in another terminal."
+echo "   Then, run 'trigger j71-4 tx fire' to fire trigger."
+echo "  ---------------------------------------------------------------"
+echo ""
