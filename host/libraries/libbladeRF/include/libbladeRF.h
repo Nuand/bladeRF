@@ -417,29 +417,6 @@ const char * CALL_CONV bladerf_backend_str(bladerf_backend backend);
  * @{
  */
 
-/** Minimum RXVGA1 gain, in dB */
-#define BLADERF_RXVGA1_GAIN_MIN     5
-
-/** Maximum RXVGA1 gain, in dB */
-#define BLADERF_RXVGA1_GAIN_MAX     30
-
-/** Minimum RXVGA2 gain, in dB */
-#define BLADERF_RXVGA2_GAIN_MIN     0
-
-/** Maximum RXVGA2 gain, in dB */
-#define BLADERF_RXVGA2_GAIN_MAX     30
-
-/** Minimum TXVGA1 gain, in dB */
-#define BLADERF_TXVGA1_GAIN_MIN     (-35)
-
-/** Maximum TXVGA1 gain, in dB */
-#define BLADERF_TXVGA1_GAIN_MAX     (-4)
-
-/** Minimum TXVGA2 gain, in dB */
-#define BLADERF_TXVGA2_GAIN_MIN     0
-
-/** Maximum TXVGA2 gain, in dB */
-#define BLADERF_TXVGA2_GAIN_MAX     25
 
 /** Minimum sample rate, in Hz */
 #define BLADERF_SAMPLERATE_MIN      80000u
@@ -623,19 +600,6 @@ typedef enum {
     BLADERF_SAMPLING_INTERNAL, /**< Sample from RX/TX connector */
     BLADERF_SAMPLING_EXTERNAL  /**< Sample from J60 or J61 */
 } bladerf_sampling;
-
-/**
- * LNA gain options
- */
-typedef enum {
-    BLADERF_LNA_GAIN_UNKNOWN,    /**< Invalid LNA gain */
-    BLADERF_LNA_GAIN_BYPASS,     /**< LNA bypassed - 0dB gain */
-    BLADERF_LNA_GAIN_MID,        /**< LNA Mid Gain (MAX-6dB) */
-    BLADERF_LNA_GAIN_MAX         /**< LNA Max Gain */
-} bladerf_lna_gain;
-
-#define BLADERF_LNA_GAIN_MID_DB    3 /**< Gain in dB of the LNA at mid setting */
-#define BLADERF_LNA_GAIN_MAX_DB    6 /**< Gain in db of the LNA at max setting */
 
 /**
  * LPF mode
@@ -1049,143 +1013,6 @@ API_EXPORT
 int CALL_CONV bladerf_get_correction(struct bladerf *dev, bladerf_module module,
                                      bladerf_correction corr, int16_t *value);
 
-/**
- * Set the PA gain in dB
- *
- * Values outside the range of
- * [ \ref BLADERF_TXVGA2_GAIN_MIN, \ref BLADERF_TXVGA2_GAIN_MAX ]
- * will be clamped.
- *
- * @param       dev         Device handle
- * @param       gain        Desired gain
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_set_txvga2(struct bladerf *dev, int gain);
-
-/**
- * Get the PA gain in dB
- *
- * @param       dev         Device handle
- * @param       gain        Pointer to returned gain
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT int
-CALL_CONV bladerf_get_txvga2(struct bladerf *dev, int *gain);
-
-/**
- * Set the post-LPF gain in dB
- *
- * Values outside the range of
- * [ \ref BLADERF_TXVGA1_GAIN_MIN, \ref BLADERF_TXVGA1_GAIN_MAX ]
- * will be clamped.
- *
- * @param       dev         Device handle
- * @param       gain        Desired gain
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_set_txvga1(struct bladerf *dev, int gain);
-
-/**
- * Get the post-LPF gain in dB
- *
- * @param       dev         Device handle
- * @param       gain        Pointer to returned gain
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_get_txvga1(struct bladerf *dev, int *gain);
-
-/**
- * Set the LNA gain
- *
- * @param       dev         Device handle
- * @param       gain        Desired gain level
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_set_lna_gain(struct bladerf *dev, bladerf_lna_gain gain);
-
-/**
- * Get the LNA gain
- *
- * @param       dev         Device handle
- * @param       gain        Pointer to the set gain level
- */
-API_EXPORT
-int CALL_CONV bladerf_get_lna_gain(struct bladerf *dev, bladerf_lna_gain *gain);
-
-/**
- * Set the pre-LPF VGA gain
- *
- * Values outside the range of
- * [ \ref BLADERF_RXVGA1_GAIN_MIN, \ref BLADERF_RXVGA1_GAIN_MAX ]
- * will be clamped.
- *
- * @param       dev         Device handle
- * @param       gain        Desired gain
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_set_rxvga1(struct bladerf *dev, int gain);
-
-/**
- * Get the pre-LPF VGA gain
- *
- * @param       dev         Device handle
- * @param       gain        Pointer to the set gain level
- */
-API_EXPORT
-int CALL_CONV bladerf_get_rxvga1(struct bladerf *dev, int *gain);
-
-/**
- * Set the post-LPF VGA gain
- *
- * Values outside the range of
- * [ \ref BLADERF_RXVGA2_GAIN_MIN, \ref BLADERF_RXVGA2_GAIN_MAX ]
- * will be clamped.
- *
- * @param       dev         Device handle
- * @param       gain        Desired gain
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_set_rxvga2(struct bladerf *dev, int gain);
-
-/**
- * Get the post-LPF VGA gain
- *
- * @param       dev         Device handle
- * @param       gain        Pointer to the set gain level
- */
-API_EXPORT
-int CALL_CONV bladerf_get_rxvga2(struct bladerf *dev, int *gain);
-
-/**
- * Set combined gain values
- *
- * This function computes the optimal LNA, RXVGA1, and RVGA2 gains for a
- * requested amount of RX gain, and computes the optimal TXVGA1 and TXVGA2 gains
- * for a requested amount of TX gain.
- *
- * Values outside the valid gain range will be clipped.
- *
- * @param       dev         Device handle
- * @param       mod         Module
- * @param       gain        Desired gain
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_set_gain(struct bladerf *dev, bladerf_module mod, int gain);
 
 /**
  * Set the bandwidth of the LMS LPF to specified value in Hz
@@ -1568,6 +1395,199 @@ int CALL_CONV bladerf_get_vctcxo_tamer_mode(struct bladerf *dev,
                                              bladerf_vctcxo_tamer_mode *mode);
 
 /** @} (End of FN_CTRL) */
+
+/**
+ * @defgroup FN_GAIN    Gain control
+ *
+ * These functions provide control over the device's RX and TX gain stages.
+ *
+ * In general, the gains should be incremented in the following order
+ * (and decremented in the reverse order).
+ *
+ * <b>TX:</b> `TXVGA1`, `TXVGA2`
+ *
+ * <b>RX:</b> `LNA`, `RXVGA`, `RXVGA2`
+ *
+ * @{
+ */
+
+/** Minimum RXVGA1 gain, in dB */
+#define BLADERF_RXVGA1_GAIN_MIN     5
+
+/** Maximum RXVGA1 gain, in dB */
+#define BLADERF_RXVGA1_GAIN_MAX     30
+
+/** Minimum RXVGA2 gain, in dB */
+#define BLADERF_RXVGA2_GAIN_MIN     0
+
+/** Maximum RXVGA2 gain, in dB */
+#define BLADERF_RXVGA2_GAIN_MAX     30
+
+/** Minimum TXVGA1 gain, in dB */
+#define BLADERF_TXVGA1_GAIN_MIN     (-35)
+
+/** Maximum TXVGA1 gain, in dB */
+#define BLADERF_TXVGA1_GAIN_MAX     (-4)
+
+/** Minimum TXVGA2 gain, in dB */
+#define BLADERF_TXVGA2_GAIN_MIN     0
+
+/** Maximum TXVGA2 gain, in dB */
+#define BLADERF_TXVGA2_GAIN_MAX     25
+
+/**
+ * LNA gain options
+ */
+typedef enum {
+    BLADERF_LNA_GAIN_UNKNOWN,    /**< Invalid LNA gain */
+    BLADERF_LNA_GAIN_BYPASS,     /**< LNA bypassed - 0dB gain */
+    BLADERF_LNA_GAIN_MID,        /**< LNA Mid Gain (MAX-6dB) */
+    BLADERF_LNA_GAIN_MAX         /**< LNA Max Gain */
+} bladerf_lna_gain;
+
+#define BLADERF_LNA_GAIN_MID_DB    3 /**< Gain in dB of the LNA at mid setting */
+#define BLADERF_LNA_GAIN_MAX_DB    6 /**< Gain in db of the LNA at max setting */
+
+/**
+ * Set the PA gain in dB
+ *
+ * Values outside the range of
+ * [ \ref BLADERF_TXVGA2_GAIN_MIN, \ref BLADERF_TXVGA2_GAIN_MAX ]
+ * will be clamped.
+ *
+ * @param       dev         Device handle
+ * @param       gain        Desired gain
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_txvga2(struct bladerf *dev, int gain);
+
+/**
+ * Get the PA gain in dB
+ *
+ * @param       dev         Device handle
+ * @param       gain        Pointer to returned gain
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT int
+CALL_CONV bladerf_get_txvga2(struct bladerf *dev, int *gain);
+
+/**
+ * Set the post-LPF gain in dB
+ *
+ * Values outside the range of
+ * [ \ref BLADERF_TXVGA1_GAIN_MIN, \ref BLADERF_TXVGA1_GAIN_MAX ]
+ * will be clamped.
+ *
+ * @param       dev         Device handle
+ * @param       gain        Desired gain
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_txvga1(struct bladerf *dev, int gain);
+
+/**
+ * Get the post-LPF gain in dB
+ *
+ * @param       dev         Device handle
+ * @param       gain        Pointer to returned gain
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_txvga1(struct bladerf *dev, int *gain);
+
+/**
+ * Set the LNA gain
+ *
+ * @param       dev         Device handle
+ * @param       gain        Desired gain level
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_lna_gain(struct bladerf *dev, bladerf_lna_gain gain);
+
+/**
+ * Get the LNA gain
+ *
+ * @param       dev         Device handle
+ * @param       gain        Pointer to the set gain level
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_lna_gain(struct bladerf *dev, bladerf_lna_gain *gain);
+
+/**
+ * Set the pre-LPF VGA gain
+ *
+ * Values outside the range of
+ * [ \ref BLADERF_RXVGA1_GAIN_MIN, \ref BLADERF_RXVGA1_GAIN_MAX ]
+ * will be clamped.
+ *
+ * @param       dev         Device handle
+ * @param       gain        Desired gain
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_rxvga1(struct bladerf *dev, int gain);
+
+/**
+ * Get the pre-LPF VGA gain
+ *
+ * @param       dev         Device handle
+ * @param       gain        Pointer to the set gain level
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_rxvga1(struct bladerf *dev, int *gain);
+
+/**
+ * Set the post-LPF VGA gain
+ *
+ * Values outside the range of
+ * [ \ref BLADERF_RXVGA2_GAIN_MIN, \ref BLADERF_RXVGA2_GAIN_MAX ]
+ * will be clamped.
+ *
+ * @param       dev         Device handle
+ * @param       gain        Desired gain
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_rxvga2(struct bladerf *dev, int gain);
+
+/**
+ * Get the post-LPF VGA gain
+ *
+ * @param       dev         Device handle
+ * @param       gain        Pointer to the set gain level
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_rxvga2(struct bladerf *dev, int *gain);
+
+/**
+ * Set combined gain values
+ *
+ * This function computes the optimal LNA, RXVGA1, and RVGA2 gains for a
+ * requested amount of RX gain, and computes the optimal TXVGA1 and TXVGA2 gains
+ * for a requested amount of TX gain.
+ *
+ * Values outside the valid gain range will be clipped.
+ *
+ * @param       dev         Device handle
+ * @param       mod         Module
+ * @param       gain        Desired gain
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_gain(struct bladerf *dev, bladerf_module mod, int gain);
+
+/** @} (End of FN_GAIN) */
+
 
 /**
  * @defgroup FMT_META   Sample Formats and Metadata
