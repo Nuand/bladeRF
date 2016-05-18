@@ -418,15 +418,6 @@ const char * CALL_CONV bladerf_backend_str(bladerf_backend backend);
  */
 
 
-/** Minimum bandwidth, in Hz */
-#define BLADERF_BANDWIDTH_MIN       1500000u
-
-/** Maximum bandwidth, in Hz */
-#define BLADERF_BANDWIDTH_MAX       28000000u
-
-/** Minimum tunable frequency (without an XB-200 attached), in Hz */
-#define BLADERF_FREQUENCY_MIN       237500000u
-
 /**
  * Minimum tunable frequency (with an XB-200 attached), in HZ.
  *
@@ -435,6 +426,9 @@ const char * CALL_CONV bladerf_backend_str(bladerf_backend backend);
  * degrade as you tune to lower frequencies.
  */
 #define BLADERF_FREQUENCY_MIN_XB200 0u
+
+/** Minimum tunable frequency (without an XB-200 attached), in Hz */
+#define BLADERF_FREQUENCY_MIN       237500000u
 
 /** Maximum tunable frequency, in Hz */
 #define BLADERF_FREQUENCY_MAX       3800000000u
@@ -812,71 +806,6 @@ int CALL_CONV bladerf_set_correction(struct bladerf *dev, bladerf_module module,
 API_EXPORT
 int CALL_CONV bladerf_get_correction(struct bladerf *dev, bladerf_module module,
                                      bladerf_correction corr, int16_t *value);
-
-
-/**
- * Set the bandwidth of the LMS LPF to specified value in Hz
- *
- * The underlying device is capable of a discrete set of bandwidth values. The
- * caller should check the `actual` parameter to determine which of these
- * discrete bandwidth values is actually used for the requested bandwidth.
- *
- * Values outside the range of
- * [ \ref BLADERF_BANDWIDTH_MIN, \ref BLADERF_BANDWIDTH_MAX ]
- * will be clamped.
- *
- * @param[in]   dev                 Device handle
- * @param[in]   module              Module for bandwidth request
- * @param[in]   bandwidth           Desired bandwidth
- * @param[out]  actual              If non-NULL, written with the actual
- *                                  bandwidth that the device was able to
- *                                  achieve.
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_set_bandwidth(struct bladerf *dev, bladerf_module module,
-                                    unsigned int bandwidth,
-                                    unsigned int *actual);
-
-/**
- * Get the bandwidth of the LMS LPF
- *
- * @param       dev                 Device Handle
- * @param       module              Module for bandwidth request
- * @param       bandwidth           Actual bandwidth in Hz
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_get_bandwidth(struct bladerf *dev, bladerf_module module,
-                                    unsigned int *bandwidth);
-
-/**
- * Set the LMS LPF mode to bypass or disable it
- *
- * @param       dev         Device handle
- * @param       module      Module for mode request
- * @param       mode        Mode to be set
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_set_lpf_mode(struct bladerf *dev, bladerf_module module,
-                                   bladerf_lpf_mode mode);
-
-/**
- * Get the current mode of the LMS LPF
- *
- * @param       dev         Device handle
- * @param       module      Module for mode request
- * @param       mode        Current mode of the LPF
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_get_lpf_mode(struct bladerf *dev, bladerf_module module,
-                                   bladerf_lpf_mode *mode);
 
 /**
  * Select the appropriate band path given a frequency in Hz.
@@ -1604,6 +1533,92 @@ int CALL_CONV bladerf_get_sampling(struct bladerf *dev,
                                    bladerf_sampling *sampling);
 
 /** @} (End of FN_SAMPLING) */
+
+/**
+ * @defgroup FN_BANDWIDTH Bandwidth configuration
+ *
+ * This section defines functionality for configuring the device's
+ * LPF bandwidth. In most cases, one should define the bandwidth to
+ * be less than the sample rate to minimize the impact of aliases.
+ *
+ * To determine the required bandwidth setting for a desired sample rate
+ * (or vice versa), review the RX/TX LPF response plots LMS6002D in datasheet.
+ *
+ * @{
+ */
+
+/** Minimum bandwidth, in Hz */
+#define BLADERF_BANDWIDTH_MIN       1500000u
+
+/** Maximum bandwidth, in Hz */
+#define BLADERF_BANDWIDTH_MAX       28000000u
+
+/**
+ * Set the bandwidth of the LMS LPF to specified value in Hz
+ *
+ * The underlying device is capable of a discrete set of bandwidth values. The
+ * caller should check the `actual` parameter to determine which of these
+ * discrete bandwidth values is actually used for the requested bandwidth.
+ *
+ * Values outside the range of
+ * [ \ref BLADERF_BANDWIDTH_MIN, \ref BLADERF_BANDWIDTH_MAX ]
+ * will be clamped.
+ *
+ * @param[in]   dev                 Device handle
+ * @param[in]   module              Module for bandwidth request
+ * @param[in]   bandwidth           Desired bandwidth
+ * @param[out]  actual              If non-NULL, written with the actual
+ *                                  bandwidth that the device was able to
+ *                                  achieve.
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_bandwidth(struct bladerf *dev, bladerf_module module,
+                                    unsigned int bandwidth,
+                                    unsigned int *actual);
+
+/**
+ * Get the bandwidth of the LMS LPF
+ *
+ * @param       dev                 Device Handle
+ * @param       module              Module for bandwidth request
+ * @param       bandwidth           Actual bandwidth in Hz
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_bandwidth(struct bladerf *dev, bladerf_module module,
+                                    unsigned int *bandwidth);
+
+/**
+ * Set the LMS LPF mode to bypass or disable it
+ *
+ * @param       dev         Device handle
+ * @param       module      Module for mode request
+ * @param       mode        Mode to be set
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_lpf_mode(struct bladerf *dev, bladerf_module module,
+                                   bladerf_lpf_mode mode);
+
+/**
+ * Get the current mode of the LMS LPF
+ *
+ * @param       dev         Device handle
+ * @param       module      Module for mode request
+ * @param       mode        Current mode of the LPF
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_lpf_mode(struct bladerf *dev, bladerf_module module,
+                                   bladerf_lpf_mode *mode);
+
+
+/** @} (End of FN_BANDWIDTH) */
 
 /**
  * @defgroup FMT_META   Sample Formats and Metadata
