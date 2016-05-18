@@ -418,12 +418,6 @@ const char * CALL_CONV bladerf_backend_str(bladerf_backend backend);
  */
 
 
-/** Minimum sample rate, in Hz */
-#define BLADERF_SAMPLERATE_MIN      80000u
-
-/** Maximum recommended sample rate, in Hz */
-#define BLADERF_SAMPLERATE_REC_MAX  40000000u
-
 /** Minimum bandwidth, in Hz */
 #define BLADERF_BANDWIDTH_MIN       1500000u
 
@@ -540,66 +534,6 @@ typedef enum {
     BLADERF_LB_NONE
 
 } bladerf_loopback;
-
-/**
- * RX Mux modes
- *
- * These values describe the source of samples to the RX FIFOs in the FPGA.
- * They map directly to rx_mux_mode_t inside the FPGA's source code.
- */
-typedef enum {
-    /**
-     * Invalid RX Mux mode selection
-     */
-    BLADERF_RX_MUX_INVALID = -1,
-
-    /**
-     * Read baseband samples from the LMS6002D. This is the default mode
-     * of operation.
-     */
-    BLADERF_RX_MUX_BASEBAND_LMS  = 0x0,
-
-    /**
-     * Read samples from 12 bit counters.
-     *
-     * The I channel counts up while the Q channel counts down.
-     */
-    BLADERF_RX_MUX_12BIT_COUNTER = 0x1,
-
-    /**
-     * Read samples from a 32 bit up-counter.
-     *
-     * I and Q form a little-endian value.
-     */
-    BLADERF_RX_MUX_32BIT_COUNTER = 0x2,
-
-    /* RX_MUX setting 0x3 is reserved for future use */
-
-    /**
-     * Read samples from the baseband TX input to the FPGA (from the host)
-     */
-    BLADERF_RX_MUX_DIGITAL_LOOPBACK = 0x4,
-
-} bladerf_rx_mux;
-
-/**
- * Rational sample rate representation
- */
-struct bladerf_rational_rate {
-    uint64_t integer;           /**< Integer portion */
-    uint64_t num;               /**< Numerator in fractional portion */
-    uint64_t den;               /**< Denominator in fractional portion. This
-                                     must be > 0. */
-};
-
-/**
- * Sampling connection
- */
-typedef enum {
-    BLADERF_SAMPLING_UNKNOWN,  /**< Unable to determine connection type */
-    BLADERF_SAMPLING_INTERNAL, /**< Sample from RX/TX connector */
-    BLADERF_SAMPLING_EXTERNAL  /**< Sample from J60 or J61 */
-} bladerf_sampling;
 
 /**
  * LPF mode
@@ -846,140 +780,6 @@ int CALL_CONV bladerf_set_loopback(struct bladerf *dev, bladerf_loopback l);
  */
 API_EXPORT
 int CALL_CONV bladerf_get_loopback(struct bladerf *dev, bladerf_loopback *l);
-
-
-/**
- * Set the current RX Mux mode
- *
- * @param       dev     Device handle
- * @param       mux     Mux mode.
- *
- * @returns 0 on success, value from \ref RETCODES list on failure.
- */
-API_EXPORT
-int CALL_CONV bladerf_set_rx_mux(struct bladerf *dev, bladerf_rx_mux mux);
-
-
-/**
- * Gets the current RX Mux mode
- *
- * @param[in]   dev     Device handle
- * @param[out]  mode    Current RX Mux mode
- *
- * @returns 0 on success, value from \ref RETCODES list on failure.
- */
-
-API_EXPORT
-int CALL_CONV bladerf_get_rx_mux(struct bladerf *dev, bladerf_rx_mux *mode);
-
-/**
- * Configure the device's sample rate, in Hz.  Note this requires the sample
- * rate is an integer value of Hz.  Use bladerf_set_rational_sample_rate()
- * for more arbitrary values.
- *
- * The sample rate must be greater than or equal to \ref BLADERF_SAMPLERATE_MIN.
- * Values above \ref BLADERF_SAMPLERATE_REC_MAX are allowed, but not
- * recommended. Setting the sample rates higher than recommended max may yield
- * errors and unexpected results.
- *
- * @param[in]   dev         Device handle
- * @param[in]   module      Module to change
- * @param[in]   rate        Sample rate
- * @param[out]  actual      If non-NULL. this is written with the actual
- *                          sample rate achieved.
- *
- * @return 0 on success,
- *         BLADERF_ERR_INVAL for an invalid sample rate,
- *         or a value from \ref RETCODES list on other failures
- */
-API_EXPORT
-int CALL_CONV bladerf_set_sample_rate(struct bladerf *dev,
-                                      bladerf_module module,
-                                      unsigned int rate,
-                                      unsigned int *actual);
-
-/**
- * Configure the device's sample rate as a rational fraction of Hz.
- * Sample rates are in the form of integer + num/denom.
- *
- * @param[in]   dev         Device handle
- * @param[in]   module      Module to change
- * @param[in]   rate        Rational sample rate
- * @param[out]  actual      If non-NULL, this is written with the actual
- *                          rational sample rate achieved.
- *
- * The sample rate must be greater than or equal to \ref BLADERF_SAMPLERATE_MIN.
- * Values above \ref BLADERF_SAMPLERATE_REC_MAX are allowed, but not
- * recommended. Setting the sample rates higher than recommended max may yield
- * errors and unexpected results.
- *
- * @return 0 on success,
- *         BLADERF_ERR_INVAL for an invalid sample rate,
- *         or a value from \ref RETCODES list on other failures
- */
-API_EXPORT
-int CALL_CONV bladerf_set_rational_sample_rate(
-                                        struct bladerf *dev,
-                                        bladerf_module module,
-                                        struct bladerf_rational_rate *rate,
-                                        struct bladerf_rational_rate *actual);
-
-/**
- * Configure the sampling of the LMS6002D to be either internal or
- * external.  Internal sampling will read from the RXVGA2 driver internal
- * to the chip.  External sampling will connect the ADC inputs to the
- * external inputs for direct sampling.
- *
- * @param[in]   dev         Device handle
- * @param[in]   sampling    Sampling connection
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_set_sampling(struct bladerf *dev,
-                                   bladerf_sampling sampling);
-
-/**
- * Read the device's current state of RXVGA2 and ADC pin connection
- * to figure out which sampling mode it is currently configured in.
- *
- * @param[in]   dev         Device handle
- * @param[out]  sampling    Sampling connection
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_get_sampling(struct bladerf *dev,
-                                   bladerf_sampling *sampling);
-
-/**
- * Read the device's sample rate in Hz
- *
- * @param[in]   dev         Device handle
- * @param[in]   module      Module to query
- * @param[out]  rate        Pointer to returned sample rate
- *
- * @return 0 on success, value from \ref RETCODES list upon failure
- */
-API_EXPORT
-int CALL_CONV bladerf_get_sample_rate(struct bladerf *dev,
-                                      bladerf_module module,
-                                      unsigned int *rate);
-
-/**
- * Read the device's sample rate in rational Hz
- *
- * @param[in]   dev         Device handle
- * @param[in]   module      Module to query
- * @param[out]  rate        Pointer to returned rational sample rate
- *
- * @return 0 on success, value from \ref RETCODES list upon failure
- */
-API_EXPORT
-int CALL_CONV bladerf_get_rational_sample_rate(
-                                        struct bladerf *dev,
-                                        bladerf_module module,
-                                        struct bladerf_rational_rate *rate);
 
 
 /**
@@ -1588,6 +1388,222 @@ int CALL_CONV bladerf_set_gain(struct bladerf *dev, bladerf_module mod, int gain
 
 /** @} (End of FN_GAIN) */
 
+/**
+ * @defgroup FN_SAMPLING Sampling control
+ *
+ * This section presents functionality pertaining to configuring the
+ * sample rate and mode of the device's RX and TX modules.
+ *
+ * @{
+ */
+
+/** Minimum sample rate, in Hz */
+#define BLADERF_SAMPLERATE_MIN      80000u
+
+/**
+ * Maximum recommended sample rate, in Hz.
+ *
+ * The max sample rate of the LMS6002D is 40 MHz, but this API allows for larger
+ * values to allow users to leverage FPGA customizations (e.g., to generate
+ * test samples or mux other data into the sample stream).
+ *
+ * If you are not performing such customizations, treat this as the max allowed
+ * values.
+ */
+#define BLADERF_SAMPLERATE_REC_MAX  40000000u
+
+/**
+ * RX Mux modes
+ *
+ * These values describe the source of samples to the RX FIFOs in the FPGA.
+ * They map directly to rx_mux_mode_t inside the FPGA's source code.
+ */
+typedef enum {
+    /**
+     * Invalid RX Mux mode selection
+     */
+    BLADERF_RX_MUX_INVALID = -1,
+
+    /**
+     * Read baseband samples from the LMS6002D. This is the default mode
+     * of operation.
+     */
+    BLADERF_RX_MUX_BASEBAND_LMS  = 0x0,
+
+    /**
+     * Read samples from 12 bit counters.
+     *
+     * The I channel counts up while the Q channel counts down.
+     */
+    BLADERF_RX_MUX_12BIT_COUNTER = 0x1,
+
+    /**
+     * Read samples from a 32 bit up-counter.
+     *
+     * I and Q form a little-endian value.
+     */
+    BLADERF_RX_MUX_32BIT_COUNTER = 0x2,
+
+    /* RX_MUX setting 0x3 is reserved for future use */
+
+    /**
+     * Read samples from the baseband TX input to the FPGA (from the host)
+     */
+    BLADERF_RX_MUX_DIGITAL_LOOPBACK = 0x4,
+
+} bladerf_rx_mux;
+
+/**
+ * Rational sample rate representation
+ */
+struct bladerf_rational_rate {
+    uint64_t integer;           /**< Integer portion */
+    uint64_t num;               /**< Numerator in fractional portion */
+    uint64_t den;               /**< Denominator in fractional portion. This
+                                     must be > 0. */
+};
+
+/**
+ * Sampling connection
+ */
+typedef enum {
+    BLADERF_SAMPLING_UNKNOWN,  /**< Unable to determine connection type */
+    BLADERF_SAMPLING_INTERNAL, /**< Sample from RX/TX connector */
+    BLADERF_SAMPLING_EXTERNAL  /**< Sample from J60 or J61 */
+} bladerf_sampling;
+
+/**
+ * Configure the device's sample rate, in Hz.  Note this requires the sample
+ * rate is an integer value of Hz.  Use bladerf_set_rational_sample_rate()
+ * for more arbitrary values.
+ *
+ * The sample rate must be greater than or equal to \ref BLADERF_SAMPLERATE_MIN.
+ * Values above \ref BLADERF_SAMPLERATE_REC_MAX are allowed, but not
+ * recommended. Setting the sample rates higher than recommended max may yield
+ * errors and unexpected results.
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   module      Module to change
+ * @param[in]   rate        Sample rate
+ * @param[out]  actual      If non-NULL. this is written with the actual
+ *                          sample rate achieved.
+ *
+ * @return 0 on success,
+ *         BLADERF_ERR_INVAL for an invalid sample rate,
+ *         or a value from \ref RETCODES list on other failures
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_sample_rate(struct bladerf *dev,
+                                      bladerf_module module,
+                                      unsigned int rate,
+                                      unsigned int *actual);
+
+/**
+ * Configure the device's sample rate as a rational fraction of Hz.
+ * Sample rates are in the form of integer + num/denom.
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   module      Module to change
+ * @param[in]   rate        Rational sample rate
+ * @param[out]  actual      If non-NULL, this is written with the actual
+ *                          rational sample rate achieved.
+ *
+ * The sample rate must be greater than or equal to \ref BLADERF_SAMPLERATE_MIN.
+ * Values above \ref BLADERF_SAMPLERATE_REC_MAX are allowed, but not
+ * recommended. Setting the sample rates higher than recommended max may yield
+ * errors and unexpected results.
+ *
+ * @return 0 on success,
+ *         BLADERF_ERR_INVAL for an invalid sample rate,
+ *         or a value from \ref RETCODES list on other failures
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_rational_sample_rate(
+                                        struct bladerf *dev,
+                                        bladerf_module module,
+                                        struct bladerf_rational_rate *rate,
+                                        struct bladerf_rational_rate *actual);
+/**
+ * Read the device's sample rate in Hz
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   module      Module to query
+ * @param[out]  rate        Pointer to returned sample rate
+ *
+ * @return 0 on success, value from \ref RETCODES list upon failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_sample_rate(struct bladerf *dev,
+                                      bladerf_module module,
+                                      unsigned int *rate);
+
+/**
+ * Read the device's sample rate in rational Hz
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   module      Module to query
+ * @param[out]  rate        Pointer to returned rational sample rate
+ *
+ * @return 0 on success, value from \ref RETCODES list upon failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_rational_sample_rate(
+                                        struct bladerf *dev,
+                                        bladerf_module module,
+                                        struct bladerf_rational_rate *rate);
+
+/**
+ * Configure the sampling of the LMS6002D to be either internal or
+ * external.  Internal sampling will read from the RXVGA2 driver internal
+ * to the chip.  External sampling will connect the ADC inputs to the
+ * external inputs for direct sampling.
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   sampling    Sampling connection
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_sampling(struct bladerf *dev,
+                                   bladerf_sampling sampling);
+
+/**
+ * Set the current RX Mux mode
+ *
+ * @param       dev     Device handle
+ * @param       mux     Mux mode.
+ *
+ * @returns 0 on success, value from \ref RETCODES list on failure.
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_rx_mux(struct bladerf *dev, bladerf_rx_mux mux);
+
+
+/**
+ * Gets the current RX Mux mode
+ *
+ * @param[in]   dev     Device handle
+ * @param[out]  mode    Current RX Mux mode
+ *
+ * @returns 0 on success, value from \ref RETCODES list on failure.
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_rx_mux(struct bladerf *dev, bladerf_rx_mux *mode);
+
+/**
+ * Read the device's current state of RXVGA2 and ADC pin connection
+ * to figure out which sampling mode it is currently configured in.
+ *
+ * @param[in]   dev         Device handle
+ * @param[out]  sampling    Sampling connection
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_sampling(struct bladerf *dev,
+                                   bladerf_sampling *sampling);
+
+/** @} (End of FN_SAMPLING) */
 
 /**
  * @defgroup FMT_META   Sample Formats and Metadata
