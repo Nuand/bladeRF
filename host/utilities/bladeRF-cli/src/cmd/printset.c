@@ -1479,7 +1479,7 @@ int print_smb_mode(struct cli_state *state, int argc, char **argv)
 
     mode_str = smb_mode_to_str(mode);
 
-    printf("  Mode:      %s\n", mode_str);
+    printf("  SMB Mode:   %s\n", mode_str);
 
     if (mode == BLADERF_SMB_MODE_OUTPUT) {
         struct bladerf_rational_rate rate;
@@ -1492,10 +1492,10 @@ int print_smb_mode(struct cli_state *state, int argc, char **argv)
         /* If the user has not set a custom output frequency, the rate will be
          * zero. Just note the reference clock frequency in this case. */
         if (rate.integer == 0 && rate.num == 0 && rate.den == 0) {
-            printf("  Frequency: 38.4 MHz (reference clock)\n");
+            printf("  SMB Output: 38.4 MHz (reference clock)\n");
         } else {
             /* Otherwise, show the custom frequency in use */
-            printf("  Frequency: %"PRIu64" + %"PRIu64"/%"PRIu64" Hz\n",
+            printf("  SMB Output: %"PRIu64" + %"PRIu64"/%"PRIu64" Hz\n",
                     rate.integer, rate.num, rate.den);
         }
     }
