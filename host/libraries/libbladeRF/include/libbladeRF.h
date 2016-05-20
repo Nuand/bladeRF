@@ -511,63 +511,6 @@ bladerf_dev_speed CALL_CONV bladerf_device_speed(struct bladerf *dev);
  * @{
  */
 
-
-/**
- * Loopback options
- */
-typedef enum {
-
-    /**
-     * Firmware loopback inside of the FX3
-     */
-    BLADERF_LB_FIRMWARE = 1,
-
-    /**
-     * Baseband loopback. TXLPF output is connected to the RXVGA2 input.
-     */
-    BLADERF_LB_BB_TXLPF_RXVGA2,
-
-    /**
-     * Baseband loopback. TXVGA1 output is connected to the RXVGA2 input.
-     */
-    BLADERF_LB_BB_TXVGA1_RXVGA2,
-
-    /**
-     * Baseband loopback. TXLPF output is connected to the RXLPF input.
-     */
-    BLADERF_LB_BB_TXLPF_RXLPF,
-
-    /**
-     * Baseband loopback. TXVGA1 output is connected to RXLPF input.
-     */
-    BLADERF_LB_BB_TXVGA1_RXLPF,
-
-    /**
-     * RF loopback. The TXMIX output, through the AUX PA, is connected to the
-     * output of LNA1.
-     */
-    BLADERF_LB_RF_LNA1,
-
-
-    /**
-     * RF loopback. The TXMIX output, through the AUX PA, is connected to the
-     * output of LNA2.
-     */
-    BLADERF_LB_RF_LNA2,
-
-    /**
-     * RF loopback. The TXMIX output, through the AUX PA, is connected to the
-     * output of LNA3.
-     */
-    BLADERF_LB_RF_LNA3,
-
-    /**
-     * Disables loopback and returns to normal operation.
-     */
-    BLADERF_LB_NONE
-
-} bladerf_loopback;
-
 /**
  * LPF mode
  */
@@ -770,34 +713,6 @@ typedef enum {
 API_EXPORT
 int CALL_CONV bladerf_enable_module(struct bladerf *dev,
                                     bladerf_module m, bool enable);
-
-/**
- * Apply specified loopback mode
- *
- * @param       dev     Device handle
- * @param       l       Loopback mode. Note that BLADERF_LB_NONE disables the
- *                      use of loopback functionality.
- *
- * @note Loopback modes should only be enabled or disabled while the RX and TX
- *       modules are both disabled (and therefore, when no samples are being
- *       actively streamed). Otherwise, unexpected behavior may occur.
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_set_loopback(struct bladerf *dev, bladerf_loopback l);
-
-
-/**
- * Get current loopback mode
- *
- * @param[in]   dev     Device handle
- * @param[out]  l       Current loopback mode
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_get_loopback(struct bladerf *dev, bladerf_loopback *l);
 
 
 /**
@@ -1728,6 +1643,106 @@ int CALL_CONV bladerf_set_tuning_mode(struct bladerf *dev,
 
 
 /** @} (End of FN_TUNING) */
+
+/**
+ * @defgroup FN_LOOPBACK Internal loopback
+ *
+ * The bladeRF provides a variety of loopback modes to aid in development
+ * and testing.
+ *
+ * In general, the digital or baseband loopback modes provide the most "ideal"
+ * operating conditions, while the internal RF loopback modes introduce more of
+ * the typical nonidealities of analog systems.
+ *
+ * @{
+ */
+
+/**
+ * Loopback options
+ */
+typedef enum {
+
+    /**
+     * Firmware loopback inside of the FX3
+     */
+    BLADERF_LB_FIRMWARE = 1,
+
+    /**
+     * Baseband loopback. TXLPF output is connected to the RXVGA2 input.
+     */
+    BLADERF_LB_BB_TXLPF_RXVGA2,
+
+    /**
+     * Baseband loopback. TXVGA1 output is connected to the RXVGA2 input.
+     */
+    BLADERF_LB_BB_TXVGA1_RXVGA2,
+
+    /**
+     * Baseband loopback. TXLPF output is connected to the RXLPF input.
+     */
+    BLADERF_LB_BB_TXLPF_RXLPF,
+
+    /**
+     * Baseband loopback. TXVGA1 output is connected to RXLPF input.
+     */
+    BLADERF_LB_BB_TXVGA1_RXLPF,
+
+    /**
+     * RF loopback. The TXMIX output, through the AUX PA, is connected to the
+     * output of LNA1.
+     */
+    BLADERF_LB_RF_LNA1,
+
+
+    /**
+     * RF loopback. The TXMIX output, through the AUX PA, is connected to the
+     * output of LNA2.
+     */
+    BLADERF_LB_RF_LNA2,
+
+    /**
+     * RF loopback. The TXMIX output, through the AUX PA, is connected to the
+     * output of LNA3.
+     */
+    BLADERF_LB_RF_LNA3,
+
+    /**
+     * Disables loopback and returns to normal operation.
+     */
+    BLADERF_LB_NONE
+
+} bladerf_loopback;
+
+/**
+ * Apply specified loopback mode
+ *
+ * @param       dev     Device handle
+ * @param       l       Loopback mode. Note that BLADERF_LB_NONE disables the
+ *                      use of loopback functionality.
+ *
+ * @note Loopback modes should only be enabled or disabled while the RX and TX
+ *       modules are both disabled (and therefore, when no samples are being
+ *       actively streamed). Otherwise, unexpected behavior may occur.
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_loopback(struct bladerf *dev, bladerf_loopback l);
+
+
+/**
+ * Get current loopback mode
+ *
+ * @param[in]   dev     Device handle
+ * @param[out]  l       Current loopback mode
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_loopback(struct bladerf *dev, bladerf_loopback *l);
+
+/** @} (End of FN_LOOPBACK) */
+
 
 /**
  * @defgroup FMT_META   Sample Formats and Metadata
