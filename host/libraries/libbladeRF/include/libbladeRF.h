@@ -1908,7 +1908,7 @@ int CALL_CONV bladerf_get_smb_frequency(struct bladerf *dev,
 /** @} (End of FN_SMB_CLOCK) */
 
 /**
- * @defgroup FN_TRIG    Trigger Control
+ * @defgroup FN_TRIG   Triggers and synchronization
  *
  * Trigger functionality introduced in bladeRF FPGA v0.6.0 allows TX and/or RX
  * samples to be gated via a trigger signal. This allows multiple devices to
