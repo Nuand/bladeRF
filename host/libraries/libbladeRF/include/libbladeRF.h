@@ -503,10 +503,11 @@ bladerf_dev_speed CALL_CONV bladerf_device_speed(struct bladerf *dev);
 
 
 /**
- * @defgroup FN_CTRL    Device control and configuration
+ * @defgroup FN_MODULE RX & TX module control
  *
- * This section provides functions pertaining to accessing, controlling, and
- * configuring various device options and parameters.
+ * The RX and TX modules are independently configurable. As such,
+ * many libbladeRF functions require a ::bladerf_module parameter
+ * to specify which module to operate on.
  *
  * @{
  */
@@ -525,12 +526,16 @@ typedef enum
 /**
  * Enable or disable the specified RX/TX module.
  *
+ * RX and TX modules must always be enabled prior to streaming samples
+ * on the associated interface.
+ *
  * When a synchronous stream is associated with the specified module, this
  * will shut down the underlying asynchronous stream when `enable` = false.
  *
- * When transmitting samples with the sync interface, be sure to provide ample
- * time for TX samples reach the FPGA and be transmitted before calling this
- * function with `enable` = false.
+ * When transmitting samples, be sure to provide ample time for TX samples reach
+ * the RF front-end before calling this function with `enable` = false. (This
+ * can be achieved easily when using metadata, as shown on
+ * <a class="el" href="sync_tx_meta_bursts.html">this page</a>.)
  *
  * @param       dev     Device handle
  * @param       m       Device module
@@ -542,7 +547,7 @@ API_EXPORT
 int CALL_CONV bladerf_enable_module(struct bladerf *dev,
                                     bladerf_module m, bool enable);
 
-/** @} (End of FN_CTRL) */
+/** @} (End of FN_MODULE) */
 
 /**
  * @defgroup FN_GAIN    Gain control
