@@ -512,15 +512,6 @@ bladerf_dev_speed CALL_CONV bladerf_device_speed(struct bladerf *dev);
  */
 
 /**
- * LPF mode
- */
-typedef enum {
-    BLADERF_LPF_NORMAL,     /**< LPF connected and enabled */
-    BLADERF_LPF_BYPASSED,   /**< LPF bypassed */
-    BLADERF_LPF_DISABLED    /**< LPF disabled */
-} bladerf_lpf_mode;
-
-/**
  * Module selection for those which have both RX and TX constituents
  */
 typedef enum
@@ -1339,6 +1330,15 @@ int CALL_CONV bladerf_get_sampling(struct bladerf *dev,
 
 /** Maximum bandwidth, in Hz */
 #define BLADERF_BANDWIDTH_MAX       28000000u
+
+/**
+ * Low-Pass Filter (LPF) mode
+ */
+typedef enum {
+    BLADERF_LPF_NORMAL,     /**< LPF connected and enabled */
+    BLADERF_LPF_BYPASSED,   /**< LPF bypassed */
+    BLADERF_LPF_DISABLED    /**< LPF disabled */
+} bladerf_lpf_mode;
 
 /**
  * Set the bandwidth of the LMS LPF to specified value in Hz
