@@ -128,12 +128,14 @@ extern "C" {
 /** @} (End RETCODES) */
 
 /**
- * @defgroup FN_INIT    Initialization/deinitialization
+ * @defgroup FN_INIT    Initialization and deinitialization
  *
- * The functions in this section provide the ability query available devices,
- * initialize them, and deinitialize them. They are not guaranteed to be
- * thread-safe; the caller is responsible for ensuring they are executed
- * atomically.
+ * The functions in this section provide the ability query and inspect available
+ * devices, initialize them, and deinitialize them.
+ *
+ * See the
+ * <a class="el" href="boilerplate.html">Device configuration boilerplate</a>
+ * page for an overview on how to open and configure a device.
  *
  * @{
  */
@@ -158,9 +160,6 @@ typedef enum {
 
 /**
  * Information about a bladeRF attached to the system
- *
- * See the \ref FN_DEVINFO section for information on populating and comparing
- * these structures.
  */
 struct bladerf_devinfo {
     bladerf_backend backend;    /**< Backend to use when connecting to device */
@@ -188,6 +187,71 @@ int CALL_CONV bladerf_get_device_list(struct bladerf_devinfo **devices);
  */
 API_EXPORT
 void CALL_CONV bladerf_free_device_list(struct bladerf_devinfo *devices);
+
+/**
+ * Initialize a device identifier information structure to a "wildcard" state.
+ * The values in each field will match any value for that field.
+ *
+ * Passing a bladerf_devinfo initialized with this function to
+ * bladerf_open_with_devinfo() will match the first device found.
+ */
+API_EXPORT
+void CALL_CONV bladerf_init_devinfo(struct bladerf_devinfo *info);
+
+/**
+ * Fill out a provided bladerf_devinfo structure, given an open device handle.
+ * This function is thread-safe.
+ *
+ * @pre dev must be a valid device handle.
+ *
+ * @param[in]    dev     Device handle previously obtained with bladerf_open()
+ * @param[out]   info    Device information populated by this function
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_devinfo(struct bladerf *dev,
+                                  struct bladerf_devinfo *info);
+
+/**
+ * Populate a device identifier information structure using the provided
+ * device identifier string.
+ jjk*
+ * @param[in]   devstr  Device identifier string, formated as described
+ *                      in the bladerf_open() documentation
+ *
+ * @param[out]  info    Upon success, this will be filled out according to the
+ *                      provided device identifier string, with wildcards for
+ *                      any fields that were not provided.
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_devinfo_from_str(const char *devstr,
+                                           struct bladerf_devinfo *info);
+
+/**
+ * Test whether two device identifier information structures match, taking
+ * wildcard values into account.
+ */
+API_EXPORT
+bool CALL_CONV bladerf_devinfo_matches(const struct bladerf_devinfo *a,
+                                       const struct bladerf_devinfo *b);
+
+/**
+ * Test whether a provided device string matches a device described by
+ * the provided bladerf_devinfo structure
+ *
+ * @param[in]   dev_str     Devices string, formated as described in the
+ *                          the documentation of bladerf_open
+ *
+ * @param[in]   info        Device info to compare with
+ *
+ * @return  true upon a match, false otherwise
+ */
+API_EXPORT
+bool CALL_CONV bladerf_devstr_matches(const char *dev_str,
+                                      struct bladerf_devinfo *info);
 
 /**
  * Opens device specified by provided bladerf_devinfo structure
@@ -305,96 +369,6 @@ API_EXPORT
 void bladerf_set_usb_reset_on_open(bool enabled);
 
 /** @} (End FN_INIT) */
-
-/**
- * @defgroup FN_DEVINFO Device identifier information functions
- *
- * As the functions in this section do not operate on a device, there are no
- * internal thread-safety concerns. The caller only needs to ensure the
- * function parameters are not modified while these functions are executing.
- *
- * @{
- */
-
-/**
- * Initialize a device identifier information structure to a "wildcard" state.
- * The values in each field will match any value for that field.
- *
- * Passing a bladerf_devinfo initialized with this function to
- * bladerf_open_with_devinfo() will match the first device found.
- */
-API_EXPORT
-void CALL_CONV bladerf_init_devinfo(struct bladerf_devinfo *info);
-
-/**
- * Fill out a provided bladerf_devinfo structure, given an open device handle.
- * This function is thread-safe.
- *
- * @pre dev must be a valid device handle.
- *
- * @param[in]    dev     Device handle previously obtained with bladerf_open()
- * @param[out]   info    Device information populated by this function
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_get_devinfo(struct bladerf *dev,
-                                  struct bladerf_devinfo *info);
-
-/**
- * Populate a device identifier information structure using the provided
- * device identifier string.
- *
- * @param[in]   devstr  Device identifier string, formated as described
- *                      in the bladerf_open() documentation
- *
- * @param[out]  info    Upon success, this will be filled out according to the
- *                      provided device identifier string, with wildcards for
- *                      any fields that were not provided.
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_get_devinfo_from_str(const char *devstr,
-                                           struct bladerf_devinfo *info);
-
-/**
- * Test whether two device identifier information structures match, taking
- * wildcard values into account.
- */
-API_EXPORT
-bool CALL_CONV bladerf_devinfo_matches(const struct bladerf_devinfo *a,
-                                       const struct bladerf_devinfo *b);
-
-/**
- * Test whether a provided device string matches a device described by
- * the provided bladerf_devinfo structure
- *
- * @param[in]   dev_str     Devices string, formated as described in the
- *                          the documentation of bladerf_open
- *
- * @param[in]   info        Device info to compare with
- *
- * @return  true upon a match, false otherwise
- */
-API_EXPORT
-bool CALL_CONV bladerf_devstr_matches(const char *dev_str,
-                                      struct bladerf_devinfo *info);
-
-/**
- * Retrieve the backend string associated with the specified
- * backend enumeration value.
- *
- * @warning Do not attempt to modify or free() the returned string.
- *
- * @return A string that can used to specify the `backend` portion of a device
- *         identifier string. (See bladerf_open().)
- */
-API_EXPORT
-const char * CALL_CONV bladerf_backend_str(bladerf_backend backend);
-
-
-/** @} (End of FN_DEVINFO) */
 
 /**
  * @defgroup FN_INFO    Device properties and information
@@ -2991,6 +2965,19 @@ typedef enum {
  */
 API_EXPORT
 const char * CALL_CONV bladerf_strerror(int error);
+
+/**
+ * Retrieve the backend string associated with the specified
+ * backend enumeration value.
+ *
+ * @warning Do not attempt to modify or free() the returned string.
+ *
+ * @return A string that can used to specify the `backend` portion of a device
+ *         identifier string. (See bladerf_open().)
+ */
+API_EXPORT
+const char * CALL_CONV bladerf_backend_str(bladerf_backend backend);
+
 
 /**
  * Get libbladeRF version information
