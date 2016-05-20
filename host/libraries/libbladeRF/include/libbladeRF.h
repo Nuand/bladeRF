@@ -1743,6 +1743,440 @@ int CALL_CONV bladerf_get_loopback(struct bladerf *dev, bladerf_loopback *l);
 
 /** @} (End of FN_LOOPBACK) */
 
+/**
+ * @defgroup FN_SMB_CLOCK SMB clock port control
+ *
+ * The SMB clock port (J62) may be used to synchronize sampling on multiple
+ * devices, or to generate an arbitrary clock output for a different device.
+ *
+ * For MIMO configurations, one device is the clock "master" and outputs
+ * its 38.4 MHz reference on this port.  The clock "slave" devices configure
+ * the SMB port as an input and expect to see this 38.4 MHz reference on this
+ * port. This implies that the "master" must be configured first.
+ *
+ * Alternatively, this port may be used to generate an arbitrary clock signal
+ * for use with other devices via the bladerf_set_smb_frequency() and
+ * bladerf_set_rational_smb_frequency() functions.
+ *
+ * @warning <b>Do not</b> use these functions when operating an expansion board.
+ *          A different clock configuration is required for the XB devices
+ *          which cannot be used simultaneously with the SMB clock port.
+ * @{
+ */
+
+/**
+ * Maximum output frequency on SMB connector, if no expansion board attached.
+ */
+#define BLADERF_SMB_FREQUENCY_MAX   200000000u
+
+/**
+ * Minimum output frequency on SMB connector, if no expansion board attached.
+ */
+#define BLADERF_SMB_FREQUENCY_MIN   ((38400000u * 66u) / (32 * 567))
+
+
+/**
+ * SMB clock port mode of operation
+ */
+typedef enum {
+    BLADERF_SMB_MODE_INVALID = -1,  /**< Invalid selection */
+
+    BLADERF_SMB_MODE_DISABLED,      /**< Not in use. Device operates from
+                                     *   its onboard clock and does not
+                                     *   use J62. */
+
+    BLADERF_SMB_MODE_OUTPUT,        /**< Device outputs a 38.4 MHz reference
+                                     *   clock on J62. This may be used to
+                                     *   drive another device that is
+                                     *   configured with
+                                     *   ::BLADERF_SMB_MODE_INPUT.
+                                     */
+
+    BLADERF_SMB_MODE_INPUT,         /**< Device configures J62 as an input
+                                     *   and expects a 38.4 MHz reference
+                                     *   to be available when this setting
+                                     *   is applied.
+                                     */
+
+    BLADERF_SMB_MODE_UNAVAILBLE,    /**< SMB port is unavailable for use due
+                                     *   the underlying clock being used
+                                     *   elsewhere (e.g., for and expansion
+                                     *   board).
+                                     */
+
+} bladerf_smb_mode;
+
+/**
+ * Set the current mode of operation of the SMB clock port
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   mode        Desired mode
+ *
+ * @return 0 on success, or a value from \ref RETCODES list on failure.
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_smb_mode(struct bladerf *dev, bladerf_smb_mode mode);
+
+/**
+ * Get the current mode of operation of the SMB clock port
+ *
+ * @param[in]   dev         Device handle
+ * @param[out]  mode        Desired mode
+ *
+ * @return 0 on success, or a value from \ref RETCODES list on failure.
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_smb_mode(struct bladerf *dev, bladerf_smb_mode *mode);
+
+/**
+ * Set the SMB clock port frequency in rational Hz
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   rate        Rational frequency
+ * @param[out]  actual      If non-NULL, this is written with the actual
+ *
+ * The frequency must be between \ref BLADERF_SMB_FREQUENCY_MIN and
+ * \ref BLADERF_SMB_FREQUENCY_MAX.
+ *
+ * This function inherently configures the SMB clock port as an output. Do not
+ * call bladerf_set_smb_mode() with ::BLADERF_SMB_MODE_OUTPUT, as this will
+ * reset the output frequency to the 38.4 MHz reference.
+ *
+ * @warning This clock should not be set if an expansion board is connected.
+ *
+ * @return 0 on success,
+ *         BLADERF_ERR_INVAL for an invalid frequency,
+ *         or a value from \ref RETCODES list on failure.
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_rational_smb_frequency(
+                                        struct bladerf *dev,
+                                        struct bladerf_rational_rate *rate,
+                                        struct bladerf_rational_rate *actual);
+
+/**
+ * Set the SMB connector output frequency in Hz.
+ * Use bladerf_set_rational_smb_frequency() for more arbitrary values.
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   rate        Frequency
+ * @param[out]  actual      If non-NULL. this is written with the actual
+ *                          frequency achieved.
+ *
+ * This function inherently configures the SMB clock port as an output. Do not
+ * call bladerf_set_smb_mode() with ::BLADERF_SMB_MODE_OUTPUT, as this will
+ * reset the output frequency to the 38.4 MHz reference.
+ *
+ * The frequency must be between \ref BLADERF_SMB_FREQUENCY_MIN and
+ * \ref BLADERF_SMB_FREQUENCY_MAX.
+ *
+ * @warning This clock should not be set if an expansion board is connected.
+ *
+ * @return 0 on success,
+ *         BLADERF_ERR_INVAL for an invalid frequency,
+ *         or a value from \ref RETCODES list on other failures
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_smb_frequency(struct bladerf *dev,
+                                        uint32_t rate, uint32_t *actual);
+
+/**
+ * Read the SMB connector output frequency in rational Hz
+ *
+ * @param[in]   dev         Device handle
+ * @param[out]  rate        Pointer to returned rational frequency
+ *
+ * @return 0 on success, value from \ref RETCODES list upon failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_rational_smb_frequency(
+                                        struct bladerf *dev,
+                                        struct bladerf_rational_rate *rate);
+
+/**
+ * Read the SMB connector output frequency in Hz
+ *
+ * @param[in]   dev         Device handle
+ * @param[out]  rate        Pointer to returned frequency
+ *
+ * @return 0 on success, value from \ref RETCODES list upon failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_smb_frequency(struct bladerf *dev,
+                                        unsigned int *rate);
+
+/** @} (End of FN_SMB_CLOCK) */
+
+/**
+ * @defgroup FN_TRIG    Trigger Control
+ *
+ * Trigger functionality introduced in bladeRF FPGA v0.6.0 allows TX and/or RX
+ * samples to be gated via a trigger signal. This allows multiple devices to
+ * synchronize their TX/RX operations upon the reception of a trigger event.
+ *
+ * The set of functions presented in this section of the API provides control
+ * over this triggering functionality. It is intended that these functions be
+ * used <b>prior</b> to starting sample streams. Attempting to use these
+ * functions while streaming may yield undefined and undesirable behavior.
+ *
+ * For devices running at the same sample rate, the trigger event should
+ * achieve synchronization within +/- 1 sample on each device in the chain.
+ *
+ * As of FPGA v0.6.0, J71 pin 4 (mini_exp_1) has been allocated as the
+ * trigger signal. However, this API section is designed to allow future
+ * signals to be added, including users' software and hardware customizations.
+ *
+ * The standard usage of these functions is shown below. This example
+ * assumes two devices are connected such they share a common ground and
+ * their J71-4 pins are connected. It is also assumed that both devices
+ * are configured to share a single clock via the external SMB connection.
+ * (This may be achieved with an external 38.4 MHz clock source, or by
+ *  configuring one device as a MIMO master and the other a MIMO slave.)
+ *
+ * @code{.c}
+ *
+ * int status;
+ * bladerf_module module = BLADERF_MODULE_RX;
+ * bladerf_trigger_signal = BLADERF_TRIGGER_J71_4;
+ *
+ * // Allocate and initialize a bladerf_trigger structure for each
+ * // trigger in the system.
+ * struct bladerf_trigger trig_master, trig_slave;
+ *
+ * status = bladerf_trigger_init(dev_master, module, signal, &trig_master);
+ * if (status == 0) {
+ *     trig_master.role = BLADERF_TRIGGER_ROLE_MASTER;
+ * } else {
+ *     goto handle_error;
+ * }
+ *
+ * status = bladerf_trigger_init(dev_slave1, module, signal, &trig_slave);
+ * if (status == 0) {
+ *     master_rx.role = BLADERF_TRIGGER_ROLE_SLAVE;
+ * } else {
+ *     goto handle_error;
+ * }
+ *
+ * // Arm the triggering functionality on each device
+ * status = bladerf_trigger_arm(dev_master, &trig_master, true, 0, 0);
+ * if (status != 0) {
+ *     goto handle_error;
+ * }
+ *
+ * status = bladerf_trigger_arm(dev_slave, &trig_slave, true, 0, 0);
+ * if (status != 0) {
+ *     goto handle_error;
+ * }
+ *
+ * // Call bladerf_sync_config() and bladerf_sync_rx() on each device.
+ * // Ensure the timeout parameters used are long enough to accommodate
+ * // the expected time until the trigger will be fired.
+ * status = start_rx_streams(dev_master, dev_slave);
+ * if (status != 0) {
+ *     goto handle_error;
+ * }
+ *
+ * // Fire the trigger signal
+ * status = bladerf_trigger_fire(dev_master, &trig_master);
+ * if (status != 0) {
+ *     goto handle_error;
+ * }
+ *
+ * // Handle RX signals and then shut down streams.
+ * // Synchronized samples should now be reaching the host following the
+ * // reception of the external trigger signal.
+ * status = handle_rx_operations(dev_master, dev_slave);
+ * if (status != 0) {
+ *     goto handle_error;
+ * }
+ *
+ * // Disable triggering on all devices to restore normal RX operation
+ * trig_master.role = BLADERF_TRIGGER_ROLE_DISABLED;
+ * status = bladerf_trigger_arm(dev_master, &trig_master, false, 0, 0);
+ * if (status != 0) {
+ *     goto handle_error;
+ * }
+ *
+ * trig_slave.role  = BLADERF_TRIGGER_ROLE_DISABLED;
+ * status = bladerf_trigger_arm(dev_master, &trig_slave, false, 0, 0);
+ * if (status != 0) {
+ *     goto handle_error;
+ * }
+ *
+ * @endcode
+ *
+ * @{
+ */
+
+/**
+ * This value denotes the role of a device in a trigger chain.
+ */
+typedef enum  {
+    BLADERF_TRIGGER_ROLE_INVALID = -1,  /**< Invalid role selection */
+
+    BLADERF_TRIGGER_ROLE_DISABLED,      /**< Triggering functionality is
+                                         *   disabled on this device. Samples
+                                         *   are not gated and the trigger
+                                         *   signal is an input.
+                                         */
+
+    BLADERF_TRIGGER_ROLE_MASTER,        /**< This device is the trigger master.
+                                         *   Its trigger signal will be an
+                                         *   output and this device will
+                                         *   determine when all devices shall
+                                         *   trigger.
+                                         */
+
+    BLADERF_TRIGGER_ROLE_SLAVE,         /**< This device is the trigger slave.
+                                         *   This device's trigger signal will
+                                         *   be an input and this devices will
+                                         *   wait for the master's trigger
+                                         *   signal assertion.
+                                         */
+} bladerf_trigger_role;
+
+/**
+ * Trigger signal selection
+ *
+ * This selects pin or signal used for the trigger.
+ *
+ * ::BLADERF_TRIGGER_J71_4 is the only valid option as of FPGA v0.6.0.
+ *
+ * The BLADERF_TRIGGER_USER_* values have been added to allow users to modify
+ * both hardware and software implementations to add custom triggers, while
+ * maintaining libbladeRF API compatibility. Official bladeRF releases will
+ * not utilize these user signal IDs.
+ */
+typedef enum  {
+    BLADERF_TRIGGER_INVALID = -1, /**< Invalid selection */
+    BLADERF_TRIGGER_J71_4,        /**< J71 pin 4 (mini_exp_1) */
+
+    BLADERF_TRIGGER_USER_0 = 128, /**< Reserved for user SW/HW customizations */
+    BLADERF_TRIGGER_USER_1,       /**< Reserved for user SW/HW customizations */
+    BLADERF_TRIGGER_USER_2,       /**< Reserved for user SW/HW customizations */
+    BLADERF_TRIGGER_USER_3,       /**< Reserved for user SW/HW customizations */
+    BLADERF_TRIGGER_USER_4,       /**< Reserved for user SW/HW customizations */
+    BLADERF_TRIGGER_USER_5,       /**< Reserved for user SW/HW customizations */
+    BLADERF_TRIGGER_USER_6,       /**< Reserved for user SW/HW customizations */
+    BLADERF_TRIGGER_USER_7,       /**< Reserved for user SW/HW customizations */
+} bladerf_trigger_signal;
+
+/**
+ * Trigger configuration
+ *
+ * It is <b>highly recommended</b> to keep a 1:1 relationship between triggers
+ * in the physical setup and instances of this structure. (i.e., do not
+ * re-use and change the same bladerf_trigger) for multiple triggers.)
+ */
+struct bladerf_trigger
+{
+    bladerf_module module;         /**< RX/TX module associated with trigger */
+    bladerf_trigger_role role;     /**< Role of the device in a trigger chain */
+    bladerf_trigger_signal signal; /**< Pin or signal being used */
+    uint64_t options;              /**< Reserved field for future options. This
+                                    *   is unused and should be set to 0.
+                                    */
+};
+
+/**
+ * Initialize a bladerf_trigger structure based upon the current configuration
+ * of the specified trigger signal.
+ *
+ * While it is possible to simply declare and manually fill in a
+ * bladerf_trigger structure, it is recommended to use this function to
+ * retrieve the current `role` and `options` values.
+ *
+ * @param[in]   dev         Device to query
+ * @param[in]   module      Module to query
+ * @param[in]   signal      Trigger signal to query
+ * @param[out]  trigger     Updated to describe trigger
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_trigger_init(struct bladerf *dev,
+                                   bladerf_module module,
+                                   bladerf_trigger_signal signal,
+                                   struct bladerf_trigger *trigger);
+
+/**
+ * Configure and (dis)arm a trigger on the specified device.
+ *
+ * @note If trigger->role is set to ::BLADERF_TRIGGER_ROLE_DISABLED,
+ *       this will inherently disarm an armed trigger and clear any fire
+ *       requests, regardless of the value of `arm`.
+ *
+ * @param[in]   dev     Device to configure
+ * @param[in]   trigger Trigger configure
+ * @param[in]   arm     (Re)Arm trigger if true, disarm if false
+ * @param[in]   resv1   Reserved for future use. Set to 0.
+ * @param[in]   resv2   Reserved for future use. Set to 0.
+ *
+ * @warning Configuring two devices in the trigger chain (or both RX and
+ *          TX on a single device) as masters can damage the associated FPGA
+ *          pins, as this would cause contention over the trigger signal.<b>
+ *          Ensure only one device in the chain is configured as the master!
+ *          </b>
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_trigger_arm(struct bladerf *dev,
+                                  const struct bladerf_trigger *trigger,
+                                  bool arm, uint64_t resv1, uint64_t resv2);
+
+/**
+ * Fire a trigger event.
+ *
+ * Calling this functiona with a trigger whose role is anything other than
+ * ::BLADERF_TRIGGER_REG_MASTER will yield a BLADERF_ERR_INVAL return value.
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   trigger     Trigger to assert
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_trigger_fire(struct bladerf *dev,
+                                   const struct bladerf_trigger *trigger);
+
+/**
+ * Query the fire request status of a master trigger
+ *
+ * @param[in]   dev             Device handle
+ *
+ * @param[in]   trigger         Trigger to query
+ *
+ * @param[out]  is_armed        Set to true if the trigger is armed, and false
+ *                              otherwise. May be NULL.
+ *
+ * @param[out]  has_fired       Set to true if the trigger has fired, and false
+ *                              otherwise. May be NULL.
+ *
+ * @param[out]  fire_requested  Only applicable to a trigger master.
+ *                              Set to true if a fire request has been
+ *                              previously submitted. May be NULL.
+ *
+ * @param[out]  resv1           Reserved for future use.
+ *                              This field is written as 0 if not set to NULL.
+ *
+ * @param[out]  resv2           Reserved for future use.
+ *                              This field is written as 0 if not set to NULL.
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_trigger_state(struct bladerf *dev,
+                                    const struct bladerf_trigger *trigger,
+                                    bool *is_armed,
+                                    bool *has_fired,
+                                    bool *fire_requested,
+                                    uint64_t *resv1,
+                                    uint64_t *resv2);
+
+/** @} (End of FN_TRIG) */
+
+
 
 /**
  * @defgroup FMT_META   Sample Formats and Metadata
@@ -2450,440 +2884,6 @@ int CALL_CONV bladerf_sync_rx(struct bladerf *dev,
 
 
 /** @} (End of FN_DATA_SYNC) */
-
-/**
- * @defgroup FN_SMB_CLOCK SMB clock port control
- *
- * The SMB clock port (J62) may be used to synchronize sampling on multiple
- * devices, or to generate an arbitrary clock output for a different device.
- *
- * For MIMO configurations, one device is the clock "master" and outputs
- * its 38.4 MHz reference on this port.  The clock "slave" devices configure
- * the SMB port as an input and expect to see this 38.4 MHz reference on this
- * port. This implies that the "master" must be configured first.
- *
- * Alternatively, this port may be used to generate an arbitrary clock signal
- * for use with other devices via the bladerf_set_smb_frequency() and
- * bladerf_set_rational_smb_frequency() functions.
- *
- * @warning <b>Do not</b> use these functions when operating an expansion board.
- *          A different clock configuration is required for the XB devices
- *          which cannot be used simultaneously with the SMB clock port.
- * @{
- */
-
-/**
- * Maximum output frequency on SMB connector, if no expansion board attached.
- */
-#define BLADERF_SMB_FREQUENCY_MAX   200000000u
-
-/**
- * Minimum output frequency on SMB connector, if no expansion board attached.
- */
-#define BLADERF_SMB_FREQUENCY_MIN   ((38400000u * 66u) / (32 * 567))
-
-
-/**
- * SMB clock port mode of operation
- */
-typedef enum {
-    BLADERF_SMB_MODE_INVALID = -1,  /**< Invalid selection */
-
-    BLADERF_SMB_MODE_DISABLED,      /**< Not in use. Device operates from
-                                     *   its onboard clock and does not
-                                     *   use J62. */
-
-    BLADERF_SMB_MODE_OUTPUT,        /**< Device outputs a 38.4 MHz reference
-                                     *   clock on J62. This may be used to
-                                     *   drive another device that is
-                                     *   configured with
-                                     *   ::BLADERF_SMB_MODE_INPUT.
-                                     */
-
-    BLADERF_SMB_MODE_INPUT,         /**< Device configures J62 as an input
-                                     *   and expects a 38.4 MHz reference
-                                     *   to be available when this setting
-                                     *   is applied.
-                                     */
-
-    BLADERF_SMB_MODE_UNAVAILBLE,    /**< SMB port is unavailable for use due
-                                     *   the underlying clock being used
-                                     *   elsewhere (e.g., for and expansion
-                                     *   board).
-                                     */
-
-} bladerf_smb_mode;
-
-/**
- * Set the current mode of operation of the SMB clock port
- *
- * @param[in]   dev         Device handle
- * @param[in]   mode        Desired mode
- *
- * @return 0 on success, or a value from \ref RETCODES list on failure.
- */
-API_EXPORT
-int CALL_CONV bladerf_set_smb_mode(struct bladerf *dev, bladerf_smb_mode mode);
-
-/**
- * Get the current mode of operation of the SMB clock port
- *
- * @param[in]   dev         Device handle
- * @param[out]  mode        Desired mode
- *
- * @return 0 on success, or a value from \ref RETCODES list on failure.
- */
-API_EXPORT
-int CALL_CONV bladerf_get_smb_mode(struct bladerf *dev, bladerf_smb_mode *mode);
-
-/**
- * Set the SMB clock port frequency in rational Hz
- *
- * @param[in]   dev         Device handle
- * @param[in]   rate        Rational frequency
- * @param[out]  actual      If non-NULL, this is written with the actual
- *
- * The frequency must be between \ref BLADERF_SMB_FREQUENCY_MIN and
- * \ref BLADERF_SMB_FREQUENCY_MAX.
- *
- * This function inherently configures the SMB clock port as an output. Do not
- * call bladerf_set_smb_mode() with ::BLADERF_SMB_MODE_OUTPUT, as this will
- * reset the output frequency to the 38.4 MHz reference.
- *
- * @warning This clock should not be set if an expansion board is connected.
- *
- * @return 0 on success,
- *         BLADERF_ERR_INVAL for an invalid frequency,
- *         or a value from \ref RETCODES list on failure.
- */
-API_EXPORT
-int CALL_CONV bladerf_set_rational_smb_frequency(
-                                        struct bladerf *dev,
-                                        struct bladerf_rational_rate *rate,
-                                        struct bladerf_rational_rate *actual);
-
-/**
- * Set the SMB connector output frequency in Hz.
- * Use bladerf_set_rational_smb_frequency() for more arbitrary values.
- *
- * @param[in]   dev         Device handle
- * @param[in]   rate        Frequency
- * @param[out]  actual      If non-NULL. this is written with the actual
- *                          frequency achieved.
- *
- * This function inherently configures the SMB clock port as an output. Do not
- * call bladerf_set_smb_mode() with ::BLADERF_SMB_MODE_OUTPUT, as this will
- * reset the output frequency to the 38.4 MHz reference.
- *
- * The frequency must be between \ref BLADERF_SMB_FREQUENCY_MIN and
- * \ref BLADERF_SMB_FREQUENCY_MAX.
- *
- * @warning This clock should not be set if an expansion board is connected.
- *
- * @return 0 on success,
- *         BLADERF_ERR_INVAL for an invalid frequency,
- *         or a value from \ref RETCODES list on other failures
- */
-API_EXPORT
-int CALL_CONV bladerf_set_smb_frequency(struct bladerf *dev,
-                                        uint32_t rate, uint32_t *actual);
-
-/**
- * Read the SMB connector output frequency in rational Hz
- *
- * @param[in]   dev         Device handle
- * @param[out]  rate        Pointer to returned rational frequency
- *
- * @return 0 on success, value from \ref RETCODES list upon failure
- */
-API_EXPORT
-int CALL_CONV bladerf_get_rational_smb_frequency(
-                                        struct bladerf *dev,
-                                        struct bladerf_rational_rate *rate);
-
-/**
- * Read the SMB connector output frequency in Hz
- *
- * @param[in]   dev         Device handle
- * @param[out]  rate        Pointer to returned frequency
- *
- * @return 0 on success, value from \ref RETCODES list upon failure
- */
-API_EXPORT
-int CALL_CONV bladerf_get_smb_frequency(struct bladerf *dev,
-                                        unsigned int *rate);
-
-/** @} (End of FN_SMB_CLOCK) */
-
-/**
- * @defgroup FN_TRIG    Trigger Control
- *
- * Trigger functionality introduced in bladeRF FPGA v0.6.0 allows TX and/or RX
- * samples to be gated via a trigger signal. This allows multiple devices to
- * synchronize their TX/RX operations upon the reception of a trigger event.
- *
- * The set of functions presented in this section of the API provides control
- * over this triggering functionality. It is intended that these functions be
- * used <b>prior</b> to starting sample streams. Attempting to use these
- * functions while streaming may yield undefined and undesirable behavior.
- *
- * For devices running at the same sample rate, the trigger event should
- * achieve synchronization within +/- 1 sample on each device in the chain.
- *
- * As of FPGA v0.6.0, J71 pin 4 (mini_exp_1) has been allocated as the
- * trigger signal. However, this API section is designed to allow future
- * signals to be added, including users' software and hardware customizations.
- *
- * The standard usage of these functions is shown below. This example
- * assumes two devices are connected such they share a common ground and
- * their J71-4 pins are connected. It is also assumed that both devices
- * are configured to share a single clock via the external SMB connection.
- * (This may be achieved with an external 38.4 MHz clock source, or by
- *  configuring one device as a MIMO master and the other a MIMO slave.)
- *
- * @code{.c}
- *
- * int status;
- * bladerf_module module = BLADERF_MODULE_RX;
- * bladerf_trigger_signal = BLADERF_TRIGGER_J71_4;
- *
- * // Allocate and initialize a bladerf_trigger structure for each
- * // trigger in the system.
- * struct bladerf_trigger trig_master, trig_slave;
- *
- * status = bladerf_trigger_init(dev_master, module, signal, &trig_master);
- * if (status == 0) {
- *     trig_master.role = BLADERF_TRIGGER_ROLE_MASTER;
- * } else {
- *     goto handle_error;
- * }
- *
- * status = bladerf_trigger_init(dev_slave1, module, signal, &trig_slave);
- * if (status == 0) {
- *     master_rx.role = BLADERF_TRIGGER_ROLE_SLAVE;
- * } else {
- *     goto handle_error;
- * }
- *
- * // Arm the triggering functionality on each device
- * status = bladerf_trigger_arm(dev_master, &trig_master, true, 0, 0);
- * if (status != 0) {
- *     goto handle_error;
- * }
- *
- * status = bladerf_trigger_arm(dev_slave, &trig_slave, true, 0, 0);
- * if (status != 0) {
- *     goto handle_error;
- * }
- *
- * // Call bladerf_sync_config() and bladerf_sync_rx() on each device.
- * // Ensure the timeout parameters used are long enough to accommodate
- * // the expected time until the trigger will be fired.
- * status = start_rx_streams(dev_master, dev_slave);
- * if (status != 0) {
- *     goto handle_error;
- * }
- *
- * // Fire the trigger signal
- * status = bladerf_trigger_fire(dev_master, &trig_master);
- * if (status != 0) {
- *     goto handle_error;
- * }
- *
- * // Handle RX signals and then shut down streams.
- * // Synchronized samples should now be reaching the host following the
- * // reception of the external trigger signal.
- * status = handle_rx_operations(dev_master, dev_slave);
- * if (status != 0) {
- *     goto handle_error;
- * }
- *
- * // Disable triggering on all devices to restore normal RX operation
- * trig_master.role = BLADERF_TRIGGER_ROLE_DISABLED;
- * status = bladerf_trigger_arm(dev_master, &trig_master, false, 0, 0);
- * if (status != 0) {
- *     goto handle_error;
- * }
- *
- * trig_slave.role  = BLADERF_TRIGGER_ROLE_DISABLED;
- * status = bladerf_trigger_arm(dev_master, &trig_slave, false, 0, 0);
- * if (status != 0) {
- *     goto handle_error;
- * }
- *
- * @endcode
- *
- * @{
- */
-
-/**
- * This value denotes the role of a device in a trigger chain.
- */
-typedef enum  {
-    BLADERF_TRIGGER_ROLE_INVALID = -1,  /**< Invalid role selection */
-
-    BLADERF_TRIGGER_ROLE_DISABLED,      /**< Triggering functionality is
-                                         *   disabled on this device. Samples
-                                         *   are not gated and the trigger
-                                         *   signal is an input.
-                                         */
-
-    BLADERF_TRIGGER_ROLE_MASTER,        /**< This device is the trigger master.
-                                         *   Its trigger signal will be an
-                                         *   output and this device will
-                                         *   determine when all devices shall
-                                         *   trigger.
-                                         */
-
-    BLADERF_TRIGGER_ROLE_SLAVE,         /**< This device is the trigger slave.
-                                         *   This device's trigger signal will
-                                         *   be an input and this devices will
-                                         *   wait for the master's trigger
-                                         *   signal assertion.
-                                         */
-} bladerf_trigger_role;
-
-/**
- * Trigger signal selection
- *
- * This selects pin or signal used for the trigger.
- *
- * ::BLADERF_TRIGGER_J71_4 is the only valid option as of FPGA v0.6.0.
- *
- * The BLADERF_TRIGGER_USER_* values have been added to allow users to modify
- * both hardware and software implementations to add custom triggers, while
- * maintaining libbladeRF API compatibility. Official bladeRF releases will
- * not utilize these user signal IDs.
- */
-typedef enum  {
-    BLADERF_TRIGGER_INVALID = -1, /**< Invalid selection */
-    BLADERF_TRIGGER_J71_4,        /**< J71 pin 4 (mini_exp_1) */
-
-    BLADERF_TRIGGER_USER_0 = 128, /**< Reserved for user SW/HW customizations */
-    BLADERF_TRIGGER_USER_1,       /**< Reserved for user SW/HW customizations */
-    BLADERF_TRIGGER_USER_2,       /**< Reserved for user SW/HW customizations */
-    BLADERF_TRIGGER_USER_3,       /**< Reserved for user SW/HW customizations */
-    BLADERF_TRIGGER_USER_4,       /**< Reserved for user SW/HW customizations */
-    BLADERF_TRIGGER_USER_5,       /**< Reserved for user SW/HW customizations */
-    BLADERF_TRIGGER_USER_6,       /**< Reserved for user SW/HW customizations */
-    BLADERF_TRIGGER_USER_7,       /**< Reserved for user SW/HW customizations */
-} bladerf_trigger_signal;
-
-/**
- * Trigger configuration
- *
- * It is <b>highly recommended</b> to keep a 1:1 relationship between triggers
- * in the physical setup and instances of this structure. (i.e., do not
- * re-use and change the same bladerf_trigger) for multiple triggers.)
- */
-struct bladerf_trigger
-{
-    bladerf_module module;         /**< RX/TX module associated with trigger */
-    bladerf_trigger_role role;     /**< Role of the device in a trigger chain */
-    bladerf_trigger_signal signal; /**< Pin or signal being used */
-    uint64_t options;              /**< Reserved field for future options. This
-                                    *   is unused and should be set to 0.
-                                    */
-};
-
-/**
- * Initialize a bladerf_trigger structure based upon the current configuration
- * of the specified trigger signal.
- *
- * While it is possible to simply declare and manually fill in a
- * bladerf_trigger structure, it is recommended to use this function to
- * retrieve the current `role` and `options` values.
- *
- * @param[in]   dev         Device to query
- * @param[in]   module      Module to query
- * @param[in]   signal      Trigger signal to query
- * @param[out]  trigger     Updated to describe trigger
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_trigger_init(struct bladerf *dev,
-                                   bladerf_module module,
-                                   bladerf_trigger_signal signal,
-                                   struct bladerf_trigger *trigger);
-
-/**
- * Configure and (dis)arm a trigger on the specified device.
- *
- * @note If trigger->role is set to ::BLADERF_TRIGGER_ROLE_DISABLED,
- *       this will inherently disarm an armed trigger and clear any fire
- *       requests, regardless of the value of `arm`.
- *
- * @param[in]   dev     Device to configure
- * @param[in]   trigger Trigger configure
- * @param[in]   arm     (Re)Arm trigger if true, disarm if false
- * @param[in]   resv1   Reserved for future use. Set to 0.
- * @param[in]   resv2   Reserved for future use. Set to 0.
- *
- * @warning Configuring two devices in the trigger chain (or both RX and
- *          TX on a single device) as masters can damage the associated FPGA
- *          pins, as this would cause contention over the trigger signal.<b>
- *          Ensure only one device in the chain is configured as the master!
- *          </b>
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_trigger_arm(struct bladerf *dev,
-                                  const struct bladerf_trigger *trigger,
-                                  bool arm, uint64_t resv1, uint64_t resv2);
-
-/**
- * Fire a trigger event.
- *
- * Calling this functiona with a trigger whose role is anything other than
- * ::BLADERF_TRIGGER_REG_MASTER will yield a BLADERF_ERR_INVAL return value.
- *
- * @param[in]   dev         Device handle
- * @param[in]   trigger     Trigger to assert
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_trigger_fire(struct bladerf *dev,
-                                   const struct bladerf_trigger *trigger);
-
-/**
- * Query the fire request status of a master trigger
- *
- * @param[in]   dev             Device handle
- *
- * @param[in]   trigger         Trigger to query
- *
- * @param[out]  is_armed        Set to true if the trigger is armed, and false
- *                              otherwise. May be NULL.
- *
- * @param[out]  has_fired       Set to true if the trigger has fired, and false
- *                              otherwise. May be NULL.
- *
- * @param[out]  fire_requested  Only applicable to a trigger master.
- *                              Set to true if a fire request has been
- *                              previously submitted. May be NULL.
- *
- * @param[out]  resv1           Reserved for future use.
- *                              This field is written as 0 if not set to NULL.
- *
- * @param[out]  resv2           Reserved for future use.
- *                              This field is written as 0 if not set to NULL.
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_trigger_state(struct bladerf *dev,
-                                    const struct bladerf_trigger *trigger,
-                                    bool *is_armed,
-                                    bool *has_fired,
-                                    bool *fire_requested,
-                                    uint64_t *resv1,
-                                    uint64_t *resv2);
-
-/** @} (End of FN_TRIG) */
-
 
 /**
  * @defgroup FN_PROG  Device loading and programming
