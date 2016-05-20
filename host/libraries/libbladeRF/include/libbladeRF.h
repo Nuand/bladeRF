@@ -86,48 +86,6 @@ extern "C" {
 #endif
 
 /**
- * @defgroup    RETCODES    Error codes
- *
- * bladeRF library routines return negative values to indicate errors.
- * Values >= 0 are used to indicate success.
- *
- * @code
- *  int status = bladerf_set_txvga1(dev, 2);
- *
- *  if (status < 0)
- *      handle_error();
- * @endcode
- *
- * @{
- */
-#define BLADERF_ERR_UNEXPECTED  (-1)  /**< An unexpected failure occurred */
-#define BLADERF_ERR_RANGE       (-2)  /**< Provided parameter is out of range */
-#define BLADERF_ERR_INVAL       (-3)  /**< Invalid operation/parameter */
-#define BLADERF_ERR_MEM         (-4)  /**< Memory allocation error */
-#define BLADERF_ERR_IO          (-5)  /**< File/Device I/O error */
-#define BLADERF_ERR_TIMEOUT     (-6)  /**< Operation timed out */
-#define BLADERF_ERR_NODEV       (-7)  /**< No device(s) available */
-#define BLADERF_ERR_UNSUPPORTED (-8)  /**< Operation not supported */
-#define BLADERF_ERR_MISALIGNED  (-9)  /**< Misaligned flash access */
-#define BLADERF_ERR_CHECKSUM    (-10) /**< Invalid checksum */
-#define BLADERF_ERR_NO_FILE     (-11) /**< File not found */
-#define BLADERF_ERR_UPDATE_FPGA (-12) /**< An FPGA update is required */
-#define BLADERF_ERR_UPDATE_FW   (-13) /**< A firmware update is requied */
-#define BLADERF_ERR_TIME_PAST   (-14) /**< Requested timestamp is in the past */
-#define BLADERF_ERR_QUEUE_FULL  (-15) /**< Could not enqueue data into
-                                       *   full queue */
-#define BLADERF_ERR_FPGA_OP     (-16) /**< An FPGA operation reported failure */
-#define BLADERF_ERR_PERMISSION  (-17) /**< Insufficient permissions for the
-                                       *   requested operation */
-#define BLADERF_ERR_WOULD_BLOCK (-18) /**< Operation would block, but has been
-                                       *   requested to be non-blocking. This
-                                       *   indicates to a caller that it may
-                                       *   need to retry the operation later.
-                                       */
-
-/** @} (End RETCODES) */
-
-/**
  * @defgroup FN_INIT    Initialization and deinitialization
  *
  * The functions in this section provide the ability query and inspect available
@@ -2659,17 +2617,6 @@ typedef enum {
 } bladerf_log_level;
 
 /**
- * Obtain a textual description of a value from the \ref RETCODES list
- *
- * @warning Do not attempt to modify the returned string.
- *
- * @param   error   Error value to look up
- * @return  Error string
- */
-API_EXPORT
-const char * CALL_CONV bladerf_strerror(int error);
-
-/**
  * Retrieve the backend string associated with the specified
  * backend enumeration value.
  *
@@ -4303,6 +4250,60 @@ int CALL_CONV bladerf_write_flash(struct bladerf *dev, const uint8_t *buf,
                                   uint32_t page, uint32_t count);
 
 /** @} (End of FN_FLASH) */
+
+/**
+ * @defgroup    RETCODES    Error codes
+ *
+ * bladeRF library routines return negative values to indicate errors.
+ * Values >= 0 are used to indicate success.
+ *
+ * @code
+ *  int status = bladerf_set_txvga1(dev, 2);
+ *
+ *  if (status < 0)
+ *      handle_error();
+ * @endcode
+ *
+ * @{
+ */
+#define BLADERF_ERR_UNEXPECTED  (-1)  /**< An unexpected failure occurred */
+#define BLADERF_ERR_RANGE       (-2)  /**< Provided parameter is out of range */
+#define BLADERF_ERR_INVAL       (-3)  /**< Invalid operation/parameter */
+#define BLADERF_ERR_MEM         (-4)  /**< Memory allocation error */
+#define BLADERF_ERR_IO          (-5)  /**< File/Device I/O error */
+#define BLADERF_ERR_TIMEOUT     (-6)  /**< Operation timed out */
+#define BLADERF_ERR_NODEV       (-7)  /**< No device(s) available */
+#define BLADERF_ERR_UNSUPPORTED (-8)  /**< Operation not supported */
+#define BLADERF_ERR_MISALIGNED  (-9)  /**< Misaligned flash access */
+#define BLADERF_ERR_CHECKSUM    (-10) /**< Invalid checksum */
+#define BLADERF_ERR_NO_FILE     (-11) /**< File not found */
+#define BLADERF_ERR_UPDATE_FPGA (-12) /**< An FPGA update is required */
+#define BLADERF_ERR_UPDATE_FW   (-13) /**< A firmware update is requied */
+#define BLADERF_ERR_TIME_PAST   (-14) /**< Requested timestamp is in the past */
+#define BLADERF_ERR_QUEUE_FULL  (-15) /**< Could not enqueue data into
+                                       *   full queue */
+#define BLADERF_ERR_FPGA_OP     (-16) /**< An FPGA operation reported failure */
+#define BLADERF_ERR_PERMISSION  (-17) /**< Insufficient permissions for the
+                                       *   requested operation */
+#define BLADERF_ERR_WOULD_BLOCK (-18) /**< Operation would block, but has been
+                                       *   requested to be non-blocking. This
+                                       *   indicates to a caller that it may
+                                       *   need to retry the operation later.
+                                       */
+
+/**
+ * Obtain a textual description of a value from the \ref RETCODES list
+ *
+ * @warning Do not attempt to modify the returned string.
+ *
+ * @param   error   Error value to look up
+ * @return  Error string
+ */
+API_EXPORT
+const char * CALL_CONV bladerf_strerror(int error);
+
+/** @} (End RETCODES) */
+
 
 #ifdef __cplusplus
 }
