@@ -2641,6 +2641,80 @@ int CALL_CONV bladerf_expansion_gpio_dir_masked_write(struct bladerf *dev,
 /** @} (End of FN_EXP_IO) */
 
 /**
+ * @defgroup FN_MISC Miscellaneous
+ * @{
+ */
+
+/**
+ * Severity levels for logging functions
+ */
+typedef enum {
+    BLADERF_LOG_LEVEL_VERBOSE,  /**< Verbose level logging */
+    BLADERF_LOG_LEVEL_DEBUG,    /**< Debug level logging */
+    BLADERF_LOG_LEVEL_INFO,     /**< Information level logging */
+    BLADERF_LOG_LEVEL_WARNING,  /**< Warning level logging */
+    BLADERF_LOG_LEVEL_ERROR,    /**< Error level logging */
+    BLADERF_LOG_LEVEL_CRITICAL, /**< Fatal error level logging */
+    BLADERF_LOG_LEVEL_SILENT    /**< No output */
+} bladerf_log_level;
+
+/**
+ * Obtain a textual description of a value from the \ref RETCODES list
+ *
+ * @warning Do not attempt to modify the returned string.
+ *
+ * @param   error   Error value to look up
+ * @return  Error string
+ */
+API_EXPORT
+const char * CALL_CONV bladerf_strerror(int error);
+
+/**
+ * Retrieve the backend string associated with the specified
+ * backend enumeration value.
+ *
+ * @warning Do not attempt to modify or free() the returned string.
+ *
+ * @return A string that can used to specify the `backend` portion of a device
+ *         identifier string. (See bladerf_open().)
+ */
+API_EXPORT
+const char * CALL_CONV bladerf_backend_str(bladerf_backend backend);
+
+
+/**
+ * Get libbladeRF version information
+ *
+ * @param[out]  version     libbladeRF version information
+ */
+API_EXPORT
+void CALL_CONV bladerf_version(struct bladerf_version *version);
+
+/**
+ * Sets the filter level for displayed log messages. Messages that are at or
+ * above the specified log level will be printed, while messages with a lower
+ * log level will be suppressed.
+ *
+ * @param   level       The new log level filter value
+ */
+API_EXPORT
+void CALL_CONV bladerf_log_set_verbosity(bladerf_log_level level);
+
+/**
+ * Read firmware log data and write it to the specified file
+ *
+ * @param   dev         Device to read firmware log from
+ * @param   filename    Filename to write log information to. If set to NULL,
+ *                      log data will be printed to stdout.
+ *
+ * @return 0 upon success, or a value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_fw_log(struct bladerf *dev, const char *filename);
+
+/** @} (End of FN_MISC) */
+
+/**
  * @defgroup FMT_META   Sample Formats and Metadata
  *
  * This section defines the available sample formats and metadata flags.
@@ -3429,79 +3503,6 @@ int CALL_CONV bladerf_jump_to_bootloader(struct bladerf *dev);
 
 /** @} (End of FN_PROG) */
 
-/**
- * @defgroup FN_MISC Miscellaneous
- * @{
- */
-
-/**
- * Severity levels for logging functions
- */
-typedef enum {
-    BLADERF_LOG_LEVEL_VERBOSE,  /**< Verbose level logging */
-    BLADERF_LOG_LEVEL_DEBUG,    /**< Debug level logging */
-    BLADERF_LOG_LEVEL_INFO,     /**< Information level logging */
-    BLADERF_LOG_LEVEL_WARNING,  /**< Warning level logging */
-    BLADERF_LOG_LEVEL_ERROR,    /**< Error level logging */
-    BLADERF_LOG_LEVEL_CRITICAL, /**< Fatal error level logging */
-    BLADERF_LOG_LEVEL_SILENT    /**< No output */
-} bladerf_log_level;
-
-/**
- * Obtain a textual description of a value from the \ref RETCODES list
- *
- * @warning Do not attempt to modify the returned string.
- *
- * @param   error   Error value to look up
- * @return  Error string
- */
-API_EXPORT
-const char * CALL_CONV bladerf_strerror(int error);
-
-/**
- * Retrieve the backend string associated with the specified
- * backend enumeration value.
- *
- * @warning Do not attempt to modify or free() the returned string.
- *
- * @return A string that can used to specify the `backend` portion of a device
- *         identifier string. (See bladerf_open().)
- */
-API_EXPORT
-const char * CALL_CONV bladerf_backend_str(bladerf_backend backend);
-
-
-/**
- * Get libbladeRF version information
- *
- * @param[out]  version     libbladeRF version information
- */
-API_EXPORT
-void CALL_CONV bladerf_version(struct bladerf_version *version);
-
-/**
- * Sets the filter level for displayed log messages. Messages that are at or
- * above the specified log level will be printed, while messages with a lower
- * log level will be suppressed.
- *
- * @param   level       The new log level filter value
- */
-API_EXPORT
-void CALL_CONV bladerf_log_set_verbosity(bladerf_log_level level);
-
-/**
- * Read firmware log data and write it to the specified file
- *
- * @param   dev         Device to read firmware log from
- * @param   filename    Filename to write log information to. If set to NULL,
- *                      log data will be printed to stdout.
- *
- * @return 0 upon success, or a value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_get_fw_log(struct bladerf *dev, const char *filename);
-
-/** @} (End of FN_MISC) */
 
 /**
  * @defgroup FN_IMAGE Flash image format
