@@ -366,7 +366,7 @@ void CALL_CONV bladerf_close(struct bladerf *device);
  *                      and false otherwise.
  */
 API_EXPORT
-void bladerf_set_usb_reset_on_open(bool enabled);
+void CALL_CONV bladerf_set_usb_reset_on_open(bool enabled);
 
 /** @} (End FN_INIT) */
 
