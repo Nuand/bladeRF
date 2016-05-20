@@ -3503,6 +3503,72 @@ int CALL_CONV bladerf_jump_to_bootloader(struct bladerf *dev);
 
 /** @} (End of FN_PROG) */
 
+/**
+ * @defgroup FN_BOOTLOADER  Bootloader Recovery
+ *
+ * These functions provide the ability to identify devices enumerating as an
+ * FX3 bootloader, download firmware to RAM, and then execute the firmware.
+ *
+ * Care should be taken to ensure that devices operated on are indeed a bladeRF,
+ * as opposed to another FX3-based device running in bootloader mode.
+ * @{
+ */
+
+/**
+ * Get a list of devices that are running the FX3 bootloader.
+ *
+ * After obtaining this list, identify the device that you would like to load
+ * firmware onto. Save the bus and address values so that you can provide them
+ * to bladerf_load_fw_from_bootloader(), and then free this list via
+ * bladerf_free_device_list().
+ *
+ * @param[out]   list    Upon finding devices, this will be updated to point
+ *                       to a list of bladerf_devinfo structures that
+ *                       describe the identified devices.
+ *
+ * @return Number of items populated in `list`,
+ *         or an error value from the \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_bootloader_list(struct bladerf_devinfo **list);
+
+/**
+ * Download firmware to the specified device that is enumarating an FX3
+ * bootloader, and begin executing the firmware from RAM.
+ *
+ * Note that this function <b>does not</b> write the firmware to SPI flash.
+ * If this is desired, open the newly enumerated device with bladerf_open() and
+ * use bladerf_flash_firmware().
+ *
+ * @param device_identifier   Device identifier string describing the
+ *                            backend to use via the
+ *                              `<backend>:device=<bus>:<addr>` syntax.
+ *                            If this is NULL, the backend, bus, and addr
+ *                            arguments will be used instead.
+ *
+ * @param backend             Backend to use. This is only used if
+ *                              device_identifier is NULL.
+ *
+ * @param bus                 Bus number the device is located on. This is only
+ *                              used if device_identifier is NULL.
+ *
+ * @param addr                Bus address the device is located on. This is only
+ *                              used if device_identifier is NULL.
+ *
+ * @param file                Filename of the firmware image to boot
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ *
+ *
+ */
+API_EXPORT
+int CALL_CONV bladerf_load_fw_from_bootloader(const char *device_identifier,
+                                              bladerf_backend backend,
+                                              uint8_t bus, uint8_t addr,
+                                              const char *file);
+
+/** @} (End of FN_BOOTLOADER) */
+
 
 /**
  * @defgroup FN_IMAGE Flash image format
@@ -4237,72 +4303,6 @@ int CALL_CONV bladerf_write_flash(struct bladerf *dev, const uint8_t *buf,
                                   uint32_t page, uint32_t count);
 
 /** @} (End of FN_FLASH) */
-
-/**
- * @defgroup FN_BOOTLOADER  Bootloader Recovery
- *
- * These functions provide the ability to identify devices enumerating as an
- * FX3 bootloader, download firmware to RAM, and then execute the firmware.
- *
- * Care should be taken to ensure that devices operated on are indeed a bladeRF,
- * as opposed to another FX3-based device running in bootloader mode.
- * @{
- */
-
-/**
- * Get a list of devices that are running the FX3 bootloader.
- *
- * After obtaining this list, identify the device that you would like to load
- * firmware onto. Save the bus and address values so that you can provide them
- * to bladerf_load_fw_from_bootloader(), and then free this list via
- * bladerf_free_device_list().
- *
- * @param[out]   list    Upon finding devices, this will be updated to point
- *                       to a list of bladerf_devinfo structures that
- *                       describe the identified devices.
- *
- * @return Number of items populated in `list`,
- *         or an error value from the \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_get_bootloader_list(struct bladerf_devinfo **list);
-
-/**
- * Download firmware to the specified device that is enumarating an FX3
- * bootloader, and begin executing the firmware from RAM.
- *
- * Note that this function <b>does not</b> write the firmware to SPI flash.
- * If this is desired, open the newly enumerated device with bladerf_open() and
- * use bladerf_flash_firmware().
- *
- * @param device_identifier   Device identifier string describing the
- *                            backend to use via the
- *                              `<backend>:device=<bus>:<addr>` syntax.
- *                            If this is NULL, the backend, bus, and addr
- *                            arguments will be used instead.
- *
- * @param backend             Backend to use. This is only used if
- *                              device_identifier is NULL.
- *
- * @param bus                 Bus number the device is located on. This is only
- *                              used if device_identifier is NULL.
- *
- * @param addr                Bus address the device is located on. This is only
- *                              used if device_identifier is NULL.
- *
- * @param file                Filename of the firmware image to boot
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- *
- *
- */
-API_EXPORT
-int CALL_CONV bladerf_load_fw_from_bootloader(const char *device_identifier,
-                                              bladerf_backend backend,
-                                              uint8_t bus, uint8_t addr,
-                                              const char *file);
-
-/** @} (End of FN_BOOTLOADER) */
 
 #ifdef __cplusplus
 }
