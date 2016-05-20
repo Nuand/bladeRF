@@ -407,6 +407,128 @@ const char * CALL_CONV bladerf_backend_str(bladerf_backend backend);
 
 /** @} (End of FN_DEVINFO) */
 
+/**
+ * @defgroup FN_INFO    Device properties and information
+ *
+ * These functions provide the ability to query various pieces of information
+ * from an attached device. They are thread-safe.
+ *
+ * @{
+ */
+
+/**
+ * Version structure for FPGA, firmware, libbladeRF, and associated utilities
+ */
+struct bladerf_version {
+    uint16_t major;             /**< Major version */
+    uint16_t minor;             /**< Minor version */
+    uint16_t patch;             /**< Patch version */
+    const char *describe;       /**< Version string with any additional suffix
+                                 *   information.
+                                 *
+                                 *   @warning Do not attempt to modify or
+                                 *            free() this string. */
+};
+
+/**
+ * FPGA device variant (size)
+ */
+typedef enum {
+    BLADERF_FPGA_UNKNOWN = 0,   /**< Unable to determine FPGA variant */
+    BLADERF_FPGA_40KLE = 40,    /**< 40 kLE FPGA */
+    BLADERF_FPGA_115KLE = 115   /**< 115 kLE FPGA */
+} bladerf_fpga_size;
+
+
+/**
+ * Query a device's serial number
+ *
+ * @param[in]   dev     Device handle
+ * @param[out]  serial  This user-supplied buffer, which <b>must be at least
+ *                      ::BLADERF_SERIAL_LENGTH bytes</b>, will be updated to
+ *                      contain a NUL-terminated serial number string. If an
+ *                      error occurs (as indicated by a non-zero return value),
+ *                      no data will be written to this pointer.
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_serial(struct bladerf *dev, char *serial);
+
+/**
+ * Query a device's VCTCXO calibration trim
+ *
+ * @param[in]   dev     Device handle
+ * @param[out]  trim    Will be updated with the factory DAC trim value. If an
+ *                      error occurs, no data will be written to this pointer.
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim);
+
+/**
+ * Query a device's FPGA size
+ *
+ * @param[in]   dev     Device handle
+ * @param[out]  size    Will be updated with the on-board FPGA's size. If an
+ *                      error occurs, no data will be written to this pointer.
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_fpga_size(struct bladerf *dev,
+                                    bladerf_fpga_size *size);
+
+/**
+ * Query firmware version
+ *
+ * @param[in]   dev         Device handle
+ * @param[out]  version     Updated to contain firmware version
+ *
+ * @return 0 on success, value from \ref RETCODES list upon failing to retrieve
+ *         this information from the device.
+ */
+API_EXPORT
+int CALL_CONV bladerf_fw_version(struct bladerf *dev,
+                                 struct bladerf_version *version);
+
+/**
+ * Check FPGA configuration status
+ *
+ * @param   dev     Device handle
+ *
+ * @return  1 if FPGA is configured,
+ *          0 if it is not,
+ *          and value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_is_fpga_configured(struct bladerf *dev);
+
+/**
+ * Query FPGA version
+ *
+ * @param[in]   dev         Device handle
+ * @param[out]  version     Updated to contain firmware version
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_fpga_version(struct bladerf *dev,
+                                   struct bladerf_version *version);
+
+/**
+ * Obtain the bus speed at which the device is operating
+ *
+ * @param       dev     Device handle
+ * @return      speed   Device speed
+ */
+API_EXPORT
+bladerf_dev_speed CALL_CONV bladerf_device_speed(struct bladerf *dev);
+
+/** @} (End FN_INFO) */
+
+
 
 /**
  * @defgroup FN_CTRL    Device control and configuration
@@ -2759,128 +2881,6 @@ int CALL_CONV bladerf_trigger_state(struct bladerf *dev,
                                     uint64_t *resv2);
 
 /** @} (End of FN_TRIG) */
-
-
-/**
- * @defgroup FN_INFO    Device info
- *
- * These functions provide the ability to query various pieces of information
- * from an attached device. They are thread-safe.
- *
- * @{
- */
-
-/**
- * Version structure for FPGA, firmware, libbladeRF, and associated utilities
- */
-struct bladerf_version {
-    uint16_t major;             /**< Major version */
-    uint16_t minor;             /**< Minor version */
-    uint16_t patch;             /**< Patch version */
-    const char *describe;       /**< Version string with any additional suffix
-                                 *   information.
-                                 *
-                                 *   @warning Do not attempt to modify or
-                                 *            free() this string. */
-};
-
-/**
- * FPGA device variant (size)
- */
-typedef enum {
-    BLADERF_FPGA_UNKNOWN = 0,   /**< Unable to determine FPGA variant */
-    BLADERF_FPGA_40KLE = 40,    /**< 40 kLE FPGA */
-    BLADERF_FPGA_115KLE = 115   /**< 115 kLE FPGA */
-} bladerf_fpga_size;
-
-
-/**
- * Query a device's serial number
- *
- * @param[in]   dev     Device handle
- * @param[out]  serial  This user-supplied buffer, which <b>must be at least
- *                      ::BLADERF_SERIAL_LENGTH bytes</b>, will be updated to
- *                      contain a NUL-terminated serial number string. If an
- *                      error occurs (as indicated by a non-zero return value),
- *                      no data will be written to this pointer.
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_get_serial(struct bladerf *dev, char *serial);
-
-/**
- * Query a device's VCTCXO calibration trim
- *
- * @param[in]   dev     Device handle
- * @param[out]  trim    Will be updated with the factory DAC trim value. If an
- *                      error occurs, no data will be written to this pointer.
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim);
-
-/**
- * Query a device's FPGA size
- *
- * @param[in]   dev     Device handle
- * @param[out]  size    Will be updated with the on-board FPGA's size. If an
- *                      error occurs, no data will be written to this pointer.
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_get_fpga_size(struct bladerf *dev,
-                                    bladerf_fpga_size *size);
-
-/**
- * Query firmware version
- *
- * @param[in]   dev         Device handle
- * @param[out]  version     Updated to contain firmware version
- *
- * @return 0 on success, value from \ref RETCODES list upon failing to retrieve
- *         this information from the device.
- */
-API_EXPORT
-int CALL_CONV bladerf_fw_version(struct bladerf *dev,
-                                 struct bladerf_version *version);
-
-/**
- * Check FPGA configuration status
- *
- * @param   dev     Device handle
- *
- * @return  1 if FPGA is configured,
- *          0 if it is not,
- *          and value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_is_fpga_configured(struct bladerf *dev);
-
-/**
- * Query FPGA version
- *
- * @param[in]   dev         Device handle
- * @param[out]  version     Updated to contain firmware version
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_fpga_version(struct bladerf *dev,
-                                   struct bladerf_version *version);
-
-/**
- * Obtain the bus speed at which the device is operating
- *
- * @param       dev     Device handle
- * @return      speed   Device speed
- */
-API_EXPORT
-bladerf_dev_speed CALL_CONV bladerf_device_speed(struct bladerf *dev);
-
-/** @} (End FN_INFO) */
 
 
 /**
