@@ -27,8 +27,10 @@ accessible knowledge base of common questions and answers to be developed.
 Bugs, both in libbladeRF and this documentation, may be reported on the
 <a class="el" href="https://www.github.com/Nuand/bladeRF/issues">GitHub issue tracker</a>
 
-<h1>Application Programming Interface</h1>
-The libbladeRF API provides the ability to:
+<hr>
+
+<h1>The libbladeRF API</h1>
+libbladeRF provides the ability to:
 <ul>
     <li>
     Query and connect to bladeRF devices connected to a system
@@ -41,6 +43,8 @@ The libbladeRF API provides the ability to:
             <li>Sample rate</li>
             <li>Gain stages</li>
             <li>Expansion board settings</li>
+            <li>SMB clock port mode (for MIMO applications)</li>
+            <li>Synchronization trigger signals</li>
         </ul>
     </li>
     <li>
@@ -69,20 +73,10 @@ The libbladeRF API provides the ability to:
 
 </ul>
 
-The <a class="el" href="modules.html">Modules</a> presents the various groups
-of API functions that correspond to the above features.
+The <a class="el" href="modules.html">API Sections</a> page presents a complete list of of the libbladeRF API sections,
+including the aforementioned items.
 
-Most functions return an integer <a class="el" href="group___r_e_t_c_o_d_e_s.html">error code</a>
-that indicates success or failure. As commonly found in *nix system libraries,
-a status value of 0 is used to indicate success.Some functions provide a value
-greater than or equal to 0 upon success, such as a count value.
-
-Negative values are used to specify the type of error that occurred. These
-values may be passed to bladerf_strerror() to retrieve a
-<code>const char*</code> message suitable for printing in error messages.
-
-<h1>Additional Topics and Examples</h1>
-
+The following pages provide examples and more detailed usage information:
 <ul>
     <li>
     <a class="el" href="boilerplate.html">Device configuration boilerplate</a>
