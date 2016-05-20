@@ -2245,6 +2245,397 @@ int CALL_CONV bladerf_xb300_get_output_power(struct bladerf *dev, float *val);
 /** @} (End of FN_XB) */
 
 /**
+ * @defgroup FN_EXP_IO Expansion IO control
+ *
+ * These definitoins and functions provide high-level functionality for
+ * manipulating pins on the bladeRF U74 Expansion Header, and the associated
+ * mappings on expansion boards.
+ *
+ * @{
+ */
+
+/** Expansion pin GPIO number to bitmask */
+#define BLADERF_XB_GPIO(n) (1 << (n-1))
+
+/** Specifies a pin to be an output */
+#define BLADERF_XB_DIR_OUTPUT(pin)  (pin)
+
+/** Specifies a pin to be an input */
+#define BLADERF_XB_DIR_INPUT(pin)   (0)
+
+/** Pin bitmask for Expansion GPIO 1 (U74 pin 11) */
+#define BLADERF_XB_GPIO_01 BLADERF_XB_GPIO(1)
+
+/** Pin bitmask for Expansion GPIO 2 (U74 pin 13) */
+#define BLADERF_XB_GPIO_02 BLADERF_XB_GPIO(2)
+
+/** Pin bitmask for Expansion GPIO 3 (U74 pin 17) */
+#define BLADERF_XB_GPIO_03 BLADERF_XB_GPIO(3)
+
+/** Pin bitmask for Expansion GPIO 4 (U74 pin 19) */
+#define BLADERF_XB_GPIO_04 BLADERF_XB_GPIO(4)
+
+/** Pin bitmask for Expansion GPIO 5 (U74 pin 23) */
+#define BLADERF_XB_GPIO_05 BLADERF_XB_GPIO(5)
+
+/** Pin bitmask for Expansion GPIO 6 (U74 pin 25) */
+#define BLADERF_XB_GPIO_06 BLADERF_XB_GPIO(6)
+
+/** Pin bitmask for Expansion GPIO 7 (U74 pin 29) */
+#define BLADERF_XB_GPIO_07 BLADERF_XB_GPIO(7)
+
+/** Pin bitmask for Expansion GPIO 8 (U74 pin 31) */
+#define BLADERF_XB_GPIO_08 BLADERF_XB_GPIO(8)
+
+/** Pin bitmask for Expansion GPIO 9 (U74 pin 35) */
+#define BLADERF_XB_GPIO_09 BLADERF_XB_GPIO(9)
+
+/** Pin bitmask for Expansion GPIO 10 (U74 pin 37) */
+#define BLADERF_XB_GPIO_10 BLADERF_XB_GPIO(10)
+
+/** Pin bitmask for Expansion GPIO 11 (U74 pin 41) */
+#define BLADERF_XB_GPIO_11 BLADERF_XB_GPIO(11)
+
+/** Pin bitmask for Expansion GPIO 12 (U74 pin 43) */
+#define BLADERF_XB_GPIO_12 BLADERF_XB_GPIO(12)
+
+/** Pin bitmask for Expansion GPIO 13 (U74 pin 47) */
+#define BLADERF_XB_GPIO_13 BLADERF_XB_GPIO(13)
+
+/** Pin bitmask for Expansion GPIO 14 (U74 pin 49) */
+#define BLADERF_XB_GPIO_14 BLADERF_XB_GPIO(14)
+
+/** Pin bitmask for Expansion GPIO 15 (U74 pin 53) */
+#define BLADERF_XB_GPIO_15 BLADERF_XB_GPIO(15)
+
+/** Pin bitmask for Expansion GPIO 16 (U74 pin 55) */
+#define BLADERF_XB_GPIO_16 BLADERF_XB_GPIO(16)
+
+/** Pin bitmask for Expansion GPIO 17 (U74 pin 12) */
+#define BLADERF_XB_GPIO_17 BLADERF_XB_GPIO(17)
+
+/** Pin bitmask for Expansion GPIO 18 (U74 pin 14) */
+#define BLADERF_XB_GPIO_18 BLADERF_XB_GPIO(18)
+
+/** Pin bitmask for Expansion GPIO 19 (U74 pin 18) */
+#define BLADERF_XB_GPIO_19 BLADERF_XB_GPIO(19)
+
+/** Pin bitmask for Expansion GPIO 20 (U74 pin 20) */
+#define BLADERF_XB_GPIO_20 BLADERF_XB_GPIO(20)
+
+/** Pin bitmask for Expansion GPIO 21 (U74 pin 24) */
+#define BLADERF_XB_GPIO_21 BLADERF_XB_GPIO(21)
+
+/** Pin bitmask for Expansion GPIO 22 (U74 pin 26) */
+#define BLADERF_XB_GPIO_22 BLADERF_XB_GPIO(22)
+
+/** Pin bitmask for Expansion GPIO 23 (U74 pin 30) */
+#define BLADERF_XB_GPIO_23 BLADERF_XB_GPIO(23)
+
+/** Pin bitmask for Expansion GPIO 24 (U74 pin 32) */
+#define BLADERF_XB_GPIO_24 BLADERF_XB_GPIO(24)
+
+/** Pin bitmask for Expansion GPIO 25 (U74 pin 36) */
+#define BLADERF_XB_GPIO_25 BLADERF_XB_GPIO(25)
+
+/** Pin bitmask for Expansion GPIO 26 (U74 pin 38) */
+#define BLADERF_XB_GPIO_26 BLADERF_XB_GPIO(26)
+
+/** Pin bitmask for Expansion GPIO 27 (U74 pin 42) */
+#define BLADERF_XB_GPIO_27 BLADERF_XB_GPIO(27)
+
+/** Pin bitmask for Expansion GPIO 28 (U74 pin 44) */
+#define BLADERF_XB_GPIO_28 BLADERF_XB_GPIO(28)
+
+/** Pin bitmask for Expansion GPIO 29 (U74 pin 48) */
+#define BLADERF_XB_GPIO_29 BLADERF_XB_GPIO(29)
+
+/** Pin bitmask for Expansion GPIO 30 (U74 pin 50) */
+#define BLADERF_XB_GPIO_30 BLADERF_XB_GPIO(30)
+
+/** Pin bitmask for Expansion GPIO 31 (U74 pin 54) */
+#define BLADERF_XB_GPIO_31 BLADERF_XB_GPIO(31)
+
+/** Pin bitmask for Expansion GPIO 32 (U74 pin 56) */
+#define BLADERF_XB_GPIO_32 BLADERF_XB_GPIO(32)
+
+
+/** Bitmask for XB-200 header J7, pin 1 */
+#define BLADERF_XB200_PIN_J7_1  BLADERF_XB_GPIO_10
+
+/** Bitmask for XB-200 header J7, pin 2 */
+#define BLADERF_XB200_PIN_J7_2  BLADERF_XB_GPIO_11
+
+/** Bitmask for XB-200 header J7, pin 5 */
+#define BLADERF_XB200_PIN_J7_5  BLADERF_XB_GPIO_08
+
+/** Bitmask for XB-200 header J7, pin 6 */
+#define BLADERF_XB200_PIN_J7_6  BLADERF_XB_GPIO_09
+
+/** Bitmask for XB-200 header J13, pin 1 */
+#define BLADERF_XB200_PIN_J13_1 BLADERF_XB_GPIO_17
+
+/** Bitmask for XB-200 header J13, pin 2 */
+#define BLADERF_XB200_PIN_J13_2 BLADERF_XB_GPIO_18
+
+/* XB-200 J13 Pin 6 is actually reserved for SPI */
+
+/** Bitmask for XB-200 header J16, pin 1 */
+#define BLADERF_XB200_PIN_J16_1 BLADERF_XB_GPIO_31
+
+/** Bitmask for XB-200 header J16, pin 2 */
+#define BLADERF_XB200_PIN_J16_2 BLADERF_XB_GPIO_32
+
+/** Bitmask for XB-200 header J16, pin 3 */
+#define BLADERF_XB200_PIN_J16_3 BLADERF_XB_GPIO_19
+
+/** Bitmask for XB-200 header J16, pin 4 */
+#define BLADERF_XB200_PIN_J16_4 BLADERF_XB_GPIO_20
+
+/** Bitmask for XB-200 header J16, pin 5 */
+#define BLADERF_XB200_PIN_J16_5 BLADERF_XB_GPIO_21
+
+/** Bitmask for XB-200 header J16, pin 6 */
+#define BLADERF_XB200_PIN_J16_6 BLADERF_XB_GPIO_24
+
+/** Bitmask for XB-100 header J2, pin 3 */
+#define BLADERF_XB100_PIN_J2_3 BLADERF_XB_GPIO_07
+
+/** Bitmask for XB-100 header J2, pin 4 */
+#define BLADERF_XB100_PIN_J2_4  BLADERF_XB_GPIO_08
+
+/** Bitmask for XB-100 header J3, pin 3 */
+#define BLADERF_XB100_PIN_J3_3  BLADERF_XB_GPIO_09
+
+/** Bitmask for XB-100 header J3, pin 4 */
+#define BLADERF_XB100_PIN_J3_4  BLADERF_XB_GPIO_10
+
+/** Bitmask for XB-100 header J4, pin 3 */
+#define BLADERF_XB100_PIN_J4_3  BLADERF_XB_GPIO_11
+
+/** Bitmask for XB-100 header J4, pin 4 */
+#define BLADERF_XB100_PIN_J4_4  BLADERF_XB_GPIO_12
+
+/** Bitmask for XB-100 header J5, pin 3 */
+#define BLADERF_XB100_PIN_J5_3  BLADERF_XB_GPIO_13
+
+/** Bitmask for XB-100 header J5, pin 4 */
+#define BLADERF_XB100_PIN_J5_4  BLADERF_XB_GPIO_14
+
+/** Bitmask for XB-100 header J11, pin 2 */
+#define BLADERF_XB100_PIN_J11_2 BLADERF_XB_GPIO_05
+
+/** Bitmask for XB-100 header J11, pin 3 */
+#define BLADERF_XB100_PIN_J11_3 BLADERF_XB_GPIO_04
+
+/** Bitmask for XB-100 header J11, pin 4 */
+#define BLADERF_XB100_PIN_J11_4 BLADERF_XB_GPIO_03
+
+/** Bitmask for XB-100 header J11, pin 5 */
+#define BLADERF_XB100_PIN_J11_5 BLADERF_XB_GPIO_06
+
+/** Bitmask for XB-100 header J12, pin 2 */
+#define BLADERF_XB100_PIN_J12_2 BLADERF_XB_GPIO_01
+
+/*  XB-100 header J12, pins 3 and 4 are reserved for SPI */
+
+/** Bitmask for XB-100 header J12, pin 5 */
+#define BLADERF_XB100_PIN_J12_5 BLADERF_XB_GPIO_02
+
+/** Bitmask for XB-100 LED_D1 (blue) */
+#define BLADERF_XB100_LED_D1    BLADERF_XB_GPIO_24
+
+/** Bitmask for XB-100 LED_D2 (blue) */
+#define BLADERF_XB100_LED_D2    BLADERF_XB_GPIO_32
+
+/** Bitmask for XB-100 LED_D3 (blue) */
+#define BLADERF_XB100_LED_D3    BLADERF_XB_GPIO_30
+
+/** Bitmask for XB-100 LED_D4 (red) */
+#define BLADERF_XB100_LED_D4    BLADERF_XB_GPIO_28
+
+/** Bitmask for XB-100 LED_D5 (red) */
+#define BLADERF_XB100_LED_D5    BLADERF_XB_GPIO_23
+
+/** Bitmask for XB-100 LED_D6 (red) */
+#define BLADERF_XB100_LED_D6    BLADERF_XB_GPIO_25
+
+/** Bitmask for XB-100 LED_D7 (green) */
+#define BLADERF_XB100_LED_D7    BLADERF_XB_GPIO_31
+
+/** Bitmask for XB-100 LED_D8 (green) */
+#define BLADERF_XB100_LED_D8    BLADERF_XB_GPIO_29
+
+/** Bitmask for XB-100 tricolor LED, red cathode */
+#define BLADERF_XB100_TLED_RED  BLADERF_XB_GPIO_22
+
+/** Bitmask for XB-100 tricolor LED, green cathode */
+#define BLADERF_XB100_TLED_GREEN  BLADERF_XB_GPIO_21
+
+/** Bitmask for XB-100 tricolor LED, blue cathode */
+#define BLADERF_XB100_TLED_BLUE BLADERF_XB_GPIO_20
+
+/** Bitmask for XB-100 DIP switch 1 */
+#define BLADERF_XB100_DIP_SW1   BLADERF_XB_GPIO_27
+
+/** Bitmask for XB-100 DIP switch 2 */
+#define BLADERF_XB100_DIP_SW2   BLADERF_XB_GPIO_26
+
+/** Bitmask for XB-100 DIP switch 3 */
+#define BLADERF_XB100_DIP_SW3   BLADERF_XB_GPIO_16
+
+/** Bitmask for XB-100 DIP switch 4 */
+#define BLADERF_XB100_DIP_SW4   BLADERF_XB_GPIO_15
+
+/** Bitmask for XB-100 button J6 */
+#define BLADERF_XB100_BTN_J6   BLADERF_XB_GPIO_19
+
+/** Bitmask for XB-100 button J7 */
+#define BLADERF_XB100_BTN_J7   BLADERF_XB_GPIO_18
+
+/** Bitmask for XB-100 button J8 */
+#define BLADERF_XB100_BTN_J8   BLADERF_XB_GPIO_17
+
+/* XB-100 buttons J9 and J10 are not mapped to the GPIO register,
+ * but instead to reserved SPI pins. FPGA modifications are needed to
+ * use these. */
+
+/**
+ * Read the state of expansion GPIO values
+ *
+ * @param[in]   dev         Device handle
+ * @param[out]  val         Value of GPIO pins
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_expansion_gpio_read(struct bladerf *dev, uint32_t *val);
+
+/**
+ * Write expansion GPIO pins.
+ *
+ * Callers should be sure to perform a read-modify-write sequence to avoid
+ * accidentally clearing other GPIO bits that may be set by the library
+ * internally.
+ *
+ * Consider using bladerf_expansion_gpio_masked_write() instead.
+ *
+ * @param   dev         Device handle
+ * @param   val         Data to write to GPIO pins.
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_expansion_gpio_write(struct bladerf *dev, uint32_t val);
+
+/**
+ * Write values to the specified GPIO pins
+ *
+ * This function alleviates the need for the caller to perform a
+ * read-modify-write sequence. The supplied mask is used by the FPGA to
+ * perform the required RMW operation.
+ *
+ * @param   dev         Device handle
+ * @param   mask        Mask of pins to write
+ * @param   value       Value to write.
+ *
+ * For example, to set XB200 pins J16-1 and J16-2, and clear J16-4 and J16-5:
+ * @code{.c}
+ *  const uint32_t pins_to_write =
+ *      BLADERF_XB200_PIN_J16_1 |
+ *      BLADERF_XB200_PIN_J16_2 |
+ *      BLADERF_XB200_PIN_J16_3 |
+ *      BLADERF_XB200_PIN_J16_4;
+ *
+ *  const uint32_t values_to_write =
+ *      BLADERF_XB200_PIN_J16_1 |
+ *      BLADERF_XB200_PIN_J16_2;
+ *
+ *  int status = bladerf_expansion_gpio_masked_write(dev,
+ *                                                   pins_to_write,
+ *                                                   values_to_write);
+ * @endcode
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_expansion_gpio_masked_write(struct bladerf *dev,
+                                                  uint32_t mask,
+                                                  uint32_t value);
+
+/**
+ * Read the expansion GPIO direction register
+ *
+ * @param[in]   dev         Device handle
+ * @param[out]  outputs     Pins configured as outputs will be set to '1'.
+ *                          Pins configured as inputs will be set to '0'.
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_expansion_gpio_dir_read(struct bladerf *dev,
+                                              uint32_t *outputs);
+
+/**
+ * Write to the expansion GPIO direction register.
+ *
+ * Callers should be sure to perform a read-modify-write sequence to avoid
+ * accidentally clearing other GPIO bits that may be set by the library
+ * internally.
+ *
+ * Consider using bladerf_expansion_gpio_dir_masked_write() instead.
+ *
+ * @param   dev         Device handle
+ * @param   outputs     Pins set to '1' will be configured as outputs.
+ *                      Pins set to '0' will be configured as inputs.
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_expansion_gpio_dir_write(struct bladerf *dev,
+                                               uint32_t outputs);
+
+/**
+ * Configure the direction of the specified expansion GPIO pins
+ *
+ * This function alleviates the need for the caller to perform a
+ * read-modify-write sequence. The supplied mask is used by the FPGA to
+ * perform the required RMW operation.
+ *
+ * @param   dev         Device handle
+ * @param   mask        Bitmask of pins to configure
+ * @param   outputs     Pins set to '1' will be configured as outputs.
+ *                      Pins set to '0' will be configured as inputs.
+ *
+ * For example, to configure XB200 pins J16-1 and J16-2 and pins
+ * J16-4 and J16-5 as inputs:
+ *
+ * @code{.c}
+ *  const uint32_t pins_to_config =
+ *      BLADERF_XB200_PIN_J16_1 |
+ *      BLADERF_XB200_PIN_J16_2 |
+ *      BLADERF_XB200_PIN_J16_3 |
+ *      BLADERF_XB200_PIN_J16_4;
+ *
+ *  const uint32_t output_pins =
+ *      BLADERF_XB200_PIN_J16_1 |
+ *      BLADERF_XB200_PIN_J16_2;
+ *
+ *  int status = bladerf_expansion_gpio_masked_write(dev,
+ *                                                   pins_to_config,
+ *                                                   output_pins);
+ * @endcode
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_expansion_gpio_dir_masked_write(struct bladerf *dev,
+                                                      uint32_t mask,
+                                                      uint32_t outputs);
+
+/** @} (End of FN_EXP_IO) */
+
+/**
  * @defgroup FMT_META   Sample Formats and Metadata
  *
  * This section defines the available sample formats and metadata flags.
@@ -3313,397 +3704,6 @@ int CALL_CONV bladerf_image_read(struct bladerf_image *image, const char *file);
 
 /** @} (End of FN_IMAGE) */
 
-
-/**
- * @defgroup FN_EXP_IO Expansion IO control
- *
- * These definitoins and functions provide high-level functionality for
- * manipulating pins on the bladeRF U74 Expansion Header, and the associated
- * mappings on expansion boards.
- *
- * @{
- */
-
-/** Expansion pin GPIO number to bitmask */
-#define BLADERF_XB_GPIO(n) (1 << (n-1))
-
-/** Specifies a pin to be an output */
-#define BLADERF_XB_DIR_OUTPUT(pin)  (pin)
-
-/** Specifies a pin to be an input */
-#define BLADERF_XB_DIR_INPUT(pin)   (0)
-
-/** Pin bitmask for Expansion GPIO 1 (U74 pin 11) */
-#define BLADERF_XB_GPIO_01 BLADERF_XB_GPIO(1)
-
-/** Pin bitmask for Expansion GPIO 2 (U74 pin 13) */
-#define BLADERF_XB_GPIO_02 BLADERF_XB_GPIO(2)
-
-/** Pin bitmask for Expansion GPIO 3 (U74 pin 17) */
-#define BLADERF_XB_GPIO_03 BLADERF_XB_GPIO(3)
-
-/** Pin bitmask for Expansion GPIO 4 (U74 pin 19) */
-#define BLADERF_XB_GPIO_04 BLADERF_XB_GPIO(4)
-
-/** Pin bitmask for Expansion GPIO 5 (U74 pin 23) */
-#define BLADERF_XB_GPIO_05 BLADERF_XB_GPIO(5)
-
-/** Pin bitmask for Expansion GPIO 6 (U74 pin 25) */
-#define BLADERF_XB_GPIO_06 BLADERF_XB_GPIO(6)
-
-/** Pin bitmask for Expansion GPIO 7 (U74 pin 29) */
-#define BLADERF_XB_GPIO_07 BLADERF_XB_GPIO(7)
-
-/** Pin bitmask for Expansion GPIO 8 (U74 pin 31) */
-#define BLADERF_XB_GPIO_08 BLADERF_XB_GPIO(8)
-
-/** Pin bitmask for Expansion GPIO 9 (U74 pin 35) */
-#define BLADERF_XB_GPIO_09 BLADERF_XB_GPIO(9)
-
-/** Pin bitmask for Expansion GPIO 10 (U74 pin 37) */
-#define BLADERF_XB_GPIO_10 BLADERF_XB_GPIO(10)
-
-/** Pin bitmask for Expansion GPIO 11 (U74 pin 41) */
-#define BLADERF_XB_GPIO_11 BLADERF_XB_GPIO(11)
-
-/** Pin bitmask for Expansion GPIO 12 (U74 pin 43) */
-#define BLADERF_XB_GPIO_12 BLADERF_XB_GPIO(12)
-
-/** Pin bitmask for Expansion GPIO 13 (U74 pin 47) */
-#define BLADERF_XB_GPIO_13 BLADERF_XB_GPIO(13)
-
-/** Pin bitmask for Expansion GPIO 14 (U74 pin 49) */
-#define BLADERF_XB_GPIO_14 BLADERF_XB_GPIO(14)
-
-/** Pin bitmask for Expansion GPIO 15 (U74 pin 53) */
-#define BLADERF_XB_GPIO_15 BLADERF_XB_GPIO(15)
-
-/** Pin bitmask for Expansion GPIO 16 (U74 pin 55) */
-#define BLADERF_XB_GPIO_16 BLADERF_XB_GPIO(16)
-
-/** Pin bitmask for Expansion GPIO 17 (U74 pin 12) */
-#define BLADERF_XB_GPIO_17 BLADERF_XB_GPIO(17)
-
-/** Pin bitmask for Expansion GPIO 18 (U74 pin 14) */
-#define BLADERF_XB_GPIO_18 BLADERF_XB_GPIO(18)
-
-/** Pin bitmask for Expansion GPIO 19 (U74 pin 18) */
-#define BLADERF_XB_GPIO_19 BLADERF_XB_GPIO(19)
-
-/** Pin bitmask for Expansion GPIO 20 (U74 pin 20) */
-#define BLADERF_XB_GPIO_20 BLADERF_XB_GPIO(20)
-
-/** Pin bitmask for Expansion GPIO 21 (U74 pin 24) */
-#define BLADERF_XB_GPIO_21 BLADERF_XB_GPIO(21)
-
-/** Pin bitmask for Expansion GPIO 22 (U74 pin 26) */
-#define BLADERF_XB_GPIO_22 BLADERF_XB_GPIO(22)
-
-/** Pin bitmask for Expansion GPIO 23 (U74 pin 30) */
-#define BLADERF_XB_GPIO_23 BLADERF_XB_GPIO(23)
-
-/** Pin bitmask for Expansion GPIO 24 (U74 pin 32) */
-#define BLADERF_XB_GPIO_24 BLADERF_XB_GPIO(24)
-
-/** Pin bitmask for Expansion GPIO 25 (U74 pin 36) */
-#define BLADERF_XB_GPIO_25 BLADERF_XB_GPIO(25)
-
-/** Pin bitmask for Expansion GPIO 26 (U74 pin 38) */
-#define BLADERF_XB_GPIO_26 BLADERF_XB_GPIO(26)
-
-/** Pin bitmask for Expansion GPIO 27 (U74 pin 42) */
-#define BLADERF_XB_GPIO_27 BLADERF_XB_GPIO(27)
-
-/** Pin bitmask for Expansion GPIO 28 (U74 pin 44) */
-#define BLADERF_XB_GPIO_28 BLADERF_XB_GPIO(28)
-
-/** Pin bitmask for Expansion GPIO 29 (U74 pin 48) */
-#define BLADERF_XB_GPIO_29 BLADERF_XB_GPIO(29)
-
-/** Pin bitmask for Expansion GPIO 30 (U74 pin 50) */
-#define BLADERF_XB_GPIO_30 BLADERF_XB_GPIO(30)
-
-/** Pin bitmask for Expansion GPIO 31 (U74 pin 54) */
-#define BLADERF_XB_GPIO_31 BLADERF_XB_GPIO(31)
-
-/** Pin bitmask for Expansion GPIO 32 (U74 pin 56) */
-#define BLADERF_XB_GPIO_32 BLADERF_XB_GPIO(32)
-
-
-/** Bitmask for XB-200 header J7, pin 1 */
-#define BLADERF_XB200_PIN_J7_1  BLADERF_XB_GPIO_10
-
-/** Bitmask for XB-200 header J7, pin 2 */
-#define BLADERF_XB200_PIN_J7_2  BLADERF_XB_GPIO_11
-
-/** Bitmask for XB-200 header J7, pin 5 */
-#define BLADERF_XB200_PIN_J7_5  BLADERF_XB_GPIO_08
-
-/** Bitmask for XB-200 header J7, pin 6 */
-#define BLADERF_XB200_PIN_J7_6  BLADERF_XB_GPIO_09
-
-/** Bitmask for XB-200 header J13, pin 1 */
-#define BLADERF_XB200_PIN_J13_1 BLADERF_XB_GPIO_17
-
-/** Bitmask for XB-200 header J13, pin 2 */
-#define BLADERF_XB200_PIN_J13_2 BLADERF_XB_GPIO_18
-
-/* XB-200 J13 Pin 6 is actually reserved for SPI */
-
-/** Bitmask for XB-200 header J16, pin 1 */
-#define BLADERF_XB200_PIN_J16_1 BLADERF_XB_GPIO_31
-
-/** Bitmask for XB-200 header J16, pin 2 */
-#define BLADERF_XB200_PIN_J16_2 BLADERF_XB_GPIO_32
-
-/** Bitmask for XB-200 header J16, pin 3 */
-#define BLADERF_XB200_PIN_J16_3 BLADERF_XB_GPIO_19
-
-/** Bitmask for XB-200 header J16, pin 4 */
-#define BLADERF_XB200_PIN_J16_4 BLADERF_XB_GPIO_20
-
-/** Bitmask for XB-200 header J16, pin 5 */
-#define BLADERF_XB200_PIN_J16_5 BLADERF_XB_GPIO_21
-
-/** Bitmask for XB-200 header J16, pin 6 */
-#define BLADERF_XB200_PIN_J16_6 BLADERF_XB_GPIO_24
-
-/** Bitmask for XB-100 header J2, pin 3 */
-#define BLADERF_XB100_PIN_J2_3 BLADERF_XB_GPIO_07
-
-/** Bitmask for XB-100 header J2, pin 4 */
-#define BLADERF_XB100_PIN_J2_4  BLADERF_XB_GPIO_08
-
-/** Bitmask for XB-100 header J3, pin 3 */
-#define BLADERF_XB100_PIN_J3_3  BLADERF_XB_GPIO_09
-
-/** Bitmask for XB-100 header J3, pin 4 */
-#define BLADERF_XB100_PIN_J3_4  BLADERF_XB_GPIO_10
-
-/** Bitmask for XB-100 header J4, pin 3 */
-#define BLADERF_XB100_PIN_J4_3  BLADERF_XB_GPIO_11
-
-/** Bitmask for XB-100 header J4, pin 4 */
-#define BLADERF_XB100_PIN_J4_4  BLADERF_XB_GPIO_12
-
-/** Bitmask for XB-100 header J5, pin 3 */
-#define BLADERF_XB100_PIN_J5_3  BLADERF_XB_GPIO_13
-
-/** Bitmask for XB-100 header J5, pin 4 */
-#define BLADERF_XB100_PIN_J5_4  BLADERF_XB_GPIO_14
-
-/** Bitmask for XB-100 header J11, pin 2 */
-#define BLADERF_XB100_PIN_J11_2 BLADERF_XB_GPIO_05
-
-/** Bitmask for XB-100 header J11, pin 3 */
-#define BLADERF_XB100_PIN_J11_3 BLADERF_XB_GPIO_04
-
-/** Bitmask for XB-100 header J11, pin 4 */
-#define BLADERF_XB100_PIN_J11_4 BLADERF_XB_GPIO_03
-
-/** Bitmask for XB-100 header J11, pin 5 */
-#define BLADERF_XB100_PIN_J11_5 BLADERF_XB_GPIO_06
-
-/** Bitmask for XB-100 header J12, pin 2 */
-#define BLADERF_XB100_PIN_J12_2 BLADERF_XB_GPIO_01
-
-/*  XB-100 header J12, pins 3 and 4 are reserved for SPI */
-
-/** Bitmask for XB-100 header J12, pin 5 */
-#define BLADERF_XB100_PIN_J12_5 BLADERF_XB_GPIO_02
-
-/** Bitmask for XB-100 LED_D1 (blue) */
-#define BLADERF_XB100_LED_D1    BLADERF_XB_GPIO_24
-
-/** Bitmask for XB-100 LED_D2 (blue) */
-#define BLADERF_XB100_LED_D2    BLADERF_XB_GPIO_32
-
-/** Bitmask for XB-100 LED_D3 (blue) */
-#define BLADERF_XB100_LED_D3    BLADERF_XB_GPIO_30
-
-/** Bitmask for XB-100 LED_D4 (red) */
-#define BLADERF_XB100_LED_D4    BLADERF_XB_GPIO_28
-
-/** Bitmask for XB-100 LED_D5 (red) */
-#define BLADERF_XB100_LED_D5    BLADERF_XB_GPIO_23
-
-/** Bitmask for XB-100 LED_D6 (red) */
-#define BLADERF_XB100_LED_D6    BLADERF_XB_GPIO_25
-
-/** Bitmask for XB-100 LED_D7 (green) */
-#define BLADERF_XB100_LED_D7    BLADERF_XB_GPIO_31
-
-/** Bitmask for XB-100 LED_D8 (green) */
-#define BLADERF_XB100_LED_D8    BLADERF_XB_GPIO_29
-
-/** Bitmask for XB-100 tricolor LED, red cathode */
-#define BLADERF_XB100_TLED_RED  BLADERF_XB_GPIO_22
-
-/** Bitmask for XB-100 tricolor LED, green cathode */
-#define BLADERF_XB100_TLED_GREEN  BLADERF_XB_GPIO_21
-
-/** Bitmask for XB-100 tricolor LED, blue cathode */
-#define BLADERF_XB100_TLED_BLUE BLADERF_XB_GPIO_20
-
-/** Bitmask for XB-100 DIP switch 1 */
-#define BLADERF_XB100_DIP_SW1   BLADERF_XB_GPIO_27
-
-/** Bitmask for XB-100 DIP switch 2 */
-#define BLADERF_XB100_DIP_SW2   BLADERF_XB_GPIO_26
-
-/** Bitmask for XB-100 DIP switch 3 */
-#define BLADERF_XB100_DIP_SW3   BLADERF_XB_GPIO_16
-
-/** Bitmask for XB-100 DIP switch 4 */
-#define BLADERF_XB100_DIP_SW4   BLADERF_XB_GPIO_15
-
-/** Bitmask for XB-100 button J6 */
-#define BLADERF_XB100_BTN_J6   BLADERF_XB_GPIO_19
-
-/** Bitmask for XB-100 button J7 */
-#define BLADERF_XB100_BTN_J7   BLADERF_XB_GPIO_18
-
-/** Bitmask for XB-100 button J8 */
-#define BLADERF_XB100_BTN_J8   BLADERF_XB_GPIO_17
-
-/* XB-100 buttons J9 and J10 are not mapped to the GPIO register,
- * but instead to reserved SPI pins. FPGA modifications are needed to
- * use these. */
-
-/**
- * Read the state of expansion GPIO values
- *
- * @param[in]   dev         Device handle
- * @param[out]  val         Value of GPIO pins
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_expansion_gpio_read(struct bladerf *dev, uint32_t *val);
-
-/**
- * Write expansion GPIO pins.
- *
- * Callers should be sure to perform a read-modify-write sequence to avoid
- * accidentally clearing other GPIO bits that may be set by the library
- * internally.
- *
- * Consider using bladerf_expansion_gpio_masked_write() instead.
- *
- * @param   dev         Device handle
- * @param   val         Data to write to GPIO pins.
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_expansion_gpio_write(struct bladerf *dev, uint32_t val);
-
-/**
- * Write values to the specified GPIO pins
- *
- * This function alleviates the need for the caller to perform a
- * read-modify-write sequence. The supplied mask is used by the FPGA to
- * perform the required RMW operation.
- *
- * @param   dev         Device handle
- * @param   mask        Mask of pins to write
- * @param   value       Value to write.
- *
- * For example, to set XB200 pins J16-1 and J16-2, and clear J16-4 and J16-5:
- * @code{.c}
- *  const uint32_t pins_to_write =
- *      BLADERF_XB200_PIN_J16_1 |
- *      BLADERF_XB200_PIN_J16_2 |
- *      BLADERF_XB200_PIN_J16_3 |
- *      BLADERF_XB200_PIN_J16_4;
- *
- *  const uint32_t values_to_write =
- *      BLADERF_XB200_PIN_J16_1 |
- *      BLADERF_XB200_PIN_J16_2;
- *
- *  int status = bladerf_expansion_gpio_masked_write(dev,
- *                                                   pins_to_write,
- *                                                   values_to_write);
- * @endcode
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_expansion_gpio_masked_write(struct bladerf *dev,
-                                                  uint32_t mask,
-                                                  uint32_t value);
-
-/**
- * Read the expansion GPIO direction register
- *
- * @param[in]   dev         Device handle
- * @param[out]  outputs     Pins configured as outputs will be set to '1'.
- *                          Pins configured as inputs will be set to '0'.
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_expansion_gpio_dir_read(struct bladerf *dev,
-                                              uint32_t *outputs);
-
-/**
- * Write to the expansion GPIO direction register.
- *
- * Callers should be sure to perform a read-modify-write sequence to avoid
- * accidentally clearing other GPIO bits that may be set by the library
- * internally.
- *
- * Consider using bladerf_expansion_gpio_dir_masked_write() instead.
- *
- * @param   dev         Device handle
- * @param   outputs     Pins set to '1' will be configured as outputs.
- *                      Pins set to '0' will be configured as inputs.
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_expansion_gpio_dir_write(struct bladerf *dev,
-                                               uint32_t outputs);
-
-/**
- * Configure the direction of the specified expansion GPIO pins
- *
- * This function alleviates the need for the caller to perform a
- * read-modify-write sequence. The supplied mask is used by the FPGA to
- * perform the required RMW operation.
- *
- * @param   dev         Device handle
- * @param   mask        Bitmask of pins to configure
- * @param   outputs     Pins set to '1' will be configured as outputs.
- *                      Pins set to '0' will be configured as inputs.
- *
- * For example, to configure XB200 pins J16-1 and J16-2 and pins
- * J16-4 and J16-5 as inputs:
- *
- * @code{.c}
- *  const uint32_t pins_to_config =
- *      BLADERF_XB200_PIN_J16_1 |
- *      BLADERF_XB200_PIN_J16_2 |
- *      BLADERF_XB200_PIN_J16_3 |
- *      BLADERF_XB200_PIN_J16_4;
- *
- *  const uint32_t output_pins =
- *      BLADERF_XB200_PIN_J16_1 |
- *      BLADERF_XB200_PIN_J16_2;
- *
- *  int status = bladerf_expansion_gpio_masked_write(dev,
- *                                                   pins_to_config,
- *                                                   output_pins);
- * @endcode
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_expansion_gpio_dir_masked_write(struct bladerf *dev,
-                                                      uint32_t mask,
-                                                      uint32_t outputs);
-
-/** @} (End of FN_EXP_IO) */
 
 /**
  * @defgroup LOW_LEVEL Low-level development and testing routines
