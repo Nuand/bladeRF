@@ -611,79 +611,6 @@ typedef enum {
     BLADERF_XB300_AMP_PA_AUX        /**< Auxillary Power amplifier */
 } bladerf_xb300_amplifier;
 
-/**
- * DC Calibration Modules
- */
-typedef enum {
-    BLADERF_DC_CAL_INVALID = -1,
-    BLADERF_DC_CAL_LPF_TUNING,
-    BLADERF_DC_CAL_TX_LPF,
-    BLADERF_DC_CAL_RX_LPF,
-    BLADERF_DC_CAL_RXVGA2
-} bladerf_cal_module;
-
-/**
- * Correction parameter selection
- *
- * These values specify the correction parameter to modify or query when
- * calling bladerf_set_correction() or bladerf_get_correction(). Note that the
- * meaning of the `value` parameter to these functions depends upon the
- * correction parameter.
- *
- */
-typedef enum {
-    /**
-     * Adjusts the in-phase DC offset via controls provided by the LMS6002D
-     * front end. Valid values are [-2048, 2048], which are scaled to the
-     * available control bits in the LMS device.
-     */
-    BLADERF_CORR_LMS_DCOFF_I,
-
-    /**
-     * Adjusts the quadrature DC offset via controls provided the LMS6002D
-     * front end. Valid values are [-2048, 2048], which are scaled to the
-     * available control bits.
-     */
-    BLADERF_CORR_LMS_DCOFF_Q,
-
-    /**
-     * Adjusts FPGA-based phase correction of [-10, 10] degrees, via a provided
-     * count value of [-4096, 4096].
-     */
-    BLADERF_CORR_FPGA_PHASE,
-
-    /**
-     * Adjusts FPGA-based gain correction value in [-1.0, 1.0], via provided
-     * values in the range of [-4096, 4096].
-     */
-    BLADERF_CORR_FPGA_GAIN
-} bladerf_correction;
-
-/**
- * VCTCXO Tamer mode selection
- *
- * These values control the use of header J71 pin 1 for taming the
- * on-board VCTCXO. When supplying input into the VCTCXO tamer, a 1.8V signal
- * must be provided.
- *
- * <b>
- * IMPORTANT: Exceeding 1.8V on J71-1 can damage the associated FPGA I/O bank.
- * Ensure that you provide only a 1.8V signal!
- * </b>
- */
-typedef enum {
-    /** Denotes an invalid selection or state */
-    BLADERF_VCTCXO_TAMER_INVALID = -1,
-
-    /** Do not attempt to tame the VCTCXO with an input source. */
-    BLADERF_VCTCXO_TAMER_DISABLED = 0,
-
-    /** Use a 1 pps input source to tame the VCTCXO. */
-    BLADERF_VCTCXO_TAMER_1_PPS = 1,
-
-    /** Use a 10 MHz input source to tame the VCTCXO. */
-    BLADERF_VCTCXO_TAMER_10_MHZ = 2
-} bladerf_vctcxo_tamer_mode;
 
 /**
  * Enable or disable the specified RX/TX module.
@@ -705,37 +632,6 @@ API_EXPORT
 int CALL_CONV bladerf_enable_module(struct bladerf *dev,
                                     bladerf_module m, bool enable);
 
-
-/**
- * Set the value of the specified configuration parameter
- *
- * See the ::bladerf_correction description for the valid ranges of the
- * `value` parameter.
- *
- * @param   dev         Device handle
- * @param   module      Module to apply correction to
- * @param   corr        Correction type
- * @param   value       Value to apply
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_set_correction(struct bladerf *dev, bladerf_module module,
-                                     bladerf_correction corr, int16_t value);
-
-/**
- * Obtain the current value of the specified configuration parameter
- *
- * @param[in]   dev         Device handle
- * @param[in]   module      Module to retrieve correction information from
- * @param[in]   corr        Correction type
- * @param[out]  value       Current value
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_get_correction(struct bladerf *dev, bladerf_module module,
-                                     bladerf_correction corr, int16_t *value);
 
 /**
  * Attach and enable an expansion board's features
@@ -874,32 +770,6 @@ int CALL_CONV bladerf_xb300_get_amplifier_enable(struct bladerf *dev,
  */
 API_EXPORT
 int CALL_CONV bladerf_xb300_get_output_power(struct bladerf *dev, float *val);
-
-/**
- * Set the VCTCXO tamer mode.
- *
- * @param       dev         Device handle
- * @param       mode        VCTCXO taming mode
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_set_vctcxo_tamer_mode(struct bladerf *dev,
-                                             bladerf_vctcxo_tamer_mode mode);
-
-/**
- * Get the current VCTCXO tamer mode
- *
- * @param[in]       dev         Device handle
- * @param[out]      mode        Current VCTCXO taming mode or
- *                              BLADERF_VCTCXO_TAMER_INVALID if a failure
- *                              occurs.
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_get_vctcxo_tamer_mode(struct bladerf *dev,
-                                             bladerf_vctcxo_tamer_mode *mode);
 
 /** @} (End of FN_CTRL) */
 
@@ -2176,7 +2046,185 @@ int CALL_CONV bladerf_trigger_state(struct bladerf *dev,
 
 /** @} (End of FN_TRIG) */
 
+/**
+ * @defgroup FN_CORR    Corrections and calibration
+ *
+ * This group provides routines for performing calibration and applying
+ * corrections.
+ *
+ * The automatic DC correction used by the `bladeRF-cli` is not part of
+ * this API, but it is implemented using libbladeRF. This automatic DC
+ * calibration code is available
+ * <a class="el" href="https://github.com/Nuand/bladeRF/blob/master/host/common/src/dc_calibration.c">here</a>
+ * under an "MIT" license.
+ * @{
+ */
 
+/**
+ * DC Calibration Modules
+ */
+typedef enum {
+    BLADERF_DC_CAL_INVALID = -1,
+    BLADERF_DC_CAL_LPF_TUNING,
+    BLADERF_DC_CAL_TX_LPF,
+    BLADERF_DC_CAL_RX_LPF,
+    BLADERF_DC_CAL_RXVGA2
+} bladerf_cal_module;
+
+/**
+ * Correction parameter selection
+ *
+ * These values specify the correction parameter to modify or query when
+ * calling bladerf_set_correction() or bladerf_get_correction(). Note that the
+ * meaning of the `value` parameter to these functions depends upon the
+ * correction parameter.
+ *
+ */
+typedef enum {
+    /**
+     * Adjusts the in-phase DC offset via controls provided by the LMS6002D
+     * front end. Valid values are [-2048, 2048], which are scaled to the
+     * available control bits in the LMS device.
+     */
+    BLADERF_CORR_LMS_DCOFF_I,
+
+    /**
+     * Adjusts the quadrature DC offset via controls provided the LMS6002D
+     * front end. Valid values are [-2048, 2048], which are scaled to the
+     * available control bits.
+     */
+    BLADERF_CORR_LMS_DCOFF_Q,
+
+    /**
+     * Adjusts FPGA-based phase correction of [-10, 10] degrees, via a provided
+     * count value of [-4096, 4096].
+     */
+    BLADERF_CORR_FPGA_PHASE,
+
+    /**
+     * Adjusts FPGA-based gain correction value in [-1.0, 1.0], via provided
+     * values in the range of [-4096, 4096].
+     */
+    BLADERF_CORR_FPGA_GAIN
+} bladerf_correction;
+
+/**
+ * VCTCXO Tamer mode selection
+ *
+ * These values control the use of header J71 pin 1 for taming the
+ * on-board VCTCXO to improve or sustain frequency accuracy.
+ *
+ * When supplying input into the VCTCXO tamer, a 1.8V signal must be provided.
+ *
+ * <b>
+ * IMPORTANT: Exceeding 1.8V on J71-1 can damage the associated FPGA I/O bank.
+ * Ensure that you provide only a 1.8V signal!
+ * </b>
+ */
+typedef enum {
+    /** Denotes an invalid selection or state */
+    BLADERF_VCTCXO_TAMER_INVALID = -1,
+
+    /** Do not attempt to tame the VCTCXO with an input source. */
+    BLADERF_VCTCXO_TAMER_DISABLED = 0,
+
+    /** Use a 1 pps input source to tame the VCTCXO. */
+    BLADERF_VCTCXO_TAMER_1_PPS = 1,
+
+    /** Use a 10 MHz input source to tame the VCTCXO. */
+    BLADERF_VCTCXO_TAMER_10_MHZ = 2
+} bladerf_vctcxo_tamer_mode;
+
+/**
+ * Set the value of the specified configuration parameter
+ *
+ * See the ::bladerf_correction description for the valid ranges of the
+ * `value` parameter.
+ *
+ * @param   dev         Device handle
+ * @param   module      Module to apply correction to
+ * @param   corr        Correction type
+ * @param   value       Value to apply
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_correction(struct bladerf *dev, bladerf_module module,
+                                     bladerf_correction corr, int16_t value);
+
+/**
+ * Obtain the current value of the specified configuration parameter
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   module      Module to retrieve correction information from
+ * @param[in]   corr        Correction type
+ * @param[out]  value       Current value
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_correction(struct bladerf *dev, bladerf_module module,
+                                     bladerf_correction corr, int16_t *value);
+
+
+/**
+ * Set the VCTCXO tamer mode.
+ *
+ * @param       dev         Device handle
+ * @param       mode        VCTCXO taming mode
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_vctcxo_tamer_mode(struct bladerf *dev,
+                                             bladerf_vctcxo_tamer_mode mode);
+
+/**
+ * Get the current VCTCXO tamer mode
+ *
+ * @param[in]       dev         Device handle
+ * @param[out]      mode        Current VCTCXO taming mode or
+ *                              BLADERF_VCTCXO_TAMER_INVALID if a failure
+ *                              occurs.
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_vctcxo_tamer_mode(struct bladerf *dev,
+                                             bladerf_vctcxo_tamer_mode *mode);
+
+/**
+ * Write value to VCTCXO trim DAC.
+ *
+ * This should not be used when the VCTCXO tamer is enabled.
+ *
+ * @param   dev         Device handle
+ * @param   val         Value to write to VCTCXO trim DAC
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_dac_write(struct bladerf *dev, uint16_t val);
+
+/**
+ * Read value from VCTCXO trim DAC.
+ *
+ * This is similar to bladerf_get_vctcxo_trim(), except that it returns the
+ * current trim DAC value, as opposed to the calibration value read from
+ * flash.
+ *
+ * Use this if you are trying to query the value after having previously
+ * made calls to bladerf_dac_write().
+ *
+ * @param[in]   dev     Device handle
+ * @param[out]  val     Value to read from VCTCXO trim DAC
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_dac_read(struct bladerf *dev, uint16_t *val);
+
+/** @} (End of FN_CORR) */
 
 /**
  * @defgroup FMT_META   Sample Formats and Metadata
@@ -3894,35 +3942,6 @@ int CALL_CONV bladerf_config_gpio_write(struct bladerf *dev, uint32_t val);
 API_EXPORT
 int CALL_CONV bladerf_get_timestamp(struct bladerf *dev, bladerf_module mod,
                                     uint64_t *value);
-
-/**
- * Write value to VCTCXO trim DAC
- *
- * @param   dev         Device handle
- * @param   val         Value to write to VCTCXO trim DAC
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_dac_write(struct bladerf *dev, uint16_t val);
-
-/**
- * Read value from VCTCXO trim DAC.
- *
- * This is similar to bladerf_get_vctcxo_trim(), except that it returns the
- * current trim DAC value, as opposed to the calibration value read from
- * flash.
- *
- * Use this if you are trying to query the value after having previously
- * made calls to bladerf_dac_write().
- *
- * @param[in]   dev     Device handle
- * @param[out]  val     Value to read from VCTCXO trim DAC
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_dac_read(struct bladerf *dev, uint16_t *val);
 
 /**
  * Write value to secondary XB SPI
