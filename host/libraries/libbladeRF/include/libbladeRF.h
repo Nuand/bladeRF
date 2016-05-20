@@ -513,61 +513,6 @@ bladerf_dev_speed CALL_CONV bladerf_device_speed(struct bladerf *dev);
 
 
 /**
- * Minimum tunable frequency (with an XB-200 attached), in HZ.
- *
- * While this value is the lowest permitted, note that the components on the
- * XB-200 are only rated down to 50 MHz. Be aware that performance will likely
- * degrade as you tune to lower frequencies.
- */
-#define BLADERF_FREQUENCY_MIN_XB200 0u
-
-/** Minimum tunable frequency (without an XB-200 attached), in Hz */
-#define BLADERF_FREQUENCY_MIN       237500000u
-
-/** Maximum tunable frequency, in Hz */
-#define BLADERF_FREQUENCY_MAX       3800000000u
-
-/**
- * Specifies that scheduled retune should occur immediately when using
- * bladerf_schedule_retune().
- */
-#define BLADERF_RETUNE_NOW  0
-
-/**
- * Frequency tuning modes
- *
- * BLADERF_TUNING_MODE_HOST is the default if either of the following conditions
- * are true:
- *   - libbladeRF < v1.3.0
- *   - FPGA       < v0.2.0
- *
- * BLADERF_TUNING_MODE_FPGA is the default if both of the following conditions
- * are true:
- *  - libbladeRF >= v1.3.0
- *  - FPGA       >= v0.2.0
- *
- * The default mode can be overridden by setting a BLADERF_DEFAULT_TUNING_MODE
- * environment variable to "host" or "fpga". Overriding this value with a mode
- * not supported by the FPGA will result in failures or unexpected behavior.
- */
-typedef enum {
-    /** Indicates an invalid mode is set */
-    BLADERF_TUNING_MODE_INVALID = -1,
-
-    /**
-     * Perform tuning algorithm on the host. This is slower, but provides
-     * easier accessiblity to diagnostic information.
-     */
-    BLADERF_TUNING_MODE_HOST,
-
-    /**
-     * Perform tuning algorithm on the FPGA for faster tuning.
-     *
-     */
-    BLADERF_TUNING_MODE_FPGA,
-} bladerf_tuning_mode;
-
-/**
  * Loopback options
  */
 typedef enum {
@@ -733,21 +678,6 @@ typedef enum {
 } bladerf_xb300_amplifier;
 
 /**
- * Quick Re-tune parameters. Note that these parameters, which are associated
- * with LMS6002D register values, are sensitive to changes in the operating
- * environment (e.g., temperature).
- *
- * This structure should be filled in via bladerf_get_quick_tune().
- */
-struct bladerf_quick_tune {
-    uint8_t freqsel;    /**< Choice of VCO and VCO division factor */
-    uint8_t vcocap;     /**< VCOCAP value */
-    uint16_t nint;      /**< Integer portion of LO frequency value */
-    uint32_t nfrac;     /**< Fractional portion of LO frequency value */
-    uint8_t  flags;     /**< Flag bits used internally by libbladeRF */
-};
-
-/**
  * DC Calibration Modules
  */
 typedef enum {
@@ -900,158 +830,6 @@ int CALL_CONV bladerf_set_correction(struct bladerf *dev, bladerf_module module,
 API_EXPORT
 int CALL_CONV bladerf_get_correction(struct bladerf *dev, bladerf_module module,
                                      bladerf_correction corr, int16_t *value);
-
-/**
- * Select the appropriate band path given a frequency in Hz.
- *
- * Most API users will not need to use this function, as bladerf_set_frequency()
- * calls this internally after tuning the device.
- *
- * The high band (LNA2 and PA2) is used for `frequency` >= 1.5 GHz. Otherwise,
- * The low band (LNA1 and PA1) is used.
- *
- * Frequency values outside the range of
- * [ \ref BLADERF_FREQUENCY_MIN, \ref BLADERF_FREQUENCY_MAX ]
- * will be clamped.
- *
- * @param       dev         Device handle
- * @param       module      Module to configure
- * @param       frequency   Tuned frequency
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_select_band(struct bladerf *dev, bladerf_module module,
-                                  unsigned int frequency);
-
-/**
- * Set module's frequency in Hz.
- *
- * Values outside the range of
- * [ \ref BLADERF_FREQUENCY_MIN, \ref BLADERF_FREQUENCY_MAX ]
- * will be clamped.
- *
- * For best results, it is recommended to keep the RX and TX frequencies at
- * least 1 MHz apart, and to digitally mix on the RX side if reception closer
- * to the TX frequency is required.
- *
- * This calls bladerf_select_band() internally.
- *
- * @param       dev         Device handle
- * @param       module      Module to configure
- * @param       frequency   Desired frequency
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_set_frequency(struct bladerf *dev,
-                                    bladerf_module module,
-                                    unsigned int frequency);
-
-/**
- * Schedule a frequency retune to occur at specified sample timestamp value.
- *
- * @pre bladerf_sync_config() must have been called with the
- *      BLADERF_FORMAT_SC16_Q11_META format for the associated module in order
- *      to enable timestamps. (The timestamped metadata format must be enabled
- *      in order to use this function.)
- *
- * @param       dev             Device handle
- *
- * @param       module          Module to retune
- *
- * @param       timestamp       Module's sample timestamp to perform the retune
- *                              operation. If this value is in the past, the
- *                              retune will occur immediately. To perform the
- *                              retune immediately, specify BLADERF_RETUNE_NOW.
- *
- * @param       frequency       Desired frequency, in Hz.
- *
- * @param       quick_tune      If NULL, the `frequency` parameter will be used.
- *                              If non-NULL, the provided "quick retune" values
- *                              will be applied to the transceiver to tune it
- *                              according to a previous state retrieved via
- *                              bladerf_get_quick_tune().
- *
- *
- * @return 0 on success, value from \ref RETCODES list on failure. If the
- *         underlying queue of scheduled retune requests becomes full,
- *         BLADERF_ERR_QUEUE_FULL will be returned. In this case, it should be
- *         possible to schedule a retune after the timestamp of one of the
- *         earlier requests occurs.
- */
-API_EXPORT
-int CALL_CONV bladerf_schedule_retune(struct bladerf *dev,
-                                      bladerf_module module,
-                                      uint64_t timestamp,
-                                      unsigned int frequency,
-                                      struct bladerf_quick_tune *quick_tune);
-
-/**
- * Cancel all pending scheduled retune operations for the specified module.
- *
- * This will be done automatically during bladerf_close() to ensure that
- * previously queued retunes do not continue to occur after closing and then
- * later re-opening a device.
- *
- * @param   dev     Device handle
- * @param   module  Module to cancel pending operations on
- *
- * @return 0 on success, value from \ref RETCODES list on failure.
- */
-API_EXPORT
-int CALL_CONV bladerf_cancel_scheduled_retunes(struct bladerf *dev,
-                                               bladerf_module module);
-
-/**
- * Get module's current frequency in Hz
- *
- * @param       dev         Device handle
- * @param       module      Module to configure
- * @param       frequency   Pointer to the returned frequency
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_get_frequency(struct bladerf *dev,
-                                    bladerf_module module,
-                                    unsigned int *frequency);
-
-/**
- * Fetch parameters used to tune the transceiver to the current frequency for
- * use with bladerf_schedule_retune() to perform a "quick retune."
- *
- * This allows for a faster retune, with a potential trade off of
- * increased phase noise.  Note that these parameters are sensitive to
- * changes in the operating environment, and should be "refreshed" if planning
- * to use the "quick retune" functionality over a long period of time.
- *
- * @pre bladerf_set_frequency() or bladerf_schedule_retune() have previously
- *      been used to retune to the desired frequency.
- *
- * @param[in]   dev         Device handle
- * @param[in]   module      Module to query
- * @param[out]  quick_tune  Quick retune parameters
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_get_quick_tune(struct bladerf *dev,
-                                     bladerf_module module,
-                                     struct bladerf_quick_tune *quick_tune);
-
-/**
- * Set the device's tuning mode
- *
- * @param       dev         Device handle
- * @param       mode        Desired tuning mode. Note that the available modes
- *                          depends on the FPGA version.
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_set_tuning_mode(struct bladerf *dev,
-                                      bladerf_tuning_mode mode);
 
 /**
  * Attach and enable an expansion board's features
@@ -1713,6 +1491,243 @@ int CALL_CONV bladerf_get_lpf_mode(struct bladerf *dev, bladerf_module module,
 
 
 /** @} (End of FN_BANDWIDTH) */
+
+/**
+ * @defgroup FN_TUNING  Frequency tuning
+ *
+ * These functions provide the ability to tune the RX and TX modules.
+ *
+ * See <a class="el" href="tuning.html">this page</a> for more detailed
+ * information about how the API performs this tuning, and for example
+ * code snippets.
+ *
+ * @{
+ */
+
+/**
+ * Minimum tunable frequency (with an XB-200 attached), in HZ.
+ *
+ * While this value is the lowest permitted, note that the components on the
+ * XB-200 are only rated down to 50 MHz. Be aware that performance will likely
+ * degrade as you tune to lower frequencies.
+ */
+#define BLADERF_FREQUENCY_MIN_XB200 0u
+
+/** Minimum tunable frequency (without an XB-200 attached), in Hz */
+#define BLADERF_FREQUENCY_MIN       237500000u
+
+/** Maximum tunable frequency, in Hz */
+#define BLADERF_FREQUENCY_MAX       3800000000u
+
+/**
+ * Specifies that scheduled retune should occur immediately when using
+ * bladerf_schedule_retune().
+ */
+#define BLADERF_RETUNE_NOW  0
+
+/**
+ * Frequency tuning modes
+ *
+ * BLADERF_TUNING_MODE_HOST is the default if either of the following conditions
+ * are true:
+ *   - libbladeRF < v1.3.0
+ *   - FPGA       < v0.2.0
+ *
+ * BLADERF_TUNING_MODE_FPGA is the default if both of the following conditions
+ * are true:
+ *  - libbladeRF >= v1.3.0
+ *  - FPGA       >= v0.2.0
+ *
+ * The default mode can be overridden by setting a BLADERF_DEFAULT_TUNING_MODE
+ * environment variable to "host" or "fpga". Overriding this value with a mode
+ * not supported by the FPGA will result in failures or unexpected behavior.
+ */
+typedef enum {
+    /** Indicates an invalid mode is set */
+    BLADERF_TUNING_MODE_INVALID = -1,
+
+    /**
+     * Perform tuning algorithm on the host. This is slower, but provides
+     * easier accessiblity to diagnostic information.
+     */
+    BLADERF_TUNING_MODE_HOST,
+
+    /**
+     * Perform tuning algorithm on the FPGA for faster tuning.
+     *
+     */
+    BLADERF_TUNING_MODE_FPGA,
+} bladerf_tuning_mode;
+
+/**
+ * Quick Re-tune parameters. Note that these parameters, which are associated
+ * with LMS6002D register values, are sensitive to changes in the operating
+ * environment (e.g., temperature).
+ *
+ * This structure should be filled in via bladerf_get_quick_tune().
+ */
+struct bladerf_quick_tune {
+    uint8_t freqsel;    /**< Choice of VCO and VCO division factor */
+    uint8_t vcocap;     /**< VCOCAP value */
+    uint16_t nint;      /**< Integer portion of LO frequency value */
+    uint32_t nfrac;     /**< Fractional portion of LO frequency value */
+    uint8_t  flags;     /**< Flag bits used internally by libbladeRF */
+};
+
+/**
+ * Select the appropriate band path given a frequency in Hz.
+ *
+ * Most API users will not need to use this function, as bladerf_set_frequency()
+ * calls this internally after tuning the device.
+ *
+ * The high band (LNA2 and PA2) is used for `frequency` >= 1.5 GHz. Otherwise,
+ * The low band (LNA1 and PA1) is used.
+ *
+ * Frequency values outside the range of
+ * [ \ref BLADERF_FREQUENCY_MIN, \ref BLADERF_FREQUENCY_MAX ]
+ * will be clamped.
+ *
+ * @param       dev         Device handle
+ * @param       module      Module to configure
+ * @param       frequency   Tuned frequency
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_select_band(struct bladerf *dev, bladerf_module module,
+                                  unsigned int frequency);
+
+/**
+ * Set module's frequency in Hz.
+ *
+ * Values outside the range of
+ * [ \ref BLADERF_FREQUENCY_MIN, \ref BLADERF_FREQUENCY_MAX ]
+ * will be clamped.
+ *
+ * For best results, it is recommended to keep the RX and TX frequencies at
+ * least 1 MHz apart, and to digitally mix on the RX side if reception closer
+ * to the TX frequency is required.
+ *
+ * This calls bladerf_select_band() internally.
+ *
+ * @param       dev         Device handle
+ * @param       module      Module to configure
+ * @param       frequency   Desired frequency
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_frequency(struct bladerf *dev,
+                                    bladerf_module module,
+                                    unsigned int frequency);
+
+/**
+ * Schedule a frequency retune to occur at specified sample timestamp value.
+ *
+ * @pre bladerf_sync_config() must have been called with the
+ *      BLADERF_FORMAT_SC16_Q11_META format for the associated module in order
+ *      to enable timestamps. (The timestamped metadata format must be enabled
+ *      in order to use this function.)
+ *
+ * @param       dev             Device handle
+ *
+ * @param       module          Module to retune
+ *
+ * @param       timestamp       Module's sample timestamp to perform the retune
+ *                              operation. If this value is in the past, the
+ *                              retune will occur immediately. To perform the
+ *                              retune immediately, specify BLADERF_RETUNE_NOW.
+ *
+ * @param       frequency       Desired frequency, in Hz.
+ *
+ * @param       quick_tune      If NULL, the `frequency` parameter will be used.
+ *                              If non-NULL, the provided "quick retune" values
+ *                              will be applied to the transceiver to tune it
+ *                              according to a previous state retrieved via
+ *                              bladerf_get_quick_tune().
+ *
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure. If the
+ *         underlying queue of scheduled retune requests becomes full,
+ *         BLADERF_ERR_QUEUE_FULL will be returned. In this case, it should be
+ *         possible to schedule a retune after the timestamp of one of the
+ *         earlier requests occurs.
+ */
+API_EXPORT
+int CALL_CONV bladerf_schedule_retune(struct bladerf *dev,
+                                      bladerf_module module,
+                                      uint64_t timestamp,
+                                      unsigned int frequency,
+                                      struct bladerf_quick_tune *quick_tune);
+
+/**
+ * Cancel all pending scheduled retune operations for the specified module.
+ *
+ * This will be done automatically during bladerf_close() to ensure that
+ * previously queued retunes do not continue to occur after closing and then
+ * later re-opening a device.
+ *
+ * @param   dev     Device handle
+ * @param   module  Module to cancel pending operations on
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure.
+ */
+API_EXPORT
+int CALL_CONV bladerf_cancel_scheduled_retunes(struct bladerf *dev,
+                                               bladerf_module module);
+
+/**
+ * Get module's current frequency in Hz
+ *
+ * @param       dev         Device handle
+ * @param       module      Module to configure
+ * @param       frequency   Pointer to the returned frequency
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_frequency(struct bladerf *dev,
+                                    bladerf_module module,
+                                    unsigned int *frequency);
+
+/**
+ * Fetch parameters used to tune the transceiver to the current frequency for
+ * use with bladerf_schedule_retune() to perform a "quick retune."
+ *
+ * This allows for a faster retune, with a potential trade off of
+ * increased phase noise.  Note that these parameters are sensitive to
+ * changes in the operating environment, and should be "refreshed" if planning
+ * to use the "quick retune" functionality over a long period of time.
+ *
+ * @pre bladerf_set_frequency() or bladerf_schedule_retune() have previously
+ *      been used to retune to the desired frequency.
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   module      Module to query
+ * @param[out]  quick_tune  Quick retune parameters
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_quick_tune(struct bladerf *dev,
+                                     bladerf_module module,
+                                     struct bladerf_quick_tune *quick_tune);
+
+/**
+ * Set the device's tuning mode
+ *
+ * @param       dev         Device handle
+ * @param       mode        Desired tuning mode. Note that the available modes
+ *                          depends on the FPGA version.
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_tuning_mode(struct bladerf *dev,
+                                      bladerf_tuning_mode mode);
+
+
+/** @} (End of FN_TUNING) */
 
 /**
  * @defgroup FMT_META   Sample Formats and Metadata
