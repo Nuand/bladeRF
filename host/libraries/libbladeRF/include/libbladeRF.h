@@ -153,17 +153,6 @@ typedef enum {
     BLADERF_BACKEND_DUMMY = 100, /**< Dummy used for development purposes */
 } bladerf_backend;
 
-
-/**
- * This enum describes the USB Speed at which the bladeRF is connected.
- * Speeds not listed here are not supported.
- */
-typedef enum {
-    BLADERF_DEVICE_SPEED_UNKNOWN,
-    BLADERF_DEVICE_SPEED_HIGH,
-    BLADERF_DEVICE_SPEED_SUPER,
-} bladerf_dev_speed;
-
 /** Length of device serial number string, including NUL-terminator */
 #define BLADERF_SERIAL_LENGTH   33
 
@@ -439,6 +428,15 @@ typedef enum {
     BLADERF_FPGA_115KLE = 115   /**< 115 kLE FPGA */
 } bladerf_fpga_size;
 
+/**
+ * This enum describes the USB Speed at which the bladeRF is connected.
+ * Speeds not listed here are not supported.
+ */
+typedef enum {
+    BLADERF_DEVICE_SPEED_UNKNOWN,
+    BLADERF_DEVICE_SPEED_HIGH,
+    BLADERF_DEVICE_SPEED_SUPER,
+} bladerf_dev_speed;
 
 /**
  * Query a device's serial number
