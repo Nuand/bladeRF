@@ -521,96 +521,6 @@ typedef enum
     BLADERF_MODULE_TX               /**< Transmit Module */
 } bladerf_module;
 
-/**
- * Expansion boards
- */
-typedef enum {
-    BLADERF_XB_NONE = 0,    /**< No expansion boards attached */
-    BLADERF_XB_100,         /**< XB-100 GPIO expansion board.
-                             *   This device is not yet supported in
-                             *   libbladeRF, and is here as a placeholder
-                             *   for future support. */
-    BLADERF_XB_200,         /**< XB-200 Transverter board */
-    BLADERF_XB_300          /**< XB-300 Amplifier board */
-} bladerf_xb;
-
-/**
- * XB-200 filter selection options
- */
-typedef enum {
-    /** 50-54 MHz (6 meter band) filterbank */
-    BLADERF_XB200_50M = 0,
-
-    /** 144-148 MHz (2 meter band) filterbank */
-    BLADERF_XB200_144M,
-
-    /**
-     * 222-225 MHz (1.25 meter band) filterbank.
-     *
-     * Note that this filter option is technically wider, covering 206-235 MHz.
-     */
-    BLADERF_XB200_222M,
-
-    /**
-     * This option enables the RX/TX module's custom filter bank path across the
-     * associated FILT and FILT-ANT SMA connectors on the XB-200 board.
-     *
-     * For reception, it is often possible to simply connect the RXFILT and
-     * RXFILT-ANT connectors with an SMA cable (effectively, "no filter"). This
-     * allows for reception of signals outside of the frequency range of the
-     * on-board filters, with some potential trade-off in signal quality.
-     *
-     * For transmission, <b>always</b> use an appropriate filter on the custom
-     * filter path to avoid spurious emissions.
-     *
-     */
-    BLADERF_XB200_CUSTOM,
-
-    /**
-     * When this option is selected, the other filter options are automatically
-     * selected depending on the RX or TX module's current frequency, based upon
-     * the 1dB points of the on-board filters.  For frequencies outside the
-     * range of the on-board filters, the custom path is selected.
-     */
-    BLADERF_XB200_AUTO_1DB,
-
-    /**
-     * When this option is selected, the other filter options are automatically
-     * selected depending on the RX or TX module's current frequency, based upon
-     * the 3dB points of the on-board filters.  For frequencies outside the
-     * range of the on-board filters, the custom path is selected.
-     */
-    BLADERF_XB200_AUTO_3DB
-} bladerf_xb200_filter;
-
-/**
- * XB-200 signal paths
- */
-typedef enum {
-    BLADERF_XB200_BYPASS = 0,   /**< Bypass the XB-200 mixer */
-    BLADERF_XB200_MIX           /**< Pass signals through the XB-200 mixer */
-} bladerf_xb200_path;
-
-/**
- * XB-300 TRX setting
- */
-typedef enum {
-    BLADERF_XB300_TRX_INVAL = -1,   /**< Invalid TRX selection */
-    BLADERF_XB300_TRX_TX = 0,       /**< TRX antenna operates as TX */
-    BLADERF_XB300_TRX_RX,           /**< TRX antenna operates as RX */
-    BLADERF_XB300_TRX_UNSET         /**< TRX antenna unset */
-} bladerf_xb300_trx;
-
-/**
- * XB-300 Amplifier selection
- */
-typedef enum {
-    BLADERF_XB300_AMP_INVAL = -1,   /**< Invalid amplifier selection */
-    BLADERF_XB300_AMP_PA = 0,       /**< TX Power amplifier */
-    BLADERF_XB300_AMP_LNA,          /**< RX LNA */
-    BLADERF_XB300_AMP_PA_AUX        /**< Auxillary Power amplifier */
-} bladerf_xb300_amplifier;
-
 
 /**
  * Enable or disable the specified RX/TX module.
@@ -631,145 +541,6 @@ typedef enum {
 API_EXPORT
 int CALL_CONV bladerf_enable_module(struct bladerf *dev,
                                     bladerf_module m, bool enable);
-
-
-/**
- * Attach and enable an expansion board's features
- *
- * @param       dev         Device handle
- * @param       xb          Expansion board
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_expansion_attach(struct bladerf *dev, bladerf_xb xb);
-
-/**
- * Determine which expansion board is attached
- *
- * @param       dev         Device handle
- * @param       xb          Expansion board
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_expansion_get_attached(struct bladerf *dev, bladerf_xb *xb);
-
-/**
- * Set XB-200 filterbank
- *
- * @param       dev         Device handle
- * @param       mod         Module
- * @param       filter      XB200 filterbank
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_xb200_set_filterbank(struct bladerf *dev,
-                                           bladerf_module mod,
-                                           bladerf_xb200_filter filter);
-
-/**
- * Get current XB-200 filterbank
- *
- * @param[in]    dev        Device handle
- * @param[in]    module     Module to query
- * @param[out]   filter     Pointer to filterbank, only updated if return
- *                          value is 0.
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_xb200_get_filterbank(struct bladerf *dev,
-                                           bladerf_module module,
-                                           bladerf_xb200_filter *filter);
-
-/**
- * Set XB-200 signal path
- *
- * @param       dev         Device handle
- * @param       module      Module to configure
- * @param       path        Desired XB-200 signal path
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_xb200_set_path(struct bladerf *dev,
-                                     bladerf_module module,
-                                     bladerf_xb200_path path);
-
-/**
- * Get current XB-200 signal path
- *
- * @param       dev         Device handle
- * @param       module      Module to query
- * @param       path        Pointer to XB200 signal path
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_xb200_get_path(struct bladerf *dev,
-                                     bladerf_module module,
-                                     bladerf_xb200_path *path);
-
-/**
- * Configure the XB-300 TRX path
- *
- * @param       dev         Device handle
- * @param       trx         Desired XB-300 TRX setting
- *
- * @return 0 on success, BLADERF_ERR_* on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_xb300_set_trx(struct bladerf *dev,
-                   bladerf_xb300_trx trx);
-/**
- * Get the current XB-300 signal path
- *
- * @param       dev         Device handle
- * @param       trx         XB300 TRX antenna setting
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_xb300_get_trx(struct bladerf *dev,
-                   bladerf_xb300_trx *trx);
-/**
- * Enable or disable selected XB-300 amplifier
- *
- * @param       dev         Device handle
- * @param       amp         XB-300 amplifier
- * @param       enable      Set true to enable or false to disable
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_xb300_set_amplifier_enable(struct bladerf *dev,
-                   bladerf_xb300_amplifier amp,
-                   bool enable);
-/**
- * Get state of selected XB-300 amplifier
- *
- * @param       dev         Device handle
- * @param       amp         XB-300 amplifier
- * @param       enable      Set true to enable or false to disable
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_xb300_get_amplifier_enable(struct bladerf *dev,
-                   bladerf_xb300_amplifier amp,
-                   bool *enable);
-/**
- * Get current PA PDET output power in dBm
- *
- * @param       dev         Device handle
- * @param       val         Output power in dBm
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_xb300_get_output_power(struct bladerf *dev, float *val);
 
 /** @} (End of FN_CTRL) */
 
@@ -2225,6 +1996,253 @@ API_EXPORT
 int CALL_CONV bladerf_dac_read(struct bladerf *dev, uint16_t *val);
 
 /** @} (End of FN_CORR) */
+
+/**
+ * @defgroup    FN_XB   Expansion boards
+ *
+ * This group of functions provides the ability to control and configure
+ * expansion boards such as the XB-100, XB-200, and XB-300.
+ *
+ * In general, one should call bladerf_expansion_attach() immediately after
+ * opening the device.
+ *
+ * Hotplug and expansion board removal is not supported. It is expected that
+ * the expansion boards are attached at power-on and remain attached
+ * until power is removed.
+ *
+ * @{
+ */
+
+/**
+ * Expansion boards
+ */
+typedef enum {
+    BLADERF_XB_NONE = 0,    /**< No expansion boards attached */
+    BLADERF_XB_100,         /**< XB-100 GPIO expansion board.
+                             *   This device is not yet supported in
+                             *   libbladeRF, and is here as a placeholder
+                             *   for future support. */
+    BLADERF_XB_200,         /**< XB-200 Transverter board */
+    BLADERF_XB_300          /**< XB-300 Amplifier board */
+} bladerf_xb;
+
+/**
+ * XB-200 filter selection options
+ */
+typedef enum {
+    /** 50-54 MHz (6 meter band) filterbank */
+    BLADERF_XB200_50M = 0,
+
+    /** 144-148 MHz (2 meter band) filterbank */
+    BLADERF_XB200_144M,
+
+    /**
+     * 222-225 MHz (1.25 meter band) filterbank.
+     *
+     * Note that this filter option is technically wider, covering 206-235 MHz.
+     */
+    BLADERF_XB200_222M,
+
+    /**
+     * This option enables the RX/TX module's custom filter bank path across the
+     * associated FILT and FILT-ANT SMA connectors on the XB-200 board.
+     *
+     * For reception, it is often possible to simply connect the RXFILT and
+     * RXFILT-ANT connectors with an SMA cable (effectively, "no filter"). This
+     * allows for reception of signals outside of the frequency range of the
+     * on-board filters, with some potential trade-off in signal quality.
+     *
+     * For transmission, <b>always</b> use an appropriate filter on the custom
+     * filter path to avoid spurious emissions.
+     *
+     */
+    BLADERF_XB200_CUSTOM,
+
+    /**
+     * When this option is selected, the other filter options are automatically
+     * selected depending on the RX or TX module's current frequency, based upon
+     * the 1dB points of the on-board filters.  For frequencies outside the
+     * range of the on-board filters, the custom path is selected.
+     */
+    BLADERF_XB200_AUTO_1DB,
+
+    /**
+     * When this option is selected, the other filter options are automatically
+     * selected depending on the RX or TX module's current frequency, based upon
+     * the 3dB points of the on-board filters.  For frequencies outside the
+     * range of the on-board filters, the custom path is selected.
+     */
+    BLADERF_XB200_AUTO_3DB
+} bladerf_xb200_filter;
+
+/**
+ * XB-200 signal paths
+ */
+typedef enum {
+    BLADERF_XB200_BYPASS = 0,   /**< Bypass the XB-200 mixer */
+    BLADERF_XB200_MIX           /**< Pass signals through the XB-200 mixer */
+} bladerf_xb200_path;
+
+/**
+ * XB-300 TRX setting
+ */
+typedef enum {
+    BLADERF_XB300_TRX_INVAL = -1,   /**< Invalid TRX selection */
+    BLADERF_XB300_TRX_TX = 0,       /**< TRX antenna operates as TX */
+    BLADERF_XB300_TRX_RX,           /**< TRX antenna operates as RX */
+    BLADERF_XB300_TRX_UNSET         /**< TRX antenna unset */
+} bladerf_xb300_trx;
+
+/**
+ * XB-300 Amplifier selection
+ */
+typedef enum {
+    BLADERF_XB300_AMP_INVAL = -1,   /**< Invalid amplifier selection */
+    BLADERF_XB300_AMP_PA = 0,       /**< TX Power amplifier */
+    BLADERF_XB300_AMP_LNA,          /**< RX LNA */
+    BLADERF_XB300_AMP_PA_AUX        /**< Auxillary Power amplifier */
+} bladerf_xb300_amplifier;
+
+/**
+ * Attach and enable an expansion board's features
+ *
+ * @param       dev         Device handle
+ * @param       xb          Expansion board
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_expansion_attach(struct bladerf *dev, bladerf_xb xb);
+
+/**
+ * Determine which expansion board is attached
+ *
+ * @param       dev         Device handle
+ * @param       xb          Expansion board
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_expansion_get_attached(struct bladerf *dev, bladerf_xb *xb);
+
+/**
+ * Set XB-200 filterbank
+ *
+ * @param       dev         Device handle
+ * @param       mod         Module
+ * @param       filter      XB200 filterbank
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_xb200_set_filterbank(struct bladerf *dev,
+                                           bladerf_module mod,
+                                           bladerf_xb200_filter filter);
+
+/**
+ * Get current XB-200 filterbank
+ *
+ * @param[in]    dev        Device handle
+ * @param[in]    module     Module to query
+ * @param[out]   filter     Pointer to filterbank, only updated if return
+ *                          value is 0.
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_xb200_get_filterbank(struct bladerf *dev,
+                                           bladerf_module module,
+                                           bladerf_xb200_filter *filter);
+
+/**
+ * Set XB-200 signal path
+ *
+ * @param       dev         Device handle
+ * @param       module      Module to configure
+ * @param       path        Desired XB-200 signal path
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_xb200_set_path(struct bladerf *dev,
+                                     bladerf_module module,
+                                     bladerf_xb200_path path);
+
+/**
+ * Get current XB-200 signal path
+ *
+ * @param       dev         Device handle
+ * @param       module      Module to query
+ * @param       path        Pointer to XB200 signal path
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_xb200_get_path(struct bladerf *dev,
+                                     bladerf_module module,
+                                     bladerf_xb200_path *path);
+
+/**
+ * Configure the XB-300 TRX path
+ *
+ * @param       dev         Device handle
+ * @param       trx         Desired XB-300 TRX setting
+ *
+ * @return 0 on success, BLADERF_ERR_* on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_xb300_set_trx(struct bladerf *dev,
+                   bladerf_xb300_trx trx);
+/**
+ * Get the current XB-300 signal path
+ *
+ * @param       dev         Device handle
+ * @param       trx         XB300 TRX antenna setting
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_xb300_get_trx(struct bladerf *dev,
+                   bladerf_xb300_trx *trx);
+/**
+ * Enable or disable selected XB-300 amplifier
+ *
+ * @param       dev         Device handle
+ * @param       amp         XB-300 amplifier
+ * @param       enable      Set true to enable or false to disable
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_xb300_set_amplifier_enable(struct bladerf *dev,
+                   bladerf_xb300_amplifier amp,
+                   bool enable);
+/**
+ * Get state of selected XB-300 amplifier
+ *
+ * @param       dev         Device handle
+ * @param       amp         XB-300 amplifier
+ * @param       enable      Set true to enable or false to disable
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_xb300_get_amplifier_enable(struct bladerf *dev,
+                   bladerf_xb300_amplifier amp,
+                   bool *enable);
+/**
+ * Get current PA PDET output power in dBm
+ *
+ * @param       dev         Device handle
+ * @param       val         Output power in dBm
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_xb300_get_output_power(struct bladerf *dev, float *val);
+
+
+/** @} (End of FN_XB) */
 
 /**
  * @defgroup FMT_META   Sample Formats and Metadata
