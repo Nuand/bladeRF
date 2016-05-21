@@ -451,7 +451,7 @@ void *tx_task(void *cli_state_arg)
                 break;
 
             case RXTX_STATE_STOP:
-                rxtx_task_exec_stop(tx, &requests);
+                rxtx_task_exec_stop(cli_state, tx, &requests);
                 break;
 
             case RXTX_STATE_SHUTDOWN:

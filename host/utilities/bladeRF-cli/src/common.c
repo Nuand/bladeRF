@@ -147,13 +147,13 @@ void cli_state_destroy(struct cli_state *s)
         cli_close_all_scripts(&s->scripts);
 
         if (s->rx) {
-            rxtx_shutdown(s->rx);
+            rxtx_shutdown(s, s->rx);
             rxtx_data_free(s->rx);
             s->rx = NULL;
         }
 
         if (s->tx) {
-            rxtx_shutdown(s->tx);
+            rxtx_shutdown(s, s->tx);
             rxtx_data_free(s->tx);
             s->tx = NULL;
         }

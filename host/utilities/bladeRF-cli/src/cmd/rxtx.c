@@ -37,6 +37,7 @@
 #include "rel_assert.h"
 #include "minmax.h"
 #include "thread.h"
+#include "log.h"
 
 /* A "seems good enough" arbitrary minimum */
 #define RXTX_BUFFERS_MIN 4
@@ -65,6 +66,30 @@ const struct numeric_suffix rxtx_kmg_suffixes[] = {
 
 const size_t rxtx_time_suffixes_len = ARRAY_LEN(rxtx_time_suffixes);
 const size_t rxtx_kmg_suffixes_len = ARRAY_LEN(rxtx_kmg_suffixes);
+
+/* We need to disarm any pending triggers when shutting down a stream
+ * to ensure that we don't stall waiting on a timeout. */
+static void disarm_triggers(struct cli_state *s, bladerf_module m)
+{
+    int status;
+    struct bladerf_trigger trig;
+
+    /* A shutdown request could occur when we don't have a device handle
+     * opened. There's nothign for us to do here if that is the case. */
+    if (!s->dev) {
+        return;
+    }
+
+    status = bladerf_trigger_init(s->dev, m, BLADERF_TRIGGER_J71_4, &trig);
+    if (status == 0) {
+        trig.role = BLADERF_TRIGGER_ROLE_DISABLED;
+        status = bladerf_trigger_arm(s->dev, &trig, false, 0, 0);
+    }
+
+    if (status != 0 && status != BLADERF_ERR_UNSUPPORTED) {
+        log_warning("Failed to disarm trigger - may stall on timeout.\n");
+    }
+}
 
 void rxtx_set_state(struct rxtx_data *rxtx, enum rxtx_state state)
 {
@@ -380,8 +405,10 @@ bool rxtx_task_running(struct rxtx_data *rxtx)
     return rxtx_get_state(rxtx) == RXTX_STATE_RUNNING;
 }
 
-void rxtx_shutdown(struct rxtx_data *rxtx)
+void rxtx_shutdown(struct cli_state *s, struct rxtx_data *rxtx)
 {
+    disarm_triggers(s, rxtx->module);
+
     if (rxtx->task_mgmt.started && rxtx_get_state(rxtx) != RXTX_STATE_FAIL) {
         rxtx_submit_request(rxtx, RXTX_TASK_REQ_SHUTDOWN);
         pthread_join(rxtx->task_mgmt.thread, NULL);
@@ -610,6 +637,7 @@ int rxtx_cmd_stop(struct cli_state *s, struct rxtx_data *rxtx)
     if (rxtx_get_state(rxtx) != RXTX_STATE_RUNNING) {
         status = CLI_RET_STATE;
     } else {
+        disarm_triggers(s, rxtx->module);
         rxtx_submit_request(rxtx, RXTX_TASK_REQ_STOP);
         status = 0;
     }
@@ -640,7 +668,8 @@ void rxtx_task_exec_idle(struct rxtx_data *rxtx, unsigned char *requests)
     *requests = 0;
 }
 
-void rxtx_task_exec_stop(struct rxtx_data *rxtx, unsigned char *requests)
+void rxtx_task_exec_stop(struct cli_state *s, struct rxtx_data *rxtx,
+                         unsigned char *requests)
 {
     *requests = rxtx_get_requests(rxtx,
                                   RXTX_TASK_REQ_STOP | RXTX_TASK_REQ_SHUTDOWN);

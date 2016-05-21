@@ -64,9 +64,13 @@ bool rxtx_task_running(struct rxtx_data *rxtx);
 /**
  * Request RX/TX task to shut down and exit. Blocks until task has shut down.
  *
- * @param   rxtx      RX/TX data handle
+ * @param   s       CLI state. Device handle will be accessed to apply any
+ *                  changes required to allow the stream task to shut down
+ *                  (e.g., disabling triggers).
+ *
+ * @param   rxtx    RX/TX data handle
  */
-void rxtx_shutdown(struct rxtx_data *rxtx);
+void rxtx_shutdown(struct cli_state *s, struct rxtx_data *rxtx);
 
 /**
  * Release any rx/tx wait commands

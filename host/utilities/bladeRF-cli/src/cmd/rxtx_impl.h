@@ -8,7 +8,7 @@
  *
  * This file is part of the bladeRF project
  *
- * Copyright (C) 2013 Nuand LLC
+ * Copyright (C) 2013, 2016 Nuand LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -343,10 +343,15 @@ void rxtx_task_exec_running(struct rxtx_data *rxtx, struct cli_state *s);
 /**
  * Handle the rx/tx task's STOP state
  *
+ * @param   s           CLI state. This is used to make operate on s->dev
+ *                      to ensure the stream can be stopped
+ *                      (e.g., disarming pending triggers).
+ *
  * @param   rxtx        RX/TX data handle
  * @param   requests    Task's copy of pending requests
  */
-void rxtx_task_exec_stop(struct rxtx_data *rxtx, unsigned char *requests);
+void rxtx_task_exec_stop(struct cli_state *s, struct rxtx_data *rxtx,
+                            unsigned char *requests);
 
 /**
  * Wait for a task to transition into the specified state
