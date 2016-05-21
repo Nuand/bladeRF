@@ -1540,15 +1540,22 @@ int CALL_CONV bladerf_get_smb_frequency(struct bladerf *dev,
  * over this triggering functionality. It is intended that these functions be
  * used <b>prior</b> to starting sample streams. Attempting to use these
  * functions while streaming may yield undefined and undesirable behavior.
+ * These functions are thread-safe.
  *
  * For devices running at the same sample rate, the trigger event should
  * achieve synchronization within +/- 1 sample on each device in the chain.
  *
- * These functions are thread-safe.
  *
  * As of FPGA v0.6.0, J71 pin 4 (mini_exp_1) has been allocated as the
  * trigger signal. However, this API section is designed to allow future
  * signals to be added, including users' software and hardware customizations.
+ *
+ * @note <b>Important</b>: Ensure that you disarm triggers <b>before</b>
+ * stopping sample streams (i.e., calling bladerf_enable_module()
+ * with `enable = false`).  Otherwise, the operation of shutting down streams
+ * will block for the entire duration of the stream timeout (or infinitely if
+ * the timeouts were set to 0).
+ *
  *
  * The standard usage of these functions is shown below. This example
  * assumes two devices are connected such they share a common ground and
