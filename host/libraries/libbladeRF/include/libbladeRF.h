@@ -95,6 +95,8 @@ extern "C" {
  * <a class="el" href="boilerplate.html">Device configuration boilerplate</a>
  * page for an overview on how to open and configure a device.
  *
+ * These functions are thread-safe.
+ *
  * @{
  */
 
@@ -158,7 +160,6 @@ void CALL_CONV bladerf_init_devinfo(struct bladerf_devinfo *info);
 
 /**
  * Fill out a provided bladerf_devinfo structure, given an open device handle.
- * This function is thread-safe.
  *
  * @pre dev must be a valid device handle.
  *
@@ -332,7 +333,9 @@ void CALL_CONV bladerf_set_usb_reset_on_open(bool enabled);
  * @defgroup FN_INFO    Device properties and information
  *
  * These functions provide the ability to query various pieces of information
- * from an attached device. They are thread-safe.
+ * from an attached device.
+ *
+ * These functions are thread-safe.
  *
  * @{
  */
@@ -467,6 +470,8 @@ bladerf_dev_speed CALL_CONV bladerf_device_speed(struct bladerf *dev);
  * many libbladeRF functions require a ::bladerf_module parameter
  * to specify which module to operate on.
  *
+ * These functions are thread-safe.
+ *
  * @{
  */
 
@@ -518,6 +523,8 @@ int CALL_CONV bladerf_enable_module(struct bladerf *dev,
  * <b>TX:</b> `TXVGA1`, `TXVGA2`
  *
  * <b>RX:</b> `LNA`, `RXVGA`, `RXVGA2`
+ *
+ * These functions are thread-safe.
  *
  * @{
  */
@@ -704,6 +711,8 @@ int CALL_CONV bladerf_set_gain(struct bladerf *dev, bladerf_module mod, int gain
  *
  * This section presents functionality pertaining to configuring the
  * sample rate and mode of the device's RX and TX modules.
+ *
+ * These functions are thread-safe.
  *
  * @{
  */
@@ -926,6 +935,8 @@ int CALL_CONV bladerf_get_sampling(struct bladerf *dev,
  * To determine the required bandwidth setting for a desired sample rate
  * (or vice versa), review the RX/TX LPF response plots LMS6002D in datasheet.
  *
+ * These functions are thread-safe.
+ *
  * @{
  */
 
@@ -1019,6 +1030,8 @@ int CALL_CONV bladerf_get_lpf_mode(struct bladerf *dev, bladerf_module module,
  * See <a class="el" href="tuning.html">this page</a> for more detailed
  * information about how the API performs this tuning, and for example
  * code snippets.
+ *
+ * These functions are thread-safe.
  *
  * @{
  */
@@ -1258,6 +1271,8 @@ int CALL_CONV bladerf_set_tuning_mode(struct bladerf *dev,
  * operating conditions, while the internal RF loopback modes introduce more of
  * the typical nonidealities of analog systems.
  *
+ * These functions are thread-safe.
+ *
  * @{
  */
 
@@ -1365,6 +1380,9 @@ int CALL_CONV bladerf_get_loopback(struct bladerf *dev, bladerf_loopback *l);
  * @warning <b>Do not</b> use these functions when operating an expansion board.
  *          A different clock configuration is required for the XB devices
  *          which cannot be used simultaneously with the SMB clock port.
+ *
+ * These functions are thread-safe.
+ *
  * @{
  */
 
@@ -1525,6 +1543,8 @@ int CALL_CONV bladerf_get_smb_frequency(struct bladerf *dev,
  *
  * For devices running at the same sample rate, the trigger event should
  * achieve synchronization within +/- 1 sample on each device in the chain.
+ *
+ * These functions are thread-safe.
  *
  * As of FPGA v0.6.0, J71 pin 4 (mini_exp_1) has been allocated as the
  * trigger signal. However, this API section is designed to allow future
@@ -1784,7 +1804,8 @@ int CALL_CONV bladerf_trigger_state(struct bladerf *dev,
  * @defgroup FN_CORR    Corrections and calibration
  *
  * This group provides routines for performing calibration and applying
- * corrections.
+ * corrections. These functions are thread-safe.
+ *
  *
  * The automatic DC correction used by the `bladeRF-cli` is not part of
  * this API, but it is implemented using libbladeRF. This automatic DC
@@ -1972,6 +1993,8 @@ int CALL_CONV bladerf_dac_read(struct bladerf *dev, uint16_t *val);
  * Hotplug and expansion board removal is not supported. It is expected that
  * the expansion boards are attached at power-on and remain attached
  * until power is removed.
+ *
+ * These functions are thread-safe.
  *
  * @{
  */
@@ -2210,9 +2233,11 @@ int CALL_CONV bladerf_xb300_get_output_power(struct bladerf *dev, float *val);
 /**
  * @defgroup FN_EXP_IO Expansion IO control
  *
- * These definitoins and functions provide high-level functionality for
+ * These definitions and functions provide high-level functionality for
  * manipulating pins on the bladeRF U74 Expansion Header, and the associated
  * mappings on expansion boards.
+ *
+ * These functions are thread-safe.
  *
  * @{
  */
@@ -2600,6 +2625,12 @@ int CALL_CONV bladerf_expansion_gpio_dir_masked_write(struct bladerf *dev,
 
 /**
  * @defgroup FN_MISC Miscellaneous
+ *
+ * This section contains various helper/utility functions that do not
+ * fall into one of the other API categories.
+ *
+ * These functions are thread-safe.
+ *
  * @{
  */
 
@@ -2903,6 +2934,9 @@ struct bladerf_metadata {
  * New users are recommended to first evaluate the \ref FN_DATA_SYNC interface,
  * and to only use this interface if the former is found to not yield suitable
  * performance.
+ *
+ * These functions are either thread-safe or may be used in a thread-safe
+ * manner (per the details noted in the function description).
  *
  * @{
  */
@@ -3458,6 +3492,9 @@ int CALL_CONV bladerf_jump_to_bootloader(struct bladerf *dev);
  *
  * Care should be taken to ensure that devices operated on are indeed a bladeRF,
  * as opposed to another FX3-based device running in bootloader mode.
+ *
+ * These functions are thread-safe.
+ *
  * @{
  */
 
@@ -3522,6 +3559,8 @@ int CALL_CONV bladerf_load_fw_from_bootloader(const char *device_identifier,
  *
  * This section contains a file format and associated routines for storing
  * and loading flash contents with metadata.
+ *
+ * These functions are thread-safe.
  *
  * @{
  */
