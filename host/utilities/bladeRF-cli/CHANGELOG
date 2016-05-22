@@ -5,15 +5,26 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.4.0 (2016-01-05)
+--------------------------------
+This version depends upon libbladeRF v1.7.0 or later.
+
+  * Added XB-300 support
+  * Added synchronization trigger support
+  * Added set `smb_mode` and print `smb_mode` support
+     - This supersedes the `mimo` command, which is now marked *deprecated*.
+  * Fixed CLI exit on FW/FPGA version mismatch
+  * Fixed build on big-endian machines.
+
 v1.3.1 (2016-01-05)
 --------------------------------
-This version depends upon libbladeRF v1.5.1.
+This version depends upon libbladeRF v1.5.1 or later.
 
   * Addressed warnings that occur with GCC -Os flag.
 
 v1.3.0 (2015-12-31)
 --------------------------------
-This version depends upon libbladeRF v1.5.0.
+This version depends upon libbladeRF v1.5.0 or later.
 
  * Marked 'set frequency <value>' deprecated.
     - Use 'set frequency rx <value>' or 'set frequency tx <value>'
@@ -28,7 +39,7 @@ This version depends upon libbladeRF v1.5.0.
 
 v1.2.1 (2015-07-16)
 --------------------------------
-This version depends upon libbladeRF v1.4.1.
+This version depends upon libbladeRF v1.4.1 or later.
 
  * Fixed issue where transmission could be truncated due to TX RFFE being
    turned off before sample buffers reach the transceiver.
@@ -37,7 +48,7 @@ This version depends upon libbladeRF v1.4.1.
 
 v1.2.0 (2015-06-30)
 --------------------------------
-This version depends upon libbladeRF v1.4.0.
+This version depends upon libbladeRF v1.4.0 or later.
 
  * Added support for semicolon command separators
  * Added 'print trimdac' support. (Requires FPGA v0.3.2)
@@ -45,7 +56,7 @@ This version depends upon libbladeRF v1.4.0.
 
 v1.1.2 (2015-02-28)
 --------------------------------
-This version depends upon libbladeRF v1.2.1.
+This version depends upon libbladeRF v1.2.1 or later.
 
  * Fixed and improved help text and manual page generation.The doc generation
    scripts should now be compatible with formats used by pandoc 1.12.x and
@@ -53,7 +64,7 @@ This version depends upon libbladeRF v1.2.1.
 
 v1.1.1 (2015-01-31)
 --------------------------------
-This version depends upon libbladeRF v1.2.0.
+This version depends upon libbladeRF v1.2.0 or later.
 
  * Updated LMS bit definitions for 'peek/poke lms' commands to include bits
    previously marked "spare."
@@ -63,7 +74,7 @@ This version depends upon libbladeRF v1.2.0.
 
 v1.1.0 (2014-12-23)
 --------------------------------
-This version depends upon libbladeRF v1.1.0.
+This version depends upon libbladeRF v1.1.0 or later.
 
  * The -p/--probe command line option now causes bladeRF-cli to return a
     non-zero return value if no devices are found. This is intended to allow
@@ -82,7 +93,7 @@ This version depends upon libbladeRF v1.1.0.
 
 v1.0.0 (2014-11-29)
 --------------------------------
-This version depends upon libbladeRF v1.0.0.
+This version depends upon libbladeRF v1.0.0 or later.
 
  * Major version number incremented.
     * This denotes that no further reverse-incompatible command changes shall be
@@ -91,7 +102,7 @@ This version depends upon libbladeRF v1.0.0.
 
 v0.12.0 (2014-10-30)
 --------------------------------
-This version depends upon libbladeRF v0.17.0.
+This version depends upon libbladeRF v0.17.0 or later.
 
  * Migrated rx/tx commands to libbladeRF's synchronous interface
  * Introduced support of '#' line comments
@@ -102,7 +113,7 @@ This version depends upon libbladeRF v0.17.0.
 
 v0.11.1 (2014-07-24)
 --------------------------------
-This version depends upon libbladeRF v0.16.2.
+This version depends upon libbladeRF v0.16.2 or later.
 
  * Added missing FW loopback mode option
  * Fixed help text and doc generation
@@ -114,7 +125,7 @@ This version depends upon libbladeRF v0.16.2.
 
 v0.11.0 (2014-07-04)
 --------------------------------
-This version depends upon libbladeRF v0.16.0.
+This version depends upon libbladeRF v0.16.0 or later.
 
  * Added experimental DC calibration table generation
     - Changed usage of 'calibrate' command
