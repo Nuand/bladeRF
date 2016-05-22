@@ -933,7 +933,8 @@ int CALL_CONV bladerf_get_sampling(struct bladerf *dev,
  * be less than the sample rate to minimize the impact of aliases.
  *
  * To determine the required bandwidth setting for a desired sample rate
- * (or vice versa), review the RX/TX LPF response plots LMS6002D in datasheet.
+ * (or vice versa), review the TX/RX LPF amplitude response plots in
+ * the LMS6002D datasheet. (This was Figure 6 as of datasheet v1.2r0.)
  *
  * These functions are thread-safe.
  *
