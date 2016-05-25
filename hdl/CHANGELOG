@@ -6,6 +6,11 @@ hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
 --------------------------------
+v0.6.0 (2015-05-25)
+--------------------------------
+ * Added TRX synchronization trigger functionality via J71-4.
+
+--------------------------------
 v0.5.0 (2015-11-23)
 --------------------------------
  * Added support for 1 PPS and 10 MHz input to tame VCTCXO
