@@ -2750,25 +2750,38 @@ typedef enum {
     BLADERF_FORMAT_SC16_Q11,
 
     /**
-     * This format is the same as the ::BLADERF_FORMAT_SC16_Q11 format, except the
-     * first 4 samples (16 bytes) in every block of 1024 samples are replaced
-     * with metadata, organized as follows, with all fields being little endian
-     * byte order:
+     * This format is the same as the ::BLADERF_FORMAT_SC16_Q11 format, except
+     * the first 4 samples in every <i>block*</i> of samples are replaced with
+     * metadata organized as follows. All fields are little-endian byte order.
      *
      * <pre>
-     *  0x00 [uint32_t:  Reserved]
-     *  0x04 [uint64_t:  64-bit Timestamp]
-     *  0x0c [uint32_t:  BLADERF_META_FLAG_* flags]
+     *  .-------------.-----------.----------------------------------.
+     *  | Byte offset |   Type    | Description                      |
+     *  +-------------+-----------+----------------------------------+
+     *  |    0x00     | uint32_t  | Reserved]                        |
+     *  |    0x04     | uint64_t  | 64-bit Timestamp]                |
+     *  |    0x0c     | uint32_t  | BLADERF_META_FLAG_* flags]       |
+     *  `-------------`-----------`----------------------------------`
      * </pre>
      *
-     * When using the bladerf_sync_rx() and bladerf_sync_tx() functions,
-     * this detail is transparent to caller. These functions take care of
-     * packing/unpacking the metadata into/from the data, via the
-     * bladerf_metadata structure.
+     * <i>*</i>The number of samples in a <i>block</i> is dependent upon
+     * the USB speed being used:
+     *  - USB 2.0 Hi-Speed: 256 samples
+     *  - USB 3.0 SuperSpeed: 512 samples
      *
-     * Currently, when using the asynchronous data transfer interface, the user
-     * is responsible for manually packing/unpacking this metadata into/from
-     * their sample data.
+     * When using the bladerf_sync_rx() and bladerf_sync_tx() functions, the
+     * above details are entirely transparent; the caller need not be concerned
+     * with these details. These functions take care of packing/unpacking the
+     * metadata into/from the underlying stream and convey this information
+     * through the ::bladerf_metadata structure.
+     *
+     * However, when using the \ref FN_DATA_ASYNC interface, the user is
+     * responsible for manually packing/unpacking the above metadata into/from
+     * their samples.
+     *
+     * For a more informatoin, see the
+     * <a class="el" href="https://github.com/Nuand/bladeRF/blob/master/host/libraries/libbladeRF/src/metadata.h">metadata.h</a>
+     * header in the libbladeRF codebase.
      */
     BLADERF_FORMAT_SC16_Q11_META,
 } bladerf_format;
