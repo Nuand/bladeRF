@@ -2716,7 +2716,7 @@ int CALL_CONV bladerf_get_fw_log(struct bladerf *dev, const char *filename);
 /** @} (End of FN_MISC) */
 
 /**
- * @defgroup FMT_META   Sample Formats and Metadata
+ * @defgroup FMT_META   Sample formats and metadata
  *
  * This section defines the available sample formats and metadata flags.
  *
@@ -3565,7 +3565,7 @@ int CALL_CONV bladerf_jump_to_bootloader(struct bladerf *dev);
 /** @} (End of FN_PROG) */
 
 /**
- * @defgroup FN_BOOTLOADER  Bootloader Recovery
+ * @defgroup FN_BOOTLOADER  Bootloader recovery
  *
  * These functions provide the ability to identify devices enumerating as an
  * FX3 bootloader, download firmware to RAM, and then execute the firmware.
