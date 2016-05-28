@@ -1567,11 +1567,18 @@ int CALL_CONV bladerf_get_smb_frequency(struct bladerf *dev,
  *
  *
  * The standard usage of these functions is shown below. This example
- * assumes two devices are connected such they share a common ground and
- * their J71-4 pins are connected. It is also assumed that both devices
- * are configured to share a single clock via the external SMB connection.
- * (This may be achieved with an external 38.4 MHz clock source, or by
- *  configuring one device as a MIMO master and the other a MIMO slave.)
+ * assumes:
+ *
+ *  - The two devices are connected such they share a common ground and their
+ *      J71-4 pins are connected.
+ *
+ *  - Both devices are already configured to utilize a common clock signal via
+ *      the external SMB connection.  Generally, this will consist of one device
+ *      to outputting its reference clock via the SMB clock port, and
+ *      configuring the other device(s) to use the SMB clock port as a reference
+ *      clock input. This may be achieved using the bladerf_set_smb_mode()
+ *      function, found in the \ref FN_SMB_CLOCK section.
+ *
  *
  * @code{.c}
  *
