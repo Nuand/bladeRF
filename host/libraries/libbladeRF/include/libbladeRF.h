@@ -2944,6 +2944,50 @@ struct bladerf_metadata {
     uint8_t reserved[32];
 };
 
+/**
+ * Retrieve the specified module's current timestamp counter value from the
+ * FPGA.
+ *
+ * This function is only intended to be used to retrieve a coarse estimate of
+ * the current timestamp when starting up a stream. It <b>should not</b> be used
+ * as a means to accurately retrieve the current timestamp of individual samples
+ * within a running stream. The reasons for this are:
+ *  - The timestamp counter will have advanced during the time that the captured
+ *      value is propagated back from the FPGA to the host
+ *  - The value retrieved in this manner is not tightly-coupled with
+ *      specific sample positions in the stream.
+ *
+ * When actively receiving a sample stream, instead use the
+ * ::bladerf_metadata::timestamp field (provided when using the
+ * ::BLADERF_FORMAT_SC16_Q11_META format) to retrieve the timestamp value
+ * associated with a block of samples. See the
+ * <a class="el" href="sync_rx_meta.html">RX with metadata</a> page for
+ * examples of this.
+ *
+ * An example use-case of this function is to schedule an initial TX burst
+ * in a set of bursts;
+ *  - Configure and start a TX stream using the ::BLADERF_FORMAT_SC16_Q11_META
+ *      format.
+ *  - Retrieve timestamp `T`, a coarse estimate the TX's current timestamp via this
+ *      function.
+ *  - Schedule the first burst, `F` to occur in the future: `F = T + N`.
+ *      Generally, adding `N` in tens to low hundreds of milliseconds is
+ *      sufficient to account for timestamp retrieval overhead and stream
+ *      startup.
+ *  - Schedule additional bursts relative to the first burst `F`.
+ *
+ * Examples of the above are shown on the <a class="el"
+ * href="sync_tx_meta_bursts.html">TX with metadata</a> page.
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   mod         Module to query
+ * @param[out]  value       Coarse timestamp value
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_timestamp(struct bladerf *dev, bladerf_module mod,
+                                    uint64_t *value);
 
 /** @} (End of FMT_META) */
 
@@ -4028,19 +4072,6 @@ int CALL_CONV bladerf_config_gpio_read(struct bladerf *dev, uint32_t *val);
  */
 API_EXPORT
 int CALL_CONV bladerf_config_gpio_write(struct bladerf *dev, uint32_t val);
-
-/**
- * Retrieve the current timestamp counter value from the FPGA
- *
- * @param   dev         Device handle
- * @param   mod         Module to perform streaming with
- * @param   value       Pointer to variable the data should be read into
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_get_timestamp(struct bladerf *dev, bladerf_module mod,
-                                    uint64_t *value);
 
 /**
  * Write value to secondary XB SPI
