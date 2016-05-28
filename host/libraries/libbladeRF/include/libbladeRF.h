@@ -2779,7 +2779,7 @@ typedef enum {
      * responsible for manually packing/unpacking the above metadata into/from
      * their samples.
      *
-     * For a more informatoin, see the
+     * For a more information, see the
      * <a class="el" href="https://github.com/Nuand/bladeRF/blob/master/host/libraries/libbladeRF/src/metadata.h">metadata.h</a>
      * header in the libbladeRF codebase.
      */
