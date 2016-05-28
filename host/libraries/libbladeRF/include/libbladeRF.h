@@ -1432,6 +1432,14 @@ typedef enum {
 /**
  * Set the current mode of operation of the SMB clock port
  *
+ * In a MIMO configuration, one "master" device should first be configured to
+ * output its reference clock to the slave devices via
+ * `bladerf_set_smb_mode(dev, BLADERF_SMB_MODE_OUTPUT)`.
+ *
+ * Next, all "slave" devices should be configured to use the reference clock
+ * provided on the SMB clock port (instead of using their on-board reference)
+ * via `bladerf_set_smb_mode(dev, BLADERF_SMB_MODE_INPUT)`.
+ *
  * @param[in]   dev         Device handle
  * @param[in]   mode        Desired mode
  *
