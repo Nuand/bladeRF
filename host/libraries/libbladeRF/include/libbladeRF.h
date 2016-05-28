@@ -2758,9 +2758,9 @@ typedef enum {
      *  .-------------.-----------.----------------------------------.
      *  | Byte offset |   Type    | Description                      |
      *  +-------------+-----------+----------------------------------+
-     *  |    0x00     | uint32_t  | Reserved]                        |
-     *  |    0x04     | uint64_t  | 64-bit Timestamp]                |
-     *  |    0x0c     | uint32_t  | BLADERF_META_FLAG_* flags]       |
+     *  |    0x00     | uint32_t  | Reserved                         |
+     *  |    0x04     | uint64_t  | 64-bit Timestamp                 |
+     *  |    0x0c     | uint32_t  | BLADERF_META_FLAG_* flags        |
      *  `-------------`-----------`----------------------------------`
      * </pre>
      *
