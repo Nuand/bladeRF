@@ -94,7 +94,9 @@ elseif(${CMAKE_SYSTEM_VERSION} EQUAL 6.3)
     set(CYUSB3_DRIVER_DIR       "${FX3_SDK_PATH}/driver/bin/win81/${CYUSB_ARCH}")
     set(CYUSB3_INF              "drivers/windows/CyUSB3/win7_8/cyusb3.inf")
 else()
-    message(FATAL_ERROR "Unsupported CMAKE_SYSTEM_VERSION: ${CMAKE_SYSTEM_VERSION}")
+    message(WARNING "CyAPI found, but CMAKE_SYSTEM_VERSION=${CMAKE_SYSTEM_VERSION} is not supported by CyAPI SDK. Marking CYAPI as not found.")
+    set(CYAPI_FOUND false)
+    return()
 endif()
 
 # CyUSB3 ships 01009 for <= Vista, and 01011 for >= Win 7
