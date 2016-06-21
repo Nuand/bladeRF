@@ -227,6 +227,15 @@ int bladerf_open_with_devinfo(struct bladerf **opened_device,
          * "autoloaded" from SPI flash. */
         fpga_check_version(dev);
 
+        /* Initialize the device before we try to interact with it.  In the case
+         * of an autoloaded FPGA, we need to ensure the clocks are all running
+         * before we can try to cancel any scheduled retunes or else the NIOS
+         * hangs. */
+        status = init_device(dev);
+        if (status != 0) {
+            goto error;
+        }
+
         if (have_cap(dev, BLADERF_CAP_SCHEDULED_RETUNE)) {
             /* Cancel any pending re-tunes that may have been left over as the
              * result of a user application crashing or forgetting to call
@@ -242,11 +251,6 @@ int bladerf_open_with_devinfo(struct bladerf **opened_device,
                 log_warning("Failed to cancel any pending TX retunes: %s\n",
                         bladerf_strerror(status));
             }
-        }
-
-        status = init_device(dev);
-        if (status != 0) {
-            goto error;
         }
     } else {
         /* Try searching for an FPGA in the config search path */
