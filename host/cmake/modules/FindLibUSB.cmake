@@ -40,7 +40,7 @@ include(CheckIncludeFile)
 # See http://www.libusb.org/wiki/windows_backend#LatestBinarySnapshots
 if(WIN32)
     set(LIBUSB_PATH
-        "C:/Program Files (x86)/libusb-1.0.19"
+        "C:/Program Files (x86)/libusb-1.0.20"
         CACHE
         PATH
         "Path to libusb files. (This is generally only needed for Windows users who downloaded binary distributions.)"
