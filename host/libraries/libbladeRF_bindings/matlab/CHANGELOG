@@ -5,6 +5,14 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v0.1.2 (2016-06-29)
+--------------------------------
+
+This version is intended for use with libbladeRF v1.7.2.
+
+Changes:
+  * Fixed incorrect BB_TXLPF_RXLPF loopback mode name in bladeRF_Simulink.m
+
 v0.1.1 (2016-01-07)
 --------------------------------
 
