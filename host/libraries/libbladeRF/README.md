@@ -13,14 +13,18 @@ Functionality provided by this library includes:
 - Updating the device's firmware and FPGA
 - Low-level access to on-board devices, for testing and debugging
 
-For more information, please generate and view the doxygen documentation. From your host/build directory, run:
+Please see the [CHANGELOG](CHANGELOG) file for a summary of changes across libbladeRF versions.
+
+## Documentation ##
+
+For more information, one can generate and view the API documentation. From your host/build directory, run:
 ```
 cmake -DBUILD_DOCUMENTATION=ON ../
 make libbladeRF-doxygen
 ```
 The HTML documentation will be placed in **\<build dir\>/libraries/libbladerf/doc/doxygen/html**.  The **index.html** file is the "main" documentation page.
 
-Please see the [CHANGELOG](CHANGELOG) file for a summary of changes across libbladeRF versions.
+This API documentation is available online at: https://nuand.com/libbladeRF-doc
 
 ## Build Variables ##
 
