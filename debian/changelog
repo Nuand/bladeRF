@@ -1,3 +1,13 @@
+bladerf (2016.06) unstable; urgency=low
+
+  * Added synchronization trigger functionality
+  * Added SMB clock port control to libbladeRF API
+  * Added XB-300 support
+  * Added detection of v2.0.0 firmware series (with new VID/PID)
+  * FPGA bitstream v0.6.0, FX3 FW v2.0.0, libbladeRF v1.7.2, bladeRF-cli v1.4.0
+
+ -- Jon Szymaniak <jon.szymaniak@nuand.com>  Wed, 29 Jun 2016 16:10:35 -0400
+
 bladerf (2016.01-rc1) unstable; urgency=low
 
   * Added support for VCTCXO taming using 1.8V 1 PPS or 10 MHz input signal

@@ -6,6 +6,124 @@ hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
 --------------------------------------------------------------------------------
+ 2016.06 (2016-06-29)
+--------------------------------------------------------------------------------
+
+This release introduces new functionality and bug fixes. It consists of the
+following versions:
+
+    * FPGA bitstream                v0.6.0
+    * FX3 firmware                  v2.0.0
+    * libbladeRF                    v1.7.2
+    * bladeRF-cli                   v1.4.0
+    * MATLAB & Simulink bindings    v0.1.2
+
+New Features:
+
+* libbladeRF, bladeRF-cli
+    - Added SMB clock control functionality
+    - Added synchronization trigger functionality
+    - Added XB-300 support
+    - Added detection for v2.0.0 firmware series (new VID/PID)
+
+* FPGA
+    - Added synchronization trigger functionality using J71 header (pin 4)
+    - Added ADSB top-level architecture for out-of-tree ADSB core
+        + https://github.com/nuand/bladeRF-adsb
+
+* FX3
+    - 2.x.y series of firmware introduces new VID/PID
+
+* libbladeRF API documentation
+    - Re-organized into more cohesive sections
+    - Added additional clarifications and corrections
+
+* Miscellaneous:
+    - Windows builds updated to search for libusb 1.0.20 by default
+    - Added GNU Radio Companion loopback example
+
+The following issue tracker items have been closed since 2015.01-rc1:
+
+    * Bugs:
+        - #474: [libbladeRF] Clarify required SMB clock port config prior to
+                trigger API usage
+        - #470: [libbladeRF] VS2012 Build failure (cannot find stdbool.h)
+        - #468: BLADERF_FORMAT_SC16_Q11_META docs confusing
+        - #466: [bladeRF-cli] First open fails when device has incompatible
+                FPGA/FW
+        - #465: [libbladeRF] TX Timeout Regression
+        - #462: [invalid] cmake build failure on CentOS 7.2
+        - #460: [libbladeRF] Explain when (not) to use bladerf_get_timestamp()
+        - #459: [invalid] [libbladeRF] Build failure reported on MS VS2013
+        - #458: [libbladerf] assertion failed in sync_worker.c, tx_callback
+                after bug 438 fix
+        - #457: [libbladeRF] bladerf_sync_tx() clears burst regardless of return
+        - #454: [debian] bladerf-fpga-hostedx40 leaves bad rbf file around if
+                the download fails
+        - #453: [bladeRF-cli] Automatic DC Calibration does not appear to apply
+                nominal value
+        - #450: host/common items missing extern "C" { ... }
+        - #448: Build broken on big-endian targets
+        - #446: Wrong loopback mode name for Simulink IF
+        - #354: [hdl] failure to include STP file due to talkback req ought to
+                be fatal
+
+    * Enhancement:
+        - #463: Adding SignalTap in scripted build
+        - #403: LibbladeRF support for setting MIMO mode
+        - #221: Synchronized Tx/Rx of multiple bladeRFs for MIMO using Mini
+                Expansion Header
+        - #174: Migrate FX3 build to CMake-generated Makefile
+
+    * Other:
+        - #432: Error building on Pi
+
+Outstanding issue tracker items:
+    * Bugs:
+        - #475: [libbladeRF] Windows 10 builds fail if CyFX3 SDK is present
+        - #473: [Windows][libbladeRF][duplicate] Triggered TX Stalls on Cypress
+                Backend
+        - #472: [libbladeRF, FX3] bladerf_device_reset() does not allow
+                libbladeRF to close device cleanly
+        - #471: [nios] VCTCXO Trim DAC Readback is implemented incorrectly
+        - #464: [bladeRF-cli] `probe` can't access already opened devices
+                (libusb, Windows)
+        - #447: Build broken on MSVC2015 (ptheads timespec conflict)
+        - #443: [libbladeRF] Cypress backend timeouts & receiving NULL buffers
+                upon transfer completion
+        - #442: [FX3 Firmware] Jump to bootloader after NULL interface is
+                restored
+        - #427: [libbladeRF] Cannot set some samplerates returned by
+                bladerf_set_rational_rate()
+        - #408: [libbladeRF] Device hangs after repeated open/stream/close
+        - #401: libusb detection fails when x-compiling for Android
+        - #390: Warning after running rx start when loopback=firmware
+        - #360: [hdl] Older FPGA revisions no longer build
+        - #352: [libbladeRF] Intermittent out-of-order transfer callbacks
+                with Windows & libusb 1.0.19
+        - #301: Direct sampling with XB-200 needs additional improvements
+
+    * Enhancements:
+        - #452: [Simulink] Integrate Signal Specification to RX
+        - #439: [libbladeRF] Move submit_stream_buffer implementations up a
+                layer. (Has pending PR #467)
+        - #431: Halfband filtering
+        - #430: Fs/4 Mix
+        - #428: Low-rate stream formats
+        - #416: Add CMake project config files
+        - #395: [hdl] Timing Closure on LMS6 SPI interface
+        - #382: 'bladerf_get_serial()' fixed buffer size should be ideally
+                handled in the API
+        - #321: How about a switch for bladeRF-cli to emit calibration in a
+                format bladeRF-cli can later read?
+        - #319: [bladeRF-cli] Add libedit and libreadline support
+
+    * Other:
+        - #388: [FX3 Firmware] Investigate USB3 drive controls
+        - #344: [fx3] Investigate/fix field checksums
+        - #328: [libbladeRF] Review and evaluate use of stream lock WRT libusb
+
+--------------------------------------------------------------------------------
  2016.01-rc1 (2016-01-07)
 --------------------------------------------------------------------------------
 
