@@ -66,7 +66,7 @@ working directory, in a file named \f[C]<serial>_dc_<rx|tx>.tbl\f[].
 in the table.
 \f[C]f_inc\f[] is the frequency increment.
 .PP
-By default, tables are generated over the entire frequency range, in 2
+By default, tables are generated over the entire frequency range, in 10
 MHz steps.
 .RE
 .SS clear

@@ -27,7 +27,7 @@
  * Any manual modifications to this file will be overwritten!
  * To edit the content of help strings, please edit interactive-help.md
  *
- * Last generated: Sat May 14 15:52:03 EDT 2016 by jynik
+ * Last generated: Tue Jul 12 18:41:06 EDT 2016 by jynik
  */
 
 #ifndef BLADERF_CLI_DOC_CMD_HELP_H__
@@ -85,7 +85,7 @@
   "    frequency increment.\n" \
   "\n" \
   "    By default, tables are generated over the entire frequency range,\n" \
-  "    in 2 MHz steps.\n" \
+  "    in 10 MHz steps.\n" \
   "\n" \
 
 

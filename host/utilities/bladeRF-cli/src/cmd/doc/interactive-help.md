@@ -51,7 +51,7 @@ Available operations:
     table. `f_inc` is the frequency increment.
 
     By default, tables are generated over the entire frequency range, in
-    2 MHz steps.
+    10 MHz steps.
 
 
 clear
