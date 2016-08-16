@@ -334,7 +334,7 @@ int main(int argc, char *argv[])
     uint64_t acquisition = CORRELATOR_NO_RESULT;
     int sps;
     int i;
-    int status;
+    int status = -1;
 
     int num_samples;
 
