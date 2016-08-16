@@ -375,7 +375,7 @@ int main(int argc, char *argv[])
     if (acquisition == CORRELATOR_NO_RESULT) {
         printf("Correlation symbols not found.\n");
     } else {
-        printf("Acquired Code. Acquisition = %lu\n", acquisition);
+        printf("Acquired Code. Acquisition = %"PRIu64"\n", acquisition);
     }
 
     status = 0;
