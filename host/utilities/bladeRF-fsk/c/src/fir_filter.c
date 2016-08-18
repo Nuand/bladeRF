@@ -24,6 +24,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include "host_config.h"
 
 #include "fir_filter.h"
 

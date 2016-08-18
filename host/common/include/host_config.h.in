@@ -271,6 +271,19 @@
 #       define inline __inline
 #   endif
 
+/* Visual studio 2012 compiler (v17.00.XX) doesn't have round functions */
+#   if _MSC_VER <= 1700
+#       include <math.h>
+        static inline float roundf(float x)
+        {
+            return x >= 0.0f ? floorf(x + 0.5f) : ceilf(x - 0.5f);
+        }
+        static inline double round(double x)
+        {
+            return x >= 0.0 ? floor(x + 0.5) : ceil(x - 0.5);
+        }
+#   endif
+
 #endif // _MSC_VER
 
 #endif

@@ -31,6 +31,7 @@ int load_samples_from_csv_file(char *filename, bool pad_zeros, int buffer_size,
     int buf_inc_size;            //Number of additional samples to add space for on a realloc()
     bool reachedEOF;
     int16_t temp_sample1, temp_sample2;
+    int16_t *tmp_ptr;
 
     //Open csv file
     FILE *fp = fopen(filename, "r");
@@ -47,7 +48,7 @@ int load_samples_from_csv_file(char *filename, bool pad_zeros, int buffer_size,
     }
 
     //Allocate initial memory for tx_samples
-    *samples = malloc(buf_inc_size * 2 * sizeof(int16_t));
+    *samples = (int16_t *) malloc(buf_inc_size * 2 * sizeof(int16_t));
     if (*samples == NULL){
         perror("malloc");
         fclose(fp);
@@ -71,7 +72,7 @@ int load_samples_from_csv_file(char *filename, bool pad_zeros, int buffer_size,
             }
             //allocate more memory. Add space for another 'buf_inc_size' samples
             samples_buf_size += buf_inc_size;
-            int16_t *tmp_ptr = realloc(*samples, samples_buf_size * 2 * sizeof(int16_t));
+            tmp_ptr = (int16_t *) realloc(*samples, samples_buf_size * 2 * sizeof(int16_t));
             if (tmp_ptr == NULL){
                 perror("realloc");
                 free(*samples);
@@ -117,6 +118,7 @@ int load_struct_samples_from_csv_file(char *filename, bool pad_zeros, int buffer
     int buf_inc_size;            //Number of additional samples to add space for on a realloc()
     bool reachedEOF;
     int16_t temp_sample1, temp_sample2;
+    struct complex_sample *tmp_ptr;
 
     //Open csv file
     FILE *fp = fopen(filename, "r");
@@ -133,7 +135,7 @@ int load_struct_samples_from_csv_file(char *filename, bool pad_zeros, int buffer
     }
 
     //Allocate initial memory for tx_samples
-    *samples = malloc(buf_inc_size * sizeof(struct complex_sample));
+    *samples = (struct complex_sample *) malloc(buf_inc_size * sizeof(struct complex_sample));
     if (*samples == NULL){
         perror("malloc");
         fclose(fp);
@@ -156,7 +158,7 @@ int load_struct_samples_from_csv_file(char *filename, bool pad_zeros, int buffer
             }
             //allocate more memory. Add space for another 'buf_inc_size' samples
             samples_buf_size += buf_inc_size;
-            struct complex_sample *tmp_ptr = realloc(*samples,
+            tmp_ptr = (struct complex_sample *) realloc(*samples,
                                        samples_buf_size * sizeof(struct complex_sample));
             if (tmp_ptr == NULL){
                 perror("realloc");

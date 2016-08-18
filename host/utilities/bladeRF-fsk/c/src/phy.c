@@ -576,12 +576,12 @@ static void create_ramps(unsigned int ramp_length, struct complex_sample ramp_do
     //Create the ramps
     for (samp = 0; samp < ramp_length-1; samp++){
         //ramp up
-        ramp_up[samp].i = (int16_t) rint(ramp_up_step*(samp+1));    //I
+        ramp_up[samp].i = (int16_t) round(ramp_up_step*(samp+1));    //I
         ramp_up[samp].q = 0;                            //Q
 
         //ramp down
-		ramp_down[samp].i = (int16_t) rint(ramp_down_init.i - ramp_down_step_i*(samp + 1));
-		ramp_down[samp].q = (int16_t) rint(ramp_down_init.q - ramp_down_step_q*(samp + 1));
+		ramp_down[samp].i = (int16_t) round(ramp_down_init.i - ramp_down_step_i*(samp + 1));
+		ramp_down[samp].q = (int16_t) round(ramp_down_init.q - ramp_down_step_q*(samp + 1));
     }
 
     //Set last ramp up/ ramp down sample (will always be the same)

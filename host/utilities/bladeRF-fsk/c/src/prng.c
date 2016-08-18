@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    seed = atoll(argv[1]);
+    seed = atol(argv[1]);
     if (seed == 0) {
         fprintf(stderr, "Seed must be non-zero.\n");
         return EXIT_FAILURE;

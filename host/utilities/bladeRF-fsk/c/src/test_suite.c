@@ -43,7 +43,6 @@
  */
 int link_test(char *dev_id1, char *dev_id2, unsigned int tx_freq1, unsigned int tx_freq2)
 {
-    printf("------------BEGINNING LINK TEST-----------\n");
     struct link_handle *link1 = NULL;
     struct link_handle *link2 = NULL;
     int status = 0;
@@ -55,6 +54,7 @@ int link_test(char *dev_id1, char *dev_id2, unsigned int tx_freq1, unsigned int 
     struct bladerf *dev1 = NULL, *dev2 = NULL;
     char *result;
 
+    printf("------------BEGINNING LINK TEST-----------\n");
     //Open bladeRFs
     status = bladerf_open(&dev1, dev_id1);
     if (status != 0){
@@ -68,7 +68,7 @@ int link_test(char *dev_id1, char *dev_id2, unsigned int tx_freq1, unsigned int 
     }
 
     //Zero the tx_data buffer
-    memset(tx_data, 0, sizeof(tx_data));
+    memset((void *)tx_data, 0, sizeof(tx_data));
     //Prompt for a string
     printf("Enter a string to tx using link1: ");
     result = fgets((char *) tx_data, sizeof(tx_data), stdin);
@@ -155,7 +155,6 @@ int link_test(char *dev_id1, char *dev_id2, unsigned int tx_freq1, unsigned int 
  */
 int phy_test(char *dev_id1, char *dev_id2, unsigned int tx_freq1, unsigned int tx_freq2)
 {
-    printf("------------BEGINNING PHY TEST------------\n");
     struct phy_handle *phy1 = NULL;
     struct phy_handle *phy2 = NULL;
     uint8_t tx_data[DATA_FRAME_LENGTH];
@@ -168,6 +167,7 @@ int phy_test(char *dev_id1, char *dev_id2, unsigned int tx_freq1, unsigned int t
     struct bladerf *dev1 = NULL, *dev2 = NULL;
     char *result;
 
+    printf("------------BEGINNING PHY TEST------------\n");
     //Zero the tx_data buffer
     memset(tx_data, 0, sizeof(tx_data));
     //Set first byte to data frame code
@@ -311,7 +311,6 @@ int phy_test(char *dev_id1, char *dev_id2, unsigned int tx_freq1, unsigned int t
  */
 int phy_receive_test(void)
 {
-    printf("------------BEGINNING PHY RECEIVER TEST------------\n");
     struct phy_handle *phy = NULL;
     uint8_t *rx_data;
     int status = 0, ret;
@@ -319,6 +318,7 @@ int phy_receive_test(void)
     struct radio_params params;
     struct bladerf *dev = NULL;
 
+    printf("------------BEGINNING PHY RECEIVER TEST------------\n");
     //Init phy
     status = bladerf_open(&dev, NULL);
     if (status != 0){
@@ -381,7 +381,6 @@ int phy_receive_test(void)
  */
 int fsk_test1(void)
 {
-    printf("------------BEGINNING FSK TEST 1-------------\n");
     //tx
     struct complex_sample *tx_samples = NULL;
     uint8_t tx_data[] = "=Hello-there=";
@@ -394,6 +393,7 @@ int fsk_test1(void)
     int status = 0;
     uint8_t rx_data[512];
 
+    printf("------------BEGINNING FSK TEST 1-------------\n");
     //Open fsk handle
     fsk = fsk_init();
     if (fsk == NULL){
@@ -405,7 +405,7 @@ int fsk_test1(void)
     num_samples_tx = sizeof(tx_data)*8*SAMP_PER_SYMB+1;
 
     //Allocate tx samples
-    tx_samples = malloc(num_samples_tx * sizeof(struct complex_sample));
+    tx_samples = (struct complex_sample *) malloc(num_samples_tx * sizeof(struct complex_sample));
     if (tx_samples == NULL){
         perror("malloc");
         status = -1;
