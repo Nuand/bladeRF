@@ -15,7 +15,7 @@
 # Contributors are sorted by last name or handle. The fields are:
 #   (N) Name or handle
 #   (E) Email address
-#   (F) Handle on nuand forum
+#   (F) Handle on nuand forums
 #   (I) IRC handle in Freenode/#bladerf
 #   (G) GitHub handle
 #   (D) Description of contributions or project responsibilities
@@ -89,13 +89,12 @@ G: maggo1404
 D: OSX build fixes
 
 N: Jon Szymaniak
-E: jon.szymaniak@nuand.com
 F: jynik
 I: jynik
 G: jynik
-D: Project maintainer
+D: Former developer and project maintainer
 
-N: Ryan Tucker 
+N: Ryan Tucker
 E: rtucker@gmail.com
 I: HoopyCat
 G: rtucker
