@@ -60,7 +60,7 @@ void stop(struct bladerf_fsk_handle *handle);
 
 /**
  * Thread function which gets bytes from the user via either stdin or a file and sends
- * them with link_send_data(). Thread will return when it encounters EOF. Setting 
+ * them with link_send_data(). Thread will return when it encounters EOF. Setting
  * handle->tx.stop to true will not necessarily stop the thread since it may be stuck
  * on fgets().
  *
@@ -260,7 +260,7 @@ int main(int argc, char *argv[])
     if (status < 0) {
         return status;
     } else if (status == 1) {
-        printf( 
+        printf(
             "Usage: %s <options>\n"
             "bladeRF-to-bladeRF text/file transfer program based on a custom FSK software modem\n\n"
             "Options:\n",
@@ -317,4 +317,5 @@ int main(int argc, char *argv[])
     //Stop/cleanup everything else
     stop(handle);
     config_deinit(config);
+    return 0;
 }

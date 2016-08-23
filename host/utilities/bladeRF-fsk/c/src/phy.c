@@ -438,7 +438,7 @@ int phy_fill_tx_buf(struct phy_handle *phy, uint8_t *data_buf, unsigned int leng
 
 /**
  * Thread function which transmits data frames
- * 
+ *
  * @param[in]   arg     pointer to phy handle struct
  */
 void *phy_transmit_frames(void *arg)
@@ -720,15 +720,15 @@ void *phy_receive_frames(void *arg)
     unsigned int num_bytes_rx;
     unsigned int data_index;        //Current index of rx_buffer to receive new bytes on
                                     //doubles as the current received frame length
-    uint64_t samples_index;            //Current index of samples buffer to correlate/demod
+    uint64_t samples_index=0;            //Current index of samples buffer to correlate/demod
                                     //samples from
     bool preamble_detected;
-    bool new_frame;
+    bool new_frame = false;
     int frame_length = 0;            //link layer frame length
     uint8_t *rx_buffer = NULL;    //local rx data buffer
     uint8_t frame_type;
     struct bladerf_metadata metadata;            //bladerf metadata for sync_rx()
-    unsigned int num_bytes_to_demod;
+    unsigned int num_bytes_to_demod = 0;
     uint64_t timestamp = UINT64_MAX;
 
     enum states {RECEIVE, PREAMBLE_CORRELATE, DEMOD,

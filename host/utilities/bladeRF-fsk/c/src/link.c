@@ -1027,10 +1027,10 @@ static int receive_ack(struct link_handle *link, uint16_t ack_num, unsigned int 
  */
 void *receive_frames(void *arg)
 {
-    uint8_t *rx_buf;
+    uint8_t *rx_buf = NULL;
     unsigned int frame_length;
     uint32_t crc_32, crc_32_rx;
-    bool is_data_frame;
+    bool is_data_frame = false;
     int status;
     uint8_t ack_send_buf[ACK_FRAME_LENGTH];
     uint16_t seq_num = 0;
