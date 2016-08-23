@@ -33,6 +33,8 @@
  *
  * MATLAB command:
  *      taps = firpm(31, [0 1/8 1/3 1], [1 1 0 0]);
+ *                      OR
+ *      taps = remez(31, [0 1/8 1/3 1], [1 1 0 0]);
  *
  * For FSK implementation with mod_index=pi/2, SPS=8, this filter was designed to:
  *      - Pass the signal's main lobe
