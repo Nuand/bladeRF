@@ -1,3 +1,7 @@
+#include "AvailabilityMacros.h"
+
+#if MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_12
+
 /*
  * clock_gettime() wrapper for OSX based upon jbenet's github "gist":
  *   https://gist.github.com/jbenet/1087739
@@ -56,3 +60,5 @@ clock_gettime_out:
         return 0;
     }
 }
+
+#endif
