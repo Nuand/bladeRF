@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project>
+	<configuration id="preference.org.eclipse.cdt.managedbuilder.core.configurationDataProvider.1762988339" name="Nios II">
+		<extension point="org.eclipse.cdt.core.LanguageSettingsProvider">
+			<provider-reference id="org.eclipse.cdt.core.ReferencedProjectsLanguageSettingsProvider" ref="shared-provider"/>
+			<provider class="com.altera.sbtgui.project.importer.Nios2GCCBuiltinSpecsDetector" console="false" env-hash="-69715947438844272" id="altera.tool.Nios2GCCBuiltinSpecsDetector" keep-relative-paths="false" name="Nios II GCC Built-in Compiler Settings" parameter="${COMMAND} ${FLAGS} -E -P -v -dD &quot;${INPUTS}&quot;" prefer-non-shared="true">
+				<language-scope id="org.eclipse.cdt.core.gcc"/>
+				<language-scope id="org.eclipse.cdt.core.g++"/>
+			</provider>
+			<provider-reference id="org.eclipse.cdt.managedbuilder.core.MBSLanguageSettingsProvider" ref="shared-provider"/>
+			<provider class="org.eclipse.cdt.core.language.settings.providers.LanguageSettingsGenericProvider" id="org.eclipse.cdt.ui.UserLanguageSettingsProvider" name="CDT User Setting Entries" prefer-non-shared="true" store-entries-with-project="true">
+				<language id="org.eclipse.cdt.core.gcc">
+					<resource project-relative-path="">
+						<entry kind="includePath" name="${ProjDirPath}/../../../../../../../fpga_common/include">
+							<flag value="LOCAL|EXPORTED"/>
+						</entry>
+						<entry kind="includePath" name="${ProjDirPath}/../../../../../../../host/libraries/libbladeRF/include">
+							<flag value="LOCAL|EXPORTED"/>
+						</entry>
+						<entry kind="includePath" name="${ProjDirPath}/../bladeRF_nios_bsp/">
+							<flag value="LOCAL|EXPORTED"/>
+						</entry>
+						<entry kind="includePath" name="${ProjDirPath}/../bladeRF_nios_bsp/drivers/inc">
+							<flag value="LOCAL|EXPORTED"/>
+						</entry>
+						<entry kind="includePath" name="${ProjDirPath}/../bladeRF_nios_bsp/HAL/inc">
+							<flag value="LOCAL|EXPORTED"/>
+						</entry>
+						<entry kind="includePath" name="${ProjDirPath}/../bladeRF_nios_bsp/HAL/inc/os">
+							<flag value="LOCAL|EXPORTED"/>
+						</entry>
+						<entry kind="includePath" name="${ProjDirPath}/../bladeRF_nios_bsp/HAL/inc/sys">
+							<flag value="LOCAL|EXPORTED"/>
+						</entry>
+						<entry kind="includePath" name="${ProjDirPath}/../bladeRF_nios_bsp/HAL/inc/priv">
+							<flag value="LOCAL|EXPORTED"/>
+						</entry>
+					</resource>
+				</language>
+			</provider>
+		</extension>
+	</configuration>
+</project>
