@@ -1,0 +1,8 @@
+# Convenience directory
+set here $::quartus(qip_path)
+
+# Top level entity and pin constraints
+set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/bladerf.vhd]]
+
+# Basic timing constraints
+set_global_assignment -name SDC_FILE [file normalize [file join $here constraints/bladerf.sdc]]
