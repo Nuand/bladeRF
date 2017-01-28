@@ -2,6 +2,7 @@
 #define TEST_COMMON_H_
 
 #include <stdint.h>
+#include <time.h>
 #include "host_config.h"
 #include "rel_assert.h"
 
