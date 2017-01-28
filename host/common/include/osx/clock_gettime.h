@@ -27,6 +27,10 @@
 
 #include <time.h>
 
+#include "AvailabilityMacros.h"
+
+#if MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_12
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -42,6 +46,8 @@ int clock_gettime(clockid_t clk_id, struct timespec *tp);
 
 #ifdef __cplusplus
 } /* extern "C" */
+#endif
+
 #endif
 
 #endif
