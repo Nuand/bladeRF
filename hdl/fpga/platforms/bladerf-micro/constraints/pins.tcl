@@ -285,7 +285,14 @@ set_location_assignment PIN_G16 -to adf_sclk
 set_location_assignment PIN_G18 -to adf_sdi
 set_location_assignment PIN_J19 -to adf_sdo
 set_location_assignment PIN_H18 -to adf_csn
-set_location_assignment PIN_H16 -to c5_clock_2
+set_location_assignment PIN_H16 -to c5_clock_1
+set_location_assignment PIN_G15 -to exp_present
+set_location_assignment PIN_B15 -to exp_i2c_scl
+set_location_assignment PIN_F14 -to exp_i2c_sda
+set_location_assignment PIN_H14 -to exp_spi_sclk
+set_location_assignment PIN_B13 -to exp_spi_miso
+set_location_assignment PIN_J13 -to exp_spi_mosi
+set_location_assignment PIN_A13 -to exp_spi_csn
 set_location_assignment PIN_H10 -to adi_rx_sp4t1_v[2]
 set_location_assignment PIN_H13 -to adi_rx_sp4t1_v[1]
 set_location_assignment PIN_G11 -to adi_rx_sp4t2_v[2]
@@ -301,33 +308,26 @@ set_location_assignment PIN_G12 -to dac_csn
 
 # Bank 8A
 set_location_assignment PIN_G10 -to exp_clock_in
-set_location_assignment PIN_L7  -to exp_i2c_scl
 set_location_assignment PIN_F10 -to "exp_clock_in(n)"
-set_location_assignment PIN_K7  -to exp_i2c_sda
-set_location_assignment PIN_J7  -to exp_present
 set_location_assignment PIN_H8  -to exp_clock_out
 set_location_assignment PIN_G8  -to "exp_clock_out(n)"
-set_location_assignment PIN_J9  -to exp_gpio[15]
-set_location_assignment PIN_A10 -to exp_gpio[13]
-set_location_assignment PIN_H9  -to exp_gpio[14]
-set_location_assignment PIN_A9  -to exp_gpio[12]
-set_location_assignment PIN_B10 -to exp_gpio[11]
-set_location_assignment PIN_A5  -to exp_gpio[9]
-set_location_assignment PIN_C9  -to exp_gpio[10]
-set_location_assignment PIN_B5  -to exp_gpio[8]
-set_location_assignment PIN_E10 -to c5_clock_1
-set_location_assignment PIN_B6  -to exp_gpio[7]
-set_location_assignment PIN_B7  -to exp_gpio[6]
+set_location_assignment PIN_B10 -to exp_gpio[7]
+set_location_assignment PIN_C9  -to exp_gpio[6]
+set_location_assignment PIN_E10 -to c5_clock_2
+set_location_assignment PIN_B6  -to exp_gpio[9]
+set_location_assignment PIN_B7  -to exp_gpio[8]
 set_location_assignment PIN_A8  -to exp_gpio[5]
-set_location_assignment PIN_C6  -to exp_gpio[3]
+set_location_assignment PIN_C6  -to exp_gpio[11]
 set_location_assignment PIN_A7  -to exp_gpio[4]
-set_location_assignment PIN_D6  -to exp_gpio[2]
-set_location_assignment PIN_E9  -to exp_gpio[1]
-set_location_assignment PIN_D7  -to exp_spi_sclk
-set_location_assignment PIN_D9  -to exp_gpio[0]
-set_location_assignment PIN_C8  -to exp_spi_miso
-set_location_assignment PIN_G6  -to exp_spi_mosi
-set_location_assignment PIN_H6  -to exp_spi_csn
+set_location_assignment PIN_D6  -to exp_gpio[10]
+set_location_assignment PIN_E9  -to exp_gpio[3]
+set_location_assignment PIN_D7  -to exp_gpio[13]
+set_location_assignment PIN_D9  -to exp_gpio[2]
+set_location_assignment PIN_C8  -to exp_gpio[12]
+set_location_assignment PIN_G6  -to exp_gpio[1]
+set_location_assignment PIN_F7  -to exp_gpio[15]
+set_location_assignment PIN_H6  -to exp_gpio[0]
+set_location_assignment PIN_E7  -to exp_gpio[14]
 
 
 # Bank Voltage

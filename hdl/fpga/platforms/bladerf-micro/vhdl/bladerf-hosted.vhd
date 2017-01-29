@@ -1099,13 +1099,19 @@ begin
     adi_enable    <= led1_blink;
     adi_en_agc    <= exp_spi_miso when rising_edge(c5_clock_2);
     adi_ctrl_in   <= adi_ctrl_out(7 downto 4) xor adi_ctrl_out(3 downto 0);
-    exp_clock_out <= exp_clock_in;
     exp_spi_csn   <= exp_present;
     exp_gpio(0)   <= led1_blink;
     exp_gpio(1)   <= led1_blink;
     adf_sclk      <= nios_sclk;
     adf_sdi       <= adf_sdo;
     adf_csn       <= exp_present;
+
+    U_exp_pll : entity work.pll
+      port map (
+        inclk0              =>  exp_clock_in,
+        c0                  =>  exp_clock_out,
+        locked              =>  open
+      ) ;
 
     U_lvds_tx : component axi_ad9361_alt_lvds_tx
         port map (
