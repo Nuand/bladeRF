@@ -1096,13 +1096,16 @@ begin
     exp_i2c_scl   <= i2c_scl_out when i2c_scl_oen = '0' else 'Z' ;
     exp_i2c_sda   <= i2c_sda_out when i2c_sda_oen = '0' else 'Z' ;
     adi_txnrx     <= led1_blink;
-    adi_en_agc    <= led1_blink;
-    adi_ctrl_in   <= (others => led1_blink);
+    adi_enable    <= led1_blink;
+    adi_en_agc    <= exp_spi_miso when rising_edge(c5_clock_2);
+    adi_ctrl_in   <= adi_ctrl_out(7 downto 4) xor adi_ctrl_out(3 downto 0);
     exp_clock_out <= exp_clock_in;
     exp_spi_csn   <= exp_present;
-    spi1_sclk     <= nios_sclk;
-    spi1_sdi      <= spi1_sdo;
-    spi1_csn      <= exp_present;
+    exp_gpio(0)   <= led1_blink;
+    exp_gpio(1)   <= led1_blink;
+    adf_sclk      <= nios_sclk;
+    adf_sdi       <= adf_sdo;
+    adf_csn       <= exp_present;
 
     U_lvds_tx : component axi_ad9361_alt_lvds_tx
         port map (

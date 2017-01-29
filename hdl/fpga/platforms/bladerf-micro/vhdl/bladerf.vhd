@@ -44,6 +44,7 @@ entity bladerf is
     adi_rx_data         :   in      std_logic_vector(5 downto 0) ;
     adi_rx_frame        :   in      std_logic ;
 
+    -- RX RF Switching (3.3 V)
     adi_rx_sp4t1_v      :   out     std_logic_vector(2 downto 1) ;
     adi_rx_sp4t2_v      :   out     std_logic_vector(2 downto 1) ;
 
@@ -52,6 +53,7 @@ entity bladerf is
     adi_tx_data         :   out     std_logic_vector(5 downto 0) ;
     adi_tx_frame        :   out     std_logic ;
 
+    -- TX RF Switching (3.3 V)
     adi_tx_sp4t1_v      :   out     std_logic_vector(2 downto 1) ;
     adi_tx_sp4t2_v      :   out     std_logic_vector(2 downto 1) ;
 
@@ -63,10 +65,11 @@ entity bladerf is
 
     -- AD9361 Control Interface (2.5 V)
     adi_reset_n         :   buffer  std_logic ;
+    adi_enable          :   out     std_logic;
     adi_txnrx           :   out     std_logic := '0';
     adi_en_agc          :   out     std_logic := '0';
     adi_ctrl_in         :   out     std_logic_vector(3 downto 0) := (others => '0');
-    adi_ctrl_out        :   in      std_logic_vector(3 downto 0);
+    adi_ctrl_out        :   in      std_logic_vector(7 downto 0);
 
     -- Misc I2C Interface (TBD)
     i2c1_scl            :   inout   std_logic ;
@@ -74,13 +77,13 @@ entity bladerf is
     i2c2_scl            :   inout   std_logic ;
     i2c2_sda            :   inout   std_logic ;
 
-    -- Misc SPI Interface (TBD)
-    spi1_sclk           :   out     std_logic := '0' ;
-    spi1_csn            :   out     std_logic := '1' ;
-    spi1_sdi            :   out     std_logic := '0' ;
-    spi1_sdo            :   in      std_logic := '0' ;
+    -- ADF4002 SPI Interface (TBD)
+    adf_sclk            :   out     std_logic := '0' ;
+    adf_csn             :   out     std_logic := '1' ;
+    adf_sdi             :   out     std_logic := '0' ;
+    adf_sdo             :   in      std_logic := '0' ;
 
-    -- FX3 Interface (1.8 V)
+    -- FX3 Interface (3.3 V)
     fx3_pclk            :   in      std_logic ;
     fx3_gpif            :   inout   std_logic_vector(31 downto 0) ;
     fx3_ctl             :   inout   std_logic_vector(12 downto 0) ;
