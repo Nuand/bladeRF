@@ -77,13 +77,13 @@ entity bladerf is
     i2c2_scl            :   inout   std_logic ;
     i2c2_sda            :   inout   std_logic ;
 
-    -- ADF4002 SPI Interface (TBD)
+    -- ADF4002 SPI Interface (3.3 V)
     adf_sclk            :   out     std_logic := '0' ;
     adf_csn             :   out     std_logic := '1' ;
     adf_sdi             :   out     std_logic := '0' ;
     adf_sdo             :   in      std_logic := '0' ;
 
-    -- FX3 Interface (3.3 V)
+    -- FX3 Interface (1.8 V)
     fx3_pclk            :   in      std_logic ;
     fx3_gpif            :   inout   std_logic_vector(31 downto 0) ;
     fx3_ctl             :   inout   std_logic_vector(12 downto 0) ;
