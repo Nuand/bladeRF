@@ -32,6 +32,6 @@ set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/fx3_
 set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/bladerf-hosted.vhd]]
 
 # SDC Constraints
+set_global_assignment -name SDC_FILE [file normalize [file join $here constraints/ad9361.sdc]]
 set_global_assignment -name SDC_FILE [file normalize [file join $here constraints/bladerf.sdc]]
-
 
