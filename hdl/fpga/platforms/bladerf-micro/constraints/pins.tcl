@@ -230,31 +230,50 @@ foreach pin ${lvds_ins} {
 ##########
 # BANK 5A
 ##########
+set_location_assignment PIN_T17 -to i2c1_sda
+set_location_assignment PIN_T22 -to i2c1_scl
+set_location_assignment PIN_T15 -to adi_rx_sp4t1_v[2]
+set_location_assignment PIN_R22 -to adi_rx_sp4t1_v[1]
+set_location_assignment PIN_R15 -to adi_rx_sp4t2_v[2]
+set_location_assignment PIN_R21 -to adi_rx_sp4t2_v[1]
+set_location_assignment PIN_R16 -to adi_tx_sp4t1_v[2]
+set_location_assignment PIN_P22 -to adi_tx_sp4t1_v[1]
+set_location_assignment PIN_R17 -to adi_tx_sp4t2_v[2]
+set_location_assignment PIN_P19 -to adi_tx_sp4t2_v[1]
 set_location_assignment PIN_P16 -to fx3_uart_cts
 set_location_assignment PIN_P18 -to fx3_uart_rxd
 set_location_assignment PIN_P17 -to fx3_uart_txd
 
 
 # Bank voltage
-set_global_assignment -name IOBANK_VCCIO "1.8V" -section_id "5A"
+set_global_assignment -name IOBANK_VCCIO "3.3V" -section_id "5A"
 
 # Single-ended output constraints
 set outs {
     fx3_uart_cts
     fx3_uart_rxd
 }
+for { set i 1 } { $i < 3 } { incr i } {
+    lappend outs "adi_rx_sp4t1_v\[${i}\]"
+    lappend outs "adi_rx_sp4t2_v\[${i}\]"
+    lappend outs "adi_tx_sp4t1_v\[${i}\]"
+    lappend outs "adi_tx_sp4t2_v\[${i}\]"
+}
 
 foreach pin ${outs} {
-    set_instance_assignment -name IO_STANDARD          "1.8 V"           -to ${pin}
+    set_instance_assignment -name IO_STANDARD          "3.3-V LVCMOS"    -to ${pin}
     set_instance_assignment -name CURRENT_STRENGTH_NEW "MAXIMUM CURRENT" -to ${pin}
     set_instance_assignment -name SLEW_RATE            1                 -to ${pin}
 }
 
 # Single-ended inout constraints
-set inouts {}
+set inouts {
+    i2c1_sda
+    i2c1_scl
+}
 
 foreach pin ${inouts} {
-    set_instance_assignment -name IO_STANDARD          "1.8 V"           -to ${pin}
+    set_instance_assignment -name IO_STANDARD          "3.3-V LVCMOS"    -to ${pin}
     set_instance_assignment -name CURRENT_STRENGTH_NEW "MAXIMUM CURRENT" -to ${pin}
     set_instance_assignment -name SLEW_RATE            1                 -to ${pin}
 }
@@ -265,7 +284,7 @@ set ins {
 }
 
 foreach pin ${ins} {
-    set_instance_assignment -name IO_STANDARD          "1.8 V"           -to ${pin}
+    set_instance_assignment -name IO_STANDARD          "3.3-V LVCMOS"    -to ${pin}
 }
 
 
@@ -277,10 +296,6 @@ foreach pin ${ins} {
 set_location_assignment PIN_K20 -to led[3]
 set_location_assignment PIN_B16 -to led[2]
 set_location_assignment PIN_K19 -to led[1]
-set_location_assignment PIN_C16 -to i2c2_sda
-set_location_assignment PIN_D17 -to i2c2_scl
-set_location_assignment PIN_G17 -to i2c1_sda
-set_location_assignment PIN_E16 -to i2c1_scl
 set_location_assignment PIN_G16 -to adf_sclk
 set_location_assignment PIN_G18 -to adf_sdi
 set_location_assignment PIN_J19 -to adf_sdo
@@ -293,14 +308,6 @@ set_location_assignment PIN_H14 -to exp_spi_sclk
 set_location_assignment PIN_B13 -to exp_spi_miso
 set_location_assignment PIN_J13 -to exp_spi_mosi
 set_location_assignment PIN_A13 -to exp_spi_csn
-set_location_assignment PIN_H10 -to adi_rx_sp4t1_v[2]
-set_location_assignment PIN_H13 -to adi_rx_sp4t1_v[1]
-set_location_assignment PIN_G11 -to adi_rx_sp4t2_v[2]
-set_location_assignment PIN_G13 -to adi_rx_sp4t2_v[1]
-set_location_assignment PIN_F12 -to adi_tx_sp4t1_v[2]
-set_location_assignment PIN_D13 -to adi_tx_sp4t1_v[1]
-set_location_assignment PIN_B12 -to adi_tx_sp4t2_v[2]
-set_location_assignment PIN_C13 -to adi_tx_sp4t2_v[1]
 set_location_assignment PIN_A12 -to dac_sclk
 set_location_assignment PIN_H11 -to dac_sdi
 set_location_assignment PIN_L8  -to dac_sdo
@@ -350,12 +357,6 @@ set outs {
 for { set i 1 } { $i < 4 } { incr i } {
     lappend outs "led\[${i}\]"
 }
-for { set i 1 } { $i < 3 } { incr i } {
-    lappend outs "adi_rx_sp4t1_v\[${i}\]"
-    lappend outs "adi_rx_sp4t2_v\[${i}\]"
-    lappend outs "adi_tx_sp4t1_v\[${i}\]"
-    lappend outs "adi_tx_sp4t2_v\[${i}\]"
-}
 
 foreach pin ${outs} {
     set_instance_assignment -name IO_STANDARD          "3.3-V LVCMOS"    -to ${pin}
@@ -365,10 +366,6 @@ foreach pin ${outs} {
 
 # Single-ended inout constraints
 set inouts {
-    i2c1_sda
-    i2c1_scl
-    i2c2_sda
-    i2c2_scl
     exp_i2c_scl
     exp_i2c_sda
 }

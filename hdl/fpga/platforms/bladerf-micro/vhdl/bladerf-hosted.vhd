@@ -1091,8 +1091,6 @@ begin
     i2c_sda_in <= i2c1_sda ;
 
     -- temp assignments for initial bringup vv
-    i2c2_scl      <= i2c_scl_out when i2c_scl_oen = '0' else 'Z' ;
-    i2c2_sda      <= i2c_sda_out when i2c_sda_oen = '0' else 'Z' ;
     exp_i2c_scl   <= i2c_scl_out when i2c_scl_oen = '0' else 'Z' ;
     exp_i2c_sda   <= i2c_sda_out when i2c_sda_oen = '0' else 'Z' ;
     adi_txnrx     <= led1_blink;
