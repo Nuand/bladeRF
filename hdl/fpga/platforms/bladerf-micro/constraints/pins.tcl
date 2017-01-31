@@ -230,6 +230,8 @@ foreach pin ${lvds_ins} {
 ##########
 # BANK 5A
 ##########
+set_location_assignment PIN_T18 -to adf_sdo
+set_location_assignment PIN_T20 -to dac_sdo
 set_location_assignment PIN_T17 -to i2c1_sda
 set_location_assignment PIN_T22 -to i2c1_scl
 set_location_assignment PIN_T15 -to adi_rx_sp4t1_v[2]
@@ -280,6 +282,8 @@ foreach pin ${inouts} {
 
 # Single-ended input constraints
 set ins {
+    adf_sdo
+    dac_sdo
     fx3_uart_txd
 }
 
@@ -298,7 +302,6 @@ set_location_assignment PIN_B16 -to led[2]
 set_location_assignment PIN_K19 -to led[1]
 set_location_assignment PIN_G16 -to adf_sclk
 set_location_assignment PIN_G18 -to adf_sdi
-set_location_assignment PIN_J19 -to adf_sdo
 set_location_assignment PIN_H18 -to adf_csn
 set_location_assignment PIN_H16 -to c5_clock_1
 set_location_assignment PIN_G15 -to exp_present
@@ -310,7 +313,6 @@ set_location_assignment PIN_J13 -to exp_spi_mosi
 set_location_assignment PIN_A13 -to exp_spi_csn
 set_location_assignment PIN_A12 -to dac_sclk
 set_location_assignment PIN_H11 -to dac_sdi
-set_location_assignment PIN_L8  -to dac_sdo
 set_location_assignment PIN_G12 -to dac_csn
 
 # Bank 8A
@@ -381,8 +383,6 @@ foreach pin ${inouts} {
 
 # Single-ended input constraints
 set ins {
-    adf_sdo
-    dac_sdo
     c5_clock_1
     c5_clock_2
     exp_clock_in
