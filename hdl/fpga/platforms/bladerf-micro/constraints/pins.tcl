@@ -140,6 +140,8 @@ set_location_assignment PIN_N16 -to adi_ctrl_in[0]
 set_location_assignment PIN_N20 -to adi_ctrl_in[1]
 set_location_assignment PIN_M16 -to adi_ctrl_in[2]
 set_location_assignment PIN_N21 -to adi_ctrl_in[3]
+set_location_assignment PIN_N19 -to i2c1_sda
+set_location_assignment PIN_M22 -to i2c1_scl
 set_location_assignment PIN_K17 -to adi_enable
 set_location_assignment PIN_M20 -to adi_en_agc
 set_location_assignment PIN_L17 -to adi_txnrx
@@ -176,7 +178,10 @@ foreach pin ${outs} {
 }
 
 # Single-ended inout constraints
-set inouts {}
+set inouts {
+    i2c1_sda
+    i2c1_scl
+}
 
 foreach pin ${inouts} {
     set_instance_assignment -name IO_STANDARD          "2.5 V"           -to ${pin}
@@ -232,8 +237,8 @@ foreach pin ${lvds_ins} {
 ##########
 set_location_assignment PIN_T18 -to adf_sdo
 set_location_assignment PIN_T20 -to dac_sdo
-set_location_assignment PIN_T17 -to i2c1_sda
-set_location_assignment PIN_T22 -to i2c1_scl
+set_location_assignment PIN_T17 -to adf_muxout
+set_location_assignment PIN_T22 -to adf_ce
 set_location_assignment PIN_T15 -to adi_rx_sp4t1_v[2]
 set_location_assignment PIN_R22 -to adi_rx_sp4t1_v[1]
 set_location_assignment PIN_R15 -to adi_rx_sp4t2_v[2]
@@ -254,6 +259,7 @@ set_global_assignment -name IOBANK_VCCIO "3.3V" -section_id "5A"
 set outs {
     fx3_uart_cts
     fx3_uart_rxd
+    adf_ce
 }
 for { set i 1 } { $i < 3 } { incr i } {
     lappend outs "adi_rx_sp4t1_v\[${i}\]"
@@ -269,10 +275,7 @@ foreach pin ${outs} {
 }
 
 # Single-ended inout constraints
-set inouts {
-    i2c1_sda
-    i2c1_scl
-}
+set inouts {}
 
 foreach pin ${inouts} {
     set_instance_assignment -name IO_STANDARD          "3.3-V LVCMOS"    -to ${pin}
@@ -285,6 +288,7 @@ set ins {
     adf_sdo
     dac_sdo
     fx3_uart_txd
+    adf_muxout
 }
 
 foreach pin ${ins} {
@@ -304,39 +308,47 @@ set_location_assignment PIN_G16 -to adf_sclk
 set_location_assignment PIN_G18 -to adf_sdi
 set_location_assignment PIN_H18 -to adf_csn
 set_location_assignment PIN_H16 -to c5_clock_1
-set_location_assignment PIN_G15 -to exp_present
+set_location_assignment PIN_G15 -to exp_present_n
 set_location_assignment PIN_B15 -to exp_i2c_scl
 set_location_assignment PIN_F14 -to exp_i2c_sda
-set_location_assignment PIN_H14 -to exp_spi_sclk
-set_location_assignment PIN_B13 -to exp_spi_miso
-set_location_assignment PIN_J13 -to exp_spi_mosi
-set_location_assignment PIN_A13 -to exp_spi_csn
+set_location_assignment PIN_H13 -to c5_clock_2
 set_location_assignment PIN_A12 -to dac_sclk
 set_location_assignment PIN_H11 -to dac_sdi
 set_location_assignment PIN_G12 -to dac_csn
 
 # Bank 8A
 set_location_assignment PIN_G10 -to exp_clock_in
+set_location_assignment PIN_L7  -to exp_gpio[15]
 set_location_assignment PIN_F10 -to "exp_clock_in(n)"
+set_location_assignment PIN_K7  -to exp_gpio[14]
+set_location_assignment PIN_J7  -to exp_gpio[1]
 set_location_assignment PIN_H8  -to exp_clock_out
+set_location_assignment PIN_J8  -to exp_gpio[0]
 set_location_assignment PIN_G8  -to "exp_clock_out(n)"
-set_location_assignment PIN_B10 -to exp_gpio[7]
-set_location_assignment PIN_C9  -to exp_gpio[6]
-set_location_assignment PIN_E10 -to c5_clock_2
-set_location_assignment PIN_B6  -to exp_gpio[9]
-set_location_assignment PIN_B7  -to exp_gpio[8]
-set_location_assignment PIN_A8  -to exp_gpio[5]
-set_location_assignment PIN_C6  -to exp_gpio[11]
-set_location_assignment PIN_A7  -to exp_gpio[4]
-set_location_assignment PIN_D6  -to exp_gpio[10]
-set_location_assignment PIN_E9  -to exp_gpio[3]
-set_location_assignment PIN_D7  -to exp_gpio[13]
-set_location_assignment PIN_D9  -to exp_gpio[2]
-set_location_assignment PIN_C8  -to exp_gpio[12]
-set_location_assignment PIN_G6  -to exp_gpio[1]
-set_location_assignment PIN_F7  -to exp_gpio[15]
-set_location_assignment PIN_H6  -to exp_gpio[0]
-set_location_assignment PIN_E7  -to exp_gpio[14]
+set_location_assignment PIN_J9  -to exp_gpio[3]
+set_location_assignment PIN_A10 -to exp_gpio[17]
+set_location_assignment PIN_H9  -to exp_gpio[2]
+set_location_assignment PIN_A9  -to exp_gpio[16]
+set_location_assignment PIN_B10 -to exp_gpio[5]
+set_location_assignment PIN_A5  -to exp_gpio[19]
+set_location_assignment PIN_C9  -to exp_gpio[4]
+set_location_assignment PIN_B5  -to exp_gpio[18]
+set_location_assignment PIN_E10 -to exp_gpio[7]
+set_location_assignment PIN_B6  -to exp_gpio[21]
+set_location_assignment PIN_F9  -to exp_gpio[6]
+set_location_assignment PIN_B7  -to exp_gpio[20]
+set_location_assignment PIN_A8  -to exp_gpio[9]
+set_location_assignment PIN_C6  -to exp_gpio[23]
+set_location_assignment PIN_A7  -to exp_gpio[8]
+set_location_assignment PIN_D6  -to exp_gpio[22]
+set_location_assignment PIN_E9  -to exp_gpio[11]
+set_location_assignment PIN_D7  -to exp_gpio[25]
+set_location_assignment PIN_D9  -to exp_gpio[10]
+set_location_assignment PIN_C8  -to exp_gpio[24]
+set_location_assignment PIN_G6  -to exp_gpio[13]
+set_location_assignment PIN_F7  -to exp_gpio[27]
+set_location_assignment PIN_H6  -to exp_gpio[12]
+set_location_assignment PIN_E7  -to exp_gpio[26]
 
 
 # Bank Voltage
@@ -352,9 +364,6 @@ set outs {
     dac_sdi
     dac_csn
     exp_clock_out
-    exp_spi_sclk
-    exp_spi_mosi
-    exp_spi_csn
 }
 for { set i 1 } { $i < 4 } { incr i } {
     lappend outs "led\[${i}\]"
@@ -371,7 +380,7 @@ set inouts {
     exp_i2c_scl
     exp_i2c_sda
 }
-for { set i 0 } { $i < 16 } { incr i } {
+for { set i 0 } { $i < 28 } { incr i } {
     lappend inouts "exp_gpio\[${i}\]"
 }
 
@@ -386,8 +395,7 @@ set ins {
     c5_clock_1
     c5_clock_2
     exp_clock_in
-    exp_spi_miso
-    exp_present
+    exp_present_n
 }
 
 foreach pin ${ins} {

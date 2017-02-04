@@ -80,6 +80,8 @@ entity bladerf is
     adf_csn             :   out     std_logic := '1' ;
     adf_sdi             :   out     std_logic := '0' ;
     adf_sdo             :   in      std_logic := '0' ;
+    adf_ce              :   out     std_logic := '0';
+    adf_muxout          :   in      std_logic;
 
     -- FX3 GPIF Interface - VIO1/2/3 (1.8 V)
     fx3_pclk            :   in      std_logic ;
@@ -92,16 +94,12 @@ entity bladerf is
     fx3_uart_cts        :   out     std_logic ;
 
     -- Expansion Interface (3.3 V)
-    exp_present         :   in      std_logic ;
-    exp_spi_sclk        :   out     std_logic ;
-    exp_spi_miso        :   in      std_logic ;
-    exp_spi_mosi        :   out     std_logic ;
-    exp_spi_csn         :   out     std_logic;
+    exp_present_n       :   in      std_logic ;
     exp_i2c_sda         :   inout   std_logic;
     exp_i2c_scl         :   inout   std_logic;
     exp_clock_in        :   in      std_logic ;
     exp_clock_out       :   out     std_logic;
-    exp_gpio            :   inout   std_logic_vector(15 downto 0)
+    exp_gpio            :   inout   std_logic_vector(27 downto 0)
   ) ;
 end entity ; -- bladerf
 --TODO: explain revisions

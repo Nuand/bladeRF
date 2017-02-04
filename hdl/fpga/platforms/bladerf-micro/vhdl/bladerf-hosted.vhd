@@ -1095,14 +1095,15 @@ begin
     exp_i2c_sda   <= i2c_sda_out when i2c_sda_oen = '0' else 'Z' ;
     adi_txnrx     <= led1_blink;
     adi_enable    <= led1_blink;
-    adi_en_agc    <= exp_spi_miso when rising_edge(c5_clock_2);
+    adi_en_agc    <= led1_blink when rising_edge(c5_clock_2);
     adi_ctrl_in   <= adi_ctrl_out(7 downto 4) xor adi_ctrl_out(3 downto 0);
-    exp_spi_csn   <= exp_present;
+    exp_gpio(27 downto 16) <= (others => led1_blink);
     exp_gpio(0)   <= led1_blink;
     exp_gpio(1)   <= led1_blink;
     adf_sclk      <= nios_sclk;
     adf_sdi       <= adf_sdo;
-    adf_csn       <= exp_present;
+    adf_csn       <= exp_present_n;
+    adf_ce        <= adf_muxout;
 
     U_exp_pll : entity work.pll
       port map (
@@ -1191,8 +1192,8 @@ begin
     -- CTS and the SPI CSx are tied to the same signal.  When we are in reset, allow for SPI accesses
     fx3_uart_cts            <= '1' when sys_rst_sync = '0' else 'Z'  ;
 
-    exp_spi_sclk            <= nios_sclk when ( nios_ss_n(1 downto 0) = "01" ) else '0' ;
-    exp_spi_mosi            <= nios_sdio when ( nios_ss_n(1 downto 0) = "01" ) else '0' ;
+    --exp_spi_sclk            <= nios_sclk when ( nios_ss_n(1 downto 0) = "01" ) else '0' ;
+    --exp_spi_mosi            <= nios_sdio when ( nios_ss_n(1 downto 0) = "01" ) else '0' ;
 
     --mini_exp1               <= 'Z';
     --mini_exp2               <= 'Z';
