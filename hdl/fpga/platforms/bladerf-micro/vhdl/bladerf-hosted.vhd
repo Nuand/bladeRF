@@ -336,6 +336,7 @@ architecture hosted_bladerf of bladerf is
     signal tx_trigger_line      : std_logic := '0';
 
     signal tx_trigger_arm_sync  :   std_logic ;
+    signal tx_trigger_line_sync :   std_logic;
 
     -- Trigger Control readback interfaces
     signal rx_trigger_ctl_rb    : std_logic_vector(7 downto 0);
@@ -346,11 +347,13 @@ architecture hosted_bladerf of bladerf is
     alias rx_trigger_fire_rb        : std_logic is rx_trigger_ctl_rb(1);
     alias rx_trigger_master_rb      : std_logic is rx_trigger_ctl_rb(2);
     alias rx_trigger_line_rb        : std_logic is rx_trigger_ctl_rb(3);
+    alias rx_trigger_unused_rb      : std_logic_vector(7 downto 4) is rx_trigger_ctl_rb(7 downto 4);
 
     alias tx_trigger_arm_rb         : std_logic is tx_trigger_ctl_rb(0);
     alias tx_trigger_fire_rb        : std_logic is tx_trigger_ctl_rb(1);
     alias tx_trigger_master_rb      : std_logic is tx_trigger_ctl_rb(2);
     alias tx_trigger_line_rb        : std_logic is tx_trigger_ctl_rb(3);
+    alias tx_trigger_unused_rb      : std_logic_vector(7 downto 4) is tx_trigger_ctl_rb(7 downto 4);
 
     -- Trigger Outputs
     signal lms_rx_enable_sig                        : std_logic;
@@ -358,8 +361,6 @@ architecture hosted_bladerf of bladerf is
     signal tx_sample_fifo_rempty_untriggered        : std_logic;
 
     signal tx_lms_data : signed(11 downto 0) := (others => '0');
-
-    --signal lvds_l_clk  : std_logic;
 
     signal lvds_rx_frame  : std_logic_vector(3 downto 0);
     signal lvds_rx_data_0 : std_logic_vector(5 downto 0);
@@ -839,6 +840,7 @@ begin
     rx_trigger_fire_rb   <= rx_trigger_fire;
     rx_trigger_master_rb <= rx_trigger_master;
     rx_trigger_line_rb   <= rx_trigger_line;
+    rx_trigger_unused_rb <= (others => '0');
 
     -- TX Trigger
     U_tx_arm_sync : entity work.reset_synchronizer
@@ -851,6 +853,16 @@ begin
         sync            =>  tx_trigger_arm_sync
       ) ;
 
+    U_tx_trig_sync : entity work.synchronizer
+      generic map (
+        RESET_LEVEL =>  '0'
+      ) port map (
+        reset       =>  tx_reset,
+        clock       =>  tx_clock,
+        async       =>  tx_trigger_line,
+        sync        =>  tx_trigger_line_sync
+      ) ;
+
     txtrig : entity work.trigger(async)
       generic map (
         DEFAULT_OUTPUT  => '1'
@@ -858,7 +870,7 @@ begin
         armed           => tx_trigger_arm_sync,
         fired           => tx_trigger_fire,
         master          => tx_trigger_master,
-        trigger_in      => tx_trigger_line,
+        trigger_in      => tx_trigger_line_sync,
         trigger_out     => tx_trigger_line,
         signal_in       => tx_sample_fifo_rempty_untriggered,
         signal_out      => tx_sample_fifo.rempty
@@ -868,6 +880,7 @@ begin
     tx_trigger_fire_rb   <= tx_trigger_fire;
     tx_trigger_master_rb <= tx_trigger_master;
     tx_trigger_line_rb   <= tx_trigger_line;
+    tx_trigger_unused_rb <= (others => '0');
 
     -- LMS6002D IQ interface
     rx_sample_i(15 downto 12) <= (others => rx_sample_i(11)) ;
