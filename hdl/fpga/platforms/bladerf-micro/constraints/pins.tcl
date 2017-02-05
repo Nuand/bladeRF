@@ -236,7 +236,6 @@ foreach pin ${lvds_ins} {
 # BANK 5A
 ##########
 set_location_assignment PIN_T18 -to adf_sdo
-set_location_assignment PIN_T20 -to dac_sdo
 set_location_assignment PIN_T17 -to adf_muxout
 set_location_assignment PIN_T22 -to adf_ce
 set_location_assignment PIN_T15 -to adi_rx_sp4t1_v[2]
@@ -286,7 +285,6 @@ foreach pin ${inouts} {
 # Single-ended input constraints
 set ins {
     adf_sdo
-    dac_sdo
     fx3_uart_txd
     adf_muxout
 }

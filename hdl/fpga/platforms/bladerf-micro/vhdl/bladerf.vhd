@@ -33,7 +33,6 @@ entity bladerf is
     -- VCTCXO DAC (3.3 V)
     dac_sclk            :   out     std_logic := '0' ;
     dac_sdi             :   out     std_logic := '0' ;
-    dac_sdo             :   in      std_logic ;
     dac_csn             :   out     std_logic := '1' ;
 
     -- LEDs (3.3 V)

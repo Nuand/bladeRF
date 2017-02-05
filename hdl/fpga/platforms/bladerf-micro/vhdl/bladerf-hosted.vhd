@@ -1077,7 +1077,7 @@ begin
     begin
         dac_sclk <= nios_sclk ;
         dac_sdi <= nios_sdio ;
-        nios_sdo <= dac_sdo ;
+        nios_sdo <= '0';
         if( xb_mode = "00" ) then
             xb_gpio_dir <= nios_xb_gpio_dir(31 downto 0);
             dac_csn <= nios_ss_n(0);
@@ -1108,7 +1108,7 @@ begin
     exp_i2c_sda   <= i2c_sda_out when i2c_sda_oen = '0' else 'Z' ;
     adi_txnrx     <= led1_blink;
     adi_enable    <= led1_blink;
-    adi_en_agc    <= led1_blink when rising_edge(c5_clock_2);
+    adi_en_agc    <= '1' when rising_edge(c5_clock_2);
     adi_ctrl_in   <= adi_ctrl_out(7 downto 4) xor adi_ctrl_out(3 downto 0);
     exp_gpio(27 downto 16) <= (others => led1_blink);
     exp_gpio(0)   <= led1_blink;
