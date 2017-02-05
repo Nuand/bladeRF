@@ -59,24 +59,7 @@ set_false_path -from [get_registers {*source_holding[*]}] -to *
 #set_output_delay -clock [get_clocks {U_pll|altpll_component|auto_generated|pll1|clk[0]}] -min 0.0 [get_ports {fx3_uart_rxd}] -add_delay
 #set_input_delay -clock [get_clocks {U_pll|altpll_component|auto_generated|pll1|clk[0]}] -max 1.0 [get_ports {fx3_uart_txd}]
 #set_input_delay -clock [get_clocks {U_pll|altpll_component|auto_generated|pll1|clk[0]}] -min 0.0 [get_ports {fx3_uart_txd}] -add_delay
-#
-## LMS SPI interface
-#
-## Create SPI generated clock
-#create_generated_clock -name lms_sclk_reg -source [get_pins {U_pll|altpll_component|auto_generated|pll1|clk[0]}] -divide_by 4 [get_registers {*lms_spi*current.sclk}]
-#create_generated_clock -name lms_sclk_pin -source [get_registers -no_duplicates {*lms_spi*current.sclk}] [get_ports {lms_sclk}]
-#
-#set_input_delay  -clock_fall -clock lms_sclk_pin -min  1.0 [get_ports {lms_sdo}]
-#set_input_delay  -clock_fall -clock lms_sclk_pin -max  9.0 [get_ports {lms_sdo}] -add_delay
-#
-#set_output_delay -clock lms_sclk_pin -min  1.0 [get_ports {lms_sen lms_sdio}]
-#set_output_delay -clock lms_sclk_pin -max  2.0 [get_ports {lms_sen lms_sdio}] -add_delay
-#
-#set_multicycle_path -setup -start -from [get_clocks {U_pll*clk[0]}] -to [get_clocks lms_sclk_pin] 2
-#set_multicycle_path -hold -start -from [get_clocks {U_pll*clk[0]}] -to [get_clocks lms_sclk_pin] 2
-#set_multicycle_path -setup -end -from [get_clocks lms_sclk_pin] -to [get_clocks {U_pll*clk[0]}] 2
-#set_multicycle_path -hold -end -from [get_clocks lms_sclk_pin] -to [get_clocks {U_pll*clk[0]}] 2
-#
+
 ## Si5338 interface
 #set_input_delay -clock [get_clocks U_pll*0*] -min  1.0 [get_ports {si_scl si_sda}]
 #set_input_delay -clock [get_clocks U_pll*0*] -max  1.0 [get_ports {si_scl si_sda}] -add_delay
@@ -90,7 +73,7 @@ set_false_path -from [get_registers {*source_holding[*]}] -to *
 #
 #set_input_delay -clock [get_clocks U_pll*0*] -min 1.0 [get_ports dac_sdo]
 #set_input_delay -clock [get_clocks U_pll*0*] -max 1.0 [get_ports dac_sdo] -add_delay
-#
+
 # LED's
 set_false_path -from * -to [get_ports led*]
 
