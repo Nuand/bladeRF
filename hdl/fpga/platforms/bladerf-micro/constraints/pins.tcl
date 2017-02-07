@@ -237,14 +237,14 @@ foreach pin ${lvds_ins} {
 ##########
 set_location_assignment PIN_T17 -to adf_muxout
 set_location_assignment PIN_T22 -to adf_ce
-set_location_assignment PIN_T15 -to adi_rx_sp4t1_v[2]
-set_location_assignment PIN_R22 -to adi_rx_sp4t1_v[1]
-set_location_assignment PIN_R15 -to adi_rx_sp4t2_v[2]
-set_location_assignment PIN_R21 -to adi_rx_sp4t2_v[1]
-set_location_assignment PIN_R16 -to adi_tx_sp4t1_v[2]
-set_location_assignment PIN_P22 -to adi_tx_sp4t1_v[1]
-set_location_assignment PIN_R17 -to adi_tx_sp4t2_v[2]
-set_location_assignment PIN_P19 -to adi_tx_sp4t2_v[1]
+set_location_assignment PIN_T15 -to adi_rx_spdt1_v[2]
+set_location_assignment PIN_R22 -to adi_rx_spdt1_v[1]
+set_location_assignment PIN_R15 -to adi_rx_spdt2_v[2]
+set_location_assignment PIN_R21 -to adi_rx_spdt2_v[1]
+set_location_assignment PIN_R16 -to adi_tx_spdt1_v[2]
+set_location_assignment PIN_P22 -to adi_tx_spdt1_v[1]
+set_location_assignment PIN_R17 -to adi_tx_spdt2_v[2]
+set_location_assignment PIN_P19 -to adi_tx_spdt2_v[1]
 set_location_assignment PIN_P16 -to fx3_uart_cts
 set_location_assignment PIN_P18 -to fx3_uart_rxd
 set_location_assignment PIN_P17 -to fx3_uart_txd
@@ -260,10 +260,10 @@ set outs {
     adf_ce
 }
 for { set i 1 } { $i < 3 } { incr i } {
-    lappend outs "adi_rx_sp4t1_v\[${i}\]"
-    lappend outs "adi_rx_sp4t2_v\[${i}\]"
-    lappend outs "adi_tx_sp4t1_v\[${i}\]"
-    lappend outs "adi_tx_sp4t2_v\[${i}\]"
+    lappend outs "adi_rx_spdt1_v\[${i}\]"
+    lappend outs "adi_rx_spdt2_v\[${i}\]"
+    lappend outs "adi_tx_spdt1_v\[${i}\]"
+    lappend outs "adi_tx_spdt2_v\[${i}\]"
 }
 
 foreach pin ${outs} {

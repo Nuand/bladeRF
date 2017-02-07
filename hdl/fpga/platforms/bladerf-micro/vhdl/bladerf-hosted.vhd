@@ -1197,10 +1197,10 @@ begin
     --lms_rx_enable           <= nios_gpio(1) ;
     --lms_tx_enable           <= nios_gpio(2) ;
 
-    adi_tx_sp4t1_v          <= nios_gpio(4 downto 3) ;
-    adi_tx_sp4t2_v          <= nios_gpio(4 downto 3) ;
-    adi_rx_sp4t1_v          <= nios_gpio(6 downto 5) ;
-    adi_rx_sp4t2_v          <= nios_gpio(6 downto 5) ;
+    adi_tx_spdt1_v          <= nios_gpio(4 downto 3) ;
+    adi_tx_spdt2_v          <= nios_gpio(4 downto 3) ;
+    adi_rx_spdt1_v          <= nios_gpio(6 downto 5) ;
+    adi_rx_spdt2_v          <= nios_gpio(6 downto 5) ;
 
     -- CTS and the SPI CSx are tied to the same signal.  When we are in reset, allow for SPI accesses
     fx3_uart_cts            <= '1' when sys_rst_sync = '0' else 'Z'  ;

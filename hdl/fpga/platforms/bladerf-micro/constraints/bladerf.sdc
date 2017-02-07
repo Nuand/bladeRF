@@ -52,7 +52,7 @@ set_input_delay  -clock [get_clocks {U_pll*divclk}] -min 0.0 [get_ports {fx3_uar
 set_false_path -from * -to [get_ports led*]
 
 # LMS long lived GPIO and RF Switches
-set_false_path -from * -to [get_ports {adi_*x_sp4t*_v* adi_reset_n}]
+set_false_path -from * -to [get_ports {adi_*x_spdt*_v* adi_reset_n}]
 
 # Long lived correction parameters
 set_false_path -from * -to [get_keepers {iq_correction:*} ]

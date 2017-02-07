@@ -44,8 +44,8 @@ entity bladerf is
     adi_rx_frame        :   in      std_logic ;
 
     -- RX RF Switching (3.3 V)
-    adi_rx_sp4t1_v      :   out     std_logic_vector(2 downto 1) ;
-    adi_rx_sp4t2_v      :   out     std_logic_vector(2 downto 1) ;
+    adi_rx_spdt1_v      :   out     std_logic_vector(2 downto 1) ;
+    adi_rx_spdt2_v      :   out     std_logic_vector(2 downto 1) ;
 
     -- AD9361 TX Interface (2.5 V, LVDS)
     adi_tx_clock        :   out     std_logic ;
@@ -53,8 +53,8 @@ entity bladerf is
     adi_tx_frame        :   out     std_logic ;
 
     -- TX RF Switching (3.3 V)
-    adi_tx_sp4t1_v      :   out     std_logic_vector(2 downto 1) ;
-    adi_tx_sp4t2_v      :   out     std_logic_vector(2 downto 1) ;
+    adi_tx_spdt1_v      :   out     std_logic_vector(2 downto 1) ;
+    adi_tx_spdt2_v      :   out     std_logic_vector(2 downto 1) ;
 
     -- AD9361 SPI Interface (2.5 V)
     adi_spi_sclk        :   buffer  std_logic := '0' ;
