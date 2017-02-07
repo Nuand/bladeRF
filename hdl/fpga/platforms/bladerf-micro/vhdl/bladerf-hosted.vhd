@@ -1114,7 +1114,7 @@ begin
     exp_gpio(0)   <= led1_blink;
     exp_gpio(1)   <= led1_blink;
     adf_sclk      <= nios_sclk;
-    adf_sdi       <= adf_sdo;
+    adf_sdi       <= led1_blink;
     adf_csn       <= exp_present_n;
     adf_ce        <= adf_muxout;
 

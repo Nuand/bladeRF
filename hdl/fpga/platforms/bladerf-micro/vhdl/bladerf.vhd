@@ -78,7 +78,6 @@ entity bladerf is
     adf_sclk            :   out     std_logic := '0' ;
     adf_csn             :   out     std_logic := '1' ;
     adf_sdi             :   out     std_logic := '0' ;
-    adf_sdo             :   in      std_logic := '0' ;
     adf_ce              :   out     std_logic := '0';
     adf_muxout          :   in      std_logic;
 
