@@ -140,8 +140,6 @@ set_location_assignment PIN_N16 -to adi_ctrl_in[0]
 set_location_assignment PIN_N20 -to adi_ctrl_in[1]
 set_location_assignment PIN_M16 -to adi_ctrl_in[2]
 set_location_assignment PIN_N21 -to adi_ctrl_in[3]
-set_location_assignment PIN_N19 -to i2c1_sda
-set_location_assignment PIN_M22 -to i2c1_scl
 set_location_assignment PIN_K17 -to adi_enable
 set_location_assignment PIN_M20 -to adi_en_agc
 set_location_assignment PIN_L17 -to adi_txnrx
@@ -178,10 +176,7 @@ foreach pin ${outs} {
 }
 
 # Single-ended inout constraints
-set inouts {
-    i2c1_sda
-    i2c1_scl
-}
+set inouts {}
 
 foreach pin ${inouts} {
     set_instance_assignment -name IO_STANDARD          "2.5 V"           -to ${pin}
@@ -307,6 +302,8 @@ set_location_assignment PIN_H16 -to c5_clock_1
 set_location_assignment PIN_G15 -to exp_present_n
 set_location_assignment PIN_B15 -to exp_i2c_scl
 set_location_assignment PIN_F14 -to exp_i2c_sda
+set_location_assignment PIN_A13 -to tx_bias_en
+set_location_assignment PIN_J11 -to rx_bias_en
 set_location_assignment PIN_H13 -to c5_clock_2
 set_location_assignment PIN_A12 -to dac_sclk
 set_location_assignment PIN_H11 -to dac_sdi
@@ -360,6 +357,8 @@ set outs {
     dac_sdi
     dac_csn
     exp_clock_out
+    tx_bias_en
+    rx_bias_en
 }
 for { set i 1 } { $i < 4 } { incr i } {
     lappend outs "led\[${i}\]"

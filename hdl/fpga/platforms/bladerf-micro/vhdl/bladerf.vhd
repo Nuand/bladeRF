@@ -47,6 +47,9 @@ entity bladerf is
     adi_rx_spdt1_v      :   out     std_logic_vector(2 downto 1) ;
     adi_rx_spdt2_v      :   out     std_logic_vector(2 downto 1) ;
 
+    -- RX Bias-T Enable
+    rx_bias_en          :   out     std_logic := '0';
+
     -- AD9361 TX Interface (2.5 V, LVDS)
     adi_tx_clock        :   out     std_logic ;
     adi_tx_data         :   out     std_logic_vector(5 downto 0) ;
@@ -55,6 +58,9 @@ entity bladerf is
     -- TX RF Switching (3.3 V)
     adi_tx_spdt1_v      :   out     std_logic_vector(2 downto 1) ;
     adi_tx_spdt2_v      :   out     std_logic_vector(2 downto 1) ;
+
+    -- TX Bias-T Enable
+    tx_bias_en          :   out     std_logic := '0';
 
     -- AD9361 SPI Interface (2.5 V)
     adi_spi_sclk        :   buffer  std_logic := '0' ;
@@ -69,10 +75,6 @@ entity bladerf is
     adi_en_agc          :   out     std_logic := '0';
     adi_ctrl_in         :   out     std_logic_vector(3 downto 0) := (others => '0');
     adi_ctrl_out        :   in      std_logic_vector(7 downto 0);
-
-    -- Misc I2C Interface (3.3 V)
-    i2c1_scl            :   inout   std_logic ;
-    i2c1_sda            :   inout   std_logic ;
 
     -- ADF4002 SPI Interface (3.3 V)
     adf_sclk            :   out     std_logic := '0' ;

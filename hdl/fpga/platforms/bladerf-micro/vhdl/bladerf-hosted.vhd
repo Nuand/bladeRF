@@ -1097,15 +1097,13 @@ begin
     end process;
 
     -- IO for NIOS
-    i2c1_scl <= i2c_scl_out when i2c_scl_oen = '0' else 'Z' ;
-    i2c1_sda <= i2c_sda_out when i2c_sda_oen = '0' else 'Z' ;
+    exp_i2c_scl <= i2c_scl_out when i2c_scl_oen = '0' else 'Z' ;
+    exp_i2c_sda <= i2c_sda_out when i2c_sda_oen = '0' else 'Z' ;
 
-    i2c_scl_in <= i2c1_scl ;
-    i2c_sda_in <= i2c1_sda ;
+    i2c_scl_in <= exp_i2c_scl ;
+    i2c_sda_in <= exp_i2c_sda ;
 
     -- temp assignments for initial bringup vv
-    exp_i2c_scl   <= i2c_scl_out when i2c_scl_oen = '0' else 'Z' ;
-    exp_i2c_sda   <= i2c_sda_out when i2c_sda_oen = '0' else 'Z' ;
     adi_txnrx     <= led1_blink;
     adi_enable    <= led1_blink;
     adi_en_agc    <= '1' when rising_edge(c5_clock_2);
@@ -1117,6 +1115,8 @@ begin
     adf_sdi       <= led1_blink;
     adf_csn       <= exp_present_n;
     adf_ce        <= adf_muxout;
+    tx_bias_en    <= led1_blink;
+    rx_bias_en    <= led1_blink;
 
     U_exp_pll : entity work.pll
       port map (
