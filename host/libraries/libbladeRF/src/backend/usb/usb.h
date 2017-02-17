@@ -22,8 +22,9 @@
 #ifndef BACKEND_USB_H_
 #define BACKEND_USB_H_
 
-#include "bladerf_priv.h"
-#include "fx3_fw.h"
+#include "host_config.h"
+
+#include "board/board.h"
 
 #if ENABLE_USB_DEV_RESET_ON_OPEN
 extern bool bladerf_usb_reset_device_on_open;
@@ -80,7 +81,6 @@ typedef enum {
     USB_DIR_HOST_TO_DEVICE = 0x00,
     USB_DIR_DEVICE_TO_HOST = 0x80
 } usb_direction;
-
 
 /**
  * USB backend driver function table
@@ -149,7 +149,7 @@ struct bladerf_usb {
 
 static inline struct bladerf_usb *usb_backend(struct bladerf *dev, void **driver)
 {
-    struct bladerf_usb *ret = (struct bladerf_usb*)dev->backend;
+    struct bladerf_usb *ret = (struct bladerf_usb*)dev->backend_data;
     if (driver) {
         *driver = ret->driver;
     }

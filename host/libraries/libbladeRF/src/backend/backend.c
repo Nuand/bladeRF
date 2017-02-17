@@ -18,15 +18,20 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
+
+#include <strings.h>
+
 #include "rel_assert.h"
+#include "log.h"
+
+#include "devinfo.h"
 
 #include "backend/backend.h"
 #include "backend/backend_config.h"
-#include "log.h"
 
 static const struct backend_fns *backend_list[] = BLADERF_BACKEND_LIST;
 
-int open_with_any_backend(struct bladerf *device,
+int open_with_any_backend(struct bladerf *dev,
                           struct bladerf_devinfo *info)
 {
     size_t i;
@@ -34,24 +39,24 @@ int open_with_any_backend(struct bladerf *device,
     const size_t n_backends = ARRAY_SIZE(backend_list);
 
     for (i = 0; i < n_backends && status != 0; i++) {
-        status = backend_list[i]->open(device, info);
+        status = backend_list[i]->open(dev, info);
     }
 
     return status;
 }
 
-int backend_open(struct bladerf *device, struct bladerf_devinfo *info) {
-
+int backend_open(struct bladerf *dev, struct bladerf_devinfo *info)
+{
     size_t i;
     int status = BLADERF_ERR_NODEV;
     const size_t n_backends = ARRAY_SIZE(backend_list);
 
     if (info->backend == BLADERF_BACKEND_ANY) {
-        status = open_with_any_backend(device, info);
+        status = open_with_any_backend(dev, info);
     } else {
         for (i = 0; i < n_backends; i++) {
             if (backend_list[i]->matches(info->backend)) {
-                status = backend_list[i]->open(device, info);
+                status = backend_list[i]->open(dev, info);
                 break;
             }
         }
@@ -128,7 +133,7 @@ int backend_load_fw_from_bootloader(bladerf_backend backend,
     return status;
 }
 
-const char * backend2str(bladerf_backend backend)
+const char *backend2str(bladerf_backend backend)
 {
     switch (backend) {
         case BLADERF_BACKEND_LIBUSB:

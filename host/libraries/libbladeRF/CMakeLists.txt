@@ -267,33 +267,31 @@ include_directories(${LIBBLADERF_INCLUDES})
 # Configure source files
 ################################################################################
 set(LIBBLADERF_SOURCE
-        src/async.c
         src/backend/backend.c
-        src/bladerf.c
-        src/bladerf_priv.c
-        src/capabilities.c
-        src/config.c
-        src/dc_cal_table.c
-        src/device_identifier.c
-        src/devinfo.c
-        src/file_ops.c
-        src/flash.c
-        src/flash_fields.c
-        src/fpga.c
-        src/fx3_fw.c
-        src/fx3_fw_log.c
-        src/gain.c
-        src/image.c
+        src/driver/spi_flash.c
+        src/driver/fx3_fw.c
+        src/driver/fpga_trigger.c
+        src/driver/si5338.c
+        src/driver/smb_clock.c
+        src/board/bladerf1/bladerf1.c
+        src/board/bladerf1/capabilities.c
+        src/board/bladerf1/compatibility.c
+        src/board/bladerf1/calibration.c
+        src/board/bladerf1/flash.c
+        src/board/bladerf1/image.c
+        src/expansion/xb100.c
+        src/expansion/xb200.c
+        src/expansion/xb300.c
+        src/streaming/async.c
+        src/streaming/sync.c
+        src/streaming/sync_worker.c
         src/init_fini.c
-        src/si5338.c
-        src/smb_clock.c
-        src/sync.c
-        src/sync_worker.c
-        src/trigger.c
-        src/tuning.c
+        src/helpers/timeout.c
+        src/helpers/file.c
+        src/helpers/version.c
         src/version.h
-        src/version_compat.c
-        src/xb.c
+        src/devinfo.c
+        src/bladerf.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/sha256.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/log.c
@@ -336,7 +334,7 @@ if(ENABLE_BACKEND_CYAPI)
 endif()
 
 if(ENABLE_BACKEND_DUMMY)
-    set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend/dummy.c)
+    set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend/dummy/dummy.c)
 endif()
 
 if(ENABLE_BACKEND_LINUX_DRIVER)

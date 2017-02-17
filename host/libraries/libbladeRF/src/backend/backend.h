@@ -25,8 +25,11 @@
 #ifndef BACKEND_H__
 #define BACKEND_H__
 
-#include "bladerf_priv.h"
-#include "fx3_fw.h"
+#include <stddef.h>
+#include <stdbool.h>
+
+#include <libbladeRF.h>
+
 #include "logger_entry.h"
 
 #define BACKEND_STR_ANY    "*"
@@ -43,6 +46,17 @@ typedef enum {
 } backend_probe_target;
 
 /**
+ * Backend protocol to use
+ */
+typedef enum {
+    BACKEND_FPGA_PROTOCOL_NIOSII_LEGACY,
+    BACKEND_FPGA_PROTOCOL_NIOSII,
+} backend_fpga_protocol;
+
+struct bladerf_devinfo_list;
+struct fx3_firmware;
+
+/**
  * Backend-specific function table
  *
  * The backend is responsible for making calls to
@@ -52,7 +66,6 @@ typedef enum {
  *
  */
 struct backend_fns {
-
     /* Returns true if a backend supports the specified backend type,
      * and false otherwise */
     bool (*matches)(bladerf_backend backend);
@@ -62,22 +75,25 @@ struct backend_fns {
     int (*probe)(backend_probe_target probe_target,
                  struct bladerf_devinfo_list *info_list);
 
-    /* Opening device based upon specified device info.
-     *
-     * The backend open implementation must call
-     * capabilities_init_pre_fpga_load(), as it may need this information while
-     * opening the device, and will definitely be needed by core code after
-     * the handle is put to use.
-     */
-    int (*open)(struct bladerf *device, struct bladerf_devinfo *info);
+    /* Opening device based upon specified device info. */
+    int (*open)(struct bladerf *dev, struct bladerf_devinfo *info);
+
+    /* Set the FPGA protocol */
+    int (*set_fpga_protocol)(struct bladerf *dev, backend_fpga_protocol fpga_protocol);
 
     /* Closing of the device and freeing of the data */
     void (*close)(struct bladerf *dev);
 
+    /* Is firmware ready */
+    int (*is_fw_ready)(struct bladerf *dev);
+
     /* FPGA Loading and checking */
-    int (*load_fpga)(struct bladerf *dev, uint8_t *image, size_t image_size);
+    int (*load_fpga)(struct bladerf *dev, const uint8_t *image, size_t image_size);
     int (*is_fpga_configured)(struct bladerf *dev);
 
+    /* Version checking */
+    int (*get_fw_version)(struct bladerf *dev, struct bladerf_version *version);
+    int (*get_fpga_version)(struct bladerf *dev, struct bladerf_version *version);
 
     /* Flash operations */
 
@@ -108,24 +124,18 @@ struct backend_fns {
     /* Expansion GPIO accessors */
     int (*expansion_gpio_write)(struct bladerf *dev,
                                 uint32_t mask, uint32_t val);
-
     int (*expansion_gpio_read)(struct bladerf *dev, uint32_t *val);
-
     int (*expansion_gpio_dir_write)(struct bladerf *dev,
                                     uint32_t mask, uint32_t outputs);
-
     int (*expansion_gpio_dir_read)(struct bladerf *dev, uint32_t *outputs);
 
     /* IQ Correction Settings */
     int (*set_iq_gain_correction)(struct bladerf *dev, bladerf_module module,
                                   int16_t value);
-
     int (*set_iq_phase_correction)(struct bladerf *dev, bladerf_module module,
                                    int16_t value);
-
     int (*get_iq_gain_correction)(struct bladerf *dev, bladerf_module module,
                                   int16_t *value);
-
     int (*get_iq_phase_correction)(struct bladerf *dev, bladerf_module module,
                                    int16_t *value);
 
@@ -151,7 +161,6 @@ struct backend_fns {
 
     int (*set_vctcxo_tamer_mode)(struct bladerf *dev,
                                  bladerf_vctcxo_tamer_mode mode);
-
     int (*get_vctcxo_tamer_mode)(struct bladerf *dev,
                                  bladerf_vctcxo_tamer_mode *mode);
 
@@ -201,7 +210,7 @@ struct backend_fns {
  *
  * @return  0 on success, BLADERF_ERR_* code on failure
  */
-int backend_open(struct bladerf *device, struct bladerf_devinfo *info);
+int backend_open(struct bladerf *dev, struct bladerf_devinfo *info);
 
 /**
  * Probe for devices, filling in the provided devinfo list and size of
@@ -230,7 +239,6 @@ int backend_load_fw_from_bootloader(bladerf_backend backend,
                                     uint8_t bus, uint8_t addr,
                                     struct fx3_firmware *fw);
 
-
 /**
  * Convert a backend enumeration value to a string
  *
@@ -239,7 +247,7 @@ int backend_load_fw_from_bootloader(bladerf_backend backend,
  * @return  A backend string for the associated enumeration value. An invalid
  *          value will yield the "ANY" wildcard.
  */
-const char * backend2str(bladerf_backend backend);
+const char *backend2str(bladerf_backend backend);
 
 /**
  * Convert a string to a backend type value
@@ -251,6 +259,4 @@ const char * backend2str(bladerf_backend backend);
  */
 int str2backend(const char *str, bladerf_backend *backend);
 
-
 #endif
-

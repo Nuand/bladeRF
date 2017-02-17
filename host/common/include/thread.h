@@ -60,10 +60,15 @@
         assert(status == 0 && "Mutex unlock failure");\
     } while (0)
 
+#   define MUTEX_DESTROY(m) do { \
+        int status = pthread_mutex_destroy(m); \
+        assert(status == 0 && "Mutex destroy failure");\
+    } while (0)
 #else
 #   define MUTEX_INIT(m) pthread_mutex_init(m, NULL)
 #   define MUTEX_LOCK(m) pthread_mutex_lock(m)
 #   define MUTEX_UNLOCK(m) pthread_mutex_unlock(m)
+#   define MUTEX_DESTROY(m) pthread_mutex_destroy(m)
 #endif
 
 #endif

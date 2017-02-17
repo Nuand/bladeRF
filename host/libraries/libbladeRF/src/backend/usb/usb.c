@@ -18,24 +18,28 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
+
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
 #include <inttypes.h>
 
-#include "usb.h"
 #include "rel_assert.h"
-#include "bladerf_priv.h"
+#include "log.h"
+#include "minmax.h"
+#include "conversions.h"
+#include "usb.h"
+
+#include "board/board.h"
 #include "backend/backend.h"
 #include "backend/backend_config.h"
 #include "backend/usb/usb.h"
-#include "async.h"
-#include "bladeRF.h"    /* Firmware interface */
-#include "log.h"
-#include "capabilities.h"
-#include "minmax.h"
-#include "conversions.h"
+#include "driver/fx3_fw.h"
+#include "streaming/async.h"
+#include "helpers/version.h"
+
+#include "bladeRF.h"
 #include "nios_pkt_formats.h"
 #include "nios_legacy_access.h"
 #include "nios_access.h"
@@ -43,12 +47,6 @@
 #if ENABLE_USB_DEV_RESET_ON_OPEN
 bool bladerf_usb_reset_device_on_open = true;
 #endif
-
-typedef enum {
-    CORR_INVALID,
-    CORR_FPGA,
-    CORR_LMS
-} corr_type;
 
 static const struct usb_driver *usb_driver_list[] = BLADERF_USB_BACKEND_LIST;
 
@@ -151,43 +149,18 @@ static int usb_is_fpga_configured(struct bladerf *dev)
     }
 }
 
-/* Switch to RF link mode, fetch the FPGA version, and determine the
- * device's capabilities */
-static int post_fpga_load_init(struct bladerf *dev)
+static int usb_set_fpga_protocol(struct bladerf *dev, backend_fpga_protocol fpga_protocol)
 {
-    int status = change_setting(dev, USB_IF_RF_LINK);
-    if (status == 0) {
-        /* Read and store FPGA version info. This is only possible after
-         * we've entered RF link mode.
-         *
-         * The legacy mode is used here since we can't yet determine if
-         * the FPGA is capable of using the newer packet formats. */
-        status = nios_legacy_get_fpga_version(dev, &dev->fpga_version);
-        if (status != 0) {
-            return status;
-        } else {
-            log_verbose("Read FPGA version: %s\n", dev->fpga_version.describe);
-        }
-    }
-
-    /* Update device capabilities mask based upon FPGA version number */
-    capabilities_init_post_fpga_load(dev);
-
-    if (!getenv("BLADERF_FORCE_LEGACY_NIOS_PKT")) {
-        /* Switch to our newer NIOS II request/response packet format
-         * if the FPGA supports it */
-        if (have_cap(dev, BLADERF_CAP_PKT_HANDLER_FMT)) {
-            log_verbose("Using current packet handler formats\n");
-            dev->fn = &backend_fns_usb;
-        } else {
-            log_verbose("Using legacy packet handler format\n");
-        }
+    if (fpga_protocol == BACKEND_FPGA_PROTOCOL_NIOSII_LEGACY) {
+        dev->backend = &backend_fns_usb_legacy;
+    } else if (fpga_protocol == BACKEND_FPGA_PROTOCOL_NIOSII) {
+        dev->backend = &backend_fns_usb;
     } else {
-        dev->capabilities &= ~(BLADERF_CAP_PKT_HANDLER_FMT);
-        log_verbose("Using legacy packet handler format due to env var\n");
+        log_error("Unknown FPGA protocol: %d\n", fpga_protocol);
+        return BLADERF_ERR_INVAL;
     }
 
-    return status;
+    return 0;
 }
 
 /* After performing a flash operation, switch back to either RF_LINK or the
@@ -253,19 +226,38 @@ static void usb_close(struct bladerf *dev)
 
         usb->fn->close(driver);
         free(usb);
-        dev->backend = NULL;
+        dev->backend_data = NULL;
     }
 }
 
-static inline int populate_fw_version(struct bladerf_usb *usb,
-                                      struct bladerf_version *version)
+static int usb_is_fw_ready(struct bladerf *dev)
 {
-    int status = usb->fn->get_string_descriptor(
-                                    usb->driver,
-                                    BLADE_USB_STR_INDEX_FW_VER,
-                                    (unsigned char *)version->describe,
-                                    BLADERF_VERSION_STR_MAX);
+    int status;
+    int result;
 
+    status = vendor_cmd_int(dev, BLADE_USB_CMD_QUERY_DEVICE_READY,
+                                 USB_DIR_DEVICE_TO_HOST, &result);
+    if (status < 0) {
+        return status;
+    } else if (result == 0 || result == 1) {
+        return result;
+    } else {
+        log_debug("Unexpected result from firmware status query: %d\n", result);
+        return BLADERF_ERR_UNEXPECTED;
+    }
+}
+
+static int usb_get_fw_version(struct bladerf *dev,
+                              struct bladerf_version *version)
+{
+    void *driver;
+    struct bladerf_usb *usb = usb_backend(dev, &driver);
+    int status;
+
+    status = usb->fn->get_string_descriptor(driver,
+                                            BLADE_USB_STR_INDEX_FW_VER,
+                                            (unsigned char *)version->describe,
+                                            BLADERF_VERSION_STR_MAX);
     if (status == 0) {
         status = str2version(version->describe, version);
     } else {
@@ -275,7 +267,26 @@ static inline int populate_fw_version(struct bladerf_usb *usb,
                     "required.\n\n");
         status = BLADERF_ERR_UPDATE_FW;
     }
+
     return status;
+}
+
+static int usb_get_fpga_version(struct bladerf *dev,
+                                struct bladerf_version *version)
+{
+    int status;
+
+    status = change_setting(dev, USB_IF_RF_LINK);
+    if (status < 0) {
+        return status;
+    }
+
+    /* Read and store FPGA version info. This is only possible after
+     * we've entered RF link mode.
+     *
+     * The legacy mode is used here since we can't yet determine if
+     * the FPGA is capable of using the newer packet formats. */
+    return nios_legacy_get_fpga_version(dev, version);
 }
 
 static int usb_open(struct bladerf *dev, struct bladerf_devinfo *info)
@@ -290,8 +301,8 @@ static int usb_open(struct bladerf *dev, struct bladerf_devinfo *info)
 
     /* Default to legacy-mode access until we determine the FPGA is
      * capable of handling newer request formats */
-    dev->fn = &backend_fns_usb_legacy;
-    dev->backend = usb;
+    dev->backend = &backend_fns_usb_legacy;
+    dev->backend_data = usb;
 
     status = BLADERF_ERR_NODEV;
     for (i = 0; i < ARRAY_SIZE(usb_driver_list) && status == BLADERF_ERR_NODEV; i++) {
@@ -305,66 +316,9 @@ static int usb_open(struct bladerf *dev, struct bladerf_devinfo *info)
 
     if (status != 0) {
         free(usb);
+        dev->backend_data = NULL;
         dev->backend = NULL;
-        dev->fn = NULL;
         return status;
-    }
-
-    dev->transfer_timeout[BLADERF_MODULE_TX] = BULK_TIMEOUT_MS;
-    dev->transfer_timeout[BLADERF_MODULE_RX] = BULK_TIMEOUT_MS;
-
-
-    /* The FPGA version is populated when rf link is established
-     * (zeroize until then) */
-    dev->fpga_version.major = 0;
-    dev->fpga_version.minor = 0;
-    dev->fpga_version.patch = 0;
-
-    status = populate_fw_version(usb, &dev->fw_version);
-    if (status < 0) {
-        log_debug("Failed to populate FW version: %s\n",
-                  bladerf_strerror(status));
-        return status;
-    }
-
-    /* Fetch initial device capabilities based upon firmware version */
-    capabilities_init_pre_fpga_load(dev);
-
-    /* Wait for SPI flash autoloading to complete, if needed */
-    if (have_cap(dev, BLADERF_CAP_QUERY_DEVICE_READY)) {
-        const unsigned int max_retries = 30;
-        unsigned int i;
-        int status;
-        int32_t device_ready = 0;
-
-        for (i = 0; (device_ready != 1) && i < max_retries; i++) {
-            status = vendor_cmd_int(dev, BLADE_USB_CMD_QUERY_DEVICE_READY,
-                                         USB_DIR_DEVICE_TO_HOST, &device_ready);
-
-            if (status != 0 || (device_ready != 1)) {
-                if (i == 0) {
-                    log_info("Waiting for device to become ready...\n");
-                } else {
-                    log_debug("Retry %02u/%02u.\n", i + 1, max_retries);
-                }
-
-                usleep(1000000);
-            }
-        }
-
-        if (i >= max_retries) {
-            log_debug("Timed out while waiting for device.\n");
-            return BLADERF_ERR_TIMEOUT;
-        }
-    } else {
-        const unsigned int major = dev->fw_version.major;
-        const unsigned int minor = dev->fw_version.minor;
-        const unsigned int patch = dev->fw_version.patch;
-
-        log_info("FX3 FW v%u.%u.%u does not support the \"device ready\" query.\n"
-                 "\tEnsure flash-autoloading completes before opening a device.\n"
-                 "\tUpgrade the FX3 firmware to avoid this message in the future.\n"
-                 "\n", major, minor, patch);
     }
 
     /* Just out of paranoia, put the device into a known state */
@@ -372,11 +326,6 @@ static int usb_open(struct bladerf *dev, struct bladerf_devinfo *info)
     if (status < 0) {
         log_debug("Failed to switch to USB_IF_NULL\n");
         goto error;
-    }
-
-    status = usb_is_fpga_configured(dev);
-    if (status > 0) {
-        status = post_fpga_load_init(dev);
     }
 
 error:
@@ -403,7 +352,7 @@ static int begin_fpga_programming(struct bladerf *dev)
     }
 }
 
-static int usb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size)
+static int usb_load_fpga(struct bladerf *dev, const uint8_t *image, size_t image_size)
 {
     void *driver;
     struct bladerf_usb *usb = usb_backend(dev, &driver);
@@ -430,7 +379,7 @@ static int usb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size)
 
     /* Send the file down */
     assert(image_size <= UINT32_MAX);
-    status = usb->fn->bulk_transfer(driver, PERIPHERAL_EP_OUT, image,
+    status = usb->fn->bulk_transfer(driver, PERIPHERAL_EP_OUT, (void *)image,
                                     (uint32_t)image_size, timeout_ms);
     if (status < 0) {
         log_debug("Failed to write FPGA bitstream to FPGA: %s\n",
@@ -462,7 +411,7 @@ static int usb_load_fpga(struct bladerf *dev, uint8_t *image, size_t image_size)
         return BLADERF_ERR_TIMEOUT;
     }
 
-    return post_fpga_load_init(dev);
+    return 0;
 }
 
 static inline int perform_erase(struct bladerf *dev, uint16_t block)
@@ -520,15 +469,21 @@ static inline int read_page(struct bladerf *dev, uint8_t read_operation,
 {
     void *driver;
     struct bladerf_usb *usb = usb_backend(dev, &driver);
+    bladerf_dev_speed usb_speed;
     int status;
     int32_t op_status;
     uint16_t read_size;
     uint16_t offset;
     uint8_t request;
 
-    if (dev->usb_speed == BLADERF_DEVICE_SPEED_SUPER) {
+    if (usb->fn->get_speed(driver, &usb_speed) != 0) {
+        log_debug("Error getting USB speed in %s\n", __FUNCTION__);
+        return BLADERF_ERR_UNEXPECTED;
+    }
+
+    if (usb_speed == BLADERF_DEVICE_SPEED_SUPER) {
         read_size = BLADERF_FLASH_PAGE_SIZE;
-    } else if (dev->usb_speed == BLADERF_DEVICE_SPEED_HIGH) {
+    } else if (usb_speed == BLADERF_DEVICE_SPEED_HIGH) {
         read_size = 64;
     } else {
         log_debug("Encountered unknown USB speed in %s\n", __FUNCTION__);
@@ -629,10 +584,16 @@ static int write_page(struct bladerf *dev, uint16_t page, const uint8_t *buf)
     uint16_t write_size;
     void *driver;
     struct bladerf_usb *usb = usb_backend(dev, &driver);
+    bladerf_dev_speed usb_speed;
 
-    if (dev->usb_speed == BLADERF_DEVICE_SPEED_SUPER) {
+    if (usb->fn->get_speed(driver, &usb_speed) != 0) {
+        log_debug("Error getting USB speed in %s\n", __FUNCTION__);
+        return BLADERF_ERR_UNEXPECTED;
+    }
+
+    if (usb_speed == BLADERF_DEVICE_SPEED_SUPER) {
         write_size = BLADERF_FLASH_PAGE_SIZE;
-    } else if (dev->usb_speed == BLADERF_DEVICE_SPEED_HIGH) {
+    } else if (usb_speed == BLADERF_DEVICE_SPEED_HIGH) {
         write_size = 64;
     } else {
         assert(!"BUG - unexpected device speed");
@@ -896,7 +857,7 @@ static void usb_deinit_stream(struct bladerf_stream *stream)
 }
 
 /*
- * Information about the boot image format and boot over USB caan be found in
+ * Information about the boot image format and boot over USB can be found in
  * Cypress AN76405: EZ-USB (R) FX3 (TM) Boot Options:
  *  http://www.cypress.com/?docID=49862
  *
@@ -1080,16 +1041,34 @@ static int usb_read_fw_log(struct bladerf *dev, logger_entry *e)
     int status;
     *e = LOG_EOF;
 
-    if (have_cap(dev, BLADERF_CAP_READ_FW_LOG_ENTRY)) {
-        status = vendor_cmd_int(dev, BLADE_USB_CMD_READ_LOG_ENTRY,
-                                USB_DIR_DEVICE_TO_HOST, (int32_t*) e);
-    } else {
-        log_debug("FX3 FW v%s does not support log retrieval.\n",
-                  dev->fw_version.describe);
-        status = BLADERF_ERR_UNSUPPORTED;
-    }
+    status = vendor_cmd_int(dev, BLADE_USB_CMD_READ_LOG_ENTRY,
+                            USB_DIR_DEVICE_TO_HOST, (int32_t*) e);
 
     return status;
+}
+
+static int config_gpio_write(struct bladerf *dev, uint32_t val)
+{
+    void *driver;
+    struct bladerf_usb *usb = usb_backend(dev, &driver);
+    bladerf_dev_speed usb_speed;
+
+    if (usb->fn->get_speed(driver, &usb_speed) != 0) {
+        log_debug("Error getting USB speed in %s\n", __FUNCTION__);
+        return BLADERF_ERR_UNEXPECTED;
+    }
+
+    /* If we're connected at HS, we need to use smaller DMA transfers */
+    if (usb_speed == BLADERF_DEVICE_SPEED_HIGH) {
+        val |= BLADERF_GPIO_FEATURE_SMALL_DMA_XFER;
+    } else if (usb_speed == BLADERF_DEVICE_SPEED_SUPER) {
+        val &= ~BLADERF_GPIO_FEATURE_SMALL_DMA_XFER;
+    } else {
+        assert(!"Encountered unknown USB speed");
+        return BLADERF_ERR_UNEXPECTED;
+    }
+
+    return nios_config_write(dev, val);
 }
 
 static int set_agc_dc_correction_unsupported(struct bladerf *dev,
@@ -1101,6 +1080,29 @@ static int set_agc_dc_correction_unsupported(struct bladerf *dev,
     return BLADERF_ERR_UNSUPPORTED;
 }
 
+static int legacy_config_gpio_write(struct bladerf *dev, uint32_t val)
+{
+    void *driver;
+    struct bladerf_usb *usb = usb_backend(dev, &driver);
+    bladerf_dev_speed usb_speed;
+
+    if (usb->fn->get_speed(driver, &usb_speed) != 0) {
+        log_debug("Error getting USB speed in %s\n", __FUNCTION__);
+        return BLADERF_ERR_UNEXPECTED;
+    }
+
+    /* If we're connected at HS, we need to use smaller DMA transfers */
+    if (usb_speed == BLADERF_DEVICE_SPEED_HIGH) {
+        val |= BLADERF_GPIO_FEATURE_SMALL_DMA_XFER;
+    } else if (usb_speed == BLADERF_DEVICE_SPEED_SUPER) {
+        val &= ~BLADERF_GPIO_FEATURE_SMALL_DMA_XFER;
+    } else {
+        assert(!"Encountered unknown USB speed");
+        return BLADERF_ERR_UNEXPECTED;
+    }
+
+    return nios_legacy_config_write(dev, val);
+}
 
 /* USB backend that used legacy format for communicating with NIOS II */
 const struct backend_fns backend_fns_usb_legacy = {
@@ -1109,10 +1111,15 @@ const struct backend_fns backend_fns_usb_legacy = {
     FIELD_INIT(.probe, usb_probe),
 
     FIELD_INIT(.open, usb_open),
+    FIELD_INIT(.set_fpga_protocol, usb_set_fpga_protocol),
     FIELD_INIT(.close, usb_close),
+    FIELD_INIT(.is_fw_ready, usb_is_fw_ready),
 
     FIELD_INIT(.load_fpga, usb_load_fpga),
     FIELD_INIT(.is_fpga_configured, usb_is_fpga_configured),
+
+    FIELD_INIT(.get_fw_version, usb_get_fw_version),
+    FIELD_INIT(.get_fpga_version, usb_get_fpga_version),
 
     FIELD_INIT(.erase_flash_blocks, usb_erase_flash_blocks),
     FIELD_INIT(.read_flash_pages, usb_read_flash_pages),
@@ -1125,7 +1132,7 @@ const struct backend_fns backend_fns_usb_legacy = {
     FIELD_INIT(.get_otp, usb_get_otp),
     FIELD_INIT(.get_device_speed, usb_get_device_speed),
 
-    FIELD_INIT(.config_gpio_write, nios_legacy_config_write),
+    FIELD_INIT(.config_gpio_write, legacy_config_gpio_write),
     FIELD_INIT(.config_gpio_read, nios_legacy_config_read),
 
     FIELD_INIT(.expansion_gpio_write, nios_legacy_expansion_gpio_write),
@@ -1180,10 +1187,15 @@ const struct backend_fns backend_fns_usb = {
     FIELD_INIT(.probe, usb_probe),
 
     FIELD_INIT(.open, usb_open),
+    FIELD_INIT(.set_fpga_protocol, usb_set_fpga_protocol),
     FIELD_INIT(.close, usb_close),
+    FIELD_INIT(.is_fw_ready, usb_is_fw_ready),
 
     FIELD_INIT(.load_fpga, usb_load_fpga),
     FIELD_INIT(.is_fpga_configured, usb_is_fpga_configured),
+
+    FIELD_INIT(.get_fw_version, usb_get_fw_version),
+    FIELD_INIT(.get_fpga_version, usb_get_fpga_version),
 
     FIELD_INIT(.erase_flash_blocks, usb_erase_flash_blocks),
     FIELD_INIT(.read_flash_pages, usb_read_flash_pages),
@@ -1196,7 +1208,7 @@ const struct backend_fns backend_fns_usb = {
     FIELD_INIT(.get_otp, usb_get_otp),
     FIELD_INIT(.get_device_speed, usb_get_device_speed),
 
-    FIELD_INIT(.config_gpio_write, nios_config_write),
+    FIELD_INIT(.config_gpio_write, config_gpio_write),
     FIELD_INIT(.config_gpio_read, nios_config_read),
 
     FIELD_INIT(.expansion_gpio_write, nios_expansion_gpio_write),

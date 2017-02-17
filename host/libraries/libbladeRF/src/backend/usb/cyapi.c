@@ -38,7 +38,6 @@ extern "C" {
 
 #include <CyAPI.h>
 
-
 /* This GUID must match that in the modified CyUSB3.inf used with the bladeRF */
 static const GUID driver_guid = {
     0x35D5D3F1, 0x9D0E, 0x4F62, 0xBC, 0xFB, 0xB0, 0xD4, 0x8E,0xA6, 0x34, 0x16
@@ -276,7 +275,6 @@ static int cyapi_change_setting(void *driver, uint8_t setting)
     }
 }
 
-
 static void cyapi_close(void *driver)
 {
     struct bladerf_cyapi *cyapi_data = get_backend_data(driver);
@@ -509,7 +507,6 @@ out:
     return status;
 }
 
-
 #ifdef LOGGING_ENABLED
 static inline int find_buf(void* ptr, struct bladerf_stream *stream)
 {
@@ -581,11 +578,11 @@ static int cyapi_stream(void *driver, struct bladerf_stream *stream,
     struct bladerf_cyapi *cyapi = get_backend_data(driver);
     struct bladerf_metadata meta;
 
-    assert(stream->dev->transfer_timeout[stream->module] <= ULONG_MAX);
-    if (stream->dev->transfer_timeout[stream->module] == 0) {
+    assert(stream->transfer_timeout <= ULONG_MAX);
+    if (stream->transfer_timeout == 0) {
         timeout_ms = INFINITE;
     } else {
-        timeout_ms = stream->dev->transfer_timeout[stream->module];
+        timeout_ms = stream->transfer_timeout;
     }
 
     switch (module) {
@@ -728,6 +725,7 @@ out:
 
     return 0;
 }
+
 /* The top-level code will have acquired the stream->lock for us */
 int cyapi_submit_stream_buffer(void *driver, struct bladerf_stream *stream,
                                void *buffer, unsigned int timeout_ms,

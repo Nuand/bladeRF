@@ -34,15 +34,19 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "bladerf_priv.h"
-#include "capabilities.h"
+#include "log.h"
+
 #include "usb.h"
 #include "nios_legacy_access.h"
 #include "nios_pkt_formats.h"
-#include "log.h"
 
-//#define PRINT_BUFFERS
-#ifdef PRINT_BUFFERS
+#include "board/board.h"
+#include "board/bladerf1/capabilities.h"
+#include "helpers/version.h"
+
+#include "board/bladerf1/capabilities.h"
+
+#if 0
 static void print_buf(const char *msg, const uint8_t *buf, size_t len)
 {
     size_t i;
@@ -208,7 +212,6 @@ int nios_legacy_get_fpga_version(struct bladerf *dev,
                              USB_DIR_DEVICE_TO_HOST, &cmd, 1);
 
         if (status != 0) {
-            memset(&dev->fpga_version, 0, sizeof(dev->fpga_version));
             log_debug("Failed to read FPGA version[%d]: %s\n", i,
                       bladerf_strerror(status));
 
@@ -365,7 +368,8 @@ int nios_legacy_vctcxo_trim_dac_write(struct bladerf *dev, uint16_t value)
     int base;
 
     /* FPGA v0.0.4 introduced a change to the location of the DAC registers */
-    const bool legacy_location = !have_cap(dev, BLADERF_CAP_UPDATED_DAC_ADDR);
+    const bool legacy_location =
+        !have_cap(dev->board->get_capabilities(dev), BLADERF_CAP_UPDATED_DAC_ADDR);
 
     base = legacy_location ? 0 : 34;
 

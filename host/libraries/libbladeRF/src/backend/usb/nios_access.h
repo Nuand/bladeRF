@@ -37,7 +37,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "bladerf_priv.h"
+#include "board/board.h"
 #include "usb.h"
 
 /**

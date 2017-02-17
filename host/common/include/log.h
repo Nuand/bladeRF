@@ -30,6 +30,8 @@
 #define LOG_H__
 
 #include <stdio.h>
+#include <inttypes.h>
+
 #include "libbladeRF.h"
 
 #ifdef __cplusplus

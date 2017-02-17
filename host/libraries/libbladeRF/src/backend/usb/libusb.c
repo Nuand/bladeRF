@@ -18,16 +18,22 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
+
 #include <stdlib.h>
+#include <string.h>
 #include <pthread.h>
 #include <errno.h>
 #include <libusb.h>
-#include "bladeRF.h"    /* Firmware interface */
 
+#include "log.h"
+
+#include "devinfo.h"
 #include "backend/backend.h"
 #include "backend/usb/usb.h"
-#include "async.h"
-#include "log.h"
+#include "streaming/async.h"
+#include "helpers/timeout.h"
+
+#include "bladeRF.h"
 
 #include "host_config.h"
 
@@ -69,8 +75,8 @@ static inline struct bladerf_lusb * lusb_backend(struct bladerf *dev)
 {
     struct bladerf_usb *usb;
 
-    assert(dev && dev->backend);
-    usb = (struct bladerf_usb *) dev->backend;
+    assert(dev && dev->backend_data);
+    usb = (struct bladerf_usb *) dev->backend_data;
 
     assert(usb->driver);
     return (struct bladerf_lusb *) usb->driver;
@@ -567,7 +573,6 @@ static int reset_and_reopen(libusb_context *context,
 }
 #endif
 
-
 static int lusb_open(void **driver,
                      struct bladerf_devinfo *info_in,
                      struct bladerf_devinfo *info_out)
@@ -634,7 +639,6 @@ static int lusb_change_setting(void *driver, uint8_t setting)
 
     return error_conv(status);
 }
-
 
 static void lusb_close(void *driver)
 {
@@ -928,7 +932,6 @@ static inline void cancel_all_transfers(struct bladerf_stream *stream)
 
     for (i = 0; i < stream_data->num_transfers; i++) {
         if (stream_data->transfer_status[i] == TRANSFER_IN_FLIGHT) {
-
             status = libusb_cancel_transfer(stream_data->transfers[i]);
             if (status < 0 && status != LIBUSB_ERROR_NOT_FOUND) {
                 log_error("Error canceling transfer (%d): %s\n",
@@ -1120,7 +1123,7 @@ static int submit_transfer(struct bladerf_stream *stream, void *buffer)
                               (int)bytes_per_buffer,
                               lusb_stream_cb,
                               stream,
-                              stream->dev->transfer_timeout[stream->module]);
+                              stream->transfer_timeout);
 
     prev_idx = stream_data->i;
     stream_data->transfer_status[stream_data->i] = TRANSFER_IN_FLIGHT;
@@ -1161,7 +1164,6 @@ static int submit_transfer(struct bladerf_stream *stream, void *buffer)
 
     return error_conv(status);
 }
-
 
 static int lusb_init_stream(void *driver, struct bladerf_stream *stream,
                             size_t num_transfers)
@@ -1314,6 +1316,7 @@ static int lusb_stream(void *driver, struct bladerf_stream *stream,
 
     return status;
 }
+
 /* The top-level code will have aquired the stream->lock for us */
 int lusb_submit_stream_buffer(void *driver, struct bladerf_stream *stream,
                               void *buffer, unsigned int timeout_ms,

@@ -29,7 +29,7 @@
 
 #if !defined(BLADERF_NIOS_BUILD) && !defined(BLADERF_NIOS_PC_SIMULATION)
 #   include <libbladeRF.h>
-#   include "bladerf_priv.h"
+#   include "board/board.h"
 #   include "log.h"
 #else
 #   include "libbladeRF_nios_compat.h"

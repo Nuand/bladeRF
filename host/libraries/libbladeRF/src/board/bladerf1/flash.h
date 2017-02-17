@@ -1,0 +1,142 @@
+#ifndef __BLADERF1_FLASH_H__
+#define __BLADERF1_FLASH_H__
+
+#include <libbladeRF.h>
+
+#include <stdint.h>
+
+/**
+ * Write the provided data to the FX3 Firmware region to flash.
+ *
+ * This function does no validation of the data (i.e., that it's valid FW).
+ *
+ * @param[inout]    dev     bladeRF handle
+ * @param[in]       image   Firmware image data
+ * @param[in]       len     Length of firmware image data
+ *
+ * @return 0 on success, BLADERF_ERR_* value on failure
+ */
+int spi_flash_write_fx3_fw(struct bladerf *dev, const uint8_t *image, size_t len);
+
+/**
+ * Write the provided FPGA bitstream to flash and enable autoloading via
+ * writing the associated metadata.
+ *
+ * @param[inout]    dev         bladeRF handle
+ * @param[in]       bitstream   FPGA bitstream data
+ * @param[in]       len         Length of the bitstream data
+ *
+ * @return 0 on success, BLADERF_ERR_* value on failure
+ */
+int spi_flash_write_fpga_bitstream(struct bladerf *dev,
+                                   const uint8_t *bitstream, size_t len);
+
+/**
+ * Erase FPGA metadata and bitstream regions of flash.
+ *
+ * @param   dev             bladeRF handle
+ *
+ * @return 0 on success, BLADERF_ERR_* value on failure
+ */
+int spi_flash_erase_fpga(struct bladerf *dev);
+
+/**
+ * Read data from OTP ("otp") section of flash.
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   field       OTP field
+ * @param[out]  data        Populated with retrieved data
+ * @param[in]   data_size   Size of the data to read
+ *
+ * 0 on success, BLADERF_ERR_* on failure
+ */
+int spi_flash_read_otp(struct bladerf *dev, char *field,
+                       char *data, size_t data_size);
+
+/**
+ * Read data from calibration ("cal") section of flash.
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   field       Calibration field
+ * @param[out]  data        Populated with retrieved data
+ * @param[in]   data_size   Size of the data to read
+ *
+ * 0 on success, BLADERF_ERR_* on failure
+ */
+int spi_flash_read_cal(struct bladerf *dev, char *field,
+                       char *data, size_t data_size);
+
+/**
+ * Retrieve the device serial from flash.
+ *
+ * @pre The provided buffer is BLADERF_SERIAL_LENGTH in size
+ *
+ * @param[inout] dev        Device handle. On success, serial field is updated
+ * @param[out]   serial_buf Populated with device serial
+ *
+ * 0 on success, BLADERF_ERR_* on failure
+ */
+int spi_flash_read_serial(struct bladerf *dev, char *serial_buf);
+
+/**
+ * Retrieve VCTCXO calibration value from flash.
+ *
+ * @param[inout]   dev      Device handle
+ * @param[out]     dac_trim DAC trim
+ *
+ * 0 on success, BLADERF_ERR_* on failure
+ */
+int spi_flash_read_vctcxo_trim(struct bladerf *dev, uint16_t *dac_trim);
+
+/**
+ * Retrieve FPGA size variant from flash.
+ *
+ * @param[inout]   dev          Device handle.
+ * @param[out]     fpga_size    FPGA size
+ *
+ * 0 on success, BLADERF_ERR_* on failure
+ */
+int spi_flash_read_fpga_size(struct bladerf *dev, bladerf_fpga_size *fpga_size);
+
+/**
+ * Encode a binary key-value pair.
+ *
+ * @param[in]       ptr     Pointer to data buffer that will contain encoded data
+ * @param[in]       len     Length of data buffer that will contain encoded data
+ * @param[inout]    idx     Pointer indicating next free byte inside of data
+ *                          buffer that will contain encoded data
+ * @param[in]       field   Key of value to be stored in encoded data buffer
+ * @param[in]       val     Value to be stored in encoded data buffer
+ *
+ * 0 on success, BLADERF_ERR_* on failure
+ */
+int binkv_encode_field(char *ptr, int len, int *idx, const char *field,
+                       const char *val);
+
+/**
+ * Decode a binary key-value pair.
+ *
+ * @param[in]       ptr     Pointer to data buffer containing encoded data
+ * @param[in]       len     Length of data buffer containing encoded data
+ * @param[in]       field   Key of value to be decoded in encoded data buffer
+ * @param[out]      val     Value to be retrieved from encoded data buffer
+ * @param[in]       maxlen  Maximum length of value to be retrieved
+ *
+ * 0 on success, BLADERF_ERR_* on failure
+ */
+int binkv_decode_field(char *ptr, int len, char *field,
+                       char *val, size_t maxlen);
+
+/**
+ * Add a binary key-value pair to an existing binkv data buffer.
+ *
+ * @param[in]    buf    Buffer to add field to
+ * @param[in]    len    Length of `buf' in bytes
+ * @param[in]    field  Key of value to be stored in encoded data buffer
+ * @param[in]    val    Value associated with key `field'
+ *
+ * 0 on success, BLADERF_ERR_* on failure
+ */
+int binkv_add_field(char *buf, int len, const char *field, const char *val);
+
+#endif

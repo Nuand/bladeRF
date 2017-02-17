@@ -34,9 +34,9 @@
 
 #if !defined(BLADERF_NIOS_BUILD) && !defined(BLADERF_NIOS_PC_SIMULATION)
 #   include <libbladeRF.h>
-#   include "bladerf_priv.h"
-#   define LMS_WRITE(dev, addr, value) dev->fn->lms_write(dev, addr, value)
-#   define LMS_READ(dev, addr, value)  dev->fn->lms_read(dev, addr, value)
+#   include "board/board.h"
+#   define LMS_WRITE(dev, addr, value) dev->backend->lms_write(dev, addr, value)
+#   define LMS_READ(dev, addr, value)  dev->backend->lms_read(dev, addr, value)
 #else
 #   include "libbladeRF_nios_compat.h"
 #   include "devices.h"
@@ -80,6 +80,10 @@ struct lms_freq {
     uint8_t     vcocap_result;  /**< Filled in by retune operation to denote
                                      which VCOCAP value was used */
 };
+
+/* For >= 1.5 GHz uses the high band should be used. Otherwise, the low
+ * band should be selected */
+#define BLADERF1_BAND_HIGH 1500000000
 
 /**
  * Internal low-pass filter bandwidth selection

@@ -1,7 +1,7 @@
 /**
  * @file devinfo.h
  *
- * @brief Routines for handling and comparing device information
+ * @brief Routines for parsing and handling device identifier
  *
  * This file is part of the bladeRF project:
  *   http://www.github.com/nuand/bladeRF
@@ -22,12 +22,11 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
-#ifndef _BLADERF_DEVINFO_H_
-#define _BLADERF_DEVINFO_H_
 
-#include "libbladeRF.h"
-#include <string.h>
-#include <limits.h>
+#ifndef _DEVINFO_H_
+#define _DEVINFO_H_
+
+#include <stddef.h>
 
 /* Reserved values for bladerf_devinfo fields to indicate "undefined" */
 #define DEVINFO_SERIAL_ANY    "ANY"
@@ -40,6 +39,14 @@ struct bladerf_devinfo_list {
     size_t num_elt;      /* Number of elements in the list */
     size_t backing_size; /* Size of backing array */
 };
+
+#include "backend/backend.h"
+
+int probe(backend_probe_target target_device, struct bladerf_devinfo **devices);
+
+int bladerf_get_device_list(struct bladerf_devinfo **devices);
+
+void bladerf_free_device_list(struct bladerf_devinfo *devices);
 
 /**
  * Do the device instances for the two provided device info structures match
@@ -101,4 +108,18 @@ bladerf_get_devinfo_list(struct bladerf_devinfo *devinfo);
 int bladerf_devinfo_list_add(struct bladerf_devinfo_list *list,
                              struct bladerf_devinfo *info);
 
-#endif /* _BLADERF_DEVINFO_H_ */
+/**
+ * Fill out a device info structure based upon the provided device indentifer
+ * string. If a failure occurrs, the contents of d are undefined.
+ *
+ * For device identifier format, see the documentation for bladerf_open
+ * (in include/libbladeRF.h)
+ *
+ * @param[in]  device_identifier   Device identifier string
+ * @param[out] d                   Device info to fill in
+ *
+ * @return 0 on success, BLADERF_ERR_* on failure
+ */
+int str2devinfo(const char *device_identifier, struct bladerf_devinfo *d);
+
+#endif

@@ -46,14 +46,16 @@
 
 #include <stdint.h>
 #include <string.h>
+
 #include <libbladeRF.h>
+
 #include "lms.h"
 
 #ifndef BLADERF_NIOS_BUILD
-#   include "bladerf_priv.h"
-#   include "capabilities.h"
 #   include "log.h"
 #   include "rel_assert.h"
+#   include "board/board.h"
+#   include "board/bladerf1/capabilities.h"
 
 //  #define LMS_COUNT_BUSY_WAITS
 
@@ -1187,7 +1189,7 @@ static int loopback_tx(struct bladerf *dev, bladerf_loopback mode)
             }
 
             status = lms_select_band(dev, BLADERF_MODULE_TX,
-                                     lms_frequency_to_hz(&f) < BLADERF_BAND_HIGH);
+                                     lms_frequency_to_hz(&f) < BLADERF1_BAND_HIGH);
             break;
         }
 
@@ -1367,7 +1369,7 @@ static int loopback_rx(struct bladerf *dev, bladerf_loopback mode)
 
 
             status = lms_select_band(dev, BLADERF_MODULE_RX,
-                                     lms_frequency_to_hz(&f) < BLADERF_BAND_HIGH);
+                                     lms_frequency_to_hz(&f) < BLADERF1_BAND_HIGH);
             break;
         }
 
@@ -1759,7 +1761,7 @@ int lms_get_quick_tune(struct bladerf *dev,
 
         quick_tune->flags = LMS_FREQ_FLAGS_FORCE_VCOCAP;
 
-        if (lms_frequency_to_hz(&f) < BLADERF_BAND_HIGH) {
+        if (lms_frequency_to_hz(&f) < BLADERF1_BAND_HIGH) {
             quick_tune->flags |= LMS_FREQ_FLAGS_LOW_BAND;
         }
     }
@@ -2269,7 +2271,7 @@ int lms_calculate_tuning_params(uint32_t freq, struct lms_freq *f)
 
     f->flags = 0;
 
-    if (freq < BLADERF_BAND_HIGH) {
+    if (freq < BLADERF1_BAND_HIGH) {
         f->flags |= LMS_FREQ_FLAGS_LOW_BAND;
     }
 
@@ -2295,8 +2297,9 @@ int lms_set_precalculated_frequency(struct bladerf *dev, bladerf_module mod,
     const uint8_t pll_base = base | 0x80;
 #   else
     const uint8_t pll_base =
-        have_cap(dev, BLADERF_CAP_ATOMIC_NINT_NFRAC_WRITE) ?
-            (base | 0x80) : base;
+        have_cap(dev->board->get_capabilities(dev),
+                 BLADERF_CAP_ATOMIC_NINT_NFRAC_WRITE) ?
+                    (base | 0x80) : base;
 #   endif
 
     f->vcocap_result = 0xff;

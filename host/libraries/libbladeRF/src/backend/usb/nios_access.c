@@ -25,15 +25,17 @@
 #include <stdbool.h>
 #include <inttypes.h>
 
-#include "bladerf_priv.h"
+#include "log.h"
+#include "conversions.h"
+
 #include "usb.h"
 #include "nios_access.h"
 #include "nios_pkt_formats.h"
-#include "capabilities.h"
-#include "log.h"
 
-//#define PRINT_BUFFERS
-#ifdef PRINT_BUFFERS
+#include "board/board.h"
+#include "helpers/version.h"
+
+#if 0
 static void print_buf(const char *msg, const uint8_t *buf, size_t len)
 {
     size_t i;
@@ -91,7 +93,8 @@ static int nios_access(struct bladerf *dev, uint8_t *buf)
     return status;
 }
 
-int nios_8x8_read(struct bladerf *dev, uint8_t id, uint8_t addr, uint8_t *data)
+static int nios_8x8_read(struct bladerf *dev, uint8_t id,
+                         uint8_t addr, uint8_t *data)
 {
     int status;
     uint8_t buf[NIOS_PKT_LEN];
@@ -115,7 +118,8 @@ int nios_8x8_read(struct bladerf *dev, uint8_t id, uint8_t addr, uint8_t *data)
     }
 }
 
-int nios_8x8_write(struct bladerf *dev, uint8_t id, uint8_t addr, uint8_t data)
+static int nios_8x8_write(struct bladerf *dev, uint8_t id,
+                          uint8_t addr, uint8_t data)
 {
     int status;
     uint8_t buf[NIOS_PKT_LEN];
@@ -138,8 +142,8 @@ int nios_8x8_write(struct bladerf *dev, uint8_t id, uint8_t addr, uint8_t data)
     }
 }
 
-int nios_8x16_read(struct bladerf *dev, uint8_t id,
-                   uint8_t addr, uint16_t *data)
+static int nios_8x16_read(struct bladerf *dev, uint8_t id,
+                          uint8_t addr, uint16_t *data)
 {
     int status;
     uint8_t buf[NIOS_PKT_LEN];
@@ -165,8 +169,8 @@ int nios_8x16_read(struct bladerf *dev, uint8_t id,
     }
 }
 
-int nios_8x16_write(struct bladerf *dev, uint8_t id,
-                    uint8_t addr, uint16_t data)
+static int nios_8x16_write(struct bladerf *dev, uint8_t id,
+                           uint8_t addr, uint16_t data)
 {
     int status;
     uint8_t buf[NIOS_PKT_LEN];
@@ -189,8 +193,8 @@ int nios_8x16_write(struct bladerf *dev, uint8_t id,
     }
 }
 
-int nios_8x32_read(struct bladerf *dev, uint8_t id,
-                   uint8_t addr, uint32_t *data)
+static int nios_8x32_read(struct bladerf *dev, uint8_t id,
+                          uint8_t addr, uint32_t *data)
 {
     int status;
     uint8_t buf[NIOS_PKT_LEN];
@@ -214,8 +218,8 @@ int nios_8x32_read(struct bladerf *dev, uint8_t id,
     }
 }
 
-int nios_8x32_write(struct bladerf *dev, uint8_t id,
-                    uint8_t addr, uint32_t data)
+static int nios_8x32_write(struct bladerf *dev, uint8_t id,
+                           uint8_t addr, uint32_t data)
 {
     int status;
     uint8_t buf[NIOS_PKT_LEN];
@@ -288,7 +292,6 @@ static int nios_32x32_masked_write(struct bladerf *dev, uint8_t id,
         return BLADERF_ERR_FPGA_OP;
     }
 }
-
 
 int nios_config_read(struct bladerf *dev, uint32_t *val)
 {
@@ -445,15 +448,6 @@ int nios_vctcxo_trim_dac_read(struct bladerf *dev, uint16_t *value)
 {
     int status;
 
-    if (!have_cap(dev, BLADERF_CAP_VCTCXO_TRIMDAC_READ)) {
-        *value = 0x0000;
-
-        log_debug("FPGA %s does not support VCTCXO trimdac readback.\n",
-                  dev->fpga_version.describe);
-
-        return BLADERF_ERR_UNSUPPORTED;
-    }
-
     status = nios_8x16_read(dev, NIOS_PKT_8x16_TARGET_VCTCXO_DAC, 0x98, value);
     if (status != 0) {
         *value = 0;
@@ -468,14 +462,6 @@ int nios_set_vctcxo_tamer_mode(struct bladerf *dev,
                                bladerf_vctcxo_tamer_mode mode)
 {
     int status;
-
-    if (!have_cap(dev, BLADERF_CAP_VCTCXO_TAMING_MODE)) {
-        log_debug("FPGA %s does not support VCTCXO taming via an input source\n",
-                  dev->fpga_version.describe);
-
-        return BLADERF_ERR_UNSUPPORTED;
-    }
-
 
     status = nios_8x8_write(dev,
                             NIOS_PKT_8x8_TARGET_VCTCXO_TAMER, 0xff,
@@ -495,13 +481,6 @@ int nios_get_vctcxo_tamer_mode(struct bladerf *dev,
     uint8_t tmp;
 
     *mode = BLADERF_VCTCXO_TAMER_INVALID;
-
-    if (!have_cap(dev, BLADERF_CAP_VCTCXO_TAMING_MODE)) {
-        log_debug("FPGA %s does not support VCTCXO taming via an input source\n",
-                  dev->fpga_version.describe);
-
-        return BLADERF_ERR_UNSUPPORTED;
-    }
 
     status = nios_8x8_read(dev, NIOS_PKT_8x8_TARGET_VCTCXO_TAMER, 0xff, &tmp);
     if (status == 0) {
