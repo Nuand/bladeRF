@@ -106,6 +106,7 @@ set_location_assignment PIN_Y14  -to "adi_rx_data[2](n)"
 set_location_assignment PIN_Y15  -to adi_rx_data[2]
 set_location_assignment PIN_V14  -to "adi_rx_clock(n)"
 set_location_assignment PIN_V15  -to adi_rx_clock
+set_location_assignment PIN_AB18 -to ps_sync_1p1
 set_location_assignment PIN_AB20 -to "adi_tx_clock(n)"
 set_location_assignment PIN_Y16  -to "adi_rx_data[3](n)"
 set_location_assignment PIN_AB21 -to adi_tx_clock
@@ -125,6 +126,7 @@ set_location_assignment PIN_Y20  -to "adi_rx_frame(n)"
 set_location_assignment PIN_W22  -to adi_tx_data[3]
 set_location_assignment PIN_Y19  -to adi_rx_frame
 set_location_assignment PIN_Y21  -to "adi_tx_data[2](n)"
+set_location_assignment PIN_R14  -to ps_sync_1p8
 set_location_assignment PIN_W21  -to adi_tx_data[2]
 set_location_assignment PIN_U22  -to "adi_tx_data[1](n)"
 set_location_assignment PIN_V19  -to adi_ctrl_out[3]
@@ -140,6 +142,7 @@ set_location_assignment PIN_N16 -to adi_ctrl_in[0]
 set_location_assignment PIN_N20 -to adi_ctrl_in[1]
 set_location_assignment PIN_M16 -to adi_ctrl_in[2]
 set_location_assignment PIN_N21 -to adi_ctrl_in[3]
+set_location_assignment PIN_M18 -to adi_sync_in
 set_location_assignment PIN_K17 -to adi_enable
 set_location_assignment PIN_M20 -to adi_en_agc
 set_location_assignment PIN_L17 -to adi_txnrx
@@ -164,6 +167,9 @@ set outs {
     adi_spi_csn
     adi_spi_sdi
     adi_spi_sclk
+    ps_sync_1p1
+    ps_sync_1p8
+    adi_sync_in
 }
 for { set i 0 } { $i < 4 } { incr i } {
     lappend outs "adi_ctrl_in\[${i}\]"
@@ -230,6 +236,8 @@ foreach pin ${lvds_ins} {
 ##########
 # BANK 5A
 ##########
+set_location_assignment PIN_T19 -to pwr_scl
+set_location_assignment PIN_T18 -to pwr_sda
 set_location_assignment PIN_T17 -to adf_muxout
 set_location_assignment PIN_T22 -to adf_ce
 set_location_assignment PIN_T15 -to adi_rx_spdt1_v[2]
@@ -253,6 +261,7 @@ set outs {
     fx3_uart_cts
     fx3_uart_rxd
     adf_ce
+    pwr_scl
 }
 for { set i 1 } { $i < 3 } { incr i } {
     lappend outs "adi_rx_spdt1_v\[${i}\]"
@@ -268,7 +277,9 @@ foreach pin ${outs} {
 }
 
 # Single-ended inout constraints
-set inouts {}
+set inouts {
+    pwr_sda
+}
 
 foreach pin ${inouts} {
     set_instance_assignment -name IO_STANDARD          "3.3-V LVCMOS"    -to ${pin}

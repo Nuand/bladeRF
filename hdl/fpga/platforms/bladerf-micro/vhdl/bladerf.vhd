@@ -38,6 +38,14 @@ entity bladerf is
     -- LEDs (3.3 V)
     led                 :   buffer  std_logic_vector(3 downto 1) := (others =>'0') ;
 
+    -- Power supply sync (2.5 V)
+    ps_sync_1p1         :   out     std_logic := '0';
+    ps_sync_1p8         :   out     std_logic := '0';
+
+    -- Power monitor (3.3 V)
+    pwr_sda             :   inout   std_logic := 'Z';
+    pwr_scl             :   out     std_logic := 'Z';
+
     -- AD9361 RX Interface (2.5 V, LVDS)
     adi_rx_clock        :   in      std_logic ;
     adi_rx_data         :   in      std_logic_vector(5 downto 0) ;
@@ -75,6 +83,7 @@ entity bladerf is
     adi_en_agc          :   out     std_logic := '0';
     adi_ctrl_in         :   out     std_logic_vector(3 downto 0) := (others => '0');
     adi_ctrl_out        :   in      std_logic_vector(7 downto 0);
+    adi_sync_in         :   out     std_logic := '0';
 
     -- ADF4002 SPI Interface (3.3 V)
     adf_sclk            :   out     std_logic := '0' ;

@@ -1117,6 +1117,10 @@ begin
     adf_ce        <= adf_muxout;
     tx_bias_en    <= led1_blink;
     rx_bias_en    <= led1_blink;
+    adi_sync_in   <= c5_clock_2;
+
+    pwr_scl       <= i2c_scl_out when i2c_scl_oen = '0' else 'Z' ;
+    pwr_sda       <= i2c_sda_out when i2c_sda_oen = '0' else 'Z' ;
 
     U_exp_pll : entity work.pll
       port map (
@@ -1174,6 +1178,27 @@ begin
 
     -- end temp ^^
 
+    -- Power supply synchronization
+    -- ADP2384 sync freq must be +/- 10% of the Fsw set by RT.
+    -- RT = 53.6k +/- 1%, so Fsw = 0.999768 MHz to 1.015514 MHz.
+    -- Therefore, sync must fall between:
+    --   -10% of 1.015514 MHz = 0.913964 MHz
+    --   +10% of 0.999768 MHz = 1.099745 MHz
+    -- Dividing 38.4 MHz by 38 yields 1.010526 MHz.
+    ps_sync : process(c5_clock_1)
+        variable count  : natural range 0 to 19 := 19;
+        variable ps_clk : std_logic := '0';
+    begin
+        if( rising_edge(c5_clock_1) ) then
+            ps_sync_1p1 <= ps_clk;
+            ps_sync_1p8 <= ps_clk;
+            count := count - 1;
+            if( count = 0 ) then
+                count  := 19;
+                ps_clk := not ps_clk;
+            end if;
+        end if;
+    end process;
 
     toggle_led1 : process(fx3_pclk_pll)
         variable count : natural range 0 to 100_000_000 := 100_000_000 ;
