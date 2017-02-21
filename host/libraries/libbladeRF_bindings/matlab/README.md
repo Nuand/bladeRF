@@ -18,11 +18,21 @@ device.rx.frequency = 915.125e6;
 device.tx.frequency = 921.700e6;
 ```
 
-Before starting, run `help bladeRF.build_thunk` to view instructions on how to
-have MATLAB build a Thunk file to use in conjunction with libbladeRF.
+# Before Starting #
+
+You will need to generate a thunk file (a compatibility layer for `loadlibrary()`)
+so that MATLAB can correctly call the libbladeRF functions.
+
+Run `help bladeRF.build_thunk` to view instructions on how to 
+have MATLAB build a Thunk file to use in conjunction
+with libbladeRF.
 
 For more information, use the MATLAB `help` and `doc` commands on the files in this
 directory, as well as on the various object properties contained in these files.
+
+# MATLAB Toolbox Requirements #
+
+- [Signal Processing Toolbox](https://www.mathworks.com/products/signal.html): required for RX GUI
 
 # Files #
 
