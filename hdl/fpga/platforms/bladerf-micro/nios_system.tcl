@@ -22,7 +22,7 @@ if { [info exists nios_impl] == 0 } {
 # (disabled instances are intentionally culled)
 add_instance command_uart command_uart 1.0
 
-add_instance control altera_avalon_pio 16.0
+add_instance control altera_avalon_pio
 set_instance_parameter_value control {bitClearingEdgeCapReg} {0}
 set_instance_parameter_value control {bitModifyingOutReg} {1}
 set_instance_parameter_value control {captureEdge} {0}
@@ -35,7 +35,7 @@ set_instance_parameter_value control {simDoTestBenchWiring} {0}
 set_instance_parameter_value control {simDrivenValue} {0.0}
 set_instance_parameter_value control {width} {32}
 
-add_instance iq_corr_rx_phase_gain altera_avalon_pio 16.0
+add_instance iq_corr_rx_phase_gain altera_avalon_pio
 set_instance_parameter_value iq_corr_rx_phase_gain {bitClearingEdgeCapReg} {0}
 set_instance_parameter_value iq_corr_rx_phase_gain {bitModifyingOutReg} {0}
 set_instance_parameter_value iq_corr_rx_phase_gain {captureEdge} {0}
@@ -48,7 +48,7 @@ set_instance_parameter_value iq_corr_rx_phase_gain {simDoTestBenchWiring} {0}
 set_instance_parameter_value iq_corr_rx_phase_gain {simDrivenValue} {0.0}
 set_instance_parameter_value iq_corr_rx_phase_gain {width} {32}
 
-add_instance iq_corr_tx_phase_gain altera_avalon_pio 16.0
+add_instance iq_corr_tx_phase_gain altera_avalon_pio
 set_instance_parameter_value iq_corr_tx_phase_gain {bitClearingEdgeCapReg} {0}
 set_instance_parameter_value iq_corr_tx_phase_gain {bitModifyingOutReg} {0}
 set_instance_parameter_value iq_corr_tx_phase_gain {captureEdge} {0}
@@ -61,7 +61,7 @@ set_instance_parameter_value iq_corr_tx_phase_gain {simDoTestBenchWiring} {0}
 set_instance_parameter_value iq_corr_tx_phase_gain {simDrivenValue} {0.0}
 set_instance_parameter_value iq_corr_tx_phase_gain {width} {32}
 
-add_instance jtag_uart altera_avalon_jtag_uart 16.0
+add_instance jtag_uart altera_avalon_jtag_uart
 set_instance_parameter_value jtag_uart {allowMultipleConnections} {0}
 set_instance_parameter_value jtag_uart {hubInstanceID} {0}
 set_instance_parameter_value jtag_uart {readBufferDepth} {64}
@@ -79,7 +79,7 @@ set_instance_parameter_value lms_spi {CLOCK_DIV} {4}
 set_instance_parameter_value lms_spi {ADDR_WIDTH} {8}
 set_instance_parameter_value lms_spi {DATA_WIDTH} {8}
 
-add_instance nios2 altera_nios2_gen2 16.0
+add_instance nios2 altera_nios2_gen2
 set_instance_parameter_value nios2 {tmr_enabled} {0}
 set_instance_parameter_value nios2 {setting_disable_tmr_inj} {0}
 set_instance_parameter_value nios2 {setting_showUnpublishedSettings} {0}
@@ -221,7 +221,7 @@ set_instance_parameter_value nios2 {data_master_high_performance_paddr_size} {0.
 add_instance opencores_i2c bladerf_oc_i2c_master 1.0
 set_instance_parameter_value opencores_i2c {ARST_LVL} {1}
 
-add_instance peripheral_spi altera_avalon_spi 16.0
+add_instance peripheral_spi altera_avalon_spi
 set_instance_parameter_value peripheral_spi {clockPhase} {1}
 set_instance_parameter_value peripheral_spi {clockPolarity} {1}
 set_instance_parameter_value peripheral_spi {dataWidth} {8}
@@ -235,7 +235,7 @@ set_instance_parameter_value peripheral_spi {syncRegDepth} {2}
 set_instance_parameter_value peripheral_spi {targetClockRate} {9600000.0}
 set_instance_parameter_value peripheral_spi {targetSlaveSelectToSClkDelay} {0.0}
 
-add_instance ram altera_avalon_onchip_memory2 16.0
+add_instance ram altera_avalon_onchip_memory2
 set_instance_parameter_value ram {allowInSystemMemoryContentEditor} {1}
 set_instance_parameter_value ram {blockType} {AUTO}
 set_instance_parameter_value ram {dataWidth} {32}
@@ -261,7 +261,7 @@ set_instance_parameter_value ram {resetrequest_enabled} {1}
 
 add_instance rx_tamer time_tamer 1.0
 
-add_instance rx_trigger_ctl altera_avalon_pio 16.0
+add_instance rx_trigger_ctl altera_avalon_pio
 set_instance_parameter_value rx_trigger_ctl {bitClearingEdgeCapReg} {0}
 set_instance_parameter_value rx_trigger_ctl {bitModifyingOutReg} {1}
 set_instance_parameter_value rx_trigger_ctl {captureEdge} {0}
@@ -274,14 +274,14 @@ set_instance_parameter_value rx_trigger_ctl {simDoTestBenchWiring} {0}
 set_instance_parameter_value rx_trigger_ctl {simDrivenValue} {0.0}
 set_instance_parameter_value rx_trigger_ctl {width} {8}
 
-add_instance system_clock clock_source 16.0
+add_instance system_clock clock_source
 set_instance_parameter_value system_clock {clockFrequency} {80000000.0}
 set_instance_parameter_value system_clock {clockFrequencyKnown} {1}
 set_instance_parameter_value system_clock {resetSynchronousEdges} {DEASSERT}
 
 add_instance tx_tamer time_tamer 1.0
 
-add_instance tx_trigger_ctl altera_avalon_pio 16.0
+add_instance tx_trigger_ctl altera_avalon_pio
 set_instance_parameter_value tx_trigger_ctl {bitClearingEdgeCapReg} {0}
 set_instance_parameter_value tx_trigger_ctl {bitModifyingOutReg} {1}
 set_instance_parameter_value tx_trigger_ctl {captureEdge} {0}
@@ -296,7 +296,7 @@ set_instance_parameter_value tx_trigger_ctl {width} {8}
 
 add_instance vctcxo_tamer_0 vctcxo_tamer 1.0
 
-add_instance xb_gpio altera_avalon_pio 16.0
+add_instance xb_gpio altera_avalon_pio
 set_instance_parameter_value xb_gpio {bitClearingEdgeCapReg} {0}
 set_instance_parameter_value xb_gpio {bitModifyingOutReg} {0}
 set_instance_parameter_value xb_gpio {captureEdge} {0}
@@ -309,7 +309,7 @@ set_instance_parameter_value xb_gpio {simDoTestBenchWiring} {0}
 set_instance_parameter_value xb_gpio {simDrivenValue} {0.0}
 set_instance_parameter_value xb_gpio {width} {32}
 
-add_instance xb_gpio_dir altera_avalon_pio 16.0
+add_instance xb_gpio_dir altera_avalon_pio
 set_instance_parameter_value xb_gpio_dir {bitClearingEdgeCapReg} {0}
 set_instance_parameter_value xb_gpio_dir {bitModifyingOutReg} {0}
 set_instance_parameter_value xb_gpio_dir {captureEdge} {0}
