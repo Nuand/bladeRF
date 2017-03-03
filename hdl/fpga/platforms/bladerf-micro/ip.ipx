@@ -1,7 +1,7 @@
 <library>
-	<path path="../../opencores/i2c/**/*"/>
-	<path path="../../nuand/time_tamer/**/*"/>
-	<path path="../../nuand/command_uart/**/*"/>
-        <path path="../../nuand/lms6_spi_controller/**/*"/>
-        <path path="../../nuand/vctcxo_tamer/**/*"/>
+        <path path="../../../fpga/ip/opencores/i2c/**/*"/>
+        <path path="../../../fpga/ip/nuand/time_tamer/**/*"/>
+        <path path="../../../fpga/ip/nuand/command_uart/**/*"/>
+        <path path="../../../fpga/ip/nuand/lms6_spi_controller/**/*"/>
+        <path path="../../../fpga/ip/nuand/vctcxo_tamer/**/*"/>
 </library>
