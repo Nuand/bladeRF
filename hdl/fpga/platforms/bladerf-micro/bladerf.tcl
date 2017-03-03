@@ -14,13 +14,15 @@ set options { \
 array set opts [::cmdline::getoptions quartus(args) $options]
 
 set PROJECT_NAME $opts(projname)
-set TOP_LEVEL    "bladerf_micro"
+set TOP_LEVEL    "bladerf"
 set BASE_REV     "base"
 
 # Make a revision of the bladeRF FPGA based on a qip file in the platforms directory
 proc make_revision { rev } {
     global PROJECT_NAME
     global BASE_REV
+    global opts
+
     if [revision_exists ${rev}] {
         project_open -revision ${rev} ${PROJECT_NAME}
     } else {
