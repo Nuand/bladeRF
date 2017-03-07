@@ -10,10 +10,9 @@ set_project_property HIDE_FROM_IP_CATALOG {false}
 if { [info exists nios_impl] == 0 } {
     error "Nios implementation variable not set."
 } else {
-    switch -nocase $nios_impl {
-        tiny    { set nios_impl Tiny  }
-        small   { set nios_impl Small }
-        fast    { set nios_impl Fast  }
+    switch -regexp $nios_impl {
+        "[Tt][Ii][Nn][Yy]"     { puts "using tiny";  set nios_impl Tiny  }
+        "[Ff][Aa][Ss][Tt]"     { puts "using fast";  set nios_impl Fast  }
         default { error "Invalid NIOS implementation: ${nios_impl}." }
     }
 }
