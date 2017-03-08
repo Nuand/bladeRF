@@ -93,7 +93,7 @@ set_global_assignment -name AUTO_PACKED_REGISTERS_STRATIXII              NORMAL
 # Add IP files and pin assignments
 set_global_assignment -name QIP_FILE [file normalize $opts(platdir)/${PROJECT_NAME}.qip]
 source [file normalize $opts(platdir)/constraints/pins.tcl]
-file copy -force $opts(platdir)/ip.ipx ./ip.ipx
+file copy -force $opts(platdir)/build/ip.ipx ./ip.ipx
 export_assignments
 
 # At this point, we can add custom revisions
