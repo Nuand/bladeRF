@@ -1,7 +1,0 @@
-# Current directory only
-/*.html
-/*.sopcinfo
-/synthesis
-
-# This and all subdirectories
-*.qsys_edit
