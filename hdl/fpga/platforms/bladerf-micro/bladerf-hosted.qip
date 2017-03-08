@@ -35,7 +35,7 @@ set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/blad
 set_global_assignment -name QIP_FILE [file normalize [file join $workdir nios_system/synthesis/nios_system.qip]]
 
 # Explicitly include Nios mem_init
-set_global_assignment -name QIP_FILE [file normalize [file join $here nios_system/software/bladeRF_nios/mem_init/meminit.qip]]
+set_global_assignment -name QIP_FILE [file normalize [file join $workdir bladeRF_nios/mem_init/meminit.qip]]
 
 # SDC Constraints
 set_global_assignment -name SDC_FILE [file normalize [file join $here constraints/ad9361.sdc]]

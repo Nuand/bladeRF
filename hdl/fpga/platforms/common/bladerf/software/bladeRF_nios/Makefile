@@ -1,14 +1,22 @@
 #------------------------------------------------------------------------------
+#              VARIABLES TO BE DEFINED BY PLATFORM MAKEFILE
+#------------------------------------------------------------------------------
+
+#  - FPGA_COMMON_DIR    : Path to fpga_common
+#  - LIBBLADERF_DIR     : Path to libbladeRF
+#  - BLADERF_COMMON_DIR : Path to common bladeRF_nios dir
+#  - NIOS_BUILD_OUTDIR  : Path to place the Nios build products
+#  - MEM_INIT_DIR       : Path to place the mem_init build products
+#  - BSP_BUILD_OUTDIR   : Path where BSP build products are located
+#  - QUARTUS_OUTDIR     : Path where Quartus build products are located
+
+#------------------------------------------------------------------------------
 #              VARIABLES APPENDED TO BY INCLUDED MAKEFILE FRAGMENTS
 #------------------------------------------------------------------------------
 
-FPGA_COMMON_DIR := ../../../../../../../fpga_common
-LIBBLADERF_DIR := ../../../../../../../host/libraries/libbladeRF
-
-
 # List of include directories for -I compiler option (-I added when used).
 # Includes the BSP.
-ALT_INCLUDE_DIRS := -I src -I $(FPGA_COMMON_DIR)/include -I $(LIBBLADERF_DIR)/include
+ALT_INCLUDE_DIRS := -I $(BLADERF_COMMON_DIR)/src -I $(FPGA_COMMON_DIR)/include -I $(LIBBLADERF_DIR)/include
 
 # List of library directories for -L linker option (-L added when used).
 # Includes the BSP.
@@ -143,19 +151,19 @@ ACDS_VERSION := 12.1sp1
 # Define path to the application ELF.
 # It may be used by the makefile fragments so is defined before including them.
 #
-ELF := bladeRF_nios.elf
+ELF := $(NIOS_BUILD_OUTDIR)/bladeRF_nios.elf
 
 # Paths to C, C++, and assembly source files.
-C_SRCS += src/bladeRF_nios.c
-C_SRCS += src/devices.c
-C_SRCS += src/pkt_8x8.c
-C_SRCS += src/pkt_8x16.c
-C_SRCS += src/pkt_8x32.c
-C_SRCS += src/pkt_8x64.c
-C_SRCS += src/pkt_32x32.c
-C_SRCS += src/pkt_retune.c
-C_SRCS += src/pkt_legacy.c
-C_SRCS += src/devices_sim.c
+C_SRCS += $(BLADERF_COMMON_DIR)/src/bladeRF_nios.c
+C_SRCS += $(BLADERF_COMMON_DIR)/src/devices.c
+C_SRCS += $(BLADERF_COMMON_DIR)/src/pkt_8x8.c
+C_SRCS += $(BLADERF_COMMON_DIR)/src/pkt_8x16.c
+C_SRCS += $(BLADERF_COMMON_DIR)/src/pkt_8x32.c
+C_SRCS += $(BLADERF_COMMON_DIR)/src/pkt_8x64.c
+C_SRCS += $(BLADERF_COMMON_DIR)/src/pkt_32x32.c
+C_SRCS += $(BLADERF_COMMON_DIR)/src/pkt_retune.c
+C_SRCS += $(BLADERF_COMMON_DIR)/src/pkt_legacy.c
+C_SRCS += $(BLADERF_COMMON_DIR)/src/devices_sim.c
 C_SRCS += $(FPGA_COMMON_DIR)/src/lms.c
 C_SRCS += $(FPGA_COMMON_DIR)/src/band_select.c
 CXX_SRCS :=
@@ -163,7 +171,7 @@ ASM_SRCS :=
 
 
 # Path to root of object file tree.
-OBJ_ROOT_DIR := obj
+OBJ_ROOT_DIR := $(NIOS_BUILD_OUTDIR)/obj
 
 # Options to control objdump.
 CREATE_OBJDUMP := 1
@@ -192,7 +200,7 @@ CRT0 :=
 SYS_LIB :=
 
 # Define path to the root of the BSP.
-BSP_ROOT_DIR := ../bladeRF_nios_bsp/
+BSP_ROOT_DIR := $(BSP_BUILD_OUTDIR)
 
 # List of application specific include directories, library directories and library names
 APP_INCLUDE_DIRS :=
@@ -203,7 +211,7 @@ APP_LIBRARY_NAMES :=
 BUILD_PRE_PROCESS :=
 BUILD_POST_PROCESS :=
 
-QUARTUS_PROJECT_DIR := ../../../../../../quartus/work/output_files
+QUARTUS_PROJECT_DIR := $(QUARTUS_OUTDIR)
 
 
 #END GENERATED
