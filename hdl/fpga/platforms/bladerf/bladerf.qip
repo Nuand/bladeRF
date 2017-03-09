@@ -1,5 +1,9 @@
-# Convenience directory
-set here $::quartus(qip_path)
+# Convenience variable
+set here      $::quartus(qip_path)
+set altera_ip [file normalize [file join $here ../../ip/altera]]
+set adi_ip    [file normalize [file join $here ../../ip/analogdevicesinc]]
+set nuand_ip  [file normalize [file join $here ../../ip/nuand]]
+set workdir   [file normalize [file join $here ../../../quartus/work/bladerf]]
 
 # Top level entity and pin constraints
 set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/bladerf.vhd]]

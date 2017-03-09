@@ -1,36 +1,38 @@
 # Convenience variable
-set here $::quartus(qip_path)
+set here      $::quartus(qip_path)
+set altera_ip [file normalize [file join $here ../../ip/altera]]
+set adi_ip    [file normalize [file join $here ../../ip/analogdevicesinc]]
+set nuand_ip  [file normalize [file join $here ../../ip/nuand]]
+set workdir   [file normalize [file join $here ../../../quartus/work/bladerf]]
 
 # Altera IP
-set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/pll/pll.qip]]
-set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/fx3_pll/fx3_pll.qip]]
-set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/nios_system/synthesis/nios_system.qip]]
-set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/rx_fifo/rx_fifo.qip]]
-set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/tx_fifo/tx_fifo.qip]]
-set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/tx_meta_fifo/tx_meta_fifo.qip]]
-set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/rx_meta_fifo/rx_meta_fifo.qip]]
+set_global_assignment -name QIP_FILE [file normalize [file join $altera_ip pll/pll.qip]]
+set_global_assignment -name QIP_FILE [file normalize [file join $altera_ip fx3_pll/fx3_pll.qip]]
+set_global_assignment -name QIP_FILE [file normalize [file join $altera_ip rx_fifo/rx_fifo.qip]]
+set_global_assignment -name QIP_FILE [file normalize [file join $altera_ip tx_fifo/tx_fifo.qip]]
+set_global_assignment -name QIP_FILE [file normalize [file join $altera_ip tx_meta_fifo/tx_meta_fifo.qip]]
+set_global_assignment -name QIP_FILE [file normalize [file join $altera_ip rx_meta_fifo/rx_meta_fifo.qip]]
 
 # Explicitly include Nios mem_init
-set_global_assignment -name QIP_FILE [file normalize [file join $here ../../ip/altera/nios_system/software/bladeRF_nios/mem_init/meminit.qip]]
+set_global_assignment -name QIP_FILE [file normalize [file join $workdir bladeRF_nios/mem_init/meminit.qip]]
 
 # Implementation details
-set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/tan_table.vhd]]
-set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/iq_correction.vhd]]
-set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/signal_generator.vhd]]
-set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/synchronizer.vhd]]
-set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/handshake.vhd]]
-set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/reset_synchronizer.vhd]]
-set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/fifo_reader.vhd]]
-set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/fifo_writer.vhd]]
-set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/lms6002d/vhdl/lms6002d.vhd]]
-set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/lms6_spi_controller/vhdl/lms6_spi_controller.vhd]]
-set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/lms6002d/vhdl/bladerf_agc_lms_drv.vhd]]
-set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/synthesis/lms6002d/vhdl/bladerf_agc.vhd]]
-set_global_assignment -name VHDL_FILE [file normalize [file join $here ../../ip/nuand/trigger/trigger.vhd]]
+set_global_assignment -name QIP_FILE [file normalize  [file join $workdir nios_system/synthesis/nios_system.qip]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/tan_table.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/iq_correction.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/signal_generator.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/synchronizer.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/handshake.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/reset_synchronizer.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/fifo_reader.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/fifo_writer.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/lms6002d/vhdl/lms6002d.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip lms6_spi_controller/vhdl/lms6_spi_controller.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/lms6002d/vhdl/bladerf_agc_lms_drv.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/lms6002d/vhdl/bladerf_agc.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip trigger/trigger.vhd]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/fx3_gpif.vhd]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/bladerf-hosted.vhd]]
 
 # SDC Constraints
 set_global_assignment -name SDC_FILE [file normalize [file join $here constraints/bladerf.sdc]]
-
-
