@@ -16,4 +16,4 @@ QUARTUS_OUTDIR     := $(QUARTUS_WORKDIR)/output_files
 #              INCLUDE THE COMMON MAKEFILE
 #------------------------------------------------------------------------------
 
-include ../../../common/bladerf/software/bladeRF_nios/Makefile
+include $(BLADERF_COMMON_DIR)/Makefile

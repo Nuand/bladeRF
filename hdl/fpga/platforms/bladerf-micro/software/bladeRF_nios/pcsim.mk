@@ -12,4 +12,4 @@ NIOS_BUILD_OUTDIR  := $(QUARTUS_WORKDIR)/bladeRF_nios
 #              INCLUDE THE COMMON MAKEFILE
 #------------------------------------------------------------------------------
 
-include ../../../common/bladerf/software/bladeRF_nios/pcsim.mk
+include $(BLADERF_COMMON_DIR)/pcsim.mk
