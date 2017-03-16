@@ -154,5 +154,6 @@ struct board_fns {
 
 /* Boards */
 extern const struct board_fns bladerf1_board_fns;
+extern const struct board_fns bladerf2_board_fns;
 
 #endif

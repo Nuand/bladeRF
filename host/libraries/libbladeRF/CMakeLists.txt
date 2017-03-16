@@ -284,6 +284,10 @@ set(LIBBLADERF_SOURCE
         src/board/bladerf1/calibration.c
         src/board/bladerf1/flash.c
         src/board/bladerf1/image.c
+        src/board/bladerf2/bladerf2.c
+        src/board/bladerf2/capabilities.c
+        src/board/bladerf2/compatibility.c
+        src/board/bladerf2/params.c
         src/expansion/xb100.c
         src/expansion/xb200.c
         src/expansion/xb300.c
