@@ -42,7 +42,6 @@
 /******************************************************************************/
 /***************************** Include Files **********************************/
 /******************************************************************************/
-
 #include "stdint.h"
 #include "util.h"
 #include "config.h"
@@ -139,27 +138,28 @@ enum adc_data_sel {
 /************************ Functions Declarations ******************************/
 /******************************************************************************/
 
-int spi_init(struct ad9361_rf_phy *phy, void *userdata);
-int spi_write(struct spi_device *spi, uint16_t cmd, const uint8_t *buf,
-              unsigned int len);
-int spi_read(struct spi_device *spi, uint16_t cmd, uint8_t *buf,
-             unsigned int len);
+int32_t spi_init(uint32_t device_id, uint8_t  clk_pha, uint8_t  clk_pol);
+int32_t spi_read(uint8_t *data, uint8_t bytes_number);
+int spi_write_then_read(struct spi_device *spi,
+                        const unsigned char *txbuf, unsigned n_tx,
+		                unsigned char *rxbuf, unsigned n_rx);
 
-int gpio_init(struct ad9361_rf_phy *phy, void *userdata);
-bool gpio_is_valid(struct gpio_device *gpio, int32_t number);
-int gpio_set_value(struct gpio_device *gpio, int32_t number, bool value);
+void gpio_init(uint32_t device_id);
+void gpio_direction(uint8_t pin, uint8_t direction);
+bool gpio_is_valid(int number);
+void gpio_set_value(unsigned gpio, int value);
 
 void udelay(unsigned long usecs);
 void mdelay(unsigned long msecs);
 unsigned long msleep_interruptible(unsigned int msecs);
 
 #ifndef AXI_ADC_NOT_PRESENT
-int axiadc_init(struct ad9361_rf_phy *phy, void *userdata);
+void axiadc_init(struct ad9361_rf_phy *phy);
 int axiadc_post_setup(struct ad9361_rf_phy *phy);
-int axiadc_read(struct axiadc_state *st, uint32_t addr, uint32_t *data);
-int axiadc_write(struct axiadc_state *st, uint32_t addr, uint32_t data);
-int axiadc_set_pnsel(struct axiadc_state *st, unsigned int channel, enum adc_pn_sel sel);
-int axiadc_idelay_set(struct axiadc_state *st, unsigned int lane, unsigned int val);
+unsigned int axiadc_read(struct axiadc_state *st, unsigned long reg);
+void axiadc_write(struct axiadc_state *st, unsigned reg, unsigned val);
+int axiadc_set_pnsel(struct axiadc_state *st, int channel, enum adc_pn_sel sel);
+void axiadc_idelay_set(struct axiadc_state *st, unsigned lane, unsigned val);
 #endif
 
 #endif
