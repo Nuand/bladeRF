@@ -55,7 +55,9 @@
 /********************** Macros and Constants Definitions **********************/
 /******************************************************************************/
 #define SUCCESS									0
+#ifndef ARRAY_SIZE
 #define ARRAY_SIZE(arr)							(sizeof(arr) / sizeof((arr)[0]))
+#endif
 #define min(x, y)								(((x) < (y)) ? (x) : (y))
 #define min_t(type, x, y)						(type)min((type)(x), (type)(y))
 #define max(x, y)								(((x) > (y)) ? (x) : (y))

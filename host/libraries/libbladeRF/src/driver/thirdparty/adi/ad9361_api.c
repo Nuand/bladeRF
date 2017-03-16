@@ -1875,7 +1875,7 @@ int32_t ad9361_set_no_ch_mode(struct ad9361_rf_phy *phy, uint8_t no_ch_mode)
  */
 int32_t ad9361_do_mcs(struct ad9361_rf_phy *phy_master, struct ad9361_rf_phy *phy_slave)
 {
-	uint32_t ensm_mode;
+	uint32_t ensm_mode = 0;
 	int32_t step;
 	int32_t reg;
 

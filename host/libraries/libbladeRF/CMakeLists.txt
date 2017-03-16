@@ -273,6 +273,11 @@ set(LIBBLADERF_SOURCE
         src/driver/fpga_trigger.c
         src/driver/si5338.c
         src/driver/smb_clock.c
+        src/driver/thirdparty/adi/ad9361.c
+        src/driver/thirdparty/adi/ad9361_api.c
+        src/driver/thirdparty/adi/ad9361_conv.c
+        src/driver/thirdparty/adi/util.c
+        src/driver/thirdparty/adi/platform.c
         src/board/bladerf1/bladerf1.c
         src/board/bladerf1/capabilities.c
         src/board/bladerf1/compatibility.c
