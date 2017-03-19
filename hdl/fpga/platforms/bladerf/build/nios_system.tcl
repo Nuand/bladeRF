@@ -24,6 +24,8 @@ set_instance_parameter_value lms_spi {DATA_WIDTH} {8}
 add_instance vctcxo_tamer_0 vctcxo_tamer 1.0
 
 # exported interfaces
+add_interface clk clock sink
+set_interface_property clk EXPORT_OF clk_0.clk_in
 add_interface command conduit end
 set_interface_property command EXPORT_OF common_system_0.command
 add_interface correction_rx_phase_gain conduit end
@@ -36,16 +38,14 @@ add_interface gpio conduit end
 set_interface_property gpio EXPORT_OF common_system_0.gpio
 add_interface oc_i2c conduit end
 set_interface_property oc_i2c EXPORT_OF common_system_0.oc_i2c
+add_interface reset reset sink
+set_interface_property reset EXPORT_OF clk_0.clk_in_reset
 add_interface rx_tamer conduit end
 set_interface_property rx_tamer EXPORT_OF common_system_0.rx_tamer
 add_interface rx_trigger_ctl conduit end
 set_interface_property rx_trigger_ctl EXPORT_OF common_system_0.rx_trigger_ctl
 add_interface spi conduit end
 set_interface_property spi EXPORT_OF lms_spi.conduit_end
-add_interface sys_clk clock sink
-set_interface_property sys_clk EXPORT_OF clk_0.clk_in
-add_interface sys_reset reset sink
-set_interface_property sys_reset EXPORT_OF clk_0.clk_in_reset
 add_interface tx_tamer conduit end
 set_interface_property tx_tamer EXPORT_OF common_system_0.tx_tamer
 add_interface tx_trigger_ctl conduit end
