@@ -61,7 +61,7 @@ set_instance_parameter_value iq_corr_tx_phase_gain {simDrivenValue} {0.0}
 set_instance_parameter_value iq_corr_tx_phase_gain {width} {32}
 
 add_instance irq_bridge_0 altera_irq_bridge
-set_instance_parameter_value irq_bridge_0 {IRQ_WIDTH} {2}
+set_instance_parameter_value irq_bridge_0 {IRQ_WIDTH} {3}
 set_instance_parameter_value irq_bridge_0 {IRQ_N} {0}
 
 add_instance jtag_uart altera_avalon_jtag_uart
@@ -513,6 +513,9 @@ set_connection_parameter_value nios2.irq/irq_bridge_0.sender0_irq irqNumber {0}
 
 add_connection nios2.irq irq_bridge_0.sender1_irq
 set_connection_parameter_value nios2.irq/irq_bridge_0.sender1_irq irqNumber {6}
+
+add_connection nios2.irq irq_bridge_0.sender2_irq
+set_connection_parameter_value nios2.irq/irq_bridge_0.sender2_irq irqNumber {8}
 
 add_connection system_clock.clk_reset irq_bridge_0.clk_reset
 

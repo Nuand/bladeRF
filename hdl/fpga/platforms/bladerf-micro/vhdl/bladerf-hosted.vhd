@@ -68,8 +68,6 @@ architecture hosted_bladerf of bladerf is
         tx_tamer_ts_clock               :   in  std_logic ;
         tx_tamer_ts_reset               :   in  std_logic;
         tx_tamer_ts_time                :   out std_logic_vector(63 downto 0);
-        vctcxo_tamer_tune_ref           :   in  std_logic;
-        vctcxo_tamer_vctcxo_clock       :   in  std_logic;
         tx_trigger_ctl_in_port          :   in std_logic_vector(7 downto 0);
         tx_trigger_ctl_out_port         :   out std_logic_vector(7 downto 0);
         rx_trigger_ctl_in_port          :   in std_logic_vector(7 downto 0);
@@ -1041,8 +1039,6 @@ begin
         tx_tamer_ts_clock               => tx_clock,
         tx_tamer_ts_reset               => tx_ts_reset,
         unsigned(tx_tamer_ts_time)      => tx_timestamp,
-        vctcxo_tamer_tune_ref           => '0',
-        vctcxo_tamer_vctcxo_clock       => c5_clock_1,
         rx_trigger_ctl_out_port         => rx_trigger_ctl,
         tx_trigger_ctl_out_port         => tx_trigger_ctl,
         rx_trigger_ctl_in_port          => rx_trigger_ctl_rb,
