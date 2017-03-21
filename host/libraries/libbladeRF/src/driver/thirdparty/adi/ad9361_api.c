@@ -72,7 +72,8 @@ static struct axiadc_chip_info axiadc_chip_info_tbl[] =
  *
  * Note: This function will/may affect the data path.
  */
-int32_t ad9361_init (struct ad9361_rf_phy **ad9361_phy, AD9361_InitParam *init_param)
+int32_t ad9361_init (struct ad9361_rf_phy **ad9361_phy,
+					 AD9361_InitParam *init_param, void *userdata)
 {
 	struct ad9361_rf_phy *phy;
 	int32_t ret = 0;
@@ -86,6 +87,11 @@ int32_t ad9361_init (struct ad9361_rf_phy **ad9361_phy, AD9361_InitParam *init_p
 
 	phy->spi = (struct spi_device *)zmalloc(sizeof(*phy->spi));
 	if (!phy->spi) {
+		return -ENOMEM;
+	}
+
+	phy->gpio = (struct gpio_device *)zmalloc(sizeof(*phy->gpio));
+	if (!phy->gpio) {
 		return -ENOMEM;
 	}
 
@@ -115,7 +121,6 @@ int32_t ad9361_init (struct ad9361_rf_phy **ad9361_phy, AD9361_InitParam *init_p
 	phy->dev_sel = init_param->dev_sel;
 
 	/* Identification number */
-	phy->spi->id_no = init_param->id_no;
 	phy->id_no = init_param->id_no;
 
 	/* Reference Clock */
@@ -407,6 +412,16 @@ int32_t ad9361_init (struct ad9361_rf_phy **ad9361_phy, AD9361_InitParam *init_p
 	phy->bist_tone_level_dB = 0;
 	phy->bist_tone_mask = 0;
 
+	ret = spi_init(phy, userdata);
+	if (ret < 0) {
+		goto out;
+	}
+
+	ret = gpio_init(phy, userdata);
+	if (ret < 0) {
+		goto out;
+	}
+
 	ad9361_reset(phy);
 
 	ret = ad9361_spi_read(phy->spi, REG_PRODUCT_ID);
@@ -457,6 +472,7 @@ int32_t ad9361_init (struct ad9361_rf_phy **ad9361_phy, AD9361_InitParam *init_p
 
 out:
 	free(phy->spi);
+	free(phy->gpio);
 #ifndef AXI_ADC_NOT_PRESENT
 	free(phy->adc_conv);
 	free(phy->adc_state);

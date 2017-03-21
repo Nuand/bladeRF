@@ -3316,6 +3316,7 @@ struct ad9361_rf_phy {
 	enum dev_id		dev_sel;
 	uint8_t 		id_no;
 	struct spi_device 	*spi;
+	struct gpio_device 	*gpio;
 	struct clk 		*clk_refin;
 	struct clk 		*clks[NUM_AD9361_CLKS];
 	struct refclk_scale *ref_clk_scale[NUM_AD9361_CLKS];

@@ -86,12 +86,12 @@
 #define printk(format, ...)			({ if (0) printf(format, ## __VA_ARGS__); })
 #endif
 
-struct device {
+struct spi_device {
+    void *userdata;
 };
 
-struct spi_device {
-	struct device	dev;
-	uint8_t 		id_no;
+struct gpio_device {
+    void *userdata;
 };
 
 struct axiadc_state {

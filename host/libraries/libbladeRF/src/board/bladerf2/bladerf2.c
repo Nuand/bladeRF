@@ -107,7 +107,7 @@ static int bladerf2_initialize(struct bladerf *dev)
     struct bladerf2_board_data *board_data = dev->board_data;
     int status;
 
-    status = ad9361_init(&board_data->phy, &ad9361_init_params);
+    status = ad9361_init(&board_data->phy, &ad9361_init_params, dev);
     if (status < 0) {
         log_error("AD9361 initialization error: %d\n", status);
         return errno_ad9361_to_bladerf(status);
