@@ -1,24 +1,17 @@
 #include <stdint.h>
 #include <unistd.h>
 
+#include "board/board.h"
+
 #include "platform.h"
 
 /***************************************************************************//**
  * @brief spi_init
 *******************************************************************************/
 
-int32_t spi_init(uint32_t device_id, uint8_t  clk_pha, uint8_t  clk_pol)
+int spi_init(struct ad9361_rf_phy *phy, void *userdata)
 {
-	return 0;
-}
-
-/***************************************************************************//**
- * @brief spi_read
-*******************************************************************************/
-
-int32_t spi_read(uint8_t *data, uint8_t bytes_number)
-{
-	return 0;
+    return 0;
 }
 
 /***************************************************************************//**
@@ -26,8 +19,8 @@ int32_t spi_read(uint8_t *data, uint8_t bytes_number)
 *******************************************************************************/
 
 int spi_write_then_read(struct spi_device *spi,
-		                const unsigned char *txbuf, unsigned n_tx,
-		                unsigned char *rxbuf, unsigned n_rx)
+                        const unsigned char *txbuf, unsigned n_tx,
+                        unsigned char *rxbuf, unsigned n_rx)
 {
 	return 0;
 }
@@ -36,42 +29,25 @@ int spi_write_then_read(struct spi_device *spi,
  * @brief gpio_init
 *******************************************************************************/
 
-void gpio_init(uint32_t device_id)
+int gpio_init(struct ad9361_rf_phy *phy, void *userdata)
 {
-
-}
-
-/***************************************************************************//**
- * @brief gpio_direction
-*******************************************************************************/
-
-void gpio_direction(uint8_t pin, uint8_t direction)
-{
-
+    return 0;
 }
 
 /***************************************************************************//**
  * @brief gpio_is_valid
 *******************************************************************************/
 
-bool gpio_is_valid(int number)
+bool gpio_is_valid(struct gpio_device *gpio, int32_t number)
 {
 	return 0;
 }
 
 /***************************************************************************//**
- * @brief gpio_data
-*******************************************************************************/
-
-void gpio_data(uint8_t pin, uint8_t data)
-{
-
-}
-
-/***************************************************************************//**
  * @brief gpio_set_value
 *******************************************************************************/
-void gpio_set_value(unsigned gpio, int value)
+
+int gpio_set_value(struct gpio_device *gpio, int32_t number, bool value)
 {
 
 }
@@ -79,24 +55,27 @@ void gpio_set_value(unsigned gpio, int value)
 /***************************************************************************//**
  * @brief udelay
 *******************************************************************************/
+
 void udelay(unsigned long usecs)
 {
-	usleep(usecs);
+    usleep(usecs);
 }
 
 /***************************************************************************//**
  * @brief mdelay
 *******************************************************************************/
+
 void mdelay(unsigned long msecs)
 {
-	usleep(msecs * 1000);
+    usleep(msecs * 1000);
 }
 
 /***************************************************************************//**
  * @brief msleep_interruptible
 *******************************************************************************/
+
 unsigned long msleep_interruptible(unsigned int msecs)
 {
-	usleep(msecs * 1000);
-	return 0;
+    usleep(msecs * 1000);
+    return 0;
 }
