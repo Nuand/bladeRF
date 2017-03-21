@@ -213,6 +213,11 @@ static int dummy_lms_read(struct bladerf *dev, uint8_t addr, uint8_t *data)
     return 0;
 }
 
+int dummy_ad9361_spi(struct bladerf *dev, uint16_t cmd, uint8_t *data, size_t len)
+{
+    return 0;
+}
+
 static int dummy_vctcxo_dac_write(struct bladerf *dev, uint16_t value)
 {
     return 0;
@@ -364,6 +369,8 @@ const struct backend_fns backend_fns_dummy = {
 
     FIELD_INIT(.lms_write, dummy_lms_write),
     FIELD_INIT(.lms_read, dummy_lms_read),
+
+    FIELD_INIT(.ad9361_spi, dummy_ad9361_spi),
 
     FIELD_INIT(.vctcxo_dac_write, dummy_vctcxo_dac_write),
     FIELD_INIT(.vctcxo_dac_read,  dummy_vctcxo_dac_read),

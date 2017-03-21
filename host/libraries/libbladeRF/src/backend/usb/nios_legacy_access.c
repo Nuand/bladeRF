@@ -361,6 +361,13 @@ int nios_legacy_lms6_write(struct bladerf *dev, uint8_t addr, uint8_t data)
     return status;
 }
 
+int nios_legacy_ad9361_spi(struct bladerf *dev, uint16_t cmd,
+                           uint8_t *data, size_t len)
+{
+    log_debug("This operation is not supported by the legacy NIOS packet format\n");
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
 int nios_legacy_vctcxo_trim_dac_write(struct bladerf *dev, uint16_t value)
 {
     int status;
