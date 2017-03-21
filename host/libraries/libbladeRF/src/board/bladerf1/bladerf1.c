@@ -39,6 +39,7 @@
 
 #include "driver/smb_clock.h"
 #include "driver/si5338.h"
+#include "driver/dac161s055.h"
 #include "driver/spi_flash.h"
 #include "driver/fpga_trigger.h"
 #include "driver/fx3_fw.h"
@@ -378,7 +379,7 @@ static int bladerf1_initialize(struct bladerf *dev)
         }
 
         /* Set the calibrated VCTCXO DAC value */
-        status = dev->backend->vctcxo_dac_write(dev, board_data->dac_trim);
+        status = dac161s055_write(dev, board_data->dac_trim);
         if (status != 0) {
             return status;
         }
@@ -2650,7 +2651,7 @@ int bladerf_dac_write(struct bladerf *dev, uint16_t val)
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = dev->backend->vctcxo_dac_write(dev, val);
+    status = dac161s055_write(dev, val);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
@@ -2669,7 +2670,7 @@ int bladerf_dac_read(struct bladerf *dev, uint16_t *val)
         goto exit;
     }
 
-    status = dev->backend->vctcxo_dac_read(dev, val);
+    status = dac161s055_read(dev, val);
 
 exit:
     MUTEX_UNLOCK(&dev->lock);

@@ -218,12 +218,12 @@ int dummy_ad9361_spi(struct bladerf *dev, uint16_t cmd, uint8_t *data, size_t le
     return 0;
 }
 
-static int dummy_vctcxo_dac_write(struct bladerf *dev, uint16_t value)
+static int dummy_vctcxo_dac_write(struct bladerf *dev, uint8_t addr, uint16_t value)
 {
     return 0;
 }
 
-static int dummy_vctcxo_dac_read(struct bladerf *dev, uint16_t *value)
+static int dummy_vctcxo_dac_read(struct bladerf *dev, uint8_t addr, uint16_t *value)
 {
     return 0;
 }

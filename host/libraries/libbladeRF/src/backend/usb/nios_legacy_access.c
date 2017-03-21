@@ -368,11 +368,17 @@ int nios_legacy_ad9361_spi(struct bladerf *dev, uint16_t cmd,
     return BLADERF_ERR_UNSUPPORTED;
 }
 
-int nios_legacy_vctcxo_trim_dac_write(struct bladerf *dev, uint16_t value)
+int nios_legacy_vctcxo_trim_dac_write(struct bladerf *dev, uint8_t addr, uint16_t value)
 {
     int status;
     struct uart_cmd cmd;
     int base;
+
+    /* Only pass through writes of the DAC value, for compatibility with
+     * dac161s055 driver */
+    if (addr != 0x08) {
+        return 0;
+    }
 
     /* FPGA v0.0.4 introduced a change to the location of the DAC registers */
     const bool legacy_location =

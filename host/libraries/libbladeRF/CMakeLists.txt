@@ -272,6 +272,7 @@ set(LIBBLADERF_SOURCE
         src/driver/fx3_fw.c
         src/driver/fpga_trigger.c
         src/driver/si5338.c
+        src/driver/dac161s055.c
         src/driver/smb_clock.c
         src/driver/thirdparty/adi/ad9361.c
         src/driver/thirdparty/adi/ad9361_api.c

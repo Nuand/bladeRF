@@ -469,35 +469,14 @@ int nios_ad9361_spi(struct bladerf *dev, uint16_t cmd,
     return 0;
 }
 
-int nios_vctcxo_trim_dac_write(struct bladerf *dev, uint16_t value)
+int nios_vctcxo_trim_dac_write(struct bladerf *dev, uint8_t addr, uint16_t value)
 {
-    int status;
-
-    /* Ensure device is in write-through mode */
-    status = nios_8x16_write(dev, NIOS_PKT_8x16_TARGET_VCTCXO_DAC, 0x28, 0);
-    if (status == 0) {
-        /* Write DAC value to channel 0 */
-        status = nios_8x16_write(dev, NIOS_PKT_8x16_TARGET_VCTCXO_DAC,
-                                 0x08, value);
-
-        log_verbose("%s: Wrote 0x%04x\n", __FUNCTION__, value);
-    }
-
-    return status;
+    return nios_8x16_write(dev, NIOS_PKT_8x16_TARGET_VCTCXO_DAC, addr, value);
 }
 
-int nios_vctcxo_trim_dac_read(struct bladerf *dev, uint16_t *value)
+int nios_vctcxo_trim_dac_read(struct bladerf *dev, uint8_t addr, uint16_t *value)
 {
-    int status;
-
-    status = nios_8x16_read(dev, NIOS_PKT_8x16_TARGET_VCTCXO_DAC, 0x98, value);
-    if (status != 0) {
-        *value = 0;
-    } else {
-        log_verbose("%s: Read 0x%04x\n", __FUNCTION__, *value);
-    }
-
-    return status;
+    return nios_8x16_read(dev, NIOS_PKT_8x16_TARGET_VCTCXO_DAC, addr, value);
 }
 
 int nios_set_vctcxo_tamer_mode(struct bladerf *dev,

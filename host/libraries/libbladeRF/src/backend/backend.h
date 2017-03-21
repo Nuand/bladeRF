@@ -159,8 +159,8 @@ struct backend_fns {
     int (*ad9361_spi)(struct bladerf *dev, uint16_t cmd, uint8_t *data, size_t len);
 
     /* VCTCXO accessors */
-    int (*vctcxo_dac_write)(struct bladerf *dev, uint16_t value);
-    int (*vctcxo_dac_read)(struct bladerf *dev, uint16_t *value);
+    int (*vctcxo_dac_write)(struct bladerf *dev, uint8_t addr, uint16_t value);
+    int (*vctcxo_dac_read)(struct bladerf *dev, uint8_t addr, uint16_t *value);
 
     int (*set_vctcxo_tamer_mode)(struct bladerf *dev,
                                  bladerf_vctcxo_tamer_mode mode);

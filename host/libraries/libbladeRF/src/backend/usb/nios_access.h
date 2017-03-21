@@ -139,24 +139,26 @@ int nios_lms6_write(struct bladerf *dev, uint8_t addr, uint8_t data);
 int nios_ad9361_spi(struct bladerf *dev, uint16_t cmd, uint8_t *data, size_t len);
 
 /**
- * Write to VCTCXO trim DAC
+ * Write to a VCTCXO trim DAC register.
  *
  * @param[in]   dev         Device handle
- * @param[in]   value       VCTCXO trim DAC value to write
+ * @param[in]   addr        Register
+ * @param[in]   value       Value
  *
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
-int nios_vctcxo_trim_dac_write(struct bladerf *dev, uint16_t value);
+int nios_vctcxo_trim_dac_write(struct bladerf *dev, uint8_t addr, uint16_t value);
 
 /**
- * Read the current VCTCXO trim DAC value
+ * Read from a VCTCXO trim DAC register.
  *
  * @param[in]   dev         Device handle
- * @param[out]  value       On success, updated with VCTCXO value
+ * @param[in]   addr        Register
+ * @param[out]  value       Data
  *
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
-int nios_vctcxo_trim_dac_read(struct bladerf *dev, uint16_t *value);
+int nios_vctcxo_trim_dac_read(struct bladerf *dev, uint8_t addr, uint16_t *value);
 
 /**
  * Write VCTCXO tamer mode selection
