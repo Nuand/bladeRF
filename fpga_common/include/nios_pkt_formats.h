@@ -29,6 +29,7 @@
 #include "nios_pkt_8x32.h"
 #include "nios_pkt_8x64.h"
 #include "nios_pkt_32x32.h"
+#include "nios_pkt_16x64.h"
 
 #define NIOS_PKT_LEN 16
 
