@@ -19,8 +19,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef VERSION_COMPAT_H_
-#define VERSION_COMPAT_H_
+#ifndef __VERSION_HELPERS_H__
+#define __VERSION_HELPERS_H__
 
 #include <libbladeRF.h>
 
@@ -87,5 +87,56 @@ bool version_fields_greater_or_equal(const struct bladerf_version *version,
 bool version_fields_less_than(const struct bladerf_version *version,
                               unsigned int major, unsigned int minor,
                               unsigned int patch);
+
+
+/* Version compatibility table structure. */
+struct version_compat_table {
+    const struct compat {
+        struct bladerf_version ver;
+        struct bladerf_version requires;
+    } *table;
+    unsigned int len;
+};
+
+/**
+ * Check if the firmware version is sufficient for the current libbladeRF
+ * version. If it's not, the user will need to use the bootloader to flash a
+ * newer version.
+ *
+ * @param[in]   fw_compat_table         Firmware-FPGA version compat. table
+ * @param[in]   fw_version              Firmware version
+ * @param[out]  required_fw_version     If not-NULL, populated with minimum
+ *                                      required firmware version
+ *
+ * @return  0 if the FW version is sufficient for normal operation,
+ *          BLADERF_ERR_UPDATE_FW if a firmware update is required.
+ */
+int version_check_fw(const struct version_compat_table *fw_compat_table,
+                     const struct bladerf_version *fw_version,
+                     struct bladerf_version *required_fw_version);
+
+/**
+ * Check if the firmware and FPGA versions are sufficient and compatible.
+ *
+ * @param[in]   fw_compat_table         Firmware-FPGA version compat. table
+ * @param[in]   fpga_compat_table       FPGA-Firmware version compat. table
+ * @param[in]   fw_version              Firmware version
+ * @param[in]   fpga_version            Firmware version
+ * @param[out]  required_fw_version     If not-NULL, populated with minimum
+ *                                      required firmware version
+ * @param[out]  required_fpga_version   If not-NULL, populated with minimum
+ *                                      required FPGA version
+ *
+ * @return  0 if the FPGA version is sufficient for normal operation,
+ *          BLADERF_ERR_UPDATE_FPGA if the firmware requires a newer FPGA,
+ *          BLADERF_ERR_UPDATE_FW if a firmware update is required to support
+ *          the currently loaded FPGA.
+ */
+int version_check(const struct version_compat_table *fw_compat_table,
+                  const struct version_compat_table *fpga_compat_table,
+                  const struct bladerf_version *fw_version,
+                  const struct bladerf_version *fpga_version,
+                  struct bladerf_version *required_fw_version,
+                  struct bladerf_version *required_fpga_version);
 
 #endif

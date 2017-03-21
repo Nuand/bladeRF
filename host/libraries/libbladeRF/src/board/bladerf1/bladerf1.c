@@ -513,7 +513,8 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     }
 
     /* Verify that we have a sufficent firmware version before continuing. */
-    status = bladerf1_version_check_fw(&board_data->fw_version, &required_fw_version);
+    status = version_check_fw(&bladerf1_fw_compat_table,
+                              &board_data->fw_version, &required_fw_version);
     if (status != 0) {
 #ifdef LOGGING_ENABLED
         if (status == BLADERF_ERR_UPDATE_FW) {
@@ -641,8 +642,9 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
      * If an error code caused this function to bail out, it would prevent a
      * user from being able to unload and reflash a bitstream being
      * "autoloaded" from SPI flash. */
-    status = bladerf1_version_check(&board_data->fw_version, &board_data->fpga_version,
-                                    &required_fw_version, &required_fpga_version);
+    status = version_check(&bladerf1_fw_compat_table, &bladerf1_fpga_compat_table,
+                           &board_data->fw_version, &board_data->fpga_version,
+                           &required_fw_version, &required_fpga_version);
     if (status < 0) {
 #if LOGGING_ENABLED
         if (status == BLADERF_ERR_UPDATE_FPGA) {
@@ -1778,8 +1780,9 @@ static int bladerf1_load_fpga(struct bladerf *dev, const uint8_t *buf, size_t le
     }
     log_verbose("Read FPGA version: %s\n", board_data->fpga_version.describe);
 
-    status = bladerf1_version_check(&board_data->fw_version, &board_data->fpga_version,
-                                    &required_fw_version, &required_fpga_version);
+    status = version_check(&bladerf1_fw_compat_table, &bladerf1_fpga_compat_table,
+                           &board_data->fw_version, &board_data->fpga_version,
+                           &required_fw_version, &required_fpga_version);
     if (status != 0) {
 #if LOGGING_ENABLED
         if (status == BLADERF_ERR_UPDATE_FPGA) {

@@ -866,8 +866,9 @@ static int bladerf2_load_fpga(struct bladerf *dev, const uint8_t *buf, size_t le
     }
     log_verbose("Read FPGA version: %s\n", board_data->fpga_version.describe);
 
-    status = bladerf2_version_check(&board_data->fw_version, &board_data->fpga_version,
-                                    &required_fw_version, &required_fpga_version);
+    status = version_check(&bladerf2_fw_compat_table, &bladerf2_fpga_compat_table,
+                           &board_data->fw_version, &board_data->fpga_version,
+                           &required_fw_version, &required_fpga_version);
     if (status != 0) {
 #if LOGGING_ENABLED
         if (status == BLADERF_ERR_UPDATE_FPGA) {
