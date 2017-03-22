@@ -135,25 +135,18 @@ struct usb_fns {
 
     int (*open_bootloader)(void **driver, uint8_t bus, uint8_t addr);
     void (*close_bootloader)(void *driver);
+
+    bladerf_backend id;
 };
 
 struct usb_driver {
-    const bladerf_backend id;
     const struct usb_fns *fn;
+    bladerf_backend id;
 };
 
 struct bladerf_usb {
     const struct usb_fns *fn;
     void *driver;
 };
-
-static inline struct bladerf_usb *usb_backend(struct bladerf *dev, void **driver)
-{
-    struct bladerf_usb *ret = (struct bladerf_usb*)dev->backend_data;
-    if (driver) {
-        *driver = ret->driver;
-    }
-    return ret;
-}
 
 #endif

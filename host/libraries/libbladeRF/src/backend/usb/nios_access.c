@@ -62,14 +62,13 @@ static void print_buf(const char *msg, const uint8_t *buf, size_t len)
 /* Buf is assumed to be NIOS_PKT_LEN bytes */
 static int nios_access(struct bladerf *dev, uint8_t *buf)
 {
+    struct bladerf_usb *usb = dev->backend_data;
     int status;
-    void *driver;
-    struct bladerf_usb *usb = usb_backend(dev, &driver);
 
     print_buf("NIOS II request:\n", buf, NIOS_PKT_LEN);
 
     /* Send the command */
-    status = usb->fn->bulk_transfer(driver, PERIPHERAL_EP_OUT,
+    status = usb->fn->bulk_transfer(usb->driver, PERIPHERAL_EP_OUT,
                                      buf, NIOS_PKT_LEN,
                                      PERIPHERAL_TIMEOUT_MS);
     if (status != 0) {
@@ -79,7 +78,7 @@ static int nios_access(struct bladerf *dev, uint8_t *buf)
     }
 
     /* Retrieve the request */
-    status = usb->fn->bulk_transfer(driver, PERIPHERAL_EP_IN,
+    status = usb->fn->bulk_transfer(usb->driver, PERIPHERAL_EP_IN,
                                     buf, NIOS_PKT_LEN,
                                     PERIPHERAL_TIMEOUT_MS);
 

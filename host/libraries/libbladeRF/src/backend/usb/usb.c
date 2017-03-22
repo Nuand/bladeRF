@@ -57,10 +57,9 @@ const struct backend_fns backend_fns_usb_legacy;
 static inline int vendor_cmd_int_windex(struct bladerf *dev, uint8_t cmd,
                                         uint16_t windex, int32_t *val)
 {
-    void *driver;
-    struct bladerf_usb *usb = usb_backend(dev, &driver);
+    struct bladerf_usb *usb = dev->backend_data;
 
-    return usb->fn->control_transfer(driver,
+    return usb->fn->control_transfer(usb->driver,
                                       USB_TARGET_DEVICE,
                                       USB_REQUEST_VENDOR,
                                       USB_DIR_DEVICE_TO_HOST,
@@ -73,10 +72,9 @@ static inline int vendor_cmd_int_windex(struct bladerf *dev, uint8_t cmd,
 static inline int vendor_cmd_int_wvalue(struct bladerf *dev, uint8_t cmd,
                                         uint16_t wvalue, int32_t *val)
 {
-    void *driver;
-    struct bladerf_usb *usb = usb_backend(dev, &driver);
+    struct bladerf_usb *usb = dev->backend_data;
 
-    return usb->fn->control_transfer(driver,
+    return usb->fn->control_transfer(usb->driver,
                                       USB_TARGET_DEVICE,
                                       USB_REQUEST_VENDOR,
                                       USB_DIR_DEVICE_TO_HOST,
@@ -90,10 +88,9 @@ static inline int vendor_cmd_int_wvalue(struct bladerf *dev, uint8_t cmd,
 static inline int vendor_cmd_int(struct bladerf *dev, uint8_t cmd,
                                  usb_direction dir, int32_t *val)
 {
-    void *driver;
-    struct bladerf_usb *usb = usb_backend(dev, &driver);
+    struct bladerf_usb *usb = dev->backend_data;
 
-    return usb->fn->control_transfer(driver,
+    return usb->fn->control_transfer(usb->driver,
                                       USB_TARGET_DEVICE,
                                       USB_REQUEST_VENDOR,
                                       dir, cmd, 0, 0,
@@ -104,12 +101,11 @@ static inline int vendor_cmd_int(struct bladerf *dev, uint8_t cmd,
 static inline int change_setting(struct bladerf *dev, uint8_t setting)
 {
     int status;
-    void *driver;
-    struct bladerf_usb *usb = usb_backend(dev, &driver);
+    struct bladerf_usb *usb = dev->backend_data;
 
     log_verbose("Changing to USB alt setting %u\n", setting);
 
-    status = usb->fn->change_setting(driver, setting);
+    status = usb->fn->change_setting(usb->driver, setting);
     if (status != 0) {
         log_debug("Failed to change setting: %s\n", bladerf_strerror(status));
     }
@@ -211,20 +207,19 @@ static int usb_probe(backend_probe_target probe_target,
 static void usb_close(struct bladerf *dev)
 {
     int status;
-    void *driver;
-    struct bladerf_usb *usb = usb_backend(dev, &driver);
+    struct bladerf_usb *usb = dev->backend_data;
 
     if (usb != NULL) {
         /* It seems we need to switch back to our NULL interface before closing,
          * or else our device doesn't close upon exit in OSX and then fails to
          * re-open cleanly */
-        status = usb->fn->change_setting(driver, USB_IF_NULL);
+        status = usb->fn->change_setting(usb->driver, USB_IF_NULL);
         if (status != 0) {
             log_error("Failed to switch to NULL interface: %s\n",
                     bladerf_strerror(status));
         }
 
-        usb->fn->close(driver);
+        usb->fn->close(usb->driver);
         free(usb);
         dev->backend_data = NULL;
     }
@@ -250,11 +245,10 @@ static int usb_is_fw_ready(struct bladerf *dev)
 static int usb_get_fw_version(struct bladerf *dev,
                               struct bladerf_version *version)
 {
-    void *driver;
-    struct bladerf_usb *usb = usb_backend(dev, &driver);
+    struct bladerf_usb *usb = dev->backend_data;
     int status;
 
-    status = usb->fn->get_string_descriptor(driver,
+    status = usb->fn->get_string_descriptor(usb->driver,
                                             BLADE_USB_STR_INDEX_FW_VER,
                                             (unsigned char *)version->describe,
                                             BLADERF_VERSION_STR_MAX);
@@ -293,33 +287,40 @@ static int usb_open(struct bladerf *dev, struct bladerf_devinfo *info)
 {
     int status;
     size_t i;
-    struct bladerf_usb *usb = (struct bladerf_usb*) malloc(sizeof(*usb));
+    struct bladerf_usb *usb;
 
+    usb = malloc(sizeof(*usb));
     if (usb == NULL) {
         return BLADERF_ERR_MEM;
+    }
+
+    /* Try each matching usb driver */
+    for (i = 0; i < ARRAY_SIZE(usb_driver_list); i++) {
+        if (info->backend == BLADERF_BACKEND_ANY
+                || usb_driver_list[i]->id == info->backend) {
+            usb->fn = usb_driver_list[i]->fn;
+            status = usb->fn->open(&usb->driver, info, &dev->ident);
+            if (status == 0) {
+                break;
+            } else if (status == BLADERF_ERR_NODEV) {
+                continue;
+            } else {
+                free(usb);
+                return status;
+            }
+        }
+    }
+
+    /* If no usb driver was found */
+    if (i == ARRAY_SIZE(usb_driver_list)) {
+        free(usb);
+        return BLADERF_ERR_NODEV;
     }
 
     /* Default to legacy-mode access until we determine the FPGA is
      * capable of handling newer request formats */
     dev->backend = &backend_fns_usb_legacy;
     dev->backend_data = usb;
-
-    status = BLADERF_ERR_NODEV;
-    for (i = 0; i < ARRAY_SIZE(usb_driver_list) && status == BLADERF_ERR_NODEV; i++) {
-        if (info->backend == BLADERF_BACKEND_ANY ||
-            usb_driver_list[i]->id == info->backend) {
-
-            usb->fn = usb_driver_list[i]->fn;
-            status = usb->fn->open(&usb->driver, info, &dev->ident);
-        }
-    }
-
-    if (status != 0) {
-        free(usb);
-        dev->backend_data = NULL;
-        dev->backend = NULL;
-        return status;
-    }
 
     /* Just out of paranoia, put the device into a known state */
     status = change_setting(dev, USB_IF_NULL);
@@ -354,8 +355,7 @@ static int begin_fpga_programming(struct bladerf *dev)
 
 static int usb_load_fpga(struct bladerf *dev, const uint8_t *image, size_t image_size)
 {
-    void *driver;
-    struct bladerf_usb *usb = usb_backend(dev, &driver);
+    struct bladerf_usb *usb = dev->backend_data;
 
     unsigned int wait_count;
     const unsigned int timeout_ms = (2 * CTRL_TIMEOUT_MS);
@@ -379,8 +379,10 @@ static int usb_load_fpga(struct bladerf *dev, const uint8_t *image, size_t image
 
     /* Send the file down */
     assert(image_size <= UINT32_MAX);
-    status = usb->fn->bulk_transfer(driver, PERIPHERAL_EP_OUT, (void *)image,
-                                    (uint32_t)image_size, timeout_ms);
+    status = usb->fn->bulk_transfer(usb->driver, PERIPHERAL_EP_OUT,
+                                    (void *)image,
+                                    (uint32_t)image_size,
+                                    timeout_ms);
     if (status < 0) {
         log_debug("Failed to write FPGA bitstream to FPGA: %s\n",
                   bladerf_strerror(status));
@@ -417,10 +419,9 @@ static int usb_load_fpga(struct bladerf *dev, const uint8_t *image, size_t image
 static inline int perform_erase(struct bladerf *dev, uint16_t block)
 {
     int status, erase_ret;
-    void *driver;
-    struct bladerf_usb *usb = usb_backend(dev, &driver);
+    struct bladerf_usb *usb = dev->backend_data;
 
-    status = usb->fn->control_transfer(driver,
+    status = usb->fn->control_transfer(usb->driver,
                                         USB_TARGET_DEVICE,
                                         USB_REQUEST_VENDOR,
                                         USB_DIR_DEVICE_TO_HOST,
@@ -467,8 +468,7 @@ error:
 static inline int read_page(struct bladerf *dev, uint8_t read_operation,
                             uint16_t page, uint8_t *buf)
 {
-    void *driver;
-    struct bladerf_usb *usb = usb_backend(dev, &driver);
+    struct bladerf_usb *usb = dev->backend_data;
     bladerf_dev_speed usb_speed;
     int status;
     int32_t op_status;
@@ -476,7 +476,7 @@ static inline int read_page(struct bladerf *dev, uint8_t read_operation,
     uint16_t offset;
     uint8_t request;
 
-    if (usb->fn->get_speed(driver, &usb_speed) != 0) {
+    if (usb->fn->get_speed(usb->driver, &usb_speed) != 0) {
         log_debug("Error getting USB speed in %s\n", __FUNCTION__);
         return BLADERF_ERR_UNEXPECTED;
     }
@@ -514,7 +514,7 @@ static inline int read_page(struct bladerf *dev, uint8_t read_operation,
 
     /* Retrieve data from the firmware page buffer */
     for (offset = 0; offset < BLADERF_FLASH_PAGE_SIZE; offset += read_size) {
-        status = usb->fn->control_transfer(driver,
+        status = usb->fn->control_transfer(usb->driver,
                                            USB_TARGET_DEVICE,
                                            USB_REQUEST_VENDOR,
                                            USB_DIR_DEVICE_TO_HOST,
@@ -582,11 +582,10 @@ static int write_page(struct bladerf *dev, uint16_t page, const uint8_t *buf)
     int32_t commit_status;
     uint16_t offset;
     uint16_t write_size;
-    void *driver;
-    struct bladerf_usb *usb = usb_backend(dev, &driver);
+    struct bladerf_usb *usb = dev->backend_data;
     bladerf_dev_speed usb_speed;
 
-    if (usb->fn->get_speed(driver, &usb_speed) != 0) {
+    if (usb->fn->get_speed(usb->driver, &usb_speed) != 0) {
         log_debug("Error getting USB speed in %s\n", __FUNCTION__);
         return BLADERF_ERR_UNEXPECTED;
     }
@@ -604,7 +603,7 @@ static int write_page(struct bladerf *dev, uint16_t page, const uint8_t *buf)
      * Casting away the buffer's const-ness here is gross, but this buffer
      * will not be written to on an out transfer. */
     for (offset = 0; offset < BLADERF_FLASH_PAGE_SIZE; offset += write_size) {
-        status = usb->fn->control_transfer(driver,
+        status = usb->fn->control_transfer(usb->driver,
                                             USB_TARGET_DEVICE,
                                             USB_REQUEST_VENDOR,
                                             USB_DIR_HOST_TO_DEVICE,
@@ -691,10 +690,9 @@ error:
 
 static int usb_device_reset(struct bladerf *dev)
 {
-    void *driver;
-    struct bladerf_usb *usb = usb_backend(dev, &driver);
+    struct bladerf_usb *usb = dev->backend_data;
 
-    return usb->fn->control_transfer(driver, USB_TARGET_DEVICE,
+    return usb->fn->control_transfer(usb->driver, USB_TARGET_DEVICE,
                                       USB_REQUEST_VENDOR,
                                       USB_DIR_HOST_TO_DEVICE,
                                       BLADE_USB_CMD_RESET,
@@ -704,10 +702,9 @@ static int usb_device_reset(struct bladerf *dev)
 
 static int usb_jump_to_bootloader(struct bladerf *dev)
 {
-    void *driver;
-    struct bladerf_usb *usb = usb_backend(dev, &driver);
+    struct bladerf_usb *usb = dev->backend_data;
 
-    return usb->fn->control_transfer(driver, USB_TARGET_DEVICE,
+    return usb->fn->control_transfer(usb->driver, USB_TARGET_DEVICE,
                                       USB_REQUEST_VENDOR,
                                       USB_DIR_HOST_TO_DEVICE,
                                       BLADE_USB_CMD_JUMP_TO_BOOTLOADER,
@@ -750,10 +747,9 @@ static int usb_get_otp(struct bladerf *dev, char *otp)
 
 static int usb_get_device_speed(struct bladerf *dev, bladerf_dev_speed *speed)
 {
-    void *driver;
-    struct bladerf_usb *usb = usb_backend(dev, &driver);
+    struct bladerf_usb *usb = dev->backend_data;
 
-    return usb->fn->get_speed(driver, speed);
+    return usb->fn->get_speed(usb->driver, speed);
 }
 
 static int usb_set_firmware_loopback(struct bladerf *dev, bool enable) {
@@ -828,32 +824,28 @@ static int usb_enable_module(struct bladerf *dev, bladerf_module m, bool enable)
 
 static int usb_init_stream(struct bladerf_stream *stream, size_t num_transfers)
 {
-    void *driver;
-    struct bladerf_usb *usb = usb_backend(stream->dev, &driver);
-    return usb->fn->init_stream(driver, stream, num_transfers);
+    struct bladerf_usb *usb = stream->dev->backend_data;
+    return usb->fn->init_stream(usb->driver, stream, num_transfers);
 }
 
 static int usb_stream(struct bladerf_stream *stream, bladerf_module module)
 {
-    void *driver;
-    struct bladerf_usb *usb = usb_backend(stream->dev, &driver);
-    return usb->fn->stream(driver, stream, module);
+    struct bladerf_usb *usb = stream->dev->backend_data;
+    return usb->fn->stream(usb->driver, stream, module);
 }
 
 int usb_submit_stream_buffer(struct bladerf_stream *stream, void *buffer,
                              unsigned int timeout_ms, bool nonblock)
 {
-    void *driver;
-    struct bladerf_usb *usb = usb_backend(stream->dev, &driver);
-    return usb->fn->submit_stream_buffer(driver, stream, buffer,
+    struct bladerf_usb *usb = stream->dev->backend_data;
+    return usb->fn->submit_stream_buffer(usb->driver, stream, buffer,
                                          timeout_ms, nonblock);
 }
 
 static void usb_deinit_stream(struct bladerf_stream *stream)
 {
-    void *driver;
-    struct bladerf_usb *usb = usb_backend(stream->dev, &driver);
-    usb->fn->deinit_stream(driver, stream);
+    struct bladerf_usb *usb = stream->dev->backend_data;
+    usb->fn->deinit_stream(usb->driver, stream);
 }
 
 /*
@@ -1049,11 +1041,10 @@ static int usb_read_fw_log(struct bladerf *dev, logger_entry *e)
 
 static int config_gpio_write(struct bladerf *dev, uint32_t val)
 {
-    void *driver;
-    struct bladerf_usb *usb = usb_backend(dev, &driver);
+    struct bladerf_usb *usb = dev->backend_data;
     bladerf_dev_speed usb_speed;
 
-    if (usb->fn->get_speed(driver, &usb_speed) != 0) {
+    if (usb->fn->get_speed(usb->driver, &usb_speed) != 0) {
         log_debug("Error getting USB speed in %s\n", __FUNCTION__);
         return BLADERF_ERR_UNEXPECTED;
     }
@@ -1082,11 +1073,10 @@ static int set_agc_dc_correction_unsupported(struct bladerf *dev,
 
 static int legacy_config_gpio_write(struct bladerf *dev, uint32_t val)
 {
-    void *driver;
-    struct bladerf_usb *usb = usb_backend(dev, &driver);
+    struct bladerf_usb *usb = dev->backend_data;
     bladerf_dev_speed usb_speed;
 
-    if (usb->fn->get_speed(driver, &usb_speed) != 0) {
+    if (usb->fn->get_speed(usb->driver, &usb_speed) != 0) {
         log_debug("Error getting USB speed in %s\n", __FUNCTION__);
         return BLADERF_ERR_UNEXPECTED;
     }

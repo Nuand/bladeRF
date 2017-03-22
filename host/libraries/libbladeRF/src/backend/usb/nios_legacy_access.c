@@ -75,8 +75,7 @@ static int nios_access(struct bladerf *dev, uint8_t peripheral,
                        usb_direction dir, struct uart_cmd *cmd,
                        size_t len)
 {
-    void *driver;
-    struct bladerf_usb *usb = usb_backend(dev, &driver);
+    struct bladerf_usb *usb = dev->backend_data;
 
     int status;
     size_t i;
@@ -99,7 +98,7 @@ static int nios_access(struct bladerf *dev, uint8_t peripheral,
     print_buf("NIOS II access request:\n", buf, 16);
 
     /* Send the command */
-    status = usb->fn->bulk_transfer(driver, PERIPHERAL_EP_OUT,
+    status = usb->fn->bulk_transfer(usb->driver, PERIPHERAL_EP_OUT,
                                      buf, sizeof(buf),
                                      PERIPHERAL_TIMEOUT_MS);
     if (status != 0) {
@@ -110,7 +109,7 @@ static int nios_access(struct bladerf *dev, uint8_t peripheral,
 
     /* Read back the ACK. The command data is only used for a read operation,
      * and is thrown away otherwise */
-    status = usb->fn->bulk_transfer(driver, PERIPHERAL_EP_IN,
+    status = usb->fn->bulk_transfer(usb->driver, PERIPHERAL_EP_IN,
                                     buf, sizeof(buf),
                                     PERIPHERAL_TIMEOUT_MS);
 
