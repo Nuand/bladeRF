@@ -257,6 +257,7 @@ int bladerf_open_with_devinfo(struct bladerf **opened_device,
 {
     struct bladerf *dev;
     struct bladerf_devinfo any_device;
+    unsigned int i;
     int status;
 
     if (devinfo == NULL) {
@@ -271,22 +272,48 @@ int bladerf_open_with_devinfo(struct bladerf **opened_device,
         return BLADERF_ERR_MEM;
     }
 
-    /* FIXME add board discovery */
-    dev->board = &bladerf1_board_fns;
+    /* Open backend */
+    status = backend_open(dev, devinfo);
+    if (status != 0) {
+        free(dev);
+        return status;
+    }
+
+    /* Find matching board */
+    for (i = 0; i < bladerf_boards_len; i++) {
+        if (bladerf_boards[i]->matches(dev)) {
+            dev->board = bladerf_boards[i];
+            break;
+        }
+    }
+    /* If no matching borad was found */
+    if (i == bladerf_boards_len) {
+        dev->backend->close(dev);
+        free(dev);
+        return BLADERF_ERR_NODEV;
+    }
 
     MUTEX_INIT(&dev->lock);
 
+    /* Open board */
     status = dev->board->open(dev, devinfo);
 
     if (status < 0) {
         bladerf_close(dev);
-    } else {
-        *opened_device = dev;
+        return status;
     }
 
+    /* Load configuration file */
     status = config_load_options_file(dev);
 
-    return status;
+    if (status < 0) {
+        bladerf_close(dev);
+        return status;
+    }
+
+    *opened_device = dev;
+
+    return 0;
 }
 
 int bladerf_get_devinfo(struct bladerf *dev, struct bladerf_devinfo *info)
@@ -305,8 +332,15 @@ void bladerf_close(struct bladerf *dev)
 {
     if (dev) {
         MUTEX_LOCK(&dev->lock);
+
         dev->board->close(dev);
+
+        if (dev->backend) {
+            dev->backend->close(dev);
+        }
+
         MUTEX_UNLOCK(&dev->lock);
+
         free(dev);
     }
 }

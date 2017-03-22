@@ -29,6 +29,7 @@
 #define LOGGER_ID_STRING
 #include "logger_id.h"
 #include "logger_entry.h"
+#include "bladeRF.h"
 
 #include "board/board.h"
 
@@ -48,6 +49,7 @@
 #include "band_select.h"
 
 #include "backend/usb/usb.h"
+#include "backend/backend_config.h"
 
 #include "expansion/xb100.h"
 #include "expansion/xb200.h"
@@ -410,6 +412,33 @@ static int bladerf1_initialize(struct bladerf *dev)
  ******************************************************************************/
 
 /******************************************************************************/
+/* Matches */
+/******************************************************************************/
+
+static bool bladerf1_matches(struct bladerf *dev)
+{
+    struct bladerf_usb *usb;
+    uint16_t vid, pid;
+    int status;
+
+    if (strcmp(dev->backend->name, "usb") != 0)
+        return false;
+
+    usb = dev->backend_data;
+
+    status = usb->fn->get_vid_pid(usb->driver, &vid, &pid);
+    if (status < 0)
+        return false;
+
+    if (vid == USB_NUAND_VENDOR_ID && pid == USB_NUAND_BLADERF_PRODUCT_ID)
+        return true;
+    else if (vid == USB_NUAND_LEGACY_VENDOR_ID && pid == USB_NUAND_BLADERF_LEGACY_PRODUCT_ID)
+        return true;
+
+    return false;
+}
+
+/******************************************************************************/
 /* Open/close */
 /******************************************************************************/
 
@@ -436,14 +465,6 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
 
     board_data->module_format[BLADERF_MODULE_RX] = -1;
     board_data->module_format[BLADERF_MODULE_TX] = -1;
-
-    /* Open backend */
-    status = backend_open(dev, devinfo);
-    if (status != 0) {
-        free(board_data);
-        dev->board_data = NULL;
-        return status;
-    }
 
     /* Read firmware version */
     status = dev->backend->get_fw_version(dev, &board_data->fw_version);
@@ -764,10 +785,6 @@ static void bladerf1_close(struct bladerf *dev)
         dc_cal_tbl_free(&board_data->cal.dc_tx);
 
         free(board_data);
-    }
-
-    if (dev->backend) {
-        dev->backend->close(dev);
     }
 }
 
@@ -2130,6 +2147,7 @@ static int bladerf1_expansion_get_attached(struct bladerf *dev, bladerf_xb *xb)
 /******************************************************************************/
 
 const struct board_fns bladerf1_board_fns = {
+    FIELD_INIT(.matches, bladerf1_matches),
     FIELD_INIT(.open, bladerf1_open),
     FIELD_INIT(.close, bladerf1_close),
     FIELD_INIT(.device_speed, bladerf1_device_speed),

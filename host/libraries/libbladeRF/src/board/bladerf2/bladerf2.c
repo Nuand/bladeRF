@@ -40,6 +40,7 @@
 #include "driver/fx3_fw.h"
 
 #include "backend/usb/usb.h"
+#include "backend/backend_config.h"
 
 #include "streaming/async.h"
 #include "streaming/sync.h"
@@ -131,6 +132,32 @@ static int bladerf2_initialize(struct bladerf *dev)
  ******************************************************************************/
 
 /******************************************************************************/
+/* Matches */
+/******************************************************************************/
+
+static bool bladerf2_matches(struct bladerf *dev)
+{
+    struct bladerf_usb *usb;
+    uint16_t vid, pid;
+    int status;
+
+    if (strcmp(dev->backend->name, "usb") != 0)
+        return false;
+
+    usb = dev->backend_data;
+
+    status = usb->fn->get_vid_pid(usb->driver, &vid, &pid);
+    if (status < 0)
+        return false;
+
+    log_info("found vid pid %04x %04x\n", vid, pid);
+
+    /* FIXME */
+
+    return true;
+}
+
+/******************************************************************************/
 /* Open/close */
 /******************************************************************************/
 
@@ -156,14 +183,6 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     /* Initialize board data */
     board_data->fpga_version.describe = board_data->fpga_version_str;
     board_data->fw_version.describe = board_data->fw_version_str;
-
-    /* Open backend */
-    status = backend_open(dev, devinfo);
-    if (status != 0) {
-        free(board_data);
-        dev->board_data = NULL;
-        return status;
-    }
 
     /* Read firmware version */
     status = dev->backend->get_fw_version(dev, &board_data->fw_version);
@@ -360,10 +379,6 @@ static void bladerf2_close(struct bladerf *dev)
         free(board_data->phy->clk_refin);
         free(board_data->phy->pdata);
         free(board_data->phy);
-    }
-
-    if (dev->backend) {
-        dev->backend->close(dev);
     }
 }
 
@@ -1034,6 +1049,7 @@ static int bladerf2_expansion_get_attached(struct bladerf *dev, bladerf_xb *xb)
 /******************************************************************************/
 
 const struct board_fns bladerf2_board_fns = {
+    FIELD_INIT(.matches, bladerf2_matches),
     FIELD_INIT(.open, bladerf2_open),
     FIELD_INIT(.close, bladerf2_close),
     FIELD_INIT(.device_speed, bladerf2_device_speed),

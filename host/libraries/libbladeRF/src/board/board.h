@@ -56,6 +56,9 @@ struct bladerf {
 };
 
 struct board_fns {
+    /* Board is compatible with backend */
+    bool (*matches)(struct bladerf *dev);
+
     /* Open/close */
     int (*open)(struct bladerf *dev, struct bladerf_devinfo *devinfo);
     void (*close)(struct bladerf *dev);
@@ -153,7 +156,7 @@ struct board_fns {
 };
 
 /* Boards */
-extern const struct board_fns bladerf1_board_fns;
-extern const struct board_fns bladerf2_board_fns;
+extern const struct board_fns *bladerf_boards[];
+extern const unsigned int bladerf_boards_len;
 
 #endif

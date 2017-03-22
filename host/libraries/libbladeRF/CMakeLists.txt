@@ -289,6 +289,7 @@ set(LIBBLADERF_SOURCE
         src/board/bladerf2/capabilities.c
         src/board/bladerf2/compatibility.c
         src/board/bladerf2/params.c
+        src/board/board.c
         src/expansion/xb100.c
         src/expansion/xb200.c
         src/expansion/xb300.c
