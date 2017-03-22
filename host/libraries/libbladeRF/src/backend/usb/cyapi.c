@@ -286,6 +286,17 @@ static void cyapi_close(void *driver)
 
 }
 
+static int cyapi_get_vid_pid(void *driver, uint16_t *vid,
+                             uint16_t *pid)
+{
+    CCyUSBDevice *dev = get_device(driver);
+
+    *vid = dev->VendorID;
+    *pid = dev->ProductID;
+
+    return 0;
+}
+
 static int cyapi_get_speed(void *driver,
                           bladerf_dev_speed *device_speed)
 {
@@ -798,6 +809,7 @@ extern "C" {
         FIELD_INIT(.probe, cyapi_probe),
         FIELD_INIT(.open, cyapi_open),
         FIELD_INIT(.close, cyapi_close),
+        FIELD_INIT(.get_vid_pid, cyapi_get_vid_pid),
         FIELD_INIT(.get_speed, cyapi_get_speed),
         FIELD_INIT(.change_setting, cyapi_change_setting),
         FIELD_INIT(.control_transfer, cyapi_control_transfer),

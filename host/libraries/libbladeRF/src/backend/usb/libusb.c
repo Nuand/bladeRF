@@ -772,6 +772,26 @@ error:
     return status;
 }
 
+static int lusb_get_vid_pid(void *driver, uint16_t *vid,
+                            uint16_t *pid)
+{
+    struct bladerf_lusb *lusb = (struct bladerf_lusb *)driver;
+    struct libusb_device_descriptor desc;
+    int status;
+
+    status = libusb_get_device_descriptor(lusb->dev, &desc);
+    if (status != 0) {
+        log_debug("Couldn't get device descriptor: %s\n",
+                  libusb_error_name(status));
+         return BLADERF_ERR_IO;
+    }
+
+    *vid = desc.idVendor;
+    *pid = desc.idProduct;
+
+    return 0;
+}
+
 static int lusb_get_speed(void *driver,
                           bladerf_dev_speed *device_speed)
 {
@@ -1397,6 +1417,7 @@ static const struct usb_fns libusb_fns = {
     FIELD_INIT(.probe, lusb_probe),
     FIELD_INIT(.open, lusb_open),
     FIELD_INIT(.close, lusb_close),
+    FIELD_INIT(.get_vid_pid, lusb_get_vid_pid),
     FIELD_INIT(.get_speed, lusb_get_speed),
     FIELD_INIT(.change_setting, lusb_change_setting),
     FIELD_INIT(.control_transfer, lusb_control_transfer),
