@@ -73,7 +73,7 @@ set forced_talkback 0
 set enable_stp 0
 if { $opts(stp) != "" } {
     # Check if we need to force
-    if { ([get_user_option -name TALKBACK_ENABLED] == off || [get_user_option -name TALKBACK_ENABLED] == "") && $opts(force) } {
+    if { ([get_user_option -name TALKBACK_ENABLED] == off || [get_user_option -name TALKBACK_ENABLED] == "") && ($opts(force) == "1") } {
         puts "Enabling TalkBack to include SignalTap file"
         set_user_option -name TALKBACK_ENABLED on
         set forced_talkback 1
