@@ -24,6 +24,9 @@ library ieee ;
     use ieee.math_real.all ;
     use ieee.math_complex.all ;
 
+library work;
+    use work.bladerf_p.all;
+
 architecture hosted_bladerf of bladerf is
 
     attribute noprune   : boolean ;
@@ -41,13 +44,13 @@ architecture hosted_bladerf of bladerf is
         spi_MOSI                        :   out std_logic;        -- MOSI
         spi_SCLK                        :   out std_logic;        -- SCLK
         spi_SS_n                        :   out std_logic;        -- SS_n
+        oc_i2c_arst_i                   :   in  std_logic;
+        oc_i2c_scl_pad_i                :   in  std_logic;
         oc_i2c_scl_pad_o                :   out std_logic;
         oc_i2c_scl_padoen_o             :   out std_logic;
         oc_i2c_sda_pad_i                :   in  std_logic;
         oc_i2c_sda_pad_o                :   out std_logic;
         oc_i2c_sda_padoen_o             :   out std_logic;
-        oc_i2c_arst_i                   :   in  std_logic;
-        oc_i2c_scl_pad_i                :   in  std_logic;
         gpio_export                     :   out std_logic_vector(31 downto 0);
         xb_gpio_in_port                 :   in  std_logic_vector(31 downto 0) := (others => 'X');
         xb_gpio_out_port                :   out std_logic_vector(31 downto 0);
@@ -371,6 +374,9 @@ architecture hosted_bladerf of bladerf is
     signal lvds_tx_data_1 : std_logic_vector(5 downto 0);
     signal lvds_tx_data_2 : std_logic_vector(5 downto 0);
     signal lvds_tx_data_3 : std_logic_vector(5 downto 0);
+
+    signal exp_clock_out_s : std_logic := '1';
+    signal exp_blink       : std_logic := '1';
 
 begin
 
@@ -1020,13 +1026,13 @@ begin
         command_serial_out              => command_serial_out,
         correction_tx_phase_gain_export => correction_tx_phase_gain,
         correction_rx_phase_gain_export => correction_rx_phase_gain,
+        oc_i2c_arst_i                   => '0',
+        oc_i2c_scl_pad_i                => i2c_scl_in,
         oc_i2c_scl_pad_o                => i2c_scl_out,
         oc_i2c_scl_padoen_o             => i2c_scl_oen,
         oc_i2c_sda_pad_i                => i2c_sda_in,
         oc_i2c_sda_pad_o                => i2c_sda_out,
         oc_i2c_sda_padoen_o             => i2c_sda_oen,
-        oc_i2c_arst_i                   => '0',
-        oc_i2c_scl_pad_i                => i2c_scl_in,
         rx_tamer_ts_sync_in             => '0',
         rx_tamer_ts_sync_out            => open,
         rx_tamer_ts_pps                 => '0',
@@ -1045,85 +1051,59 @@ begin
         tx_trigger_ctl_in_port          => tx_trigger_ctl_rb
       ) ;
 
-    xb_gpio_direction : process(all)
-    begin
-        for i in 0 to 14 loop
-            if (xb_gpio_dir(i) = '1') then
-                nios_xb_gpio_in(i) <= nios_xb_gpio_out(i);
-                if (xb_mode = "10" and i + 1 = 2) then
-                    exp_gpio(i+1) <= nios_ss_n(1);
-                elsif (i + 1 /= 1) then
-                    exp_gpio(i+1) <= nios_xb_gpio_out(i);
-                end if;
-            else
-                if (i + 1 = 1) then
-                    nios_xb_gpio_in(i) <= exp_clock_in;
-                else
-                    nios_xb_gpio_in(i) <= exp_gpio(i + 1);
-                    exp_gpio(i + 1) <= 'Z';
-                end if;
-            end if;
-        end loop ;
-    end process ;
+    -- DAC SPI
+    dac_sclk <= nios_sclk;
+    dac_sdi  <= nios_sdio;
+    nios_sdo <= '0';
+    dac_csn  <= nios_ss_n(0);
 
-    nios_gpio(20 downto 19) <= nios_ss_n;
-    nios_gpio(22 downto 21) <= xb_mode;
+    -- Expansion I2C
+    exp_i2c_scl <= 'Z';
+    exp_i2c_sda <= 'Z';
 
-    dac_cs_selection : process(all)
-    begin
-        dac_sclk <= nios_sclk ;
-        dac_sdi <= nios_sdio ;
-        nios_sdo <= '0';
-        if( xb_mode = "00" ) then
-            xb_gpio_dir <= nios_xb_gpio_dir(31 downto 0);
-            dac_csn <= nios_ss_n(0);
-        elsif( xb_mode = "10" ) then
-            xb_gpio_dir <= nios_xb_gpio_dir(31 downto 0);
-            if (nios_ss_n(1 downto 0) = "10") then --
-                dac_csn <= '0';
-            elsif (nios_ss_n(1 downto 0) = "01") then
-                dac_csn <= '1';
-            else
-                dac_csn <= '1';
-            end if;
-        else
-            xb_gpio_dir <= nios_xb_gpio_dir(31 downto 0)  ;
-            dac_csn <= nios_ss_n(0) ;
-        end if;
-    end process;
+    -- Power monitor I2C
+    pwr_scl     <= i2c_scl_out when i2c_scl_oen = '0' else 'Z';
+    pwr_sda     <= i2c_sda_out when i2c_sda_oen = '0' else 'Z';
 
-    -- IO for NIOS
-    exp_i2c_scl <= i2c_scl_out when i2c_scl_oen = '0' else 'Z' ;
-    exp_i2c_sda <= i2c_sda_out when i2c_sda_oen = '0' else 'Z' ;
-
-    i2c_scl_in <= exp_i2c_scl ;
-    i2c_sda_in <= exp_i2c_sda ;
+    i2c_scl_in  <= pwr_scl;
+    i2c_sda_in  <= pwr_sda;
 
     -- temp assignments for initial bringup vv
-    adi_txnrx     <= led1_blink;
-    adi_enable    <= led1_blink;
-    adi_en_agc    <= '1' when rising_edge(c5_clock_2);
-    adi_ctrl_in   <= adi_ctrl_out(7 downto 4) xor adi_ctrl_out(3 downto 0);
-    exp_gpio(27 downto 16) <= (others => led1_blink);
-    exp_gpio(0)   <= led1_blink;
-    exp_gpio(1)   <= led1_blink;
-    adf_sclk      <= nios_sclk;
-    adf_sdi       <= led1_blink;
-    adf_csn       <= exp_present_n;
-    adf_ce        <= adf_muxout;
-    tx_bias_en    <= led1_blink;
-    rx_bias_en    <= led1_blink;
-    adi_sync_in   <= c5_clock_2;
+    adi_txnrx     <= '0';
+    adi_enable    <= '1';
+    adi_en_agc    <= '0';
+    adi_ctrl_in   <= (others => '0');
 
-    pwr_scl       <= i2c_scl_out when i2c_scl_oen = '0' else 'Z' ;
-    pwr_sda       <= i2c_sda_out when i2c_sda_oen = '0' else 'Z' ;
+    exp_gpio      <= (others => exp_blink);
+    adf_sclk      <= '0';
+    adf_sdi       <= '0';
+    adf_csn       <= '1';
+    adf_ce        <= '0';
+    tx_bias_en    <= '0';
+    rx_bias_en    <= '0';
+    adi_sync_in   <= '0';
+
 
     U_exp_pll : entity work.pll
-      port map (
-        inclk0              =>  exp_clock_in,
-        c0                  =>  exp_clock_out,
-        locked              =>  open
-      ) ;
+        port map (
+            inclk0 => exp_clock_in,
+            c0     => exp_clock_out_s,
+            locked => open
+        );
+
+    exp_clock_out <= exp_clock_out_s;
+
+    exp_toggler : process(exp_clock_out_s)
+        variable count : natural range 0 to 100_000_000 := 100_000_000 ;
+    begin
+        if( rising_edge(exp_clock_out_s) ) then
+            count := count - 1 ;
+            if( count = 0 ) then
+                count := 100_000_00 ;
+                exp_blink <= not exp_blink;
+            end if ;
+        end if ;
+    end process ;
 
     U_lvds_tx : component axi_ad9361_alt_lvds_tx
         port map (
@@ -1212,25 +1192,15 @@ begin
     led(2) <= tx_underflow_led  when nios_gpio(15) = '0' else not nios_gpio(13);
     led(3) <= rx_overflow_led   when nios_gpio(15) = '0' else not nios_gpio(14);
 
-    adi_reset_n             <= not nios_gpio(0) ;
+    adi_reset_n             <= '1';
 
-    --lms_rx_enable_sig       <= nios_gpio(1) ;
-    --lms_rx_enable           <= nios_gpio(1) ;
-    --lms_tx_enable           <= nios_gpio(2) ;
-
-    adi_tx_spdt1_v          <= nios_gpio(4 downto 3) ;
-    adi_tx_spdt2_v          <= nios_gpio(4 downto 3) ;
-    adi_rx_spdt1_v          <= nios_gpio(6 downto 5) ;
-    adi_rx_spdt2_v          <= nios_gpio(6 downto 5) ;
+    adi_tx_spdt1_v          <= pack(DISABLED);
+    adi_tx_spdt2_v          <= pack(DISABLED);
+    adi_rx_spdt1_v          <= pack(DISABLED);
+    adi_rx_spdt2_v          <= pack(DISABLED);
 
     -- CTS and the SPI CSx are tied to the same signal.  When we are in reset, allow for SPI accesses
     fx3_uart_cts            <= '1' when sys_rst_sync = '0' else 'Z'  ;
-
-    --exp_spi_sclk            <= nios_sclk when ( nios_ss_n(1 downto 0) = "01" ) else '0' ;
-    --exp_spi_mosi            <= nios_sdio when ( nios_ss_n(1 downto 0) = "01" ) else '0' ;
-
-    --mini_exp1               <= 'Z';
-    --mini_exp2               <= 'Z';
 
     set_tx_ts_reset : process(tx_clock, tx_reset)
     begin
