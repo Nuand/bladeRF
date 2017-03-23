@@ -28,16 +28,16 @@ add_instance common_system_0 common_system 1.0
 
 add_instance lms_spi altera_avalon_spi
 set_instance_parameter_value lms_spi {clockPhase} {0}
-set_instance_parameter_value lms_spi {clockPolarity} {0}
+set_instance_parameter_value lms_spi {clockPolarity} {1}
 set_instance_parameter_value lms_spi {dataWidth} {8}
 set_instance_parameter_value lms_spi {disableAvalonFlowControl} {0}
 set_instance_parameter_value lms_spi {insertDelayBetweenSlaveSelectAndSClk} {0}
-set_instance_parameter_value lms_spi {insertSync} {0}
+set_instance_parameter_value lms_spi {insertSync} {1}
 set_instance_parameter_value lms_spi {lsbOrderedFirst} {0}
 set_instance_parameter_value lms_spi {masterSPI} {1}
 set_instance_parameter_value lms_spi {numberOfSlaves} {1}
 set_instance_parameter_value lms_spi {syncRegDepth} {2}
-set_instance_parameter_value lms_spi {targetClockRate} {50000000.0}
+set_instance_parameter_value lms_spi {targetClockRate} {40000000.0}
 set_instance_parameter_value lms_spi {targetSlaveSelectToSClkDelay} {0.0}
 
 add_instance vctcxo_tamer_0 altera_avalon_onchip_memory2
