@@ -39,7 +39,11 @@ int band_select(struct bladerf *dev, bladerf_module module, bool low_band)
         return status;
     }
 
+#ifndef BLADERF_NIOS_BUILD
     status = dev->backend->config_gpio_read(dev, &gpio);
+#else
+    status = CONFIG_GPIO_READ(dev, &gpio);
+#endif
     if (status != 0) {
         return status;
     }
@@ -47,5 +51,9 @@ int band_select(struct bladerf *dev, bladerf_module module, bool low_band)
     gpio &= ~(module == BLADERF_MODULE_TX ? (3 << 3) : (3 << 5));
     gpio |= (module == BLADERF_MODULE_TX ? (band << 3) : (band << 5));
 
+#ifndef BLADERF_NIOS_BUILD
     return dev->backend->config_gpio_write(dev, gpio);
+#else
+    return CONFIG_GPIO_WRITE(dev, gpio);
+#endif
 }
