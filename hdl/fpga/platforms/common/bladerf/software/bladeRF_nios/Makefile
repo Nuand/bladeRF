@@ -9,6 +9,10 @@
 #  - MEM_INIT_DIR       : Path to place the mem_init build products
 #  - BSP_BUILD_OUTDIR   : Path where BSP build products are located
 #  - QUARTUS_OUTDIR     : Path where Quartus build products are located
+#
+# Can opionally define these other variables
+#  - ALT_INCLUDE_DIRS
+#  - C_SRCS
 
 #------------------------------------------------------------------------------
 #              VARIABLES APPENDED TO BY INCLUDED MAKEFILE FRAGMENTS
@@ -16,7 +20,9 @@
 
 # List of include directories for -I compiler option (-I added when used).
 # Includes the BSP.
-ALT_INCLUDE_DIRS := -I $(BLADERF_COMMON_DIR)/src -I $(FPGA_COMMON_DIR)/include -I $(LIBBLADERF_DIR)/include
+ALT_INCLUDE_DIRS += -I $(BLADERF_COMMON_DIR)/src \
+                    -I $(FPGA_COMMON_DIR)/include \
+                    -I $(LIBBLADERF_DIR)/include
 
 # List of library directories for -L linker option (-L added when used).
 # Includes the BSP.
@@ -154,7 +160,6 @@ ACDS_VERSION := 12.1sp1
 ELF := $(NIOS_BUILD_OUTDIR)/bladeRF_nios.elf
 
 # Paths to C, C++, and assembly source files.
-C_SRCS += $(BLADERF_COMMON_DIR)/src/bladeRF_nios.c
 C_SRCS += $(BLADERF_COMMON_DIR)/src/devices.c
 C_SRCS += $(BLADERF_COMMON_DIR)/src/pkt_8x8.c
 C_SRCS += $(BLADERF_COMMON_DIR)/src/pkt_8x16.c

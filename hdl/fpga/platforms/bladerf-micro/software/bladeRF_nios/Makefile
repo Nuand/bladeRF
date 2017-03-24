@@ -12,6 +12,10 @@ MEM_INIT_DIR       := $(NIOS_BUILD_OUTDIR)/mem_init
 BSP_BUILD_OUTDIR   := $(QUARTUS_WORKDIR)/bladeRF_nios_bsp
 QUARTUS_OUTDIR     := $(QUARTUS_WORKDIR)/output_files
 
+ALT_INCLUDE_DIRS   += -I ./src
+
+C_SRCS             += ./src/bladeRF_nios.c
+
 #------------------------------------------------------------------------------
 #              INCLUDE THE COMMON MAKEFILE
 #------------------------------------------------------------------------------
