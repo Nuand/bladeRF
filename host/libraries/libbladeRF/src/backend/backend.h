@@ -202,6 +202,9 @@ struct backend_fns {
                         bladerf_trigger_signal trigger, uint8_t *val);
     int (*write_trigger)(struct bladerf *dev, bladerf_module module,
                          bladerf_trigger_signal trigger, uint8_t val);
+
+    /* Backend name */
+    const char *name;
 };
 
 /**

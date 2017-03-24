@@ -398,4 +398,6 @@ const struct backend_fns backend_fns_dummy = {
 
     FIELD_INIT(.read_trigger, dummy_read_trigger),
     FIELD_INIT(.write_trigger, dummy_write_trigger),
+
+    FIELD_INIT(.name, "dummy"),
 };
