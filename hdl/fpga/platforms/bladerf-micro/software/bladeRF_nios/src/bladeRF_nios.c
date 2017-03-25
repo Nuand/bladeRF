@@ -41,6 +41,7 @@
 #include "pkt_8x16.h"
 #include "pkt_8x32.h"
 #include "pkt_8x64.h"
+#include "pkt_16x64.h"
 #include "pkt_32x32.h"
 #include "pkt_retune.h"
 #include "pkt_legacy.h"
@@ -85,6 +86,7 @@ static const struct pkt_handler pkt_handlers[] = {
     PKT_8x16,
     PKT_8x32,
     PKT_8x64,
+    PKT_16x64,
     PKT_32x32,
     PKT_LEGACY,
 };
@@ -138,8 +140,8 @@ int main(void)
     state_t tune_state = COARSE_TUNE_MIN;
 
     // ADI SPI data
-    uint8_t adi_wdata[3];
-    uint8_t adi_rdata;
+    uint16_t adi_spi_addr;
+    uint64_t adi_spi_data;
 
     // Set the known/default values of the trim DAC cal line
     trimdac_cal_line.point[0].x  = 0;
@@ -164,52 +166,39 @@ int main(void)
     }
 
     while ( 1 ) {
-        adi_wdata[0] = 0x0;
-        adi_wdata[1] = 0x0;
-        adi_wdata[2] = 0x0;
-        adi_rdata    = 0x0;
+        //             W/Rb        | NB2:0       | A[9:0]
+        adi_spi_addr = (0x0 << 15) | (0x0 << 12) | (0x000 << 0);
+        adi_spi_data = UINT64_C(0x0);
 
         // Read AD9361 registers 0x000-0x007
         for( i=0; i < 0x8; i++ ) {
-            adi_wdata[1] = (uint8_t)i;
-            alt_avalon_spi_command(LMS_SPI_BASE, 0, 2, &adi_wdata, 0, 0, ALT_AVALON_SPI_COMMAND_MERGE);
-            alt_avalon_spi_command(LMS_SPI_BASE, 0, 0, 0, 1, &adi_rdata, 0);
+            adi_spi_addr = (adi_spi_addr & 0xfc00) | i;
+            adi_spi_data = ad9361_spi_read(adi_spi_addr);
         }
 
         // Read AD9361 registers 0x045-0x04b
         for( i=0x45; i < 0x4c; i++ ) {
-            adi_wdata[1] = (uint8_t)i;
-            alt_avalon_spi_command(LMS_SPI_BASE, 0, 2, &adi_wdata, 0, 0, ALT_AVALON_SPI_COMMAND_MERGE);
-            alt_avalon_spi_command(LMS_SPI_BASE, 0, 0, 0, 1, &adi_rdata, 0);
+            adi_spi_addr = (adi_spi_addr & 0xfc00) | i;
+            adi_spi_data = ad9361_spi_read(adi_spi_addr);
         }
 
         // Read 0x028
-        adi_wdata[0] = 0x0;
-        adi_wdata[1] = 0x28;
-        adi_wdata[2] = 0x0;
-        alt_avalon_spi_command(LMS_SPI_BASE, 0, 2, &adi_wdata, 0, 0, ALT_AVALON_SPI_COMMAND_MERGE);
-        alt_avalon_spi_command(LMS_SPI_BASE, 0, 0, 0, 1, &adi_rdata, 0);
+        adi_spi_addr = (adi_spi_addr & 0xfc00) | 0x28;
+        adi_spi_data = ad9361_spi_read(adi_spi_addr);
 
         // Write 0x5a to 0x028
-        adi_wdata[0] = 0x80;
-        adi_wdata[1] = 0x28;
-        adi_wdata[2] = 0x5a;
-        alt_avalon_spi_command(LMS_SPI_BASE, 0, 2, &adi_wdata, 0, 0, ALT_AVALON_SPI_COMMAND_MERGE);
-        alt_avalon_spi_command(LMS_SPI_BASE, 0, 1, &adi_wdata[2], 0, 0, 0);
+        adi_spi_addr = (adi_spi_addr & 0xfc00) | 0x28;
+        adi_spi_data = (UINT64_C(0x5a) << (64-8));
+        ad9361_spi_write((adi_spi_addr | 0x8000), adi_spi_data);
 
         // Read 0x028
-        adi_wdata[0] = 0x0;
-        adi_wdata[1] = 0x28;
-        adi_wdata[2] = 0x0;
-        alt_avalon_spi_command(LMS_SPI_BASE, 0, 2, &adi_wdata, 0, 0, ALT_AVALON_SPI_COMMAND_MERGE);
-        alt_avalon_spi_command(LMS_SPI_BASE, 0, 0, 0, 1, &adi_rdata, 0);
+        adi_spi_addr = (adi_spi_addr & 0xfc00) | 0x28;
+        adi_spi_data = ad9361_spi_read(adi_spi_addr);
 
-        // Write 0x00 to 0x028
-        adi_wdata[0] = 0x80;
-        adi_wdata[1] = 0x28;
-        adi_wdata[2] = 0x0;
-        alt_avalon_spi_command(LMS_SPI_BASE, 0, 2, &adi_wdata, 0, 0, ALT_AVALON_SPI_COMMAND_MERGE);
-        alt_avalon_spi_command(LMS_SPI_BASE, 0, 1, &adi_wdata[2], 0, 0, 0);
+        // Write 0x5a to 0x028
+        adi_spi_addr = (adi_spi_addr & 0xfc00) | 0x28;
+        adi_spi_data = (UINT64_C(0x0) << (64-8));
+        ad9361_spi_write((adi_spi_addr | 0x8000), adi_spi_data);
 
         usleep(100);
     }

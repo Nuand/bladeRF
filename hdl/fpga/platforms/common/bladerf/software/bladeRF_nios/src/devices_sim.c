@@ -73,6 +73,20 @@ void lms6_write(uint8_t addr, uint8_t data)
     ASSERT(data == 0x09);
 }
 
+uint64_t ad9361_spi_read(uint16_t addr) {
+    const uint64_t ret = 0x17;
+    DBG("%s: addr=0x%04x, returning 0x%04x\n", __FUNCTION__, addr, ret);
+    ASSERT(addr == 0x2f2f);
+    return ret;
+}
+
+void ad9361_spi_write(uint16_t addr, uint64_t data)
+{
+    DBG("%s: addr=0x%04x, data=0x%04x\n", __FUNCTION__, addr, data);
+    ASSERT(addr == 0x0707);
+    ASSERT(data == 0x09);
+}
+
 uint8_t si5338_read(uint8_t addr)
 {
     const uint8_t ret = 0x88;

@@ -26,6 +26,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <alt_types.h>
 #include "devices.h"
 #include "debug.h"
 #include "fpga_version.h"
@@ -299,6 +300,66 @@ void lms6_write(uint8_t addr, uint8_t data)
     spi_arbiter_lock();
     IOWR_8DIRECT(LMS_SPI_BASE, addr, data);
     spi_arbiter_unlock();
+}
+
+uint64_t ad9361_spi_read(uint16_t addr)
+{
+    alt_u8   addr8[2];
+    alt_u8   data8[8];
+    alt_u8   bytes;
+    uint8_t  i;
+    uint64_t rv;
+
+    // The alt_avalon_spi_command expects parameters to be arrays of bytes
+
+    // Convert the uint16_t address into array of 2 uint8_t
+    addr8[0] = (addr >> 8);
+    addr8[1] = (addr & 0xff);
+
+    // Calculate number of data bytes in this command
+    bytes = (((addr >> 12) & 0x7) + 1);
+
+    // Send down the command
+    alt_avalon_spi_command(LMS_SPI_BASE, 0, 2, &addr8, 0, 0, ALT_AVALON_SPI_COMMAND_MERGE);
+
+    // Get the response
+    alt_avalon_spi_command(LMS_SPI_BASE, 0, 0, 0, bytes, &data8, 0);
+
+    // Build the uint64_t return value
+    rv = UINT64_C(0x0);
+    for( i = 0; i < 8; i++ ) {
+        rv |= (data8[i] << (64-((i+1)*8)));
+    }
+
+    return rv;
+}
+
+void ad9361_spi_write(uint16_t addr, uint64_t data)
+{
+    alt_u8   addr8[2];
+    alt_u8   data8[8];
+    alt_u8   bytes;
+    uint8_t  i;
+
+    // The alt_avalon_spi_command expects parameters to be arrays of bytes
+
+    // Convert the uint16_t address into array of 2 uint8_t
+    addr8[0] = (addr >> 8);
+    addr8[1] = (addr & 0xff);
+
+    // Convert the uint64_t data into an array of 8 uint8_t
+    for( i = 0; i < 8; i++ ) {
+        data8[i] = ((data >> (64-((i+1)*8))) & 0xff);
+    }
+
+    // Calculate number of data bytes in this command
+    bytes = (((addr >> 12) & 0x7) + 1);
+
+    // Send down the command
+    alt_avalon_spi_command(LMS_SPI_BASE, 0, 2, &addr8, 0, 0, ALT_AVALON_SPI_COMMAND_MERGE);
+
+    // Send down the data
+    alt_avalon_spi_command(LMS_SPI_BASE, 0, bytes, &data8, 0, 0, 0);
 }
 
 uint8_t si5338_read(uint8_t addr)

@@ -155,6 +155,23 @@ uint8_t lms6_read(uint8_t addr);
 void lms6_write(uint8_t addr, uint8_t data);
 
 /**
+ * Read from AD9361 SPI register(s)
+ *
+ * @param   addr    Address to read from
+ *
+ * @return  Register data
+ */
+uint64_t ad9361_spi_read(uint16_t addr);
+
+/**
+ * Write to AD9361 SPI register(s)
+ *
+ * @param   addr    Register address to write to
+ * @param   data    Data to write
+ */
+void ad9361_spi_write(uint16_t addr, uint64_t data);
+
+/**
  * Read from Si5338 clock generator register
  *
  * @param   addr    Address to read from
