@@ -170,14 +170,8 @@ int main(void)
         adi_spi_addr = (0x0 << 15) | (0x0 << 12) | (0x000 << 0);
         adi_spi_data = UINT64_C(0x0);
 
-        // Read AD9361 registers 0x000-0x007
-        for( i=0; i < 0x8; i++ ) {
-            adi_spi_addr = (adi_spi_addr & 0xfc00) | i;
-            adi_spi_data = ad9361_spi_read(adi_spi_addr);
-        }
-
-        // Read AD9361 registers 0x045-0x04b
-        for( i=0x45; i < 0x4c; i++ ) {
+        // Read AD9361 registers 0x045-0x04c
+        for( i=0x45; i < 0x4d; i++ ) {
             adi_spi_addr = (adi_spi_addr & 0xfc00) | i;
             adi_spi_data = ad9361_spi_read(adi_spi_addr);
         }
