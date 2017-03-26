@@ -44,6 +44,9 @@ architecture hosted_bladerf of bladerf is
         spi_MOSI                        :   out std_logic;        -- MOSI
         spi_SCLK                        :   out std_logic;        -- SCLK
         spi_SS_n                        :   out std_logic;        -- SS_n
+        gpio_export                     :   out std_logic_vector(31 downto 0);
+        gpio_rffe_0_in_port             :   in  std_logic_vector(31 downto 0);
+        gpio_rffe_0_out_port            :   out std_logic_vector(31 downto 0);
         oc_i2c_arst_i                   :   in  std_logic;
         oc_i2c_scl_pad_i                :   in  std_logic;
         oc_i2c_scl_pad_o                :   out std_logic;
@@ -51,7 +54,6 @@ architecture hosted_bladerf of bladerf is
         oc_i2c_sda_pad_i                :   in  std_logic;
         oc_i2c_sda_pad_o                :   out std_logic;
         oc_i2c_sda_padoen_o             :   out std_logic;
-        gpio_export                     :   out std_logic_vector(31 downto 0);
         xb_gpio_in_port                 :   in  std_logic_vector(31 downto 0) := (others => 'X');
         xb_gpio_out_port                :   out std_logic_vector(31 downto 0);
         xb_gpio_dir_export              :   out std_logic_vector(31 downto 0);
@@ -378,13 +380,18 @@ architecture hosted_bladerf of bladerf is
     signal exp_clock_out_s : std_logic := '1';
     signal exp_blink       : std_logic := '1';
 
+    signal rffe_gpio       : rffe_gpio_t := (
+        i => RFFE_GPI_DEFAULT,
+        o => pack(RFFE_GPO_DEFAULT)
+    );
+
 begin
 
     correction_tx_phase <= signed(correction_tx_phase_gain(31 downto 16));
     correction_tx_gain  <= signed(correction_tx_phase_gain(15 downto 0));
     correction_rx_phase <= signed(correction_rx_phase_gain(31 downto 16));
     correction_rx_gain  <= signed(correction_rx_phase_gain(15 downto 0));
-    correction_valid <= '1';
+    correction_valid    <= '1';
 
 
     -- Create 80MHz from 38.4MHz coming from the c4_clock source
@@ -1019,6 +1026,8 @@ begin
         spi_SCLK                        => adi_spi_sclk,
         spi_SS_n                        => adi_spi_csn,
         gpio_export                     => nios_gpio,
+        gpio_rffe_0_in_port             => pack(rffe_gpio),
+        gpio_rffe_0_out_port            => rffe_gpio.o,
         xb_gpio_in_port                 => nios_xb_gpio_in,
         xb_gpio_out_port                => nios_xb_gpio_out,
         xb_gpio_dir_export              => nios_xb_gpio_dir,
@@ -1069,19 +1078,11 @@ begin
     i2c_sda_in  <= pwr_sda;
 
     -- temp assignments for initial bringup vv
-    adi_txnrx     <= '0';
-    adi_enable    <= '1';
-    adi_en_agc    <= '0';
-    adi_ctrl_in   <= (others => '0');
-
     exp_gpio      <= (others => exp_blink);
     adf_sclk      <= '0';
     adf_sdi       <= '0';
     adf_csn       <= '1';
     adf_ce        <= '0';
-    tx_bias_en    <= '0';
-    rx_bias_en    <= '0';
-    adi_sync_in   <= '0';
 
 
     U_exp_pll : entity work.pll
@@ -1192,12 +1193,21 @@ begin
     led(2) <= tx_underflow_led  when nios_gpio(15) = '0' else not nios_gpio(13);
     led(3) <= rx_overflow_led   when nios_gpio(15) = '0' else not nios_gpio(14);
 
-    adi_reset_n             <= '1';
+    adi_ctrl_in    <= unpack(rffe_gpio.o).ctrl_in;
+    adi_tx_spdt2_v <= unpack(rffe_gpio.o).tx_spdt2;
+    adi_tx_spdt1_v <= unpack(rffe_gpio.o).tx_spdt1;
+    tx_bias_en     <= unpack(rffe_gpio.o).tx_bias_en;
+    adi_rx_spdt2_v <= unpack(rffe_gpio.o).rx_spdt2;
+    adi_rx_spdt1_v <= unpack(rffe_gpio.o).rx_spdt1;
+    rx_bias_en     <= unpack(rffe_gpio.o).rx_bias_en;
+    adi_sync_in    <= unpack(rffe_gpio.o).sync_in;
+    adi_en_agc     <= unpack(rffe_gpio.o).en_agc;
+    adi_txnrx      <= unpack(rffe_gpio.o).txnrx;
+    adi_enable     <= unpack(rffe_gpio.o).enable;
+    adi_reset_n    <= unpack(rffe_gpio.o).reset_n;
 
-    adi_tx_spdt1_v          <= pack(DISABLED);
-    adi_tx_spdt2_v          <= pack(DISABLED);
-    adi_rx_spdt1_v          <= pack(DISABLED);
-    adi_rx_spdt2_v          <= pack(DISABLED);
+    rffe_gpio.i.ctrl_out <= adi_ctrl_out;
+
 
     -- CTS and the SPI CSx are tied to the same signal.  When we are in reset, allow for SPI accesses
     fx3_uart_cts            <= '1' when sys_rst_sync = '0' else 'Z'  ;

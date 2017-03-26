@@ -26,6 +26,19 @@ set_instance_parameter_value clk_0 {resetSynchronousEdges} {DEASSERT}
 
 add_instance common_system_0 common_system 1.0
 
+add_instance gpio_rffe_0 altera_avalon_pio
+set_instance_parameter_value gpio_rffe_0 {bitClearingEdgeCapReg} {0}
+set_instance_parameter_value gpio_rffe_0 {bitModifyingOutReg} {1}
+set_instance_parameter_value gpio_rffe_0 {captureEdge} {0}
+set_instance_parameter_value gpio_rffe_0 {direction} {InOut}
+set_instance_parameter_value gpio_rffe_0 {edgeType} {RISING}
+set_instance_parameter_value gpio_rffe_0 {generateIRQ} {1}
+set_instance_parameter_value gpio_rffe_0 {irqType} {LEVEL}
+set_instance_parameter_value gpio_rffe_0 {resetValue} {0x00000003}
+set_instance_parameter_value gpio_rffe_0 {simDoTestBenchWiring} {0}
+set_instance_parameter_value gpio_rffe_0 {simDrivenValue} {0.0}
+set_instance_parameter_value gpio_rffe_0 {width} {32}
+
 add_instance lms_spi altera_avalon_spi
 set_instance_parameter_value lms_spi {clockPhase} {0}
 set_instance_parameter_value lms_spi {clockPolarity} {1}
@@ -77,6 +90,8 @@ add_interface dac conduit end
 set_interface_property dac EXPORT_OF common_system_0.dac
 add_interface gpio conduit end
 set_interface_property gpio EXPORT_OF common_system_0.gpio
+add_interface gpio_rffe_0 conduit end
+set_interface_property gpio_rffe_0 EXPORT_OF gpio_rffe_0.external_connection
 add_interface oc_i2c conduit end
 set_interface_property oc_i2c EXPORT_OF common_system_0.oc_i2c
 add_interface reset reset sink
@@ -107,18 +122,30 @@ set_connection_parameter_value common_system_0.pb_0_m0/lms_spi.spi_control_port 
 set_connection_parameter_value common_system_0.pb_0_m0/lms_spi.spi_control_port baseAddress {0x0000}
 set_connection_parameter_value common_system_0.pb_0_m0/lms_spi.spi_control_port defaultConnection {0}
 
+add_connection common_system_0.pb_1_m0 gpio_rffe_0.s1
+set_connection_parameter_value common_system_0.pb_1_m0/gpio_rffe_0.s1 arbitrationPriority {1}
+set_connection_parameter_value common_system_0.pb_1_m0/gpio_rffe_0.s1 baseAddress {0x0000}
+set_connection_parameter_value common_system_0.pb_1_m0/gpio_rffe_0.s1 defaultConnection {0}
+
 add_connection clk_0.clk common_system_0.clk
 
 add_connection clk_0.clk lms_spi.clk
+
+add_connection clk_0.clk gpio_rffe_0.clk
 
 add_connection clk_0.clk vctcxo_tamer_0.clk1
 
 add_connection common_system_0.ib0_receiver_irq lms_spi.irq
 set_connection_parameter_value common_system_0.ib0_receiver_irq/lms_spi.irq irqNumber {2}
 
+add_connection common_system_0.ib0_receiver_irq gpio_rffe_0.irq
+set_connection_parameter_value common_system_0.ib0_receiver_irq/gpio_rffe_0.irq irqNumber {3}
+
 add_connection clk_0.clk_reset common_system_0.reset
 
 add_connection clk_0.clk_reset lms_spi.reset
+
+add_connection clk_0.clk_reset gpio_rffe_0.reset
 
 add_connection clk_0.clk_reset vctcxo_tamer_0.reset1
 
