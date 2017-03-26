@@ -320,10 +320,10 @@ uint64_t ad9361_spi_read(uint16_t addr)
     bytes = (((addr >> 12) & 0x7) + 1);
 
     // Send down the command
-    alt_avalon_spi_command(LMS_SPI_BASE, 0, 2, &addr8, 0, 0, ALT_AVALON_SPI_COMMAND_MERGE);
+    alt_avalon_spi_command(LMS_SPI_BASE, 0, 2, &addr8[0], 0, 0, ALT_AVALON_SPI_COMMAND_MERGE);
 
     // Get the response
-    alt_avalon_spi_command(LMS_SPI_BASE, 0, 0, 0, bytes, &data8, 0);
+    alt_avalon_spi_command(LMS_SPI_BASE, 0, 0, 0, bytes, &data8[0], 0);
 
     // Build the uint64_t return value
     rv = UINT64_C(0x0);
@@ -356,10 +356,10 @@ void ad9361_spi_write(uint16_t addr, uint64_t data)
     bytes = (((addr >> 12) & 0x7) + 1);
 
     // Send down the command
-    alt_avalon_spi_command(LMS_SPI_BASE, 0, 2, &addr8, 0, 0, ALT_AVALON_SPI_COMMAND_MERGE);
+    alt_avalon_spi_command(LMS_SPI_BASE, 0, 2, &addr8[0], 0, 0, ALT_AVALON_SPI_COMMAND_MERGE);
 
     // Send down the data
-    alt_avalon_spi_command(LMS_SPI_BASE, 0, bytes, &data8, 0, 0, 0);
+    alt_avalon_spi_command(LMS_SPI_BASE, 0, bytes, &data8[0], 0, 0, 0);
 }
 
 uint8_t si5338_read(uint8_t addr)
@@ -419,12 +419,12 @@ void vctcxo_trim_dac_write(uint8_t cmd, uint16_t val)
 
 void vctcxo_trim_dac_read(uint8_t cmd, uint16_t *val)
 {
-    uint8_t data[2];
+    alt_u8 data[2];
 
     alt_avalon_spi_command(PERIPHERAL_SPI_BASE, 0, 1, &cmd, 0, 0, ALT_AVALON_SPI_COMMAND_MERGE);
-    alt_avalon_spi_command(PERIPHERAL_SPI_BASE, 0, 0, 0, 2, &data, 0);
+    alt_avalon_spi_command(PERIPHERAL_SPI_BASE, 0, 0, 0, 2, &data[0], 0);
 
-    *val = (data[0] << 8) | data[1];
+    *val = ((uint8_t)data[0] << 8) | (uint8_t)data[1];
 }
 
 void adf4351_write(uint32_t val)
