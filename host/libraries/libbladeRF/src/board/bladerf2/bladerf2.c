@@ -260,6 +260,13 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
         goto error;
     }
 
+    /* Set FPGA protocol */
+    status = dev->backend->set_fpga_protocol(dev, BACKEND_FPGA_PROTOCOL_NIOSII);
+    if (status < 0) {
+        log_error("Unable to set backend FPGA protocol: %d\n", status);
+        return status;
+    }
+
     /* Check if FPGA is configured */
     status = dev->backend->is_fpga_configured(dev);
     if (status < 0) {
