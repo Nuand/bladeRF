@@ -707,7 +707,7 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
         status = dev->backend->set_fpga_protocol(dev, BACKEND_FPGA_PROTOCOL_NIOSII_LEGACY);
     }
     if (status < 0) {
-        log_error("Unable to set backend FPGA protocol: %d\n", usb_speed);
+        log_error("Unable to set backend FPGA protocol: %d\n", status);
         return status;
     }
 
