@@ -201,6 +201,7 @@ static bool device_is_fx3_bootloader(libusb_device *dev)
 static inline bool device_has_bladeRF_ids(libusb_device *dev)
 {
     return device_has_vid_pid(dev, USB_NUAND_VENDOR_ID, USB_NUAND_BLADERF_PRODUCT_ID) ||
+           device_has_vid_pid(dev, USB_NUAND_VENDOR_ID, USB_NUAND_BLADERF2_PRODUCT_ID) ||
            device_has_vid_pid(dev, USB_NUAND_LEGACY_VENDOR_ID, USB_NUAND_BLADERF_LEGACY_PRODUCT_ID);
 
 }

@@ -128,6 +128,7 @@ out:
 static inline bool has_bladerf_ids(CCyUSBDevice *dev)
 {
     return ((dev->VendorID == USB_NUAND_VENDOR_ID)          && (dev->ProductID == USB_NUAND_BLADERF_PRODUCT_ID)) ||
+           ((dev->VendorID == USB_NUAND_VENDOR_ID)          && (dev->ProductID == USB_NUAND_BLADERF2_PRODUCT_ID)) ||
            ((dev->VendorID == USB_NUAND_LEGACY_VENDOR_ID)   && (dev->ProductID == USB_NUAND_BLADERF_LEGACY_PRODUCT_ID));
 }
 
