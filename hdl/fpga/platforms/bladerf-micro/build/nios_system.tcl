@@ -43,7 +43,7 @@ set_instance_parameter_value lms_spi {clockPolarity} {1}
 set_instance_parameter_value lms_spi {dataWidth} {8}
 set_instance_parameter_value lms_spi {disableAvalonFlowControl} {0}
 set_instance_parameter_value lms_spi {insertDelayBetweenSlaveSelectAndSClk} {0}
-set_instance_parameter_value lms_spi {insertSync} {1}
+set_instance_parameter_value lms_spi {insertSync} {0}
 set_instance_parameter_value lms_spi {lsbOrderedFirst} {0}
 set_instance_parameter_value lms_spi {masterSPI} {1}
 set_instance_parameter_value lms_spi {numberOfSlaves} {1}
