@@ -20,36 +20,53 @@ int spi_init(struct ad9361_rf_phy *phy, void *userdata)
 }
 
 /***************************************************************************//**
- * @brief spi_write_then_read
+ * @brief spi_write
 *******************************************************************************/
 
-int spi_write_then_read(struct spi_device *spi,
-                        const unsigned char *txbuf, unsigned n_tx,
-                        unsigned char *rxbuf, unsigned n_rx)
+int spi_write(struct spi_device *spi, uint16_t cmd, const uint8_t *buf,
+              unsigned int len)
 {
-    const unsigned int num = max(n_tx, n_rx) - 2;
     struct bladerf *dev = spi->userdata;
-    uint16_t cmd;
-    uint8_t buf[num];
     int status;
+    uint64_t data;
 
-    /* Reconstruct 16-bit cmd from txbuf */
-    cmd = (txbuf[0] << 8) | (txbuf[1]);
-
-    /* Copy txbuf to buf */
-    for (unsigned int i = 2; i < n_tx - 2; i++) {
-        buf[i-2] = txbuf[i];
+    /* Copy buf to data */
+    data = 0;
+    for (unsigned i = 0; i < len; i++) {
+        data |= (((uint64_t)buf[i]) << 8*(7-i));
     }
 
     /* SPI transaction */
-    status = dev->backend->ad9361_spi(dev, cmd, buf, num);
+    status = dev->backend->ad9361_spi_write(dev, cmd, data);
     if (status < 0) {
-        return - EIO;
+        return -EIO;
     }
 
-    /* Copy buf to rxbuf */
-    for (unsigned int i = 0; i < n_rx; i++) {
-        rxbuf[i] = buf[i];
+    return 0;
+}
+
+/***************************************************************************//**
+ * @brief spi_read
+*******************************************************************************/
+
+#include <inttypes.h>
+
+int spi_read(struct spi_device *spi, uint16_t cmd, uint8_t *buf,
+             unsigned int len)
+{
+    struct bladerf *dev = spi->userdata;
+    int status;
+    uint64_t data = 0;
+
+    /* SPI transaction */
+    status = dev->backend->ad9361_spi_read(dev, cmd, &data);
+    if (status < 0) {
+        return -EIO;
+    }
+
+    /* Copy data to buf */
+    for (unsigned int i = 0; i < len; i++) {
+        buf[i] = (data >> 8*(7-i)) & 0xff;
     }
 
     return 0;
