@@ -97,6 +97,7 @@ struct bladeRF_sector {
 #define USB_NUAND_VENDOR_ID                         0x2cf0
 #define USB_NUAND_BLADERF_PRODUCT_ID                0x5246
 #define USB_NUAND_BLADERF_BOOT_PRODUCT_ID           0x5247
+#define USB_NUAND_BLADERF2_PRODUCT_ID               0x5250
 
 #define USB_NUAND_LEGACY_VENDOR_ID                  0x1d50
 #define USB_NUAND_BLADERF_LEGACY_PRODUCT_ID         0x6066
