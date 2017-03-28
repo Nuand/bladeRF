@@ -566,7 +566,6 @@ const char *ad9361_ensm_states[] = {
 int32_t ad9361_spi_readm(struct spi_device *spi, uint32_t reg,
 	uint8_t *rbuf, uint32_t num)
 {
-	uint8_t buf[2];
 	int32_t ret;
 	uint16_t cmd;
 
@@ -574,10 +573,8 @@ int32_t ad9361_spi_readm(struct spi_device *spi, uint32_t reg,
 		return -EINVAL;
 
 	cmd = AD_READ | AD_CNT(num) | AD_ADDR(reg);
-	buf[0] = cmd >> 8;
-	buf[1] = cmd & 0xFF;
 
-	ret = spi_write_then_read(spi, &buf[0], 2, rbuf, num);
+	ret = spi_read(spi, cmd, rbuf, num);
 	if (ret < 0) {
 		dev_err(&spi->dev, "Read Error %"PRId32, ret);
 		return ret;
@@ -659,16 +656,14 @@ static int32_t __ad9361_spi_readf(struct spi_device *spi, uint32_t reg,
 int32_t ad9361_spi_write(struct spi_device *spi,
 	uint32_t reg, uint32_t val)
 {
-	uint8_t buf[3];
 	int32_t ret;
 	uint16_t cmd;
+	uint8_t data;
 
 	cmd = AD_WRITE | AD_CNT(1) | AD_ADDR(reg);
-	buf[0] = cmd >> 8;
-	buf[1] = cmd & 0xFF;
-	buf[2] = val;
+	data = val;
 
-	ret = spi_write_then_read(spi, buf, 3, NULL, 0);
+	ret = spi_write(spi, cmd, &data, 1);
 	if (ret < 0) {
 		dev_err(&spi->dev, "Write Error %"PRId32, ret);
 		return ret;
@@ -731,7 +726,6 @@ static int32_t __ad9361_spi_writef(struct spi_device *spi, uint32_t reg,
 static int32_t ad9361_spi_writem(struct spi_device *spi,
 	uint32_t reg, uint8_t *tbuf, uint32_t num)
 {
-	uint8_t buf[10];
 	int32_t ret;
 	uint16_t cmd;
 
@@ -739,17 +733,8 @@ static int32_t ad9361_spi_writem(struct spi_device *spi,
 		return -EINVAL;
 
 	cmd = AD_WRITE | AD_CNT(num) | AD_ADDR(reg);
-	buf[0] = cmd >> 8;
-	buf[1] = cmd & 0xFF;
 
-#ifndef ALTERA_PLATFORM
-	memcpy(&buf[2], tbuf, num);
-#else
-	int32_t i;
-	for (i = 0; i < num; i++)
-		buf[2 + i] =  tbuf[i];
-#endif
-	ret = spi_write_then_read(spi, buf, num + 2, NULL, 0);
+	ret = spi_write(spi, cmd, tbuf, num);
 	if (ret < 0) {
 		dev_err(&spi->dev, "Write Error %"PRId32, ret);
 		return ret;

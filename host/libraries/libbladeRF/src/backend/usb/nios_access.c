@@ -241,6 +241,55 @@ static int nios_8x32_write(struct bladerf *dev, uint8_t id,
     }
 }
 
+static int nios_16x64_read(struct bladerf *dev, uint8_t id,
+                           uint16_t addr, uint64_t *data)
+{
+    int status;
+    uint8_t buf[NIOS_PKT_LEN];
+    bool success;
+
+    nios_pkt_16x64_pack(buf, id, false, addr, 0);
+
+    status = nios_access(dev, buf);
+    if (status != 0) {
+        return status;
+    }
+
+    nios_pkt_16x64_resp_unpack(buf, NULL, NULL, NULL, data, &success);
+
+    if (success) {
+        return 0;
+    } else {
+        *data = 0;
+        log_debug("%s: response packet reported failure.\n", __FUNCTION__);
+        return BLADERF_ERR_FPGA_OP;
+    }
+}
+
+static int nios_16x64_write(struct bladerf *dev, uint8_t id,
+                            uint16_t addr, uint64_t data)
+{
+    int status;
+    uint8_t buf[NIOS_PKT_LEN];
+    bool success;
+
+    nios_pkt_16x64_pack(buf, id, true, addr, data);
+
+    status = nios_access(dev, buf);
+    if (status != 0) {
+        return status;
+    }
+
+    nios_pkt_16x64_resp_unpack(buf, NULL, NULL, NULL, NULL, &success);
+
+    if (success) {
+        return 0;
+    } else {
+        log_debug("%s: response packet reported failure.\n", __FUNCTION__);
+        return BLADERF_ERR_FPGA_OP;
+    }
+}
+
 static int nios_32x32_masked_read(struct bladerf *dev, uint8_t id,
                                   uint32_t mask, uint32_t *val)
 {
@@ -426,46 +475,14 @@ int nios_lms6_write(struct bladerf *dev, uint8_t addr, uint8_t data)
     return status;
 }
 
-int nios_ad9361_spi(struct bladerf *dev, uint16_t cmd,
-                    uint8_t *data, size_t len)
+int nios_ad9361_spi_read(struct bladerf *dev, uint16_t cmd, uint64_t *data)
 {
-    int status;
-    bool success;
-    uint8_t buf[NIOS_PKT_LEN];
-    uint64_t data64;
+    return nios_16x64_read(dev, NIOS_PKT_16x64_TARGET_AD9361, cmd, data);
+}
 
-    /* Maximum data length is 64-bits */
-    if (len > 8) {
-        return BLADERF_ERR_UNSUPPORTED;
-    }
-
-    /* Pack data into data64 */
-    data64 = 0;
-    for (size_t i = 0; i < len; i++) {
-        data64 |= ((uint64_t) data[i] << 8*i);
-    }
-
-    /* The address is used as a mask of bits to read and return */
-    nios_pkt_16x64_pack(buf, NIOS_PKT_16x64_TARGET_AD9361, true, cmd, data64);
-
-    status = nios_access(dev, buf);
-    if (status != 0) {
-        return status;
-    }
-
-    nios_pkt_16x64_resp_unpack(buf, NULL, NULL, NULL, &data64, &success);
-
-    if (!success) {
-        log_debug("%s: response packet reported failure.\n", __FUNCTION__);
-        return BLADERF_ERR_FPGA_OP;
-    }
-
-    /* Unpack data64 into data */
-    for (size_t i = 0; i < len; i++) {
-        data[i] = (uint8_t)((data64 >> 8*i) & 0xff);
-    }
-
-    return 0;
+int nios_ad9361_spi_write(struct bladerf *dev, uint16_t cmd, uint64_t data)
+{
+    return nios_16x64_write(dev, NIOS_PKT_16x64_TARGET_AD9361, cmd, data);
 }
 
 int nios_vctcxo_trim_dac_write(struct bladerf *dev, uint8_t addr, uint16_t value)

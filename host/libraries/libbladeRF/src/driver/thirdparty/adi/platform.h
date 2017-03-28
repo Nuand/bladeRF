@@ -140,9 +140,10 @@ enum adc_data_sel {
 /******************************************************************************/
 
 int spi_init(struct ad9361_rf_phy *phy, void *userdata);
-int spi_write_then_read(struct spi_device *spi,
-                        const unsigned char *txbuf, unsigned n_tx,
-		                unsigned char *rxbuf, unsigned n_rx);
+int spi_write(struct spi_device *spi, uint16_t cmd, const uint8_t *buf,
+              unsigned int len);
+int spi_read(struct spi_device *spi, uint16_t cmd, uint8_t *buf,
+             unsigned int len);
 
 int gpio_init(struct ad9361_rf_phy *phy, void *userdata);
 bool gpio_is_valid(struct gpio_device *gpio, int32_t number);

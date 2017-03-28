@@ -153,16 +153,26 @@ int nios_legacy_lms6_read(struct bladerf *dev, uint8_t addr, uint8_t *data);
 int nios_legacy_lms6_write(struct bladerf *dev, uint8_t addr, uint8_t data);
 
 /**
- * Perform a SPI transaction with the AD9361.
+ * Read the AD9361 over SPI.
  *
  * @param[in]       dev         Device handle
  * @param[in]       cmd         Command
- * @param[inout]    data        Data buffer
- * @param[in]       len         Data buffer length
+ * @param[out]      data        Data
  *
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
-int nios_legacy_ad9361_spi(struct bladerf *dev, uint16_t cmd, uint8_t *data, size_t len);
+int nios_legacy_ad9361_spi_read(struct bladerf *dev, uint16_t cmd, uint64_t *data);
+
+/**
+ * Write to the AD9361 over SPI.
+ *
+ * @param[in]       dev         Device handle
+ * @param[in]       cmd         Command
+ * @param[in]       data        Data
+ *
+ * @return 0 on success, BLADERF_ERR_* code on error.
+ */
+int nios_legacy_ad9361_spi_write(struct bladerf *dev, uint16_t cmd, uint64_t data);
 
 /**
  * Write to the VCTCXO trim DAC.
