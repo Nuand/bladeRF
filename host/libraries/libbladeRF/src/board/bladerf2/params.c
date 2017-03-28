@@ -6,7 +6,7 @@ AD9361_InitParam ad9361_init_params = {
 	/* Identification number */
 	0,		//id_no
 	/* Reference Clock */
-	40000000UL,	//reference_clk_rate
+	38400000UL,	//reference_clk_rate
 	/* Base Configuration */
 	1,		//two_rx_two_tx_mode_enable *** adi,2rx-2tx-mode-enable
 	1,		//one_rx_one_tx_mode_use_rx_num *** adi,1rx-1tx-mode-use-rx-num
