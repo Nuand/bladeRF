@@ -29,6 +29,7 @@
 #define LOGGER_ID_STRING
 #include "logger_id.h"
 #include "logger_entry.h"
+#include "bladeRF.h"
 
 #include "board/board.h"
 #include "capabilities.h"
@@ -150,11 +151,10 @@ static bool bladerf2_matches(struct bladerf *dev)
     if (status < 0)
         return false;
 
-    log_info("found vid pid %04x %04x\n", vid, pid);
+    if (vid == USB_NUAND_VENDOR_ID && pid == USB_NUAND_BLADERF2_PRODUCT_ID)
+        return true;
 
-    /* FIXME */
-
-    return true;
+    return false;
 }
 
 /******************************************************************************/
