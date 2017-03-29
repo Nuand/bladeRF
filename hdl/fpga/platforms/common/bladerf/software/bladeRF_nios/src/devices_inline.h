@@ -47,6 +47,22 @@ static inline void control_reg_write(uint32_t value)
     IOWR_ALTERA_AVALON_PIO_DATA(COMMON_SYSTEM_0_CONTROL_BASE, value);
 }
 
+static inline uint32_t rffe_csr_read(void)
+{
+    #ifdef GPIO_RFFE_0_BASE
+    return IORD_ALTERA_AVALON_PIO_DATA(GPIO_RFFE_0_BASE);
+    #else
+    return 0;
+    #endif
+}
+
+static inline void rffe_csr_write(uint32_t value)
+{
+    #ifdef GPIO_RFFE_0_BASE
+    IOWR_ALTERA_AVALON_PIO_DATA(GPIO_RFFE_0_BASE, value);
+    #endif
+}
+
 static inline uint32_t expansion_port_read(void)
 {
     return IORD_ALTERA_AVALON_PIO_DATA(COMMON_SYSTEM_0_XB_GPIO_BASE);

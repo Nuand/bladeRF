@@ -88,31 +88,32 @@
  *
  */
 
-#define NIOS_PKT_8x32_MAGIC         ((uint8_t) 'C')
+#define NIOS_PKT_8x32_MAGIC           ((uint8_t) 'C')
 
 /* Request packet indices */
-#define NIOS_PKT_8x32_IDX_MAGIC      0
-#define NIOS_PKT_8x32_IDX_TARGET_ID  1
-#define NIOS_PKT_8x32_IDX_FLAGS      2
-#define NIOS_PKT_8x32_IDX_RESV1      3
-#define NIOS_PKT_8x32_IDX_ADDR       4
-#define NIOS_PKT_8x32_IDX_DATA       5
-#define NIOS_PKT_8x32_IDX_RESV2      9
+#define NIOS_PKT_8x32_IDX_MAGIC       0
+#define NIOS_PKT_8x32_IDX_TARGET_ID   1
+#define NIOS_PKT_8x32_IDX_FLAGS       2
+#define NIOS_PKT_8x32_IDX_RESV1       3
+#define NIOS_PKT_8x32_IDX_ADDR        4
+#define NIOS_PKT_8x32_IDX_DATA        5
+#define NIOS_PKT_8x32_IDX_RESV2       9
 
 /* Target IDs */
-#define NIOS_PKT_8x32_TARGET_VERSION 0x00   /* FPGA version (read only) */
-#define NIOS_PKT_8x32_TARGET_CONTROL 0x01   /* FPGA control/config register */
-#define NIOS_PKT_8x32_TARGET_ADF4351 0x02   /* XB-200 ADF4351 register access
+#define NIOS_PKT_8x32_TARGET_VERSION  0x00   /* FPGA version (read only) */
+#define NIOS_PKT_8x32_TARGET_CONTROL  0x01   /* FPGA control/config register */
+#define NIOS_PKT_8x32_TARGET_ADF4351  0x02   /* XB-200 ADF4351 register access
                                              * (write-only) */
+#define NIOS_PKT_8x32_TARGET_RFFE_CSR 0x03   /* RFFE control & status GPIO */
 
 /* IDs 0x80 through 0xff will not be assigned by Nuand. These are reserved
  * for user customizations */
-#define NIOS_PKT_8x32_TARGET_USR1    0x80
-#define NIOS_PKT_8x32_TARGET_USR128  0xff
+#define NIOS_PKT_8x32_TARGET_USR1     0x80
+#define NIOS_PKT_8x32_TARGET_USR128   0xff
 
 /* Flag bits */
-#define NIOS_PKT_8x32_FLAG_WRITE     (1 << 0)
-#define NIOS_PKT_8x32_FLAG_SUCCESS   (1 << 1)
+#define NIOS_PKT_8x32_FLAG_WRITE      (1 << 0)
+#define NIOS_PKT_8x32_FLAG_SUCCESS    (1 << 1)
 
 /* Pack the request buffer */
 static inline void nios_pkt_8x32_pack(uint8_t *buf, uint8_t target, bool write,

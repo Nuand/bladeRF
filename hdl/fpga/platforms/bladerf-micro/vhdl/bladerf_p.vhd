@@ -97,8 +97,8 @@ package bladerf_p is
         sync_in      => '0',
         en_agc       => '0',
         txnrx        => '0',
-        enable       => '1',
-        reset_n      => '1'
+        enable       => '0',
+        reset_n      => '0'
     );
 
     constant RFFE_GPI_DEFAULT : rffe_gpi_t := (
