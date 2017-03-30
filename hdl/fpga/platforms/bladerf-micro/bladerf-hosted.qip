@@ -39,5 +39,6 @@ set_global_assignment -name QIP_FILE [file normalize [file join $workdir bladeRF
 
 # SDC Constraints
 set_global_assignment -name SDC_FILE [file normalize [file join $here constraints/ad9361.sdc]]
+set_global_assignment -name SDC_FILE [file normalize [file join $nuand_ip synthesis/constraints/spi.sdc]]
 set_global_assignment -name SDC_FILE [file normalize [file join $here constraints/bladerf.sdc]]
 

@@ -1,5 +1,6 @@
 # Convenience directory
-set here $::quartus(qip_path)
+set here      $::quartus(qip_path)
+set nuand_ip  [file normalize [file join $here ../../ip/nuand]]
 
 # Platform packages
 set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/bladerf_p.vhd]]
@@ -9,4 +10,5 @@ set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/blad
 
 # Basic timing constraints
 set_global_assignment -name SDC_FILE [file normalize [file join $here constraints/ad9361.sdc]]
+set_global_assignment -name SDC_FILE [file normalize [file join $nuand_ip synthesis/constraints/spi.sdc]]
 set_global_assignment -name SDC_FILE [file normalize [file join $here constraints/bladerf.sdc]]
