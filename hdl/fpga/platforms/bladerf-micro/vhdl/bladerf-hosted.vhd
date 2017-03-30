@@ -1063,8 +1063,16 @@ begin
     -- DAC SPI
     dac_sclk <= nios_sclk;
     dac_sdi  <= nios_sdio;
-    nios_sdo <= '0';
     dac_csn  <= nios_ss_n(0);
+
+    -- ADF SPI
+    adf_sclk <= nios_sclk    when nios_gpio(11) = '1' else '0';
+    adf_sdi  <= nios_sdio    when nios_gpio(11) = '1' else '0';
+    adf_csn  <= nios_ss_n(1) when nios_gpio(11) = '1' else '1';
+    adf_ce   <= nios_gpio(11);
+
+    nios_sdo <= adf_muxout when ((nios_ss_n(1) = '0') and (nios_gpio(11) = '1'))
+                else '0';
 
     -- Expansion I2C
     exp_i2c_scl <= 'Z';
@@ -1079,11 +1087,6 @@ begin
 
     -- temp assignments for initial bringup vv
     exp_gpio      <= (others => exp_blink);
-    adf_sclk      <= '0';
-    adf_sdi       <= '0';
-    adf_csn       <= '1';
-    adf_ce        <= '0';
-
 
     U_exp_pll : entity work.pll
         port map (
