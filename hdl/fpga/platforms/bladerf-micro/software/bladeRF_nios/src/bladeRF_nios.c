@@ -143,6 +143,9 @@ int main(void)
     uint16_t adi_spi_addr;
     uint64_t adi_spi_data;
 
+    // AD5621 DAC
+    uint16_t dac_val;
+
     // Set the known/default values of the trim DAC cal line
     trimdac_cal_line.point[0].x  = 0;
     trimdac_cal_line.point[0].y  = trimdac_min;
@@ -165,6 +168,7 @@ int main(void)
         }
     }
 
+    #if 0
     while ( 1 ) {
         //             W/Rb        | NB2:0       | A[9:0]
         adi_spi_addr = (0x0 << 15) | (0x0 << 12) | (0x000 << 0);
@@ -196,6 +200,22 @@ int main(void)
 
         usleep(100);
     }
+    #endif
+
+    #if 1
+    while( 1 ) {
+        for( i = 0; i < 6; i++ ) {
+            // Calculate DAC value
+            dac_val = ((((uint16_t)i) * 0x333) << 2) & 0x3fff;
+            // Write DAC value
+            ad56x1_vctcxo_trim_dac_write(NULL, dac_val);
+            usleep(2000000);
+            // Tristate the DAC, keeping same DAC value in register
+            ad56x1_vctcxo_trim_dac_write(NULL, (dac_val | 0xc000) );
+            usleep(2000000);
+        }
+    }
+    #endif
 
     while (run_nios) {
         have_request = HAVE_REQUEST();

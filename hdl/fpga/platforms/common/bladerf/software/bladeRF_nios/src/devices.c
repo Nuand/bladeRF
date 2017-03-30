@@ -427,6 +427,26 @@ void vctcxo_trim_dac_read(uint8_t cmd, uint16_t *val)
     *val = ((uint8_t)data[0] << 8) | (uint8_t)data[1];
 }
 
+void ad56x1_vctcxo_trim_dac_write(uint8_t cmd, uint16_t val)
+{
+    uint8_t data[2] = {
+        (val >> 8) & 0xff,
+        val & 0xff,
+    };
+
+    /* Update cached value of trim DAC setting */
+    vctcxo_trim_dac_value = val;
+
+    alt_avalon_spi_command(PERIPHERAL_SPI_BASE, 0, 2, data, 0, 0, 0) ;
+}
+
+void ad56x1_vctcxo_trim_dac_read(uint8_t cmd, uint16_t *val)
+{
+    /* The AD56x1 DAC does not have readback functionality.
+     * Return the cached DAC value */
+    *val = vctcxo_trim_dac_value;
+}
+
 void adf4351_write(uint32_t val)
 {
     union {

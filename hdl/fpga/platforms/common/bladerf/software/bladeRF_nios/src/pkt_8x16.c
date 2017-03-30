@@ -95,6 +95,10 @@ static inline bool perform_read(uint8_t id, uint8_t addr, uint16_t *data)
             iq_corr_read(addr, data);
             break;
 
+        case NIOS_PKT_8x16_TARGET_AD56X1_DAC:
+            ad56x1_vctcxo_trim_dac_read(addr, data);
+            break;
+
         /* Add user customizations here
 
         case NIOS_PKT_8x8_TARGET_USR1:
@@ -125,6 +129,10 @@ static inline bool perform_write(uint8_t id, uint8_t addr, uint16_t data)
 
         case NIOS_PKT_8x16_TARGET_AGC_CORR:
             agc_dc_corr_write(addr, data);
+            break;
+
+        case NIOS_PKT_8x16_TARGET_AD56X1_DAC:
+            ad56x1_vctcxo_trim_dac_write(addr, data);
             break;
 
         /* Add user customizations here
