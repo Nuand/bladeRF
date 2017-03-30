@@ -1061,9 +1061,9 @@ begin
       ) ;
 
     -- DAC SPI
-    dac_sclk <= nios_sclk;
-    dac_sdi  <= nios_sdio;
-    dac_csn  <= nios_ss_n(0);
+    dac_sclk <= nios_sclk    when nios_gpio(11) = '0' else '0';
+    dac_sdi  <= nios_sdio    when nios_gpio(11) = '0' else '0';
+    dac_csn  <= nios_ss_n(0) when nios_gpio(11) = '0' else '1';
 
     -- ADF SPI
     adf_sclk <= nios_sclk    when nios_gpio(11) = '1' else '0';
