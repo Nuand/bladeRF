@@ -130,6 +130,9 @@ extern uint16_t vctcxo_trim_dac_value;
 /* Define a cached version of the VCTCXO tamer control register */
 extern uint8_t vctcxo_tamer_ctrl_reg;
 
+/* Cached ADF400x registers */
+extern uint32_t adf400x_reg[4];
+
 /**
  * Initialize NIOS II device interfaces.
  *
@@ -219,6 +222,22 @@ void ad56x1_vctcxo_trim_dac_write(uint8_t cmd, uint16_t val);
  * @param   data    Read data
  */
 void ad56x1_vctcxo_trim_dac_read(uint8_t cmd, uint16_t *val);
+
+/**
+ * Write a command to the ADF400x
+ *
+ * @param   data    Data to shift into latch
+ */
+void adf400x_spi_write(uint32_t val);
+
+/**
+ * Read from ADF400x
+ *
+ * @param   addr    Register to read
+ *
+ * @return  Register data
+ */
+uint32_t adf400x_spi_read(uint8_t addr);
 
 /**
  * Write a value to the ADF4351 synthesizer (on the XB-200)

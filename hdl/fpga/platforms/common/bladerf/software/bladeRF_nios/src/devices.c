@@ -41,6 +41,9 @@ uint16_t vctcxo_trim_dac_value = 0x7FFF;
 /* Define a cached version of the VCTCXO tamer control register */
 uint8_t vctcxo_tamer_ctrl_reg = 0x00;
 
+/* Cached version of ADF400x registers */
+uint32_t adf400x_reg[4] = {0};
+
 static void command_uart_enable_isr(bool enable) {
     uint32_t val = enable ? 1 : 0 ;
     IOWR_32DIRECT(COMMAND_UART_BASE, 16, val) ;
@@ -216,6 +219,7 @@ void tamer_schedule(bladerf_module m, uint64_t time) {
 }
 
 void bladerf_nios_init(struct pkt_buf *pkt, struct vctcxo_tamer_pkt_buf *vctcxo_tamer_pkt) {
+
     /* Set the prescaler for 400kHz with an 80MHz clock:
      *      (prescaler = clock / (5*desired) - 1)
      */
@@ -445,6 +449,40 @@ void ad56x1_vctcxo_trim_dac_read(uint8_t cmd, uint16_t *val)
     /* The AD56x1 DAC does not have readback functionality.
      * Return the cached DAC value */
     *val = vctcxo_trim_dac_value;
+}
+
+void adf400x_spi_write(uint32_t val)
+{
+    uint8_t data[3] = {
+        (val >> 16) & 0xff,
+        (val >> 8)  & 0xff,
+        (val >> 0)  & 0xff
+    };
+
+    /* Update cached value of ADF400x setting */
+    adf400x_reg[val & 0x3] = val;
+
+    alt_avalon_spi_command(PERIPHERAL_SPI_BASE, 1, 3, data, 0, 0, 0) ;
+}
+
+uint32_t adf400x_spi_read(uint8_t addr)
+{
+    /* This assumes the AD400x MUXOUT is set to SDO/MISO,
+     * but the behavior of this output is unclear.
+     * We may want to return a cached value instead? */
+    uint8_t sdi_data[3] = {
+        (adf400x_reg[addr & 0x3] >> 16) & 0xff,
+        (adf400x_reg[addr & 0x3] >> 8)  & 0xff,
+        (adf400x_reg[addr & 0x3] >> 0)  & 0xff
+    };
+
+    uint8_t sdo_data[3] = { 0 };
+
+    /* Perform the SPI operation so we can take a look on SignalTap */
+    alt_avalon_spi_command(PERIPHERAL_SPI_BASE, 1, 3, sdi_data, 3, sdo_data, 0);
+
+    /* Just return the cached value for now ... */
+    return adf400x_reg[addr & 0x3];
 }
 
 void adf4351_write(uint32_t val)

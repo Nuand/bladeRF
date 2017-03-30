@@ -214,6 +214,13 @@ int main(void)
             ad56x1_vctcxo_trim_dac_write(NULL, (dac_val | 0xc000) );
             usleep(2000000);
         }
+
+        for( i = 0; i < 4; i++ ) {
+            adf400x_spi_write((uint32_t)i);
+            usleep(100);
+            adi_spi_data = (uint64_t)adf400x_spi_read((uint32_t)i);
+            usleep(100);
+        }
     }
     #endif
 

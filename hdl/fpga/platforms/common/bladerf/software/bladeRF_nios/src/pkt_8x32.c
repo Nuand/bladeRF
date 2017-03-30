@@ -49,6 +49,10 @@ static inline bool perform_read(uint8_t id, uint8_t addr, uint32_t *data)
             *data = rffe_csr_read();
             break;
 
+        case NIOS_PKT_8x32_TARGET_ADF400X:
+            *data = adf400x_spi_read(addr);
+            break;
+
         default:
             DBG("Invalid id: 0x%02x\n", id);
             *data = 0x00;
@@ -75,6 +79,10 @@ static inline bool perform_write(uint8_t id, uint8_t addr, uint32_t data)
 
         case NIOS_PKT_8x32_TARGET_RFFE_CSR:
             rffe_csr_write(data);
+            break;
+
+        case NIOS_PKT_8x32_TARGET_ADF400X:
+            adf400x_spi_write(data);
             break;
 
         default:
