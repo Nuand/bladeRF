@@ -208,10 +208,10 @@ int main(void)
             // Calculate DAC value
             dac_val = ((((uint16_t)i) * 0x333) << 2) & 0x3fff;
             // Write DAC value
-            ad56x1_vctcxo_trim_dac_write(NULL, dac_val);
+            ad56x1_vctcxo_trim_dac_write(dac_val);
             usleep(2000000);
             // Tristate the DAC, keeping same DAC value in register
-            ad56x1_vctcxo_trim_dac_write(NULL, (dac_val | 0xc000) );
+            ad56x1_vctcxo_trim_dac_write(dac_val | 0xc000 );
             usleep(2000000);
         }
 

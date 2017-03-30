@@ -210,18 +210,16 @@ void vctcxo_trim_dac_read(uint8_t cmd, uint16_t *val);
 /**
  * Write a command to the AD56x1 VCTCXO trim DAC
  *
- * @param   cmd     DAC command (not used)
  * @param   data    command data to write
  */
-void ad56x1_vctcxo_trim_dac_write(uint8_t cmd, uint16_t val);
+void ad56x1_vctcxo_trim_dac_write(uint16_t val);
 
 /**
  * Read from the AD56x1 VCTCXO trim DAC
  *
- * @param   cmd     DAC command (not used)
  * @param   data    Read data
  */
-void ad56x1_vctcxo_trim_dac_read(uint8_t cmd, uint16_t *val);
+void ad56x1_vctcxo_trim_dac_read(uint16_t *val);
 
 /**
  * Write a command to the ADF400x
