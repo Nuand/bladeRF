@@ -477,12 +477,28 @@ int nios_lms6_write(struct bladerf *dev, uint8_t addr, uint8_t data)
 
 int nios_ad9361_spi_read(struct bladerf *dev, uint16_t cmd, uint64_t *data)
 {
-    return nios_16x64_read(dev, NIOS_PKT_16x64_TARGET_AD9361, cmd, data);
+    int status;
+
+    status = nios_16x64_read(dev, NIOS_PKT_16x64_TARGET_AD9361, cmd, data);
+    if (status == 0) {
+        log_verbose("%s: Read 0x%" PRIx64 " from addr 0x%04x\n",
+                    __FUNCTION__, *data, cmd);
+    }
+
+    return status;
 }
 
 int nios_ad9361_spi_write(struct bladerf *dev, uint16_t cmd, uint64_t data)
 {
-    return nios_16x64_write(dev, NIOS_PKT_16x64_TARGET_AD9361, cmd, data);
+    int status;
+
+    status = nios_16x64_write(dev, NIOS_PKT_16x64_TARGET_AD9361, cmd, data);
+    if (status == 0) {
+        log_verbose("%s: Wrote 0x%" PRIx64 " to addr 0x%04x\n",
+                    __FUNCTION__, data, cmd);
+    }
+
+    return status;
 }
 
 int nios_vctcxo_trim_dac_write(struct bladerf *dev, uint8_t addr, uint16_t value)
