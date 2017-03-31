@@ -377,8 +377,13 @@ for { set i 1 } { $i < 4 } { incr i } {
 
 foreach pin ${outs} {
     set_instance_assignment -name IO_STANDARD          "3.3-V LVCMOS"    -to ${pin}
-    set_instance_assignment -name CURRENT_STRENGTH_NEW "MAXIMUM CURRENT" -to ${pin}
-    set_instance_assignment -name SLEW_RATE            1                 -to ${pin}
+    if { ${pin} == "exp_clock_out" } {
+        set_instance_assignment -name CURRENT_STRENGTH_NEW "MAXIMUM CURRENT" -to ${pin}
+        set_instance_assignment -name SLEW_RATE            1                 -to ${pin}
+    } else {
+        set_instance_assignment -name CURRENT_STRENGTH_NEW "MINIMUM CURRENT" -to ${pin}
+        set_instance_assignment -name SLEW_RATE            0                 -to ${pin}
+    }
 }
 
 # Single-ended inout constraints
