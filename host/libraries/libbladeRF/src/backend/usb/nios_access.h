@@ -132,7 +132,6 @@ int nios_lms6_write(struct bladerf *dev, uint8_t addr, uint8_t data);
  * @param[in]       dev         Device handle
  * @param[in]       cmd         Command
  * @param[out]      data        Data
- * @param[in]       len         Data buffer length
  *
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
