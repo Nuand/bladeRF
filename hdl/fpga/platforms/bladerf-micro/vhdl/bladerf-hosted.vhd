@@ -1060,12 +1060,12 @@ begin
         tx_trigger_ctl_in_port          => tx_trigger_ctl_rb
       ) ;
 
-    -- DAC SPI
-    dac_sclk <= nios_sclk    when nios_gpio(11) = '0' else '0';
-    dac_sdi  <= nios_sdio    when nios_gpio(11) = '0' else '0';
-    dac_csn  <= nios_ss_n(0) when nios_gpio(11) = '0' else '1';
+    -- DAC SPI (data latched on falling edge)
+    dac_sclk <= not nios_sclk when nios_gpio(11) = '0' else '0';
+    dac_sdi  <= nios_sdio     when nios_gpio(11) = '0' else '0';
+    dac_csn  <= nios_ss_n(0)  when nios_gpio(11) = '0' else '1';
 
-    -- ADF SPI
+    -- ADF SPI (data latched on rising edge)
     adf_sclk <= nios_sclk    when nios_gpio(11) = '1' else '0';
     adf_sdi  <= nios_sdio    when nios_gpio(11) = '1' else '0';
     adf_csn  <= nios_ss_n(1) when nios_gpio(11) = '1' else '1';
