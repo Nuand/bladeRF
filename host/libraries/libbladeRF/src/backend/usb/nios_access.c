@@ -525,6 +525,30 @@ int nios_rffe_control_write(struct bladerf *dev, uint32_t value)
     return status;
 }
 
+int nios_ad56x1_vctcxo_trim_dac_read(struct bladerf *dev, uint16_t *value)
+{
+    int status;
+
+    status = nios_8x16_read(dev, NIOS_PKT_8x16_TARGET_AD56X1_DAC, 0, value);
+    if (status == 0) {
+        log_verbose("%s: Read 0x%04x\n", __FUNCTION__, *value);
+    }
+
+    return status;
+}
+
+int nios_ad56x1_vctcxo_trim_dac_write(struct bladerf *dev, uint16_t value)
+{
+    int status;
+
+    status = nios_8x16_write(dev, NIOS_PKT_8x16_TARGET_AD56X1_DAC, 0, value);
+    if (status == 0) {
+        log_verbose("%s: Wrote 0x%04x\n", __FUNCTION__, value);
+    }
+
+    return status;
+}
+
 int nios_vctcxo_trim_dac_write(struct bladerf *dev, uint8_t addr, uint16_t value)
 {
     return nios_8x16_write(dev, NIOS_PKT_8x16_TARGET_VCTCXO_DAC, addr, value);

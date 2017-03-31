@@ -197,6 +197,26 @@ int nios_legacy_rffe_control_read(struct bladerf *dev, uint32_t *value);
 int nios_legacy_rffe_control_write(struct bladerf *dev, uint32_t value);
 
 /**
+ * Write to the AD56X1 VCTCXO trim DAC.
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   value       Value
+ *
+ * @return 0 on success, BLADERF_ERR_* code on error.
+ */
+int nios_legacy_ad56x1_vctcxo_trim_dac_write(struct bladerf *dev, uint16_t value);
+
+/**
+ * Read the AD56X1 VCTCXO trim DAC.
+ *
+ * @param[in]   dev         Device handle
+ * @param[out]  value       Data
+ *
+ * @return 0 on success, BLADERF_ERR_* code on error.
+ */
+int nios_legacy_ad56x1_vctcxo_trim_dac_read(struct bladerf *dev, uint16_t *value);
+
+/**
  * Write to the VCTCXO trim DAC.
  *
  * @param[in]   dev         Device handle
