@@ -253,10 +253,13 @@ static int bladerf1_apply_lms_dc_cals(struct bladerf *dev)
 
             /* Report the first of any failures */
             status = (rx_status == 0) ? tx_status : rx_status;
+            if (status != 0) {
+                return status;
+            }
         }
     }
 
-    return status;
+    return 0;
 }
 
 /**
@@ -403,8 +406,11 @@ static int bladerf1_initialize(struct bladerf *dev)
      * FPGA.
      */
     status = bladerf1_apply_lms_dc_cals(dev);
+    if (status != 0) {
+        return status;
+    }
 
-    return status;
+    return 0;
 }
 
 /******************************************************************************
@@ -517,7 +523,7 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     if (status < 0) {
         log_debug("Failed to get device speed: %s\n",
                   bladerf_strerror(status));
-        goto error;
+        return status;
     }
     switch (usb_speed) {
         case BLADERF_DEVICE_SPEED_SUPER:
@@ -529,9 +535,8 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
             break;
 
         default:
-            status = BLADERF_ERR_UNEXPECTED;
             log_error("Unsupported device speed: %d\n", usb_speed);
-            goto error;
+            return BLADERF_ERR_UNEXPECTED;
     }
 
     /* Verify that we have a sufficent firmware version before continuing. */
@@ -552,7 +557,7 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
                         required_fw_version.patch);
         }
 #endif
-        goto error;
+        return status;
     }
 
     /* VCTCXO trim and FPGA size are non-fatal indicators that we've
@@ -599,7 +604,7 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
 
     status = dev->backend->is_fpga_configured(dev);
     if (status < 0) {
-        goto error;
+        return status;
     } else if (status != 1 && board_data->fpga_size == BLADERF_FPGA_UNKNOWN) {
         log_warning("Unknown FPGA size. Skipping FPGA configuration...\n");
         log_warning("Skipping further initialization...\n");
@@ -612,8 +617,7 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
             full_path = file_find("hostedx115.rbf");
         } else {
             log_error("Invalid FPGA size %d.\n", board_data->fpga_size);
-            status = BLADERF_ERR_UNEXPECTED;
-            goto error;
+            return BLADERF_ERR_UNEXPECTED;
         }
 
         if (full_path) {
@@ -625,18 +629,18 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
             status = file_read_buffer(full_path, &buf, &buf_size);
             free(full_path);
             if (status != 0) {
-                goto error;
+                return status;
             }
 
             status = dev->backend->load_fpga(dev, buf, buf_size);
             if (status != 0) {
-                log_warning("Failure loading FPGA.\n");
-                goto error;
+                log_warning("Failure loading FPGA: %s\n", bladerf_strerror(status));
+                return status;
             }
         } else {
             log_warning("FPGA bitstream file not found.\n");
-            status = BLADERF_ERR_UNEXPECTED;
-            goto error;
+            log_warning("Skipping further initialization...\n");
+            return 0;
         }
     }
 
@@ -717,7 +721,7 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
      * hangs. */
     status = bladerf1_initialize(dev);
     if (status != 0) {
-        goto error;
+        return status;
     }
 
     if (have_cap(board_data->capabilities, BLADERF_CAP_SCHEDULED_RETUNE)) {
@@ -728,17 +732,18 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
         if (status != 0) {
             log_warning("Failed to cancel any pending RX retunes: %s\n",
                     bladerf_strerror(status));
+            return status;
         }
 
         status = dev->board->cancel_scheduled_retunes(dev, BLADERF_MODULE_TX);
         if (status != 0) {
             log_warning("Failed to cancel any pending TX retunes: %s\n",
                     bladerf_strerror(status));
+            return status;
         }
     }
 
-error:
-    return status;
+    return 0;
 }
 
 static void bladerf1_close(struct bladerf *dev)
