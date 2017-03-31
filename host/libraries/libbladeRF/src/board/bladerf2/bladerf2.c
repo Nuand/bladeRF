@@ -222,21 +222,18 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     if (status < 0) {
         log_debug("Failed to get device speed: %s\n",
                   bladerf_strerror(status));
-        goto error;
+        return status;
     }
     switch (usb_speed) {
         case BLADERF_DEVICE_SPEED_SUPER:
             board_data->msg_size = USB_MSG_SIZE_SS;
             break;
-
         case BLADERF_DEVICE_SPEED_HIGH:
             board_data->msg_size = USB_MSG_SIZE_HS;
             break;
-
         default:
-            status = BLADERF_ERR_UNEXPECTED;
             log_error("Unsupported device speed: %d\n", usb_speed);
-            goto error;
+            return BLADERF_ERR_UNEXPECTED;
     }
 
     /* Verify that we have a sufficent firmware version before continuing. */
@@ -257,7 +254,7 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
                         required_fw_version.patch);
         }
 #endif
-        goto error;
+        return status;
     }
 
     /* Set FPGA protocol */
@@ -270,7 +267,7 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     /* Check if FPGA is configured */
     status = dev->backend->is_fpga_configured(dev);
     if (status < 0) {
-        goto error;
+        return status;
     } else if (status != 1 && board_data->fpga_size == BLADERF_FPGA_UNKNOWN) {
         log_warning("Unknown FPGA size. Skipping FPGA configuration...\n");
         log_warning("Skipping further initialization...\n");
@@ -287,18 +284,18 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
             status = file_read_buffer(full_path, &buf, &buf_size);
             free(full_path);
             if (status != 0) {
-                goto error;
+                return status;
             }
 
             status = dev->backend->load_fpga(dev, buf, buf_size);
             if (status != 0) {
-                log_warning("Failure loading FPGA.\n");
-                goto error;
+                log_warning("Failure loading FPGA: %s\n", bladerf_strerror(status));
+                return status;
             }
         } else {
             log_warning("FPGA bitstream file not found.\n");
-            status = BLADERF_ERR_UNEXPECTED;
-            goto error;
+            log_warning("Skipping further initialization...\n");
+            return 0;
         }
     }
 
@@ -363,8 +360,7 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
         return status;
     }
 
-error:
-    return status;
+    return 0;
 }
 
 static void bladerf2_close(struct bladerf *dev)
