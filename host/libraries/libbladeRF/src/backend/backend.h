@@ -167,6 +167,10 @@ struct backend_fns {
     int (*ad56x1_vctcxo_trim_dac_write)(struct bladerf *dev, uint16_t value);
     int (*ad56x1_vctcxo_trim_dac_read)(struct bladerf *dev, uint16_t *value);
 
+    /* ADF400X accessors */
+    int (*adf400x_write)(struct bladerf *dev, uint8_t addr, uint32_t data);
+    int (*adf400x_read)(struct bladerf *dev, uint8_t addr, uint32_t *data);
+
     /* VCTCXO accessors */
     int (*vctcxo_dac_write)(struct bladerf *dev, uint8_t addr, uint16_t value);
     int (*vctcxo_dac_read)(struct bladerf *dev, uint8_t addr, uint16_t *value);

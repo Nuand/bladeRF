@@ -1154,6 +1154,9 @@ const struct backend_fns backend_fns_usb_legacy = {
     FIELD_INIT(.ad56x1_vctcxo_trim_dac_write, nios_legacy_ad56x1_vctcxo_trim_dac_write),
     FIELD_INIT(.ad56x1_vctcxo_trim_dac_read, nios_legacy_ad56x1_vctcxo_trim_dac_read),
 
+    FIELD_INIT(.adf400x_write, nios_legacy_adf400x_write),
+    FIELD_INIT(.adf400x_read, nios_legacy_adf400x_read),
+
     FIELD_INIT(.vctcxo_dac_write, nios_legacy_vctcxo_trim_dac_write),
     FIELD_INIT(.vctcxo_dac_read, nios_vctcxo_trim_dac_read),
 
@@ -1240,6 +1243,9 @@ const struct backend_fns backend_fns_usb = {
 
     FIELD_INIT(.ad56x1_vctcxo_trim_dac_write, nios_ad56x1_vctcxo_trim_dac_write),
     FIELD_INIT(.ad56x1_vctcxo_trim_dac_read, nios_ad56x1_vctcxo_trim_dac_read),
+
+    FIELD_INIT(.adf400x_write, nios_adf400x_write),
+    FIELD_INIT(.adf400x_read, nios_adf400x_read),
 
     FIELD_INIT(.vctcxo_dac_write, nios_vctcxo_trim_dac_write),
     FIELD_INIT(.vctcxo_dac_read, nios_vctcxo_trim_dac_read),

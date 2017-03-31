@@ -243,6 +243,16 @@ static int dummy_ad56x1_vctcxo_trim_dac_read(struct bladerf *dev, uint16_t *valu
     return 0;
 }
 
+static int dummy_adf400x_write(struct bladerf *dev, uint8_t addr, uint32_t data)
+{
+    return 0;
+}
+
+static int dummy_adf400x_read(struct bladerf *dev, uint8_t addr, uint32_t *data)
+{
+    return 0;
+}
+
 static int dummy_vctcxo_dac_write(struct bladerf *dev, uint8_t addr, uint16_t value)
 {
     return 0;
@@ -403,6 +413,9 @@ const struct backend_fns backend_fns_dummy = {
 
     FIELD_INIT(.ad56x1_vctcxo_trim_dac_write, dummy_ad56x1_vctcxo_trim_dac_write),
     FIELD_INIT(.ad56x1_vctcxo_trim_dac_read, dummy_ad56x1_vctcxo_trim_dac_read),
+
+    FIELD_INIT(.adf400x_write, dummy_adf400x_write),
+    FIELD_INIT(.adf400x_read, dummy_adf400x_read),
 
     FIELD_INIT(.vctcxo_dac_write, dummy_vctcxo_dac_write),
     FIELD_INIT(.vctcxo_dac_read,  dummy_vctcxo_dac_read),

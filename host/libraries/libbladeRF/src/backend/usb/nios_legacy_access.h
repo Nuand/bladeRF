@@ -217,6 +217,28 @@ int nios_legacy_ad56x1_vctcxo_trim_dac_write(struct bladerf *dev, uint16_t value
 int nios_legacy_ad56x1_vctcxo_trim_dac_read(struct bladerf *dev, uint16_t *value);
 
 /**
+ * Write to the ADF400X.
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   addr        Address
+ * @param[in]   data        Data
+ *
+ * @return 0 on success, BLADERF_ERR_* code on error.
+ */
+int nios_legacy_adf400x_write(struct bladerf *dev, uint8_t addr, uint32_t data);
+
+/**
+ * Read from the ADF400X.
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   addr        Address
+ * @param[out]  data        Data
+ *
+ * @return 0 on success, BLADERF_ERR_* code on error.
+ */
+int nios_legacy_adf400x_read(struct bladerf *dev, uint8_t addr, uint32_t *data);
+
+/**
  * Write to the VCTCXO trim DAC.
  *
  * @param[in]   dev         Device handle
