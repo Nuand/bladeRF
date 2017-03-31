@@ -168,6 +168,9 @@ int main(void)
         }
     }
 
+    /* ====================
+     * AD9361 SPI TESTS
+     * ==================== */
     #if 0
     while ( 1 ) {
         //             W/Rb        | NB2:0       | A[9:0]
@@ -202,7 +205,14 @@ int main(void)
     }
     #endif
 
-    #if 1
+
+    /* ====================
+     * AD5621 SPI TESTS
+     * ==================== */
+    #if 0
+    // Disable the ADF400x
+    control_reg_write( 0x0 );
+    usleep(2000000);
     while( 1 ) {
         for( i = 0; i < 6; i++ ) {
             // Calculate DAC value
@@ -214,13 +224,47 @@ int main(void)
             ad56x1_vctcxo_trim_dac_write(dac_val | 0xc000 );
             usleep(2000000);
         }
+    }
+    #endif
+
+
+    /* ====================
+     * ADF4001 SPI TESTS
+     * ==================== */
+    #if 0
+    // Tristate the DAC
+    ad56x1_vctcxo_trim_dac_write( 0xc000 );
+    while( 1 ) {
+
+        // Enable the ADF400x
+        control_reg_write( 0x1 << 11 );
+        usleep(2000000);
+
+        // 0x000003 -- MUXOUT = 'Z'; CP = Normal
+        adf400x_spi_write(0x3);
+        usleep(2000000);
+
+        // 0x000137 -- MUXOUT = AVDD (3.3 V); CP = 'Z'
+        adf400x_spi_write(0x137);
+        usleep(2000000);
+
+        // 0x000177 -- MUXOUT = DGND; CP = 'Z'
+        adf400x_spi_write(0x177);
+        usleep(2000000);
+
+        // 0x000167 -- MUXOUT = SDO; CP = 'Z'
+        //adf400x_spi_write(0x167);
+        //usleep(2000000);
 
         for( i = 0; i < 4; i++ ) {
-            adf400x_spi_write((uint32_t)i);
-            usleep(100);
-            adi_spi_data = (uint64_t)adf400x_spi_read((uint32_t)i);
+            // Read all the registers
+            adf400x_spi_read((uint32_t)i);
             usleep(100);
         }
+
+        // Disable the ADF400x
+        control_reg_write( 0x0 );
+        usleep(2000000);
     }
     #endif
 
