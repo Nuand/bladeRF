@@ -468,20 +468,18 @@ void adf400x_spi_write(uint32_t val)
 uint32_t adf400x_spi_read(uint8_t addr)
 {
     /* This assumes the AD400x MUXOUT is set to SDO/MISO,
-     * but the behavior of this output is unclear.
-     * We may want to return a cached value instead? */
+     * but the behavior of this output is unclear. */
+    uint8_t sdo_data[3] = { 0 };
     uint8_t sdi_data[3] = {
         (adf400x_reg[addr & 0x3] >> 16) & 0xff,
         (adf400x_reg[addr & 0x3] >> 8)  & 0xff,
         (adf400x_reg[addr & 0x3] >> 0)  & 0xff
     };
 
-    uint8_t sdo_data[3] = { 0 };
-
     /* Perform the SPI operation so we can take a look on SignalTap */
-    alt_avalon_spi_command(PERIPHERAL_SPI_BASE, 1, 3, sdi_data, 3, sdo_data, 0);
+    //alt_avalon_spi_command(PERIPHERAL_SPI_BASE, 1, 3, sdi_data, 3, sdo_data, 0);
 
-    /* Just return the cached value for now ... */
+    /* Just return the cached value */
     return adf400x_reg[addr & 0x3];
 }
 
