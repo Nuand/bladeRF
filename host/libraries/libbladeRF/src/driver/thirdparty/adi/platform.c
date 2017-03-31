@@ -5,10 +5,6 @@
 
 #include "platform.h"
 
-/* Bitwise positions of GPIOs in configuration register */
-#define CONFIG_GPIO_RESETB  0
-#define CONFIG_GPIO_SYNC    1
-
 /***************************************************************************//**
  * @brief spi_init
 *******************************************************************************/
@@ -86,11 +82,15 @@ int gpio_init(struct ad9361_rf_phy *phy, void *userdata)
  * @brief gpio_is_valid
 *******************************************************************************/
 
+/* Bitwise positions of GPOs in RFFE control register */
+#define RFFE_CONTROL_RESET_N  0
+#define RFFE_CONTROL_SYNC_IN  4
+
 bool gpio_is_valid(struct gpio_device *gpio, int32_t number)
 {
-    if (number == CONFIG_GPIO_RESETB) {
+    if (number == RFFE_CONTROL_RESET_N) {
         return true;
-    } else if (number == CONFIG_GPIO_SYNC) {
+    } else if (number == RFFE_CONTROL_SYNC_IN) {
         return true;
     }
 
@@ -108,7 +108,7 @@ int gpio_set_value(struct gpio_device *gpio, int32_t number, bool value)
     uint32_t reg;
 
     /* Read */
-    status = dev->backend->config_gpio_read(dev, &reg);
+    status = dev->backend->rffe_control_read(dev, &reg);
     if (status < 0) {
         return -EIO;
     }
@@ -121,7 +121,7 @@ int gpio_set_value(struct gpio_device *gpio, int32_t number, bool value)
     }
 
     /* Write */
-    status = dev->backend->config_gpio_write(dev, reg);
+    status = dev->backend->rffe_control_write(dev, reg);
     if (status < 0) {
         return -EIO;
     }
