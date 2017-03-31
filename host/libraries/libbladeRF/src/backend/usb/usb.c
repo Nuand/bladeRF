@@ -1148,6 +1148,9 @@ const struct backend_fns backend_fns_usb_legacy = {
     FIELD_INIT(.ad9361_spi_write, nios_legacy_ad9361_spi_write),
     FIELD_INIT(.ad9361_spi_read, nios_legacy_ad9361_spi_read),
 
+    FIELD_INIT(.rffe_control_write, nios_legacy_rffe_control_write),
+    FIELD_INIT(.rffe_control_read, nios_legacy_rffe_control_read),
+
     FIELD_INIT(.vctcxo_dac_write, nios_legacy_vctcxo_trim_dac_write),
     FIELD_INIT(.vctcxo_dac_read, nios_vctcxo_trim_dac_read),
 
@@ -1228,6 +1231,9 @@ const struct backend_fns backend_fns_usb = {
 
     FIELD_INIT(.ad9361_spi_write, nios_ad9361_spi_write),
     FIELD_INIT(.ad9361_spi_read, nios_ad9361_spi_read),
+
+    FIELD_INIT(.rffe_control_write, nios_rffe_control_write),
+    FIELD_INIT(.rffe_control_read, nios_rffe_control_read),
 
     FIELD_INIT(.vctcxo_dac_write, nios_vctcxo_trim_dac_write),
     FIELD_INIT(.vctcxo_dac_read, nios_vctcxo_trim_dac_read),

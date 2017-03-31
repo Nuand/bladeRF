@@ -159,6 +159,10 @@ struct backend_fns {
     int (*ad9361_spi_write)(struct bladerf *dev, uint16_t cmd, uint64_t data);
     int (*ad9361_spi_read)(struct bladerf *dev, uint16_t cmd, uint64_t *data);
 
+    /* RFFE control accessors */
+    int (*rffe_control_write)(struct bladerf *dev, uint32_t value);
+    int (*rffe_control_read)(struct bladerf *dev, uint32_t *value);
+
     /* VCTCXO accessors */
     int (*vctcxo_dac_write)(struct bladerf *dev, uint8_t addr, uint16_t value);
     int (*vctcxo_dac_read)(struct bladerf *dev, uint8_t addr, uint16_t *value);

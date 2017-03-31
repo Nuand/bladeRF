@@ -149,6 +149,28 @@ int nios_ad9361_spi_read(struct bladerf *dev, uint16_t cmd, uint64_t *data);
 int nios_ad9361_spi_write(struct bladerf *dev, uint16_t cmd, uint64_t data);
 
 /**
+ * Read RFFE control register.
+ *
+ * @param[inout]    dev         Device handle
+ * @param[in]       len         Data buffer length
+ * @param[out]      value       Value
+ *
+ * @return 0 on success, BLADERF_ERR_* code on error.
+ */
+int nios_rffe_control_read(struct bladerf *dev, uint32_t *value);
+
+/**
+ * Write RFFE control register.
+ *
+ * @param[inout]    dev         Device handle
+ * @param[in]       len         Data buffer length
+ * @param[in]       value       Value
+ *
+ * @return 0 on success, BLADERF_ERR_* code on error.
+ */
+int nios_rffe_control_write(struct bladerf *dev, uint32_t value);
+
+/**
  * Write to a VCTCXO trim DAC register.
  *
  * @param[in]   dev         Device handle
