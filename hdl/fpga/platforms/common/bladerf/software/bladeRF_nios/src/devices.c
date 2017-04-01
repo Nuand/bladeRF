@@ -332,7 +332,7 @@ uint64_t ad9361_spi_read(uint16_t addr)
     // Build the uint64_t return value
     rv = UINT64_C(0x0);
     for( i = 0; i < 8; i++ ) {
-        rv |= (data8[i] << (64-((i+1)*8)));
+        rv |= (((uint64_t)data8[i]) << 8*(7-i));
     }
 
     return rv;
@@ -353,7 +353,7 @@ void ad9361_spi_write(uint16_t addr, uint64_t data)
 
     // Convert the uint64_t data into an array of 8 uint8_t
     for( i = 0; i < 8; i++ ) {
-        data8[i] = ((data >> (64-((i+1)*8))) & 0xff);
+        data8[i] = (data >> 8*(7-i)) & 0xff;
     }
 
     // Calculate number of data bytes in this command
