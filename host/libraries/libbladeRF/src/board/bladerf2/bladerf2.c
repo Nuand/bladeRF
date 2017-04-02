@@ -134,6 +134,12 @@ static int bladerf2_initialize(struct bladerf *dev)
         return errno_ad9361_to_bladerf(status);
     }
 
+    /* Transition to idle alert state */
+    status = ad9361_set_en_state_machine_mode(board_data->phy, ENSM_MODE_ALERT);
+    if (status < 0) {
+        return errno_ad9361_to_bladerf(status);
+    }
+
     /* Update device state */
     board_data->device_state = STATE_INITIALIZED;
 
