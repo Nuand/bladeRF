@@ -83,6 +83,10 @@ struct bladerf2_board_data {
     char fw_version_str[BLADERF_VERSION_STR_MAX+1];
 };
 
+#define RFFE_CONTROL_RESET_N    0
+#define RFFE_CONTROL_ENABLE     1
+#define RFFE_CONTROL_TXNRX      2
+
 /******************************************************************************/
 /* Helpers */
 /******************************************************************************/
@@ -118,6 +122,12 @@ static int bladerf2_initialize(struct bladerf *dev)
     struct bladerf2_board_data *board_data = dev->board_data;
     int status;
 
+    /* Initialize RFFE control */
+    status = dev->backend->rffe_control_write(dev, (1 << RFFE_CONTROL_RESET_N));
+    if (status < 0) {
+        return status;
+    }
+
     status = ad9361_init(&board_data->phy, &ad9361_init_params, dev);
     if (status < 0) {
         log_error("AD9361 initialization error: %d\n", status);
@@ -130,12 +140,6 @@ static int bladerf2_initialize(struct bladerf *dev)
     }
 
     status = ad9361_set_rx_fir_config(board_data->phy, ad9361_init_rx_fir_config);
-    if (status < 0) {
-        return errno_ad9361_to_bladerf(status);
-    }
-
-    /* Transition to idle alert state */
-    status = ad9361_set_en_state_machine_mode(board_data->phy, ENSM_MODE_ALERT);
     if (status < 0) {
         return errno_ad9361_to_bladerf(status);
     }
@@ -475,48 +479,37 @@ static int bladerf2_get_fw_version(struct bladerf *dev, struct bladerf_version *
 
 static int bladerf2_enable_module(struct bladerf *dev, bladerf_module ch, bool enable)
 {
-    struct bladerf2_board_data *board_data = dev->board_data;
-    uint32_t mode, new_mode;
     int status;
+    bool tx;
+    uint32_t reg;
 
-    status = ad9361_get_en_state_machine_mode(board_data->phy, &mode);
+    /* Read RFFE control register */
+    status = dev->backend->rffe_control_read(dev, &reg);
     if (status < 0) {
-        log_error("Getting AD9361 ENSM mode: %d\n", status);
-        return errno_ad9361_to_bladerf(status);
+        return status;
     }
 
-    if ((ch & BLADERF_TX) && enable && mode == ENSM_MODE_RX) {
-        log_error("AD9361 is in RX mode.");
-        return -EINVAL;
-    } else if (!(ch & BLADERF_TX) && enable && mode == ENSM_MODE_TX) {
-        log_error("AD9361 is in TX mode.");
-        return -EINVAL;
+    tx = (ch & BLADERF_TX) == BLADERF_TX;
+
+    /* Modify */
+    if (enable && tx) {
+        /* Enable TX */
+        reg |= (1 << RFFE_CONTROL_TXNRX);
+    } else if (enable && !tx) {
+        /* Enable RX */
+        reg |= (1 << RFFE_CONTROL_ENABLE);
+    } else if (!enable && tx) {
+        /* Disable TX */
+        reg &= ~(1 << RFFE_CONTROL_TXNRX);
+    } else if (!enable && !tx) {
+        /* Disable RX */
+        reg &= ~(1 << RFFE_CONTROL_ENABLE);
     }
 
-    if (enable) {
-        new_mode = (ch & BLADERF_TX) ? ENSM_MODE_TX : ENSM_MODE_RX;
-    } else {
-        new_mode = ENSM_MODE_ALERT;
-    }
-
-    if (mode == new_mode)
-        return 0;
-
-    ad9361_set_en_state_machine_mode(board_data->phy, new_mode);
+    /* Write RFFE control register */
+    status = dev->backend->rffe_control_write(dev, reg);
     if (status < 0) {
-        log_error("Setting AD9361 ENSM mode: %d\n", status);
-        return errno_ad9361_to_bladerf(status);
-    }
-
-    ad9361_get_en_state_machine_mode(board_data->phy, &mode);
-    if (status < 0) {
-        log_error("Getting AD9361 ENSM mode: %d\n", status);
-        return errno_ad9361_to_bladerf(status);
-    }
-
-    if (mode != new_mode) {
-        log_error("AD9361 ENSM mode did not change (got %d, expected %d).\n", mode, new_mode);
-        return -EIO;
+        return status;
     }
 
     return 0;

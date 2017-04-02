@@ -12,7 +12,7 @@ AD9361_InitParam ad9361_init_params = {
 	1,		//one_rx_one_tx_mode_use_rx_num *** adi,1rx-1tx-mode-use-rx-num
 	1,		//one_rx_one_tx_mode_use_tx_num *** adi,1rx-1tx-mode-use-tx-num
 	0,		//frequency_division_duplex_mode_enable *** adi,frequency-division-duplex-mode-enable
-	0,		//frequency_division_duplex_independent_mode_enable *** adi,frequency-division-duplex-independent-mode-enable
+	1,		//frequency_division_duplex_independent_mode_enable *** adi,frequency-division-duplex-independent-mode-enable
 	0,		//tdd_use_dual_synth_mode_enable *** adi,tdd-use-dual-synth-mode-enable
 	0,		//tdd_skip_vco_cal_enable *** adi,tdd-skip-vco-cal-enable
 	0,		//tx_fastlock_delay_ns *** adi,tx-fastlock-delay-ns
