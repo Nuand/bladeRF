@@ -475,6 +475,50 @@ static int bladerf2_get_fw_version(struct bladerf *dev, struct bladerf_version *
 
 static int bladerf2_enable_module(struct bladerf *dev, bladerf_module ch, bool enable)
 {
+    struct bladerf2_board_data *board_data = dev->board_data;
+    uint32_t mode, new_mode;
+    int status;
+
+    status = ad9361_get_en_state_machine_mode(board_data->phy, &mode);
+    if (status < 0) {
+        log_error("Getting AD9361 ENSM mode: %d\n", status);
+        return errno_ad9361_to_bladerf(status);
+    }
+
+    if ((ch & BLADERF_TX) && enable && mode == ENSM_MODE_RX) {
+        log_error("AD9361 is in RX mode.");
+        return -EINVAL;
+    } else if (!(ch & BLADERF_TX) && enable && mode == ENSM_MODE_TX) {
+        log_error("AD9361 is in TX mode.");
+        return -EINVAL;
+    }
+
+    if (enable) {
+        new_mode = (ch & BLADERF_TX) ? ENSM_MODE_TX : ENSM_MODE_RX;
+    } else {
+        new_mode = ENSM_MODE_ALERT;
+    }
+
+    if (mode == new_mode)
+        return 0;
+
+    ad9361_set_en_state_machine_mode(board_data->phy, new_mode);
+    if (status < 0) {
+        log_error("Setting AD9361 ENSM mode: %d\n", status);
+        return errno_ad9361_to_bladerf(status);
+    }
+
+    ad9361_get_en_state_machine_mode(board_data->phy, &mode);
+    if (status < 0) {
+        log_error("Getting AD9361 ENSM mode: %d\n", status);
+        return errno_ad9361_to_bladerf(status);
+    }
+
+    if (mode != new_mode) {
+        log_error("AD9361 ENSM mode did not change (got %d, expected %d).\n", mode, new_mode);
+        return -EIO;
+    }
+
     return 0;
 }
 
