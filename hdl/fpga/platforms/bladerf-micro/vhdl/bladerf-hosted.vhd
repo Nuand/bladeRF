@@ -34,19 +34,63 @@ architecture hosted_bladerf of bladerf is
 
     component nios_system is
       port (
-        clk_clk                         :   in  std_logic := 'X'; -- clk
-        reset_reset_n                   :   in  std_logic := 'X'; -- reset_n
-        dac_MISO                        :   in  std_logic := 'X'; -- MISO
-        dac_MOSI                        :   out std_logic;        -- MOSI
-        dac_SCLK                        :   out std_logic;        -- SCLK
-        dac_SS_n                        :   out std_logic_vector(1 downto 0);        -- SS_n
-        spi_MISO                        :   in  std_logic := 'X'; -- MISO
-        spi_MOSI                        :   out std_logic;        -- MOSI
-        spi_SCLK                        :   out std_logic;        -- SCLK
-        spi_SS_n                        :   out std_logic;        -- SS_n
+        clk_clk                         :   in  std_logic := 'X';
+        reset_reset_n                   :   in  std_logic := 'X';
+        dac_MISO                        :   in  std_logic := 'X';
+        dac_MOSI                        :   out std_logic;
+        dac_SCLK                        :   out std_logic;
+        dac_SS_n                        :   out std_logic_vector(1 downto 0);
+        spi_MISO                        :   in  std_logic := 'X';
+        spi_MOSI                        :   out std_logic;
+        spi_SCLK                        :   out std_logic;
+        spi_SS_n                        :   out std_logic;
         gpio_export                     :   out std_logic_vector(31 downto 0);
         gpio_rffe_0_in_port             :   in  std_logic_vector(31 downto 0);
         gpio_rffe_0_out_port            :   out std_logic_vector(31 downto 0);
+        ad9361_dac_sync_in_sync         :   in  std_logic;
+        ad9361_dac_sync_out_sync        :   out std_logic;
+        ad9361_data_clock_clk           :   out std_logic;
+        ad9361_data_reset_reset         :   out std_logic;
+        ad9361_device_if_rx_clk_in_p    :   in  std_logic;
+        ad9361_device_if_rx_clk_in_n    :   in  std_logic;
+        ad9361_device_if_rx_frame_in_p  :   in  std_logic;
+        ad9361_device_if_rx_frame_in_n  :   in  std_logic;
+        ad9361_device_if_rx_data_in_p   :   in  std_logic_vector(5 downto 0);
+        ad9361_device_if_rx_data_in_n   :   in  std_logic_vector(5 downto 0);
+        ad9361_device_if_tx_clk_out_p   :   out std_logic;
+        ad9361_device_if_tx_clk_out_n   :   out std_logic;
+        ad9361_device_if_tx_frame_out_p :   out std_logic;
+        ad9361_device_if_tx_frame_out_n :   out std_logic;
+        ad9361_device_if_tx_data_out_p  :   out std_logic_vector(5 downto 0);
+        ad9361_device_if_tx_data_out_n  :   out std_logic_vector(5 downto 0);
+        ad9361_adc_i0_enable            :   out std_logic;
+        ad9361_adc_i0_valid             :   out std_logic;
+        ad9361_adc_i0_data              :   out std_logic_vector(15 downto 0);
+        ad9361_adc_i1_enable            :   out std_logic;
+        ad9361_adc_i1_valid             :   out std_logic;
+        ad9361_adc_i1_data              :   out std_logic_vector(15 downto 0);
+        ad9361_adc_overflow_ovf         :   in  std_logic;
+        ad9361_adc_q0_enable            :   out std_logic;
+        ad9361_adc_q0_valid             :   out std_logic;
+        ad9361_adc_q0_data              :   out std_logic_vector(15 downto 0);
+        ad9361_adc_q1_enable            :   out std_logic;
+        ad9361_adc_q1_valid             :   out std_logic;
+        ad9361_adc_q1_data              :   out std_logic_vector(15 downto 0);
+        ad9361_adc_underflow_unf        :   in  std_logic;
+        ad9361_dac_i0_enable            :   out std_logic;
+        ad9361_dac_i0_valid             :   out std_logic;
+        ad9361_dac_i0_data              :   in  std_logic_vector(15 downto 0);
+        ad9361_dac_i1_enable            :   out std_logic;
+        ad9361_dac_i1_valid             :   out std_logic;
+        ad9361_dac_i1_data              :   in  std_logic_vector(15 downto 0);
+        ad9361_dac_overflow_ovf         :   in  std_logic;
+        ad9361_dac_q0_enable            :   out std_logic;
+        ad9361_dac_q0_valid             :   out std_logic;
+        ad9361_dac_q0_data              :   in  std_logic_vector(15 downto 0);
+        ad9361_dac_q1_enable            :   out std_logic;
+        ad9361_dac_q1_valid             :   out std_logic;
+        ad9361_dac_q1_data              :   in  std_logic_vector(15 downto 0);
+        ad9361_dac_underflow_unf        :   in  std_logic;
         oc_i2c_arst_i                   :   in  std_logic;
         oc_i2c_scl_pad_i                :   in  std_logic;
         oc_i2c_scl_pad_o                :   out std_logic;
@@ -57,77 +101,30 @@ architecture hosted_bladerf of bladerf is
         xb_gpio_in_port                 :   in  std_logic_vector(31 downto 0) := (others => 'X');
         xb_gpio_out_port                :   out std_logic_vector(31 downto 0);
         xb_gpio_dir_export              :   out std_logic_vector(31 downto 0);
-        command_serial_in               :   in  std_logic ;
-        command_serial_out              :   out std_logic ;
+        command_serial_in               :   in  std_logic;
+        command_serial_out              :   out std_logic;
         correction_rx_phase_gain_export :   out std_logic_vector(31 downto 0);
         correction_tx_phase_gain_export :   out std_logic_vector(31 downto 0);
         rx_tamer_ts_sync_in             :   in  std_logic;
-        rx_tamer_ts_sync_out            :   out std_logic ;
-        rx_tamer_ts_pps                 :   in  std_logic ;
-        rx_tamer_ts_clock               :   in  std_logic ;
+        rx_tamer_ts_sync_out            :   out std_logic;
+        rx_tamer_ts_pps                 :   in  std_logic;
+        rx_tamer_ts_clock               :   in  std_logic;
         rx_tamer_ts_reset               :   in  std_logic;
-        rx_tamer_ts_time                :   out std_logic_vector(63 downto 0) ;
+        rx_tamer_ts_time                :   out std_logic_vector(63 downto 0);
         tx_tamer_ts_sync_in             :   in  std_logic;
-        tx_tamer_ts_sync_out            :   out std_logic ;
-        tx_tamer_ts_pps                 :   in  std_logic ;
-        tx_tamer_ts_clock               :   in  std_logic ;
+        tx_tamer_ts_sync_out            :   out std_logic;
+        tx_tamer_ts_pps                 :   in  std_logic;
+        tx_tamer_ts_clock               :   in  std_logic;
         tx_tamer_ts_reset               :   in  std_logic;
         tx_tamer_ts_time                :   out std_logic_vector(63 downto 0);
-        tx_trigger_ctl_in_port          :   in std_logic_vector(7 downto 0);
+        tx_trigger_ctl_in_port          :   in  std_logic_vector(7 downto 0);
         tx_trigger_ctl_out_port         :   out std_logic_vector(7 downto 0);
-        rx_trigger_ctl_in_port          :   in std_logic_vector(7 downto 0);
+        rx_trigger_ctl_in_port          :   in  std_logic_vector(7 downto 0);
         rx_trigger_ctl_out_port         :   out std_logic_vector(7 downto 0)
       );
     end component;
 
-    component axi_ad9361_alt_lvds_tx is
-        port(
-            -- physical interface (transmit)
-            tx_clk_out_p   : out std_logic;
-            tx_clk_out_n   : out std_logic;
-            tx_frame_out_p : out std_logic;
-            tx_frame_out_n : out std_logic;
-            tx_data_out_p  : out std_logic_vector(5 downto 0);
-            tx_data_out_n  : out std_logic_vector(5 downto 0);
-
-            -- data interface
-            tx_clk         : in  std_logic;
-            clk            : in  std_logic;
-            tx_frame       : in  std_logic_vector(3 downto 0);
-            tx_data_0      : in  std_logic_vector(5 downto 0);
-            tx_data_1      : in  std_logic_vector(5 downto 0);
-            tx_data_2      : in  std_logic_vector(5 downto 0);
-            tx_data_3      : in  std_logic_vector(5 downto 0);
-            tx_locked      : out std_logic
-        );
-    end component;
-
-    component axi_ad9361_alt_lvds_rx is
-        port(
-            -- physical interface (receive)
-            rx_clk_in_p   : in  std_logic;
-            rx_clk_in_n   : in  std_logic;
-            rx_frame_in_p : in  std_logic;
-            rx_frame_in_n : in  std_logic;
-            rx_data_in_p  : in  std_logic_vector(5 downto 0);
-            rx_data_in_n  : in  std_logic_vector(5 downto 0);
-
-            -- data interface
-            clk           : out std_logic;
-            rx_frame      : out std_logic_vector(3 downto 0);
-            rx_data_0     : out std_logic_vector(5 downto 0);
-            rx_data_1     : out std_logic_vector(5 downto 0);
-            rx_data_2     : out std_logic_vector(5 downto 0);
-            rx_data_3     : out std_logic_vector(5 downto 0);
-            rx_locked     : out std_logic
-        );
-    end component;
-
-    signal lvds_l_clk : std_logic;
-
     alias sys_rst   is fx3_ctl(7) ;
-    alias tx_clock  is lvds_l_clk;
-    alias rx_clock  is lvds_l_clk;
 
     -- Can be set from libbladeRF using bladerf_set_rx_mux()
     type rx_mux_mode_t is (RX_MUX_NORMAL, RX_MUX_12BIT_COUNTER, RX_MUX_32BIT_COUNTER, RX_MUX_ENTROPY, RX_MUX_DIGITAL_LOOPBACK) ;
@@ -365,25 +362,19 @@ architecture hosted_bladerf of bladerf is
 
     signal tx_lms_data : signed(11 downto 0) := (others => '0');
 
-    signal lvds_rx_frame  : std_logic_vector(3 downto 0);
-    signal lvds_rx_data_0 : std_logic_vector(5 downto 0);
-    signal lvds_rx_data_1 : std_logic_vector(5 downto 0);
-    signal lvds_rx_data_2 : std_logic_vector(5 downto 0);
-    signal lvds_rx_data_3 : std_logic_vector(5 downto 0);
-
-    signal lvds_tx_frame  : std_logic_vector(3 downto 0);
-    signal lvds_tx_data_0 : std_logic_vector(5 downto 0);
-    signal lvds_tx_data_1 : std_logic_vector(5 downto 0);
-    signal lvds_tx_data_2 : std_logic_vector(5 downto 0);
-    signal lvds_tx_data_3 : std_logic_vector(5 downto 0);
-
-    signal exp_clock_out_s : std_logic := '1';
     signal exp_blink       : std_logic := '1';
 
     signal rffe_gpio       : rffe_gpio_t := (
         i => RFFE_GPI_DEFAULT,
         o => pack(RFFE_GPO_DEFAULT)
     );
+
+    signal ad9361 : mimo_t;
+    alias tx_clock  is ad9361.clock;
+    alias rx_clock  is ad9361.clock;
+
+    attribute noprune of ad9361 : signal is true;
+    attribute keep    of ad9361 : signal is true;
 
 begin
 
@@ -760,27 +751,31 @@ begin
         overflow_duration   =>  x"ffff"
       ) ;
 
-    U_rx_iq_correction : entity work.iq_correction(rx)
-      generic map(
-        INPUT_WIDTH         => rx_sample_corrected_i'length
-      ) port map(
-        reset               => rx_reset,
-        clock               => rx_clock,
+    --U_rx_iq_correction : entity work.iq_correction(rx)
+    --  generic map(
+    --    INPUT_WIDTH         => rx_sample_corrected_i'length
+    --  ) port map(
+    --    reset               => rx_reset,
+    --    clock               => rx_clock,
+    --
+    --    in_real             => resize(rx_mux_i,16),
+    --    in_imag             => resize(rx_mux_q,16),
+    --    in_valid            => rx_mux_valid,
+    --
+    --    out_real            => rx_sample_corrected_i,
+    --    out_imag            => rx_sample_corrected_q,
+    --    out_valid           => rx_sample_corrected_valid,
+    --
+    --    dc_real             => FPGA_DC_CORRECTION,
+    --    dc_imag             => FPGA_DC_CORRECTION,
+    --    gain                => correction_rx_gain,
+    --    phase               => correction_rx_phase,
+    --    correction_valid    => correction_valid
+    --  );
 
-        in_real             => resize(rx_mux_i,16),
-        in_imag             => resize(rx_mux_q,16),
-        in_valid            => rx_mux_valid,
-
-        out_real            => rx_sample_corrected_i,
-        out_imag            => rx_sample_corrected_q,
-        out_valid           => rx_sample_corrected_valid,
-
-        dc_real             => FPGA_DC_CORRECTION,
-        dc_imag             => FPGA_DC_CORRECTION,
-        gain                => correction_rx_gain,
-        phase               => correction_rx_phase,
-        correction_valid    => correction_valid
-      );
+    rx_sample_corrected_i     <= resize(rx_mux_i,16);
+    rx_sample_corrected_q     <= resize(rx_mux_q,16);
+    rx_sample_corrected_valid <= rx_mux_valid;
 
     U_fifo_reader : entity work.fifo_reader
       port map (
@@ -811,27 +806,31 @@ begin
         underflow_duration  =>  x"ffff"
       ) ;
 
-    U_tx_iq_correction : entity work.iq_correction(tx)
-      generic map (
-        INPUT_WIDTH         => tx_sample_raw_i'length
-      ) port map (
-        reset               => tx_reset,
-        clock               => tx_clock,
+    --U_tx_iq_correction : entity work.iq_correction(tx)
+    --  generic map (
+    --    INPUT_WIDTH         => tx_sample_raw_i'length
+    --  ) port map (
+    --    reset               => tx_reset,
+    --    clock               => tx_clock,
+    --
+    --    in_real             => tx_sample_raw_i,
+    --    in_imag             => tx_sample_raw_q,
+    --    in_valid            => tx_sample_raw_valid,
+    --
+    --    out_real            => tx_sample_i,
+    --    out_imag            => tx_sample_q,
+    --    out_valid           => tx_sample_valid,
+    --
+    --    dc_real             => FPGA_DC_CORRECTION,
+    --    dc_imag             => FPGA_DC_CORRECTION,
+    --    gain                => correction_tx_gain,
+    --    phase               => correction_tx_phase,
+    --    correction_valid    => correction_valid
+    --  );
 
-        in_real             => tx_sample_raw_i,
-        in_imag             => tx_sample_raw_q,
-        in_valid            => tx_sample_raw_valid,
-
-        out_real            => tx_sample_i,
-        out_imag            => tx_sample_q,
-        out_valid           => tx_sample_valid,
-
-        dc_real             => FPGA_DC_CORRECTION,
-        dc_imag             => FPGA_DC_CORRECTION,
-        gain                => correction_tx_gain,
-        phase               => correction_tx_phase,
-        correction_valid    => correction_valid
-      );
+    tx_sample_i     <= tx_sample_raw_i;
+    tx_sample_q     <= tx_sample_raw_q;
+    tx_sample_valid <= tx_sample_raw_valid;
 
     -- RX Trigger
     rxtrig : entity work.trigger(async)
@@ -923,9 +922,6 @@ begin
         tx_lms_enable       =>  open
         ) ;
 
-    lvds_tx_data_0 <= std_logic_vector(tx_lms_data(5 downto 0));
-    lvds_tx_data_1 <= std_logic_vector(tx_lms_data(11 downto 6));
-
     U_rx_siggen : entity work.signal_generator
       port map (
         clock           =>  rx_clock,
@@ -984,8 +980,8 @@ begin
     end process ;
 
     -- Register the inputs immediately
-    lms_rx_data_reg         <= signed(lvds_rx_data_0 & lvds_rx_data_1) when rising_edge(rx_clock) ;
-    lms_rx_iq_select_reg    <= lvds_rx_frame(0) when rising_edge(rx_clock) ;
+    lms_rx_data_reg         <= to_signed(0, lms_rx_data_reg'length) when rising_edge(rx_clock) ;
+    lms_rx_iq_select_reg    <= '0' when rising_edge(rx_clock) ;
 
     -- FX3 GPIF bidirectional signals
     register_gpif : process(sys_rst_sync, fx3_pclk_pll)
@@ -1028,6 +1024,50 @@ begin
         gpio_export                     => nios_gpio,
         gpio_rffe_0_in_port             => pack(rffe_gpio),
         gpio_rffe_0_out_port            => rffe_gpio.o,
+        ad9361_dac_sync_in_sync         => '0',
+        ad9361_dac_sync_out_sync        => adi_sync_in,
+        ad9361_data_clock_clk           => ad9361.clock, -- out std_logic;
+        ad9361_data_reset_reset         => ad9361.reset, -- out std_logic;
+        ad9361_device_if_rx_clk_in_p    => adi_rx_clock,
+        ad9361_device_if_rx_clk_in_n    => '0',
+        ad9361_device_if_rx_frame_in_p  => adi_rx_frame,
+        ad9361_device_if_rx_frame_in_n  => '0',
+        ad9361_device_if_rx_data_in_p   => adi_rx_data,
+        ad9361_device_if_rx_data_in_n   => (others => '0'),
+        ad9361_device_if_tx_clk_out_p   => adi_tx_clock,
+        ad9361_device_if_tx_clk_out_n   => open,
+        ad9361_device_if_tx_frame_out_p => adi_tx_frame,
+        ad9361_device_if_tx_frame_out_n => open,
+        ad9361_device_if_tx_data_out_p  => adi_tx_data,
+        ad9361_device_if_tx_data_out_n  => open,
+        ad9361_adc_i0_enable            => ad9361.ch(0).adc.i.enable, -- out sl
+        ad9361_adc_i0_valid             => ad9361.ch(0).adc.i.valid,  -- out sl
+        ad9361_adc_i0_data              => ad9361.ch(0).adc.i.data,   -- out slv(15:0)
+        ad9361_adc_i1_enable            => ad9361.ch(1).adc.i.enable, -- out sl
+        ad9361_adc_i1_valid             => ad9361.ch(1).adc.i.valid,  -- out sl
+        ad9361_adc_i1_data              => ad9361.ch(1).adc.i.data,   -- out slv(15:0)
+        ad9361_adc_overflow_ovf         => ad9361.adc_overflow,       -- in  sl
+        ad9361_adc_q0_enable            => ad9361.ch(0).adc.q.enable, -- out sl
+        ad9361_adc_q0_valid             => ad9361.ch(0).adc.q.valid,  -- out sl
+        ad9361_adc_q0_data              => ad9361.ch(0).adc.q.data,   -- out slv(15:0)
+        ad9361_adc_q1_enable            => ad9361.ch(1).adc.q.enable, -- out sl
+        ad9361_adc_q1_valid             => ad9361.ch(1).adc.q.valid,  -- out sl
+        ad9361_adc_q1_data              => ad9361.ch(1).adc.q.data,   -- out slv(15:0)
+        ad9361_adc_underflow_unf        => ad9361.adc_underflow,      -- in  sl
+        ad9361_dac_i0_enable            => ad9361.ch(0).dac.i.enable, -- out sl
+        ad9361_dac_i0_valid             => ad9361.ch(0).dac.i.valid,  -- out sl
+        ad9361_dac_i0_data              => ad9361.ch(0).dac.i.data,   -- in  slv(15:0)
+        ad9361_dac_i1_enable            => ad9361.ch(1).dac.i.enable, -- out sl
+        ad9361_dac_i1_valid             => ad9361.ch(1).dac.i.valid,  -- out sl
+        ad9361_dac_i1_data              => ad9361.ch(1).dac.i.data,   -- in  slv(15:0)
+        ad9361_dac_overflow_ovf         => ad9361.dac_overflow,       -- in  sl
+        ad9361_dac_q0_enable            => ad9361.ch(0).dac.q.enable, -- out sl
+        ad9361_dac_q0_valid             => ad9361.ch(0).dac.q.valid,  -- out sl
+        ad9361_dac_q0_data              => ad9361.ch(0).dac.q.data,   -- in  slv(15:0)
+        ad9361_dac_q1_enable            => ad9361.ch(1).dac.q.enable, -- out sl
+        ad9361_dac_q1_valid             => ad9361.ch(1).dac.q.valid,  -- out sl
+        ad9361_dac_q1_data              => ad9361.ch(1).dac.q.data,   -- in  slv(15:0)
+        ad9361_dac_underflow_unf        => ad9361.dac_underflow,      -- in  sl
         xb_gpio_in_port                 => nios_xb_gpio_in,
         xb_gpio_out_port                => nios_xb_gpio_out,
         xb_gpio_dir_export              => nios_xb_gpio_dir,
@@ -1088,19 +1128,12 @@ begin
     -- temp assignments for initial bringup vv
     exp_gpio      <= (others => exp_blink);
 
-    U_exp_pll : entity work.pll
-        port map (
-            inclk0 => exp_clock_in,
-            c0     => exp_clock_out_s,
-            locked => open
-        );
+    exp_clock_out <= exp_clock_in;
 
-    exp_clock_out <= exp_clock_out_s;
-
-    exp_toggler : process(exp_clock_out_s)
+    exp_toggler : process(exp_clock_in)
         variable count : natural range 0 to 100_000_000 := 100_000_000 ;
     begin
-        if( rising_edge(exp_clock_out_s) ) then
+        if( rising_edge(exp_clock_in) ) then
             count := count - 1 ;
             if( count = 0 ) then
                 count := 100_000_00 ;
@@ -1108,53 +1141,6 @@ begin
             end if ;
         end if ;
     end process ;
-
-    U_lvds_tx : component axi_ad9361_alt_lvds_tx
-        port map (
-            -- physical interface (transmit)
-            tx_clk_out_p   => adi_tx_clock,
-            tx_clk_out_n   => open,
-            tx_frame_out_p => adi_tx_frame,
-            tx_frame_out_n => open,
-            tx_data_out_p  => adi_tx_data,
-            tx_data_out_n  => open,
-
-            -- data interface
-            tx_clk         => adi_rx_clock,
-            clk            => lvds_l_clk,
-            tx_frame       => lvds_tx_frame,
-            tx_data_0      => lvds_tx_data_0,
-            tx_data_1      => lvds_tx_data_1,
-            tx_data_2      => lvds_tx_data_2,
-            tx_data_3      => lvds_tx_data_3,
-            tx_locked      => open
-        );
-
-    lvds_tx_frame <= lvds_rx_frame;
-    --lvds_tx_data_0 <= lvds_rx_data_0;
-    --lvds_tx_data_1 <= lvds_rx_data_1;
-    lvds_tx_data_2 <= lvds_rx_data_2;
-    lvds_tx_data_3 <= lvds_rx_data_3;
-
-    U_lvds_rx : component axi_ad9361_alt_lvds_rx
-        port map (
-            -- physical interface (receive)
-            rx_clk_in_p   => adi_rx_clock,
-            rx_clk_in_n   => '0',
-            rx_frame_in_p => adi_rx_frame,
-            rx_frame_in_n => '0',
-            rx_data_in_p  => adi_rx_data,
-            rx_data_in_n  => (others => '0'),
-
-            -- data interface
-            clk           => lvds_l_clk,
-            rx_frame      => lvds_rx_frame,
-            rx_data_0     => lvds_rx_data_0,
-            rx_data_1     => lvds_rx_data_1,
-            rx_data_2     => lvds_rx_data_2,
-            rx_data_3     => lvds_rx_data_3,
-            rx_locked     => open
-        );
 
     -- end temp ^^
 
@@ -1203,7 +1189,7 @@ begin
     adi_rx_spdt2_v <= unpack(rffe_gpio.o).rx_spdt2;
     adi_rx_spdt1_v <= unpack(rffe_gpio.o).rx_spdt1;
     rx_bias_en     <= unpack(rffe_gpio.o).rx_bias_en;
-    adi_sync_in    <= unpack(rffe_gpio.o).sync_in;
+    --adi_sync_in    <= unpack(rffe_gpio.o).sync_in;
     adi_en_agc     <= unpack(rffe_gpio.o).en_agc;
     adi_txnrx      <= unpack(rffe_gpio.o).txnrx;
     adi_enable     <= unpack(rffe_gpio.o).enable;

@@ -7,18 +7,16 @@ set_project_property DEVICE_FAMILY {Cyclone V}
 set_project_property DEVICE {5CEBA4F23C8}
 set_project_property HIDE_FROM_IP_CATALOG {false}
 
-if { [info exists nios_impl] == 0 } {
-    error "Nios implementation variable not set."
-} else {
-    switch -regexp $nios_impl {
-        "[Tt][Ii][Nn][Yy]"     { puts "using tiny";  set nios_impl Tiny  }
-        "[Ff][Aa][Ss][Tt]"     { puts "using fast";  set nios_impl Fast  }
-        default { error "Invalid NIOS implementation: ${nios_impl}." }
-    }
-}
-
 # Instances and instance parameters
 # (disabled instances are intentionally culled)
+add_instance axi_ad9361_0 axi_ad9361 1.0
+set_instance_parameter_value axi_ad9361_0 {ID} {0}
+set_instance_parameter_value axi_ad9361_0 {DEVICE_TYPE} {0}
+
+add_instance cb_ad9361_0_data altera_clock_bridge
+set_instance_parameter_value cb_ad9361_0_data {EXPLICIT_CLOCK_RATE} {0.0}
+set_instance_parameter_value cb_ad9361_0_data {NUM_CLOCK_OUTPUTS} {1}
+
 add_instance clk_0 clock_source
 set_instance_parameter_value clk_0 {clockFrequency} {80000000.0}
 set_instance_parameter_value clk_0 {clockFrequencyKnown} {1}
@@ -53,6 +51,12 @@ set_instance_parameter_value lms_spi {syncRegDepth} {2}
 set_instance_parameter_value lms_spi {targetClockRate} {40000000.0}
 set_instance_parameter_value lms_spi {targetSlaveSelectToSClkDelay} {0.0}
 
+add_instance rb_ad9361_0_data altera_reset_bridge
+set_instance_parameter_value rb_ad9361_0_data {ACTIVE_LOW_RESET} {0}
+set_instance_parameter_value rb_ad9361_0_data {SYNCHRONOUS_EDGES} {deassert}
+set_instance_parameter_value rb_ad9361_0_data {NUM_RESET_OUTPUTS} {1}
+set_instance_parameter_value rb_ad9361_0_data {USE_RESET_REQUEST} {0}
+
 add_instance vctcxo_tamer_0 altera_avalon_onchip_memory2
 set_instance_parameter_value vctcxo_tamer_0 {allowInSystemMemoryContentEditor} {0}
 set_instance_parameter_value vctcxo_tamer_0 {blockType} {AUTO}
@@ -78,6 +82,28 @@ set_instance_parameter_value vctcxo_tamer_0 {ecc_enabled} {0}
 set_instance_parameter_value vctcxo_tamer_0 {resetrequest_enabled} {1}
 
 # exported interfaces
+add_interface ad9361_dac_sync_in conduit end
+set_interface_property ad9361_dac_sync_in EXPORT_OF axi_ad9361_0.if_dac_sync_in
+add_interface ad9361_dac_sync_out conduit end
+set_interface_property ad9361_dac_sync_out EXPORT_OF axi_ad9361_0.if_dac_sync_out
+add_interface ad9361_data_clock clock source
+set_interface_property ad9361_data_clock EXPORT_OF cb_ad9361_0_data.out_clk
+add_interface ad9361_data_reset reset source
+set_interface_property ad9361_data_reset EXPORT_OF rb_ad9361_0_data.out_reset
+add_interface ad9361_device_if conduit end
+set_interface_property ad9361_device_if EXPORT_OF axi_ad9361_0.device_if
+add_interface ad9361_adc_i0 conduit end
+set_interface_property ad9361_adc_i0 EXPORT_OF axi_ad9361_0.fifo_ch_0_in
+add_interface ad9361_adc_i1 conduit end
+set_interface_property ad9361_adc_i1 EXPORT_OF axi_ad9361_0.fifo_ch_2_in
+add_interface ad9361_adc_overflow conduit end
+set_interface_property ad9361_adc_overflow EXPORT_OF axi_ad9361_0.if_adc_dovf
+add_interface ad9361_adc_q0 conduit end
+set_interface_property ad9361_adc_q0 EXPORT_OF axi_ad9361_0.fifo_ch_1_in
+add_interface ad9361_adc_q1 conduit end
+set_interface_property ad9361_adc_q1 EXPORT_OF axi_ad9361_0.fifo_ch_3_in
+add_interface ad9361_adc_underflow conduit end
+set_interface_property ad9361_adc_underflow EXPORT_OF axi_ad9361_0.if_adc_dunf
 add_interface clk clock sink
 set_interface_property clk EXPORT_OF clk_0.clk_in
 add_interface command conduit end
@@ -88,6 +114,18 @@ add_interface correction_tx_phase_gain conduit end
 set_interface_property correction_tx_phase_gain EXPORT_OF common_system_0.correction_tx_phase_gain
 add_interface dac conduit end
 set_interface_property dac EXPORT_OF common_system_0.dac
+add_interface ad9361_dac_i0 conduit end
+set_interface_property ad9361_dac_i0 EXPORT_OF axi_ad9361_0.fifo_ch_0_out
+add_interface ad9361_dac_i1 conduit end
+set_interface_property ad9361_dac_i1 EXPORT_OF axi_ad9361_0.fifo_ch_2_out
+add_interface ad9361_dac_overflow conduit end
+set_interface_property ad9361_dac_overflow EXPORT_OF axi_ad9361_0.if_dac_dovf
+add_interface ad9361_dac_q0 conduit end
+set_interface_property ad9361_dac_q0 EXPORT_OF axi_ad9361_0.fifo_ch_1_out
+add_interface ad9361_dac_q1 conduit end
+set_interface_property ad9361_dac_q1 EXPORT_OF axi_ad9361_0.fifo_ch_3_out
+add_interface ad9361_dac_underflow conduit end
+set_interface_property ad9361_dac_underflow EXPORT_OF axi_ad9361_0.if_dac_dunf
 add_interface gpio conduit end
 set_interface_property gpio EXPORT_OF common_system_0.gpio
 add_interface gpio_rffe_0 conduit end
@@ -127,6 +165,11 @@ set_connection_parameter_value common_system_0.pb_1_m0/gpio_rffe_0.s1 arbitratio
 set_connection_parameter_value common_system_0.pb_1_m0/gpio_rffe_0.s1 baseAddress {0x0000}
 set_connection_parameter_value common_system_0.pb_1_m0/gpio_rffe_0.s1 defaultConnection {0}
 
+add_connection common_system_0.pb_2_m0 axi_ad9361_0.s_axi
+set_connection_parameter_value common_system_0.pb_2_m0/axi_ad9361_0.s_axi arbitrationPriority {1}
+set_connection_parameter_value common_system_0.pb_2_m0/axi_ad9361_0.s_axi baseAddress {0x0000}
+set_connection_parameter_value common_system_0.pb_2_m0/axi_ad9361_0.s_axi defaultConnection {0}
+
 add_connection clk_0.clk common_system_0.clk
 
 add_connection clk_0.clk lms_spi.clk
@@ -134,6 +177,16 @@ add_connection clk_0.clk lms_spi.clk
 add_connection clk_0.clk gpio_rffe_0.clk
 
 add_connection clk_0.clk vctcxo_tamer_0.clk1
+
+add_connection clk_0.clk axi_ad9361_0.delay_clock
+
+add_connection clk_0.clk axi_ad9361_0.s_axi_clock
+
+add_connection axi_ad9361_0.if_l_clk rb_ad9361_0_data.clk
+
+add_connection axi_ad9361_0.if_l_clk axi_ad9361_0.device_clock
+
+add_connection axi_ad9361_0.if_l_clk cb_ad9361_0_data.in_clk
 
 add_connection common_system_0.ib0_receiver_irq lms_spi.irq
 set_connection_parameter_value common_system_0.ib0_receiver_irq/lms_spi.irq irqNumber {2}
@@ -148,6 +201,10 @@ add_connection clk_0.clk_reset lms_spi.reset
 add_connection clk_0.clk_reset gpio_rffe_0.reset
 
 add_connection clk_0.clk_reset vctcxo_tamer_0.reset1
+
+add_connection clk_0.clk_reset axi_ad9361_0.s_axi_reset
+
+add_connection axi_ad9361_0.if_rst rb_ad9361_0_data.in_reset
 
 # interconnect requirements
 set_interconnect_requirement {$system} {qsys_mm.clockCrossingAdapter} {HANDSHAKE}

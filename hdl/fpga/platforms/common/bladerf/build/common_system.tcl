@@ -245,6 +245,19 @@ set_instance_parameter_value pb_1 {PIPELINE_COMMAND} {1}
 set_instance_parameter_value pb_1 {PIPELINE_RESPONSE} {1}
 set_instance_parameter_value pb_1 {USE_RESPONSE} {0}
 
+add_instance pb_2 altera_avalon_mm_bridge
+set_instance_parameter_value pb_2 {DATA_WIDTH} {32}
+set_instance_parameter_value pb_2 {SYMBOL_WIDTH} {8}
+set_instance_parameter_value pb_2 {ADDRESS_WIDTH} {16}
+set_instance_parameter_value pb_2 {USE_AUTO_ADDRESS_WIDTH} {1}
+set_instance_parameter_value pb_2 {ADDRESS_UNITS} {SYMBOLS}
+set_instance_parameter_value pb_2 {MAX_BURST_SIZE} {1}
+set_instance_parameter_value pb_2 {MAX_PENDING_RESPONSES} {4}
+set_instance_parameter_value pb_2 {LINEWRAPBURSTS} {0}
+set_instance_parameter_value pb_2 {PIPELINE_COMMAND} {1}
+set_instance_parameter_value pb_2 {PIPELINE_RESPONSE} {1}
+set_instance_parameter_value pb_2 {USE_RESPONSE} {0}
+
 add_instance peripheral_spi altera_avalon_spi
 set_instance_parameter_value peripheral_spi {clockPhase} {1}
 set_instance_parameter_value peripheral_spi {clockPolarity} {1}
@@ -365,6 +378,8 @@ add_interface pb_0_m0 avalon master
 set_interface_property pb_0_m0 EXPORT_OF pb_0.m0
 add_interface pb_1_m0 avalon master
 set_interface_property pb_1_m0 EXPORT_OF pb_1.m0
+add_interface pb_2_m0 avalon master
+set_interface_property pb_2_m0 EXPORT_OF pb_2.m0
 add_interface reset reset sink
 set_interface_property reset EXPORT_OF system_clock.clk_in_reset
 add_interface rx_tamer conduit end
@@ -420,6 +435,11 @@ add_connection nios2.data_master pb_1.s0
 set_connection_parameter_value nios2.data_master/pb_1.s0 arbitrationPriority {1}
 set_connection_parameter_value nios2.data_master/pb_1.s0 baseAddress {0x9440}
 set_connection_parameter_value nios2.data_master/pb_1.s0 defaultConnection {0}
+
+add_connection nios2.data_master pb_2.s0
+set_connection_parameter_value nios2.data_master/pb_2.s0 arbitrationPriority {1}
+set_connection_parameter_value nios2.data_master/pb_2.s0 baseAddress {0x00010000}
+set_connection_parameter_value nios2.data_master/pb_2.s0 defaultConnection {0}
 
 add_connection nios2.data_master ram.s1
 set_connection_parameter_value nios2.data_master/ram.s1 arbitrationPriority {1}
@@ -502,6 +522,8 @@ add_connection system_clock.clk irq_bridge_0.clk
 
 add_connection system_clock.clk pb_1.clk
 
+add_connection system_clock.clk pb_2.clk
+
 add_connection system_clock.clk ram.clk1
 
 add_connection system_clock.clk command_uart.clock
@@ -573,6 +595,8 @@ add_connection system_clock.clk_reset tx_trigger_ctl.reset
 add_connection system_clock.clk_reset pb_0.reset
 
 add_connection system_clock.clk_reset pb_1.reset
+
+add_connection system_clock.clk_reset pb_2.reset
 
 add_connection system_clock.clk_reset ram.reset1
 

@@ -38,6 +38,7 @@ set_global_assignment -name QIP_FILE [file normalize [file join $workdir nios_sy
 set_global_assignment -name QIP_FILE [file normalize [file join $workdir bladeRF_nios/mem_init/meminit.qip]]
 
 # SDC Constraints
+set_global_assignment -name SDC_FILE [file normalize [file join $adi_ip hdl/library/common/ad_axi_ip_constr.sdc]]
 set_global_assignment -name SDC_FILE [file normalize [file join $here constraints/ad9361.sdc]]
 set_global_assignment -name SDC_FILE [file normalize [file join $nuand_ip synthesis/constraints/spi.sdc]]
 set_global_assignment -name SDC_FILE [file normalize [file join $here constraints/bladerf.sdc]]

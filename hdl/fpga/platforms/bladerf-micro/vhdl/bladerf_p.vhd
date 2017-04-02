@@ -65,6 +65,39 @@ package bladerf_p is
         o : std_logic_vector(31 downto 0);
     end record;
 
+    type datastream_t is record
+        enable : std_logic;
+        valid  : std_logic;
+        data   : std_logic_vector(15 downto 0);
+    end record;
+
+    type sample_t is record
+        i      : datastream_t;
+        q      : datastream_t;
+    end record;
+
+    type channel_t is record
+        dac    : sample_t;
+        adc    : sample_t;
+    end record;
+
+    type channels_t is array( natural range <> ) of channel_t;
+
+    type mimo_t is record
+        clock         : std_logic;
+        reset         : std_logic;
+        adc_overflow  : std_logic;
+        adc_underflow : std_logic;
+        dac_overflow  : std_logic;
+        dac_underflow : std_logic;
+        -- Maybe some future version of Quartus will allow unconstrained
+        -- arrays within a record that are then constrained when defining
+        -- signals of this record type "signal s : mimo_t(ch(0 to 1));"
+        -- Until then, define this record as a fixed 2x2 MIMO here.
+        ch            : channels_t(0 to 1);
+    end record;
+
+
     -- ========================================================================
     -- PACK FUNCTIONS -- pack a human-readable record/type into bits
     -- ========================================================================
