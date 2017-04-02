@@ -155,7 +155,7 @@ module axi_ad9361_alt_lvds_tx (
     .outclock_duty_cycle (50),
     .outclock_multiply_by (1),
     .outclock_phase_shift (0),
-    .outclock_resource ("Regional clock"),
+    .outclock_resource ("AUTO"),
     .output_data_rate (500),
     .pll_compensation_mode ("AUTO"),
     .pll_self_reset_on_loss_lock ("OFF"),

@@ -141,7 +141,7 @@ module axi_ad9361_alt_lvds_rx (
     .lpm_hint ("CBX_MODULE_PREFIX=axi_ad9361_alt_lvds_rx"),
     .lpm_type ("altlvds_rx"),
     .number_of_channels (7),
-    .outclock_resource ("Regional clock"),
+    .outclock_resource ("AUTO"),
     .pll_operation_mode ("NORMAL"),
     .pll_self_reset_on_loss_lock ("UNUSED"),
     .port_rx_channel_data_align ("PORT_UNUSED"),
