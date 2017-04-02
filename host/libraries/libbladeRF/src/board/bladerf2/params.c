@@ -226,7 +226,7 @@ AD9361_InitParam ad9361_init_params = {
 	48,		//tx1_mon_lo_cm *** adi,txmon-1-lo-cm
 	48,		//tx2_mon_lo_cm *** adi,txmon-2-lo-cm
 	/* GPIO definitions */
-	-1,		//gpio_resetb *** reset-gpios
+	0,		//gpio_resetb *** reset-gpios
 	/* MCS Sync */
 	-1,		//gpio_sync *** sync-gpios
 	-1,		//gpio_cal_sw1 *** cal-sw1-gpios
