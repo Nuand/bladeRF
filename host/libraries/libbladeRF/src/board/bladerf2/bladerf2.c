@@ -81,6 +81,9 @@ struct bladerf2_board_data {
     struct bladerf_version fw_version;
     char fpga_version_str[BLADERF_VERSION_STR_MAX+1];
     char fw_version_str[BLADERF_VERSION_STR_MAX+1];
+
+    /* Synchronous interface handles */
+    struct bladerf_sync sync[2];
 };
 
 #define RFFE_CONTROL_RESET_N    0
@@ -798,17 +801,35 @@ static int bladerf2_get_stream_timeout(struct bladerf *dev, bladerf_module ch, u
 
 static int bladerf2_sync_config(struct bladerf *dev, bladerf_module ch, bladerf_format format, unsigned int num_buffers, unsigned int buffer_size, unsigned int num_transfers, unsigned int stream_timeout)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    struct bladerf2_board_data *board_data = dev->board_data;
+    int status;
+
+    status = sync_init(&board_data->sync[ch & BLADERF_TX], dev, ch,
+                       format, num_buffers, buffer_size,
+                       board_data->msg_size, num_transfers,
+                       stream_timeout);
+
+    return status;
 }
 
 static int bladerf2_sync_tx(struct bladerf *dev, void *samples, unsigned int num_samples, struct bladerf_metadata *metadata, unsigned int timeout_ms)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    struct bladerf2_board_data *board_data = dev->board_data;
+    int status;
+
+    status = sync_tx(&board_data->sync[1], samples, num_samples, metadata, timeout_ms);
+
+    return status;
 }
 
 static int bladerf2_sync_rx(struct bladerf *dev, void *samples, unsigned int num_samples, struct bladerf_metadata *metadata, unsigned int timeout_ms)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    struct bladerf2_board_data *board_data = dev->board_data;
+    int status;
+
+    status = sync_rx(&board_data->sync[0], samples, num_samples, metadata, timeout_ms);
+
+    return status;
 }
 
 static int bladerf2_get_timestamp(struct bladerf *dev, bladerf_module ch, uint64_t *value)
