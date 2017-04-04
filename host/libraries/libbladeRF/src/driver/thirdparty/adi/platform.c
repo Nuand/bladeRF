@@ -25,10 +25,11 @@ int spi_write(struct spi_device *spi, uint16_t cmd, const uint8_t *buf,
     struct bladerf *dev = spi->userdata;
     int status;
     uint64_t data;
+    unsigned i;
 
     /* Copy buf to data */
     data = 0;
-    for (unsigned i = 0; i < len; i++) {
+    for (i = 0; i < len; i++) {
         data |= (((uint64_t)buf[i]) << 8*(7-i));
     }
 
@@ -53,6 +54,7 @@ int spi_read(struct spi_device *spi, uint16_t cmd, uint8_t *buf,
     struct bladerf *dev = spi->userdata;
     int status;
     uint64_t data = 0;
+    unsigned int i;
 
     /* SPI transaction */
     status = dev->backend->ad9361_spi_read(dev, cmd, &data);
@@ -61,7 +63,7 @@ int spi_read(struct spi_device *spi, uint16_t cmd, uint8_t *buf,
     }
 
     /* Copy data to buf */
-    for (unsigned int i = 0; i < len; i++) {
+    for (i = 0; i < len; i++) {
         buf[i] = (data >> 8*(7-i)) & 0xff;
     }
 
