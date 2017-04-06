@@ -444,13 +444,13 @@ void bladerf_version(struct bladerf_version *version)
 /* Enable/disable */
 /******************************************************************************/
 
-int bladerf_enable_module(struct bladerf *dev,
-                            bladerf_module m, bool enable)
+int bladerf_enable_module(struct bladerf *dev, bladerf_direction dir,
+                          bool enable)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = dev->board->enable_module(dev, m, enable);
+    status = dev->board->enable_module(dev, dir, enable);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
@@ -460,12 +460,12 @@ int bladerf_enable_module(struct bladerf *dev,
 /* Gain */
 /******************************************************************************/
 
-int bladerf_set_gain(struct bladerf *dev, bladerf_module mod, int gain)
+int bladerf_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = dev->board->set_gain(dev, mod, gain);
+    status = dev->board->set_gain(dev, ch, gain);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
@@ -475,50 +475,50 @@ int bladerf_set_gain(struct bladerf *dev, bladerf_module mod, int gain)
 /* Sample Rate */
 /******************************************************************************/
 
-int bladerf_set_sample_rate(struct bladerf *dev, bladerf_module module,
+int bladerf_set_sample_rate(struct bladerf *dev, bladerf_channel ch,
                             uint32_t rate, uint32_t *actual)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = dev->board->set_sample_rate(dev, module, rate, actual);
+    status = dev->board->set_sample_rate(dev, ch, rate, actual);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
 }
 
-int bladerf_get_sample_rate(struct bladerf *dev, bladerf_module module,
+int bladerf_get_sample_rate(struct bladerf *dev, bladerf_channel ch,
                             unsigned int *rate)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = dev->board->get_sample_rate(dev, module, rate);
+    status = dev->board->get_sample_rate(dev, ch, rate);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
 }
 
-int bladerf_set_rational_sample_rate(struct bladerf *dev, bladerf_module module,
+int bladerf_set_rational_sample_rate(struct bladerf *dev, bladerf_channel ch,
                                      struct bladerf_rational_rate *rate,
                                      struct bladerf_rational_rate *actual)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = dev->board->set_rational_sample_rate(dev, module, rate, actual);
+    status = dev->board->set_rational_sample_rate(dev, ch, rate, actual);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
 }
 
-int bladerf_get_rational_sample_rate(struct bladerf *dev, bladerf_module module,
+int bladerf_get_rational_sample_rate(struct bladerf *dev, bladerf_channel ch,
                                      struct bladerf_rational_rate *rate)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = dev->board->get_rational_sample_rate(dev, module, rate);
+    status = dev->board->get_rational_sample_rate(dev, ch, rate);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
@@ -528,26 +528,26 @@ int bladerf_get_rational_sample_rate(struct bladerf *dev, bladerf_module module,
 /* Bandwidth */
 /******************************************************************************/
 
-int bladerf_set_bandwidth(struct bladerf *dev, bladerf_module module,
+int bladerf_set_bandwidth(struct bladerf *dev, bladerf_channel ch,
                           unsigned int bandwidth,
                           unsigned int *actual)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = dev->board->set_bandwidth(dev, module, bandwidth, actual);
+    status = dev->board->set_bandwidth(dev, ch, bandwidth, actual);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
 }
 
-int bladerf_get_bandwidth(struct bladerf *dev, bladerf_module module,
+int bladerf_get_bandwidth(struct bladerf *dev, bladerf_channel ch,
                             unsigned int *bandwidth)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = dev->board->get_bandwidth(dev, module, bandwidth);
+    status = dev->board->get_bandwidth(dev, ch, bandwidth);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
@@ -558,36 +558,36 @@ int bladerf_get_bandwidth(struct bladerf *dev, bladerf_module module,
 /******************************************************************************/
 
 int bladerf_set_frequency(struct bladerf *dev,
-                          bladerf_module module, unsigned int frequency)
+                          bladerf_channel ch, unsigned int frequency)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = dev->board->set_frequency(dev, module, frequency);
+    status = dev->board->set_frequency(dev, ch, frequency);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
 }
 
 int bladerf_get_frequency(struct bladerf *dev,
-                            bladerf_module module, unsigned int *frequency)
+                          bladerf_channel ch, unsigned int *frequency)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = dev->board->get_frequency(dev, module, frequency);
+    status = dev->board->get_frequency(dev, ch, frequency);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
 }
 
-int bladerf_select_band(struct bladerf *dev, bladerf_module module,
+int bladerf_select_band(struct bladerf *dev, bladerf_channel ch,
                         unsigned int frequency)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = dev->board->select_band(dev, module, frequency);
+    status = dev->board->select_band(dev, ch, frequency);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
@@ -598,20 +598,20 @@ int bladerf_select_band(struct bladerf *dev, bladerf_module module,
 /******************************************************************************/
 
 int bladerf_get_quick_tune(struct bladerf *dev,
-                           bladerf_module module,
+                           bladerf_channel ch,
                            struct bladerf_quick_tune *quick_tune)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = dev->board->get_quick_tune(dev, module, quick_tune);
+    status = dev->board->get_quick_tune(dev, ch, quick_tune);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
 }
 
 int bladerf_schedule_retune(struct bladerf *dev,
-                            bladerf_module module,
+                            bladerf_channel ch,
                             uint64_t timestamp,
                             unsigned int frequency,
                             struct bladerf_quick_tune *quick_tune)
@@ -620,18 +620,18 @@ int bladerf_schedule_retune(struct bladerf *dev,
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = dev->board->schedule_retune(dev, module, timestamp, frequency, quick_tune);
+    status = dev->board->schedule_retune(dev, ch, timestamp, frequency, quick_tune);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
 }
 
-int bladerf_cancel_scheduled_retunes(struct bladerf *dev, bladerf_module m)
+int bladerf_cancel_scheduled_retunes(struct bladerf *dev, bladerf_channel ch)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = dev->board->cancel_scheduled_retunes(dev, m);
+    status = dev->board->cancel_scheduled_retunes(dev, ch);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
@@ -642,14 +642,14 @@ int bladerf_cancel_scheduled_retunes(struct bladerf *dev, bladerf_module m)
 /******************************************************************************/
 
 int bladerf_trigger_init(struct bladerf *dev,
-                         bladerf_module module,
+                         bladerf_channel ch,
                          bladerf_trigger_signal signal,
                          struct bladerf_trigger *trigger)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = dev->board->trigger_init(dev, module, signal, trigger);
+    status = dev->board->trigger_init(dev, ch, signal, trigger);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
@@ -744,12 +744,12 @@ int bladerf_init_stream(struct bladerf_stream **stream,
     return status;
 }
 
-int bladerf_stream(struct bladerf_stream *stream, bladerf_module module)
+int bladerf_stream(struct bladerf_stream *stream, bladerf_direction dir)
 {
     int status;
     MUTEX_LOCK(&stream->dev->lock);
 
-    status = stream->dev->board->stream(stream, module);
+    status = stream->dev->board->stream(stream, dir);
 
     MUTEX_UNLOCK(&stream->dev->lock);
     return status;
@@ -774,30 +774,30 @@ void bladerf_deinit_stream(struct bladerf_stream *stream)
     }
 }
 
-int bladerf_set_stream_timeout(struct bladerf *dev, bladerf_module module,
+int bladerf_set_stream_timeout(struct bladerf *dev, bladerf_direction dir,
                                unsigned int timeout) {
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = dev->board->set_stream_timeout(dev, module, timeout);
+    status = dev->board->set_stream_timeout(dev, dir, timeout);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
 }
 
-int bladerf_get_stream_timeout(struct bladerf *dev, bladerf_module module,
+int bladerf_get_stream_timeout(struct bladerf *dev, bladerf_direction dir,
                                unsigned int *timeout) {
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = dev->board->get_stream_timeout(dev, module, timeout);
+    status = dev->board->get_stream_timeout(dev, dir, timeout);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
 }
 
 int bladerf_sync_config(struct bladerf *dev,
-                        bladerf_module module,
+                        bladerf_direction dir,
                         bladerf_format format,
                         unsigned int num_buffers,
                         unsigned int buffer_size,
@@ -807,7 +807,7 @@ int bladerf_sync_config(struct bladerf *dev,
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = dev->board->sync_config(dev, module, format, num_buffers, buffer_size, num_transfers, stream_timeout);
+    status = dev->board->sync_config(dev, dir, format, num_buffers, buffer_size, num_transfers, stream_timeout);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
@@ -829,12 +829,12 @@ int bladerf_sync_rx(struct bladerf *dev,
     return dev->board->sync_rx(dev, samples, num_samples, metadata, timeout_ms);
 }
 
-int bladerf_get_timestamp(struct bladerf *dev, bladerf_module module, uint64_t *value)
+int bladerf_get_timestamp(struct bladerf *dev, bladerf_direction dir, uint64_t *value)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = dev->board->get_timestamp(dev, module, value);
+    status = dev->board->get_timestamp(dev, dir, value);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
@@ -918,25 +918,25 @@ int bladerf_set_rational_smb_frequency(struct bladerf *dev,
 /* DC/Phase/Gain Correction */
 /******************************************************************************/
 
-int bladerf_get_correction(struct bladerf *dev, bladerf_module module,
+int bladerf_get_correction(struct bladerf *dev, bladerf_channel ch,
                            bladerf_correction corr, int16_t *value)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = dev->board->get_correction(dev, module, corr, value);
+    status = dev->board->get_correction(dev, ch, corr, value);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
 }
 
-int bladerf_set_correction(struct bladerf *dev, bladerf_module module,
+int bladerf_set_correction(struct bladerf *dev, bladerf_channel ch,
                            bladerf_correction corr, int16_t value)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = dev->board->set_correction(dev, module, corr, value);
+    status = dev->board->set_correction(dev, ch, corr, value);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
@@ -1271,52 +1271,52 @@ int bladerf_expansion_gpio_dir_masked_write(struct bladerf *dev,
 /* XB200 */
 
 int bladerf_xb200_set_filterbank(struct bladerf *dev,
-                                 bladerf_module mod,
+                                 bladerf_channel ch,
                                  bladerf_xb200_filter filter)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = xb200_set_filterbank(dev, mod, filter);
+    status = xb200_set_filterbank(dev, ch, filter);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
 }
 
 int bladerf_xb200_get_filterbank(struct bladerf *dev,
-                                 bladerf_module module,
+                                 bladerf_channel ch,
                                  bladerf_xb200_filter *filter)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = xb200_get_filterbank(dev, module, filter);
+    status = xb200_get_filterbank(dev, ch, filter);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
 }
 
 int bladerf_xb200_set_path(struct bladerf *dev,
-                           bladerf_module module,
+                           bladerf_channel ch,
                            bladerf_xb200_path path)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = xb200_set_path(dev, module, path);
+    status = xb200_set_path(dev, ch, path);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
 }
 
 int bladerf_xb200_get_path(struct bladerf *dev,
-                                     bladerf_module module,
-                                     bladerf_xb200_path *path)
+                           bladerf_channel ch,
+                           bladerf_xb200_path *path)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = xb200_get_path(dev, module, path);
+    status = xb200_get_path(dev, ch, path);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;

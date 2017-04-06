@@ -246,17 +246,17 @@ static int bladerf1_apply_lms_dc_cals(struct bladerf *dev)
 
             if (have_rx) {
                 unsigned int rx_f;
-                rx_status = dev->board->get_frequency(dev, BLADERF_MODULE_RX, &rx_f);
+                rx_status = dev->board->get_frequency(dev, BLADERF_CHANNEL_RX(0), &rx_f);
                 if (rx_status == 0) {
-                    rx_status = dev->board->set_frequency(dev, BLADERF_MODULE_RX, rx_f);
+                    rx_status = dev->board->set_frequency(dev, BLADERF_CHANNEL_RX(0), rx_f);
                 }
             }
 
             if (have_tx) {
                 unsigned int rx_f;
-                rx_status = dev->board->get_frequency(dev, BLADERF_MODULE_RX, &rx_f);
+                rx_status = dev->board->get_frequency(dev, BLADERF_CHANNEL_RX(0), &rx_f);
                 if (rx_status == 0) {
-                    rx_status = dev->board->set_frequency(dev, BLADERF_MODULE_RX, rx_f);
+                    rx_status = dev->board->set_frequency(dev, BLADERF_CHANNEL_RX(0), rx_f);
                 }
             }
 
@@ -303,12 +303,12 @@ static int bladerf1_initialize(struct bladerf *dev)
         }
 
         /* Disable the front ends */
-        status = lms_enable_rffe(dev, BLADERF_MODULE_TX, false);
+        status = lms_enable_rffe(dev, BLADERF_CHANNEL_TX(0), false);
         if (status != 0) {
             return status;
         }
 
-        status = lms_enable_rffe(dev, BLADERF_MODULE_RX, false);
+        status = lms_enable_rffe(dev, BLADERF_CHANNEL_RX(0), false);
         if (status != 0) {
             return status;
         }
@@ -363,35 +363,35 @@ static int bladerf1_initialize(struct bladerf *dev)
         }
 
         /* Configure charge pump current offsets */
-        status = lms_config_charge_pumps(dev, BLADERF_MODULE_TX);
+        status = lms_config_charge_pumps(dev, BLADERF_CHANNEL_TX(0));
         if (status != 0) {
             return status;
         }
 
-        status = lms_config_charge_pumps(dev, BLADERF_MODULE_RX);
+        status = lms_config_charge_pumps(dev, BLADERF_CHANNEL_RX(0));
         if (status != 0) {
             return status;
         }
 
         /* Set a default samplerate */
-        status = si5338_set_sample_rate(dev, BLADERF_MODULE_TX, 1000000, NULL);
+        status = si5338_set_sample_rate(dev, BLADERF_CHANNEL_TX(0), 1000000, NULL);
         if (status != 0) {
             return status;
         }
 
-        status = si5338_set_sample_rate(dev, BLADERF_MODULE_RX, 1000000, NULL);
+        status = si5338_set_sample_rate(dev, BLADERF_CHANNEL_RX(0), 1000000, NULL);
         if (status != 0) {
             return status;
         }
 
         board_data->tuning_mode = tuning_get_default_mode(dev);
 
-        status = dev->board->set_frequency(dev, BLADERF_MODULE_TX, 2447000000U);
+        status = dev->board->set_frequency(dev, BLADERF_CHANNEL_TX(0), 2447000000U);
         if (status != 0) {
             return status;
         }
 
-        status = dev->board->set_frequency(dev, BLADERF_MODULE_RX, 2484000000U);
+        status = dev->board->set_frequency(dev, BLADERF_CHANNEL_RX(0), 2484000000U);
         if (status != 0) {
             return status;
         }
@@ -485,8 +485,8 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     board_data->fpga_version.describe = board_data->fpga_version_str;
     board_data->fw_version.describe = board_data->fw_version_str;
 
-    board_data->module_format[BLADERF_MODULE_RX] = -1;
-    board_data->module_format[BLADERF_MODULE_TX] = -1;
+    board_data->module_format[BLADERF_RX] = -1;
+    board_data->module_format[BLADERF_TX] = -1;
 
     /* Read firmware version */
     status = dev->backend->get_fw_version(dev, &board_data->fw_version);
@@ -751,14 +751,14 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
         /* Cancel any pending re-tunes that may have been left over as the
          * result of a user application crashing or forgetting to call
          * bladerf_close() */
-        status = dev->board->cancel_scheduled_retunes(dev, BLADERF_MODULE_RX);
+        status = dev->board->cancel_scheduled_retunes(dev, BLADERF_CHANNEL_RX(0));
         if (status != 0) {
             log_warning("Failed to cancel any pending RX retunes: %s\n",
                     bladerf_strerror(status));
             return status;
         }
 
-        status = dev->board->cancel_scheduled_retunes(dev, BLADERF_MODULE_TX);
+        status = dev->board->cancel_scheduled_retunes(dev, BLADERF_CHANNEL_TX(0));
         if (status != 0) {
             log_warning("Failed to cancel any pending TX retunes: %s\n",
                     bladerf_strerror(status));
@@ -775,8 +775,8 @@ static void bladerf1_close(struct bladerf *dev)
     int status;
 
     if (board_data) {
-        sync_deinit(&board_data->sync[BLADERF_MODULE_RX]);
-        sync_deinit(&board_data->sync[BLADERF_MODULE_TX]);
+        sync_deinit(&board_data->sync[BLADERF_CHANNEL_RX(0)]);
+        sync_deinit(&board_data->sync[BLADERF_CHANNEL_TX(0)]);
 
         status = dev->backend->is_fpga_configured(dev);
         if (status == 1 && have_cap(board_data->capabilities, BLADERF_CAP_SCHEDULED_RETUNE)) {
@@ -790,8 +790,8 @@ static void bladerf1_close(struct bladerf *dev)
              * wondering why the device is starting up or "unexpectedly"
              * switching to a different frequency later.
              */
-            dev->board->cancel_scheduled_retunes(dev, BLADERF_MODULE_RX);
-            dev->board->cancel_scheduled_retunes(dev, BLADERF_MODULE_TX);
+            dev->board->cancel_scheduled_retunes(dev, BLADERF_CHANNEL_RX(0));
+            dev->board->cancel_scheduled_retunes(dev, BLADERF_CHANNEL_TX(0));
         }
 
         /* Detach expansion board */
@@ -879,29 +879,31 @@ static int bladerf1_get_fw_version(struct bladerf *dev, struct bladerf_version *
 /* Enable/disable */
 /******************************************************************************/
 
-static int perform_format_deconfig(struct bladerf *dev, bladerf_module module);
+static int perform_format_deconfig(struct bladerf *dev, bladerf_direction dir);
 
-static int bladerf1_enable_module(struct bladerf *dev, bladerf_module m, bool enable)
+static int bladerf1_enable_module(struct bladerf *dev, bladerf_direction dir, bool enable)
 {
     struct bladerf1_board_data *board_data = dev->board_data;
+    bladerf_channel ch;
     int status;
 
-    if (m != BLADERF_MODULE_RX && m != BLADERF_MODULE_TX) {
+    if (dir != BLADERF_RX && dir != BLADERF_TX) {
         return BLADERF_ERR_INVAL;
     }
 
-    log_debug("Enable Module: %s - %s\n",
-                (m == BLADERF_MODULE_RX) ? "RX" : "TX",
+    log_debug("Enable direction: %s - %s\n",
+                (dir == BLADERF_RX) ? "RX" : "TX",
                 enable ? "True" : "False") ;
 
 
     if (enable == false) {
-        sync_deinit(&board_data->sync[m]);
-        perform_format_deconfig(dev, m);
+        sync_deinit(&board_data->sync[dir]);
+        perform_format_deconfig(dev, dir);
     }
 
-    lms_enable_rffe(dev, m, enable);
-    status = dev->backend->enable_module(dev, m, enable);
+    ch = (dir == BLADERF_RX) ? BLADERF_CHANNEL_RX(0) : BLADERF_CHANNEL_TX(0);
+    lms_enable_rffe(dev, ch, enable);
+    status = dev->backend->enable_module(dev, dir, enable);
 
     return status;
 }
@@ -996,11 +998,11 @@ static int set_tx_gain(struct bladerf *dev, int gain)
     return status;
 }
 
-static int bladerf1_set_gain(struct bladerf *dev, bladerf_module mod, int gain)
+static int bladerf1_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
 {
-    if (mod == BLADERF_MODULE_TX) {
+    if (ch == BLADERF_CHANNEL_TX(0)) {
         return set_tx_gain(dev, gain);
-    } else if (mod == BLADERF_MODULE_RX) {
+    } else if (ch == BLADERF_CHANNEL_RX(0)) {
         return set_rx_gain(dev, gain);
     }
 
@@ -1060,31 +1062,31 @@ static int bladerf1_get_gain_mode(struct bladerf *dev, bladerf_module mod, blade
 /* Sample Rate */
 /******************************************************************************/
 
-static int bladerf1_set_sample_rate(struct bladerf *dev, bladerf_module module, unsigned int rate, unsigned int *actual)
+static int bladerf1_set_sample_rate(struct bladerf *dev, bladerf_channel ch, unsigned int rate, unsigned int *actual)
 {
-    return si5338_set_sample_rate(dev, module, rate, actual);
+    return si5338_set_sample_rate(dev, ch, rate, actual);
 }
 
-static int bladerf1_get_sample_rate(struct bladerf *dev, bladerf_module module, unsigned int *rate)
+static int bladerf1_get_sample_rate(struct bladerf *dev, bladerf_channel ch, unsigned int *rate)
 {
-    return si5338_get_sample_rate(dev, module, rate);
+    return si5338_get_sample_rate(dev, ch, rate);
 }
 
-static int bladerf1_set_rational_sample_rate(struct bladerf *dev, bladerf_module module, struct bladerf_rational_rate *rate, struct bladerf_rational_rate *actual)
+static int bladerf1_set_rational_sample_rate(struct bladerf *dev, bladerf_channel ch, struct bladerf_rational_rate *rate, struct bladerf_rational_rate *actual)
 {
-    return si5338_set_rational_sample_rate(dev, module, rate, actual);
+    return si5338_set_rational_sample_rate(dev, ch, rate, actual);
 }
 
-static int bladerf1_get_rational_sample_rate(struct bladerf *dev, bladerf_module module, struct bladerf_rational_rate *rate)
+static int bladerf1_get_rational_sample_rate(struct bladerf *dev, bladerf_channel ch, struct bladerf_rational_rate *rate)
 {
-    return si5338_get_rational_sample_rate(dev, module, rate);
+    return si5338_get_rational_sample_rate(dev, ch, rate);
 }
 
 /******************************************************************************/
 /* Bandwidth */
 /******************************************************************************/
 
-static int bladerf1_set_bandwidth(struct bladerf *dev, bladerf_module module, unsigned int bandwidth, unsigned int *actual)
+static int bladerf1_set_bandwidth(struct bladerf *dev, bladerf_channel ch, unsigned int bandwidth, unsigned int *actual)
 {
     int status;
     lms_bw bw;
@@ -1099,12 +1101,12 @@ static int bladerf1_set_bandwidth(struct bladerf *dev, bladerf_module module, un
 
     bw = lms_uint2bw(bandwidth);
 
-    status = lms_lpf_enable(dev, module, true);
+    status = lms_lpf_enable(dev, ch, true);
     if (status != 0) {
         return status;
     }
 
-    status = lms_set_bandwidth(dev, module, bw);
+    status = lms_set_bandwidth(dev, ch, bw);
     if (actual != NULL) {
         if (status == 0) {
             *actual = lms_bw2uint(bw);
@@ -1116,12 +1118,12 @@ static int bladerf1_set_bandwidth(struct bladerf *dev, bladerf_module module, un
     return status;
 }
 
-static int bladerf1_get_bandwidth(struct bladerf *dev, bladerf_module module, unsigned int *bandwidth)
+static int bladerf1_get_bandwidth(struct bladerf *dev, bladerf_channel ch, unsigned int *bandwidth)
 {
     int status;
     lms_bw bw;
 
-    status = lms_get_bandwidth( dev, module, &bw);
+    status = lms_get_bandwidth( dev, ch, &bw);
     if (status == 0) {
         *bandwidth = lms_bw2uint(bw);
     } else {
@@ -1135,7 +1137,7 @@ static int bladerf1_get_bandwidth(struct bladerf *dev, bladerf_module module, un
 /* Frequency */
 /******************************************************************************/
 
-static int bladerf1_set_frequency(struct bladerf *dev, bladerf_module module, unsigned int frequency)
+static int bladerf1_set_frequency(struct bladerf *dev, bladerf_channel ch, unsigned int frequency)
 {
     struct bladerf1_board_data *board_data = dev->board_data;
     const bladerf_xb attached = dev->xb;
@@ -1144,25 +1146,25 @@ static int bladerf1_set_frequency(struct bladerf *dev, bladerf_module module, un
     int16_t dc_i, dc_q;
     struct dc_cal_entry entry;
     const struct dc_cal_tbl *dc_cal =
-        (module == BLADERF_MODULE_RX) ? board_data->cal.dc_rx : board_data->cal.dc_tx;
+        (ch == BLADERF_CHANNEL_RX(0)) ? board_data->cal.dc_rx : board_data->cal.dc_tx;
 
-    log_debug("Setting %s frequency to %u\n", module2str(module), frequency);
+    log_debug("Setting %s frequency to %u\n", channel2str(ch), frequency);
 
     if (attached == BLADERF_XB_200) {
         if (frequency < BLADERF_FREQUENCY_MIN) {
-            status = xb200_set_path(dev, module, BLADERF_XB200_MIX);
+            status = xb200_set_path(dev, ch, BLADERF_XB200_MIX);
             if (status) {
                 return status;
             }
 
-            status = xb200_auto_filter_selection(dev, module, frequency);
+            status = xb200_auto_filter_selection(dev, ch, frequency);
             if (status) {
                 return status;
             }
 
             frequency = 1248000000 - frequency;
         } else {
-            status = xb200_set_path(dev, module, BLADERF_XB200_BYPASS);
+            status = xb200_set_path(dev, ch, BLADERF_XB200_BYPASS);
             if (status) {
                 return status;
             }
@@ -1171,16 +1173,16 @@ static int bladerf1_set_frequency(struct bladerf *dev, bladerf_module module, un
 
     switch (board_data->tuning_mode) {
         case BLADERF_TUNING_MODE_HOST:
-            status = lms_set_frequency(dev, module, frequency);
+            status = lms_set_frequency(dev, ch, frequency);
             if (status != 0) {
                 return status;
             }
 
-            status = band_select(dev, module, frequency < BLADERF1_BAND_HIGH);
+            status = band_select(dev, ch, frequency < BLADERF1_BAND_HIGH);
             break;
 
         case BLADERF_TUNING_MODE_FPGA: {
-            status = dev->board->schedule_retune(dev, module, BLADERF_RETUNE_NOW, frequency, NULL);
+            status = dev->board->schedule_retune(dev, ch, BLADERF_RETUNE_NOW, frequency, NULL);
             break;
         }
 
@@ -1199,17 +1201,17 @@ static int bladerf1_set_frequency(struct bladerf *dev, bladerf_module module, un
         dc_i = entry.dc_i;
         dc_q = entry.dc_q;
 
-        status = lms_set_dc_offset_i(dev, module, dc_i);
+        status = lms_set_dc_offset_i(dev, ch, dc_i);
         if (status != 0) {
             return status;
         }
 
-        status = lms_set_dc_offset_q(dev, module, dc_q);
+        status = lms_set_dc_offset_q(dev, ch, dc_q);
         if (status != 0) {
             return status;
         }
 
-        if (module == BLADERF_MODULE_RX &&
+        if (ch == BLADERF_CHANNEL_RX(0) &&
             have_cap(board_data->capabilities, BLADERF_CAP_AGC_DC_LUT)) {
 
             status = dev->backend->set_agc_dc_correction(dev,
@@ -1228,19 +1230,19 @@ static int bladerf1_set_frequency(struct bladerf *dev, bladerf_module module, un
         }
 
         log_verbose("Set %s DC offset cal (I, Q) to: (%d, %d)\n",
-                    (module == BLADERF_MODULE_RX) ? "RX" : "TX", dc_i, dc_q);
+                    (ch == BLADERF_CHANNEL_RX(0)) ? "RX" : "TX", dc_i, dc_q);
     }
 
     return 0;
 }
 
-static int bladerf1_get_frequency(struct bladerf *dev, bladerf_module module, unsigned int *frequency)
+static int bladerf1_get_frequency(struct bladerf *dev, bladerf_channel ch, unsigned int *frequency)
 {
     bladerf_xb200_path path;
     struct lms_freq f;
     int status = 0;
 
-    status = lms_get_frequency( dev, module, &f );
+    status = lms_get_frequency(dev, ch, &f);
     if (status != 0) {
         return status;
     }
@@ -1258,7 +1260,7 @@ static int bladerf1_get_frequency(struct bladerf *dev, bladerf_module module, un
     }
 
     if (dev->xb == BLADERF_XB_200) {
-        status = xb200_get_path(dev, module, &path);
+        status = xb200_get_path(dev, ch, &path);
         if (status != 0) {
             return status;
         }
@@ -1270,21 +1272,21 @@ static int bladerf1_get_frequency(struct bladerf *dev, bladerf_module module, un
     return 0;
 }
 
-static int bladerf1_select_band(struct bladerf *dev, bladerf_module module, unsigned int frequency)
+static int bladerf1_select_band(struct bladerf *dev, bladerf_channel ch, unsigned int frequency)
 {
-    return band_select(dev, module, frequency < BLADERF1_BAND_HIGH);
+    return band_select(dev, ch, frequency < BLADERF1_BAND_HIGH);
 }
 
 /******************************************************************************/
 /* Scheduled Tuning */
 /******************************************************************************/
 
-static int bladerf1_get_quick_tune(struct bladerf *dev, bladerf_module module, struct bladerf_quick_tune *quick_tune)
+static int bladerf1_get_quick_tune(struct bladerf *dev, bladerf_channel ch, struct bladerf_quick_tune *quick_tune)
 {
-    return lms_get_quick_tune(dev, module, quick_tune);
+    return lms_get_quick_tune(dev, ch, quick_tune);
 }
 
-static int bladerf1_schedule_retune(struct bladerf *dev, bladerf_module module, uint64_t timestamp, unsigned int frequency, struct bladerf_quick_tune *quick_tune)
+static int bladerf1_schedule_retune(struct bladerf *dev, bladerf_channel ch, uint64_t timestamp, unsigned int frequency, struct bladerf_quick_tune *quick_tune)
 
 {
     struct bladerf1_board_data *board_data = dev->board_data;
@@ -1314,19 +1316,19 @@ static int bladerf1_schedule_retune(struct bladerf *dev, bladerf_module module, 
         f.vcocap_result = 0;
     }
 
-    return dev->backend->retune(dev, module, timestamp,
+    return dev->backend->retune(dev, ch, timestamp,
                        f.nint, f.nfrac, f.freqsel, f.vcocap,
                        (f.flags & LMS_FREQ_FLAGS_LOW_BAND) != 0,
                        (f.flags & LMS_FREQ_FLAGS_FORCE_VCOCAP) != 0);
 }
 
-int bladerf1_cancel_scheduled_retunes(struct bladerf *dev, bladerf_module m)
+int bladerf1_cancel_scheduled_retunes(struct bladerf *dev, bladerf_channel ch)
 {
     struct bladerf1_board_data *board_data = dev->board_data;
     int status;
 
     if (have_cap(board_data->capabilities, BLADERF_CAP_SCHEDULED_RETUNE)) {
-        status = dev->backend->retune(dev, m, NIOS_PKT_RETUNE_CLEAR_QUEUE, 0, 0, 0, 0, false, false);
+        status = dev->backend->retune(dev, ch, NIOS_PKT_RETUNE_CLEAR_QUEUE, 0, 0, 0, 0, false, false);
     } else {
         log_debug("This FPGA version (%u.%u.%u) does not support "
                   "scheduled retunes.\n",  board_data->fpga_version.major,
@@ -1342,7 +1344,7 @@ int bladerf1_cancel_scheduled_retunes(struct bladerf *dev, bladerf_module m)
 /* Trigger */
 /******************************************************************************/
 
-static int bladerf1_trigger_init(struct bladerf *dev, bladerf_module module, bladerf_trigger_signal signal, struct bladerf_trigger *trigger)
+static int bladerf1_trigger_init(struct bladerf *dev, bladerf_channel ch, bladerf_trigger_signal signal, struct bladerf_trigger *trigger)
 {
     struct bladerf1_board_data *board_data = dev->board_data;
 
@@ -1352,7 +1354,7 @@ static int bladerf1_trigger_init(struct bladerf *dev, bladerf_module module, bla
         return BLADERF_ERR_UNSUPPORTED;
     }
 
-    return fpga_trigger_init(dev, module, signal, trigger);
+    return fpga_trigger_init(dev, ch, signal, trigger);
 }
 
 static int bladerf1_trigger_arm(struct bladerf *dev, const struct bladerf_trigger *trigger, bool arm, uint64_t resv1, uint64_t resv2)
@@ -1436,22 +1438,22 @@ static inline int requires_timestamps(bladerf_format format, bool *required)
 /**
  * Perform the neccessary device configuration for the specified format
  * (e.g., enabling/disabling timestamp support), first checking that the
- * requested format would not conflict with the other module.
+ * requested format would not conflict with the other stream direction.
  *
  * @param   dev     Device handle
- * @param   module  Module that is currently being configured
- * @param   format  Format the module is being configured for
+ * @param   dir     Direction that is currently being configured
+ * @param   format  Format the channel is being configured for
  *
  * @return 0 on success, BLADERF_ERR_* on failure
  */
-static int perform_format_config(struct bladerf *dev, bladerf_module module,
+static int perform_format_config(struct bladerf *dev, bladerf_direction dir,
                                  bladerf_format format)
 {
     struct bladerf1_board_data *board_data = dev->board_data;
 
     int status = 0;
     bool use_timestamps;
-    bladerf_module other;
+    bladerf_channel other;
     bool other_using_timestamps;
     uint32_t gpio_val;
 
@@ -1466,17 +1468,17 @@ static int perform_format_config(struct bladerf *dev, bladerf_module module,
         return BLADERF_ERR_UPDATE_FPGA;
     }
 
-    switch (module) {
-        case BLADERF_MODULE_RX:
-            other = BLADERF_MODULE_TX;
+    switch (dir) {
+        case BLADERF_RX:
+            other = BLADERF_TX;
             break;
 
-        case BLADERF_MODULE_TX:
-            other = BLADERF_MODULE_RX;
+        case BLADERF_TX:
+            other = BLADERF_RX;
             break;
 
         default:
-            log_debug("Invalid module: %d\n", module);
+            log_debug("Invalid direction: %d\n", dir);
             return BLADERF_ERR_INVAL;
     }
 
@@ -1501,35 +1503,35 @@ static int perform_format_config(struct bladerf *dev, bladerf_module module,
 
     status = dev->backend->config_gpio_write(dev, gpio_val);
     if (status == 0) {
-        board_data->module_format[module] = format;
+        board_data->module_format[dir] = format;
     }
 
     return status;
 }
 
 /**
- * Deconfigure and update any state pertaining what a format that a module is no
- * longer using
+ * Deconfigure and update any state pertaining what a format that a stream
+ * direction is no longer using.
  *
  * @param   dev     Device handle
- * @param   module  Module that is currently being deconfigured
+ * @param   dir     Direction that is currently being deconfigured
  *
  * @return 0 on success, BLADERF_ERR_* on failure
  */
-static int perform_format_deconfig(struct bladerf *dev, bladerf_module module)
+static int perform_format_deconfig(struct bladerf *dev, bladerf_direction dir)
 {
     struct bladerf1_board_data *board_data = dev->board_data;
 
-    switch (module) {
-        case BLADERF_MODULE_RX:
-        case BLADERF_MODULE_TX:
+    switch (dir) {
+        case BLADERF_RX:
+        case BLADERF_TX:
             /* We'll reconfigure the HW when we call perform_format_config, so
              * we just need to update our stored information */
-            board_data->module_format[module] = -1;
+            board_data->module_format[dir] = -1;
             break;
 
         default:
-            log_debug("%s: Invalid module: %d\n", __FUNCTION__, module);
+            log_debug("%s: Invalid direction: %d\n", __FUNCTION__, dir);
             return BLADERF_ERR_INVAL;
     }
 
@@ -1542,18 +1544,18 @@ static int bladerf1_init_stream(struct bladerf_stream **stream, struct bladerf *
                              format, samples_per_buffer, num_transfers, user_data);
 }
 
-static int bladerf1_stream(struct bladerf_stream *stream, bladerf_module module)
+static int bladerf1_stream(struct bladerf_stream *stream, bladerf_direction dir)
 {
     int stream_status, fmt_status;
 
-    fmt_status = perform_format_config(stream->dev, module, stream->format);
+    fmt_status = perform_format_config(stream->dev, dir, stream->format);
     if (fmt_status != 0) {
         return fmt_status;
     }
 
-    stream_status = async_run_stream(stream, module);
+    stream_status = async_run_stream(stream, dir);
 
-    fmt_status = perform_format_deconfig(stream->dev, module);
+    fmt_status = perform_format_deconfig(stream->dev, dir);
     if (fmt_status != 0) {
         return fmt_status;
     }
@@ -1571,41 +1573,41 @@ static void bladerf1_deinit_stream(struct bladerf_stream *stream)
     async_deinit_stream(stream);
 }
 
-static int bladerf1_set_stream_timeout(struct bladerf *dev, bladerf_module module, unsigned int timeout)
+static int bladerf1_set_stream_timeout(struct bladerf *dev, bladerf_direction dir, unsigned int timeout)
 {
     struct bladerf1_board_data *board_data = dev->board_data;
 
-    MUTEX_LOCK(&board_data->sync[module].lock);
-    board_data->sync[module].stream_config.timeout_ms = timeout;
-    MUTEX_UNLOCK(&board_data->sync[module].lock);
+    MUTEX_LOCK(&board_data->sync[dir].lock);
+    board_data->sync[dir].stream_config.timeout_ms = timeout;
+    MUTEX_UNLOCK(&board_data->sync[dir].lock);
 
     return 0;
 }
 
-static int bladerf1_get_stream_timeout(struct bladerf *dev, bladerf_module module, unsigned int *timeout)
+static int bladerf1_get_stream_timeout(struct bladerf *dev, bladerf_direction dir, unsigned int *timeout)
 {
     struct bladerf1_board_data *board_data = dev->board_data;
 
-    MUTEX_LOCK(&board_data->sync[module].lock);
-    *timeout = board_data->sync[module].stream_config.timeout_ms;
-    MUTEX_UNLOCK(&board_data->sync[module].lock);
+    MUTEX_LOCK(&board_data->sync[dir].lock);
+    *timeout = board_data->sync[dir].stream_config.timeout_ms;
+    MUTEX_UNLOCK(&board_data->sync[dir].lock);
 
     return 0;
 }
 
-static int bladerf1_sync_config(struct bladerf *dev, bladerf_module module, bladerf_format format, unsigned int num_buffers, unsigned int buffer_size, unsigned int num_transfers, unsigned int stream_timeout)
+static int bladerf1_sync_config(struct bladerf *dev, bladerf_direction dir, bladerf_format format, unsigned int num_buffers, unsigned int buffer_size, unsigned int num_transfers, unsigned int stream_timeout)
 {
     struct bladerf1_board_data *board_data = dev->board_data;
     int status;
 
-    status = perform_format_config(dev, module, format);
+    status = perform_format_config(dev, dir, format);
     if (status == 0) {
-        status = sync_init(&board_data->sync[module], dev, module,
+        status = sync_init(&board_data->sync[dir], dev, dir,
                            format, num_buffers, buffer_size,
                            board_data->msg_size, num_transfers,
                            stream_timeout);
         if (status != 0) {
-            perform_format_deconfig(dev, module);
+            perform_format_deconfig(dev, dir);
         }
     }
 
@@ -1617,7 +1619,7 @@ static int bladerf1_sync_tx(struct bladerf *dev, void *samples, unsigned int num
     struct bladerf1_board_data *board_data = dev->board_data;
     int status;
 
-    status = sync_tx(&board_data->sync[BLADERF_MODULE_TX],
+    status = sync_tx(&board_data->sync[BLADERF_TX],
                      samples, num_samples, metadata, timeout_ms);
 
     return status;
@@ -1628,15 +1630,15 @@ static int bladerf1_sync_rx(struct bladerf *dev, void *samples, unsigned int num
     struct bladerf1_board_data *board_data = dev->board_data;
     int status;
 
-    status = sync_rx(&board_data->sync[BLADERF_MODULE_RX],
+    status = sync_rx(&board_data->sync[BLADERF_RX],
                      samples, num_samples, metadata, timeout_ms);
 
     return status;
 }
 
-static int bladerf1_get_timestamp(struct bladerf *dev, bladerf_module mod, uint64_t *value)
+static int bladerf1_get_timestamp(struct bladerf *dev, bladerf_direction dir, uint64_t *value)
 {
-    return dev->backend->get_timestamp(dev, mod, value);
+    return dev->backend->get_timestamp(dev, dir, value);
 }
 
 /******************************************************************************/
@@ -1677,17 +1679,17 @@ static int bladerf1_set_rational_smb_frequency(struct bladerf *dev, struct blade
 /* DC/Phase/Gain Correction */
 /******************************************************************************/
 
-static int bladerf1_get_correction(struct bladerf *dev, bladerf_module module, bladerf_correction corr, int16_t *value)
+static int bladerf1_get_correction(struct bladerf *dev, bladerf_channel ch, bladerf_correction corr, int16_t *value)
 {
     int status;
 
     switch (corr) {
         case BLADERF_CORR_FPGA_PHASE:
-            status = dev->backend->get_iq_phase_correction(dev, module, value);
+            status = dev->backend->get_iq_phase_correction(dev, ch, value);
             break;
 
         case BLADERF_CORR_FPGA_GAIN:
-            status = dev->backend->get_iq_gain_correction(dev, module, value);
+            status = dev->backend->get_iq_gain_correction(dev, ch, value);
 
             /* Undo the gain control offset */
             if (status == 0) {
@@ -1696,11 +1698,11 @@ static int bladerf1_get_correction(struct bladerf *dev, bladerf_module module, b
             break;
 
         case BLADERF_CORR_LMS_DCOFF_I:
-            status = lms_get_dc_offset_i(dev, module, value);
+            status = lms_get_dc_offset_i(dev, ch, value);
             break;
 
         case BLADERF_CORR_LMS_DCOFF_Q:
-            status = lms_get_dc_offset_q(dev, module, value);
+            status = lms_get_dc_offset_q(dev, ch, value);
             break;
 
         default:
@@ -1712,27 +1714,27 @@ static int bladerf1_get_correction(struct bladerf *dev, bladerf_module module, b
     return status;
 }
 
-static int bladerf1_set_correction(struct bladerf *dev, bladerf_module module, bladerf_correction corr, int16_t value)
+static int bladerf1_set_correction(struct bladerf *dev, bladerf_channel ch, bladerf_correction corr, int16_t value)
 {
     int status;
 
     switch (corr) {
         case BLADERF_CORR_FPGA_PHASE:
-            status = dev->backend->set_iq_phase_correction(dev, module, value);
+            status = dev->backend->set_iq_phase_correction(dev, ch, value);
             break;
 
         case BLADERF_CORR_FPGA_GAIN:
             /* Gain correction requires than an offset be applied */
             value += (int16_t) 4096;
-            status = dev->backend->set_iq_gain_correction(dev, module, value);
+            status = dev->backend->set_iq_gain_correction(dev, ch, value);
             break;
 
         case BLADERF_CORR_LMS_DCOFF_I:
-            status = lms_set_dc_offset_i(dev, module, value);
+            status = lms_set_dc_offset_i(dev, ch, value);
             break;
 
         case BLADERF_CORR_LMS_DCOFF_Q:
-            status = lms_set_dc_offset_q(dev, module, value);
+            status = lms_set_dc_offset_q(dev, ch, value);
             break;
 
         default:
@@ -2188,7 +2190,6 @@ const struct board_fns bladerf1_board_fns = {
     FIELD_INIT(.get_capabilities, bladerf1_get_capabilities),
     FIELD_INIT(.get_fpga_version, bladerf1_get_fpga_version),
     FIELD_INIT(.get_fw_version, bladerf1_get_fw_version),
-    FIELD_INIT(.enable_module, bladerf1_enable_module),
     FIELD_INIT(.set_gain, bladerf1_set_gain),
     FIELD_INIT(.set_gain_mode, bladerf1_set_gain_mode),
     FIELD_INIT(.get_gain_mode, bladerf1_get_gain_mode),
@@ -2208,6 +2209,7 @@ const struct board_fns bladerf1_board_fns = {
     FIELD_INIT(.trigger_arm, bladerf1_trigger_arm),
     FIELD_INIT(.trigger_fire, bladerf1_trigger_fire),
     FIELD_INIT(.trigger_state, bladerf1_trigger_state),
+    FIELD_INIT(.enable_module, bladerf1_enable_module),
     FIELD_INIT(.init_stream, bladerf1_init_stream),
     FIELD_INIT(.stream, bladerf1_stream),
     FIELD_INIT(.submit_stream_buffer, bladerf1_submit_stream_buffer),
@@ -2514,25 +2516,25 @@ exit:
 /* LPF Bypass */
 /******************************************************************************/
 
-int bladerf_set_lpf_mode(struct bladerf *dev, bladerf_module module,
+int bladerf_set_lpf_mode(struct bladerf *dev, bladerf_channel ch,
                          bladerf_lpf_mode mode)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = lms_lpf_set_mode(dev, module, mode);
+    status = lms_lpf_set_mode(dev, ch, mode);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
 }
 
-int bladerf_get_lpf_mode(struct bladerf *dev, bladerf_module module,
+int bladerf_get_lpf_mode(struct bladerf *dev, bladerf_channel ch,
                          bladerf_lpf_mode *mode)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = lms_lpf_get_mode(dev, module, mode);
+    status = lms_lpf_get_mode(dev, ch, mode);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
@@ -2888,28 +2890,28 @@ int bladerf_config_gpio_write(struct bladerf *dev, uint32_t val)
 /******************************************************************************/
 
 int bladerf_read_trigger(struct bladerf *dev,
-                         bladerf_module module,
+                         bladerf_channel ch,
                          bladerf_trigger_signal trigger,
                          uint8_t *val)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = fpga_trigger_read(dev, module, trigger, val);
+    status = fpga_trigger_read(dev, ch, trigger, val);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
 }
 
 int bladerf_write_trigger(struct bladerf *dev,
-                          bladerf_module module,
+                          bladerf_channel ch,
                           bladerf_trigger_signal trigger,
                           uint8_t val)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = fpga_trigger_write(dev, module, trigger, val);
+    status = fpga_trigger_write(dev, ch, trigger, val);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;

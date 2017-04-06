@@ -434,7 +434,7 @@ int nios_get_fpga_version(struct bladerf *dev, struct bladerf_version *ver)
     return status;
 }
 
-int nios_get_timestamp(struct bladerf *dev, bladerf_module module,
+int nios_get_timestamp(struct bladerf *dev, bladerf_direction dir,
                        uint64_t *timestamp)
 {
     int status;
@@ -442,17 +442,17 @@ int nios_get_timestamp(struct bladerf *dev, bladerf_module module,
     uint8_t addr;
     bool success;
 
-    switch (module) {
-        case BLADERF_MODULE_RX:
+    switch (dir) {
+        case BLADERF_RX:
             addr = NIOS_PKT_8x64_TIMESTAMP_RX;
             break;
 
-        case BLADERF_MODULE_TX:
+        case BLADERF_TX:
             addr = NIOS_PKT_8x64_TIMESTAMP_TX;
             break;
 
         default:
-            log_debug("Invalid module: %d\n", module);
+            log_debug("Invalid direction: %d\n", dir);
             return BLADERF_ERR_INVAL;
     }
 
@@ -467,7 +467,7 @@ int nios_get_timestamp(struct bladerf *dev, bladerf_module module,
 
     if (success) {
         log_verbose("%s: Read %s timstamp: 0x%"PRIu64"\n",
-                    __FUNCTION__, module2str(module), timestamp);
+                    __FUNCTION__, direction2str(dir), timestamp);
         return 0;
     } else {
         log_debug("%s: response packet reported failure.\n", __FUNCTION__);
@@ -730,123 +730,123 @@ int nios_get_vctcxo_tamer_mode(struct bladerf *dev,
 }
 
 
-int nios_get_iq_gain_correction(struct bladerf *dev, bladerf_module module,
+int nios_get_iq_gain_correction(struct bladerf *dev, bladerf_channel ch,
                                 int16_t *value)
 {
     int status = BLADERF_ERR_INVAL;
     uint16_t tmp = 0;
 
-    switch (module) {
-        case BLADERF_MODULE_RX:
+    switch (ch) {
+        case BLADERF_CHANNEL_RX(0):
             status = nios_8x16_read(dev, NIOS_PKT_8x16_TARGET_IQ_CORR,
                                     NIOS_PKT_8x16_ADDR_IQ_CORR_RX_GAIN, &tmp);
             break;
 
-        case BLADERF_MODULE_TX:
+        case BLADERF_CHANNEL_TX(0):
             status = nios_8x16_read(dev, NIOS_PKT_8x16_TARGET_IQ_CORR,
                                     NIOS_PKT_8x16_ADDR_IQ_CORR_TX_GAIN, &tmp);
             break;
 
         default:
-            log_debug("Invalid module: %d\n", module);
+            log_debug("Invalid channel: 0x%x\n", ch);
     }
 
     *value = (int16_t) tmp;
 
     if (status == 0) {
         log_verbose("%s: Read %s %d\n",
-                    __FUNCTION__, module2str(module), *value);
+                    __FUNCTION__, channel2str(ch), *value);
     }
 
     return status;
 }
 
-int nios_get_iq_phase_correction(struct bladerf *dev, bladerf_module module,
+int nios_get_iq_phase_correction(struct bladerf *dev, bladerf_channel ch,
                                  int16_t *value)
 {
     int status = BLADERF_ERR_INVAL;
     uint16_t tmp = 0;
 
-    switch (module) {
-        case BLADERF_MODULE_RX:
+    switch (ch) {
+        case BLADERF_CHANNEL_RX(0):
             status = nios_8x16_read(dev, NIOS_PKT_8x16_TARGET_IQ_CORR,
                                     NIOS_PKT_8x16_ADDR_IQ_CORR_RX_PHASE, &tmp);
             break;
 
-        case BLADERF_MODULE_TX:
+        case BLADERF_CHANNEL_TX(0):
             status = nios_8x16_read(dev, NIOS_PKT_8x16_TARGET_IQ_CORR,
                                     NIOS_PKT_8x16_ADDR_IQ_CORR_TX_PHASE, &tmp);
             break;
 
         default:
-            log_debug("Invalid module: %d\n", module);
+            log_debug("Invalid channel: 0x%x\n", ch);
     }
 
     *value = (int16_t) tmp;
 
     if (status == 0) {
         log_verbose("%s: Read %s %d\n",
-                    __FUNCTION__, module2str(module), *value);
+                    __FUNCTION__, channel2str(ch), *value);
     }
 
     return status;
 }
 
-int nios_set_iq_gain_correction(struct bladerf *dev, bladerf_module module,
+int nios_set_iq_gain_correction(struct bladerf *dev, bladerf_channel ch,
                                 int16_t value)
 {
     int status = BLADERF_ERR_INVAL;
 
-    switch (module) {
-        case BLADERF_MODULE_RX:
+    switch (ch) {
+        case BLADERF_CHANNEL_RX(0):
             log_verbose("Setting RX IQ Correction gain: %d\n", value);
             status = nios_8x16_write(dev, NIOS_PKT_8x16_TARGET_IQ_CORR,
                                      NIOS_PKT_8x16_ADDR_IQ_CORR_RX_GAIN, value);
             break;
 
-        case BLADERF_MODULE_TX:
+        case BLADERF_CHANNEL_TX(0):
             log_verbose("Setting TX IQ Correction gain: %d\n", value);
             status = nios_8x16_write(dev, NIOS_PKT_8x16_TARGET_IQ_CORR,
                                      NIOS_PKT_8x16_ADDR_IQ_CORR_TX_GAIN, value);
             break;
 
         default:
-            log_debug("Invalid module: %d\n", module);
+            log_debug("Invalid channel: 0x%x\n", ch);
     }
 
     if (status == 0) {
         log_verbose("%s: Wrote %s %d\n",
-                    __FUNCTION__, module2str(module), value);
+                    __FUNCTION__, channel2str(ch), value);
     }
 
     return status;
 }
 
-int nios_set_iq_phase_correction(struct bladerf *dev, bladerf_module module,
+int nios_set_iq_phase_correction(struct bladerf *dev, bladerf_channel ch,
                                  int16_t value)
 {
     int status = BLADERF_ERR_INVAL;
 
-    switch (module) {
-        case BLADERF_MODULE_RX:
+    switch (ch) {
+        case BLADERF_CHANNEL_RX(0):
             log_verbose("Setting RX IQ Correction phase: %d\n", value);
             status = nios_8x16_write(dev, NIOS_PKT_8x16_TARGET_IQ_CORR,
                                      NIOS_PKT_8x16_ADDR_IQ_CORR_RX_PHASE, value);
             break;
 
-        case BLADERF_MODULE_TX:
+        case BLADERF_CHANNEL_TX(0):
             log_verbose("Setting TX IQ Correction phase: %d\n", value);
             status = nios_8x16_write(dev, NIOS_PKT_8x16_TARGET_IQ_CORR,
                                      NIOS_PKT_8x16_ADDR_IQ_CORR_TX_PHASE, value);
             break;
 
         default:
-            log_debug("Invalid module: %d\n", module);
+            log_debug("Invalid channel: 0x%x\n", ch);
     }
 
     if (status == 0) {
         log_verbose("%s: Wrote %s %d\n",
-                    __FUNCTION__, module2str(module), value);
+                    __FUNCTION__, channel2str(ch), value);
     }
 
 
@@ -937,7 +937,7 @@ int nios_expansion_gpio_dir_write(struct bladerf *dev,
     return status;
 }
 
-int nios_retune(struct bladerf *dev, bladerf_module module,
+int nios_retune(struct bladerf *dev, bladerf_channel ch,
                 uint64_t timestamp, uint16_t nint, uint32_t nfrac,
                 uint8_t freqsel, uint8_t vcocap, bool low_band,
                 bool quick_tune)
@@ -949,15 +949,15 @@ int nios_retune(struct bladerf *dev, bladerf_module module,
     uint64_t duration;
 
     if (timestamp == NIOS_PKT_RETUNE_CLEAR_QUEUE) {
-        log_verbose("Clearing %s retune queue.\n", module2str(module));
+        log_verbose("Clearing %s retune queue.\n", channel2str(ch));
     } else {
-        log_verbose("%s: module=%s timestamp=%"PRIu64" nint=%u nfrac=%u\n\t\t\t\t"
+        log_verbose("%s: channel=%s timestamp=%"PRIu64" nint=%u nfrac=%u\n\t\t\t\t"
                     "freqsel=0x%02x vcocap=0x%02x low_band=%d quick_tune=%d\n",
-                    __FUNCTION__, module2str(module), timestamp, nint, nfrac,
+                    __FUNCTION__, channel2str(ch), timestamp, nint, nfrac,
                     freqsel, vcocap, low_band, quick_tune);
     }
 
-    nios_pkt_retune_pack(buf, module, timestamp,
+    nios_pkt_retune_pack(buf, ch, timestamp,
                          nint, nfrac, freqsel, vcocap, low_band, quick_tune);
 
     status = nios_access(dev, buf);
@@ -969,10 +969,10 @@ int nios_retune(struct bladerf *dev, bladerf_module module,
 
     if (resp_flags & NIOS_PKT_RETUNERESP_FLAG_TSVTUNE_VALID) {
         log_verbose("%s retune operation: vcocap=%u, duration=%"PRIu64"\n",
-                    module2str(module), vcocap, duration);
+                    channel2str(ch), vcocap, duration);
     } else {
         log_verbose("%s operation duration: %"PRIu64"\n",
-                    module2str(module), duration);
+                    channel2str(ch), duration);
     }
 
     if ((resp_flags & NIOS_PKT_RETUNERESP_FLAG_SUCCESS) == 0) {
@@ -989,23 +989,23 @@ int nios_retune(struct bladerf *dev, bladerf_module module,
     return status;
 }
 
-int nios_read_trigger(struct bladerf *dev, bladerf_module module,
+int nios_read_trigger(struct bladerf *dev, bladerf_channel ch,
                       bladerf_trigger_signal trigger, uint8_t *value)
 {
     int status;
     uint8_t nios_id;
 
-    switch (module) {
-        case BLADERF_MODULE_TX:
+    switch (ch) {
+        case BLADERF_CHANNEL_TX(0):
             nios_id = NIOS_PKT_8x8_TX_TRIGGER_CTL;
             break;
 
-        case BLADERF_MODULE_RX:
+        case BLADERF_CHANNEL_RX(0):
             nios_id = NIOS_PKT_8x8_RX_TRIGGER_CTL;
             break;
 
         default:
-            log_debug("Invalid module: %d\n", module);
+            log_debug("Invalid channel: 0x%x\n", ch);
             return BLADERF_ERR_INVAL;
     }
 
@@ -1021,29 +1021,29 @@ int nios_read_trigger(struct bladerf *dev, bladerf_module module,
 
     status = nios_8x8_read(dev, nios_id, 0, value);
     if (status == 0) {
-        log_verbose("%s trigger read value 0x%02x\n", module2str(module), *value);
+        log_verbose("%s trigger read value 0x%02x\n", channel2str(ch), *value);
     }
 
     return status;
 }
 
-int nios_write_trigger(struct bladerf *dev, bladerf_module module,
+int nios_write_trigger(struct bladerf *dev, bladerf_channel ch,
                        bladerf_trigger_signal trigger, uint8_t value)
 {
     int status;
     uint8_t nios_id;
 
-    switch (module) {
-        case BLADERF_MODULE_TX:
+    switch (ch) {
+        case BLADERF_CHANNEL_TX(0):
             nios_id = NIOS_PKT_8x8_TX_TRIGGER_CTL;
             break;
 
-        case BLADERF_MODULE_RX:
+        case BLADERF_CHANNEL_RX(0):
             nios_id = NIOS_PKT_8x8_RX_TRIGGER_CTL;
             break;
 
         default:
-            log_debug("Invalid module: %d\n", module);
+            log_debug("Invalid channel: 0x%x\n", ch);
             return BLADERF_ERR_INVAL;
     }
 
@@ -1059,7 +1059,7 @@ int nios_write_trigger(struct bladerf *dev, bladerf_module module,
 
     status = nios_8x8_write(dev, nios_id, 0, value);
     if (status == 0) {
-        log_verbose("%s trigger write value 0x%02x\n", module2str(module), value);
+        log_verbose("%s trigger write value 0x%02x\n", channel2str(ch), value);
     }
 
     return status;

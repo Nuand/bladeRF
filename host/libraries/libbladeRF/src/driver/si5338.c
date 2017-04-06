@@ -476,12 +476,12 @@ static int si5338_set_rational_multisynth(struct bladerf *dev,
 }
 
 
-int si5338_set_rational_sample_rate(struct bladerf *dev, bladerf_module module,
+int si5338_set_rational_sample_rate(struct bladerf *dev, bladerf_channel ch,
                                     const struct bladerf_rational_rate *rate,
                                     struct bladerf_rational_rate *actual)
 {
     struct bladerf_rational_rate rate_reduced = *rate;
-    uint8_t index = (module == BLADERF_MODULE_RX) ? 1 : 2;
+    uint8_t index = (ch == BLADERF_CHANNEL_RX(0)) ? 1 : 2;
     uint8_t channel = SI5338_EN_A;
 
     /* Enforce minimum sample rate */
@@ -491,7 +491,7 @@ int si5338_set_rational_sample_rate(struct bladerf *dev, bladerf_module module,
         return BLADERF_ERR_INVAL;
     }
 
-    if (module == BLADERF_MODULE_TX) {
+    if (ch == BLADERF_CHANNEL_TX(0)) {
         channel |= SI5338_EN_B;
     }
 
@@ -518,7 +518,7 @@ int si5338_set_rational_smb_freq(struct bladerf *dev,
     return si5338_set_rational_multisynth(dev, 3, SI5338_EN_A, &rate_reduced, actual);
 }
 
-int si5338_set_sample_rate(struct bladerf *dev, bladerf_module module,
+int si5338_set_sample_rate(struct bladerf *dev, bladerf_channel ch,
                            uint32_t rate, uint32_t *actual)
 {
     struct bladerf_rational_rate req, act;
@@ -530,7 +530,7 @@ int si5338_set_sample_rate(struct bladerf *dev, bladerf_module module,
     req.num = 0;
     req.den = 1;
 
-    status = si5338_set_rational_sample_rate(dev, module, &req, &act);
+    status = si5338_set_rational_sample_rate(dev, ch, &req, &act);
 
     if (status == 0 && act.num != 0) {
         log_info("Non-integer sample rate set from integer sample rate, "
@@ -575,7 +575,7 @@ int si5338_set_smb_freq(struct bladerf *dev, uint32_t rate, uint32_t *actual)
     return status;
 }
 
-int si5338_get_rational_sample_rate(struct bladerf *dev, bladerf_module module,
+int si5338_get_rational_sample_rate(struct bladerf *dev, bladerf_channel ch,
                                     struct bladerf_rational_rate *rate)
 {
 
@@ -583,7 +583,7 @@ int si5338_get_rational_sample_rate(struct bladerf *dev, bladerf_module module,
     int status;
 
     /* Select the multisynth we want to read */
-    ms.index = (module == BLADERF_MODULE_RX) ? 1 : 2;
+    ms.index = (ch == BLADERF_CHANNEL_RX(0)) ? 1 : 2;
 
     /* Update the base address */
     si5338_update_base(&ms);
@@ -623,13 +623,13 @@ int si5338_get_rational_smb_freq(struct bladerf *dev,
     return 0;
 }
 
-int si5338_get_sample_rate(struct bladerf *dev, bladerf_module module,
+int si5338_get_sample_rate(struct bladerf *dev, bladerf_channel ch,
                            unsigned int *rate)
 {
     struct bladerf_rational_rate actual;
     int status;
 
-    status = si5338_get_rational_sample_rate(dev, module, &actual);
+    status = si5338_get_rational_sample_rate(dev, ch, &actual);
 
     if (status) {
         si5338_log_read_error(status, bladerf_strerror(status));

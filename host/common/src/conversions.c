@@ -134,6 +134,34 @@ bladerf_module str2module(const char *str)
     }
 }
 
+const char * channel2str(bladerf_channel ch)
+{
+    switch (ch) {
+        case BLADERF_CHANNEL_RX(0):
+            return "RX0";
+        case BLADERF_CHANNEL_TX(0):
+            return "TX0";
+        case BLADERF_CHANNEL_RX(1):
+            return "RX1";
+        case BLADERF_CHANNEL_TX(1):
+            return "TX1";
+        default:
+            return "Unknown";
+    }
+}
+
+const char * direction2str(bladerf_direction dir)
+{
+    switch (dir) {
+        case BLADERF_RX:
+            return "RX";
+        case BLADERF_TX:
+            return "TX";
+        default:
+            return "Unknown";
+    }
+}
+
 const char * trigger2str(bladerf_trigger_signal trigger)
 {
     switch (trigger) {

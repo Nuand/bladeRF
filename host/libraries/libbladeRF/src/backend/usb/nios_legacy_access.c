@@ -241,7 +241,7 @@ int nios_legacy_get_fpga_version(struct bladerf *dev,
     return status;
 }
 
-int nios_legacy_get_timestamp(struct bladerf *dev, bladerf_module mod,
+int nios_legacy_get_timestamp(struct bladerf *dev, bladerf_direction dir,
                               uint64_t *value)
 {
     int status = 0;
@@ -250,10 +250,10 @@ int nios_legacy_get_timestamp(struct bladerf *dev, bladerf_module mod,
     size_t i;
 
     /* Offset 16 is the time tamer according to the Nios firmware */
-    cmds[0].addr = (mod == BLADERF_MODULE_RX ? 16 : 24);
-    cmds[1].addr = (mod == BLADERF_MODULE_RX ? 17 : 25);
-    cmds[2].addr = (mod == BLADERF_MODULE_RX ? 18 : 26);
-    cmds[3].addr = (mod == BLADERF_MODULE_RX ? 19 : 27);
+    cmds[0].addr = (dir == BLADERF_RX ? 16 : 24);
+    cmds[1].addr = (dir == BLADERF_RX ? 17 : 25);
+    cmds[2].addr = (dir == BLADERF_RX ? 18 : 26);
+    cmds[3].addr = (dir == BLADERF_RX ? 19 : 27);
     cmds[0].data = cmds[1].data = cmds[2].data = cmds[3].data = 0xff;
 
     status = nios_access(dev,
@@ -268,10 +268,10 @@ int nios_legacy_get_timestamp(struct bladerf *dev, bladerf_module mod,
         }
     }
 
-    cmds[0].addr = (mod == BLADERF_MODULE_RX ? 20 : 28);
-    cmds[1].addr = (mod == BLADERF_MODULE_RX ? 21 : 29);
-    cmds[2].addr = (mod == BLADERF_MODULE_RX ? 22 : 30);
-    cmds[3].addr = (mod == BLADERF_MODULE_RX ? 23 : 31);
+    cmds[0].addr = (dir == BLADERF_RX ? 20 : 28);
+    cmds[1].addr = (dir == BLADERF_RX ? 21 : 29);
+    cmds[2].addr = (dir == BLADERF_RX ? 22 : 30);
+    cmds[3].addr = (dir == BLADERF_RX ? 23 : 31);
     cmds[0].data = cmds[1].data = cmds[2].data = cmds[3].data = 0xff;
 
     status = nios_access(dev,
@@ -530,23 +530,23 @@ static int set_iq_correction(struct bladerf *dev, uint8_t addr, int16_t value)
 
 
 int nios_legacy_get_iq_gain_correction(struct bladerf *dev,
-                                       bladerf_module module, int16_t *value)
+                                       bladerf_channel ch, int16_t *value)
 {
     int status;
     uint8_t addr;
 
-    switch (module) {
-        case BLADERF_MODULE_RX:
+    switch (ch) {
+        case BLADERF_CHANNEL_RX(0):
             addr = NIOS_PKT_LEGACY_DEV_RX_GAIN_ADDR;
             break;
 
-        case BLADERF_MODULE_TX:
+        case BLADERF_CHANNEL_TX(0):
             addr = NIOS_PKT_LEGACY_DEV_TX_GAIN_ADDR;
             break;
 
         default:
-            log_debug("%s: invalid module provided (%d)\n",
-                      __FUNCTION__, module);
+            log_debug("%s: invalid channel provided (0x%x)\n",
+                      __FUNCTION__, ch);
 
             return BLADERF_ERR_INVAL;
     }
@@ -557,22 +557,22 @@ int nios_legacy_get_iq_gain_correction(struct bladerf *dev,
 }
 
 int nios_legacy_get_iq_phase_correction(struct bladerf *dev,
-                                        bladerf_module module, int16_t *value)
+                                        bladerf_channel ch, int16_t *value)
 {
     uint8_t addr;
 
-    switch (module) {
-        case BLADERF_MODULE_RX:
+    switch (ch) {
+        case BLADERF_CHANNEL_RX(0):
             addr = NIOS_PKT_LEGACY_DEV_RX_PHASE_ADDR;
             break;
 
-        case BLADERF_MODULE_TX:
+        case BLADERF_CHANNEL_TX(0):
             addr = NIOS_PKT_LEGACY_DEV_TX_PHASE_ADDR;
             break;
 
         default:
-            log_debug("%s: invalid module provided (%d)\n",
-                      __FUNCTION__, module);
+            log_debug("%s: invalid channel provided (0x%x)\n",
+                      __FUNCTION__, ch);
 
             return BLADERF_ERR_INVAL;
     }
@@ -581,24 +581,24 @@ int nios_legacy_get_iq_phase_correction(struct bladerf *dev,
 }
 
 int nios_legacy_set_iq_gain_correction(struct bladerf *dev,
-                                       bladerf_module module, int16_t value)
+                                       bladerf_channel ch, int16_t value)
 {
     uint8_t addr;
 
-    switch (module) {
-        case BLADERF_MODULE_RX:
+    switch (ch) {
+        case BLADERF_CHANNEL_RX(0):
             addr = NIOS_PKT_LEGACY_DEV_RX_GAIN_ADDR;
             log_verbose("Setting RX IQ Correction phase: %d\n", value);
             break;
 
-        case BLADERF_MODULE_TX:
+        case BLADERF_CHANNEL_TX(0):
             addr = NIOS_PKT_LEGACY_DEV_TX_GAIN_ADDR;
             log_verbose("Setting TX IQ Correction phase: %d\n", value);
             break;
 
         default:
-            log_debug("%s: invalid module provided (%d)\n",
-                      __FUNCTION__, module);
+            log_debug("%s: invalid channel provided (0x%x)\n",
+                      __FUNCTION__, ch);
 
             return BLADERF_ERR_INVAL;
     }
@@ -607,24 +607,24 @@ int nios_legacy_set_iq_gain_correction(struct bladerf *dev,
 }
 
 int nios_legacy_set_iq_phase_correction(struct bladerf *dev,
-                                        bladerf_module module, int16_t value)
+                                        bladerf_channel ch, int16_t value)
 {
     uint8_t addr;
 
-    switch (module) {
-        case BLADERF_MODULE_RX:
+    switch (ch) {
+        case BLADERF_CHANNEL_RX(0):
             log_verbose("Setting RX IQ Correction phase: %d\n", value);
             addr = NIOS_PKT_LEGACY_DEV_RX_PHASE_ADDR;
             break;
 
-        case BLADERF_MODULE_TX:
+        case BLADERF_CHANNEL_TX(0):
             log_verbose("Setting TX IQ Correction phase: %d\n", value);
             addr = NIOS_PKT_LEGACY_DEV_TX_PHASE_ADDR;
             break;
 
         default:
-            log_debug("%s: invalid module provided (%d)\n",
-                      __FUNCTION__, module);
+            log_debug("%s: invalid channel provided (0x%x)\n",
+                      __FUNCTION__, ch);
 
             return BLADERF_ERR_INVAL;
     }

@@ -461,11 +461,11 @@ bladerf_dev_speed CALL_CONV bladerf_device_speed(struct bladerf *dev);
 /** @} (End FN_INFO) */
 
 /**
- * @defgroup FN_MODULE Module control
+ * @defgroup FN_CHANNEL Channel control
  *
- * The RX and TX modules are independently configurable. As such,
- * many libbladeRF functions require a ::bladerf_module parameter
- * to specify which module to operate on.
+ * The RX and TX channels are independently configurable. As such,
+ * many libbladeRF functions require a ::bladerf_channel parameter
+ * to specify which channel to operate on.
  *
  * These functions are thread-safe.
  *
@@ -473,38 +473,68 @@ bladerf_dev_speed CALL_CONV bladerf_device_speed(struct bladerf *dev);
  */
 
 /**
- * Module selection for those which have both RX and TX constituents
+ * Channel type
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ * // RX Channel 0
+ * bladerf_channel ch = BLADERF_CHANNEL_RX(0);
+ *
+ * // RX Channel 1
+ * bladerf_channel ch = BLADERF_CHANNEL_RX(1);
+ *
+ * // TX Channel 0
+ * bladerf_channel ch = BLADERF_CHANNEL_TX(0);
+ *
+ * // TX Channel 1
+ * bladerf_channel ch = BLADERF_CHANNEL_TX(1);
+ * @endcode
  */
-typedef enum
-{
-    BLADERF_MODULE_INVALID = -1,    /**< Invalid module entry */
-    BLADERF_MODULE_RX,              /**< Receive Module */
-    BLADERF_MODULE_TX               /**< Transmit Module */
-} bladerf_module;
+typedef int bladerf_channel;
 
 /**
- * Enable or disable the specified module.
+ * RX Channel Macro
  *
- * Modules must always be enabled prior to streaming samples on the associated
- * interface.
+ * Example usage:
  *
- * When a synchronous stream is associated with the specified module, this will
- * shut down the underlying asynchronous stream when `enable` = false.
+ * @code{.c}
+ * // RX Channel 0
+ * bladerf_channel ch = BLADERF_CHANNEL_RX(0);
  *
- * When transmitting samples, be sure to provide ample time for TX samples reach
- * the RF front-end before calling this function with `enable` = false. (This
- * can be achieved easily when using metadata, as shown on
- * <a class="el" href="sync_tx_meta_bursts.html">this page</a>.)
- *
- * @param       dev     Device handle
- * @param       m       Device module
- * @param       enable  true to enable, false to disable
- *
- * @return 0 on success, value from \ref RETCODES list on failure
+ * // RX Channel 1
+ * bladerf_channel ch = BLADERF_CHANNEL_RX(1);
+ * @endcode
  */
-API_EXPORT
-int CALL_CONV bladerf_enable_module(struct bladerf *dev,
-                                    bladerf_module m, bool enable);
+#define BLADERF_CHANNEL_RX(ch)      (((ch) << 1) | 0x0)
+
+/**
+ * TX Channel Macro
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ * // TX Channel 0
+ * bladerf_channel ch = BLADERF_CHANNEL_TX(0);
+ *
+ * // TX Channel 1
+ * bladerf_channel ch = BLADERF_CHANNEL_TX(1);
+ * @endcode
+ */
+#define BLADERF_CHANNEL_TX(ch)      (((ch) << 1) | 0x1)
+
+/**
+ * Invalid channel
+ */
+#define BLADERF_CHANNEL_INVALID     (-1)
+
+/** @cond IGNORE */
+/* Backwards compatible mapping to `bladerf_module`. */
+typedef bladerf_channel bladerf_module;
+#define BLADERF_MODULE_INVALID  BLADERF_CHANNEL_INVALID
+#define BLADERF_MODULE_RX       BLADERF_CHANNEL_RX(0)
+#define BLADERF_MODULE_TX       BLADERF_CHANNEL_TX(0)
+/** @endcond */
 
 /**
  * @defgroup FN_GAIN    Gain
@@ -517,6 +547,21 @@ int CALL_CONV bladerf_enable_module(struct bladerf *dev,
  */
 
 /**
+ * Gain control modes
+ */
+typedef enum  {
+    BLADERF_GAIN_DEFAULT,        /**< Device-specific default */
+    BLADERF_GAIN_MGC,            /**< Manual gain control */
+    BLADERF_GAIN_FASTATTACK_AGC, /**< Automatic gain control, fast attack */
+    BLADERF_GAIN_SLOWATTACK_AGC, /**< Automatic gain control, slow attack */
+    BLADERF_GAIN_HYBRID_AGC      /**< Automatic gain control, hybrid attack */
+} bladerf_gain_mode;
+
+/* Backwards compatibility */
+#define BLADERF_GAIN_AUTOMATIC BLADERF_GAIN_DEFAULT
+#define BLADERF_GAIN_MANUAL BLADERF_GAIN_MGC
+
+/**
  * Set combined gain values
  *
  * This function computes the optimal LNA, RXVGA1, and RVGA2 gains for a
@@ -526,13 +571,51 @@ int CALL_CONV bladerf_enable_module(struct bladerf *dev,
  * Values outside the valid gain range will be clipped.
  *
  * @param       dev         Device handle
- * @param       mod         Module
+ * @param       ch          Channel
  * @param       gain        Desired gain
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_set_gain(struct bladerf *dev, bladerf_module mod, int gain);
+int CALL_CONV bladerf_set_gain(struct bladerf *dev, bladerf_channel ch, int gain);
+
+/**
+ * Set gain mode
+ *
+ * Sets the mode for hardware AGC. Not all channels or boards will support
+ * all possible values (e.g. transmit channels); invalid combinations will
+ * return ::BLADERF_ERR_UNSUPPORTED.
+ *
+ * The special value of ::BLADERF_GAIN_DEFAULT will return hardware AGC to
+ * its default value at initialization.
+ *
+ * @param       dev         Device handle
+ * @param[in]   ch          Channel
+ * @param[in]   mode        Desired gain mode
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_gain_mode(struct bladerf *dev, bladerf_channel ch,
+                                    bladerf_gain_mode mode);
+
+/**
+ * Get gain mode
+ *
+ * Gets the current mode for hardware AGC. If the channel or board does not
+ * meaningfully have a gain mode (e.g. transmit channels), mode will be
+ * set to ::BLADERF_GAIN_DEFAULT and `0` will be returned.
+ *
+ * @param       dev         Device handle
+ * @param[in]   ch          Channel
+ * @param[out]  mode        Gain mode
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_gain_mode(struct bladerf *dev, bladerf_channel ch,
+                                    bladerf_gain_mode *mode);
+
 
 /** @} (End of FN_GAIN) */
 
@@ -540,7 +623,7 @@ int CALL_CONV bladerf_set_gain(struct bladerf *dev, bladerf_module mod, int gain
  * @defgroup FN_SAMPLING Sample rate
  *
  * This section presents functionality pertaining to configuring the
- * sample rate and mode of the device's RX and TX modules.
+ * sample rate and mode of the device's RX and TX channels.
  *
  * These functions are thread-safe.
  *
@@ -568,7 +651,7 @@ struct bladerf_rational_rate {
  * errors and unexpected results.
  *
  * @param[in]   dev         Device handle
- * @param[in]   module      Module to change
+ * @param[in]   ch          Channel
  * @param[in]   rate        Sample rate
  * @param[out]  actual      If non-NULL. this is written with the actual
  *                          sample rate achieved.
@@ -579,7 +662,7 @@ struct bladerf_rational_rate {
  */
 API_EXPORT
 int CALL_CONV bladerf_set_sample_rate(struct bladerf *dev,
-                                      bladerf_module module,
+                                      bladerf_channel ch,
                                       unsigned int rate,
                                       unsigned int *actual);
 
@@ -588,7 +671,7 @@ int CALL_CONV bladerf_set_sample_rate(struct bladerf *dev,
  * Sample rates are in the form of integer + num/denom.
  *
  * @param[in]   dev         Device handle
- * @param[in]   module      Module to change
+ * @param[in]   ch          Channel to change
  * @param[in]   rate        Rational sample rate
  * @param[out]  actual      If non-NULL, this is written with the actual
  *                          rational sample rate achieved.
@@ -605,28 +688,28 @@ int CALL_CONV bladerf_set_sample_rate(struct bladerf *dev,
 API_EXPORT
 int CALL_CONV bladerf_set_rational_sample_rate(
                                         struct bladerf *dev,
-                                        bladerf_module module,
+                                        bladerf_channel ch,
                                         struct bladerf_rational_rate *rate,
                                         struct bladerf_rational_rate *actual);
 /**
  * Read the device's sample rate in Hz
  *
  * @param[in]   dev         Device handle
- * @param[in]   module      Module to query
+ * @param[in]   ch          Channel
  * @param[out]  rate        Pointer to returned sample rate
  *
  * @return 0 on success, value from \ref RETCODES list upon failure
  */
 API_EXPORT
 int CALL_CONV bladerf_get_sample_rate(struct bladerf *dev,
-                                      bladerf_module module,
+                                      bladerf_channel ch,
                                       unsigned int *rate);
 
 /**
  * Read the device's sample rate in rational Hz
  *
  * @param[in]   dev         Device handle
- * @param[in]   module      Module to query
+ * @param[in]   ch          Channel
  * @param[out]  rate        Pointer to returned rational sample rate
  *
  * @return 0 on success, value from \ref RETCODES list upon failure
@@ -634,7 +717,7 @@ int CALL_CONV bladerf_get_sample_rate(struct bladerf *dev,
 API_EXPORT
 int CALL_CONV bladerf_get_rational_sample_rate(
                                         struct bladerf *dev,
-                                        bladerf_module module,
+                                        bladerf_channel ch,
                                         struct bladerf_rational_rate *rate);
 
 /** @} (End of FN_SAMPLING) */
@@ -667,7 +750,7 @@ int CALL_CONV bladerf_get_rational_sample_rate(
  * will be clamped.
  *
  * @param[in]   dev                 Device handle
- * @param[in]   module              Module for bandwidth request
+ * @param[in]   ch                  Channel
  * @param[in]   bandwidth           Desired bandwidth
  * @param[out]  actual              If non-NULL, written with the actual
  *                                  bandwidth that the device was able to
@@ -676,7 +759,7 @@ int CALL_CONV bladerf_get_rational_sample_rate(
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_set_bandwidth(struct bladerf *dev, bladerf_module module,
+int CALL_CONV bladerf_set_bandwidth(struct bladerf *dev, bladerf_channel ch,
                                     unsigned int bandwidth,
                                     unsigned int *actual);
 
@@ -684,13 +767,13 @@ int CALL_CONV bladerf_set_bandwidth(struct bladerf *dev, bladerf_module module,
  * Get the bandwidth of the LMS LPF
  *
  * @param       dev                 Device Handle
- * @param       module              Module for bandwidth request
+ * @param       ch                  Channel
  * @param       bandwidth           Actual bandwidth in Hz
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_get_bandwidth(struct bladerf *dev, bladerf_module module,
+int CALL_CONV bladerf_get_bandwidth(struct bladerf *dev, bladerf_channel ch,
                                     unsigned int *bandwidth);
 
 /** @} (End of FN_BANDWIDTH) */
@@ -698,7 +781,7 @@ int CALL_CONV bladerf_get_bandwidth(struct bladerf *dev, bladerf_module module,
 /**
  * @defgroup FN_TUNING  Frequency
  *
- * These functions provide the ability to tune the RX and TX modules.
+ * These functions provide the ability to tune the RX and TX channels.
  *
  * See <a class="el" href="tuning.html">this page</a> for more detailed
  * information about how the API performs this tuning, and for example
@@ -757,17 +840,17 @@ typedef enum {
  * will be clamped.
  *
  * @param       dev         Device handle
- * @param       module      Module to configure
+ * @param       ch          Channel
  * @param       frequency   Tuned frequency
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_select_band(struct bladerf *dev, bladerf_module module,
+int CALL_CONV bladerf_select_band(struct bladerf *dev, bladerf_channel ch,
                                   unsigned int frequency);
 
 /**
- * Set module's frequency in Hz.
+ * Set channel's frequency in Hz.
  *
  * Values outside the range of
  * [ \ref BLADERF_FREQUENCY_MIN, \ref BLADERF_FREQUENCY_MAX ]
@@ -780,27 +863,27 @@ int CALL_CONV bladerf_select_band(struct bladerf *dev, bladerf_module module,
  * This calls bladerf_select_band() internally.
  *
  * @param       dev         Device handle
- * @param       module      Module to configure
+ * @param       ch          Channel
  * @param       frequency   Desired frequency
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
 int CALL_CONV bladerf_set_frequency(struct bladerf *dev,
-                                    bladerf_module module,
+                                    bladerf_channel ch,
                                     unsigned int frequency);
 /**
- * Get module's current frequency in Hz
+ * Get channel's current frequency in Hz
  *
  * @param       dev         Device handle
- * @param       module      Module to configure
+ * @param       ch          Channel
  * @param       frequency   Pointer to the returned frequency
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
 int CALL_CONV bladerf_get_frequency(struct bladerf *dev,
-                                    bladerf_module module,
+                                    bladerf_channel ch,
                                     unsigned int *frequency);
 
 /**
@@ -864,21 +947,21 @@ int CALL_CONV bladerf_set_tuning_mode(struct bladerf *dev,
  * @code{.c}
  *
  * int status;
- * bladerf_module module = BLADERF_MODULE_RX;
- * bladerf_trigger_signal = BLADERF_TRIGGER_J71_4;
+ * bladerf_channel channel = BLADERF_CHANNEL_RX(0);
+ * bladerf_trigger_signal signal = BLADERF_TRIGGER_J71_4;
  *
  * // Allocate and initialize a bladerf_trigger structure for each
  * // trigger in the system.
  * struct bladerf_trigger trig_master, trig_slave;
  *
- * status = bladerf_trigger_init(dev_master, module, signal, &trig_master);
+ * status = bladerf_trigger_init(dev_master, channel, signal, &trig_master);
  * if (status == 0) {
  *     trig_master.role = BLADERF_TRIGGER_ROLE_MASTER;
  * } else {
  *     goto handle_error;
  * }
  *
- * status = bladerf_trigger_init(dev_slave1, module, signal, &trig_slave);
+ * status = bladerf_trigger_init(dev_slave1, channel, signal, &trig_slave);
  * if (status == 0) {
  *     master_rx.role = BLADERF_TRIGGER_ROLE_SLAVE;
  * } else {
@@ -998,7 +1081,7 @@ typedef enum  {
  */
 struct bladerf_trigger
 {
-    bladerf_module module;         /**< RX/TX module associated with trigger */
+    bladerf_channel channel;       /**< RX/TX channel associated with trigger */
     bladerf_trigger_role role;     /**< Role of the device in a trigger chain */
     bladerf_trigger_signal signal; /**< Pin or signal being used */
     uint64_t options;              /**< Reserved field for future options. This
@@ -1015,7 +1098,7 @@ struct bladerf_trigger
  * retrieve the current `role` and `options` values.
  *
  * @param[in]   dev         Device to query
- * @param[in]   module      Module to query
+ * @param[in]   ch          Channel
  * @param[in]   signal      Trigger signal to query
  * @param[out]  trigger     Updated to describe trigger
  *
@@ -1023,7 +1106,7 @@ struct bladerf_trigger
  */
 API_EXPORT
 int CALL_CONV bladerf_trigger_init(struct bladerf *dev,
-                                   bladerf_module module,
+                                   bladerf_channel ch,
                                    bladerf_trigger_signal signal,
                                    struct bladerf_trigger *trigger);
 
@@ -1190,28 +1273,28 @@ typedef enum {
  * `value` parameter.
  *
  * @param   dev         Device handle
- * @param   module      Module to apply correction to
+ * @param   ch          Channel
  * @param   corr        Correction type
  * @param   value       Value to apply
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_set_correction(struct bladerf *dev, bladerf_module module,
+int CALL_CONV bladerf_set_correction(struct bladerf *dev, bladerf_channel ch,
                                      bladerf_correction corr, int16_t value);
 
 /**
  * Obtain the current value of the specified configuration parameter
  *
  * @param[in]   dev         Device handle
- * @param[in]   module      Module to retrieve correction information from
+ * @param[in]   ch          Channel
  * @param[in]   corr        Correction type
  * @param[out]  value       Current value
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_get_correction(struct bladerf *dev, bladerf_module module,
+int CALL_CONV bladerf_get_correction(struct bladerf *dev, bladerf_channel ch,
                                      bladerf_correction corr, int16_t *value);
 
 
@@ -1392,18 +1475,19 @@ struct bladerf_quick_tune {
  * Schedule a frequency retune to occur at specified sample timestamp value.
  *
  * @pre bladerf_sync_config() must have been called with the
- *      BLADERF_FORMAT_SC16_Q11_META format for the associated module in order
+ *      BLADERF_FORMAT_SC16_Q11_META format for the associated channel in order
  *      to enable timestamps. (The timestamped metadata format must be enabled
  *      in order to use this function.)
  *
  * @param       dev             Device handle
  *
- * @param       module          Module to retune
+ * @param       ch              Channel
  *
- * @param       timestamp       Module's sample timestamp to perform the retune
- *                              operation. If this value is in the past, the
- *                              retune will occur immediately. To perform the
- *                              retune immediately, specify BLADERF_RETUNE_NOW.
+ * @param       timestamp       Channel's sample timestamp to perform the
+ *                              retune operation. If this value is in the past,
+ *                              the retune will occur immediately. To perform
+ *                              the retune immediately, specify
+ *                              BLADERF_RETUNE_NOW.
  *
  * @param       frequency       Desired frequency, in Hz.
  *
@@ -1422,26 +1506,26 @@ struct bladerf_quick_tune {
  */
 API_EXPORT
 int CALL_CONV bladerf_schedule_retune(struct bladerf *dev,
-                                      bladerf_module module,
+                                      bladerf_channel ch,
                                       uint64_t timestamp,
                                       unsigned int frequency,
                                       struct bladerf_quick_tune *quick_tune);
 
 /**
- * Cancel all pending scheduled retune operations for the specified module.
+ * Cancel all pending scheduled retune operations for the specified channel.
  *
  * This will be done automatically during bladerf_close() to ensure that
  * previously queued retunes do not continue to occur after closing and then
  * later re-opening a device.
  *
  * @param   dev     Device handle
- * @param   module  Module to cancel pending operations on
+ * @param   ch      Channel
  *
  * @return 0 on success, value from \ref RETCODES list on failure.
  */
 API_EXPORT
 int CALL_CONV bladerf_cancel_scheduled_retunes(struct bladerf *dev,
-                                               bladerf_module module);
+                                               bladerf_channel ch);
 
 /**
  * Fetch parameters used to tune the transceiver to the current frequency for
@@ -1456,19 +1540,19 @@ int CALL_CONV bladerf_cancel_scheduled_retunes(struct bladerf *dev,
  *      been used to retune to the desired frequency.
  *
  * @param[in]   dev         Device handle
- * @param[in]   module      Module to query
+ * @param[in]   ch          Channel
  * @param[out]  quick_tune  Quick retune parameters
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
 int CALL_CONV bladerf_get_quick_tune(struct bladerf *dev,
-                                     bladerf_module module,
+                                     bladerf_channel ch,
                                      struct bladerf_quick_tune *quick_tune);
 
 /** @} (End of FN_SCHEDULED_TUNING) */
 
-/** @} (End of FN_MODULE) */
+/** @} (End of FN_CHANNEL) */
 
 /**
  * @defgroup STREAMING Streaming
@@ -1477,6 +1561,14 @@ int CALL_CONV bladerf_get_quick_tune(struct bladerf *dev,
  *
  * @{
  */
+
+/**
+ * Stream direction
+ */
+typedef enum {
+    BLADERF_RX = 0,                   /**< Receive direction */
+    BLADERF_TX = 1,                   /**< Transmit direction */
+} bladerf_direction;
 
 /**
  * @defgroup STREAMING_FORMAT Formats
@@ -1563,8 +1655,8 @@ typedef enum {
 #define BLADERF_META_STATUS_OVERRUN  (1 << 0)
 
 /**
- * A sample underrun has occurred. This generally only occurrs on the TX module
- * when the FPGA is starved of samples.
+ * A sample underrun has occurred. This generally only occurrs on the TX
+ * channel when the FPGA is starved of samples.
  *
  * @note libbladeRF does not report this status. It is here for future use.
  */
@@ -1670,7 +1762,7 @@ struct bladerf_metadata {
 
     /**
      * Free-running FPGA counter that monotonically increases at the
-     * sample rate of the associated module. */
+     * sample rate of the associated channel. */
     uint64_t timestamp;
 
     /**
@@ -1721,7 +1813,31 @@ struct bladerf_metadata {
 /** @} (End of STREAMING_FORMAT) */
 
 /**
- * Retrieve the specified module's current timestamp counter value from the
+ * Enable or disable the specified stream direction.
+ *
+ * Channels must always be enabled prior to streaming samples on the associated
+ * interface.
+ *
+ * When a synchronous stream is associated with the specified channel, this
+ * will shut down the underlying asynchronous stream when `enable` = false.
+ *
+ * When transmitting samples, be sure to provide ample time for TX samples reach
+ * the RF front-end before calling this function with `enable` = false. (This
+ * can be achieved easily when using metadata, as shown on
+ * <a class="el" href="sync_tx_meta_bursts.html">this page</a>.)
+ *
+ * @param       dev     Device handle
+ * @param       dir     Stream direction
+ * @param       enable  true to enable, false to disable
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_enable_module(struct bladerf *dev,
+                                    bladerf_direction dir, bool enable);
+
+/**
+ * Retrieve the specified stream's current timestamp counter value from the
  * FPGA.
  *
  * This function is only intended to be used to retrieve a coarse estimate of
@@ -1756,13 +1872,13 @@ struct bladerf_metadata {
  * href="sync_tx_meta_bursts.html">TX with metadata</a> page.
  *
  * @param[in]   dev         Device handle
- * @param[in]   mod         Module to query
+ * @param[in]   dir         Stream direction
  * @param[out]  value       Coarse timestamp value
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_get_timestamp(struct bladerf *dev, bladerf_module mod,
+int CALL_CONV bladerf_get_timestamp(struct bladerf *dev, bladerf_direction dir,
                                     uint64_t *value);
 
 /**
@@ -1810,11 +1926,10 @@ int CALL_CONV bladerf_get_timestamp(struct bladerf *dev, bladerf_module mod,
  * the underlying asynchronous stream parameters
  *
  * This function does not call bladerf_enable_module(). The API user is
- * responsible for enabling/disable modules when desired.
+ * responsible for enabling/disable channels when desired.
  *
- * Note that (re)configuring ::BLADERF_MODULE_TX does not affect the
- * ::BLADERF_MODULE_RX modules, and vice versa. This call configures each module
- * independently.
+ * Note that (re)configuring the TX direction does not affect the RX direction,
+ * and vice versa. This call configures each direction independently.
  *
  * Memory allocated by this function will be deallocated when bladerf_close()
  * is called.
@@ -1826,7 +1941,7 @@ int CALL_CONV bladerf_get_timestamp(struct bladerf *dev, bladerf_module mod,
  *
  * @param   dev             Device to configure
  *
- * @param   module          Module to use with synchronous interface
+ * @param   dir             Stream direction to use with synchronous interface
  *
  * @param   format          Format to use in synchronous data transfers
  *
@@ -1853,7 +1968,7 @@ int CALL_CONV bladerf_get_timestamp(struct bladerf *dev, bladerf_module mod,
  */
 API_EXPORT
 int CALL_CONV bladerf_sync_config(struct bladerf *dev,
-                                  bladerf_module module,
+                                  bladerf_direction dir,
                                   bladerf_format format,
                                   unsigned int num_buffers,
                                   unsigned int buffer_size,
@@ -1864,7 +1979,7 @@ int CALL_CONV bladerf_sync_config(struct bladerf *dev,
  * Transmit IQ samples.
  *
  * Under the hood, this call starts up an underlying asynchronous stream as
- * needed. This stream can be stopped by disabling the TX module. (See
+ * needed. This stream can be stopped by disabling the TX channel. (See
  * bladerf_enable_module for more details.)
  *
  * Samples will only be sent to the FPGA when a buffer have been filled. The
@@ -1907,7 +2022,7 @@ int CALL_CONV bladerf_sync_tx(struct bladerf *dev,
  * Receive IQ samples.
  *
  * Under the hood, this call starts up an underlying asynchronous stream as
- * needed. This stream can be stopped by disabling the RX module. (See
+ * needed. This stream can be stopped by disabling the RX channel. (See
  * bladerf_enable_module for more details.)
  *
  * @param[in]   dev         Device handle
@@ -1994,13 +2109,13 @@ struct bladerf_stream;
  * BLADERF_STREAM_NO_DATA and submitting buffers later -- <b>but not both</b>.
  *
  * When running in a full-duplex mode of operation with simultaneous TX and RX
- * stream threads, be aware that one module's callback may occur in the context
- * of another module's thread. The API user is responsible for ensuring their
+ * stream threads, be aware that one stream's callback may occur in the context
+ * of another stream's thread. The API user is responsible for ensuring their
  * callbacks are thread safe. For example, when managing access to sample
  * buffers, the caller must ensure that if one thread is processing samples in a
  * buffer, that this buffer is not returned via the callback's return value.
  *
- * As of libbladeRF v0.15.0, is guaranteed that only one callback from a module
+ * As of libbladeRF v0.15.0, is guaranteed that only one callback from a stream
  * will occur at a time. (i.e., a second TX callback will not fire while one is
  * currently being handled.)  To achieve this, while a callback is executing, a
  * per-stream lock is held. It is important to consider this when thinking about
@@ -2124,24 +2239,24 @@ int CALL_CONV bladerf_init_stream(struct bladerf_stream **stream,
  * Begin running a stream. This call will block until the steam completes.
  *
  * Only 1 RX stream and 1 TX stream may be running at a time. Attempting to
- * call bladerf_stream() with more than one stream per module will yield
- * unexpected (and most likely undesirable) results. See the ::bladerf_stream_cb
- * description for additional thread-safety caveats.
+ * call bladerf_stream() with more than one stream will yield unexpected (and
+ * most likely undesirable) results. See the ::bladerf_stream_cb description
+ * for additional thread-safety caveats.
  *
  * @pre This function should be preceded by a call to bladerf_enable_module()
- *      to enable the associated RX or TX module before attempting to use
+ *      to enable the associated RX or TX channel before attempting to use
  *      it to stream data.
  *
  * @param   stream  A stream handle that has been successfully been initialized
  *                  via bladerf_init_stream()
  *
- * @param   module  Module to perform streaming with
+ * @param   dir     Stream direction to perform streaming with
  *
  * @return  0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
 int CALL_CONV bladerf_stream(struct bladerf_stream *stream,
-                             bladerf_module module);
+                             bladerf_direction dir);
 
 /**
  * Submit a buffer to a stream from outside of a stream callback function.
@@ -2214,14 +2329,14 @@ void CALL_CONV bladerf_deinit_stream(struct bladerf_stream *stream);
  * Set stream transfer timeout in milliseconds
  *
  * @param   dev         Device handle
- * @param   module      Module to adjust
+ * @param   dir         Stream direction
  * @param   timeout     Timeout in milliseconds
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
 int CALL_CONV bladerf_set_stream_timeout(struct bladerf *dev,
-                                         bladerf_module module,
+                                         bladerf_direction dir,
                                          unsigned int timeout);
 
 
@@ -2229,7 +2344,7 @@ int CALL_CONV bladerf_set_stream_timeout(struct bladerf *dev,
  * Get transfer timeout in milliseconds
  *
  * @param[in]   dev         Device handle
- * @param[in]   module      Module to adjust
+ * @param[in]   dir         Stream direction
  * @param[out]  timeout     On success, updated with current transfer
  *                          timeout value. Undefined on failure.
  *
@@ -2237,7 +2352,7 @@ int CALL_CONV bladerf_set_stream_timeout(struct bladerf *dev,
  */
 API_EXPORT
 int CALL_CONV bladerf_get_stream_timeout(struct bladerf *dev,
-                                         bladerf_module module,
+                                         bladerf_direction dir,
                                          unsigned int *timeout);
 
 /** @} (End of FN_STREAMING_ASYNC) */
@@ -2849,26 +2964,26 @@ typedef enum {
  * Set the LMS LPF mode to bypass or disable it
  *
  * @param       dev         Device handle
- * @param       module      Module for mode request
+ * @param       ch          Channel
  * @param       mode        Mode to be set
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_set_lpf_mode(struct bladerf *dev, bladerf_module module,
+int CALL_CONV bladerf_set_lpf_mode(struct bladerf *dev, bladerf_channel ch,
                                    bladerf_lpf_mode mode);
 
 /**
  * Get the current mode of the LMS LPF
  *
  * @param       dev         Device handle
- * @param       module      Module for mode request
+ * @param       ch          Channel
  * @param       mode        Current mode of the LPF
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_get_lpf_mode(struct bladerf *dev, bladerf_module module,
+int CALL_CONV bladerf_get_lpf_mode(struct bladerf *dev, bladerf_channel ch,
                                    bladerf_lpf_mode *mode);
 
 /** @} (End of FN_BLADERF1_LPF_BYPASS) */
@@ -2952,7 +3067,7 @@ typedef enum {
  *                      use of loopback functionality.
  *
  * @note Loopback modes should only be enabled or disabled while the RX and TX
- *       modules are both disabled (and therefore, when no samples are being
+ *       channels are both disabled (and therefore, when no samples are being
  *       actively streamed). Otherwise, unexpected behavior may occur.
  *
  * @return 0 on success, value from \ref RETCODES list on failure
@@ -3593,8 +3708,8 @@ typedef enum {
     BLADERF_XB200_222M,
 
     /**
-     * This option enables the RX/TX module's custom filter bank path across the
-     * associated FILT and FILT-ANT SMA connectors on the XB-200 board.
+     * This option enables the RX/TX channel's custom filter bank path across
+     * the associated FILT and FILT-ANT SMA connectors on the XB-200 board.
      *
      * For reception, it is often possible to simply connect the RXFILT and
      * RXFILT-ANT connectors with an SMA cable (effectively, "no filter"). This
@@ -3609,16 +3724,16 @@ typedef enum {
 
     /**
      * When this option is selected, the other filter options are automatically
-     * selected depending on the RX or TX module's current frequency, based upon
-     * the 1dB points of the on-board filters.  For frequencies outside the
-     * range of the on-board filters, the custom path is selected.
+     * selected depending on the RX or TX channel's current frequency, based
+     * upon the 1dB points of the on-board filters.  For frequencies outside
+     * the range of the on-board filters, the custom path is selected.
      */
     BLADERF_XB200_AUTO_1DB,
 
     /**
      * When this option is selected, the other filter options are automatically
-     * selected depending on the RX or TX module's current frequency, based upon
-     * the 3dB points of the on-board filters.  For frequencies outside the
+     * selected depending on the RX or TX channel's current frequency, based
+     * upon the 3dB points of the on-board filters. For frequencies outside the
      * range of the on-board filters, the custom path is selected.
      */
     BLADERF_XB200_AUTO_3DB
@@ -3678,21 +3793,21 @@ int CALL_CONV bladerf_expansion_get_attached(struct bladerf *dev, bladerf_xb *xb
  * Set XB-200 filterbank
  *
  * @param       dev         Device handle
- * @param       mod         Module
+ * @param       ch          Channel
  * @param       filter      XB200 filterbank
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
 int CALL_CONV bladerf_xb200_set_filterbank(struct bladerf *dev,
-                                           bladerf_module mod,
+                                           bladerf_channel ch,
                                            bladerf_xb200_filter filter);
 
 /**
  * Get current XB-200 filterbank
  *
  * @param[in]    dev        Device handle
- * @param[in]    module     Module to query
+ * @param[in]    ch         Channel
  * @param[out]   filter     Pointer to filterbank, only updated if return
  *                          value is 0.
  *
@@ -3700,35 +3815,35 @@ int CALL_CONV bladerf_xb200_set_filterbank(struct bladerf *dev,
  */
 API_EXPORT
 int CALL_CONV bladerf_xb200_get_filterbank(struct bladerf *dev,
-                                           bladerf_module module,
+                                           bladerf_channel ch,
                                            bladerf_xb200_filter *filter);
 
 /**
  * Set XB-200 signal path
  *
  * @param       dev         Device handle
- * @param       module      Module to configure
+ * @param       ch          Channel
  * @param       path        Desired XB-200 signal path
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
 int CALL_CONV bladerf_xb200_set_path(struct bladerf *dev,
-                                     bladerf_module module,
+                                     bladerf_channel ch,
                                      bladerf_xb200_path path);
 
 /**
  * Get current XB-200 signal path
  *
  * @param       dev         Device handle
- * @param       module      Module to query
+ * @param       ch          Channel
  * @param       path        Pointer to XB200 signal path
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
 int CALL_CONV bladerf_xb200_get_path(struct bladerf *dev,
-                                     bladerf_module module,
+                                     bladerf_channel ch,
                                      bladerf_xb200_path *path);
 
 /**
@@ -4170,7 +4285,7 @@ int CALL_CONV bladerf_calibrate_dc(struct bladerf *dev,
  * Read trigger control register
  *
  * @param   dev             Device handle
- * @param   module          Module to read from
+ * @param   ch              Channel
  * @param   signal          Trigger signal (control register) to read from
  * @param   val             Pointer to variable that register is read into
  *                          See the BLADERF_TRIGGER_REG_* macros for the meaning
@@ -4180,7 +4295,7 @@ int CALL_CONV bladerf_calibrate_dc(struct bladerf *dev,
  */
 API_EXPORT
 int CALL_CONV bladerf_read_trigger(struct bladerf *dev,
-                                   bladerf_module module,
+                                   bladerf_channel ch,
                                    bladerf_trigger_signal signal,
                                    uint8_t *val);
 
@@ -4188,7 +4303,7 @@ int CALL_CONV bladerf_read_trigger(struct bladerf *dev,
  * Write trigger control register
  *
  * @param   dev             Device handle
- * @param   module          Module to configure
+ * @param   ch              Channel
  * @param   signal          Trigger signal to configure
  * @param   val             Data to write into the trigger control register.
  *                          See the BLADERF_TRIGGER_REG_* macros for options.
@@ -4197,7 +4312,7 @@ int CALL_CONV bladerf_read_trigger(struct bladerf *dev,
  */
 API_EXPORT
 int CALL_CONV bladerf_write_trigger(struct bladerf *dev,
-                                    bladerf_module module,
+                                    bladerf_channel ch,
                                     bladerf_trigger_signal signal,
                                     uint8_t val);
 

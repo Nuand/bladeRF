@@ -46,31 +46,31 @@ static bool is_valid_signal(bladerf_trigger_signal signal)
     }
 }
 
-int fpga_trigger_read(struct bladerf *dev, bladerf_module module,
+int fpga_trigger_read(struct bladerf *dev, bladerf_channel ch,
                       bladerf_trigger_signal signal, uint8_t *regval)
 {
-    if (module != BLADERF_MODULE_RX && module != BLADERF_MODULE_TX)
+    if (ch != BLADERF_CHANNEL_RX(0) && ch != BLADERF_CHANNEL_TX(0))
         return BLADERF_ERR_INVAL;
 
     if (!is_valid_signal(signal))
         return BLADERF_ERR_INVAL;
 
-    return dev->backend->read_trigger(dev, module, signal, regval);
+    return dev->backend->read_trigger(dev, ch, signal, regval);
 }
 
-int fpga_trigger_write(struct bladerf *dev, bladerf_module module,
+int fpga_trigger_write(struct bladerf *dev, bladerf_channel ch,
                        bladerf_trigger_signal signal, uint8_t regval)
 {
-    if (module != BLADERF_MODULE_RX && module != BLADERF_MODULE_TX)
+    if (ch != BLADERF_CHANNEL_RX(0) && ch != BLADERF_CHANNEL_TX(0))
         return BLADERF_ERR_INVAL;
 
     if (!is_valid_signal(signal))
         return BLADERF_ERR_INVAL;
 
-    return dev->backend->write_trigger(dev, module, signal, regval);
+    return dev->backend->write_trigger(dev, ch, signal, regval);
 }
 
-int fpga_trigger_init(struct bladerf *dev, bladerf_module module,
+int fpga_trigger_init(struct bladerf *dev, bladerf_channel ch,
                       bladerf_trigger_signal signal,
                  struct bladerf_trigger *trigger)
 
@@ -80,9 +80,9 @@ int fpga_trigger_init(struct bladerf *dev, bladerf_module module,
 
     trigger->options = 0;
 
-    status = fpga_trigger_read(dev, module, signal, &regval);
+    status = fpga_trigger_read(dev, ch, signal, &regval);
     if (status != 0) {
-        trigger->module = BLADERF_MODULE_INVALID;
+        trigger->channel = BLADERF_CHANNEL_INVALID;
         trigger->role   = BLADERF_TRIGGER_ROLE_INVALID;
         trigger->signal = BLADERF_TRIGGER_INVALID;
         return status;
@@ -94,7 +94,7 @@ int fpga_trigger_init(struct bladerf *dev, bladerf_module module,
         trigger->role = BLADERF_TRIGGER_ROLE_SLAVE;
     }
 
-    trigger->module = module;
+    trigger->channel = ch;
     trigger->signal = signal;
 
     return 0;
@@ -106,7 +106,7 @@ int fpga_trigger_arm(struct bladerf *dev,
     int status;
     uint8_t regval;
 
-    status = fpga_trigger_read(dev, trigger->module, trigger->signal, &regval);
+    status = fpga_trigger_read(dev, trigger->channel, trigger->signal, &regval);
     if (status != 0) {
         return status;
     }
@@ -138,7 +138,7 @@ int fpga_trigger_arm(struct bladerf *dev,
             return BLADERF_ERR_INVAL;
     }
 
-    status = fpga_trigger_write(dev, trigger->module, trigger->signal, regval);
+    status = fpga_trigger_write(dev, trigger->channel, trigger->signal, regval);
 
     return status;
 }
@@ -149,13 +149,13 @@ int fpga_trigger_fire(struct bladerf *dev,
     int status;
     uint8_t regval;
 
-    status = fpga_trigger_read(dev, trigger->module, trigger->signal, &regval);
+    status = fpga_trigger_read(dev, trigger->channel, trigger->signal, &regval);
     if (status != 0) {
         return status;
     }
 
     regval |= BLADERF_TRIGGER_REG_FIRE;
-    status = fpga_trigger_write(dev, trigger->module, trigger->signal, regval);
+    status = fpga_trigger_write(dev, trigger->channel, trigger->signal, regval);
 
     return status;
 }
@@ -166,7 +166,7 @@ int fpga_trigger_state(struct bladerf *dev, const struct bladerf_trigger *trigge
     int status;
     uint8_t regval;
 
-    status = fpga_trigger_read(dev, trigger->module, trigger->signal, &regval);
+    status = fpga_trigger_read(dev, trigger->channel, trigger->signal, &regval);
     if (status != 0) {
         *fired = false;
         return status;

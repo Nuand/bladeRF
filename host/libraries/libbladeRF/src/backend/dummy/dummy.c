@@ -158,21 +158,21 @@ static int dummy_expansion_gpio_dir_read(struct bladerf *dev, uint32_t *val)
 }
 
 static int dummy_set_iq_gain_correction(struct bladerf *dev,
-                                        bladerf_module module,
+                                        bladerf_channel ch,
                                         int16_t value)
 {
     return 0;
 }
 
 static int dummy_set_iq_phase_correction(struct bladerf *dev,
-                                         bladerf_module module,
+                                         bladerf_channel ch,
                                          int16_t value)
 {
     return 0;
 }
 
 static int dummy_get_iq_gain_correction(struct bladerf *dev,
-                                        bladerf_module module,
+                                        bladerf_channel ch,
                                         int16_t *value)
 {
     *value = 0;
@@ -180,14 +180,14 @@ static int dummy_get_iq_gain_correction(struct bladerf *dev,
 }
 
 static int dummy_get_iq_phase_correction(struct bladerf *dev,
-                                         bladerf_module module,
+                                         bladerf_channel ch,
                                          int16_t *value)
 {
     *value = 0;
     return 0;
 }
 
-static int dummy_get_timestamp(struct bladerf *dev, bladerf_module mod,
+static int dummy_get_timestamp(struct bladerf *dev, bladerf_direction dir,
                                uint64_t *val)
 {
     return 0;
@@ -312,7 +312,7 @@ static int dummy_get_firmware_loopback(struct bladerf *dev, bool *is_enabled)
     return 0;
 }
 
-static int dummy_enable_module(struct bladerf *dev, bladerf_module m,
+static int dummy_enable_module(struct bladerf *dev, bladerf_channel ch,
                                bool enable)
 {
     return 0;
@@ -323,7 +323,7 @@ static int dummy_init_stream(struct bladerf_stream *stream, size_t num_transfers
     return 0;
 }
 
-static int dummy_stream(struct bladerf_stream *stream, bladerf_module module)
+static int dummy_stream(struct bladerf_stream *stream, bladerf_direction dir)
 {
     return 0;
 }
@@ -341,7 +341,7 @@ static void dummy_deinit_stream(struct bladerf_stream *stream)
     return;
 }
 
-static int dummy_retune(struct bladerf *dev, bladerf_module module,
+static int dummy_retune(struct bladerf *dev, bladerf_channel ch,
                         uint64_t timestamp, uint16_t nint, uint32_t nfrac,
                         uint8_t  freqsel, uint8_t vcocap, bool low_band,
                         bool quick_tune)
@@ -363,14 +363,14 @@ static int dummy_read_fw_log(struct bladerf *dev, logger_entry *e)
     return 0;
 }
 
-int dummy_read_trigger(struct bladerf *dev, bladerf_module m,
+static int dummy_read_trigger(struct bladerf *dev, bladerf_channel ch,
                        bladerf_trigger_signal trigger, uint8_t * value)
 {
     *value = 0;
     return 0;
 }
 
-int dummy_write_trigger(struct bladerf *dev, bladerf_module m,
+static int dummy_write_trigger(struct bladerf *dev, bladerf_channel ch,
                         bladerf_trigger_signal trigger, uint8_t value)
 {
     return 0;

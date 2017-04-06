@@ -97,6 +97,26 @@ const char * module2str(bladerf_module m);
 bladerf_module str2module(const char *str);
 
 /**
+ * Convert a channel index to a string
+ *
+ * @note The caller should not attempt to modify or free() the returned string.
+ *
+ * @param   ch          Channel
+ * @return  String representation of channel
+ */
+const char * channel2str(bladerf_channel ch);
+
+/**
+ * Convert a direction enumeration to a string
+ *
+ * @note The caller should not attempt to modify or free() the returned string.
+ *
+ * @param   dir         direction
+ * @return  String representation of direction
+ */
+const char * direction2str(bladerf_direction dir);
+
+/**
  * Convert a trigger signal enumeration value to a string
  *
  * @param   trigger     Trigger item

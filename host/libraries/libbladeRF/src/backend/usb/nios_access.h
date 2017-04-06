@@ -74,12 +74,12 @@ int nios_get_fpga_version(struct bladerf *dev, struct bladerf_version *ver);
  * Read a timestamp counter value
  *
  * @param[in]   dev         Device handle
- * @param[in]   module      Module to query
+ * @param[in]   dir         Stream direction
  * @param[out]  timestamp   On success, updated with the timestamp value
  *
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
-int nios_get_timestamp(struct bladerf *dev, bladerf_module module,
+int nios_get_timestamp(struct bladerf *dev, bladerf_direction dir,
                        uint64_t *timestamp);
 
 /**
@@ -305,49 +305,49 @@ int nios_get_vctcxo_tamer_mode(struct bladerf *dev,
  * Read a IQ gain correction value
  *
  * @param[in]   dev         Device handle
- * @param[in]   module      Module to read from
+ * @param[in]   ch          Channel
  * @param[out]  value       On success, updated with phase correction value
  *
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
-int nios_get_iq_gain_correction(struct bladerf *dev, bladerf_module module,
+int nios_get_iq_gain_correction(struct bladerf *dev, bladerf_channel ch,
                                 int16_t *value);
 
 /**
  * Read a IQ phase correction value
  *
  * @param[in]   dev         Device handle
- * @param[in]   module      Module to read from
+ * @param[in]   ch          Channel
  * @param[out]  value       On success, updated with phase correction value
  *
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
 int nios_get_iq_phase_correction(struct bladerf *dev,
-                                 bladerf_module module, int16_t *value);
+                                 bladerf_channel ch, int16_t *value);
 
 /**
  * Write an IQ gain correction value
  *
  * @param[in]   dev         Device handle
- * @param[in]   module      Module to write to
+ * @param[in]   ch          Channel
  * @param[in]   value       Correction value to write
  *
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
 int nios_set_iq_gain_correction(struct bladerf *dev,
-                                bladerf_module module, int16_t value);
+                                bladerf_channel ch, int16_t value);
 
 /**
  * Write an IQ phase correction value
  *
  * @param[in]   dev         Device handle
- * @param[in]   module      Module to write to
+ * @param[in]   ch          Channel
  * @param[in]   value       Correction value to write
  *
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
 int nios_set_iq_phase_correction(struct bladerf *dev,
-                                 bladerf_module module, int16_t value);
+                                 bladerf_channel ch, int16_t value);
 
 /**
  * Write AGC DC LUT values
@@ -425,7 +425,7 @@ int nios_expansion_gpio_dir_write(struct bladerf *dev,
  * All of the following parameters are ignored.
  *
  * @param[in]   dev         Device handle
- * @param[in]   module      Module to retune
+ * @param[in]   ch          Channel
  * @param[in]   timestamp   Time to schedule retune at
  * @param[in]   nint        Integer portion of frequency multiplier
  * @param[in]   nfrac       Fractional portion of frequency multiplier
@@ -436,7 +436,7 @@ int nios_expansion_gpio_dir_write(struct bladerf *dev,
  *
  * @return BLADERF_ERR_UNSUPPORTED
  */
-int nios_retune(struct bladerf *dev, bladerf_module module, uint64_t timestamp,
+int nios_retune(struct bladerf *dev, bladerf_channel ch, uint64_t timestamp,
                 uint16_t nint, uint32_t nfrac, uint8_t freqsel, uint8_t vcocap,
                 bool low_band, bool quick_tune);
 
@@ -444,27 +444,27 @@ int nios_retune(struct bladerf *dev, bladerf_module module, uint64_t timestamp,
  * Read trigger register value
  *
  * @param[in]   dev        Device handle
- * @param[in]   module     Module to configure
+ * @param[in]   ch         Channel
  * @param[in]   trigger    Trigger to read from
  * @param[out]  value      On success, updated with register value
  *
  *
  * @return 0 on success, BLADERF_ERR_* code on error
  */
-int nios_read_trigger(struct bladerf *dev, bladerf_module module,
+int nios_read_trigger(struct bladerf *dev, bladerf_channel ch,
                       bladerf_trigger_signal trigger, uint8_t * value);
 
 /**
  * Write trigger register value
  *
  * @param[in]   dev        Device handle
- * @param[in]   module     Module to configure
+ * @param[in]   ch         Channel
  * @param[in]   trigger    Trigger to read
  * @param[in]   value      Value to write
  *
  * @return 0 on success, BLADERF_ERR_* code on error
  */
-int nios_write_trigger(struct bladerf *dev, bladerf_module module,
+int nios_write_trigger(struct bladerf *dev, bladerf_channel ch,
                        bladerf_trigger_signal trigger, uint8_t value);
 
 #endif

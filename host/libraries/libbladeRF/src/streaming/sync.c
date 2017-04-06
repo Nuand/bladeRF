@@ -61,7 +61,7 @@ static inline unsigned int samples_per_msg(size_t msg_size,
 
 int sync_init(struct bladerf_sync *sync,
               struct bladerf *dev,
-              bladerf_module module,
+              bladerf_direction dir,
               bladerf_format format,
               unsigned int num_buffers,
               size_t buffer_size,
@@ -77,8 +77,8 @@ int sync_init(struct bladerf_sync *sync,
         return BLADERF_ERR_INVAL;
     }
 
-    if (module != BLADERF_MODULE_TX && module != BLADERF_MODULE_RX) {
-        log_debug("Invalid bladerf_module value encountered: %d", module);
+    if (dir != BLADERF_TX && dir != BLADERF_RX) {
+        log_debug("Invalid direction encountered: %d", dir);
         return BLADERF_ERR_INVAL;
     }
 
@@ -103,17 +103,17 @@ int sync_init(struct bladerf_sync *sync,
 
     MUTEX_INIT(&sync->lock);
 
-    switch (module) {
-        case BLADERF_MODULE_TX:
+    switch (dir) {
+        case BLADERF_TX:
             sync->buf_mgmt.submitter = SYNC_TX_SUBMITTER_FN;
             break;
 
-        case BLADERF_MODULE_RX:
+        case BLADERF_RX:
             sync->buf_mgmt.submitter = SYNC_TX_SUBMITTER_INVALID;
             break;
 
         default:
-            log_debug("Invalid module provided: %d\n", module);
+            log_debug("Invalid direction provided: %d\n", dir);
             return BLADERF_ERR_INVAL;
     }
 
@@ -123,7 +123,7 @@ int sync_init(struct bladerf_sync *sync,
     sync->buf_mgmt.num_buffers = num_buffers;
     sync->buf_mgmt.resubmit_count = 0;
 
-    sync->stream_config.module = module;
+    sync->stream_config.direction = dir;
     sync->stream_config.format = format;
     sync->stream_config.samples_per_buffer = buffer_size;
     sync->stream_config.num_xfers = num_transfers;
@@ -153,8 +153,8 @@ int sync_init(struct bladerf_sync *sync,
         goto error;
     }
 
-    switch (module) {
-        case BLADERF_MODULE_RX:
+    switch (dir) {
+        case BLADERF_RX:
             /* When starting up an RX stream, the first 'num_transfers'
              * transfers will be submitted to the USB layer to grab data */
             sync->buf_mgmt.prod_i = num_transfers;
@@ -174,7 +174,7 @@ int sync_init(struct bladerf_sync *sync,
 
             break;
 
-        case BLADERF_MODULE_TX:
+        case BLADERF_TX:
             sync->buf_mgmt.prod_i = 0;
             sync->buf_mgmt.cons_i = BUFFER_MGMT_INVALID_INDEX;
             sync->buf_mgmt.partial_off = 0;
@@ -209,7 +209,7 @@ error:
 void sync_deinit(struct bladerf_sync *sync)
 {
     if (sync->initialized) {
-        if (sync->stream_config.module == BLADERF_MODULE_TX) {
+        if (sync->stream_config.direction == BLADERF_TX) {
             async_submit_stream_buffer(sync->worker->stream,
                                        BLADERF_STREAM_SHUTDOWN, 0, false);
         }

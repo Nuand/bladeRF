@@ -578,7 +578,7 @@ static int submit_transfer(struct bladerf_stream *stream, void *buffer)
 }
 
 static int cyapi_stream(void *driver, struct bladerf_stream *stream,
-                       bladerf_module module)
+                        bladerf_direction dir)
 {
     int status;
     int idx = 0;
@@ -597,17 +597,17 @@ static int cyapi_stream(void *driver, struct bladerf_stream *stream,
         timeout_ms = stream->transfer_timeout;
     }
 
-    switch (module) {
-        case BLADERF_MODULE_RX:
+    switch (dir) {
+        case BLADERF_RX:
             data->ep = get_ep(cyapi->dev, SAMPLE_EP_IN);
             break;
 
-        case BLADERF_MODULE_TX:
+        case BLADERF_TX:
             data->ep = get_ep(cyapi->dev, SAMPLE_EP_OUT);
             break;
 
         default:
-            assert(!"Invalid module");
+            assert(!"Invalid direction");
             return BLADERF_ERR_UNEXPECTED;
     }
 
@@ -628,7 +628,7 @@ static int cyapi_stream(void *driver, struct bladerf_stream *stream,
     MUTEX_LOCK(&stream->lock);
 
     for (unsigned int i = 0; i < data->num_transfers && status == 0; i++) {
-        if (module == BLADERF_MODULE_TX) {
+        if (dir == BLADERF_TX) {
             next_buffer = stream->cb(stream->dev, stream, &meta, NULL,
                                      stream->samples_per_buffer,
                                      stream->user_data);

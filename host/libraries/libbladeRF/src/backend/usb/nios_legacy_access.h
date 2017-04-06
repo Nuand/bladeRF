@@ -100,12 +100,12 @@ int nios_legacy_get_fpga_version(struct bladerf *dev,
  * Read a timestamp counter value
  *
  * @param[in]   dev         Device handle
- * @param[in]   module      Module to query
+ * @param[in]   dir         Stream direction
  * @param[out]  timestamp   On success, updated with the timestamp value
  *
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
-int nios_legacy_get_timestamp(struct bladerf *dev, bladerf_module module,
+int nios_legacy_get_timestamp(struct bladerf *dev, bladerf_direction dir,
                               uint64_t *timestamp);
 
 /**
@@ -297,49 +297,49 @@ int nios_legacy_vctcxo_trim_dac_write(struct bladerf *dev, uint8_t addr, uint16_
  * Read a IQ gain correction value
  *
  * @param[in]   dev         Device handle
- * @param[in]   module      Module to read from
+ * @param[in]   ch          Channel
  * @param[out]  value       On success, updated with phase correction value
  *
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
 int nios_legacy_get_iq_gain_correction(struct bladerf *dev,
-                                       bladerf_module module, int16_t *value);
+                                       bladerf_channel ch, int16_t *value);
 
 /**
  * Read a IQ phase correction value
  *
  * @param[in]   dev         Device handle
- * @param[in]   module      Module to read from
+ * @param[in]   ch          Channel
  * @param[out]  value       On success, updated with phase correction value
  *
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
 int nios_legacy_get_iq_phase_correction(struct bladerf *dev,
-                                        bladerf_module module, int16_t *value);
+                                        bladerf_channel ch, int16_t *value);
 
 /**
  * Write an IQ gain correction value
  *
  * @param[in]   dev         Device handle
- * @param[in]   module      Module to write to
+ * @param[in]   ch          Channel
  * @param[in]   value       Correction value to write
  *
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
 int nios_legacy_set_iq_gain_correction(struct bladerf *dev,
-                                       bladerf_module module, int16_t value);
+                                       bladerf_channel ch, int16_t value);
 
 /**
  * Write an IQ phase correction value
  *
  * @param[in]   dev         Device handle
- * @param[in]   module      Module to write to
+ * @param[in]   ch          Channel
  * @param[in]   value       Correction value to write
  *
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
 int nios_legacy_set_iq_phase_correction(struct bladerf *dev,
-                                        bladerf_module module, int16_t value);
+                                        bladerf_channel ch, int16_t value);
 
 /**
  * Write a value to the XB-200's ADF4351 synthesizer

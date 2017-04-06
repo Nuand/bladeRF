@@ -130,13 +130,13 @@ struct backend_fns {
     int (*expansion_gpio_dir_read)(struct bladerf *dev, uint32_t *outputs);
 
     /* IQ Correction Settings */
-    int (*set_iq_gain_correction)(struct bladerf *dev, bladerf_module module,
+    int (*set_iq_gain_correction)(struct bladerf *dev, bladerf_channel ch,
                                   int16_t value);
-    int (*set_iq_phase_correction)(struct bladerf *dev, bladerf_module module,
+    int (*set_iq_phase_correction)(struct bladerf *dev, bladerf_channel ch,
                                    int16_t value);
-    int (*get_iq_gain_correction)(struct bladerf *dev, bladerf_module module,
+    int (*get_iq_gain_correction)(struct bladerf *dev, bladerf_channel ch,
                                   int16_t *value);
-    int (*get_iq_phase_correction)(struct bladerf *dev, bladerf_module module,
+    int (*get_iq_phase_correction)(struct bladerf *dev, bladerf_channel ch,
                                    int16_t *value);
 
     /* AGC DC Correction Lookup Table */
@@ -145,7 +145,7 @@ struct backend_fns {
                                  int16_t q_low, int16_t i_low);
 
     /* Get current timestamp counter values */
-    int (*get_timestamp)(struct bladerf *dev, bladerf_module mod, uint64_t *value);
+    int (*get_timestamp)(struct bladerf *dev, bladerf_direction dir, uint64_t *value);
 
     /* Si5338 accessors */
     int (*si5338_write)(struct bladerf *dev, uint8_t addr, uint8_t data);
@@ -196,16 +196,16 @@ struct backend_fns {
     int (*get_firmware_loopback)(struct bladerf *dev, bool *is_enabled);
 
     /* Sample stream */
-    int (*enable_module)(struct bladerf *dev, bladerf_module m, bool enable);
+    int (*enable_module)(struct bladerf *dev, bladerf_direction dir, bool enable);
 
     int (*init_stream)(struct bladerf_stream *stream, size_t num_transfers);
-    int (*stream)(struct bladerf_stream *stream, bladerf_module module);
+    int (*stream)(struct bladerf_stream *stream, bladerf_direction dir);
     int (*submit_stream_buffer)(struct bladerf_stream *stream, void *buffer,
                                 unsigned int timeout_ms, bool nonblock);
     void (*deinit_stream)(struct bladerf_stream *stream);
 
     /* Schedule a frequency retune operation */
-    int (*retune)(struct bladerf *dev, bladerf_module module,
+    int (*retune)(struct bladerf *dev, bladerf_channel ch,
                   uint64_t timestamp, uint16_t nint, uint32_t nfrac,
                   uint8_t freqsel, uint8_t vcocap, bool low_band,
                   bool quick_tune);
@@ -219,9 +219,9 @@ struct backend_fns {
     int (*read_fw_log)(struct bladerf *dev, logger_entry *e);
 
     /* Read and Write access to trigger registers */
-    int (*read_trigger)(struct bladerf *dev, bladerf_module module,
+    int (*read_trigger)(struct bladerf *dev, bladerf_channel ch,
                         bladerf_trigger_signal trigger, uint8_t *val);
-    int (*write_trigger)(struct bladerf *dev, bladerf_module module,
+    int (*write_trigger)(struct bladerf *dev, bladerf_channel ch,
                          bladerf_trigger_signal trigger, uint8_t val);
 
     /* Backend name */

@@ -28,6 +28,7 @@
  * Read trigger control register
  *
  * @param   dev             Device handle
+ * @param   ch              Channel
  * @param   signal          Trigger signal control register to read from
  * @param   val             Pointer to variable that register is read into
  *                          See the BLADERF_TRIGGER_REG_* macros for the meaning
@@ -35,36 +36,37 @@
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
-int fpga_trigger_read(struct bladerf *dev, bladerf_module module,
+int fpga_trigger_read(struct bladerf *dev, bladerf_channel ch,
                       bladerf_trigger_signal trigger, uint8_t *val);
 
 /**
  * Write trigger control register
  *
  * @param   dev             Device handle
+ * @param   ch              Channel
  * @param   signal          Trigger signal to configure
  * @param   val             Data to write into the trigger control register.
  *                          See the BLADERF_TRIGGER_REG_* macros for options.
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
-int fpga_trigger_write(struct bladerf *dev, bladerf_module module,
+int fpga_trigger_write(struct bladerf *dev, bladerf_channel ch,
                        bladerf_trigger_signal trigger, uint8_t val);
 
 
 /**
  * Initialize a bladerf_trigger structure based upon the current state
- * of a module's trigger control register.
+ * of a channel's trigger control register.
  *
  * @param[in]   dev         Device to query
- * @param[in]   module      Module to query
+ * @param[in]   ch          Channel
  * @param[in]   signal      Trigger signal to query
  * @param[out]  trigger     Updated to describe trigger
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
 
-int fpga_trigger_init(struct bladerf *dev, bladerf_module module,
+int fpga_trigger_init(struct bladerf *dev, bladerf_channel ch,
                       bladerf_trigger_signal signal,
                       struct bladerf_trigger *trigger);
 

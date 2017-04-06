@@ -110,9 +110,6 @@ static int errno_ad9361_to_bladerf(int err)
     return BLADERF_ERR_UNEXPECTED;
 }
 
-/* FIXME move to libbladeRF.h */
-#define BLADERF_TX (1<<0)
-
 /******************************************************************************/
 /* Low-level Initialization */
 /******************************************************************************/
@@ -482,7 +479,7 @@ static int bladerf2_get_fw_version(struct bladerf *dev, struct bladerf_version *
 /* Enable/disable */
 /******************************************************************************/
 
-static int bladerf2_enable_module(struct bladerf *dev, bladerf_module ch, bool enable)
+static int bladerf2_enable_module(struct bladerf *dev, bladerf_direction dir, bool enable)
 {
     int status;
     bool tx;
@@ -494,7 +491,7 @@ static int bladerf2_enable_module(struct bladerf *dev, bladerf_module ch, bool e
         return status;
     }
 
-    tx = (ch & BLADERF_TX) == BLADERF_TX;
+    tx = (dir == BLADERF_TX);
 
     /* Modify */
     if (enable && tx) {
@@ -518,7 +515,7 @@ static int bladerf2_enable_module(struct bladerf *dev, bladerf_module ch, bool e
     }
 
     /* Enable module through backend */
-    status = dev->backend->enable_module(dev, ch, enable);
+    status = dev->backend->enable_module(dev, dir, enable);
     if (status < 0) {
         return status;
     }
@@ -530,7 +527,7 @@ static int bladerf2_enable_module(struct bladerf *dev, bladerf_module ch, bool e
 /* Gain */
 /******************************************************************************/
 
-static int bladerf2_set_gain(struct bladerf *dev, bladerf_module ch, int gain)
+static int bladerf2_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
 {
     struct bladerf2_board_data *board_data = dev->board_data;
     int status;
@@ -549,7 +546,7 @@ static int bladerf2_set_gain(struct bladerf *dev, bladerf_module ch, int gain)
 }
 
 #if 0
-static int bladerf2_get_gain(struct bladerf *dev, bladerf_module ch, int *gain)
+static int bladerf2_get_gain(struct bladerf *dev, bladerf_channel ch, int *gain)
 {
     struct bladerf2_board_data *board_data = dev->board_data;
     int status;
@@ -572,7 +569,7 @@ static int bladerf2_get_gain(struct bladerf *dev, bladerf_module ch, int *gain)
 /* Sample Rate */
 /******************************************************************************/
 
-static int bladerf2_set_sample_rate(struct bladerf *dev, bladerf_module ch, unsigned int rate, unsigned int *actual)
+static int bladerf2_set_sample_rate(struct bladerf *dev, bladerf_channel ch, unsigned int rate, unsigned int *actual)
 {
     struct bladerf2_board_data *board_data = dev->board_data;
     int status;
@@ -600,7 +597,7 @@ static int bladerf2_set_sample_rate(struct bladerf *dev, bladerf_module ch, unsi
     return 0;
 }
 
-static int bladerf2_get_sample_rate(struct bladerf *dev, bladerf_module ch, unsigned int *rate)
+static int bladerf2_get_sample_rate(struct bladerf *dev, bladerf_channel ch, unsigned int *rate)
 {
     struct bladerf2_board_data *board_data = dev->board_data;
     int status;
@@ -618,12 +615,12 @@ static int bladerf2_get_sample_rate(struct bladerf *dev, bladerf_module ch, unsi
     return 0;
 }
 
-static int bladerf2_set_rational_sample_rate(struct bladerf *dev, bladerf_module ch, struct bladerf_rational_rate *rate, struct bladerf_rational_rate *actual)
+static int bladerf2_set_rational_sample_rate(struct bladerf *dev, bladerf_channel ch, struct bladerf_rational_rate *rate, struct bladerf_rational_rate *actual)
 {
     return BLADERF_ERR_UNSUPPORTED;
 }
 
-static int bladerf2_get_rational_sample_rate(struct bladerf *dev, bladerf_module ch, struct bladerf_rational_rate *rate)
+static int bladerf2_get_rational_sample_rate(struct bladerf *dev, bladerf_channel ch, struct bladerf_rational_rate *rate)
 {
     return BLADERF_ERR_UNSUPPORTED;
 }
@@ -632,7 +629,7 @@ static int bladerf2_get_rational_sample_rate(struct bladerf *dev, bladerf_module
 /* Bandwidth */
 /******************************************************************************/
 
-static int bladerf2_set_bandwidth(struct bladerf *dev, bladerf_module ch, unsigned int bandwidth, unsigned int *actual)
+static int bladerf2_set_bandwidth(struct bladerf *dev, bladerf_channel ch, unsigned int bandwidth, unsigned int *actual)
 {
     struct bladerf2_board_data *board_data = dev->board_data;
     int status;
@@ -660,7 +657,7 @@ static int bladerf2_set_bandwidth(struct bladerf *dev, bladerf_module ch, unsign
     return 0;
 }
 
-static int bladerf2_get_bandwidth(struct bladerf *dev, bladerf_module ch, unsigned int *bandwidth)
+static int bladerf2_get_bandwidth(struct bladerf *dev, bladerf_channel ch, unsigned int *bandwidth)
 {
     struct bladerf2_board_data *board_data = dev->board_data;
     int status;
@@ -682,7 +679,7 @@ static int bladerf2_get_bandwidth(struct bladerf *dev, bladerf_module ch, unsign
 /* Frequency */
 /******************************************************************************/
 
-static int bladerf2_set_frequency(struct bladerf *dev, bladerf_module ch, unsigned int frequency)
+static int bladerf2_set_frequency(struct bladerf *dev, bladerf_channel ch, unsigned int frequency)
 {
     struct bladerf2_board_data *board_data = dev->board_data;
     int status;
@@ -702,7 +699,7 @@ static int bladerf2_set_frequency(struct bladerf *dev, bladerf_module ch, unsign
     return 0;
 }
 
-static int bladerf2_get_frequency(struct bladerf *dev, bladerf_module ch, unsigned int *frequency)
+static int bladerf2_get_frequency(struct bladerf *dev, bladerf_channel ch, unsigned int *frequency)
 {
     struct bladerf2_board_data *board_data = dev->board_data;
     int status;
@@ -723,7 +720,7 @@ static int bladerf2_get_frequency(struct bladerf *dev, bladerf_module ch, unsign
     return 0;
 }
 
-static int bladerf2_select_band(struct bladerf *dev, bladerf_module ch, unsigned int frequency)
+static int bladerf2_select_band(struct bladerf *dev, bladerf_channel ch, unsigned int frequency)
 {
     return BLADERF_ERR_UNSUPPORTED;
 }
@@ -732,18 +729,18 @@ static int bladerf2_select_band(struct bladerf *dev, bladerf_module ch, unsigned
 /* Scheduled Tuning */
 /******************************************************************************/
 
-static int bladerf2_get_quick_tune(struct bladerf *dev, bladerf_module ch, struct bladerf_quick_tune *quick_tune)
+static int bladerf2_get_quick_tune(struct bladerf *dev, bladerf_channel ch, struct bladerf_quick_tune *quick_tune)
 {
     return BLADERF_ERR_UNSUPPORTED;
 }
 
-static int bladerf2_schedule_retune(struct bladerf *dev, bladerf_module ch, uint64_t timestamp, unsigned int frequency, struct bladerf_quick_tune *quick_tune)
+static int bladerf2_schedule_retune(struct bladerf *dev, bladerf_channel ch, uint64_t timestamp, unsigned int frequency, struct bladerf_quick_tune *quick_tune)
 
 {
     return BLADERF_ERR_UNSUPPORTED;
 }
 
-int bladerf2_cancel_scheduled_retunes(struct bladerf *dev, bladerf_module ch)
+int bladerf2_cancel_scheduled_retunes(struct bladerf *dev, bladerf_channel ch)
 {
     return BLADERF_ERR_UNSUPPORTED;
 }
@@ -752,7 +749,7 @@ int bladerf2_cancel_scheduled_retunes(struct bladerf *dev, bladerf_module ch)
 /* Trigger */
 /******************************************************************************/
 
-static int bladerf2_trigger_init(struct bladerf *dev, bladerf_module ch, bladerf_trigger_signal signal, struct bladerf_trigger *trigger)
+static int bladerf2_trigger_init(struct bladerf *dev, bladerf_channel ch, bladerf_trigger_signal signal, struct bladerf_trigger *trigger)
 {
     return BLADERF_ERR_UNSUPPORTED;
 }
@@ -782,9 +779,9 @@ static int bladerf2_init_stream(struct bladerf_stream **stream, struct bladerf *
                              format, samples_per_buffer, num_transfers, user_data);
 }
 
-static int bladerf2_stream(struct bladerf_stream *stream, bladerf_module ch)
+static int bladerf2_stream(struct bladerf_stream *stream, bladerf_direction dir)
 {
-    return async_run_stream(stream, ch);
+    return async_run_stream(stream, dir);
 }
 
 static int bladerf2_submit_stream_buffer(struct bladerf_stream *stream, void *buffer, unsigned int timeout_ms, bool nonblock)
@@ -797,22 +794,22 @@ static void bladerf2_deinit_stream(struct bladerf_stream *stream)
     async_deinit_stream(stream);
 }
 
-static int bladerf2_set_stream_timeout(struct bladerf *dev, bladerf_module ch, unsigned int timeout)
+static int bladerf2_set_stream_timeout(struct bladerf *dev, bladerf_direction dir, unsigned int timeout)
 {
     return BLADERF_ERR_UNSUPPORTED;
 }
 
-static int bladerf2_get_stream_timeout(struct bladerf *dev, bladerf_module ch, unsigned int *timeout)
+static int bladerf2_get_stream_timeout(struct bladerf *dev, bladerf_direction dir, unsigned int *timeout)
 {
     return BLADERF_ERR_UNSUPPORTED;
 }
 
-static int bladerf2_sync_config(struct bladerf *dev, bladerf_module ch, bladerf_format format, unsigned int num_buffers, unsigned int buffer_size, unsigned int num_transfers, unsigned int stream_timeout)
+static int bladerf2_sync_config(struct bladerf *dev, bladerf_direction dir, bladerf_format format, unsigned int num_buffers, unsigned int buffer_size, unsigned int num_transfers, unsigned int stream_timeout)
 {
     struct bladerf2_board_data *board_data = dev->board_data;
     int status;
 
-    status = sync_init(&board_data->sync[ch & BLADERF_TX], dev, ch,
+    status = sync_init(&board_data->sync[dir], dev, dir,
                        format, num_buffers, buffer_size,
                        board_data->msg_size, num_transfers,
                        stream_timeout);
@@ -840,9 +837,9 @@ static int bladerf2_sync_rx(struct bladerf *dev, void *samples, unsigned int num
     return status;
 }
 
-static int bladerf2_get_timestamp(struct bladerf *dev, bladerf_module ch, uint64_t *value)
+static int bladerf2_get_timestamp(struct bladerf *dev, bladerf_direction dir, uint64_t *value)
 {
-    return dev->backend->get_timestamp(dev, ch, value);
+    return dev->backend->get_timestamp(dev, dir, value);
 }
 
 /******************************************************************************/
@@ -883,12 +880,12 @@ static int bladerf2_set_rational_smb_frequency(struct bladerf *dev, struct blade
 /* DC/Phase/Gain Correction */
 /******************************************************************************/
 
-static int bladerf2_get_correction(struct bladerf *dev, bladerf_module ch, bladerf_correction corr, int16_t *value)
+static int bladerf2_get_correction(struct bladerf *dev, bladerf_channel ch, bladerf_correction corr, int16_t *value)
 {
     return BLADERF_ERR_UNSUPPORTED;
 }
 
-static int bladerf2_set_correction(struct bladerf *dev, bladerf_module ch, bladerf_correction corr, int16_t value)
+static int bladerf2_set_correction(struct bladerf *dev, bladerf_channel ch, bladerf_correction corr, int16_t value)
 {
     return BLADERF_ERR_UNSUPPORTED;
 }
@@ -1142,7 +1139,6 @@ const struct board_fns bladerf2_board_fns = {
     FIELD_INIT(.get_capabilities, bladerf2_get_capabilities),
     FIELD_INIT(.get_fpga_version, bladerf2_get_fpga_version),
     FIELD_INIT(.get_fw_version, bladerf2_get_fw_version),
-    FIELD_INIT(.enable_module, bladerf2_enable_module),
     FIELD_INIT(.set_gain, bladerf2_set_gain),
     FIELD_INIT(.set_sample_rate, bladerf2_set_sample_rate),
     FIELD_INIT(.set_rational_sample_rate, bladerf2_set_rational_sample_rate),
@@ -1160,6 +1156,7 @@ const struct board_fns bladerf2_board_fns = {
     FIELD_INIT(.trigger_arm, bladerf2_trigger_arm),
     FIELD_INIT(.trigger_fire, bladerf2_trigger_fire),
     FIELD_INIT(.trigger_state, bladerf2_trigger_state),
+    FIELD_INIT(.enable_module, bladerf2_enable_module),
     FIELD_INIT(.init_stream, bladerf2_init_stream),
     FIELD_INIT(.stream, bladerf2_stream),
     FIELD_INIT(.submit_stream_buffer, bladerf2_submit_stream_buffer),

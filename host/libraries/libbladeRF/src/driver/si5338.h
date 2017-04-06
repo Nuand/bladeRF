@@ -31,54 +31,54 @@
 #include "board/board.h"
 
 /**
- * Set the rational sample rate of the specified module.
+ * Set the rational sample rate of the specified channel.
  *
  * @param[inout]    dev     Device handle
- * @param[in]       module  Device module
+ * @param[in]       ch      Channel
  * @param[in]       rate    Rational rate requested
  * @param[out]      actual  Rational rate actually set
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
-int si5338_set_rational_sample_rate(struct bladerf *dev, bladerf_module module,
+int si5338_set_rational_sample_rate(struct bladerf *dev, bladerf_channel ch,
                                     const struct bladerf_rational_rate *rate,
                                     struct bladerf_rational_rate *actual);
 
 /**
- * Get the rational sample rate of the specified module.
+ * Get the rational sample rate of the specified channel.
  *
  * @param[inout]    dev     Device handle
- * @param[in]       module  Device module
+ * @param[in]       ch      Channel
  * @param[out]      rate    Rational rate
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
-int si5338_get_rational_sample_rate(struct bladerf *dev, bladerf_module module,
+int si5338_get_rational_sample_rate(struct bladerf *dev, bladerf_channel ch,
                                     struct bladerf_rational_rate *rate);
 
 /**
- * Set the integral sample rate of the specified module.
+ * Set the integral sample rate of the specified channel.
  *
  * @param[inout]    dev     Device handle
- * @param[in]       module  Device module
+ * @param[in]       ch      Channel
  * @param[in]       rate    Integral rate requested
  * @param[out]      actual  Integral rate actually set
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
-int si5338_set_sample_rate(struct bladerf *dev, bladerf_module module,
+int si5338_set_sample_rate(struct bladerf *dev, bladerf_channel ch,
                            uint32_t rate, uint32_t *actual);
 
 /**
- * Get the integral sample rate of the specified module.
+ * Get the integral sample rate of the specified channel.
  *
  * @param[inout]    dev     Device handle
- * @param[in]       module  Device module
+ * @param[in]       ch      Channel
  * @param[out]      rate    Integral rate
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
-int si5338_get_sample_rate(struct bladerf *dev, bladerf_module module,
+int si5338_get_sample_rate(struct bladerf *dev, bladerf_channel ch,
                            unsigned int *rate);
 
 /**

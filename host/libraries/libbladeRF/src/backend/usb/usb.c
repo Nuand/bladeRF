@@ -785,30 +785,30 @@ static int usb_get_firmware_loopback(struct bladerf *dev, bool *is_enabled)
     return status;
 }
 
-static int usb_enable_module(struct bladerf *dev, bladerf_module m, bool enable)
+static int usb_enable_module(struct bladerf *dev, bladerf_direction dir, bool enable)
 {
     int status;
     int32_t fx3_ret = -1;
     const uint16_t val = enable ? 1 : 0;
-    const uint8_t cmd = (m == BLADERF_MODULE_RX) ?
+    const uint8_t cmd = (dir == BLADERF_RX) ?
                             BLADE_USB_CMD_RF_RX : BLADE_USB_CMD_RF_TX;
 
     status = vendor_cmd_int_wvalue(dev, cmd, val, &fx3_ret);
     if (status != 0) {
         log_debug("Could not enable RF %s (%d): %s\n",
-                    (m == BLADERF_MODULE_RX) ? "RX" : "TX",
+                    (dir == BLADERF_RX) ? "RX" : "TX",
                     status, bladerf_strerror(status));
 
     } else if (fx3_ret != 0) {
         log_warning("FX3 reported error=0x%x when %s RF %s\n",
                     fx3_ret,
                     enable ? "enabling" : "disabling",
-                    (m == BLADERF_MODULE_RX) ? "RX" : "TX");
+                    (dir == BLADERF_RX) ? "RX" : "TX");
 
         /* FIXME: Work around what seems to be a harmless failure.
          *        It appears that in firmware or in the lib, we may be
-         *        attempting to disable an already disabled module, or
-         *        enabling an already enabled module.
+         *        attempting to disable an already disabled channel, or
+         *        enabling an already enabled channel.
          *
          *        Further investigation required
          *
@@ -828,10 +828,10 @@ static int usb_init_stream(struct bladerf_stream *stream, size_t num_transfers)
     return usb->fn->init_stream(usb->driver, stream, num_transfers);
 }
 
-static int usb_stream(struct bladerf_stream *stream, bladerf_module module)
+static int usb_stream(struct bladerf_stream *stream, bladerf_direction dir)
 {
     struct bladerf_usb *usb = stream->dev->backend_data;
-    return usb->fn->stream(usb->driver, stream, module);
+    return usb->fn->stream(usb->driver, stream, dir);
 }
 
 int usb_submit_stream_buffer(struct bladerf_stream *stream, void *buffer,

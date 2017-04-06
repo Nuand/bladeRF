@@ -41,64 +41,64 @@ int xb200_init(struct bladerf *dev);
  * Select an XB-200 filterbank
  *
  * @param       dev         Device handle
- * @param       mod         Module
+ * @param       ch          Channel
  * @param       filter      XB200 filterbank
  *
  * @return 0 on success, BLADERF_ERR_* on failure
  */
 int xb200_set_filterbank(struct bladerf *dev,
-                         bladerf_module mod,
+                         bladerf_channel ch,
                          bladerf_xb200_filter filter);
 
 /**
  * Select an appropriate filterbank, based upon the specified frequency
  *
  * @param[in]   dev        Device handle
- * @param[in]   mod        Module to change
+ * @param[in]   ch         Channel
  * @param[in]   frequency  Frequency
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
-int xb200_auto_filter_selection(struct bladerf *dev, bladerf_module mod,
+int xb200_auto_filter_selection(struct bladerf *dev, bladerf_channel ch,
                                 unsigned int frequency);
 
 /**
  * Get the current selected XB-200 filterbank
  *
  * @param[in]    dev        Device handle
- * @param[in]    module     Module to query
+ * @param[in]    ch         Channel
  * @param[out]   filter     Pointer to filterbank, only updated if return
  *                          value is 0.
  *
  * @return 0 on success, BLADERF_ERR_* on failure
  */
 int xb200_get_filterbank(struct bladerf *dev,
-                         bladerf_module module,
+                         bladerf_channel ch,
                          bladerf_xb200_filter *filter);
 /**
  * Configure the XB-200 signal path
  *
  * @param       dev         Device handle
- * @param       module      Module to configure
+ * @param       ch          Channel
  * @param       path        Desired XB-200 signal path
  *
  * @return 0 on success, BLADERF_ERR_* on failure
  */
 int xb200_set_path(struct bladerf *dev,
-                   bladerf_module module,
+                   bladerf_channel ch,
                    bladerf_xb200_path path);
 
 /**
  * Get the current XB-200 signal path
  *
  * @param       dev         Device handle
- * @param       module      Module to query
+ * @param       ch          Channel
  * @param       path        Pointer to XB200 signal path
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 int xb200_get_path(struct bladerf *dev,
-                   bladerf_module module,
+                   bladerf_channel ch,
                    bladerf_xb200_path *path);
 
 #endif

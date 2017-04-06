@@ -27,13 +27,11 @@
 
 #include <libbladeRF.h>
 
-#define MODULE_STR(s) module2str(s->stream_config.module)
-
 /* These parameters are only written during sync_init */
 struct stream_config
 {
     bladerf_format format;
-    bladerf_module module;
+    bladerf_direction direction;
 
     unsigned int samples_per_buffer;
     unsigned int num_xfers;
@@ -147,7 +145,7 @@ struct bladerf_sync {
 
 /**
  * Create and initialize as synchronous interface handle for the specified
- * device and module. If the synchronous handle is already initialized, this
+ * device and direction. If the synchronous handle is already initialized, this
  * call will first deinitialize it.
  *
  * The associated stream will be started at the first RX or TX call
@@ -156,7 +154,7 @@ struct bladerf_sync {
  */
 int sync_init(struct bladerf_sync *sync,
               struct bladerf *dev,
-              bladerf_module module,
+              bladerf_direction dir,
               bladerf_format format,
               unsigned int num_buffers,
               size_t buffer_size,

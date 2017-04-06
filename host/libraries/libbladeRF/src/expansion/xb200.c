@@ -79,8 +79,8 @@ int xb200_attach(struct bladerf *dev)
         return BLADERF_ERR_MEM;
     }
 
-    xb_data->auto_filter[BLADERF_MODULE_RX] = -1;
-    xb_data->auto_filter[BLADERF_MODULE_TX] = -1;
+    xb_data->auto_filter[BLADERF_CHANNEL_RX(0)] = -1;
+    xb_data->auto_filter[BLADERF_CHANNEL_TX(0)] = -1;
 
     dev->xb_data = xb_data;
 
@@ -190,25 +190,25 @@ int xb200_init(struct bladerf *dev)
     int status;
 
     log_verbose( "Setting RX path\n" );
-    status = xb200_set_path(dev, BLADERF_MODULE_RX, BLADERF_XB200_BYPASS);
+    status = xb200_set_path(dev, BLADERF_CHANNEL_RX(0), BLADERF_XB200_BYPASS);
     if (status != 0) {
         return status;
     }
 
     log_verbose( "Setting TX path\n" );
-    status = xb200_set_path(dev, BLADERF_MODULE_TX, BLADERF_XB200_BYPASS);
+    status = xb200_set_path(dev, BLADERF_CHANNEL_TX(0), BLADERF_XB200_BYPASS);
     if (status != 0) {
         return status;
     }
 
     log_verbose( "Setting RX filter\n" );
-    status = xb200_set_filterbank(dev, BLADERF_MODULE_RX, BLADERF_XB200_AUTO_1DB);
+    status = xb200_set_filterbank(dev, BLADERF_CHANNEL_RX(0), BLADERF_XB200_AUTO_1DB);
     if (status != 0) {
         return status;
     }
 
     log_verbose( "Setting TX filter\n" );
-    status = xb200_set_filterbank(dev, BLADERF_MODULE_TX, BLADERF_XB200_AUTO_1DB);
+    status = xb200_set_filterbank(dev, BLADERF_CHANNEL_TX(0), BLADERF_XB200_AUTO_1DB);
     if (status != 0) {
         return status;
     }
@@ -271,13 +271,13 @@ static int check_xb200_path(bladerf_xb200_path p)
 
     return status;
 }
-int xb200_get_filterbank(struct bladerf *dev, bladerf_module module,
+int xb200_get_filterbank(struct bladerf *dev, bladerf_channel ch,
                          bladerf_xb200_filter *filter) {
     int status;
     uint32_t val;
     unsigned int shift;
 
-    if (module != BLADERF_MODULE_RX && module != BLADERF_MODULE_TX)
+    if (ch != BLADERF_CHANNEL_RX(0) && ch != BLADERF_CHANNEL_TX(0))
         return BLADERF_ERR_INVAL;
 
     status = dev->backend->expansion_gpio_read(dev, &val);
@@ -285,7 +285,7 @@ int xb200_get_filterbank(struct bladerf *dev, bladerf_module module,
         return status;
     }
 
-    if (module == BLADERF_MODULE_RX) {
+    if (ch == BLADERF_CHANNEL_RX(0)) {
         shift = BLADERF_XB_RX_SHIFT;
     } else {
         shift = BLADERF_XB_TX_SHIFT;
@@ -302,7 +302,7 @@ int xb200_get_filterbank(struct bladerf *dev, bladerf_module module,
     return status;
 }
 
-static int set_filterbank_mux(struct bladerf *dev, bladerf_module module, bladerf_xb200_filter filter)
+static int set_filterbank_mux(struct bladerf *dev, bladerf_channel ch, bladerf_xb200_filter filter)
 {
     int status;
     uint32_t orig, val, mask;
@@ -312,7 +312,7 @@ static int set_filterbank_mux(struct bladerf *dev, bladerf_module module, blader
     assert(filter >= 0);
     assert(filter < ARRAY_SIZE(filters));
 
-    if (module == BLADERF_MODULE_RX) {
+    if (ch == BLADERF_CHANNEL_RX(0)) {
         mask = BLADERF_XB_RX_MASK;
         shift = BLADERF_XB_RX_SHIFT;
     } else {
@@ -343,12 +343,12 @@ static int set_filterbank_mux(struct bladerf *dev, bladerf_module module, blader
 }
 
 int xb200_set_filterbank(struct bladerf *dev,
-                         bladerf_module module, bladerf_xb200_filter filter) {
+                         bladerf_channel ch, bladerf_xb200_filter filter) {
     struct xb200_xb_data *xb_data = dev->xb_data;
     int status = 0;
     unsigned int frequency;
 
-    if (module != BLADERF_MODULE_RX && module != BLADERF_MODULE_TX)
+    if (ch != BLADERF_CHANNEL_RX(0) && ch != BLADERF_CHANNEL_TX(0))
         return BLADERF_ERR_INVAL;
 
     status = check_xb200_filter(filter);
@@ -358,23 +358,23 @@ int xb200_set_filterbank(struct bladerf *dev,
 
     if (filter == BLADERF_XB200_AUTO_1DB || filter == BLADERF_XB200_AUTO_3DB) {
         /* Save which soft auto filter mode we're in */
-        xb_data->auto_filter[module] = filter;
+        xb_data->auto_filter[ch] = filter;
 
-        status = dev->board->get_frequency(dev, module, &frequency);
+        status = dev->board->get_frequency(dev, ch, &frequency);
         if (status == 0) {
-            status = xb200_auto_filter_selection(dev, module, frequency);
+            status = xb200_auto_filter_selection(dev, ch, frequency);
         }
 
     } else {
         /* Invalidate the soft auto filter mode entry */
-        xb_data->auto_filter[module] = -1;
-        status = set_filterbank_mux(dev, module, filter);
+        xb_data->auto_filter[ch] = -1;
+        status = set_filterbank_mux(dev, ch, filter);
     }
 
     return status;
 }
 
-int xb200_auto_filter_selection(struct bladerf *dev, bladerf_module mod,
+int xb200_auto_filter_selection(struct bladerf *dev, bladerf_channel ch,
                                 unsigned int frequency) {
     struct xb200_xb_data *xb_data = dev->xb_data;
     int status = 0;
@@ -384,10 +384,10 @@ int xb200_auto_filter_selection(struct bladerf *dev, bladerf_module mod,
         return 0;
     }
 
-    if (mod != BLADERF_MODULE_RX && mod != BLADERF_MODULE_TX)
+    if (ch != BLADERF_CHANNEL_RX(0) && ch != BLADERF_CHANNEL_TX(0))
         return BLADERF_ERR_INVAL;
 
-    if (xb_data->auto_filter[mod] == BLADERF_XB200_AUTO_1DB) {
+    if (xb_data->auto_filter[ch] == BLADERF_XB200_AUTO_1DB) {
         if (37774405 <= frequency && frequency <= 59535436) {
             filter = BLADERF_XB200_50M;
         } else if (128326173 <= frequency && frequency <= 166711171) {
@@ -398,8 +398,8 @@ int xb200_auto_filter_selection(struct bladerf *dev, bladerf_module mod,
             filter = BLADERF_XB200_CUSTOM;
         }
 
-        status = set_filterbank_mux(dev, mod, filter);
-    } else if (xb_data->auto_filter[mod] == BLADERF_XB200_AUTO_3DB) {
+        status = set_filterbank_mux(dev, ch, filter);
+    } else if (xb_data->auto_filter[ch] == BLADERF_XB200_AUTO_3DB) {
         if (34782924 <= frequency && frequency <= 61899260) {
             filter = BLADERF_XB200_50M;
         } else if (121956957 <= frequency && frequency <= 178444099) {
@@ -410,7 +410,7 @@ int xb200_auto_filter_selection(struct bladerf *dev, bladerf_module mod,
             filter = BLADERF_XB200_CUSTOM;
         }
 
-        status = set_filterbank_mux(dev, mod, filter);
+        status = set_filterbank_mux(dev, ch, filter);
     }
 
     return status;
@@ -420,13 +420,13 @@ int xb200_auto_filter_selection(struct bladerf *dev, bladerf_module mod,
 #define LMS_TX_SWAP 0x08
 
 int xb200_set_path(struct bladerf *dev,
-                   bladerf_module module, bladerf_xb200_path path) {
+                   bladerf_channel ch, bladerf_xb200_path path) {
     int status;
     uint32_t val;
     uint32_t mask;
     uint8_t lval, lorig = 0;
 
-    if (module != BLADERF_MODULE_RX && module != BLADERF_MODULE_TX)
+    if (ch != BLADERF_CHANNEL_RX(0) && ch != BLADERF_CHANNEL_TX(0))
         return BLADERF_ERR_INVAL;
 
     status = check_xb200_path(path);
@@ -442,9 +442,9 @@ int xb200_set_path(struct bladerf *dev,
     lval = lorig;
 
     if (path == BLADERF_XB200_MIX) {
-        lval |= (module == BLADERF_MODULE_RX) ? LMS_RX_SWAP : LMS_TX_SWAP;
+        lval |= (ch == BLADERF_CHANNEL_RX(0)) ? LMS_RX_SWAP : LMS_TX_SWAP;
     } else {
-        lval &= ~((module == BLADERF_MODULE_RX) ? LMS_RX_SWAP : LMS_TX_SWAP);
+        lval &= ~((ch == BLADERF_CHANNEL_RX(0)) ? LMS_RX_SWAP : LMS_TX_SWAP);
     }
 
     status = LMS_WRITE(dev, 0x5A, lval);
@@ -469,7 +469,7 @@ int xb200_set_path(struct bladerf *dev,
         }
     }
 
-    if (module == BLADERF_MODULE_RX) {
+    if (ch == BLADERF_CHANNEL_RX(0)) {
         mask = (BLADERF_XB_CONFIG_RX_BYPASS_MASK | BLADERF_XB_RX_ENABLE);
     } else {
         mask = (BLADERF_XB_CONFIG_TX_BYPASS_MASK | BLADERF_XB_TX_ENABLE);
@@ -478,7 +478,7 @@ int xb200_set_path(struct bladerf *dev,
     val |= BLADERF_XB_RF_ON;
     val &= ~mask;
 
-    if (module == BLADERF_MODULE_RX) {
+    if (ch == BLADERF_CHANNEL_RX(0)) {
         if (path == BLADERF_XB200_MIX) {
             val |= (BLADERF_XB_RX_ENABLE | BLADERF_XB_CONFIG_RX_PATH_MIX);
         } else {
@@ -496,11 +496,11 @@ int xb200_set_path(struct bladerf *dev,
 }
 
 int xb200_get_path(struct bladerf *dev,
-                   bladerf_module module, bladerf_xb200_path *path) {
+                   bladerf_channel ch, bladerf_xb200_path *path) {
     int status;
     uint32_t val;
 
-    if (module != BLADERF_MODULE_RX && module != BLADERF_MODULE_TX)
+    if (ch != BLADERF_CHANNEL_RX(0) && ch != BLADERF_CHANNEL_TX(0))
         return BLADERF_ERR_INVAL;
 
     status = dev->backend->expansion_gpio_read(dev, &val);
@@ -508,11 +508,11 @@ int xb200_get_path(struct bladerf *dev,
         return status;
     }
 
-    if (module == BLADERF_MODULE_RX) {
+    if (ch == BLADERF_CHANNEL_RX(0)) {
         *path = (val & BLADERF_XB_CONFIG_RX_BYPASS) ?
                     BLADERF_XB200_MIX : BLADERF_XB200_BYPASS;
 
-    } else if (module == BLADERF_MODULE_TX) {
+    } else if (ch == BLADERF_CHANNEL_TX(0)) {
         *path = (val & BLADERF_XB_CONFIG_TX_BYPASS) ?
                     BLADERF_XB200_MIX : BLADERF_XB200_BYPASS;
     }

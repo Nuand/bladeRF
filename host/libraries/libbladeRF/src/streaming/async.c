@@ -143,18 +143,18 @@ int async_init_stream(struct bladerf_stream **stream,
     return status;
 }
 
-int async_run_stream(struct bladerf_stream *stream, bladerf_module module)
+int async_run_stream(struct bladerf_stream *stream, bladerf_direction dir)
 {
     int status;
     struct bladerf *dev = stream->dev;
 
     MUTEX_LOCK(&stream->lock);
-    stream->module = module;
+    stream->direction = dir;
     stream->state = STREAM_RUNNING;
     pthread_cond_signal(&stream->stream_started);
     MUTEX_UNLOCK(&stream->lock);
 
-    status = dev->backend->stream(stream, module);
+    status = dev->backend->stream(stream, dir);
 
     /* Backend return value takes precedence over stream error status */
     return status == 0 ? stream->error_code : status;

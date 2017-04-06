@@ -127,7 +127,7 @@ struct usb_fns {
                        size_t num_transfers);
 
     int (*stream)(void *driver, struct bladerf_stream *stream,
-                  bladerf_module module);
+                  bladerf_direction dir);
 
     int (*submit_stream_buffer)(void *driver, struct bladerf_stream *stream,
                                 void *buffer, unsigned int timeout_ms,
