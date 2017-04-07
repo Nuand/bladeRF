@@ -55,6 +55,10 @@ static inline bool perform_write(uint8_t id, uint32_t addr, uint32_t data)
             }
             break;
 
+        case NIOS_PKT_32x32_TARGET_ADI_AXI:
+            adi_axi_write(addr, data);
+            break;
+
         /* Add user customizations here
 
         case NIOS_PKT_8x8_TARGET_USR1:
@@ -81,6 +85,10 @@ static inline bool perform_read(uint8_t id, uint32_t addr, uint32_t *data)
 
         case NIOS_PKT_32x32_TARGET_EXP_DIR:
             *data = expansion_port_get_direction() & addr;
+            break;
+
+        case NIOS_PKT_32x32_TARGET_ADI_AXI:
+            *data = adi_axi_read(addr);
             break;
 
         /* Add user customizations here

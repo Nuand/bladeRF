@@ -175,6 +175,23 @@ uint64_t ad9361_spi_read(uint16_t addr);
 void ad9361_spi_write(uint16_t addr, uint64_t data);
 
 /**
+ * Read from ADI AXI space
+ *
+ * @param   addr    Address to read from
+ *
+ * @return  Register data
+ */
+uint32_t adi_axi_read(uint16_t addr);
+
+/**
+ * Write to ADI AXI space
+ *
+ * @param   addr    Register address to write to
+ * @param   data    Data to write
+ */
+void adi_axi_write(uint16_t addr, uint32_t data);
+
+/**
  * Read from Si5338 clock generator register
  *
  * @param   addr    Address to read from

@@ -105,6 +105,7 @@
  * to read/write */
 #define NIOS_PKT_32x32_TARGET_EXP     0x00 /* Expansion I/O */
 #define NIOS_PKT_32x32_TARGET_EXP_DIR 0x01 /* Expansion I/O Direction reg */
+#define NIOS_PKT_32x32_TARGET_ADI_AXI 0x02 /* ADI AXI Interface */
 
 /* IDs 0x80 through 0xff will not be assigned by Nuand. These are reserved
  * for user customizations */

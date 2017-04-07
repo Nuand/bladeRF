@@ -366,6 +366,18 @@ void ad9361_spi_write(uint16_t addr, uint64_t data)
     alt_avalon_spi_command(LMS_SPI_BASE, 0, bytes, &data8[0], 0, 0, 0);
 }
 
+uint32_t adi_axi_read(uint16_t addr)
+{
+    uint32_t data;
+    data = IORD_32DIRECT(AXI_AD9361_0_BASE, addr);
+    return data;
+}
+
+void adi_axi_write(uint16_t addr, uint32_t data)
+{
+    IOWR_32DIRECT(AXI_AD9361_0_BASE, addr, data);
+}
+
 uint8_t si5338_read(uint8_t addr)
 {
     uint8_t data;
