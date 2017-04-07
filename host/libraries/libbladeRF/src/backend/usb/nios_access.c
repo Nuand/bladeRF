@@ -290,6 +290,55 @@ static int nios_16x64_write(struct bladerf *dev, uint8_t id,
     }
 }
 
+static int nios_32x32_read(struct bladerf *dev, uint32_t id,
+                          uint32_t addr, uint32_t *data)
+{
+    int status;
+    uint8_t buf[NIOS_PKT_LEN];
+    bool success;
+
+    nios_pkt_32x32_pack(buf, id, false, addr, 0);
+
+    status = nios_access(dev, buf);
+    if (status != 0) {
+        return status;
+    }
+
+    nios_pkt_32x32_resp_unpack(buf, NULL, NULL, NULL, data, &success);
+
+    if (success) {
+        return 0;
+    } else {
+        *data = 0;
+        log_debug("%s: response packet reported failure.\n", __FUNCTION__);
+        return BLADERF_ERR_FPGA_OP;
+    }
+}
+
+static int nios_32x32_write(struct bladerf *dev, uint32_t id,
+                           uint32_t addr, uint32_t data)
+{
+    int status;
+    uint8_t buf[NIOS_PKT_LEN];
+    bool success;
+
+    nios_pkt_32x32_pack(buf, id, true, addr, data);
+
+    status = nios_access(dev, buf);
+    if (status != 0) {
+        return status;
+    }
+
+    nios_pkt_32x32_resp_unpack(buf, NULL, NULL, NULL, NULL, &success);
+
+    if (success) {
+        return 0;
+    } else {
+        log_debug("%s: response packet reported failure.\n", __FUNCTION__);
+        return BLADERF_ERR_FPGA_OP;
+    }
+}
+
 static int nios_32x32_masked_read(struct bladerf *dev, uint8_t id,
                                   uint32_t mask, uint32_t *val)
 {
