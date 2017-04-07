@@ -141,7 +141,6 @@ static inline void nios_pkt_16x64_pack(uint8_t *buf, uint8_t target, bool write,
 
     buf[NIOS_PKT_16x64_IDX_RESV2 + 0] = 0x00;
     buf[NIOS_PKT_16x64_IDX_RESV2 + 1] = 0x00;
-    buf[NIOS_PKT_16x64_IDX_RESV2 + 2] = 0x00;
 }
 
 /* Unpack the request buffer */
