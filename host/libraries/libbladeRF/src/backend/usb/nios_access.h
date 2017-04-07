@@ -149,6 +149,28 @@ int nios_ad9361_spi_read(struct bladerf *dev, uint16_t cmd, uint64_t *data);
 int nios_ad9361_spi_write(struct bladerf *dev, uint16_t cmd, uint64_t data);
 
 /**
+ * Read the ADI AXI memory mapped region.
+ *
+ * @param[in]       dev         Device handle
+ * @param[in]       addr        Address
+ * @param[out]      data        Data
+ *
+ * @return 0 on success, BLADERF_ERR_* code on error.
+ */
+int nios_adi_axi_read(struct bladerf *dev, uint32_t cmd, uint32_t *data);
+
+/**
+ * Write to the ADI AXI memory mapped region.
+ *
+ * @param[in]       dev         Device handle
+ * @param[in]       addr        Address
+ * @param[in]       data        Data
+ *
+ * @return 0 on success, BLADERF_ERR_* code on error.
+ */
+int nios_adi_axi_write(struct bladerf *dev, uint32_t cmd, uint32_t data);
+
+/**
  * Read RFFE control register.
  *
  * @param[inout]    dev         Device handle

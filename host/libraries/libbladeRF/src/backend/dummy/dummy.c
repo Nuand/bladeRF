@@ -223,6 +223,16 @@ static int dummy_ad9361_spi_read(struct bladerf *dev, uint16_t cmd, uint64_t *da
     return 0;
 }
 
+static int dummy_adi_axi_write(struct bladerf *dev, uint32_t addr, uint32_t data)
+{
+    return 0;
+}
+
+static int dummy_adi_axi_read(struct bladerf *dev, uint32_t addr, uint32_t *data)
+{
+    return 0;
+}
+
 static int dummy_rffe_control_write(struct bladerf *dev, uint32_t value)
 {
     return 0;
@@ -407,6 +417,9 @@ const struct backend_fns backend_fns_dummy = {
 
     FIELD_INIT(.ad9361_spi_write, dummy_ad9361_spi_write),
     FIELD_INIT(.ad9361_spi_read, dummy_ad9361_spi_read),
+
+    FIELD_INIT(.adi_axi_write, dummy_adi_axi_write),
+    FIELD_INIT(.adi_axi_read, dummy_adi_axi_read),
 
     FIELD_INIT(.rffe_control_write, dummy_rffe_control_write),
     FIELD_INIT(.rffe_control_read, dummy_rffe_control_read),

@@ -550,6 +550,32 @@ int nios_ad9361_spi_write(struct bladerf *dev, uint16_t cmd, uint64_t data)
     return status;
 }
 
+int nios_adi_axi_read(struct bladerf *dev, uint32_t addr, uint32_t *data)
+{
+    int status;
+
+    status = nios_32x32_read(dev, NIOS_PKT_32x32_TARGET_ADI_AXI, addr, data);
+    if (status == 0) {
+        log_verbose("%s: Read 0x%" PRIx64 " from addr 0x%04x\n",
+                    __FUNCTION__, *data, addr);
+    }
+
+    return status;
+}
+
+int nios_adi_axi_write(struct bladerf *dev, uint32_t addr, uint32_t data)
+{
+    int status;
+
+    status = nios_32x32_write(dev, NIOS_PKT_32x32_TARGET_ADI_AXI, addr, data);
+    if (status == 0) {
+        log_verbose("%s: Wrote 0x%" PRIx64 " to addr 0x%04x\n",
+                    __FUNCTION__, data, addr);
+    }
+
+    return status;
+}
+
 int nios_rffe_control_read(struct bladerf *dev, uint32_t *value)
 {
     int status;

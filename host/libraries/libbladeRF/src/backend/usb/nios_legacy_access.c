@@ -374,6 +374,20 @@ int nios_legacy_ad9361_spi_write(struct bladerf *dev, uint16_t cmd,
     return BLADERF_ERR_UNSUPPORTED;
 }
 
+int nios_legacy_adi_axi_read(struct bladerf *dev, uint32_t addr,
+                                uint32_t *data)
+{
+    log_debug("This operation is not supported by the legacy NIOS packet format\n");
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
+int nios_legacy_adi_axi_write(struct bladerf *dev, uint32_t cmd,
+                                 uint32_t data)
+{
+    log_debug("This operation is not supported by the legacy NIOS packet format\n");
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
 int nios_legacy_rffe_control_read(struct bladerf *dev, uint32_t *value)
 {
     log_debug("This operation is not supported by the legacy NIOS packet format\n");
