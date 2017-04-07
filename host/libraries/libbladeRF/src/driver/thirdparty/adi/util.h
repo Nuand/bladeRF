@@ -97,6 +97,7 @@ struct gpio_device {
 struct axiadc_state {
 	struct ad9361_rf_phy	*phy;
 	uint32_t				pcore_version;
+    void *userdata;
 };
 
 struct axiadc_chip_info {

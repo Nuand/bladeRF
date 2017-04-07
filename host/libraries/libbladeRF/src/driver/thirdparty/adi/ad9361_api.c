@@ -447,8 +447,13 @@ int32_t ad9361_init (struct ad9361_rf_phy **ad9361_phy,
 		goto out;
 
 #ifndef AXI_ADC_NOT_PRESENT
-	axiadc_init(phy);
-	phy->adc_state->pcore_version = axiadc_read(phy->adc_state, ADI_REG_VERSION);
+	ret = axiadc_init(phy, userdata);
+	if (ret < 0)
+		goto out;
+
+	ret = axiadc_read(phy->adc_state, ADI_REG_VERSION, &phy->adc_state->pcore_version);
+	if (ret < 0)
+		goto out;
 #endif
 
 	ad9361_init_gain_tables(phy);
@@ -1829,6 +1834,8 @@ int32_t ad9361_get_trx_path_clks(struct ad9361_rf_phy *phy,
  */
 int32_t ad9361_set_no_ch_mode(struct ad9361_rf_phy *phy, uint8_t no_ch_mode)
 {
+	int ret;
+
 	switch (no_ch_mode) {
 	case 1:
 		phy->pdata->rx2tx2 = 0;
@@ -1870,12 +1877,20 @@ int32_t ad9361_set_no_ch_mode(struct ad9361_rf_phy *phy, uint8_t no_ch_mode)
 	phy->clks[TX_RFPLL]->rate = ad9361_rfpll_recalc_rate(phy->ref_clk_scale[TX_RFPLL]);
 
 #ifndef AXI_ADC_NOT_PRESENT
-	axiadc_init(phy);
+	ret = axiadc_init(phy, phy->adc_state->userdata);
+	if (ret < 0)
+		return ret;
 #endif
-	ad9361_setup(phy);
+
+	ret = ad9361_setup(phy);
+	if (ret < 0)
+		return ret;
+
 #ifndef AXI_ADC_NOT_PRESENT
 	/* platform specific wrapper to call ad9361_post_setup() */
-	axiadc_post_setup(phy);
+	ret = axiadc_post_setup(phy);
+	if (ret < 0)
+		return ret;
 #endif
 
 	return 0;
