@@ -28,7 +28,7 @@ int spi_write(struct spi_device *spi, uint16_t cmd, const uint8_t *buf,
     struct bladerf *dev = spi->userdata;
     int status;
     uint64_t data;
-    unsigned i;
+    unsigned int i;
 
     /* Copy buf to data */
     data = 0;
