@@ -158,3 +158,127 @@ unsigned long msleep_interruptible(unsigned int msecs)
     usleep(msecs * 1000);
     return 0;
 }
+
+/***************************************************************************//**
+ * @brief axiadc_init
+*******************************************************************************/
+
+int axiadc_init(struct ad9361_rf_phy *phy, void *userdata)
+{
+    phy->adc_state->userdata = userdata;
+    return 0;
+}
+
+/***************************************************************************//**
+ * @brief axiadc_post_setup
+*******************************************************************************/
+
+int axiadc_post_setup(struct ad9361_rf_phy *phy)
+{
+    return ad9361_post_setup(phy);
+}
+
+/***************************************************************************//**
+ * @brief axiadc_read
+*******************************************************************************/
+
+int axiadc_read(struct axiadc_state *st, uint32_t addr, uint32_t *data)
+{
+    struct bladerf *dev = st->userdata;
+    int status;
+
+    /* Read */
+    status = dev->backend->adi_axi_read(dev, addr, data);
+    if (status < 0) {
+        return -EIO;
+    }
+
+    return 0;
+}
+
+/***************************************************************************//**
+ * @brief axiadc_write
+*******************************************************************************/
+
+int axiadc_write(struct axiadc_state *st, uint32_t addr, uint32_t data)
+{
+    struct bladerf *dev = st->userdata;
+    int status;
+
+    /* Write */
+    status = dev->backend->adi_axi_write(dev, addr, data);
+    if (status < 0) {
+        return -EIO;
+    }
+
+    return 0;
+}
+
+/***************************************************************************//**
+ * @brief axiadc_set_pnsel
+*******************************************************************************/
+
+int axiadc_set_pnsel(struct axiadc_state *st, unsigned int channel, enum adc_pn_sel sel)
+{
+    int status;
+    uint32_t reg;
+
+    if (PCORE_VERSION_MAJOR(st->pcore_version) > 7) {
+        status = axiadc_read(st, ADI_REG_CHAN_CNTRL_3(channel), &reg);
+        if (status != 0)
+            return status;
+
+        reg &= ~ADI_ADC_PN_SEL(~0);
+        reg |= ADI_ADC_PN_SEL(sel);
+
+        status = axiadc_write(st, ADI_REG_CHAN_CNTRL_3(channel), reg);
+        if (status != 0)
+            return status;
+    } else {
+        status = axiadc_read(st, ADI_REG_CHAN_CNTRL(channel), &reg);
+        if (status != 0)
+            return status;
+
+        if (sel == ADC_PN_CUSTOM) {
+            reg |= ADI_PN_SEL;
+        } else if (sel == ADC_PN9) {
+            reg &= ~ADI_PN23_TYPE;
+            reg &= ~ADI_PN_SEL;
+        } else {
+            reg |= ADI_PN23_TYPE;
+            reg &= ~ADI_PN_SEL;
+        }
+
+        status = axiadc_write(st, ADI_REG_CHAN_CNTRL(channel), reg);
+        if (status != 0)
+            return status;
+    }
+
+    return 0;
+}
+
+/***************************************************************************//**
+ * @brief axiadc_idelay_set
+*******************************************************************************/
+
+int axiadc_idelay_set(struct axiadc_state *st, unsigned int lane, unsigned int val)
+{
+    int status;
+
+    if (PCORE_VERSION_MAJOR(st->pcore_version) > 8) {
+        status = axiadc_write(st, ADI_REG_DELAY(lane), val);
+        if (status != 0)
+            return status;
+    } else {
+        status = axiadc_write(st, ADI_REG_DELAY_CNTRL, 0);
+        if (status != 0)
+            return status;
+
+        status = axiadc_write(st, ADI_REG_DELAY_CNTRL,
+                                ADI_DELAY_ADDRESS(lane) | ADI_DELAY_WDATA(val) | ADI_DELAY_SEL);
+        if (status != 0)
+            return status;
+    }
+
+    return 0;
+}
