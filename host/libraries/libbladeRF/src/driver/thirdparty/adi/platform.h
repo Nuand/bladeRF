@@ -154,12 +154,12 @@ void mdelay(unsigned long msecs);
 unsigned long msleep_interruptible(unsigned int msecs);
 
 #ifndef AXI_ADC_NOT_PRESENT
-void axiadc_init(struct ad9361_rf_phy *phy);
+int axiadc_init(struct ad9361_rf_phy *phy, void *userdata);
 int axiadc_post_setup(struct ad9361_rf_phy *phy);
-unsigned int axiadc_read(struct axiadc_state *st, unsigned long reg);
-void axiadc_write(struct axiadc_state *st, unsigned reg, unsigned val);
-int axiadc_set_pnsel(struct axiadc_state *st, int channel, enum adc_pn_sel sel);
-void axiadc_idelay_set(struct axiadc_state *st, unsigned lane, unsigned val);
+int axiadc_read(struct axiadc_state *st, uint32_t addr, uint32_t *data);
+int axiadc_write(struct axiadc_state *st, uint32_t addr, uint32_t data);
+int axiadc_set_pnsel(struct axiadc_state *st, unsigned int channel, enum adc_pn_sel sel);
+int axiadc_idelay_set(struct axiadc_state *st, unsigned int lane, unsigned int val);
 #endif
 
 #endif
