@@ -126,7 +126,9 @@ static int bladerf2_initialize(struct bladerf *dev)
     int status;
 
     /* Initialize RFFE control */
-    status = dev->backend->rffe_control_write(dev, (1 << RFFE_CONTROL_RESET_N));
+    status = dev->backend->rffe_control_write(dev, (1 << RFFE_CONTROL_RESET_N) |
+                                                   (1 << RFFE_CONTROL_ENABLE) |
+                                                   (1 << RFFE_CONTROL_TXNRX));
     if (status < 0) {
         return status;
     }
