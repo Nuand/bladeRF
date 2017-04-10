@@ -1195,8 +1195,18 @@ begin
     adi_enable     <= unpack(rffe_gpio.o).enable;
     adi_reset_n    <= unpack(rffe_gpio.o).reset_n;
 
-    rffe_gpio.i.ctrl_out <= adi_ctrl_out;
-
+    -- Synchronize the AD9361 ctrl_out bus into the Nios clock domain
+    gen_sync_adi_ctrl_out : for i in adi_ctrl_out'range generate
+        U_sync_adi_ctrl_out : entity work.synchronizer
+          generic map (
+            RESET_LEVEL         =>  '0'
+          ) port map (
+            reset               =>  '0',
+            clock               =>  \80MHz\,
+            async               =>  adi_ctrl_out(i),
+            sync                =>  rffe_gpio.i.ctrl_out(i)
+          );
+    end generate;
 
     -- CTS and the SPI CSx are tied to the same signal.  When we are in reset, allow for SPI accesses
     fx3_uart_cts            <= '1' when sys_rst_sync = '0' else 'Z'  ;
