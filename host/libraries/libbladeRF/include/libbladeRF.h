@@ -458,6 +458,15 @@ int CALL_CONV bladerf_fpga_version(struct bladerf *dev,
 API_EXPORT
 bladerf_dev_speed CALL_CONV bladerf_device_speed(struct bladerf *dev);
 
+/**
+ * Get the board name
+ *
+ * @param       dev     Device handle
+ * @return      Board name string
+ */
+API_EXPORT
+const char * CALL_CONV bladerf_get_board_name(struct bladerf *dev);
+
 /** @} (End FN_INFO) */
 
 /**

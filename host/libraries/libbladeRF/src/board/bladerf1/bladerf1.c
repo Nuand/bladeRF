@@ -2304,6 +2304,7 @@ const struct board_fns bladerf1_board_fns = {
     FIELD_INIT(.set_tuning_mode, bladerf1_set_tuning_mode),
     FIELD_INIT(.expansion_attach, bladerf1_expansion_attach),
     FIELD_INIT(.expansion_get_attached, bladerf1_expansion_get_attached),
+    FIELD_INIT(.name, "bladerf1"),
 };
 
 /******************************************************************************

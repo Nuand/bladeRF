@@ -393,6 +393,11 @@ int bladerf_is_fpga_configured(struct bladerf *dev)
     return status;
 }
 
+const char *bladerf_get_board_name(struct bladerf *dev)
+{
+    return dev->board->name;
+}
+
 /******************************************************************************/
 /* Versions */
 /******************************************************************************/

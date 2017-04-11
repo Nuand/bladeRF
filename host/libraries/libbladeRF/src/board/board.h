@@ -160,6 +160,9 @@ struct board_fns {
     /* Expansion support */
     int (*expansion_attach)(struct bladerf *dev, bladerf_xb xb);
     int (*expansion_get_attached)(struct bladerf *dev, bladerf_xb *xb);
+
+    /* Board name */
+    const char *name;
 };
 
 /* Boards */
