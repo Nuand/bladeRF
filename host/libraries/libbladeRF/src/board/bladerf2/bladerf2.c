@@ -545,7 +545,6 @@ static int bladerf2_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
     return 0;
 }
 
-#if 0
 static int bladerf2_get_gain(struct bladerf *dev, bladerf_channel ch, int *gain)
 {
     struct bladerf2_board_data *board_data = dev->board_data;
@@ -554,7 +553,7 @@ static int bladerf2_get_gain(struct bladerf *dev, bladerf_channel ch, int *gain)
     if (ch & BLADERF_TX) {
         return BLADERF_ERR_UNSUPPORTED;
     } else {
-        status = ad9361_get_rx_rf_gain(dev->board_data->phy, ch >> 1, gain);
+        status = ad9361_get_rx_rf_gain(board_data->phy, ch >> 1, gain);
     }
 
     if (status < 0) {
@@ -563,7 +562,31 @@ static int bladerf2_get_gain(struct bladerf *dev, bladerf_channel ch, int *gain)
 
     return 0;
 }
-#endif
+
+static int bladerf2_get_gain_range(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range)
+{
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
+static int bladerf2_set_gain_stage(struct bladerf *dev, bladerf_channel ch, const char *stage, int gain)
+{
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
+static int bladerf2_get_gain_stage(struct bladerf *dev, bladerf_channel ch, const char *stage, int *gain)
+{
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
+static int bladerf2_get_gain_stage_range(struct bladerf *dev, bladerf_channel ch, const char *stage, struct bladerf_range *range)
+{
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
+static int bladerf2_get_gain_stages(struct bladerf *dev, bladerf_channel ch, const char **stages, unsigned int count)
+{
+    return BLADERF_ERR_UNSUPPORTED;
+}
 
 /******************************************************************************/
 /* Sample Rate */
@@ -1141,6 +1164,12 @@ const struct board_fns bladerf2_board_fns = {
     FIELD_INIT(.get_fpga_version, bladerf2_get_fpga_version),
     FIELD_INIT(.get_fw_version, bladerf2_get_fw_version),
     FIELD_INIT(.set_gain, bladerf2_set_gain),
+    FIELD_INIT(.get_gain, bladerf2_get_gain),
+    FIELD_INIT(.get_gain_range, bladerf2_get_gain_range),
+    FIELD_INIT(.set_gain_stage, bladerf2_set_gain_stage),
+    FIELD_INIT(.get_gain_stage, bladerf2_get_gain_stage),
+    FIELD_INIT(.get_gain_stage_range, bladerf2_get_gain_stage_range),
+    FIELD_INIT(.get_gain_stages, bladerf2_get_gain_stages),
     FIELD_INIT(.set_sample_rate, bladerf2_set_sample_rate),
     FIELD_INIT(.set_rational_sample_rate, bladerf2_set_rational_sample_rate),
     FIELD_INIT(.get_sample_rate, bladerf2_get_sample_rate),

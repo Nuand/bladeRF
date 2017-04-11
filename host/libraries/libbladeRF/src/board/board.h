@@ -76,8 +76,14 @@ struct board_fns {
 
     /* Gain */
     int (*set_gain)(struct bladerf *dev, bladerf_channel ch, int gain);
+    int (*get_gain)(struct bladerf *dev, bladerf_channel ch, int *gain);
     int (*set_gain_mode)(struct bladerf *dev, bladerf_channel ch, bladerf_gain_mode mode);
     int (*get_gain_mode)(struct bladerf *dev, bladerf_channel ch, bladerf_gain_mode *mode);
+    int (*get_gain_range)(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range);
+    int (*set_gain_stage)(struct bladerf *dev, bladerf_channel ch, const char *stage, int gain);
+    int (*get_gain_stage)(struct bladerf *dev, bladerf_channel ch, const char *stage, int *gain);
+    int (*get_gain_stage_range)(struct bladerf *dev, bladerf_channel ch, const char *stage, struct bladerf_range *range);
+    int (*get_gain_stages)(struct bladerf *dev, bladerf_channel ch, const char **stages, unsigned int count);
 
     /* Sample Rate */
     int (*set_sample_rate)(struct bladerf *dev, bladerf_channel ch, unsigned int rate, unsigned int *actual);

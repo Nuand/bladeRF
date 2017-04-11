@@ -1058,6 +1058,36 @@ static int bladerf1_get_gain_mode(struct bladerf *dev, bladerf_module mod, blade
     return status;
 }
 
+static int bladerf1_get_gain(struct bladerf *dev, bladerf_channel ch, int *gain)
+{
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
+static int bladerf1_get_gain_range(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range)
+{
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
+static int bladerf1_set_gain_stage(struct bladerf *dev, bladerf_channel ch, const char *stage, int gain)
+{
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
+static int bladerf1_get_gain_stage(struct bladerf *dev, bladerf_channel ch, const char *stage, int *gain)
+{
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
+static int bladerf1_get_gain_stage_range(struct bladerf *dev, bladerf_channel ch, const char *stage, struct bladerf_range *range)
+{
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
+static int bladerf1_get_gain_stages(struct bladerf *dev, bladerf_channel ch, const char **stages, unsigned int count)
+{
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
 /******************************************************************************/
 /* Sample Rate */
 /******************************************************************************/
@@ -2201,8 +2231,14 @@ const struct board_fns bladerf1_board_fns = {
     FIELD_INIT(.get_fpga_version, bladerf1_get_fpga_version),
     FIELD_INIT(.get_fw_version, bladerf1_get_fw_version),
     FIELD_INIT(.set_gain, bladerf1_set_gain),
+    FIELD_INIT(.get_gain, bladerf1_get_gain),
     FIELD_INIT(.set_gain_mode, bladerf1_set_gain_mode),
     FIELD_INIT(.get_gain_mode, bladerf1_get_gain_mode),
+    FIELD_INIT(.get_gain_range, bladerf1_get_gain_range),
+    FIELD_INIT(.set_gain_stage, bladerf1_set_gain_stage),
+    FIELD_INIT(.get_gain_stage, bladerf1_get_gain_stage),
+    FIELD_INIT(.get_gain_stage_range, bladerf1_get_gain_stage_range),
+    FIELD_INIT(.get_gain_stages, bladerf1_get_gain_stages),
     FIELD_INIT(.set_sample_rate, bladerf1_set_sample_rate),
     FIELD_INIT(.set_rational_sample_rate, bladerf1_set_rational_sample_rate),
     FIELD_INIT(.get_sample_rate, bladerf1_get_sample_rate),

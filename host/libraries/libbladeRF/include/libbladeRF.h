@@ -547,6 +547,16 @@ typedef bladerf_channel bladerf_module;
  */
 
 /**
+ * Range structure
+ */
+struct bladerf_range {
+    int64_t min;    /**< Minimum value */
+    int64_t max;    /**< Maximum value */
+    int64_t step;   /**< Step of value */
+    float scale;    /**< Unit scale */
+};
+
+/**
  * Gain control modes
  */
 typedef enum  {
@@ -562,11 +572,7 @@ typedef enum  {
 #define BLADERF_GAIN_MANUAL BLADERF_GAIN_MGC
 
 /**
- * Set combined gain values
- *
- * This function computes the optimal LNA, RXVGA1, and RVGA2 gains for a
- * requested amount of RX gain, and computes the optimal TXVGA1 and TXVGA2 gains
- * for a requested amount of TX gain.
+ * Set overall gain
  *
  * Values outside the valid gain range will be clipped.
  *
@@ -578,6 +584,18 @@ typedef enum  {
  */
 API_EXPORT
 int CALL_CONV bladerf_set_gain(struct bladerf *dev, bladerf_channel ch, int gain);
+
+/**
+ * Get overall gain
+ *
+ * @param       dev         Device handle
+ * @param       ch          Channel
+ * @param       gain        Gain
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_gain(struct bladerf *dev, bladerf_channel ch, int *gain);
 
 /**
  * Set gain mode
@@ -616,6 +634,75 @@ API_EXPORT
 int CALL_CONV bladerf_get_gain_mode(struct bladerf *dev, bladerf_channel ch,
                                     bladerf_gain_mode *mode);
 
+/**
+ * Get range of overall gain
+ *
+ * @param       dev         Device handle
+ * @param       ch          Channel
+ * @param       range       Gain range
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_gain_range(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range);
+
+/**
+ * Set gain stage
+ *
+ * Values outside the valid gain range will be clipped.
+ *
+ * @param       dev         Device handle
+ * @param       ch          Channel
+ * @param       stage       Gain stage name
+ * @param       gain        Desired gain
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_gain_stage(struct bladerf *dev, bladerf_channel ch, const char *stage, int gain);
+
+/**
+ * Get gain stage
+ *
+ * @param       dev         Device handle
+ * @param       ch          Channel
+ * @param       stage       Gain stage name
+ * @param       gain        Gain
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_gain_stage(struct bladerf *dev, bladerf_channel ch, const char *stage, int *gain);
+
+/**
+ * Get range of gain stage
+ *
+ * @param       dev         Device handle
+ * @param       ch          Channel
+ * @param       stage       Gain stage name
+ * @param       range       Gain range
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_gain_stage_range(struct bladerf *dev, bladerf_channel ch, const char *stage, struct bladerf_range *range);
+
+/**
+ * Get gain stages
+ *
+ * This function may be called with `NULL` for `stages`, or 0 for `count`, to
+ * determine the number of gain stages.
+ *
+ * @param       dev         Device handle
+ * @param       ch          Channel
+ * @param       stages      Gain stage names
+ * @param       count       Number to populate
+ *
+ * @return Number of gain stages on success, value from \ref RETCODES list on
+ * failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_gain_stages(struct bladerf *dev, bladerf_channel ch, const char **stages, unsigned int count);
 
 /** @} (End of FN_GAIN) */
 

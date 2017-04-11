@@ -471,6 +471,72 @@ int bladerf_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
     return status;
 }
 
+int bladerf_get_gain(struct bladerf *dev, bladerf_channel ch, int *gain)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->get_gain(dev, ch, gain);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
+int bladerf_get_gain_range(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->get_gain_range(dev, ch, range);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
+int bladerf_set_gain_stage(struct bladerf *dev, bladerf_channel ch, const char *stage, int gain)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->set_gain_stage(dev, ch, stage, gain);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
+int bladerf_get_gain_stage(struct bladerf *dev, bladerf_channel ch, const char *stage, int *gain)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->get_gain_stage(dev, ch, stage, gain);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
+int bladerf_get_gain_stage_range(struct bladerf *dev, bladerf_channel ch, const char *stage, struct bladerf_range *range)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->get_gain_stage_range(dev, ch, stage, range);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
+int bladerf_get_gain_stages(struct bladerf *dev, bladerf_channel ch, const char **stages, unsigned int count)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->get_gain_stages(dev, ch, stages, count);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
 /******************************************************************************/
 /* Sample Rate */
 /******************************************************************************/
