@@ -565,6 +565,18 @@ int bladerf_get_sample_rate(struct bladerf *dev, bladerf_channel ch,
     return status;
 }
 
+int bladerf_get_sample_rate_range(struct bladerf *dev, bladerf_channel ch,
+                                  struct bladerf_range *range)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->get_sample_rate_range(dev, ch, range);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
 int bladerf_set_rational_sample_rate(struct bladerf *dev, bladerf_channel ch,
                                      struct bladerf_rational_rate *rate,
                                      struct bladerf_rational_rate *actual)
@@ -619,6 +631,18 @@ int bladerf_get_bandwidth(struct bladerf *dev, bladerf_channel ch,
     return status;
 }
 
+int bladerf_get_bandwidth_range(struct bladerf *dev, bladerf_channel ch,
+                                struct bladerf_range *range)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->get_bandwidth_range(dev, ch, range);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
 /******************************************************************************/
 /* Frequency */
 /******************************************************************************/
@@ -642,6 +666,18 @@ int bladerf_get_frequency(struct bladerf *dev,
     MUTEX_LOCK(&dev->lock);
 
     status = dev->board->get_frequency(dev, ch, frequency);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
+int bladerf_get_frequency_range(struct bladerf *dev, bladerf_channel ch,
+                                struct bladerf_range *range)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->get_frequency_range(dev, ch, range);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;

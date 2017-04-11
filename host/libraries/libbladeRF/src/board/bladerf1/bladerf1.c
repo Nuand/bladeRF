@@ -1102,6 +1102,11 @@ static int bladerf1_get_sample_rate(struct bladerf *dev, bladerf_channel ch, uns
     return si5338_get_sample_rate(dev, ch, rate);
 }
 
+static int bladerf1_get_sample_rate_range(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range)
+{
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
 static int bladerf1_set_rational_sample_rate(struct bladerf *dev, bladerf_channel ch, struct bladerf_rational_rate *rate, struct bladerf_rational_rate *actual)
 {
     return si5338_set_rational_sample_rate(dev, ch, rate, actual);
@@ -1161,6 +1166,11 @@ static int bladerf1_get_bandwidth(struct bladerf *dev, bladerf_channel ch, unsig
     }
 
     return status;
+}
+
+static int bladerf1_get_bandwidth_range(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range)
+{
+    return BLADERF_ERR_UNSUPPORTED;
 }
 
 /******************************************************************************/
@@ -1300,6 +1310,11 @@ static int bladerf1_get_frequency(struct bladerf *dev, bladerf_channel ch, unsig
     }
 
     return 0;
+}
+
+static int bladerf1_get_frequency_range(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range)
+{
+    return BLADERF_ERR_UNSUPPORTED;
 }
 
 static int bladerf1_select_band(struct bladerf *dev, bladerf_channel ch, unsigned int frequency)
@@ -2242,10 +2257,13 @@ const struct board_fns bladerf1_board_fns = {
     FIELD_INIT(.set_sample_rate, bladerf1_set_sample_rate),
     FIELD_INIT(.set_rational_sample_rate, bladerf1_set_rational_sample_rate),
     FIELD_INIT(.get_sample_rate, bladerf1_get_sample_rate),
+    FIELD_INIT(.get_sample_rate_range, bladerf1_get_sample_rate_range),
     FIELD_INIT(.get_rational_sample_rate, bladerf1_get_rational_sample_rate),
     FIELD_INIT(.set_bandwidth, bladerf1_set_bandwidth),
     FIELD_INIT(.get_bandwidth, bladerf1_get_bandwidth),
+    FIELD_INIT(.get_bandwidth_range, bladerf1_get_bandwidth_range),
     FIELD_INIT(.get_frequency, bladerf1_get_frequency),
+    FIELD_INIT(.get_frequency_range, bladerf1_get_frequency_range),
     FIELD_INIT(.set_frequency, bladerf1_set_frequency),
     FIELD_INIT(.select_band, bladerf1_select_band),
     FIELD_INIT(.get_quick_tune, bladerf1_get_quick_tune),

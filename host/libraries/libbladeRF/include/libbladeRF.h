@@ -793,6 +793,20 @@ int CALL_CONV bladerf_get_sample_rate(struct bladerf *dev,
                                       unsigned int *rate);
 
 /**
+ * Get the supported range of sample rate
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   ch          Channel
+ * @param[out]  range       Sample rate range
+ *
+ * @return 0 on success, value from \ref RETCODES list upon failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_sample_rate_range(struct bladerf *dev,
+                                            bladerf_channel ch,
+                                            struct bladerf_range *range);
+
+/**
  * Read the device's sample rate in rational Hz
  *
  * @param[in]   dev         Device handle
@@ -862,6 +876,19 @@ int CALL_CONV bladerf_set_bandwidth(struct bladerf *dev, bladerf_channel ch,
 API_EXPORT
 int CALL_CONV bladerf_get_bandwidth(struct bladerf *dev, bladerf_channel ch,
                                     unsigned int *bandwidth);
+
+/**
+ * Get the supported range of bandwidth
+ *
+ * @param       dev                 Device Handle
+ * @param       ch                  Channel
+ * @param       range               Bandwidth range
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_bandwidth_range(struct bladerf *dev, bladerf_channel ch,
+                                          struct bladerf_range *range);
 
 /** @} (End of FN_BANDWIDTH) */
 
@@ -972,6 +999,20 @@ API_EXPORT
 int CALL_CONV bladerf_get_frequency(struct bladerf *dev,
                                     bladerf_channel ch,
                                     unsigned int *frequency);
+
+/**
+ * Get the supported range of frequency
+ *
+ * @param       dev         Device handle
+ * @param       ch          Channel
+ * @param       range       Frequency range
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_frequency_range(struct bladerf *dev,
+                                          bladerf_channel ch,
+                                          struct bladerf_range *range);
 
 /**
  * Set the device's tuning mode
