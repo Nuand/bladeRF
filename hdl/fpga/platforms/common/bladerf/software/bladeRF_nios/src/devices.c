@@ -419,6 +419,55 @@ void si5338_write(uint8_t addr, uint8_t data)
     si5338_complete_transfer(0);
 }
 
+uint16_t ina219_read(uint8_t addr)
+{
+    uint16_t data;
+
+    /* Set the address to the INA219 */
+    IOWR_8DIRECT(I2C, OC_I2C_DATA, INA219_I2C);
+    IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_STA | OC_I2C_WR);
+    si5338_complete_transfer(1);
+
+    IOWR_8DIRECT(I2C, OC_I2C_DATA, addr);
+    IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_WR | OC_I2C_STO);
+    si5338_complete_transfer(1) ;
+
+    /* Next transfer is a read operation, so '1' in the read/write bit */
+    IOWR_8DIRECT(I2C, OC_I2C_DATA, INA219_I2C | 1);
+    IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_STA | OC_I2C_WR);
+    si5338_complete_transfer(1) ;
+
+    IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_RD );
+    si5338_complete_transfer(1);
+    data = IORD_8DIRECT(I2C, OC_I2C_DATA) << 16;
+
+    IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_RD | OC_I2C_NACK | OC_I2C_STO);
+    si5338_complete_transfer(0);
+
+    data |= IORD_8DIRECT(I2C, OC_I2C_DATA);
+    return data;
+}
+
+void ina219_write(uint8_t addr, uint16_t data)
+{
+    /* Set the address to the Si5338 */
+    IOWR_8DIRECT(I2C, OC_I2C_DATA, INA219_I2C) ;
+    IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_STA | OC_I2C_WR);
+    si5338_complete_transfer(1);
+
+    IOWR_8DIRECT(I2C, OC_I2C_DATA, addr);
+    IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_CMD_STATUS | OC_I2C_WR);
+    si5338_complete_transfer(1);
+
+    IOWR_8DIRECT(I2C, OC_I2C_DATA, (data >> 16));
+    IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_WR);
+    si5338_complete_transfer(1);
+
+    IOWR_8DIRECT(I2C, OC_I2C_DATA, data);
+    IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_WR | OC_I2C_STO);
+    si5338_complete_transfer(0);
+}
+
 void vctcxo_trim_dac_write(uint8_t cmd, uint16_t val)
 {
     uint8_t data[3] = {

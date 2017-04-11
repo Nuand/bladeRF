@@ -76,8 +76,9 @@
 #   define OC_I2C_DATA         3
 #   define OC_I2C_CMD_STATUS   4
 
-/* SI5338 I2C interface */
+/* I2C interface */
 #   define SI5338_I2C          (0xE0)
+#   define INA219_I2C          (0x88)
 #   define OC_I2C_ENABLE       (1<<7)
 #   define OC_I2C_STA          (1<<7)
 #   define OC_I2C_STO          (1<<6)
@@ -207,6 +208,23 @@ uint8_t si5338_read(uint8_t addr);
  * @param   data    Data to write
  */
 void si5338_write(uint8_t addr, uint8_t data);
+
+/**
+ * Read from INA219 power IC
+ *
+ * @param   addr    Address to read from
+ *
+ * @return  Register data
+ */
+uint16_t ina219_read(uint8_t addr);
+
+/**
+ * Write to INA219 power IC
+ *
+ * @param   addr    Register address
+ * @param   data    Data to write
+ */
+void ina219_write(uint8_t addr, uint16_t data);
 
 /**
  * Write a command to the VCTCXO trim DAC

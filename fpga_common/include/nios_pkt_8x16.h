@@ -104,6 +104,7 @@
 #define NIOS_PKT_8x16_TARGET_IQ_CORR    0x01
 #define NIOS_PKT_8x16_TARGET_AGC_CORR   0x02
 #define NIOS_PKT_8x16_TARGET_AD56X1_DAC 0x03
+#define NIOS_PKT_8x16_TARGET_INA219     0x04
 
 /* IDs 0x80 through 0xff will not be assigned by Nuand. These are reserved
  * for user customizations */

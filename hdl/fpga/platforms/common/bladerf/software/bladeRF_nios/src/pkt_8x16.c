@@ -99,6 +99,10 @@ static inline bool perform_read(uint8_t id, uint8_t addr, uint16_t *data)
             ad56x1_vctcxo_trim_dac_read(data);
             break;
 
+        case NIOS_PKT_8x16_TARGET_INA219:
+            *data = ina219_read(addr);
+            break;
+
         /* Add user customizations here
 
         case NIOS_PKT_8x8_TARGET_USR1:
@@ -133,6 +137,10 @@ static inline bool perform_write(uint8_t id, uint8_t addr, uint16_t data)
 
         case NIOS_PKT_8x16_TARGET_AD56X1_DAC:
             ad56x1_vctcxo_trim_dac_write(data);
+            break;
+
+        case NIOS_PKT_8x16_TARGET_INA219:
+            ina219_write(addr, data);
             break;
 
         /* Add user customizations here
