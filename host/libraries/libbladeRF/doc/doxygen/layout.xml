@@ -146,10 +146,10 @@
       <files visible="yes" title=""/>
       <namespaces visible="yes" title=""/>
       <classes visible="yes" title=""/>
-      <defines title=""/>
       <typedefs title=""/>
       <enums title=""/>
       <enumvalues title=""/>
+      <defines title=""/>
       <functions title=""/>
       <variables title=""/>
       <signals title=""/>
@@ -164,10 +164,10 @@
     <memberdef>
       <pagedocs/>
       <inlineclasses title=""/>
-      <defines title=""/>
       <typedefs title=""/>
       <enums title=""/>
       <enumvalues title=""/>
+      <defines title=""/>
       <functions title=""/>
       <variables title=""/>
       <signals title=""/>
