@@ -578,7 +578,7 @@ static int submit_transfer(struct bladerf_stream *stream, void *buffer)
 }
 
 static int cyapi_stream(void *driver, struct bladerf_stream *stream,
-                        bladerf_direction dir)
+                        bladerf_channel_layout layout)
 {
     int status;
     int idx = 0;
@@ -597,7 +597,7 @@ static int cyapi_stream(void *driver, struct bladerf_stream *stream,
         timeout_ms = stream->transfer_timeout;
     }
 
-    switch (dir) {
+    switch (layout & BLADERF_DIRECTION_MASK) {
         case BLADERF_RX:
             data->ep = get_ep(cyapi->dev, SAMPLE_EP_IN);
             break;
@@ -605,10 +605,6 @@ static int cyapi_stream(void *driver, struct bladerf_stream *stream,
         case BLADERF_TX:
             data->ep = get_ep(cyapi->dev, SAMPLE_EP_OUT);
             break;
-
-        default:
-            assert(!"Invalid direction");
-            return BLADERF_ERR_UNEXPECTED;
     }
 
     if (data->ep == NULL) {

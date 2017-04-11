@@ -1544,16 +1544,21 @@ static int bladerf1_init_stream(struct bladerf_stream **stream, struct bladerf *
                              format, samples_per_buffer, num_transfers, user_data);
 }
 
-static int bladerf1_stream(struct bladerf_stream *stream, bladerf_direction dir)
+static int bladerf1_stream(struct bladerf_stream *stream, bladerf_channel_layout layout)
 {
+    bladerf_direction dir = layout & BLADERF_DIRECTION_MASK;
     int stream_status, fmt_status;
+
+    if (layout != BLADERF_RX_X1 && layout != BLADERF_TX_X1) {
+        return -EINVAL;
+    }
 
     fmt_status = perform_format_config(stream->dev, dir, stream->format);
     if (fmt_status != 0) {
         return fmt_status;
     }
 
-    stream_status = async_run_stream(stream, dir);
+    stream_status = async_run_stream(stream, layout);
 
     fmt_status = perform_format_deconfig(stream->dev, dir);
     if (fmt_status != 0) {
@@ -1595,14 +1600,19 @@ static int bladerf1_get_stream_timeout(struct bladerf *dev, bladerf_direction di
     return 0;
 }
 
-static int bladerf1_sync_config(struct bladerf *dev, bladerf_direction dir, bladerf_format format, unsigned int num_buffers, unsigned int buffer_size, unsigned int num_transfers, unsigned int stream_timeout)
+static int bladerf1_sync_config(struct bladerf *dev, bladerf_channel_layout layout, bladerf_format format, unsigned int num_buffers, unsigned int buffer_size, unsigned int num_transfers, unsigned int stream_timeout)
 {
     struct bladerf1_board_data *board_data = dev->board_data;
+    bladerf_direction dir = layout & BLADERF_DIRECTION_MASK;
     int status;
+
+    if (layout != BLADERF_RX_X1 && layout != BLADERF_TX_X1) {
+        return -EINVAL;
+    }
 
     status = perform_format_config(dev, dir, format);
     if (status == 0) {
-        status = sync_init(&board_data->sync[dir], dev, dir,
+        status = sync_init(&board_data->sync[dir], dev, layout,
                            format, num_buffers, buffer_size,
                            board_data->msg_size, num_transfers,
                            stream_timeout);

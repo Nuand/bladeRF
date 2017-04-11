@@ -199,7 +199,7 @@ struct backend_fns {
     int (*enable_module)(struct bladerf *dev, bladerf_direction dir, bool enable);
 
     int (*init_stream)(struct bladerf_stream *stream, size_t num_transfers);
-    int (*stream)(struct bladerf_stream *stream, bladerf_direction dir);
+    int (*stream)(struct bladerf_stream *stream, bladerf_channel_layout layout);
     int (*submit_stream_buffer)(struct bladerf_stream *stream, void *buffer,
                                 unsigned int timeout_ms, bool nonblock);
     void (*deinit_stream)(struct bladerf_stream *stream);

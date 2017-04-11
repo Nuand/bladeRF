@@ -31,7 +31,7 @@
 struct stream_config
 {
     bladerf_format format;
-    bladerf_direction direction;
+    bladerf_channel_layout layout;
 
     unsigned int samples_per_buffer;
     unsigned int num_xfers;
@@ -154,7 +154,7 @@ struct bladerf_sync {
  */
 int sync_init(struct bladerf_sync *sync,
               struct bladerf *dev,
-              bladerf_direction dir,
+              bladerf_channel_layout layout,
               bladerf_format format,
               unsigned int num_buffers,
               size_t buffer_size,

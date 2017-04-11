@@ -1571,6 +1571,20 @@ typedef enum {
 } bladerf_direction;
 
 /**
+ * Stream channel layout
+ */
+typedef enum {
+    BLADERF_RX_X1  = 0,    /**< x1 RX (SISO) */
+    BLADERF_TX_X1  = 1,    /**< x1 TX (SISO) */
+    BLADERF_RX_X2  = 2,    /**< x2 RX (MIMO) */
+    BLADERF_TX_X2  = 3,    /**< x2 TX (MIMO) */
+} bladerf_channel_layout;
+
+/** @cond IGNORE */
+#define BLADERF_DIRECTION_MASK (0x1)
+/** @endcond */
+
+/**
  * @defgroup STREAMING_FORMAT Formats
  *
  * This section defines the available sample formats and metadata flags.
@@ -1941,7 +1955,7 @@ int CALL_CONV bladerf_get_timestamp(struct bladerf *dev, bladerf_direction dir,
  *
  * @param   dev             Device to configure
  *
- * @param   dir             Stream direction to use with synchronous interface
+ * @param   layout          Stream direction and layout
  *
  * @param   format          Format to use in synchronous data transfers
  *
@@ -1968,7 +1982,7 @@ int CALL_CONV bladerf_get_timestamp(struct bladerf *dev, bladerf_direction dir,
  */
 API_EXPORT
 int CALL_CONV bladerf_sync_config(struct bladerf *dev,
-                                  bladerf_direction dir,
+                                  bladerf_channel_layout layout,
                                   bladerf_format format,
                                   unsigned int num_buffers,
                                   unsigned int buffer_size,
@@ -2250,13 +2264,13 @@ int CALL_CONV bladerf_init_stream(struct bladerf_stream **stream,
  * @param   stream  A stream handle that has been successfully been initialized
  *                  via bladerf_init_stream()
  *
- * @param   dir     Stream direction to perform streaming with
+ * @param   layout  Stream direction and channel layout
  *
  * @return  0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
 int CALL_CONV bladerf_stream(struct bladerf_stream *stream,
-                             bladerf_direction dir);
+                             bladerf_channel_layout layout);
 
 /**
  * Submit a buffer to a stream from outside of a stream callback function.

@@ -108,12 +108,12 @@ struct board_fns {
     /* Streaming */
     int (*enable_module)(struct bladerf *dev, bladerf_direction dir, bool enable);
     int (*init_stream)(struct bladerf_stream **stream, struct bladerf *dev, bladerf_stream_cb callback, void ***buffers, size_t num_buffers, bladerf_format format, size_t samples_per_buffer, size_t num_transfers, void *user_data);
-    int (*stream)(struct bladerf_stream *stream, bladerf_direction dir);
+    int (*stream)(struct bladerf_stream *stream, bladerf_channel_layout layout);
     int (*submit_stream_buffer)(struct bladerf_stream *stream, void *buffer, unsigned int timeout_ms, bool nonblock);
     void (*deinit_stream)(struct bladerf_stream *stream);
     int (*set_stream_timeout)(struct bladerf *dev, bladerf_direction dir, unsigned int timeout);
     int (*get_stream_timeout)(struct bladerf *dev, bladerf_direction dir, unsigned int *timeout);
-    int (*sync_config)(struct bladerf *dev, bladerf_direction dir, bladerf_format format, unsigned int num_buffers, unsigned int buffer_size, unsigned int num_transfers, unsigned int stream_timeout);
+    int (*sync_config)(struct bladerf *dev, bladerf_channel_layout layout, bladerf_format format, unsigned int num_buffers, unsigned int buffer_size, unsigned int num_transfers, unsigned int stream_timeout);
     int (*sync_tx)(struct bladerf *dev, void *samples, unsigned int num_samples, struct bladerf_metadata *metadata, unsigned int timeout_ms);
     int (*sync_rx)(struct bladerf *dev, void *samples, unsigned int num_samples, struct bladerf_metadata *metadata, unsigned int timeout_ms);
     int (*get_timestamp)(struct bladerf *dev, bladerf_direction dir, uint64_t *value);

@@ -37,6 +37,8 @@
 
 #include "board/board.h"
 
+#define worker2str(s) (direction2str(s->stream_config.layout & BLADERF_DIRECTION_MASK))
+
 void *sync_worker_task(void *arg);
 
 static void *rx_callback(struct bladerf *dev,
@@ -64,7 +66,7 @@ static void *rx_callback(struct bladerf *dev,
 
     if (requests & SYNC_WORKER_STOP) {
         log_verbose("%s worker: Got STOP request upon entering callback. "
-                    "Ending stream.\n", direction2str(s->stream_config.direction));
+                    "Ending stream.\n", worker2str(s));
         return NULL;
     }
 
@@ -89,7 +91,7 @@ static void *rx_callback(struct bladerf *dev,
             b->prod_i = (next_idx + 1) % b->num_buffers;
 
             log_verbose("%s worker: buf[%u] = full, buf[%u] = in_flight\n",
-                        direction2str(s->stream_config.direction), samples_idx, next_idx);
+                        worker2str(s), samples_idx, next_idx);
 
         } else {
             /* TODO propagate back the RX Overrun to the sync_rx() caller */
@@ -137,7 +139,7 @@ static void *tx_callback(struct bladerf *dev,
 
     if (requests & SYNC_WORKER_STOP) {
         log_verbose("%s worker: Got STOP request upon entering callback. "
-                    "Ending stream.\r\n", direction2str(s->stream_config.direction));
+                    "Ending stream.\r\n", worker2str(s));
         return NULL;
     }
 
@@ -176,7 +178,7 @@ static void *tx_callback(struct bladerf *dev,
         MUTEX_UNLOCK(&b->lock);
 
         log_verbose("%s worker: Buffer %u emptied.\r\n",
-                    direction2str(s->stream_config.direction), completed_idx);
+                    worker2str(s), completed_idx);
     }
 
     return ret;
@@ -195,7 +197,7 @@ int sync_worker_init(struct bladerf_sync *s)
     s->worker->state = SYNC_WORKER_STATE_STARTUP;
     s->worker->err_code = 0;
 
-    s->worker->cb = s->stream_config.direction == BLADERF_RX ?
+    s->worker->cb = (s->stream_config.layout & BLADERF_DIRECTION_MASK) == BLADERF_RX ?
                         rx_callback : tx_callback;
 
     status = async_init_stream(&s->worker->stream,
@@ -209,8 +211,8 @@ int sync_worker_init(struct bladerf_sync *s)
                                s);
 
     if (status != 0) {
-        log_debug("%s worker: Failed to init stream: %s\n", direction2str(s->stream_config.direction),
-                  bladerf_strerror(status));
+        log_debug("%s worker: Failed to init stream: %s\n",
+                  worker2str(s), bladerf_strerror(status));
         goto worker_init_out;
     }
 
@@ -385,7 +387,7 @@ static sync_worker_state exec_idle_state(struct bladerf_sync *s)
     MUTEX_LOCK(&s->worker->request_lock);
 
     while (s->worker->requests == 0) {
-        log_verbose("%s worker: Waiting for pending requests\n", direction2str(s->stream_config.direction));
+        log_verbose("%s worker: Waiting for pending requests\n", worker2str(s));
 
         pthread_cond_wait(&s->worker->requests_pending,
                           &s->worker->request_lock);
@@ -396,17 +398,15 @@ static sync_worker_state exec_idle_state(struct bladerf_sync *s)
     MUTEX_UNLOCK(&s->worker->request_lock);
 
     if (requests & SYNC_WORKER_STOP) {
-        log_verbose("%s worker: Got request to stop\n",
-                direction2str(s->stream_config.direction));
+        log_verbose("%s worker: Got request to stop\n", worker2str(s));
 
         next_state = SYNC_WORKER_STATE_SHUTTING_DOWN;
 
     } else if (requests & SYNC_WORKER_START) {
-        log_verbose("%s worker: Got request to start\n",
-                direction2str(s->stream_config.direction));
+        log_verbose("%s worker: Got request to start\n", worker2str(s));
         MUTEX_LOCK(&s->buf_mgmt.lock);
 
-        if (s->stream_config.direction == BLADERF_TX) {
+        if ((s->stream_config.layout & BLADERF_DIRECTION_MASK) == BLADERF_TX) {
             /* If we've previously timed out on a stream, we'll likely have some
             * stale buffers marked "in-flight" that have since been cancelled. */
             for (i = 0; i < s->buf_mgmt.num_buffers; i++) {
@@ -417,7 +417,6 @@ static sync_worker_state exec_idle_state(struct bladerf_sync *s)
 
             pthread_cond_signal(&s->buf_mgmt.buf_ready);
         } else {
-            assert(s->stream_config.direction == BLADERF_RX);
             s->buf_mgmt.prod_i = s->stream_config.num_xfers;
 
             for (i = 0; i < s->buf_mgmt.num_buffers; i++) {
@@ -444,10 +443,10 @@ static void exec_running_state(struct bladerf_sync *s)
 {
     int status;
 
-    status = async_run_stream(s->worker->stream, s->stream_config.direction);
+    status = async_run_stream(s->worker->stream, s->stream_config.layout);
 
     log_verbose("%s worker: stream ended with: %s\n",
-                direction2str(s->stream_config.direction), bladerf_strerror(status));
+                worker2str(s), bladerf_strerror(status));
 
     /* Save off the result of running the stream so we can report what
      * happened to the API caller */
@@ -469,9 +468,9 @@ void *sync_worker_task(void *arg)
     sync_worker_state state = SYNC_WORKER_STATE_IDLE;
     struct bladerf_sync *s = (struct bladerf_sync *)arg;
 
-    log_verbose("%s worker: task started\n", direction2str(s->stream_config.direction));
+    log_verbose("%s worker: task started\n", worker2str(s));
     set_state(s->worker, state);
-    log_verbose("%s worker: task state set\n", direction2str(s->stream_config.direction));
+    log_verbose("%s worker: task state set\n", worker2str(s));
 
     while (state != SYNC_WORKER_STATE_STOPPED) {
 
@@ -493,7 +492,7 @@ void *sync_worker_task(void *arg)
                 break;
 
             case SYNC_WORKER_STATE_SHUTTING_DOWN:
-                log_verbose("%s worker: Shutting down...\n", direction2str(s->stream_config.direction));
+                log_verbose("%s worker: Shutting down...\n", worker2str(s));
 
                 state = SYNC_WORKER_STATE_STOPPED;
                 set_state(s->worker, state);

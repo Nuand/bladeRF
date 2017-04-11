@@ -828,10 +828,10 @@ static int usb_init_stream(struct bladerf_stream *stream, size_t num_transfers)
     return usb->fn->init_stream(usb->driver, stream, num_transfers);
 }
 
-static int usb_stream(struct bladerf_stream *stream, bladerf_direction dir)
+static int usb_stream(struct bladerf_stream *stream, bladerf_channel_layout layout)
 {
     struct bladerf_usb *usb = stream->dev->backend_data;
-    return usb->fn->stream(usb->driver, stream, dir);
+    return usb->fn->stream(usb->driver, stream, layout);
 }
 
 int usb_submit_stream_buffer(struct bladerf_stream *stream, void *buffer,

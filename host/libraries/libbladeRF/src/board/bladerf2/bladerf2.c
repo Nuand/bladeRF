@@ -779,9 +779,9 @@ static int bladerf2_init_stream(struct bladerf_stream **stream, struct bladerf *
                              format, samples_per_buffer, num_transfers, user_data);
 }
 
-static int bladerf2_stream(struct bladerf_stream *stream, bladerf_direction dir)
+static int bladerf2_stream(struct bladerf_stream *stream, bladerf_channel_layout layout)
 {
-    return async_run_stream(stream, dir);
+    return async_run_stream(stream, layout & BLADERF_DIRECTION_MASK);
 }
 
 static int bladerf2_submit_stream_buffer(struct bladerf_stream *stream, void *buffer, unsigned int timeout_ms, bool nonblock)
@@ -804,12 +804,13 @@ static int bladerf2_get_stream_timeout(struct bladerf *dev, bladerf_direction di
     return BLADERF_ERR_UNSUPPORTED;
 }
 
-static int bladerf2_sync_config(struct bladerf *dev, bladerf_direction dir, bladerf_format format, unsigned int num_buffers, unsigned int buffer_size, unsigned int num_transfers, unsigned int stream_timeout)
+static int bladerf2_sync_config(struct bladerf *dev, bladerf_channel_layout layout, bladerf_format format, unsigned int num_buffers, unsigned int buffer_size, unsigned int num_transfers, unsigned int stream_timeout)
 {
     struct bladerf2_board_data *board_data = dev->board_data;
+    bladerf_direction dir = layout & BLADERF_DIRECTION_MASK;
     int status;
 
-    status = sync_init(&board_data->sync[dir], dev, dir,
+    status = sync_init(&board_data->sync[dir], dev, layout,
                        format, num_buffers, buffer_size,
                        board_data->msg_size, num_transfers,
                        stream_timeout);

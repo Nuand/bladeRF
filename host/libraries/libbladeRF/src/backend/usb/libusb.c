@@ -1131,7 +1131,7 @@ static int submit_transfer(struct bladerf_stream *stream, void *buffer)
     const size_t bytes_per_buffer = async_stream_buf_bytes(stream);
     size_t prev_idx;
     const unsigned char ep =
-        stream->direction == BLADERF_TX ? SAMPLE_EP_OUT : SAMPLE_EP_IN;
+        (stream->layout & BLADERF_DIRECTION_MASK) == BLADERF_TX ? SAMPLE_EP_OUT : SAMPLE_EP_IN;
 
     transfer = get_next_available_transfer(stream_data);
     assert(transfer != NULL);
@@ -1265,7 +1265,7 @@ error:
 }
 
 static int lusb_stream(void *driver, struct bladerf_stream *stream,
-                       bladerf_direction dir)
+                       bladerf_channel_layout layout)
 {
     size_t i;
     int status = 0;
@@ -1283,7 +1283,7 @@ static int lusb_stream(void *driver, struct bladerf_stream *stream,
 
     /* Set up initial set of buffers */
     for (i = 0; i < stream_data->num_transfers; i++) {
-        if (dir == BLADERF_TX) {
+        if ((layout & BLADERF_DIRECTION_MASK) == BLADERF_TX) {
             buffer = stream->cb(dev,
                                 stream,
                                 &metadata,

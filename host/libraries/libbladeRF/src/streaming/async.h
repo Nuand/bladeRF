@@ -44,7 +44,7 @@ struct bladerf_stream {
     /* These items are configured in async_init_stream() and should only be
      * read (NOT MODIFIED) during the execution of the stream */
     struct bladerf *dev;
-    bladerf_direction direction;
+    bladerf_channel_layout layout;
     bladerf_format format;
     unsigned int transfer_timeout;
     bladerf_stream_cb cb;
@@ -79,7 +79,7 @@ int async_init_stream(struct bladerf_stream **stream,
                       void *user_data);
 
 /* Backend code is responsible for acquiring stream->lock in their callbacks */
-int async_run_stream(struct bladerf_stream *stream, bladerf_direction dir);
+int async_run_stream(struct bladerf_stream *stream, bladerf_channel_layout layout);
 
 
 /* This function WILL acquire stream->lock before calling backend code.

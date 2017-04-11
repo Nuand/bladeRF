@@ -744,12 +744,12 @@ int bladerf_init_stream(struct bladerf_stream **stream,
     return status;
 }
 
-int bladerf_stream(struct bladerf_stream *stream, bladerf_direction dir)
+int bladerf_stream(struct bladerf_stream *stream, bladerf_channel_layout layout)
 {
     int status;
     MUTEX_LOCK(&stream->dev->lock);
 
-    status = stream->dev->board->stream(stream, dir);
+    status = stream->dev->board->stream(stream, layout);
 
     MUTEX_UNLOCK(&stream->dev->lock);
     return status;
@@ -797,7 +797,7 @@ int bladerf_get_stream_timeout(struct bladerf *dev, bladerf_direction dir,
 }
 
 int bladerf_sync_config(struct bladerf *dev,
-                        bladerf_direction dir,
+                        bladerf_channel_layout layout,
                         bladerf_format format,
                         unsigned int num_buffers,
                         unsigned int buffer_size,
@@ -807,7 +807,7 @@ int bladerf_sync_config(struct bladerf *dev,
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = dev->board->sync_config(dev, dir, format, num_buffers, buffer_size, num_transfers, stream_timeout);
+    status = dev->board->sync_config(dev, layout, format, num_buffers, buffer_size, num_transfers, stream_timeout);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
