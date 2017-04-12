@@ -337,7 +337,7 @@ struct rx_cal {
 struct rx_cal_backup {
     struct bladerf_rational_rate rational_sample_rate;
     unsigned int bandwidth;
-    unsigned int tx_freq;
+    uint64_t tx_freq;
 };
 
 static int get_rx_cal_backup(struct bladerf *dev, struct rx_cal_backup *b)
@@ -922,7 +922,7 @@ int dc_calibration_rx(struct bladerf *dev,
             const char sol = '\r';
             const char eol = '\0';
 #           endif
-            printf("%cCalibrated @ %10u Hz: I=%4d (Error: %4.2f), "
+            printf("%cCalibrated @ %10" PRIu64 " Hz: I=%4d (Error: %4.2f), "
                    "Q=%4d (Error: %4.2f)      ",
                    sol,
                    params[i].frequency,
@@ -982,7 +982,7 @@ out:
 #define TX_CAL_DEFAULT_LB (BLADERF_LB_RF_LNA1)
 
 struct tx_cal_backup {
-    unsigned int rx_freq;
+    uint64_t rx_freq;
     struct bladerf_rational_rate rx_sample_rate;
     unsigned int rx_bandwidth;
 
@@ -1669,7 +1669,7 @@ int dc_calibration_tx(struct bladerf *dev,
             const char sol = '\r';
             const char eol = '\0';
 #           endif
-            printf("%cCalibrated @ %10u Hz: "
+            printf("%cCalibrated @ %10" PRIu64 " Hz: "
                    "I=%4d (Error: %4.2f), "
                    "Q=%4d (Error: %4.2f)      %c",
                    sol,

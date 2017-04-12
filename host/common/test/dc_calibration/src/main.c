@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
+#include <inttypes.h>
 
 #include <libbladeRF.h>
 #include "dc_calibration.h"
@@ -133,7 +134,7 @@ int main(int argc, char *argv[])
 
             status = dc_calibration(dev, module, &p, 1, false);
             if (status == 0) {
-                printf("F=%10u, Corr_I=%4d, Corr_Q=%4d, Error_I=%4.2f, Error_Q=%4.2f\n",
+                printf("F=%10" PRIu64 ", Corr_I=%4d, Corr_Q=%4d, Error_I=%4.2f, Error_Q=%4.2f\n",
                        p.frequency, p.corr_i, p.corr_q, p.error_i, p.error_q);
             } else {
                 fprintf(stderr, "Calibration failed: %s\n",
@@ -167,7 +168,7 @@ int main(int argc, char *argv[])
                 status = dc_calibration(dev, module, p, count, true);
                 if (status == 0) {
                     for (i = 0; i < count; i++) {
-                        printf("F=%10u, Corr_I=%4d, Corr_Q=%4d, Error_I=%4.2f, Error_Q=%4.2f\n",
+                        printf("F=%10" PRIu64 ", Corr_I=%4d, Corr_Q=%4d, Error_I=%4.2f, Error_Q=%4.2f\n",
                                p[i].frequency, p[i].corr_i, p[i].corr_q,
                                p[i].error_i, p[i].error_q);
                     }

@@ -970,7 +970,7 @@ typedef enum {
  */
 API_EXPORT
 int CALL_CONV bladerf_select_band(struct bladerf *dev, bladerf_channel ch,
-                                  unsigned int frequency);
+                                  uint64_t frequency);
 
 /**
  * Set channel's frequency in Hz.
@@ -994,7 +994,7 @@ int CALL_CONV bladerf_select_band(struct bladerf *dev, bladerf_channel ch,
 API_EXPORT
 int CALL_CONV bladerf_set_frequency(struct bladerf *dev,
                                     bladerf_channel ch,
-                                    unsigned int frequency);
+                                    uint64_t frequency);
 /**
  * Get channel's current frequency in Hz
  *
@@ -1007,7 +1007,7 @@ int CALL_CONV bladerf_set_frequency(struct bladerf *dev,
 API_EXPORT
 int CALL_CONV bladerf_get_frequency(struct bladerf *dev,
                                     bladerf_channel ch,
-                                    unsigned int *frequency);
+                                    uint64_t *frequency);
 
 /**
  * Get the supported range of frequency
@@ -1645,7 +1645,7 @@ API_EXPORT
 int CALL_CONV bladerf_schedule_retune(struct bladerf *dev,
                                       bladerf_channel ch,
                                       uint64_t timestamp,
-                                      unsigned int frequency,
+                                      uint64_t frequency,
                                       struct bladerf_quick_tune *quick_tune);
 
 /**

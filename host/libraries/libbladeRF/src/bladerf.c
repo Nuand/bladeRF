@@ -653,7 +653,7 @@ int bladerf_get_bandwidth_range(struct bladerf *dev, bladerf_channel ch,
 /******************************************************************************/
 
 int bladerf_set_frequency(struct bladerf *dev,
-                          bladerf_channel ch, unsigned int frequency)
+                          bladerf_channel ch, uint64_t frequency)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -665,7 +665,7 @@ int bladerf_set_frequency(struct bladerf *dev,
 }
 
 int bladerf_get_frequency(struct bladerf *dev,
-                          bladerf_channel ch, unsigned int *frequency)
+                          bladerf_channel ch, uint64_t *frequency)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -689,7 +689,7 @@ int bladerf_get_frequency_range(struct bladerf *dev, bladerf_channel ch,
 }
 
 int bladerf_select_band(struct bladerf *dev, bladerf_channel ch,
-                        unsigned int frequency)
+                        uint64_t frequency)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -720,7 +720,7 @@ int bladerf_get_quick_tune(struct bladerf *dev,
 int bladerf_schedule_retune(struct bladerf *dev,
                             bladerf_channel ch,
                             uint64_t timestamp,
-                            unsigned int frequency,
+                            uint64_t frequency,
                             struct bladerf_quick_tune *quick_tune)
 
 {

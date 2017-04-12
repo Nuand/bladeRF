@@ -60,7 +60,7 @@ int xb200_set_filterbank(struct bladerf *dev,
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
 int xb200_auto_filter_selection(struct bladerf *dev, bladerf_channel ch,
-                                unsigned int frequency);
+                                uint64_t frequency);
 
 /**
  * Get the current selected XB-200 filterbank

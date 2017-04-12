@@ -35,7 +35,7 @@ extern "C" {
 #endif
 
 struct dc_calibration_params {
-    unsigned int frequency;
+    uint64_t frequency;
     int16_t corr_i;
     int16_t corr_q;
     float error_i;

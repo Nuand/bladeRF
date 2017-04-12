@@ -245,7 +245,7 @@ static int bladerf1_apply_lms_dc_cals(struct bladerf *dev)
             int tx_status = 0;
 
             if (have_rx) {
-                unsigned int rx_f;
+                uint64_t rx_f;
                 rx_status = dev->board->get_frequency(dev, BLADERF_CHANNEL_RX(0), &rx_f);
                 if (rx_status == 0) {
                     rx_status = dev->board->set_frequency(dev, BLADERF_CHANNEL_RX(0), rx_f);
@@ -253,7 +253,7 @@ static int bladerf1_apply_lms_dc_cals(struct bladerf *dev)
             }
 
             if (have_tx) {
-                unsigned int rx_f;
+                uint64_t rx_f;
                 rx_status = dev->board->get_frequency(dev, BLADERF_CHANNEL_RX(0), &rx_f);
                 if (rx_status == 0) {
                     rx_status = dev->board->set_frequency(dev, BLADERF_CHANNEL_RX(0), rx_f);
@@ -1177,7 +1177,7 @@ static int bladerf1_get_bandwidth_range(struct bladerf *dev, bladerf_channel ch,
 /* Frequency */
 /******************************************************************************/
 
-static int bladerf1_set_frequency(struct bladerf *dev, bladerf_channel ch, unsigned int frequency)
+static int bladerf1_set_frequency(struct bladerf *dev, bladerf_channel ch, uint64_t frequency)
 {
     struct bladerf1_board_data *board_data = dev->board_data;
     const bladerf_xb attached = dev->xb;
@@ -1276,7 +1276,7 @@ static int bladerf1_set_frequency(struct bladerf *dev, bladerf_channel ch, unsig
     return 0;
 }
 
-static int bladerf1_get_frequency(struct bladerf *dev, bladerf_channel ch, unsigned int *frequency)
+static int bladerf1_get_frequency(struct bladerf *dev, bladerf_channel ch, uint64_t *frequency)
 {
     bladerf_xb200_path path;
     struct lms_freq f;
@@ -1317,7 +1317,7 @@ static int bladerf1_get_frequency_range(struct bladerf *dev, bladerf_channel ch,
     return BLADERF_ERR_UNSUPPORTED;
 }
 
-static int bladerf1_select_band(struct bladerf *dev, bladerf_channel ch, unsigned int frequency)
+static int bladerf1_select_band(struct bladerf *dev, bladerf_channel ch, uint64_t frequency)
 {
     return band_select(dev, ch, frequency < BLADERF1_BAND_HIGH);
 }
@@ -1331,7 +1331,7 @@ static int bladerf1_get_quick_tune(struct bladerf *dev, bladerf_channel ch, stru
     return lms_get_quick_tune(dev, ch, quick_tune);
 }
 
-static int bladerf1_schedule_retune(struct bladerf *dev, bladerf_channel ch, uint64_t timestamp, unsigned int frequency, struct bladerf_quick_tune *quick_tune)
+static int bladerf1_schedule_retune(struct bladerf *dev, bladerf_channel ch, uint64_t timestamp, uint64_t frequency, struct bladerf_quick_tune *quick_tune)
 
 {
     struct bladerf1_board_data *board_data = dev->board_data;

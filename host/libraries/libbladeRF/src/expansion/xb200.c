@@ -346,7 +346,7 @@ int xb200_set_filterbank(struct bladerf *dev,
                          bladerf_channel ch, bladerf_xb200_filter filter) {
     struct xb200_xb_data *xb_data = dev->xb_data;
     int status = 0;
-    unsigned int frequency;
+    uint64_t frequency;
 
     if (ch != BLADERF_CHANNEL_RX(0) && ch != BLADERF_CHANNEL_TX(0))
         return BLADERF_ERR_INVAL;
@@ -375,7 +375,7 @@ int xb200_set_filterbank(struct bladerf *dev,
 }
 
 int xb200_auto_filter_selection(struct bladerf *dev, bladerf_channel ch,
-                                unsigned int frequency) {
+                                uint64_t frequency) {
     struct xb200_xb_data *xb_data = dev->xb_data;
     int status = 0;
     bladerf_xb200_filter filter;

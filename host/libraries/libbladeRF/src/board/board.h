@@ -98,14 +98,14 @@ struct board_fns {
     int (*get_bandwidth_range)(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range);
 
     /* Frequency */
-    int (*get_frequency)(struct bladerf *dev, bladerf_channel ch, unsigned int *frequency);
-    int (*set_frequency)(struct bladerf *dev, bladerf_channel ch, unsigned int frequency);
+    int (*get_frequency)(struct bladerf *dev, bladerf_channel ch, uint64_t *frequency);
+    int (*set_frequency)(struct bladerf *dev, bladerf_channel ch, uint64_t frequency);
     int (*get_frequency_range)(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range);
-    int (*select_band)(struct bladerf *dev, bladerf_channel ch, unsigned int frequency);
+    int (*select_band)(struct bladerf *dev, bladerf_channel ch, uint64_t frequency);
 
     /* Scheduled Tuning */
     int (*get_quick_tune)(struct bladerf *dev, bladerf_channel ch, struct bladerf_quick_tune *quick_tune);
-    int (*schedule_retune)(struct bladerf *dev, bladerf_channel ch, uint64_t timestamp, unsigned int frequency, struct bladerf_quick_tune *quick_tune);
+    int (*schedule_retune)(struct bladerf *dev, bladerf_channel ch, uint64_t timestamp, uint64_t frequency, struct bladerf_quick_tune *quick_tune);
     int (*cancel_scheduled_retunes)(struct bladerf *dev, bladerf_channel ch);
 
     /* Trigger */

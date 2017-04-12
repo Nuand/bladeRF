@@ -46,6 +46,7 @@ static int set_and_check(struct bladerf *dev, bladerf_module m,
                          unsigned int freq, unsigned int prev_freq)
 {
     int status;
+    uint64_t readback64;
     unsigned int readback;
 
     status = bladerf_set_frequency(dev, m, freq);
@@ -55,12 +56,15 @@ static int set_and_check(struct bladerf *dev, bladerf_module m,
         return status;
     }
 
-    status = bladerf_get_frequency(dev, m, &readback);
+    status = bladerf_get_frequency(dev, m, &readback64);
     if (status != 0) {
         PR_ERROR("Failed to get frequency: %s\n",
                  bladerf_strerror(status));
         return status;
     }
+
+    /* FIXME migrate test to 64-bit frequency */
+    readback = readback64;
 
     if (!freq_match(freq, readback)) {
         PR_ERROR("Frequency (%u) != Readback value (%u)\n",

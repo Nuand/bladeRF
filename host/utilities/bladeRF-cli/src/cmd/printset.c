@@ -273,7 +273,7 @@ int print_frequency(struct cli_state *state, int argc, char **argv)
     /* Usage: print frequency [<rx|tx>] */
     int rv = CLI_RET_OK;
     int status;
-    unsigned int freq;
+    uint64_t freq;
     bladerf_module module = BLADERF_MODULE_RX;
     if( argc == 3 ) {
         /* Parse module */
@@ -295,7 +295,7 @@ int print_frequency(struct cli_state *state, int argc, char **argv)
                 state->last_lib_error = status;
                 rv = CLI_RET_LIBBLADERF;
             } else {
-                printf( "  RX Frequency: %10u Hz\n", freq );
+                printf( "  RX Frequency: %10" PRIu64 " Hz\n", freq );
             }
         }
 
@@ -305,7 +305,7 @@ int print_frequency(struct cli_state *state, int argc, char **argv)
                 state->last_lib_error = status;
                 rv = CLI_RET_LIBBLADERF;
             } else {
-                printf( "  TX Frequency: %10u Hz\n", freq );
+                printf( "  TX Frequency: %10" PRIu64 " Hz\n", freq );
             }
         }
     }
@@ -318,7 +318,7 @@ int set_frequency(struct cli_state *state, int argc, char **argv)
     /* Usage: set frequency [<rx|tx>] <frequency in Hz> */
     int rv = CLI_RET_OK;
     int status;
-    unsigned int freq;
+    uint64_t freq;
     bladerf_module module = BLADERF_MODULE_RX;
 
     if( argc == 4 ) {
@@ -377,7 +377,7 @@ int set_frequency(struct cli_state *state, int argc, char **argv)
                         state->last_lib_error = status;
                         rv = CLI_RET_LIBBLADERF;
                     } else {
-                        printf( "  Set RX frequency: %10uHz\n", freq );
+                        printf( "  Set RX frequency: %10" PRIu64 " Hz\n", freq );
                     }
                 }
             }
@@ -397,7 +397,7 @@ int set_frequency(struct cli_state *state, int argc, char **argv)
                         state->last_lib_error = status;
                         rv = CLI_RET_LIBBLADERF;
                     } else {
-                        printf( "  Set TX frequency: %10uHz\n", freq );
+                        printf( "  Set TX frequency: %10" PRIu64 " Hz\n", freq );
                     }
                 }
             }

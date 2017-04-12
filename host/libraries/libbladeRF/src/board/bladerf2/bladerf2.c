@@ -712,7 +712,7 @@ static int bladerf2_get_bandwidth_range(struct bladerf *dev, bladerf_channel ch,
 /* Frequency */
 /******************************************************************************/
 
-static int bladerf2_set_frequency(struct bladerf *dev, bladerf_channel ch, unsigned int frequency)
+static int bladerf2_set_frequency(struct bladerf *dev, bladerf_channel ch, uint64_t frequency)
 {
     struct bladerf2_board_data *board_data = dev->board_data;
     int status;
@@ -732,7 +732,7 @@ static int bladerf2_set_frequency(struct bladerf *dev, bladerf_channel ch, unsig
     return 0;
 }
 
-static int bladerf2_get_frequency(struct bladerf *dev, bladerf_channel ch, unsigned int *frequency)
+static int bladerf2_get_frequency(struct bladerf *dev, bladerf_channel ch, uint64_t *frequency)
 {
     struct bladerf2_board_data *board_data = dev->board_data;
     int status;
@@ -758,7 +758,7 @@ static int bladerf2_get_frequency_range(struct bladerf *dev, bladerf_channel ch,
     return BLADERF_ERR_UNSUPPORTED;
 }
 
-static int bladerf2_select_band(struct bladerf *dev, bladerf_channel ch, unsigned int frequency)
+static int bladerf2_select_band(struct bladerf *dev, bladerf_channel ch, uint64_t frequency)
 {
     return BLADERF_ERR_UNSUPPORTED;
 }
@@ -772,7 +772,7 @@ static int bladerf2_get_quick_tune(struct bladerf *dev, bladerf_channel ch, stru
     return BLADERF_ERR_UNSUPPORTED;
 }
 
-static int bladerf2_schedule_retune(struct bladerf *dev, bladerf_channel ch, uint64_t timestamp, unsigned int frequency, struct bladerf_quick_tune *quick_tune)
+static int bladerf2_schedule_retune(struct bladerf *dev, bladerf_channel ch, uint64_t timestamp, uint64_t frequency, struct bladerf_quick_tune *quick_tune)
 
 {
     return BLADERF_ERR_UNSUPPORTED;
