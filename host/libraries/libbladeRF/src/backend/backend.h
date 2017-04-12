@@ -155,6 +155,10 @@ struct backend_fns {
     int (*lms_write)(struct bladerf *dev, uint8_t addr, uint8_t data);
     int (*lms_read)(struct bladerf *dev, uint8_t addr, uint8_t *data);
 
+    /* INA219 accessors */
+    int (*ina219_write)(struct bladerf *dev, uint8_t addr, uint16_t data);
+    int (*ina219_read)(struct bladerf *dev, uint8_t addr, uint16_t *data);
+
     /* AD9361 accessors */
     int (*ad9361_spi_write)(struct bladerf *dev, uint16_t cmd, uint64_t data);
     int (*ad9361_spi_read)(struct bladerf *dev, uint16_t cmd, uint64_t *data);

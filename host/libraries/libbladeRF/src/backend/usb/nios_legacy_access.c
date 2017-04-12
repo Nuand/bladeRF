@@ -360,6 +360,18 @@ int nios_legacy_lms6_write(struct bladerf *dev, uint8_t addr, uint8_t data)
     return status;
 }
 
+int nios_legacy_ina219_read(struct bladerf *dev, uint8_t addr, uint16_t *data)
+{
+    log_debug("This operation is not supported by the legacy NIOS packet format\n");
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
+int nios_legacy_ina219_write(struct bladerf *dev, uint8_t addr, uint16_t data)
+{
+    log_debug("This operation is not supported by the legacy NIOS packet format\n");
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
 int nios_legacy_ad9361_spi_read(struct bladerf *dev, uint16_t cmd,
                                 uint64_t *data)
 {

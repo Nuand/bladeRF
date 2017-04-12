@@ -524,6 +524,32 @@ int nios_lms6_write(struct bladerf *dev, uint8_t addr, uint8_t data)
     return status;
 }
 
+int nios_ina219_read(struct bladerf *dev, uint8_t addr, uint16_t *data)
+{
+    int status;
+
+    status = nios_8x16_read(dev, NIOS_PKT_8x16_TARGET_INA219, addr, data);
+    if (status == 0) {
+        log_verbose("%s: Read 0x%04x from addr 0x%02x\n",
+                    __FUNCTION__, *data, addr);
+    }
+
+    return status;
+}
+
+int nios_ina219_write(struct bladerf *dev, uint8_t addr, uint16_t data)
+{
+    int status;
+
+    status = nios_8x16_write(dev, NIOS_PKT_8x16_TARGET_INA219, addr, data);
+    if (status == 0) {
+        log_verbose("%s: Wrote 0x%04x to addr 0x%02x\n",
+                    __FUNCTION__, data, addr);
+    }
+
+    return status;
+}
+
 int nios_ad9361_spi_read(struct bladerf *dev, uint16_t cmd, uint64_t *data)
 {
     int status;

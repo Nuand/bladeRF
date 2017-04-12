@@ -153,6 +153,28 @@ int nios_legacy_lms6_read(struct bladerf *dev, uint8_t addr, uint8_t *data);
 int nios_legacy_lms6_write(struct bladerf *dev, uint8_t addr, uint8_t data);
 
 /**
+ * Read from an INA219 register
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   addr        Register address
+ * @param[out]  data        Data
+ *
+ * @return 0 on success, BLADERF_ERR_* code on error.
+ */
+int nios_legacy_ina219_read(struct bladerf *dev, uint8_t addr, uint16_t *data);
+
+/**
+ * Write to an INA219 register
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   addr        Register address
+ * @param[in]   data        Data
+ *
+ * @return 0 on success, BLADERF_ERR_* code on error.
+ */
+int nios_legacy_ina219_write(struct bladerf *dev, uint8_t addr, uint16_t data);
+
+/**
  * Read the AD9361 over SPI.
  *
  * @param[in]       dev         Device handle
