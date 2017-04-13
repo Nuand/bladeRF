@@ -133,16 +133,12 @@ architecture hosted_bladerf of bladerf is
     signal rx_mux_mode      : rx_mux_mode_t ;
 
     signal \80MHz\          : std_logic ;
-    signal \80MHz locked\   : std_logic ;
 
     signal nios_gpio        : std_logic_vector(31 downto 0) ;
-    signal nios_xb_gpio_in  : std_logic_vector(31 downto 0) ;
-    signal nios_xb_gpio_out : std_logic_vector(31 downto 0) ;
-    signal nios_xb_gpio_dir : std_logic_vector(31 downto 0) ;
+    signal nios_xb_gpio_in  : std_logic_vector(31 downto 0) := (others => '0');
+    signal nios_xb_gpio_out : std_logic_vector(31 downto 0) := (others => '0');
+    signal nios_xb_gpio_dir : std_logic_vector(31 downto 0) := (others => '0');
     signal xb_gpio_dir      : std_logic_vector(31 downto 0) ;
-
-    signal correction_rx_phase_gain :  std_logic_vector(31 downto 0);
-    signal correction_tx_phase_gain :  std_logic_vector(31 downto 0);
 
     signal i2c_scl_in       : std_logic ;
     signal i2c_scl_out      : std_logic ;
@@ -278,9 +274,6 @@ architecture hosted_bladerf of bladerf is
     signal rx_overflow_led      :   std_logic ;
     signal rx_overflow_count    :   unsigned(63 downto 0) ;
 
-    signal lms_rx_data_reg      :   signed(11 downto 0) ;
-    signal lms_rx_iq_select_reg :   std_logic ;
-
     signal rx_mux_i             :   signed(15 downto 0) ;
     signal rx_mux_q             :   signed(15 downto 0) ;
     signal rx_mux_valid         :   std_logic ;
@@ -298,20 +291,12 @@ architecture hosted_bladerf of bladerf is
 
     signal xb_mode  : std_logic_vector(1 downto 0);
 
-    signal correction_valid : std_logic;
-
-    signal correction_tx_phase :  signed(15 downto 0);--to_signed(integer(round(real(2**Q_SCALE) * PHASE_OFFSET)),DC_WIDTH);
-    signal correction_tx_gain  :  signed(15 downto 0);--to_signed(integer(round(real(2**Q_SCALE) * DC_OFFSET_REAL)),DC_WIDTH);
-    signal correction_rx_phase :  signed(15 downto 0);--to_signed(integer(round(real(2**Q_SCALE) * PHASE_OFFSET)),DC_WIDTH);
-    signal correction_rx_gain  :  signed(15 downto 0);--to_signed(integer(round(real(2**Q_SCALE) * DC_OFFSET_REAL)),DC_WIDTH);
-
     signal command_serial_in    :   std_logic ;
     signal command_serial_out   :   std_logic ;
 
     constant FPGA_DC_CORRECTION :  signed(15 downto 0) := to_signed(integer(0), 16);
 
     signal fx3_pclk_pll     :   std_logic ;
-    signal fx3_pll_locked   :   std_logic ;
 
     signal timestamp_req    :   std_logic ;
     signal timestamp_ack    :   std_logic ;
@@ -373,31 +358,26 @@ architecture hosted_bladerf of bladerf is
     alias tx_clock  is ad9361.clock;
     alias rx_clock  is ad9361.clock;
 
+    signal channel_sel : std_logic := '0';
+
     attribute noprune of ad9361 : signal is true;
     attribute keep    of ad9361 : signal is true;
 
 begin
-
-    correction_tx_phase <= signed(correction_tx_phase_gain(31 downto 16));
-    correction_tx_gain  <= signed(correction_tx_phase_gain(15 downto 0));
-    correction_rx_phase <= signed(correction_rx_phase_gain(31 downto 16));
-    correction_rx_gain  <= signed(correction_rx_phase_gain(15 downto 0));
-    correction_valid    <= '1';
-
 
     -- Create 80MHz from 38.4MHz coming from the c4_clock source
     U_pll : entity work.pll
       port map (
         inclk0              =>  c5_clock_1,
         c0                  =>  \80MHz\,
-        locked              =>  \80MHz locked\
+        locked              =>  open
       ) ;
 
     U_fx3_pll : entity work.fx3_pll
       port map (
         inclk0              =>  fx3_pclk,
         c0                  =>  fx3_pclk_pll,
-        locked              =>  fx3_pll_locked
+        locked              =>  open
       ) ;
 
     -- Cross domain synchronizer chains
@@ -751,28 +731,6 @@ begin
         overflow_duration   =>  x"ffff"
       ) ;
 
-    --U_rx_iq_correction : entity work.iq_correction(rx)
-    --  generic map(
-    --    INPUT_WIDTH         => rx_sample_corrected_i'length
-    --  ) port map(
-    --    reset               => rx_reset,
-    --    clock               => rx_clock,
-    --
-    --    in_real             => resize(rx_mux_i,16),
-    --    in_imag             => resize(rx_mux_q,16),
-    --    in_valid            => rx_mux_valid,
-    --
-    --    out_real            => rx_sample_corrected_i,
-    --    out_imag            => rx_sample_corrected_q,
-    --    out_valid           => rx_sample_corrected_valid,
-    --
-    --    dc_real             => FPGA_DC_CORRECTION,
-    --    dc_imag             => FPGA_DC_CORRECTION,
-    --    gain                => correction_rx_gain,
-    --    phase               => correction_rx_phase,
-    --    correction_valid    => correction_valid
-    --  );
-
     rx_sample_corrected_i     <= resize(rx_mux_i,16);
     rx_sample_corrected_q     <= resize(rx_mux_q,16);
     rx_sample_corrected_valid <= rx_mux_valid;
@@ -805,28 +763,6 @@ begin
         underflow_count     =>  tx_underflow_count,
         underflow_duration  =>  x"ffff"
       ) ;
-
-    --U_tx_iq_correction : entity work.iq_correction(tx)
-    --  generic map (
-    --    INPUT_WIDTH         => tx_sample_raw_i'length
-    --  ) port map (
-    --    reset               => tx_reset,
-    --    clock               => tx_clock,
-    --
-    --    in_real             => tx_sample_raw_i,
-    --    in_imag             => tx_sample_raw_q,
-    --    in_valid            => tx_sample_raw_valid,
-    --
-    --    out_real            => tx_sample_i,
-    --    out_imag            => tx_sample_q,
-    --    out_valid           => tx_sample_valid,
-    --
-    --    dc_real             => FPGA_DC_CORRECTION,
-    --    dc_imag             => FPGA_DC_CORRECTION,
-    --    gain                => correction_tx_gain,
-    --    phase               => correction_tx_phase,
-    --    correction_valid    => correction_valid
-    --  );
 
     tx_sample_i     <= tx_sample_raw_i;
     tx_sample_q     <= tx_sample_raw_q;
@@ -892,35 +828,39 @@ begin
     tx_trigger_line_rb   <= tx_trigger_line;
     tx_trigger_unused_rb <= (others => '0');
 
-    -- LMS6002D IQ interface
-    rx_sample_i(15 downto 12) <= (others => rx_sample_i(11)) ;
-    rx_sample_q(15 downto 12) <= (others => rx_sample_q(11)) ;
-    U_lms6002d : entity work.lms6002d
-      port map (
-        rx_clock            =>  rx_clock,
-        rx_reset            =>  rx_reset,
-        rx_enable           =>  rx_enable,
+    U_sync_channel_sel : entity work.synchronizer
+      generic map (
+        RESET_LEVEL         =>  '0'
+      ) port map (
+        reset               =>  '0',
+        clock               =>  rx_clock,
+        async               =>  nios_gpio(17),
+        sync                =>  channel_sel
+      ) ;
 
-        rx_lms_data         =>  lms_rx_data_reg,
-        rx_lms_iq_sel       =>  lms_rx_iq_select_reg,
-        rx_lms_enable       =>  open,
+    channel_mux : process( all )
+        variable ch : integer range 0 to 1 := 0;
+    begin
+        if( rising_edge(rx_clock) ) then
+            if( channel_sel = '0' ) then
+                ch := 0;
+            else
+                ch := 1;
+            end if;
 
-        rx_sample_i         =>  rx_sample_i(11 downto 0),
-        rx_sample_q         =>  rx_sample_q(11 downto 0),
-        rx_sample_valid     =>  rx_sample_valid,
+            rx_sample_i(15 downto 12) <= ( others => ad9361.ch(ch).adc.i.data(11) );
+            rx_sample_i(11 downto 0)  <= signed(ad9361.ch(ch).adc.i.data(11 downto 0));
+            rx_sample_q(15 downto 12) <= ( others => ad9361.ch(ch).adc.q.data(11) );
+            rx_sample_q(11 downto 0)  <= signed(ad9361.ch(ch).adc.q.data(11 downto 0));
+            rx_sample_valid           <= ad9361.ch(ch).adc.i.valid and
+                                         ad9361.ch(ch).adc.q.valid;
 
-        tx_clock            =>  tx_clock,
-        tx_reset            =>  tx_reset,
-        tx_enable           =>  tx_enable,
+            -- TODO: figure out why dac_valid is an output?!
+            ad9361.ch(ch).dac.i.data <= std_logic_vector(tx_sample_raw_i);
+            ad9361.ch(ch).dac.q.data <= std_logic_vector(tx_sample_raw_q);
+        end if;
+    end process;
 
-        tx_sample_i         =>  tx_sample_i(11 downto 0),
-        tx_sample_q         =>  tx_sample_q(11 downto 0),
-        tx_sample_valid     =>  tx_sample_valid,
-
-        tx_lms_data         =>  tx_lms_data,
-        tx_lms_iq_sel       =>  open,
-        tx_lms_enable       =>  open
-        ) ;
 
     U_rx_siggen : entity work.signal_generator
       port map (
@@ -978,10 +918,6 @@ begin
             end case ;
         end if ;
     end process ;
-
-    -- Register the inputs immediately
-    lms_rx_data_reg         <= to_signed(0, lms_rx_data_reg'length) when rising_edge(rx_clock) ;
-    lms_rx_iq_select_reg    <= '0' when rising_edge(rx_clock) ;
 
     -- FX3 GPIF bidirectional signals
     register_gpif : process(sys_rst_sync, fx3_pclk_pll)
@@ -1073,8 +1009,8 @@ begin
         xb_gpio_dir_export              => nios_xb_gpio_dir,
         command_serial_in               => command_serial_in,
         command_serial_out              => command_serial_out,
-        correction_tx_phase_gain_export => correction_tx_phase_gain,
-        correction_rx_phase_gain_export => correction_rx_phase_gain,
+        correction_tx_phase_gain_export => open,
+        correction_rx_phase_gain_export => open,
         oc_i2c_arst_i                   => '0',
         oc_i2c_scl_pad_i                => i2c_scl_in,
         oc_i2c_scl_pad_o                => i2c_scl_out,
@@ -1269,5 +1205,4 @@ begin
         dest_ack            =>  timestamp_ack
       ) ;
 
-end architecture ; -- arch
-
+end architecture;
