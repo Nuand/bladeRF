@@ -14,43 +14,7 @@ set_module_property DISPLAY_NAME axi_ad9361
 
 add_fileset quartus_synth QUARTUS_SYNTH "" "Quartus Synthesis"
 set_fileset_property quartus_synth TOP_LEVEL axi_ad9361
-add_fileset_file ad_rst.v                 VERILOG PATH $ad_hdl_dir/library/common/ad_rst.v
-add_fileset_file ad_lvds_clk.v            VERILOG PATH $ad_hdl_dir/library/common/altera/ad_lvds_clk.v
-add_fileset_file ad_lvds_in.v             VERILOG PATH $ad_hdl_dir/library/common/altera/ad_lvds_in.v
-add_fileset_file ad_lvds_out.v            VERILOG PATH $ad_hdl_dir/library/common/altera/ad_lvds_out.v
-add_fileset_file MULT_MACRO.v             VERILOG PATH $ad_hdl_dir/library/common/altera/MULT_MACRO.v
-add_fileset_file DSP48E1.v                VERILOG PATH $ad_hdl_dir/library/common/altera/DSP48E1.v
-add_fileset_file ad_mul.v                 VERILOG PATH $ad_hdl_dir/library/common/ad_mul.v
-add_fileset_file ad_pnmon.v               VERILOG PATH $ad_hdl_dir/library/common/ad_pnmon.v
-add_fileset_file ad_dds_sine.v            VERILOG PATH $ad_hdl_dir/library/common/ad_dds_sine.v
-add_fileset_file ad_dds_1.v               VERILOG PATH $ad_hdl_dir/library/common/ad_dds_1.v
-add_fileset_file ad_dds.v                 VERILOG PATH $ad_hdl_dir/library/common/ad_dds.v
-add_fileset_file ad_datafmt.v             VERILOG PATH $ad_hdl_dir/library/common/ad_datafmt.v
-add_fileset_file ad_dcfilter.v            VERILOG PATH $ad_hdl_dir/library/common/ad_dcfilter.v
-add_fileset_file ad_iqcor.v               VERILOG PATH $ad_hdl_dir/library/common/ad_iqcor.v
-add_fileset_file up_axi.v                 VERILOG PATH $ad_hdl_dir/library/common/up_axi.v
-add_fileset_file up_xfer_cntrl.v          VERILOG PATH $ad_hdl_dir/library/common/up_xfer_cntrl.v
-add_fileset_file up_xfer_status.v         VERILOG PATH $ad_hdl_dir/library/common/up_xfer_status.v
-add_fileset_file up_clock_mon.v           VERILOG PATH $ad_hdl_dir/library/common/up_clock_mon.v
-add_fileset_file up_delay_cntrl.v         VERILOG PATH $ad_hdl_dir/library/common/up_delay_cntrl.v
-add_fileset_file up_adc_common.v          VERILOG PATH $ad_hdl_dir/library/common/up_adc_common.v
-add_fileset_file up_adc_channel.v         VERILOG PATH $ad_hdl_dir/library/common/up_adc_channel.v
-add_fileset_file up_dac_common.v          VERILOG PATH $ad_hdl_dir/library/common/up_dac_common.v
-add_fileset_file up_dac_channel.v         VERILOG PATH $ad_hdl_dir/library/common/up_dac_channel.v
-add_fileset_file up_tdd_cntrl.v           VERILOG PATH $ad_hdl_dir/library/common/up_tdd_cntrl.v
-add_fileset_file ad_tdd_control.v         VERILOG PATH $ad_hdl_dir/library/common/ad_tdd_control.v
-add_fileset_file ad_addsub.v              VERILOG PATH $ad_hdl_dir/library/common/ad_addsub.v
-add_fileset_file axi_ad9361_alt_lvds_tx.v VERILOG PATH axi_ad9361_alt_lvds_tx.v
-add_fileset_file axi_ad9361_alt_lvds_rx.v VERILOG PATH axi_ad9361_alt_lvds_rx.v
-add_fileset_file axi_ad9361_dev_if_alt.v  VERILOG PATH axi_ad9361_dev_if_alt.v
-add_fileset_file axi_ad9361_rx_pnmon.v    VERILOG PATH axi_ad9361_rx_pnmon.v
-add_fileset_file axi_ad9361_rx_channel.v  VERILOG PATH axi_ad9361_rx_channel.v
-add_fileset_file axi_ad9361_rx.v          VERILOG PATH axi_ad9361_rx.v
-add_fileset_file axi_ad9361_tx_channel.v  VERILOG PATH axi_ad9361_tx_channel.v
-add_fileset_file axi_ad9361_tx.v          VERILOG PATH axi_ad9361_tx.v
-add_fileset_file axi_ad9361_tdd.v         VERILOG PATH axi_ad9361_tdd.v
-add_fileset_file axi_ad9361_tdd_if.v      VERILOG PATH axi_ad9361_tdd_if.v
-add_fileset_file axi_ad9361.v             VERILOG PATH axi_ad9361.v TOP_LEVEL_FILE
+add_fileset_file axi_ad9361.qip OTHER PATH ./axi_ad9361.qip
 
 # parameters
 
