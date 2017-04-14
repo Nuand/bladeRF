@@ -132,7 +132,10 @@ architecture hosted_bladerf of bladerf is
     signal rx_mux_sel       : unsigned(2 downto 0) ;
     signal rx_mux_mode      : rx_mux_mode_t ;
 
-    signal \80MHz\          : std_logic ;
+    signal \80MHz\           : std_logic ;
+    signal \80MHz locked\    : std_logic ;
+    signal \80MHz pll reset\ : std_logic ;
+
 
     signal nios_gpio        : std_logic_vector(31 downto 0) ;
     signal nios_xb_gpio_in  : std_logic_vector(31 downto 0) := (others => '0');
@@ -296,7 +299,9 @@ architecture hosted_bladerf of bladerf is
 
     constant FPGA_DC_CORRECTION :  signed(15 downto 0) := to_signed(integer(0), 16);
 
-    signal fx3_pclk_pll     :   std_logic ;
+    signal fx3_pclk_pll        : std_logic;
+    signal fx3_pclk_pll_locked : std_logic;
+    signal fx3_pclk_pll_reset  : std_logic;
 
     signal timestamp_req    :   std_logic ;
     signal timestamp_ack    :   std_logic ;
@@ -368,17 +373,43 @@ begin
     -- Create 80MHz from 38.4MHz coming from the c4_clock source
     U_pll : entity work.pll
       port map (
+        areset              =>  \80MHz pll reset\,
         inclk0              =>  c5_clock_1,
         c0                  =>  \80MHz\,
-        locked              =>  open
+        locked              =>  \80MHz locked\
       ) ;
+
+    U_pll_reset_pll : entity work.pll_reset
+      generic map (
+        SYS_CLOCK_FREQ_HZ   => 38_400_000,
+        DEVICE_FAMILY       => "Cyclone V"
+      )
+      port map (
+        sys_clock      => c5_clock_1,
+        pll_locked     => \80MHz locked\,
+        pll_locked_out => open,
+        pll_reset      => \80MHz pll reset\
+    );
 
     U_fx3_pll : entity work.fx3_pll
       port map (
+        areset              =>  fx3_pclk_pll_reset,
         inclk0              =>  fx3_pclk,
         c0                  =>  fx3_pclk_pll,
-        locked              =>  open
+        locked              =>  fx3_pclk_pll_locked
       ) ;
+
+    U_pll_reset_fx3_pll : entity work.pll_reset
+      generic map (
+        SYS_CLOCK_FREQ_HZ   => 100_000_000,
+        DEVICE_FAMILY       => "Cyclone V"
+      )
+      port map (
+        sys_clock      => fx3_pclk,
+        pll_locked     => fx3_pclk_pll_locked,
+        pll_locked_out => open,
+        pll_reset      => fx3_pclk_pll_reset
+    );
 
     -- Cross domain synchronizer chains
     U_usb_speed : entity work.synchronizer

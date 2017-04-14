@@ -13,21 +13,15 @@ set_global_assignment -name QIP_FILE [file normalize [file join $altera_ip tx_fi
 set_global_assignment -name QIP_FILE [file normalize [file join $altera_ip tx_meta_fifo/tx_meta_fifo.qip]]
 set_global_assignment -name QIP_FILE [file normalize [file join $altera_ip rx_meta_fifo/rx_meta_fifo.qip]]
 
-# ADI IP
-set_global_assignment -name VERILOG_FILE [file normalize [file join $adi_ip hdl/library/axi_ad9361/axi_ad9361_alt_lvds_rx.v]]
-set_global_assignment -name VERILOG_FILE [file normalize [file join $adi_ip hdl/library/axi_ad9361/axi_ad9361_alt_lvds_tx.v]]
-
 # Nuand IP
-set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/tan_table.vhd]]
-set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/iq_correction.vhd]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/signal_generator.vhd]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/synchronizer.vhd]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/handshake.vhd]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/reset_synchronizer.vhd]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/fifo_reader.vhd]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/fifo_writer.vhd]]
-set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/lms6002d/vhdl/lms6002d.vhd]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip trigger/trigger.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip pll_reset/hdl/vhdl/pll_reset.vhd]]
 
 # Implementation Details
 set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/fx3_gpif.vhd]]
