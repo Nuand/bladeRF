@@ -568,6 +568,36 @@ begin
         wrusedw             => tx_sample_fifo.wused
       );
 
+    tx_channel_mux : process( all )
+        variable ch     : integer range 0 to 1 := 0;
+        variable fifo_i : std_logic_vector(11 downto 0) := (others => '0');
+        variable fifo_q : std_logic_vector(11 downto 0) := (others => '0');
+    begin
+        if( rising_edge(tx_clock) ) then
+            if( channel_sel = '0' ) then
+                ch := 0;
+            else
+                ch := 1;
+            end if;
+
+            if( tx_sample_fifo.rempty = '0' ) then
+                tx_sample_fifo.rreq <= ad9361.ch(ch).dac.i.valid;
+                fifo_i := tx_sample_fifo.rdata(11 downto 0);
+                fifo_q := tx_sample_fifo.rdata(27 downto 16);
+            else
+                tx_sample_fifo.rreq <= '0';
+                fifo_i := (others => '0');
+                fifo_q := (others => '0');
+            end if;
+
+            ad9361.ch(ch).dac.i.data <= fifo_i & "0000";
+            ad9361.ch(ch).dac.q.data <= fifo_q & "0000";
+
+            tx_sample_raw_i <= resize(signed(fifo_i), tx_sample_raw_i'length);
+            tx_sample_raw_q <= resize(signed(fifo_q), tx_sample_raw_q'length);
+        end if;
+    end process;
+
     -- TX meta fifo
     tx_meta_fifo.aclr <= tx_reset ;
     tx_meta_fifo.wclock <= fx3_pclk_pll ;
@@ -766,34 +796,34 @@ begin
     rx_sample_corrected_q     <= resize(rx_mux_q,16);
     rx_sample_corrected_valid <= rx_mux_valid;
 
-    U_fifo_reader : entity work.fifo_reader
-      port map (
-        clock               =>  tx_clock,
-        reset               =>  tx_reset,
-        enable              =>  tx_enable,
-
-        usb_speed           =>  usb_speed_tx,
-        meta_en             =>  meta_en_tx,
-        timestamp           =>  tx_timestamp,
-
-        fifo_empty          =>  tx_sample_fifo.rempty,
-        fifo_usedw          =>  tx_sample_fifo.rused,
-        fifo_data           =>  tx_sample_fifo.rdata,
-        fifo_read           =>  tx_sample_fifo.rreq,
-
-        meta_fifo_empty     =>  tx_meta_fifo.rempty,
-        meta_fifo_usedw     =>  tx_meta_fifo.rused,
-        meta_fifo_data      =>  tx_meta_fifo.rdata,
-        meta_fifo_read      =>  tx_meta_fifo.rreq,
-
-        out_i               =>  tx_sample_raw_i,
-        out_q               =>  tx_sample_raw_q,
-        out_valid           =>  tx_sample_raw_valid,
-
-        underflow_led       =>  tx_underflow_led,
-        underflow_count     =>  tx_underflow_count,
-        underflow_duration  =>  x"ffff"
-      ) ;
+    --U_fifo_reader : entity work.fifo_reader
+    --  port map (
+    --    clock               =>  tx_clock,
+    --    reset               =>  tx_reset,
+    --    enable              =>  tx_enable,
+    --
+    --    usb_speed           =>  usb_speed_tx,
+    --    meta_en             =>  meta_en_tx,
+    --    timestamp           =>  tx_timestamp,
+    --
+    --    fifo_empty          =>  tx_sample_fifo.rempty,
+    --    fifo_usedw          =>  tx_sample_fifo.rused,
+    --    fifo_data           =>  tx_sample_fifo.rdata,
+    --    fifo_read           =>  tx_sample_fifo.rreq,
+    --
+    --    meta_fifo_empty     =>  tx_meta_fifo.rempty,
+    --    meta_fifo_usedw     =>  tx_meta_fifo.rused,
+    --    meta_fifo_data      =>  tx_meta_fifo.rdata,
+    --    meta_fifo_read      =>  tx_meta_fifo.rreq,
+    --
+    --    out_i               =>  tx_sample_raw_i,
+    --    out_q               =>  tx_sample_raw_q,
+    --    out_valid           =>  tx_sample_raw_valid,
+    --
+    --    underflow_led       =>  tx_underflow_led,
+    --    underflow_count     =>  tx_underflow_count,
+    --    underflow_duration  =>  x"ffff"
+    --  ) ;
 
     tx_sample_i     <= tx_sample_raw_i;
     tx_sample_q     <= tx_sample_raw_q;
@@ -869,7 +899,7 @@ begin
         sync                =>  channel_sel
       ) ;
 
-    channel_mux : process( all )
+    rx_channel_mux : process( all )
         variable ch : integer range 0 to 1 := 0;
     begin
         if( rising_edge(rx_clock) ) then
@@ -885,10 +915,6 @@ begin
             rx_sample_q(11 downto 0)  <= signed(ad9361.ch(ch).adc.q.data(11 downto 0));
             rx_sample_valid           <= ad9361.ch(ch).adc.i.valid and
                                          ad9361.ch(ch).adc.q.valid;
-
-            -- TODO: figure out why dac_valid is an output?!
-            ad9361.ch(ch).dac.i.data <= std_logic_vector(tx_sample_raw_i);
-            ad9361.ch(ch).dac.q.data <= std_logic_vector(tx_sample_raw_q);
         end if;
     end process;
 
