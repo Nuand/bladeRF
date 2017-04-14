@@ -57,7 +57,8 @@ module axi_ad9361_alt_lvds_tx (
   tx_data_1,
   tx_data_2,
   tx_data_3,
-  tx_locked);
+  tx_locked,
+  tx_pll_reset);
 
   // physical interface (transmit)
 
@@ -78,6 +79,7 @@ module axi_ad9361_alt_lvds_tx (
   input   [ 5:0]  tx_data_2;
   input   [ 5:0]  tx_data_3;
   output          tx_locked;
+  input           tx_pll_reset;
 
   // internal registers
 
@@ -173,7 +175,7 @@ module axi_ad9361_alt_lvds_tx (
     .tx_outclock (tx_clk_out_p),
     .tx_out ({tx_frame_out_p, tx_data_out_p}),
     .tx_locked (tx_locked),
-    .pll_areset (1'b0),
+    .pll_areset (tx_pll_reset),
     .sync_inclock (1'b0),
     .tx_data_reset (1'b0),
     .tx_enable (1'b1),

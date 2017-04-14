@@ -206,6 +206,8 @@ module axi_ad9361_dev_if (
   wire    [ 5:0]  rx_data_2_s;
   wire    [ 5:0]  rx_data_3_s;
   wire            rx_locked_s;
+  wire            rx_pll_reset_s;
+  wire            tx_pll_reset_s;
 
   // tdd support-
 
@@ -310,6 +312,16 @@ module axi_ad9361_dev_if (
 
   // interface (transmit)
 
+  pll_reset #(
+    .SYS_CLOCK_FREQ_HZ( 80000000 ),
+    .DEVICE_FAMILY( "Cyclone V" ) )
+  i_tx_pll_reset (
+    .sys_clock(up_clk),
+    .pll_locked(tx_locked_s),
+    .pll_locked_out( ),
+    .pll_reset(tx_pll_reset_s)
+  );
+
   axi_ad9361_alt_lvds_tx i_tx (
     .tx_clk_out_p (tx_clk_out_p),
     .tx_clk_out_n (tx_clk_out_n),
@@ -324,9 +336,20 @@ module axi_ad9361_dev_if (
     .tx_data_1 (tx_data_1),
     .tx_data_2 (tx_data_2),
     .tx_data_3 (tx_data_3),
-    .tx_locked (tx_locked_s));
+    .tx_locked (tx_locked_s),
+    .tx_pll_reset(tx_pll_reset_s));
 
   // interface (receive)
+
+  pll_reset #(
+    .SYS_CLOCK_FREQ_HZ( 80000000 ),
+    .DEVICE_FAMILY( "Cyclone V" ) )
+  i_rx_pll_reset (
+    .sys_clock(up_clk),
+    .pll_locked(rx_locked_s),
+    .pll_locked_out( ),
+    .pll_reset(rx_pll_reset_s)
+  );
 
   axi_ad9361_alt_lvds_rx i_rx (
     .rx_clk_in_p (rx_clk_in_p),
@@ -341,7 +364,8 @@ module axi_ad9361_dev_if (
     .rx_data_1 (rx_data_1_s),
     .rx_data_2 (rx_data_2_s),
     .rx_data_3 (rx_data_3_s),
-    .rx_locked (rx_locked_s));
+    .rx_locked (rx_locked_s),
+    .rx_pll_reset(rx_pll_reset_s));
 
 endmodule
 

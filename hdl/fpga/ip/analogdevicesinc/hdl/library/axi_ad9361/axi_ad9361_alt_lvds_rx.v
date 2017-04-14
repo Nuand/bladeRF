@@ -56,7 +56,8 @@ module axi_ad9361_alt_lvds_rx (
   rx_data_1,
   rx_data_2,
   rx_data_3,
-  rx_locked);
+  rx_locked,
+  rx_pll_reset);
 
   // physical interface (receive)
 
@@ -76,6 +77,7 @@ module axi_ad9361_alt_lvds_rx (
   output  [ 5:0]  rx_data_2;
   output  [ 5:0]  rx_data_3;
   output          rx_locked;
+  input           rx_pll_reset;
 
   // internal signals
 
@@ -168,7 +170,7 @@ module axi_ad9361_alt_lvds_rx (
     .rx_locked (rx_locked),
     .dpa_pll_cal_busy (),
     .dpa_pll_recal (1'b0),
-    .pll_areset (1'b0),
+    .pll_areset (rx_pll_reset),
     .pll_phasecounterselect (),
     .pll_phasedone (1'b1),
     .pll_phasestep (),

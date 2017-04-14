@@ -1,6 +1,7 @@
 # This file gets copied by Qsys into the work directory.
 # Need to use paths relative to that.
-set adi_ip_dir [file join $::quartus(qip_path) ../../../../../../fpga/ip/analogdevicesinc/hdl/]
+set adi_ip_dir   [file join $::quartus(qip_path) ../../../../../../fpga/ip/analogdevicesinc/hdl/]
+set nuand_ip_dir [file join $::quartus(qip_path) ../../../../../../fpga/ip/nuand/]
 
 set_global_assignment -name VERILOG_FILE [file normalize [file join $adi_ip_dir/library/common/ad_rst.v]]
 set_global_assignment -name VERILOG_FILE [file normalize [file join $adi_ip_dir/library/common/altera/ad_lvds_clk.v]]
@@ -39,3 +40,5 @@ set_global_assignment -name VERILOG_FILE [file normalize [file join $adi_ip_dir/
 set_global_assignment -name VERILOG_FILE [file normalize [file join $adi_ip_dir/library/axi_ad9361/axi_ad9361_tdd.v]]
 set_global_assignment -name VERILOG_FILE [file normalize [file join $adi_ip_dir/library/axi_ad9361/axi_ad9361_tdd_if.v]]
 set_global_assignment -name VERILOG_FILE [file normalize [file join $adi_ip_dir/library/axi_ad9361/axi_ad9361.v]]
+
+set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip_dir/pll_reset/hdl/vhdl/pll_reset.vhd]]
