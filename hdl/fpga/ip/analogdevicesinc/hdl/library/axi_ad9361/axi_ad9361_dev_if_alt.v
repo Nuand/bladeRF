@@ -312,15 +312,17 @@ module axi_ad9361_dev_if (
 
   // interface (transmit)
 
-  pll_reset #(
-    .SYS_CLOCK_FREQ_HZ( 80000000 ),
-    .DEVICE_FAMILY( "Cyclone V" ) )
-  i_tx_pll_reset (
-    .sys_clock(up_clk),
-    .pll_locked(tx_locked_s),
-    .pll_locked_out( ),
-    .pll_reset(tx_pll_reset_s)
-  );
+  //pll_reset #(
+  //  .SYS_CLOCK_FREQ_HZ( 80000000 ),
+  //  .DEVICE_FAMILY( "Cyclone V" ) )
+  //i_tx_pll_reset (
+  //  .sys_clock(up_clk),
+  //  .pll_locked(tx_locked_s),
+  //  .pll_locked_out( ),
+  //  .pll_reset(tx_pll_reset_s)
+  //);
+
+  assign tx_pll_reset_s = rx_pll_reset_s;
 
   axi_ad9361_alt_lvds_tx i_tx (
     .tx_clk_out_p (tx_clk_out_p),
@@ -347,7 +349,7 @@ module axi_ad9361_dev_if (
     .DEVICE_FAMILY( "Cyclone V" ) )
   i_rx_pll_reset (
     .sys_clock(up_clk),
-    .pll_locked(rx_locked_s),
+    .pll_locked(rx_locked_s & tx_locked_s), // TX & RX PLLs will be merged anyway
     .pll_locked_out( ),
     .pll_reset(rx_pll_reset_s)
   );
