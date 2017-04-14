@@ -516,6 +516,12 @@ static int bladerf2_enable_module(struct bladerf *dev, bladerf_module ch, bool e
         return status;
     }
 
+    /* Enable module through backend */
+    status = dev->backend->enable_module(dev, ch, enable);
+    if (status < 0) {
+        return status;
+    }
+
     return 0;
 }
 
