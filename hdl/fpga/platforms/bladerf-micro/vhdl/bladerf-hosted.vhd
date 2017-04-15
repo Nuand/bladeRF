@@ -829,6 +829,8 @@ begin
     tx_sample_q     <= tx_sample_raw_q;
     tx_sample_valid <= tx_sample_raw_valid;
 
+    lms_rx_enable_sig <= nios_gpio(1);
+
     -- RX Trigger
     rxtrig : entity work.trigger(async)
       generic map (
