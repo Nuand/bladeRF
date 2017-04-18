@@ -168,11 +168,19 @@ unsigned long msleep_interruptible(unsigned int msecs)
 
 int axiadc_init(struct ad9361_rf_phy *phy, void *userdata)
 {
+    int status;
+
     phy->adc_state->userdata = userdata;
 
-    adc_init(phy);
+    status = adc_init(phy);
+    if (status < 0) {
+        return status;
+    }
 
-    dac_init(phy, DATA_SEL_DDS, 0);
+    status = dac_init(phy, DATA_SEL_DDS, 0);
+    if (status < 0) {
+        return status;
+    }
 
     return 0;
 }

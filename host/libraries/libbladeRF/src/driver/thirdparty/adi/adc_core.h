@@ -147,9 +147,9 @@
 /************************ Functions Declarations ******************************/
 /******************************************************************************/
 
-void adc_init(struct ad9361_rf_phy *phy);
-void adc_read(struct ad9361_rf_phy *phy, uint32_t regAddr, uint32_t *data);
-void adc_write(struct ad9361_rf_phy *phy, uint32_t regAddr, uint32_t data);
+int adc_init(struct ad9361_rf_phy *phy);
+int adc_read(struct ad9361_rf_phy *phy, uint32_t regAddr, uint32_t *data);
+int adc_write(struct ad9361_rf_phy *phy, uint32_t regAddr, uint32_t data);
 int32_t adc_set_calib_scale(struct ad9361_rf_phy *phy,
 							uint32_t chan,
 							int32_t val,

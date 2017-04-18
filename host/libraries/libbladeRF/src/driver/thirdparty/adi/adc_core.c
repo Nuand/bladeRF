@@ -50,39 +50,64 @@
 /***************************************************************************//**
  * @brief adc_read
 *******************************************************************************/
-void adc_read(struct ad9361_rf_phy *phy, uint32_t regAddr, uint32_t *data)
+int adc_read(struct ad9361_rf_phy *phy, uint32_t regAddr, uint32_t *data)
 {
-    axiadc_read(phy->adc_state, regAddr, data);
+	return axiadc_read(phy->adc_state, regAddr, data);
 }
 
 /***************************************************************************//**
  * @brief adc_write
 *******************************************************************************/
-void adc_write(struct ad9361_rf_phy *phy, uint32_t regAddr, uint32_t data)
+int adc_write(struct ad9361_rf_phy *phy, uint32_t regAddr, uint32_t data)
 {
-    axiadc_write(phy->adc_state, regAddr, data);
+	return axiadc_write(phy->adc_state, regAddr, data);
 }
 
 /***************************************************************************//**
  * @brief adc_init
 *******************************************************************************/
-void adc_init(struct ad9361_rf_phy *phy)
+int adc_init(struct ad9361_rf_phy *phy)
 {
-	adc_write(phy, ADC_REG_RSTN, 0);
-	adc_write(phy, ADC_REG_RSTN, ADC_RSTN);
+	int ret;
 
-	adc_write(phy, ADC_REG_CHAN_CNTRL(0),
+	ret = adc_write(phy, ADC_REG_RSTN, 0);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = adc_write(phy, ADC_REG_RSTN, ADC_RSTN);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = adc_write(phy, ADC_REG_CHAN_CNTRL(0),
 		ADC_IQCOR_ENB | ADC_FORMAT_SIGNEXT | ADC_FORMAT_ENABLE | ADC_ENABLE);
-	adc_write(phy, ADC_REG_CHAN_CNTRL(1),
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = adc_write(phy, ADC_REG_CHAN_CNTRL(1),
 		ADC_IQCOR_ENB | ADC_FORMAT_SIGNEXT | ADC_FORMAT_ENABLE | ADC_ENABLE);
+	if (ret < 0) {
+		return ret;
+	}
 
 	if (phy->pdata->rx2tx2)
 	{
-		adc_write(phy, ADC_REG_CHAN_CNTRL(2),
+		ret = adc_write(phy, ADC_REG_CHAN_CNTRL(2),
 			ADC_IQCOR_ENB | ADC_FORMAT_SIGNEXT | ADC_FORMAT_ENABLE | ADC_ENABLE);
-		adc_write(phy, ADC_REG_CHAN_CNTRL(3),
+		if (ret < 0) {
+			return ret;
+		}
+
+		ret = adc_write(phy, ADC_REG_CHAN_CNTRL(3),
 			ADC_IQCOR_ENB | ADC_FORMAT_SIGNEXT | ADC_FORMAT_ENABLE | ADC_ENABLE);
+		if (ret < 0) {
+			return ret;
+		}
 	}
+
+	return 0;
 }
 
 /***************************************************************************//**
@@ -94,6 +119,7 @@ int32_t adc_set_calib_scale_phase(struct ad9361_rf_phy *phy,
 								  int32_t val,
 								  int32_t val2)
 {
+	int ret;
 	uint32_t fract;
 	uint64_t llval;
 	uint32_t tmp;
@@ -120,7 +146,10 @@ int32_t adc_set_calib_scale_phase(struct ad9361_rf_phy *phy,
 	do_div(&llval, 1000000UL);
 	fract |= llval;
 
-	adc_read(phy, ADC_REG_CHAN_CNTRL_2(chan), &tmp);
+	ret = adc_read(phy, ADC_REG_CHAN_CNTRL_2(chan), &tmp);
+	if (ret < 0) {
+		return ret;
+	}
 
 	if (!((chan + phase) % 2)) {
 		tmp &= ~ADC_IQCOR_COEFF_1(~0);
@@ -130,7 +159,10 @@ int32_t adc_set_calib_scale_phase(struct ad9361_rf_phy *phy,
 		tmp |= ADC_IQCOR_COEFF_2(fract);
 	}
 
-	adc_write(phy, ADC_REG_CHAN_CNTRL_2(chan), tmp);
+	ret = adc_write(phy, ADC_REG_CHAN_CNTRL_2(chan), tmp);
+	if (ret < 0) {
+		return ret;
+	}
 
 	return 0;
 }
@@ -144,11 +176,15 @@ int32_t adc_get_calib_scale_phase(struct ad9361_rf_phy *phy,
 								  int32_t *val,
 								  int32_t *val2)
 {
+	int ret;
 	uint32_t tmp;
 	int32_t sign;
 	uint64_t llval;
 
-	adc_read(phy, ADC_REG_CHAN_CNTRL_2(chan), &tmp);
+	ret = adc_read(phy, ADC_REG_CHAN_CNTRL_2(chan), &tmp);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* format is 1.1.14 (sign, integer and fractional bits) */
 
