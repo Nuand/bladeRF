@@ -783,7 +783,7 @@ static int bladerf2_init_stream(struct bladerf_stream **stream, struct bladerf *
 
 static int bladerf2_stream(struct bladerf_stream *stream, bladerf_module ch)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    return async_run_stream(stream, ch);
 }
 
 static int bladerf2_submit_stream_buffer(struct bladerf_stream *stream, void *buffer, unsigned int timeout_ms, bool nonblock)
