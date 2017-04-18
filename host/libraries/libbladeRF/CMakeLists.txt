@@ -277,6 +277,8 @@ set(LIBBLADERF_SOURCE
         src/driver/thirdparty/adi/ad9361.c
         src/driver/thirdparty/adi/ad9361_api.c
         src/driver/thirdparty/adi/ad9361_conv.c
+        src/driver/thirdparty/adi/adc_core.c
+        src/driver/thirdparty/adi/dac_core.c
         src/driver/thirdparty/adi/util.c
         src/driver/thirdparty/adi/platform.c
         src/board/bladerf1/bladerf1.c
