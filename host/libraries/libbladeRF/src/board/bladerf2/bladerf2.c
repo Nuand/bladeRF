@@ -34,6 +34,7 @@
 #include "board/board.h"
 #include "capabilities.h"
 #include "compatibility.h"
+#include "../bladerf1/flash.h"
 
 #include "driver/thirdparty/adi/ad9361_api.h"
 #include "driver/spi_flash.h"
@@ -1024,7 +1025,6 @@ static int bladerf2_load_fpga(struct bladerf *dev, const uint8_t *buf, size_t le
 
 static int bladerf2_flash_fpga(struct bladerf *dev, const uint8_t *buf, size_t length)
 {
-    #if 0
     struct bladerf2_board_data *board_data = dev->board_data;
 
     if (!is_valid_fpga_size(board_data->fpga_size, length)) {
@@ -1032,21 +1032,13 @@ static int bladerf2_flash_fpga(struct bladerf *dev, const uint8_t *buf, size_t l
     }
 
     return spi_flash_write_fpga_bitstream(dev, buf, length);
-    #else
-    return BLADERF_ERR_UNSUPPORTED;
-    #endif
 }
 
 static int bladerf2_erase_stored_fpga(struct bladerf *dev)
 {
-    #if 0
     return spi_flash_erase_fpga(dev);
-    #else
-    return BLADERF_ERR_UNSUPPORTED;
-    #endif
 }
 
-#if 0
 static bool is_valid_fw_size(size_t len)
 {
     /* Simple FW applications generally are significantly larger than this */
@@ -1058,11 +1050,9 @@ static bool is_valid_fw_size(size_t len)
         return true;
     }
 }
-#endif
 
 static int bladerf2_flash_firmware(struct bladerf *dev, const uint8_t *buf, size_t length)
 {
-    #if 0
     const char env_override[] = "BLADERF_SKIP_FW_SIZE_CHECK";
 
     /* Sanity check firmware length.
@@ -1079,9 +1069,6 @@ static int bladerf2_flash_firmware(struct bladerf *dev, const uint8_t *buf, size
     }
 
     return spi_flash_write_fx3_fw(dev, buf, length);
-    #else
-    return BLADERF_ERR_UNSUPPORTED;
-    #endif
 }
 
 static int bladerf2_device_reset(struct bladerf *dev)
