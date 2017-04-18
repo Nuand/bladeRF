@@ -209,6 +209,8 @@ begin
 
         if( state = SAMPLE_WRITE and meta_enable = '1') then
             tx_meta_fifo_data <= meta_buffer(127 downto 96);
+        else
+            tx_meta_fifo_data <= (others=>'0');
         end if;
 
     end process;
