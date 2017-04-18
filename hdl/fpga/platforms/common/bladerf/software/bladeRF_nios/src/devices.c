@@ -368,14 +368,18 @@ void ad9361_spi_write(uint16_t addr, uint64_t data)
 
 uint32_t adi_axi_read(uint16_t addr)
 {
-    uint32_t data;
+    uint32_t data = 0;
+#ifdef AXI_AD9361_0_BASE // Temporary hack for bladeRF1 compat
     data = IORD_32DIRECT(AXI_AD9361_0_BASE, addr);
+#endif
     return data;
 }
 
 void adi_axi_write(uint16_t addr, uint32_t data)
 {
+#ifdef AXI_AD9361_0_BASE // Temporary hack for bladeRF1 compat
     IOWR_32DIRECT(AXI_AD9361_0_BASE, addr, data);
+#endif
 }
 
 uint8_t si5338_read(uint8_t addr)
