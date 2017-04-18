@@ -162,7 +162,7 @@ AD9361_InitParam ad9361_init_params = {
 	0,		//elna_rx2_gpo1_control_enable *** adi,elna-rx2-gpo1-control-enable
 	0,		//elna_gaintable_all_index_enable *** adi,elna-gaintable-all-index-enable
 	/* Digital Interface Control */
-	0,		//digital_interface_tune_skip_mode *** adi,digital-interface-tune-skip-mode
+	1,		//digital_interface_tune_skip_mode *** adi,digital-interface-tune-skip-mode
 	0,		//digital_interface_tune_fir_disable *** adi,digital-interface-tune-fir-disable
 	1,		//pp_tx_swap_enable *** adi,pp-tx-swap-enable
 	1,		//pp_rx_swap_enable *** adi,pp-rx-swap-enable
@@ -185,8 +185,8 @@ AD9361_InitParam ad9361_init_params = {
 	0,		//delay_rx_data *** adi,delay-rx-data
 	0,		//rx_data_clock_delay *** adi,rx-data-clock-delay
 	4,		//rx_data_delay *** adi,rx-data-delay
-	7,		//tx_fb_clock_delay *** adi,tx-fb-clock-delay
-	0,		//tx_data_delay *** adi,tx-data-delay
+	0,		//tx_fb_clock_delay *** adi,tx-fb-clock-delay
+	9,		//tx_data_delay *** adi,tx-data-delay
 	150,	//lvds_bias_mV *** adi,lvds-bias-mV
 	1,		//lvds_rx_onchip_termination_enable *** adi,lvds-rx-onchip-termination-enable
 	0,		//rx1rx2_phase_inversion_en *** adi,rx1-rx2-phase-inversion-enable
