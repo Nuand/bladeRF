@@ -658,7 +658,7 @@ int32_t ad9361_post_setup(struct ad9361_rf_phy *phy)
 			return ret;
 	}
 
-	flags = 0x0;
+	flags = BE_VERBOSE | BE_MOREVERBOSE;
 
 	ret = axiadc_read(st, 0x0004, &tmp);
 	if (ret < 0)
