@@ -6,7 +6,7 @@ package require cmdline
 set options { \
     { "projname.arg" ""        "Name of Quartus project" } \
     { "rev.arg"      ""        "Name of revision within the project" } \
-    { "flow.arg"     "none"    "Quartus flow: none, synth, full" } \
+    { "flow.arg"     "gen"     "Quartus flow: gen, synth, full" } \
     { "stp.arg"      ""        "SignalTap II file to use" } \
     { "force.arg"    ""        "Force enable TalkBack to use SignalTapII" } \
 }
@@ -55,11 +55,11 @@ if { ![revision_exists -project $opts(projname) $opts(rev)] } {
 }
 
 # Check the flow
-if { $opts(flow) != "none" &&
+if { $opts(flow) != "gen" &&
      $opts(flow) != "synth" &&
      $opts(flow) != "full" } {
     puts stderr "ERROR: Invalid Quartus flow. Valid option are:"
-    puts stderr "  none  - generate project files only"
+    puts stderr "  gen   - generate project files only"
     puts stderr "  synth - generate project files and run synthesis only"
     puts stderr "  full  - generate project, synth, fit, timing, assemble"
     exit 1
