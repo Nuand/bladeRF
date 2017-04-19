@@ -59,9 +59,9 @@ set_false_path -from * -to [get_ports {adi_*x_spdt*_v* adi_reset_n}]
 
 # JTAG settings
 set_clock_groups -exclusive -group [get_clocks altera_reserved_tck]
-#set_input_delay  -clock [get_clocks altera_reserved_tck] 20 [get_ports altera_reserved_tdi]
-#set_input_delay  -clock [get_clocks altera_reserved_tck] 20 [get_ports altera_reserved_tms]
-#set_output_delay -clock [get_clocks altera_reserved_tck] 20 [get_ports altera_reserved_tdo]
+set_input_delay  -clock [get_clocks altera_reserved_tck] 2.0 [get_ports altera_reserved_tdi]
+set_input_delay  -clock [get_clocks altera_reserved_tck] 2.0 [get_ports altera_reserved_tms]
+set_output_delay -clock [get_clocks altera_reserved_tck] 2.0 [get_ports altera_reserved_tdo]
 
 # Exceptions
 
