@@ -33,12 +33,13 @@ set_multicycle_path -from [get_clocks {fx3_virtual}] -to [get_clocks {U_fx3_pll*
 
 ### Slow Interfaces ###
 
+set_false_path -from * -to [get_ports ps_sync_1p*]
+set_false_path -from * -to [get_ports {rx_bias_en tx_bias_en}]
 set_false_path -from * -to [get_ports exp_gpio[*]]
 
 # FX3 UART interface
 #set_false_path -from * -to [get_ports fx3_uart_rxd]
-#set_false_path -from [get_ports fx3_uart_txd] -to *
-#set_false_path -from * -to [get_ports fx3_uart_cts]
+set_false_path -from * -to [get_ports fx3_uart_cts]
 set_output_delay -clock [get_clocks {U_pll*divclk}] -max 1.0 [get_ports {fx3_uart_rxd}]
 set_output_delay -clock [get_clocks {U_pll*divclk}] -min 0.0 [get_ports {fx3_uart_rxd}] -add_delay
 set_input_delay  -clock [get_clocks {U_pll*divclk}] -max 1.0 [get_ports {fx3_uart_txd}]
@@ -54,9 +55,6 @@ set_false_path -from * -to [get_ports led*]
 
 # LMS long lived GPIO and RF Switches
 set_false_path -from * -to [get_ports {adi_*x_spdt*_v* adi_reset_n}]
-
-# Long lived correction parameters
-set_false_path -from * -to [get_keepers {iq_correction:*} ]
 
 # JTAG settings
 set_clock_groups -exclusive -group [get_clocks altera_reserved_tck]
