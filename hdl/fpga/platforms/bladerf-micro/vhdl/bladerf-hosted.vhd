@@ -306,10 +306,11 @@ architecture hosted_bladerf of bladerf is
     signal tx_trigger_ctl       : std_logic_vector(7 downto 0);
 
     -- Trigger Control breakdown
-    alias rx_trigger_arm        : std_logic is rx_trigger_ctl(0);
-    alias rx_trigger_fire       : std_logic is rx_trigger_ctl(1);
-    alias rx_trigger_master     : std_logic is rx_trigger_ctl(2);
-    signal rx_trigger_line      : std_logic := '0';
+    alias rx_trigger_arm         : std_logic is rx_trigger_ctl(0);
+    alias rx_trigger_fire        : std_logic is rx_trigger_ctl(1);
+    alias rx_trigger_master      : std_logic is rx_trigger_ctl(2);
+    signal rx_trigger_line       : std_logic := '0';
+    signal rx_trigger_signal_out : std_logic := '0';
 
     alias tx_trigger_arm        : std_logic is tx_trigger_ctl(0);
     alias tx_trigger_fire       : std_logic is tx_trigger_ctl(1);
@@ -829,7 +830,17 @@ begin
         trigger_in      => rx_trigger_line,
         trigger_out     => rx_trigger_line,
         signal_in       => lms_rx_enable_sig,
-        signal_out      => lms_rx_enable_qualified
+        signal_out      => rx_trigger_signal_out
+      );
+
+    U_sync_rxtrig_sigout : entity work.synchronizer
+      generic map (
+        RESET_LEVEL =>  '0'
+      ) port map (
+        reset       =>  rx_reset,
+        clock       =>  rx_clock,
+        async       =>  rx_trigger_signal_out,
+        sync        =>  lms_rx_enable_qualified
       );
 
     rx_trigger_arm_rb    <= rx_trigger_arm;
