@@ -34,32 +34,6 @@ set_instance_parameter_value control {simDoTestBenchWiring} {0}
 set_instance_parameter_value control {simDrivenValue} {0.0}
 set_instance_parameter_value control {width} {32}
 
-add_instance iq_corr_rx_phase_gain altera_avalon_pio
-set_instance_parameter_value iq_corr_rx_phase_gain {bitClearingEdgeCapReg} {0}
-set_instance_parameter_value iq_corr_rx_phase_gain {bitModifyingOutReg} {0}
-set_instance_parameter_value iq_corr_rx_phase_gain {captureEdge} {0}
-set_instance_parameter_value iq_corr_rx_phase_gain {direction} {Output}
-set_instance_parameter_value iq_corr_rx_phase_gain {edgeType} {RISING}
-set_instance_parameter_value iq_corr_rx_phase_gain {generateIRQ} {0}
-set_instance_parameter_value iq_corr_rx_phase_gain {irqType} {LEVEL}
-set_instance_parameter_value iq_corr_rx_phase_gain {resetValue} {0.0}
-set_instance_parameter_value iq_corr_rx_phase_gain {simDoTestBenchWiring} {0}
-set_instance_parameter_value iq_corr_rx_phase_gain {simDrivenValue} {0.0}
-set_instance_parameter_value iq_corr_rx_phase_gain {width} {32}
-
-add_instance iq_corr_tx_phase_gain altera_avalon_pio
-set_instance_parameter_value iq_corr_tx_phase_gain {bitClearingEdgeCapReg} {0}
-set_instance_parameter_value iq_corr_tx_phase_gain {bitModifyingOutReg} {0}
-set_instance_parameter_value iq_corr_tx_phase_gain {captureEdge} {0}
-set_instance_parameter_value iq_corr_tx_phase_gain {direction} {Output}
-set_instance_parameter_value iq_corr_tx_phase_gain {edgeType} {RISING}
-set_instance_parameter_value iq_corr_tx_phase_gain {generateIRQ} {0}
-set_instance_parameter_value iq_corr_tx_phase_gain {irqType} {LEVEL}
-set_instance_parameter_value iq_corr_tx_phase_gain {resetValue} {1.0}
-set_instance_parameter_value iq_corr_tx_phase_gain {simDoTestBenchWiring} {0}
-set_instance_parameter_value iq_corr_tx_phase_gain {simDrivenValue} {0.0}
-set_instance_parameter_value iq_corr_tx_phase_gain {width} {32}
-
 add_instance irq_bridge_0 altera_irq_bridge
 set_instance_parameter_value irq_bridge_0 {IRQ_WIDTH} {4}
 set_instance_parameter_value irq_bridge_0 {IRQ_N} {0}
@@ -362,10 +336,6 @@ add_interface clk clock sink
 set_interface_property clk EXPORT_OF system_clock.clk_in
 add_interface command conduit end
 set_interface_property command EXPORT_OF command_uart.rs232
-add_interface correction_rx_phase_gain conduit end
-set_interface_property correction_rx_phase_gain EXPORT_OF iq_corr_rx_phase_gain.external_connection
-add_interface correction_tx_phase_gain conduit end
-set_interface_property correction_tx_phase_gain EXPORT_OF iq_corr_tx_phase_gain.external_connection
 add_interface dac conduit end
 set_interface_property dac EXPORT_OF peripheral_spi.external
 add_interface gpio conduit end
@@ -451,16 +421,6 @@ set_connection_parameter_value nios2.data_master/control.s1 arbitrationPriority 
 set_connection_parameter_value nios2.data_master/control.s1 baseAddress {0x9040}
 set_connection_parameter_value nios2.data_master/control.s1 defaultConnection {0}
 
-add_connection nios2.data_master iq_corr_rx_phase_gain.s1
-set_connection_parameter_value nios2.data_master/iq_corr_rx_phase_gain.s1 arbitrationPriority {1}
-set_connection_parameter_value nios2.data_master/iq_corr_rx_phase_gain.s1 baseAddress {0x90d0}
-set_connection_parameter_value nios2.data_master/iq_corr_rx_phase_gain.s1 defaultConnection {0}
-
-add_connection nios2.data_master iq_corr_tx_phase_gain.s1
-set_connection_parameter_value nios2.data_master/iq_corr_tx_phase_gain.s1 arbitrationPriority {1}
-set_connection_parameter_value nios2.data_master/iq_corr_tx_phase_gain.s1 baseAddress {0x90c0}
-set_connection_parameter_value nios2.data_master/iq_corr_tx_phase_gain.s1 defaultConnection {0}
-
 add_connection nios2.data_master xb_gpio.s1
 set_connection_parameter_value nios2.data_master/xb_gpio.s1 arbitrationPriority {1}
 set_connection_parameter_value nios2.data_master/xb_gpio.s1 baseAddress {0x90b0}
@@ -503,10 +463,6 @@ add_connection system_clock.clk jtag_uart.clk
 add_connection system_clock.clk peripheral_spi.clk
 
 add_connection system_clock.clk control.clk
-
-add_connection system_clock.clk iq_corr_rx_phase_gain.clk
-
-add_connection system_clock.clk iq_corr_tx_phase_gain.clk
 
 add_connection system_clock.clk xb_gpio.clk
 
@@ -573,10 +529,6 @@ add_connection system_clock.clk_reset jtag_uart.reset
 add_connection system_clock.clk_reset peripheral_spi.reset
 
 add_connection system_clock.clk_reset control.reset
-
-add_connection system_clock.clk_reset iq_corr_rx_phase_gain.reset
-
-add_connection system_clock.clk_reset iq_corr_tx_phase_gain.reset
 
 add_connection system_clock.clk_reset xb_gpio.reset
 

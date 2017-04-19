@@ -108,10 +108,6 @@ add_interface clk clock sink
 set_interface_property clk EXPORT_OF clk_0.clk_in
 add_interface command conduit end
 set_interface_property command EXPORT_OF common_system_0.command
-add_interface correction_rx_phase_gain conduit end
-set_interface_property correction_rx_phase_gain EXPORT_OF common_system_0.correction_rx_phase_gain
-add_interface correction_tx_phase_gain conduit end
-set_interface_property correction_tx_phase_gain EXPORT_OF common_system_0.correction_tx_phase_gain
 add_interface dac conduit end
 set_interface_property dac EXPORT_OF common_system_0.dac
 add_interface ad9361_dac_i0 conduit end

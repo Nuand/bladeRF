@@ -103,8 +103,6 @@ architecture hosted_bladerf of bladerf is
         xb_gpio_dir_export              :   out std_logic_vector(31 downto 0);
         command_serial_in               :   in  std_logic;
         command_serial_out              :   out std_logic;
-        correction_rx_phase_gain_export :   out std_logic_vector(31 downto 0);
-        correction_tx_phase_gain_export :   out std_logic_vector(31 downto 0);
         rx_tamer_ts_sync_in             :   in  std_logic;
         rx_tamer_ts_sync_out            :   out std_logic;
         rx_tamer_ts_pps                 :   in  std_logic;
@@ -281,10 +279,6 @@ architecture hosted_bladerf of bladerf is
     signal rx_mux_q             :   signed(15 downto 0) ;
     signal rx_mux_valid         :   std_logic ;
 
-    signal rx_sample_corrected_i : signed(15 downto 0);
-    signal rx_sample_corrected_q : signed(15 downto 0);
-    signal rx_sample_corrected_valid : std_logic;
-
     signal led1_blink : std_logic;
 
     signal nios_sdo : std_logic;
@@ -296,8 +290,6 @@ architecture hosted_bladerf of bladerf is
 
     signal command_serial_in    :   std_logic ;
     signal command_serial_out   :   std_logic ;
-
-    constant FPGA_DC_CORRECTION :  signed(15 downto 0) := to_signed(integer(0), 16);
 
     signal fx3_pclk_pll        : std_logic;
     signal fx3_pclk_pll_locked : std_logic;
@@ -783,18 +775,14 @@ begin
         meta_fifo_data      =>  rx_meta_fifo.wdata,
         meta_fifo_write     =>  rx_meta_fifo.wreq,
 
-        in_i                =>  rx_sample_corrected_i,
-        in_q                =>  rx_sample_corrected_q,
-        in_valid            =>  rx_sample_corrected_valid,
+        in_i                =>  resize(rx_mux_i,16),
+        in_q                =>  resize(rx_mux_q,16),
+        in_valid            =>  rx_mux_valid,
 
         overflow_led        =>  rx_overflow_led,
         overflow_count      =>  rx_overflow_count,
         overflow_duration   =>  x"ffff"
       ) ;
-
-    rx_sample_corrected_i     <= resize(rx_mux_i,16);
-    rx_sample_corrected_q     <= resize(rx_mux_q,16);
-    rx_sample_corrected_valid <= rx_mux_valid;
 
     --U_fifo_reader : entity work.fifo_reader
     --  port map (
@@ -1068,8 +1056,6 @@ begin
         xb_gpio_dir_export              => nios_xb_gpio_dir,
         command_serial_in               => command_serial_in,
         command_serial_out              => command_serial_out,
-        correction_tx_phase_gain_export => open,
-        correction_rx_phase_gain_export => open,
         oc_i2c_arst_i                   => '0',
         oc_i2c_scl_pad_i                => i2c_scl_in,
         oc_i2c_scl_pad_o                => i2c_scl_out,

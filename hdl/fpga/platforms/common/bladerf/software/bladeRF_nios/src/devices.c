@@ -226,9 +226,13 @@ void bladerf_nios_init(struct pkt_buf *pkt, struct vctcxo_tamer_pkt_buf *vctcxo_
     IOWR_16DIRECT(I2C, OC_I2C_PRESCALER, 39);
     IOWR_8DIRECT(I2C, OC_I2C_CTRL, OC_I2C_ENABLE);
 
+#ifdef IQ_CORR_RX_PHASE_GAIN_BASE
+#ifdef IQ_CORR_TX_PHASE_GAIN_BASE
     /* Set the IQ Correction parameters to 0 */
     IOWR_ALTERA_AVALON_PIO_DATA(IQ_CORR_RX_PHASE_GAIN_BASE, DEFAULT_CORRECTION);
     IOWR_ALTERA_AVALON_PIO_DATA(IQ_CORR_TX_PHASE_GAIN_BASE, DEFAULT_CORRECTION);
+#endif
+#endif
 
     /* Disable all triggering */
     IOWR_ALTERA_AVALON_PIO_DATA(TX_TRIGGER_CTL_BASE, 0x00);
@@ -534,12 +538,12 @@ uint32_t adf400x_spi_read(uint8_t addr)
 {
     /* This assumes the AD400x MUXOUT is set to SDO/MISO,
      * but the behavior of this output is unclear. */
-    uint8_t sdo_data[3] = { 0 };
+    /* uint8_t sdo_data[3] = { 0 };
     uint8_t sdi_data[3] = {
         (adf400x_reg[addr & 0x3] >> 16) & 0xff,
         (adf400x_reg[addr & 0x3] >> 8)  & 0xff,
         (adf400x_reg[addr & 0x3] >> 0)  & 0xff
-    };
+    }; */
 
     /* Perform the SPI operation so we can take a look on SignalTap */
     //alt_avalon_spi_command(PERIPHERAL_SPI_BASE, 1, 3, sdi_data, 3, sdo_data, 0);
@@ -569,6 +573,9 @@ void adf4351_write(uint32_t val)
     alt_avalon_spi_command(PERIPHERAL_SPI_BASE, 1, 4, (uint8_t*)&sval.val, 0, 0, 0);
 }
 
+// Temporary for bladeRF2 compat
+#ifdef IQ_CORR_RX_PHASE_GAIN_BASE
+#ifdef IQ_CORR_TX_PHASE_GAIN_BASE
 static inline uint32_t module_to_iqcorr_base(bladerf_module m)
 {
     if (m == BLADERF_MODULE_RX) {
@@ -619,6 +626,14 @@ void iqbal_set_phase(bladerf_module m, uint16_t value)
 
     IOWR_ALTERA_AVALON_PIO_DATA(base, regval);
 }
+
+#endif
+#else
+uint16_t iqbal_get_gain(bladerf_module m) { return 0; }
+void     iqbal_set_gain(bladerf_module m, uint16_t value) { }
+uint16_t iqbal_get_phase(bladerf_module m) { return 0; }
+void     iqbal_set_phase(bladerf_module m, uint16_t value) { }
+#endif
 
 void tx_trigger_ctl_write(uint8_t data)
 {

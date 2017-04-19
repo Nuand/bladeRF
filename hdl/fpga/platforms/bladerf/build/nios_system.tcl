@@ -16,6 +16,32 @@ set_instance_parameter_value clk_0 {resetSynchronousEdges} {DEASSERT}
 
 add_instance common_system_0 common_system 1.0
 
+add_instance iq_corr_rx_phase_gain altera_avalon_pio
+set_instance_parameter_value iq_corr_rx_phase_gain {bitClearingEdgeCapReg} {0}
+set_instance_parameter_value iq_corr_rx_phase_gain {bitModifyingOutReg} {0}
+set_instance_parameter_value iq_corr_rx_phase_gain {captureEdge} {0}
+set_instance_parameter_value iq_corr_rx_phase_gain {direction} {Output}
+set_instance_parameter_value iq_corr_rx_phase_gain {edgeType} {RISING}
+set_instance_parameter_value iq_corr_rx_phase_gain {generateIRQ} {0}
+set_instance_parameter_value iq_corr_rx_phase_gain {irqType} {LEVEL}
+set_instance_parameter_value iq_corr_rx_phase_gain {resetValue} {0.0}
+set_instance_parameter_value iq_corr_rx_phase_gain {simDoTestBenchWiring} {0}
+set_instance_parameter_value iq_corr_rx_phase_gain {simDrivenValue} {0.0}
+set_instance_parameter_value iq_corr_rx_phase_gain {width} {32}
+
+add_instance iq_corr_tx_phase_gain altera_avalon_pio
+set_instance_parameter_value iq_corr_tx_phase_gain {bitClearingEdgeCapReg} {0}
+set_instance_parameter_value iq_corr_tx_phase_gain {bitModifyingOutReg} {0}
+set_instance_parameter_value iq_corr_tx_phase_gain {captureEdge} {0}
+set_instance_parameter_value iq_corr_tx_phase_gain {direction} {Output}
+set_instance_parameter_value iq_corr_tx_phase_gain {edgeType} {RISING}
+set_instance_parameter_value iq_corr_tx_phase_gain {generateIRQ} {0}
+set_instance_parameter_value iq_corr_tx_phase_gain {irqType} {LEVEL}
+set_instance_parameter_value iq_corr_tx_phase_gain {resetValue} {0.0}
+set_instance_parameter_value iq_corr_tx_phase_gain {simDoTestBenchWiring} {0}
+set_instance_parameter_value iq_corr_tx_phase_gain {simDrivenValue} {0.0}
+set_instance_parameter_value iq_corr_tx_phase_gain {width} {32}
+
 add_instance lms_spi lms6_spi_controller 1.0
 set_instance_parameter_value lms_spi {CLOCK_DIV} {4}
 set_instance_parameter_value lms_spi {ADDR_WIDTH} {8}
@@ -29,9 +55,9 @@ set_interface_property clk EXPORT_OF clk_0.clk_in
 add_interface command conduit end
 set_interface_property command EXPORT_OF common_system_0.command
 add_interface correction_rx_phase_gain conduit end
-set_interface_property correction_rx_phase_gain EXPORT_OF common_system_0.correction_rx_phase_gain
+set_interface_property correction_rx_phase_gain EXPORT_OF iq_corr_rx_phase_gain.external_connection
 add_interface correction_tx_phase_gain conduit end
-set_interface_property correction_tx_phase_gain EXPORT_OF common_system_0.correction_tx_phase_gain
+set_interface_property correction_tx_phase_gain EXPORT_OF iq_corr_tx_phase_gain.external_connection
 add_interface dac conduit end
 set_interface_property dac EXPORT_OF common_system_0.dac
 add_interface gpio conduit end
@@ -68,7 +94,21 @@ set_connection_parameter_value common_system_0.pb_0_m0/lms_spi.avalon_slave_0 ar
 set_connection_parameter_value common_system_0.pb_0_m0/lms_spi.avalon_slave_0 baseAddress {0x0000}
 set_connection_parameter_value common_system_0.pb_0_m0/lms_spi.avalon_slave_0 defaultConnection {0}
 
+add_connection common_system_0.pb_1_m0 iq_corr_rx_phase_gain.s1
+set_connection_parameter_value common_system_0.pb_1_m0/iq_corr_rx_phase_gain.s1 arbitrationPriority {1}
+set_connection_parameter_value common_system_0.pb_1_m0/iq_corr_rx_phase_gain.s1 baseAddress {0x0000}
+set_connection_parameter_value common_system_0.pb_1_m0/iq_corr_rx_phase_gain.s1 defaultConnection {0}
+
+add_connection common_system_0.pb_1_m0 iq_corr_tx_phase_gain.s1
+set_connection_parameter_value common_system_0.pb_1_m0/iq_corr_tx_phase_gain.s1 arbitrationPriority {1}
+set_connection_parameter_value common_system_0.pb_1_m0/iq_corr_tx_phase_gain.s1 baseAddress {0x0010}
+set_connection_parameter_value common_system_0.pb_1_m0/iq_corr_tx_phase_gain.s1 defaultConnection {0}
+
 add_connection clk_0.clk common_system_0.clk
+
+add_connection clk_0.clk iq_corr_rx_phase_gain.clk
+
+add_connection clk_0.clk iq_corr_tx_phase_gain.clk
 
 add_connection clk_0.clk vctcxo_tamer_0.clock_sink
 
@@ -78,6 +118,10 @@ add_connection common_system_0.ib0_receiver_irq vctcxo_tamer_0.interrupt_sender
 set_connection_parameter_value common_system_0.ib0_receiver_irq/vctcxo_tamer_0.interrupt_sender irqNumber {0}
 
 add_connection clk_0.clk_reset common_system_0.reset
+
+add_connection clk_0.clk_reset iq_corr_rx_phase_gain.reset
+
+add_connection clk_0.clk_reset iq_corr_tx_phase_gain.reset
 
 add_connection clk_0.clk_reset vctcxo_tamer_0.reset_sink
 
