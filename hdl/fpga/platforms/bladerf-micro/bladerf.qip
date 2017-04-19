@@ -1,7 +1,8 @@
 # Convenience directory
-set here      $::quartus(qip_path)
-set adi_ip    [file normalize [file join $here ../../ip/analogdevicesinc]]
-set nuand_ip  [file normalize [file join $here ../../ip/nuand]]
+set here         $::quartus(qip_path)
+set adi_ip       [file normalize [file join $here ../../ip/analogdevicesinc]]
+set nuand_ip     [file normalize [file join $here ../../ip/nuand]]
+set opencores_ip [file normalize [file join $here ../../ip/opencores]]
 
 # Platform packages
 set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/bladerf_p.vhd]]
@@ -14,3 +15,4 @@ set_global_assignment -name SDC_FILE [file normalize [file join $adi_ip hdl/libr
 set_global_assignment -name SDC_FILE [file normalize [file join $here constraints/ad9361.sdc]]
 set_global_assignment -name SDC_FILE [file normalize [file join $nuand_ip synthesis/constraints/spi.sdc]]
 set_global_assignment -name SDC_FILE [file normalize [file join $here constraints/bladerf.sdc]]
+set_global_assignment -name SDC_FILE [file normalize [file join $opencores_ip i2c/rtl/oc_i2c.sdc]]
