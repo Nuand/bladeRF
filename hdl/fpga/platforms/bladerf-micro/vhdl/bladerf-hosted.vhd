@@ -138,8 +138,7 @@ architecture hosted_bladerf of bladerf is
     signal nios_gpio        : std_logic_vector(31 downto 0) ;
     signal nios_xb_gpio_in  : std_logic_vector(31 downto 0) := (others => '0');
     signal nios_xb_gpio_out : std_logic_vector(31 downto 0) := (others => '0');
-    signal nios_xb_gpio_dir : std_logic_vector(31 downto 0) := (others => '0');
-    signal xb_gpio_dir      : std_logic_vector(31 downto 0) ;
+    signal nios_xb_gpio_oe  : std_logic_vector(31 downto 0) := (others => '0');
 
     signal i2c_scl_in       : std_logic ;
     signal i2c_scl_out      : std_logic ;
@@ -1053,7 +1052,7 @@ begin
         ad9361_dac_underflow_unf        => ad9361.dac_underflow,      -- in  sl
         xb_gpio_in_port                 => nios_xb_gpio_in,
         xb_gpio_out_port                => nios_xb_gpio_out,
-        xb_gpio_dir_export              => nios_xb_gpio_dir,
+        xb_gpio_dir_export              => nios_xb_gpio_oe,
         command_serial_in               => command_serial_in,
         command_serial_out              => command_serial_out,
         oc_i2c_arst_i                   => '0',
@@ -1106,24 +1105,21 @@ begin
     i2c_scl_in  <= pwr_scl;
     i2c_sda_in  <= pwr_sda;
 
-    -- temp assignments for initial bringup vv
-    exp_gpio      <= (others => exp_blink);
+    generate_xb_gpio_out : for i in exp_gpio'range generate
+        exp_gpio(i) <= nios_xb_gpio_out(i) when nios_xb_gpio_oe(i) = '1' else 'Z';
+    end generate;
 
-    exp_clock_out <= exp_clock_in;
-
-    exp_toggler : process(exp_clock_in)
-        variable count : natural range 0 to 100_000_000 := 100_000_000 ;
-    begin
-        if( rising_edge(exp_clock_in) ) then
-            count := count - 1 ;
-            if( count = 0 ) then
-                count := 100_000_00 ;
-                exp_blink <= not exp_blink;
-            end if ;
-        end if ;
-    end process ;
-
-    -- end temp ^^
+    generate_xb_gpio_in : for i in exp_gpio'range generate
+        U_sync_xb_gpio_in : entity work.synchronizer
+          generic map (
+            RESET_LEVEL         =>  '0'
+          ) port map (
+            reset               =>  '0',
+            clock               =>  \80MHz\,
+            async               =>  exp_gpio(i),
+            sync                =>  nios_xb_gpio_in(i)
+          ) ;
+    end generate;
 
     -- Power supply synchronization
     -- ADP2384 sync freq must be +/- 10% of the Fsw set by RT.

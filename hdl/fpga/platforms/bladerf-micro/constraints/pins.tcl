@@ -321,14 +321,18 @@ set_location_assignment PIN_H11 -to dac_sdi
 set_location_assignment PIN_G12 -to dac_csn
 
 # Bank 8A
-set_location_assignment PIN_G10 -to exp_clock_in
+#set_location_assignment PIN_G10 -to exp_clock_in
+set_location_assignment PIN_G10 -to exp_gpio[29]
 set_location_assignment PIN_L7  -to exp_gpio[15]
-set_location_assignment PIN_F10 -to "exp_clock_in(n)"
+#set_location_assignment PIN_F10 -to "exp_clock_in(n)"
+set_location_assignment PIN_F10 -to exp_gpio[28]
 set_location_assignment PIN_K7  -to exp_gpio[14]
 set_location_assignment PIN_J7  -to exp_gpio[1]
-set_location_assignment PIN_H8  -to exp_clock_out
+#set_location_assignment PIN_H8  -to exp_clock_out
+set_location_assignment PIN_H8  -to exp_gpio[31]
 set_location_assignment PIN_J8  -to exp_gpio[0]
-set_location_assignment PIN_G8  -to "exp_clock_out(n)"
+#set_location_assignment PIN_G8  -to "exp_clock_out(n)"
+set_location_assignment PIN_G8  -to exp_gpio[30]
 set_location_assignment PIN_J9  -to exp_gpio[3]
 set_location_assignment PIN_A10 -to exp_gpio[17]
 set_location_assignment PIN_H9  -to exp_gpio[2]
@@ -367,7 +371,6 @@ set outs {
     dac_sclk
     dac_sdi
     dac_csn
-    exp_clock_out
     tx_bias_en
     rx_bias_en
 }
@@ -391,7 +394,7 @@ set inouts {
     exp_i2c_scl
     exp_i2c_sda
 }
-for { set i 0 } { $i < 28 } { incr i } {
+for { set i 0 } { $i < 32 } { incr i } {
     lappend inouts "exp_gpio\[${i}\]"
 }
 
@@ -405,7 +408,6 @@ foreach pin ${inouts} {
 set ins {
     c5_clock_1
     c5_clock_2
-    exp_clock_in
     exp_present_n
 }
 

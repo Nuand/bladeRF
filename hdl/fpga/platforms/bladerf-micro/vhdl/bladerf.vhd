@@ -106,9 +106,7 @@ entity bladerf is
     exp_present_n       :   in      std_logic ;
     exp_i2c_sda         :   inout   std_logic;
     exp_i2c_scl         :   inout   std_logic;
-    exp_clock_in        :   in      std_logic ;
-    exp_clock_out       :   out     std_logic;
-    exp_gpio            :   inout   std_logic_vector(27 downto 0)
+    exp_gpio            :   inout   std_logic_vector(31 downto 0)
   ) ;
 end entity ; -- bladerf
 --TODO: explain revisions

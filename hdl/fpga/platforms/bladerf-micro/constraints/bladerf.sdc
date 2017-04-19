@@ -3,7 +3,6 @@ create_clock -period "100.0 MHz" -waveform {0.6 5.6} [get_ports fx3_pclk]
 create_clock -period "38.4 MHz"  [get_ports c5_clock_1]
 create_clock -period "38.4 MHz"  [get_ports c5_clock_2]
 create_clock -period "250.0 MHz" [get_ports adi_rx_clock]
-create_clock -period "38.4 MHz"  [get_ports exp_clock_in]
 
 ## Virtual clocks
 create_clock -period "100.0 MHz" -name fx3_virtual
@@ -33,6 +32,8 @@ set_multicycle_path -from [get_clocks {fx3_virtual}] -to [get_clocks {U_fx3_pll*
 
 
 ### Slow Interfaces ###
+
+set_false_path -from * -to [get_ports exp_gpio[*]]
 
 # FX3 UART interface
 #set_false_path -from * -to [get_ports fx3_uart_rxd]
