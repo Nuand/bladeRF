@@ -1773,7 +1773,9 @@ static int bladerf2_expansion_attach(struct bladerf *dev, bladerf_xb xb)
 
 static int bladerf2_expansion_get_attached(struct bladerf *dev, bladerf_xb *xb)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    *xb = BLADERF_XB_NONE;
+
+    return 0;
 }
 
 /******************************************************************************/
