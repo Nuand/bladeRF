@@ -36,6 +36,7 @@ set_multicycle_path -from [get_clocks {fx3_virtual}] -to [get_clocks {U_fx3_pll*
 set_false_path -from * -to [get_ports ps_sync_1p*]
 set_false_path -from * -to [get_ports {rx_bias_en tx_bias_en}]
 set_false_path -from * -to [get_ports exp_gpio[*]]
+set_false_path -from * -to [get_ports adf_ce]
 
 # FX3 UART interface
 #set_false_path -from * -to [get_ports fx3_uart_rxd]
