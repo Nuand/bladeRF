@@ -764,6 +764,25 @@ static int bladerf2_select_band(struct bladerf *dev, bladerf_channel ch, uint64_
 }
 
 /******************************************************************************/
+/* RF ports */
+/******************************************************************************/
+
+static int bladerf2_set_rf_port(struct bladerf *dev, bladerf_channel ch, const char *port)
+{
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
+static int bladerf2_get_rf_port(struct bladerf *dev, bladerf_channel ch, const char **port)
+{
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
+static int bladerf2_get_rf_ports(struct bladerf *dev, bladerf_channel ch, const char **ports, unsigned int count)
+{
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
+/******************************************************************************/
 /* Scheduled Tuning */
 /******************************************************************************/
 
@@ -1197,6 +1216,9 @@ const struct board_fns bladerf2_board_fns = {
     FIELD_INIT(.get_frequency_range, bladerf2_get_frequency_range),
     FIELD_INIT(.set_frequency, bladerf2_set_frequency),
     FIELD_INIT(.select_band, bladerf2_select_band),
+    FIELD_INIT(.set_rf_port, bladerf2_set_rf_port),
+    FIELD_INIT(.get_rf_port, bladerf2_get_rf_port),
+    FIELD_INIT(.get_rf_ports, bladerf2_get_rf_ports),
     FIELD_INIT(.get_quick_tune, bladerf2_get_quick_tune),
     FIELD_INIT(.schedule_retune, bladerf2_schedule_retune),
     FIELD_INIT(.cancel_scheduled_retunes, bladerf2_cancel_scheduled_retunes),

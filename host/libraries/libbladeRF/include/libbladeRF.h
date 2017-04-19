@@ -1040,6 +1040,63 @@ int CALL_CONV bladerf_set_tuning_mode(struct bladerf *dev,
 /** @} (End of FN_TUNING) */
 
 /**
+ * @defgroup FN_RF_PORTS RF Ports
+ *
+ * These functions provide the ability to select various RF ports for RX and TX
+ * channels.
+ *
+ * These functions are thread-safe.
+ *
+ * @{
+ */
+
+/**
+ * Set the RF port
+ *
+ * @param       dev         Device handle
+ * @param       ch          Channel
+ * @param       port        RF port name
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_rf_port(struct bladerf *dev, bladerf_channel ch,
+                                  const char *port);
+
+/**
+ * Get the RF port
+ *
+ * @param       dev         Device handle
+ * @param       ch          Channel
+ * @param       port        RF port name
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_rf_port(struct bladerf *dev, bladerf_channel ch,
+                                  const char **port);
+
+/**
+ * Get available RF ports
+ *
+ * This function may be called with `NULL` for `ports`, or 0 for `count`, to
+ * determine the number of RF ports.
+ *
+ * @param       dev         Device handle
+ * @param       ch          Channel
+ * @param       ports       RF port names
+ * @param       count       Number to populate
+ *
+ * @return Number of RF ports on success, value from \ref RETCODES list on
+ * failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_rf_ports(struct bladerf *dev, bladerf_channel ch,
+                                   const char **ports, unsigned int count);
+
+/** @} (End of FN_RF_PORTS) */
+
+/**
  * @defgroup FN_TRIG   Triggers
  *
  * Trigger functionality introduced in bladeRF FPGA v0.6.0 allows TX and/or RX

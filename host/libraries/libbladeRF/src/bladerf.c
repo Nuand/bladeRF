@@ -701,6 +701,46 @@ int bladerf_select_band(struct bladerf *dev, bladerf_channel ch,
 }
 
 /******************************************************************************/
+/* RF Ports*/
+/******************************************************************************/
+
+int bladerf_set_rf_port(struct bladerf *dev, bladerf_channel ch,
+                        const char *port)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->set_rf_port(dev, ch, port);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
+int bladerf_get_rf_port(struct bladerf *dev, bladerf_channel ch,
+                        const char **port)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->get_rf_port(dev, ch, port);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
+int bladerf_get_rf_ports(struct bladerf *dev, bladerf_channel ch,
+                         const char **ports, unsigned int count)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->get_rf_ports(dev, ch, ports, count);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
+/******************************************************************************/
 /* Scheduled Tuning */
 /******************************************************************************/
 

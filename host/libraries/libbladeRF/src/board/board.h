@@ -103,6 +103,11 @@ struct board_fns {
     int (*get_frequency_range)(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range);
     int (*select_band)(struct bladerf *dev, bladerf_channel ch, uint64_t frequency);
 
+    /* RF Ports */
+    int (*set_rf_port)(struct bladerf *dev, bladerf_channel ch, const char *port);
+    int (*get_rf_port)(struct bladerf *dev, bladerf_channel ch, const char **port);
+    int (*get_rf_ports)(struct bladerf *dev, bladerf_channel ch, const char **ports, unsigned int count);
+
     /* Scheduled Tuning */
     int (*get_quick_tune)(struct bladerf *dev, bladerf_channel ch, struct bladerf_quick_tune *quick_tune);
     int (*schedule_retune)(struct bladerf *dev, bladerf_channel ch, uint64_t timestamp, uint64_t frequency, struct bladerf_quick_tune *quick_tune);
