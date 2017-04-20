@@ -87,9 +87,74 @@ struct bladerf2_board_data {
     struct bladerf_sync sync[2];
 };
 
+/******************************************************************************/
+/* Constants */
+/******************************************************************************/
+
 #define RFFE_CONTROL_RESET_N    0
 #define RFFE_CONTROL_ENABLE     1
 #define RFFE_CONTROL_TXNRX      2
+
+/* Overall RX gain range */
+
+static const struct bladerf_range bladerf2_rx_gain_range = {
+    .min = 0,
+    .max = 77,
+    .step = 1,
+    .scale = 1,
+};
+
+/* Overall TX gain range */
+
+static const struct bladerf_range bladerf2_tx_gain_range = {
+    .min = -89750,
+    .max = 0,
+    .step = 250,
+    .scale = 0.001,
+};
+
+struct bladerf_gain_stage_info {
+    const char *name;
+    struct bladerf_range range;
+};
+
+/* RX gain stages */
+
+static const struct bladerf_gain_stage_info bladerf2_rx_gain_stages[] = {
+    {
+        .name = "full",
+        .range = {
+            .min = 0,
+            .max = 77,
+            .step = 1,
+            .scale = 1,
+        },
+    },
+    {
+        .name = "digital",
+        .range = {
+            .min = 0,
+            .max = 31,
+            .step = 1,
+            .scale = 1,
+        },
+    },
+};
+
+/* TX gain stages */
+
+static const struct bladerf_gain_stage_info bladerf2_tx_gain_stages[] = {
+    {
+        .name = "dsa",
+        .range = {
+            .min = -89750,
+            .max = 0,
+            .step = 250,
+            .scale = 0.001,
+        },
+    },
+};
+
 
 /******************************************************************************/
 /* Helpers */
@@ -553,6 +618,9 @@ static int bladerf2_get_gain(struct bladerf *dev, bladerf_channel ch, int *gain)
 
     if (ch & BLADERF_TX) {
         status = ad9361_get_tx_attenuation(board_data->phy, ch >> 1, &atten);
+        if (status == 0) {
+            *gain = -atten;
+        }
     } else {
         status = ad9361_get_rx_rf_gain(board_data->phy, ch >> 1, gain);
     }
@@ -561,36 +629,116 @@ static int bladerf2_get_gain(struct bladerf *dev, bladerf_channel ch, int *gain)
         return errno_ad9361_to_bladerf(status);
     }
 
-    if (ch & BLADERF_TX) {
-        *gain = -atten;
-    }
-
     return 0;
 }
 
 static int bladerf2_get_gain_range(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    if (ch & BLADERF_TX) {
+        *range = bladerf2_tx_gain_range;
+    } else {
+        /* TODO look up rx_gain_info for current LO */
+        *range = bladerf2_rx_gain_range;
+    }
+
+    return 0;
 }
 
 static int bladerf2_set_gain_stage(struct bladerf *dev, bladerf_channel ch, const char *stage, int gain)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    if (ch & BLADERF_TX) {
+        if (strcmp(stage, "dsa") == 0) {
+            return dev->board->set_gain(dev, ch, gain);
+        }
+    } else {
+        if (strcmp(stage, "full") == 0) {
+            return dev->board->set_gain(dev, ch, gain);
+        } else if (strcmp(stage, "digital") == 0) {
+            return BLADERF_ERR_UNSUPPORTED;
+        }
+    }
+
+    return BLADERF_ERR_INVAL;
 }
 
 static int bladerf2_get_gain_stage(struct bladerf *dev, bladerf_channel ch, const char *stage, int *gain)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    struct bladerf2_board_data *board_data = dev->board_data;
+    int status;
+
+    if (ch & BLADERF_TX) {
+        if (strcmp(stage, "dsa") == 0) {
+            return dev->board->get_gain(dev, ch, gain);
+        } else {
+            return BLADERF_ERR_INVAL;
+        }
+    } else {
+        struct rf_rx_gain rx_gain;
+
+        status = ad9361_get_rx_gain(board_data->phy, (ch >> 1) + 1, &rx_gain);
+        if (status < 0) {
+            return errno_ad9361_to_bladerf(status);
+        }
+
+        if (strcmp(stage, "full") == 0) {
+            *gain = rx_gain.gain_db;
+        } else if(strcmp(stage, "digital") == 0) {
+            *gain = rx_gain.digital_gain;
+        } else {
+            return BLADERF_ERR_INVAL;
+        }
+    }
+
+    return 0;
 }
 
 static int bladerf2_get_gain_stage_range(struct bladerf *dev, bladerf_channel ch, const char *stage, struct bladerf_range *range)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    const struct bladerf_gain_stage_info *stage_infos;
+    unsigned int stage_infos_len;
+    unsigned int i;
+
+    if (ch & BLADERF_TX) {
+        stage_infos = bladerf2_tx_gain_stages;
+        stage_infos_len = ARRAY_SIZE(bladerf2_tx_gain_stages);
+    } else {
+        stage_infos = bladerf2_rx_gain_stages;
+        stage_infos_len = ARRAY_SIZE(bladerf2_rx_gain_stages);
+    }
+
+    for (i = 0; i < stage_infos_len; i++) {
+        if (strcmp(stage_infos[i].name, stage) == 0) {
+            *range = stage_infos[i].range;
+            return 0;
+        }
+    }
+
+    return BLADERF_ERR_INVAL;
 }
 
 static int bladerf2_get_gain_stages(struct bladerf *dev, bladerf_channel ch, const char **stages, unsigned int count)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    const struct bladerf_gain_stage_info *stage_infos;
+    unsigned int stage_infos_len;
+    unsigned int i;
+
+    if (ch & BLADERF_TX) {
+        stage_infos = bladerf2_tx_gain_stages;
+        stage_infos_len = ARRAY_SIZE(bladerf2_tx_gain_stages);
+    } else {
+        stage_infos = bladerf2_rx_gain_stages;
+        stage_infos_len = ARRAY_SIZE(bladerf2_rx_gain_stages);
+    }
+
+    if (stages != NULL) {
+        count = (stage_infos_len < count) ? stage_infos_len : count;
+
+        for (i = 0; i < count; i++) {
+            stages[i] = stage_infos[i].name;
+        }
+    }
+
+    return stage_infos_len;
 }
 
 /******************************************************************************/
