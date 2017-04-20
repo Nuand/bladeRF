@@ -912,11 +912,35 @@ static int bladerf1_enable_module(struct bladerf *dev, bladerf_direction dir, bo
 /* Gain */
 /******************************************************************************/
 
-static inline int set_rx_gain_combo(struct bladerf *dev,
-                                     bladerf_lna_gain lnagain,
-                                     int rxvga1, int rxvga2)
+static int set_rx_gain(struct bladerf *dev, int gain)
 {
     int status;
+    bladerf_lna_gain lnagain;
+    int rxvga1;
+    int rxvga2;
+
+    if (gain <= BLADERF_LNA_GAIN_MID_DB) {
+        lnagain = BLADERF_LNA_GAIN_BYPASS;
+        rxvga1 = BLADERF_RXVGA1_GAIN_MIN;
+        rxvga2 = BLADERF_RXVGA2_GAIN_MIN;
+    } else if (gain <= BLADERF_LNA_GAIN_MID_DB + BLADERF_RXVGA1_GAIN_MIN) {
+        lnagain = BLADERF_LNA_GAIN_MID_DB;
+        rxvga1 = BLADERF_RXVGA1_GAIN_MIN;
+        rxvga2 = BLADERF_RXVGA2_GAIN_MIN;
+    } else if (gain <= (BLADERF_LNA_GAIN_MAX_DB + BLADERF_RXVGA1_GAIN_MAX)) {
+        lnagain = BLADERF_LNA_GAIN_MID;
+        rxvga1 = gain - BLADERF_LNA_GAIN_MID_DB;
+        rxvga2 = BLADERF_RXVGA2_GAIN_MIN;
+    } else if (gain < (BLADERF_LNA_GAIN_MAX_DB + BLADERF_RXVGA1_GAIN_MAX + BLADERF_RXVGA2_GAIN_MAX)) {
+        lnagain = BLADERF_LNA_GAIN_MAX;
+        rxvga1 = BLADERF_RXVGA1_GAIN_MAX;
+        rxvga2 = gain - (BLADERF_LNA_GAIN_MAX_DB + BLADERF_RXVGA1_GAIN_MAX);
+    } else {
+        lnagain = BLADERF_LNA_GAIN_MAX;
+        rxvga1 = BLADERF_RXVGA1_GAIN_MAX;
+        rxvga2 = BLADERF_RXVGA2_GAIN_MAX;
+    }
+
     status = lms_lna_set_gain(dev, lnagain);
     if (status < 0) {
         return status;
@@ -927,54 +951,20 @@ static inline int set_rx_gain_combo(struct bladerf *dev,
         return status;
     }
 
-    return lms_rxvga2_set_gain(dev, rxvga2);
-}
-
-static int set_rx_gain(struct bladerf *dev, int gain)
-{
-    if (gain <= BLADERF_LNA_GAIN_MID_DB) {
-        return set_rx_gain_combo(dev,
-                                 BLADERF_LNA_GAIN_BYPASS,
-                                 BLADERF_RXVGA1_GAIN_MIN,
-                                 BLADERF_RXVGA2_GAIN_MIN);
-    } else if (gain <= BLADERF_LNA_GAIN_MID_DB + BLADERF_RXVGA1_GAIN_MIN) {
-        return set_rx_gain_combo(dev,
-                                 BLADERF_LNA_GAIN_MID_DB,
-                                 BLADERF_RXVGA1_GAIN_MIN,
-                                 BLADERF_RXVGA2_GAIN_MIN);
-    } else if (gain <= (BLADERF_LNA_GAIN_MAX_DB + BLADERF_RXVGA1_GAIN_MAX)) {
-        return set_rx_gain_combo(dev,
-                                 BLADERF_LNA_GAIN_MID,
-                                 gain - BLADERF_LNA_GAIN_MID_DB,
-                                 BLADERF_RXVGA2_GAIN_MIN);
-    } else if (gain < (BLADERF_LNA_GAIN_MAX_DB + BLADERF_RXVGA1_GAIN_MAX + BLADERF_RXVGA2_GAIN_MAX)) {
-        return set_rx_gain_combo(dev,
-                BLADERF_LNA_GAIN_MAX,
-                BLADERF_RXVGA1_GAIN_MAX,
-                gain - (BLADERF_LNA_GAIN_MAX_DB + BLADERF_RXVGA1_GAIN_MAX));
-    } else {
-        return set_rx_gain_combo(dev,
-                                 BLADERF_LNA_GAIN_MAX,
-                                 BLADERF_RXVGA1_GAIN_MAX,
-                                 BLADERF_RXVGA2_GAIN_MAX);
-    }
-}
-
-static inline int set_tx_gain_combo(struct bladerf *dev, int txvga1, int txvga2)
-{
-    int status;
-
-    status = lms_txvga1_set_gain(dev, txvga1);
-    if (status == 0) {
-        status = lms_txvga2_set_gain(dev, txvga2);
+    status = lms_rxvga2_set_gain(dev, rxvga2);
+    if (status < 0) {
+        return status;
     }
 
-    return status;
+    return 0;
 }
 
 static int set_tx_gain(struct bladerf *dev, int gain)
 {
     int status;
+    int txvga1;
+    int txvga2;
+
     const int max_gain =
         (BLADERF_TXVGA1_GAIN_MAX - BLADERF_TXVGA1_GAIN_MIN)
             + BLADERF_TXVGA2_GAIN_MAX;
@@ -984,18 +974,27 @@ static int set_tx_gain(struct bladerf *dev, int gain)
     }
 
     if (gain <= BLADERF_TXVGA2_GAIN_MAX) {
-        status = set_tx_gain_combo(dev, BLADERF_TXVGA1_GAIN_MIN, gain);
+        txvga1 = BLADERF_TXVGA1_GAIN_MIN;
+        txvga2 = gain;
     } else if (gain <= max_gain) {
-        status = set_tx_gain_combo(dev,
-                    BLADERF_TXVGA1_GAIN_MIN + gain - BLADERF_TXVGA2_GAIN_MAX,
-                    BLADERF_TXVGA2_GAIN_MAX);
+        txvga1 = BLADERF_TXVGA1_GAIN_MIN + gain - BLADERF_TXVGA2_GAIN_MAX;
+        txvga2 = BLADERF_TXVGA2_GAIN_MAX;
     } else {
-        status = set_tx_gain_combo(dev,
-                                   BLADERF_TXVGA1_GAIN_MAX,
-                                   BLADERF_TXVGA2_GAIN_MAX);
+        txvga1 = BLADERF_TXVGA1_GAIN_MAX;
+        txvga2 = BLADERF_TXVGA2_GAIN_MAX;
     }
 
-    return status;
+    status = lms_txvga1_set_gain(dev, txvga1);
+    if (status < 0) {
+        return status;
+    }
+
+    status = lms_txvga2_set_gain(dev, txvga2);
+    if (status < 0) {
+        return status;
+    }
+
+    return 0;
 }
 
 static int bladerf1_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
