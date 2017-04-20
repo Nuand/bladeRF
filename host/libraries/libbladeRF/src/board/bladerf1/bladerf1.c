@@ -193,6 +193,40 @@ static const struct bladerf_gain_stage_info bladerf1_tx_gain_stages[] = {
     },
 };
 
+/* Sample Rate Range */
+
+static const struct bladerf_range bladerf1_sample_rate_range = {
+    .min = BLADERF_SAMPLERATE_MIN,
+    .max = BLADERF_SAMPLERATE_REC_MAX,
+    .step = 1,
+    .scale = 1,
+};
+
+/* Bandwidth Range */
+
+static const struct bladerf_range bladerf1_bandwidth_range = {
+    .min = BLADERF_BANDWIDTH_MIN,
+    .max = BLADERF_BANDWIDTH_MAX,
+    .step = 1,
+    .scale = 1,
+};
+
+/* Frequency Range */
+
+static const struct bladerf_range bladerf1_frequency_range = {
+    .min = BLADERF_FREQUENCY_MIN,
+    .max = BLADERF_FREQUENCY_MAX,
+    .step = 1,
+    .scale = 1,
+};
+
+static const struct bladerf_range bladerf1_xb200_frequency_range = {
+    .min = 0,
+    .max = 300e6,
+    .step = 1,
+    .scale = 1,
+};
+
 /******************************************************************************/
 /* Low-level Initialization */
 /******************************************************************************/
@@ -1381,7 +1415,8 @@ static int bladerf1_get_sample_rate(struct bladerf *dev, bladerf_channel ch, uns
 
 static int bladerf1_get_sample_rate_range(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    *range = bladerf1_sample_rate_range;
+    return 0;
 }
 
 static int bladerf1_set_rational_sample_rate(struct bladerf *dev, bladerf_channel ch, struct bladerf_rational_rate *rate, struct bladerf_rational_rate *actual)
@@ -1447,7 +1482,8 @@ static int bladerf1_get_bandwidth(struct bladerf *dev, bladerf_channel ch, unsig
 
 static int bladerf1_get_bandwidth_range(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    *range = bladerf1_bandwidth_range;
+    return 0;
 }
 
 /******************************************************************************/
@@ -1591,7 +1627,13 @@ static int bladerf1_get_frequency(struct bladerf *dev, bladerf_channel ch, uint6
 
 static int bladerf1_get_frequency_range(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    if (dev->xb == BLADERF_XB_200) {
+        *range = bladerf1_xb200_frequency_range;
+    } else {
+        *range = bladerf1_frequency_range;
+    }
+
+    return 0;
 }
 
 static int bladerf1_select_band(struct bladerf *dev, bladerf_channel ch, uint64_t frequency)
