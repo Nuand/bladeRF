@@ -46,6 +46,9 @@ entity bladerf is
     pwr_sda             :   inout   std_logic := 'Z';
     pwr_scl             :   out     std_logic := 'Z';
 
+    -- Power mux control (2.5)
+    psu_ctl_d           :   inout   std_logic_vector(1 downto 0) ;
+
     -- AD9361 RX Interface (2.5 V, LVDS)
     adi_rx_clock        :   in      std_logic ;
     adi_rx_data         :   in      std_logic_vector(5 downto 0) ;

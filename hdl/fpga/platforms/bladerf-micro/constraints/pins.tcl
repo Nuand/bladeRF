@@ -136,6 +136,8 @@ set_location_assignment PIN_U16  -to adi_ctrl_out[1]
 set_location_assignment PIN_U21  -to "adi_tx_data[0](n)"
 set_location_assignment PIN_U17  -to adi_ctrl_out[0]
 set_location_assignment PIN_U20  -to adi_tx_data[0]
+set_location_assignment PIN_P14  -to psu_ctl_d[0]
+set_location_assignment PIN_AB17 -to psu_ctl_d[1]
 
 # Bank 5B
 set_location_assignment PIN_N16 -to adi_ctrl_in[0]
@@ -182,7 +184,10 @@ foreach pin ${outs} {
 }
 
 # Single-ended inout constraints
-set inouts {}
+set inouts {
+    psu_ctl_d[0]
+    psu_ctl_d[1]
+}
 
 foreach pin ${inouts} {
     set_instance_assignment -name IO_STANDARD          "2.5 V"           -to ${pin}

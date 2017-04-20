@@ -1105,6 +1105,9 @@ begin
     i2c_scl_in  <= pwr_scl;
     i2c_sda_in  <= pwr_sda;
 
+    -- Power mux control
+    psu_ctl_d   <= "ZZ";
+
     generate_xb_gpio_out : for i in exp_gpio'range generate
         exp_gpio(i) <= nios_xb_gpio_out(i) when nios_xb_gpio_oe(i) = '1' else 'Z';
     end generate;
