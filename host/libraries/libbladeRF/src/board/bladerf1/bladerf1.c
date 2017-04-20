@@ -2661,44 +2661,64 @@ const struct board_fns bladerf1_board_fns = {
 int bladerf_set_txvga2(struct bladerf *dev, int gain)
 {
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     status = lms_txvga2_set_gain(dev, gain);
 
     MUTEX_UNLOCK(&dev->lock);
+
     return status;
 }
 
 int bladerf_get_txvga2(struct bladerf *dev, int *gain)
 {
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     status = lms_txvga2_get_gain(dev, gain);
 
     MUTEX_UNLOCK(&dev->lock);
+
     return status;
 }
 
 int bladerf_set_txvga1(struct bladerf *dev, int gain)
 {
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     status = lms_txvga1_set_gain(dev, gain);
 
     MUTEX_UNLOCK(&dev->lock);
+
     return status;
 }
 
 int bladerf_get_txvga1(struct bladerf *dev, int *gain)
 {
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     status = lms_txvga1_get_gain(dev, gain);
 
     MUTEX_UNLOCK(&dev->lock);
+
     return status;
 }
 
@@ -2709,66 +2729,96 @@ int bladerf_get_txvga1(struct bladerf *dev, int *gain)
 int bladerf_set_lna_gain(struct bladerf *dev, bladerf_lna_gain gain)
 {
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     status = lms_lna_set_gain(dev, gain);
 
     MUTEX_UNLOCK(&dev->lock);
+
     return status;
 }
 
 int bladerf_get_lna_gain(struct bladerf *dev, bladerf_lna_gain *gain)
 {
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     status = lms_lna_get_gain(dev, gain);
 
     MUTEX_UNLOCK(&dev->lock);
+
     return status;
 }
 
 int bladerf_set_rxvga1(struct bladerf *dev, int gain)
 {
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     status = lms_rxvga1_set_gain(dev, gain);
 
     MUTEX_UNLOCK(&dev->lock);
+
     return status;
 }
 
 int bladerf_get_rxvga1(struct bladerf *dev, int *gain)
 {
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     status = lms_rxvga1_get_gain(dev, gain);
 
     MUTEX_UNLOCK(&dev->lock);
+
     return status;
 }
 
 int bladerf_set_rxvga2(struct bladerf *dev, int gain)
 {
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     status = lms_rxvga2_set_gain(dev, gain);
 
     MUTEX_UNLOCK(&dev->lock);
+
     return status;
 }
 
 int bladerf_get_rxvga2(struct bladerf *dev, int *gain)
 {
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     status = lms_rxvga2_get_gain(dev, gain);
 
     MUTEX_UNLOCK(&dev->lock);
+
     return status;
 }
 
@@ -2780,6 +2830,10 @@ int bladerf_set_loopback(struct bladerf *dev, bladerf_loopback l)
 {
     struct bladerf1_board_data *board_data = dev->board_data;
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     if (l == BLADERF_LB_FIRMWARE) {
@@ -2840,6 +2894,10 @@ int bladerf_get_loopback(struct bladerf *dev, bladerf_loopback *l)
 {
     struct bladerf1_board_data *board_data = dev->board_data;
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     *l = BLADERF_LB_NONE;
@@ -2857,6 +2915,7 @@ int bladerf_get_loopback(struct bladerf *dev, bladerf_loopback *l)
     }
 
     MUTEX_UNLOCK(&dev->lock);
+
     return status;
 }
 
@@ -2868,11 +2927,15 @@ int bladerf_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim)
 {
     struct bladerf1_board_data *board_data = dev->board_data;
 
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     *trim = board_data->dac_trim;
 
     MUTEX_UNLOCK(&dev->lock);
+
     return 0;
 }
 
@@ -2881,6 +2944,10 @@ int bladerf_set_vctcxo_tamer_mode(struct bladerf *dev,
 {
     struct bladerf1_board_data *board_data = dev->board_data;
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     if (!have_cap(board_data->capabilities, BLADERF_CAP_VCTCXO_TAMING_MODE)) {
@@ -2902,6 +2969,10 @@ int bladerf_get_vctcxo_tamer_mode(struct bladerf *dev,
 {
     struct bladerf1_board_data *board_data = dev->board_data;
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     if (!have_cap(board_data->capabilities, BLADERF_CAP_VCTCXO_TAMING_MODE)) {
@@ -2926,11 +2997,16 @@ int bladerf_set_lpf_mode(struct bladerf *dev, bladerf_channel ch,
                          bladerf_lpf_mode mode)
 {
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     status = lms_lpf_set_mode(dev, ch, mode);
 
     MUTEX_UNLOCK(&dev->lock);
+
     return status;
 }
 
@@ -2938,11 +3014,16 @@ int bladerf_get_lpf_mode(struct bladerf *dev, bladerf_channel ch,
                          bladerf_lpf_mode *mode)
 {
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     status = lms_lpf_get_mode(dev, ch, mode);
 
     MUTEX_UNLOCK(&dev->lock);
+
     return status;
 }
 
@@ -2959,7 +3040,9 @@ int bladerf_jump_to_bootloader(struct bladerf *dev)
     }
 
     MUTEX_LOCK(&dev->lock);
+
     status = dev->backend->jump_to_bootloader(dev);
+
     MUTEX_UNLOCK(&dev->lock);
 
     return status;
@@ -3016,16 +3099,20 @@ int bladerf_load_fw_from_bootloader(const char *device_identifier,
 
 int bladerf_get_fw_log(struct bladerf *dev, const char *filename)
 {
-    struct bladerf1_board_data *board_data = dev->board_data;
     int status;
     FILE *f = NULL;
     logger_entry e;
 
     MUTEX_LOCK(&dev->lock);
 
-    if (!have_cap(board_data->capabilities, BLADERF_CAP_READ_FW_LOG_ENTRY)) {
-        log_debug("FX3 FW v%s does not support log retrieval.\n",
-                  board_data->fw_version.describe);
+    if (!have_cap(dev->board->get_capabilities(dev), BLADERF_CAP_READ_FW_LOG_ENTRY)) {
+        struct bladerf_version fw_version;
+
+        if (dev->board->get_fw_version(dev, &fw_version) == 0) {
+            log_debug("FX3 FW v%s does not support log retrieval.\n",
+                      fw_version.describe);
+        }
+
         status = BLADERF_ERR_UNSUPPORTED;
         goto error;
     }
@@ -3091,11 +3178,16 @@ error:
 int bladerf_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
 {
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     status = lms_calibrate_dc(dev, module);
 
     MUTEX_UNLOCK(&dev->lock);
+
     return status;
 }
 
@@ -3106,11 +3198,16 @@ int bladerf_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
 int bladerf_dac_write(struct bladerf *dev, uint16_t val)
 {
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     status = dac161s055_write(dev, val);
 
     MUTEX_UNLOCK(&dev->lock);
+
     return status;
 }
 
@@ -3118,6 +3215,10 @@ int bladerf_dac_read(struct bladerf *dev, uint16_t *val)
 {
     struct bladerf1_board_data *board_data = dev->board_data;
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     if (!have_cap(board_data->capabilities, BLADERF_CAP_VCTCXO_TRIMDAC_READ)) {
@@ -3131,6 +3232,7 @@ int bladerf_dac_read(struct bladerf *dev, uint16_t *val)
 
 exit:
     MUTEX_UNLOCK(&dev->lock);
+
     return status;
 }
 
@@ -3141,22 +3243,32 @@ exit:
 int bladerf_si5338_read(struct bladerf *dev, uint8_t address, uint8_t *val)
 {
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     status = dev->backend->si5338_read(dev,address,val);
 
     MUTEX_UNLOCK(&dev->lock);
+
     return status;
 }
 
 int bladerf_si5338_write(struct bladerf *dev, uint8_t address, uint8_t val)
 {
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     status = dev->backend->si5338_write(dev,address,val);
 
     MUTEX_UNLOCK(&dev->lock);
+
     return status;
 }
 
@@ -3167,22 +3279,32 @@ int bladerf_si5338_write(struct bladerf *dev, uint8_t address, uint8_t val)
 int bladerf_lms_read(struct bladerf *dev, uint8_t address, uint8_t *val)
 {
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     status = dev->backend->lms_read(dev,address,val);
 
     MUTEX_UNLOCK(&dev->lock);
+
     return status;
 }
 
 int bladerf_lms_write(struct bladerf *dev, uint8_t address, uint8_t val)
 {
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     status = dev->backend->lms_write(dev,address,val);
 
     MUTEX_UNLOCK(&dev->lock);
+
     return status;
 }
 
@@ -3190,11 +3312,16 @@ int bladerf_lms_set_dc_cals(struct bladerf *dev,
                             const struct bladerf_lms_dc_cals *dc_cals)
 {
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     status = lms_set_dc_cals(dev, dc_cals);
 
     MUTEX_UNLOCK(&dev->lock);
+
     return status;
 }
 
@@ -3202,11 +3329,16 @@ int bladerf_lms_get_dc_cals(struct bladerf *dev,
                             struct bladerf_lms_dc_cals *dc_cals)
 {
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     status = lms_get_dc_cals(dev, dc_cals);
 
     MUTEX_UNLOCK(&dev->lock);
+
     return status;
 }
 
@@ -3218,11 +3350,16 @@ int bladerf_erase_flash(struct bladerf *dev,
                         uint32_t erase_block, uint32_t count)
 {
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     status = spi_flash_erase(dev, erase_block, count);
 
     MUTEX_UNLOCK(&dev->lock);
+
     return status;
 }
 
@@ -3230,11 +3367,16 @@ int bladerf_read_flash(struct bladerf *dev, uint8_t *buf,
                        uint32_t page, uint32_t count)
 {
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     status = spi_flash_read(dev, buf, page, count);
 
     MUTEX_UNLOCK(&dev->lock);
+
     return status;
 }
 
@@ -3242,11 +3384,16 @@ int bladerf_write_flash(struct bladerf *dev, const uint8_t *buf,
                         uint32_t page, uint32_t count)
 {
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     status = spi_flash_write(dev, buf, page, count);
 
     MUTEX_UNLOCK(&dev->lock);
+
     return status;
 }
 
@@ -3257,11 +3404,16 @@ int bladerf_write_flash(struct bladerf *dev, const uint8_t *buf,
 int bladerf_xb_spi_write(struct bladerf *dev, uint32_t val)
 {
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     status = dev->backend->xb_spi(dev, val);
 
     MUTEX_UNLOCK(&dev->lock);
+
     return status;
 }
 
@@ -3272,22 +3424,32 @@ int bladerf_xb_spi_write(struct bladerf *dev, uint32_t val)
 int bladerf_config_gpio_read(struct bladerf *dev, uint32_t *val)
 {
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     status = dev->backend->config_gpio_read(dev, val);
 
     MUTEX_UNLOCK(&dev->lock);
+
     return status;
 }
 
 int bladerf_config_gpio_write(struct bladerf *dev, uint32_t val)
 {
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     status = dev->backend->config_gpio_write(dev, val);
 
     MUTEX_UNLOCK(&dev->lock);
+
     return status;
 }
 
@@ -3301,11 +3463,16 @@ int bladerf_read_trigger(struct bladerf *dev,
                          uint8_t *val)
 {
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     status = fpga_trigger_read(dev, ch, trigger, val);
 
     MUTEX_UNLOCK(&dev->lock);
+
     return status;
 }
 
@@ -3315,10 +3482,15 @@ int bladerf_write_trigger(struct bladerf *dev,
                           uint8_t val)
 {
     int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
     MUTEX_LOCK(&dev->lock);
 
     status = fpga_trigger_write(dev, ch, trigger, val);
 
     MUTEX_UNLOCK(&dev->lock);
+
     return status;
 }
