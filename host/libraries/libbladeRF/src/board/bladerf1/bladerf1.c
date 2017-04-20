@@ -959,6 +959,44 @@ static int set_rx_gain(struct bladerf *dev, int gain)
     return 0;
 }
 
+static int get_rx_gain(struct bladerf *dev, int *gain)
+{
+    int status;
+    bladerf_lna_gain lnagain;
+    int lnagain_db;
+    int rxvga1;
+    int rxvga2;
+
+    status = lms_lna_get_gain(dev, &lnagain);
+    if (status < 0) {
+        return status;
+    }
+
+    status = lms_rxvga1_get_gain(dev, &rxvga1);
+    if (status < 0) {
+        return status;
+    }
+
+    status = lms_rxvga2_get_gain(dev, &rxvga2);
+    if (status < 0) {
+        return status;
+    }
+
+    if (lnagain == BLADERF_LNA_GAIN_BYPASS) {
+        lnagain_db = 0;
+    } else if (lnagain == BLADERF_LNA_GAIN_MID) {
+        lnagain_db = BLADERF_LNA_GAIN_MID_DB;
+    } else if (lnagain == BLADERF_LNA_GAIN_MAX) {
+        lnagain_db = BLADERF_LNA_GAIN_MAX_DB;
+    } else {
+        return BLADERF_ERR_UNEXPECTED;
+    }
+
+    *gain = lnagain_db + rxvga1 + rxvga2;
+
+    return 0;
+}
+
 static int set_tx_gain(struct bladerf *dev, int gain)
 {
     int status;
@@ -993,6 +1031,27 @@ static int set_tx_gain(struct bladerf *dev, int gain)
     if (status < 0) {
         return status;
     }
+
+    return 0;
+}
+
+static int get_tx_gain(struct bladerf *dev, int *gain)
+{
+    int status;
+    int txvga1;
+    int txvga2;
+
+    status = lms_txvga1_get_gain(dev, &txvga1);
+    if (status < 0) {
+        return status;
+    }
+
+    status = lms_txvga2_get_gain(dev, &txvga2);
+    if (status < 0) {
+        return status;
+    }
+
+    *gain = txvga1 + txvga2;
 
     return 0;
 }
@@ -1059,7 +1118,13 @@ static int bladerf1_get_gain_mode(struct bladerf *dev, bladerf_module mod, blade
 
 static int bladerf1_get_gain(struct bladerf *dev, bladerf_channel ch, int *gain)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    if (ch == BLADERF_CHANNEL_TX(0)) {
+        return get_tx_gain(dev, gain);
+    } else if (ch == BLADERF_CHANNEL_RX(0)) {
+        return get_rx_gain(dev, gain);
+    }
+
+    return BLADERF_ERR_INVAL;
 }
 
 static int bladerf1_get_gain_range(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range)
