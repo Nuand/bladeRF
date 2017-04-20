@@ -533,7 +533,7 @@ static int bladerf2_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
     int status;
 
     if (ch & BLADERF_TX) {
-        return BLADERF_ERR_UNSUPPORTED;
+        status = ad9361_set_tx_attenuation(board_data->phy, ch >> 1, -gain);
     } else {
         status = ad9361_set_rx_rf_gain(board_data->phy, ch >> 1, gain);
     }
@@ -549,15 +549,20 @@ static int bladerf2_get_gain(struct bladerf *dev, bladerf_channel ch, int *gain)
 {
     struct bladerf2_board_data *board_data = dev->board_data;
     int status;
+    uint32_t atten;
 
     if (ch & BLADERF_TX) {
-        return BLADERF_ERR_UNSUPPORTED;
+        status = ad9361_get_tx_attenuation(board_data->phy, ch >> 1, &atten);
     } else {
         status = ad9361_get_rx_rf_gain(board_data->phy, ch >> 1, gain);
     }
 
     if (status < 0) {
         return errno_ad9361_to_bladerf(status);
+    }
+
+    if (ch & BLADERF_TX) {
+        *gain = -atten;
     }
 
     return 0;
