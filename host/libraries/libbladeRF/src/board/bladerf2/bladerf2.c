@@ -189,6 +189,33 @@ static const struct bladerf_range bladerf2_tx_frequency_range = {
     .scale = 1,
 };
 
+/* RF Ports */
+
+struct ad9361_port_map {
+    const char *name;
+    unsigned int id;
+};
+
+static const struct ad9361_port_map bladerf2_rx_port_map[] = {
+    {"A_BALANCED", 0},
+    {"B_BALANCED", 1},
+    {"C_BALANCED", 2},
+    {"A_N", 3},
+    {"A_P", 4},
+    {"B_N", 5},
+    {"B_P", 6},
+    {"C_N", 7},
+    {"C_P", 8},
+    {"TX_MON1", 9},
+    {"TX_MON2", 10},
+    {"TX_MON1_2", 11},
+};
+
+static const struct ad9361_port_map bladerf2_tx_port_map[] = {
+    {"TXA", 0},
+    {"TXB", 1},
+};
+
 /******************************************************************************/
 /* Helpers */
 /******************************************************************************/
@@ -963,17 +990,106 @@ static int bladerf2_select_band(struct bladerf *dev, bladerf_channel ch, uint64_
 
 static int bladerf2_set_rf_port(struct bladerf *dev, bladerf_channel ch, const char *port)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    struct bladerf2_board_data *board_data = dev->board_data;
+    const struct ad9361_port_map *port_map;
+    unsigned int port_map_len;
+    unsigned int i;
+    uint32_t port_id;
+    int status;
+
+    if (ch & BLADERF_TX) {
+        port_map = bladerf2_tx_port_map;
+        port_map_len = ARRAY_SIZE(bladerf2_tx_port_map);
+    } else {
+        port_map = bladerf2_rx_port_map;
+        port_map_len = ARRAY_SIZE(bladerf2_rx_port_map);
+    }
+
+    for (i = 0; i < port_map_len; i++) {
+        if (strcmp(port_map[i].name, port) == 0) {
+            port_id = port_map[i].id;
+            break;
+        }
+    }
+
+    if (i == port_map_len) {
+        return BLADERF_ERR_INVAL;
+    }
+
+    if (ch & BLADERF_TX) {
+        status = ad9361_set_tx_rf_port_output(board_data->phy, port_id);
+    } else {
+        status = ad9361_set_rx_rf_port_input(board_data->phy, port_id);
+    }
+
+    if (status < 0) {
+        return errno_ad9361_to_bladerf(status);
+    }
+
+    return 0;
 }
 
 static int bladerf2_get_rf_port(struct bladerf *dev, bladerf_channel ch, const char **port)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    struct bladerf2_board_data *board_data = dev->board_data;
+    const struct ad9361_port_map *port_map;
+    unsigned int port_map_len;
+    unsigned int i;
+    uint32_t port_id;
+    int status;
+
+    if (ch & BLADERF_TX) {
+        port_map = bladerf2_tx_port_map;
+        port_map_len = ARRAY_SIZE(bladerf2_tx_port_map);
+        status = ad9361_get_tx_rf_port_output(board_data->phy, &port_id);
+    } else {
+        port_map = bladerf2_rx_port_map;
+        port_map_len = ARRAY_SIZE(bladerf2_rx_port_map);
+        status = ad9361_get_rx_rf_port_input(board_data->phy, &port_id);
+    }
+
+    if (status < 0) {
+        return errno_ad9361_to_bladerf(status);
+    }
+
+    for (i = 0; i < port_map_len; i++) {
+        if (port_id == port_map[i].id) {
+            *port = port_map[i].name;
+            break;
+        }
+    }
+
+    if (i == port_map_len) {
+        *port = "unknown";
+        return BLADERF_ERR_UNEXPECTED;
+    }
+
+    return 0;
 }
 
 static int bladerf2_get_rf_ports(struct bladerf *dev, bladerf_channel ch, const char **ports, unsigned int count)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    const struct ad9361_port_map *port_map;
+    unsigned int port_map_len;
+    unsigned int i;
+
+    if (ch & BLADERF_TX) {
+        port_map = bladerf2_tx_port_map;
+        port_map_len = ARRAY_SIZE(bladerf2_tx_port_map);
+    } else {
+        port_map = bladerf2_rx_port_map;
+        port_map_len = ARRAY_SIZE(bladerf2_rx_port_map);
+    }
+
+    if (ports != NULL) {
+        count = (port_map_len < count) ? port_map_len : count;
+
+        for (i = 0; i < count; i++) {
+            ports[i] = port_map[i].name;
+        }
+    }
+
+    return port_map_len;
 }
 
 /******************************************************************************/
