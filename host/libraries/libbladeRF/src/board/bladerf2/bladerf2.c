@@ -309,21 +309,17 @@ static int bladerf2_initialize(struct bladerf *dev)
 
 static bool bladerf2_matches(struct bladerf *dev)
 {
-    struct bladerf_usb *usb;
     uint16_t vid, pid;
     int status;
 
-    if (strcmp(dev->backend->name, "usb") != 0)
+    status = dev->backend->get_vid_pid(dev, &vid, &pid);
+    if (status < 0) {
         return false;
+    }
 
-    usb = dev->backend_data;
-
-    status = usb->fn->get_vid_pid(usb->driver, &vid, &pid);
-    if (status < 0)
-        return false;
-
-    if (vid == USB_NUAND_VENDOR_ID && pid == USB_NUAND_BLADERF2_PRODUCT_ID)
+    if (vid == USB_NUAND_VENDOR_ID && pid == USB_NUAND_BLADERF2_PRODUCT_ID) {
         return true;
+    }
 
     return false;
 }
