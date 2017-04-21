@@ -1190,7 +1190,7 @@ static int bladerf2_sync_tx(struct bladerf *dev, void *samples, unsigned int num
     struct bladerf2_board_data *board_data = dev->board_data;
     int status;
 
-    status = sync_tx(&board_data->sync[1], samples, num_samples, metadata, timeout_ms);
+    status = sync_tx(&board_data->sync[BLADERF_TX], samples, num_samples, metadata, timeout_ms);
 
     return status;
 }
@@ -1200,7 +1200,7 @@ static int bladerf2_sync_rx(struct bladerf *dev, void *samples, unsigned int num
     struct bladerf2_board_data *board_data = dev->board_data;
     int status;
 
-    status = sync_rx(&board_data->sync[0], samples, num_samples, metadata, timeout_ms);
+    status = sync_rx(&board_data->sync[BLADERF_RX], samples, num_samples, metadata, timeout_ms);
 
     return status;
 }
