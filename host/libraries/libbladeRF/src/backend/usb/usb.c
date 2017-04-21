@@ -337,6 +337,13 @@ error:
     return status;
 }
 
+static int usb_get_vid_pid(struct bladerf *dev, uint16_t *vid, uint16_t *pid)
+{
+    struct bladerf_usb *usb = dev->backend_data;
+
+    return usb->fn->get_vid_pid(usb->driver, vid, pid);
+}
+
 static int begin_fpga_programming(struct bladerf *dev)
 {
     int result;
@@ -1101,8 +1108,10 @@ const struct backend_fns backend_fns_usb_legacy = {
     FIELD_INIT(.probe, usb_probe),
 
     FIELD_INIT(.open, usb_open),
+    FIELD_INIT(.get_vid_pid, usb_get_vid_pid),
     FIELD_INIT(.set_fpga_protocol, usb_set_fpga_protocol),
     FIELD_INIT(.close, usb_close),
+
     FIELD_INIT(.is_fw_ready, usb_is_fw_ready),
 
     FIELD_INIT(.load_fpga, usb_load_fpga),
@@ -1197,8 +1206,10 @@ const struct backend_fns backend_fns_usb = {
     FIELD_INIT(.probe, usb_probe),
 
     FIELD_INIT(.open, usb_open),
+    FIELD_INIT(.get_vid_pid, usb_get_vid_pid),
     FIELD_INIT(.set_fpga_protocol, usb_set_fpga_protocol),
     FIELD_INIT(.close, usb_close),
+
     FIELD_INIT(.is_fw_ready, usb_is_fw_ready),
 
     FIELD_INIT(.load_fpga, usb_load_fpga),

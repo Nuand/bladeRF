@@ -39,6 +39,11 @@ static int dummy_probe(backend_probe_target probe_target,
     return 0;
 }
 
+static int dummy_get_vid_pid(struct bladerf *dev, uint16_t *vid, uint16_t *pid)
+{
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
 static int dummy_open(struct bladerf *dev, struct bladerf_devinfo *info)
 {
     return BLADERF_ERR_NODEV;
@@ -382,6 +387,7 @@ const struct backend_fns backend_fns_dummy = {
     FIELD_INIT(.probe, dummy_probe),
 
     FIELD_INIT(.open, dummy_open),
+    FIELD_INIT(.get_vid_pid, dummy_get_vid_pid),
     FIELD_INIT(.set_fpga_protocol, dummy_set_fpga_protocol),
     FIELD_INIT(.close, dummy_close),
 

@@ -75,6 +75,9 @@ struct backend_fns {
     int (*probe)(backend_probe_target probe_target,
                  struct bladerf_devinfo_list *info_list);
 
+    /* Get VID and PID of the device */
+    int (*get_vid_pid)(struct bladerf *dev, uint16_t *vid, uint16_t *pid);
+
     /* Opening device based upon specified device info. */
     int (*open)(struct bladerf *dev, struct bladerf_devinfo *info);
 
