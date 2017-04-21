@@ -111,9 +111,32 @@ struct bladerf1_board_data {
     struct bladerf_sync sync[NUM_MODULES];
 };
 
+#define CHECK_BOARD_STATE(_state) \
+    do { \
+        struct bladerf1_board_data *board_data = dev->board_data; \
+        if (board_data->state < _state) { \
+            log_error("Board state insufficient for operation " \
+                      "(current \"%s\", requires \"%s\").\n", \
+                      bladerf1_state_to_string[board_data->state], \
+                      bladerf1_state_to_string[_state]); \
+            return BLADERF_ERR_NOT_INIT; \
+        } \
+    } while(0)
+
+
 /******************************************************************************/
 /* Constants */
 /******************************************************************************/
+
+/* Board state to string map */
+
+static const char *bladerf1_state_to_string[] = {
+    [STATE_UNINITIALIZED]   = "Uninitialized",
+    [STATE_FIRMWARE_LOADED] = "Firmware Loaded",
+    [STATE_FPGA_LOADED]     = "FPGA Loaded",
+    [STATE_INITIALIZED]     = "Initialized",
+    [STATE_CALIBRATED]      = "Calibrated",
+};
 
 /* Overall RX gain range */
 
@@ -941,6 +964,8 @@ static bladerf_dev_speed bladerf1_device_speed(struct bladerf *dev)
     int status;
     bladerf_dev_speed usb_speed;
 
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
     status = dev->backend->get_device_speed(dev, &usb_speed);
     if (status < 0) {
         return BLADERF_DEVICE_SPEED_UNKNOWN;
@@ -952,18 +977,25 @@ static bladerf_dev_speed bladerf1_device_speed(struct bladerf *dev)
 static int bladerf1_get_serial(struct bladerf *dev, char *serial)
 {
     strcpy(serial, dev->ident.serial);
+
     return 0;
 }
 
 static int bladerf1_get_fpga_size(struct bladerf *dev, bladerf_fpga_size *size)
 {
     struct bladerf1_board_data *board_data = dev->board_data;
+
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
     *size = board_data->fpga_size;
+
     return 0;
 }
 
 static int bladerf1_is_fpga_configured(struct bladerf *dev)
 {
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
     return dev->backend->is_fpga_configured(dev);
 }
 
@@ -980,14 +1012,22 @@ static uint64_t bladerf1_get_capabilities(struct bladerf *dev)
 static int bladerf1_get_fpga_version(struct bladerf *dev, struct bladerf_version *version)
 {
     struct bladerf1_board_data *board_data = dev->board_data;
+
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
     memcpy(version, &board_data->fpga_version, sizeof(*version));
+
     return 0;
 }
 
 static int bladerf1_get_fw_version(struct bladerf *dev, struct bladerf_version *version)
 {
     struct bladerf1_board_data *board_data = dev->board_data;
+
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
     memcpy(version, &board_data->fw_version, sizeof(*version));
+
     return 0;
 }
 
@@ -1003,6 +1043,8 @@ static int bladerf1_enable_module(struct bladerf *dev, bladerf_direction dir, bo
     bladerf_channel ch;
     int status;
 
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     if (dir != BLADERF_RX && dir != BLADERF_TX) {
         return BLADERF_ERR_INVAL;
     }
@@ -1010,7 +1052,6 @@ static int bladerf1_enable_module(struct bladerf *dev, bladerf_direction dir, bo
     log_debug("Enable direction: %s - %s\n",
                 (dir == BLADERF_RX) ? "RX" : "TX",
                 enable ? "True" : "False") ;
-
 
     if (enable == false) {
         sync_deinit(&board_data->sync[dir]);
@@ -1202,6 +1243,8 @@ static int get_tx_gain(struct bladerf *dev, int *gain)
 
 static int bladerf1_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
 {
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     if (ch == BLADERF_CHANNEL_TX(0)) {
         return set_tx_gain(dev, gain);
     } else if (ch == BLADERF_CHANNEL_RX(0)) {
@@ -1262,6 +1305,8 @@ static int bladerf1_get_gain_mode(struct bladerf *dev, bladerf_module mod, blade
 
 static int bladerf1_get_gain(struct bladerf *dev, bladerf_channel ch, int *gain)
 {
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     if (ch == BLADERF_CHANNEL_TX(0)) {
         return get_tx_gain(dev, gain);
     } else if (ch == BLADERF_CHANNEL_RX(0)) {
@@ -1285,6 +1330,8 @@ static int bladerf1_get_gain_range(struct bladerf *dev, bladerf_channel ch, stru
 static int bladerf1_set_gain_stage(struct bladerf *dev, bladerf_channel ch, const char *stage, int gain)
 {
     int status;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     /* TODO implement gain clamping */
 
@@ -1316,6 +1363,8 @@ static int bladerf1_set_gain_stage(struct bladerf *dev, bladerf_channel ch, cons
 static int bladerf1_get_gain_stage(struct bladerf *dev, bladerf_channel ch, const char *stage, int *gain)
 {
     int status;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     status = BLADERF_ERR_INVAL;
 
@@ -1405,11 +1454,15 @@ static int bladerf1_get_gain_stages(struct bladerf *dev, bladerf_channel ch, con
 
 static int bladerf1_set_sample_rate(struct bladerf *dev, bladerf_channel ch, unsigned int rate, unsigned int *actual)
 {
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     return si5338_set_sample_rate(dev, ch, rate, actual);
 }
 
 static int bladerf1_get_sample_rate(struct bladerf *dev, bladerf_channel ch, unsigned int *rate)
 {
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     return si5338_get_sample_rate(dev, ch, rate);
 }
 
@@ -1421,11 +1474,15 @@ static int bladerf1_get_sample_rate_range(struct bladerf *dev, bladerf_channel c
 
 static int bladerf1_set_rational_sample_rate(struct bladerf *dev, bladerf_channel ch, struct bladerf_rational_rate *rate, struct bladerf_rational_rate *actual)
 {
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     return si5338_set_rational_sample_rate(dev, ch, rate, actual);
 }
 
 static int bladerf1_get_rational_sample_rate(struct bladerf *dev, bladerf_channel ch, struct bladerf_rational_rate *rate)
 {
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     return si5338_get_rational_sample_rate(dev, ch, rate);
 }
 
@@ -1437,6 +1494,8 @@ static int bladerf1_set_bandwidth(struct bladerf *dev, bladerf_channel ch, unsig
 {
     int status;
     lms_bw bw;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     if (bandwidth < BLADERF_BANDWIDTH_MIN) {
         bandwidth = BLADERF_BANDWIDTH_MIN;
@@ -1470,6 +1529,8 @@ static int bladerf1_get_bandwidth(struct bladerf *dev, bladerf_channel ch, unsig
     int status;
     lms_bw bw;
 
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     status = lms_get_bandwidth( dev, ch, &bw);
     if (status == 0) {
         *bandwidth = lms_bw2uint(bw);
@@ -1494,12 +1555,13 @@ static int bladerf1_set_frequency(struct bladerf *dev, bladerf_channel ch, uint6
 {
     struct bladerf1_board_data *board_data = dev->board_data;
     const bladerf_xb attached = dev->xb;
-
     int status;
     int16_t dc_i, dc_q;
     struct dc_cal_entry entry;
     const struct dc_cal_tbl *dc_cal =
         (ch == BLADERF_CHANNEL_RX(0)) ? board_data->cal.dc_rx : board_data->cal.dc_tx;
+
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
 
     log_debug("Setting %s frequency to %u\n", channel2str(ch), frequency);
 
@@ -1595,6 +1657,8 @@ static int bladerf1_get_frequency(struct bladerf *dev, bladerf_channel ch, uint6
     struct lms_freq f;
     int status = 0;
 
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     status = lms_get_frequency(dev, ch, &f);
     if (status != 0) {
         return status;
@@ -1638,6 +1702,8 @@ static int bladerf1_get_frequency_range(struct bladerf *dev, bladerf_channel ch,
 
 static int bladerf1_select_band(struct bladerf *dev, bladerf_channel ch, uint64_t frequency)
 {
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     return band_select(dev, ch, frequency < BLADERF1_BAND_HIGH);
 }
 
@@ -1666,6 +1732,8 @@ static int bladerf1_get_rf_ports(struct bladerf *dev, bladerf_channel ch, const 
 
 static int bladerf1_get_quick_tune(struct bladerf *dev, bladerf_channel ch, struct bladerf_quick_tune *quick_tune)
 {
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     return lms_get_quick_tune(dev, ch, quick_tune);
 }
 
@@ -1675,6 +1743,8 @@ static int bladerf1_schedule_retune(struct bladerf *dev, bladerf_channel ch, uin
     struct bladerf1_board_data *board_data = dev->board_data;
     int status;
     struct lms_freq f;
+
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
 
     if (!have_cap(board_data->capabilities, BLADERF_CAP_SCHEDULED_RETUNE)) {
         log_debug("This FPGA version (%u.%u.%u) does not support "
@@ -1710,6 +1780,8 @@ int bladerf1_cancel_scheduled_retunes(struct bladerf *dev, bladerf_channel ch)
     struct bladerf1_board_data *board_data = dev->board_data;
     int status;
 
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
     if (have_cap(board_data->capabilities, BLADERF_CAP_SCHEDULED_RETUNE)) {
         status = dev->backend->retune(dev, ch, NIOS_PKT_RETUNE_CLEAR_QUEUE, 0, 0, 0, 0, false, false);
     } else {
@@ -1731,6 +1803,8 @@ static int bladerf1_trigger_init(struct bladerf *dev, bladerf_channel ch, blader
 {
     struct bladerf1_board_data *board_data = dev->board_data;
 
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     if (!have_cap(board_data->capabilities, BLADERF_CAP_TRX_SYNC_TRIG)) {
         log_debug("FPGA v%s does not support synchronization triggers.\n",
                   board_data->fpga_version.describe);
@@ -1743,6 +1817,8 @@ static int bladerf1_trigger_init(struct bladerf *dev, bladerf_channel ch, blader
 static int bladerf1_trigger_arm(struct bladerf *dev, const struct bladerf_trigger *trigger, bool arm, uint64_t resv1, uint64_t resv2)
 {
     struct bladerf1_board_data *board_data = dev->board_data;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     if (!have_cap(board_data->capabilities, BLADERF_CAP_TRX_SYNC_TRIG)) {
         log_debug("FPGA v%s does not support synchronization triggers.\n",
@@ -1760,6 +1836,8 @@ static int bladerf1_trigger_fire(struct bladerf *dev, const struct bladerf_trigg
 {
     struct bladerf1_board_data *board_data = dev->board_data;
 
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     if (!have_cap(board_data->capabilities, BLADERF_CAP_TRX_SYNC_TRIG)) {
         log_debug("FPGA v%s does not support synchronization triggers.\n",
                   board_data->fpga_version.describe);
@@ -1773,6 +1851,8 @@ static int bladerf1_trigger_state(struct bladerf *dev, const struct bladerf_trig
 {
     struct bladerf1_board_data *board_data = dev->board_data;
     int status;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     if (!have_cap(board_data->capabilities, BLADERF_CAP_TRX_SYNC_TRIG)) {
         log_debug("FPGA v%s does not support synchronization triggers.\n",
@@ -1923,6 +2003,8 @@ static int perform_format_deconfig(struct bladerf *dev, bladerf_direction dir)
 
 static int bladerf1_init_stream(struct bladerf_stream **stream, struct bladerf *dev, bladerf_stream_cb callback, void ***buffers, size_t num_buffers, bladerf_format format, size_t samples_per_buffer, size_t num_transfers, void *user_data)
 {
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     return async_init_stream(stream, dev, callback, buffers, num_buffers,
                              format, samples_per_buffer, num_transfers, user_data);
 }
@@ -1989,6 +2071,8 @@ static int bladerf1_sync_config(struct bladerf *dev, bladerf_channel_layout layo
     bladerf_direction dir = layout & BLADERF_DIRECTION_MASK;
     int status;
 
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     if (layout != BLADERF_RX_X1 && layout != BLADERF_TX_X1) {
         return -EINVAL;
     }
@@ -2012,6 +2096,10 @@ static int bladerf1_sync_tx(struct bladerf *dev, void *samples, unsigned int num
     struct bladerf1_board_data *board_data = dev->board_data;
     int status;
 
+    if (!board_data->sync[BLADERF_TX].initialized) {
+        return BLADERF_ERR_INVAL;
+    }
+
     status = sync_tx(&board_data->sync[BLADERF_TX],
                      samples, num_samples, metadata, timeout_ms);
 
@@ -2023,6 +2111,10 @@ static int bladerf1_sync_rx(struct bladerf *dev, void *samples, unsigned int num
     struct bladerf1_board_data *board_data = dev->board_data;
     int status;
 
+    if (!board_data->sync[BLADERF_RX].initialized) {
+        return BLADERF_ERR_INVAL;
+    }
+
     status = sync_rx(&board_data->sync[BLADERF_RX],
                      samples, num_samples, metadata, timeout_ms);
 
@@ -2031,6 +2123,8 @@ static int bladerf1_sync_rx(struct bladerf *dev, void *samples, unsigned int num
 
 static int bladerf1_get_timestamp(struct bladerf *dev, bladerf_direction dir, uint64_t *value)
 {
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     return dev->backend->get_timestamp(dev, dir, value);
 }
 
@@ -2040,31 +2134,43 @@ static int bladerf1_get_timestamp(struct bladerf *dev, bladerf_direction dir, ui
 
 static int bladerf1_get_smb_mode(struct bladerf *dev, bladerf_smb_mode *mode)
 {
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     return smb_clock_get_mode(dev, mode);
 }
 
 static int bladerf1_set_smb_mode(struct bladerf *dev, bladerf_smb_mode mode)
 {
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     return smb_clock_set_mode(dev, mode);
 }
 
 static int bladerf1_get_smb_frequency(struct bladerf *dev, unsigned int *rate)
 {
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     return si5338_get_smb_freq(dev, rate);
 }
 
 static int bladerf1_set_smb_frequency(struct bladerf *dev, uint32_t rate, uint32_t *actual)
 {
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     return si5338_set_smb_freq(dev, rate, actual);
 }
 
 static int bladerf1_get_rational_smb_frequency(struct bladerf *dev, struct bladerf_rational_rate *rate)
 {
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     return si5338_get_rational_smb_freq(dev, rate);
 }
 
 static int bladerf1_set_rational_smb_frequency(struct bladerf *dev, struct bladerf_rational_rate *rate, struct bladerf_rational_rate *actual)
 {
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     return si5338_set_rational_smb_freq(dev, rate, actual);
 }
 
@@ -2075,6 +2181,8 @@ static int bladerf1_set_rational_smb_frequency(struct bladerf *dev, struct blade
 static int bladerf1_get_correction(struct bladerf *dev, bladerf_channel ch, bladerf_correction corr, int16_t *value)
 {
     int status;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     switch (corr) {
         case BLADERF_CORR_FPGA_PHASE:
@@ -2110,6 +2218,8 @@ static int bladerf1_get_correction(struct bladerf *dev, bladerf_channel ch, blad
 static int bladerf1_set_correction(struct bladerf *dev, bladerf_channel ch, bladerf_correction corr, int16_t value)
 {
     int status;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     switch (corr) {
         case BLADERF_CORR_FPGA_PHASE:
@@ -2203,6 +2313,8 @@ static int bladerf1_load_fpga(struct bladerf *dev, const uint8_t *buf, size_t le
     struct bladerf_version required_fpga_version;
     int status;
 
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
     if (!is_valid_fpga_size(board_data->fpga_size, length)) {
         return BLADERF_ERR_INVAL;
     }
@@ -2273,6 +2385,8 @@ static int bladerf1_flash_fpga(struct bladerf *dev, const uint8_t *buf, size_t l
 {
     struct bladerf1_board_data *board_data = dev->board_data;
 
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
     if (!is_valid_fpga_size(board_data->fpga_size, length)) {
         return BLADERF_ERR_INVAL;
     }
@@ -2282,6 +2396,8 @@ static int bladerf1_flash_fpga(struct bladerf *dev, const uint8_t *buf, size_t l
 
 static int bladerf1_erase_stored_fpga(struct bladerf *dev)
 {
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
     return spi_flash_erase_fpga(dev);
 }
 
@@ -2301,6 +2417,8 @@ static int bladerf1_flash_firmware(struct bladerf *dev, const uint8_t *buf, size
 {
     const char env_override[] = "BLADERF_SKIP_FW_SIZE_CHECK";
 
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
     /* Sanity check firmware length.
      *
      * TODO in the future, better sanity checks can be performed when
@@ -2319,6 +2437,8 @@ static int bladerf1_flash_firmware(struct bladerf *dev, const uint8_t *buf, size
 
 static int bladerf1_device_reset(struct bladerf *dev)
 {
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
     return dev->backend->device_reset(dev);
 }
 
@@ -2328,11 +2448,15 @@ static int bladerf1_device_reset(struct bladerf *dev)
 
 static int bladerf1_get_sampling(struct bladerf *dev, bladerf_sampling *sampling)
 {
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     return lms_get_sampling(dev, sampling);
 }
 
 static int bladerf1_set_sampling(struct bladerf *dev, bladerf_sampling sampling)
 {
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     return lms_select_sampling(dev, sampling);
 }
 
@@ -2345,6 +2469,8 @@ static int bladerf1_set_rx_mux(struct bladerf *dev, bladerf_rx_mux mode)
     uint32_t rx_mux_val;
     uint32_t config_gpio;
     int status;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     /* Validate desired mux mode */
     switch (mode) {
@@ -2378,6 +2504,8 @@ static int bladerf1_get_rx_mux(struct bladerf *dev, bladerf_rx_mux *mode)
     bladerf_rx_mux val;
     uint32_t config_gpio;
     int status;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     status = dev->backend->config_gpio_read(dev, &config_gpio);
     if (status != 0) {
@@ -2415,6 +2543,8 @@ static int bladerf1_set_tuning_mode(struct bladerf *dev, bladerf_tuning_mode mod
 {
     struct bladerf1_board_data *board_data = dev->board_data;
 
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     if (mode == BLADERF_TUNING_MODE_FPGA &&
             !have_cap(board_data->capabilities, BLADERF_CAP_FPGA_TUNING)) {
         log_debug("The loaded FPGA version (%u.%u.%u) does not support the "
@@ -2450,6 +2580,8 @@ static int bladerf1_expansion_attach(struct bladerf *dev, bladerf_xb xb)
     struct bladerf1_board_data *board_data = dev->board_data;
     bladerf_xb attached;
     int status;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     status = dev->board->expansion_get_attached(dev, &attached);
     if (status != 0) {
@@ -2543,6 +2675,8 @@ static int bladerf1_expansion_get_attached(struct bladerf *dev, bladerf_xb *xb)
 {
     int status;
     uint32_t val;
+
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
 
     status = dev->backend->config_gpio_read(dev, &val);
     if (status != 0) {
@@ -2667,6 +2801,8 @@ int bladerf_set_txvga2(struct bladerf *dev, int gain)
 
     MUTEX_LOCK(&dev->lock);
 
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     status = lms_txvga2_set_gain(dev, gain);
 
     MUTEX_UNLOCK(&dev->lock);
@@ -2682,6 +2818,8 @@ int bladerf_get_txvga2(struct bladerf *dev, int *gain)
         return BLADERF_ERR_UNSUPPORTED;
 
     MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     status = lms_txvga2_get_gain(dev, gain);
 
@@ -2699,6 +2837,8 @@ int bladerf_set_txvga1(struct bladerf *dev, int gain)
 
     MUTEX_LOCK(&dev->lock);
 
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     status = lms_txvga1_set_gain(dev, gain);
 
     MUTEX_UNLOCK(&dev->lock);
@@ -2714,6 +2854,8 @@ int bladerf_get_txvga1(struct bladerf *dev, int *gain)
         return BLADERF_ERR_UNSUPPORTED;
 
     MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     status = lms_txvga1_get_gain(dev, gain);
 
@@ -2735,6 +2877,8 @@ int bladerf_set_lna_gain(struct bladerf *dev, bladerf_lna_gain gain)
 
     MUTEX_LOCK(&dev->lock);
 
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     status = lms_lna_set_gain(dev, gain);
 
     MUTEX_UNLOCK(&dev->lock);
@@ -2750,6 +2894,8 @@ int bladerf_get_lna_gain(struct bladerf *dev, bladerf_lna_gain *gain)
         return BLADERF_ERR_UNSUPPORTED;
 
     MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     status = lms_lna_get_gain(dev, gain);
 
@@ -2767,6 +2913,8 @@ int bladerf_set_rxvga1(struct bladerf *dev, int gain)
 
     MUTEX_LOCK(&dev->lock);
 
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     status = lms_rxvga1_set_gain(dev, gain);
 
     MUTEX_UNLOCK(&dev->lock);
@@ -2782,6 +2930,8 @@ int bladerf_get_rxvga1(struct bladerf *dev, int *gain)
         return BLADERF_ERR_UNSUPPORTED;
 
     MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     status = lms_rxvga1_get_gain(dev, gain);
 
@@ -2799,6 +2949,8 @@ int bladerf_set_rxvga2(struct bladerf *dev, int gain)
 
     MUTEX_LOCK(&dev->lock);
 
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     status = lms_rxvga2_set_gain(dev, gain);
 
     MUTEX_UNLOCK(&dev->lock);
@@ -2814,6 +2966,8 @@ int bladerf_get_rxvga2(struct bladerf *dev, int *gain)
         return BLADERF_ERR_UNSUPPORTED;
 
     MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     status = lms_rxvga2_get_gain(dev, gain);
 
@@ -2835,6 +2989,8 @@ int bladerf_set_loopback(struct bladerf *dev, bladerf_loopback l)
         return BLADERF_ERR_UNSUPPORTED;
 
     MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     if (l == BLADERF_LB_FIRMWARE) {
         /* Firmware loopback was fully implemented in FW v1.7.1
@@ -2900,6 +3056,8 @@ int bladerf_get_loopback(struct bladerf *dev, bladerf_loopback *l)
 
     MUTEX_LOCK(&dev->lock);
 
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     *l = BLADERF_LB_NONE;
 
     if (have_cap(board_data->capabilities, BLADERF_CAP_FW_LOOPBACK)) {
@@ -2932,6 +3090,8 @@ int bladerf_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim)
 
     MUTEX_LOCK(&dev->lock);
 
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
     *trim = board_data->dac_trim;
 
     MUTEX_UNLOCK(&dev->lock);
@@ -2949,6 +3109,8 @@ int bladerf_set_vctcxo_tamer_mode(struct bladerf *dev,
         return BLADERF_ERR_UNSUPPORTED;
 
     MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     if (!have_cap(board_data->capabilities, BLADERF_CAP_VCTCXO_TAMING_MODE)) {
         log_debug("FPGA %s does not support VCTCXO taming via an input source\n",
@@ -2974,6 +3136,8 @@ int bladerf_get_vctcxo_tamer_mode(struct bladerf *dev,
         return BLADERF_ERR_UNSUPPORTED;
 
     MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     if (!have_cap(board_data->capabilities, BLADERF_CAP_VCTCXO_TAMING_MODE)) {
         log_debug("FPGA %s does not support VCTCXO taming via an input source\n",
@@ -3003,6 +3167,8 @@ int bladerf_set_lpf_mode(struct bladerf *dev, bladerf_channel ch,
 
     MUTEX_LOCK(&dev->lock);
 
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     status = lms_lpf_set_mode(dev, ch, mode);
 
     MUTEX_UNLOCK(&dev->lock);
@@ -3019,6 +3185,8 @@ int bladerf_get_lpf_mode(struct bladerf *dev, bladerf_channel ch,
         return BLADERF_ERR_UNSUPPORTED;
 
     MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     status = lms_lpf_get_mode(dev, ch, mode);
 
@@ -3105,6 +3273,8 @@ int bladerf_get_fw_log(struct bladerf *dev, const char *filename)
 
     MUTEX_LOCK(&dev->lock);
 
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
     if (!have_cap(dev->board->get_capabilities(dev), BLADERF_CAP_READ_FW_LOG_ENTRY)) {
         struct bladerf_version fw_version;
 
@@ -3184,6 +3354,8 @@ int bladerf_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
 
     MUTEX_LOCK(&dev->lock);
 
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     status = lms_calibrate_dc(dev, module);
 
     MUTEX_UNLOCK(&dev->lock);
@@ -3204,6 +3376,8 @@ int bladerf_dac_write(struct bladerf *dev, uint16_t val)
 
     MUTEX_LOCK(&dev->lock);
 
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
     status = dac161s055_write(dev, val);
 
     MUTEX_UNLOCK(&dev->lock);
@@ -3220,6 +3394,8 @@ int bladerf_dac_read(struct bladerf *dev, uint16_t *val)
         return BLADERF_ERR_UNSUPPORTED;
 
     MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
 
     if (!have_cap(board_data->capabilities, BLADERF_CAP_VCTCXO_TRIMDAC_READ)) {
         log_debug("FPGA %s does not support VCTCXO trimdac readback.\n",
@@ -3249,6 +3425,8 @@ int bladerf_si5338_read(struct bladerf *dev, uint8_t address, uint8_t *val)
 
     MUTEX_LOCK(&dev->lock);
 
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
     status = dev->backend->si5338_read(dev,address,val);
 
     MUTEX_UNLOCK(&dev->lock);
@@ -3264,6 +3442,8 @@ int bladerf_si5338_write(struct bladerf *dev, uint8_t address, uint8_t val)
         return BLADERF_ERR_UNSUPPORTED;
 
     MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
 
     status = dev->backend->si5338_write(dev,address,val);
 
@@ -3285,6 +3465,8 @@ int bladerf_lms_read(struct bladerf *dev, uint8_t address, uint8_t *val)
 
     MUTEX_LOCK(&dev->lock);
 
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
     status = dev->backend->lms_read(dev,address,val);
 
     MUTEX_UNLOCK(&dev->lock);
@@ -3300,6 +3482,8 @@ int bladerf_lms_write(struct bladerf *dev, uint8_t address, uint8_t val)
         return BLADERF_ERR_UNSUPPORTED;
 
     MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
 
     status = dev->backend->lms_write(dev,address,val);
 
@@ -3318,6 +3502,8 @@ int bladerf_lms_set_dc_cals(struct bladerf *dev,
 
     MUTEX_LOCK(&dev->lock);
 
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     status = lms_set_dc_cals(dev, dc_cals);
 
     MUTEX_UNLOCK(&dev->lock);
@@ -3334,6 +3520,8 @@ int bladerf_lms_get_dc_cals(struct bladerf *dev,
         return BLADERF_ERR_UNSUPPORTED;
 
     MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     status = lms_get_dc_cals(dev, dc_cals);
 
@@ -3356,6 +3544,8 @@ int bladerf_erase_flash(struct bladerf *dev,
 
     MUTEX_LOCK(&dev->lock);
 
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
     status = spi_flash_erase(dev, erase_block, count);
 
     MUTEX_UNLOCK(&dev->lock);
@@ -3373,6 +3563,8 @@ int bladerf_read_flash(struct bladerf *dev, uint8_t *buf,
 
     MUTEX_LOCK(&dev->lock);
 
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
     status = spi_flash_read(dev, buf, page, count);
 
     MUTEX_UNLOCK(&dev->lock);
@@ -3389,6 +3581,8 @@ int bladerf_write_flash(struct bladerf *dev, const uint8_t *buf,
         return BLADERF_ERR_UNSUPPORTED;
 
     MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
 
     status = spi_flash_write(dev, buf, page, count);
 
@@ -3410,6 +3604,8 @@ int bladerf_xb_spi_write(struct bladerf *dev, uint32_t val)
 
     MUTEX_LOCK(&dev->lock);
 
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
     status = dev->backend->xb_spi(dev, val);
 
     MUTEX_UNLOCK(&dev->lock);
@@ -3430,6 +3626,8 @@ int bladerf_config_gpio_read(struct bladerf *dev, uint32_t *val)
 
     MUTEX_LOCK(&dev->lock);
 
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
     status = dev->backend->config_gpio_read(dev, val);
 
     MUTEX_UNLOCK(&dev->lock);
@@ -3445,6 +3643,8 @@ int bladerf_config_gpio_write(struct bladerf *dev, uint32_t val)
         return BLADERF_ERR_UNSUPPORTED;
 
     MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
 
     status = dev->backend->config_gpio_write(dev, val);
 
@@ -3469,6 +3669,8 @@ int bladerf_read_trigger(struct bladerf *dev,
 
     MUTEX_LOCK(&dev->lock);
 
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
     status = fpga_trigger_read(dev, ch, trigger, val);
 
     MUTEX_UNLOCK(&dev->lock);
@@ -3487,6 +3689,8 @@ int bladerf_write_trigger(struct bladerf *dev,
         return BLADERF_ERR_UNSUPPORTED;
 
     MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
 
     status = fpga_trigger_write(dev, ch, trigger, val);
 
