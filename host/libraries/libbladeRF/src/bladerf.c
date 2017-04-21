@@ -1286,6 +1286,8 @@ const char * bladerf_strerror(int error)
             return "Insufficient permissions for the requested operation";
         case BLADERF_ERR_WOULD_BLOCK:
             return "The operation would block, but has been requested to be non-blocking";
+        case BLADERF_ERR_NOT_INIT:
+            return "Insufficient initialization for the requested operation";
         case 0:
             return "Success";
         default:

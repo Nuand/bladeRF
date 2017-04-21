@@ -4765,6 +4765,8 @@ void CALL_CONV bladerf_version(struct bladerf_version *version);
                                        *   indicates to a caller that it may
                                        *   need to retry the operation later.
                                        */
+#define BLADERF_ERR_NOT_INIT    (-19) /**< Device insufficiently initialized
+                                       *   for operation */
 
 /**
  * Obtain a textual description of a value from the \ref RETCODES list
