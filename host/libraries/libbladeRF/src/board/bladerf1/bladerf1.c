@@ -71,14 +71,14 @@
 #define NUM_MODULES 2
 
 struct bladerf1_board_data {
-    /* Device state */
+    /* Board state */
     enum {
         STATE_UNINITIALIZED,
         STATE_FIRMWARE_LOADED,
         STATE_FPGA_LOADED,
         STATE_INITIALIZED,
         STATE_CALIBRATED,
-    } device_state;
+    } state;
 
     /* Bitmask of capabilities determined by version numbers */
     uint64_t capabilities;
@@ -386,7 +386,7 @@ static int bladerf1_apply_lms_dc_cals(struct bladerf *dev)
 
     /* Update device state */
     if (have_tx && have_rx)
-        board_data->device_state = STATE_CALIBRATED;
+        board_data->state = STATE_CALIBRATED;
 
     return 0;
 }
@@ -528,7 +528,7 @@ static int bladerf1_initialize(struct bladerf *dev)
     }
 
     /* Update device state */
-    board_data->device_state = STATE_INITIALIZED;
+    board_data->state = STATE_INITIALIZED;
 
     /* Set up LMS DC offset register calibration and initial IQ settings,
      * if any tables have been loaded already.
@@ -614,7 +614,7 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     log_verbose("Read Firmware version: %s\n", board_data->fw_version.describe);
 
     /* Update device state */
-    board_data->device_state = STATE_FIRMWARE_LOADED;
+    board_data->state = STATE_FIRMWARE_LOADED;
 
     /* Determine firmware capabilities */
     board_data->capabilities |= bladerf1_get_fw_capabilities(&board_data->fw_version);
@@ -741,7 +741,7 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     if (status < 0) {
         return status;
     } else if (status == 1) {
-        board_data->device_state = STATE_FPGA_LOADED;
+        board_data->state = STATE_FPGA_LOADED;
     } else if (status != 1 && board_data->fpga_size == BLADERF_FPGA_UNKNOWN) {
         log_warning("Unknown FPGA size. Skipping FPGA configuration...\n");
         log_warning("Skipping further initialization...\n");
@@ -775,7 +775,7 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
                 return status;
             }
 
-            board_data->device_state = STATE_FPGA_LOADED;
+            board_data->state = STATE_FPGA_LOADED;
         } else {
             log_warning("FPGA bitstream file not found.\n");
             log_warning("Skipping further initialization...\n");
@@ -2213,7 +2213,7 @@ static int bladerf1_load_fpga(struct bladerf *dev, const uint8_t *buf, size_t le
     }
 
     /* Update device state */
-    board_data->device_state = STATE_FPGA_LOADED;
+    board_data->state = STATE_FPGA_LOADED;
 
     /* Read FPGA version */
     status = dev->backend->get_fpga_version(dev, &board_data->fpga_version);
