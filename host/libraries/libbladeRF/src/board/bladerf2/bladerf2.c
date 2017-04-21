@@ -87,6 +87,18 @@ struct bladerf2_board_data {
     struct bladerf_sync sync[2];
 };
 
+#define CHECK_BOARD_STATE(_state) \
+    do { \
+        struct bladerf2_board_data *board_data = dev->board_data; \
+        if (board_data->state < _state) { \
+            log_error("Board state insufficient for operation " \
+                      "(current \"%s\", requires \"%s\").\n", \
+                      bladerf2_state_to_string[board_data->state], \
+                      bladerf2_state_to_string[_state]); \
+            return BLADERF_ERR_NOT_INIT; \
+        } \
+    } while(0)
+
 /******************************************************************************/
 /* Constants */
 /******************************************************************************/
@@ -94,6 +106,16 @@ struct bladerf2_board_data {
 #define RFFE_CONTROL_RESET_N    0
 #define RFFE_CONTROL_ENABLE     1
 #define RFFE_CONTROL_TXNRX      2
+
+/* Board state to string map */
+
+static const char *bladerf2_state_to_string[] = {
+    [STATE_UNINITIALIZED]   = "Uninitialized",
+    [STATE_FIRMWARE_LOADED] = "Firmware Loaded",
+    [STATE_FPGA_LOADED]     = "FPGA Loaded",
+    [STATE_INITIALIZED]     = "Initialized",
+    [STATE_CALIBRATED]      = "Calibrated",
+};
 
 /* Overall RX gain range */
 
@@ -550,6 +572,8 @@ static bladerf_dev_speed bladerf2_device_speed(struct bladerf *dev)
     int status;
     bladerf_dev_speed usb_speed;
 
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
     status = dev->backend->get_device_speed(dev, &usb_speed);
     if (status < 0) {
         return BLADERF_DEVICE_SPEED_UNKNOWN;
@@ -567,12 +591,18 @@ static int bladerf2_get_serial(struct bladerf *dev, char *serial)
 static int bladerf2_get_fpga_size(struct bladerf *dev, bladerf_fpga_size *size)
 {
     struct bladerf2_board_data *board_data = dev->board_data;
+
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
     *size = board_data->fpga_size;
+
     return 0;
 }
 
 static int bladerf2_is_fpga_configured(struct bladerf *dev)
 {
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
     return dev->backend->is_fpga_configured(dev);
 }
 
@@ -589,14 +619,22 @@ static uint64_t bladerf2_get_capabilities(struct bladerf *dev)
 static int bladerf2_get_fpga_version(struct bladerf *dev, struct bladerf_version *version)
 {
     struct bladerf2_board_data *board_data = dev->board_data;
+
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
     memcpy(version, &board_data->fpga_version, sizeof(*version));
+
     return 0;
 }
 
 static int bladerf2_get_fw_version(struct bladerf *dev, struct bladerf_version *version)
 {
     struct bladerf2_board_data *board_data = dev->board_data;
+
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
     memcpy(version, &board_data->fw_version, sizeof(*version));
+
     return 0;
 }
 
@@ -609,6 +647,8 @@ static int bladerf2_enable_module(struct bladerf *dev, bladerf_direction dir, bo
     int status;
     bool tx;
     uint32_t reg;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     /* Read RFFE control register */
     status = dev->backend->rffe_control_read(dev, &reg);
@@ -657,6 +697,8 @@ static int bladerf2_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
     struct bladerf2_board_data *board_data = dev->board_data;
     int status;
 
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     if (ch & BLADERF_TX) {
         status = ad9361_set_tx_attenuation(board_data->phy, ch >> 1, -gain);
     } else {
@@ -675,6 +717,8 @@ static int bladerf2_get_gain(struct bladerf *dev, bladerf_channel ch, int *gain)
     struct bladerf2_board_data *board_data = dev->board_data;
     int status;
     uint32_t atten;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     if (ch & BLADERF_TX) {
         status = ad9361_get_tx_attenuation(board_data->phy, ch >> 1, &atten);
@@ -706,6 +750,8 @@ static int bladerf2_get_gain_range(struct bladerf *dev, bladerf_channel ch, stru
 
 static int bladerf2_set_gain_stage(struct bladerf *dev, bladerf_channel ch, const char *stage, int gain)
 {
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     if (ch & BLADERF_TX) {
         if (strcmp(stage, "dsa") == 0) {
             return dev->board->set_gain(dev, ch, gain);
@@ -725,6 +771,8 @@ static int bladerf2_get_gain_stage(struct bladerf *dev, bladerf_channel ch, cons
 {
     struct bladerf2_board_data *board_data = dev->board_data;
     int status;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     if (ch & BLADERF_TX) {
         if (strcmp(stage, "dsa") == 0) {
@@ -810,6 +858,8 @@ static int bladerf2_set_sample_rate(struct bladerf *dev, bladerf_channel ch, uns
     struct bladerf2_board_data *board_data = dev->board_data;
     int status;
 
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     if (ch & BLADERF_TX) {
         status = ad9361_set_tx_sampling_freq(board_data->phy, rate);
         if (status < 0) {
@@ -837,6 +887,8 @@ static int bladerf2_get_sample_rate(struct bladerf *dev, bladerf_channel ch, uns
 {
     struct bladerf2_board_data *board_data = dev->board_data;
     int status;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     if (ch & BLADERF_TX) {
         status = ad9361_get_tx_sampling_freq(board_data->phy, rate);
@@ -876,6 +928,8 @@ static int bladerf2_set_bandwidth(struct bladerf *dev, bladerf_channel ch, unsig
     struct bladerf2_board_data *board_data = dev->board_data;
     int status;
 
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     if (ch & BLADERF_TX) {
         status = ad9361_set_tx_rf_bandwidth(board_data->phy, bandwidth);
         if (status < 0) {
@@ -903,6 +957,8 @@ static int bladerf2_get_bandwidth(struct bladerf *dev, bladerf_channel ch, unsig
 {
     struct bladerf2_board_data *board_data = dev->board_data;
     int status;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     if (ch & BLADERF_TX) {
         status = ad9361_get_tx_rf_bandwidth(board_data->phy, bandwidth);
@@ -932,6 +988,8 @@ static int bladerf2_set_frequency(struct bladerf *dev, bladerf_channel ch, uint6
     struct bladerf2_board_data *board_data = dev->board_data;
     int status;
 
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     if (ch & BLADERF_TX) {
         status = ad9361_set_tx_lo_freq(board_data->phy, frequency);
     } else {
@@ -952,6 +1010,8 @@ static int bladerf2_get_frequency(struct bladerf *dev, bladerf_channel ch, uint6
     struct bladerf2_board_data *board_data = dev->board_data;
     int status;
     uint64_t lo_frequency;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     if (ch & BLADERF_TX) {
         status = ad9361_get_tx_lo_freq(board_data->phy, &lo_frequency);
@@ -997,6 +1057,8 @@ static int bladerf2_set_rf_port(struct bladerf *dev, bladerf_channel ch, const c
     uint32_t port_id;
     int status;
 
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     if (ch & BLADERF_TX) {
         port_map = bladerf2_tx_port_map;
         port_map_len = ARRAY_SIZE(bladerf2_tx_port_map);
@@ -1037,6 +1099,8 @@ static int bladerf2_get_rf_port(struct bladerf *dev, bladerf_channel ch, const c
     unsigned int i;
     uint32_t port_id;
     int status;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     if (ch & BLADERF_TX) {
         port_map = bladerf2_tx_port_map;
@@ -1142,6 +1206,8 @@ static int bladerf2_trigger_state(struct bladerf *dev, const struct bladerf_trig
 
 static int bladerf2_init_stream(struct bladerf_stream **stream, struct bladerf *dev, bladerf_stream_cb callback, void ***buffers, size_t num_buffers, bladerf_format format, size_t samples_per_buffer, size_t num_transfers, void *user_data)
 {
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     return async_init_stream(stream, dev, callback, buffers, num_buffers,
                              format, samples_per_buffer, num_transfers, user_data);
 }
@@ -1177,6 +1243,8 @@ static int bladerf2_sync_config(struct bladerf *dev, bladerf_channel_layout layo
     bladerf_direction dir = layout & BLADERF_DIRECTION_MASK;
     int status;
 
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     status = sync_init(&board_data->sync[dir], dev, layout,
                        format, num_buffers, buffer_size,
                        board_data->msg_size, num_transfers,
@@ -1190,6 +1258,10 @@ static int bladerf2_sync_tx(struct bladerf *dev, void *samples, unsigned int num
     struct bladerf2_board_data *board_data = dev->board_data;
     int status;
 
+    if (!board_data->sync[BLADERF_TX].initialized) {
+        return BLADERF_ERR_INVAL;
+    }
+
     status = sync_tx(&board_data->sync[BLADERF_TX], samples, num_samples, metadata, timeout_ms);
 
     return status;
@@ -1200,6 +1272,10 @@ static int bladerf2_sync_rx(struct bladerf *dev, void *samples, unsigned int num
     struct bladerf2_board_data *board_data = dev->board_data;
     int status;
 
+    if (!board_data->sync[BLADERF_RX].initialized) {
+        return BLADERF_ERR_INVAL;
+    }
+
     status = sync_rx(&board_data->sync[BLADERF_RX], samples, num_samples, metadata, timeout_ms);
 
     return status;
@@ -1207,6 +1283,8 @@ static int bladerf2_sync_rx(struct bladerf *dev, void *samples, unsigned int num
 
 static int bladerf2_get_timestamp(struct bladerf *dev, bladerf_direction dir, uint64_t *value)
 {
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
     return dev->backend->get_timestamp(dev, dir, value);
 }
 
@@ -1322,6 +1400,8 @@ static int bladerf2_load_fpga(struct bladerf *dev, const uint8_t *buf, size_t le
     struct bladerf_version required_fpga_version;
     int status;
 
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
     if (!is_valid_fpga_size(board_data->fpga_size, length)) {
         return BLADERF_ERR_INVAL;
     }
@@ -1392,6 +1472,8 @@ static int bladerf2_flash_fpga(struct bladerf *dev, const uint8_t *buf, size_t l
 {
     struct bladerf2_board_data *board_data = dev->board_data;
 
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
     if (!is_valid_fpga_size(board_data->fpga_size, length)) {
         return BLADERF_ERR_INVAL;
     }
@@ -1401,6 +1483,8 @@ static int bladerf2_flash_fpga(struct bladerf *dev, const uint8_t *buf, size_t l
 
 static int bladerf2_erase_stored_fpga(struct bladerf *dev)
 {
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
     return spi_flash_erase_fpga(dev);
 }
 
@@ -1420,6 +1504,8 @@ static int bladerf2_flash_firmware(struct bladerf *dev, const uint8_t *buf, size
 {
     const char env_override[] = "BLADERF_SKIP_FW_SIZE_CHECK";
 
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
     /* Sanity check firmware length.
      *
      * TODO in the future, better sanity checks can be performed when
@@ -1438,6 +1524,8 @@ static int bladerf2_flash_firmware(struct bladerf *dev, const uint8_t *buf, size
 
 static int bladerf2_device_reset(struct bladerf *dev)
 {
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
     return dev->backend->device_reset(dev);
 }
 
