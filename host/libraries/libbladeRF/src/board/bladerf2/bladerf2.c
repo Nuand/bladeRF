@@ -40,6 +40,7 @@
 #include "driver/spi_flash.h"
 #include "driver/fpga_trigger.h"
 #include "driver/fx3_fw.h"
+#include "driver/ina219.h"
 
 #include "backend/usb/usb.h"
 #include "backend/backend_config.h"
@@ -264,6 +265,7 @@ static int errno_ad9361_to_bladerf(int err)
 extern AD9361_InitParam ad9361_init_params;
 extern AD9361_RXFIRConfig ad9361_init_rx_fir_config;
 extern AD9361_TXFIRConfig ad9361_init_tx_fir_config;
+extern const float ina219_r_shunt;
 
 static int bladerf2_initialize(struct bladerf *dev)
 {
@@ -291,6 +293,11 @@ static int bladerf2_initialize(struct bladerf *dev)
     status = ad9361_set_rx_fir_config(board_data->phy, ad9361_init_rx_fir_config);
     if (status < 0) {
         return errno_ad9361_to_bladerf(status);
+    }
+
+    status = ina219_init(dev, ina219_r_shunt);
+    if (status < 0) {
+        return status;
     }
 
     /* Update device state */
