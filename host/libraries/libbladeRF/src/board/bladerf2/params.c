@@ -286,3 +286,5 @@ AD9361_TXFIRConfig ad9361_init_tx_fir_config = {	// BPF PASSBAND 3/20 fs to 1/4 
 	 {0, 0, 0, 0, 0, 0}, // tx_path_clks[6]
 	 0 // tx_bandwidth
 };
+
+const float ina219_r_shunt = 0.001;
