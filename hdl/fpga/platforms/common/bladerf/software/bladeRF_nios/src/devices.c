@@ -447,7 +447,7 @@ uint16_t ina219_read(uint8_t addr)
 
     IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_RD );
     si5338_complete_transfer(1);
-    data = IORD_8DIRECT(I2C, OC_I2C_DATA) << 16;
+    data = IORD_8DIRECT(I2C, OC_I2C_DATA) << 8;
 
     IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_RD | OC_I2C_NACK | OC_I2C_STO);
     si5338_complete_transfer(0);
@@ -467,7 +467,7 @@ void ina219_write(uint8_t addr, uint16_t data)
     IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_CMD_STATUS | OC_I2C_WR);
     si5338_complete_transfer(1);
 
-    IOWR_8DIRECT(I2C, OC_I2C_DATA, (data >> 16));
+    IOWR_8DIRECT(I2C, OC_I2C_DATA, data >> 8);
     IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_WR);
     si5338_complete_transfer(1);
 
