@@ -1292,40 +1292,6 @@ static int bladerf2_get_timestamp(struct bladerf *dev, bladerf_direction dir, ui
 }
 
 /******************************************************************************/
-/* SMB Clock Configuration (board-agnostic feature?) */
-/******************************************************************************/
-
-static int bladerf2_get_smb_mode(struct bladerf *dev, bladerf_smb_mode *mode)
-{
-    return BLADERF_ERR_UNSUPPORTED;
-}
-
-static int bladerf2_set_smb_mode(struct bladerf *dev, bladerf_smb_mode mode)
-{
-    return BLADERF_ERR_UNSUPPORTED;
-}
-
-static int bladerf2_get_smb_frequency(struct bladerf *dev, unsigned int *rate)
-{
-    return BLADERF_ERR_UNSUPPORTED;
-}
-
-static int bladerf2_set_smb_frequency(struct bladerf *dev, uint32_t rate, uint32_t *actual)
-{
-    return BLADERF_ERR_UNSUPPORTED;
-}
-
-static int bladerf2_get_rational_smb_frequency(struct bladerf *dev, struct bladerf_rational_rate *rate)
-{
-    return BLADERF_ERR_UNSUPPORTED;
-}
-
-static int bladerf2_set_rational_smb_frequency(struct bladerf *dev, struct bladerf_rational_rate *rate, struct bladerf_rational_rate *actual)
-{
-    return BLADERF_ERR_UNSUPPORTED;
-}
-
-/******************************************************************************/
 /* DC/Phase/Gain Correction */
 /******************************************************************************/
 
@@ -1638,12 +1604,6 @@ const struct board_fns bladerf2_board_fns = {
     FIELD_INIT(.sync_tx, bladerf2_sync_tx),
     FIELD_INIT(.sync_rx, bladerf2_sync_rx),
     FIELD_INIT(.get_timestamp, bladerf2_get_timestamp),
-    FIELD_INIT(.get_smb_mode, bladerf2_get_smb_mode),
-    FIELD_INIT(.set_smb_mode, bladerf2_set_smb_mode),
-    FIELD_INIT(.get_smb_frequency, bladerf2_get_smb_frequency),
-    FIELD_INIT(.set_smb_frequency, bladerf2_set_smb_frequency),
-    FIELD_INIT(.get_rational_smb_frequency, bladerf2_get_rational_smb_frequency),
-    FIELD_INIT(.set_rational_smb_frequency, bladerf2_set_rational_smb_frequency),
     FIELD_INIT(.get_correction, bladerf2_get_correction),
     FIELD_INIT(.set_correction, bladerf2_set_correction),
     FIELD_INIT(.load_fpga, bladerf2_load_fpga),

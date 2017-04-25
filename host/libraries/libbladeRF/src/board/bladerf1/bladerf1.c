@@ -2125,52 +2125,6 @@ static int bladerf1_get_timestamp(struct bladerf *dev, bladerf_direction dir, ui
 }
 
 /******************************************************************************/
-/* SMB Clock Configuration (board-agnostic feature?) */
-/******************************************************************************/
-
-static int bladerf1_get_smb_mode(struct bladerf *dev, bladerf_smb_mode *mode)
-{
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
-
-    return smb_clock_get_mode(dev, mode);
-}
-
-static int bladerf1_set_smb_mode(struct bladerf *dev, bladerf_smb_mode mode)
-{
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
-
-    return smb_clock_set_mode(dev, mode);
-}
-
-static int bladerf1_get_smb_frequency(struct bladerf *dev, unsigned int *rate)
-{
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
-
-    return si5338_get_smb_freq(dev, rate);
-}
-
-static int bladerf1_set_smb_frequency(struct bladerf *dev, uint32_t rate, uint32_t *actual)
-{
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
-
-    return si5338_set_smb_freq(dev, rate, actual);
-}
-
-static int bladerf1_get_rational_smb_frequency(struct bladerf *dev, struct bladerf_rational_rate *rate)
-{
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
-
-    return si5338_get_rational_smb_freq(dev, rate);
-}
-
-static int bladerf1_set_rational_smb_frequency(struct bladerf *dev, struct bladerf_rational_rate *rate, struct bladerf_rational_rate *actual)
-{
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
-
-    return si5338_set_rational_smb_freq(dev, rate, actual);
-}
-
-/******************************************************************************/
 /* DC/Phase/Gain Correction */
 /******************************************************************************/
 
@@ -2755,12 +2709,6 @@ const struct board_fns bladerf1_board_fns = {
     FIELD_INIT(.sync_tx, bladerf1_sync_tx),
     FIELD_INIT(.sync_rx, bladerf1_sync_rx),
     FIELD_INIT(.get_timestamp, bladerf1_get_timestamp),
-    FIELD_INIT(.get_smb_mode, bladerf1_get_smb_mode),
-    FIELD_INIT(.set_smb_mode, bladerf1_set_smb_mode),
-    FIELD_INIT(.get_smb_frequency, bladerf1_get_smb_frequency),
-    FIELD_INIT(.set_smb_frequency, bladerf1_set_smb_frequency),
-    FIELD_INIT(.get_rational_smb_frequency, bladerf1_get_rational_smb_frequency),
-    FIELD_INIT(.set_rational_smb_frequency, bladerf1_set_rational_smb_frequency),
     FIELD_INIT(.get_correction, bladerf1_get_correction),
     FIELD_INIT(.set_correction, bladerf1_set_correction),
     FIELD_INIT(.load_fpga, bladerf1_load_fpga),
@@ -3185,6 +3133,118 @@ int bladerf_get_lpf_mode(struct bladerf *dev, bladerf_channel ch,
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     status = lms_lpf_get_mode(dev, ch, mode);
+
+    MUTEX_UNLOCK(&dev->lock);
+
+    return status;
+}
+
+/******************************************************************************/
+/* SMB Clock Configuration */
+/******************************************************************************/
+
+int bladerf_get_smb_mode(struct bladerf *dev, bladerf_smb_mode *mode)
+{
+    int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
+    MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    status = smb_clock_get_mode(dev, mode);
+
+    MUTEX_UNLOCK(&dev->lock);
+
+    return status;
+}
+
+int bladerf_set_smb_mode(struct bladerf *dev, bladerf_smb_mode mode)
+{
+    int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
+    MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    status = smb_clock_set_mode(dev, mode);
+
+    MUTEX_UNLOCK(&dev->lock);
+
+    return status;
+}
+
+int bladerf_get_smb_frequency(struct bladerf *dev, unsigned int *rate)
+{
+    int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
+    MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    status = si5338_get_smb_freq(dev, rate);
+
+    MUTEX_UNLOCK(&dev->lock);
+
+    return status;
+}
+
+int bladerf_set_smb_frequency(struct bladerf *dev, uint32_t rate, uint32_t *actual)
+{
+    int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
+    MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    status = si5338_set_smb_freq(dev, rate, actual);
+
+    MUTEX_UNLOCK(&dev->lock);
+
+    return status;
+}
+
+int bladerf_get_rational_smb_frequency(struct bladerf *dev, struct bladerf_rational_rate *rate)
+{
+    int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
+    MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    status = si5338_get_rational_smb_freq(dev, rate);
+
+    MUTEX_UNLOCK(&dev->lock);
+
+    return status;
+}
+
+int bladerf_set_rational_smb_frequency(struct bladerf *dev, struct bladerf_rational_rate *rate, struct bladerf_rational_rate *actual)
+{
+    int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
+    MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    status = si5338_set_rational_smb_freq(dev, rate, actual);
 
     MUTEX_UNLOCK(&dev->lock);
 

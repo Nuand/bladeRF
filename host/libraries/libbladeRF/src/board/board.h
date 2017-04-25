@@ -132,14 +132,6 @@ struct board_fns {
     int (*sync_rx)(struct bladerf *dev, void *samples, unsigned int num_samples, struct bladerf_metadata *metadata, unsigned int timeout_ms);
     int (*get_timestamp)(struct bladerf *dev, bladerf_direction dir, uint64_t *value);
 
-    /* SMB Clock Configuration (board-agnostic feature?) */
-    int (*get_smb_mode)(struct bladerf *dev, bladerf_smb_mode *mode);
-    int (*set_smb_mode)(struct bladerf *dev, bladerf_smb_mode mode);
-    int (*get_smb_frequency)(struct bladerf *dev, unsigned int *rate);
-    int (*set_smb_frequency)(struct bladerf *dev, uint32_t rate, uint32_t *actual);
-    int (*get_rational_smb_frequency)(struct bladerf *dev, struct bladerf_rational_rate *rate);
-    int (*set_rational_smb_frequency)(struct bladerf *dev, struct bladerf_rational_rate *rate, struct bladerf_rational_rate *actual);
-
     /* DC/Phase/Gain Correction */
     int (*get_correction)(struct bladerf *dev, bladerf_channel ch, bladerf_correction corr, int16_t *value);
     int (*set_correction)(struct bladerf *dev, bladerf_channel ch, bladerf_correction corr, int16_t value);
