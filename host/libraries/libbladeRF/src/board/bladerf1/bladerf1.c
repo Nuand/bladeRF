@@ -2318,24 +2318,6 @@ static int bladerf1_device_reset(struct bladerf *dev)
 }
 
 /******************************************************************************/
-/* Sample Internal/Direct */
-/******************************************************************************/
-
-static int bladerf1_get_sampling(struct bladerf *dev, bladerf_sampling *sampling)
-{
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
-
-    return lms_get_sampling(dev, sampling);
-}
-
-static int bladerf1_set_sampling(struct bladerf *dev, bladerf_sampling sampling)
-{
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
-
-    return lms_select_sampling(dev, sampling);
-}
-
-/******************************************************************************/
 /* Sample RX FPGA Mux */
 /******************************************************************************/
 
@@ -2639,8 +2621,6 @@ const struct board_fns bladerf1_board_fns = {
     FIELD_INIT(.erase_stored_fpga, bladerf1_erase_stored_fpga),
     FIELD_INIT(.flash_firmware, bladerf1_flash_firmware),
     FIELD_INIT(.device_reset, bladerf1_device_reset),
-    FIELD_INIT(.get_sampling, bladerf1_get_sampling),
-    FIELD_INIT(.set_sampling, bladerf1_set_sampling),
     FIELD_INIT(.get_rx_mux, bladerf1_get_rx_mux),
     FIELD_INIT(.set_rx_mux, bladerf1_set_rx_mux),
     FIELD_INIT(.set_tuning_mode, bladerf1_set_tuning_mode),
@@ -3056,6 +3036,46 @@ int bladerf_get_lpf_mode(struct bladerf *dev, bladerf_channel ch,
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     status = lms_lpf_get_mode(dev, ch, mode);
+
+    MUTEX_UNLOCK(&dev->lock);
+
+    return status;
+}
+
+/******************************************************************************/
+/* Sample Internal/Direct */
+/******************************************************************************/
+
+int bladerf_get_sampling(struct bladerf *dev, bladerf_sampling *sampling)
+{
+    int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
+    MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    status = lms_get_sampling(dev, sampling);
+
+    MUTEX_UNLOCK(&dev->lock);
+
+    return status;
+}
+
+int bladerf_set_sampling(struct bladerf *dev, bladerf_sampling sampling)
+{
+    int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
+    MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    status = lms_select_sampling(dev, sampling);
 
     MUTEX_UNLOCK(&dev->lock);
 

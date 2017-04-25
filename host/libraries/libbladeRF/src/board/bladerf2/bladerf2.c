@@ -1485,20 +1485,6 @@ static int bladerf2_device_reset(struct bladerf *dev)
 }
 
 /******************************************************************************/
-/* Sample Internal/Direct */
-/******************************************************************************/
-
-static int bladerf2_get_sampling(struct bladerf *dev, bladerf_sampling *sampling)
-{
-    return BLADERF_ERR_UNSUPPORTED;
-}
-
-static int bladerf2_set_sampling(struct bladerf *dev, bladerf_sampling sampling)
-{
-    return BLADERF_ERR_UNSUPPORTED;
-}
-
-/******************************************************************************/
 /* Sample RX FPGA Mux */
 /******************************************************************************/
 
@@ -1595,8 +1581,6 @@ const struct board_fns bladerf2_board_fns = {
     FIELD_INIT(.erase_stored_fpga, bladerf2_erase_stored_fpga),
     FIELD_INIT(.flash_firmware, bladerf2_flash_firmware),
     FIELD_INIT(.device_reset, bladerf2_device_reset),
-    FIELD_INIT(.get_sampling, bladerf2_get_sampling),
-    FIELD_INIT(.set_sampling, bladerf2_set_sampling),
     FIELD_INIT(.get_rx_mux, bladerf2_get_rx_mux),
     FIELD_INIT(.set_rx_mux, bladerf2_set_rx_mux),
     FIELD_INIT(.set_tuning_mode, bladerf2_set_tuning_mode),

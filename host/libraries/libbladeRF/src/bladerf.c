@@ -1074,32 +1074,6 @@ int bladerf_device_reset(struct bladerf *dev)
 }
 
 /******************************************************************************/
-/* Sample Internal/Direct */
-/******************************************************************************/
-
-int bladerf_get_sampling(struct bladerf *dev, bladerf_sampling *sampling)
-{
-    int status;
-    MUTEX_LOCK(&dev->lock);
-
-    status = dev->board->get_sampling(dev, sampling);
-
-    MUTEX_UNLOCK(&dev->lock);
-    return status;
-}
-
-int bladerf_set_sampling(struct bladerf *dev, bladerf_sampling sampling)
-{
-    int status;
-    MUTEX_LOCK(&dev->lock);
-
-    status = dev->board->set_sampling(dev, sampling);
-
-    MUTEX_UNLOCK(&dev->lock);
-    return status;
-}
-
-/******************************************************************************/
 /* Sample RX FPGA Mux */
 /******************************************************************************/
 

@@ -139,10 +139,6 @@ struct board_fns {
     int (*flash_firmware)(struct bladerf *dev, const uint8_t *buf, size_t length);
     int (*device_reset)(struct bladerf *dev);
 
-    /* Sample Internal/Direct */
-    int (*get_sampling)(struct bladerf *dev, bladerf_sampling *sampling);
-    int (*set_sampling)(struct bladerf *dev, bladerf_sampling sampling);
-
     /* Sample RX FPGA Mux */
     int (*get_rx_mux)(struct bladerf *dev, bladerf_rx_mux *mode);
     int (*set_rx_mux)(struct bladerf *dev, bladerf_rx_mux mode);
