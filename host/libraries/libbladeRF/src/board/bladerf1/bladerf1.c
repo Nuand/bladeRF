@@ -2318,6 +2318,91 @@ static int bladerf1_device_reset(struct bladerf *dev)
 }
 
 /******************************************************************************/
+/* Loopback */
+/******************************************************************************/
+
+static int bladerf1_set_loopback(struct bladerf *dev, bladerf_loopback l)
+{
+    struct bladerf1_board_data *board_data = dev->board_data;
+    int status;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    if (l == BLADERF_LB_FIRMWARE) {
+        /* Firmware loopback was fully implemented in FW v1.7.1
+         * (1.7.0 could enable it, but 1.7.1 also allowed readback,
+         * so we'll enforce 1.7.1 here. */
+        if (!have_cap(board_data->capabilities, BLADERF_CAP_FW_LOOPBACK)) {
+            log_warning("Firmware v1.7.1 or later is required "
+                        "to use firmware loopback.\n\n");
+            status = BLADERF_ERR_UPDATE_FW;
+            return status;
+        } else {
+            /* Samples won't reach the LMS when the device is in firmware
+             * loopback mode. By placing the LMS into a loopback mode, we ensure
+             * that the PAs will be disabled, and remain enabled across
+             * frequency changes.
+             */
+            status = lms_set_loopback_mode(dev, BLADERF_LB_RF_LNA3);
+            if (status != 0) {
+                return status;
+            }
+
+            status = dev->backend->set_firmware_loopback(dev, true);
+        }
+    } else {
+        /* If applicable, ensure FW loopback is disabled */
+        if (have_cap(board_data->capabilities, BLADERF_CAP_FW_LOOPBACK)) {
+            bool fw_lb_enabled = false;
+
+            /* Query first, as the implementation of setting the mode
+             * may interrupt running streams. The API don't guarantee that
+             * switching loopback modes on the fly to work, but we can at least
+             * try to avoid unnecessarily interrupting things...*/
+            status = dev->backend->get_firmware_loopback(dev, &fw_lb_enabled);
+            if (status != 0) {
+                return status;
+            }
+
+            if (fw_lb_enabled) {
+                status = dev->backend->set_firmware_loopback(dev, false);
+                if (status != 0) {
+                    return status;
+                }
+            }
+        }
+
+        status = lms_set_loopback_mode(dev, l);
+    }
+
+    return status;
+}
+
+static int bladerf1_get_loopback(struct bladerf *dev, bladerf_loopback *l)
+{
+    struct bladerf1_board_data *board_data = dev->board_data;
+    int status;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    *l = BLADERF_LB_NONE;
+
+    if (have_cap(board_data->capabilities, BLADERF_CAP_FW_LOOPBACK)) {
+        bool fw_lb_enabled;
+        status = dev->backend->get_firmware_loopback(dev, &fw_lb_enabled);
+        if (status == 0 && fw_lb_enabled) {
+            *l = BLADERF_LB_FIRMWARE;
+        }
+    }
+
+    if (*l == BLADERF_LB_NONE) {
+        status = lms_get_loopback_mode(dev, l);
+    }
+
+    return status;
+}
+
+/******************************************************************************/
 /* Sample RX FPGA Mux */
 /******************************************************************************/
 
@@ -2585,6 +2670,8 @@ const struct board_fns bladerf1_board_fns = {
     FIELD_INIT(.erase_stored_fpga, bladerf1_erase_stored_fpga),
     FIELD_INIT(.flash_firmware, bladerf1_flash_firmware),
     FIELD_INIT(.device_reset, bladerf1_device_reset),
+    FIELD_INIT(.set_loopback, bladerf1_set_loopback),
+    FIELD_INIT(.get_loopback, bladerf1_get_loopback),
     FIELD_INIT(.get_rx_mux, bladerf1_get_rx_mux),
     FIELD_INIT(.set_rx_mux, bladerf1_set_rx_mux),
     FIELD_INIT(.expansion_attach, bladerf1_expansion_attach),
@@ -2780,107 +2867,6 @@ int bladerf_get_rxvga2(struct bladerf *dev, int *gain)
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     status = lms_rxvga2_get_gain(dev, gain);
-
-    MUTEX_UNLOCK(&dev->lock);
-
-    return status;
-}
-
-/******************************************************************************/
-/* Loopback */
-/******************************************************************************/
-
-int bladerf_set_loopback(struct bladerf *dev, bladerf_loopback l)
-{
-    struct bladerf1_board_data *board_data = dev->board_data;
-    int status;
-
-    if (dev->board != &bladerf1_board_fns)
-        return BLADERF_ERR_UNSUPPORTED;
-
-    MUTEX_LOCK(&dev->lock);
-
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
-
-    if (l == BLADERF_LB_FIRMWARE) {
-        /* Firmware loopback was fully implemented in FW v1.7.1
-         * (1.7.0 could enable it, but 1.7.1 also allowed readback,
-         * so we'll enforce 1.7.1 here. */
-        if (!have_cap(board_data->capabilities, BLADERF_CAP_FW_LOOPBACK)) {
-            log_warning("Firmware v1.7.1 or later is required "
-                        "to use firmware loopback.\n\n");
-            status = BLADERF_ERR_UPDATE_FW;
-            goto out;
-        } else {
-            /* Samples won't reach the LMS when the device is in firmware
-             * loopback mode. By placing the LMS into a loopback mode, we ensure
-             * that the PAs will be disabled, and remain enabled across
-             * frequency changes.
-             */
-            status = lms_set_loopback_mode(dev, BLADERF_LB_RF_LNA3);
-            if (status != 0) {
-                goto out;
-            }
-
-            status = dev->backend->set_firmware_loopback(dev, true);
-        }
-
-    } else {
-
-        /* If applicable, ensure FW loopback is disabled */
-        if (have_cap(board_data->capabilities, BLADERF_CAP_FW_LOOPBACK)) {
-            bool fw_lb_enabled = false;
-
-            /* Query first, as the implementation of setting the mode
-             * may interrupt running streams. The API don't guarantee that
-             * switching loopback modes on the fly to work, but we can at least
-             * try to avoid unnecessarily interrupting things...*/
-            status = dev->backend->get_firmware_loopback(dev, &fw_lb_enabled);
-            if (status != 0) {
-                goto out;
-            }
-
-            if (fw_lb_enabled) {
-                status = dev->backend->set_firmware_loopback(dev, false);
-                if (status != 0) {
-                    goto out;
-                }
-            }
-        }
-
-        status =  lms_set_loopback_mode(dev, l);
-    }
-
-out:
-    MUTEX_UNLOCK(&dev->lock);
-    return status;
-}
-
-int bladerf_get_loopback(struct bladerf *dev, bladerf_loopback *l)
-{
-    struct bladerf1_board_data *board_data = dev->board_data;
-    int status;
-
-    if (dev->board != &bladerf1_board_fns)
-        return BLADERF_ERR_UNSUPPORTED;
-
-    MUTEX_LOCK(&dev->lock);
-
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
-
-    *l = BLADERF_LB_NONE;
-
-    if (have_cap(board_data->capabilities, BLADERF_CAP_FW_LOOPBACK)) {
-        bool fw_lb_enabled;
-        status = dev->backend->get_firmware_loopback(dev, &fw_lb_enabled);
-        if (status == 0 && fw_lb_enabled) {
-            *l = BLADERF_LB_FIRMWARE;
-        }
-    }
-
-    if (*l == BLADERF_LB_NONE) {
-        status = lms_get_loopback_mode(dev, l);
-    }
 
     MUTEX_UNLOCK(&dev->lock);
 

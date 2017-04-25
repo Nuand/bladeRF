@@ -1074,6 +1074,32 @@ int bladerf_device_reset(struct bladerf *dev)
 }
 
 /******************************************************************************/
+/* Loopback */
+/******************************************************************************/
+
+int bladerf_set_loopback(struct bladerf *dev, bladerf_loopback l)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->set_loopback(dev, l);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
+int bladerf_get_loopback(struct bladerf *dev, bladerf_loopback *l)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->get_loopback(dev, l);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
+/******************************************************************************/
 /* Sample RX FPGA Mux */
 /******************************************************************************/
 

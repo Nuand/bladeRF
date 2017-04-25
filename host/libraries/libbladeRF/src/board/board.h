@@ -139,6 +139,10 @@ struct board_fns {
     int (*flash_firmware)(struct bladerf *dev, const uint8_t *buf, size_t length);
     int (*device_reset)(struct bladerf *dev);
 
+    /* Loopback */
+    int (*set_loopback)(struct bladerf *dev, bladerf_loopback l);
+    int (*get_loopback)(struct bladerf *dev, bladerf_loopback *l);
+
     /* Sample RX FPGA Mux */
     int (*get_rx_mux)(struct bladerf *dev, bladerf_rx_mux *mode);
     int (*set_rx_mux)(struct bladerf *dev, bladerf_rx_mux mode);

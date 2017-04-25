@@ -1485,6 +1485,20 @@ static int bladerf2_device_reset(struct bladerf *dev)
 }
 
 /******************************************************************************/
+/* Loopback */
+/******************************************************************************/
+
+static int bladerf2_set_loopback(struct bladerf *dev, bladerf_loopback l)
+{
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
+static int bladerf2_get_loopback(struct bladerf *dev, bladerf_loopback *l)
+{
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
+/******************************************************************************/
 /* Sample RX FPGA Mux */
 /******************************************************************************/
 
@@ -1572,6 +1586,8 @@ const struct board_fns bladerf2_board_fns = {
     FIELD_INIT(.erase_stored_fpga, bladerf2_erase_stored_fpga),
     FIELD_INIT(.flash_firmware, bladerf2_flash_firmware),
     FIELD_INIT(.device_reset, bladerf2_device_reset),
+    FIELD_INIT(.set_loopback, bladerf2_set_loopback),
+    FIELD_INIT(.get_loopback, bladerf2_get_loopback),
     FIELD_INIT(.get_rx_mux, bladerf2_get_rx_mux),
     FIELD_INIT(.set_rx_mux, bladerf2_set_rx_mux),
     FIELD_INIT(.expansion_attach, bladerf2_expansion_attach),
