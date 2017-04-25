@@ -1511,12 +1511,72 @@ static int bladerf2_device_reset(struct bladerf *dev)
 
 static int bladerf2_set_loopback(struct bladerf *dev, bladerf_loopback l)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    struct bladerf2_board_data *board_data = dev->board_data;
+    int status;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    if (l == BLADERF_LB_NONE) {
+        /* Disable digital loopback */
+        status = ad9361_bist_loopback(board_data->phy, 0);
+        if (status < 0) {
+            return status;
+        }
+
+        /* Disable firmware loopback */
+        status = dev->backend->set_firmware_loopback(dev, false);
+        if (status < 0) {
+            return status;
+        }
+    } else if (l == BLADERF_LB_FIRMWARE) {
+        /* Disable digital loopback */
+        status = ad9361_bist_loopback(board_data->phy, 0);
+        if (status < 0) {
+            return status;
+        }
+
+        /* Enable firmware loopback */
+        status = dev->backend->set_firmware_loopback(dev, true);
+        if (status < 0) {
+            return status;
+        }
+    } else {
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    return 0;
 }
 
 static int bladerf2_get_loopback(struct bladerf *dev, bladerf_loopback *l)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    struct bladerf2_board_data *board_data = dev->board_data;
+    int status;
+    bool fw_loopback;
+    int32_t ad9361_loopback;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    /* Read firwmare loopback */
+    status = dev->backend->get_firmware_loopback(dev, &fw_loopback);
+    if (status < 0) {
+        return status;
+    }
+
+    if (fw_loopback) {
+        *l = BLADERF_LB_FIRMWARE;
+        return 0;
+    }
+
+    /* Read AD9361 bist loopback */
+    ad9361_get_bist_loopback(board_data->phy, &ad9361_loopback);
+
+    if (ad9361_loopback == 1) {
+        /* FIXME digital loopback value */
+    }
+
+    *l = BLADERF_LB_NONE;
+
+    return 0;
 }
 
 /******************************************************************************/
