@@ -1292,20 +1292,6 @@ static int bladerf2_get_timestamp(struct bladerf *dev, bladerf_direction dir, ui
 }
 
 /******************************************************************************/
-/* DC/Phase/Gain Correction */
-/******************************************************************************/
-
-static int bladerf2_get_correction(struct bladerf *dev, bladerf_channel ch, bladerf_correction corr, int16_t *value)
-{
-    return BLADERF_ERR_UNSUPPORTED;
-}
-
-static int bladerf2_set_correction(struct bladerf *dev, bladerf_channel ch, bladerf_correction corr, int16_t value)
-{
-    return BLADERF_ERR_UNSUPPORTED;
-}
-
-/******************************************************************************/
 /* FPGA/Firmware Loading/Flashing */
 /******************************************************************************/
 
@@ -1604,8 +1590,6 @@ const struct board_fns bladerf2_board_fns = {
     FIELD_INIT(.sync_tx, bladerf2_sync_tx),
     FIELD_INIT(.sync_rx, bladerf2_sync_rx),
     FIELD_INIT(.get_timestamp, bladerf2_get_timestamp),
-    FIELD_INIT(.get_correction, bladerf2_get_correction),
-    FIELD_INIT(.set_correction, bladerf2_set_correction),
     FIELD_INIT(.load_fpga, bladerf2_load_fpga),
     FIELD_INIT(.flash_fpga, bladerf2_flash_fpga),
     FIELD_INIT(.erase_stored_fpga, bladerf2_erase_stored_fpga),

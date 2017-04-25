@@ -132,10 +132,6 @@ struct board_fns {
     int (*sync_rx)(struct bladerf *dev, void *samples, unsigned int num_samples, struct bladerf_metadata *metadata, unsigned int timeout_ms);
     int (*get_timestamp)(struct bladerf *dev, bladerf_direction dir, uint64_t *value);
 
-    /* DC/Phase/Gain Correction */
-    int (*get_correction)(struct bladerf *dev, bladerf_channel ch, bladerf_correction corr, int16_t *value);
-    int (*set_correction)(struct bladerf *dev, bladerf_channel ch, bladerf_correction corr, int16_t value);
-
     /* FPGA/Firmware Loading/Flashing */
     int (*load_fpga)(struct bladerf *dev, const uint8_t *buf, size_t length);
     int (*flash_fpga)(struct bladerf *dev, const uint8_t *buf, size_t length);

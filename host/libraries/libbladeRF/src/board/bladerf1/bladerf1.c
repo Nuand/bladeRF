@@ -2125,81 +2125,6 @@ static int bladerf1_get_timestamp(struct bladerf *dev, bladerf_direction dir, ui
 }
 
 /******************************************************************************/
-/* DC/Phase/Gain Correction */
-/******************************************************************************/
-
-static int bladerf1_get_correction(struct bladerf *dev, bladerf_channel ch, bladerf_correction corr, int16_t *value)
-{
-    int status;
-
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
-
-    switch (corr) {
-        case BLADERF_CORR_FPGA_PHASE:
-            status = dev->backend->get_iq_phase_correction(dev, ch, value);
-            break;
-
-        case BLADERF_CORR_FPGA_GAIN:
-            status = dev->backend->get_iq_gain_correction(dev, ch, value);
-
-            /* Undo the gain control offset */
-            if (status == 0) {
-                *value -= 4096;
-            }
-            break;
-
-        case BLADERF_CORR_LMS_DCOFF_I:
-            status = lms_get_dc_offset_i(dev, ch, value);
-            break;
-
-        case BLADERF_CORR_LMS_DCOFF_Q:
-            status = lms_get_dc_offset_q(dev, ch, value);
-            break;
-
-        default:
-            status = BLADERF_ERR_INVAL;
-            log_debug("Invalid correction type: %d\n", corr);
-            break;
-    }
-
-    return status;
-}
-
-static int bladerf1_set_correction(struct bladerf *dev, bladerf_channel ch, bladerf_correction corr, int16_t value)
-{
-    int status;
-
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
-
-    switch (corr) {
-        case BLADERF_CORR_FPGA_PHASE:
-            status = dev->backend->set_iq_phase_correction(dev, ch, value);
-            break;
-
-        case BLADERF_CORR_FPGA_GAIN:
-            /* Gain correction requires than an offset be applied */
-            value += (int16_t) 4096;
-            status = dev->backend->set_iq_gain_correction(dev, ch, value);
-            break;
-
-        case BLADERF_CORR_LMS_DCOFF_I:
-            status = lms_set_dc_offset_i(dev, ch, value);
-            break;
-
-        case BLADERF_CORR_LMS_DCOFF_Q:
-            status = lms_set_dc_offset_q(dev, ch, value);
-            break;
-
-        default:
-            status = BLADERF_ERR_INVAL;
-            log_debug("Invalid correction type: %d\n", corr);
-            break;
-    }
-
-    return status;
-}
-
-/******************************************************************************/
 /* FPGA/Firmware Loading/Flashing */
 /******************************************************************************/
 
@@ -2709,8 +2634,6 @@ const struct board_fns bladerf1_board_fns = {
     FIELD_INIT(.sync_tx, bladerf1_sync_tx),
     FIELD_INIT(.sync_rx, bladerf1_sync_rx),
     FIELD_INIT(.get_timestamp, bladerf1_get_timestamp),
-    FIELD_INIT(.get_correction, bladerf1_get_correction),
-    FIELD_INIT(.set_correction, bladerf1_set_correction),
     FIELD_INIT(.load_fpga, bladerf1_load_fpga),
     FIELD_INIT(.flash_fpga, bladerf1_flash_fpga),
     FIELD_INIT(.erase_stored_fpga, bladerf1_erase_stored_fpga),
@@ -3133,6 +3056,95 @@ int bladerf_get_lpf_mode(struct bladerf *dev, bladerf_channel ch,
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     status = lms_lpf_get_mode(dev, ch, mode);
+
+    MUTEX_UNLOCK(&dev->lock);
+
+    return status;
+}
+
+/******************************************************************************/
+/* DC/Phase/Gain Correction */
+/******************************************************************************/
+
+int bladerf_get_correction(struct bladerf *dev, bladerf_channel ch, bladerf_correction corr, int16_t *value)
+{
+    int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
+    MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    switch (corr) {
+        case BLADERF_CORR_FPGA_PHASE:
+            status = dev->backend->get_iq_phase_correction(dev, ch, value);
+            break;
+
+        case BLADERF_CORR_FPGA_GAIN:
+            status = dev->backend->get_iq_gain_correction(dev, ch, value);
+
+            /* Undo the gain control offset */
+            if (status == 0) {
+                *value -= 4096;
+            }
+            break;
+
+        case BLADERF_CORR_LMS_DCOFF_I:
+            status = lms_get_dc_offset_i(dev, ch, value);
+            break;
+
+        case BLADERF_CORR_LMS_DCOFF_Q:
+            status = lms_get_dc_offset_q(dev, ch, value);
+            break;
+
+        default:
+            status = BLADERF_ERR_INVAL;
+            log_debug("Invalid correction type: %d\n", corr);
+            break;
+    }
+
+    MUTEX_UNLOCK(&dev->lock);
+
+    return status;
+}
+
+int bladerf_set_correction(struct bladerf *dev, bladerf_channel ch, bladerf_correction corr, int16_t value)
+{
+    int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
+    MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    switch (corr) {
+        case BLADERF_CORR_FPGA_PHASE:
+            status = dev->backend->set_iq_phase_correction(dev, ch, value);
+            break;
+
+        case BLADERF_CORR_FPGA_GAIN:
+            /* Gain correction requires than an offset be applied */
+            value += (int16_t) 4096;
+            status = dev->backend->set_iq_gain_correction(dev, ch, value);
+            break;
+
+        case BLADERF_CORR_LMS_DCOFF_I:
+            status = lms_set_dc_offset_i(dev, ch, value);
+            break;
+
+        case BLADERF_CORR_LMS_DCOFF_Q:
+            status = lms_set_dc_offset_q(dev, ch, value);
+            break;
+
+        default:
+            status = BLADERF_ERR_INVAL;
+            log_debug("Invalid correction type: %d\n", corr);
+            break;
+    }
 
     MUTEX_UNLOCK(&dev->lock);
 

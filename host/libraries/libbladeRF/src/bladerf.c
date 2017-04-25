@@ -988,34 +988,6 @@ int bladerf_get_timestamp(struct bladerf *dev, bladerf_direction dir, uint64_t *
 }
 
 /******************************************************************************/
-/* DC/Phase/Gain Correction */
-/******************************************************************************/
-
-int bladerf_get_correction(struct bladerf *dev, bladerf_channel ch,
-                           bladerf_correction corr, int16_t *value)
-{
-    int status;
-    MUTEX_LOCK(&dev->lock);
-
-    status = dev->board->get_correction(dev, ch, corr, value);
-
-    MUTEX_UNLOCK(&dev->lock);
-    return status;
-}
-
-int bladerf_set_correction(struct bladerf *dev, bladerf_channel ch,
-                           bladerf_correction corr, int16_t value)
-{
-    int status;
-    MUTEX_LOCK(&dev->lock);
-
-    status = dev->board->set_correction(dev, ch, corr, value);
-
-    MUTEX_UNLOCK(&dev->lock);
-    return status;
-}
-
-/******************************************************************************/
 /* FPGA/Firmware Loading/Flashing */
 /******************************************************************************/
 
