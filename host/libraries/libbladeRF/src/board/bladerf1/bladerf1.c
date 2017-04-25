@@ -2393,42 +2393,6 @@ static int bladerf1_get_rx_mux(struct bladerf *dev, bladerf_rx_mux *mode)
 }
 
 /******************************************************************************/
-/* Tune on host or FPGA */
-/******************************************************************************/
-
-static int bladerf1_set_tuning_mode(struct bladerf *dev, bladerf_tuning_mode mode)
-{
-    struct bladerf1_board_data *board_data = dev->board_data;
-
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
-
-    if (mode == BLADERF_TUNING_MODE_FPGA &&
-            !have_cap(board_data->capabilities, BLADERF_CAP_FPGA_TUNING)) {
-        log_debug("The loaded FPGA version (%u.%u.%u) does not support the "
-                  "provided tuning mode (%d)\n",
-                  board_data->fpga_version.major, board_data->fpga_version.minor,
-                  board_data->fpga_version.patch, mode);
-        return BLADERF_ERR_UNSUPPORTED;
-    }
-
-    switch (board_data->tuning_mode) {
-        case BLADERF_TUNING_MODE_HOST:
-            log_debug("Tuning mode: host\n");
-            break;
-        case BLADERF_TUNING_MODE_FPGA:
-            log_debug("Tuning mode: FPGA\n");
-            break;
-        default:
-            assert(!"Bug encountered.");
-            return BLADERF_ERR_INVAL;
-    }
-
-    board_data->tuning_mode = mode;
-
-    return 0;
-}
-
-/******************************************************************************/
 /* Expansion support */
 /******************************************************************************/
 
@@ -2623,7 +2587,6 @@ const struct board_fns bladerf1_board_fns = {
     FIELD_INIT(.device_reset, bladerf1_device_reset),
     FIELD_INIT(.get_rx_mux, bladerf1_get_rx_mux),
     FIELD_INIT(.set_rx_mux, bladerf1_set_rx_mux),
-    FIELD_INIT(.set_tuning_mode, bladerf1_set_tuning_mode),
     FIELD_INIT(.expansion_attach, bladerf1_expansion_attach),
     FIELD_INIT(.expansion_get_attached, bladerf1_expansion_get_attached),
     FIELD_INIT(.name, "bladerf1"),
@@ -2919,6 +2882,55 @@ int bladerf_get_loopback(struct bladerf *dev, bladerf_loopback *l)
         status = lms_get_loopback_mode(dev, l);
     }
 
+    MUTEX_UNLOCK(&dev->lock);
+
+    return status;
+}
+
+/******************************************************************************/
+/* Tune on host or FPGA */
+/******************************************************************************/
+
+int bladerf_set_tuning_mode(struct bladerf *dev, bladerf_tuning_mode mode)
+{
+    struct bladerf1_board_data *board_data = dev->board_data;
+    int status;
+
+    if (dev->board != &bladerf1_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
+    MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    if (mode == BLADERF_TUNING_MODE_FPGA &&
+            !have_cap(board_data->capabilities, BLADERF_CAP_FPGA_TUNING)) {
+        log_debug("The loaded FPGA version (%u.%u.%u) does not support the "
+                  "provided tuning mode (%d)\n",
+                  board_data->fpga_version.major, board_data->fpga_version.minor,
+                  board_data->fpga_version.patch, mode);
+        status = BLADERF_ERR_UNSUPPORTED;
+        goto exit;
+    }
+
+    switch (mode) {
+        case BLADERF_TUNING_MODE_HOST:
+            log_debug("Tuning mode: host\n");
+            break;
+        case BLADERF_TUNING_MODE_FPGA:
+            log_debug("Tuning mode: FPGA\n");
+            break;
+        default:
+            assert(!"Bug encountered.");
+            status = BLADERF_ERR_INVAL;
+            goto exit;
+    }
+
+    board_data->tuning_mode = mode;
+
+    status = 0;
+
+exit:
     MUTEX_UNLOCK(&dev->lock);
 
     return status;

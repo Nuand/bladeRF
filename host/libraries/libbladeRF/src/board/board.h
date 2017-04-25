@@ -143,9 +143,6 @@ struct board_fns {
     int (*get_rx_mux)(struct bladerf *dev, bladerf_rx_mux *mode);
     int (*set_rx_mux)(struct bladerf *dev, bladerf_rx_mux mode);
 
-    /* Tune on host or FPGA */
-    int (*set_tuning_mode)(struct bladerf *dev, bladerf_tuning_mode mode);
-
     /* Expansion support */
     int (*expansion_attach)(struct bladerf *dev, bladerf_xb xb);
     int (*expansion_get_attached)(struct bladerf *dev, bladerf_xb *xb);

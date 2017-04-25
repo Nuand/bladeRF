@@ -1499,15 +1499,6 @@ static int bladerf2_get_rx_mux(struct bladerf *dev, bladerf_rx_mux *mode)
 }
 
 /******************************************************************************/
-/* Tune on host or FPGA */
-/******************************************************************************/
-
-static int bladerf2_set_tuning_mode(struct bladerf *dev, bladerf_tuning_mode mode)
-{
-    return BLADERF_ERR_UNSUPPORTED;
-}
-
-/******************************************************************************/
 /* Expansion support */
 /******************************************************************************/
 
@@ -1583,7 +1574,6 @@ const struct board_fns bladerf2_board_fns = {
     FIELD_INIT(.device_reset, bladerf2_device_reset),
     FIELD_INIT(.get_rx_mux, bladerf2_get_rx_mux),
     FIELD_INIT(.set_rx_mux, bladerf2_set_rx_mux),
-    FIELD_INIT(.set_tuning_mode, bladerf2_set_tuning_mode),
     FIELD_INIT(.expansion_attach, bladerf2_expansion_attach),
     FIELD_INIT(.expansion_get_attached, bladerf2_expansion_get_attached),
     FIELD_INIT(.name, "bladerf2"),
