@@ -1185,22 +1185,43 @@ int bladerf2_cancel_scheduled_retunes(struct bladerf *dev, bladerf_channel ch)
 
 static int bladerf2_trigger_init(struct bladerf *dev, bladerf_channel ch, bladerf_trigger_signal signal, struct bladerf_trigger *trigger)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    return fpga_trigger_init(dev, ch, signal, trigger);
 }
 
 static int bladerf2_trigger_arm(struct bladerf *dev, const struct bladerf_trigger *trigger, bool arm, uint64_t resv1, uint64_t resv2)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    return fpga_trigger_fire(dev, trigger);
 }
 
 static int bladerf2_trigger_fire(struct bladerf *dev, const struct bladerf_trigger *trigger)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    return fpga_trigger_fire(dev, trigger);
 }
 
 static int bladerf2_trigger_state(struct bladerf *dev, const struct bladerf_trigger *trigger, bool *is_armed, bool *has_fired, bool *fire_requested, uint64_t *resv1, uint64_t *resv2)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    int status;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    status = fpga_trigger_state(dev, trigger, is_armed, has_fired, fire_requested);
+
+    /* Reserved for future metadata (e.g., trigger counts, timestamp) */
+    if (resv1 != NULL) {
+        *resv1 = 0;
+    }
+
+    if (resv2 != NULL) {
+        *resv2 = 0;
+    }
+
+    return status;
 }
 
 /******************************************************************************/
