@@ -1452,10 +1452,9 @@ typedef enum {
     BLADERF_RX_MUX_INVALID = -1,
 
     /**
-     * Read baseband samples from the LMS6002D. This is the default mode
-     * of operation.
+     * Read baseband samples. This is the default mode of operation.
      */
-    BLADERF_RX_MUX_BASEBAND_LMS  = 0x0,
+    BLADERF_RX_MUX_BASEBAND = 0x0,
 
     /**
      * Read samples from 12 bit counters.
@@ -1479,6 +1478,11 @@ typedef enum {
     BLADERF_RX_MUX_DIGITAL_LOOPBACK = 0x4,
 
 } bladerf_rx_mux;
+
+/** @cond IGNORE */
+/* Backwards compatible mapping for `bladerf_rx_mux`. */
+#define BLADERF_RX_MUX_BASEBAND_LMS BLADERF_RX_MUX_BASEBAND
+/** @endcond */
 
 /**
  * Set the current RX Mux mode

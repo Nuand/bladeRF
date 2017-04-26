@@ -2416,7 +2416,7 @@ static int bladerf1_set_rx_mux(struct bladerf *dev, bladerf_rx_mux mode)
 
     /* Validate desired mux mode */
     switch (mode) {
-        case BLADERF_RX_MUX_BASEBAND_LMS:
+        case BLADERF_RX_MUX_BASEBAND:
         case BLADERF_RX_MUX_12BIT_COUNTER:
         case BLADERF_RX_MUX_32BIT_COUNTER:
         case BLADERF_RX_MUX_DIGITAL_LOOPBACK:
@@ -2461,7 +2461,7 @@ static int bladerf1_get_rx_mux(struct bladerf *dev, bladerf_rx_mux *mode)
 
     /* Enure it's a valid/supported value */
     switch (val) {
-        case BLADERF_RX_MUX_BASEBAND_LMS:
+        case BLADERF_RX_MUX_BASEBAND:
         case BLADERF_RX_MUX_12BIT_COUNTER:
         case BLADERF_RX_MUX_32BIT_COUNTER:
         case BLADERF_RX_MUX_DIGITAL_LOOPBACK:
