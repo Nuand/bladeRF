@@ -1119,6 +1119,9 @@ begin
     -- Power mux control
     psu_ctl_d   <= "ZZ";
 
+    -- Expansion clock request/enable
+    exp_clock_en <= exp_present and exp_clock_req;
+
     generate_xb_gpio_out : for i in exp_gpio'range generate
         exp_gpio(i) <= nios_xb_gpio_out(i) when nios_xb_gpio_oe(i) = '1' else 'Z';
     end generate;

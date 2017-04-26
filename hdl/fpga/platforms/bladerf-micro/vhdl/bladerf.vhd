@@ -106,7 +106,9 @@ entity bladerf is
     fx3_uart_cts        :   out     std_logic ;
 
     -- Expansion Interface (3.3 V)
-    exp_present_n       :   in      std_logic ;
+    exp_present         :   in      std_logic;
+    exp_clock_req       :   in      std_logic;
+    exp_clock_en        :   out     std_logic;
     exp_i2c_sda         :   inout   std_logic;
     exp_i2c_scl         :   inout   std_logic;
     exp_gpio            :   inout   std_logic_vector(31 downto 0)
