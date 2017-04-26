@@ -647,11 +647,17 @@ static int bladerf2_get_fw_version(struct bladerf *dev, struct bladerf_version *
 
 static int bladerf2_enable_module(struct bladerf *dev, bladerf_direction dir, bool enable)
 {
+    struct bladerf2_board_data *board_data = dev->board_data;
     int status;
     bool tx;
     uint32_t reg;
 
     CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    /* Stop synchronous interface */
+    if (!enable) {
+        sync_deinit(&board_data->sync[dir]);
+    }
 
     /* Read RFFE control register */
     status = dev->backend->rffe_control_read(dev, &reg);
