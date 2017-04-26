@@ -51,7 +51,7 @@ architecture arch of time_tamer is
 
     signal timestamp    :   unsigned(63 downto 0) ;
 
-    signal compare_time         :   unsigned(63 downto 0) ;
+    signal compare_time         :   unsigned(63 downto 0) := (others => '0');
 
     signal mm_clear_compare     :   std_logic ;
     signal mm_compare_cleared   :   std_logic ;
@@ -304,7 +304,7 @@ begin
                     end if ;
 
                 when WAIT_FOR_COMPARE =>
-                    if( compare_time <= timestamp ) then
+                    if( compare_time = timestamp ) then
                         ts_time_trigger <= '1' ;
                         ts_compare_loaded <= '0' ;
                         fsm := WAIT_FOR_CLEAR ;

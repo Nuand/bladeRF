@@ -10,7 +10,7 @@ architecture arch of time_tamer_tb is
     signal clock        :   std_logic       := '1' ;
     signal reset        :   std_logic       := '1' ;
 
-    signal addr         :   std_logic_vector(4 downto 0) ;
+    signal addr         :   std_logic_vector(4 downto 0) := (others => '0');
     signal din          :   std_logic_vector(7 downto 0) ;
     signal dout         :   std_logic_vector(7 downto 0) ;
     signal write        :   std_logic                       := '0' ;
