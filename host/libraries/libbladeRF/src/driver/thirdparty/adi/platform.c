@@ -177,7 +177,7 @@ int axiadc_init(struct ad9361_rf_phy *phy, void *userdata)
         return status;
     }
 
-    status = dac_init(phy, DATA_SEL_DDS, 0);
+    status = dac_init(phy, DATA_SEL_DMA, 0);
     if (status < 0) {
         return status;
     }
