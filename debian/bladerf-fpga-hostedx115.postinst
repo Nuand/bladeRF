@@ -40,6 +40,8 @@ if [ ! -s ${DATAFILE} ] || ! checkfile ${DATAFILE}; then
 
 		EOMSG
 
+		# exit successfully, as otherwise the package is left
+		# half-configured and the surrounding install/upgrade fails
 		exit 0
 	fi
 fi
