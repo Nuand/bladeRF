@@ -40,7 +40,7 @@ if [ ! -s ${DATAFILE} ] || ! checkfile ${DATAFILE}; then
 
 		EOMSG
 
-		exit 1
+		exit 0
 	fi
 fi
 
