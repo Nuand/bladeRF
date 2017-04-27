@@ -874,18 +874,24 @@ static int bladerf2_set_sample_rate(struct bladerf *dev, bladerf_channel ch, uns
         if (status < 0) {
             return errno_ad9361_to_bladerf(status);
         }
-        status = ad9361_get_tx_sampling_freq(board_data->phy, actual);
-        if (status < 0) {
-            return errno_ad9361_to_bladerf(status);
+
+        if (actual) {
+            status = ad9361_get_tx_sampling_freq(board_data->phy, actual);
+            if (status < 0) {
+                return errno_ad9361_to_bladerf(status);
+            }
         }
     } else {
         status = ad9361_set_rx_sampling_freq(board_data->phy, rate);
         if (status < 0) {
             return errno_ad9361_to_bladerf(status);
         }
-        status = ad9361_get_rx_sampling_freq(board_data->phy, actual);
-        if (status < 0) {
-            return errno_ad9361_to_bladerf(status);
+
+        if (actual) {
+            status = ad9361_get_rx_sampling_freq(board_data->phy, actual);
+            if (status < 0) {
+                return errno_ad9361_to_bladerf(status);
+            }
         }
     }
 
