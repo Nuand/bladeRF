@@ -950,18 +950,24 @@ static int bladerf2_set_bandwidth(struct bladerf *dev, bladerf_channel ch, unsig
         if (status < 0) {
             return errno_ad9361_to_bladerf(status);
         }
-        status = ad9361_get_tx_rf_bandwidth(board_data->phy, actual);
-        if (status < 0) {
-            return errno_ad9361_to_bladerf(status);
+
+        if (actual) {
+            status = ad9361_get_tx_rf_bandwidth(board_data->phy, actual);
+            if (status < 0) {
+                return errno_ad9361_to_bladerf(status);
+            }
         }
     } else {
         status = ad9361_set_rx_rf_bandwidth(board_data->phy, bandwidth);
         if (status < 0) {
             return errno_ad9361_to_bladerf(status);
         }
-        status = ad9361_get_rx_rf_bandwidth(board_data->phy, actual);
-        if (status < 0) {
-            return errno_ad9361_to_bladerf(status);
+
+        if (actual) {
+            status = ad9361_get_rx_rf_bandwidth(board_data->phy, actual);
+            if (status < 0) {
+                return errno_ad9361_to_bladerf(status);
+            }
         }
     }
 
