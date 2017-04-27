@@ -893,13 +893,7 @@ int bladerf_init_stream(struct bladerf_stream **stream,
 
 int bladerf_stream(struct bladerf_stream *stream, bladerf_channel_layout layout)
 {
-    int status;
-    MUTEX_LOCK(&stream->dev->lock);
-
-    status = stream->dev->board->stream(stream, layout);
-
-    MUTEX_UNLOCK(&stream->dev->lock);
-    return status;
+    return stream->dev->board->stream(stream, layout);
 }
 
 int bladerf_submit_stream_buffer(struct bladerf_stream *stream,
