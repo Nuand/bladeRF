@@ -25,6 +25,118 @@ library ieee;
 package bladerf_p is
 
     -- ========================================================================
+    -- Component declarations for Verilog files
+    -- ========================================================================
+
+    component system_pll is
+        port (
+            refclk   : in  std_logic;
+            rst      : in  std_logic;
+            outclk_0 : out std_logic;
+            locked   : out std_logic
+        );
+    end component;
+
+    component fx3_pll is
+        port (
+            refclk   : in  std_logic;
+            rst      : in  std_logic;
+            outclk_0 : out std_logic;
+            locked   : out std_logic
+        );
+    end component;
+
+    component nios_system is
+      port (
+        clk_clk                         :   in  std_logic := 'X';
+        reset_reset_n                   :   in  std_logic := 'X';
+        dac_MISO                        :   in  std_logic := 'X';
+        dac_MOSI                        :   out std_logic;
+        dac_SCLK                        :   out std_logic;
+        dac_SS_n                        :   out std_logic_vector(1 downto 0);
+        spi_MISO                        :   in  std_logic := 'X';
+        spi_MOSI                        :   out std_logic;
+        spi_SCLK                        :   out std_logic;
+        spi_SS_n                        :   out std_logic;
+        gpio_export                     :   out std_logic_vector(31 downto 0);
+        gpio_rffe_0_in_port             :   in  std_logic_vector(31 downto 0);
+        gpio_rffe_0_out_port            :   out std_logic_vector(31 downto 0);
+        ad9361_dac_sync_in_sync         :   in  std_logic;
+        ad9361_dac_sync_out_sync        :   out std_logic;
+        ad9361_data_clock_clk           :   out std_logic;
+        ad9361_data_reset_reset         :   out std_logic;
+        ad9361_device_if_rx_clk_in_p    :   in  std_logic;
+        ad9361_device_if_rx_clk_in_n    :   in  std_logic;
+        ad9361_device_if_rx_frame_in_p  :   in  std_logic;
+        ad9361_device_if_rx_frame_in_n  :   in  std_logic;
+        ad9361_device_if_rx_data_in_p   :   in  std_logic_vector(5 downto 0);
+        ad9361_device_if_rx_data_in_n   :   in  std_logic_vector(5 downto 0);
+        ad9361_device_if_tx_clk_out_p   :   out std_logic;
+        ad9361_device_if_tx_clk_out_n   :   out std_logic;
+        ad9361_device_if_tx_frame_out_p :   out std_logic;
+        ad9361_device_if_tx_frame_out_n :   out std_logic;
+        ad9361_device_if_tx_data_out_p  :   out std_logic_vector(5 downto 0);
+        ad9361_device_if_tx_data_out_n  :   out std_logic_vector(5 downto 0);
+        ad9361_adc_i0_enable            :   out std_logic;
+        ad9361_adc_i0_valid             :   out std_logic;
+        ad9361_adc_i0_data              :   out std_logic_vector(15 downto 0);
+        ad9361_adc_i1_enable            :   out std_logic;
+        ad9361_adc_i1_valid             :   out std_logic;
+        ad9361_adc_i1_data              :   out std_logic_vector(15 downto 0);
+        ad9361_adc_overflow_ovf         :   in  std_logic;
+        ad9361_adc_q0_enable            :   out std_logic;
+        ad9361_adc_q0_valid             :   out std_logic;
+        ad9361_adc_q0_data              :   out std_logic_vector(15 downto 0);
+        ad9361_adc_q1_enable            :   out std_logic;
+        ad9361_adc_q1_valid             :   out std_logic;
+        ad9361_adc_q1_data              :   out std_logic_vector(15 downto 0);
+        ad9361_adc_underflow_unf        :   in  std_logic;
+        ad9361_dac_i0_enable            :   out std_logic;
+        ad9361_dac_i0_valid             :   out std_logic;
+        ad9361_dac_i0_data              :   in  std_logic_vector(15 downto 0);
+        ad9361_dac_i1_enable            :   out std_logic;
+        ad9361_dac_i1_valid             :   out std_logic;
+        ad9361_dac_i1_data              :   in  std_logic_vector(15 downto 0);
+        ad9361_dac_overflow_ovf         :   in  std_logic;
+        ad9361_dac_q0_enable            :   out std_logic;
+        ad9361_dac_q0_valid             :   out std_logic;
+        ad9361_dac_q0_data              :   in  std_logic_vector(15 downto 0);
+        ad9361_dac_q1_enable            :   out std_logic;
+        ad9361_dac_q1_valid             :   out std_logic;
+        ad9361_dac_q1_data              :   in  std_logic_vector(15 downto 0);
+        ad9361_dac_underflow_unf        :   in  std_logic;
+        oc_i2c_arst_i                   :   in  std_logic;
+        oc_i2c_scl_pad_i                :   in  std_logic;
+        oc_i2c_scl_pad_o                :   out std_logic;
+        oc_i2c_scl_padoen_o             :   out std_logic;
+        oc_i2c_sda_pad_i                :   in  std_logic;
+        oc_i2c_sda_pad_o                :   out std_logic;
+        oc_i2c_sda_padoen_o             :   out std_logic;
+        xb_gpio_in_port                 :   in  std_logic_vector(31 downto 0) := (others => 'X');
+        xb_gpio_out_port                :   out std_logic_vector(31 downto 0);
+        xb_gpio_dir_export              :   out std_logic_vector(31 downto 0);
+        command_serial_in               :   in  std_logic;
+        command_serial_out              :   out std_logic;
+        rx_tamer_ts_sync_in             :   in  std_logic;
+        rx_tamer_ts_sync_out            :   out std_logic;
+        rx_tamer_ts_pps                 :   in  std_logic;
+        rx_tamer_ts_clock               :   in  std_logic;
+        rx_tamer_ts_reset               :   in  std_logic;
+        rx_tamer_ts_time                :   out std_logic_vector(63 downto 0);
+        tx_tamer_ts_sync_in             :   in  std_logic;
+        tx_tamer_ts_sync_out            :   out std_logic;
+        tx_tamer_ts_pps                 :   in  std_logic;
+        tx_tamer_ts_clock               :   in  std_logic;
+        tx_tamer_ts_reset               :   in  std_logic;
+        tx_tamer_ts_time                :   out std_logic_vector(63 downto 0);
+        tx_trigger_ctl_in_port          :   in  std_logic_vector(7 downto 0);
+        tx_trigger_ctl_out_port         :   out std_logic_vector(7 downto 0);
+        rx_trigger_ctl_in_port          :   in  std_logic_vector(7 downto 0);
+        rx_trigger_ctl_out_port         :   out std_logic_vector(7 downto 0)
+      );
+    end component;
+
+    -- ========================================================================
     -- TYPEDEFS
     -- ========================================================================
 

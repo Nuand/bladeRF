@@ -41,14 +41,14 @@ set_false_path -from * -to [get_ports adf_ce]
 # FX3 UART interface
 #set_false_path -from * -to [get_ports fx3_uart_rxd]
 set_false_path -from * -to [get_ports fx3_uart_cts]
-set_output_delay -clock [get_clocks {U_pll*divclk}] -max 1.0 [get_ports {fx3_uart_rxd}]
-set_output_delay -clock [get_clocks {U_pll*divclk}] -min 0.0 [get_ports {fx3_uart_rxd}] -add_delay
-set_input_delay  -clock [get_clocks {U_pll*divclk}] -max 1.0 [get_ports {fx3_uart_txd}]
-set_input_delay  -clock [get_clocks {U_pll*divclk}] -min 0.0 [get_ports {fx3_uart_txd}] -add_delay
+set_output_delay -clock [get_clocks {U_system_pll*divclk}] -max 1.0 [get_ports {fx3_uart_rxd}]
+set_output_delay -clock [get_clocks {U_system_pll*divclk}] -min 0.0 [get_ports {fx3_uart_rxd}] -add_delay
+set_input_delay  -clock [get_clocks {U_system_pll*divclk}] -max 1.0 [get_ports {fx3_uart_txd}]
+set_input_delay  -clock [get_clocks {U_system_pll*divclk}] -min 0.0 [get_ports {fx3_uart_txd}] -add_delay
 
 ## VCTCXO trimdac
-#set_output_delay -clock [get_clocks U_pll*0*] -min 0.0 [get_ports {dac_csn dac_sclk dac_sdi}]
-#set_output_delay -clock [get_clocks U_pll*0*] -max 0.2 [get_ports {dac_csn dac_sclk dac_sdi}] -add_delay
+#set_output_delay -clock [get_clocks U_system_pll*0*] -min 0.0 [get_ports {dac_csn dac_sclk dac_sdi}]
+#set_output_delay -clock [get_clocks U_system_pll*0*] -max 0.2 [get_ports {dac_csn dac_sclk dac_sdi}] -add_delay
 
 
 # LED's

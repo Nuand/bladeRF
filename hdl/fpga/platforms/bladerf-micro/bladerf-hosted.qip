@@ -7,8 +7,6 @@ set opencores_ip [file normalize [file join $here ../../ip/opencores]]
 set workdir      [file normalize [file join $here ../../../quartus/work/bladerf-micro]]
 
 # Altera IP
-set_global_assignment -name QIP_FILE [file normalize [file join $altera_ip pll/pll.qip]]
-set_global_assignment -name QIP_FILE [file normalize [file join $altera_ip fx3_pll/fx3_pll.qip]]
 set_global_assignment -name QIP_FILE [file normalize [file join $altera_ip rx_fifo/rx_fifo.qip]]
 set_global_assignment -name QIP_FILE [file normalize [file join $altera_ip tx_fifo/tx_fifo.qip]]
 set_global_assignment -name QIP_FILE [file normalize [file join $altera_ip tx_meta_fifo/tx_meta_fifo.qip]]
@@ -29,12 +27,11 @@ set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/fx3_
 set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/bladerf-hosted.vhd]]
 set_global_assignment -name QIP_FILE [file normalize [file join $workdir nios_system/synthesis/nios_system.qip]]
 
+set_global_assignment -name VERILOG_FILE [file normalize [file join $workdir system_pll/system_pll.v]]
+set_global_assignment -name QIP_FILE [file normalize [file join $workdir system_pll/system_pll.qip]]
+
+set_global_assignment -name VERILOG_FILE [file normalize [file join $workdir fx3_pll/fx3_pll.v]]
+set_global_assignment -name QIP_FILE [file normalize [file join $workdir fx3_pll/fx3_pll.qip]]
+
 # Explicitly include Nios mem_init
 set_global_assignment -name QIP_FILE [file normalize [file join $workdir bladeRF_nios/mem_init/meminit.qip]]
-
-# SDC Constraints
-set_global_assignment -name SDC_FILE [file normalize [file join $adi_ip hdl/library/common/ad_axi_ip_constr.sdc]]
-set_global_assignment -name SDC_FILE [file normalize [file join $here constraints/ad9361.sdc]]
-set_global_assignment -name SDC_FILE [file normalize [file join $nuand_ip synthesis/constraints/spi.sdc]]
-set_global_assignment -name SDC_FILE [file normalize [file join $here constraints/bladerf.sdc]]
-set_global_assignment -name SDC_FILE [file normalize [file join $opencores_ip i2c/rtl/oc_i2c.sdc]]

@@ -32,96 +32,6 @@ architecture hosted_bladerf of bladerf is
     attribute noprune   : boolean ;
     attribute keep      : boolean ;
 
-    component nios_system is
-      port (
-        clk_clk                         :   in  std_logic := 'X';
-        reset_reset_n                   :   in  std_logic := 'X';
-        dac_MISO                        :   in  std_logic := 'X';
-        dac_MOSI                        :   out std_logic;
-        dac_SCLK                        :   out std_logic;
-        dac_SS_n                        :   out std_logic_vector(1 downto 0);
-        spi_MISO                        :   in  std_logic := 'X';
-        spi_MOSI                        :   out std_logic;
-        spi_SCLK                        :   out std_logic;
-        spi_SS_n                        :   out std_logic;
-        gpio_export                     :   out std_logic_vector(31 downto 0);
-        gpio_rffe_0_in_port             :   in  std_logic_vector(31 downto 0);
-        gpio_rffe_0_out_port            :   out std_logic_vector(31 downto 0);
-        ad9361_dac_sync_in_sync         :   in  std_logic;
-        ad9361_dac_sync_out_sync        :   out std_logic;
-        ad9361_data_clock_clk           :   out std_logic;
-        ad9361_data_reset_reset         :   out std_logic;
-        ad9361_device_if_rx_clk_in_p    :   in  std_logic;
-        ad9361_device_if_rx_clk_in_n    :   in  std_logic;
-        ad9361_device_if_rx_frame_in_p  :   in  std_logic;
-        ad9361_device_if_rx_frame_in_n  :   in  std_logic;
-        ad9361_device_if_rx_data_in_p   :   in  std_logic_vector(5 downto 0);
-        ad9361_device_if_rx_data_in_n   :   in  std_logic_vector(5 downto 0);
-        ad9361_device_if_tx_clk_out_p   :   out std_logic;
-        ad9361_device_if_tx_clk_out_n   :   out std_logic;
-        ad9361_device_if_tx_frame_out_p :   out std_logic;
-        ad9361_device_if_tx_frame_out_n :   out std_logic;
-        ad9361_device_if_tx_data_out_p  :   out std_logic_vector(5 downto 0);
-        ad9361_device_if_tx_data_out_n  :   out std_logic_vector(5 downto 0);
-        ad9361_adc_i0_enable            :   out std_logic;
-        ad9361_adc_i0_valid             :   out std_logic;
-        ad9361_adc_i0_data              :   out std_logic_vector(15 downto 0);
-        ad9361_adc_i1_enable            :   out std_logic;
-        ad9361_adc_i1_valid             :   out std_logic;
-        ad9361_adc_i1_data              :   out std_logic_vector(15 downto 0);
-        ad9361_adc_overflow_ovf         :   in  std_logic;
-        ad9361_adc_q0_enable            :   out std_logic;
-        ad9361_adc_q0_valid             :   out std_logic;
-        ad9361_adc_q0_data              :   out std_logic_vector(15 downto 0);
-        ad9361_adc_q1_enable            :   out std_logic;
-        ad9361_adc_q1_valid             :   out std_logic;
-        ad9361_adc_q1_data              :   out std_logic_vector(15 downto 0);
-        ad9361_adc_underflow_unf        :   in  std_logic;
-        ad9361_dac_i0_enable            :   out std_logic;
-        ad9361_dac_i0_valid             :   out std_logic;
-        ad9361_dac_i0_data              :   in  std_logic_vector(15 downto 0);
-        ad9361_dac_i1_enable            :   out std_logic;
-        ad9361_dac_i1_valid             :   out std_logic;
-        ad9361_dac_i1_data              :   in  std_logic_vector(15 downto 0);
-        ad9361_dac_overflow_ovf         :   in  std_logic;
-        ad9361_dac_q0_enable            :   out std_logic;
-        ad9361_dac_q0_valid             :   out std_logic;
-        ad9361_dac_q0_data              :   in  std_logic_vector(15 downto 0);
-        ad9361_dac_q1_enable            :   out std_logic;
-        ad9361_dac_q1_valid             :   out std_logic;
-        ad9361_dac_q1_data              :   in  std_logic_vector(15 downto 0);
-        ad9361_dac_underflow_unf        :   in  std_logic;
-        oc_i2c_arst_i                   :   in  std_logic;
-        oc_i2c_scl_pad_i                :   in  std_logic;
-        oc_i2c_scl_pad_o                :   out std_logic;
-        oc_i2c_scl_padoen_o             :   out std_logic;
-        oc_i2c_sda_pad_i                :   in  std_logic;
-        oc_i2c_sda_pad_o                :   out std_logic;
-        oc_i2c_sda_padoen_o             :   out std_logic;
-        xb_gpio_in_port                 :   in  std_logic_vector(31 downto 0) := (others => 'X');
-        xb_gpio_out_port                :   out std_logic_vector(31 downto 0);
-        xb_gpio_dir_export              :   out std_logic_vector(31 downto 0);
-        command_serial_in               :   in  std_logic;
-        command_serial_out              :   out std_logic;
-        rx_tamer_ts_sync_in             :   in  std_logic;
-        rx_tamer_ts_sync_out            :   out std_logic;
-        rx_tamer_ts_pps                 :   in  std_logic;
-        rx_tamer_ts_clock               :   in  std_logic;
-        rx_tamer_ts_reset               :   in  std_logic;
-        rx_tamer_ts_time                :   out std_logic_vector(63 downto 0);
-        tx_tamer_ts_sync_in             :   in  std_logic;
-        tx_tamer_ts_sync_out            :   out std_logic;
-        tx_tamer_ts_pps                 :   in  std_logic;
-        tx_tamer_ts_clock               :   in  std_logic;
-        tx_tamer_ts_reset               :   in  std_logic;
-        tx_tamer_ts_time                :   out std_logic_vector(63 downto 0);
-        tx_trigger_ctl_in_port          :   in  std_logic_vector(7 downto 0);
-        tx_trigger_ctl_out_port         :   out std_logic_vector(7 downto 0);
-        rx_trigger_ctl_in_port          :   in  std_logic_vector(7 downto 0);
-        rx_trigger_ctl_out_port         :   out std_logic_vector(7 downto 0)
-      );
-    end component;
-
     alias sys_rst   is fx3_ctl(7) ;
 
     -- Can be set from libbladeRF using bladerf_set_rx_mux()
@@ -362,46 +272,46 @@ architecture hosted_bladerf of bladerf is
 
 begin
 
-    -- Create 80MHz from 38.4MHz coming from the c4_clock source
-    U_pll : entity work.pll
-      port map (
-        areset              =>  \80MHz pll reset\,
-        inclk0              =>  c5_clock_1,
-        c0                  =>  \80MHz\,
-        locked              =>  \80MHz locked\
-      ) ;
+    -- Create 80 MHz system clock from 38.4 MHz from the c5_clock_1 source
+    U_system_pll : component system_pll
+        port map (
+            refclk   => c5_clock_1,
+            rst      => \80MHz pll reset\,
+            outclk_0 => \80MHz\,
+            locked   => \80MHz locked\
+        );
 
     U_pll_reset_pll : entity work.pll_reset
-      generic map (
-        SYS_CLOCK_FREQ_HZ   => 38_400_000,
-        DEVICE_FAMILY       => "Cyclone V"
-      )
-      port map (
-        sys_clock      => c5_clock_1,
-        pll_locked     => \80MHz locked\,
-        pll_locked_out => open,
-        pll_reset      => \80MHz pll reset\
-    );
+        generic map (
+            SYS_CLOCK_FREQ_HZ   => 38_400_000,
+            DEVICE_FAMILY       => "Cyclone V"
+        )
+        port map (
+            sys_clock      => c5_clock_1,
+            pll_locked     => \80MHz locked\,
+            pll_locked_out => open,
+            pll_reset      => \80MHz pll reset\
+        );
 
-    U_fx3_pll : entity work.fx3_pll
-      port map (
-        areset              =>  fx3_pclk_pll_reset,
-        inclk0              =>  fx3_pclk,
-        c0                  =>  fx3_pclk_pll,
-        locked              =>  fx3_pclk_pll_locked
-      ) ;
+    U_fx3_pll : component fx3_pll
+        port map (
+            refclk   =>  fx3_pclk,
+            rst      =>  fx3_pclk_pll_reset,
+            outclk_0 =>  fx3_pclk_pll,
+            locked   =>  fx3_pclk_pll_locked
+        );
 
     U_pll_reset_fx3_pll : entity work.pll_reset
-      generic map (
-        SYS_CLOCK_FREQ_HZ   => 100_000_000,
-        DEVICE_FAMILY       => "Cyclone V"
-      )
-      port map (
-        sys_clock      => fx3_pclk,
-        pll_locked     => fx3_pclk_pll_locked,
-        pll_locked_out => open,
-        pll_reset      => fx3_pclk_pll_reset
-    );
+        generic map (
+            SYS_CLOCK_FREQ_HZ   => 100_000_000,
+            DEVICE_FAMILY       => "Cyclone V"
+        )
+        port map (
+            sys_clock      => fx3_pclk,
+            pll_locked     => fx3_pclk_pll_locked,
+            pll_locked_out => open,
+            pll_reset      => fx3_pclk_pll_reset
+        );
 
     -- Cross domain synchronizer chains
     U_usb_speed : entity work.synchronizer
