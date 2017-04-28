@@ -45,10 +45,23 @@ architecture hosted_bladerf of bladerf is
     signal \80MHz pll reset\ : std_logic ;
 
 
-    signal nios_gpio        : std_logic_vector(31 downto 0) ;
+    signal nios_gpio_i      : std_logic_vector(31 downto 0) ;
     signal nios_xb_gpio_in  : std_logic_vector(31 downto 0) := (others => '0');
     signal nios_xb_gpio_out : std_logic_vector(31 downto 0) := (others => '0');
     signal nios_xb_gpio_oe  : std_logic_vector(31 downto 0) := (others => '0');
+
+    type nios_gpio_t is record
+        usb_speed   : std_logic;
+        rx_mux_sel  : std_logic_vector(2 downto 0);
+        spi_mux     : std_logic;
+        leds        : std_logic_vector(3 downto 1);
+        led_mode    : std_logic;
+        meta_sync   : std_logic;
+        channel_sel : std_logic;
+        xb_mode     : std_logic_vector(1 downto 0);
+    end record;
+
+    signal nios_gpio        : nios_gpio_t;
 
     signal i2c_scl_in       : std_logic ;
     signal i2c_scl_out      : std_logic ;
@@ -320,7 +333,7 @@ begin
       ) port map (
         reset               =>  '0',
         clock               =>  fx3_pclk_pll,
-        async               =>  nios_gpio(7),
+        async               =>  nios_gpio.usb_speed,
         sync                =>  usb_speed
       ) ;
 
@@ -330,7 +343,7 @@ begin
       ) port map (
         reset               =>  '0',
         clock               =>  rx_clock,
-        async               =>  nios_gpio(7),
+        async               =>  nios_gpio.usb_speed,
         sync                =>  usb_speed_rx
       ) ;
 
@@ -340,7 +353,7 @@ begin
       ) port map (
         reset               =>  '0',
         clock               =>  tx_clock,
-        async               =>  nios_gpio(7),
+        async               =>  nios_gpio.usb_speed,
         sync                =>  usb_speed_tx
       ) ;
 
@@ -351,7 +364,7 @@ begin
           ) port map (
             reset               =>  '0',
             clock               =>  rx_clock,
-            async               =>  nios_gpio(8+i),
+            async               =>  nios_gpio.rx_mux_sel(i),
             sync                =>  rx_mux_sel(i)
           ) ;
     end generate ;
@@ -362,7 +375,7 @@ begin
       ) port map (
         reset               =>  '0',
         clock               =>  fx3_pclk_pll,
-        async               =>  nios_gpio(16),
+        async               =>  nios_gpio.meta_sync,
         sync                =>  meta_en_fx3
       ) ;
 
@@ -372,7 +385,7 @@ begin
       ) port map (
         reset               =>  '0',
         clock               =>  tx_clock,
-        async               =>  nios_gpio(16),
+        async               =>  nios_gpio.meta_sync,
         sync                =>  meta_en_tx
       ) ;
 
@@ -382,11 +395,11 @@ begin
       ) port map (
         reset               =>  '0',
         clock               =>  rx_clock,
-        async               =>  nios_gpio(16),
+        async               =>  nios_gpio.meta_sync,
         sync                =>  meta_en_rx
       ) ;
 
-    xb_mode <= nios_gpio(31 downto 30);
+    xb_mode <= nios_gpio.xb_mode;
 
     U_sys_reset_sync : entity work.reset_synchronizer
       generic map (
@@ -805,7 +818,7 @@ begin
       ) port map (
         reset               =>  '0',
         clock               =>  rx_clock,
-        async               =>  nios_gpio(17),
+        async               =>  nios_gpio.channel_sel,
         sync                =>  channel_sel
       ) ;
 
@@ -924,7 +937,7 @@ begin
         spi_MOSI                        => adi_spi_sdi,
         spi_SCLK                        => adi_spi_sclk,
         spi_SS_n                        => adi_spi_csn,
-        gpio_export                     => nios_gpio,
+        gpio_export                     => nios_gpio_i,
         gpio_rffe_0_in_port             => pack(rffe_gpio),
         gpio_rffe_0_out_port            => rffe_gpio.o,
         ad9361_dac_sync_in_sync         => '0',
@@ -1001,18 +1014,28 @@ begin
         tx_trigger_ctl_in_port          => tx_trigger_ctl_rb
       ) ;
 
+    -- Nios GPIO
+    nios_gpio.usb_speed   <= nios_gpio_i(7);
+    nios_gpio.rx_mux_sel  <= nios_gpio_i(10 downto 8);
+    nios_gpio.spi_mux     <= nios_gpio_i(11);
+    nios_gpio.leds        <= nios_gpio_i(14 downto 12);
+    nios_gpio.led_mode    <= nios_gpio_i(15);
+    nios_gpio.meta_sync   <= nios_gpio_i(16);
+    nios_gpio.channel_sel <= nios_gpio_i(17);
+    nios_gpio.xb_mode     <= nios_gpio_i(31 downto 30);
+
     -- DAC SPI (data latched on falling edge)
-    dac_sclk <= not nios_sclk when nios_gpio(11) = '0' else '0';
-    dac_sdi  <= nios_sdio     when nios_gpio(11) = '0' else '0';
-    dac_csn  <= nios_ss_n(0)  when nios_gpio(11) = '0' else '1';
+    dac_sclk <= not nios_sclk when nios_gpio.spi_mux = '0' else '0';
+    dac_sdi  <= nios_sdio     when nios_gpio.spi_mux = '0' else '0';
+    dac_csn  <= nios_ss_n(0)  when nios_gpio.spi_mux = '0' else '1';
 
     -- ADF SPI (data latched on rising edge)
-    adf_sclk <= nios_sclk    when nios_gpio(11) = '1' else '0';
-    adf_sdi  <= nios_sdio    when nios_gpio(11) = '1' else '0';
-    adf_csn  <= nios_ss_n(1) when nios_gpio(11) = '1' else '1';
-    adf_ce   <= nios_gpio(11);
+    adf_sclk <= nios_sclk    when nios_gpio.spi_mux = '1' else '0';
+    adf_sdi  <= nios_sdio    when nios_gpio.spi_mux = '1' else '0';
+    adf_csn  <= nios_ss_n(1) when nios_gpio.spi_mux = '1' else '1';
+    adf_ce   <= nios_gpio.spi_mux;
 
-    nios_sdo <= adf_muxout when ((nios_ss_n(1) = '0') and (nios_gpio(11) = '1'))
+    nios_sdo <= adf_muxout when ((nios_ss_n(1) = '0') and (nios_gpio.spi_mux = '1'))
                 else '0';
 
     -- Expansion I2C
@@ -1082,9 +1105,9 @@ begin
         end if ;
     end process ;
 
-    led(1) <= led1_blink        when nios_gpio(15) = '0' else not nios_gpio(12);
-    led(2) <= tx_underflow_led  when nios_gpio(15) = '0' else not nios_gpio(13);
-    led(3) <= rx_overflow_led   when nios_gpio(15) = '0' else not nios_gpio(14);
+    led(1) <= led1_blink        when nios_gpio.led_mode = '0' else not nios_gpio.leds(1);
+    led(2) <= tx_underflow_led  when nios_gpio.led_mode = '0' else not nios_gpio.leds(2);
+    led(3) <= rx_overflow_led   when nios_gpio.led_mode = '0' else not nios_gpio.leds(3);
 
     adi_ctrl_in    <= unpack(rffe_gpio.o).ctrl_in;
     adi_tx_spdt2_v <= unpack(rffe_gpio.o).tx_spdt2;
