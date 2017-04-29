@@ -47,15 +47,17 @@ begin
 
     dma_buf_sz <= to_signed(1015, dma_buf_sz'length) when usb_speed = '0' else to_signed(503, dma_buf_sz'length);
     process( clock, reset)
+        variable room_in_fifo : std_logic := '0';
     begin
         if( reset = '1') then
             dma_downcount <= (others =>'0') ;
-            meta_written <= '0' ;
+            meta_written  <= '0' ;
+            room_in_fifo  := '0';
         elsif( rising_edge( clock ) ) then
             if (enable = '1' and meta_en = '1') then
                 if( dma_downcount > 0 ) then
                     dma_downcount <= dma_downcount - 1 ;
-                elsif ( to_signed(2**fifo_usedw'length,fifo_usedw'length+2) - (signed('0'&fifo_full&fifo_usedw)) > dma_buf_sz ) then
+                elsif ( room_in_fifo = '1' ) then
                     -- Guaranteed to be done downcounting here .. so only reset the downcount
                     -- if we are able to store that amount of samples in the downstream FIFO
                     if( meta_written = '1' or in_valid = '1' ) then
@@ -68,6 +70,12 @@ begin
             else
                 dma_downcount <= (others =>'0') ;
                 meta_written <= '0' ;
+            end if;
+
+            if( to_signed(2**fifo_usedw'length,fifo_usedw'length+2) - (signed('0'&fifo_full&fifo_usedw)) > dma_buf_sz ) then
+                room_in_fifo := '1';
+            else
+                room_in_fifo := '0';
             end if;
         end if;
     end process;
