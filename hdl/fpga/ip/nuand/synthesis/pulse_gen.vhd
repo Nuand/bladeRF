@@ -32,7 +32,7 @@ library ieee;
 --
 -- Parameters:
 --   EDGE_RISE    : '1' = generates a pulse when input transitions low-to-high
---   EDGE_FALL    : '1' = generates a pulse when input transitions high-to-low
+--   EDGE_FALL    : '0' = generates a pulse when input transitions high-to-low
 --
 --   It is possible to have both a rising and falling edge pulse, meaning
 --   the output pulse will occur for one clock period on the rising edge
