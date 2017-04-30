@@ -926,12 +926,42 @@ static int bladerf2_get_sample_rate_range(struct bladerf *dev, bladerf_channel c
 
 static int bladerf2_set_rational_sample_rate(struct bladerf *dev, bladerf_channel ch, struct bladerf_rational_rate *rate, struct bladerf_rational_rate *actual)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    int status;
+    unsigned int integer_rate, actual_integer_rate;
+
+    integer_rate = rate->integer + rate->num / rate->den;
+
+    status = bladerf2_set_sample_rate(dev, ch, integer_rate, &actual_integer_rate);
+
+    if (status < 0) {
+        return status;
+    }
+
+    actual->integer = actual_integer_rate;
+    actual->num = 0;
+    actual->den = 1;
+
+    return 0;
 }
 
 static int bladerf2_get_rational_sample_rate(struct bladerf *dev, bladerf_channel ch, struct bladerf_rational_rate *rate)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    int status;
+    unsigned int integer_rate;
+
+    status = bladerf2_get_sample_rate(dev, ch, &integer_rate);
+
+    if (status < 0)
+        return status;
+
+    if (rate) {
+        rate->integer = integer_rate;
+        rate->num = 0;
+        rate->den = 1;
+    }
+
+    return 0;
+
 }
 
 /******************************************************************************/
