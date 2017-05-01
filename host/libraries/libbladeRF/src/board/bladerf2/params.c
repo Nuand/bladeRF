@@ -192,6 +192,12 @@ AD9361_InitParam ad9361_init_params = {
 	0,		//rx1rx2_phase_inversion_en *** adi,rx1-rx2-phase-inversion-enable
 	0xFF,	//lvds_invert1_control *** adi,lvds-invert1-control
 	0x0F,	//lvds_invert2_control *** adi,lvds-invert2-control
+	0,		//clk_out_drive
+	0,		//dataclk_drive
+	0,		//data_port_drive
+	0,		//clk_out_slew
+	0,		//dataclk_slew
+	0,		//data_port_slew
 	/* GPO Control */
 	0,		//gpo0_inactive_state_high_enable *** adi,gpo0-inactive-state-high-enable
 	0,		//gpo1_inactive_state_high_enable *** adi,gpo1-inactive-state-high-enable

@@ -3418,8 +3418,12 @@ static int32_t ad9361_pp_port_setup(struct ad9361_rf_phy *phy, bool restore_c3)
 	ad9361_spi_write(spi, REG_RX_CLOCK_DATA_DELAY, pd->port_ctrl.rx_clk_data_delay);
 	ad9361_spi_write(spi, REG_TX_CLOCK_DATA_DELAY, pd->port_ctrl.tx_clk_data_delay);
 
-	ad9361_spi_write(spi, REG_LVDS_BIAS_CTRL, pd->port_ctrl.lvds_bias_ctrl);
+	ad9361_spi_write(spi, REG_LVDS_BIAS_CTRL, pd->port_ctrl.lvds_bias_ctrl | CLK_OUT_SLEW(pd->port_ctrl.clk_out_slew));
 	//	ad9361_spi_write(spi, REG_DIGITAL_IO_CTRL, pd->port_ctrl.digital_io_ctrl);
+	ad9361_spi_write(spi, REG_DIGITAL_IO_CTRL, DATACLK_SLEW(pd->port_ctrl.dataclk_slew) | DATA_PORT_SLEW(pd->port_ctrl.data_port_slew));
+	ad9361_spi_writef(spi, REG_DIGITAL_IO_CTRL, DATACLK_DRIVE, pd->port_ctrl.dataclk_drive);
+	ad9361_spi_writef(spi, REG_DIGITAL_IO_CTRL, DATA_PORT_DRIVE, pd->port_ctrl.data_port_drive);
+	ad9361_spi_writef(spi, REG_DIGITAL_IO_CTRL, CLK_OUT_DRIVE, pd->port_ctrl.clk_out_drive);
 	ad9361_spi_write(spi, REG_LVDS_INVERT_CTRL1, pd->port_ctrl.lvds_invert[0]);
 	ad9361_spi_write(spi, REG_LVDS_INVERT_CTRL2, pd->port_ctrl.lvds_invert[1]);
 
@@ -3430,6 +3434,9 @@ static int32_t ad9361_pp_port_setup(struct ad9361_rf_phy *phy, bool restore_c3)
 		ad9361_spi_writef(spi, REG_INVERT_BITS,
 				  INVERT_RX2_RF_DC_CGOUT_WORD, 0);
 	}
+
+	dev_dbg(&phy->spi->dev, "%s: REG_DIGITAL_IO_CTRL = %x", __func__, ad9361_spi_read(spi, REG_DIGITAL_IO_CTRL));
+	dev_dbg(&phy->spi->dev, "%s: REG_LVDS_BIAS_CTRL = %x", __func__, ad9361_spi_read(spi, REG_LVDS_BIAS_CTRL));
 
 	return 0;
 }

@@ -341,6 +341,12 @@ int32_t ad9361_init (struct ad9361_rf_phy **ad9361_phy,
 	phy->pdata->port_ctrl.tx_clk_data_delay |= TX_DATA_DELAY(init_param->tx_data_delay);
 	phy->pdata->port_ctrl.lvds_bias_ctrl = ((init_param->lvds_bias_mV - 75) / 75) & 0x7;
 	phy->pdata->port_ctrl.lvds_bias_ctrl |= (init_param->lvds_rx_onchip_termination_enable << 5);
+	phy->pdata->port_ctrl.clk_out_drive = init_param->clk_out_drive & 0x1;
+	phy->pdata->port_ctrl.dataclk_drive = init_param->dataclk_drive & 0x1;
+	phy->pdata->port_ctrl.data_port_drive = init_param->data_port_drive & 0x1;
+	phy->pdata->port_ctrl.clk_out_slew = init_param->clk_out_slew & 0x3;
+	phy->pdata->port_ctrl.dataclk_slew = init_param->dataclk_slew & 0x3;
+	phy->pdata->port_ctrl.data_port_slew = init_param->data_port_slew & 0x3;
 	phy->pdata->rx1rx2_phase_inversion_en = init_param->rx1rx2_phase_inversion_en;
 
 	/* GPO Control */

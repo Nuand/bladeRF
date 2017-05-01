@@ -3042,6 +3042,12 @@ struct port_control {
 	uint8_t			digital_io_ctrl;
 	uint8_t			lvds_bias_ctrl;
 	uint8_t			lvds_invert[2];
+	uint8_t			clk_out_drive;
+	uint8_t			dataclk_drive;
+	uint8_t			data_port_drive;
+	uint8_t			clk_out_slew;
+	uint8_t			dataclk_slew;
+	uint8_t			data_port_slew;
 };
 
 struct ctrl_outs_control {

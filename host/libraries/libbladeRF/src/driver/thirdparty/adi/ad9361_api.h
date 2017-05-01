@@ -240,6 +240,12 @@ typedef struct
 	uint8_t		rx1rx2_phase_inversion_en;	/* adi,rx1-rx2-phase-inversion-enable */
 	uint8_t		lvds_invert1_control;	/* adi,lvds-invert1-control */
 	uint8_t		lvds_invert2_control;	/* adi,lvds-invert2-control */
+	uint8_t		clk_out_drive;
+	uint8_t		dataclk_drive;
+	uint8_t		data_port_drive;
+	uint8_t		clk_out_slew;
+	uint8_t		dataclk_slew;
+	uint8_t		data_port_slew;
 	/* GPO Control */
 	uint8_t		gpo0_inactive_state_high_enable;	/* adi,gpo0-inactive-state-high-enable */
 	uint8_t		gpo1_inactive_state_high_enable;	/* adi,gpo1-inactive-state-high-enable */
