@@ -107,6 +107,13 @@ struct bladerf2_board_data {
 #define RFFE_CONTROL_RESET_N    0
 #define RFFE_CONTROL_ENABLE     1
 #define RFFE_CONTROL_TXNRX      2
+#define RFFE_CONTROL_EN_AGC     3
+#define RFFE_CONTROL_SYNC_IN    4
+#define RFFE_CONTROL_RX_BIAS_EN 5
+#define RFFE_CONTROL_RX_SW_SHIFT    6
+#define RFFE_CONTROL_TX_BIAS_EN     10
+#define RFFE_CONTROL_TX_SW_SHIFT    11
+#define RFFE_CONTROL_SPDT_MASK      0xF
 
 /* Board state to string map */
 
@@ -1034,6 +1041,44 @@ static int bladerf2_get_bandwidth_range(struct bladerf *dev, bladerf_channel ch,
 /* Frequency */
 /******************************************************************************/
 
+static int bladerf2_select_band(struct bladerf *dev, bladerf_channel ch, uint64_t frequency)
+{
+    const uint64_t mid_band_point = 3000000000U;
+    struct bladerf2_board_data *board_data = dev->board_data;
+    int status;
+    bool low_band;
+    uint32_t reg;
+
+    status = dev->backend->rffe_control_read(dev, &reg);
+    if (status < 0) {
+        return status;
+    }
+
+    low_band = frequency < mid_band_point;
+
+    if (ch & BLADERF_TX) {
+        reg &= ~(RFFE_CONTROL_SPDT_MASK << RFFE_CONTROL_TX_SW_SHIFT);
+        if (low_band)
+            reg |= 0x5 << RFFE_CONTROL_TX_SW_SHIFT;
+        else
+            reg |= 0xA << RFFE_CONTROL_TX_SW_SHIFT;
+        status = ad9361_set_tx_rf_port_output(board_data->phy, low_band ? 0 : 1);
+    } else {
+        reg &= ~(RFFE_CONTROL_SPDT_MASK << RFFE_CONTROL_RX_SW_SHIFT);
+        if (low_band)
+            reg |= 0x5 << RFFE_CONTROL_RX_SW_SHIFT;
+        else
+            reg |= 0xA << RFFE_CONTROL_RX_SW_SHIFT;
+        status = ad9361_set_rx_rf_port_input(board_data->phy, low_band ? 0 : 1);
+    }
+
+    if (status < 0) {
+        return errno_ad9361_to_bladerf(status);
+    }
+
+    return dev->backend->rffe_control_write(dev, reg);
+}
+
 static int bladerf2_set_frequency(struct bladerf *dev, bladerf_channel ch, uint64_t frequency)
 {
     struct bladerf2_board_data *board_data = dev->board_data;
@@ -1051,9 +1096,7 @@ static int bladerf2_set_frequency(struct bladerf *dev, bladerf_channel ch, uint6
         return errno_ad9361_to_bladerf(status);
     }
 
-    /* FIXME ad9361_set_rx_rf_port_input / ad9361_set_tx_rf_port_output */
-
-    return 0;
+    return bladerf2_select_band(dev, ch, frequency);
 }
 
 static int bladerf2_get_frequency(struct bladerf *dev, bladerf_channel ch, uint64_t *frequency)
@@ -1088,11 +1131,6 @@ static int bladerf2_get_frequency_range(struct bladerf *dev, bladerf_channel ch,
     }
 
     return 0;
-}
-
-static int bladerf2_select_band(struct bladerf *dev, bladerf_channel ch, uint64_t frequency)
-{
-    return BLADERF_ERR_UNSUPPORTED;
 }
 
 /******************************************************************************/
