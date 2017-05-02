@@ -1361,46 +1361,6 @@ static int bladerf2_get_timestamp(struct bladerf *dev, bladerf_direction dir, ui
 }
 
 /******************************************************************************/
-/* Low level AD9361 Accessors */
-/******************************************************************************/
-int bladerf_ad9361_read(struct bladerf *dev, uint16_t address, uint8_t *val)
-{
-    int status;
-    uint64_t data;
-    int len;
-    int i;
-
-    status = dev->backend->ad9361_spi_read(dev, address, &data);
-    if (status < 0)
-        return status;
-
-    len = 1;
-    for (i = 0; i < len; i++) {
-        val[i] = (data >> 8*(7-i)) & 0xff;
-    }
-
-    return status;
-}
-
-int bladerf_ad9361_write(struct bladerf *dev, uint16_t address, uint8_t val)
-{
-    uint64_t data;
-    int i;
-    int len;
-    uint8_t buf[8] = { 0, 0, 0, 0,  0, 0, 0, 0 };
-
-    len = 8;
-    buf[0] = val;
-
-    data = 0;
-    for (i = 0; i < len; i++) {
-        data |= (((uint64_t)buf[i]) << 8*(7-i));
-    }
-
-    return dev->backend->ad9361_spi_write(dev, AD_WRITE | AD_CNT(1) | AD_ADDR(address), data);
-}
-
-/******************************************************************************/
 /* FPGA/Firmware Loading/Flashing */
 /******************************************************************************/
 
@@ -1836,4 +1796,54 @@ const struct board_fns bladerf2_board_fns = {
  ******************************************************************************
  ******************************************************************************/
 
-/* TBD */
+/******************************************************************************/
+/* Low level AD9361 Accessors */
+/******************************************************************************/
+
+int bladerf_ad9361_read(struct bladerf *dev, uint16_t address, uint8_t *val)
+{
+    int status;
+    uint64_t data;
+
+    if (dev->board != &bladerf2_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
+    MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    address = AD_READ | AD_CNT(1) | address;
+
+    status = dev->backend->ad9361_spi_read(dev, address, &data);
+
+    if (status == 0) {
+        *val = (data >> 56) & 0xff;
+    }
+
+    MUTEX_UNLOCK(&dev->lock);
+
+    return status;
+}
+
+int bladerf_ad9361_write(struct bladerf *dev, uint16_t address, uint8_t val)
+{
+    int status;
+    uint64_t data;
+
+    if (dev->board != &bladerf2_board_fns)
+        return BLADERF_ERR_UNSUPPORTED;
+
+    MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    address = AD_WRITE | AD_CNT(1) | address;
+
+    data = (((uint64_t)val) << 56);
+
+    status = dev->backend->ad9361_spi_write(dev, address, data);
+
+    MUTEX_UNLOCK(&dev->lock);
+
+    return status;
+}
