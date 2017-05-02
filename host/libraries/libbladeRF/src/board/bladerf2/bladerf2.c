@@ -88,7 +88,7 @@ struct bladerf2_board_data {
     struct bladerf_sync sync[2];
 };
 
-#define CHECK_BOARD_STATE(_state) \
+#define _CHECK_BOARD_STATE(_state, _locked) \
     do { \
         struct bladerf2_board_data *board_data = dev->board_data; \
         if (board_data->state < _state) { \
@@ -96,9 +96,15 @@ struct bladerf2_board_data {
                       "(current \"%s\", requires \"%s\").\n", \
                       bladerf2_state_to_string[board_data->state], \
                       bladerf2_state_to_string[_state]); \
+            if (_locked) { \
+                MUTEX_UNLOCK(&dev->lock); \
+            } \
             return BLADERF_ERR_NOT_INIT; \
         } \
     } while(0)
+
+#define CHECK_BOARD_STATE(_state)           _CHECK_BOARD_STATE(_state, false)
+#define CHECK_BOARD_STATE_LOCKED(_state)    _CHECK_BOARD_STATE(_state, true)
 
 /******************************************************************************/
 /* Constants */
@@ -1859,7 +1865,7 @@ int bladerf_ad9361_read(struct bladerf *dev, uint16_t address, uint8_t *val)
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
 
     address = AD_READ | AD_CNT(1) | address;
 
@@ -1884,7 +1890,7 @@ int bladerf_ad9361_write(struct bladerf *dev, uint16_t address, uint8_t val)
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
 
     address = AD_WRITE | AD_CNT(1) | address;
 
