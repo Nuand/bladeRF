@@ -4252,6 +4252,32 @@ struct bladerf_lms_dc_cals
 };
 
 /**
+ * Read an AD9361 register
+ *
+ * @param   dev         Device handle
+ * @param   address     AD9361 register offset
+ * @param   val         Pointer to variable the data should be read into
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_ad9361_read(struct bladerf *dev,
+                               uint16_t address, uint8_t *val);
+
+/**
+ * Write an AD9361 register
+ *
+ * @param   dev         Device handle
+ * @param   address     AD9361 register offset
+ * @param   val         Data to write to register
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_ad9361_write(struct bladerf *dev,
+                                uint16_t address, uint8_t val);
+
+/**
  * Read a LMS register
  *
  * @param   dev         Device handle
