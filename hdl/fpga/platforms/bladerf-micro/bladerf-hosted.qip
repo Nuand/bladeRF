@@ -28,7 +28,7 @@ set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip trigg
 set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip pll_reset/hdl/vhdl/pll_reset.vhd]]
 
 # Implementation Details
-set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/fx3_gpif.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $common_dir vhdl/fx3_gpif.vhd]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/bladerf-hosted.vhd]]
 set_global_assignment -name QIP_FILE  [file normalize [file join $workdir nios_system/synthesis/nios_system.qip]]
 
