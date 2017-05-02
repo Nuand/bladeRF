@@ -246,6 +246,7 @@ static const struct ad9361_port_map bladerf2_tx_port_map[] = {
     {"TXB", 1},
 };
 
+static int bladerf2_select_band(struct bladerf *dev, bladerf_channel ch, uint64_t frequency);
 /******************************************************************************/
 /* Helpers */
 /******************************************************************************/
@@ -303,6 +304,16 @@ static int bladerf2_initialize(struct bladerf *dev)
     }
 
     status = ina219_init(dev, ina219_r_shunt);
+    if (status < 0) {
+        return status;
+    }
+
+    status = bladerf2_select_band(dev, BLADERF_TX, board_data->phy->pdata->tx_synth_freq);
+    if (status < 0) {
+        return status;
+    }
+
+    status = bladerf2_select_band(dev, BLADERF_RX, board_data->phy->pdata->rx_synth_freq);
     if (status < 0) {
         return status;
     }
