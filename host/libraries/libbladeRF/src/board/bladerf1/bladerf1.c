@@ -111,7 +111,7 @@ struct bladerf1_board_data {
     struct bladerf_sync sync[NUM_MODULES];
 };
 
-#define CHECK_BOARD_STATE(_state) \
+#define _CHECK_BOARD_STATE(_state, _locked) \
     do { \
         struct bladerf1_board_data *board_data = dev->board_data; \
         if (board_data->state < _state) { \
@@ -119,10 +119,15 @@ struct bladerf1_board_data {
                       "(current \"%s\", requires \"%s\").\n", \
                       bladerf1_state_to_string[board_data->state], \
                       bladerf1_state_to_string[_state]); \
+            if (_locked) { \
+                MUTEX_UNLOCK(&dev->lock); \
+            } \
             return BLADERF_ERR_NOT_INIT; \
         } \
     } while(0)
 
+#define CHECK_BOARD_STATE(_state)           _CHECK_BOARD_STATE(_state, false)
+#define CHECK_BOARD_STATE_LOCKED(_state)    _CHECK_BOARD_STATE(_state, true)
 
 /******************************************************************************/
 /* Constants */
@@ -2698,7 +2703,7 @@ int bladerf_set_txvga2(struct bladerf *dev, int gain)
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    CHECK_BOARD_STATE_LOCKED(STATE_INITIALIZED);
 
     status = lms_txvga2_set_gain(dev, gain);
 
@@ -2716,7 +2721,7 @@ int bladerf_get_txvga2(struct bladerf *dev, int *gain)
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    CHECK_BOARD_STATE_LOCKED(STATE_INITIALIZED);
 
     status = lms_txvga2_get_gain(dev, gain);
 
@@ -2734,7 +2739,7 @@ int bladerf_set_txvga1(struct bladerf *dev, int gain)
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    CHECK_BOARD_STATE_LOCKED(STATE_INITIALIZED);
 
     status = lms_txvga1_set_gain(dev, gain);
 
@@ -2752,7 +2757,7 @@ int bladerf_get_txvga1(struct bladerf *dev, int *gain)
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    CHECK_BOARD_STATE_LOCKED(STATE_INITIALIZED);
 
     status = lms_txvga1_get_gain(dev, gain);
 
@@ -2774,7 +2779,7 @@ int bladerf_set_lna_gain(struct bladerf *dev, bladerf_lna_gain gain)
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    CHECK_BOARD_STATE_LOCKED(STATE_INITIALIZED);
 
     status = lms_lna_set_gain(dev, gain);
 
@@ -2792,7 +2797,7 @@ int bladerf_get_lna_gain(struct bladerf *dev, bladerf_lna_gain *gain)
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    CHECK_BOARD_STATE_LOCKED(STATE_INITIALIZED);
 
     status = lms_lna_get_gain(dev, gain);
 
@@ -2810,7 +2815,7 @@ int bladerf_set_rxvga1(struct bladerf *dev, int gain)
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    CHECK_BOARD_STATE_LOCKED(STATE_INITIALIZED);
 
     status = lms_rxvga1_set_gain(dev, gain);
 
@@ -2828,7 +2833,7 @@ int bladerf_get_rxvga1(struct bladerf *dev, int *gain)
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    CHECK_BOARD_STATE_LOCKED(STATE_INITIALIZED);
 
     status = lms_rxvga1_get_gain(dev, gain);
 
@@ -2846,7 +2851,7 @@ int bladerf_set_rxvga2(struct bladerf *dev, int gain)
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    CHECK_BOARD_STATE_LOCKED(STATE_INITIALIZED);
 
     status = lms_rxvga2_set_gain(dev, gain);
 
@@ -2864,7 +2869,7 @@ int bladerf_get_rxvga2(struct bladerf *dev, int *gain)
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    CHECK_BOARD_STATE_LOCKED(STATE_INITIALIZED);
 
     status = lms_rxvga2_get_gain(dev, gain);
 
@@ -2887,7 +2892,7 @@ int bladerf_set_tuning_mode(struct bladerf *dev, bladerf_tuning_mode mode)
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    CHECK_BOARD_STATE_LOCKED(STATE_INITIALIZED);
 
     if (mode == BLADERF_TUNING_MODE_FPGA &&
             !have_cap(board_data->capabilities, BLADERF_CAP_FPGA_TUNING)) {
@@ -2935,7 +2940,7 @@ int bladerf_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim)
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+    CHECK_BOARD_STATE_LOCKED(STATE_FIRMWARE_LOADED);
 
     *trim = board_data->dac_trim;
 
@@ -2955,7 +2960,7 @@ int bladerf_set_vctcxo_tamer_mode(struct bladerf *dev,
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    CHECK_BOARD_STATE_LOCKED(STATE_INITIALIZED);
 
     if (!have_cap(board_data->capabilities, BLADERF_CAP_VCTCXO_TAMING_MODE)) {
         log_debug("FPGA %s does not support VCTCXO taming via an input source\n",
@@ -2982,7 +2987,7 @@ int bladerf_get_vctcxo_tamer_mode(struct bladerf *dev,
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    CHECK_BOARD_STATE_LOCKED(STATE_INITIALIZED);
 
     if (!have_cap(board_data->capabilities, BLADERF_CAP_VCTCXO_TAMING_MODE)) {
         log_debug("FPGA %s does not support VCTCXO taming via an input source\n",
@@ -3012,7 +3017,7 @@ int bladerf_set_lpf_mode(struct bladerf *dev, bladerf_channel ch,
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    CHECK_BOARD_STATE_LOCKED(STATE_INITIALIZED);
 
     status = lms_lpf_set_mode(dev, ch, mode);
 
@@ -3031,7 +3036,7 @@ int bladerf_get_lpf_mode(struct bladerf *dev, bladerf_channel ch,
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    CHECK_BOARD_STATE_LOCKED(STATE_INITIALIZED);
 
     status = lms_lpf_get_mode(dev, ch, mode);
 
@@ -3053,7 +3058,7 @@ int bladerf_get_sampling(struct bladerf *dev, bladerf_sampling *sampling)
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    CHECK_BOARD_STATE_LOCKED(STATE_INITIALIZED);
 
     status = lms_get_sampling(dev, sampling);
 
@@ -3071,7 +3076,7 @@ int bladerf_set_sampling(struct bladerf *dev, bladerf_sampling sampling)
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    CHECK_BOARD_STATE_LOCKED(STATE_INITIALIZED);
 
     status = lms_select_sampling(dev, sampling);
 
@@ -3093,7 +3098,7 @@ int bladerf_get_correction(struct bladerf *dev, bladerf_channel ch, bladerf_corr
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    CHECK_BOARD_STATE_LOCKED(STATE_INITIALIZED);
 
     switch (corr) {
         case BLADERF_CORR_FPGA_PHASE:
@@ -3137,7 +3142,7 @@ int bladerf_set_correction(struct bladerf *dev, bladerf_channel ch, bladerf_corr
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    CHECK_BOARD_STATE_LOCKED(STATE_INITIALIZED);
 
     switch (corr) {
         case BLADERF_CORR_FPGA_PHASE:
@@ -3182,7 +3187,7 @@ int bladerf_get_smb_mode(struct bladerf *dev, bladerf_smb_mode *mode)
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    CHECK_BOARD_STATE_LOCKED(STATE_INITIALIZED);
 
     status = smb_clock_get_mode(dev, mode);
 
@@ -3200,7 +3205,7 @@ int bladerf_set_smb_mode(struct bladerf *dev, bladerf_smb_mode mode)
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    CHECK_BOARD_STATE_LOCKED(STATE_INITIALIZED);
 
     status = smb_clock_set_mode(dev, mode);
 
@@ -3218,7 +3223,7 @@ int bladerf_get_smb_frequency(struct bladerf *dev, unsigned int *rate)
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    CHECK_BOARD_STATE_LOCKED(STATE_INITIALIZED);
 
     status = si5338_get_smb_freq(dev, rate);
 
@@ -3236,7 +3241,7 @@ int bladerf_set_smb_frequency(struct bladerf *dev, uint32_t rate, uint32_t *actu
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    CHECK_BOARD_STATE_LOCKED(STATE_INITIALIZED);
 
     status = si5338_set_smb_freq(dev, rate, actual);
 
@@ -3254,7 +3259,7 @@ int bladerf_get_rational_smb_frequency(struct bladerf *dev, struct bladerf_ratio
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    CHECK_BOARD_STATE_LOCKED(STATE_INITIALIZED);
 
     status = si5338_get_rational_smb_freq(dev, rate);
 
@@ -3272,7 +3277,7 @@ int bladerf_set_rational_smb_frequency(struct bladerf *dev, struct bladerf_ratio
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    CHECK_BOARD_STATE_LOCKED(STATE_INITIALIZED);
 
     status = si5338_set_rational_smb_freq(dev, rate, actual);
 
@@ -3359,8 +3364,6 @@ int bladerf_get_fw_log(struct bladerf *dev, const char *filename)
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
-
     if (!have_cap(dev->board->get_capabilities(dev), BLADERF_CAP_READ_FW_LOG_ENTRY)) {
         struct bladerf_version fw_version;
 
@@ -3440,7 +3443,7 @@ int bladerf_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    CHECK_BOARD_STATE_LOCKED(STATE_INITIALIZED);
 
     status = lms_calibrate_dc(dev, module);
 
@@ -3462,7 +3465,7 @@ int bladerf_dac_write(struct bladerf *dev, uint16_t val)
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
 
     status = dac161s055_write(dev, val);
 
@@ -3481,7 +3484,7 @@ int bladerf_dac_read(struct bladerf *dev, uint16_t *val)
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
 
     if (!have_cap(board_data->capabilities, BLADERF_CAP_VCTCXO_TRIMDAC_READ)) {
         log_debug("FPGA %s does not support VCTCXO trimdac readback.\n",
@@ -3511,7 +3514,7 @@ int bladerf_si5338_read(struct bladerf *dev, uint8_t address, uint8_t *val)
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
 
     status = dev->backend->si5338_read(dev,address,val);
 
@@ -3529,7 +3532,7 @@ int bladerf_si5338_write(struct bladerf *dev, uint8_t address, uint8_t val)
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
 
     status = dev->backend->si5338_write(dev,address,val);
 
@@ -3551,7 +3554,7 @@ int bladerf_lms_read(struct bladerf *dev, uint8_t address, uint8_t *val)
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
 
     status = dev->backend->lms_read(dev,address,val);
 
@@ -3569,7 +3572,7 @@ int bladerf_lms_write(struct bladerf *dev, uint8_t address, uint8_t val)
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
 
     status = dev->backend->lms_write(dev,address,val);
 
@@ -3588,7 +3591,7 @@ int bladerf_lms_set_dc_cals(struct bladerf *dev,
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    CHECK_BOARD_STATE_LOCKED(STATE_INITIALIZED);
 
     status = lms_set_dc_cals(dev, dc_cals);
 
@@ -3607,7 +3610,7 @@ int bladerf_lms_get_dc_cals(struct bladerf *dev,
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
+    CHECK_BOARD_STATE_LOCKED(STATE_INITIALIZED);
 
     status = lms_get_dc_cals(dev, dc_cals);
 
@@ -3630,7 +3633,7 @@ int bladerf_erase_flash(struct bladerf *dev,
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+    CHECK_BOARD_STATE_LOCKED(STATE_FIRMWARE_LOADED);
 
     status = spi_flash_erase(dev, erase_block, count);
 
@@ -3649,7 +3652,7 @@ int bladerf_read_flash(struct bladerf *dev, uint8_t *buf,
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+    CHECK_BOARD_STATE_LOCKED(STATE_FIRMWARE_LOADED);
 
     status = spi_flash_read(dev, buf, page, count);
 
@@ -3668,7 +3671,7 @@ int bladerf_write_flash(struct bladerf *dev, const uint8_t *buf,
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+    CHECK_BOARD_STATE_LOCKED(STATE_FIRMWARE_LOADED);
 
     status = spi_flash_write(dev, buf, page, count);
 
@@ -3690,7 +3693,7 @@ int bladerf_xb_spi_write(struct bladerf *dev, uint32_t val)
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
 
     status = dev->backend->xb_spi(dev, val);
 
@@ -3712,7 +3715,7 @@ int bladerf_config_gpio_read(struct bladerf *dev, uint32_t *val)
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
 
     status = dev->backend->config_gpio_read(dev, val);
 
@@ -3730,7 +3733,7 @@ int bladerf_config_gpio_write(struct bladerf *dev, uint32_t val)
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
 
     status = dev->backend->config_gpio_write(dev, val);
 
@@ -3755,7 +3758,7 @@ int bladerf_read_trigger(struct bladerf *dev,
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
 
     status = fpga_trigger_read(dev, ch, trigger, val);
 
@@ -3776,7 +3779,7 @@ int bladerf_write_trigger(struct bladerf *dev,
 
     MUTEX_LOCK(&dev->lock);
 
-    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
 
     status = fpga_trigger_write(dev, ch, trigger, val);
 
