@@ -27,6 +27,11 @@
 #include "peekpoke.h"
 #include "conversions.h"
 
+static inline bool matches_ad9361(const char *str)
+{
+    return strcasecmp("adi", str) == 0 || strcasecmp("ad9361", str) == 0;
+}
+
 static inline bool matches_lms6002d(const char *str)
 {
     return strcasecmp("lms", str) == 0 || strcasecmp("lms6002d", str) == 0;
@@ -46,7 +51,8 @@ int cmd_peek(struct cli_state *state, int argc, char **argv)
     */
     int rv = CLI_RET_OK;
     bool ok;
-    int (*f)(struct bladerf *, uint8_t, uint8_t *);
+    int (*f)(struct bladerf *, uint8_t, uint8_t *) = NULL;
+    int (*f2)(struct bladerf *, uint16_t, uint8_t *) = NULL;
     unsigned int count, address, max_address;
 
     if( argc == 3 || argc == 4 ) {
@@ -62,8 +68,21 @@ int cmd_peek(struct cli_state *state, int argc, char **argv)
             }
         }
 
+        /* Are we reading from the AD9361 */
+        if (matches_ad9361(argv[1])) {
+            /* Parse address */
+            address = str2uint( argv[2], 0, ADI_MAX_ADDRESS, &ok );
+            if( !ok ) {
+                invalid_address(state, argv[0], argv[2]);
+                rv = CLI_RET_INVPARAM;
+            } else {
+                f2 = bladerf_ad9361_read;
+                max_address = ADI_MAX_ADDRESS;
+            }
+        }
+
         /* Are we reading from the LMS6002D */
-        if (matches_lms6002d(argv[1])) {
+        else if (matches_lms6002d(argv[1])) {
             /* Parse address */
             address = str2uint( argv[2], 0, LMS_MAX_ADDRESS, &ok );
             if( !ok ) {
@@ -95,14 +114,19 @@ int cmd_peek(struct cli_state *state, int argc, char **argv)
         }
 
         /* Loop over the addresses and output the values */
-        if( rv == CLI_RET_OK && f ) {
+        if( rv == CLI_RET_OK && (f || f2) ) {
             int status;
             uint8_t val;
 
             putchar('\n');
 
             for(; count > 0 && address < max_address; count-- ) {
-                status = f( state->dev, (uint8_t)address, &val );
+                if (f) {
+                    status = f( state->dev, (uint8_t)address, &val );
+                } else if (f2) {
+                    status = f2( state->dev, (uint16_t)address, &val );
+                }
+
                 if (status < 0) {
                     state->last_lib_error = status;
                     rv = CLI_RET_LIBBLADERF;

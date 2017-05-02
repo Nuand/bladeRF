@@ -26,6 +26,7 @@
 
 #include "common.h"
 
+#define ADI_MAX_ADDRESS 0x3F7
 #define DAC_MAX_ADDRESS 127
 #define LMS_MAX_ADDRESS 127
 #define SI_MAX_ADDRESS  255
