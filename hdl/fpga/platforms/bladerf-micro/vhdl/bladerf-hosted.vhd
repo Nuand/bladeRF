@@ -487,6 +487,7 @@ begin
         variable ch     : integer range 0 to 1 := 0;
         variable fifo_i : std_logic_vector(11 downto 0) := (others => '0');
         variable fifo_q : std_logic_vector(11 downto 0) := (others => '0');
+        variable valid  : std_logic := '0';
     begin
         if( rising_edge(tx_clock) ) then
             if( channel_sel = '0' ) then
@@ -499,17 +500,20 @@ begin
                 tx_sample_fifo.rreq <= ad9361.ch(ch).dac.i.valid;
                 fifo_i := tx_sample_fifo.rdata(11 downto 0);
                 fifo_q := tx_sample_fifo.rdata(27 downto 16);
+                valid  := ad9361.ch(ch).dac.i.valid;
             else
                 tx_sample_fifo.rreq <= '0';
                 fifo_i := (others => '0');
                 fifo_q := (others => '0');
+                valid  := '0';
             end if;
 
             ad9361.ch(ch).dac.i.data <= fifo_i & "0000";
             ad9361.ch(ch).dac.q.data <= fifo_q & "0000";
 
-            tx_sample_raw_i <= resize(signed(fifo_i), tx_sample_raw_i'length);
-            tx_sample_raw_q <= resize(signed(fifo_q), tx_sample_raw_q'length);
+            tx_sample_raw_i     <= resize(signed(fifo_i), tx_sample_raw_i'length);
+            tx_sample_raw_q     <= resize(signed(fifo_q), tx_sample_raw_q'length);
+            tx_sample_raw_valid <= valid;
         end if;
     end process;
 
@@ -581,11 +585,9 @@ begin
     rx_loopback_fifo.wclock <= tx_clock ;
     rx_loopback_fifo.wdata <= std_logic_vector(tx_sample_i & tx_sample_q) when tx_loopback_enabled = '1' else (others => '0') ;
     rx_loopback_fifo.wreq <= tx_sample_valid when tx_loopback_enabled = '1' else '0';
-
     rx_loopback_fifo.rclock <= rx_clock ;
-    rx_loopback_fifo.rreq <= '1' when rx_loopback_enabled = '1' and rx_loopback_fifo.rempty = '0' else '0' ;
 
-    U_rx_loopack_fifo : entity work.rx_fifo
+    U_rx_loopback_fifo : entity work.rx_fifo
       port map (
         aclr                => rx_loopback_fifo.aclr,
         data                => rx_loopback_fifo.wdata,
@@ -602,6 +604,51 @@ begin
         wrusedw             => rx_loopback_fifo.wused
       );
 
+    rx_loopback_fifo_out : process( rx_reset, rx_loopback_fifo.rclock )
+        constant WATERLINE          : natural := 16;
+        variable already_strobed    : boolean := false;
+    begin
+        if (rx_reset = '1') then
+            rx_loopback_enabled     <= '0';
+            rx_loopback_fifo.rreq   <= '0';
+            rx_loopback_i           <= (others => '0');
+            rx_loopback_q           <= (others => '0');
+            rx_loopback_valid       <= '0';
+        elsif( rising_edge(rx_loopback_fifo.rclock) ) then
+            rx_loopback_enabled     <= '0';
+            rx_loopback_fifo.rreq   <= '0';
+            rx_loopback_i           <= rx_loopback_i;
+            rx_loopback_q           <= rx_loopback_q;
+            rx_loopback_valid       <= '0';
+
+            -- is loopback enabled?
+            if (rx_mux_mode = RX_MUX_DIGITAL_LOOPBACK) then
+                rx_loopback_enabled <= rx_enable;
+            end if;
+
+            -- do the loopback
+            if (rx_loopback_enabled = '1') then
+                rx_loopback_i       <= resize(signed(rx_loopback_fifo.rdata(31 downto 16)), rx_loopback_i'length);
+                rx_loopback_q       <= resize(signed(rx_loopback_fifo.rdata(15 downto 0)), rx_loopback_q'length);
+                rx_loopback_valid   <= rx_loopback_fifo.rreq;
+            end if;
+
+            -- read from the fifo if req'd
+            if (unsigned(rx_loopback_fifo.rused) > WATERLINE) then
+                rx_loopback_fifo.rreq   <= rx_loopback_enabled and not rx_loopback_fifo.rempty;
+            end if;
+
+            -- handle situation where fifo is empty but we tried to rreq from it
+            if (rx_loopback_fifo.rreq = '1' and already_strobed) then
+                already_strobed     := false;
+                rx_loopback_valid   <= '0';
+            end if;
+
+            -- detect above condition
+            already_strobed := (rx_loopback_fifo.rreq = '1' and rx_loopback_fifo.rempty = '1');
+        end if;
+    end process rx_loopback_fifo_out;
+
     U_loopback_sync : entity work.reset_synchronizer
       generic map (
         INPUT_LEVEL         => '0',
@@ -611,24 +658,6 @@ begin
         async               =>  rx_loopback_enabled,
         sync                =>  tx_loopback_enabled
       ) ;
-
-    rx_loopback_enabled <= '1' when rx_enable = '1' and rx_mux_mode = RX_MUX_DIGITAL_LOOPBACK else '0' ;
-    rx_loopback_i <= resize(signed(rx_loopback_fifo.rdata(31 downto 16)), rx_loopback_i'length) ;
-    rx_loopback_q <= resize(signed(rx_loopback_fifo.rdata(15 downto 0)), rx_loopback_q'length) ;
-
-    loopback_valid : process(rx_reset, rx_clock)
-    begin
-        if (rx_reset = '1') then
-            rx_loopback_valid <= '0';
-        elsif rising_edge(rx_clock) then
-             if (rx_loopback_fifo.rempty = '0') then
-                -- Delay fifo read request by one clock to indicate sample validity
-                rx_loopback_valid <= rx_loopback_fifo.rreq ;
-            else
-                rx_loopback_valid <= '0' ;
-            end if;
-        end if;
-    end process loopback_valid;
 
     -- FX3 GPIF
     U_fx3_gpif : entity work.fx3_gpif
