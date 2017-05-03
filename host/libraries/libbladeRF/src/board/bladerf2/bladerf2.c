@@ -2008,6 +2008,18 @@ static int bladerf2_set_loopback(struct bladerf *dev, bladerf_loopback l)
         if (status < 0) {
             return status;
         }
+    } else if (l == BLADERF_LB_AD9361_BIST) {
+        /* Enable digital loopback */
+        status = ad9361_bist_loopback(board_data->phy, 1);
+        if (status < 0) {
+            return status;
+        }
+
+        /* Disable firmware loopback */
+        status = dev->backend->set_firmware_loopback(dev, false);
+        if (status < 0) {
+            return status;
+        }
     } else {
         return BLADERF_ERR_UNSUPPORTED;
     }
@@ -2039,7 +2051,8 @@ static int bladerf2_get_loopback(struct bladerf *dev, bladerf_loopback *l)
     ad9361_get_bist_loopback(board_data->phy, &ad9361_loopback);
 
     if (ad9361_loopback == 1) {
-        /* FIXME digital loopback value */
+        *l = BLADERF_LB_AD9361_BIST;
+        return 0;
     }
 
     *l = BLADERF_LB_NONE;

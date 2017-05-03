@@ -1113,7 +1113,12 @@ typedef enum {
     /**
      * Disables loopback and returns to normal operation.
      */
-    BLADERF_LB_NONE
+    BLADERF_LB_NONE,
+
+    /**
+     * AD9361 digital loopback
+     */
+    BLADERF_LB_AD9361_BIST,
 } bladerf_loopback;
 
 /**
