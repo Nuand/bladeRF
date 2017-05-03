@@ -27,7 +27,7 @@
  * Any manual modifications to this file will be overwritten!
  * To edit the content of help strings, please edit interactive-help.md
  *
- * Last generated: Tue Jul 12 18:41:06 EDT 2016 by jynik
+ * Last generated: Wed May  3 10:54:27 EDT 2017 by rtucker@rho
  */
 
 #ifndef BLADERF_CLI_DOC_CMD_HELP_H__
@@ -439,11 +439,11 @@
 
 
 #define CLI_CMD_HELPTEXT_peek \
-  "Usage: peek <dac|lms|si> <address> [num_addresses]\n" \
+  "Usage: peek <adi|dac|lms|si> <address> [num_addresses]\n" \
   "\n" \
   "The peek command can read any of the devices hanging off the FPGA\n" \
-  "which includes the LMS6002D transceiver, VCTCXO trim DAC or the Si5338\n" \
-  "clock generator chip.\n" \
+  "which includes the AD9361 or LMS6002D transceiver, VCTCXO trim DAC or\n" \
+  "the Si5338 clock generator chip.\n" \
   "\n" \
   "If num_addresses is supplied, the address is incremented by 1 and\n" \
   "another peek is performed for that many addresses.\n" \
@@ -451,7 +451,8 @@
   "Valid Address Ranges:\n" \
   "\n" \
   "    Device Address Range\n" \
-  "  -------- ---------------\n" \
+  "  -------- -------------------\n" \
+  "       adi 0 to 0x3F7 (1015)\n" \
   "       dac 0 to 255\n" \
   "       lms 0 to 127\n" \
   "        si 0 to 255\n" \
@@ -463,16 +464,17 @@
 
 
 #define CLI_CMD_HELPTEXT_poke \
-  "Usage: poke <dac|lms|si> <address> <data>\n" \
+  "Usage: poke <adi|dac|lms|si> <address> <data>\n" \
   "\n" \
   "The poke command can write any of the devices hanging off the FPGA\n" \
-  "which includes the LMS6002D transceiver, VCTCXO trim DAC or the Si5338\n" \
-  "clock generator chip.\n" \
+  "which includes the AD9361 or LMS6002D transceiver, VCTCXO trim DAC or\n" \
+  "the Si5338 clock generator chip.\n" \
   "\n" \
   "Valid Address Ranges:\n" \
   "\n" \
   "    Device Address Range\n" \
-  "  -------- ---------------\n" \
+  "  -------- -------------------\n" \
+  "       adi 0 to 0x3F7 (1015)\n" \
   "       dac 0 to 255\n" \
   "       lms 0 to 127\n" \
   "        si 0 to 255\n" \

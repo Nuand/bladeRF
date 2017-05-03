@@ -422,11 +422,11 @@ device specifier format.
 peek
 ----
 
-Usage: `peek <dac|lms|si> <address> [num_addresses]`
+Usage: `peek <adi|dac|lms|si> <address> [num_addresses]`
 
 The peek command can read any of the devices hanging off the FPGA which
-includes the LMS6002D transceiver, VCTCXO trim DAC or the Si5338 clock
-generator chip.
+includes the AD9361 or LMS6002D transceiver, VCTCXO trim DAC or the Si5338
+clock generator chip.
 
 If `num_addresses` is supplied, the address is incremented by 1 and
 another peek is performed for that many addresses.
@@ -434,7 +434,8 @@ another peek is performed for that many addresses.
 Valid Address Ranges:
 
      Device Address Range
------------ ----------------
+----------- -----------------
+`adi`       0 to 0x3F7 (1015)
 `dac`       0 to 255
 `lms`       0 to 127
 `si`        0 to 255
@@ -447,16 +448,17 @@ Example:
 poke
 ----
 
-Usage: `poke <dac|lms|si> <address> <data>`
+Usage: `poke <adi|dac|lms|si> <address> <data>`
 
 The poke command can write any of the devices hanging off the FPGA which
-includes the LMS6002D transceiver, VCTCXO trim DAC or the Si5338 clock
-generator chip.
+includes the AD9361 or LMS6002D transceiver, VCTCXO trim DAC or the Si5338
+clock generator chip.
 
 Valid Address Ranges:
 
      Device Address Range
------------ ----------------
+----------- -----------------
+`adi`       0 to 0x3F7 (1015)
 `dac`       0 to 255
 `lms`       0 to 127
 `si`        0 to 255
