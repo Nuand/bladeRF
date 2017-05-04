@@ -233,23 +233,23 @@ struct ad9361_port_map {
 };
 
 static const struct ad9361_port_map bladerf2_rx_port_map[] = {
-    {"A_BALANCED", 0},
-    {"B_BALANCED", 1},
-    {"C_BALANCED", 2},
-    {"A_N", 3},
-    {"A_P", 4},
-    {"B_N", 5},
-    {"B_P", 6},
-    {"C_N", 7},
-    {"C_P", 8},
-    {"TX_MON1", 9},
-    {"TX_MON2", 10},
-    {"TX_MON1_2", 11},
+    {"A_BALANCED", A_BALANCED},
+    {"B_BALANCED", B_BALANCED},
+    {"C_BALANCED", C_BALANCED},
+    {"A_N", A_N},
+    {"A_P", A_P},
+    {"B_N", B_N},
+    {"B_P", B_P},
+    {"C_N", C_N},
+    {"C_P", C_P},
+    {"TX_MON1", TX_MON1},
+    {"TX_MON2", TX_MON2},
+    {"TX_MON1_2", TX_MON1_2},
 };
 
 static const struct ad9361_port_map bladerf2_tx_port_map[] = {
-    {"TXA", 0},
-    {"TXB", 1},
+    {"TXA", TXA},
+    {"TXB", TXB},
 };
 
 static int bladerf2_select_band(struct bladerf *dev, bladerf_channel ch, uint64_t frequency);
