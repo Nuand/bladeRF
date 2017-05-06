@@ -68,6 +68,7 @@ struct board_fns {
     int (*get_serial)(struct bladerf *dev, char *serial);
     int (*get_fpga_size)(struct bladerf *dev, bladerf_fpga_size *size);
     int (*is_fpga_configured)(struct bladerf *dev);
+    int (*get_vctcxo_trim)(struct bladerf *dev, uint16_t *trim);
     uint64_t (*get_capabilities)(struct bladerf *dev);
 
     /* Versions */

@@ -633,6 +633,16 @@ static int bladerf2_is_fpga_configured(struct bladerf *dev)
     return dev->backend->is_fpga_configured(dev);
 }
 
+static int bladerf2_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim)
+{
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
+    /* FIXME fetch factory value from SPI flash */
+    *trim = 0x7fff;
+
+    return 0;
+}
+
 static uint64_t bladerf2_get_capabilities(struct bladerf *dev)
 {
     struct bladerf2_board_data *board_data = dev->board_data;
@@ -1790,6 +1800,7 @@ const struct board_fns bladerf2_board_fns = {
     FIELD_INIT(.get_serial, bladerf2_get_serial),
     FIELD_INIT(.get_fpga_size, bladerf2_get_fpga_size),
     FIELD_INIT(.is_fpga_configured, bladerf2_is_fpga_configured),
+    FIELD_INIT(.get_vctcxo_trim, bladerf2_get_vctcxo_trim),
     FIELD_INIT(.get_capabilities, bladerf2_get_capabilities),
     FIELD_INIT(.get_fpga_version, bladerf2_get_fpga_version),
     FIELD_INIT(.get_fw_version, bladerf2_get_fw_version),

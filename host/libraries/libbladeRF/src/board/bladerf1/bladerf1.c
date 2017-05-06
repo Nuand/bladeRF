@@ -1000,6 +1000,17 @@ static int bladerf1_is_fpga_configured(struct bladerf *dev)
     return dev->backend->is_fpga_configured(dev);
 }
 
+static int bladerf1_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim)
+{
+    struct bladerf1_board_data *board_data = dev->board_data;
+
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
+    *trim = board_data->dac_trim;
+
+    return 0;
+}
+
 static uint64_t bladerf1_get_capabilities(struct bladerf *dev)
 {
     struct bladerf1_board_data *board_data = dev->board_data;
@@ -2625,6 +2636,7 @@ const struct board_fns bladerf1_board_fns = {
     FIELD_INIT(.get_serial, bladerf1_get_serial),
     FIELD_INIT(.get_fpga_size, bladerf1_get_fpga_size),
     FIELD_INIT(.is_fpga_configured, bladerf1_is_fpga_configured),
+    FIELD_INIT(.get_vctcxo_trim, bladerf1_get_vctcxo_trim),
     FIELD_INIT(.get_capabilities, bladerf1_get_capabilities),
     FIELD_INIT(.get_fpga_version, bladerf1_get_fpga_version),
     FIELD_INIT(.get_fw_version, bladerf1_get_fw_version),
@@ -2930,24 +2942,6 @@ exit:
 /******************************************************************************/
 /* VCTCXO Control */
 /******************************************************************************/
-
-int bladerf_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim)
-{
-    struct bladerf1_board_data *board_data = dev->board_data;
-
-    if (dev->board != &bladerf1_board_fns)
-        return BLADERF_ERR_UNSUPPORTED;
-
-    MUTEX_LOCK(&dev->lock);
-
-    CHECK_BOARD_STATE_LOCKED(STATE_FIRMWARE_LOADED);
-
-    *trim = board_data->dac_trim;
-
-    MUTEX_UNLOCK(&dev->lock);
-
-    return 0;
-}
 
 int bladerf_set_vctcxo_tamer_mode(struct bladerf *dev,
                                   bladerf_vctcxo_tamer_mode mode)

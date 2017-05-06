@@ -393,6 +393,17 @@ int bladerf_is_fpga_configured(struct bladerf *dev)
     return status;
 }
 
+int bladerf_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->get_vctcxo_trim(dev, trim);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
 const char *bladerf_get_board_name(struct bladerf *dev)
 {
     return dev->board->name;

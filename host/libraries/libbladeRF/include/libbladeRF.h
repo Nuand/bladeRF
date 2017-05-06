@@ -459,6 +459,18 @@ API_EXPORT
 bladerf_dev_speed CALL_CONV bladerf_device_speed(struct bladerf *dev);
 
 /**
+ * Query a device's VCTCXO calibration trim
+ *
+ * @param[in]   dev     Device handle
+ * @param[out]  trim    Will be updated with the factory DAC trim value. If an
+ *                      error occurs, no data will be written to this pointer.
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim);
+
+/**
  * Get the board name
  *
  * @param       dev     Device handle
@@ -4160,18 +4172,6 @@ int CALL_CONV bladerf_xb300_get_output_power(struct bladerf *dev, float *val);
  *
  * @{
  */
-
-/**
- * Query a device's VCTCXO calibration trim
- *
- * @param[in]   dev     Device handle
- * @param[out]  trim    Will be updated with the factory DAC trim value. If an
- *                      error occurs, no data will be written to this pointer.
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim);
 
 /**
  * Write value to VCTCXO trim DAC.
