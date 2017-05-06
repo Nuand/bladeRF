@@ -407,7 +407,9 @@ bool rxtx_task_running(struct rxtx_data *rxtx)
 
 void rxtx_shutdown(struct cli_state *s, struct rxtx_data *rxtx)
 {
-    disarm_triggers(s, rxtx->module);
+    if (s->dev && bladerf_is_fpga_configured(s->dev) == 1) {
+        disarm_triggers(s, rxtx->module);
+    }
 
     if (rxtx->task_mgmt.started && rxtx_get_state(rxtx) != RXTX_STATE_FAIL) {
         rxtx_submit_request(rxtx, RXTX_TASK_REQ_SHUTDOWN);
