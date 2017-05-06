@@ -28,11 +28,12 @@
 #define PRINTSET_DECL(x) \
     int print_##x(struct cli_state *, int, char **); int set_##x(struct cli_state *, int, char **);
 
-#define PRINTSET_ENTRY(x, printall_option) { \
+#define PRINTSET_ENTRY(x, printall_option, _board) { \
         FIELD_INIT(.print, print_##x), \
         FIELD_INIT(.set, set_##x), \
         FIELD_INIT(.name, #x), \
         FIELD_INIT(.pa_option, printall_option), \
+        FIELD_INIT(.board, _board), \
 }
 
 /**
@@ -45,6 +46,8 @@ enum printall_option
     PRINTALL_OPTION_SKIP,           /**< Skip this entry */
     PRINTALL_OPTION_APPEND_NEWLINE, /**< Print an extra newline after entry */
 };
+
+#define BOARD_ANY  NULL
 
 /* An entry in the printset table */
 struct printset_entry {
@@ -61,6 +64,9 @@ struct printset_entry {
      * Additional options when printing this entry as part of the
      * 'print command' with no options (i.e., print everything) */
     enum printall_option pa_option;
+
+    /** Board associated with this parameter, or NULL for generic */
+    const char *board;
 };
 
 /* Declarations */
@@ -86,28 +92,28 @@ PRINTSET_DECL(xb_gpio_dir)
 
 /* print/set parameter table */
 struct printset_entry printset_table[] = {
-    PRINTSET_ENTRY(bandwidth,       PRINTALL_OPTION_APPEND_NEWLINE),
-    PRINTSET_ENTRY(frequency,       PRINTALL_OPTION_APPEND_NEWLINE),
-    PRINTSET_ENTRY(agc,             PRINTALL_OPTION_APPEND_NEWLINE),
-    PRINTSET_ENTRY(gpio,            PRINTALL_OPTION_APPEND_NEWLINE),
-    PRINTSET_ENTRY(loopback,        PRINTALL_OPTION_APPEND_NEWLINE),
-    PRINTSET_ENTRY(rx_mux,          PRINTALL_OPTION_APPEND_NEWLINE),
-    PRINTSET_ENTRY(lnagain,         PRINTALL_OPTION_NONE),
-    PRINTSET_ENTRY(rxvga1,          PRINTALL_OPTION_NONE),
-    PRINTSET_ENTRY(rxvga2,          PRINTALL_OPTION_NONE),
-    PRINTSET_ENTRY(txvga1,          PRINTALL_OPTION_NONE),
-    PRINTSET_ENTRY(txvga2,          PRINTALL_OPTION_APPEND_NEWLINE),
-    PRINTSET_ENTRY(sampling,        PRINTALL_OPTION_APPEND_NEWLINE),
-    PRINTSET_ENTRY(samplerate,      PRINTALL_OPTION_APPEND_NEWLINE),
-    PRINTSET_ENTRY(smb_mode,        PRINTALL_OPTION_APPEND_NEWLINE),
-    PRINTSET_ENTRY(trimdac,         PRINTALL_OPTION_APPEND_NEWLINE),
-    PRINTSET_ENTRY(vctcxo_tamer,    PRINTALL_OPTION_APPEND_NEWLINE),
-    PRINTSET_ENTRY(xb_spi,          PRINTALL_OPTION_SKIP),
-    PRINTSET_ENTRY(xb_gpio,         PRINTALL_OPTION_NONE),
-    PRINTSET_ENTRY(xb_gpio_dir,     PRINTALL_OPTION_NONE),
+    PRINTSET_ENTRY(bandwidth,       PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
+    PRINTSET_ENTRY(frequency,       PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
+    PRINTSET_ENTRY(agc,             PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
+    PRINTSET_ENTRY(gpio,            PRINTALL_OPTION_APPEND_NEWLINE, "bladerf1"),
+    PRINTSET_ENTRY(loopback,        PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
+    PRINTSET_ENTRY(rx_mux,          PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
+    PRINTSET_ENTRY(lnagain,         PRINTALL_OPTION_NONE,           "bladerf1"),
+    PRINTSET_ENTRY(rxvga1,          PRINTALL_OPTION_NONE,           "bladerf1"),
+    PRINTSET_ENTRY(rxvga2,          PRINTALL_OPTION_NONE,           "bladerf1"),
+    PRINTSET_ENTRY(txvga1,          PRINTALL_OPTION_NONE,           "bladerf1"),
+    PRINTSET_ENTRY(txvga2,          PRINTALL_OPTION_APPEND_NEWLINE, "bladerf1"),
+    PRINTSET_ENTRY(sampling,        PRINTALL_OPTION_APPEND_NEWLINE, "bladerf1"),
+    PRINTSET_ENTRY(samplerate,      PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
+    PRINTSET_ENTRY(smb_mode,        PRINTALL_OPTION_APPEND_NEWLINE, "bladerf1"),
+    PRINTSET_ENTRY(trimdac,         PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
+    PRINTSET_ENTRY(vctcxo_tamer,    PRINTALL_OPTION_APPEND_NEWLINE, "bladerf1"),
+    PRINTSET_ENTRY(xb_spi,          PRINTALL_OPTION_SKIP,           "bladerf1"),
+    PRINTSET_ENTRY(xb_gpio,         PRINTALL_OPTION_NONE,           "bladerf1"),
+    PRINTSET_ENTRY(xb_gpio_dir,     PRINTALL_OPTION_NONE,           "bladerf1"),
 
     /* End of table marked by entry with NULL/empty fields */
-    { FIELD_INIT(.print, NULL), FIELD_INIT(.set, NULL), FIELD_INIT(.name, "") }
+    { FIELD_INIT(.print, NULL), FIELD_INIT(.set, NULL), FIELD_INIT(.name, ""), FIELD_INIT(.board, NULL) }
 };
 
 bladerf_module get_module( char *mod, bool *ok )
@@ -1970,44 +1976,45 @@ int cmd_print(struct cli_state *state, int argc, char **argv)
            supplied as argv[1]. */
         empty_argv[0] = argv[0];
 
-        entry = &printset_table[0];
-
-        while (entry->print != NULL) {
-
-            if (entry->pa_option != PRINTALL_OPTION_SKIP) {
-                empty_argv[1] = (char *) entry->name;
-
-                if (!strcasecmp(entry->name, "xb_gpio_dir") ||
-                    !strcasecmp(entry->name, "xb_gpio")) {
-                    empty_argv[2] = "register";
-                    empty_argc = 3;
-                } else {
-                    empty_argv[2] = NULL;
-                    empty_argc = 2;
-                }
-
-                rv = entry->print(state, empty_argc, (char **)empty_argv);
-                if (rv != CLI_RET_OK) {
-                    if (cli_fatal(rv)) {
-                        return rv;
-                    }
-
-                    /* Print error messages here so that we can continue
-                     * onto the remaining items */
-                    cli_err_nnl(state, empty_argv[1], "%s\n",
-                                cli_strerror(rv, state->last_lib_error));
-
-                    /* We've reported this, don't pass it back up
-                     * the call stack */
-                    rv = 0;
-                }
-
-                if (entry->pa_option == PRINTALL_OPTION_APPEND_NEWLINE) {
-                    printf("\n");
-                }
+        for (entry = &printset_table[0]; entry->print != NULL; entry++) {
+            if (entry->pa_option == PRINTALL_OPTION_SKIP) {
+                continue;
+            } else if (entry->board &&
+                        strcmp(entry->board,
+                               bladerf_get_board_name(state->dev)) != 0) {
+                continue;
             }
 
-            entry++;
+            empty_argv[1] = (char *) entry->name;
+
+            if (!strcasecmp(entry->name, "xb_gpio_dir") ||
+                !strcasecmp(entry->name, "xb_gpio")) {
+                empty_argv[2] = "register";
+                empty_argc = 3;
+            } else {
+                empty_argv[2] = NULL;
+                empty_argc = 2;
+            }
+
+            rv = entry->print(state, empty_argc, (char **)empty_argv);
+            if (rv != CLI_RET_OK) {
+                if (cli_fatal(rv)) {
+                    return rv;
+                }
+
+                /* Print error messages here so that we can continue
+                 * onto the remaining items */
+                cli_err_nnl(state, empty_argv[1], "%s\n",
+                            cli_strerror(rv, state->last_lib_error));
+
+                /* We've reported this, don't pass it back up
+                 * the call stack */
+                rv = 0;
+            }
+
+            if (entry->pa_option == PRINTALL_OPTION_APPEND_NEWLINE) {
+                printf("\n");
+            }
         }
     }
 
