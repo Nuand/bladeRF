@@ -459,18 +459,6 @@ API_EXPORT
 bladerf_dev_speed CALL_CONV bladerf_device_speed(struct bladerf *dev);
 
 /**
- * Query a device's VCTCXO calibration trim
- *
- * @param[in]   dev     Device handle
- * @param[out]  trim    Will be updated with the factory DAC trim value. If an
- *                      error occurs, no data will be written to this pointer.
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim);
-
-/**
  * Get the board name
  *
  * @param       dev     Device handle
@@ -2807,6 +2795,59 @@ API_EXPORT
 int CALL_CONV bladerf_image_read(struct bladerf_image *image, const char *file);
 
 /** @} (End of FN_IMAGE) */
+
+/**
+ * @defgroup FN_LOW_LEVEL Low-level Functions
+ *
+ * This section defines low-level APIs.
+ *
+ * @{
+ */
+
+/**
+ * Query a device's VCTCXO calibration trim
+ *
+ * @param[in]   dev     Device handle
+ * @param[out]  trim    Will be updated with the factory DAC trim value. If an
+ *                      error occurs, no data will be written to this pointer.
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim);
+
+/**
+ * Write value to VCTCXO trim DAC.
+ *
+ * This should not be used when the VCTCXO tamer is enabled.
+ *
+ * @param   dev         Device handle
+ * @param   val         Value to write to VCTCXO trim DAC
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_trim_dac_write(struct bladerf *dev, uint16_t val);
+
+/**
+ * Read value from VCTCXO trim DAC.
+ *
+ * This is similar to bladerf_get_vctcxo_trim(), except that it returns the
+ * current trim DAC value, as opposed to the calibration value read from
+ * flash.
+ *
+ * Use this if you are trying to query the value after having previously
+ * made calls to bladerf_dac_write().
+ *
+ * @param[in]   dev     Device handle
+ * @param[out]  val     Value to read from VCTCXO trim DAC
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_trim_dac_read(struct bladerf *dev, uint16_t *val);
+
+/** @} (End of FN_LOW_LEVEL) */
 
 /**
  * @defgroup BLADERF1 bladeRF1 Support

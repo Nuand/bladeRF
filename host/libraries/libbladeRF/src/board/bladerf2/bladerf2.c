@@ -1773,6 +1773,24 @@ static int bladerf2_get_rx_mux(struct bladerf *dev, bladerf_rx_mux *mode)
 }
 
 /******************************************************************************/
+/* Low-level VCTCXO Trim DAC access */
+/******************************************************************************/
+
+int bladerf2_trim_dac_read(struct bladerf *dev, uint16_t *trim)
+{
+    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
+
+    return dev->backend->ad56x1_vctcxo_trim_dac_read(dev, trim);
+}
+
+int bladerf2_trim_dac_write(struct bladerf *dev, uint16_t trim)
+{
+    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
+
+    return dev->backend->ad56x1_vctcxo_trim_dac_write(dev, trim);
+}
+
+/******************************************************************************/
 /* Expansion support */
 /******************************************************************************/
 
@@ -1853,6 +1871,8 @@ const struct board_fns bladerf2_board_fns = {
     FIELD_INIT(.get_loopback, bladerf2_get_loopback),
     FIELD_INIT(.get_rx_mux, bladerf2_get_rx_mux),
     FIELD_INIT(.set_rx_mux, bladerf2_set_rx_mux),
+    FIELD_INIT(.trim_dac_read, bladerf2_trim_dac_read),
+    FIELD_INIT(.trim_dac_write, bladerf2_trim_dac_write),
     FIELD_INIT(.expansion_attach, bladerf2_expansion_attach),
     FIELD_INIT(.expansion_get_attached, bladerf2_expansion_get_attached),
     FIELD_INIT(.name, "bladerf2"),

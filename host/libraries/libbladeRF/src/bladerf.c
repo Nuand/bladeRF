@@ -1131,6 +1131,38 @@ int bladerf_get_rx_mux(struct bladerf *dev, bladerf_rx_mux *mux)
 }
 
 /******************************************************************************/
+/* Low-level VCTCXO Trim DAC access */
+/******************************************************************************/
+
+int bladerf_trim_dac_read(struct bladerf *dev, uint16_t *trim)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->trim_dac_read(dev, trim);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
+int bladerf_trim_dac_write(struct bladerf *dev, uint16_t trim)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->trim_dac_write(dev, trim);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
+int bladerf_dac_read(struct bladerf *dev, uint16_t *trim)
+    __attribute__ ((alias ("bladerf_trim_dac_read")));
+
+int bladerf_dac_write(struct bladerf *dev, uint16_t trim)
+    __attribute__ ((alias ("bladerf_trim_dac_write")));
+
+/******************************************************************************/
 /* Helpers & Miscellaneous */
 /******************************************************************************/
 

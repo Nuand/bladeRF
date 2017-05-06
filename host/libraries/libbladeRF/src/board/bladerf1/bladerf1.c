@@ -2494,6 +2494,32 @@ static int bladerf1_get_rx_mux(struct bladerf *dev, bladerf_rx_mux *mode)
 }
 
 /******************************************************************************/
+/* Low-level VCTCXO Trim DAC access */
+/******************************************************************************/
+
+int bladerf1_trim_dac_read(struct bladerf *dev, uint16_t *trim)
+{
+    struct bladerf1_board_data *board_data = dev->board_data;
+
+    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
+
+    if (!have_cap(board_data->capabilities, BLADERF_CAP_VCTCXO_TRIMDAC_READ)) {
+        log_debug("FPGA %s does not support VCTCXO trimdac readback.\n",
+                  board_data->fpga_version.describe);
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    return dac161s055_read(dev, trim);
+}
+
+int bladerf1_trim_dac_write(struct bladerf *dev, uint16_t trim)
+{
+    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
+
+    return dac161s055_write(dev, trim);
+}
+
+/******************************************************************************/
 /* Expansion support */
 /******************************************************************************/
 
@@ -2691,6 +2717,8 @@ const struct board_fns bladerf1_board_fns = {
     FIELD_INIT(.get_loopback, bladerf1_get_loopback),
     FIELD_INIT(.get_rx_mux, bladerf1_get_rx_mux),
     FIELD_INIT(.set_rx_mux, bladerf1_set_rx_mux),
+    FIELD_INIT(.trim_dac_read, bladerf1_trim_dac_read),
+    FIELD_INIT(.trim_dac_write, bladerf1_trim_dac_write),
     FIELD_INIT(.expansion_attach, bladerf1_expansion_attach),
     FIELD_INIT(.expansion_get_attached, bladerf1_expansion_get_attached),
     FIELD_INIT(.name, "bladerf1"),
@@ -3441,55 +3469,6 @@ int bladerf_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
 
     status = lms_calibrate_dc(dev, module);
 
-    MUTEX_UNLOCK(&dev->lock);
-
-    return status;
-}
-
-/******************************************************************************/
-/* Low-level VTCXO Trim DAC access */
-/******************************************************************************/
-
-int bladerf_dac_write(struct bladerf *dev, uint16_t val)
-{
-    int status;
-
-    if (dev->board != &bladerf1_board_fns)
-        return BLADERF_ERR_UNSUPPORTED;
-
-    MUTEX_LOCK(&dev->lock);
-
-    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
-
-    status = dac161s055_write(dev, val);
-
-    MUTEX_UNLOCK(&dev->lock);
-
-    return status;
-}
-
-int bladerf_dac_read(struct bladerf *dev, uint16_t *val)
-{
-    struct bladerf1_board_data *board_data = dev->board_data;
-    int status;
-
-    if (dev->board != &bladerf1_board_fns)
-        return BLADERF_ERR_UNSUPPORTED;
-
-    MUTEX_LOCK(&dev->lock);
-
-    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
-
-    if (!have_cap(board_data->capabilities, BLADERF_CAP_VCTCXO_TRIMDAC_READ)) {
-        log_debug("FPGA %s does not support VCTCXO trimdac readback.\n",
-                  board_data->fpga_version.describe);
-        status = BLADERF_ERR_UNSUPPORTED;
-        goto exit;
-    }
-
-    status = dac161s055_read(dev, val);
-
-exit:
     MUTEX_UNLOCK(&dev->lock);
 
     return status;
