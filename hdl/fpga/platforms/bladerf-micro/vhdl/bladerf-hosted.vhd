@@ -177,7 +177,7 @@ architecture hosted_bladerf of bladerf is
 
     signal tx_sample_raw_i : signed(15 downto 0);
     signal tx_sample_raw_q : signed(15 downto 0);
-    signal tx_sample_raw_valid : std_logic;
+    signal tx_sample_raw_valid : std_logic := '0';
 
     signal tx_sample_i      : signed(15 downto 0) ;
     signal tx_sample_q      : signed(15 downto 0) ;
@@ -191,10 +191,10 @@ architecture hosted_bladerf of bladerf is
     signal fx3_ctl_out      : std_logic_vector(12 downto 0) ;
     signal fx3_ctl_oe       : std_logic_vector(12 downto 0) ;
 
-    signal tx_underflow_led     :   std_logic ;
+    signal tx_underflow_led     :   std_logic := '1';
     signal tx_underflow_count   :   unsigned(63 downto 0) ;
 
-    signal rx_overflow_led      :   std_logic ;
+    signal rx_overflow_led      :   std_logic := '1';
     signal rx_overflow_count    :   unsigned(63 downto 0) ;
 
     signal rx_mux_i             :   signed(15 downto 0) ;
