@@ -167,10 +167,10 @@ module axi_ad9361_dev_if (
   input           up_txnrx;
   input   [ 6:0]  up_adc_dld;
   input   [34:0]  up_adc_dwdata;
-  output  [34:0]  up_adc_drdata;
+  output  [34:0]  up_adc_drdata = 'h0;
   input   [ 9:0]  up_dac_dld;
   input   [49:0]  up_dac_dwdata;
-  output  [49:0]  up_dac_drdata;
+  output  [49:0]  up_dac_drdata = 'h0;
   input           delay_clk;
   input           delay_rst;
   output          delay_locked;
