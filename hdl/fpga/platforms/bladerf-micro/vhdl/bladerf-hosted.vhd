@@ -232,13 +232,13 @@ architecture hosted_bladerf of bladerf is
     alias rx_trigger_arm         : std_logic is rx_trigger_ctl(0);
     alias rx_trigger_fire        : std_logic is rx_trigger_ctl(1);
     alias rx_trigger_master      : std_logic is rx_trigger_ctl(2);
-    signal rx_trigger_line       : std_logic := '0';
+    alias rx_trigger_line        : std_logic is mini_exp1;
     signal rx_trigger_signal_out : std_logic := '0';
 
     alias tx_trigger_arm        : std_logic is tx_trigger_ctl(0);
     alias tx_trigger_fire       : std_logic is tx_trigger_ctl(1);
     alias tx_trigger_master     : std_logic is tx_trigger_ctl(2);
-    signal tx_trigger_line      : std_logic := '0';
+    alias tx_trigger_line       : std_logic is mini_exp1;
 
     signal tx_trigger_arm_sync  :   std_logic ;
     signal tx_trigger_line_sync :   std_logic;

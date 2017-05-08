@@ -327,6 +327,8 @@ set_location_assignment PIN_A12 -to dac_sclk
 set_location_assignment PIN_H11 -to dac_sdi
 set_location_assignment PIN_G12 -to dac_csn
 set_location_assignment PIN_D12 -to exp_clock_req
+set_location_assignment PIN_J18 -to mini_exp1
+set_location_assignment PIN_J17 -to mini_exp2
 
 # Bank 8A
 set_location_assignment PIN_G10 -to exp_gpio[15]
@@ -397,6 +399,8 @@ foreach pin ${outs} {
 set inouts {
     exp_i2c_scl
     exp_i2c_sda
+    mini_exp1
+    mini_exp2
 }
 for { set i 0 } { $i < 32 } { incr i } {
     lappend inouts "exp_gpio\[${i}\]"
