@@ -74,19 +74,17 @@ module ad_addsub (
   reg     [A_DATA_WIDTH:0]       out_d = 'b0;
   reg     [A_DATA_WIDTH:0]       out_d2 = 'b0;
   reg     [(A_DATA_WIDTH-1):0]   A_d = 'b0;
-  reg     [(A_DATA_WIDTH-1):0]   A_d2 = 'b0;
   reg     [(A_DATA_WIDTH-1):0]   Amax_d = 'b0;
   reg     [(A_DATA_WIDTH-1):0]   Amax_d2 = 'b0;
 
   // constant regs
 
-  reg     [(A_DATA_WIDTH-1):0]   B_reg = B_DATA_VALUE;
+  reg     [(A_DATA_WIDTH-1):0]   B_reg = B_DATA_VALUE[(A_DATA_WIDTH-1):0];
 
   // latch the inputs
 
   always @(posedge clk) begin
       A_d <= A;
-      A_d2 <= A_d;
       Amax_d <= Amax;
       Amax_d2 <= Amax_d;
   end
@@ -123,7 +121,7 @@ module ad_addsub (
 
   always @(posedge clk) begin
     if ( CE ) begin
-      out <= out_d2;
+      out <= out_d2[(A_DATA_WIDTH-1):0];
     end else begin
       out <= 'b0;
     end
