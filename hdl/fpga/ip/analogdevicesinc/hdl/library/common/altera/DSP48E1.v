@@ -106,7 +106,7 @@ module DSP48E1 (
   parameter CREG = 1;
   parameter DREG = 1;
   parameter INMODEREG = 1;
-  parameter MASK = 'h3fffffffffff;
+  parameter MASK = 'hffffffff;
   parameter MREG = 1;
   parameter OPMODEREG = 1;
   parameter PATTERN = 0;
