@@ -1,0 +1,14 @@
+{ "" "" "" "Verilog HDL or VHDL warning at nios_system_lms_spi.v(383): conditional expression evaluates to a constant" {  } {  } 0 10037 "" 0 0 "Design Software" 0 -1 0 ""}
+{ "" "" "" "Verilog HDL or VHDL warning at axi_ad9361_alt_lvds_tx_lvds_tx.v(49): object \"clkselect\" assigned a value but never read" {  } {  } 0 10036 "" 0 0 "Design Software" 0 -1 0 ""}
+{ "" "" "" "Verilog HDL or VHDL warning at axi_ad9361_alt_lvds_rx_lvds_rx.v(49): object \"clkselect\" assigned a value but never read" {  } {  } 0 10036 "" 0 0 "Design Software" 0 -1 0 ""}
+{ "" "" "" "Unrecognized synthesis attribute \"enum_state\" at nios_system/synthesis/submodules/i2c_master_byte_ctrl.v(199)" {  } {  } 0 10335 "" 0 0 "Design Software" 0 -1 0 ""}
+{ "" "" "" "Unrecognized synthesis attribute \"enum_state\" at nios_system/synthesis/submodules/i2c_master_bit_ctrl.v(185)" {  } {  } 0 10335 "" 0 0 "Design Software" 0 -1 0 ""}
+{ "" "" "" "Verilog HDL Synthesis Attribute warning at i2c_master_bit_ctrl.v(410): ignoring full_case attribute on case statement with explicit default case item" {  } {  } 0 10766 "" 0 0 "Design Software" 0 -1 0 ""}
+{ "" "" "" "Verilog HDL Case Statement warning at i2c_master_bit_ctrl.v(406): honored full_case synthesis attribute - differences between design synthesis and simulation may occur" {  } {  } 0 10208 "" 0 0 "Design Software" 0 -1 0 ""}
+{ "" "" "" "No output dependent on input pin \"c5_clock_2\"" {  } {  } 0 15610 "" 0 0 "Design Software" 0 -1 0 ""}
+{ "" "" "" "Ignored filter at qfit2_legacy_fmain_fitter_flow.tcl(117): *ws_dgrp\|dffpipe_ed9:dffpipe15\|dffe16a* could not be matched with a clock or keeper or register or port or pin or cell or partition" {  } {  } 0 332174 "" 0 0 "Design Software" 0 -1 0 ""}
+{ "" "" "" "Ignored set_false_path at qfit2_legacy_fmain_fitter_flow.tcl(117): Argument <to> is not an object ID" {  } {  } 0 332049 "" 0 0 "Design Software" 0 -1 0 ""}
+{ "" "" "" "Ignored filter at qfit2_legacy_fmain_fitter_flow.tcl(117): *rs_dgwp\|dffpipe_cd9:dffpipe11\|dffe12a* could not be matched with a clock or keeper or register or port or pin or cell or partition" {  } {  } 0 332174 "" 0 0 "Design Software" 0 -1 0 ""}
+{ "" "" "" "Verilog HDL or VHDL warning at nios_system_mm_interconnect_2_router.sv" {  } {  } 0 9999 "" 0 0 "Design Software" 0 -1 0 ""}
+{ "" "" "" "Verilog HDL assignment warning at altera_merlin_axi_slave_ni.sv" {  } {  } 0 9999 "" 0 0 "Design Software" 0 -1 0 ""}
+{ "" "" "" "Verilog HDL or VHDL warning at altera_merlin_width_adapter.sv" {  } {  } 0 9999 "" 0 0 "Design Software" 0 -1 0 ""}

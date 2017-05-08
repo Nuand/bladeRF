@@ -279,6 +279,10 @@ pushd ${work_dir}
 
 cp -r ${build_dir}/ip.ipx .
 
+if [ -f ${build_dir}/../*.srf ]; then
+    cp -r ${build_dir}/../*.srf .
+fi
+
 echo ""
 echo "##########################################################################"
 echo "    Generating NIOS II Qsys for ${board} ..."
