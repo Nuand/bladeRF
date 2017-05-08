@@ -94,8 +94,8 @@ module ad_tdd_control(
   parameter   integer TX_DATA_PATH_DELAY = 0;     // internally eliminate the delay introduced by the TX data path
   parameter   integer CONTROL_PATH_DELAY = 0;     // internally eliminate the delay introduced by the control path
 
-  localparam          ON = 1;
-  localparam          OFF = 0;
+  localparam          ON = 1'b1;
+  localparam          OFF = 1'b0;
 
   // input/output signals
 
@@ -282,7 +282,7 @@ module ad_tdd_control(
         if ((~tdd_sync_d3 & tdd_sync_d2) == 1'b1) begin
           tdd_counter <= 24'b0;
         end else begin
-          tdd_counter <= (tdd_counter < tdd_frame_length) ? tdd_counter + 1 : 24'b0;
+          tdd_counter <= (tdd_counter < tdd_frame_length) ? tdd_counter + 1'b1 : 24'b0;
         end
       end else begin
         tdd_counter <= tdd_counter_init;
@@ -293,12 +293,12 @@ module ad_tdd_control(
   // tdd burst counter
   always @(posedge clk) begin
     if (rst == 1'b1) begin
-      tdd_burst_counter <= tdd_burst_count;
+      tdd_burst_counter <= tdd_burst_count[5:0];
     end else begin
       if (tdd_cstate == ON) begin
-        tdd_burst_counter <= ((tdd_burst_counter > 0) && (tdd_endof_frame == 1'b1)) ? tdd_burst_counter - 1 : tdd_burst_counter;
+        tdd_burst_counter <= ((tdd_burst_counter > 0) && (tdd_endof_frame == 1'b1)) ? tdd_burst_counter - 1'b1 : tdd_burst_counter;
       end else begin
-        tdd_burst_counter <= tdd_burst_count;
+        tdd_burst_counter <= tdd_burst_count[5:0];
       end
     end
   end
