@@ -81,7 +81,6 @@ architecture sample_shuffler of fx3_gpif is
     signal should_tx    :   std_logic ;
 
     type dma_event is (DE_TX, DE_RX);
-    signal dma_last_event : dma_event;
     type state_t is (IDLE, IDLE_RD, IDLE_RD_1, IDLE_WR, IDLE_WR_1, IDLE_WR_2, IDLE_WR_3, META_READ, SAMPLE_READ, META_WRITE, SAMPLE_WRITE, SAMPLE_WRITE_IGNORE, FINISHED);
     signal state : state_t;
 
@@ -240,10 +239,6 @@ begin
             if( can_rx = '1' ) then
                 if( can_tx = '0' ) then
                     should_rx <= '1' ;
---                elsif( dma_last_event = DE_TX ) then
---                    should_rx <= '1' ;
---                else
---                    should_rx <= '0' ;
                 else
                     should_rx <= '1';
                 end if ;
@@ -253,13 +248,6 @@ begin
 
             if( can_tx = '1' ) then
                 should_tx <= '1';
---                if( can_rx = '0' ) then
---                    should_tx <= '1' ;
---                elsif( dma_last_event = DE_RX ) then
---                    should_tx <= '1' ;
---                else
---                    should_tx <= '0' ;
---                end if ;
             else
                 should_tx <= '0' ;
             end if ;
@@ -277,7 +265,6 @@ begin
             dma2_tx_ack <= '0';
             dma3_tx_ack <= '0';
             dma_downcount <= (others => '0');
-            dma_last_event <= DE_TX;
             meta_downcount <= (others => '0');
             gpif_oe <= '1';
             underrun_set <= '0';
@@ -302,7 +289,6 @@ begin
                             rx_next_dma <= '0';
 
                             state <= IDLE_RD;
-                            dma_last_event <= DE_RX;
                         elsif( should_tx = '1' ) then
                             dma_downcount <= gpif_buf_size_cond;
 
@@ -317,7 +303,6 @@ begin
                             tx_next_dma <= '1';
 
                             state <= IDLE_WR;
-                            dma_last_event <= DE_TX;
                         end if;
                         meta_downcount <= to_signed(3, meta_downcount'length);
                     end if;
