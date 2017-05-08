@@ -158,8 +158,6 @@ module axi_ad9361_tdd (
 
   output  [41:0]    tdd_dbg;
 
-  reg               tdd_slave_synced = 1'b0;
-
   // internal signals
 
   wire              rst;
