@@ -64,7 +64,7 @@ set_instance_parameter_value vctcxo_tamer_0 {dataWidth} {8}
 set_instance_parameter_value vctcxo_tamer_0 {dataWidth2} {32}
 set_instance_parameter_value vctcxo_tamer_0 {dualPort} {0}
 set_instance_parameter_value vctcxo_tamer_0 {enableDiffWidth} {0}
-set_instance_parameter_value vctcxo_tamer_0 {initMemContent} {1}
+set_instance_parameter_value vctcxo_tamer_0 {initMemContent} {0}
 set_instance_parameter_value vctcxo_tamer_0 {initializationFileName} {onchip_mem.hex}
 set_instance_parameter_value vctcxo_tamer_0 {instanceID} {NONE}
 set_instance_parameter_value vctcxo_tamer_0 {memorySize} {256.0}
