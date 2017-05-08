@@ -337,7 +337,7 @@ module up_tdd_cntrl (
           8'h00: up_rdata <= PCORE_VERSION;
           8'h01: up_rdata <= ID;
           8'h02: up_rdata <= up_scratch;
-          8'h10: up_rdata <= {28'h0, up_tdd_gated_tx_dmapath,
+          8'h10: up_rdata <= {26'h0, up_tdd_gated_tx_dmapath,
                                      up_tdd_gated_rx_dmapath,
                                      up_tdd_tx_only,
                                      up_tdd_rx_only,
