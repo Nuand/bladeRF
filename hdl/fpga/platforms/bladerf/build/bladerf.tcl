@@ -42,6 +42,7 @@ set_global_assignment -name DEVICE                   $opts(part)
 set_global_assignment -name VHDL_INPUT_VERSION       VHDL_2008
 set_global_assignment -name TOP_LEVEL_ENTITY         ${TOP_LEVEL}
 set_global_assignment -name PROJECT_OUTPUT_DIRECTORY $opts(outdir)
+set_global_assignment -name NUM_PARALLEL_PROCESSORS  ALL
 
 # Configuration settings
 set_global_assignment -name CYCLONEIII_CONFIGURATION_SCHEME "FAST PASSIVE PARALLEL"
