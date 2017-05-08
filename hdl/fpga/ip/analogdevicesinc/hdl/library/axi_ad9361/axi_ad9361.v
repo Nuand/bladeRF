@@ -296,6 +296,10 @@ module axi_ad9361 (
   wire            adc_valid_s;
   wire    [47:0]  adc_data_s;
   wire            adc_status_s;
+  wire            adc_valid_i0_s;
+  wire            adc_valid_q0_s;
+  wire            adc_valid_i1_s;
+  wire            adc_valid_q1_s;
   wire            dac_valid_s;
   wire    [47:0]  dac_data_s;
   wire            dac_valid_i0_s;
