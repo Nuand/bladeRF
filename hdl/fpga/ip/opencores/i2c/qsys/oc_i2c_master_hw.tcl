@@ -41,11 +41,7 @@ set_module_property ALLOW_GREYBOX_GENERATION false
 add_fileset QUARTUS_SYNTH QUARTUS_SYNTH "" ""
 set_fileset_property QUARTUS_SYNTH TOP_LEVEL i2c_master_top
 set_fileset_property QUARTUS_SYNTH ENABLE_RELATIVE_INCLUDE_PATHS false
-add_fileset_file i2c_master_top.v VERILOG PATH ../rtl/verilog/i2c_master_top.v
-add_fileset_file timescale.v VERILOG PATH ../rtl/verilog/timescale.v
-add_fileset_file i2c_master_defines.v VERILOG PATH ../rtl/verilog/i2c_master_defines.v
-add_fileset_file i2c_master_byte_ctrl.v VERILOG PATH ../rtl/verilog/i2c_master_byte_ctrl.v
-add_fileset_file i2c_master_bit_ctrl.v VERILOG PATH ../rtl/verilog/i2c_master_bit_ctrl.v
+add_fileset_file i2c.qip OTHER PATH ../i2c.qip
 
 
 # 

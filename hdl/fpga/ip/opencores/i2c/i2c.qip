@@ -1,0 +1,9 @@
+# When generating a system, Qsys will copy this file into its synthesis output
+# directory. All paths below must be relative to that directory.
+set oc_ip_dir [file join $::quartus(qip_path) ../../../../../../fpga/ip/opencores]
+
+set_global_assignment -name VERILOG_FILE [file normalize [file join $oc_ip_dir i2c/rtl/verilog/i2c_master_top.v ]]
+set_global_assignment -name VERILOG_FILE [file normalize [file join $oc_ip_dir i2c/rtl/verilog/timescale.v ]]
+set_global_assignment -name VERILOG_FILE [file normalize [file join $oc_ip_dir i2c/rtl/verilog/i2c_master_defines.v ]]
+set_global_assignment -name VERILOG_FILE [file normalize [file join $oc_ip_dir i2c/rtl/verilog/i2c_master_byte_ctrl.v ]]
+set_global_assignment -name VERILOG_FILE [file normalize [file join $oc_ip_dir i2c/rtl/verilog/i2c_master_bit_ctrl.v ]]
