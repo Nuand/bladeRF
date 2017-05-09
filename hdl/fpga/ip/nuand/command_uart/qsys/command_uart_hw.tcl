@@ -40,7 +40,7 @@ add_fileset QUARTUS_SYNTH QUARTUS_SYNTH "" ""
 set_fileset_property QUARTUS_SYNTH TOP_LEVEL command_uart
 set_fileset_property QUARTUS_SYNTH ENABLE_RELATIVE_INCLUDE_PATHS false
 set_fileset_property QUARTUS_SYNTH ENABLE_FILE_OVERWRITE_MODE false
-add_fileset_file ../vhdl/command_uart.vhd VHDL PATH ../vhdl/command_uart.vhd TOP_LEVEL_FILE
+add_fileset_file command_uart.qip OTHER PATH ../command_uart.qip
 
 
 #
