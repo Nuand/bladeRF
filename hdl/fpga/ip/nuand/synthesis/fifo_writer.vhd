@@ -42,6 +42,7 @@ architecture simple of fifo_writer is
     signal overflow_detected    :   std_logic ;
     signal meta_written : std_logic ;
     signal meta_written_reg : std_logic ;
+    signal fifo_write_ready : std_logic;
 
 begin
 
@@ -89,7 +90,20 @@ begin
 
     -- Simple concatenation of samples
     fifo_data   <= std_logic_vector(in_q & in_i) ;
-    fifo_write  <= in_valid when overflow_recovering = '0' and fifo_full = '0' and (meta_en = '0' or meta_written_reg = '1') else '0' ;
+    fifo_write  <= in_valid when fifo_write_ready = '1' else '0' ;
+
+    write_ready : process( clock, reset )
+    begin
+        if( reset = '1' ) then
+            fifo_write_ready <= '0';
+        elsif( rising_edge(clock) ) then
+            if overflow_recovering = '0' and fifo_full = '0' and (meta_en = '0' or meta_written_reg = '1') then
+                fifo_write_ready <= '1';
+            else
+                fifo_write_ready <= '0';
+            end if;
+        end if;
+    end process;
 
     -- Clear out the contents when RX is disabled
     clear_fifo : process( clock, reset )
