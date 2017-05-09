@@ -69,6 +69,8 @@ set_output_delay -clock [get_clocks altera_reserved_tck] 2.0 [get_ports altera_r
 # With the LVDS cores, the TX PLL clock got merged with the RX PLL clock
 set_false_path -from {reset_synchronizer:U_rx_clock_reset|sync} -to {tx_*fifo:U_tx_*_fifo|dcfifo:U_dcfifo|dcfifo_*:auto_generated|dffpipe_3dc:wraclr|dffe12a[0]}
 set_false_path -from {reset_synchronizer:U_rx_clock_reset|sync} -to {tx_*fifo:U_tx_*_fifo|dcfifo:U_dcfifo|dcfifo_*:auto_generated|dffpipe_3dc:wraclr|dffe13a[0]}
+set_false_path -from {reset_synchronizer:U_tx_reset|sync} -to {tx_fifo:U_tx_sample_fifo|dcfifo:U_dcfifo|dcfifo_5t92:auto_generated|dffpipe_3dc:wraclr|dffe12a[0]}
+set_false_path -from {reset_synchronizer:U_tx_reset|sync} -to {tx_fifo:U_tx_sample_fifo|dcfifo:U_dcfifo|dcfifo_5t92:auto_generated|dffpipe_3dc:wraclr|dffe13a[0]}
 
 # False path between hold_time and compare_time due to the way the FSM is setup
 set_false_path -from {*x_tamer|hold_time[*]} -to {*x_tamer|compare_time[*]}
