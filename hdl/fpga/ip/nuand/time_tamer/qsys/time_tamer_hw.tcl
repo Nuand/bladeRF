@@ -40,9 +40,7 @@ add_fileset QUARTUS_SYNTH QUARTUS_SYNTH "" ""
 set_fileset_property QUARTUS_SYNTH TOP_LEVEL time_tamer
 set_fileset_property QUARTUS_SYNTH ENABLE_RELATIVE_INCLUDE_PATHS false
 set_fileset_property QUARTUS_SYNTH ENABLE_FILE_OVERWRITE_MODE false
-add_fileset_file time_tamer.vhd VHDL PATH ../vhdl/time_tamer.vhd TOP_LEVEL_FILE
-add_fileset_file handshake.vhd VHDL PATH ../../synthesis/handshake.vhd
-add_fileset_file synchronizer.vhd VHDL PATH ../../synthesis/synchronizer.vhd
+add_fileset_file time_tamer.qip OTHER PATH ../time_tamer.qip
 
 
 # 
