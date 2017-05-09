@@ -1,0 +1,10 @@
+# When generating a system, Qsys will copy this file into its synthesis output
+# directory. All paths below must be relative to that directory.
+set nuand_ip_dir [file join $::quartus(qip_path) ../../../../../../fpga/ip/nuand]
+
+set_global_assignment -name VHDL_FILE -hdl_version VHDL_2008 [file normalize [file join $nuand_ip_dir vctcxo_tamer/vhdl/vctcxo_tamer.vhd]]
+set_global_assignment -name VHDL_FILE -hdl_version VHDL_2008 [file normalize [file join $nuand_ip_dir vctcxo_tamer/vhdl/pps_counter.vhd]]
+set_global_assignment -name VHDL_FILE -hdl_version VHDL_2008 [file normalize [file join $nuand_ip_dir synthesis/handshake.vhd]]
+set_global_assignment -name VHDL_FILE -hdl_version VHDL_2008 [file normalize [file join $nuand_ip_dir synthesis/synchronizer.vhd]]
+set_global_assignment -name VHDL_FILE -hdl_version VHDL_2008 [file normalize [file join $nuand_ip_dir synthesis/reset_synchronizer.vhd]]
+set_global_assignment -name VHDL_FILE -hdl_version VHDL_2008 [file normalize [file join $nuand_ip_dir synthesis/edge_detector.vhd]]

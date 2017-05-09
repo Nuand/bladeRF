@@ -40,12 +40,7 @@ add_fileset QUARTUS_SYNTH QUARTUS_SYNTH "" ""
 set_fileset_property QUARTUS_SYNTH TOP_LEVEL vctcxo_tamer
 set_fileset_property QUARTUS_SYNTH ENABLE_RELATIVE_INCLUDE_PATHS false
 set_fileset_property QUARTUS_SYNTH ENABLE_FILE_OVERWRITE_MODE false
-add_fileset_file vctcxo_tamer.vhd VHDL PATH ../vhdl/vctcxo_tamer.vhd TOP_LEVEL_FILE
-add_fileset_file pps_counter.vhd VHDL PATH ../vhdl/pps_counter.vhd
-add_fileset_file synchronizer.vhd VHDL PATH ../../synthesis/synchronizer.vhd
-add_fileset_file handshake.vhd VHDL PATH ../../synthesis/handshake.vhd
-add_fileset_file edge_detector.vhd VHDL PATH ../../synthesis/edge_detector.vhd
-add_fileset_file reset_synchronizer.vhd VHDL PATH ../../synthesis/reset_synchronizer.vhd
+add_fileset_file vctcxo_tamer.qip OTHER PATH ../vctcxo_tamer.qip
 
 
 # 
