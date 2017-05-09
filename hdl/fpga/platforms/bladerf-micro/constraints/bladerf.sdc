@@ -12,8 +12,6 @@ derive_pll_clocks
 derive_clock_uncertainty
 
 # First flop synchronizer false path
-set_false_path -from * -to [get_registers *synchronize:reg0]
-set_false_path -from * -to [get_registers reset_synchronizer*]
 set_false_path -from [get_registers {*source_holding[*]}] -to *
 
 
