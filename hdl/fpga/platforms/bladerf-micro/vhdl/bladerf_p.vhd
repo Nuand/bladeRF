@@ -140,6 +140,71 @@ package bladerf_p is
     -- TYPEDEFS
     -- ========================================================================
 
+    type fifo_t is record
+        aclr    :   std_logic;
+
+        wclock  :   std_logic;
+        wdata   :   std_logic_vector(31 downto 0);
+        wreq    :   std_logic;
+        wempty  :   std_logic;
+        wfull   :   std_logic;
+        wused   :   std_logic_vector(11 downto 0);
+
+        rclock  :   std_logic;
+        rdata   :   std_logic_vector(31 downto 0);
+        rreq    :   std_logic;
+        rempty  :   std_logic;
+        rfull   :   std_logic;
+        rused   :   std_logic_vector(11 downto 0);
+    end record;
+
+    type meta_fifo_tx_t is record
+        aclr    :   std_logic;
+
+        wclock  :   std_logic;
+        wdata   :   std_logic_vector(31 downto 0);
+        wreq    :   std_logic;
+        wempty  :   std_logic;
+        wfull   :   std_logic;
+        wused   :   std_logic_vector(4 downto 0);
+
+        rclock  :   std_logic;
+        rdata   :   std_logic_vector(127 downto 0);
+        rreq    :   std_logic;
+        rempty  :   std_logic;
+        rfull   :   std_logic;
+        rused   :   std_logic_vector(2 downto 0);
+    end record;
+
+    type meta_fifo_rx_t is record
+        aclr    :   std_logic;
+
+        wclock  :   std_logic;
+        wdata   :   std_logic_vector(127 downto 0);
+        wreq    :   std_logic;
+        wempty  :   std_logic;
+        wfull   :   std_logic;
+        wused   :   std_logic_vector(4 downto 0);
+
+        rclock  :   std_logic;
+        rdata   :   std_logic_vector(31 downto 0);
+        rreq    :   std_logic;
+        rempty  :   std_logic;
+        rfull   :   std_logic;
+        rused   :   std_logic_vector(6 downto 0);
+    end record;
+
+    type nios_gpio_t is record
+        usb_speed   : std_logic;
+        rx_mux_sel  : std_logic_vector(2 downto 0);
+        spi_mux     : std_logic;
+        leds        : std_logic_vector(3 downto 1);
+        led_mode    : std_logic;
+        meta_sync   : std_logic;
+        channel_sel : std_logic;
+        xb_mode     : std_logic_vector(1 downto 0);
+    end record;
+
     type sky13374_397lf_t is (
         DISABLED,
         RF1_TO_RF2,
@@ -195,17 +260,13 @@ package bladerf_p is
 
     type channels_t is array( natural range <> ) of channel_t;
 
-    type mimo_t is record
+    type mimo_2r2t_t is record
         clock         : std_logic;
         reset         : std_logic;
         adc_overflow  : std_logic;
         adc_underflow : std_logic;
         dac_overflow  : std_logic;
         dac_underflow : std_logic;
-        -- Maybe some future version of Quartus will allow unconstrained
-        -- arrays within a record that are then constrained when defining
-        -- signals of this record type "signal s : mimo_t(ch(0 to 1));"
-        -- Until then, define this record as a fixed 2x2 MIMO here.
         ch            : channels_t(0 to 1);
     end record;
 
@@ -248,6 +309,77 @@ package bladerf_p is
 
     constant RFFE_GPI_DEFAULT : rffe_gpi_t := (
         ctrl_out     => (others => '0')
+    );
+
+    constant FIFO_T_DEFAULT : fifo_t := (
+        aclr    => '1',
+        wclock  => '0',
+        wdata   => (others => '0'),
+        wreq    => '0',
+        wempty  => '1',
+        wfull   => '0',
+        wused   => (others => '0'),
+        rclock  => '0',
+        rdata   => (others => '0'),
+        rreq    => '0',
+        rempty  => '1',
+        rfull   => '0',
+        rused   => (others => '0')
+    );
+
+    constant META_FIFO_TX_T_DEFAULT : meta_fifo_tx_t := (
+        aclr    => '1',
+        wclock  => '0',
+        wdata   => (others => '0'),
+        wreq    => '0',
+        wempty  => '1',
+        wfull   => '0',
+        wused   => (others => '0'),
+        rclock  => '0',
+        rdata   => (others => '0'),
+        rreq    => '0',
+        rempty  => '1',
+        rfull   => '0',
+        rused   => (others => '0')
+    );
+
+    constant META_FIFO_RX_T_DEFAULT : meta_fifo_rx_t := (
+        aclr    => '1',
+        wclock  => '0',
+        wdata   => (others => '0'),
+        wreq    => '0',
+        wempty  => '1',
+        wfull   => '0',
+        wused   => (others => '0'),
+        rclock  => '0',
+        rdata   => (others => '0'),
+        rreq    => '0',
+        rempty  => '1',
+        rfull   => '0',
+        rused   => (others => '0')
+    );
+
+    constant MIMO_2R2T_T_DEFAULT : mimo_2r2t_t := (
+        clock         => '0',
+        reset         => '1',
+        adc_overflow  => '0',
+        adc_underflow => '0',
+        dac_overflow  => '0',
+        dac_underflow => '0',
+        ch            => (others => (
+            dac => (i => (enable => '0',
+                          valid  => '0',
+                          data   => (others => '0')),
+                    q => (enable => '0',
+                          valid  => '0',
+                          data   => (others => '0'))),
+            adc => (i => (enable => '0',
+                          valid  => '0',
+                          data   => (others => '0')),
+                    q => (enable => '0',
+                          valid  => '0',
+                          data   => (others => '0')))
+            ))
     );
 
 end package;
