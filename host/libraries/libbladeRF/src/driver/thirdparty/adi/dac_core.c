@@ -80,7 +80,7 @@ static int dds_default_setup(struct ad9361_rf_phy *phy,
 							 uint32_t chan, uint32_t phase,
 							 uint32_t freq, int32_t scale)
 {
-	struct dds_state *dds_st = phy->adc_state->dac_core_state;
+	struct dds_state *dds_st = &phy->adc_state->dac_dds_state;
 	int ret;
 
 	ret = dds_set_phase(phy, chan, phase);
@@ -110,7 +110,7 @@ static int dds_default_setup(struct ad9361_rf_phy *phy,
 *******************************************************************************/
 int dac_stop(struct ad9361_rf_phy *phy)
 {
-	struct dds_state *dds_st = phy->adc_state->dac_core_state;
+	struct dds_state *dds_st = &phy->adc_state->dac_dds_state;
 
 	if (PCORE_VERSION_MAJOR(dds_st->pcore_version) < 8)
 	{
@@ -125,7 +125,7 @@ int dac_stop(struct ad9361_rf_phy *phy)
 *******************************************************************************/
 int dac_start_sync(struct ad9361_rf_phy *phy, bool force_on)
 {
-	struct dds_state *dds_st = phy->adc_state->dac_core_state;
+	struct dds_state *dds_st = &phy->adc_state->dac_dds_state;
 
 	if (PCORE_VERSION_MAJOR(dds_st->pcore_version) < 8)
 	{
@@ -146,12 +146,7 @@ int dac_init(struct ad9361_rf_phy *phy, uint8_t data_sel, uint8_t config_dma)
 	int ret;
 	uint32_t reg_ctrl_2;
 
-	phy->adc_state->dac_core_state = malloc(sizeof(struct dds_state));
-	if (phy->adc_state->dac_core_state == NULL) {
-		return -ENOMEM;
-	}
-
-	dds_st = phy->adc_state->dac_core_state;
+	dds_st = &phy->adc_state->dac_dds_state;
 
 	ret = dac_write(phy, DAC_REG_RSTN, 0x0);
 	if (ret < 0) {
@@ -293,7 +288,7 @@ int dac_init(struct ad9361_rf_phy *phy, uint8_t data_sel, uint8_t config_dma)
 *******************************************************************************/
 int dds_set_frequency(struct ad9361_rf_phy *phy, uint32_t chan, uint32_t freq)
 {
-	struct dds_state *dds_st = phy->adc_state->dac_core_state;
+	struct dds_state *dds_st = &phy->adc_state->dac_dds_state;
 	int ret;
 	uint64_t val64;
 	uint32_t reg;
@@ -333,7 +328,7 @@ int dds_set_frequency(struct ad9361_rf_phy *phy, uint32_t chan, uint32_t freq)
 *******************************************************************************/
 int dds_set_phase(struct ad9361_rf_phy *phy, uint32_t chan, uint32_t phase)
 {
-	struct dds_state *dds_st = phy->adc_state->dac_core_state;
+	struct dds_state *dds_st = &phy->adc_state->dac_dds_state;
 	int ret;
 	uint64_t val64;
 	uint32_t reg;
@@ -373,7 +368,7 @@ int dds_set_phase(struct ad9361_rf_phy *phy, uint32_t chan, uint32_t phase)
 *******************************************************************************/
 int dds_set_scale(struct ad9361_rf_phy *phy, uint32_t chan, int32_t scale_micro_units)
 {
-	struct dds_state *dds_st = phy->adc_state->dac_core_state;
+	struct dds_state *dds_st = &phy->adc_state->dac_dds_state;
 	int ret;
 	uint32_t scale_reg;
 	uint32_t sign_part;
@@ -454,7 +449,7 @@ int dds_set_scale(struct ad9361_rf_phy *phy, uint32_t chan, int32_t scale_micro_
 *******************************************************************************/
 int dds_update(struct ad9361_rf_phy *phy)
 {
-	struct dds_state *dds_st = phy->adc_state->dac_core_state;
+	struct dds_state *dds_st = &phy->adc_state->dac_dds_state;
 	int ret;
 	uint32_t chan;
 
@@ -484,7 +479,7 @@ int dds_update(struct ad9361_rf_phy *phy)
 *******************************************************************************/
 int dac_datasel(struct ad9361_rf_phy *phy, int32_t chan, enum dds_data_select sel)
 {
-	struct dds_state *dds_st = phy->adc_state->dac_core_state;
+	struct dds_state *dds_st = &phy->adc_state->dac_dds_state;
 	int ret;
 
 	if (PCORE_VERSION_MAJOR(dds_st->pcore_version) > 7) {
@@ -605,7 +600,7 @@ int32_t dds_set_calib_scale_phase(struct ad9361_rf_phy *phy,
 								  int32_t val,
 								  int32_t val2)
 {
-	struct dds_state *dds_st = phy->adc_state->dac_core_state;
+	struct dds_state *dds_st = &phy->adc_state->dac_dds_state;
 	int ret;
 	uint32_t reg;
 	uint32_t i;
@@ -651,7 +646,7 @@ int32_t dds_get_calib_scale_phase(struct ad9361_rf_phy *phy,
 								  int32_t *val,
 								  int32_t *val2)
 {
-	struct dds_state *dds_st = phy->adc_state->dac_core_state;
+	struct dds_state *dds_st = &phy->adc_state->dac_dds_state;
 	int ret;
 	uint32_t reg;
 

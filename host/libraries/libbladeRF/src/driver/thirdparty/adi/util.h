@@ -50,6 +50,8 @@
 #include "common.h"
 #include "config.h"
 
+#include "adc_core.h"
+#include "dac_core.h"
 
 /******************************************************************************/
 /********************** Macros and Constants Definitions **********************/
@@ -97,7 +99,7 @@ struct gpio_device {
 struct axiadc_state {
 	struct ad9361_rf_phy	*phy;
 	uint32_t				pcore_version;
-	void *dac_core_state;
+	struct dds_state dac_dds_state;
     void *userdata;
 };
 
