@@ -496,7 +496,7 @@ int print_gpio(struct cli_state *state, int argc, char **argv)
         }
         printf( "    %-20s", "RX Source:" );
         switch((val&0x300)>>8) {
-            case 0: printf( "LMS6002D\n" ); break;
+            case 0: printf( "Baseband\n" ); break;
             case 1: printf( "Internal 12-bit counter\n" ); break;
             case 2: printf( "Internal 32-bit counter\n" ); break;
             case 3: printf( "Whitened Entropy\n" ); break;
@@ -1125,8 +1125,8 @@ int print_rx_mux(struct cli_state *state, int argc, char **argv)
     }
 
     switch (mux_setting) {
-        case BLADERF_RX_MUX_BASEBAND_LMS:
-            mux_str = "BASEBAND_LMS - Baseband samples from LMS6002D";
+        case BLADERF_RX_MUX_BASEBAND:
+            mux_str = "BASEBAND - Baseband samples";
             break;
         case BLADERF_RX_MUX_12BIT_COUNTER:
             mux_str = "12BIT_COUNTER - 12-bit Up-Count I, Down-Count Q";
@@ -1154,8 +1154,8 @@ int set_rx_mux(struct cli_state *state, int argc, char **argv)
         return CLI_RET_NARGS;
     }
 
-    if (!strcasecmp(argv[2], "BASEBAND_LMS")) {
-        mux_val = BLADERF_RX_MUX_BASEBAND_LMS;
+    if (!strcasecmp(argv[2], "BASEBAND") || !strcasecmp(argv[2], "BASEBAND_LMS")) {
+        mux_val = BLADERF_RX_MUX_BASEBAND;
     } else if (!strcasecmp(argv[2], "12BIT_COUNTER")) {
         mux_val = BLADERF_RX_MUX_12BIT_COUNTER;
     } else if (!strcasecmp(argv[2], "32BIT_COUNTER")) {

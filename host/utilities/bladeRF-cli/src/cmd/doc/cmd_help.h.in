@@ -27,7 +27,7 @@
  * Any manual modifications to this file will be overwritten!
  * To edit the content of help strings, please edit interactive-help.md
  *
- * Last generated: Wed May  3 10:54:27 EDT 2017 by rtucker@rho
+ * Last generated: Tue May  9 18:22:31 PDT 2017 by vsergeev@vsergeev-laptop
  */
 
 #ifndef BLADERF_CLI_DOC_CMD_HELP_H__
@@ -50,10 +50,10 @@
   "    -   calibrate lms rxlpf [<I filter> <Q filter>]\n" \
   "    -   calibrate lms rxvga2 [<DC ref> <I1> <Q1> <I2> <Q2>]\n" \
   "\n" \
-  "    Perform the specified auto-calibration, or all of them if none\n" \
-  "    are provided. When values are provided, these are used instead of\n" \
-  "    the results of the auto-calibration procedure. Use lms show to\n" \
-  "    read and print the current LMS calibration values.\n" \
+  "    Perform the specified auto-calibration, or all of them if none are\n" \
+  "    provided. When values are provided, these are used instead of the\n" \
+  "    results of the auto-calibration procedure. Use lms show to read\n" \
+  "    and print the current LMS calibration values.\n" \
   "\n" \
   "    For rxvga2, I1 and Q1 are the Stage 1 I and Q components\n" \
   "    respectively, and I2 and Q2 are the Stage 2 I and Q components.\n" \
@@ -81,8 +81,8 @@
   "    Generate and write an I/Q correction parameter table to the\n" \
   "    current working directory, in a file named\n" \
   "    <serial>_dc_<rx|tx>.tbl. f_min and f_max are min and max\n" \
-  "    frequencies to include in the table. f_inc is the\n" \
-  "    frequency increment.\n" \
+  "    frequencies to include in the table. f_inc is the frequency\n" \
+  "    increment.\n" \
   "\n" \
   "    By default, tables are generated over the entire frequency range,\n" \
   "    in 10 MHz steps.\n" \
@@ -136,15 +136,15 @@
   "\n" \
   "    Valid options are:\n" \
   "\n" \
-  "            Option Description\n" \
-  "      ------------ ------------------------------------------------------\n" \
-  "               cal Calibration data\n" \
-  "                fw Firmware\n" \
-  "            fpga40 Metadata and bitstream for 40 kLE FPGA\n" \
-  "           fpga115 Metadata and bitstream for 115 kLE FPGA\n" \
+  "             Option Description\n" \
+  "      ------------- ----------------------------------------------------------\n" \
+  "                cal Calibration data\n" \
+  "                 fw Firmware\n" \
+  "             fpga40 Metadata and bitstream for 40 kLE FPGA\n" \
+  "            fpga115 Metadata and bitstream for 115 kLE FPGA\n" \
   "\n" \
-  "-   <address> - Address of data to back up. Must be\n" \
-  "    erase block-aligned.\n" \
+  "-   <address> - Address of data to back up. Must be erase\n" \
+  "    block-aligned.\n" \
   "-   <len> - Length of region to back up. Must be erase block-aligned.\n" \
   "\n" \
   "Note: When an address and length are provided, the image type will\n" \
@@ -185,20 +185,20 @@
   "\n" \
   "    Valid options are:\n" \
   "\n" \
-  "      -------------------------------------------------------------------\n" \
-  "            Option Description\n" \
-  "      ------------ ------------------------------------------------------\n" \
-  "               cal Calibration data\n" \
+  "      ------------------------------------------------------------------------\n" \
+  "             Option Description\n" \
+  "      ------------- ----------------------------------------------------------\n" \
+  "                cal Calibration data\n" \
   "\n" \
-  "                fw Firmware\n" \
+  "                 fw Firmware\n" \
   "\n" \
-  "            fpga40 Metadata and bitstream for 40 kLE FPGA\n" \
+  "             fpga40 Metadata and bitstream for 40 kLE FPGA\n" \
   "\n" \
-  "           fpga115 Metadata and bitstream for 115 kLE FPGA\n" \
+  "            fpga115 Metadata and bitstream for 115 kLE FPGA\n" \
   "\n" \
-  "               raw Raw data. The address and length parameters must be\n" \
-  "                   provided if this type is selected.\n" \
-  "      -------------------------------------------------------------------\n" \
+  "                raw Raw data. The address and length parameters must be\n" \
+  "                    provided if this type is selected.\n" \
+  "      ------------------------------------------------------------------------\n" \
   "\n" \
   "-   serial=<serial>\n" \
   "\n" \
@@ -236,8 +236,8 @@
   "\n" \
   "-   <address>\n" \
   "\n" \
-  "    Defaults to the address specified in the provided flash\n" \
-  "    image file.\n" \
+  "    Defaults to the address specified in the provided flash image\n" \
+  "    file.\n" \
   "\n" \
   "-   <length>\n" \
   "\n" \
@@ -363,9 +363,9 @@
   "\n" \
   "-   <pa|lna|aux> [on|off]\n" \
   "\n" \
-  "    Enable or disable the power amplifier (PA), low-noise\n" \
-  "    amplifier (lna) or auxillary LNA (aux). The current state if the\n" \
-  "    specified device is printed if [on|off] is not specified.\n" \
+  "    Enable or disable the power amplifier (PA), low-noise amplifier\n" \
+  "    (lna) or auxillary LNA (aux). The current state if the specified\n" \
+  "    device is printed if [on|off] is not specified.\n" \
   "\n" \
   "    Note: The auxillary path on the XB-300 is not populated with\n" \
   "    components by default; the aux control will have no effect upon\n" \
@@ -382,8 +382,8 @@
   "    The default XB-300 hardware configuration includes separate RX and\n" \
   "    TX paths. However, users wishing to use only a single antenna for\n" \
   "    TRX can do so via a modification to resistor population options on\n" \
-  "    the XB-300 and use this command to switch between RX an\n" \
-  "    TX operation. (See R8, R10, and R23 on the schematic.)\n" \
+  "    the XB-300 and use this command to switch between RX an TX\n" \
+  "    operation. (See R8, R10, and R23 on the schematic.)\n" \
   "\n" \
   "Examples:\n" \
   "\n" \
@@ -398,8 +398,8 @@
   "\n" \
   "-   xb 300 enable\n" \
   "\n" \
-  "    Enables and configures the use of GPIOs to interact with\n" \
-  "    the XB-300. The PA and LNA will disabled by default.\n" \
+  "    Enables and configures the use of GPIOs to interact with the\n" \
+  "    XB-300. The PA and LNA will disabled by default.\n" \
   "\n" \
   "-   xb 300 lna on\n" \
   "\n" \
@@ -568,19 +568,19 @@
   "Receive IQ samples and write them to the specified file. Reception is\n" \
   "controlled and configured by one of the following:\n" \
   "\n" \
-  "  -----------------------------------------------------------------------\n" \
-  "       Command Description\n" \
-  "  ------------ ----------------------------------------------------------\n" \
-  "         start Start receiving samples\n" \
+  "  ----------------------------------------------------------------------------------\n" \
+  "         Command Description\n" \
+  "  -------------- -------------------------------------------------------------------\n" \
+  "           start Start receiving samples\n" \
   "\n" \
-  "          stop Stop receiving samples\n" \
+  "            stop Stop receiving samples\n" \
   "\n" \
-  "          wait Wait for sample transmission to complete, or until a\n" \
-  "               specified amount of time elapses\n" \
+  "            wait Wait for sample transmission to complete, or until a specified\n" \
+  "                 amount of time elapses\n" \
   "\n" \
-  "        config Configure sample reception. If no parameters are provided,\n" \
-  "               the current parameters are printed.\n" \
-  "  -----------------------------------------------------------------------\n" \
+  "          config Configure sample reception. If no parameters are provided, the\n" \
+  "                 current parameters are printed.\n" \
+  "  ----------------------------------------------------------------------------------\n" \
   "\n" \
   "Running rx without any additional commands is valid shorthand for\n" \
   "rx config.\n" \
@@ -653,26 +653,19 @@
   "\n" \
   "Below are the available options for :\n" \
   "\n" \
-  "       Trigger Description\n" \
-  "  ------------ ----------------------------------------------------------\n" \
-  "         J71-4 Trigger signal is on mini_exp1 (J71, pin 4).\n" \
+  "        Trigger Description\n" \
+  "  ------------- --------------------------------------------------------------\n" \
+  "          J71-4 Trigger signal is on mini_exp1 (J71, pin 4).\n" \
   "\n" \
   "The trigger is controlled and configured by providing the last\n" \
   "argument, which may be one of the following:\n" \
   "\n" \
-  "  -----------------------------------------------------------------------\n" \
-  "       Command Description\n" \
-  "  ------------ ----------------------------------------------------------\n" \
-  "           off Clears fire request and disables trigger functionality.\n" \
-  "\n" \
-  "         slave Configures trigger as slave, clears fire request, and arms\n" \
-  "               the device.\n" \
-  "\n" \
-  "        master Configures trigger as master, clears fire request, and\n" \
-  "               arms the device.\n" \
-  "\n" \
-  "          fire Sets fire request. Only applicable to the master.\n" \
-  "  -----------------------------------------------------------------------\n" \
+  "           Command Description\n" \
+  "  ---------------- -----------------------------------------------------------------------------\n" \
+  "               off Clears fire request and disables trigger functionality.\n" \
+  "             slave Configures trigger as slave, clears fire request, and arms the device.\n" \
+  "            master Configures trigger as master, clears fire request, and arms the device.\n" \
+  "              fire Sets fire request. Only applicable to the master.\n" \
   "\n" \
   "A trigger chain consists of a single or multiple bladeRF units and may\n" \
   "contain TX and RX modules. If multiple bladeRF units are used they\n" \
@@ -703,8 +696,8 @@
   "\n" \
   "5.  Finish the transmit and receive tasks as usual\n" \
   "\n" \
-  "6.  Re-configure the master and slaves to clear fire requests\n" \
-  "    and re-arm.\n" \
+  "6.  Re-configure the master and slaves to clear fire requests and\n" \
+  "    re-arm.\n" \
   "\n" \
   "        Steps 1 through 5 may be repeated as neccessary.\n" \
   "\n" \
@@ -728,19 +721,19 @@
   "Read IQ samples from the specified file and transmit them.\n" \
   "Transmission is controlled and configured by one of the following:\n" \
   "\n" \
-  "  -----------------------------------------------------------------------\n" \
-  "       Command Description\n" \
-  "  ------------ ----------------------------------------------------------\n" \
-  "         start Start transmitting samples\n" \
+  "  ----------------------------------------------------------------------------------------\n" \
+  "          Command Description\n" \
+  "  --------------- ------------------------------------------------------------------------\n" \
+  "            start Start transmitting samples\n" \
   "\n" \
-  "          stop Stop transmitting samples\n" \
+  "             stop Stop transmitting samples\n" \
   "\n" \
-  "          wait Wait for sample transmission to complete, or until a\n" \
-  "               specified amount of time elapses\n" \
+  "             wait Wait for sample transmission to complete, or until a specified amount of\n" \
+  "                  time elapses\n" \
   "\n" \
-  "        config Configure sample transmission. If no parameters are\n" \
-  "               provided, the current parameters are printed.\n" \
-  "  -----------------------------------------------------------------------\n" \
+  "           config Configure sample transmission. If no parameters are provided, the\n" \
+  "                  current parameters are printed.\n" \
+  "  ----------------------------------------------------------------------------------------\n" \
   "\n" \
   "Running tx without any additional commands is valid shorthand for\n" \
   "tx config.\n" \
@@ -800,8 +793,8 @@
   "-   The n, samples, buffers, and xfers parameters support the suffixes\n" \
   "    K, M, and G, which are multiples of 1024.\n" \
   "-   For higher sample rates, it is advised that the input file be\n" \
-  "    stored in RAM (e.g. /tmp, /dev/shm) or on an SSD, rather than\n" \
-  "    a HDD.\n" \
+  "    stored in RAM (e.g. /tmp, /dev/shm) or on an SSD, rather than a\n" \
+  "    HDD.\n" \
   "-   When providing CSV data, this command will first convert it to a\n" \
   "    binary format, stored in a file in the current working directory.\n" \
   "    During this process, out-of-range values will be clamped.\n" \
@@ -818,46 +811,46 @@
   "The set command takes a parameter and an arbitrary number of arguments\n" \
   "for that particular parameter. The parameter is one of:\n" \
   "\n" \
-  "  -----------------------------------------------------------------------\n" \
-  "       Parameter Description\n" \
-  "  -------------- --------------------------------------------------------\n" \
-  "       bandwidth Bandwidth settings\n" \
+  "  -------------------------------------------------------------------------------------------\n" \
+  "           Parameter Description\n" \
+  "  ------------------ ------------------------------------------------------------------------\n" \
+  "           bandwidth Bandwidth settings\n" \
   "\n" \
-  "       frequency Frequency settings\n" \
+  "           frequency Frequency settings\n" \
   "\n" \
-  "            gpio FX3 <-> FPGA GPIO state\n" \
+  "                gpio FX3 <-> FPGA GPIO state\n" \
   "\n" \
-  "        loopback Loopback settings. Run 'set loopback' to list modes.\n" \
+  "            loopback Loopback settings. Run 'set loopback' to list modes.\n" \
   "\n" \
-  "         lnagain Gain setting of the RX LNA, in dB. Values: 0, 3, 6\n" \
+  "             lnagain Gain setting of the RX LNA, in dB. Values: 0, 3, 6\n" \
   "\n" \
-  "          rxvga1 Gain setting of RXVGA1, in dB. Range: [5, 30]\n" \
+  "              rxvga1 Gain setting of RXVGA1, in dB. Range: [5, 30]\n" \
   "\n" \
-  "          rx_mux FPGA RX FIFO input mux mode. Options are: BASEBAND_LMS,\n" \
-  "                 12BIT_COUNTER, 32BIT_COUNTER, DIGITAL_LOOPBACK\n" \
+  "              rx_mux FPGA RX FIFO input mux mode. Options are: BASEBAND, 12BIT_COUNTER,\n" \
+  "                     32BIT_COUNTER, DIGITAL_LOOPBACK\n" \
   "\n" \
-  "          rxvga1 Gain setting of RXVGA1, in dB. Range: [5, 30]\n" \
+  "              rxvga1 Gain setting of RXVGA1, in dB. Range: [5, 30]\n" \
   "\n" \
-  "          rxvga2 Gain setting of RXVGA2, in dB. Range: [0, 30]\n" \
+  "              rxvga2 Gain setting of RXVGA2, in dB. Range: [0, 30]\n" \
   "\n" \
-  "          txvga1 Gain setting of TXVGA1, in dB. Range: [-35, -4]\n" \
+  "              txvga1 Gain setting of TXVGA1, in dB. Range: [-35, -4]\n" \
   "\n" \
-  "          txvga2 Gain setting of TXVGA2, in dB. Range: [0, 25]\n" \
+  "              txvga2 Gain setting of TXVGA2, in dB. Range: [0, 25]\n" \
   "\n" \
-  "        sampling External or internal sampling mode\n" \
+  "            sampling External or internal sampling mode\n" \
   "\n" \
-  "      samplerate Sample rate settings\n" \
+  "          samplerate Sample rate settings\n" \
   "\n" \
-  "        smb_mode SMB clock port mode of operation\n" \
+  "            smb_mode SMB clock port mode of operation\n" \
   "\n" \
-  "         trimdac VCTCXO trim DAC settings\n" \
+  "             trimdac VCTCXO trim DAC settings\n" \
   "\n" \
-  "    vctcxo_tamer VCTCXO tamer mode. Options: Disabled, 1PPS, 10MHz\n" \
+  "        vctcxo_tamer VCTCXO tamer mode. Options: Disabled, 1PPS, 10MHz\n" \
   "\n" \
-  "         xb_gpio Expansion board GPIO values\n" \
+  "             xb_gpio Expansion board GPIO values\n" \
   "\n" \
-  "     xb_gpio_dir Expansion board GPIO direction (1=output, 0=input)\n" \
-  "  -----------------------------------------------------------------------\n" \
+  "         xb_gpio_dir Expansion board GPIO direction (1=output, 0=input)\n" \
+  "  -------------------------------------------------------------------------------------------\n" \
   "\n" \
 
 

@@ -842,7 +842,7 @@ that particular parameter. The parameter is one of:
 `rxvga1`        Gain setting of RXVGA1, in dB. Range: [5, 30]
 
 `rx_mux`        FPGA RX FIFO input mux mode. Options are:
-                    BASEBAND_LMS, 12BIT_COUNTER,
+                    BASEBAND, 12BIT_COUNTER,
                     32BIT_COUNTER, DIGITAL_LOOPBACK
 
 `rxvga1`        Gain setting of RXVGA1, in dB. Range: [5, 30]
