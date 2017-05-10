@@ -497,6 +497,34 @@ out:
 }
 
 /**
+ * Deinitialize the AD9361 part.
+ * @return 0 in case of success, negative error code otherwise.
+ */
+int32_t ad9361_deinit (struct ad9361_rf_phy *phy)
+{
+	if (phy) {
+		/* Put AD9361 part into reset */
+		if (gpio_is_valid(phy->gpio, phy->pdata->gpio_resetb)) {
+			gpio_set_value(phy->gpio, phy->pdata->gpio_resetb, 0);
+		}
+	}
+
+	if (phy) {
+		free(phy->spi);
+		free(phy->gpio);
+#ifndef AXI_ADC_NOT_PRESENT
+		free(phy->adc_conv);
+		free(phy->adc_state);
+#endif
+		free(phy->clk_refin);
+		free(phy->pdata);
+		free(phy);
+	}
+
+	return 0;
+}
+
+/**
  * Set the Enable State Machine (ENSM) mode.
  * @param phy The AD9361 current state structure.
  * @param mode The ENSM mode.
