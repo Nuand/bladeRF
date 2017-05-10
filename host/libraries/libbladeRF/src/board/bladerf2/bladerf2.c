@@ -572,17 +572,9 @@ static void bladerf2_close(struct bladerf *dev)
 {
     struct bladerf2_board_data *board_data = dev->board_data;
 
-    if (board_data->phy) {
-        /* FIXME ad9361 driver provides no free() */
-        free(board_data->phy->spi);
-        free(board_data->phy->gpio);
-        #ifndef AXI_ADC_NOT_PRESENT
-        free(board_data->phy->adc_conv);
-        free(board_data->phy->adc_state);
-        #endif
-        free(board_data->phy->clk_refin);
-        free(board_data->phy->pdata);
-        free(board_data->phy);
+    if (board_data && board_data->phy) {
+        ad9361_deinit(board_data->phy);
+        board_data->phy = NULL;
     }
 
     if (board_data) {
