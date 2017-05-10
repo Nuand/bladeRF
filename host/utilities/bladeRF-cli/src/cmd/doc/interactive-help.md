@@ -474,7 +474,9 @@ print
 Usage: `print [parameter]`
 
 The print command takes a parameter to print. Available parameters are listed
-below. If no paremeter is specified, all parameters are printed.
+below. If no parameter is specified, all parameters are printed.
+
+Common parameters:
 
 ----------------------------------------------------------------------
     Parameter Description
@@ -487,9 +489,21 @@ below. If no paremeter is specified, all parameters are printed.
 
 `loopback`      Loopback settings
 
-`lnagain`       Gain setting of the RX LNA, in dB
-
 `rx_mux`        FPGA RX FIFO input mux setting
+
+`samplerate`    Samplerate settings
+
+`trimdac`       VCTCXO Trim DAC settings
+
+`vctcxo_tamer`  Current VCTCXO tamer mode.
+----------------------------------------------------------------------
+
+BladeRF1-only parameters:
+
+----------------------------------------------------------------------
+    Parameter Description
+------------- --------------------------------------------------------
+`lnagain`       Gain setting of the RX LNA, in dB
 
 `rxvga1`        Gain setting of RXVGA1, in dB
 
@@ -501,19 +515,12 @@ below. If no paremeter is specified, all parameters are printed.
 
 `sampling`      External or internal sampling mode
 
-`samplerate`    Samplerate settings
-
 `smb_mode`      SMB clock port mode of operation
-
-`trimdac`       VCTCXO Trim DAC settings
-
-`vctcxo_tamer`  Current VCTCXO tamer mode.
 
 `xb_gpio`       Expansion board GPIO values
 
 `xb_gpio_dir`   Expansion board GPIO direction (1=output, 0=input)
 ----------------------------------------------------------------------
-
 
 probe
 -----
@@ -824,7 +831,9 @@ set
 Usage: `set <parameter> <arguments>`
 
 The set command takes a parameter and an arbitrary number of arguments for
-that particular parameter. The parameter is one of:
+that particular parameter.
+
+Common parameters:
 
 ----------------------------------------------------------------------
     Parameter Description
@@ -835,15 +844,25 @@ that particular parameter. The parameter is one of:
 
 `gpio`          FX3 <-> FPGA GPIO state
 
+`rx_mux`        FPGA RX FIFO input mux mode. Options are:
+                BASEBAND, 12BIT_COUNTER, 32BIT_COUNTER,
+                DIGITAL_LOOPBACK
+
+`samplerate`    Sample rate settings
+
+`trimdac`       VCTCXO trim DAC settings
+
+`vctcxo_tamer`  VCTCXO tamer mode. Options: Disabled, 1PPS, 10MHz
+----------------------------------------------------------------------
+
+BladeRF1-only parameters:
+
+----------------------------------------------------------------------
+    Parameter Description
+------------- --------------------------------------------------------
 `loopback`      Loopback settings. Run 'set loopback' to list modes.
 
 `lnagain`       Gain setting of the RX LNA, in dB. Values: 0, 3, 6
-
-`rxvga1`        Gain setting of RXVGA1, in dB. Range: [5, 30]
-
-`rx_mux`        FPGA RX FIFO input mux mode. Options are:
-                    BASEBAND, 12BIT_COUNTER,
-                    32BIT_COUNTER, DIGITAL_LOOPBACK
 
 `rxvga1`        Gain setting of RXVGA1, in dB. Range: [5, 30]
 
@@ -855,19 +874,12 @@ that particular parameter. The parameter is one of:
 
 `sampling`      External or internal sampling mode
 
-`samplerate`    Sample rate settings
-
 `smb_mode`      SMB clock port mode of operation
-
-`trimdac`       VCTCXO trim DAC settings
-
-`vctcxo_tamer`  VCTCXO tamer mode. Options: Disabled, 1PPS, 10MHz
 
 `xb_gpio`       Expansion board GPIO values
 
 `xb_gpio_dir`   Expansion board GPIO direction (1=output, 0=input)
 ----------------------------------------------------------------------
-
 
 version
 -------

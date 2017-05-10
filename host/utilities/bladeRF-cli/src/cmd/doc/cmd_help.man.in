@@ -632,7 +632,9 @@ Usage: \f[C]print\ [parameter]\f[]
 .PP
 The print command takes a parameter to print.
 Available parameters are listed below.
-If no paremeter is specified, all parameters are printed.
+If no parameter is specified, all parameters are printed.
+.PP
+Common parameters:
 .PP
 .TS
 tab(@);
@@ -664,14 +666,42 @@ T}@T{
 Loopback settings
 T}
 T{
-\f[C]lnagain\f[]
-T}@T{
-Gain setting of the RX LNA, in dB
-T}
-T{
 \f[C]rx_mux\f[]
 T}@T{
 FPGA RX FIFO input mux setting
+T}
+T{
+\f[C]samplerate\f[]
+T}@T{
+Samplerate settings
+T}
+T{
+\f[C]trimdac\f[]
+T}@T{
+VCTCXO Trim DAC settings
+T}
+T{
+\f[C]vctcxo_tamer\f[]
+T}@T{
+Current VCTCXO tamer mode.
+T}
+.TE
+.PP
+BladeRF1\-only parameters:
+.PP
+.TS
+tab(@);
+rw(13.6n) lw(54.4n).
+T{
+Parameter
+T}@T{
+Description
+T}
+_
+T{
+\f[C]lnagain\f[]
+T}@T{
+Gain setting of the RX LNA, in dB
 T}
 T{
 \f[C]rxvga1\f[]
@@ -699,24 +729,9 @@ T}@T{
 External or internal sampling mode
 T}
 T{
-\f[C]samplerate\f[]
-T}@T{
-Samplerate settings
-T}
-T{
 \f[C]smb_mode\f[]
 T}@T{
 SMB clock port mode of operation
-T}
-T{
-\f[C]trimdac\f[]
-T}@T{
-VCTCXO Trim DAC settings
-T}
-T{
-\f[C]vctcxo_tamer\f[]
-T}@T{
-Current VCTCXO tamer mode.
 T}
 T{
 \f[C]xb_gpio\f[]
@@ -1200,7 +1215,8 @@ Usage: \f[C]set\ <parameter>\ <arguments>\f[]
 .PP
 The set command takes a parameter and an arbitrary number of arguments
 for that particular parameter.
-The parameter is one of:
+.PP
+Common parameters:
 .PP
 .TS
 tab(@);
@@ -1227,6 +1243,41 @@ T}@T{
 FX3 <\-> FPGA GPIO state
 T}
 T{
+\f[C]rx_mux\f[]
+T}@T{
+FPGA RX FIFO input mux mode.
+Options are: BASEBAND, 12BIT_COUNTER, 32BIT_COUNTER, DIGITAL_LOOPBACK
+T}
+T{
+\f[C]samplerate\f[]
+T}@T{
+Sample rate settings
+T}
+T{
+\f[C]trimdac\f[]
+T}@T{
+VCTCXO trim DAC settings
+T}
+T{
+\f[C]vctcxo_tamer\f[]
+T}@T{
+VCTCXO tamer mode.
+Options: Disabled, 1PPS, 10MHz
+T}
+.TE
+.PP
+BladeRF1\-only parameters:
+.PP
+.TS
+tab(@);
+rw(13.6n) lw(54.4n).
+T{
+Parameter
+T}@T{
+Description
+T}
+_
+T{
 \f[C]loopback\f[]
 T}@T{
 Loopback settings.
@@ -1237,18 +1288,6 @@ T{
 T}@T{
 Gain setting of the RX LNA, in dB.
 Values: 0, 3, 6
-T}
-T{
-\f[C]rxvga1\f[]
-T}@T{
-Gain setting of RXVGA1, in dB.
-Range: [5, 30]
-T}
-T{
-\f[C]rx_mux\f[]
-T}@T{
-FPGA RX FIFO input mux mode.
-Options are: BASEBAND, 12BIT_COUNTER, 32BIT_COUNTER, DIGITAL_LOOPBACK
 T}
 T{
 \f[C]rxvga1\f[]
@@ -1280,25 +1319,9 @@ T}@T{
 External or internal sampling mode
 T}
 T{
-\f[C]samplerate\f[]
-T}@T{
-Sample rate settings
-T}
-T{
 \f[C]smb_mode\f[]
 T}@T{
 SMB clock port mode of operation
-T}
-T{
-\f[C]trimdac\f[]
-T}@T{
-VCTCXO trim DAC settings
-T}
-T{
-\f[C]vctcxo_tamer\f[]
-T}@T{
-VCTCXO tamer mode.
-Options: Disabled, 1PPS, 10MHz
 T}
 T{
 \f[C]xb_gpio\f[]

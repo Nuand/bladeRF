@@ -27,7 +27,7 @@
  * Any manual modifications to this file will be overwritten!
  * To edit the content of help strings, please edit interactive-help.md
  *
- * Last generated: Tue May  9 18:22:31 PDT 2017 by vsergeev@vsergeev-laptop
+ * Last generated: Tue May  9 18:51:08 PDT 2017 by vsergeev@vsergeev-laptop
  */
 
 #ifndef BLADERF_CLI_DOC_CMD_HELP_H__
@@ -489,8 +489,10 @@
   "Usage: print [parameter]\n" \
   "\n" \
   "The print command takes a parameter to print. Available parameters are\n" \
-  "listed below. If no paremeter is specified, all parameters are\n" \
+  "listed below. If no parameter is specified, all parameters are\n" \
   "printed.\n" \
+  "\n" \
+  "Common parameters:\n" \
   "\n" \
   "       Parameter Description\n" \
   "  -------------- --------------------------------------------------------\n" \
@@ -498,17 +500,22 @@
   "       frequency Frequency settings\n" \
   "            gpio FX3 <-> FPGA GPIO state\n" \
   "        loopback Loopback settings\n" \
-  "         lnagain Gain setting of the RX LNA, in dB\n" \
   "          rx_mux FPGA RX FIFO input mux setting\n" \
+  "      samplerate Samplerate settings\n" \
+  "         trimdac VCTCXO Trim DAC settings\n" \
+  "    vctcxo_tamer Current VCTCXO tamer mode.\n" \
+  "\n" \
+  "BladeRF1-only parameters:\n" \
+  "\n" \
+  "       Parameter Description\n" \
+  "  -------------- --------------------------------------------------------\n" \
+  "         lnagain Gain setting of the RX LNA, in dB\n" \
   "          rxvga1 Gain setting of RXVGA1, in dB\n" \
   "          rxvga2 Gain setting of RXVGA2, in dB\n" \
   "          txvga1 Gain setting of TXVGA1, in dB\n" \
   "          txvga2 Gain setting of TXVGA2, in dB\n" \
   "        sampling External or internal sampling mode\n" \
-  "      samplerate Samplerate settings\n" \
   "        smb_mode SMB clock port mode of operation\n" \
-  "         trimdac VCTCXO Trim DAC settings\n" \
-  "    vctcxo_tamer Current VCTCXO tamer mode.\n" \
   "         xb_gpio Expansion board GPIO values\n" \
   "     xb_gpio_dir Expansion board GPIO direction (1=output, 0=input)\n" \
   "\n" \
@@ -809,7 +816,9 @@
   "Usage: set <parameter> <arguments>\n" \
   "\n" \
   "The set command takes a parameter and an arbitrary number of arguments\n" \
-  "for that particular parameter. The parameter is one of:\n" \
+  "for that particular parameter.\n" \
+  "\n" \
+  "Common parameters:\n" \
   "\n" \
   "  -------------------------------------------------------------------------------------------\n" \
   "           Parameter Description\n" \
@@ -820,37 +829,30 @@
   "\n" \
   "                gpio FX3 <-> FPGA GPIO state\n" \
   "\n" \
-  "            loopback Loopback settings. Run 'set loopback' to list modes.\n" \
-  "\n" \
-  "             lnagain Gain setting of the RX LNA, in dB. Values: 0, 3, 6\n" \
-  "\n" \
-  "              rxvga1 Gain setting of RXVGA1, in dB. Range: [5, 30]\n" \
-  "\n" \
   "              rx_mux FPGA RX FIFO input mux mode. Options are: BASEBAND, 12BIT_COUNTER,\n" \
   "                     32BIT_COUNTER, DIGITAL_LOOPBACK\n" \
   "\n" \
-  "              rxvga1 Gain setting of RXVGA1, in dB. Range: [5, 30]\n" \
-  "\n" \
-  "              rxvga2 Gain setting of RXVGA2, in dB. Range: [0, 30]\n" \
-  "\n" \
-  "              txvga1 Gain setting of TXVGA1, in dB. Range: [-35, -4]\n" \
-  "\n" \
-  "              txvga2 Gain setting of TXVGA2, in dB. Range: [0, 25]\n" \
-  "\n" \
-  "            sampling External or internal sampling mode\n" \
-  "\n" \
   "          samplerate Sample rate settings\n" \
-  "\n" \
-  "            smb_mode SMB clock port mode of operation\n" \
   "\n" \
   "             trimdac VCTCXO trim DAC settings\n" \
   "\n" \
   "        vctcxo_tamer VCTCXO tamer mode. Options: Disabled, 1PPS, 10MHz\n" \
-  "\n" \
-  "             xb_gpio Expansion board GPIO values\n" \
-  "\n" \
-  "         xb_gpio_dir Expansion board GPIO direction (1=output, 0=input)\n" \
   "  -------------------------------------------------------------------------------------------\n" \
+  "\n" \
+  "BladeRF1-only parameters:\n" \
+  "\n" \
+  "       Parameter Description\n" \
+  "  -------------- --------------------------------------------------------\n" \
+  "        loopback Loopback settings. Run 'set loopback' to list modes.\n" \
+  "         lnagain Gain setting of the RX LNA, in dB. Values: 0, 3, 6\n" \
+  "          rxvga1 Gain setting of RXVGA1, in dB. Range: [5, 30]\n" \
+  "          rxvga2 Gain setting of RXVGA2, in dB. Range: [0, 30]\n" \
+  "          txvga1 Gain setting of TXVGA1, in dB. Range: [-35, -4]\n" \
+  "          txvga2 Gain setting of TXVGA2, in dB. Range: [0, 25]\n" \
+  "        sampling External or internal sampling mode\n" \
+  "        smb_mode SMB clock port mode of operation\n" \
+  "         xb_gpio Expansion board GPIO values\n" \
+  "     xb_gpio_dir Expansion board GPIO direction (1=output, 0=input)\n" \
   "\n" \
 
 
