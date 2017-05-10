@@ -1,11 +1,7 @@
 # Clock inputs
-create_clock -period "100.0 MHz" -waveform {0.6 5.6} [get_ports fx3_pclk]
 create_clock -period "38.4 MHz"  [get_ports c5_clock_1]
 create_clock -period "38.4 MHz"  [get_ports c5_clock_2]
 create_clock -period "250.0 MHz" [get_ports adi_rx_clock]
-
-## Virtual clocks
-create_clock -period "100.0 MHz" -name fx3_virtual
 
 # Generate the appropriate PLL clocks
 derive_pll_clocks
