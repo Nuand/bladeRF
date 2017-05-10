@@ -537,11 +537,11 @@ See the \f[C]bladerf_open()\f[] documentation in libbladeRF for the
 complete device specifier format.
 .SS peek
 .PP
-Usage: \f[C]peek\ <dac|lms|si>\ <address>\ [num_addresses]\f[]
+Usage: \f[C]peek\ <adi|dac|lms|si>\ <address>\ [num_addresses]\f[]
 .PP
 The peek command can read any of the devices hanging off the FPGA which
-includes the LMS6002D transceiver, VCTCXO trim DAC or the Si5338 clock
-generator chip.
+includes the AD9361 or LMS6002D transceiver, VCTCXO trim DAC or the
+Si5338 clock generator chip.
 .PP
 If \f[C]num_addresses\f[] is supplied, the address is incremented by 1
 and another peek is performed for that many addresses.
@@ -557,6 +557,11 @@ T}@T{
 Address Range
 T}
 _
+T{
+\f[C]adi\f[]
+T}@T{
+0 to 0x3F7 (1015)
+T}
 T{
 \f[C]dac\f[]
 T}@T{
@@ -579,11 +584,11 @@ Example:
 \f[C]peek\ si\ ...\f[]
 .SS poke
 .PP
-Usage: \f[C]poke\ <dac|lms|si>\ <address>\ <data>\f[]
+Usage: \f[C]poke\ <adi|dac|lms|si>\ <address>\ <data>\f[]
 .PP
 The poke command can write any of the devices hanging off the FPGA which
-includes the LMS6002D transceiver, VCTCXO trim DAC or the Si5338 clock
-generator chip.
+includes the AD9361 or LMS6002D transceiver, VCTCXO trim DAC or the
+Si5338 clock generator chip.
 .PP
 Valid Address Ranges:
 .PP
@@ -596,6 +601,11 @@ T}@T{
 Address Range
 T}
 _
+T{
+\f[C]adi\f[]
+T}@T{
+0 to 0x3F7 (1015)
+T}
 T{
 \f[C]dac\f[]
 T}@T{
