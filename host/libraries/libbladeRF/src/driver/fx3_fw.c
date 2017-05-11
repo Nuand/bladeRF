@@ -336,7 +336,7 @@ bool fx3_fw_next_section(struct fx3_firmware *fw, uint32_t *section_addr,
     return true;
 }
 
-uint32_t fx3_fw_entry_point(struct fx3_firmware *fw)
+uint32_t fx3_fw_entry_point(const struct fx3_firmware *fw)
 {
     assert(fw != NULL);
     return fw->entry_addr;

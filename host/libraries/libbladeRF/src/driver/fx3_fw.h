@@ -72,6 +72,6 @@ bool fx3_fw_next_section(struct fx3_firmware *fw, uint32_t *section_addr,
 /**
  * @return The 32-bit little-endian address of the firmware entry point.
  */
-uint32_t fx3_fw_entry_point(struct fx3_firmware *fw);
+uint32_t fx3_fw_entry_point(const struct fx3_firmware *fw);
 
 #endif
