@@ -74,7 +74,7 @@ struct sync_worker {
  * Create a launch a worker thread. It will enter the IDLE state upon
  * executing.
  *
- * @param[in]   s   Sync handle containing worker to initialize
+ * @param   s   Sync handle containing worker to initialize
  *
  * @return 0 on success, BLADERF_ERR_* on failure
  */
@@ -83,7 +83,7 @@ int sync_worker_init(struct bladerf_sync *s);
 /**
  * Shutdown and deinitialize
  *
- * @param[in]   w       Worker to deinitialize
+ * @param       w       Worker to deinitialize
  * @param[in]   lock    Acquired to signal `cond` if non-NULL
  * @param[in]   cond    If non-NULL, this is signaled after requesting the
  *                      worker to shut down, waking a potentially blocked
@@ -95,13 +95,12 @@ void sync_worker_deinit(struct sync_worker *w,
 /**
  * Wait for state change with optional timeout
  *
- * @param   w               Worker to wait for
- * @param   state           State to wait for
- * @param   timeout_ms      Timeout in ms. 0 implies "wait forever"
+ * @param       w           Worker to wait for
+ * @param[in]   state       State to wait for
+ * @param[in]   timeout_ms  Timeout in ms. 0 implies "wait forever"
  *
- * @return  0 on success,
- *          BLADERF_ERR_TIMEOUT on timeout,
- *          BLADERF_ERR_UNKNOWN on other errors
+ * @return 0 on success, BLADERF_ERR_TIMEOUT on timeout, BLADERF_ERR_UNKNOWN on
+ * other errors
  */
 int sync_worker_wait_for_state(struct sync_worker *w,
                                sync_worker_state state,
@@ -110,10 +109,10 @@ int sync_worker_wait_for_state(struct sync_worker *w,
 /**
  * Get the worker's current state.
  *
- * @param[in]  w        Worker to query
- * @param[out] err_code Stream error code (libbladeRF error code value).
- *                      Querying this value will reset the interal
- *                      error code value.
+ * @param       w           Worker to query
+ * @param[out]  err_code    Stream error code (libbladeRF error code value).
+ *                          Querying this value will reset the interal error
+ *                          code value.
  *
  * @return Worker's current state
  */
@@ -123,8 +122,8 @@ sync_worker_state sync_worker_get_state(struct sync_worker *w,
 /**
  * Submit a request to the worker task
  *
- * @param   w               Worker to send request to
- * @param   request         Bitmask of requests to submit
+ * @param       w           Worker to send request to
+ * @param[in]   request     Bitmask of requests to submit
  */
 void sync_worker_submit_request(struct sync_worker *w, unsigned int request);
 

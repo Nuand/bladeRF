@@ -33,8 +33,8 @@
 /**
  * Initialize the INA219 voltage/current/power monitor.
  *
- * @param[inout]    dev         Device handle
- * @param[in]       r_shunt     Shunt resistor in ohms
+ * @param       dev         Device handle
+ * @param[in]   r_shunt     Shunt resistor in ohms
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
@@ -43,8 +43,8 @@ int ina219_init(struct bladerf *dev, float r_shunt);
 /**
  * Read the shunt voltage.
  *
- * @param[inout]    dev         Device handle
- * @param[out]      voltage     Shunt voltage in volts
+ * @param       dev         Device handle
+ * @param[out]  voltage     Shunt voltage in volts
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
@@ -53,8 +53,8 @@ int ina219_read_shunt_voltage(struct bladerf *dev, float *voltage);
 /**
  * Read the bus voltage.
  *
- * @param[inout]    dev         Device handle
- * @param[out]      voltage     Bus voltage in volts
+ * @param       dev         Device handle
+ * @param[out]  voltage     Bus voltage in volts
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
@@ -63,8 +63,8 @@ int ina219_read_bus_voltage(struct bladerf *dev, float *voltage);
 /**
  * Read the load current.
  *
- * @param[inout]    dev         Device handle
- * @param[out]      current     Load current in amps
+ * @param       dev         Device handle
+ * @param[out]  current     Load current in amps
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
@@ -73,8 +73,8 @@ int ina219_read_current(struct bladerf *dev, float *current);
 /**
  * Read the load power.
  *
- * @param[inout]    dev         Device handle
- * @param[out]      power       Load power in watts
+ * @param       dev         Device handle
+ * @param[out]  power       Load power in watts
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */

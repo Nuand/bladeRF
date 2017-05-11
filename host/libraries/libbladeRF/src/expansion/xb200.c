@@ -219,7 +219,7 @@ int xb200_init(struct bladerf *dev)
 /**
  * Validate XB-200 filter selection
  *
- * @param   f       Filter supplied by API user.
+ * @param[in]   f   Filter supplied by API user.
  *
  * @return 0 for a valid enumeration value, BLADERF_ERR_INVAL otherwise.
  */
@@ -249,7 +249,7 @@ static int check_xb200_filter(bladerf_xb200_filter f)
 /**
  * Validate XB-200 path selection
  *
- * @param   p       Path supplied by API user.
+ * @param[in]   p   Path supplied by API user.
  *
  * @return 0 for a valid enumeration value, BLADERF_ERR_INVAL otherwise.
  */

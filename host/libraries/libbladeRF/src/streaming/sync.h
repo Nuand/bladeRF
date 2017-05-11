@@ -166,7 +166,7 @@ int sync_init(struct bladerf_sync *sync,
  * Deinitialize the sync handle. This tears down and deallocates the underlying
  * asynchronous stream.
  *
- * @param   sync    Handle to deinitialize.
+ * @param[inout]    sync    Handle to deinitialize.
  */
 void sync_deinit(struct bladerf_sync *sync);
 

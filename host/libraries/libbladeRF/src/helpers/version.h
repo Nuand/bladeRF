@@ -37,10 +37,10 @@ bool version_equal(const struct bladerf_version *v1,
 /**
  * Check if version v1 is greater than or equal to version v2.
  *
- * @param       v1  First version
- * @param       v1  Second version
+ * @param[in]   v1  First version
+ * @param[in]   v2  Second version
  *
- * @return true for greater or equal, false otherwise
+ * @return true for greater or equal than, false otherwise
  */
 bool version_greater_or_equal(const struct bladerf_version *v1,
                               const struct bladerf_version *v2);
@@ -48,10 +48,8 @@ bool version_greater_or_equal(const struct bladerf_version *v1,
 /**
  * Check if version v1 is less than version v2.
  *
- * @param       version     Version structure to check
- * @param       major       Minor version
- * @param       minor       Minor version
- * @param       patch       Patch version
+ * @param[in]   v1  First version
+ * @param[in]   v2  Second version
  *
  * @return true for less than, false otherwise
  */
@@ -62,12 +60,12 @@ bool version_less_than(const struct bladerf_version *v1,
  * Check if version in the provided structure is greater or equal to
  * the version specified by the provided major, minor, and patch values
  *
- * @param       version     Version structure to check
- * @param       major       Minor version
- * @param       minor       Minor version
- * @param       patch       Patch version
+ * @param[in]   version     Version structure to check
+ * @param[in]   major       Minor version
+ * @param[in]   minor       Minor version
+ * @param[in]   patch       Patch version
  *
- * @return true for greater or equal, false otherwise
+ * @return true for greater or equal than, false otherwise
  */
 bool version_fields_greater_or_equal(const struct bladerf_version *version,
                                      unsigned int major, unsigned int minor,
@@ -77,10 +75,10 @@ bool version_fields_greater_or_equal(const struct bladerf_version *version,
  * Check if version in the provided structure is less than
  * the version specied by the provided major, minor, and patch values
  *
- * @param       version     Version structure to check
- * @param       major       Minor version
- * @param       minor       Minor version
- * @param       patch       Patch version
+ * @param[in]   version     Version structure to check
+ * @param[in]   major       Minor version
+ * @param[in]   minor       Minor version
+ * @param[in]   patch       Patch version
  *
  * @return true for less than, false otherwise
  */

@@ -88,7 +88,7 @@ ssize_t file_size(FILE *f);
  * the full path is returned. There is a chance that the file will be removed
  * in between this call indicating it exists and attempting to open it.
  *
- * @param   filename    File to search for
+ * @param[in]   filename    File to search for
  *
  * @return Full path if the file is found, NULL otherwise.
  */

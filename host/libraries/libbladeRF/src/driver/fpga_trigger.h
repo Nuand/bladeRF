@@ -27,12 +27,12 @@
 /**
  * Read trigger control register
  *
- * @param   dev             Device handle
- * @param   ch              Channel
- * @param   signal          Trigger signal control register to read from
- * @param   val             Pointer to variable that register is read into
- *                          See the BLADERF_TRIGGER_REG_* macros for the meaning
- *                          of each bit.
+ * @param       dev     Device handle
+ * @param[in]   ch      Channel
+ * @param[in]   signal  Trigger signal control register to read from
+ * @param[out]  val     Pointer to variable that register is read into See the
+ *                      BLADERF_TRIGGER_REG_* macros for the meaning of each
+ *                      bit.
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
@@ -42,11 +42,11 @@ int fpga_trigger_read(struct bladerf *dev, bladerf_channel ch,
 /**
  * Write trigger control register
  *
- * @param   dev             Device handle
- * @param   ch              Channel
- * @param   signal          Trigger signal to configure
- * @param   val             Data to write into the trigger control register.
- *                          See the BLADERF_TRIGGER_REG_* macros for options.
+ * @param       dev     Device handle
+ * @param[in]   ch      Channel
+ * @param[in]   signal  Trigger signal to configure
+ * @param[in]   val     Data to write into the trigger control register. See
+ *                      the BLADERF_TRIGGER_REG_* macros for options.
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
@@ -58,14 +58,13 @@ int fpga_trigger_write(struct bladerf *dev, bladerf_channel ch,
  * Initialize a bladerf_trigger structure based upon the current state
  * of a channel's trigger control register.
  *
- * @param[in]   dev         Device to query
- * @param[in]   ch          Channel
- * @param[in]   signal      Trigger signal to query
- * @param[out]  trigger     Updated to describe trigger
+ * @param       dev     Device to query
+ * @param[in]   ch      Channel
+ * @param[in]   signal  Trigger signal to query
+ * @param[out]  trigger Updated to describe trigger
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
-
 int fpga_trigger_init(struct bladerf *dev, bladerf_channel ch,
                       bladerf_trigger_signal signal,
                       struct bladerf_trigger *trigger);
@@ -73,9 +72,9 @@ int fpga_trigger_init(struct bladerf *dev, bladerf_channel ch,
 /**
  * Arm or re-arm the specified trigger.
  *
- * @param[in]   dev     Device handle
+ * @param       dev     Device handle
  * @param[in]   trigger Description of trigger to arm
- * @param[in]   arm     If true, the specified trigger will be armed. Setting
+ * @param[in]   arm     If true, the specified trigger will be armed.  Setting
  *                      this to false will disarm the trigger specified in
  *                      `config`.
  *
@@ -90,8 +89,8 @@ int fpga_trigger_arm(struct bladerf *dev,
  * Calling this functiona with a trigger whose role is anything other than
  * ::BLADERF_TRIGGER_REG_MASTER will yield a BLADERF_ERR_INVAL return value.
  *
- * @param[in]   dev         Device handle
- * @param[in]   trigger     Trigger to assert
+ * @param       dev     Device handle
+ * @param[in]   trigger Trigger to assert
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
@@ -101,20 +100,15 @@ int fpga_trigger_fire(struct bladerf *dev,
 /**
  * Query the fire request status of a master trigger
  *
- * @param[in]   dev             Device handle
- *
+ * @param       dev             Device handle
  * @param[in]   trigger         Trigger to query
- *
  * @param[out]  is_armed        Set to true if the trigger is armed, and false
  *                              otherwise. May be NULL.
- *
  * @param[out]  has_fired       Set to true if the trigger has fired, and false
  *                              otherwise. May be NULL.
- *
- * @param[out]  fire_requested  Only applicable to a trigger master.
- *                              Set to true if a fire request has been
- *                              previously submitted. May be NULL.
- *
+ * @param[out]  fire_requested  Only applicable to a trigger master.  Set to
+ *                              true if a fire request has been previously
+ *                              submitted. May be NULL.
  * @param[out]  resv1           Reserved parameter. Set to NULL.
  *
  * @return 0 on success, BLADERF_ERR_* value on failure

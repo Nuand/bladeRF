@@ -31,8 +31,8 @@
 /**
  * Write the output value to the DAC.
  *
- * @param[inout]    dev     Device handle
- * @param[in]       value   Value
+ * @param       dev     Device handle
+ * @param[in]   value   Value
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
@@ -41,8 +41,8 @@ int dac161s055_write(struct bladerf *dev, uint16_t value);
 /**
  * Read the output value of the DAC.
  *
- * @param[inout]    dev     Device handle
- * @param[out]      value   Value
+ * @param       dev     Device handle
+ * @param[out]  value   Value
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */

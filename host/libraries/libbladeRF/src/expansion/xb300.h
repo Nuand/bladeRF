@@ -40,31 +40,31 @@ int xb300_init(struct bladerf *dev);
 /**
  * Configure the XB-300 TRX path
  *
- * @param       dev         Device handle
- * @param       trx         Desired XB-300 TRX setting
+ * @param       dev     Device handle
+ * @param[in]   trx     Desired XB-300 TRX setting
  *
- * @return 0 on success, BLADERF_ERR_* on failure
+ * @return 0 on success, BLADERF_ERR_* value on failure
  */
 int xb300_set_trx(struct bladerf *dev, bladerf_xb300_trx trx);
 
 /**
  * Get the current XB-300 signal path
  *
- * @param       dev         Device handle
- * @param       trx         XB300 TRX antenna setting
+ * @param       dev     Device handle
+ * @param[out]  trx     XB300 TRX antenna setting
  *
- * @return 0 on success, value from \ref RETCODES list on failure
+ * @return 0 on success, BLADERF_ERR_* value on failure
  */
 int xb300_get_trx(struct bladerf *dev, bladerf_xb300_trx *trx);
 
 /**
  * Enable or disable selected XB-300 amplifier
  *
- * @param       dev         Device handle
- * @param       amp         XB-300 amplifier
- * @param       enable      Set true to enable or false to disable
+ * @param       dev     Device handle
+ * @param[in]   amp     XB-300 amplifier
+ * @param[in]   enable  Set true to enable or false to disable
  *
- * @return 0 on success, value from \ref RETCODES list on failure
+ * @return 0 on success, BLADERF_ERR_* value on failure
  */
 int xb300_set_amplifier_enable(struct bladerf *dev,
                                bladerf_xb300_amplifier amp,
@@ -72,11 +72,11 @@ int xb300_set_amplifier_enable(struct bladerf *dev,
 /**
  * Get state of selected XB-300 amplifier
  *
- * @param       dev         Device handle
- * @param       amp         XB-300 amplifier
- * @param       enable      Set true to enable or false to disable
+ * @param       dev     Device handle
+ * @param[in]   amp     XB-300 amplifier
+ * @param[out]  enable  Set true to enable or false to disable
  *
- * @return 0 on success, value from \ref RETCODES list on failure
+ * @return 0 on success, BLADERF_ERR_* value on failure
  */
 int xb300_get_amplifier_enable(struct bladerf *dev,
                                bladerf_xb300_amplifier amp,
@@ -84,8 +84,8 @@ int xb300_get_amplifier_enable(struct bladerf *dev,
 /**
  * Get current PA PDET output power in dBm
  *
- * @param       dev         Device handle
- * @param       val         Output power in dBm
+ * @param       dev     Device handle
+ * @param[out]  val     Output power in dBm
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */

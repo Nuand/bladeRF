@@ -52,8 +52,8 @@ void bladerf_free_device_list(struct bladerf_devinfo *devices);
  * Do the device instances for the two provided device info structures match
  * (taking wildcards into account)?
  *
- * @param   a   Device information to compare
- * @param   b   Device information to compare
+ * @param[in]   a   Device information to compare
+ * @param[in]   b   Device information to compare
  *
  * @return true on match, false otherwise
  */
@@ -64,8 +64,8 @@ bool bladerf_instance_matches(const struct bladerf_devinfo *a,
  * Do the serials for the two provided device info structures match
  * (taking wildcards into account)?
  *
- * @param   a   Device information to compare
- * @param   b   Device information to compare
+ * @param[in]   a   Device information to compare
+ * @param[in]   b   Device information to compare
  *
  * @return true on match, false otherwise
  */
@@ -76,8 +76,8 @@ bool bladerf_serial_matches(const struct bladerf_devinfo *a,
  * Do the bus and addr for the two provided device info structures match
  * (taking wildcards into account)?
  *
- * @param   a   Device information to compare
- * @param   b   Device information to compare
+ * @param[in]   a   Device information to compare
+ * @param[in]   b   Device information to compare
  *
  * @return true on match, false otherwise
  */
@@ -85,12 +85,18 @@ bool bladerf_bus_addr_matches(const struct bladerf_devinfo *a,
                               const struct bladerf_devinfo *b);
 
 /**
- * Create list of deinfos
+ * Create list of devinfos
+ *
+ * @param[in]   list    List of devinfos
+ *
+ * @return 0 on success, BLADERF_ERR_* on failure
  */
 int bladerf_devinfo_list_init(struct bladerf_devinfo_list *list);
 
 /**
  * Get a pointer to the parent devinfo_list container of a devinfo
+ *
+ * @param[in]   devinfo Device info
  *
  * @return pointer to container on success, NULL on error
  */
@@ -100,10 +106,10 @@ bladerf_get_devinfo_list(struct bladerf_devinfo *devinfo);
 /**
  * Add an item to our internal devinfo list
  *
- * @param   list    List to append to
- * @param   info    Info to copy into the list
+ * @param[inout]    list    List to append to
+ * @param[in]       info    Info to copy into the list
  *
- * 0 on success, BLADERF_ERR_* on failure
+ * @return 0 on success, BLADERF_ERR_* on failure
  */
 int bladerf_devinfo_list_add(struct bladerf_devinfo_list *list,
                              struct bladerf_devinfo *info);

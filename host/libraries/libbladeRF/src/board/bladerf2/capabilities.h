@@ -47,18 +47,18 @@ static inline bool have_cap(uint64_t capabilities, uint64_t capability)
 /**
  * Determine device's firmware capabilities.
  *
- * @param   fw_version  Firmware version
+ * @param[in]   fw_version  Firmware version
  *
- * @return  Capabilities bitmask
+ * @return Capabilities bitmask
  */
 uint64_t bladerf2_get_fw_capabilities(const struct bladerf_version *fw_version);
 
 /**
  * Add capability bits based upon FPGA version stored in the device handle
  *
- * @param   fpga_version    FPGA version
+ * @param[in]   fpga_version    FPGA version
  *
- * @return  Capabilities bitmask
+ * @return Capabilities bitmask
  */
 uint64_t bladerf2_get_fpga_capabilities(const struct bladerf_version *fpga_version);
 

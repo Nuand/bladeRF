@@ -40,17 +40,15 @@ struct fx3_firmware;
  * @param[in]   buf     Buffer containing a FX3 firmware image
  * @param[in]   buf_len Length of buffer
  *
- * @return 0 on success,
- *         BLADERF_ERR_INVAL if image validation fails,
- *         BLADERF_ERR_* values on other errors.
- *
+ * @return 0 on success, BLADERF_ERR_INVAL if image validation fails,
+ * BLADERF_ERR_* values on other errors.
  */
 int fx3_fw_parse(struct fx3_firmware **fw, uint8_t *buf, size_t buf_len);
 
 /**
  * Free the data stored in the provided fx3_firmware structure.
  *
- * @param   fw  Structure to deallocate
+ * @param[inout]    fw  Structure to deallocate
  */
 void fx3_fw_free(struct fx3_firmware *fw);
 
@@ -63,13 +61,15 @@ void fx3_fw_free(struct fx3_firmware *fw);
  * @param[out]  section_data    Updated to point to start of next section's data
  * @parma[out]  section_len     Length of the next section
  *
- * @return true if this function returned section data,
- *         false if the end of the FW has been reached and no data is available.
+ * @return true if this function returned section data, false if the end of the
+ * FW has been reached and no data is available.
  */
 bool fx3_fw_next_section(struct fx3_firmware *fw, uint32_t *section_addr,
                          uint8_t **section_data, uint32_t *section_len);
 
 /**
+ * @param[in]   fw              Handle FX3 firmware data
+ *
  * @return The 32-bit little-endian address of the firmware entry point.
  */
 uint32_t fx3_fw_entry_point(const struct fx3_firmware *fw);

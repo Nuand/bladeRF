@@ -35,27 +35,26 @@
 /**
  * Erase regions of SPI flash
  *
- * @param   dev             Device handle
- * @param   erase_block     Erase block to start erasing at
- * @param   count           Number of blocks to erase.
+ * @param       dev             Device handle
+ * @param[in]   erase_block     Erase block to start erasing at
+ * @param[in]   count           Number of blocks to erase.
  *
  * @return 0 on success, or BLADERF_ERR_INVAL on an invalid `erase_block` or
- *         `count` value, or a value from \ref RETCODES list on other failures
+ * `count` value, or a value from \ref RETCODES list on other failures
  */
 int spi_flash_erase(struct bladerf *dev, uint32_t erase_block, uint32_t count);
 
 /**
  * Read data from flash
  *
- * @param   dev     Device handle
- * @param   buf     Buffer to read data into. Must be
- *                  `count` * BLADERF_FLASH_PAGE_SIZE bytes or larger.
+ * @param       dev     Device handle
+ * @param[out]  buf     Buffer to read data into. Must be `count` *
+ *                      BLADERF_FLASH_PAGE_SIZE bytes or larger.
+ * @param[in]   page    Page to begin reading from
+ * @param[in]   count   Number of pages to read
  *
- * @param   page    Page to begin reading from
- * @param   count   Number of pages to read
- *
- * @return 0 on success, or BLADERF_ERR_INVAL on an invalid `page` or
- *         `count` value, or a value from \ref RETCODES list on other failures.
+ * @return 0 on success, or BLADERF_ERR_INVAL on an invalid `page` or `count`
+ * value, or a value from \ref RETCODES list on other failures.
  */
 int spi_flash_read(struct bladerf *dev, uint8_t *buf,
                    uint32_t page, uint32_t count);
@@ -63,16 +62,15 @@ int spi_flash_read(struct bladerf *dev, uint8_t *buf,
 /**
  * Verify data in flash
  *
- * @param   dev             Device handle
- * @param   readback_buf    Buffer to read data into. Must be
- *                          `count` * BLADERF_FLASH_PAGE_SIZE bytes or larger.
- * @param   
+ * @param       dev             Device handle
+ * @param[out]  readback_buf    Buffer to read data into. Must be `count` *
+ *                              BLADERF_FLASH_PAGE_SIZE bytes or larger.
+ * @param[in]   expected_buf    Expected contents of buffer
+ * @param[in]   page            Page to begin reading from
+ * @param[in]   count           Number of pages to read
  *
- * @param   page    Page to begin reading from
- * @param   count   Number of pages to read
- *
- * @return 0 on success, or BLADERF_ERR_INVAL on an invalid `page` or
- *         `count` value, or a value from \ref RETCODES list on other failures.
+ * @return 0 on success, or BLADERF_ERR_INVAL on an invalid `page` or `count`
+ * value, or a value from \ref RETCODES list on other failures.
  */
 int spi_flash_verify(struct bladerf *dev, uint8_t *readback_buf,
                      const uint8_t *expected_buf, uint32_t page,
@@ -81,14 +79,13 @@ int spi_flash_verify(struct bladerf *dev, uint8_t *readback_buf,
 /**
  * Write data to flash
  *
- * @param   dev   Device handle
- * @param   buf   Data to write to flash
+ * @param       dev     Device handle
+ * @param[in]   buf     Data to write to flash
+ * @param[in]   page    Page to begin writing at
+ * @param[in]   count   Number of pages to write
  *
- * @param   page  Page to begin writing at
- * @param   count Number of pages to write
- *
- * @return 0 on success, or BLADERF_ERR_INVAL on an invalid `page` or
- *         `count` value, or a value from \ref RETCODES list on other failures.
+ * @return 0 on success, or BLADERF_ERR_INVAL on an invalid `page` or `count`
+ * value, or a value from \ref RETCODES list on other failures.
  */
 int spi_flash_write(struct bladerf *dev, const uint8_t *buf,
                     uint32_t page, uint32_t count);

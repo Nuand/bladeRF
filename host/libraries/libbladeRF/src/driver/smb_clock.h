@@ -27,7 +27,7 @@
 /**
  * Set the current mode of operation of the SMB clock port
  *
- * @param[in]   dev         Device handle
+ * @param       dev         Device handle
  * @param[in]   mode        Desired mode
  *
  * @return 0 on success, or a BLADERF_ERR_* value on failure.
@@ -37,7 +37,7 @@ int smb_clock_set_mode(struct bladerf *dev, bladerf_smb_mode mode);
 /**
  * Get the current mode of operation of the SMB clock port
  *
- * @param[in]   dev         Device handle
+ * @param       dev         Device handle
  * @param[out]  mode        Desired mode
  *
  * @return 0 on success, or a value from \ref RETCODES list on failure.

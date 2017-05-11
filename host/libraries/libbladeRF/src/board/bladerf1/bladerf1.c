@@ -1915,9 +1915,9 @@ static inline int requires_timestamps(bladerf_format format, bool *required)
  * (e.g., enabling/disabling timestamp support), first checking that the
  * requested format would not conflict with the other stream direction.
  *
- * @param   dev     Device handle
- * @param   dir     Direction that is currently being configured
- * @param   format  Format the channel is being configured for
+ * @param           dev     Device handle
+ * @param[in]       dir     Direction that is currently being configured
+ * @param[in]       format  Format the channel is being configured for
  *
  * @return 0 on success, BLADERF_ERR_* on failure
  */
@@ -1988,8 +1988,8 @@ static int perform_format_config(struct bladerf *dev, bladerf_direction dir,
  * Deconfigure and update any state pertaining what a format that a stream
  * direction is no longer using.
  *
- * @param   dev     Device handle
- * @param   dir     Direction that is currently being deconfigured
+ * @param       dev     Device handle
+ * @param[in]   dir     Direction that is currently being deconfigured
  *
  * @return 0 on success, BLADERF_ERR_* on failure
  */

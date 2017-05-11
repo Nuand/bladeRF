@@ -260,9 +260,10 @@ int backend_probe(backend_probe_target probe_target,
  * Search for bootloader via provided specification, download firmware,
  * and boot it.
  *
- * @param   backend     Backend to use for this operation
- * @param   bus         USB bus the device is connected to
- * @param   addr        USB addr associated with the device
+ * @param[in]   backend     Backend to use for this operation
+ * @param[in]   bus         USB bus the device is connected to
+ * @param[in]   addr        USB addr associated with the device
+ * @param[in]   fw          Firmware to load
  *
  * @return 0 on success, BLADERF_ERR_* on failure
  */
@@ -273,7 +274,7 @@ int backend_load_fw_from_bootloader(bladerf_backend backend,
 /**
  * Convert a backend enumeration value to a string
  *
- * @param   backend     Value to convert to a string
+ * @param[in]   backend     Value to convert to a string
  *
  * @return  A backend string for the associated enumeration value. An invalid
  *          value will yield the "ANY" wildcard.

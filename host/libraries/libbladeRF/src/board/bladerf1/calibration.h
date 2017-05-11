@@ -53,10 +53,10 @@ extern struct dc_cal_tbl rx_cal_test;
 /**
  * Get the index of an (approximate) match from the specific dc cal table
  *
- * @param   tbl     Table to search
- * @param   freq    Desired frequency
+ * @param[in]   tbl     Table to search
+ * @param[in]   freq    Desired frequency
  *
- * @param   Index into tbl->entries[]
+ * @return index into tbl->entries[].
  */
 unsigned int dc_cal_tbl_lookup(const struct dc_cal_tbl *tbl, unsigned int freq);
 
@@ -65,9 +65,9 @@ unsigned int dc_cal_tbl_lookup(const struct dc_cal_tbl *tbl, unsigned int freq);
  * specified frequency is not in the table, the DC calibration values will
  * be interpolated from surrounding entries.
  *
- * @param[in]  tbl      Table to search
- * @param[in]  freq     Desired frequency
- * @param[out] entry    Found or interpolated DC calibration values
+ * @param[in]   tbl      Table to search
+ * @param[in]   freq     Desired frequency
+ * @param[out]  entry    Found or interpolated DC calibration values
  */
 void dc_cal_tbl_entry(const struct dc_cal_tbl *tbl, unsigned int freq,
                       struct dc_cal_entry *entry);
@@ -75,27 +75,27 @@ void dc_cal_tbl_entry(const struct dc_cal_tbl *tbl, unsigned int freq,
 /**
  * Load a DC calibration table from the provided data
  *
- * @param   buf   Packed table data
- * @param   len   Length of packed data, in bytes
+ * @param[in]   buf   Packed table data
+ * @param[in]   len   Length of packed data, in bytes
  *
- * @return Loaded table
+ * @return Loaded DC calibration table, or NULL on error
  */
 struct dc_cal_tbl * dc_cal_tbl_load(const uint8_t *buf, size_t buf_len);
 
 /**
  * Load a DC calibration table from an image file
  *
- * @param   buf   Packed table data
- * @param   len   Length of packed data, in bytes
+ * @param[out]  tbl         DC calibration Table
+ * @param[in]   img_file    Path to image file
  *
- * @return Loaded table
+ * @return 0 on success, BLADERF_ERR_* value on failure
  */
 int dc_cal_tbl_image_load(struct dc_cal_tbl **tbl, const char *img_file);
 
 /**
  * Free a DC calibration table
  *
- * @param   tbl     Pointer to table to free
+ * @param[inout]    tbl     Pointer to table to free
  *
  * The table pointer will be set to NULL after freeing it.
  */

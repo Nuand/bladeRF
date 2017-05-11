@@ -40,11 +40,11 @@ int xb200_init(struct bladerf *dev);
 /**
  * Select an XB-200 filterbank
  *
- * @param       dev         Device handle
- * @param       ch          Channel
- * @param       filter      XB200 filterbank
+ * @param       dev     Device handle
+ * @param[in]   ch      Channel
+ * @param[in]   filter  XB200 filterbank
  *
- * @return 0 on success, BLADERF_ERR_* on failure
+ * @return 0 on success, BLADERF_ERR_* value on failure
  */
 int xb200_set_filterbank(struct bladerf *dev,
                          bladerf_channel ch,
@@ -53,9 +53,9 @@ int xb200_set_filterbank(struct bladerf *dev,
 /**
  * Select an appropriate filterbank, based upon the specified frequency
  *
- * @param[in]   dev        Device handle
- * @param[in]   ch         Channel
- * @param[in]   frequency  Frequency
+ * @param       dev         Device handle
+ * @param[in]   ch          Channel
+ * @param[in]   frequency   Frequency
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
@@ -65,12 +65,12 @@ int xb200_auto_filter_selection(struct bladerf *dev, bladerf_channel ch,
 /**
  * Get the current selected XB-200 filterbank
  *
- * @param[in]    dev        Device handle
- * @param[in]    ch         Channel
- * @param[out]   filter     Pointer to filterbank, only updated if return
- *                          value is 0.
+ * @param       dev        Device handle
+ * @param[in]   ch         Channel
+ * @param[out]  filter     Pointer to filterbank, only updated if return value
+ *                          is 0.
  *
- * @return 0 on success, BLADERF_ERR_* on failure
+ * @return 0 on success, BLADERF_ERR_* value on failure
  */
 int xb200_get_filterbank(struct bladerf *dev,
                          bladerf_channel ch,
@@ -79,10 +79,10 @@ int xb200_get_filterbank(struct bladerf *dev,
  * Configure the XB-200 signal path
  *
  * @param       dev         Device handle
- * @param       ch          Channel
- * @param       path        Desired XB-200 signal path
+ * @param[in]   ch          Channel
+ * @param[in]   path        Desired XB-200 signal path
  *
- * @return 0 on success, BLADERF_ERR_* on failure
+ * @return 0 on success, BLADERF_ERR_* value on failure
  */
 int xb200_set_path(struct bladerf *dev,
                    bladerf_channel ch,
@@ -92,8 +92,8 @@ int xb200_set_path(struct bladerf *dev,
  * Get the current XB-200 signal path
  *
  * @param       dev         Device handle
- * @param       ch          Channel
- * @param       path        Pointer to XB200 signal path
+ * @param[in]   ch          Channel
+ * @param[out]  path        Pointer to XB200 signal path
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
