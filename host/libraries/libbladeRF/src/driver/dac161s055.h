@@ -23,8 +23,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef __DAC161S055_H__
-#define __DAC161S055_H__
+#ifndef DRIVER_DAC161S055_H_
+#define DRIVER_DAC161S055_H_
 
 #include "board/board.h"
 

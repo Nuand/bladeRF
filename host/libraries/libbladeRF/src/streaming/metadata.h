@@ -15,8 +15,9 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
-#ifndef METADATA_H_
-#define METADATA_H_
+
+#ifndef STREAMING_METADATA_H_
+#define STREAMING_METADATA_H_
 
 /*
  *  Metadata layout

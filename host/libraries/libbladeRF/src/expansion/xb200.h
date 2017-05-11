@@ -23,8 +23,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef XB200_H_
-#define XB200_H_
+#ifndef EXPANSION_XB200_H_
+#define EXPANSION_XB200_H_
 
 #include <stdbool.h>
 

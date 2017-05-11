@@ -23,8 +23,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef _DEVINFO_H_
-#define _DEVINFO_H_
+#ifndef DEVINFO_H_
+#define DEVINFO_H_
 
 #include <stddef.h>
 

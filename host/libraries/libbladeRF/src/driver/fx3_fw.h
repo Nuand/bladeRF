@@ -21,8 +21,9 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
-#ifndef FX3_FW_H_
-#define FX3_FW_H_
+
+#ifndef DRIVER_FX3_FW_H_
+#define DRIVER_FX3_FW_H_
 
 #include <stdint.h>
 #include <stdbool.h>

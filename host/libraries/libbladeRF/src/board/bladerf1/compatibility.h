@@ -1,5 +1,5 @@
-#ifndef __BLADERF1_COMPATIBILITY_H__
-#define __BLADERF1_COMPATIBILITY_H__
+#ifndef BLADERF1_COMPATIBILITY_H_
+#define BLADERF1_COMPATIBILITY_H_
 
 #include "helpers/version.h"
 

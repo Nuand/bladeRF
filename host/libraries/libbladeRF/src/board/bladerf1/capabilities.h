@@ -22,8 +22,8 @@
 /* This file defines device capabilities added across libbladeRF, FX3, and FPGA
  * versions that we can check for */
 
-#ifndef BLADERF_CAPABILITIES_H_
-#define BLADERF_CAPABILITIES_H_
+#ifndef BLADERF1_CAPABILITIES_H_
+#define BLADERF1_CAPABILITIES_H_
 
 #include <stdint.h>
 

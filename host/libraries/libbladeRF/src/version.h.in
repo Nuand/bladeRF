@@ -1,5 +1,5 @@
-#ifndef VERSION_H__
-#define VERSION_H__
+#ifndef VERSION_H_
+#define VERSION_H_
 
 #define LIBBLADERF_VERSION       "@VERSION@"
 

@@ -23,13 +23,14 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
+
+#ifndef DRIVER_SPI_FLASH_H_
+#define DRIVER_SPI_FLASH_H_
+
 #include <stdint.h>
 #include <assert.h>
 
 #include <libbladeRF.h>
-
-#ifndef SPI_FLASH_H_
-#define SPI_FLASH_H_
 
 /**
  * Erase regions of SPI flash

@@ -18,8 +18,9 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
-#ifndef BLADERF_ASYNC_H_
-#define BLADERF_ASYNC_H_
+
+#ifndef STREAMING_ASYNC_H_
+#define STREAMING_ASYNC_H_
 
 #include <pthread.h>
 

@@ -20,8 +20,8 @@
  */
 #if defined(ENABLE_BACKEND_DUMMY)
 
-#define BACKEND_DUMMY_H__
-#ifndef BACKEND_DUMMY_H__
+#define BACKEND_DUMMY_H_
+#ifndef BACKEND_DUMMY_H_
 
 #include "bladerf_priv.h"
 

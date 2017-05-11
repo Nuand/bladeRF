@@ -1,5 +1,5 @@
-#ifndef __BLADERF1_FLASH_H__
-#define __BLADERF1_FLASH_H__
+#ifndef BLADERF1_FLASH_H_
+#define BLADERF1_FLASH_H_
 
 #include <libbladeRF.h>
 

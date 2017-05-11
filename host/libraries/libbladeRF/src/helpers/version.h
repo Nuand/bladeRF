@@ -19,8 +19,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef __VERSION_HELPERS_H__
-#define __VERSION_HELPERS_H__
+#ifndef HELPERS_VERSION_H_
+#define HELPERS_VERSION_H_
 
 #include <libbladeRF.h>
 

@@ -19,8 +19,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef BLADERF_FORMAT_H
-#define BLADERF_FORMAT_H
+#ifndef STREAMING_FORMAT_H_
+#define STREAMING_FORMAT_H_
 
 #include "rel_assert.h"
 

@@ -19,8 +19,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef FPGA_TRIGGER_H_
-#define FPGA_TRIGGER_H_
+#ifndef DRIVER_FPGA_TRIGGER_H_
+#define DRIVER_FPGA_TRIGGER_H_
 
 #include "board/board.h"
 

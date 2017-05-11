@@ -30,8 +30,8 @@
  * and macros pertaining to the legacy packet format.
  */
 
-#ifndef NIOS_ACCESS_H_
-#define NIOS_ACCESS_H_
+#ifndef BACKEND_USB_NIOS_ACCESS_H_
+#define BACKEND_USB_NIOS_ACCESS_H_
 
 #include <stdlib.h>
 #include <stdint.h>

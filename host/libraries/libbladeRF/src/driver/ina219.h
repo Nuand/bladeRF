@@ -23,8 +23,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef INA219_H__
-#define INA219_H__
+#ifndef DRIVER_INA219_H_
+#define DRIVER_INA219_H_
 
 #include <libbladeRF.h>
 

@@ -23,8 +23,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef SI5338_H__
-#define SI5338_H__
+#ifndef DRIVER_SI5338_H_
+#define DRIVER_SI5338_H_
 
 #include <libbladeRF.h>
 

@@ -19,8 +19,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef BLADERF_SYNC_H_
-#define BLADERF_SYNC_H_
+#ifndef STREAMING_SYNC_H_
+#define STREAMING_SYNC_H_
 
 #include <pthread.h>
 #include <limits.h>
