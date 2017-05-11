@@ -142,7 +142,7 @@ unsigned int dc_cal_tbl_lookup(const struct dc_cal_tbl *tbl, unsigned int freq)
     return find_entry(tbl, tbl->curr_idx, 0, tbl->n_entries - 1, freq, &limit);
 }
 
-struct dc_cal_tbl * dc_cal_tbl_load(uint8_t *buf, size_t buf_len)
+struct dc_cal_tbl * dc_cal_tbl_load(const uint8_t *buf, size_t buf_len)
 {
     struct dc_cal_tbl *ret;
     uint32_t i;

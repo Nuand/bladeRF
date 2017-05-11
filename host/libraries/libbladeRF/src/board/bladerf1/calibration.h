@@ -80,7 +80,7 @@ void dc_cal_tbl_entry(const struct dc_cal_tbl *tbl, unsigned int freq,
  *
  * @return Loaded table
  */
-struct dc_cal_tbl * dc_cal_tbl_load(uint8_t *buf, size_t buf_len);
+struct dc_cal_tbl * dc_cal_tbl_load(const uint8_t *buf, size_t buf_len);
 
 /**
  * Load a DC calibration table from an image file
