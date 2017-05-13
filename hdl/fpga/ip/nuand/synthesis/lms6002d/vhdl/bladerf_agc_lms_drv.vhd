@@ -34,6 +34,11 @@ entity bladerf_agc_lms_drv is
     gain_high       :  out  std_logic ;
     gain_mid        :  out  std_logic ;
     gain_low        :  out  std_logic ;
+
+    -- Arbiter
+    arbiter_req     :  out  std_logic ;
+    arbiter_grant   :   in  std_logic ;
+    arbiter_done    :  out  std_logic ;
         -- Physical Interface
     sclk            :   out std_logic ;
     miso            :   in  std_logic ;
@@ -49,7 +54,7 @@ architecture arch of bladerf_agc_lms_drv is
     type rxvga1_gain_t is ( RXVGA1_MID_GAIN, RXVGA1_MAX_GAIN ) ;
     type rxvga2_gain_t is ( RXVGA2_LOW_GAIN, RXVGA2_MID_GAIN ) ;
 
-    type fsm_t is ( INIT, IDLE, SPI_WRITE, WRITE_RXVGA1, WRITE_RXVGA2,
+    type fsm_t is ( INIT, IDLE, SPI_WRITE, SPI_WRITE_GRANTED, WRITE_RXVGA1, WRITE_RXVGA2,
                     UPDATE_GAINS, SPI_WAIT, SPI_WAIT_1 ) ;
 
     type gain_t is record
@@ -90,6 +95,9 @@ architecture arch of bladerf_agc_lms_drv is
         current_gain        :   gain_t ;
         future_gain         :   gain_t ;
 
+        arbiter_req         :   std_logic ;
+        arbiter_done        :   std_logic ;
+
         -- Avalon-MM Interface
         mm_write            :   std_logic ;
         mm_addr             :   std_logic_vector(7 downto 0) ;
@@ -102,6 +110,8 @@ architecture arch of bladerf_agc_lms_drv is
         rv.fsm          := INIT ;
         rv.nfsm         := INIT ;
         rv.initializing := '0' ;
+        rv.arbiter_req  := '0' ;
+        rv.arbiter_done := '0' ;
         rv.gain_state   := UNSET_GAIN_STATE ;
         rv.mm_addr      := ( others => '0' ) ;
         rv.mm_din       := ( others => '0' ) ;
@@ -113,13 +123,16 @@ architecture arch of bladerf_agc_lms_drv is
     signal mm_busy          :   std_logic ;
 begin
 
+    arbiter_req  <= current.arbiter_req ;
+    arbiter_done <= current.arbiter_done ;
+
     gain_high <= '1' when current.gain_state = HIGH_GAIN_STATE else '0' ;
     gain_mid  <= '1' when current.gain_state = MID_GAIN_STATE else '0' ;
     gain_low  <= '1' when current.gain_state = LOW_GAIN_STATE else '0' ;
     gain_ack <= current.ack ; --'1' when current.fsm = UPDATE_GAINS else '0' ;
     gain_nack <= current.nack ;
 
-    U_spi_controller: entity work.bladerf_spi_controller
+    U_spi_controller: entity work.lms6_spi_controller
       port map (
         -- Physical Interface
         sclk            => sclk,
@@ -132,7 +145,7 @@ begin
         mm_reset        => reset,
         mm_read         => '0',
         mm_write        => current.mm_write,
-        mm_addr         => current.mm_addr( 6 downto 0 ),
+        mm_addr         => current.mm_addr,
         mm_din          => current.mm_din,
         mm_dout         => open,
         mm_dout_val     => open,                                  -- Read data valid.
@@ -154,6 +167,8 @@ begin
         future.mm_write <= '0' ;
         future.ack <= '0' ;
         future.nack <= '0' ;
+        future.arbiter_done <= '0' ;
+        future.arbiter_req  <= '0' ;
 
         case current.fsm is
             when INIT =>
@@ -204,6 +219,12 @@ begin
                 end if ;
 
             when SPI_WRITE =>
+                future.arbiter_req <= '1' ;
+                if( arbiter_grant = '1' ) then
+                    future.fsm <= SPI_WRITE_GRANTED ;
+                end if ;
+
+            when SPI_WRITE_GRANTED =>
                 if( current.current_gain.lna_gain /= current.future_gain.lna_gain or
                       current.initializing = '1' ) then
                     future.mm_addr <= x"75" ;
@@ -255,6 +276,7 @@ begin
                 future.ack <= '1' ;
                 future.initializing <= '0' ;
                 future.current_gain <= current.future_gain ;
+                future.arbiter_done <= '1' ;
                 future.fsm <= IDLE ;
 
             when SPI_WAIT =>
