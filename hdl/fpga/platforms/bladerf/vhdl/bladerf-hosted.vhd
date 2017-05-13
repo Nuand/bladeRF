@@ -73,7 +73,10 @@ architecture hosted_bladerf of bladerf is
         tx_trigger_ctl_in_port          :   in std_logic_vector(7 downto 0);
         tx_trigger_ctl_out_port         :   out std_logic_vector(7 downto 0);
         rx_trigger_ctl_in_port          :   in std_logic_vector(7 downto 0);
-        rx_trigger_ctl_out_port         :   out std_logic_vector(7 downto 0)
+        rx_trigger_ctl_out_port         :   out std_logic_vector(7 downto 0);
+        arbiter_request                 :   in  std_logic_vector(1 downto 0);
+        arbiter_granted                 :   out std_logic_vector(1 downto 0)  := (others => 'X');
+        arbiter_ack                     :   in  std_logic_vector(1 downto 0)  := (others => 'X')
       );
     end component;
 
@@ -301,6 +304,24 @@ architecture hosted_bladerf of bladerf is
     signal arbiter_granted      : std_logic_vector(1 downto 0);
     signal arbiter_ack          : std_logic_vector(1 downto 0);
 
+    -- AGC control signal
+    signal agc_en               : std_logic ;
+    signal gain_inc_req         : std_logic ;
+    signal gain_dec_req         : std_logic ;
+    signal gain_rst_req         : std_logic ;
+    signal gain_ack             : std_logic ;
+    signal gain_nack            : std_logic ;
+    signal gain_max             : std_logic ;
+    signal rst_gains            : std_logic ;
+    signal burst                : std_logic ;
+
+    signal agc_lms_sdio         : std_logic ;
+    signal agc_lms_sclk         : std_logic ;
+    signal agc_lms_sen          : std_logic ;
+    signal nios_lms_sdio        : std_logic ;
+    signal nios_lms_sclk        : std_logic ;
+    signal nios_lms_sen         : std_logic ;
+
     -- Trigger Control readback breakdown
     alias rx_trigger_arm_rb         : std_logic is rx_trigger_ctl_rb(0);
     alias rx_trigger_fire_rb        : std_logic is rx_trigger_ctl_rb(1);
@@ -382,6 +403,18 @@ begin
             sync                =>  rx_mux_sel(i)
           ) ;
     end generate ;
+
+
+    U_agc_en : entity work.synchronizer
+      generic map (
+        RESET_LEVEL         =>  '0'
+      ) port map (
+        reset               =>  '0',
+        clock               =>  rx_clock,
+        async               =>  nios_gpio(12),
+        sync                =>  agc_en
+      ) ;
+
 
     U_meta_sync_fx3 : entity work.synchronizer
       generic map (
@@ -713,6 +746,68 @@ begin
         correction_valid    => correction_valid
       );
 
+
+    U_agc : entity work.bladerf_agc
+      port map (
+        clock          => rx_clock,
+        reset          => rx_reset,
+
+        agc_hold_req   => '0',
+
+        gain_inc_req   => gain_inc_req,
+        gain_dec_req   => gain_dec_req,
+        gain_rst_req   => gain_rst_req,
+        gain_ack       => gain_ack,
+        gain_nack      => gain_nack,
+        gain_max       => gain_max,
+
+        rst_gains      => rst_gains,
+        burst          => burst,
+
+        sample_i       => rx_sample_corrected_i,
+        sample_q       => rx_sample_corrected_q,
+        sample_valid   => rx_sample_corrected_valid
+      ) ;
+
+    U_agc_lms : entity work.bladerf_agc_lms_drv
+      port map (
+        clock          => rx_clock,
+        reset          => rx_reset,
+
+        enable         => agc_en,
+        gain_inc_req   => gain_inc_req,
+        gain_dec_req   => gain_dec_req,
+        gain_rst_req   => gain_rst_req,
+        gain_ack       => gain_ack,
+        gain_nack      => gain_nack,
+
+        gain_high      => open,
+        gain_mid       => open,
+        gain_low       => open,
+
+        arbiter_req    => arbiter_request(1),
+        arbiter_grant  => arbiter_granted(1),
+        arbiter_done   => arbiter_ack(1),
+
+        sclk           => agc_lms_sclk,
+        miso           => lms_sdo,
+        mosi           => agc_lms_sdio,
+        cs_n           => agc_lms_sen
+      ) ;
+
+    U_agc_mux : process(all)
+    begin
+        if( arbiter_granted(1) = '1' ) then
+            lms_sdio <= agc_lms_sdio ;
+            lms_sclk <= agc_lms_sclk ;
+            lms_sen  <= agc_lms_sen ;
+        else
+            lms_sdio <= nios_lms_sdio ;
+            lms_sclk <= nios_lms_sclk ;
+            lms_sen  <= nios_lms_sen ;
+        end if ;
+    end process ;
+
     U_fifo_reader : entity work.fifo_reader
       port map (
         clock               =>  tx_clock,
@@ -741,6 +836,7 @@ begin
         underflow_count     =>  tx_underflow_count,
         underflow_duration  =>  x"ffff"
       ) ;
+
 
     U_tx_iq_correction : entity work.iq_correction(tx)
       generic map (
@@ -938,9 +1034,9 @@ begin
         dac_SCLK                        => nios_sclk,
         dac_SS_n                        => nios_ss_n,
         spi_MISO                        => lms_sdo,
-        spi_MOSI                        => lms_sdio,
-        spi_SCLK                        => lms_sclk,
-        spi_SS_n                        => lms_sen,
+        spi_MOSI                        => nios_lms_sdio,
+        spi_SCLK                        => nios_lms_sclk,
+        spi_SS_n                        => nios_lms_sen,
         gpio_export                     => nios_gpio,
         xb_gpio_in_port                 => nios_xb_gpio_in,
         xb_gpio_out_port                => nios_xb_gpio_out,
