@@ -296,6 +296,11 @@ architecture hosted_bladerf of bladerf is
     signal rx_trigger_ctl_rb    : std_logic_vector(7 downto 0);
     signal tx_trigger_ctl_rb    : std_logic_vector(7 downto 0);
 
+    -- Arbiter signal
+    signal arbiter_request      : std_logic_vector(1 downto 0);
+    signal arbiter_granted      : std_logic_vector(1 downto 0);
+    signal arbiter_ack          : std_logic_vector(1 downto 0);
+
     -- Trigger Control readback breakdown
     alias rx_trigger_arm_rb         : std_logic is rx_trigger_ctl_rb(0);
     alias rx_trigger_fire_rb        : std_logic is rx_trigger_ctl_rb(1);
@@ -968,7 +973,10 @@ begin
         rx_trigger_ctl_out_port         => rx_trigger_ctl,
         tx_trigger_ctl_out_port         => tx_trigger_ctl,
         rx_trigger_ctl_in_port          => rx_trigger_ctl_rb,
-        tx_trigger_ctl_in_port          => tx_trigger_ctl_rb
+        tx_trigger_ctl_in_port          => tx_trigger_ctl_rb,
+        arbiter_request                 => arbiter_request,
+        arbiter_granted                 => arbiter_granted,
+        arbiter_ack                     => arbiter_ack
       ) ;
 
     xb_gpio_direction : process(all)
