@@ -1,4 +1,4 @@
--- Copyright (c) 2013 Nuand LLC
+-- Copyright (c) 2017 Nuand LLC
 --
 -- Permission is hereby granted, free of charge, to any person obtaining a copy
 -- of this software and associated documentation files (the "Software"), to deal
@@ -44,155 +44,114 @@ architecture hosted_bladerf of bladerf is
     signal fx3_pclk_pll_locked : std_logic;
     signal fx3_pclk_pll_reset  : std_logic;
 
-    -- Can be set from libbladeRF using bladerf_set_rx_mux()
-    type rx_mux_mode_t is (
-        RX_MUX_NORMAL,
-        RX_MUX_12BIT_COUNTER,
-        RX_MUX_32BIT_COUNTER,
-        RX_MUX_ENTROPY,
-        RX_MUX_DIGITAL_LOOPBACK
-    );
+    signal rx_mux_sel             : unsigned(2 downto 0);
 
-    signal rx_mux_mode           : rx_mux_mode_t;
-    signal rx_mux_sel            : unsigned(2 downto 0);
+    signal nios_gpio_i            : std_logic_vector(31 downto 0);
+    signal nios_xb_gpio_in        : std_logic_vector(31 downto 0) := (others => '0');
+    signal nios_xb_gpio_out       : std_logic_vector(31 downto 0) := (others => '0');
+    signal nios_xb_gpio_oe        : std_logic_vector(31 downto 0) := (others => '0');
 
-    signal nios_gpio_i           : std_logic_vector(31 downto 0);
-    signal nios_xb_gpio_in       : std_logic_vector(31 downto 0) := (others => '0');
-    signal nios_xb_gpio_out      : std_logic_vector(31 downto 0) := (others => '0');
-    signal nios_xb_gpio_oe       : std_logic_vector(31 downto 0) := (others => '0');
+    signal nios_gpio              : nios_gpio_t;
 
-    signal nios_gpio             : nios_gpio_t;
+    signal i2c_scl_in             : std_logic;
+    signal i2c_scl_out            : std_logic;
+    signal i2c_scl_oen            : std_logic;
 
-    signal i2c_scl_in            : std_logic;
-    signal i2c_scl_out           : std_logic;
-    signal i2c_scl_oen           : std_logic;
+    signal i2c_sda_in             : std_logic;
+    signal i2c_sda_out            : std_logic;
+    signal i2c_sda_oen            : std_logic;
 
-    signal i2c_sda_in            : std_logic;
-    signal i2c_sda_out           : std_logic;
-    signal i2c_sda_oen           : std_logic;
+    signal tx_sample_fifo         : fifo_t := FIFO_T_DEFAULT;
+    signal rx_sample_fifo         : fifo_t := FIFO_T_DEFAULT;
+    signal rx_loopback_fifo       : fifo_t := FIFO_T_DEFAULT;
 
-    signal rx_sample_fifo        : fifo_t := FIFO_T_DEFAULT;
-    signal tx_sample_fifo        : fifo_t := FIFO_T_DEFAULT;
-    signal rx_loopback_fifo      : fifo_t := FIFO_T_DEFAULT;
+    signal tx_meta_fifo           : meta_fifo_tx_t := META_FIFO_TX_T_DEFAULT;
+    signal rx_meta_fifo           : meta_fifo_rx_t := META_FIFO_RX_T_DEFAULT;
 
-    signal tx_meta_fifo          : meta_fifo_tx_t := META_FIFO_TX_T_DEFAULT;
-    signal rx_meta_fifo          : meta_fifo_rx_t := META_FIFO_RX_T_DEFAULT;
+    signal usb_speed_pclk         : std_logic;
+    signal usb_speed_rx           : std_logic;
+    signal usb_speed_tx           : std_logic;
 
-    signal usb_speed_pclk        : std_logic;
-    signal usb_speed_rx          : std_logic;
-    signal usb_speed_tx          : std_logic;
+    signal tx_reset               : std_logic;
+    signal rx_reset               : std_logic;
 
-    signal tx_reset              : std_logic;
-    signal rx_reset              : std_logic;
+    signal tx_enable_pclk         : std_logic;
+    signal rx_enable_pclk         : std_logic;
 
-    signal tx_enable_pclk        : std_logic;
-    signal rx_enable_pclk        : std_logic;
+    signal tx_enable              : std_logic;
+    signal rx_enable              : std_logic;
 
-    signal tx_enable             : std_logic;
-    signal rx_enable             : std_logic;
+    signal meta_en_pclk           : std_logic;
+    signal meta_en_tx             : std_logic;
+    signal meta_en_rx             : std_logic;
 
-    signal meta_en_tx            : std_logic;
-    signal meta_en_rx            : std_logic;
-    signal meta_en_pclk          : std_logic;
+    signal tx_timestamp           : unsigned(63 downto 0);
+    signal rx_timestamp           : unsigned(63 downto 0);
+    signal timestamp_sync         : std_logic;
 
-    signal tx_timestamp          : unsigned(63 downto 0);
-    signal rx_timestamp          : unsigned(63 downto 0);
-    signal timestamp_sync        : std_logic;
+    signal tx_loopback_enabled    : std_logic                     := '0';
+    signal tx_loopback_data       : std_logic_vector(31 downto 0) := (others => '0');
+    signal tx_loopback_data_valid : std_logic                     := '0';
 
-    signal rx_sample_i           : signed(15 downto 0);
-    signal rx_sample_q           : signed(15 downto 0);
-    signal rx_sample_valid       : std_logic;
+    signal fx3_gpif_in            : std_logic_vector(31 downto 0);
+    signal fx3_gpif_out           : std_logic_vector(31 downto 0);
+    signal fx3_gpif_oe            : std_logic;
 
-    signal rx_gen_mode           : std_logic;
-    signal rx_gen_i              : signed(15 downto 0);
-    signal rx_gen_q              : signed(15 downto 0);
-    signal rx_gen_valid          : std_logic;
+    signal fx3_ctl_in             : std_logic_vector(12 downto 0);
+    signal fx3_ctl_out            : std_logic_vector(12 downto 0);
+    signal fx3_ctl_oe             : std_logic_vector(12 downto 0);
 
-    signal rx_loopback_i         : signed(15 downto 0) := (others =>'0');
-    signal rx_loopback_q         : signed(15 downto 0) := (others =>'0');
-    signal rx_loopback_valid     : std_logic := '0';
-    signal rx_loopback_enabled   : std_logic := '0';
-    signal tx_loopback_enabled   : std_logic := '0';
+    signal tx_underflow_led       : std_logic := '1';
+    signal rx_overflow_led        : std_logic := '1';
 
-    signal tx_sample_i           : signed(15 downto 0);
-    signal tx_sample_q           : signed(15 downto 0);
-    signal tx_sample_valid       : std_logic;
+    signal led1_blink             : std_logic;
 
-    signal fx3_gpif_in           : std_logic_vector(31 downto 0);
-    signal fx3_gpif_out          : std_logic_vector(31 downto 0);
-    signal fx3_gpif_oe           : std_logic;
+    signal nios_sdo               : std_logic;
+    signal nios_sdio              : std_logic;
+    signal nios_sclk              : std_logic;
+    signal nios_ss_n              : std_logic_vector(1 downto 0);
 
-    signal fx3_ctl_in            : std_logic_vector(12 downto 0);
-    signal fx3_ctl_out           : std_logic_vector(12 downto 0);
-    signal fx3_ctl_oe            : std_logic_vector(12 downto 0);
+    signal command_serial_in      : std_logic;
+    signal command_serial_out     : std_logic;
 
-    signal tx_underflow_led      : std_logic := '1';
+    signal timestamp_req          : std_logic;
+    signal timestamp_ack          : std_logic;
+    signal fx3_timestamp          : unsigned(63 downto 0);
 
-    signal rx_overflow_led       : std_logic := '1';
-
-    signal rx_mux_i              : signed(15 downto 0);
-    signal rx_mux_q              : signed(15 downto 0);
-    signal rx_mux_valid          : std_logic;
-
-    signal led1_blink            : std_logic;
-
-    signal nios_sdo              : std_logic;
-    signal nios_sdio             : std_logic;
-    signal nios_sclk             : std_logic;
-    signal nios_ss_n             : std_logic_vector(1 downto 0);
-
-    signal command_serial_in     : std_logic;
-    signal command_serial_out    : std_logic;
-
-    signal timestamp_req         : std_logic;
-    signal timestamp_ack         : std_logic;
-    signal fx3_timestamp         : unsigned(63 downto 0);
-
-    signal rx_ts_reset           : std_logic;
-    signal tx_ts_reset           : std_logic;
+    signal rx_ts_reset            : std_logic;
+    signal tx_ts_reset            : std_logic;
 
     -- Trigger Control interfaces
-    signal rx_trigger_ctl        : std_logic_vector(7 downto 0);
-    signal tx_trigger_ctl        : std_logic_vector(7 downto 0);
+    signal rx_trigger_ctl         : std_logic_vector(7 downto 0);
+    signal tx_trigger_ctl         : std_logic_vector(7 downto 0);
 
     -- Trigger Control breakdown
-    alias rx_trigger_arm         : std_logic is rx_trigger_ctl(0);
-    alias rx_trigger_fire        : std_logic is rx_trigger_ctl(1);
-    alias rx_trigger_master      : std_logic is rx_trigger_ctl(2);
-    alias rx_trigger_line        : std_logic is mini_exp1;
-    signal rx_trigger_signal_out : std_logic := '0';
+    alias rx_trigger_arm          : std_logic is rx_trigger_ctl(0);
+    alias rx_trigger_fire         : std_logic is rx_trigger_ctl(1);
+    alias rx_trigger_master       : std_logic is rx_trigger_ctl(2);
+    alias rx_trigger_line         : std_logic is mini_exp1;
 
-    alias tx_trigger_arm         : std_logic is tx_trigger_ctl(0);
-    alias tx_trigger_fire        : std_logic is tx_trigger_ctl(1);
-    alias tx_trigger_master      : std_logic is tx_trigger_ctl(2);
-    alias tx_trigger_line        : std_logic is mini_exp1;
-
-    signal tx_trigger_arm_sync   : std_logic;
-    signal tx_trigger_line_sync  : std_logic;
+    alias tx_trigger_arm          : std_logic is tx_trigger_ctl(0);
+    alias tx_trigger_fire         : std_logic is tx_trigger_ctl(1);
+    alias tx_trigger_master       : std_logic is tx_trigger_ctl(2);
+    alias tx_trigger_line         : std_logic is mini_exp1;
 
     -- Trigger Control readback interfaces
-    signal rx_trigger_ctl_rb     : std_logic_vector(7 downto 0);
-    signal tx_trigger_ctl_rb     : std_logic_vector(7 downto 0);
+    signal rx_trigger_ctl_rb      : std_logic_vector(7 downto 0);
+    signal tx_trigger_ctl_rb      : std_logic_vector(7 downto 0);
 
     -- Trigger Control readback breakdown
-    alias rx_trigger_arm_rb      : std_logic is rx_trigger_ctl_rb(0);
-    alias rx_trigger_fire_rb     : std_logic is rx_trigger_ctl_rb(1);
-    alias rx_trigger_master_rb   : std_logic is rx_trigger_ctl_rb(2);
-    alias rx_trigger_line_rb     : std_logic is rx_trigger_ctl_rb(3);
-    alias rx_trigger_unused_rb   : std_logic_vector(7 downto 4) is rx_trigger_ctl_rb(7 downto 4);
+    alias rx_trigger_arm_rb       : std_logic is rx_trigger_ctl_rb(0);
+    alias rx_trigger_fire_rb      : std_logic is rx_trigger_ctl_rb(1);
+    alias rx_trigger_master_rb    : std_logic is rx_trigger_ctl_rb(2);
+    alias rx_trigger_line_rb      : std_logic is rx_trigger_ctl_rb(3);
+    alias rx_trigger_unused_rb    : std_logic_vector(7 downto 4) is rx_trigger_ctl_rb(7 downto 4);
 
-    alias tx_trigger_arm_rb      : std_logic is tx_trigger_ctl_rb(0);
-    alias tx_trigger_fire_rb     : std_logic is tx_trigger_ctl_rb(1);
-    alias tx_trigger_master_rb   : std_logic is tx_trigger_ctl_rb(2);
-    alias tx_trigger_line_rb     : std_logic is tx_trigger_ctl_rb(3);
-    alias tx_trigger_unused_rb   : std_logic_vector(7 downto 4) is tx_trigger_ctl_rb(7 downto 4);
-
-    -- Trigger Outputs
-    signal lms_rx_enable_sig                 : std_logic;
-    signal lms_rx_enable_qualified           : std_logic;
-    signal tx_sample_fifo_rempty_untriggered : std_logic;
-
-    signal tx_lms_data     : signed(11 downto 0) := (others => '0');
+    alias tx_trigger_arm_rb       : std_logic is tx_trigger_ctl_rb(0);
+    alias tx_trigger_fire_rb      : std_logic is tx_trigger_ctl_rb(1);
+    alias tx_trigger_master_rb    : std_logic is tx_trigger_ctl_rb(2);
+    alias tx_trigger_line_rb      : std_logic is tx_trigger_ctl_rb(3);
+    alias tx_trigger_unused_rb    : std_logic_vector(7 downto 4) is tx_trigger_ctl_rb(7 downto 4);
 
     signal rffe_gpio       : rffe_gpio_t := (
         i => RFFE_GPI_DEFAULT,
@@ -203,7 +162,7 @@ architecture hosted_bladerf of bladerf is
     alias tx_clock  is ad9361.clock;
     alias rx_clock  is ad9361.clock;
 
-    signal channel_sel : std_logic := '0';
+    signal channel_sel            : std_logic := '0';
 
 begin
 
@@ -327,7 +286,7 @@ begin
             rx_meta_fifo_data   =>  rx_meta_fifo.rdata
         );
 
-    -- FX3 GPIF bidirectional signals
+    -- FX3 GPIF bidirectional signal control
     register_gpif : process(sys_reset_pclk, fx3_pclk_pll)
     begin
         if( sys_reset_pclk = '1' ) then
@@ -343,7 +302,7 @@ begin
         end if;
     end process;
 
-    -- FX3 CTL bidirectional signals
+    -- FX3 CTL bidirectional signal control
     generate_ctl : for i in fx3_ctl'range generate
         fx3_ctl(i) <= fx3_ctl_out(i) when fx3_ctl_oe(i) = '1' else 'Z';
     end generate;
@@ -530,443 +489,124 @@ begin
     end generate;
 
 
-
-
-
-
-
-
-
-    -- TX sample fifo
-    tx_sample_fifo.aclr   <= tx_reset;
-    tx_sample_fifo.wclock <= fx3_pclk_pll;
-    tx_sample_fifo.rclock <= tx_clock;
-    U_tx_sample_fifo : entity work.tx_fifo
-        port map (
-            aclr                => tx_sample_fifo.aclr,
-
-            wrclk               => tx_sample_fifo.wclock,
-            wrreq               => tx_sample_fifo.wreq,
-            data                => tx_sample_fifo.wdata,
-            wrempty             => tx_sample_fifo.wempty,
-            wrfull              => tx_sample_fifo.wfull,
-            wrusedw             => tx_sample_fifo.wused,
-
-            rdclk               => tx_sample_fifo.rclock,
-            rdreq               => tx_sample_fifo.rreq,
-            q                   => tx_sample_fifo.rdata,
-            --rdempty             => tx_sample_fifo.rempty,
-            rdempty             => tx_sample_fifo_rempty_untriggered,
-            rdfull              => tx_sample_fifo.rfull,
-            rdusedw             => tx_sample_fifo.rused
-        );
-
-    tx_channel_mux : process( all )
-        variable ch     : integer range 0 to 1 := 0;
-        variable fifo_i : std_logic_vector(11 downto 0) := (others => '0');
-        variable fifo_q : std_logic_vector(11 downto 0) := (others => '0');
-        variable valid  : std_logic := '0';
-    begin
-        if( rising_edge(tx_clock) ) then
-            if( channel_sel = '0' ) then
-                ch := 0;
-            else
-                ch := 1;
-            end if;
-
-            if( tx_sample_fifo.rempty = '0' ) then
-                tx_sample_fifo.rreq <= ad9361.ch(ch).dac.i.valid;
-                fifo_i := tx_sample_fifo.rdata(11 downto 0);
-                fifo_q := tx_sample_fifo.rdata(27 downto 16);
-                valid  := ad9361.ch(ch).dac.i.valid;
-            else
-                tx_sample_fifo.rreq <= '0';
-                fifo_i := (others => '0');
-                fifo_q := (others => '0');
-                valid  := '0';
-            end if;
-
-            ad9361.ch(ch).dac.i.data <= fifo_i & "0000";
-            ad9361.ch(ch).dac.q.data <= fifo_q & "0000";
-
-            tx_sample_i     <= resize(signed(fifo_i), tx_sample_i'length);
-            tx_sample_q     <= resize(signed(fifo_q), tx_sample_q'length);
-            tx_sample_valid <= valid;
-        end if;
-    end process;
-
-    -- TX meta fifo
-    tx_meta_fifo.aclr   <= tx_reset;
-    tx_meta_fifo.wclock <= fx3_pclk_pll;
-    tx_meta_fifo.rclock <= tx_clock;
-    U_tx_meta_fifo : entity work.tx_meta_fifo
-        port map (
-            aclr                => tx_meta_fifo.aclr,
-
-            wrclk               => tx_meta_fifo.wclock,
-            wrreq               => tx_meta_fifo.wreq,
-            data                => tx_meta_fifo.wdata,
-            wrempty             => tx_meta_fifo.wempty,
-            wrfull              => tx_meta_fifo.wfull,
-            wrusedw             => tx_meta_fifo.wused,
-
-            rdclk               => tx_meta_fifo.rclock,
-            rdreq               => tx_meta_fifo.rreq,
-            q                   => tx_meta_fifo.rdata,
-            rdempty             => tx_meta_fifo.rempty,
-            rdfull              => tx_meta_fifo.rfull,
-            rdusedw             => tx_meta_fifo.rused
-        );
-
-    --U_fifo_reader : entity work.fifo_reader
-    --  port map (
-    --    clock               =>  tx_clock,
-    --    reset               =>  tx_reset,
-    --    enable              =>  tx_enable,
-    --
-    --    usb_speed           =>  usb_speed_tx,
-    --    meta_en             =>  meta_en_tx,
-    --    timestamp           =>  tx_timestamp,
-    --
-    --    fifo_empty          =>  tx_sample_fifo.rempty,
-    --    fifo_usedw          =>  tx_sample_fifo.rused,
-    --    fifo_data           =>  tx_sample_fifo.rdata,
-    --    fifo_read           =>  tx_sample_fifo.rreq,
-    --
-    --    meta_fifo_empty     =>  tx_meta_fifo.rempty,
-    --    meta_fifo_usedw     =>  tx_meta_fifo.rused,
-    --    meta_fifo_data      =>  tx_meta_fifo.rdata,
-    --    meta_fifo_read      =>  tx_meta_fifo.rreq,
-    --
-    --    out_i               =>  tx_sample_i,
-    --    out_q               =>  tx_sample_q,
-    --    out_valid           =>  tx_sample_valid,
-    --
-    --    underflow_led       =>  tx_underflow_led,
-    --    underflow_count     =>  open,
-    --    underflow_duration  =>  x"ffff"
-    --  ) ;
-
-
-
-
-
-
-
-
-
-
-
-
-    -- RX sample fifo
-    rx_sample_fifo.aclr   <= not rx_enable_pclk;
-    rx_sample_fifo.wclock <= rx_clock;
-    rx_sample_fifo.rclock <= fx3_pclk_pll;
-    U_rx_sample_fifo : entity work.rx_fifo
-        port map (
-            aclr                => rx_sample_fifo.aclr,
-
-            wrclk               => rx_sample_fifo.wclock,
-            wrreq               => rx_sample_fifo.wreq,
-            data                => rx_sample_fifo.wdata,
-            wrempty             => rx_sample_fifo.wempty,
-            wrfull              => rx_sample_fifo.wfull,
-            wrusedw             => rx_sample_fifo.wused,
-
-            rdclk               => rx_sample_fifo.rclock,
-            rdreq               => rx_sample_fifo.rreq,
-            q                   => rx_sample_fifo.rdata,
-            rdempty             => rx_sample_fifo.rempty,
-            rdfull              => rx_sample_fifo.rfull,
-            rdusedw             => rx_sample_fifo.rused
-        );
-
-    -- RX meta fifo
-    rx_meta_fifo.aclr   <= not rx_enable_pclk;
-    rx_meta_fifo.wclock <= rx_clock;
-    rx_meta_fifo.rclock <= fx3_pclk_pll;
-    U_rx_meta_fifo : entity work.rx_meta_fifo
-        port map (
-            aclr                => rx_meta_fifo.aclr,
-
-            wrclk               => rx_meta_fifo.wclock,
-            wrreq               => rx_meta_fifo.wreq,
-            data                => rx_meta_fifo.wdata,
-            wrempty             => rx_meta_fifo.wempty,
-            wrfull              => rx_meta_fifo.wfull,
-            wrusedw             => rx_meta_fifo.wused,
-
-            rdclk               => rx_meta_fifo.rclock,
-            rdreq               => rx_meta_fifo.rreq,
-            q                   => rx_meta_fifo.rdata,
-            rdempty             => rx_meta_fifo.rempty,
-            rdfull              => rx_meta_fifo.rfull,
-            rdusedw             => rx_meta_fifo.rused
-        );
-
-
-    -- RX loopback fifo
-    rx_loopback_fifo.aclr   <= '1' when tx_reset = '1' or tx_loopback_enabled = '0' else '0';
-    rx_loopback_fifo.wclock <= tx_clock;
-    rx_loopback_fifo.wdata  <= std_logic_vector(tx_sample_i & tx_sample_q) when tx_loopback_enabled = '1' else (others => '0');
-    rx_loopback_fifo.wreq   <= tx_sample_valid when tx_loopback_enabled = '1' else '0';
-    rx_loopback_fifo.rclock <= rx_clock;
-
-    U_rx_loopback_fifo : entity work.rx_fifo
-        port map (
-            aclr                => rx_loopback_fifo.aclr,
-
-            wrclk               => rx_loopback_fifo.wclock,
-            wrreq               => rx_loopback_fifo.wreq,
-            data                => rx_loopback_fifo.wdata,
-            wrempty             => rx_loopback_fifo.wempty,
-            wrfull              => rx_loopback_fifo.wfull,
-            wrusedw             => rx_loopback_fifo.wused,
-
-            rdclk               => rx_loopback_fifo.rclock,
-            rdreq               => rx_loopback_fifo.rreq,
-            q                   => rx_loopback_fifo.rdata,
-            rdempty             => rx_loopback_fifo.rempty,
-            rdfull              => rx_loopback_fifo.rfull,
-            rdusedw             => rx_loopback_fifo.rused
-        );
-
-    rx_loopback_fifo_out : process( rx_reset, rx_loopback_fifo.rclock )
-        constant WATERLINE          : natural := 16;
-        variable already_strobed    : boolean := false;
-    begin
-        if (rx_reset = '1') then
-            rx_loopback_enabled     <= '0';
-            rx_loopback_fifo.rreq   <= '0';
-            rx_loopback_i           <= (others => '0');
-            rx_loopback_q           <= (others => '0');
-            rx_loopback_valid       <= '0';
-        elsif( rising_edge(rx_loopback_fifo.rclock) ) then
-            rx_loopback_enabled     <= '0';
-            rx_loopback_fifo.rreq   <= '0';
-            rx_loopback_i           <= rx_loopback_i;
-            rx_loopback_q           <= rx_loopback_q;
-            rx_loopback_valid       <= '0';
-
-            -- is loopback enabled?
-            if (rx_mux_mode = RX_MUX_DIGITAL_LOOPBACK) then
-                rx_loopback_enabled <= rx_enable;
-            end if;
-
-            -- do the loopback
-            if (rx_loopback_enabled = '1') then
-                rx_loopback_i       <= resize(signed(rx_loopback_fifo.rdata(31 downto 16)), rx_loopback_i'length);
-                rx_loopback_q       <= resize(signed(rx_loopback_fifo.rdata(15 downto 0)), rx_loopback_q'length);
-                rx_loopback_valid   <= rx_loopback_fifo.rreq;
-            end if;
-
-            -- read from the fifo if req'd
-            if (unsigned(rx_loopback_fifo.rused) > WATERLINE) then
-                rx_loopback_fifo.rreq   <= rx_loopback_enabled and not rx_loopback_fifo.rempty;
-            end if;
-
-            -- handle situation where fifo is empty but we tried to rreq from it
-            if (rx_loopback_fifo.rreq = '1' and already_strobed) then
-                already_strobed     := false;
-                rx_loopback_valid   <= '0';
-            end if;
-
-            -- detect above condition
-            already_strobed := (rx_loopback_fifo.rreq = '1' and rx_loopback_fifo.rempty = '1');
-        end if;
-    end process;
-
-
-
-
-
-
-
-
-
-
-    -- Sample bridges
-    U_fifo_writer : entity work.fifo_writer
-      port map (
-        clock               =>  rx_clock,
-        reset               =>  rx_reset,
-        enable              =>  rx_enable,
-
-        usb_speed           =>  usb_speed_rx,
-        meta_en             =>  meta_en_rx,
-        timestamp           =>  rx_timestamp,
-
-        fifo_full           =>  rx_sample_fifo.wfull,
-        fifo_usedw          =>  rx_sample_fifo.wused,
-        fifo_data           =>  rx_sample_fifo.wdata,
-        fifo_write          =>  rx_sample_fifo.wreq,
-
-        meta_fifo_full      =>  rx_meta_fifo.wfull,
-        meta_fifo_usedw     =>  rx_meta_fifo.wused,
-        meta_fifo_data      =>  rx_meta_fifo.wdata,
-        meta_fifo_write     =>  rx_meta_fifo.wreq,
-
-        in_i                =>  resize(rx_mux_i,16),
-        in_q                =>  resize(rx_mux_q,16),
-        in_valid            =>  rx_mux_valid,
-
-        overflow_led        =>  rx_overflow_led,
-        overflow_count      =>  open,
-        overflow_duration   =>  x"ffff"
-      );
-
-    lms_rx_enable_sig <= rx_enable;
-
-    -- RX Trigger
-    rxtrig : entity work.trigger(async)
-      generic map (
-        DEFAULT_OUTPUT  => '0'
-      ) port map (
-        armed           => rx_trigger_arm,
-        fired           => rx_trigger_fire,
-        master          => rx_trigger_master,
-        trigger_in      => rx_trigger_line,
-        trigger_out     => rx_trigger_line,
-        signal_in       => lms_rx_enable_sig,
-        signal_out      => rx_trigger_signal_out
-      );
-
-    rx_trigger_arm_rb    <= rx_trigger_arm;
-    rx_trigger_fire_rb   <= rx_trigger_fire;
-    rx_trigger_master_rb <= rx_trigger_master;
-    rx_trigger_line_rb   <= rx_trigger_line;
-    rx_trigger_unused_rb <= (others => '0');
-
-
-    txtrig : entity work.trigger(async)
-      generic map (
-        DEFAULT_OUTPUT  => '1'
-      ) port map (
-        armed           => tx_trigger_arm_sync,
-        fired           => tx_trigger_fire,
-        master          => tx_trigger_master,
-        trigger_in      => tx_trigger_line_sync,
-        trigger_out     => tx_trigger_line,
-        signal_in       => tx_sample_fifo_rempty_untriggered,
-        signal_out      => tx_sample_fifo.rempty
-      );
-
+    -- TX Trigger readback assignments
     tx_trigger_arm_rb    <= tx_trigger_arm;
     tx_trigger_fire_rb   <= tx_trigger_fire;
     tx_trigger_master_rb <= tx_trigger_master;
     tx_trigger_line_rb   <= tx_trigger_line;
     tx_trigger_unused_rb <= (others => '0');
 
+    U_tx : entity work.tx
+        port map (
+            tx_reset             => tx_reset,
+            tx_clock             => tx_clock,
+            tx_enable            => tx_enable,
 
-    rx_channel_mux : process( all )
-        variable ch : integer range 0 to 1 := 0;
-    begin
-        if( rising_edge(rx_clock) ) then
-            if( channel_sel = '0' ) then
-                ch := 0;
-            else
-                ch := 1;
-            end if;
+            meta_en              => meta_en_tx,
+            timestamp_reset      => tx_ts_reset,
+            usb_speed            => usb_speed_tx,
+            tx_timestamp         => tx_timestamp,
+            mimo_channel_sel     => channel_sel,
 
-            rx_sample_i(15 downto 12) <= ( others => ad9361.ch(ch).adc.i.data(11) );
-            rx_sample_i(11 downto 0)  <= signed(ad9361.ch(ch).adc.i.data(11 downto 0));
-            rx_sample_q(15 downto 12) <= ( others => ad9361.ch(ch).adc.q.data(11) );
-            rx_sample_q(11 downto 0)  <= signed(ad9361.ch(ch).adc.q.data(11 downto 0));
-            rx_sample_valid           <= ad9361.ch(ch).adc.i.valid and
-                                         ad9361.ch(ch).adc.q.valid;
-        end if;
-    end process;
+            -- Triggering
+            trigger_arm          => tx_trigger_arm,
+            trigger_fire         => tx_trigger_fire,
+            trigger_master       => tx_trigger_master,
+            trigger_line         => tx_trigger_line,
 
+            -- Samples from host via FX3
+            sample_fifo_wclock   => fx3_pclk_pll,
+            sample_fifo_wreq     => tx_sample_fifo.wreq,
+            sample_fifo_wdata    => tx_sample_fifo.wdata,
+            sample_fifo_wempty   => tx_sample_fifo.wempty,
+            sample_fifo_wfull    => tx_sample_fifo.wfull,
+            sample_fifo_wused    => tx_sample_fifo.wused,
 
-    U_rx_siggen : entity work.signal_generator
-      port map (
-        clock           =>  rx_clock,
-        reset           =>  rx_reset,
-        enable          =>  rx_enable,
+            -- Metadata from host via FX3
+            meta_fifo_wclock     => fx3_pclk_pll,
+            meta_fifo_wreq       => tx_meta_fifo.wreq,
+            meta_fifo_wdata      => tx_meta_fifo.wdata,
+            meta_fifo_wempty     => tx_meta_fifo.wempty,
+            meta_fifo_wfull      => tx_meta_fifo.wfull,
+            meta_fifo_wused      => tx_meta_fifo.wused,
 
-        mode            =>  rx_gen_mode,
+            -- Digital Loopback Interface
+            loopback_enabled     => tx_loopback_enabled,
+            loopback_data        => tx_loopback_data,
+            loopback_data_valid  => tx_loopback_data_valid,
 
-        sample_i        =>  rx_gen_i,
-        sample_q        =>  rx_gen_q,
-        sample_valid    =>  rx_gen_valid
-      );
-
-    rx_mux_mode <= rx_mux_mode_t'val(to_integer(rx_mux_sel));
-
-    rx_mux : process(rx_reset, rx_clock)
-    begin
-        if( rx_reset = '1' ) then
-            rx_mux_i     <= (others =>'0');
-            rx_mux_q     <= (others =>'0');
-            rx_mux_valid <= '0';
-            rx_gen_mode  <= '0';
-        elsif( rising_edge(rx_clock) ) then
-            case rx_mux_mode is
-                when RX_MUX_NORMAL =>
-                    rx_mux_i <= rx_sample_i;
-                    rx_mux_q <= rx_sample_q;
-                    if( lms_rx_enable_qualified = '1' ) then
-                        rx_mux_valid <= rx_sample_valid;
-                    else
-                        rx_mux_valid <= '0';
-                    end if;
-                when RX_MUX_12BIT_COUNTER | RX_MUX_32BIT_COUNTER =>
-                    rx_mux_i     <= rx_gen_i;
-                    rx_mux_q     <= rx_gen_q;
-                    rx_mux_valid <= rx_gen_valid;
-                    if( rx_mux_mode = RX_MUX_32BIT_COUNTER ) then
-                        rx_gen_mode <= '1';
-                    else
-                        rx_gen_mode <= '0';
-                    end if;
-                when RX_MUX_ENTROPY =>
-                    -- Not yet implemented
-                    rx_mux_i     <= (others => '0');
-                    rx_mux_q     <= (others => '0');
-                    rx_mux_valid <= '0';
-                when RX_MUX_DIGITAL_LOOPBACK =>
-                    rx_mux_i     <= rx_loopback_i;
-                    rx_mux_q     <= rx_loopback_q;
-                    rx_mux_valid <= rx_loopback_valid;
-                when others =>
-                    rx_mux_i     <= (others =>'0');
-                    rx_mux_q     <= (others =>'0');
-                    rx_mux_valid <= '0';
-            end case;
-        end if;
-    end process;
+            -- RFFE Interface
+            dac_0_enable         => ad9361.ch(0).dac.i.enable or ad9361.ch(0).dac.q.enable,
+            dac_0_request        => ad9361.ch(0).dac.i.valid  or ad9361.ch(0).dac.q.valid,
+            dac_0_i              => ad9361.ch(0).dac.i.data,
+            dac_0_q              => ad9361.ch(0).dac.q.data,
+            dac_1_enable         => ad9361.ch(1).dac.i.enable or ad9361.ch(1).dac.q.enable,
+            dac_1_request        => ad9361.ch(1).dac.i.valid  or ad9361.ch(1).dac.q.valid,
+            dac_1_i              => ad9361.ch(1).dac.i.data,
+            dac_1_q              => ad9361.ch(1).dac.q.data
+        );
 
 
+    -- RX Trigger readback assignments
+    rx_trigger_arm_rb    <= rx_trigger_arm;
+    rx_trigger_fire_rb   <= rx_trigger_fire;
+    rx_trigger_master_rb <= rx_trigger_master;
+    rx_trigger_line_rb   <= rx_trigger_line;
+    rx_trigger_unused_rb <= (others => '0');
 
+    U_rx : entity work.rx
+        port map (
+            rx_reset               => rx_reset,
+            rx_clock               => rx_clock,
+            rx_enable              => rx_enable,
 
+            meta_en                => meta_en_rx,
+            timestamp_reset        => rx_ts_reset,
+            usb_speed              => usb_speed_rx,
+            rx_mux_sel             => rx_mux_sel,
+            rx_overflow_led        => rx_overflow_led,
+            rx_timestamp           => rx_timestamp,
+            mimo_channel_sel       => channel_sel,
 
+            -- Triggering
+            trigger_arm            => rx_trigger_arm,
+            trigger_fire           => rx_trigger_fire,
+            trigger_master         => rx_trigger_master,
+            trigger_line           => rx_trigger_line,
 
+            -- Samples to host via FX3
+            sample_fifo_rclock     => fx3_pclk_pll,
+            sample_fifo_rreq       => rx_sample_fifo.rreq,
+            sample_fifo_rdata      => rx_sample_fifo.rdata,
+            sample_fifo_rempty     => rx_sample_fifo.rempty,
+            sample_fifo_rfull      => rx_sample_fifo.rfull,
+            sample_fifo_rused      => rx_sample_fifo.rused,
 
-    set_tx_ts_reset : process(tx_clock, tx_reset)
-    begin
-        if( tx_reset = '1' ) then
-            tx_ts_reset <= '1';
-        elsif( rising_edge(tx_clock) ) then
-            if( meta_en_tx = '1' ) then
-                tx_ts_reset <= '0';
-            else
-                tx_ts_reset <= '1';
-            end if;
-        end if;
-    end process;
+            -- Metadata to host via FX3
+            meta_fifo_rclock       => fx3_pclk_pll,
+            meta_fifo_rreq         => rx_meta_fifo.rreq,
+            meta_fifo_rdata        => rx_meta_fifo.rdata,
+            meta_fifo_rempty       => rx_meta_fifo.rempty,
+            meta_fifo_rfull        => rx_meta_fifo.rfull,
+            meta_fifo_rused        => rx_meta_fifo.rused,
 
-    set_rx_ts_reset : process(rx_clock, rx_reset)
-    begin
-        if( rx_reset = '1' ) then
-            rx_ts_reset <= '1';
-        elsif( rising_edge(rx_clock) ) then
-            if( meta_en_rx = '1' ) then
-                rx_ts_reset <= '0';
-            else
-                rx_ts_reset <= '1';
-            end if;
-        end if;
-    end process;
+            -- Digital Loopback Interface
+            loopback_fifo_wenabled => tx_loopback_enabled,
+            loopback_fifo_wreset   => tx_reset,
+            loopback_fifo_wclock   => tx_clock,
+            loopback_fifo_wdata    => tx_loopback_data,
+            loopback_fifo_wreq     => tx_loopback_data_valid,
+
+            -- RFFE Interface
+            adc_0_enable           => ad9361.ch(0).adc.i.enable or ad9361.ch(0).adc.q.enable,
+            adc_0_valid            => ad9361.ch(0).adc.i.valid  or ad9361.ch(0).adc.q.valid,
+            adc_0_i                => ad9361.ch(0).adc.i.data,
+            adc_0_q                => ad9361.ch(0).adc.q.data,
+            adc_1_enable           => ad9361.ch(1).adc.i.enable or ad9361.ch(1).adc.q.enable,
+            adc_1_valid            => ad9361.ch(1).adc.i.valid  or ad9361.ch(1).adc.q.valid,
+            adc_1_i                => ad9361.ch(1).adc.i.data,
+            adc_1_q                => ad9361.ch(1).adc.q.data
+        );
 
 
     -- ========================================================================
@@ -1015,28 +655,6 @@ begin
             clock               =>  tx_clock,
             async               =>  sys_reset_pclk,
             sync                =>  tx_reset
-        );
-
-    U_reset_sync_loopback : entity work.reset_synchronizer
-        generic map (
-            INPUT_LEVEL         => '0',
-            OUTPUT_LEVEL        => '0'
-        )
-        port map (
-            clock               =>  tx_clock,
-            async               =>  rx_loopback_enabled,
-            sync                =>  tx_loopback_enabled
-        );
-
-    U_reset_sync_tx_trig_arm : entity work.reset_synchronizer
-        generic map (
-            INPUT_LEVEL     =>  '0',
-            OUTPUT_LEVEL    =>  '0'
-        )
-        port map (
-            clock           =>  tx_clock,
-            async           =>  tx_trigger_arm,
-            sync            =>  tx_trigger_arm_sync
         );
 
 
@@ -1180,28 +798,6 @@ begin
             clock       =>  tx_clock,
             async       =>  tx_enable_pclk,
             sync        =>  tx_enable
-        );
-
-    U_sync_rx_trig_signal_out : entity work.synchronizer
-        generic map (
-            RESET_LEVEL =>  '0'
-        )
-        port map (
-            reset       =>  rx_reset,
-            clock       =>  rx_clock,
-            async       =>  rx_trigger_signal_out,
-            sync        =>  lms_rx_enable_qualified
-        );
-
-    U_sync_tx_trig_trigger_line : entity work.synchronizer
-        generic map (
-            RESET_LEVEL =>  '0'
-        )
-        port map (
-            reset       =>  tx_reset,
-            clock       =>  tx_clock,
-            async       =>  tx_trigger_line,
-            sync        =>  tx_trigger_line_sync
         );
 
 
