@@ -9,6 +9,22 @@
    categories="System" />
  <parameter name="bonusData"><![CDATA[bonusData 
 {
+   element arbiter_0
+   {
+      datum _sortIndex
+      {
+         value = "18";
+         type = "int";
+      }
+   }
+   element arbiter_0.avalon_slave_0
+   {
+      datum baseAddress
+      {
+         value = "38144";
+         type = "String";
+      }
+   }
    element command_uart
    {
       datum _sortIndex
@@ -318,6 +334,11 @@
  <parameter name="timeStamp" value="0" />
  <parameter name="useTestBenchNamingPattern" value="false" />
  <instanceScript></instanceScript>
+ <interface
+   name="arbiter"
+   internal="arbiter_0.conduit_end"
+   type="conduit"
+   dir="end" />
  <interface name="clk" internal="system_clock.clk_in" type="clock" dir="end" />
  <interface name="command" internal="command_uart.rs232" type="conduit" dir="end" />
  <interface
@@ -386,6 +407,9 @@
    internal="xb_gpio_dir.external_connection"
    type="conduit"
    dir="end" />
+ <module name="arbiter_0" kind="arbiter" version="1.0" enabled="1">
+  <parameter name="N" value="2" />
+ </module>
  <module name="command_uart" kind="command_uart" version="1.0" enabled="1" />
  <module name="control" kind="altera_avalon_pio" version="16.0" enabled="1">
   <parameter name="bitClearingEdgeCapReg" value="false" />
@@ -481,7 +505,7 @@
   <parameter name="dataAddrWidth" value="16" />
   <parameter name="dataMasterHighPerformanceAddrWidth" value="1" />
   <parameter name="dataMasterHighPerformanceMapParam" value="" />
-  <parameter name="dataSlaveMapParam"><![CDATA[<address-map><slave name='ram.s1' start='0x4000' end='0x8000' type='altera_avalon_onchip_memory2.s1' /><slave name='nios2.debug_mem_slave' start='0x8800' end='0x9000' type='altera_nios2_gen2.debug_mem_slave' /><slave name='control.s1' start='0x9040' end='0x9060' type='altera_avalon_pio.s1' /><slave name='peripheral_spi.spi_control_port' start='0x9060' end='0x9080' type='altera_avalon_spi.spi_control_port' /><slave name='xb_gpio_dir.s1' start='0x90A0' end='0x90B0' type='altera_avalon_pio.s1' /><slave name='xb_gpio.s1' start='0x90B0' end='0x90C0' type='altera_avalon_pio.s1' /><slave name='iq_corr_tx_phase_gain.s1' start='0x90C0' end='0x90D0' type='altera_avalon_pio.s1' /><slave name='iq_corr_rx_phase_gain.s1' start='0x90D0' end='0x90E0' type='altera_avalon_pio.s1' /><slave name='opencores_i2c.bladerf_oc_i2c_master' start='0x90F0' end='0x90F8' type='bladerf_oc_i2c_master.bladerf_oc_i2c_master' /><slave name='jtag_uart.avalon_jtag_slave' start='0x9100' end='0x9108' type='altera_avalon_jtag_uart.avalon_jtag_slave' /><slave name='command_uart.avalon_slave' start='0x9120' end='0x9140' type='command_uart.avalon_slave' /><slave name='tx_tamer.avalon_slave_0' start='0x9140' end='0x9160' type='time_tamer.avalon_slave_0' /><slave name='rx_tamer.avalon_slave_0' start='0x9160' end='0x9180' type='time_tamer.avalon_slave_0' /><slave name='lms_spi.avalon_slave_0' start='0x9200' end='0x9300' type='lms6_spi_controller.avalon_slave_0' /><slave name='vctcxo_tamer_0.avalon_slave_0' start='0x9300' end='0x9400' type='vctcxo_tamer.avalon_slave_0' /><slave name='rx_trigger_ctl.s1' start='0x9400' end='0x9420' type='altera_avalon_pio.s1' /><slave name='tx_trigger_ctl.s1' start='0x9420' end='0x9440' type='altera_avalon_pio.s1' /></address-map>]]></parameter>
+  <parameter name="dataSlaveMapParam"><![CDATA[<address-map><slave name='ram.s1' start='0x4000' end='0x8000' type='altera_avalon_onchip_memory2.s1' /><slave name='nios2.debug_mem_slave' start='0x8800' end='0x9000' type='altera_nios2_gen2.debug_mem_slave' /><slave name='control.s1' start='0x9040' end='0x9060' type='altera_avalon_pio.s1' /><slave name='peripheral_spi.spi_control_port' start='0x9060' end='0x9080' type='altera_avalon_spi.spi_control_port' /><slave name='xb_gpio_dir.s1' start='0x90A0' end='0x90B0' type='altera_avalon_pio.s1' /><slave name='xb_gpio.s1' start='0x90B0' end='0x90C0' type='altera_avalon_pio.s1' /><slave name='iq_corr_tx_phase_gain.s1' start='0x90C0' end='0x90D0' type='altera_avalon_pio.s1' /><slave name='iq_corr_rx_phase_gain.s1' start='0x90D0' end='0x90E0' type='altera_avalon_pio.s1' /><slave name='opencores_i2c.bladerf_oc_i2c_master' start='0x90F0' end='0x90F8' type='bladerf_oc_i2c_master.bladerf_oc_i2c_master' /><slave name='jtag_uart.avalon_jtag_slave' start='0x9100' end='0x9108' type='altera_avalon_jtag_uart.avalon_jtag_slave' /><slave name='command_uart.avalon_slave' start='0x9120' end='0x9140' type='command_uart.avalon_slave' /><slave name='tx_tamer.avalon_slave_0' start='0x9140' end='0x9160' type='time_tamer.avalon_slave_0' /><slave name='rx_tamer.avalon_slave_0' start='0x9160' end='0x9180' type='time_tamer.avalon_slave_0' /><slave name='lms_spi.avalon_slave_0' start='0x9200' end='0x9300' type='lms6_spi_controller.avalon_slave_0' /><slave name='vctcxo_tamer_0.avalon_slave_0' start='0x9300' end='0x9400' type='vctcxo_tamer.avalon_slave_0' /><slave name='rx_trigger_ctl.s1' start='0x9400' end='0x9420' type='altera_avalon_pio.s1' /><slave name='tx_trigger_ctl.s1' start='0x9420' end='0x9440' type='altera_avalon_pio.s1' /><slave name='arbiter_0.avalon_slave_0' start='0x9500' end='0x9520' type='arbiter.avalon_slave_0' /></address-map>]]></parameter>
   <parameter name="data_master_high_performance_paddr_base" value="0" />
   <parameter name="data_master_high_performance_paddr_size" value="0" />
   <parameter name="data_master_paddr_base" value="0" />
@@ -527,7 +551,7 @@
   <parameter name="instruction_master_high_performance_paddr_size" value="0" />
   <parameter name="instruction_master_paddr_base" value="0" />
   <parameter name="instruction_master_paddr_size" value="0" />
-  <parameter name="internalIrqMaskSystemInfo" value="191" />
+  <parameter name="internalIrqMaskSystemInfo" value="255" />
   <parameter name="io_regionbase" value="0" />
   <parameter name="io_regionsize" value="0" />
   <parameter name="master_addr_map" value="false" />
@@ -831,6 +855,15 @@
    kind="avalon"
    version="16.0"
    start="nios2.data_master"
+   end="arbiter_0.avalon_slave_0">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x9500" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection
+   kind="avalon"
+   version="16.0"
+   start="nios2.data_master"
    end="opencores_i2c.bladerf_oc_i2c_master">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x90f0" />
@@ -1018,6 +1051,11 @@
    start="system_clock.clk"
    end="vctcxo_tamer_0.clock_sink" />
  <connection
+   kind="clock"
+   version="16.0"
+   start="system_clock.clk"
+   end="arbiter_0.clock_sink" />
+ <connection
    kind="interrupt"
    version="16.0"
    start="nios2.irq"
@@ -1051,6 +1089,13 @@
    start="nios2.irq"
    end="vctcxo_tamer_0.interrupt_sender">
   <parameter name="irqNumber" value="0" />
+ </connection>
+ <connection
+   kind="interrupt"
+   version="16.0"
+   start="nios2.irq"
+   end="arbiter_0.interrupt_sender">
+  <parameter name="irqNumber" value="6" />
  </connection>
  <connection kind="interrupt" version="16.0" start="nios2.irq" end="jtag_uart.irq">
   <parameter name="irqNumber" value="1" />
@@ -1127,6 +1172,11 @@
    version="16.0"
    start="system_clock.clk_reset"
    end="tx_trigger_ctl.reset" />
+ <connection
+   kind="reset"
+   version="16.0"
+   start="system_clock.clk_reset"
+   end="arbiter_0.reset" />
  <connection
    kind="reset"
    version="16.0"
