@@ -65,12 +65,12 @@ entity tx is
         loopback_data_valid  : out   std_logic;
 
         -- RFFE Interface
-        dac_0_enable         : in    std_logic;
-        dac_0_request        : in    std_logic;
+        dac_0_enable         : in    std_logic := '0';
+        dac_0_request        : in    std_logic := '0';
         dac_0_i              : out   std_logic_vector(MIMO_2R2T_T_DEFAULT.ch(0).dac.i.data'range);
         dac_0_q              : out   std_logic_vector(MIMO_2R2T_T_DEFAULT.ch(0).dac.q.data'range);
-        dac_1_enable         : in    std_logic;
-        dac_1_request        : in    std_logic;
+        dac_1_enable         : in    std_logic := '0';
+        dac_1_request        : in    std_logic := '0';
         dac_1_i              : out   std_logic_vector(MIMO_2R2T_T_DEFAULT.ch(1).dac.i.data'range);
         dac_1_q              : out   std_logic_vector(MIMO_2R2T_T_DEFAULT.ch(1).dac.q.data'range)
     );
@@ -145,8 +145,6 @@ begin
         );
 
     mimo_channel_sel_mux : process( tx_clock )
-        --variable fifo_i    : std_logic_vector(11 downto 0) := (others => '0');
-        --variable fifo_q    : std_logic_vector(11 downto 0) := (others => '0');
         variable fifo_rreq : std_logic := '0';
 
         alias fifo_i : std_logic_vector(11 downto 0) is sample_fifo.rdata(11 downto 0);
@@ -154,11 +152,7 @@ begin
     begin
         if( rising_edge(tx_clock) ) then
 
-            --fifo_i := sample_fifo.rdata(11 downto 0);
-            --fifo_q := sample_fifo.rdata(27 downto 16);
-
             sample_fifo.rreq    <= '0';
-            loopback_data_valid <= '0';
 
             if( sample_fifo.rempty = '0' ) then
                 if( (mimo_channel_sel = '0') and (dac_0_enable = '1') ) then
@@ -171,10 +165,8 @@ begin
 
                 if( loopback_enabled = '1' ) then
                     sample_fifo.rreq    <= '1';
-                    loopback_data_valid <= '1';
                 else
                     sample_fifo.rreq    <= '0';
-                    loopback_data_valid <= '0';
                 end if;
             end if;
 
@@ -186,7 +178,8 @@ begin
                 dac_1_q <= fifo_q & "0000";
             end if;
 
-            loopback_data <= sample_fifo.rdata;
+            loopback_data       <= sample_fifo.rdata;
+            loopback_data_valid <= sample_fifo.rreq;
 
         end if;
     end process;
