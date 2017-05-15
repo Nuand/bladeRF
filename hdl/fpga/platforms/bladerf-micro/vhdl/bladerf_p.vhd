@@ -212,12 +212,6 @@ package bladerf_p is
         UNDEFINED
     );
 
-    --type gpio32_t is record
-    --    i  : std_logic_vector(31 downto 0);
-    --    o  : std_logic_vector(31 downto 0);
-    --    oe : std_logic_vector(31 downto 0);
-    --end record;
-
     type rffe_gpo_t is record
         reset_n      : std_logic;
         enable       : std_logic;
@@ -270,6 +264,13 @@ package bladerf_p is
         ch            : channels_t(0 to 1);
     end record;
 
+    type trigger_t is record
+        arm       : std_logic;
+        fire      : std_logic;
+        master    : std_logic;
+        trig_line : std_logic;
+    end record;
+
 
     -- ========================================================================
     -- PACK FUNCTIONS -- pack a human-readable record/type into bits
@@ -278,6 +279,7 @@ package bladerf_p is
     function pack( x : sky13374_397lf_t ) return std_logic_vector;
     function pack( x : rffe_gpo_t )       return std_logic_vector;
     function pack( x : rffe_gpio_t )      return std_logic_vector;
+    function pack( x : trigger_t )        return std_logic_vector;
 
 
     -- ========================================================================
@@ -286,6 +288,8 @@ package bladerf_p is
 
     function unpack( x : std_logic_vector(1 downto 0)  ) return sky13374_397lf_t;
     function unpack( x : std_logic_vector(31 downto 0) ) return rffe_gpo_t;
+    function unpack( trig_gpo  : std_logic_vector(7 downto 0);
+                     trig_line : std_logic ) return trigger_t;
 
 
     -- ========================================================================
@@ -382,6 +386,13 @@ package bladerf_p is
             ))
     );
 
+    constant TRIGGER_T_DEFAULT : trigger_t := (
+        arm       => '0',
+        fire      => '0',
+        master    => '0',
+        trig_line => '0'
+    );
+
 end package;
 
 package body bladerf_p is
@@ -432,6 +443,18 @@ package body bladerf_p is
         return rv;
     end function;
 
+    function pack( x : trigger_t ) return std_logic_vector is
+        variable rv : std_logic_vector(7 downto 0);
+    begin
+        rv(7 downto 4) := (others => '0');
+        rv(3)          := x.trig_line;
+        rv(2)          := x.master;
+        rv(1)          := x.fire;
+        rv(0)          := x.arm;
+        return rv;
+    end function;
+
+
     -- ========================================================================
     -- UNPACK FUNCTIONS
     -- ========================================================================
@@ -464,6 +487,17 @@ package body bladerf_p is
         rv.txnrx         := x(2);
         rv.enable        := x(1);
         rv.reset_n       := x(0);
+        return rv;
+    end function;
+
+    function unpack( trig_gpo  : std_logic_vector(7 downto 0);
+                     trig_line : std_logic ) return trigger_t is
+        variable rv : trigger_t := TRIGGER_T_DEFAULT;
+    begin
+        rv.trig_line := trig_line;
+        rv.master    := trig_gpo(2);
+        rv.fire      := trig_gpo(1);
+        rv.arm       := trig_gpo(0);
         return rv;
     end function;
 

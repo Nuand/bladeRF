@@ -121,44 +121,20 @@ architecture hosted_bladerf of bladerf is
     signal rx_ts_reset            : std_logic;
     signal tx_ts_reset            : std_logic;
 
-    -- Trigger Control interfaces
-    signal rx_trigger_ctl         : std_logic_vector(7 downto 0);
-    signal tx_trigger_ctl         : std_logic_vector(7 downto 0);
+    signal rx_trigger_ctl_i       : std_logic_vector(7 downto 0);
+    signal rx_trigger_ctl         : trigger_t := TRIGGER_T_DEFAULT;
+    alias  rx_trigger_line        : std_logic is mini_exp1;
 
-    -- Trigger Control breakdown
-    alias rx_trigger_arm          : std_logic is rx_trigger_ctl(0);
-    alias rx_trigger_fire         : std_logic is rx_trigger_ctl(1);
-    alias rx_trigger_master       : std_logic is rx_trigger_ctl(2);
-    alias rx_trigger_line         : std_logic is mini_exp1;
+    signal tx_trigger_ctl_i       : std_logic_vector(7 downto 0);
+    signal tx_trigger_ctl         : trigger_t := TRIGGER_T_DEFAULT;
+    alias  tx_trigger_line        : std_logic is mini_exp1;
 
-    alias tx_trigger_arm          : std_logic is tx_trigger_ctl(0);
-    alias tx_trigger_fire         : std_logic is tx_trigger_ctl(1);
-    alias tx_trigger_master       : std_logic is tx_trigger_ctl(2);
-    alias tx_trigger_line         : std_logic is mini_exp1;
-
-    -- Trigger Control readback interfaces
-    signal rx_trigger_ctl_rb      : std_logic_vector(7 downto 0);
-    signal tx_trigger_ctl_rb      : std_logic_vector(7 downto 0);
-
-    -- Trigger Control readback breakdown
-    alias rx_trigger_arm_rb       : std_logic is rx_trigger_ctl_rb(0);
-    alias rx_trigger_fire_rb      : std_logic is rx_trigger_ctl_rb(1);
-    alias rx_trigger_master_rb    : std_logic is rx_trigger_ctl_rb(2);
-    alias rx_trigger_line_rb      : std_logic is rx_trigger_ctl_rb(3);
-    alias rx_trigger_unused_rb    : std_logic_vector(7 downto 4) is rx_trigger_ctl_rb(7 downto 4);
-
-    alias tx_trigger_arm_rb       : std_logic is tx_trigger_ctl_rb(0);
-    alias tx_trigger_fire_rb      : std_logic is tx_trigger_ctl_rb(1);
-    alias tx_trigger_master_rb    : std_logic is tx_trigger_ctl_rb(2);
-    alias tx_trigger_line_rb      : std_logic is tx_trigger_ctl_rb(3);
-    alias tx_trigger_unused_rb    : std_logic_vector(7 downto 4) is tx_trigger_ctl_rb(7 downto 4);
-
-    signal rffe_gpio       : rffe_gpio_t := (
+    signal rffe_gpio              : rffe_gpio_t := (
         i => RFFE_GPI_DEFAULT,
         o => pack(RFFE_GPO_DEFAULT)
     );
 
-    signal ad9361 : mimo_2r2t_t := MIMO_2R2T_T_DEFAULT;
+    signal ad9361                 : mimo_2r2t_t := MIMO_2R2T_T_DEFAULT;
     alias tx_clock  is ad9361.clock;
     alias rx_clock  is ad9361.clock;
 
@@ -327,93 +303,93 @@ begin
     -- ========================================================================
 
     U_nios_system : component nios_system
-      port map (
-        clk_clk                         => sys_clock,
-        reset_reset_n                   => '1',
-        dac_MISO                        => nios_sdo,
-        dac_MOSI                        => nios_sdio,
-        dac_SCLK                        => nios_sclk,
-        dac_SS_n                        => nios_ss_n,
-        spi_MISO                        => adi_spi_sdo,
-        spi_MOSI                        => adi_spi_sdi,
-        spi_SCLK                        => adi_spi_sclk,
-        spi_SS_n                        => adi_spi_csn,
-        gpio_export                     => nios_gpio_i,
-        gpio_rffe_0_in_port             => pack(rffe_gpio),
-        gpio_rffe_0_out_port            => rffe_gpio.o,
-        ad9361_dac_sync_in_sync         => '0',
-        ad9361_dac_sync_out_sync        => adi_sync_in,
-        ad9361_data_clock_clk           => ad9361.clock, -- out std_logic;
-        ad9361_data_reset_reset         => ad9361.reset, -- out std_logic;
-        ad9361_device_if_rx_clk_in_p    => adi_rx_clock,
-        ad9361_device_if_rx_clk_in_n    => '0',
-        ad9361_device_if_rx_frame_in_p  => adi_rx_frame,
-        ad9361_device_if_rx_frame_in_n  => '0',
-        ad9361_device_if_rx_data_in_p   => adi_rx_data,
-        ad9361_device_if_rx_data_in_n   => (others => '0'),
-        ad9361_device_if_tx_clk_out_p   => adi_tx_clock,
-        ad9361_device_if_tx_clk_out_n   => open,
-        ad9361_device_if_tx_frame_out_p => adi_tx_frame,
-        ad9361_device_if_tx_frame_out_n => open,
-        ad9361_device_if_tx_data_out_p  => adi_tx_data,
-        ad9361_device_if_tx_data_out_n  => open,
-        ad9361_adc_i0_enable            => ad9361.ch(0).adc.i.enable, -- out sl
-        ad9361_adc_i0_valid             => ad9361.ch(0).adc.i.valid,  -- out sl
-        ad9361_adc_i0_data              => ad9361.ch(0).adc.i.data,   -- out slv(15:0)
-        ad9361_adc_i1_enable            => ad9361.ch(1).adc.i.enable, -- out sl
-        ad9361_adc_i1_valid             => ad9361.ch(1).adc.i.valid,  -- out sl
-        ad9361_adc_i1_data              => ad9361.ch(1).adc.i.data,   -- out slv(15:0)
-        ad9361_adc_overflow_ovf         => ad9361.adc_overflow,       -- in  sl
-        ad9361_adc_q0_enable            => ad9361.ch(0).adc.q.enable, -- out sl
-        ad9361_adc_q0_valid             => ad9361.ch(0).adc.q.valid,  -- out sl
-        ad9361_adc_q0_data              => ad9361.ch(0).adc.q.data,   -- out slv(15:0)
-        ad9361_adc_q1_enable            => ad9361.ch(1).adc.q.enable, -- out sl
-        ad9361_adc_q1_valid             => ad9361.ch(1).adc.q.valid,  -- out sl
-        ad9361_adc_q1_data              => ad9361.ch(1).adc.q.data,   -- out slv(15:0)
-        ad9361_adc_underflow_unf        => ad9361.adc_underflow,      -- in  sl
-        ad9361_dac_i0_enable            => ad9361.ch(0).dac.i.enable, -- out sl
-        ad9361_dac_i0_valid             => ad9361.ch(0).dac.i.valid,  -- out sl
-        ad9361_dac_i0_data              => ad9361.ch(0).dac.i.data,   -- in  slv(15:0)
-        ad9361_dac_i1_enable            => ad9361.ch(1).dac.i.enable, -- out sl
-        ad9361_dac_i1_valid             => ad9361.ch(1).dac.i.valid,  -- out sl
-        ad9361_dac_i1_data              => ad9361.ch(1).dac.i.data,   -- in  slv(15:0)
-        ad9361_dac_overflow_ovf         => ad9361.dac_overflow,       -- in  sl
-        ad9361_dac_q0_enable            => ad9361.ch(0).dac.q.enable, -- out sl
-        ad9361_dac_q0_valid             => ad9361.ch(0).dac.q.valid,  -- out sl
-        ad9361_dac_q0_data              => ad9361.ch(0).dac.q.data,   -- in  slv(15:0)
-        ad9361_dac_q1_enable            => ad9361.ch(1).dac.q.enable, -- out sl
-        ad9361_dac_q1_valid             => ad9361.ch(1).dac.q.valid,  -- out sl
-        ad9361_dac_q1_data              => ad9361.ch(1).dac.q.data,   -- in  slv(15:0)
-        ad9361_dac_underflow_unf        => ad9361.dac_underflow,      -- in  sl
-        xb_gpio_in_port                 => nios_xb_gpio_in,
-        xb_gpio_out_port                => nios_xb_gpio_out,
-        xb_gpio_dir_export              => nios_xb_gpio_oe,
-        command_serial_in               => command_serial_in,
-        command_serial_out              => command_serial_out,
-        oc_i2c_arst_i                   => '0',
-        oc_i2c_scl_pad_i                => i2c_scl_in,
-        oc_i2c_scl_pad_o                => i2c_scl_out,
-        oc_i2c_scl_padoen_o             => i2c_scl_oen,
-        oc_i2c_sda_pad_i                => i2c_sda_in,
-        oc_i2c_sda_pad_o                => i2c_sda_out,
-        oc_i2c_sda_padoen_o             => i2c_sda_oen,
-        rx_tamer_ts_sync_in             => '0',
-        rx_tamer_ts_sync_out            => open,
-        rx_tamer_ts_pps                 => '0',
-        rx_tamer_ts_clock               => rx_clock,
-        rx_tamer_ts_reset               => rx_ts_reset,
-        unsigned(rx_tamer_ts_time)      => rx_timestamp,
-        tx_tamer_ts_sync_in             => '0',
-        tx_tamer_ts_sync_out            => open,
-        tx_tamer_ts_pps                 => '0',
-        tx_tamer_ts_clock               => tx_clock,
-        tx_tamer_ts_reset               => tx_ts_reset,
-        unsigned(tx_tamer_ts_time)      => tx_timestamp,
-        rx_trigger_ctl_out_port         => rx_trigger_ctl,
-        tx_trigger_ctl_out_port         => tx_trigger_ctl,
-        rx_trigger_ctl_in_port          => rx_trigger_ctl_rb,
-        tx_trigger_ctl_in_port          => tx_trigger_ctl_rb
-      );
+        port map (
+            clk_clk                         => sys_clock,
+            reset_reset_n                   => '1',
+            dac_MISO                        => nios_sdo,
+            dac_MOSI                        => nios_sdio,
+            dac_SCLK                        => nios_sclk,
+            dac_SS_n                        => nios_ss_n,
+            spi_MISO                        => adi_spi_sdo,
+            spi_MOSI                        => adi_spi_sdi,
+            spi_SCLK                        => adi_spi_sclk,
+            spi_SS_n                        => adi_spi_csn,
+            gpio_export                     => nios_gpio_i,
+            gpio_rffe_0_in_port             => pack(rffe_gpio),
+            gpio_rffe_0_out_port            => rffe_gpio.o,
+            ad9361_dac_sync_in_sync         => '0',
+            ad9361_dac_sync_out_sync        => adi_sync_in,
+            ad9361_data_clock_clk           => ad9361.clock, -- out std_logic;
+            ad9361_data_reset_reset         => ad9361.reset, -- out std_logic;
+            ad9361_device_if_rx_clk_in_p    => adi_rx_clock,
+            ad9361_device_if_rx_clk_in_n    => '0',
+            ad9361_device_if_rx_frame_in_p  => adi_rx_frame,
+            ad9361_device_if_rx_frame_in_n  => '0',
+            ad9361_device_if_rx_data_in_p   => adi_rx_data,
+            ad9361_device_if_rx_data_in_n   => (others => '0'),
+            ad9361_device_if_tx_clk_out_p   => adi_tx_clock,
+            ad9361_device_if_tx_clk_out_n   => open,
+            ad9361_device_if_tx_frame_out_p => adi_tx_frame,
+            ad9361_device_if_tx_frame_out_n => open,
+            ad9361_device_if_tx_data_out_p  => adi_tx_data,
+            ad9361_device_if_tx_data_out_n  => open,
+            ad9361_adc_i0_enable            => ad9361.ch(0).adc.i.enable, -- out sl
+            ad9361_adc_i0_valid             => ad9361.ch(0).adc.i.valid,  -- out sl
+            ad9361_adc_i0_data              => ad9361.ch(0).adc.i.data,   -- out slv(15:0)
+            ad9361_adc_i1_enable            => ad9361.ch(1).adc.i.enable, -- out sl
+            ad9361_adc_i1_valid             => ad9361.ch(1).adc.i.valid,  -- out sl
+            ad9361_adc_i1_data              => ad9361.ch(1).adc.i.data,   -- out slv(15:0)
+            ad9361_adc_overflow_ovf         => ad9361.adc_overflow,       -- in  sl
+            ad9361_adc_q0_enable            => ad9361.ch(0).adc.q.enable, -- out sl
+            ad9361_adc_q0_valid             => ad9361.ch(0).adc.q.valid,  -- out sl
+            ad9361_adc_q0_data              => ad9361.ch(0).adc.q.data,   -- out slv(15:0)
+            ad9361_adc_q1_enable            => ad9361.ch(1).adc.q.enable, -- out sl
+            ad9361_adc_q1_valid             => ad9361.ch(1).adc.q.valid,  -- out sl
+            ad9361_adc_q1_data              => ad9361.ch(1).adc.q.data,   -- out slv(15:0)
+            ad9361_adc_underflow_unf        => ad9361.adc_underflow,      -- in  sl
+            ad9361_dac_i0_enable            => ad9361.ch(0).dac.i.enable, -- out sl
+            ad9361_dac_i0_valid             => ad9361.ch(0).dac.i.valid,  -- out sl
+            ad9361_dac_i0_data              => ad9361.ch(0).dac.i.data,   -- in  slv(15:0)
+            ad9361_dac_i1_enable            => ad9361.ch(1).dac.i.enable, -- out sl
+            ad9361_dac_i1_valid             => ad9361.ch(1).dac.i.valid,  -- out sl
+            ad9361_dac_i1_data              => ad9361.ch(1).dac.i.data,   -- in  slv(15:0)
+            ad9361_dac_overflow_ovf         => ad9361.dac_overflow,       -- in  sl
+            ad9361_dac_q0_enable            => ad9361.ch(0).dac.q.enable, -- out sl
+            ad9361_dac_q0_valid             => ad9361.ch(0).dac.q.valid,  -- out sl
+            ad9361_dac_q0_data              => ad9361.ch(0).dac.q.data,   -- in  slv(15:0)
+            ad9361_dac_q1_enable            => ad9361.ch(1).dac.q.enable, -- out sl
+            ad9361_dac_q1_valid             => ad9361.ch(1).dac.q.valid,  -- out sl
+            ad9361_dac_q1_data              => ad9361.ch(1).dac.q.data,   -- in  slv(15:0)
+            ad9361_dac_underflow_unf        => ad9361.dac_underflow,      -- in  sl
+            xb_gpio_in_port                 => nios_xb_gpio_in,
+            xb_gpio_out_port                => nios_xb_gpio_out,
+            xb_gpio_dir_export              => nios_xb_gpio_oe,
+            command_serial_in               => command_serial_in,
+            command_serial_out              => command_serial_out,
+            oc_i2c_arst_i                   => '0',
+            oc_i2c_scl_pad_i                => i2c_scl_in,
+            oc_i2c_scl_pad_o                => i2c_scl_out,
+            oc_i2c_scl_padoen_o             => i2c_scl_oen,
+            oc_i2c_sda_pad_i                => i2c_sda_in,
+            oc_i2c_sda_pad_o                => i2c_sda_out,
+            oc_i2c_sda_padoen_o             => i2c_sda_oen,
+            rx_tamer_ts_sync_in             => '0',
+            rx_tamer_ts_sync_out            => open,
+            rx_tamer_ts_pps                 => '0',
+            rx_tamer_ts_clock               => rx_clock,
+            rx_tamer_ts_reset               => rx_ts_reset,
+            unsigned(rx_tamer_ts_time)      => rx_timestamp,
+            tx_tamer_ts_sync_in             => '0',
+            tx_tamer_ts_sync_out            => open,
+            tx_tamer_ts_pps                 => '0',
+            tx_tamer_ts_clock               => tx_clock,
+            tx_tamer_ts_reset               => tx_ts_reset,
+            unsigned(tx_tamer_ts_time)      => tx_timestamp,
+            rx_trigger_ctl_out_port         => rx_trigger_ctl_i,
+            tx_trigger_ctl_out_port         => tx_trigger_ctl_i,
+            rx_trigger_ctl_in_port          => pack(rx_trigger_ctl),
+            tx_trigger_ctl_in_port          => pack(tx_trigger_ctl)
+        );
 
     -- FX3 UART
     command_serial_in <= fx3_uart_txd       when sys_reset = '0' else '1';
@@ -446,6 +422,10 @@ begin
     adi_txnrx      <= unpack(rffe_gpio.o).txnrx;
     adi_enable     <= unpack(rffe_gpio.o).enable;
     adi_reset_n    <= unpack(rffe_gpio.o).reset_n;
+
+    -- Unpack trigger GPIO bits into records
+    rx_trigger_ctl <= unpack(rx_trigger_ctl_i, rx_trigger_line);
+    tx_trigger_ctl <= unpack(tx_trigger_ctl_i, tx_trigger_line);
 
     -- LEDs
     led(1) <= led1_blink        when nios_gpio.led_mode = '0' else not nios_gpio.leds(1);
@@ -489,13 +469,7 @@ begin
     end generate;
 
 
-    -- TX Trigger readback assignments
-    tx_trigger_arm_rb    <= tx_trigger_arm;
-    tx_trigger_fire_rb   <= tx_trigger_fire;
-    tx_trigger_master_rb <= tx_trigger_master;
-    tx_trigger_line_rb   <= tx_trigger_line;
-    tx_trigger_unused_rb <= (others => '0');
-
+    -- TX Submodule
     U_tx : entity work.tx
         port map (
             tx_reset             => tx_reset,
@@ -509,9 +483,9 @@ begin
             mimo_channel_sel     => channel_sel,
 
             -- Triggering
-            trigger_arm          => tx_trigger_arm,
-            trigger_fire         => tx_trigger_fire,
-            trigger_master       => tx_trigger_master,
+            trigger_arm          => tx_trigger_ctl.arm,
+            trigger_fire         => tx_trigger_ctl.fire,
+            trigger_master       => tx_trigger_ctl.master,
             trigger_line         => tx_trigger_line,
 
             -- Samples from host via FX3
@@ -547,13 +521,7 @@ begin
         );
 
 
-    -- RX Trigger readback assignments
-    rx_trigger_arm_rb    <= rx_trigger_arm;
-    rx_trigger_fire_rb   <= rx_trigger_fire;
-    rx_trigger_master_rb <= rx_trigger_master;
-    rx_trigger_line_rb   <= rx_trigger_line;
-    rx_trigger_unused_rb <= (others => '0');
-
+    -- RX Submodule
     U_rx : entity work.rx
         port map (
             rx_reset               => rx_reset,
@@ -569,9 +537,9 @@ begin
             mimo_channel_sel       => channel_sel,
 
             -- Triggering
-            trigger_arm            => rx_trigger_arm,
-            trigger_fire           => rx_trigger_fire,
-            trigger_master         => rx_trigger_master,
+            trigger_arm            => rx_trigger_ctl.arm,
+            trigger_fire           => rx_trigger_ctl.fire,
+            trigger_master         => rx_trigger_ctl.master,
             trigger_line           => rx_trigger_line,
 
             -- Samples to host via FX3
