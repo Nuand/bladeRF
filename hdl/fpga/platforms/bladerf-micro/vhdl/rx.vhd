@@ -282,8 +282,8 @@ begin
 
             -- Do the loopback
             if( loopback_enabled = '1' ) then
-                loopback_i     <= resize(signed(loopback_fifo.rdata(31 downto 16)), loopback_i'length);
-                loopback_q     <= resize(signed(loopback_fifo.rdata(15 downto 0)), loopback_q'length);
+                loopback_i     <= resize(signed(loopback_fifo.rdata(15 downto 0)), loopback_i'length);
+                loopback_q     <= resize(signed(loopback_fifo.rdata(31 downto 16)), loopback_q'length);
                 loopback_valid <= loopback_fifo.rreq;
             end if;
 
