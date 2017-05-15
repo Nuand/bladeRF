@@ -63,14 +63,14 @@ set_output_delay -clock [get_clocks altera_reserved_tck] 2.0 [get_ports altera_r
 # The DCFIFO documentation says to false path aclr-->rdclk, but we need to do it to wrclk.
 # Has not been an issue so far, so probably safe?
 # With the LVDS cores, the TX PLL clock got merged with the RX PLL clock
-set_false_path -from {reset_synchronizer:U_rx_clock_reset|sync} -to {tx_*fifo:U_tx_*_fifo|dcfifo:U_dcfifo|dcfifo_*:auto_generated|dffpipe_3dc:wraclr|dffe12a[0]}
-set_false_path -from {reset_synchronizer:U_rx_clock_reset|sync} -to {tx_*fifo:U_tx_*_fifo|dcfifo:U_dcfifo|dcfifo_*:auto_generated|dffpipe_3dc:wraclr|dffe13a[0]}
-set_false_path -from {reset_synchronizer:U_tx_reset|sync} -to {tx_fifo:U_tx_sample_fifo|dcfifo:U_dcfifo|dcfifo_5t92:auto_generated|dffpipe_3dc:wraclr|dffe12a[0]}
-set_false_path -from {reset_synchronizer:U_tx_reset|sync} -to {tx_fifo:U_tx_sample_fifo|dcfifo:U_dcfifo|dcfifo_5t92:auto_generated|dffpipe_3dc:wraclr|dffe13a[0]}
+set_false_path -from {reset_synchronizer:U_reset_sync_rx|sync} -to {tx:U_tx|tx_*fifo:U_tx_*_fifo|dcfifo:U_dcfifo|dcfifo_*:auto_generated|dffpipe_3dc:wraclr|dffe12a[0]}
+set_false_path -from {reset_synchronizer:U_reset_sync_rx|sync} -to {tx:U_tx|tx_*fifo:U_tx_*_fifo|dcfifo:U_dcfifo|dcfifo_*:auto_generated|dffpipe_3dc:wraclr|dffe13a[0]}
+set_false_path -from {reset_synchronizer:U_reset_sync_tx|sync} -to {tx:U_tx|tx_fifo:U_tx_sample_fifo|dcfifo:U_dcfifo|dcfifo_5t92:auto_generated|dffpipe_3dc:wraclr|dffe12a[0]}
+set_false_path -from {reset_synchronizer:U_reset_sync_tx|sync} -to {tx:U_tx|tx_fifo:U_tx_sample_fifo|dcfifo:U_dcfifo|dcfifo_5t92:auto_generated|dffpipe_3dc:wraclr|dffe13a[0]}
 
 # False path between hold_time and compare_time due to the way the FSM is setup
 set_false_path -from {*x_tamer|hold_time[*]} -to {*x_tamer|compare_time[*]}
 
 # Asynchronous clear on the RX FIFO when disabling RX
-set_false_path -from {fx3_gpif*rx_enable} -to {rx_meta_fifo*:wraclr|*}
-set_false_path -from {fx3_gpif*rx_enable} -to {rx_fifo*:wraclr|*}
+set_false_path -from {fx3_gpif*rx_enable} -to {rx:U_rx|rx_meta_fifo*:wraclr|*}
+set_false_path -from {fx3_gpif*rx_enable} -to {rx:U_rx|rx_fifo*:wraclr|*}
