@@ -284,7 +284,71 @@ extern const float ina219_r_shunt;
 static int bladerf2_initialize(struct bladerf *dev)
 {
     struct bladerf2_board_data *board_data = dev->board_data;
+    struct bladerf_version required_fw_version;
+    struct bladerf_version required_fpga_version;
     int status;
+
+    /* Read FPGA version */
+    status = dev->backend->get_fpga_version(dev, &board_data->fpga_version);
+    if (status < 0) {
+        log_debug("Failed to get FPGA version: %s\n",
+                  bladerf_strerror(status));
+        return status;
+    }
+    log_verbose("Read FPGA version: %s\n", board_data->fpga_version.describe);
+
+    /* Determine FPGA capabilities */
+    board_data->capabilities |= bladerf2_get_fpga_capabilities(&board_data->fpga_version);
+    log_verbose("Capability mask after FPGA load: 0x%016"PRIx64"\n",
+                 board_data->capabilities);
+
+    /* If the FPGA version check fails, just warn, but don't error out.
+     *
+     * If an error code caused this function to bail out, it would prevent a
+     * user from being able to unload and reflash a bitstream being
+     * "autoloaded" from SPI flash. */
+    status = version_check(&bladerf2_fw_compat_table, &bladerf2_fpga_compat_table,
+                           &board_data->fw_version, &board_data->fpga_version,
+                           &required_fw_version, &required_fpga_version);
+    if (status < 0) {
+#if LOGGING_ENABLED
+        if (status == BLADERF_ERR_UPDATE_FPGA) {
+            log_warning("FPGA v%u.%u.%u was detected. Firmware v%u.%u.%u "
+                        "requires FPGA v%u.%u.%u or later. Please load a "
+                        "different FPGA version before continuing.\n\n",
+                        board_data->fpga_version.major,
+                        board_data->fpga_version.minor,
+                        board_data->fpga_version.patch,
+                        board_data->fw_version.major,
+                        board_data->fw_version.minor,
+                        board_data->fw_version.patch,
+                        required_fpga_version.major,
+                        required_fpga_version.minor,
+                        required_fpga_version.patch);
+        } else if (status == BLADERF_ERR_UPDATE_FW) {
+            log_warning("FPGA v%u.%u.%u was detected, which requires firmware "
+                        "v%u.%u.%u or later. The device firmware is currently "
+                        "v%u.%u.%u. Please upgrade the device firmware before "
+                        "continuing.\n\n",
+                        board_data->fpga_version.major,
+                        board_data->fpga_version.minor,
+                        board_data->fpga_version.patch,
+                        required_fw_version.major,
+                        required_fw_version.minor,
+                        required_fw_version.patch,
+                        board_data->fw_version.major,
+                        board_data->fw_version.minor,
+                        board_data->fw_version.patch);
+        }
+#endif
+    }
+
+    /* Set FPGA packet protocol */
+    status = dev->backend->set_fpga_protocol(dev, BACKEND_FPGA_PROTOCOL_NIOSII);
+    if (status < 0) {
+        log_error("Unable to set backend FPGA protocol: %d\n", status);
+        return status;
+    }
 
     /* Initialize RFFE control */
     status = dev->backend->rffe_control_write(dev, (1 << RFFE_CONTROL_ENABLE) |
@@ -363,7 +427,6 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
 {
     struct bladerf2_board_data *board_data;
     struct bladerf_version required_fw_version;
-    struct bladerf_version required_fpga_version;
     char *full_path;
     bladerf_dev_speed usb_speed;
     const unsigned int max_retries = 30;
@@ -458,13 +521,6 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
         return status;
     }
 
-    /* Set FPGA protocol */
-    status = dev->backend->set_fpga_protocol(dev, BACKEND_FPGA_PROTOCOL_NIOSII);
-    if (status < 0) {
-        log_error("Unable to set backend FPGA protocol: %d\n", status);
-        return status;
-    }
-
     /* Check if FPGA is configured */
     status = dev->backend->is_fpga_configured(dev);
     if (status < 0) {
@@ -502,61 +558,6 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
             log_warning("Skipping further initialization...\n");
             return 0;
         }
-    }
-
-    /* Read FPGA version */
-    status = dev->backend->get_fpga_version(dev, &board_data->fpga_version);
-    if (status < 0) {
-        log_debug("Failed to get FPGA version: %s\n",
-                  bladerf_strerror(status));
-        return status;
-    }
-    log_verbose("Read FPGA version: %s\n", board_data->fpga_version.describe);
-
-    /* Determine FPGA capabilities */
-    board_data->capabilities |= bladerf2_get_fpga_capabilities(&board_data->fpga_version);
-    log_verbose("Capability mask after FPGA load: 0x%016"PRIx64"\n",
-                 board_data->capabilities);
-
-    /* If the FPGA version check fails, just warn, but don't error out.
-     *
-     * If an error code caused this function to bail out, it would prevent a
-     * user from being able to unload and reflash a bitstream being
-     * "autoloaded" from SPI flash. */
-    status = version_check(&bladerf2_fw_compat_table, &bladerf2_fpga_compat_table,
-                           &board_data->fw_version, &board_data->fpga_version,
-                           &required_fw_version, &required_fpga_version);
-    if (status < 0) {
-#if LOGGING_ENABLED
-        if (status == BLADERF_ERR_UPDATE_FPGA) {
-            log_warning("FPGA v%u.%u.%u was detected. Firmware v%u.%u.%u "
-                        "requires FPGA v%u.%u.%u or later. Please load a "
-                        "different FPGA version before continuing.\n\n",
-                        board_data->fpga_version.major,
-                        board_data->fpga_version.minor,
-                        board_data->fpga_version.patch,
-                        board_data->fw_version.major,
-                        board_data->fw_version.minor,
-                        board_data->fw_version.patch,
-                        required_fpga_version.major,
-                        required_fpga_version.minor,
-                        required_fpga_version.patch);
-        } else if (status == BLADERF_ERR_UPDATE_FW) {
-            log_warning("FPGA v%u.%u.%u was detected, which requires firmware "
-                        "v%u.%u.%u or later. The device firmware is currently "
-                        "v%u.%u.%u. Please upgrade the device firmware before "
-                        "continuing.\n\n",
-                        board_data->fpga_version.major,
-                        board_data->fpga_version.minor,
-                        board_data->fpga_version.patch,
-                        required_fw_version.major,
-                        required_fw_version.minor,
-                        required_fw_version.patch,
-                        board_data->fw_version.major,
-                        board_data->fw_version.minor,
-                        board_data->fw_version.patch);
-        }
-#endif
     }
 
     /* Initialize the board */
@@ -1477,8 +1478,6 @@ static bool is_valid_fpga_size(bladerf_fpga_size fpga, size_t len)
 static int bladerf2_load_fpga(struct bladerf *dev, const uint8_t *buf, size_t length)
 {
     struct bladerf2_board_data *board_data = dev->board_data;
-    struct bladerf_version required_fw_version;
-    struct bladerf_version required_fpga_version;
     int status;
 
     CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
@@ -1494,52 +1493,6 @@ static int bladerf2_load_fpga(struct bladerf *dev, const uint8_t *buf, size_t le
 
     /* Update device state */
     board_data->state = STATE_FPGA_LOADED;
-
-    /* Read FPGA version */
-    status = dev->backend->get_fpga_version(dev, &board_data->fpga_version);
-    if (status < 0) {
-        log_debug("Failed to get FPGA version: %s\n",
-                  bladerf_strerror(status));
-        return status;
-    }
-    log_verbose("Read FPGA version: %s\n", board_data->fpga_version.describe);
-
-    status = version_check(&bladerf2_fw_compat_table, &bladerf2_fpga_compat_table,
-                           &board_data->fw_version, &board_data->fpga_version,
-                           &required_fw_version, &required_fpga_version);
-    if (status != 0) {
-#if LOGGING_ENABLED
-        if (status == BLADERF_ERR_UPDATE_FPGA) {
-            log_warning("FPGA v%u.%u.%u was detected. Firmware v%u.%u.%u "
-                        "requires FPGA v%u.%u.%u or later. Please load a "
-                        "different FPGA version before continuing.\n\n",
-                        board_data->fpga_version.major,
-                        board_data->fpga_version.minor,
-                        board_data->fpga_version.patch,
-                        board_data->fw_version.major,
-                        board_data->fw_version.minor,
-                        board_data->fw_version.patch,
-                        required_fpga_version.major,
-                        required_fpga_version.minor,
-                        required_fpga_version.patch);
-        } else if (status == BLADERF_ERR_UPDATE_FW) {
-            log_warning("FPGA v%u.%u.%u was detected, which requires firmware "
-                        "v%u.%u.%u or later. The device firmware is currently "
-                        "v%u.%u.%u. Please upgrade the device firmware before "
-                        "continuing.\n\n",
-                        board_data->fpga_version.major,
-                        board_data->fpga_version.minor,
-                        board_data->fpga_version.patch,
-                        required_fw_version.major,
-                        required_fw_version.minor,
-                        required_fw_version.patch,
-                        board_data->fw_version.major,
-                        board_data->fw_version.minor,
-                        board_data->fw_version.patch);
-        }
-#endif
-        return status;
-    }
 
     status = bladerf2_initialize(dev);
     if (status != 0) {
