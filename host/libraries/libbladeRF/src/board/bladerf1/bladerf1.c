@@ -1776,7 +1776,7 @@ static int bladerf1_schedule_retune(struct bladerf *dev, bladerf_channel ch, uin
                        (f.flags & LMS_FREQ_FLAGS_FORCE_VCOCAP) != 0);
 }
 
-int bladerf1_cancel_scheduled_retunes(struct bladerf *dev, bladerf_channel ch)
+static int bladerf1_cancel_scheduled_retunes(struct bladerf *dev, bladerf_channel ch)
 {
     struct bladerf1_board_data *board_data = dev->board_data;
     int status;
