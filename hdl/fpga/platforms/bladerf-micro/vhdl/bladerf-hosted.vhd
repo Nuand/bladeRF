@@ -399,15 +399,8 @@ begin
     -- Allow SPI accesses when FPGA is in reset
     fx3_uart_cts      <= '1' when sys_reset_pclk = '0' else 'Z';
 
-    -- Nios GPIO
-    nios_gpio.usb_speed       <= nios_gpio_i(7);
-    nios_gpio.rx_mux_sel      <= nios_gpio_i(10 downto 8);
-    nios_gpio.adf_chip_enable <= nios_gpio_i(11);
-    nios_gpio.leds            <= nios_gpio_i(14 downto 12);
-    nios_gpio.led_mode        <= nios_gpio_i(15);
-    nios_gpio.meta_sync       <= nios_gpio_i(16);
-    nios_gpio.channel_sel     <= nios_gpio_i(17);
-    nios_gpio.xb_mode         <= nios_gpio_i(31 downto 30);
+    -- Unpack the Nios GPIOs into a record
+    nios_gpio <= unpack(nios_gpio_i);
 
     -- RFFE GPIO outputs
     adi_ctrl_in    <= unpack(rffe_gpio.o).ctrl_in;

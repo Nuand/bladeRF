@@ -195,14 +195,14 @@ package bladerf_p is
     end record;
 
     type nios_gpio_t is record
-        usb_speed       : std_logic;
-        rx_mux_sel      : std_logic_vector(2 downto 0);
-        adf_chip_enable : std_logic;
-        leds            : std_logic_vector(3 downto 1);
-        led_mode        : std_logic;
-        meta_sync       : std_logic;
-        channel_sel     : std_logic;
         xb_mode         : std_logic_vector(1 downto 0);
+        channel_sel     : std_logic;
+        meta_sync       : std_logic;
+        led_mode        : std_logic;
+        leds            : std_logic_vector(3 downto 1);
+        adf_chip_enable : std_logic;
+        rx_mux_sel      : std_logic_vector(2 downto 0);
+        usb_speed       : std_logic;
     end record;
 
     type sky13374_397lf_t is (
@@ -280,6 +280,7 @@ package bladerf_p is
     function pack( x : rffe_gpo_t )       return std_logic_vector;
     function pack( x : rffe_gpio_t )      return std_logic_vector;
     function pack( x : trigger_t )        return std_logic_vector;
+    function pack( x : nios_gpio_t )      return std_logic_vector;
 
 
     -- ========================================================================
@@ -290,7 +291,7 @@ package bladerf_p is
     function unpack( x : std_logic_vector(31 downto 0) ) return rffe_gpo_t;
     function unpack( trig_gpo  : std_logic_vector(7 downto 0);
                      trig_line : std_logic ) return trigger_t;
-
+    function unpack( x : std_logic_vector(31 downto 0) ) return nios_gpio_t;
 
     -- ========================================================================
     -- TYPEDEF RESET CONSTANTS
@@ -454,6 +455,20 @@ package body bladerf_p is
         return rv;
     end function;
 
+    function pack( x : nios_gpio_t ) return std_logic_vector is
+        variable rv : std_logic_vector(31 downto 0) := (others => '0');
+    begin
+         rv(31 downto 30)   := x.xb_mode;
+         rv(17)             := x.channel_sel;
+         rv(16)             := x.meta_sync;
+         rv(15)             := x.led_mode;
+         rv(14 downto 12)   := x.leds;
+         rv(11)             := x.adf_chip_enable;
+         rv(10 downto 8)    := x.rx_mux_sel;
+         rv(7)              := x.usb_speed;
+        return rv;
+    end function;
+
 
     -- ========================================================================
     -- UNPACK FUNCTIONS
@@ -498,6 +513,20 @@ package body bladerf_p is
         rv.master    := trig_gpo(2);
         rv.fire      := trig_gpo(1);
         rv.arm       := trig_gpo(0);
+        return rv;
+    end function;
+
+    function unpack( x : std_logic_vector(31 downto 0) ) return nios_gpio_t is
+        variable rv : nios_gpio_t;
+    begin
+        rv.xb_mode         := x(31 downto 30);
+        rv.channel_sel     := x(17);
+        rv.meta_sync       := x(16);
+        rv.led_mode        := x(15);
+        rv.leds            := x(14 downto 12);
+        rv.adf_chip_enable := x(11);
+        rv.rx_mux_sel      := x(10 downto 8);
+        rv.usb_speed       := x(7);
         return rv;
     end function;
 
