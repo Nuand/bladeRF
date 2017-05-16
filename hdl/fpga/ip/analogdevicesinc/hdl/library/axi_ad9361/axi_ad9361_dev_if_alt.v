@@ -167,10 +167,10 @@ module axi_ad9361_dev_if (
   input           up_txnrx;
   input   [ 6:0]  up_adc_dld;
   input   [34:0]  up_adc_dwdata;
-  output  [34:0]  up_adc_drdata = 'h0;
+  output  [34:0]  up_adc_drdata; // = 'h0;
   input   [ 9:0]  up_dac_dld;
   input   [49:0]  up_dac_dwdata;
-  output  [49:0]  up_dac_drdata = 'h0;
+  output  [49:0]  up_dac_drdata; // = 'h0;
   input           delay_clk;
   input           delay_rst;
   output          delay_locked;
@@ -208,6 +208,11 @@ module axi_ad9361_dev_if (
   wire            rx_locked_s;
   wire            rx_pll_reset_s;
   wire            tx_pll_reset_s;
+
+  // up_adc_drdata and up_dac_drdata explicitly assigned here
+  // the default on the output declaration breaks modelsim...
+  assign up_adc_drdata = 'h0;
+  assign up_dac_drdata = 'h0;
 
   // tdd support-
 
