@@ -2875,6 +2875,18 @@ API_EXPORT
 int CALL_CONV bladerf_set_tuning_mode(struct bladerf *dev,
                                       bladerf_tuning_mode mode);
 
+/**
+ * Get the device's current tuning mode
+ *
+ * @param       dev         Device handle
+ * @param[in]   mode        Tuning mode
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_tuning_mode(struct bladerf *dev,
+                                      bladerf_tuning_mode *mode);
+
 /** @} (End of FN_TUNING_MODE) */
 
 /** @} (End of FN_LOW_LEVEL) */

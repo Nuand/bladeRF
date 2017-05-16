@@ -2321,6 +2321,17 @@ static int bladerf1_set_tuning_mode(struct bladerf *dev, bladerf_tuning_mode mod
     return 0;
 }
 
+static int bladerf1_get_tuning_mode(struct bladerf *dev, bladerf_tuning_mode *mode)
+{
+    struct bladerf1_board_data *board_data = dev->board_data;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    *mode = board_data->tuning_mode;
+
+    return 0;
+}
+
 /******************************************************************************/
 /* Loopback */
 /******************************************************************************/
@@ -2702,6 +2713,7 @@ const struct board_fns bladerf1_board_fns = {
     FIELD_INIT(.flash_firmware, bladerf1_flash_firmware),
     FIELD_INIT(.device_reset, bladerf1_device_reset),
     FIELD_INIT(.set_tuning_mode, bladerf1_set_tuning_mode),
+    FIELD_INIT(.get_tuning_mode, bladerf1_get_tuning_mode),
     FIELD_INIT(.set_loopback, bladerf1_set_loopback),
     FIELD_INIT(.get_loopback, bladerf1_get_loopback),
     FIELD_INIT(.get_rx_mux, bladerf1_get_rx_mux),

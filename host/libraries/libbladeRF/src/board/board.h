@@ -142,6 +142,7 @@ struct board_fns {
 
     /* Tuning mode */
     int (*set_tuning_mode)(struct bladerf *dev, bladerf_tuning_mode mode);
+    int (*get_tuning_mode)(struct bladerf *dev, bladerf_tuning_mode *mode);
 
     /* Loopback */
     int (*set_loopback)(struct bladerf *dev, bladerf_loopback l);

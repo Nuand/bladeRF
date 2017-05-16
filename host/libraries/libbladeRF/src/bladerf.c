@@ -1093,6 +1093,17 @@ int bladerf_set_tuning_mode(struct bladerf *dev, bladerf_tuning_mode mode)
     return status;
 }
 
+int bladerf_get_tuning_mode(struct bladerf *dev, bladerf_tuning_mode *mode)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->get_tuning_mode(dev, mode);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
 /******************************************************************************/
 /* Loopback */
 /******************************************************************************/
