@@ -47,6 +47,7 @@ entity rx is
 
         -- Samples to host via FX3
         sample_fifo_rclock     : in    std_logic;
+        sample_fifo_raclr      : in    std_logic;
         sample_fifo_rreq       : in    std_logic;
         sample_fifo_rdata      : out   std_logic_vector(FIFO_T_DEFAULT.rdata'range);
         sample_fifo_rempty     : out   std_logic;
@@ -55,6 +56,7 @@ entity rx is
 
         -- Metadata to host via FX3
         meta_fifo_rclock       : in    std_logic;
+        meta_fifo_raclr        : in    std_logic;
         meta_fifo_rreq         : in    std_logic;
         meta_fifo_rdata        : out   std_logic_vector(META_FIFO_RX_T_DEFAULT.rdata'range);
         meta_fifo_rempty       : out   std_logic;
@@ -139,7 +141,7 @@ begin
 
 
     -- RX sample FIFO
-    sample_fifo.aclr   <= not rx_enable;
+    sample_fifo.aclr   <= sample_fifo_raclr;
     sample_fifo.wclock <= rx_clock;
     U_rx_sample_fifo : entity work.rx_fifo
         port map (
@@ -162,7 +164,7 @@ begin
 
 
     -- RX meta FIFO
-    meta_fifo.aclr   <= not rx_enable;
+    meta_fifo.aclr   <= meta_fifo_raclr;
     meta_fifo.wclock <= rx_clock;
     U_rx_meta_fifo : entity work.rx_meta_fifo
         port map (

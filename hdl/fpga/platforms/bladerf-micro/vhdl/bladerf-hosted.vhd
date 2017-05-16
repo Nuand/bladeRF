@@ -544,6 +544,7 @@ begin
 
             -- Samples to host via FX3
             sample_fifo_rclock     => fx3_pclk_pll,
+            sample_fifo_raclr      => not rx_enable_pclk,
             sample_fifo_rreq       => rx_sample_fifo.rreq,
             sample_fifo_rdata      => rx_sample_fifo.rdata,
             sample_fifo_rempty     => rx_sample_fifo.rempty,
@@ -552,6 +553,7 @@ begin
 
             -- Metadata to host via FX3
             meta_fifo_rclock       => fx3_pclk_pll,
+            meta_fifo_raclr        => not rx_enable_pclk,
             meta_fifo_rreq         => rx_meta_fifo.rreq,
             meta_fifo_rdata        => rx_meta_fifo.rdata,
             meta_fifo_rempty       => rx_meta_fifo.rempty,
