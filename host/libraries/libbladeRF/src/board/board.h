@@ -152,7 +152,7 @@ struct board_fns {
     int (*get_rx_mux)(struct bladerf *dev, bladerf_rx_mux *mode);
     int (*set_rx_mux)(struct bladerf *dev, bladerf_rx_mux mode);
 
-    /* Trim DAC read/write */
+    /* Low-level VCTCXO Trim DAC access */
     int (*trim_dac_read)(struct bladerf *dev, uint16_t *trim);
     int (*trim_dac_write)(struct bladerf *dev, uint16_t trim);
 
