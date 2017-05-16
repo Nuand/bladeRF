@@ -140,6 +140,9 @@ struct board_fns {
     int (*flash_firmware)(struct bladerf *dev, const uint8_t *buf, size_t length);
     int (*device_reset)(struct bladerf *dev);
 
+    /* Tuning mode */
+    int (*set_tuning_mode)(struct bladerf *dev, bladerf_tuning_mode mode);
+
     /* Loopback */
     int (*set_loopback)(struct bladerf *dev, bladerf_loopback l);
     int (*get_loopback)(struct bladerf *dev, bladerf_loopback *l);

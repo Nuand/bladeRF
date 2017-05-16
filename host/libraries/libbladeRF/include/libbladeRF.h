@@ -2818,6 +2818,65 @@ int CALL_CONV bladerf_trim_dac_write(struct bladerf *dev, uint16_t val);
 API_EXPORT
 int CALL_CONV bladerf_trim_dac_read(struct bladerf *dev, uint16_t *val);
 
+/**
+ * @defgroup FN_TUNING_MODE Tuning Mode
+ *
+ * These functions provide the ability to select the tuning mode.
+ *
+ * These functions are thread-safe.
+ *
+ * @{
+ */
+
+/**
+ * Frequency tuning modes
+ *
+ * BLADERF_TUNING_MODE_HOST is the default if either of the following conditions
+ * are true:
+ *   - libbladeRF < v1.3.0
+ *   - FPGA       < v0.2.0
+ *
+ * BLADERF_TUNING_MODE_FPGA is the default if both of the following conditions
+ * are true:
+ *  - libbladeRF >= v1.3.0
+ *  - FPGA       >= v0.2.0
+ *
+ * The default mode can be overridden by setting a BLADERF_DEFAULT_TUNING_MODE
+ * environment variable to "host" or "fpga". Overriding this value with a mode
+ * not supported by the FPGA will result in failures or unexpected behavior.
+ */
+typedef enum {
+    /** Indicates an invalid mode is set */
+    BLADERF_TUNING_MODE_INVALID = -1,
+
+    /**
+     * Perform tuning algorithm on the host. This is slower, but provides
+     * easier accessiblity to diagnostic information.
+     */
+    BLADERF_TUNING_MODE_HOST,
+
+    /**
+     * Perform tuning algorithm on the FPGA for faster tuning.
+     *
+     */
+    BLADERF_TUNING_MODE_FPGA,
+} bladerf_tuning_mode;
+
+/**
+ * Set the device's tuning mode
+ *
+ * @param       dev         Device handle
+ * @param[in]   mode        Desired tuning mode. Note that the available modes
+ *                          depends on the FPGA version.
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_tuning_mode(struct bladerf *dev,
+                                      bladerf_tuning_mode mode);
+
+/** @} (End of FN_TUNING_MODE) */
+
 /** @} (End of FN_LOW_LEVEL) */
 
 /**
@@ -3288,65 +3347,6 @@ int CALL_CONV bladerf_get_lpf_mode(struct bladerf *dev, bladerf_channel ch,
                                    bladerf_lpf_mode *mode);
 
 /** @} (End of FN_BLADERF1_LPF_BYPASS) */
-
-/**
- * @defgroup FN_BLADERF1_TUNING_MODE Tuning Mode
- *
- * These functions provide the ability to select the tuning mode.
- *
- * These functions are thread-safe.
- *
- * @{
- */
-
-/**
- * Frequency tuning modes
- *
- * BLADERF_TUNING_MODE_HOST is the default if either of the following conditions
- * are true:
- *   - libbladeRF < v1.3.0
- *   - FPGA       < v0.2.0
- *
- * BLADERF_TUNING_MODE_FPGA is the default if both of the following conditions
- * are true:
- *  - libbladeRF >= v1.3.0
- *  - FPGA       >= v0.2.0
- *
- * The default mode can be overridden by setting a BLADERF_DEFAULT_TUNING_MODE
- * environment variable to "host" or "fpga". Overriding this value with a mode
- * not supported by the FPGA will result in failures or unexpected behavior.
- */
-typedef enum {
-    /** Indicates an invalid mode is set */
-    BLADERF_TUNING_MODE_INVALID = -1,
-
-    /**
-     * Perform tuning algorithm on the host. This is slower, but provides
-     * easier accessiblity to diagnostic information.
-     */
-    BLADERF_TUNING_MODE_HOST,
-
-    /**
-     * Perform tuning algorithm on the FPGA for faster tuning.
-     *
-     */
-    BLADERF_TUNING_MODE_FPGA,
-} bladerf_tuning_mode;
-
-/**
- * Set the device's tuning mode
- *
- * @param       dev         Device handle
- * @param[in]   mode        Desired tuning mode. Note that the available modes
- *                          depends on the FPGA version.
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_set_tuning_mode(struct bladerf *dev,
-                                      bladerf_tuning_mode mode);
-
-/** @} (End of FN_BLADERF1_TUNING_MODE) */
 
 /**
  * @defgroup FN_SMB_CLOCK SMB clock port control

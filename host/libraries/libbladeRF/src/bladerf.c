@@ -1079,6 +1079,21 @@ int bladerf_device_reset(struct bladerf *dev)
 }
 
 /******************************************************************************/
+/* Tuning mode */
+/******************************************************************************/
+
+int bladerf_set_tuning_mode(struct bladerf *dev, bladerf_tuning_mode mode)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->set_tuning_mode(dev, mode);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
+/******************************************************************************/
 /* Loopback */
 /******************************************************************************/
 
