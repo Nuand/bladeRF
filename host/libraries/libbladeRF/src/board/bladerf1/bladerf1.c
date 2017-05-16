@@ -26,9 +26,6 @@
 
 #include "log.h"
 #include "conversions.h"
-#define LOGGER_ID_STRING
-#include "logger_id.h"
-#include "logger_entry.h"
 #include "bladeRF.h"
 
 #include "board/board.h"
@@ -43,7 +40,6 @@
 #include "driver/dac161s055.h"
 #include "driver/spi_flash.h"
 #include "driver/fpga_trigger.h"
-#include "driver/fx3_fw.h"
 #include "lms.h"
 #include "nios_pkt_retune.h"
 #include "band_select.h"
@@ -3298,148 +3294,6 @@ int bladerf_set_rational_smb_frequency(struct bladerf *dev, struct bladerf_ratio
     status = si5338_set_rational_smb_freq(dev, rate, actual);
 
     MUTEX_UNLOCK(&dev->lock);
-
-    return status;
-}
-
-/******************************************************************************/
-/* FX3 Firmware */
-/******************************************************************************/
-
-int bladerf_jump_to_bootloader(struct bladerf *dev)
-{
-    int status;
-
-    if (!dev->backend->jump_to_bootloader) {
-        return BLADERF_ERR_UNSUPPORTED;
-    }
-
-    MUTEX_LOCK(&dev->lock);
-
-    status = dev->backend->jump_to_bootloader(dev);
-
-    MUTEX_UNLOCK(&dev->lock);
-
-    return status;
-}
-
-int bladerf_get_bootloader_list(struct bladerf_devinfo **devices)
-{
-    return probe(BACKEND_PROBE_FX3_BOOTLOADER, devices);
-}
-
-int bladerf_load_fw_from_bootloader(const char *device_identifier,
-                                    bladerf_backend backend,
-                                    uint8_t bus, uint8_t addr,
-                                    const char *file)
-{
-    int status;
-    uint8_t *buf;
-    size_t buf_len;
-    struct fx3_firmware *fw = NULL;
-    struct bladerf_devinfo devinfo;
-
-    if (device_identifier == NULL) {
-        bladerf_init_devinfo(&devinfo);
-        devinfo.backend = backend;
-        devinfo.usb_bus = bus;
-        devinfo.usb_addr = addr;
-    } else {
-        status = str2devinfo(device_identifier, &devinfo);
-        if (status != 0) {
-            return status;
-        }
-    }
-
-    status = file_read_buffer(file, &buf, &buf_len);
-    if (status != 0) {
-        return status;
-    }
-
-    status = fx3_fw_parse(&fw, buf, buf_len);
-    free(buf);
-    if (status != 0) {
-        return status;
-    }
-
-    assert(fw != NULL);
-
-    status = backend_load_fw_from_bootloader(devinfo.backend, devinfo.usb_bus,
-                                             devinfo.usb_addr, fw);
-
-    fx3_fw_free(fw);
-
-    return status;
-}
-
-int bladerf_get_fw_log(struct bladerf *dev, const char *filename)
-{
-    int status;
-    FILE *f = NULL;
-    logger_entry e;
-
-    MUTEX_LOCK(&dev->lock);
-
-    if (!have_cap(dev->board->get_capabilities(dev), BLADERF_CAP_READ_FW_LOG_ENTRY)) {
-        struct bladerf_version fw_version;
-
-        if (dev->board->get_fw_version(dev, &fw_version) == 0) {
-            log_debug("FX3 FW v%s does not support log retrieval.\n",
-                      fw_version.describe);
-        }
-
-        status = BLADERF_ERR_UNSUPPORTED;
-        goto error;
-    }
-
-    if (filename != NULL) {
-        f = fopen(filename, "w");
-        if (f == NULL) {
-            switch (errno) {
-                case ENOENT:
-                    status = BLADERF_ERR_NO_FILE;
-                    break;
-                case EACCES:
-                    status = BLADERF_ERR_PERMISSION;
-                    break;
-                default:
-                    status = BLADERF_ERR_IO;
-                    break;
-            }
-            goto error;
-        }
-    } else {
-        f = stdout;
-    }
-
-    do {
-        status = dev->backend->read_fw_log(dev, &e);
-        if (status != 0) {
-            log_debug("Failed to read FW log: %s\n", bladerf_strerror(status));
-            goto error;
-        }
-
-        if (e == LOG_ERR) {
-            fprintf(f, "<Unexpected error>,,\n");
-        } else if (e != LOG_EOF) {
-            uint8_t file_id;
-            uint16_t line;
-            uint16_t data;
-            const char *src_file;
-
-            logger_entry_unpack(e, &file_id, &line, &data);
-            src_file = logger_id_string(file_id);
-
-            fprintf(f, "%s, %u, 0x%04x\n", src_file, line, data);
-        }
-    } while (e != LOG_EOF && e != LOG_ERR);
-
-error:
-    MUTEX_UNLOCK(&dev->lock);
-
-    if (f != NULL && f != stdout) {
-        fclose(f);
-    }
 
     return status;
 }
