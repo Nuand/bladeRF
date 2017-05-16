@@ -195,14 +195,14 @@ package bladerf_p is
     end record;
 
     type nios_gpio_t is record
-        usb_speed   : std_logic;
-        rx_mux_sel  : std_logic_vector(2 downto 0);
-        spi_mux     : std_logic;
-        leds        : std_logic_vector(3 downto 1);
-        led_mode    : std_logic;
-        meta_sync   : std_logic;
-        channel_sel : std_logic;
-        xb_mode     : std_logic_vector(1 downto 0);
+        usb_speed       : std_logic;
+        rx_mux_sel      : std_logic_vector(2 downto 0);
+        adf_chip_enable : std_logic;
+        leds            : std_logic_vector(3 downto 1);
+        led_mode        : std_logic;
+        meta_sync       : std_logic;
+        channel_sel     : std_logic;
+        xb_mode         : std_logic_vector(1 downto 0);
     end record;
 
     type sky13374_397lf_t is (

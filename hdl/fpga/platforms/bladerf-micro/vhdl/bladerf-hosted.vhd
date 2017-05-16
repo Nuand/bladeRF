@@ -400,14 +400,14 @@ begin
     fx3_uart_cts      <= '1' when sys_reset_pclk = '0' else 'Z';
 
     -- Nios GPIO
-    nios_gpio.usb_speed   <= nios_gpio_i(7);
-    nios_gpio.rx_mux_sel  <= nios_gpio_i(10 downto 8);
-    nios_gpio.spi_mux     <= nios_gpio_i(11);
-    nios_gpio.leds        <= nios_gpio_i(14 downto 12);
-    nios_gpio.led_mode    <= nios_gpio_i(15);
-    nios_gpio.meta_sync   <= nios_gpio_i(16);
-    nios_gpio.channel_sel <= nios_gpio_i(17);
-    nios_gpio.xb_mode     <= nios_gpio_i(31 downto 30);
+    nios_gpio.usb_speed       <= nios_gpio_i(7);
+    nios_gpio.rx_mux_sel      <= nios_gpio_i(10 downto 8);
+    nios_gpio.adf_chip_enable <= nios_gpio_i(11);
+    nios_gpio.leds            <= nios_gpio_i(14 downto 12);
+    nios_gpio.led_mode        <= nios_gpio_i(15);
+    nios_gpio.meta_sync       <= nios_gpio_i(16);
+    nios_gpio.channel_sel     <= nios_gpio_i(17);
+    nios_gpio.xb_mode         <= nios_gpio_i(31 downto 30);
 
     -- RFFE GPIO outputs
     adi_ctrl_in    <= unpack(rffe_gpio.o).ctrl_in;
@@ -433,17 +433,17 @@ begin
     led(3) <= rx_overflow_led   when nios_gpio.led_mode = '0' else not nios_gpio.leds(3);
 
     -- DAC SPI (data latched on falling edge)
-    dac_sclk <= not nios_sclk when nios_gpio.spi_mux = '0' else '0';
-    dac_sdi  <= nios_sdio     when nios_gpio.spi_mux = '0' else '0';
-    dac_csn  <= nios_ss_n(0)  when nios_gpio.spi_mux = '0' else '1';
+    dac_sclk <= not nios_sclk when nios_gpio.adf_chip_enable = '0' else '0';
+    dac_sdi  <= nios_sdio     when nios_gpio.adf_chip_enable = '0' else '0';
+    dac_csn  <= nios_ss_n(0)  when nios_gpio.adf_chip_enable = '0' else '1';
 
     -- ADF SPI (data latched on rising edge)
-    adf_sclk <= nios_sclk    when nios_gpio.spi_mux = '1' else '0';
-    adf_sdi  <= nios_sdio    when nios_gpio.spi_mux = '1' else '0';
-    adf_csn  <= nios_ss_n(1) when nios_gpio.spi_mux = '1' else '1';
-    adf_ce   <= nios_gpio.spi_mux;
+    adf_sclk <= nios_sclk    when nios_gpio.adf_chip_enable = '1' else '0';
+    adf_sdi  <= nios_sdio    when nios_gpio.adf_chip_enable = '1' else '0';
+    adf_csn  <= nios_ss_n(1) when nios_gpio.adf_chip_enable = '1' else '1';
+    adf_ce   <= nios_gpio.adf_chip_enable;
 
-    nios_sdo <= adf_muxout when ((nios_ss_n(1) = '0') and (nios_gpio.spi_mux = '1'))
+    nios_sdo <= adf_muxout when ((nios_ss_n(1) = '0') and (nios_gpio.adf_chip_enable = '1'))
                 else '0';
 
     -- Power monitor I2C
