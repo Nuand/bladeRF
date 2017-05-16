@@ -1750,6 +1750,33 @@ static int bladerf2_trim_dac_write(struct bladerf *dev, uint16_t trim)
 }
 
 /******************************************************************************/
+/* Low-level SPI Flash access */
+/******************************************************************************/
+
+static int bladerf2_erase_flash(struct bladerf *dev, uint32_t erase_block, uint32_t count)
+{
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
+    return spi_flash_erase(dev, erase_block, count);
+}
+
+static int bladerf2_read_flash(struct bladerf *dev, uint8_t *buf,
+                               uint32_t page, uint32_t count)
+{
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
+    return spi_flash_read(dev, buf, page, count);
+}
+
+static int bladerf2_write_flash(struct bladerf *dev, const uint8_t *buf,
+                                uint32_t page, uint32_t count)
+{
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
+    return spi_flash_write(dev, buf, page, count);
+}
+
+/******************************************************************************/
 /* Expansion support */
 /******************************************************************************/
 
@@ -1834,6 +1861,9 @@ const struct board_fns bladerf2_board_fns = {
     FIELD_INIT(.set_rx_mux, bladerf2_set_rx_mux),
     FIELD_INIT(.trim_dac_read, bladerf2_trim_dac_read),
     FIELD_INIT(.trim_dac_write, bladerf2_trim_dac_write),
+    FIELD_INIT(.erase_flash, bladerf2_erase_flash),
+    FIELD_INIT(.read_flash, bladerf2_read_flash),
+    FIELD_INIT(.write_flash, bladerf2_write_flash),
     FIELD_INIT(.expansion_attach, bladerf2_expansion_attach),
     FIELD_INIT(.expansion_get_attached, bladerf2_expansion_get_attached),
     FIELD_INIT(.name, "bladerf2"),

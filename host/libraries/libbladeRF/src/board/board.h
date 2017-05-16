@@ -156,6 +156,11 @@ struct board_fns {
     int (*trim_dac_read)(struct bladerf *dev, uint16_t *trim);
     int (*trim_dac_write)(struct bladerf *dev, uint16_t trim);
 
+    /* Low-level SPI flash access */
+    int (*erase_flash)(struct bladerf *dev, uint32_t erase_block, uint32_t count);
+    int (*read_flash)(struct bladerf *dev, uint8_t *buf, uint32_t page, uint32_t count);
+    int (*write_flash)(struct bladerf *dev, const uint8_t *buf, uint32_t page, uint32_t count);
+
     /* Expansion support */
     int (*expansion_attach)(struct bladerf *dev, bladerf_xb xb);
     int (*expansion_get_attached)(struct bladerf *dev, bladerf_xb *xb);

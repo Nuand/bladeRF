@@ -2889,6 +2889,67 @@ int CALL_CONV bladerf_get_tuning_mode(struct bladerf *dev,
 
 /** @} (End of FN_TUNING_MODE) */
 
+/**
+ * @defgroup FN_SPI_FLASH SPI Flash
+ *
+ * These functions provide the ability to erase, read, and write the SPI flash.
+ *
+ * These functions are thread-safe.
+ *
+ * @{
+ */
+
+/**
+ * Erase regions of the bladeRF's SPI flash
+ *
+ * This function operates in units of 64KiB erase blocks
+ *
+ * @param       dev             Device handle
+ * @param[in]   erase_block     Erase block to start erasing at
+ * @param[in]   count           Number of blocks to erase.
+ *
+ * @return 0 on success, or BLADERF_ERR_INVAL on an invalid `erase_block` or
+ * `count` value, or a value from \ref RETCODES list on other failures
+ */
+API_EXPORT
+int CALL_CONV bladerf_erase_flash(struct bladerf *dev,
+                                  uint32_t erase_block, uint32_t count);
+
+/**
+ * Read data from the bladeRF's SPI flash
+ *
+ * This function operates in units of 256-byte pages.
+ *
+ * @param       dev     Device handle
+ * @param[in]   buf     Buffer to read data into. Must be `count` *
+ *                      BLADERF_FLASH_PAGE_SIZE bytes or larger.
+ * @param[in]   page    Page to begin reading from
+ * @param[in]   count   Number of pages to read
+ *
+ * @return 0 on success, or BLADERF_ERR_INVAL on an invalid `page` or `count`
+ * value, or a value from \ref RETCODES list on other failures.
+ */
+API_EXPORT
+int CALL_CONV bladerf_read_flash(struct bladerf *dev, uint8_t *buf,
+                                 uint32_t page, uint32_t count);
+
+/**
+ * Write data to the bladeRF's SPI flash device
+ *
+ * @param       dev     Device handle
+ * @param[in]   buf     Data to write to flash
+ * @param[in]   page    Page to begin writing at
+ * @param[in]   count   Number of pages to write
+ *
+ * @return 0 on success, or BLADERF_ERR_INVAL on an invalid `page` or `count`
+ * value, or a value from \ref RETCODES list on other failures.
+ */
+API_EXPORT
+int CALL_CONV bladerf_write_flash(struct bladerf *dev, const uint8_t *buf,
+                                  uint32_t page, uint32_t count);
+
+/** @} (End of FN_SPI_FLASH) */
+
 /** @} (End of FN_LOW_LEVEL) */
 
 /**
@@ -4693,55 +4754,6 @@ int CALL_CONV bladerf_write_trigger(struct bladerf *dev,
 /** Length of entire FPGA region, in units of erase blocks */
 #define BLADERF_FLASH_EB_LEN_FPGA \
             (BLADERF_FLASH_TO_EB(BLADERF_FLASH_BYTE_LEN_FPGA))
-
-/**
- * Erase regions of the bladeRF's SPI flash
- *
- * This function operates in units of 64KiB erase blocks
- *
- * @param       dev             Device handle
- * @param[in]   erase_block     Erase block to start erasing at
- * @param[in]   count           Number of blocks to erase.
- *
- * @return 0 on success, or BLADERF_ERR_INVAL on an invalid `erase_block` or
- * `count` value, or a value from \ref RETCODES list on other failures
- */
-API_EXPORT
-int CALL_CONV bladerf_erase_flash(struct bladerf *dev,
-                                  uint32_t erase_block, uint32_t count);
-
-/**
- * Read data from the bladeRF's SPI flash
- *
- * This function operates in units of 256-byte pages.
- *
- * @param       dev     Device handle
- * @param[in]   buf     Buffer to read data into. Must be `count` *
- *                      BLADERF_FLASH_PAGE_SIZE bytes or larger.
- * @param[in]   page    Page to begin reading from
- * @param[in]   count   Number of pages to read
- *
- * @return 0 on success, or BLADERF_ERR_INVAL on an invalid `page` or `count`
- * value, or a value from \ref RETCODES list on other failures.
- */
-API_EXPORT
-int CALL_CONV bladerf_read_flash(struct bladerf *dev, uint8_t *buf,
-                                 uint32_t page, uint32_t count);
-
-/**
- * Write data to the bladeRF's SPI flash device
- *
- * @param       dev     Device handle
- * @param[in]   buf     Data to write to flash
- * @param[in]   page    Page to begin writing at
- * @param[in]   count   Number of pages to write
- *
- * @return 0 on success, or BLADERF_ERR_INVAL on an invalid `page` or `count`
- * value, or a value from \ref RETCODES list on other failures.
- */
-API_EXPORT
-int CALL_CONV bladerf_write_flash(struct bladerf *dev, const uint8_t *buf,
-                                  uint32_t page, uint32_t count);
 
 /** @} (End of LOW_LEVEL) */
 

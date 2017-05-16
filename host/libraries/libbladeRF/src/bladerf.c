@@ -1188,6 +1188,44 @@ int bladerf_dac_read(struct bladerf *dev, uint16_t *trim)
 int bladerf_dac_write(struct bladerf *dev, uint16_t trim)
     __attribute__ ((alias ("bladerf_trim_dac_write")));
 
+
+/******************************************************************************/
+/* Low-level SPI Flash access */
+/******************************************************************************/
+
+int bladerf_erase_flash(struct bladerf *dev, uint32_t erase_block, uint32_t count)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->erase_flash(dev, erase_block, count);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
+int bladerf_read_flash(struct bladerf *dev, uint8_t *buf, uint32_t page, uint32_t count)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->read_flash(dev, buf, page, count);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
+int bladerf_write_flash(struct bladerf *dev, const uint8_t *buf, uint32_t page, uint32_t count)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->write_flash(dev, buf, page, count);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
 /******************************************************************************/
 /* Helpers & Miscellaneous */
 /******************************************************************************/

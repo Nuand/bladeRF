@@ -2519,6 +2519,33 @@ static int bladerf1_trim_dac_write(struct bladerf *dev, uint16_t trim)
 }
 
 /******************************************************************************/
+/* Low-level SPI Flash access */
+/******************************************************************************/
+
+static int bladerf1_erase_flash(struct bladerf *dev, uint32_t erase_block, uint32_t count)
+{
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
+    return spi_flash_erase(dev, erase_block, count);
+}
+
+static int bladerf1_read_flash(struct bladerf *dev, uint8_t *buf,
+                               uint32_t page, uint32_t count)
+{
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
+    return spi_flash_read(dev, buf, page, count);
+}
+
+static int bladerf1_write_flash(struct bladerf *dev, const uint8_t *buf,
+                                uint32_t page, uint32_t count)
+{
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
+    return spi_flash_write(dev, buf, page, count);
+}
+
+/******************************************************************************/
 /* Expansion support */
 /******************************************************************************/
 
@@ -2720,6 +2747,9 @@ const struct board_fns bladerf1_board_fns = {
     FIELD_INIT(.set_rx_mux, bladerf1_set_rx_mux),
     FIELD_INIT(.trim_dac_read, bladerf1_trim_dac_read),
     FIELD_INIT(.trim_dac_write, bladerf1_trim_dac_write),
+    FIELD_INIT(.erase_flash, bladerf1_erase_flash),
+    FIELD_INIT(.read_flash, bladerf1_read_flash),
+    FIELD_INIT(.write_flash, bladerf1_write_flash),
     FIELD_INIT(.expansion_attach, bladerf1_expansion_attach),
     FIELD_INIT(.expansion_get_attached, bladerf1_expansion_get_attached),
     FIELD_INIT(.name, "bladerf1"),
@@ -3538,67 +3568,6 @@ int bladerf_lms_get_dc_cals(struct bladerf *dev,
     CHECK_BOARD_STATE_LOCKED(STATE_INITIALIZED);
 
     status = lms_get_dc_cals(dev, dc_cals);
-
-    MUTEX_UNLOCK(&dev->lock);
-
-    return status;
-}
-
-/******************************************************************************/
-/* Low-level Flash access */
-/******************************************************************************/
-
-int bladerf_erase_flash(struct bladerf *dev,
-                        uint32_t erase_block, uint32_t count)
-{
-    int status;
-
-    if (dev->board != &bladerf1_board_fns)
-        return BLADERF_ERR_UNSUPPORTED;
-
-    MUTEX_LOCK(&dev->lock);
-
-    CHECK_BOARD_STATE_LOCKED(STATE_FIRMWARE_LOADED);
-
-    status = spi_flash_erase(dev, erase_block, count);
-
-    MUTEX_UNLOCK(&dev->lock);
-
-    return status;
-}
-
-int bladerf_read_flash(struct bladerf *dev, uint8_t *buf,
-                       uint32_t page, uint32_t count)
-{
-    int status;
-
-    if (dev->board != &bladerf1_board_fns)
-        return BLADERF_ERR_UNSUPPORTED;
-
-    MUTEX_LOCK(&dev->lock);
-
-    CHECK_BOARD_STATE_LOCKED(STATE_FIRMWARE_LOADED);
-
-    status = spi_flash_read(dev, buf, page, count);
-
-    MUTEX_UNLOCK(&dev->lock);
-
-    return status;
-}
-
-int bladerf_write_flash(struct bladerf *dev, const uint8_t *buf,
-                        uint32_t page, uint32_t count)
-{
-    int status;
-
-    if (dev->board != &bladerf1_board_fns)
-        return BLADERF_ERR_UNSUPPORTED;
-
-    MUTEX_LOCK(&dev->lock);
-
-    CHECK_BOARD_STATE_LOCKED(STATE_FIRMWARE_LOADED);
-
-    status = spi_flash_write(dev, buf, page, count);
 
     MUTEX_UNLOCK(&dev->lock);
 
