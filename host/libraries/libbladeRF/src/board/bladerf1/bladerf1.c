@@ -2496,11 +2496,11 @@ static int bladerf1_get_rx_mux(struct bladerf *dev, bladerf_rx_mux *mode)
 /* Low-level VCTCXO Trim DAC access */
 /******************************************************************************/
 
-int bladerf1_trim_dac_read(struct bladerf *dev, uint16_t *trim)
+static int bladerf1_trim_dac_read(struct bladerf *dev, uint16_t *trim)
 {
     struct bladerf1_board_data *board_data = dev->board_data;
 
-    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
 
     if (!have_cap(board_data->capabilities, BLADERF_CAP_VCTCXO_TRIMDAC_READ)) {
         log_debug("FPGA %s does not support VCTCXO trimdac readback.\n",
@@ -2511,9 +2511,9 @@ int bladerf1_trim_dac_read(struct bladerf *dev, uint16_t *trim)
     return dac161s055_read(dev, trim);
 }
 
-int bladerf1_trim_dac_write(struct bladerf *dev, uint16_t trim)
+static int bladerf1_trim_dac_write(struct bladerf *dev, uint16_t trim)
 {
-    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
 
     return dac161s055_write(dev, trim);
 }
