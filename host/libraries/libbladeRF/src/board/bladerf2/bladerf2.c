@@ -1750,6 +1750,26 @@ static int bladerf2_trim_dac_write(struct bladerf *dev, uint16_t trim)
 }
 
 /******************************************************************************/
+/* Low-level Trigger control access */
+/******************************************************************************/
+
+static int bladerf2_read_trigger(struct bladerf *dev, bladerf_channel ch,
+                                 bladerf_trigger_signal trigger, uint8_t *val)
+{
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    return fpga_trigger_read(dev, ch, trigger, val);
+}
+
+static int bladerf2_write_trigger(struct bladerf *dev, bladerf_channel ch,
+                                  bladerf_trigger_signal trigger, uint8_t val)
+{
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    return fpga_trigger_write(dev, ch, trigger, val);
+}
+
+/******************************************************************************/
 /* Low-level SPI Flash access */
 /******************************************************************************/
 
@@ -1861,6 +1881,8 @@ const struct board_fns bladerf2_board_fns = {
     FIELD_INIT(.set_rx_mux, bladerf2_set_rx_mux),
     FIELD_INIT(.trim_dac_read, bladerf2_trim_dac_read),
     FIELD_INIT(.trim_dac_write, bladerf2_trim_dac_write),
+    FIELD_INIT(.read_trigger, bladerf2_read_trigger),
+    FIELD_INIT(.write_trigger, bladerf2_write_trigger),
     FIELD_INIT(.erase_flash, bladerf2_erase_flash),
     FIELD_INIT(.read_flash, bladerf2_read_flash),
     FIELD_INIT(.write_flash, bladerf2_write_flash),

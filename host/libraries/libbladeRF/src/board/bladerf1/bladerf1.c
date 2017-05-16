@@ -2519,6 +2519,26 @@ static int bladerf1_trim_dac_write(struct bladerf *dev, uint16_t trim)
 }
 
 /******************************************************************************/
+/* Low-level Trigger control access */
+/******************************************************************************/
+
+static int bladerf1_read_trigger(struct bladerf *dev, bladerf_channel ch,
+                                 bladerf_trigger_signal trigger, uint8_t *val)
+{
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    return fpga_trigger_read(dev, ch, trigger, val);
+}
+
+static int bladerf1_write_trigger(struct bladerf *dev, bladerf_channel ch,
+                                  bladerf_trigger_signal trigger, uint8_t val)
+{
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    return fpga_trigger_write(dev, ch, trigger, val);
+}
+
+/******************************************************************************/
 /* Low-level SPI Flash access */
 /******************************************************************************/
 
@@ -2747,6 +2767,8 @@ const struct board_fns bladerf1_board_fns = {
     FIELD_INIT(.set_rx_mux, bladerf1_set_rx_mux),
     FIELD_INIT(.trim_dac_read, bladerf1_trim_dac_read),
     FIELD_INIT(.trim_dac_write, bladerf1_trim_dac_write),
+    FIELD_INIT(.read_trigger, bladerf1_read_trigger),
+    FIELD_INIT(.write_trigger, bladerf1_write_trigger),
     FIELD_INIT(.erase_flash, bladerf1_erase_flash),
     FIELD_INIT(.read_flash, bladerf1_read_flash),
     FIELD_INIT(.write_flash, bladerf1_write_flash),
@@ -3436,8 +3458,6 @@ error:
 /* DC Calibration */
 /******************************************************************************/
 
-/* FIXME make API function */
-
 int bladerf_calibrate_dc(struct bladerf *dev, bladerf_cal_module module)
 {
     int status;
@@ -3636,48 +3656,3 @@ int bladerf_config_gpio_write(struct bladerf *dev, uint32_t val)
     return status;
 }
 
-/******************************************************************************/
-/* Low-level Trigger access */
-/******************************************************************************/
-
-int bladerf_read_trigger(struct bladerf *dev,
-                         bladerf_channel ch,
-                         bladerf_trigger_signal trigger,
-                         uint8_t *val)
-{
-    int status;
-
-    if (dev->board != &bladerf1_board_fns)
-        return BLADERF_ERR_UNSUPPORTED;
-
-    MUTEX_LOCK(&dev->lock);
-
-    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
-
-    status = fpga_trigger_read(dev, ch, trigger, val);
-
-    MUTEX_UNLOCK(&dev->lock);
-
-    return status;
-}
-
-int bladerf_write_trigger(struct bladerf *dev,
-                          bladerf_channel ch,
-                          bladerf_trigger_signal trigger,
-                          uint8_t val)
-{
-    int status;
-
-    if (dev->board != &bladerf1_board_fns)
-        return BLADERF_ERR_UNSUPPORTED;
-
-    MUTEX_LOCK(&dev->lock);
-
-    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
-
-    status = fpga_trigger_write(dev, ch, trigger, val);
-
-    MUTEX_UNLOCK(&dev->lock);
-
-    return status;
-}

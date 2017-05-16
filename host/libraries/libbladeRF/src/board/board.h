@@ -156,6 +156,10 @@ struct board_fns {
     int (*trim_dac_read)(struct bladerf *dev, uint16_t *trim);
     int (*trim_dac_write)(struct bladerf *dev, uint16_t trim);
 
+    /* Low-level Trigger control access */
+    int (*read_trigger)(struct bladerf *dev, bladerf_channel ch, bladerf_trigger_signal trigger, uint8_t *val);
+    int (*write_trigger)(struct bladerf *dev, bladerf_channel ch, bladerf_trigger_signal trigger, uint8_t val);
+
     /* Low-level SPI flash access */
     int (*erase_flash)(struct bladerf *dev, uint32_t erase_block, uint32_t count);
     int (*read_flash)(struct bladerf *dev, uint8_t *buf, uint32_t page, uint32_t count);

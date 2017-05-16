@@ -2902,6 +2902,93 @@ int CALL_CONV bladerf_get_tuning_mode(struct bladerf *dev,
 /** @} (End of FN_TUNING_MODE) */
 
 /**
+ * @defgroup FN_TRIGGER_CONTROL Trigger Control
+ *
+ * These functions provide the ability to read and write the trigger control
+ * registers.
+ *
+ * These functions are thread-safe.
+ *
+ * @{
+ */
+
+/**
+ * Trigger control register "Arm" bit
+ *
+ * This bit arms (i.e., enables) the trigger controller when set to 1. Samples
+ * will be gated until the "Fire" bit has been asserted.
+ *
+ * A 0 in this bit disables the trigger controller. Samples will continue
+ * to flow as they normally do in this state.
+ */
+#define BLADERF_TRIGGER_REG_ARM     ((uint8_t) (1 << 0))
+
+/**
+ * Trigger control register "Fire" bit
+ *
+ * For a master, this bit causes a trigger to be sent to all slave devices. Once
+ * this trigger is received (the master "receives" it immediately as well),
+ * devices begin streaming samples.
+ *
+ * This bit has no effect on slave devices.
+ */
+#define BLADERF_TRIGGER_REG_FIRE    ((uint8_t) (1 << 1))
+
+/**
+ * Trigger control register "Master" bit
+ *
+ * Selects whether the device is a trigger master (1) or trigger slave (0).
+ * The trigger master drives the trigger signal as an output.
+ * Slave devices configure the trigger signal as an input.
+ */
+#define BLADERF_TRIGGER_REG_MASTER  ((uint8_t) (1 << 2))
+
+/**
+ * Trigger control registers "line" bit
+ *
+ * This is a read-only register bit that denotes the current state of the
+ * the trigger signal.
+ */
+#define BLADERF_TRIGGER_REG_LINE    ((uint8_t) (1 << 3))
+
+/**
+ * Read trigger control register
+ *
+ * @param       dev         Device handle
+ * @param[in]   ch          Channel
+ * @param[in]   signal      Trigger signal (control register) to read from
+ * @param[out]  val         Pointer to variable that register is read into See
+ *                          the BLADERF_TRIGGER_REG_* macros for the meaning of
+ *                          each bit.
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_read_trigger(struct bladerf *dev,
+                                   bladerf_channel ch,
+                                   bladerf_trigger_signal signal,
+                                   uint8_t *val);
+
+/**
+ * Write trigger control register
+ *
+ * @param       dev         Device handle
+ * @param[in]   ch          Channel
+ * @param[in]   signal      Trigger signal to configure
+ * @param[in]   val         Data to write into the trigger control register.
+ *                          See the BLADERF_TRIGGER_REG_* macros for options.
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_write_trigger(struct bladerf *dev,
+                                    bladerf_channel ch,
+                                    bladerf_trigger_signal signal,
+                                    uint8_t val);
+
+/** @} (End of FN_TRIGGER_CONTROL) */
+
+/**
  * @defgroup FN_SPI_FLASH SPI Flash
  *
  * These functions provide the ability to erase, read, and write the SPI flash.
@@ -4597,80 +4684,6 @@ typedef enum {
 API_EXPORT
 int CALL_CONV bladerf_calibrate_dc(struct bladerf *dev,
                                    bladerf_cal_module module);
-
-/**
- * Trigger control register "Arm" bit
- *
- * This bit arms (i.e., enables) the trigger controller when set to 1. Samples
- * will be gated until the "Fire" bit has been asserted.
- *
- * A 0 in this bit disables the trigger controller. Samples will continue
- * to flow as they normally do in this state.
- */
-#define BLADERF_TRIGGER_REG_ARM     ((uint8_t) (1 << 0))
-
-/**
- * Trigger control register "Fire" bit
- *
- * For a master, this bit causes a trigger to be sent to all slave devices. Once
- * this trigger is received (the master "receives" it immediately as well),
- * devices begin streaming samples.
- *
- * This bit has no effect on slave devices.
- */
-#define BLADERF_TRIGGER_REG_FIRE    ((uint8_t) (1 << 1))
-
-/**
- * Trigger control register "Master" bit
- *
- * Selects whether the device is a trigger master (1) or trigger slave (0).
- * The trigger master drives the trigger signal as an output.
- * Slave devices configure the trigger signal as an input.
- */
-#define BLADERF_TRIGGER_REG_MASTER  ((uint8_t) (1 << 2))
-
-/**
- * Trigger control registers "line" bit
- *
- * This is a read-only register bit that denotes the current state of the
- * the trigger signal.
- */
-#define BLADERF_TRIGGER_REG_LINE    ((uint8_t) (1 << 3))
-
-/**
- * Read trigger control register
- *
- * @param       dev         Device handle
- * @param[in]   ch          Channel
- * @param[in]   signal      Trigger signal (control register) to read from
- * @param[out]  val         Pointer to variable that register is read into See
- *                          the BLADERF_TRIGGER_REG_* macros for the meaning of
- *                          each bit.
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_read_trigger(struct bladerf *dev,
-                                   bladerf_channel ch,
-                                   bladerf_trigger_signal signal,
-                                   uint8_t *val);
-
-/**
- * Write trigger control register
- *
- * @param       dev         Device handle
- * @param[in]   ch          Channel
- * @param[in]   signal      Trigger signal to configure
- * @param[in]   val         Data to write into the trigger control register.
- *                          See the BLADERF_TRIGGER_REG_* macros for options.
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_write_trigger(struct bladerf *dev,
-                                    bladerf_channel ch,
-                                    bladerf_trigger_signal signal,
-                                    uint8_t val);
 
 /** Total size of bladeRF SPI flash, in bytes */
 #define BLADERF_FLASH_TOTAL_SIZE  (4 * 1024 * 1024)

@@ -1188,6 +1188,31 @@ int bladerf_dac_read(struct bladerf *dev, uint16_t *trim)
 int bladerf_dac_write(struct bladerf *dev, uint16_t trim)
     __attribute__ ((alias ("bladerf_trim_dac_write")));
 
+/******************************************************************************/
+/* Low-level Trigger control access */
+/******************************************************************************/
+
+int bladerf_read_trigger(struct bladerf *dev, bladerf_channel ch, bladerf_trigger_signal trigger, uint8_t *val)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->read_trigger(dev, ch, trigger, val);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
+int bladerf_write_trigger(struct bladerf *dev, bladerf_channel ch, bladerf_trigger_signal trigger, uint8_t val)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->write_trigger(dev, ch, trigger, val);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
 
 /******************************************************************************/
 /* Low-level SPI Flash access */
