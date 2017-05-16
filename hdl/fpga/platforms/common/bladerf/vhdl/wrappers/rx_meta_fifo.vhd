@@ -3,6 +3,7 @@
 
 library ieee;
     use ieee.std_logic_1164.all;
+    use ieee.math_real.all;
 
 library altera_mf;
     use altera_mf.altera_mf_components.all;
@@ -20,8 +21,8 @@ entity rx_meta_fifo is
         LPM_SHOWAHEAD           : string  := "ON";
         LPM_WIDTH               : natural := 128;
         LPM_WIDTH_R             : natural := 32;
-        LPM_WIDTHU              : natural := 5;
-        LPM_WIDTHU_R            : natural := 7;
+        --LPM_WIDTHU              : natural := 5;
+        --LPM_WIDTHU_R            : natural := 7;
         OVERFLOW_CHECKING       : string  := "ON";
         RDSYNC_DELAYPIPE        : natural := 5;
         READ_ACLR_SYNCH         : string  := "ON";
@@ -42,10 +43,10 @@ entity rx_meta_fifo is
         q          : out std_logic_vector(LPM_WIDTH_R-1 downto 0);
         rdempty    : out std_logic;
         rdfull     : out std_logic;
-        rdusedw    : out std_logic_vector(LPM_WIDTHU_R-1 downto 0);
+        rdusedw    : out std_logic_vector(integer(ceil(log2(real(LPM_WIDTH))))-1 downto 0);
         wrempty    : out std_logic;
         wrfull     : out std_logic;
-        wrusedw    : out std_logic_vector(LPM_WIDTHU-1 downto 0)
+        wrusedw    : out std_logic_vector(integer(ceil(log2(real(LPM_NUMWORDS))))-1 downto 0)
         --eccstatus  : out std_logic_vector(1 downto 0)
     );
 end entity;
@@ -67,8 +68,8 @@ begin
             LPM_SHOWAHEAD           => LPM_SHOWAHEAD,
             LPM_WIDTH               => LPM_WIDTH,
             LPM_WIDTH_R             => LPM_WIDTH_R,
-            LPM_WIDTHU              => LPM_WIDTHU,
-            LPM_WIDTHU_R            => LPM_WIDTHU_R,
+            LPM_WIDTHU              => wrusedw'length,
+            LPM_WIDTHU_R            => rdusedw'length,
             OVERFLOW_CHECKING       => OVERFLOW_CHECKING,
             RDSYNC_DELAYPIPE        => RDSYNC_DELAYPIPE,
             READ_ACLR_SYNCH         => READ_ACLR_SYNCH,
