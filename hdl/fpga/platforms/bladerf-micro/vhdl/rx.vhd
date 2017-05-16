@@ -261,8 +261,6 @@ begin
 
 
     loopback_fifo_control : process( rx_reset, loopback_fifo.rclock )
-        constant WATERLINE          : natural := 16;
-        variable already_strobed    : boolean := false;
     begin
         if( rx_reset = '1' ) then
             loopback_enabled   <= '0';
@@ -283,28 +281,14 @@ begin
             end if;
 
             -- Do the loopback
-            if( loopback_enabled = '1' ) then
-                loopback_i     <= resize(signed(loopback_fifo.rdata(15 downto 0)), loopback_i'length);
-                loopback_q     <= resize(signed(loopback_fifo.rdata(31 downto 16)), loopback_q'length);
-                loopback_valid <= loopback_fifo.rreq;
-            end if;
+            loopback_i     <= resize(signed(loopback_fifo.rdata(15 downto 0)), loopback_i'length);
+            loopback_q     <= resize(signed(loopback_fifo.rdata(31 downto 16)), loopback_q'length);
+            loopback_valid <= loopback_fifo.rreq and not loopback_fifo.rempty;
 
             -- Read from the FIFO if req'd
-            if( unsigned(loopback_fifo.rused) > WATERLINE ) then
-                loopback_fifo.rreq <= loopback_enabled and (not loopback_fifo.rempty);
-            end if;
-
-            -- Handle situation where FIFO is empty but we tried to rreq from it
-            if( (loopback_fifo.rreq = '1') and already_strobed ) then
-                already_strobed := false;
-                loopback_valid  <= '0';
-            end if;
-
-            -- Detect above condition
-            already_strobed := ( (loopback_fifo.rreq = '1') and (loopback_fifo.rempty = '1') );
+            loopback_fifo.rreq <= loopback_enabled and (not loopback_fifo.rempty);
         end if;
     end process;
-
 
     U_rx_siggen : entity work.signal_generator
         port map (
