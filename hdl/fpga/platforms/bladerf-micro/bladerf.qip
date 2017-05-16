@@ -13,6 +13,7 @@ set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/blad
 # Basic timing constraints
 set_global_assignment -name SDC_FILE [file normalize [file join $adi_ip hdl/library/common/ad_axi_ip_constr.sdc]]
 set_global_assignment -name SDC_FILE [file normalize [file join $nuand_ip synthesis/constraints/ad9361.sdc]]
+set_global_assignment -name SDC_FILE [file normalize [file join $nuand_ip synthesis/constraints/fx3.sdc]]
 set_global_assignment -name SDC_FILE [file normalize [file join $nuand_ip synthesis/constraints/spi.sdc]]
 set_global_assignment -name SDC_FILE [file normalize [file join $here constraints/bladerf.sdc]]
 set_global_assignment -name SDC_FILE [file normalize [file join $opencores_ip i2c/rtl/oc_i2c.sdc]]
