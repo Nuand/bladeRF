@@ -179,7 +179,7 @@ begin
             end if;
 
             loopback_data       <= sample_fifo.rdata;
-            loopback_data_valid <= sample_fifo.rreq;
+            loopback_data_valid <= sample_fifo.rreq and not sample_fifo.rempty;
 
         end if;
     end process;
