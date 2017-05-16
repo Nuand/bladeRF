@@ -1615,6 +1615,96 @@ int CALL_CONV bladerf_get_quick_tune(struct bladerf *dev,
 
 /** @} (End of FN_SCHEDULED_TUNING) */
 
+/**
+ * @defgroup FN_CORR    Correction
+ *
+ * This group provides routines for performing calibration and applying
+ * corrections. These functions are thread-safe.
+ *
+ * The automatic DC correction used by the `bladeRF-cli` is not part of
+ * this API, but it is implemented using libbladeRF. This automatic DC
+ * calibration code is available
+ * <a class="el" href="https://github.com/Nuand/bladeRF/blob/master/host/common/src/dc_calibration.c">here</a>
+ * under an "MIT" license.
+ * @{
+ */
+
+/**
+ * Correction parameter selection
+ *
+ * These values specify the correction parameter to modify or query when
+ * calling bladerf_set_correction() or bladerf_get_correction(). Note that the
+ * meaning of the `value` parameter to these functions depends upon the
+ * correction parameter.
+ *
+ */
+typedef enum {
+    /**
+     * Adjusts the in-phase DC offset. Valid values are [-2048, 2048], which
+     * are scaled to the available control bits in the RFIC.
+     */
+    BLADERF_CORR_DCOFF_I,
+
+    /**
+     * Adjusts the quadrature DC offset. Valid values are [-2048, 2048], which
+     * are scaled to the available control bits.
+     */
+    BLADERF_CORR_DCOFF_Q,
+
+    /**
+     * Adjusts phase correction of [-10, 10] degrees, via a provided count
+     * value of [-4096, 4096].
+     */
+    BLADERF_CORR_PHASE,
+
+    /**
+     * Adjusts gain correction value in [-1.0, 1.0], via provided values in the
+     * range of [-4096, 4096].
+     */
+    BLADERF_CORR_GAIN
+} bladerf_correction;
+
+/** @cond IGNORE */
+/* Backwards compatible mapping to `bladerf_correction`. */
+#define BLADERF_CORR_LMS_DCOFF_I    BLADERF_CORR_DCOFF_I
+#define BLADERF_CORR_LMS_DCOFF_Q    BLADERF_CORR_DCOFF_Q
+#define BLADERF_CORR_FPGA_PHASE     BLADERF_CORR_PHASE
+#define BLADERF_CORR_FPGA_GAIN      BLADERF_CORR_GAIN
+/** @endcond */
+
+/**
+ * Set the value of the specified configuration parameter
+ *
+ * See the ::bladerf_correction description for the valid ranges of the
+ * `value` parameter.
+ *
+ * @param       dev         Device handle
+ * @param[in]   ch          Channel
+ * @param[in]   corr        Correction type
+ * @param[in]   value       Value to apply
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_correction(struct bladerf *dev, bladerf_channel ch,
+                                     bladerf_correction corr, int16_t value);
+
+/**
+ * Obtain the current value of the specified configuration parameter
+ *
+ * @param       dev         Device handle
+ * @param[in]   ch          Channel
+ * @param[in]   corr        Correction type
+ * @param[out]  value       Current value
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_correction(struct bladerf *dev, bladerf_channel ch,
+                                     bladerf_correction corr, int16_t *value);
+
+/** @} (End of FN_CORR) */
+
 /** @} (End of FN_CHANNEL) */
 
 /**
@@ -3428,91 +3518,6 @@ int CALL_CONV bladerf_get_sampling(struct bladerf *dev,
 
 
 /** @} (End of FN_BLADERF1_SAMPLING_MUX) */
-
-/**
- * @defgroup FN_BLADERF1_CORR    Correction
- *
- * This group provides routines for performing calibration and applying
- * corrections. These functions are thread-safe.
- *
- *
- * The automatic DC correction used by the `bladeRF-cli` is not part of
- * this API, but it is implemented using libbladeRF. This automatic DC
- * calibration code is available
- * <a class="el" href="https://github.com/Nuand/bladeRF/blob/master/host/common/src/dc_calibration.c">here</a>
- * under an "MIT" license.
- * @{
- */
-
-/**
- * Correction parameter selection
- *
- * These values specify the correction parameter to modify or query when
- * calling bladerf_set_correction() or bladerf_get_correction(). Note that the
- * meaning of the `value` parameter to these functions depends upon the
- * correction parameter.
- *
- */
-typedef enum {
-    /**
-     * Adjusts the in-phase DC offset via controls provided by the LMS6002D
-     * front end. Valid values are [-2048, 2048], which are scaled to the
-     * available control bits in the LMS device.
-     */
-    BLADERF_CORR_LMS_DCOFF_I,
-
-    /**
-     * Adjusts the quadrature DC offset via controls provided the LMS6002D
-     * front end. Valid values are [-2048, 2048], which are scaled to the
-     * available control bits.
-     */
-    BLADERF_CORR_LMS_DCOFF_Q,
-
-    /**
-     * Adjusts FPGA-based phase correction of [-10, 10] degrees, via a provided
-     * count value of [-4096, 4096].
-     */
-    BLADERF_CORR_FPGA_PHASE,
-
-    /**
-     * Adjusts FPGA-based gain correction value in [-1.0, 1.0], via provided
-     * values in the range of [-4096, 4096].
-     */
-    BLADERF_CORR_FPGA_GAIN
-} bladerf_correction;
-
-/**
- * Set the value of the specified configuration parameter
- *
- * See the ::bladerf_correction description for the valid ranges of the
- * `value` parameter.
- *
- * @param       dev         Device handle
- * @param[in]   ch          Channel
- * @param[in]   corr        Correction type
- * @param[in]   value       Value to apply
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_set_correction(struct bladerf *dev, bladerf_channel ch,
-                                     bladerf_correction corr, int16_t value);
-
-/**
- * Obtain the current value of the specified configuration parameter
- *
- * @param       dev         Device handle
- * @param[in]   ch          Channel
- * @param[in]   corr        Correction type
- * @param[out]  value       Current value
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_get_correction(struct bladerf *dev, bladerf_channel ch,
-                                     bladerf_correction corr, int16_t *value);
-
-/** @} (End of FN_BLADERF1_CORR) */
 
 /**
  * @defgroup FN_BLADERF1_LPF_BYPASS LPF Bypass

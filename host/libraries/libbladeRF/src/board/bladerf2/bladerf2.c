@@ -1276,6 +1276,22 @@ static int bladerf2_cancel_scheduled_retunes(struct bladerf *dev, bladerf_channe
 }
 
 /******************************************************************************/
+/* DC/Phase/Gain Correction */
+/******************************************************************************/
+
+static int bladerf2_get_correction(struct bladerf *dev, bladerf_channel ch,
+                                   bladerf_correction corr, int16_t *value)
+{
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
+static int bladerf2_set_correction(struct bladerf *dev, bladerf_channel ch,
+                                   bladerf_correction corr, int16_t value)
+{
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
+/******************************************************************************/
 /* Trigger */
 /******************************************************************************/
 
@@ -1886,6 +1902,8 @@ const struct board_fns bladerf2_board_fns = {
     FIELD_INIT(.get_quick_tune, bladerf2_get_quick_tune),
     FIELD_INIT(.schedule_retune, bladerf2_schedule_retune),
     FIELD_INIT(.cancel_scheduled_retunes, bladerf2_cancel_scheduled_retunes),
+    FIELD_INIT(.get_correction, bladerf2_get_correction),
+    FIELD_INIT(.set_correction, bladerf2_set_correction),
     FIELD_INIT(.trigger_init, bladerf2_trigger_init),
     FIELD_INIT(.trigger_arm, bladerf2_trigger_arm),
     FIELD_INIT(.trigger_fire, bladerf2_trigger_fire),

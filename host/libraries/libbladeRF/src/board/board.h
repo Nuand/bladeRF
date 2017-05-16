@@ -113,6 +113,10 @@ struct board_fns {
     int (*schedule_retune)(struct bladerf *dev, bladerf_channel ch, uint64_t timestamp, uint64_t frequency, struct bladerf_quick_tune *quick_tune);
     int (*cancel_scheduled_retunes)(struct bladerf *dev, bladerf_channel ch);
 
+    /* DC/Phase/Gain Correction */
+    int (*get_correction)(struct bladerf *dev, bladerf_channel ch, bladerf_correction corr, int16_t *value);
+    int (*set_correction)(struct bladerf *dev, bladerf_channel ch, bladerf_correction corr, int16_t value);
+
     /* Trigger */
     int (*trigger_init)(struct bladerf *dev, bladerf_channel ch, bladerf_trigger_signal signal, struct bladerf_trigger *trigger);
     int (*trigger_arm)(struct bladerf *dev, const struct bladerf_trigger *trigger, bool arm, uint64_t resv1, uint64_t resv2);

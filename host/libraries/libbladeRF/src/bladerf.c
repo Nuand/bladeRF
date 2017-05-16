@@ -785,6 +785,34 @@ int bladerf_cancel_scheduled_retunes(struct bladerf *dev, bladerf_channel ch)
 }
 
 /******************************************************************************/
+/* DC/Phase/Gain Correction */
+/******************************************************************************/
+
+int bladerf_get_correction(struct bladerf *dev, bladerf_channel ch,
+                           bladerf_correction corr, int16_t *value)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->get_correction(dev, ch, corr, value);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
+int bladerf_set_correction(struct bladerf *dev, bladerf_channel ch,
+                           bladerf_correction corr, int16_t value)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->set_correction(dev, ch, corr, value);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
+/******************************************************************************/
 /* Trigger */
 /******************************************************************************/
 
