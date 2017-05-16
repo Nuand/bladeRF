@@ -43,7 +43,7 @@ entity rx_meta_fifo is
         q          : out std_logic_vector(LPM_WIDTH_R-1 downto 0);
         rdempty    : out std_logic;
         rdfull     : out std_logic;
-        rdusedw    : out std_logic_vector(integer(ceil(log2(real(LPM_WIDTH))))-1 downto 0);
+        rdusedw    : out std_logic_vector(integer(ceil(log2(real(LPM_NUMWORDS*LPM_WIDTH)/real(LPM_WIDTH_R))))-1 downto 0);
         wrempty    : out std_logic;
         wrfull     : out std_logic;
         wrusedw    : out std_logic_vector(integer(ceil(log2(real(LPM_NUMWORDS))))-1 downto 0)
