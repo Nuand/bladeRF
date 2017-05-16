@@ -25,6 +25,7 @@ library ieee;
     use ieee.math_complex.all;
 
 library work;
+    use work.bladerf;
     use work.bladerf_p.all;
 
 architecture hosted_bladerf of bladerf is

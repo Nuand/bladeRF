@@ -294,105 +294,16 @@ package bladerf_p is
     function unpack( x : std_logic_vector(31 downto 0) ) return nios_gpio_t;
 
     -- ========================================================================
-    -- TYPEDEF RESET CONSTANTS
+    -- TYPEDEF RESET CONSTANTS -- deferred to permit use of pack/unpack
     -- ========================================================================
 
-    constant RFFE_GPO_DEFAULT : rffe_gpo_t := (
-        ctrl_in      => (others => '0'),
-        tx_spdt2     => pack(DISABLED),
-        tx_spdt1     => pack(DISABLED),
-        tx_bias_en   => '0',
-        rx_spdt2     => pack(DISABLED),
-        rx_spdt1     => pack(DISABLED),
-        rx_bias_en   => '0',
-        sync_in      => '0',
-        en_agc       => '0',
-        txnrx        => '0',
-        enable       => '0',
-        reset_n      => '0'
-    );
-
-    constant RFFE_GPI_DEFAULT : rffe_gpi_t := (
-        ctrl_out     => (others => '0')
-    );
-
-    constant FIFO_T_DEFAULT : fifo_t := (
-        aclr    => '1',
-        wclock  => '0',
-        wdata   => (others => '0'),
-        wreq    => '0',
-        wempty  => '1',
-        wfull   => '0',
-        wused   => (others => '0'),
-        rclock  => '0',
-        rdata   => (others => '0'),
-        rreq    => '0',
-        rempty  => '1',
-        rfull   => '0',
-        rused   => (others => '0')
-    );
-
-    constant META_FIFO_TX_T_DEFAULT : meta_fifo_tx_t := (
-        aclr    => '1',
-        wclock  => '0',
-        wdata   => (others => '0'),
-        wreq    => '0',
-        wempty  => '1',
-        wfull   => '0',
-        wused   => (others => '0'),
-        rclock  => '0',
-        rdata   => (others => '0'),
-        rreq    => '0',
-        rempty  => '1',
-        rfull   => '0',
-        rused   => (others => '0')
-    );
-
-    constant META_FIFO_RX_T_DEFAULT : meta_fifo_rx_t := (
-        aclr    => '1',
-        wclock  => '0',
-        wdata   => (others => '0'),
-        wreq    => '0',
-        wempty  => '1',
-        wfull   => '0',
-        wused   => (others => '0'),
-        rclock  => '0',
-        rdata   => (others => '0'),
-        rreq    => '0',
-        rempty  => '1',
-        rfull   => '0',
-        rused   => (others => '0')
-    );
-
-    constant MIMO_2R2T_T_DEFAULT : mimo_2r2t_t := (
-        clock         => '0',
-        reset         => '1',
-        adc_overflow  => '0',
-        adc_underflow => '0',
-        dac_overflow  => '0',
-        dac_underflow => '0',
-        ch            => (others => (
-            dac => (i => (enable => '0',
-                          valid  => '0',
-                          data   => (others => '0')),
-                    q => (enable => '0',
-                          valid  => '0',
-                          data   => (others => '0'))),
-            adc => (i => (enable => '0',
-                          valid  => '0',
-                          data   => (others => '0')),
-                    q => (enable => '0',
-                          valid  => '0',
-                          data   => (others => '0')))
-            ))
-    );
-
-    constant TRIGGER_T_DEFAULT : trigger_t := (
-        arm       => '0',
-        fire      => '0',
-        master    => '0',
-        trig_line => '0'
-    );
+    constant RFFE_GPO_DEFAULT : rffe_gpo_t;
+    constant RFFE_GPI_DEFAULT : rffe_gpi_t;
+    constant FIFO_T_DEFAULT : fifo_t;
+    constant META_FIFO_TX_T_DEFAULT : meta_fifo_tx_t;
+    constant META_FIFO_RX_T_DEFAULT : meta_fifo_rx_t;
+    constant MIMO_2R2T_T_DEFAULT : mimo_2r2t_t;
+    constant TRIGGER_T_DEFAULT : trigger_t;
 
 end package;
 
@@ -529,5 +440,107 @@ package body bladerf_p is
         rv.usb_speed       := x(7);
         return rv;
     end function;
+
+
+    -- ========================================================================
+    -- TYPEDEF RESET CONSTANTS
+    -- ========================================================================
+
+    constant RFFE_GPO_DEFAULT : rffe_gpo_t := (
+        ctrl_in      => (others => '0'),
+        tx_spdt2     => pack(DISABLED),
+        tx_spdt1     => pack(DISABLED),
+        tx_bias_en   => '0',
+        rx_spdt2     => pack(DISABLED),
+        rx_spdt1     => pack(DISABLED),
+        rx_bias_en   => '0',
+        sync_in      => '0',
+        en_agc       => '0',
+        txnrx        => '0',
+        enable       => '0',
+        reset_n      => '0'
+    );
+
+    constant RFFE_GPI_DEFAULT : rffe_gpi_t := (
+        ctrl_out     => (others => '0')
+    );
+
+    constant FIFO_T_DEFAULT : fifo_t := (
+        aclr    => '1',
+        wclock  => '0',
+        wdata   => (others => '0'),
+        wreq    => '0',
+        wempty  => '1',
+        wfull   => '0',
+        wused   => (others => '0'),
+        rclock  => '0',
+        rdata   => (others => '0'),
+        rreq    => '0',
+        rempty  => '1',
+        rfull   => '0',
+        rused   => (others => '0')
+    );
+
+    constant META_FIFO_TX_T_DEFAULT : meta_fifo_tx_t := (
+        aclr    => '1',
+        wclock  => '0',
+        wdata   => (others => '0'),
+        wreq    => '0',
+        wempty  => '1',
+        wfull   => '0',
+        wused   => (others => '0'),
+        rclock  => '0',
+        rdata   => (others => '0'),
+        rreq    => '0',
+        rempty  => '1',
+        rfull   => '0',
+        rused   => (others => '0')
+    );
+
+    constant META_FIFO_RX_T_DEFAULT : meta_fifo_rx_t := (
+        aclr    => '1',
+        wclock  => '0',
+        wdata   => (others => '0'),
+        wreq    => '0',
+        wempty  => '1',
+        wfull   => '0',
+        wused   => (others => '0'),
+        rclock  => '0',
+        rdata   => (others => '0'),
+        rreq    => '0',
+        rempty  => '1',
+        rfull   => '0',
+        rused   => (others => '0')
+    );
+
+    constant MIMO_2R2T_T_DEFAULT : mimo_2r2t_t := (
+        clock         => '0',
+        reset         => '1',
+        adc_overflow  => '0',
+        adc_underflow => '0',
+        dac_overflow  => '0',
+        dac_underflow => '0',
+        ch            => (others => (
+            dac => (i => (enable => '0',
+                          valid  => '0',
+                          data   => (others => '0')),
+                    q => (enable => '0',
+                          valid  => '0',
+                          data   => (others => '0'))),
+            adc => (i => (enable => '0',
+                          valid  => '0',
+                          data   => (others => '0')),
+                    q => (enable => '0',
+                          valid  => '0',
+                          data   => (others => '0')))
+            ))
+    );
+
+    constant TRIGGER_T_DEFAULT : trigger_t := (
+        arm       => '0',
+        fire      => '0',
+        master    => '0',
+        trig_line => '0'
+    );
 
 end package body;
