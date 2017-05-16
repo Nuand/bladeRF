@@ -626,16 +626,6 @@ static int bladerf2_is_fpga_configured(struct bladerf *dev)
     return dev->backend->is_fpga_configured(dev);
 }
 
-static int bladerf2_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim)
-{
-    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
-
-    /* FIXME fetch factory value from SPI flash */
-    *trim = 0x7fff;
-
-    return 0;
-}
-
 static uint64_t bladerf2_get_capabilities(struct bladerf *dev)
 {
     struct bladerf2_board_data *board_data = dev->board_data;
@@ -1751,6 +1741,16 @@ static int bladerf2_get_vctcxo_tamer_mode(struct bladerf *dev,
 /* Low-level VCTCXO Trim DAC access */
 /******************************************************************************/
 
+static int bladerf2_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim)
+{
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
+    /* FIXME fetch factory value from SPI flash */
+    *trim = 0x7fff;
+
+    return 0;
+}
+
 static int bladerf2_trim_dac_read(struct bladerf *dev, uint16_t *trim)
 {
     CHECK_BOARD_STATE(STATE_FPGA_LOADED);
@@ -1858,7 +1858,6 @@ const struct board_fns bladerf2_board_fns = {
     FIELD_INIT(.get_serial, bladerf2_get_serial),
     FIELD_INIT(.get_fpga_size, bladerf2_get_fpga_size),
     FIELD_INIT(.is_fpga_configured, bladerf2_is_fpga_configured),
-    FIELD_INIT(.get_vctcxo_trim, bladerf2_get_vctcxo_trim),
     FIELD_INIT(.get_capabilities, bladerf2_get_capabilities),
     FIELD_INIT(.get_fpga_version, bladerf2_get_fpga_version),
     FIELD_INIT(.get_fw_version, bladerf2_get_fw_version),
@@ -1915,6 +1914,7 @@ const struct board_fns bladerf2_board_fns = {
     FIELD_INIT(.set_rx_mux, bladerf2_set_rx_mux),
     FIELD_INIT(.get_vctcxo_tamer_mode, bladerf2_get_vctcxo_tamer_mode),
     FIELD_INIT(.set_vctcxo_tamer_mode, bladerf2_set_vctcxo_tamer_mode),
+    FIELD_INIT(.get_vctcxo_trim, bladerf2_get_vctcxo_trim),
     FIELD_INIT(.trim_dac_read, bladerf2_trim_dac_read),
     FIELD_INIT(.trim_dac_write, bladerf2_trim_dac_write),
     FIELD_INIT(.read_trigger, bladerf2_read_trigger),

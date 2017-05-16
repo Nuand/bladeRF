@@ -1000,17 +1000,6 @@ static int bladerf1_is_fpga_configured(struct bladerf *dev)
     return dev->backend->is_fpga_configured(dev);
 }
 
-static int bladerf1_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim)
-{
-    struct bladerf1_board_data *board_data = dev->board_data;
-
-    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
-
-    *trim = board_data->dac_trim;
-
-    return 0;
-}
-
 static uint64_t bladerf1_get_capabilities(struct bladerf *dev)
 {
     struct bladerf1_board_data *board_data = dev->board_data;
@@ -2532,6 +2521,17 @@ static int bladerf1_get_vctcxo_tamer_mode(struct bladerf *dev,
 /* Low-level VCTCXO Trim DAC access */
 /******************************************************************************/
 
+static int bladerf1_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim)
+{
+    struct bladerf1_board_data *board_data = dev->board_data;
+
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
+    *trim = board_data->dac_trim;
+
+    return 0;
+}
+
 static int bladerf1_trim_dac_read(struct bladerf *dev, uint16_t *trim)
 {
     struct bladerf1_board_data *board_data = dev->board_data;
@@ -2762,7 +2762,6 @@ const struct board_fns bladerf1_board_fns = {
     FIELD_INIT(.get_serial, bladerf1_get_serial),
     FIELD_INIT(.get_fpga_size, bladerf1_get_fpga_size),
     FIELD_INIT(.is_fpga_configured, bladerf1_is_fpga_configured),
-    FIELD_INIT(.get_vctcxo_trim, bladerf1_get_vctcxo_trim),
     FIELD_INIT(.get_capabilities, bladerf1_get_capabilities),
     FIELD_INIT(.get_fpga_version, bladerf1_get_fpga_version),
     FIELD_INIT(.get_fw_version, bladerf1_get_fw_version),
@@ -2821,6 +2820,7 @@ const struct board_fns bladerf1_board_fns = {
     FIELD_INIT(.set_rx_mux, bladerf1_set_rx_mux),
     FIELD_INIT(.get_vctcxo_tamer_mode, bladerf1_get_vctcxo_tamer_mode),
     FIELD_INIT(.set_vctcxo_tamer_mode, bladerf1_set_vctcxo_tamer_mode),
+    FIELD_INIT(.get_vctcxo_trim, bladerf1_get_vctcxo_trim),
     FIELD_INIT(.trim_dac_read, bladerf1_trim_dac_read),
     FIELD_INIT(.trim_dac_write, bladerf1_trim_dac_write),
     FIELD_INIT(.read_trigger, bladerf1_read_trigger),

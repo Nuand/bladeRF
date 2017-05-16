@@ -68,7 +68,6 @@ struct board_fns {
     int (*get_serial)(struct bladerf *dev, char *serial);
     int (*get_fpga_size)(struct bladerf *dev, bladerf_fpga_size *size);
     int (*is_fpga_configured)(struct bladerf *dev);
-    int (*get_vctcxo_trim)(struct bladerf *dev, uint16_t *trim);
     uint64_t (*get_capabilities)(struct bladerf *dev);
 
     /* Versions */
@@ -157,6 +156,7 @@ struct board_fns {
     int (*get_vctcxo_tamer_mode)(struct bladerf *dev, bladerf_vctcxo_tamer_mode *mode);
 
     /* Low-level VCTCXO Trim DAC access */
+    int (*get_vctcxo_trim)(struct bladerf *dev, uint16_t *trim);
     int (*trim_dac_read)(struct bladerf *dev, uint16_t *trim);
     int (*trim_dac_write)(struct bladerf *dev, uint16_t trim);
 
