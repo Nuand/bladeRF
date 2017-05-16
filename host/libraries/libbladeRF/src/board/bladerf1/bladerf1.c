@@ -2493,6 +2493,42 @@ static int bladerf1_get_rx_mux(struct bladerf *dev, bladerf_rx_mux *mode)
 }
 
 /******************************************************************************/
+/* Low-level VCTCXO Tamer Mode */
+/******************************************************************************/
+
+static int bladerf1_set_vctcxo_tamer_mode(struct bladerf *dev,
+                                          bladerf_vctcxo_tamer_mode mode)
+{
+    struct bladerf1_board_data *board_data = dev->board_data;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    if (!have_cap(board_data->capabilities, BLADERF_CAP_VCTCXO_TAMING_MODE)) {
+        log_debug("FPGA %s does not support VCTCXO taming via an input source\n",
+                  board_data->fpga_version.describe);
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    return dev->backend->set_vctcxo_tamer_mode(dev, mode);
+}
+
+static int bladerf1_get_vctcxo_tamer_mode(struct bladerf *dev,
+                                          bladerf_vctcxo_tamer_mode *mode)
+{
+    struct bladerf1_board_data *board_data = dev->board_data;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    if (!have_cap(board_data->capabilities, BLADERF_CAP_VCTCXO_TAMING_MODE)) {
+        log_debug("FPGA %s does not support VCTCXO taming via an input source\n",
+                  board_data->fpga_version.describe);
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    return dev->backend->get_vctcxo_tamer_mode(dev, mode);
+}
+
+/******************************************************************************/
 /* Low-level VCTCXO Trim DAC access */
 /******************************************************************************/
 
@@ -2783,6 +2819,8 @@ const struct board_fns bladerf1_board_fns = {
     FIELD_INIT(.get_loopback, bladerf1_get_loopback),
     FIELD_INIT(.get_rx_mux, bladerf1_get_rx_mux),
     FIELD_INIT(.set_rx_mux, bladerf1_set_rx_mux),
+    FIELD_INIT(.get_vctcxo_tamer_mode, bladerf1_get_vctcxo_tamer_mode),
+    FIELD_INIT(.set_vctcxo_tamer_mode, bladerf1_set_vctcxo_tamer_mode),
     FIELD_INIT(.trim_dac_read, bladerf1_trim_dac_read),
     FIELD_INIT(.trim_dac_write, bladerf1_trim_dac_write),
     FIELD_INIT(.read_trigger, bladerf1_read_trigger),
@@ -2988,64 +3026,6 @@ int bladerf_get_rxvga2(struct bladerf *dev, int *gain)
 
     MUTEX_UNLOCK(&dev->lock);
 
-    return status;
-}
-
-/******************************************************************************/
-/* VCTCXO Control */
-/******************************************************************************/
-
-int bladerf_set_vctcxo_tamer_mode(struct bladerf *dev,
-                                  bladerf_vctcxo_tamer_mode mode)
-{
-    struct bladerf1_board_data *board_data = dev->board_data;
-    int status;
-
-    if (dev->board != &bladerf1_board_fns)
-        return BLADERF_ERR_UNSUPPORTED;
-
-    MUTEX_LOCK(&dev->lock);
-
-    CHECK_BOARD_STATE_LOCKED(STATE_INITIALIZED);
-
-    if (!have_cap(board_data->capabilities, BLADERF_CAP_VCTCXO_TAMING_MODE)) {
-        log_debug("FPGA %s does not support VCTCXO taming via an input source\n",
-                  board_data->fpga_version.describe);
-        status = BLADERF_ERR_UNSUPPORTED;
-        goto exit;
-    }
-
-    status = dev->backend->set_vctcxo_tamer_mode(dev, mode);
-
-exit:
-    MUTEX_UNLOCK(&dev->lock);
-    return status;
-}
-
-int bladerf_get_vctcxo_tamer_mode(struct bladerf *dev,
-                                  bladerf_vctcxo_tamer_mode *mode)
-{
-    struct bladerf1_board_data *board_data = dev->board_data;
-    int status;
-
-    if (dev->board != &bladerf1_board_fns)
-        return BLADERF_ERR_UNSUPPORTED;
-
-    MUTEX_LOCK(&dev->lock);
-
-    CHECK_BOARD_STATE_LOCKED(STATE_INITIALIZED);
-
-    if (!have_cap(board_data->capabilities, BLADERF_CAP_VCTCXO_TAMING_MODE)) {
-        log_debug("FPGA %s does not support VCTCXO taming via an input source\n",
-                  board_data->fpga_version.describe);
-        status = BLADERF_ERR_UNSUPPORTED;
-        goto exit;
-    }
-
-    status = dev->backend->get_vctcxo_tamer_mode(dev, mode);
-
-exit:
-    MUTEX_UNLOCK(&dev->lock);
     return status;
 }
 

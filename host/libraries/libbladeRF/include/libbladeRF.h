@@ -2776,6 +2776,70 @@ int CALL_CONV bladerf_image_read(struct bladerf_image *image, const char *file);
  */
 
 /**
+ * @defgroup FN_VCTCXO_TAMER VCTCXO Tamer Mode
+ *
+ * This group provides routines for controlling the VTCTXO tamer.  These
+ * functions are thread-safe.
+ *
+ * @{
+ */
+
+/**
+ * VCTCXO Tamer mode selection
+ *
+ * These values control the use of header J71 pin 1 for taming the
+ * on-board VCTCXO to improve or sustain frequency accuracy.
+ *
+ * When supplying input into the VCTCXO tamer, a 1.8V signal must be provided.
+ *
+ * <b>
+ * IMPORTANT: Exceeding 1.8V on J71-1 can damage the associated FPGA I/O bank.
+ * Ensure that you provide only a 1.8V signal!
+ * </b>
+ */
+typedef enum {
+    /** Denotes an invalid selection or state */
+    BLADERF_VCTCXO_TAMER_INVALID = -1,
+
+    /** Do not attempt to tame the VCTCXO with an input source. */
+    BLADERF_VCTCXO_TAMER_DISABLED = 0,
+
+    /** Use a 1 pps input source to tame the VCTCXO. */
+    BLADERF_VCTCXO_TAMER_1_PPS = 1,
+
+    /** Use a 10 MHz input source to tame the VCTCXO. */
+    BLADERF_VCTCXO_TAMER_10_MHZ = 2
+} bladerf_vctcxo_tamer_mode;
+
+/**
+ * Set the VCTCXO tamer mode.
+ *
+ * @param       dev         Device handle
+ * @param[in]   mode        VCTCXO taming mode
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_vctcxo_tamer_mode(struct bladerf *dev,
+                                             bladerf_vctcxo_tamer_mode mode);
+
+/**
+ * Get the current VCTCXO tamer mode
+ *
+ * @param           dev         Device handle
+ * @param[out]      mode        Current VCTCXO taming mode or
+ *                              BLADERF_VCTCXO_TAMER_INVALID if a failure
+ *                              occurs.
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_vctcxo_tamer_mode(struct bladerf *dev,
+                                             bladerf_vctcxo_tamer_mode *mode);
+
+/** @} (End of FN_VCTCXO_TAMER) */
+
+/**
  * @defgroup FN_VCTCXO_TRIM_DAC VCTCXO Trim DAC
  *
  * These functions provide the ability to manipulate the VCTCXO Trim DAC.
@@ -3449,70 +3513,6 @@ int CALL_CONV bladerf_get_correction(struct bladerf *dev, bladerf_channel ch,
                                      bladerf_correction corr, int16_t *value);
 
 /** @} (End of FN_BLADERF1_CORR) */
-
-/**
- * @defgroup FN_BLADERF1_VCTCXO VCTCXO Tamer Mode
- *
- * This group provides routines for controlling the VTCTXO tamer.  These
- * functions are thread-safe.
- *
- * @{
- */
-
-/**
- * VCTCXO Tamer mode selection
- *
- * These values control the use of header J71 pin 1 for taming the
- * on-board VCTCXO to improve or sustain frequency accuracy.
- *
- * When supplying input into the VCTCXO tamer, a 1.8V signal must be provided.
- *
- * <b>
- * IMPORTANT: Exceeding 1.8V on J71-1 can damage the associated FPGA I/O bank.
- * Ensure that you provide only a 1.8V signal!
- * </b>
- */
-typedef enum {
-    /** Denotes an invalid selection or state */
-    BLADERF_VCTCXO_TAMER_INVALID = -1,
-
-    /** Do not attempt to tame the VCTCXO with an input source. */
-    BLADERF_VCTCXO_TAMER_DISABLED = 0,
-
-    /** Use a 1 pps input source to tame the VCTCXO. */
-    BLADERF_VCTCXO_TAMER_1_PPS = 1,
-
-    /** Use a 10 MHz input source to tame the VCTCXO. */
-    BLADERF_VCTCXO_TAMER_10_MHZ = 2
-} bladerf_vctcxo_tamer_mode;
-
-/**
- * Set the VCTCXO tamer mode.
- *
- * @param       dev         Device handle
- * @param[in]   mode        VCTCXO taming mode
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_set_vctcxo_tamer_mode(struct bladerf *dev,
-                                             bladerf_vctcxo_tamer_mode mode);
-
-/**
- * Get the current VCTCXO tamer mode
- *
- * @param           dev         Device handle
- * @param[out]      mode        Current VCTCXO taming mode or
- *                              BLADERF_VCTCXO_TAMER_INVALID if a failure
- *                              occurs.
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_get_vctcxo_tamer_mode(struct bladerf *dev,
-                                             bladerf_vctcxo_tamer_mode *mode);
-
-/** @} (End of FN_BLADERF1_VCTCXO) */
 
 /**
  * @defgroup FN_BLADERF1_LPF_BYPASS LPF Bypass

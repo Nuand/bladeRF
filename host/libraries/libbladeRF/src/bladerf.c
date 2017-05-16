@@ -1157,6 +1157,34 @@ int bladerf_get_rx_mux(struct bladerf *dev, bladerf_rx_mux *mux)
 }
 
 /******************************************************************************/
+/* Low-level VCTCXO Tamer Mode */
+/******************************************************************************/
+
+int bladerf_set_vctcxo_tamer_mode(struct bladerf *dev,
+                                  bladerf_vctcxo_tamer_mode mode)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->set_vctcxo_tamer_mode(dev, mode);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
+int bladerf_get_vctcxo_tamer_mode(struct bladerf *dev,
+                                  bladerf_vctcxo_tamer_mode *mode)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->get_vctcxo_tamer_mode(dev, mode);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
+/******************************************************************************/
 /* Low-level VCTCXO Trim DAC access */
 /******************************************************************************/
 

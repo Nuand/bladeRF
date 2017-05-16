@@ -1732,6 +1732,22 @@ static int bladerf2_get_rx_mux(struct bladerf *dev, bladerf_rx_mux *mode)
 }
 
 /******************************************************************************/
+/* Low-level VCTCXO Tamer Mode */
+/******************************************************************************/
+
+static int bladerf2_set_vctcxo_tamer_mode(struct bladerf *dev,
+                                          bladerf_vctcxo_tamer_mode mode)
+{
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
+static int bladerf2_get_vctcxo_tamer_mode(struct bladerf *dev,
+                                          bladerf_vctcxo_tamer_mode *mode)
+{
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
+/******************************************************************************/
 /* Low-level VCTCXO Trim DAC access */
 /******************************************************************************/
 
@@ -1897,6 +1913,8 @@ const struct board_fns bladerf2_board_fns = {
     FIELD_INIT(.get_loopback, bladerf2_get_loopback),
     FIELD_INIT(.get_rx_mux, bladerf2_get_rx_mux),
     FIELD_INIT(.set_rx_mux, bladerf2_set_rx_mux),
+    FIELD_INIT(.get_vctcxo_tamer_mode, bladerf2_get_vctcxo_tamer_mode),
+    FIELD_INIT(.set_vctcxo_tamer_mode, bladerf2_set_vctcxo_tamer_mode),
     FIELD_INIT(.trim_dac_read, bladerf2_trim_dac_read),
     FIELD_INIT(.trim_dac_write, bladerf2_trim_dac_write),
     FIELD_INIT(.read_trigger, bladerf2_read_trigger),
