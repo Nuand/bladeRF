@@ -49,4 +49,6 @@ proc compile_nuand { root } {
 
     vcom -work nuand -2008 [file join $root ./trigger/trigger.vhd]
     vcom -work nuand -2008 [file join $root ./synthesis/signal_generator.vhd]
+
+    vcom -work nuand -2008 [file join $root ./synthesis/set_clear_ff.vhd]
 }
