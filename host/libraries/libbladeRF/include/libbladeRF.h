@@ -2989,6 +2989,43 @@ int CALL_CONV bladerf_write_trigger(struct bladerf *dev,
 /** @} (End of FN_TRIGGER_CONTROL) */
 
 /**
+ * @defgroup FN_CONFIG_GPIO Configuration GPIO
+ *
+ * These functions provide the ability to read and write the configuration
+ * GPIO.
+ *
+ * These functions are thread-safe.
+ *
+ * @{
+ */
+
+/**
+ * Read the configuration GPIO register.
+ *
+ * @param       dev     Device handle
+ * @param[out]  val     Pointer to variable the data should be read into
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_config_gpio_read(struct bladerf *dev, uint32_t *val);
+
+/**
+ * Write the configuration GPIO register. Callers should be sure to perform a
+ * read-modify-write sequence to avoid accidentally clearing other GPIO bits
+ * that may be set by the library internally.
+ *
+ * @param       dev     Device handle
+ * @param[out]  val     Data to write to GPIO register
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_config_gpio_write(struct bladerf *dev, uint32_t val);
+
+/** @} (End of FN_CONFIG_GPIO) */
+
+/**
  * @defgroup FN_SPI_FLASH SPI Flash
  *
  * These functions provide the ability to erase, read, and write the SPI flash.
@@ -4626,30 +4663,6 @@ int CALL_CONV bladerf_lms_get_dc_cals(struct bladerf *dev,
  * achieving 1 timestamp count per sample.
  * */
 #define BLADERF_GPIO_TIMESTAMP_DIV2 (1 << 17)
-
-/**
- * Read a configuration GPIO register
- *
- * @param       dev     Device handle
- * @param[out]  val     Pointer to variable the data should be read into
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_config_gpio_read(struct bladerf *dev, uint32_t *val);
-
-/**
- * Write a configuration GPIO register. Callers should be sure to perform a
- * read-modify-write sequence to avoid accidentally clearing other
- * GPIO bits that may be set by the library internally.
- *
- * @param       dev     Device handle
- * @param[out]  val     Data to write to GPIO register
- *
- * @return 0 on success, value from \ref RETCODES list on failure
- */
-API_EXPORT
-int CALL_CONV bladerf_config_gpio_write(struct bladerf *dev, uint32_t val);
 
 /**
  * Write value to secondary XB SPI

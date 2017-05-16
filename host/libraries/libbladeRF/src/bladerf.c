@@ -1215,6 +1215,32 @@ int bladerf_write_trigger(struct bladerf *dev, bladerf_channel ch, bladerf_trigg
 }
 
 /******************************************************************************/
+/* Low-level Configuration GPIO access */
+/******************************************************************************/
+
+int bladerf_config_gpio_read(struct bladerf *dev, uint32_t *val)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->config_gpio_read(dev, val);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
+int bladerf_config_gpio_write(struct bladerf *dev, uint32_t val)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->config_gpio_write(dev, val);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
+/******************************************************************************/
 /* Low-level SPI Flash access */
 /******************************************************************************/
 

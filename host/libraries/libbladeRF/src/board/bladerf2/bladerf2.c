@@ -1770,6 +1770,24 @@ static int bladerf2_write_trigger(struct bladerf *dev, bladerf_channel ch,
 }
 
 /******************************************************************************/
+/* Low-level Configuration GPIO access */
+/******************************************************************************/
+
+static int bladerf2_config_gpio_read(struct bladerf *dev, uint32_t *val)
+{
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    return dev->backend->config_gpio_read(dev, val);
+}
+
+static int bladerf2_config_gpio_write(struct bladerf *dev, uint32_t val)
+{
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    return dev->backend->config_gpio_write(dev, val);
+}
+
+/******************************************************************************/
 /* Low-level SPI Flash access */
 /******************************************************************************/
 
@@ -1883,6 +1901,8 @@ const struct board_fns bladerf2_board_fns = {
     FIELD_INIT(.trim_dac_write, bladerf2_trim_dac_write),
     FIELD_INIT(.read_trigger, bladerf2_read_trigger),
     FIELD_INIT(.write_trigger, bladerf2_write_trigger),
+    FIELD_INIT(.config_gpio_read, bladerf2_config_gpio_read),
+    FIELD_INIT(.config_gpio_write, bladerf2_config_gpio_write),
     FIELD_INIT(.erase_flash, bladerf2_erase_flash),
     FIELD_INIT(.read_flash, bladerf2_read_flash),
     FIELD_INIT(.write_flash, bladerf2_write_flash),

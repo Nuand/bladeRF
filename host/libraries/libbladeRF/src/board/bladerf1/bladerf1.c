@@ -2539,6 +2539,24 @@ static int bladerf1_write_trigger(struct bladerf *dev, bladerf_channel ch,
 }
 
 /******************************************************************************/
+/* Low-level Configuration GPIO access */
+/******************************************************************************/
+
+static int bladerf1_config_gpio_read(struct bladerf *dev, uint32_t *val)
+{
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    return dev->backend->config_gpio_read(dev, val);
+}
+
+static int bladerf1_config_gpio_write(struct bladerf *dev, uint32_t val)
+{
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    return dev->backend->config_gpio_write(dev, val);
+}
+
+/******************************************************************************/
 /* Low-level SPI Flash access */
 /******************************************************************************/
 
@@ -2769,6 +2787,8 @@ const struct board_fns bladerf1_board_fns = {
     FIELD_INIT(.trim_dac_write, bladerf1_trim_dac_write),
     FIELD_INIT(.read_trigger, bladerf1_read_trigger),
     FIELD_INIT(.write_trigger, bladerf1_write_trigger),
+    FIELD_INIT(.config_gpio_read, bladerf1_config_gpio_read),
+    FIELD_INIT(.config_gpio_write, bladerf1_config_gpio_write),
     FIELD_INIT(.erase_flash, bladerf1_erase_flash),
     FIELD_INIT(.read_flash, bladerf1_read_flash),
     FIELD_INIT(.write_flash, bladerf1_write_flash),
@@ -3615,44 +3635,3 @@ int bladerf_xb_spi_write(struct bladerf *dev, uint32_t val)
 
     return status;
 }
-
-/******************************************************************************/
-/* Low-level GPIO access */
-/******************************************************************************/
-
-int bladerf_config_gpio_read(struct bladerf *dev, uint32_t *val)
-{
-    int status;
-
-    if (dev->board != &bladerf1_board_fns)
-        return BLADERF_ERR_UNSUPPORTED;
-
-    MUTEX_LOCK(&dev->lock);
-
-    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
-
-    status = dev->backend->config_gpio_read(dev, val);
-
-    MUTEX_UNLOCK(&dev->lock);
-
-    return status;
-}
-
-int bladerf_config_gpio_write(struct bladerf *dev, uint32_t val)
-{
-    int status;
-
-    if (dev->board != &bladerf1_board_fns)
-        return BLADERF_ERR_UNSUPPORTED;
-
-    MUTEX_LOCK(&dev->lock);
-
-    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
-
-    status = dev->backend->config_gpio_write(dev, val);
-
-    MUTEX_UNLOCK(&dev->lock);
-
-    return status;
-}
-
