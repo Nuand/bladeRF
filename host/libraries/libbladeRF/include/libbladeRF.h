@@ -2776,6 +2776,16 @@ int CALL_CONV bladerf_image_read(struct bladerf_image *image, const char *file);
  */
 
 /**
+ * @defgroup FN_VCTCXO_TRIM_DAC VCTCXO Trim DAC
+ *
+ * These functions provide the ability to manipulate the VCTCXO Trim DAC.
+ *
+ * These functions are thread-safe.
+ *
+ * @{
+ */
+
+/**
  * Query a device's VCTCXO calibration trim
  *
  * @param       dev     Device handle
@@ -2817,6 +2827,8 @@ int CALL_CONV bladerf_trim_dac_write(struct bladerf *dev, uint16_t val);
  */
 API_EXPORT
 int CALL_CONV bladerf_trim_dac_read(struct bladerf *dev, uint16_t *val);
+
+/** @} (End of FN_VCTCXO_TRIM_DAC) */
 
 /**
  * @defgroup FN_TUNING_MODE Tuning Mode
