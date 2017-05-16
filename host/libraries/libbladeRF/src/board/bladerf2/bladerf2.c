@@ -1270,7 +1270,7 @@ static int bladerf2_schedule_retune(struct bladerf *dev, bladerf_channel ch, uin
     return BLADERF_ERR_UNSUPPORTED;
 }
 
-int bladerf2_cancel_scheduled_retunes(struct bladerf *dev, bladerf_channel ch)
+static int bladerf2_cancel_scheduled_retunes(struct bladerf *dev, bladerf_channel ch)
 {
     return BLADERF_ERR_UNSUPPORTED;
 }
