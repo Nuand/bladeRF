@@ -179,6 +179,8 @@ architecture sample_shuffler of fx3_gpif is
     signal can_tx, should_tx    :   boolean;
     signal rx_fifo_enough       :   boolean;
     signal tx_fifo_enough       :   boolean;
+    signal rx_fifo_critical     :   boolean;
+
     signal underrun             :   std_logic;
     signal dma_req              :   dma_handshake_t;
     signal gpif_buf_size        :   natural range GPIF_BUF_SIZE_HS to GPIF_BUF_SIZE_SS := GPIF_BUF_SIZE_SS;
@@ -261,11 +263,16 @@ begin
     calculate_fifo_waterlines : process(reset, pclk)
     begin
         if (reset = '1') then
-            rx_fifo_enough  <= false;
-            tx_fifo_enough  <= false;
+            rx_fifo_enough      <= false;
+            rx_fifo_critical    <= false;
+            tx_fifo_enough      <= false;
         elsif (rising_edge(pclk)) then
-            rx_fifo_enough  <= (unsigned(rx_fifo_full&rx_fifo_usedw) >= gpif_buf_size);
-            tx_fifo_enough  <= (unsigned(tx_fifo_usedw) < ((2**(tx_fifo_usedw'length-1) - gpif_buf_size)));
+            -- Do we have at least one block of data in RX buffer?
+            rx_fifo_enough      <= (unsigned(rx_fifo_full&rx_fifo_usedw) >= gpif_buf_size);
+            -- Can we not fit one more block of data in RX buffer?
+            rx_fifo_critical    <= (unsigned(rx_fifo_usedw) >= ((2**(rx_fifo_usedw'length-1) - gpif_buf_size)));
+            -- Do we have room for one more block of data in the TX buffer?
+            tx_fifo_enough      <= (unsigned(tx_fifo_usedw) < ((2**(tx_fifo_usedw'length-1) - gpif_buf_size)));
         end if;
     end process calculate_fifo_waterlines;
 
@@ -319,6 +326,9 @@ begin
     end process gpif_mux;
 
     -- Arbitrate RX and TX requests
+    -- In the event the FX3 simultaneously requests RX and TX, we generally
+    -- prioritize the TX first; this helps avoid discontinuities on the TX
+    -- signal. However, if RX is about to overflow, we'll choose that.
     can_and_should : process(pclk, reset)
     begin
         if (reset = '1') then
@@ -329,8 +339,8 @@ begin
         elsif (rising_edge(pclk)) then
             can_rx      <= dma_rx_enable = '1' and rx_fifo_enough and (dma_req.rx0 = '1' or dma_req.rx1 = '1');
             can_tx      <= dma_tx_enable = '1' and tx_fifo_enough and (dma_req.tx2 = '1' or dma_req.tx3 = '1');
-            should_rx   <= can_rx and not can_tx;
-            should_tx   <= can_tx;
+            should_rx   <= can_rx and (not can_tx or rx_fifo_critical);
+            should_tx   <= can_tx and not rx_fifo_critical;
         end if;
     end process;
 
