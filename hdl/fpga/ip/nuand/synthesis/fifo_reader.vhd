@@ -1,43 +1,63 @@
-library ieee ;
-    use ieee.std_logic_1164.all ;
-    use ieee.numeric_std.all ;
+-- Copyright (c) 2017 Nuand LLC
+--
+-- Permission is hereby granted, free of charge, to any person obtaining a copy
+-- of this software and associated documentation files (the "Software"), to deal
+-- in the Software without restriction, including without limitation the rights
+-- to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+-- copies of the Software, and to permit persons to whom the Software is
+-- furnished to do so, subject to the following conditions:
+--
+-- The above copyright notice and this permission notice shall be included in
+-- all copies or substantial portions of the Software.
+--
+-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+-- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+-- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+-- AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+-- LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+-- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+-- THE SOFTWARE.
+
+library ieee;
+    use ieee.std_logic_1164.all;
+    use ieee.numeric_std.all;
 
 entity fifo_reader is
   port (
-    clock               :   in      std_logic ;
-    reset               :   in      std_logic ;
-    enable              :   in      std_logic ;
+    clock               :   in      std_logic;
+    reset               :   in      std_logic;
+    enable              :   in      std_logic;
 
-    usb_speed           :   in      std_logic ;
-    meta_en             :   in      std_logic ;
+    usb_speed           :   in      std_logic;
+    meta_en             :   in      std_logic;
     timestamp           :   in      unsigned(63 downto 0);
 
     fifo_usedw          :   in      std_logic_vector(11 downto 0);
-    fifo_read           :   buffer  std_logic ;
-    fifo_empty          :   in      std_logic ;
-    fifo_data           :   in      std_logic_vector(31 downto 0) ;
+    fifo_read           :   buffer  std_logic;
+    fifo_empty          :   in      std_logic;
+    fifo_data           :   in      std_logic_vector(31 downto 0);
 
     meta_fifo_usedw     :   in      std_logic_vector(2 downto 0);
-    meta_fifo_read      :   buffer  std_logic ;
-    meta_fifo_empty     :   in      std_logic ;
-    meta_fifo_data      :   in      std_logic_vector(127 downto 0) ;
+    meta_fifo_read      :   buffer  std_logic;
+    meta_fifo_empty     :   in      std_logic;
+    meta_fifo_data      :   in      std_logic_vector(127 downto 0);
 
-    out_i               :   buffer  signed(15 downto 0) ;
-    out_q               :   buffer  signed(15 downto 0) ;
-    out_valid           :   buffer  std_logic ;
+    out_i               :   buffer  signed(15 downto 0);
+    out_q               :   buffer  signed(15 downto 0);
+    out_valid           :   buffer  std_logic;
 
-    underflow_led       :   buffer  std_logic ;
-    underflow_count     :   buffer  unsigned(63 downto 0) ;
+    underflow_led       :   buffer  std_logic;
+    underflow_count     :   buffer  unsigned(63 downto 0);
     underflow_duration  :   in      unsigned(15 downto 0)
-  ) ;
-end entity ;
+  );
+end entity;
 
 architecture simple of fifo_reader is
 
-    signal underflow_detected   :   std_logic ;
-    signal meta_time_go         :   std_logic ;
-    signal meta_time_eq         :   std_logic ;
-    signal meta_time_hit        :   signed(15 downto 0) ;
+    signal underflow_detected   :   std_logic;
+    signal meta_time_go         :   std_logic;
+    signal meta_time_eq         :   std_logic;
+    signal meta_time_hit        :   signed(15 downto 0);
     signal meta_p_time          :   unsigned(63 downto 0);
     signal meta_loaded          :   std_logic;
 
@@ -49,7 +69,7 @@ begin
         if (reset = '1') then
             meta_loaded   <= '0';
             meta_p_time <= (others => '0');
-            meta_fifo_read <= '0' ;
+            meta_fifo_read <= '0';
         elsif( rising_edge(clock) ) then
             meta_fifo_read <= '0';
             if( meta_loaded = '0' ) then
@@ -90,112 +110,111 @@ begin
     read_fifo : process( clock, reset )
     begin
         if( reset = '1' ) then
-            fifo_read <= '0' ;
+            fifo_read <= '0';
         elsif( rising_edge( clock ) ) then
-            fifo_read <= '0' ;
+            fifo_read <= '0';
             if( enable = '1' ) then
                 if( fifo_read = '0' and fifo_empty = '0' ) then
                     if (meta_en = '0' or (meta_en = '1' and meta_time_go = '1')) then
-                        fifo_read <= '1' ;
+                        fifo_read <= '1';
                     end if;
-                end if ;
+                end if;
             else
-                fifo_read <= '0' ;
-            end if ;
-        end if ;
-    end process ;
+                fifo_read <= '0';
+            end if;
+        end if;
+    end process;
 
     register_out_valid : process(clock, reset)
-        constant COUNT_RESET : natural := 11 ;
-        variable prev_enable : std_logic := '0' ;
-        variable downcount : natural range 0 to COUNT_RESET := COUNT_RESET ;
+        constant COUNT_RESET : natural := 11;
+        variable prev_enable : std_logic := '0';
+        variable downcount : natural range 0 to COUNT_RESET := COUNT_RESET;
     begin
         if( reset = '1' ) then
-            out_valid <= '0' ;
-            prev_enable := '0' ;
-            downcount := COUNT_RESET ;
+            out_valid <= '0';
+            prev_enable := '0';
+            downcount := COUNT_RESET;
         elsif( rising_edge(clock) ) then
             if( fifo_empty = '1' ) then
-                out_i <= (others =>'0') ;
-                out_q <= (others =>'0') ;
+                out_i <= (others =>'0');
+                out_q <= (others =>'0');
             else
-                out_i <= resize(signed(fifo_data(11 downto 0)),out_i'length) ;
-                out_q <= resize(signed(fifo_data(27 downto 16)),out_q'length) ;
-            end if ;
+                out_i <= resize(signed(fifo_data(11 downto 0)),out_i'length);
+                out_q <= resize(signed(fifo_data(27 downto 16)),out_q'length);
+            end if;
             if( enable = '1' ) then
                 if( downcount > 0 ) then
                     if( downcount mod 2 = 1 ) then
-                        out_valid <= '1' ;
+                        out_valid <= '1';
                     else
-                        out_valid <= '0' ;
-                    end if ;
-                    downcount := downcount - 1 ;
+                        out_valid <= '0';
+                    end if;
+                    downcount := downcount - 1;
                 else
-                    out_valid <= fifo_read ;
-                end if ;
+                    out_valid <= fifo_read;
+                end if;
             else
-                downcount := COUNT_RESET ;
-            end if ;
-            prev_enable := enable ;
-        end if ;
-    end process ;
+                downcount := COUNT_RESET;
+            end if;
+            prev_enable := enable;
+        end if;
+    end process;
 
     -- Underflow detection
     detect_underflows : process( clock, reset )
     begin
         if( reset = '1' ) then
-            underflow_detected <= '0' ;
+            underflow_detected <= '0';
         elsif( rising_edge( clock ) ) then
-            underflow_detected <= '0' ;
+            underflow_detected <= '0';
             if( enable = '1' and fifo_empty = '1' and (meta_en = '0' or (meta_en = '1' and meta_time_go = '1')) ) then
-                underflow_detected <= '1' ;
-            end if ;
-        end if ;
-    end process ;
+                underflow_detected <= '1';
+            end if;
+        end if;
+    end process;
 
     -- Count the number of times we underflow, but only if they are discontinuous
     -- meaning we have an underflow condition, a non-underflow condition, then
     -- another underflow condition counts as 2 underflows, but an underflow condition
     -- followed by N underflow conditions counts as a single underflow condition.
     count_underflows : process( clock, reset )
-        variable prev_underflow : std_logic := '0' ;
+        variable prev_underflow : std_logic := '0';
     begin
         if( reset = '1' ) then
-            prev_underflow := '0' ;
-            underflow_count <= (others =>'0') ;
+            prev_underflow := '0';
+            underflow_count <= (others =>'0');
         elsif( rising_edge( clock ) ) then
             if( prev_underflow = '0' and underflow_detected = '1' ) then
-                underflow_count <= underflow_count + 1 ;
-            end if ;
-            prev_underflow := underflow_detected ;
-        end if ;
-    end process ;
+                underflow_count <= underflow_count + 1;
+            end if;
+            prev_underflow := underflow_detected;
+        end if;
+    end process;
 
     -- Active high assertion for underflow_duration when the underflow
     -- condition has been detected.  The LED will stay asserted
     -- if multiple underflows have occurred
     blink_underflow_led : process( clock, reset )
-        variable downcount : natural range 0 to 2**underflow_duration'length-1 ;
+        variable downcount : natural range 0 to 2**underflow_duration'length-1;
     begin
         if( reset = '1' ) then
-            downcount := 0 ;
-            underflow_led <= '0' ;
+            downcount := 0;
+            underflow_led <= '0';
         elsif( rising_edge(clock) ) then
             -- Default to not being asserted
-            underflow_led <= '0' ;
+            underflow_led <= '0';
 
             -- Countdown so we can see what happened
             if( downcount > 0 ) then
-                downcount := downcount - 1 ;
-                underflow_led <= '1' ;
-            end if ;
+                downcount := downcount - 1;
+                underflow_led <= '1';
+            end if;
 
             -- Underflow occurred so light it up
             if( underflow_detected = '1' ) then
-                downcount := to_integer(underflow_duration) ;
-            end if ;
-        end if ;
-    end process ;
+                downcount := to_integer(underflow_duration);
+            end if;
+        end if;
+    end process;
 
-end architecture ;
-
+end architecture;
