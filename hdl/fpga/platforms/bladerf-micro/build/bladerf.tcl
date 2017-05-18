@@ -70,13 +70,18 @@ set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS  "HALF SIGNAL SWING" 
 set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS  "HALF SIGNAL SWING" -fall
 
 # Synthesis
-set_global_assignment -name CYCLONEII_OPTIMIZATION_TECHNIQUE        SPEED
+set_global_assignment -name OPTIMIZATION_TECHNIQUE                  SPEED
 set_global_assignment -name PHYSICAL_SYNTHESIS_COMBO_LOGIC          ON
 set_global_assignment -name PHYSICAL_SYNTHESIS_REGISTER_DUPLICATION ON
 set_global_assignment -name PHYSICAL_SYNTHESIS_REGISTER_RETIMING    ON
+set_global_assignment -name SYNTH_PROTECT_SDC_CONSTRAINT            ON
+set_global_assignment -name QII_AUTO_PACKED_REGISTERS               "SPARSE AUTO"
+set_global_assignment -name PHYSICAL_SYNTHESIS_EFFORT               NORMAL
+set_global_assignment -name SYNTHESIS_EFFORT                        AUTO
+
 
 # Fitting
-set_global_assignment -name FITTER_EFFORT                                "STANDARD FIT"
+set_global_assignment -name FITTER_EFFORT                                "AUTO FIT"
 set_global_assignment -name OPTIMIZE_POWER_DURING_FITTING                "EXTRA EFFORT"
 set_global_assignment -name FITTER_AUTO_EFFORT_DESIRED_SLACK_MARGIN      "1 ns"
 set_global_assignment -name ADV_NETLIST_OPT_SYNTH_WYSIWYG_REMAP          ON
@@ -85,6 +90,8 @@ set_global_assignment -name ENABLE_DRC_SETTINGS                          ON
 set_global_assignment -name ROUTER_LCELL_INSERTION_AND_LOGIC_DUPLICATION ON
 set_global_assignment -name ROUTER_TIMING_OPTIMIZATION_LEVEL             MAXIMUM
 set_global_assignment -name AUTO_PACKED_REGISTERS_STRATIXII              NORMAL
+set_global_assignment -name OPTIMIZE_TIMING                             "NORMAL COMPILATION"
+
 #set_instance_assignment -name FAST_INPUT_REGISTER                       ON -to lms_rx_data[*]
 #set_instance_assignment -name FAST_OUTPUT_REGISTER                      ON -to fx3_gpif[*]
 #set_instance_assignment -name FAST_OUTPUT_REGISTER                      ON -to lms_tx_data[*]
