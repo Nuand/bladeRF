@@ -33,19 +33,15 @@ set_false_path -from * -to [get_ports exp_gpio[*]]
 set_false_path -from * -to [get_ports adf_ce]
 
 # FX3 UART interface
-#set_false_path -from * -to [get_ports fx3_uart_rxd]
 set_false_path -from * -to [get_ports fx3_uart_cts]
-set_output_delay -clock [get_clocks {U_system_pll*divclk}] -max 1.0 [get_ports {fx3_uart_rxd}]
-set_output_delay -clock [get_clocks {U_system_pll*divclk}] -min 0.0 [get_ports {fx3_uart_rxd}] -add_delay
-set_input_delay  -clock [get_clocks {U_system_pll*divclk}] -max 1.0 [get_ports {fx3_uart_txd}]
-set_input_delay  -clock [get_clocks {U_system_pll*divclk}] -min 0.0 [get_ports {fx3_uart_txd}] -add_delay
+set_false_path -from * -to [get_ports fx3_uart_rxd]
+set_false_path -from [get_ports fx3_uart_txd] -to *
 
 ## VCTCXO trimdac
 #set_output_delay -clock [get_clocks U_system_pll*0*] -min 0.0 [get_ports {dac_csn dac_sclk dac_sdi}]
 #set_output_delay -clock [get_clocks U_system_pll*0*] -max 0.2 [get_ports {dac_csn dac_sclk dac_sdi}] -add_delay
 
-
-# LED's
+# LEDs
 set_false_path -from * -to [get_ports led*]
 
 # LMS long lived GPIO and RF Switches
