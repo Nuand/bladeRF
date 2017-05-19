@@ -66,6 +66,7 @@ struct printset_entry {
 /* Declarations */
 PRINTSET_DECL(bandwidth)
 PRINTSET_DECL(frequency)
+PRINTSET_DECL(fabric_register)
 PRINTSET_DECL(gpio)
 PRINTSET_DECL(loopback)
 PRINTSET_DECL(lnagain)
@@ -87,6 +88,7 @@ PRINTSET_DECL(xb_gpio_dir)
 struct printset_entry printset_table[] = {
     PRINTSET_ENTRY(bandwidth,       PRINTALL_OPTION_APPEND_NEWLINE),
     PRINTSET_ENTRY(frequency,       PRINTALL_OPTION_APPEND_NEWLINE),
+    PRINTSET_ENTRY(fabric_register, PRINTALL_OPTION_SKIP),
     PRINTSET_ENTRY(gpio,            PRINTALL_OPTION_APPEND_NEWLINE),
     PRINTSET_ENTRY(loopback,        PRINTALL_OPTION_APPEND_NEWLINE),
     PRINTSET_ENTRY(rx_mux,          PRINTALL_OPTION_APPEND_NEWLINE),
@@ -401,6 +403,84 @@ int set_frequency(struct cli_state *state, int argc, char **argv)
             }
 
         }
+    }
+
+    return rv;
+}
+
+int set_fabric_register(struct cli_state *state, int argc, char **argv)
+{
+    int rv = CLI_RET_OK, status;
+    uint8_t addr;
+    uint32_t val;
+    bool ok;
+
+    if ( argc != 4 ) {
+        rv = CLI_RET_NARGS;
+    }
+
+    if( argc == 2 ) {
+        printf( "Usage: set fabric_register <addr> <value>\n" );
+        printf( "\n" );
+        printf( "    addr   Register address\n" );
+        printf( "    value  Register value to write\n" );
+    }
+
+    if ( argc == 4 ) {
+        addr = str2uint(argv[2], 0, 255, &ok);
+        if (!ok) {
+            return CLI_RET_INVPARAM;
+        }
+
+        val = str2uint(argv[3], 0, UINT_MAX, &ok);
+        if (!ok) {
+            return CLI_RET_INVPARAM;
+        }
+
+        status = bladerf_fabric_register_write(state->dev, addr, val);
+        if (status < 0) {
+            state->last_lib_error = status;
+            rv = CLI_RET_LIBBLADERF;
+        } else {
+            printf("  Register %d set to value: %d\n", addr, val);
+        }
+
+    }
+
+    return rv;
+}
+
+int print_fabric_register(struct cli_state *state, int argc, char **argv)
+{
+    int rv = CLI_RET_OK, status;
+    uint8_t addr;
+    uint32_t val;
+    bool ok;
+
+    if ( argc != 3 ) {
+        rv = CLI_RET_NARGS;
+    }
+
+    if( argc == 2 ) {
+        printf( "Usage: print fabric_register <addr>\n" );
+        printf( "\n" );
+        printf( "    addr   Register address\n" );
+    }
+
+    if ( argc == 3 ) {
+        addr = str2uint(argv[2], 0, 255, &ok);
+	    if (!ok) {
+		    return CLI_RET_INVPARAM;
+	    }
+
+        status = bladerf_fabric_register_read(state->dev, addr, &val);
+        if (status < 0) {
+            state->last_lib_error = status;
+            rv = CLI_RET_LIBBLADERF;
+        } else {
+            printf("  Register %d value: %d\n", addr, val);
+        }
+
     }
 
     return rv;
