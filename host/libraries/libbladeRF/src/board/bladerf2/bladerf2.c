@@ -1277,10 +1277,247 @@ static int bladerf2_cancel_scheduled_retunes(struct bladerf *dev, bladerf_channe
 /* DC/Phase/Gain Correction */
 /******************************************************************************/
 
+static const struct {
+    struct {
+        uint16_t reg[2];        /* Low/High band */
+        unsigned int shift;     /* Value scaling */
+    } corr[4];
+} ad9361_correction_reg_table[4] = {
+    [BLADERF_CHANNEL_RX(0)].corr = {
+        [BLADERF_CORR_DCOFF_I] = {
+            .reg = {0, 0},  /* More complex look up */
+            .shift = 0,
+        },
+        [BLADERF_CORR_DCOFF_Q] = {
+            .reg = {0, 0},  /* More complex look up */
+            .shift = 0,
+        },
+        [BLADERF_CORR_PHASE] = {
+            .reg = {REG_RX1_INPUT_A_PHASE_CORR, REG_RX1_INPUT_BC_PHASE_CORR},
+            .shift = 6,
+        },
+        [BLADERF_CORR_GAIN] = {
+            .reg = {REG_RX1_INPUT_A_GAIN_CORR, REG_RX1_INPUT_BC_PHASE_CORR},
+            .shift = 6,
+        }
+    },
+    [BLADERF_CHANNEL_RX(1)].corr = {
+        [BLADERF_CORR_DCOFF_I] = {
+            .reg = {0, 0}, /* More complex look up */
+            .shift = 0,
+        },
+        [BLADERF_CORR_DCOFF_Q] = {
+            .reg = {0, 0}, /* More complex look up */
+            .shift = 0,
+        },
+        [BLADERF_CORR_PHASE] = {
+            .reg = {REG_RX2_INPUT_A_PHASE_CORR, REG_RX2_INPUT_BC_PHASE_CORR},
+            .shift = 6,
+        },
+        [BLADERF_CORR_GAIN] = {
+            .reg = {REG_RX2_INPUT_A_GAIN_CORR, REG_RX2_INPUT_BC_PHASE_CORR},
+            .shift = 6,
+        }
+    },
+    [BLADERF_CHANNEL_TX(0)].corr = {
+        [BLADERF_CORR_DCOFF_I] = {
+            .reg = {REG_TX1_OUT_1_OFFSET_I, REG_TX1_OUT_2_OFFSET_I},
+            .shift = 5,
+        },
+        [BLADERF_CORR_DCOFF_Q] = {
+            .reg = {REG_TX1_OUT_1_OFFSET_Q, REG_TX1_OUT_2_OFFSET_Q},
+            .shift = 5,
+        },
+        [BLADERF_CORR_PHASE] = {
+            .reg = {REG_TX1_OUT_1_PHASE_CORR, REG_TX1_OUT_2_PHASE_CORR},
+            .shift = 6,
+        },
+        [BLADERF_CORR_GAIN] = {
+            .reg = {REG_TX1_OUT_1_GAIN_CORR, REG_TX1_OUT_2_GAIN_CORR},
+            .shift = 6,
+        }
+    },
+    [BLADERF_CHANNEL_TX(1)].corr = {
+        [BLADERF_CORR_DCOFF_I] = {
+            .reg = {REG_TX2_OUT_1_OFFSET_I, REG_TX2_OUT_2_OFFSET_I},
+            .shift = 5,
+        },
+        [BLADERF_CORR_DCOFF_Q] = {
+            .reg = {REG_TX2_OUT_1_OFFSET_Q, REG_TX2_OUT_2_OFFSET_Q},
+            .shift = 5,
+        },
+        [BLADERF_CORR_PHASE] = {
+            .reg = {REG_TX2_OUT_1_PHASE_CORR, REG_TX2_OUT_2_PHASE_CORR},
+            .shift = 6,
+        },
+        [BLADERF_CORR_GAIN] = {
+            .reg = {REG_TX2_OUT_1_GAIN_CORR, REG_TX2_OUT_2_GAIN_CORR},
+            .shift = 6,
+        }
+    },
+};
+
+static const struct {
+    uint16_t reg_top;
+    uint16_t reg_bot;
+} ad9361_correction_rx_dcoff_reg_table[4][2][2] = {
+    /* Channel 1 */
+    [BLADERF_CHANNEL_RX(0)] = {
+        /* A band */
+        {
+            /* I */
+            {REG_INPUT_A_OFFSETS_1, REG_RX1_INPUT_A_OFFSETS},
+            /* Q */
+            {REG_RX1_INPUT_A_OFFSETS, REG_RX1_INPUT_A_Q_OFFSET},
+        },
+        /* B/C band */
+        {
+            /* I */
+            {REG_INPUT_BC_OFFSETS_1, REG_RX1_INPUT_BC_OFFSETS},
+            /* Q */
+            {REG_RX1_INPUT_BC_OFFSETS, REG_RX1_INPUT_BC_Q_OFFSET},
+        },
+    },
+    /* Channel 2 */
+    [BLADERF_CHANNEL_RX(1)] = {
+        /* A band */
+        {
+            /* I */
+            {REG_RX2_INPUT_A_I_OFFSET, REG_RX2_INPUT_A_OFFSETS},
+            /* Q */
+            {REG_RX2_INPUT_A_OFFSETS, REG_INPUT_A_OFFSETS_1},
+        },
+        /* B/C band */
+        {
+            /* I */
+            {REG_RX2_INPUT_BC_I_OFFSET, REG_RX2_INPUT_BC_OFFSETS},
+            /* Q */
+            {REG_RX2_INPUT_BC_OFFSETS, REG_INPUT_BC_OFFSETS_1},
+        },
+    },
+};
+
 static int bladerf2_get_correction(struct bladerf *dev, bladerf_channel ch,
                                    bladerf_correction corr, int16_t *value)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    struct bladerf2_board_data *board_data = dev->board_data;
+    int status;
+    bool low_band;
+    uint16_t reg, data;
+    unsigned int shift;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    /* Validate channel */
+    if (ch != BLADERF_CHANNEL_RX(0) && ch != BLADERF_CHANNEL_RX(1) &&
+            ch != BLADERF_CHANNEL_TX(0) && ch != BLADERF_CHANNEL_TX(1)) {
+        return BLADERF_ERR_INVAL;
+    }
+
+    /* Validate correction */
+    if (corr != BLADERF_CORR_DCOFF_I && corr != BLADERF_CORR_DCOFF_Q &&
+            corr != BLADERF_CORR_PHASE && corr != BLADERF_CORR_GAIN) {
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    /* Look up band */
+    if (ch & BLADERF_TX) {
+        uint32_t mode;
+
+        status = ad9361_get_tx_rf_port_output(board_data->phy, &mode);
+        if (status < 0) {
+            return errno_ad9361_to_bladerf(status);
+        }
+
+        low_band = (mode == TXA);
+    } else {
+        uint32_t mode;
+
+        status = ad9361_get_rx_rf_port_input(board_data->phy, &mode);
+        if (status < 0) {
+            return errno_ad9361_to_bladerf(status);
+        }
+
+        /* Check if RX RF port mode is supported */
+        if (mode != A_BALANCED && mode != B_BALANCED && mode != C_BALANCED) {
+            return BLADERF_ERR_UNSUPPORTED;
+        }
+
+        low_band = (mode == A_BALANCED);
+    }
+
+    if ((corr == BLADERF_CORR_DCOFF_I || corr == BLADERF_CORR_DCOFF_Q) &&
+            (ch & BLADERF_DIRECTION_MASK) == BLADERF_RX) {
+        /* RX DC offset corrections are stuffed in a super convoluted way in
+         * the register map. See AD9361 register map page 51. */
+        bool is_q = (corr == BLADERF_CORR_DCOFF_Q);
+        uint8_t data_top, data_bot;
+        uint16_t data;
+
+        /* Read top register */
+        status = ad9361_spi_read(board_data->phy->spi, ad9361_correction_rx_dcoff_reg_table[ch][low_band][is_q].reg_top);
+        if (status < 0) {
+            return errno_ad9361_to_bladerf(status);
+        }
+        data_top = status;
+
+        /* Read bottom register */
+        status = ad9361_spi_read(board_data->phy->spi, ad9361_correction_rx_dcoff_reg_table[ch][low_band][is_q].reg_bot);
+        if (status < 0) {
+            return errno_ad9361_to_bladerf(status);
+        }
+        data_bot = status;
+
+        if (ch == BLADERF_CHANNEL_RX(0)) {
+            if (!is_q) {
+                /*    top: | x x x x 9 8 7 6 | */
+                /* bottom: | 5 4 3 2 1 0 x x | */
+                data = ((data_top & 0xf) << 6) | (data_bot >> 2);
+            } else {
+                /*    top: | x x x x x x 9 8 | */
+                /* bottom: | 7 6 5 4 3 2 1 0 | */
+                data = ((data_top & 0x3) << 8) | data_bot;
+            }
+        } else {
+            if (!is_q) {
+                /*    top: | 9 8 7 6 5 4 3 2 | */
+                /* bottom: | x x x x x x 1 0 | */
+                data = (data_top << 2) | (data_bot & 0x3);
+            } else {
+                /*    top: | x x 9 8 7 6 5 4 | */
+                /* bottom: | 3 2 1 0 x x x x | */
+                data = (data_top << 4) | (data_bot >> 4);
+            }
+        }
+
+        /* Scale 10-bit to 13-bit */
+        data = data << 3;
+
+        /* Sign extend value */
+        *value = data | ((data & (1 << 12)) ? 0xf000 : 0x0000);
+    } else {
+        /* Look up correction register and value shift in table */
+        reg = ad9361_correction_reg_table[ch].corr[corr].reg[low_band];
+        shift = ad9361_correction_reg_table[ch].corr[corr].shift;
+
+        /* Read register and scale value */
+        status = ad9361_spi_read(board_data->phy->spi, reg);
+        if (status < 0) {
+            return errno_ad9361_to_bladerf(status);
+        }
+
+        /* Scale 8-bit to 12-bit/13-bit */
+        data = status << shift;
+
+        /* Sign extend value */
+        if (shift == 5) {
+            *value = data | ((data & (1 << 12)) ? 0xf000 : 0x0000);
+        } else {
+            *value = data | ((data & (1 << 13)) ? 0xc000 : 0x0000);
+        }
+    }
+
+    return 0;
 }
 
 static int bladerf2_set_correction(struct bladerf *dev, bladerf_channel ch,
