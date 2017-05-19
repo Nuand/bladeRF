@@ -50,7 +50,7 @@
  *
  *  https://github.com/Nuand/bladeRF/blob/master/doc/development/versioning.md
  */
-#define LIBBLADERF_API_VERSION (0x01080000)
+#define LIBBLADERF_API_VERSION (0x01090000)
 
 #ifdef __cplusplus
 extern "C" {
@@ -2751,6 +2751,32 @@ void CALL_CONV bladerf_log_set_verbosity(bladerf_log_level level);
  */
 API_EXPORT
 int CALL_CONV bladerf_get_fw_log(struct bladerf *dev, const char *filename);
+
+/**
+ * Read a register value from the programmable logic register probe
+ *
+ * @param[in]   dev     Device handle
+ * @param[in]   addr    FPGA register address
+ * @param[out]  value   FPGA register value
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_fabric_register_read(struct bladerf *dev,
+                                            uint8_t addr, uint32_t *value);
+
+/**
+ * Write a register value in the programmable logic register probe
+ *
+ * @param[in]   dev     Device handle
+ * @param[in]   addr    FPGA register probe address
+ * @param[in]   value   FPGA register probe value
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_fabric_register_write(struct bladerf *dev,
+                                            uint8_t addr, uint32_t value);
 
 /** @} (End of FN_MISC) */
 
