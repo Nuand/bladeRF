@@ -1598,7 +1598,7 @@ static int bladerf2_set_loopback(struct bladerf *dev, bladerf_loopback l)
         /* Disable digital loopback */
         status = ad9361_bist_loopback(board_data->phy, 0);
         if (status < 0) {
-            return status;
+            return errno_ad9361_to_bladerf(status);
         }
 
         /* Disable firmware loopback */
@@ -1610,7 +1610,7 @@ static int bladerf2_set_loopback(struct bladerf *dev, bladerf_loopback l)
         /* Disable digital loopback */
         status = ad9361_bist_loopback(board_data->phy, 0);
         if (status < 0) {
-            return status;
+            return errno_ad9361_to_bladerf(status);
         }
 
         /* Enable firmware loopback */
