@@ -169,6 +169,30 @@ int nios_set_vctcxo_tamer_mode(struct bladerf *dev,
 int nios_get_vctcxo_tamer_mode(struct bladerf *dev,
                                bladerf_vctcxo_tamer_mode *mode);
 
+/*
+ * Write a register value in the programmable logic register probe
+ *
+ * @param[in]   dev     Device handle
+ * @param[in]   addr    FPGA register probe address
+ * @param[in]   value   FPGA register probe value
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+int nios_fabric_register_write(struct bladerf *dev,
+                                uint8_t addr, uint32_t value);
+
+/*
+ * Read a register value from the programmable logic register probe
+ *
+ * @param[in]   dev     Device handle
+ * @param[in]   addr    FPGA register address
+ * @param[out]  value   FPGA register value
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+int nios_fabric_register_read(struct bladerf *dev,
+                                uint8_t addr, uint32_t *value);
+
 /**
  * Read a IQ gain correction value
  *

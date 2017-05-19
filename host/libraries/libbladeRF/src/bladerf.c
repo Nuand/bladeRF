@@ -1918,6 +1918,33 @@ int bladerf_get_vctcxo_tamer_mode(struct bladerf *dev,
 }
 
 /*------------------------------------------------------------------------------
+ * Fabric register access
+ *----------------------------------------------------------------------------*/
+int bladerf_fabric_register_read(struct bladerf *dev,
+                                    uint8_t addr, uint32_t *value)
+{
+    int status;
+    MUTEX_LOCK(&dev->ctrl_lock);
+
+    status = dev->fn->fabric_register_read(dev, addr, value);
+
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+    return status;
+}
+
+int bladerf_fabric_register_write(struct bladerf *dev,
+                                    uint8_t addr, uint32_t value)
+{
+    int status;
+    MUTEX_LOCK(&dev->ctrl_lock);
+
+    status = dev->fn->fabric_register_write(dev, addr, value);
+
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+    return status;
+}
+
+/*------------------------------------------------------------------------------
  * XB SPI register write
  *----------------------------------------------------------------------------*/
 

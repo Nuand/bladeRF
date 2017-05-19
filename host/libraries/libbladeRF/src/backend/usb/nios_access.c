@@ -522,6 +522,53 @@ int nios_get_vctcxo_tamer_mode(struct bladerf *dev,
     return status;
 }
 
+int nios_fabric_register_write(struct bladerf *dev,
+                                uint8_t addr, uint32_t value)
+{
+    int status;
+
+    if (!have_cap(dev, BLADERF_CAP_FABRIC_REGISTER_ACCESS)) {
+        log_debug("FPGA %s does not support fabric register access\n",
+                  dev->fpga_version.describe);
+
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+
+    status = nios_8x32_write(dev, NIOS_PKT_8x32_TARGET_FABRIC_REGISTER_PROBE,
+                            addr, value);
+
+    if (status == 0) {
+        log_verbose("%s: Wrote addr=0x%02x, value=0x%08x\n", __FUNCTION__, addr, value);
+    }
+
+    return status;
+}
+
+int nios_fabric_register_read(struct bladerf *dev,
+                                uint8_t addr, uint32_t *value)
+{
+    int status;
+    uint32_t tmp;
+
+    *value = 0;
+
+    if (!have_cap(dev, BLADERF_CAP_FABRIC_REGISTER_ACCESS)) {
+        log_debug("FPGA %s does not support fabric register access\n",
+                  dev->fpga_version.describe);
+
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    status = nios_8x32_read(dev, NIOS_PKT_8x32_TARGET_FABRIC_REGISTER_PROBE,
+            addr, &tmp);
+    if (status == 0) {
+        log_verbose("%s: Read addr=0x%02x, value=0x%08x\n", __FUNCTION__, addr, tmp);
+        *value = tmp;
+    }
+
+    return status;
+}
 
 int nios_get_iq_gain_correction(struct bladerf *dev, bladerf_module module,
                                 int16_t *value)
