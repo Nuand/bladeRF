@@ -171,6 +171,23 @@ void vctcxo_trim_dac_write(uint8_t cmd, uint16_t val);
 void vctcxo_trim_dac_read(uint8_t cmd, uint16_t *val);
 
 /**
+ * Write a value to a fabric register
+ *
+ * @param   addr    fabric register addess
+ * @param   val     fabric register value
+ */
+void fabric_register_probe_write(uint8_t addr, uint32_t data);
+
+/**
+ * Read a value from a fabric register
+ *
+ * @param   addr    fabric register addess
+ *
+ * @return  The read register value
+ */
+uint32_t fabric_register_probe_read(uint8_t addr);
+
+/**
  * Write a value to the ADF4351 synthesizer (on the XB-200)
  *
  * @param   val     Value to write

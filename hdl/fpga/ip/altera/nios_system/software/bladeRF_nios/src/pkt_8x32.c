@@ -45,6 +45,10 @@ static inline bool perform_read(uint8_t id, uint8_t addr, uint32_t *data)
             *data = 0x00;
             return false;
 
+        case NIOS_PKT_8x32_TARGET_FABRIC_REGISTER_PROBE:
+            *data = fabric_register_probe_read(addr);
+            break;
+
         default:
             DBG("Invalid id: 0x%02x\n", id);
             *data = 0x00;
@@ -67,6 +71,10 @@ static inline bool perform_write(uint8_t id, uint8_t addr, uint32_t data)
 
         case NIOS_PKT_8x32_TARGET_ADF4351:
             adf4351_write(data);
+            break;
+
+        case NIOS_PKT_8x32_TARGET_FABRIC_REGISTER_PROBE:
+            fabric_register_probe_write(addr, data);
             break;
 
         default:
