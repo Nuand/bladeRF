@@ -49,20 +49,12 @@
          type = "String";
       }
    }
-   element vctcxo_tamer_0
+   element fabric_probe
    {
       datum _sortIndex
       {
-         value = "15";
+         value = "18";
          type = "int";
-      }
-   }
-   element vctcxo_tamer_0.avalon_slave_0
-   {
-      datum baseAddress
-      {
-         value = "37632";
-         type = "String";
       }
    }
    element iq_corr_rx_phase_gain
@@ -117,7 +109,7 @@
    {
       datum _sortIndex
       {
-         value = "16";
+         value = "17";
          type = "int";
       }
    }
@@ -205,7 +197,7 @@
    {
       datum _sortIndex
       {
-         value = "15";
+         value = "16";
          type = "int";
       }
    }
@@ -273,6 +265,22 @@
          type = "String";
       }
    }
+   element vctcxo_tamer_0
+   {
+      datum _sortIndex
+      {
+         value = "15";
+         type = "int";
+      }
+   }
+   element vctcxo_tamer_0.avalon_slave_0
+   {
+      datum baseAddress
+      {
+         value = "37632";
+         type = "String";
+      }
+   }
    element xb_gpio
    {
       datum _sortIndex
@@ -315,7 +323,7 @@
  <parameter name="generateLegacySim" value="false" />
  <parameter name="generationId" value="0" />
  <parameter name="globalResetBus" value="false" />
- <parameter name="hdlLanguage" value="Verilog" />
+ <parameter name="hdlLanguage" value="VERILOG" />
  <parameter name="hideFromIPCatalog" value="false" />
  <parameter name="lockedInterfaceDefinition" value="" />
  <parameter name="maxAdditionalLatency" value="1" />
@@ -325,7 +333,31 @@
  <parameter name="testBenchDutName" value="" />
  <parameter name="timeStamp" value="0" />
  <parameter name="useTestBenchNamingPattern" value="false" />
- <instanceScript></instanceScript>
+ <instanceParameter
+   name="enable_fabric_register_inputs"
+   displayName="enable_fabric_register_inputs"
+   type="integer"
+   defaultValue="0"
+   legalRanges="0 1"
+   description="" />
+ <instanceParameter
+   name="enable_fabric_register_outputs"
+   displayName="enable_fabric_register_outputs"
+   type="integer"
+   defaultValue="0"
+   legalRanges="0 1"
+   description="" />
+ <instanceScript><![CDATA[# request a specific version of the scripting API
+package require -exact qsys 15.0
+
+# Set the name of the procedure to manipulate parameters
+set_module_property COMPOSITION_CALLBACK compose
+
+proc compose {} {
+    # manipulate parameters in here
+    set_instance_parameter_value fabric_probe enable_inputs [ get_parameter_value enable_fabric_register_inputs ]
+    set_instance_parameter_value fabric_probe enable_outputs [ get_parameter_value enable_fabric_register_outputs ]
+}]]></instanceScript>
  <interface name="clk" internal="system_clock.clk_in" type="clock" dir="end" />
  <interface name="command" internal="command_uart.rs232" type="conduit" dir="end" />
  <interface
@@ -344,13 +376,24 @@
    type="conduit"
    dir="end" />
  <interface
-   name="gpio"
-   internal="control.external_connection"
+   name="fabric_probe_in"
+   internal="fabric_probe.in"
    type="conduit"
    dir="end" />
  <interface
-   name="vctcxo_tamer"
-   internal="vctcxo_tamer_0.conduit_end"
+   name="fabric_probe_out"
+   internal="fabric_probe.out"
+   type="conduit"
+   dir="end" />
+ <interface
+   name="fabric_register_probe_0_registers_in"
+   internal="fabric_probe.registers_in" />
+ <interface
+   name="fabric_register_probe_0_registers_out"
+   internal="fabric_probe.registers_out" />
+ <interface
+   name="gpio"
+   internal="control.external_connection"
    type="conduit"
    dir="end" />
  <interface
@@ -385,6 +428,11 @@
    type="conduit"
    dir="end" />
  <interface
+   name="vctcxo_tamer"
+   internal="vctcxo_tamer_0.conduit_end"
+   type="conduit"
+   dir="end" />
+ <interface
    name="xb_gpio"
    internal="xb_gpio.external_connection"
    type="conduit"
@@ -409,7 +457,14 @@
   <parameter name="simDrivenValue" value="0" />
   <parameter name="width" value="32" />
  </module>
- <module name="vctcxo_tamer_0" kind="vctcxo_tamer" version="1.0" enabled="1" />
+ <module
+   name="fabric_probe"
+   kind="fabric_register_probe"
+   version="1.0"
+   enabled="1">
+  <parameter name="enable_inputs" value="true" />
+  <parameter name="enable_outputs" value="true" />
+ </module>
  <module
    name="iq_corr_rx_phase_gain"
    kind="altera_avalon_pio"
@@ -490,7 +545,7 @@
   <parameter name="dataAddrWidth" value="16" />
   <parameter name="dataMasterHighPerformanceAddrWidth" value="1" />
   <parameter name="dataMasterHighPerformanceMapParam" value="" />
-  <parameter name="dataSlaveMapParam"><![CDATA[<address-map><slave name='ram.s1' start='0x4000' end='0x8000' /><slave name='nios2.debug_mem_slave' start='0x8800' end='0x9000' /><slave name='control.s1' start='0x9040' end='0x9060' /><slave name='peripheral_spi.spi_control_port' start='0x9060' end='0x9080' /><slave name='xb_gpio_dir.s1' start='0x90A0' end='0x90B0' /><slave name='xb_gpio.s1' start='0x90B0' end='0x90C0' /><slave name='iq_corr_tx_phase_gain.s1' start='0x90C0' end='0x90D0' /><slave name='iq_corr_rx_phase_gain.s1' start='0x90D0' end='0x90E0' /><slave name='opencores_i2c.bladerf_oc_i2c_master' start='0x90F0' end='0x90F8' /><slave name='jtag_uart.avalon_jtag_slave' start='0x9100' end='0x9108' /><slave name='command_uart.avalon_slave' start='0x9120' end='0x9140' /><slave name='tx_tamer.avalon_slave_0' start='0x9140' end='0x9160' /><slave name='rx_tamer.avalon_slave_0' start='0x9160' end='0x9180' /><slave name='lms_spi.avalon_slave_0' start='0x9200' end='0x9300' /><slave name='vctcxo_tamer_0.avalon_slave_0' start='0x9300' end='0x9400' /><slave name='rx_trigger_ctl.s1' start='0x9400' end='0x9420' /><slave name='tx_trigger_ctl.s1' start='0x9420' end='0x9440' /></address-map>]]></parameter>
+  <parameter name="dataSlaveMapParam"><![CDATA[<address-map><slave name='ram.s1' start='0x4000' end='0x8000' /><slave name='nios2.debug_mem_slave' start='0x8800' end='0x9000' /><slave name='control.s1' start='0x9040' end='0x9060' /><slave name='peripheral_spi.spi_control_port' start='0x9060' end='0x9080' /><slave name='xb_gpio_dir.s1' start='0x90A0' end='0x90B0' /><slave name='xb_gpio.s1' start='0x90B0' end='0x90C0' /><slave name='iq_corr_tx_phase_gain.s1' start='0x90C0' end='0x90D0' /><slave name='iq_corr_rx_phase_gain.s1' start='0x90D0' end='0x90E0' /><slave name='opencores_i2c.bladerf_oc_i2c_master' start='0x90F0' end='0x90F8' /><slave name='jtag_uart.avalon_jtag_slave' start='0x9100' end='0x9108' /><slave name='command_uart.avalon_slave' start='0x9120' end='0x9140' /><slave name='tx_tamer.avalon_slave_0' start='0x9140' end='0x9160' /><slave name='rx_tamer.avalon_slave_0' start='0x9160' end='0x9180' /><slave name='fabric_probe.mm' start='0x9180' end='0x91A0' /><slave name='lms_spi.avalon_slave_0' start='0x9200' end='0x9300' /><slave name='vctcxo_tamer_0.avalon_slave_0' start='0x9300' end='0x9400' /><slave name='rx_trigger_ctl.s1' start='0x9400' end='0x9420' /><slave name='tx_trigger_ctl.s1' start='0x9420' end='0x9440' /></address-map>]]></parameter>
   <parameter name="data_master_high_performance_paddr_base" value="0" />
   <parameter name="data_master_high_performance_paddr_size" value="0" />
   <parameter name="data_master_paddr_base" value="0" />
@@ -746,6 +801,7 @@
   <parameter name="simDrivenValue" value="0" />
   <parameter name="width" value="8" />
  </module>
+ <module name="vctcxo_tamer_0" kind="vctcxo_tamer" version="1.0" enabled="1" />
  <module name="xb_gpio" kind="altera_avalon_pio" version="15.0" enabled="1">
   <parameter name="bitClearingEdgeCapReg" value="false" />
   <parameter name="bitModifyingOutReg" value="false" />
@@ -848,6 +904,15 @@
    end="nios2.debug_mem_slave">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x8800" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection
+   kind="avalon"
+   version="15.0"
+   start="nios2.data_master"
+   end="fabric_probe.mm">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x9180" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection kind="avalon" version="15.0" start="nios2.data_master" end="ram.s1">
@@ -1001,6 +1066,11 @@
    kind="clock"
    version="15.0"
    start="system_clock.clk"
+   end="fabric_probe.clock" />
+ <connection
+   kind="clock"
+   version="15.0"
+   start="system_clock.clk"
    end="opencores_i2c.clock_sink" />
  <connection
    kind="clock"
@@ -1132,6 +1202,11 @@
    version="15.0"
    start="system_clock.clk_reset"
    end="tx_trigger_ctl.reset" />
+ <connection
+   kind="reset"
+   version="15.0"
+   start="system_clock.clk_reset"
+   end="fabric_probe.reset" />
  <connection
    kind="reset"
    version="15.0"
