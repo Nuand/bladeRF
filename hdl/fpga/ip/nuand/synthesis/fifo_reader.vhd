@@ -33,18 +33,18 @@ entity fifo_reader is
     timestamp           :   in      unsigned(63 downto 0);
 
     fifo_usedw          :   in      std_logic_vector(11 downto 0);
-    fifo_read           :   buffer  std_logic;
+    fifo_read           :   buffer  std_logic := '0';
     fifo_empty          :   in      std_logic;
     fifo_data           :   in      std_logic_vector(31 downto 0);
 
     meta_fifo_usedw     :   in      std_logic_vector(2 downto 0);
-    meta_fifo_read      :   buffer  std_logic;
+    meta_fifo_read      :   buffer  std_logic := '0';
     meta_fifo_empty     :   in      std_logic;
     meta_fifo_data      :   in      std_logic_vector(127 downto 0);
 
-    out_i               :   buffer  signed(15 downto 0);
-    out_q               :   buffer  signed(15 downto 0);
-    out_valid           :   buffer  std_logic;
+    out_i               :   buffer  signed(15 downto 0) := (others => '0');
+    out_q               :   buffer  signed(15 downto 0) := (others => '0');
+    out_valid           :   buffer  std_logic := '0';
 
     underflow_led       :   buffer  std_logic;
     underflow_count     :   buffer  unsigned(63 downto 0);
@@ -54,111 +54,229 @@ end entity;
 
 architecture simple of fifo_reader is
 
-    signal underflow_detected   :   std_logic;
-    signal meta_time_go         :   std_logic;
-    signal meta_time_eq         :   std_logic;
-    signal meta_time_hit        :   signed(15 downto 0);
-    signal meta_p_time          :   unsigned(63 downto 0);
-    signal meta_loaded          :   std_logic;
+    constant DMA_BUF_SIZE_SS    : natural   := 1015;
+    constant DMA_BUF_SIZE_HS    : natural   := 503;
 
+    signal   dma_buf_size       : natural range DMA_BUF_SIZE_HS to DMA_BUF_SIZE_SS := DMA_BUF_SIZE_SS;
+    signal   underflow_detected : std_logic := '0';
+
+    type meta_state_t is (
+        META_LOAD,
+        META_WAIT,
+        META_DOWNCOUNT
+    );
+
+    type meta_fsm_t is record
+        state           : meta_state_t;
+        dma_downcount   : natural range 0 to DMA_BUF_SIZE_SS;
+        meta_read       : std_logic;
+        meta_p_time     : unsigned(63 downto 0);
+        meta_time_go    : std_logic;
+    end record;
+
+    constant META_FSM_RESET_VALUE : meta_fsm_t := (
+        state           => META_LOAD,
+        dma_downcount   => 0,
+        meta_read       => '0',
+        meta_p_time     => (others => '-'),
+        meta_time_go    => '0'
+    );
+
+    signal meta_current : meta_fsm_t := META_FSM_RESET_VALUE;
+    signal meta_future  : meta_fsm_t := META_FSM_RESET_VALUE;
+
+    type fifo_state_t is (
+        READ_SAMPLES,
+        READ_THROTTLE
+    );
+
+    type fifo_fsm_t is record
+        state           : fifo_state_t;
+        downcount       : natural range 0 to 255;
+        fifo_read       : std_logic;
+        data_i          : signed(out_i'range);
+        data_q          : signed(out_q'range);
+        data_v          : std_logic;
+    end record;
+
+    constant FIFO_FSM_RESET_VALUE : fifo_fsm_t := (
+        state           => READ_SAMPLES,
+        downcount       => 0,
+        fifo_read       => '0',
+        data_i          => (others => '-'),
+        data_q          => (others => '-'),
+        data_v          => '0'
+    );
+
+    signal fifo_current : fifo_fsm_t := FIFO_FSM_RESET_VALUE;
+    signal fifo_future  : fifo_fsm_t := FIFO_FSM_RESET_VALUE;
 
 begin
 
-    process(clock, reset, meta_fifo_empty, meta_fifo_usedw)
+    -- Determine the DMA buffer size based on USB speed
+    calc_buf_size : process( clock, reset )
     begin
-        if (reset = '1') then
-            meta_loaded   <= '0';
-            meta_p_time <= (others => '0');
-            meta_fifo_read <= '0';
+        if( reset = '1' ) then
+            dma_buf_size <= DMA_BUF_SIZE_SS;
         elsif( rising_edge(clock) ) then
-            meta_fifo_read <= '0';
-            if( meta_loaded = '0' ) then
+            if( usb_speed = '0' ) then
+                dma_buf_size <= DMA_BUF_SIZE_SS;
+            else
+                dma_buf_size <= DMA_BUF_SIZE_HS;
+            end if;
+        end if;
+    end process;
+
+
+    -- ------------------------------------------------------------------------
+    -- META FIFO FSM
+    -- ------------------------------------------------------------------------
+
+    -- Meta FIFO synchronous process
+    meta_fsm_sync : process( clock, reset )
+    begin
+        if( reset = '1' ) then
+            meta_current <= META_FSM_RESET_VALUE;
+        elsif( rising_edge(clock) ) then
+            meta_current <= meta_future;
+        end if;
+    end process;
+
+    -- Meta FIFO combinatorial process
+    meta_fsm_comb : process( all )
+    begin
+
+        meta_future <= meta_current;
+
+        meta_future.meta_read <= '0';
+
+        case meta_current.state is
+
+            when META_LOAD =>
+
+                meta_future.meta_p_time <= unsigned(meta_fifo_data(95 downto 32));
+
+                if( meta_current.dma_downcount = 1 ) then
+                    -- Finish up the previous meta block
+                    meta_future.meta_time_go  <= '1';
+                    meta_future.dma_downcount <= 0;
+                else
+                    meta_future.meta_time_go  <= '0';
+                end if;
+
                 if( meta_fifo_empty = '0' ) then
-                    meta_p_time <= unsigned(meta_fifo_data(95 downto 32));
-                    meta_loaded <= '1';
-                    meta_fifo_read <= '1';
+                    meta_future.meta_read <= '1';
+                    meta_future.state     <= META_WAIT;
                 end if;
-            else
-                if (meta_time_eq = '1') then
-                    meta_loaded <= '0';
-                end if;
-            end if;
-        end if;
-    end process;
-    meta_time_eq <= '1' when (enable = '1' and meta_loaded = '1' and ((meta_p_time = 0 and meta_time_hit = 0) or (timestamp >= meta_p_time and meta_p_time /= 0))) else '0';
-    process(clock, reset)
-    begin
-        if (reset = '1') then
-            meta_time_hit <= (others => '0');
-        elsif(rising_edge(clock)) then
-            if (meta_time_eq = '1') then
-                if (usb_speed = '0') then
-                    meta_time_hit <= to_signed(1015, meta_time_hit'length);
-                else
-                    meta_time_hit <= to_signed(503, meta_time_hit'length);
-                end if;
-            else
-                if (meta_time_hit > 0) then
-                    meta_time_hit <= meta_time_hit - 1;
-                end if;
-            end if;
-        end if;
-    end process;
-    meta_time_go <= '1' when (meta_en = '1' and (meta_time_eq = '1' or meta_time_hit > 0 )) else '0';
 
-    -- Assumes we want to read every other clock cycle
-    read_fifo : process( clock, reset )
-    begin
-        if( reset = '1' ) then
-            fifo_read <= '0';
-        elsif( rising_edge( clock ) ) then
-            fifo_read <= '0';
-            if( enable = '1' ) then
-                if( fifo_read = '0' and fifo_empty = '0' ) then
-                    if (meta_en = '0' or (meta_en = '1' and meta_time_go = '1')) then
-                        fifo_read <= '1';
-                    end if;
+            when META_WAIT =>
+
+                meta_future.dma_downcount <= dma_buf_size;
+
+                if( timestamp >= meta_current.meta_p_time ) then
+                    meta_future.meta_time_go <= '1';
+                    meta_future.state        <= META_DOWNCOUNT;
                 end if;
-            else
-                fifo_read <= '0';
-            end if;
+
+            when META_DOWNCOUNT =>
+
+                meta_future.meta_time_go  <= '1';
+                meta_future.dma_downcount <= meta_current.dma_downcount - 1;
+
+                if( meta_current.dma_downcount = 2 ) then
+                    -- Look for 2 because of the 2 cycles passing
+                    -- through META_LOAD and META_WAIT after this.
+                    meta_future.state <= META_LOAD;
+                end if;
+
+            when others =>
+
+                meta_future.state <= META_LOAD;
+
+        end case;
+
+        -- Abort?
+        if( (enable = '0') or (meta_en = '0') ) then
+            meta_future <= META_FSM_RESET_VALUE;
         end if;
+
+        -- Output assignments
+        meta_fifo_read <= meta_current.meta_read;
+
     end process;
 
-    register_out_valid : process(clock, reset)
-        constant COUNT_RESET : natural := 11;
-        variable prev_enable : std_logic := '0';
-        variable downcount : natural range 0 to COUNT_RESET := COUNT_RESET;
+
+    -- ------------------------------------------------------------------------
+    -- SAMPLE FIFO FSM
+    -- ------------------------------------------------------------------------
+
+    -- Sample FIFO synchronous process
+    fifo_fsm_sync : process( clock, reset )
     begin
         if( reset = '1' ) then
-            out_valid <= '0';
-            prev_enable := '0';
-            downcount := COUNT_RESET;
+            fifo_current <= FIFO_FSM_RESET_VALUE;
         elsif( rising_edge(clock) ) then
-            if( fifo_empty = '1' ) then
-                out_i <= (others =>'0');
-                out_q <= (others =>'0');
-            else
-                out_i <= resize(signed(fifo_data(11 downto 0)),out_i'length);
-                out_q <= resize(signed(fifo_data(27 downto 16)),out_q'length);
-            end if;
-            if( enable = '1' ) then
-                if( downcount > 0 ) then
-                    if( downcount mod 2 = 1 ) then
-                        out_valid <= '1';
-                    else
-                        out_valid <= '0';
-                    end if;
-                    downcount := downcount - 1;
-                else
-                    out_valid <= fifo_read;
-                end if;
-            else
-                downcount := COUNT_RESET;
-            end if;
-            prev_enable := enable;
+            fifo_current <= fifo_future;
         end if;
     end process;
+
+    -- Sample FIFO combinatorial process
+    fifo_fsm_comb : process( all )
+    begin
+
+        fifo_future <= fifo_current;
+
+        fifo_future.fifo_read <= '0';
+        fifo_future.data_i    <= resize(signed(fifo_data(11 downto 0)) , fifo_future.data_i'length);
+        fifo_future.data_q    <= resize(signed(fifo_data(27 downto 16)), fifo_future.data_q'length);
+        fifo_future.data_v    <= '0';
+
+        case fifo_current.state is
+
+            when READ_SAMPLES =>
+
+                fifo_future.downcount <= 0;
+
+                if( fifo_empty = '0' and
+                    (meta_en = '0' or (meta_en = '1' and meta_current.meta_time_go = '1')) ) then
+                    fifo_future.fifo_read <= '1';
+                    fifo_future.data_v    <= '1';
+                    fifo_future.state     <= READ_THROTTLE;
+                end if;
+
+            when READ_THROTTLE =>
+
+                if( fifo_current.downcount = 0 ) then
+                    fifo_future.state     <= READ_SAMPLES;
+                else
+                    fifo_future.downcount <= fifo_current.downcount - 1;
+                end if;
+
+            when others =>
+
+                fifo_future.state <= READ_SAMPLES;
+
+        end case;
+
+        -- Abort?
+        if( enable = '0' ) then
+            fifo_future.fifo_read <= '0';
+            fifo_future.data_v    <= '0';
+            fifo_future.state     <= FIFO_FSM_RESET_VALUE.state;
+        end if;
+
+        -- Output assignments
+        fifo_read <= fifo_current.fifo_read;
+        out_i     <= fifo_current.data_i;
+        out_q     <= fifo_current.data_q;
+        out_valid <= fifo_current.data_v;
+
+    end process;
+
+
+    -- ------------------------------------------------------------------------
+    -- UNDERFLOW
+    -- ------------------------------------------------------------------------
 
     -- Underflow detection
     detect_underflows : process( clock, reset )
@@ -167,7 +285,8 @@ begin
             underflow_detected <= '0';
         elsif( rising_edge( clock ) ) then
             underflow_detected <= '0';
-            if( enable = '1' and fifo_empty = '1' and (meta_en = '0' or (meta_en = '1' and meta_time_go = '1')) ) then
+            if( enable = '1' and fifo_empty = '1' and
+                (meta_en = '0' or (meta_en = '1' and meta_current.meta_time_go = '1')) ) then
                 underflow_detected <= '1';
             end if;
         end if;
@@ -181,7 +300,7 @@ begin
         variable prev_underflow : std_logic := '0';
     begin
         if( reset = '1' ) then
-            prev_underflow := '0';
+            prev_underflow  := '0';
             underflow_count <= (others =>'0');
         elsif( rising_edge( clock ) ) then
             if( prev_underflow = '0' and underflow_detected = '1' ) then
@@ -195,18 +314,18 @@ begin
     -- condition has been detected.  The LED will stay asserted
     -- if multiple underflows have occurred
     blink_underflow_led : process( clock, reset )
-        variable downcount : natural range 0 to 2**underflow_duration'length-1;
+        variable downcount : natural range 0 to 2**underflow_duration'length-1 := 0;
     begin
         if( reset = '1' ) then
-            downcount := 0;
+            downcount     := 0;
             underflow_led <= '0';
         elsif( rising_edge(clock) ) then
             -- Default to not being asserted
             underflow_led <= '0';
 
             -- Countdown so we can see what happened
-            if( downcount > 0 ) then
-                downcount := downcount - 1;
+            if( downcount /= 0 ) then
+                downcount     := downcount - 1;
                 underflow_led <= '1';
             end if;
 
