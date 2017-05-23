@@ -192,12 +192,12 @@ begin
 
             when META_DOWNCOUNT =>
 
+                meta_future.dma_downcount <= meta_current.dma_downcount - 1;
+
                 if( meta_current.dma_downcount = 2 ) then
                     -- Look for 2 because of the 2 cycles passing
                     -- through IDLE and META_WRITE after this.
                     meta_future.state <= IDLE;
-                else
-                    meta_future.dma_downcount <= meta_current.dma_downcount - 1;
                 end if;
 
             when others =>
@@ -208,8 +208,9 @@ begin
 
         -- Abort?
         if( (enable = '0') or (meta_en = '0') ) then
-            meta_future.state         <= IDLE;
+            meta_future.meta_write    <= '0';
             meta_future.meta_written  <= '0';
+            meta_future.state         <= IDLE;
         end if;
 
         -- Output assignments
@@ -320,7 +321,7 @@ begin
         variable prev_overflow : std_logic := '0';
     begin
         if( reset = '1' ) then
-            prev_overflow := '0';
+            prev_overflow  := '0';
             overflow_count <= (others =>'0');
         elsif( rising_edge( clock ) ) then
             if( prev_overflow = '0' and overflow_detected = '1' ) then
@@ -337,7 +338,7 @@ begin
         variable downcount : natural range 0 to 2**overflow_duration'length-1;
     begin
         if( reset = '1' ) then
-            downcount := 0;
+            downcount    := 0;
             overflow_led <= '0';
         elsif( rising_edge(clock) ) then
             -- Default to not being asserted
