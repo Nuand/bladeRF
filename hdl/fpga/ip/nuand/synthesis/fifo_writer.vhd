@@ -122,6 +122,11 @@ architecture simple of fifo_writer is
 
 begin
 
+    -- Throw an error if port widths don't make sense
+    assert (fifo_data'length >= (NUM_STREAMS*2*in_samples(in_samples'low).data_i'length) )
+        report "fifo_data port width too narrow to support " & integer'image(NUM_STREAMS) & " MIMO streams."
+        severity failure;
+
     -- Determine the DMA buffer size based on USB speed
     calc_buf_size : process( clock, reset )
     begin
@@ -241,14 +246,27 @@ begin
 
     -- Sample FIFO combinatorial process
     fifo_fsm_comb : process( all )
+        variable max_bit : natural range fifo_data'range := 0;
+        variable min_bit : natural range fifo_data'range := 0;
     begin
 
         fifo_future            <= fifo_current;
 
         fifo_future.fifo_clear <= '0';
         fifo_future.fifo_write <= '0';
-        fifo_future.fifo_data  <= std_logic_vector(in_samples(in_samples'low).data_q &
-                                                   in_samples(in_samples'low).data_i);
+
+        -- TODO: Make this more bandwidth-efficient so we're not transmitting
+        --       zeroes over the USB interface.
+        for i in in_sample_controls'range loop
+            max_bit := (((2*in_samples(i).data_i'length)*(i+1))-1);
+            min_bit := ((2*in_samples(i).data_i'length)*i);
+            if( in_sample_controls(i).enable = '1' ) then
+                fifo_future.fifo_data(max_bit downto min_bit) <= std_logic_vector(
+                    in_samples(i).data_q & in_samples(i).data_i);
+            else
+                fifo_future.fifo_data(max_bit downto min_bit) <= (others => '0');
+            end if;
+        end loop;
 
         case fifo_current.state is
 

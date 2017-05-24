@@ -30,7 +30,7 @@ entity fifo_reader is
         NUM_STREAMS           : natural := 1;
         FIFO_USEDW_WIDTH      : natural := 12;
         FIFO_DATA_WIDTH       : natural := 32;
-        META_FIFO_USEDW_WIDTH : natural := 5;
+        META_FIFO_USEDW_WIDTH : natural := 3;
         META_FIFO_DATA_WIDTH  : natural := 128
     );
     port (
@@ -42,15 +42,15 @@ entity fifo_reader is
         meta_en             :   in      std_logic;
         timestamp           :   in      unsigned(63 downto 0);
 
-        fifo_usedw          :   in      std_logic_vector(11 downto 0);
+        fifo_usedw          :   in      std_logic_vector(FIFO_USEDW_WIDTH-1 downto 0);
         fifo_read           :   buffer  std_logic := '0';
         fifo_empty          :   in      std_logic;
-        fifo_data           :   in      std_logic_vector(31 downto 0);
+        fifo_data           :   in      std_logic_vector(FIFO_DATA_WIDTH-1 downto 0);
 
-        meta_fifo_usedw     :   in      std_logic_vector(2 downto 0);
+        meta_fifo_usedw     :   in      std_logic_vector(META_FIFO_USEDW_WIDTH-1 downto 0);
         meta_fifo_read      :   buffer  std_logic := '0';
         meta_fifo_empty     :   in      std_logic;
-        meta_fifo_data      :   in      std_logic_vector(127 downto 0);
+        meta_fifo_data      :   in      std_logic_vector(META_FIFO_DATA_WIDTH-1 downto 0);
 
         in_sample_controls  :   in      sample_controls_t(0 to NUM_STREAMS-1) := (others => SAMPLE_CONTROL_DISABLE);
         out_samples         :   out     sample_streams_t(0 to NUM_STREAMS-1)  := (others => ZERO_SAMPLE);
@@ -103,18 +103,14 @@ architecture simple of fifo_reader is
         state           : fifo_state_t;
         downcount       : natural range 0 to 255;
         fifo_read       : std_logic;
-        data_i          : signed(out_samples(out_samples'low).data_i'range);
-        data_q          : signed(out_samples(out_samples'low).data_q'range);
-        data_v          : std_logic;
+        out_samples     : sample_streams_t(out_samples'range);
     end record;
 
     constant FIFO_FSM_RESET_VALUE : fifo_fsm_t := (
         state           => READ_SAMPLES,
         downcount       => 0,
         fifo_read       => '0',
-        data_i          => (others => '-'),
-        data_q          => (others => '-'),
-        data_v          => '0'
+        out_samples     => (others => ZERO_SAMPLE)
     );
 
     signal fifo_current : fifo_fsm_t := FIFO_FSM_RESET_VALUE;
@@ -231,14 +227,35 @@ begin
 
     -- Sample FIFO combinatorial process
     fifo_fsm_comb : process( all )
+        variable max_bit_i : natural range fifo_data'range := 0;
+        variable min_bit_i : natural range fifo_data'range := 0;
+        variable max_bit_q : natural range fifo_data'range := 0;
+        variable min_bit_q : natural range fifo_data'range := 0;
+        variable read_req  : std_logic                     := '0';
     begin
 
         fifo_future <= fifo_current;
 
         fifo_future.fifo_read <= '0';
-        fifo_future.data_i    <= resize(signed(fifo_data(11 downto 0)) , fifo_future.data_i'length);
-        fifo_future.data_q    <= resize(signed(fifo_data(27 downto 16)), fifo_future.data_q'length);
-        fifo_future.data_v    <= '0';
+
+        -- TODO: Make this more bandwidth-efficient so we're not transmitting
+        --       zeroes over the USB interface.
+        for i in in_sample_controls'range loop
+            max_bit_i := 11 + ((2*out_samples(i).data_i'length)*i);
+            min_bit_i :=  0 + ((2*out_samples(i).data_i'length)*i);
+            max_bit_q := 27 + ((2*out_samples(i).data_i'length)*i);
+            min_bit_q := 16 + ((2*out_samples(i).data_i'length)*i);
+            if( in_sample_controls(i).enable = '1' ) then
+                fifo_future.out_samples(i).data_i <=
+                    resize(signed(fifo_data(max_bit_i downto min_bit_i)),fifo_future.out_samples(i).data_i'length);
+                fifo_future.out_samples(i).data_q <=
+                    resize(signed(fifo_data(max_bit_q downto min_bit_q)),fifo_future.out_samples(i).data_q'length);
+            else
+                fifo_future.out_samples(i).data_i <= (others => '0');
+                fifo_future.out_samples(i).data_q <= (others => '0');
+            end if;
+            fifo_future.out_samples(i).data_v <= '0';
+        end loop;
 
         case fifo_current.state is
 
@@ -248,8 +265,14 @@ begin
 
                 if( fifo_empty = '0' and
                     (meta_en = '0' or (meta_en = '1' and meta_current.meta_time_go = '1')) ) then
-                    fifo_future.fifo_read <= '1';
-                    fifo_future.data_v    <= '1';
+
+                    read_req := '0';
+                    for i in in_sample_controls'range loop
+                        read_req := read_req or in_sample_controls(i).data_req;
+                        fifo_future.out_samples(i).data_v <= in_sample_controls(i).data_req;
+                    end loop;
+
+                    fifo_future.fifo_read <= read_req;
                     fifo_future.state     <= READ_THROTTLE;
                 end if;
 
@@ -270,15 +293,15 @@ begin
         -- Abort?
         if( enable = '0' ) then
             fifo_future.fifo_read <= '0';
-            fifo_future.data_v    <= '0';
             fifo_future.state     <= FIFO_FSM_RESET_VALUE.state;
+            for i in fifo_current.out_samples'range loop
+                fifo_future.out_samples(i).data_v <= '0';
+            end loop;
         end if;
 
         -- Output assignments
-        fifo_read <= fifo_current.fifo_read;
-        out_samples(out_samples'low).data_i <= fifo_current.data_i;
-        out_samples(out_samples'low).data_q <= fifo_current.data_q;
-        out_samples(out_samples'low).data_v <= fifo_current.data_v;
+        fifo_read   <= fifo_current.fifo_read;
+        out_samples <= fifo_current.out_samples;
 
     end process;
 

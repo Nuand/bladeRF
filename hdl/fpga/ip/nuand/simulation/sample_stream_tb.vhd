@@ -25,7 +25,7 @@ architecture arch of sample_stream_tb is
     constant TX_HALF_PERIOD     :   time        := 1.0/(9.0e6)/2.0*1 sec ;
     constant RX_HALF_PERIOD     :   time        := 1.0/(9.0e6)/2.0*1 sec ;
 
-    constant NUM_MIMO_STREAMS   :   natural     := 1;
+    constant NUM_MIMO_STREAMS   :   natural     := 2;
 
     -- Clocks
     signal fx3_clock            :   std_logic   := '1' ;
@@ -97,8 +97,8 @@ architecture arch of sample_stream_tb is
     end record ;
 
     -- FIFOs
-    signal txfifo       :   fifo_t( data( 31 downto 0), q( 31 downto 0), rdusedw(11 downto 0), wrusedw(11 downto 0) ) ;
-    signal rxfifo       :   fifo_t( data( 31 downto 0), q( 31 downto 0), rdusedw(11 downto 0), wrusedw(11 downto 0) ) ;
+    signal txfifo       :   fifo_t( data( 31 downto 0), q( 63 downto 0), rdusedw(11 downto 0), wrusedw(11 downto 0) ) ;
+    signal rxfifo       :   fifo_t( data( 63 downto 0), q( 31 downto 0), rdusedw(11 downto 0), wrusedw(11 downto 0) ) ;
     signal txmeta       :   fifo_t( data( 31 downto 0), q(127 downto 0), rdusedw( 2 downto 0), wrusedw( 4 downto 0) ) ;
     signal rxmeta       :   fifo_t( data(127 downto 0), q( 31 downto 0), rdusedw( 6 downto 0), wrusedw( 4 downto 0) ) ;
 
@@ -149,7 +149,7 @@ begin
         rdreq               =>  txfifo.rdreq,
         wrclk               =>  txfifo.wrclk,
         wrreq               =>  txfifo.wrreq,
-        q                   =>  txfifo.q,
+        q                   =>  txfifo.q(31 downto 0),
         rdempty             =>  txfifo.rdempty,
         rdfull              =>  txfifo.rdfull,
         rdusedw             =>  txfifo.rdusedw,
@@ -157,6 +157,10 @@ begin
         wrfull              =>  txfifo.wrfull,
         wrusedw             =>  txfifo.wrusedw
       ) ;
+
+    -- Channel 1, swap I and Q of Channel 0
+    txfifo.q(63 downto 48) <= txfifo.q(15 downto 0);
+    txfifo.q(47 downto 32) <= txfifo.q(31 downto 16);
 
     -- TX Meta FIFO
     txmeta.rdclk <= tx_clock ;
@@ -184,7 +188,7 @@ begin
     U_rx_fifo : entity work.rx_fifo
       port map (
         aclr                =>  rxfifo.aclr,
-        data                =>  rxfifo.data,
+        data                =>  rxfifo.data(31 downto 0),
         rdclk               =>  rxfifo.rdclk,
         rdreq               =>  rxfifo.rdreq,
         wrclk               =>  rxfifo.wrclk,
@@ -220,6 +224,13 @@ begin
 
     -- TX FIFO Reader
     U_fifo_reader : entity work.fifo_reader
+      generic map (
+        NUM_STREAMS           => NUM_MIMO_STREAMS,
+        FIFO_USEDW_WIDTH      => txfifo.rdusedw'length,
+        FIFO_DATA_WIDTH       => txfifo.q'length,
+        META_FIFO_USEDW_WIDTH => txmeta.rdusedw'length,
+        META_FIFO_DATA_WIDTH  => txmeta.q'length
+      )
       port map (
         clock               =>  tx_clock,
         reset               =>  reset,
@@ -239,7 +250,8 @@ begin
         meta_fifo_empty     =>  txmeta.rdempty,
         meta_fifo_data      =>  txmeta.q,
 
-        in_sample_controls  =>  (others => SAMPLE_CONTROL_ENABLE),
+        in_sample_controls  =>  (0 => SAMPLE_CONTROL_ENABLE,
+                                 1 => SAMPLE_CONTROL_ENABLE),
         out_samples         =>  tx_samples,
 
         underflow_led       =>  underflow_led,
@@ -259,6 +271,13 @@ begin
 
     -- RX FIFO Writer
     U_fifo_writer : entity work.fifo_writer
+      generic map (
+        NUM_STREAMS           => NUM_MIMO_STREAMS,
+        FIFO_USEDW_WIDTH      => rxfifo.wrusedw'length,
+        FIFO_DATA_WIDTH       => rxfifo.data'length,
+        META_FIFO_USEDW_WIDTH => rxmeta.wrusedw'length,
+        META_FIFO_DATA_WIDTH  => rxmeta.data'length
+      )
       port map (
         clock               =>  rx_clock,
         reset               =>  reset,
@@ -268,7 +287,8 @@ begin
         meta_en             =>  meta_en,
         timestamp           =>  rx_timestamp,
 
-        in_sample_controls  =>  (others => SAMPLE_CONTROL_ENABLE),
+        in_sample_controls  =>  (0 => SAMPLE_CONTROL_ENABLE,
+                                 1 => SAMPLE_CONTROL_ENABLE),
         in_samples          =>  rx_samples,
 
         fifo_clear          =>  rxfifo.aclr,
@@ -293,9 +313,9 @@ begin
     rx_samples(0).data_v <= rx_sample_valid;
 
     -- Channel 1, swap I and Q for something different
-    --rx_samples(1).data_i <= rx_sample_q;
-    --rx_samples(1).data_q <= rx_sample_i;
-    --rx_samples(1).data_v <= rx_sample_valid;
+    rx_samples(1).data_i <= rx_sample_q;
+    rx_samples(1).data_q <= rx_sample_i;
+    rx_samples(1).data_v <= rx_sample_valid;
 
     -- LMS Sample Interface
     U_lms6002d : entity work.lms6002d
