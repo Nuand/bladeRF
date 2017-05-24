@@ -73,7 +73,6 @@ struct bladerf1_board_data {
         STATE_FIRMWARE_LOADED,
         STATE_FPGA_LOADED,
         STATE_INITIALIZED,
-        STATE_CALIBRATED,
     } state;
 
     /* Bitmask of capabilities determined by version numbers */
@@ -136,7 +135,6 @@ static const char *bladerf1_state_to_string[] = {
     [STATE_FIRMWARE_LOADED] = "Firmware Loaded",
     [STATE_FPGA_LOADED]     = "FPGA Loaded",
     [STATE_INITIALIZED]     = "Initialized",
-    [STATE_CALIBRATED]      = "Calibrated",
 };
 
 /* Overall RX gain range */
@@ -407,10 +405,6 @@ static int bladerf1_apply_lms_dc_cals(struct bladerf *dev)
             }
         }
     }
-
-    /* Update device state */
-    if (have_tx && have_rx)
-        board_data->state = STATE_CALIBRATED;
 
     return 0;
 }
