@@ -24,6 +24,9 @@ library ieee ;
     use ieee.math_real.all ;
     use ieee.math_complex.all ;
 
+library work;
+    use work.fifo_readwrite_p.all;
+
 architecture hosted_bladerf of bladerf is
 
     attribute noprune   : boolean ;
@@ -89,6 +92,8 @@ architecture hosted_bladerf of bladerf is
     alias sys_rst   is fx3_ctl(7) ;
     alias tx_clock  is c4_tx_clock ;
     alias rx_clock  is lms_rx_clock_out ;
+
+    constant NUM_MIMO_STREAMS : natural := 1;
 
     -- Can be set from libbladeRF using bladerf_set_rx_mux()
     type rx_mux_mode_t is (RX_MUX_NORMAL, RX_MUX_12BIT_COUNTER, RX_MUX_32BIT_COUNTER, RX_MUX_ENTROPY, RX_MUX_DIGITAL_LOOPBACK) ;
@@ -205,6 +210,8 @@ architecture hosted_bladerf of bladerf is
     signal rx_sample_q      : signed(15 downto 0) ;
     signal rx_sample_valid  : std_logic ;
 
+    signal rx_samples       : sample_streams_t(0 to NUM_MIMO_STREAMS-1) := (others => ZERO_SAMPLE);
+
     signal rx_gen_mode      : std_logic ;
     signal rx_gen_i         : signed(15 downto 0) ;
     signal rx_gen_q         : signed(15 downto 0) ;
@@ -227,6 +234,8 @@ architecture hosted_bladerf of bladerf is
     signal tx_sample_i      : signed(15 downto 0) ;
     signal tx_sample_q      : signed(15 downto 0) ;
     signal tx_sample_valid  : std_logic ;
+
+    signal tx_samples       : sample_streams_t(0 to NUM_MIMO_STREAMS-1) := (others => ZERO_SAMPLE);
 
     signal fx3_gpif_in      : std_logic_vector(31 downto 0) ;
     signal fx3_gpif_out     : std_logic_vector(31 downto 0) ;
@@ -783,9 +792,8 @@ begin
         meta_fifo_data      =>  rx_meta_fifo.wdata,
         meta_fifo_write     =>  rx_meta_fifo.wreq,
 
-        in_i                =>  rx_sample_corrected_i,
-        in_q                =>  rx_sample_corrected_q,
-        in_valid            =>  rx_sample_corrected_valid,
+        in_sample_controls  =>  (others => SAMPLE_CONTROL_ENABLE),
+        in_samples          =>  rx_samples,
 
         overflow_led        =>  rx_overflow_led,
         overflow_count      =>  rx_overflow_count,
@@ -808,6 +816,10 @@ begin
             fpga_dc_q_correction <= ( others => '0' ) ;
         end if;
     end process ;
+
+    rx_samples(0).data_i <= rx_sample_corrected_i;
+    rx_samples(0).data_q <= rx_sample_corrected_q;
+    rx_samples(0).data_v <= rx_sample_corrected_valid;
 
     U_rx_iq_correction : entity work.iq_correction(rx)
       generic map(
@@ -915,15 +927,17 @@ begin
         meta_fifo_data      =>  tx_meta_fifo.rdata,
         meta_fifo_read      =>  tx_meta_fifo.rreq,
 
-        out_i               =>  tx_sample_raw_i,
-        out_q               =>  tx_sample_raw_q,
-        out_valid           =>  tx_sample_raw_valid,
+        in_sample_controls  =>  (others => SAMPLE_CONTROL_ENABLE),
+        out_samples         =>  tx_samples,
 
         underflow_led       =>  tx_underflow_led,
         underflow_count     =>  tx_underflow_count,
         underflow_duration  =>  x"ffff"
       ) ;
 
+    tx_sample_raw_i     <= tx_samples(0).data_i;
+    tx_sample_raw_q     <= tx_samples(0).data_q;
+    tx_sample_raw_valid <= tx_samples(0).data_v;
 
     U_tx_iq_correction : entity work.iq_correction(tx)
       generic map (

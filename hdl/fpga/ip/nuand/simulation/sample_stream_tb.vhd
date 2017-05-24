@@ -5,6 +5,7 @@ library ieee ;
 
 library nuand ;
     use nuand.util.all ;
+    use nuand.fifo_readwrite_p.all;
 
 library std ;
     use std.env.all ;
@@ -23,6 +24,8 @@ architecture arch of sample_stream_tb is
     constant FX3_HALF_PERIOD    :   time        := 1.0/(100.0e6)/2.0*1 sec ;
     constant TX_HALF_PERIOD     :   time        := 1.0/(9.0e6)/2.0*1 sec ;
     constant RX_HALF_PERIOD     :   time        := 1.0/(9.0e6)/2.0*1 sec ;
+
+    constant NUM_MIMO_STREAMS   :   natural     := 1;
 
     -- Clocks
     signal fx3_clock            :   std_logic   := '1' ;
@@ -45,6 +48,8 @@ architecture arch of sample_stream_tb is
     signal tx_sample_q          :   signed(15 downto 0) ;
     signal tx_sample_valid      :   std_logic ;
 
+    signal tx_samples           :   sample_streams_t(0 to NUM_MIMO_STREAMS-1) := (others => ZERO_SAMPLE);
+
     -- RX Signalling
     signal rx_enable            :   std_logic ;
     signal rx_native_i          :   signed(11 downto 0) ;
@@ -52,6 +57,8 @@ architecture arch of sample_stream_tb is
     signal rx_sample_i          :   signed(15 downto 0) ;
     signal rx_sample_q          :   signed(15 downto 0) ;
     signal rx_sample_valid      :   std_logic ;
+
+    signal rx_samples           :   sample_streams_t(0 to NUM_MIMO_STREAMS-1) := (others => ZERO_SAMPLE);
 
     -- Underflow
     signal underflow_led        :   std_logic ;
@@ -232,14 +239,23 @@ begin
         meta_fifo_empty     =>  txmeta.rdempty,
         meta_fifo_data      =>  txmeta.q,
 
-        out_i               =>  tx_sample_i,
-        out_q               =>  tx_sample_q,
-        out_valid           =>  tx_sample_valid,
+        in_sample_controls  =>  (others => SAMPLE_CONTROL_ENABLE),
+        out_samples         =>  tx_samples,
 
         underflow_led       =>  underflow_led,
         underflow_count     =>  underflow_count,
         underflow_duration  =>  underflow_duration
       ) ;
+
+    -- Channel 0 gets connected
+    tx_sample_i     <= tx_samples(0).data_i;
+    tx_sample_q     <= tx_samples(0).data_q;
+    tx_sample_valid <= tx_samples(0).data_v;
+
+    -- Channel 1 goes nowhere
+    --tx_sample_i     <= tx_samples(1).data_i;
+    --tx_sample_q     <= tx_samples(1).data_q;
+    --tx_sample_valid <= tx_samples(1).data_v;
 
     -- RX FIFO Writer
     U_fifo_writer : entity work.fifo_writer
@@ -252,9 +268,8 @@ begin
         meta_en             =>  meta_en,
         timestamp           =>  rx_timestamp,
 
-        in_i                =>  rx_sample_i,
-        in_q                =>  rx_sample_q,
-        in_valid            =>  rx_sample_valid,
+        in_sample_controls  =>  (others => SAMPLE_CONTROL_ENABLE),
+        in_samples          =>  rx_samples,
 
         fifo_clear          =>  rxfifo.aclr,
         fifo_write          =>  rxfifo.wrreq,
@@ -272,6 +287,15 @@ begin
         overflow_duration   =>  overflow_duration
       ) ;
 
+    -- Channel 0
+    rx_samples(0).data_i <= rx_sample_i;
+    rx_samples(0).data_q <= rx_sample_q;
+    rx_samples(0).data_v <= rx_sample_valid;
+
+    -- Channel 1, swap I and Q for something different
+    --rx_samples(1).data_i <= rx_sample_q;
+    --rx_samples(1).data_q <= rx_sample_i;
+    --rx_samples(1).data_v <= rx_sample_valid;
 
     -- LMS Sample Interface
     U_lms6002d : entity work.lms6002d

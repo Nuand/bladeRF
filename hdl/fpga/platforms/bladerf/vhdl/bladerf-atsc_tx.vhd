@@ -24,6 +24,9 @@ library ieee ;
     use ieee.math_real.all ;
     use ieee.math_complex.all ;
 
+library work;
+    use work.fifo_readwrite_p.all;
+
 architecture atsc_tx of bladerf is
 
     attribute noprune   : boolean ;
@@ -74,6 +77,8 @@ architecture atsc_tx of bladerf is
     alias sys_rst   is fx3_ctl(7) ;
     alias tx_clock  is c4_tx_clock ;
     alias rx_clock  is lms_rx_clock_out ;
+
+    constant NUM_MIMO_STREAMS : natural := 1;
 
     type rx_mux_mode_t is (RX_MUX_NORMAL, RX_MUX_12BIT_COUNTER, RX_MUX_32BIT_COUNTER, RX_MUX_ENTROPY, RX_MUX_DIGITAL_LOOPBACK) ;
 
@@ -187,6 +192,8 @@ architecture atsc_tx of bladerf is
     signal rx_sample_i      : signed(15 downto 0) ;
     signal rx_sample_q      : signed(15 downto 0) ;
     signal rx_sample_valid  : std_logic ;
+
+    signal rx_samples       : sample_streams_t(0 to NUM_MIMO_STREAMS-1) := (others => ZERO_SAMPLE);
 
     signal rx_gen_mode      : std_logic ;
     signal rx_gen_i         : signed(15 downto 0) ;
@@ -567,14 +574,17 @@ begin
         meta_fifo_data      =>  open,
         meta_fifo_write     =>  open,
 
-        in_i                =>  rx_sample_corrected_i,
-        in_q                =>  rx_sample_corrected_q,
-        in_valid            =>  rx_sample_corrected_valid,
+        in_sample_controls  =>  (others => SAMPLE_CONTROL_ENABLE),
+        in_samples          =>  rx_samples,
 
         overflow_led        =>  rx_overflow_led,
         overflow_count      =>  rx_overflow_count,
         overflow_duration   =>  x"ffff"
       ) ;
+
+    rx_samples(0).data_i <= rx_sample_corrected_i;
+    rx_samples(0).data_q <= rx_sample_corrected_q;
+    rx_samples(0).data_v <= rx_sample_corrected_valid;
 
     U_rx_iq_correction : entity work.iq_correction(rx)
       generic map(
@@ -618,9 +628,8 @@ begin
         meta_fifo_data      =>  (others => '0'),
         meta_fifo_read      =>  open,
 
-        out_i               =>  open,
-        out_q               =>  open,
-        out_valid           =>  open,
+        in_sample_controls  =>  (others => SAMPLE_CONTROL_ENABLE),
+        out_samples         =>  open,
 
         underflow_led       =>  tx_underflow_led,
         underflow_count     =>  tx_underflow_count,

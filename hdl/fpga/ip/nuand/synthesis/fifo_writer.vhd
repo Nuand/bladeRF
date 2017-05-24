@@ -22,39 +22,44 @@ library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
 
+library work;
+    use work.fifo_readwrite_p.all;
+
 entity fifo_writer is
-  generic (
-    USEDW_WIDTH         :   natural := 12;
-    META_USEDW_WIDTH    :   natural := 5
-  );
-  port (
-    clock               :   in      std_logic;
-    reset               :   in      std_logic;
-    enable              :   in      std_logic;
+    generic (
+        NUM_STREAMS           : natural := 1;
+        FIFO_USEDW_WIDTH      : natural := 12;
+        FIFO_DATA_WIDTH       : natural := 32;
+        META_FIFO_USEDW_WIDTH : natural := 5;
+        META_FIFO_DATA_WIDTH  : natural := 128
+    );
+    port (
+        clock               :   in      std_logic;
+        reset               :   in      std_logic;
+        enable              :   in      std_logic;
 
-    usb_speed           :   in      std_logic;
-    meta_en             :   in      std_logic;
-    timestamp           :   in      unsigned(63 downto 0);
+        usb_speed           :   in      std_logic;
+        meta_en             :   in      std_logic;
+        timestamp           :   in      unsigned(63 downto 0);
 
-    in_i                :   in      signed(15 downto 0);
-    in_q                :   in      signed(15 downto 0);
-    in_valid            :   in      std_logic;
+        in_sample_controls  :   in      sample_controls_t(0 to NUM_STREAMS-1) := (others => SAMPLE_CONTROL_DISABLE);
+        in_samples          :   in      sample_streams_t(0 to NUM_STREAMS-1)  := (others => ZERO_SAMPLE);
 
-    fifo_usedw          :   in      std_logic_vector(USEDW_WIDTH-1 downto 0) ;
-    fifo_clear          :   buffer  std_logic;
-    fifo_write          :   buffer  std_logic := '0';
-    fifo_full           :   in      std_logic;
-    fifo_data           :   out     std_logic_vector(31 downto 0) := (others => '0');
+        fifo_usedw          :   in      std_logic_vector(FIFO_USEDW_WIDTH-1 downto 0);
+        fifo_clear          :   buffer  std_logic;
+        fifo_write          :   buffer  std_logic := '0';
+        fifo_full           :   in      std_logic;
+        fifo_data           :   out     std_logic_vector(FIFO_DATA_WIDTH-1 downto 0) := (others => '0');
 
-    meta_fifo_full      :   in     std_logic;
-    meta_fifo_usedw     :   in     std_logic_vector(META_USEDW_WIDTH-1 downto 0);
-    meta_fifo_data      :   out    std_logic_vector(127 downto 0) := (others => '0');
-    meta_fifo_write     :   out    std_logic := '0';
+        meta_fifo_full      :   in     std_logic;
+        meta_fifo_usedw     :   in     std_logic_vector(META_FIFO_USEDW_WIDTH-1 downto 0);
+        meta_fifo_data      :   out    std_logic_vector(META_FIFO_DATA_WIDTH-1 downto 0) := (others => '0');
+        meta_fifo_write     :   out    std_logic := '0';
 
-    overflow_led        :   buffer  std_logic;
-    overflow_count      :   buffer  unsigned(63 downto 0);
-    overflow_duration   :   in      unsigned(15 downto 0)
-  );
+        overflow_led        :   buffer  std_logic;
+        overflow_count      :   buffer  unsigned(63 downto 0);
+        overflow_duration   :   in      unsigned(15 downto 0)
+    );
 end entity;
 
 architecture simple of fifo_writer is
@@ -184,7 +189,7 @@ begin
 
             when META_WRITE =>
 
-                if( (meta_fifo_full = '0') and (in_valid = '1') ) then
+                if( (meta_fifo_full = '0') and (in_samples(in_samples'low).data_v = '1') ) then
                     meta_future.meta_write   <= '1';
                     meta_future.meta_written <= '1';
                     meta_future.state        <= META_DOWNCOUNT;
@@ -242,7 +247,8 @@ begin
 
         fifo_future.fifo_clear <= '0';
         fifo_future.fifo_write <= '0';
-        fifo_future.fifo_data  <= std_logic_vector(in_q & in_i);
+        fifo_future.fifo_data  <= std_logic_vector(in_samples(in_samples'low).data_q &
+                                                   in_samples(in_samples'low).data_i);
 
         case fifo_current.state is
 
@@ -258,7 +264,7 @@ begin
             when WRITE_SAMPLES =>
 
                 if( ((meta_current.meta_written = '1') or (meta_en = '0')) ) then
-                    fifo_future.fifo_write <= in_valid;
+                    fifo_future.fifo_write <= in_samples(in_samples'low).data_v;
                 else
                     fifo_future.fifo_write <= '0';
                 end if;
@@ -306,7 +312,7 @@ begin
             overflow_detected <= '0';
         elsif( rising_edge( clock ) ) then
             overflow_detected <= '0';
-            if( enable = '1' and in_valid = '1' and
+            if( enable = '1' and in_samples(in_samples'low).data_v = '1' and
                 fifo_full = '1' and fifo_current.fifo_clear = '0' ) then
                 overflow_detected <= '1';
             end if;

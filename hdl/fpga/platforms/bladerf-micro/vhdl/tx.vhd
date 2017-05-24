@@ -24,6 +24,7 @@ library ieee;
 
 library work;
     use work.bladerf_p.all;
+    use work.fifo_readwrite_p.all;
 
 entity tx is
     port(
@@ -78,8 +79,12 @@ end entity;
 
 architecture arch of tx is
 
+    constant NUM_MIMO_STREAMS             : natural        := 1;
+
     signal sample_fifo                    : tx_fifo_t      := TX_FIFO_T_DEFAULT;
     signal meta_fifo                      : meta_fifo_tx_t := META_FIFO_TX_T_DEFAULT;
+
+    signal tx_samples                     : sample_streams_t(0 to NUM_MIMO_STREAMS-1) := (others => ZERO_SAMPLE);
 
     signal trigger_arm_sync               : std_logic;
     signal trigger_line_sync              : std_logic;
@@ -208,6 +213,8 @@ begin
     --    meta_fifo_data      =>  meta_fifo.rdata,
     --    meta_fifo_read      =>  meta_fifo.rreq,
     --
+    --    in_sample_controls  =>  (others => SAMPLE_CONTROL_ENABLE),
+    --    out_samples         =>  tx_samples,
     --    out_i               =>  tx_sample_i,
     --    out_q               =>  tx_sample_q,
     --    out_valid           =>  tx_sample_valid,
@@ -216,6 +223,10 @@ begin
     --    underflow_count     =>  open,
     --    underflow_duration  =>  x"ffff"
     --  ) ;
+
+    --tx_sample_i     <= tx_samples(0).data_i;
+    --tx_sample_q     <= tx_samples(0).data_q;
+    --tx_sample_valid <= tx_samples(0).data_v;
 
     txtrig : entity work.trigger(async)
         generic map (

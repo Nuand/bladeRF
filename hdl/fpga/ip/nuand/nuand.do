@@ -1,9 +1,6 @@
 proc compile_nuand { root } {
     vlib nuand
 
-    vcom -work nuand -2008 [file join $root ../altera/tx_fifo/tx_fifo.vhd]
-
-
     vcom -work nuand -2008 [file join $root ./synthesis/constellation_mapper.vhd]
     vcom -work nuand -2008 [file join $root ./synthesis/sync_fifo.vhd]
     vcom -work nuand -2008 [file join $root ./synthesis/uart.vhd]
@@ -43,6 +40,7 @@ proc compile_nuand { root } {
     vcom -work nuand -2008 [file join $root ../altera/rx_meta_fifo/rx_meta_fifo.vhd]
     vcom -work nuand -2008 [file join $root ../altera/tx_meta_fifo/tx_meta_fifo.vhd]
 
+    vcom -work nuand -2008 [file join $root ./synthesis/fifo_readwrite_p.vhd]
     vcom -work nuand -2008 [file join $root ./synthesis/fifo_reader.vhd]
     vcom -work nuand -2008 [file join $root ./synthesis/fifo_writer.vhd]
     vcom -work nuand -2008 [file join $root ./simulation/sample_stream_tb.vhd]

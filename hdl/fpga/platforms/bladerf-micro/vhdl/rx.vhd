@@ -24,6 +24,7 @@ library ieee;
 
 library work;
     use work.bladerf_p.all;
+    use work.fifo_readwrite_p.all;
 
 entity rx is
     port(
@@ -93,6 +94,8 @@ architecture arch of rx is
         RX_MUX_DIGITAL_LOOPBACK
     );
 
+    constant NUM_MIMO_STREAMS       : natural             := 1;
+
     signal rx_mux_mode              : rx_mux_mode_t       := RX_MUX_NORMAL;
 
     signal sample_fifo              : rx_fifo_t           := RX_FIFO_T_DEFAULT;
@@ -108,6 +111,8 @@ architecture arch of rx is
     signal rx_sample_i              : signed(15 downto 0);
     signal rx_sample_q              : signed(15 downto 0);
     signal rx_sample_valid          : std_logic;
+
+    signal rx_samples               : sample_streams_t(0 to NUM_MIMO_STREAMS-1) := (others => ZERO_SAMPLE);
 
     signal rx_gen_mode              : std_logic;
     signal rx_gen_i                 : signed(15 downto 0);
@@ -218,8 +223,8 @@ begin
     -- Sample bridge
     U_fifo_writer : entity work.fifo_writer
       generic map (
-        USEDW_WIDTH         =>  sample_fifo.wused'length,
-        META_USEDW_WIDTH    =>  meta_fifo.wused'length
+        FIFO_USEDW_WIDTH      =>  sample_fifo.wused'length,
+        META_FIFO_USEDW_WIDTH =>  meta_fifo.wused'length
       ) port map (
         clock               =>  rx_clock,
         reset               =>  rx_reset,
@@ -239,15 +244,17 @@ begin
         meta_fifo_data      =>  meta_fifo.wdata,
         meta_fifo_write     =>  meta_fifo.wreq,
 
-        in_i                =>  resize(rx_mux_i, 16),
-        in_q                =>  resize(rx_mux_q, 16),
-        in_valid            =>  rx_mux_valid,
+        in_sample_controls  =>  (others => SAMPLE_CONTROL_ENABLE),
+        in_samples          =>  rx_samples,
 
         overflow_led        =>  rx_overflow_led,
         overflow_count      =>  open,
         overflow_duration   =>  x"ffff"
     );
 
+    rx_samples(0).data_i <= resize(rx_mux_i, rx_samples(0).data_i'length);
+    rx_samples(0).data_q <= resize(rx_mux_q, rx_samples(0).data_q'length);
+    rx_samples(0).data_v <= rx_mux_valid;
 
     mimo_channel_sel_mux : process( rx_clock )
     begin
