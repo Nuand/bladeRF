@@ -64,7 +64,6 @@ struct bladerf2_board_data {
         STATE_FIRMWARE_LOADED,
         STATE_FPGA_LOADED,
         STATE_INITIALIZED,
-        STATE_CALIBRATED,
     } state;
 
     /* AD9361 PHY Handle */
@@ -128,7 +127,6 @@ static const char *bladerf2_state_to_string[] = {
     [STATE_FIRMWARE_LOADED] = "Firmware Loaded",
     [STATE_FPGA_LOADED]     = "FPGA Loaded",
     [STATE_INITIALIZED]     = "Initialized",
-    [STATE_CALIBRATED]      = "Calibrated",
 };
 
 /* Overall RX gain range */
