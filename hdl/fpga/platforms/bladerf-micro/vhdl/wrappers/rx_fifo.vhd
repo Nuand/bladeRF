@@ -1,12 +1,11 @@
 -- The only purpose for this wrapper is to set sane defaults for the
--- DCFIFO generics. These defaults may be overridden as needed.
+-- common_dcfifo generics. These defaults may be overridden as needed.
 
 library ieee;
     use ieee.std_logic_1164.all;
-    use ieee.math_real.all;
 
-library altera_mf;
-    use altera_mf.altera_mf_components.all;
+library work;
+    use work.common_dcfifo_p.all;
 
 entity rx_fifo is
     generic (
@@ -15,21 +14,18 @@ entity rx_fifo is
         CLOCKS_ARE_SYNCHRONIZED : string  := "FALSE";
         DELAY_RDUSEDW           : natural := 1;
         DELAY_WRUSEDW           : natural := 1;
-        INTENDED_DEVICE_FAMILY  : string  := "Cyclone V"; -- "unused";
-        --ENABLE_ECC              : string  := "FALSE";
+        INTENDED_DEVICE_FAMILY  : string  := "Cyclone V";
         LPM_NUMWORDS            : natural := 4096;
         LPM_SHOWAHEAD           : string  := "ON";
         LPM_WIDTH               : natural := 32;
-        --LPM_WIDTHU              : natural := 12;
+        LPM_WIDTH_R             : natural := 32;
         OVERFLOW_CHECKING       : string  := "ON";
         RDSYNC_DELAYPIPE        : natural := 5;
         READ_ACLR_SYNCH         : string  := "ON";
         UNDERFLOW_CHECKING      : string  := "ON";
         USE_EAB                 : string  := "ON";
         WRITE_ACLR_SYNCH        : string  := "ON";
-        WRSYNC_DELAYPIPE        : natural := 5;
-        LPM_HINT                : string  := "UNUSED";
-        LPM_TYPE                : string  := "dcfifo"
+        WRSYNC_DELAYPIPE        : natural := 5
     );
     port (
         aclr       : in  std_logic := '0';
@@ -38,13 +34,13 @@ entity rx_fifo is
         rdreq      : in  std_logic;
         wrclk      : in  std_logic;
         wrreq      : in  std_logic;
-        q          : out std_logic_vector(LPM_WIDTH-1 downto 0);
+        q          : out std_logic_vector(LPM_WIDTH_R-1 downto 0);
         rdempty    : out std_logic;
         rdfull     : out std_logic;
-        rdusedw    : out std_logic_vector(integer(ceil(log2(real(LPM_NUMWORDS))))-1 downto 0);
+        rdusedw    : out std_logic_vector(compute_rdusedw_high(LPM_NUMWORDS, LPM_WIDTH, LPM_WIDTH_R) downto 0);
         wrempty    : out std_logic;
         wrfull     : out std_logic;
-        wrusedw    : out std_logic_vector(integer(ceil(log2(real(LPM_NUMWORDS))))-1 downto 0)
+        wrusedw    : out std_logic_vector(compute_wrusedw_high(LPM_NUMWORDS) downto 0)
         --eccstatus  : out std_logic_vector(1 downto 0)
     );
 end entity;
@@ -53,7 +49,7 @@ architecture arch of rx_fifo is
 
 begin
 
-    U_dcfifo : dcfifo
+    U_common_dcfifo : entity work.common_dcfifo
         generic map (
             ADD_RAM_OUTPUT_REGISTER => ADD_RAM_OUTPUT_REGISTER,
             ADD_USEDW_MSB_BIT       => ADD_USEDW_MSB_BIT,
@@ -65,16 +61,14 @@ begin
             LPM_NUMWORDS            => LPM_NUMWORDS,
             LPM_SHOWAHEAD           => LPM_SHOWAHEAD,
             LPM_WIDTH               => LPM_WIDTH,
-            LPM_WIDTHU              => wrusedw'length,
+            LPM_WIDTH_R             => LPM_WIDTH_R,
             OVERFLOW_CHECKING       => OVERFLOW_CHECKING,
             RDSYNC_DELAYPIPE        => RDSYNC_DELAYPIPE,
             READ_ACLR_SYNCH         => READ_ACLR_SYNCH,
             UNDERFLOW_CHECKING      => UNDERFLOW_CHECKING,
             USE_EAB                 => USE_EAB,
             WRITE_ACLR_SYNCH        => WRITE_ACLR_SYNCH,
-            WRSYNC_DELAYPIPE        => WRSYNC_DELAYPIPE,
-            LPM_HINT                => LPM_HINT,
-            LPM_TYPE                => LPM_TYPE
+            WRSYNC_DELAYPIPE        => WRSYNC_DELAYPIPE
         )
         port map (
             aclr      => aclr,
