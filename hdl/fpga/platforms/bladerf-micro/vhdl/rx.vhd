@@ -27,7 +27,10 @@ library work;
     use work.fifo_readwrite_p.all;
 
 entity rx is
-    port(
+    generic (
+        NUM_STREAMS          : natural := 2
+    );
+    port (
         rx_reset               : in    std_logic;
         rx_clock               : in    std_logic;
         rx_enable              : in    std_logic;
@@ -38,7 +41,6 @@ entity rx is
         rx_mux_sel             : in    unsigned;
         rx_overflow_led        : out   std_logic := '1';
         rx_timestamp           : in    unsigned(63 downto 0);
-        mimo_channel_sel       : in    std_logic := '0'; -- temporary
 
         -- Triggering
         trigger_arm            : in    std_logic;
@@ -72,14 +74,8 @@ entity rx is
         loopback_fifo_wreq     : in    std_logic;
 
         -- RFFE Interface
-        adc_0_enable           : in    std_logic;
-        adc_0_valid            : in    std_logic;
-        adc_0_i                : in    std_logic_vector(MIMO_2R2T_T_DEFAULT.ch(0).dac.i.data'range);
-        adc_0_q                : in    std_logic_vector(MIMO_2R2T_T_DEFAULT.ch(0).dac.q.data'range);
-        adc_1_enable           : in    std_logic;
-        adc_1_valid            : in    std_logic;
-        adc_1_i                : in    std_logic_vector(MIMO_2R2T_T_DEFAULT.ch(1).dac.i.data'range);
-        adc_1_q                : in    std_logic_vector(MIMO_2R2T_T_DEFAULT.ch(1).dac.q.data'range)
+        adc_controls           : in    sample_controls_t(0 to NUM_STREAMS-1) := (others => SAMPLE_CONTROL_DISABLE);
+        adc_streams            : in    sample_streams_t(0 to NUM_STREAMS-1)  := (others => ZERO_SAMPLE)
     );
 end entity;
 
@@ -94,34 +90,22 @@ architecture arch of rx is
         RX_MUX_DIGITAL_LOOPBACK
     );
 
-    constant NUM_MIMO_STREAMS       : natural             := 1;
-
     signal rx_mux_mode              : rx_mux_mode_t       := RX_MUX_NORMAL;
 
     signal sample_fifo              : rx_fifo_t           := RX_FIFO_T_DEFAULT;
     signal loopback_fifo            : loopback_fifo_t     := LOOPBACK_FIFO_T_DEFAULT;
     signal meta_fifo                : meta_fifo_rx_t      := META_FIFO_RX_T_DEFAULT;
 
-    signal loopback_i               : signed(15 downto 0) := (others =>'0');
-    signal loopback_q               : signed(15 downto 0) := (others =>'0');
-    signal loopback_valid           : std_logic           := '0';
+    signal loopback_streams         : sample_streams_t(adc_streams'range) := (others => ZERO_SAMPLE);
     signal loopback_enabled         : std_logic           := '0';
     signal loopback_fifo_wenabled_i : std_logic           := '0';
-
-    signal rx_sample_i              : signed(15 downto 0);
-    signal rx_sample_q              : signed(15 downto 0);
-    signal rx_sample_valid          : std_logic;
-
-    signal rx_samples               : sample_streams_t(0 to NUM_MIMO_STREAMS-1) := (others => ZERO_SAMPLE);
 
     signal rx_gen_mode              : std_logic;
     signal rx_gen_i                 : signed(15 downto 0);
     signal rx_gen_q                 : signed(15 downto 0);
     signal rx_gen_valid             : std_logic;
 
-    signal rx_mux_i                 : signed(15 downto 0);
-    signal rx_mux_q                 : signed(15 downto 0);
-    signal rx_mux_valid             : std_logic;
+    signal mux_streams              : sample_streams_t(adc_streams'range) := (others => ZERO_SAMPLE);
 
     signal trigger_signal_out       : std_logic;
     signal trigger_signal_out_sync  : std_logic;
@@ -222,89 +206,83 @@ begin
 
     -- Sample bridge
     U_fifo_writer : entity work.fifo_writer
-      generic map (
-        FIFO_USEDW_WIDTH      =>  sample_fifo.wused'length,
-        META_FIFO_USEDW_WIDTH =>  meta_fifo.wused'length
-      ) port map (
-        clock               =>  rx_clock,
-        reset               =>  rx_reset,
-        enable              =>  rx_enable,
+        generic map (
+            NUM_STREAMS           => NUM_STREAMS,
+            FIFO_USEDW_WIDTH      => sample_fifo.wused'length,
+            FIFO_DATA_WIDTH       => sample_fifo.wdata'length,
+            META_FIFO_USEDW_WIDTH => meta_fifo.wused'length,
+            META_FIFO_DATA_WIDTH  => meta_fifo.wdata'length
+        )
+        port map (
+            clock               =>  rx_clock,
+            reset               =>  rx_reset,
+            enable              =>  rx_enable,
 
-        usb_speed           =>  usb_speed,
-        meta_en             =>  meta_en,
-        timestamp           =>  rx_timestamp,
+            usb_speed           =>  usb_speed,
+            meta_en             =>  meta_en,
+            timestamp           =>  rx_timestamp,
 
-        fifo_full           =>  sample_fifo.wfull,
-        fifo_usedw          =>  sample_fifo.wused,
-        fifo_data           =>  sample_fifo.wdata,
-        fifo_write          =>  sample_fifo.wreq,
+            fifo_full           =>  sample_fifo.wfull,
+            fifo_usedw          =>  sample_fifo.wused,
+            fifo_data           =>  sample_fifo.wdata,
+            fifo_write          =>  sample_fifo.wreq,
 
-        meta_fifo_full      =>  meta_fifo.wfull,
-        meta_fifo_usedw     =>  meta_fifo.wused,
-        meta_fifo_data      =>  meta_fifo.wdata,
-        meta_fifo_write     =>  meta_fifo.wreq,
+            meta_fifo_full      =>  meta_fifo.wfull,
+            meta_fifo_usedw     =>  meta_fifo.wused,
+            meta_fifo_data      =>  meta_fifo.wdata,
+            meta_fifo_write     =>  meta_fifo.wreq,
 
-        in_sample_controls  =>  (others => SAMPLE_CONTROL_ENABLE),
-        in_samples          =>  rx_samples,
+            in_sample_controls  =>  adc_controls,
+            in_samples          =>  mux_streams,
 
-        overflow_led        =>  rx_overflow_led,
-        overflow_count      =>  open,
-        overflow_duration   =>  x"ffff"
-    );
-
-    rx_samples(0).data_i <= resize(rx_mux_i, rx_samples(0).data_i'length);
-    rx_samples(0).data_q <= resize(rx_mux_q, rx_samples(0).data_q'length);
-    rx_samples(0).data_v <= rx_mux_valid;
-
-    mimo_channel_sel_mux : process( rx_clock )
-    begin
-        if( rising_edge(rx_clock) ) then
-            if( (mimo_channel_sel = '0') and (adc_0_enable = '1') ) then
-                rx_sample_i     <= resize(signed(adc_0_i(11 downto 0)), rx_sample_i'length);
-                rx_sample_q     <= resize(signed(adc_0_q(11 downto 0)), rx_sample_q'length);
-                rx_sample_valid <= adc_0_valid;
-            elsif( (mimo_channel_sel = '1') and (adc_1_enable = '1') ) then
-                rx_sample_i     <= resize(signed(adc_1_i(11 downto 0)), rx_sample_i'length);
-                rx_sample_q     <= resize(signed(adc_1_q(11 downto 0)), rx_sample_q'length);
-                rx_sample_valid <= adc_1_valid;
-            else
-                rx_sample_i     <= to_signed(0, rx_sample_i'length);
-                rx_sample_q     <= to_signed(0, rx_sample_q'length);
-                rx_sample_valid <= '0';
-            end if;
-        end if;
-    end process;
+            overflow_led        =>  rx_overflow_led,
+            overflow_count      =>  open,
+            overflow_duration   =>  x"ffff"
+        );
 
 
     loopback_fifo_control : process( rx_reset, loopback_fifo.rclock )
+        variable max_bit_i : natural range loopback_fifo.rdata'range;
+        variable min_bit_i : natural range loopback_fifo.rdata'range;
+        variable max_bit_q : natural range loopback_fifo.rdata'range;
+        variable min_bit_q : natural range loopback_fifo.rdata'range;
     begin
         if( rx_reset = '1' ) then
             loopback_enabled   <= '0';
             loopback_fifo.rreq <= '0';
-            loopback_i         <= (others => '0');
-            loopback_q         <= (others => '0');
-            loopback_valid     <= '0';
+            loopback_streams   <= (others => ZERO_SAMPLE);
         elsif( rising_edge(loopback_fifo.rclock) ) then
-            loopback_enabled   <= '0';
-            loopback_fifo.rreq <= '0';
-            loopback_i         <= loopback_i;
-            loopback_q         <= loopback_q;
-            loopback_valid     <= '0';
 
             -- Is loopback enabled?
             if( rx_mux_mode = RX_MUX_DIGITAL_LOOPBACK ) then
                 loopback_enabled <= rx_enable;
+            else
+                loopback_enabled <= '0';
             end if;
 
             -- Do the loopback
-            loopback_i     <= resize(signed(loopback_fifo.rdata(15 downto 0)), loopback_i'length);
-            loopback_q     <= resize(signed(loopback_fifo.rdata(31 downto 16)), loopback_q'length);
-            loopback_valid <= loopback_fifo.rreq and not loopback_fifo.rempty;
+            for i in loopback_streams'range loop
+                max_bit_i := 11 + ((2*loopback_streams(i).data_i'length)*i);
+                min_bit_i :=  0 + ((2*loopback_streams(i).data_i'length)*i);
+                max_bit_q := 27 + ((2*loopback_streams(i).data_i'length)*i);
+                min_bit_q := 16 + ((2*loopback_streams(i).data_i'length)*i);
+
+                loopback_streams(i).data_i <=
+                    resize(signed(loopback_fifo.rdata(max_bit_i downto min_bit_i)),
+                           loopback_streams(i).data_i'length);
+
+                loopback_streams(i).data_q <=
+                    resize(signed(loopback_fifo.rdata(max_bit_q downto min_bit_q)),
+                           loopback_streams(i).data_q'length);
+
+                loopback_streams(i).data_v <= loopback_fifo.rreq and not loopback_fifo.rempty;
+            end loop;
 
             -- Read from the FIFO if req'd
             loopback_fifo.rreq <= loopback_enabled and (not loopback_fifo.rempty);
         end if;
     end process;
+
 
     U_rx_siggen : entity work.signal_generator
         port map (
@@ -323,24 +301,24 @@ begin
     rx_mux : process(rx_reset, rx_clock)
     begin
         if( rx_reset = '1' ) then
-            rx_mux_i     <= (others =>'0');
-            rx_mux_q     <= (others =>'0');
-            rx_mux_valid <= '0';
+            mux_streams  <= (others => ZERO_SAMPLE);
             rx_gen_mode  <= '0';
         elsif( rising_edge(rx_clock) ) then
             case rx_mux_mode is
                 when RX_MUX_NORMAL =>
-                    rx_mux_i <= rx_sample_i;
-                    rx_mux_q <= rx_sample_q;
-                    if( trigger_signal_out_sync = '1' ) then
-                        rx_mux_valid <= rx_sample_valid;
-                    else
-                        rx_mux_valid <= '0';
+                    mux_streams <= adc_streams;
+                    if( trigger_signal_out_sync = '0' ) then
+                        for i in mux_streams'range loop
+                            mux_streams(i).data_v <= '0';
+                        end loop;
                     end if;
                 when RX_MUX_12BIT_COUNTER | RX_MUX_32BIT_COUNTER =>
-                    rx_mux_i     <= rx_gen_i;
-                    rx_mux_q     <= rx_gen_q;
-                    rx_mux_valid <= rx_gen_valid;
+                    for i in mux_streams'range loop
+                        mux_streams(i).data_i <= rx_gen_i;
+                        mux_streams(i).data_q <= rx_gen_q;
+                        mux_streams(i).data_v <= rx_gen_valid;
+                    end loop;
+
                     if( rx_mux_mode = RX_MUX_32BIT_COUNTER ) then
                         rx_gen_mode <= '1';
                     else
@@ -348,17 +326,11 @@ begin
                     end if;
                 when RX_MUX_ENTROPY =>
                     -- Not yet implemented
-                    rx_mux_i     <= (others => '0');
-                    rx_mux_q     <= (others => '0');
-                    rx_mux_valid <= '0';
+                    mux_streams  <= (others => ZERO_SAMPLE);
                 when RX_MUX_DIGITAL_LOOPBACK =>
-                    rx_mux_i     <= loopback_i;
-                    rx_mux_q     <= loopback_q;
-                    rx_mux_valid <= loopback_valid;
+                    mux_streams  <= loopback_streams;
                 when others =>
-                    rx_mux_i     <= (others =>'0');
-                    rx_mux_q     <= (others =>'0');
-                    rx_mux_valid <= '0';
+                    mux_streams  <= (others => ZERO_SAMPLE);
             end case;
         end if;
     end process;

@@ -27,7 +27,10 @@ library work;
     use work.fifo_readwrite_p.all;
 
 entity tx is
-    port(
+    generic (
+        NUM_STREAMS          : natural := 2
+    );
+    port (
         tx_reset             : in    std_logic;
         tx_clock             : in    std_logic;
         tx_enable            : in    std_logic;
@@ -35,8 +38,8 @@ entity tx is
         meta_en              : in    std_logic := '0';
         timestamp_reset      : out   std_logic := '1';
         usb_speed            : in    std_logic;
+        tx_underflow_led     : out   std_logic := '1';
         tx_timestamp         : in    unsigned(63 downto 0);
-        mimo_channel_sel     : in    std_logic := '0'; -- temporary
 
         -- Triggering
         trigger_arm          : in    std_logic;
@@ -66,25 +69,15 @@ entity tx is
         loopback_data_valid  : out   std_logic;
 
         -- RFFE Interface
-        dac_0_enable         : in    std_logic := '0';
-        dac_0_request        : in    std_logic := '0';
-        dac_0_i              : out   std_logic_vector(MIMO_2R2T_T_DEFAULT.ch(0).dac.i.data'range);
-        dac_0_q              : out   std_logic_vector(MIMO_2R2T_T_DEFAULT.ch(0).dac.q.data'range);
-        dac_1_enable         : in    std_logic := '0';
-        dac_1_request        : in    std_logic := '0';
-        dac_1_i              : out   std_logic_vector(MIMO_2R2T_T_DEFAULT.ch(1).dac.i.data'range);
-        dac_1_q              : out   std_logic_vector(MIMO_2R2T_T_DEFAULT.ch(1).dac.q.data'range)
+        dac_controls         : in    sample_controls_t(0 to NUM_STREAMS-1) := (others => SAMPLE_CONTROL_DISABLE);
+        dac_streams          : out   sample_streams_t(0 to NUM_STREAMS-1)  := (others => ZERO_SAMPLE)
     );
 end entity;
 
 architecture arch of tx is
 
-    constant NUM_MIMO_STREAMS             : natural        := 1;
-
     signal sample_fifo                    : tx_fifo_t      := TX_FIFO_T_DEFAULT;
     signal meta_fifo                      : meta_fifo_tx_t := META_FIFO_TX_T_DEFAULT;
-
-    signal tx_samples                     : sample_streams_t(0 to NUM_MIMO_STREAMS-1) := (others => ZERO_SAMPLE);
 
     signal trigger_arm_sync               : std_logic;
     signal trigger_line_sync              : std_logic;
@@ -153,80 +146,48 @@ begin
             rdusedw             => meta_fifo.rused
         );
 
-    mimo_channel_sel_mux : process( tx_clock )
-        variable fifo_rreq : std_logic := '0';
-
-        alias fifo_i : std_logic_vector(11 downto 0) is sample_fifo.rdata(11 downto 0);
-        alias fifo_q : std_logic_vector(11 downto 0) is sample_fifo.rdata(27 downto 16);
+    loopback_proc : process( sample_fifo.rclock )
     begin
-        if( rising_edge(tx_clock) ) then
-
-            sample_fifo.rreq    <= '0';
-
-            if( sample_fifo.rempty = '0' ) then
-                if( (mimo_channel_sel = '0') and (dac_0_enable = '1') ) then
-                    sample_fifo.rreq <= dac_0_request;
-                elsif( (mimo_channel_sel = '1') and (dac_1_enable = '1') ) then
-                    sample_fifo.rreq <= dac_1_request;
-                else
-                    sample_fifo.rreq <= '0';
-                end if;
-
-                if( loopback_enabled = '1' ) then
-                    sample_fifo.rreq    <= '1';
-                else
-                    sample_fifo.rreq    <= '0';
-                end if;
-            end if;
-
-            if( mimo_channel_sel = '0' ) then
-                dac_0_i <= fifo_i & "0000";
-                dac_0_q <= fifo_q & "0000";
-            else
-                dac_1_i <= fifo_i & "0000";
-                dac_1_q <= fifo_q & "0000";
-            end if;
-
+        if( rising_edge(sample_fifo.rclock) ) then
             loopback_data       <= sample_fifo.rdata;
-            loopback_data_valid <= sample_fifo.rreq and not sample_fifo.rempty;
-
+            loopback_data_valid <= sample_fifo.rreq and loopback_enabled;
         end if;
     end process;
 
-    --U_fifo_reader : entity work.fifo_reader
-    --  port map (
-    --    clock               =>  tx_clock,
-    --    reset               =>  tx_reset,
-    --    enable              =>  tx_enable,
-    --
-    --    usb_speed           =>  usb_speed_tx,
-    --    meta_en             =>  meta_en,
-    --    timestamp           =>  tx_timestamp,
-    --
-    --    fifo_empty          =>  sample_fifo.rempty,
-    --    fifo_usedw          =>  sample_fifo.rused,
-    --    fifo_data           =>  sample_fifo.rdata,
-    --    fifo_read           =>  sample_fifo.rreq,
-    --
-    --    meta_fifo_empty     =>  meta_fifo.rempty,
-    --    meta_fifo_usedw     =>  meta_fifo.rused,
-    --    meta_fifo_data      =>  meta_fifo.rdata,
-    --    meta_fifo_read      =>  meta_fifo.rreq,
-    --
-    --    in_sample_controls  =>  (others => SAMPLE_CONTROL_ENABLE),
-    --    out_samples         =>  tx_samples,
-    --    out_i               =>  tx_sample_i,
-    --    out_q               =>  tx_sample_q,
-    --    out_valid           =>  tx_sample_valid,
-    --
-    --    underflow_led       =>  tx_underflow_led,
-    --    underflow_count     =>  open,
-    --    underflow_duration  =>  x"ffff"
-    --  ) ;
+    U_fifo_reader : entity work.fifo_reader
+        generic map (
+            NUM_STREAMS           => NUM_STREAMS,
+            FIFO_USEDW_WIDTH      => sample_fifo.rused'length,
+            FIFO_DATA_WIDTH       => sample_fifo.rdata'length,
+            META_FIFO_USEDW_WIDTH => meta_fifo.rused'length,
+            META_FIFO_DATA_WIDTH  => meta_fifo.rdata'length
+        )
+        port map (
+            clock               =>  tx_clock,
+            reset               =>  tx_reset,
+            enable              =>  tx_enable,
 
-    --tx_sample_i     <= tx_samples(0).data_i;
-    --tx_sample_q     <= tx_samples(0).data_q;
-    --tx_sample_valid <= tx_samples(0).data_v;
+            usb_speed           =>  usb_speed,
+            meta_en             =>  meta_en,
+            timestamp           =>  tx_timestamp,
+
+            fifo_empty          =>  sample_fifo.rempty,
+            fifo_usedw          =>  sample_fifo.rused,
+            fifo_data           =>  sample_fifo.rdata,
+            fifo_read           =>  sample_fifo.rreq,
+
+            meta_fifo_empty     =>  meta_fifo.rempty,
+            meta_fifo_usedw     =>  meta_fifo.rused,
+            meta_fifo_data      =>  meta_fifo.rdata,
+            meta_fifo_read      =>  meta_fifo.rreq,
+
+            in_sample_controls  =>  dac_controls,
+            out_samples         =>  dac_streams,
+
+            underflow_led       =>  tx_underflow_led,
+            underflow_count     =>  open,
+            underflow_duration  =>  x"ffff"
+        );
 
     txtrig : entity work.trigger(async)
         generic map (

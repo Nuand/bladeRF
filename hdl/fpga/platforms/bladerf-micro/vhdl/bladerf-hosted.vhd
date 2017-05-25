@@ -27,6 +27,7 @@ library ieee;
 library work;
     use work.bladerf;
     use work.bladerf_p.all;
+    use work.fifo_readwrite_p.all;
 
 architecture hosted_bladerf of bladerf is
 
@@ -140,6 +141,11 @@ architecture hosted_bladerf of bladerf is
     alias rx_clock  is ad9361.clock;
 
     signal channel_sel            : std_logic := '0';
+
+    signal dac_controls           : sample_controls_t(0 to 0)             := (others => SAMPLE_CONTROL_DISABLE);
+    signal dac_streams            : sample_streams_t(dac_controls'range)  := (others => ZERO_SAMPLE);
+    signal adc_controls           : sample_controls_t(dac_controls'range) := (others => SAMPLE_CONTROL_DISABLE);
+    signal adc_streams            : sample_streams_t(dac_controls'range)  := (others => ZERO_SAMPLE);
 
 begin
 
@@ -465,6 +471,9 @@ begin
 
     -- TX Submodule
     U_tx : entity work.tx
+        generic map (
+            NUM_STREAMS          => dac_controls'length
+        )
         port map (
             tx_reset             => tx_reset,
             tx_clock             => tx_clock,
@@ -473,8 +482,9 @@ begin
             meta_en              => meta_en_tx,
             timestamp_reset      => tx_ts_reset,
             usb_speed            => usb_speed_tx,
+            tx_underflow_led     => tx_underflow_led,
             tx_timestamp         => tx_timestamp,
-            mimo_channel_sel     => channel_sel,
+            --mimo_channel_sel     => channel_sel,
 
             -- Triggering
             trigger_arm          => tx_trigger_ctl.arm,
@@ -504,19 +514,25 @@ begin
             loopback_data_valid  => tx_loopback_data_valid,
 
             -- RFFE Interface
-            dac_0_enable         => ad9361.ch(0).dac.i.enable or ad9361.ch(0).dac.q.enable,
-            dac_0_request        => ad9361.ch(0).dac.i.valid  or ad9361.ch(0).dac.q.valid,
-            dac_0_i              => ad9361.ch(0).dac.i.data,
-            dac_0_q              => ad9361.ch(0).dac.q.data,
-            dac_1_enable         => ad9361.ch(1).dac.i.enable or ad9361.ch(1).dac.q.enable,
-            dac_1_request        => ad9361.ch(1).dac.i.valid  or ad9361.ch(1).dac.q.valid,
-            dac_1_i              => ad9361.ch(1).dac.i.data,
-            dac_1_q              => ad9361.ch(1).dac.q.data
+            dac_controls         => dac_controls,
+            dac_streams          => dac_streams
         );
 
+    dac_assignment_proc : process( all )
+    begin
+        for i in dac_controls'range loop
+            dac_controls(i).enable   <= ad9361.ch(i).dac.i.enable or ad9361.ch(i).dac.q.enable or tx_loopback_enabled;
+            dac_controls(i).data_req <= ad9361.ch(i).dac.i.valid  or ad9361.ch(i).dac.q.valid  or tx_loopback_enabled;
+            ad9361.ch(i).dac.i.data  <= std_logic_vector(dac_streams(i).data_i(11 downto 0)) & "0000";
+            ad9361.ch(i).dac.q.data  <= std_logic_vector(dac_streams(i).data_q(11 downto 0)) & "0000";
+        end loop;
+    end process;
 
     -- RX Submodule
     U_rx : entity work.rx
+        generic map (
+            NUM_STREAMS          => adc_controls'length
+        )
         port map (
             rx_reset               => rx_reset,
             rx_clock               => rx_clock,
@@ -528,7 +544,7 @@ begin
             rx_mux_sel             => rx_mux_sel,
             rx_overflow_led        => rx_overflow_led,
             rx_timestamp           => rx_timestamp,
-            mimo_channel_sel       => channel_sel,
+            --mimo_channel_sel       => channel_sel,
 
             -- Triggering
             trigger_arm            => rx_trigger_ctl.arm,
@@ -562,16 +578,20 @@ begin
             loopback_fifo_wreq     => tx_loopback_data_valid,
 
             -- RFFE Interface
-            adc_0_enable           => ad9361.ch(0).adc.i.enable or ad9361.ch(0).adc.q.enable,
-            adc_0_valid            => ad9361.ch(0).adc.i.valid  or ad9361.ch(0).adc.q.valid,
-            adc_0_i                => ad9361.ch(0).adc.i.data,
-            adc_0_q                => ad9361.ch(0).adc.q.data,
-            adc_1_enable           => ad9361.ch(1).adc.i.enable or ad9361.ch(1).adc.q.enable,
-            adc_1_valid            => ad9361.ch(1).adc.i.valid  or ad9361.ch(1).adc.q.valid,
-            adc_1_i                => ad9361.ch(1).adc.i.data,
-            adc_1_q                => ad9361.ch(1).adc.q.data
+            adc_controls           => adc_controls,
+            adc_streams            => adc_streams
         );
 
+    adc_assignment_proc : process( all )
+    begin
+        for i in adc_controls'range loop
+            adc_controls(i).enable   <= ad9361.ch(i).adc.i.enable or ad9361.ch(i).adc.q.enable;
+            adc_controls(i).data_req <= '1';
+            adc_streams(i).data_i    <= signed(ad9361.ch(i).adc.i.data);
+            adc_streams(i).data_q    <= signed(ad9361.ch(i).adc.q.data);
+            adc_streams(i).data_v    <= ad9361.ch(i).adc.i.valid  or ad9361.ch(i).adc.q.valid;
+        end loop;
+    end process;
 
     -- ========================================================================
     -- RESET SYNCHRONIZERS
