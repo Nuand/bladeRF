@@ -705,3 +705,17 @@ int nios_legacy_expansion_gpio_dir_write(struct bladerf *dev,
     log_verbose("%s: 0x%08\n", __FUNCTION__, val);
     return nios_legacy_pio_write(dev, NIOS_PKT_LEGACY_PIO_ADDR_EXP_DIR, val);
 }
+
+int nios_legacy_read_trigger(struct bladerf *dev, bladerf_channel ch,
+                             bladerf_trigger_signal trigger, uint8_t *value)
+{
+    log_debug("This operation is not supported by the legacy NIOS packet format\n");
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
+int nios_legacy_write_trigger(struct bladerf *dev, bladerf_channel ch,
+                              bladerf_trigger_signal trigger, uint8_t value)
+{
+    log_debug("This operation is not supported by the legacy NIOS packet format\n");
+    return BLADERF_ERR_UNSUPPORTED;
+}

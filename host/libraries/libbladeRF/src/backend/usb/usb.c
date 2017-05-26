@@ -1196,6 +1196,9 @@ const struct backend_fns backend_fns_usb_legacy = {
 
     FIELD_INIT(.read_fw_log, usb_read_fw_log),
 
+    FIELD_INIT(.read_trigger, nios_legacy_read_trigger),
+    FIELD_INIT(.write_trigger, nios_legacy_write_trigger),
+
     FIELD_INIT(.name, "usb"),
 };
 

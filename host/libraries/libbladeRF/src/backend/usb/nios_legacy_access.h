@@ -395,4 +395,31 @@ int nios_legacy_expansion_gpio_dir_read(struct bladerf *dev, uint32_t *val);
 int nios_legacy_expansion_gpio_dir_write(struct bladerf *dev,
                                          uint32_t mask, uint32_t outputs);
 
+/**
+ * Read trigger register value
+ *
+ * @param       dev        Device handle
+ * @param[in]   ch         Channel
+ * @param[in]   trigger    Trigger to read from
+ * @param[out]  value      On success, updated with register value
+ *
+ *
+ * @return 0 on success, BLADERF_ERR_* code on error
+ */
+int nios_legacy_read_trigger(struct bladerf *dev, bladerf_channel ch,
+                             bladerf_trigger_signal trigger, uint8_t * value);
+
+/**
+ * Write trigger register value
+ *
+ * @param       dev        Device handle
+ * @param[in]   ch         Channel
+ * @param[in]   trigger    Trigger to read
+ * @param[in]   value      Value to write
+ *
+ * @return 0 on success, BLADERF_ERR_* code on error
+ */
+int nios_legacy_write_trigger(struct bladerf *dev, bladerf_channel ch,
+                              bladerf_trigger_signal trigger, uint8_t value);
+
 #endif
