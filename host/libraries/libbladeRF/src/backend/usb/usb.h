@@ -137,8 +137,6 @@ struct usb_fns {
 
     int (*open_bootloader)(void **driver, uint8_t bus, uint8_t addr);
     void (*close_bootloader)(void *driver);
-
-    bladerf_backend id;
 };
 
 struct usb_driver {
