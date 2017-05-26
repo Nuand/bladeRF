@@ -132,19 +132,19 @@ static const char *bladerf2_state_to_string[] = {
 /* Overall RX gain range */
 
 static const struct bladerf_range bladerf2_rx_gain_range = {
-    .min = 0,
-    .max = 77,
-    .step = 1,
-    .scale = 1,
+    FIELD_INIT(.min, 0),
+    FIELD_INIT(.max, 77),
+    FIELD_INIT(.step, 1),
+    FIELD_INIT(.scale, 1),
 };
 
 /* Overall TX gain range */
 
 static const struct bladerf_range bladerf2_tx_gain_range = {
-    .min = -89750,
-    .max = 0,
-    .step = 250,
-    .scale = 0.001,
+    FIELD_INIT(.min, -89750),
+    FIELD_INIT(.max, 0),
+    FIELD_INIT(.step, 250),
+    FIELD_INIT(.scale, 0.001),
 };
 
 struct bladerf_gain_stage_info {
@@ -156,22 +156,22 @@ struct bladerf_gain_stage_info {
 
 static const struct bladerf_gain_stage_info bladerf2_rx_gain_stages[] = {
     {
-        .name = "full",
-        .range = {
-            .min = 0,
-            .max = 77,
-            .step = 1,
-            .scale = 1,
-        },
+        FIELD_INIT(.name, "full"),
+        FIELD_INIT(.range, {
+            FIELD_INIT(.min, 0),
+            FIELD_INIT(.max, 77),
+            FIELD_INIT(.step, 1),
+            FIELD_INIT(.scale, 1),
+        }),
     },
     {
-        .name = "digital",
-        .range = {
-            .min = 0,
-            .max = 31,
-            .step = 1,
-            .scale = 1,
-        },
+        FIELD_INIT(.name, "digital"),
+        FIELD_INIT(.range, {
+            FIELD_INIT(.min, 0),
+            FIELD_INIT(.max, 31),
+            FIELD_INIT(.step, 1),
+            FIELD_INIT(.scale, 1),
+        }),
     },
 };
 
@@ -179,48 +179,48 @@ static const struct bladerf_gain_stage_info bladerf2_rx_gain_stages[] = {
 
 static const struct bladerf_gain_stage_info bladerf2_tx_gain_stages[] = {
     {
-        .name = "dsa",
-        .range = {
-            .min = -89750,
-            .max = 0,
-            .step = 250,
-            .scale = 0.001,
-        },
+        FIELD_INIT(.name, "dsa"),
+        FIELD_INIT(.range, {
+            FIELD_INIT(.min, -89750),
+            FIELD_INIT(.max, 0),
+            FIELD_INIT(.step, 250),
+            FIELD_INIT(.scale, 0.001),
+        }),
     },
 };
 
 /* Sample Rate Range */
 
 static const struct bladerf_range bladerf2_sample_rate_range = {
-    .min = 0,
-    .max = 61440000,
-    .step = 1,
-    .scale = 1,
+    FIELD_INIT(.min, 0),
+    FIELD_INIT(.max, 61440000),
+    FIELD_INIT(.step, 1),
+    FIELD_INIT(.scale, 1),
 };
 
 /* Bandwidth Range */
 
 static const struct bladerf_range bladerf2_bandwidth_range = {
-    .min = 200e3,
-    .max = 56e6,
-    .step = 1,
-    .scale = 1,
+    FIELD_INIT(.min, 200e3),
+    FIELD_INIT(.max, 56e6),
+    FIELD_INIT(.step, 1),
+    FIELD_INIT(.scale, 1),
 };
 
 /* Frequency Range */
 
 static const struct bladerf_range bladerf2_rx_frequency_range = {
-    .min = 70e6,
-    .max = 6000e6,
-    .step = 2,
-    .scale = 1,
+    FIELD_INIT(.min, 70e6),
+    FIELD_INIT(.max, 6000e6),
+    FIELD_INIT(.step, 2),
+    FIELD_INIT(.scale, 1),
 };
 
 static const struct bladerf_range bladerf2_tx_frequency_range = {
-    .min = 46.875e6,
-    .max = 6000e6,
-    .step = 2,
-    .scale = 1,
+    FIELD_INIT(.min, 46.875e6),
+    FIELD_INIT(.max, 6000e6),
+    FIELD_INIT(.step, 2),
+    FIELD_INIT(.scale, 1),
 };
 
 /* RF Ports */
@@ -1285,74 +1285,74 @@ static const struct {
 } ad9361_correction_reg_table[4] = {
     [BLADERF_CHANNEL_RX(0)].corr = {
         [BLADERF_CORR_DCOFF_I] = {
-            .reg = {0, 0},  /* More complex look up */
-            .shift = 0,
+            FIELD_INIT(.reg, {0, 0}),  /* More complex look up */
+            FIELD_INIT(.shift, 0),
         },
         [BLADERF_CORR_DCOFF_Q] = {
-            .reg = {0, 0},  /* More complex look up */
-            .shift = 0,
+            FIELD_INIT(.reg, {0, 0}),  /* More complex look up */
+            FIELD_INIT(.shift, 0),
         },
         [BLADERF_CORR_PHASE] = {
-            .reg = {REG_RX1_INPUT_A_PHASE_CORR, REG_RX1_INPUT_BC_PHASE_CORR},
-            .shift = 6,
+            FIELD_INIT(.reg, {REG_RX1_INPUT_A_PHASE_CORR, REG_RX1_INPUT_BC_PHASE_CORR}),
+            FIELD_INIT(.shift, 6),
         },
         [BLADERF_CORR_GAIN] = {
-            .reg = {REG_RX1_INPUT_A_GAIN_CORR, REG_RX1_INPUT_BC_PHASE_CORR},
-            .shift = 6,
+            FIELD_INIT(.reg, {REG_RX1_INPUT_A_GAIN_CORR, REG_RX1_INPUT_BC_PHASE_CORR}),
+            FIELD_INIT(.shift, 6),
         }
     },
     [BLADERF_CHANNEL_RX(1)].corr = {
         [BLADERF_CORR_DCOFF_I] = {
-            .reg = {0, 0}, /* More complex look up */
-            .shift = 0,
+            FIELD_INIT(.reg, {0, 0}), /* More complex look up */
+            FIELD_INIT(.shift, 0),
         },
         [BLADERF_CORR_DCOFF_Q] = {
-            .reg = {0, 0}, /* More complex look up */
-            .shift = 0,
+            FIELD_INIT(.reg, {0, 0}), /* More complex look up */
+            FIELD_INIT(.shift, 0),
         },
         [BLADERF_CORR_PHASE] = {
-            .reg = {REG_RX2_INPUT_A_PHASE_CORR, REG_RX2_INPUT_BC_PHASE_CORR},
-            .shift = 6,
+            FIELD_INIT(.reg, {REG_RX2_INPUT_A_PHASE_CORR, REG_RX2_INPUT_BC_PHASE_CORR}),
+            FIELD_INIT(.shift, 6),
         },
         [BLADERF_CORR_GAIN] = {
-            .reg = {REG_RX2_INPUT_A_GAIN_CORR, REG_RX2_INPUT_BC_PHASE_CORR},
-            .shift = 6,
+            FIELD_INIT(.reg, {REG_RX2_INPUT_A_GAIN_CORR, REG_RX2_INPUT_BC_PHASE_CORR}),
+            FIELD_INIT(.shift, 6),
         }
     },
     [BLADERF_CHANNEL_TX(0)].corr = {
         [BLADERF_CORR_DCOFF_I] = {
-            .reg = {REG_TX1_OUT_1_OFFSET_I, REG_TX1_OUT_2_OFFSET_I},
-            .shift = 5,
+            FIELD_INIT(.reg, {REG_TX1_OUT_1_OFFSET_I, REG_TX1_OUT_2_OFFSET_I}),
+            FIELD_INIT(.shift, 5),
         },
         [BLADERF_CORR_DCOFF_Q] = {
-            .reg = {REG_TX1_OUT_1_OFFSET_Q, REG_TX1_OUT_2_OFFSET_Q},
-            .shift = 5,
+            FIELD_INIT(.reg, {REG_TX1_OUT_1_OFFSET_Q, REG_TX1_OUT_2_OFFSET_Q}),
+            FIELD_INIT(.shift, 5),
         },
         [BLADERF_CORR_PHASE] = {
-            .reg = {REG_TX1_OUT_1_PHASE_CORR, REG_TX1_OUT_2_PHASE_CORR},
-            .shift = 6,
+            FIELD_INIT(.reg, {REG_TX1_OUT_1_PHASE_CORR, REG_TX1_OUT_2_PHASE_CORR}),
+            FIELD_INIT(.shift, 6),
         },
         [BLADERF_CORR_GAIN] = {
-            .reg = {REG_TX1_OUT_1_GAIN_CORR, REG_TX1_OUT_2_GAIN_CORR},
-            .shift = 6,
+            FIELD_INIT(.reg, {REG_TX1_OUT_1_GAIN_CORR, REG_TX1_OUT_2_GAIN_CORR}),
+            FIELD_INIT(.shift, 6),
         }
     },
     [BLADERF_CHANNEL_TX(1)].corr = {
         [BLADERF_CORR_DCOFF_I] = {
-            .reg = {REG_TX2_OUT_1_OFFSET_I, REG_TX2_OUT_2_OFFSET_I},
-            .shift = 5,
+            FIELD_INIT(.reg, {REG_TX2_OUT_1_OFFSET_I, REG_TX2_OUT_2_OFFSET_I}),
+            FIELD_INIT(.shift, 5),
         },
         [BLADERF_CORR_DCOFF_Q] = {
-            .reg = {REG_TX2_OUT_1_OFFSET_Q, REG_TX2_OUT_2_OFFSET_Q},
-            .shift = 5,
+            FIELD_INIT(.reg, {REG_TX2_OUT_1_OFFSET_Q, REG_TX2_OUT_2_OFFSET_Q}),
+            FIELD_INIT(.shift, 5),
         },
         [BLADERF_CORR_PHASE] = {
-            .reg = {REG_TX2_OUT_1_PHASE_CORR, REG_TX2_OUT_2_PHASE_CORR},
-            .shift = 6,
+            FIELD_INIT(.reg, {REG_TX2_OUT_1_PHASE_CORR, REG_TX2_OUT_2_PHASE_CORR}),
+            FIELD_INIT(.shift, 6),
         },
         [BLADERF_CORR_GAIN] = {
-            .reg = {REG_TX2_OUT_1_GAIN_CORR, REG_TX2_OUT_2_GAIN_CORR},
-            .shift = 6,
+            FIELD_INIT(.reg, {REG_TX2_OUT_1_GAIN_CORR, REG_TX2_OUT_2_GAIN_CORR}),
+            FIELD_INIT(.shift, 6),
         }
     },
 };
