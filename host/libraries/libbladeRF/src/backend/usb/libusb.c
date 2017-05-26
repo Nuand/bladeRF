@@ -1433,6 +1433,6 @@ static const struct usb_fns libusb_fns = {
 };
 
 const struct usb_driver usb_driver_libusb = {
+    FIELD_INIT(.fn, &libusb_fns),
     FIELD_INIT(.id, BLADERF_BACKEND_LIBUSB),
-    FIELD_INIT(.fn, &libusb_fns)
 };
