@@ -113,7 +113,8 @@ struct printset_entry printset_table[] = {
     PRINTSET_ENTRY(xb_gpio_dir,     PRINTALL_OPTION_NONE,           "bladerf1"),
 
     /* End of table marked by entry with NULL/empty fields */
-    { FIELD_INIT(.print, NULL), FIELD_INIT(.set, NULL), FIELD_INIT(.name, ""), FIELD_INIT(.board, NULL) }
+    { FIELD_INIT(.print, NULL), FIELD_INIT(.set, NULL), FIELD_INIT(.name, ""),
+      FIELD_INIT(.pa_option, PRINTALL_OPTION_NONE), FIELD_INIT(.board, NULL) }
 };
 
 bladerf_module get_module( char *mod, bool *ok )
