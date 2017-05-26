@@ -140,19 +140,19 @@ static const char *bladerf1_state_to_string[] = {
 /* Overall RX gain range */
 
 static const struct bladerf_range bladerf1_rx_gain_range = {
-    .min = BLADERF_RXVGA1_GAIN_MIN + BLADERF_RXVGA2_GAIN_MIN,
-    .max = BLADERF_LNA_GAIN_MAX_DB + BLADERF_RXVGA1_GAIN_MAX + BLADERF_RXVGA2_GAIN_MAX,
-    .step = 1,
-    .scale = 1,
+    FIELD_INIT(.min, BLADERF_RXVGA1_GAIN_MIN + BLADERF_RXVGA2_GAIN_MIN),
+    FIELD_INIT(.max, BLADERF_LNA_GAIN_MAX_DB + BLADERF_RXVGA1_GAIN_MAX + BLADERF_RXVGA2_GAIN_MAX),
+    FIELD_INIT(.step, 1),
+    FIELD_INIT(.scale, 1),
 };
 
 /* Overall TX gain range */
 
 static const struct bladerf_range bladerf1_tx_gain_range = {
-    .min = BLADERF_TXVGA1_GAIN_MIN + BLADERF_TXVGA2_GAIN_MIN,
-    .max = BLADERF_TXVGA1_GAIN_MAX + BLADERF_TXVGA2_GAIN_MAX,
-    .step = 1,
-    .scale = 1,
+    FIELD_INIT(.min, BLADERF_TXVGA1_GAIN_MIN + BLADERF_TXVGA2_GAIN_MIN),
+    FIELD_INIT(.max, BLADERF_TXVGA1_GAIN_MAX + BLADERF_TXVGA2_GAIN_MAX),
+    FIELD_INIT(.step, 1),
+    FIELD_INIT(.scale, 1),
 };
 
 struct bladerf_gain_stage_info {
@@ -164,31 +164,31 @@ struct bladerf_gain_stage_info {
 
 static const struct bladerf_gain_stage_info bladerf1_rx_gain_stages[] = {
     {
-        .name = "lna",
-        .range = {
-            .min = 0,
-            .max = BLADERF_LNA_GAIN_MAX_DB,
-            .step = 3,
-            .scale = 1,
-        },
+        FIELD_INIT(.name, "lna"),
+        FIELD_INIT(.range, {
+            FIELD_INIT(.min, 0),
+            FIELD_INIT(.max, BLADERF_LNA_GAIN_MAX_DB),
+            FIELD_INIT(.step, 3),
+            FIELD_INIT(.scale, 1),
+        }),
     },
     {
-        .name = "rxvga1",
-        .range = {
-            .min = BLADERF_RXVGA1_GAIN_MIN,
-            .max = BLADERF_RXVGA1_GAIN_MAX,
-            .step = 1,
-            .scale = 1,
-        },
+        FIELD_INIT(.name, "rxvga1"),
+        FIELD_INIT(.range, {
+            FIELD_INIT(.min, BLADERF_RXVGA1_GAIN_MIN),
+            FIELD_INIT(.max, BLADERF_RXVGA1_GAIN_MAX),
+            FIELD_INIT(.step, 1),
+            FIELD_INIT(.scale, 1),
+        }),
     },
     {
-        .name = "rxvga2",
-        .range = {
-            .min = BLADERF_RXVGA2_GAIN_MIN,
-            .max = BLADERF_RXVGA2_GAIN_MAX,
-            .step = 1,
-            .scale = 1,
-        },
+        FIELD_INIT(.name, "rxvga2"),
+        FIELD_INIT(.range, {
+            FIELD_INIT(.min, BLADERF_RXVGA2_GAIN_MIN),
+            FIELD_INIT(.max, BLADERF_RXVGA2_GAIN_MAX),
+            FIELD_INIT(.step, 1),
+            FIELD_INIT(.scale, 1),
+        }),
     },
 };
 
@@ -196,57 +196,57 @@ static const struct bladerf_gain_stage_info bladerf1_rx_gain_stages[] = {
 
 static const struct bladerf_gain_stage_info bladerf1_tx_gain_stages[] = {
     {
-        .name = "txvga1",
-        .range = {
-            .min = BLADERF_TXVGA1_GAIN_MIN,
-            .max = BLADERF_TXVGA1_GAIN_MAX,
-            .step = 1,
-            .scale = 1,
-        },
+        FIELD_INIT(.name, "txvga1"),
+        FIELD_INIT(.range, {
+            FIELD_INIT(.min, BLADERF_TXVGA1_GAIN_MIN),
+            FIELD_INIT(.max, BLADERF_TXVGA1_GAIN_MAX),
+            FIELD_INIT(.step, 1),
+            FIELD_INIT(.scale, 1),
+        }),
     },
     {
-        .name = "txvga2",
-        .range = {
-            .min = BLADERF_TXVGA2_GAIN_MIN,
-            .max = BLADERF_TXVGA2_GAIN_MAX,
-            .step = 1,
-            .scale = 1,
-        },
+        FIELD_INIT(.name, "txvga2"),
+        FIELD_INIT(.range, {
+            FIELD_INIT(.min, BLADERF_TXVGA2_GAIN_MIN),
+            FIELD_INIT(.max, BLADERF_TXVGA2_GAIN_MAX),
+            FIELD_INIT(.step, 1),
+            FIELD_INIT(.scale, 1),
+        }),
     },
 };
 
 /* Sample Rate Range */
 
 static const struct bladerf_range bladerf1_sample_rate_range = {
-    .min = BLADERF_SAMPLERATE_MIN,
-    .max = BLADERF_SAMPLERATE_REC_MAX,
-    .step = 1,
-    .scale = 1,
+    FIELD_INIT(.min, BLADERF_SAMPLERATE_MIN),
+    FIELD_INIT(.max, BLADERF_SAMPLERATE_REC_MAX),
+    FIELD_INIT(.step, 1),
+    FIELD_INIT(.scale, 1),
 };
 
 /* Bandwidth Range */
 
 static const struct bladerf_range bladerf1_bandwidth_range = {
-    .min = BLADERF_BANDWIDTH_MIN,
-    .max = BLADERF_BANDWIDTH_MAX,
-    .step = 1,
-    .scale = 1,
+    FIELD_INIT(.min, BLADERF_BANDWIDTH_MIN),
+    FIELD_INIT(.max, BLADERF_BANDWIDTH_MAX),
+    FIELD_INIT(.step, 1),
+    FIELD_INIT(.scale, 1),
 };
 
 /* Frequency Range */
 
 static const struct bladerf_range bladerf1_frequency_range = {
-    .min = BLADERF_FREQUENCY_MIN,
-    .max = BLADERF_FREQUENCY_MAX,
-    .step = 1,
-    .scale = 1,
+    FIELD_INIT(.min, BLADERF_FREQUENCY_MIN),
+    FIELD_INIT(.max, BLADERF_FREQUENCY_MAX),
+    FIELD_INIT(.step, 1),
+    FIELD_INIT(.scale, 1),
 };
 
 static const struct bladerf_range bladerf1_xb200_frequency_range = {
-    .min = 0,
-    .max = 300e6,
-    .step = 1,
-    .scale = 1,
+    FIELD_INIT(.min, 0),
+    FIELD_INIT(.max, 300e6),
+    FIELD_INIT(.step, 1),
+    FIELD_INIT(.scale, 1),
 };
 
 /******************************************************************************/
