@@ -157,6 +157,7 @@ begin
     U_fifo_reader : entity work.fifo_reader
         generic map (
             NUM_STREAMS           => NUM_STREAMS,
+            FIFO_READ_THROTTLE    => 0,
             FIFO_USEDW_WIDTH      => sample_fifo.rused'length,
             FIFO_DATA_WIDTH       => sample_fifo.rdata'length,
             META_FIFO_USEDW_WIDTH => meta_fifo.rused'length,
