@@ -27,11 +27,12 @@ library work;
 
 entity fifo_reader is
     generic (
-        NUM_STREAMS           : natural := 1;
-        FIFO_USEDW_WIDTH      : natural := 12;
-        FIFO_DATA_WIDTH       : natural := 32;
-        META_FIFO_USEDW_WIDTH : natural := 3;
-        META_FIFO_DATA_WIDTH  : natural := 128
+        NUM_STREAMS           : natural                 := 1;
+        FIFO_READ_THROTTLE    : natural range 0 to 255  := 1;
+        FIFO_USEDW_WIDTH      : natural                 := 12;
+        FIFO_DATA_WIDTH       : natural                 := 32;
+        META_FIFO_USEDW_WIDTH : natural                 := 3;
+        META_FIFO_DATA_WIDTH  : natural                 := 128
     );
     port (
         clock               :   in      std_logic;
@@ -101,14 +102,14 @@ architecture simple of fifo_reader is
 
     type fifo_fsm_t is record
         state           : fifo_state_t;
-        downcount       : natural range 0 to 255;
+        downcount       : natural range FIFO_READ_THROTTLE'range;
         fifo_read       : std_logic;
         out_samples     : sample_streams_t(out_samples'range);
     end record;
 
     constant FIFO_FSM_RESET_VALUE : fifo_fsm_t := (
         state           => READ_SAMPLES,
-        downcount       => 0,
+        downcount       => FIFO_READ_THROTTLE,
         fifo_read       => '0',
         out_samples     => (others => ZERO_SAMPLE)
     );
@@ -261,7 +262,7 @@ begin
 
             when READ_SAMPLES =>
 
-                fifo_future.downcount <= 0;
+                fifo_future.downcount <= FIFO_FSM_RESET_VALUE.downcount;
 
                 if( fifo_empty = '0' and
                     (meta_en = '0' or (meta_en = '1' and meta_current.meta_time_go = '1')) ) then
@@ -273,12 +274,17 @@ begin
                     end loop;
 
                     fifo_future.fifo_read <= read_req;
-                    fifo_future.state     <= READ_THROTTLE;
+
+                    if( FIFO_FSM_RESET_VALUE.downcount /= 0 ) then
+                        fifo_future.state <= READ_THROTTLE;
+                    end if;
+
                 end if;
 
             when READ_THROTTLE =>
 
-                if( fifo_current.downcount = 0 ) then
+                -- If in this state, downcount is guaranteed to be >= 1
+                if( fifo_current.downcount = 1 ) then
                     fifo_future.state     <= READ_SAMPLES;
                 else
                     fifo_future.downcount <= fifo_current.downcount - 1;
