@@ -182,10 +182,9 @@ begin
     -- RX loopback FIFO
     loopback_fifo.aclr   <= '1' when ( (loopback_fifo_wreset = '1') or (loopback_fifo_wenabled_i = '0') ) else '0';
     loopback_fifo.rclock <= rx_clock;
-    U_rx_loopback_fifo : entity work.rx_fifo
-        generic map (
-            LPM_NUMWORDS        => 2**(loopback_fifo.wused'length)
-        ) port map (
+
+    U_rx_loopback_fifo : entity work.lb_fifo
+        port map (
             aclr                => loopback_fifo.aclr,
 
             wrclk               => loopback_fifo_wclock,

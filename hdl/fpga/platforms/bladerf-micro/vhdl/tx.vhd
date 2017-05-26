@@ -65,7 +65,7 @@ entity tx is
 
         -- Digital Loopback Interface
         loopback_enabled     : in    std_logic;
-        loopback_data        : out   std_logic_vector(RX_FIFO_T_DEFAULT.wdata'range);
+        loopback_data        : out   std_logic_vector(LOOPBACK_FIFO_T_DEFAULT.wdata'range);
         loopback_data_valid  : out   std_logic;
 
         -- RFFE Interface

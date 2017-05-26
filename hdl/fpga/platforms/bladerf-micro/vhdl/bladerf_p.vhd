@@ -23,6 +23,9 @@ library ieee;
     use ieee.numeric_std.all;
     use ieee.math_real.all;
 
+library work;
+    use work.common_dcfifo_p.all;
+
 package bladerf_p is
 
     -- ========================================================================
@@ -141,100 +144,119 @@ package bladerf_p is
     -- TYPEDEFS
     -- ========================================================================
 
+    constant TX_FIFO_WWIDTH         : natural := 32;    -- write side data width
+    constant TX_FIFO_RWIDTH         : natural := 64;    -- read side data width
     constant TX_FIFO_LENGTH         : natural := 4096;  -- samples
+
+    constant RX_FIFO_WWIDTH         : natural := 64;    -- write side data width
+    constant RX_FIFO_RWIDTH         : natural := 32;    -- read side data width
     constant RX_FIFO_LENGTH         : natural := 4096;  -- samples
-    constant LOOPBACK_FIFO_LENGTH   : natural := 4096;  -- samples
+
+    constant LOOPBACK_FIFO_WWIDTH   : natural := 64;    -- write side data width
+    constant LOOPBACK_FIFO_RWIDTH   : natural := 64;    -- read side data width
+    constant LOOPBACK_FIFO_LENGTH   : natural := 2048;  -- samples
+
+    constant META_FIFO_TX_WWIDTH    : natural := 32;    -- write side data width
+    constant META_FIFO_TX_RWIDTH    : natural := 128;   -- read side data width
     constant META_FIFO_TX_LENGTH    : natural := 32;    -- 32-bit words
-    constant META_FIFO_RX_LENGTH    : natural := 128;   -- 32-bit words
+
+    constant META_FIFO_RX_WWIDTH    : natural := 128;   -- write side data width
+    constant META_FIFO_RX_RWIDTH    : natural := 32;    -- read side data width
+    constant META_FIFO_RX_LENGTH    : natural := 32;    -- 32-bit words
 
     type tx_fifo_t is record
         aclr    :   std_logic;
 
         wclock  :   std_logic;
-        wdata   :   std_logic_vector(31 downto 0);
+        wdata   :   std_logic_vector(TX_FIFO_WWIDTH-1 downto 0);
         wreq    :   std_logic;
         wempty  :   std_logic;
         wfull   :   std_logic;
-        wused   :   std_logic_vector(integer(ceil(log2(real(TX_FIFO_LENGTH))))-1 downto 0);
+        wused   :   std_logic_vector(compute_wrusedw_high(TX_FIFO_LENGTH) downto 0);
 
         rclock  :   std_logic;
-        rdata   :   std_logic_vector(31 downto 0);
+        rdata   :   std_logic_vector(TX_FIFO_RWIDTH-1 downto 0);
         rreq    :   std_logic;
         rempty  :   std_logic;
         rfull   :   std_logic;
-        rused   :   std_logic_vector(integer(ceil(log2(real(TX_FIFO_LENGTH))))-1 downto 0);
+        rused   :   std_logic_vector(compute_rdusedw_high(TX_FIFO_LENGTH, TX_FIFO_WWIDTH,
+                                                          TX_FIFO_RWIDTH) downto 0);
     end record;
 
     type rx_fifo_t is record
         aclr    :   std_logic;
 
         wclock  :   std_logic;
-        wdata   :   std_logic_vector(31 downto 0);
+        wdata   :   std_logic_vector(RX_FIFO_WWIDTH-1 downto 0);
         wreq    :   std_logic;
         wempty  :   std_logic;
         wfull   :   std_logic;
-        wused   :   std_logic_vector(integer(ceil(log2(real(RX_FIFO_LENGTH))))-1 downto 0);
+        wused   :   std_logic_vector(compute_wrusedw_high(RX_FIFO_LENGTH) downto 0);
 
         rclock  :   std_logic;
-        rdata   :   std_logic_vector(31 downto 0);
+        rdata   :   std_logic_vector(RX_FIFO_RWIDTH-1 downto 0);
         rreq    :   std_logic;
         rempty  :   std_logic;
         rfull   :   std_logic;
-        rused   :   std_logic_vector(integer(ceil(log2(real(RX_FIFO_LENGTH))))-1 downto 0);
+        rused   :   std_logic_vector(compute_rdusedw_high(RX_FIFO_LENGTH, RX_FIFO_WWIDTH,
+                                                          RX_FIFO_RWIDTH) downto 0);
     end record;
 
     type loopback_fifo_t is record
         aclr    :   std_logic;
 
         wclock  :   std_logic;
-        wdata   :   std_logic_vector(31 downto 0);
+        wdata   :   std_logic_vector(LOOPBACK_FIFO_WWIDTH-1 downto 0);
         wreq    :   std_logic;
         wempty  :   std_logic;
         wfull   :   std_logic;
-        wused   :   std_logic_vector(integer(ceil(log2(real(LOOPBACK_FIFO_LENGTH))))-1 downto 0);
+        wused   :   std_logic_vector(compute_wrusedw_high(LOOPBACK_FIFO_LENGTH) downto 0);
 
         rclock  :   std_logic;
-        rdata   :   std_logic_vector(31 downto 0);
+        rdata   :   std_logic_vector(LOOPBACK_FIFO_RWIDTH-1 downto 0);
         rreq    :   std_logic;
         rempty  :   std_logic;
         rfull   :   std_logic;
-        rused   :   std_logic_vector(integer(ceil(log2(real(LOOPBACK_FIFO_LENGTH))))-1 downto 0);
+        rused   :   std_logic_vector(compute_rdusedw_high(LOOPBACK_FIFO_LENGTH, LOOPBACK_FIFO_WWIDTH,
+                                                          LOOPBACK_FIFO_RWIDTH) downto 0);
     end record;
 
     type meta_fifo_tx_t is record
         aclr    :   std_logic;
 
         wclock  :   std_logic;
-        wdata   :   std_logic_vector(31 downto 0);
+        wdata   :   std_logic_vector(META_FIFO_TX_WWIDTH-1 downto 0);
         wreq    :   std_logic;
         wempty  :   std_logic;
         wfull   :   std_logic;
-        wused   :   std_logic_vector(integer(ceil(log2(real(META_FIFO_TX_LENGTH))))-1 downto 0);
+        wused   :   std_logic_vector(compute_wrusedw_high(META_FIFO_TX_LENGTH) downto 0);
 
         rclock  :   std_logic;
-        rdata   :   std_logic_vector(127 downto 0);
+        rdata   :   std_logic_vector(META_FIFO_TX_RWIDTH-1 downto 0);
         rreq    :   std_logic;
         rempty  :   std_logic;
         rfull   :   std_logic;
-        rused   :   std_logic_vector(integer(ceil(log2(real(META_FIFO_TX_LENGTH/4))))-1 downto 0);
+        rused   :   std_logic_vector(compute_rdusedw_high(META_FIFO_TX_LENGTH, META_FIFO_TX_WWIDTH,
+                                                          META_FIFO_TX_RWIDTH) downto 0);
     end record;
 
     type meta_fifo_rx_t is record
         aclr    :   std_logic;
 
         wclock  :   std_logic;
-        wdata   :   std_logic_vector(127 downto 0);
+        wdata   :   std_logic_vector(META_FIFO_RX_WWIDTH-1 downto 0);
         wreq    :   std_logic;
         wempty  :   std_logic;
         wfull   :   std_logic;
-        wused   :   std_logic_vector(integer(ceil(log2(real(META_FIFO_RX_LENGTH/4))))-1 downto 0);
+        wused   :   std_logic_vector(compute_wrusedw_high(META_FIFO_RX_LENGTH) downto 0);
 
         rclock  :   std_logic;
-        rdata   :   std_logic_vector(31 downto 0);
+        rdata   :   std_logic_vector(META_FIFO_RX_RWIDTH-1 downto 0);
         rreq    :   std_logic;
         rempty  :   std_logic;
         rfull   :   std_logic;
-        rused   :   std_logic_vector(integer(ceil(log2(real(META_FIFO_RX_LENGTH))))-1 downto 0);
+        rused   :   std_logic_vector(compute_rdusedw_high(META_FIFO_RX_LENGTH, META_FIFO_RX_WWIDTH,
+                                                          META_FIFO_RX_RWIDTH) downto 0);
     end record;
 
     type nios_gpio_t is record

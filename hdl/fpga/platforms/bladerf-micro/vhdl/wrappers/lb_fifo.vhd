@@ -7,7 +7,7 @@ library ieee;
 library work;
     use work.common_dcfifo_p.all;
 
-entity rx_fifo is
+entity lb_fifo is
     generic (
         ADD_RAM_OUTPUT_REGISTER : string  := "OFF";
         ADD_USEDW_MSB_BIT       : string  := "OFF";
@@ -15,10 +15,10 @@ entity rx_fifo is
         DELAY_RDUSEDW           : natural := 1;
         DELAY_WRUSEDW           : natural := 1;
         INTENDED_DEVICE_FAMILY  : string  := "Cyclone V";
-        LPM_NUMWORDS            : natural := 4096;
+        LPM_NUMWORDS            : natural := 2048;
         LPM_SHOWAHEAD           : string  := "ON";
         LPM_WIDTH               : natural := 64;
-        LPM_WIDTH_R             : natural := 32;
+        LPM_WIDTH_R             : natural := 64;
         OVERFLOW_CHECKING       : string  := "ON";
         RDSYNC_DELAYPIPE        : natural := 5;
         READ_ACLR_SYNCH         : string  := "ON";
@@ -45,7 +45,7 @@ entity rx_fifo is
     );
 end entity;
 
-architecture arch of rx_fifo is
+architecture arch of lb_fifo is
 
 begin
 

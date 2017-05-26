@@ -13,6 +13,7 @@ set_global_assignment -name VHDL_FILE    [file normalize [file join $here      v
 set_global_assignment -name VHDL_FILE    [file normalize [file join $here      vhdl/wrappers/tx_meta_fifo.vhd]]
 set_global_assignment -name VHDL_FILE    [file normalize [file join $here      vhdl/wrappers/rx_fifo.vhd]]
 set_global_assignment -name VHDL_FILE    [file normalize [file join $here      vhdl/wrappers/rx_meta_fifo.vhd]]
+set_global_assignment -name VHDL_FILE    [file normalize [file join $here      vhdl/wrappers/lb_fifo.vhd]]
 set_global_assignment -name VERILOG_FILE [file normalize [file join $workdir   system_pll/system_pll.v]]
 set_global_assignment -name QIP_FILE     [file normalize [file join $workdir   system_pll/system_pll.qip]]
 set_global_assignment -name VERILOG_FILE [file normalize [file join $workdir   fx3_pll/fx3_pll.v]]

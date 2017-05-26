@@ -91,9 +91,9 @@ architecture hosted_bladerf of bladerf is
     signal rx_timestamp           : unsigned(63 downto 0);
     signal timestamp_sync         : std_logic;
 
-    signal tx_loopback_enabled    : std_logic                     := '0';
-    signal tx_loopback_data       : std_logic_vector(31 downto 0) := (others => '0');
-    signal tx_loopback_data_valid : std_logic                     := '0';
+    signal tx_loopback_enabled    : std_logic                                             := '0';
+    signal tx_loopback_data       : std_logic_vector(LOOPBACK_FIFO_T_DEFAULT.rdata'range) := (others => '0');
+    signal tx_loopback_data_valid : std_logic                                             := '0';
 
     signal fx3_gpif_in            : std_logic_vector(31 downto 0);
     signal fx3_gpif_out           : std_logic_vector(31 downto 0);
@@ -142,7 +142,7 @@ architecture hosted_bladerf of bladerf is
 
     signal channel_sel            : std_logic := '0';
 
-    signal dac_controls           : sample_controls_t(0 to 0)             := (others => SAMPLE_CONTROL_DISABLE);
+    signal dac_controls           : sample_controls_t(ad9361.ch'range)    := (others => SAMPLE_CONTROL_DISABLE);
     signal dac_streams            : sample_streams_t(dac_controls'range)  := (others => ZERO_SAMPLE);
     signal adc_controls           : sample_controls_t(dac_controls'range) := (others => SAMPLE_CONTROL_DISABLE);
     signal adc_streams            : sample_streams_t(dac_controls'range)  := (others => ZERO_SAMPLE);

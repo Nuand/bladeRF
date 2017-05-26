@@ -18,7 +18,7 @@ entity tx_fifo is
         LPM_NUMWORDS            : natural := 4096;
         LPM_SHOWAHEAD           : string  := "ON";
         LPM_WIDTH               : natural := 32;
-        LPM_WIDTH_R             : natural := 32;
+        LPM_WIDTH_R             : natural := 64;
         OVERFLOW_CHECKING       : string  := "ON";
         RDSYNC_DELAYPIPE        : natural := 5;
         READ_ACLR_SYNCH         : string  := "ON";
