@@ -1107,8 +1107,8 @@ const struct backend_fns backend_fns_usb_legacy = {
 
     FIELD_INIT(.probe, usb_probe),
 
-    FIELD_INIT(.open, usb_open),
     FIELD_INIT(.get_vid_pid, usb_get_vid_pid),
+    FIELD_INIT(.open, usb_open),
     FIELD_INIT(.set_fpga_protocol, usb_set_fpga_protocol),
     FIELD_INIT(.close, usb_close),
 
@@ -1205,8 +1205,8 @@ const struct backend_fns backend_fns_usb = {
 
     FIELD_INIT(.probe, usb_probe),
 
-    FIELD_INIT(.open, usb_open),
     FIELD_INIT(.get_vid_pid, usb_get_vid_pid),
+    FIELD_INIT(.open, usb_open),
     FIELD_INIT(.set_fpga_protocol, usb_set_fpga_protocol),
     FIELD_INIT(.close, usb_close),
 
