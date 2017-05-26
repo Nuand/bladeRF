@@ -1397,6 +1397,21 @@ static const struct {
     },
 };
 
+static const int ad9361_correction_force_bit[2][4][2] = {
+    [0] = {
+        [BLADERF_CORR_DCOFF_I] = {2, 6},
+        [BLADERF_CORR_DCOFF_Q] = {2, 6},
+        [BLADERF_CORR_PHASE] = {0, 4},
+        [BLADERF_CORR_GAIN] = {0, 4},
+    },
+    [1] = {
+        [BLADERF_CORR_DCOFF_I] = {3, 7},
+        [BLADERF_CORR_DCOFF_Q] = {3, 7},
+        [BLADERF_CORR_PHASE] = {1, 5},
+        [BLADERF_CORR_GAIN] = {1, 5},
+    },
+};
+
 static int bladerf2_get_correction(struct bladerf *dev, bladerf_channel ch,
                                    bladerf_correction corr, int16_t *value)
 {
@@ -1523,7 +1538,147 @@ static int bladerf2_get_correction(struct bladerf *dev, bladerf_channel ch,
 static int bladerf2_set_correction(struct bladerf *dev, bladerf_channel ch,
                                    bladerf_correction corr, int16_t value)
 {
-    return BLADERF_ERR_UNSUPPORTED;
+    struct bladerf2_board_data *board_data = dev->board_data;
+    int status;
+    bool low_band;
+    uint16_t reg, data;
+    unsigned int shift;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    /* Validate channel */
+    if (ch != BLADERF_CHANNEL_RX(0) && ch != BLADERF_CHANNEL_RX(1) &&
+            ch != BLADERF_CHANNEL_TX(0) && ch != BLADERF_CHANNEL_TX(1)) {
+        return BLADERF_ERR_INVAL;
+    }
+
+    /* Validate correction */
+    if (corr != BLADERF_CORR_DCOFF_I && corr != BLADERF_CORR_DCOFF_Q &&
+            corr != BLADERF_CORR_PHASE && corr != BLADERF_CORR_GAIN) {
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    /* Look up band */
+    if (ch & BLADERF_TX) {
+        uint32_t mode;
+
+        status = ad9361_get_tx_rf_port_output(board_data->phy, &mode);
+        if (status < 0) {
+            return errno_ad9361_to_bladerf(status);
+        }
+
+        low_band = (mode == TXA);
+    } else {
+        uint32_t mode;
+
+        status = ad9361_get_rx_rf_port_input(board_data->phy, &mode);
+        if (status < 0) {
+            return errno_ad9361_to_bladerf(status);
+        }
+
+        /* Check if RX RF port mode is supported */
+        if (mode != A_BALANCED && mode != B_BALANCED && mode != C_BALANCED) {
+            return BLADERF_ERR_UNSUPPORTED;
+        }
+
+        low_band = (mode == A_BALANCED);
+    }
+
+    if ((corr == BLADERF_CORR_DCOFF_I || corr == BLADERF_CORR_DCOFF_Q) &&
+            (ch & BLADERF_DIRECTION_MASK) == BLADERF_RX) {
+        /* RX DC offset corrections are stuffed in a super convoluted way in
+         * the register map. See AD9361 register map page 51. */
+        bool is_q = (corr == BLADERF_CORR_DCOFF_Q);
+        uint8_t data_top, data_bot;
+
+        /* Scale 13-bit to 10-bit */
+        data = value >> 3;
+
+        /* Read top register */
+        status = ad9361_spi_read(board_data->phy->spi, ad9361_correction_rx_dcoff_reg_table[ch][low_band][is_q].reg_top);
+        if (status < 0) {
+            return errno_ad9361_to_bladerf(status);
+        }
+        data_top = status;
+
+        /* Read bottom register */
+        status = ad9361_spi_read(board_data->phy->spi, ad9361_correction_rx_dcoff_reg_table[ch][low_band][is_q].reg_bot);
+        if (status < 0) {
+            return errno_ad9361_to_bladerf(status);
+        }
+        data_bot = status;
+
+        /* Modify registers */
+        if (ch == BLADERF_CHANNEL_RX(0)) {
+            if (!is_q) {
+                /*    top: | x x x x 9 8 7 6 | */
+                /* bottom: | 5 4 3 2 1 0 x x | */
+                data_top = (data_top & 0xf0) | ((data >> 6) & 0x0f);
+                data_bot = (data_bot & 0x03) | ((data & 0x3f) << 2);
+            } else {
+                /*    top: | x x x x x x 9 8 | */
+                /* bottom: | 7 6 5 4 3 2 1 0 | */
+                data_top = (data_top & 0xfc) | ((data >> 8) & 0x03);
+                data_bot = data & 0xff;
+            }
+        } else {
+            if (!is_q) {
+                /*    top: | 9 8 7 6 5 4 3 2 | */
+                /* bottom: | x x x x x x 1 0 | */
+                data_top = (data >> 2) & 0xff;
+                data_bot = (data_bot & 0xfc) | (data & 0x03);
+            } else {
+                /*    top: | x x 9 8 7 6 5 4 | */
+                /* bottom: | 3 2 1 0 x x x x | */
+                data_top = (data & 0xc0) | ((data >> 4) & 0x3f);
+                data_bot = (data & 0x0f) | ((data & 0x0f) << 4);
+            }
+        }
+
+        /* Write top register */
+        status = ad9361_spi_write(board_data->phy->spi, ad9361_correction_rx_dcoff_reg_table[ch][low_band][is_q].reg_top, data_top);
+        if (status < 0) {
+            return errno_ad9361_to_bladerf(status);
+        }
+
+        /* Write bottom register */
+        status = ad9361_spi_write(board_data->phy->spi, ad9361_correction_rx_dcoff_reg_table[ch][low_band][is_q].reg_bot, data_bot);
+        if (status < 0) {
+            return errno_ad9361_to_bladerf(status);
+        }
+    } else {
+        /* Look up correction register and value shift in table */
+        reg = ad9361_correction_reg_table[ch].corr[corr].reg[low_band];
+        shift = ad9361_correction_reg_table[ch].corr[corr].shift;
+
+        /* Scale 12-bit/13-bit to 8-bit */
+        data = (value >> shift) & 0xff;
+
+        /* Write register */
+        status = ad9361_spi_write(board_data->phy->spi, reg, data & 0xff);
+        if (status < 0) {
+            return errno_ad9361_to_bladerf(status);
+        }
+    }
+
+    reg = (ch & BLADERF_TX) ? REG_TX_FORCE_BITS : REG_FORCE_BITS;
+
+    /* Read force bit register */
+    status = ad9361_spi_read(board_data->phy->spi, reg);
+    if (status < 0) {
+        return errno_ad9361_to_bladerf(status);
+    }
+
+    /* Modify register */
+    data = status | (1 << ad9361_correction_force_bit[ch >> 1][corr][low_band]);
+
+    /* Write force bit register */
+    status = ad9361_spi_write(board_data->phy->spi, reg, data);
+    if (status < 0) {
+        return errno_ad9361_to_bladerf(status);
+    }
+
+    return 0;
 }
 
 /******************************************************************************/
