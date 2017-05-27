@@ -837,13 +837,9 @@ int CALL_CONV bladerf_get_rational_sample_rate(
 /**
  * @defgroup FN_BANDWIDTH Bandwidth
  *
- * This section defines functionality for configuring the device's
- * LPF bandwidth. In most cases, one should define the bandwidth to
+ * This section defines functionality for configuring a channel's
+ * bandwidth. In most cases, one should define the bandwidth to
  * be less than the sample rate to minimize the impact of aliases.
- *
- * To determine the required bandwidth setting for a desired sample rate
- * (or vice versa), review the TX/RX LPF amplitude response plots in
- * the LMS6002D datasheet. (This was Figure 6 as of datasheet v1.2r0.)
  *
  * These functions are thread-safe.
  *
@@ -851,7 +847,7 @@ int CALL_CONV bladerf_get_rational_sample_rate(
  */
 
 /**
- * Set the bandwidth of the LMS LPF to specified value in Hz
+ * Set the bandwidth of the channel to the specified value in Hz
  *
  * The underlying device is capable of a discrete set of bandwidth values. The
  * caller should check the `actual` parameter to determine which of these
@@ -876,7 +872,7 @@ int CALL_CONV bladerf_set_bandwidth(struct bladerf *dev, bladerf_channel ch,
                                     unsigned int *actual);
 
 /**
- * Get the bandwidth of the LMS LPF
+ * Get the bandwidth of the channel
  *
  * @param       dev                 Device Handle
  * @param[in]   ch                  Channel
@@ -1524,7 +1520,7 @@ int CALL_CONV bladerf_get_rx_mux(struct bladerf *dev, bladerf_rx_mux *mode);
 
 /**
  * Quick Re-tune parameters. Note that these parameters, which are associated
- * with LMS6002D register values, are sensitive to changes in the operating
+ * with the RFIC's register values, are sensitive to changes in the operating
  * environment (e.g., temperature).
  *
  * This structure should be filled in via bladerf_get_quick_tune().
@@ -1867,8 +1863,7 @@ typedef enum {
  *
  * As of libbladeRF v1.3.0, it is no longer necessary for the API user to
  * ensure that the final 3 samples of a burst are 0+0j. libbladeRF now ensures
- * this hardware requirement (driven by the LMS6002D's pre-DAC register stages)
- * is upheld.
+ * this hardware requirement is upheld.
  *
  * Specifying this flag and flushing the sync interface's working buffer implies
  * that the next timestamp that can be transmitted is the current timestamp plus
