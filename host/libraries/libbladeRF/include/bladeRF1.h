@@ -167,6 +167,10 @@
 /**
  * @defgroup FN_BLADERF1_GAIN Gain stages
  *
+ * These functions provide control over the device's RX and TX gain stages,
+ * however, new applications should use the more generic
+ * bladerf_set_gain_stage() and bladerf_get_gain_stage() instead.
+ *
  * @{
  */
 
@@ -346,6 +350,11 @@ int CALL_CONV bladerf_get_rxvga2(struct bladerf *dev, int *gain);
 /**
  * @defgroup FN_BLADERF1_SAMPLING_MUX Sampling Mux
  *
+ * These functions provide control over internal and direct sampling modes of
+ * the LMS6002D.
+ *
+ * These functions are thread-safe.
+ *
  * @{
  */
 
@@ -391,6 +400,10 @@ int CALL_CONV bladerf_get_sampling(struct bladerf *dev,
 
 /**
  * @defgroup FN_BLADERF1_LPF_BYPASS LPF Bypass
+ *
+ * These functions provide control over the LPF bypass mode of the LMS6002D.
+ *
+ * These functions are thread-safe.
  *
  * @{
  */
@@ -611,7 +624,7 @@ int CALL_CONV bladerf_get_smb_frequency(struct bladerf *dev,
  * @defgroup FN_EXP_IO Expansion I/O
  *
  * These definitions and functions provide high-level functionality for
- * manipulating pins on the bladeRF U74 Expansion Header, and the associated
+ * manipulating pins on the bladeRF1 U74 Expansion Header, and the associated
  * mappings on expansion boards.
  *
  * These functions are thread-safe.
@@ -1156,6 +1169,7 @@ int CALL_CONV bladerf_xb200_get_path(struct bladerf *dev,
 API_EXPORT
 int CALL_CONV bladerf_xb300_set_trx(struct bladerf *dev,
                    bladerf_xb300_trx trx);
+
 /**
  * Get the current XB-300 signal path
  *
@@ -1167,6 +1181,7 @@ int CALL_CONV bladerf_xb300_set_trx(struct bladerf *dev,
 API_EXPORT
 int CALL_CONV bladerf_xb300_get_trx(struct bladerf *dev,
                    bladerf_xb300_trx *trx);
+
 /**
  * Enable or disable selected XB-300 amplifier
  *
@@ -1398,8 +1413,8 @@ int CALL_CONV bladerf_dac_read(struct bladerf *dev, uint16_t *val);
  * Read a Si5338 register
  *
  * @param       dev         Device handle
- * @param[in]   address     Si5338 register offset
- * @param[out]  val         Pointer to variable the data should be read into
+ * @param[in]   address     Si5338 register address
+ * @param[out]  val         Register value
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
@@ -1411,8 +1426,8 @@ int CALL_CONV bladerf_si5338_read(struct bladerf *dev,
  * Write a Si5338 register
  *
  * @param       dev         Device handle
- * @param[in]   address     Si5338 register offset
- * @param[in]   val         Data to write to register
+ * @param[in]   address     Si5338 register address
+ * @param[in]   val         Value to write to register
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
@@ -1424,8 +1439,8 @@ int CALL_CONV bladerf_si5338_write(struct bladerf *dev,
  * Read a LMS register
  *
  * @param       dev         Device handle
- * @param[in]   address     LMS register offset
- * @param[out]  val         Pointer to variable the data should be read into
+ * @param[in]   address     LMS register address
+ * @param[out]  val         Register value
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
@@ -1437,8 +1452,8 @@ int CALL_CONV bladerf_lms_read(struct bladerf *dev,
  * Write a LMS register
  *
  * @param       dev         Device handle
- * @param[in]   address     LMS register offset
- * @param[in]   val         Data to write to register
+ * @param[in]   address     LMS register address
+ * @param[in]   val         Value to write to register
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
@@ -1499,7 +1514,7 @@ int CALL_CONV bladerf_lms_get_dc_cals(struct bladerf *dev,
  * Write value to secondary XB SPI
  *
  * @param       dev     Device handle
- * @param[out]  val     Data to write to XB SPI
+ * @param[out]  val     Value to write to XB SPI
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
