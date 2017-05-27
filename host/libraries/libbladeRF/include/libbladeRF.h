@@ -1530,11 +1530,20 @@ int CALL_CONV bladerf_get_rx_mux(struct bladerf *dev, bladerf_rx_mux *mode);
  * This structure should be filled in via bladerf_get_quick_tune().
  */
 struct bladerf_quick_tune {
-    uint8_t freqsel;    /**< Choice of VCO and VCO division factor */
-    uint8_t vcocap;     /**< VCOCAP value */
-    uint16_t nint;      /**< Integer portion of LO frequency value */
-    uint32_t nfrac;     /**< Fractional portion of LO frequency value */
-    uint8_t  flags;     /**< Flag bits used internally by libbladeRF */
+    union {
+        /* bladeRF1 quick tune parameters */
+        struct {
+            uint8_t freqsel;    /**< Choice of VCO and VCO division factor */
+            uint8_t vcocap;     /**< VCOCAP value */
+            uint16_t nint;      /**< Integer portion of LO frequency value */
+            uint32_t nfrac;     /**< Fractional portion of LO frequency value */
+            uint8_t  flags;     /**< Flag bits used internally by libbladeRF */
+        };
+        /* bladeRF2 quick tune parameters */
+        struct {
+            /* TBD */
+        };
+   };
 };
 
 /**
