@@ -763,7 +763,9 @@ WARN_LOGFILE           =
 # spaces.
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/include \
+INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/include/libbladeRF.h \
+                         @CMAKE_CURRENT_SOURCE_DIR@/include/bladeRF1.h \
+                         @CMAKE_CURRENT_SOURCE_DIR@/include/bladeRF2.h \
                          @CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen
 
 # This tag can be used to specify the character encoding of the source files
