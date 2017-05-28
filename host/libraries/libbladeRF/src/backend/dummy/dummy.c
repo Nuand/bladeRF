@@ -317,7 +317,7 @@ static int dummy_get_firmware_loopback(struct bladerf *dev, bool *is_enabled)
     return 0;
 }
 
-static int dummy_enable_module(struct bladerf *dev, bladerf_channel ch,
+static int dummy_enable_module(struct bladerf *dev, bladerf_direction dir,
                                bool enable)
 {
     return 0;
@@ -328,7 +328,7 @@ static int dummy_init_stream(struct bladerf_stream *stream, size_t num_transfers
     return 0;
 }
 
-static int dummy_stream(struct bladerf_stream *stream, bladerf_direction dir)
+static int dummy_stream(struct bladerf_stream *stream, bladerf_channel_layout layout)
 {
     return 0;
 }
