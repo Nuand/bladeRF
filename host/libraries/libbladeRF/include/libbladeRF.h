@@ -1979,10 +1979,10 @@ struct bladerf_metadata {
 /** @} (End of STREAMING_FORMAT) */
 
 /**
- * Enable or disable the specified stream.
+ * Enable or disable the RF front end of the specified direction.
  *
- * Steams must always be enabled prior to streaming samples on the associated
- * interface.
+ * RF front ends must always be enabled prior to streaming samples on the
+ * associated interface.
  *
  * When a synchronous stream is associated with the specified channel, this
  * will shut down the underlying asynchronous stream when `enable` = false.
