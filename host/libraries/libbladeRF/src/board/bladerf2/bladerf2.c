@@ -1740,6 +1740,8 @@ static int bladerf2_init_stream(struct bladerf_stream **stream, struct bladerf *
 
 static int bladerf2_stream(struct bladerf_stream *stream, bladerf_channel_layout layout)
 {
+    /* FIXME use layout to configure for MIMO here */
+
     return async_run_stream(stream, layout & BLADERF_DIRECTION_MASK);
 }
 
@@ -1770,6 +1772,8 @@ static int bladerf2_sync_config(struct bladerf *dev, bladerf_channel_layout layo
     int status;
 
     CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    /* FIXME use layout to configure for MIMO here */
 
     status = sync_init(&board_data->sync[dir], dev, layout,
                        format, num_buffers, buffer_size,
