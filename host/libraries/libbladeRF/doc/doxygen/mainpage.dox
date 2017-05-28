@@ -3,7 +3,7 @@
 
 <h1>Introduction</h1>
 
-This library supports the <a class="el" href="https://www.nuand.com">Nuand bladeRF</a>
+This library supports the <a class="el" href="https://www.nuand.com">Nuand bladeRF1 and bladeRF2</a>
 USB 3.0 Software Defined Radio (SDR). It is intended to support developers looking to:
 <ul>
     <li>
@@ -39,12 +39,12 @@ libbladeRF provides the ability to:
     Configure device properties, such as:
         <ul>
             <li>Frequency tuning</li>
-            <li>Hardware Low Pass Filter (LPF) bandwidth</li>
+            <li>Bandwidth</li>
             <li>Sample rate</li>
             <li>Gain stages</li>
             <li>Expansion board settings</li>
-            <li>SMB clock port mode (for MIMO applications)</li>
             <li>Synchronization trigger signals</li>
+            <li>SMB clock port mode (for MIMO applications on bladeRF1)</li>
         </ul>
     </li>
     <li>
@@ -82,9 +82,6 @@ The following pages provide examples and more detailed usage information:
     <a class="el" href="boilerplate.html">Device configuration boilerplate</a>
     </li>
     <li>
-    <a class="el" href="tuning.html">Frequency tuning</a>
-    </li>
-    <li>
     RX and TX via the Synchronous Interface
     </li>
     <ul>
@@ -98,6 +95,9 @@ The following pages provide examples and more detailed usage information:
         <a class="el" href="sync_tx_meta_bursts.html">TX with metadata</a>
         </li>
     </ul>
+    <li>
+    <a class="el" href="tuning.html">Frequency tuning (bladeRF1)</a>
+    </li>
     <li>
         <a class="el" href="envvars.html">Environment variables</a>
     </li>

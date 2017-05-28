@@ -51,32 +51,83 @@ prior to transmitting or receiving samples.
 
 <ul>
     <li>Frequency</li>
-    <li>Gains</li>
+    <li>Gain</li>
     <li>Sample Rate</li>
     <li>Bandwidth</li>
 </ul>
 
-Note that all of the above are configured on a per-module (i.e, RX or TX) basis.
+Note that all of the above are configured on a per-channel (i.e, RX0 or TX1)
+basis.
 
-<h3> Selecting Appropriate Values </h3>
+<h3> Channels </h3>
 
-To better understand each of the available gains controls, see Figures 1, 2, and
-3 in the <a class="el" href="http://www.limemicro.com/download/lms6002dr2-datasheet-1.2r0.pdf">LMS6002D datasheet</a>.  In general, one stage should be increased prior
-to increasing the following stage.  For RX, increase the LNA gain, followed by
-RX VGA1, then RX VGA2.  Similarly, increase TX VGA1 first, then TX VGA2.
+RX and TX channels are specified by the `BLADERF_CHANNEL_RX()` and
+`BLADERF_CHANNEL_TX()` macros. These channel macros are provided as arguments
+to various methods to control frequency, gain, sample rate, and bandwidth of
+the specified channel of the bladeRF device.
+
+The bladeRF1 is a SISO SDR with one receiver and transmiter (1x1). It supports
+the following channels: `BLADERF_CHANNEL_RX(0)`, `BLADERF_CHANNEL_TX(0)`.
+
+The bladeRF2 is a MIMO SDR with two receivers and two transmitters (2x2). It
+supports the following channels: `BLADERF_CHANNEL_RX(0)`,
+`BLADERF_CHANNEL_RX(1)`, `BLADERF_CHANNEL_TX(0)`, `BLADERF_CHANNEL_TX(1)`.
+
+<h3>Selecting Appropriate Values</h3>
+
+Gain can be controlled in a coarse or fine manner. With coarse control of gain,
+bladerf_set_gain() sets an overall gain for the specified channel, and the
+underlying gain stages are configured appropriately to distribute the overall
+gain. With fine control of gain, bladerf_set_gain_stage() sets an individual
+gain for the specified gain stage and channel. The device's supported range of
+overall and individual gains can be queried with bladerf_get_gain_range() and
+bladerf_get_gain_stage_range(), respectively.
 
 The selection of sample rate and bandwidth are tightly coupled. In general, the
 sample rate must be high enough to ensure that all desired signals can be
-sampled without aliasing. However, note that the LMS6002D provides a discrete
-set of bandwidth options. This implies that one's sample rate selection will
-largely be influenced by the bandwidth option that most closely matches the
-desired value.
+sampled without aliasing. However, note that the RF transciever IC provides a
+discrete set of bandwidth options. This implies that one's sample rate
+selection will largely be influenced by the bandwidth option that most closely
+matches the desired value. The device's supported range of sample rates can be
+queried with bladerf_get_sample_rate_range().
 
-The bandwidth parameter controls the LMS6002D's RF front-end (RFFE) low-pass
-filter (LPF) setting. This should be configured to be less than the sample rate
-to ensure that the filter has reached maximum attenuation before reaching the
-desired sample rate value. Otherwise, noise and aliases may "fold"
-into the frequency range of interest.
+The bandwidth parameter controls the RF front-end (RFFE) low-pass filter (LPF)
+setting. This should be configured to be less than the sample rate to ensure
+that the filter has reached maximum attenuation before reaching the desired
+sample rate value. Otherwise, noise and aliases may "fold" into the frequency
+range of interest. The device's supported range of bandwidths can be queried
+with bladerf_get_frequency_range().
+
+<h3>bladeRF1 Details</h3>
+
+<ul>
+    <li>RX Gain</li>
+        <ul>
+            <li>Overall: 5 to 66 dB</li>
+            <li>LNA: 0 to 6 dB (step of 3 dB)</li>
+            <li>VGA1: 5 to 30 dB (step of 1 dB)</li>
+            <li>VGA2: 0 to 30 dB (step of 1 dB)</li>
+            <li>Stage names: `lna`, `rxvga1`, `rxvga2`</li>
+        </ul>
+    <li>TX Gain</li>
+        <ul>
+            <li>Overall: -35 to 21 dB</li>
+            <li>VGA1: -35 to -4 dB (step of 1 dB)</li>
+            <li>VGA2: 0 to 25 dB (step of 1 dB)</li>
+            <li>Stage names: `txvga1`, `txvga2`</li>
+        </ul>
+    <li>Frequency: 237500000 to 3800000000 Hz</li>
+    <li>Bandwidth: 1500000 to 28000000 Hz</li>
+    <li>Sample Rate: 80000 to 40000000 Hz (recommended max)</li>
+</ul>
+
+To better understand each of the available gains controls, see Figures 1, 2,
+and 3 in the <a class="el"
+href="http://www.limemicro.com/download/lms6002dr2-datasheet-1.2r0.pdf">LMS6002D
+datasheet</a>.  In general, when configuring individual gain stages, one stage
+should be increased prior to increasing the following stage.  For RX, increase
+the LNA gain, followed by RX VGA1, then RX VGA2.  Similarly, increase TX VGA1
+first, then TX VGA2.
 
 Consult the plots in Figure 5 of the <a class="el" href="http://www.limemicro.com/download/lms6002dr2-datasheet-1.2r0.pdf">LMS6002D datasheet</a>
 for the RX/TX filter responses.  Note that the filter ranges are listed in the datasheet
@@ -90,27 +141,45 @@ Therefore, when calling bladerf_set_bandwidth() with a value of 1.5 MHz, a
 sample rate 2 MHz would be a preferred minimum, and a sample rate >= 3.6 MHz
 would be an even better choice.
 
+<h3>bladeRF2 Details</h3>
+
+<ul>
+    <li>RX Gain</li>
+        <ul>
+            <li>Overall: 0 to 77 dB (step of 1 dB)</li>
+        </ul>
+    <li>TX Gain</li>
+        <ul>
+            <li>Overall: -89.75 to 0 db (step of 0.25 db)</li>
+        </ul>
+    <li>Frequency: 70000000 to 6000000000 Hz</li>
+    <li>Bandwidth: 200000 to 56000000 Hz</li>
+    <li>Sample Rate: 0 to 61440000 Hz</li>
+</ul>
+
 <h3>Applying a set of values</h3>
+
 It is common for a program to apply all of these settings during its initialization.
 Therefore, the example in this page groups these parameters into a structure and then
-uses a `configure_module()` helper function to apply them:
+uses a `configure_channel()` helper function to apply them:
 
-\snippet boilerplate.c struct module_config
+\snippet boilerplate.c struct channel_config
 
-As shown in the below implementation of `configure_module()`, the general procedure
-for applying a parameter involves calling the corresponding function and checking
-the return value.
+As shown in the below implementation of `configure_channel()`, the general
+procedure for applying a parameter involves calling the corresponding function
+and checking the return value.
 
-Note that some functions, such as bladerf_set_sample_rate() and bladerf_set_bandwidth(),
-have optional `actual` output parameters that are set to NULL in this example. These
-`actual` values are used to provide feedback about the differences between the requested
-value and the actual value applied. Some error may occur in converting the sample
-rate into a rational fraction, as required by the underlying hardware.  As previously,
-mentioned, the LMS600D provides a discrete set of RFFE LPF bandwidth settings.
-bladerf_set_bandwidth() will choose the closest bandwidth setting, and report this
-via the optional `actual` parameter.
+Note that some functions, such as bladerf_set_sample_rate() and
+bladerf_set_bandwidth(), have optional `actual` output parameters that are set
+to NULL in this example. These `actual` values are used to provide feedback
+about the differences between the requested value and the actual value applied.
+Some error may occur in converting the sample rate into a rational fraction, as
+required by the underlying hardware.  As previously, mentioned, the RF
+transceiver provides a discrete set of bandwidth settings.
+bladerf_set_bandwidth() will choose the closest bandwidth setting, and report
+this via the optional `actual` parameter.
 
-\snippet boilerplate.c configure_module
+\snippet boilerplate.c configure_channel
 
 
 <br>

@@ -67,38 +67,39 @@ struct bladerf * open_bladerf_from_serial(const char *serial)
 static int print_device_state(struct bladerf *dev)
 {
     int status;
-    unsigned int frequency, bandwidth;
+    uint64_t frequency;
+    unsigned int bandwidth;
     struct bladerf_rational_rate rate;
 
-    status = bladerf_get_frequency(dev, BLADERF_MODULE_RX, &frequency);
+    status = bladerf_get_frequency(dev, BLADERF_CHANNEL_RX(0), &frequency);
     if (status != 0) {
         return status;
     } else {
-        printf("  RX frequency: %u Hz\n", frequency);
+        printf("  RX frequency: %zu Hz\n", frequency);
     }
 
-    status = bladerf_get_frequency(dev, BLADERF_MODULE_TX, &frequency);
+    status = bladerf_get_frequency(dev, BLADERF_CHANNEL_TX(0), &frequency);
     if (status != 0) {
         return status;
     } else {
-        printf("  TX frequency: %u Hz\n", frequency);
+        printf("  TX frequency: %zu Hz\n", frequency);
     }
 
-    status = bladerf_get_bandwidth(dev, BLADERF_MODULE_RX, &bandwidth);
+    status = bladerf_get_bandwidth(dev, BLADERF_CHANNEL_RX(0), &bandwidth);
     if (status != 0) {
         return status;
     } else {
         printf("  RX bandwidth: %u Hz\n", bandwidth);
     }
 
-    status = bladerf_get_bandwidth(dev, BLADERF_MODULE_TX, &bandwidth);
+    status = bladerf_get_bandwidth(dev, BLADERF_CHANNEL_TX(0), &bandwidth);
     if (status != 0) {
         return status;
     } else {
         printf("  TX bandwidth: %u Hz\n", bandwidth);
     }
 
-    status = bladerf_get_rational_sample_rate(dev, BLADERF_MODULE_RX, &rate);
+    status = bladerf_get_rational_sample_rate(dev, BLADERF_CHANNEL_RX(0), &rate);
     if (status != 0) {
         return status;
     } else {
@@ -106,7 +107,7 @@ static int print_device_state(struct bladerf *dev)
                 rate.integer, rate.num, rate.den);
     }
 
-    status = bladerf_get_rational_sample_rate(dev, BLADERF_MODULE_TX, &rate);
+    status = bladerf_get_rational_sample_rate(dev, BLADERF_CHANNEL_TX(0), &rate);
     if (status != 0) {
         return status;
     } else {

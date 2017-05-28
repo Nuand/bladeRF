@@ -50,7 +50,7 @@ static void produce_samples(int16_t *samples, unsigned int num_samples)
 }
 
 /** [wait_for_timestamp] */
-int wait_for_timestamp(struct bladerf *dev, bladerf_module module,
+int wait_for_timestamp(struct bladerf *dev, bladerf_direction dir,
                        uint64_t timestamp, unsigned int timeout_ms)
 {
     int status;
@@ -59,7 +59,7 @@ int wait_for_timestamp(struct bladerf *dev, bladerf_module module,
     bool done;
 
     do {
-        status = bladerf_get_timestamp(dev, module, &curr_ts);
+        status = bladerf_get_timestamp(dev, dir, &curr_ts);
         done = (status != 0) || curr_ts >= timestamp;
 
         if (!done) {
@@ -110,10 +110,10 @@ int16_t * init(struct bladerf *dev, int16_t num_samples)
 
     /** [sync_config] */
 
-    /* Configure the device's TX module for use with the sync interface.
+    /* Configure the device's TX for use with the sync interface.
      * SC16 Q11 samples *with* metadata are used. */
     status = bladerf_sync_config(dev,
-                                 BLADERF_MODULE_TX,
+                                 BLADERF_TX_X1,
                                  BLADERF_FORMAT_SC16_Q11_META,
                                  num_buffers,
                                  buffer_size,
@@ -129,12 +129,12 @@ int16_t * init(struct bladerf *dev, int16_t num_samples)
 
     /** [sync_config] */
 
-    /* We must always enable the TX module *after* calling
+    /* We must always enable the TX front end *after* calling
      * bladerf_sync_config(), and *before* attempting to TX samples via
      * bladerf_sync_tx(). */
-    status = bladerf_enable_module(dev, BLADERF_MODULE_TX, true);
+    status = bladerf_enable_module(dev, BLADERF_TX, true);
     if (status != 0) {
-        fprintf(stderr, "Failed to enable TX module: %s\n",
+        fprintf(stderr, "Failed to enable TX: %s\n",
                 bladerf_strerror(status));
 
         goto error;
@@ -156,10 +156,10 @@ void deinit(struct bladerf *dev, int16_t *samples)
 {
     printf("\nDeinitalizing device.\n");
 
-    /* Disable TX module, shutting down our underlying TX stream */
-    int status = bladerf_enable_module(dev, BLADERF_MODULE_TX, false);
+    /* Disable TX, shutting down our underlying TX stream */
+    int status = bladerf_enable_module(dev, BLADERF_TX, false);
     if (status != 0) {
-        fprintf(stderr, "Failed to disable TX module: %s\n",
+        fprintf(stderr, "Failed to disable TX: %s\n",
                 bladerf_strerror(status));
     }
 
@@ -195,7 +195,7 @@ int sync_tx_meta_now_example(struct bladerf *dev, int16_t *samples,
         } else {
             uint64_t curr_ts;
 
-            status = bladerf_get_timestamp(dev, BLADERF_MODULE_TX, &curr_ts);
+            status = bladerf_get_timestamp(dev, BLADERF_TX, &curr_ts);
             if (status != 0) {
                 fprintf(stderr, "Failed to get current TX timestamp: %s\n",
                         bladerf_strerror(status));
@@ -213,13 +213,13 @@ int sync_tx_meta_now_example(struct bladerf *dev, int16_t *samples,
 
     /* Wait for samples to be TX'd before completing.  */
     if (status == 0) {
-        status = bladerf_get_timestamp(dev, BLADERF_MODULE_TX, &meta.timestamp);
+        status = bladerf_get_timestamp(dev, BLADERF_TX, &meta.timestamp);
         if (status != 0) {
             fprintf(stderr, "Failed to get current TX timestamp: %s\n",
                     bladerf_strerror(status));
             return status;
         } else {
-            status = wait_for_timestamp(dev, BLADERF_MODULE_TX,
+            status = wait_for_timestamp(dev, BLADERF_TX,
                                         meta.timestamp + 2 * num_samples,
                                         timeout_ms);
             if (status != 0) {
@@ -256,7 +256,7 @@ int sync_tx_meta_sched_example(struct bladerf *dev,
 
     /* Retrieve the current timestamp so we can schedule our transmission
      * in the future. */
-    status = bladerf_get_timestamp(dev, BLADERF_MODULE_TX, &meta.timestamp);
+    status = bladerf_get_timestamp(dev, BLADERF_TX, &meta.timestamp);
     if (status != 0) {
         fprintf(stderr, "Failed to get current TX timestamp: %s\n",
                 bladerf_strerror(status));
@@ -288,7 +288,7 @@ int sync_tx_meta_sched_example(struct bladerf *dev,
     if (status == 0) {
         meta.timestamp += 2 * num_samples;
 
-        status = wait_for_timestamp(dev, BLADERF_MODULE_TX,
+        status = wait_for_timestamp(dev, BLADERF_TX,
                                     meta.timestamp, timeout_ms);
 
         if (status != 0) {
@@ -336,7 +336,7 @@ int sync_tx_meta_update_example(struct bladerf *dev,
 
     /* Retrieve the current timestamp so we can schedule our transmission
      * in the future. */
-    status = bladerf_get_timestamp(dev, BLADERF_MODULE_TX, &meta.timestamp);
+    status = bladerf_get_timestamp(dev, BLADERF_TX, &meta.timestamp);
     if (status != 0) {
         fprintf(stderr, "Failed to get current TX timestamp: %s\n",
                 bladerf_strerror(status));
@@ -381,7 +381,7 @@ int sync_tx_meta_update_example(struct bladerf *dev,
     if (status == 0) {
         meta.timestamp += 2 * num_samples;
 
-        status = wait_for_timestamp(dev, BLADERF_MODULE_TX,
+        status = wait_for_timestamp(dev, BLADERF_TX,
                                     meta.timestamp, timeout_ms);
 
         if (status != 0) {

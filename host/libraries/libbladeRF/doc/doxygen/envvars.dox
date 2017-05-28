@@ -2,12 +2,12 @@
 \page envvars Environment Variables
 
 libbladeRF uses a few environment variables to allow users and developers
-to modify behavior at runtime. These enviroment variables should be treated
+to modify behavior at runtime. These environment variables should be treated
 as diagnostic features, rather than part of the API. They may be modified
 or removed in future versions of the library.
 
 <h3>BLADERF_LOG_LEVEL</h3>
-This enviroment variable controls the default log level setting, which is
+This environment variable controls the default log level setting, which is
 usually ::BLADERF_LOG_LEVEL_INFO.
 
 This may be useful when a program using libbladeRF is encountering errors.

@@ -7,101 +7,54 @@
 #include <stdio.h>
 #include <libbladeRF.h>
 
-/** [struct module_config] */
-/* The RX and TX modules are configured independently for these parameters */
-struct module_config {
-    bladerf_module module;
-
+/** [struct channel_config] */
+/* The RX and TX channels are configured independently for these parameters */
+struct channel_config {
+    bladerf_channel channel;
     unsigned int frequency;
     unsigned int bandwidth;
     unsigned int samplerate;
-
-    /* Gains */
-    bladerf_lna_gain rx_lna;
-    int vga1;
-    int vga2;
+    int gain;
 };
-/** [struct module_config] */
+/** [struct channel_config] */
 
-/** [configure_module] */
-int configure_module(struct bladerf *dev, struct module_config *c)
+/** [configure_channel] */
+int configure_channel(struct bladerf *dev, struct channel_config *c)
 {
     int status;
 
-    status = bladerf_set_frequency(dev, c->module, c->frequency);
+    status = bladerf_set_frequency(dev, c->channel, c->frequency);
     if (status != 0) {
         fprintf(stderr, "Failed to set frequency = %u: %s\n",
                 c->frequency, bladerf_strerror(status));
         return status;
     }
 
-    status = bladerf_set_sample_rate(dev, c->module, c->samplerate, NULL);
+    status = bladerf_set_sample_rate(dev, c->channel, c->samplerate, NULL);
     if (status != 0) {
         fprintf(stderr, "Failed to set samplerate = %u: %s\n",
                 c->samplerate, bladerf_strerror(status));
         return status;
     }
 
-    status = bladerf_set_bandwidth(dev, c->module, c->bandwidth, NULL);
+    status = bladerf_set_bandwidth(dev, c->channel, c->bandwidth, NULL);
     if (status != 0) {
         fprintf(stderr, "Failed to set bandwidth = %u: %s\n",
                 c->bandwidth, bladerf_strerror(status));
         return status;
     }
 
-    switch (c->module) {
-        case BLADERF_MODULE_RX:
-            /* Configure the gains of the RX LNA, RX VGA1, and RX VGA2  */
-            status = bladerf_set_lna_gain(dev, c->rx_lna);
-            if (status != 0) {
-                fprintf(stderr, "Failed to set RX LNA gain: %s\n",
-                        bladerf_strerror(status));
-                return status;
-            }
-
-            status = bladerf_set_rxvga1(dev, c->vga1);
-            if (status != 0) {
-                fprintf(stderr, "Failed to set RX VGA1 gain: %s\n",
-                        bladerf_strerror(status));
-                return status;
-            }
-
-            status = bladerf_set_rxvga2(dev, c->vga2);
-            if (status != 0) {
-                fprintf(stderr, "Failed to set RX VGA2 gain: %s\n",
-                        bladerf_strerror(status));
-                return status;
-            }
-            break;
-
-        case BLADERF_MODULE_TX:
-            /* Configure the TX VGA1 and TX VGA2 gains */
-            status = bladerf_set_txvga1(dev, c->vga1);
-            if (status != 0) {
-                fprintf(stderr, "Failed to set TX VGA1 gain: %s\n",
-                        bladerf_strerror(status));
-                return status;
-            }
-
-            status = bladerf_set_txvga2(dev, c->vga2);
-            if (status != 0) {
-                fprintf(stderr, "Failed to set TX VGA2 gain: %s\n",
-                        bladerf_strerror(status));
-                return status;
-            }
-            break;
-
-        default:
-            status = BLADERF_ERR_INVAL;
-            fprintf(stderr, "%s: Invalid module specified (%d)\n",
-                    __FUNCTION__, c->module);
-
+    status = bladerf_set_gain(dev, c->channel, c->gain);
+    if (status != 0) {
+        fprintf(stderr, "Failed to set gain: %s\n",
+                bladerf_strerror(status));
+        return status;
     }
 
     return status;
 }
 
-/** [configure_module] */
+/** [configure_channel] */
 
 /* Usage:
  *   libbladeRF_example_boilerplate [serial #]
@@ -114,7 +67,7 @@ int configure_module(struct bladerf *dev, struct module_config *c)
 int main(int argc, char *argv[])
 {
     int status;
-    struct module_config config;
+    struct channel_config config;
 
     /** [Opening a device] */
     struct bladerf *dev = NULL;
@@ -137,34 +90,32 @@ int main(int argc, char *argv[])
 
         return 1;
     }
+
     /** [Opening a device] */
 
-    /* Set up RX module parameters */
-    config.module     = BLADERF_MODULE_RX;
+    /* Set up RX channel parameters */
+    config.channel    = BLADERF_CHANNEL_RX(0);
     config.frequency  = 910000000;
     config.bandwidth  = 2000000;
     config.samplerate = 300000;
-    config.rx_lna     = BLADERF_LNA_GAIN_MAX;
-    config.vga1       = 30;
-    config.vga2       = 3;
+    config.gain       = 39;
 
-    status = configure_module(dev, &config);
+    status = configure_channel(dev, &config);
     if (status != 0) {
-        fprintf(stderr, "Failed to configure RX module. Exiting.\n");
+        fprintf(stderr, "Failed to configure RX channel. Exiting.\n");
         goto out;
     }
 
-    /* Set up TX module parameters */
-    config.module     = BLADERF_MODULE_TX;
+    /* Set up TX channel parameters */
+    config.channel    = BLADERF_CHANNEL_TX(0);
     config.frequency  = 918000000;
     config.bandwidth  = 1500000;
     config.samplerate = 250000;
-    config.vga1       = -14;
-    config.vga2       = 0;
+    config.gain       = -14;
 
-    status = configure_module(dev, &config);
+    status = configure_channel(dev, &config);
     if (status != 0) {
-        fprintf(stderr, "Failed to configure TX module. Exiting.\n");
+        fprintf(stderr, "Failed to configure TX channel. Exiting.\n");
         goto out;
     }
 

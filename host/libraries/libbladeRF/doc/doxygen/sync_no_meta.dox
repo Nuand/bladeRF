@@ -6,8 +6,8 @@ This page describes how to use the bladeRF <a class="el"
 href="group___f_n___d_a_t_a___s_y_n_c.html">Synchronous Interface</a> to
 transmit and receive samples.
 
-The example listed here configures and uses both the RX and TX modules. To use
-just one or the other, simply remove the code for the unneeded module.
+The example listed here configures and uses both the RX and TX channels. To use
+just one or the other, simply remove the code for the unneeded channel.
 
 <h2>Initialization and Configuration</h2>
 
@@ -16,7 +16,8 @@ First, one must allocate any "working buffers" in which samples will be stored.
 These are the `rx_samples` and `tx_samples` buffers shown in the below snippet.
 The `samples_len` variable defines the length of these buffers, in units of
 samples.  Remember, when using the SC16 Q11 format, one sample consists of two
-`int16_t` values: I and Q.
+`int16_t` values: I and Q, and when using 2x2 MIMO, samples from two channels
+are interleaved.
 
 \snippet sync_rxtx.c user_buffers
 
@@ -32,8 +33,12 @@ should still be conscious of the workings of the underlying <a class="el"
 href="group___f_n___d_a_t_a___a_s_y_n_c.html">Asynchronous Interface</a>.
 
 Before making calls to bladerf_sync_rx() and bladerf_sync_tx(), one must
-configure the underlying stream using the bladerf_sync_init() function,
+configure the underlying stream using the bladerf_sync_config() function,
 as shown in the following snippet.
+
+The second argument to bladerf_sync_config() specifies the channel direction
+and layout. In the case of SISO (1x1), we use BLADERF_RX_X1 and BLADERF_TX_X1
+layouts for RX and TX, respectively.
 
 If one forgets to configure the synchronous interface before attempting
 to call bladerf_sync_rx() or bladerf_sync_tx(), a ::BLADERF_ERR_INVAL status
@@ -66,9 +71,9 @@ allowed between completion of the synchronous interface's underlying stream
 buffers. Take care to ensure that this value is sufficiently large, considering
 the sample rate being used and the desired size of stream buffers.
 
-<h3>Enabling and Disabling modules Modules</h3>
-After configuring the synchronous interface, one must also enable
-the RF front end of the associated module(s), via bladerf_enable_module():
+<h3>Enabling and Disabling Front Ends</h3>
+After configuring the synchronous interface, one must also enable the RF front
+end of the associated stream direction(s), via bladerf_enable_module():
 
 \snippet sync_rxtx.c enable_modules
 
@@ -100,9 +105,10 @@ finally reach the RF front end. Note that the lower bound this delay is determin
 number of buffers that may have been filled by bladerf_sync_tx() and the sample rate.
 
 <h2>Deinitializing and De-allocating Resources</h2>
-When finished using a module, bladerf_enable_module() may be used to turn
-off the associated RF front. This will also de-initialize and deallocate
-the underlying data stream associated with the module.
+
+When finished using a stream, bladerf_enable_module() may be used to turn off
+the associated RF front end. This will also de-initialize and deallocate the
+underlying data associated with the stream.
 
 \snippet sync_rxtx.c disable_modules
 

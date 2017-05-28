@@ -18,8 +18,9 @@ Descriptions of the other parameters may be found in the
 <a class="el" href="sync_no_meta.html">Synchronous Interface: Basic usage without metadata</a>
 page.
 
-Remember to enable the module via bladerf_enable_module() <i>after</i> calling
-bladerf_sync_config(), and <i>before</i> attempting to call bladerf_sync_tx().
+Remember to enable the front end via bladerf_enable_module() <i>after</i>
+calling bladerf_sync_config(), and <i>before</i> attempting to call
+bladerf_sync_tx().
 
 Also ensure that bladerf_sync_config() has been called before attempting to read
 timestamps via bladerf_get_timestamp().
@@ -77,7 +78,7 @@ flag, as described in one of the following sections.
 <br>
 <h2>Waiting for TX to complete</h2>
 When scheduling transmissions, one must ensure the samples have reached the
-RF front end before shutting the stream down and disabling the TX module.
+RF front end before shutting the stream down and disabling TX.
 
 This can be achieved by polling the TX timestamp and waiting for it to exceed
 the value of the last sample. Generally, one should wait some additional time

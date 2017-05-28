@@ -72,10 +72,10 @@ int16_t * init(struct bladerf *dev, int16_t num_samples)
 
     /** [sync_config] */
 
-    /* Configure the device's RX module for use with the sync interface.
+    /* Configure the device's RX for use with the sync interface.
      * SC16 Q11 samples *with* metadata are used. */
     status = bladerf_sync_config(dev,
-                                 BLADERF_MODULE_RX,
+                                 BLADERF_RX_X1,
                                  BLADERF_FORMAT_SC16_Q11_META,
                                  num_buffers,
                                  buffer_size,
@@ -91,12 +91,12 @@ int16_t * init(struct bladerf *dev, int16_t num_samples)
 
     /** [sync_config] */
 
-    /* We must always enable the RX module *after* calling
+    /* We must always enable the RX front end *after* calling
      * bladerf_sync_config(), and *before* attempting to RX samples via
      * bladerf_sync_rx(). */
-    status = bladerf_enable_module(dev, BLADERF_MODULE_RX, true);
+    status = bladerf_enable_module(dev, BLADERF_RX, true);
     if (status != 0) {
-        fprintf(stderr, "Failed to enable RX module: %s\n",
+        fprintf(stderr, "Failed to enable RX: %s\n",
                 bladerf_strerror(status));
 
         goto error;
@@ -117,10 +117,10 @@ void deinit(struct bladerf *dev, int16_t *samples)
 {
     printf("\nDeinitalizing device.\n");
 
-    /* Disable RX module, shutting down our underlying RX stream */
-    int status = bladerf_enable_module(dev, BLADERF_MODULE_RX, false);
+    /* Disable RX, shutting down our underlying RX stream */
+    int status = bladerf_enable_module(dev, BLADERF_RX, false);
     if (status != 0) {
-        fprintf(stderr, "Failed to disable RX module: %s\n",
+        fprintf(stderr, "Failed to disable RX: %s\n",
                 bladerf_strerror(status));
     }
 
@@ -194,7 +194,7 @@ int sync_rx_meta_sched_example(struct bladerf *dev,
     meta.flags = 0;
 
     /* Retrieve the current timestamp */
-    status = bladerf_get_timestamp(dev, BLADERF_MODULE_RX, &meta.timestamp);
+    status = bladerf_get_timestamp(dev, BLADERF_RX, &meta.timestamp);
     if (status != 0) {
         fprintf(stderr, "Failed to get current RX timestamp: %s\n",
                 bladerf_strerror(status));

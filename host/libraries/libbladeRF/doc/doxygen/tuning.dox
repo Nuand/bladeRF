@@ -1,6 +1,6 @@
 /**
 
-\page tuning Frequency tuning
+\page tuning Frequency tuning (bladeRF1)
 
 The simplest means of tuning the bladeRF's RX or TX module to a specified frequency is
 the bladerf_set_frequency() function. This page provides an overview of the underlying

@@ -22,15 +22,16 @@ Descriptions of the other parameters may be found in the
 <a class="el" href="sync_no_meta.html">Synchronous Interface: Basic usage without metadata</a>
 page.
 
-Remember to enable the module via bladerf_enable_module() <i>after</i> calling
-bladerf_sync_config(), and <i>before</i> attempting to call bladerf_sync_rx().
+Remember to enable the front end via bladerf_enable_module() <i>after</i>
+calling bladerf_sync_config(), and <i>before</i> attempting to call
+bladerf_sync_rx().
 
 Also ensure that bladerf_sync_config() has been called before attempting to read
 timestamps via bladerf_get_timestamp().
 
 When using the ::BLADERF_FORMAT_SC16_Q11_META format, a ::bladerf_metadata
-structure must be passed to bladerf_sync_rx(). One should zeroize the contents
-of this structure prior to using it.
+structure must be passed to bladerf_sync_rx(). One should zero the contents of
+this structure prior to using it.
 
 <br>
 <h2>Receiving Samples Immediately with Timestamps</h2>
@@ -72,9 +73,9 @@ at the timestamp indicated in metadata structure. Ensure that the timeout provid
 bladerf_sync_rx() is sufficiently large, such that the function call does not time
 out before the desired timestamp occurs.
 
-When scheduling the first RX, it is generally helpful to first read the module's
-timestamp counter and advance it by a known duration. This is shown in the below
-example code.
+When scheduling the first RX, it is generally helpful to first read the
+stream's timestamp counter and advance it by a known duration. This is shown in
+the below example code.
 
 Note that the caller is responsible for advancing the timestamp field each
 time bladerf_sync_rx() is called.

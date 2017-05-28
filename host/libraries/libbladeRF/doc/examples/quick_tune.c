@@ -6,7 +6,7 @@
 #define NUM_FREQUENCIES 6
 #define ITERATIONS 10000
 
-int example(struct bladerf *dev, bladerf_module module)
+int example(struct bladerf *dev, bladerf_channel ch)
 {
     /** [example] */
     int status;
@@ -25,14 +25,14 @@ int example(struct bladerf *dev, bladerf_module module)
 
     /* Get our quick tune parameters for each frequency we'll be using */
     for (i = 0; i < NUM_FREQUENCIES; i++) {
-        status = bladerf_set_frequency(dev, module, frequencies[i]);
+        status = bladerf_set_frequency(dev, ch, frequencies[i]);
         if (status != 0) {
             fprintf(stderr, "Failed to set frequency to %u Hz: %s\n",
                     frequencies[i], bladerf_strerror(status));
             return status;
         }
 
-        status = bladerf_get_quick_tune(dev, module, &quick_tunes[i]);
+        status = bladerf_get_quick_tune(dev, ch, &quick_tunes[i]);
         if (status != 0) {
             fprintf(stderr, "Failed to get quick tune for %u Hz: %s\n",
                     frequencies[i], bladerf_strerror(status));
@@ -45,7 +45,7 @@ int example(struct bladerf *dev, bladerf_module module)
          *
          * Alternatively, this re-tune could be scheduled by providing a
          * timestamp counter value */
-        status = bladerf_schedule_retune(dev, module, BLADERF_RETUNE_NOW, 0,
+        status = bladerf_schedule_retune(dev, ch, BLADERF_RETUNE_NOW, 0,
                                          &quick_tunes[j]);
 
         if (status != 0) {
@@ -92,16 +92,16 @@ int main(int argc, char *argv[])
 
     /* A quick check that this works is to watch LO leakage on a VSA */
 
-    status = bladerf_enable_module(dev, BLADERF_MODULE_TX, true);
+    status = bladerf_enable_module(dev, BLADERF_TX, true);
     if (status != 0) {
-        fprintf(stderr, "Failed to enable TX module: %s\n",
+        fprintf(stderr, "Failed to enable TX: %s\n",
                 bladerf_strerror(status));
         return status;
     }
 
-    status = example(dev, BLADERF_MODULE_TX);
+    status = example(dev, BLADERF_CHANNEL_TX(0));
 
-    bladerf_enable_module(dev, BLADERF_MODULE_TX, false);
+    bladerf_enable_module(dev, BLADERF_TX, false);
     bladerf_close(dev);
     return status;
 }

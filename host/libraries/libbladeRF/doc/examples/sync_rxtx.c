@@ -67,11 +67,11 @@ static int init_sync(struct bladerf *dev)
     const unsigned int num_transfers = 8;
     const unsigned int timeout_ms    = 3500;
 
-
-    /* Configure both the device's RX and TX modules for use with the synchronous
+    /* Configure both the device's x1 RX and TX channels for use with the synchronous
      * interface. SC16 Q11 samples *without* metadata are used. */
+
     status = bladerf_sync_config(dev,
-                                 BLADERF_MODULE_RX,
+                                 BLADERF_RX_X1,
                                  BLADERF_FORMAT_SC16_Q11,
                                  num_buffers,
                                  buffer_size,
@@ -85,7 +85,7 @@ static int init_sync(struct bladerf *dev)
     }
 
     status = bladerf_sync_config(dev,
-                                 BLADERF_MODULE_TX,
+                                 BLADERF_TX_X1,
                                  BLADERF_FORMAT_SC16_Q11,
                                  num_buffers,
                                  buffer_size,
@@ -117,14 +117,14 @@ int sync_rx_example(struct bladerf *dev)
     const unsigned int samples_len = 10000; /* May be any (reasonable) size */
 
     /* Allocate a buffer to store received samples in */
-    rx_samples = malloc(samples_len * 2 * sizeof(int16_t));
+    rx_samples = malloc(samples_len * 2 * 1 * sizeof(int16_t));
     if (rx_samples == NULL) {
         perror("malloc");
         return BLADERF_ERR_MEM;
     }
 
     /* Allocate a buffer to prepare transmit data in */
-    tx_samples = malloc(samples_len * 2 * sizeof(int16_t));
+    tx_samples = malloc(samples_len * 2 * 1 * sizeof(int16_t));
     if (tx_samples == NULL) {
         perror("malloc");
         free(rx_samples);
@@ -133,7 +133,7 @@ int sync_rx_example(struct bladerf *dev)
 
     /** [user_buffers] */
 
-    /* Initialize synch interface on RX and TX modules */
+    /* Initialize synch interface on RX and TX */
     status = init_sync(dev);
     if (status != 0) {
         goto out;
@@ -141,16 +141,16 @@ int sync_rx_example(struct bladerf *dev)
 
     /** [enable_modules] */
 
-    status = bladerf_enable_module(dev, BLADERF_MODULE_RX, true);
+    status = bladerf_enable_module(dev, BLADERF_RX, true);
     if (status != 0) {
-        fprintf(stderr, "Failed to enable RX module: %s\n",
+        fprintf(stderr, "Failed to enable RX: %s\n",
                 bladerf_strerror(status));
         goto out;
     }
 
-    status = bladerf_enable_module(dev, BLADERF_MODULE_TX, true);
+    status = bladerf_enable_module(dev, BLADERF_TX, true);
     if (status != 0) {
-        fprintf(stderr, "Failed to enable RX module: %s\n",
+        fprintf(stderr, "Failed to enable TX: %s\n",
                 bladerf_strerror(status));
         goto out;
     }
@@ -199,17 +199,17 @@ out:
 
     /** [disable_modules] */
 
-    /* Disable RX module, shutting down our underlying RX stream */
-    status = bladerf_enable_module(dev, BLADERF_MODULE_RX, false);
+    /* Disable RX, shutting down our underlying RX stream */
+    status = bladerf_enable_module(dev, BLADERF_RX, false);
     if (status != 0) {
-        fprintf(stderr, "Failed to disable RX module: %s\n",
+        fprintf(stderr, "Failed to disable RX: %s\n",
                 bladerf_strerror(status));
     }
 
-    /* Disable TX module, shutting down our underlying TX stream */
-    status = bladerf_enable_module(dev, BLADERF_MODULE_TX, false);
+    /* Disable TX, shutting down our underlying TX stream */
+    status = bladerf_enable_module(dev, BLADERF_TX, false);
     if (status != 0) {
-        fprintf(stderr, "Failed to disable TX module: %s\n",
+        fprintf(stderr, "Failed to disable TX: %s\n",
                 bladerf_strerror(status));
     }
 
