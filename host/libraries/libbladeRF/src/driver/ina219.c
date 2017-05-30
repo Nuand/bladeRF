@@ -41,6 +41,7 @@ int ina219_init(struct bladerf *dev, float r_shunt)
     value = 0x8000;
     status = dev->backend->ina219_write(dev, INA219_REG_CONFIGURATION, value);
     if (status < 0) {
+        log_error("INA219 soft reset error: %d\n", status);
         return status;
     }
 
@@ -53,6 +54,7 @@ int ina219_init(struct bladerf *dev, float r_shunt)
     value = 0x019f;
     status = dev->backend->ina219_write(dev, INA219_REG_CONFIGURATION, value);
     if (status < 0) {
+        log_error("INA219 configuration error: %d\n", status);
         return status;
     }
 
@@ -64,6 +66,7 @@ int ina219_init(struct bladerf *dev, float r_shunt)
     value = (uint16_t)((0.04096 / (0.001 * r_shunt)) + 0.5);
     status = dev->backend->ina219_write(dev, INA219_REG_CALIBRATION, value);
     if (status < 0) {
+        log_error("INA219 calibration error: %d\n", status);
         return status;
     }
 
