@@ -327,11 +327,8 @@ uint64_t ad9361_spi_read(uint16_t addr)
     // Calculate number of data bytes in this command
     bytes = (((addr >> 12) & 0x7) + 1);
 
-    // Send down the command
-    alt_avalon_spi_command(LMS_SPI_BASE, 0, 2, &addr8[0], 0, 0, ALT_AVALON_SPI_COMMAND_MERGE);
-
-    // Get the response
-    alt_avalon_spi_command(LMS_SPI_BASE, 0, 0, 0, bytes, &data8[0], 0);
+    // Send down the command, read the response into data8
+    alt_avalon_spi_command(LMS_SPI_BASE, 0, 2, &addr8[0], bytes, &data8[0], 0);
 
     // Build the uint64_t return value
     rv = UINT64_C(0x0);
@@ -344,29 +341,25 @@ uint64_t ad9361_spi_read(uint16_t addr)
 
 void ad9361_spi_write(uint16_t addr, uint64_t data)
 {
-    alt_u8   addr8[2];
-    alt_u8   data8[8];
+    alt_u8   data8[10];
     alt_u8   bytes;
     uint8_t  i;
 
     // The alt_avalon_spi_command expects parameters to be arrays of bytes
 
     // Convert the uint16_t address into array of 2 uint8_t
-    addr8[0] = (addr >> 8);
-    addr8[1] = (addr & 0xff);
+    data8[0] = (addr >> 8);
+    data8[1] = (addr & 0xff);
 
     // Convert the uint64_t data into an array of 8 uint8_t
     for( i = 0; i < 8; i++ ) {
-        data8[i] = (data >> 8*(7-i)) & 0xff;
+        data8[i+2] = (data >> 8*(7-i)) & 0xff;
     }
 
-    // Calculate number of data bytes in this command
-    bytes = (((addr >> 12) & 0x7) + 1);
+    // Calculate number of command and data bytes in this command
+    bytes = (((addr >> 12) & 0x7) + 1) + 2;
 
-    // Send down the command
-    alt_avalon_spi_command(LMS_SPI_BASE, 0, 2, &addr8[0], 0, 0, ALT_AVALON_SPI_COMMAND_MERGE);
-
-    // Send down the data
+    // Send down the command and the data
     alt_avalon_spi_command(LMS_SPI_BASE, 0, bytes, &data8[0], 0, 0, 0);
 }
 
