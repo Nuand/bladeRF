@@ -7,10 +7,11 @@ set nuand_ip     [file normalize [file join $here ../../ip/nuand]]
 set workdir      [file normalize [file join $here ../../../quartus/work/bladerf]]
 
 # Altera IP
-set_global_assignment -name QIP_FILE [file normalize [file join $altera_ip pll/pll.qip]]
-set_global_assignment -name QIP_FILE [file normalize [file join $altera_ip rx_fifo/rx_fifo.qip]]
-set_global_assignment -name QIP_FILE [file normalize [file join $altera_ip tx_fifo/tx_fifo.qip]]
-set_global_assignment -name QIP_FILE [file normalize [file join $altera_ip serial_pll/serial_pll.qip]]
+set_global_assignment -name QIP_FILE  [file normalize [file join $altera_ip pll/pll.qip]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $altera_ip common_dcfifo/common_dcfifo.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $here      vhdl/wrappers/rx_fifo.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $here      vhdl/wrappers/tx_fifo.vhd]]
+set_global_assignment -name QIP_FILE  [file normalize [file join $altera_ip serial_pll/serial_pll.qip]]
 
 # Nuand IP
 set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip synthesis/fsk_demodulator.vhd]]
@@ -25,4 +26,4 @@ set_global_assignment -name VHDL_FILE [file normalize [file join $common_dir vhd
 set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/bladerf-qpsk_tx.vhd]]
 
 # SDC Constraints
-set_global_assignment -name SDC_FILE [file normalize [file join $here constraints/bladerf.sdc]]
+set_global_assignment -name SDC_FILE  [file normalize [file join $here constraints/bladerf.sdc]]
