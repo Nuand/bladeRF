@@ -356,6 +356,17 @@ static int bladerf2_initialize(struct bladerf *dev)
         return status;
     }
 
+    /* Initialize INA219 */
+    /* For reasons unknown, this fails if done immediately after
+     * ad9361_set_rx_fir_config when DEBUG is not defined. It shouldn't make
+     * a difference, but it does. TODO: Investigate/fix this */
+    status = ina219_init(dev, ina219_r_shunt);
+    if (status < 0) {
+        log_error("INA219 init error: %d\n", status);
+        return status;
+    }
+
+    /* Initialize AD9361 */
     status = ad9361_init(&board_data->phy, &ad9361_init_params, dev);
     if (status < 0) {
         log_error("AD9361 initialization error: %d\n", status);
@@ -374,12 +385,7 @@ static int bladerf2_initialize(struct bladerf *dev)
         return errno_ad9361_to_bladerf(status);
     }
 
-    status = ina219_init(dev, ina219_r_shunt);
-    if (status < 0) {
-        log_error("INA219 init error: %d\n", status);
-        return status;
-    }
-
+    /* Set up band selection */
     status = bladerf2_select_band(dev, BLADERF_TX, board_data->phy->pdata->tx_synth_freq);
     if (status < 0) {
         log_error("bladeRF TX band select error: %d\n", status);
