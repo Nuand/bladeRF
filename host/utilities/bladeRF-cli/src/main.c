@@ -298,8 +298,27 @@ static void print_error_need_devarg()
 
 static int open_device(struct rc_config *rc, struct cli_state *state, int status)
 {
+    bool unset_env = false;
+
+    if (!status) {
+        if (rc->fpga_file) {
+            // A full init will be run after the FPGA is reloaded, so there
+            // is no need to initialize everything now.
+            if (!getenv("BLADERF_FORCE_NO_FPGA_PRESENT")) {
+                unset_env = true;
+                status = setenv("BLADERF_FORCE_NO_FPGA_PRESENT", "true", 0);
+                printf("Deferring device init until after FPGA load\n");
+            }
+        }
+
+        if (status) {
+            fprintf(stderr, "Failed to setenv: %s\n", strerror(errno));
+        }
+    }
+
     if (!status) {
         status = bladerf_open(&state->dev, rc->device);
+
         if (status) {
             bool update_required = (status == BLADERF_ERR_UPDATE_FPGA) ||
                                    (status == BLADERF_ERR_UPDATE_FW);
@@ -324,6 +343,10 @@ static int open_device(struct rc_config *rc, struct cli_state *state, int status
                 status = -1;
             }
         }
+    }
+
+    if (unset_env) {
+        unsetenv("BLADERF_FORCE_NO_FPGA_PRESENT");
     }
 
     return status;
