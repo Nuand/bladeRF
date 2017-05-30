@@ -352,6 +352,7 @@ static int bladerf2_initialize(struct bladerf *dev)
     status = dev->backend->rffe_control_write(dev, (1 << RFFE_CONTROL_ENABLE) |
                                                    (1 << RFFE_CONTROL_TXNRX));
     if (status < 0) {
+        log_error("RFFE control initialization error: %d\n", status);
         return status;
     }
 
@@ -363,26 +364,31 @@ static int bladerf2_initialize(struct bladerf *dev)
 
     status = ad9361_set_tx_fir_config(board_data->phy, ad9361_init_tx_fir_config);
     if (status < 0) {
+        log_error("AD9361 set_tx_fir_config error: %d\n", status);
         return errno_ad9361_to_bladerf(status);
     }
 
     status = ad9361_set_rx_fir_config(board_data->phy, ad9361_init_rx_fir_config);
     if (status < 0) {
+        log_error("AD9361 set_rx_fir_config error: %d\n", status);
         return errno_ad9361_to_bladerf(status);
     }
 
     status = ina219_init(dev, ina219_r_shunt);
     if (status < 0) {
+        log_error("INA219 init error: %d\n", status);
         return status;
     }
 
     status = bladerf2_select_band(dev, BLADERF_TX, board_data->phy->pdata->tx_synth_freq);
     if (status < 0) {
+        log_error("bladeRF TX band select error: %d\n", status);
         return status;
     }
 
     status = bladerf2_select_band(dev, BLADERF_RX, board_data->phy->pdata->rx_synth_freq);
     if (status < 0) {
+        log_error("bladeRF RX band select error: %d\n", status);
         return status;
     }
 
