@@ -307,8 +307,8 @@ int32_t ad9361_dig_tune(struct ad9361_rf_phy *phy, uint32_t max_freq,
 {
 	struct axiadc_converter *conv = phy->adc_conv;
 	struct axiadc_state *st = phy->adc_state;
-	int32_t ret, i, j, k, chan, t, num_chan, err = 0;
-	uint32_t stat, s0, s1, c0, c1, tmp, saved = 0;
+	int32_t ret, i, j, k, chan, t, num_chan, c0, c1, err = 0;
+	uint32_t stat, s0, s1, tmp, saved = 0;
 	uint8_t field[2][16];
 	uint32_t saved_dsel[4], saved_chan_ctrl6[4], saved_chan_ctrl0[4];
 	uint32_t rates[3] = {25000000U, 40000000U, 61440000U};
@@ -402,7 +402,7 @@ int32_t ad9361_dig_tune(struct ad9361_rf_phy *phy, uint32_t max_freq,
 		c0 = ad9361_find_opt(&field[0][0], 16, &s0);
 		c1 = ad9361_find_opt(&field[1][0], 16, &s1);
 
-		if (!c0 && !c1) {
+		if (c0 <= 0 && c1 <= 0) {
 			ad9361_dig_tune_verbose_print(phy, field, t);
 			dev_err(&phy->spi->dev, "%s: Tuning %s FAILED!", __func__,
 				t ? "TX" : "RX");

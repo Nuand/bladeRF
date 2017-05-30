@@ -798,12 +798,15 @@ int32_t ad9361_validate_rfpll(struct ad9361_rf_phy *phy, uint64_t freq)
 int32_t ad9361_find_opt(uint8_t *field, uint32_t size, uint32_t *ret_start)
 {
 	int32_t i, cnt = 0, max_cnt = 0, start, max_start = 0;
+	bool found_0 = false;
+	bool found_1 = false;
 
 	for(i = 0, start = -1; i < (int64_t)size; i++) {
 		if (field[i] == 0) {
 			if (start == -1)
 				start = i;
 			cnt++;
+			found_0 = true;
 		} else {
 			if (cnt > max_cnt) {
 				max_cnt = cnt;
@@ -811,6 +814,7 @@ int32_t ad9361_find_opt(uint8_t *field, uint32_t size, uint32_t *ret_start)
 			}
 			start = -1;
 			cnt = 0;
+			found_1 = true;
 		}
 	}
 
@@ -820,6 +824,11 @@ int32_t ad9361_find_opt(uint8_t *field, uint32_t size, uint32_t *ret_start)
 	}
 
 	*ret_start = max_start;
+
+	if (!found_0 || !found_1) {
+		// All of the values were the same. This is not a healthy result.
+		return -1;
+	}
 
 	return max_cnt;
 }
