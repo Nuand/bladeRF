@@ -24,24 +24,30 @@ library ieee;
 
 package common_dcfifo_p is
 
-    function compute_rdusedw_high( numwords : natural;
-                                   width    : natural;
-                                   width_r  : natural ) return natural;
+    function compute_rdusedw_high( numwords      : natural;
+                                   width         : natural;
+                                   width_r       : natural;
+                                   add_usedw_msb : string
+                                   ) return natural;
 
-    function compute_wrusedw_high( numwords : natural ) return natural;
+    function compute_wrusedw_high( numwords      : natural;
+                                   add_usedw_msb : string
+                                   ) return natural;
 
 end package;
 
 package body common_dcfifo_p is
 
-    function compute_rdusedw_high( numwords : natural;
-                                   width    : natural;
-                                   width_r  : natural ) return natural is
+    function compute_rdusedw_high( numwords      : natural;
+                                   width         : natural;
+                                   width_r       : natural;
+                                   add_usedw_msb : string ) return natural is
         variable x  : real    := 0.0;
         variable y  : real    := 0.0;
         variable rv : natural := 0;
     begin
         x := real(numwords);
+
         if( width > width_r ) then
             y  := real(width) / real(width_r);
             rv := integer(ceil(log2(x) + log2(y))) - 1;
@@ -50,13 +56,26 @@ package body common_dcfifo_p is
             y  := real(width_r) / real(width);
             rv := integer(ceil(log2(x) - log2(y))) - 1;
         end if;
+
+        if( add_usedw_msb = "on" or add_usedw_msb = "oN" or
+            add_usedw_msb = "On" or add_usedw_msb = "ON" ) then
+            rv := rv + 1;
+        end if;
+
         return rv;
     end function;
 
-    function compute_wrusedw_high( numwords : natural ) return natural is
+    function compute_wrusedw_high( numwords      : natural;
+                                   add_usedw_msb : string ) return natural is
         variable rv : natural := 0;
     begin
         rv := integer(ceil(log2(real(numwords)))) - 1;
+
+        if( add_usedw_msb = "on" or add_usedw_msb = "oN" or
+            add_usedw_msb = "On" or add_usedw_msb = "ON" ) then
+            rv := rv + 1;
+        end if;
+
         return rv;
     end function;
 
@@ -101,10 +120,14 @@ entity common_dcfifo is
         q          : out std_logic_vector(LPM_WIDTH_R-1 downto 0);
         rdempty    : out std_logic;
         rdfull     : out std_logic;
-        rdusedw    : out std_logic_vector(compute_rdusedw_high(LPM_NUMWORDS, LPM_WIDTH, LPM_WIDTH_R) downto 0);
+        rdusedw    : out std_logic_vector(compute_rdusedw_high(LPM_NUMWORDS,
+                                                               LPM_WIDTH,
+                                                               LPM_WIDTH_R,
+                                                               ADD_USEDW_MSB_BIT) downto 0);
         wrempty    : out std_logic;
         wrfull     : out std_logic;
-        wrusedw    : out std_logic_vector(compute_wrusedw_high(LPM_NUMWORDS) downto 0)
+        wrusedw    : out std_logic_vector(compute_wrusedw_high(LPM_NUMWORDS,
+                                                               ADD_USEDW_MSB_BIT) downto 0)
         --eccstatus  : out std_logic_vector(1 downto 0)
     );
 end entity;

@@ -37,10 +37,14 @@ entity rx_fifo is
         q          : out std_logic_vector(LPM_WIDTH_R-1 downto 0);
         rdempty    : out std_logic;
         rdfull     : out std_logic;
-        rdusedw    : out std_logic_vector(compute_rdusedw_high(LPM_NUMWORDS, LPM_WIDTH, LPM_WIDTH_R) downto 0);
+        rdusedw    : out std_logic_vector(compute_rdusedw_high(LPM_NUMWORDS,
+                                                               LPM_WIDTH,
+                                                               LPM_WIDTH_R,
+                                                               ADD_USEDW_MSB_BIT) downto 0);
         wrempty    : out std_logic;
         wrfull     : out std_logic;
-        wrusedw    : out std_logic_vector(compute_wrusedw_high(LPM_NUMWORDS) downto 0)
+        wrusedw    : out std_logic_vector(compute_wrusedw_high(LPM_NUMWORDS,
+                                                               ADD_USEDW_MSB_BIT) downto 0)
         --eccstatus  : out std_logic_vector(1 downto 0)
     );
 end entity;
