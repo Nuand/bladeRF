@@ -92,11 +92,15 @@ set_global_assignment -name ROUTER_TIMING_OPTIMIZATION_LEVEL             MAXIMUM
 set_global_assignment -name AUTO_PACKED_REGISTERS_STRATIXII              NORMAL
 set_global_assignment -name OPTIMIZE_TIMING                             "NORMAL COMPILATION"
 
-#set_instance_assignment -name FAST_INPUT_REGISTER                       ON -to lms_rx_data[*]
-#set_instance_assignment -name FAST_OUTPUT_REGISTER                      ON -to fx3_gpif[*]
-#set_instance_assignment -name FAST_OUTPUT_REGISTER                      ON -to lms_tx_data[*]
-#set_instance_assignment -name FAST_OUTPUT_REGISTER                      ON -to fx3_ctl[*]
-#set_instance_assignment -name FAST_OUTPUT_ENABLE_REGISTER               ON -to fx3_gpif[*]
+set_instance_assignment -name FAST_INPUT_REGISTER                       ON -to fx3_gpif[*]
+set_instance_assignment -name FAST_INPUT_REGISTER                       ON -to fx3_ctl[4]
+set_instance_assignment -name FAST_INPUT_REGISTER                       ON -to fx3_ctl[6]
+
+set_instance_assignment -name FAST_OUTPUT_REGISTER                      ON -to fx3_gpif[*]
+set_instance_assignment -name FAST_OUTPUT_REGISTER                      ON -to fx3_ctl[0]
+set_instance_assignment -name FAST_OUTPUT_REGISTER                      ON -to fx3_ctl[3]
+
+set_instance_assignment -name FAST_OUTPUT_ENABLE_REGISTER               ON -to fx3_gpif[*]
 
 # Add IP files and pin assignments
 set_global_assignment -name QIP_FILE [file normalize $opts(platdir)/${PROJECT_NAME}.qip]
