@@ -44,13 +44,7 @@ static void print_buf(const char *msg, const uint8_t *buf, size_t len)
     }
 
     for (i = 0; i < len; i++) {
-        if (i == 0) {
-            fprintf(stderr, "  0x%02x,", buf[i]);
-        } else if ((i + 1) % 8 == 0) {
-            fprintf(stderr, " 0x%02x,\n ", buf[i]);
-        } else {
-            fprintf(stderr, " 0x%02x,", buf[i]);
-        }
+        fprintf(stderr, " %02x", buf[i]);
     }
 
     fputc('\n', stderr);
@@ -65,14 +59,14 @@ static int nios_access(struct bladerf *dev, uint8_t *buf)
     struct bladerf_usb *usb = dev->backend_data;
     int status;
 
-    print_buf("NIOS II request:\n", buf, NIOS_PKT_LEN);
+    print_buf("NIOS II REQ:", buf, NIOS_PKT_LEN);
 
     /* Send the command */
     status = usb->fn->bulk_transfer(usb->driver, PERIPHERAL_EP_OUT,
                                      buf, NIOS_PKT_LEN,
                                      PERIPHERAL_TIMEOUT_MS);
     if (status != 0) {
-        log_debug("Failed to send NIOS II request: %s\n",
+        log_error("Failed to send NIOS II request: %s\n",
                   bladerf_strerror(status));
         return status;
     }
@@ -83,11 +77,11 @@ static int nios_access(struct bladerf *dev, uint8_t *buf)
                                     PERIPHERAL_TIMEOUT_MS);
 
     if (status != 0) {
-        log_debug("Failed to receive NIOS II response: %s\n",
+        log_error("Failed to receive NIOS II response: %s\n",
                   bladerf_strerror(status));
     }
 
-    print_buf("NIOS II response:\n", buf, NIOS_PKT_LEN);
+    print_buf("NIOS II res:", buf, NIOS_PKT_LEN);
 
     return status;
 }
