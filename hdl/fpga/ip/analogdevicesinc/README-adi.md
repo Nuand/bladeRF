@@ -31,9 +31,11 @@ Prune unneeded subdirectories:
 cd hdl/fpga/ip/analogdevicesinc/hdl
 git rm -r library/* projects/*
 git reset HEAD library/axi_ad9361 library/axi_dmac library/common library/scripts \
-    library/util_axis_fifo library/util_axis_resize library/util_cpack projects/arradio
+    library/util_axis_fifo library/util_axis_resize library/util_cpack library/util_upack \
+    projects/arradio
 git checkout -- library/axi_ad9361 library/axi_dmac library/common library/scripts \
-    library/util_axis_fifo library/util_axis_resize library/util_cpack projects/arradio
+    library/util_axis_fifo library/util_axis_resize library/util_cpack library/util_upack \
+    projects/arradio
 git commit -m 'hdl/analogdevicesinc: prune unnecessary subdirectories from ADI repo'
 ```
 
