@@ -679,7 +679,7 @@ begin
     rx_loopback_fifo.rclock <= rx_clock ;
     rx_loopback_fifo.rreq <= '1' when rx_loopback_enabled = '1' and rx_loopback_fifo.rempty = '0' else '0' ;
 
-    U_rx_loopack_fifo : entity work.rx_fifo
+    U_rx_loopack_fifo : entity work.lb_fifo
       port map (
         aclr                => rx_loopback_fifo.aclr,
         data                => rx_loopback_fifo.wdata,
