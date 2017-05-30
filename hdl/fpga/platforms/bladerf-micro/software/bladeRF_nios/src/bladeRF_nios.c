@@ -139,13 +139,6 @@ int main(void)
     // VCTCXO Tune State machine
     state_t tune_state = COARSE_TUNE_MIN;
 
-    // ADI SPI data
-    uint16_t adi_spi_addr;
-    uint64_t adi_spi_data;
-
-    // AD5621 DAC
-    uint16_t dac_val;
-
     // Set the known/default values of the trim DAC cal line
     trimdac_cal_line.point[0].x  = 0;
     trimdac_cal_line.point[0].y  = trimdac_min;
@@ -171,101 +164,106 @@ int main(void)
     /* ====================
      * AD9361 SPI TESTS
      * ==================== */
-    #if 0
-    while ( 1 ) {
-        //             W/Rb        | NB2:0       | A[9:0]
-        adi_spi_addr = (0x0 << 15) | (0x0 << 12) | (0x000 << 0);
-        adi_spi_data = UINT64_C(0x0);
+    #ifdef BLADERF_NIOS_AD9361_SPI_TESTS
+        uint16_t adi_spi_addr;
+        uint64_t adi_spi_data;
 
-        // Read AD9361 registers 0x045-0x04c
-        for( i=0x45; i < 0x4d; i++ ) {
-            adi_spi_addr = (adi_spi_addr & 0xfc00) | i;
+        while ( 1 ) {
+            //             W/Rb        | NB2:0       | A[9:0]
+            adi_spi_addr = (0x0 << 15) | (0x0 << 12) | (0x000 << 0);
+            adi_spi_data = UINT64_C(0x0);
+
+            // Read AD9361 registers 0x045-0x04c
+            for( i=0x45; i < 0x4d; i++ ) {
+                adi_spi_addr = (adi_spi_addr & 0xfc00) | i;
+                adi_spi_data = ad9361_spi_read(adi_spi_addr);
+            }
+
+            // Read 0x028
+            adi_spi_addr = (adi_spi_addr & 0xfc00) | 0x28;
             adi_spi_data = ad9361_spi_read(adi_spi_addr);
+
+            // Write 0x5a to 0x028
+            adi_spi_addr = (adi_spi_addr & 0xfc00) | 0x28;
+            adi_spi_data = (UINT64_C(0x5a) << (64-8));
+            ad9361_spi_write((adi_spi_addr | 0x8000), adi_spi_data);
+
+            // Read 0x028
+            adi_spi_addr = (adi_spi_addr & 0xfc00) | 0x28;
+            adi_spi_data = ad9361_spi_read(adi_spi_addr);
+
+            // Write 0x5a to 0x028
+            adi_spi_addr = (adi_spi_addr & 0xfc00) | 0x28;
+            adi_spi_data = (UINT64_C(0x0) << (64-8));
+            ad9361_spi_write((adi_spi_addr | 0x8000), adi_spi_data);
+
+            usleep(100);
         }
-
-        // Read 0x028
-        adi_spi_addr = (adi_spi_addr & 0xfc00) | 0x28;
-        adi_spi_data = ad9361_spi_read(adi_spi_addr);
-
-        // Write 0x5a to 0x028
-        adi_spi_addr = (adi_spi_addr & 0xfc00) | 0x28;
-        adi_spi_data = (UINT64_C(0x5a) << (64-8));
-        ad9361_spi_write((adi_spi_addr | 0x8000), adi_spi_data);
-
-        // Read 0x028
-        adi_spi_addr = (adi_spi_addr & 0xfc00) | 0x28;
-        adi_spi_data = ad9361_spi_read(adi_spi_addr);
-
-        // Write 0x5a to 0x028
-        adi_spi_addr = (adi_spi_addr & 0xfc00) | 0x28;
-        adi_spi_data = (UINT64_C(0x0) << (64-8));
-        ad9361_spi_write((adi_spi_addr | 0x8000), adi_spi_data);
-
-        usleep(100);
-    }
     #endif
 
 
     /* ====================
      * AD5621 SPI TESTS
      * ==================== */
-    #if 0
-    // Disable the ADF400x
-    control_reg_write( 0x0 );
-    usleep(2000000);
-    while( 1 ) {
-        for( i = 0; i < 6; i++ ) {
-            // Calculate DAC value
-            dac_val = ((((uint16_t)i) * 0x333) << 2) & 0x3fff;
-            // Write DAC value
-            ad56x1_vctcxo_trim_dac_write(dac_val);
-            usleep(2000000);
-            // Tristate the DAC, keeping same DAC value in register
-            ad56x1_vctcxo_trim_dac_write(dac_val | 0xc000 );
-            usleep(2000000);
+    #ifdef BLADERF_NIOS_AD5621_SPI_TESTS
+        uint16_t dac_val;
+
+        // Disable the ADF400x
+        control_reg_write( 0x0 );
+        usleep(2000000);
+        while( 1 ) {
+            for( i = 0; i < 6; i++ ) {
+                // Calculate DAC value
+                dac_val = ((((uint16_t)i) * 0x333) << 2) & 0x3fff;
+                // Write DAC value
+                ad56x1_vctcxo_trim_dac_write(dac_val);
+                usleep(2000000);
+                // Tristate the DAC, keeping same DAC value in register
+                ad56x1_vctcxo_trim_dac_write(dac_val | 0xc000 );
+                usleep(2000000);
+            }
         }
-    }
     #endif
 
 
     /* ====================
      * ADF4001 SPI TESTS
      * ==================== */
-    #if 0
-    // Tristate the DAC
-    ad56x1_vctcxo_trim_dac_write( 0xc000 );
-    while( 1 ) {
+    #ifdef BLADERF_NIOS_ADF4001_SPI_TESTS
+        // Tristate the DAC
+        ad56x1_vctcxo_trim_dac_write( 0xc000 );
+        while( 1 ) {
 
-        // Enable the ADF400x
-        control_reg_write( 0x1 << 11 );
-        usleep(2000000);
+            // Enable the ADF400x
+            control_reg_write( 0x1 << 11 );
+            usleep(2000000);
 
-        // 0x000003 -- MUXOUT = 'Z'; CP = Normal
-        adf400x_spi_write(0x3);
-        usleep(2000000);
+            // 0x000003 -- MUXOUT = 'Z'; CP = Normal
+            adf400x_spi_write(0x3);
+            usleep(2000000);
 
-        // 0x000137 -- MUXOUT = AVDD (3.3 V); CP = 'Z'
-        adf400x_spi_write(0x137);
-        usleep(2000000);
+            // 0x000137 -- MUXOUT = AVDD (3.3 V); CP = 'Z'
+            adf400x_spi_write(0x137);
+            usleep(2000000);
 
-        // 0x000177 -- MUXOUT = DGND; CP = 'Z'
-        adf400x_spi_write(0x177);
-        usleep(2000000);
+            // 0x000177 -- MUXOUT = DGND; CP = 'Z'
+            adf400x_spi_write(0x177);
+            usleep(2000000);
 
-        // 0x000167 -- MUXOUT = SDO; CP = 'Z'
-        //adf400x_spi_write(0x167);
-        //usleep(2000000);
+            // 0x000167 -- MUXOUT = SDO; CP = 'Z'
+            //adf400x_spi_write(0x167);
+            //usleep(2000000);
 
-        for( i = 0; i < 4; i++ ) {
-            // Read all the registers
-            adf400x_spi_read((uint32_t)i);
-            usleep(100);
+            for( i = 0; i < 4; i++ ) {
+                // Read all the registers
+                adf400x_spi_read((uint32_t)i);
+                usleep(100);
+            }
+
+            // Disable the ADF400x
+            control_reg_write( 0x0 );
+            usleep(2000000);
         }
-
-        // Disable the ADF400x
-        control_reg_write( 0x0 );
-        usleep(2000000);
-    }
     #endif
 
     while (run_nios) {
