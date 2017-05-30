@@ -81,7 +81,7 @@ module i2c_master_top(
 	scl_pad_i, scl_pad_o, scl_padoen_o, sda_pad_i, sda_pad_o, sda_padoen_o );
 
 	// parameters
-	parameter ARST_LVL = 1'b0; // asynchronous reset level
+        parameter ARST_LVL = 0;    // asynchronous reset level
 
 	//
 	// inputs & outputs
@@ -149,7 +149,7 @@ module i2c_master_top(
 	//
 
 	// generate internal reset
-	wire rst_i = arst_i ^ ARST_LVL;
+        wire rst_i = arst_i ^ ARST_LVL[0];
 
 	// generate wishbone signals
 	wire wb_wacc = wb_we_i & wb_ack_o;

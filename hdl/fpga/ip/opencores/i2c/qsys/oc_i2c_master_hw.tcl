@@ -47,11 +47,11 @@ add_fileset_file i2c.qip OTHER PATH ../i2c.qip
 # 
 # parameters
 # 
-add_parameter ARST_LVL STD_LOGIC 0 ""
+add_parameter ARST_LVL INTEGER 0 ""
 set_parameter_property ARST_LVL DEFAULT_VALUE 0
 set_parameter_property ARST_LVL DISPLAY_NAME ARST_LVL
 set_parameter_property ARST_LVL WIDTH ""
-set_parameter_property ARST_LVL TYPE STD_LOGIC
+set_parameter_property ARST_LVL TYPE INTEGER
 set_parameter_property ARST_LVL UNITS None
 set_parameter_property ARST_LVL ALLOWED_RANGES 0:1
 set_parameter_property ARST_LVL DESCRIPTION ""
