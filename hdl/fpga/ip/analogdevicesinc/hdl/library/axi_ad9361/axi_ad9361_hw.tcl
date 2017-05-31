@@ -32,6 +32,13 @@ set_parameter_property DEVICE_TYPE TYPE INTEGER
 set_parameter_property DEVICE_TYPE UNITS None
 set_parameter_property DEVICE_TYPE HDL_PARAMETER true
 
+add_parameter DAC_DDS_DISABLE INTEGER 0
+set_parameter_property DAC_DDS_DISABLE DEFAULT_VALUE 0
+set_parameter_property DAC_DDS_DISABLE DISPLAY_NAME DAC_DDS_DISABLE
+set_parameter_property DAC_DDS_DISABLE TYPE INTEGER
+set_parameter_property DAC_DDS_DISABLE UNITS None
+set_parameter_property DAC_DDS_DISABLE HDL_PARAMETER true
+
 # axi4 slave
 
 add_interface s_axi_clock clock end

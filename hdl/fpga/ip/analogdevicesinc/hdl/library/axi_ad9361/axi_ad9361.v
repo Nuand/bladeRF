@@ -162,6 +162,7 @@ module axi_ad9361 (
   parameter   IO_DELAY_GROUP = "dev_if_delay_group";
   parameter   DAC_DATAPATH_DISABLE = 0;
   parameter   ADC_DATAPATH_DISABLE = 0;
+  parameter   DAC_DDS_DISABLE = 0;
 
   // physical interface (receive)
 
@@ -277,6 +278,10 @@ module axi_ad9361 (
   // chipscope signals
 
   output  [41:0]  tdd_dbg;
+
+  // derived parameters
+
+  localparam  DAC_DDS_DISABLE_INT = (DAC_DATAPATH_DISABLE == 1) ? 1 : DAC_DDS_DISABLE;
 
   // internal registers
 
@@ -511,6 +516,7 @@ module axi_ad9361 (
 
   axi_ad9361_tx #(
     .ID (ID),
+    .DDS_DISABLE (DAC_DDS_DISABLE_INT),
     .DATAPATH_DISABLE (DAC_DATAPATH_DISABLE))
   i_tx (
     .dac_clk (clk),

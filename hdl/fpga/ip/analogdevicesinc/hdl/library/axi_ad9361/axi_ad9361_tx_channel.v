@@ -75,6 +75,7 @@ module axi_ad9361_tx_channel (
 
   parameter   CHANNEL_ID = 32'h0;
   parameter   Q_OR_I_N = 0;
+  parameter   DDS_DISABLE = 0;
   parameter   DATAPATH_DISABLE = 0;
   localparam  PRBS_SEL = CHANNEL_ID;
   localparam  PRBS_P09  = 0;
@@ -360,11 +361,9 @@ module axi_ad9361_tx_channel (
 
   // dds
 
-  generate
-  if (DATAPATH_DISABLE == 1) begin
-  assign dac_dds_data_s = 16'd0;
-  end else begin
-  ad_dds i_dds (
+  ad_dds #(
+    .DISABLE (DDS_DISABLE))
+  i_dds (
     .clk (dac_clk),
     .dds_format (dac_dds_format),
     .dds_phase_0 (dac_dds_phase_0),
@@ -372,8 +371,6 @@ module axi_ad9361_tx_channel (
     .dds_phase_1 (dac_dds_phase_1),
     .dds_scale_1 (dac_dds_scale_2_s),
     .dds_data (dac_dds_data_s));
-  end
-  endgenerate
 
   // single channel processor
 
