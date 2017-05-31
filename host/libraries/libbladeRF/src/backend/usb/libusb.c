@@ -913,7 +913,7 @@ static int lusb_bulk_transfer(void *driver, uint8_t endpoint, void *buffer,
 
     status = error_conv(status);
     if (status == 0 && ((uint32_t)n_transferred != buffer_len)) {
-        log_debug("Short bulk transfer: requeted=%u, transferred=%u\n",
+        log_debug("Short bulk transfer: requested=%u, transferred=%u\n",
                   buffer_len, n_transferred);
         status = BLADERF_ERR_IO;
     }
