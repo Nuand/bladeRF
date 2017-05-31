@@ -12,6 +12,7 @@ set_project_property HIDE_FROM_IP_CATALOG {false}
 add_instance axi_ad9361_0 axi_ad9361 1.0
 set_instance_parameter_value axi_ad9361_0 {ID} {0}
 set_instance_parameter_value axi_ad9361_0 {DEVICE_TYPE} {0}
+set_instance_parameter_value axi_ad9361_0 {DAC_DDS_DISABLE} {1}
 
 add_instance cb_ad9361_0_data altera_clock_bridge
 set_instance_parameter_value cb_ad9361_0_data {EXPLICIT_CLOCK_RATE} {0.0}
