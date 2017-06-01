@@ -596,7 +596,8 @@ typedef enum  {
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_set_gain(struct bladerf *dev, bladerf_channel ch, int gain);
+int CALL_CONV bladerf_set_gain(struct bladerf *dev, bladerf_channel ch,
+                               int gain);
 
 /**
  * Get overall gain
@@ -608,16 +609,17 @@ int CALL_CONV bladerf_set_gain(struct bladerf *dev, bladerf_channel ch, int gain
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_get_gain(struct bladerf *dev, bladerf_channel ch, int *gain);
+int CALL_CONV bladerf_get_gain(struct bladerf *dev, bladerf_channel ch,
+                               int *gain);
 
 /**
  * Set gain mode
  *
  * Sets the mode for hardware AGC. Not all channels or boards will support
  * all possible values (e.g. transmit channels); invalid combinations will
- * return \ref BLADERF_ERR_UNSUPPORTED.
+ * return ::BLADERF_ERR_UNSUPPORTED.
  *
- * The special value of \ref BLADERF_GAIN_DEFAULT will return hardware AGC to
+ * The special value of ::BLADERF_GAIN_DEFAULT will return hardware AGC to
  * its default value at initialization.
  *
  * @param       dev         Device handle
@@ -635,7 +637,7 @@ int CALL_CONV bladerf_set_gain_mode(struct bladerf *dev, bladerf_channel ch,
  *
  * Gets the current mode for hardware AGC. If the channel or board does not
  * meaningfully have a gain mode (e.g. transmit channels), mode will be
- * set to \ref BLADERF_GAIN_DEFAULT and `0` will be returned.
+ * set to ::BLADERF_GAIN_DEFAULT and `0` will be returned.
  *
  * @param       dev         Device handle
  * @param[in]   ch          Channel
@@ -761,9 +763,7 @@ struct bladerf_rational_rate {
  * @param[out]  actual      If non-NULL. this is written with the actual
  *                          sample rate achieved.
  *
- * @return 0 on success,
- *         BLADERF_ERR_INVAL for an invalid sample rate,
- *         or a value from \ref RETCODES list on other failures
+ * @return 0 on success, value from \ref RETCODES list upon failure
  */
 API_EXPORT
 int CALL_CONV bladerf_set_sample_rate(struct bladerf *dev,
@@ -784,9 +784,7 @@ int CALL_CONV bladerf_set_sample_rate(struct bladerf *dev,
  * Use bladerf_get_sample_rate_range() to determine the range of supported
  * sample rates.
  *
- * @return 0 on success,
- *         BLADERF_ERR_INVAL for an invalid sample rate,
- *         or a value from \ref RETCODES list on other failures
+ * @return 0 on success, value from \ref RETCODES list upon failure
  */
 API_EXPORT
 int CALL_CONV bladerf_set_rational_sample_rate(
@@ -898,7 +896,8 @@ int CALL_CONV bladerf_get_bandwidth(struct bladerf *dev, bladerf_channel ch,
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_get_bandwidth_range(struct bladerf *dev, bladerf_channel ch,
+int CALL_CONV bladerf_get_bandwidth_range(struct bladerf *dev,
+                                          bladerf_channel ch,
                                           struct bladerf_range *range);
 
 /** @} (End of FN_BANDWIDTH) */
@@ -1554,9 +1553,9 @@ struct bladerf_quick_tune {
  * Schedule a frequency retune to occur at specified sample timestamp value.
  *
  * @pre bladerf_sync_config() must have been called with the
- *      BLADERF_FORMAT_SC16_Q11_META format for the associated channel in order
- *      to enable timestamps. (The timestamped metadata format must be enabled
- *      in order to use this function.)
+ *      \ref BLADERF_FORMAT_SC16_Q11_META format for the associated channel in
+ *      order to enable timestamps. (The timestamped metadata format must be
+ *      enabled in order to use this function.)
  *
  * @param       dev             Device handle
  *
@@ -1576,9 +1575,9 @@ struct bladerf_quick_tune {
  *
  * @return 0 on success, value from \ref RETCODES list on failure. If the
  *         underlying queue of scheduled retune requests becomes full,
- *         BLADERF_ERR_QUEUE_FULL will be returned. In this case, it should be
- *         possible to schedule a retune after the timestamp of one of the
- *         earlier requests occurs.
+ *         \ref BLADERF_ERR_QUEUE_FULL will be returned. In this case, it
+ *         should be possible to schedule a retune after the timestamp of one
+ *         of the earlier requests occurs.
  */
 API_EXPORT
 int CALL_CONV bladerf_schedule_retune(struct bladerf *dev,
@@ -1807,9 +1806,8 @@ typedef enum {
      * responsible for manually packing/unpacking the above metadata into/from
      * their samples.
      *
-     * For a more information, see the
-     * <a class="el" href="https://github.com/Nuand/bladeRF/blob/master/host/libraries/libbladeRF/src/streaming/metadata.h">metadata.h</a>
-     * header in the libbladeRF codebase.
+     * For more information, see the `src/streaming/metadata.h` header in the
+     * libbladeRF codebase.
      */
     BLADERF_FORMAT_SC16_Q11_META,
 } bladerf_format;
@@ -2031,8 +2029,8 @@ int CALL_CONV bladerf_enable_module(struct bladerf *dev,
  * in a set of bursts;
  *  - Configure and start a TX stream using the ::BLADERF_FORMAT_SC16_Q11_META
  *      format.
- *  - Retrieve timestamp `T`, a coarse estimate the TX's current timestamp via this
- *      function.
+ *  - Retrieve timestamp `T`, a coarse estimate the TX's current timestamp via
+ *      this function.
  *  - Schedule the first burst, `F` to occur in the future: `F = T + N`.
  *      Generally, adding `N` in tens to low hundreds of milliseconds is
  *      sufficient to account for timestamp retrieval overhead and stream
@@ -2127,7 +2125,7 @@ int CALL_CONV bladerf_get_timestamp(struct bladerf *dev, bladerf_direction dir,
  *                              underlying data stream.
  *
  * @return 0 on success,
- *         BLADERF_ERR_UNSUPPORTED if libbladeRF is not built with support
+ *         ::BLADERF_ERR_UNSUPPORTED if libbladeRF is not built with support
  *         for this functionality,
  *         or a value from \ref RETCODES list on failures.
  */
@@ -2169,7 +2167,7 @@ int CALL_CONV bladerf_sync_config(struct bladerf *dev,
  *      errors.
  *
  * @return 0 on success,
- *         BLADERF_ERR_UNSUPPORTED if libbladeRF is not built with support
+ *         ::BLADERF_ERR_UNSUPPORTED if libbladeRF is not built with support
  *         for this functionality,
  *         or a value from \ref RETCODES list on failures.
  */
@@ -2208,7 +2206,7 @@ int CALL_CONV bladerf_sync_tx(struct bladerf *dev,
  *      errors.
  *
  * @return 0 on success,
- *         BLADERF_ERR_UNSUPPORTED if libbladeRF is not built with support
+ *         ::BLADERF_ERR_UNSUPPORTED if libbladeRF is not built with support
  *         for this functionality,
  *         or a value from \ref RETCODES list on failures.
  */
@@ -2259,10 +2257,10 @@ struct bladerf_stream;
  *
  * Stream callbacks <b>must not</b> block or perform long-running operations.
  * Otherwise, timeouts may occur. If this cannot be guaranteed, consider
- * returning BLADERF_STREAM_NO_DATA in callbacks and later submit a buffer using
- * bladerf_submit_stream_buffer(). However, callbacks should always take a
- * single approach of returning buffers <b>or</b> returning
- * BLADERF_STREAM_NO_DATA and submitting buffers later -- <b>but not both</b>.
+ * returning ::BLADERF_STREAM_NO_DATA in callbacks and later submit a buffer
+ * using bladerf_submit_stream_buffer(). However, callbacks should always take
+ * a single approach of returning buffers <b>or</b> returning
+ * ::BLADERF_STREAM_NO_DATA and submitting buffers later -- <b>but not both</b>.
  *
  * When running in a full-duplex mode of operation with simultaneous TX and RX
  * stream threads, be aware that one stream's callback may occur in the context
@@ -2291,14 +2289,14 @@ struct bladerf_stream;
  *  - samples:      Pointer to buffer of samples that was sent
  *  - num_samples:  Number of sent in last transfer and to send in next transfer
  *  - Return value: The user specifies the address of the next buffer to send,
- *                  BLADERF_STREAM_SHUTDOWN, or BLADERF_STREAM_NO_DATA.
+ *                  ::BLADERF_STREAM_SHUTDOWN, or ::BLADERF_STREAM_NO_DATA.
  *
  * For RX callbacks:
  *  - samples:          Buffer filled with received data
  *  - num_samples:      Number of samples received and size of next buffers
  *  - Return value:     The user specifies the next buffer to fill with RX data,
  *                      which should be `num_samples` in size,
- *                      BLADERF_STREAM_SHUTDOWN, or BLADERF_STREAM_NO_DATA.
+ *                      ::BLADERF_STREAM_SHUTDOWN, or ::BLADERF_STREAM_NO_DATA.
  *
  */
 typedef void *(*bladerf_stream_cb)(struct bladerf *dev,
@@ -2425,10 +2423,10 @@ int CALL_CONV bladerf_stream(struct bladerf_stream *stream,
  * @param[inout]    buffer      Buffer to fill (RX) or containing data (TX).
  *                              This buffer is assumed to be the size specified
  *                              in the associated bladerf_init_stream() call.
- * @param[in]       timeout_ms  Milliseconds to timeout in, if this call blocks. 0
- *                              implies an "infinite" wait.
+ * @param[in]       timeout_ms  Milliseconds to timeout in, if this call blocks.
+ *                              0 implies an "infinite" wait.
  *
- * @return 0 on success, BLADERF_ERR_TIMEOUT upon a timeout, or a value from
+ * @return 0 on success, ::BLADERF_ERR_TIMEOUT upon a timeout, or a value from
  * \ref RETCODES list on other failures
  */
 API_EXPORT
@@ -2450,8 +2448,8 @@ int CALL_CONV bladerf_submit_stream_buffer(struct bladerf_stream *stream,
  *                              in the associated bladerf_init_stream() call.
  *
  * @return  0 on success,
- *          BLADERF_ERR_WOULD_BLOCK if the call would have to block to succeed,
- *          or another value from \ref RETCODES upon other failure
+ *          ::BLADERF_ERR_WOULD_BLOCK if the call would have to block to
+ *          succeed, or another value from \ref RETCODES upon other failure
  */
 API_EXPORT
 int CALL_CONV bladerf_submit_stream_buffer_nb(struct bladerf_stream *stream,
@@ -2466,7 +2464,7 @@ int CALL_CONV bladerf_submit_stream_buffer_nb(struct bladerf_stream *stream,
  * @post   Stream is deallocated and may no longer be used.
  *
  * @param   stream  Stream to deinitialize. This function does nothing if
- *                  stream is NULL.
+ *                  stream is `NULL`.
  */
 API_EXPORT
 void CALL_CONV bladerf_deinit_stream(struct bladerf_stream *stream);
@@ -2582,7 +2580,7 @@ int CALL_CONV bladerf_device_reset(struct bladerf *dev);
  *
  * @param       dev         Device to read firmware log from
  * @param[in]   filename    Filename to write log information to. If set to
- *                          NULL, log data will be printed to stdout.
+ *                          `NULL`, log data will be printed to stdout.
  *
  * @return 0 upon success, or a value from \ref RETCODES list on failure
  */
@@ -2634,11 +2632,11 @@ int CALL_CONV bladerf_get_bootloader_list(struct bladerf_devinfo **list);
  *                                  this is NULL, the backend, bus, and addr
  *                                  arguments will be used instead.
  * @param[in]   backend             Backend to use. This is only used if
- *                                  device_identifier is NULL.
+ *                                  device_identifier is `NULL`.
  * @param[in]   bus                 Bus number the device is located on. This
- *                                  is only used if device_identifier is NULL.
+ *                                  is only used if device_identifier is `NULL`.
  * @param[in]   addr                Bus address the device is located on. This
- *                                  is only used if device_identifier is NULL.
+ *                                  is only used if device_identifier is `NULL`.
  * @param[in]   file                Filename of the firmware image to boot
  *
  * @return 0 on success, value from \ref RETCODES list on failure
@@ -2699,15 +2697,15 @@ typedef enum {
  * values are converted to big-endian byte order, for ease of reading in a hex
  * editor.
  *
- * When creating and using a bladerf_image of type BLADERF_IMAGE_TYPE_RAW,
+ * When creating and using a bladerf_image of type ::BLADERF_IMAGE_TYPE_RAW,
  * the address and length fields must be erase-block aligned.
  */
 struct bladerf_image {
     /**
      * Magic value used to identify image file format.
      *
-     * Note that an extra character is added to store a NUL-terminator,
-     * to allow this field to be printed. This NUL-terminator is *NOT*
+     * Note that an extra character is added to store a `NUL`-terminator,
+     * to allow this field to be printed. This `NUL`-terminator is *NOT*
      * written in the serialized image.
      */
     char magic[BLADERF_IMAGE_MAGIC_LEN + 1];
@@ -2732,8 +2730,8 @@ struct bladerf_image {
      * Serial number of the device that the image was obtained from. This
      * field should be all '\0' if irrelevant.
      *
-     * The +1 here is actually extraneous; BLADERF_SERIAL_LENGTH already
-     * accounts for a NUL terminator. However, this is left here to avoid
+     * The +1 here is actually extraneous; ::BLADERF_SERIAL_LENGTH already
+     * accounts for a `NUL` terminator. However, this is left here to avoid
      * breaking backwards compatibility.
      */
     char serial[BLADERF_SERIAL_LENGTH + 1];
@@ -2749,7 +2747,7 @@ struct bladerf_image {
     bladerf_image_type type;
 
     /**
-     * Address of the flash data in this image. A value of 0xffffffff
+     * Address of the flash data in this image. A value of `0xffffffff`
      * implies that this field is left unspecified (i.e., "don't care").
      */
     uint32_t address;
@@ -2770,7 +2768,7 @@ struct bladerf_image {
  * The following bladerf_image fields are zeroed out:  `checksum`, `serial`,
  * and `reserved`,
  *
- * If the `length` parameter is not 0, the bladerf_image `data` field will be
+ * If the `length` parameter is not 0, the ::bladerf_image `data` field will be
  * dynamically allocated. Otherwise, `data` will be set to NULL.
  *
  * @note A non-zero `length` should be use only with bladerf_image_write();
@@ -2781,7 +2779,7 @@ struct bladerf_image {
  * a file.
  *
  * @return Pointer to allocated and initialized structure on success,
- *         NULL on memory allocation failure or invalid address/length.
+ *         `NULL` on memory allocation failure or invalid address/length.
  */
 API_EXPORT
 struct bladerf_image * CALL_CONV bladerf_alloc_image(bladerf_image_type type,
@@ -2797,7 +2795,7 @@ struct bladerf_image * CALL_CONV bladerf_alloc_image(bladerf_image_type type,
  * @param[in]   vctcxo_trim  VCTCXO oscillator trim value.
  *
  * @return Pointer to allocated and initialized structure on success,
- *         NULL on memory allocation failure
+ *         `NULL` on memory allocation failure
  */
 API_EXPORT
 struct bladerf_image * CALL_CONV bladerf_alloc_cal_image(
@@ -2806,7 +2804,7 @@ struct bladerf_image * CALL_CONV bladerf_alloc_cal_image(
 
 /**
  * Free a bladerf_image previously obtained via bladerf_alloc_image.
- * If the bladerf_image's `data` field is non-NULL, it will be freed.
+ * If the bladerf_image's `data` field is non-`NULL`, it will be freed.
  *
  * @param[inout]    image   Flash image
  */
@@ -2848,9 +2846,9 @@ int CALL_CONV bladerf_image_write(struct bladerf_image *image,
  *       function fails.
  *
  * @return 0 upon success,<br>
- *         BLADERF_ERR_CHECKSUM upon detecting a checksum mismatch,<br>
- *         BLADERF_ERR_INVAL if any image fields are invalid,<br>
- *         BLADERF_ERR_IO on a file I/O error,<br>
+ *         ::BLADERF_ERR_CHECKSUM upon detecting a checksum mismatch,<br>
+ *         ::BLADERF_ERR_INVAL if any image fields are invalid,<br>
+ *         ::BLADERF_ERR_IO on a file I/O error,<br>
  *         or a value from \ref RETCODES list on any other failure<br>
  */
 API_EXPORT
@@ -2920,7 +2918,7 @@ int CALL_CONV bladerf_set_vctcxo_tamer_mode(struct bladerf *dev,
  *
  * @param           dev         Device handle
  * @param[out]      mode        Current VCTCXO taming mode or
- *                              BLADERF_VCTCXO_TAMER_INVALID if a failure
+ *                              ::BLADERF_VCTCXO_TAMER_INVALID if a failure
  *                              occurs.
  *
  * @return 0 on success, value from \ref RETCODES list on failure
@@ -2998,18 +2996,18 @@ int CALL_CONV bladerf_trim_dac_read(struct bladerf *dev, uint16_t *val);
 /**
  * Frequency tuning modes
  *
- * BLADERF_TUNING_MODE_HOST is the default if either of the following conditions
- * are true:
+ * ::BLADERF_TUNING_MODE_HOST is the default if either of the following
+ * conditions are true:
  *   - libbladeRF < v1.3.0
  *   - FPGA       < v0.2.0
  *
- * BLADERF_TUNING_MODE_FPGA is the default if both of the following conditions
- * are true:
+ * ::BLADERF_TUNING_MODE_FPGA is the default if both of the following
+ * conditions are true:
  *  - libbladeRF >= v1.3.0
  *  - FPGA       >= v0.2.0
  *
- * The default mode can be overridden by setting a BLADERF_DEFAULT_TUNING_MODE
- * environment variable to "host" or "fpga". Overriding this value with a mode
+ * The default mode can be overridden by setting a ::BLADERF_DEFAULT_TUNING_MODE
+ * environment variable to `host` or `fpga`. Overriding this value with a mode
  * not supported by the FPGA will result in failures or unexpected behavior.
  */
 typedef enum {
@@ -3206,7 +3204,7 @@ int CALL_CONV bladerf_config_gpio_write(struct bladerf *dev, uint32_t val);
  * @param[in]   erase_block     Erase block to start erasing at
  * @param[in]   count           Number of blocks to erase.
  *
- * @return 0 on success, or BLADERF_ERR_INVAL on an invalid `erase_block` or
+ * @return 0 on success, or ::BLADERF_ERR_INVAL on an invalid `erase_block` or
  * `count` value, or a value from \ref RETCODES list on other failures
  */
 API_EXPORT
@@ -3220,11 +3218,11 @@ int CALL_CONV bladerf_erase_flash(struct bladerf *dev,
  *
  * @param       dev     Device handle
  * @param[in]   buf     Buffer to read data into. Must be `count` *
- *                      BLADERF_FLASH_PAGE_SIZE bytes or larger.
+ *                      ::BLADERF_FLASH_PAGE_SIZE bytes or larger.
  * @param[in]   page    Page to begin reading from
  * @param[in]   count   Number of pages to read
  *
- * @return 0 on success, or BLADERF_ERR_INVAL on an invalid `page` or `count`
+ * @return 0 on success, or ::BLADERF_ERR_INVAL on an invalid `page` or `count`
  * value, or a value from \ref RETCODES list on other failures.
  */
 API_EXPORT
@@ -3239,7 +3237,7 @@ int CALL_CONV bladerf_read_flash(struct bladerf *dev, uint8_t *buf,
  * @param[in]   page    Page to begin writing at
  * @param[in]   count   Number of pages to write
  *
- * @return 0 on success, or BLADERF_ERR_INVAL on an invalid `page` or `count`
+ * @return 0 on success, or ::BLADERF_ERR_INVAL on an invalid `page` or `count`
  * value, or a value from \ref RETCODES list on other failures.
  */
 API_EXPORT
