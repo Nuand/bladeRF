@@ -119,6 +119,7 @@ struct bladerf2_board_data {
 #define RFFE_CONTROL_TX_BIAS_EN     10
 #define RFFE_CONTROL_TX_SW_SHIFT    11
 #define RFFE_CONTROL_SPDT_MASK      0xF
+#define RFFE_CONTROL_SPDT_SHUTDOWN  0x0 // no connection
 #define RFFE_CONTROL_SPDT_LOWBAND   0xA // RF1 <-> RF3
 #define RFFE_CONTROL_SPDT_HIGHBAND  0x5 // RF1 <-> RF2
 
@@ -252,7 +253,52 @@ static const struct ad9361_port_map bladerf2_tx_port_map[] = {
     {"TXB", TXB},
 };
 
+typedef enum {
+    BAND_SHUTDOWN,
+    BAND_LOW,
+    BAND_HIGH
+} bladerf_band_t;
+
+struct range_band_map {
+    const struct bladerf_range range;
+    bladerf_band_t band;
+};
+
+static const struct range_band_map bladerf2_rx_range_band_map[] = {
+    {{FIELD_INIT(.min, 70e6), FIELD_INIT(.max, 3000e6), FIELD_INIT(.step, 2), FIELD_INIT(.scale, 1)}, BAND_LOW},
+    {{FIELD_INIT(.min, 3000e6), FIELD_INIT(.max, 6000e6), FIELD_INIT(.step, 2), FIELD_INIT(.scale, 1)}, BAND_HIGH},
+};
+
+static const struct range_band_map bladerf2_tx_range_band_map[] = {
+    {{FIELD_INIT(.min, 46.875e6), FIELD_INIT(.max, 3000e6), FIELD_INIT(.step, 2), FIELD_INIT(.scale, 1)}, BAND_LOW},
+    {{FIELD_INIT(.min, 3000e6), FIELD_INIT(.max, 6000e6), FIELD_INIT(.step, 2), FIELD_INIT(.scale, 1)}, BAND_HIGH},
+};
+
+struct band_port_map {
+    bladerf_band_t band;
+    uint32_t spdt;
+    uint32_t ad9361_port;
+};
+
+static const struct band_port_map bladerf2_rx_band_port_map[] = {
+    {BAND_SHUTDOWN, RFFE_CONTROL_SPDT_SHUTDOWN, 0},
+    {BAND_LOW,      RFFE_CONTROL_SPDT_LOWBAND,  B_BALANCED},
+    {BAND_HIGH,     RFFE_CONTROL_SPDT_HIGHBAND, A_BALANCED},
+};
+
+static const struct band_port_map bladerf2_tx_band_port_map[] = {
+    {BAND_SHUTDOWN, RFFE_CONTROL_SPDT_SHUTDOWN, 0},
+    {BAND_LOW,      RFFE_CONTROL_SPDT_LOWBAND,  TXB},
+    {BAND_HIGH,     RFFE_CONTROL_SPDT_HIGHBAND, TXA},
+};
+
+/******************************************************************************/
+/* Forward declarations */
+/******************************************************************************/
+
 static int bladerf2_select_band(struct bladerf *dev, bladerf_channel ch, uint64_t frequency);
+static int bladerf2_get_frequency(struct bladerf *dev, bladerf_channel ch, uint64_t *frequency);
+
 /******************************************************************************/
 /* Helpers */
 /******************************************************************************/
@@ -272,6 +318,127 @@ static int errno_ad9361_to_bladerf(int err)
     return BLADERF_ERR_UNEXPECTED;
 }
 
+static bladerf_band_t _get_band_by_frequency(bladerf_channel ch, uint64_t frequency)
+{
+    const struct range_band_map *band_map;
+    size_t band_map_len;
+    int64_t freqi = (int64_t)frequency;
+
+    /* Select RX vs TX */
+    if (ch & BLADERF_TX) {
+        band_map        = bladerf2_tx_range_band_map;
+        band_map_len    = ARRAY_SIZE(bladerf2_tx_range_band_map);
+    } else {
+        band_map        = bladerf2_rx_range_band_map;
+        band_map_len    = ARRAY_SIZE(bladerf2_rx_range_band_map);
+    }
+
+    /* Determine the band for the given frequency */
+    for (size_t i = 0; i < band_map_len; ++i) {
+        if (freqi >= band_map[i].range.min && freqi <= band_map[i].range.max) {
+            return band_map[i].band;
+        }
+    }
+
+    /* Not a valid frequency */
+    log_warning("%s: frequency %"PRIu64" not found in band map\n", __FUNCTION__, frequency);
+    return BAND_SHUTDOWN;
+}
+
+static const struct band_port_map *_get_band_port_map(bladerf_channel ch, bool enabled, uint64_t frequency)
+{
+    bladerf_band_t band;
+    const struct band_port_map *port_map;
+    size_t port_map_len;
+
+    /* Determine which band to use */
+    if (enabled) {
+        band = _get_band_by_frequency(ch, frequency);
+    } else {
+        band = BAND_SHUTDOWN;
+    }
+
+    /* Select the band->port map for RX vs TX */
+    if (ch & BLADERF_TX) {
+        port_map = bladerf2_tx_band_port_map;
+        port_map_len = ARRAY_SIZE(bladerf2_tx_band_port_map);
+    } else {
+        port_map = bladerf2_rx_band_port_map;
+        port_map_len = ARRAY_SIZE(bladerf2_rx_band_port_map);
+    }
+
+    /* Search through the band->port map for the desired band */
+    for (size_t i = 0; i < port_map_len; i++) {
+        if (port_map[i].band == band) {
+            return &port_map[i];
+        }
+    }
+
+    /* Wasn't found, return a null ptr */
+    log_warning("%s: frequency %"PRIu64" not found in port map\n", __FUNCTION__, frequency);
+    return NULL;
+}
+
+static int _set_spdt_bits(uint32_t *reg, bladerf_channel ch, bool enabled, uint64_t frequency)
+{
+    const struct band_port_map *port_map = NULL;
+
+    /* Look up the port configuration for this frequency */
+    port_map = _get_band_port_map(ch, enabled, frequency);
+
+    if (port_map == NULL) {
+        return BLADERF_ERR_INVAL;
+    }
+
+    /* Modify the reg bits accordingly */
+    if (ch & BLADERF_TX) {
+        *reg &= ~(RFFE_CONTROL_SPDT_MASK << RFFE_CONTROL_TX_SW_SHIFT);
+        *reg |= port_map->spdt << RFFE_CONTROL_TX_SW_SHIFT;
+    } else {
+        *reg &= ~(RFFE_CONTROL_SPDT_MASK << RFFE_CONTROL_RX_SW_SHIFT);
+        *reg |= port_map->spdt << RFFE_CONTROL_RX_SW_SHIFT;
+    }
+
+    return 0;
+}
+
+static int _set_ad9361_port(struct bladerf *dev, bladerf_channel ch, bool enabled, uint64_t frequency)
+{
+    const struct band_port_map *port_map = NULL;
+    struct bladerf2_board_data *board_data = dev->board_data;
+    int status;
+
+    /* Look up the port configuration for this frequency */
+    port_map = _get_band_port_map(ch, enabled, frequency);
+
+    if (port_map == NULL) {
+        return BLADERF_ERR_INVAL;
+    }
+
+    /* Set the AD9361 port accordingly */
+    if (ch & BLADERF_TX) {
+        status = ad9361_set_tx_rf_port_output(board_data->phy, port_map->ad9361_port);
+    } else {
+        status = ad9361_set_rx_rf_port_input(board_data->phy, port_map->ad9361_port);
+    }
+
+    if (status < 0) {
+        return errno_ad9361_to_bladerf(status);
+    }
+
+    return 0;
+}
+
+static bool _rffe_channel_enabled(uint32_t reg, bladerf_channel ch)
+{
+    /* Given a register read from the RFFE, determine if ch is enabled */
+    if (ch == BLADERF_TX) {
+        return (reg >> RFFE_CONTROL_TXNRX) & 0x1;
+    } else {
+        return (reg >> RFFE_CONTROL_ENABLE) & 0x1;
+    }
+}
+
 /******************************************************************************/
 /* Low-level Initialization */
 /******************************************************************************/
@@ -286,6 +453,7 @@ static int bladerf2_initialize(struct bladerf *dev)
     struct bladerf2_board_data *board_data = dev->board_data;
     struct bladerf_version required_fw_version;
     struct bladerf_version required_fpga_version;
+    uint32_t reg;
     int status;
 
     /* Read FPGA version */
@@ -385,6 +553,20 @@ static int bladerf2_initialize(struct bladerf *dev)
     if (status < 0) {
         log_error("AD9361 set_rx_fir_config error: %d\n", status);
         return errno_ad9361_to_bladerf(status);
+    }
+
+    /* Disable AD9361 until we need it */
+    status = dev->backend->rffe_control_read(dev, &reg);
+    if (status < 0) {
+        return status;
+    }
+
+    reg &= ~(1 << RFFE_CONTROL_TXNRX);
+    reg &= ~(1 << RFFE_CONTROL_ENABLE);
+
+    status = dev->backend->rffe_control_write(dev, reg);
+    if (status < 0) {
+        return status;
     }
 
     /* Set up band selection */
@@ -680,12 +862,30 @@ static int bladerf2_enable_module(struct bladerf *dev, bladerf_direction dir, bo
     int status;
     bool tx;
     uint32_t reg;
+    uint64_t freq = 0;
 
     CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    tx = (dir == BLADERF_TX);
 
     /* Stop synchronous interface */
     if (!enable) {
         sync_deinit(&board_data->sync[dir]);
+    }
+
+    /* Populate frequency and set up AD9361 port */
+    if (enable) {
+        /* Get current frequency */
+        status = bladerf2_get_frequency(dev, dir, &freq);
+        if (status < 0) {
+            return status;
+        }
+
+        /* Set the AD9361 port accordingly */
+        status = _set_ad9361_port(dev, dir, enable, freq);
+        if (status < 0) {
+            return status;
+        }
     }
 
     /* Read RFFE control register */
@@ -694,9 +894,7 @@ static int bladerf2_enable_module(struct bladerf *dev, bladerf_direction dir, bo
         return status;
     }
 
-    tx = (dir == BLADERF_TX);
-
-    /* Modify */
+    /* Modify ENABLE/TXNRX bits */
     if (enable && tx) {
         /* Enable TX */
         reg |= (1 << RFFE_CONTROL_TXNRX);
@@ -709,6 +907,12 @@ static int bladerf2_enable_module(struct bladerf *dev, bladerf_direction dir, bo
     } else if (!enable && !tx) {
         /* Disable RX */
         reg &= ~(1 << RFFE_CONTROL_ENABLE);
+    }
+
+    /* Modify SPDT bits */
+    status = _set_spdt_bits(&reg, dir, enable, freq);
+    if (status < 0) {
+        return status;
     }
 
     /* Write RFFE control register */
@@ -1065,45 +1269,29 @@ static int bladerf2_get_bandwidth_range(struct bladerf *dev, bladerf_channel ch,
 
 static int bladerf2_select_band(struct bladerf *dev, bladerf_channel ch, uint64_t frequency)
 {
-    const uint64_t mid_band_point = 3000000000U;
-    struct bladerf2_board_data *board_data = dev->board_data;
     int status;
-    bool low_band;
     uint32_t reg;
+    bool enable;
 
+    /* Read RFFE control register */
     status = dev->backend->rffe_control_read(dev, &reg);
     if (status < 0) {
         return status;
     }
 
-    low_band = frequency < mid_band_point;
+    /* Is this channel enabled? */
+    enable = _rffe_channel_enabled(reg, ch);
 
-    if (ch & BLADERF_TX) {
-        reg &= ~(RFFE_CONTROL_SPDT_MASK << RFFE_CONTROL_TX_SW_SHIFT);
-        if (low_band) {
-            log_debug("%s: selecting TX LOW band\n", __FUNCTION__);
-            reg |= RFFE_CONTROL_SPDT_LOWBAND << RFFE_CONTROL_TX_SW_SHIFT;
-        }
-        else {
-            log_debug("%s: selecting TX HIGH band\n", __FUNCTION__);
-            reg |= RFFE_CONTROL_SPDT_HIGHBAND << RFFE_CONTROL_TX_SW_SHIFT;
-        }
-        status = ad9361_set_tx_rf_port_output(board_data->phy, low_band ? B_BALANCED : A_BALANCED);
-    } else {
-        reg &= ~(RFFE_CONTROL_SPDT_MASK << RFFE_CONTROL_RX_SW_SHIFT);
-        if (low_band) {
-            log_debug("%s: selecting RX LOW band\n", __FUNCTION__);
-            reg |= RFFE_CONTROL_SPDT_LOWBAND << RFFE_CONTROL_RX_SW_SHIFT;
-        }
-        else {
-            log_debug("%s: selecting RX HIGH band\n", __FUNCTION__);
-            reg |= RFFE_CONTROL_SPDT_HIGHBAND << RFFE_CONTROL_RX_SW_SHIFT;
-        }
-        status = ad9361_set_rx_rf_port_input(board_data->phy, low_band ? B_BALANCED : A_BALANCED);
+    /* Update SPDT bits accordingly */
+    status = _set_spdt_bits(&reg, ch, enable, frequency);
+    if (status < 0) {
+        return status;
     }
 
+    /* Set AD9361 port */
+    status = _set_ad9361_port(dev, ch, enable, frequency);
     if (status < 0) {
-        return errno_ad9361_to_bladerf(status);
+        return status;
     }
 
     return dev->backend->rffe_control_write(dev, reg);
