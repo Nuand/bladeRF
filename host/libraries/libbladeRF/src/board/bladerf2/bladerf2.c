@@ -109,16 +109,18 @@ struct bladerf2_board_data {
 /* Constants */
 /******************************************************************************/
 
-#define RFFE_CONTROL_RESET_N    0
-#define RFFE_CONTROL_ENABLE     1
-#define RFFE_CONTROL_TXNRX      2
-#define RFFE_CONTROL_EN_AGC     3
-#define RFFE_CONTROL_SYNC_IN    4
-#define RFFE_CONTROL_RX_BIAS_EN 5
+#define RFFE_CONTROL_RESET_N        0
+#define RFFE_CONTROL_ENABLE         1
+#define RFFE_CONTROL_TXNRX          2
+#define RFFE_CONTROL_EN_AGC         3
+#define RFFE_CONTROL_SYNC_IN        4
+#define RFFE_CONTROL_RX_BIAS_EN     5
 #define RFFE_CONTROL_RX_SW_SHIFT    6
 #define RFFE_CONTROL_TX_BIAS_EN     10
 #define RFFE_CONTROL_TX_SW_SHIFT    11
 #define RFFE_CONTROL_SPDT_MASK      0xF
+#define RFFE_CONTROL_SPDT_LOWBAND   0xA // RF1 <-> RF3
+#define RFFE_CONTROL_SPDT_HIGHBAND  0x5 // RF1 <-> RF2
 
 /* Board state to string map */
 
@@ -1078,18 +1080,26 @@ static int bladerf2_select_band(struct bladerf *dev, bladerf_channel ch, uint64_
 
     if (ch & BLADERF_TX) {
         reg &= ~(RFFE_CONTROL_SPDT_MASK << RFFE_CONTROL_TX_SW_SHIFT);
-        if (low_band)
-            reg |= 0x5 << RFFE_CONTROL_TX_SW_SHIFT;
-        else
-            reg |= 0xA << RFFE_CONTROL_TX_SW_SHIFT;
-        status = ad9361_set_tx_rf_port_output(board_data->phy, low_band ? 0 : 1);
+        if (low_band) {
+            log_debug("%s: selecting TX LOW band\n", __FUNCTION__);
+            reg |= RFFE_CONTROL_SPDT_LOWBAND << RFFE_CONTROL_TX_SW_SHIFT;
+        }
+        else {
+            log_debug("%s: selecting TX HIGH band\n", __FUNCTION__);
+            reg |= RFFE_CONTROL_SPDT_HIGHBAND << RFFE_CONTROL_TX_SW_SHIFT;
+        }
+        status = ad9361_set_tx_rf_port_output(board_data->phy, low_band ? B_BALANCED : A_BALANCED);
     } else {
         reg &= ~(RFFE_CONTROL_SPDT_MASK << RFFE_CONTROL_RX_SW_SHIFT);
-        if (low_band)
-            reg |= 0x5 << RFFE_CONTROL_RX_SW_SHIFT;
-        else
-            reg |= 0xA << RFFE_CONTROL_RX_SW_SHIFT;
-        status = ad9361_set_rx_rf_port_input(board_data->phy, low_band ? 0 : 1);
+        if (low_band) {
+            log_debug("%s: selecting RX LOW band\n", __FUNCTION__);
+            reg |= RFFE_CONTROL_SPDT_LOWBAND << RFFE_CONTROL_RX_SW_SHIFT;
+        }
+        else {
+            log_debug("%s: selecting RX HIGH band\n", __FUNCTION__);
+            reg |= RFFE_CONTROL_SPDT_HIGHBAND << RFFE_CONTROL_RX_SW_SHIFT;
+        }
+        status = ad9361_set_rx_rf_port_input(board_data->phy, low_band ? B_BALANCED : A_BALANCED);
     }
 
     if (status < 0) {
