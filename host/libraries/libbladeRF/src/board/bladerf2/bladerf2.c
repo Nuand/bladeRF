@@ -318,6 +318,11 @@ static int errno_ad9361_to_bladerf(int err)
     return BLADERF_ERR_UNEXPECTED;
 }
 
+static bool is_within_range(struct bladerf_range const *range, int64_t value)
+{
+    return (value >= range->min && value <= range->max);
+}
+
 static int64_t clamp_to_range(struct bladerf_range const *range, int64_t value)
 {
     if (value < range->min) {
@@ -346,7 +351,7 @@ static bladerf_band_t _get_band_by_frequency(bladerf_channel ch, uint64_t freque
 
     /* Determine the band for the given frequency */
     for (size_t i = 0; i < band_map_len; ++i) {
-        if (freqi >= band_map[i].range.min && freqi <= band_map[i].range.max) {
+        if (is_within_range(&band_map[i].range, freqi)) {
             return band_map[i].band;
         }
     }
@@ -1218,6 +1223,10 @@ static int bladerf2_set_sample_rate(struct bladerf *dev, bladerf_channel ch, uns
 
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
+    if (!is_within_range(&bladerf2_sample_rate_range, rate)) {
+        return BLADERF_ERR_RANGE;
+    }
+
     if (ch & BLADERF_TX) {
         status = ad9361_set_tx_sampling_freq(board_data->phy, rate);
         if (status < 0) {
@@ -1324,6 +1333,10 @@ static int bladerf2_set_bandwidth(struct bladerf *dev, bladerf_channel ch, unsig
 
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
+    if (!is_within_range(&bladerf2_bandwidth_range, bandwidth)) {
+        return BLADERF_ERR_RANGE;
+    }
+
     if (ch & BLADERF_TX) {
         status = ad9361_set_tx_rf_bandwidth(board_data->phy, bandwidth);
         if (status < 0) {
@@ -1421,8 +1434,14 @@ static int bladerf2_set_frequency(struct bladerf *dev, bladerf_channel ch, uint6
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     if (ch & BLADERF_TX) {
+        if (!is_within_range(&bladerf2_tx_frequency_range, frequency)) {
+            return BLADERF_ERR_RANGE;
+        }
         status = ad9361_set_tx_lo_freq(board_data->phy, frequency);
     } else {
+        if (!is_within_range(&bladerf2_rx_frequency_range, frequency)) {
+            return BLADERF_ERR_RANGE;
+        }
         status = ad9361_set_rx_lo_freq(board_data->phy, frequency);
     }
 
