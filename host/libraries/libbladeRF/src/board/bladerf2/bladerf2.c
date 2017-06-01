@@ -135,7 +135,7 @@ static const char *bladerf2_state_to_string[] = {
 /* Overall RX gain range */
 
 static const struct bladerf_range bladerf2_rx_gain_range = {
-    FIELD_INIT(.min, 0),
+    FIELD_INIT(.min, 1),
     FIELD_INIT(.max, 77),
     FIELD_INIT(.step, 1),
     FIELD_INIT(.scale, 1),
@@ -316,6 +316,17 @@ static int errno_ad9361_to_bladerf(int err)
     }
 
     return BLADERF_ERR_UNEXPECTED;
+}
+
+static int64_t clamp_to_range(struct bladerf_range const *range, int64_t value)
+{
+    if (value < range->min) {
+        value = range->min;
+    }
+    if (value > range->max) {
+        value = range->max;
+    }
+    return value;
 }
 
 static bladerf_band_t _get_band_by_frequency(bladerf_channel ch, uint64_t frequency)
@@ -942,8 +953,10 @@ static int bladerf2_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     if (ch & BLADERF_TX) {
-        status = ad9361_set_tx_attenuation(board_data->phy, ch >> 1, -gain);
+        gain = clamp_to_range(&bladerf2_tx_gain_range, -gain);
+        status = ad9361_set_tx_attenuation(board_data->phy, ch >> 1, gain);
     } else {
+        gain = clamp_to_range(&bladerf2_rx_gain_range, gain);
         status = ad9361_set_rx_rf_gain(board_data->phy, ch >> 1, gain);
     }
 
