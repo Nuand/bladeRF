@@ -615,9 +615,9 @@ int CALL_CONV bladerf_get_gain(struct bladerf *dev, bladerf_channel ch, int *gai
  *
  * Sets the mode for hardware AGC. Not all channels or boards will support
  * all possible values (e.g. transmit channels); invalid combinations will
- * return ::BLADERF_ERR_UNSUPPORTED.
+ * return \ref BLADERF_ERR_UNSUPPORTED.
  *
- * The special value of ::BLADERF_GAIN_DEFAULT will return hardware AGC to
+ * The special value of \ref BLADERF_GAIN_DEFAULT will return hardware AGC to
  * its default value at initialization.
  *
  * @param       dev         Device handle
@@ -635,7 +635,7 @@ int CALL_CONV bladerf_set_gain_mode(struct bladerf *dev, bladerf_channel ch,
  *
  * Gets the current mode for hardware AGC. If the channel or board does not
  * meaningfully have a gain mode (e.g. transmit channels), mode will be
- * set to ::BLADERF_GAIN_DEFAULT and `0` will be returned.
+ * set to \ref BLADERF_GAIN_DEFAULT and `0` will be returned.
  *
  * @param       dev         Device handle
  * @param[in]   ch          Channel

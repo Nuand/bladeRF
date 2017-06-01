@@ -637,6 +637,28 @@ int bladerf_get_gain(struct bladerf *dev, bladerf_channel ch, int *gain)
     return status;
 }
 
+int bladerf_set_gain_mode(struct bladerf *dev, bladerf_channel ch, bladerf_gain_mode mode)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->set_gain_mode(dev, ch, mode);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
+int bladerf_get_gain_mode(struct bladerf *dev, bladerf_channel ch, bladerf_gain_mode *mode)
+{
+    int status;
+    MUTEX_LOCK(&dev->lock);
+
+    status = dev->board->get_gain_mode(dev, ch, mode);
+
+    MUTEX_UNLOCK(&dev->lock);
+    return status;
+}
+
 int bladerf_get_gain_range(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range)
 {
     int status;

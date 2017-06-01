@@ -978,6 +978,109 @@ static int bladerf2_get_gain(struct bladerf *dev, bladerf_channel ch, int *gain)
     return 0;
 }
 
+static int bladerf2_set_gain_mode(struct bladerf *dev, bladerf_channel ch, bladerf_gain_mode mode)
+{
+    struct bladerf2_board_data *board_data = dev->board_data;
+    int status;
+    uint8_t gc_mode;
+    uint8_t channel;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    /* Channel conversion */
+    if (ch == BLADERF_CHANNEL_RX(0)) {
+        channel = 0;
+    } else if (ch == BLADERF_CHANNEL_RX(1)) {
+        channel = 1;
+    } else {
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    /* Mode conversion */
+    switch (mode) {
+        case BLADERF_GAIN_DEFAULT:
+            switch (channel) {
+                case 0:
+                    gc_mode = ad9361_init_params.gc_rx1_mode;
+                    break;
+                case 1:
+                    gc_mode = ad9361_init_params.gc_rx2_mode;
+                    break;
+                default:
+                    return BLADERF_ERR_UNSUPPORTED;
+            }
+            break;
+        case BLADERF_GAIN_MGC:
+            gc_mode = RF_GAIN_MGC;
+            break;
+        case BLADERF_GAIN_FASTATTACK_AGC:
+            gc_mode = RF_GAIN_FASTATTACK_AGC;
+            break;
+        case BLADERF_GAIN_SLOWATTACK_AGC:
+            gc_mode = RF_GAIN_SLOWATTACK_AGC;
+            break;
+        case BLADERF_GAIN_HYBRID_AGC:
+            gc_mode = RF_GAIN_HYBRID_AGC;
+            break;
+        default:
+            return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    /* Set the mode! */
+    status = ad9361_set_rx_gain_control_mode(board_data->phy, channel, gc_mode);
+    if (status < 0) {
+        return errno_ad9361_to_bladerf(status);
+    }
+
+    return 0;
+}
+
+static int bladerf2_get_gain_mode(struct bladerf *dev, bladerf_channel ch, bladerf_gain_mode *mode)
+{
+    struct bladerf2_board_data *board_data = dev->board_data;
+    int status;
+    uint8_t gc_mode;
+    uint8_t channel;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    /* Channel conversion */
+    if (ch == BLADERF_CHANNEL_RX(0)) {
+        channel = 0;
+    } else if (ch == BLADERF_CHANNEL_RX(1)) {
+        channel = 1;
+    } else {
+        *mode = BLADERF_GAIN_DEFAULT;
+        return 0;
+    }
+
+    /* Get the gain */
+    status = ad9361_get_rx_gain_control_mode(board_data->phy, channel, &gc_mode);
+    if (status < 0) {
+        return errno_ad9361_to_bladerf(status);
+    }
+
+    /* Mode conversion */
+    switch (gc_mode) {
+        case RF_GAIN_MGC:
+            *mode = BLADERF_GAIN_MGC;
+            break;
+        case RF_GAIN_FASTATTACK_AGC:
+            *mode = BLADERF_GAIN_FASTATTACK_AGC;
+            break;
+        case RF_GAIN_SLOWATTACK_AGC:
+            *mode = BLADERF_GAIN_SLOWATTACK_AGC;
+            break;
+        case RF_GAIN_HYBRID_AGC:
+            *mode = BLADERF_GAIN_HYBRID_AGC;
+            break;
+        default:
+            return BLADERF_ERR_INVAL;
+    }
+
+    return 0;
+}
+
 static int bladerf2_get_gain_range(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range)
 {
     if (ch & BLADERF_TX) {
@@ -2496,6 +2599,8 @@ const struct board_fns bladerf2_board_fns = {
     FIELD_INIT(.get_fw_version, bladerf2_get_fw_version),
     FIELD_INIT(.set_gain, bladerf2_set_gain),
     FIELD_INIT(.get_gain, bladerf2_get_gain),
+    FIELD_INIT(.set_gain_mode, bladerf2_set_gain_mode),
+    FIELD_INIT(.get_gain_mode, bladerf2_get_gain_mode),
     FIELD_INIT(.get_gain_range, bladerf2_get_gain_range),
     FIELD_INIT(.set_gain_stage, bladerf2_set_gain_stage),
     FIELD_INIT(.get_gain_stage, bladerf2_get_gain_stage),

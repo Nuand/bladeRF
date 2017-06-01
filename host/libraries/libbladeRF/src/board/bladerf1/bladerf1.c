@@ -1307,6 +1307,25 @@ static int bladerf1_get_gain(struct bladerf *dev, bladerf_channel ch, int *gain)
     return BLADERF_ERR_INVAL;
 }
 
+static int bladerf1_set_gain_mode(struct bladerf *dev, bladerf_channel ch, bladerf_gain_mode mode)
+{
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    if (ch == BLADERF_CHANNEL_RX(0)) {
+        return 0;
+    };
+
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
+static int bladerf1_get_gain_mode(struct bladerf *dev, bladerf_channel ch, bladerf_gain_mode *mode)
+{
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    *mode = BLADERF_GAIN_DEFAULT;
+    return 0;
+}
+
 static int bladerf1_get_gain_range(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range)
 {
     if (ch == BLADERF_CHANNEL_TX(0)) {

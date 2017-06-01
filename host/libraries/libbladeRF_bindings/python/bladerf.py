@@ -80,8 +80,18 @@ struct bladerf_range {
     float scale;    /**< Unit scale */
 };
 
+typedef enum  {
+    BLADERF_GAIN_DEFAULT,           /**< Device-specific default */
+    BLADERF_GAIN_MGC,               /**< Manual gain control */
+    BLADERF_GAIN_FASTATTACK_AGC,    /**< Automatic gain control with fast attack (AD9361) */
+    BLADERF_GAIN_SLOWATTACK_AGC,    /**< Automatic gain control with slow attack (AD9361) */
+    BLADERF_GAIN_HYBRID_AGC         /**< Automatic gain control with hybrid attack (AD9361) */
+} bladerf_gain_mode;
+
 int bladerf_set_gain(struct bladerf *dev, bladerf_channel ch, int gain);
 int bladerf_get_gain(struct bladerf *dev, bladerf_channel ch, int *gain);
+int bladerf_set_gain_mode(struct bladerf *dev, bladerf_channel ch, bladerf_gain_mode mode);
+int bladerf_get_gain_mode(struct bladerf *dev, bladerf_channel ch, bladerf_gain_mode *mode);
 int bladerf_get_gain_range(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range);
 int bladerf_set_gain_stage(struct bladerf *dev, bladerf_channel ch, const char *stage, int gain);
 int bladerf_get_gain_stage(struct bladerf *dev, bladerf_channel ch, const char *stage, int *gain);
@@ -614,6 +624,16 @@ class BladeRF:
         ret = libbladeRF.bladerf_get_gain(self.dev[0], ch, gain)
         _check_error(ret)
         return gain[0]
+
+    def set_gain_mode(self, ch, mode):
+        ret = libbladeRF.bladerf_set_gain_mode(self.dev[0], ch, mode)
+        _check_error(ret)
+
+    def get_gain_mode(self, ch):
+        mode = ffi.new("bladerf_gain_mode *")
+        ret = libbladeRF.bladerf_get_gain_mode(self.dev[0], ch, mode)
+        _check_error(ret)
+        return mode[0]
 
     def get_gain_range(self, ch):
         gain_range = ffi.new("struct bladerf_range *")
