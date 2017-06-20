@@ -731,6 +731,10 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
         return status;
     }
 
+    /* Get FPGA size */
+    /* TODO: Actually get FPGA size */
+    board_data->fpga_size = BLADERF_FPGA_A4;
+
     /* Check if FPGA is configured */
     status = dev->backend->is_fpga_configured(dev);
     if (status < 0) {
@@ -743,7 +747,13 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
         return 0;
     } else if (status != 1) {
         /* Try searching for an FPGA in the config search path */
-        full_path = file_find("hosted.rbf");
+        if (board_data->fpga_size == BLADERF_FPGA_A4) {
+            full_path = file_find("hostedxA4.rbf");
+        } else {
+            log_error("Invalid FPGA size %d.\n", board_data->fpga_size);
+            return BLADERF_ERR_UNEXPECTED;
+        }
+
         if (full_path) {
             uint8_t *buf;
             size_t buf_size;
@@ -2171,6 +2181,7 @@ static int bladerf2_get_timestamp(struct bladerf *dev, bladerf_direction dir, ui
  * will always have a fixed file size.
  */
 #define FPGA_SIZE_X40   (1191788)
+#define FPGA_SIZE_XA4   (2632660)
 #define FPGA_SIZE_X115  (3571462)
 
 static bool is_valid_fpga_size(bladerf_fpga_size fpga, size_t len)
@@ -2182,6 +2193,9 @@ static bool is_valid_fpga_size(bladerf_fpga_size fpga, size_t len)
         case BLADERF_FPGA_40KLE:
             valid = (len == FPGA_SIZE_X40);
             break;
+
+        case BLADERF_FPGA_A4:
+            valid = (len == FPGA_SIZE_XA4);
 
         case BLADERF_FPGA_115KLE:
             valid = (len == FPGA_SIZE_X115);
