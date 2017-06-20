@@ -821,7 +821,7 @@ class BladeRF:
         _check_error(ret)
 
     def device_reset(self):
-        ret = libbladeRF.bladerf_device_reset(self.dev[0], image_path.encode())
+        ret = libbladeRF.bladerf_device_reset(self.dev[0])
         _check_error(ret)
 
     # VCTCXO Tamer Mode
