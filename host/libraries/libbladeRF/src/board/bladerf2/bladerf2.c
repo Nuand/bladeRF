@@ -2196,6 +2196,7 @@ static bool is_valid_fpga_size(bladerf_fpga_size fpga, size_t len)
 
         case BLADERF_FPGA_A4:
             valid = (len == FPGA_SIZE_XA4);
+            break;
 
         case BLADERF_FPGA_115KLE:
             valid = (len == FPGA_SIZE_X115);
