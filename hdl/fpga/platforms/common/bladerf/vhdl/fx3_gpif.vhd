@@ -430,7 +430,6 @@ begin
                 -- After the first iteration (which gives time for the FIFO
                 -- to produce valid data), assert the proper ack.
                 if (current.ack_downcount /= ACK_DOWNCOUNT_READ) then
-                    future.meta_downcount   <= max(current.meta_downcount-1, -1);
                     future.dma_acks         <= acknowledge(current.rx_current_dma);
                 end if;
 
@@ -443,6 +442,7 @@ begin
 
                 future.ack_downcount    <= max(current.ack_downcount-1, 0);
                 future.dma_downcount    <= max(current.dma_downcount-1, -1);
+                future.meta_downcount   <= max(current.meta_downcount-1, -1);
 
             when META_READ =>
                 -- Service the metadata FIFO.
