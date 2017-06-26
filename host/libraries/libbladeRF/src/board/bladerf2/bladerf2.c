@@ -326,9 +326,13 @@ static bool is_within_range(struct bladerf_range const *range, int64_t value)
 static int64_t clamp_to_range(struct bladerf_range const *range, int64_t value)
 {
     if (value < range->min) {
+        log_warning("value %"PRIi64" out of range [%"PRIi64",%"PRIi64"]\n",
+            value, range->min, range->max);
         value = range->min;
     }
     if (value > range->max) {
+        log_warning("value %"PRIi64" out of range [%"PRIi64",%"PRIi64"]\n",
+            value, range->min, range->max);
         value = range->max;
     }
     return value;
@@ -923,15 +927,19 @@ static int bladerf2_enable_module(struct bladerf *dev, bladerf_direction dir, bo
     /* Modify ENABLE/TXNRX bits */
     if (enable && tx) {
         /* Enable TX */
+        log_debug("%s: TX Enable\n", __FUNCTION__);
         reg |= (1 << RFFE_CONTROL_TXNRX);
     } else if (enable && !tx) {
         /* Enable RX */
+        log_debug("%s: RX Enable\n", __FUNCTION__);
         reg |= (1 << RFFE_CONTROL_ENABLE);
     } else if (!enable && tx) {
         /* Disable TX */
+        log_debug("%s: TX Disable\n", __FUNCTION__);
         reg &= ~(1 << RFFE_CONTROL_TXNRX);
     } else if (!enable && !tx) {
         /* Disable RX */
+        log_debug("%s: RX Disable\n", __FUNCTION__);
         reg &= ~(1 << RFFE_CONTROL_ENABLE);
     }
 
@@ -968,10 +976,13 @@ static int bladerf2_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     if (ch & BLADERF_TX) {
-        gain = clamp_to_range(&bladerf2_tx_gain_range, -gain);
-        status = ad9361_set_tx_attenuation(board_data->phy, ch >> 1, gain);
+        uint32_t atten;
+        atten  = -clamp_to_range(&bladerf2_tx_gain_range, gain) / bladerf2_tx_gain_range.scale;
+        log_debug("%s: tx; ch %d; atten %d mdB; gain %d dB\n", __FUNCTION__, ch >> 1, atten, gain);
+        status = ad9361_set_tx_attenuation(board_data->phy, ch >> 1, atten);
     } else {
-        gain = clamp_to_range(&bladerf2_rx_gain_range, gain);
+        gain = clamp_to_range(&bladerf2_rx_gain_range, gain) / bladerf2_rx_gain_range.scale;
+        log_debug("%s: rx; ch %d; gain %d dB\n", __FUNCTION__, ch >> 1, gain);
         status = ad9361_set_rx_rf_gain(board_data->phy, ch >> 1, gain);
     }
 
@@ -993,10 +1004,16 @@ static int bladerf2_get_gain(struct bladerf *dev, bladerf_channel ch, int *gain)
     if (ch & BLADERF_TX) {
         status = ad9361_get_tx_attenuation(board_data->phy, ch >> 1, &atten);
         if (status == 0) {
-            *gain = -atten;
+            *gain = -(atten * bladerf2_tx_gain_range.scale);
+            log_debug("%s: tx; ch %d; atten %d mdB; gain %d dB\n",
+                __FUNCTION__, ch >> 1, atten, *gain);
         }
     } else {
         status = ad9361_get_rx_rf_gain(board_data->phy, ch >> 1, gain);
+        if (status == 0) {
+            log_debug("%s: rx; ch %d; gain %d dB\n", __FUNCTION__,
+                ch >> 1, *gain);
+        }
     }
 
     if (status < 0) {

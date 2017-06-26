@@ -592,7 +592,9 @@ typedef enum  {
  *
  * @param       dev         Device handle
  * @param[in]   ch          Channel
- * @param[in]   gain        Desired gain
+ * @param[in]   gain        Desired gain, in dB
+ *
+ * Note that, in some cases, gain may be negative (e.g. transmit channels).
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
@@ -605,7 +607,9 @@ int CALL_CONV bladerf_set_gain(struct bladerf *dev, bladerf_channel ch,
  *
  * @param       dev         Device handle
  * @param[in]   ch          Channel
- * @param[out]  gain        Gain
+ * @param[out]  gain        Gain, in dB
+ *
+ * Note that, in some cases, gain may be negative (e.g. transmit channels).
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
@@ -686,6 +690,8 @@ int CALL_CONV bladerf_set_gain_stage(struct bladerf *dev, bladerf_channel ch,
  * @param[in]   ch          Channel
  * @param[in]   stage       Gain stage name
  * @param[out]  gain        Gain
+ *
+ * Note that, in some cases, gain may be negative (e.g. transmit channels).
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
