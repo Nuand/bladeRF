@@ -235,38 +235,35 @@ static inline unsigned int interp(unsigned int x0, unsigned int y0,
     return (unsigned int) y;
 }
 
-static inline void dc_cal_interp(const struct dc_cal_tbl *tbl,
-                                 unsigned int idx_low,
-                                 unsigned int idx_high,
-                                 unsigned int freq,
-                                 int16_t *dc_i, int16_t *dc_q)
+static inline void dc_cal_interp_entry(const struct dc_cal_tbl *tbl,
+                                       unsigned int idx_low,
+                                       unsigned int idx_high,
+                                       unsigned int freq,
+                                       struct dc_cal_entry *entry)
 {
     const unsigned int f_low = tbl->entries[idx_low].freq;
     const unsigned int f_high = tbl->entries[idx_high].freq;
 
-    *dc_i = (int16_t) interp(f_low, tbl->entries[idx_low].dc_i,
-                             f_high, tbl->entries[idx_low].dc_i,
-                             freq);
+#define ENTRY_VAR(x)                                                        \
+    entry->x    = (int16_t) interp(f_low, tbl->entries[idx_low].x,          \
+                             f_high, tbl->entries[idx_low].x,               \
+                             freq)
 
-    *dc_q = (int16_t) interp(f_low, tbl->entries[idx_low].dc_q,
-                             f_high, tbl->entries[idx_low].dc_q,
-                             freq);
+    ENTRY_VAR(dc_i);
+    ENTRY_VAR(dc_q);
 }
 
-void dc_cal_tbl_vals(const struct dc_cal_tbl *tbl, unsigned int freq,
-                     int16_t *dc_i, int16_t *dc_q)
+void dc_cal_tbl_entry(const struct dc_cal_tbl *tbl, unsigned int freq,
+                      struct dc_cal_entry *entry)
 {
     const unsigned int idx = dc_cal_tbl_lookup(tbl, freq);
 
     if (tbl->entries[idx].freq == freq) {
-        /* Exact match */
-        *dc_i = tbl->entries[idx].dc_i;
-        *dc_q = tbl->entries[idx].dc_q;
-        return;
+        memcpy(entry, &tbl->entries[idx], sizeof(struct dc_cal_entry));
     } else if (idx == (tbl->n_entries - 1)) {
-        dc_cal_interp(tbl, idx - 1, idx, freq, dc_i, dc_q);
+        dc_cal_interp_entry(tbl, idx - 1, idx, freq, entry);
     } else {
-        dc_cal_interp(tbl, idx, idx + 1, freq, dc_i, dc_q);
+        dc_cal_interp_entry(tbl, idx, idx + 1, freq, entry);
     }
 }
 

@@ -128,6 +128,7 @@ int tuning_set_freq(struct bladerf *dev, bladerf_module module,
     int status;
     const bladerf_xb attached = dev->xb;
     int16_t dc_i, dc_q;
+    struct dc_cal_entry entry;
     const struct dc_cal_tbl *dc_cal =
         (module == BLADERF_MODULE_RX) ? dev->cal.dc_rx : dev->cal.dc_tx;
 
@@ -188,7 +189,10 @@ int tuning_set_freq(struct bladerf *dev, bladerf_module module,
     }
 
     if (dc_cal != NULL) {
-        dc_cal_tbl_vals(dc_cal, frequency, &dc_i, &dc_q);
+        dc_cal_tbl_entry(dc_cal, frequency, &entry);
+
+        dc_i = entry.dc_i;
+        dc_q = entry.dc_q;
 
         status = lms_set_dc_offset_i(dev, module, dc_i);
         if (status != 0) {

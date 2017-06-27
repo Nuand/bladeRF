@@ -60,10 +60,10 @@ unsigned int dc_cal_tbl_lookup(const struct dc_cal_tbl *tbl, unsigned int freq);
  *
  * @param[in]  tbl      Table to search
  * @param[in]  freq     Desired frequency
- * @param[out] vals     Found or interpolated DC calibration values
+ * @param[out] entry    Found or interpolated DC calibration values
  */
-void dc_cal_tbl_vals(const struct dc_cal_tbl *tbl, unsigned int freq,
-                     int16_t *dc_i, int16_t *dc_q);
+void dc_cal_tbl_entry(const struct dc_cal_tbl *tbl, unsigned int freq,
+                      struct dc_cal_entry *entry);
 
 /**
  * Load a DC calibration table from the provided data
