@@ -144,8 +144,8 @@ architecture hosted_bladerf of bladerf is
 
     signal dac_controls           : sample_controls_t(ad9361.ch'range)    := (others => SAMPLE_CONTROL_DISABLE);
     signal dac_streams            : sample_streams_t(dac_controls'range)  := (others => ZERO_SAMPLE);
-    signal adc_controls           : sample_controls_t(dac_controls'range) := (others => SAMPLE_CONTROL_DISABLE);
-    signal adc_streams            : sample_streams_t(dac_controls'range)  := (others => ZERO_SAMPLE);
+    signal adc_controls           : sample_controls_t(ad9361.ch'range)    := (others => SAMPLE_CONTROL_DISABLE);
+    signal adc_streams            : sample_streams_t(adc_controls'range)  := (others => ZERO_SAMPLE);
 
 begin
 
@@ -531,7 +531,7 @@ begin
     -- RX Submodule
     U_rx : entity work.rx
         generic map (
-            NUM_STREAMS          => adc_controls'length
+            NUM_STREAMS            => adc_controls'length
         )
         port map (
             rx_reset               => rx_reset,
