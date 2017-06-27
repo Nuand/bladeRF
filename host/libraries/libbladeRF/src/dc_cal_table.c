@@ -212,6 +212,33 @@ struct dc_cal_tbl * dc_cal_tbl_load(uint8_t *buf, size_t buf_len)
         ret->entries[i].freq = LE32_TO_HOST(ret->entries[i].freq);
         ret->entries[i].dc_i = LE32_TO_HOST(ret->entries[i].dc_i);
         ret->entries[i].dc_q = LE32_TO_HOST(ret->entries[i].dc_q);
+
+        if (ret->version >= 2) {
+            memcpy(&ret->entries[i].max_dc_i, buf, sizeof(int16_t));
+            buf += sizeof(int16_t);
+
+            memcpy(&ret->entries[i].max_dc_q, buf, sizeof(int16_t));
+            buf += sizeof(int16_t);
+
+            memcpy(&ret->entries[i].mid_dc_i, buf, sizeof(int16_t));
+            buf += sizeof(int16_t);
+
+            memcpy(&ret->entries[i].mid_dc_q, buf, sizeof(int16_t));
+            buf += sizeof(int16_t);
+
+            memcpy(&ret->entries[i].min_dc_i, buf, sizeof(int16_t));
+            buf += sizeof(int16_t);
+
+            memcpy(&ret->entries[i].min_dc_q, buf, sizeof(int16_t));
+            buf += sizeof(int16_t);
+
+            ret->entries[i].max_dc_i = LE32_TO_HOST(ret->entries[i].max_dc_i);
+            ret->entries[i].max_dc_q = LE32_TO_HOST(ret->entries[i].max_dc_q);
+            ret->entries[i].mid_dc_i = LE32_TO_HOST(ret->entries[i].mid_dc_i);
+            ret->entries[i].mid_dc_q = LE32_TO_HOST(ret->entries[i].mid_dc_q);
+            ret->entries[i].min_dc_i = LE32_TO_HOST(ret->entries[i].min_dc_i);
+            ret->entries[i].min_dc_q = LE32_TO_HOST(ret->entries[i].min_dc_q);
+        }
     }
 
     return ret;
@@ -251,6 +278,13 @@ static inline void dc_cal_interp_entry(const struct dc_cal_tbl *tbl,
 
     ENTRY_VAR(dc_i);
     ENTRY_VAR(dc_q);
+
+    ENTRY_VAR(max_dc_i);
+    ENTRY_VAR(max_dc_q);
+    ENTRY_VAR(mid_dc_i);
+    ENTRY_VAR(mid_dc_q);
+    ENTRY_VAR(min_dc_i);
+    ENTRY_VAR(min_dc_q);
 }
 
 void dc_cal_tbl_entry(const struct dc_cal_tbl *tbl, unsigned int freq,

@@ -40,6 +40,13 @@ struct dc_calibration_params {
     int16_t corr_q;
     float error_i;
     float error_q;
+
+    int16_t max_dc_i;
+    int16_t max_dc_q;
+    int16_t mid_dc_i;
+    int16_t mid_dc_q;
+    int16_t min_dc_i;
+    int16_t min_dc_q;
 };
 
 /**

@@ -29,6 +29,13 @@ struct dc_cal_entry {
     unsigned int freq;          /* Frequency (Hz) associated with this entry */
     int16_t dc_i;
     int16_t dc_q;
+
+    int16_t max_dc_i;
+    int16_t max_dc_q;
+    int16_t mid_dc_i;
+    int16_t mid_dc_q;
+    int16_t min_dc_i;
+    int16_t min_dc_q;
 };
 
 

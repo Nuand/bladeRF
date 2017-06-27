@@ -402,12 +402,12 @@ static int save_table_results(const char *filename,
 
     static const uint16_t magic = HOST_TO_LE16_CONST(0x1ab1);
     static const uint32_t reserved = HOST_TO_LE32_CONST(0x00000000);
-    static const uint32_t tbl_version = HOST_TO_LE32_CONST(0x00000001);
+    static const uint32_t tbl_version = HOST_TO_LE32_CONST(0x00000002);
     static const size_t lms_data_size = 10; /* 10 uint8_t register values */
 
 
     const size_t entry_size = sizeof(uint32_t) +   /* Frequency */
-                              2 * sizeof(int16_t); /* DC I and Q valus */
+                              8 * sizeof(int16_t); /* DC I and Q valus */
 
     const size_t table_size = num_params * entry_size;
 
@@ -464,10 +464,19 @@ static int save_table_results(const char *filename,
     for (i = 0; i < num_params; i++) {
         uint32_t freq;
         int16_t corr_i, corr_q;
+        int16_t max_dc_i, max_dc_q;
+        int16_t mid_dc_i, mid_dc_q;
+        int16_t min_dc_i, min_dc_q;
 
         freq   = HOST_TO_LE32((uint32_t) params[i].frequency);
         corr_i = HOST_TO_LE16(params[i].corr_i);
         corr_q = HOST_TO_LE16(params[i].corr_q);
+        max_dc_i = HOST_TO_LE16(params[i].max_dc_i);
+        max_dc_q = HOST_TO_LE16(params[i].max_dc_q);
+        mid_dc_i = HOST_TO_LE16(params[i].mid_dc_i);
+        mid_dc_q = HOST_TO_LE16(params[i].mid_dc_q);
+        min_dc_i = HOST_TO_LE16(params[i].min_dc_i);
+        min_dc_q = HOST_TO_LE16(params[i].min_dc_q);
 
         memcpy(&image->data[off], &freq, sizeof(freq));
         off += sizeof(freq);
@@ -477,6 +486,24 @@ static int save_table_results(const char *filename,
 
         memcpy(&image->data[off], &corr_q, sizeof(corr_q));
         off += sizeof(corr_q);
+
+        memcpy(&image->data[off], &max_dc_i, sizeof(max_dc_i));
+        off += sizeof(max_dc_i);
+
+        memcpy(&image->data[off], &max_dc_q, sizeof(max_dc_q));
+        off += sizeof(max_dc_q);
+
+        memcpy(&image->data[off], &mid_dc_i, sizeof(mid_dc_i));
+        off += sizeof(mid_dc_i);
+
+        memcpy(&image->data[off], &mid_dc_q, sizeof(mid_dc_q));
+        off += sizeof(mid_dc_q);
+
+        memcpy(&image->data[off], &min_dc_i, sizeof(min_dc_i));
+        off += sizeof(min_dc_i);
+
+        memcpy(&image->data[off], &min_dc_q, sizeof(min_dc_q));
+        off += sizeof(min_dc_q);
     }
 
     status = bladerf_image_write(image, filename);
