@@ -204,6 +204,24 @@ int tuning_set_freq(struct bladerf *dev, bladerf_module module,
             return status;
         }
 
+        if (module == BLADERF_MODULE_RX &&
+            have_cap(dev, BLADERF_CAP_AGC_DC_LUT)) {
+
+            status = dev->fn->set_agc_dc_correction(dev,
+                            entry.max_dc_q, entry.max_dc_i,
+                            entry.mid_dc_q, entry.mid_dc_i,
+                            entry.min_dc_q, entry.min_dc_i);
+            if (status != 0) {
+                return status;
+            }
+
+            log_verbose("Set AGC DC offset cal (I, Q) to: Max (%d, %d) "
+                        " Mid (%d, %d) Min (%d, %d)\n",
+                        entry.max_dc_q, entry.max_dc_i,
+                        entry.mid_dc_q, entry.mid_dc_i,
+                        entry.min_dc_q, entry.min_dc_i);
+        }
+
         log_verbose("Set %s DC offset cal (I, Q) to: (%d, %d)\n",
                     (module == BLADERF_MODULE_RX) ? "RX" : "TX", dc_i, dc_q);
     }

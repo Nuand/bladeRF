@@ -101,6 +101,11 @@
 #define BLADERF_CAP_TRX_SYNC_TRIG (1 << 9)
 
 /**
+ * FPGA v0.7.0 introduced AGC DC correction Look-Up-Table
+ */
+#define BLADERF_CAP_AGC_DC_LUT          (1 << 10)
+
+/**
  * Firmware 1.7.1 introduced firmware-based loopback
  */
 #define BLADERF_CAP_FW_LOOPBACK         (((uint64_t) 1) << 32)
