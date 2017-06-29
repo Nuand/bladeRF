@@ -6,8 +6,8 @@ project(libbladeRF C)
 ################################################################################
 
 set(VERSION_INFO_MAJOR  1)
-set(VERSION_INFO_MINOR  7)
-set(VERSION_INFO_PATCH  2)
+set(VERSION_INFO_MINOR  8)
+set(VERSION_INFO_PATCH  0)
 
 if(NOT DEFINED VERSION_INFO_EXTRA)
     set(VERSION_INFO_EXTRA "git")

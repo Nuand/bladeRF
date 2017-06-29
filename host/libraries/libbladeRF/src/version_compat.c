@@ -53,6 +53,7 @@ static const struct compat fw_compat_tbl[] = {
 
 static const struct compat fpga_compat_tbl[] = {
     /*    FPGA          requires >=        Firmware */
+    { VERSION(0, 7, 0),                 VERSION(1, 6, 1) },
     { VERSION(0, 6, 0),                 VERSION(1, 6, 1) },
     { VERSION(0, 5, 0),                 VERSION(1, 6, 1) },
     { VERSION(0, 4, 1),                 VERSION(1, 6, 1) },

@@ -50,7 +50,7 @@
  *
  *  https://github.com/Nuand/bladeRF/blob/master/doc/development/versioning.md
  */
-#define LIBBLADERF_API_VERSION (0x01070200)
+#define LIBBLADERF_API_VERSION (0x01080000)
 
 #ifdef __cplusplus
 extern "C" {
