@@ -117,6 +117,14 @@ int32_t ad9361_init (struct ad9361_rf_phy **ad9361_phy,
 	phy->adc_state->phy = phy;
 #endif
 
+	/* Ensure phy->clks and phy->ref_clk_scale are adequately nulled */
+	for (size_t i = 0; i < NUM_AD9361_CLKS; ++i) {
+		phy->clks[i] = NULL;
+		phy->ref_clk_scale[i] = NULL;
+	}
+
+	phy->clk_data.clks = NULL;
+
 	/* Device selection */
 	phy->dev_sel = init_param->dev_sel;
 
@@ -489,7 +497,14 @@ out:
 	free(phy->adc_state);
 #endif
 	free(phy->clk_refin);
+	free(phy->clk_data.clks);
 	free(phy->pdata);
+
+	for (size_t i = 0; i < NUM_AD9361_CLKS; ++i) {
+		free(phy->clks[i]);
+		free(phy->ref_clk_scale[i]);
+	}
+
 	free(phy);
 	printf("%s : AD936x initialization error\n", __func__);
 
@@ -517,7 +532,14 @@ int32_t ad9361_deinit (struct ad9361_rf_phy *phy)
 		free(phy->adc_state);
 #endif
 		free(phy->clk_refin);
+		free(phy->clk_data.clks);
 		free(phy->pdata);
+
+		for (size_t i = 0; i < NUM_AD9361_CLKS; ++i) {
+			free(phy->clks[i]);
+			free(phy->ref_clk_scale[i]);
+		}
+
 		free(phy);
 	}
 
