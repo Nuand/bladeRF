@@ -195,7 +195,7 @@ static const struct bladerf_gain_stage_info bladerf2_tx_gain_stages[] = {
 /* Sample Rate Range */
 
 static const struct bladerf_range bladerf2_sample_rate_range = {
-    FIELD_INIT(.min, 0),
+    FIELD_INIT(.min, 2083334),
     FIELD_INIT(.max, 61440000),
     FIELD_INIT(.step, 1),
     FIELD_INIT(.scale, 1),
