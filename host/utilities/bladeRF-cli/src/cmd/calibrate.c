@@ -533,7 +533,7 @@ static int cal_table(struct cli_state *s, int argc, char **argv)
     if (argc == 4 || argc == 6 || argc == 7) {
         /* Only DC tables are currently supported.
          * IQ tables may be added in the future */
-        if (strcasecmp(argv[2], "dc")) {
+        if (strcasecmp(argv[2], "dc") && strcasecmp(argv[2], "agc")) {
             cli_err(s, argv[0], "Invalid table type: %s\n", argv[2]);
             return CLI_RET_INVPARAM;
         }
@@ -548,6 +548,24 @@ static int cal_table(struct cli_state *s, int argc, char **argv)
         }
     } else {
         return CLI_RET_NARGS;
+    }
+
+
+    if (!strcasecmp(argv[2], "agc")) {
+        status = bladerf_set_lna_gain(s->dev, BLADERF_LNA_GAIN_MAX);
+        if (status != 0) {
+            goto out;
+        }
+
+        status = bladerf_set_rxvga1(s->dev, 30);
+        if (status != 0) {
+            goto out;
+        }
+
+        status = bladerf_set_rxvga2(s->dev, 15);
+        if (status != 0) {
+            goto out;
+        }
     }
 
     if (argc >= 6) {
