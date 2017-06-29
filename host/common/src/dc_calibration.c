@@ -911,12 +911,15 @@ int dc_calibration_rx(struct bladerf *dev,
             const char eol = '\0';
 #           endif
             printf("%cCalibrated @ %10u Hz: I=%4d (Error: %4.2f), "
-                   "Q=%4d (Error: %4.2f)      %c",
+                   "Q=%4d (Error: %4.2f)      ",
                    sol,
                    params[i].frequency,
                    params[i].corr_i, params[i].error_i,
-                   params[i].corr_q, params[i].error_q,
-                   eol);
+                   params[i].corr_q, params[i].error_q);
+            printf("DC-LUT: Max (I=%3d, Q=%3d) Mid (I=%3d, Q=%3d)"
+                   " Min (I=%3d, Q=%3d)%c",
+                       params[i].max_dc_i, params[i].max_dc_q, params[i].mid_dc_i, params[i].mid_dc_q,
+                       params[i].min_dc_i, params[i].min_dc_q, eol);
             fflush(stdout);
         }
     }
