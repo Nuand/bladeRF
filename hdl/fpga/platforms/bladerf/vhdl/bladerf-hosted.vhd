@@ -349,6 +349,8 @@ architecture hosted_bladerf of bladerf is
     signal agc_arbiter_grant         : std_logic;
     signal agc_arbiter_done          : std_logic;
 
+    signal agc_band_sel              : std_logic;
+
     signal agc_gain_high             : std_logic;
     signal agc_gain_mid              : std_logic;
     signal agc_gain_low              : std_logic;
@@ -562,6 +564,16 @@ begin
         clock       =>  \80MHz\,
         async       =>  agc_arbiter_done,
         sync        =>  arbiter_ack(1)
+      ) ;
+
+    U_agc_band_sel : entity work.synchronizer
+      generic map (
+        RESET_LEVEL =>  '0'
+      ) port map (
+        reset       =>  rx_reset,
+        clock       =>  rx_clock,
+        async       =>  nios_gpio(5),
+        sync        =>  agc_band_sel
       ) ;
 
     -- TX sample fifo
@@ -861,6 +873,8 @@ begin
         arbiter_req    => agc_arbiter_req,
         arbiter_grant  => agc_arbiter_grant,
         arbiter_done   => agc_arbiter_done,
+
+        band_sel       => agc_band_sel,
 
         sclk           => agc_lms_sclk,
         miso           => lms_sdo,

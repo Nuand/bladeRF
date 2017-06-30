@@ -39,6 +39,9 @@ entity bladerf_agc_lms_drv is
     arbiter_req     :  out  std_logic ;
     arbiter_grant   :   in  std_logic ;
     arbiter_done    :  out  std_logic ;
+
+    -- Misc
+    band_sel        :   in  std_logic ;
         -- Physical Interface
     sclk            :   out std_logic ;
     miso            :   in  std_logic ;
@@ -229,9 +232,17 @@ begin
                       current.initializing = '1' ) then
                     future.mm_addr <= x"75" ;
                     if (current.future_gain.lna_gain = LNA_MAX_GAIN ) then
-                        future.mm_din <= x"E0"; -- -- x"D0"; --x"E0" ;
+                        if (band_sel = '0' ) then
+                            future.mm_din <= x"D0";
+                        else
+                            future.mm_din <= x"E0";
+                        end if ;
                     elsif (current.future_gain.lna_gain = LNA_MID_GAIN ) then
-                        future.mm_din <= x"A0"; -- x"90"; -- x"A0" ;
+                        if (band_sel = '0' ) then
+                            future.mm_din <= x"90";
+                        else
+                            future.mm_din <= x"A0";
+                        end if ;
                     end if ;
                     future.mm_write <= '1' ;
                     future.fsm <= SPI_WAIT ;
