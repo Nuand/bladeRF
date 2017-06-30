@@ -267,18 +267,38 @@ static void si5338_complete_transfer(uint8_t check_rxack)
     while (check_rxack && (IORD_8DIRECT(I2C, OC_I2C_CMD_STATUS) & OC_I2C_RXACK));
 }
 
+void spi_arbiter_lock()
+{
+    uint8_t data;
+
+    IOWR_32DIRECT(ARBITER_0_BASE, 0, 1);
+
+    do {
+        data = IORD_8DIRECT(ARBITER_0_BASE, 1);
+    } while((data & 1) == 0);
+}
+
+void spi_arbiter_unlock()
+{
+    IOWR_32DIRECT(ARBITER_0_BASE, 0, 2);
+}
+
 uint8_t lms6_read(uint8_t addr)
 {
     uint8_t data;
 
+    spi_arbiter_lock();
     data = IORD_8DIRECT(LMS_SPI_BASE, addr);
+    spi_arbiter_unlock();
 
     return data;
 }
 
 void lms6_write(uint8_t addr, uint8_t data)
 {
+    spi_arbiter_lock();
     IOWR_8DIRECT(LMS_SPI_BASE, addr, data);
+    spi_arbiter_unlock();
 }
 
 uint8_t si5338_read(uint8_t addr)
