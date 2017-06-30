@@ -76,7 +76,13 @@ architecture hosted_bladerf of bladerf is
         rx_trigger_ctl_out_port         :   out std_logic_vector(7 downto 0);
         arbiter_request                 :   in  std_logic_vector(1 downto 0);
         arbiter_granted                 :   out std_logic_vector(1 downto 0)  := (others => 'X');
-        arbiter_ack                     :   in  std_logic_vector(1 downto 0)  := (others => 'X')
+        arbiter_ack                     :   in  std_logic_vector(1 downto 0)  := (others => 'X');
+        agc_dc_i_max_export             :   out std_logic_vector(15 downto 0);
+        agc_dc_i_mid_export             :   out std_logic_vector(15 downto 0);
+        agc_dc_i_min_export             :   out std_logic_vector(15 downto 0);
+        agc_dc_q_max_export             :   out std_logic_vector(15 downto 0);
+        agc_dc_q_mid_export             :   out std_logic_vector(15 downto 0);
+        agc_dc_q_min_export             :   out std_logic_vector(15 downto 0)
       );
     end component;
 
@@ -1139,7 +1145,13 @@ begin
         tx_trigger_ctl_in_port          => tx_trigger_ctl_rb,
         arbiter_request                 => arbiter_request,
         arbiter_granted                 => arbiter_granted,
-        arbiter_ack                     => arbiter_ack
+        arbiter_ack                     => arbiter_ack,
+        agc_dc_i_max_export             => corr_dc_i_max,
+        agc_dc_q_max_export             => corr_dc_q_max,
+        agc_dc_i_mid_export             => corr_dc_i_mid,
+        agc_dc_q_mid_export             => corr_dc_q_mid,
+        agc_dc_i_min_export             => corr_dc_i_min,
+        agc_dc_q_min_export             => corr_dc_q_min
       ) ;
 
     xb_gpio_direction : process(all)

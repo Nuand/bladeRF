@@ -9,6 +9,102 @@
    categories="System" />
  <parameter name="bonusData"><![CDATA[bonusData 
 {
+   element agc_dc_i_max
+   {
+      datum _sortIndex
+      {
+         value = "19";
+         type = "int";
+      }
+   }
+   element agc_dc_i_max.s1
+   {
+      datum baseAddress
+      {
+         value = "38400";
+         type = "String";
+      }
+   }
+   element agc_dc_i_mid
+   {
+      datum _sortIndex
+      {
+         value = "21";
+         type = "int";
+      }
+   }
+   element agc_dc_i_mid.s1
+   {
+      datum baseAddress
+      {
+         value = "38432";
+         type = "String";
+      }
+   }
+   element agc_dc_i_min
+   {
+      datum _sortIndex
+      {
+         value = "23";
+         type = "int";
+      }
+   }
+   element agc_dc_i_min.s1
+   {
+      datum baseAddress
+      {
+         value = "38464";
+         type = "String";
+      }
+   }
+   element agc_dc_q_max
+   {
+      datum _sortIndex
+      {
+         value = "20";
+         type = "int";
+      }
+   }
+   element agc_dc_q_max.s1
+   {
+      datum baseAddress
+      {
+         value = "38416";
+         type = "String";
+      }
+   }
+   element agc_dc_q_mid
+   {
+      datum _sortIndex
+      {
+         value = "22";
+         type = "int";
+      }
+   }
+   element agc_dc_q_mid.s1
+   {
+      datum baseAddress
+      {
+         value = "38448";
+         type = "String";
+      }
+   }
+   element agc_dc_q_min
+   {
+      datum _sortIndex
+      {
+         value = "24";
+         type = "int";
+      }
+   }
+   element agc_dc_q_min.s1
+   {
+      datum baseAddress
+      {
+         value = "38480";
+         type = "String";
+      }
+   }
    element arbiter_0
    {
       datum _sortIndex
@@ -177,102 +273,6 @@
          type = "String";
       }
    }
-   element pio_0
-   {
-      datum _sortIndex
-      {
-         value = "19";
-         type = "int";
-      }
-   }
-   element pio_0.s1
-   {
-      datum baseAddress
-      {
-         value = "38400";
-         type = "String";
-      }
-   }
-   element pio_1
-   {
-      datum _sortIndex
-      {
-         value = "20";
-         type = "int";
-      }
-   }
-   element pio_1.s1
-   {
-      datum baseAddress
-      {
-         value = "38416";
-         type = "String";
-      }
-   }
-   element pio_2
-   {
-      datum _sortIndex
-      {
-         value = "21";
-         type = "int";
-      }
-   }
-   element pio_2.s1
-   {
-      datum baseAddress
-      {
-         value = "38432";
-         type = "String";
-      }
-   }
-   element pio_3
-   {
-      datum _sortIndex
-      {
-         value = "22";
-         type = "int";
-      }
-   }
-   element pio_3.s1
-   {
-      datum baseAddress
-      {
-         value = "38448";
-         type = "String";
-      }
-   }
-   element pio_4
-   {
-      datum _sortIndex
-      {
-         value = "23";
-         type = "int";
-      }
-   }
-   element pio_4.s1
-   {
-      datum baseAddress
-      {
-         value = "38464";
-         type = "String";
-      }
-   }
-   element pio_5
-   {
-      datum _sortIndex
-      {
-         value = "24";
-         type = "int";
-      }
-   }
-   element pio_5.s1
-   {
-      datum baseAddress
-      {
-         value = "38480";
-         type = "String";
-      }
-   }
    element ram
    {
       datum _sortIndex
@@ -432,32 +432,32 @@
  <instanceScript></instanceScript>
  <interface
    name="agc_dc_i_max"
-   internal="pio_0.external_connection"
+   internal="agc_dc_i_max.external_connection"
    type="conduit"
    dir="end" />
  <interface
    name="agc_dc_i_mid"
-   internal="pio_2.external_connection"
+   internal="agc_dc_i_mid.external_connection"
    type="conduit"
    dir="end" />
  <interface
    name="agc_dc_i_min"
-   internal="pio_4.external_connection"
+   internal="agc_dc_i_min.external_connection"
    type="conduit"
    dir="end" />
  <interface
    name="agc_dc_q_max"
-   internal="pio_1.external_connection"
+   internal="agc_dc_q_max.external_connection"
    type="conduit"
    dir="end" />
  <interface
    name="agc_dc_q_mid"
-   internal="pio_3.external_connection"
+   internal="agc_dc_q_mid.external_connection"
    type="conduit"
    dir="end" />
  <interface
    name="agc_dc_q_min"
-   internal="pio_5.external_connection"
+   internal="agc_dc_q_min.external_connection"
    type="conduit"
    dir="end" />
  <interface
@@ -533,6 +533,114 @@
    internal="xb_gpio_dir.external_connection"
    type="conduit"
    dir="end" />
+ <module
+   name="agc_dc_i_max"
+   kind="altera_avalon_pio"
+   version="17.0"
+   enabled="1">
+  <parameter name="bitClearingEdgeCapReg" value="false" />
+  <parameter name="bitModifyingOutReg" value="false" />
+  <parameter name="captureEdge" value="false" />
+  <parameter name="clockRate" value="80000000" />
+  <parameter name="direction" value="Output" />
+  <parameter name="edgeType" value="RISING" />
+  <parameter name="generateIRQ" value="false" />
+  <parameter name="irqType" value="LEVEL" />
+  <parameter name="resetValue" value="0" />
+  <parameter name="simDoTestBenchWiring" value="false" />
+  <parameter name="simDrivenValue" value="0" />
+  <parameter name="width" value="16" />
+ </module>
+ <module
+   name="agc_dc_i_mid"
+   kind="altera_avalon_pio"
+   version="17.0"
+   enabled="1">
+  <parameter name="bitClearingEdgeCapReg" value="false" />
+  <parameter name="bitModifyingOutReg" value="false" />
+  <parameter name="captureEdge" value="false" />
+  <parameter name="clockRate" value="80000000" />
+  <parameter name="direction" value="Output" />
+  <parameter name="edgeType" value="RISING" />
+  <parameter name="generateIRQ" value="false" />
+  <parameter name="irqType" value="LEVEL" />
+  <parameter name="resetValue" value="0" />
+  <parameter name="simDoTestBenchWiring" value="false" />
+  <parameter name="simDrivenValue" value="0" />
+  <parameter name="width" value="16" />
+ </module>
+ <module
+   name="agc_dc_i_min"
+   kind="altera_avalon_pio"
+   version="17.0"
+   enabled="1">
+  <parameter name="bitClearingEdgeCapReg" value="false" />
+  <parameter name="bitModifyingOutReg" value="false" />
+  <parameter name="captureEdge" value="false" />
+  <parameter name="clockRate" value="80000000" />
+  <parameter name="direction" value="Output" />
+  <parameter name="edgeType" value="RISING" />
+  <parameter name="generateIRQ" value="false" />
+  <parameter name="irqType" value="LEVEL" />
+  <parameter name="resetValue" value="0" />
+  <parameter name="simDoTestBenchWiring" value="false" />
+  <parameter name="simDrivenValue" value="0" />
+  <parameter name="width" value="16" />
+ </module>
+ <module
+   name="agc_dc_q_max"
+   kind="altera_avalon_pio"
+   version="17.0"
+   enabled="1">
+  <parameter name="bitClearingEdgeCapReg" value="false" />
+  <parameter name="bitModifyingOutReg" value="false" />
+  <parameter name="captureEdge" value="false" />
+  <parameter name="clockRate" value="80000000" />
+  <parameter name="direction" value="Output" />
+  <parameter name="edgeType" value="RISING" />
+  <parameter name="generateIRQ" value="false" />
+  <parameter name="irqType" value="LEVEL" />
+  <parameter name="resetValue" value="0" />
+  <parameter name="simDoTestBenchWiring" value="false" />
+  <parameter name="simDrivenValue" value="0" />
+  <parameter name="width" value="16" />
+ </module>
+ <module
+   name="agc_dc_q_mid"
+   kind="altera_avalon_pio"
+   version="17.0"
+   enabled="1">
+  <parameter name="bitClearingEdgeCapReg" value="false" />
+  <parameter name="bitModifyingOutReg" value="false" />
+  <parameter name="captureEdge" value="false" />
+  <parameter name="clockRate" value="80000000" />
+  <parameter name="direction" value="Output" />
+  <parameter name="edgeType" value="RISING" />
+  <parameter name="generateIRQ" value="false" />
+  <parameter name="irqType" value="LEVEL" />
+  <parameter name="resetValue" value="0" />
+  <parameter name="simDoTestBenchWiring" value="false" />
+  <parameter name="simDrivenValue" value="0" />
+  <parameter name="width" value="16" />
+ </module>
+ <module
+   name="agc_dc_q_min"
+   kind="altera_avalon_pio"
+   version="17.0"
+   enabled="1">
+  <parameter name="bitClearingEdgeCapReg" value="false" />
+  <parameter name="bitModifyingOutReg" value="false" />
+  <parameter name="captureEdge" value="false" />
+  <parameter name="clockRate" value="80000000" />
+  <parameter name="direction" value="Output" />
+  <parameter name="edgeType" value="RISING" />
+  <parameter name="generateIRQ" value="false" />
+  <parameter name="irqType" value="LEVEL" />
+  <parameter name="resetValue" value="0" />
+  <parameter name="simDoTestBenchWiring" value="false" />
+  <parameter name="simDrivenValue" value="0" />
+  <parameter name="width" value="16" />
+ </module>
  <module name="arbiter_0" kind="arbiter" version="1.0" enabled="1">
   <parameter name="N" value="2" />
  </module>
@@ -631,7 +739,7 @@
   <parameter name="dataAddrWidth" value="16" />
   <parameter name="dataMasterHighPerformanceAddrWidth" value="1" />
   <parameter name="dataMasterHighPerformanceMapParam" value="" />
-  <parameter name="dataSlaveMapParam"><![CDATA[<address-map><slave name='ram.s1' start='0x4000' end='0x8000' type='altera_avalon_onchip_memory2.s1' /><slave name='nios2.debug_mem_slave' start='0x8800' end='0x9000' type='altera_nios2_gen2.debug_mem_slave' /><slave name='control.s1' start='0x9040' end='0x9060' type='altera_avalon_pio.s1' /><slave name='peripheral_spi.spi_control_port' start='0x9060' end='0x9080' type='altera_avalon_spi.spi_control_port' /><slave name='xb_gpio_dir.s1' start='0x90A0' end='0x90B0' type='altera_avalon_pio.s1' /><slave name='xb_gpio.s1' start='0x90B0' end='0x90C0' type='altera_avalon_pio.s1' /><slave name='iq_corr_tx_phase_gain.s1' start='0x90C0' end='0x90D0' type='altera_avalon_pio.s1' /><slave name='iq_corr_rx_phase_gain.s1' start='0x90D0' end='0x90E0' type='altera_avalon_pio.s1' /><slave name='opencores_i2c.bladerf_oc_i2c_master' start='0x90F0' end='0x90F8' type='bladerf_oc_i2c_master.bladerf_oc_i2c_master' /><slave name='jtag_uart.avalon_jtag_slave' start='0x9100' end='0x9108' type='altera_avalon_jtag_uart.avalon_jtag_slave' /><slave name='command_uart.avalon_slave' start='0x9120' end='0x9140' type='command_uart.avalon_slave' /><slave name='tx_tamer.avalon_slave_0' start='0x9140' end='0x9160' type='time_tamer.avalon_slave_0' /><slave name='rx_tamer.avalon_slave_0' start='0x9160' end='0x9180' type='time_tamer.avalon_slave_0' /><slave name='lms_spi.avalon_slave_0' start='0x9200' end='0x9300' type='lms6_spi_controller.avalon_slave_0' /><slave name='vctcxo_tamer_0.avalon_slave_0' start='0x9300' end='0x9400' type='vctcxo_tamer.avalon_slave_0' /><slave name='rx_trigger_ctl.s1' start='0x9400' end='0x9420' type='altera_avalon_pio.s1' /><slave name='tx_trigger_ctl.s1' start='0x9420' end='0x9440' type='altera_avalon_pio.s1' /><slave name='arbiter_0.avalon_slave_0' start='0x9500' end='0x9520' type='arbiter.avalon_slave_0' /><slave name='pio_0.s1' start='0x9600' end='0x9610' type='altera_avalon_pio.s1' /><slave name='pio_1.s1' start='0x9610' end='0x9620' type='altera_avalon_pio.s1' /><slave name='pio_2.s1' start='0x9620' end='0x9630' type='altera_avalon_pio.s1' /><slave name='pio_3.s1' start='0x9630' end='0x9640' type='altera_avalon_pio.s1' /><slave name='pio_4.s1' start='0x9640' end='0x9650' type='altera_avalon_pio.s1' /><slave name='pio_5.s1' start='0x9650' end='0x9660' type='altera_avalon_pio.s1' /></address-map>]]></parameter>
+  <parameter name="dataSlaveMapParam"><![CDATA[<address-map><slave name='ram.s1' start='0x4000' end='0x8000' type='altera_avalon_onchip_memory2.s1' /><slave name='nios2.debug_mem_slave' start='0x8800' end='0x9000' type='altera_nios2_gen2.debug_mem_slave' /><slave name='control.s1' start='0x9040' end='0x9060' type='altera_avalon_pio.s1' /><slave name='peripheral_spi.spi_control_port' start='0x9060' end='0x9080' type='altera_avalon_spi.spi_control_port' /><slave name='xb_gpio_dir.s1' start='0x90A0' end='0x90B0' type='altera_avalon_pio.s1' /><slave name='xb_gpio.s1' start='0x90B0' end='0x90C0' type='altera_avalon_pio.s1' /><slave name='iq_corr_tx_phase_gain.s1' start='0x90C0' end='0x90D0' type='altera_avalon_pio.s1' /><slave name='iq_corr_rx_phase_gain.s1' start='0x90D0' end='0x90E0' type='altera_avalon_pio.s1' /><slave name='opencores_i2c.bladerf_oc_i2c_master' start='0x90F0' end='0x90F8' type='bladerf_oc_i2c_master.bladerf_oc_i2c_master' /><slave name='jtag_uart.avalon_jtag_slave' start='0x9100' end='0x9108' type='altera_avalon_jtag_uart.avalon_jtag_slave' /><slave name='command_uart.avalon_slave' start='0x9120' end='0x9140' type='command_uart.avalon_slave' /><slave name='tx_tamer.avalon_slave_0' start='0x9140' end='0x9160' type='time_tamer.avalon_slave_0' /><slave name='rx_tamer.avalon_slave_0' start='0x9160' end='0x9180' type='time_tamer.avalon_slave_0' /><slave name='lms_spi.avalon_slave_0' start='0x9200' end='0x9300' type='lms6_spi_controller.avalon_slave_0' /><slave name='vctcxo_tamer_0.avalon_slave_0' start='0x9300' end='0x9400' type='vctcxo_tamer.avalon_slave_0' /><slave name='rx_trigger_ctl.s1' start='0x9400' end='0x9420' type='altera_avalon_pio.s1' /><slave name='tx_trigger_ctl.s1' start='0x9420' end='0x9440' type='altera_avalon_pio.s1' /><slave name='arbiter_0.avalon_slave_0' start='0x9500' end='0x9520' type='arbiter.avalon_slave_0' /><slave name='agc_dc_i_max.s1' start='0x9600' end='0x9610' type='altera_avalon_pio.s1' /><slave name='agc_dc_q_max.s1' start='0x9610' end='0x9620' type='altera_avalon_pio.s1' /><slave name='agc_dc_i_mid.s1' start='0x9620' end='0x9630' type='altera_avalon_pio.s1' /><slave name='agc_dc_q_mid.s1' start='0x9630' end='0x9640' type='altera_avalon_pio.s1' /><slave name='agc_dc_i_min.s1' start='0x9640' end='0x9650' type='altera_avalon_pio.s1' /><slave name='agc_dc_q_min.s1' start='0x9650' end='0x9660' type='altera_avalon_pio.s1' /></address-map>]]></parameter>
   <parameter name="data_master_high_performance_paddr_base" value="0" />
   <parameter name="data_master_high_performance_paddr_size" value="0" />
   <parameter name="data_master_paddr_base" value="0" />
@@ -815,90 +923,6 @@
   <parameter name="syncRegDepth" value="2" />
   <parameter name="targetClockRate" value="9600000" />
   <parameter name="targetSlaveSelectToSClkDelay" value="0.0" />
- </module>
- <module name="pio_0" kind="altera_avalon_pio" version="17.0" enabled="1">
-  <parameter name="bitClearingEdgeCapReg" value="false" />
-  <parameter name="bitModifyingOutReg" value="false" />
-  <parameter name="captureEdge" value="false" />
-  <parameter name="clockRate" value="80000000" />
-  <parameter name="direction" value="Output" />
-  <parameter name="edgeType" value="RISING" />
-  <parameter name="generateIRQ" value="false" />
-  <parameter name="irqType" value="LEVEL" />
-  <parameter name="resetValue" value="0" />
-  <parameter name="simDoTestBenchWiring" value="false" />
-  <parameter name="simDrivenValue" value="0" />
-  <parameter name="width" value="16" />
- </module>
- <module name="pio_1" kind="altera_avalon_pio" version="17.0" enabled="1">
-  <parameter name="bitClearingEdgeCapReg" value="false" />
-  <parameter name="bitModifyingOutReg" value="false" />
-  <parameter name="captureEdge" value="false" />
-  <parameter name="clockRate" value="80000000" />
-  <parameter name="direction" value="Output" />
-  <parameter name="edgeType" value="RISING" />
-  <parameter name="generateIRQ" value="false" />
-  <parameter name="irqType" value="LEVEL" />
-  <parameter name="resetValue" value="0" />
-  <parameter name="simDoTestBenchWiring" value="false" />
-  <parameter name="simDrivenValue" value="0" />
-  <parameter name="width" value="16" />
- </module>
- <module name="pio_2" kind="altera_avalon_pio" version="17.0" enabled="1">
-  <parameter name="bitClearingEdgeCapReg" value="false" />
-  <parameter name="bitModifyingOutReg" value="false" />
-  <parameter name="captureEdge" value="false" />
-  <parameter name="clockRate" value="80000000" />
-  <parameter name="direction" value="Output" />
-  <parameter name="edgeType" value="RISING" />
-  <parameter name="generateIRQ" value="false" />
-  <parameter name="irqType" value="LEVEL" />
-  <parameter name="resetValue" value="0" />
-  <parameter name="simDoTestBenchWiring" value="false" />
-  <parameter name="simDrivenValue" value="0" />
-  <parameter name="width" value="16" />
- </module>
- <module name="pio_3" kind="altera_avalon_pio" version="17.0" enabled="1">
-  <parameter name="bitClearingEdgeCapReg" value="false" />
-  <parameter name="bitModifyingOutReg" value="false" />
-  <parameter name="captureEdge" value="false" />
-  <parameter name="clockRate" value="80000000" />
-  <parameter name="direction" value="Output" />
-  <parameter name="edgeType" value="RISING" />
-  <parameter name="generateIRQ" value="false" />
-  <parameter name="irqType" value="LEVEL" />
-  <parameter name="resetValue" value="0" />
-  <parameter name="simDoTestBenchWiring" value="false" />
-  <parameter name="simDrivenValue" value="0" />
-  <parameter name="width" value="16" />
- </module>
- <module name="pio_4" kind="altera_avalon_pio" version="17.0" enabled="1">
-  <parameter name="bitClearingEdgeCapReg" value="false" />
-  <parameter name="bitModifyingOutReg" value="false" />
-  <parameter name="captureEdge" value="false" />
-  <parameter name="clockRate" value="80000000" />
-  <parameter name="direction" value="Output" />
-  <parameter name="edgeType" value="RISING" />
-  <parameter name="generateIRQ" value="false" />
-  <parameter name="irqType" value="LEVEL" />
-  <parameter name="resetValue" value="0" />
-  <parameter name="simDoTestBenchWiring" value="false" />
-  <parameter name="simDrivenValue" value="0" />
-  <parameter name="width" value="16" />
- </module>
- <module name="pio_5" kind="altera_avalon_pio" version="17.0" enabled="1">
-  <parameter name="bitClearingEdgeCapReg" value="false" />
-  <parameter name="bitModifyingOutReg" value="false" />
-  <parameter name="captureEdge" value="false" />
-  <parameter name="clockRate" value="80000000" />
-  <parameter name="direction" value="Output" />
-  <parameter name="edgeType" value="RISING" />
-  <parameter name="generateIRQ" value="false" />
-  <parameter name="irqType" value="LEVEL" />
-  <parameter name="resetValue" value="0" />
-  <parameter name="simDoTestBenchWiring" value="false" />
-  <parameter name="simDrivenValue" value="0" />
-  <parameter name="width" value="16" />
  </module>
  <module
    name="ram"
@@ -1158,32 +1182,56 @@
   <parameter name="baseAddress" value="0x9400" />
   <parameter name="defaultConnection" value="false" />
  </connection>
- <connection kind="avalon" version="17.0" start="nios2.data_master" end="pio_0.s1">
+ <connection
+   kind="avalon"
+   version="17.0"
+   start="nios2.data_master"
+   end="agc_dc_i_max.s1">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x9600" />
   <parameter name="defaultConnection" value="false" />
  </connection>
- <connection kind="avalon" version="17.0" start="nios2.data_master" end="pio_1.s1">
+ <connection
+   kind="avalon"
+   version="17.0"
+   start="nios2.data_master"
+   end="agc_dc_q_max.s1">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x9610" />
   <parameter name="defaultConnection" value="false" />
  </connection>
- <connection kind="avalon" version="17.0" start="nios2.data_master" end="pio_2.s1">
+ <connection
+   kind="avalon"
+   version="17.0"
+   start="nios2.data_master"
+   end="agc_dc_i_mid.s1">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x9620" />
   <parameter name="defaultConnection" value="false" />
  </connection>
- <connection kind="avalon" version="17.0" start="nios2.data_master" end="pio_3.s1">
+ <connection
+   kind="avalon"
+   version="17.0"
+   start="nios2.data_master"
+   end="agc_dc_q_mid.s1">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x9630" />
   <parameter name="defaultConnection" value="false" />
  </connection>
- <connection kind="avalon" version="17.0" start="nios2.data_master" end="pio_4.s1">
+ <connection
+   kind="avalon"
+   version="17.0"
+   start="nios2.data_master"
+   end="agc_dc_i_min.s1">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x9640" />
   <parameter name="defaultConnection" value="false" />
  </connection>
- <connection kind="avalon" version="17.0" start="nios2.data_master" end="pio_5.s1">
+ <connection
+   kind="avalon"
+   version="17.0"
+   start="nios2.data_master"
+   end="agc_dc_q_min.s1">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x9650" />
   <parameter name="defaultConnection" value="false" />
@@ -1261,12 +1309,36 @@
    version="17.0"
    start="system_clock.clk"
    end="tx_trigger_ctl.clk" />
- <connection kind="clock" version="17.0" start="system_clock.clk" end="pio_0.clk" />
- <connection kind="clock" version="17.0" start="system_clock.clk" end="pio_1.clk" />
- <connection kind="clock" version="17.0" start="system_clock.clk" end="pio_2.clk" />
- <connection kind="clock" version="17.0" start="system_clock.clk" end="pio_3.clk" />
- <connection kind="clock" version="17.0" start="system_clock.clk" end="pio_4.clk" />
- <connection kind="clock" version="17.0" start="system_clock.clk" end="pio_5.clk" />
+ <connection
+   kind="clock"
+   version="17.0"
+   start="system_clock.clk"
+   end="agc_dc_i_max.clk" />
+ <connection
+   kind="clock"
+   version="17.0"
+   start="system_clock.clk"
+   end="agc_dc_q_max.clk" />
+ <connection
+   kind="clock"
+   version="17.0"
+   start="system_clock.clk"
+   end="agc_dc_i_mid.clk" />
+ <connection
+   kind="clock"
+   version="17.0"
+   start="system_clock.clk"
+   end="agc_dc_q_mid.clk" />
+ <connection
+   kind="clock"
+   version="17.0"
+   start="system_clock.clk"
+   end="agc_dc_i_min.clk" />
+ <connection
+   kind="clock"
+   version="17.0"
+   start="system_clock.clk"
+   end="agc_dc_q_min.clk" />
  <connection kind="clock" version="17.0" start="system_clock.clk" end="ram.clk1" />
  <connection
    kind="clock"
@@ -1429,32 +1501,32 @@
    kind="reset"
    version="17.0"
    start="system_clock.clk_reset"
-   end="pio_0.reset" />
+   end="agc_dc_i_max.reset" />
  <connection
    kind="reset"
    version="17.0"
    start="system_clock.clk_reset"
-   end="pio_1.reset" />
+   end="agc_dc_q_max.reset" />
  <connection
    kind="reset"
    version="17.0"
    start="system_clock.clk_reset"
-   end="pio_2.reset" />
+   end="agc_dc_i_mid.reset" />
  <connection
    kind="reset"
    version="17.0"
    start="system_clock.clk_reset"
-   end="pio_3.reset" />
+   end="agc_dc_q_mid.reset" />
  <connection
    kind="reset"
    version="17.0"
    start="system_clock.clk_reset"
-   end="pio_4.reset" />
+   end="agc_dc_i_min.reset" />
  <connection
    kind="reset"
    version="17.0"
    start="system_clock.clk_reset"
-   end="pio_5.reset" />
+   end="agc_dc_q_min.reset" />
  <connection
    kind="reset"
    version="17.0"
