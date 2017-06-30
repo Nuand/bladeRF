@@ -41,6 +41,8 @@ architecture arch of bladerf_agc_lms_drv_tb is
     signal  arbiter_grant   :       std_logic ;
     signal  arbiter_done    :       std_logic ;
 
+    signal  band_sel        :       std_logic ;
+
     signal  sclk            :       std_logic ;
     signal  miso            :       std_logic ;
     signal  mosi            :       std_logic ;
@@ -67,6 +69,9 @@ begin
               arbiter_req    => arbiter_req,
               arbiter_grant  => arbiter_grant,
               arbiter_done   => arbiter_done,
+
+              band_sel       => band_sel,
+
               sclk           => sclk,
               miso           => miso,
               mosi           => mosi,
@@ -76,6 +81,8 @@ begin
     clock  <= not clock after 10 ns;
     reset  <= '1', '0' after 50 ns;
     enable <= '0' , '1' after 100 ns;
+
+    band_sel     <= '1';
 
     gain_inc_req <= '0';
     gain_dec_req <= '0';
