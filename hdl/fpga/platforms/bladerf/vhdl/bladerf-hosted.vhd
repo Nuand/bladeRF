@@ -337,6 +337,11 @@ architecture hosted_bladerf of bladerf is
     signal lms_rx_enable_sig                        : std_logic;
     signal lms_rx_enable_qualified                  : std_logic;
     signal tx_sample_fifo_rempty_untriggered        : std_logic;
+
+    -- AGC signals
+    signal agc_arbiter_req           : std_logic;
+    signal agc_arbiter_grant         : std_logic;
+    signal agc_arbiter_done          : std_logic;
 begin
 
     correction_tx_phase <= signed(correction_tx_phase_gain(31 downto 16));
@@ -506,6 +511,36 @@ begin
         clock       =>  tx_clock,
         async       =>  pclk_tx_enable,
         sync        =>  tx_enable
+      ) ;
+
+    U_agc_arbiter_req_sync : entity work.synchronizer
+      generic map (
+        RESET_LEVEL =>  '0'
+      ) port map (
+        reset       =>  sys_rst_80M,
+        clock       =>  \80MHz\,
+        async       =>  agc_arbiter_req,
+        sync        =>  arbiter_request(1)
+      ) ;
+
+    U_agc_arbiter_grant_sync : entity work.synchronizer
+      generic map (
+        RESET_LEVEL =>  '0'
+      ) port map (
+        reset       =>  rx_reset,
+        clock       =>  rx_clock,
+        async       =>  arbiter_granted(1),
+        sync        =>  agc_arbiter_grant
+      ) ;
+
+    U_agc_arbiter_done_sync : entity work.synchronizer
+      generic map (
+        RESET_LEVEL =>  '0'
+      ) port map (
+        reset       =>  sys_rst_80M,
+        clock       =>  \80MHz\,
+        async       =>  agc_arbiter_done,
+        sync        =>  arbiter_ack(1)
       ) ;
 
     -- TX sample fifo
@@ -785,9 +820,9 @@ begin
         gain_mid       => open,
         gain_low       => open,
 
-        arbiter_req    => arbiter_request(1),
-        arbiter_grant  => arbiter_granted(1),
-        arbiter_done   => arbiter_ack(1),
+        arbiter_req    => agc_arbiter_req,
+        arbiter_grant  => agc_arbiter_grant,
+        arbiter_done   => agc_arbiter_done,
 
         sclk           => agc_lms_sclk,
         miso           => lms_sdo,
