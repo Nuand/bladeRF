@@ -4028,6 +4028,13 @@ int CALL_CONV bladerf_lms_get_dc_cals(struct bladerf *dev,
 #define BLADERF_GPIO_RX_HB_ENABLE   (1 << 5)
 
 /**
+ * AGC enable control bit
+ *
+ * @note This is set using bladerf_set_gain_mode().
+ */
+#define BLADERF_GPIO_AGC_ENABLE     (1 << 12)
+
+/**
  * This GPIO bit configures the FPGA to use smaller DMA
  * transfers (256 cycles instead of 512). This is required
  * when the device is not connected at Super Speed (i.e., when
