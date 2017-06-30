@@ -342,6 +342,21 @@ architecture hosted_bladerf of bladerf is
     signal agc_arbiter_req           : std_logic;
     signal agc_arbiter_grant         : std_logic;
     signal agc_arbiter_done          : std_logic;
+
+    signal agc_gain_high             : std_logic;
+    signal agc_gain_mid              : std_logic;
+    signal agc_gain_low              : std_logic;
+
+    signal fpga_dc_i_correction      : signed(15 downto 0);
+    signal fpga_dc_q_correction      : signed(15 downto 0);
+
+    signal corr_dc_i_max             : std_logic_vector(15 downto 0);
+    signal corr_dc_i_mid             : std_logic_vector(15 downto 0);
+    signal corr_dc_i_min             : std_logic_vector(15 downto 0);
+    signal corr_dc_q_max             : std_logic_vector(15 downto 0);
+    signal corr_dc_q_mid             : std_logic_vector(15 downto 0);
+    signal corr_dc_q_min             : std_logic_vector(15 downto 0);
+
 begin
 
     correction_tx_phase <= signed(correction_tx_phase_gain(31 downto 16));
@@ -759,6 +774,23 @@ begin
         overflow_duration   =>  x"ffff"
       ) ;
 
+    process(all)
+    begin
+        if( agc_gain_high = '1' ) then
+            fpga_dc_i_correction <= signed( corr_dc_i_max ) ;
+            fpga_dc_q_correction <= signed( corr_dc_q_max ) ;
+        elsif( agc_gain_mid = '1' ) then
+            fpga_dc_i_correction <= signed( corr_dc_i_mid ) ;
+            fpga_dc_q_correction <= signed( corr_dc_q_mid ) ;
+        elsif( agc_gain_low = '1' ) then
+            fpga_dc_i_correction <= signed( corr_dc_i_min ) ;
+            fpga_dc_q_correction <= signed( corr_dc_q_min ) ;
+        else
+            fpga_dc_i_correction <= ( others => '0' ) ;
+            fpga_dc_q_correction <= ( others => '0' ) ;
+        end if;
+    end process ;
+
     U_rx_iq_correction : entity work.iq_correction(rx)
       generic map(
         INPUT_WIDTH         => rx_sample_corrected_i'length
@@ -774,8 +806,8 @@ begin
         out_imag            => rx_sample_corrected_q,
         out_valid           => rx_sample_corrected_valid,
 
-        dc_real             => FPGA_DC_CORRECTION,
-        dc_imag             => FPGA_DC_CORRECTION,
+        dc_real             => fpga_dc_i_correction,
+        dc_imag             => fpga_dc_q_correction,
         gain                => correction_rx_gain,
         phase               => correction_rx_phase,
         correction_valid    => correction_valid
@@ -816,9 +848,9 @@ begin
         gain_ack       => gain_ack,
         gain_nack      => gain_nack,
 
-        gain_high      => open,
-        gain_mid       => open,
-        gain_low       => open,
+        gain_high      => agc_gain_high,
+        gain_mid       => agc_gain_mid,
+        gain_low       => agc_gain_low,
 
         arbiter_req    => agc_arbiter_req,
         arbiter_grant  => agc_arbiter_grant,
