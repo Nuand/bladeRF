@@ -66,6 +66,7 @@ struct printset_entry {
 /* Declarations */
 PRINTSET_DECL(bandwidth)
 PRINTSET_DECL(frequency)
+PRINTSET_DECL(agc)
 PRINTSET_DECL(gpio)
 PRINTSET_DECL(loopback)
 PRINTSET_DECL(lnagain)
@@ -87,6 +88,7 @@ PRINTSET_DECL(xb_gpio_dir)
 struct printset_entry printset_table[] = {
     PRINTSET_ENTRY(bandwidth,       PRINTALL_OPTION_APPEND_NEWLINE),
     PRINTSET_ENTRY(frequency,       PRINTALL_OPTION_APPEND_NEWLINE),
+    PRINTSET_ENTRY(agc,             PRINTALL_OPTION_APPEND_NEWLINE),
     PRINTSET_ENTRY(gpio,            PRINTALL_OPTION_APPEND_NEWLINE),
     PRINTSET_ENTRY(loopback,        PRINTALL_OPTION_APPEND_NEWLINE),
     PRINTSET_ENTRY(rx_mux,          PRINTALL_OPTION_APPEND_NEWLINE),
@@ -400,6 +402,55 @@ int set_frequency(struct cli_state *state, int argc, char **argv)
                 }
             }
 
+        }
+    }
+
+    return rv;
+}
+
+int print_agc(struct cli_state *state, int argc, char **argv)
+{
+    int rv = CLI_RET_OK, status;
+    bladerf_gain_mode mode;
+
+    status = bladerf_get_gain_mode( state->dev, BLADERF_MODULE_RX, &mode );
+    if (status < 0) {
+        state->last_lib_error = status;
+        rv = CLI_RET_LIBBLADERF;
+    } else {
+        printf( "   AGC: %-10s\n",
+                mode == BLADERF_GAIN_MANUAL ? "Disabled" : "Enabled" );
+    }
+    return rv;
+}
+
+int set_agc(struct cli_state *state, int argc, char **argv)
+{
+    int rv = CLI_RET_OK, status;
+    bladerf_gain_mode mode;
+
+    if (argc < 3) {
+        printf( "Usage: set agc <on|off>\n\n" );
+        rv = CLI_RET_NARGS;
+    }
+
+    if (!strcmp(argv[2], "on")) {
+       mode = BLADERF_GAIN_AUTOMATIC;
+    } else if (!strcmp(argv[2], "off")) {
+       mode = BLADERF_GAIN_MANUAL;
+    } else {
+        cli_err_nnl(state, argv[0], "Invalid AGC value (%s)\n", argv[2]);
+        rv = CLI_RET_INVPARAM;
+    }
+
+    if (rv == CLI_RET_OK) {
+        status = bladerf_set_gain_mode( state->dev, BLADERF_MODULE_RX, mode );
+        if (status < 0) {
+            state->last_lib_error = status;
+            rv = CLI_RET_LIBBLADERF;
+        } else {
+            printf( "   AGC: %-10s\n",
+                    mode == BLADERF_GAIN_MANUAL ? "Disabled" : "Enabled" );
         }
     }
 
