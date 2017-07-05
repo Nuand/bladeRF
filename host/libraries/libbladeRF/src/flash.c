@@ -200,7 +200,7 @@ error:
 static inline void fill_fpga_metadata_page(uint8_t *metadata,
                                            size_t actual_bitstream_len)
 {
-    char len_str[10];
+    char len_str[12];
     int idx = 0;
 
     memset(len_str, 0, sizeof(len_str));
