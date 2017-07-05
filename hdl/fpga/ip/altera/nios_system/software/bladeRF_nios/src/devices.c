@@ -438,6 +438,22 @@ uint8_t rx_trigger_ctl_read(void)
   return IORD_ALTERA_AVALON_PIO_DATA(RX_TRIGGER_CTL_BASE);
 }
 
+void agc_dc_corr_write(uint16_t addr, uint16_t value)
+{
+    if (addr == NIOS_PKT_8x16_ADDR_AGC_DC_Q_MAX)
+        IOWR_ALTERA_AVALON_PIO_DATA(AGC_DC_Q_MAX_BASE, value);
+    else if (addr == NIOS_PKT_8x16_ADDR_AGC_DC_I_MAX)
+        IOWR_ALTERA_AVALON_PIO_DATA(AGC_DC_I_MAX_BASE, value);
+    else if (addr == NIOS_PKT_8x16_ADDR_AGC_DC_Q_MID)
+        IOWR_ALTERA_AVALON_PIO_DATA(AGC_DC_Q_MID_BASE, value);
+    else if (addr == NIOS_PKT_8x16_ADDR_AGC_DC_I_MID)
+        IOWR_ALTERA_AVALON_PIO_DATA(AGC_DC_I_MID_BASE, value);
+    else if (addr == NIOS_PKT_8x16_ADDR_AGC_DC_Q_MIN)
+        IOWR_ALTERA_AVALON_PIO_DATA(AGC_DC_Q_MIN_BASE, value);
+    else if (addr == NIOS_PKT_8x16_ADDR_AGC_DC_I_MIN)
+        IOWR_ALTERA_AVALON_PIO_DATA(AGC_DC_I_MIN_BASE, value);
+}
+
 uint64_t time_tamer_read(bladerf_module m)
 {
     uint32_t base = (m == BLADERF_MODULE_RX) ? RX_TAMER_BASE : TX_TAMER_BASE ;

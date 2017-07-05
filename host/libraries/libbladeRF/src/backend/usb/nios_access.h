@@ -218,6 +218,22 @@ int nios_set_iq_phase_correction(struct bladerf *dev,
                                  bladerf_module module, int16_t value);
 
 /**
+ * Write AGC DC LUT values
+ *
+ * @param[in]   dev         Device handle
+ * @param[in]   q_max       Q DC offset at Max gain
+ * @param[in]   i_max       I DC offset at Max gain
+ * @param[in]   q_mid       Q DC offset at Mid gain
+ * @param[in]   i_mid       I DC offset at Mid gain
+ * @param[in]   q_low       Q DC offset at Low gain
+ * @param[in]   i_low       I DC offset at Low gain
+ *
+ * @return 0 on success, BLADERF_ERR_* code on error.
+ */
+int nios_set_agc_dc_correction(struct bladerf *dev, int16_t q_max, int16_t i_max,
+                               int16_t q_mid, int16_t i_mid,
+                               int16_t q_low, int16_t i_low);
+/**
  * Write a value to the XB-200's ADF4351 synthesizer
  *
  * @param[in]   dev         Device handle

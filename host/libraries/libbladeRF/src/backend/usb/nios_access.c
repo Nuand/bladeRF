@@ -646,6 +646,28 @@ int nios_set_iq_phase_correction(struct bladerf *dev, bladerf_module module,
     return status;
 }
 
+int nios_set_agc_dc_correction(struct bladerf *dev, int16_t q_max, int16_t i_max,
+                               int16_t q_mid, int16_t i_mid,
+                               int16_t q_low, int16_t i_low)
+{
+    int status;
+
+    status = nios_8x16_write(dev, NIOS_PKT_8x16_TARGET_AGC_CORR, NIOS_PKT_8x16_ADDR_AGC_DC_Q_MAX, q_max);
+
+    if (!status)
+        status = nios_8x16_write(dev, NIOS_PKT_8x16_TARGET_AGC_CORR, NIOS_PKT_8x16_ADDR_AGC_DC_I_MAX, i_max);
+    if (!status)
+        status = nios_8x16_write(dev, NIOS_PKT_8x16_TARGET_AGC_CORR, NIOS_PKT_8x16_ADDR_AGC_DC_Q_MID, q_mid);
+    if (!status)
+        status = nios_8x16_write(dev, NIOS_PKT_8x16_TARGET_AGC_CORR, NIOS_PKT_8x16_ADDR_AGC_DC_I_MID, i_mid);
+    if (!status)
+        status = nios_8x16_write(dev, NIOS_PKT_8x16_TARGET_AGC_CORR, NIOS_PKT_8x16_ADDR_AGC_DC_Q_MIN, q_low);
+    if (!status)
+        status = nios_8x16_write(dev, NIOS_PKT_8x16_TARGET_AGC_CORR, NIOS_PKT_8x16_ADDR_AGC_DC_I_MIN, i_low);
+
+    return status;
+}
+
 int nios_xb200_synth_write(struct bladerf *dev, uint32_t value)
 {
     int status = nios_8x32_write(dev, NIOS_PKT_8x32_TARGET_ADF4351, 0, value);

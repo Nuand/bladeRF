@@ -1198,6 +1198,8 @@ const struct backend_fns backend_fns_usb = {
     FIELD_INIT(.get_iq_gain_correction, nios_get_iq_gain_correction),
     FIELD_INIT(.get_iq_phase_correction, nios_get_iq_phase_correction),
 
+    FIELD_INIT(.set_agc_dc_correction, nios_set_agc_dc_correction),
+
     FIELD_INIT(.get_timestamp, nios_get_timestamp),
 
     FIELD_INIT(.si5338_write, nios_si5338_write),

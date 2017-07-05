@@ -123,6 +123,10 @@ static inline bool perform_write(uint8_t id, uint8_t addr, uint16_t data)
             iq_corr_write(addr, data);
             break;
 
+        case NIOS_PKT_8x16_TARGET_AGC_CORR:
+            agc_dc_corr_write(addr, data);
+            break;
+
         /* Add user customizations here
 
         case NIOS_PKT_8x8_TARGET_USR1:

@@ -129,6 +129,11 @@ struct backend_fns {
     int (*get_iq_phase_correction)(struct bladerf *dev, bladerf_module module,
                                    int16_t *value);
 
+    /* AGC DC Correction Lookup Table */
+    int (*set_agc_dc_correction)(struct bladerf *dev,
+                                 int16_t q_max, int16_t i_max, int16_t q_mid, int16_t i_mid,
+                                 int16_t q_low, int16_t i_low);
+
     /* Get current timestamp counter values */
     int (*get_timestamp)(struct bladerf *dev, bladerf_module mod, uint64_t *value);
 
