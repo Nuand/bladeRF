@@ -13,7 +13,7 @@
    {
       datum _sortIndex
       {
-         value = "19";
+         value = "20";
          type = "int";
       }
    }
@@ -29,7 +29,7 @@
    {
       datum _sortIndex
       {
-         value = "21";
+         value = "22";
          type = "int";
       }
    }
@@ -45,7 +45,7 @@
    {
       datum _sortIndex
       {
-         value = "23";
+         value = "24";
          type = "int";
       }
    }
@@ -61,7 +61,7 @@
    {
       datum _sortIndex
       {
-         value = "20";
+         value = "21";
          type = "int";
       }
    }
@@ -77,7 +77,7 @@
    {
       datum _sortIndex
       {
-         value = "22";
+         value = "23";
          type = "int";
       }
    }
@@ -93,7 +93,7 @@
    {
       datum _sortIndex
       {
-         value = "24";
+         value = "25";
          type = "int";
       }
    }
@@ -151,6 +151,14 @@
       {
          value = "36928";
          type = "String";
+      }
+   }
+   element fabric_probe
+   {
+      datum _sortIndex
+      {
+         value = "19";
+         type = "int";
       }
    }
    element iq_corr_rx_phase_gain
@@ -215,6 +223,14 @@
       {
          value = "1";
          type = "int";
+      }
+   }
+   element nios_system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
       }
    }
    element nios_system
@@ -429,7 +445,31 @@
  <parameter name="testBenchDutName" value="" />
  <parameter name="timeStamp" value="0" />
  <parameter name="useTestBenchNamingPattern" value="false" />
- <instanceScript></instanceScript>
+ <instanceParameter
+   name="enable_fabric_register_inputs"
+   displayName="enable_fabric_register_inputs"
+   type="integer"
+   defaultValue="0"
+   legalRanges="0 1"
+   description="" />
+ <instanceParameter
+   name="enable_fabric_register_outputs"
+   displayName="enable_fabric_register_outputs"
+   type="integer"
+   defaultValue="0"
+   legalRanges="0 1"
+   description="" />
+ <instanceScript><![CDATA[# request a specific version of the scripting API
+package require -exact qsys 15.0
+
+# Set the name of the procedure to manipulate parameters
+set_module_property COMPOSITION_CALLBACK compose
+
+proc compose {} {
+    # manipulate parameters in here
+    set_instance_parameter_value fabric_probe enable_inputs [ get_parameter_value enable_fabric_register_inputs ]
+    set_instance_parameter_value fabric_probe enable_outputs [ get_parameter_value enable_fabric_register_outputs ]
+}]]></instanceScript>
  <interface
    name="agc_dc_i_max"
    internal="agc_dc_i_max.external_connection"
@@ -482,6 +522,22 @@
    internal="peripheral_spi.external"
    type="conduit"
    dir="end" />
+ <interface
+   name="fabric_probe_in"
+   internal="fabric_probe.in"
+   type="conduit"
+   dir="end" />
+ <interface
+   name="fabric_probe_out"
+   internal="fabric_probe.out"
+   type="conduit"
+   dir="end" />
+ <interface
+   name="fabric_register_probe_0_registers_in"
+   internal="fabric_probe.registers_in" />
+ <interface
+   name="fabric_register_probe_0_registers_out"
+   internal="fabric_probe.registers_out" />
  <interface
    name="gpio"
    internal="control.external_connection"
@@ -660,6 +716,14 @@
   <parameter name="width" value="32" />
  </module>
  <module
+   name="fabric_probe"
+   kind="fabric_register_probe"
+   version="1.0"
+   enabled="1">
+  <parameter name="enable_inputs" value="true" />
+  <parameter name="enable_outputs" value="true" />
+ </module>
+ <module
    name="iq_corr_rx_phase_gain"
    kind="altera_avalon_pio"
    version="17.0"
@@ -739,7 +803,7 @@
   <parameter name="dataAddrWidth" value="16" />
   <parameter name="dataMasterHighPerformanceAddrWidth" value="1" />
   <parameter name="dataMasterHighPerformanceMapParam" value="" />
-  <parameter name="dataSlaveMapParam"><![CDATA[<address-map><slave name='ram.s1' start='0x4000' end='0x8000' type='altera_avalon_onchip_memory2.s1' /><slave name='nios2.debug_mem_slave' start='0x8800' end='0x9000' type='altera_nios2_gen2.debug_mem_slave' /><slave name='control.s1' start='0x9040' end='0x9060' type='altera_avalon_pio.s1' /><slave name='peripheral_spi.spi_control_port' start='0x9060' end='0x9080' type='altera_avalon_spi.spi_control_port' /><slave name='xb_gpio_dir.s1' start='0x90A0' end='0x90B0' type='altera_avalon_pio.s1' /><slave name='xb_gpio.s1' start='0x90B0' end='0x90C0' type='altera_avalon_pio.s1' /><slave name='iq_corr_tx_phase_gain.s1' start='0x90C0' end='0x90D0' type='altera_avalon_pio.s1' /><slave name='iq_corr_rx_phase_gain.s1' start='0x90D0' end='0x90E0' type='altera_avalon_pio.s1' /><slave name='opencores_i2c.bladerf_oc_i2c_master' start='0x90F0' end='0x90F8' type='bladerf_oc_i2c_master.bladerf_oc_i2c_master' /><slave name='jtag_uart.avalon_jtag_slave' start='0x9100' end='0x9108' type='altera_avalon_jtag_uart.avalon_jtag_slave' /><slave name='command_uart.avalon_slave' start='0x9120' end='0x9140' type='command_uart.avalon_slave' /><slave name='tx_tamer.avalon_slave_0' start='0x9140' end='0x9160' type='time_tamer.avalon_slave_0' /><slave name='rx_tamer.avalon_slave_0' start='0x9160' end='0x9180' type='time_tamer.avalon_slave_0' /><slave name='lms_spi.avalon_slave_0' start='0x9200' end='0x9300' type='lms6_spi_controller.avalon_slave_0' /><slave name='vctcxo_tamer_0.avalon_slave_0' start='0x9300' end='0x9400' type='vctcxo_tamer.avalon_slave_0' /><slave name='rx_trigger_ctl.s1' start='0x9400' end='0x9420' type='altera_avalon_pio.s1' /><slave name='tx_trigger_ctl.s1' start='0x9420' end='0x9440' type='altera_avalon_pio.s1' /><slave name='arbiter_0.avalon_slave_0' start='0x9500' end='0x9520' type='arbiter.avalon_slave_0' /><slave name='agc_dc_i_max.s1' start='0x9600' end='0x9610' type='altera_avalon_pio.s1' /><slave name='agc_dc_q_max.s1' start='0x9610' end='0x9620' type='altera_avalon_pio.s1' /><slave name='agc_dc_i_mid.s1' start='0x9620' end='0x9630' type='altera_avalon_pio.s1' /><slave name='agc_dc_q_mid.s1' start='0x9630' end='0x9640' type='altera_avalon_pio.s1' /><slave name='agc_dc_i_min.s1' start='0x9640' end='0x9650' type='altera_avalon_pio.s1' /><slave name='agc_dc_q_min.s1' start='0x9650' end='0x9660' type='altera_avalon_pio.s1' /></address-map>]]></parameter>
+  <parameter name="dataSlaveMapParam"><![CDATA[<address-map><slave name='ram.s1' start='0x4000' end='0x8000' type='altera_avalon_onchip_memory2.s1' /><slave name='nios2.debug_mem_slave' start='0x8800' end='0x9000' type='altera_nios2_gen2.debug_mem_slave' /><slave name='control.s1' start='0x9040' end='0x9060' type='altera_avalon_pio.s1' /><slave name='peripheral_spi.spi_control_port' start='0x9060' end='0x9080' type='altera_avalon_spi.spi_control_port' /><slave name='xb_gpio_dir.s1' start='0x90A0' end='0x90B0' type='altera_avalon_pio.s1' /><slave name='xb_gpio.s1' start='0x90B0' end='0x90C0' type='altera_avalon_pio.s1' /><slave name='iq_corr_tx_phase_gain.s1' start='0x90C0' end='0x90D0' type='altera_avalon_pio.s1' /><slave name='iq_corr_rx_phase_gain.s1' start='0x90D0' end='0x90E0' type='altera_avalon_pio.s1' /><slave name='opencores_i2c.bladerf_oc_i2c_master' start='0x90F0' end='0x90F8' type='bladerf_oc_i2c_master.bladerf_oc_i2c_master' /><slave name='jtag_uart.avalon_jtag_slave' start='0x9100' end='0x9108' type='altera_avalon_jtag_uart.avalon_jtag_slave' /><slave name='command_uart.avalon_slave' start='0x9120' end='0x9140' type='command_uart.avalon_slave' /><slave name='tx_tamer.avalon_slave_0' start='0x9140' end='0x9160' type='time_tamer.avalon_slave_0' /><slave name='rx_tamer.avalon_slave_0' start='0x9160' end='0x9180' type='time_tamer.avalon_slave_0' /><slave name='fabric_probe.mm' start='0x9180' end='0x91A0' type='fabric_register_probe.mm' /><slave name='lms_spi.avalon_slave_0' start='0x9200' end='0x9300' type='lms6_spi_controller.avalon_slave_0' /><slave name='vctcxo_tamer_0.avalon_slave_0' start='0x9300' end='0x9400' type='vctcxo_tamer.avalon_slave_0' /><slave name='rx_trigger_ctl.s1' start='0x9400' end='0x9420' type='altera_avalon_pio.s1' /><slave name='tx_trigger_ctl.s1' start='0x9420' end='0x9440' type='altera_avalon_pio.s1' /><slave name='arbiter_0.avalon_slave_0' start='0x9500' end='0x9520' type='arbiter.avalon_slave_0' /><slave name='agc_dc_i_max.s1' start='0x9600' end='0x9610' type='altera_avalon_pio.s1' /><slave name='agc_dc_q_max.s1' start='0x9610' end='0x9620' type='altera_avalon_pio.s1' /><slave name='agc_dc_i_mid.s1' start='0x9620' end='0x9630' type='altera_avalon_pio.s1' /><slave name='agc_dc_q_mid.s1' start='0x9630' end='0x9640' type='altera_avalon_pio.s1' /><slave name='agc_dc_i_min.s1' start='0x9640' end='0x9650' type='altera_avalon_pio.s1' /><slave name='agc_dc_q_min.s1' start='0x9650' end='0x9660' type='altera_avalon_pio.s1' /></address-map>]]></parameter>
   <parameter name="data_master_high_performance_paddr_base" value="0" />
   <parameter name="data_master_high_performance_paddr_size" value="0" />
   <parameter name="data_master_paddr_base" value="0" />
@@ -1114,6 +1178,15 @@
   <parameter name="baseAddress" value="0x8800" />
   <parameter name="defaultConnection" value="false" />
  </connection>
+ <connection
+   kind="avalon"
+   version="17.0"
+   start="nios2.data_master"
+   end="fabric_probe.mm">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x9180" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
  <connection kind="avalon" version="17.0" start="nios2.data_master" end="ram.s1">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x4000" />
@@ -1349,6 +1422,11 @@
    kind="clock"
    version="17.0"
    start="system_clock.clk"
+   end="fabric_probe.clock" />
+ <connection
+   kind="clock"
+   version="17.0"
+   start="system_clock.clk"
    end="opencores_i2c.clock_sink" />
  <connection
    kind="clock"
@@ -1527,6 +1605,11 @@
    version="17.0"
    start="system_clock.clk_reset"
    end="agc_dc_q_min.reset" />
+ <connection
+   kind="reset"
+   version="17.0"
+   start="system_clock.clk_reset"
+   end="fabric_probe.reset" />
  <connection
    kind="reset"
    version="17.0"
