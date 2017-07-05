@@ -5,6 +5,12 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.5.0 (2017-07-01)
+--------------------------------
+This version depends upon libbladeRF v1.8.0 or later.
+
+  * Added support for Automatic Gain Control
+
 v1.4.0 (2016-01-05)
 --------------------------------
 This version depends upon libbladeRF v1.7.0 or later.

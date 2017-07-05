@@ -4,4 +4,5 @@
 	<path path="../../nuand/command_uart/**/*"/>
         <path path="../../nuand/lms6_spi_controller/**/*"/>
         <path path="../../nuand/vctcxo_tamer/**/*"/>
+        <path path="../../nuand/arbiter/**/*"/>
 </library>

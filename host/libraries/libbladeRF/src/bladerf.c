@@ -717,6 +717,52 @@ int bladerf_set_gain(struct bladerf *dev, bladerf_module mod, int gain) {
     return status;
 }
 
+int bladerf_set_gain_mode(struct bladerf *dev, bladerf_module mod, bladerf_gain_mode mode)
+{
+    int status;
+    uint32_t config_gpio;
+
+    MUTEX_LOCK(&dev->ctrl_lock);
+
+    if ((status = CONFIG_GPIO_READ(dev, &config_gpio))) {
+        goto out;
+    }
+
+    if (mode == BLADERF_GAIN_AUTOMATIC) {
+        config_gpio |= BLADERF_GPIO_AGC_ENABLE;
+    } else if (mode == BLADERF_GAIN_MANUAL) {
+        config_gpio &= ~BLADERF_GPIO_AGC_ENABLE;
+    }
+
+    status = CONFIG_GPIO_WRITE(dev, config_gpio);
+
+out:
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+    return status;
+}
+
+int bladerf_get_gain_mode(struct bladerf *dev, bladerf_module mod, bladerf_gain_mode *mode)
+{
+    int status;
+    uint32_t config_gpio;
+
+    MUTEX_LOCK(&dev->ctrl_lock);
+
+    if ((status = CONFIG_GPIO_READ(dev, &config_gpio))) {
+        goto out;
+    }
+
+    if (config_gpio & BLADERF_GPIO_AGC_ENABLE) {
+        *mode = BLADERF_GAIN_AUTOMATIC;
+    } else {
+        *mode = BLADERF_GAIN_MANUAL;
+    }
+
+out:
+    MUTEX_UNLOCK(&dev->ctrl_lock);
+    return status;
+}
+
 int bladerf_set_bandwidth(struct bladerf *dev, bladerf_module module,
                           unsigned int bandwidth,
                           unsigned int *actual)

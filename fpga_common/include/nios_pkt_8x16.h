@@ -102,6 +102,7 @@
 /* Target IDs */
 #define NIOS_PKT_8x16_TARGET_VCTCXO_DAC 0x00
 #define NIOS_PKT_8x16_TARGET_IQ_CORR    0x01
+#define NIOS_PKT_8x16_TARGET_AGC_CORR   0x02
 
 /* IDs 0x80 through 0xff will not be assigned by Nuand. These are reserved
  * for user customizations */
@@ -117,6 +118,14 @@
 #define NIOS_PKT_8x16_ADDR_IQ_CORR_RX_PHASE 0x01
 #define NIOS_PKT_8x16_ADDR_IQ_CORR_TX_GAIN  0x02
 #define NIOS_PKT_8x16_ADDR_IQ_CORR_TX_PHASE 0x03
+
+/* Sub-addresses for the AGC DC Correction target block */
+#define NIOS_PKT_8x16_ADDR_AGC_DC_Q_MAX  0x00
+#define NIOS_PKT_8x16_ADDR_AGC_DC_I_MAX  0x01
+#define NIOS_PKT_8x16_ADDR_AGC_DC_Q_MID  0x02
+#define NIOS_PKT_8x16_ADDR_AGC_DC_I_MID  0x03
+#define NIOS_PKT_8x16_ADDR_AGC_DC_Q_MIN  0x04
+#define NIOS_PKT_8x16_ADDR_AGC_DC_I_MIN  0x05
 
 /* Pack the request buffer */
 static inline void nios_pkt_8x16_pack(uint8_t *buf, uint8_t target, bool write,

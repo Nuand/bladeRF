@@ -73,7 +73,16 @@ architecture hosted_bladerf of bladerf is
         tx_trigger_ctl_in_port          :   in std_logic_vector(7 downto 0);
         tx_trigger_ctl_out_port         :   out std_logic_vector(7 downto 0);
         rx_trigger_ctl_in_port          :   in std_logic_vector(7 downto 0);
-        rx_trigger_ctl_out_port         :   out std_logic_vector(7 downto 0)
+        rx_trigger_ctl_out_port         :   out std_logic_vector(7 downto 0);
+        arbiter_request                 :   in  std_logic_vector(1 downto 0);
+        arbiter_granted                 :   out std_logic_vector(1 downto 0)  := (others => 'X');
+        arbiter_ack                     :   in  std_logic_vector(1 downto 0)  := (others => 'X');
+        agc_dc_i_max_export             :   out std_logic_vector(15 downto 0);
+        agc_dc_i_mid_export             :   out std_logic_vector(15 downto 0);
+        agc_dc_i_min_export             :   out std_logic_vector(15 downto 0);
+        agc_dc_q_max_export             :   out std_logic_vector(15 downto 0);
+        agc_dc_q_mid_export             :   out std_logic_vector(15 downto 0);
+        agc_dc_q_min_export             :   out std_logic_vector(15 downto 0)
       );
     end component;
 
@@ -296,6 +305,29 @@ architecture hosted_bladerf of bladerf is
     signal rx_trigger_ctl_rb    : std_logic_vector(7 downto 0);
     signal tx_trigger_ctl_rb    : std_logic_vector(7 downto 0);
 
+    -- Arbiter signal
+    signal arbiter_request      : std_logic_vector(1 downto 0);
+    signal arbiter_granted      : std_logic_vector(1 downto 0);
+    signal arbiter_ack          : std_logic_vector(1 downto 0);
+
+    -- AGC control signal
+    signal agc_en               : std_logic ;
+    signal gain_inc_req         : std_logic ;
+    signal gain_dec_req         : std_logic ;
+    signal gain_rst_req         : std_logic ;
+    signal gain_ack             : std_logic ;
+    signal gain_nack            : std_logic ;
+    signal gain_max             : std_logic ;
+    signal rst_gains            : std_logic ;
+    signal burst                : std_logic ;
+
+    signal agc_lms_sdio         : std_logic ;
+    signal agc_lms_sclk         : std_logic ;
+    signal agc_lms_sen          : std_logic ;
+    signal nios_lms_sdio        : std_logic ;
+    signal nios_lms_sclk        : std_logic ;
+    signal nios_lms_sen         : std_logic ;
+
     -- Trigger Control readback breakdown
     alias rx_trigger_arm_rb         : std_logic is rx_trigger_ctl_rb(0);
     alias rx_trigger_fire_rb        : std_logic is rx_trigger_ctl_rb(1);
@@ -311,6 +343,28 @@ architecture hosted_bladerf of bladerf is
     signal lms_rx_enable_sig                        : std_logic;
     signal lms_rx_enable_qualified                  : std_logic;
     signal tx_sample_fifo_rempty_untriggered        : std_logic;
+
+    -- AGC signals
+    signal agc_arbiter_req           : std_logic;
+    signal agc_arbiter_grant         : std_logic;
+    signal agc_arbiter_done          : std_logic;
+
+    signal agc_band_sel              : std_logic;
+
+    signal agc_gain_high             : std_logic;
+    signal agc_gain_mid              : std_logic;
+    signal agc_gain_low              : std_logic;
+
+    signal fpga_dc_i_correction      : signed(15 downto 0);
+    signal fpga_dc_q_correction      : signed(15 downto 0);
+
+    signal corr_dc_i_max             : std_logic_vector(15 downto 0);
+    signal corr_dc_i_mid             : std_logic_vector(15 downto 0);
+    signal corr_dc_i_min             : std_logic_vector(15 downto 0);
+    signal corr_dc_q_max             : std_logic_vector(15 downto 0);
+    signal corr_dc_q_mid             : std_logic_vector(15 downto 0);
+    signal corr_dc_q_min             : std_logic_vector(15 downto 0);
+
 begin
 
     correction_tx_phase <= signed(correction_tx_phase_gain(31 downto 16));
@@ -377,6 +431,18 @@ begin
             sync                =>  rx_mux_sel(i)
           ) ;
     end generate ;
+
+
+    U_agc_en : entity work.synchronizer
+      generic map (
+        RESET_LEVEL         =>  '0'
+      ) port map (
+        reset               =>  '0',
+        clock               =>  rx_clock,
+        async               =>  nios_gpio(12),
+        sync                =>  agc_en
+      ) ;
+
 
     U_meta_sync_fx3 : entity work.synchronizer
       generic map (
@@ -468,6 +534,46 @@ begin
         clock       =>  tx_clock,
         async       =>  pclk_tx_enable,
         sync        =>  tx_enable
+      ) ;
+
+    U_agc_arbiter_req_sync : entity work.synchronizer
+      generic map (
+        RESET_LEVEL =>  '0'
+      ) port map (
+        reset       =>  sys_rst_80M,
+        clock       =>  \80MHz\,
+        async       =>  agc_arbiter_req,
+        sync        =>  arbiter_request(1)
+      ) ;
+
+    U_agc_arbiter_grant_sync : entity work.synchronizer
+      generic map (
+        RESET_LEVEL =>  '0'
+      ) port map (
+        reset       =>  rx_reset,
+        clock       =>  rx_clock,
+        async       =>  arbiter_granted(1),
+        sync        =>  agc_arbiter_grant
+      ) ;
+
+    U_agc_arbiter_done_sync : entity work.synchronizer
+      generic map (
+        RESET_LEVEL =>  '0'
+      ) port map (
+        reset       =>  sys_rst_80M,
+        clock       =>  \80MHz\,
+        async       =>  agc_arbiter_done,
+        sync        =>  arbiter_ack(1)
+      ) ;
+
+    U_agc_band_sel : entity work.synchronizer
+      generic map (
+        RESET_LEVEL =>  '0'
+      ) port map (
+        reset       =>  rx_reset,
+        clock       =>  rx_clock,
+        async       =>  nios_gpio(5),
+        sync        =>  agc_band_sel
       ) ;
 
     -- TX sample fifo
@@ -686,6 +792,23 @@ begin
         overflow_duration   =>  x"ffff"
       ) ;
 
+    process(all)
+    begin
+        if( agc_gain_high = '1' ) then
+            fpga_dc_i_correction <= signed( corr_dc_i_max ) ;
+            fpga_dc_q_correction <= signed( corr_dc_q_max ) ;
+        elsif( agc_gain_mid = '1' ) then
+            fpga_dc_i_correction <= signed( corr_dc_i_mid ) ;
+            fpga_dc_q_correction <= signed( corr_dc_q_mid ) ;
+        elsif( agc_gain_low = '1' ) then
+            fpga_dc_i_correction <= signed( corr_dc_i_min ) ;
+            fpga_dc_q_correction <= signed( corr_dc_q_min ) ;
+        else
+            fpga_dc_i_correction <= ( others => '0' ) ;
+            fpga_dc_q_correction <= ( others => '0' ) ;
+        end if;
+    end process ;
+
     U_rx_iq_correction : entity work.iq_correction(rx)
       generic map(
         INPUT_WIDTH         => rx_sample_corrected_i'length
@@ -701,12 +824,76 @@ begin
         out_imag            => rx_sample_corrected_q,
         out_valid           => rx_sample_corrected_valid,
 
-        dc_real             => FPGA_DC_CORRECTION,
-        dc_imag             => FPGA_DC_CORRECTION,
+        dc_real             => fpga_dc_i_correction,
+        dc_imag             => fpga_dc_q_correction,
         gain                => correction_rx_gain,
         phase               => correction_rx_phase,
         correction_valid    => correction_valid
       );
+
+
+    U_agc : entity work.bladerf_agc
+      port map (
+        clock          => rx_clock,
+        reset          => rx_reset,
+
+        agc_hold_req   => '0',
+
+        gain_inc_req   => gain_inc_req,
+        gain_dec_req   => gain_dec_req,
+        gain_rst_req   => gain_rst_req,
+        gain_ack       => gain_ack,
+        gain_nack      => gain_nack,
+        gain_max       => gain_max,
+
+        rst_gains      => rst_gains,
+        burst          => burst,
+
+        sample_i       => rx_sample_corrected_i,
+        sample_q       => rx_sample_corrected_q,
+        sample_valid   => rx_sample_corrected_valid
+      ) ;
+
+    U_agc_lms : entity work.bladerf_agc_lms_drv
+      port map (
+        clock          => rx_clock,
+        reset          => rx_reset,
+
+        enable         => agc_en,
+        gain_inc_req   => gain_inc_req,
+        gain_dec_req   => gain_dec_req,
+        gain_rst_req   => gain_rst_req,
+        gain_ack       => gain_ack,
+        gain_nack      => gain_nack,
+
+        gain_high      => agc_gain_high,
+        gain_mid       => agc_gain_mid,
+        gain_low       => agc_gain_low,
+
+        arbiter_req    => agc_arbiter_req,
+        arbiter_grant  => agc_arbiter_grant,
+        arbiter_done   => agc_arbiter_done,
+
+        band_sel       => agc_band_sel,
+
+        sclk           => agc_lms_sclk,
+        miso           => lms_sdo,
+        mosi           => agc_lms_sdio,
+        cs_n           => agc_lms_sen
+      ) ;
+
+    U_agc_mux : process(all)
+    begin
+        if( arbiter_granted(1) = '1' ) then
+            lms_sdio <= agc_lms_sdio ;
+            lms_sclk <= agc_lms_sclk ;
+            lms_sen  <= agc_lms_sen ;
+        else
+            lms_sdio <= nios_lms_sdio ;
+            lms_sclk <= nios_lms_sclk ;
+            lms_sen  <= nios_lms_sen ;
+        end if ;
+    end process ;
 
     U_fifo_reader : entity work.fifo_reader
       port map (
@@ -736,6 +923,7 @@ begin
         underflow_count     =>  tx_underflow_count,
         underflow_duration  =>  x"ffff"
       ) ;
+
 
     U_tx_iq_correction : entity work.iq_correction(tx)
       generic map (
@@ -933,9 +1121,9 @@ begin
         dac_SCLK                        => nios_sclk,
         dac_SS_n                        => nios_ss_n,
         spi_MISO                        => lms_sdo,
-        spi_MOSI                        => lms_sdio,
-        spi_SCLK                        => lms_sclk,
-        spi_SS_n                        => lms_sen,
+        spi_MOSI                        => nios_lms_sdio,
+        spi_SCLK                        => nios_lms_sclk,
+        spi_SS_n                        => nios_lms_sen,
         gpio_export                     => nios_gpio,
         xb_gpio_in_port                 => nios_xb_gpio_in,
         xb_gpio_out_port                => nios_xb_gpio_out,
@@ -968,7 +1156,16 @@ begin
         rx_trigger_ctl_out_port         => rx_trigger_ctl,
         tx_trigger_ctl_out_port         => tx_trigger_ctl,
         rx_trigger_ctl_in_port          => rx_trigger_ctl_rb,
-        tx_trigger_ctl_in_port          => tx_trigger_ctl_rb
+        tx_trigger_ctl_in_port          => tx_trigger_ctl_rb,
+        arbiter_request                 => arbiter_request,
+        arbiter_granted                 => arbiter_granted,
+        arbiter_ack                     => arbiter_ack,
+        agc_dc_i_max_export             => corr_dc_i_max,
+        agc_dc_q_max_export             => corr_dc_q_max,
+        agc_dc_i_mid_export             => corr_dc_i_mid,
+        agc_dc_q_mid_export             => corr_dc_q_mid,
+        agc_dc_i_min_export             => corr_dc_i_min,
+        agc_dc_q_min_export             => corr_dc_q_min
       ) ;
 
     xb_gpio_direction : process(all)

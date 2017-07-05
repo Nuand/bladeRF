@@ -53,6 +53,13 @@ Available operations:
     By default, tables are generated over the entire frequency range, in
     10 MHz steps.
 
+ * Generate RX or TX I/Q DC correction parameter tables for AGC Look Up Table
+
+     * `calibrate table agc <rx|tx> [<f_min> <f_max> [f_inc]]`
+
+    Similar usage as `calibrate table dc` except the call will set gains to
+    the AGC's base gain value before running `calibrate table dc`.
+
 
 clear
 -----

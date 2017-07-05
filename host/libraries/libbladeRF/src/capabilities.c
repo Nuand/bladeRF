@@ -90,6 +90,7 @@ void capabilities_init_post_fpga_load(struct bladerf *dev)
 
     if (version_greater_or_equal(&dev->fpga_version, 0, 7, 0)) {
         dev->capabilities |= BLADERF_CAP_FABRIC_REGISTER_ACCESS;
+        dev->capabilities |= BLADERF_CAP_AGC_DC_LUT;
     }
 
     log_verbose("Capability mask after FPGA load: 0x%016"PRIx64"\n",

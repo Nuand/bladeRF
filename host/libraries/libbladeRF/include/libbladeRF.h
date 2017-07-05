@@ -704,6 +704,45 @@ int CALL_CONV bladerf_get_rxvga2(struct bladerf *dev, int *gain);
 API_EXPORT
 int CALL_CONV bladerf_set_gain(struct bladerf *dev, bladerf_module mod, int gain);
 
+/**
+ * Gain control modes
+ */
+typedef enum  {
+    BLADERF_GAIN_AUTOMATIC,      /**< Device-specific default */
+    BLADERF_GAIN_MANUAL          /**< Manual gain control */
+} bladerf_gain_mode;
+
+/**
+ * Set gain mode
+ *
+ * Sets the mode for hardware AGC in the case of RX
+ *
+ * @param       dev         Device handle
+ * @param       mod         Module
+ * @param       mode        Desired gain mode
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_gain_mode(struct bladerf *dev, bladerf_module mod,
+                                    bladerf_gain_mode mode);
+
+/**
+ * Get gain mode
+ *
+ * Gets the current mode for hardware AGC in the case of RX
+ *
+ * @param       dev         Device handle
+ * @param       mod         Module
+ * @param       mode        Gain mode
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_gain_mode(struct bladerf *dev, bladerf_module mod,
+                                    bladerf_gain_mode *mode);
+
+
 /** @} (End of FN_GAIN) */
 
 /**
@@ -4052,6 +4091,13 @@ int CALL_CONV bladerf_lms_get_dc_cals(struct bladerf *dev,
  * @note This is set using bladerf_set_frequency().
  */
 #define BLADERF_GPIO_RX_HB_ENABLE   (1 << 5)
+
+/**
+ * AGC enable control bit
+ *
+ * @note This is set using bladerf_set_gain_mode().
+ */
+#define BLADERF_GPIO_AGC_ENABLE     (1 << 12)
 
 /**
  * This GPIO bit configures the FPGA to use smaller DMA

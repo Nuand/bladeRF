@@ -5,6 +5,17 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.8.0 (2017-07-01)
+--------------------------------
+
+This version of libbladeRF is intended for use with:
+
+FX3 Firmware v2.0.0 (or v1.9.1)
+FPGA         v0.7.0
+
+Changes:
+ * Added support for Automatic Gain Control
+
 v1.7.2 (2016-06-29)
 --------------------------------
 

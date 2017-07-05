@@ -4,23 +4,18 @@
  *
  * Copyright (c) 2015 Nuand LLC
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <assert.h>
@@ -43,6 +38,10 @@ struct complexf {
     float q;
 };
 
+struct gain_mode {
+    bladerf_lna_gain lna_gain;
+    int rxvga1, rxvga2;
+};
 /*******************************************************************************
  * Debug items
  ******************************************************************************/
@@ -616,6 +615,73 @@ static void init_rx_cal_sweep(int16_t *corr, unsigned int *sweep_len,
     *sweep_len = actual_len;
 }
 
+static int save_gains(struct rx_cal *cal, struct gain_mode *gain) {
+    int status;
+
+    status = bladerf_get_lna_gain(cal->dev, &gain->lna_gain);
+    if (status != 0) {
+        return status;
+    }
+
+    status = bladerf_get_rxvga1(cal->dev, &gain->rxvga1);
+    if (status != 0) {
+        return status;
+    }
+
+    status = bladerf_get_rxvga2(cal->dev, &gain->rxvga2);
+    if (status != 0) {
+        return status;
+    }
+
+    return status;
+}
+
+static int load_gains(struct rx_cal *cal, struct gain_mode *gain) {
+    int status;
+
+    status = bladerf_set_lna_gain(cal->dev, gain->lna_gain);
+    if (status != 0) {
+        return status;
+    }
+
+    status = bladerf_set_rxvga1(cal->dev, gain->rxvga1);
+    if (status != 0) {
+        return status;
+    }
+
+    status = bladerf_set_rxvga2(cal->dev, gain->rxvga2);
+    if (status != 0) {
+        return status;
+    }
+
+    return status;
+}
+
+static int rx_cal_dc_off(struct rx_cal *cal, struct gain_mode *gains,
+                        int16_t *dc_i, int16_t *dc_q)
+{
+    int status = BLADERF_ERR_UNEXPECTED;
+
+    float mean_i, mean_q;
+
+    status = load_gains(cal, gains);
+    if (status != 0) {
+        return status;
+    }
+
+    status = rx_samples(cal->dev, cal->samples, cal->num_samples,
+                        &cal->ts, RX_CAL_TS_INC);
+    if (status != 0) {
+        return status;
+    }
+
+    sample_mean(cal->samples, cal->num_samples, &mean_i, &mean_q);
+    *dc_i = mean_i;
+    *dc_q = mean_q;
+
+    return 0;
+}
+
 static int rx_cal_sweep(struct rx_cal *cal,
                         int16_t *corr, unsigned int sweep_len,
                         int16_t *result_i, int16_t *result_q,
@@ -682,6 +748,13 @@ static int perform_rx_cal(struct rx_cal *cal, struct dc_calibration_params *p)
     int status;
     int16_t i_est, q_est;
     unsigned int sweep_len = RX_CAL_MAX_SWEEP_LEN;
+    struct gain_mode saved_gains;
+
+    struct gain_mode agc_gains[] = {
+        { .lna_gain = BLADERF_LNA_GAIN_MAX, .rxvga1 = 30, .rxvga2 = 15 },  /* AGC Max Gain */
+        { .lna_gain = BLADERF_LNA_GAIN_MID, .rxvga1 = 30, .rxvga2 = 0  },  /* AGC Mid Gain */
+        { .lna_gain = BLADERF_LNA_GAIN_MID, .rxvga1 = 12, .rxvga2 = 0  }   /* AGC Min Gain */
+    };
 
     status = rx_cal_update_frequency(cal, p->frequency);
     if (status != 0) {
@@ -710,6 +783,29 @@ static int perform_rx_cal(struct rx_cal *cal, struct dc_calibration_params *p)
 
     /* Apply the nominal correction values */
     status = set_rx_dc_corr(cal->dev, p->corr_i, p->corr_q);
+
+    /* Measure DC correction for AGC */
+    status = save_gains(cal, &saved_gains);
+    if (status != 0) {
+        return status;
+    }
+
+    status = rx_cal_dc_off(cal, &agc_gains[2], &p->min_dc_i, &p->min_dc_q);
+    if (status != 0) {
+        return status;
+    }
+
+    status = rx_cal_dc_off(cal, &agc_gains[1], &p->mid_dc_i, &p->mid_dc_q);
+    if (status != 0) {
+        return status;
+    }
+
+    status = rx_cal_dc_off(cal, &agc_gains[0], &p->max_dc_i, &p->max_dc_q);
+    if (status != 0) {
+        return status;
+    }
+
+    status = load_gains(cal, &saved_gains);
 
     return status;
 }
@@ -815,12 +911,15 @@ int dc_calibration_rx(struct bladerf *dev,
             const char eol = '\0';
 #           endif
             printf("%cCalibrated @ %10u Hz: I=%4d (Error: %4.2f), "
-                   "Q=%4d (Error: %4.2f)      %c",
+                   "Q=%4d (Error: %4.2f)      ",
                    sol,
                    params[i].frequency,
                    params[i].corr_i, params[i].error_i,
-                   params[i].corr_q, params[i].error_q,
-                   eol);
+                   params[i].corr_q, params[i].error_q);
+            printf("DC-LUT: Max (I=%3d, Q=%3d) Mid (I=%3d, Q=%3d)"
+                   " Min (I=%3d, Q=%3d)%c",
+                       params[i].max_dc_i, params[i].max_dc_q, params[i].mid_dc_i, params[i].mid_dc_q,
+                       params[i].min_dc_i, params[i].min_dc_q, eol);
             fflush(stdout);
         }
     }

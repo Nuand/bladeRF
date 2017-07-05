@@ -29,6 +29,13 @@ struct dc_cal_entry {
     unsigned int freq;          /* Frequency (Hz) associated with this entry */
     int16_t dc_i;
     int16_t dc_q;
+
+    int16_t max_dc_i;
+    int16_t max_dc_q;
+    int16_t mid_dc_i;
+    int16_t mid_dc_q;
+    int16_t min_dc_i;
+    int16_t min_dc_q;
 };
 
 
@@ -60,10 +67,10 @@ unsigned int dc_cal_tbl_lookup(const struct dc_cal_tbl *tbl, unsigned int freq);
  *
  * @param[in]  tbl      Table to search
  * @param[in]  freq     Desired frequency
- * @param[out] vals     Found or interpolated DC calibration values
+ * @param[out] entry    Found or interpolated DC calibration values
  */
-void dc_cal_tbl_vals(const struct dc_cal_tbl *tbl, unsigned int freq,
-                     int16_t *dc_i, int16_t *dc_q);
+void dc_cal_tbl_entry(const struct dc_cal_tbl *tbl, unsigned int freq,
+                      struct dc_cal_entry *entry);
 
 /**
  * Load a DC calibration table from the provided data
