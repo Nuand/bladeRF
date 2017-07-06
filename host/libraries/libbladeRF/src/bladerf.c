@@ -722,7 +722,21 @@ int bladerf_set_gain_mode(struct bladerf *dev, bladerf_module mod, bladerf_gain_
     int status;
     uint32_t config_gpio;
 
+    if (mod != BLADERF_MODULE_RX) {
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
     MUTEX_LOCK(&dev->ctrl_lock);
+
+    if (!have_cap(dev, BLADERF_CAP_AGC_DC_LUT) || !dev->cal.dc_rx) {
+        status = BLADERF_ERR_UNSUPPORTED;
+        goto out;
+    }
+
+    if (dev->cal.dc_rx->version != 2) {
+        status = BLADERF_ERR_UNSUPPORTED;
+        goto out;
+    }
 
     if ((status = CONFIG_GPIO_READ(dev, &config_gpio))) {
         goto out;
