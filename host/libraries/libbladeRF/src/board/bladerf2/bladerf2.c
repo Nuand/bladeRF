@@ -134,11 +134,55 @@ static const char *bladerf2_state_to_string[] = {
 
 /* Overall RX gain range */
 
-static const struct bladerf_range bladerf2_rx_gain_range = {
-    FIELD_INIT(.min, 1),
-    FIELD_INIT(.max, 77),
-    FIELD_INIT(.step, 1),
-    FIELD_INIT(.scale, 1),
+struct bladerf_gain_range {
+    struct bladerf_range frequency;
+    struct bladerf_range gain;
+};
+
+/* Reference: ad9361.c, ad9361_gt_tableindex and ad9361_init_gain_tables */
+static const struct bladerf_gain_range bladerf2_rx_gain_ranges[] = {
+    {
+        FIELD_INIT(.frequency, {
+            FIELD_INIT(.min, 0),
+            FIELD_INIT(.max, 1300e6),
+            FIELD_INIT(.step, 1),
+            FIELD_INIT(.scale, 1),
+        }),
+        FIELD_INIT(.gain, {
+            FIELD_INIT(.min, 1),
+            FIELD_INIT(.max, 77),
+            FIELD_INIT(.step, 1),
+            FIELD_INIT(.scale, 1),
+        })
+    },
+    {
+        FIELD_INIT(.frequency, {
+            FIELD_INIT(.min, 1300e6),
+            FIELD_INIT(.max, 4000e6),
+            FIELD_INIT(.step, 1),
+            FIELD_INIT(.scale, 1),
+        }),
+        FIELD_INIT(.gain, {
+            FIELD_INIT(.min, -4),
+            FIELD_INIT(.max, 71),
+            FIELD_INIT(.step, 1),
+            FIELD_INIT(.scale, 1),
+        })
+    },
+    {
+        FIELD_INIT(.frequency, {
+            FIELD_INIT(.min, 4000e6),
+            FIELD_INIT(.max, 6000e6),
+            FIELD_INIT(.step, 1),
+            FIELD_INIT(.scale, 1),
+        }),
+        FIELD_INIT(.gain, {
+            FIELD_INIT(.min, -10),
+            FIELD_INIT(.max, 62),
+            FIELD_INIT(.step, 1),
+            FIELD_INIT(.scale, 1),
+        })
+    }
 };
 
 /* Overall TX gain range */
@@ -150,18 +194,18 @@ static const struct bladerf_range bladerf2_tx_gain_range = {
     FIELD_INIT(.scale, 0.001),
 };
 
+/* RX gain stages */
+
 struct bladerf_gain_stage_info {
     const char *name;
     struct bladerf_range range;
 };
 
-/* RX gain stages */
-
 static const struct bladerf_gain_stage_info bladerf2_rx_gain_stages[] = {
     {
         FIELD_INIT(.name, "full"),
         FIELD_INIT(.range, {
-            FIELD_INIT(.min, 0),
+            FIELD_INIT(.min, -10),
             FIELD_INIT(.max, 77),
             FIELD_INIT(.step, 1),
             FIELD_INIT(.scale, 1),
@@ -320,19 +364,30 @@ static int errno_ad9361_to_bladerf(int err)
 
 static bool is_within_range(struct bladerf_range const *range, int64_t value)
 {
+    if (NULL == range) {
+        log_error("%s: range is a null pointer, bailing out\n", __FUNCTION__);
+        return value;
+    }
+
+    value /= range->scale;
     return (value >= range->min && value <= range->max);
 }
 
 static int64_t clamp_to_range(struct bladerf_range const *range, int64_t value)
 {
+    if (NULL == range) {
+        log_error("%s: range is a null pointer, bailing out\n", __FUNCTION__);
+        return value;
+    }
+    value /= range->scale;
     if (value < range->min) {
-        log_warning("value %"PRIi64" out of range [%"PRIi64",%"PRIi64"]\n",
-            value, range->min, range->max);
+        log_warning("%s: value %"PRIi64" out of range [%"PRIi64",%"PRIi64"]\n",
+            __FUNCTION__, value, range->min, range->max);
         value = range->min;
     }
     if (value > range->max) {
-        log_warning("value %"PRIi64" out of range [%"PRIi64",%"PRIi64"]\n",
-            value, range->min, range->max);
+        log_warning("%s: value %"PRIi64" out of range [%"PRIi64",%"PRIi64"]\n",
+            __FUNCTION__, value, range->min, range->max);
         value = range->max;
     }
     return value;
@@ -968,6 +1023,40 @@ static int bladerf2_enable_module(struct bladerf *dev, bladerf_direction dir, bo
 /* Gain */
 /******************************************************************************/
 
+static int bladerf2_get_gain_range(struct bladerf *dev, bladerf_channel ch,
+                                   struct bladerf_range *range)
+{
+    if (ch & BLADERF_TX) {
+        *range = bladerf2_tx_gain_range;
+    } else {
+        const struct bladerf_gain_range *ranges;
+        size_t ranges_len;
+        uint64_t frequency = 0;
+        int status = 0;
+
+        status = bladerf2_get_frequency(dev, ch, &frequency);
+        if (status < 0) {
+            log_error("%s: bladerf2_get_frequency failed (ch=%d,status=%d)\n",
+                __FUNCTION__, ch, status);
+            return status;
+        }
+
+        ranges = bladerf2_rx_gain_ranges;
+        ranges_len = ARRAY_SIZE(bladerf2_rx_gain_ranges);
+
+        for (size_t i = 0; i < ranges_len; i++) {
+            if (is_within_range(&ranges[i].frequency, frequency)) {
+                *range = ranges[i].gain;
+                return 0;
+            }
+        }
+
+        return BLADERF_ERR_RANGE;
+    }
+
+    return 0;
+}
+
 static int bladerf2_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
 {
     struct bladerf2_board_data *board_data = dev->board_data;
@@ -981,7 +1070,15 @@ static int bladerf2_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
         log_debug("%s: tx; ch %d; atten %d mdB; gain %d dB\n", __FUNCTION__, ch >> 1, atten, gain);
         status = ad9361_set_tx_attenuation(board_data->phy, ch >> 1, atten);
     } else {
-        gain = clamp_to_range(&bladerf2_rx_gain_range, gain) / bladerf2_rx_gain_range.scale;
+        struct bladerf_range range;
+        status = bladerf2_get_gain_range(dev, ch, &range);
+
+        if (status < 0) {
+            log_error("%s: bladerf2_get_gain_range returned %d\n", __FUNCTION__, status);
+            return status;
+        }
+
+        gain = clamp_to_range(&range, gain) / range.scale;
         log_debug("%s: rx; ch %d; gain %d dB\n", __FUNCTION__, ch >> 1, gain);
         status = ad9361_set_rx_rf_gain(board_data->phy, ch >> 1, gain);
     }
@@ -1126,16 +1223,28 @@ static int bladerf2_get_gain_mode(struct bladerf *dev, bladerf_channel ch, blade
     return 0;
 }
 
-static int bladerf2_get_gain_range(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range)
+static int bladerf2_get_gain_stage_range(struct bladerf *dev, bladerf_channel ch, const char *stage, struct bladerf_range *range)
 {
+    const struct bladerf_gain_stage_info *stage_infos;
+    unsigned int stage_infos_len;
+    unsigned int i;
+
     if (ch & BLADERF_TX) {
-        *range = bladerf2_tx_gain_range;
+        stage_infos = bladerf2_tx_gain_stages;
+        stage_infos_len = ARRAY_SIZE(bladerf2_tx_gain_stages);
     } else {
-        /* TODO look up rx_gain_info for current LO */
-        *range = bladerf2_rx_gain_range;
+        stage_infos = bladerf2_rx_gain_stages;
+        stage_infos_len = ARRAY_SIZE(bladerf2_rx_gain_stages);
     }
 
-    return 0;
+    for (i = 0; i < stage_infos_len; i++) {
+        if (strcmp(stage_infos[i].name, stage) == 0) {
+            *range = stage_infos[i].range;
+            return 0;
+        }
+    }
+
+    return BLADERF_ERR_INVAL;
 }
 
 static int bladerf2_set_gain_stage(struct bladerf *dev, bladerf_channel ch, const char *stage, int gain)
@@ -1188,30 +1297,6 @@ static int bladerf2_get_gain_stage(struct bladerf *dev, bladerf_channel ch, cons
     }
 
     return 0;
-}
-
-static int bladerf2_get_gain_stage_range(struct bladerf *dev, bladerf_channel ch, const char *stage, struct bladerf_range *range)
-{
-    const struct bladerf_gain_stage_info *stage_infos;
-    unsigned int stage_infos_len;
-    unsigned int i;
-
-    if (ch & BLADERF_TX) {
-        stage_infos = bladerf2_tx_gain_stages;
-        stage_infos_len = ARRAY_SIZE(bladerf2_tx_gain_stages);
-    } else {
-        stage_infos = bladerf2_rx_gain_stages;
-        stage_infos_len = ARRAY_SIZE(bladerf2_rx_gain_stages);
-    }
-
-    for (i = 0; i < stage_infos_len; i++) {
-        if (strcmp(stage_infos[i].name, stage) == 0) {
-            *range = stage_infos[i].range;
-            return 0;
-        }
-    }
-
-    return BLADERF_ERR_INVAL;
 }
 
 static int bladerf2_get_gain_stages(struct bladerf *dev, bladerf_channel ch, const char **stages, unsigned int count)
