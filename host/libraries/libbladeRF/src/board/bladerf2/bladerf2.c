@@ -426,11 +426,10 @@ static bool is_within_range(struct bladerf_range const *range, int64_t value)
 {
     if (NULL == range) {
         log_error("%s: range is a null pointer, bailing out\n", __FUNCTION__);
-        return value;
+        return false;
     }
 
-    value /= range->scale;
-    return (value >= range->min && value <= range->max);
+    return ((value / range->scale) >= range->min && (value / range->scale) <= range->max);
 }
 
 static int64_t clamp_to_range(struct bladerf_range const *range, int64_t value)
@@ -439,17 +438,19 @@ static int64_t clamp_to_range(struct bladerf_range const *range, int64_t value)
         log_error("%s: range is a null pointer, bailing out\n", __FUNCTION__);
         return value;
     }
-    value /= range->scale;
-    if (value < range->min) {
-        log_warning("%s: value %"PRIi64" out of range [%"PRIi64",%"PRIi64"]\n",
+
+    if ((value / range->scale) < range->min) {
+        log_warning("%s: value %"PRIi64" is outside of range [%"PRIi64",%"PRIi64"]\n",
             __FUNCTION__, value, range->min, range->max);
-        value = range->min;
+        value = range->min * range->scale;
     }
-    if (value > range->max) {
-        log_warning("%s: value %"PRIi64" out of range [%"PRIi64",%"PRIi64"]\n",
+
+    if ((value / range->scale) > range->max) {
+        log_warning("%s: value %"PRIi64" is outside of range [%"PRIi64",%"PRIi64"]\n",
             __FUNCTION__, value, range->min, range->max);
-        value = range->max;
+        value = range->max * range->scale;
     }
+
     return value;
 }
 
