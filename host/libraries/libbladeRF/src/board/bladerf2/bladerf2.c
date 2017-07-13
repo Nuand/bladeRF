@@ -833,12 +833,22 @@ static bool bladerf2_matches(struct bladerf *dev)
     uint16_t vid, pid;
     int status;
 
+    if (NULL == dev) {
+        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
+        return false;
+    }
+
+    if (NULL == dev->backend) {
+        log_error("%s: dev->backend is null, bailing out\n", __FUNCTION__);
+        return false;
+    }
+
     status = dev->backend->get_vid_pid(dev, &vid, &pid);
     if (status < 0) {
         return false;
     }
 
-    if (vid == USB_NUAND_VENDOR_ID && pid == USB_NUAND_BLADERF2_PRODUCT_ID) {
+    if (USB_NUAND_VENDOR_ID == vid && USB_NUAND_BLADERF2_PRODUCT_ID == pid) {
         return true;
     }
 
@@ -855,44 +865,54 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     struct bladerf_version required_fw_version;
     char *full_path;
     bladerf_dev_speed usb_speed;
-    const unsigned int max_retries = 30;
-    unsigned int i;
     int ready;
     int status = 0;
 
+    const size_t max_retries = 30;
+
+    if (NULL == dev) {
+        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
+        return BLADERF_ERR_INVAL;
+    }
+
+    if (NULL == dev->backend) {
+        log_error("%s: dev->backend is null, bailing out\n", __FUNCTION__);
+        return BLADERF_ERR_INVAL;
+    }
+
     /* Allocate board data */
     board_data = calloc(1, sizeof(struct bladerf2_board_data));
-    if (board_data == NULL) {
+    if (NULL == board_data) {
         return BLADERF_ERR_MEM;
     }
     dev->board_data = board_data;
 
     /* Initialize board data */
     board_data->fpga_version.describe = board_data->fpga_version_str;
-    board_data->fw_version.describe = board_data->fw_version_str;
+    board_data->fw_version.describe   = board_data->fw_version_str;
 
     /* Read firmware version */
     status = dev->backend->get_fw_version(dev, &board_data->fw_version);
     if (status < 0) {
-        log_debug("Failed to get FW version: %s\n",
-                  bladerf_strerror(status));
+        log_debug("Failed to get FW version: %s\n", bladerf_strerror(status));
         return status;
     }
     log_verbose("Read Firmware version: %s\n", board_data->fw_version.describe);
 
     /* Determine firmware capabilities */
-    board_data->capabilities |= bladerf2_get_fw_capabilities(&board_data->fw_version);
-    log_verbose("Capability mask before FPGA load: 0x%016"PRIx64"\n",
-                 board_data->capabilities);
+    board_data->capabilities |=
+        bladerf2_get_fw_capabilities(&board_data->fw_version);
+    log_verbose("Capability mask before FPGA load: 0x%016" PRIx64 "\n",
+                board_data->capabilities);
 
     /* Update device state */
     board_data->state = STATE_FIRMWARE_LOADED;
 
     /* Wait until firmware is ready */
-    for (i = 0; i < max_retries; i++) {
+    for (size_t i = 0; i < max_retries; i++) {
         ready = dev->backend->is_fw_ready(dev);
         if (ready != 1) {
-            if (i == 0) {
+            if (0 == i) {
                 log_info("Waiting for device to become ready...\n");
             } else {
                 log_debug("Retry %02u/%02u.\n", i + 1, max_retries);
@@ -902,7 +922,8 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
             break;
         }
     }
-    if (i >= max_retries) {
+
+    if (ready != 1) {
         log_debug("Timed out while waiting for device.\n");
         return BLADERF_ERR_TIMEOUT;
     }
@@ -910,10 +931,10 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     /* Determine data message size */
     status = dev->backend->get_device_speed(dev, &usb_speed);
     if (status < 0) {
-        log_debug("Failed to get device speed: %s\n",
-                  bladerf_strerror(status));
+        log_debug("Failed to get device speed: %s\n", bladerf_strerror(status));
         return status;
     }
+
     switch (usb_speed) {
         case BLADERF_DEVICE_SPEED_SUPER:
             board_data->msg_size = USB_MSG_SIZE_SS;
@@ -931,16 +952,14 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
                               &board_data->fw_version, &required_fw_version);
     if (status != 0) {
 #ifdef LOGGING_ENABLED
-        if (status == BLADERF_ERR_UPDATE_FW) {
+        if (BLADERF_ERR_UPDATE_FW == status) {
             log_warning("Firmware v%u.%u.%u was detected. libbladeRF v%s "
                         "requires firmware v%u.%u.%u or later. An upgrade via "
                         "the bootloader is required.\n\n",
                         &board_data->fw_version.major,
                         &board_data->fw_version.minor,
-                        &board_data->fw_version.patch,
-                        LIBBLADERF_VERSION,
-                        required_fw_version.major,
-                        required_fw_version.minor,
+                        &board_data->fw_version.patch, LIBBLADERF_VERSION,
+                        required_fw_version.major, required_fw_version.minor,
                         required_fw_version.patch);
         }
 #endif
@@ -955,22 +974,25 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     status = dev->backend->is_fpga_configured(dev);
     if (status < 0) {
         return status;
-    } else if (status == 1) {
+    } else if (1 == status) {
         board_data->state = STATE_FPGA_LOADED;
-    } else if (status != 1 && board_data->fpga_size == BLADERF_FPGA_UNKNOWN) {
+    } else if (status != 1 && BLADERF_FPGA_UNKNOWN == board_data->fpga_size) {
         log_warning("Unknown FPGA size. Skipping FPGA configuration...\n");
         log_warning("Skipping further initialization...\n");
         return 0;
     } else if (status != 1) {
         /* Try searching for an FPGA in the config search path */
-        if (board_data->fpga_size == BLADERF_FPGA_A4) {
-            full_path = file_find("hostedxA4.rbf");
-        } else {
-            log_error("Invalid FPGA size %d.\n", board_data->fpga_size);
-            return BLADERF_ERR_UNEXPECTED;
+        switch (board_data->fpga_size) {
+            case BLADERF_FPGA_A4:
+                full_path = file_find("hostedxA4.rbf");
+                break;
+
+            default:
+                log_error("Invalid FPGA size %d.\n", board_data->fpga_size);
+                return BLADERF_ERR_UNEXPECTED;
         }
 
-        if (full_path) {
+        if (full_path != NULL) {
             uint8_t *buf;
             size_t buf_size;
 
@@ -984,7 +1006,8 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
 
             status = dev->backend->load_fpga(dev, buf, buf_size);
             if (status != 0) {
-                log_warning("Failure loading FPGA: %s\n", bladerf_strerror(status));
+                log_warning("Failure loading FPGA: %s\n",
+                            bladerf_strerror(status));
                 return status;
             }
 
@@ -1007,15 +1030,17 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
 
 static void bladerf2_close(struct bladerf *dev)
 {
-    struct bladerf2_board_data *board_data = dev->board_data;
+    if (dev != NULL) {
+        struct bladerf2_board_data *board_data = dev->board_data;
 
-    if (board_data && board_data->phy) {
-        ad9361_deinit(board_data->phy);
-        board_data->phy = NULL;
-    }
-
-    if (board_data) {
-        free(board_data);
+        if (board_data != NULL) {
+            if (board_data->phy != NULL) {
+                ad9361_deinit(board_data->phy);
+                board_data->phy = NULL;
+            }
+            free(board_data);
+            board_data = NULL;
+        }
     }
 }
 
