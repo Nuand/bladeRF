@@ -87,19 +87,35 @@ struct bladerf2_board_data {
     struct bladerf_sync sync[2];
 };
 
-#define _CHECK_BOARD_STATE(_state, _locked)                        \
-    do {                                                           \
-        struct bladerf2_board_data *board_data = dev->board_data;  \
-        if (board_data->state < _state) {                          \
-            log_error("Board state insufficient for operation "    \
-                      "(current \"%s\", requires \"%s\").\n",      \
-                      bladerf2_state_to_string[board_data->state], \
-                      bladerf2_state_to_string[_state]);           \
-            if (_locked) {                                         \
-                MUTEX_UNLOCK(&dev->lock);                          \
-            }                                                      \
-            return BLADERF_ERR_NOT_INIT;                           \
-        }                                                          \
+#define _CHECK_BOARD_STATE(_state, _locked)                                    \
+    do {                                                                       \
+        struct bladerf2_board_data *board_data;                                \
+                                                                               \
+        if (NULL == dev) {                                                     \
+            log_error("%s: dev is null, bailing out\n", "_CHECK_BOARD_STATE"); \
+            return BLADERF_ERR_INVAL;                                          \
+        }                                                                      \
+                                                                               \
+        board_data = dev->board_data;                                          \
+                                                                               \
+        if (NULL == board_data) {                                              \
+            log_error("%s: board_data is null, bailing out\n",                 \
+                      "_CHECK_BOARD_STATE");                                   \
+            return BLADERF_ERR_INVAL;                                          \
+        }                                                                      \
+                                                                               \
+        if (board_data->state < _state) {                                      \
+            log_error("Board state insufficient for operation "                \
+                      "(current \"%s\", requires \"%s\").\n",                  \
+                      bladerf2_state_to_string[board_data->state],             \
+                      bladerf2_state_to_string[_state]);                       \
+                                                                               \
+            if (_locked) {                                                     \
+                MUTEX_UNLOCK(&dev->lock);                                      \
+            }                                                                  \
+                                                                               \
+            return BLADERF_ERR_NOT_INIT;                                       \
+        }                                                                      \
     } while (0)
 
 // clang-format off
@@ -436,7 +452,7 @@ static int errno_ad9361_to_bladerf(int err)
 static bool is_within_range(struct bladerf_range const *range, int64_t value)
 {
     if (NULL == range) {
-        log_error("%s: range is a null pointer, bailing out\n", __FUNCTION__);
+        log_error("%s: range is null, bailing out\n", __FUNCTION__);
         return false;
     }
 
@@ -447,7 +463,7 @@ static bool is_within_range(struct bladerf_range const *range, int64_t value)
 static int64_t clamp_to_range(struct bladerf_range const *range, int64_t value)
 {
     if (NULL == range) {
-        log_error("%s: range is a null pointer, bailing out\n", __FUNCTION__);
+        log_error("%s: range is null, bailing out\n", __FUNCTION__);
         return value;
     }
 
@@ -522,7 +538,7 @@ static const struct band_port_map *_get_band_port_map(bladerf_channel ch,
     }
 
     if (NULL == port_map) {
-        log_error("%s: port_map is null, bailing out \n", __FUNCTION__);
+        log_error("%s: port_map is null, bailing out\n", __FUNCTION__);
         return NULL;
     }
 
@@ -547,7 +563,7 @@ static int _set_spdt_bits(uint32_t *reg,
     const struct band_port_map *port_map = NULL;
 
     if (NULL == reg) {
-        log_error("%s: reg is null, bailing out \n", __FUNCTION__);
+        log_error("%s: reg is null, bailing out\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
@@ -580,19 +596,19 @@ static int _set_ad9361_port(struct bladerf *dev,
     int status;
 
     if (NULL == dev) {
-        log_error("%s: dev is null, bailing out \n", __FUNCTION__);
+        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
     board_data = dev->board_data;
 
     if (NULL == board_data) {
-        log_error("%s: board_data is null, bailing out \n", __FUNCTION__);
+        log_error("%s: board_data is null, bailing out\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
     if (NULL == board_data->phy) {
-        log_error("%s: board_data->phy is null, bailing out \n", __FUNCTION__);
+        log_error("%s: board_data->phy is null, bailing out\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
@@ -600,7 +616,7 @@ static int _set_ad9361_port(struct bladerf *dev,
     port_map = _get_band_port_map(ch, enabled, frequency);
 
     if (NULL == port_map) {
-        log_error("%s: port_map is null, bailing out \n", __FUNCTION__);
+        log_error("%s: port_map is null, bailing out\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
@@ -641,63 +657,77 @@ extern const float ina219_r_shunt;
 
 static int bladerf2_initialize(struct bladerf *dev)
 {
-    struct bladerf2_board_data *board_data = dev->board_data;
+    struct bladerf2_board_data *board_data;
     struct bladerf_version required_fw_version;
     struct bladerf_version required_fpga_version;
     uint32_t reg;
     int status;
 
+    if (NULL == dev) {
+        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
+        return BLADERF_ERR_INVAL;
+    }
+
+    if (NULL == dev->board_data) {
+        log_error("%s: board_data is null, bailing out\n", __FUNCTION__);
+        return BLADERF_ERR_INVAL;
+    }
+
+    if (NULL == dev->backend) {
+        log_error("%s: dev->backend is null, bailing out\n", __FUNCTION__);
+        return BLADERF_ERR_INVAL;
+    }
+
+    board_data = dev->board_data;
+
     /* Read FPGA version */
     status = dev->backend->get_fpga_version(dev, &board_data->fpga_version);
     if (status < 0) {
-        log_debug("Failed to get FPGA version: %s\n",
-                  bladerf_strerror(status));
+        log_debug("Failed to get FPGA version: %s\n", bladerf_strerror(status));
         return status;
     }
+
     log_verbose("Read FPGA version: %s\n", board_data->fpga_version.describe);
 
     /* Determine FPGA capabilities */
-    board_data->capabilities |= bladerf2_get_fpga_capabilities(&board_data->fpga_version);
-    log_verbose("Capability mask after FPGA load: 0x%016"PRIx64"\n",
-                 board_data->capabilities);
+    board_data->capabilities |=
+        bladerf2_get_fpga_capabilities(&board_data->fpga_version);
+
+    log_verbose("Capability mask after FPGA load: 0x%016" PRIx64 "\n",
+                board_data->capabilities);
 
     /* If the FPGA version check fails, just warn, but don't error out.
      *
      * If an error code caused this function to bail out, it would prevent a
      * user from being able to unload and reflash a bitstream being
      * "autoloaded" from SPI flash. */
-    status = version_check(&bladerf2_fw_compat_table, &bladerf2_fpga_compat_table,
+    status = version_check(&bladerf2_fw_compat_table,
+                           &bladerf2_fpga_compat_table,
                            &board_data->fw_version, &board_data->fpga_version,
                            &required_fw_version, &required_fpga_version);
     if (status < 0) {
 #if LOGGING_ENABLED
-        if (status == BLADERF_ERR_UPDATE_FPGA) {
-            log_warning("FPGA v%u.%u.%u was detected. Firmware v%u.%u.%u "
-                        "requires FPGA v%u.%u.%u or later. Please load a "
-                        "different FPGA version before continuing.\n\n",
-                        board_data->fpga_version.major,
-                        board_data->fpga_version.minor,
-                        board_data->fpga_version.patch,
-                        board_data->fw_version.major,
-                        board_data->fw_version.minor,
-                        board_data->fw_version.patch,
-                        required_fpga_version.major,
-                        required_fpga_version.minor,
-                        required_fpga_version.patch);
-        } else if (status == BLADERF_ERR_UPDATE_FW) {
-            log_warning("FPGA v%u.%u.%u was detected, which requires firmware "
-                        "v%u.%u.%u or later. The device firmware is currently "
-                        "v%u.%u.%u. Please upgrade the device firmware before "
-                        "continuing.\n\n",
-                        board_data->fpga_version.major,
-                        board_data->fpga_version.minor,
-                        board_data->fpga_version.patch,
-                        required_fw_version.major,
-                        required_fw_version.minor,
-                        required_fw_version.patch,
-                        board_data->fw_version.major,
-                        board_data->fw_version.minor,
-                        board_data->fw_version.patch);
+        if (BLADERF_ERR_UPDATE_FPGA == status) {
+            log_warning(
+                "FPGA v%u.%u.%u was detected. Firmware v%u.%u.%u "
+                "requires FPGA v%u.%u.%u or later. Please load a "
+                "different FPGA version before continuing.\n\n",
+                board_data->fpga_version.major, board_data->fpga_version.minor,
+                board_data->fpga_version.patch, board_data->fw_version.major,
+                board_data->fw_version.minor, board_data->fw_version.patch,
+                required_fpga_version.major, required_fpga_version.minor,
+                required_fpga_version.patch);
+        } else if (BLADERF_ERR_UPDATE_FW == status) {
+            log_warning(
+                "FPGA v%u.%u.%u was detected, which requires firmware "
+                "v%u.%u.%u or later. The device firmware is currently "
+                "v%u.%u.%u. Please upgrade the device firmware before "
+                "continuing.\n\n",
+                board_data->fpga_version.major, board_data->fpga_version.minor,
+                board_data->fpga_version.patch, required_fw_version.major,
+                required_fw_version.minor, required_fw_version.patch,
+                board_data->fw_version.major, board_data->fw_version.minor,
+                board_data->fw_version.patch);
         }
 #endif
     }
@@ -710,8 +740,8 @@ static int bladerf2_initialize(struct bladerf *dev)
     }
 
     /* Initialize RFFE control */
-    status = dev->backend->rffe_control_write(dev, (1 << RFFE_CONTROL_ENABLE) |
-                                                   (1 << RFFE_CONTROL_TXNRX));
+    status = dev->backend->rffe_control_write(
+        dev, (1 << RFFE_CONTROL_ENABLE) | (1 << RFFE_CONTROL_TXNRX));
     if (status < 0) {
         log_error("RFFE control initialization error: %d\n", status);
         return status;
@@ -734,13 +764,20 @@ static int bladerf2_initialize(struct bladerf *dev)
         return errno_ad9361_to_bladerf(status);
     }
 
-    status = ad9361_set_tx_fir_config(board_data->phy, ad9361_init_tx_fir_config);
+    if (NULL == board_data->phy || NULL == board_data->phy->pdata) {
+        log_error("AD9361 initialization error: returned null phy or pdata\n");
+        return BLADERF_ERR_UNEXPECTED;
+    }
+
+    status = ad9361_set_tx_fir_config(board_data->phy,
+                                      ad9361_init_tx_fir_config);
     if (status < 0) {
         log_error("AD9361 set_tx_fir_config error: %d\n", status);
         return errno_ad9361_to_bladerf(status);
     }
 
-    status = ad9361_set_rx_fir_config(board_data->phy, ad9361_init_rx_fir_config);
+    status = ad9361_set_rx_fir_config(board_data->phy,
+                                      ad9361_init_rx_fir_config);
     if (status < 0) {
         log_error("AD9361 set_rx_fir_config error: %d\n", status);
         return errno_ad9361_to_bladerf(status);
@@ -749,6 +786,7 @@ static int bladerf2_initialize(struct bladerf *dev)
     /* Disable AD9361 until we need it */
     status = dev->backend->rffe_control_read(dev, &reg);
     if (status < 0) {
+        log_error("rffe_control_read error: %d\n", status);
         return status;
     }
 
@@ -757,17 +795,20 @@ static int bladerf2_initialize(struct bladerf *dev)
 
     status = dev->backend->rffe_control_write(dev, reg);
     if (status < 0) {
+        log_error("rffe_control_write error: %d\n", status);
         return status;
     }
 
     /* Set up band selection */
-    status = bladerf2_select_band(dev, BLADERF_TX, board_data->phy->pdata->tx_synth_freq);
+    status = bladerf2_select_band(dev, BLADERF_TX,
+                                  board_data->phy->pdata->tx_synth_freq);
     if (status < 0) {
         log_error("bladeRF TX band select error: %d\n", status);
         return status;
     }
 
-    status = bladerf2_select_band(dev, BLADERF_RX, board_data->phy->pdata->rx_synth_freq);
+    status = bladerf2_select_band(dev, BLADERF_RX,
+                                  board_data->phy->pdata->rx_synth_freq);
     if (status < 0) {
         log_error("bladeRF RX band select error: %d\n", status);
         return status;
