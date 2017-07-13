@@ -19,38 +19,38 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include <string.h>
 #include <errno.h>
+#include <string.h>
 
 #include <libbladeRF.h>
 
-#include "log.h"
 #include "conversions.h"
+#include "log.h"
 #define LOGGER_ID_STRING
-#include "logger_id.h"
-#include "logger_entry.h"
 #include "bladeRF.h"
+#include "logger_entry.h"
+#include "logger_id.h"
 
+#include "../bladerf1/flash.h"
 #include "board/board.h"
 #include "capabilities.h"
 #include "compatibility.h"
-#include "../bladerf1/flash.h"
 
-#include "driver/thirdparty/adi/ad9361_api.h"
-#include "driver/spi_flash.h"
 #include "driver/fpga_trigger.h"
 #include "driver/fx3_fw.h"
 #include "driver/ina219.h"
+#include "driver/spi_flash.h"
+#include "driver/thirdparty/adi/ad9361_api.h"
 
-#include "backend/usb/usb.h"
 #include "backend/backend_config.h"
+#include "backend/usb/usb.h"
 
 #include "streaming/async.h"
 #include "streaming/sync.h"
 
 #include "devinfo.h"
-#include "helpers/version.h"
 #include "helpers/file.h"
+#include "helpers/version.h"
 #include "version.h"
 
 /******************************************************************************
@@ -80,27 +80,27 @@ struct bladerf2_board_data {
     /* Version information */
     struct bladerf_version fpga_version;
     struct bladerf_version fw_version;
-    char fpga_version_str[BLADERF_VERSION_STR_MAX+1];
-    char fw_version_str[BLADERF_VERSION_STR_MAX+1];
+    char fpga_version_str[BLADERF_VERSION_STR_MAX + 1];
+    char fw_version_str[BLADERF_VERSION_STR_MAX + 1];
 
     /* Synchronous interface handles */
     struct bladerf_sync sync[2];
 };
 
-#define _CHECK_BOARD_STATE(_state, _locked) \
-    do { \
-        struct bladerf2_board_data *board_data = dev->board_data; \
-        if (board_data->state < _state) { \
-            log_error("Board state insufficient for operation " \
-                      "(current \"%s\", requires \"%s\").\n", \
+#define _CHECK_BOARD_STATE(_state, _locked)                        \
+    do {                                                           \
+        struct bladerf2_board_data *board_data = dev->board_data;  \
+        if (board_data->state < _state) {                          \
+            log_error("Board state insufficient for operation "    \
+                      "(current \"%s\", requires \"%s\").\n",      \
                       bladerf2_state_to_string[board_data->state], \
-                      bladerf2_state_to_string[_state]); \
-            if (_locked) { \
-                MUTEX_UNLOCK(&dev->lock); \
-            } \
-            return BLADERF_ERR_NOT_INIT; \
-        } \
-    } while(0)
+                      bladerf2_state_to_string[_state]);           \
+            if (_locked) {                                         \
+                MUTEX_UNLOCK(&dev->lock);                          \
+            }                                                      \
+            return BLADERF_ERR_NOT_INIT;                           \
+        }                                                          \
+    } while (0)
 
 // clang-format off
 #define CHECK_BOARD_STATE(_state)           _CHECK_BOARD_STATE(_state, false)
@@ -146,44 +146,44 @@ struct bladerf_gain_range {
 static const struct bladerf_gain_range bladerf2_rx_gain_ranges[] = {
     {
         FIELD_INIT(.frequency, {
-            FIELD_INIT(.min, 0),
-            FIELD_INIT(.max, 1300e6),
-            FIELD_INIT(.step, 1),
-            FIELD_INIT(.scale, 1),
+            FIELD_INIT(.min,    0),
+            FIELD_INIT(.max,    1300e6),
+            FIELD_INIT(.step,   1),
+            FIELD_INIT(.scale,  1),
         }),
         FIELD_INIT(.gain, {
-            FIELD_INIT(.min, 1),
-            FIELD_INIT(.max, 77),
-            FIELD_INIT(.step, 1),
-            FIELD_INIT(.scale, 1),
+            FIELD_INIT(.min,    1),
+            FIELD_INIT(.max,    77),
+            FIELD_INIT(.step,   1),
+            FIELD_INIT(.scale,  1),
         })
     },
     {
         FIELD_INIT(.frequency, {
-            FIELD_INIT(.min, 1300e6),
-            FIELD_INIT(.max, 4000e6),
-            FIELD_INIT(.step, 1),
-            FIELD_INIT(.scale, 1),
+            FIELD_INIT(.min,    1300e6),
+            FIELD_INIT(.max,    4000e6),
+            FIELD_INIT(.step,   1),
+            FIELD_INIT(.scale,  1),
         }),
         FIELD_INIT(.gain, {
-            FIELD_INIT(.min, -4),
-            FIELD_INIT(.max, 71),
-            FIELD_INIT(.step, 1),
-            FIELD_INIT(.scale, 1),
+            FIELD_INIT(.min,    -4),
+            FIELD_INIT(.max,    71),
+            FIELD_INIT(.step,   1),
+            FIELD_INIT(.scale,  1),
         })
     },
     {
         FIELD_INIT(.frequency, {
-            FIELD_INIT(.min, 4000e6),
-            FIELD_INIT(.max, 6000e6),
-            FIELD_INIT(.step, 1),
-            FIELD_INIT(.scale, 1),
+            FIELD_INIT(.min,    4000e6),
+            FIELD_INIT(.max,    6000e6),
+            FIELD_INIT(.step,   1),
+            FIELD_INIT(.scale,  1),
         }),
         FIELD_INIT(.gain, {
-            FIELD_INIT(.min, -10),
-            FIELD_INIT(.max, 62),
-            FIELD_INIT(.step, 1),
-            FIELD_INIT(.scale, 1),
+            FIELD_INIT(.min,    -10),
+            FIELD_INIT(.max,    62),
+            FIELD_INIT(.step,   1),
+            FIELD_INIT(.scale,  1),
         })
     }
 };
@@ -191,10 +191,10 @@ static const struct bladerf_gain_range bladerf2_rx_gain_ranges[] = {
 /* Overall TX gain range */
 
 static const struct bladerf_range bladerf2_tx_gain_range = {
-    FIELD_INIT(.min, -89750),
-    FIELD_INIT(.max, 0),
-    FIELD_INIT(.step, 250),
-    FIELD_INIT(.scale, 0.001),
+    FIELD_INIT(.min,    -89750),
+    FIELD_INIT(.max,    0),
+    FIELD_INIT(.step,   250),
+    FIELD_INIT(.scale,  0.001),
 };
 
 /* RX gain stages */
@@ -208,19 +208,19 @@ static const struct bladerf_gain_stage_info bladerf2_rx_gain_stages[] = {
     {
         FIELD_INIT(.name, "full"),
         FIELD_INIT(.range, {
-            FIELD_INIT(.min, -10),
-            FIELD_INIT(.max, 77),
-            FIELD_INIT(.step, 1),
-            FIELD_INIT(.scale, 1),
+            FIELD_INIT(.min,    -10),
+            FIELD_INIT(.max,    77),
+            FIELD_INIT(.step,   1),
+            FIELD_INIT(.scale,  1),
         }),
     },
     {
         FIELD_INIT(.name, "digital"),
         FIELD_INIT(.range, {
-            FIELD_INIT(.min, 0),
-            FIELD_INIT(.max, 31),
-            FIELD_INIT(.step, 1),
-            FIELD_INIT(.scale, 1),
+            FIELD_INIT(.min,    0),
+            FIELD_INIT(.max,    31),
+            FIELD_INIT(.step,   1),
+            FIELD_INIT(.scale,  1),
         }),
     },
 };
@@ -231,10 +231,10 @@ static const struct bladerf_gain_stage_info bladerf2_tx_gain_stages[] = {
     {
         FIELD_INIT(.name, "dsa"),
         FIELD_INIT(.range, {
-            FIELD_INIT(.min, -89750),
-            FIELD_INIT(.max, 0),
-            FIELD_INIT(.step, 250),
-            FIELD_INIT(.scale, 0.001),
+            FIELD_INIT(.min,    -89750),
+            FIELD_INIT(.max,    0),
+            FIELD_INIT(.step,   250),
+            FIELD_INIT(.scale,  0.001),
         }),
     },
 };
@@ -242,35 +242,35 @@ static const struct bladerf_gain_stage_info bladerf2_tx_gain_stages[] = {
 /* Sample Rate Range */
 
 static const struct bladerf_range bladerf2_sample_rate_range = {
-    FIELD_INIT(.min, 2083334),
-    FIELD_INIT(.max, 61440000),
-    FIELD_INIT(.step, 1),
-    FIELD_INIT(.scale, 1),
+    FIELD_INIT(.min,    2083334),
+    FIELD_INIT(.max,    61440000),
+    FIELD_INIT(.step,   1),
+    FIELD_INIT(.scale,  1),
 };
 
 /* Bandwidth Range */
 
 static const struct bladerf_range bladerf2_bandwidth_range = {
-    FIELD_INIT(.min, 200e3),
-    FIELD_INIT(.max, 56e6),
-    FIELD_INIT(.step, 1),
-    FIELD_INIT(.scale, 1),
+    FIELD_INIT(.min,    200e3),
+    FIELD_INIT(.max,    56e6),
+    FIELD_INIT(.step,   1),
+    FIELD_INIT(.scale,  1),
 };
 
 /* Frequency Range */
 
 static const struct bladerf_range bladerf2_rx_frequency_range = {
-    FIELD_INIT(.min, 70e6),
-    FIELD_INIT(.max, 6000e6),
-    FIELD_INIT(.step, 2),
-    FIELD_INIT(.scale, 1),
+    FIELD_INIT(.min,    70e6),
+    FIELD_INIT(.max,    6000e6),
+    FIELD_INIT(.step,   2),
+    FIELD_INIT(.scale,  1),
 };
 
 static const struct bladerf_range bladerf2_tx_frequency_range = {
-    FIELD_INIT(.min, 46.875e6),
-    FIELD_INIT(.max, 6000e6),
-    FIELD_INIT(.step, 2),
-    FIELD_INIT(.scale, 1),
+    FIELD_INIT(.min,    46.875e6),
+    FIELD_INIT(.max,    6000e6),
+    FIELD_INIT(.step,   2),
+    FIELD_INIT(.scale,  1),
 };
 
 /* RF Ports */
@@ -315,19 +315,19 @@ static const struct range_band_map bladerf2_rx_range_band_map[] = {
     {
         FIELD_INIT(.band, BAND_LOW),
         FIELD_INIT(.range, {
-            FIELD_INIT(.min, 70e6),
-            FIELD_INIT(.max, 3000e6),
-            FIELD_INIT(.step, 2),
-            FIELD_INIT(.scale, 1)
+            FIELD_INIT(.min,    70e6),
+            FIELD_INIT(.max,    3000e6),
+            FIELD_INIT(.step,   2),
+            FIELD_INIT(.scale,  1)
         }),
     },
     {
         FIELD_INIT(.band, BAND_HIGH),
         FIELD_INIT(.range, {
-            FIELD_INIT(.min, 3000e6),
-            FIELD_INIT(.max, 6000e6),
-            FIELD_INIT(.step, 2),
-            FIELD_INIT(.scale, 1)
+            FIELD_INIT(.min,    3000e6),
+            FIELD_INIT(.max,    6000e6),
+            FIELD_INIT(.step,   2),
+            FIELD_INIT(.scale,  1)
         }),
     },
 };
@@ -336,19 +336,19 @@ static const struct range_band_map bladerf2_tx_range_band_map[] = {
     {
         FIELD_INIT(.band, BAND_LOW),
         FIELD_INIT(.range, {
-            FIELD_INIT(.min, 46.875e6),
-            FIELD_INIT(.max, 3000e6),
-            FIELD_INIT(.step, 2),
-            FIELD_INIT(.scale, 1)
+            FIELD_INIT(.min,    46.875e6),
+            FIELD_INIT(.max,    3000e6),
+            FIELD_INIT(.step,   2),
+            FIELD_INIT(.scale,  1)
         }),
     },
     {
         FIELD_INIT(.band, BAND_HIGH),
         FIELD_INIT(.range, {
-            FIELD_INIT(.min, 3000e6),
-            FIELD_INIT(.max, 6000e6),
-            FIELD_INIT(.step, 2),
-            FIELD_INIT(.scale, 1)
+            FIELD_INIT(.min,    3000e6),
+            FIELD_INIT(.max,    6000e6),
+            FIELD_INIT(.step,   2),
+            FIELD_INIT(.scale,  1)
         }),
     },
 };
@@ -361,37 +361,37 @@ struct band_port_map {
 
 static const struct band_port_map bladerf2_rx_band_port_map[] = {
     {
-        FIELD_INIT(.band, BAND_SHUTDOWN),
-        FIELD_INIT(.spdt, RFFE_CONTROL_SPDT_SHUTDOWN),
-        FIELD_INIT(.ad9361_port, 0),
+        FIELD_INIT(.band,           BAND_SHUTDOWN),
+        FIELD_INIT(.spdt,           RFFE_CONTROL_SPDT_SHUTDOWN),
+        FIELD_INIT(.ad9361_port,    0),
     },
     {
-        FIELD_INIT(.band, BAND_LOW),
-        FIELD_INIT(.spdt, RFFE_CONTROL_SPDT_LOWBAND),
-        FIELD_INIT(.ad9361_port, B_BALANCED),
+        FIELD_INIT(.band,           BAND_LOW),
+        FIELD_INIT(.spdt,           RFFE_CONTROL_SPDT_LOWBAND),
+        FIELD_INIT(.ad9361_port,    B_BALANCED),
     },
     {
-        FIELD_INIT(.band, BAND_HIGH),
-        FIELD_INIT(.spdt, RFFE_CONTROL_SPDT_HIGHBAND),
-        FIELD_INIT(.ad9361_port, A_BALANCED),
+        FIELD_INIT(.band,           BAND_HIGH),
+        FIELD_INIT(.spdt,           RFFE_CONTROL_SPDT_HIGHBAND),
+        FIELD_INIT(.ad9361_port,    A_BALANCED),
     },
 };
 
 static const struct band_port_map bladerf2_tx_band_port_map[] = {
     {
-        FIELD_INIT(.band, BAND_SHUTDOWN),
-        FIELD_INIT(.spdt, RFFE_CONTROL_SPDT_SHUTDOWN),
-        FIELD_INIT(.ad9361_port, 0),
+        FIELD_INIT(.band,           BAND_SHUTDOWN),
+        FIELD_INIT(.spdt,           RFFE_CONTROL_SPDT_SHUTDOWN),
+        FIELD_INIT(.ad9361_port,    0),
     },
     {
-        FIELD_INIT(.band, BAND_LOW),
-        FIELD_INIT(.spdt, RFFE_CONTROL_SPDT_LOWBAND),
-        FIELD_INIT(.ad9361_port, TXB),
+        FIELD_INIT(.band,           BAND_LOW),
+        FIELD_INIT(.spdt,           RFFE_CONTROL_SPDT_LOWBAND),
+        FIELD_INIT(.ad9361_port,    TXB),
     },
     {
-        FIELD_INIT(.band, BAND_HIGH),
-        FIELD_INIT(.spdt, RFFE_CONTROL_SPDT_HIGHBAND),
-        FIELD_INIT(.ad9361_port, TXA),
+        FIELD_INIT(.band,           BAND_HIGH),
+        FIELD_INIT(.spdt,           RFFE_CONTROL_SPDT_HIGHBAND),
+        FIELD_INIT(.ad9361_port,    TXA),
     },
 };
 // clang-format on
@@ -400,8 +400,12 @@ static const struct band_port_map bladerf2_tx_band_port_map[] = {
 /* Forward declarations */
 /******************************************************************************/
 
-static int bladerf2_select_band(struct bladerf *dev, bladerf_channel ch, uint64_t frequency);
-static int bladerf2_get_frequency(struct bladerf *dev, bladerf_channel ch, uint64_t *frequency);
+static int bladerf2_select_band(struct bladerf *dev,
+                                bladerf_channel ch,
+                                uint64_t frequency);
+static int bladerf2_get_frequency(struct bladerf *dev,
+                                  bladerf_channel ch,
+                                  uint64_t *frequency);
 
 /******************************************************************************/
 /* Helpers */
@@ -410,13 +414,20 @@ static int bladerf2_get_frequency(struct bladerf *dev, bladerf_channel ch, uint6
 static int errno_ad9361_to_bladerf(int err)
 {
     switch (err) {
-        case EIO: return BLADERF_ERR_IO;
-        case EAGAIN: return BLADERF_ERR_WOULD_BLOCK;
-        case ENOMEM: return BLADERF_ERR_MEM;
-        case EFAULT: return BLADERF_ERR_UNEXPECTED;
-        case ENODEV: return BLADERF_ERR_NODEV;
-        case EINVAL: return BLADERF_ERR_INVAL;
-        case ETIMEDOUT: return BLADERF_ERR_TIMEOUT;
+        case EIO:
+            return BLADERF_ERR_IO;
+        case EAGAIN:
+            return BLADERF_ERR_WOULD_BLOCK;
+        case ENOMEM:
+            return BLADERF_ERR_MEM;
+        case EFAULT:
+            return BLADERF_ERR_UNEXPECTED;
+        case ENODEV:
+            return BLADERF_ERR_NODEV;
+        case EINVAL:
+            return BLADERF_ERR_INVAL;
+        case ETIMEDOUT:
+            return BLADERF_ERR_TIMEOUT;
     }
 
     return BLADERF_ERR_UNEXPECTED;
@@ -429,7 +440,8 @@ static bool is_within_range(struct bladerf_range const *range, int64_t value)
         return false;
     }
 
-    return ((value / range->scale) >= range->min && (value / range->scale) <= range->max);
+    return ((value / range->scale) >= range->min &&
+            (value / range->scale) <= range->max);
 }
 
 static int64_t clamp_to_range(struct bladerf_range const *range, int64_t value)
@@ -440,21 +452,24 @@ static int64_t clamp_to_range(struct bladerf_range const *range, int64_t value)
     }
 
     if ((value / range->scale) < range->min) {
-        log_warning("%s: value %"PRIi64" is outside of range [%"PRIi64",%"PRIi64"]\n",
-            __FUNCTION__, value, range->min, range->max);
+        log_warning("%s: value %" PRIi64 " is outside of range [%" PRIi64
+                    ",%" PRIi64 "]\n",
+                    __FUNCTION__, value, range->min, range->max);
         value = range->min * range->scale;
     }
 
     if ((value / range->scale) > range->max) {
-        log_warning("%s: value %"PRIi64" is outside of range [%"PRIi64",%"PRIi64"]\n",
-            __FUNCTION__, value, range->min, range->max);
+        log_warning("%s: value %" PRIi64 " is outside of range [%" PRIi64
+                    ",%" PRIi64 "]\n",
+                    __FUNCTION__, value, range->min, range->max);
         value = range->max * range->scale;
     }
 
     return value;
 }
 
-static enum bladerf_band _get_band_by_frequency(bladerf_channel ch, uint64_t frequency)
+static enum bladerf_band _get_band_by_frequency(bladerf_channel ch,
+                                                uint64_t frequency)
 {
     const struct range_band_map *band_map;
     size_t band_map_len;
@@ -462,11 +477,11 @@ static enum bladerf_band _get_band_by_frequency(bladerf_channel ch, uint64_t fre
 
     /* Select RX vs TX */
     if (ch & BLADERF_TX) {
-        band_map        = bladerf2_tx_range_band_map;
-        band_map_len    = ARRAY_SIZE(bladerf2_tx_range_band_map);
+        band_map     = bladerf2_tx_range_band_map;
+        band_map_len = ARRAY_SIZE(bladerf2_tx_range_band_map);
     } else {
-        band_map        = bladerf2_rx_range_band_map;
-        band_map_len    = ARRAY_SIZE(bladerf2_rx_range_band_map);
+        band_map     = bladerf2_rx_range_band_map;
+        band_map_len = ARRAY_SIZE(bladerf2_rx_range_band_map);
     }
 
     /* Determine the band for the given frequency */
@@ -477,11 +492,14 @@ static enum bladerf_band _get_band_by_frequency(bladerf_channel ch, uint64_t fre
     }
 
     /* Not a valid frequency */
-    log_warning("%s: frequency %"PRIu64" not found in band map\n", __FUNCTION__, frequency);
+    log_warning("%s: frequency %" PRIu64 " not found in band map\n",
+                __FUNCTION__, frequency);
     return BAND_SHUTDOWN;
 }
 
-static const struct band_port_map *_get_band_port_map(bladerf_channel ch, bool enabled, uint64_t frequency)
+static const struct band_port_map *_get_band_port_map(bladerf_channel ch,
+                                                      bool enabled,
+                                                      uint64_t frequency)
 {
     enum bladerf_band band;
     const struct band_port_map *port_map;
@@ -496,11 +514,16 @@ static const struct band_port_map *_get_band_port_map(bladerf_channel ch, bool e
 
     /* Select the band->port map for RX vs TX */
     if (ch & BLADERF_TX) {
-        port_map = bladerf2_tx_band_port_map;
+        port_map     = bladerf2_tx_band_port_map;
         port_map_len = ARRAY_SIZE(bladerf2_tx_band_port_map);
     } else {
-        port_map = bladerf2_rx_band_port_map;
+        port_map     = bladerf2_rx_band_port_map;
         port_map_len = ARRAY_SIZE(bladerf2_rx_band_port_map);
+    }
+
+    if (NULL == port_map) {
+        log_error("%s: port_map is null, bailing out \n", __FUNCTION__);
+        return NULL;
     }
 
     /* Search through the band->port map for the desired band */
@@ -511,18 +534,27 @@ static const struct band_port_map *_get_band_port_map(bladerf_channel ch, bool e
     }
 
     /* Wasn't found, return a null ptr */
-    log_warning("%s: frequency %"PRIu64" not found in port map\n", __FUNCTION__, frequency);
+    log_warning("%s: frequency %" PRIu64 " not found in port map\n",
+                __FUNCTION__, frequency);
     return NULL;
 }
 
-static int _set_spdt_bits(uint32_t *reg, bladerf_channel ch, bool enabled, uint64_t frequency)
+static int _set_spdt_bits(uint32_t *reg,
+                          bladerf_channel ch,
+                          bool enabled,
+                          uint64_t frequency)
 {
     const struct band_port_map *port_map = NULL;
+
+    if (NULL == reg) {
+        log_error("%s: reg is null, bailing out \n", __FUNCTION__);
+        return BLADERF_ERR_INVAL;
+    }
 
     /* Look up the port configuration for this frequency */
     port_map = _get_band_port_map(ch, enabled, frequency);
 
-    if (port_map == NULL) {
+    if (NULL == port_map) {
         return BLADERF_ERR_INVAL;
     }
 
@@ -538,24 +570,47 @@ static int _set_spdt_bits(uint32_t *reg, bladerf_channel ch, bool enabled, uint6
     return 0;
 }
 
-static int _set_ad9361_port(struct bladerf *dev, bladerf_channel ch, bool enabled, uint64_t frequency)
+static int _set_ad9361_port(struct bladerf *dev,
+                            bladerf_channel ch,
+                            bool enabled,
+                            uint64_t frequency)
 {
-    const struct band_port_map *port_map = NULL;
-    struct bladerf2_board_data *board_data = dev->board_data;
+    const struct band_port_map *port_map;
+    struct bladerf2_board_data *board_data;
     int status;
+
+    if (NULL == dev) {
+        log_error("%s: dev is null, bailing out \n", __FUNCTION__);
+        return BLADERF_ERR_INVAL;
+    }
+
+    board_data = dev->board_data;
+
+    if (NULL == board_data) {
+        log_error("%s: board_data is null, bailing out \n", __FUNCTION__);
+        return BLADERF_ERR_INVAL;
+    }
+
+    if (NULL == board_data->phy) {
+        log_error("%s: board_data->phy is null, bailing out \n", __FUNCTION__);
+        return BLADERF_ERR_INVAL;
+    }
 
     /* Look up the port configuration for this frequency */
     port_map = _get_band_port_map(ch, enabled, frequency);
 
-    if (port_map == NULL) {
+    if (NULL == port_map) {
+        log_error("%s: port_map is null, bailing out \n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
     /* Set the AD9361 port accordingly */
     if (ch & BLADERF_TX) {
-        status = ad9361_set_tx_rf_port_output(board_data->phy, port_map->ad9361_port);
+        status = ad9361_set_tx_rf_port_output(board_data->phy,
+                                              port_map->ad9361_port);
     } else {
-        status = ad9361_set_rx_rf_port_input(board_data->phy, port_map->ad9361_port);
+        status = ad9361_set_rx_rf_port_input(board_data->phy,
+                                             port_map->ad9361_port);
     }
 
     if (status < 0) {
