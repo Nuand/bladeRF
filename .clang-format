@@ -61,7 +61,7 @@ Cpp11BracedListStyle: true
 ForEachMacros:   [ foreach, Q_FOREACH, BOOST_FOREACH ]
 IndentWrappedFunctionNames: true
 KeepEmptyLinesAtTheStartOfBlocks: false
-MaxEmptyLinesToKeep: 1
+MaxEmptyLinesToKeep: 2
 NamespaceIndentation: All
 SortIncludes:    true
 SpaceAfterCStyleCast: false

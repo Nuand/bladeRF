@@ -536,7 +536,7 @@ static int64_t _clamp_to_range(struct bladerf_range const *range, int64_t value)
 }
 
 static enum bladerf2_band _get_band_by_frequency(bladerf_channel ch,
-                                                uint64_t frequency)
+                                                 uint64_t frequency)
 {
     const struct range_band_map *band_map;
     size_t band_map_len;
@@ -563,7 +563,6 @@ static enum bladerf2_band _get_band_by_frequency(bladerf_channel ch,
                 __FUNCTION__, frequency);
     return BAND_SHUTDOWN;
 }
-
 
 
 static const struct band_port_map *_get_band_port_map(bladerf_channel ch,
@@ -1725,8 +1724,8 @@ static int bladerf2_set_rational_sample_rate(
 
     integer_rate = rate->integer + rate->num / rate->den;
 
-    status = bladerf2_set_sample_rate(dev, ch, integer_rate,
-                                      &actual_integer_rate);
+    status =
+        bladerf2_set_sample_rate(dev, ch, integer_rate, &actual_integer_rate);
     if (status < 0) {
         RETURN_ERROR_STATUS("bladerf2_set_sample_ratel", status);
     }
@@ -2048,7 +2047,7 @@ static int bladerf2_get_rf_port(struct bladerf *dev,
         for (size_t i = 0; i < port_map_len; i++) {
             if (port_id == port_map[i].id) {
                 *port = port_map[i].name;
-                ok = true;
+                ok    = true;
                 break;
             }
         }
@@ -2604,8 +2603,8 @@ static int bladerf2_trigger_state(struct bladerf *dev,
 
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
-    status = fpga_trigger_state(dev, trigger, is_armed,
-                                has_fired, fire_requested);
+    status =
+        fpga_trigger_state(dev, trigger, is_armed, has_fired, fire_requested);
 
     /* Reserved for future metadata (e.g., trigger counts, timestamp) */
     if (resv1 != NULL) {
@@ -2949,7 +2948,7 @@ static int bladerf2_get_tuning_mode(struct bladerf *dev,
 static int bladerf2_set_loopback(struct bladerf *dev, bladerf_loopback l)
 {
     struct bladerf2_board_data *board_data;
-    int32_t bist_loopback = 0;
+    int32_t bist_loopback  = 0;
     bool firmware_loopback = false;
     int status;
 
@@ -2964,7 +2963,7 @@ static int bladerf2_set_loopback(struct bladerf *dev, bladerf_loopback l)
             firmware_loopback = true;
             break;
         case BLADERF_LB_AD9361_BIST:
-            bist_loopback     = 1;
+            bist_loopback = 1;
             break;
         default:
             RETURN_ERROR_STATUS("decoding loopback mode",
