@@ -6,12 +6,22 @@ library ieee ;
 library nuand ;
     use nuand.util.all ;
     use nuand.fifo_readwrite_p.all;
+    use nuand.common_dcfifo_p.all;
 
 library std ;
     use std.env.all ;
     use std.textio.all ;
 
 entity sample_stream_tb is
+    generic (
+        -- For bladeRF (SISO):
+        NUM_MIMO_STREAMS          : natural := 1;
+        FIFO_READER_READ_THROTTLE : natural := 1
+
+        -- For bladeRF2 (2x2 MIMO):
+        --NUM_MIMO_STREAMS          : natural := 2;
+        --FIFO_READER_READ_THROTTLE : natural := 0
+    );
 end entity ;
 
 architecture arch of sample_stream_tb is
@@ -25,7 +35,8 @@ architecture arch of sample_stream_tb is
     constant TX_HALF_PERIOD     :   time        := 1.0/(9.0e6)/2.0*1 sec ;
     constant RX_HALF_PERIOD     :   time        := 1.0/(9.0e6)/2.0*1 sec ;
 
-    constant NUM_MIMO_STREAMS   :   natural     := 2;
+    signal reader_controls      :   sample_controls_t(0 to NUM_MIMO_STREAMS-1) := (others => SAMPLE_CONTROL_DISABLE);
+    signal writer_controls      :   sample_controls_t(0 to NUM_MIMO_STREAMS-1) := (others => SAMPLE_CONTROL_DISABLE);
 
     -- Clocks
     signal fx3_clock            :   std_logic   := '1' ;
@@ -97,8 +108,16 @@ architecture arch of sample_stream_tb is
     end record ;
 
     -- FIFOs
-    signal txfifo       :   fifo_t( data( 31 downto 0), q( 63 downto 0), rdusedw(11 downto 0), wrusedw(11 downto 0) ) ;
-    signal rxfifo       :   fifo_t( data( 63 downto 0), q( 31 downto 0), rdusedw(11 downto 0), wrusedw(11 downto 0) ) ;
+    signal txfifo       :   fifo_t( data( 31 downto 0), -- GPIF side is always 32 bits
+                                    q( ((NUM_MIMO_STREAMS*32)-1) downto 0),
+                                    rdusedw(compute_rdusedw_high(4096,32,(NUM_MIMO_STREAMS*32),"NO") downto 0),
+                                    wrusedw(compute_wrusedw_high(4096,"NO") downto 0) );
+
+    signal rxfifo       :   fifo_t( data( ((NUM_MIMO_STREAMS*32)-1) downto 0),
+                                    q( 31 downto 0), -- GPIF side is always 32 bits
+                                    rdusedw(compute_rdusedw_high(4096,(NUM_MIMO_STREAMS*32),32,"NO") downto 0),
+                                    wrusedw(compute_wrusedw_high(4096,"NO") downto 0) );
+
     signal txmeta       :   fifo_t( data( 31 downto 0), q(127 downto 0), rdusedw( 2 downto 0), wrusedw( 4 downto 0) ) ;
     signal rxmeta       :   fifo_t( data(127 downto 0), q( 31 downto 0), rdusedw( 6 downto 0), wrusedw( 4 downto 0) ) ;
 
@@ -149,7 +168,7 @@ begin
         rdreq               =>  txfifo.rdreq,
         wrclk               =>  txfifo.wrclk,
         wrreq               =>  txfifo.wrreq,
-        q                   =>  txfifo.q(31 downto 0),
+        q                   =>  txfifo.q,
         rdempty             =>  txfifo.rdempty,
         rdfull              =>  txfifo.rdfull,
         rdusedw             =>  txfifo.rdusedw,
@@ -157,10 +176,6 @@ begin
         wrfull              =>  txfifo.wrfull,
         wrusedw             =>  txfifo.wrusedw
       ) ;
-
-    -- Channel 1, swap I and Q of Channel 0
-    txfifo.q(63 downto 48) <= txfifo.q(15 downto 0);
-    txfifo.q(47 downto 32) <= txfifo.q(31 downto 16);
 
     -- TX Meta FIFO
     txmeta.rdclk <= tx_clock ;
@@ -188,7 +203,7 @@ begin
     U_rx_fifo : entity work.rx_fifo
       port map (
         aclr                =>  rxfifo.aclr,
-        data                =>  rxfifo.data(31 downto 0),
+        data                =>  rxfifo.data,
         rdclk               =>  rxfifo.rdclk,
         rdreq               =>  rxfifo.rdreq,
         wrclk               =>  rxfifo.wrclk,
@@ -226,6 +241,7 @@ begin
     U_fifo_reader : entity work.fifo_reader
       generic map (
         NUM_STREAMS           => NUM_MIMO_STREAMS,
+        FIFO_READ_THROTTLE    => FIFO_READER_READ_THROTTLE,
         FIFO_USEDW_WIDTH      => txfifo.rdusedw'length,
         FIFO_DATA_WIDTH       => txfifo.q'length,
         META_FIFO_USEDW_WIDTH => txmeta.rdusedw'length,
@@ -250,14 +266,37 @@ begin
         meta_fifo_empty     =>  txmeta.rdempty,
         meta_fifo_data      =>  txmeta.q,
 
-        in_sample_controls  =>  (0 => SAMPLE_CONTROL_ENABLE,
-                                 1 => SAMPLE_CONTROL_ENABLE),
+        in_sample_controls  =>  reader_controls,
         out_samples         =>  tx_samples,
 
         underflow_led       =>  underflow_led,
         underflow_count     =>  underflow_count,
         underflow_duration  =>  underflow_duration
       ) ;
+
+    gen_reader_controls : if( NUM_MIMO_STREAMS > 1 ) generate
+        -- The TX side of the AD9361 HDL is a FIFO pull interface
+        -- that expects a readahead FIFO. It toggles the data request
+        -- signal every other cycle. This behavior is mimicked here.
+        process( tx_clock, reset )
+        begin
+            if( reset = '1' ) then
+                reader_controls <= (0 => SAMPLE_CONTROL_ENABLE,
+                                    1 => SAMPLE_CONTROL_ENABLE);
+            elsif( rising_edge(tx_clock) ) then
+                for i in reader_controls'range loop
+                    reader_controls(i) <= (
+                        enable   => reader_controls(i).enable,
+                        data_req => not reader_controls(i).data_req );
+                end loop;
+            end if;
+        end process;
+    else generate
+        -- The LMS6 HDL is not nearly as complicated (or featureful)
+        -- as the AD9361. For LMS6, we just push samples directly to
+        -- the device, so the data request line can stay asserted.
+        reader_controls <= (others => SAMPLE_CONTROL_ENABLE);
+    end generate;
 
     -- Channel 0 gets connected
     tx_sample_i     <= tx_samples(0).data_i;
@@ -287,8 +326,7 @@ begin
         meta_en             =>  meta_en,
         timestamp           =>  rx_timestamp,
 
-        in_sample_controls  =>  (0 => SAMPLE_CONTROL_ENABLE,
-                                 1 => SAMPLE_CONTROL_ENABLE),
+        in_sample_controls  =>  writer_controls,
         in_samples          =>  rx_samples,
 
         fifo_clear          =>  rxfifo.aclr,
@@ -307,15 +345,35 @@ begin
         overflow_duration   =>  overflow_duration
       ) ;
 
+    gen_writer_controls : if( NUM_MIMO_STREAMS > 1 ) generate
+        process( rx_clock, reset )
+        begin
+            if( reset = '1' ) then
+                writer_controls <= (0 => SAMPLE_CONTROL_ENABLE,
+                                    1 => SAMPLE_CONTROL_ENABLE);
+            elsif( rising_edge(rx_clock) ) then
+                for i in writer_controls'range loop
+                    writer_controls(i) <= (
+                        enable   => reader_controls(i).enable,
+                        data_req => reader_controls(i).enable );
+                end loop;
+            end if;
+        end process;
+    else generate
+        writer_controls <= reader_controls;
+    end generate;
+
     -- Channel 0
     rx_samples(0).data_i <= rx_sample_i;
     rx_samples(0).data_q <= rx_sample_q;
     rx_samples(0).data_v <= rx_sample_valid;
 
-    -- Channel 1, swap I and Q for something different
-    rx_samples(1).data_i <= rx_sample_q;
-    rx_samples(1).data_q <= rx_sample_i;
-    rx_samples(1).data_v <= rx_sample_valid;
+    gen_rx_mimo : if( NUM_MIMO_STREAMS = 2 ) generate
+        -- Channel 1: swap I and Q
+        rx_samples(1).data_i <= rx_sample_q;
+        rx_samples(1).data_q <= rx_sample_i;
+        rx_samples(1).data_v <= rx_sample_valid;
+    end generate;
 
     -- LMS Sample Interface
     U_lms6002d : entity work.lms6002d
@@ -351,7 +409,7 @@ begin
     tx_native_i <= resize(tx_sample_i, tx_native_i'length) ;
     tx_native_q <= resize(tx_sample_q, tx_native_q'length) ;
 
-  -- LMS Model
+    -- LMS Model
     U_lms6002d_model : entity work.lms6002d_model
       port map (
         resetx              =>  not(reset),
@@ -375,7 +433,7 @@ begin
         pll_out             =>  open
       ) ;
 
-  -- TX FIFO Filler
+    -- TX FIFO Filler
     tx_filler : process
         variable ang        :   real  := 0.0 ;
         variable dang       :   real  := MATH_PI/100.0 ;
@@ -416,8 +474,8 @@ begin
                         sample_i := to_signed(2047, sample_i'length) ;
                         sample_q := to_signed(2047, sample_q'length) ;
                     end if ;
-                    --sample_i := to_signed(integer(2047.0*cos(ang)),sample_i'length);
-                    --sample_q := to_signed(integer(2047.0*sin(ang)),sample_q'length);
+                    sample_i := to_signed(integer(2047.0*cos(ang)),sample_i'length);
+                    sample_q := to_signed(integer(2047.0*sin(ang)),sample_q'length);
                     txfifo.data <= std_logic_vector(sample_q & sample_i) after 0.1 ns ;
                     txfifo.wrreq <= '1' after 0.1 ns ;
                     nop( fx3_clock, 1 );

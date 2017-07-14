@@ -102,7 +102,7 @@ architecture simple of fifo_reader is
 
     type fifo_fsm_t is record
         state           : fifo_state_t;
-        downcount       : natural range FIFO_READ_THROTTLE'range;
+        downcount       : natural range 0 to FIFO_READ_THROTTLE;
         fifo_read       : std_logic;
         out_samples     : sample_streams_t(out_samples'range);
     end record;

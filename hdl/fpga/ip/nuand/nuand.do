@@ -1,4 +1,4 @@
-proc compile_nuand { root } {
+proc compile_nuand { root platform } {
     vlib nuand
 
     vcom -work nuand -2008 [file join $root ./synthesis/constellation_mapper.vhd]
@@ -21,6 +21,18 @@ proc compile_nuand { root } {
 
     vcom -work nuand -2008 [file join $root ./synthesis/signal_processing_p.vhd]
 
+    vcom -work nuand -2008 [file join $root ../altera/common_dcfifo/common_dcfifo.vhd]
+
+    if { ($platform == "bladerf") || ($platform == "bladerf-micro") } {
+        vcom -work nuand -2008 [file join $root ../../platforms/${platform}/vhdl/wrappers/rx_fifo.vhd]
+        vcom -work nuand -2008 [file join $root ../../platforms/${platform}/vhdl/wrappers/tx_fifo.vhd]
+        vcom -work nuand -2008 [file join $root ../../platforms/${platform}/vhdl/wrappers/rx_meta_fifo.vhd]
+        vcom -work nuand -2008 [file join $root ../../platforms/${platform}/vhdl/wrappers/tx_meta_fifo.vhd]
+    } else {
+        # Don't error out because it might not matter...
+        puts "WARNING: Unknown platform: ${platform}"
+    }
+
     vcom -work nuand -2008 [file join $root ./synthesis/bit_stripper.vhd]
     vcom -work nuand -2008 [file join $root ./synthesis/fir_filter.vhd]
     vcom -work nuand -2008 [file join $root ./synthesis/atsc_tx.vhd]
@@ -34,11 +46,6 @@ proc compile_nuand { root } {
 
     vcom -work nuand -2008 [file join $root ./synthesis/lms6002d/vhdl/lms6002d.vhd]
     vcom -work nuand -2008 [file join $root ./synthesis/lms6002d/vhdl/tb/lms6002d_tb.vhd]
-
-    vcom -work nuand -2008 [file join $root ../altera/rx_fifo/rx_fifo.vhd]
-    vcom -work nuand -2008 [file join $root ../altera/tx_fifo/tx_fifo.vhd]
-    vcom -work nuand -2008 [file join $root ../altera/rx_meta_fifo/rx_meta_fifo.vhd]
-    vcom -work nuand -2008 [file join $root ../altera/tx_meta_fifo/tx_meta_fifo.vhd]
 
     vcom -work nuand -2008 [file join $root ./synthesis/fifo_readwrite_p.vhd]
     vcom -work nuand -2008 [file join $root ./synthesis/fifo_reader.vhd]
