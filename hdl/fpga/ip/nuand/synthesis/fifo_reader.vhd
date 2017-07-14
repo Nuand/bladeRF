@@ -96,28 +96,50 @@ architecture simple of fifo_reader is
     signal meta_future  : meta_fsm_t := META_FSM_RESET_VALUE;
 
     type fifo_state_t is (
+        COMPUTE_ENABLED_CHANNELS,
+        COMPUTE_OFFSETS,
         READ_SAMPLES,
         READ_THROTTLE
     );
 
+    type ch_offsets_t is array( natural range <> ) of natural range fifo_data'low to fifo_data'high;
+
     type fifo_fsm_t is record
-        state           : fifo_state_t;
-        downcount       : natural range 0 to FIFO_READ_THROTTLE;
-        fifo_read       : std_logic;
-        out_samples     : sample_streams_t(out_samples'range);
+        state               : fifo_state_t;
+        downcount           : natural range 0 to FIFO_READ_THROTTLE;
+        sample_controls_reg : sample_controls_t(in_sample_controls'range);
+        enabled_channels    : natural range 0 to in_sample_controls'length;
+        ch_shift            : natural range 0 to out_samples'high;
+        ch_offsets          : ch_offsets_t(in_sample_controls'range);
+        mimo_delay_init     : natural range 0 to in_sample_controls'length;
+        mimo_delay          : natural range 0 to in_sample_controls'length;
+        fifo_read           : std_logic;
+        out_samples         : sample_streams_t(out_samples'range);
     end record;
 
     constant FIFO_FSM_RESET_VALUE : fifo_fsm_t := (
-        state           => READ_SAMPLES,
-        downcount       => FIFO_READ_THROTTLE,
-        fifo_read       => '0',
-        out_samples     => (others => ZERO_SAMPLE)
+        state               => COMPUTE_ENABLED_CHANNELS,
+        downcount           => FIFO_READ_THROTTLE,
+        sample_controls_reg => (others => SAMPLE_CONTROL_DISABLE),
+        enabled_channels    => 0,
+        ch_shift            => 0,
+        ch_offsets          => (others => 0),
+        mimo_delay_init     => 0,
+        mimo_delay          => 0,
+        fifo_read           => '0',
+        out_samples         => (others => ZERO_SAMPLE)
     );
 
     signal fifo_current : fifo_fsm_t := FIFO_FSM_RESET_VALUE;
     signal fifo_future  : fifo_fsm_t := FIFO_FSM_RESET_VALUE;
 
 begin
+
+    -- Throw compile/synthesis error if things don't make sense
+    assert ( (in_sample_controls'low = out_samples'low) and
+             (in_sample_controls'high = out_samples'high) )
+        report "in_sample_controls must have same range as out_samples"
+        severity failure;
 
     -- Determine the DMA buffer size based on USB speed
     calc_buf_size : process( clock, reset )
@@ -228,37 +250,155 @@ begin
 
     -- Sample FIFO combinatorial process
     fifo_fsm_comb : process( all )
-        variable max_bit_i : natural range fifo_data'range := 0;
-        variable min_bit_i : natural range fifo_data'range := 0;
-        variable max_bit_q : natural range fifo_data'range := 0;
-        variable min_bit_q : natural range fifo_data'range := 0;
-        variable read_req  : std_logic                     := '0';
+
+        -- Count how many channels are enabled
+        function count_enabled( x : sample_controls_t ) return natural is
+            variable rv : natural := 0;
+        begin
+            rv := 0;
+            for i in x'range loop
+                if( x(i).enable = '1' ) then
+                    rv := rv + 1;
+                end if;
+            end loop;
+            return rv;
+        end function;
+
+        -- Compute channel offsets for MIMO data unpacking
+        function compute_channel_offsets( x : sample_controls_t ) return ch_offsets_t is
+            variable rv : ch_offsets_t(x'range) := (others => 0);
+        begin
+            rv := (others => 0);
+            for i in x'low+1 to x'high loop
+                for j in x'low to x'high-1 loop
+                    if( x(j).enable = '1' ) then
+                        rv(i) := rv(i) + 1;
+                    end if;
+                end loop;
+            end loop;
+            return rv;
+        end function;
+
+        -- Compute the MIMO delay
+        function compute_mimo_delay( x           : sample_controls_t;
+                                     en_channels : natural ) return natural is
+            variable rv : natural := 0;
+        begin
+            rv := 0;
+            if( en_channels /= 0 ) then
+                rv := (x'length / en_channels) - 1;
+            else
+                rv := 0;
+            end if;
+            return rv;
+        end function;
+
+        -- The sample FIFO output is a wide data bus that may contain more
+        -- than one sample for a given channel. This function unpacks
+        -- the bus into an array of sample streams. For example, a 2x2 MIMO
+        -- design with 16-bit samples will pack its data into a 64-bit wide
+        -- bus in one of the following ways:
+        --      | 63:48 | 47:32 | 31:16 | 15:0 | Bits
+        --   1. |   Q1  |   I1  |   Q0  |  I0  | Channels 0 & 1 enabled
+        --   2. |   Q0' |   I0' |   Q0  |  I0  | Channel 0 only enabled
+        --   3. |   Q1' |   I1' |   Q1  |  I1  | Channel 1 only enabled
+        -- This function will return an array of length 2. The 0th
+        -- element containing I0/Q0, and the 1st element I1/Q1. It is up
+        -- to the state machine to select between element 0 and 1 based
+        -- on which stream(s) is/are enabled.
+        function unpack( c : sample_controls_t;
+                         d : std_logic_vector ) return sample_streams_t is
+            variable rv          : sample_streams_t(c'range);
+            constant OFFSET_UNIT : natural := rv(rv'low).data_i'length +
+                                              rv(rv'low).data_q'length;
+            -- The following 4 constants are platform-specific and perhaps
+            -- should be parameters instead. This is good enough for now.
+            constant I_HIGH      : natural := 11;
+            constant I_LOW       : natural := 0;
+            constant Q_HIGH      : natural := 27;
+            constant Q_LOW       : natural := 16;
+        begin
+            -- Ensure the array indices are normalized
+            assert (c'low = 0) and (c'high >= c'low)
+                report "Invalid range for parameter 'c'"
+                severity failure;
+
+            for i in rv'range loop
+                rv(i).data_i := resize(signed(shift_right(unsigned(d),i*OFFSET_UNIT)(I_HIGH downto I_LOW)),rv(i).data_i'length);
+                rv(i).data_q := resize(signed(shift_right(unsigned(d),i*OFFSET_UNIT)(Q_HIGH downto Q_LOW)),rv(i).data_q'length);
+                rv(i).data_v := '0';
+            end loop;
+
+            return rv;
+        end function;
+
+        variable unpacked       : sample_streams_t(out_samples'range);
+        variable mimo_delay_tmp : natural range 0 to in_sample_controls'length;
+        variable read_req       : std_logic                     := '0';
     begin
 
         fifo_future <= fifo_current;
 
         fifo_future.fifo_read <= '0';
 
-        -- TODO: Make this more bandwidth-efficient so we're not transmitting
-        --       zeroes over the USB interface.
-        for i in in_sample_controls'range loop
-            max_bit_i := 11 + ((2*out_samples(i).data_i'length)*i);
-            min_bit_i :=  0 + ((2*out_samples(i).data_i'length)*i);
-            max_bit_q := 27 + ((2*out_samples(i).data_i'length)*i);
-            min_bit_q := 16 + ((2*out_samples(i).data_i'length)*i);
-            if( in_sample_controls(i).enable = '1' ) then
-                fifo_future.out_samples(i).data_i <=
-                    resize(signed(fifo_data(max_bit_i downto min_bit_i)),fifo_future.out_samples(i).data_i'length);
-                fifo_future.out_samples(i).data_q <=
-                    resize(signed(fifo_data(max_bit_q downto min_bit_q)),fifo_future.out_samples(i).data_q'length);
-            else
-                fifo_future.out_samples(i).data_i <= (others => '0');
-                fifo_future.out_samples(i).data_q <= (others => '0');
+        unpacked := unpack(fifo_current.sample_controls_reg, fifo_data);
+        for i in fifo_future.out_samples'range loop
+            if( fifo_current.sample_controls_reg(i).enable = '1' ) then
+                fifo_future.out_samples(i) <= unpacked(fifo_current.ch_offsets(i) + fifo_current.ch_shift);
             end if;
-            fifo_future.out_samples(i).data_v <= '0';
         end loop;
 
         case fifo_current.state is
+
+            when COMPUTE_ENABLED_CHANNELS =>
+
+                -- Compute the number of MIMO channels that are enabled
+                fifo_future.enabled_channels <= count_enabled(in_sample_controls);
+
+                -- Register the sample control settings
+                fifo_future.sample_controls_reg <= in_sample_controls;
+
+                fifo_future.state <= COMPUTE_OFFSETS;
+
+            when COMPUTE_OFFSETS =>
+
+                -- Basic concept of this algorithm:
+                --   1. Determine initial unpacked stream array index for each channel
+                --       a. All channel indices start at 0.
+                --       b. For each channel, add 1 to the index for each previous
+                --          channel that is enabled. For 2x2 MIMO:
+                --            ch_enabled | channel offset (sample stream array index)
+                --            0 & 1      | ch0 = 0, ch1 = 0 + 1 = 1
+                --            0 only     | ch0 = 0, ch1 = -
+                --            1 only     | ch0 = -, ch1 = 0 + 0 = 0
+                --   2. Compute the MIMO delay. This is the number of clock
+                --      cycles to wait before asserting the FIFO read req.
+                --        The formula is (and the int truncation is desirable):
+                --          mimo_delay = ((total_channels / enabled_channels) - 1)
+                --        In our example:
+                --          ch_enabled | mimo_delay
+                --          0 & 1      | (2/2)-1 = 0
+                --          0 only     | (2/1)-1 = 1
+                --          1 only     | (2/1)-1 = 1
+                --        When a single channel is enabled, we have to wait for
+                --        one cycle before asserting read_req because there is
+                --        a second sample in the upper 32 bits of the FIFO data.
+                --   3. During each MIMO delay cycle, add the number of enabled
+                --      channels to the channel offset index. This points to the
+                --      next valid sample in the current fifo_data.
+
+                -- Step 1: Determine bit offsets for each channel
+                --   For each channel, add one MIMO_OFFSET_UNIT for each previous
+                --   channel that is enabled. Ignore the first channel.
+                fifo_future.ch_offsets <= compute_channel_offsets(fifo_current.sample_controls_reg);
+
+                -- Step 2: Compute the MIMO delay (delay between read_req toggles)
+                mimo_delay_tmp := compute_mimo_delay(fifo_current.sample_controls_reg,
+                                                     fifo_current.enabled_channels);
+                fifo_future.mimo_delay_init <= mimo_delay_tmp;
+                fifo_future.mimo_delay      <= mimo_delay_tmp;
+
+                fifo_future.state <= READ_SAMPLES;
 
             when READ_SAMPLES =>
 
@@ -267,16 +407,29 @@ begin
                 if( fifo_empty = '0' and
                     (meta_en = '0' or (meta_en = '1' and meta_current.meta_time_go = '1')) ) then
 
+                    -- Check for valid data request
                     read_req := '0';
                     for i in in_sample_controls'range loop
-                        read_req := read_req or in_sample_controls(i).data_req;
-                        fifo_future.out_samples(i).data_v <= in_sample_controls(i).data_req;
+                        read_req := read_req or (in_sample_controls(i).data_req and in_sample_controls(i).enable);
+                        fifo_future.out_samples(i).data_v <= in_sample_controls(i).data_req and
+                                                             in_sample_controls(i).enable;
                     end loop;
 
-                    fifo_future.fifo_read <= read_req;
+                    -- Received a valid data request
+                    if( read_req = '1' ) then
+                        if( fifo_current.mimo_delay = 0 ) then
+                            fifo_future.mimo_delay <= fifo_current.mimo_delay_init;
+                            fifo_future.ch_shift   <= 0;
+                            fifo_future.fifo_read  <= read_req;
+                        else
+                            -- Step 3 of MIMO unpacker
+                            fifo_future.ch_shift   <= fifo_current.ch_shift + fifo_current.enabled_channels;
+                            fifo_future.mimo_delay <= fifo_current.mimo_delay - 1;
+                        end if;
 
-                    if( FIFO_FSM_RESET_VALUE.downcount /= 0 ) then
-                        fifo_future.state <= READ_THROTTLE;
+                        if( FIFO_FSM_RESET_VALUE.downcount /= 0 ) then
+                            fifo_future.state <= READ_THROTTLE;
+                        end if;
                     end if;
 
                 end if;
@@ -292,7 +445,7 @@ begin
 
             when others =>
 
-                fifo_future.state <= READ_SAMPLES;
+                fifo_future.state <= FIFO_FSM_RESET_VALUE.state;
 
         end case;
 
@@ -303,6 +456,10 @@ begin
             for i in fifo_current.out_samples'range loop
                 fifo_future.out_samples(i).data_v <= '0';
             end loop;
+        end if;
+
+        if( fifo_empty = '1' ) then
+            fifo_future.state <= FIFO_FSM_RESET_VALUE.state;
         end if;
 
         -- Output assignments

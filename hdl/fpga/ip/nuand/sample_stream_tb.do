@@ -7,7 +7,7 @@ file mkdir ${simdir}
 cd ${simdir}
 
 # Platform settings
-set platform "bladerf"
+set platform "bladerf-micro"
 
 if { ${platform} == "bladerf" } {
     set NUM_MIMO_STREAMS          1
