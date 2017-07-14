@@ -88,35 +88,43 @@ struct bladerf2_board_data {
     struct bladerf_sync sync[2];
 };
 
-#define _CHECK_BOARD_STATE(_state, _locked)                                    \
-    do {                                                                       \
-        struct bladerf2_board_data *board_data;                                \
-                                                                               \
-        if (NULL == dev) {                                                     \
-            log_error("%s: dev is null, bailing out\n", "_CHECK_BOARD_STATE"); \
-            return BLADERF_ERR_INVAL;                                          \
-        }                                                                      \
-                                                                               \
-        board_data = dev->board_data;                                          \
-                                                                               \
-        if (NULL == board_data) {                                              \
-            log_error("%s: board_data is null, bailing out\n",                 \
-                      "_CHECK_BOARD_STATE");                                   \
-            return BLADERF_ERR_INVAL;                                          \
-        }                                                                      \
-                                                                               \
-        if (board_data->state < _state) {                                      \
-            log_error("Board state insufficient for operation "                \
-                      "(current \"%s\", requires \"%s\").\n",                  \
-                      bladerf2_state_to_string[board_data->state],             \
-                      bladerf2_state_to_string[_state]);                       \
-                                                                               \
-            if (_locked) {                                                     \
-                MUTEX_UNLOCK(&dev->lock);                                      \
-            }                                                                  \
-                                                                               \
-            return BLADERF_ERR_NOT_INIT;                                       \
-        }                                                                      \
+/* Responsible for checking for null pointers on dev and commonly-accessed
+ * members of dev, as well as the board state.  Also responsible for unlocking
+ * if things go terribly wrong. */
+#define _CHECK_BOARD_STATE(_state, _locked)                        \
+    do {                                                           \
+        struct bladerf2_board_data *board_data;                    \
+                                                                   \
+        if (NULL == dev) {                                         \
+            log_error("%s: dev is null\n", "_CHECK_BOARD_STATE");  \
+            return BLADERF_ERR_INVAL;                              \
+        }                                                          \
+                                                                   \
+        if (NULL == dev->board || NULL == dev->backend) {          \
+            log_error("%s: dev not properly initialized\n",        \
+                      "_CHECK_BOARD_STATE");                       \
+                                                                   \
+            if (_locked) {                                         \
+                MUTEX_UNLOCK(&dev->lock);                          \
+            }                                                      \
+                                                                   \
+            return BLADERF_ERR_INVAL;                              \
+        }                                                          \
+                                                                   \
+        board_data = dev->board_data;                              \
+                                                                   \
+        if (board_data->state < _state) {                          \
+            log_error("Board state insufficient for operation "    \
+                      "(current \"%s\", requires \"%s\").\n",      \
+                      bladerf2_state_to_string[board_data->state], \
+                      bladerf2_state_to_string[_state]);           \
+                                                                   \
+            if (_locked) {                                         \
+                MUTEX_UNLOCK(&dev->lock);                          \
+            }                                                      \
+                                                                   \
+            return BLADERF_ERR_NOT_INIT;                           \
+        }                                                          \
     } while (0)
 
 // clang-format off
@@ -128,6 +136,34 @@ struct bladerf2_board_data {
 /******************************************************************************/
 /* Constants */
 /******************************************************************************/
+
+enum bladerf2_band { BAND_SHUTDOWN, BAND_LOW, BAND_HIGH };
+
+struct bladerf_gain_range {
+    struct bladerf_range frequency;
+    struct bladerf_range gain;
+};
+
+struct bladerf_gain_stage_info {
+    const char *name;
+    struct bladerf_range range;
+};
+
+struct bladerf_ad9361_port_name_map {
+    const char *name;
+    unsigned int id;
+};
+
+struct range_band_map {
+    enum bladerf2_band band;
+    const struct bladerf_range range;
+};
+
+struct band_port_map {
+    enum bladerf2_band band;
+    uint32_t spdt;
+    uint32_t ad9361_port;
+};
 
 // clang-format off
 #define RFFE_CONTROL_RESET_N        0
@@ -143,23 +179,19 @@ struct bladerf2_board_data {
 #define RFFE_CONTROL_SPDT_SHUTDOWN  0x0  // no connection
 #define RFFE_CONTROL_SPDT_LOWBAND   0xA  // RF1 <-> RF3
 #define RFFE_CONTROL_SPDT_HIGHBAND  0x5  // RF1 <-> RF2
+// clang-format on
 
 /* Board state to string map */
-
 static const char *bladerf2_state_to_string[] = {
-    [STATE_UNINITIALIZED]   = "Uninitialized",
-    [STATE_FIRMWARE_LOADED] = "Firmware Loaded",
-    [STATE_FPGA_LOADED]     = "FPGA Loaded",
-    [STATE_INITIALIZED]     = "Initialized",
+        [STATE_UNINITIALIZED]   = "Uninitialized",
+        [STATE_FIRMWARE_LOADED] = "Firmware Loaded",
+        [STATE_FPGA_LOADED]     = "FPGA Loaded",
+        [STATE_INITIALIZED]     = "Initialized",
 };
+
+// clang-format off
 
 /* Overall RX gain range */
-
-struct bladerf_gain_range {
-    struct bladerf_range frequency;
-    struct bladerf_range gain;
-};
-
 /* Reference: ad9361.c, ad9361_gt_tableindex and ad9361_init_gain_tables */
 static const struct bladerf_gain_range bladerf2_rx_gain_ranges[] = {
     {
@@ -207,7 +239,6 @@ static const struct bladerf_gain_range bladerf2_rx_gain_ranges[] = {
 };
 
 /* Overall TX gain range */
-
 static const struct bladerf_range bladerf2_tx_gain_range = {
     FIELD_INIT(.min,    -89750),
     FIELD_INIT(.max,    0),
@@ -216,12 +247,6 @@ static const struct bladerf_range bladerf2_tx_gain_range = {
 };
 
 /* RX gain stages */
-
-struct bladerf_gain_stage_info {
-    const char *name;
-    struct bladerf_range range;
-};
-
 static const struct bladerf_gain_stage_info bladerf2_rx_gain_stages[] = {
     {
         FIELD_INIT(.name, "full"),
@@ -244,7 +269,6 @@ static const struct bladerf_gain_stage_info bladerf2_rx_gain_stages[] = {
 };
 
 /* TX gain stages */
-
 static const struct bladerf_gain_stage_info bladerf2_tx_gain_stages[] = {
     {
         FIELD_INIT(.name, "dsa"),
@@ -258,7 +282,6 @@ static const struct bladerf_gain_stage_info bladerf2_tx_gain_stages[] = {
 };
 
 /* Sample Rate Range */
-
 static const struct bladerf_range bladerf2_sample_rate_range = {
     FIELD_INIT(.min,    2083334),
     FIELD_INIT(.max,    61440000),
@@ -267,7 +290,6 @@ static const struct bladerf_range bladerf2_sample_rate_range = {
 };
 
 /* Bandwidth Range */
-
 static const struct bladerf_range bladerf2_bandwidth_range = {
     FIELD_INIT(.min,    200e3),
     FIELD_INIT(.max,    56e6),
@@ -275,8 +297,7 @@ static const struct bladerf_range bladerf2_bandwidth_range = {
     FIELD_INIT(.scale,  1),
 };
 
-/* Frequency Range */
-
+/* Frequency Ranges */
 static const struct bladerf_range bladerf2_rx_frequency_range = {
     FIELD_INIT(.min,    70e6),
     FIELD_INIT(.max,    6000e6),
@@ -292,13 +313,7 @@ static const struct bladerf_range bladerf2_tx_frequency_range = {
 };
 
 /* RF Ports */
-
-struct ad9361_port_map {
-    const char *name;
-    unsigned int id;
-};
-
-static const struct ad9361_port_map bladerf2_rx_port_map[] = {
+static const struct bladerf_ad9361_port_name_map bladerf2_rx_port_map[] = {
     {   FIELD_INIT(.name, "A_BALANCED"),    FIELD_INIT(.id, A_BALANCED),    },
     {   FIELD_INIT(.name, "B_BALANCED"),    FIELD_INIT(.id, B_BALANCED),    },
     {   FIELD_INIT(.name, "C_BALANCED"),    FIELD_INIT(.id, C_BALANCED),    },
@@ -313,20 +328,9 @@ static const struct ad9361_port_map bladerf2_rx_port_map[] = {
     {   FIELD_INIT(.name, "TX_MON1_2"),     FIELD_INIT(.id, TX_MON1_2),     },
 };
 
-static const struct ad9361_port_map bladerf2_tx_port_map[] = {
+static const struct bladerf_ad9361_port_name_map bladerf2_tx_port_map[] = {
     {   FIELD_INIT(.name, "TXA"),           FIELD_INIT(.id, TXA),           },
     {   FIELD_INIT(.name, "TXB"),           FIELD_INIT(.id, TXB),           },
-};
-
-enum bladerf_band {
-    BAND_SHUTDOWN,
-    BAND_LOW,
-    BAND_HIGH
-};
-
-struct range_band_map {
-    enum bladerf_band band;
-    const struct bladerf_range range;
 };
 
 static const struct range_band_map bladerf2_rx_range_band_map[] = {
@@ -369,12 +373,6 @@ static const struct range_band_map bladerf2_tx_range_band_map[] = {
             FIELD_INIT(.scale,  1)
         }),
     },
-};
-
-struct band_port_map {
-    enum bladerf_band band;
-    uint32_t spdt;
-    uint32_t ad9361_port;
 };
 
 static const struct band_port_map bladerf2_rx_band_port_map[] = {
@@ -453,10 +451,15 @@ static int errno_ad9361_to_bladerf(int err)
     return BLADERF_ERR_UNEXPECTED;
 }
 
-static bool is_within_range(struct bladerf_range const *range, int64_t value)
+static bool _is_tx(bladerf_channel ch)
+{
+    return (ch & BLADERF_TX);
+}
+
+static bool _is_within_range(struct bladerf_range const *range, int64_t value)
 {
     if (NULL == range) {
-        log_error("%s: range is null, bailing out\n", __FUNCTION__);
+        log_error("%s: range is null\n", __FUNCTION__);
         return false;
     }
 
@@ -464,23 +467,21 @@ static bool is_within_range(struct bladerf_range const *range, int64_t value)
             (value / range->scale) <= range->max);
 }
 
-static int64_t clamp_to_range(struct bladerf_range const *range, int64_t value)
+static int64_t _clamp_to_range(struct bladerf_range const *range, int64_t value)
 {
     if (NULL == range) {
-        log_error("%s: range is null, bailing out\n", __FUNCTION__);
+        log_error("%s: range is null\n", __FUNCTION__);
         return value;
     }
 
     if ((value / range->scale) < range->min) {
-        log_warning("%s: value %" PRIi64 " is outside of range [%" PRIi64
-                    ",%" PRIi64 "]\n",
+        log_warning("%s: %" PRIi64 " below range [%" PRIi64 ",%" PRIi64 "]\n",
                     __FUNCTION__, value, range->min, range->max);
         value = range->min * range->scale;
     }
 
     if ((value / range->scale) > range->max) {
-        log_warning("%s: value %" PRIi64 " is outside of range [%" PRIi64
-                    ",%" PRIi64 "]\n",
+        log_warning("%s: %" PRIi64 " above range [%" PRIi64 ",%" PRIi64 "]\n",
                     __FUNCTION__, value, range->min, range->max);
         value = range->max * range->scale;
     }
@@ -488,7 +489,7 @@ static int64_t clamp_to_range(struct bladerf_range const *range, int64_t value)
     return value;
 }
 
-static enum bladerf_band _get_band_by_frequency(bladerf_channel ch,
+static enum bladerf2_band _get_band_by_frequency(bladerf_channel ch,
                                                 uint64_t frequency)
 {
     const struct range_band_map *band_map;
@@ -496,7 +497,7 @@ static enum bladerf_band _get_band_by_frequency(bladerf_channel ch,
     int64_t freqi = (int64_t)frequency;
 
     /* Select RX vs TX */
-    if (ch & BLADERF_TX) {
+    if (_is_tx(ch)) {
         band_map     = bladerf2_tx_range_band_map;
         band_map_len = ARRAY_SIZE(bladerf2_tx_range_band_map);
     } else {
@@ -506,7 +507,7 @@ static enum bladerf_band _get_band_by_frequency(bladerf_channel ch,
 
     /* Determine the band for the given frequency */
     for (size_t i = 0; i < band_map_len; ++i) {
-        if (is_within_range(&band_map[i].range, freqi)) {
+        if (_is_within_range(&band_map[i].range, freqi)) {
             return band_map[i].band;
         }
     }
@@ -521,19 +522,15 @@ static const struct band_port_map *_get_band_port_map(bladerf_channel ch,
                                                       bool enabled,
                                                       uint64_t frequency)
 {
-    enum bladerf_band band;
+    enum bladerf2_band band;
     const struct band_port_map *port_map;
     size_t port_map_len;
 
     /* Determine which band to use */
-    if (enabled) {
-        band = _get_band_by_frequency(ch, frequency);
-    } else {
-        band = BAND_SHUTDOWN;
-    }
+    band = enabled ? _get_band_by_frequency(ch, frequency) : BAND_SHUTDOWN;
 
     /* Select the band->port map for RX vs TX */
-    if (ch & BLADERF_TX) {
+    if (_is_tx(ch)) {
         port_map     = bladerf2_tx_band_port_map;
         port_map_len = ARRAY_SIZE(bladerf2_tx_band_port_map);
     } else {
@@ -542,7 +539,7 @@ static const struct band_port_map *_get_band_port_map(bladerf_channel ch,
     }
 
     if (NULL == port_map) {
-        log_error("%s: port_map is null, bailing out\n", __FUNCTION__);
+        log_error("%s: port_map is null\n", __FUNCTION__);
         return NULL;
     }
 
@@ -564,10 +561,10 @@ static int _set_spdt_bits(uint32_t *reg,
                           bool enabled,
                           uint64_t frequency)
 {
-    const struct band_port_map *port_map = NULL;
+    const struct band_port_map *port_map;
 
     if (NULL == reg) {
-        log_error("%s: reg is null, bailing out\n", __FUNCTION__);
+        log_error("%s: reg is null\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
@@ -579,7 +576,7 @@ static int _set_spdt_bits(uint32_t *reg,
     }
 
     /* Modify the reg bits accordingly */
-    if (ch & BLADERF_TX) {
+    if (_is_tx(ch)) {
         *reg &= ~(RFFE_CONTROL_SPDT_MASK << RFFE_CONTROL_TX_SW_SHIFT);
         *reg |= port_map->spdt << RFFE_CONTROL_TX_SW_SHIFT;
     } else {
@@ -597,40 +594,30 @@ static int _set_ad9361_port(struct bladerf *dev,
 {
     const struct band_port_map *port_map;
     struct bladerf2_board_data *board_data;
+    struct ad9361_rf_phy *phy;
     int status;
 
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
+    if (NULL == dev || NULL == dev->board_data) {
+        log_error("%s: dev not properly initialized\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
     board_data = dev->board_data;
-
-    if (NULL == board_data) {
-        log_error("%s: board_data is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    if (NULL == board_data->phy) {
-        log_error("%s: board_data->phy is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
+    phy        = board_data->phy;
 
     /* Look up the port configuration for this frequency */
     port_map = _get_band_port_map(ch, enabled, frequency);
 
     if (NULL == port_map) {
-        log_error("%s: port_map is null, bailing out\n", __FUNCTION__);
+        log_error("%s: _get_band_port_map returned null\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
     /* Set the AD9361 port accordingly */
-    if (ch & BLADERF_TX) {
-        status = ad9361_set_tx_rf_port_output(board_data->phy,
-                                              port_map->ad9361_port);
+    if (_is_tx(ch)) {
+        status = ad9361_set_tx_rf_port_output(phy, port_map->ad9361_port);
     } else {
-        status = ad9361_set_rx_rf_port_input(board_data->phy,
-                                             port_map->ad9361_port);
+        status = ad9361_set_rx_rf_port_input(phy, port_map->ad9361_port);
     }
 
     if (status < 0) {
@@ -640,10 +627,10 @@ static int _set_ad9361_port(struct bladerf *dev,
     return 0;
 }
 
-static bool _rffe_channel_enabled(uint32_t reg, bladerf_channel ch)
+static bool _is_rffe_channel_enabled(uint32_t reg, bladerf_channel ch)
 {
     /* Given a register read from the RFFE, determine if ch is enabled */
-    if (ch == BLADERF_TX) {
+    if (_is_tx(ch)) {
         return (reg >> RFFE_CONTROL_TXNRX) & 0x1;
     } else {
         return (reg >> RFFE_CONTROL_ENABLE) & 0x1;
@@ -663,23 +650,14 @@ extern const float ina219_r_shunt;
 static int bladerf2_initialize(struct bladerf *dev)
 {
     struct bladerf2_board_data *board_data;
+    struct ad9361_rf_phy *phy;
     struct bladerf_version required_fw_version;
     struct bladerf_version required_fpga_version;
     uint32_t reg;
     int status;
 
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    if (NULL == dev->board_data) {
-        log_error("%s: board_data is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    if (NULL == dev->backend) {
-        log_error("%s: dev->backend is null, bailing out\n", __FUNCTION__);
+    if (NULL == dev || NULL == dev->board_data || NULL == dev->backend) {
+        log_error("%s: dev not properly initialized\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
@@ -706,10 +684,10 @@ static int bladerf2_initialize(struct bladerf *dev)
      * If an error code caused this function to bail out, it would prevent a
      * user from being able to unload and reflash a bitstream being
      * "autoloaded" from SPI flash. */
-    status = version_check(&bladerf2_fw_compat_table,
-                           &bladerf2_fpga_compat_table,
-                           &board_data->fw_version, &board_data->fpga_version,
-                           &required_fw_version, &required_fpga_version);
+    status =
+        version_check(&bladerf2_fw_compat_table, &bladerf2_fpga_compat_table,
+                      &board_data->fw_version, &board_data->fpga_version,
+                      &required_fw_version, &required_fpga_version);
     if (status < 0) {
 #if LOGGING_ENABLED
         if (BLADERF_ERR_UPDATE_FPGA == status) {
@@ -774,15 +752,15 @@ static int bladerf2_initialize(struct bladerf *dev)
         return BLADERF_ERR_UNEXPECTED;
     }
 
-    status = ad9361_set_tx_fir_config(board_data->phy,
-                                      ad9361_init_tx_fir_config);
+    phy = board_data->phy;
+
+    status = ad9361_set_tx_fir_config(phy, ad9361_init_tx_fir_config);
     if (status < 0) {
         log_error("AD9361 set_tx_fir_config error: %d\n", status);
         return errno_ad9361_to_bladerf(status);
     }
 
-    status = ad9361_set_rx_fir_config(board_data->phy,
-                                      ad9361_init_rx_fir_config);
+    status = ad9361_set_rx_fir_config(phy, ad9361_init_rx_fir_config);
     if (status < 0) {
         log_error("AD9361 set_rx_fir_config error: %d\n", status);
         return errno_ad9361_to_bladerf(status);
@@ -805,15 +783,13 @@ static int bladerf2_initialize(struct bladerf *dev)
     }
 
     /* Set up band selection */
-    status = bladerf2_select_band(dev, BLADERF_TX,
-                                  board_data->phy->pdata->tx_synth_freq);
+    status = bladerf2_select_band(dev, BLADERF_TX, phy->pdata->tx_synth_freq);
     if (status < 0) {
         log_error("bladeRF TX band select error: %d\n", status);
         return status;
     }
 
-    status = bladerf2_select_band(dev, BLADERF_RX,
-                                  board_data->phy->pdata->rx_synth_freq);
+    status = bladerf2_select_band(dev, BLADERF_RX, phy->pdata->rx_synth_freq);
     if (status < 0) {
         log_error("bladeRF RX band select error: %d\n", status);
         return status;
@@ -839,13 +815,8 @@ static bool bladerf2_matches(struct bladerf *dev)
     uint16_t vid, pid;
     int status;
 
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
-        return false;
-    }
-
-    if (NULL == dev->backend) {
-        log_error("%s: dev->backend is null, bailing out\n", __FUNCTION__);
+    if (NULL == dev || NULL == dev->backend) {
+        log_error("%s: dev not properly initialized\n", __FUNCTION__);
         return false;
     }
 
@@ -877,19 +848,15 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
 
     const size_t max_retries = 30;
 
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    if (NULL == dev->backend) {
-        log_error("%s: dev->backend is null, bailing out\n", __FUNCTION__);
+    if (NULL == dev || NULL == dev->backend) {
+        log_error("%s: dev not properly initialized\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
     /* Allocate board data */
     board_data = calloc(1, sizeof(struct bladerf2_board_data));
     if (NULL == board_data) {
+        log_error("%s: could not calloc board_data\n", __FUNCTION__);
         return BLADERF_ERR_MEM;
     }
     dev->board_data = board_data;
@@ -1061,16 +1028,6 @@ static bladerf_dev_speed bladerf2_device_speed(struct bladerf *dev)
     int status;
     bladerf_dev_speed usb_speed;
 
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
-        return BLADERF_DEVICE_SPEED_UNKNOWN;
-    }
-
-    if (NULL == dev->backend) {
-        log_error("%s: dev->backend is null, bailing out\n", __FUNCTION__);
-        return BLADERF_DEVICE_SPEED_UNKNOWN;
-    }
-
     CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
 
     status = dev->backend->get_device_speed(dev, &usb_speed);
@@ -1084,12 +1041,12 @@ static bladerf_dev_speed bladerf2_device_speed(struct bladerf *dev)
 static int bladerf2_get_serial(struct bladerf *dev, char *serial)
 {
     if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
+        log_error("%s: dev is null\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
     if (NULL == serial) {
-        log_error("%s: serial is null, bailing out\n", __FUNCTION__);
+        log_error("%s: serial is null\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
@@ -1102,24 +1059,14 @@ static int bladerf2_get_fpga_size(struct bladerf *dev, bladerf_fpga_size *size)
 {
     struct bladerf2_board_data *board_data;
 
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
     if (NULL == size) {
-        log_error("%s: size is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    board_data = dev->board_data;
-
-    if (NULL == board_data) {
-        log_error("%s: board_data is null, bailing out\n", __FUNCTION__);
+        log_error("%s: size is null\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
     CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
+    board_data = dev->board_data;
 
     *size = board_data->fpga_size;
 
@@ -1128,16 +1075,6 @@ static int bladerf2_get_fpga_size(struct bladerf *dev, bladerf_fpga_size *size)
 
 static int bladerf2_is_fpga_configured(struct bladerf *dev)
 {
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    if (NULL == dev->backend) {
-        log_error("%s: dev->backend is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
     CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
 
     return dev->backend->is_fpga_configured(dev);
@@ -1147,17 +1084,12 @@ static uint64_t bladerf2_get_capabilities(struct bladerf *dev)
 {
     struct bladerf2_board_data *board_data;
 
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
+    if (NULL == dev || NULL == dev->board_data) {
+        log_error("%s: dev not properly initialized\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
     board_data = dev->board_data;
-
-    if (NULL == board_data) {
-        log_error("%s: board_data is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
 
     return board_data->capabilities;
 }
@@ -1172,24 +1104,14 @@ static int bladerf2_get_fpga_version(struct bladerf *dev,
 {
     struct bladerf2_board_data *board_data;
 
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
     if (NULL == version) {
-        log_error("%s: version is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    board_data = dev->board_data;
-
-    if (NULL == board_data) {
-        log_error("%s: board_data is null, bailing out\n", __FUNCTION__);
+        log_error("%s: version is null\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
     CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    board_data = dev->board_data;
 
     memcpy(version, &board_data->fpga_version, sizeof(*version));
 
@@ -1201,24 +1123,14 @@ static int bladerf2_get_fw_version(struct bladerf *dev,
 {
     struct bladerf2_board_data *board_data;
 
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
     if (NULL == version) {
-        log_error("%s: version is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    board_data = dev->board_data;
-
-    if (NULL == board_data) {
-        log_error("%s: board_data is null, bailing out\n", __FUNCTION__);
+        log_error("%s: version is null\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
     CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
+
+    board_data = dev->board_data;
 
     memcpy(version, &board_data->fw_version, sizeof(*version));
 
@@ -1240,24 +1152,9 @@ static int bladerf2_enable_module(struct bladerf *dev,
     uint32_t reg;
     uint64_t freq = 0;
 
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     board_data = dev->board_data;
-
-    if (NULL == board_data) {
-        log_error("%s: board_data is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    if (NULL == dev->backend) {
-        log_error("%s: dev->backend is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     tx = (BLADERF_TX == dir);
 
@@ -1334,16 +1231,16 @@ static int bladerf2_get_gain_range(struct bladerf *dev,
                                    struct bladerf_range *range)
 {
     if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
+        log_error("%s: dev is null\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
     if (NULL == range) {
-        log_error("%s: range is null, bailing out\n", __FUNCTION__);
+        log_error("%s: range is null\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
-    if (ch & BLADERF_TX) {
+    if (_is_tx(ch)) {
         *range = bladerf2_tx_gain_range;
     } else {
         const struct bladerf_gain_range *ranges;
@@ -1363,7 +1260,7 @@ static int bladerf2_get_gain_range(struct bladerf *dev,
         ranges_len = ARRAY_SIZE(bladerf2_rx_gain_ranges);
 
         for (size_t i = 0; i < ranges_len; i++) {
-            if (is_within_range(&ranges[i].frequency, frequency)) {
+            if (_is_within_range(&ranges[i].frequency, frequency)) {
                 *range = ranges[i].gain;
                 return 0;
             }
@@ -1382,19 +1279,9 @@ static int bladerf2_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
     int val;
     int status;
 
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     board_data = dev->board_data;
-
-    if (NULL == board_data) {
-        log_error("%s: board_data is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     status = bladerf2_get_gain_range(dev, ch, &range);
 
@@ -1404,15 +1291,15 @@ static int bladerf2_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
         return status;
     }
 
-    if (ch & BLADERF_TX) {
-        val = -clamp_to_range(&range, gain) / range.scale;
+    if (_is_tx(ch)) {
+        val = -_clamp_to_range(&range, gain) / range.scale;
 
         log_debug("%s: tx; ch %d; atten %d mdB; gain %d dB\n", __FUNCTION__,
                   ch >> 1, val, gain);
 
         status = ad9361_set_tx_attenuation(board_data->phy, ch >> 1, val);
     } else {
-        val = clamp_to_range(&range, gain) / range.scale;
+        val = _clamp_to_range(&range, gain) / range.scale;
 
         log_debug("%s: rx; ch %d; gain %d dB\n", __FUNCTION__, ch >> 1, val);
 
@@ -1433,24 +1320,14 @@ static int bladerf2_get_gain(struct bladerf *dev, bladerf_channel ch, int *gain)
     int status;
     uint32_t atten;
 
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    board_data = dev->board_data;
-
-    if (NULL == board_data) {
-        log_error("%s: board_data is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
     if (NULL == gain) {
-        log_error("%s: gain is null, bailing out\n", __FUNCTION__);
+        log_error("%s: gain is null\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
     CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    board_data = dev->board_data;
 
     status = bladerf2_get_gain_range(dev, ch, &range);
 
@@ -1460,7 +1337,7 @@ static int bladerf2_get_gain(struct bladerf *dev, bladerf_channel ch, int *gain)
         return status;
     }
 
-    if (ch & BLADERF_TX) {
+    if (_is_tx(ch)) {
         status = ad9361_get_tx_attenuation(board_data->phy, ch >> 1, &atten);
         if (0 == status) {
             *gain = -(atten * range.scale);
@@ -1492,19 +1369,9 @@ static int bladerf2_set_gain_mode(struct bladerf *dev,
     uint8_t gc_mode;
     uint8_t channel;
 
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     board_data = dev->board_data;
-
-    if (NULL == board_data) {
-        log_error("%s: board_data is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     /* Channel conversion */
     if (ch == BLADERF_CHANNEL_RX(0)) {
@@ -1563,24 +1430,14 @@ static int bladerf2_get_gain_mode(struct bladerf *dev,
     uint8_t gc_mode;
     uint8_t channel;
 
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    board_data = dev->board_data;
-
-    if (NULL == board_data) {
-        log_error("%s: board_data is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
     if (NULL == mode) {
-        log_error("%s: mode is null, bailing out\n", __FUNCTION__);
+        log_error("%s: mode is null\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
     CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    board_data = dev->board_data;
 
     /* Channel conversion */
     if (ch == BLADERF_CHANNEL_RX(0)) {
@@ -1630,16 +1487,16 @@ static int bladerf2_get_gain_stage_range(struct bladerf *dev,
     unsigned int i;
 
     if (NULL == stage) {
-        log_error("%s: stage is null, bailing out\n", __FUNCTION__);
+        log_error("%s: stage is null\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
     if (NULL == range) {
-        log_error("%s: range is null, bailing out\n", __FUNCTION__);
+        log_error("%s: range is null\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
-    if (ch & BLADERF_TX) {
+    if (_is_tx(ch)) {
         stage_infos     = bladerf2_tx_gain_stages;
         stage_infos_len = ARRAY_SIZE(bladerf2_tx_gain_stages);
     } else {
@@ -1662,24 +1519,14 @@ static int bladerf2_set_gain_stage(struct bladerf *dev,
                                    const char *stage,
                                    int gain)
 {
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    if (NULL == dev->board) {
-        log_error("%s: dev->board is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
     if (NULL == stage) {
-        log_error("%s: stage is null, bailing out\n", __FUNCTION__);
+        log_error("%s: stage is null\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
-    if (ch & BLADERF_TX) {
+    if (_is_tx(ch)) {
         if (strcmp(stage, "dsa") == 0) {
             return dev->board->set_gain(dev, ch, gain);
         }
@@ -1702,36 +1549,21 @@ static int bladerf2_get_gain_stage(struct bladerf *dev,
     struct bladerf2_board_data *board_data;
     int status;
 
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    if (NULL == dev->board) {
-        log_error("%s: dev->board is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    board_data = dev->board_data;
-
-    if (NULL == board_data) {
-        log_error("%s: board_data is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
     if (NULL == stage) {
-        log_error("%s: stage is null, bailing out\n", __FUNCTION__);
+        log_error("%s: stage is null\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
     if (NULL == gain) {
-        log_error("%s: gain is null, bailing out\n", __FUNCTION__);
+        log_error("%s: gain is null\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
-    if (ch & BLADERF_TX) {
+    board_data = dev->board_data;
+
+    if (_is_tx(ch)) {
         if (strcmp(stage, "dsa") == 0) {
             return dev->board->get_gain(dev, ch, gain);
         } else {
@@ -1766,7 +1598,7 @@ static int bladerf2_get_gain_stages(struct bladerf *dev,
     unsigned int stage_infos_len;
     unsigned int i;
 
-    if (ch & BLADERF_TX) {
+    if (_is_tx(ch)) {
         stage_infos     = bladerf2_tx_gain_stages;
         stage_infos_len = ARRAY_SIZE(bladerf2_tx_gain_stages);
     } else {
@@ -1795,11 +1627,12 @@ static int bladerf2_get_sample_rate_range(struct bladerf *dev,
                                           struct bladerf_range *range)
 {
     if (NULL == range) {
-        log_error("%s: range is null, bailing out\n", __FUNCTION__);
+        log_error("%s: range is null\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
     *range = bladerf2_sample_rate_range;
+
     return 0;
 }
 
@@ -1814,30 +1647,20 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
 
     /* Note: *actual is an OPTIONAL param */
 
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     board_data = dev->board_data;
-
-    if (NULL == board_data) {
-        log_error("%s: board_data is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     status = bladerf2_get_sample_rate_range(dev, ch, &range);
     if (status < 0) {
         return status;
     }
 
-    if (!is_within_range(&range, rate)) {
+    if (!_is_within_range(&range, rate)) {
         return BLADERF_ERR_RANGE;
     }
 
-    if (ch & BLADERF_TX) {
+    if (_is_tx(ch)) {
         status = ad9361_set_tx_sampling_freq(board_data->phy, rate);
         if (status < 0) {
             return errno_ad9361_to_bladerf(status);
@@ -1873,21 +1696,11 @@ static int bladerf2_get_sample_rate(struct bladerf *dev,
     struct bladerf2_board_data *board_data;
     int status;
 
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     board_data = dev->board_data;
 
-    if (NULL == board_data) {
-        log_error("%s: board_data is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
-
-    if (ch & BLADERF_TX) {
+    if (_is_tx(ch)) {
         status = ad9361_get_tx_sampling_freq(board_data->phy, rate);
     } else {
         status = ad9361_get_rx_sampling_freq(board_data->phy, rate);
@@ -1913,12 +1726,12 @@ static int bladerf2_set_rational_sample_rate(
     /* Note: *actual is an OPTIONAL param */
 
     if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
+        log_error("%s: dev is null\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
     if (NULL == rate) {
-        log_error("%s: rate is null, bailing out\n", __FUNCTION__);
+        log_error("%s: rate is null\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
@@ -1947,6 +1760,11 @@ static int bladerf2_get_rational_sample_rate(struct bladerf *dev,
     int status;
     unsigned int integer_rate;
 
+    if (NULL == dev) {
+        log_error("%s: dev is null\n", __FUNCTION__);
+        return BLADERF_ERR_INVAL;
+    }
+
     status = bladerf2_get_sample_rate(dev, ch, &integer_rate);
 
     if (status < 0) {
@@ -1972,7 +1790,7 @@ static int bladerf2_get_bandwidth_range(struct bladerf *dev,
                                         struct bladerf_range *range)
 {
     if (NULL == range) {
-        log_error("%s: range is null, bailing out\n", __FUNCTION__);
+        log_error("%s: range is null\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
@@ -1991,30 +1809,20 @@ static int bladerf2_set_bandwidth(struct bladerf *dev,
 
     /* Note: *actual is an OPTIONAL param */
 
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     board_data = dev->board_data;
-
-    if (NULL == board_data) {
-        log_error("%s: board_data is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     status = bladerf2_get_bandwidth_range(dev, ch, &range);
     if (status < 0) {
         return status;
     }
 
-    if (!is_within_range(&range, bandwidth)) {
+    if (!_is_within_range(&range, bandwidth)) {
         return BLADERF_ERR_RANGE;
     }
 
-    if (ch & BLADERF_TX) {
+    if (_is_tx(ch)) {
         status = ad9361_set_tx_rf_bandwidth(board_data->phy, bandwidth);
         if (status < 0) {
             return errno_ad9361_to_bladerf(status);
@@ -2050,26 +1858,16 @@ static int bladerf2_get_bandwidth(struct bladerf *dev,
     struct bladerf2_board_data *board_data;
     int status;
 
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    board_data = dev->board_data;
-
-    if (NULL == board_data) {
-        log_error("%s: board_data is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
     if (NULL == bandwidth) {
-        log_error("%s: bandwidth is null, bailing out\n", __FUNCTION__);
+        log_error("%s: bandwidth is null\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
-    if (ch & BLADERF_TX) {
+    board_data = dev->board_data;
+
+    if (_is_tx(ch)) {
         status = ad9361_get_tx_rf_bandwidth(board_data->phy, bandwidth);
     } else {
         status = ad9361_get_rx_rf_bandwidth(board_data->phy, bandwidth);
@@ -2092,11 +1890,11 @@ static int bladerf2_get_frequency_range(struct bladerf *dev,
                                         struct bladerf_range *range)
 {
     if (NULL == range) {
-        log_error("%s: range is null, bailing out\n", __FUNCTION__);
+        log_error("%s: range is null\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
-    if (ch & BLADERF_TX) {
+    if (_is_tx(ch)) {
         *range = bladerf2_tx_frequency_range;
     } else {
         *range = bladerf2_rx_frequency_range;
@@ -2114,12 +1912,12 @@ static int bladerf2_select_band(struct bladerf *dev,
     bool enable;
 
     if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
+        log_error("%s: dev is null\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
     if (NULL == dev->backend) {
-        log_error("%s: dev->backend is null, bailing out\n", __FUNCTION__);
+        log_error("%s: dev->backend is null\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
@@ -2130,7 +1928,7 @@ static int bladerf2_select_band(struct bladerf *dev,
     }
 
     /* Is this channel enabled? */
-    enable = _rffe_channel_enabled(reg, ch);
+    enable = _is_rffe_channel_enabled(reg, ch);
 
     /* Update SPDT bits accordingly */
     status = _set_spdt_bits(&reg, ch, enable, frequency);
@@ -2155,32 +1953,22 @@ static int bladerf2_set_frequency(struct bladerf *dev,
     struct bladerf_range range;
     int status;
 
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     board_data = dev->board_data;
-
-    if (NULL == board_data) {
-        log_error("%s: board_data is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     status = bladerf2_get_frequency_range(dev, ch, &range);
     if (status < 0) {
         return status;
     }
 
-    if (ch & BLADERF_TX) {
-        if (!is_within_range(&range, frequency)) {
+    if (_is_tx(ch)) {
+        if (!_is_within_range(&range, frequency)) {
             return BLADERF_ERR_RANGE;
         }
         status = ad9361_set_tx_lo_freq(board_data->phy, frequency);
     } else {
-        if (!is_within_range(&range, frequency)) {
+        if (!_is_within_range(&range, frequency)) {
             return BLADERF_ERR_RANGE;
         }
         status = ad9361_set_rx_lo_freq(board_data->phy, frequency);
@@ -2201,26 +1989,16 @@ static int bladerf2_get_frequency(struct bladerf *dev,
     int status;
     uint64_t lo_frequency;
 
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    board_data = dev->board_data;
-
-    if (NULL == board_data) {
-        log_error("%s: board_data is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
     if (NULL == frequency) {
-        log_error("%s: frequency is null, bailing out\n", __FUNCTION__);
+        log_error("%s: frequency is null\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
-    if (ch & BLADERF_TX) {
+    board_data = dev->board_data;
+
+    if (_is_tx(ch)) {
         status = ad9361_get_tx_lo_freq(board_data->phy, &lo_frequency);
     } else {
         status = ad9361_get_rx_lo_freq(board_data->phy, &lo_frequency);
@@ -2245,27 +2023,17 @@ static int bladerf2_set_rf_port(struct bladerf *dev,
                                 const char *port)
 {
     struct bladerf2_board_data *board_data;
-    const struct ad9361_port_map *port_map;
+    const struct bladerf_ad9361_port_name_map *port_map;
     unsigned int port_map_len;
     unsigned int i;
     uint32_t port_id;
     int status;
 
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     board_data = dev->board_data;
 
-    if (NULL == board_data) {
-        log_error("%s: board_data is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
-
-    if (ch & BLADERF_TX) {
+    if (_is_tx(ch)) {
         port_map     = bladerf2_tx_port_map;
         port_map_len = ARRAY_SIZE(bladerf2_tx_port_map);
     } else {
@@ -2284,7 +2052,7 @@ static int bladerf2_set_rf_port(struct bladerf *dev,
         return BLADERF_ERR_INVAL;
     }
 
-    if (ch & BLADERF_TX) {
+    if (_is_tx(ch)) {
         status = ad9361_set_tx_rf_port_output(board_data->phy, port_id);
     } else {
         status = ad9361_set_rx_rf_port_input(board_data->phy, port_id);
@@ -2302,32 +2070,22 @@ static int bladerf2_get_rf_port(struct bladerf *dev,
                                 const char **port)
 {
     struct bladerf2_board_data *board_data;
-    const struct ad9361_port_map *port_map;
+    const struct bladerf_ad9361_port_name_map *port_map;
     unsigned int port_map_len;
     unsigned int i;
     uint32_t port_id;
     int status;
 
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    board_data = dev->board_data;
-
-    if (NULL == board_data) {
-        log_error("%s: board_data is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
     if (NULL == port) {
-        log_error("%s: port is null, bailing out\n", __FUNCTION__);
+        log_error("%s: port is null\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
-    if (ch & BLADERF_TX) {
+    board_data = dev->board_data;
+
+    if (_is_tx(ch)) {
         port_map     = bladerf2_tx_port_map;
         port_map_len = ARRAY_SIZE(bladerf2_tx_port_map);
         status       = ad9361_get_tx_rf_port_output(board_data->phy, &port_id);
@@ -2361,11 +2119,11 @@ static int bladerf2_get_rf_ports(struct bladerf *dev,
                                  const char **ports,
                                  unsigned int count)
 {
-    const struct ad9361_port_map *port_map;
+    const struct bladerf_ad9361_port_name_map *port_map;
     unsigned int port_map_len;
     unsigned int i;
 
-    if (ch & BLADERF_TX) {
+    if (_is_tx(ch)) {
         port_map     = bladerf2_tx_port_map;
         port_map_len = ARRAY_SIZE(bladerf2_tx_port_map);
     } else {
@@ -2565,24 +2323,14 @@ static int bladerf2_get_correction(struct bladerf *dev,
     uint16_t reg, data;
     unsigned int shift;
 
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    board_data = dev->board_data;
-
-    if (NULL == board_data) {
-        log_error("%s: board_data is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
     if (NULL == value) {
-        log_error("%s: value is null, bailing out\n", __FUNCTION__);
+        log_error("%s: value is null\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
     CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    board_data = dev->board_data;
 
     /* Validate channel */
     if (ch != BLADERF_CHANNEL_RX(0) && ch != BLADERF_CHANNEL_RX(1) &&
@@ -2597,7 +2345,7 @@ static int bladerf2_get_correction(struct bladerf *dev,
     }
 
     /* Look up band */
-    if (ch & BLADERF_TX) {
+    if (_is_tx(ch)) {
         uint32_t mode;
 
         status = ad9361_get_tx_rf_port_output(board_data->phy, &mode);
@@ -2711,19 +2459,9 @@ static int bladerf2_set_correction(struct bladerf *dev,
     uint16_t reg, data;
     unsigned int shift;
 
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     board_data = dev->board_data;
-
-    if (NULL == board_data) {
-        log_error("%s: board_data is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     /* Validate channel */
     if (ch != BLADERF_CHANNEL_RX(0) && ch != BLADERF_CHANNEL_RX(1) &&
@@ -2738,7 +2476,7 @@ static int bladerf2_set_correction(struct bladerf *dev,
     }
 
     /* Look up band */
-    if (ch & BLADERF_TX) {
+    if (_is_tx(ch)) {
         uint32_t mode;
 
         status = ad9361_get_tx_rf_port_output(board_data->phy, &mode);
@@ -2850,7 +2588,7 @@ static int bladerf2_set_correction(struct bladerf *dev,
         }
     }
 
-    reg = (ch & BLADERF_TX) ? REG_TX_FORCE_BITS : REG_FORCE_BITS;
+    reg = (_is_tx(ch)) ? REG_TX_FORCE_BITS : REG_FORCE_BITS;
 
     /* Read force bit register */
     status = ad9361_spi_read(board_data->phy->spi, reg);
@@ -3000,19 +2738,9 @@ static int bladerf2_sync_config(struct bladerf *dev,
     bladerf_direction dir = layout & BLADERF_DIRECTION_MASK;
     int status;
 
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     board_data = dev->board_data;
-
-    if (NULL == board_data) {
-        log_error("%s: board_data is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     /* FIXME use layout to configure for MIMO here */
 
@@ -3032,17 +2760,12 @@ static int bladerf2_sync_tx(struct bladerf *dev,
     struct bladerf2_board_data *board_data;
     int status;
 
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
+    if (NULL == dev || NULL == dev->board_data) {
+        log_error("%s: dev not properly initialized\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
     board_data = dev->board_data;
-
-    if (NULL == board_data) {
-        log_error("%s: board_data is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
 
     if (!board_data->sync[BLADERF_TX].initialized) {
         return BLADERF_ERR_INVAL;
@@ -3063,17 +2786,12 @@ static int bladerf2_sync_rx(struct bladerf *dev,
     struct bladerf2_board_data *board_data;
     int status;
 
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
+    if (NULL == dev || NULL == dev->board_data) {
+        log_error("%s: dev not properly initialized\n", __FUNCTION__);
         return BLADERF_ERR_INVAL;
     }
 
     board_data = dev->board_data;
-
-    if (NULL == board_data) {
-        log_error("%s: board_data is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
 
     if (!board_data->sync[BLADERF_RX].initialized) {
         return BLADERF_ERR_INVAL;
@@ -3089,16 +2807,6 @@ static int bladerf2_get_timestamp(struct bladerf *dev,
                                   bladerf_direction dir,
                                   uint64_t *value)
 {
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    if (NULL == dev->backend) {
-        log_error("%s: dev->backend is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     return dev->backend->get_timestamp(dev, dir, value);
@@ -3177,24 +2885,9 @@ static int bladerf2_load_fpga(struct bladerf *dev,
     struct bladerf2_board_data *board_data;
     int status;
 
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
 
     board_data = dev->board_data;
-
-    if (NULL == board_data) {
-        log_error("%s: board_data is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    if (NULL == dev->backend) {
-        log_error("%s: dev->backend is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
 
     if (!is_valid_fpga_size(board_data->fpga_size, length)) {
         return BLADERF_ERR_INVAL;
@@ -3222,19 +2915,9 @@ static int bladerf2_flash_fpga(struct bladerf *dev,
 {
     struct bladerf2_board_data *board_data;
 
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
+    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
 
     board_data = dev->board_data;
-
-    if (NULL == board_data) {
-        log_error("%s: board_data is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
 
     if (!is_valid_fpga_size(board_data->fpga_size, length)) {
         return BLADERF_ERR_INVAL;
@@ -3290,16 +2973,6 @@ static int bladerf2_device_reset(struct bladerf *dev)
 {
     CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
 
-    if (NULL == dev) {
-        log_error("%s: dev is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    if (NULL == dev->backend) {
-        log_error("%s: dev->backend is null, bailing out\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
     return dev->backend->device_reset(dev);
 }
 
@@ -3320,16 +2993,19 @@ static int bladerf2_get_tuning_mode(struct bladerf *dev,
     return BLADERF_ERR_UNSUPPORTED;
 }
 
+
 /******************************************************************************/
 /* Loopback */
 /******************************************************************************/
 
 static int bladerf2_set_loopback(struct bladerf *dev, bladerf_loopback l)
 {
-    struct bladerf2_board_data *board_data = dev->board_data;
+    struct bladerf2_board_data *board_data;
     int status;
 
     CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    board_data = dev->board_data;
 
     if (l == BLADERF_LB_NONE) {
         /* Disable digital loopback */
@@ -3376,12 +3052,14 @@ static int bladerf2_set_loopback(struct bladerf *dev, bladerf_loopback l)
 
 static int bladerf2_get_loopback(struct bladerf *dev, bladerf_loopback *l)
 {
-    struct bladerf2_board_data *board_data = dev->board_data;
+    struct bladerf2_board_data *board_data;
     int status;
     bool fw_loopback;
     int32_t ad9361_loopback;
 
     CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    board_data = dev->board_data;
 
     /* Read firwmare loopback */
     status = dev->backend->get_firmware_loopback(dev, &fw_loopback);
@@ -3407,6 +3085,7 @@ static int bladerf2_get_loopback(struct bladerf *dev, bladerf_loopback *l)
     return 0;
 }
 
+
 /******************************************************************************/
 /* Sample RX FPGA Mux */
 /******************************************************************************/
@@ -3425,12 +3104,12 @@ static int bladerf2_set_rx_mux(struct bladerf *dev, bladerf_rx_mux mode)
         case BLADERF_RX_MUX_12BIT_COUNTER:
         case BLADERF_RX_MUX_32BIT_COUNTER:
         case BLADERF_RX_MUX_DIGITAL_LOOPBACK:
-            rx_mux_val = ((uint32_t) mode) << BLADERF_GPIO_RX_MUX_SHIFT;
+            rx_mux_val = ((uint32_t)mode) << BLADERF_GPIO_RX_MUX_SHIFT;
             break;
 
         default:
-            log_debug("Invalid RX mux mode setting passed to %s(): %d\n",
-                      mode, __FUNCTION__);
+            log_debug("Invalid RX mux mode setting passed to %s(): %d\n", mode,
+                      __FUNCTION__);
             return BLADERF_ERR_INVAL;
     }
 
@@ -3457,6 +3136,11 @@ static int bladerf2_get_rx_mux(struct bladerf *dev, bladerf_rx_mux *mode)
     uint32_t config_gpio;
     int status;
 
+    if (NULL == mode) {
+        log_error("%s: mode is null\n", __FUNCTION__);
+        return BLADERF_ERR_INVAL;
+    }
+
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     status = dev->backend->config_gpio_read(dev, &config_gpio);
@@ -3469,7 +3153,7 @@ static int bladerf2_get_rx_mux(struct bladerf *dev, bladerf_rx_mux *mode)
     config_gpio >>= BLADERF_GPIO_RX_MUX_SHIFT;
     val = config_gpio;
 
-    /* Enure it's a valid/supported value */
+    /* Ensure it's a valid/supported value */
     switch (val) {
         case BLADERF_RX_MUX_BASEBAND:
         case BLADERF_RX_MUX_12BIT_COUNTER:
@@ -3479,13 +3163,14 @@ static int bladerf2_get_rx_mux(struct bladerf *dev, bladerf_rx_mux *mode)
             break;
 
         default:
-            *mode = BLADERF_RX_MUX_INVALID;
+            *mode  = BLADERF_RX_MUX_INVALID;
             status = BLADERF_ERR_UNEXPECTED;
             log_debug("Invalid rx mux mode %d read from config gpio\n", val);
     }
 
     return status;
 }
+
 
 /******************************************************************************/
 /* Low-level VCTCXO Tamer Mode */
@@ -3509,6 +3194,11 @@ static int bladerf2_get_vctcxo_tamer_mode(struct bladerf *dev,
 
 static int bladerf2_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim)
 {
+    if (NULL == trim) {
+        log_error("%s: trim is null\n", __FUNCTION__);
+        return BLADERF_ERR_INVAL;
+    }
+
     CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
 
     /* FIXME fetch factory value from SPI flash */
@@ -3519,6 +3209,11 @@ static int bladerf2_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim)
 
 static int bladerf2_trim_dac_read(struct bladerf *dev, uint16_t *trim)
 {
+    if (NULL == trim) {
+        log_error("%s: trim is null\n", __FUNCTION__);
+        return BLADERF_ERR_INVAL;
+    }
+
     CHECK_BOARD_STATE(STATE_FPGA_LOADED);
 
     return dev->backend->ad56x1_vctcxo_trim_dac_read(dev, trim);
@@ -3531,25 +3226,31 @@ static int bladerf2_trim_dac_write(struct bladerf *dev, uint16_t trim)
     return dev->backend->ad56x1_vctcxo_trim_dac_write(dev, trim);
 }
 
+
 /******************************************************************************/
 /* Low-level Trigger control access */
 /******************************************************************************/
 
-static int bladerf2_read_trigger(struct bladerf *dev, bladerf_channel ch,
-                                 bladerf_trigger_signal trigger, uint8_t *val)
+static int bladerf2_read_trigger(struct bladerf *dev,
+                                 bladerf_channel ch,
+                                 bladerf_trigger_signal trigger,
+                                 uint8_t *val)
 {
     CHECK_BOARD_STATE(STATE_FPGA_LOADED);
 
     return fpga_trigger_read(dev, ch, trigger, val);
 }
 
-static int bladerf2_write_trigger(struct bladerf *dev, bladerf_channel ch,
-                                  bladerf_trigger_signal trigger, uint8_t val)
+static int bladerf2_write_trigger(struct bladerf *dev,
+                                  bladerf_channel ch,
+                                  bladerf_trigger_signal trigger,
+                                  uint8_t val)
 {
     CHECK_BOARD_STATE(STATE_FPGA_LOADED);
 
     return fpga_trigger_write(dev, ch, trigger, val);
 }
+
 
 /******************************************************************************/
 /* Low-level Configuration GPIO access */
@@ -3569,32 +3270,40 @@ static int bladerf2_config_gpio_write(struct bladerf *dev, uint32_t val)
     return dev->backend->config_gpio_write(dev, val);
 }
 
+
 /******************************************************************************/
 /* Low-level SPI Flash access */
 /******************************************************************************/
 
-static int bladerf2_erase_flash(struct bladerf *dev, uint32_t erase_block, uint32_t count)
+static int bladerf2_erase_flash(struct bladerf *dev,
+                                uint32_t erase_block,
+                                uint32_t count)
 {
     CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
 
     return spi_flash_erase(dev, erase_block, count);
 }
 
-static int bladerf2_read_flash(struct bladerf *dev, uint8_t *buf,
-                               uint32_t page, uint32_t count)
+static int bladerf2_read_flash(struct bladerf *dev,
+                               uint8_t *buf,
+                               uint32_t page,
+                               uint32_t count)
 {
     CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
 
     return spi_flash_read(dev, buf, page, count);
 }
 
-static int bladerf2_write_flash(struct bladerf *dev, const uint8_t *buf,
-                                uint32_t page, uint32_t count)
+static int bladerf2_write_flash(struct bladerf *dev,
+                                const uint8_t *buf,
+                                uint32_t page,
+                                uint32_t count)
 {
     CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
 
     return spi_flash_write(dev, buf, page, count);
 }
+
 
 /******************************************************************************/
 /* Expansion support */
@@ -3607,10 +3316,16 @@ static int bladerf2_expansion_attach(struct bladerf *dev, bladerf_xb xb)
 
 static int bladerf2_expansion_get_attached(struct bladerf *dev, bladerf_xb *xb)
 {
+    if (NULL == xb) {
+        log_error("%s: xb is null\n", __FUNCTION__);
+        return BLADERF_ERR_INVAL;
+    }
+
     *xb = BLADERF_XB_NONE;
 
     return 0;
 }
+
 
 /******************************************************************************/
 /* Board binding */
@@ -3699,6 +3414,7 @@ const struct board_fns bladerf2_board_fns = {
     FIELD_INIT(.name, "bladerf2"),
 };
 
+
 /******************************************************************************
  ******************************************************************************
  *                         bladeRF2-specific Functions                        *
@@ -3714,8 +3430,19 @@ int bladerf_ad9361_read(struct bladerf *dev, uint16_t address, uint8_t *val)
     int status;
     uint64_t data;
 
-    if (dev->board != &bladerf2_board_fns)
+    if (NULL == dev) {
+        log_error("%s: dev not properly initialized\n", __FUNCTION__);
+        return BLADERF_ERR_INVAL;
+    }
+
+    if (NULL == val) {
+        log_error("%s: val is null\n", __FUNCTION__);
+        return BLADERF_ERR_INVAL;
+    }
+
+    if (dev->board != &bladerf2_board_fns) {
         return BLADERF_ERR_UNSUPPORTED;
+    }
 
     MUTEX_LOCK(&dev->lock);
 
@@ -3739,8 +3466,14 @@ int bladerf_ad9361_write(struct bladerf *dev, uint16_t address, uint8_t val)
     int status;
     uint64_t data;
 
-    if (dev->board != &bladerf2_board_fns)
+    if (NULL == dev) {
+        log_error("%s: dev not properly initialized\n", __FUNCTION__);
+        return BLADERF_ERR_INVAL;
+    }
+
+    if (dev->board != &bladerf2_board_fns) {
         return BLADERF_ERR_UNSUPPORTED;
+    }
 
     MUTEX_LOCK(&dev->lock);
 
