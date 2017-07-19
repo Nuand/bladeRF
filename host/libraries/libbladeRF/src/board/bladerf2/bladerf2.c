@@ -1802,9 +1802,7 @@ static int bladerf2_set_bandwidth(struct bladerf *dev,
         RETURN_ERROR_STATUS("bladerf2_get_bandwidth_range", status);
     }
 
-    if (!_is_within_range(&range, bandwidth)) {
-        return BLADERF_ERR_RANGE;
-    }
+    bandwidth = _clamp_to_range(&range, bandwidth);
 
     if (_is_tx(ch)) {
         status = ad9361_set_tx_rf_bandwidth(board_data->phy, bandwidth);
