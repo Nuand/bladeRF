@@ -115,7 +115,7 @@ int cmd_peek(struct cli_state *state, int argc, char **argv)
 
         /* Loop over the addresses and output the values */
         if( rv == CLI_RET_OK && (f || f2) ) {
-            int status;
+            int status = BLADERF_ERR_UNEXPECTED;
             uint8_t val;
 
             putchar('\n');
