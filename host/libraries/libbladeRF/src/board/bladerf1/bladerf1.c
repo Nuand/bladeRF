@@ -1341,71 +1341,69 @@ static int bladerf1_get_gain_range(struct bladerf *dev, bladerf_channel ch, stru
     return 0;
 }
 
-static int bladerf1_set_gain_stage(struct bladerf *dev, bladerf_channel ch, const char *stage, int gain)
+static int bladerf1_set_gain_stage(struct bladerf *dev,
+                                   bladerf_channel ch,
+                                   const char *stage,
+                                   int gain)
 {
-    int status;
-
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     /* TODO implement gain clamping */
 
-    status = BLADERF_ERR_INVAL;
-
     if (ch == BLADERF_CHANNEL_TX(0)) {
         if (strcmp(stage, "txvga1") == 0) {
-            status = lms_txvga1_set_gain(dev, gain);
+            return lms_txvga1_set_gain(dev, gain);
         } else if (strcmp(stage, "txvga2") == 0) {
-            status = lms_txvga2_set_gain(dev, gain);
+            return lms_txvga2_set_gain(dev, gain);
         }
     } else if (ch == BLADERF_CHANNEL_RX(0)) {
         if (strcmp(stage, "rxvga1") == 0) {
-            status = lms_rxvga1_set_gain(dev, gain);
+            return lms_rxvga1_set_gain(dev, gain);
         } else if (strcmp(stage, "rxvga2") == 0) {
-            status = lms_rxvga2_set_gain(dev, gain);
+            return lms_rxvga2_set_gain(dev, gain);
         } else if (strcmp(stage, "lna") == 0) {
-            status = lms_lna_set_gain(dev, convert_gain_to_lna_gain(gain));
+            return lms_lna_set_gain(dev, convert_gain_to_lna_gain(gain));
         }
+    } else {
+        log_error("%s: channel %d invalid\n", __FUNCTION__, ch);
     }
 
-    if (status < 0) {
-        return status;
-    }
-
+    log_warning("%s: gain stage '%s' invalid\n", __FUNCTION__, stage);
     return 0;
 }
 
-static int bladerf1_get_gain_stage(struct bladerf *dev, bladerf_channel ch, const char *stage, int *gain)
+static int bladerf1_get_gain_stage(struct bladerf *dev,
+                                   bladerf_channel ch,
+                                   const char *stage,
+                                   int *gain)
 {
-    int status;
-
     CHECK_BOARD_STATE(STATE_INITIALIZED);
-
-    status = BLADERF_ERR_INVAL;
 
     if (ch == BLADERF_CHANNEL_TX(0)) {
         if (strcmp(stage, "txvga1") == 0) {
-            status = lms_txvga1_get_gain(dev, gain);
+            return lms_txvga1_get_gain(dev, gain);
         } else if (strcmp(stage, "txvga2") == 0) {
-            status = lms_txvga2_get_gain(dev, gain);
+            return lms_txvga2_get_gain(dev, gain);
         }
     } else if (ch == BLADERF_CHANNEL_RX(0)) {
         if (strcmp(stage, "rxvga1") == 0) {
-            status = lms_rxvga1_get_gain(dev, gain);
+            return lms_rxvga1_get_gain(dev, gain);
         } else if (strcmp(stage, "rxvga2") == 0) {
-            status = lms_rxvga2_get_gain(dev, gain);
+            return lms_rxvga2_get_gain(dev, gain);
         } else if (strcmp(stage, "lna") == 0) {
+            int status;
             bladerf_lna_gain lnagain;
             status = lms_lna_get_gain(dev, &lnagain);
             if (status == 0) {
                 *gain = convert_lna_gain_to_gain(lnagain);
             }
+            return status;
         }
+    } else {
+        log_error("%s: channel %d invalid\n", __FUNCTION__, ch);
     }
 
-    if (status < 0) {
-        return status;
-    }
-
+    log_warning("%s: gain stage '%s' invalid\n", __FUNCTION__, stage);
     return 0;
 }
 
