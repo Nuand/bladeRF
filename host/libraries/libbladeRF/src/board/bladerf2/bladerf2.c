@@ -90,6 +90,13 @@ struct bladerf2_board_data {
 
 /* Macro for logging and returning an error status. This should be used for
  * errors defined in the \ref RETCODES list. */
+#define RETURN_ERROR_STATUS_ARG(_what, _arg, _status)                  \
+    {                                                                  \
+        log_error("%s: %s %s failed: %s\n", __FUNCTION__, _what, _arg, \
+                  bladerf_strerror(_status));                          \
+        return _status;                                                \
+    }
+
 #define RETURN_ERROR_STATUS(_what, _status)                   \
     {                                                         \
         log_error("%s: %s failed: %s\n", __FUNCTION__, _what, \
@@ -104,6 +111,13 @@ struct bladerf2_board_data {
     }
 
 /* Macro for logging and returning ::BLADERF_ERR_INVAL */
+#define RETURN_INVAL_ARG(_what, _arg, _why)                               \
+    {                                                                     \
+        log_error("%s: %s '%s' invalid: %s\n", __FUNCTION__, _what, _arg, \
+                  _why);                                                  \
+        return BLADERF_ERR_INVAL;                                         \
+    }
+
 #define RETURN_INVAL(_what, _why)                                     \
     {                                                                 \
         log_error("%s: %s invalid: %s\n", __FUNCTION__, _what, _why); \
@@ -568,7 +582,6 @@ static enum bladerf2_band _get_band_by_frequency(bladerf_channel ch,
     return BAND_SHUTDOWN;
 }
 
-
 static const struct band_port_map *_get_band_port_map(bladerf_channel ch,
                                                       bool enabled,
                                                       uint64_t frequency)
@@ -944,8 +957,8 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
             board_data->msg_size = USB_MSG_SIZE_HS;
             break;
         default:
-            log_error("Unsupported device speed: %d\n", usb_speed);
-            return BLADERF_ERR_UNEXPECTED;
+            RETURN_ERROR_STATUS_ARG("Got unsupported device speed", usb_speed,
+                                    BLADERF_ERR_UNEXPECTED);
     }
 
     /* Verify that we have a sufficent firmware version before continuing. */
@@ -989,8 +1002,9 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
                 break;
 
             default:
-                log_error("Invalid FPGA size %d.\n", board_data->fpga_size);
-                return BLADERF_ERR_UNEXPECTED;
+                RETURN_ERROR_STATUS_ARG("Mapping FPGA size",
+                                        board_data->fpga_size,
+                                        BLADERF_ERR_UNEXPECTED);
         }
 
         if (full_path != NULL) {
@@ -1001,6 +1015,8 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
 
             status = file_read_buffer(full_path, &buf, &buf_size);
             free(full_path);
+            full_path = NULL;
+
             if (status != 0) {
                 RETURN_ERROR_STATUS("file_read_buffer", status);
             }
@@ -1057,6 +1073,8 @@ static bladerf_dev_speed bladerf2_device_speed(struct bladerf *dev)
 
     status = dev->backend->get_device_speed(dev, &usb_speed);
     if (status < 0) {
+        log_error("%s: get_device_speed failed: %s\n", __FUNCTION__,
+                  bladerf_strerror(status));
         return BLADERF_DEVICE_SPEED_UNKNOWN;
     }
 
@@ -1362,7 +1380,7 @@ static int bladerf2_set_gain_mode(struct bladerf *dev,
 {
     struct bladerf2_board_data *board_data;
     int status;
-    uint8_t channel;
+    uint8_t ad9361_channel;
     const struct bladerf_ad9361_gain_mode_map *mode_map;
     size_t mode_map_len;
     enum rf_gain_ctrl_mode gc_mode;
@@ -1382,13 +1400,13 @@ static int bladerf2_set_gain_mode(struct bladerf *dev,
 
     /* Channel conversion */
     if (ch == BLADERF_CHANNEL_RX(0)) {
-        channel = 0;
-        gc_mode = ad9361_init_params.gc_rx1_mode;
+        ad9361_channel = 0;
+        gc_mode        = ad9361_init_params.gc_rx1_mode;
     } else if (ch == BLADERF_CHANNEL_RX(1)) {
-        channel = 1;
-        gc_mode = ad9361_init_params.gc_rx2_mode;
+        ad9361_channel = 1;
+        gc_mode        = ad9361_init_params.gc_rx2_mode;
     } else {
-        RETURN_ERROR_STATUS("channel mapping", BLADERF_ERR_UNSUPPORTED);
+        RETURN_ERROR_STATUS_ARG("channel", ch, BLADERF_ERR_UNSUPPORTED);
     }
 
     /* Mode conversion */
@@ -1402,7 +1420,8 @@ static int bladerf2_set_gain_mode(struct bladerf *dev,
     }
 
     /* Set the mode! */
-    status = ad9361_set_rx_gain_control_mode(board_data->phy, channel, gc_mode);
+    status = ad9361_set_rx_gain_control_mode(board_data->phy, ad9361_channel,
+                                             gc_mode);
     if (status < 0) {
         RETURN_ERROR_AD9361("ad9361_set_rx_gain_control_mode", status);
     }
@@ -1442,8 +1461,7 @@ static int bladerf2_get_gain_mode(struct bladerf *dev,
     } else if (ch == BLADERF_CHANNEL_RX(1)) {
         channel = 1;
     } else {
-        // TODO: undefined!
-        RETURN_INVAL("ch", "not found");
+        RETURN_ERROR_STATUS_ARG("channel", ch, BLADERF_ERR_UNSUPPORTED);
     }
 
     /* Get the gain */
@@ -1498,7 +1516,7 @@ static int bladerf2_get_gain_stage_range(struct bladerf *dev,
         }
     }
 
-    return BLADERF_ERR_INVAL;
+    RETURN_ERROR_STATUS_ARG("gain stage", stage, BLADERF_ERR_UNSUPPORTED);
 }
 
 static int bladerf2_set_gain_stage(struct bladerf *dev,
@@ -1520,12 +1538,14 @@ static int bladerf2_set_gain_stage(struct bladerf *dev,
         if (strcmp(stage, "full") == 0) {
             return dev->board->set_gain(dev, ch, gain);
         } else if (strcmp(stage, "digital") == 0) {
-            RETURN_ERROR_STATUS("setting digital gain",
-                                BLADERF_ERR_UNSUPPORTED);
+            log_warning("%s: gain stage '%s' unsupported\n", __FUNCTION__,
+                        stage);
+            return 0;
         }
     }
 
-    RETURN_INVAL("gain stage", "is invalid");
+    log_warning("%s: gain stage '%s' invalid\n", __FUNCTION__, stage);
+    return 0;
 }
 
 static int bladerf2_get_gain_stage(struct bladerf *dev,
@@ -1551,8 +1571,6 @@ static int bladerf2_get_gain_stage(struct bladerf *dev,
     if (_is_tx(ch)) {
         if (strcmp(stage, "dsa") == 0) {
             return dev->board->get_gain(dev, ch, gain);
-        } else {
-            RETURN_INVAL("gain stage", "is invalid");
         }
     } else {
         struct rf_rx_gain rx_gain;
@@ -1564,13 +1582,14 @@ static int bladerf2_get_gain_stage(struct bladerf *dev,
 
         if (strcmp(stage, "full") == 0) {
             *gain = rx_gain.gain_db;
+            return 0;
         } else if (strcmp(stage, "digital") == 0) {
             *gain = rx_gain.digital_gain;
-        } else {
-            RETURN_INVAL("gain stage", "is invalid");
+            return 0;
         }
     }
 
+    log_warning("%s: gain stage '%s' invalid\n", __FUNCTION__, stage);
     return 0;
 }
 
@@ -2056,6 +2075,7 @@ static int bladerf2_get_rf_port(struct bladerf *dev,
 
         if (!ok) {
             *port = "unknown";
+            log_error("%s: unexpected port_id %u\n", __FUNCTION__, port_id);
             return BLADERF_ERR_UNEXPECTED;
         }
     }
@@ -2248,14 +2268,14 @@ static const int ad9361_correction_force_bit[2][4][2] = {
     [0] = {
         [BLADERF_CORR_DCOFF_I] = {2, 6},
         [BLADERF_CORR_DCOFF_Q] = {2, 6},
-        [BLADERF_CORR_PHASE] = {0, 4},
-        [BLADERF_CORR_GAIN] = {0, 4},
+        [BLADERF_CORR_PHASE]   = {0, 4},
+        [BLADERF_CORR_GAIN]    = {0, 4},
     },
     [1] = {
         [BLADERF_CORR_DCOFF_I] = {3, 7},
         [BLADERF_CORR_DCOFF_Q] = {3, 7},
-        [BLADERF_CORR_PHASE] = {1, 5},
-        [BLADERF_CORR_GAIN] = {1, 5},
+        [BLADERF_CORR_PHASE]   = {1, 5},
+        [BLADERF_CORR_GAIN]    = {1, 5},
     },
 };
 // clang-format on
@@ -2282,7 +2302,7 @@ static int bladerf2_get_correction(struct bladerf *dev,
     /* Validate channel */
     if (ch != BLADERF_CHANNEL_RX(0) && ch != BLADERF_CHANNEL_RX(1) &&
         ch != BLADERF_CHANNEL_TX(0) && ch != BLADERF_CHANNEL_TX(1)) {
-        RETURN_INVAL("ch", "is not valid");
+        RETURN_INVAL_ARG("channel", ch, "is not valid");
     }
 
     /* Validate correction */
@@ -2415,7 +2435,7 @@ static int bladerf2_set_correction(struct bladerf *dev,
     /* Validate channel */
     if (ch != BLADERF_CHANNEL_RX(0) && ch != BLADERF_CHANNEL_RX(1) &&
         ch != BLADERF_CHANNEL_TX(0) && ch != BLADERF_CHANNEL_TX(1)) {
-        RETURN_INVAL("ch", "is not valid");
+        RETURN_INVAL_ARG("channel", ch, "is not valid");
     }
 
     /* Validate correction */
@@ -2770,9 +2790,7 @@ static int bladerf2_get_timestamp(struct bladerf *dev,
  * will always have a fixed file size.
  */
 // clang-format off
-#define FPGA_SIZE_X40   (1191788)
 #define FPGA_SIZE_XA4   (2632660)
-#define FPGA_SIZE_X115  (3571462)
 // clang-format on
 
 static bool is_valid_fpga_size(bladerf_fpga_size fpga, size_t len)
@@ -2781,16 +2799,8 @@ static bool is_valid_fpga_size(bladerf_fpga_size fpga, size_t len)
     bool valid;
 
     switch (fpga) {
-        case BLADERF_FPGA_40KLE:
-            valid = (len == FPGA_SIZE_X40);
-            break;
-
         case BLADERF_FPGA_A4:
             valid = (len == FPGA_SIZE_XA4);
-            break;
-
-        case BLADERF_FPGA_115KLE:
-            valid = (len == FPGA_SIZE_X115);
             break;
 
         default:
@@ -2839,7 +2849,7 @@ static int bladerf2_load_fpga(struct bladerf *dev,
     board_data = dev->board_data;
 
     if (!is_valid_fpga_size(board_data->fpga_size, length)) {
-        RETURN_INVAL("fpga size", "is not valid");
+        RETURN_INVAL_ARG("fpga size", board_data->fpga_size, "is not valid");
     }
 
     status = dev->backend->load_fpga(dev, buf, length);
@@ -2869,7 +2879,7 @@ static int bladerf2_flash_fpga(struct bladerf *dev,
     board_data = dev->board_data;
 
     if (!is_valid_fpga_size(board_data->fpga_size, length)) {
-        RETURN_INVAL("fpga size", "is not valid");
+        RETURN_INVAL_ARG("fpga size", board_data->fpga_size, "is not valid");
     }
 
     return spi_flash_write_fpga_bitstream(dev, buf, length);
@@ -2912,7 +2922,7 @@ static int bladerf2_flash_firmware(struct bladerf *dev,
         log_info("Detected potentially invalid firmware file.\n");
         log_info("Define BLADERF_SKIP_FW_SIZE_CHECK in your environment "
                  "to skip this check.\n");
-        RETURN_INVAL("fpga size", "is not valid");
+        RETURN_INVAL_ARG("firmware size", length, "is not valid");
     }
 
     return spi_flash_write_fx3_fw(dev, buf, length);
@@ -2968,8 +2978,8 @@ static int bladerf2_set_loopback(struct bladerf *dev, bladerf_loopback l)
             bist_loopback = 1;
             break;
         default:
-            RETURN_ERROR_STATUS("decoding loopback mode",
-                                BLADERF_ERR_UNSUPPORTED);
+            RETURN_ERROR_STATUS_ARG("decoding loopback mode", l,
+                                    BLADERF_ERR_UNSUPPORTED);
     }
 
     /* Set digital loopback state */
@@ -2993,6 +3003,10 @@ static int bladerf2_get_loopback(struct bladerf *dev, bladerf_loopback *l)
     int status;
     bool fw_loopback;
     int32_t ad9361_loopback;
+
+    if (NULL == l) {
+        RETURN_INVAL("l", "is null");
+    }
 
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
@@ -3048,7 +3062,7 @@ static int bladerf2_set_rx_mux(struct bladerf *dev, bladerf_rx_mux mode)
         default:
             log_debug("Invalid RX mux mode setting passed to %s(): %d\n", mode,
                       __FUNCTION__);
-            RETURN_INVAL("bladerf_rx_mux", "is invalid");
+            RETURN_INVAL_ARG("bladerf_rx_mux", mode, "is invalid");
     }
 
     status = dev->backend->config_gpio_read(dev, &config_gpio);
@@ -3396,14 +3410,16 @@ int bladerf_ad9361_read(struct bladerf *dev, uint16_t address, uint8_t *val)
     address = AD_READ | AD_CNT(1) | address;
 
     status = dev->backend->ad9361_spi_read(dev, address, &data);
-
-    if (status == 0) {
-        *val = (data >> 56) & 0xff;
+    if (status < 0) {
+        MUTEX_UNLOCK(&dev->lock);
+        RETURN_ERROR_AD9361("ad9361_spi_read", status);
     }
+
+    *val = (data >> 56) & 0xff;
 
     MUTEX_UNLOCK(&dev->lock);
 
-    return status;
+    return 0;
 }
 
 int bladerf_ad9361_write(struct bladerf *dev, uint16_t address, uint8_t val)
@@ -3429,8 +3445,12 @@ int bladerf_ad9361_write(struct bladerf *dev, uint16_t address, uint8_t val)
     data = (((uint64_t)val) << 56);
 
     status = dev->backend->ad9361_spi_write(dev, address, data);
+    if (status < 0) {
+        MUTEX_UNLOCK(&dev->lock);
+        RETURN_ERROR_AD9361("ad9361_spi_write", status);
+    }
 
     MUTEX_UNLOCK(&dev->lock);
 
-    return status;
+    return 0;
 }

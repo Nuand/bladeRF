@@ -588,13 +588,13 @@ typedef enum  {
 /**
  * Set overall gain
  *
- * Values outside the valid gain range will be clipped.
+ * Values outside the valid gain range will be clamped.
  *
  * @param       dev         Device handle
  * @param[in]   ch          Channel
  * @param[in]   gain        Desired gain, in dB
  *
- * Note that, in some cases, gain may be negative (e.g. transmit channels).
+ * Note that gain may be negative (e.g. transmit channels).
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
@@ -609,7 +609,7 @@ int CALL_CONV bladerf_set_gain(struct bladerf *dev, bladerf_channel ch,
  * @param[in]   ch          Channel
  * @param[out]  gain        Gain, in dB
  *
- * Note that, in some cases, gain may be negative (e.g. transmit channels).
+ * Note that gain may be negative (e.g. transmit channels).
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
@@ -657,6 +657,9 @@ int CALL_CONV bladerf_get_gain_mode(struct bladerf *dev, bladerf_channel ch,
 /**
  * Get range of overall gain
  *
+ * This may vary depending on the configured frequency, so it should be checked
+ * after setting the desired frequency.
+ *
  * @param       dev         Device handle
  * @param[in]   ch          Channel
  * @param[out]  range       Gain range
@@ -664,7 +667,8 @@ int CALL_CONV bladerf_get_gain_mode(struct bladerf *dev, bladerf_channel ch,
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_get_gain_range(struct bladerf *dev, bladerf_channel ch,
+int CALL_CONV bladerf_get_gain_range(struct bladerf *dev,
+                                     bladerf_channel ch,
                                      struct bladerf_range *range);
 
 /**
