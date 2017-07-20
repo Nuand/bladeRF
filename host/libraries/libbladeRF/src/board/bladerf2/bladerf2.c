@@ -88,6 +88,8 @@ struct bladerf2_board_data {
     struct bladerf_sync sync[2];
 };
 
+/* Macro for logging and returning an error status. This should be used for
+ * errors defined in the \ref RETCODES list. */
 #define RETURN_ERROR_STATUS(_what, _status)                   \
     {                                                         \
         log_error("%s: %s failed: %s\n", __FUNCTION__, _what, \
@@ -95,11 +97,13 @@ struct bladerf2_board_data {
         return _status;                                       \
     }
 
+/* Macro for converting, logging, and returning libad9361 error codes. */
 #define RETURN_ERROR_AD9361(_what, _status)                          \
     {                                                                \
         RETURN_ERROR_STATUS(_what, errno_ad9361_to_bladerf(_status)) \
     }
 
+/* Macro for logging and returning ::BLADERF_ERR_INVAL */
 #define RETURN_INVAL(_what, _why)                                     \
     {                                                                 \
         log_error("%s: %s invalid: %s\n", __FUNCTION__, _what, _why); \
@@ -107,10 +111,10 @@ struct bladerf2_board_data {
     }
 
 /* Responsible for checking for null pointers on dev and commonly-accessed
- * members of dev, as well as the board state.  Also responsible for unlocking
+ * members of dev, as well as the board state. Also responsible for unlocking
  * if things go terribly wrong. */
 #define _CHECK_BOARD_STATE(_state, _locked)                              \
-    do {                                                                 \
+    {                                                                    \
         struct bladerf2_board_data *board_data;                          \
                                                                          \
         if (NULL == dev) {                                               \
@@ -139,7 +143,7 @@ struct bladerf2_board_data {
                                                                          \
             return BLADERF_ERR_NOT_INIT;                                 \
         }                                                                \
-    } while (0)
+    }
 
 // clang-format off
 #define CHECK_BOARD_STATE(_state)           _CHECK_BOARD_STATE(_state, false)
@@ -342,7 +346,7 @@ static const struct bladerf_range bladerf2_rx_frequency_range = {
 };
 
 static const struct bladerf_range bladerf2_tx_frequency_range = {
-    FIELD_INIT(.min,    46.875e6),
+    FIELD_INIT(.min,    70e6),
     FIELD_INIT(.max,    6000e6),
     FIELD_INIT(.step,   2),
     FIELD_INIT(.scale,  1),
