@@ -187,9 +187,9 @@ static inline void invalid_gain(struct cli_state *s,
 int print_bandwidth(struct cli_state *state, int argc, char **argv)
 {
     /* Usage: print bandwidth [rx|tx]*/
-    int rv   = CLI_RET_OK;
-    int *err = &state->last_lib_error;
-    bladerf_channel channel;
+    int rv                  = CLI_RET_OK;
+    int *err                = &state->last_lib_error;
+    bladerf_channel channel = BLADERF_CHANNEL_INVALID;
     unsigned int bw;
     bool ok;
     int status;
@@ -268,9 +268,9 @@ static int _set_print_bandwidth(struct cli_state *state,
 int set_bandwidth(struct cli_state *state, int argc, char **argv)
 {
     /* Usage: set bandwidth [<rx|tx>] <bandwidth in Hz> */
-    int rv   = CLI_RET_OK;
-    int *err = &state->last_lib_error;
-    bladerf_channel channel;
+    int rv                  = CLI_RET_OK;
+    int *err                = &state->last_lib_error;
+    bladerf_channel channel = BLADERF_CHANNEL_INVALID;
     unsigned int bw;
     struct bladerf_range range;
     bool ok;
@@ -334,9 +334,9 @@ int set_bandwidth(struct cli_state *state, int argc, char **argv)
 int print_frequency(struct cli_state *state, int argc, char **argv)
 {
     /* Usage: print frequency [<rx|tx>] */
-    int rv   = CLI_RET_OK;
-    int *err = &state->last_lib_error;
-    bladerf_channel channel;
+    int rv                  = CLI_RET_OK;
+    int *err                = &state->last_lib_error;
+    bladerf_channel channel = BLADERF_CHANNEL_INVALID;
     uint64_t freq;
     bool ok;
     int status;
@@ -418,9 +418,9 @@ static int _set_print_frequency(struct cli_state *state,
 int set_frequency(struct cli_state *state, int argc, char **argv)
 {
     /* Usage: set frequency [<rx|tx>] <frequency in Hz> */
-    int rv   = CLI_RET_OK;
-    int *err = &state->last_lib_error;
-    bladerf_channel channel;
+    int rv                  = CLI_RET_OK;
+    int *err                = &state->last_lib_error;
+    bladerf_channel channel = BLADERF_CHANNEL_INVALID;
     uint64_t freq;
     struct bladerf_range range;
     bool ok;
@@ -1516,9 +1516,9 @@ int print_samplerate(struct cli_state *state, int argc, char **argv)
 int set_samplerate(struct cli_state *state, int argc, char **argv)
 {
     /* Usage: set samplerate [rx|tx] [integer [numerator denominator]]*/
-    int rv   = CLI_RET_OK;
-    int *err = &state->last_lib_error;
-    bladerf_channel channel;
+    int rv                  = CLI_RET_OK;
+    int *err                = &state->last_lib_error;
+    bladerf_channel channel = BLADERF_CHANNEL_INVALID;
     struct bladerf_rational_rate rate, actual;
     bladerf_dev_speed usb_speed;
     bool ok;
