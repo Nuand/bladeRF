@@ -809,18 +809,18 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     if (full_path != NULL) {
         log_debug("Loading RX calibration image %s\n", full_path);
         dc_cal_tbl_image_load(&board_data->cal.dc_rx, full_path);
-        free(full_path);
     }
     free(full_path);
+    full_path = NULL;
 
     snprintf(filename, sizeof(filename), "%s_dc_tx.tbl", dev->ident.serial);
     full_path = file_find(filename);
     if (full_path != NULL) {
         log_debug("Loading TX calibration image %s\n", full_path);
         dc_cal_tbl_image_load(&board_data->cal.dc_tx, full_path);
-        free(full_path);
     }
     free(full_path);
+    full_path = NULL;
 
     status = dev->backend->is_fpga_configured(dev);
     if (status < 0) {
@@ -842,14 +842,17 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
             return BLADERF_ERR_UNEXPECTED;
         }
 
-        if (full_path) {
+        if (full_path != NULL) {
             uint8_t *buf;
             size_t buf_size;
 
             log_debug("Loading FPGA from: %s\n", full_path);
 
             status = file_read_buffer(full_path, &buf, &buf_size);
+
             free(full_path);
+            full_path = NULL;
+
             if (status != 0) {
                 return status;
             }
@@ -943,6 +946,7 @@ static void bladerf1_close(struct bladerf *dev)
         dc_cal_tbl_free(&board_data->cal.dc_tx);
 
         free(board_data);
+        board_data = NULL;
     }
 }
 
