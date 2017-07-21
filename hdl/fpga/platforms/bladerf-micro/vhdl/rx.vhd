@@ -49,10 +49,10 @@ entity rx is
         sample_fifo_rclock     : in    std_logic;
         sample_fifo_raclr      : in    std_logic;
         sample_fifo_rreq       : in    std_logic;
-        sample_fifo_rdata      : out   std_logic_vector(FIFO_T_DEFAULT.rdata'range);
+        sample_fifo_rdata      : out   std_logic_vector(RX_FIFO_T_DEFAULT.rdata'range);
         sample_fifo_rempty     : out   std_logic;
         sample_fifo_rfull      : out   std_logic;
-        sample_fifo_rused      : out   std_logic_vector(FIFO_T_DEFAULT.rused'range);
+        sample_fifo_rused      : out   std_logic_vector(RX_FIFO_T_DEFAULT.rused'range);
 
         -- Metadata to host via FX3
         meta_fifo_rclock       : in    std_logic;
@@ -67,7 +67,7 @@ entity rx is
         loopback_fifo_wenabled : out   std_logic;
         loopback_fifo_wreset   : in    std_logic;
         loopback_fifo_wclock   : in    std_logic;
-        loopback_fifo_wdata    : in    std_logic_vector(FIFO_T_DEFAULT.wdata'range);
+        loopback_fifo_wdata    : in    std_logic_vector(LOOPBACK_FIFO_T_DEFAULT.wdata'range);
         loopback_fifo_wreq     : in    std_logic;
 
         -- RFFE Interface
@@ -95,8 +95,8 @@ architecture arch of rx is
 
     signal rx_mux_mode              : rx_mux_mode_t       := RX_MUX_NORMAL;
 
-    signal sample_fifo              : fifo_t              := FIFO_T_DEFAULT;
-    signal loopback_fifo            : fifo_t              := FIFO_T_DEFAULT;
+    signal sample_fifo              : rx_fifo_t           := RX_FIFO_T_DEFAULT;
+    signal loopback_fifo            : loopback_fifo_t     := LOOPBACK_FIFO_T_DEFAULT;
     signal meta_fifo                : meta_fifo_rx_t      := META_FIFO_RX_T_DEFAULT;
 
     signal loopback_i               : signed(15 downto 0) := (others =>'0');
@@ -144,7 +144,9 @@ begin
     sample_fifo.aclr   <= sample_fifo_raclr;
     sample_fifo.wclock <= rx_clock;
     U_rx_sample_fifo : entity work.rx_fifo
-        port map (
+        generic map (
+            LPM_NUMWORDS        => 2**(sample_fifo.wused'length)
+        ) port map (
             aclr                => sample_fifo.aclr,
 
             wrclk               => sample_fifo.wclock,
@@ -167,7 +169,9 @@ begin
     meta_fifo.aclr   <= meta_fifo_raclr;
     meta_fifo.wclock <= rx_clock;
     U_rx_meta_fifo : entity work.rx_meta_fifo
-        port map (
+        generic map (
+            LPM_NUMWORDS        => 2**(meta_fifo.wused'length)
+        ) port map (
             aclr                => meta_fifo.aclr,
 
             wrclk               => meta_fifo.wclock,
@@ -190,7 +194,9 @@ begin
     loopback_fifo.aclr   <= '1' when ( (loopback_fifo_wreset = '1') or (loopback_fifo_wenabled_i = '0') ) else '0';
     loopback_fifo.rclock <= rx_clock;
     U_rx_loopback_fifo : entity work.rx_fifo
-        port map (
+        generic map (
+            LPM_NUMWORDS        => 2**(loopback_fifo.wused'length)
+        ) port map (
             aclr                => loopback_fifo.aclr,
 
             wrclk               => loopback_fifo_wclock,
@@ -211,7 +217,10 @@ begin
 
     -- Sample bridge
     U_fifo_writer : entity work.fifo_writer
-      port map (
+      generic map (
+        USEDW_WIDTH         =>  sample_fifo.wused'length,
+        META_USEDW_WIDTH    =>  meta_fifo.wused'length
+      ) port map (
         clock               =>  rx_clock,
         reset               =>  rx_reset,
         enable              =>  rx_enable,

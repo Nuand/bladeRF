@@ -46,10 +46,10 @@ entity tx is
         -- Samples from host via FX3
         sample_fifo_wclock   : in    std_logic;
         sample_fifo_wreq     : in    std_logic;
-        sample_fifo_wdata    : in    std_logic_vector(FIFO_T_DEFAULT.wdata'range);
+        sample_fifo_wdata    : in    std_logic_vector(TX_FIFO_T_DEFAULT.wdata'range);
         sample_fifo_wempty   : out   std_logic;
         sample_fifo_wfull    : out   std_logic;
-        sample_fifo_wused    : out   std_logic_vector(FIFO_T_DEFAULT.wused'range);
+        sample_fifo_wused    : out   std_logic_vector(TX_FIFO_T_DEFAULT.wused'range);
 
         -- Metadata from host via FX3
         meta_fifo_wclock     : in    std_logic;
@@ -61,7 +61,7 @@ entity tx is
 
         -- Digital Loopback Interface
         loopback_enabled     : in    std_logic;
-        loopback_data        : out   std_logic_vector(FIFO_T_DEFAULT.wdata'range);
+        loopback_data        : out   std_logic_vector(RX_FIFO_T_DEFAULT.wdata'range);
         loopback_data_valid  : out   std_logic;
 
         -- RFFE Interface
@@ -78,7 +78,7 @@ end entity;
 
 architecture arch of tx is
 
-    signal sample_fifo                    : fifo_t         := FIFO_T_DEFAULT;
+    signal sample_fifo                    : tx_fifo_t      := TX_FIFO_T_DEFAULT;
     signal meta_fifo                      : meta_fifo_tx_t := META_FIFO_TX_T_DEFAULT;
 
     signal trigger_arm_sync               : std_logic;
@@ -104,7 +104,9 @@ begin
     sample_fifo.aclr   <= tx_reset;
     sample_fifo.rclock <= tx_clock;
     U_tx_sample_fifo : entity work.tx_fifo
-        port map (
+        generic map (
+            LPM_NUMWORDS        => 2**(sample_fifo.wused'length)
+        ) port map (
             aclr                => sample_fifo.aclr,
 
             wrclk               => sample_fifo_wclock,
@@ -126,7 +128,9 @@ begin
     meta_fifo.aclr   <= tx_reset;
     meta_fifo.rclock <= tx_clock;
     U_tx_meta_fifo : entity work.tx_meta_fifo
-        port map (
+        generic map (
+            LPM_NUMWORDS        => 2**(meta_fifo.wused'length)
+        ) port map (
             aclr                => meta_fifo.aclr,
 
             wrclk               => meta_fifo_wclock,

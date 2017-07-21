@@ -3,6 +3,10 @@ library ieee ;
     use ieee.numeric_std.all ;
 
 entity fifo_writer is
+  generic (
+    USEDW_WIDTH         :   natural := 12;
+    META_USEDW_WIDTH    :   natural := 5
+  );
   port (
     clock               :   in      std_logic ;
     reset               :   in      std_logic ;
@@ -16,14 +20,14 @@ entity fifo_writer is
     in_q                :   in      signed(15 downto 0) ;
     in_valid            :   in      std_logic ;
 
-    fifo_usedw          :   in      std_logic_vector(11 downto 0) ;
+    fifo_usedw          :   in      std_logic_vector(USEDW_WIDTH-1 downto 0) ;
     fifo_clear          :   buffer  std_logic ;
     fifo_write          :   buffer  std_logic ;
     fifo_full           :   in      std_logic ;
     fifo_data           :   out     std_logic_vector(31 downto 0) ;
 
     meta_fifo_full      :   in     std_logic;
-    meta_fifo_usedw     :   in     std_logic_vector(4 downto 0);
+    meta_fifo_usedw     :   in     std_logic_vector(META_USEDW_WIDTH-1 downto 0);
     meta_fifo_data      :   out    std_logic_vector(127 downto 0);
     meta_fifo_write     :   out    std_logic;
 

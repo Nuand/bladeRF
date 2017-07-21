@@ -21,6 +21,7 @@
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
+    use ieee.math_real.all;
 
 package bladerf_p is
 
@@ -140,7 +141,13 @@ package bladerf_p is
     -- TYPEDEFS
     -- ========================================================================
 
-    type fifo_t is record
+    constant TX_FIFO_LENGTH         : natural := 4096;  -- samples
+    constant RX_FIFO_LENGTH         : natural := 4096;  -- samples
+    constant LOOPBACK_FIFO_LENGTH   : natural := 4096;  -- samples
+    constant META_FIFO_TX_LENGTH    : natural := 32;    -- 32-bit words
+    constant META_FIFO_RX_LENGTH    : natural := 128;   -- 32-bit words
+
+    type tx_fifo_t is record
         aclr    :   std_logic;
 
         wclock  :   std_logic;
@@ -148,14 +155,50 @@ package bladerf_p is
         wreq    :   std_logic;
         wempty  :   std_logic;
         wfull   :   std_logic;
-        wused   :   std_logic_vector(11 downto 0);
+        wused   :   std_logic_vector(integer(ceil(log2(real(TX_FIFO_LENGTH))))-1 downto 0);
 
         rclock  :   std_logic;
         rdata   :   std_logic_vector(31 downto 0);
         rreq    :   std_logic;
         rempty  :   std_logic;
         rfull   :   std_logic;
-        rused   :   std_logic_vector(11 downto 0);
+        rused   :   std_logic_vector(integer(ceil(log2(real(TX_FIFO_LENGTH))))-1 downto 0);
+    end record;
+
+    type rx_fifo_t is record
+        aclr    :   std_logic;
+
+        wclock  :   std_logic;
+        wdata   :   std_logic_vector(31 downto 0);
+        wreq    :   std_logic;
+        wempty  :   std_logic;
+        wfull   :   std_logic;
+        wused   :   std_logic_vector(integer(ceil(log2(real(RX_FIFO_LENGTH))))-1 downto 0);
+
+        rclock  :   std_logic;
+        rdata   :   std_logic_vector(31 downto 0);
+        rreq    :   std_logic;
+        rempty  :   std_logic;
+        rfull   :   std_logic;
+        rused   :   std_logic_vector(integer(ceil(log2(real(RX_FIFO_LENGTH))))-1 downto 0);
+    end record;
+
+    type loopback_fifo_t is record
+        aclr    :   std_logic;
+
+        wclock  :   std_logic;
+        wdata   :   std_logic_vector(31 downto 0);
+        wreq    :   std_logic;
+        wempty  :   std_logic;
+        wfull   :   std_logic;
+        wused   :   std_logic_vector(integer(ceil(log2(real(LOOPBACK_FIFO_LENGTH))))-1 downto 0);
+
+        rclock  :   std_logic;
+        rdata   :   std_logic_vector(31 downto 0);
+        rreq    :   std_logic;
+        rempty  :   std_logic;
+        rfull   :   std_logic;
+        rused   :   std_logic_vector(integer(ceil(log2(real(LOOPBACK_FIFO_LENGTH))))-1 downto 0);
     end record;
 
     type meta_fifo_tx_t is record
@@ -166,14 +209,14 @@ package bladerf_p is
         wreq    :   std_logic;
         wempty  :   std_logic;
         wfull   :   std_logic;
-        wused   :   std_logic_vector(4 downto 0);
+        wused   :   std_logic_vector(integer(ceil(log2(real(META_FIFO_TX_LENGTH))))-1 downto 0);
 
         rclock  :   std_logic;
         rdata   :   std_logic_vector(127 downto 0);
         rreq    :   std_logic;
         rempty  :   std_logic;
         rfull   :   std_logic;
-        rused   :   std_logic_vector(2 downto 0);
+        rused   :   std_logic_vector(integer(ceil(log2(real(META_FIFO_TX_LENGTH/4))))-1 downto 0);
     end record;
 
     type meta_fifo_rx_t is record
@@ -184,14 +227,14 @@ package bladerf_p is
         wreq    :   std_logic;
         wempty  :   std_logic;
         wfull   :   std_logic;
-        wused   :   std_logic_vector(4 downto 0);
+        wused   :   std_logic_vector(integer(ceil(log2(real(META_FIFO_RX_LENGTH/4))))-1 downto 0);
 
         rclock  :   std_logic;
         rdata   :   std_logic_vector(31 downto 0);
         rreq    :   std_logic;
         rempty  :   std_logic;
         rfull   :   std_logic;
-        rused   :   std_logic_vector(6 downto 0);
+        rused   :   std_logic_vector(integer(ceil(log2(real(META_FIFO_RX_LENGTH))))-1 downto 0);
     end record;
 
     type nios_gpio_t is record
@@ -297,13 +340,15 @@ package bladerf_p is
     -- TYPEDEF RESET CONSTANTS -- deferred to permit use of pack/unpack
     -- ========================================================================
 
-    constant RFFE_GPO_DEFAULT : rffe_gpo_t;
-    constant RFFE_GPI_DEFAULT : rffe_gpi_t;
-    constant FIFO_T_DEFAULT : fifo_t;
-    constant META_FIFO_TX_T_DEFAULT : meta_fifo_tx_t;
-    constant META_FIFO_RX_T_DEFAULT : meta_fifo_rx_t;
-    constant MIMO_2R2T_T_DEFAULT : mimo_2r2t_t;
-    constant TRIGGER_T_DEFAULT : trigger_t;
+    constant RFFE_GPO_DEFAULT           : rffe_gpo_t;
+    constant RFFE_GPI_DEFAULT           : rffe_gpi_t;
+    constant TX_FIFO_T_DEFAULT          : tx_fifo_t;
+    constant RX_FIFO_T_DEFAULT          : rx_fifo_t;
+    constant LOOPBACK_FIFO_T_DEFAULT    : loopback_fifo_t;
+    constant META_FIFO_TX_T_DEFAULT     : meta_fifo_tx_t;
+    constant META_FIFO_RX_T_DEFAULT     : meta_fifo_rx_t;
+    constant MIMO_2R2T_T_DEFAULT        : mimo_2r2t_t;
+    constant TRIGGER_T_DEFAULT          : trigger_t;
 
 end package;
 
@@ -465,7 +510,39 @@ package body bladerf_p is
         ctrl_out     => (others => '0')
     );
 
-    constant FIFO_T_DEFAULT : fifo_t := (
+    constant TX_FIFO_T_DEFAULT : tx_fifo_t := (
+        aclr    => '1',
+        wclock  => '0',
+        wdata   => (others => '0'),
+        wreq    => '0',
+        wempty  => '1',
+        wfull   => '0',
+        wused   => (others => '0'),
+        rclock  => '0',
+        rdata   => (others => '0'),
+        rreq    => '0',
+        rempty  => '1',
+        rfull   => '0',
+        rused   => (others => '0')
+    );
+
+    constant RX_FIFO_T_DEFAULT : rx_fifo_t := (
+        aclr    => '1',
+        wclock  => '0',
+        wdata   => (others => '0'),
+        wreq    => '0',
+        wempty  => '1',
+        wfull   => '0',
+        wused   => (others => '0'),
+        rclock  => '0',
+        rdata   => (others => '0'),
+        rreq    => '0',
+        rempty  => '1',
+        rfull   => '0',
+        rused   => (others => '0')
+    );
+
+    constant LOOPBACK_FIFO_T_DEFAULT : loopback_fifo_t := (
         aclr    => '1',
         wclock  => '0',
         wdata   => (others => '0'),
