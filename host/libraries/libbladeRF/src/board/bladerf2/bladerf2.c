@@ -810,6 +810,12 @@ static int bladerf2_initialize(struct bladerf *dev)
         RETURN_ERROR_AD9361("ad9361_set_rx_fir_config", status);
     }
 
+    /* Enable RX FIR filter */
+    status = ad9361_set_rx_fir_en_dis(phy, 1);
+    if (status < 0) {
+        RETURN_ERROR_AD9361("ad9361_set_rx_fir_en_dis", status);
+    }
+
     /* Disable AD9361 until we need it */
     status = dev->backend->rffe_control_read(dev, &reg);
     if (status < 0) {
