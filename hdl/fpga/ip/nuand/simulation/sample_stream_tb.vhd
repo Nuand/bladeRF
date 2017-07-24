@@ -281,8 +281,10 @@ begin
         process( tx_clock, reset )
         begin
             if( reset = '1' ) then
-                reader_controls <= (0 => SAMPLE_CONTROL_ENABLE,
-                                    1 => SAMPLE_CONTROL_ENABLE);
+                reader_controls <= (0 => (enable => '1',
+                                          data_req => '1'),
+                                    1 => (enable => '1',
+                                          data_req => '1'));
             elsif( rising_edge(tx_clock) ) then
                 for i in reader_controls'range loop
                     reader_controls(i) <= (

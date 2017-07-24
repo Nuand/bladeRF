@@ -111,8 +111,8 @@ architecture simple of fifo_reader is
         enabled_channels    : natural range 0 to in_sample_controls'length;
         ch_shift            : natural range 0 to out_samples'high;
         ch_offsets          : ch_offsets_t(in_sample_controls'range);
-        mimo_delay_init     : natural range 0 to in_sample_controls'length;
-        mimo_delay          : natural range 0 to in_sample_controls'length;
+        samples_left_init   : natural range 0 to in_sample_controls'length;
+        samples_left        : natural range 0 to in_sample_controls'length;
         fifo_read           : std_logic;
         out_samples         : sample_streams_t(out_samples'range);
     end record;
@@ -124,8 +124,8 @@ architecture simple of fifo_reader is
         enabled_channels    => 0,
         ch_shift            => 0,
         ch_offsets          => (others => 0),
-        mimo_delay_init     => 0,
-        mimo_delay          => 0,
+        samples_left_init   => 0,
+        samples_left        => 0,
         fifo_read           => '0',
         out_samples         => (others => ZERO_SAMPLE)
     );
@@ -251,48 +251,9 @@ begin
     -- Sample FIFO combinatorial process
     fifo_fsm_comb : process( all )
 
-        -- Count how many channels are enabled
-        function count_enabled( x : sample_controls_t ) return natural is
-            variable rv : natural := 0;
-        begin
-            rv := 0;
-            for i in x'range loop
-                if( x(i).enable = '1' ) then
-                    rv := rv + 1;
-                end if;
-            end loop;
-            return rv;
-        end function;
-
-        -- Compute channel offsets for MIMO data unpacking
-        function compute_channel_offsets( x : sample_controls_t ) return ch_offsets_t is
-            variable rv : ch_offsets_t(x'range) := (others => 0);
-        begin
-            rv := (others => 0);
-            for i in x'low+1 to x'high loop
-                for j in x'low to x'high-1 loop
-                    if( x(j).enable = '1' ) then
-                        rv(i) := rv(i) + 1;
-                    end if;
-                end loop;
-            end loop;
-            return rv;
-        end function;
-
-        -- Compute the MIMO delay
-        function compute_mimo_delay( x           : sample_controls_t;
-                                     en_channels : natural ) return natural is
-            variable rv : natural := 0;
-        begin
-            rv := 0;
-            if( en_channels /= 0 ) then
-                rv := (x'length / en_channels) - 1;
-            else
-                rv := 0;
-            end if;
-            return rv;
-        end function;
-
+        -- --------------------------------------------------------------------
+        -- MIMO UNPACKER: STEP 1 of 5
+        -- --------------------------------------------------------------------
         -- The sample FIFO output is a wide data bus that may contain more
         -- than one sample for a given channel. This function unpacks
         -- the bus into an array of sample streams. For example, a 2x2 MIMO
@@ -332,15 +293,61 @@ begin
             return rv;
         end function;
 
-        variable unpacked       : sample_streams_t(out_samples'range);
-        variable mimo_delay_tmp : natural range 0 to in_sample_controls'length;
-        variable read_req       : std_logic                     := '0';
+        -- --------------------------------------------------------------------
+        -- MIMO UNPACKER: STEP 2 of 5
+        -- --------------------------------------------------------------------
+        -- Count how many channels are enabled
+        function count_enabled( x : sample_controls_t ) return natural is
+            variable rv : natural := 0;
+        begin
+            rv := 0;
+            for i in x'range loop
+                if( x(i).enable = '1' ) then
+                    rv := rv + 1;
+                end if;
+            end loop;
+            return rv;
+        end function;
+
+        -- --------------------------------------------------------------------
+        -- MIMO UNPACKER: STEP 3 of 5
+        -- --------------------------------------------------------------------
+        -- The FIFO data has been unpacked into an array containing I and Q
+        -- samples for each of the possible channels they belong to. We need to
+        -- figure out which index of this unpacked array belongs to which
+        -- channel so we can output it to the correct endpoint, as follows:
+        --   a. All channel indices start at 0.
+        --   b. For each channel, add 1 to the index for each previous
+        --      channel that is enabled. For 2x2 MIMO:
+        --        ch_enabled | array index of the unpacked data stream
+        --        0 & 1      | ch0 = 0    ; ch1 = 0 + 1 = 1
+        --        0 only     | ch0 = 0    ; ch1 = -     = 0 (ch1 is disabled, doesn't matter)
+        --        1 only     | ch0 = - = 0; ch1 = 0 + 0 = 0 (ch0 is disabled, doesn't matter)
+        function compute_initial_channel_offsets( x : sample_controls_t ) return ch_offsets_t is
+            variable rv : ch_offsets_t(x'range) := (others => 0);
+        begin
+            rv := (others => 0);
+            for i in x'low+1 to x'high loop
+                for j in x'low to x'high-1 loop
+                    if( x(j).enable = '1' ) then
+                        rv(i) := rv(i) + 1;
+                    end if;
+                end loop;
+            end loop;
+            return rv;
+        end function;
+
+
+        variable unpacked         : sample_streams_t(out_samples'range);
+        variable read_req         : std_logic                     := '0';
+
     begin
 
         fifo_future <= fifo_current;
 
         fifo_future.fifo_read <= '0';
 
+        -- MIMO UNPACKER: STEP 1 of 5
         unpacked := unpack(fifo_current.sample_controls_reg, fifo_data);
         for i in fifo_future.out_samples'range loop
             if( fifo_current.sample_controls_reg(i).enable = '1' ) then
@@ -352,7 +359,7 @@ begin
 
             when COMPUTE_ENABLED_CHANNELS =>
 
-                -- Compute the number of MIMO channels that are enabled
+                -- MIMO UNPACKER: STEP 2 of 5
                 fifo_future.enabled_channels <= count_enabled(in_sample_controls);
 
                 -- Register the sample control settings
@@ -362,41 +369,15 @@ begin
 
             when COMPUTE_OFFSETS =>
 
-                -- Basic concept of this algorithm:
-                --   1. Determine initial unpacked stream array index for each channel
-                --       a. All channel indices start at 0.
-                --       b. For each channel, add 1 to the index for each previous
-                --          channel that is enabled. For 2x2 MIMO:
-                --            ch_enabled | channel offset (sample stream array index)
-                --            0 & 1      | ch0 = 0, ch1 = 0 + 1 = 1
-                --            0 only     | ch0 = 0, ch1 = -
-                --            1 only     | ch0 = -, ch1 = 0 + 0 = 0
-                --   2. Compute the MIMO delay. This is the number of clock
-                --      cycles to wait before asserting the FIFO read req.
-                --        The formula is (and the int truncation is desirable):
-                --          mimo_delay = ((total_channels / enabled_channels) - 1)
-                --        In our example:
-                --          ch_enabled | mimo_delay
-                --          0 & 1      | (2/2)-1 = 0
-                --          0 only     | (2/1)-1 = 1
-                --          1 only     | (2/1)-1 = 1
-                --        When a single channel is enabled, we have to wait for
-                --        one cycle before asserting read_req because there is
-                --        a second sample in the upper 32 bits of the FIFO data.
-                --   3. During each MIMO delay cycle, add the number of enabled
-                --      channels to the channel offset index. This points to the
-                --      next valid sample in the current fifo_data.
+                -- MIMO UNPACKER: STEP 3 of 5
+                fifo_future.ch_offsets <= compute_initial_channel_offsets(fifo_current.sample_controls_reg);
 
-                -- Step 1: Determine bit offsets for each channel
-                --   For each channel, add one MIMO_OFFSET_UNIT for each previous
-                --   channel that is enabled. Ignore the first channel.
-                fifo_future.ch_offsets <= compute_channel_offsets(fifo_current.sample_controls_reg);
-
-                -- Step 2: Compute the MIMO delay (delay between read_req toggles)
-                mimo_delay_tmp := compute_mimo_delay(fifo_current.sample_controls_reg,
-                                                     fifo_current.enabled_channels);
-                fifo_future.mimo_delay_init <= mimo_delay_tmp;
-                fifo_future.mimo_delay      <= mimo_delay_tmp;
+                -- MIMO UNPACKER: STEP 4 of 5
+                --   Compute the number of valid samples that each channel has remaining in fifo_data that
+                --   still need to be processed (not including the first). This becomes the number of clock
+                --   cycles to wait before asserting the FIFO read request to get a new batch of samples.
+                fifo_future.samples_left_init <= NUM_STREAMS - fifo_current.enabled_channels;
+                fifo_future.samples_left      <= NUM_STREAMS - fifo_current.enabled_channels;
 
                 fifo_future.state <= READ_SAMPLES;
 
@@ -417,14 +398,16 @@ begin
 
                     -- Received a valid data request
                     if( read_req = '1' ) then
-                        if( fifo_current.mimo_delay = 0 ) then
-                            fifo_future.mimo_delay <= fifo_current.mimo_delay_init;
-                            fifo_future.ch_shift   <= 0;
-                            fifo_future.fifo_read  <= read_req;
+                        if( fifo_current.samples_left = 0 ) then
+                            fifo_future.samples_left <= fifo_current.samples_left_init;
+                            fifo_future.ch_shift     <= 0;
+                            fifo_future.fifo_read    <= read_req;
                         else
-                            -- Step 3 of MIMO unpacker
-                            fifo_future.ch_shift   <= fifo_current.ch_shift + fifo_current.enabled_channels;
-                            fifo_future.mimo_delay <= fifo_current.mimo_delay - 1;
+                            -- MIMO UNPACKER: STEP 5 of 5
+                            --   Add the number of enabled channels to each channel's offset index.
+                            --   This points that channel to the next valid sample in the current fifo_data.
+                            fifo_future.ch_shift     <= fifo_current.ch_shift + fifo_current.enabled_channels;
+                            fifo_future.samples_left <= fifo_current.samples_left - 1;
                         end if;
 
                         if( FIFO_FSM_RESET_VALUE.downcount /= 0 ) then
