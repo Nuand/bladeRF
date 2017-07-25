@@ -301,7 +301,7 @@ static int open_device(struct rc_config *rc, struct cli_state *state, int status
     bool unset_env = false;
 
     if (!status) {
-        if (rc->fpga_file) {
+        if (rc->fpga_file || rc->flash_fpga_file || rc->fw_file) {
             // A full init will be run after the FPGA is reloaded, so there
             // is no need to initialize everything now.
             if (!getenv("BLADERF_FORCE_NO_FPGA_PRESENT")) {
