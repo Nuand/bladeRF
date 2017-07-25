@@ -26,7 +26,7 @@ are used to describe changes to a component's primary interface(s).
 * The minor version shall be incremented to denote reverse-compatible
   additions.
 
-* The minor version shall be incremented for reverse-compatible bug fixes and
+* The patch version shall be incremented for reverse-compatible bug fixes and
   internal changes that do not affect the primary interface(s).
 
 The ```-extra``` portion will generally be used to include the git revision
