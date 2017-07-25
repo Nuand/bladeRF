@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Nuand LLC
+ * Copyright (c) 2013-2017 Nuand LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -77,6 +77,9 @@ CyU3PReturnStatus_t ClearDMAChannel(uint8_t ep, CyU3PDmaChannel * handle,
                                     uint32_t count);
 void CyFxAppErrorHandler(CyU3PReturnStatus_t apiRetStatus);
 void NuandAllowSuspend(CyBool_t set_allow_suspend);
+
+/* defined in bladerf{1,2}.c */
+void NuandFpgaConfigSwFlipLut(uint16_t flipLut[256]);
 
 extern uint32_t glAppMode;
 

@@ -42,7 +42,7 @@ $ cmake -DFX3_INSTALL_PATH=/opt/cypress/fx3_sdk -DCMAKE_TOOLCHAIN_FILE=../cmake/
 $ make
 ```
 
-When the firmware build is completed, you should have an `output` directory containing a `bladeRF_fw_v<VERSION>.img` firmware binary.
+When the firmware build is completed, you should have an `output` directory containing `bladeRF1_fw_v<VERSION>.img` (for bladeRF 1.0) and `bladeRF2_fw_v<VERSION>.img` (for bladeRF 2.0) firmware binaries.
 
 Note that it is still possible to use Eclipse to develop and debug if you followed the above steps. See the *Creating an Eclipse Project* section below.
 
@@ -82,7 +82,7 @@ The FX3 SDK provides an Eclipse-based IDE. A pre-configured project file for thi
 3. Under `Select root directory`, select this directory (`bladeRF/fx3_firmware`)
 4. You should see `bladeRF` listed under `Projects`. Ensure this is checked and click `Finish`.
 5. **Linux users only**: From the C/C++ Projects view, right click bladeRF and select `Properties`. Under `C/C++ Build` --> `Builder Settings`, uncheck `Use default build command` and change `cs-make` to `make`. cs-make is provided with the Windows SDK. Linux users may simply use the `make` program provided by their distribution.
-6. Kick off the build! The resulting `build/output/bladeRF_fw_v<VERSION>.img` should be the same as those obtained from the command-line build outlined in the previous section.
+6. Kick off the build! The resulting `build/output/bladeRF{1,2}_fw_v<VERSION>.img` should be the same as those obtained from the command-line build outlined in the previous section.
 
 For more information about developing and debugging FX3 firmware, see the [FX3 Programmer's Manual][fx3_prog_manual].
 

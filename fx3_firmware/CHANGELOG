@@ -5,6 +5,13 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v2.1.0 (2017-07-25)
+--------------------------------
+ * Add support for the bladeRF 2.0 (2cf0:5250).
+ * Create a static lib (libbladeRF_fx3.a) with code common across all products.
+ * Rename bladeRF_fw_*.img to bladeRF1_fw_*.img to avoid ambiguity.
+ * Move USB descriptor consts to .usbdscr section so the linker glomps them.
+
 v2.0.0 (2016-04-06)
 --------------------------------
  * bladeRF Firmware VID/PID updated to Nuand's assigned VID.

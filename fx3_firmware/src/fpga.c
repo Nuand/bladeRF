@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Nuand LLC
+ * Copyright (c) 2013-2017 Nuand LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -63,23 +63,7 @@ int FpgaBeginProgram(void)
 
 
 void NuandFpgaConfigSwInit(void) {
-    uint32_t i, tmpr, tmpw;
-
-    for (i = 0; i < 256; i++) {
-        tmpr = i;
-
-        tmpw = 0;
-#define US_GPIF_2_FPP(GPIFbit, FPPbit)      tmpw |= (tmpr & (1 << FPPbit)) ? (1 << GPIFbit) : 0;
-        US_GPIF_2_FPP(7,  0);
-        US_GPIF_2_FPP(15, 1);
-        US_GPIF_2_FPP(6,  2);
-        US_GPIF_2_FPP(2,  3);
-        US_GPIF_2_FPP(1,  4);
-        US_GPIF_2_FPP(3,  5);
-        US_GPIF_2_FPP(9,  6);
-        US_GPIF_2_FPP(11, 7);
-        glFlipLut[i] = tmpw;
-    }
+    NuandFpgaConfigSwFlipLut(glFlipLut);
 }
 
 /* DMA callback function to handle the produce events for U to P transfers. */

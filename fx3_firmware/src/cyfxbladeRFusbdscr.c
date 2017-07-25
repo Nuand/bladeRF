@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Nuand LLC
+ * Copyright (c) 2013-2017 Nuand LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,54 +22,13 @@
 #include "bladeRF.h"
 #include "cyfxbladeRF.h"
 
-/* Nuand VID */
-#define VID_LOW             (USB_NUAND_VENDOR_ID & 0xff)
-#define VID_HIGH            (USB_NUAND_VENDOR_ID >> 8)
-
-/* Nuand bladeRF PID */
-#define BLADERF_PID_LOW     (USB_NUAND_BLADERF_PRODUCT_ID & 0xff)
-#define BLADERF_PID_HIGH    (USB_NUAND_BLADERF_PRODUCT_ID >> 8)
-
-/* Standard device descriptor for USB 3.0 */
-const uint8_t CyFxUSB30DeviceDscr[] __attribute__ ((aligned (32))) =
-{
-    0x12,                                   /* Descriptor size */
-    CY_U3P_USB_DEVICE_DESCR,                /* Device descriptor type */
-    0x00,0x03,                              /* USB 3.0 */
-    0x00,                                   /* Device class */
-    0x00,                                   /* Device sub-class */
-    0x00,                                   /* Device protocol */
-    0x09,                                   /* Maxpacket size for EP0 : 2^9 */
-    VID_LOW, VID_HIGH,                      /* Vendor ID */
-    BLADERF_PID_LOW, BLADERF_PID_HIGH,      /* Product ID */
-    0x00,0x00,                              /* Device release number */
-    0x01,                                   /* Manufacture string index */
-    0x02,                                   /* Product string index */
-    0x03,                                   /* Serial number string index */
-    0x01                                    /* Number of configurations */
-};
-
-/* Standard device descriptor for USB 2.0 */
-const uint8_t CyFxUSB20DeviceDscr[] __attribute__ ((aligned (32))) =
-{
-    0x12,                                   /* Descriptor size */
-    CY_U3P_USB_DEVICE_DESCR,                /* Device descriptor type */
-    0x10,0x02,                              /* USB 2.10 */
-    0x00,                                   /* Device class */
-    0x00,                                   /* Device sub-class */
-    0x00,                                   /* Device protocol */
-    0x40,                                   /* Maxpacket size for EP0 : 64 bytes */
-    VID_LOW, VID_HIGH,                      /* Vendor ID */
-    BLADERF_PID_LOW, BLADERF_PID_HIGH,      /* Product ID */
-    0x00,0x00,                              /* Device release number */
-    0x01,                                   /* Manufacture string index */
-    0x02,                                   /* Product string index */
-    0x03,                                   /* Serial number string index */
-    0x01                                    /* Number of configurations */
-};
+/* Device descriptors for USB 3.0 and 2.0 (CyFxUSB30DeviceDscr[] and
+ * CyFxUSB20DeviceDscr[]), along with the product string descriptor
+ * (CyFxUSBProductDscr[]), are now located in the product-specific files
+ * (bladeRF1.c and bladeRF2.c) */
 
 /* Binary device object store descriptor */
-const uint8_t CyFxUSBBOSDscr[] __attribute__ ((aligned (32))) =
+const uint8_t CyFxUSBBOSDscr[] __attribute__ ((aligned (32))) __attribute__ ((section(".usbdscr"))) =
 {
     0x05,                           /* Descriptor size */
     CY_U3P_BOS_DESCR,               /* Device descriptor type */
@@ -94,7 +53,7 @@ const uint8_t CyFxUSBBOSDscr[] __attribute__ ((aligned (32))) =
 };
 
 /* Standard device qualifier descriptor */
-const uint8_t CyFxUSBDeviceQualDscr[] __attribute__ ((aligned (32))) =
+const uint8_t CyFxUSBDeviceQualDscr[] __attribute__ ((aligned (32))) __attribute__ ((section(".usbdscr"))) =
 {
     0x0A,                           /* Descriptor size */
     CY_U3P_USB_DEVQUAL_DESCR,       /* Device qualifier descriptor type */
@@ -108,7 +67,7 @@ const uint8_t CyFxUSBDeviceQualDscr[] __attribute__ ((aligned (32))) =
 };
 
 /* Standard super speed configuration descriptor */
-const uint8_t CyFxUSBSSConfigDscr[] __attribute__ ((aligned (32))) =
+const uint8_t CyFxUSBSSConfigDscr[] __attribute__ ((aligned (32))) __attribute__ ((section(".usbdscr"))) =
 {
     /* Configuration descriptor */
     0x09,                           /* Descriptor size */
@@ -121,7 +80,6 @@ const uint8_t CyFxUSBSSConfigDscr[] __attribute__ ((aligned (32))) =
     0x64,                           /* Max power consumption of device (in 8mA unit) : 200mA */
 
 
-
     /* Interface descriptor #0, alt interface #0, Nothing */
     0x09,                           /* Descriptor size */
     CY_U3P_USB_INTRFC_DESCR,        /* Interface Descriptor type */
@@ -132,6 +90,7 @@ const uint8_t CyFxUSBSSConfigDscr[] __attribute__ ((aligned (32))) =
     0x00,                           /* Interface sub class */
     0x00,                           /* Interface protocol code */
     0x00,                           /* Interface descriptor string index */
+
 
     /* Interface descriptor #0, alt interface #1, RF */
     0x09,                           /* Descriptor size */
@@ -192,7 +151,7 @@ const uint8_t CyFxUSBSSConfigDscr[] __attribute__ ((aligned (32))) =
     /* Endpoint descriptor for producer EP */
     0x07,                           /* Descriptor size */
     CY_U3P_USB_ENDPNT_DESCR,        /* Endpoint descriptor type */
-    BLADE_FPGA_EP_PRODUCER,              /* Endpoint address and description */
+    BLADE_FPGA_EP_PRODUCER,         /* Endpoint address and description */
     CY_U3P_USB_EP_BULK,             /* Bulk endpoint type */
     0x00,0x04,                      /* Max packet size = 1024 bytes */
     0x00,                           /* Servicing interval for data transfers : 0 for bulk */
@@ -219,7 +178,7 @@ const uint8_t CyFxUSBSSConfigDscr[] __attribute__ ((aligned (32))) =
     /* Endpoint descriptor for producer EP */
     0x07,                           /* Descriptor size */
     CY_U3P_USB_ENDPNT_DESCR,        /* Endpoint descriptor type */
-    BLADE_FPGA_EP_PRODUCER,              /* Endpoint address and description */
+    BLADE_FPGA_EP_PRODUCER,         /* Endpoint address and description */
     CY_U3P_USB_EP_BULK,             /* Bulk endpoint type */
     0x00,0x04,                      /* Max packet size = 1024 bytes */
     0x00,                           /* Servicing interval for data transfers : 0 for bulk */
@@ -230,6 +189,7 @@ const uint8_t CyFxUSBSSConfigDscr[] __attribute__ ((aligned (32))) =
     0x01,                           /* Max no. of packets in a burst : 0: burst 1 packet at a time */
     0x00,                           /* Max streams for bulk EP = 0 (No streams) */
     0x00,0x00,                      /* Service interval for the EP : 0 for bulk */
+
 
     /* Interface descriptor #0, alt interface #3, FPGA load */
     0x09,                           /* Descriptor size */
@@ -245,7 +205,7 @@ const uint8_t CyFxUSBSSConfigDscr[] __attribute__ ((aligned (32))) =
     /* Endpoint descriptor for producer EP */
     0x07,                           /* Descriptor size */
     CY_U3P_USB_ENDPNT_DESCR,        /* Endpoint descriptor type */
-    BLADE_FPGA_EP_PRODUCER,              /* Endpoint address and description */
+    BLADE_FPGA_EP_PRODUCER,         /* Endpoint address and description */
     CY_U3P_USB_EP_BULK,             /* Bulk endpoint type */
     0x00,0x04,                      /* Max packet size = 1024 bytes */
     0x00,                           /* Servicing interval for data transfers : 0 for bulk */
@@ -259,7 +219,7 @@ const uint8_t CyFxUSBSSConfigDscr[] __attribute__ ((aligned (32))) =
 };
 
 /* Standard high speed configuration descriptor */
-const uint8_t CyFxUSBHSConfigDscr[] __attribute__ ((aligned (32))) =
+const uint8_t CyFxUSBHSConfigDscr[] __attribute__ ((aligned (32))) __attribute__ ((section(".usbdscr"))) =
 {
     /* Configuration descriptor */
     0x09,                           /* Descriptor size */
@@ -296,7 +256,7 @@ const uint8_t CyFxUSBHSConfigDscr[] __attribute__ ((aligned (32))) =
     /* Endpoint descriptor for producer EP */
     0x07,                           /* Descriptor size */
     CY_U3P_USB_ENDPNT_DESCR,        /* Endpoint descriptor type */
-    0x01,              /* Endpoint address and description */
+    0x01,                           /* Endpoint address and description */
     CY_U3P_USB_EP_BULK,             /* Bulk endpoint type */
     0x00,0x02,                      /* Max packet size = 512 bytes */
     0x00,                           /* Servicing interval for data transfers : 0 for bulk */
@@ -304,7 +264,7 @@ const uint8_t CyFxUSBHSConfigDscr[] __attribute__ ((aligned (32))) =
     /* Endpoint descriptor for producer EP */
     0x07,                           /* Descriptor size */
     CY_U3P_USB_ENDPNT_DESCR,        /* Endpoint descriptor type */
-    0x81,              /* Endpoint address and description */
+    0x81,                           /* Endpoint address and description */
     CY_U3P_USB_EP_BULK,             /* Bulk endpoint type */
     0x00,0x02,                      /* Max packet size = 512 bytes */
     0x00,                           /* Servicing interval for data transfers : 0 for bulk */
@@ -312,7 +272,7 @@ const uint8_t CyFxUSBHSConfigDscr[] __attribute__ ((aligned (32))) =
     /* Endpoint descriptor for producer EP */
     0x07,                           /* Descriptor size */
     CY_U3P_USB_ENDPNT_DESCR,        /* Endpoint descriptor type */
-    0x02,              /* Endpoint address and description */
+    0x02,                           /* Endpoint address and description */
     CY_U3P_USB_EP_BULK,             /* Bulk endpoint type */
     0x00,0x02,                      /* Max packet size = 512 bytes */
     0x00,                           /* Servicing interval for data transfers : 0 for bulk */
@@ -320,7 +280,7 @@ const uint8_t CyFxUSBHSConfigDscr[] __attribute__ ((aligned (32))) =
     /* Endpoint descriptor for producer EP */
     0x07,                           /* Descriptor size */
     CY_U3P_USB_ENDPNT_DESCR,        /* Endpoint descriptor type */
-    0x82,              /* Endpoint address and description */
+    0x82,                           /* Endpoint address and description */
     CY_U3P_USB_EP_BULK,             /* Bulk endpoint type */
     0x00,0x02,                      /* Max packet size = 512 bytes */
     0x00,                           /* Servicing interval for data transfers : 0 for bulk */
@@ -339,7 +299,7 @@ const uint8_t CyFxUSBHSConfigDscr[] __attribute__ ((aligned (32))) =
     /* Endpoint descriptor for producer EP */
     0x07,                           /* Descriptor size */
     CY_U3P_USB_ENDPNT_DESCR,        /* Endpoint descriptor type */
-    0x01,              /* Endpoint address and description */
+    0x01,                           /* Endpoint address and description */
     CY_U3P_USB_EP_BULK,             /* Bulk endpoint type */
     0x00,0x02,                      /* Max packet size = 512 bytes */
     0x00,                           /* Servicing interval for data transfers : 0 for bulk */
@@ -358,14 +318,14 @@ const uint8_t CyFxUSBHSConfigDscr[] __attribute__ ((aligned (32))) =
     /* Endpoint descriptor for producer EP */
     0x07,                           /* Descriptor size */
     CY_U3P_USB_ENDPNT_DESCR,        /* Endpoint descriptor type */
-    BLADE_FPGA_EP_PRODUCER,              /* Endpoint address and description */
+    BLADE_FPGA_EP_PRODUCER,         /* Endpoint address and description */
     CY_U3P_USB_EP_BULK,             /* Bulk endpoint type */
     0x00,0x02,                      /* Max packet size = 512 bytes */
     0x00,                           /* Servicing interval for data transfers : 0 for bulk */
 };
 
 /* Standard full speed configuration descriptor */
-const uint8_t CyFxUSBFSConfigDscr[] __attribute__ ((aligned (32))) =
+const uint8_t CyFxUSBFSConfigDscr[] __attribute__ ((aligned (32))) __attribute__ ((section(".usbdscr"))) =
 {
     /* Configuration descriptor */
     0x09,                           /* Descriptor size */
@@ -399,7 +359,7 @@ const uint8_t CyFxUSBFSConfigDscr[] __attribute__ ((aligned (32))) =
     /* Endpoint descriptor for producer EP */
     0x07,                           /* Descriptor size */
     CY_U3P_USB_ENDPNT_DESCR,        /* Endpoint descriptor type */
-    BLADE_FPGA_EP_PRODUCER,              /* Endpoint address and description */
+    BLADE_FPGA_EP_PRODUCER,         /* Endpoint address and description */
     CY_U3P_USB_EP_BULK,             /* Bulk endpoint type */
     0x40,0x00,                      /* Max packet size = 64 bytes */
     0x00,                           /* Servicing interval for data transfers : 0 for bulk */
@@ -414,7 +374,7 @@ const uint8_t CyFxUSBFSConfigDscr[] __attribute__ ((aligned (32))) =
 };
 
 /* Standard language ID string descriptor */
-const uint8_t CyFxUSBStringLangIDDscr[] __attribute__ ((aligned (32))) =
+const uint8_t CyFxUSBStringLangIDDscr[] __attribute__ ((aligned (32))) __attribute__ ((section(".usbdscr"))) =
 {
     0x04,                           /* Descriptor size */
     CY_U3P_USB_STRING_DESCR,        /* Device descriptor type */
@@ -422,7 +382,7 @@ const uint8_t CyFxUSBStringLangIDDscr[] __attribute__ ((aligned (32))) =
 };
 
 /* Standard manufacturer string descriptor */
-const uint8_t CyFxUSBManufactureDscr[] __attribute__ ((aligned (32))) =
+const uint8_t CyFxUSBManufactureDscr[] __attribute__ ((aligned (32))) __attribute__ ((section(".usbdscr"))) =
 {
     0x0C,                           /* Descriptor size */
     CY_U3P_USB_STRING_DESCR,        /* Device descriptor type */
@@ -432,25 +392,6 @@ const uint8_t CyFxUSBManufactureDscr[] __attribute__ ((aligned (32))) =
     'n',0x00,
     'd',0x00,
 };
-
-/* Standard product string descriptor */
-const uint8_t CyFxUSBProductDscr[] __attribute__ ((aligned (32))) =
-{
-    0x10,                           /* Descriptor size */
-    CY_U3P_USB_STRING_DESCR,        /* Device descriptor type */
-    'b',0x00,
-    'l',0x00,
-    'a',0x00,
-    'd',0x00,
-    'e',0x00,
-    'R',0x00,
-    'F',0x00
-};
-
-/* Place this buffer as the last buffer so that no other variable / code shares
- * the same cache line. Do not add any other variables / arrays in this file.
- * This will lead to variables sharing the same cache line. */
-const uint8_t CyFxUsbDscrAlignBuffer[32] __attribute__ ((aligned (32)));
 
 /* [ ] */
 
