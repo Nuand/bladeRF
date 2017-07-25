@@ -294,22 +294,6 @@ begin
         end function;
 
         -- --------------------------------------------------------------------
-        -- MIMO UNPACKER: STEP 2 of 5
-        -- --------------------------------------------------------------------
-        -- Count how many channels are enabled
-        function count_enabled( x : sample_controls_t ) return natural is
-            variable rv : natural := 0;
-        begin
-            rv := 0;
-            for i in x'range loop
-                if( x(i).enable = '1' ) then
-                    rv := rv + 1;
-                end if;
-            end loop;
-            return rv;
-        end function;
-
-        -- --------------------------------------------------------------------
         -- MIMO UNPACKER: STEP 3 of 5
         -- --------------------------------------------------------------------
         -- The FIFO data has been unpacked into an array containing I and Q
@@ -360,7 +344,8 @@ begin
             when COMPUTE_ENABLED_CHANNELS =>
 
                 -- MIMO UNPACKER: STEP 2 of 5
-                fifo_future.enabled_channels <= count_enabled(in_sample_controls);
+                --   Count the number of enabled channels
+                fifo_future.enabled_channels <= count_enabled_channels(in_sample_controls);
 
                 -- Register the sample control settings
                 fifo_future.sample_controls_reg <= in_sample_controls;
@@ -442,6 +427,7 @@ begin
         end if;
 
         if( fifo_empty = '1' ) then
+            -- Re-evaluate the MIMO settings
             fifo_future.state <= FIFO_FSM_RESET_VALUE.state;
         end if;
 

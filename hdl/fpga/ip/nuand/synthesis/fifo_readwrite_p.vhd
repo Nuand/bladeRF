@@ -44,6 +44,9 @@ package fifo_readwrite_p is
 
     constant ZERO_SAMPLE            : sample_stream_t;
 
+    -- Count how many channels are enabled
+    function count_enabled_channels( x : sample_controls_t ) return natural;
+
 end package;
 
 package body fifo_readwrite_p is
@@ -64,5 +67,18 @@ package body fifo_readwrite_p is
         data_q   => (others => '0'),
         data_v   => '0'
     );
+
+    -- Count how many channels are enabled
+    function count_enabled_channels( x : sample_controls_t ) return natural is
+        variable rv : natural := 0;
+    begin
+        rv := 0;
+        for i in x'range loop
+            if( x(i).enable = '1' ) then
+                rv := rv + 1;
+            end if;
+        end loop;
+        return rv;
+    end function;
 
 end package body;
