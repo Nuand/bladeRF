@@ -115,6 +115,8 @@ int file_read_buffer(const char *filename, uint8_t **buf_ret, size_t *size_ret)
 
     f = fopen(filename, "rb");
     if (!f) {
+        log_error("%s: could not open %s: %s\n", __FUNCTION__, filename,
+                  strerror(errno));
         switch (errno) {
             case ENOENT:
                 return BLADERF_ERR_NO_FILE;
