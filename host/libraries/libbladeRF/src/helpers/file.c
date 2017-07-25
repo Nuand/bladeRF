@@ -134,23 +134,23 @@ int file_read_buffer(const char *filename, uint8_t **buf_ret, size_t *size_ret)
     }
 
     len = file_size(f);
-    if(len < 0) {
+    if (len < 0) {
         status = BLADERF_ERR_IO;
         goto out;
     }
 
-    buf = (uint8_t*) malloc(len);
+    buf = (uint8_t *)malloc(len);
     if (!buf) {
         status = BLADERF_ERR_MEM;
         goto out;
     }
 
-    status = file_read(f, (char*)buf, len);
+    status = file_read(f, (char *)buf, len);
     if (status < 0) {
         goto out;
     }
 
-    *buf_ret = buf;
+    *buf_ret  = buf;
     *size_ret = len;
     fclose(f);
     return 0;
@@ -226,7 +226,7 @@ static inline size_t get_home_dir(char *buf, size_t max_len)
 
 static inline size_t get_install_dir(char *buf, size_t max_len)
 {
-	return 0;
+    return 0;
 }
 
 #if BLADERF_OS_LINUX
