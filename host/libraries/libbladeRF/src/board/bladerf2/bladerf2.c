@@ -987,8 +987,15 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     }
 
     /* Get FPGA size */
-    /* TODO: Actually get FPGA size */
+    /* TODO: Actually get FPGA size from flash */
     board_data->fpga_size = BLADERF_FPGA_A4;
+
+    /* Skip further work if BLADERF_FORCE_NO_FPGA_PRESENT is set */
+    if (getenv("BLADERF_FORCE_NO_FPGA_PRESENT")) {
+        log_debug("Skipping FPGA configuration and initialization - "
+                  "BLADERF_FORCE_NO_FPGA_PRESENT is set.\n");
+        return 0;
+    }
 
     /* Check if FPGA is configured */
     status = dev->backend->is_fpga_configured(dev);
