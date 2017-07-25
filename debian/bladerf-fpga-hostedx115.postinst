@@ -26,6 +26,7 @@ if [ ! -s ${DATAFILE} ] || ! checkfile ${DATAFILE}; then
 		# We're good!  Copy it to its new home.
 		echo "Download successful, copying to ${DATAFILE}"
 		mv ${NEWFILE} ${DATAFILE}
+		chmod 0444 ${DATAFILE}
 	else
 		# It failed!  Print an error and nuke the temporary file.
 		rm -f ${NEWFILE}
