@@ -371,7 +371,7 @@ int print_frequency(struct cli_state *state, int argc, char **argv)
 
     if (rv == CLI_RET_OK && (argc == 2 || _is_tx(channel))) {
         status =
-            bladerf_get_frequency(state->dev, BLADERF_CHANNEL_RX(1), &freq);
+            bladerf_get_frequency(state->dev, BLADERF_CHANNEL_TX(0), &freq);
         if (status < 0) {
             *err = status;
             rv   = CLI_RET_LIBBLADERF;
