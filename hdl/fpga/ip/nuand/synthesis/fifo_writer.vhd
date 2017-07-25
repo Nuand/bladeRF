@@ -103,18 +103,24 @@ architecture simple of fifo_writer is
         HOLDOFF
     );
 
+    type ch_offsets_t is array( natural range <> ) of natural range fifo_data'low to fifo_data'high;
+
     type fifo_fsm_t is record
-        state           : fifo_state_t;
-        fifo_clear      : std_logic;
-        fifo_write      : std_logic;
-        fifo_data       : std_logic_vector(fifo_data'range);
+        state               : fifo_state_t;
+        fifo_clear          : std_logic;
+        fifo_write          : std_logic;
+        fifo_data           : unsigned(fifo_data'range);
+        samples_left_init   : natural range 0 to in_sample_controls'length;
+        samples_left        : natural range 0 to in_sample_controls'length;
     end record;
 
     constant FIFO_FSM_RESET_VALUE : fifo_fsm_t := (
-        state           => CLEAR,
-        fifo_clear      => '1',
-        fifo_write      => '0',
-        fifo_data       => (others => '-')
+        state               => CLEAR,
+        fifo_clear          => '1',
+        fifo_write          => '0',
+        fifo_data           => (others => '-'),
+        samples_left_init   => 0,
+        samples_left        => 0
     );
 
     signal fifo_current : fifo_fsm_t := FIFO_FSM_RESET_VALUE;
@@ -246,8 +252,42 @@ begin
 
     -- Sample FIFO combinatorial process
     fifo_fsm_comb : process( all )
-        variable max_bit : natural range fifo_data'range := 0;
-        variable min_bit : natural range fifo_data'range := 0;
+
+        -- --------------------------------------------------------------------
+        -- MIMO PACKER: STEP 1 of 3
+        -- --------------------------------------------------------------------
+        -- This block receives samples as an array of sample streams, one
+        -- element per channel. These streams need to be packed into a single,
+        -- wide bus that is written to a FIFO and eventually delivered to the
+        -- host. When all channels are enabled, this wide bus will contain one
+        -- I/Q sample pair for each channel. When channels are disabled, the
+        -- wide bus may contain multiple samples from the remaining enabled
+        -- channels in order to more efficiently use the available USB bandwidth.
+        -- For example, a 2x2 MIMO design with 16-bit samples will pack its data
+        -- into a 64-bit wide bus in one of the following ways:
+        --      | 63:48 | 47:32 | 31:16 | 15:0 | Bit indices
+        --   1. |   Q1  |   I1  |   Q0  |  I0  | Channels 0 & 1 enabled
+        --   2. |   Q0' |   I0' |   Q0  |  I0  | Channel 0 only enabled
+        --   3. |   Q1' |   I1' |   Q1  |  I1  | Channel 1 only enabled
+        function pack( sc : sample_controls_t;
+                       ss : sample_streams_t;
+                       d  : unsigned ) return unsigned is
+            constant LEN  : natural           := ss(ss'low).data_i'length + ss(ss'low).data_q'length;
+            variable rv   : unsigned(d'range) := (others => '0');
+        begin
+            rv := d;
+            for i in sc'range loop
+                if( (sc(i).enable = '1') and (ss(i).data_v = '1') ) then
+                    rv := unsigned(ss(i).data_q) & unsigned(ss(i).data_i) &
+                          rv(rv'high downto rv'high-LEN+1);
+                end if;
+            end loop;
+            return rv;
+        end function;
+
+
+        variable write_req : std_logic := '0';
+
     begin
 
         fifo_future            <= fifo_current;
@@ -255,22 +295,17 @@ begin
         fifo_future.fifo_clear <= '0';
         fifo_future.fifo_write <= '0';
 
-        -- TODO: Make this more bandwidth-efficient so we're not transmitting
-        --       zeroes over the USB interface.
-        for i in in_sample_controls'range loop
-            max_bit := (((2*in_samples(i).data_i'length)*(i+1))-1);
-            min_bit := ((2*in_samples(i).data_i'length)*i);
-            if( in_sample_controls(i).enable = '1' ) then
-                fifo_future.fifo_data(max_bit downto min_bit) <= std_logic_vector(
-                    in_samples(i).data_q & in_samples(i).data_i);
-            else
-                fifo_future.fifo_data(max_bit downto min_bit) <= (others => '0');
-            end if;
-        end loop;
+        -- MIMO PACKER: STEP 1 of 3
+        fifo_future.fifo_data  <= pack(in_sample_controls, in_samples, fifo_current.fifo_data);
 
         case fifo_current.state is
 
             when CLEAR =>
+
+                -- MIMO PACKER: STEP 2 of 3
+                --   Compute "samples left" to fill up the fifo_data bus
+                fifo_future.samples_left_init <= NUM_STREAMS - count_enabled_channels(in_sample_controls);
+                fifo_future.samples_left      <= NUM_STREAMS - count_enabled_channels(in_sample_controls);
 
                 if( enable = '1' ) then
                     fifo_future.fifo_clear <= '0';
@@ -282,7 +317,25 @@ begin
             when WRITE_SAMPLES =>
 
                 if( ((meta_current.meta_written = '1') or (meta_en = '0')) ) then
-                    fifo_future.fifo_write <= in_samples(in_samples'low).data_v;
+
+                    -- Check for valid data
+                    write_req := '0';
+                    for i in in_sample_controls'range loop
+                        if( in_sample_controls(i).enable = '1' ) then
+                            write_req := write_req or in_samples(i).data_v;
+                        end if;
+                    end loop;
+
+                    -- Received valid data
+                    if( write_req = '1' ) then
+                        if( fifo_current.samples_left = 0 ) then
+                            fifo_future.samples_left <= fifo_current.samples_left_init;
+                            fifo_future.fifo_write   <= write_req;
+                        else
+                            -- MIMO PACKER: STEP 3 of 3
+                            fifo_future.samples_left <= fifo_current.samples_left - 1;
+                        end if;
+                    end if;
                 else
                     fifo_future.fifo_write <= '0';
                 end if;
@@ -314,7 +367,7 @@ begin
         -- Output assignments
         fifo_clear <= fifo_current.fifo_clear;
         fifo_write <= fifo_current.fifo_write;
-        fifo_data  <= fifo_current.fifo_data;
+        fifo_data  <= std_logic_vector(fifo_current.fifo_data);
 
     end process;
 
