@@ -288,7 +288,7 @@ begin
             elsif( rising_edge(tx_clock) ) then
                 for i in reader_controls'range loop
                     reader_controls(i) <= (
-                        enable   => reader_controls(i).enable,
+                        enable   =>     reader_controls(i).enable,
                         data_req => not reader_controls(i).data_req );
                 end loop;
             end if;
@@ -351,13 +351,15 @@ begin
         process( rx_clock, reset )
         begin
             if( reset = '1' ) then
-                writer_controls <= (0 => SAMPLE_CONTROL_ENABLE,
-                                    1 => SAMPLE_CONTROL_ENABLE);
+                writer_controls <= (0 => (enable => '1',
+                                          data_req => '1'),
+                                    1 => (enable => '1',
+                                          data_req => '1'));
             elsif( rising_edge(rx_clock) ) then
                 for i in writer_controls'range loop
                     writer_controls(i) <= (
-                        enable   => reader_controls(i).enable,
-                        data_req => reader_controls(i).enable );
+                        enable   =>     writer_controls(i).enable,
+                        data_req => not writer_controls(i).data_req );
                 end loop;
             end if;
         end process;
