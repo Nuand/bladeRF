@@ -334,7 +334,7 @@ void si5338_write(uint8_t addr, uint8_t data)
     si5338_complete_transfer(1);
 
     IOWR_8DIRECT(I2C, OC_I2C_DATA, addr);
-    IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_CMD_STATUS | OC_I2C_WR);
+    IOWR_8DIRECT(I2C, OC_I2C_CMD_STATUS, OC_I2C_WR);
     si5338_complete_transfer(1);
 
     IOWR_8DIRECT(I2C, OC_I2C_DATA, data);
