@@ -25,6 +25,7 @@
 #ifndef OSX_CLOCK_GETTIME_H_
 #define OSX_CLOCK_GETTIME_H_
 
+#include "host_config.h"
 #include <time.h>
 
 #if HAVE_CLOCK_GETTIME == 0
