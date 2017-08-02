@@ -6,7 +6,7 @@ The HDL is separated out into two different sections:
 | Directory | Description                                                           |
 | :-------- | :-------------------------------------------------------------------- |
 | fpga      | Source HDL in the form of IP blocks or platform specific top levels   |
-| quartus   | Specific files for Quartus II project creation and building           |
+| quartus   | Specific files for Quartus Prime project creation and building           |
 
 IP, as it is added to the repository, falls under the category of who created the IP.  Some IP is created by Altera tools and remains in an Altera directory.  Some has been written by nuand or has been downloaded from OpenCores.  These blocks should be seen as independent from the platform and, essentially, building blocks for the entire platform.
 
@@ -15,21 +15,21 @@ Currently, the only platform we have is bladeRF.  As more platforms come out, mo
 ## Pre-compiled FPGA Binaries ##
 Some FPGA binaries are available for [download][download].  Please note the md5 hash as well as the git commit hash.
 
-[download]: http://nuand.com/fpga (nuand/FPGA Images)
+[download]: https://www.nuand.com/fpga/ (nuand/FPGA Images)
 
 ## Required Software ##
-We use an [Altera][altera] [Cyclone IV E FPGA][cive].  The size of the FPGA is the only difference between the x40 and x115 models.  Altera provides their [Quartus II][quartus] software for synthesizing designs for their FPGAs.  It is free of charge, but not open source and may require registering on their site to download the software.
+We use an [Altera][altera] [Cyclone IV E FPGA][cive].  The size of the FPGA is the only difference between the x40 and x115 models.  Altera provides their [Quartus Prime][quartus] software for synthesizing designs for their FPGAs.  The Lite Edition is free of charge, but not open source, and may require registering on their site to download the software.
 
-**Important Note:** Be sure to download [Quartus II version 15.0][quartus], which the bladeRF project files are based upon. The updates to Quartus II 15.0 are not reverse-compatible with earlier Quartus versions (e.g., 14.0, 13.1).
+**Important Note:** Be sure to download [Quartus Prime version 17.0][quartus], which the bladeRF project files are based upon. The updates to Quartus Prime 17.0 are not reverse-compatible with earlier Quartus versions, nor will future versions necessarily be reverse-compatible with 17.0.
 
-[altera]: http://www.altera.com (Altera)
-[quartus]: http://dl.altera.com/15.0/?edition=web (Quartus II Web Edition 15.0 Software)
-[cive]: http://www.altera.com/devices/fpga/cyclone-iv/overview/cyiv-overview.html
+[altera]: https://www.altera.com/ (Altera, part of the Intel Programmable Solutions Group)
+[quartus]: https://dl.altera.com/17.0/?edition=lite (Quartus Prime Lite Edition v17.0)
+[cive]: https://www.altera.com/products/fpga/cyclone-series/cyclone-iv/overview.html
 
 ## HDL Structure ##
 Since the FPGA is connected and soldered down to the board, it makes sense to have a single top level which defines where the pins go, their IO levels and their genera directionality.  We use a single `bladerf.vhd` top level to define a VHDL entity called `bladerf` that defines these pins.
 
-We realize people will want to change the internal guts of the FPGA for their own programmable logic reasons.  Because of this, we decided to differentiate the implementations using a feature of the Quartus II project file called Revisions.  Revisions can take a base design (top level entity, a part and pins) and duplicate that project, recording any source level changes you wish to make to the project.  This way, a user must only create their own architecture that is the new implementation of the `bladerf` top level.
+We realize people will want to change the internal guts of the FPGA for their own programmable logic reasons.  Because of this, we decided to differentiate the implementations using a feature of the Quartus Prime project file called Revisions.  Revisions can take a base design (top level entity, a part and pins) and duplicate that project, recording any source level changes you wish to make to the project.  This way, a user must only create their own architecture that is the new implementation of the `bladerf` top level.
 
 This technique can be seen with the currently supported architectures:
 
@@ -39,9 +39,9 @@ This technique can be seen with the currently supported architectures:
 | atsc_tx       | ATSC transmittter - Reads 4-bit ATSC symbols via USB and performs pilot insertion, filtering, and baseband shift. |
 
 ## Building the Project ##
-The Quartus II build tools supports TCL as a scripting language which we utilize to not only create the project file, but build the system without requiring the need of the GUI. Currently, the `build_bladerf.sh` performs some environment checks, builds the NIOS BSP and software, and then kicks off TCL scripts to build the FPGA image.
+The Quartus Prime build tools supports TCL as a scripting language which we utilize to not only create the project file, but build the system without requiring the need of the GUI. Currently, the `build_bladerf.sh` performs some environment checks, builds the NIOS BSP and software, and then kicks off TCL scripts to build the FPGA image.
 
-To support multiple versions of Quartus II on the same machine and to ensure the environment is appropriately setup, please use the `nios2_command_shell.sh` script to get into an appropriate Quartus II environment.  Note that this shell script is usually located in the `nios2eds` directory of your Quartus II install directory.  Also note that this is the preferred method regardless of using Windows or Linux to build.  If you're using pybombs, make sure you haven't run `setup_env.sh`, as it prevents `nios2_command_shell.sh` from working properly.
+To support multiple versions of Quartus Prime on the same machine and to ensure the environment is appropriately setup, please use the `nios2_command_shell.sh` script to get into an appropriate Quartus Prime environment.  Note that this shell script is usually located in the `nios2eds` directory of your Quartus Prime install directory.  Also note that this is the preferred method regardless of using Windows or Linux to build.  If you're using pybombs, make sure you haven't run `setup_env.sh`, as it prevents `nios2_command_shell.sh` from working properly.
 
 1. Take note of which Altera Cyclone IV you have. (The EP4CE40 is 40 kLE, and the EP4CE115 is 115 kLE.)  You'll need this size below...
 2. Enter the `quartus` directory
@@ -58,4 +58,4 @@ For advanced users who want to use Signal Tap internal logic analyzer in their d
 quartus_sh -t ../build.tcl -rev hosted -size 115 -stp ../signaltap/debug_rx.stp
 ```
 
-Note that to use Signal Tap with the Quartus II Web Edition software, Altera requires that the TalkBack feature be enabled.  The build script tries to 'fake' this out by setting the TalkBack feature to be on, compiling the project, then turning it off immediately.  If this behavior is not desired, don't try to add a Signal Tap file to the project.
+Note that to use Signal Tap with the Quartus Prime Web Edition software, Altera requires that the TalkBack feature be enabled.  The build script tries to 'fake' this out by setting the TalkBack feature to be on, compiling the project, then turning it off immediately.  If this behavior is not desired, don't try to add a Signal Tap file to the project.
