@@ -339,15 +339,21 @@ if(ENABLE_BACKEND_LINUX_DRIVER)
 endif()
 
 if(BLADERF_OS_OSX)
-    set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE}
-        ${BLADERF_HOST_COMMON_SOURCE_DIR}/osx/clock_gettime.c
-    )
+    if (NOT HAVE_CLOCK_GETTIME)
+        message(STATUS "Including clock_gettime.c shim for macOS")
+        set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE}
+            ${BLADERF_HOST_COMMON_SOURCE_DIR}/osx/clock_gettime.c
+        )
+    endif()
 endif()
 
 if(MSVC)
-    set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE}
-        ${BLADERF_HOST_COMMON_SOURCE_DIR}/windows/clock_gettime.c
-    )
+    if (NOT HAVE_CLOCK_GETTIME)
+        message(STATUS "Including clock_gettime.c shim for Windows")
+        set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE}
+            ${BLADERF_HOST_COMMON_SOURCE_DIR}/windows/clock_gettime.c
+        )
+    endif()
 endif()
 
 set(SRC_TO_SHORTEN ${LIBBLADERF_SOURCE})

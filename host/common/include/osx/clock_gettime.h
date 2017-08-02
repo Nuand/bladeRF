@@ -2,7 +2,7 @@
  * This file is part of the bladeRF project:
  *   http://www.github.com/nuand/bladeRF
  *
- * Copyright (c) 2013 Nuand LLC
+ * Copyright (c) 2013-2017 Nuand LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,17 +27,15 @@
 
 #include <time.h>
 
-#include "AvailabilityMacros.h"
-
-#if MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_12
+#if HAVE_CLOCK_GETTIME == 0
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif // __cplusplus
 
 #ifndef __MACH__
 #   error "This file is intended for use with OSX systems only."
-#endif
+#endif // __MACH__
 
 typedef int clockid_t;
 #define CLOCK_REALTIME 0
@@ -46,8 +44,8 @@ int clock_gettime(clockid_t clk_id, struct timespec *tp);
 
 #ifdef __cplusplus
 } /* extern "C" */
-#endif
+#endif // __cplusplus
 
-#endif
+#endif // !HAVE_CLOCK_GETTIME
 
-#endif
+#endif // OSX_CLOCK_GETTIME_H

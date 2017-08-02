@@ -41,6 +41,8 @@
 #error "Build configured for multiple operating systems"
 #endif
 
+#cmakedefine01  HAVE_CLOCK_GETTIME
+
 /*******************************************************************************
  * Endianness conversions
  *
