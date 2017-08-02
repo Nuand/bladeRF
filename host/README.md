@@ -39,6 +39,17 @@ sudo make install
 sudo ldconfig
 ```
 
+**Fedora Note:** By default, libbladeRF will install to /usr/local/{lib,lib64}, which is [not listed in /etc/ld.so.conf][redhat144967]. On these systems, it is recommended to create a ```/etc/ld.so.conf.d/local.conf``` specifying these directories:
+
+```
+sudo tee /etc/ld.so.conf.d/local.conf <<EOF
+/usr/local/lib
+/usr/local/lib64
+EOF
+```
+
+Then, run ```sudo ldconfig``` again.
+
 ### Windows ###
 - Create a build directory
 - Run the CMake GUI, pointing the source location to this ```host``` directory and the build directory to the ```build``` directory you just created.
@@ -84,3 +95,4 @@ more information.
 [variable list]: http://www.cmake.org/cmake/help/v2.8.11/cmake.html#section_Variables (CMake variables)
 [CMake documentation]: http://www.cmake.org/cmake/help/documentation.html (Cmake documentation)
 [Cypress FX3 SDK]: http://www.cypress.com/?rID=57990 (Cypress FX3 SDK)
+[redhat144967]: https://bugzilla.redhat.com/show_bug.cgi?id=144967 (Red Hat Bugzilla - Bug 144967)
