@@ -1,6 +1,10 @@
 bladerf (2017.07) unstable; urgency=low
 
+  [ Robert Ghilduta ]
   * Add Automatic Gain Control
+
+  [ Rey Tucker ]
+  * debian: fix permissions on FPGA and firmware binaries after downloading
 
  -- Robert Ghilduta <robert.ghilduta@nuand.com>  Sun, 02 Jul 2017 21:14:15 -0400
 
