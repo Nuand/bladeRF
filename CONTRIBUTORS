@@ -94,9 +94,9 @@ I: jynik
 G: jynik
 D: Former developer and project maintainer
 
-N: Ryan Tucker
-E: rtucker@gmail.com
+N: Rey Tucker
+E: rey.tucker@nuand.com
+F: rtucker
 I: HoopyCat
 G: rtucker
-D: Documentation, FPGA build automation, PPA maintainer
-W: http://hoopycat.com/bladerf_builds
+D: Project maintainer, developer, PPA maintainer
