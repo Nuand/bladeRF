@@ -24,8 +24,6 @@
  * THE SOFTWARE.
  */
 
-#if HAVE_CLOCK_GETTIME == 0
-
 #include "clock_gettime.h"
 #include <errno.h>
 #include <mach/clock.h>
@@ -59,5 +57,3 @@ clock_gettime_out:
         return 0;
     }
 }
-
-#endif // !HAVE_CLOCK_GETTIME
