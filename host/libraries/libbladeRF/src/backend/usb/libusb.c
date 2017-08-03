@@ -29,6 +29,8 @@
 #include "async.h"
 #include "log.h"
 
+#include "host_config.h"
+
 #ifndef LIBUSB_HANDLE_EVENTS_TIMEOUT_NSEC
 #   define LIBUSB_HANDLE_EVENTS_TIMEOUT_NSEC    (15 * 1000)
 #endif
@@ -37,6 +39,9 @@ struct bladerf_lusb {
     libusb_device           *dev;
     libusb_device_handle    *handle;
     libusb_context          *context;
+#if 1 == BLADERF_OS_WINDOWS
+    HANDLE                  mutex;
+#endif // BLADERF_OS_WINDOWS
 };
 
 typedef enum {
@@ -336,6 +341,40 @@ static void get_libusb_version(char *buf, size_t buf_len)
 }
 #endif
 
+static int create_device_mutex(struct bladerf_lusb *dev)
+{
+    int status = 0;
+
+#if 1 == BLADERF_OS_WINDOWS
+    const char prefix[] = "Global\\bladeRF-";
+    const size_t mutex_name_len = strlen(prefix) + BLADERF_SERIAL_LENGTH;
+    char *mutex_name = (char *)calloc(mutex_name_len, 1);
+
+    if (NULL == mutex_name) {
+        return BLADERF_ERR_MEM;
+    } else {
+        strcpy(mutex_name, prefix);
+    }
+
+    wcstombs(mutex_name + strlen(prefix), info->serial,
+             sizeof(mutex_name) - BLADERF_SERIAL_LENGTH - 1);
+    log_verbose("Mutex name: %s\n", mutex_name);
+
+    SetLastError(0);
+    dev->mutex = CreateMutex(NULL, true, mutex_name);
+    last_error = GetLastError();
+    if (NULL == dev->mutex || last_error != 0) {
+        log_debug("Unable to create device mutex: mutex=%p, last_error=%ld\n",
+                  dev->mutex, last_error);
+        dev->Close();
+        status = BLADERF_ERR_NODEV;
+    }
+
+    free(mutex_name);
+#endif // BLADERF_OS_WINDOWS
+
+    return status;
+}
 
 static int open_device(const struct bladerf_devinfo *info,
                        libusb_context *context,
@@ -349,7 +388,7 @@ static int open_device(const struct bladerf_devinfo *info,
 
     dev = (struct bladerf_lusb *) calloc(1, sizeof(dev[0]));
     if (dev == NULL) {
-        log_debug("Failed allocate handle for instance %d.\n",
+        log_debug("Failed to allocate handle for instance %d.\n",
                   info->instance);
 
         /* Report "no device" so we could try again with
@@ -366,7 +405,7 @@ static int open_device(const struct bladerf_devinfo *info,
                   info->instance, libusb_error_name(status));
 
         status = error_conv(status);
-        goto error;
+        goto out;
     }
 
     status = libusb_claim_interface(dev->handle, 0);
@@ -375,10 +414,19 @@ static int open_device(const struct bladerf_devinfo *info,
                   info->instance, libusb_error_name(status));
 
         status = error_conv(status);
-        goto error;
+        goto out;
     }
 
-error:
+    status = create_device_mutex(dev);
+    if (status < 0) {
+        log_debug("Failed to get device mutex for instance %d: %s\n",
+                  info->instance, bladerf_strerror(status));
+
+        status = error_conv(status);
+        goto out;
+    }
+
+out:
     if (status != 0) {
         if (dev->handle != NULL) {
             libusb_close(dev->handle);
@@ -497,6 +545,10 @@ static int reset_and_reopen(libusb_context *context,
 
         libusb_release_interface((*dev)->handle, 0);
         libusb_close((*dev)->handle);
+#if 1 == BLADERF_OS_WINDOWS
+        CloseHandle((*dev)->mutex);
+#endif // BLADERF_OS_WINDOWS
+
         *dev = NULL;
 
         memcpy(&new_info, info, sizeof(new_info));
@@ -597,6 +649,9 @@ static void lusb_close(void *driver)
 
     libusb_close(lusb->handle);
     libusb_exit(lusb->context);
+#if 1 == BLADERF_OS_WINDOWS
+    CloseHandle(lusb->mutex);
+#endif // BLADERF_OS_WINDOWS
     free(lusb);
 }
 
@@ -619,6 +674,10 @@ static void lusb_close_bootloader(void *driver)
         if (lusb->context != NULL) {
             libusb_exit(lusb->context);
         }
+
+#if 1 == BLADERF_OS_WINDOWS
+        CloseHandle(lusb->mutex);
+#endif // BLADERF_OS_WINDOWS
 
         free(lusb);
     }
