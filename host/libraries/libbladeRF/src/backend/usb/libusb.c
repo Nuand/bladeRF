@@ -366,6 +366,8 @@ static int create_device_mutex(const struct bladerf_devinfo *info,
         log_debug("Unable to create device mutex: mutex=%p, last_error=%ld\n",
                   dev->mutex, last_error);
         status = BLADERF_ERR_NODEV;
+        ReleaseMutex(dev->mutex);
+        CloseHandle(dev->mutex);
     }
 
     free(mutex_name);
@@ -544,7 +546,7 @@ static int reset_and_reopen(libusb_context *context,
         libusb_release_interface((*dev)->handle, 0);
         libusb_close((*dev)->handle);
 #if 1 == BLADERF_OS_WINDOWS
-        CloseHandle((*dev)->mutex);
+        ReleaseMutex((*dev)->mutex);
 #endif // BLADERF_OS_WINDOWS
 
         *dev = NULL;
@@ -648,7 +650,7 @@ static void lusb_close(void *driver)
     libusb_close(lusb->handle);
     libusb_exit(lusb->context);
 #if 1 == BLADERF_OS_WINDOWS
-    CloseHandle(lusb->mutex);
+    ReleaseMutex(lusb->mutex);
 #endif // BLADERF_OS_WINDOWS
     free(lusb);
 }
@@ -674,7 +676,7 @@ static void lusb_close_bootloader(void *driver)
         }
 
 #if 1 == BLADERF_OS_WINDOWS
-        CloseHandle(lusb->mutex);
+        ReleaseMutex(lusb->mutex);
 #endif // BLADERF_OS_WINDOWS
 
         free(lusb);
