@@ -341,7 +341,8 @@ static void get_libusb_version(char *buf, size_t buf_len)
 }
 #endif
 
-static int create_device_mutex(struct bladerf_lusb *dev)
+static int create_device_mutex(const struct bladerf_devinfo *info,
+                               struct bladerf_lusb *dev)
 {
     int status = 0;
 
@@ -349,15 +350,13 @@ static int create_device_mutex(struct bladerf_lusb *dev)
     const char prefix[] = "Global\\bladeRF-";
     const size_t mutex_name_len = strlen(prefix) + BLADERF_SERIAL_LENGTH;
     char *mutex_name = (char *)calloc(mutex_name_len, 1);
+    DWORD last_error;
 
     if (NULL == mutex_name) {
         return BLADERF_ERR_MEM;
-    } else {
-        strcpy(mutex_name, prefix);
     }
 
-    wcstombs(mutex_name + strlen(prefix), info->serial,
-             sizeof(mutex_name) - BLADERF_SERIAL_LENGTH - 1);
+    snprintf(mutex_name, mutex_name_len, "%s%s", prefix, info->serial);
     log_verbose("Mutex name: %s\n", mutex_name);
 
     SetLastError(0);
@@ -366,7 +365,6 @@ static int create_device_mutex(struct bladerf_lusb *dev)
     if (NULL == dev->mutex || last_error != 0) {
         log_debug("Unable to create device mutex: mutex=%p, last_error=%ld\n",
                   dev->mutex, last_error);
-        dev->Close();
         status = BLADERF_ERR_NODEV;
     }
 
@@ -417,7 +415,7 @@ static int open_device(const struct bladerf_devinfo *info,
         goto out;
     }
 
-    status = create_device_mutex(dev);
+    status = create_device_mutex(info, dev);
     if (status < 0) {
         log_debug("Failed to get device mutex for instance %d: %s\n",
                   info->instance, bladerf_strerror(status));
