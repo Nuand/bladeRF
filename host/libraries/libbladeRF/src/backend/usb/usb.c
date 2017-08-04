@@ -2,7 +2,7 @@
  * This file is part of the bladeRF project:
  *   http://www.github.com/nuand/bladeRF
  *
- * Copyright (C) 2014 Nuand LLC
+ * Copyright (C) 2014-2017 Nuand LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -1092,6 +1092,15 @@ static int usb_read_fw_log(struct bladerf *dev, logger_entry *e)
     return status;
 }
 
+static int set_agc_dc_correction_unsupported(struct bladerf *dev,
+                                             int16_t q_max, int16_t i_max,
+                                             int16_t q_mid, int16_t i_mid,
+                                             int16_t q_low, int16_t i_low)
+{
+    log_debug("Operation not supported with legacy NIOS packet format.\n");
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
 
 /* USB backend that used legacy format for communicating with NIOS II */
 const struct backend_fns backend_fns_usb_legacy = {
@@ -1128,6 +1137,8 @@ const struct backend_fns backend_fns_usb_legacy = {
     FIELD_INIT(.set_iq_phase_correction, nios_legacy_set_iq_phase_correction),
     FIELD_INIT(.get_iq_gain_correction, nios_legacy_get_iq_gain_correction),
     FIELD_INIT(.get_iq_phase_correction, nios_legacy_get_iq_phase_correction),
+
+    FIELD_INIT(.set_agc_dc_correction, set_agc_dc_correction_unsupported),
 
     FIELD_INIT(.get_timestamp, nios_legacy_get_timestamp),
 
