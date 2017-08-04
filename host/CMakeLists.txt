@@ -70,6 +70,9 @@ if(WIN32)
     include(FindCyAPI)
 endif()
 
+include(CheckLibraryExists)
+check_library_exists(c clock_gettime "time.h" HAVE_CLOCK_GETTIME)
+
 ################################################################################
 # Compiler configuration
 ################################################################################
