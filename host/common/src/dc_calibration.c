@@ -245,6 +245,18 @@ int dc_calibration_lms6(struct bladerf *dev, const char *module_str)
  * Shared utility routines
  ******************************************************************************/
 
+/* Round float to int16_t */
+static inline int16_t float_to_int16(float val)
+{
+    if ((val - 0.5) <= INT16_MIN) {
+        return INT16_MIN;
+    }
+    if ((val + 0.5) >= INT16_MAX) {
+        return INT16_MAX;
+    }
+    return val >= 0 ? (int16_t)(val + 0.5) : (int16_t)(val - 0.5);
+}
+
 /* Convert ms to samples */
 #define MS_TO_SAMPLES(ms_, rate_) (\
     (unsigned int) (ms_ * ((uint64_t) rate_) / 1000) \
@@ -676,8 +688,8 @@ static int rx_cal_dc_off(struct rx_cal *cal, struct gain_mode *gains,
     }
 
     sample_mean(cal->samples, cal->num_samples, &mean_i, &mean_q);
-    *dc_i = mean_i;
-    *dc_q = mean_q;
+    *dc_i = float_to_int16(mean_i);
+    *dc_q = float_to_int16(mean_q);
 
     return 0;
 }
