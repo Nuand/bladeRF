@@ -230,7 +230,7 @@ if(WIN32 AND NOT CMAKE_CROSSCOMPILING)
         add_custom_command(
             OUTPUT "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/pthreadVC2.dll"
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${LIBPTHREADSWIN32_PATH}/dll/${LIBPTHREADSWIN32_LIBRARY_PATH_SUFFIX}/pthreadVC2.dll"
+                "${LIBPTHREADSWIN32_DLL}"
                 "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/"
             COMMENT "Copying pthreadVC2.dll to output directory..."
         )
