@@ -249,6 +249,7 @@ static int open_via_info(void **driver, backend_probe_target probe_target,
 
     if (status != 0) {
         delete dev;
+        ReleaseMutex(cyapi_data->mutex);
         CloseHandle(cyapi_data->mutex);
     }
 
@@ -281,6 +282,7 @@ static void cyapi_close(void *driver)
     struct bladerf_cyapi *cyapi_data = get_backend_data(driver);
     cyapi_data->dev->Close();
     delete cyapi_data->dev;
+    ReleaseMutex(cyapi_data->mutex);
     CloseHandle(cyapi_data->mutex);
     free(driver);
 
