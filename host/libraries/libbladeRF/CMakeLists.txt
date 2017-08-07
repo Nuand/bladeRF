@@ -127,8 +127,8 @@ if(ENABLE_LOCK_CHECKS)
     add_definitions(-DENABLE_LOCK_CHECKS)
 endif()
 
-if("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" OR
-    "${CMAKE_C_COMPILER_ID}" STREQUAL "Clang" )
+if(${CMAKE_C_COMPILER_ID} STREQUAL "GNU" OR
+   ${CMAKE_C_COMPILER_ID} STREQUAL "Clang")
 
     # Doing this manually instead of via add_compiler_export_flags() since
     # the GenerateExportHeader module appears to break for C-only projects:

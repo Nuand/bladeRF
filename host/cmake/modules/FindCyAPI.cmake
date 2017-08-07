@@ -24,7 +24,7 @@ set(FX3_SDK_PATH
     "Path to the Cypress FX3 SDK"
 )
 
-if(NOT EXISTS "${FX3_SDK_PATH}")
+if(NOT EXISTS ${FX3_SDK_PATH})
     message(STATUS
             "Cypress backend not available. The following location does not exist: FX3_SDK_PATH=${FX3_SDK_PATH}")
     return()
