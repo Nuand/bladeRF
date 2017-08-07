@@ -82,7 +82,8 @@ uint32_t clk_get_rate(struct ad9361_rf_phy *phy,
 		case TX_RFPLL_INT:
 		case RX_RFPLL_INT:
 			rate = ad9361_rfpll_int_recalc_rate(clk_priv,
-						phy->clks[clk_priv->parent_source]->rate);
+                                                phy->clks[clk_priv->parent_source]->rate);
+                        break;
 		case RX_RFPLL_DUMMY:
 		case TX_RFPLL_DUMMY:
 			rate = ad9361_rfpll_dummy_recalc_rate(clk_priv);
@@ -151,7 +152,8 @@ int32_t clk_set_rate(struct ad9361_rf_phy *phy,
 				break;
 			case RX_RFPLL_DUMMY:
 			case TX_RFPLL_DUMMY:
-				ad9361_rfpll_dummy_set_rate(clk_priv, rate);
+                                ad9361_rfpll_dummy_set_rate(clk_priv, rate);
+                                break;
 			case TX_RFPLL:
 			case RX_RFPLL:
 				round_rate = ad9361_rfpll_round_rate(clk_priv, rate);
