@@ -324,10 +324,14 @@ if(LIBUSB_FOUND AND ENABLE_BACKEND_LIBUSB)
     set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend//usb/libusb.c)
 endif()
 
-if(CYAPI_FOUND AND ENABLE_BACKEND_CYAPI)
-    set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend/usb/cyapi.c)
-    # CyAPI is C++
-    set_source_files_properties(src/backend/usb/cyapi.c PROPERTIES LANGUAGE CXX)
+if(ENABLE_BACKEND_CYAPI)
+    if(CYAPI_FOUND)
+        set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE} src/backend/usb/cyapi.c)
+        # CyAPI is C++
+        set_source_files_properties(src/backend/usb/cyapi.c PROPERTIES LANGUAGE CXX)
+    else()
+        message(FATAL_ERROR "CyAPI was not found or is not compatible with this system.")
+    endif()
 endif()
 
 if(ENABLE_BACKEND_DUMMY)
