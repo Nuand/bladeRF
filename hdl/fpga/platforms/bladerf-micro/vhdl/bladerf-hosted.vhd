@@ -519,10 +519,27 @@ begin
         );
 
     dac_assignment_proc : process( all )
+        -- Temporary until host code is updated for MIMO support
+        type     channel_selects is array(dac_controls'range) of std_logic;
+        variable mimo_ch : channel_selects;
+        -- End temporary
     begin
+
+        -- Temporary until host code is updated for MIMO support
+        if( channel_sel = '0' ) then
+            mimo_ch(0) := '1';
+            mimo_ch(1) := '0';
+        else
+            mimo_ch(0) := '0';
+            mimo_ch(1) := '1';
+        end if;
+        -- End temporary
+
         for i in dac_controls'range loop
-            dac_controls(i).enable   <= ad9361.ch(i).dac.i.enable or ad9361.ch(i).dac.q.enable or tx_loopback_enabled;
-            dac_controls(i).data_req <= ad9361.ch(i).dac.i.valid  or ad9361.ch(i).dac.q.valid  or tx_loopback_enabled;
+            dac_controls(i).enable   <= (ad9361.ch(i).dac.i.enable or ad9361.ch(i).dac.q.enable or tx_loopback_enabled) and
+                                        mimo_ch(i);
+            dac_controls(i).data_req <= (ad9361.ch(i).dac.i.valid  or ad9361.ch(i).dac.q.valid  or tx_loopback_enabled) and
+                                        mimo_ch(i);
             ad9361.ch(i).dac.i.data  <= std_logic_vector(dac_streams(i).data_i(11 downto 0)) & "0000";
             ad9361.ch(i).dac.q.data  <= std_logic_vector(dac_streams(i).data_q(11 downto 0)) & "0000";
         end loop;
@@ -583,9 +600,24 @@ begin
         );
 
     adc_assignment_proc : process( all )
+        -- Temporary until host code is updated for MIMO support
+        type     channel_selects is array(dac_controls'range) of std_logic;
+        variable mimo_ch : channel_selects;
+        -- End temporary
     begin
+
+        -- Temporary until host code is updated for MIMO support
+        if( channel_sel = '0' ) then
+            mimo_ch(0) := '1';
+            mimo_ch(1) := '0';
+        else
+            mimo_ch(0) := '0';
+            mimo_ch(1) := '1';
+        end if;
+        -- End temporary
+
         for i in adc_controls'range loop
-            adc_controls(i).enable   <= ad9361.ch(i).adc.i.enable or ad9361.ch(i).adc.q.enable;
+            adc_controls(i).enable   <= (ad9361.ch(i).adc.i.enable or ad9361.ch(i).adc.q.enable) and mimo_ch(i);
             adc_controls(i).data_req <= '1';
             adc_streams(i).data_i    <= signed(ad9361.ch(i).adc.i.data);
             adc_streams(i).data_q    <= signed(ad9361.ch(i).adc.q.data);
