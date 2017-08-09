@@ -1,4 +1,7 @@
 /** [Full listing] */
+/* Save to a file, e.g. boilerplate.c, and then compile:
+ * $ gcc boilerplate.c -o libbladeRF_example_boilerplate -lbladeRF
+ */
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
