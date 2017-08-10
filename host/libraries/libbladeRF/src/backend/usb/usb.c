@@ -23,6 +23,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <inttypes.h>
+#include <errno.h>
 
 #include "usb.h"
 #include "rel_assert.h"
@@ -884,9 +885,57 @@ int usb_submit_stream_buffer(struct bladerf_stream *stream, void *buffer,
 {
     void *driver;
     struct bladerf_usb *usb = usb_backend(stream->dev, &driver);
-    return usb->fn->submit_stream_buffer(driver, stream, buffer,
-                                         timeout_ms, nonblock);
+    int status = 0;
+    struct timespec timeout_abs;
+
+    if (buffer == BLADERF_STREAM_SHUTDOWN) {
+        if (usb->fn->get_num_avail(stream) == usb->fn->get_num_transfers(stream)) {
+            stream->state = STREAM_DONE;
+        } else {
+            stream->state = STREAM_SHUTTING_DOWN;
+        }
+
+        return 0;
+    }
+
+    if (usb->fn->get_num_avail(stream) == 0) {
+        if (nonblock) {
+            log_debug("Non-blocking buffer submission requested, but no "
+                      "transfers are currently available.");
+
+            return BLADERF_ERR_WOULD_BLOCK;
+        }
+
+        if (timeout_ms != 0) {
+            status = populate_abs_timeout(&timeout_abs, timeout_ms);
+            if (status != 0) {
+                return BLADERF_ERR_UNEXPECTED;
+            }
+
+            while (usb->fn->get_num_avail(stream) == 0 && status == 0) {
+                status = pthread_cond_timedwait(&stream->can_submit_buffer,
+                        &stream->lock,
+                        &timeout_abs);
+            }
+        } else {
+            while (usb->fn->get_num_avail(stream) == 0 && status == 0) {
+                status = pthread_cond_wait(&stream->can_submit_buffer,
+                        &stream->lock);
+            }
+        }
+    }
+
+    if (status == ETIMEDOUT) {
+        log_debug("%s: Timed out waiting for a transfer to become available.\n",
+                  __FUNCTION__);
+        return BLADERF_ERR_TIMEOUT;
+    } else if (status != 0) {
+        return BLADERF_ERR_UNEXPECTED;
+    } else {
+        return usb->fn->submit_transfer(stream, buffer);
+    }
 }
+
 
 static void usb_deinit_stream(struct bladerf_stream *stream)
 {

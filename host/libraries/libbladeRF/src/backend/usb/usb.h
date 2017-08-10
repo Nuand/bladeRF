@@ -103,6 +103,12 @@ struct usb_fns {
     void (*close)(void *driver);
 
     int (*get_speed)(void *driver, bladerf_dev_speed *speed);
+    
+    size_t (*get_num_avail)(struct bladerf_stream *stream);
+
+    size_t (*get_num_transfers)(struct bladerf_stream *stream);
+
+    int (*submit_transfer)(struct bladerf_stream *stream, void *buffer);
 
     int (*change_setting)(void *driver, uint8_t setting);
 
@@ -126,10 +132,6 @@ struct usb_fns {
 
     int (*stream)(void *driver, struct bladerf_stream *stream,
                   bladerf_module module);
-
-    int (*submit_stream_buffer)(void *driver, struct bladerf_stream *stream,
-                                void *buffer, unsigned int timeout_ms,
-                                bool nonblock);
 
     int (*deinit_stream)(void *driver, struct bladerf_stream *stream);
 
