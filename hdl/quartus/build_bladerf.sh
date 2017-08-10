@@ -85,6 +85,10 @@ fi
 # Default to NIOS II E (Tiny)
 nios_rev="Tiny"
 
+# Don't export the fabric register probe outputs for the default revisions
+export_fabric_register_outputs=0
+export_fabric_register_inputs=0
+
 while getopts ":fa:s:r:n:h" opt; do
     case $opt in
         h)
@@ -200,7 +204,9 @@ ip-generate \
     --system-info=DEVICE_FAMILY=Cyclone\ IV\ E \
     --system-info=DEVICE=EP4CE40F23C8 \
     --system-info=DEVICE_SPEEDGRADE=8 \
-    --component-file=$nios_system/nios_system.qsys
+    --component-file=$nios_system/nios_system.qsys \
+    --component-parameter=enable_fabric_register_inputs=$export_fabric_register_inputs \
+    --component-parameter=enable_fabric_register_outputs=$export_fabric_register_outputs
 
 ip-generate \
     --project-directory=$nios_system \
@@ -213,7 +219,9 @@ ip-generate \
     --system-info=DEVICE_FAMILY=Cyclone\ IV\ E \
     --system-info=DEVICE=EP4CE40F23C8 \
     --system-info=DEVICE_SPEEDGRADE=8 \
-    --component-file=$nios_system/nios_system.qsys
+    --component-file=$nios_system/nios_system.qsys \
+    --component-parameter=enable_fabric_register_inputs=$export_fabric_register_inputs \
+    --component-parameter=enable_fabric_register_outputs=$export_fabric_register_outputs
 
 echo ""
 echo "##########################################################################"

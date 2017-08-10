@@ -1075,6 +1075,21 @@ static int get_vctcxo_tamer_mode_unsupported(struct bladerf *dev,
     return BLADERF_ERR_UNSUPPORTED;
 }
 
+static int fabric_register_write_unsupported(struct bladerf *dev,
+                                            uint8_t addr, uint32_t value)
+{
+    log_debug("Operation not supported with legacy NIOS packet format.\n");
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
+static int fabric_register_read_unsupported(struct bladerf *dev,
+                                            uint8_t addr, uint32_t *value)
+{
+    *value = 0;
+    log_debug("Operation not supported with legacy NIOS packet format.\n");
+    return BLADERF_ERR_UNSUPPORTED;
+}
+
 static int usb_read_fw_log(struct bladerf *dev, logger_entry *e)
 {
     int status;
@@ -1154,6 +1169,9 @@ const struct backend_fns backend_fns_usb_legacy = {
     FIELD_INIT(.set_vctcxo_tamer_mode, set_vctcxo_tamer_mode_unsupported),
     FIELD_INIT(.get_vctcxo_tamer_mode, get_vctcxo_tamer_mode_unsupported),
 
+    FIELD_INIT(.fabric_register_write, fabric_register_write_unsupported),
+    FIELD_INIT(.fabric_register_read, fabric_register_read_unsupported),
+
     FIELD_INIT(.xb_spi, nios_legacy_xb200_synth_write),
 
     FIELD_INIT(.set_firmware_loopback, usb_set_firmware_loopback),
@@ -1224,6 +1242,9 @@ const struct backend_fns backend_fns_usb = {
 
     FIELD_INIT(.set_vctcxo_tamer_mode, nios_set_vctcxo_tamer_mode),
     FIELD_INIT(.get_vctcxo_tamer_mode, nios_get_vctcxo_tamer_mode),
+
+    FIELD_INIT(.fabric_register_write, nios_fabric_register_write),
+    FIELD_INIT(.fabric_register_read, nios_fabric_register_read),
 
     FIELD_INIT(.xb_spi, nios_xb200_synth_write),
 

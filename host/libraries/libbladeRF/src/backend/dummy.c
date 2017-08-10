@@ -213,6 +213,19 @@ static int dummy_vctcxo_dac_read(struct bladerf *dev, uint16_t *value)
     return 0;
 }
 
+static int dummy_fabric_register_write(struct bladerf *dev,
+                                    uint8_t addr, uint32_t value)
+{
+    return 0;
+}
+
+static int dummy_fabric_register_read(struct bladerf *dev,
+                                    uint8_t addr, uint32_t *value)
+{
+    *value = 0;
+    return 0;
+}
+
 static int dummy_xb_spi(struct bladerf *dev, uint32_t value)
 {
     return 0;
@@ -338,6 +351,9 @@ const struct backend_fns backend_fns_dummy = {
 
     FIELD_INIT(.vctcxo_dac_write, dummy_vctcxo_dac_write),
     FIELD_INIT(.vctcxo_dac_read,  dummy_vctcxo_dac_read),
+
+    FIELD_INIT(.fabric_register_write, dummy_fabric_register_write),
+    FIELD_INIT(.fabric_register_read,  dummy_fabric_register_read),
 
     FIELD_INIT(.set_vctcxo_tamer_mode, dummy_set_vctcxo_tamer_mode),
     FIELD_INIT(.get_vctcxo_tamer_mode, dummy_get_vctcxo_tamer_mode),

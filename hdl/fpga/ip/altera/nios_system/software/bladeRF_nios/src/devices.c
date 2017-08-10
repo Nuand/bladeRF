@@ -195,6 +195,16 @@ void vctcxo_tamer_write(uint8_t addr, uint8_t data) {
     IOWR_8DIRECT(VCTCXO_TAMER_0_BASE, addr, data);
 }
 
+void fabric_register_probe_write(uint8_t addr, uint32_t data) {
+    addr = (addr & 0x07) << 2;
+    IOWR_32DIRECT(FABRIC_PROBE_BASE, addr, data);
+}
+
+uint32_t fabric_register_probe_read(uint8_t addr) {
+    addr = (addr & 0x07) << 2;
+    return (uint32_t)IORD_32DIRECT(FABRIC_PROBE_BASE, addr);
+}
+
 void tamer_schedule(bladerf_module m, uint64_t time) {
     uint32_t base = (m == BLADERF_MODULE_RX) ? RX_TAMER_BASE : TX_TAMER_BASE ;
 

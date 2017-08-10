@@ -155,6 +155,13 @@ struct backend_fns {
     int (*get_vctcxo_tamer_mode)(struct bladerf *dev,
                                  bladerf_vctcxo_tamer_mode *mode);
 
+    /* Fabric register accessors */
+    int (*fabric_register_write)(struct bladerf *dev,
+                                    uint8_t addr, uint32_t value);
+
+    int (*fabric_register_read)(struct bladerf *dev,
+                                    uint8_t addr, uint32_t *value);
+
     /* Expansion board SPI */
     int (*xb_spi)(struct bladerf *dev, uint32_t value);
 

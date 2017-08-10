@@ -106,6 +106,12 @@
 #define BLADERF_CAP_AGC_DC_LUT          (1 << 10)
 
 /**
+ * FPGA v0.8.0 introduces the ability to access registers in the FPGA fabric
+ * from libbladeRF
+ */
+#define BLADERF_CAP_FABRIC_REGISTER_ACCESS (1 << 10)
+
+/**
  * Firmware 1.7.1 introduced firmware-based loopback
  */
 #define BLADERF_CAP_FW_LOOPBACK         (((uint64_t) 1) << 32)
