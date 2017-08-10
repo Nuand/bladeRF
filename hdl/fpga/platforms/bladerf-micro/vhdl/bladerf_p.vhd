@@ -172,7 +172,7 @@ package bladerf_p is
         wreq    :   std_logic;
         wempty  :   std_logic;
         wfull   :   std_logic;
-        wused   :   std_logic_vector(compute_wrusedw_high(TX_FIFO_LENGTH) downto 0);
+        wused   :   std_logic_vector(compute_wrusedw_high(TX_FIFO_LENGTH, "OFF") downto 0);
 
         rclock  :   std_logic;
         rdata   :   std_logic_vector(TX_FIFO_RWIDTH-1 downto 0);
@@ -180,7 +180,7 @@ package bladerf_p is
         rempty  :   std_logic;
         rfull   :   std_logic;
         rused   :   std_logic_vector(compute_rdusedw_high(TX_FIFO_LENGTH, TX_FIFO_WWIDTH,
-                                                          TX_FIFO_RWIDTH) downto 0);
+                                                          TX_FIFO_RWIDTH, "OFF") downto 0);
     end record;
 
     type rx_fifo_t is record
@@ -191,7 +191,7 @@ package bladerf_p is
         wreq    :   std_logic;
         wempty  :   std_logic;
         wfull   :   std_logic;
-        wused   :   std_logic_vector(compute_wrusedw_high(RX_FIFO_LENGTH) downto 0);
+        wused   :   std_logic_vector(compute_wrusedw_high(RX_FIFO_LENGTH, "OFF") downto 0);
 
         rclock  :   std_logic;
         rdata   :   std_logic_vector(RX_FIFO_RWIDTH-1 downto 0);
@@ -199,7 +199,7 @@ package bladerf_p is
         rempty  :   std_logic;
         rfull   :   std_logic;
         rused   :   std_logic_vector(compute_rdusedw_high(RX_FIFO_LENGTH, RX_FIFO_WWIDTH,
-                                                          RX_FIFO_RWIDTH) downto 0);
+                                                          RX_FIFO_RWIDTH, "OFF") downto 0);
     end record;
 
     type loopback_fifo_t is record
@@ -210,7 +210,7 @@ package bladerf_p is
         wreq    :   std_logic;
         wempty  :   std_logic;
         wfull   :   std_logic;
-        wused   :   std_logic_vector(compute_wrusedw_high(LOOPBACK_FIFO_LENGTH) downto 0);
+        wused   :   std_logic_vector(compute_wrusedw_high(LOOPBACK_FIFO_LENGTH, "OFF") downto 0);
 
         rclock  :   std_logic;
         rdata   :   std_logic_vector(LOOPBACK_FIFO_RWIDTH-1 downto 0);
@@ -218,7 +218,7 @@ package bladerf_p is
         rempty  :   std_logic;
         rfull   :   std_logic;
         rused   :   std_logic_vector(compute_rdusedw_high(LOOPBACK_FIFO_LENGTH, LOOPBACK_FIFO_WWIDTH,
-                                                          LOOPBACK_FIFO_RWIDTH) downto 0);
+                                                          LOOPBACK_FIFO_RWIDTH, "OFF") downto 0);
     end record;
 
     type meta_fifo_tx_t is record
@@ -229,7 +229,7 @@ package bladerf_p is
         wreq    :   std_logic;
         wempty  :   std_logic;
         wfull   :   std_logic;
-        wused   :   std_logic_vector(compute_wrusedw_high(META_FIFO_TX_LENGTH) downto 0);
+        wused   :   std_logic_vector(compute_wrusedw_high(META_FIFO_TX_LENGTH, "OFF") downto 0);
 
         rclock  :   std_logic;
         rdata   :   std_logic_vector(META_FIFO_TX_RWIDTH-1 downto 0);
@@ -237,7 +237,7 @@ package bladerf_p is
         rempty  :   std_logic;
         rfull   :   std_logic;
         rused   :   std_logic_vector(compute_rdusedw_high(META_FIFO_TX_LENGTH, META_FIFO_TX_WWIDTH,
-                                                          META_FIFO_TX_RWIDTH) downto 0);
+                                                          META_FIFO_TX_RWIDTH, "OFF") downto 0);
     end record;
 
     type meta_fifo_rx_t is record
@@ -248,7 +248,7 @@ package bladerf_p is
         wreq    :   std_logic;
         wempty  :   std_logic;
         wfull   :   std_logic;
-        wused   :   std_logic_vector(compute_wrusedw_high(META_FIFO_RX_LENGTH) downto 0);
+        wused   :   std_logic_vector(compute_wrusedw_high(META_FIFO_RX_LENGTH, "OFF") downto 0);
 
         rclock  :   std_logic;
         rdata   :   std_logic_vector(META_FIFO_RX_RWIDTH-1 downto 0);
@@ -256,7 +256,7 @@ package bladerf_p is
         rempty  :   std_logic;
         rfull   :   std_logic;
         rused   :   std_logic_vector(compute_rdusedw_high(META_FIFO_RX_LENGTH, META_FIFO_RX_WWIDTH,
-                                                          META_FIFO_RX_RWIDTH) downto 0);
+                                                          META_FIFO_RX_RWIDTH, "OFF") downto 0);
     end record;
 
     type nios_gpio_t is record
