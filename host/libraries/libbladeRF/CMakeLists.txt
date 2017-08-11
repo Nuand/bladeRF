@@ -304,6 +304,7 @@ set(LIBBLADERF_SOURCE
         src/helpers/file.c
         src/helpers/version.c
         src/version.h
+        src/interleave.c
         src/devinfo.c
         src/bladerf.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/sha256.c
