@@ -140,7 +140,8 @@ architecture hosted_bladerf of bladerf is
     alias tx_clock  is ad9361.clock;
     alias rx_clock  is ad9361.clock;
 
-    signal channel_sel            : std_logic := '0';
+    signal mimo_rx_enables        : std_logic_vector(RFFE_GPO_DEFAULT.mimo_rx_en'range) := RFFE_GPO_DEFAULT.mimo_rx_en;
+    signal mimo_tx_enables        : std_logic_vector(RFFE_GPO_DEFAULT.mimo_rx_en'range) := RFFE_GPO_DEFAULT.mimo_tx_en;
 
     signal dac_controls           : sample_controls_t(ad9361.ch'range)    := (others => SAMPLE_CONTROL_DISABLE);
     signal dac_streams            : sample_streams_t(dac_controls'range)  := (others => ZERO_SAMPLE);
@@ -484,7 +485,6 @@ begin
             usb_speed            => usb_speed_tx,
             tx_underflow_led     => tx_underflow_led,
             tx_timestamp         => tx_timestamp,
-            --mimo_channel_sel     => channel_sel,
 
             -- Triggering
             trigger_arm          => tx_trigger_ctl.arm,
@@ -519,27 +519,12 @@ begin
         );
 
     dac_assignment_proc : process( all )
-        -- Temporary until host code is updated for MIMO support
-        type     channel_selects is array(dac_controls'range) of std_logic;
-        variable mimo_ch : channel_selects;
-        -- End temporary
     begin
-
-        -- Temporary until host code is updated for MIMO support
-        if( channel_sel = '0' ) then
-            mimo_ch(0) := '1';
-            mimo_ch(1) := '0';
-        else
-            mimo_ch(0) := '0';
-            mimo_ch(1) := '1';
-        end if;
-        -- End temporary
-
         for i in dac_controls'range loop
             dac_controls(i).enable   <= (ad9361.ch(i).dac.i.enable or ad9361.ch(i).dac.q.enable or tx_loopback_enabled) and
-                                        mimo_ch(i);
+                                        mimo_tx_enables(i);
             dac_controls(i).data_req <= (ad9361.ch(i).dac.i.valid  or ad9361.ch(i).dac.q.valid  or tx_loopback_enabled) and
-                                        mimo_ch(i);
+                                        mimo_tx_enables(i);
             ad9361.ch(i).dac.i.data  <= std_logic_vector(dac_streams(i).data_i(11 downto 0)) & "0000";
             ad9361.ch(i).dac.q.data  <= std_logic_vector(dac_streams(i).data_q(11 downto 0)) & "0000";
         end loop;
@@ -561,7 +546,6 @@ begin
             rx_mux_sel             => rx_mux_sel,
             rx_overflow_led        => rx_overflow_led,
             rx_timestamp           => rx_timestamp,
-            --mimo_channel_sel       => channel_sel,
 
             -- Triggering
             trigger_arm            => rx_trigger_ctl.arm,
@@ -600,24 +584,9 @@ begin
         );
 
     adc_assignment_proc : process( all )
-        -- Temporary until host code is updated for MIMO support
-        type     channel_selects is array(dac_controls'range) of std_logic;
-        variable mimo_ch : channel_selects;
-        -- End temporary
     begin
-
-        -- Temporary until host code is updated for MIMO support
-        if( channel_sel = '0' ) then
-            mimo_ch(0) := '1';
-            mimo_ch(1) := '0';
-        else
-            mimo_ch(0) := '0';
-            mimo_ch(1) := '1';
-        end if;
-        -- End temporary
-
         for i in adc_controls'range loop
-            adc_controls(i).enable   <= (ad9361.ch(i).adc.i.enable or ad9361.ch(i).adc.q.enable) and mimo_ch(i);
+            adc_controls(i).enable   <= (ad9361.ch(i).adc.i.enable or ad9361.ch(i).adc.q.enable) and mimo_rx_enables(i);
             adc_controls(i).data_req <= '1';
             adc_streams(i).data_i    <= signed(ad9361.ch(i).adc.i.data);
             adc_streams(i).data_q    <= signed(ad9361.ch(i).adc.q.data);
@@ -758,16 +727,31 @@ begin
             );
     end generate;
 
-    U_sync_channel_sel : entity work.synchronizer
-        generic map (
-            RESET_LEVEL         =>  '0'
-        )
-        port map (
-            reset               =>  '0',
-            clock               =>  rx_clock,
-            async               =>  nios_gpio.channel_sel,
-            sync                =>  channel_sel
-        );
+    generate_sync_mimo_rx_en : for i in mimo_rx_enables'range generate
+        U_sync_mimo_rx_en : entity work.synchronizer
+            generic map (
+                RESET_LEVEL         =>  '0'
+                )
+            port map (
+                reset               =>  '0',
+                clock               =>  rx_clock,
+                async               =>  unpack(rffe_gpio.o).mimo_rx_en(i),
+                sync                =>  mimo_rx_enables(i)
+            );
+    end generate;
+
+    generate_sync_mimo_tx_en : for i in mimo_tx_enables'range generate
+        U_sync_mimo_tx_en : entity work.synchronizer
+            generic map (
+                RESET_LEVEL         =>  '0'
+                )
+            port map (
+                reset               =>  '0',
+                clock               =>  tx_clock,
+                async               =>  unpack(rffe_gpio.o).mimo_tx_en(i),
+                sync                =>  mimo_tx_enables(i)
+            );
+    end generate;
 
     generate_sync_adi_ctrl_out : for i in adi_ctrl_out'range generate
         U_sync_adi_ctrl_out : entity work.synchronizer

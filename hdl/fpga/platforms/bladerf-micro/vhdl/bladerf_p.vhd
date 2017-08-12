@@ -261,7 +261,6 @@ package bladerf_p is
 
     type nios_gpio_t is record
         xb_mode         : std_logic_vector(1 downto 0);
-        channel_sel     : std_logic;
         meta_sync       : std_logic;
         led_mode        : std_logic;
         leds            : std_logic_vector(3 downto 1);
@@ -282,14 +281,16 @@ package bladerf_p is
         enable       : std_logic;
         txnrx        : std_logic;
         en_agc       : std_logic;
-        ctrl_in      : std_logic_vector(3 downto 0);
         sync_in      : std_logic;
+        rx_bias_en   : std_logic;
         rx_spdt1     : std_logic_vector(2 downto 1);
         rx_spdt2     : std_logic_vector(2 downto 1);
-        rx_bias_en   : std_logic;
+        tx_bias_en   : std_logic;
         tx_spdt1     : std_logic_vector(2 downto 1);
         tx_spdt2     : std_logic_vector(2 downto 1);
-        tx_bias_en   : std_logic;
+        mimo_rx_en   : std_logic_vector(1 downto 0);
+        mimo_tx_en   : std_logic_vector(1 downto 0);
+        ctrl_in      : std_logic_vector(3 downto 0);
     end record;
 
     type rffe_gpi_t is record
@@ -397,7 +398,11 @@ package body bladerf_p is
     begin
         --rv(31 downto 24) := x.ctrl_out;    -- Reserved as inputs
         rv(23 downto 20) := x.ctrl_in;
-        rv(19 downto 15) := (others => '0'); -- Available for future use
+        rv(19)           := '0';             -- Available for future use
+        rv(18)           := x.mimo_tx_en(1);
+        rv(17)           := x.mimo_rx_en(1);
+        rv(16)           := x.mimo_tx_en(0);
+        rv(15)           := x.mimo_rx_en(0);
         rv(14 downto 13) := x.tx_spdt2;
         rv(12 downto 11) := x.tx_spdt1;
         rv(10)           := x.tx_bias_en;
@@ -437,7 +442,6 @@ package body bladerf_p is
         variable rv : std_logic_vector(31 downto 0) := (others => '0');
     begin
          rv(31 downto 30)   := x.xb_mode;
-         rv(17)             := x.channel_sel;
          rv(16)             := x.meta_sync;
          rv(15)             := x.led_mode;
          rv(14 downto 12)   := x.leds;
@@ -469,6 +473,8 @@ package body bladerf_p is
     begin
         --rv.ctrl_out      := x(31 downto 24);
         rv.ctrl_in       := x(23 downto 20);
+        rv.mimo_tx_en    := x(18) & x(16); -- channel 1 & channel 0
+        rv.mimo_rx_en    := x(17) & x(15); -- channel 1 & channel 0
         rv.tx_spdt2      := x(14 downto 13);
         rv.tx_spdt1      := x(12 downto 11);
         rv.tx_bias_en    := x(10);
@@ -498,7 +504,6 @@ package body bladerf_p is
         variable rv : nios_gpio_t;
     begin
         rv.xb_mode         := x(31 downto 30);
-        rv.channel_sel     := x(17);
         rv.meta_sync       := x(16);
         rv.led_mode        := x(15);
         rv.leds            := x(14 downto 12);
@@ -514,18 +519,20 @@ package body bladerf_p is
     -- ========================================================================
 
     constant RFFE_GPO_DEFAULT : rffe_gpo_t := (
-        ctrl_in      => (others => '0'),
-        tx_spdt2     => pack(DISABLED),
-        tx_spdt1     => pack(DISABLED),
-        tx_bias_en   => '0',
-        rx_spdt2     => pack(DISABLED),
-        rx_spdt1     => pack(DISABLED),
-        rx_bias_en   => '0',
-        sync_in      => '0',
-        en_agc       => '0',
-        txnrx        => '0',
+        reset_n      => '0',
         enable       => '0',
-        reset_n      => '0'
+        txnrx        => '0',
+        en_agc       => '0',
+        sync_in      => '0',
+        rx_bias_en   => '0',
+        rx_spdt1     => pack(DISABLED),
+        rx_spdt2     => pack(DISABLED),
+        tx_bias_en   => '0',
+        tx_spdt1     => pack(DISABLED),
+        tx_spdt2     => pack(DISABLED),
+        mimo_rx_en   => (others => '0'),
+        mimo_tx_en   => (others => '0'),
+        ctrl_in      => (others => '0')
     );
 
     constant RFFE_GPI_DEFAULT : rffe_gpi_t := (

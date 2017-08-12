@@ -33,7 +33,7 @@ set_instance_parameter_value gpio_rffe_0 {direction} {InOut}
 set_instance_parameter_value gpio_rffe_0 {edgeType} {RISING}
 set_instance_parameter_value gpio_rffe_0 {generateIRQ} {1}
 set_instance_parameter_value gpio_rffe_0 {irqType} {LEVEL}
-set_instance_parameter_value gpio_rffe_0 {resetValue} {0x00000000}
+set_instance_parameter_value gpio_rffe_0 {resetValue} {0x00018000}
 set_instance_parameter_value gpio_rffe_0 {simDoTestBenchWiring} {0}
 set_instance_parameter_value gpio_rffe_0 {simDrivenValue} {0.0}
 set_instance_parameter_value gpio_rffe_0 {width} {32}
