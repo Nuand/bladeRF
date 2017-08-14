@@ -1,7 +1,7 @@
 #include <libbladeRF.h>
 #include <stdio.h>
 
-#include "log.h"
+#include "helpers/interleave.h"
 
 #ifndef min
 #define min(x, y) x < y ? x : y
@@ -18,9 +18,8 @@
 bool verbose = false;
 bool quiet   = false;
 
-size_t const BYTES_PER_SAMPLE = sizeof(uint32_t);
-size_t const CELL_WIDTH       = 4;
-size_t const NUM_COLUMNS      = 8;
+size_t const CELL_WIDTH  = 4;
+size_t const NUM_COLUMNS = 8;
 
 /* Creates a buffer of buflen bytes, containing a counting pattern */
 void *create_buf(size_t buflen)
@@ -44,7 +43,11 @@ void *create_buf(size_t buflen)
 
 /* Checks the contents of a buffer, buf, of buflen bytes for a proper counting
  * pattern (starting at count), checking every stride'th sample */
-bool check_buf(void const *buf, size_t buflen, size_t stride, uint16_t count)
+bool check_buf(void const *buf,
+               size_t buflen,
+               size_t samplesize,
+               size_t stride,
+               uint16_t count)
 {
     bool retval   = true;
     uint32_t *ptr = NULL;
@@ -55,7 +58,7 @@ bool check_buf(void const *buf, size_t buflen, size_t stride, uint16_t count)
         return false;
     }
 
-    for (size_t i = 0; i < buflen / BYTES_PER_SAMPLE; i += stride) {
+    for (size_t i = 0; i < buflen / samplesize; i += stride) {
         ptr = (uint32_t *)buf + i;
 
         count %= 65536;
@@ -78,6 +81,11 @@ bool check_buf(void const *buf, size_t buflen, size_t stride, uint16_t count)
  * columns with CELL_WIDTH bytes in each column */
 void print_buf(void const *buf, size_t buflen, size_t num_columns)
 {
+    // short circuit if we're going to print nothing
+    if (!verbose) {
+        return;
+    }
+
     size_t const columns = min(num_columns, buflen / CELL_WIDTH);
     size_t const rowsize = sizeof(char) * (CELL_WIDTH * 2) * (columns + 1) + 1;
     size_t const rows    = max(buflen / columns / CELL_WIDTH, 1);
@@ -99,7 +107,6 @@ void print_buf(void const *buf, size_t buflen, size_t num_columns)
             for (size_t byte = 0; byte < CELL_WIDTH; ++byte) {
                 snprintf((rowstr + rowidx), rowsize - rowidx, "%02x",
                          *((uint8_t *)buf++));
-                        //*((uint8_t *)buf + bufidx));
                 rowidx += 2;
             }
         }
@@ -117,19 +124,40 @@ void print_buf(void const *buf, size_t buflen, size_t num_columns)
     free(rowstr);
 }
 
-/* Executes a test case with channel layouts rx_layout and tx_layout, expecting
+/* Executes a test case with channel layouts rxlay and txlay, expecting
  * num_samples in format */
-int test(bladerf_channel_layout rx_layout, bladerf_channel_layout tx_layout, bladerf_format format, size_t num_samples)
+int test(bladerf_channel_layout rxlay,
+         bladerf_channel_layout txlay,
+         bladerf_format format,
+         size_t num_samples)
 {
     void *buf;
     int status;
 
-    size_t const bytes = BYTES_PER_SAMPLE * num_samples;
-    size_t const stride = (BLADERF_RX_X1 == rx_layout || BLADERF_TX_X1 == tx_layout) ? 1 : 2;
-    size_t const offset = BLADERF_FORMAT_SC16_Q11_META == format ? 16 : 0;
+    size_t const samplesize = _interleave_calc_bytes_per_sample(format);
+    size_t const offset     = _interleave_calc_metadata_bytes(format);
+    size_t const num_chan   = _interleave_calc_num_channels(rxlay);
+    size_t const bytes      = samplesize * num_samples;
 
-    PRINT_INFO("beginning test: rx_layout = %d, tx_layout = %d, format = %d, num_samples = %lu\n",
-        rx_layout, tx_layout, format, num_samples);
+    if (num_chan != _interleave_calc_num_channels(txlay)) {
+        PRINT_ERROR("incompatible channel layouts: %d and %d\n", rxlay, txlay);
+        return -1;
+    }
+
+    if (bytes < offset) {
+        PRINT_ERROR("bytes (%lu) cannot be less than offset (%lu)\n", bytes,
+                    offset);
+        return -1;
+    }
+
+    if (num_chan < 1) {
+        PRINT_ERROR("num_chan (%lu) cannot be less than 1\n", num_chan);
+        return -1;
+    }
+
+    PRINT_INFO("beginning test: rxlay = %d, txlay = %d, format = %d, "
+               "num_samples = %lu\n",
+               rxlay, txlay, format, num_samples);
 
     PRINT_INFO("creating test buffer... ");
 
@@ -143,7 +171,7 @@ int test(bladerf_channel_layout rx_layout, bladerf_channel_layout tx_layout, bla
 
     print_buf(buf, bytes, NUM_COLUMNS);
 
-    status = bladerf_interleave_stream_buffer(tx_layout, format, num_samples, buf);
+    status = bladerf_interleave_stream_buffer(txlay, format, num_samples, buf);
     if (status != 0) {
         PRINT_ERROR("interleaver returned %d\n", status);
         goto error;
@@ -153,9 +181,10 @@ int test(bladerf_channel_layout rx_layout, bladerf_channel_layout tx_layout, bla
 
     if (offset > 0) {
         // special case check
-        PRINT_INFO("checking metadata (%lu bytes starting at %p)... ", offset, buf);
+        PRINT_INFO("checking metadata (%lu bytes starting at %p)... ", offset,
+                   buf);
         print_buf(buf, offset, NUM_COLUMNS);
-        if (!check_buf(buf, offset, 1, 0)) {
+        if (!check_buf(buf, offset, samplesize, 1, 0)) {
             PRINT_ERROR("check_buf returned FALSE!\n");
             status = -1;
             goto error;
@@ -164,10 +193,10 @@ int test(bladerf_channel_layout rx_layout, bladerf_channel_layout tx_layout, bla
         }
     }
 
-    if (1 == stride) {
+    if (num_chan == 1) {
         // special case check
         PRINT_INFO("not a MIMO layout, verifying no interleaving occurred... ");
-        if (!check_buf(buf, bytes, 1, 0)) {
+        if (!check_buf(buf, bytes, samplesize, 1, 0)) {
             PRINT_ERROR("check_buf returned FALSE!\n");
             status = -1;
             goto error;
@@ -176,19 +205,19 @@ int test(bladerf_channel_layout rx_layout, bladerf_channel_layout tx_layout, bla
         }
     }
 
-    for (size_t i = 0; i < stride; ++i) {
+    for (size_t i = 0; i < num_chan; ++i) {
         // get a pointer to the first interleaved sample for this channel
-        void *bufptr = buf + offset + (BYTES_PER_SAMPLE * i);
+        void *bufptr = buf + offset + (samplesize * i);
         // len is still the whole buffer
-        size_t bufptrlen = bytes - offset;
+        size_t buflen = bytes - offset;
         // start the counting pattern at the right place
         // offset the start value accordingly for channels > 0
-        uint16_t startval = ((offset + i * (bufptrlen/stride)) / sizeof(uint16_t)) % 65536;
+        uint16_t startval = ((offset + i * (buflen / num_chan)) / 2) % 65536;
 
         if (!verbose && !quiet && 0 == i) {
             verbose = true;
             PRINT_VERBOSE("memory dump %p -> %p\n", buf, buf + bytes);
-            if (bytes > 64*2) {
+            if (bytes > 64 * 2) {
                 print_buf(buf, 48, 2);
                 PRINT_VERBOSE(" ...\n");
                 print_buf(buf + bytes - 48, 48, 2);
@@ -198,9 +227,11 @@ int test(bladerf_channel_layout rx_layout, bladerf_channel_layout tx_layout, bla
             verbose = false;
         }
 
-        PRINT_INFO("checking interleaved data for ch %lu (*bufptr %p bufptrlen %lu stride %lu startval %04x)... ", i, bufptr, bufptrlen, stride, startval);
+        PRINT_INFO("checking interleaved data for ch %lu (*bufptr %p buflen "
+                   "%lu num_chan %lu startval %04x)... ",
+                   i, bufptr, buflen, num_chan, startval);
 
-        if (!check_buf(bufptr, bufptrlen, stride, startval)) {
+        if (!check_buf(bufptr, buflen, samplesize, num_chan, startval)) {
             PRINT_ERROR("check_buf returned FALSE!\n");
             status = -1;
             goto error;
@@ -209,8 +240,8 @@ int test(bladerf_channel_layout rx_layout, bladerf_channel_layout tx_layout, bla
         }
     }
 
-
-    status = bladerf_deinterleave_stream_buffer(rx_layout, format, num_samples, buf);
+    status =
+        bladerf_deinterleave_stream_buffer(rxlay, format, num_samples, buf);
     if (status != 0) {
         PRINT_ERROR("deinterleaver returned %d\n", status);
         goto error;
@@ -220,7 +251,7 @@ int test(bladerf_channel_layout rx_layout, bladerf_channel_layout tx_layout, bla
 
     PRINT_INFO("checking deinterleaved data... ");
 
-    if (!check_buf(buf, bytes, 1, 0)) {
+    if (!check_buf(buf, bytes, samplesize, 1, 0)) {
         PRINT_ERROR("check_buf returned FALSE!\n");
         status = -1;
         goto error;
@@ -236,33 +267,36 @@ error:
 /* it's main */
 int main(int argc, char *argv[])
 {
-    int status = 0;
-size_t const NUM_SAMPLES = 16384;
+    int status               = 0;
+    size_t const NUM_SAMPLES = 16384;
 
     PRINT_INFO("*** BEGINNING 1-CHANNEL TESTS: interleaving should be noop\n");
 
-    status = test(BLADERF_RX_X1, BLADERF_TX_X1, BLADERF_FORMAT_SC16_Q11, NUM_SAMPLES);
+    status = test(BLADERF_RX_X1, BLADERF_TX_X1, BLADERF_FORMAT_SC16_Q11,
+                  NUM_SAMPLES);
     if (status < 0) {
         goto error;
     }
 
-    status = test(BLADERF_RX_X1, BLADERF_TX_X1, BLADERF_FORMAT_SC16_Q11_META, NUM_SAMPLES);
+    status = test(BLADERF_RX_X1, BLADERF_TX_X1, BLADERF_FORMAT_SC16_Q11_META,
+                  NUM_SAMPLES);
     if (status < 0) {
         goto error;
     }
 
     PRINT_INFO("*** BEGINNING 2-CHANNEL TESTS\n");
 
-    status = test(BLADERF_RX_X2, BLADERF_TX_X2, BLADERF_FORMAT_SC16_Q11, NUM_SAMPLES);
+    status = test(BLADERF_RX_X2, BLADERF_TX_X2, BLADERF_FORMAT_SC16_Q11,
+                  NUM_SAMPLES);
     if (status < 0) {
         goto error;
     }
 
-    status = test(BLADERF_RX_X2, BLADERF_TX_X2, BLADERF_FORMAT_SC16_Q11_META, NUM_SAMPLES);
+    status = test(BLADERF_RX_X2, BLADERF_TX_X2, BLADERF_FORMAT_SC16_Q11_META,
+                  NUM_SAMPLES);
     if (status < 0) {
         goto error;
     }
-
 
 error:
     if (status < 0) {
@@ -271,4 +305,3 @@ error:
 
     return status;
 }
-
