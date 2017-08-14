@@ -46,6 +46,7 @@
 
 #include "devinfo.h"
 #include "helpers/file.h"
+#include "helpers/interleave.h"
 
 #include "conversions.h"
 #include "parse.h"
@@ -1181,6 +1182,22 @@ int bladerf_get_timestamp(struct bladerf *dev, bladerf_direction dir, uint64_t *
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
+}
+
+int bladerf_interleave_stream_buffer(bladerf_channel_layout layout,
+                                     bladerf_format format,
+                                     unsigned int buffer_size,
+                                     void *samples)
+{
+    return _interleave_interleave_buf(layout, format, buffer_size, samples);
+}
+
+int bladerf_deinterleave_stream_buffer(bladerf_channel_layout layout,
+                                       bladerf_format format,
+                                       unsigned int buffer_size,
+                                       void *samples)
+{
+    return _interleave_deinterleave_buf(layout, format, buffer_size, samples);
 }
 
 /******************************************************************************/

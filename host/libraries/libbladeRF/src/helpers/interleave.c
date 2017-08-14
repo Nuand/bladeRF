@@ -62,7 +62,7 @@ size_t _interleave_calc_metadata_bytes(bladerf_format format)
     return 0;
 }
 
-int bladerf_interleave_stream_buffer(bladerf_channel_layout layout,
+int _interleave_interleave_buf(bladerf_channel_layout layout,
                                      bladerf_format format,
                                      unsigned int buffer_size,
                                      void *samples)
@@ -116,7 +116,7 @@ int bladerf_interleave_stream_buffer(bladerf_channel_layout layout,
     return 0;
 }
 
-int bladerf_deinterleave_stream_buffer(bladerf_channel_layout layout,
+int _interleave_deinterleave_buf(bladerf_channel_layout layout,
                                        bladerf_format format,
                                        unsigned int buffer_size,
                                        void *samples)

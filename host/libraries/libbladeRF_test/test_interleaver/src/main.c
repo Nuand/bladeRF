@@ -171,7 +171,7 @@ int test(bladerf_channel_layout rxlay,
 
     print_buf(buf, bytes, NUM_COLUMNS);
 
-    status = bladerf_interleave_stream_buffer(txlay, format, num_samples, buf);
+    status = _interleave_interleave_buf(txlay, format, num_samples, buf);
     if (status != 0) {
         PRINT_ERROR("interleaver returned %d\n", status);
         goto error;
@@ -240,8 +240,7 @@ int test(bladerf_channel_layout rxlay,
         }
     }
 
-    status =
-        bladerf_deinterleave_stream_buffer(rxlay, format, num_samples, buf);
+    status = _interleave_deinterleave_buf(rxlay, format, num_samples, buf);
     if (status != 0) {
         PRINT_ERROR("deinterleaver returned %d\n", status);
         goto error;

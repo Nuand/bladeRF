@@ -31,4 +31,14 @@ size_t _interleave_calc_bytes_per_sample(bladerf_format format);
 size_t _interleave_calc_metadata_bytes(bladerf_format format);
 size_t _interleave_calc_num_channels(bladerf_channel_layout layout);
 
+int _interleave_interleave_buf(bladerf_channel_layout layout,
+                               bladerf_format format,
+                               unsigned int buffer_size,
+                               void *samples);
+
+int _interleave_deinterleave_buf(bladerf_channel_layout layout,
+                                 bladerf_format format,
+                                 unsigned int buffer_size,
+                                 void *samples);
+
 #endif
