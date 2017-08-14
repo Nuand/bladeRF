@@ -548,7 +548,6 @@ static void _print_gpio_bladerf2(uint32_t val)
     int leds            = (val >> 12) & 0x07;  // 14 downto 12
     int led_mode        = (val >> 15) & 0x01;  // 15
     int meta_sync       = (val >> 16) & 0x01;  // 16
-    int channel_sel     = (val >> 17) & 0x01;  // 17
     int xb_mode         = (val >> 30) & 0x03;  // 31 downto 30
 
     printf("    %-20s%-10s\n", "USB Speed:", usb_speed ? "1" : "0");
@@ -581,7 +580,6 @@ static void _print_gpio_bladerf2(uint32_t val)
     }
 
     printf("    %-20s%-10s\n", "Meta Sync:", meta_sync ? "1" : "0");
-    printf("    %-20s%-10s\n", "Channel Select:", channel_sel ? "1" : "0");
     printf("    %-20s0x%08x\n", "XB Mode:", xb_mode);
 }
 
