@@ -92,7 +92,7 @@ int bladerf_interleave_stream_buffer(bladerf_channel_layout layout,
         memcpy(dstptr, srcptr, meta_size);
         srcptr += meta_size;
         dstptr += meta_size;
-        samps_per_ch -= (meta_size / samp_size);
+        samps_per_ch -= (meta_size / samp_size / num_channels);
     }
 
     // Iterate...
@@ -146,7 +146,7 @@ int bladerf_deinterleave_stream_buffer(bladerf_channel_layout layout,
         memcpy(dstptr, srcptr, meta_size);
         srcptr += meta_size;
         dstptr += meta_size;
-        samps_per_ch -= (meta_size / samp_size);
+        samps_per_ch -= (meta_size / samp_size / num_channels);
     }
 
     // Iterate...
