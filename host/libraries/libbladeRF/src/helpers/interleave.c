@@ -23,7 +23,9 @@
 
 #include <libbladeRF.h>
 
-static size_t calc_num_channels(bladerf_channel_layout layout)
+#include "helpers/interleave.h"
+
+size_t _interleave_calc_num_channels(bladerf_channel_layout layout)
 {
     switch (layout) {
         case BLADERF_RX_X1:
@@ -37,7 +39,7 @@ static size_t calc_num_channels(bladerf_channel_layout layout)
     return 0;
 }
 
-static size_t calc_bytes_per_sample(bladerf_format format)
+size_t _interleave_calc_bytes_per_sample(bladerf_format format)
 {
     switch (format) {
         case BLADERF_FORMAT_SC16_Q11:
@@ -48,7 +50,7 @@ static size_t calc_bytes_per_sample(bladerf_format format)
     return 0;
 }
 
-static size_t calc_metadata_bytes(bladerf_format format)
+size_t _interleave_calc_metadata_bytes(bladerf_format format)
 {
     switch (format) {
         case BLADERF_FORMAT_SC16_Q11_META:
@@ -66,7 +68,7 @@ int bladerf_interleave_stream_buffer(bladerf_channel_layout layout,
                                      void *samples)
 {
     void *buf, *srcptr, *dstptr;
-    size_t num_channels = calc_num_channels(layout);
+    size_t num_channels = _interleave_calc_num_channels(layout);
     size_t samp_size, meta_size, samps_per_ch;
     size_t srcidx, dstidx, samp, ch;
 
@@ -76,8 +78,8 @@ int bladerf_interleave_stream_buffer(bladerf_channel_layout layout,
     }
 
     // Placeholder for an actually efficient algorithm
-    samp_size    = calc_bytes_per_sample(format);
-    meta_size    = calc_metadata_bytes(format);
+    samp_size    = _interleave_calc_bytes_per_sample(format);
+    meta_size    = _interleave_calc_metadata_bytes(format);
     samps_per_ch = buffer_size / num_channels;
     buf          = malloc(samp_size * buffer_size);
     srcptr       = samples;
@@ -120,7 +122,7 @@ int bladerf_deinterleave_stream_buffer(bladerf_channel_layout layout,
                                        void *samples)
 {
     void *buf, *srcptr, *dstptr;
-    size_t num_channels = calc_num_channels(layout);
+    size_t num_channels = _interleave_calc_num_channels(layout);
     size_t samp_size, meta_size, samps_per_ch;
     size_t srcidx, dstidx, samp, ch;
 
@@ -130,8 +132,8 @@ int bladerf_deinterleave_stream_buffer(bladerf_channel_layout layout,
     }
 
     // Placeholder for an actually efficient algorithm
-    samp_size    = calc_bytes_per_sample(format);
-    meta_size    = calc_metadata_bytes(format);
+    samp_size    = _interleave_calc_bytes_per_sample(format);
+    meta_size    = _interleave_calc_metadata_bytes(format);
     samps_per_ch = buffer_size / num_channels;
     buf          = malloc(samp_size * buffer_size);
     srcptr       = samples;
