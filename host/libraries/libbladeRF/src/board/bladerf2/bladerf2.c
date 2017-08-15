@@ -209,17 +209,19 @@ struct band_port_map {
 #define RFFE_CONTROL_EN_AGC         3
 #define RFFE_CONTROL_SYNC_IN        4
 #define RFFE_CONTROL_RX_BIAS_EN     5
-#define RFFE_CONTROL_RX_SW_SHIFT    6
+#define RFFE_CONTROL_RX_SPDT_1      6
+#define RFFE_CONTROL_RX_SPDT_2      8
 #define RFFE_CONTROL_TX_BIAS_EN     10
-#define RFFE_CONTROL_TX_SW_SHIFT    11
+#define RFFE_CONTROL_TX_SPDT_1      11
+#define RFFE_CONTROL_TX_SPDT_2      13
 #define RFFE_CONTROL_MIMO_RX_EN_0   15
 #define RFFE_CONTROL_MIMO_RX_EN_1   16
 #define RFFE_CONTROL_MIMO_TX_EN_0   17
 #define RFFE_CONTROL_MIMO_TX_EN_1   18
-#define RFFE_CONTROL_SPDT_MASK      0xF
+#define RFFE_CONTROL_SPDT_MASK      0x3
 #define RFFE_CONTROL_SPDT_SHUTDOWN  0x0  // no connection
-#define RFFE_CONTROL_SPDT_LOWBAND   0xA  // RF1 <-> RF3
-#define RFFE_CONTROL_SPDT_HIGHBAND  0x5  // RF1 <-> RF2
+#define RFFE_CONTROL_SPDT_LOWBAND   0x2  // RF1 <-> RF3
+#define RFFE_CONTROL_SPDT_HIGHBAND  0x1  // RF1 <-> RF2
 
 /* Board state to string map */
 static const char *bladerf2_state_to_string[] = {
@@ -630,6 +632,7 @@ static int _set_spdt_bits(uint32_t *reg,
                           uint64_t frequency)
 {
     const struct band_port_map *port_map;
+    uint32_t shift;
 
     if (NULL == reg) {
         RETURN_INVAL("reg", "is null");
@@ -643,13 +646,25 @@ static int _set_spdt_bits(uint32_t *reg,
     }
 
     /* Modify the reg bits accordingly */
-    if (_is_tx(ch)) {
-        *reg &= ~(RFFE_CONTROL_SPDT_MASK << RFFE_CONTROL_TX_SW_SHIFT);
-        *reg |= port_map->spdt << RFFE_CONTROL_TX_SW_SHIFT;
-    } else {
-        *reg &= ~(RFFE_CONTROL_SPDT_MASK << RFFE_CONTROL_RX_SW_SHIFT);
-        *reg |= port_map->spdt << RFFE_CONTROL_RX_SW_SHIFT;
+    switch (ch) {
+        case BLADERF_CHANNEL_RX(0):
+            shift = RFFE_CONTROL_RX_SPDT_1;
+            break;
+        case BLADERF_CHANNEL_RX(1):
+            shift = RFFE_CONTROL_RX_SPDT_2;
+            break;
+        case BLADERF_CHANNEL_TX(0):
+            shift = RFFE_CONTROL_TX_SPDT_1;
+            break;
+        case BLADERF_CHANNEL_TX(1):
+            shift = RFFE_CONTROL_TX_SPDT_2;
+            break;
+        default:
+            RETURN_INVAL("ch", "not recognized");
     }
+
+    *reg &= ~(RFFE_CONTROL_SPDT_MASK << shift);
+    *reg |= port_map->spdt << shift;
 
     return 0;
 }
@@ -695,19 +710,64 @@ static bool _is_rffe_channel_enabled(uint32_t reg, bladerf_channel ch)
     /* Given a register read from the RFFE, determine if ch is enabled */
     switch (ch) {
         case BLADERF_CHANNEL_RX(0):
-            return ((reg >> RFFE_CONTROL_ENABLE) & 0x1) && ((reg >> RFFE_CONTROL_MIMO_RX_EN_0) & 0x1);
+            return ((reg >> RFFE_CONTROL_ENABLE) & 0x1) &&
+                   ((reg >> RFFE_CONTROL_MIMO_RX_EN_0) & 0x1);
         case BLADERF_CHANNEL_RX(1):
-            return ((reg >> RFFE_CONTROL_ENABLE) & 0x1) && ((reg >> RFFE_CONTROL_MIMO_RX_EN_1) & 0x1);
+            return ((reg >> RFFE_CONTROL_ENABLE) & 0x1) &&
+                   ((reg >> RFFE_CONTROL_MIMO_RX_EN_1) & 0x1);
         case BLADERF_CHANNEL_TX(0):
-            return ((reg >> RFFE_CONTROL_TXNRX) & 0x1) && ((reg >> RFFE_CONTROL_MIMO_TX_EN_0) & 0x1);
+            return ((reg >> RFFE_CONTROL_TXNRX) & 0x1) &&
+                   ((reg >> RFFE_CONTROL_MIMO_TX_EN_0) & 0x1);
         case BLADERF_CHANNEL_TX(1):
-            return ((reg >> RFFE_CONTROL_TXNRX) & 0x1) && ((reg >> RFFE_CONTROL_MIMO_TX_EN_1) & 0x1);
+            return ((reg >> RFFE_CONTROL_TXNRX) & 0x1) &&
+                   ((reg >> RFFE_CONTROL_MIMO_TX_EN_1) & 0x1);
         default:
             log_error("%s: unknown channel index %d\n", __FUNCTION__, ch);
             return false;
     }
 }
 
+static int _set_tx_mute(struct bladerf *dev, bladerf_channel ch, bool state)
+{
+    struct bladerf2_board_data *board_data;
+    struct ad9361_rf_phy *phy;
+    uint32_t *cached_atten;
+    uint32_t atten_mdb;
+    int ch_num;
+    int status;
+
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    board_data = dev->board_data;
+    phy        = board_data->phy;
+
+    switch (ch) {
+        case BLADERF_CHANNEL_TX(0):
+            cached_atten = &(phy->tx1_atten_cached);
+            ch_num       = 1;
+            break;
+        case BLADERF_CHANNEL_TX(1):
+            cached_atten = &(phy->tx2_atten_cached);
+            ch_num       = 2;
+            break;
+        default:
+            RETURN_INVAL("ch", "is not a valid TX channel");
+    }
+
+    if (state) {
+        *cached_atten = ad9361_get_tx_atten(phy, ch_num);
+        atten_mdb     = 89750;
+    } else {
+        atten_mdb = *cached_atten;
+    }
+
+    log_debug("%s: %smuting TX%d (cached atten: %d)\n", __FUNCTION__,
+              state ? "" : "un", ch_num, *cached_atten);
+    status =
+        ad9361_set_tx_atten(phy, atten_mdb, (ch_num == 1), (ch_num == 2), true);
+
+    return status;
+}
 
 /******************************************************************************/
 /* Low-level Initialization */
@@ -851,6 +911,17 @@ static int bladerf2_initialize(struct bladerf *dev)
     status = bladerf2_select_band(dev, BLADERF_RX, phy->pdata->rx_synth_freq);
     if (status < 0) {
         RETURN_ERROR_STATUS("bladerf2_select_band (RX)", status);
+    }
+
+    /* Mute TX channels */
+    status = _set_tx_mute(dev, BLADERF_CHANNEL_TX(0), true);
+    if (status < 0) {
+        RETURN_ERROR_STATUS("_set_tx_mute(BLADERF_CHANNEL_TX(0))", status);
+    }
+
+    status = _set_tx_mute(dev, BLADERF_CHANNEL_TX(1), true);
+    if (status < 0) {
+        RETURN_ERROR_STATUS("_set_tx_mute(BLADERF_CHANNEL_TX(1))", status);
     }
 
     /* Update device state */
@@ -1221,6 +1292,8 @@ static int bladerf2_enable_module(struct bladerf *dev,
         RETURN_ERROR_STATUS("rffe_control_read", status);
     }
 
+    log_debug("%s: rffe_control_read %08x\n", __FUNCTION__, reg);
+
     /* Figure out what we need to do */
     switch (ch) {
         case BLADERF_CHANNEL_RX(0):
@@ -1270,15 +1343,20 @@ static int bladerf2_enable_module(struct bladerf *dev,
         sync_deinit(&board_data->sync[_is_tx(ch) ? BLADERF_TX : BLADERF_RX]);
     }
 
+    /* Mute unused TX channels */
+    if (ch_changing && _is_tx(ch)) {
+        _set_tx_mute(dev, ch, !enable);
+    }
+
     /* Modify MIMO channel enable bits */
     if (enable) {
         reg |= (1 << ch_bit);
-        log_debug("%s: %s ch %d enable\n", __FUNCTION__,
-                  _is_tx(ch) ? "TX" : "RX", ch);
+        log_debug("%s: %s%d enable\n", __FUNCTION__, _is_tx(ch) ? "TX" : "RX",
+                  (ch >> 1) + 1);
     } else {
         reg &= ~(1 << ch_bit);
-        log_debug("%s: %s ch %d enable\n", __FUNCTION__,
-                  _is_tx(ch) ? "TX" : "RX", ch);
+        log_debug("%s: %s%d disable\n", __FUNCTION__, _is_tx(ch) ? "TX" : "RX",
+                  (ch >> 1) + 1);
     }
 
     /* Modify ENABLE/TXNRX bits */
@@ -1299,6 +1377,7 @@ static int bladerf2_enable_module(struct bladerf *dev,
     }
 
     /* Write RFFE control register */
+    log_debug("%s: rffe_control_write %08x\n", __FUNCTION__, reg);
     status = dev->backend->rffe_control_write(dev, reg);
     if (status < 0) {
         RETURN_ERROR_STATUS("rffe_control_write", status);
