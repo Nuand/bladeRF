@@ -124,7 +124,7 @@ struct board_fns {
     int (*trigger_state)(struct bladerf *dev, const struct bladerf_trigger *trigger, bool *is_armed, bool *has_fired, bool *fire_requested, uint64_t *resv1, uint64_t *resv2);
 
     /* Streaming */
-    int (*enable_module)(struct bladerf *dev, bladerf_direction dir, bool enable);
+    int (*enable_module)(struct bladerf *dev, bladerf_channel ch, bool enable);
     int (*init_stream)(struct bladerf_stream **stream, struct bladerf *dev, bladerf_stream_cb callback, void ***buffers, size_t num_buffers, bladerf_format format, size_t samples_per_buffer, size_t num_transfers, void *user_data);
     int (*stream)(struct bladerf_stream *stream, bladerf_channel_layout layout);
     int (*submit_stream_buffer)(struct bladerf_stream *stream, void *buffer, unsigned int timeout_ms, bool nonblock);

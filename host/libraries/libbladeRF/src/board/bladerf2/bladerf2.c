@@ -212,6 +212,10 @@ struct band_port_map {
 #define RFFE_CONTROL_RX_SW_SHIFT    6
 #define RFFE_CONTROL_TX_BIAS_EN     10
 #define RFFE_CONTROL_TX_SW_SHIFT    11
+#define RFFE_CONTROL_MIMO_RX_EN_0   15
+#define RFFE_CONTROL_MIMO_RX_EN_1   16
+#define RFFE_CONTROL_MIMO_TX_EN_0   17
+#define RFFE_CONTROL_MIMO_TX_EN_1   18
 #define RFFE_CONTROL_SPDT_MASK      0xF
 #define RFFE_CONTROL_SPDT_SHUTDOWN  0x0  // no connection
 #define RFFE_CONTROL_SPDT_LOWBAND   0xA  // RF1 <-> RF3
@@ -689,10 +693,18 @@ static int _set_ad9361_port(struct bladerf *dev,
 static bool _is_rffe_channel_enabled(uint32_t reg, bladerf_channel ch)
 {
     /* Given a register read from the RFFE, determine if ch is enabled */
-    if (_is_tx(ch)) {
-        return (reg >> RFFE_CONTROL_TXNRX) & 0x1;
-    } else {
-        return (reg >> RFFE_CONTROL_ENABLE) & 0x1;
+    switch (ch) {
+        case BLADERF_CHANNEL_RX(0):
+            return ((reg >> RFFE_CONTROL_ENABLE) & 0x1) && ((reg >> RFFE_CONTROL_MIMO_RX_EN_0) & 0x1);
+        case BLADERF_CHANNEL_RX(1):
+            return ((reg >> RFFE_CONTROL_ENABLE) & 0x1) && ((reg >> RFFE_CONTROL_MIMO_RX_EN_1) & 0x1);
+        case BLADERF_CHANNEL_TX(0):
+            return ((reg >> RFFE_CONTROL_TXNRX) & 0x1) && ((reg >> RFFE_CONTROL_MIMO_TX_EN_0) & 0x1);
+        case BLADERF_CHANNEL_TX(1):
+            return ((reg >> RFFE_CONTROL_TXNRX) & 0x1) && ((reg >> RFFE_CONTROL_MIMO_TX_EN_1) & 0x1);
+        default:
+            log_error("%s: unknown channel index %d\n", __FUNCTION__, ch);
+            return false;
     }
 }
 
@@ -1190,37 +1202,18 @@ static int bladerf2_get_fw_version(struct bladerf *dev,
 /******************************************************************************/
 
 static int bladerf2_enable_module(struct bladerf *dev,
-                                  bladerf_direction dir,
+                                  bladerf_channel ch,
                                   bool enable)
 {
     struct bladerf2_board_data *board_data;
-    bool tx;
-    uint32_t reg;
+    uint32_t reg, ch_bit, dir_bit;
     uint64_t freq = 0;
     int status;
+    bool ch_changing, dir_changing, dir_enable;
 
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     board_data = dev->board_data;
-
-    tx = (BLADERF_TX == dir);
-
-    if (enable) {
-        /* Get current frequency */
-        status = bladerf2_get_frequency(dev, dir, &freq);
-        if (status < 0) {
-            RETURN_ERROR_STATUS("bladerf2_get_frequency", status);
-        }
-
-        /* Set the AD9361 port accordingly */
-        status = _set_ad9361_port(dev, dir, enable, freq);
-        if (status < 0) {
-            RETURN_ERROR_STATUS("_set_ad9361_port", status);
-        }
-    } else {
-        /* Stop synchronous interface */
-        sync_deinit(&board_data->sync[dir]);
-    }
 
     /* Read RFFE control register */
     status = dev->backend->rffe_control_read(dev, &reg);
@@ -1228,27 +1221,79 @@ static int bladerf2_enable_module(struct bladerf *dev,
         RETURN_ERROR_STATUS("rffe_control_read", status);
     }
 
-    /* Modify ENABLE/TXNRX bits */
-    if (enable) {
-        if (tx) {
-            log_debug("%s: TX Enable\n", __FUNCTION__);
-            reg |= (1 << RFFE_CONTROL_TXNRX);
-        } else {
-            log_debug("%s: RX Enable\n", __FUNCTION__);
-            reg |= (1 << RFFE_CONTROL_ENABLE);
+    /* Figure out what we need to do */
+    switch (ch) {
+        case BLADERF_CHANNEL_RX(0):
+            dir_enable = enable || ((reg >> RFFE_CONTROL_MIMO_RX_EN_1) & 0x1);
+            ch_bit     = RFFE_CONTROL_MIMO_RX_EN_0;
+            dir_bit    = RFFE_CONTROL_ENABLE;
+            break;
+        case BLADERF_CHANNEL_RX(1):
+            dir_enable = enable || ((reg >> RFFE_CONTROL_MIMO_RX_EN_0) & 0x1);
+            ch_bit     = RFFE_CONTROL_MIMO_RX_EN_1;
+            dir_bit    = RFFE_CONTROL_ENABLE;
+            break;
+        case BLADERF_CHANNEL_TX(0):
+            dir_enable = enable || ((reg >> RFFE_CONTROL_MIMO_TX_EN_1) & 0x1);
+            ch_bit     = RFFE_CONTROL_MIMO_TX_EN_0;
+            dir_bit    = RFFE_CONTROL_TXNRX;
+            break;
+        case BLADERF_CHANNEL_TX(1):
+            dir_enable = enable || ((reg >> RFFE_CONTROL_MIMO_TX_EN_0) & 0x1);
+            ch_bit     = RFFE_CONTROL_MIMO_TX_EN_1;
+            dir_bit    = RFFE_CONTROL_TXNRX;
+            break;
+        default:
+            RETURN_ERROR_STATUS("bladerf2_enable_module", BLADERF_ERR_INVAL);
+    }
+
+    ch_changing  = ((reg >> ch_bit) & 0x1) != enable;
+    dir_changing = ((reg >> dir_bit) & 0x1) != dir_enable;
+
+    /* Select AD9361 port */
+    if (ch_changing && enable) {
+        /* Get current frequency */
+        status = bladerf2_get_frequency(dev, ch, &freq);
+        if (status < 0) {
+            RETURN_ERROR_STATUS("bladerf2_get_frequency", status);
         }
-    } else {
-        if (tx) {
-            log_debug("%s: TX Disable\n", __FUNCTION__);
-            reg &= ~(1 << RFFE_CONTROL_TXNRX);
-        } else {
-            log_debug("%s: RX Disable\n", __FUNCTION__);
-            reg &= ~(1 << RFFE_CONTROL_ENABLE);
+
+        /* Set the AD9361 port accordingly */
+        status = _set_ad9361_port(dev, ch, enable, freq);
+        if (status < 0) {
+            RETURN_ERROR_STATUS("_set_ad9361_port", status);
         }
     }
 
+    /* If this is the last channel in a direction, stop synchronous interface */
+    if (dir_changing && !dir_enable) {
+        sync_deinit(&board_data->sync[_is_tx(ch) ? BLADERF_TX : BLADERF_RX]);
+    }
+
+    /* Modify MIMO channel enable bits */
+    if (enable) {
+        reg |= (1 << ch_bit);
+        log_debug("%s: %s ch %d enable\n", __FUNCTION__,
+                  _is_tx(ch) ? "TX" : "RX", ch);
+    } else {
+        reg &= ~(1 << ch_bit);
+        log_debug("%s: %s ch %d enable\n", __FUNCTION__,
+                  _is_tx(ch) ? "TX" : "RX", ch);
+    }
+
+    /* Modify ENABLE/TXNRX bits */
+    if (dir_enable) {
+        reg |= (1 << dir_bit);
+        log_debug("%s: %s module enable\n", __FUNCTION__,
+                  _is_tx(ch) ? "TX" : "RX");
+    } else {
+        reg &= ~(1 << dir_bit);
+        log_debug("%s: %s module disable\n", __FUNCTION__,
+                  _is_tx(ch) ? "TX" : "RX");
+    }
+
     /* Modify SPDT bits */
-    status = _set_spdt_bits(&reg, dir, enable, freq);
+    status = _set_spdt_bits(&reg, ch, enable, freq);
     if (status < 0) {
         RETURN_ERROR_STATUS("_set_spdt_bits", status);
     }
@@ -1260,9 +1305,12 @@ static int bladerf2_enable_module(struct bladerf *dev,
     }
 
     /* Enable module through backend */
-    status = dev->backend->enable_module(dev, dir, enable);
-    if (status < 0) {
-        RETURN_ERROR_STATUS("enable_module", status);
+    if (dir_changing) {
+        status = dev->backend->enable_module(
+            dev, _is_tx(ch) ? BLADERF_TX : BLADERF_RX, dir_enable);
+        if (status < 0) {
+            RETURN_ERROR_STATUS("enable_module", status);
+        }
     }
 
     return 0;

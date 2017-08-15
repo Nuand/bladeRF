@@ -600,13 +600,13 @@ void bladerf_version(struct bladerf_version *version)
 /* Enable/disable */
 /******************************************************************************/
 
-int bladerf_enable_module(struct bladerf *dev, bladerf_direction dir,
+int bladerf_enable_module(struct bladerf *dev, bladerf_channel ch,
                           bool enable)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = dev->board->enable_module(dev, dir, enable);
+    status = dev->board->enable_module(dev, ch, enable);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;

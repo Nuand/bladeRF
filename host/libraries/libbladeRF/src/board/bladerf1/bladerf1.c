@@ -1032,30 +1032,30 @@ static int bladerf1_get_fw_version(struct bladerf *dev, struct bladerf_version *
 
 static int perform_format_deconfig(struct bladerf *dev, bladerf_direction dir);
 
-static int bladerf1_enable_module(struct bladerf *dev, bladerf_direction dir, bool enable)
+static int bladerf1_enable_module(struct bladerf *dev,
+                                  bladerf_channel ch,
+                                  bool enable)
 {
     struct bladerf1_board_data *board_data = dev->board_data;
-    bladerf_channel ch;
     int status;
 
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
-    if (dir != BLADERF_RX && dir != BLADERF_TX) {
+    if (ch != BLADERF_CHANNEL_RX(0) && ch != BLADERF_CHANNEL_TX(0)) {
         return BLADERF_ERR_INVAL;
     }
 
-    log_debug("Enable direction: %s - %s\n",
-                (dir == BLADERF_RX) ? "RX" : "TX",
-                enable ? "True" : "False") ;
+    log_debug("Enable channel: %s - %s\n",
+              (ch == BLADERF_CHANNEL_RX(0)) ? "RX" : "TX",
+              enable ? "True" : "False");
 
     if (enable == false) {
-        sync_deinit(&board_data->sync[dir]);
-        perform_format_deconfig(dev, dir);
+        sync_deinit(&board_data->sync[ch]);
+        perform_format_deconfig(dev, (bladerf_direction)ch);
     }
 
-    ch = (dir == BLADERF_RX) ? BLADERF_CHANNEL_RX(0) : BLADERF_CHANNEL_TX(0);
     lms_enable_rffe(dev, ch, enable);
-    status = dev->backend->enable_module(dev, dir, enable);
+    status = dev->backend->enable_module(dev, (bladerf_direction)ch, enable);
 
     return status;
 }

@@ -2130,7 +2130,7 @@ int CALL_CONV bladerf_deinterleave_stream_buffer(bladerf_channel_layout layout,
  */
 API_EXPORT
 int CALL_CONV bladerf_enable_module(struct bladerf *dev,
-                                    bladerf_direction dir, bool enable);
+                                    bladerf_channel ch, bool enable);
 
 /**
  * Retrieve the specified stream's current timestamp counter value from the
