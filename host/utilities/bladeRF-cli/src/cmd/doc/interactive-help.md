@@ -648,6 +648,8 @@ available parameters.
 `timeout`       Data stream timeout. With no suffix, the default
                 unit is `ms`. The default value is 1000 ms (1 s).
                 Valid suffixes are `ms` and `s`.
+
+`channel`       Physical RF channel to use, either 1 (default) or 2.
 ----------------------------------------------------------------------
 
 Example:
@@ -814,6 +816,8 @@ available parameters.
 `timeout`       Data stream timeout. With no suffix, the default
                 unit is ms. The default value is 1000 ms (1 s).
                 Valid suffixes are 'ms' and 's'.
+
+`channel`       Physical RF channel to use, either 1 (default) or 2.
 ----------------------------------------------------------------------
 
 Example:

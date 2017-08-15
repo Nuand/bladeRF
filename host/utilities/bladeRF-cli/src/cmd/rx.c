@@ -258,7 +258,7 @@ void *rx_task(void *cli_state_arg)
                     MUTEX_LOCK(&rx->data_mgmt.lock);
 
                     status = bladerf_sync_config(cli_state->dev,
-                                                 BLADERF_MODULE_RX,
+                                                 rx->data_mgmt.layout,
                                                  BLADERF_FORMAT_SC16_Q11,
                                                  rx->data_mgmt.num_buffers,
                                                  rx->data_mgmt.samples_per_buffer,
@@ -285,7 +285,7 @@ void *rx_task(void *cli_state_arg)
 
                 MUTEX_LOCK(dev_lock);
                 status = bladerf_enable_module(cli_state->dev,
-                                               rx->module, true);
+                                               rx->channel, true);
                 MUTEX_UNLOCK(dev_lock);
 
                 if (status < 0) {
@@ -295,7 +295,7 @@ void *rx_task(void *cli_state_arg)
 
                     MUTEX_LOCK(dev_lock);
                     disable_status = bladerf_enable_module(cli_state->dev,
-                                                           rx->module, false);
+                                                           rx->channel, false);
                     MUTEX_UNLOCK(dev_lock);
 
                     if (status == 0 && disable_status < 0) {
@@ -374,7 +374,9 @@ static void rx_print_config(struct rxtx_data *rx)
     n_samples = rx_params->n_samples;
     MUTEX_UNLOCK(&rx->param_lock);
 
-    rxtx_print_state(rx, "\n  State: ", "\n");
+    printf("\n");
+    rxtx_print_state(rx, "  State: ", "\n");
+    rxtx_print_channel(rx, "  Channel: ", "\n");
     rxtx_print_error(rx, "  Last error: ", "\n");
     rxtx_print_file(rx, "  File: ", "\n");
     rxtx_print_file_format(rx, "  File format: ", "\n");
@@ -425,7 +427,21 @@ static int rx_cmd_config(struct cli_state *s, int argc, char **argv)
                     cli_err(s, argv[0], RXTX_ERRMSG_VALUE(argv[1], val));
                     return CLI_RET_INVPARAM;
                 }
+            } else if (!strcasecmp("channel", argv[i])) {
+                /* Configure RX channel */
+                unsigned int n;
+                bool ok;
 
+                n = str2uint(val, 1, 2, &ok);
+
+                if (ok) {
+                    MUTEX_LOCK(&s->rx->param_lock);
+                    s->rx->channel = BLADERF_CHANNEL_RX(n-1);
+                    MUTEX_UNLOCK(&s->rx->param_lock);
+                } else {
+                    cli_err(s, argv[0], RXTX_ERRMSG_VALUE(argv[1], val));
+                    return CLI_RET_INVPARAM;
+                }
             } else {
                 cli_err(s, argv[0],
                         "Unrecognized config parameter: %s\n", argv[i]);

@@ -69,7 +69,7 @@ const size_t rxtx_kmg_suffixes_len = ARRAY_LEN(rxtx_kmg_suffixes);
 
 /* We need to disarm any pending triggers when shutting down a stream
  * to ensure that we don't stall waiting on a timeout. */
-static void disarm_triggers(struct cli_state *s, bladerf_module m)
+static void disarm_triggers(struct cli_state *s, bladerf_channel c)
 {
     int status;
     struct bladerf_trigger trig;
@@ -80,7 +80,7 @@ static void disarm_triggers(struct cli_state *s, bladerf_module m)
         return;
     }
 
-    status = bladerf_trigger_init(s->dev, m, BLADERF_TRIGGER_J71_4, &trig);
+    status = bladerf_trigger_init(s->dev, c, BLADERF_TRIGGER_J71_4, &trig);
     if (status == 0) {
         trig.role = BLADERF_TRIGGER_ROLE_DISABLED;
         status = bladerf_trigger_arm(s->dev, &trig, false, 0, 0);
@@ -89,6 +89,17 @@ static void disarm_triggers(struct cli_state *s, bladerf_module m)
     if (status != 0 && status != BLADERF_ERR_UNSUPPORTED) {
         log_warning("Failed to disarm trigger - may stall on timeout.\n");
     }
+}
+
+bool rxtx_is_valid_channel(bladerf_channel ch)
+{
+    return (ch == BLADERF_CHANNEL_RX(0) || ch == BLADERF_CHANNEL_RX(1) ||
+            ch == BLADERF_CHANNEL_TX(0) || ch == BLADERF_CHANNEL_TX(1));
+}
+
+bool rxtx_is_tx(bladerf_channel ch)
+{
+    return (ch & BLADERF_TX);
 }
 
 void rxtx_set_state(struct rxtx_data *rxtx, enum rxtx_state state)
@@ -272,6 +283,29 @@ void rxtx_print_stream_info(struct rxtx_data *rxtx,
     printf("%sTimeout (ms): %u%s", prefix, timeout, suffix);
 }
 
+void rxtx_print_channel(struct rxtx_data *rxtx,
+                        const char *prefix,
+                        const char *suffix)
+{
+    bladerf_channel channel;
+
+    MUTEX_LOCK(&rxtx->param_lock);
+    channel = rxtx->channel;
+    MUTEX_UNLOCK(&rxtx->param_lock);
+
+    printf("%s", prefix);
+
+    if (!rxtx_is_valid_channel(channel)) {
+        printf("INVALID (%d)", channel);
+    } else if (rxtx_is_tx(channel)) {
+        printf("TX%d", (channel >> 1) + 1);
+    } else {
+        printf("RX%d", (channel >> 1) + 1);
+    }
+
+    printf("%s", suffix);
+}
+
 enum rxtx_fmt rxtx_str2fmt(const char *str)
 {
     enum rxtx_fmt ret = RXTX_FMT_INVALID;
@@ -285,11 +319,11 @@ enum rxtx_fmt rxtx_str2fmt(const char *str)
     return ret;
 }
 
-struct rxtx_data *rxtx_data_alloc(bladerf_module module)
+struct rxtx_data *rxtx_data_alloc(bladerf_channel channel)
 {
     struct rxtx_data *ret;
 
-    if (module != BLADERF_MODULE_RX && module != BLADERF_MODULE_TX) {
+    if (!rxtx_is_valid_channel(channel)) {
         return NULL;
     }
 
@@ -299,19 +333,8 @@ struct rxtx_data *rxtx_data_alloc(bladerf_module module)
         return NULL;
     }
 
-    /* Allocate and initialize module-specific parameters */
-    if (module == BLADERF_MODULE_RX) {
-        struct rx_params *rx_params;
-
-        rx_params = malloc(sizeof(*rx_params));
-        if (!rx_params) {
-            free(ret);
-            return NULL;
-        } else {
-            rx_params->n_samples = 100000;
-            ret->params = rx_params;
-        }
-    } else {
+    /* Allocate and initialize channel-specific parameters */
+    if (rxtx_is_tx(channel)) {
         struct tx_params *tx_params;
 
         tx_params = malloc(sizeof(*tx_params));
@@ -323,7 +346,19 @@ struct rxtx_data *rxtx_data_alloc(bladerf_module module)
             tx_params->repeat_delay = 0;
             ret->params = tx_params;
         }
+    } else {
+        struct rx_params *rx_params;
+
+        rx_params = malloc(sizeof(*rx_params));
+        if (!rx_params) {
+            free(ret);
+            return NULL;
+        } else {
+            rx_params->n_samples = 100000;
+            ret->params = rx_params;
+        }
     }
+
     MUTEX_INIT(&ret->param_lock);
 
     /* Initialize data management items */
@@ -331,6 +366,7 @@ struct rxtx_data *rxtx_data_alloc(bladerf_module module)
     ret->data_mgmt.samples_per_buffer = 32 * 1024;
     ret->data_mgmt.num_transfers = 16;
     ret->data_mgmt.timeout_ms = 1000;
+    ret->data_mgmt.layout = rxtx_is_tx(channel) ? BLADERF_TX_X1 : BLADERF_RX_X1;
 
     MUTEX_INIT(&ret->data_mgmt.lock);
 
@@ -353,33 +389,20 @@ struct rxtx_data *rxtx_data_alloc(bladerf_module module)
 
     cli_error_init(&ret->last_error);
 
-    ret->module = module;
+    ret->channel = channel;
 
     return ret;
 }
 
-int rxtx_startup(struct cli_state *s, bladerf_module module)
+int rxtx_startup(struct cli_state *s, bladerf_channel channel)
 {
     int status;
 
-    if (module != BLADERF_MODULE_RX && module != BLADERF_MODULE_TX) {
+    if (!rxtx_is_valid_channel(channel)) {
         return CLI_RET_INVPARAM;
     }
 
-    if (module == BLADERF_MODULE_RX) {
-        rxtx_set_state(s->rx, RXTX_STATE_INIT);
-        status = pthread_create(&s->rx->task_mgmt.thread, NULL, rx_task, s);
-
-        if (status < 0) {
-            rxtx_set_state(s->rx, RXTX_STATE_FAIL);
-        } else {
-            status = rxtx_wait_for_state(s->rx, RXTX_STATE_IDLE, 0);
-            if (status == 0) {
-                s->rx->task_mgmt.started = true;
-            }
-        }
-
-    } else {
+    if (rxtx_is_tx(channel)) {
         rxtx_set_state(s->tx, RXTX_STATE_INIT);
         status = pthread_create(&s->tx->task_mgmt.thread, NULL, tx_task, s);
 
@@ -389,6 +412,18 @@ int rxtx_startup(struct cli_state *s, bladerf_module module)
             status = rxtx_wait_for_state(s->tx, RXTX_STATE_IDLE, 0);
             if (status == 0) {
                 s->tx->task_mgmt.started = true;
+            }
+        }
+    } else {
+        rxtx_set_state(s->rx, RXTX_STATE_INIT);
+        status = pthread_create(&s->rx->task_mgmt.thread, NULL, rx_task, s);
+
+        if (status < 0) {
+            rxtx_set_state(s->rx, RXTX_STATE_FAIL);
+        } else {
+            status = rxtx_wait_for_state(s->rx, RXTX_STATE_IDLE, 0);
+            if (status == 0) {
+                s->rx->task_mgmt.started = true;
             }
         }
     }
@@ -408,7 +443,7 @@ bool rxtx_task_running(struct rxtx_data *rxtx)
 void rxtx_shutdown(struct cli_state *s, struct rxtx_data *rxtx)
 {
     if (s->dev && bladerf_is_fpga_configured(s->dev) == 1) {
-        disarm_triggers(s, rxtx->module);
+        disarm_triggers(s, rxtx->channel);
     }
 
     if (rxtx->task_mgmt.started && rxtx_get_state(rxtx) != RXTX_STATE_FAIL) {
@@ -557,7 +592,7 @@ static void check_samplerate(struct cli_state *s, struct rxtx_data *rxtx)
     samplerate_min = (uint64_t)n_xfers * samp_per_buf * 1000 / timeout_ms;
     samplerate_min += (samplerate_min + 9) / 10;
 
-    status = bladerf_get_sample_rate(s->dev, rxtx->module, &samplerate_dev);
+    status = bladerf_get_sample_rate(s->dev, rxtx->channel, &samplerate_dev);
     if (status < 0) {
         cli_err(s, "Error", "Failed read device's current sample rate. "
                             "Unable to perform sanity check.\n");
@@ -639,7 +674,7 @@ int rxtx_cmd_stop(struct cli_state *s, struct rxtx_data *rxtx)
     if (rxtx_get_state(rxtx) != RXTX_STATE_RUNNING) {
         status = CLI_RET_STATE;
     } else {
-        disarm_triggers(s, rxtx->module);
+        disarm_triggers(s, rxtx->channel);
         rxtx_submit_request(rxtx, RXTX_TASK_REQ_STOP);
         status = 0;
     }

@@ -35,7 +35,7 @@ struct rxtx_data;
  *
  * @return  allocated data on succss, NULL on failure
  */
-struct rxtx_data *rxtx_data_alloc(bladerf_module module);
+struct rxtx_data *rxtx_data_alloc(bladerf_channel channel);
 
 /**
  * Startup the RX or TX task.
@@ -49,7 +49,7 @@ struct rxtx_data *rxtx_data_alloc(bladerf_module module);
  *
  * @return  0 on success, nonzero on failure
  */
-int rxtx_startup(struct cli_state *s, bladerf_module m);
+int rxtx_startup(struct cli_state *s, bladerf_channel c);
 
 /**
  * Test whether RX or TX task is running (as opposed to idle or shutting down)

@@ -66,7 +66,7 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
     timeout_ms = tx->data_mgmt.timeout_ms;
     MUTEX_UNLOCK(&tx->data_mgmt.lock);
 
-    status = bladerf_get_sample_rate(s->dev, tx->module, &sample_rate);
+    status = bladerf_get_sample_rate(s->dev, tx->channel, &sample_rate);
     if (status != 0) {
         set_last_error(&tx->last_error, ETYPE_BLADERF, status);
         return CLI_RET_LIBBLADERF;
@@ -191,7 +191,7 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
     }
 
     /* Flush zero samples through the device to ensure samples reach the RFFE
-     * before we exit and then disable the TX module.
+     * before we exit and then disable the TX channel.
      *
      * This is a bit excessive, but sufficient for the time being. */
     if (status == 0) {
@@ -400,7 +400,7 @@ void *tx_task(void *cli_state_arg)
 
                 /* Initialize the TX synchronous data configuration */
                 status = bladerf_sync_config(cli_state->dev,
-                                             BLADERF_MODULE_TX,
+                                             tx->data_mgmt.layout,
                                              BLADERF_FORMAT_SC16_Q11,
                                              tx->data_mgmt.num_buffers,
                                              tx->data_mgmt.samples_per_buffer,
@@ -423,7 +423,7 @@ void *tx_task(void *cli_state_arg)
             case RXTX_STATE_RUNNING:
                 MUTEX_LOCK(dev_lock);
                 status = bladerf_enable_module(cli_state->dev,
-                                               tx->module, true);
+                                               tx->channel, true);
                 MUTEX_UNLOCK(dev_lock);
 
                 if (status < 0) {
@@ -437,7 +437,7 @@ void *tx_task(void *cli_state_arg)
 
                     MUTEX_LOCK(dev_lock);
                     disable_status = bladerf_enable_module(cli_state->dev,
-                                                           tx->module, false);
+                                                           tx->channel, false);
                     MUTEX_UNLOCK(dev_lock);
 
                     if (status == 0 && disable_status < 0) {
@@ -530,6 +530,7 @@ static void tx_print_config(struct rxtx_data *tx)
 
     printf("\n");
     rxtx_print_state(tx, "  State: ", "\n");
+    rxtx_print_channel(tx, "  Channel: ", "\n");
     rxtx_print_error(tx, "  Last error: ", "\n");
     rxtx_print_file(tx, "  File: ", "\n");
     rxtx_print_file_format(tx, "  File format: ", "\n");
@@ -586,7 +587,6 @@ static int tx_config(struct cli_state *s, int argc, char **argv)
                     cli_err(s, argv[0], RXTX_ERRMSG_VALUE(argv[1], val));
                     return CLI_RET_INVPARAM;
                 }
-
             } else if (!strcasecmp("delay", argv[i])) {
                 /* Configure the number of useconds between each repetition  */
 
@@ -603,7 +603,21 @@ static int tx_config(struct cli_state *s, int argc, char **argv)
                     cli_err(s, argv[0], RXTX_ERRMSG_VALUE(argv[1], val));
                     return CLI_RET_INVPARAM;
                 }
+            } else if (!strcasecmp("channel", argv[i])) {
+                /* Configure TX channel */
+                unsigned int n;
+                bool ok;
 
+                n = str2uint(val, 1, 2, &ok);
+
+                if (ok) {
+                    MUTEX_LOCK(&s->tx->param_lock);
+                    s->tx->channel = BLADERF_CHANNEL_TX(n-1);
+                    MUTEX_UNLOCK(&s->tx->param_lock);
+                } else {
+                    cli_err(s, argv[0], RXTX_ERRMSG_VALUE(argv[1], val));
+                    return CLI_RET_INVPARAM;
+                }
             } else {
                 cli_err(s, argv[0],
                         "Unrecognized config parameter: %s\n", argv[i]);

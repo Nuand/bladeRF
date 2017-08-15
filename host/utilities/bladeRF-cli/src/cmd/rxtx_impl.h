@@ -82,6 +82,7 @@ struct data_mgmt
     unsigned int samples_per_buffer;/* Size of each buffer (in samples) */
     unsigned int num_transfers;     /* # of transfers to use in the stream */
     unsigned int timeout_ms;        /* Stream timeout, in ms */
+    bladerf_channel_layout layout;  /* Channel layout (SISO vs MIMO, etc) */
 };
 
 /* Input/Ouput file and related metadata.
@@ -118,9 +119,8 @@ struct task_mgmt
 /* RX or TX-specific parameters */
 struct params;
 
-struct rxtx_data
-{
-    bladerf_module module;
+struct rxtx_data {
+    bladerf_channel channel;
 
     struct data_mgmt data_mgmt;
     struct file_mgmt file_mgmt;
@@ -151,6 +151,9 @@ extern const size_t rxtx_kmg_suffixes_len;
 /* Forward declare thread entry points implemented by rx/tx code */
 void * rx_task(void *cli_state);
 void * tx_task(void *cli_state);
+
+bool rxtx_is_valid_channel(bladerf_channel ch);
+bool rxtx_is_tx(bladerf_channel ch);
 
 /**
  * Set tasks's current state
@@ -251,6 +254,17 @@ void rxtx_print_error(struct rxtx_data *rxtx,
  */
 void rxtx_print_stream_info(struct rxtx_data *rxtx,
                             const char *prefix, const char *suffix);
+
+/**
+ * Print the channel description for the task
+ *
+ * @param   rxtx    RX/TX data handle
+ * @param   prefix  Prefix to print before task state
+ * @param   suffix  Suffix to print after task state
+ */
+void rxtx_print_channel(struct rxtx_data *rxtx,
+                        const char *prefix,
+                        const char *suffix);
 
 /**
  * Submit a request to the associated task
