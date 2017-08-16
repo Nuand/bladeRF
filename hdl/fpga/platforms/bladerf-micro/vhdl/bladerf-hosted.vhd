@@ -141,7 +141,7 @@ architecture hosted_bladerf of bladerf is
     alias rx_clock  is ad9361.clock;
 
     signal mimo_rx_enables        : std_logic_vector(RFFE_GPO_DEFAULT.mimo_rx_en'range) := RFFE_GPO_DEFAULT.mimo_rx_en;
-    signal mimo_tx_enables        : std_logic_vector(RFFE_GPO_DEFAULT.mimo_rx_en'range) := RFFE_GPO_DEFAULT.mimo_tx_en;
+    signal mimo_tx_enables        : std_logic_vector(RFFE_GPO_DEFAULT.mimo_tx_en'range) := RFFE_GPO_DEFAULT.mimo_tx_en;
 
     signal dac_controls           : sample_controls_t(ad9361.ch'range)    := (others => SAMPLE_CONTROL_DISABLE);
     signal dac_streams            : sample_streams_t(dac_controls'range)  := (others => ZERO_SAMPLE);
