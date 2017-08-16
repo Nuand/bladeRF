@@ -209,14 +209,14 @@ struct band_port_map {
 #define RFFE_CONTROL_EN_AGC         3
 #define RFFE_CONTROL_SYNC_IN        4
 #define RFFE_CONTROL_RX_BIAS_EN     5
-#define RFFE_CONTROL_RX_SPDT_1      6
-#define RFFE_CONTROL_RX_SPDT_2      8
+#define RFFE_CONTROL_RX_SPDT_1      6   // 6 and 7
+#define RFFE_CONTROL_RX_SPDT_2      8   // 8 and 9
 #define RFFE_CONTROL_TX_BIAS_EN     10
-#define RFFE_CONTROL_TX_SPDT_1      11
-#define RFFE_CONTROL_TX_SPDT_2      13
+#define RFFE_CONTROL_TX_SPDT_1      11  // 11 and 12
+#define RFFE_CONTROL_TX_SPDT_2      13  // 13 and 14
 #define RFFE_CONTROL_MIMO_RX_EN_0   15
-#define RFFE_CONTROL_MIMO_RX_EN_1   16
-#define RFFE_CONTROL_MIMO_TX_EN_0   17
+#define RFFE_CONTROL_MIMO_TX_EN_0   16
+#define RFFE_CONTROL_MIMO_RX_EN_1   17
 #define RFFE_CONTROL_MIMO_TX_EN_1   18
 #define RFFE_CONTROL_SPDT_MASK      0x3
 #define RFFE_CONTROL_SPDT_SHUTDOWN  0x0  // no connection
