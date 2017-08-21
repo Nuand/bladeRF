@@ -1323,15 +1323,14 @@ static int bladerf2_enable_module(struct bladerf *dev,
     ch_changing  = ((reg >> ch_bit) & 0x1) != enable;
     dir_changing = ((reg >> dir_bit) & 0x1) != dir_enable;
 
-    /* Select AD9361 port */
-    if (ch_changing && enable) {
-        /* Get current frequency */
-        status = bladerf2_get_frequency(dev, ch, &freq);
-        if (status < 0) {
-            RETURN_ERROR_STATUS("bladerf2_get_frequency", status);
-        }
+    /* Get current frequency */
+    status = bladerf2_get_frequency(dev, ch, &freq);
+    if (status < 0) {
+        RETURN_ERROR_STATUS("bladerf2_get_frequency", status);
+    }
 
-        /* Set the AD9361 port accordingly */
+    /* Set the AD9361 port accordingly */
+    if (ch_changing && enable) {
         status = _set_ad9361_port(dev, ch, enable, freq);
         if (status < 0) {
             RETURN_ERROR_STATUS("_set_ad9361_port", status);
