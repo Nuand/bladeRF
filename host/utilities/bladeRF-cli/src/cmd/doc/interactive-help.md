@@ -422,11 +422,13 @@ device specifier format.
 peek
 ----
 
-Usage: `peek <adi|dac|lms|si> <address> [num_addresses]`
+Usage: `peek <adf|adi|dac|lms|si> <address> [num_addresses]`
 
-The peek command can read any of the devices hanging off the FPGA which
-includes the AD9361 or LMS6002D transceiver, VCTCXO trim DAC or the Si5338
-clock generator chip.
+The peek command can read any of the devices hanging off the FPGA. This
+includes the:
+
+ * bladeRF 1: LMS6002D transceiver, VCTCXO trim DAC, Si5338 clock generator
+ * bladeRF 2: AD9361 transceiver, VCTCXO trim DAC, ADF4002 frequency synthesizer
 
 If `num_addresses` is supplied, the address is incremented by 1 and
 another peek is performed for that many addresses.
@@ -435,6 +437,7 @@ Valid Address Ranges:
 
      Device Address Range
 ----------- -----------------
+`adf`       0 to 3
 `adi`       0 to 0x3F7 (1015)
 `dac`       0 to 255
 `lms`       0 to 127
@@ -448,16 +451,19 @@ Example:
 poke
 ----
 
-Usage: `poke <adi|dac|lms|si> <address> <data>`
+Usage: `poke <adf|adi|dac|lms|si> <address> <data>`
 
-The poke command can write any of the devices hanging off the FPGA which
-includes the AD9361 or LMS6002D transceiver, VCTCXO trim DAC or the Si5338
-clock generator chip.
+The poke command can write any of the devices hanging off the FPGA. This
+includes the:
+
+ * bladeRF 1: LMS6002D transceiver, VCTCXO trim DAC, Si5338 clock generator
+ * bladeRF 2: AD9361 transceiver, VCTCXO trim DAC, ADF4002 frequency synthesizer
 
 Valid Address Ranges:
 
      Device Address Range
 ----------- -----------------
+`adf`       0 to 3
 `adi`       0 to 0x3F7 (1015)
 `dac`       0 to 255
 `lms`       0 to 127
@@ -520,6 +526,14 @@ BladeRF1-only parameters:
 `xb_gpio`       Expansion board GPIO values
 
 `xb_gpio_dir`   Expansion board GPIO direction (1=output, 0=input)
+----------------------------------------------------------------------
+
+BladeRF2-only parameters:
+
+----------------------------------------------------------------------
+    Parameter Description
+------------- --------------------------------------------------------
+`adf_enable`    Enables (1) or disables (0) the ADF4002 chip
 ----------------------------------------------------------------------
 
 probe
@@ -879,6 +893,14 @@ BladeRF1-only parameters:
 `xb_gpio`       Expansion board GPIO values
 
 `xb_gpio_dir`   Expansion board GPIO direction (1=output, 0=input)
+----------------------------------------------------------------------
+
+BladeRF2-only parameters:
+
+----------------------------------------------------------------------
+    Parameter Description
+------------- --------------------------------------------------------
+`adf_enable`    Enables (1) or disables (0) the ADF4002 chip
 ----------------------------------------------------------------------
 
 version

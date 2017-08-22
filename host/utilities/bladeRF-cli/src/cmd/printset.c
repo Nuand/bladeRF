@@ -50,7 +50,11 @@ enum printall_option {
     PRINTALL_OPTION_APPEND_NEWLINE, /**< Print an extra newline after entry */
 };
 
-#define BOARD_ANY NULL
+enum board_option {
+    BOARD_ANY,      /**< Supported on all hardware */
+    BOARD_BLADERF1, /**< Supported on bladeRF 1 */
+    BOARD_BLADERF2, /**< Supported on bladeRF 2 */
+};
 
 /* An entry in the printset table */
 struct printset_entry {
@@ -68,11 +72,12 @@ struct printset_entry {
      * 'print command' with no options (i.e., print everything) */
     enum printall_option pa_option;
 
-    /** Board associated with this parameter, or NULL for generic */
-    const char *board;
+    /** Board associated with this parameter, or BOARD_ANY for generic */
+    enum board_option const board;
 };
 
 /* Declarations */
+PRINTSET_DECL(adf_enable);
 PRINTSET_DECL(bandwidth);
 PRINTSET_DECL(frequency);
 PRINTSET_DECL(agc);
@@ -96,29 +101,31 @@ PRINTSET_DECL(xb_gpio_dir);
 // clang-format off
 /* print/set parameter table */
 struct printset_entry printset_table[] = {
-    PRINTSET_ENTRY(bandwidth,       PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
-    PRINTSET_ENTRY(frequency,       PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
-    PRINTSET_ENTRY(agc,             PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
-    PRINTSET_ENTRY(gpio,            PRINTALL_OPTION_APPEND_NEWLINE, "bladerf1"),
-    PRINTSET_ENTRY(loopback,        PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
-    PRINTSET_ENTRY(rx_mux,          PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
-    PRINTSET_ENTRY(lnagain,         PRINTALL_OPTION_NONE,           "bladerf1"),
-    PRINTSET_ENTRY(rxvga1,          PRINTALL_OPTION_NONE,           "bladerf1"),
-    PRINTSET_ENTRY(rxvga2,          PRINTALL_OPTION_NONE,           "bladerf1"),
-    PRINTSET_ENTRY(txvga1,          PRINTALL_OPTION_NONE,           "bladerf1"),
-    PRINTSET_ENTRY(txvga2,          PRINTALL_OPTION_APPEND_NEWLINE, "bladerf1"),
-    PRINTSET_ENTRY(sampling,        PRINTALL_OPTION_APPEND_NEWLINE, "bladerf1"),
-    PRINTSET_ENTRY(samplerate,      PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
-    PRINTSET_ENTRY(smb_mode,        PRINTALL_OPTION_APPEND_NEWLINE, "bladerf1"),
-    PRINTSET_ENTRY(trimdac,         PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
-    PRINTSET_ENTRY(vctcxo_tamer,    PRINTALL_OPTION_APPEND_NEWLINE, "bladerf1"),
-    PRINTSET_ENTRY(xb_spi,          PRINTALL_OPTION_SKIP,           "bladerf1"),
-    PRINTSET_ENTRY(xb_gpio,         PRINTALL_OPTION_NONE,           "bladerf1"),
-    PRINTSET_ENTRY(xb_gpio_dir,     PRINTALL_OPTION_NONE,           "bladerf1"),
+    PRINTSET_ENTRY(bandwidth,    PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
+    PRINTSET_ENTRY(frequency,    PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
+    PRINTSET_ENTRY(agc,          PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
+    PRINTSET_ENTRY(gpio,         PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF1),
+    PRINTSET_ENTRY(loopback,     PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
+    PRINTSET_ENTRY(rx_mux,       PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
+    PRINTSET_ENTRY(lnagain,      PRINTALL_OPTION_NONE,           BOARD_BLADERF1),
+    PRINTSET_ENTRY(rxvga1,       PRINTALL_OPTION_NONE,           BOARD_BLADERF1),
+    PRINTSET_ENTRY(rxvga2,       PRINTALL_OPTION_NONE,           BOARD_BLADERF1),
+    PRINTSET_ENTRY(txvga1,       PRINTALL_OPTION_NONE,           BOARD_BLADERF1),
+    PRINTSET_ENTRY(txvga2,       PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF1),
+    PRINTSET_ENTRY(sampling,     PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF1),
+    PRINTSET_ENTRY(samplerate,   PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
+    PRINTSET_ENTRY(smb_mode,     PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF1),
+    PRINTSET_ENTRY(adf_enable,   PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF2),
+    PRINTSET_ENTRY(trimdac,      PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
+    PRINTSET_ENTRY(vctcxo_tamer, PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF1),
+    PRINTSET_ENTRY(xb_spi,       PRINTALL_OPTION_SKIP,           BOARD_BLADERF1),
+    PRINTSET_ENTRY(xb_gpio,      PRINTALL_OPTION_NONE,           BOARD_BLADERF1),
+    PRINTSET_ENTRY(xb_gpio_dir,  PRINTALL_OPTION_NONE,           BOARD_BLADERF1),
 
     /* End of table marked by entry with NULL/empty fields */
     { FIELD_INIT(.print, NULL), FIELD_INIT(.set, NULL), FIELD_INIT(.name, ""),
-      FIELD_INIT(.pa_option, PRINTALL_OPTION_NONE), FIELD_INIT(.board, NULL) }
+      FIELD_INIT(.pa_option, PRINTALL_OPTION_NONE),
+      FIELD_INIT(.board, BOARD_ANY) }
 };
 // clang-format on
 
@@ -130,6 +137,51 @@ static bool _is_rx(bladerf_channel ch)
 static bool _is_tx(bladerf_channel ch)
 {
     return (ch == BLADERF_CHANNEL_TX(0) || ch == BLADERF_CHANNEL_TX(1));
+}
+
+static bool _is_board(struct bladerf *dev, enum board_option board)
+{
+    char const *board_name = bladerf_get_board_name(dev);
+
+    if (BOARD_ANY == board) {
+        return true;
+    }
+
+    if (BOARD_BLADERF1 == board && strcmp(board_name, "bladerf1") == 0) {
+        return true;
+    }
+
+    if (BOARD_BLADERF2 == board && strcmp(board_name, "bladerf2") == 0) {
+        return true;
+    }
+
+    return false;
+}
+
+static int _gpio_modify(struct bladerf *dev, uint32_t mask, uint32_t val)
+{
+    int status;
+    uint32_t gpio;
+
+    // read from gpio
+    status = bladerf_config_gpio_read(dev, &gpio);
+    if (status < 0) {
+        return status;
+    }
+
+    // clear bits
+    gpio &= ~(mask);
+
+    // set bits
+    gpio |= (val & mask);
+
+    // write back to gpio
+    status = bladerf_config_gpio_write(dev, gpio);
+    if (status < 0) {
+        return status;
+    }
+
+    return status;
 }
 
 bladerf_channel get_channel(char *ch, bool *ok)
@@ -182,6 +234,60 @@ static inline void invalid_gain(struct cli_state *s,
                                 const char *gain)
 {
     cli_err_nnl(s, cmd, "Invalid gain setting for %s (%s)\n", param, gain);
+}
+
+int print_adf_enable(struct cli_state *state, int argc, char **argv)
+{
+    int rv   = CLI_RET_OK;
+    int *err = &state->last_lib_error;
+    int status;
+    uint32_t val;
+
+    status = bladerf_config_gpio_read(state->dev, &val);
+    if (status < 0) {
+        *err = status;
+        rv   = CLI_RET_LIBBLADERF;
+    }
+
+    if (rv == CLI_RET_OK) {
+        int adf_chip_enable = (val >> 11) & 0x01;  // 11
+
+        printf("  ADF Chip Enable: %s\n",
+               adf_chip_enable ? "enabled" : "disabled");
+    }
+
+    return rv;
+}
+
+int set_adf_enable(struct cli_state *state, int argc, char **argv)
+{
+    /* set adf_enable {0,1} */
+    int rv   = CLI_RET_OK;
+    int *err = &state->last_lib_error;
+    int status;
+    uint32_t val;
+
+    if (argc == 3) {
+        bool ok;
+        val = str2uint(argv[2], 0, 1, &ok);
+
+        if (!ok) {
+            cli_err_nnl(state, argv[0], "Invalid adf_enable value (%s)\n",
+                        argv[2]);
+            rv = CLI_RET_INVPARAM;
+        } else {
+            status = _gpio_modify(state->dev, 0x800, (val << 11));
+            if (status < 0) {
+                *err = status;
+                rv   = CLI_RET_LIBBLADERF;
+            } else {
+                rv = print_adf_enable(state, argc, argv);
+            }
+        }
+    } else {
+        rv = CLI_RET_NARGS;
+    }
+    return rv;
 }
 
 int print_bandwidth(struct cli_state *state, int argc, char **argv)
@@ -648,11 +754,11 @@ int print_gpio(struct cli_state *state, int argc, char **argv)
     if (rv == CLI_RET_OK) {
         printf("  GPIO: 0x%8.8x\n", val);
 
-        if (strcmp(bladerf_get_board_name(state->dev), "bladerf1") == 0) {
+        if (_is_board(state->dev, BOARD_BLADERF1)) {
             _print_gpio_bladerf1(val);
         }
 
-        if (strcmp(bladerf_get_board_name(state->dev), "bladerf2") == 0) {
+        if (_is_board(state->dev, BOARD_BLADERF2)) {
             _print_gpio_bladerf2(val);
         }
     }
@@ -2203,9 +2309,7 @@ int cmd_print(struct cli_state *state, int argc, char **argv)
         for (entry = &printset_table[0]; entry->print != NULL; entry++) {
             if (entry->pa_option == PRINTALL_OPTION_SKIP) {
                 continue;
-            } else if (entry->board &&
-                       strcmp(entry->board,
-                              bladerf_get_board_name(state->dev)) != 0) {
+            } else if (!_is_board(state->dev, entry->board)) {
                 continue;
             }
 

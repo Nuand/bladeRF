@@ -17,19 +17,24 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
+#include <libbladeRF.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdbool.h>
-#include <libbladeRF.h>
 
-#include "common.h"
 #include "cmd.h"
-#include "peekpoke.h"
+#include "common.h"
 #include "conversions.h"
+#include "peekpoke.h"
 
 static inline bool matches_ad9361(const char *str)
 {
     return strcasecmp("adi", str) == 0 || strcasecmp("ad9361", str) == 0;
+}
+
+static inline bool matches_adf4002(const char *str)
+{
+    return strcasecmp("adf", str) == 0 || strcasecmp("adf4002", str) == 0;
 }
 
 static inline bool matches_lms6002d(const char *str)
@@ -45,23 +50,26 @@ static inline bool matches_si5338(const char *str)
 int cmd_peek(struct cli_state *state, int argc, char **argv)
 {
     /* Valid commands:
-        peek dac <address> [num addresses]
-        peek lms <address> [num addresses]
-        peek si  <address> [num addresses]
+        peek {adi,ad9361}   <address> [num addresses]
+        peek {adf,adf4002}  <address> [num addresses]
+        peek dac            <address> [num addresses]
+        peek lms            <address> [num addresses]
+        peek si             <address> [num addresses]
     */
     int rv = CLI_RET_OK;
     bool ok;
-    int (*f)(struct bladerf *, uint8_t, uint8_t *) = NULL;
+    int (*f)(struct bladerf *, uint8_t, uint8_t *)   = NULL;
     int (*f2)(struct bladerf *, uint16_t, uint8_t *) = NULL;
+    int (*f3)(struct bladerf *, uint8_t, uint32_t *) = NULL;
     unsigned int count, address, max_address;
 
-    if( argc == 3 || argc == 4 ) {
+    if (argc == 3 || argc == 4) {
         count = 1;
 
         /* Parse the number of addresses */
-        if( argc == 4 ) {
-            count = str2uint( argv[3], 0, MAX_NUM_ADDRESSES, &ok );
-            if( !ok ) {
+        if (argc == 4) {
+            count = str2uint(argv[3], 0, MAX_NUM_ADDRESSES, &ok);
+            if (!ok) {
                 cli_err(state, argv[0],
                         "Invalid number of addresses provided (%s)\n", argv[3]);
                 return CLI_RET_INVPARAM;
@@ -71,25 +79,38 @@ int cmd_peek(struct cli_state *state, int argc, char **argv)
         /* Are we reading from the AD9361 */
         if (matches_ad9361(argv[1])) {
             /* Parse address */
-            address = str2uint( argv[2], 0, ADI_MAX_ADDRESS, &ok );
-            if( !ok ) {
+            address = str2uint(argv[2], 0, ADI_MAX_ADDRESS, &ok);
+            if (!ok) {
                 invalid_address(state, argv[0], argv[2]);
                 rv = CLI_RET_INVPARAM;
             } else {
-                f2 = bladerf_ad9361_read;
+                f2          = bladerf_ad9361_read;
                 max_address = ADI_MAX_ADDRESS;
+            }
+        }
+
+        /* Are we reading from the ADF4002? */
+        else if (matches_adf4002(argv[1])) {
+            /* Parse address */
+            address = str2uint(argv[2], 0, ADF4002_MAX_ADDRESS, &ok);
+            if (!ok) {
+                invalid_address(state, argv[0], argv[2]);
+                rv = CLI_RET_INVPARAM;
+            } else {
+                f3          = bladerf_adf4002_read;
+                max_address = ADF4002_MAX_ADDRESS;
             }
         }
 
         /* Are we reading from the LMS6002D */
         else if (matches_lms6002d(argv[1])) {
             /* Parse address */
-            address = str2uint( argv[2], 0, LMS_MAX_ADDRESS, &ok );
-            if( !ok ) {
+            address = str2uint(argv[2], 0, LMS_MAX_ADDRESS, &ok);
+            if (!ok) {
                 invalid_address(state, argv[0], argv[2]);
                 rv = CLI_RET_INVPARAM;
             } else {
-                f = bladerf_lms_read;
+                f           = bladerf_lms_read;
                 max_address = LMS_MAX_ADDRESS;
             }
         }
@@ -97,12 +118,12 @@ int cmd_peek(struct cli_state *state, int argc, char **argv)
         /* Are we reading from the Si5338? */
         else if (matches_si5338(argv[1])) {
             /* Parse address */
-            address = str2uint( argv[2], 0, SI_MAX_ADDRESS, &ok );
-            if( !ok ) {
+            address = str2uint(argv[2], 0, SI_MAX_ADDRESS, &ok);
+            if (!ok) {
                 invalid_address(state, argv[0], argv[2]);
                 rv = CLI_RET_INVPARAM;
             } else {
-                f = bladerf_si5338_read;
+                f           = bladerf_si5338_read;
                 max_address = SI_MAX_ADDRESS;
             }
         }
@@ -114,24 +135,31 @@ int cmd_peek(struct cli_state *state, int argc, char **argv)
         }
 
         /* Loop over the addresses and output the values */
-        if( rv == CLI_RET_OK && (f || f2) ) {
+        if (rv == CLI_RET_OK && (f || f2 || f3)) {
             int status = BLADERF_ERR_UNEXPECTED;
             uint8_t val;
+            uint32_t val32;
 
             putchar('\n');
 
-            for(; count > 0 && address < max_address; count-- ) {
+            for (; count > 0 && address <= max_address; count--) {
                 if (f) {
-                    status = f( state->dev, (uint8_t)address, &val );
+                    status = f(state->dev, (uint8_t)address, &val);
                 } else if (f2) {
-                    status = f2( state->dev, (uint16_t)address, &val );
+                    status = f2(state->dev, (uint16_t)address, &val);
+                } else if (f3) {
+                    status = f3(state->dev, (uint8_t)address, &val32);
                 }
 
                 if (status < 0) {
                     state->last_lib_error = status;
-                    rv = CLI_RET_LIBBLADERF;
+                    rv                    = CLI_RET_LIBBLADERF;
                 } else {
-                    printf( "  0x%2.2x: 0x%2.2x\n", address, val );
+                    if (f || f2) {
+                        printf("  0x%2.2x: 0x%2.2x\n", address, val);
+                    } else if (f3) {
+                        printf("  0x%2.2x: 0x%8.8x\n", address, val32);
+                    }
 
                     if (matches_lms6002d(argv[1])) {
                         lms_reg_info(address, val);
@@ -144,9 +172,8 @@ int cmd_peek(struct cli_state *state, int argc, char **argv)
         }
 
     } else {
-        cli_err(state, argv[0], "Invalid number of arguments (%d)\n",  argc);
+        cli_err(state, argv[0], "Invalid number of arguments (%d)\n", argc);
         rv = CLI_RET_INVPARAM;
     }
     return rv;
 }
-

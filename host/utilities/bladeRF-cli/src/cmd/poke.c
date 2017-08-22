@@ -17,48 +17,54 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
+#include <libbladeRF.h>
 #include <stdio.h>
 #include <string.h>
-#include <libbladeRF.h>
 
 #include "cmd.h"
-#include "peekpoke.h"
 #include "conversions.h"
+#include "peekpoke.h"
 
 static inline bool matches_ad9361(const char *str)
 {
     return strcasecmp("adi", str) == 0 || strcasecmp("ad9361", str) == 0;
 }
 
+static inline bool matches_adf4002(const char *str)
+{
+    return strcasecmp("adf", str) == 0 || strcasecmp("adf4002", str) == 0;
+}
+
 int cmd_poke(struct cli_state *state, int argc, char **argv)
 {
     /* Valid commands:
-        poke dac <address> <value>
-        poke lms <address> <value>
-        poke si  <address> <value>
+        poke {adi,ad9361}   <address> <value>
+        poke {adf,adf4002}  <address> <value>
+        poke dac            <address> <value>
+        poke lms            <address> <value>
+        poke si             <address> <value>
     */
     int rv = CLI_RET_OK;
     int status;
     bool ok;
-    int (*f)(struct bladerf *, uint8_t, uint8_t) = NULL;
+    int (*f)(struct bladerf *, uint8_t, uint8_t)   = NULL;
     int (*f2)(struct bladerf *, uint16_t, uint8_t) = NULL;
+    int (*f3)(struct bladerf *, uint8_t, uint32_t) = NULL;
     unsigned int address, value;
 
-    if( argc == 4 ) {
-
+    if (argc == 4) {
         /* Parse the value */
-        value = str2uint( argv[3], 0, MAX_VALUE, &ok );
-        if( !ok ) {
-            cli_err(state, argv[0],
-                    "Invalid value provided (%s)", argv[3]);
+        value = str2uint(argv[3], 0, MAX_VALUE, &ok);
+        if (!ok) {
+            cli_err(state, argv[0], "Invalid value provided (%s)", argv[3]);
             return CLI_RET_INVPARAM;
         }
 
-        /* Are we reading from the DAC? */
-        if( strcasecmp( argv[1], "dac" ) == 0 ) {
+        /* Are we writing to the DAC? */
+        if (strcasecmp(argv[1], "dac") == 0) {
             /* Parse address */
-            address = str2uint( argv[2], 0, DAC_MAX_ADDRESS, &ok );
-            if( !ok ) {
+            address = str2uint(argv[2], 0, DAC_MAX_ADDRESS, &ok);
+            if (!ok) {
                 invalid_address(state, argv[0], argv[2]);
                 rv = CLI_RET_INVPARAM;
             } else {
@@ -68,22 +74,35 @@ int cmd_poke(struct cli_state *state, int argc, char **argv)
             }
         }
 
-        /* Are we reading from the AD9361 */
-        else if(matches_ad9361(argv[1])) {
+        /* Are we writing to the AD9361? */
+        else if (matches_ad9361(argv[1])) {
             /* Parse address */
-            address = str2uint( argv[2], 0, ADI_MAX_ADDRESS, &ok );
-            if( !ok ) {
+            address = str2uint(argv[2], 0, ADI_MAX_ADDRESS, &ok);
+            if (!ok) {
                 invalid_address(state, argv[0], argv[2]);
                 rv = CLI_RET_INVPARAM;
             } else {
-                f2 = bladerf_ad9361_write;;
+                f2 = bladerf_ad9361_write;
             }
         }
-        /* Are we reading from the LMS6002D */
-        else if( strcasecmp( argv[1], "lms" ) == 0 ) {
+
+        /* Are we writing to the ADF4002? */
+        else if (matches_adf4002(argv[1])) {
             /* Parse address */
-            address = str2uint( argv[2], 0, LMS_MAX_ADDRESS, &ok );
-            if( !ok ) {
+            address = str2uint(argv[2], 0, ADF4002_MAX_ADDRESS, &ok);
+            if (!ok) {
+                invalid_address(state, argv[0], argv[2]);
+                rv = CLI_RET_INVPARAM;
+            } else {
+                f3 = bladerf_adf4002_write;
+            }
+        }
+
+        /* Are we writing to the LMS6002D? */
+        else if (strcasecmp(argv[1], "lms") == 0) {
+            /* Parse address */
+            address = str2uint(argv[2], 0, LMS_MAX_ADDRESS, &ok);
+            if (!ok) {
                 invalid_address(state, argv[0], argv[2]);
                 rv = CLI_RET_INVPARAM;
             } else {
@@ -91,11 +110,11 @@ int cmd_poke(struct cli_state *state, int argc, char **argv)
             }
         }
 
-        /* Are we reading from the Si5338? */
-        else if( strcasecmp( argv[1], "si" ) == 0 ) {
+        /* Are we writing to the Si5338? */
+        else if (strcasecmp(argv[1], "si") == 0) {
             /* Parse address */
-            address = str2uint( argv[2], 0, SI_MAX_ADDRESS, &ok );
-            if( !ok ) {
+            address = str2uint(argv[2], 0, SI_MAX_ADDRESS, &ok);
+            if (!ok) {
                 invalid_address(state, argv[0], argv[2]);
                 rv = CLI_RET_INVPARAM;
             } else {
@@ -103,29 +122,35 @@ int cmd_poke(struct cli_state *state, int argc, char **argv)
             }
         }
 
-        /* I guess we aren't reading from anything :( */
+        /* I guess we aren't writing to anything :( */
         else {
-            cli_err(state, argv[0], "%s is not a pokeable device\n", argv[1] );
+            cli_err(state, argv[0], "%s is not a pokeable device\n", argv[1]);
             rv = CLI_RET_INVPARAM;
         }
 
         /* Write the value to the address */
-        if( rv == CLI_RET_OK && (f || f2) ) {
-            if( f ) {
-                status = f( state->dev, (uint8_t)address, (uint8_t)value );
-            } else if( f2 ) {
-                status = f2( state->dev, (uint16_t)address, (uint8_t)value );
+        if (rv == CLI_RET_OK && (f || f2 || f3)) {
+            if (f) {
+                status = f(state->dev, (uint8_t)address, (uint8_t)value);
+            } else if (f2) {
+                status = f2(state->dev, (uint16_t)address, (uint8_t)value);
+            } else if (f3) {
+                status = f3(state->dev, (uint8_t)address, (uint32_t)value);
             }
 
             if (status < 0) {
                 state->last_lib_error = status;
-                rv = CLI_RET_LIBBLADERF;
+                rv                    = CLI_RET_LIBBLADERF;
             } else {
-                printf( "\n  0x%2.2x: 0x%2.2x\n", address, value );
+                putchar('\n');
+                if (f || f2) {
+                    printf("  0x%2.2x: 0x%2.2x\n", address, value);
+                } else if (f3) {
+                    printf("  0x%2.2x: 0x%8.8x\n", address, value);
+                }
                 if (f == bladerf_lms_write) {
                     uint8_t readback;
-                    int status = bladerf_lms_read(state->dev,
-                                                  (uint8_t)address,
+                    int status = bladerf_lms_read(state->dev, (uint8_t)address,
                                                   &readback);
                     if (status == 0) {
                         lms_reg_info(address, readback);
@@ -141,4 +166,3 @@ int cmd_poke(struct cli_state *state, int argc, char **argv)
     }
     return rv;
 }
-

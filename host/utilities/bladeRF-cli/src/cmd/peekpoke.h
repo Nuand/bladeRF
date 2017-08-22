@@ -26,14 +26,16 @@
 
 #include "common.h"
 
-#define ADI_MAX_ADDRESS 0x3F7
-#define DAC_MAX_ADDRESS 127
-#define LMS_MAX_ADDRESS 127
-#define SI_MAX_ADDRESS  255
+// clang-format off
+#define ADI_MAX_ADDRESS     0x3F7
+#define DAC_MAX_ADDRESS     127
+#define LMS_MAX_ADDRESS     127
+#define SI_MAX_ADDRESS      255
+#define ADF4002_MAX_ADDRESS 3
 
-#define MAX_NUM_ADDRESSES 256
-#define MAX_VALUE 255
-
+#define MAX_NUM_ADDRESSES   256
+#define MAX_VALUE           255
+// clang-format on
 
 /* Convenience shared function */
 void invalid_address(struct cli_state *s, char *fn, char *addr);
@@ -42,4 +44,3 @@ void invalid_address(struct cli_state *s, char *fn, char *addr);
 void lms_reg_info(unsigned int address, unsigned int value);
 
 #endif /* PEEKPOKE_H__ */
-
