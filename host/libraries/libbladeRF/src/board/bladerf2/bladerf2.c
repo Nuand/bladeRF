@@ -3467,3 +3467,77 @@ int bladerf_ad9361_write(struct bladerf *dev, uint16_t address, uint8_t val)
 
     return 0;
 }
+
+/******************************************************************************/
+/* Low level ADF4002 Accessors */
+/******************************************************************************/
+
+int bladerf_adf4002_read(struct bladerf *dev, uint8_t address, uint32_t *val)
+{
+    int status;
+    uint32_t data;
+
+    if (NULL == dev) {
+        RETURN_INVAL("dev", "not initialized");
+    }
+
+    if (dev->board != &bladerf2_board_fns) {
+        RETURN_ERROR_STATUS("board compatibility check",
+                            BLADERF_ERR_UNSUPPORTED);
+    }
+
+    if (NULL == val) {
+        RETURN_INVAL("val", "is null");
+    }
+
+    MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
+
+    address &= 0x03;
+
+    status = dev->backend->adf400x_read(dev, address, &data);
+    if (status < 0) {
+        MUTEX_UNLOCK(&dev->lock);
+        RETURN_ERROR_STATUS("adf400x_read", status);
+    }
+
+    *val = data;
+
+    MUTEX_UNLOCK(&dev->lock);
+
+    return 0;
+}
+
+int bladerf_adf4002_write(struct bladerf *dev, uint8_t address, uint32_t val)
+{
+    int status;
+    uint32_t data;
+
+    if (NULL == dev) {
+        RETURN_INVAL("dev", "not initialized");
+    }
+
+    if (dev->board != &bladerf2_board_fns) {
+        RETURN_ERROR_STATUS("board compatibility check",
+                            BLADERF_ERR_UNSUPPORTED);
+    }
+
+    MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
+
+    address &= 0x03;
+
+    data = val;
+
+    status = dev->backend->adf400x_write(dev, address, data);
+    if (status < 0) {
+        MUTEX_UNLOCK(&dev->lock);
+        RETURN_ERROR_STATUS("adf400x_write", status);
+    }
+
+    MUTEX_UNLOCK(&dev->lock);
+
+    return 0;
+}

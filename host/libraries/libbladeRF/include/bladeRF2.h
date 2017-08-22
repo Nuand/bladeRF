@@ -58,7 +58,8 @@
  */
 API_EXPORT
 int CALL_CONV bladerf_ad9361_read(struct bladerf *dev,
-                                  uint16_t address, uint8_t *val);
+                                  uint16_t address,
+                                  uint8_t *val);
 /**
  * Write an AD9361 register
  *
@@ -70,7 +71,54 @@ int CALL_CONV bladerf_ad9361_read(struct bladerf *dev,
  */
 API_EXPORT
 int CALL_CONV bladerf_ad9361_write(struct bladerf *dev,
-                                   uint16_t address, uint8_t val);
+                                   uint16_t address,
+                                   uint8_t val);
+
+/**
+ * Read value from ADF4002 Phase Detector/Frequency Synthesizer
+ *
+ * Reference:
+ * http://www.analog.com/media/en/technical-documentation/data-sheets/ADF4002.pdf
+ *
+ * The address is interpreted as the control bits (DB1 and DB0) used to write
+ * to a specific latch.
+ *
+ * Note that val is shifted right by 2 bits, relative to the data sheet's latch
+ * map. val(21 downto 0) = DB(23 downto 2)
+ *
+ * @param       dev         Device handle
+ * @param[in]   address     ADF4002 latch address
+ * @param[out]  val         Value to read from ADF4002
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_adf4002_read(struct bladerf *dev,
+                                   uint8_t address,
+                                   uint32_t *val);
+
+/**
+ * Write value to ADF4002 Phase Detector/Frequency Synthesizer
+ *
+ * Reference:
+ * http://www.analog.com/media/en/technical-documentation/data-sheets/ADF4002.pdf
+ *
+ * The address is interpreted as the control bits (DB1 and DB0) used to write
+ * to a specific latch.
+ *
+ * Note that val is shifted right by 2 bits, relative to the data sheet's latch
+ * map. val(21 downto 0) = DB(23 downto 2)
+ *
+ * @param       dev         Device handle
+ * @param[in]   address     ADF4002 latch address
+ * @param[in]   val         Value to write to ADF4002
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_adf4002_write(struct bladerf *dev,
+                                    uint8_t address,
+                                    uint32_t val);
 
 /** @} (End of FN_BLADERF2_LOW_LEVEL) */
 
