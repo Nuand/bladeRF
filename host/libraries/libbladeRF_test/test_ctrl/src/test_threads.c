@@ -39,8 +39,6 @@ struct sync_task {
     bool run;
     int status;
     bladerf_module module;
-    int (*fn)(struct bladerf *dev, void *samples, unsigned int num_samples,
-              struct bladerf_metadata *meata, unsigned int timeout_ms);
 };
 
 struct thread_test_case {
@@ -103,8 +101,13 @@ static void * stream_task(void *arg)
 
     get_sync_task_state(t, &run);
     while (run && status == 0) {
-        status = t->fn(t->dev, samples, DEFAULT_BUF_LEN, NULL,
-                       DEFAULT_TIMEOUT_MS);
+        if (BLADERF_RX == t->module) {
+            status = bladerf_sync_rx(t->dev, samples, DEFAULT_BUF_LEN, NULL,
+                           DEFAULT_TIMEOUT_MS);
+        } else {
+            status = bladerf_sync_tx(t->dev, samples, DEFAULT_BUF_LEN, NULL,
+                           DEFAULT_TIMEOUT_MS);
+        }
 
         if (status != 0) {
             PR_ERROR("%s failed with: %s\n",
@@ -138,12 +141,6 @@ static void init_task(struct sync_task *t, struct bladerf *dev, bladerf_module m
     t->run = true;
     t->status = 0;
     t->module = m;
-
-    if (m == BLADERF_MODULE_RX) {
-        t->fn = bladerf_sync_rx;
-    } else {
-        t->fn = bladerf_sync_tx;
-    }
 }
 
 static int launch_task(struct sync_task *t)
