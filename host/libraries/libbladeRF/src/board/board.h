@@ -132,7 +132,7 @@ struct board_fns {
     int (*set_stream_timeout)(struct bladerf *dev, bladerf_direction dir, unsigned int timeout);
     int (*get_stream_timeout)(struct bladerf *dev, bladerf_direction dir, unsigned int *timeout);
     int (*sync_config)(struct bladerf *dev, bladerf_channel_layout layout, bladerf_format format, unsigned int num_buffers, unsigned int buffer_size, unsigned int num_transfers, unsigned int stream_timeout);
-    int (*sync_tx)(struct bladerf *dev, void *samples, unsigned int num_samples, struct bladerf_metadata *metadata, unsigned int timeout_ms);
+    int (*sync_tx)(struct bladerf *dev, void const *samples, unsigned int num_samples, struct bladerf_metadata *metadata, unsigned int timeout_ms);
     int (*sync_rx)(struct bladerf *dev, void *samples, unsigned int num_samples, struct bladerf_metadata *metadata, unsigned int timeout_ms);
     int (*get_timestamp)(struct bladerf *dev, bladerf_direction dir, uint64_t *value);
 

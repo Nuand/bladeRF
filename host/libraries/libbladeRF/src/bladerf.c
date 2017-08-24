@@ -1155,7 +1155,8 @@ int bladerf_sync_config(struct bladerf *dev,
 }
 
 int bladerf_sync_tx(struct bladerf *dev,
-                    void *samples, unsigned int num_samples,
+                    void const *samples,
+                    unsigned int num_samples,
                     struct bladerf_metadata *metadata,
                     unsigned int timeout_ms)
 {
@@ -1163,7 +1164,8 @@ int bladerf_sync_tx(struct bladerf *dev,
 }
 
 int bladerf_sync_rx(struct bladerf *dev,
-                    void *samples, unsigned int num_samples,
+                    void *samples,
+                    unsigned int num_samples,
                     struct bladerf_metadata *metadata,
                     unsigned int timeout_ms)
 {

@@ -2180,7 +2180,11 @@ static int bladerf1_sync_config(struct bladerf *dev, bladerf_channel_layout layo
     return status;
 }
 
-static int bladerf1_sync_tx(struct bladerf *dev, void *samples, unsigned int num_samples, struct bladerf_metadata *metadata, unsigned int timeout_ms)
+static int bladerf1_sync_tx(struct bladerf *dev,
+                            void const *samples,
+                            unsigned int num_samples,
+                            struct bladerf_metadata *metadata,
+                            unsigned int timeout_ms)
 {
     struct bladerf1_board_data *board_data = dev->board_data;
     int status;
@@ -2189,13 +2193,17 @@ static int bladerf1_sync_tx(struct bladerf *dev, void *samples, unsigned int num
         return BLADERF_ERR_INVAL;
     }
 
-    status = sync_tx(&board_data->sync[BLADERF_TX],
-                     samples, num_samples, metadata, timeout_ms);
+    status = sync_tx(&board_data->sync[BLADERF_TX], samples, num_samples,
+                     metadata, timeout_ms);
 
     return status;
 }
 
-static int bladerf1_sync_rx(struct bladerf *dev, void *samples, unsigned int num_samples, struct bladerf_metadata *metadata, unsigned int timeout_ms)
+static int bladerf1_sync_rx(struct bladerf *dev,
+                            void *samples,
+                            unsigned int num_samples,
+                            struct bladerf_metadata *metadata,
+                            unsigned int timeout_ms)
 {
     struct bladerf1_board_data *board_data = dev->board_data;
     int status;
@@ -2204,8 +2212,8 @@ static int bladerf1_sync_rx(struct bladerf *dev, void *samples, unsigned int num
         return BLADERF_ERR_INVAL;
     }
 
-    status = sync_rx(&board_data->sync[BLADERF_RX],
-                     samples, num_samples, metadata, timeout_ms);
+    status = sync_rx(&board_data->sync[BLADERF_RX], samples, num_samples,
+                     metadata, timeout_ms);
 
     return status;
 }

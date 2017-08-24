@@ -170,11 +170,17 @@ int sync_init(struct bladerf_sync *sync,
  */
 void sync_deinit(struct bladerf_sync *sync);
 
-int sync_rx(struct bladerf_sync *sync, void *samples, unsigned int num_samples,
-            struct bladerf_metadata *metadata, unsigned int timeout_ms);
+int sync_rx(struct bladerf_sync *sync,
+            void *samples,
+            unsigned int num_samples,
+            struct bladerf_metadata *metadata,
+            unsigned int timeout_ms);
 
-int sync_tx(struct bladerf_sync *sync, void *samples, unsigned int num_samples,
-            struct bladerf_metadata *metadata, unsigned int timeout_ms);
+int sync_tx(struct bladerf_sync *sync,
+            void const *samples,
+            unsigned int num_samples,
+            struct bladerf_metadata *metadata,
+            unsigned int timeout_ms);
 
 unsigned int sync_buf2idx(struct buffer_mgmt *b, void *addr);
 

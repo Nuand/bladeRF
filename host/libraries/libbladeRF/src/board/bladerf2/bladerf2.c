@@ -2736,7 +2736,7 @@ static int bladerf2_sync_config(struct bladerf *dev,
 }
 
 static int bladerf2_sync_tx(struct bladerf *dev,
-                            void *samples,
+                            void const *samples,
                             unsigned int num_samples,
                             struct bladerf_metadata *metadata,
                             unsigned int timeout_ms)

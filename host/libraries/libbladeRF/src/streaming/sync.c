@@ -783,20 +783,22 @@ static inline int handle_tx_parameters(struct bladerf_metadata *user_meta,
     return 0;
 }
 
-int sync_tx(struct bladerf_sync *s, void *samples, unsigned int num_samples,
-            struct bladerf_metadata *user_meta, unsigned int timeout_ms)
+int sync_tx(struct bladerf_sync *s,
+            void const *samples,
+            unsigned int num_samples,
+            struct bladerf_metadata *user_meta,
+            unsigned int timeout_ms)
 {
     struct buffer_mgmt *b = NULL;
 
-    int status = 0;
-    unsigned int samples_written = 0;
-    unsigned int samples_to_copy = 0;
+    int status                      = 0;
+    unsigned int samples_written    = 0;
+    unsigned int samples_to_copy    = 0;
     unsigned int samples_per_buffer = 0;
-    uint8_t *samples_src = (uint8_t*)samples;
-    uint8_t *buf_dest = NULL;
-    struct tx_options op = {
-        FIELD_INIT(.flush, false),
-        FIELD_INIT(.zero_pad, false),
+    uint8_t const *samples_src      = (uint8_t const *)samples;
+    uint8_t *buf_dest               = NULL;
+    struct tx_options op            = {
+        FIELD_INIT(.flush, false), FIELD_INIT(.zero_pad, false),
     };
 
     log_verbose("%s: called for %u samples.\n", __FUNCTION__, num_samples);
@@ -812,11 +814,10 @@ int sync_tx(struct bladerf_sync *s, void *samples, unsigned int num_samples,
         goto out;
     }
 
-    b = &s->buf_mgmt;
+    b                  = &s->buf_mgmt;
     samples_per_buffer = s->stream_config.samples_per_buffer;
 
-    while (status == 0 && ((samples_written < num_samples) || op.flush) ) {
-
+    while (status == 0 && ((samples_written < num_samples) || op.flush)) {
         switch (s->state) {
             case SYNC_STATE_CHECK_WORKER: {
                 int stream_error;
@@ -849,9 +850,8 @@ int sync_tx(struct bladerf_sync *s, void *samples, unsigned int num_samples,
                 sync_worker_submit_request(s->worker, SYNC_WORKER_START);
 
                 status = sync_worker_wait_for_state(
-                        s->worker,
-                        SYNC_WORKER_STATE_RUNNING,
-                        SYNC_WORKER_START_TIMEOUT_MS);
+                    s->worker, SYNC_WORKER_STATE_RUNNING,
+                    SYNC_WORKER_START_TIMEOUT_MS);
 
                 if (status == 0) {
                     s->state = SYNC_STATE_WAIT_FOR_BUFFER;
@@ -867,8 +867,8 @@ int sync_tx(struct bladerf_sync *s, void *samples, unsigned int num_samples,
                 if (b->status[b->prod_i] == SYNC_BUFFER_EMPTY) {
                     s->state = SYNC_STATE_BUFFER_READY;
                 } else {
-                    status = wait_for_buffer(b, timeout_ms,
-                                             __FUNCTION__, b->prod_i);
+                    status =
+                        wait_for_buffer(b, timeout_ms, __FUNCTION__, b->prod_i);
                 }
 
                 MUTEX_UNLOCK(&b->lock);
@@ -877,7 +877,7 @@ int sync_tx(struct bladerf_sync *s, void *samples, unsigned int num_samples,
             case SYNC_STATE_BUFFER_READY:
                 MUTEX_LOCK(&b->lock);
                 b->status[b->prod_i] = SYNC_BUFFER_PARTIAL;
-                b->partial_off = 0;
+                b->partial_off       = 0;
 
                 switch (s->stream_config.format) {
                     case BLADERF_FORMAT_SC16_Q11:
@@ -885,9 +885,9 @@ int sync_tx(struct bladerf_sync *s, void *samples, unsigned int num_samples,
                         break;
 
                     case BLADERF_FORMAT_SC16_Q11_META:
-                        s->state = SYNC_STATE_USING_BUFFER_META;
+                        s->state             = SYNC_STATE_USING_BUFFER_META;
                         s->meta.curr_msg_off = 0;
-                        s->meta.msg_num = 0;
+                        s->meta.msg_num      = 0;
                         break;
 
                     default:
@@ -902,13 +902,13 @@ int sync_tx(struct bladerf_sync *s, void *samples, unsigned int num_samples,
             case SYNC_STATE_USING_BUFFER:
                 MUTEX_LOCK(&b->lock);
 
-                buf_dest = (uint8_t*)b->buffers[b->prod_i];
+                buf_dest        = (uint8_t *)b->buffers[b->prod_i];
                 samples_to_copy = uint_min(num_samples - samples_written,
                                            samples_per_buffer - b->partial_off);
 
                 memcpy(buf_dest + samples2bytes(s, b->partial_off),
-                        samples_src + samples2bytes(s, samples_written),
-                        samples2bytes(s, samples_to_copy));
+                       samples_src + samples2bytes(s, samples_written),
+                       samples2bytes(s, samples_to_copy));
 
                 b->partial_off += samples_to_copy;
                 samples_written += samples_to_copy;
@@ -931,15 +931,14 @@ int sync_tx(struct bladerf_sync *s, void *samples, unsigned int num_samples,
                 MUTEX_LOCK(&b->lock);
 
                 switch (s->meta.state) {
-
                     case SYNC_META_STATE_HEADER:
-                        buf_dest = (uint8_t*)b->buffers[b->prod_i];
+                        buf_dest = (uint8_t *)b->buffers[b->prod_i];
 
                         s->meta.curr_msg =
                             buf_dest + s->meta.msg_size * s->meta.msg_num;
 
                         log_verbose("%s: Set curr_msg to: %p (buf @ %p)\n",
-                                     __FUNCTION__, s->meta.curr_msg, buf_dest);
+                                    __FUNCTION__, s->meta.curr_msg, buf_dest);
 
                         s->meta.curr_msg_off = 0;
 
@@ -965,29 +964,27 @@ int sync_tx(struct bladerf_sync *s, void *samples, unsigned int num_samples,
                             size_t to_zero;
 
                             log_verbose("%s: User requested zero padding to "
-                                        "t=%"PRIu64" (%"PRIu64" + %"PRIu64")\n",
-                                        __FUNCTION__,
-                                        user_meta->timestamp,
+                                        "t=%" PRIu64 " (%" PRIu64 " + %" PRIu64
+                                        ")\n",
+                                        __FUNCTION__, user_meta->timestamp,
                                         s->meta.curr_timestamp, delta);
 
                             if (delta < left_in_msg(s)) {
-                                to_zero = (size_t) delta;
+                                to_zero = (size_t)delta;
 
                                 log_verbose("%s: Padded subset of msg "
-                                            "(%"PRIu64" samples)\n",
-                                            __FUNCTION__,
-                                            (uint64_t) to_zero);
+                                            "(%" PRIu64 " samples)\n",
+                                            __FUNCTION__, (uint64_t)to_zero);
                             } else {
                                 to_zero = left_in_msg(s);
 
                                 log_verbose("%s: Padded remainder of msg "
-                                            "(%"PRIu64" samples)\n",
-                                            __FUNCTION__,
-                                            (uint64_t) to_zero);
+                                            "(%" PRIu64 " samples)\n",
+                                            __FUNCTION__, (uint64_t)to_zero);
                             }
 
                             memset(s->meta.curr_msg + METADATA_HEADER_SIZE +
-                                    samples2bytes(s, s->meta.curr_msg_off),
+                                       samples2bytes(s, s->meta.curr_msg_off),
                                    0, samples2bytes(s, to_zero));
 
                             s->meta.curr_msg_off += to_zero;
@@ -1015,19 +1012,20 @@ int sync_tx(struct bladerf_sync *s, void *samples, unsigned int num_samples,
                                             "Padding into next message.\n");
                             } else {
                                 s->meta.curr_timestamp = user_meta->timestamp;
-                                op.zero_pad = false;
+                                op.zero_pad            = false;
                             }
                         }
 
-                        samples_to_copy = uint_min(num_samples - samples_written,
-                                                   left_in_msg(s));
+                        samples_to_copy = uint_min(
+                            num_samples - samples_written, left_in_msg(s));
 
                         if (samples_to_copy != 0) {
                             /* We have user data to copy into the current
                              * message within the buffer */
                             memcpy(s->meta.curr_msg + METADATA_HEADER_SIZE +
-                                        samples2bytes(s, s->meta.curr_msg_off),
-                                   samples_src + samples2bytes(s, samples_written),
+                                       samples2bytes(s, s->meta.curr_msg_off),
+                                   samples_src +
+                                       samples2bytes(s, samples_written),
                                    samples2bytes(s, samples_to_copy));
 
                             s->meta.curr_msg_off += samples_to_copy;
@@ -1038,7 +1036,6 @@ int sync_tx(struct bladerf_sync *s, void *samples, unsigned int num_samples,
                                         "Current message offset is now: %u\n",
                                         __FUNCTION__, samples_to_copy,
                                         s->meta.curr_msg_off);
-
                         }
 
                         if (left_in_msg(s) != 0 && op.flush) {
@@ -1058,13 +1055,13 @@ int sync_tx(struct bladerf_sync *s, void *samples, unsigned int num_samples,
                             memset(s->meta.curr_msg + off, 0,
                                    samples2bytes(s, to_zero));
 
-                            log_verbose("%s: Flushed %u samples @ %u (0x%08x)\n",
-                                        __FUNCTION__,
-                                        to_zero, s->meta.curr_msg_off, off);
+                            log_verbose(
+                                "%s: Flushed %u samples @ %u (0x%08x)\n",
+                                __FUNCTION__, to_zero, s->meta.curr_msg_off,
+                                off);
 
                             s->meta.curr_msg_off += to_zero;
                             s->meta.curr_timestamp += to_zero;
-
                         }
 
                         if (left_in_msg(s) == 0) {
@@ -1082,7 +1079,7 @@ int sync_tx(struct bladerf_sync *s, void *samples, unsigned int num_samples,
                             status = advance_tx_buffer(s, b);
 
                             s->meta.msg_num = 0;
-                            s->state = SYNC_STATE_WAIT_FOR_BUFFER;
+                            s->state        = SYNC_STATE_WAIT_FOR_BUFFER;
 
                             /* We want to clear the flush flag if we've written
                              * all of our data, but keep it set if we have more
@@ -1106,9 +1103,8 @@ int sync_tx(struct bladerf_sync *s, void *samples, unsigned int num_samples,
     if (status == 0 &&
         s->stream_config.format == BLADERF_FORMAT_SC16_Q11_META &&
         (user_meta->flags & BLADERF_META_FLAG_TX_BURST_END)) {
-
         s->meta.in_burst = false;
-        s->meta.now = false;
+        s->meta.now      = false;
     }
 
 out:
