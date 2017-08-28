@@ -86,6 +86,9 @@ struct bladerf2_board_data {
 
     /* Synchronous interface handles */
     struct bladerf_sync sync[2];
+
+    /* TX Mute Status */
+    bool tx_mute[2];
 };
 
 /* Macro for logging and returning an error status. This should be used for
@@ -727,14 +730,10 @@ static bool _is_rffe_channel_enabled(uint32_t reg, bladerf_channel ch)
     }
 }
 
-static int _set_tx_mute(struct bladerf *dev, bladerf_channel ch, bool state)
+static uint32_t _get_tx_gain_cache(struct bladerf *dev, bladerf_channel ch)
 {
     struct bladerf2_board_data *board_data;
     struct ad9361_rf_phy *phy;
-    uint32_t *cached_atten;
-    uint32_t atten_mdb;
-    int ch_num;
-    int status;
 
     CHECK_BOARD_STATE(STATE_FPGA_LOADED);
 
@@ -743,30 +742,81 @@ static int _set_tx_mute(struct bladerf *dev, bladerf_channel ch, bool state)
 
     switch (ch) {
         case BLADERF_CHANNEL_TX(0):
-            cached_atten = &(phy->tx1_atten_cached);
-            ch_num       = 1;
-            break;
+            return phy->tx1_atten_cached;
         case BLADERF_CHANNEL_TX(1):
-            cached_atten = &(phy->tx2_atten_cached);
-            ch_num       = 2;
-            break;
+            return phy->tx2_atten_cached;
         default:
             RETURN_INVAL("ch", "is not a valid TX channel");
     }
+}
 
-    if (state) {
-        *cached_atten = ad9361_get_tx_atten(phy, ch_num);
-        atten_mdb     = 89750;
-    } else {
-        atten_mdb = *cached_atten;
+static int _set_tx_gain_cache(struct bladerf *dev,
+                              bladerf_channel ch,
+                              uint32_t atten_mdb)
+{
+    struct bladerf2_board_data *board_data;
+    struct ad9361_rf_phy *phy;
+
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    board_data = dev->board_data;
+    phy        = board_data->phy;
+
+    switch (ch) {
+        case BLADERF_CHANNEL_TX(0):
+            phy->tx1_atten_cached = atten_mdb;
+            return 0;
+        case BLADERF_CHANNEL_TX(1):
+            phy->tx2_atten_cached = atten_mdb;
+            return 0;
+        default:
+            RETURN_INVAL("ch", "is not a valid TX channel");
+    }
+}
+
+static int _set_tx_mute(struct bladerf *dev, bladerf_channel ch, bool state)
+{
+    struct bladerf2_board_data *board_data;
+    struct ad9361_rf_phy *phy;
+    uint32_t atten;
+    uint32_t cached;
+    int port;
+    int status;
+
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    board_data = dev->board_data;
+    phy        = board_data->phy;
+    port       = (ch >> 1) + 1;
+    cached     = _get_tx_gain_cache(dev, ch);
+
+    if (board_data->tx_mute[ch >> 1] == state) {
+        log_warning("attempted to mute already-muted channel %d\n", ch);
+        return 0;
     }
 
-    log_debug("%s: %smuting TX%d (cached atten: %d)\n", __FUNCTION__,
-              state ? "" : "un", ch_num, *cached_atten);
-    status =
-        ad9361_set_tx_atten(phy, atten_mdb, (ch_num == 1), (ch_num == 2), true);
+    if (state) {
+        cached = ad9361_get_tx_atten(phy, port);
+        atten  = 89750;
+    } else {
+        atten = cached;
+    }
 
-    return status;
+    status = _set_tx_gain_cache(dev, ch, cached);
+    if (status != 0) {
+        RETURN_ERROR_STATUS("failed to update tx gain cache", status);
+    }
+
+    log_debug("%s: %smuting TX%d (cached: %d)\n", __FUNCTION__,
+              state ? "" : "un", port, cached);
+    status = ad9361_set_tx_atten(phy, atten, (port == 1), (port == 2), true);
+    if (status != 0) {
+        RETURN_ERROR_AD9361("failed to set tx atten", status);
+    }
+
+    board_data->tx_mute[ch >> 1] = state;
+
+    return 0;
 }
 
 /******************************************************************************/
@@ -914,6 +964,9 @@ static int bladerf2_initialize(struct bladerf *dev)
     }
 
     /* Mute TX channels */
+    board_data->tx_mute[0] = false;
+    board_data->tx_mute[1] = false;
+
     status = _set_tx_mute(dev, BLADERF_CHANNEL_TX(0), true);
     if (status < 0) {
         RETURN_ERROR_STATUS("_set_tx_mute(BLADERF_CHANNEL_TX(0))", status);
@@ -1457,9 +1510,13 @@ static int bladerf2_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
     if (_is_tx(ch)) {
         val = -_clamp_to_range(&range, gain) / range.scale;
 
-        status = ad9361_set_tx_attenuation(board_data->phy, ch >> 1, val);
-        if (status < 0) {
-            RETURN_ERROR_AD9361("ad9361_set_tx_attenuation", status);
+        if (board_data->tx_mute[ch >> 1]) {
+            status = _set_tx_gain_cache(dev, ch, val);
+        } else {
+            status = ad9361_set_tx_attenuation(board_data->phy, ch >> 1, val);
+            if (status < 0) {
+                RETURN_ERROR_AD9361("ad9361_set_tx_attenuation", status);
+            }
         }
     } else {
         val = _clamp_to_range(&range, gain) / range.scale;
