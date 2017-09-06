@@ -1150,6 +1150,10 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
                 full_path = file_find("hostedxA4.rbf");
                 break;
 
+            case BLADERF_FPGA_A9:
+                full_path = file_find("hostedxA9.rbf");
+                break;
+
             default:
                 RETURN_ERROR_STATUS_ARG("Mapping FPGA size",
                                         board_data->fpga_size,
@@ -2987,6 +2991,7 @@ static int bladerf2_get_timestamp(struct bladerf *dev,
  */
 // clang-format off
 #define FPGA_SIZE_XA4   (2632660)
+#define FPGA_SIZE_XA9   (12858972)
 // clang-format on
 
 static bool is_valid_fpga_size(bladerf_fpga_size fpga, size_t len)
@@ -2997,6 +3002,10 @@ static bool is_valid_fpga_size(bladerf_fpga_size fpga, size_t len)
     switch (fpga) {
         case BLADERF_FPGA_A4:
             valid = (len == FPGA_SIZE_XA4);
+            break;
+
+        case BLADERF_FPGA_A9:
+            valid = (len == FPGA_SIZE_XA9);
             break;
 
         default:

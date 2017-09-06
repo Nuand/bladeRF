@@ -369,8 +369,9 @@ struct bladerf_version {
 typedef enum {
     BLADERF_FPGA_UNKNOWN = 0,   /**< Unable to determine FPGA variant */
     BLADERF_FPGA_40KLE = 40,    /**< 40 kLE FPGA */
+    BLADERF_FPGA_115KLE = 115,  /**< 115 kLE FPGA */
     BLADERF_FPGA_A4 = 49,       /**< 49 kLE FPGA (A4) */
-    BLADERF_FPGA_115KLE = 115   /**< 115 kLE FPGA */
+    BLADERF_FPGA_A9 = 301       /**< 301 kLE FPGA (A9) */
 } bladerf_fpga_size;
 
 /**
