@@ -2074,7 +2074,6 @@ static int bladerf2_select_band(struct bladerf *dev,
 {
     int status;
     uint32_t reg;
-    bool enable;
 
     CHECK_BOARD_STATE(STATE_FPGA_LOADED);
 
@@ -2084,19 +2083,25 @@ static int bladerf2_select_band(struct bladerf *dev,
         RETURN_ERROR_STATUS("rffe_control_read", status);
     }
 
-    /* Is this channel enabled? */
-    enable = _is_rffe_channel_enabled(reg, ch);
+    /* We have to do this for all the channels sharing the same LO. */
+    for (size_t bandchan = 0; bandchan < 2; ++bandchan) {
+        bladerf_channel bch = _is_tx(ch) ? BLADERF_CHANNEL_TX(bandchan)
+                                         : BLADERF_CHANNEL_RX(bandchan);
 
-    /* Update SPDT bits accordingly */
-    status = _set_spdt_bits(&reg, ch, enable, frequency);
-    if (status < 0) {
-        RETURN_ERROR_STATUS("_set_spdt_bits", status);
-    }
+        /* Is this channel enabled? */
+        bool enable = _is_rffe_channel_enabled(reg, bch);
 
-    /* Set AD9361 port */
-    status = _set_ad9361_port(dev, ch, enable, frequency);
-    if (status < 0) {
-        RETURN_ERROR_STATUS("_set_ad9361_port", status);
+        /* Update SPDT bits accordingly */
+        status = _set_spdt_bits(&reg, bch, enable, frequency);
+        if (status < 0) {
+            RETURN_ERROR_STATUS("_set_spdt_bits", status);
+        }
+
+        /* Set AD9361 port */
+        status = _set_ad9361_port(dev, bch, enable, frequency);
+        if (status < 0) {
+            RETURN_ERROR_STATUS("_set_ad9361_port", status);
+        }
     }
 
     status = dev->backend->rffe_control_write(dev, reg);
@@ -2138,11 +2143,6 @@ static int bladerf2_set_frequency(struct bladerf *dev,
         if (status < 0) {
             RETURN_ERROR_AD9361("ad9361_set_rx_lo_freq", status);
         }
-    }
-
-    status = bladerf2_select_band(dev, ch, frequency);
-    if (status < 0) {
-        RETURN_ERROR_STATUS("bladerf2_select_band", status);
     }
 
     return 0;
