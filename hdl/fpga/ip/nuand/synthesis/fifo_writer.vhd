@@ -110,7 +110,6 @@ architecture simple of fifo_writer is
         fifo_clear          : std_logic;
         fifo_write          : std_logic;
         fifo_data           : unsigned(fifo_data'range);
-        samples_left_init   : natural range 0 to in_sample_controls'length;
         samples_left        : natural range 0 to in_sample_controls'length;
     end record;
 
@@ -119,7 +118,6 @@ architecture simple of fifo_writer is
         fifo_clear          => '1',
         fifo_write          => '0',
         fifo_data           => (others => '-'),
-        samples_left_init   => 0,
         samples_left        => 0
     );
 
@@ -304,7 +302,6 @@ begin
 
                 -- MIMO PACKER: STEP 2 of 3
                 --   Compute "samples left" to fill up the fifo_data bus
-                fifo_future.samples_left_init <= NUM_STREAMS - count_enabled_channels(in_sample_controls);
                 fifo_future.samples_left      <= NUM_STREAMS - count_enabled_channels(in_sample_controls);
 
                 if( enable = '1' ) then
@@ -329,7 +326,7 @@ begin
                     -- Received valid data
                     if( write_req = '1' ) then
                         if( fifo_current.samples_left = 0 ) then
-                            fifo_future.samples_left <= fifo_current.samples_left_init;
+                            fifo_future.samples_left <= NUM_STREAMS - count_enabled_channels(in_sample_controls);
                             fifo_future.fifo_write   <= write_req;
                         else
                             -- MIMO PACKER: STEP 3 of 3
