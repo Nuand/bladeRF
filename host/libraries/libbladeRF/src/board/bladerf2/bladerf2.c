@@ -823,9 +823,9 @@ static bool _is_total_sample_rate_achievable(struct bladerf *dev)
 {
     int status;
     uint32_t reg, rx_rate, tx_rate;
-    size_t throughput_accum                = 0;
+    float throughput_accum                 = 0;
     size_t active_channels                 = 0;
-    size_t const MAX_SAMPLE_THROUGHPUT     = 80e6;
+    float const MAX_SAMPLE_THROUGHPUT      = 80e6;
     struct bladerf2_board_data *board_data = dev->board_data;
 
     /* Read RFFE control register */
@@ -867,8 +867,8 @@ static bool _is_total_sample_rate_achievable(struct bladerf *dev)
 
     if (throughput_accum > MAX_SAMPLE_THROUGHPUT) {
         log_warning("The total sample throughput for the %d active channel%s, "
-                    "%d Msps, is greater than the recommended maximum sample "
-                    "throughput, %d Msps. You may experience dropped samples "
+                    "%g Msps, is greater than the recommended maximum sample "
+                    "throughput, %g Msps. You may experience dropped samples "
                     "unless the sample rate is reduced, or some channels are "
                     "deactivated.\n",
                     active_channels, (active_channels == 1 ? "" : "s"),
