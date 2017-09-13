@@ -819,6 +819,66 @@ static int _set_tx_mute(struct bladerf *dev, bladerf_channel ch, bool state)
     return 0;
 }
 
+static bool _is_total_sample_rate_achievable(struct bladerf *dev)
+{
+    int status;
+    uint32_t reg, rx_rate, tx_rate;
+    size_t throughput_accum                = 0;
+    size_t active_channels                 = 0;
+    size_t const MAX_SAMPLE_THROUGHPUT     = 80e6;
+    struct bladerf2_board_data *board_data = dev->board_data;
+
+    /* Read RFFE control register */
+    status = dev->backend->rffe_control_read(dev, &reg);
+    if (status < 0) {
+        return false;
+    }
+
+    /* Get RX and TX sample rates */
+    status = ad9361_get_rx_sampling_freq(board_data->phy, &rx_rate);
+    if (status < 0) {
+        return false;
+    }
+    status = ad9361_get_tx_sampling_freq(board_data->phy, &tx_rate);
+    if (status < 0) {
+        return false;
+    }
+
+    /* Accumulate sample rates for all channels */
+    if ((reg >> RFFE_CONTROL_MIMO_RX_EN_0) & 0x1) {
+        throughput_accum += rx_rate;
+        ++active_channels;
+    }
+
+    if ((reg >> RFFE_CONTROL_MIMO_RX_EN_1) & 0x1) {
+        throughput_accum += rx_rate;
+        ++active_channels;
+    }
+
+    if ((reg >> RFFE_CONTROL_MIMO_TX_EN_0) & 0x1) {
+        throughput_accum += tx_rate;
+        ++active_channels;
+    }
+
+    if ((reg >> RFFE_CONTROL_MIMO_TX_EN_1) & 0x1) {
+        throughput_accum += tx_rate;
+        ++active_channels;
+    }
+
+    if (throughput_accum > MAX_SAMPLE_THROUGHPUT) {
+        log_warning("The total sample throughput for the %d active channel%s, "
+                    "%d Msps, is greater than the recommended maximum sample "
+                    "throughput, %d Msps. You may experience dropped samples "
+                    "unless the sample rate is reduced, or some channels are "
+                    "deactivated.\n",
+                    active_channels, (active_channels == 1 ? "" : "s"),
+                    throughput_accum / 1e6, MAX_SAMPLE_THROUGHPUT / 1e6);
+        return false;
+    }
+
+    return true;
+}
+
 /******************************************************************************/
 /* Low-level Initialization */
 /******************************************************************************/
@@ -1448,6 +1508,9 @@ static int bladerf2_enable_module(struct bladerf *dev,
         }
     }
 
+    /* Warn the user if this isn't achievable */
+    _is_total_sample_rate_achievable(dev);
+
     return 0;
 }
 
@@ -1903,6 +1966,9 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
     if (actual != NULL) {
         return bladerf2_get_sample_rate(dev, ch, actual);
     }
+
+    /* Warn the user if this isn't achievable */
+    _is_total_sample_rate_achievable(dev);
 
     return 0;
 }
