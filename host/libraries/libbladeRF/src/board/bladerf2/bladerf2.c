@@ -1864,16 +1864,16 @@ static int bladerf2_get_gain_stages(struct bladerf *dev,
     const struct bladerf_gain_stage_info *stage_infos;
     unsigned int stage_infos_len;
 
-    if (NULL == stages) {
-        RETURN_INVAL("stages", "is null");
-    }
-
     if (_is_tx(ch)) {
         stage_infos     = bladerf2_tx_gain_stages;
         stage_infos_len = ARRAY_SIZE(bladerf2_tx_gain_stages);
     } else {
         stage_infos     = bladerf2_rx_gain_stages;
         stage_infos_len = ARRAY_SIZE(bladerf2_rx_gain_stages);
+    }
+
+    if (NULL == stages || 0 == count) {
+        return stage_infos_len;
     }
 
     count = (stage_infos_len < count) ? stage_infos_len : count;
