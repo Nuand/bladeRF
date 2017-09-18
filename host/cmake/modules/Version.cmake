@@ -101,11 +101,11 @@ if(VERSION_INFO_OVERRIDE)
     set(VERSION_INFO "${VERSION_INFO_BASE}-${VERSION_INFO_OVERRIDE}")
 
 # Intra-release builds
-elseif("${VERSION_INFO_EXTRA}" STREQUAL "git")
+elseif(${VERSION_INFO_EXTRA} STREQUAL "git")
     set(VERSION_INFO "${VERSION_INFO_BASE}-git${GIT_INFO}")
 
 # Versioned releases
-elseif("${VERSION_INFO_EXTRA}" STREQUAL "")
+elseif(${VERSION_INFO_EXTRA} STREQUAL "")
     set(VERSION_INFO "${VERSION_INFO_BASE}")
 
 # Invalid 
