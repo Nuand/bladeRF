@@ -584,7 +584,7 @@ typedef enum  {
 
 /* Backwards compatibility */
 #define BLADERF_GAIN_AUTOMATIC BLADERF_GAIN_DEFAULT
-#define BLADERF_GAIN_MANUAL BLADERF_GAIN_MGC
+#define BLADERF_GAIN_MANUAL    BLADERF_GAIN_MGC
 
 /**
  * Mapping of human-readable names to gain modes
