@@ -2842,29 +2842,25 @@ static int bladerf1_expansion_attach(struct bladerf *dev, bladerf_xb xb)
         return BLADERF_ERR_INVAL;
     }
 
+    /* Cache what we have attached in our device handle to alleviate the
+     * need to go read the device state */
+    dev->xb = xb;
+
     return 0;
 }
 
 static int bladerf1_expansion_get_attached(struct bladerf *dev, bladerf_xb *xb)
 {
     int status;
-    uint32_t val;
 
     CHECK_BOARD_STATE(STATE_FPGA_LOADED);
 
-    status = dev->backend->config_gpio_read(dev, &val);
-    if (status != 0) {
-        return status;
-    }
-
-    val = (val >> 30) & 0x3;
-
-    switch (val) {
+    switch (dev->xb) {
         case BLADERF_XB_NONE:
         case BLADERF_XB_100:
         case BLADERF_XB_200:
         case BLADERF_XB_300:
-            *xb = val;
+            *xb = dev->xb;
             status = 0;
             break;
         default:
