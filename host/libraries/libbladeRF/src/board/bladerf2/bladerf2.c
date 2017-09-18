@@ -309,6 +309,30 @@ static const struct bladerf_range bladerf2_tx_gain_range = {
     FIELD_INIT(.scale,  0.001),
 };
 
+/* RX gain modes */
+static const struct bladerf_gain_modes bladerf2_rx_gain_modes[] = {
+    {
+        FIELD_INIT(.name, "default"),
+        FIELD_INIT(.mode, BLADERF_GAIN_DEFAULT)
+    },
+    {
+        FIELD_INIT(.name, "manual"),
+        FIELD_INIT(.mode, BLADERF_GAIN_MGC)
+    },
+    {
+        FIELD_INIT(.name, "fast"),
+        FIELD_INIT(.mode, BLADERF_GAIN_FASTATTACK_AGC)
+    },
+    {
+        FIELD_INIT(.name, "slow"),
+        FIELD_INIT(.mode, BLADERF_GAIN_SLOWATTACK_AGC)
+    },
+    {
+        FIELD_INIT(.name, "hybrid"),
+        FIELD_INIT(.mode, BLADERF_GAIN_HYBRID_AGC)
+    }
+};
+
 /* RX gain stages */
 static const struct bladerf_gain_stage_info bladerf2_rx_gain_stages[] = {
     {
@@ -1746,6 +1770,28 @@ static int bladerf2_get_gain_mode(struct bladerf *dev,
     }
 
     return 0;
+}
+
+static int bladerf2_get_gain_modes(struct bladerf *dev,
+                                   bladerf_channel ch,
+                                   struct bladerf_gain_modes const **modes)
+{
+    struct bladerf_gain_modes const *mode_infos;
+    unsigned int mode_infos_len;
+
+    if (_is_tx(ch)) {
+        mode_infos     = NULL;
+        mode_infos_len = 0;
+    } else {
+        mode_infos     = bladerf2_rx_gain_modes;
+        mode_infos_len = ARRAY_SIZE(bladerf2_rx_gain_modes);
+    }
+
+    if (modes != NULL) {
+        *modes = mode_infos;
+    }
+
+    return mode_infos_len;
 }
 
 static int bladerf2_get_gain_stage_range(struct bladerf *dev,
@@ -3577,6 +3623,7 @@ const struct board_fns bladerf2_board_fns = {
     FIELD_INIT(.get_gain, bladerf2_get_gain),
     FIELD_INIT(.set_gain_mode, bladerf2_set_gain_mode),
     FIELD_INIT(.get_gain_mode, bladerf2_get_gain_mode),
+    FIELD_INIT(.get_gain_modes, bladerf2_get_gain_modes),
     FIELD_INIT(.get_gain_range, bladerf2_get_gain_range),
     FIELD_INIT(.set_gain_stage, bladerf2_set_gain_stage),
     FIELD_INIT(.get_gain_stage, bladerf2_get_gain_stage),

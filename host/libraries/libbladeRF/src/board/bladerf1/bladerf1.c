@@ -155,6 +155,14 @@ static const struct bladerf_range bladerf1_tx_gain_range = {
     FIELD_INIT(.scale, 1),
 };
 
+/* RX gain modes */
+static const struct bladerf_gain_modes bladerf1_rx_gain_modes[] = {
+    {
+        FIELD_INIT(.name, "default"),
+        FIELD_INIT(.mode, BLADERF_GAIN_DEFAULT)
+    }
+};
+
 struct bladerf_gain_stage_info {
     const char *name;
     struct bladerf_range range;
@@ -1328,6 +1336,28 @@ static int bladerf1_get_gain_mode(struct bladerf *dev, bladerf_channel ch, blade
 
     *mode = BLADERF_GAIN_DEFAULT;
     return 0;
+}
+
+static int bladerf1_get_gain_modes(struct bladerf *dev,
+                                   bladerf_channel ch,
+                                   struct bladerf_gain_modes const **modes)
+{
+    struct bladerf_gain_modes const *mode_infos;
+    unsigned int mode_infos_len;
+
+    if (BLADERF_CHANNEL_TX(0) == ch) {
+        mode_infos     = NULL;
+        mode_infos_len = 0;
+    } else {
+        mode_infos     = bladerf1_rx_gain_modes;
+        mode_infos_len = ARRAY_SIZE(bladerf1_rx_gain_modes);
+    }
+
+    if (modes != NULL) {
+        *modes = mode_infos;
+    }
+
+    return mode_infos_len;
 }
 
 static int bladerf1_get_gain_range(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range)
@@ -2865,6 +2895,7 @@ const struct board_fns bladerf1_board_fns = {
     FIELD_INIT(.get_gain, bladerf1_get_gain),
     FIELD_INIT(.set_gain_mode, bladerf1_set_gain_mode),
     FIELD_INIT(.get_gain_mode, bladerf1_get_gain_mode),
+    FIELD_INIT(.get_gain_modes, bladerf1_get_gain_modes),
     FIELD_INIT(.get_gain_range, bladerf1_get_gain_range),
     FIELD_INIT(.set_gain_stage, bladerf1_set_gain_stage),
     FIELD_INIT(.get_gain_stage, bladerf1_get_gain_stage),

@@ -587,6 +587,14 @@ typedef enum  {
 #define BLADERF_GAIN_MANUAL BLADERF_GAIN_MGC
 
 /**
+ * Mapping of human-readable names to gain modes
+ */
+struct bladerf_gain_modes {
+    const char *name;           /**< Name of gain mode */
+    bladerf_gain_mode mode;     /**< Gain mode enumeration */
+};
+
+/**
  * Set overall gain
  *
  * Values outside the valid gain range will be clamped.
@@ -654,6 +662,27 @@ int CALL_CONV bladerf_set_gain_mode(struct bladerf *dev, bladerf_channel ch,
 API_EXPORT
 int CALL_CONV bladerf_get_gain_mode(struct bladerf *dev, bladerf_channel ch,
                                     bladerf_gain_mode *mode);
+
+/**
+ * Get gain modes
+ *
+ * Populates `modes` with a pointer to an array of structs containing the
+ * supported gain modes.
+ *
+ * This function may be called with `NULL` for `modes` to determine the number
+ * of gain modes supported.
+ *
+ * @param       dev         Device handle
+ * @param[in]   ch          Channel
+ * @param[out]  modes       Supported gain modes
+ *
+ * @return Number of gain modes on success, value from \ref RETCODES list on
+ * failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_gain_modes(struct bladerf *dev,
+                                     bladerf_channel ch,
+                                     struct bladerf_gain_modes const **modes);
 
 /**
  * Get range of overall gain
