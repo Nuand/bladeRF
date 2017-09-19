@@ -290,54 +290,65 @@ int set_adf_enable(struct cli_state *state, int argc, char **argv)
     return rv;
 }
 
-int print_bandwidth(struct cli_state *state, int argc, char **argv)
+static int _do_print_bandwidth(struct cli_state *state, bladerf_channel ch)
 {
-    /* Usage: print bandwidth [rx|tx]*/
-    int rv                  = CLI_RET_OK;
-    int *err                = &state->last_lib_error;
-    bladerf_channel channel = BLADERF_CHANNEL_INVALID;
+    int rv   = CLI_RET_OK;
+    int *err = &state->last_lib_error;
     unsigned int bw;
-    bool ok;
     int status;
 
-    switch (argc) {
-        case 2:
-            /* Do both RX and TX */
-            break;
-        case 3:
-            /* Parse channel */
-            channel = get_channel(argv[2], &ok);
-            if (!ok) {
-                invalid_channel(state, argv[0], argv[2]);
-                rv = CLI_RET_INVPARAM;
-            }
-            break;
-        default:
-            rv = CLI_RET_NARGS;
-            break;
-    }
-
-    if (rv == CLI_RET_OK && (argc == 2 || _is_rx(channel))) {
-        status = bladerf_get_bandwidth(state->dev, BLADERF_CHANNEL_RX(0), &bw);
-        if (status < 0) {
-            *err = status;
-            rv   = CLI_RET_LIBBLADERF;
-        } else {
-            printf("  RX Bandwidth: %9u Hz\n", bw);
-        }
-    }
-
-    if (rv == CLI_RET_OK && (argc == 2 || _is_tx(channel))) {
-        status = bladerf_get_bandwidth(state->dev, BLADERF_CHANNEL_TX(0), &bw);
-        if (status < 0) {
-            *err = status;
-            rv   = CLI_RET_LIBBLADERF;
-        } else {
-            printf("  TX Bandwidth: %9u Hz\n", bw);
-        }
+    status = bladerf_get_bandwidth(state->dev, ch, &bw);
+    if (status < 0) {
+        *err = status;
+        rv   = CLI_RET_LIBBLADERF;
+    } else {
+        printf("  %s Bandwidth: %9u Hz\n", get_channel_str(ch), bw);
     }
 
     return rv;
+}
+
+int print_bandwidth(struct cli_state *state, int argc, char **argv)
+{
+    /* Usage: print bandwidth [<rx|tx>] */
+    int rv                  = CLI_RET_OK;
+    bladerf_channel channel = BLADERF_CHANNEL_INVALID;
+    bool ok;
+
+    if (argc == 2) {
+        /* Do both RX and TX */
+        size_t chi;
+
+        for (chi = 0; chi < bladerf_get_channel_count(state->dev, 0); ++chi) {
+            if (rv == CLI_RET_OK) {
+                rv = _do_print_bandwidth(state, BLADERF_CHANNEL_RX(chi));
+            }
+        }
+
+        for (chi = 0; chi < bladerf_get_channel_count(state->dev, 1); ++chi) {
+            if (rv == CLI_RET_OK) {
+                rv = _do_print_bandwidth(state, BLADERF_CHANNEL_TX(chi));
+            }
+        }
+
+        return rv;
+    }
+
+    if (argc == 3) {
+        /* Parse channel */
+        channel = get_channel(argv[2], &ok);
+        if (!ok) {
+            invalid_channel(state, argv[0], argv[2]);
+            rv = CLI_RET_INVPARAM;
+        }
+        if (rv == CLI_RET_OK) {
+            rv = _do_print_bandwidth(state, channel);
+        }
+
+        return rv;
+    }
+
+    return CLI_RET_NARGS;
 }
 
 static int _set_print_bandwidth(struct cli_state *state,
@@ -424,14 +435,44 @@ int set_bandwidth(struct cli_state *state, int argc, char **argv)
         }
     }
 
-    if (rv == CLI_RET_OK && (argc == 3 || _is_rx(channel))) {
+    if (rv == CLI_RET_OK && argc == 3) {
+        size_t chi;
+
         /* Change RX bandwidth */
-        rv = _set_print_bandwidth(state, BLADERF_CHANNEL_RX(0), bw);
+        for (chi = 0; chi < bladerf_get_channel_count(state->dev, 0); ++chi) {
+            if (rv == CLI_RET_OK) {
+                rv = _set_print_bandwidth(state, BLADERF_CHANNEL_RX(chi), bw);
+            }
+        }
+        /* Change TX bandwidth */
+        for (chi = 0; chi < bladerf_get_channel_count(state->dev, 1); ++chi) {
+            if (rv == CLI_RET_OK) {
+                rv = _set_print_bandwidth(state, BLADERF_CHANNEL_TX(chi), bw);
+            }
+        }
+        return rv;
     }
 
-    if (rv == CLI_RET_OK && (argc == 3 || _is_tx(channel))) {
-        /* Change TX bandwidth */
-        rv = _set_print_bandwidth(state, BLADERF_CHANNEL_TX(0), bw);
+    if (rv == CLI_RET_OK) {
+        rv = _set_print_bandwidth(state, channel, bw);
+    }
+
+    return rv;
+}
+
+static int _do_print_freq(struct cli_state *state, bladerf_channel ch)
+{
+    int rv   = CLI_RET_OK;
+    int *err = &state->last_lib_error;
+    uint64_t freq;
+    int status;
+
+    status = bladerf_get_frequency(state->dev, ch, &freq);
+    if (status < 0) {
+        *err = status;
+        rv   = CLI_RET_LIBBLADERF;
+    } else {
+        printf("  %s Frequency: %10" PRIu64 " Hz\n", get_channel_str(ch), freq);
     }
 
     return rv;
@@ -441,52 +482,42 @@ int print_frequency(struct cli_state *state, int argc, char **argv)
 {
     /* Usage: print frequency [<rx|tx>] */
     int rv                  = CLI_RET_OK;
-    int *err                = &state->last_lib_error;
     bladerf_channel channel = BLADERF_CHANNEL_INVALID;
-    uint64_t freq;
     bool ok;
-    int status;
 
-    switch (argc) {
-        case 2:
-            /* Do both RX and TX */
-            break;
-        case 3:
-            /* Parse channel */
-            channel = get_channel(argv[2], &ok);
-            if (!ok) {
-                invalid_channel(state, argv[0], argv[2]);
-                rv = CLI_RET_INVPARAM;
+    if (argc == 2) {
+        size_t chi;
+
+        /* Do both RX and TX */
+        for (chi = 0; chi < bladerf_get_channel_count(state->dev, 0); ++chi) {
+            if (rv == CLI_RET_OK) {
+                rv = _do_print_freq(state, BLADERF_CHANNEL_RX(chi));
             }
-            break;
-        default:
-            rv = CLI_RET_NARGS;
-            break;
-    }
-
-    if (rv == CLI_RET_OK && (argc == 2 || _is_rx(channel))) {
-        status =
-            bladerf_get_frequency(state->dev, BLADERF_CHANNEL_RX(0), &freq);
-        if (status < 0) {
-            *err = status;
-            rv   = CLI_RET_LIBBLADERF;
-        } else {
-            printf("  RX Frequency: %10" PRIu64 " Hz\n", freq);
         }
-    }
-
-    if (rv == CLI_RET_OK && (argc == 2 || _is_tx(channel))) {
-        status =
-            bladerf_get_frequency(state->dev, BLADERF_CHANNEL_TX(0), &freq);
-        if (status < 0) {
-            *err = status;
-            rv   = CLI_RET_LIBBLADERF;
-        } else {
-            printf("  TX Frequency: %10" PRIu64 " Hz\n", freq);
+        for (chi = 0; chi < bladerf_get_channel_count(state->dev, 1); ++chi) {
+            if (rv == CLI_RET_OK) {
+                rv = _do_print_freq(state, BLADERF_CHANNEL_TX(chi));
+            }
         }
+
+        return rv;
     }
 
-    return rv;
+    if (argc == 3) {
+        /* Parse channel */
+        channel = get_channel(argv[2], &ok);
+        if (!ok) {
+            invalid_channel(state, argv[0], argv[2]);
+            rv = CLI_RET_INVPARAM;
+        }
+        if (rv == CLI_RET_OK) {
+            rv = _do_print_freq(state, channel);
+        }
+
+        return rv;
+    }
+
+    return CLI_RET_NARGS;
 }
 
 static int _set_print_frequency(struct cli_state *state,
@@ -590,11 +621,20 @@ int set_frequency(struct cli_state *state, int argc, char **argv)
     }
 
     if (rv == CLI_RET_OK && argc == 3) {
-        /* Change RX frequency */
-        rv = _set_print_frequency(state, BLADERF_CHANNEL_RX(0), freq);
-        /* Change TX frequency */
-        rv = _set_print_frequency(state, BLADERF_CHANNEL_TX(0), freq);
+        size_t chi;
 
+        /* Change RX frequency */
+        for (chi = 0; chi < bladerf_get_channel_count(state->dev, 0); ++chi) {
+            if (rv == CLI_RET_OK) {
+                rv = _set_print_frequency(state, BLADERF_CHANNEL_RX(chi), freq);
+            }
+        }
+        /* Change TX frequency */
+        for (chi = 0; chi < bladerf_get_channel_count(state->dev, 1); ++chi) {
+            if (rv == CLI_RET_OK) {
+                rv = _set_print_frequency(state, BLADERF_CHANNEL_TX(chi), freq);
+            }
+        }
         return rv;
     }
 
