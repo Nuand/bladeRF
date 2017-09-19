@@ -129,14 +129,14 @@ struct printset_entry printset_table[] = {
 };
 // clang-format on
 
-static bool _is_rx(bladerf_channel ch)
-{
-    return (ch == BLADERF_CHANNEL_RX(0) || ch == BLADERF_CHANNEL_RX(1));
-}
-
 static bool _is_tx(bladerf_channel ch)
 {
-    return (ch == BLADERF_CHANNEL_TX(0) || ch == BLADERF_CHANNEL_TX(1));
+    return (ch & BLADERF_TX);
+}
+
+static bool _is_rx(bladerf_channel ch)
+{
+    return !_is_tx(ch);
 }
 
 static bool _is_board(struct bladerf *dev, enum board_option board)
