@@ -189,13 +189,13 @@ bladerf_channel get_channel(char *ch, bool *ok)
     bladerf_channel rv;
     *ok = true;
 
-    if (strcasecmp(ch, "rx") == 0 || strcasecmp(ch, "rx0") == 0) {
+    if (strcasecmp(ch, "rx") == 0 || strcasecmp(ch, "rx1") == 0) {
         rv = BLADERF_CHANNEL_RX(0);
-    } else if (strcasecmp(ch, "rx1") == 0) {
+    } else if (strcasecmp(ch, "rx2") == 0) {
         rv = BLADERF_CHANNEL_RX(1);
-    } else if (strcasecmp(ch, "tx") == 0 || strcasecmp(ch, "tx0") == 0) {
+    } else if (strcasecmp(ch, "tx") == 0 || strcasecmp(ch, "tx1") == 0) {
         rv = BLADERF_CHANNEL_TX(0);
-    } else if (strcasecmp(ch, "tx1") == 0) {
+    } else if (strcasecmp(ch, "tx2") == 0) {
         rv = BLADERF_CHANNEL_TX(1);
     } else {
         rv  = BLADERF_CHANNEL_INVALID;
@@ -209,13 +209,13 @@ static char *get_channel_str(bladerf_channel ch)
 {
     switch (ch) {
         case BLADERF_CHANNEL_RX(0):
-            return "RX0";
-        case BLADERF_CHANNEL_RX(1):
             return "RX1";
+        case BLADERF_CHANNEL_RX(1):
+            return "RX2";
         case BLADERF_CHANNEL_TX(0):
-            return "TX0";
-        case BLADERF_CHANNEL_TX(1):
             return "TX1";
+        case BLADERF_CHANNEL_TX(1):
+            return "TX2";
         default:
             return "??";
     }
