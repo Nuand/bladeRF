@@ -1079,16 +1079,15 @@ static int bladerf1_enable_module(struct bladerf *dev,
 
 static bladerf_lna_gain convert_gain_to_lna_gain(int gain)
 {
-    switch (gain) {
-        case BLADERF_LNA_GAIN_MAX_DB:
-            return BLADERF_LNA_GAIN_MAX;
-        case BLADERF_LNA_GAIN_MID_DB:
-            return BLADERF_LNA_GAIN_MID;
-        case BLADERF_LNA_GAIN_BYPASS:
-            return BLADERF_LNA_GAIN_BYPASS;
-        default:
-            return BLADERF_LNA_GAIN_UNKNOWN;
+    if (gain >= BLADERF_LNA_GAIN_MAX_DB) {
+        return BLADERF_LNA_GAIN_MAX;
     }
+
+    if (gain >= BLADERF_LNA_GAIN_MID_DB) {
+        return BLADERF_LNA_GAIN_MID;
+    }
+
+    return BLADERF_LNA_GAIN_BYPASS;
 }
 
 static int convert_lna_gain_to_gain(bladerf_lna_gain lnagain)
