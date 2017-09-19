@@ -589,14 +589,17 @@ int set_frequency(struct cli_state *state, int argc, char **argv)
         }
     }
 
-    if (rv == CLI_RET_OK && (argc == 3 || _is_rx(channel))) {
+    if (rv == CLI_RET_OK && argc == 3) {
         /* Change RX frequency */
         rv = _set_print_frequency(state, BLADERF_CHANNEL_RX(0), freq);
-    }
-
-    if (rv == CLI_RET_OK && (argc == 3 || _is_tx(channel))) {
         /* Change TX frequency */
         rv = _set_print_frequency(state, BLADERF_CHANNEL_TX(0), freq);
+
+        return rv;
+    }
+
+    if (rv == CLI_RET_OK) {
+        rv = _set_print_frequency(state, channel, freq);
     }
 
     return rv;
