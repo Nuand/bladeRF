@@ -31,6 +31,102 @@
 
 #include "backend/backend.h"
 
+/* Device capabilities are stored in a 64-bit mask.
+ *
+ * FPGA-oriented capabilities start at bit 0.
+ * FX3-oriented capabilities start at bit 24.
+ * Other/mixed capabilities start at bit 48.
+ */
+
+/**
+ * Prior to FPGA 0.0.4, the DAC register were located at a different address
+ */
+#define BLADERF_CAP_UPDATED_DAC_ADDR    (1 << 0)
+
+/**
+ * FPGA version 0.0.5 introduced XB-200 support
+ */
+#define BLADERF_CAP_XB200               (1 << 1)
+
+/**
+ * FPGA version 0.1.0 introduced timestamp support
+ */
+#define BLADERF_CAP_TIMESTAMPS          (1 << 2)
+
+/**
+ * FPGA version 0.2.0 introduced NIOS-based tuning support.
+ */
+#define BLADERF_CAP_FPGA_TUNING         (1 << 3)
+
+/**
+ * FPGA version 0.2.0 also introduced scheduled retune support. The
+ * re-use of this capability bit is intentional.
+ */
+#define BLADERF_CAP_SCHEDULED_RETUNE    (1 << 3)
+
+/**
+ * FPGA version 0.3.0 introduced new packet handler formats that pack
+ * operations into a single requests.
+ */
+#define BLADERF_CAP_PKT_HANDLER_FMT     (1 << 4)
+
+/**
+ * A bug fix in FPGA version 0.3.2 allowed support for reading back
+ * the current VCTCXO trim dac value.
+ */
+#define BLADERF_CAP_VCTCXO_TRIMDAC_READ (1 << 5)
+
+/**
+ * FPGA v0.4.0 introduced the ability to write LMS6002D TX/RX PLL
+ * NINT & NFRAC regiters atomically.
+ */
+#define BLADERF_CAP_ATOMIC_NINT_NFRAC_WRITE (1 << 6)
+
+/**
+ * FPGA v0.4.1 fixed an issue with masked writes to the expansion GPIO
+ * and expansion GPIO direction registers.
+ *
+ * To help users avoid getting bitten by this bug, we'll mark this
+ * as a capability and disallow masked writes unless an FPGA with the
+ * fix is being used.
+ */
+#define BLADERF_CAP_MASKED_XBIO_WRITE   (1 << 7)
+
+/**
+ * FPGA v0.5.0 introduces the ability to tame the VCTCXO via a 1 pps or 10 MHz
+ * input source on the mini expansion header.
+ */
+#define BLADERF_CAP_VCTCXO_TAMING_MODE  (1 << 8)
+
+/**
+ * FPGA v0.6.0 introduced trx synchronization trigger via J71-4
+ */
+#define BLADERF_CAP_TRX_SYNC_TRIG (1 << 9)
+
+/**
+ * Firmware 1.7.1 introduced firmware-based loopback
+ */
+#define BLADERF_CAP_FW_LOOPBACK         (((uint64_t) 1) << 32)
+
+/**
+ * FX3 firmware version 1.8.0 introduced the ability to query when the
+ * device has become ready for use by the host.  This was done to avoid
+ * opening and attempting to use the device while flash-based FPGA autoloading
+ * was occurring.
+ */
+#define BLADERF_CAP_QUERY_DEVICE_READY  (((uint64_t) 1) << 33)
+
+/**
+ * FX3 firmware v1.9.0 introduced a vendor request by which firmware log
+ * events could be retrieved.
+ */
+#define BLADERF_CAP_READ_FW_LOG_ENTRY   (((uint64_t) 1) << 34)
+
+/**
+ * FX3 firmware v2.1.0 introduced support for bladeRF 2
+ */
+#define BLADERF_CAP_FW_SUPPORTS_BLADERF2 (((uint64_t) 1) << 35)
+
 struct bladerf {
     /* Handle lock - to ensure atomic access to control and configuration
      * operations */
@@ -69,6 +165,7 @@ struct board_fns {
     int (*get_fpga_size)(struct bladerf *dev, bladerf_fpga_size *size);
     int (*is_fpga_configured)(struct bladerf *dev);
     uint64_t (*get_capabilities)(struct bladerf *dev);
+    size_t (*get_channel_count)(struct bladerf *dev, bool tx);
 
     /* Versions */
     int (*get_fpga_version)(struct bladerf *dev, struct bladerf_version *version);

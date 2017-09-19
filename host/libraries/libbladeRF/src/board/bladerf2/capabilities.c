@@ -28,7 +28,25 @@
 
 uint64_t bladerf2_get_fw_capabilities(const struct bladerf_version *fw_version)
 {
-    return 0;
+    uint64_t capabilities = 0;
+
+    if (version_fields_greater_or_equal(fw_version, 1, 7, 1)) {
+        capabilities |= BLADERF_CAP_FW_LOOPBACK;
+    }
+
+    if (version_fields_greater_or_equal(fw_version, 1, 8, 0)) {
+        capabilities |= BLADERF_CAP_QUERY_DEVICE_READY;
+    }
+
+    if (version_fields_greater_or_equal(fw_version, 1, 9, 0)) {
+        capabilities |= BLADERF_CAP_READ_FW_LOG_ENTRY;
+    }
+
+    if (version_fields_greater_or_equal(fw_version, 2, 1, 0)) {
+        capabilities |= BLADERF_CAP_FW_SUPPORTS_BLADERF2;
+    }
+
+    return capabilities;
 }
 
 uint64_t bladerf2_get_fpga_capabilities(const struct bladerf_version *fpga_version)

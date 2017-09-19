@@ -2,7 +2,7 @@
  * This file is part of the bladeRF project:
  *   http://www.github.com/nuand/bladeRF
  *
- * Copyright (C) 2015 Nuand LLC
+ * Copyright (C) 2015-2017 Nuand LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -28,13 +28,6 @@
 #include <stdint.h>
 
 #include "board/board.h"
-
-/* Device capabilities are stored in a 64-bit mask.
- *
- * FPGA-oriented capabilities start at bit 0.
- * FX3-oriented capabilities start at bit 24.
- * Other/mixed capabilities start at bit 48.
- */
 
 /**
  * Convenience wrapper for testing capabilities mask

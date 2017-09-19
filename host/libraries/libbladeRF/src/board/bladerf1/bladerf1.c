@@ -1008,6 +1008,11 @@ static uint64_t bladerf1_get_capabilities(struct bladerf *dev)
     return board_data->capabilities;
 }
 
+static size_t bladerf1_get_channel_count(struct bladerf *dev, bool tx)
+{
+    return 1;
+}
+
 /******************************************************************************/
 /* Versions */
 /******************************************************************************/
@@ -2885,6 +2890,7 @@ const struct board_fns bladerf1_board_fns = {
     FIELD_INIT(.get_fpga_size, bladerf1_get_fpga_size),
     FIELD_INIT(.is_fpga_configured, bladerf1_is_fpga_configured),
     FIELD_INIT(.get_capabilities, bladerf1_get_capabilities),
+    FIELD_INIT(.get_channel_count, bladerf1_get_channel_count),
     FIELD_INIT(.get_fpga_version, bladerf1_get_fpga_version),
     FIELD_INIT(.get_fw_version, bladerf1_get_fw_version),
     FIELD_INIT(.set_gain, bladerf1_set_gain),

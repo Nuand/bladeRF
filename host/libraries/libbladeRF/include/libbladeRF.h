@@ -469,6 +469,18 @@ bladerf_dev_speed CALL_CONV bladerf_device_speed(struct bladerf *dev);
 API_EXPORT
 const char * CALL_CONV bladerf_get_board_name(struct bladerf *dev);
 
+/**
+ * Get the number of channels supported by the given device
+ *
+ * @param       dev     Device handle
+ * @param       tx      If true, returns the number of TX channels. If false,
+ *                      returns the number of RX channels.
+ *
+ * @return      Number of channels
+ */
+API_EXPORT
+size_t CALL_CONV bladerf_get_channel_count(struct bladerf *dev, bool tx);
+
 /** @} (End FN_INFO) */
 
 /**
