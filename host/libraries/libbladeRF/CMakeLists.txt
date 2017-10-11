@@ -73,6 +73,11 @@ option(ENABLE_USB_DEV_RESET_ON_OPEN
        ${BLADERF_OS_LINUX}
 )
 
+option(ENABLE_RFIC_TIMING_CALIBRATION
+       "Perform timing calibration on the RFIC digital interface during initialization. This is only implemented on AD936x-based hardware."
+       OFF
+)
+
 ##############################
 # Backend Support
 ##############################
@@ -125,6 +130,10 @@ endif()
 
 if(ENABLE_LOCK_CHECKS)
     add_definitions(-DENABLE_LOCK_CHECKS)
+endif()
+
+if(ENABLE_RFIC_TIMING_CALIBRATION)
+    add_definitions(-DENABLE_AD9361_DIGITAL_INTERFACE_TIMING_VERIFICATION)
 endif()
 
 if(${CMAKE_C_COMPILER_ID} STREQUAL "GNU" OR

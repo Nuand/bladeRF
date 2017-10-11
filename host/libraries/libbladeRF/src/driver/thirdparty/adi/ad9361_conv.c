@@ -407,7 +407,7 @@ int32_t ad9361_dig_tune(struct ad9361_rf_phy *phy, uint32_t max_freq,
 			dev_err(&phy->spi->dev, "%s: Tuning %s FAILED!", __func__,
 				t ? "TX" : "RX");
 			err |= -EIO;
-		} else if (flags & BE_VERBOSE) {
+		} else if ((flags & BE_VERBOSE) && !(flags & BE_MOREVERBOSE)) {
 			ad9361_dig_tune_verbose_print(phy, field, t);
 		}
 
@@ -565,6 +565,17 @@ int32_t ad9361_dig_tune(struct ad9361_rf_phy *phy, uint32_t max_freq,
 					ad9361_spi_read(phy->spi, REG_RX_CLOCK_DATA_DELAY);
 				phy->pdata->port_ctrl.tx_clk_data_delay =
 					ad9361_spi_read(phy->spi, REG_TX_CLOCK_DATA_DELAY);
+
+				/* Print the end result of the above calibration */
+				printk("%s: Digital Interface Timing\n", __func__);
+				printk("%s: rx_data_clock_delay %d\n", __func__,
+					phy->pdata->port_ctrl.rx_clk_data_delay >> 4);
+				printk("%s: rx_data_delay       %d\n", __func__,
+					phy->pdata->port_ctrl.rx_clk_data_delay & 0xF);
+				printk("%s: tx_fb_clock_delay   %d\n", __func__,
+					phy->pdata->port_ctrl.tx_clk_data_delay >> 4);
+				printk("%s: tx_data_delay       %d\n", __func__,
+					phy->pdata->port_ctrl.tx_clk_data_delay & 0xF);
 			}
 
 			if (!phy->pdata->fdd) {
