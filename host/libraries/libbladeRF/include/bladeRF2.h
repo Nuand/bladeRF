@@ -120,6 +120,34 @@ int CALL_CONV bladerf_adf4002_write(struct bladerf *dev,
                                     uint8_t address,
                                     uint32_t val);
 
+/**
+ * Register identifiers for INA219
+ */
+typedef enum {
+    BLADERF_INA219_CONFIGURATION, /**< Configuration register (uint16_t) */
+    BLADERF_INA219_VOLTAGE_SHUNT, /**< Shunt voltage (float) */
+    BLADERF_INA219_VOLTAGE_BUS,   /**< Bus voltage (float) */
+    BLADERF_INA219_POWER,         /**< Load power (float) */
+    BLADERF_INA219_CURRENT,       /**< Load current (float) */
+    BLADERF_INA219_CALIBRATION,   /**< Calibration (uint16_t) */
+} bladerf_ina219_register;
+
+/**
+ * Read value from INA219 Current/Power Monitor
+ *
+ * Reference: http://www.ti.com/product/INA219
+ *
+ * @param       dev     Device handle
+ * @param[in]   reg     Register to read from
+ * @param[out]  val     Value read from INA219
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_ina219_read(struct bladerf *dev,
+                                  bladerf_ina219_register reg,
+                                  void *val);
+
 /** @} (End of FN_BLADERF2_LOW_LEVEL) */
 
 /** @} (End of BLADERF2) */

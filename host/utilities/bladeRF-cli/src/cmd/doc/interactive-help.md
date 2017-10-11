@@ -501,7 +501,7 @@ Common parameters:
 
 `trimdac`       VCTCXO Trim DAC settings
 
-`vctcxo_tamer`  Current VCTCXO tamer mode.
+`vctcxo_tamer`  Current VCTCXO tamer mode
 ----------------------------------------------------------------------
 
 BladeRF1-only parameters:
@@ -534,6 +534,8 @@ BladeRF2-only parameters:
     Parameter Description
 ------------- --------------------------------------------------------
 `adf_enable`    Enables (1) or disables (0) the ADF4002 chip
+
+`ina219`        Voltage, current, and power information
 ----------------------------------------------------------------------
 
 probe

@@ -82,6 +82,7 @@ PRINTSET_DECL(bandwidth);
 PRINTSET_DECL(frequency);
 PRINTSET_DECL(agc);
 PRINTSET_DECL(gpio);
+PRINTSET_DECL(ina219);
 PRINTSET_DECL(loopback);
 PRINTSET_DECL(lnagain);
 PRINTSET_DECL(rx_mux);
@@ -118,6 +119,7 @@ struct printset_entry printset_table[] = {
     PRINTSET_ENTRY(adf_enable,   PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF2),
     PRINTSET_ENTRY(trimdac,      PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
     PRINTSET_ENTRY(vctcxo_tamer, PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF1),
+    PRINTSET_ENTRY(ina219,       PRINTALL_OPTION_NONE,           BOARD_BLADERF2),
     PRINTSET_ENTRY(xb_spi,       PRINTALL_OPTION_SKIP,           BOARD_BLADERF1),
     PRINTSET_ENTRY(xb_gpio,      PRINTALL_OPTION_NONE,           BOARD_BLADERF1),
     PRINTSET_ENTRY(xb_gpio_dir,  PRINTALL_OPTION_NONE,           BOARD_BLADERF1),
@@ -835,6 +837,48 @@ int set_gpio(struct cli_state *state, int argc, char **argv)
         rv = CLI_RET_NARGS;
     }
     return rv;
+}
+
+int print_ina219(struct cli_state *state, int argc, char **argv)
+{
+    int rv   = CLI_RET_OK;
+    int *err = &state->last_lib_error;
+    int status;
+    float val;
+
+    status = bladerf_ina219_read(state->dev, BLADERF_INA219_VOLTAGE_BUS, &val);
+    if (status < 0) {
+        *err = status;
+        rv   = CLI_RET_LIBBLADERF;
+        return rv;
+    }
+
+    printf("  Bus voltage:  %g V\n", val);
+
+    status = bladerf_ina219_read(state->dev, BLADERF_INA219_CURRENT, &val);
+    if (status < 0) {
+        *err = status;
+        rv   = CLI_RET_LIBBLADERF;
+        return rv;
+    }
+
+    printf("  Load current: %g A\n", val);
+
+    status = bladerf_ina219_read(state->dev, BLADERF_INA219_POWER, &val);
+    if (status < 0) {
+        *err = status;
+        rv   = CLI_RET_LIBBLADERF;
+        return rv;
+    }
+
+    printf("  Load power:   %g W\n", val);
+
+    return rv;
+}
+
+int set_ina219(struct cli_state *state, int argc, char **argv)
+{
+    return 0;
 }
 
 struct xb_gpio_lut {

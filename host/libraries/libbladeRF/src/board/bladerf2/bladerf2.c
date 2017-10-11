@@ -3851,3 +3851,45 @@ int bladerf_adf4002_write(struct bladerf *dev, uint8_t address, uint32_t val)
 
     return 0;
 }
+
+/******************************************************************************/
+/* Low level INA219 Accessors */
+/******************************************************************************/
+
+int bladerf_ina219_read(struct bladerf *dev,
+                        bladerf_ina219_register reg,
+                        void *val)
+{
+    int status;
+
+    MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
+
+    switch (reg) {
+        case BLADERF_INA219_CONFIGURATION:
+        case BLADERF_INA219_CALIBRATION:
+            return BLADERF_ERR_UNSUPPORTED;
+        case BLADERF_INA219_VOLTAGE_SHUNT:
+            status = ina219_read_shunt_voltage(dev, (float *)val);
+            break;
+        case BLADERF_INA219_VOLTAGE_BUS:
+            status = ina219_read_bus_voltage(dev, (float *)val);
+            break;
+        case BLADERF_INA219_POWER:
+            status = ina219_read_power(dev, (float *)val);
+            break;
+        case BLADERF_INA219_CURRENT:
+            status = ina219_read_current(dev, (float *)val);
+            break;
+    }
+
+    if (status < 0) {
+        MUTEX_UNLOCK(&dev->lock);
+        RETURN_ERROR_STATUS("ina219_read", status);
+    }
+
+    MUTEX_UNLOCK(&dev->lock);
+
+    return 0;
+}
