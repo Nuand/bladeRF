@@ -31,6 +31,42 @@
  */
 
 /**
+ * @defgroup FN_BLADERF2_BIAS_TEE Bias Tee Control
+ *
+ * @{
+ */
+
+/**
+ * Get current bias tee state
+ *
+ * @param       dev     Device handle
+ * @param[in]   ch      Channel
+ * @param[out]  enable  True if bias tee active, false otherwise
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_bias_tee(struct bladerf *dev,
+                                   bladerf_channel ch,
+                                   bool *enable);
+
+/**
+ * Get current bias tee state
+ *
+ * @param       dev     Device handle
+ * @param[in]   ch      Channel
+ * @param[in]   enable  True to activate bias tee, false to deactivate
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_bias_tee(struct bladerf *dev,
+                                   bladerf_channel ch,
+                                   bool enable);
+
+/** @} (End of FN_BLADERF2_BIAS_TEE) */
+
+/**
  * @defgroup FN_BLADERF2_LOW_LEVEL Low-level accessors
  *
  * In a most cases, higher-level routines should be used. These routines are
@@ -43,6 +79,12 @@
  * the same registers/settings.
  *
  * These functions are thread-safe.
+ *
+ * @{
+ */
+
+/**
+ * @defgroup FN_BLADERF2_LOW_LEVEL_AD9361 AD9361 RFIC
  *
  * @{
  */
@@ -73,6 +115,14 @@ API_EXPORT
 int CALL_CONV bladerf_ad9361_write(struct bladerf *dev,
                                    uint16_t address,
                                    uint8_t val);
+
+/** @} (End of FN_BLADERF2_LOW_LEVEL_AD9361) */
+
+/**
+ * @defgroup FN_BLADERF2_LOW_LEVEL_ADF4002 ADF4002 Phase Detector/Freq. Synth
+ *
+ * @{
+ */
 
 /**
  * Read value from ADF4002 Phase Detector/Frequency Synthesizer
@@ -120,6 +170,14 @@ int CALL_CONV bladerf_adf4002_write(struct bladerf *dev,
                                     uint8_t address,
                                     uint32_t val);
 
+/** @} (End of FN_BLADERF2_LOW_LEVEL_ADF4002) */
+
+/**
+ * @defgroup FN_BLADERF2_LOW_LEVEL_INA219 INA219 Current/Power Monitor
+ *
+ * @{
+ */
+
 /**
  * Register identifiers for INA219
  */
@@ -147,6 +205,8 @@ API_EXPORT
 int CALL_CONV bladerf_ina219_read(struct bladerf *dev,
                                   bladerf_ina219_register reg,
                                   void *val);
+
+/** @} (End of FN_BLADERF2_LOW_LEVEL_INA219) */
 
 /** @} (End of FN_BLADERF2_LOW_LEVEL) */
 

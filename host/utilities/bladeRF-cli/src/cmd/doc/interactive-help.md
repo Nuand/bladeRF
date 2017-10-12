@@ -535,6 +535,8 @@ BladeRF2-only parameters:
 ------------- --------------------------------------------------------
 `adf_enable`    Enables (1) or disables (0) the ADF4002 chip
 
+`biastee`       Enables or disables the bias tee on a given channel
+
 `ina219`        Voltage, current, and power information
 ----------------------------------------------------------------------
 
@@ -907,6 +909,8 @@ BladeRF2-only parameters:
     Parameter Description
 ------------- --------------------------------------------------------
 `adf_enable`    Enables (1) or disables (0) the ADF4002 chip
+
+`biastee`       Enables or disables the bias tee on a given channel
 ----------------------------------------------------------------------
 
 version

@@ -79,6 +79,7 @@ struct printset_entry {
 /* Declarations */
 PRINTSET_DECL(adf_enable);
 PRINTSET_DECL(bandwidth);
+PRINTSET_DECL(biastee);
 PRINTSET_DECL(frequency);
 PRINTSET_DECL(agc);
 PRINTSET_DECL(gpio);
@@ -117,6 +118,7 @@ struct printset_entry printset_table[] = {
     PRINTSET_ENTRY(samplerate,   PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
     PRINTSET_ENTRY(smb_mode,     PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF1),
     PRINTSET_ENTRY(adf_enable,   PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF2),
+    PRINTSET_ENTRY(biastee,      PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF2),
     PRINTSET_ENTRY(trimdac,      PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
     PRINTSET_ENTRY(vctcxo_tamer, PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF1),
     PRINTSET_ENTRY(ina219,       PRINTALL_OPTION_NONE,           BOARD_BLADERF2),
@@ -457,6 +459,112 @@ int set_bandwidth(struct cli_state *state, int argc, char **argv)
 
     if (rv == CLI_RET_OK) {
         rv = _set_print_bandwidth(state, channel, bw);
+    }
+
+    return rv;
+}
+
+static int _do_print_biastee(struct cli_state *state, bladerf_channel ch)
+{
+    int rv   = CLI_RET_OK;
+    int *err = &state->last_lib_error;
+    int status;
+    bool enable;
+
+    status = bladerf_get_bias_tee(state->dev, ch, &enable);
+    if (status < 0) {
+        *err = status;
+        rv   = CLI_RET_LIBBLADERF;
+    } else {
+        printf("  Bias Tee (%s): %s\n", get_channel_str(ch),
+               enable ? "on" : "off");
+    }
+
+    return rv;
+}
+
+int print_biastee(struct cli_state *state, int argc, char **argv)
+{
+    /* Usage: print biastee [<rx|tx>] */
+    int rv                  = CLI_RET_OK;
+    bladerf_channel channel = BLADERF_CHANNEL_INVALID;
+    bool ok;
+
+    if (3 == argc) {
+        channel = get_channel(argv[2], &ok);
+        if (!ok) {
+            invalid_channel(state, argv[0], argv[2]);
+            rv = CLI_RET_INVPARAM;
+        }
+    }
+
+    if (BLADERF_CHANNEL_INVALID == channel) {
+        // do RX and TX
+        if (CLI_RET_OK == rv) {
+            rv = _do_print_biastee(state, BLADERF_CHANNEL_RX(0));
+        }
+        if (CLI_RET_OK == rv) {
+            rv = _do_print_biastee(state, BLADERF_CHANNEL_TX(0));
+        }
+    } else {
+        if (CLI_RET_OK == rv) {
+            rv = _do_print_biastee(state, channel);
+        }
+    }
+
+    return rv;
+}
+
+int set_biastee(struct cli_state *state, int argc, char **argv)
+{
+    /* Usage: set biastee [<rx|tx>] <0|1> */
+    int rv                  = CLI_RET_OK;
+    int *err                = &state->last_lib_error;
+    bladerf_channel channel = BLADERF_CHANNEL_INVALID;
+    bool ok;
+    int status;
+    uint32_t val;
+
+    switch (argc) {
+        case 3:
+            /* Will do both RX and TX */
+            /* Parse value */
+            val = str2uint(argv[2], 0, 1, &ok);
+            break;
+        case 4:
+            /* Parse channel */
+            channel = get_channel(argv[2], &ok);
+            if (!ok) {
+                invalid_channel(state, argv[0], argv[2]);
+                rv = CLI_RET_INVPARAM;
+            } else {
+                /* Parse value */
+                val = str2uint(argv[3], 0, 1, &ok);
+            }
+            break;
+        default:
+            /* Print usage */
+            printf("Usage: set biastee [channel] <bool>\n");
+            printf("\n");
+            printf("    %-15s%s\n", "channel", "Set 'rx' or 'tx' bias tee");
+            printf("    %-15s%s\n", "bool", "0 to disable, 1 to enable");
+            return rv;
+    }
+
+    if (CLI_RET_OK == rv) {
+        if (!ok || BLADERF_CHANNEL_INVALID == channel) {
+            cli_err_nnl(state, argv[0], "Invalid biastee value (%s)\n",
+                        argv[argc - 1]);
+            rv = CLI_RET_INVPARAM;
+        } else {
+            status = bladerf_set_bias_tee(state->dev, channel, (val == 1));
+            if (status < 0) {
+                *err = status;
+                rv   = CLI_RET_LIBBLADERF;
+            } else {
+                rv = print_biastee(state, argc, argv);
+            }
+        }
     }
 
     return rv;

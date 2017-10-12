@@ -3705,6 +3705,74 @@ const struct board_fns bladerf2_board_fns = {
  ******************************************************************************/
 
 /******************************************************************************/
+/* Bias Tee Control */
+/******************************************************************************/
+
+int bladerf_get_bias_tee(struct bladerf *dev, bladerf_channel ch, bool *enable)
+{
+    uint32_t reg;
+    int status;
+    uint32_t shift;
+
+    MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
+
+    shift = _is_tx(ch) ? RFFE_CONTROL_TX_BIAS_EN : RFFE_CONTROL_RX_BIAS_EN;
+
+    /* Read RFFE control register */
+    status = dev->backend->rffe_control_read(dev, &reg);
+    if (status < 0) {
+        RETURN_ERROR_STATUS("rffe_control_read", status);
+    }
+
+    /* Check register value */
+    *enable = (reg >> shift) & 0x1;
+
+    MUTEX_UNLOCK(&dev->lock);
+
+    return 0;
+}
+
+int bladerf_set_bias_tee(struct bladerf *dev, bladerf_channel ch, bool enable)
+{
+    uint32_t reg;
+    int status;
+    uint32_t shift;
+
+    MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
+
+    shift = _is_tx(ch) ? RFFE_CONTROL_TX_BIAS_EN : RFFE_CONTROL_RX_BIAS_EN;
+
+    /* Read RFFE control register */
+    status = dev->backend->rffe_control_read(dev, &reg);
+    if (status < 0) {
+        RETURN_ERROR_STATUS("rffe_control_read", status);
+    }
+
+    /* Clear register value */
+    reg &= ~(1 << shift);
+
+    /* Set register value */
+    if (enable) {
+        reg |= (1 << shift);
+    }
+
+    /* Write RFFE control register */
+    log_debug("%s: rffe_control_write %08x\n", __FUNCTION__, reg);
+    status = dev->backend->rffe_control_write(dev, reg);
+    if (status < 0) {
+        RETURN_ERROR_STATUS("rffe_control_write", status);
+    }
+
+    MUTEX_UNLOCK(&dev->lock);
+
+    return 0;
+}
+
+/******************************************************************************/
 /* Low level AD9361 Accessors */
 /******************************************************************************/
 
