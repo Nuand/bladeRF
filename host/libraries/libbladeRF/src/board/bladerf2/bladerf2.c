@@ -3928,7 +3928,7 @@ int bladerf_ina219_read(struct bladerf *dev,
                         bladerf_ina219_register reg,
                         void *val)
 {
-    int status;
+    int status = 0;
 
     MUTEX_LOCK(&dev->lock);
 
