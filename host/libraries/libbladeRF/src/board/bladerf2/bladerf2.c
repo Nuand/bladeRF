@@ -1629,9 +1629,12 @@ static int bladerf2_get_gain(struct bladerf *dev, bladerf_channel ch, int *gain)
 {
     struct bladerf2_board_data *board_data;
     struct bladerf_range range;
+    uint8_t ad_ch = ch >> 1;
     int status;
-    uint32_t atten;
-    int my_gain = 0;
+
+    if (NULL == gain) {
+        RETURN_INVAL("gain", "is null");
+    }
 
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
@@ -1643,23 +1646,31 @@ static int bladerf2_get_gain(struct bladerf *dev, bladerf_channel ch, int *gain)
     }
 
     if (_is_tx(ch)) {
-        status = ad9361_get_tx_attenuation(board_data->phy, ch >> 1, &atten);
-        if (status < 0) {
-            RETURN_ERROR_AD9361("ad9361_get_tx_attenuation", status);
+        uint32_t atten;
+
+        if (board_data->tx_mute[ad_ch]) {
+            /* TX is muted, return cached value */
+            atten = _get_tx_gain_cache(dev, ch);
+        } else {
+            /* Get actual value from hardware */
+            status = ad9361_get_tx_attenuation(board_data->phy, ad_ch, &atten);
+            if (status < 0) {
+                RETURN_ERROR_AD9361("ad9361_get_tx_attenuation", status);
+            }
         }
 
-        my_gain = -(atten * range.scale);
+        /* Flip sign and scale */
+        *gain = -(atten * range.scale);
     } else {
-        status = ad9361_get_rx_rf_gain(board_data->phy, ch >> 1, gain);
+        int32_t rawgain;
+
+        status = ad9361_get_rx_rf_gain(board_data->phy, ad_ch, &rawgain);
         if (status < 0) {
             RETURN_ERROR_AD9361("ad9361_get_rx_rf_gain", status);
         }
 
-        my_gain *= range.scale;
-    }
-
-    if (gain != NULL) {
-        *gain = my_gain;
+        /* Scale */
+        *gain = rawgain * range.scale;
     }
 
     return 0;
@@ -3215,7 +3226,8 @@ static int bladerf2_erase_stored_fpga(struct bladerf *dev)
 
 static bool is_valid_fw_size(size_t len)
 {
-    /* Simple FW applications generally are significantly larger than this */
+    /* Simple FW applications generally are significantly larger than this
+     */
     if (len < (50 * 1024)) {
         return false;
     } else if (len > BLADERF_FLASH_BYTE_LEN_FIRMWARE) {
@@ -3700,7 +3712,7 @@ const struct board_fns bladerf2_board_fns = {
 
 /******************************************************************************
  ******************************************************************************
- *                         bladeRF2-specific Functions                        *
+ *                         bladeRF2-specific Functions *
  ******************************************************************************
  ******************************************************************************/
 
