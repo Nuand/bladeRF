@@ -78,10 +78,11 @@ struct printset_entry {
 
 /* Declarations */
 PRINTSET_DECL(adf_enable);
+PRINTSET_DECL(agc);
 PRINTSET_DECL(bandwidth);
 PRINTSET_DECL(biastee);
 PRINTSET_DECL(frequency);
-PRINTSET_DECL(agc);
+PRINTSET_DECL(gain);
 PRINTSET_DECL(gpio);
 PRINTSET_DECL(ina219);
 PRINTSET_DECL(loopback);
@@ -109,6 +110,7 @@ struct printset_entry printset_table[] = {
     PRINTSET_ENTRY(gpio,         PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF1),
     PRINTSET_ENTRY(loopback,     PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
     PRINTSET_ENTRY(rx_mux,       PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
+    PRINTSET_ENTRY(gain,         PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
     PRINTSET_ENTRY(lnagain,      PRINTALL_OPTION_NONE,           BOARD_BLADERF1),
     PRINTSET_ENTRY(rxvga1,       PRINTALL_OPTION_NONE,           BOARD_BLADERF1),
     PRINTSET_ENTRY(rxvga2,       PRINTALL_OPTION_NONE,           BOARD_BLADERF1),
@@ -291,6 +293,59 @@ int set_adf_enable(struct cli_state *state, int argc, char **argv)
     } else {
         rv = CLI_RET_NARGS;
     }
+    return rv;
+}
+
+int print_agc(struct cli_state *state, int argc, char **argv)
+{
+    int rv   = CLI_RET_OK;
+    int *err = &state->last_lib_error;
+    int status;
+    bladerf_gain_mode mode;
+
+    status = bladerf_get_gain_mode(state->dev, BLADERF_MODULE_RX, &mode);
+    if (status < 0) {
+        *err = status;
+        rv   = CLI_RET_LIBBLADERF;
+    } else {
+        printf("   AGC: %-10s\n",
+               mode == BLADERF_GAIN_MANUAL ? "Disabled" : "Enabled");
+    }
+    return rv;
+}
+
+int set_agc(struct cli_state *state, int argc, char **argv)
+{
+    int rv   = CLI_RET_OK;
+    int *err = &state->last_lib_error;
+    int status;
+    bladerf_gain_mode mode;
+
+    if (argc < 3) {
+        printf("Usage: set agc <on|off>\n\n");
+        rv = CLI_RET_NARGS;
+    }
+
+    if (!strcmp(argv[2], "on")) {
+        mode = BLADERF_GAIN_AUTOMATIC;
+    } else if (!strcmp(argv[2], "off")) {
+        mode = BLADERF_GAIN_MANUAL;
+    } else {
+        cli_err_nnl(state, argv[0], "Invalid AGC value (%s)\n", argv[2]);
+        rv = CLI_RET_INVPARAM;
+    }
+
+    if (rv == CLI_RET_OK) {
+        status = bladerf_set_gain_mode(state->dev, BLADERF_MODULE_RX, mode);
+        if (status < 0) {
+            *err = status;
+            rv   = CLI_RET_LIBBLADERF;
+        } else {
+            printf("   AGC: %-10s\n",
+                   mode == BLADERF_GAIN_MANUAL ? "Disabled" : "Enabled");
+        }
+    }
+
     return rv;
 }
 
@@ -751,6 +806,258 @@ int set_frequency(struct cli_state *state, int argc, char **argv)
     if (rv == CLI_RET_OK) {
         rv = _set_print_frequency(state, channel, freq);
     }
+
+    return rv;
+}
+
+int print_gain(struct cli_state *state, int argc, char **argv)
+{
+    int rv                  = CLI_RET_OK;
+    int *err                = &state->last_lib_error;
+    char *stage             = NULL;
+    bladerf_channel channel = BLADERF_CHANNEL_INVALID;
+    size_t const max_count  = 16; /* Max number of stages to display */
+    size_t const max_len    = 16; /* Max length of a stage name */
+    bool printed            = false;
+    int status;
+
+    switch (argc) {
+        /* NOTE: The lack of 'break' in these cases is intentional */
+        case 4:
+            /* One channel, one stage */
+            stage = argv[3];
+        case 3: { /* One channel, all stages */
+            bool ok;
+            channel = get_channel(argv[2], &ok);
+            if (!ok) {
+                invalid_channel(state, argv[0], argv[2]);
+                rv = CLI_RET_INVPARAM;
+            }
+        }
+        case 2:
+            /* All channels, all stages */
+            break;
+        default:
+            /* Print usage */
+            printf("Usage: print gain [<channel> [<stage>]]\n");
+            printf("\n");
+            printf("    %-15s%s\n", "channel",
+                   "Channel identifier (e.g. 'rx', 'tx2')");
+            printf("    %-15s%s\n", "stage", "Name of gain stage to query");
+            return rv;
+    }
+
+    /* Loop over direction */
+    for (bladerf_direction dir = BLADERF_RX; dir <= BLADERF_TX; ++dir) {
+        size_t chan_count;
+
+        if (CLI_RET_OK != rv) {
+            /* Something went wrong, break the loop */
+            break;
+        }
+
+        /* Get the number of channels supported in this direction */
+        chan_count = bladerf_get_channel_count(state->dev, (BLADERF_TX == dir));
+
+        /* Loop over channels */
+        for (size_t ch = 0; ch < chan_count; ++ch) {
+            char *gain_names[max_count];
+            int count;
+            int gain;
+            bladerf_channel brf_ch;
+
+            if (CLI_RET_OK != rv) {
+                /* Something went wrong, break the loop */
+                break;
+            }
+
+            /* Look up the bladeRF channel identifier for this dir and ch */
+            brf_ch = (BLADERF_TX == dir) ? BLADERF_CHANNEL_TX(ch)
+                                         : BLADERF_CHANNEL_RX(ch);
+
+            if (BLADERF_CHANNEL_INVALID != channel && brf_ch != channel) {
+                /* This is not the channel we're looking for */
+                continue;
+            }
+
+            /* How many gain stages are available? */
+            count = bladerf_get_gain_stages(
+                state->dev, brf_ch, (char const **)&gain_names, max_count);
+
+            /* Loop over the gain stages */
+            for (int si = 0; si < count; ++si) {
+                struct bladerf_range range;
+                char stage_name[max_len];
+                float range_min;
+                float range_max;
+
+                if (CLI_RET_OK != rv) {
+                    /* Something went wrong, break the loop */
+                    break;
+                }
+
+                if (NULL != stage && 0 != strcmp(gain_names[si], stage)) {
+                    /* This is not the stage we're looking for */
+                    continue;
+                }
+
+                /* Get the allowed range of gain values */
+                status = bladerf_get_gain_stage_range(state->dev, brf_ch,
+                                                      gain_names[si], &range);
+                if (status < 0) {
+                    *err = status;
+                    rv   = CLI_RET_LIBBLADERF;
+                    break;
+                };
+
+                range_min = range.min * range.scale;
+                range_max = range.max * range.scale;
+
+                /* Get the current value of the gain stage */
+                status = bladerf_get_gain_stage(state->dev, brf_ch,
+                                                gain_names[si], &gain);
+                if (status < 0) {
+                    *err = status;
+                    rv   = CLI_RET_LIBBLADERF;
+                    break;
+                };
+
+                /* Prepare human-readable stage name */
+                status =
+                    snprintf(stage_name, (max_len - 1),
+                             "%s %s:", get_channel_str(brf_ch), gain_names[si]);
+                if (status < 0) {
+                    *err = status;
+                    rv   = CLI_RET_UNKNOWN;
+                    break;
+                }
+
+                /* Send it out */
+                printed = true;
+                printf("  Gain %-12s %4d dB (Range: [%g, %g])\n", stage_name,
+                       gain, range_min, range_max);
+            }
+        }
+    }
+
+    if (!printed && channel != BLADERF_CHANNEL_INVALID && stage != NULL) {
+        /* We did not find any applicable values :( */
+        printf("  Channel and/or stage not found: %s %s\n",
+               get_channel_str(channel), stage);
+    }
+
+    return rv;
+}
+
+int set_gain(struct cli_state *state, int argc, char **argv)
+{
+    int rv                  = CLI_RET_OK;
+    int *err                = &state->last_lib_error;
+    char *stage             = NULL;
+    bladerf_channel channel = BLADERF_CHANNEL_INVALID;
+    char *value_str         = NULL;
+    size_t const max_len    = 16; /* Max length of a stage name */
+    struct bladerf_range range;
+    char stage_name[max_len];
+    int gain;
+    bool ok;
+    int status;
+
+    switch (argc) {
+        case 4:
+            /* One channel, default stage */
+            value_str = argv[3];
+            break;
+        case 5:
+            /* One channel, one stage */
+            stage     = argv[3];
+            value_str = argv[4];
+            break;
+        default:
+            /* Print usage */
+            printf("Usage: set gain <channel> [<stage>] <value>\n");
+            printf("\n");
+            printf("    %-15s%s\n", "channel",
+                   "Channel identifier (e.g. 'rx', 'tx2')");
+            printf("    %-15s%s\n", "stage", "Name of gain stage to set");
+            printf("    %-15s%s\n", "value", "Gain value in dB");
+            return rv;
+    }
+
+    channel = get_channel(argv[2], &ok);
+    if (!ok) {
+        invalid_channel(state, argv[0], argv[2]);
+        rv = CLI_RET_INVPARAM;
+        return rv;
+    }
+
+    if (stage != NULL) {
+        /* Query the allowed range of a specific gain stage */
+        status =
+            bladerf_get_gain_stage_range(state->dev, channel, stage, &range);
+    } else {
+        /* Query the allowed range of overall gain */
+        status = bladerf_get_gain_range(state->dev, channel, &range);
+    }
+
+    if (status < 0) {
+        *err = status;
+        rv   = CLI_RET_LIBBLADERF;
+        return rv;
+    }
+
+    gain = str2int(value_str, range.min, range.max, &ok);
+    if (!ok) {
+        invalid_gain(state, argv[0],
+                     (stage == NULL) ? get_channel_str(channel) : stage,
+                     value_str);
+        rv = CLI_RET_INVPARAM;
+        return rv;
+    }
+
+    if (stage != NULL) {
+        printf("Setting %s %s gain to %d dB\n", get_channel_str(channel), stage,
+               gain);
+        status = bladerf_set_gain_stage(state->dev, channel, stage, gain);
+    } else {
+        printf("Setting %s overall gain to %d dB\n", get_channel_str(channel),
+               gain);
+        status = bladerf_set_gain(state->dev, channel, gain);
+    }
+
+    if (status < 0) {
+        *err = status;
+        rv   = CLI_RET_LIBBLADERF;
+        return rv;
+    }
+
+    if (stage != NULL) {
+        status = bladerf_get_gain_stage(state->dev, channel, stage, &gain);
+    } else {
+        status = bladerf_get_gain(state->dev, channel, &gain);
+    }
+
+    if (status < 0) {
+        *err = status;
+        rv   = CLI_RET_LIBBLADERF;
+        return rv;
+    }
+
+    if (stage != NULL) {
+        status = snprintf(stage_name, max_len - 1,
+                          "%s %s:", get_channel_str(channel), stage);
+    } else {
+        status = snprintf(stage_name, max_len - 1,
+                          "%s overall:", get_channel_str(channel));
+    }
+
+    if (status < 0) {
+        *err = status;
+        rv   = CLI_RET_UNKNOWN;
+        return rv;
+    }
+
+    printf("  Gain %-12s %4d dB\n", stage_name, gain);
 
     return rv;
 }
