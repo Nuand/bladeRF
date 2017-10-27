@@ -154,10 +154,12 @@ begin
     -- PLLs
     -- ========================================================================
 
+    -- TODO: implement c5_clock1 / c5_clock2 auto switchover in PLL
+
     -- Create 80 MHz system clock from c5_clock_1 (38.4 MHz)
     U_system_pll : component system_pll
         port map (
-            refclk   => c5_clock_1,
+            refclk   => c5_clock2,
             rst      => sys_pll_reset,
             outclk_0 => sys_clock,
             locked   => sys_pll_locked
@@ -169,7 +171,7 @@ begin
             DEVICE_FAMILY       => "Cyclone V"
         )
         port map (
-            sys_clock      => c5_clock_1,
+            sys_clock      => c5_clock2,
             pll_locked     => sys_pll_locked,
             pll_reset      => sys_pll_reset
         );
@@ -205,12 +207,14 @@ begin
     -- Therefore, sync must fall between:
     --   -10% of 201.117 KHz = 177.575 KHz
     --   +10% of 197.305 KHz = 217.036 KHz
-    -- Dividing 38.4 MHz by 200 KHz yields 192, or 96 clock periods.
-    ps_sync : process(c5_clock_1)
+    -- Dividing 38.4 MHz by 200 KHz yields 192 clock periods. For a 50% duty
+    -- cycle, ps_clk must spend half that time (96 periods) in logic '1' state,
+    -- and the other half in logic '0' state.
+    ps_sync : process(c5_clock2)
         variable count  : natural range 0 to 96 := 96;
         variable ps_clk : std_logic := '0';
     begin
-        if( rising_edge(c5_clock_1) ) then
+        if( rising_edge(c5_clock2) ) then
             ps_sync_1p1 <= ps_clk;
             ps_sync_1p8 <= ps_clk;
             count := count - 1;
@@ -429,9 +433,37 @@ begin
     tx_trigger_ctl <= unpack(tx_trigger_ctl_i, tx_trigger_line);
 
     -- LEDs
-    led(1) <= led1_blink        when nios_gpio.led_mode = '0' else not nios_gpio.leds(1);
-    led(2) <= tx_underflow_led  when nios_gpio.led_mode = '0' else not nios_gpio.leds(2);
+    --led(1) <= led1_blink        when nios_gpio.led_mode = '0' else not nios_gpio.leds(1);
+    --led(2) <= tx_underflow_led  when nios_gpio.led_mode = '0' else not nios_gpio.leds(2);
     led(3) <= rx_overflow_led   when nios_gpio.led_mode = '0' else not nios_gpio.leds(3);
+
+    led1_blink_proc : process(c5_clock1)
+        variable count  : natural range 0 to 192e5 := 192e5;
+        variable led1   : std_logic := '0';
+    begin
+        if( rising_edge(c5_clock1) ) then
+            led(1) <= led1;
+            count := count - 1;
+            if( count = 0 ) then
+                count  := count'high;
+                led1   := not led1;
+            end if;
+        end if;
+    end process;
+
+    led2_blink_proc : process(c5_clock2)
+        variable count  : natural range 0 to 192e5 := 192e5;
+        variable led2   : std_logic := '0';
+    begin
+        if( rising_edge(c5_clock2) ) then
+            led(2) <= led2;
+            count := count - 1;
+            if( count = 0 ) then
+                count  := count'high;
+                led2   := not led2;
+            end if;
+        end if;
+    end process;
 
     -- DAC SPI (data latched on falling edge)
     dac_sclk <= not nios_sclk when nios_gpio.adf_chip_enable = '0' else '0';
@@ -454,11 +486,11 @@ begin
     i2c_scl_in  <= pwr_scl;
     i2c_sda_in  <= pwr_sda;
 
-    -- Power mux control
-    psu_ctl_d   <= "ZZ";
-
-    -- Expansion clock request/enable
-    exp_clock_en <= exp_present and exp_clock_req;
+    -- SI53304 controls / clock output enables
+    si_clock_sel <= nios_gpio.si_clock_sel;
+    c5_clock2_oe <= '1'; --  TODO: not sure if we need this to be a Nios GPIO, or if we can auto detect
+    exp_clock_oe <= exp_present and exp_clock_req;
+    ufl_clock_oe <= nios_gpio.ufl_clock_oe;
 
     -- Expansion I2C
     exp_i2c_scl <= 'Z';

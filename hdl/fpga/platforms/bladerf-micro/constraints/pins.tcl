@@ -136,8 +136,8 @@ set_location_assignment PIN_U16  -to adi_ctrl_out[1]
 set_location_assignment PIN_U21  -to "adi_tx_data[0](n)"
 set_location_assignment PIN_U17  -to adi_ctrl_out[0]
 set_location_assignment PIN_U20  -to adi_tx_data[0]
-set_location_assignment PIN_P14  -to psu_ctl_d[0]
-set_location_assignment PIN_AB17 -to psu_ctl_d[1]
+set_location_assignment PIN_P14  -to pwr_sda
+set_location_assignment PIN_AB17 -to pwr_scl
 
 # Bank 5B
 set_location_assignment PIN_N16 -to adi_ctrl_in[0]
@@ -172,6 +172,7 @@ set outs {
     ps_sync_1p1
     ps_sync_1p8
     adi_sync_in
+    pwr_scl
 }
 for { set i 0 } { $i < 4 } { incr i } {
     lappend outs "adi_ctrl_in\[${i}\]"
@@ -185,8 +186,7 @@ foreach pin ${outs} {
 
 # Single-ended inout constraints
 set inouts {
-    psu_ctl_d[0]
-    psu_ctl_d[1]
+    pwr_sda
 }
 
 foreach pin ${inouts} {
@@ -241,10 +241,10 @@ foreach pin ${lvds_ins} {
 ##########
 # BANK 5A
 ##########
-set_location_assignment PIN_T19 -to pwr_scl
-set_location_assignment PIN_T18 -to pwr_sda
-set_location_assignment PIN_T17 -to adf_muxout
-set_location_assignment PIN_T22 -to adf_ce
+set_location_assignment PIN_T19 -to ufl_clock_oe
+set_location_assignment PIN_T18 -to adf_ce
+set_location_assignment PIN_T17 -to c5_clock2_oe
+set_location_assignment PIN_T22 -to si_clock_sel
 set_location_assignment PIN_T15 -to adi_rx_spdt1_v[2]
 set_location_assignment PIN_R22 -to adi_rx_spdt1_v[1]
 set_location_assignment PIN_R15 -to adi_rx_spdt2_v[2]
@@ -256,7 +256,7 @@ set_location_assignment PIN_P19 -to adi_tx_spdt2_v[1]
 set_location_assignment PIN_P16 -to fx3_uart_cts
 set_location_assignment PIN_P18 -to fx3_uart_rxd
 set_location_assignment PIN_P17 -to fx3_uart_txd
-set_location_assignment PIN_T20 -to exp_clock_en
+set_location_assignment PIN_T20 -to exp_clock_oe
 
 
 # Bank voltage
@@ -267,8 +267,10 @@ set outs {
     fx3_uart_cts
     fx3_uart_rxd
     adf_ce
-    pwr_scl
-    exp_clock_en
+    exp_clock_oe
+    ufl_clock_oe
+    c5_clock2_oe
+    si_clock_sel
 }
 for { set i 1 } { $i < 3 } { incr i } {
     lappend outs "adi_rx_spdt1_v\[${i}\]"
@@ -285,7 +287,7 @@ foreach pin ${outs} {
 
 # Single-ended inout constraints
 set inouts {
-    pwr_sda
+
 }
 
 foreach pin ${inouts} {
@@ -297,7 +299,6 @@ foreach pin ${inouts} {
 # Single-ended input constraints
 set ins {
     fx3_uart_txd
-    adf_muxout
 }
 
 foreach pin ${ins} {
@@ -316,19 +317,22 @@ set_location_assignment PIN_K19 -to led[1]
 set_location_assignment PIN_G16 -to adf_sclk
 set_location_assignment PIN_G18 -to adf_sdi
 set_location_assignment PIN_H18 -to adf_csn
-set_location_assignment PIN_H16 -to c5_clock_1
+set_location_assignment PIN_F12 -to adf_muxout
+set_location_assignment PIN_H16 -to c5_clock1
 set_location_assignment PIN_G15 -to exp_present
 set_location_assignment PIN_B15 -to exp_i2c_scl
 set_location_assignment PIN_F14 -to exp_i2c_sda
 set_location_assignment PIN_A13 -to tx_bias_en
 set_location_assignment PIN_J11 -to rx_bias_en
-set_location_assignment PIN_H13 -to c5_clock_2
+set_location_assignment PIN_H13 -to c5_clock2
 set_location_assignment PIN_A12 -to dac_sclk
 set_location_assignment PIN_H11 -to dac_sdi
 set_location_assignment PIN_G12 -to dac_csn
 set_location_assignment PIN_D12 -to exp_clock_req
 set_location_assignment PIN_J18 -to mini_exp1
 set_location_assignment PIN_J17 -to mini_exp2
+set_location_assignment PIN_E12 -to hw_rev[0]
+set_location_assignment PIN_E15 -to hw_rev[1]
 
 # Bank 8A
 set_location_assignment PIN_G10 -to exp_gpio[15]
@@ -414,10 +418,12 @@ foreach pin ${inouts} {
 
 # Single-ended input constraints
 set ins {
-    c5_clock_1
-    c5_clock_2
+    c5_clock1
+    c5_clock2
     exp_present
     exp_clock_req
+    hw_rev[0]
+    hw_rev[1]
 }
 
 foreach pin ${ins} {

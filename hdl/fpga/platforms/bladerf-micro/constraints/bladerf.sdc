@@ -1,6 +1,6 @@
 # Clock inputs
-create_clock -period "38.4 MHz"  [get_ports c5_clock_1]
-create_clock -period "38.4 MHz"  [get_ports c5_clock_2]
+create_clock -period "38.4 MHz"  [get_ports c5_clock1]
+create_clock -period "38.4 MHz"  [get_ports c5_clock2]
 create_clock -period "250.0 MHz" [get_ports adi_rx_clock]
 
 # Generate the appropriate PLL clocks

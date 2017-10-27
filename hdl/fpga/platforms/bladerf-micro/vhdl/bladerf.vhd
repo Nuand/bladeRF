@@ -27,8 +27,14 @@ library ieee ;
 entity bladerf is
   port (
     -- Main 38.4MHz system clock (3.3 V)
-    c5_clock_1          :   in      std_logic ;
-    c5_clock_2          :   in      std_logic ;
+    c5_clock1           :   in      std_logic ;
+    c5_clock2           :   in      std_logic ;
+
+    -- SI53304 clock controls (3.3 V)
+    si_clock_sel        :   out     std_logic := '0';
+    c5_clock2_oe        :   out     std_logic := '0';
+    ufl_clock_oe        :   out     std_logic := '0';
+    exp_clock_oe        :   out     std_logic := '0';
 
     -- VCTCXO DAC (3.3 V)
     dac_sclk            :   out     std_logic := '0' ;
@@ -45,9 +51,6 @@ entity bladerf is
     -- Power monitor (3.3 V)
     pwr_sda             :   inout   std_logic := 'Z';
     pwr_scl             :   out     std_logic := 'Z';
-
-    -- Power mux control (2.5)
-    psu_ctl_d           :   inout   std_logic_vector(1 downto 0) ;
 
     -- AD9361 RX Interface (2.5 V, LVDS)
     adi_rx_clock        :   in      std_logic ;
@@ -105,16 +108,20 @@ entity bladerf is
     fx3_uart_txd        :   in      std_logic ;
     fx3_uart_cts        :   out     std_logic ;
 
-    -- Expansion Interface (3.3 V)
+    -- Expansion Interface (3.3 V / 2.5 V / 1.8 V)
     exp_present         :   in      std_logic;
     exp_clock_req       :   in      std_logic;
-    exp_clock_en        :   out     std_logic;
     exp_i2c_sda         :   inout   std_logic;
     exp_i2c_scl         :   inout   std_logic;
     exp_gpio            :   inout   std_logic_vector(31 downto 0);
 
+    -- Mini expansion interface (3.3 V / 2.5 V / 1.8 V)
     mini_exp1           :   inout   std_logic := 'Z';
-    mini_exp2           :   inout   std_logic := 'Z'
+    mini_exp2           :   inout   std_logic := 'Z';
+
+    -- Hardware revision resistors (3.3 V / 2.5 V / 1.8 V)
+    hw_rev              :   in      std_logic_vector(1 downto 0)
+
   ) ;
 end entity ; -- bladerf
 --TODO: explain revisions

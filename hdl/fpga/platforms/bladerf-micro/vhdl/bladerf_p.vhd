@@ -261,6 +261,8 @@ package bladerf_p is
 
     type nios_gpio_t is record
         xb_mode         : std_logic_vector(1 downto 0);
+        si_clock_sel    : std_logic;
+        ufl_clock_oe    : std_logic;
         meta_sync       : std_logic;
         led_mode        : std_logic;
         leds            : std_logic_vector(3 downto 1);
@@ -441,13 +443,15 @@ package body bladerf_p is
     function pack( x : nios_gpio_t ) return std_logic_vector is
         variable rv : std_logic_vector(31 downto 0) := (others => '0');
     begin
-         rv(31 downto 30)   := x.xb_mode;
-         rv(16)             := x.meta_sync;
-         rv(15)             := x.led_mode;
-         rv(14 downto 12)   := x.leds;
-         rv(11)             := x.adf_chip_enable;
-         rv(10 downto 8)    := x.rx_mux_sel;
-         rv(7)              := x.usb_speed;
+        rv(31 downto 30)   := x.xb_mode;
+        rv(18)             := x.si_clock_sel;
+        rv(17)             := x.ufl_clock_oe;
+        rv(16)             := x.meta_sync;
+        rv(15)             := x.led_mode;
+        rv(14 downto 12)   := x.leds;
+        rv(11)             := x.adf_chip_enable;
+        rv(10 downto 8)    := x.rx_mux_sel;
+        rv(7)              := x.usb_speed;
         return rv;
     end function;
 
@@ -504,6 +508,8 @@ package body bladerf_p is
         variable rv : nios_gpio_t;
     begin
         rv.xb_mode         := x(31 downto 30);
+        rv.si_clock_sel    := x(18);
+        rv.ufl_clock_oe    := x(17);
         rv.meta_sync       := x(16);
         rv.led_mode        := x(15);
         rv.leds            := x(14 downto 12);
