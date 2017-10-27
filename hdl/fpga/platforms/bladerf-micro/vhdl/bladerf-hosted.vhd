@@ -201,13 +201,13 @@ begin
     -- ========================================================================
 
     -- ADP2384 sync freq must be +/- 10% of the Fsw set by RT.
-    -- RT = 53.6k +/- 1%, so Fsw = 0.999768 MHz to 1.015514 MHz.
+    -- RT = 332k +/- 1%, so Fsw = 197.305 KHz to 201.117 KHz
     -- Therefore, sync must fall between:
-    --   -10% of 1.015514 MHz = 0.913964 MHz
-    --   +10% of 0.999768 MHz = 1.099745 MHz
-    -- Dividing 38.4 MHz by 38 yields 1.010526 MHz.
+    --   -10% of 201.117 KHz = 177.575 KHz
+    --   +10% of 197.305 KHz = 217.036 KHz
+    -- Dividing 38.4 MHz by 200 KHz yields 192, or 96 clock periods.
     ps_sync : process(c5_clock_1)
-        variable count  : natural range 0 to 19 := 19;
+        variable count  : natural range 0 to 96 := 96;
         variable ps_clk : std_logic := '0';
     begin
         if( rising_edge(c5_clock_1) ) then
@@ -215,7 +215,7 @@ begin
             ps_sync_1p8 <= ps_clk;
             count := count - 1;
             if( count = 0 ) then
-                count  := 19;
+                count  := count'high;
                 ps_clk := not ps_clk;
             end if;
         end if;
