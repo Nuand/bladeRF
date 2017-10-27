@@ -45,6 +45,15 @@ int ina219_init(struct bladerf *dev, float r_shunt)
         return status;
     }
 
+    /* Poll until we're out of reset */
+    while (value & 0x8000) {
+        status = dev->backend->ina219_read(dev, INA219_REG_CONFIGURATION, &value);
+        if (status < 0) {
+            log_error("INA219 soft reset poll error: %d\n", status);
+            return status;
+        }
+    }
+
     /* Write configuration register */
     /* BRNG   (13) = 0 for 16V FSR
        PG  (12-11) = 00 for 40mV
