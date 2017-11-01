@@ -47,8 +47,8 @@ AD9361_InitParam ad9361_init_params = {
 	10000,	//tx_attenuation_mdB *** adi,tx-attenuation-mdB
 	0,		//update_tx_gain_in_alert_enable *** adi,update-tx-gain-in-alert-enable
 	/* Reference Clock Control */
-	0,		//xo_disable_use_ext_refclk_enable *** adi,xo-disable-use-ext-refclk-enable
-	{8, 5920},	//dcxo_coarse_and_fine_tune[2] *** adi,dcxo-coarse-and-fine-tune
+        1,		//xo_disable_use_ext_refclk_enable *** adi,xo-disable-use-ext-refclk-enable
+        {3, 5920},	//dcxo_coarse_and_fine_tune[2] *** adi,dcxo-coarse-and-fine-tune
 	CLKOUT_DISABLE,	//clk_output_mode_select *** adi,clk-output-mode-select
 	/* Gain Control */
 	2,		//gc_rx1_mode *** adi,gc-rx1-mode
