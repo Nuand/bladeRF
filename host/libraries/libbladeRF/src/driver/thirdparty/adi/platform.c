@@ -87,10 +87,6 @@ int gpio_init(struct ad9361_rf_phy *phy, void *userdata)
  * @brief gpio_is_valid
 *******************************************************************************/
 
-/* Bitwise positions of GPOs in RFFE control register */
-#define RFFE_CONTROL_RESET_N  0
-#define RFFE_CONTROL_SYNC_IN  4
-
 bool gpio_is_valid(struct gpio_device *gpio, int32_t number)
 {
     if (number == RFFE_CONTROL_RESET_N) {

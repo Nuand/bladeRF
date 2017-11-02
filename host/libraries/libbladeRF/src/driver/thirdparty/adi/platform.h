@@ -135,6 +135,10 @@ enum adc_data_sel {
 	ADC_DATA_SEL_RAMP, /* TBD */
 };
 
+/* Bitwise positions of GPOs in RFFE control register */
+#define RFFE_CONTROL_RESET_N  0
+#define RFFE_CONTROL_SYNC_IN  4
+
 /******************************************************************************/
 /************************ Functions Declarations ******************************/
 /******************************************************************************/
