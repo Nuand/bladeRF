@@ -164,32 +164,6 @@ static bool _is_board(struct bladerf *dev, enum board_option board)
     return false;
 }
 
-static int _gpio_modify(struct bladerf *dev, uint32_t mask, uint32_t val)
-{
-    int status;
-    uint32_t gpio;
-
-    // read from gpio
-    status = bladerf_config_gpio_read(dev, &gpio);
-    if (status < 0) {
-        return status;
-    }
-
-    // clear bits
-    gpio &= ~(mask);
-
-    // set bits
-    gpio |= (val & mask);
-
-    // write back to gpio
-    status = bladerf_config_gpio_write(dev, gpio);
-    if (status < 0) {
-        return status;
-    }
-
-    return status;
-}
-
 bladerf_channel get_channel(char *ch, bool *ok)
 {
     bladerf_channel rv;
@@ -247,19 +221,16 @@ int print_adf_enable(struct cli_state *state, int argc, char **argv)
     int rv   = CLI_RET_OK;
     int *err = &state->last_lib_error;
     int status;
-    uint32_t val;
+    bool val;
 
-    status = bladerf_config_gpio_read(state->dev, &val);
+    status = bladerf_adf4002_get_enable(state->dev, &val);
     if (status < 0) {
         *err = status;
         rv   = CLI_RET_LIBBLADERF;
     }
 
     if (rv == CLI_RET_OK) {
-        int adf_chip_enable = (val >> 11) & 0x01;  // 11
-
-        printf("  ADF Chip Enable: %s\n",
-               adf_chip_enable ? "enabled" : "disabled");
+        printf("  ADF Chip Enable: %s\n", val ? "enabled" : "disabled");
     }
 
     return rv;
@@ -282,7 +253,7 @@ int set_adf_enable(struct cli_state *state, int argc, char **argv)
                         argv[2]);
             rv = CLI_RET_INVPARAM;
         } else {
-            status = _gpio_modify(state->dev, 0x800, (val << 11));
+            status = bladerf_adf4002_set_enable(state->dev, val);
             if (status < 0) {
                 *err = status;
                 rv   = CLI_RET_LIBBLADERF;
@@ -308,7 +279,7 @@ int print_agc(struct cli_state *state, int argc, char **argv)
         *err = status;
         rv   = CLI_RET_LIBBLADERF;
     } else {
-        printf("   AGC: %-10s\n",
+        printf("  AGC: %-10s\n",
                mode == BLADERF_GAIN_MANUAL ? "Disabled" : "Enabled");
     }
     return rv;
