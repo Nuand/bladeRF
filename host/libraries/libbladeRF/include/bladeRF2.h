@@ -125,6 +125,30 @@ int CALL_CONV bladerf_ad9361_write(struct bladerf *dev,
  */
 
 /**
+ * Fetch the state of the ADF4002 Phase Detector/Frequency Synthesizer
+ *
+ * @param       dev         Device handle
+ * @param[out]  enabled     True if enabled, False otherwise
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_adf4002_get_enable(struct bladerf *dev, bool *enabled);
+
+/**
+ * Enable the ADF4002 Phase Detector/Frequency Synthesizer
+ *
+ * Enabling this disables the AD5601 VCTCXO trimmer DAC, and vice versa.
+ *
+ * @param       dev         Device handle
+ * @param[in]   enable      True to enable, False otherwise
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_adf4002_set_enable(struct bladerf *dev, bool enable);
+
+/**
  * Read value from ADF4002 Phase Detector/Frequency Synthesizer
  *
  * Reference:

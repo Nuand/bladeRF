@@ -3862,6 +3862,85 @@ int bladerf_ad9361_write(struct bladerf *dev, uint16_t address, uint8_t val)
 /* Low level ADF4002 Accessors */
 /******************************************************************************/
 
+int bladerf_adf4002_get_enable(struct bladerf *dev, bool *enabled)
+{
+    int status;
+    uint32_t data;
+
+    if (NULL == dev) {
+        RETURN_INVAL("dev", "not initialized");
+    }
+
+    if (NULL == enabled) {
+        RETURN_INVAL("enabled", "is null");
+    }
+
+    MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
+
+    status = dev->backend->config_gpio_read(dev, &data);
+    if (status < 0) {
+        MUTEX_UNLOCK(&dev->lock);
+        RETURN_ERROR_STATUS("config_gpio_read", status);
+    }
+
+    *enabled = (data >> 11) & 0x01;
+
+    MUTEX_UNLOCK(&dev->lock);
+
+    return 0;
+}
+
+int bladerf_adf4002_set_enable(struct bladerf *dev, bool enable)
+{
+    int status;
+    uint32_t data;
+
+    if (NULL == dev) {
+        RETURN_INVAL("dev", "not initialized");
+    }
+
+    MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
+
+    // Set the trimdac to high z if applicable
+    uint16_t trim;
+    status = dev->backend->ad56x1_vctcxo_trim_dac_read(dev, &trim);
+    if (status < 0) {
+        RETURN_ERROR_STATUS("ad56x1_vctcxo_trim_dac_read", status);
+    }
+
+    trim &= ~(3 << 14);
+    trim |= ((enable ? 3 : 0) << 14);
+
+    status = dev->backend->ad56x1_vctcxo_trim_dac_write(dev, trim);
+    if (status < 0) {
+        RETURN_ERROR_STATUS("ad56x1_vctcxo_trim_dac_write", status);
+    }
+
+    status = dev->backend->config_gpio_read(dev, &data);
+    if (status < 0) {
+        MUTEX_UNLOCK(&dev->lock);
+        RETURN_ERROR_STATUS("config_gpio_read", status);
+    }
+
+    data &= ~(1 << 11);
+    data |= ((enable ? 1 : 0) << 11);
+
+    status = dev->backend->config_gpio_write(dev, data);
+    if (status < 0) {
+        MUTEX_UNLOCK(&dev->lock);
+        RETURN_ERROR_STATUS("config_gpio_write", status);
+    }
+
+    MUTEX_UNLOCK(&dev->lock);
+
+
+    return 0;
+}
+
 int bladerf_adf4002_read(struct bladerf *dev, uint8_t address, uint32_t *val)
 {
     int status;
