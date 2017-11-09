@@ -116,6 +116,17 @@ int CALL_CONV bladerf_ad9361_write(struct bladerf *dev,
                                    uint16_t address,
                                    uint8_t val);
 
+/**
+ * Read the temperature from the AD9361 RFIC
+ *
+ * @param       dev         Device handle
+ * @param[out]  val         Temperature in degrees C
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_ad9361_temperature(struct bladerf *dev, int32_t *val);
+
 /** @} (End of FN_BLADERF2_LOW_LEVEL_AD9361) */
 
 /**

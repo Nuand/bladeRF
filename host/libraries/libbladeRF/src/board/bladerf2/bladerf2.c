@@ -3864,6 +3864,21 @@ int bladerf_ad9361_write(struct bladerf *dev, uint16_t address, uint8_t val)
     return 0;
 }
 
+int bladerf_ad9361_temperature(struct bladerf *dev, int32_t *val)
+{
+    struct bladerf2_board_data *board_data;
+    struct ad9361_rf_phy *phy;
+
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    board_data = dev->board_data;
+    phy        = board_data->phy;
+
+    *val = ad9361_get_temp(phy);
+
+    return 0;
+}
+
 /******************************************************************************/
 /* Low level ADF4002 Accessors */
 /******************************************************************************/
