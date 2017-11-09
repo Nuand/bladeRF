@@ -95,6 +95,7 @@ PRINTSET_DECL(gpio);
 PRINTSET_DECL(ina219);
 PRINTSET_DECL(loopback);
 PRINTSET_DECL(lnagain);
+PRINTSET_DECL(rfconfig);
 PRINTSET_DECL(rx_mux);
 PRINTSET_DECL(rxvga1);
 PRINTSET_DECL(rxvga2);
@@ -116,6 +117,7 @@ struct printset_entry printset_table[] = {
     PRINTSET_ENTRY(frequency,    PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
     PRINTSET_ENTRY(agc,          PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
     PRINTSET_ENTRY(gpio,         PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF1),
+    READONLY_ENTRY(rfconfig,     PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF2),
     PRINTSET_ENTRY(loopback,     PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
     PRINTSET_ENTRY(rx_mux,       PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
     PRINTSET_ENTRY(gain,         PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
@@ -1879,6 +1881,31 @@ int set_loopback(struct cli_state *state, int argc, char **argv)
     } else {
         return print_loopback(state, 2, argv);
     }
+}
+
+int print_rfconfig(struct cli_state *state, int argc, char **argv)
+{
+    int status;
+    bladerf_rf_switch_config config;
+    int *err = &state->last_lib_error;
+
+    status = bladerf_get_rf_switch_config(state->dev, &config);
+    if (status < 0) {
+        *err = status;
+        return CLI_RET_LIBBLADERF;
+    }
+
+    printf("  Port config:\n");
+    printf("    TX1: AD9361 %x, SPDT %x\n", config.tx1_ad9361_port,
+           config.tx1_spdt_port);
+    printf("    TX2: AD9361 %x, SPDT %x\n", config.tx2_ad9361_port,
+           config.tx2_spdt_port);
+    printf("    RX1: AD9361 %x, SPDT %x\n", config.rx1_ad9361_port,
+           config.rx1_spdt_port);
+    printf("    RX2: AD9361 %x, SPDT %x\n", config.rx2_ad9361_port,
+           config.rx2_spdt_port);
+
+    return 0;
 }
 
 int print_rx_mux(struct cli_state *state, int argc, char **argv)
