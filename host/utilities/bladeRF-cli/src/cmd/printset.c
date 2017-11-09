@@ -38,6 +38,14 @@
         FIELD_INIT(.pa_option, printall_option),   \
         FIELD_INIT(.board, _board),                \
     }
+#define READONLY_ENTRY(x, printall_option, _board) \
+    {                                              \
+        FIELD_INIT(.print, print_##x),             \
+        FIELD_INIT(.set, NULL),                    \
+        FIELD_INIT(.name, #x),                     \
+        FIELD_INIT(.pa_option, printall_option),   \
+        FIELD_INIT(.board, _board),                \
+    }
 // clang-format on
 
 /**
@@ -123,7 +131,7 @@ struct printset_entry printset_table[] = {
     PRINTSET_ENTRY(biastee,      PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF2),
     PRINTSET_ENTRY(trimdac,      PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
     PRINTSET_ENTRY(vctcxo_tamer, PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF1),
-    PRINTSET_ENTRY(ina219,       PRINTALL_OPTION_NONE,           BOARD_BLADERF2),
+    READONLY_ENTRY(ina219,       PRINTALL_OPTION_NONE,           BOARD_BLADERF2),
     PRINTSET_ENTRY(xb_spi,       PRINTALL_OPTION_SKIP,           BOARD_BLADERF1),
     PRINTSET_ENTRY(xb_gpio,      PRINTALL_OPTION_NONE,           BOARD_BLADERF1),
     PRINTSET_ENTRY(xb_gpio_dir,  PRINTALL_OPTION_NONE,           BOARD_BLADERF1),
@@ -1260,11 +1268,6 @@ int print_ina219(struct cli_state *state, int argc, char **argv)
     printf("  Load power:   %g W\n", val);
 
     return rv;
-}
-
-int set_ina219(struct cli_state *state, int argc, char **argv)
-{
-    return 0;
 }
 
 struct xb_gpio_lut {
@@ -2733,7 +2736,7 @@ int cmd_set(struct cli_state *state, int argc, char **argv)
     if (argc > 1) {
         entry = get_printset_entry(argv[1]);
 
-        if (entry != NULL) {
+        if (entry != NULL && entry->set != NULL) {
             printf("\n");
 
             /* Call the parameter setting function */
@@ -2765,7 +2768,7 @@ int cmd_print(struct cli_state *state, int argc, char **argv)
     if (argc > 1) {
         entry = get_printset_entry(argv[1]);
 
-        if (entry != NULL) {
+        if (entry != NULL && entry->print != NULL) {
             /* Call the parameter printing function */
             rv = entry->print(state, argc, argv);
         } else {
