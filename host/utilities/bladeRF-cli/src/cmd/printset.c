@@ -85,6 +85,7 @@ struct printset_entry {
 };
 
 /* Declarations */
+PRINTSET_DECL(ad9361);
 PRINTSET_DECL(adf_enable);
 PRINTSET_DECL(agc);
 PRINTSET_DECL(bandwidth);
@@ -117,6 +118,7 @@ struct printset_entry printset_table[] = {
     PRINTSET_ENTRY(frequency,    PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
     PRINTSET_ENTRY(agc,          PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
     PRINTSET_ENTRY(gpio,         PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF1),
+    READONLY_ENTRY(ad9361,       PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF2),
     READONLY_ENTRY(rfconfig,     PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF2),
     PRINTSET_ENTRY(loopback,     PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
     PRINTSET_ENTRY(rx_mux,       PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
@@ -1883,6 +1885,24 @@ int set_loopback(struct cli_state *state, int argc, char **argv)
     }
 }
 
+int print_ad9361(struct cli_state *state, int argc, char **argv)
+{
+    int status;
+    int *err = &state->last_lib_error;
+    float temperature;
+
+    status = bladerf_ad9361_temperature(state->dev, &temperature);
+    if (status < 0) {
+        *err = status;
+        return CLI_RET_LIBBLADERF;
+    }
+
+    printf("  AD9361 RFIC status:\n");
+    printf("    Temperature: %4.1f degrees C\n", temperature);
+
+    return 0;
+}
+
 static char const *_ad9361_rx_portstr(uint32_t port)
 {
     const char *pstrs[] = {"A_BAL",   "B_BAL",     "C_BAL", "A_N", "A_P",
@@ -1923,7 +1943,6 @@ int print_rfconfig(struct cli_state *state, int argc, char **argv)
     int status;
     bladerf_rf_switch_config config;
     int *err = &state->last_lib_error;
-
 
     status = bladerf_get_rf_switch_config(state->dev, &config);
     if (status < 0) {
