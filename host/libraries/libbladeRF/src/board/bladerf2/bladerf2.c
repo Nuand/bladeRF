@@ -698,7 +698,6 @@ static int _set_spdt_bits(uint32_t *reg,
 
 static int _set_ad9361_port(struct bladerf *dev,
                             bladerf_channel ch,
-                            bool enabled,
                             uint64_t frequency)
 {
     const struct band_port_map *port_map;
@@ -712,7 +711,7 @@ static int _set_ad9361_port(struct bladerf *dev,
     phy        = board_data->phy;
 
     /* Look up the port configuration for this frequency */
-    port_map = _get_band_port_map(ch, enabled, frequency);
+    port_map = _get_band_port_map(ch, true, frequency);
 
     if (NULL == port_map) {
         RETURN_INVAL("_get_band_port_map", "returned null");
@@ -1476,9 +1475,9 @@ static int bladerf2_enable_module(struct bladerf *dev,
 
     /* Set the AD9361 port accordingly */
     if (ch_changing && enable) {
-        status = _set_ad9361_port(dev, ch, enable, freq);
+        status = bladerf2_select_band(dev, ch, freq);
         if (status < 0) {
-            RETURN_ERROR_STATUS("_set_ad9361_port", status);
+            RETURN_ERROR_STATUS("bladerf2_select_band", status);
         }
     }
 
@@ -2223,17 +2222,17 @@ static int bladerf2_select_band(struct bladerf *dev,
         if (status < 0) {
             RETURN_ERROR_STATUS("_set_spdt_bits", status);
         }
-
-        /* Set AD9361 port */
-        status = _set_ad9361_port(dev, bch, enable, frequency);
-        if (status < 0) {
-            RETURN_ERROR_STATUS("_set_ad9361_port", status);
-        }
     }
 
     status = dev->backend->rffe_control_write(dev, reg);
     if (status < 0) {
         RETURN_ERROR_STATUS("rffe_control_write", status);
+    }
+
+    /* Set AD9361 port */
+    status = _set_ad9361_port(dev, ch, frequency);
+    if (status < 0) {
+        RETURN_ERROR_STATUS("_set_ad9361_port", status);
     }
 
     return 0;
@@ -2260,6 +2259,13 @@ static int bladerf2_set_frequency(struct bladerf *dev,
         return BLADERF_ERR_RANGE;
     }
 
+    /* Set up band selection */
+    status = bladerf2_select_band(dev, ch, frequency);
+    if (status < 0) {
+        RETURN_ERROR_STATUS("bladerf2_select_band", status);
+    }
+
+    /* Change LO frequency */
     if (_is_tx(ch)) {
         status = ad9361_set_tx_lo_freq(board_data->phy, frequency);
         if (status < 0) {
