@@ -232,6 +232,27 @@ int CALL_CONV bladerf_ina219_read(struct bladerf *dev,
 
 /** @} (End of FN_BLADERF2_LOW_LEVEL_INA219) */
 
+/**
+ * @defgroup FN_BLADERF2_LOW_LEVEL_RF_SWITCHING RF Switching Control
+ *
+ * @{
+ */
+
+typedef struct {
+    uint32_t tx1_ad9361_port;
+    uint32_t tx1_spdt_port;
+    uint32_t tx2_ad9361_port;
+    uint32_t tx2_spdt_port;
+    uint32_t rx1_ad9361_port;
+    uint32_t rx1_spdt_port;
+    uint32_t rx2_ad9361_port;
+    uint32_t rx2_spdt_port;
+} bladerf_rf_switch_config;
+
+API_EXPORT
+int CALL_CONV bladerf_get_rf_switch_config(struct bladerf *dev,
+                                           bladerf_rf_switch_config *config);
+
 /** @} (End of FN_BLADERF2_LOW_LEVEL) */
 
 /** @} (End of BLADERF2) */

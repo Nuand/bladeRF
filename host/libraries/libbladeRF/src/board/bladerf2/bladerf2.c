@@ -4058,3 +4058,66 @@ int bladerf_ina219_read(struct bladerf *dev,
 
     return 0;
 }
+
+/******************************************************************************/
+/* Low level RF Switch Accessors */
+/******************************************************************************/
+
+int bladerf_get_rf_switch_config(struct bladerf *dev,
+                                 bladerf_rf_switch_config *config)
+{
+    struct bladerf2_board_data *board_data;
+    struct ad9361_rf_phy *phy;
+    uint32_t val, reg;
+    int status;
+
+    if (NULL == config) {
+        RETURN_INVAL("config", "is null");
+    }
+
+    MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
+
+    board_data = dev->board_data;
+    phy        = board_data->phy;
+
+    /* Get AD9361 status */
+    status = ad9361_get_tx_rf_port_output(phy, &val);
+    if (status < 0) {
+        MUTEX_UNLOCK(&dev->lock);
+        RETURN_ERROR_STATUS("ad9361_get_tx_rf_port_output", status);
+    }
+
+    config->tx1_ad9361_port = val;
+    config->tx2_ad9361_port = val;
+
+    status = ad9361_get_rx_rf_port_input(phy, &val);
+    if (status < 0) {
+        MUTEX_UNLOCK(&dev->lock);
+        RETURN_ERROR_STATUS("ad9361_get_rx_rf_port_input", status);
+    }
+
+    config->rx1_ad9361_port = val;
+    config->rx2_ad9361_port = val;
+
+    /* Read RFFE control register */
+    status = dev->backend->rffe_control_read(dev, &reg);
+    if (status < 0) {
+        MUTEX_UNLOCK(&dev->lock);
+        RETURN_ERROR_STATUS("rffe_control_read", status);
+    }
+
+    config->rx1_spdt_port =
+        (reg >> RFFE_CONTROL_RX_SPDT_1) & RFFE_CONTROL_SPDT_MASK;
+    config->rx2_spdt_port =
+        (reg >> RFFE_CONTROL_RX_SPDT_2) & RFFE_CONTROL_SPDT_MASK;
+    config->tx1_spdt_port =
+        (reg >> RFFE_CONTROL_TX_SPDT_1) & RFFE_CONTROL_SPDT_MASK;
+    config->tx2_spdt_port =
+        (reg >> RFFE_CONTROL_TX_SPDT_2) & RFFE_CONTROL_SPDT_MASK;
+
+    MUTEX_UNLOCK(&dev->lock);
+
+    return 0;
+}
