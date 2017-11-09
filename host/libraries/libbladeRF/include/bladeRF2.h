@@ -125,7 +125,7 @@ int CALL_CONV bladerf_ad9361_write(struct bladerf *dev,
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_ad9361_temperature(struct bladerf *dev, int32_t *val);
+int CALL_CONV bladerf_ad9361_temperature(struct bladerf *dev, float *val);
 
 /** @} (End of FN_BLADERF2_LOW_LEVEL_AD9361) */
 

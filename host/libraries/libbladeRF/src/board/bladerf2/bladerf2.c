@@ -3864,7 +3864,7 @@ int bladerf_ad9361_write(struct bladerf *dev, uint16_t address, uint8_t val)
     return 0;
 }
 
-int bladerf_ad9361_temperature(struct bladerf *dev, int32_t *val)
+int bladerf_ad9361_temperature(struct bladerf *dev, float *val)
 {
     struct bladerf2_board_data *board_data;
     struct ad9361_rf_phy *phy;
@@ -3874,7 +3874,7 @@ int bladerf_ad9361_temperature(struct bladerf *dev, int32_t *val)
     board_data = dev->board_data;
     phy        = board_data->phy;
 
-    *val = ad9361_get_temp(phy);
+    *val = ad9361_get_temp(phy) / 1000.0;
 
     return 0;
 }
