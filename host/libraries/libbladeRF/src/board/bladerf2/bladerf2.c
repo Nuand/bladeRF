@@ -3895,6 +3895,7 @@ int bladerf_adf4002_get_enable(struct bladerf *dev, bool *enabled)
 int bladerf_adf4002_set_enable(struct bladerf *dev, bool enable)
 {
     int status;
+    uint16_t trim;
     uint32_t data;
 
     if (NULL == dev) {
@@ -3906,7 +3907,6 @@ int bladerf_adf4002_set_enable(struct bladerf *dev, bool enable)
     CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
 
     // Set the trimdac to high z if applicable
-    uint16_t trim;
     status = dev->backend->ad56x1_vctcxo_trim_dac_read(dev, &trim);
     if (status < 0) {
         RETURN_ERROR_STATUS("ad56x1_vctcxo_trim_dac_read", status);

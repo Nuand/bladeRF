@@ -138,7 +138,7 @@ int CALL_CONV bladerf_adf4002_get_enable(struct bladerf *dev, bool *enabled);
 /**
  * Enable the ADF4002 Phase Detector/Frequency Synthesizer
  *
- * Enabling this disables the AD5601 VCTCXO trimmer DAC, and vice versa.
+ * Enabling this disables the AD5621 VCTCXO trimmer DAC, and vice versa.
  *
  * @param       dev         Device handle
  * @param[in]   enable      True to enable, False otherwise
