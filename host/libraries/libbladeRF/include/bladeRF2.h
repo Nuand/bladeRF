@@ -165,11 +165,8 @@ int CALL_CONV bladerf_adf4002_set_enable(struct bladerf *dev, bool enable);
  * Reference:
  * http://www.analog.com/media/en/technical-documentation/data-sheets/ADF4002.pdf
  *
- * The address is interpreted as the control bits (DB1 and DB0) used to write
+ * The `address` is interpreted as the control bits (DB1 and DB0) used to write
  * to a specific latch.
- *
- * Note that val is shifted right by 2 bits, relative to the data sheet's latch
- * map. val(21 downto 0) = DB(23 downto 2)
  *
  * @param       dev         Device handle
  * @param[in]   address     ADF4002 latch address
@@ -188,11 +185,8 @@ int CALL_CONV bladerf_adf4002_read(struct bladerf *dev,
  * Reference:
  * http://www.analog.com/media/en/technical-documentation/data-sheets/ADF4002.pdf
  *
- * The address is interpreted as the control bits (DB1 and DB0) used to write
- * to a specific latch.
- *
- * Note that val is shifted right by 2 bits, relative to the data sheet's latch
- * map. val(21 downto 0) = DB(23 downto 2)
+ * The `address` is interpreted as the control bits (DB1 and DB0) used to write
+ * to a specific latch.  These bits are masked out in `val`
  *
  * @param       dev         Device handle
  * @param[in]   address     ADF4002 latch address

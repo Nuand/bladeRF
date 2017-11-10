@@ -34,7 +34,7 @@
 #define ADF4002_MAX_ADDRESS 3
 
 #define MAX_NUM_ADDRESSES   256
-#define MAX_VALUE           255
+#define MAX_VALUE           (1<<24)
 // clang-format on
 
 /* Convenience shared function */

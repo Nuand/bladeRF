@@ -653,8 +653,6 @@ int nios_adf400x_read(struct bladerf *dev, uint8_t addr, uint32_t *data)
         log_verbose("%s: Read 0x%08x from addr 0x%02x\n", __FUNCTION__, *data, addr);
     }
 
-    *data >>= 2;
-
     return status;
 }
 
@@ -662,7 +660,9 @@ int nios_adf400x_write(struct bladerf *dev, uint8_t addr, uint32_t data)
 {
     int status;
 
-    status = nios_8x32_write(dev, NIOS_PKT_8x32_TARGET_ADF400X, 0, (data << 2) | (addr & 0x3));
+    data &= ~(0x3);
+
+    status = nios_8x32_write(dev, NIOS_PKT_8x32_TARGET_ADF400X, 0, data | (addr & 0x3));
     if (status == 0) {
         log_verbose("%s: Wrote 0x%08x to addr 0x%02x\n", __FUNCTION__, data, addr);
     }
