@@ -154,9 +154,7 @@ begin
     -- PLLs
     -- ========================================================================
 
-    -- TODO: implement c5_clock1 / c5_clock2 auto switchover in PLL
-
-    -- Create 80 MHz system clock from c5_clock_1 (38.4 MHz)
+    -- Create 80 MHz system clock from 38.4 MHz
     U_system_pll : component system_pll
         port map (
             refclk   => c5_clock2,
@@ -433,37 +431,9 @@ begin
     tx_trigger_ctl <= unpack(tx_trigger_ctl_i, tx_trigger_line);
 
     -- LEDs
-    --led(1) <= led1_blink        when nios_gpio.led_mode = '0' else not nios_gpio.leds(1);
-    --led(2) <= tx_underflow_led  when nios_gpio.led_mode = '0' else not nios_gpio.leds(2);
+    led(1) <= led1_blink        when nios_gpio.led_mode = '0' else not nios_gpio.leds(1);
+    led(2) <= tx_underflow_led  when nios_gpio.led_mode = '0' else not nios_gpio.leds(2);
     led(3) <= rx_overflow_led   when nios_gpio.led_mode = '0' else not nios_gpio.leds(3);
-
-    led1_blink_proc : process(c5_clock1)
-        variable count  : natural range 0 to 192e5 := 192e5;
-        variable led1   : std_logic := '0';
-    begin
-        if( rising_edge(c5_clock1) ) then
-            led(1) <= led1;
-            count := count - 1;
-            if( count = 0 ) then
-                count  := count'high;
-                led1   := not led1;
-            end if;
-        end if;
-    end process;
-
-    led2_blink_proc : process(c5_clock2)
-        variable count  : natural range 0 to 192e5 := 192e5;
-        variable led2   : std_logic := '0';
-    begin
-        if( rising_edge(c5_clock2) ) then
-            led(2) <= led2;
-            count := count - 1;
-            if( count = 0 ) then
-                count  := count'high;
-                led2   := not led2;
-            end if;
-        end if;
-    end process;
 
     -- DAC SPI (data latched on falling edge)
     dac_sclk <= not nios_sclk when nios_gpio.adf_chip_enable = '0' else '0';
@@ -488,7 +458,7 @@ begin
 
     -- SI53304 controls / clock output enables
     si_clock_sel <= nios_gpio.si_clock_sel;
-    c5_clock2_oe <= '1'; --  TODO: not sure if we need this to be a Nios GPIO, or if we can auto detect
+    c5_clock2_oe <= '1';
     exp_clock_oe <= exp_present and exp_clock_req;
     ufl_clock_oe <= nios_gpio.ufl_clock_oe;
 
