@@ -51,6 +51,7 @@ entity bladerf is
     -- Power monitor (3.3 V)
     pwr_sda             :   inout   std_logic := 'Z';
     pwr_scl             :   out     std_logic := 'Z';
+    pwr_status          :   in      std_logic;
 
     -- AD9361 RX Interface (2.5 V, LVDS)
     adi_rx_clock        :   in      std_logic ;

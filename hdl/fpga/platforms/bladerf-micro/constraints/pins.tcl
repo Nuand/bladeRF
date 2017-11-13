@@ -50,6 +50,7 @@ set_location_assignment PIN_P9   -to fx3_ctl[10]
 set_location_assignment PIN_Y11  -to fx3_ctl[11]
 set_location_assignment PIN_N9   -to fx3_pclk
 set_location_assignment PIN_AA12 -to fx3_ctl[12]
+set_location_assignment PIN_R11  -to pwr_status
 
 
 # Bank Voltage
@@ -83,11 +84,14 @@ foreach pin ${inouts} {
 # Single-ended input constraints
 set ins {
     fx3_pclk
+    pwr_status
 }
 
 foreach pin ${ins} {
     set_instance_assignment -name IO_STANDARD          "1.8 V"           -to ${pin}
 }
+
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR "ON" -to pwr_status
 
 
 ##########
@@ -424,14 +428,16 @@ set ins {
     exp_clock_req
     hw_rev[0]
     hw_rev[1]
+    adf_muxout
 }
 
 foreach pin ${ins} {
     set_instance_assignment -name IO_STANDARD          "3.3-V LVCMOS"    -to ${pin}
 }
 
-
-
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR "ON" -to adf_muxout
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR "ON" -to hw_rev[0]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR "ON" -to hw_rev[1]
 
 
 
