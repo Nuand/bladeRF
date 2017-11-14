@@ -252,7 +252,7 @@ static const struct bladerf_range bladerf1_frequency_range = {
 
 static const struct bladerf_range bladerf1_xb200_frequency_range = {
     FIELD_INIT(.min, 0),
-    FIELD_INIT(.max, 300e6),
+    FIELD_INIT(.max, BLADERF_FREQUENCY_MAX),
     FIELD_INIT(.step, 1),
     FIELD_INIT(.scale, 1),
 };
