@@ -201,7 +201,7 @@ begin
     -- ========================================================================
 
     ps_sync : process(c5_clock2)
-        constant ADP2384_COUNT : natural := adp2384_sync( ref_hz => 38.4e6,
+        constant ADP2384_COUNT : natural := adp2384_sync( REF_HZ => 38.4e6,
                                                           option => 2 );
         variable count  : natural range 0 to ADP2384_COUNT := ADP2384_COUNT;
         variable ps_clk : std_logic := '0';

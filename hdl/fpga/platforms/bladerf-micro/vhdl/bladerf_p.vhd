@@ -550,34 +550,38 @@ package body bladerf_p is
     --              0: Balanced (midpoint between slowest/fastest)
     --              ...
     --             +x: Fastest valid SYNC frequency for the given RT
-    function adp2384_sync( rt_ohm : real := 332.0e3;
-                           rt_tol : real := 0.01;
-                           ref_hz : real := 38.4e6;
-                           option : integer range -2 to 2 := 0
+    function adp2384_sync( constant RT_OHM : real := 332.0e3;
+                           constant RT_TOL : real := 0.01;
+                           constant REF_HZ : real := 38.4e6;
+                                    option : integer range -2 to 2 := 0
                            ) return natural is
+
+        -- Min/max switching frequency of ADP2384
+        constant FSW_KHZ_MIN      : real    := 200.0;
+        constant FSW_KHZ_MAX      : real    := 1400.0;
 
         -- Given the RT resistor value and tolerance, compute the min/max
         -- and convert to kohm.
-        constant rt_kohm_min      : real    := (rt_ohm * (1.0 - rt_tol)) / 1.0e3;
-        constant rt_kohm_max      : real    := (rt_ohm * (1.0 + rt_tol)) / 1.0e3;
+        constant RT_KOHM_MIN      : real    := (RT_OHM * (1.0 - RT_TOL)) / 1.0e3;
+        constant RT_KOHM_MAX      : real    := (RT_OHM * (1.0 + RT_TOL)) / 1.0e3;
 
         -- Compute the min/max switching frequencies (Hz) dictated by RT
-        constant rt_fsw_min       : real    := 1.0e3 * (69120.0 / (rt_kohm_max + 15.0));
-        constant rt_fsw_max       : real    := 1.0e3 * (69120.0 / (rt_kohm_min + 15.0));
+        constant RT_FSW_MIN       : real    := 1.0e3 * (69120.0 / (RT_KOHM_MAX + 15.0));
+        constant RT_FSW_MAX       : real    := 1.0e3 * (69120.0 / (RT_KOHM_MIN + 15.0));
 
         -- The SYNC pin frequency can be +/- 10% of the frequency set by RT.
         -- Due to tolerances, use -10% of fsw_max, and +10% of fsw_min. This
         -- will guarantee a compatible fsync across all board variations.
-        constant fsync_tol        : real    := 0.10;
-        constant fsync_min        : real    := (1.0 - fsync_tol) * rt_fsw_max;
-        constant fsync_max        : real    := (1.0 + fsync_tol) * rt_fsw_min;
+        constant FSYNC_TOL        : real    := 0.10;
+        constant FSYNC_MIN        : real    := (1.0 - FSYNC_TOL) * RT_FSW_MAX;
+        constant FSYNC_MAX        : real    := (1.0 + FSYNC_TOL) * RT_FSW_MIN;
 
         -- Compute the number of "reference" clock cycles needed to achieve
         -- the sync frequency. This value is divided by 2 to create a 50%
         -- duty cycle sync clock. A lower SYNC frequency requires more cycles.
-        constant cycles_max       : real    := floor( (ref_hz / fsync_min) / 2.0 );
-        constant cycles_min       : real    := ceil(  (ref_hz / fsync_max) / 2.0 );
-        constant cycles_incr      : real    := (cycles_max - cycles_min) /
+        constant CYCLES_MAX       : real    := floor( (REF_HZ / FSYNC_MIN) / 2.0 );
+        constant CYCLES_MIN       : real    := ceil(  (REF_HZ / FSYNC_MAX) / 2.0 );
+        constant CYCLES_INCR      : real    := (CYCLES_MAX - CYCLES_MIN) /
                                                real((option'high - option'low + 1) - 1);
 
         variable rv               : real    := 0.0;
@@ -585,14 +589,14 @@ package body bladerf_p is
 
     begin
 
-        rv        := floor( cycles_max - ( ( real(option) + real(abs(option'low)) ) * cycles_incr ) );
-        fsync_khz := (ref_hz / (rv * 2.0)) / 1.0e3;
+        rv        := floor( CYCLES_MAX - ( ( real(option) + real(abs(option'low)) ) * CYCLES_INCR ) );
+        fsync_khz  := (REF_HZ / (rv * 2.0)) / 1.0e3;
 
-        assert ( fsync_khz > 180.0 ) and ( fsync_khz < 1540.0 )
+        assert ( fsync_khz > ((1.0 - FSYNC_TOL)*FSW_KHZ_MIN) ) and ( fsync_khz < ((1.0 + FSYNC_TOL)*FSW_KHZ_MAX) )
             report "ADP2384 SYNC frequency invalid: " & real'image(fsync_khz) & " kHz."
             severity failure;
 
-        report "ADP2384 SYNC frequency: " & real'image(fsync_khz) & " kHz."
+        report "ADP2384 SYNC frequency is " & real'image(fsync_khz) & " kHz."
             severity note;
 
         return integer(rv);
