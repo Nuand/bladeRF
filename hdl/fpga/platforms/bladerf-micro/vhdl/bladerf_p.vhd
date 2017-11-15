@@ -574,10 +574,10 @@ package body bladerf_p is
 
         -- Compute the number of "reference" clock cycles needed to achieve
         -- the sync frequency. This value is divided by 2 to create a 50%
-        -- duty cycle sync clock
-        constant cycles_fsync_min : real    := floor( (ref_hz / fsync_min) / 2.0 );
-        constant cycles_fsync_max : real    := ceil(  (ref_hz / fsync_max) / 2.0 );
-        constant cycles_fsync_inc : real    := (cycles_fsync_min - cycles_fsync_max) /
+        -- duty cycle sync clock. A lower SYNC frequency requires more cycles.
+        constant cycles_max       : real    := floor( (ref_hz / fsync_min) / 2.0 );
+        constant cycles_min       : real    := ceil(  (ref_hz / fsync_max) / 2.0 );
+        constant cycles_incr      : real    := (cycles_max - cycles_min) /
                                                real((option'high - option'low + 1) - 1);
 
         variable rv               : real    := 0.0;
@@ -585,7 +585,7 @@ package body bladerf_p is
 
     begin
 
-        rv        := floor(cycles_fsync_min - ((real(option) + real(abs(option'low))) * cycles_fsync_inc));
+        rv        := floor( cycles_max - ( ( real(option) + real(abs(option'low)) ) * cycles_incr ) );
         fsync_khz := (ref_hz / (rv * 2.0)) / 1.0e3;
 
         assert ( fsync_khz > 180.0 ) and ( fsync_khz < 1540.0 )
