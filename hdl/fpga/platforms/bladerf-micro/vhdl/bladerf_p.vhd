@@ -361,6 +361,17 @@ package bladerf_p is
                      trig_line : std_logic ) return trigger_t;
     function unpack( x : std_logic_vector(31 downto 0) ) return nios_gpio_t;
 
+
+    -- ========================================================================
+    -- Utility functions
+    -- ========================================================================
+
+    function adp2384_sync( rt_ohm : real := 332.0e3;
+                           rt_tol : real := 0.01;
+                           ref_hz : real := 38.4e6;
+                           option : integer range -2 to 2 := 0
+                           ) return natural;
+
     -- ========================================================================
     -- TYPEDEF RESET CONSTANTS -- deferred to permit use of pack/unpack
     -- ========================================================================
@@ -519,6 +530,74 @@ package body bladerf_p is
         return rv;
     end function;
 
+
+    -- ========================================================================
+    -- Utility functions
+    -- ========================================================================
+
+    -- ADP2384 SYNC frequency calculator
+    --   Determine the number of cycles of refclk needed to assert and deassert
+    --   the SYNC pin of the ADP2384 switch-mode power supplies to create a
+    --   50% duty cycle clock within the valid frequency range of the ADP2384.
+    --
+    -- Parameters:
+    --   rt_ohm: Resistance, in ohms, of the RT resistor of ADP2384
+    --   rt_tol: Tolerance of the RT resistor
+    --   ref_hz: Frequency of the reference clock that is being divided down
+    --   option: Select the SYNC frequency option: [-x, +x]
+    --             -x: Slowest valid SYNC frequency for the given RT
+    --              ...
+    --              0: Balanced (midpoint between slowest/fastest)
+    --              ...
+    --             +x: Fastest valid SYNC frequency for the given RT
+    function adp2384_sync( rt_ohm : real := 332.0e3;
+                           rt_tol : real := 0.01;
+                           ref_hz : real := 38.4e6;
+                           option : integer range -2 to 2 := 0
+                           ) return natural is
+
+        -- Given the RT resistor value and tolerance, compute the min/max
+        -- and convert to kohm.
+        constant rt_kohm_min      : real    := (rt_ohm * (1.0 - rt_tol)) / 1.0e3;
+        constant rt_kohm_max      : real    := (rt_ohm * (1.0 + rt_tol)) / 1.0e3;
+
+        -- Compute the min/max switching frequencies (Hz) dictated by RT
+        constant rt_fsw_min       : real    := 1.0e3 * (69120.0 / (rt_kohm_max + 15.0));
+        constant rt_fsw_max       : real    := 1.0e3 * (69120.0 / (rt_kohm_min + 15.0));
+
+        -- The SYNC pin frequency can be +/- 10% of the frequency set by RT.
+        -- Due to tolerances, use -10% of fsw_max, and +10% of fsw_min. This
+        -- will guarantee a compatible fsync across all board variations.
+        constant fsync_tol        : real    := 0.10;
+        constant fsync_min        : real    := (1.0 - fsync_tol) * rt_fsw_max;
+        constant fsync_max        : real    := (1.0 + fsync_tol) * rt_fsw_min;
+
+        -- Compute the number of "reference" clock cycles needed to achieve
+        -- the sync frequency. This value is divided by 2 to create a 50%
+        -- duty cycle sync clock
+        constant cycles_fsync_min : real    := floor( (ref_hz / fsync_min) / 2.0 );
+        constant cycles_fsync_max : real    := ceil(  (ref_hz / fsync_max) / 2.0 );
+        constant cycles_fsync_inc : real    := (cycles_fsync_min - cycles_fsync_max) /
+                                               real((option'high - option'low + 1) - 1);
+
+        variable rv               : real    := 0.0;
+        variable fsync_khz        : real    := 0.0;
+
+    begin
+
+        rv        := floor(cycles_fsync_min - ((real(option) + real(abs(option'low))) * cycles_fsync_inc));
+        fsync_khz := (ref_hz / (rv * 2.0)) / 1.0e3;
+
+        assert ( fsync_khz > 180.0 ) and ( fsync_khz < 1540.0 )
+            report "ADP2384 SYNC frequency invalid: " & real'image(fsync_khz) & " kHz."
+            severity failure;
+
+        report "ADP2384 SYNC frequency: " & real'image(fsync_khz) & " kHz."
+            severity note;
+
+        return integer(rv);
+
+    end function;
 
     -- ========================================================================
     -- TYPEDEF RESET CONSTANTS

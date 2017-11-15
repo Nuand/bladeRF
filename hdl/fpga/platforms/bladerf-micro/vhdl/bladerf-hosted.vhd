@@ -200,16 +200,10 @@ begin
     -- POWER SUPPLY SYNCHRONIZATION
     -- ========================================================================
 
-    -- ADP2384 sync freq must be +/- 10% of the Fsw set by RT.
-    -- RT = 332k +/- 1%, so Fsw = 197.305 KHz to 201.117 KHz
-    -- Therefore, sync must fall between:
-    --   -10% of 201.117 KHz = 177.575 KHz
-    --   +10% of 197.305 KHz = 217.036 KHz
-    -- Dividing 38.4 MHz by 200 KHz yields 192 clock periods. For a 50% duty
-    -- cycle, ps_clk must spend half that time (96 periods) in logic '1' state,
-    -- and the other half in logic '0' state.
     ps_sync : process(c5_clock2)
-        variable count  : natural range 0 to 96 := 96;
+        constant ADP2384_COUNT : natural := adp2384_sync( ref_hz => 38.4e6,
+                                                          option => 2 );
+        variable count  : natural range 0 to ADP2384_COUNT := ADP2384_COUNT;
         variable ps_clk : std_logic := '0';
     begin
         if( rising_edge(c5_clock2) ) then
