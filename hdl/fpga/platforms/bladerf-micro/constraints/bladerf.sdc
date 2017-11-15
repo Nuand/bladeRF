@@ -25,27 +25,24 @@ set_multicycle_path -from [get_clocks {fx3_virtual}] -to [get_clocks {U_fx3_pll*
 set_multicycle_path -from [get_clocks {fx3_virtual}] -to [get_clocks {U_fx3_pll*divclk}] -hold -start 2
 
 
-### Slow Interfaces ###
+# Slow Interfaces
 
-set_false_path -from * -to [get_ports ps_sync_1p*]
-set_false_path -from * -to [get_ports {rx_bias_en tx_bias_en}]
-set_false_path -from * -to [get_ports exp_gpio[*]]
-set_false_path -from * -to [get_ports adf_ce]
+set_false_path -from *             -to [get_ports ps_sync_1p*]
+set_false_path -from *             -to [get_ports {rx_bias_en tx_bias_en}]
+set_false_path -from *             -to [get_ports {exp_gpio[*] exp_clock_oe}]
+set_false_path -from *             -to [get_ports adf_ce]
+set_false_path -from *             -to [get_ports led*]
+set_false_path -from *             -to [get_ports {adi_*x_spdt*_v* adi_reset_n}]
+set_false_path -from *             -to [get_ports si_clock_sel]
+set_false_path -from *             -to [get_ports ufl_clock_oe]
+set_false_path -from adf_muxout    -to *
+set_false_path -from exp_clock_req -to *
+set_false_path -from exp_present   -to *
 
 # FX3 UART interface
-set_false_path -from * -to [get_ports fx3_uart_cts]
-set_false_path -from * -to [get_ports fx3_uart_rxd]
+set_false_path -from *                        -to [get_ports fx3_uart_cts]
+set_false_path -from *                        -to [get_ports fx3_uart_rxd]
 set_false_path -from [get_ports fx3_uart_txd] -to *
-
-## VCTCXO trimdac
-#set_output_delay -clock [get_clocks U_system_pll*0*] -min 0.0 [get_ports {dac_csn dac_sclk dac_sdi}]
-#set_output_delay -clock [get_clocks U_system_pll*0*] -max 0.2 [get_ports {dac_csn dac_sclk dac_sdi}] -add_delay
-
-# LEDs
-set_false_path -from * -to [get_ports led*]
-
-# LMS long lived GPIO and RF Switches
-set_false_path -from * -to [get_ports {adi_*x_spdt*_v* adi_reset_n}]
 
 # JTAG settings
 set_clock_groups -exclusive -group [get_clocks altera_reserved_tck]
