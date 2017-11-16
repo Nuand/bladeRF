@@ -366,10 +366,10 @@ package bladerf_p is
     -- Utility functions
     -- ========================================================================
 
-    function adp2384_sync( rt_ohm : real := 332.0e3;
-                           rt_tol : real := 0.01;
-                           ref_hz : real := 38.4e6;
-                           option : integer range -2 to 2 := 0
+    function adp2384_sync( constant RT_OHM : real := 332.0e3;
+                           constant RT_TOL : real := 0.01;
+                           constant REF_HZ : real := 38.4e6;
+                                    option : integer range -2 to 2 := 0
                            ) return natural;
 
     -- ========================================================================
