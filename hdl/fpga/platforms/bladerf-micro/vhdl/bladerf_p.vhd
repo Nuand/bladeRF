@@ -366,11 +366,9 @@ package bladerf_p is
     -- Utility functions
     -- ========================================================================
 
-    function adp2384_sync( constant RT_OHM : real := 332.0e3;
-                           constant RT_TOL : real := 0.01;
-                           constant REF_HZ : real := 38.4e6;
-                                    option : integer range -2 to 2 := 0
-                           ) return natural;
+    function adp2384_sync_divisors( constant REFCLK_HZ  : real := 38.4e6;
+                                             n_divisors : natural
+                                    ) return integer_vector;
 
     -- ========================================================================
     -- TYPEDEF RESET CONSTANTS -- deferred to permit use of pack/unpack
@@ -535,71 +533,107 @@ package body bladerf_p is
     -- Utility functions
     -- ========================================================================
 
-    -- ADP2384 SYNC frequency calculator
-    --   Determine the number of cycles of refclk needed to assert and deassert
-    --   the SYNC pin of the ADP2384 switch-mode power supplies to create a
-    --   50% duty cycle clock within the valid frequency range of the ADP2384.
+    -- ADP2384 SYNC divisor calculator
+    --   The ADP2384 supports a synchronization frequency within +/-10% of the
+    --   switching frequency set by the RT resistor. Given the frequency of the
+    ---  reference clock (the clock that will be divided down), and the number
+    --   of divisors requested, this function will compute and return an array
+    --   of equally-spaced divisors producing valid SYNC frequencies.
     --
     -- Parameters:
-    --   rt_ohm: Resistance, in ohms, of the RT resistor of ADP2384
-    --   rt_tol: Tolerance of the RT resistor
-    --   ref_hz: Frequency of the reference clock that is being divided down
-    --   option: Select the SYNC frequency option: [-x, +x]
-    --             -x: Slowest valid SYNC frequency for the given RT
-    --              ...
-    --              0: Balanced (midpoint between slowest/fastest)
-    --              ...
-    --             +x: Fastest valid SYNC frequency for the given RT
-    function adp2384_sync( constant RT_OHM : real := 332.0e3;
-                           constant RT_TOL : real := 0.01;
-                           constant REF_HZ : real := 38.4e6;
-                                    option : integer range -2 to 2 := 0
-                           ) return natural is
+    --   refclk_hz:    Frequency of the reference clock to be divided down
+    --   n_sync_freqs: Number of divisors to compute
+    function adp2384_sync_divisors( constant REFCLK_HZ  : real := 38.4e6;
+                                             n_divisors : natural
+                                    ) return integer_vector is
+
+        -- Because Quartus 16.0 doesn't support this function from VHDL 2008
+        function minimum( x : real; y : real ) return real is
+            variable rv : real;
+        begin
+            if( x < y ) then
+                rv := x;
+            else
+                rv := y;
+            end if;
+            return rv;
+        end function;
+
+        -- Because Quartus 16.0 doesn't support this function from VHDL 2008
+        function maximum( x : real; y : real ) return real is
+            variable rv : real;
+        begin
+            if( x > y ) then
+                rv := x;
+            else
+                rv := y;
+            end if;
+            return rv;
+        end function;
+
+        -- Convert to kHz for ease of calculations
+        constant REFCLK_KHZ       : real    := REFCLK_HZ / 1.0e3;
 
         -- Min/max switching frequency of ADP2384
         constant FSW_KHZ_MIN      : real    := 200.0;
         constant FSW_KHZ_MAX      : real    := 1400.0;
 
+        -- RT resistor value and tolerance
+        constant RT_KOHM          : real    := 332.0;
+        constant RT_TOL           : real    := 0.01;
+
+
         -- Given the RT resistor value and tolerance, compute the min/max
         -- and convert to kohm.
-        constant RT_KOHM_MIN      : real    := (RT_OHM * (1.0 - RT_TOL)) / 1.0e3;
-        constant RT_KOHM_MAX      : real    := (RT_OHM * (1.0 + RT_TOL)) / 1.0e3;
+        constant RT_KOHM_MIN      : real    := RT_KOHM * (1.0 - RT_TOL);
+        constant RT_KOHM_MAX      : real    := RT_KOHM * (1.0 + RT_TOL);
 
-        -- Compute the min/max switching frequencies (Hz) dictated by RT
-        constant RT_FSW_MIN       : real    := 1.0e3 * (69120.0 / (RT_KOHM_MAX + 15.0));
-        constant RT_FSW_MAX       : real    := 1.0e3 * (69120.0 / (RT_KOHM_MIN + 15.0));
+        -- Compute the min/max switching frequencies (kHz) dictated by RT
+        constant RT_FSW_KHZ_MIN    : real    := 69120.0 / (RT_KOHM_MAX + 15.0);
+        constant RT_FSW_KHZ_MAX    : real    := 69120.0 / (RT_KOHM_MIN + 15.0);
 
         -- The SYNC pin frequency can be +/- 10% of the frequency set by RT.
         -- Due to tolerances, use -10% of fsw_max, and +10% of fsw_min. This
         -- will guarantee a compatible fsync across all board variations.
         constant FSYNC_TOL        : real    := 0.10;
-        constant FSYNC_MIN        : real    := (1.0 - FSYNC_TOL) * RT_FSW_MAX;
-        constant FSYNC_MAX        : real    := (1.0 + FSYNC_TOL) * RT_FSW_MIN;
+        constant FSYNC_KHZ_MIN    : real    := (1.0 - FSYNC_TOL) * RT_FSW_KHZ_MAX;
+        constant FSYNC_KHZ_MAX    : real    := (1.0 + FSYNC_TOL) * RT_FSW_KHZ_MIN;
 
-        -- Compute the number of "reference" clock cycles needed to achieve
-        -- the sync frequency. This value is divided by 2 to create a 50%
-        -- duty cycle sync clock. A lower SYNC frequency requires more cycles.
-        constant CYCLES_MAX       : real    := floor( (REF_HZ / FSYNC_MIN) / 2.0 );
-        constant CYCLES_MIN       : real    := ceil(  (REF_HZ / FSYNC_MAX) / 2.0 );
-        constant CYCLES_INCR      : real    := (CYCLES_MAX - CYCLES_MIN) /
-                                               real((option'high - option'low + 1) - 1);
+        -- Compute the max/min divisors, keeping the sync frequency within the valid
+        -- window of the ADP2384. Divide by two due to the 50% duty cycle.
+        constant DIVISOR_MIN      : real    := ceil(  (REFCLK_KHZ / minimum(FSYNC_KHZ_MAX, FSW_KHZ_MAX)) / 2.0 );
+        constant DIVISOR_MAX      : real    := floor( (REFCLK_KHZ / maximum(FSYNC_KHZ_MIN, FSW_KHZ_MIN)) / 2.0 );
 
-        variable rv               : real    := 0.0;
-        variable fsync_khz        : real    := 0.0;
+        -- Compute the number of cycles between divisors to create an equally
+        -- spaced array of divisors of the requested length.
+        constant DIVISOR_INCR     : real    := (DIVISOR_MAX - DIVISOR_MIN) / real(n_divisors - 1);
+
+        variable rv               : integer_vector(0 to n_divisors-1);
+        variable fsync_khz        : real;
 
     begin
 
-        rv        := floor( CYCLES_MAX - ( ( real(option) + real(abs(option'low)) ) * CYCLES_INCR ) );
-        fsync_khz  := (REF_HZ / (rv * 2.0)) / 1.0e3;
-
-        assert ( fsync_khz > ((1.0 - FSYNC_TOL)*FSW_KHZ_MIN) ) and ( fsync_khz < ((1.0 + FSYNC_TOL)*FSW_KHZ_MAX) )
-            report "ADP2384 SYNC frequency invalid: " & real'image(fsync_khz) & " kHz."
+        assert (DIVISOR_INCR >= 1.0)
+            report "ERROR: Too many divisors requested for range " &
+            real'image(DIVISOR_MIN) & " to " & real'image(DIVISOR_MAX) & "."
             severity failure;
 
-        report "ADP2384 SYNC frequency is " & real'image(fsync_khz) & " kHz."
-            severity note;
+        for i in 0 to (n_divisors - 1) loop
+            rv(i)     := integer(floor(DIVISOR_MAX - (real(i) * DIVISOR_INCR)));
+            fsync_khz := REFCLK_KHZ / real( rv(i) * 2 );
 
-        return integer(rv);
+            report "ADP2384 SYNC frequency " & integer'image(i) & " = " &
+                real'image(fsync_khz) & " kHz."
+                severity note;
+
+            assert ( fsync_khz >= FSW_KHZ_MIN ) and ( fsync_khz <= FSW_KHZ_MAX )
+                report "ERROR: ADP2384 SYNC frequency " & real'image(fsync_khz) &
+                " is outside of valid range (" & real'image(FSW_KHZ_MIN) & " kHz to " &
+                real'image(FSW_KHZ_MAX) & "kHz."
+                severity failure;
+        end loop;
+
+        return rv;
 
     end function;
 

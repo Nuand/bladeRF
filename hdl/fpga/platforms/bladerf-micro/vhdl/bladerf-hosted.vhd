@@ -148,6 +148,8 @@ architecture hosted_bladerf of bladerf is
     signal adc_controls           : sample_controls_t(ad9361.ch'range)    := (others => SAMPLE_CONTROL_DISABLE);
     signal adc_streams            : sample_streams_t(adc_controls'range)  := (others => ZERO_SAMPLE);
 
+    signal   ps_sync              : std_logic_vector(0 downto 0)          := (others => '0');
+
 begin
 
     -- ========================================================================
@@ -200,22 +202,21 @@ begin
     -- POWER SUPPLY SYNCHRONIZATION
     -- ========================================================================
 
-    ps_sync : process(c5_clock2)
-        constant ADP2384_COUNT : natural := adp2384_sync( REF_HZ => 38.4e6,
-                                                          option => 2 );
-        variable count  : natural range 0 to ADP2384_COUNT := ADP2384_COUNT;
-        variable ps_clk : std_logic := '0';
-    begin
-        if( rising_edge(c5_clock2) ) then
-            ps_sync_1p1 <= ps_clk;
-            ps_sync_1p8 <= ps_clk;
-            count := count - 1;
-            if( count = 0 ) then
-                count  := count'high;
-                ps_clk := not ps_clk;
-            end if;
-        end if;
-    end process;
+    U_ps_sync : entity work.ps_sync
+        generic map (
+            OUTPUTS  => 1,
+            USE_LFSR => false,
+            HOP_LIST => ( 0 => adp2384_sync_divisors( REFCLK_HZ  => 38.4e6,
+                                                      n_divisors => 7 )(5)), -- just use 213.333 kHz for now
+            HOP_RATE => 1
+        )
+        port map (
+            refclk   => c5_clock2,
+            sync     => ps_sync
+        );
+
+    ps_sync_1p1 <= ps_sync(0);
+    ps_sync_1p8 <= ps_sync(0);
 
     -- ========================================================================
     -- FX3 GPIF
