@@ -2551,7 +2551,7 @@ int CALL_CONV bladerf_init_stream(struct bladerf_stream **stream,
                                   void *user_data);
 
 /**
- * Begin running a stream. This call will block until the steam completes.
+ * Begin running a stream. This call will block until the stream completes.
  *
  * Only 1 RX stream and 1 TX stream may be running at a time. Attempting to
  * call bladerf_stream() with more than one stream will yield unexpected (and
