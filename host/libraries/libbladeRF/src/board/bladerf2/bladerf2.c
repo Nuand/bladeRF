@@ -58,6 +58,13 @@
  *                          bladeRF2 board state                              *
  ******************************************************************************/
 
+enum bladerf2_vctcxo_trim_source {
+    TRIM_SOURCE_NONE,
+    TRIM_SOURCE_TRIM_DAC,
+    TRIM_SOURCE_ADF4002,
+    TRIM_SOURCE_AD9361_AUXDAC
+};
+
 struct bladerf2_board_data {
     /* Board state */
     enum {
@@ -89,6 +96,10 @@ struct bladerf2_board_data {
 
     /* TX Mute Status */
     bool tx_mute[2];
+
+    /* VCTCXO trim state */
+    enum bladerf2_vctcxo_trim_source trim_source;
+    uint16_t trimdac_value;
 };
 
 /* Macro for logging and returning an error status. This should be used for
@@ -1059,6 +1070,21 @@ static int bladerf2_initialize(struct bladerf *dev)
     if (status < 0) {
         RETURN_ERROR_STATUS("_set_tx_mute(BLADERF_CHANNEL_TX(1))", status);
     }
+
+    /* Initialize VCTCXO trim DAC to stored value */
+    uint16_t *trimval = &(board_data->trimdac_value);
+
+    status = bladerf_get_vctcxo_trim(dev, trimval);
+    if (status < 0) {
+        RETURN_ERROR_STATUS("bladerf2_get_vctcxo_trim", status);
+    }
+
+    status = dev->backend->ad56x1_vctcxo_trim_dac_write(dev, *trimval);
+    if (status < 0) {
+        RETURN_ERROR_STATUS("ad56x1_vctcxo_trim_dac_write", status);
+    }
+
+    board_data->trim_source = TRIM_SOURCE_TRIM_DAC;
 
     /* Update device state */
     board_data->state = STATE_INITIALIZED;
@@ -3482,6 +3508,86 @@ static int bladerf2_get_vctcxo_tamer_mode(struct bladerf *dev,
 /* Low-level VCTCXO Trim DAC access */
 /******************************************************************************/
 
+static int bladerf2_get_trim_dac_enable(struct bladerf *dev, bool *enable)
+{
+    int status;
+    uint16_t trim;
+
+    if (NULL == enable) {
+        RETURN_INVAL("enable", "is null");
+    }
+
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    // Read current trim DAC setting
+    status = dev->backend->ad56x1_vctcxo_trim_dac_read(dev, &trim);
+    if (status < 0) {
+        RETURN_ERROR_STATUS("ad56x1_vctcxo_trim_dac_read", status);
+    }
+
+    // Determine if it's enabled...
+    *enable = (0 == (trim >> 14));
+
+    log_debug("trim DAC is %s\n", (*enable ? "enabled" : "disabled"));
+
+    if ((trim >> 14) != 0 && (trim >> 14) != 3) {
+        log_warning("unknown trim DAC state: 0x%x\n", (trim >> 14));
+    }
+
+    return 0;
+}
+
+static int bladerf2_set_trim_dac_enable(struct bladerf *dev, bool enable)
+{
+    int status;
+    uint16_t trim;
+    bool current_state;
+    struct bladerf2_board_data *board_data;
+
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    board_data = dev->board_data;
+
+    // See if we have anything to do
+    status = bladerf2_get_trim_dac_enable(dev, &current_state);
+    if (status < 0) {
+        RETURN_ERROR_STATUS("bladerf2_get_trim_dac_enable", status);
+    }
+
+    if (enable == current_state) {
+        log_debug("trim DAC already %s, nothing to do\n",
+                  enable ? "enabled" : "disabled");
+        return 0;
+    }
+
+    // Read current trim DAC setting
+    status = dev->backend->ad56x1_vctcxo_trim_dac_read(dev, &trim);
+    if (status < 0) {
+        RETURN_ERROR_STATUS("ad56x1_vctcxo_trim_dac_read", status);
+    }
+
+    // Set the trim DAC to high z if applicable
+    if (!enable && trim != (3 << 14)) {
+        board_data->trimdac_value = trim;
+        log_debug("saving current trim DAC value: 0x%04x\n", trim);
+        trim = 3 << 14;
+    } else if (enable && trim == (3 << 14)) {
+        trim = board_data->trimdac_value;
+        log_debug("restoring old trim DAC value: 0x%04x\n", trim);
+    }
+
+    // Write back the trim DAC setting
+    status = dev->backend->ad56x1_vctcxo_trim_dac_write(dev, trim);
+    if (status < 0) {
+        RETURN_ERROR_STATUS("ad56x1_vctcxo_trim_dac_write", status);
+    }
+
+    // Update our state flag
+    board_data->trim_source = enable ? TRIM_SOURCE_TRIM_DAC : TRIM_SOURCE_NONE;
+
+    return 0;
+}
+
 static int bladerf2_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim)
 {
     if (NULL == trim) {
@@ -3491,7 +3597,7 @@ static int bladerf2_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim)
     CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
 
     /* FIXME fetch factory value from SPI flash */
-    *trim = 0x7fff;
+    *trim = 0x1ffc;
 
     return 0;
 }
@@ -3513,7 +3619,6 @@ static int bladerf2_trim_dac_write(struct bladerf *dev, uint16_t trim)
 
     return dev->backend->ad56x1_vctcxo_trim_dac_write(dev, trim);
 }
-
 
 /******************************************************************************/
 /* Low-level Trigger control access */
@@ -3732,6 +3837,14 @@ int bladerf_get_bias_tee(struct bladerf *dev, bladerf_channel ch, bool *enable)
     int status;
     uint32_t shift;
 
+    if (NULL == dev) {
+        RETURN_INVAL("dev", "not initialized");
+    }
+
+    if (NULL == enable) {
+        RETURN_INVAL("enable", "is null");
+    }
+
     MUTEX_LOCK(&dev->lock);
 
     CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
@@ -3757,6 +3870,10 @@ int bladerf_set_bias_tee(struct bladerf *dev, bladerf_channel ch, bool enable)
     uint32_t reg;
     int status;
     uint32_t shift;
+
+    if (NULL == dev) {
+        RETURN_INVAL("dev", "not initialized");
+    }
 
     MUTEX_LOCK(&dev->lock);
 
@@ -3916,48 +4033,57 @@ int bladerf_adf4002_get_enable(struct bladerf *dev, bool *enabled)
 int bladerf_adf4002_set_enable(struct bladerf *dev, bool enable)
 {
     int status;
-    uint16_t trim;
     uint32_t data;
+    struct bladerf2_board_data *board_data;
 
     if (NULL == dev) {
         RETURN_INVAL("dev", "not initialized");
     }
 
+    board_data = dev->board_data;
+
     MUTEX_LOCK(&dev->lock);
 
     CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
 
-    // Set the trimdac to high z if applicable
-    status = dev->backend->ad56x1_vctcxo_trim_dac_read(dev, &trim);
-    if (status < 0) {
-        RETURN_ERROR_STATUS("ad56x1_vctcxo_trim_dac_read", status);
+    // Disable the trim DAC when we're using the ADF4002
+    if (enable) {
+        status = bladerf2_set_trim_dac_enable(dev, false);
+        if (status < 0) {
+            RETURN_ERROR_STATUS("bladerf2_set_trim_dac_enable", status);
+        }
     }
 
-    trim &= ~(3 << 14);
-    trim |= ((enable ? 3 : 0) << 14);
-
-    status = dev->backend->ad56x1_vctcxo_trim_dac_write(dev, trim);
-    if (status < 0) {
-        RETURN_ERROR_STATUS("ad56x1_vctcxo_trim_dac_write", status);
-    }
-
+    // Read current config GPIO value
     status = dev->backend->config_gpio_read(dev, &data);
     if (status < 0) {
         MUTEX_UNLOCK(&dev->lock);
         RETURN_ERROR_STATUS("config_gpio_read", status);
     }
 
+    // Set the ADF4002 enable bit accordingly
     data &= ~(1 << 11);
     data |= ((enable ? 1 : 0) << 11);
 
+    // Write back the config GPIO
     status = dev->backend->config_gpio_write(dev, data);
     if (status < 0) {
         MUTEX_UNLOCK(&dev->lock);
         RETURN_ERROR_STATUS("config_gpio_write", status);
     }
 
-    MUTEX_UNLOCK(&dev->lock);
+    // Update our state flag
+    board_data->trim_source = enable ? TRIM_SOURCE_ADF4002 : TRIM_SOURCE_NONE;
 
+    // Enable the trim DAC if we're done with the ADF4002
+    if (!enable) {
+        status = bladerf2_set_trim_dac_enable(dev, true);
+        if (status < 0) {
+            RETURN_ERROR_STATUS("bladerf2_set_trim_dac_enable", status);
+        }
+    }
+
+    MUTEX_UNLOCK(&dev->lock);
 
     return 0;
 }
@@ -4042,6 +4168,10 @@ int bladerf_ina219_read(struct bladerf *dev,
 {
     int status = 0;
 
+    if (NULL == dev) {
+        RETURN_INVAL("dev", "not initialized");
+    }
+
     MUTEX_LOCK(&dev->lock);
 
     CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
@@ -4085,6 +4215,10 @@ int bladerf_get_rf_switch_config(struct bladerf *dev,
     struct ad9361_rf_phy *phy;
     uint32_t val, reg;
     int status;
+
+    if (NULL == dev) {
+        RETURN_INVAL("dev", "not initialized");
+    }
 
     if (NULL == config) {
         RETURN_INVAL("config", "is null");
