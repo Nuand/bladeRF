@@ -361,6 +361,10 @@ begin
         -- Maintain current state unless otherwise specified
         future              <= current;
 
+        -- Prevents inferred latch by making sure this variable always gets an
+        -- assignment. (It is used as a temporary variable during SETUP_RD.)
+        next_state          := IDLE;
+
         -- Deassert fifo reads/writes
         future.rx_fifo_rd   <= '0';
         future.tx_fifo_wr   <= '0';
