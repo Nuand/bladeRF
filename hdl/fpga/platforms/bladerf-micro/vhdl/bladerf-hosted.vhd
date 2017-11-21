@@ -205,10 +205,10 @@ begin
     U_ps_sync : entity work.ps_sync
         generic map (
             OUTPUTS  => 1,
-            USE_LFSR => false,
-            HOP_LIST => ( 0 => adp2384_sync_divisors( REFCLK_HZ  => 38.4e6,
-                                                      n_divisors => 7 )(5)), -- just use 213.333 kHz for now
-            HOP_RATE => 1
+            USE_LFSR => true,
+            HOP_LIST => adp2384_sync_divisors( REFCLK_HZ  => 38.4e6,
+                                               n_divisors => 7 ),
+            HOP_RATE => 100
         )
         port map (
             refclk   => c5_clock2,
