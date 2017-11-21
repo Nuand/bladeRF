@@ -245,6 +245,18 @@ int print_adf_enable(struct cli_state *state, int argc, char **argv)
         printf("  ADF Chip Enable: %s\n", val ? "enabled" : "disabled");
     }
 
+    if (val) {
+        status = bladerf_adf4002_get_locked(state->dev, &val);
+        if (status < 0) {
+            *err = status;
+            rv   = CLI_RET_LIBBLADERF;
+        }
+
+        if (rv == CLI_RET_OK) {
+            printf("  ADF Chip Locked: %s\n", val ? "locked" : "unlocked");
+        }
+    }
+
     return rv;
 }
 
