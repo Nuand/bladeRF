@@ -139,6 +139,17 @@ int CALL_CONV bladerf_ad9361_temperature(struct bladerf *dev, float *val);
  */
 
 /**
+ * Fetch the lock state of the ADF4002 Phase Detector/Frequency Synthesizer
+ *
+ * @param       dev         Device handle
+ * @param[out]  locked      True if locked, False otherwise
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_adf4002_get_locked(struct bladerf *dev, bool *locked);
+
+/**
  * Fetch the state of the ADF4002 Phase Detector/Frequency Synthesizer
  *
  * @param       dev         Device handle

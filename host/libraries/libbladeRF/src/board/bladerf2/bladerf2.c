@@ -236,6 +236,7 @@ static const uint64_t BLADERF_REFIN_DEFAULT    = 10.0e6;
 #define RFFE_CONTROL_MIMO_TX_EN_0   16
 #define RFFE_CONTROL_MIMO_RX_EN_1   17
 #define RFFE_CONTROL_MIMO_TX_EN_1   18
+#define RFFE_CONTROL_ADF_MUXOUT     19   // input only
 #define RFFE_CONTROL_SPDT_MASK      0x3
 #define RFFE_CONTROL_SPDT_SHUTDOWN  0x0  // no connection
 #define RFFE_CONTROL_SPDT_LOWBAND   0x2  // RF1 <-> RF3
@@ -4019,6 +4020,28 @@ int bladerf_ad9361_temperature(struct bladerf *dev, float *val)
 /* Low level ADF4002 Accessors */
 /******************************************************************************/
 
+int bladerf_adf4002_get_locked(struct bladerf *dev, bool *locked)
+{
+    int status;
+    uint32_t reg;
+
+    if (NULL == locked) {
+        RETURN_INVAL("locked", "is null");
+    }
+
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    /* Read RFFE control register */
+    status = dev->backend->rffe_control_read(dev, &reg);
+    if (status < 0) {
+        RETURN_ERROR_STATUS("rffe_control_read", status);
+    }
+
+    *locked = (reg >> RFFE_CONTROL_ADF_MUXOUT) & 0x1;
+
+    return 0;
+}
+
 int bladerf_adf4002_get_enable(struct bladerf *dev, bool *enabled)
 {
     int status;
@@ -4157,8 +4180,8 @@ int bladerf_adf4002_configure(struct bladerf *dev, uint16_t R, uint16_t N)
     /* Hardcoded values: */
     /* Counter operation: 0 (Normal) */
     /* Power down control: 00 (Normal) */
-    /* Muxout control: 5 (N-channel open-drain lock detect) */
-    init_array[2] |= (5 & ((1 << 3) - 1)) << 4;
+    /* Muxout control: 0x1 (digital lock detect) */
+    init_array[2] |= (1 & ((1 << 3) - 1)) << 4;
     /* PD Polarity: 1 (positive) */
     init_array[2] |= 1 << 7;
     /* CP three-state: 0 (normal) */
