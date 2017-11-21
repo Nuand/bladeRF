@@ -297,6 +297,7 @@ package bladerf_p is
 
     type rffe_gpi_t is record
         ctrl_out     : std_logic_vector(7 downto 0);
+        adf_muxout   : std_logic;
     end record;
 
     type rffe_gpio_t is record
@@ -409,7 +410,7 @@ package body bladerf_p is
     begin
         --rv(31 downto 24) := x.ctrl_out;    -- Reserved as inputs
         rv(23 downto 20) := x.ctrl_in;
-        rv(19)           := '0';             -- Available for future use
+        --rv(19)           := x.adf_muxout;  -- Reserved as input
         rv(18)           := x.mimo_tx_en(1);
         rv(17)           := x.mimo_rx_en(1);
         rv(16)           := x.mimo_tx_en(0);
@@ -432,9 +433,11 @@ package body bladerf_p is
         variable rv : std_logic_vector(31 downto 0);
     begin
         -- Physical inputs
-        rv(31 downto 24) := x.i.ctrl_out;
+        rv(31 downto 24)  := x.i.ctrl_out;
+        rv(19)            := x.i.adf_muxout;
         -- Output readback
-        rv(23 downto 0)  := x.o(23 downto 0);
+        rv(23 downto 20)  := x.o(23 downto 20);
+        rv(18 downto 0)   := x.o(18 downto 0);
         return rv;
     end function;
 
@@ -659,7 +662,8 @@ package body bladerf_p is
     );
 
     constant RFFE_GPI_DEFAULT : rffe_gpi_t := (
-        ctrl_out     => (others => '0')
+        ctrl_out    => (others => '0'),
+        adf_muxout  => '0'
     );
 
     constant TX_FIFO_T_DEFAULT : tx_fifo_t := (

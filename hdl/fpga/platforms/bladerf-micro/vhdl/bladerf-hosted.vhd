@@ -763,6 +763,17 @@ begin
             );
     end generate;
 
+    U_sync_adf_muxout : entity work.synchronizer
+        generic map (
+            RESET_LEVEL         =>  '0'
+        )
+        port map (
+            reset               =>  '0',
+            clock               =>  sys_clock,
+            async               =>  adf_muxout,
+            sync                =>  rffe_gpio.i.adf_muxout
+        );
+
     generate_sync_xb_gpio_in : for i in exp_gpio'range generate
         U_sync_xb_gpio_in : entity work.synchronizer
           generic map (
