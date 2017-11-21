@@ -132,6 +132,9 @@ int CALL_CONV bladerf_ad9361_temperature(struct bladerf *dev, float *val);
 /**
  * @defgroup FN_BLADERF2_LOW_LEVEL_ADF4002 ADF4002 Phase Detector/Freq. Synth
  *
+ * Reference:
+ * http://www.analog.com/media/en/technical-documentation/data-sheets/ADF4002.pdf
+ *
  * @{
  */
 
@@ -160,10 +163,42 @@ API_EXPORT
 int CALL_CONV bladerf_adf4002_set_enable(struct bladerf *dev, bool enable);
 
 /**
- * Read value from ADF4002 Phase Detector/Frequency Synthesizer
+ * Configure the ADF4002 Phase Detector/Frequency Synthesizer
  *
- * Reference:
- * http://www.analog.com/media/en/technical-documentation/data-sheets/ADF4002.pdf
+ * Use \ref bladerf_adf4002_calculate_ratio to compute the R and N from given
+ * reference and system clock frequencies.
+ *
+ * @param       dev         Device handle
+ * @param[in]   R           Reference counter divide ratio (1...16383)
+ * @param[in]   N           N counter divide ratio (1...8191)
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_adf4002_configure(struct bladerf *dev,
+                                        uint16_t R,
+                                        uint16_t N);
+
+/**
+ * Calculate valid R and N values for given reference and system clock
+ * frequencies.
+ *
+ * @param       dev         Device handle
+ * @param[in]   ref_freq    Reference clock frequency, in Hz
+ * @param[in]   clock_freq  System clock frequency, in Hz
+ * @param[out]  R           Reference counter divide ratio (1...16383)
+ * @param[out]  N           N counter divide ratio (1...8191)
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_adf4002_calculate_ratio(uint64_t ref_freq,
+                                              uint64_t clock_freq,
+                                              uint16_t *R,
+                                              uint16_t *N);
+
+/**
+ * Read value from ADF4002 Phase Detector/Frequency Synthesizer
  *
  * The `address` is interpreted as the control bits (DB1 and DB0) used to write
  * to a specific latch.
@@ -181,9 +216,6 @@ int CALL_CONV bladerf_adf4002_read(struct bladerf *dev,
 
 /**
  * Write value to ADF4002 Phase Detector/Frequency Synthesizer
- *
- * Reference:
- * http://www.analog.com/media/en/technical-documentation/data-sheets/ADF4002.pdf
  *
  * The `address` is interpreted as the control bits (DB1 and DB0) used to write
  * to a specific latch.  These bits are masked out in `val`

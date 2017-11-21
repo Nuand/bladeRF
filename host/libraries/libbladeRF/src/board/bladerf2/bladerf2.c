@@ -100,6 +100,7 @@ struct bladerf2_board_data {
     /* VCTCXO trim state */
     enum bladerf2_vctcxo_trim_source trim_source;
     uint16_t trimdac_value;
+    uint64_t refclk_frequency;
 };
 
 /* Macro for logging and returning an error status. This should be used for
@@ -215,6 +216,9 @@ struct band_port_map {
     uint32_t spdt;
     uint32_t ad9361_port;
 };
+
+static const uint64_t BLADERF_VCTCXO_FREQUENCY = 38.4e6;
+static const uint64_t BLADERF_REFIN_DEFAULT    = 10.0e6;
 
 // clang-format off
 #define RFFE_CONTROL_RESET_N        0
@@ -509,7 +513,6 @@ static const struct band_port_map bladerf2_tx_band_port_map[] = {
     },
 };
 // clang-format on
-
 
 /******************************************************************************/
 /* Forward declarations */
@@ -1085,6 +1088,22 @@ static int bladerf2_initialize(struct bladerf *dev)
     }
 
     board_data->trim_source = TRIM_SOURCE_TRIM_DAC;
+
+    /* Configure ADF4002 */
+    uint16_t R, N;
+
+    board_data->refclk_frequency = BLADERF_REFIN_DEFAULT;
+
+    status = bladerf_adf4002_calculate_ratio(board_data->refclk_frequency,
+                                             BLADERF_VCTCXO_FREQUENCY, &R, &N);
+    if (status < 0) {
+        RETURN_ERROR_STATUS("bladerf_adf4002_calculate_ratio", status);
+    }
+
+    status = bladerf_adf4002_configure(dev, R, N);
+    if (status < 0) {
+        RETURN_ERROR_STATUS("bladerf_adf4002_configure", status);
+    }
 
     /* Update device state */
     board_data->state = STATE_INITIALIZED;
@@ -4086,6 +4105,134 @@ int bladerf_adf4002_set_enable(struct bladerf *dev, bool enable)
     MUTEX_UNLOCK(&dev->lock);
 
     return 0;
+}
+
+int bladerf_adf4002_configure(struct bladerf *dev, uint16_t R, uint16_t N)
+{
+    int status;
+    uint32_t init_array[3];
+    bool is_enabled;
+
+    if (R < 1 || R > 16383) {
+        RETURN_INVAL("R", "outside range [1,16383]");
+    }
+
+    if (N < 1 || N > 8191) {
+        RETURN_INVAL("N", "outside range [1,8191]");
+    }
+
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    /* Get the present state... */
+    status = bladerf_adf4002_get_enable(dev, &is_enabled);
+    if (status < 0) {
+        RETURN_ERROR_STATUS("bladerf_adf4002_get_enable", status);
+    }
+
+    /* Enable the chip if applicable */
+    if (!is_enabled) {
+        bladerf_adf4002_set_enable(dev, true);
+        if (status < 0) {
+            RETURN_ERROR_STATUS("bladerf_adf4002_set_enable", status);
+        }
+    }
+
+    /* Register 0: Reference Counter Latch */
+    init_array[0] = 0;
+    /* R Counter: */
+    init_array[0] |= (R & ((1 << 14) - 1)) << 2;
+    /* Hardcoded values: */
+    /* Anti-backlash: 00 (2.9 ns) */
+    /* Lock detect precision: 0 (three cycles) */
+
+    /* Register 1: N Counter Latch */
+    init_array[1] = 1;
+    /* N Counter: */
+    init_array[1] |= (N & ((1 << 13) - 1)) << 8;
+    /* Hardcoded values: */
+    /* CP Gain: 0 (Setting 1) */
+
+    /* Register 2: Function Latch */
+    init_array[2] = 2;
+    /* Hardcoded values: */
+    /* Counter operation: 0 (Normal) */
+    /* Power down control: 00 (Normal) */
+    /* Muxout control: 5 (N-channel open-drain lock detect) */
+    init_array[2] |= (5 & ((1 << 3) - 1)) << 4;
+    /* PD Polarity: 1 (positive) */
+    init_array[2] |= 1 << 7;
+    /* CP three-state: 0 (normal) */
+    /* Fastlock Mode: 00 (disabled) */
+    /* Timer Counter Control: 0000 (3 PFD cycles) */
+    /* Current Setting 1: 111 (5 mA) */
+    init_array[2] |= 0x7 << 15;
+    /* Current Setting 2: 111 (5 mA) */
+    init_array[2] |= 0x7 << 18;
+
+    /* Write the values to the chip */
+    for (size_t i = 0; i < ARRAY_SIZE(init_array); ++i) {
+        log_debug("reg %x gets 0x%08x\n", i, init_array[i]);
+        status = bladerf_adf4002_write(dev, i, init_array[i]);
+        if (status < 0) {
+            RETURN_ERROR_STATUS("bladerf_adf4002_write", status);
+        }
+    }
+
+    /* Re-disable the chip if applicable */
+    if (!is_enabled) {
+        bladerf_adf4002_set_enable(dev, false);
+        if (status < 0) {
+            RETURN_ERROR_STATUS("bladerf_adf4002_set_enable", status);
+        }
+    }
+
+    return 0;
+}
+
+int bladerf_adf4002_calculate_ratio(uint64_t ref_freq,
+                                    uint64_t clock_freq,
+                                    uint16_t *R,
+                                    uint16_t *N)
+{
+    size_t const Rmax = 16383;
+    double const tol  = 0.00001;
+    double target     = (double)clock_freq / (double)ref_freq;
+
+    if (NULL == R) {
+        RETURN_INVAL("R", "is null");
+    }
+
+    if (NULL == N) {
+        RETURN_INVAL("N", "is null");
+    }
+
+    if (ref_freq < 5e6 || ref_freq > 300e6) {
+        RETURN_INVAL("ref_freq", "is out of range [5e6,300e6]");
+    }
+
+    if (clock_freq < 5e6 || clock_freq > 400e6) {
+        RETURN_INVAL("clock_freq", "is out of range [5e6,400e6]");
+    }
+
+    for (uint16_t R_try = 1; R_try < Rmax; ++R_try) {
+        uint16_t N_try = (uint16_t)(target * R_try + 0.5);
+
+        if (N_try > 8191) {
+            continue;
+        }
+
+        double ratio = (double)N_try / (double)R_try;
+        double delta = (ratio > target) ? (ratio - target) : (target - ratio);
+
+        if (delta < tol) {
+            *R = R_try;
+            *N = N_try;
+
+            return 0;
+        }
+    }
+
+    RETURN_INVAL("requested ratio", "not achievable");
 }
 
 int bladerf_adf4002_read(struct bladerf *dev, uint8_t address, uint32_t *val)
