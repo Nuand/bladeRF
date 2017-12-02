@@ -360,8 +360,6 @@ if(MSVC)
     endif()
 endif()
 
-set(SRC_TO_SHORTEN ${LIBBLADERF_SOURCE})
-include(ShortFileMacro)
 add_library(libbladerf_shared SHARED ${LIBBLADERF_SOURCE})
 
 ################################################################################
