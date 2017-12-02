@@ -364,3 +364,228 @@ bladerf_smb_mode str_to_smb_mode(const char *str)
         return BLADERF_SMB_MODE_INVALID;
     }
 }
+
+unsigned int str2uint(const char *str, unsigned int min, unsigned int max, bool *ok)
+{
+    unsigned int ret;
+    char *optr;
+
+    errno = 0;
+    ret = strtoul(str, &optr, 0);
+
+    if (errno == ERANGE || (errno != 0 && ret == 0)) {
+        *ok = false;
+        return 0;
+    }
+
+    if (str == optr) {
+        *ok = false;
+        return 0;
+    }
+
+    if (ret >= min && ret <= max) {
+        *ok = true;
+        return (unsigned int)ret;
+    }
+
+    *ok = false;
+    return 0;
+}
+
+int str2int(const char *str, int min, int max, bool *ok)
+{
+    long int ret;
+    char *optr;
+
+    errno = 0;
+    ret = strtol(str, &optr, 0);
+
+    if ((errno == ERANGE && (ret == LONG_MAX || ret == LONG_MIN))
+            || (errno != 0 && ret == 0)) {
+        *ok = false;
+        return 0;
+    }
+
+    if (str == optr) {
+        *ok = false;
+        return 0;
+    }
+
+    if (ret >= min && ret <= max) {
+        *ok = true;
+        return (int)ret;
+    }
+
+    *ok = false;
+    return 0;
+}
+
+uint64_t str2uint64(const char *str, uint64_t min, uint64_t max, bool *ok)
+{
+    uint64_t ret;
+    char *optr;
+
+    errno = 0;
+    ret = (uint64_t)strtod(str, &optr);
+
+    if ((errno == ERANGE && ret == ULONG_MAX)
+            || (errno != 0 && ret == 0)) {
+        *ok = false;
+        return 0;
+    }
+
+    if (str == optr) {
+        *ok = false;
+        return 0;
+    }
+
+    if (ret >= min && ret <= max) {
+        *ok = true;
+        return ret;
+    }
+
+    *ok = false;
+    return 0;
+}
+
+double str2double(const char *str, double min, double max, bool *ok)
+{
+    double ret;
+    char *optr;
+
+    errno = 0;
+    ret = strtod(str, &optr);
+
+    if (errno == ERANGE || (errno != 0 && ret == 0)) {
+        *ok = false;
+        return NAN;
+    }
+
+    if (str == optr) {
+        *ok = false;
+        return NAN;
+    }
+
+    if (ret >= min && ret <= max) {
+        *ok = true;
+        return ret;
+    }
+
+    *ok = false;
+    return NAN;
+}
+
+static uint64_t suffix_multiplier(const char *str,
+                      const struct numeric_suffix *suffixes, const size_t num_suff,
+                      bool *ok)
+{
+    unsigned i;
+
+    *ok = true;
+
+    if (!strlen(str))
+        return 1;
+
+    for (i = 0; i < num_suff; i++) {
+        if (!strcasecmp(suffixes[i].suffix, str)) {
+            return suffixes[i].multiplier;
+        }
+    }
+
+    *ok = false;
+    return 0;
+}
+
+unsigned int str2uint_suffix(const char *str, unsigned int min, unsigned int max,
+                      const struct numeric_suffix *suffixes, const size_t num_suff,
+                      bool *ok)
+{
+    uint64_t mult;
+    unsigned int rv;
+    double val;
+    char *optr;
+
+    errno = 0;
+    val = strtod(str, &optr);
+
+    if (errno == ERANGE || (errno != 0 && val == 0)) {
+        *ok = false;
+        return 0;
+    }
+
+    if (str == optr) {
+        *ok = false;
+        return 0;
+    }
+
+    mult = suffix_multiplier(optr, suffixes, num_suff, ok);
+    if (!*ok)
+        return false;
+
+    rv = (unsigned int)(val * mult);
+
+    if (rv >= min && rv <= max) {
+        return rv;
+    }
+
+    *ok = false;
+    return 0;
+}
+
+uint64_t str2uint64_suffix(const char *str, uint64_t min, uint64_t max,
+                      const struct numeric_suffix *suffixes, const size_t num_suff,
+                      bool *ok)
+{
+    uint64_t mult, rv;
+    long double val;
+    char *optr;
+
+    errno = 0;
+    val = strtold(str, &optr);
+
+    if (errno == ERANGE && (errno != 0 && val == 0)) {
+        *ok = false;
+        return 0;
+    }
+
+    if (str == optr) {
+        *ok = false;
+        return 0;
+    }
+
+    mult = suffix_multiplier(optr, suffixes, num_suff, ok);
+    if (!*ok)
+        return false;
+
+    rv = (uint64_t)(val * mult);
+    if (rv >= min && rv <= max) {
+        return rv;
+    }
+
+    *ok = false;
+    return 0;
+}
+
+int str2bool(const char *str, bool *val)
+{
+    unsigned int i;
+
+    char *str_true[] = { "true", "t", "one", "1", "enable", "en", "on" };
+    char *str_false[] = { "false", "f", "zero", "0", "disable", "dis", "off" };
+
+    for (i = 0; i < ARRAY_SIZE(str_true); i++) {
+        if (!strcasecmp(str_true[i], str)) {
+            *val = true;
+            return 0;
+        }
+    }
+
+    for (i = 0; i < ARRAY_SIZE(str_false); i++) {
+        if (!strcasecmp(str_false[i], str)) {
+            *val = false;
+            return 0;
+        }
+    }
+
+    return BLADERF_ERR_INVAL;
+}
