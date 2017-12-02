@@ -172,7 +172,7 @@ begin
         );
 
     -- Generate a single-cycle 'count valid' pulse
-    U_pulse_gen_count_v : entity work.pulse_gen
+    U_edge_detector_count_v : entity work.edge_detector
         generic map (
             EDGE_RISE       => '1',
             EDGE_FALL       => '0'
