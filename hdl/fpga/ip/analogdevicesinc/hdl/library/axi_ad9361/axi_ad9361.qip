@@ -41,4 +41,4 @@ set_global_assignment -name VERILOG_FILE [file normalize [file join $adi_ip_dir/
 set_global_assignment -name VERILOG_FILE [file normalize [file join $adi_ip_dir/library/axi_ad9361/axi_ad9361_tdd_if.v]]
 set_global_assignment -name VERILOG_FILE [file normalize [file join $adi_ip_dir/library/axi_ad9361/axi_ad9361.v]]
 
-set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip_dir/pll_reset/hdl/vhdl/pll_reset.vhd]]
+set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip_dir/pll_reset/vhdl/pll_reset.vhd]]
