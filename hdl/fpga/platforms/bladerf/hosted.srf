@@ -1,0 +1,9 @@
+{ "" "" "" "VHDL Subtype or Type Declaration warning at fifo_writer.vhd(280): subtype or type has null range" {  } {  } 0 10445 "" 0 0 "Design Software" 0 -1 0 ""}
+{ "" "" "" "Unrecognized synthesis attribute \"enum_state\" at ../../../fpga/ip/opencores/i2c/rtl/verilog/i2c_master_byte_ctrl.v(199)" {  } {  } 0 10335 "" 0 0 "Design Software" 0 -1 0 ""}
+{ "" "" "" "Unrecognized synthesis attribute \"enum_state\" at ../../../fpga/ip/opencores/i2c/rtl/verilog/i2c_master_bit_ctrl.v(185)" {  } {  } 0 10335 "" 0 0 "Design Software" 0 -1 0 ""}
+{ "" "" "" "VHDL Subtype or Type Declaration warning at fifo_reader.vhd(314): subtype or type has null range" {  } {  } 0 10445 "" 0 0 "Design Software" 0 -1 0 ""}
+{ "" "" "" "Verilog HDL Synthesis Attribute warning at i2c_master_bit_ctrl.v(410): ignoring full_case attribute on case statement with explicit default case item" {  } {  } 0 10766 "" 0 0 "Design Software" 0 -1 0 ""}
+{ "" "" "" "Verilog HDL Case Statement warning at i2c_master_bit_ctrl.v(406): honored full_case synthesis attribute - differences between design synthesis and simulation may occur" {  } {  } 0 10208 "" 0 0 "Design Software" 0 -1 0 ""}
+{ "" "" "" "Verilog HDL or VHDL warning at altera_merlin_width_adapter.sv(283): object \"in_write\" assigned a value but never read" {  } {  } 0 10036 "" 0 0 "Design Software" 0 -1 0 ""}
+{ "" "" "" "Verilog HDL or VHDL warning at altera_merlin_width_adapter.sv(742): object \"aligned_addr\" assigned a value but never read" {  } {  } 0 10036 "" 0 0 "Design Software" 0 -1 0 ""}
+{ "" "" "" "Verilog HDL or VHDL warning at altera_merlin_width_adapter.sv(743): object \"aligned_byte_cnt\" assigned a value but never read" {  } {  } 0 10036 "" 0 0 "Design Software" 0 -1 0 ""}
