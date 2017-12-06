@@ -1,6 +1,7 @@
 { "" "" "" "Verilog HDL or VHDL warning at axi_ad9361_alt_lvds_rx_lvds_rx.v(49): object \"clkselect\" assigned a value but never read" {  } {  } 0 10036 "" 0 0 "Design Software" 0 -1 0 ""}
 { "" "" "" "Verilog HDL or VHDL warning at axi_ad9361_alt_lvds_tx_lvds_tx.v(49): object \"clkselect\" assigned a value but never read" {  } {  } 0 10036 "" 0 0 "Design Software" 0 -1 0 ""}
 { "" "" "" "Verilog HDL or VHDL warning at nios_system_lms_spi.v(383): conditional expression evaluates to a constant" {  } {  } 0 10037 "" 0 0 "Design Software" 0 -1 0 ""}
+{ "" "" "" "Verilog HDL or VHDL warning at nios_system_lms_spi.v(384): conditional expression evaluates to a constant" {  } {  } 0 10037 "" 0 0 "Design Software" 0 -1 0 ""}
 { "" "" "" "Verilog HDL Case Statement warning at i2c_master_bit_ctrl.v(406): honored full_case synthesis attribute - differences between design synthesis and simulation may occur" {  } {  } 0 10208 "" 0 0 "Design Software" 0 -1 0 ""}
 { "" "" "" "Unrecognized synthesis attribute \"enum_state\" at ../../../fpga/ip/opencores/i2c/rtl/verilog/i2c_master_bit_ctrl.v(185)" {  } {  } 0 10335 "" 0 0 "Design Software" 0 -1 0 ""}
 { "" "" "" "Unrecognized synthesis attribute \"enum_state\" at ../../../fpga/ip/opencores/i2c/rtl/verilog/i2c_master_byte_ctrl.v(199)" {  } {  } 0 10335 "" 0 0 "Design Software" 0 -1 0 ""}
