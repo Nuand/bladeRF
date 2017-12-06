@@ -277,7 +277,7 @@ begin
             for i in sc'range loop
                 if( (sc(i).enable = '1') and (ss(i).data_v = '1') ) then
                     rv := unsigned(ss(i).data_q) & unsigned(ss(i).data_i) &
-                          rv(rv'high downto rv'high-LEN+1);
+                          rv(rv'high downto rv'low+LEN);
                 end if;
             end loop;
             return rv;
