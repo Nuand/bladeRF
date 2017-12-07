@@ -54,6 +54,33 @@ int str2args(const char *line, char comment_char, char ***argv);
  */
 void free_args(int argc, char **argv);
 
+struct config_options {
+    char *key;
+    char *value;
+    int lineno;
+};
+/**
+ * Convert a bladeRF options file to an array of strings
+ *
+ * @param[in]   dev     Pointer to bladerf device
+ * @param[in]   buf     String buffer containing entire file
+ * @param[in]   buf_sz  String buffer containing entire file
+ * @param[out]  opts    A pointer to an array of strings containing options for
+ *                      this device
+ *
+ * @return  number of options on success, BLADERF_ERR_* values on other failures
+ */
+int str2options(struct bladerf *dev, const char *buf, size_t buf_sz,
+                    struct config_options **opts);
+
+/**
+ * Free an array of previously returned options
+ *
+ * @param[in]   optv    Pointer to array of config_options
+ * @param[in]   optc    Number of config_options
+ */
+void free_opts(struct config_options *optv, int optc);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
