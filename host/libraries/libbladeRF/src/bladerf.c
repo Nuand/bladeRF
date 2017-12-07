@@ -257,6 +257,10 @@ int bladerf_open_with_devinfo(struct bladerf **opened_device,
         status = config_load_fpga(dev);
     }
 
+    if (status >= 0) {
+        status = config_load_options_file(dev);
+    }
+
 error:
     if (status < 0) {
         bladerf_close(dev);
