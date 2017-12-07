@@ -50,4 +50,15 @@ int config_load_dc_cals(struct bladerf *dev);
  */
 int config_load_fpga(struct bladerf *dev);
 
+/**
+ * Load bladeRF configuration options and settings from a file
+ *
+ * @pre     dev->fpga_size is populated, unknown is a valid option
+ *
+ * @param   dev     Handle to device to configure
+ *
+ * @return  0 on success, BLADERF_ERR_* values on other failures
+ */
+int config_load_options_file(struct bladerf *dev);
+
 #endif
