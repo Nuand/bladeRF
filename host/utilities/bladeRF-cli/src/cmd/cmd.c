@@ -26,6 +26,7 @@
 #include "conversions.h"
 #include "script.h"
 #include "thread.h"
+#include "parse.h"
 
 #include "doc/cmd_help.h"
 

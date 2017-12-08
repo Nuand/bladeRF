@@ -299,6 +299,7 @@ set(LIBBLADERF_SOURCE
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/log.c
         ${BLADERF_FPGA_COMMON_SOURCE_DIR}/lms.c
         ${BLADERF_FPGA_COMMON_SOURCE_DIR}/band_select.c
+        ${BLADERF_HOST_COMMON_SOURCE_DIR}/parse.c
 )
 
 if (MSVC)
@@ -360,8 +361,6 @@ if(MSVC)
     endif()
 endif()
 
-set(SRC_TO_SHORTEN ${LIBBLADERF_SOURCE})
-include(ShortFileMacro)
 add_library(libbladerf_shared SHARED ${LIBBLADERF_SOURCE})
 
 ################################################################################

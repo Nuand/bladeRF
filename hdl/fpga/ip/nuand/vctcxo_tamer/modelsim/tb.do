@@ -6,7 +6,7 @@ vlib ${vcom_lib}
 # Support
 vcom {*}$vcom_opts -work ${vcom_lib} ../../synthesis/synchronizer.vhd
 vcom {*}$vcom_opts -work ${vcom_lib} ../../synthesis/handshake.vhd
-vcom {*}$vcom_opts -work ${vcom_lib} ../../synthesis/pulse_gen.vhd
+vcom {*}$vcom_opts -work ${vcom_lib} ../../synthesis/edge_detector.vhd
 vcom {*}$vcom_opts -work ${vcom_lib} ../../synthesis/reset_synchronizer.vhd
 
 # UUT

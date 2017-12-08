@@ -165,6 +165,7 @@ set(BLADERF_CLI_SOURCE
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/dc_calibration.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/log.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/str_queue.c
+        ${BLADERF_HOST_COMMON_SOURCE_DIR}/parse.c
 )
 
 # Select the input mode (and script handling) backend
@@ -187,8 +188,6 @@ if(APPLE)
     )
 endif()
 
-set(SRC_TO_SHORTEN ${BLADERF_CLI_SOURCE})
-include(ShortFileMacro)
 add_executable(bladeRF-cli ${BLADERF_CLI_SOURCE})
 
 ################################################################################

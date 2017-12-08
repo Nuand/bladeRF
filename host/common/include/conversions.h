@@ -1,12 +1,8 @@
-/**
- * @file conversions.h
- *
- * @brief Miscellaneous conversion routines
- *
+/*
  * This file is part of the bladeRF project:
  *   http://www.github.com/nuand/bladeRF
  *
- * Copyright (c) 2013 Nuand LLC
+ * Copyright (C) 2014-2017 Nuand LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,158 +22,23 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef CONVERSIONS_H__
-#define CONVERSIONS_H__
+#ifndef CONVERSIONS_H_
+#define CONVERSIONS_H_
 
 #include <stdint.h>
 #include <libbladeRF.h>
+#include <errno.h>
+#include <string.h>
+#include <stdlib.h>
+#include <limits.h>
+#include <math.h>
+
+#include "rel_assert.h"
 #include "host_config.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * Represents an association between a string suffix for a numeric value and
- * its multiplier. For example, "k" might correspond to 1000.
- */
-typedef struct numeric_suffix {
-    const char *suffix;
-    int multiplier;
-} numeric_suffix;
-
-/**
- * String to integer conversion with range and error checking
- *
- *  @param  str     String to convert
- *  @param  min     Inclusive minimum allowed value
- *  @param  max     Inclusive maximum allowed value
- *  @param  ok      If non-NULL, this will be set to true to denote that
- *                  the conversion succeeded. If this value is not true,
- *                  then the return value should not be used.
- *
- * @return 0 on success, undefined on failure
- */
-int str2int(const char *str, int min, int max, bool *ok);
-
-/**
- * Convert a string to an unsigned integer with range and error checking
- *
- * @param[in]   str     String to conver
- * @param[in]   min     Minimum allowed value (inclusive)
- * @param[in]   max     Maximum allowed value (inclusive)
- * @param[out]  ok      If non-NULL, this is set to true if the conversion was
- *                      successful, and false for an invalid or out of range
- *                      value.
- *
- * @return  Converted value on success, 0 on failure
- */
-unsigned int str2uint(const char *str,
-                      unsigned int min, unsigned int max, bool *ok);
-
-/**
- * Convert a string to a uint64 with range and error checking
- *
- * @param[in]   str     String to conver
- * @param[in]   min     Minimum allowed value (inclusive)
- * @param[in]   max     Maximum allowed value (inclusive)
- * @param[out]  ok      If non-NULL, this is set to true if the conversion was
- *                      successful, and false for an invalid or out of range
- *                      value.
- *
- * @return  Converted value on success, 0 on failure
- */
-uint64_t str2uint64(const char *str, uint64_t min, uint64_t max, bool *ok);
-
-/**
- * Convert a string to an unsigned 64-bit integer with range and error checking
- *
- * @param[in]   str     String to conver
- * @param[in]   min     Minimum allowed value (inclusive)
- * @param[in]   max     Maximum allowed value (inclusive)
- * @param[out]  ok      If non-NULL, this is set to true if the conversion was
- *                      successful, and false for an invalid or out of range
- *                      value.
- *
- * @return  Converted value on success, 0 on failure
- */
-uint64_t str2uint64(const char *str, uint64_t min, uint64_t max, bool *ok);
-
-/**
- * Convert a string to a double with range and error checking
- *
- * @param[in]   str     String to conver
- * @param[in]   min     Minimum allowed value (inclusive)
- * @param[in]   max     Maximum allowed value (inclusive)
- * @param[out]  ok      If non-NULL, this is set to true if the conversion was
- *                      successful, and false for an invalid or out of range
- *                      value.
- *
- * @return  Converted value on success, 0 on failure
- */
-double str2double(const char *str, double min, double max, bool *ok);
-
-/**
- * Convert a string to an unsigned integer with range and error checking.
- * Supports the use of decimal representations and suffixes in the string.
- * For example, a string "2.4G" might be converted to 2400000000.
- *
- * @param[in]   str     String to convert
- * @param[in]   min     Minimum allowed value (inclusive)
- * @param[in]   max     Maximum allowed value (inclusive)
- * @param[in]   suffixes    List of allowed suffixes and their multipliers
- * @param[in]   num_suffixes    Number of suffixes in the list
- * @param[out]  ok      If non-NULL, this is set to true if the conversion was
- *                      successful, and false for an invalid or out of range
- *                      value.
- *
- * @return  Converted value on success, 0 on failure
- */
-unsigned int str2uint_suffix(const char *str,
-                             unsigned int min, unsigned int max,
-                             const struct numeric_suffix suffixes[],
-                             size_t num_suffixes, bool *ok);
-/**
- * Convert a string to a uint64 with range and error checking.
- * Supports the use of decimal representations and suffixes in the string.
- * For example, a string "2.4G" might be converted to 2400000000.
- *
- * @param[in]   str     String to convert
- * @param[in]   min     Minimum allowed value (inclusive)
- * @param[in]   max     Maximum allowed value (inclusive)
- * @param[in]   suffixes    List of allowed suffixes and their multipliers
- * @param[in]   num_suffixes    Number of suffixes in the list
- * @param[out]  ok      If non-NULL, this is set to true if the conversion was
- *                      successful, and false for an invalid or out of range
- *                      value.
- *
- * @return  Converted value on success, 0 on failure
- */
-uint64_t str2uint64_suffix(const char *str,
-                           uint64_t min, uint64_t max,
-                           const struct numeric_suffix suffixes[],
-                           size_t num_suffixes, bool *ok);
-
-/**
- * Convert a string to a double with range and error checking.
- * Supports the use of decimal representations and suffixes in the string.
- * For example, a string "2.4G" might be converted to 2400000000.
- *
- * @param[in]   str     String to convert
- * @param[in]   min     Minimum allowed value (inclusive)
- * @param[in]   max     Maximum allowed value (inclusive)
- * @param[in]   suffixes    List of allowed suffixes and their multipliers
- * @param[in]   num_suffixes    Number of suffixes in the list
- * @param[out]  ok      If non-NULL, this is set to true if the conversion was
- *                      successful, and false for an invalid or out of range
- *                      value.
- *
- * @return  Converted value on success, 0 on failure
- */
-double str2dbl_suffix(const char *str,
-                      double min, double max,
-                      const struct numeric_suffix suffixes[],
-                      size_t num_suffixes, bool *ok);
 
 /**
  * Convert a string to a bladerf_version
@@ -286,19 +147,6 @@ bladerf_trigger_role str2triggerrole(const char *str);
 int str2loopback(const char *str, bladerf_loopback *loopback);
 
 /**
- * Convert a string to an argc/argv-style argument list. Arguments are split
- * on whitespace. Double-quotes may be used to include whitespace in an
- * argument.  Backescapes are not supported.
- *
- * @param[in]   str         String to break into args
- * @param[in]   eol_comm    End of line comment delimiter
- * @param[out]  argv        Will be updated to point to heap-allocated argv list
- *
- * @return argc on success, -1 on failure, -2 on unterminated quote
- */
-int str2args(const char *line, char eol_comm, char ***argv);
-
-/**
  * Convert RX LNA gain strings to their associated enum values
  *
  * @param[in]   str         Gain string to convert
@@ -308,14 +156,6 @@ int str2args(const char *line, char eol_comm, char ***argv);
  * @return 0 on success, -1 on invalid string
  */
 int str2lnagain(const char *str, bladerf_lna_gain *gain);
-
-/**
- * Free argument list previously allocated by str2args
- *
- * @param       argc    Number of arguments
- * @param       argv    Argument list
- */
-void free_args(int argc, char **argv);
 
 /**
  * Get a string description of the specified bladeRF backend
@@ -369,23 +209,6 @@ void float_to_sc16q11(const float *in, int16_t *out, unsigned int n);
 bladerf_cal_module str_to_bladerf_cal_module(const char *str);
 
 /**
- * Convert a string to a boolean value.
- *
- * Valid `true` strings:
- *  "true",  "t", "enable",  "en",  "e", "on", "1"
- *
- * Valid `false` strings:
- *  "false", "f", "disable", "dis", "d", "off", "0"
- *
- * @param[in]   str         Input string. This comparison is case-insensitive.
- * @param[out]  val         Converted boolean value. This is set to `false`
- *                          for invalid input.
- *
- * @return 0 on success, or non-zero for an invalid string.
- */
-int str2bool(const char *string, bool *val);
-
-/**
  * Convert a bladerf_smb_mode enumeration value to a string
  *
  * @param[in]   mode        Mode enum value
@@ -404,6 +227,104 @@ const char * smb_mode_to_str(bladerf_smb_mode mode);
  *              returned for an invalid string.
  */
 bladerf_smb_mode str_to_smb_mode(const char *str);
+
+/**
+ * Convert an ASCII char string to an unsigned integer and check its bounds
+ *
+ * @param[in]   str         String to convert
+ * @param[in]   min         Value below this is bad
+ * @param[in]   max         Value above this is bad
+ * @param[out]  ok          True if conversion and bounds check did not fail
+ *
+ * @return An unsigned integer converted from an ASCII string
+ */
+unsigned int str2uint(const char *str, unsigned int min, unsigned int max, bool *ok);
+
+/**
+ * Convert an ASCII char string to an integer and check its bounds
+ *
+ * @param[in]   str         String to convert
+ * @param[in]   min         Value below this is bad
+ * @param[in]   max         Value above this is bad
+ * @param[out]  ok          True if conversion and bounds check did not fail
+ *
+ * @return A signed integer converted from an ASCII string
+ */
+int str2int(const char *str, int min, int max, bool *ok);
+
+/**
+ * Convert an ASCII char string to a 64bit unsigned long long integer and check
+ * its bounds
+ *
+ * @param[in]   str         String to convert
+ * @param[in]   min         Value below this is bad
+ * @param[in]   max         Value above this is bad
+ * @param[out]  ok          True if conversion and bounds check did not fail
+ *
+ * @return An unsigned long long integer converted from an ASCII string
+ */
+uint64_t str2uint64(const char *str, uint64_t min, uint64_t max, bool *ok);
+
+/**
+ * Convert an ASCII char string to a double and check its bounds
+ *
+ * @param[in]   str         String to convert
+ * @param[in]   min         Value below this is bad
+ * @param[in]   max         Value above this is bad
+ * @param[out]  ok          True if conversion and bounds check did not fail
+ *
+ * @return A double converted from an ASCII string
+ */
+double str2double(const char *str, double min, double max, bool *ok);
+struct numeric_suffix {
+    const char *suffix;
+    uint64_t multiplier;
+};
+typedef struct numeric_suffix numeric_suffix;
+
+/**
+ * Convert an ASCII char string that has a suffix multipler to an unsigned
+ * integer and check its bounds
+ *
+ * @param[in]   str         String to convert
+ * @param[in]   min         Value below this is bad
+ * @param[in]   max         Value above this is bad
+ * @param[in]   suffixes    Array of numeric_suffix
+ * @param[in]   num_suff    Total number of numeric_suffix in suffixes array
+ * @param[out]  ok          True if conversion and bounds check did not fail
+ *
+ * @return An unsigned integer converted from an ASCII string
+ */
+unsigned int str2uint_suffix(const char *str, unsigned int min, unsigned int max,
+                      const struct numeric_suffix *suffixes, const size_t num_suff,
+                      bool *ok);
+
+/**
+ * Convert an ASCII char string that has a suffix multipler to an unsigned
+ * integer and check its bounds
+ *
+ * @param[in]   str         String to convert
+ * @param[in]   min         Value below this is bad
+ * @param[in]   max         Value above this is bad
+ * @param[in]   suffixes    Array of numeric_suffix
+ * @param[in]   num_suff    Total number of numeric_suffix in suffixes array
+ * @param[out]  ok          True if conversion and bounds check did not fail
+ *
+ * @return An unsigned long long integer converted from an ASCII string
+ */
+uint64_t str2uint64_suffix(const char *str, uint64_t min, uint64_t max,
+                      const struct numeric_suffix *suffixes, const size_t num_suff,
+                      bool *ok);
+
+/**
+ * Convert a string to a boolean
+ *
+ * @param[in]	str	String to convert
+ * @param[out]  val	Boolean value
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+int str2bool(const char *str, bool *val);
 
 #ifdef __cplusplus
 } /* extern "C" */

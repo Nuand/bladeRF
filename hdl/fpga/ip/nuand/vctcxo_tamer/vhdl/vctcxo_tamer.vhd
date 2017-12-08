@@ -199,7 +199,7 @@ begin
         );
 
     -- Generate a single-cycle version of the 1PPS signal
-    U_pulse_gen_pps : entity work.pulse_gen
+    U_edge_detector_pps : entity work.edge_detector
         generic map (
             EDGE_RISE       => '1',
             EDGE_FALL       => '0'

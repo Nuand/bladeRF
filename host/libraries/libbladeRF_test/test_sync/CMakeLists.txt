@@ -36,9 +36,6 @@ if(MSVC)
     )
 endif()
 
-set(SRC_TO_SHORTEN ${SRC})
-include(ShortFileMacro)
-
 include_directories(${TEST_SYNC_INCLUDES})
 add_executable(libbladeRF_test_sync ${SRC})
 target_link_libraries(libbladeRF_test_sync ${TEST_SYNC_LIBS})

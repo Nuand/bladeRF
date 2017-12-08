@@ -44,7 +44,7 @@ add_fileset_file vctcxo_tamer.vhd VHDL PATH ../vhdl/vctcxo_tamer.vhd TOP_LEVEL_F
 add_fileset_file pps_counter.vhd VHDL PATH ../vhdl/pps_counter.vhd
 add_fileset_file synchronizer.vhd VHDL PATH ../../synthesis/synchronizer.vhd
 add_fileset_file handshake.vhd VHDL PATH ../../synthesis/handshake.vhd
-add_fileset_file pulse_gen.vhd VHDL PATH ../../synthesis/pulse_gen.vhd
+add_fileset_file edge_detector.vhd VHDL PATH ../../synthesis/edge_detector.vhd
 add_fileset_file reset_synchronizer.vhd VHDL PATH ../../synthesis/reset_synchronizer.vhd
 
 

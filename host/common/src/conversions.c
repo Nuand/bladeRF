@@ -2,7 +2,7 @@
  * This file is part of the bladeRF project:
  *   http://www.github.com/nuand/bladeRF
  *
- * Copyright (c) 2013 Nuand LLC
+ * Copyright (c) 2017 Nuand LLC.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,223 +22,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <stdbool.h>
-#include <stdint.h>
-#include <string.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <errno.h>
-#include <math.h>
 
 #include "conversions.h"
-#include "rel_assert.h"
 
-enum str2args_parse_state {
-    PARSE_STATE_IN_SPACE,
-    PARSE_STATE_START_ARG,
-    PARSE_STATE_IN_ARG,
-    PARSE_STATE_IN_QUOTE,
-    PARSE_STATE_ERROR
-};
-
-
-int str2int(const char *str, int min, int max, bool *ok)
-{
-    long value;
-    char *endptr;
-
-    errno = 0;
-    value = strtol(str, &endptr, 0);
-
-    if (errno != 0 || value < (long)min || value > (long)max ||
-        endptr == str || *endptr != '\0') {
-
-        if (ok) {
-            *ok = false;
-        }
-
-        return 0;
-    }
-
-    if (ok) {
-        *ok = true;
-    }
-    return (int)value;
-}
-
-unsigned int str2uint(const char *str, unsigned int min, unsigned int max, bool *ok)
-{
-    unsigned long value;
-    char *endptr;
-
-    errno = 0;
-    value = strtoul(str, &endptr, 0);
-
-    if (errno != 0 ||
-        value < (unsigned long)min || value > (unsigned long)max ||
-        endptr == str || *endptr != '\0') {
-
-        if (ok) {
-            *ok = false;
-        }
-
-        return 0;
-    }
-
-    if (ok) {
-        *ok = true;
-    }
-    return (unsigned int)value;
-}
-
-
-uint64_t str2uint64(const char *str, uint64_t min, uint64_t max, bool *ok)
-{
-    unsigned long long value;
-    char *endptr;
-
-    errno = 0;
-    value = strtoull(str, &endptr, 0);
-
-    if (errno != 0 || endptr == str || *endptr != '\0' ||
-        value < (unsigned long long)min || value > (unsigned long long)max) {
-
-        if (ok) {
-            *ok = false;
-        }
-
-        return 0;
-    }
-
-    if (ok) {
-        *ok = true;
-    }
-
-    return (uint64_t)value;
-}
-
-double str2double(const char *str, double min, double max, bool *ok)
-{
-    double value;
-    char *endptr;
-
-    errno = 0;
-    value = strtod(str, &endptr);
-
-    if (errno != 0 || value < min || value > max ||
-        endptr == str || *endptr != '\0') {
-
-        if (ok) {
-            *ok = false;
-        }
-
-        return 0;
-    }
-
-    if (ok) {
-        *ok = true;
-    }
-
-    return value;
-}
-
-/* MSVC workarounds */
-
-#if _MSC_VER
-    /* This appears to be missing <= 2012 */
-#   ifndef INFINITY
-#       define INFINITY (_HUGE * _HUGE)
-#   endif
-
-   /* As of MSVC 2013, INFINITY appears to be available, but
-    * the compiler emits a warning for every usage, despite it
-    * causing an overflow by design.
-    *  https://msdn.microsoft.com/en-us/library/cwt7tyxx.aspx
-    *
-    * Oddly, we see warning 4056, despite math.h noting that 4756
-    * will be induced (with the same description).
-    */
-#   pragma warning (push)
-#   pragma warning (disable:4056)
-#endif
-
-double str2dbl_suffix(const char *str,
-                      double min, double max,
-                      const struct numeric_suffix suffixes[],
-                      size_t num_suffixes, bool *ok)
-{
-    double value;
-    char *endptr;
-    size_t i;
-
-    errno = 0;
-    value = strtod(str, &endptr);
-
-    /* If a number could not be parsed at the beginning of the string */
-    if (errno != 0 || endptr == str) {
-        if (ok) {
-            *ok = false;
-        }
-
-        return 0;
-    }
-
-    /* Loop through each available suffix */
-    for (i = 0; i < num_suffixes; i++) {
-        /* If the suffix appears at the end of the number */
-        if (!strcasecmp(endptr, suffixes[i].suffix)) {
-            /* Apply the multiplier */
-            value *= suffixes[i].multiplier;
-            break;
-        }
-    }
-
-    /* Test for overflow */
-    if (value == INFINITY || value == -INFINITY) {
-        if (ok) {
-            *ok = false;
-        }
-
-        return 0;
-    }
-
-    /* Check that the resulting value is in bounds */
-    if (value > max || value < min) {
-        if (ok) {
-            *ok = false;
-        }
-
-        return 0;
-    }
-
-    if (ok) {
-        *ok = true;
-    }
-
-    return value;
-}
-#if _MSC_VER
-#   pragma warning(pop)
-#endif
-
-unsigned int str2uint_suffix(const char *str,
-                             unsigned int min, unsigned int max,
-                             const struct numeric_suffix suffixes[],
-                             size_t num_suffixes, bool *ok)
-{
-    return (unsigned int) str2dbl_suffix(str, min, max,
-                                         suffixes, num_suffixes, ok);
-}
-
-uint64_t str2uint64_suffix(const char *str,
-                           uint64_t min, uint64_t max,
-                           const struct numeric_suffix suffixes[],
-                           size_t num_suffixes, bool *ok)
-{
-    /* FIXME: Potential loss of precision on min/max here */
-    return (uint64_t) str2dbl_suffix(str, (double) min, (double) max,
-                                     suffixes, num_suffixes, ok);
-}
 int str2version(const char *str, struct bladerf_version *version)
 {
     unsigned long tmp;
@@ -279,50 +65,6 @@ int str2version(const char *str, struct bladerf_version *version)
     version->patch = (uint16_t)tmp;
 
     version->describe = str;
-
-    return 0;
-}
-
-void free_args(int argc, char **argv)
-{
-    int i;
-
-    if (argc >= 0 && argv != NULL) {
-
-        for (i = 0; i < argc; i++) {
-            free(argv[i]);
-        }
-        free(argv);
-    }
-}
-
-static void zero_argvs(int start, int end, char **argv)
-{
-    int i;
-    for (i = start; i <= end; i++) {
-        argv[i] = NULL;
-    }
-}
-
-/* Returns 0 on success, -1 on failure */
-static int append_char(char **arg, int *arg_size, int *arg_i, char c)
-{
-    char *tmp;
-
-    if (*arg_i >= *arg_size) {
-        tmp = (char *)realloc(*arg, *arg_size * 2);
-
-        if (!tmp) {
-            return -1;
-        } else {
-            memset(tmp + *arg_size, 0, *arg_size);
-            *arg = tmp;
-            *arg_size = *arg_size * 2;
-        }
-    }
-
-    (*arg)[*arg_i] = c;
-    *arg_i += 1;
 
     return 0;
 }
@@ -505,158 +247,6 @@ int str2loopback(const char *str, bladerf_loopback *loopback)
     return status;
 }
 
-int str2args(const char *line, char comment_char, char ***argv_ret)
-{
-    int line_i, arg_i;      /* Index into line and current argument */
-    int argv_size = 10;     /* Initial # of allocated args */
-    int arg_size;           /* Allocated size of the curr arg */
-    char **argv;
-    int argc;
-    enum str2args_parse_state state = PARSE_STATE_IN_SPACE;
-    const size_t line_len = strlen(line);
-    bool got_eol_comment = false;
-
-
-    argc = arg_i = 0;
-    argv = (char **)malloc(argv_size * sizeof(char *));
-    if (!argv) {
-        return -1;
-    }
-
-    zero_argvs(0, argv_size - 1, argv);
-    arg_size = 0;
-    line_i = 0;
-
-    while ( ((size_t)line_i < line_len) &&
-            state != PARSE_STATE_ERROR  &&
-            !got_eol_comment) {
-
-        switch (state) {
-            case PARSE_STATE_IN_SPACE:
-                /* Found the start of the next argument */
-                if (!isspace((unsigned char) line[line_i])) {
-                    if (line[line_i] == comment_char) {
-                        got_eol_comment = true;
-                    } else {
-                        state = PARSE_STATE_START_ARG;
-                    }
-                } else {
-                    /* Gobble up space */
-                    line_i++;
-                }
-                break;
-
-            case PARSE_STATE_START_ARG:
-                /* Increase size of argv, if needed */
-                if (argc >= argv_size) {
-                    void *tmp;
-                    argv_size = argv_size + argv_size / 2;
-                    tmp = realloc(argv, argv_size);
-
-                    if (tmp) {
-                        argv = (char **)tmp;
-                        zero_argvs(argc, argv_size - 1, argv);
-                    } else {
-                        state = PARSE_STATE_ERROR;
-                    }
-                }
-
-                /* Record start of word (unless we failed to realloc() */
-                if (state != PARSE_STATE_ERROR) {
-
-                    /* Reset per-arg variables */
-                    arg_i = 0;
-                    arg_size = 32;
-
-                    /* Allocate this argument. This will be
-                     * realloc'd as necessary by append_char() */
-                    argv[argc] = (char *)calloc(arg_size, 1);
-                    if (!argv[argc]) {
-                        state = PARSE_STATE_ERROR;
-                        break;
-                    }
-
-                    if (line[line_i] == '"') {
-                        /* Gobble up quote */
-                        state = PARSE_STATE_IN_QUOTE;
-                    } else {
-                        /* Append this character to the argument begin
-                         * fetching up a word */
-                        if (append_char(&argv[argc], &arg_size,
-                                    &arg_i, line[line_i])) {
-                            state = PARSE_STATE_ERROR;
-                        } else {
-                            state = PARSE_STATE_IN_ARG;
-                        }
-                    }
-
-                    argc++;
-                    line_i++;
-                }
-
-                break;
-
-            case PARSE_STATE_IN_ARG:
-                if (isspace((unsigned char) line[line_i])) {
-                    state = PARSE_STATE_IN_SPACE;
-                } else if (line[line_i] == '"') {
-                    state = PARSE_STATE_IN_QUOTE;
-                } else if (line[line_i] == comment_char) {
-                    got_eol_comment = true;
-                } else {
-                    /* Append this character to the argument and remain in
-                     * PARSE_STATE_IN_ARG state */
-                    if (append_char(&argv[argc - 1], &arg_size,
-                                    &arg_i, line[line_i])) {
-                        state = PARSE_STATE_ERROR;
-                    }
-                }
-
-                line_i++;
-                break;
-
-
-            case PARSE_STATE_IN_QUOTE:
-                if (line[line_i] == '"') {
-                    /* Return to looking for more of the word */
-                    state = PARSE_STATE_IN_ARG;
-                } else {
-                    /* Append this character to the argumen */
-                  if (append_char(&argv[argc - 1], &arg_size,
-                                  &arg_i, line[line_i])) {
-                      state = PARSE_STATE_ERROR;
-                  }
-                }
-
-                line_i++;
-                break;
-
-            case PARSE_STATE_ERROR:
-                break;
-        }
-    }
-
-    /* Print PARSE_STATE_ERROR message if hit the EOL in an invalid state */
-    switch (state) {
-        case PARSE_STATE_IN_SPACE:
-        case PARSE_STATE_IN_ARG:
-            *argv_ret = argv;
-            break;
-
-        case PARSE_STATE_IN_QUOTE:
-            free_args(argc, argv);
-            argc = -2;
-            break;
-
-        default:
-            free_args(argc, argv);
-            argc = -1;
-            break;
-    }
-
-    return argc;
-}
-
 int str2lnagain(const char *str, bladerf_lna_gain *gain)
 {
     *gain = BLADERF_LNA_GAIN_MAX;
@@ -740,33 +330,6 @@ bladerf_cal_module str_to_bladerf_cal_module(const char *str)
     return module;
 }
 
-int str2bool(const char *str, bool *val)
-{
-    static const char *t_vals[] = { "true",  "t", "enable",  "en",  "e", "on",  "1" };
-    static const char *f_vals[] = { "false", "f", "disable", "dis", "d", "off", "0" };
-
-    static const size_t t_vals_len = sizeof(t_vals) / sizeof(t_vals[0]);
-    static const size_t f_vals_len = sizeof(f_vals) / sizeof(f_vals[0]);
-
-    size_t i;
-
-    assert(t_vals_len == f_vals_len);
-
-    for (i = 0; i < sizeof(t_vals) / sizeof(t_vals[0]); i++) {
-        if (!strcasecmp(str, t_vals[i])) {
-            *val = true;
-            return 0;
-        } else if (!strcasecmp(str, f_vals[i])) {
-            *val = false;
-            return 0;
-        }
-    }
-
-    /* No match */
-    *val = false;
-    return -1;
-}
-
 const char * smb_mode_to_str(bladerf_smb_mode mode)
 {
     switch (mode) {
@@ -800,4 +363,229 @@ bladerf_smb_mode str_to_smb_mode(const char *str)
     } else {
         return BLADERF_SMB_MODE_INVALID;
     }
+}
+
+unsigned int str2uint(const char *str, unsigned int min, unsigned int max, bool *ok)
+{
+    unsigned int ret;
+    char *optr;
+
+    errno = 0;
+    ret = strtoul(str, &optr, 0);
+
+    if (errno == ERANGE || (errno != 0 && ret == 0)) {
+        *ok = false;
+        return 0;
+    }
+
+    if (str == optr) {
+        *ok = false;
+        return 0;
+    }
+
+    if (ret >= min && ret <= max) {
+        *ok = true;
+        return (unsigned int)ret;
+    }
+
+    *ok = false;
+    return 0;
+}
+
+int str2int(const char *str, int min, int max, bool *ok)
+{
+    long int ret;
+    char *optr;
+
+    errno = 0;
+    ret = strtol(str, &optr, 0);
+
+    if ((errno == ERANGE && (ret == LONG_MAX || ret == LONG_MIN))
+            || (errno != 0 && ret == 0)) {
+        *ok = false;
+        return 0;
+    }
+
+    if (str == optr) {
+        *ok = false;
+        return 0;
+    }
+
+    if (ret >= min && ret <= max) {
+        *ok = true;
+        return (int)ret;
+    }
+
+    *ok = false;
+    return 0;
+}
+
+uint64_t str2uint64(const char *str, uint64_t min, uint64_t max, bool *ok)
+{
+    uint64_t ret;
+    char *optr;
+
+    errno = 0;
+    ret = (uint64_t)strtod(str, &optr);
+
+    if ((errno == ERANGE && ret == ULONG_MAX)
+            || (errno != 0 && ret == 0)) {
+        *ok = false;
+        return 0;
+    }
+
+    if (str == optr) {
+        *ok = false;
+        return 0;
+    }
+
+    if (ret >= min && ret <= max) {
+        *ok = true;
+        return ret;
+    }
+
+    *ok = false;
+    return 0;
+}
+
+double str2double(const char *str, double min, double max, bool *ok)
+{
+    double ret;
+    char *optr;
+
+    errno = 0;
+    ret = strtod(str, &optr);
+
+    if (errno == ERANGE || (errno != 0 && ret == 0)) {
+        *ok = false;
+        return NAN;
+    }
+
+    if (str == optr) {
+        *ok = false;
+        return NAN;
+    }
+
+    if (ret >= min && ret <= max) {
+        *ok = true;
+        return ret;
+    }
+
+    *ok = false;
+    return NAN;
+}
+
+static uint64_t suffix_multiplier(const char *str,
+                      const struct numeric_suffix *suffixes, const size_t num_suff,
+                      bool *ok)
+{
+    unsigned i;
+
+    *ok = true;
+
+    if (!strlen(str))
+        return 1;
+
+    for (i = 0; i < num_suff; i++) {
+        if (!strcasecmp(suffixes[i].suffix, str)) {
+            return suffixes[i].multiplier;
+        }
+    }
+
+    *ok = false;
+    return 0;
+}
+
+unsigned int str2uint_suffix(const char *str, unsigned int min, unsigned int max,
+                      const struct numeric_suffix *suffixes, const size_t num_suff,
+                      bool *ok)
+{
+    uint64_t mult;
+    unsigned int rv;
+    double val;
+    char *optr;
+
+    errno = 0;
+    val = strtod(str, &optr);
+
+    if (errno == ERANGE || (errno != 0 && val == 0)) {
+        *ok = false;
+        return 0;
+    }
+
+    if (str == optr) {
+        *ok = false;
+        return 0;
+    }
+
+    mult = suffix_multiplier(optr, suffixes, num_suff, ok);
+    if (!*ok)
+        return false;
+
+    rv = (unsigned int)(val * mult);
+
+    if (rv >= min && rv <= max) {
+        return rv;
+    }
+
+    *ok = false;
+    return 0;
+}
+
+uint64_t str2uint64_suffix(const char *str, uint64_t min, uint64_t max,
+                      const struct numeric_suffix *suffixes, const size_t num_suff,
+                      bool *ok)
+{
+    uint64_t mult, rv;
+    long double val;
+    char *optr;
+
+    errno = 0;
+    val = strtold(str, &optr);
+
+    if (errno == ERANGE && (errno != 0 && val == 0)) {
+        *ok = false;
+        return 0;
+    }
+
+    if (str == optr) {
+        *ok = false;
+        return 0;
+    }
+
+    mult = suffix_multiplier(optr, suffixes, num_suff, ok);
+    if (!*ok)
+        return false;
+
+    rv = (uint64_t)(val * mult);
+    if (rv >= min && rv <= max) {
+        return rv;
+    }
+
+    *ok = false;
+    return 0;
+}
+
+int str2bool(const char *str, bool *val)
+{
+    unsigned int i;
+
+    char *str_true[] = { "true", "t", "one", "1", "enable", "en", "on" };
+    char *str_false[] = { "false", "f", "zero", "0", "disable", "dis", "off" };
+
+    for (i = 0; i < ARRAY_SIZE(str_true); i++) {
+        if (!strcasecmp(str_true[i], str)) {
+            *val = true;
+            return 0;
+        }
+    }
+
+    for (i = 0; i < ARRAY_SIZE(str_false); i++) {
+        if (!strcasecmp(str_false[i], str)) {
+            *val = false;
+            return 0;
+        }
+    }
+
+    return BLADERF_ERR_INVAL;
 }
