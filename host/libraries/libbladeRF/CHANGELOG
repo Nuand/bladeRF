@@ -5,6 +5,18 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.9.0 (2017-12-07)
+--------------------------------
+
+This version of libbladeRF is intended for use with:
+
+FX3 Firmware v2.0.0 (or v1.9.1)
+FPGA         v0.7.1
+
+Changes:
+ * Added bladeRF.conf config option file
+ * Minor fix-ups
+
 v1.8.0 (2017-07-01)
 --------------------------------
 
