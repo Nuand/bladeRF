@@ -15,15 +15,15 @@ conflicts=('bladerf-util')
 provides=('bladerf-util')
 backup=(etc/bladerf.cfg)
 source=('bladeRF::git+https://github.com/Nuand/bladeRF#branch=master'
-        'http://nuand.com/fx3/latest.img'
-        'http://nuand.com/fpga/ddc81d0fb1b653227b5824d8d5fcb444556da175/hostedx40.rbf'
-        'http://nuand.com/fpga/ddc81d0fb1b653227b5824d8d5fcb444556da175/hostedx115.rbf'
+        'https://www.nuand.com/fx3/bladeRF_fw_v2.0.0.img'
+        'https://www.nuand.com/fpga/v0.7.1/hostedx40.rbf'
+        'https://www.nuand.com/fpga/v0.7.1/hostedx115.rbf'
 )
 sha1sums=(
         'SKIP'
-        'SKIP'
-        '10251c8d12bf32bd4d2ec987f904fa3e644883cd'
-        '211d3d997b56624d46abfa2eeaeefde345a38c87'
+        '25dd40565e14051b3a3195fa6784ee5cb2a8e8a2'
+        '07c491710c9fab0e9b952fb2adc59e62f6693d50'
+        'bf1464df78b2c18f0d711108550e30692b536ea4'
 )
 
 
@@ -65,7 +65,7 @@ package() {
   make DESTDIR=$pkgdir install
   mkdir -p $pkgdir/usr/share/bladerf/fpga
   mkdir $pkgdir/usr/share/bladerf/firmware
-  cp $srcdir/latest.img $pkgdir/usr/share/bladerf/firmware/
+  cp $srcdir/bladeRF_fw_v2.0.0.img $pkgdir/usr/share/bladerf/firmware/bladeRF_fw.img
   cp $srcdir/hostedx40.rbf $pkgdir/usr/share/bladerf/fpga/
   cp $srcdir/hostedx115.rbf $pkgdir/usr/share/bladerf/fpga/
   cp $srcdir/$_gitname-build/COPYING $pkgdir/usr/share/bladerf/LICENSE
