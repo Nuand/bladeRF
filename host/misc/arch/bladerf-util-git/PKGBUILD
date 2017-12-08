@@ -63,11 +63,11 @@ package() {
 
   cd "$srcdir/$_gitname-build/host"
   make DESTDIR=$pkgdir install
-  mkdir -p $pkgdir/usr/share/bladerf/fpga
-  mkdir $pkgdir/usr/share/bladerf/firmware
-  cp $srcdir/bladeRF_fw_v2.0.0.img $pkgdir/usr/share/bladerf/firmware/bladeRF_fw.img
-  cp $srcdir/hostedx40.rbf $pkgdir/usr/share/bladerf/fpga/
-  cp $srcdir/hostedx115.rbf $pkgdir/usr/share/bladerf/fpga/
-  cp $srcdir/$_gitname-build/COPYING $pkgdir/usr/share/bladerf/LICENSE
+  mkdir -p $pkgdir/usr/share/Nuand/bladeRF/fpga
+  mkdir $pkgdir/usr/share/Nuand/bladeRF/firmware
+  cp $srcdir/bladeRF_fw_v2.0.0.img $pkgdir/usr/share/Nuand/bladeRF/firmware/bladeRF_fw.img
+  cp $srcdir/hostedx40.rbf $pkgdir/usr/share/Nuand/bladeRF/fpga/
+  cp $srcdir/hostedx115.rbf $pkgdir/usr/share/Nuand/bladeRF/fpga/
+  cp $srcdir/$_gitname-build/COPYING $pkgdir/usr/share/Nuand/bladeRF/LICENSE
 }
 
