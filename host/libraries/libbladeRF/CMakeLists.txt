@@ -466,15 +466,23 @@ if(BUILD_LIBBLADERF_DOCUMENTATION)
 
         set(LOGO_IMAGE "${CMAKE_CURRENT_SOURCE_DIR}/doc/images/logo.png")
 
+        set(DOXYGEN_SOURCE_FILES
+            ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/Doxyfile
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/libbladeRF.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/*.dox
+            ${CMAKE_CURRENT_SOURCE_DIR}/doc/examples/*
+            ${CMAKE_CURRENT_SOURCE_DIR}/doc/images/*
+        )
+
         configure_file(
             ${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/Doxyfile.in
             ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/Doxyfile
             @ONLY
-            )
+        )
 
         add_custom_command(
             OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/html/index.html
-            DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/Doxyfile ${CMAKE_CURRENT_SOURCE_DIR}/include/libbladeRF.h
+            DEPENDS ${DOXYGEN_SOURCE_FILES}
             COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/Doxyfile
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen
             COMMENT "Generating libbladeRF API documentation via Doxygen in: ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen"
