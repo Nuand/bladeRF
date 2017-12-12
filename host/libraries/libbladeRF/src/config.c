@@ -242,7 +242,7 @@ static int apply_config_options(struct bladerf *dev, struct config_options opt)
     }
 
     if (status < 0)
-        log_warning("Error massage for option (%s) on line %d:\n%s\n",
+        log_warning("Error message for option (%s) on line %d:\n%s\n",
                 opt.key, opt.lineno, bladerf_strerror(status));
 
     return status;
