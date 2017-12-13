@@ -931,7 +931,7 @@ static inline void cancel_all_transfers(struct bladerf_stream *stream)
 
             status = libusb_cancel_transfer(stream_data->transfers[i]);
             if (status < 0 && status != LIBUSB_ERROR_NOT_FOUND) {
-                log_error("Error canceling transfer (%d): %s\r\n",
+                log_error("Error canceling transfer (%d): %s\n",
                         status, libusb_error_name(status));
             } else {
                 stream_data->transfer_status[i] = TRANSFER_CANCEL_PENDING;
@@ -973,7 +973,7 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
            stream_data->transfer_status[transfer_i] == TRANSFER_CANCEL_PENDING);
 
     if (transfer_i >= stream_data->num_transfers) {
-        log_error("Unable to find transfer");
+        log_error("Unable to find transfer\n");
         stream->state = STREAM_SHUTTING_DOWN;
     } else {
         stream_data->transfer_status[transfer_i] = TRANSFER_AVAIL;
@@ -1083,7 +1083,7 @@ get_next_available_transfer(struct lusb_stream_data *stream_data)
                 stream_data->out_of_order_event == false) {
 
                 log_warning("Transfer callback occurred out of order. "
-                            "(Warning only this time.)\r\n");
+                            "(Warning only this time.)\n");
                 stream_data->out_of_order_event = true;
             }
 
@@ -1336,7 +1336,7 @@ int lusb_submit_stream_buffer(void *driver, struct bladerf_stream *stream,
     if (stream_data->num_avail == 0) {
         if (nonblock) {
             log_debug("Non-blocking buffer submission requested, but no "
-                      "transfers are currently available.");
+                      "transfers are currently available.\n");
 
             return BLADERF_ERR_WOULD_BLOCK;
         }
