@@ -19,6 +19,9 @@ set(SRC
     ${BLADERF_HOST_COMMON_SOURCE_DIR}/log.c
 )
 
+set(SRC_TO_SHORTEN ${SRC})
+include(ShortFileMacro)
+
 add_definitions(-DLOGGING_ENABLED)
 add_definitions(-DTEST_FX3_FW_VALIDATION)
 add_definitions(-DLIBBLADERF_SEARCH_PREFIX="${CMAKE_INSTALL_PREFIX}")
