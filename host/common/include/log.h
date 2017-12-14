@@ -39,9 +39,7 @@ extern "C" {
 #ifdef SHORT_FILE_
 #   define  THIS_FILE  SHORT_FILE_
 #else
-#if 0
 #   warning "SHORT_FILE_ was not defined. Using __FILE__ instead."
-#endif
 #   define  THIS_FILE   __FILE__
 #endif
 

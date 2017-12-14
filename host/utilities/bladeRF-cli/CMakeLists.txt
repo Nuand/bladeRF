@@ -188,6 +188,8 @@ if(APPLE)
     )
 endif()
 
+set(SRC_TO_SHORTEN ${BLADERF_CLI_SOURCE})
+include(ShortFileMacro)
 add_executable(bladeRF-cli ${BLADERF_CLI_SOURCE})
 
 ################################################################################
