@@ -1063,28 +1063,6 @@ int bladerf_trigger_state(struct bladerf *dev,
     return status;
 }
 
-int bladerf_set_gain_mode(struct bladerf *dev, bladerf_module mod, bladerf_gain_mode mode)
-{
-    int status;
-    MUTEX_LOCK(&dev->lock);
-
-    status = dev->board->set_gain_mode(dev, mod, mode);
-
-    MUTEX_UNLOCK(&dev->lock);
-    return status;
-}
-
-int bladerf_get_gain_mode(struct bladerf *dev, bladerf_module mod, bladerf_gain_mode *mode)
-{
-    int status;
-    MUTEX_LOCK(&dev->lock);
-
-    status = dev->board->get_gain_mode(dev, mod, mode);
-
-    MUTEX_UNLOCK(&dev->lock);
-    return status;
-}
-
 /******************************************************************************/
 /* Streaming */
 /******************************************************************************/
