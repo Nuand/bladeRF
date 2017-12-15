@@ -278,6 +278,8 @@ static void i2c_complete_transfer(uint8_t check_rxack)
 
 void spi_arbiter_lock()
 {
+// Applies only to bladeRF1
+#ifdef ARBITER_0_BASE
     uint8_t data;
 
     IOWR_32DIRECT(ARBITER_0_BASE, 0, 1);
@@ -285,11 +287,15 @@ void spi_arbiter_lock()
     do {
         data = IORD_8DIRECT(ARBITER_0_BASE, 1);
     } while((data & 1) == 0);
+#endif // ARBITER_0_BASE
 }
 
 void spi_arbiter_unlock()
 {
+// Applies only to bladeRF1
+#ifdef ARBITER_0_BASE
     IOWR_32DIRECT(ARBITER_0_BASE, 0, 2);
+#endif // ARBITER_0_BASE
 }
 
 uint8_t lms6_read(uint8_t addr)
@@ -650,6 +656,8 @@ uint8_t rx_trigger_ctl_read(void)
 
 void agc_dc_corr_write(uint16_t addr, uint16_t value)
 {
+// Applies only to bladeRF1
+#ifdef AGC_DC_I_MIN_BASE
     if (addr == NIOS_PKT_8x16_ADDR_AGC_DC_Q_MAX)
         IOWR_ALTERA_AVALON_PIO_DATA(AGC_DC_Q_MAX_BASE, value);
     else if (addr == NIOS_PKT_8x16_ADDR_AGC_DC_I_MAX)
@@ -662,6 +670,7 @@ void agc_dc_corr_write(uint16_t addr, uint16_t value)
         IOWR_ALTERA_AVALON_PIO_DATA(AGC_DC_Q_MIN_BASE, value);
     else if (addr == NIOS_PKT_8x16_ADDR_AGC_DC_I_MIN)
         IOWR_ALTERA_AVALON_PIO_DATA(AGC_DC_I_MIN_BASE, value);
+#endif // AGC_DC_I_MIN_BASE
 }
 
 uint64_t time_tamer_read(bladerf_module m)
