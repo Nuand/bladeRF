@@ -24,9 +24,6 @@ set(SRC
     ${BLADERF_HOST_COMMON_SOURCE_DIR}/log.c
 )
 
-set(SRC_TO_SHORTEN ${SRC})
-include(ShortFileMacro)
-
 include_directories(${INCLUDES})
 add_executable(libbladeRF_test_interleaver ${SRC})
 target_link_libraries(libbladeRF_test_interleaver libbladerf_shared)
