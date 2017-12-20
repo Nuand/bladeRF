@@ -49,6 +49,87 @@ set_instance_parameter_value lms_spi {DATA_WIDTH} {8}
 
 add_instance vctcxo_tamer_0 vctcxo_tamer 1.0
 
+add_instance arbiter_0 arbiter 1.0
+set_instance_parameter_value arbiter_0 {N} {2}
+
+add_instance agc_dc_i_max altera_avalon_pio
+set_instance_parameter_value agc_dc_i_max {bitClearingEdgeCapReg} {0}
+set_instance_parameter_value agc_dc_i_max {bitModifyingOutReg} {0}
+set_instance_parameter_value agc_dc_i_max {captureEdge} {0}
+set_instance_parameter_value agc_dc_i_max {direction} {Output}
+set_instance_parameter_value agc_dc_i_max {edgeType} {RISING}
+set_instance_parameter_value agc_dc_i_max {generateIRQ} {0}
+set_instance_parameter_value agc_dc_i_max {irqType} {LEVEL}
+set_instance_parameter_value agc_dc_i_max {resetValue} {0.0}
+set_instance_parameter_value agc_dc_i_max {simDoTestBenchWiring} {0}
+set_instance_parameter_value agc_dc_i_max {simDrivenValue} {0.0}
+set_instance_parameter_value agc_dc_i_max {width} {16}
+
+add_instance agc_dc_i_mid altera_avalon_pio
+set_instance_parameter_value agc_dc_i_mid {bitClearingEdgeCapReg} {0}
+set_instance_parameter_value agc_dc_i_mid {bitModifyingOutReg} {0}
+set_instance_parameter_value agc_dc_i_mid {captureEdge} {0}
+set_instance_parameter_value agc_dc_i_mid {direction} {Output}
+set_instance_parameter_value agc_dc_i_mid {edgeType} {RISING}
+set_instance_parameter_value agc_dc_i_mid {generateIRQ} {0}
+set_instance_parameter_value agc_dc_i_mid {irqType} {LEVEL}
+set_instance_parameter_value agc_dc_i_mid {resetValue} {0.0}
+set_instance_parameter_value agc_dc_i_mid {simDoTestBenchWiring} {0}
+set_instance_parameter_value agc_dc_i_mid {simDrivenValue} {0.0}
+set_instance_parameter_value agc_dc_i_mid {width} {16}
+
+add_instance agc_dc_i_min altera_avalon_pio
+set_instance_parameter_value agc_dc_i_min {bitClearingEdgeCapReg} {0}
+set_instance_parameter_value agc_dc_i_min {bitModifyingOutReg} {0}
+set_instance_parameter_value agc_dc_i_min {captureEdge} {0}
+set_instance_parameter_value agc_dc_i_min {direction} {Output}
+set_instance_parameter_value agc_dc_i_min {edgeType} {RISING}
+set_instance_parameter_value agc_dc_i_min {generateIRQ} {0}
+set_instance_parameter_value agc_dc_i_min {irqType} {LEVEL}
+set_instance_parameter_value agc_dc_i_min {resetValue} {0.0}
+set_instance_parameter_value agc_dc_i_min {simDoTestBenchWiring} {0}
+set_instance_parameter_value agc_dc_i_min {simDrivenValue} {0.0}
+set_instance_parameter_value agc_dc_i_min {width} {16}
+
+add_instance agc_dc_q_max altera_avalon_pio
+set_instance_parameter_value agc_dc_q_max {bitClearingEdgeCapReg} {0}
+set_instance_parameter_value agc_dc_q_max {bitModifyingOutReg} {0}
+set_instance_parameter_value agc_dc_q_max {captureEdge} {0}
+set_instance_parameter_value agc_dc_q_max {direction} {Output}
+set_instance_parameter_value agc_dc_q_max {edgeType} {RISING}
+set_instance_parameter_value agc_dc_q_max {generateIRQ} {0}
+set_instance_parameter_value agc_dc_q_max {irqType} {LEVEL}
+set_instance_parameter_value agc_dc_q_max {resetValue} {0.0}
+set_instance_parameter_value agc_dc_q_max {simDoTestBenchWiring} {0}
+set_instance_parameter_value agc_dc_q_max {simDrivenValue} {0.0}
+set_instance_parameter_value agc_dc_q_max {width} {16}
+
+add_instance agc_dc_q_mid altera_avalon_pio
+set_instance_parameter_value agc_dc_q_mid {bitClearingEdgeCapReg} {0}
+set_instance_parameter_value agc_dc_q_mid {bitModifyingOutReg} {0}
+set_instance_parameter_value agc_dc_q_mid {captureEdge} {0}
+set_instance_parameter_value agc_dc_q_mid {direction} {Output}
+set_instance_parameter_value agc_dc_q_mid {edgeType} {RISING}
+set_instance_parameter_value agc_dc_q_mid {generateIRQ} {0}
+set_instance_parameter_value agc_dc_q_mid {irqType} {LEVEL}
+set_instance_parameter_value agc_dc_q_mid {resetValue} {0.0}
+set_instance_parameter_value agc_dc_q_mid {simDoTestBenchWiring} {0}
+set_instance_parameter_value agc_dc_q_mid {simDrivenValue} {0.0}
+set_instance_parameter_value agc_dc_q_mid {width} {16}
+
+add_instance agc_dc_q_min altera_avalon_pio
+set_instance_parameter_value agc_dc_q_min {bitClearingEdgeCapReg} {0}
+set_instance_parameter_value agc_dc_q_min {bitModifyingOutReg} {0}
+set_instance_parameter_value agc_dc_q_min {captureEdge} {0}
+set_instance_parameter_value agc_dc_q_min {direction} {Output}
+set_instance_parameter_value agc_dc_q_min {edgeType} {RISING}
+set_instance_parameter_value agc_dc_q_min {generateIRQ} {0}
+set_instance_parameter_value agc_dc_q_min {irqType} {LEVEL}
+set_instance_parameter_value agc_dc_q_min {resetValue} {0.0}
+set_instance_parameter_value agc_dc_q_min {simDoTestBenchWiring} {0}
+set_instance_parameter_value agc_dc_q_min {simDrivenValue} {0.0}
+set_instance_parameter_value agc_dc_q_min {width} {16}
+
 # exported interfaces
 add_interface clk clock sink
 set_interface_property clk EXPORT_OF clk_0.clk_in
@@ -82,6 +163,20 @@ add_interface xb_gpio conduit end
 set_interface_property xb_gpio EXPORT_OF common_system_0.xb_gpio
 add_interface xb_gpio_dir conduit end
 set_interface_property xb_gpio_dir EXPORT_OF common_system_0.xb_gpio_dir
+add_interface arbiter conduit end
+set_interface_property arbiter EXPORT_OF arbiter_0.conduit_end
+add_interface agc_dc_i_max conduit end
+set_interface_property agc_dc_i_max EXPORT_OF agc_dc_i_max.external_connection
+add_interface agc_dc_i_mid conduit end
+set_interface_property agc_dc_i_mid EXPORT_OF agc_dc_i_mid.external_connection
+add_interface agc_dc_i_min conduit end
+set_interface_property agc_dc_i_min EXPORT_OF agc_dc_i_min.external_connection
+add_interface agc_dc_q_max conduit end
+set_interface_property agc_dc_q_max EXPORT_OF agc_dc_q_max.external_connection
+add_interface agc_dc_q_mid conduit end
+set_interface_property agc_dc_q_mid EXPORT_OF agc_dc_q_mid.external_connection
+add_interface agc_dc_q_min conduit end
+set_interface_property agc_dc_q_min EXPORT_OF agc_dc_q_min.external_connection
 
 # connections and connection parameters
 add_connection common_system_0.pb_0_m0 vctcxo_tamer_0.avalon_slave_0
@@ -104,18 +199,70 @@ set_connection_parameter_value common_system_0.pb_1_m0/iq_corr_tx_phase_gain.s1 
 set_connection_parameter_value common_system_0.pb_1_m0/iq_corr_tx_phase_gain.s1 baseAddress {0x0010}
 set_connection_parameter_value common_system_0.pb_1_m0/iq_corr_tx_phase_gain.s1 defaultConnection {0}
 
+add_connection common_system_0.pb_2_m0 arbiter_0.avalon_slave_0
+set_connection_parameter_value common_system_0.pb_2_m0/arbiter_0.avalon_slave_0 arbitrationPriority {1}
+set_connection_parameter_value common_system_0.pb_2_m0/arbiter_0.avalon_slave_0 baseAddress {0x0200}
+set_connection_parameter_value common_system_0.pb_2_m0/arbiter_0.avalon_slave_0 defaultConnection {0}
+
+add_connection common_system_0.pb_2_m0 agc_dc_i_max.s1
+set_connection_parameter_value common_system_0.pb_2_m0/agc_dc_i_max.s1 arbitrationPriority {1}
+set_connection_parameter_value common_system_0.pb_2_m0/agc_dc_i_max.s1 baseAddress {0x0300}
+set_connection_parameter_value common_system_0.pb_2_m0/agc_dc_i_max.s1 defaultConnection {0}
+
+add_connection common_system_0.pb_2_m0 agc_dc_q_max.s1
+set_connection_parameter_value common_system_0.pb_2_m0/agc_dc_q_max.s1 arbitrationPriority {1}
+set_connection_parameter_value common_system_0.pb_2_m0/agc_dc_q_max.s1 baseAddress {0x0310}
+set_connection_parameter_value common_system_0.pb_2_m0/agc_dc_q_max.s1 defaultConnection {0}
+
+add_connection common_system_0.pb_2_m0 agc_dc_i_mid.s1
+set_connection_parameter_value common_system_0.pb_2_m0/agc_dc_i_mid.s1 arbitrationPriority {1}
+set_connection_parameter_value common_system_0.pb_2_m0/agc_dc_i_mid.s1 baseAddress {0x0320}
+set_connection_parameter_value common_system_0.pb_2_m0/agc_dc_i_mid.s1 defaultConnection {0}
+
+add_connection common_system_0.pb_2_m0 agc_dc_q_mid.s1
+set_connection_parameter_value common_system_0.pb_2_m0/agc_dc_q_mid.s1 arbitrationPriority {1}
+set_connection_parameter_value common_system_0.pb_2_m0/agc_dc_q_mid.s1 baseAddress {0x0330}
+set_connection_parameter_value common_system_0.pb_2_m0/agc_dc_q_mid.s1 defaultConnection {0}
+
+add_connection common_system_0.pb_2_m0 agc_dc_i_min.s1
+set_connection_parameter_value common_system_0.pb_2_m0/agc_dc_i_min.s1 arbitrationPriority {1}
+set_connection_parameter_value common_system_0.pb_2_m0/agc_dc_i_min.s1 baseAddress {0x0340}
+set_connection_parameter_value common_system_0.pb_2_m0/agc_dc_i_min.s1 defaultConnection {0}
+
+add_connection common_system_0.pb_2_m0 agc_dc_q_min.s1
+set_connection_parameter_value common_system_0.pb_2_m0/agc_dc_q_min.s1 arbitrationPriority {1}
+set_connection_parameter_value common_system_0.pb_2_m0/agc_dc_q_min.s1 baseAddress {0x0350}
+set_connection_parameter_value common_system_0.pb_2_m0/agc_dc_q_min.s1 defaultConnection {0}
+
 add_connection clk_0.clk common_system_0.clk
 
 add_connection clk_0.clk iq_corr_rx_phase_gain.clk
 
 add_connection clk_0.clk iq_corr_tx_phase_gain.clk
 
+add_connection clk_0.clk agc_dc_i_max.clk
+
+add_connection clk_0.clk agc_dc_q_max.clk
+
+add_connection clk_0.clk agc_dc_i_mid.clk
+
+add_connection clk_0.clk agc_dc_q_mid.clk
+
+add_connection clk_0.clk agc_dc_i_min.clk
+
+add_connection clk_0.clk agc_dc_q_min.clk
+
 add_connection clk_0.clk vctcxo_tamer_0.clock_sink
 
 add_connection clk_0.clk lms_spi.clock_sink
 
+add_connection clk_0.clk arbiter_0.clock_sink
+
 add_connection common_system_0.ib0_receiver_irq vctcxo_tamer_0.interrupt_sender
 set_connection_parameter_value common_system_0.ib0_receiver_irq/vctcxo_tamer_0.interrupt_sender irqNumber {0}
+
+add_connection common_system_0.ib0_receiver_irq arbiter_0.interrupt_sender
+set_connection_parameter_value common_system_0.ib0_receiver_irq/arbiter_0.interrupt_sender irqNumber {1}
 
 add_connection clk_0.clk_reset common_system_0.reset
 
@@ -126,6 +273,20 @@ add_connection clk_0.clk_reset iq_corr_tx_phase_gain.reset
 add_connection clk_0.clk_reset vctcxo_tamer_0.reset_sink
 
 add_connection clk_0.clk_reset lms_spi.reset_sink
+
+add_connection clk_0.clk_reset arbiter_0.reset
+
+add_connection clk_0.clk_reset agc_dc_i_max.reset
+
+add_connection clk_0.clk_reset agc_dc_q_max.reset
+
+add_connection clk_0.clk_reset agc_dc_i_mid.reset
+
+add_connection clk_0.clk_reset agc_dc_q_mid.reset
+
+add_connection clk_0.clk_reset agc_dc_i_min.reset
+
+add_connection clk_0.clk_reset agc_dc_q_min.reset
 
 # interconnect requirements
 set_interconnect_requirement {$system} {qsys_mm.clockCrossingAdapter} {HANDSHAKE}

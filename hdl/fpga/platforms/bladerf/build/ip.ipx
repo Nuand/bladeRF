@@ -4,4 +4,5 @@
         <path path="../../../fpga/ip/nuand/command_uart/**/*"/>
         <path path="../../../fpga/ip/nuand/lms6_spi_controller/**/*"/>
         <path path="../../../fpga/ip/nuand/vctcxo_tamer/**/*"/>
+        <path path="../../../fpga/ip/nuand/arbiter/**/*"/>
 </library>
