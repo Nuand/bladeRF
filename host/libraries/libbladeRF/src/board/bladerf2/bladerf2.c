@@ -4408,8 +4408,8 @@ int bladerf_get_rf_switch_config(struct bladerf *dev,
         RETURN_ERROR_STATUS("ad9361_get_tx_rf_port_output", status);
     }
 
-    config->tx1_ad9361_port = val;
-    config->tx2_ad9361_port = val;
+    config->tx1_rfic_port = val;
+    config->tx2_rfic_port = val;
 
     status = ad9361_get_rx_rf_port_input(phy, &val);
     if (status < 0) {
@@ -4417,8 +4417,8 @@ int bladerf_get_rf_switch_config(struct bladerf *dev,
         RETURN_ERROR_STATUS("ad9361_get_rx_rf_port_input", status);
     }
 
-    config->rx1_ad9361_port = val;
-    config->rx2_ad9361_port = val;
+    config->rx1_rfic_port = val;
+    config->rx2_rfic_port = val;
 
     /* Read RFFE control register */
     status = dev->backend->rffe_control_read(dev, &reg);

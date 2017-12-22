@@ -1914,17 +1914,17 @@ int print_rfconfig(struct cli_state *state, int argc, char **argv)
     }
 
     printf("  Port config:\n");
-    printf("    TX1: RFIC 0x%x (%s) => SW 0x%x (%s)\n", config.tx1_ad9361_port,
-           _ad9361_tx_portstr(config.tx1_ad9361_port), config.tx1_spdt_port,
+    printf("    TX1: RFIC 0x%x (%s) => SW 0x%x (%s)\n", config.tx1_rfic_port,
+           _ad9361_tx_portstr(config.tx1_rfic_port), config.tx1_spdt_port,
            _sky13374_portstr(config.tx1_spdt_port));
-    printf("    TX2: RFIC 0x%x (%s) => SW 0x%x (%s)\n", config.tx2_ad9361_port,
-           _ad9361_tx_portstr(config.tx2_ad9361_port), config.tx2_spdt_port,
+    printf("    TX2: RFIC 0x%x (%s) => SW 0x%x (%s)\n", config.tx2_rfic_port,
+           _ad9361_tx_portstr(config.tx2_rfic_port), config.tx2_spdt_port,
            _sky13374_portstr(config.tx2_spdt_port));
-    printf("    RX1: RFIC 0x%x (%s) <= SW 0x%x (%s)\n", config.rx1_ad9361_port,
-           _ad9361_rx_portstr(config.rx1_ad9361_port), config.rx1_spdt_port,
+    printf("    RX1: RFIC 0x%x (%s) <= SW 0x%x (%s)\n", config.rx1_rfic_port,
+           _ad9361_rx_portstr(config.rx1_rfic_port), config.rx1_spdt_port,
            _sky13374_portstr(config.rx1_spdt_port));
-    printf("    RX2: RFIC 0x%x (%s) <= SW 0x%x (%s)\n", config.rx2_ad9361_port,
-           _ad9361_rx_portstr(config.rx2_ad9361_port), config.rx2_spdt_port,
+    printf("    RX2: RFIC 0x%x (%s) <= SW 0x%x (%s)\n", config.rx2_rfic_port,
+           _ad9361_rx_portstr(config.rx2_rfic_port), config.rx2_spdt_port,
            _sky13374_portstr(config.rx2_spdt_port));
 
     return 0;

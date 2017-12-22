@@ -586,7 +586,7 @@ struct bladerf_range {
 /**
  * Gain control modes
  */
-typedef enum  {
+typedef enum {
     BLADERF_GAIN_DEFAULT,        /**< Device-specific default */
     BLADERF_GAIN_MGC,            /**< Manual gain control */
     BLADERF_GAIN_FASTATTACK_AGC, /**< Automatic gain control, fast attack */
@@ -595,8 +595,8 @@ typedef enum  {
 } bladerf_gain_mode;
 
 /* Backwards compatibility */
-#define BLADERF_GAIN_AUTOMATIC BLADERF_GAIN_DEFAULT
-#define BLADERF_GAIN_MANUAL    BLADERF_GAIN_MGC
+#define BLADERF_GAIN_AUTOMATIC BLADERF_GAIN_DEFAULT /**< Default AGC mode */
+#define BLADERF_GAIN_MANUAL    BLADERF_GAIN_MGC     /**< Manual gain control */
 
 /**
  * Mapping of human-readable names to gain modes
@@ -2165,7 +2165,7 @@ int CALL_CONV bladerf_deinterleave_stream_buffer(bladerf_channel_layout layout,
  * <a class="el" href="sync_tx_meta_bursts.html">this page</a>.)
  *
  * @param       dev     Device handle
- * @param[in]   dir     Stream direction
+ * @param[in]   ch      Channel
  * @param[in]   enable  true to enable, false to disable
  *
  * @return 0 on success, value from \ref RETCODES list on failure
@@ -3176,7 +3176,7 @@ int CALL_CONV bladerf_trim_dac_read(struct bladerf *dev, uint16_t *val);
  *  - libbladeRF >= v1.3.0
  *  - FPGA       >= v0.2.0
  *
- * The default mode can be overridden by setting a ::BLADERF_DEFAULT_TUNING_MODE
+ * The default mode can be overridden by setting a BLADERF_DEFAULT_TUNING_MODE
  * environment variable to `host` or `fpga`. Overriding this value with a mode
  * not supported by the FPGA will result in failures or unexpected behavior.
  */

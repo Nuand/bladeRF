@@ -194,7 +194,6 @@ int CALL_CONV bladerf_adf4002_configure(struct bladerf *dev,
  * Calculate valid R and N values for given reference and system clock
  * frequencies.
  *
- * @param       dev         Device handle
  * @param[in]   ref_freq    Reference clock frequency, in Hz
  * @param[in]   clock_freq  System clock frequency, in Hz
  * @param[out]  R           Reference counter divide ratio (1...16383)
@@ -286,20 +285,36 @@ int CALL_CONV bladerf_ina219_read(struct bladerf *dev,
  * @{
  */
 
+/**
+ * RF switch configuration structure
+ */
 typedef struct {
-    uint32_t tx1_ad9361_port;
-    uint32_t tx1_spdt_port;
-    uint32_t tx2_ad9361_port;
-    uint32_t tx2_spdt_port;
-    uint32_t rx1_ad9361_port;
-    uint32_t rx1_spdt_port;
-    uint32_t rx2_ad9361_port;
-    uint32_t rx2_spdt_port;
+    uint32_t tx1_rfic_port; /**< Active TX1 output from RFIC */
+    uint32_t tx1_spdt_port; /**< RF switch configuration for the TX1 path */
+    uint32_t tx2_rfic_port; /**< Active TX2 output from RFIC */
+    uint32_t tx2_spdt_port; /**< RF switch configuration for the TX2 path */
+    uint32_t rx1_rfic_port; /**< Active RX1 input to RFIC */
+    uint32_t rx1_spdt_port; /**< RF switch configuration for the RX1 path */
+    uint32_t rx2_rfic_port; /**< Active RX2 input to RFIC */
+    uint32_t rx2_spdt_port; /**< RF switch configuration for the RX2 path */
 } bladerf_rf_switch_config;
 
+/**
+ * Read the current RF switching configuration from the bladeRF hardware.
+ *
+ * Queries both the RFIC and the RF switch and passes back a
+ * bladerf_rf_switch_config stucture.
+ *
+ * @param       dev     Device handle
+ * @param[out]  config  Switch configuration struct
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
 API_EXPORT
 int CALL_CONV bladerf_get_rf_switch_config(struct bladerf *dev,
                                            bladerf_rf_switch_config *config);
+
+/** @} (End of FN_BLADERF2_LOW_LEVEL_RF_SWITCHING) */
 
 /** @} (End of FN_BLADERF2_LOW_LEVEL) */
 
