@@ -1,6 +1,7 @@
 # Convenience directory
 set here         $::quartus(qip_path)
 set adi_ip       [file normalize [file join $here ../../ip/analogdevicesinc]]
+set common       [file normalize [file join $here ../common/bladerf]]
 set nuand_ip     [file normalize [file join $here ../../ip/nuand]]
 set opencores_ip [file normalize [file join $here ../../ip/opencores]]
 
@@ -11,9 +12,9 @@ set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/blad
 set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/bladerf.vhd]]
 
 # Basic timing constraints
-set_global_assignment -name SDC_FILE [file normalize [file join $adi_ip hdl/library/common/ad_axi_ip_constr.sdc]]
-set_global_assignment -name SDC_FILE [file normalize [file join $nuand_ip synthesis/constraints/ad9361.sdc]]
-set_global_assignment -name SDC_FILE [file normalize [file join $nuand_ip synthesis/constraints/fx3.sdc]]
-set_global_assignment -name SDC_FILE [file normalize [file join $nuand_ip synthesis/constraints/spi.sdc]]
 set_global_assignment -name SDC_FILE [file normalize [file join $here constraints/bladerf.sdc]]
-set_global_assignment -name SDC_FILE [file normalize [file join $opencores_ip i2c/rtl/oc_i2c.sdc]]
+set_global_assignment -name SDC_FILE [file normalize [file join $here constraints/i2c.sdc]]
+set_global_assignment -name SDC_FILE [file normalize [file join $here constraints/spi.sdc]]
+set_global_assignment -name SDC_FILE [file normalize [file join $adi_ip hdl/library/common/ad_axi_ip_constr.sdc]]
+set_global_assignment -name SDC_FILE [file normalize [file join $common constraints/ad9361.sdc]]
+set_global_assignment -name SDC_FILE [file normalize [file join $common constraints/fx3.sdc]]
