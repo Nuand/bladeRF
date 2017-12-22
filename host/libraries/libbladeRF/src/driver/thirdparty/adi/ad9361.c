@@ -4304,12 +4304,12 @@ static int32_t ad9361_validate_trx_clock_chain(struct ad9361_rf_phy *phy,
 	}
 
 	for (i = 1; i <= 3; i++) {
-		if (abs(rx_path_clks[ADC_FREQ] / i - data_clk) < 4)
+		if ((rx_path_clks[ADC_FREQ] / i - data_clk) < 4)
 			return 0;
 	}
 
 	for (i = 1; i <= 4; i++) {
-		if (abs((rx_path_clks[R2_FREQ] >> i) - data_clk) < 4)
+		if (((rx_path_clks[R2_FREQ] >> i) - data_clk) < 4)
 			return 0;
 	}
 
@@ -6793,7 +6793,7 @@ int32_t ad9361_rfpll_set_rate(struct refclk_scale *clk_priv, uint32_t rate)
 		* so for now do nothing here.
 		*/
 		if (phy->auto_cal_en && !phy->pdata->use_ext_tx_lo)
-			if (abs((int64_t)(phy->last_tx_quad_cal_freq - ad9361_from_clk(rate))) >
+			if (labs((int64_t)(phy->last_tx_quad_cal_freq - ad9361_from_clk(rate))) >
 				(int64_t)phy->cal_threshold_freq) {
 				ret = ad9361_do_calib_run(phy, TX_QUAD_CAL, -1);
 				if (ret < 0)

@@ -440,7 +440,8 @@ int32_t ad9361_init (struct ad9361_rf_phy **ad9361_phy,
 
 	ret = ad9361_spi_read(phy->spi, REG_PRODUCT_ID);
 	if ((ret & PRODUCT_ID_MASK) != PRODUCT_ID_9361) {
-		printf("%s : Unsupported PRODUCT_ID 0x%X", __func__, (unsigned int)ret);
+		printf("%s : Unsupported PRODUCT_ID 0x%X\n", __func__,
+				(unsigned int)ret);
 		ret = -ENODEV;
 		goto out;
 	}
@@ -677,7 +678,7 @@ int32_t ad9361_get_en_state_machine_mode (struct ad9361_rf_phy *phy,
 int32_t ad9361_set_rx_rf_gain (struct ad9361_rf_phy *phy,
 							   uint8_t ch, int32_t gain_db)
 {
-	struct rf_rx_gain rx_gain = {0};
+	struct rf_rx_gain rx_gain = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 	int32_t ret = 0;
 
 	if ((phy->pdata->rx2tx2 == 0) && (ch == RX2)) {
@@ -708,7 +709,7 @@ int32_t ad9361_set_rx_rf_gain (struct ad9361_rf_phy *phy,
 int32_t ad9361_get_rx_rf_gain (struct ad9361_rf_phy *phy,
 							   uint8_t ch, int32_t *gain_db)
 {
-	struct rf_rx_gain rx_gain = {0};
+	struct rf_rx_gain rx_gain = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 	int32_t ret = 0;
 
 	if ((phy->pdata->rx2tx2 == 0) && (ch == RX2)) {
@@ -944,7 +945,7 @@ int32_t ad9361_get_rx_rssi (struct ad9361_rf_phy *phy,
 int32_t ad9361_set_rx_gain_control_mode (struct ad9361_rf_phy *phy,
 										 uint8_t ch, uint8_t gc_mode)
 {
-	struct rf_gain_ctrl gc = {0};
+	struct rf_gain_ctrl gc = {0, 0};
 
 	if ((phy->pdata->rx2tx2 == 0) && (ch == RX2)) {
 		printf("%s : RX2 is an invalid option in 1x1 mode!\n", __func__);
