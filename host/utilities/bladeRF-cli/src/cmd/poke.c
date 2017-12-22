@@ -45,7 +45,7 @@ int cmd_poke(struct cli_state *state, int argc, char **argv)
         poke si             <address> <value>
     */
     int rv = CLI_RET_OK;
-    int status;
+    int status = 0;
     bool ok;
     int (*f)(struct bladerf *, uint8_t, uint8_t)   = NULL;
     int (*f2)(struct bladerf *, uint16_t, uint8_t) = NULL;
