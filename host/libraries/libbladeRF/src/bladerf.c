@@ -131,12 +131,12 @@ static int apply_config_options(struct bladerf *dev, struct config_options opt)
 
         status = bladerf_set_bandwidth(dev, BLADERF_MODULE_TX, bw, NULL);
     } else if (!strcasecmp(opt.key, "agc")) {
-        gain_mode = str2bool(opt.value, &ok) ? BLADERF_GAIN_AUTOMATIC
-                                            : BLADERF_GAIN_MANUAL;
+        ok = str2bool(opt.value, &val);
         printf("%s %d \n", opt.value, ok);
-        if (!ok)
+        if (ok != 0)
             return BLADERF_ERR_INVAL;
 
+        gain_mode = (val & 1) ? BLADERF_GAIN_AUTOMATIC : BLADERF_GAIN_MANUAL;
         status = bladerf_set_gain_mode(dev, BLADERF_MODULE_RX, gain_mode);
     } else if (!strcasecmp(opt.key, "gpio")) {
         val = str2uint(opt.key, 0, -1, &ok);
