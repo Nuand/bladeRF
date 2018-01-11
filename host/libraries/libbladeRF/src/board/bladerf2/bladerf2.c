@@ -543,6 +543,7 @@ static int bladerf2_select_band(struct bladerf *dev,
 static int bladerf2_get_frequency(struct bladerf *dev,
                                   bladerf_channel ch,
                                   uint64_t *frequency);
+static int bladerf2_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim);
 
 
 /******************************************************************************/
@@ -1115,7 +1116,7 @@ static int bladerf2_initialize(struct bladerf *dev)
     /* Initialize VCTCXO trim DAC to stored value */
     uint16_t *trimval = &(board_data->trimdac_value);
 
-    status = bladerf_get_vctcxo_trim(dev, trimval);
+    status = bladerf2_get_vctcxo_trim(dev, trimval);
     if (status < 0) {
         RETURN_ERROR_STATUS("bladerf2_get_vctcxo_trim", status);
     }
@@ -3274,6 +3275,8 @@ static int bladerf2_load_fpga(struct bladerf *dev,
         RETURN_INVAL_ARG("fpga size", board_data->fpga_size, "is not valid");
     }
 
+    MUTEX_LOCK(&dev->lock);
+
     status = dev->backend->load_fpga(dev, buf, length);
     if (status != 0) {
         RETURN_ERROR_STATUS("load_fpga", status);
@@ -3281,6 +3284,8 @@ static int bladerf2_load_fpga(struct bladerf *dev,
 
     /* Update device state */
     board_data->state = STATE_FPGA_LOADED;
+
+    MUTEX_UNLOCK(&dev->lock);
 
     status = bladerf2_initialize(dev);
     if (status != 0) {

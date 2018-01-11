@@ -1211,9 +1211,7 @@ int bladerf_load_fpga(struct bladerf *dev, const char *fpga_file)
         goto exit;
     }
 
-    MUTEX_LOCK(&dev->lock);
     status = dev->board->load_fpga(dev, buf, buf_size);
-    MUTEX_UNLOCK(&dev->lock);
 
 exit:
     free(buf);

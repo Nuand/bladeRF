@@ -2361,6 +2361,8 @@ static int bladerf1_load_fpga(struct bladerf *dev, const uint8_t *buf, size_t le
         return BLADERF_ERR_INVAL;
     }
 
+    MUTEX_LOCK(&dev->lock);
+
     status = dev->backend->load_fpga(dev, buf, length);
     if (status != 0) {
         return status;
@@ -2368,6 +2370,8 @@ static int bladerf1_load_fpga(struct bladerf *dev, const uint8_t *buf, size_t le
 
     /* Update device state */
     board_data->state = STATE_FPGA_LOADED;
+
+    MUTEX_UNLOCK(&dev->lock);
 
     status = bladerf1_initialize(dev);
     if (status != 0) {
