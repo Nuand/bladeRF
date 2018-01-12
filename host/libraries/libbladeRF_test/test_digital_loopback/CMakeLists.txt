@@ -22,8 +22,12 @@ else(MSVC)
     set(LIBS ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
 endif(MSVC)
 
+add_definitions(-DLOGGING_ENABLED=1)
+
 set(SRC
         src/main.c
+        ${BLADERF_HOST_COMMON_SOURCE_DIR}/conversions.c
+        ${BLADERF_HOST_COMMON_SOURCE_DIR}/log.c
 )
 
 if(MSVC)
