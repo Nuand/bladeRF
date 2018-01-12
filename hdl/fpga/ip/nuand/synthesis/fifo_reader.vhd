@@ -47,6 +47,7 @@ entity fifo_reader is
         fifo_read           :   buffer  std_logic := '0';
         fifo_empty          :   in      std_logic;
         fifo_data           :   in      std_logic_vector(FIFO_DATA_WIDTH-1 downto 0);
+        fifo_holdoff        :   in      std_logic := '0';
 
         meta_fifo_usedw     :   in      std_logic_vector(META_FIFO_USEDW_WIDTH-1 downto 0);
         meta_fifo_read      :   buffer  std_logic := '0';
@@ -99,7 +100,8 @@ architecture simple of fifo_reader is
         COMPUTE_ENABLED_CHANNELS,
         COMPUTE_OFFSETS,
         READ_SAMPLES,
-        READ_THROTTLE
+        READ_THROTTLE,
+        READ_HOLDOFF
     );
 
     type ch_offsets_t is array( natural range <> ) of natural range fifo_data'low to fifo_data'high;
@@ -370,8 +372,12 @@ begin
 
                 fifo_future.downcount <= FIFO_FSM_RESET_VALUE.downcount;
 
-                if( fifo_empty = '0' and
-                    (meta_en = '0' or (meta_en = '1' and meta_current.meta_time_go = '1')) ) then
+                if( fifo_holdoff = '1' ) then
+                    -- Pause for a spell
+                    fifo_future.state <= READ_HOLDOFF;
+
+                elsif( fifo_empty = '0' and
+                       (meta_en = '0' or (meta_en = '1' and meta_current.meta_time_go = '1')) ) then
 
                     -- Check for valid data request
                     read_req := '0';
@@ -409,6 +415,12 @@ begin
                     fifo_future.state     <= READ_SAMPLES;
                 else
                     fifo_future.downcount <= fifo_current.downcount - 1;
+                end if;
+
+            when READ_HOLDOFF =>
+
+                if( fifo_holdoff = '0' ) then
+                    fifo_future.state <= READ_SAMPLES;
                 end if;
 
             when others =>
