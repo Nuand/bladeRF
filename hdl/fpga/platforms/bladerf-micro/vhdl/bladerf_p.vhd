@@ -154,7 +154,7 @@ package bladerf_p is
 
     constant LOOPBACK_FIFO_WWIDTH   : natural := 64;    -- write side data width
     constant LOOPBACK_FIFO_RWIDTH   : natural := 64;    -- read side data width
-    constant LOOPBACK_FIFO_LENGTH   : natural := 2048;  -- samples
+    constant LOOPBACK_FIFO_LENGTH   : natural := 512;   -- samples
 
     constant META_FIFO_TX_WWIDTH    : natural := 32;    -- write side data width
     constant META_FIFO_TX_RWIDTH    : natural := 128;   -- read side data width
