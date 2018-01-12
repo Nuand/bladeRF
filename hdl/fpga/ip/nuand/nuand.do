@@ -24,6 +24,7 @@ proc compile_nuand { root platform } {
     vcom -work nuand -2008 [file join $root ../altera/common_dcfifo/common_dcfifo.vhd]
 
     if { ($platform == "bladerf") || ($platform == "bladerf-micro") } {
+        vcom -work nuand -2008 [file join $root ../../platforms/${platform}/vhdl/wrappers/lb_fifo.vhd]
         vcom -work nuand -2008 [file join $root ../../platforms/${platform}/vhdl/wrappers/rx_fifo.vhd]
         vcom -work nuand -2008 [file join $root ../../platforms/${platform}/vhdl/wrappers/tx_fifo.vhd]
         vcom -work nuand -2008 [file join $root ../../platforms/${platform}/vhdl/wrappers/rx_meta_fifo.vhd]
@@ -56,4 +57,7 @@ proc compile_nuand { root platform } {
     vcom -work nuand -2008 [file join $root ./synthesis/signal_generator.vhd]
 
     vcom -work nuand -2008 [file join $root ./synthesis/set_clear_ff.vhd]
+
+    vcom -work nuand -2008 [file join $root ./pll_reset/vhdl/pll_reset.vhd]
+    vcom -work nuand -2008 [file join $root ./ps_sync/vhdl/ps_sync.vhd]
 }
