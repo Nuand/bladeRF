@@ -1,4 +1,4 @@
--- Copyright (c) 2013 Nuand LLC
+-- Copyright (c) 2013-2017 Nuand LLC
 --
 -- Permission is hereby granted, free of charge, to any person obtaining a copy
 -- of this software and associated documentation files (the "Software"), to deal
@@ -31,29 +31,8 @@ end entity ; -- bladerf_tb
 
 architecture arch of bladerf_tb is
 
-    constant C4_CLOCK_HALF_PERIOD   : time  := 1 sec * (1.0/38.4e6/2.0) ;
-
-    type lms_rx_t is record
-        clock           :   std_logic ;
-        clock_out       :   std_logic ;
-        data            :   signed(11 downto 0) ;
-        enable          :   std_logic ;
-        iq_select       :   std_logic ;
-    end record ;
-
-    type lms_tx_t is record
-        clock           :   std_logic ;
-        data            :   signed(11 downto 0) ;
-        enable          :   std_logic ;
-        iq_select       :   std_logic ;
-    end record ;
-
-    type lms_spi_t is record
-        sclk            :   std_logic ;
-        sen             :   std_logic ;
-        sdio            :   std_logic ;
-        sdo             :   std_logic ;
-    end record ;
+    constant C5_CLOCK_HALF_PERIOD       : time  := 1 sec * (1.0/38.4e6/2.0) ;
+    constant ADI_RX_CLOCK_HALF_PERIOD   : time  := 1 sec * (1.0/61.44e6/2.0);
 
     type fx3_gpif_t is record
         pclk            :   std_logic ;
@@ -74,114 +53,120 @@ architecture arch of bladerf_tb is
         end loop ;
     end procedure ;
 
-    signal c4_clock     :   std_logic   := '1' ;
-    signal lms_rx       :   lms_rx_t := ( clock => '1', data => (others =>'0'), clock_out => '1', iq_select => '1', enable => '0' ) ;
-    signal lms_tx       :   lms_tx_t := ( clock => '1', data => (others =>'0'), enable => '1', iq_select => '1' ) ;
-    signal lms_spi      :   lms_spi_t ;
-    signal lms_pll_out  :   std_logic ;
-    signal lms_reset    :   std_logic ;
-    signal fx3_gpif     :   fx3_gpif_t ;
-    signal fx3_uart     :   fx3_uart_t ;
-    signal refexp_1pps  :   std_logic ;
+    signal c5_clock1    :   std_logic   := '1';
+    signal c5_clock2    :   std_logic   := '1';
+    signal adi_rx_clock :   std_logic   := '1';
+    signal fx3_gpif     :   fx3_gpif_t;
+    signal fx3_uart     :   fx3_uart_t;
 
 begin
 
     -- Main 38.4MHz clock input
-    c4_clock <= not c4_clock after C4_CLOCK_HALF_PERIOD ;
+    c5_clock1 <= not c5_clock1 after C5_CLOCK_HALF_PERIOD ;
+    c5_clock2 <= not c5_clock2 after C5_CLOCK_HALF_PERIOD ;
 
-    -- LMS 80MHz RX and TX clocks
-    lms_tx.clock <= not lms_tx.clock after (1.0/80.0e6) * 1 sec ;
-    lms_rx.clock <= not lms_rx.clock after (1.0/80.0e6) * 1 sec ;
+    -- AD9361 clock input
+    adi_rx_clock <= not adi_rx_clock after ADI_RX_CLOCK_HALF_PERIOD;
 
     -- Top level of the FPGA
     U_bladerf : entity nuand.bladerf
       port map (
         -- Main system clock
-        c4_clock            => c4_clock,
+        c5_clock1           => c5_clock1,
+        c5_clock2           => c5_clock2,
+
+        -- Si53304 clock controls
+        si_clock_sel        => open,
+        c5_clock2_oe        => open,
+        ufl_clock_oe        => open,
+        exp_clock_oe        => open,
 
         -- VCTCXO DAC
         dac_sclk            => open,
         dac_sdi             => open,
-        dac_sdo             => '0',
-        dac_csx             => open,
+        dac_csn             => open,
 
         -- LEDs
         led                 => open,
 
-        -- LMS RX Interface
-        lms_rx_clock_out    => lms_rx.clock_out,
-        lms_rx_data         => lms_rx.data,
-        lms_rx_enable       => lms_rx.enable,
-        lms_rx_iq_select    => lms_rx.iq_select,
-        lms_rx_v            => open,
+        -- Power supply sync
+        ps_sync_1p1         => open,
+        ps_sync_1p8         => open,
 
-        -- LMS TX Interface
-        c4_tx_clock         => lms_tx.clock,
-        lms_tx_data         => lms_tx.data,
-        lms_tx_enable       => lms_tx.enable,
-        lms_tx_iq_select    => lms_tx.iq_select,
-        lms_tx_v            => open,
+        -- Power monitor
+        pwr_sda             => open,
+        pwr_scl             => open,
+        pwr_status          => '0',
 
-        -- LMS SPI Interface
-        lms_sclk            => lms_spi.sclk,
-        lms_sen             => lms_spi.sen,
-        lms_sdio            => lms_spi.sdio,
-        lms_sdo             => lms_spi.sdo,
+        -- AD9361 RX interface
+        adi_rx_clock        => adi_rx_clock,
+        adi_rx_data         => (others => '0'),
+        adi_rx_frame        => '0',
 
-        -- LMS Control Interface
-        lms_pll_out         => lms_pll_out,
-        lms_reset           => lms_reset,
+        -- RX RF switching
+        adi_rx_spdt1_v      => open,
+        adi_rx_spdt2_v      => open,
 
-        -- FX3 Interface
+        -- RX bias-tee enable
+        rx_bias_en          => open,
+
+        -- AD9361 TX interface
+        adi_tx_clock        => open,
+        adi_tx_data         => open,
+        adi_tx_frame        => open,
+
+        -- TX RF switching
+        adi_tx_spdt1_v      => open,
+        adi_tx_spdt2_v      => open,
+
+        -- TX bias-tee enable
+        tx_bias_en          => open,
+
+        -- AD9361 SPI interface
+        adi_spi_sclk        => open,
+        adi_spi_csn         => open,
+        adi_spi_sdi         => open,
+        adi_spi_sdo         => '0',
+
+        -- AD9361 control interface
+        adi_reset_n         => open,
+        adi_enable          => open,
+        adi_txnrx           => open,
+        adi_en_agc          => open,
+        adi_ctrl_in         => open,
+        adi_ctrl_out        => (others => '0'),
+        adi_sync_in         => open,
+
+        -- ADF4002 SPI interface
+        adf_sclk            => open,
+        adf_csn             => open,
+        adf_sdi             => open,
+        adf_ce              => open,
+        adf_muxout          => '0',
+
+        -- FX3 GPIF Interface
         fx3_pclk            => fx3_gpif.pclk,
         fx3_gpif            => fx3_gpif.gpif,
         fx3_ctl             => fx3_gpif.ctl,
+
+        -- FX3 UART interface
         fx3_uart_rxd        => fx3_uart.rxd,
         fx3_uart_txd        => fx3_uart.txd,
         fx3_uart_cts        => fx3_uart.cts,
 
-        -- Reference signals
-        ref_vctcxo_tune     => refexp_1pps,
-        ref_sma_clock       => '0',
+        -- Expansion Interface
+        exp_present         => '0',
+        exp_clock_req       => '0',
+        exp_i2c_sda         => open,
+        exp_i2c_scl         => open,
+        exp_gpio            => open,
 
         -- Mini expansion
         mini_exp1           => open,
         mini_exp2           => open,
 
-        -- Expansion Interface
-        exp_present         => '0',
-        exp_spi_clock       => open,
-        exp_spi_miso        => '0',
-        exp_spi_mosi        => open,
-        exp_clock_in        => '0',
-        exp_gpio            => open
-      ) ;
-
-    -- LMS6002D Model
-    U_lms6002d : entity nuand.lms6002d_model
-      port map (
-        -- LMS RX Interface
-        rx_clock        => lms_rx.clock,
-        rx_clock_out    => lms_rx.clock_out,
-        rx_data         => lms_rx.data,
-        rx_enable       => lms_rx.enable,
-        rx_iq_select    => lms_rx.iq_select,
-
-        -- LMS TX Interface
-        tx_clock        => lms_tx.clock,
-        tx_data         => lms_tx.data,
-        tx_enable       => lms_tx.enable,
-        tx_iq_select    => lms_tx.iq_select,
-
-        -- LMS SPI Interface
-        sclk            => lms_spi.sclk,
-        sen             => lms_spi.sen,
-        sdio            => lms_spi.sdio,
-        sdo             => lms_spi.sdo,
-
-        -- LMS Control Interface
-        pll_out         => lms_pll_out,
-        resetx          => lms_reset
+        -- HW rev
+        hw_rev              => (others => '0')
       ) ;
 
     -- FX3 Model
@@ -202,21 +187,6 @@ begin
         fx3_tx_meta_en      => '1'
       ) ;
 
-    -- Create an accurate 1pps signal that is 1 ms wide
-    create_1pps : process
-        constant PULSE_PERIOD   : time := 1 sec ;
-        constant PULSE_WIDTH    : time := 1 ms ;
-    begin
-        if( now = 0 ps ) then
-            refexp_1pps <= '0' ;
-        else
-            refexp_1pps <= '1' ;
-        end if ;
-        wait for PULSE_WIDTH ;
-        refexp_1pps <= '0' ;
-        wait for PULSE_PERIOD - PULSE_WIDTH ;
-    end process ;
-
     -- Stimulus
     tb : process
     begin
@@ -225,4 +195,3 @@ begin
     end process ;
 
 end architecture ; -- arch
-
