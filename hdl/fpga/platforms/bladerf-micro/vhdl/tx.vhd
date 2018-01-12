@@ -65,8 +65,11 @@ entity tx is
 
         -- Digital Loopback Interface
         loopback_enabled     : in    std_logic;
-        loopback_data        : out   std_logic_vector(LOOPBACK_FIFO_T_DEFAULT.wdata'range);
-        loopback_data_valid  : out   std_logic;
+        loopback_fifo_wclock : out   std_logic;
+        loopback_fifo_wreq   : out   std_logic;
+        loopback_fifo_wdata  : out   std_logic_vector(LOOPBACK_FIFO_T_DEFAULT.wdata'range);
+        loopback_fifo_wfull  : in    std_logic;
+        loopback_fifo_wused  : in    std_logic_vector(LOOPBACK_FIFO_T_DEFAULT.wused'range);
 
         -- RFFE Interface
         dac_controls         : in    sample_controls_t(0 to NUM_STREAMS-1) := (others => SAMPLE_CONTROL_DISABLE);
@@ -82,6 +85,9 @@ architecture arch of tx is
     signal trigger_arm_sync               : std_logic;
     signal trigger_line_sync              : std_logic;
     signal sample_fifo_rempty_untriggered : std_logic;
+
+    signal sample_fifo_holdoff            : std_logic;
+    signal sample_fifo_holdoff_i          : std_logic;
 
 begin
 
@@ -146,13 +152,42 @@ begin
             rdusedw             => meta_fifo.rused
         );
 
-    loopback_proc : process( sample_fifo.rclock )
+    loopback_fifo_wclock <= tx_clock;
+
+    loopback_proc : process( tx_clock )
     begin
-        if( rising_edge(sample_fifo.rclock) ) then
-            loopback_data       <= sample_fifo.rdata;
-            loopback_data_valid <= sample_fifo.rreq and loopback_enabled;
+        if( rising_edge(tx_clock) ) then
+            loopback_fifo_wdata <= sample_fifo.rdata;
+            loopback_fifo_wreq  <= sample_fifo.rreq and loopback_enabled;
         end if;
     end process;
+
+    -- Pass through loopback_fifo_wfull immediately
+    sample_fifo_holdoff <=  sample_fifo_holdoff_i or
+                            (loopback_enabled and loopback_fifo_wfull);
+
+    -- Persist sample fifo holdoff for a number of clocks, to give time for
+    -- the FIFO to drain properly
+    sample_fifo_holdoff_proc : process( tx_clock )
+        variable backoff_downcount : natural range 0 to 3;
+    begin
+        if( rising_edge(tx_clock) ) then
+            sample_fifo_holdoff_i <= '0';
+
+            if( loopback_enabled = '1' ) then
+                if( backoff_downcount /= 0 ) then
+                    backoff_downcount       := backoff_downcount - 1;
+                    sample_fifo_holdoff_i   <= '1';
+                end if;
+
+                if( loopback_fifo_wfull = '1' ) then
+                    backoff_downcount       := 3;
+                    sample_fifo_holdoff_i   <= '1';
+                end if;
+            end if;
+        end if;
+    end process;
+
 
     U_fifo_reader : entity work.fifo_reader
         generic map (
@@ -176,6 +211,7 @@ begin
             fifo_usedw          =>  sample_fifo.rused,
             fifo_data           =>  sample_fifo.rdata,
             fifo_read           =>  sample_fifo.rreq,
+            fifo_holdoff        =>  sample_fifo_holdoff,
 
             meta_fifo_empty     =>  meta_fifo.rempty,
             meta_fifo_usedw     =>  meta_fifo.rused,

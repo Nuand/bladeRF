@@ -65,7 +65,7 @@ architecture hosted_bladerf of bladerf is
 
     signal tx_sample_fifo         : tx_fifo_t       := TX_FIFO_T_DEFAULT;
     signal rx_sample_fifo         : rx_fifo_t       := RX_FIFO_T_DEFAULT;
-    signal rx_loopback_fifo       : loopback_fifo_t := LOOPBACK_FIFO_T_DEFAULT;
+    signal tx_loopback_fifo       : loopback_fifo_t := LOOPBACK_FIFO_T_DEFAULT;
 
     signal tx_meta_fifo           : meta_fifo_tx_t := META_FIFO_TX_T_DEFAULT;
     signal rx_meta_fifo           : meta_fifo_rx_t := META_FIFO_RX_T_DEFAULT;
@@ -91,9 +91,7 @@ architecture hosted_bladerf of bladerf is
     signal rx_timestamp           : unsigned(63 downto 0);
     signal timestamp_sync         : std_logic;
 
-    signal tx_loopback_enabled    : std_logic                                             := '0';
-    signal tx_loopback_data       : std_logic_vector(LOOPBACK_FIFO_T_DEFAULT.rdata'range) := (others => '0');
-    signal tx_loopback_data_valid : std_logic                                             := '0';
+    signal tx_loopback_enabled    : std_logic := '0';
 
     signal fx3_gpif_in            : std_logic_vector(31 downto 0);
     signal fx3_gpif_out           : std_logic_vector(31 downto 0);
@@ -507,8 +505,11 @@ begin
 
             -- Digital Loopback Interface
             loopback_enabled     => tx_loopback_enabled,
-            loopback_data        => tx_loopback_data,
-            loopback_data_valid  => tx_loopback_data_valid,
+            loopback_fifo_wclock => tx_loopback_fifo.wclock,
+            loopback_fifo_wdata  => tx_loopback_fifo.wdata,
+            loopback_fifo_wreq   => tx_loopback_fifo.wreq,
+            loopback_fifo_wfull  => tx_loopback_fifo.wfull,
+            loopback_fifo_wused  => tx_loopback_fifo.wused,
 
             -- RFFE Interface
             dac_controls         => dac_controls,
@@ -571,9 +572,11 @@ begin
             -- Digital Loopback Interface
             loopback_fifo_wenabled => tx_loopback_enabled,
             loopback_fifo_wreset   => tx_reset,
-            loopback_fifo_wclock   => tx_clock,
-            loopback_fifo_wdata    => tx_loopback_data,
-            loopback_fifo_wreq     => tx_loopback_data_valid,
+            loopback_fifo_wclock   => tx_loopback_fifo.wclock,
+            loopback_fifo_wdata    => tx_loopback_fifo.wdata,
+            loopback_fifo_wreq     => tx_loopback_fifo.wreq,
+            loopback_fifo_wfull    => tx_loopback_fifo.wfull,
+            loopback_fifo_wused    => tx_loopback_fifo.wused,
 
             -- RFFE Interface
             adc_controls           => adc_controls,

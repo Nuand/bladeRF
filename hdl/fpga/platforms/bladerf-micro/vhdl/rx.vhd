@@ -72,6 +72,8 @@ entity rx is
         loopback_fifo_wclock   : in    std_logic;
         loopback_fifo_wdata    : in    std_logic_vector(LOOPBACK_FIFO_T_DEFAULT.wdata'range);
         loopback_fifo_wreq     : in    std_logic;
+        loopback_fifo_wfull    : out   std_logic;
+        loopback_fifo_wused    : out   std_logic_vector(LOOPBACK_FIFO_T_DEFAULT.wused'range);
 
         -- RFFE Interface
         adc_controls           : in    sample_controls_t(0 to NUM_STREAMS-1) := (others => SAMPLE_CONTROL_DISABLE);
@@ -184,6 +186,9 @@ begin
     loopback_fifo.rclock <= rx_clock;
 
     U_rx_loopback_fifo : entity work.lb_fifo
+        generic map (
+            LPM_NUMWORDS        => 2**(loopback_fifo.rused'length)
+        )
         port map (
             aclr                => loopback_fifo.aclr,
 
@@ -191,8 +196,8 @@ begin
             wrreq               => loopback_fifo_wreq,
             data                => loopback_fifo_wdata,
             wrempty             => open,
-            wrfull              => open,
-            wrusedw             => open,
+            wrfull              => loopback_fifo_wfull,
+            wrusedw             => loopback_fifo_wused,
 
             rdclk               => loopback_fifo.rclock,
             rdreq               => loopback_fifo.rreq,
@@ -241,44 +246,64 @@ begin
 
 
     loopback_fifo_control : process( rx_reset, loopback_fifo.rclock )
-        variable max_bit_i : natural range loopback_fifo.rdata'range;
-        variable min_bit_i : natural range loopback_fifo.rdata'range;
-        variable max_bit_q : natural range loopback_fifo.rdata'range;
-        variable min_bit_q : natural range loopback_fifo.rdata'range;
+        variable offset     : natural range 0 to loopback_fifo.rdata'length;
+        variable remaining  : natural range 0 to loopback_fifo.rdata'length/32;
+        variable loopdata   : std_logic_vector(loopback_fifo.rdata'range);
     begin
         if( rx_reset = '1' ) then
-            loopback_enabled   <= '0';
-            loopback_fifo.rreq <= '0';
-            loopback_streams   <= (others => ZERO_SAMPLE);
+            loopback_enabled    <= '0';
+            loopback_fifo.rreq  <= '0';
+            loopback_streams    <= (others => ZERO_SAMPLE);
+            remaining           := 0;
         elsif( rising_edge(loopback_fifo.rclock) ) then
 
             -- Is loopback enabled?
-            if( rx_mux_mode = RX_MUX_DIGITAL_LOOPBACK ) then
-                loopback_enabled <= rx_enable;
+            if( rx_mux_mode = RX_MUX_DIGITAL_LOOPBACK and rx_enable = '1' ) then
+                loopback_enabled    <= '1';
             else
-                loopback_enabled <= '0';
+                loopback_enabled    <= '0';
+                loopback_fifo.rreq  <= '0';
+                remaining           := 0;
+            end if;
+
+            -- Clear data valids
+            for i in loopback_streams'range loop
+                loopback_streams(i).data_v <= '0';
+            end loop;
+
+            -- Handle loopback FIFO
+            if( loopback_fifo.rreq = '1' ) then
+                -- We have fresh data!
+                loopback_fifo.rreq <= '0';
+                loopdata    := loopback_fifo.rdata;
+                remaining   := loopback_fifo.rdata'length/32;
+            elsif( remaining = 0 and sample_fifo.wfull = '0' and loopback_fifo.rempty = '0' ) then
+                -- Read more from the FIFO if we can
+                loopback_fifo.rreq <= '1';
             end if;
 
             -- Do the loopback
             for i in loopback_streams'range loop
-                max_bit_i := 11 + ((2*loopback_streams(i).data_i'length)*i);
-                min_bit_i :=  0 + ((2*loopback_streams(i).data_i'length)*i);
-                max_bit_q := 27 + ((2*loopback_streams(i).data_i'length)*i);
-                min_bit_q := 16 + ((2*loopback_streams(i).data_i'length)*i);
 
-                loopback_streams(i).data_i <=
-                    resize(signed(loopback_fifo.rdata(max_bit_i downto min_bit_i)),
-                           loopback_streams(i).data_i'length);
+                offset := loopdata'length - (remaining*32);
 
-                loopback_streams(i).data_q <=
-                    resize(signed(loopback_fifo.rdata(max_bit_q downto min_bit_q)),
-                           loopback_streams(i).data_q'length);
+                if( adc_controls(i).enable = '1' and remaining > 0 ) then
+                    loopback_streams(i).data_i <=
+                        resize(signed(loopdata(offset+11 downto offset+0)),
+                                loopback_streams(i).data_i'length);
 
-                loopback_streams(i).data_v <= loopback_fifo.rreq and not loopback_fifo.rempty;
+                    loopback_streams(i).data_q <=
+                        resize(signed(loopdata(offset+27 downto offset+16)),
+                                loopback_streams(i).data_q'length);
+
+                    loopback_streams(i).data_v <= '1';
+
+                    -- Shift our loopdata index
+                    if( remaining > 0 ) then
+                        remaining := remaining - 1;
+                    end if;
+                end if;
             end loop;
-
-            -- Read from the FIFO if req'd
-            loopback_fifo.rreq <= loopback_enabled and (not loopback_fifo.rempty);
         end if;
     end process;
 
