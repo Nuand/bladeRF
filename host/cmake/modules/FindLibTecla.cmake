@@ -5,7 +5,7 @@ set(__INCLUDED_BLADERF_FINDLIBTECLA_CMAKE TRUE)
 
 find_package(PkgConfig)
 if(PKG_CONFIG_FOUND)
-    pkg_check_modules (LIBTECLA_PKG libtecla)
+    pkg_check_modules(LIBTECLA_PKG libtecla QUIET)
 endif(PKG_CONFIG_FOUND)
 
 if(NOT LIBTECLA_FOUND)
