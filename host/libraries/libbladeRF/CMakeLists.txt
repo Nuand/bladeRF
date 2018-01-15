@@ -198,6 +198,10 @@ else(MSVC)
     endif()
 endif(MSVC)
 
+if(BLADERF_OS_OSX)
+    set(LIBBLADERF_INCLUDES ${LIBBLADERF_INCLUDES} /usr/include/malloc)
+endif()
+
 if (NOT HAVE_THREADS)
     message(FATAL_ERROR "pthreads not found. This is required to build libbladeRF.")
 endif()
