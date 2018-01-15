@@ -4,7 +4,7 @@
  * This file is part of the bladeRF project:
  *   http://www.github.com/nuand/bladeRF
  *
- * Copyright (c) 2013 Nuand LLC.
+ * Copyright (c) 2013-2018 Nuand LLC.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -311,5 +311,17 @@
  * Miscellaneous utility macros
  ******************************************************************************/
 #define ARRAY_SIZE(n) (sizeof(n) / sizeof(n[0]))
+
+/**
+ * GCC 7+ warns on implicit fallthroughs in switch statements
+ * (-Wimplicit-fallthrough), which we use in a couple places for simplicity.
+ * The statement attribute syntax used to suppress this warning is not
+ * supported by anything else.
+ */
+#if __GNUC__ >= 7
+#define EXPLICIT_FALLTHROUGH __attribute__((fallthrough))
+#else
+#define EXPLICIT_FALLTHROUGH
+#endif  // __GNUC__ >= 7
 
 #endif
