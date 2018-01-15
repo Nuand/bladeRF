@@ -821,6 +821,9 @@ int print_gain(struct cli_state *state, int argc, char **argv)
         case 4:
             /* One channel, one stage */
             stage = argv[3];
+
+            __attribute__((fallthrough));
+
         case 3: { /* One channel, all stages */
             bool ok;
             channel = get_channel(argv[2], &ok);
@@ -828,6 +831,8 @@ int print_gain(struct cli_state *state, int argc, char **argv)
                 invalid_channel(state, argv[0], argv[2]);
                 rv = CLI_RET_INVPARAM;
             }
+
+            __attribute__((fallthrough));
         }
         case 2:
             /* All channels, all stages */
