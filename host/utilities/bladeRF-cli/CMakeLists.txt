@@ -23,32 +23,6 @@ configure_file(
 )
 
 ################################################################################
-# Regenerate interactive help
-################################################################################
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src/cmd/doc)
-find_program(PANDOC_EXECUTABLE pandoc)
-
-if(PANDOC_EXECUTABLE)
-    # Run the generation script
-    message(STATUS "Will use pandoc to generate interactive help")
-    add_custom_command(
-        OUTPUT src/cmd/doc/cmd_help.h src/cmd/doc/cmd_help.man
-        COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/src/cmd/doc/generate.bash ${CMAKE_CURRENT_SOURCE_DIR}/src/cmd/doc/interactive-help.md
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src/cmd/doc
-    )
-else(PANDOC_EXECUTABLE)
-    # Re-use old cmd_help.h and cmd_help.man
-    message(STATUS "Could not find pandoc.  Interactive help may be out of date.")
-    add_custom_command(
-        OUTPUT src/cmd/doc/cmd_help.h
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/src/cmd/doc/cmd_help.h.in ${CMAKE_CURRENT_BINARY_DIR}/src/cmd/doc/cmd_help.h
-    )
-    add_custom_command(
-        OUTPUT src/cmd/doc/cmd_help.man
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/src/cmd/doc/cmd_help.man.in ${CMAKE_CURRENT_BINARY_DIR}/src/cmd/doc/cmd_help.man
-    )
-endif(PANDOC_EXECUTABLE)
-################################################################################
 # Build dependencies
 ################################################################################
 find_package(LibTecla)
@@ -59,30 +33,99 @@ else(MSVC)
 	find_package(Threads REQUIRED)
 endif(MSVC)
 
+find_program(PANDOC_EXECUTABLE pandoc)
+find_program(BASH_EXECUTABLE bash)
+
+if(PANDOC_EXECUTABLE AND BASH_EXECUTABLE)
+    set(CAN_BUILD_INTERACTIVE_HELP ON)
+else()
+    set(CAN_BUILD_INTERACTIVE_HELP OFF)
+endif()
+
 ################################################################################
 # Configuration options
 ################################################################################
 
 option(ENABLE_LIBTECLA
         "Enable the use of libtecla, if available."
-        ${LIBTECLA_FOUND}
-)
+        ${LIBTECLA_FOUND})
 
 option(BUILD_BLADERF_CLI_DOCUMENTATION
         "Build bladeRF-cli man page. Requires help2man."
         ${BUILD_DOCUMENTATION})
 
+option(BUILD_BLADERF_CLI_INTERACTIVE_HELP
+        "Rebuild bladeRF-cli interactive help. Requires pandoc."
+        ${CAN_BUILD_INTERACTIVE_HELP})
+
 if(NOT ${BUILD_DOCUMENTATION})
     set(BUILD_BLADERF_CLI_DOCUMENTATION OFF)
 endif()
 
+if((NOT CAN_BUILD_INTERACTIVE_HELP) AND (BUILD_BLADERF_CLI_INTERACTIVE_HELP))
+    message(FATAL_ERROR "BUILD_BLADERF_CLI_INTERACTIVE_HELP was forced ON, "
+            "but there are missing prerequisites!")
+endif()
 
 if(ENABLE_LIBTECLA)
     if((NOT LIBTECLA_INCLUDE_DIR) OR (NOT LIBTECLA_LIBRARIES))
-        message(FATAL_ERROR "ENABLE_LIBTECLA was forced ON, but libtecla cannot be found!")
+        message(FATAL_ERROR "ENABLE_LIBTECLA was forced ON, but libtecla "
+                "cannot be found!")
     endif()
 
     message(STATUS "libtecla support enabled")
+endif()
+
+################################################################################
+# Regenerate interactive help
+################################################################################
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src/cmd/doc)
+
+if(BUILD_BLADERF_CLI_INTERACTIVE_HELP)
+    # Do a quick test to make sure we have everything we need...
+    execute_process(
+        COMMAND ${BASH_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/cmd/doc/generate.bash
+                --pandoc=${PANDOC_EXECUTABLE}
+                --test
+                ${CMAKE_CURRENT_SOURCE_DIR}/src/cmd/doc/interactive-help.md
+        RESULT_VARIABLE INTERACTIVE_HELP_GENERATOR_FAILED
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src/cmd/doc
+    )
+
+    if(INTERACTIVE_HELP_GENERATOR_FAILED)
+        message(FATAL_ERROR "generate.bash failed! Try disabling "
+                "BUILD_BLADERF_CLI_INTERACTIVE_HELP, or fix the above error.")
+    endif()
+
+    # Run the generation script during build
+    message(STATUS "Will regenerate bladeRF-cli interactive help")
+    add_custom_command(
+        OUTPUT src/cmd/doc/cmd_help.h src/cmd/doc/cmd_help.man
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/cmd/doc/generate.bash
+        COMMAND ${BASH_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/cmd/doc/generate.bash
+                --pandoc=${PANDOC_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/src/cmd/doc/interactive-help.md
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src/cmd/doc
+    )
+else()
+    # Re-use old cmd_help.h and cmd_help.man
+    message(STATUS "Reusing existing interactive help for bladeRF-cli")
+    add_custom_command(
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/cmd/doc/cmd_help.h.in
+        OUTPUT src/cmd/doc/cmd_help.h
+        COMMAND ${CMAKE_COMMAND} -E copy 
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/cmd/doc/cmd_help.h.in
+            ${CMAKE_CURRENT_BINARY_DIR}/src/cmd/doc/cmd_help.h
+    )
+    add_custom_command(
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/cmd/doc/cmd_help.man.in
+        OUTPUT src/cmd/doc/cmd_help.man
+        COMMAND ${CMAKE_COMMAND} -E copy
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/cmd/doc/cmd_help.man.in
+            ${CMAKE_CURRENT_BINARY_DIR}/src/cmd/doc/cmd_help.man
+    )
 endif()
 
 ################################################################################
@@ -243,23 +286,30 @@ if(BUILD_BLADERF_CLI_DOCUMENTATION)
         add_custom_command(
             OUTPUT bladeRF-cli.1
             DEPENDS bladeRF-cli src/cmd/doc/cmd_help.man
-            COMMAND ${HELP2MAN_EXECUTABLE} --no-info --no-discard-stderr
-                                           --opt-include=${CMAKE_CURRENT_SOURCE_DIR}/../doc/include_man/bladeRF-cli.h2m
-                                           --opt-include=${CMAKE_CURRENT_BINARY_DIR}/src/cmd/doc/cmd_help.man
-                                           --opt-include=${CMAKE_CURRENT_SOURCE_DIR}/../doc/include_man/common.h2m
-                                           --output=bladeRF-cli.1 ./bladeRF-cli
+            COMMAND ${HELP2MAN_EXECUTABLE}
+                --no-info --no-discard-stderr
+                --opt-include=${CMAKE_CURRENT_SOURCE_DIR}/../doc/include_man/bladeRF-cli.h2m
+                --opt-include=${CMAKE_CURRENT_BINARY_DIR}/src/cmd/doc/cmd_help.man
+                --opt-include=${CMAKE_CURRENT_SOURCE_DIR}/../doc/include_man/common.h2m
+                --output=bladeRF-cli.1
+                ./bladeRF-cli
             WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
         )
 
-        install(FILES ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/bladeRF-cli.1 DESTINATION ${MAN_INSTALL_DIR}/man1)
+        install(
+            FILES ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/bladeRF-cli.1
+            DESTINATION ${MAN_INSTALL_DIR}/man1
+        )
 
         add_custom_target(bladeRF-cli-manpage ALL DEPENDS bladeRF-cli.1)
 
     else(HELP2MAN_EXECUTABLE)
-        message(FATAL_ERROR "Could not find help2man. bladeRF-cli man page cannot be built.")
+        message(FATAL_ERROR "Could not find help2man. bladeRF-cli man page "
+                "cannot be built.")
     endif(HELP2MAN_EXECUTABLE)
 else(BUILD_BLADERF_CLI_DOCUMENTATION)
-    message(STATUS "Not building man page for bladeRF-cli.  (BUILD_BLADERF_CLI_DOCUMENTATION is OFF)")
+    message(STATUS "Not building man page for bladeRF-cli. "
+            "(BUILD_BLADERF_CLI_DOCUMENTATION is OFF)")
 endif(BUILD_BLADERF_CLI_DOCUMENTATION)
 
 ################################################################################
