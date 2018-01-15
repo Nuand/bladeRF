@@ -814,6 +814,7 @@ int print_gain(struct cli_state *state, int argc, char **argv)
     size_t const max_count  = 16; /* Max number of stages to display */
     size_t const max_len    = 16; /* Max length of a stage name */
     bool printed            = false;
+    bool ok;
     int status;
 
     switch (argc) {
@@ -821,22 +822,21 @@ int print_gain(struct cli_state *state, int argc, char **argv)
         case 4:
             /* One channel, one stage */
             stage = argv[3];
+            EXPLICIT_FALLTHROUGH;
 
-            __attribute__((fallthrough));
-
-        case 3: { /* One channel, all stages */
-            bool ok;
+        case 3:
+            /* One channel, all stages */
             channel = get_channel(argv[2], &ok);
             if (!ok) {
                 invalid_channel(state, argv[0], argv[2]);
                 rv = CLI_RET_INVPARAM;
             }
+            EXPLICIT_FALLTHROUGH;
 
-            __attribute__((fallthrough));
-        }
         case 2:
             /* All channels, all stages */
             break;
+
         default:
             /* Print usage */
             printf("Usage: print gain [<channel> [<stage>]]\n");
