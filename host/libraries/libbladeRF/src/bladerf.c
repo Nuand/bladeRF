@@ -1426,10 +1426,13 @@ int bladerf_trim_dac_write(struct bladerf *dev, uint16_t trim)
 }
 
 int bladerf_dac_read(struct bladerf *dev, uint16_t *trim)
-    __attribute__ ((alias ("bladerf_trim_dac_read")));
-
+{
+    return bladerf_trim_dac_read(dev, trim);
+}
 int bladerf_dac_write(struct bladerf *dev, uint16_t trim)
-    __attribute__ ((alias ("bladerf_trim_dac_write")));
+{
+    return bladerf_trim_dac_write(dev, trim);
+}
 
 /******************************************************************************/
 /* Low-level Trigger control access */
