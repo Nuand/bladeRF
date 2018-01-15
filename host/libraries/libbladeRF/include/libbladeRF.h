@@ -1597,7 +1597,8 @@ struct bladerf_quick_tune {
         };
         /* bladeRF2 quick tune parameters */
         struct {
-            /* TBD */
+            /* TODO: Define these */
+            void *tbd;
         };
    };
 };
