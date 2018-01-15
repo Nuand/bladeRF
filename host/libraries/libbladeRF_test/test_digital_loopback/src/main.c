@@ -129,7 +129,8 @@ void *tx_callback(struct bladerf *dev,
 
     uint16_t *buf;
     uint64_t value;
-    uint16_t i_val, q_val;
+    uint16_t i_val = 0;
+    uint16_t q_val = 0;
 
     if (meta->status &
         (BLADERF_META_STATUS_OVERRUN | BLADERF_META_STATUS_UNDERRUN)) {
@@ -138,7 +139,7 @@ void *tx_callback(struct bladerf *dev,
     }
 
     buf        = state->buffers[state->idx];
-    state->idx = (++state->idx) % state->num;
+    state->idx = (state->idx + 1) % state->num;
 
     /* The AD9361 tends to swap channels when loopbacking */
     size_t skip_by = (LOOPBACK_RFIC == state->lb_mode) ? 4 : 2;
@@ -334,7 +335,7 @@ void *rx_callback(struct bladerf *dev,
     }
 
     buf        = state->buffers[state->idx];
-    state->idx = (++state->idx) % state->num;
+    state->idx = (state->idx + 1) % state->num;
 
     if ((good_count + bad_count - last_status_print) > 100000000) {
         log_info("IQ Matches: %zu / %zu (%.1f%%), %d blocks\n", good_count,
