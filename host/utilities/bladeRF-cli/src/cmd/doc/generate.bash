@@ -164,25 +164,34 @@ fi
 
 # Start generating documentation
 echo "${MYNAME}: Generating HTML doc (cmd_help.html)..."
-${PANDOC_CMD} --standalone --self-contained --toc -f markdown -t html5 -o cmd_help.html.new ${INPUT_FILE} && mv cmd_help.html.new cmd_help.html
+${PANDOC_CMD} \
+    --standalone --self-contained --toc -f markdown -t html5 \
+    --metadata title="bladeRF-cli commands" -o cmd_help.html.new \
+    ${INPUT_FILE} \
+    && mv cmd_help.html.new cmd_help.html
 
 if [ ! -s "cmd_help.html" ]; then
     echo "${MYNAME}: Failed to generate HTML help!"
 fi
 
 echo "${MYNAME}: Generating man page snippet (cmd_help.man)..."
-${PANDOC_CMD} -f markdown -t man -o cmd_help.man.new ${INPUT_FILE} && mv cmd_help.man.new cmd_help.man
+${PANDOC_CMD} \
+    -f markdown -t man -o cmd_help.man.new ${INPUT_FILE} \
+    && mv cmd_help.man.new cmd_help.man
 
 if [ ! -s "cmd_help.man" ]; then
-    echo "${MYNAME}: Failed to generate man page!  Using canned version."
+    echo "${MYNAME}: Failed to generate man page! Using pre-built file."
     cp ${INPUT_DIR}/cmd_help.man.in cmd_help.man
 fi
 
 echo "${MYNAME}: Generating text version (cmd_help.txt)..."
-${PANDOC_CMD} --ascii --columns=70 -f markdown -t plain -o cmd_help.txt.new ${INPUT_FILE} && mv cmd_help.txt.new cmd_help.txt
+${PANDOC_CMD} \
+    --ascii --columns=70 -f markdown -t plain -o cmd_help.txt.new \
+    ${INPUT_FILE} \
+    && mv cmd_help.txt.new cmd_help.txt
 
 if [ ! -s "cmd_help.txt" ]; then
-    echo "${MYNAME}: Failed to generate text version!  Using canned header file."
+    echo "${MYNAME}: Failed to generate text version! Using pre-built file."
     cp ${INPUT_DIR}/cmd_help.h.in cmd_help.h
     exit 0
 fi
