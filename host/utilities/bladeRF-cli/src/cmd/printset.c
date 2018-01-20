@@ -1,7 +1,7 @@
 /*
  * This file is part of the bladeRF project
  *
- * Copyright (C) 2013-2015 Nuand LLC
+ * Copyright (C) 2013-2018 Nuand LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -176,43 +176,6 @@ static bool _is_board(struct bladerf *dev, enum board_option board)
     return false;
 }
 
-bladerf_channel get_channel(char *ch, bool *ok)
-{
-    bladerf_channel rv;
-    *ok = true;
-
-    if (strcasecmp(ch, "rx") == 0 || strcasecmp(ch, "rx1") == 0) {
-        rv = BLADERF_CHANNEL_RX(0);
-    } else if (strcasecmp(ch, "rx2") == 0) {
-        rv = BLADERF_CHANNEL_RX(1);
-    } else if (strcasecmp(ch, "tx") == 0 || strcasecmp(ch, "tx1") == 0) {
-        rv = BLADERF_CHANNEL_TX(0);
-    } else if (strcasecmp(ch, "tx2") == 0) {
-        rv = BLADERF_CHANNEL_TX(1);
-    } else {
-        rv  = BLADERF_CHANNEL_INVALID;
-        *ok = false;
-    }
-
-    return rv;
-}
-
-static char *get_channel_str(bladerf_channel ch)
-{
-    switch (ch) {
-        case BLADERF_CHANNEL_RX(0):
-            return "RX1";
-        case BLADERF_CHANNEL_RX(1):
-            return "RX2";
-        case BLADERF_CHANNEL_TX(0):
-            return "TX1";
-        case BLADERF_CHANNEL_TX(1):
-            return "TX2";
-        default:
-            return "??";
-    }
-}
-
 static inline void invalid_channel(struct cli_state *s,
                                    const char *cmd,
                                    const char *channel)
@@ -356,7 +319,7 @@ static int _do_print_bandwidth(struct cli_state *state, bladerf_channel ch)
         *err = status;
         rv   = CLI_RET_LIBBLADERF;
     } else {
-        printf("  %s Bandwidth: %9u Hz\n", get_channel_str(ch), bw);
+        printf("  %s Bandwidth: %9u Hz\n", channel2str(ch), bw);
     }
 
     return rv;
@@ -367,7 +330,6 @@ int print_bandwidth(struct cli_state *state, int argc, char **argv)
     /* Usage: print bandwidth [<rx|tx>] */
     int rv                  = CLI_RET_OK;
     bladerf_channel channel = BLADERF_CHANNEL_INVALID;
-    bool ok;
 
     if (argc == 2) {
         /* Do both RX and TX */
@@ -390,8 +352,8 @@ int print_bandwidth(struct cli_state *state, int argc, char **argv)
 
     if (argc == 3) {
         /* Parse channel */
-        channel = get_channel(argv[2], &ok);
-        if (!ok) {
+        channel = str2channel(argv[2]);
+        if (BLADERF_CHANNEL_INVALID == channel) {
             invalid_channel(state, argv[0], argv[2]);
             rv = CLI_RET_INVPARAM;
         }
@@ -429,7 +391,7 @@ static int _set_print_bandwidth(struct cli_state *state,
             rv   = CLI_RET_LIBBLADERF;
         } else {
             printf("  Set %s bandwidth - req:%9u Hz actual:%9u Hz\n",
-                   get_channel_str(ch), bw, actual);
+                   channel2str(ch), bw, actual);
         }
     }
 
@@ -453,8 +415,8 @@ int set_bandwidth(struct cli_state *state, int argc, char **argv)
             break;
         case 4:
             /* Parse channel */
-            channel = get_channel(argv[2], &ok);
-            if (!ok) {
+            channel = str2channel(argv[2]);
+            if (BLADERF_CHANNEL_INVALID == channel) {
                 invalid_channel(state, argv[0], argv[2]);
                 rv = CLI_RET_INVPARAM;
             }
@@ -526,7 +488,7 @@ static int _do_print_biastee(struct cli_state *state, bladerf_channel ch)
         *err = status;
         rv   = CLI_RET_LIBBLADERF;
     } else {
-        printf("  Bias Tee (%s): %s\n", get_channel_str(ch),
+        printf("  Bias Tee (%s): %s\n", channel2str(ch),
                enable ? "on" : "off");
     }
 
@@ -538,11 +500,10 @@ int print_biastee(struct cli_state *state, int argc, char **argv)
     /* Usage: print biastee [<rx|tx>] */
     int rv                  = CLI_RET_OK;
     bladerf_channel channel = BLADERF_CHANNEL_INVALID;
-    bool ok;
 
     if (3 == argc) {
-        channel = get_channel(argv[2], &ok);
-        if (!ok) {
+        channel = str2channel(argv[2]);
+        if (BLADERF_CHANNEL_INVALID == channel) {
             invalid_channel(state, argv[0], argv[2]);
             rv = CLI_RET_INVPARAM;
         }
@@ -583,8 +544,8 @@ int set_biastee(struct cli_state *state, int argc, char **argv)
             break;
         case 4:
             /* Parse channel */
-            channel = get_channel(argv[2], &ok);
-            if (!ok) {
+            channel = str2channel(argv[2]);
+            if (BLADERF_CHANNEL_INVALID == channel) {
                 invalid_channel(state, argv[0], argv[2]);
                 rv = CLI_RET_INVPARAM;
             } else {
@@ -632,7 +593,7 @@ static int _do_print_freq(struct cli_state *state, bladerf_channel ch)
         *err = status;
         rv   = CLI_RET_LIBBLADERF;
     } else {
-        printf("  %s Frequency: %10" PRIu64 " Hz\n", get_channel_str(ch), freq);
+        printf("  %s Frequency: %10" PRIu64 " Hz\n", channel2str(ch), freq);
     }
 
     return rv;
@@ -643,7 +604,6 @@ int print_frequency(struct cli_state *state, int argc, char **argv)
     /* Usage: print frequency [<rx|tx>] */
     int rv                  = CLI_RET_OK;
     bladerf_channel channel = BLADERF_CHANNEL_INVALID;
-    bool ok;
 
     if (argc == 2) {
         size_t chi;
@@ -665,8 +625,8 @@ int print_frequency(struct cli_state *state, int argc, char **argv)
 
     if (argc == 3) {
         /* Parse channel */
-        channel = get_channel(argv[2], &ok);
-        if (!ok) {
+        channel = str2channel(argv[2]);
+        if (BLADERF_CHANNEL_INVALID == channel) {
             invalid_channel(state, argv[0], argv[2]);
             rv = CLI_RET_INVPARAM;
         }
@@ -705,7 +665,7 @@ static int _set_print_frequency(struct cli_state *state,
         } else {
             printf("  Set %s frequency - req:%10" PRIu64 " Hz actual:%10" PRIu64
                    " Hz\n",
-                   get_channel_str(ch), freq, actual);
+                   channel2str(ch), freq, actual);
         }
     }
 
@@ -744,8 +704,8 @@ int set_frequency(struct cli_state *state, int argc, char **argv)
             break;
         case 4:
             /* Parse channel */
-            channel = get_channel(argv[2], &ok);
-            if (!ok) {
+            channel = str2channel(argv[2]);
+            if (BLADERF_CHANNEL_INVALID == channel) {
                 invalid_channel(state, argv[0], argv[2]);
                 rv = CLI_RET_INVPARAM;
             }
@@ -814,7 +774,6 @@ int print_gain(struct cli_state *state, int argc, char **argv)
     size_t const max_count  = 16; /* Max number of stages to display */
     size_t const max_len    = 16; /* Max length of a stage name */
     bool printed            = false;
-    bool ok;
     int status;
 
     switch (argc) {
@@ -826,8 +785,8 @@ int print_gain(struct cli_state *state, int argc, char **argv)
 
         case 3:
             /* One channel, all stages */
-            channel = get_channel(argv[2], &ok);
-            if (!ok) {
+            channel = str2channel(argv[2]);
+            if (BLADERF_CHANNEL_INVALID == channel) {
                 invalid_channel(state, argv[0], argv[2]);
                 rv = CLI_RET_INVPARAM;
             }
@@ -925,7 +884,7 @@ int print_gain(struct cli_state *state, int argc, char **argv)
                 /* Prepare human-readable stage name */
                 status =
                     snprintf(stage_name, (max_len - 1),
-                             "%s %s:", get_channel_str(brf_ch), gain_names[si]);
+                             "%s %s:", channel2str(brf_ch), gain_names[si]);
                 if (status < 0) {
                     *err = status;
                     rv   = CLI_RET_UNKNOWN;
@@ -943,7 +902,7 @@ int print_gain(struct cli_state *state, int argc, char **argv)
     if (!printed && channel != BLADERF_CHANNEL_INVALID && stage != NULL) {
         /* We did not find any applicable values :( */
         printf("  Channel and/or stage not found: %s %s\n",
-               get_channel_str(channel), stage);
+               channel2str(channel), stage);
     }
 
     return rv;
@@ -984,8 +943,8 @@ int set_gain(struct cli_state *state, int argc, char **argv)
             return rv;
     }
 
-    channel = get_channel(argv[2], &ok);
-    if (!ok) {
+    channel = str2channel(argv[2]);
+    if (BLADERF_CHANNEL_INVALID == channel) {
         invalid_channel(state, argv[0], argv[2]);
         rv = CLI_RET_INVPARAM;
         return rv;
@@ -1009,18 +968,18 @@ int set_gain(struct cli_state *state, int argc, char **argv)
     gain = str2int(value_str, range.min, range.max, &ok);
     if (!ok) {
         invalid_gain(state, argv[0],
-                     (stage == NULL) ? get_channel_str(channel) : stage,
+                     (stage == NULL) ? channel2str(channel) : stage,
                      value_str);
         rv = CLI_RET_INVPARAM;
         return rv;
     }
 
     if (stage != NULL) {
-        printf("Setting %s %s gain to %d dB\n", get_channel_str(channel), stage,
+        printf("Setting %s %s gain to %d dB\n", channel2str(channel), stage,
                gain);
         status = bladerf_set_gain_stage(state->dev, channel, stage, gain);
     } else {
-        printf("Setting %s overall gain to %d dB\n", get_channel_str(channel),
+        printf("Setting %s overall gain to %d dB\n", channel2str(channel),
                gain);
         status = bladerf_set_gain(state->dev, channel, gain);
     }
@@ -1045,10 +1004,10 @@ int set_gain(struct cli_state *state, int argc, char **argv)
 
     if (stage != NULL) {
         status = snprintf(stage_name, max_len - 1,
-                          "%s %s:", get_channel_str(channel), stage);
+                          "%s %s:", channel2str(channel), stage);
     } else {
         status = snprintf(stage_name, max_len - 1,
-                          "%s overall:", get_channel_str(channel));
+                          "%s overall:", channel2str(channel));
     }
 
     if (status < 0) {
@@ -2106,15 +2065,14 @@ int print_samplerate(struct cli_state *state, int argc, char **argv)
     struct bladerf_rational_rate rate;
     bladerf_channel channel;
     int status;
-    bool ok;
 
     if (argc < 2 || argc > 3) {
         rv = CLI_RET_NARGS;
     }
 
     if (rv == CLI_RET_OK && argc == 3) {
-        channel = get_channel(argv[2], &ok);
-        if (!ok) {
+        channel = str2channel(argv[2]);
+        if (BLADERF_CHANNEL_INVALID == channel) {
             invalid_channel(state, argv[0], argv[2]);
             rv = CLI_RET_INVPARAM;
         }
@@ -2201,8 +2159,8 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
         case 4:
         case 6:
             /* Parse channel */
-            channel = get_channel(argv[2], &ok);
-            if (!ok) {
+            channel = str2channel(argv[2]);
+            if (BLADERF_CHANNEL_INVALID == channel) {
                 invalid_channel(state, argv[0], argv[2]);
                 rv = CLI_RET_INVPARAM;
             }
