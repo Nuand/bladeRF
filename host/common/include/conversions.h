@@ -2,7 +2,7 @@
  * This file is part of the bladeRF project:
  *   http://www.github.com/nuand/bladeRF
  *
- * Copyright (C) 2014-2017 Nuand LLC
+ * Copyright (C) 2014-2018 Nuand LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -105,6 +105,17 @@ bladerf_module str2module(const char *str);
  * @return  String representation of channel
  */
 const char * channel2str(bladerf_channel ch);
+
+/**
+ * Convert a string to a channel index
+ *
+ * This is case-insensitive.
+ *
+ * @param   str         Channel as a string.
+ * @return  BLADERF_CHANNEL_RX(n) or BLADERF_CHANNEL_TX(n),
+ * 			or BLADERF_CHANNEL_INVALID if not recognized
+ */
+bladerf_channel str2channel(char const *str);
 
 /**
  * Convert a direction enumeration to a string

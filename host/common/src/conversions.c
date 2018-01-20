@@ -2,7 +2,7 @@
  * This file is part of the bladeRF project:
  *   http://www.github.com/nuand/bladeRF
  *
- * Copyright (c) 2017 Nuand LLC.
+ * Copyright (c) 2017-2018 Nuand LLC.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -148,6 +148,25 @@ const char * channel2str(bladerf_channel ch)
         default:
             return "Unknown";
     }
+}
+
+bladerf_channel str2channel(char const *str)
+{
+    bladerf_channel rv;
+
+    if (strcasecmp(str, "rx") == 0 || strcasecmp(str, "rx1") == 0) {
+        rv = BLADERF_CHANNEL_RX(0);
+    } else if (strcasecmp(str, "rx2") == 0) {
+        rv = BLADERF_CHANNEL_RX(1);
+    } else if (strcasecmp(str, "tx") == 0 || strcasecmp(str, "tx1") == 0) {
+        rv = BLADERF_CHANNEL_TX(0);
+    } else if (strcasecmp(str, "tx2") == 0) {
+        rv = BLADERF_CHANNEL_TX(1);
+    } else {
+        rv  = BLADERF_CHANNEL_INVALID;
+    }
+
+    return rv;
 }
 
 const char * direction2str(bladerf_direction dir)
