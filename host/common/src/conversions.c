@@ -252,7 +252,9 @@ int str2loopback(const char *str, bladerf_loopback *loopback)
 {
     int status = 0;
 
-    if (!strcasecmp("bb_txlpf_rxvga2", str)) {
+    if (!strcasecmp("firmware", str)) {
+        *loopback = BLADERF_LB_FIRMWARE;
+    } else if (!strcasecmp("bb_txlpf_rxvga2", str)) {
         *loopback = BLADERF_LB_BB_TXLPF_RXVGA2;
     } else if (!strcasecmp("bb_txlpf_rxlpf", str)) {
         *loopback = BLADERF_LB_BB_TXLPF_RXLPF;
@@ -266,6 +268,8 @@ int str2loopback(const char *str, bladerf_loopback *loopback)
         *loopback = BLADERF_LB_RF_LNA2;
     } else if (!strcasecmp("rf_lna3", str)) {
         *loopback = BLADERF_LB_RF_LNA3;
+    } else if (!strcasecmp("rf_bist", str)) {
+        *loopback = BLADERF_LB_AD9361_BIST;
     } else if (!strcasecmp("none", str)) {
         *loopback = BLADERF_LB_NONE;
     } else {
