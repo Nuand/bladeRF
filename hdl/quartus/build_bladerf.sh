@@ -157,11 +157,6 @@ while getopts ":fa:b:s:r:n:h:c" opt; do
     esac
 done
 
-if [ "$clear_work_dir" == "1" ]; then
-    echo -e "\nClearing work/ directory\n" >&2
-    rm -rf work
-fi
-
 if [ "$board" == "" ]; then
     echo -e "\nError: board (-b) is required\n" >&2
     usage
@@ -274,6 +269,11 @@ work_dir=work/${platform}
 common_dir=../../../fpga/platforms/common/bladerf/
 build_dir=../../../fpga/platforms/${platform}/build/
 
+if [ "$clear_work_dir" == "1" ]; then
+    echo -e "\nClearing ${work_dir} directory\n" >&2
+    rm -rf "${work_dir}"
+fi
+
 mkdir -p ${work_dir}
 pushd ${work_dir}
 
@@ -378,7 +378,7 @@ else
 fi
 
 popd
-BUILD_TIME_DONE="$(cat work/${platform}/output_files/$rev.done)"
+BUILD_TIME_DONE="$(cat ${work_dir}/output_files/$rev.done)"
 BUILD_TIME_DONE=$(date -d"$BUILD_TIME_DONE" '+%F_%H.%M.%S')
 
 BUILD_NAME="$rev"x"$size"
@@ -386,9 +386,9 @@ BUILD_OUTPUT_DIR="$BUILD_NAME"-"$BUILD_TIME_DONE"
 RBF=$BUILD_NAME.rbf
 
 mkdir -p "$BUILD_OUTPUT_DIR"
-cp "work/${platform}/output_files/$rev.rbf" "$BUILD_OUTPUT_DIR/$RBF"
+cp "${work_dir}/output_files/$rev.rbf" "$BUILD_OUTPUT_DIR/$RBF"
 
-for file in work/${platform}/output_files/*rpt work/${platform}/output_files/*summary; do
+for file in ${work_dir}/output_files/*rpt ${work_dir}/output_files/*summary; do
     new_file=$(basename $file | sed -e s/$rev/"$BUILD_NAME"/)
     cp $file "$BUILD_OUTPUT_DIR/$new_file"
 done
