@@ -265,7 +265,7 @@ fi
 # Error out at the first sign of trouble
 set -e
 
-work_dir=work/${platform}
+work_dir="work/${platform}-${size}"
 common_dir=../../../fpga/platforms/common/bladerf/
 build_dir=../../../fpga/platforms/${platform}/build/
 
