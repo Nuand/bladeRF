@@ -8,7 +8,7 @@ The HDL is separated out into two different sections:
 | fpga      | Source HDL in the form of IP blocks or platform specific top levels   |
 | quartus   | Specific files for Quartus Prime project creation and building           |
 
-IP, as it is added to the repository, falls under the category of who created the IP.  Some IP is created by Altera tools and remains in an Altera directory.  Some has been written by nuand or has been downloaded from OpenCores.  These blocks should be seen as independent from the platform and, essentially, building blocks for the entire platform.
+IP, as it is added to the repository, falls under the category of who created the IP.  Some IP is created by Intel FPGA (formerly Altera) tools and remains in an `altera` directory.  Some has been written by Nuand or has been downloaded from OpenCores.  These blocks should be seen as independent from the platform and, essentially, building blocks for the entire platform.
 
 Currently, the only platform we have is bladeRF.  As more platforms come out, more top levels will be created but the same IP should be able to be used with any of those platforms.
 
@@ -18,12 +18,12 @@ Some FPGA binaries are available for [download][download].  Please note the md5 
 [download]: https://www.nuand.com/fpga/ (nuand/FPGA Images)
 
 ## Required Software ##
-We use an [Altera][altera] [Cyclone IV E FPGA][cive].  The size of the FPGA is the only difference between the x40 and x115 models.  Altera provides their [Quartus Prime][quartus] software for synthesizing designs for their FPGAs.  The Lite Edition is free of charge, but not open source, and may require registering on their site to download the software.
+We use an [Intel (Altera)][intel] [Cyclone IV E FPGA][cive].  The size of the FPGA is the only difference between the x40 and x115 models.  Intel provides their [Quartus Prime][quartus] software for synthesizing designs for their FPGAs.  The Lite Edition is free of charge, but not open source, and may require registering on their site to download the software.
 
-**Important Note:** Be sure to download [Quartus Prime version 17.0][quartus], which the bladeRF project files are based upon. The updates to Quartus Prime 17.0 are not reverse-compatible with earlier Quartus versions, nor will future versions necessarily be reverse-compatible with 17.0.
+**Important Note:** Be sure to download and install [Quartus Prime version 17.1][quartus], which the bladeRF project files are based upon. Updates to Quartus Prime are not guaranteed to be reverse-compatible with earlier Quartus versions, nor will future versions necessarily be reverse-compatible.
 
-[altera]: https://www.altera.com/ (Altera, part of the Intel Programmable Solutions Group)
-[quartus]: https://dl.altera.com/17.0/?edition=lite (Quartus Prime Lite Edition v17.0)
+[intel]: https://www.altera.com/ (Altera, part of the Intel Programmable Solutions Group)
+[quartus]: https://dl.altera.com/17.1/?edition=lite (Quartus Prime Lite Edition v17.1)
 [cive]: https://www.altera.com/products/fpga/cyclone-series/cyclone-iv/overview.html
 
 ## HDL Structure ##
@@ -43,7 +43,7 @@ The Quartus Prime build tools supports TCL as a scripting language which we util
 
 To support multiple versions of Quartus Prime on the same machine and to ensure the environment is appropriately setup, please use the `nios2_command_shell.sh` script to get into an appropriate Quartus Prime environment.  Note that this shell script is usually located in the `nios2eds` directory of your Quartus Prime install directory.  Also note that this is the preferred method regardless of using Windows or Linux to build.  If you're using pybombs, make sure you haven't run `setup_env.sh`, as it prevents `nios2_command_shell.sh` from working properly.
 
-1. Take note of which Altera Cyclone IV you have. (The EP4CE40 is 40 kLE, and the EP4CE115 is 115 kLE.)  You'll need this size below...
+1. Take note of which Cyclone device you have. (The EP4CE40 is 40 kLE, and the EP4CE115 is 115 kLE.)  You'll need this size below.
 2. Enter the `quartus` directory
 3. Execute, from inside an appropriate NIOS II command shell, `./build_bladerf.sh -h` to view the usage for the build script. Note the size and revision options. Also note any items you'll need to add to your PATH before continuing.
 4. Execute, from inside an appropriate NIOS II command shell, `./build_bladerf.sh -s <size> -r <revision>`, with the relevant size for your bladeRF, and the desired revision.  This will create the NIOS system and software associated with the FPGA build needed by the internal RAM for execution.
@@ -58,4 +58,4 @@ For advanced users who want to use Signal Tap internal logic analyzer in their d
 quartus_sh -t ../build.tcl -rev hosted -size 115 -stp ../signaltap/debug_rx.stp
 ```
 
-Note that to use Signal Tap with the Quartus Prime Lite Edition software, Altera requires that the TalkBack feature be enabled.  The build script tries to 'fake' this out by setting the TalkBack feature to be on, compiling the project, then turning it off immediately.  If this behavior is not desired, don't try to add a Signal Tap file to the project.
+Note that to use Signal Tap with the Quartus Prime Lite Edition software, the TalkBack feature must be enabled.  The build script tries to 'fake' this out by setting the TalkBack feature to be on, compiling the project, then turning it off immediately afterward.  If this behavior is not desired, don't try to add a Signal Tap file to the project.
