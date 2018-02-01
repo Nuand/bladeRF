@@ -101,6 +101,9 @@ The following pages provide examples and more detailed usage information:
     <li>
         <a class="el" href="envvars.html">Environment variables</a>
     </li>
+    <li>
+        <a class="el" href="configfile.html">Configuration file</a>
+    </li>
 </ul>
 
 */

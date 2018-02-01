@@ -1,0 +1,185 @@
+/**
+\page configfile Configuration File
+
+libbladeRF supports an optional configuration file. This feature is useful for
+specifying preferred default settings, or for configuring options that aren't
+yet supported by a third-party application. If found, the configuration file is
+parsed immediately after a bladeRF is opened and initialized by libbladeRF.
+
+A configuration file may be named either `bladeRF.conf` (preferred) or
+`bladerf.conf`. libbladeRF uses the same search path it uses for finding FPGA
+images and calibration tables, defined by file_find() in file_ops.c:
+
+<b>Linux and OSX:</b>
+<ul>
+    <li>The current working directory</li>
+    <li>The directory containing the program being executed</li>
+    <li><code>~/.config/Nuand/bladeRF</code></li>
+    <li><code>~/.Nuand/bladeRF</code></li>
+    <li><code>/etc/Nuand/bladeRF</code></li>
+    <li><code>/usr/share/Nuand/bladeRF</code></li>
+</ul>
+
+<b>Windows:</b>
+<ul>
+    <li>The current working directory</li>
+    <li>The directory containing the program being executed</li>
+    <li><code>C:\\Users\\USERNAME\\AppData\\Roaming\\Nuand\\bladeRF</code>
+        (via <a class="el" href="https://msdn.microsoft.com/en-us/library/windows/desktop/dd378457%28v=vs.85%29.aspx">FOLDERID_RoamingAppData</a>)</li>
+    <li>The installation path, via <code>HKEY_LOCAL_MACHINE\\Software\\Nuand LLC\\Path</code></li>
+</ul>
+
+<strong>Note:</strong> libbladeRF will only find and process the first
+configuration file it finds. Any other files appearing later in the search path
+will be ignored.
+
+A valid configuration file may contain:
+
+<ul>
+    <li><em>Comments</em> are lines starting with a `#`, and are ignored.
+    <li><em>Restrictions</em> are lines starting with a `[` and ending with a
+    `]`, and are used to apply a scope to a subset of options.</li>
+    <li><em>Options</em> themselves are specified by an option key, a space,
+    and then a value.</li>
+</ul>
+
+The below example loads an FPGA image from `/home/user/hostedx40.rbf`, set the
+trim DAC value to 592, and set the frequency to 2.4 GHz, when <em>any</em>
+bladeRF is opened:
+
+\snippet example_bladeRF.conf basic_usage
+
+<hr>
+<h2>Restrictions</h2>
+
+Options may be restricted to bladeRFs that match a particular description. A
+restriction applies to all options following it, until the next restriction (or
+the end of the file). When iterating through the configuration file, a given
+option will be applied if the target bladeRF matches the most recent restriction
+(or if there are no restrictions). If it does not, the option will be silently
+ignored.
+
+<h3>Matching by FPGA size</h3>
+
+The following restrictions are based on the FPGA size on the bladeRF board:
+
+<ul>
+    <li>`[x40]` - Only boards matching ::BLADERF_FPGA_40KLE</li>
+    <li>`[x115]` - Only boards matching ::BLADERF_FPGA_115KLE</li>
+</ul>
+
+The following example would program the FPGA with `/home/user/hostedx40.rbf`
+when initializing a bladeRF x40, but would program it with
+`/home/user/hostedx115.rbf` if the bladeRF is an x115 model.
+
+\snippet example_bladeRF.conf match_fpga
+
+<h3>Matching by Device Identifier String</h3>
+
+A restriction of `[<device identifier string>]` will limit the following options
+to bladeRFs matching that string. Under the hood, any square-bracketed string
+that is not otherwise recognized gets passed to bladerf_devstr_matches() as a
+possible device identifier string.
+
+The general form of a device identifier string is:
+
+    <backend>:[device=<bus>:<addr>] [instance=<n>] [serial=<serial>]
+
+<strong>Note:</strong> Please see bladerf_open() for a complete description of
+device identifier strings.
+
+The below example is similar to the above examples. However, it will apply
+different trimdac values to two specific boards, which are identified by serial
+number.
+
+\snippet example_bladeRF.conf match_devstr
+
+<h3>Matching any device</h3>
+
+Finally, a wildcard (`[*]`) or empty (`[]`) restriction will match any device,
+and may be used to "cancel" a previous restriction.
+
+<hr>
+<h2>Options</h2>
+
+Options (unless ignored due to a restriction) will be applied sequentially,
+immediately following initialization of the bladeRF.
+
+<strong>Note:</strong> If the same option key is specified more than once, it
+will be applied more than once; e.g. specifying `frequency 2.4G` and then
+`frequency 400M` will first tune the frequency to 2.4 GHz, and then to 400 MHz.
+
+<ul>
+    <li><b>`fpga <rbf_filename>`</b></li>
+
+        Loads the specified FPGA image via bladerf_load_fpga().
+
+    <li><b>`frequency <Hz>`</b></li>
+
+        Sets the bladeRF's RX and TX frequencies to a given frequency in Hz.
+        Suffixes are supported.
+
+        This option causes libbladeRF to call bladerf_set_frequency() on both
+        ::BLADERF_MODULE_RX and ::BLADERF_MODULE_TX.
+
+    <li><b>`samplerate <rate>`</b></li>
+
+        Sets the sample rate for the RX ADC and TX to the given rate in samples
+        per second. Suffixes are supported.
+
+        This option causes libbladeRF to call bladerf_set_rational_sample_rate()
+        on both ::BLADERF_MODULE_RX and ::BLADERF_MODULE_TX.
+
+    <li><b>`bandwidth <Hz>`</b></li>
+
+        Sets the RF bandwidth to a given value in Hz. Suffixes are supported.
+
+        This option causes libbladeRF to call bladerf_set_bandwidth() on both
+        ::BLADERF_MODULE_RX and ::BLADERF_MODULE_TX.
+
+    <li><b>`agc <bool>`</b></li>
+
+        Enables or disables automatic gain control mode, via
+        bladerf_set_gain_mode().
+
+        A true value (e.g. `on`) selects ::BLADERF_GAIN_AUTOMATIC, while a false
+        value (e.g. `off`) selects ::BLADERF_GAIN_MANUAL.
+
+    <li><b>`gpio <uint>`</b></li>
+
+        Sets the GPIO register to a given value, using
+        bladerf_config_gpio_write().
+
+    <li><b>`sampling <internal|external>`</b></li>
+
+        Sets the sampling source by calling bladerf_set_sampling().
+
+        Choices are `internal` or `external`.
+
+        <strong>See ::bladerf_sampling for important information.</strong>
+
+    <li><b>`trimdac <uint>`</b></li>
+
+        Sets the trim DAC value via bladerf_dac_write().
+
+    <li><b>`vctcxo_tamer <disabled|1pps|10mhz>`</b></li>
+
+        Sets the VCTCXO tamer method using bladerf_set_vctcxo_tamer_mode().
+
+        Choices are `disabled`, `1PPS`, and `10MHz`.
+
+        <strong>See ::bladerf_vctcxo_tamer_mode for important
+        information.</strong>
+
+</ul>
+
+<h3>Suffixes</h3>
+Where noted above, the following suffixes are supported:
+
+<ul>
+    <li>`G`, `GHz`: multiply by 1000*1000*1000</li>
+    <li>`M`, `MHz`: multiply by 1000*1000</li>
+    <li>`k`, `kHz`: multiply by 1000</li>
+</ul>
+
+*/

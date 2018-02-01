@@ -181,7 +181,7 @@ static int apply_config_options(struct bladerf *dev, struct config_options opt)
 
         status = bladerf_set_rational_sample_rate(dev, BLADERF_MODULE_TX,
                                                     &rate, &actual);
-    } else if (!strcasecmp(opt.key, "bandwdith")) {
+    } else if (!strcasecmp(opt.key, "bandwidth")) {
         bw = str2uint_suffix( opt.value,
                 BLADERF_BANDWIDTH_MIN, BLADERF_BANDWIDTH_MAX,
                 freq_suffixes, NUM_FREQ_SUFFIXES, &ok);
@@ -242,7 +242,7 @@ static int apply_config_options(struct bladerf *dev, struct config_options opt)
     }
 
     if (status < 0)
-        log_warning("Error massage for option (%s) on line %d:\n%s\n",
+        log_warning("Error message for option (%s) on line %d:\n%s\n",
                 opt.key, opt.lineno, bladerf_strerror(status));
 
     return status;
