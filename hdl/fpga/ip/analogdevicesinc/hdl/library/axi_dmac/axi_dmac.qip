@@ -1,0 +1,31 @@
+# This file gets copied by Qsys several layers into the work directory.
+# Any relative paths defined here must be relative to that directory.
+set ad_hdl_dir [file normalize [file join $::quartus(qip_path) ../../../../../../fpga/ip/analogdevicesinc/hdl/]]
+
+set_global_assignment -name VERILOG_FILE $ad_hdl_dir/library/common/sync_bits.v
+set_global_assignment -name VERILOG_FILE $ad_hdl_dir/library/common/sync_gray.v
+set_global_assignment -name VERILOG_FILE $ad_hdl_dir/library/common/up_axi.v
+set_global_assignment -name VERILOG_FILE $ad_hdl_dir/library/util_axis_resize/util_axis_resize.v
+set_global_assignment -name VERILOG_FILE $ad_hdl_dir/library/util_axis_fifo/util_axis_fifo.v
+set_global_assignment -name VERILOG_FILE $ad_hdl_dir/library/util_axis_fifo/address_gray.v
+set_global_assignment -name VERILOG_FILE $ad_hdl_dir/library/util_axis_fifo/address_gray_pipelined.v
+set_global_assignment -name VERILOG_FILE $ad_hdl_dir/library/util_axis_fifo/address_sync.v
+set_global_assignment -name MISC_FILE    $ad_hdl_dir/library/axi_dmac/inc_id.h
+set_global_assignment -name MISC_FILE    $ad_hdl_dir/library/axi_dmac/resp.h
+set_global_assignment -name VERILOG_FILE $ad_hdl_dir/library/axi_dmac/address_generator.v
+set_global_assignment -name VERILOG_FILE $ad_hdl_dir/library/axi_dmac/data_mover.v
+set_global_assignment -name VERILOG_FILE $ad_hdl_dir/library/axi_dmac/request_arb.v
+set_global_assignment -name VERILOG_FILE $ad_hdl_dir/library/axi_dmac/request_generator.v
+set_global_assignment -name VERILOG_FILE $ad_hdl_dir/library/axi_dmac/response_handler.v
+set_global_assignment -name VERILOG_FILE $ad_hdl_dir/library/axi_dmac/axi_register_slice.v
+set_global_assignment -name VERILOG_FILE $ad_hdl_dir/library/axi_dmac/2d_transfer.v
+set_global_assignment -name VERILOG_FILE $ad_hdl_dir/library/axi_dmac/dest_axi_mm.v
+set_global_assignment -name VERILOG_FILE $ad_hdl_dir/library/axi_dmac/dest_axi_stream.v
+set_global_assignment -name VERILOG_FILE $ad_hdl_dir/library/axi_dmac/dest_fifo_inf.v
+set_global_assignment -name VERILOG_FILE $ad_hdl_dir/library/axi_dmac/src_axi_mm.v
+set_global_assignment -name VERILOG_FILE $ad_hdl_dir/library/axi_dmac/src_axi_stream.v
+set_global_assignment -name VERILOG_FILE $ad_hdl_dir/library/axi_dmac/src_fifo_inf.v
+set_global_assignment -name VERILOG_FILE $ad_hdl_dir/library/axi_dmac/splitter.v
+set_global_assignment -name VERILOG_FILE $ad_hdl_dir/library/axi_dmac/response_generator.v
+set_global_assignment -name VERILOG_FILE $ad_hdl_dir/library/axi_dmac/axi_dmac.v
+set_global_assignment -name SDC_FILE     $ad_hdl_dir/library/axi_dmac/axi_dmac_constr.sdc
