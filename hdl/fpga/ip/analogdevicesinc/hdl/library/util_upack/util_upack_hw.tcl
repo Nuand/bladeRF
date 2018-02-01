@@ -16,9 +16,7 @@ set_module_property ELABORATION_CALLBACK p_util_upack
 
 add_fileset quartus_synth QUARTUS_SYNTH "" "Quartus Synthesis"
 set_fileset_property quartus_synth TOP_LEVEL util_upack
-add_fileset_file util_upack_dmx.v   VERILOG PATH util_upack_dmx.v
-add_fileset_file util_upack_dsf.v   VERILOG PATH util_upack_dsf.v
-add_fileset_file util_upack.v       VERILOG PATH util_upack.v TOP_LEVEL_FILE
+add_fileset_file util_upack.qip OTHER PATH ./util_upack.qip
 
 # parameters
 
