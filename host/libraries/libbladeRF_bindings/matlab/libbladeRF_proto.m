@@ -46,8 +46,8 @@ switch arch
     case 'win64'
         libname   = 'libbladeRF_thunk_pcwin64';
         libsuffix = '.dll';
-        bool_arg  = 'uint8';
-        bool_ret  = 'uint8';
+        bool_arg  = 'bool';
+        bool_ret  = '_Bool';
         u64_type  = 'uint64';
         pathsep   = ';';
 
