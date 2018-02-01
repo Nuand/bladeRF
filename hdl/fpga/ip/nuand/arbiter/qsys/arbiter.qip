@@ -1,0 +1,5 @@
+# This file gets copied by Qsys several layers into the work directory.
+# Any relative paths defined here must be relative to that directory.
+set nuand_hdl_dir [file normalize [file join $::quartus(qip_path) ../../../../../../fpga/ip/nuand/]]
+
+set_global_assignment -name VHDL_FILE $nuand_hdl_dir/arbiter/vhdl/arbiter.vhd

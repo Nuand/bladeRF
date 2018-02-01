@@ -40,7 +40,7 @@ add_fileset QUARTUS_SYNTH QUARTUS_SYNTH "" ""
 set_fileset_property QUARTUS_SYNTH TOP_LEVEL arbiter
 set_fileset_property QUARTUS_SYNTH ENABLE_RELATIVE_INCLUDE_PATHS false
 set_fileset_property QUARTUS_SYNTH ENABLE_FILE_OVERWRITE_MODE false
-add_fileset_file arbiter.vhd VHDL PATH ../vhdl/arbiter.vhd TOP_LEVEL_FILE
+add_fileset_file arbiter.qip OTHER PATH ./arbiter.qip
 
 
 # 
