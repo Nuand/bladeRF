@@ -1,0 +1,7 @@
+# This file gets copied by Qsys several layers into the work directory.
+# Any relative paths defined here must be relative to that directory.
+set ad_hdl_dir [file normalize [file join $::quartus(qip_path) ../../../../../../fpga/ip/analogdevicesinc/hdl/]]
+
+set_global_assignment -name VERILOG_FILE $ad_hdl_dir/library/util_cpack/util_cpack_mux.v
+set_global_assignment -name VERILOG_FILE $ad_hdl_dir/library/util_cpack/util_cpack_dsf.v
+set_global_assignment -name VERILOG_FILE $ad_hdl_dir/library/util_cpack/util_cpack.v
