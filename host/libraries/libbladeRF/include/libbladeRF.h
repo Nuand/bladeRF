@@ -564,6 +564,11 @@ typedef bladerf_channel bladerf_module;
 /** @endcond */
 
 /**
+ * Convenience macro: true if argument is a TX channel
+ */
+#define BLADERF_CHANNEL_IS_TX(ch) (ch & BLADERF_TX)
+
+/**
  * @defgroup FN_GAIN    Gain
  *
  * These functions provide control over the device's RX and TX gain stages.
