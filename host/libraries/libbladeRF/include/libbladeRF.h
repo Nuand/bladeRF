@@ -753,6 +753,9 @@ int CALL_CONV bladerf_get_gain_stage(struct bladerf *dev, bladerf_channel ch,
 /**
  * Get range of gain stage
  *
+ * This function may be called with `NULL` for `range` to test if a given gain
+ * range exists.
+ *
  * @param       dev         Device handle
  * @param[in]   ch          Channel
  * @param[in]   stage       Gain stage name

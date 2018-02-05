@@ -1895,7 +1895,9 @@ static int bladerf2_get_gain_stage_range(struct bladerf *dev,
 
     for (size_t i = 0; i < stage_infos_len; i++) {
         if (strcmp(stage_infos[i].name, stage) == 0) {
-            *range = stage_infos[i].range;
+            if (NULL != range) {
+                *range = stage_infos[i].range;
+            }
             return 0;
         }
     }

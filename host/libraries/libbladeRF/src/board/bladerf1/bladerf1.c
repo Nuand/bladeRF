@@ -1466,17 +1466,20 @@ static int bladerf1_get_gain_stage(struct bladerf *dev,
     return 0;
 }
 
-static int bladerf1_get_gain_stage_range(struct bladerf *dev, bladerf_channel ch, const char *stage, struct bladerf_range *range)
+static int bladerf1_get_gain_stage_range(struct bladerf *dev,
+                                         bladerf_channel ch,
+                                         const char *stage,
+                                         struct bladerf_range *range)
 {
     const struct bladerf_gain_stage_info *stage_infos;
     unsigned int stage_infos_len;
     unsigned int i;
 
     if (ch == BLADERF_CHANNEL_TX(0)) {
-        stage_infos = bladerf1_tx_gain_stages;
+        stage_infos     = bladerf1_tx_gain_stages;
         stage_infos_len = ARRAY_SIZE(bladerf1_tx_gain_stages);
     } else if (ch == BLADERF_CHANNEL_RX(0)) {
-        stage_infos = bladerf1_rx_gain_stages;
+        stage_infos     = bladerf1_rx_gain_stages;
         stage_infos_len = ARRAY_SIZE(bladerf1_rx_gain_stages);
     } else {
         return BLADERF_ERR_INVAL;
@@ -1484,7 +1487,9 @@ static int bladerf1_get_gain_stage_range(struct bladerf *dev, bladerf_channel ch
 
     for (i = 0; i < stage_infos_len; i++) {
         if (strcmp(stage_infos[i].name, stage) == 0) {
-            *range = stage_infos[i].range;
+            if (NULL != range) {
+                *range = stage_infos[i].range;
+            }
             return 0;
         }
     }
