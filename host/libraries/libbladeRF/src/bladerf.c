@@ -1312,6 +1312,33 @@ int bladerf_get_tuning_mode(struct bladerf *dev, bladerf_tuning_mode *mode)
 /* Loopback */
 /******************************************************************************/
 
+int bladerf_get_loopback_modes(struct bladerf *dev,
+                               struct bladerf_loopback_modes const **modes)
+{
+    int status;
+
+    status = dev->board->get_loopback_modes(dev, modes);
+
+    return status;
+}
+
+bool bladerf_is_loopback_mode_supported(struct bladerf *dev,
+                                        bladerf_loopback mode)
+{
+    struct bladerf_loopback_modes modes;
+    struct bladerf_loopback_modes const *modesptr = &modes;
+
+    int count = bladerf_get_loopback_modes(dev, &modesptr);
+
+    for (int i = 0; i < count; ++i) {
+        if (modesptr[i].mode == mode) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 int bladerf_set_loopback(struct bladerf *dev, bladerf_loopback l)
 {
     int status;

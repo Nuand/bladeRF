@@ -1179,6 +1179,44 @@ typedef enum {
 } bladerf_loopback;
 
 /**
+ * Mapping of human-readable names to loopback modes
+ */
+struct bladerf_loopback_modes {
+    const char *name;      /**< Name of loopback mode */
+    bladerf_loopback mode; /**< Loopback mode enumeration */
+};
+
+/**
+ * Get loopback modes
+ *
+ * Populates `modes` with a pointer to an array of structs containing the
+ * supported loopback modes.
+ *
+ * This function may be called with `NULL` for `modes` to determine the number
+ * of loopback modes supported.
+ *
+ * @param       dev         Device handle
+ * @param[out]  modes       Supported loopback modes
+ *
+ * @return Number of loopback modes on success, value from \ref RETCODES list
+ * on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_loopback_modes(
+    struct bladerf *dev, struct bladerf_loopback_modes const **modes);
+
+/**
+ * Test if a given loopback mode is supported on this device.
+ *
+ * @param       dev         Device handle
+ * @param[in]   mode        bladerf_loopback enum to check
+ *
+ * @return true if supported, false if not (or on error)
+ */
+API_EXPORT bool CALL_CONV bladerf_is_loopback_mode_supported(
+    struct bladerf *dev, bladerf_loopback mode);
+
+/**
  * Apply specified loopback mode
  *
  * @param       dev     Device handle

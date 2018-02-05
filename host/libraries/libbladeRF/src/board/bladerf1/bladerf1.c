@@ -156,6 +156,7 @@ static const struct bladerf_range bladerf1_tx_gain_range = {
 };
 
 /* RX gain modes */
+
 static const struct bladerf_gain_modes bladerf1_rx_gain_modes[] = {
     {
         FIELD_INIT(.name, "default"),
@@ -255,6 +256,47 @@ static const struct bladerf_range bladerf1_xb200_frequency_range = {
     FIELD_INIT(.max, BLADERF_FREQUENCY_MAX),
     FIELD_INIT(.step, 1),
     FIELD_INIT(.scale, 1),
+};
+
+/* Loopback modes */
+
+static const struct bladerf_loopback_modes bladerf1_loopback_modes[] = {
+    {
+        FIELD_INIT(.name, "none"),
+        FIELD_INIT(.mode, BLADERF_LB_NONE)
+    },
+    {
+        FIELD_INIT(.name, "firmware"),
+        FIELD_INIT(.mode, BLADERF_LB_FIRMWARE)
+    },
+    {
+        FIELD_INIT(.name, "bb_txlpf_rxvga2"),
+        FIELD_INIT(.mode, BLADERF_LB_BB_TXLPF_RXVGA2)
+    },
+    {
+        FIELD_INIT(.name, "bb_txlpf_rxlpf"),
+        FIELD_INIT(.mode, BLADERF_LB_BB_TXLPF_RXLPF)
+    },
+    {
+        FIELD_INIT(.name, "bb_txvga1_rxvga2"),
+        FIELD_INIT(.mode, BLADERF_LB_BB_TXVGA1_RXVGA2)
+    },
+    {
+        FIELD_INIT(.name, "bb_txvga1_rxlpf"),
+        FIELD_INIT(.mode, BLADERF_LB_BB_TXVGA1_RXLPF)
+    },
+    {
+        FIELD_INIT(.name, "rf_lna1"),
+        FIELD_INIT(.mode, BLADERF_LB_RF_LNA1)
+    },
+    {
+        FIELD_INIT(.name, "rf_lna2"),
+        FIELD_INIT(.mode, BLADERF_LB_RF_LNA2)
+    },
+    {
+        FIELD_INIT(.name, "rf_lna3"),
+        FIELD_INIT(.mode, BLADERF_LB_RF_LNA3)
+    },
 };
 
 /******************************************************************************/
@@ -2438,6 +2480,16 @@ static int bladerf1_get_tuning_mode(struct bladerf *dev, bladerf_tuning_mode *mo
 /* Loopback */
 /******************************************************************************/
 
+static int bladerf1_get_loopback_modes(
+    struct bladerf *dev, struct bladerf_loopback_modes const **modes)
+{
+    if (modes != NULL) {
+        *modes = bladerf1_loopback_modes;
+    }
+
+    return ARRAY_SIZE(bladerf1_loopback_modes);
+}
+
 static int bladerf1_set_loopback(struct bladerf *dev, bladerf_loopback l)
 {
     struct bladerf1_board_data *board_data = dev->board_data;
@@ -2927,6 +2979,7 @@ const struct board_fns bladerf1_board_fns = {
     FIELD_INIT(.device_reset, bladerf1_device_reset),
     FIELD_INIT(.set_tuning_mode, bladerf1_set_tuning_mode),
     FIELD_INIT(.get_tuning_mode, bladerf1_get_tuning_mode),
+    FIELD_INIT(.get_loopback_modes, bladerf1_get_loopback_modes),
     FIELD_INIT(.set_loopback, bladerf1_set_loopback),
     FIELD_INIT(.get_loopback, bladerf1_get_loopback),
     FIELD_INIT(.get_rx_mux, bladerf1_get_rx_mux),

@@ -513,6 +513,24 @@ static const struct band_port_map bladerf2_tx_band_port_map[] = {
         FIELD_INIT(.ad9361_port,    TXA),
     },
 };
+
+/* Loopback modes */
+
+static const struct bladerf_loopback_modes bladerf2_loopback_modes[] = {
+    {
+        FIELD_INIT(.name, "none"),
+        FIELD_INIT(.mode, BLADERF_LB_NONE)
+    },
+    {
+        FIELD_INIT(.name, "firmware"),
+        FIELD_INIT(.mode, BLADERF_LB_FIRMWARE)
+    },
+    {
+        FIELD_INIT(.name, "rf_bist"),
+        FIELD_INIT(.mode, BLADERF_LB_AD9361_BIST)
+    },
+};
+
 // clang-format on
 
 /******************************************************************************/
@@ -3340,6 +3358,16 @@ static int bladerf2_get_tuning_mode(struct bladerf *dev,
 /* Loopback */
 /******************************************************************************/
 
+static int bladerf2_get_loopback_modes(
+    struct bladerf *dev, struct bladerf_loopback_modes const **modes)
+{
+    if (modes != NULL) {
+        *modes = bladerf2_loopback_modes;
+    }
+
+    return ARRAY_SIZE(bladerf2_loopback_modes);
+}
+
 static int bladerf2_set_loopback(struct bladerf *dev, bladerf_loopback l)
 {
     struct bladerf2_board_data *board_data;
@@ -3817,6 +3845,7 @@ const struct board_fns bladerf2_board_fns = {
     FIELD_INIT(.device_reset, bladerf2_device_reset),
     FIELD_INIT(.set_tuning_mode, bladerf2_set_tuning_mode),
     FIELD_INIT(.get_tuning_mode, bladerf2_get_tuning_mode),
+    FIELD_INIT(.get_loopback_modes, bladerf2_get_loopback_modes),
     FIELD_INIT(.set_loopback, bladerf2_set_loopback),
     FIELD_INIT(.get_loopback, bladerf2_get_loopback),
     FIELD_INIT(.get_rx_mux, bladerf2_get_rx_mux),
