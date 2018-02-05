@@ -563,11 +563,6 @@ static int errno_ad9361_to_bladerf(int err)
     return BLADERF_ERR_UNEXPECTED;
 }
 
-static bool _is_tx(bladerf_channel ch)
-{
-    return (ch & BLADERF_TX);
-}
-
 static bool _is_within_range(struct bladerf_range const *range, int64_t value)
 {
     if (NULL == range) {
@@ -609,7 +604,7 @@ static enum bladerf2_band _get_band_by_frequency(bladerf_channel ch,
     int64_t freqi = (int64_t)frequency;
 
     /* Select RX vs TX */
-    if (_is_tx(ch)) {
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
         band_map     = bladerf2_tx_range_band_map;
         band_map_len = ARRAY_SIZE(bladerf2_tx_range_band_map);
     } else {
@@ -642,7 +637,7 @@ static const struct band_port_map *_get_band_port_map(bladerf_channel ch,
     band = enabled ? _get_band_by_frequency(ch, frequency) : BAND_SHUTDOWN;
 
     /* Select the band->port map for RX vs TX */
-    if (_is_tx(ch)) {
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
         port_map     = bladerf2_tx_band_port_map;
         port_map_len = ARRAY_SIZE(bladerf2_tx_band_port_map);
     } else {
@@ -733,7 +728,7 @@ static int _set_ad9361_port(struct bladerf *dev,
     }
 
     /* Set the AD9361 port accordingly */
-    if (_is_tx(ch)) {
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
         status = ad9361_set_tx_rf_port_output(phy, port_map->ad9361_port);
     } else {
         status = ad9361_set_rx_rf_port_input(phy, port_map->ad9361_port);
@@ -1529,34 +1524,35 @@ static int bladerf2_enable_module(struct bladerf *dev,
 
     /* If this is the last channel in a direction, stop synchronous interface */
     if (dir_changing && !dir_enable) {
-        sync_deinit(&board_data->sync[_is_tx(ch) ? BLADERF_TX : BLADERF_RX]);
+        sync_deinit(&board_data->sync[BLADERF_CHANNEL_IS_TX(ch) ? BLADERF_TX
+                                                                : BLADERF_RX]);
     }
 
     /* Mute unused TX channels */
-    if (ch_changing && _is_tx(ch)) {
+    if (ch_changing && BLADERF_CHANNEL_IS_TX(ch)) {
         _set_tx_mute(dev, ch, !enable);
     }
 
     /* Modify MIMO channel enable bits */
     if (enable) {
         reg |= (1 << ch_bit);
-        log_debug("%s: %s%d enable\n", __FUNCTION__, _is_tx(ch) ? "TX" : "RX",
-                  (ch >> 1) + 1);
+        log_debug("%s: %s%d enable\n", __FUNCTION__,
+                  BLADERF_CHANNEL_IS_TX(ch) ? "TX" : "RX", (ch >> 1) + 1);
     } else {
         reg &= ~(1 << ch_bit);
-        log_debug("%s: %s%d disable\n", __FUNCTION__, _is_tx(ch) ? "TX" : "RX",
-                  (ch >> 1) + 1);
+        log_debug("%s: %s%d disable\n", __FUNCTION__,
+                  BLADERF_CHANNEL_IS_TX(ch) ? "TX" : "RX", (ch >> 1) + 1);
     }
 
     /* Modify ENABLE/TXNRX bits */
     if (dir_enable) {
         reg |= (1 << dir_bit);
         log_debug("%s: %s module enable\n", __FUNCTION__,
-                  _is_tx(ch) ? "TX" : "RX");
+                  BLADERF_CHANNEL_IS_TX(ch) ? "TX" : "RX");
     } else {
         reg &= ~(1 << dir_bit);
         log_debug("%s: %s module disable\n", __FUNCTION__,
-                  _is_tx(ch) ? "TX" : "RX");
+                  BLADERF_CHANNEL_IS_TX(ch) ? "TX" : "RX");
     }
 
     /* Modify SPDT bits */
@@ -1575,7 +1571,8 @@ static int bladerf2_enable_module(struct bladerf *dev,
     /* Enable module through backend */
     if (dir_changing) {
         status = dev->backend->enable_module(
-            dev, _is_tx(ch) ? BLADERF_TX : BLADERF_RX, dir_enable);
+            dev, BLADERF_CHANNEL_IS_TX(ch) ? BLADERF_TX : BLADERF_RX,
+            dir_enable);
         if (status < 0) {
             RETURN_ERROR_STATUS("enable_module", status);
         }
@@ -1602,7 +1599,7 @@ static int bladerf2_get_gain_range(struct bladerf *dev,
 
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
-    if (_is_tx(ch)) {
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
         *range = bladerf2_tx_gain_range;
     } else {
         const struct bladerf_gain_range *ranges;
@@ -1647,7 +1644,7 @@ static int bladerf2_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
         RETURN_ERROR_STATUS("bladerf2_get_gain_range", status);
     }
 
-    if (_is_tx(ch)) {
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
         val = -_clamp_to_range(&range, gain) / range.scale;
 
         if (board_data->tx_mute[ch >> 1]) {
@@ -1690,7 +1687,7 @@ static int bladerf2_get_gain(struct bladerf *dev, bladerf_channel ch, int *gain)
         RETURN_ERROR_STATUS("bladerf2_get_gain_range", status);
     }
 
-    if (_is_tx(ch)) {
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
         uint32_t atten;
 
         if (board_data->tx_mute[ad_ch]) {
@@ -1736,7 +1733,7 @@ static int bladerf2_set_gain_mode(struct bladerf *dev,
 
     board_data = dev->board_data;
 
-    if (_is_tx(ch)) {
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
         // TODO: undefined!
         RETURN_ERROR_STATUS("bladerf2_set_gain_mode(tx)",
                             BLADERF_ERR_UNSUPPORTED);
@@ -1793,7 +1790,7 @@ static int bladerf2_get_gain_mode(struct bladerf *dev,
     board_data = dev->board_data;
     phy        = board_data->phy;
 
-    if (_is_tx(ch)) {
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
         // TODO: undefined!
         RETURN_ERROR_STATUS("bladerf2_get_gain_mode(tx)",
                             BLADERF_ERR_UNSUPPORTED);
@@ -1839,7 +1836,7 @@ static int bladerf2_get_gain_modes(struct bladerf *dev,
     struct bladerf_gain_modes const *mode_infos;
     unsigned int mode_infos_len;
 
-    if (_is_tx(ch)) {
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
         mode_infos     = NULL;
         mode_infos_len = 0;
     } else {
@@ -1870,7 +1867,7 @@ static int bladerf2_get_gain_stage_range(struct bladerf *dev,
         RETURN_INVAL("range", "is null");
     }
 
-    if (_is_tx(ch)) {
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
         stage_infos     = bladerf2_tx_gain_stages;
         stage_infos_len = ARRAY_SIZE(bladerf2_tx_gain_stages);
     } else {
@@ -1899,7 +1896,7 @@ static int bladerf2_set_gain_stage(struct bladerf *dev,
 
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
-    if (_is_tx(ch)) {
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
         if (strcmp(stage, "dsa") == 0) {
             return dev->board->set_gain(dev, ch, gain);
         }
@@ -1937,7 +1934,7 @@ static int bladerf2_get_gain_stage(struct bladerf *dev,
 
     board_data = dev->board_data;
 
-    if (_is_tx(ch)) {
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
         if (strcmp(stage, "dsa") == 0) {
             return dev->board->get_gain(dev, ch, gain);
         }
@@ -1970,7 +1967,7 @@ static int bladerf2_get_gain_stages(struct bladerf *dev,
     const struct bladerf_gain_stage_info *stage_infos;
     unsigned int stage_infos_len;
 
-    if (_is_tx(ch)) {
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
         stage_infos     = bladerf2_tx_gain_stages;
         stage_infos_len = ARRAY_SIZE(bladerf2_tx_gain_stages);
     } else {
@@ -2020,7 +2017,7 @@ static int bladerf2_get_sample_rate(struct bladerf *dev,
 
     board_data = dev->board_data;
 
-    if (_is_tx(ch)) {
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
         status = ad9361_get_tx_sampling_freq(board_data->phy, rate);
         if (status < 0) {
             RETURN_ERROR_AD9361("ad9361_get_tx_sampling_freq", status);
@@ -2057,7 +2054,7 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
         return BLADERF_ERR_RANGE;
     }
 
-    if (_is_tx(ch)) {
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
         status = ad9361_set_tx_sampling_freq(board_data->phy, rate);
         if (status < 0) {
             RETURN_ERROR_AD9361("ad9361_set_tx_sampling_freq", status);
@@ -2164,7 +2161,7 @@ static int bladerf2_get_bandwidth(struct bladerf *dev,
 
     board_data = dev->board_data;
 
-    if (_is_tx(ch)) {
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
         status = ad9361_get_tx_rf_bandwidth(board_data->phy, bandwidth);
         if (status < 0) {
             RETURN_ERROR_AD9361("ad9361_get_tx_rf_bandwidth", status);
@@ -2199,7 +2196,7 @@ static int bladerf2_set_bandwidth(struct bladerf *dev,
 
     bandwidth = _clamp_to_range(&range, bandwidth);
 
-    if (_is_tx(ch)) {
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
         status = ad9361_set_tx_rf_bandwidth(board_data->phy, bandwidth);
         if (status < 0) {
             RETURN_ERROR_AD9361("ad9361_set_tx_rf_bandwidth", status);
@@ -2231,7 +2228,7 @@ static int bladerf2_get_frequency_range(struct bladerf *dev,
         RETURN_INVAL("range", "is null");
     }
 
-    if (_is_tx(ch)) {
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
         *range = bladerf2_tx_frequency_range;
     } else {
         *range = bladerf2_rx_frequency_range;
@@ -2257,8 +2254,9 @@ static int bladerf2_select_band(struct bladerf *dev,
 
     /* We have to do this for all the channels sharing the same LO. */
     for (size_t bandchan = 0; bandchan < 2; ++bandchan) {
-        bladerf_channel bch = _is_tx(ch) ? BLADERF_CHANNEL_TX(bandchan)
-                                         : BLADERF_CHANNEL_RX(bandchan);
+        bladerf_channel bch = BLADERF_CHANNEL_IS_TX(ch)
+                                  ? BLADERF_CHANNEL_TX(bandchan)
+                                  : BLADERF_CHANNEL_RX(bandchan);
 
         /* Is this channel enabled? */
         bool enable = _is_rffe_channel_enabled(reg, bch);
@@ -2312,7 +2310,7 @@ static int bladerf2_set_frequency(struct bladerf *dev,
     }
 
     /* Change LO frequency */
-    if (_is_tx(ch)) {
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
         status = ad9361_set_tx_lo_freq(board_data->phy, frequency);
         if (status < 0) {
             RETURN_ERROR_AD9361("ad9361_set_tx_lo_freq", status);
@@ -2339,7 +2337,7 @@ static int bladerf2_get_frequency(struct bladerf *dev,
 
     board_data = dev->board_data;
 
-    if (_is_tx(ch)) {
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
         status = ad9361_get_tx_lo_freq(board_data->phy, &lo_frequency);
         if (status < 0) {
             RETURN_ERROR_AD9361("ad9361_get_tx_lo_freq", status);
@@ -2377,7 +2375,7 @@ static int bladerf2_set_rf_port(struct bladerf *dev,
 
     board_data = dev->board_data;
 
-    if (_is_tx(ch)) {
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
         port_map     = bladerf2_tx_port_map;
         port_map_len = ARRAY_SIZE(bladerf2_tx_port_map);
     } else {
@@ -2396,7 +2394,7 @@ static int bladerf2_set_rf_port(struct bladerf *dev,
         RETURN_INVAL("port", "is not valid");
     }
 
-    if (_is_tx(ch)) {
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
         status = ad9361_set_tx_rf_port_output(board_data->phy, port_id);
         if (status < 0) {
             RETURN_ERROR_AD9361("ad9361_set_tx_rf_port_output", status);
@@ -2426,7 +2424,7 @@ static int bladerf2_get_rf_port(struct bladerf *dev,
 
     board_data = dev->board_data;
 
-    if (_is_tx(ch)) {
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
         port_map     = bladerf2_tx_port_map;
         port_map_len = ARRAY_SIZE(bladerf2_tx_port_map);
         status       = ad9361_get_tx_rf_port_output(board_data->phy, &port_id);
@@ -2470,7 +2468,7 @@ static int bladerf2_get_rf_ports(struct bladerf *dev,
     const struct bladerf_ad9361_port_name_map *port_map;
     unsigned int port_map_len;
 
-    if (_is_tx(ch)) {
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
         port_map     = bladerf2_tx_port_map;
         port_map_len = ARRAY_SIZE(bladerf2_tx_port_map);
     } else {
@@ -2691,7 +2689,7 @@ static int bladerf2_get_correction(struct bladerf *dev,
     }
 
     /* Look up band */
-    if (_is_tx(ch)) {
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
         uint32_t mode;
 
         status = ad9361_get_tx_rf_port_output(board_data->phy, &mode);
@@ -2824,7 +2822,7 @@ static int bladerf2_set_correction(struct bladerf *dev,
     }
 
     /* Look up band */
-    if (_is_tx(ch)) {
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
         uint32_t mode;
 
         status = ad9361_get_tx_rf_port_output(board_data->phy, &mode);
@@ -2938,7 +2936,7 @@ static int bladerf2_set_correction(struct bladerf *dev,
         }
     }
 
-    reg = (_is_tx(ch)) ? REG_TX_FORCE_BITS : REG_FORCE_BITS;
+    reg = (BLADERF_CHANNEL_IS_TX(ch)) ? REG_TX_FORCE_BITS : REG_FORCE_BITS;
 
     /* Read force bit register */
     status = ad9361_spi_read(board_data->phy->spi, reg);
@@ -3869,7 +3867,8 @@ int bladerf_get_bias_tee(struct bladerf *dev, bladerf_channel ch, bool *enable)
 
     CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
 
-    shift = _is_tx(ch) ? RFFE_CONTROL_TX_BIAS_EN : RFFE_CONTROL_RX_BIAS_EN;
+    shift = BLADERF_CHANNEL_IS_TX(ch) ? RFFE_CONTROL_TX_BIAS_EN
+                                      : RFFE_CONTROL_RX_BIAS_EN;
 
     /* Read RFFE control register */
     status = dev->backend->rffe_control_read(dev, &reg);
@@ -3899,7 +3898,8 @@ int bladerf_set_bias_tee(struct bladerf *dev, bladerf_channel ch, bool enable)
 
     CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
 
-    shift = _is_tx(ch) ? RFFE_CONTROL_TX_BIAS_EN : RFFE_CONTROL_RX_BIAS_EN;
+    shift = BLADERF_CHANNEL_IS_TX(ch) ? RFFE_CONTROL_TX_BIAS_EN
+                                      : RFFE_CONTROL_RX_BIAS_EN;
 
     /* Read RFFE control register */
     status = dev->backend->rffe_control_read(dev, &reg);

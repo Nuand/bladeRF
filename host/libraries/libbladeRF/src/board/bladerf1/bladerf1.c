@@ -1059,16 +1059,18 @@ static int bladerf1_enable_module(struct bladerf *dev,
     }
 
     log_debug("Enable channel: %s - %s\n",
-              (ch == BLADERF_CHANNEL_RX(0)) ? "RX" : "TX",
+              BLADERF_CHANNEL_IS_TX(ch) ? "TX" : "RX",
               enable ? "True" : "False");
 
     if (enable == false) {
         sync_deinit(&board_data->sync[ch]);
-        perform_format_deconfig(dev, (bladerf_direction)ch);
+        perform_format_deconfig(
+            dev, BLADERF_CHANNEL_IS_TX(ch) ? BLADERF_TX : BLADERF_RX);
     }
 
     lms_enable_rffe(dev, ch, enable);
-    status = dev->backend->enable_module(dev, (bladerf_direction)ch, enable);
+    status = dev->backend->enable_module(
+        dev, BLADERF_CHANNEL_IS_TX(ch) ? BLADERF_TX : BLADERF_RX, enable);
 
     return status;
 }
