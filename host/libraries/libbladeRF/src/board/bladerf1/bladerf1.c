@@ -1473,7 +1473,11 @@ static int bladerf1_get_gain_stage_range(struct bladerf *dev,
 {
     const struct bladerf_gain_stage_info *stage_infos;
     unsigned int stage_infos_len;
-    unsigned int i;
+
+    if (NULL == stage) {
+        log_error("%s: stage is null\n", __FUNCTION__);
+        return BLADERF_ERR_INVAL;
+    }
 
     if (ch == BLADERF_CHANNEL_TX(0)) {
         stage_infos     = bladerf1_tx_gain_stages;
@@ -1485,7 +1489,7 @@ static int bladerf1_get_gain_stage_range(struct bladerf *dev,
         return BLADERF_ERR_INVAL;
     }
 
-    for (i = 0; i < stage_infos_len; i++) {
+    for (size_t i = 0; i < stage_infos_len; i++) {
         if (strcmp(stage_infos[i].name, stage) == 0) {
             if (NULL != range) {
                 *range = stage_infos[i].range;

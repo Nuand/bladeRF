@@ -1881,10 +1881,6 @@ static int bladerf2_get_gain_stage_range(struct bladerf *dev,
         RETURN_INVAL("stage", "is null");
     }
 
-    if (NULL == range) {
-        RETURN_INVAL("range", "is null");
-    }
-
     if (BLADERF_CHANNEL_IS_TX(ch)) {
         stage_infos     = bladerf2_tx_gain_stages;
         stage_infos_len = ARRAY_SIZE(bladerf2_tx_gain_stages);
@@ -1902,7 +1898,7 @@ static int bladerf2_get_gain_stage_range(struct bladerf *dev,
         }
     }
 
-    RETURN_ERROR_STATUS_ARG("gain stage", stage, BLADERF_ERR_UNSUPPORTED);
+    return BLADERF_ERR_INVAL;
 }
 
 static int bladerf2_set_gain_stage(struct bladerf *dev,
