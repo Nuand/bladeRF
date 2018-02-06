@@ -195,7 +195,6 @@ static int apply_config_options(struct bladerf *dev, struct config_options opt)
         status = bladerf_set_bandwidth(dev, BLADERF_MODULE_TX, bw, NULL);
     } else if (!strcasecmp(opt.key, "agc")) {
         ok = str2bool(opt.value, &val);
-        printf("%s %d \n", opt.value, ok);
         if (ok != 0)
             return BLADERF_ERR_INVAL;
 
