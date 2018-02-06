@@ -1033,6 +1033,19 @@ static int bladerf2_initialize(struct bladerf *dev)
 
     phy = board_data->phy;
 
+    /* Force AD9361 to a non-default freq. This will entice it to do a proper
+     * re-tuning when we set it back to the default freq later on. */
+    status = ad9361_set_tx_lo_freq(board_data->phy, 70e6);
+    if (status < 0) {
+        RETURN_ERROR_AD9361("ad9361_set_tx_lo_freq", status);
+    }
+
+    status = ad9361_set_rx_lo_freq(board_data->phy, 70e6);
+    if (status < 0) {
+        RETURN_ERROR_AD9361("ad9361_set_rx_lo_freq", status);
+    }
+
+    /* Set up AD9361 FIR filters */
     status = ad9361_set_tx_fir_config(phy, ad9361_init_tx_fir_config);
     if (status < 0) {
         RETURN_ERROR_AD9361("ad9361_set_tx_fir_config", status);
@@ -1072,6 +1085,17 @@ static int bladerf2_initialize(struct bladerf *dev)
     status = bladerf2_select_band(dev, BLADERF_RX, phy->pdata->rx_synth_freq);
     if (status < 0) {
         RETURN_ERROR_STATUS("bladerf2_select_band (RX)", status);
+    }
+
+    /* Move AD9361 back to desired frequency */
+    status = ad9361_set_rx_lo_freq(board_data->phy, phy->pdata->rx_synth_freq);
+    if (status < 0) {
+        RETURN_ERROR_AD9361("ad9361_set_rx_lo_freq", status);
+    }
+
+    status = ad9361_set_tx_lo_freq(board_data->phy, phy->pdata->tx_synth_freq);
+    if (status < 0) {
+        RETURN_ERROR_AD9361("ad9361_set_tx_lo_freq", status);
     }
 
     /* Mute TX channels */
