@@ -93,6 +93,7 @@ begin
     nios_ack <= nios_csr(1) ;
     nios_granted <= current.grant(0) ;
 
+    waitreq <= '0';
     readack <= rack ;
 
     uaddr <= unsigned(addr) ;
