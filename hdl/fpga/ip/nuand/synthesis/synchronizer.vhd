@@ -9,7 +9,7 @@ entity synchronizer is
     reset       :   in  std_logic ;
     clock       :   in  std_logic ;
     async       :   in  std_logic ;
-    sync        :   out std_logic
+    sync        :   out std_logic := RESET_LEVEL
   ) ;
 end entity ;
 
