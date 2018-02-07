@@ -47,13 +47,22 @@
 #include "config.h"
 #include "test_common.h"
 
+#ifdef WIN32
+#include "mkdtemp.h"
+#define MAX_FILENAME_LEN 256
+static char const DIR_DELIM[] = "\\";
+#else
+size_t const MAX_FILENAME_LEN = 256;
+static char const DIR_DELIM[] = "/";
+#endif  // WIN32
+
 /**
  * Structure for storing test state and conditions
  */
 typedef struct {
     struct bladerf_devinfo ident; /**< devinfo struct for this test */
     bladerf_fpga_size fpga_size;  /**< FPGA size */
-    unsigned int frequency;       /**< Expected frequency */
+    uint64_t frequency;       /**< Expected frequency */
 } test_state;
 
 /**
@@ -73,7 +82,7 @@ static const test_state states[] = {
             FIELD_INIT(.instance, 0)
         }),
         FIELD_INIT(.fpga_size, BLADERF_FPGA_40KLE),
-        FIELD_INIT(.frequency, 2e9),
+        FIELD_INIT(.frequency, 2000000000),
     },
     {
         FIELD_INIT(.ident, {
@@ -84,7 +93,7 @@ static const test_state states[] = {
             FIELD_INIT(.instance, 1)
         }),
         FIELD_INIT(.fpga_size, BLADERF_FPGA_115KLE),
-        FIELD_INIT(.frequency, 1.8e9),
+        FIELD_INIT(.frequency, 1800000000),
     },
     {
         FIELD_INIT(.ident, {
@@ -95,7 +104,7 @@ static const test_state states[] = {
             FIELD_INIT(.instance, 2)
         }),
         FIELD_INIT(.fpga_size, BLADERF_FPGA_40KLE),
-        FIELD_INIT(.frequency, 1.6e9),
+        FIELD_INIT(.frequency, 1600000000),
     },
 };
 // clang-format on
@@ -287,10 +296,39 @@ void bladerf_close(struct bladerf *dev)
  */
 int main(int argc, char *argv[])
 {
-    size_t const MAX_FILENAME_LEN = 256;
     char filename[MAX_FILENAME_LEN];
-    char tmpdir[] = "/tmp/libbladeRF_test_config_file.XXXXXX";
-    bool result   = true;
+    char tmpdir[MAX_FILENAME_LEN];
+    char tmpdirname[] = "libbladeRF_test_config_file.XXXXXX";
+    char *tmpbase     = NULL;
+    bool result       = true;
+    int rv;
+
+    /* Get the TEMP variable from the environment, if it exists */
+    tmpbase = getenv("TEMP");
+
+    if (NULL == tmpbase) {
+        /* It doesn't, so let's use the current working directory */
+        tmpbase = malloc(MAX_FILENAME_LEN);
+
+        if (NULL == tmpbase) {
+            perror("malloc failed");
+            exit(EXIT_FAILURE);
+        }
+
+        if (NULL == getcwd(tmpbase, MAX_FILENAME_LEN - 1)) {
+            perror("getcwd failed");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    /* Concatenate directory names */
+    rv = snprintf(tmpdir, MAX_FILENAME_LEN - 1, "%s%s%s", tmpbase, DIR_DELIM,
+                  tmpdirname);
+
+    if (rv < 0 || rv >= (int)(MAX_FILENAME_LEN - 1)) {
+        perror("snprintf failed");
+        exit(EXIT_FAILURE);
+    }
 
     /* Create a temporary directory for testing */
     if (NULL == mkdtemp(tmpdir)) {
@@ -299,8 +337,10 @@ int main(int argc, char *argv[])
     }
 
     /* Create a sample config file there */
-    if (0 > snprintf(filename, MAX_FILENAME_LEN - 1, "%s/%s", tmpdir,
-                     "bladeRF.conf")) {
+    rv = snprintf(filename, MAX_FILENAME_LEN - 1, "%s%s%s", tmpdir, DIR_DELIM,
+                  "bladeRF.conf");
+
+    if (rv < 0 || rv >= (int)(MAX_FILENAME_LEN - 1)) {
         perror("snprintf failed");
         exit(EXIT_FAILURE);
     }
@@ -360,6 +400,12 @@ int main(int argc, char *argv[])
     /* Remove the temporary directory */
     if (0 > unlink(filename)) {
         perror("unlink failed");
+        exit(EXIT_FAILURE);
+    }
+
+    /* Change working directory */
+    if (0 > chdir(tmpbase)) {
+        perror("chdir failed");
         exit(EXIT_FAILURE);
     }
 

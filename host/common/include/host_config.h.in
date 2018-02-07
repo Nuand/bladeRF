@@ -245,6 +245,7 @@
 /* Rename a few functions and types */
 #include <windows.h>
 #include <io.h>
+#include <direct.h>
 #define usleep(x)      Sleep((x+999)/1000)
 
 /* Changes specific to Microsoft Visual Studio and its C89-compliant ways */
@@ -262,6 +263,11 @@
 #   define fileno      _fileno
 #   define strdup      _strdup
 #   define access      _access
+#   define chdir       _chdir
+#   define getcwd      _getcwd
+#   define rmdir       _rmdir
+#   define unlink      _unlink
+#   define mkdir(n, m) _mkdir(n)
 
 /* ssize_t lives elsewhere */
 #   include <BaseTsd.h>
