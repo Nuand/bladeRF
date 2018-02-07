@@ -6,7 +6,7 @@ FPGA_COMMON_DIR    := ../../../../../../fpga_common
 LIBBLADERF_DIR     := ../../../../../../host/libraries/libbladeRF
 BLADERF_COMMON_DIR := ../../../common/bladerf/software/bladeRF_nios
 
-QUARTUS_WORKDIR    := ../../../../../quartus/work/bladerf-micro
+QUARTUS_WORKDIR    := ../../../../../quartus/${WORKDIR}
 NIOS_BUILD_OUTDIR  := $(QUARTUS_WORKDIR)/bladeRF_nios
 MEM_INIT_DIR       := $(NIOS_BUILD_OUTDIR)/mem_init
 BSP_BUILD_OUTDIR   := $(QUARTUS_WORKDIR)/bladeRF_nios_bsp

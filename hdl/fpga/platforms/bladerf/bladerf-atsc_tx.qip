@@ -4,7 +4,6 @@ set common_dir   [file normalize [file join $here ../common/bladerf]]
 set altera_ip    [file normalize [file join $here ../../ip/altera]]
 set adi_ip       [file normalize [file join $here ../../ip/analogdevicesinc]]
 set nuand_ip     [file normalize [file join $here ../../ip/nuand]]
-set workdir      [file normalize [file join $here ../../../quartus/work/bladerf]]
 
 # Altera IP
 set_global_assignment -name QIP_FILE  [file normalize [file join $altera_ip  pll/pll.qip]]
@@ -16,7 +15,7 @@ set_global_assignment -name VHDL_FILE [file normalize [file join $here       vhd
 set_global_assignment -name VHDL_FILE [file normalize [file join $here       vhdl/wrappers/tx_meta_fifo.vhd]]
 
 # Explicitly include Nios mem_init
-set_global_assignment -name QIP_FILE  [file normalize [file join $workdir    bladeRF_nios/mem_init/meminit.qip]]
+set_global_assignment -name QIP_FILE  [file normalize                        bladeRF_nios/mem_init/meminit.qip]
 
 # Implementation details
 set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip   synthesis/fir_filter.vhd]]
@@ -36,7 +35,7 @@ set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip   syn
 set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip   synthesis/set_clear_ff.vhd]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $common_dir vhdl/fx3_gpif.vhd]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $here       vhdl/bladerf-atsc_tx.vhd]]
-set_global_assignment -name QIP_FILE  [file normalize [file join $workdir    nios_system/synthesis/nios_system.qip]]
+set_global_assignment -name QIP_FILE  [file normalize                        nios_system/synthesis/nios_system.qip]
 
 # SDC Constraints
 set_global_assignment -name SDC_FILE  [file normalize [file join $here       constraints/bladerf.sdc]]

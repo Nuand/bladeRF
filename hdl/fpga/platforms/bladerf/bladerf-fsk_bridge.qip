@@ -4,7 +4,6 @@ set common_dir   [file normalize [file join $here ../common/bladerf]]
 set altera_ip    [file normalize [file join $here ../../ip/altera]]
 set adi_ip       [file normalize [file join $here ../../ip/analogdevicesinc]]
 set nuand_ip     [file normalize [file join $here ../../ip/nuand]]
-set workdir      [file normalize [file join $here ../../../quartus/work/bladerf]]
 
 # Altera IP
 set_global_assignment -name QIP_FILE  [file normalize [file join $altera_ip  pll/pll.qip]]
@@ -24,8 +23,8 @@ set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip   syn
 # Implementation details
 set_global_assignment -name VHDL_FILE [file normalize [file join $common_dir vhdl/ramp.vhd]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $here       vhdl/bladerf-fsk_bridge.vhd]]
-set_global_assignment -name QSYS_FILE [file normalize [file join $workdir    nios_system.qsys]]
-set_global_assignment -name QIP_FILE  [file normalize [file join $workdir    nios_system/nios_system.qip]]
+set_global_assignment -name QSYS_FILE [file normalize                        nios_system.qsys]
+set_global_assignment -name QIP_FILE  [file normalize                        nios_system/nios_system.qip]
 
 # SDC Constraints
 set_global_assignment -name SDC_FILE  [file normalize [file join $here       constraints/bladerf.sdc]]

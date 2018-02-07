@@ -266,8 +266,8 @@ fi
 set -e
 
 work_dir="work/${platform}-${size}"
-common_dir=../../../fpga/platforms/common/bladerf/
-build_dir=../../../fpga/platforms/${platform}/build/
+common_dir=../../../fpga/platforms/common/bladerf
+build_dir=../../../fpga/platforms/${platform}/build
 
 if [ "$clear_work_dir" == "1" ]; then
     echo -e "\nClearing ${work_dir} directory\n" >&2
@@ -347,6 +347,7 @@ fi
 
 pushd bladeRF_nios_bsp
 
+# Fix warnings about a memory width mismatch between the Nios and the memory initialization file
 sed -i.bak 's/\($(ELF2HEX).*--width=$(mem_hex_width)\)/\1 --record=$(shell expr ${mem_hex_width} \/ 8)/g' mem_init.mk
 
 make
@@ -359,7 +360,10 @@ pushd ${build_dir}/../software/bladeRF_nios/
 # should be in our PATH at this point, so we set these up here...
 
 #ELF2HEX=elf2hex.jar ELF2DAT=.jar make mem_init_generate
-make mem_init_clean mem_init_generate
+make WORKDIR=${work_dir} \
+     mem_init_clean \
+     mem_init_generate
+
 popd
 
 echo ""
