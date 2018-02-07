@@ -497,6 +497,14 @@ void rx_trigger_ctl_write(uint8_t data);
  */
 uint8_t rx_trigger_ctl_read(void);
 
+/**
+ * Write to bladeRF1 AGC DC correction
+ *
+ * @param   addr    Address
+ * @param   value   Value to write
+ */
+void agc_dc_corr_write(uint16_t addr, uint16_t value);
+
 /* A number of rountines define here are implemented as just a register
  * access, where incurring function call overhead is wasteful. Therefore,
  * these have been implemented as static inline functions.
