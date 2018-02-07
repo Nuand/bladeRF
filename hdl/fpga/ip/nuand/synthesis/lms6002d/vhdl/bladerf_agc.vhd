@@ -95,7 +95,7 @@ begin
     gain_dec_req <= current.dec_req ;
     gain_rst_req <= current.rst_req ;
 
-    process( clock )
+    process( clock, reset )
     begin
         if( reset = '1' ) then
             rst_gains <= '0' ;
@@ -126,7 +126,7 @@ begin
         end if ;
     end process ;
 
-    process( clock )
+    process( clock, reset )
     begin
         if( reset = '1' ) then
             iir <= ( others => '0' ) ;
