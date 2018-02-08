@@ -20,6 +20,10 @@
 % THE SOFTWARE.
 %
 
+% Background info:
+% https://www.mathworks.com/help/matlab/matlab_external/passing-arguments-to-shared-library-functions.html#f44412
+% https://ofekshilon.com/2016/07/15/on-matlabs-loadlibrary-proto-file-and-pcwin64-thunk/
+
 function [methodinfo,structs,enuminfo,ThunkLibName]=libbladeRF_proto
 %LIBBLADERF_PROTO Create structures to define interfaces found in libbladeRF.
 
@@ -27,30 +31,34 @@ function [methodinfo,structs,enuminfo,ThunkLibName]=libbladeRF_proto
 % Setup
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-ival={cell(1, 105)};
+ival={cell(1, 0)};
 structs=[];
 enuminfo=[];
 fcnNum=1;
-fcns=struct('name',ival,'calltype',ival,'LHS',ival,'RHS',ival,'alias',ival,'thunkname', ival);
+fcns=struct('name',         ival, ...
+            'calltype',     ival, ...
+            'LHS',          ival, ...
+            'RHS',          ival, ...
+            'alias',        ival, ...
+            'thunkname',    ival);
 
 arch = computer('arch');
 switch arch
     case 'glnxa64'
         libname   = 'libbladeRF_thunk_glnxa64';
         libsuffix = '.so';
-        pathsep   = ':';
         u64_type  = 'ulong';
 
     case 'win64'
         libname   = 'libbladeRF_thunk_pcwin64';
         libsuffix = '.dll';
         u64_type  = 'uint64';
-        pathsep   = ';';
 
     case 'imac64'
-        % Additionaly type changes for this may be required for OSX support
+        % Additional type changes for this may be required for OSX support
+        libname   = 'libbladeRF_thunk_imac64';
         libsuffix = '.dylib';
-        pathsep   = ':';
+        u64_type  = 'ulong';
 
     otherwise
         error(['Unsupported architecture: ' arch]);
@@ -215,7 +223,7 @@ fcns.thunkname{fcnNum}='int32voidPtrbladerf_moduleuint32Thunk';fcns.name{fcnNum}
 fcns.thunkname{fcnNum}='int32voidPtrbladerf_moduleuint32Thunk';fcns.name{fcnNum}='bladerf_set_frequency'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_module', 'uint32'};fcnNum=fcnNum+1;
 
 % int bladerf_schedule_retune ( struct bladerf * dev , bladerf_module module , uint64_t timestamp , unsigned int frequency , struct bladerf_quick_tune * quick_tune );
-fcns.thunkname{fcnNum}='int32voidPtrbladerf_moduleuint64uint32voidPtrThunk';fcns.name{fcnNum}='bladerf_schedule_retune'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_module', 'uint64', 'uint32', 'bladerf_quick_tunePtr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}=['int32voidPtrbladerf_module' u64_type 'uint32voidPtrThunk'];fcns.name{fcnNum}='bladerf_schedule_retune'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_module', u64_type, 'uint32', 'bladerf_quick_tunePtr'};fcnNum=fcnNum+1;
 
 % int bladerf_cancel_scheduled_retunes ( struct bladerf * dev , bladerf_module module );
 fcns.thunkname{fcnNum}='int32voidPtrbladerf_moduleThunk';fcns.name{fcnNum}='bladerf_cancel_scheduled_retunes'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_module'};fcnNum=fcnNum+1;
@@ -257,13 +265,13 @@ fcns.thunkname{fcnNum}='int32voidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_get
 fcns.thunkname{fcnNum}='int32voidPtrbladerf_modulebladerf_trigger_signalvoidPtrThunk';fcns.name{fcnNum}='bladerf_trigger_init'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_module', 'bladerf_trigger_signal', 'bladerf_triggerPtr'};fcnNum=fcnNum+1;
 
 % int bladerf_trigger_arm ( struct bladerf * dev , const struct bladerf_trigger * trigger , _Bool arm , uint64_t resv1 , uint64_t resv2 );
-fcns.thunkname{fcnNum}='int32voidPtrvoidPtr_Booluint64uint64Thunk';fcns.name{fcnNum}='bladerf_trigger_arm'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_triggerPtr', 'bool', 'uint64', 'uint64'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}=['int32voidPtrvoidPtr_Bool' u64_type u64_type 'Thunk'];fcns.name{fcnNum}='bladerf_trigger_arm'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_triggerPtr', 'bool', u64_type, u64_type};fcnNum=fcnNum+1;
 
 % int bladerf_trigger_fire ( struct bladerf * dev , const struct bladerf_trigger * trigger );
 fcns.thunkname{fcnNum}='int32voidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_trigger_fire'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_triggerPtr'};fcnNum=fcnNum+1;
 
 % int bladerf_trigger_state ( struct bladerf * dev , const struct bladerf_trigger * trigger , _Bool * is_armed , _Bool * has_fired , _Bool * fire_requested , uint64_t * resv1 , uint64_t * resv2 );
-fcns.thunkname{fcnNum}='int32voidPtrvoidPtrvoidPtrvoidPtrvoidPtrvoidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_trigger_state'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_triggerPtr', 'boolPtr', 'boolPtr', 'boolPtr', 'uint64Ptr', 'uint64Ptr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrvoidPtrvoidPtrvoidPtrvoidPtrvoidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_trigger_state'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_triggerPtr', 'boolPtr', 'boolPtr', 'boolPtr', [u64_type 'Ptr'], [u64_type 'Ptr']};fcnNum=fcnNum+1;
 
 % int bladerf_set_correction ( struct bladerf * dev , bladerf_module module , bladerf_correction corr , int16_t value );
 fcns.thunkname{fcnNum}='int32voidPtrbladerf_modulebladerf_correctionint16Thunk';fcns.name{fcnNum}='bladerf_set_correction'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_module', 'bladerf_correction', 'int16'};fcnNum=fcnNum+1;
@@ -347,10 +355,10 @@ fcns.thunkname{fcnNum}='voidbladerf_log_levelThunk';fcns.name{fcnNum}='bladerf_l
 fcns.thunkname{fcnNum}='int32voidPtrcstringThunk';fcns.name{fcnNum}='bladerf_get_fw_log'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'cstring'};fcnNum=fcnNum+1;
 
 % int bladerf_get_timestamp ( struct bladerf * dev , bladerf_module mod , uint64_t * value );
-fcns.thunkname{fcnNum}='int32voidPtrbladerf_modulevoidPtrThunk';fcns.name{fcnNum}='bladerf_get_timestamp'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_module', 'uint64Ptr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}='int32voidPtrbladerf_modulevoidPtrThunk';fcns.name{fcnNum}='bladerf_get_timestamp'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_module', [u64_type 'Ptr']};fcnNum=fcnNum+1;
 
 % int bladerf_init_stream ( struct bladerf_stream ** stream , struct bladerf * dev , bladerf_stream_cb callback , void *** buffers , size_t num_buffers , bladerf_format format , size_t samples_per_buffer , size_t num_transfers , void * user_data );
-fcns.thunkname{fcnNum}='int32voidPtrvoidPtrvoidPtrvoidPtruint64bladerf_formatuint64uint64voidPtrThunk';fcns.name{fcnNum}='bladerf_init_stream'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerf_streamPtrPtr', 'bladerfPtr', 'FcnPtr', 'voidPtrPtrPtr', 'uint64', 'bladerf_format', 'uint64', 'uint64', 'voidPtr'};fcnNum=fcnNum+1;
+fcns.thunkname{fcnNum}=['int32voidPtrvoidPtrvoidPtrvoidPtr' u64_type 'bladerf_format' u64_type u64_type 'voidPtrThunk'];fcns.name{fcnNum}='bladerf_init_stream'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerf_streamPtrPtr', 'bladerfPtr', 'FcnPtr', 'voidPtrPtrPtr', u64_type, 'bladerf_format', u64_type, u64_type, 'voidPtr'};fcnNum=fcnNum+1;
 
 % int bladerf_stream ( struct bladerf_stream * stream , bladerf_module module );
 fcns.thunkname{fcnNum}='int32voidPtrbladerf_moduleThunk';fcns.name{fcnNum}='bladerf_stream'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerf_streamPtr', 'bladerf_module'};fcnNum=fcnNum+1;
@@ -497,7 +505,7 @@ structs.bladerf_quick_tune.members=struct('freqsel', 'uint8', ...
 structs.bladerf_trigger.members=struct('module',    'bladerf_module', ...
                                        'role',      'bladerf_trigger_role', ...
                                        'signal',    'bladerf_trigger_signal', ...
-                                       'options',   'uint64');
+                                       'options',   u64_type);
 
 structs.bladerf_metadata.members=struct('timestamp',     u64_type, ...
                                         'flags',        'uint32', ...
