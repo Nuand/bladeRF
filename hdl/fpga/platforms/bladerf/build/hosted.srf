@@ -7,3 +7,4 @@
 { "" "" "" "Verilog HDL or VHDL warning at altera_merlin_width_adapter.sv(283): object \"in_write\" assigned a value but never read" {  } {  } 0 10036 "" 0 0 "Design Software" 0 -1 0 ""}
 { "" "" "" "Verilog HDL or VHDL warning at altera_merlin_width_adapter.sv(742): object \"aligned_addr\" assigned a value but never read" {  } {  } 0 10036 "" 0 0 "Design Software" 0 -1 0 ""}
 { "" "" "" "Verilog HDL or VHDL warning at altera_merlin_width_adapter.sv(743): object \"aligned_byte_cnt\" assigned a value but never read" {  } {  } 0 10036 "" 0 0 "Design Software" 0 -1 0 ""}
+{ "" "" "" "VHDL Subtype or Type Declaration warning at fifo_reader.vhd(316): subtype or type has null range" {  } {  } 0 10445 "" 0 0 "Design Software" 0 -1 0 ""}
