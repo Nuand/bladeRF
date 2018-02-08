@@ -77,9 +77,9 @@ architecture hosted_bladerf of bladerf is
         tx_trigger_ctl_out_port         :   out std_logic_vector(7 downto 0);
         rx_trigger_ctl_in_port          :   in std_logic_vector(7 downto 0);
         rx_trigger_ctl_out_port         :   out std_logic_vector(7 downto 0);
-        arbiter_request                 :   in  std_logic_vector(1 downto 0);
-        arbiter_granted                 :   out std_logic_vector(1 downto 0)  := (others => 'X');
-        arbiter_ack                     :   in  std_logic_vector(1 downto 0)  := (others => 'X');
+        arbiter_request                 :   in  std_logic_vector(1 downto 0) := (others => '0');
+        arbiter_granted                 :   out std_logic_vector(1 downto 0) := (others => '0');
+        arbiter_ack                     :   in  std_logic_vector(1 downto 0) := (others => '0');
         agc_dc_i_max_export             :   out std_logic_vector(15 downto 0);
         agc_dc_i_mid_export             :   out std_logic_vector(15 downto 0);
         agc_dc_i_min_export             :   out std_logic_vector(15 downto 0);
@@ -102,7 +102,6 @@ architecture hosted_bladerf of bladerf is
     signal rx_mux_mode      : rx_mux_mode_t ;
 
     signal \80MHz\          : std_logic ;
-    signal \80MHz locked\   : std_logic ;
 
     signal nios_gpio        : std_logic_vector(31 downto 0) ;
     signal nios_xb_gpio_in  : std_logic_vector(31 downto 0) ;
@@ -217,10 +216,6 @@ architecture hosted_bladerf of bladerf is
     signal rx_gen_q         : signed(15 downto 0) ;
     signal rx_gen_valid     : std_logic ;
 
-    signal rx_entropy_i     : signed(15 downto 0) := (others =>'0') ;
-    signal rx_entropy_q     : signed(15 downto 0) := (others =>'0') ;
-    signal rx_entropy_valid : std_logic := '0' ;
-
     signal rx_loopback_i     : signed(15 downto 0) := (others =>'0') ;
     signal rx_loopback_q     : signed(15 downto 0) := (others =>'0') ;
     signal rx_loopback_valid : std_logic := '0' ;
@@ -246,10 +241,8 @@ architecture hosted_bladerf of bladerf is
     signal fx3_ctl_oe       : std_logic_vector(12 downto 0) ;
 
     signal tx_underflow_led     :   std_logic ;
-    signal tx_underflow_count   :   unsigned(63 downto 0) ;
 
     signal rx_overflow_led      :   std_logic ;
-    signal rx_overflow_count    :   unsigned(63 downto 0) ;
 
     signal lms_rx_data_reg      :   signed(11 downto 0) ;
     signal lms_rx_iq_select_reg :   std_logic ;
@@ -284,7 +277,6 @@ architecture hosted_bladerf of bladerf is
     constant FPGA_DC_CORRECTION :  signed(15 downto 0) := to_signed(integer(0), 16);
 
     signal fx3_pclk_pll     :   std_logic ;
-    signal fx3_pll_locked   :   std_logic ;
 
     signal timestamp_req    :   std_logic ;
     signal timestamp_ack    :   std_logic ;
@@ -315,9 +307,9 @@ architecture hosted_bladerf of bladerf is
     signal tx_trigger_ctl_rb    : std_logic_vector(7 downto 0);
 
     -- Arbiter signal
-    signal arbiter_request      : std_logic_vector(1 downto 0);
-    signal arbiter_granted      : std_logic_vector(1 downto 0);
-    signal arbiter_ack          : std_logic_vector(1 downto 0);
+    signal arbiter_request      : std_logic_vector(1 downto 0) := (others => '0');
+    signal arbiter_granted      : std_logic_vector(1 downto 0) := (others => '0');
+    signal arbiter_ack          : std_logic_vector(1 downto 0) := (others => '0');
 
     -- AGC control signal
     signal agc_en               : std_logic ;
@@ -326,9 +318,6 @@ architecture hosted_bladerf of bladerf is
     signal gain_rst_req         : std_logic ;
     signal gain_ack             : std_logic ;
     signal gain_nack            : std_logic ;
-    signal gain_max             : std_logic ;
-    signal rst_gains            : std_logic ;
-    signal burst                : std_logic ;
 
     signal agc_lms_sdio         : std_logic ;
     signal agc_lms_sclk         : std_logic ;
@@ -388,14 +377,14 @@ begin
       port map (
         inclk0              =>  c4_clock,
         c0                  =>  \80MHz\,
-        locked              =>  \80MHz locked\
+        locked              =>  open
       ) ;
 
     U_fx3_pll : entity work.fx3_pll
       port map (
         inclk0              =>  fx3_pclk,
         c0                  =>  fx3_pclk_pll,
-        locked              =>  fx3_pll_locked
+        locked              =>  open
       ) ;
 
     -- Cross domain synchronizer chains
@@ -796,7 +785,7 @@ begin
         in_samples          =>  rx_samples,
 
         overflow_led        =>  rx_overflow_led,
-        overflow_count      =>  rx_overflow_count,
+        overflow_count      =>  open,
         overflow_duration   =>  x"ffff"
       ) ;
 
@@ -856,10 +845,10 @@ begin
         gain_rst_req   => gain_rst_req,
         gain_ack       => gain_ack,
         gain_nack      => gain_nack,
-        gain_max       => gain_max,
+        gain_max       => '0',
 
-        rst_gains      => rst_gains,
-        burst          => burst,
+        rst_gains      => open,
+        burst          => open,
 
         sample_i       => rx_sample_corrected_i,
         sample_q       => rx_sample_corrected_q,
@@ -931,7 +920,7 @@ begin
         out_samples         =>  tx_samples,
 
         underflow_led       =>  tx_underflow_led,
-        underflow_count     =>  tx_underflow_count,
+        underflow_count     =>  open,
         underflow_duration  =>  x"ffff"
       ) ;
 
@@ -975,10 +964,11 @@ begin
         signal_out      => lms_rx_enable_qualified
       );
 
-    rx_trigger_arm_rb    <= rx_trigger_arm;
-    rx_trigger_fire_rb   <= rx_trigger_fire;
-    rx_trigger_master_rb <= rx_trigger_master;
-    rx_trigger_line_rb   <= rx_trigger_line;
+    rx_trigger_arm_rb             <= rx_trigger_arm;
+    rx_trigger_fire_rb            <= rx_trigger_fire;
+    rx_trigger_master_rb          <= rx_trigger_master;
+    rx_trigger_line_rb            <= rx_trigger_line;
+    rx_trigger_ctl_rb(7 downto 4) <= rx_trigger_ctl(7 downto 4);
 
     -- TX Trigger
     U_tx_arm_sync : entity work.reset_synchronizer
@@ -1004,10 +994,11 @@ begin
         signal_out      => tx_sample_fifo.rempty
       );
 
-    tx_trigger_arm_rb    <= tx_trigger_arm;
-    tx_trigger_fire_rb   <= tx_trigger_fire;
-    tx_trigger_master_rb <= tx_trigger_master;
-    tx_trigger_line_rb   <= tx_trigger_line;
+    tx_trigger_arm_rb             <= tx_trigger_arm;
+    tx_trigger_fire_rb            <= tx_trigger_fire;
+    tx_trigger_master_rb          <= tx_trigger_master;
+    tx_trigger_line_rb            <= tx_trigger_line;
+    tx_trigger_ctl_rb(7 downto 4) <= tx_trigger_ctl(7 downto 4);
 
     -- LMS6002D IQ interface
     rx_sample_i(15 downto 12) <= (others => rx_sample_i(11)) ;
@@ -1081,9 +1072,9 @@ begin
                         rx_gen_mode <= '0' ;
                     end if ;
                 when RX_MUX_ENTROPY =>
-                    rx_mux_i <= rx_entropy_i ;
-                    rx_mux_q <= rx_entropy_q ;
-                    rx_mux_valid <= rx_entropy_valid ;
+                    rx_mux_i     <= (others => '0');
+                    rx_mux_q     <= (others => '0');
+                    rx_mux_valid <= '0';
                 when RX_MUX_DIGITAL_LOOPBACK =>
                     rx_mux_i <= rx_loopback_i ;
                     rx_mux_q <= rx_loopback_q ;
