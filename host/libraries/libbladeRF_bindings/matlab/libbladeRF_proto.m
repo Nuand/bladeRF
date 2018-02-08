@@ -358,19 +358,24 @@ fcns.thunkname{fcnNum}='int32voidPtrcstringThunk';fcns.name{fcnNum}='bladerf_get
 fcns.thunkname{fcnNum}='int32voidPtrbladerf_modulevoidPtrThunk';fcns.name{fcnNum}='bladerf_get_timestamp'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_module', [u64_type 'Ptr']};fcnNum=fcnNum+1;
 
 % int bladerf_init_stream ( struct bladerf_stream ** stream , struct bladerf * dev , bladerf_stream_cb callback , void *** buffers , size_t num_buffers , bladerf_format format , size_t samples_per_buffer , size_t num_transfers , void * user_data );
-fcns.thunkname{fcnNum}=['int32voidPtrvoidPtrvoidPtrvoidPtr' u64_type 'bladerf_format' u64_type u64_type 'voidPtrThunk'];fcns.name{fcnNum}='bladerf_init_stream'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerf_streamPtrPtr', 'bladerfPtr', 'FcnPtr', 'voidPtrPtrPtr', u64_type, 'bladerf_format', u64_type, u64_type, 'voidPtr'};fcnNum=fcnNum+1;
+% NOTE: Matlab does not support FcnPtr or voidPtrPtrPtr (last checked: R2017b)
+%fcns.thunkname{fcnNum}=['int32voidPtrvoidPtrvoidPtrvoidPtr' u64_type 'bladerf_format' u64_type u64_type 'voidPtrThunk'];fcns.name{fcnNum}='bladerf_init_stream'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerf_streamPtrPtr', 'bladerfPtr', 'FcnPtr', 'voidPtrPtrPtr', u64_type, 'bladerf_format', u64_type, u64_type, 'voidPtr'};fcnNum=fcnNum+1;
 
 % int bladerf_stream ( struct bladerf_stream * stream , bladerf_module module );
-fcns.thunkname{fcnNum}='int32voidPtrbladerf_moduleThunk';fcns.name{fcnNum}='bladerf_stream'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerf_streamPtr', 'bladerf_module'};fcnNum=fcnNum+1;
+% NOTE: cannot bladerf_init_stream, so this function is unusable
+%fcns.thunkname{fcnNum}='int32voidPtrbladerf_moduleThunk';fcns.name{fcnNum}='bladerf_stream'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerf_streamPtr', 'bladerf_module'};fcnNum=fcnNum+1;
 
 % int bladerf_submit_stream_buffer ( struct bladerf_stream * stream , void * buffer , unsigned int timeout_ms );
-fcns.thunkname{fcnNum}='int32voidPtrvoidPtruint32Thunk';fcns.name{fcnNum}='bladerf_submit_stream_buffer'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerf_streamPtr', 'voidPtr', 'uint32'};fcnNum=fcnNum+1;
+% NOTE: cannot bladerf_init_stream, so this function is unusable
+%fcns.thunkname{fcnNum}='int32voidPtrvoidPtruint32Thunk';fcns.name{fcnNum}='bladerf_submit_stream_buffer'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerf_streamPtr', 'voidPtr', 'uint32'};fcnNum=fcnNum+1;
 
 % int bladerf_submit_stream_buffer_nb ( struct bladerf_stream * stream , void * buffer );
-fcns.thunkname{fcnNum}='int32voidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_submit_stream_buffer_nb'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerf_streamPtr', 'voidPtr'};fcnNum=fcnNum+1;
+% NOTE: cannot bladerf_init_stream, so this function is unusable
+%fcns.thunkname{fcnNum}='int32voidPtrvoidPtrThunk';fcns.name{fcnNum}='bladerf_submit_stream_buffer_nb'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerf_streamPtr', 'voidPtr'};fcnNum=fcnNum+1;
 
 % void bladerf_deinit_stream ( struct bladerf_stream * stream );
-fcns.thunkname{fcnNum}='voidvoidPtrThunk';fcns.name{fcnNum}='bladerf_deinit_stream'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}=[]; fcns.RHS{fcnNum}={'bladerf_streamPtr'};fcnNum=fcnNum+1;
+% NOTE: cannot bladerf_init_stream, so this function is unusable
+%fcns.thunkname{fcnNum}='voidvoidPtrThunk';fcns.name{fcnNum}='bladerf_deinit_stream'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}=[]; fcns.RHS{fcnNum}={'bladerf_streamPtr'};fcnNum=fcnNum+1;
 
 % int bladerf_set_stream_timeout ( struct bladerf * dev , bladerf_module module , unsigned int timeout );
 fcns.thunkname{fcnNum}='int32voidPtrbladerf_moduleuint32Thunk';fcns.name{fcnNum}='bladerf_set_stream_timeout'; fcns.calltype{fcnNum}='Thunk'; fcns.LHS{fcnNum}='int32'; fcns.RHS{fcnNum}={'bladerfPtr', 'bladerf_module', 'uint32'};fcnNum=fcnNum+1;
@@ -500,7 +505,7 @@ structs.bladerf_quick_tune.members=struct('freqsel', 'uint8', ...
                                           'vcocap',  'uint8', ...
                                           'nint',    'uint16', ...
                                           'nfrac',   'uint32', ...
-                                          'flags', 'uint8');
+                                          'flags',   'uint8');
 
 structs.bladerf_trigger.members=struct('module',    'bladerf_module', ...
                                        'role',      'bladerf_trigger_role', ...
@@ -513,7 +518,8 @@ structs.bladerf_metadata.members=struct('timestamp',     u64_type, ...
                                         'actual_count', 'uint32', ...
                                         'reserved',     'uint8#32');
 
-structs.bladerf_stream.members=struct('');
+% NOTE: cannot bladerf_init_stream, so this struct is unusable
+%structs.bladerf_stream.members=struct('');
 
 structs.bladerf_image.members=struct('magic',     'int8#8', ...
                                      'checksum',  'uint8#32', ...
