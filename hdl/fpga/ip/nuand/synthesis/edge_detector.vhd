@@ -38,7 +38,7 @@ begin
    process( clock, reset )
    begin
       if( reset = '1' ) then
-         pulses <= ( others => sync_in ) ;
+         pulses <= ( others => '0' ) ;
          pulse_out <= '0' ;
       elsif( rising_edge( clock ) ) then
          pulses <= sync_in & pulses( NUM_PULSES - 1 downto 1 ) ;
