@@ -113,7 +113,7 @@ architecture sample_shuffler of fx3_gpif is
     -- State machine downcounter values
     constant ACK_DOWNCOUNT_READ     :   natural := 2;
     constant ACK_DOWNCOUNT_WRITE    :   natural := 4;
-    constant META_DOWNCOUNT_RESET   :   natural := 3;
+    constant META_DOWNCOUNT_RESET   :   natural := 4;
     constant FINI_DOWNCOUNT_RESET   :   natural := 10;
 
     -- GPIF buf sizes for USB high-speed and super-speed
@@ -454,7 +454,7 @@ begin
                 future.rxm_fifo_rd      <= '1';
 
                 -- After the meta is done, move on to the sample FIFO.
-                if (current.meta_downcount = 0) then
+                if (current.meta_downcount = 1) then
                     future.state        <= SAMPLE_READ;
                 end if;
 
@@ -517,7 +517,7 @@ begin
                 future.meta_downcount   <= max(current.meta_downcount-1, -1);
 
                 -- Check meta_buf validity and determine next action
-                if (current.meta_downcount = 0) then
+                if (current.meta_downcount = 1) then
                     if (unsigned(current.meta_buf(63 downto 0)) = 0 or
                         unsigned(current.meta_buf(31 downto 0) & current.meta_buf(63 downto 32)) > current.tx_ts_plus32)
                     then
@@ -540,7 +540,7 @@ begin
                 end if;
 
                 -- If meta_downcount is nonzero, flush meta_buf into meta FIFO
-                if (current.meta_downcount >= 0) then
+                if (current.meta_downcount > 0) then
                     future.txm_fifo_wr  <= current.tx_meta_en;
                     future.meta_buf(127 downto 0) <= current.meta_buf(95 downto 0) & x"00000000";
                 end if;
