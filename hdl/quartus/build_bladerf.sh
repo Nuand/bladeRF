@@ -238,13 +238,26 @@ fi
 
 DEVICE=$(get_device $size)
 
-# quartus_sh script gives a reference point to the quartus bin dir
-quartus_sh="`which quartus_sh`"
-if [ $? -ne 0 ] || [ ! -f "$quartus_sh" ]; then
+# Check for quartus_sh
+quartus_check="`which quartus_sh`"
+if [ $? -ne 0 ] || [ ! -f "$quartus_check" ]; then
     echo -e "\nError: quartus_sh (Quartus 'bin' directory) does not appear to be in your PATH\n" >&2
     exit 1
 fi
 
+# Check for Qsys
+qsys_check="`which qsys-generate`"
+if [ $? -ne 0 ] || [ ! -f "$qsys_check" ]; then
+    echo -e "\nError: Qsys (SOPC builder 'bin' directory) does not appear to be in your PATH.\n" >&2
+    exit 1
+fi
+
+# Check for Nios II SDK
+nios2_check="`which nios2-bsp-create-settings`"
+if [ $? -ne 0 ] || [ ! -f "$nios2_check" ]; then
+    echo -e "\nError: Nios II SDK (nios2eds 'bin' directory) does not appear to be in your PATH.\n" >&2
+    exit 1
+fi
 
 # Complain early about an unsupported version. Otherwise, the user
 # may get some unintuitive error messages.
@@ -373,13 +386,13 @@ echo "    Building ${board} FPGA Image: $rev, $size kLE"
 echo "##########################################################################"
 echo ""
 
-$quartus_sh -t ${build_dir}/bladerf.tcl -projname bladerf \
+quartus_sh -t ${build_dir}/bladerf.tcl -projname bladerf \
             -part ${DEVICE} -platdir $(readlink -f ${build_dir}/..)
 
 if [ "$stp" == "" ]; then
-    $quartus_sh -t ../../build.tcl -projname bladerf -rev hosted -flow full
+    quartus_sh -t ../../build.tcl -projname bladerf -rev hosted -flow full
 else
-    $quartus_sh -t ../../build.tcl -projname bladerf -rev hosted -flow full -stp $stp $force
+    quartus_sh -t ../../build.tcl -projname bladerf -rev hosted -flow full -stp $stp $force
 fi
 
 popd
