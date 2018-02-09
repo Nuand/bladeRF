@@ -279,7 +279,7 @@ fi
 # Error out at the first sign of trouble
 set -e
 
-work_dir="work/${platform}-${size}"
+work_dir="work/${platform}-${size}-${rev}"
 common_dir=../../../fpga/platforms/common/bladerf
 build_dir=../../../fpga/platforms/${platform}/build
 
@@ -293,8 +293,8 @@ pushd ${work_dir}
 
 cp -r ${build_dir}/ip.ipx .
 
-if [ -f ${build_dir}/*.srf ]; then
-    cp -r ${build_dir}/*.srf .
+if [ -f ${build_dir}/suppressed_messages.srf ]; then
+    cp -r ${build_dir}/suppressed_messages.srf ./${rev}.srf
 fi
 
 echo ""
@@ -390,9 +390,9 @@ quartus_sh -t ${build_dir}/bladerf.tcl -projname bladerf \
             -part ${DEVICE} -platdir $(readlink -f ${build_dir}/..)
 
 if [ "$stp" == "" ]; then
-    quartus_sh -t ../../build.tcl -projname bladerf -rev hosted -flow full
+    quartus_sh -t ../../build.tcl -projname bladerf -rev $rev -flow full
 else
-    quartus_sh -t ../../build.tcl -projname bladerf -rev hosted -flow full -stp $stp $force
+    quartus_sh -t ../../build.tcl -projname bladerf -rev $rev -flow full -stp $stp $force
 fi
 
 popd

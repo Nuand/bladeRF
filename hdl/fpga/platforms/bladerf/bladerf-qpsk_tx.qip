@@ -19,7 +19,6 @@ set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip   syn
 set_global_assignment -name VHDL_FILE [file normalize [file join $nuand_ip   synthesis/cordic.vhd]]
 
 # Implementation details
-set_global_assignment -name QSYS_FILE [file normalize                        nios_system/nios_system.qsys]]
 set_global_assignment -name QIP_FILE  [file normalize                        nios_system/synthesis/nios_system.qip]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $common_dir vhdl/ramp.vhd]]
 set_global_assignment -name VHDL_FILE [file normalize [file join $here       vhdl/bladerf-qpsk_tx.vhd]]
