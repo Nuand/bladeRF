@@ -3,26 +3,7 @@
 # Build a bladeRF fpga image
 ################################################################################
 
-function usage()
-{
-    echo ""
-    echo "bladeRF FPGA build script"
-    echo ""
-    echo "Usage: `basename $0` -r <rev> -s <size>"
-    echo ""
-    echo "Options:"
-    echo "    -c                    Clear working directory"
-    echo "    -b <board>            Target board"
-    echo "    -r <rev>              FPGA revision"
-    echo "    -s <size>             FPGA size"
-    echo "    -a <stp>              SignalTap STP file"
-    echo "    -f                    Force STP insertion"
-    echo "    -n <Tiny|Fast>        Select NIOS II Gen 2 core implementation."
-    echo "       Tiny (default)       NiosII/e; Compatible with Quartus Web Edition"
-    echo "       Fast                 NiosII/f; Requires Quartus Standard or Pro Edition"
-    echo "    -h                    Show this text"
-    echo ""
-
+function print_boards() {
     echo "Supported boards:"
     for i in ../fpga/platforms/*/build/platform.conf ; do
         source $i
@@ -37,7 +18,32 @@ function usage()
         done
         echo ""
     done
+}
+
+function usage()
+{
     echo ""
+    echo "bladeRF FPGA build script"
+    echo ""
+    echo "Usage: `basename $0` -b <board_name> -r <rev> -s <size>"
+    echo ""
+    echo "Options:"
+    echo "    -c                    Clear working directory"
+    echo "    -b <board_name>       Target board name"
+    echo "    -r <rev>              Quartus project revision"
+    echo "    -s <size>             FPGA size"
+    echo "    -a <stp>              SignalTap STP file"
+    echo "    -f                    Force SignalTap STP insertion by temporarily enabling"
+    echo "                          the TalkBack feature of Quartus (required for Web Edition)."
+    echo "                          The previous setting will be restored afterward."
+    echo "    -n <Tiny|Fast>        Select Nios II Gen 2 core implementation."
+    echo "       Tiny (default)       Nios II/e; Compatible with Quartus Web Edition"
+    echo "       Fast                 Nios II/f; Requires Quartus Standard or Pro Edition"
+    echo "    -h                    Show this text"
+    echo ""
+
+    print_boards
+
 }
 
 pushd () {
@@ -110,18 +116,13 @@ if [ $# -eq 0 ]; then
     exit 0
 fi
 
-# Default to NIOS II E (Tiny)
+# Default to Nios II/e (Tiny)
 nios_rev="Tiny"
 
-while getopts ":fa:b:s:r:n:h:c" opt; do
+while getopts ":cb:r:s:a:fn:h" opt; do
     case $opt in
         c)
             clear_work_dir=1
-            ;;
-
-        h)
-            usage
-            exit 0
             ;;
 
         b)
@@ -150,9 +151,18 @@ while getopts ":fa:b:s:r:n:h:c" opt; do
             nios_rev=$OPTARG
             ;;
 
-        \?)
-            echo "Unrecognized option: -$OPTARG" >&2
+        h)
             usage
+            exit 0
+            ;;
+
+        \?)
+            echo -e "\nUnrecognized option: -$OPTARG\n" >&2
+            exit 1
+            ;;
+
+        :)
+            echo -e "\nArgument required for argument -${OPTARG}.\n" >&2
             exit 1
             ;;
     esac
@@ -160,19 +170,19 @@ done
 
 if [ "$board" == "" ]; then
     echo -e "\nError: board (-b) is required\n" >&2
-    usage
+    print_boards
     exit 1
 fi
 
 if [ "$size" == "" ]; then
-    echo -e "\nError: size (-s) is required\n" >&2
-    usage
+    echo -e "\nError: FPGA size (-s) is required\n" >&2
+    print_boards
     exit 1
 fi
 
 if [ "$rev" == "" ]; then
-    echo -e "\nError: revision (-r) is required\n" >&2
-    usage
+    echo -e "\nError: Quartus project revision (-r) is required\n" >&2
+    print_boards
     exit 1
 fi
 
@@ -197,8 +207,8 @@ for plat_size in ${PLATFORM_FPGA_SIZES[@]} ; do
 done
 
 if [ "$size_valid" == "" ]; then
-    echo -e "\nError: Invalid size (\"$size\")" >&2
-    usage
+    echo -e "\nError: Invalid FPGA size (\"$size\")\n" >&2
+    print_boards
     exit 1
 fi
 
@@ -210,8 +220,8 @@ for plat_rev in ${PLATFORM_REVISIONS[@]} ; do
 done
 
 if [ "$rev_valid" == "" ]; then
-    echo -e "\nError: Invalid revision (\"$rev\")\n" >&2
-    usage
+    echo -e "\nError: Invalid Quartus project revision (\"$rev\")\n" >&2
+    print_boards
     exit 1
 fi
 
@@ -222,7 +232,7 @@ fi
 
 nios_rev=$(echo "$nios_rev" | tr "[:upper:]" "[:lower:]")
 if [ "$nios_rev" != "tiny" ] && [ "$nios_rev" != "fast" ]; then
-    echo -e "\nInvalid NIOS II revision: $nios_rev\n" >&2
+    echo -e "\nInvalid Nios II revision: $nios_rev\n" >&2
     exit 1
 fi
 
@@ -276,7 +286,7 @@ fi
 
 echo ""
 echo "##########################################################################"
-echo "    Generating NIOS II Qsys for ${board} ..."
+echo "    Generating Nios II Qsys for ${board} ..."
 echo "##########################################################################"
 echo ""
 
