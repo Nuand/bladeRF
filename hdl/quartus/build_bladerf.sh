@@ -39,6 +39,10 @@ function usage()
     echo "    -n <Tiny|Fast>        Select Nios II Gen 2 core implementation."
     echo "       Tiny (default)       Nios II/e; Compatible with Quartus Web Edition"
     echo "       Fast                 Nios II/f; Requires Quartus Standard or Pro Edition"
+    echo "    -l <gen|synth|full>   Quartus build steps to complete. Valid options:"
+    echo "       gen                  Only generate the project files"
+    echo "       synth                Synthesize the design"
+    echo "       full (default)       Fit the design and create programming files"
     echo "    -h                    Show this text"
     echo ""
 
@@ -116,10 +120,11 @@ if [ $# -eq 0 ]; then
     exit 0
 fi
 
-# Default to Nios II/e (Tiny)
+# Set default options
 nios_rev="Tiny"
+flow="full"
 
-while getopts ":cb:r:s:a:fn:h" opt; do
+while getopts ":cb:r:s:a:fn:l:h" opt; do
     case $opt in
         c)
             clear_work_dir=1
@@ -149,6 +154,10 @@ while getopts ":cb:r:s:a:fn:h" opt; do
 
         n)
             nios_rev=$OPTARG
+            ;;
+
+        l)
+            flow=$OPTARG
             ;;
 
         h)
@@ -235,6 +244,14 @@ if [ "$nios_rev" != "tiny" ] && [ "$nios_rev" != "fast" ]; then
     echo -e "\nInvalid Nios II revision: $nios_rev\n" >&2
     exit 1
 fi
+
+if [[ ${flow} != "gen" ]] &&
+       [[ ${flow} != "synth" ]] &&
+       [[ ${flow} != "full" ]]; then
+    echo -e "\nERROR: Invalid flow option: ${flow}.\n" >&2
+    exit 1
+fi
+
 
 DEVICE=$(get_device $size)
 
@@ -386,47 +403,58 @@ echo "    Building ${board} FPGA Image: $rev, $size kLE"
 echo "##########################################################################"
 echo ""
 
-quartus_sh -t ${build_dir}/bladerf.tcl -projname bladerf \
-            -part ${DEVICE} -platdir $(readlink -f ${build_dir}/..)
+# Generate Quartus project
+quartus_sh --64bit \
+           -t        "${build_dir}/bladerf.tcl" \
+           -projname "${PROJECT_NAME}" \
+           -part     "${DEVICE}" \
+           -platdir  "$(readlink -f ${build_dir}/..)"
 
-if [ "$stp" == "" ]; then
-    quartus_sh -t ../../build.tcl -projname bladerf -rev $rev -flow full
-else
-    quartus_sh -t ../../build.tcl -projname bladerf -rev $rev -flow full -stp $stp $force
+# Run Quartus flow
+quartus_sh --64bit \
+           -t        "../../build.tcl" \
+           -projname "${PROJECT_NAME}" \
+           -rev      "${rev}" \
+           -flow     "${flow}" \
+           -stp      "${stp_file}" \
+           -force    "${force}"
+
+popd
+
+if [[ ${flow} == "full" ]]; then
+    BUILD_TIME_DONE="$(cat ${work_dir}/output_files/$rev.done)"
+    BUILD_TIME_DONE=$(date -d"$BUILD_TIME_DONE" '+%F_%H.%M.%S')
+
+    BUILD_NAME="$rev"x"$size"
+    BUILD_OUTPUT_DIR="$BUILD_NAME"-"$BUILD_TIME_DONE"
+    RBF=$BUILD_NAME.rbf
+
+    mkdir -p "$BUILD_OUTPUT_DIR"
+    cp "${work_dir}/output_files/$rev.rbf" "$BUILD_OUTPUT_DIR/$RBF"
+
+    for file in ${work_dir}/output_files/*rpt ${work_dir}/output_files/*summary; do
+        new_file=$(basename $file | sed -e s/$rev/"$BUILD_NAME"/)
+        cp $file "$BUILD_OUTPUT_DIR/$new_file"
+    done
+
+    pushd $BUILD_OUTPUT_DIR
+    md5sum $RBF > $RBF.md5sum
+    sha256sum $RBF > $RBF.sha256sum
+    MD5SUM=$(cat $RBF.md5sum | awk '{ print $1 }')
+    SHA256SUM=$(cat $RBF.sha256sum  | awk '{ print $1 }')
+    popd
+
+    echo ""
+    echo "##########################################################################"
+    echo " Done! Image, reports, and checksums copied to:"
+    echo "   $BUILD_OUTPUT_DIR"
+    echo ""
+    echo " $RBF checksums:"
+    echo "  MD5:    $MD5SUM"
+    echo "  SHA256: $SHA256SUM"
+    echo ""
+    cat "$BUILD_OUTPUT_DIR/$BUILD_NAME.fit.summary" | sed -e 's/^\(.\)/ \1/g'
+    echo "##########################################################################"
 fi
 
-popd
-BUILD_TIME_DONE="$(cat ${work_dir}/output_files/$rev.done)"
-BUILD_TIME_DONE=$(date -d"$BUILD_TIME_DONE" '+%F_%H.%M.%S')
-
-BUILD_NAME="$rev"x"$size"
-BUILD_OUTPUT_DIR="$BUILD_NAME"-"$BUILD_TIME_DONE"
-RBF=$BUILD_NAME.rbf
-
-mkdir -p "$BUILD_OUTPUT_DIR"
-cp "${work_dir}/output_files/$rev.rbf" "$BUILD_OUTPUT_DIR/$RBF"
-
-for file in ${work_dir}/output_files/*rpt ${work_dir}/output_files/*summary; do
-    new_file=$(basename $file | sed -e s/$rev/"$BUILD_NAME"/)
-    cp $file "$BUILD_OUTPUT_DIR/$new_file"
-done
-
-pushd $BUILD_OUTPUT_DIR
-md5sum $RBF > $RBF.md5sum
-sha256sum $RBF > $RBF.sha256sum
-MD5SUM=$(cat $RBF.md5sum | awk '{ print $1 }')
-SHA256SUM=$(cat $RBF.sha256sum  | awk '{ print $1 }')
-popd
-
-echo ""
-echo "##########################################################################"
-echo " Done! Image, reports, and checksums copied to:"
-echo "   $BUILD_OUTPUT_DIR"
-echo ""
-echo " $RBF checksums:"
-echo "  MD5:    $MD5SUM"
-echo "  SHA256: $SHA256SUM"
-echo ""
-cat "$BUILD_OUTPUT_DIR/$BUILD_NAME.fit.summary" | sed -e 's/^\(.\)/ \1/g'
-echo "##########################################################################"
 echo ""
