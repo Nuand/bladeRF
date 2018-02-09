@@ -17,9 +17,9 @@ function usage()
     echo "    -s <size>             FPGA size"
     echo "    -a <stp>              SignalTap STP file"
     echo "    -f                    Force STP insertion"
-    echo "    -n <Tiny|Small|Fast>  Select NIOS II revision. Tiny is the"
-    echo "                            default and can be built with"
-    echo "                            Quartus Web Edition."
+    echo "    -n <Tiny|Fast>        Select NIOS II Gen 2 core implementation."
+    echo "       Tiny (default)       NiosII/e; Compatible with Quartus Web Edition"
+    echo "       Fast                 NiosII/f; Requires Quartus Standard or Pro Edition"
     echo "    -h                    Show this text"
     echo ""
 
@@ -146,7 +146,8 @@ while getopts ":fa:b:s:r:n:h:c" opt; do
             force="-force"
             ;;
 
-        n)  nios_rev=$OPTARG
+        n)
+            nios_rev=$OPTARG
             ;;
 
         \?)
@@ -220,7 +221,7 @@ if [ "$stp" != "" ] && [ ! -f "$stp" ]; then
 fi
 
 nios_rev=$(echo "$nios_rev" | tr "[:upper:]" "[:lower:]")
-if [ "$nios_rev" != "tiny" ] && [ "$nios_rev" != "small" ] && [ "$nios_rev" != "fast" ]; then
+if [ "$nios_rev" != "tiny" ] && [ "$nios_rev" != "fast" ]; then
     echo -e "\nInvalid NIOS II revision: $nios_rev\n" >&2
     exit 1
 fi
@@ -239,16 +240,6 @@ fi
 # may get some unintuitive error messages.
 check_quartus_version ${PLATFORM_QUARTUS_VER[major]} ${PLATFORM_QUARTUS_VER[minor]}
 if [ $? -ne 0 ]; then
-    exit 1
-fi
-
-# Check compatibility of Nios selection against Quartus version
-if [ "$nios_rev" == "small" ] &&
-         [ $(expr ${QUARTUS_VER[major]}\.${QUARTUS_VER[minor]} \>\= 14.1) -eq 1 ]; then
-    echo ""
-    echo "NiosII/s (Small) is deprecated as of Quartus 14.1 and later." >&2
-    echo "However, it may be approximated with certain configuration options" >&2
-    echo "of the NiosII/f." >&2
     exit 1
 fi
 
