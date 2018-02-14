@@ -41,8 +41,8 @@
 # is 80 MHz, output clock is 40 MHz, so it's a division by 2.
 set adi_sclk_divisor 2
 
-create_generated_clock -name adi_sclk_reg -source [get_pins $system_clock] -divide_by $adi_sclk_divisor [get_registers {*lms_spi|SCLK_reg}]
-create_generated_clock -name adi_sclk_pin -source [get_registers -no_duplicates {*lms_spi|SCLK_reg}] [get_ports {adi_spi_sclk}]
+create_generated_clock -name adi_sclk_reg -source [get_pins $system_clock] -divide_by $adi_sclk_divisor [get_registers {*rffe_spi|SCLK_reg}]
+create_generated_clock -name adi_sclk_pin -source [get_registers -no_duplicates {*rffe_spi|SCLK_reg}] [get_ports {adi_spi_sclk}]
 
 set_max_skew -from [get_clocks {adi_sclk_pin}] -to [get_ports {adi_spi_sclk}] 0.2
 

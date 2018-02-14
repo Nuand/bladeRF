@@ -59,8 +59,8 @@ set_input_delay -clock [get_clocks {U_pll|altpll_component|auto_generated|pll1|c
 # LMS SPI interface
 
 # Create SPI generated clock
-create_generated_clock -name lms_sclk_reg -source [get_pins {U_pll|altpll_component|auto_generated|pll1|clk[0]}] -divide_by 4 [get_registers {*lms_spi*current.sclk}]
-create_generated_clock -name lms_sclk_pin -source [get_registers -no_duplicates {*lms_spi*current.sclk}] [get_ports {lms_sclk}]
+create_generated_clock -name lms_sclk_reg -source [get_pins {U_pll|altpll_component|auto_generated|pll1|clk[0]}] -divide_by 4 [get_registers {*rffe_spi*current.sclk}]
+create_generated_clock -name lms_sclk_pin -source [get_registers -no_duplicates {*rffe_spi*current.sclk}] [get_ports {lms_sclk}]
 
 set_input_delay  -clock_fall -clock lms_sclk_pin -min  1.0 [get_ports {lms_sdo}]
 set_input_delay  -clock_fall -clock lms_sclk_pin -max  9.0 [get_ports {lms_sdo}] -add_delay

@@ -42,10 +42,10 @@ set_instance_parameter_value iq_corr_tx_phase_gain {simDoTestBenchWiring} {0}
 set_instance_parameter_value iq_corr_tx_phase_gain {simDrivenValue} {0.0}
 set_instance_parameter_value iq_corr_tx_phase_gain {width} {32}
 
-add_instance lms_spi lms6_spi_controller 1.0
-set_instance_parameter_value lms_spi {CLOCK_DIV} {4}
-set_instance_parameter_value lms_spi {ADDR_WIDTH} {8}
-set_instance_parameter_value lms_spi {DATA_WIDTH} {8}
+add_instance rffe_spi lms6_spi_controller 1.0
+set_instance_parameter_value rffe_spi {CLOCK_DIV} {4}
+set_instance_parameter_value rffe_spi {ADDR_WIDTH} {8}
+set_instance_parameter_value rffe_spi {DATA_WIDTH} {8}
 
 add_instance vctcxo_tamer_0 vctcxo_tamer 1.0
 
@@ -152,7 +152,7 @@ set_interface_property rx_tamer EXPORT_OF common_system_0.rx_tamer
 add_interface rx_trigger_ctl conduit end
 set_interface_property rx_trigger_ctl EXPORT_OF common_system_0.rx_trigger_ctl
 add_interface spi conduit end
-set_interface_property spi EXPORT_OF lms_spi.conduit_end
+set_interface_property spi EXPORT_OF rffe_spi.conduit_end
 add_interface tx_tamer conduit end
 set_interface_property tx_tamer EXPORT_OF common_system_0.tx_tamer
 add_interface tx_trigger_ctl conduit end
@@ -184,10 +184,10 @@ set_connection_parameter_value common_system_0.pb_0_m0/vctcxo_tamer_0.avalon_sla
 set_connection_parameter_value common_system_0.pb_0_m0/vctcxo_tamer_0.avalon_slave_0 baseAddress {0x0100}
 set_connection_parameter_value common_system_0.pb_0_m0/vctcxo_tamer_0.avalon_slave_0 defaultConnection {0}
 
-add_connection common_system_0.pb_0_m0 lms_spi.avalon_slave_0
-set_connection_parameter_value common_system_0.pb_0_m0/lms_spi.avalon_slave_0 arbitrationPriority {1}
-set_connection_parameter_value common_system_0.pb_0_m0/lms_spi.avalon_slave_0 baseAddress {0x0000}
-set_connection_parameter_value common_system_0.pb_0_m0/lms_spi.avalon_slave_0 defaultConnection {0}
+add_connection common_system_0.pb_0_m0 rffe_spi.avalon_slave_0
+set_connection_parameter_value common_system_0.pb_0_m0/rffe_spi.avalon_slave_0 arbitrationPriority {1}
+set_connection_parameter_value common_system_0.pb_0_m0/rffe_spi.avalon_slave_0 baseAddress {0x0000}
+set_connection_parameter_value common_system_0.pb_0_m0/rffe_spi.avalon_slave_0 defaultConnection {0}
 
 add_connection common_system_0.pb_1_m0 iq_corr_rx_phase_gain.s1
 set_connection_parameter_value common_system_0.pb_1_m0/iq_corr_rx_phase_gain.s1 arbitrationPriority {1}
@@ -254,7 +254,7 @@ add_connection clk_0.clk agc_dc_q_min.clk
 
 add_connection clk_0.clk vctcxo_tamer_0.clock_sink
 
-add_connection clk_0.clk lms_spi.clock_sink
+add_connection clk_0.clk rffe_spi.clock_sink
 
 add_connection clk_0.clk arbiter_0.clock_sink
 
@@ -272,7 +272,7 @@ add_connection clk_0.clk_reset iq_corr_tx_phase_gain.reset
 
 add_connection clk_0.clk_reset vctcxo_tamer_0.reset_sink
 
-add_connection clk_0.clk_reset lms_spi.reset_sink
+add_connection clk_0.clk_reset rffe_spi.reset_sink
 
 add_connection clk_0.clk_reset arbiter_0.reset
 

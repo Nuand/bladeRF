@@ -303,7 +303,7 @@ uint8_t lms6_read(uint8_t addr)
     uint8_t data;
 
     spi_arbiter_lock();
-    data = IORD_8DIRECT(LMS_SPI_BASE, addr);
+    data = IORD_8DIRECT(RFFE_SPI_BASE, addr);
     spi_arbiter_unlock();
 
     return data;
@@ -312,7 +312,7 @@ uint8_t lms6_read(uint8_t addr)
 void lms6_write(uint8_t addr, uint8_t data)
 {
     spi_arbiter_lock();
-    IOWR_8DIRECT(LMS_SPI_BASE, addr, data);
+    IOWR_8DIRECT(RFFE_SPI_BASE, addr, data);
     spi_arbiter_unlock();
 }
 
@@ -334,7 +334,7 @@ uint64_t ad9361_spi_read(uint16_t addr)
     bytes = (((addr >> 12) & 0x7) + 1);
 
     // Send down the command, read the response into data8
-    alt_avalon_spi_command(LMS_SPI_BASE, 0, 2, &addr8[0], bytes, &data8[0], 0);
+    alt_avalon_spi_command(RFFE_SPI_BASE, 0, 2, &addr8[0], bytes, &data8[0], 0);
 
     // Build the uint64_t return value
     rv = UINT64_C(0x0);
@@ -366,7 +366,7 @@ void ad9361_spi_write(uint16_t addr, uint64_t data)
     bytes = (((addr >> 12) & 0x7) + 1) + 2;
 
     // Send down the command and the data
-    alt_avalon_spi_command(LMS_SPI_BASE, 0, bytes, &data8[0], 0, 0, 0);
+    alt_avalon_spi_command(RFFE_SPI_BASE, 0, bytes, &data8[0], 0, 0, 0);
 }
 
 uint32_t adi_axi_read(uint16_t addr)

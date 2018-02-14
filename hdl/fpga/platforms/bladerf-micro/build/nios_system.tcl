@@ -38,19 +38,19 @@ set_instance_parameter_value gpio_rffe_0 {simDoTestBenchWiring} {0}
 set_instance_parameter_value gpio_rffe_0 {simDrivenValue} {0.0}
 set_instance_parameter_value gpio_rffe_0 {width} {32}
 
-add_instance lms_spi altera_avalon_spi
-set_instance_parameter_value lms_spi {clockPhase} {0}
-set_instance_parameter_value lms_spi {clockPolarity} {1}
-set_instance_parameter_value lms_spi {dataWidth} {8}
-set_instance_parameter_value lms_spi {disableAvalonFlowControl} {0}
-set_instance_parameter_value lms_spi {insertDelayBetweenSlaveSelectAndSClk} {0}
-set_instance_parameter_value lms_spi {insertSync} {0}
-set_instance_parameter_value lms_spi {lsbOrderedFirst} {0}
-set_instance_parameter_value lms_spi {masterSPI} {1}
-set_instance_parameter_value lms_spi {numberOfSlaves} {1}
-set_instance_parameter_value lms_spi {syncRegDepth} {2}
-set_instance_parameter_value lms_spi {targetClockRate} {40000000.0}
-set_instance_parameter_value lms_spi {targetSlaveSelectToSClkDelay} {0.0}
+add_instance rffe_spi altera_avalon_spi
+set_instance_parameter_value rffe_spi {clockPhase} {0}
+set_instance_parameter_value rffe_spi {clockPolarity} {1}
+set_instance_parameter_value rffe_spi {dataWidth} {8}
+set_instance_parameter_value rffe_spi {disableAvalonFlowControl} {0}
+set_instance_parameter_value rffe_spi {insertDelayBetweenSlaveSelectAndSClk} {0}
+set_instance_parameter_value rffe_spi {insertSync} {0}
+set_instance_parameter_value rffe_spi {lsbOrderedFirst} {0}
+set_instance_parameter_value rffe_spi {masterSPI} {1}
+set_instance_parameter_value rffe_spi {numberOfSlaves} {1}
+set_instance_parameter_value rffe_spi {syncRegDepth} {2}
+set_instance_parameter_value rffe_spi {targetClockRate} {40000000.0}
+set_instance_parameter_value rffe_spi {targetSlaveSelectToSClkDelay} {0.0}
 
 add_instance rb_ad9361_0_data altera_reset_bridge
 set_instance_parameter_value rb_ad9361_0_data {ACTIVE_LOW_RESET} {0}
@@ -136,7 +136,7 @@ set_interface_property rx_tamer EXPORT_OF common_system_0.rx_tamer
 add_interface rx_trigger_ctl conduit end
 set_interface_property rx_trigger_ctl EXPORT_OF common_system_0.rx_trigger_ctl
 add_interface spi conduit end
-set_interface_property spi EXPORT_OF lms_spi.external
+set_interface_property spi EXPORT_OF rffe_spi.external
 add_interface tx_tamer conduit end
 set_interface_property tx_tamer EXPORT_OF common_system_0.tx_tamer
 add_interface tx_trigger_ctl conduit end
@@ -152,10 +152,10 @@ set_connection_parameter_value common_system_0.pb_0_m0/vctcxo_tamer_0.s1 arbitra
 set_connection_parameter_value common_system_0.pb_0_m0/vctcxo_tamer_0.s1 baseAddress {0x0100}
 set_connection_parameter_value common_system_0.pb_0_m0/vctcxo_tamer_0.s1 defaultConnection {0}
 
-add_connection common_system_0.pb_0_m0 lms_spi.spi_control_port
-set_connection_parameter_value common_system_0.pb_0_m0/lms_spi.spi_control_port arbitrationPriority {1}
-set_connection_parameter_value common_system_0.pb_0_m0/lms_spi.spi_control_port baseAddress {0x0000}
-set_connection_parameter_value common_system_0.pb_0_m0/lms_spi.spi_control_port defaultConnection {0}
+add_connection common_system_0.pb_0_m0 rffe_spi.spi_control_port
+set_connection_parameter_value common_system_0.pb_0_m0/rffe_spi.spi_control_port arbitrationPriority {1}
+set_connection_parameter_value common_system_0.pb_0_m0/rffe_spi.spi_control_port baseAddress {0x0000}
+set_connection_parameter_value common_system_0.pb_0_m0/rffe_spi.spi_control_port defaultConnection {0}
 
 add_connection common_system_0.pb_1_m0 gpio_rffe_0.s1
 set_connection_parameter_value common_system_0.pb_1_m0/gpio_rffe_0.s1 arbitrationPriority {1}
@@ -169,7 +169,7 @@ set_connection_parameter_value common_system_0.pb_2_m0/axi_ad9361_0.s_axi defaul
 
 add_connection clk_0.clk common_system_0.clk
 
-add_connection clk_0.clk lms_spi.clk
+add_connection clk_0.clk rffe_spi.clk
 
 add_connection clk_0.clk gpio_rffe_0.clk
 
@@ -185,15 +185,15 @@ add_connection axi_ad9361_0.if_l_clk axi_ad9361_0.device_clock
 
 add_connection axi_ad9361_0.if_l_clk cb_ad9361_0_data.in_clk
 
-add_connection common_system_0.ib0_receiver_irq lms_spi.irq
-set_connection_parameter_value common_system_0.ib0_receiver_irq/lms_spi.irq irqNumber {2}
+add_connection common_system_0.ib0_receiver_irq rffe_spi.irq
+set_connection_parameter_value common_system_0.ib0_receiver_irq/rffe_spi.irq irqNumber {2}
 
 add_connection common_system_0.ib0_receiver_irq gpio_rffe_0.irq
 set_connection_parameter_value common_system_0.ib0_receiver_irq/gpio_rffe_0.irq irqNumber {3}
 
 add_connection clk_0.clk_reset common_system_0.reset
 
-add_connection clk_0.clk_reset lms_spi.reset
+add_connection clk_0.clk_reset rffe_spi.reset
 
 add_connection clk_0.clk_reset gpio_rffe_0.reset
 
