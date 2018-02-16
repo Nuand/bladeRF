@@ -458,3 +458,6 @@ if [[ ${flow} == "full" ]]; then
 fi
 
 echo ""
+
+# Delete empty SOPC directories in the user's home directory
+find ~ -maxdepth 1 -type d -empty -iname "sopc_altera_pll*" -delete
