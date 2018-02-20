@@ -69,7 +69,8 @@ package bladerf_p is
         oc_i2c_sda_padoen_o             :   out std_logic;
         oc_i2c_arst_i                   :   in  std_logic;
         oc_i2c_scl_pad_i                :   in  std_logic;
-        gpio_export                     :   out std_logic_vector(31 downto 0);
+        gpio_in_port                    :   in  std_logic_vector(31 downto 0);
+        gpio_out_port                   :   out std_logic_vector(31 downto 0);
         xb_gpio_in_port                 :   in  std_logic_vector(31 downto 0) := (others => 'X');
         xb_gpio_out_port                :   out std_logic_vector(31 downto 0);
         xb_gpio_dir_export              :   out std_logic_vector(31 downto 0);
@@ -263,7 +264,6 @@ package bladerf_p is
 
     function pack( x : nios_gpo_t )       return std_logic_vector;
     function pack( x : nios_gpi_t )       return std_logic_vector;
-    --function pack( x : nios_gpio_t )      return std_logic_vector;
 
 
     -- ========================================================================

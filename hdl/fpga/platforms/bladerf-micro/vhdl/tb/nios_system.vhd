@@ -74,7 +74,8 @@ entity nios_system is
         dac_MOSI                        : out std_logic;                                        -- MOSI
         dac_SCLK                        : out std_logic;                                        -- SCLK
         dac_SS_n                        : out std_logic_vector(1 downto 0);                     -- SS_n
-        gpio_export                     : out std_logic_vector(31 downto 0);                    -- export
+        gpio_in_port                    : in  std_logic_vector(31 downto 0);                    -- in_port
+        gpio_out_port                   : out std_logic_vector(31 downto 0);                    -- out_port
         gpio_rffe_0_in_port             : in  std_logic_vector(31 downto 0) := (others => 'X'); -- in_port
         gpio_rffe_0_out_port            : out std_logic_vector(31 downto 0);                    -- out_port
         oc_i2c_scl_pad_o                : out std_logic;                                        -- scl_pad_o
@@ -121,7 +122,7 @@ begin
     dac_SCLK <= '0' ;
     dac_SS_n <= (others =>'1') ;
 
-    gpio_export <= x"0001_0157" after 1 us ;
+    gpio_out_port <= x"0001_0157" after 1 us ;
 
     oc_i2c_scl_pad_o <= '0' ;
     oc_i2c_scl_padoen_o <= '1' ;

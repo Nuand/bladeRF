@@ -62,7 +62,8 @@ package bladerf_p is
         spi_MOSI                        :   out std_logic;
         spi_SCLK                        :   out std_logic;
         spi_SS_n                        :   out std_logic;
-        gpio_export                     :   out std_logic_vector(31 downto 0);
+        gpio_in_port                    :   in  std_logic_vector(31 downto 0);
+        gpio_out_port                   :   out std_logic_vector(31 downto 0);
         gpio_rffe_0_in_port             :   in  std_logic_vector(31 downto 0);
         gpio_rffe_0_out_port            :   out std_logic_vector(31 downto 0);
         ad9361_dac_sync_in_sync         :   in  std_logic;
@@ -259,7 +260,7 @@ package bladerf_p is
                                                           META_FIFO_RX_RWIDTH, "OFF") downto 0);
     end record;
 
-    type nios_gpio_t is record
+    type nios_gpo_t is record
         xb_mode         : std_logic_vector(1 downto 0);
         si_clock_sel    : std_logic;
         ufl_clock_oe    : std_logic;
@@ -269,6 +270,18 @@ package bladerf_p is
         adf_chip_enable : std_logic;
         rx_mux_sel      : std_logic_vector(2 downto 0);
         usb_speed       : std_logic;
+    end record;
+
+    type nios_gpi_t is record
+        -- Actual inputs
+        pwr_status   : std_logic;
+        -- Readback of Nios GPIO outputs
+        gpo_readback : nios_gpo_t;
+    end record;
+
+    type nios_gpio_t is record
+        i : nios_gpi_t;
+        o : nios_gpo_t;
     end record;
 
     type sky13374_397lf_t is (
@@ -349,7 +362,8 @@ package bladerf_p is
     function pack( x : rffe_gpo_t )       return std_logic_vector;
     function pack( x : rffe_gpio_t )      return std_logic_vector;
     function pack( x : trigger_t )        return std_logic_vector;
-    function pack( x : nios_gpio_t )      return std_logic_vector;
+    function pack( x : nios_gpo_t )       return std_logic_vector;
+    function pack( x : nios_gpi_t )       return std_logic_vector;
 
 
     -- ========================================================================
@@ -360,7 +374,7 @@ package bladerf_p is
     function unpack( x : std_logic_vector(31 downto 0) ) return rffe_gpo_t;
     function unpack( trig_gpo  : std_logic_vector(7 downto 0);
                      trig_line : std_logic ) return trigger_t;
-    function unpack( x : std_logic_vector(31 downto 0) ) return nios_gpio_t;
+    function unpack( x : std_logic_vector(31 downto 0) ) return nios_gpo_t;
 
 
     -- ========================================================================
@@ -408,24 +422,24 @@ package body bladerf_p is
     function pack( x : rffe_gpo_t ) return std_logic_vector is
         variable rv : std_logic_vector(31 downto 0) := (others => '0');
     begin
-        --rv(31 downto 24) := x.ctrl_out;    -- Reserved as inputs
-        rv(23 downto 20) := x.ctrl_in;
-        --rv(19)           := x.adf_muxout;  -- Reserved as input
-        rv(18)           := x.mimo_tx_en(1);
-        rv(17)           := x.mimo_rx_en(1);
-        rv(16)           := x.mimo_tx_en(0);
-        rv(15)           := x.mimo_rx_en(0);
-        rv(14 downto 13) := x.tx_spdt2;
-        rv(12 downto 11) := x.tx_spdt1;
-        rv(10)           := x.tx_bias_en;
-        rv(9 downto 8)   := x.rx_spdt2;
-        rv(7 downto 6)   := x.rx_spdt1;
-        rv(5)            := x.rx_bias_en;
-        rv(4)            := x.sync_in;
-        rv(3)            := x.en_agc;
-        rv(2)            := x.txnrx;
-        rv(1)            := x.enable;
-        rv(0)            := x.reset_n;
+        --rv(31 downto 24) := x.ctrl_out;      -- Reserved as inputs
+        rv(23 downto 20)   := x.ctrl_in;
+        --rv(19)           := x.adf_muxout;    -- Reserved as input
+        rv(18)             := x.mimo_tx_en(1);
+        rv(17)             := x.mimo_rx_en(1);
+        rv(16)             := x.mimo_tx_en(0);
+        rv(15)             := x.mimo_rx_en(0);
+        rv(14 downto 13)   := x.tx_spdt2;
+        rv(12 downto 11)   := x.tx_spdt1;
+        rv(10)             := x.tx_bias_en;
+        rv(9 downto 8)     := x.rx_spdt2;
+        rv(7 downto 6)     := x.rx_spdt1;
+        rv(5)              := x.rx_bias_en;
+        rv(4)              := x.sync_in;
+        rv(3)              := x.en_agc;
+        rv(2)              := x.txnrx;
+        rv(1)              := x.enable;
+        rv(0)              := x.reset_n;
         return rv;
     end function;
 
@@ -452,18 +466,29 @@ package body bladerf_p is
         return rv;
     end function;
 
-    function pack( x : nios_gpio_t ) return std_logic_vector is
-        variable rv : std_logic_vector(31 downto 0) := (others => '0');
+    function pack( x : nios_gpo_t ) return std_logic_vector is
+        variable rv : std_logic_vector(31 downto 0) := (others => 'U');
     begin
-        rv(31 downto 30)   := x.xb_mode;
-        rv(18)             := x.si_clock_sel;
-        rv(17)             := x.ufl_clock_oe;
-        rv(16)             := x.meta_sync;
-        rv(15)             := x.led_mode;
-        rv(14 downto 12)   := x.leds;
-        rv(11)             := x.adf_chip_enable;
-        rv(10 downto 8)    := x.rx_mux_sel;
-        rv(7)              := x.usb_speed;
+        rv(31 downto 30) := x.xb_mode;
+        rv(18)           := x.si_clock_sel;
+        rv(17)           := x.ufl_clock_oe;
+        rv(16)           := x.meta_sync;
+        rv(15)           := x.led_mode;
+        rv(14 downto 12) := x.leds;
+        rv(11)           := x.adf_chip_enable;
+        rv(10 downto 8)  := x.rx_mux_sel;
+        rv(7)            := x.usb_speed;
+        --rv(0)          := x.pwr_status;  -- Reserved as input
+        return rv;
+    end function;
+
+    function pack( x : nios_gpi_t ) return std_logic_vector is
+        variable rv : std_logic_vector(31 downto 0) := (others => 'U');
+    begin
+        -- Readback of outputs
+        rv    := pack(x.gpo_readback);
+        -- Physical inputs
+        rv(0) := x.pwr_status;
         return rv;
     end function;
 
@@ -487,10 +512,11 @@ package body bladerf_p is
     function unpack( x : std_logic_vector(31 downto 0) ) return rffe_gpo_t is
         variable rv : rffe_gpo_t := RFFE_GPO_DEFAULT;
     begin
-        --rv.ctrl_out      := x(31 downto 24);
+        --rv.ctrl_out    := x(31 downto 24); -- Reserved as input
         rv.ctrl_in       := x(23 downto 20);
-        rv.mimo_tx_en    := x(18) & x(16); -- channel 1 & channel 0
-        rv.mimo_rx_en    := x(17) & x(15); -- channel 1 & channel 0
+        --rv.adf_muxout  := x(19);           -- Reserved as input
+        rv.mimo_tx_en    := x(18) & x(16);   -- channel 1 & channel 0
+        rv.mimo_rx_en    := x(17) & x(15);   -- channel 1 & channel 0
         rv.tx_spdt2      := x(14 downto 13);
         rv.tx_spdt1      := x(12 downto 11);
         rv.tx_bias_en    := x(10);
@@ -516,8 +542,8 @@ package body bladerf_p is
         return rv;
     end function;
 
-    function unpack( x : std_logic_vector(31 downto 0) ) return nios_gpio_t is
-        variable rv : nios_gpio_t;
+    function unpack( x : std_logic_vector(31 downto 0) ) return nios_gpo_t is
+        variable rv : nios_gpo_t;
     begin
         rv.xb_mode         := x(31 downto 30);
         rv.si_clock_sel    := x(18);
@@ -528,6 +554,7 @@ package body bladerf_p is
         rv.adf_chip_enable := x(11);
         rv.rx_mux_sel      := x(10 downto 8);
         rv.usb_speed       := x(7);
+        --rv.pwr_status    := x(0);            -- Reserved as input
         return rv;
     end function;
 

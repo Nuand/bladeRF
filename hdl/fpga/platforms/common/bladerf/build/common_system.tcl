@@ -25,7 +25,7 @@ add_instance control altera_avalon_pio
 set_instance_parameter_value control {bitClearingEdgeCapReg} {0}
 set_instance_parameter_value control {bitModifyingOutReg} {1}
 set_instance_parameter_value control {captureEdge} {0}
-set_instance_parameter_value control {direction} {Output}
+set_instance_parameter_value control {direction} {InOut}
 set_instance_parameter_value control {edgeType} {RISING}
 set_instance_parameter_value control {generateIRQ} {0}
 set_instance_parameter_value control {irqType} {LEVEL}

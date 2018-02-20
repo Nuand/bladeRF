@@ -48,12 +48,12 @@ architecture hosted_bladerf of bladerf is
 
     signal rx_mux_sel             : unsigned(2 downto 0);
 
-    signal nios_gpio_i            : std_logic_vector(31 downto 0);
     signal nios_xb_gpio_in        : std_logic_vector(31 downto 0) := (others => '0');
     signal nios_xb_gpio_out       : std_logic_vector(31 downto 0) := (others => '0');
     signal nios_xb_gpio_oe        : std_logic_vector(31 downto 0) := (others => '0');
 
     signal nios_gpio              : nios_gpio_t;
+    signal nios_gpo_slv           : std_logic_vector(31 downto 0);
 
     signal i2c_scl_in             : std_logic;
     signal i2c_scl_out            : std_logic;
@@ -317,7 +317,8 @@ begin
             spi_MOSI                        => adi_spi_sdi,
             spi_SCLK                        => adi_spi_sclk,
             spi_SS_n                        => adi_spi_csn,
-            gpio_export                     => nios_gpio_i,
+            gpio_in_port                    => pack(nios_gpio.i),
+            gpio_out_port                   => nios_gpo_slv,
             gpio_rffe_0_in_port             => pack(rffe_gpio),
             gpio_rffe_0_out_port            => rffe_gpio.o,
             ad9361_dac_sync_in_sync         => '0',
@@ -402,8 +403,11 @@ begin
     -- Allow SPI accesses when FPGA is in reset
     fx3_uart_cts      <= '1' when sys_reset_pclk = '0' else 'Z';
 
-    -- Unpack the Nios GPIOs into a record
-    nios_gpio <= unpack(nios_gpio_i);
+    -- Unpack the Nios general-purpose outputs into a record
+    nios_gpio.o <= unpack(nios_gpo_slv);
+
+    -- Readback of Nios general-purpose outputs
+    nios_gpio.i.gpo_readback <= nios_gpio.o;
 
     -- RFFE GPIO outputs
     adi_ctrl_in    <= unpack(rffe_gpio.o).ctrl_in;
@@ -424,22 +428,22 @@ begin
     tx_trigger_ctl <= unpack(tx_trigger_ctl_i, tx_trigger_line);
 
     -- LEDs
-    led(1) <= led1_blink        when nios_gpio.led_mode = '0' else not nios_gpio.leds(1);
-    led(2) <= tx_underflow_led  when nios_gpio.led_mode = '0' else not nios_gpio.leds(2);
-    led(3) <= rx_overflow_led   when nios_gpio.led_mode = '0' else not nios_gpio.leds(3);
+    led(1) <= led1_blink        when nios_gpio.o.led_mode = '0' else not nios_gpio.o.leds(1);
+    led(2) <= tx_underflow_led  when nios_gpio.o.led_mode = '0' else not nios_gpio.o.leds(2);
+    led(3) <= rx_overflow_led   when nios_gpio.o.led_mode = '0' else not nios_gpio.o.leds(3);
 
     -- DAC SPI (data latched on falling edge)
-    dac_sclk <= not nios_sclk when nios_gpio.adf_chip_enable = '0' else '0';
-    dac_sdi  <= nios_sdio     when nios_gpio.adf_chip_enable = '0' else '0';
-    dac_csn  <= nios_ss_n(0)  when nios_gpio.adf_chip_enable = '0' else '1';
+    dac_sclk <= not nios_sclk when nios_gpio.o.adf_chip_enable = '0' else '0';
+    dac_sdi  <= nios_sdio     when nios_gpio.o.adf_chip_enable = '0' else '0';
+    dac_csn  <= nios_ss_n(0)  when nios_gpio.o.adf_chip_enable = '0' else '1';
 
     -- ADF SPI (data latched on rising edge)
-    adf_sclk <= nios_sclk    when nios_gpio.adf_chip_enable = '1' else '0';
-    adf_sdi  <= nios_sdio    when nios_gpio.adf_chip_enable = '1' else '0';
-    adf_csn  <= nios_ss_n(1) when nios_gpio.adf_chip_enable = '1' else '1';
-    adf_ce   <= nios_gpio.adf_chip_enable;
+    adf_sclk <= nios_sclk    when nios_gpio.o.adf_chip_enable = '1' else '0';
+    adf_sdi  <= nios_sdio    when nios_gpio.o.adf_chip_enable = '1' else '0';
+    adf_csn  <= nios_ss_n(1) when nios_gpio.o.adf_chip_enable = '1' else '1';
+    adf_ce   <= nios_gpio.o.adf_chip_enable;
 
-    nios_sdo <= adf_muxout when ((nios_ss_n(1) = '0') and (nios_gpio.adf_chip_enable = '1'))
+    nios_sdo <= adf_muxout when ((nios_ss_n(1) = '0') and (nios_gpio.o.adf_chip_enable = '1'))
                 else '0';
 
     -- Power monitor I2C
@@ -449,11 +453,14 @@ begin
     i2c_scl_in  <= pwr_scl;
     i2c_sda_in  <= pwr_sda;
 
+    -- TPS2115A status
+    nios_gpio.i.pwr_status <= pwr_status;
+
     -- SI53304 controls / clock output enables
-    si_clock_sel <= nios_gpio.si_clock_sel;
+    si_clock_sel <= nios_gpio.o.si_clock_sel;
     c5_clock2_oe <= '1';
     exp_clock_oe <= exp_present and exp_clock_req;
-    ufl_clock_oe <= nios_gpio.ufl_clock_oe;
+    ufl_clock_oe <= nios_gpio.o.ufl_clock_oe;
 
     -- Expansion I2C
     exp_i2c_scl <= 'Z';
@@ -654,7 +661,7 @@ begin
         port map (
             reset               =>  '0',
             clock               =>  fx3_pclk_pll,
-            async               =>  nios_gpio.usb_speed,
+            async               =>  nios_gpio.o.usb_speed,
             sync                =>  usb_speed_pclk
         );
 
@@ -665,7 +672,7 @@ begin
         port map (
             reset               =>  '0',
             clock               =>  rx_clock,
-            async               =>  nios_gpio.usb_speed,
+            async               =>  nios_gpio.o.usb_speed,
             sync                =>  usb_speed_rx
         );
 
@@ -676,7 +683,7 @@ begin
         port map (
             reset               =>  '0',
             clock               =>  tx_clock,
-            async               =>  nios_gpio.usb_speed,
+            async               =>  nios_gpio.o.usb_speed,
             sync                =>  usb_speed_tx
         );
 
@@ -688,7 +695,7 @@ begin
         port map (
             reset               =>  '0',
             clock               =>  fx3_pclk_pll,
-            async               =>  nios_gpio.meta_sync,
+            async               =>  nios_gpio.o.meta_sync,
             sync                =>  meta_en_pclk
         );
 
@@ -699,7 +706,7 @@ begin
         port map (
             reset               =>  '0',
             clock               =>  rx_clock,
-            async               =>  nios_gpio.meta_sync,
+            async               =>  nios_gpio.o.meta_sync,
             sync                =>  meta_en_rx
         );
 
@@ -710,7 +717,7 @@ begin
         port map (
             reset               =>  '0',
             clock               =>  tx_clock,
-            async               =>  nios_gpio.meta_sync,
+            async               =>  nios_gpio.o.meta_sync,
             sync                =>  meta_en_tx
         );
 
@@ -722,7 +729,7 @@ begin
             port map (
                 reset               =>  '0',
                 clock               =>  rx_clock,
-                async               =>  nios_gpio.rx_mux_sel(i),
+                async               =>  nios_gpio.o.rx_mux_sel(i),
                 sync                =>  rx_mux_sel(i)
             );
     end generate;

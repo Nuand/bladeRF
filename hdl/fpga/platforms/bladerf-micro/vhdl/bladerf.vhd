@@ -48,9 +48,11 @@ entity bladerf is
     ps_sync_1p1         :   out     std_logic := '0';
     ps_sync_1p8         :   out     std_logic := '0';
 
-    -- Power monitor (3.3 V)
+    -- INA219 power monitor (3.3 V)
     pwr_sda             :   inout   std_logic := 'Z';
     pwr_scl             :   out     std_logic := 'Z';
+
+    -- TPS2115A power mux status
     pwr_status          :   in      std_logic;
 
     -- AD9361 RX Interface (2.5 V, LVDS)
