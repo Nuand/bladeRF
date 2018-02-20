@@ -28,6 +28,8 @@ library altera_mf ;
     use altera_mf.altera_mf_components.all ;
 
 library work ;
+    use work.bladerf_p.all;
+    use work.fifo_readwrite_p.all;
     use work.adsb_decoder_p.all ;
 
 architecture adsb_bladerf of bladerf is
@@ -35,63 +37,23 @@ architecture adsb_bladerf of bladerf is
     attribute noprune   : boolean ;
     attribute keep      : boolean ;
 
-    component nios_system is
-      port (
-        clk_clk                         :   in  std_logic := 'X'; -- clk
-        reset_reset_n                   :   in  std_logic := 'X'; -- reset_n
-        dac_MISO                        :   in  std_logic := 'X'; -- MISO
-        dac_MOSI                        :   out std_logic;        -- MOSI
-        dac_SCLK                        :   out std_logic;        -- SCLK
-        dac_SS_n                        :   out std_logic_vector(1 downto 0);        -- SS_n
-        spi_MISO                        :   in  std_logic := 'X'; -- MISO
-        spi_MOSI                        :   out std_logic;        -- MOSI
-        spi_SCLK                        :   out std_logic;        -- SCLK
-        spi_SS_n                        :   out std_logic;        -- SS_n
-        oc_i2c_scl_pad_o                :   out std_logic;
-        oc_i2c_scl_padoen_o             :   out std_logic;
-        oc_i2c_sda_pad_i                :   in  std_logic;
-        oc_i2c_sda_pad_o                :   out std_logic;
-        oc_i2c_sda_padoen_o             :   out std_logic;
-        oc_i2c_arst_i                   :   in  std_logic;
-        oc_i2c_scl_pad_i                :   in  std_logic;
-        gpio_export                     :   out std_logic_vector(31 downto 0);
-        xb_gpio_in_port                 :   in  std_logic_vector(31 downto 0) := (others => 'X');
-        xb_gpio_out_port                :   out std_logic_vector(31 downto 0);
-        xb_gpio_dir_export              :   out std_logic_vector(31 downto 0);
-        command_serial_in               :   in  std_logic ;
-        command_serial_out              :   out std_logic ;
-        correction_rx_phase_gain_export :   out std_logic_vector(31 downto 0);
-        correction_tx_phase_gain_export :   out std_logic_vector(31 downto 0);
-        rx_tamer_ts_sync_in             :   in  std_logic;
-        rx_tamer_ts_sync_out            :   out std_logic ;
-        rx_tamer_ts_pps                 :   in  std_logic ;
-        rx_tamer_ts_clock               :   in  std_logic ;
-        rx_tamer_ts_reset               :   in  std_logic;
-        rx_tamer_ts_time                :   out std_logic_vector(63 downto 0) ;
-        tx_tamer_ts_sync_in             :   in  std_logic;
-        tx_tamer_ts_sync_out            :   out std_logic ;
-        tx_tamer_ts_pps                 :   in  std_logic ;
-        tx_tamer_ts_clock               :   in  std_logic ;
-        tx_tamer_ts_reset               :   in  std_logic;
-        tx_tamer_ts_time                :   out std_logic_vector(63 downto 0);
-        vctcxo_tamer_tune_ref           :   in  std_logic;
-        vctcxo_tamer_vctcxo_clock       :   in  std_logic
-  );
-    end component;
-
     alias sys_rst   is fx3_ctl(7) ;
     alias tx_clock  is c4_tx_clock ;
     alias rx_clock  is lms_rx_clock_out ;
 
+    constant NUM_MIMO_STREAMS : natural := 1;
+
+    -- Can be set from libbladeRF using bladerf_set_rx_mux()
     type rx_mux_mode_t is (RX_MUX_NORMAL, RX_MUX_12BIT_COUNTER, RX_MUX_32BIT_COUNTER, RX_MUX_ENTROPY, RX_MUX_DIGITAL_LOOPBACK) ;
 
     signal rx_mux_sel       : unsigned(2 downto 0) ;
     signal rx_mux_mode      : rx_mux_mode_t ;
 
     signal \80MHz\          : std_logic ;
-    signal \80MHz locked\   : std_logic ;
 
-    signal nios_gpio        : std_logic_vector(31 downto 0) ;
+    signal nios_gpio        : nios_gpio_t;
+    signal nios_gpo_slv     : std_logic_vector(31 downto 0);
+
     signal nios_xb_gpio_in  : std_logic_vector(31 downto 0) ;
     signal nios_xb_gpio_out : std_logic_vector(31 downto 0) ;
     signal nios_xb_gpio_dir : std_logic_vector(31 downto 0) ;
@@ -108,47 +70,14 @@ architecture adsb_bladerf of bladerf is
     signal i2c_sda_out      : std_logic ;
     signal i2c_sda_oen      : std_logic ;
 
-    type fifo_t is record
-        aclr    :   std_logic ;
-
-        wclock  :   std_logic ;
-        wdata   :   std_logic_vector(127 downto 0) ;
-        wreq    :   std_logic ;
-        wempty  :   std_logic ;
-        wfull   :   std_logic ;
-        wused   :   std_logic_vector(9 downto 0) ;
-
-        rclock  :   std_logic ;
-        rdata   :   std_logic_vector(31 downto 0) ;
-        rreq    :   std_logic ;
-        rempty  :   std_logic ;
-        rfull   :   std_logic ;
-        rused   :   std_logic_vector(11 downto 0) ;
-    end record ;
-
-    signal rx_sample_fifo   : fifo_t ;
-
-    type meta_fifo_rx_t is record
-        aclr    :   std_logic ;
-
-        wclock  :   std_logic ;
-        wdata   :   std_logic_vector(127 downto 0) ;
-        wreq    :   std_logic ;
-        wempty  :   std_logic ;
-        wfull   :   std_logic ;
-        wused   :   std_logic_vector(4 downto 0) ;
-
-        rclock  :   std_logic ;
-        rdata   :   std_logic_vector(31 downto 0) ;
-        rreq    :   std_logic ;
-        rempty  :   std_logic ;
-        rfull   :   std_logic ;
-        rused   :   std_logic_vector(6 downto 0) ;
-    end record ;
-
+    signal rx_sample_fifo   : rx_fifo_t ;
+    signal tx_sample_fifo   : tx_fifo_t ;
+    signal rx_loopback_fifo : loopback_fifo_t ;
+    signal tx_meta_fifo     : meta_fifo_tx_t ;
     signal rx_meta_fifo     : meta_fifo_rx_t ;
 
     signal sys_rst_sync     : std_logic ;
+    signal sys_rst_80M      : std_logic ;
 
     signal usb_speed        : std_logic ;
     signal usb_speed_rx     : std_logic ;
@@ -188,7 +117,6 @@ architecture adsb_bladerf of bladerf is
     signal fx3_ctl_oe       : std_logic_vector(12 downto 0) ;
 
     signal rx_overflow_led      :   std_logic ;
-    signal rx_overflow_count    :   unsigned(63 downto 0) ;
 
     signal lms_rx_data_reg      :   signed(11 downto 0) ;
     signal lms_rx_iq_select_reg :   std_logic ;
@@ -208,8 +136,6 @@ architecture adsb_bladerf of bladerf is
     signal nios_sclk : std_logic;
     signal nios_ss_n : std_logic_vector(1 downto 0);
 
-    signal xb_mode  : std_logic_vector(1 downto 0);
-
     signal correction_valid : std_logic;
 
     signal correction_rx_phase :  signed(15 downto 0);--to_signed(integer(round(real(2**Q_SCALE) * PHASE_OFFSET)),DC_WIDTH);
@@ -221,7 +147,6 @@ architecture adsb_bladerf of bladerf is
     constant FPGA_DC_CORRECTION :  signed(15 downto 0) := to_signed(integer(0), 16);
 
     signal fx3_pclk_pll     :   std_logic ;
-    signal fx3_pll_locked   :   std_logic ;
 
     signal timestamp_req    :   std_logic ;
     signal timestamp_ack    :   std_logic ;
@@ -254,14 +179,14 @@ begin
       port map (
         inclk0              =>  c4_clock,
         c0                  =>  \80MHz\,
-        locked              =>  \80MHz locked\
+        locked              =>  open
       ) ;
 
     U_fx3_pll : entity work.fx3_pll
       port map (
         inclk0              =>  fx3_pclk,
         c0                  =>  fx3_pclk_pll,
-        locked              =>  fx3_pll_locked
+        locked              =>  open
       ) ;
 
     -- Cross domain synchronizer chains
@@ -271,7 +196,7 @@ begin
       ) port map (
         reset               =>  '0',
         clock               =>  fx3_pclk_pll,
-        async               =>  nios_gpio(7),
+        async               =>  nios_gpio.o.usb_speed,
         sync                =>  usb_speed
       ) ;
 
@@ -281,7 +206,7 @@ begin
       ) port map (
         reset               =>  '0',
         clock               =>  rx_clock,
-        async               =>  nios_gpio(7),
+        async               =>  nios_gpio.o.usb_speed,
         sync                =>  usb_speed_rx
       ) ;
 
@@ -292,7 +217,7 @@ begin
           ) port map (
             reset               =>  '0',
             clock               =>  rx_clock,
-            async               =>  nios_gpio(8+i),
+            async               =>  nios_gpio.o.rx_mux_sel(i),
             sync                =>  rx_mux_sel(i)
           ) ;
     end generate ;
@@ -303,7 +228,7 @@ begin
       ) port map (
         reset               =>  '0',
         clock               =>  fx3_pclk_pll,
-        async               =>  nios_gpio(16),
+        async               =>  nios_gpio.o.meta_en,
         sync                =>  meta_en_fx3
       ) ;
 
@@ -313,11 +238,9 @@ begin
       ) port map (
         reset               =>  '0',
         clock               =>  rx_clock,
-        async               =>  nios_gpio(16),
+        async               =>  nios_gpio.o.meta_en,
         sync                =>  meta_en_rx
       ) ;
-
-    xb_mode <= nios_gpio(31 downto 30);
 
     U_sys_reset_sync : entity work.reset_synchronizer
       generic map (
@@ -327,6 +250,16 @@ begin
         clock               =>  fx3_pclk_pll,
         async               =>  sys_rst,
         sync                =>  sys_rst_sync
+      ) ;
+
+    U_80M_reset_sync : entity work.reset_synchronizer
+      generic map (
+        INPUT_LEVEL         =>  '1',
+        OUTPUT_LEVEL        =>  '1'
+      ) port map (
+        clock               =>  \80MHz\,
+        async               =>  sys_rst,
+        sync                =>  sys_rst_80M
       ) ;
 
     U_rx_clock_reset : entity work.reset_synchronizer
@@ -376,6 +309,9 @@ begin
     rx_meta_fifo.wclock <= rx_clock ;
     rx_meta_fifo.rclock <= fx3_pclk_pll ;
     U_rx_meta_fifo : entity work.rx_meta_fifo
+      generic map (
+        LPM_NUMWORDS        => META_FIFO_RX_LENGTH
+      )
       port map (
         aclr                => rx_meta_fifo.aclr,
         data                => rx_meta_fifo.wdata,
@@ -663,8 +599,8 @@ begin
 
     fx3_ctl_in <= fx3_ctl ;
 
-    command_serial_in <= fx3_uart_txd when sys_rst_sync = '0' else '1' ;
-    fx3_uart_rxd <= command_serial_out when sys_rst_sync = '0' else 'Z' ;
+    command_serial_in <= fx3_uart_txd when sys_rst_80M = '0' else '1' ;
+    fx3_uart_rxd <= command_serial_out when sys_rst_80M = '0' else 'Z' ;
 
     -- NIOS control system for si5338, vctcxo trim and lms control
     U_nios_system : component nios_system
@@ -679,7 +615,7 @@ begin
         spi_MOSI                        => lms_sdio,
         spi_SCLK                        => lms_sclk,
         spi_SS_n                        => lms_sen,
-        gpio_export                     => nios_gpio,
+        gpio_export                     => nios_gpo_slv,
         xb_gpio_in_port                 => nios_xb_gpio_in,
         xb_gpio_out_port                => nios_xb_gpio_out,
         xb_gpio_dir_export              => nios_xb_gpio_dir,
@@ -710,12 +646,18 @@ begin
         vctcxo_tamer_vctcxo_clock       => c4_clock
       ) ;
 
+    -- Unpack the Nios general-purpose outputs into a record
+    nios_gpio.o <= unpack(nios_gpo_slv);
+
+    -- Readback of Nios general-purpose outputs
+    nios_gpio.i.gpo_readback <= nios_gpio.o;
+
     xb_gpio_direction : process(all)
     begin
         for i in 0 to 31 loop
             if (xb_gpio_dir(i) = '1') then
                 nios_xb_gpio_in(i) <= nios_xb_gpio_out(i);
-                if (xb_mode = "10" and i + 1 = 2) then
+                if (nios_gpio.o.xb_mode = "10" and i + 1 = 2) then
                     exp_gpio(i+1) <= nios_ss_n(1);
                 elsif (i + 1 /= 1) then
                     exp_gpio(i+1) <= nios_xb_gpio_out(i);
@@ -731,18 +673,18 @@ begin
         end loop ;
     end process ;
 
-    nios_gpio(20 downto 19) <= nios_ss_n;
-    nios_gpio(22 downto 21) <= xb_mode;
+    nios_gpio.i.nios_ss_n <= nios_ss_n;
+    nios_gpio.i.xb_mode2  <= nios_gpio.o.xb_mode;
 
     dac_cs_selection : process(all)
     begin
         dac_sclk <= nios_sclk ;
         dac_sdi <= nios_sdio ;
         nios_sdo <= dac_sdo ;
-        if( xb_mode = "00" ) then
+        if( nios_gpio.o.xb_mode = "00" ) then
             xb_gpio_dir <= nios_xb_gpio_dir(31 downto 0);
             dac_csx <= nios_ss_n(0);
-        elsif( xb_mode = "10" ) then
+        elsif( nios_gpio.o.xb_mode = "10" ) then
             xb_gpio_dir <= nios_xb_gpio_dir(31 downto 0);
             if (nios_ss_n(1 downto 0) = "10") then --
                 dac_csx <= '0';
@@ -776,17 +718,17 @@ begin
         end if ;
     end process ;
 
-    led(1) <= led1_blink        when nios_gpio(15) = '0' else not nios_gpio(12);
+    led(1) <= led1_blink        when nios_gpio.o.led_mode = '0' else not nios_gpio.o.leds(1);
     led(2) <= '1' ;
-    led(3) <= rx_overflow_led   when nios_gpio(15) = '0' else not nios_gpio(14);
+    led(3) <= rx_overflow_led   when nios_gpio.o.led_mode = '0' else not nios_gpio.o.leds(3);
 
-    lms_reset               <= nios_gpio(0) ;
+    lms_reset               <= nios_gpio.o.lms_reset;
 
-    lms_rx_enable           <= nios_gpio(1) ;
-    lms_tx_enable           <= nios_gpio(2) ;
+    lms_rx_enable           <= nios_gpio.o.lms_rx_enable;
+    lms_tx_enable           <= nios_gpio.o.lms_tx_enable;
 
-    lms_tx_v                <= nios_gpio(4 downto 3) ;
-    lms_rx_v                <= nios_gpio(6 downto 5) ;
+    lms_tx_v                <= nios_gpio.o.lms_tx_v;
+    lms_rx_v                <= nios_gpio.o.lms_rx_v;
 
     -- CTS and the SPI CSx are tied to the same signal.  When we are in reset, allow for SPI accesses
     fx3_uart_cts            <= '1' when sys_rst_sync = '0' else 'Z'  ;
@@ -843,4 +785,3 @@ begin
       ) ;
 
 end architecture ; -- arch
-

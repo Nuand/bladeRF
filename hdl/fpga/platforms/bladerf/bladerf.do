@@ -9,6 +9,7 @@ proc compile_bladerf { root } {
     vcom -work nuand -2008 [file join $root ./vhdl/fx3.vhd]
     vcom -work nuand -2008 [file join $root ./vhdl/bladerf_debug_p.vhd]
     vcom -work nuand -2008 [file join $root ./vhdl/ramp.vhd]
+    vcom -work nuand -2008 [file join $root ./vhdl/bladerf_p.vhd]
     vcom -work nuand -2008 [file join $root ./vhdl/bladerf.vhd]
 	
     vcom -work nuand -2008 [file join $root ./vhdl/tb/bladerf_tb.vhd]

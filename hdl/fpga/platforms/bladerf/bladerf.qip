@@ -4,6 +4,9 @@ set altera_ip [file normalize [file join $here ../../ip/altera]]
 set adi_ip    [file normalize [file join $here ../../ip/analogdevicesinc]]
 set nuand_ip  [file normalize [file join $here ../../ip/nuand]]
 
+# Platform packages
+set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/bladerf_p.vhd]]
+
 # Top level entity and pin constraints
 set_global_assignment -name VHDL_FILE [file normalize [file join $here vhdl/bladerf.vhd]]
 
