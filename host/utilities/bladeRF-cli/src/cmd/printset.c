@@ -88,6 +88,7 @@ struct printset_entry {
 PRINTSET_DECL(ad9361);
 PRINTSET_DECL(adf_enable);
 PRINTSET_DECL(agc);
+PRINTSET_DECL(power_source);
 PRINTSET_DECL(bandwidth);
 PRINTSET_DECL(biastee);
 PRINTSET_DECL(frequency);
@@ -117,6 +118,7 @@ struct printset_entry printset_table[] = {
     PRINTSET_ENTRY(bandwidth,    PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
     PRINTSET_ENTRY(frequency,    PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
     PRINTSET_ENTRY(agc,          PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
+    READONLY_ENTRY(power_source, PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF2),
     PRINTSET_ENTRY(gpio,         PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF1),
     READONLY_ENTRY(ad9361,       PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF2),
     READONLY_ENTRY(rfconfig,     PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF2),
@@ -1826,6 +1828,34 @@ int print_ad9361(struct cli_state *state, int argc, char **argv)
 
     printf("  AD9361 RFIC status:\n");
     printf("    Temperature: %4.1f degrees C\n", temperature);
+
+    return 0;
+}
+
+int print_power_source(struct cli_state *state, int argc, char **argv)
+{
+    int status;
+    int *err = &state->last_lib_error;
+    bladerf_power_sources src;
+
+    status = bladerf_get_power_source(state->dev, &src);
+    if (status < 0) {
+        *err = status;
+        return CLI_RET_LIBBLADERF;
+    }
+
+    printf("  Power source: ");
+    switch( src ) {
+    case BLADERF_PS_DC:
+        printf("DC Barrel\n");
+        break;
+    case BLADERF_PS_USB_VBUS:
+        printf("USB Bus\n");
+        break;
+    default:
+        printf("Unknown. May require manual observation.\n");
+        break;
+    }
 
     return 0;
 }
