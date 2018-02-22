@@ -244,6 +244,37 @@ int CALL_CONV bladerf_adf4002_write(struct bladerf *dev,
 /** @} (End of FN_BLADERF2_LOW_LEVEL_ADF4002) */
 
 /**
+ * @defgroup FN_BLADERF2_LOW_LEVEL_POWER_SOURCE TPS2115A Auto Power Multiplexer
+ *
+ * @{
+ */
+
+/**
+ * Power sources
+ */
+typedef enum {
+    BLADERF_UNKNOWN,     /**< Unknown; manual observation may be required */
+    BLADERF_PS_DC,       /**< DC Barrel Plug */
+    BLADERF_PS_USB_VBUS  /**< USB Bus */
+} bladerf_power_sources;
+
+/**
+ * Get the active power source reported by the TPS2115A
+ *
+ * Reference: http://www.ti.com/product/TPS2115A
+ *
+ * @param       dev     Device handle
+ * @param[out]  val     Value read from TPS2115A
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_power_source(struct bladerf *dev,
+                                       bladerf_power_sources *val);
+
+/** @} (End of FN_BLADERF2_LOW_LEVEL_POWER_SOURCE) */
+
+/**
  * @defgroup FN_BLADERF2_LOW_LEVEL_INA219 INA219 Current/Power Monitor
  *
  * @{

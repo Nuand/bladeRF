@@ -4385,6 +4385,48 @@ int bladerf_adf4002_write(struct bladerf *dev, uint8_t address, uint32_t val)
 }
 
 /******************************************************************************/
+/* Low level Power Source Accessors */
+/******************************************************************************/
+
+int bladerf_get_power_source(struct bladerf *dev, bladerf_power_sources *src)
+{
+    int status;
+    uint32_t data;
+
+    if (NULL == dev) {
+        RETURN_INVAL("dev", "not initialized");
+    }
+
+    if (NULL == src) {
+        RETURN_INVAL("src", "is null");
+    }
+
+    if (dev->board != &bladerf2_board_fns) {
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
+
+    status = dev->backend->config_gpio_read(dev, &data);
+    if (status < 0) {
+        MUTEX_UNLOCK(&dev->lock);
+        RETURN_ERROR_STATUS("config_gpio_read", status);
+    }
+
+    if( (data >> 0) & 0x01 ) {
+        *src = BLADERF_PS_USB_VBUS;
+    } else {
+        *src = BLADERF_PS_DC;
+    }
+
+    MUTEX_UNLOCK(&dev->lock);
+
+    return 0;
+}
+
+/******************************************************************************/
 /* Low level INA219 Accessors */
 /******************************************************************************/
 
