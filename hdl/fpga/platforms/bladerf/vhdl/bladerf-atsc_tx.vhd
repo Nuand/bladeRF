@@ -809,22 +809,18 @@ begin
     nios_gpio.i.nios_ss_n <= nios_ss_n;
     nios_gpio.i.xb_mode2  <= nios_gpio.o.xb_mode;
 
-    process(all)
+    dac_cs_selection : process(all)
     begin
+        dac_sclk <= nios_sclk ;
+        dac_sdi <= nios_sdio ;
+        nios_sdo <= dac_sdo ;
         if( nios_gpio.o.xb_mode = "00" ) then
             xb_gpio_dir <= nios_xb_gpio_dir(31 downto 0);
-            dac_sclk <= nios_sclk;
             dac_csx <= nios_ss_n(0);
-            nios_sdo <= dac_sdo;
-            dac_sdi <= nios_sdio;
-            -- missing 30-32
         elsif( nios_gpio.o.xb_mode = "10" ) then
             xb_gpio_dir <= nios_xb_gpio_dir(31 downto 0);
             if (nios_ss_n(1 downto 0) = "10") then --
-                dac_sclk <= nios_sclk;
                 dac_csx <= '0';
-                nios_sdo <= dac_sdo;
-                dac_sdi <= nios_sdio;
             elsif (nios_ss_n(1 downto 0) = "01") then
                 dac_csx <= '1';
             else
@@ -832,6 +828,7 @@ begin
             end if;
         else
             xb_gpio_dir <= nios_xb_gpio_dir(31 downto 0)  ;
+            dac_csx <= nios_ss_n(0) ;
         end if;
     end process;
 
