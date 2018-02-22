@@ -270,13 +270,13 @@ begin
 
     --strip symbols
     pull_symbols : process(clock,reset)
-        variable downcount : natural range 0 to 5;
-        variable cps_downcount : natural range 0 to 5;
+        constant DOWNCOUNT_RESET : natural range 0 to 5 := 2;
+        variable downcount       : natural range 0 to 5 := DOWNCOUNT_RESET;
     begin
        --
         if (reset = '1') then
             symbol_bits_request <= '0';
-            downcount := 2;
+            downcount := DOWNCOUNT_RESET;
         elsif rising_edge(clock) then
 
             if strip_enable = '1' then
