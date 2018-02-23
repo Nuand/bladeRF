@@ -66,11 +66,11 @@ architecture atsc_tx of bladerf is
     signal i2c_sda_out      : std_logic ;
     signal i2c_sda_oen      : std_logic ;
 
-    signal rx_sample_fifo   : rx_fifo_t ;
-    signal tx_sample_fifo   : tx_fifo_t ;
-    signal rx_loopback_fifo : loopback_fifo_t ;
-    signal tx_meta_fifo     : meta_fifo_tx_t ;
-    signal rx_meta_fifo     : meta_fifo_rx_t ;
+    signal rx_sample_fifo   : rx_fifo_t       := RX_FIFO_T_DEFAULT;
+    signal tx_sample_fifo   : tx_fifo_t       := TX_FIFO_T_DEFAULT;
+    signal rx_meta_fifo     : meta_fifo_rx_t  := META_FIFO_RX_T_DEFAULT;
+    signal tx_meta_fifo     : meta_fifo_tx_t  := META_FIFO_TX_T_DEFAULT;
+    signal rx_loopback_fifo : loopback_fifo_t := LOOPBACK_FIFO_T_DEFAULT;
 
     signal sys_rst_sync     : std_logic ;
     signal sys_rst_80M      : std_logic ;
@@ -92,7 +92,6 @@ architecture atsc_tx of bladerf is
     signal meta_en_rx       : std_logic ;
     signal meta_en_fx3      : std_logic ;
     signal tx_timestamp     : unsigned(63 downto 0) ;
-    signal rx_timestamp     : unsigned(63 downto 0) ;
     signal timestamp_sync   : std_logic ;
 
     signal rx_sample_i      : signed(15 downto 0) ;
@@ -105,10 +104,6 @@ architecture atsc_tx of bladerf is
     signal rx_gen_i         : signed(15 downto 0) ;
     signal rx_gen_q         : signed(15 downto 0) ;
     signal rx_gen_valid     : std_logic ;
-
-    signal rx_entropy_i     : signed(15 downto 0) := (others =>'0') ;
-    signal rx_entropy_q     : signed(15 downto 0) := (others =>'0') ;
-    signal rx_entropy_valid : std_logic := '0' ;
 
     signal tx_sample_raw_i : signed(15 downto 0);
     signal tx_sample_raw_q : signed(15 downto 0);
@@ -690,9 +685,9 @@ begin
                         rx_gen_mode <= '0' ;
                     end if ;
                 when RX_MUX_ENTROPY =>
-                    rx_mux_i <= rx_entropy_i ;
-                    rx_mux_q <= rx_entropy_q ;
-                    rx_mux_valid <= rx_entropy_valid ;
+                    rx_mux_i     <= (others => '0');
+                    rx_mux_q     <= (others => '0');
+                    rx_mux_valid <= '0';
                 when RX_MUX_DIGITAL_LOOPBACK =>
                     rx_mux_i <= tx_sample_raw_i ;
                     rx_mux_q <= tx_sample_raw_q ;
@@ -768,7 +763,7 @@ begin
         rx_tamer_ts_pps                 => '0',
         rx_tamer_ts_clock               => rx_clock,
         rx_tamer_ts_reset               => rx_ts_reset,
-        unsigned(rx_tamer_ts_time)      => rx_timestamp,
+        unsigned(rx_tamer_ts_time)      => open,
         tx_tamer_ts_sync_in             => '0',
         tx_tamer_ts_sync_out            => open,
         tx_tamer_ts_pps                 => '0',
