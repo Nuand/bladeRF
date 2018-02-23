@@ -66,11 +66,11 @@ architecture hosted_bladerf of bladerf is
     signal i2c_sda_out      : std_logic ;
     signal i2c_sda_oen      : std_logic ;
 
-    signal rx_sample_fifo   : rx_fifo_t ;
-    signal tx_sample_fifo   : tx_fifo_t ;
-    signal rx_loopback_fifo : loopback_fifo_t ;
-    signal tx_meta_fifo     : meta_fifo_tx_t ;
-    signal rx_meta_fifo     : meta_fifo_rx_t ;
+    signal rx_sample_fifo   : rx_fifo_t       := RX_FIFO_T_DEFAULT;
+    signal tx_sample_fifo   : tx_fifo_t       := TX_FIFO_T_DEFAULT;
+    signal rx_meta_fifo     : meta_fifo_rx_t  := META_FIFO_RX_T_DEFAULT;
+    signal tx_meta_fifo     : meta_fifo_tx_t  := META_FIFO_TX_T_DEFAULT;
+    signal rx_loopback_fifo : loopback_fifo_t := LOOPBACK_FIFO_T_DEFAULT;
 
     signal sys_rst_sync     : std_logic ;
     signal sys_rst_80M      : std_logic ;

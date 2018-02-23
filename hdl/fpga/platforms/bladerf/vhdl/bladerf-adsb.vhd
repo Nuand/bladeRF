@@ -70,11 +70,11 @@ architecture adsb_bladerf of bladerf is
     signal i2c_sda_out      : std_logic ;
     signal i2c_sda_oen      : std_logic ;
 
-    signal rx_sample_fifo   : rx_fifo_t ;
-    signal tx_sample_fifo   : tx_fifo_t ;
-    signal rx_loopback_fifo : loopback_fifo_t ;
-    signal tx_meta_fifo     : meta_fifo_tx_t ;
-    signal rx_meta_fifo     : meta_fifo_rx_t ;
+    signal rx_sample_fifo   : rx_fifo_t       := RX_FIFO_T_DEFAULT;
+    signal tx_sample_fifo   : tx_fifo_t       := TX_FIFO_T_DEFAULT;
+    signal rx_meta_fifo     : meta_fifo_rx_t  := META_FIFO_RX_T_DEFAULT;
+    signal tx_meta_fifo     : meta_fifo_tx_t  := META_FIFO_TX_T_DEFAULT;
+    signal rx_loopback_fifo : loopback_fifo_t := LOOPBACK_FIFO_T_DEFAULT;
 
     signal sys_rst_sync     : std_logic ;
     signal sys_rst_80M      : std_logic ;
@@ -103,10 +103,6 @@ architecture adsb_bladerf of bladerf is
     signal rx_gen_i         : signed(15 downto 0) ;
     signal rx_gen_q         : signed(15 downto 0) ;
     signal rx_gen_valid     : std_logic ;
-
-    signal rx_entropy_i     : signed(15 downto 0) := (others =>'0') ;
-    signal rx_entropy_q     : signed(15 downto 0) := (others =>'0') ;
-    signal rx_entropy_valid : std_logic := '0' ;
 
     signal fx3_gpif_in      : std_logic_vector(31 downto 0) ;
     signal fx3_gpif_out     : std_logic_vector(31 downto 0) ;
@@ -562,9 +558,9 @@ begin
                         rx_gen_mode <= '0' ;
                     end if ;
                 when RX_MUX_ENTROPY =>
-                    rx_mux_i <= rx_entropy_i ;
-                    rx_mux_q <= rx_entropy_q ;
-                    rx_mux_valid <= rx_entropy_valid ;
+                    rx_mux_i     <= (others => '0');
+                    rx_mux_q     <= (others => '0');
+                    rx_mux_valid <= '0';
                 when others =>
                     rx_mux_i <= (others =>'0') ;
                     rx_mux_q <= (others =>'0') ;
