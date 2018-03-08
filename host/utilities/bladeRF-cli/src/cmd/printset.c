@@ -89,6 +89,7 @@ PRINTSET_DECL(ad9361);
 PRINTSET_DECL(adf_enable);
 PRINTSET_DECL(agc);
 PRINTSET_DECL(power_source);
+PRINTSET_DECL(clock_sel);
 PRINTSET_DECL(bandwidth);
 PRINTSET_DECL(biastee);
 PRINTSET_DECL(frequency);
@@ -119,6 +120,7 @@ struct printset_entry printset_table[] = {
     PRINTSET_ENTRY(frequency,    PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
     PRINTSET_ENTRY(agc,          PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
     READONLY_ENTRY(power_source, PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF2),
+    PRINTSET_ENTRY(clock_sel,    PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF2),
     PRINTSET_ENTRY(gpio,         PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF1),
     READONLY_ENTRY(ad9361,       PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF2),
     READONLY_ENTRY(rfconfig,     PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF2),
@@ -1858,6 +1860,66 @@ int print_power_source(struct cli_state *state, int argc, char **argv)
     }
 
     return 0;
+}
+
+int print_clock_sel(struct cli_state *state, int argc, char **argv)
+{
+    int status;
+    const char *clock_str;
+    bladerf_clock_select clock_sel;
+    int *err = &state->last_lib_error;
+
+    status = bladerf_get_clock_select(state->dev, &clock_sel);
+    if (status < 0) {
+        *err = status;
+        return CLI_RET_LIBBLADERF;
+    }
+
+    switch (clock_sel) {
+        case CLOCK_SELECT_VCTCXO:
+            clock_str = "Onboard VCTCXO";
+            break;
+        case CLOCK_SELECT_EXTERNAL:
+            clock_str = "External";
+            break;
+        default:
+            clock_str = "Unknown";
+    }
+
+    printf("  Clock input: %s\n", clock_str);
+
+    return 0;
+}
+
+int set_clock_sel(struct cli_state *state, int argc, char **argv)
+{
+    int rv   = CLI_RET_OK;
+    int *err = &state->last_lib_error;
+    bladerf_clock_select clock_sel;
+    int status;
+
+    if (argc != 3) {
+        return CLI_RET_NARGS;
+    }
+
+    if( !strcasecmp(argv[2], "VCTCXO") ) {
+        clock_sel = CLOCK_SELECT_VCTCXO;
+    } else if( !strcasecmp(argv[2], "EXTERNAL") ) {
+        clock_sel = CLOCK_SELECT_EXTERNAL;
+    } else {
+        cli_err_nnl(state, "Invalid clock source selection", "%s\n", argv[2]);
+        return CLI_RET_INVPARAM;
+    }
+
+    status = bladerf_set_clock_select(state->dev, clock_sel);
+    if (status < 0) {
+        *err = status;
+        rv   = CLI_RET_LIBBLADERF;
+    } else {
+        rv = print_clock_sel(state, 2, argv);
+    }
+
+    return rv;
 }
 
 static char const *_ad9361_rx_portstr(uint32_t port)
