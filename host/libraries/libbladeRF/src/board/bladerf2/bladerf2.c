@@ -4427,6 +4427,97 @@ int bladerf_get_power_source(struct bladerf *dev, bladerf_power_sources *src)
 }
 
 /******************************************************************************/
+/* Low level clock source selection accessors */
+/******************************************************************************/
+
+int bladerf_get_clock_select(struct bladerf *dev,
+                             bladerf_clock_select *sel)
+{
+    int status;
+    uint32_t gpio;
+
+    if (NULL == dev) {
+        RETURN_INVAL("dev", "not initialized");
+    }
+
+    if (NULL == sel) {
+        RETURN_INVAL("sel", "is null");
+    }
+
+    if (dev->board != &bladerf2_board_fns) {
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
+
+    status = dev->backend->config_gpio_read(dev, &gpio);
+    if (status < 0) {
+        MUTEX_UNLOCK(&dev->lock);
+        RETURN_ERROR_STATUS("config_gpio_read", status);
+    }
+
+    if( (gpio & (1 << 18)) == 0x0 ) {
+        *sel = CLOCK_SELECT_VCTCXO;
+    } else {
+        *sel = CLOCK_SELECT_EXTERNAL;
+    }
+
+    MUTEX_UNLOCK(&dev->lock);
+
+    return 0;
+}
+
+int bladerf_set_clock_select(struct bladerf *dev,
+                             bladerf_clock_select sel)
+{
+    int status;
+    uint32_t gpio;
+
+    if (NULL == dev) {
+        RETURN_INVAL("dev", "not initialized");
+    }
+
+    if (dev->board != &bladerf2_board_fns) {
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
+
+    status = dev->backend->config_gpio_read(dev, &gpio);
+    if (status < 0) {
+        MUTEX_UNLOCK(&dev->lock);
+        RETURN_ERROR_STATUS("config_gpio_read", status);
+    }
+
+    // Set the clock select bit(s) accordingly
+    switch(sel) {
+        case CLOCK_SELECT_VCTCXO:
+            gpio &= ~(1 << 18);
+            break;
+        case CLOCK_SELECT_EXTERNAL:
+            gpio |= (1 << 18);
+            break;
+        default:
+            break;
+    }
+
+    // Write back the config GPIO
+    status = dev->backend->config_gpio_write(dev, gpio);
+    if (status < 0) {
+        MUTEX_UNLOCK(&dev->lock);
+        RETURN_ERROR_STATUS("config_gpio_write", status);
+    }
+
+    MUTEX_UNLOCK(&dev->lock);
+
+    return 0;
+}
+
+/******************************************************************************/
 /* Low level INA219 Accessors */
 /******************************************************************************/
 

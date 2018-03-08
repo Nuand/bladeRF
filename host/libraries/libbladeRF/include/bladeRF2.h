@@ -275,6 +275,50 @@ int CALL_CONV bladerf_get_power_source(struct bladerf *dev,
 /** @} (End of FN_BLADERF2_LOW_LEVEL_POWER_SOURCE) */
 
 /**
+ * @defgroup FN_BLADERF2_LOW_LEVEL_CLOCK_SELECT SI53304 clock input selection
+ *
+ * @{
+ */
+
+/**
+ * Available clock sources
+ */
+typedef enum {
+    CLOCK_SELECT_VCTCXO,   /**< Use onboard VCTCXO */
+    CLOCK_SELECT_EXTERNAL  /**< Use external clock input */
+} bladerf_clock_select;
+
+/**
+ * Get the selected clock source
+ *
+ * Reference: https://www.silabs.com/documents/public/data-sheets/Si53304.pdf
+ *
+ * @param       dev     Device handle
+ * @param[out]  sel     Clock input source currently in use
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_clock_select(struct bladerf *dev,
+                                       bladerf_clock_select *sel);
+
+/**
+ * Set the clock source
+ *
+ * Reference: https://www.silabs.com/documents/public/data-sheets/Si53304.pdf
+ *
+ * @param       dev     Device handle
+ * @param[in]   sel     Clock input source to use
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_clock_select(struct bladerf *dev,
+                                       bladerf_clock_select sel);
+
+/** @} (End of FN_BLADERF2_LOW_LEVEL_CLOCK_SELECT) */
+
+/**
  * @defgroup FN_BLADERF2_LOW_LEVEL_INA219 INA219 Current/Power Monitor
  *
  * @{
