@@ -4518,6 +4518,85 @@ int bladerf_set_clock_select(struct bladerf *dev,
 }
 
 /******************************************************************************/
+/* Low level SI53304 clock output accessors */
+/******************************************************************************/
+
+int bladerf_get_clock_output(struct bladerf *dev,
+                             bool *state)
+{
+    int status;
+    uint32_t gpio;
+
+    if (NULL == dev) {
+        RETURN_INVAL("dev", "not initialized");
+    }
+
+    if (NULL == state) {
+        RETURN_INVAL("state", "is null");
+    }
+
+    if (dev->board != &bladerf2_board_fns) {
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
+
+    status = dev->backend->config_gpio_read(dev, &gpio);
+    if (status < 0) {
+        MUTEX_UNLOCK(&dev->lock);
+        RETURN_ERROR_STATUS("config_gpio_read", status);
+    }
+
+    *state = ((gpio & (1 << 17)) != 0x0);
+
+    MUTEX_UNLOCK(&dev->lock);
+
+    return 0;
+}
+
+int bladerf_set_clock_output(struct bladerf *dev,
+                             bool enable)
+{
+    int status;
+    uint32_t gpio;
+
+    if (NULL == dev) {
+        RETURN_INVAL("dev", "not initialized");
+    }
+
+    if (dev->board != &bladerf2_board_fns) {
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
+
+    status = dev->backend->config_gpio_read(dev, &gpio);
+    if (status < 0) {
+        MUTEX_UNLOCK(&dev->lock);
+        RETURN_ERROR_STATUS("config_gpio_read", status);
+    }
+
+    // Set or clear the clock output enable bit
+    gpio &= ~(1 << 17);
+    gpio |= ((enable ? 1 : 0) << 17);
+
+    // Write back the config GPIO
+    status = dev->backend->config_gpio_write(dev, gpio);
+    if (status < 0) {
+        MUTEX_UNLOCK(&dev->lock);
+        RETURN_ERROR_STATUS("config_gpio_write", status);
+    }
+
+    MUTEX_UNLOCK(&dev->lock);
+
+    return 0;
+}
+
+/******************************************************************************/
 /* Low level INA219 Accessors */
 /******************************************************************************/
 

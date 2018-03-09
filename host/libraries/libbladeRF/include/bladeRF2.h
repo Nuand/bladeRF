@@ -319,6 +319,38 @@ int CALL_CONV bladerf_set_clock_select(struct bladerf *dev,
 /** @} (End of FN_BLADERF2_LOW_LEVEL_CLOCK_SELECT) */
 
 /**
+ * @defgroup FN_BLADERF2_LOW_LEVEL_SI53304_CLOCK_OUTPUT
+ *
+ * @{
+ */
+
+/**
+ * Get the current state of the clock output
+ *
+ * @param       dev     Device handle
+ * @param[out]  state   Clock output state
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_get_clock_output(struct bladerf *dev,
+                                       bool *state);
+
+/**
+ * Set the clock output (enable/disable)
+ *
+ * @param       dev     Device handle
+ * @param[in]   enable  Clock output enable
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_set_clock_output(struct bladerf *dev,
+                                       bool enable);
+
+/** @} (End of FN_BLADERF2_LOW_LEVEL_SI53304_CLOCK_OUTPUT) */
+
+/**
  * @defgroup FN_BLADERF2_LOW_LEVEL_INA219 INA219 Current/Power Monitor
  *
  * @{
