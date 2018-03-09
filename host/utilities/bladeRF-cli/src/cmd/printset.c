@@ -90,6 +90,7 @@ PRINTSET_DECL(adf_enable);
 PRINTSET_DECL(agc);
 PRINTSET_DECL(power_source);
 PRINTSET_DECL(clock_sel);
+PRINTSET_DECL(clock_out);
 PRINTSET_DECL(bandwidth);
 PRINTSET_DECL(biastee);
 PRINTSET_DECL(frequency);
@@ -121,6 +122,7 @@ struct printset_entry printset_table[] = {
     PRINTSET_ENTRY(agc,          PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
     READONLY_ENTRY(power_source, PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF2),
     PRINTSET_ENTRY(clock_sel,    PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF2),
+    PRINTSET_ENTRY(clock_out,    PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF2),
     PRINTSET_ENTRY(gpio,         PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF1),
     READONLY_ENTRY(ad9361,       PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF2),
     READONLY_ENTRY(rfconfig,     PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF2),
@@ -1917,6 +1919,56 @@ int set_clock_sel(struct cli_state *state, int argc, char **argv)
         rv   = CLI_RET_LIBBLADERF;
     } else {
         rv = print_clock_sel(state, 2, argv);
+    }
+
+    return rv;
+}
+
+int print_clock_out(struct cli_state *state, int argc, char **argv)
+{
+    int status;
+    bool enabled;
+    int *err = &state->last_lib_error;
+
+    status = bladerf_get_clock_output(state->dev, &enabled);
+    if (status < 0) {
+        *err = status;
+        return CLI_RET_LIBBLADERF;
+    }
+
+    printf("  Clock output: %s\n", (enabled ? "Enabled" : "Disabled"));
+
+    return 0;
+}
+
+int set_clock_out(struct cli_state *state, int argc, char **argv)
+{
+    int rv   = CLI_RET_OK;
+    int *err = &state->last_lib_error;
+    bool enable;
+    int status;
+
+    if (argc != 3) {
+        return CLI_RET_NARGS;
+    }
+
+    if( !strcasecmp(argv[2], "ENABLE") ||
+        !strcasecmp(argv[2], "1") ) {
+        enable = true;
+    } else if( !strcasecmp(argv[2], "DISABLE") ||
+               !strcasecmp(argv[2], "0") ) {
+        enable = false;
+    } else {
+        cli_err_nnl(state, "Invalid clock output setting", "%s\n", argv[2]);
+        return CLI_RET_INVPARAM;
+    }
+
+    status = bladerf_set_clock_output(state->dev, enable);
+    if (status < 0) {
+        *err = status;
+        rv   = CLI_RET_LIBBLADERF;
+    } else {
+        rv = print_clock_out(state, 2, argv);
     }
 
     return rv;
