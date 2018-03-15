@@ -275,7 +275,13 @@ int CALL_CONV bladerf_get_power_source(struct bladerf *dev,
 /** @} (End of FN_BLADERF2_LOW_LEVEL_POWER_SOURCE) */
 
 /**
- * @defgroup FN_BLADERF2_LOW_LEVEL_CLOCK_SELECT SI53304 clock input selection
+ * @defgroup FN_BLADERF2_LOW_LEVEL_SI53304 Si53304 Clock Buffer
+ *
+ * @{
+ */
+
+/**
+ * @defgroup FN_BLADERF2_LOW_LEVEL_SI53304_CLOCK_SELECT Clock input selection
  *
  * @{
  */
@@ -316,10 +322,10 @@ API_EXPORT
 int CALL_CONV bladerf_set_clock_select(struct bladerf *dev,
                                        bladerf_clock_select sel);
 
-/** @} (End of FN_BLADERF2_LOW_LEVEL_CLOCK_SELECT) */
+/** @} (End of FN_BLADERF2_LOW_LEVEL_SI53304_CLOCK_SELECT) */
 
 /**
- * @defgroup FN_BLADERF2_LOW_LEVEL_SI53304_CLOCK_OUTPUT
+ * @defgroup FN_BLADERF2_LOW_LEVEL_SI53304_CLOCK_OUTPUT Clock output control
  *
  * @{
  */
@@ -349,6 +355,8 @@ int CALL_CONV bladerf_set_clock_output(struct bladerf *dev,
                                        bool enable);
 
 /** @} (End of FN_BLADERF2_LOW_LEVEL_SI53304_CLOCK_OUTPUT) */
+
+/** @} (End of FN_BLADERF2_LOW_LEVEL_SI53304) */
 
 /**
  * @defgroup FN_BLADERF2_LOW_LEVEL_INA219 INA219 Current/Power Monitor
