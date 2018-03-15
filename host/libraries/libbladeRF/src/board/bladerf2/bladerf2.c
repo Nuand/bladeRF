@@ -4085,6 +4085,68 @@ int bladerf_ad9361_temperature(struct bladerf *dev, float *val)
     return 0;
 }
 
+int bladerf_ad9361_get_rssi(struct bladerf *dev,
+                            bladerf_channel ch,
+                            int *pre_rssi,
+                            int *sym_rssi)
+{
+    struct bladerf2_board_data *board_data;
+    struct ad9361_rf_phy *phy;
+    int status;
+    int32_t pre, sym;
+
+    if (NULL == dev) {
+        RETURN_INVAL("dev", "not initialized");
+    }
+
+    if (dev->board != &bladerf2_board_fns) {
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    MUTEX_LOCK(&dev->lock);
+
+    CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
+
+    board_data = dev->board_data;
+    phy        = board_data->phy;
+
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
+        uint32_t rssi = 0;
+
+        status = ad9361_get_tx_rssi(phy, ch >> 1, &rssi);
+        if (status < 0) {
+            MUTEX_UNLOCK(&dev->lock);
+            RETURN_ERROR_AD9361("ad9361_get_tx_rssi", status);
+        }
+
+        pre = rssi / 1000.0;
+        sym = rssi / 1000.0;
+    } else {
+        struct rf_rssi rssi;
+
+        status = ad9361_get_rx_rssi(phy, ch >> 1, &rssi);
+        if (status < 0) {
+            MUTEX_UNLOCK(&dev->lock);
+            RETURN_ERROR_AD9361("ad9361_get_rx_rssi", status);
+        }
+
+        pre = rssi.preamble / rssi.multiplier;
+        sym = rssi.symbol / rssi.multiplier;
+    }
+
+    if (NULL != pre_rssi) {
+        *pre_rssi = -pre;
+    }
+
+    if (NULL != sym_rssi) {
+        *sym_rssi = -sym;
+    }
+
+    MUTEX_UNLOCK(&dev->lock);
+
+    return 0;
+}
+
 /******************************************************************************/
 /* Low level ADF4002 Accessors */
 /******************************************************************************/

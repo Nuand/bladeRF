@@ -127,6 +127,30 @@ int CALL_CONV bladerf_ad9361_write(struct bladerf *dev,
 API_EXPORT
 int CALL_CONV bladerf_ad9361_temperature(struct bladerf *dev, float *val);
 
+/**
+ * Read the RSSI for the selected channel from the AD9361 RFIC
+ *
+ * @note  This is a relative value, not an absolute value. If an absolute
+ *        value (e.g. in dBm) is desired, a calibration should be performed
+ *        against a reference signal.
+ *
+ * @note  See `src/board/bladerf2/params.c` for the RSSI control parameters.
+ *
+ * Reference: AD9361 Reference Manual UG-570
+ *
+ * @param       dev         Device handle
+ * @param       ch          Channel to query
+ * @param[out]  pre_rssi    Preamble RSSI in dB (first calculated RSSI result)
+ * @param[out]  sym_rssi    Symbol RSSI in dB (most recent RSSI result)
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_ad9361_get_rssi(struct bladerf *dev,
+                                      bladerf_channel ch,
+                                      int32_t *pre_rssi,
+                                      int32_t *sym_rssi);
+
 /** @} (End of FN_BLADERF2_LOW_LEVEL_AD9361) */
 
 /**
