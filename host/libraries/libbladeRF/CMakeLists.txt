@@ -494,7 +494,7 @@ if(BUILD_LIBBLADERF_DOCUMENTATION)
 
         set(DOXYGEN_SOURCE_FILES
             ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/Doxyfile
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/libbladeRF.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h
             ${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/*.dox
             ${CMAKE_CURRENT_SOURCE_DIR}/doc/examples/*
             ${CMAKE_CURRENT_SOURCE_DIR}/doc/images/*
