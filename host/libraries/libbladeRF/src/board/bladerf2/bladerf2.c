@@ -1835,8 +1835,7 @@ static int bladerf2_get_gain_mode(struct bladerf *dev,
 
     if (BLADERF_CHANNEL_IS_TX(ch)) {
         // TODO: undefined!
-        RETURN_ERROR_STATUS("bladerf2_get_gain_mode(tx)",
-                            BLADERF_ERR_UNSUPPORTED);
+        return BLADERF_ERR_UNSUPPORTED;
     } else {
         mode_map     = bladerf2_rx_gain_mode_map;
         mode_map_len = ARRAY_SIZE(bladerf2_rx_gain_mode_map);
@@ -3915,6 +3914,10 @@ int bladerf_get_bias_tee(struct bladerf *dev, bladerf_channel ch, bool *enable)
         RETURN_INVAL("dev", "not initialized");
     }
 
+    if (dev->board != &bladerf2_board_fns) {
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
     if (NULL == enable) {
         RETURN_INVAL("enable", "is null");
     }
@@ -3948,6 +3951,10 @@ int bladerf_set_bias_tee(struct bladerf *dev, bladerf_channel ch, bool enable)
 
     if (NULL == dev) {
         RETURN_INVAL("dev", "not initialized");
+    }
+
+    if (dev->board != &bladerf2_board_fns) {
+        return BLADERF_ERR_UNSUPPORTED;
     }
 
     MUTEX_LOCK(&dev->lock);
@@ -3997,8 +4004,7 @@ int bladerf_ad9361_read(struct bladerf *dev, uint16_t address, uint8_t *val)
     }
 
     if (dev->board != &bladerf2_board_fns) {
-        RETURN_ERROR_STATUS("board compatibility check",
-                            BLADERF_ERR_UNSUPPORTED);
+        return BLADERF_ERR_UNSUPPORTED;
     }
 
     if (NULL == val) {
@@ -4034,8 +4040,7 @@ int bladerf_ad9361_write(struct bladerf *dev, uint16_t address, uint8_t val)
     }
 
     if (dev->board != &bladerf2_board_fns) {
-        RETURN_ERROR_STATUS("board compatibility check",
-                            BLADERF_ERR_UNSUPPORTED);
+        return BLADERF_ERR_UNSUPPORTED;
     }
 
     MUTEX_LOCK(&dev->lock);
@@ -4062,6 +4067,14 @@ int bladerf_ad9361_temperature(struct bladerf *dev, float *val)
     struct bladerf2_board_data *board_data;
     struct ad9361_rf_phy *phy;
 
+    if (NULL == dev) {
+        RETURN_INVAL("dev", "not initialized");
+    }
+
+    if (dev->board != &bladerf2_board_fns) {
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
     CHECK_BOARD_STATE(STATE_FPGA_LOADED);
 
     board_data = dev->board_data;
@@ -4080,6 +4093,14 @@ int bladerf_adf4002_get_locked(struct bladerf *dev, bool *locked)
 {
     int status;
     uint32_t reg;
+
+    if (NULL == dev) {
+        RETURN_INVAL("dev", "not initialized");
+    }
+
+    if (dev->board != &bladerf2_board_fns) {
+        return BLADERF_ERR_UNSUPPORTED;
+    }
 
     if (NULL == locked) {
         RETURN_INVAL("locked", "is null");
@@ -4105,6 +4126,10 @@ int bladerf_adf4002_get_enable(struct bladerf *dev, bool *enabled)
 
     if (NULL == dev) {
         RETURN_INVAL("dev", "not initialized");
+    }
+
+    if (dev->board != &bladerf2_board_fns) {
+        return BLADERF_ERR_UNSUPPORTED;
     }
 
     if (NULL == enabled) {
@@ -4136,6 +4161,10 @@ int bladerf_adf4002_set_enable(struct bladerf *dev, bool enable)
 
     if (NULL == dev) {
         RETURN_INVAL("dev", "not initialized");
+    }
+
+    if (dev->board != &bladerf2_board_fns) {
+        return BLADERF_ERR_UNSUPPORTED;
     }
 
     board_data = dev->board_data;
@@ -4191,6 +4220,14 @@ int bladerf_adf4002_configure(struct bladerf *dev, uint16_t R, uint16_t N)
     int status;
     uint32_t init_array[3];
     bool is_enabled;
+
+    if (NULL == dev) {
+        RETURN_INVAL("dev", "not initialized");
+    }
+
+    if (dev->board != &bladerf2_board_fns) {
+        return BLADERF_ERR_UNSUPPORTED;
+    }
 
     if (R < 1 || R > 16383) {
         RETURN_INVAL("R", "outside range [1,16383]");
@@ -4324,8 +4361,7 @@ int bladerf_adf4002_read(struct bladerf *dev, uint8_t address, uint32_t *val)
     }
 
     if (dev->board != &bladerf2_board_fns) {
-        RETURN_ERROR_STATUS("board compatibility check",
-                            BLADERF_ERR_UNSUPPORTED);
+        return BLADERF_ERR_UNSUPPORTED;
     }
 
     if (NULL == val) {
@@ -4361,8 +4397,7 @@ int bladerf_adf4002_write(struct bladerf *dev, uint8_t address, uint32_t val)
     }
 
     if (dev->board != &bladerf2_board_fns) {
-        RETURN_ERROR_STATUS("board compatibility check",
-                            BLADERF_ERR_UNSUPPORTED);
+        return BLADERF_ERR_UNSUPPORTED;
     }
 
     MUTEX_LOCK(&dev->lock);
@@ -4397,12 +4432,12 @@ int bladerf_get_power_source(struct bladerf *dev, bladerf_power_sources *src)
         RETURN_INVAL("dev", "not initialized");
     }
 
-    if (NULL == src) {
-        RETURN_INVAL("src", "is null");
-    }
-
     if (dev->board != &bladerf2_board_fns) {
         return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    if (NULL == src) {
+        RETURN_INVAL("src", "is null");
     }
 
     MUTEX_LOCK(&dev->lock);
@@ -4415,7 +4450,7 @@ int bladerf_get_power_source(struct bladerf *dev, bladerf_power_sources *src)
         RETURN_ERROR_STATUS("config_gpio_read", status);
     }
 
-    if( (data >> 0) & 0x01 ) {
+    if ((data >> 0) & 0x01) {
         *src = BLADERF_PS_USB_VBUS;
     } else {
         *src = BLADERF_PS_DC;
@@ -4430,8 +4465,7 @@ int bladerf_get_power_source(struct bladerf *dev, bladerf_power_sources *src)
 /* Low level clock source selection accessors */
 /******************************************************************************/
 
-int bladerf_get_clock_select(struct bladerf *dev,
-                             bladerf_clock_select *sel)
+int bladerf_get_clock_select(struct bladerf *dev, bladerf_clock_select *sel)
 {
     int status;
     uint32_t gpio;
@@ -4440,12 +4474,12 @@ int bladerf_get_clock_select(struct bladerf *dev,
         RETURN_INVAL("dev", "not initialized");
     }
 
-    if (NULL == sel) {
-        RETURN_INVAL("sel", "is null");
-    }
-
     if (dev->board != &bladerf2_board_fns) {
         return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    if (NULL == sel) {
+        RETURN_INVAL("sel", "is null");
     }
 
     MUTEX_LOCK(&dev->lock);
@@ -4458,7 +4492,7 @@ int bladerf_get_clock_select(struct bladerf *dev,
         RETURN_ERROR_STATUS("config_gpio_read", status);
     }
 
-    if( (gpio & (1 << 18)) == 0x0 ) {
+    if ((gpio & (1 << 18)) == 0x0) {
         *sel = CLOCK_SELECT_VCTCXO;
     } else {
         *sel = CLOCK_SELECT_EXTERNAL;
@@ -4469,8 +4503,7 @@ int bladerf_get_clock_select(struct bladerf *dev,
     return 0;
 }
 
-int bladerf_set_clock_select(struct bladerf *dev,
-                             bladerf_clock_select sel)
+int bladerf_set_clock_select(struct bladerf *dev, bladerf_clock_select sel)
 {
     int status;
     uint32_t gpio;
@@ -4494,7 +4527,7 @@ int bladerf_set_clock_select(struct bladerf *dev,
     }
 
     // Set the clock select bit(s) accordingly
-    switch(sel) {
+    switch (sel) {
         case CLOCK_SELECT_VCTCXO:
             gpio &= ~(1 << 18);
             break;
@@ -4521,8 +4554,7 @@ int bladerf_set_clock_select(struct bladerf *dev,
 /* Low level SI53304 clock output accessors */
 /******************************************************************************/
 
-int bladerf_get_clock_output(struct bladerf *dev,
-                             bool *state)
+int bladerf_get_clock_output(struct bladerf *dev, bool *state)
 {
     int status;
     uint32_t gpio;
@@ -4531,12 +4563,12 @@ int bladerf_get_clock_output(struct bladerf *dev,
         RETURN_INVAL("dev", "not initialized");
     }
 
-    if (NULL == state) {
-        RETURN_INVAL("state", "is null");
-    }
-
     if (dev->board != &bladerf2_board_fns) {
         return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    if (NULL == state) {
+        RETURN_INVAL("state", "is null");
     }
 
     MUTEX_LOCK(&dev->lock);
@@ -4556,8 +4588,7 @@ int bladerf_get_clock_output(struct bladerf *dev,
     return 0;
 }
 
-int bladerf_set_clock_output(struct bladerf *dev,
-                             bool enable)
+int bladerf_set_clock_output(struct bladerf *dev, bool enable)
 {
     int status;
     uint32_t gpio;
@@ -4610,6 +4641,10 @@ int bladerf_ina219_read(struct bladerf *dev,
         RETURN_INVAL("dev", "not initialized");
     }
 
+    if (dev->board != &bladerf2_board_fns) {
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
     MUTEX_LOCK(&dev->lock);
 
     CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
@@ -4656,6 +4691,10 @@ int bladerf_get_rf_switch_config(struct bladerf *dev,
 
     if (NULL == dev) {
         RETURN_INVAL("dev", "not initialized");
+    }
+
+    if (dev->board != &bladerf2_board_fns) {
+        return BLADERF_ERR_UNSUPPORTED;
     }
 
     if (NULL == config) {
