@@ -100,6 +100,7 @@ PRINTSET_DECL(ina219);
 PRINTSET_DECL(loopback);
 PRINTSET_DECL(lnagain);
 PRINTSET_DECL(rfconfig);
+PRINTSET_DECL(rssi);
 PRINTSET_DECL(rx_mux);
 PRINTSET_DECL(rxvga1);
 PRINTSET_DECL(rxvga2);
@@ -126,6 +127,7 @@ struct printset_entry printset_table[] = {
     PRINTSET_ENTRY(gpio,         PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF1),
     READONLY_ENTRY(ad9361,       PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF2),
     READONLY_ENTRY(rfconfig,     PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF2),
+    READONLY_ENTRY(rssi,         PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF2),
     PRINTSET_ENTRY(loopback,     PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
     PRINTSET_ENTRY(rx_mux,       PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
     PRINTSET_ENTRY(gain,         PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
@@ -2036,6 +2038,67 @@ int print_rfconfig(struct cli_state *state, int argc, char **argv)
            _sky13374_portstr(config.rx2_spdt_port));
 
     return 0;
+}
+
+static int _do_print_rssi(struct cli_state *state, bladerf_channel ch)
+{
+    int rv   = CLI_RET_OK;
+    int *err = &state->last_lib_error;
+    int pre_rssi, sym_rssi;
+    int status;
+
+    status = bladerf_ad9361_get_rssi(state->dev, ch, &pre_rssi, &sym_rssi);
+    if (status < 0) {
+        *err = status;
+        rv   = CLI_RET_LIBBLADERF;
+    } else {
+        printf("  %s RSSI: preamble = %d dB, symbol = %d dB\n", channel2str(ch),
+               pre_rssi, sym_rssi);
+    }
+
+    return rv;
+}
+
+int print_rssi(struct cli_state *state, int argc, char **argv)
+{
+    /* Usage: print rssi [<rx|tx>] */
+    int rv                  = CLI_RET_OK;
+    bladerf_channel channel = BLADERF_CHANNEL_INVALID;
+
+    switch (argc) {
+        case 2: {
+            /* Do all RX channels */
+            size_t chan_count = bladerf_get_channel_count(state->dev, false);
+
+            for (size_t chi = 0; chi < chan_count; ++chi) {
+                if (CLI_RET_OK == rv) {
+                    rv = _do_print_rssi(state, BLADERF_CHANNEL_RX(chi));
+                }
+            }
+
+            break;
+        }
+
+        case 3: {
+            /* Parse channel */
+            channel = str2channel(argv[2]);
+            if (BLADERF_CHANNEL_INVALID == channel) {
+                invalid_channel(state, argv[0], argv[2]);
+                rv = CLI_RET_INVPARAM;
+            }
+            if (CLI_RET_OK == rv) {
+                rv = _do_print_rssi(state, channel);
+            }
+
+            break;
+        }
+
+        default:
+            rv = CLI_RET_NARGS;
+            break;
+    }
+
+    return rv;
 }
 
 int print_rx_mux(struct cli_state *state, int argc, char **argv)
