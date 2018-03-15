@@ -580,6 +580,8 @@ ffi.cdef("""
     int bladerf_ad9361_write(struct bladerf *dev, uint16_t address,
         uint8_t val);
     int bladerf_ad9361_temperature(struct bladerf *dev, float *val);
+    int bladerf_ad9361_get_rssi(struct bladerf *dev, bladerf_channel ch,
+        int32_t *pre_rssi, int32_t *sym_rssi);
     int bladerf_adf4002_get_locked(struct bladerf *dev, bool *locked);
     int bladerf_adf4002_get_enable(struct bladerf *dev, bool *enabled);
     int bladerf_adf4002_set_enable(struct bladerf *dev, bool enable);
@@ -840,6 +842,17 @@ class ClockSelect(enum.Enum):
 
     def __str__(self):
         return self.name
+
+
+class RSSI(collections.namedtuple("RSSI", ["preamble", "symbol"])):
+    def __str__(self):
+        return ("RSSI\n" +
+                "    preamble {preamble} dB\n" +
+                "    symbol   {symbol} dB\n").format(**self._asdict())
+
+    def __repr__(self):
+        return ("<RSSI(preamble={preamble}," +
+                "symbol={symbol})>").format(**self._asdict())
 
 
 class PowerSource(enum.Enum):
@@ -1507,6 +1520,17 @@ class BladeRF:
     ad9361_temperature = property(get_ad9361_temperature,
                                   doc="AD9361 RFIC temperature")
 
+    def get_ad9361_rssi(self, ch):
+        try:
+            preamble = ffi.new("int32_t *")
+            symbol = ffi.new("int32_t *")
+            ret = libbladeRF.bladerf_ad9361_get_rssi(self.dev[0], ch,
+                                                     preamble, symbol)
+            _check_error(ret)
+            return RSSI(preamble[0], symbol[0])
+        except UnsupportedError:
+            return None
+
     # ADF4002 Phase Detector/Frequency Synthesizer
 
     def get_adf4002_locked(self):
@@ -1674,6 +1698,21 @@ class BladeRF:
         def gain_modes(self):
             """List of supported gain modes"""
             return self.dev.get_gain_modes(self.channel)
+
+        @property
+        def rssi(self):
+            """RSSI report from RFIC"""
+            return self.dev.get_ad9361_rssi(self.channel)
+
+        @property
+        def preamble_rssi(self):
+            """Preamble RSSI reading (latched at algorithm reset)"""
+            return self.rssi.preamble
+
+        @property
+        def symbol_rssi(self):
+            """Symbol RSSI reading (most recent value)"""
+            return self.rssi.symbol
 
         @property
         def sample_rate(self):

@@ -34,6 +34,12 @@ def _print_channel_details(ch, verbose):
     if verbose:
         print("        Modes    ", _strify_list(ch.gain_modes))
 
+    if not ch.is_tx:
+        print("    Symbol RSSI  ", ch.symbol_rssi)
+
+        if verbose:
+            print("        Struct   ", repr(ch.rssi))
+
     print("    Frequency    ", ch.frequency)
     if verbose:
         print("        Range    ", repr(ch.frequency_range))
