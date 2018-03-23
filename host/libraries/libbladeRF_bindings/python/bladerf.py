@@ -1716,12 +1716,18 @@ class BladeRF:
         @property
         def preamble_rssi(self):
             """Preamble RSSI reading (latched at algorithm reset)"""
-            return self.rssi.preamble
+            if self.rssi is not None:
+                return self.rssi.preamble
+            else:
+                return None
 
         @property
         def symbol_rssi(self):
             """Symbol RSSI reading (most recent value)"""
-            return self.rssi.symbol
+            if self.rssi is not None:
+                return self.rssi.symbol
+            else:
+                return None
 
         @property
         def sample_rate(self):
