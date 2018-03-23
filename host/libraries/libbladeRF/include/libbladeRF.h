@@ -55,7 +55,8 @@
 #ifdef __cplusplus
 extern "C" {
 #else
-/* stdbool.h is not applicable for C++ programs, as the language inherently
+/**
+ * stdbool.h is not applicable for C++ programs, as the language inherently
  * provides the bool type.
  *
  * Users of Visual Studio 2012 and earlier will need to supply a stdbool.h
@@ -65,6 +66,7 @@ extern "C" {
 #include <stdbool.h>
 #endif
 
+// clang-format off
 #if defined _WIN32 || defined __CYGWIN__
 #   include <windows.h>
 #   define CALL_CONV __cdecl
@@ -84,6 +86,7 @@ extern "C" {
 #   define API_EXPORT __attribute__ ((visibility ("default")))
 #   define CALL_CONV
 #endif
+// clang-format on
 
 /**
  * @defgroup FN_INIT    Initialization
@@ -91,8 +94,7 @@ extern "C" {
  * The functions in this section provide the ability query and inspect available
  * devices, initialize them, and deinitialize them.
  *
- * See the
- * <a class="el" href="boilerplate.html">Device configuration boilerplate</a>
+ * See the \link boilerplate.html Device configuration boilerplate\endlink
  * page for an overview on how to open and configure a device.
  *
  * These functions are thread-safe.
@@ -107,25 +109,27 @@ struct bladerf;
  * Backend by which the host communicates with the device
  */
 typedef enum {
-    BLADERF_BACKEND_ANY,    /**< "Don't Care" -- use any available backend */
-    BLADERF_BACKEND_LINUX,  /**< Linux kernel driver */
-    BLADERF_BACKEND_LIBUSB, /**< libusb */
-    BLADERF_BACKEND_CYPRESS, /**< CyAPI */
+    BLADERF_BACKEND_ANY,         /**< "Don't Care" -- use any available
+                                  *   backend */
+    BLADERF_BACKEND_LINUX,       /**< Linux kernel driver */
+    BLADERF_BACKEND_LIBUSB,      /**< libusb */
+    BLADERF_BACKEND_CYPRESS,     /**< CyAPI */
     BLADERF_BACKEND_DUMMY = 100, /**< Dummy used for development purposes */
 } bladerf_backend;
 
 /** Length of device serial number string, including NUL-terminator */
-#define BLADERF_SERIAL_LENGTH   33
+#define BLADERF_SERIAL_LENGTH 33
 
 /**
  * Information about a bladeRF attached to the system
  */
 struct bladerf_devinfo {
-    bladerf_backend backend;    /**< Backend to use when connecting to device */
+    bladerf_backend backend;            /**< Backend to use when connecting to
+                                         *   device */
     char serial[BLADERF_SERIAL_LENGTH]; /**< Device serial number string */
-    uint8_t usb_bus;            /**< Bus # device is attached to */
-    uint8_t usb_addr;           /**< Device address on bus */
-    unsigned int instance;      /**< Device instance or ID */
+    uint8_t usb_bus;                    /**< Bus # device is attached to */
+    uint8_t usb_addr;                   /**< Device address on bus */
+    unsigned int instance;              /**< Device instance or ID */
 };
 
 /**
@@ -192,9 +196,9 @@ int CALL_CONV bladerf_open(struct bladerf **device,
 /**
  * Close device
  *
- * @note    Failing to close a device will result in memory leaks.
+ * @note Failing to close a device will result in memory leaks.
  *
- * @post    device is deallocated and may no longer be used.
+ * @post `device` is deallocated and may no longer be used.
  *
  * @param   device  Device handle previously obtained by bladerf_open(). This
  *                  function does nothing if device is NULL.
@@ -248,10 +252,11 @@ void CALL_CONV bladerf_free_device_list(struct bladerf_devinfo *devices);
 
 /**
  * Initialize a device identifier information structure to a "wildcard" state.
+ *
  * The values in each field will match any value for that field.
  *
- * Passing a bladerf_devinfo initialized with this function to
- * bladerf_open_with_devinfo() will match the first device found.
+ * @note Passing a bladerf_devinfo initialized with this function to
+ *       bladerf_open_with_devinfo() will match the first device found.
  */
 API_EXPORT
 void CALL_CONV bladerf_init_devinfo(struct bladerf_devinfo *info);
@@ -259,7 +264,7 @@ void CALL_CONV bladerf_init_devinfo(struct bladerf_devinfo *info);
 /**
  * Fill out a provided bladerf_devinfo structure, given an open device handle.
  *
- * @pre dev must be a valid device handle.
+ * @pre `dev` must be a valid device handle.
  *
  * @param        dev     Device handle previously obtained with bladerf_open()
  * @param[out]   info    Device information populated by this function
@@ -276,7 +281,6 @@ int CALL_CONV bladerf_get_devinfo(struct bladerf *dev,
  *
  * @param[in]   devstr  Device identifier string, formated as described
  *                      in the bladerf_open() documentation
- *
  * @param[out]  info    Upon success, this will be filled out according to the
  *                      provided device identifier string, with wildcards for
  *                      any fields that were not provided.
@@ -290,6 +294,9 @@ int CALL_CONV bladerf_get_devinfo_from_str(const char *devstr,
 /**
  * Test whether two device identifier information structures match, taking
  * wildcard values into account.
+ *
+ * @param[in]   a   the first bladerf_devinfo struct
+ * @param[in]   b   the second bladerf_devinfo struct
  */
 API_EXPORT
 bool CALL_CONV bladerf_devinfo_matches(const struct bladerf_devinfo *a,
@@ -301,7 +308,6 @@ bool CALL_CONV bladerf_devinfo_matches(const struct bladerf_devinfo *a,
  *
  * @param[in]   dev_str     Devices string, formated as described in the
  *                          the documentation of bladerf_open
- *
  * @param[in]   info        Device info to compare with
  *
  * @return  true upon a match, false otherwise
@@ -318,7 +324,7 @@ bool CALL_CONV bladerf_devstr_matches(const char *dev_str,
  *         identifier string. (See bladerf_open().)
  */
 API_EXPORT
-const char * CALL_CONV bladerf_backend_str(bladerf_backend backend);
+const char *CALL_CONV bladerf_backend_str(bladerf_backend backend);
 
 /**
  * Enable or disable USB device reset operation upon opening a device for
@@ -353,14 +359,14 @@ void CALL_CONV bladerf_set_usb_reset_on_open(bool enabled);
  * Version structure for FPGA, firmware, libbladeRF, and associated utilities
  */
 struct bladerf_version {
-    uint16_t major;             /**< Major version */
-    uint16_t minor;             /**< Minor version */
-    uint16_t patch;             /**< Patch version */
-    const char *describe;       /**< Version string with any additional suffix
-                                 *   information.
-                                 *
-                                 *   @warning Do not attempt to modify or
-                                 *            free() this string. */
+    uint16_t major;       /**< Major version */
+    uint16_t minor;       /**< Minor version */
+    uint16_t patch;       /**< Patch version */
+    const char *describe; /**< Version string with any additional suffix
+                           *   information.
+                           *
+                           *   @warning Do not attempt to modify or free()
+                           *            this string. */
 };
 
 /**
@@ -368,10 +374,10 @@ struct bladerf_version {
  */
 typedef enum {
     BLADERF_FPGA_UNKNOWN = 0,   /**< Unable to determine FPGA variant */
-    BLADERF_FPGA_40KLE = 40,    /**< 40 kLE FPGA */
-    BLADERF_FPGA_115KLE = 115,  /**< 115 kLE FPGA */
-    BLADERF_FPGA_A4 = 49,       /**< 49 kLE FPGA (A4) */
-    BLADERF_FPGA_A9 = 301       /**< 301 kLE FPGA (A9) */
+    BLADERF_FPGA_40KLE   = 40,  /**< 40 kLE FPGA */
+    BLADERF_FPGA_115KLE  = 115, /**< 115 kLE FPGA */
+    BLADERF_FPGA_A4      = 49,  /**< 49 kLE FPGA (A4) */
+    BLADERF_FPGA_A9      = 301  /**< 301 kLE FPGA (A9) */
 } bladerf_fpga_size;
 
 /**
@@ -430,9 +436,8 @@ int CALL_CONV bladerf_fw_version(struct bladerf *dev,
  *
  * @param       dev         Device handle
  *
- * @return  1 if FPGA is configured,
- *          0 if it is not,
- *          and value from \ref RETCODES list on failure
+ * @return 1 if FPGA is configured, 0 if it is not,
+ *         and value from \ref RETCODES list on failure
  */
 API_EXPORT
 int CALL_CONV bladerf_is_fpga_configured(struct bladerf *dev);
@@ -454,7 +459,7 @@ int CALL_CONV bladerf_fpga_version(struct bladerf *dev,
  *
  * @param       dev     Device handle
  *
- * @return Device speed
+ * @return Device speed enumeration
  */
 API_EXPORT
 bladerf_dev_speed CALL_CONV bladerf_device_speed(struct bladerf *dev);
@@ -464,19 +469,20 @@ bladerf_dev_speed CALL_CONV bladerf_device_speed(struct bladerf *dev);
  *
  * @param       dev     Device handle
  *
- * @return      Board name string
+ * @return Pointer to C string with the board's model name, either `bladerf1`
+ *         for a bladeRF x40/x115, or `bladerf2` for a bladeRF Micro.
  */
 API_EXPORT
-const char * CALL_CONV bladerf_get_board_name(struct bladerf *dev);
+const char *CALL_CONV bladerf_get_board_name(struct bladerf *dev);
 
 /**
- * Get the number of channels supported by the given device
+ * Get the number of RX or TX channels supported by the given device
  *
  * @param       dev     Device handle
  * @param       tx      If true, returns the number of TX channels. If false,
  *                      returns the number of RX channels.
  *
- * @return      Number of channels
+ * @return Number of channels
  */
 API_EXPORT
 size_t CALL_CONV bladerf_get_channel_count(struct bladerf *dev, bool tx);
@@ -486,9 +492,9 @@ size_t CALL_CONV bladerf_get_channel_count(struct bladerf *dev, bool tx);
 /**
  * @defgroup FN_CHANNEL Channel control
  *
- * The RX and TX channels are independently configurable. As such,
- * many libbladeRF functions require a ::bladerf_channel parameter
- * to specify which channel to operate on.
+ * The RX and TX channels are independently configurable. As such, many
+ * libbladeRF functions require a ::bladerf_channel parameter to specify the
+ * desired channel.
  *
  * These functions are thread-safe.
  *
@@ -529,7 +535,7 @@ typedef int bladerf_channel;
  * bladerf_channel ch = BLADERF_CHANNEL_RX(1);
  * @endcode
  */
-#define BLADERF_CHANNEL_RX(ch)      (((ch) << 1) | 0x0)
+#define BLADERF_CHANNEL_RX(ch) (((ch) << 1) | 0x0)
 
 /**
  * TX Channel Macro
@@ -544,12 +550,12 @@ typedef int bladerf_channel;
  * bladerf_channel ch = BLADERF_CHANNEL_TX(1);
  * @endcode
  */
-#define BLADERF_CHANNEL_TX(ch)      (((ch) << 1) | 0x1)
+#define BLADERF_CHANNEL_TX(ch) (((ch) << 1) | 0x1)
 
 /**
  * Invalid channel
  */
-#define BLADERF_CHANNEL_INVALID     (-1)
+#define BLADERF_CHANNEL_INVALID (-1)
 
 /** @cond IGNORE */
 #define BLADERF_DIRECTION_MASK (0x1)
@@ -558,9 +564,9 @@ typedef int bladerf_channel;
 /** @cond IGNORE */
 /* Backwards compatible mapping to `bladerf_module`. */
 typedef bladerf_channel bladerf_module;
-#define BLADERF_MODULE_INVALID  BLADERF_CHANNEL_INVALID
-#define BLADERF_MODULE_RX       BLADERF_CHANNEL_RX(0)
-#define BLADERF_MODULE_TX       BLADERF_CHANNEL_TX(0)
+#define BLADERF_MODULE_INVALID BLADERF_CHANNEL_INVALID
+#define BLADERF_MODULE_RX BLADERF_CHANNEL_RX(0)
+#define BLADERF_MODULE_TX BLADERF_CHANNEL_TX(0)
 /** @endcond */
 
 /**
@@ -582,10 +588,10 @@ typedef bladerf_channel bladerf_module;
  * Range structure
  */
 struct bladerf_range {
-    int64_t min;    /**< Minimum value */
-    int64_t max;    /**< Maximum value */
-    int64_t step;   /**< Step of value */
-    float scale;    /**< Unit scale */
+    int64_t min;  /**< Minimum value */
+    int64_t max;  /**< Maximum value */
+    int64_t step; /**< Step of value */
+    float scale;  /**< Unit scale */
 };
 
 /**
@@ -601,50 +607,52 @@ typedef enum {
 
 /* Backwards compatibility */
 #define BLADERF_GAIN_AUTOMATIC BLADERF_GAIN_DEFAULT /**< Default AGC mode */
-#define BLADERF_GAIN_MANUAL    BLADERF_GAIN_MGC     /**< Manual gain control */
+#define BLADERF_GAIN_MANUAL BLADERF_GAIN_MGC        /**< Manual gain control */
 
 /**
  * Mapping of human-readable names to gain modes
  */
 struct bladerf_gain_modes {
-    const char *name;           /**< Name of gain mode */
-    bladerf_gain_mode mode;     /**< Gain mode enumeration */
+    const char *name;       /**< Name of gain mode */
+    bladerf_gain_mode mode; /**< Gain mode enumeration */
 };
 
 /**
- * Set overall gain
+ * Set overall system gain
  *
- * Values outside the valid gain range will be clamped.
+ * @note Values outside the valid gain range will be clamped.
  *
  * @param       dev         Device handle
  * @param[in]   ch          Channel
  * @param[in]   gain        Desired gain, in dB
  *
- * Note that gain may be negative (e.g. transmit channels).
+ * @note `gain` may be negative (e.g. transmit channels).
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_set_gain(struct bladerf *dev, bladerf_channel ch,
+int CALL_CONV bladerf_set_gain(struct bladerf *dev,
+                               bladerf_channel ch,
                                int gain);
 
 /**
- * Get overall gain
+ * Get overall system gain
  *
  * @param       dev         Device handle
  * @param[in]   ch          Channel
  * @param[out]  gain        Gain, in dB
  *
- * Note that gain may be negative (e.g. transmit channels).
+ * @note `gain` may be negative (e.g. transmit channels).
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_get_gain(struct bladerf *dev, bladerf_channel ch,
+int CALL_CONV bladerf_get_gain(struct bladerf *dev,
+                               bladerf_channel ch,
                                int *gain);
 
 /**
- * Set gain mode
+ * Set gain control mode
  *
  * Sets the mode for hardware AGC. Not all channels or boards will support
  * all possible values (e.g. transmit channels); invalid combinations will
@@ -660,11 +668,12 @@ int CALL_CONV bladerf_get_gain(struct bladerf *dev, bladerf_channel ch,
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_set_gain_mode(struct bladerf *dev, bladerf_channel ch,
+int CALL_CONV bladerf_set_gain_mode(struct bladerf *dev,
+                                    bladerf_channel ch,
                                     bladerf_gain_mode mode);
 
 /**
- * Get gain mode
+ * Get gain control mode
  *
  * Gets the current mode for hardware AGC. If the channel or board does not
  * meaningfully have a gain mode (e.g. transmit channels), mode will be
@@ -677,11 +686,12 @@ int CALL_CONV bladerf_set_gain_mode(struct bladerf *dev, bladerf_channel ch,
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_get_gain_mode(struct bladerf *dev, bladerf_channel ch,
+int CALL_CONV bladerf_get_gain_mode(struct bladerf *dev,
+                                    bladerf_channel ch,
                                     bladerf_gain_mode *mode);
 
 /**
- * Get gain modes
+ * Get available gain control modes
  *
  * Populates `modes` with a pointer to an array of structs containing the
  * supported gain modes.
@@ -694,7 +704,7 @@ int CALL_CONV bladerf_get_gain_mode(struct bladerf *dev, bladerf_channel ch,
  * @param[out]  modes       Supported gain modes
  *
  * @return Number of gain modes on success, value from \ref RETCODES list on
- * failure
+ *         failure
  */
 API_EXPORT
 int CALL_CONV bladerf_get_gain_modes(struct bladerf *dev,
@@ -702,10 +712,10 @@ int CALL_CONV bladerf_get_gain_modes(struct bladerf *dev,
                                      struct bladerf_gain_modes const **modes);
 
 /**
- * Get range of overall gain
+ * Get range of overall system gain
  *
- * This may vary depending on the configured frequency, so it should be checked
- * after setting the desired frequency.
+ * @note This may vary depending on the configured frequency, so it should be
+ *       checked after setting the desired frequency.
  *
  * @param       dev         Device handle
  * @param[in]   ch          Channel
@@ -719,9 +729,9 @@ int CALL_CONV bladerf_get_gain_range(struct bladerf *dev,
                                      struct bladerf_range *range);
 
 /**
- * Set gain stage
+ * Set the gain for a specific gain stage
  *
- * Values outside the valid gain range will be clipped.
+ * @note Values outside the valid gain range will be clipped.
  *
  * @param       dev         Device handle
  * @param[in]   ch          Channel
@@ -731,11 +741,13 @@ int CALL_CONV bladerf_get_gain_range(struct bladerf *dev,
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_set_gain_stage(struct bladerf *dev, bladerf_channel ch,
-                                     const char *stage, int gain);
+int CALL_CONV bladerf_set_gain_stage(struct bladerf *dev,
+                                     bladerf_channel ch,
+                                     const char *stage,
+                                     int gain);
 
 /**
- * Get gain stage
+ * Set the gain for a specific gain stage
  *
  * @param       dev         Device handle
  * @param[in]   ch          Channel
@@ -747,11 +759,16 @@ int CALL_CONV bladerf_set_gain_stage(struct bladerf *dev, bladerf_channel ch,
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_get_gain_stage(struct bladerf *dev, bladerf_channel ch,
-                                     const char *stage, int *gain);
+int CALL_CONV bladerf_get_gain_stage(struct bladerf *dev,
+                                     bladerf_channel ch,
+                                     const char *stage,
+                                     int *gain);
 
 /**
- * Get range of gain stage
+ * Get gain range of a specific gain stage
+ *
+ * @note This may vary depending on the configured frequency, so it should be
+ *       checked after setting the desired frequency.
  *
  * This function may be called with `NULL` for `range` to test if a given gain
  * range exists.
@@ -770,7 +787,7 @@ int CALL_CONV bladerf_get_gain_stage_range(struct bladerf *dev,
                                            struct bladerf_range *range);
 
 /**
- * Get gain stages
+ * Get a list of available gain stages
  *
  * This function may be called with `NULL` for `stages`, or 0 for `count`, to
  * determine the number of gain stages.
@@ -781,11 +798,13 @@ int CALL_CONV bladerf_get_gain_stage_range(struct bladerf *dev,
  * @param[out]  count       Number to populate
  *
  * @return Number of gain stages on success, value from \ref RETCODES list on
- * failure
+ *         failure
  */
 API_EXPORT
-int CALL_CONV bladerf_get_gain_stages(struct bladerf *dev, bladerf_channel ch,
-                                      const char **stages, unsigned int count);
+int CALL_CONV bladerf_get_gain_stages(struct bladerf *dev,
+                                      bladerf_channel ch,
+                                      const char **stages,
+                                      unsigned int count);
 
 /** @} (End of FN_GAIN) */
 
@@ -802,21 +821,27 @@ int CALL_CONV bladerf_get_gain_stages(struct bladerf *dev, bladerf_channel ch,
 
 /**
  * Rational sample rate representation
+ *
+ * Sample rates are in the form of
+ * @f[
+ *  rate = integer + \frac{num}{den}
+ * @f]
  */
 struct bladerf_rational_rate {
-    uint64_t integer;           /**< Integer portion */
-    uint64_t num;               /**< Numerator in fractional portion */
-    uint64_t den;               /**< Denominator in fractional portion. This
-                                     must be > 0. */
+    uint64_t integer; /**< Integer portion */
+    uint64_t num;     /**< Numerator in fractional portion */
+    uint64_t den;     /**< Denominator in fractional portion. This must be
+                       *   greater than 0. */
 };
 
 /**
- * Configure the device's sample rate to the specified rate in Hz.  Note this
- * requires the sample rate is an integer value of Hz.  Use
- * bladerf_set_rational_sample_rate() for more arbitrary values.
+ * Configure the channel's sample rate to the specified rate in Hz.
  *
- * Use bladerf_get_sample_rate_range() to determine the range of supported
- * sample rates.
+ * @note This requires the sample rate is an integer value of Hz.  Use
+ *       bladerf_set_rational_sample_rate() for more arbitrary values.
+ *
+ * @see Use bladerf_get_sample_rate_range() to determine the range of supported
+ *      sample rates.
  *
  * @param       dev         Device handle
  * @param[in]   ch          Channel
@@ -833,8 +858,10 @@ int CALL_CONV bladerf_set_sample_rate(struct bladerf *dev,
                                       unsigned int *actual);
 
 /**
- * Configure the device's sample rate as a rational fraction of Hz.
- * Sample rates are in the form of integer + num/denom.
+ * Configure the channel's sample rate as a rational fraction of Hz.
+ *
+ * @see Use bladerf_get_sample_rate_range() to determine the range of supported
+ *      sample rates.
  *
  * @param       dev         Device handle
  * @param[in]   ch          Channel to change
@@ -842,19 +869,16 @@ int CALL_CONV bladerf_set_sample_rate(struct bladerf *dev,
  * @param[out]  actual      If non-NULL, this is written with the actual
  *                          rational sample rate achieved.
  *
- * Use bladerf_get_sample_rate_range() to determine the range of supported
- * sample rates.
- *
  * @return 0 on success, value from \ref RETCODES list upon failure
  */
 API_EXPORT
-int CALL_CONV bladerf_set_rational_sample_rate(
-                                        struct bladerf *dev,
-                                        bladerf_channel ch,
-                                        struct bladerf_rational_rate *rate,
-                                        struct bladerf_rational_rate *actual);
+int CALL_CONV
+    bladerf_set_rational_sample_rate(struct bladerf *dev,
+                                     bladerf_channel ch,
+                                     struct bladerf_rational_rate *rate,
+                                     struct bladerf_rational_rate *actual);
 /**
- * Get the device's sample rate in Hz
+ * Get the channel's current sample rate in Hz
  *
  * @param       dev         Device handle
  * @param[in]   ch          Channel
@@ -868,7 +892,7 @@ int CALL_CONV bladerf_get_sample_rate(struct bladerf *dev,
                                       unsigned int *rate);
 
 /**
- * Get the device's supported range of sample rates
+ * Get the channel's supported range of sample rates
  *
  * @param       dev         Device handle
  * @param[in]   ch          Channel
@@ -882,7 +906,7 @@ int CALL_CONV bladerf_get_sample_rate_range(struct bladerf *dev,
                                             struct bladerf_range *range);
 
 /**
- * Get the device's sample rate in rational Hz
+ * Get the channel's sample rate in rational Hz
  *
  * @param       dev         Device handle
  * @param[in]   ch          Channel
@@ -891,19 +915,19 @@ int CALL_CONV bladerf_get_sample_rate_range(struct bladerf *dev,
  * @return 0 on success, value from \ref RETCODES list upon failure
  */
 API_EXPORT
-int CALL_CONV bladerf_get_rational_sample_rate(
-                                        struct bladerf *dev,
-                                        bladerf_channel ch,
-                                        struct bladerf_rational_rate *rate);
+int CALL_CONV
+    bladerf_get_rational_sample_rate(struct bladerf *dev,
+                                     bladerf_channel ch,
+                                     struct bladerf_rational_rate *rate);
 
 /** @} (End of FN_SAMPLING) */
 
 /**
  * @defgroup FN_BANDWIDTH Bandwidth
  *
- * This section defines functionality for configuring a channel's
- * bandwidth. In most cases, one should define the bandwidth to
- * be less than the sample rate to minimize the impact of aliasing.
+ * This section defines functionality for configuring a channel's bandwidth. In
+ * most cases, one should define the bandwidth to be less than the sample rate
+ * to minimize the impact of aliasing.
  *
  * These functions are thread-safe.
  *
@@ -917,42 +941,43 @@ int CALL_CONV bladerf_get_rational_sample_rate(
  * caller should check the `actual` parameter to determine which of these
  * discrete bandwidth values is actually used for the requested bandwidth.
  *
- * Use bladerf_get_bandwidth_range() to determine the range of supported
- * bandwidths.
+ * @see Use bladerf_get_bandwidth_range() to determine the range of supported
+ *      bandwidths.
  *
- * @param       dev                 Device handle
- * @param[in]   ch                  Channel
- * @param[in]   bandwidth           Desired bandwidth
- * @param[out]  actual              If non-NULL, written with the actual
- *                                  bandwidth that the device was able to
- *                                  achieve.
+ * @param       dev         Device handle
+ * @param[in]   ch          Channel
+ * @param[in]   bandwidth   Desired bandwidth
+ * @param[out]  actual      If non-NULL, written with the actual bandwidth that
+ *                          the device was able to achieve.
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_set_bandwidth(struct bladerf *dev, bladerf_channel ch,
+int CALL_CONV bladerf_set_bandwidth(struct bladerf *dev,
+                                    bladerf_channel ch,
                                     unsigned int bandwidth,
                                     unsigned int *actual);
 
 /**
  * Get the bandwidth of the channel
  *
- * @param       dev                 Device Handle
- * @param[in]   ch                  Channel
- * @param[out]  bandwidth           Actual bandwidth in Hz
+ * @param       dev         Device Handle
+ * @param[in]   ch          Channel
+ * @param[out]  bandwidth   Actual bandwidth in Hz
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_get_bandwidth(struct bladerf *dev, bladerf_channel ch,
+int CALL_CONV bladerf_get_bandwidth(struct bladerf *dev,
+                                    bladerf_channel ch,
                                     unsigned int *bandwidth);
 
 /**
- * Get the supported range of bandwidth
+ * Get the supported range of bandwidths for a channel
  *
- * @param       dev                 Device Handle
- * @param[in]   ch                  Channel
- * @param[out]  range               Bandwidth range
+ * @param       dev         Device Handle
+ * @param[in]   ch          Channel
+ * @param[out]  range       Bandwidth range
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
@@ -968,9 +993,8 @@ int CALL_CONV bladerf_get_bandwidth_range(struct bladerf *dev,
  *
  * These functions provide the ability to tune the RX and TX channels.
  *
- * See <a class="el" href="tuning.html">this page</a> for more detailed
- * information about how the API performs this tuning, and for example
- * code snippets.
+ * See \link tuning.html this page\endlink for more detailed information about
+ * how the API performs this tuning, and for example code snippets.
  *
  * These functions are thread-safe.
  *
@@ -980,14 +1004,14 @@ int CALL_CONV bladerf_get_bandwidth_range(struct bladerf *dev,
 /**
  * Select the appropriate band path given a frequency in Hz.
  *
- * Most API users will not need to use this function, as bladerf_set_frequency()
- * calls this internally after tuning the device.
+ * @note Most API users will not need to use this function, as
+ *       bladerf_set_frequency() calls this internally after tuning the device.
  *
  * The high band is used for `frequency` above 1.5 GHz on bladeRF1 and above
  * 3.0 GHz on bladeRF2. Otherwise, the low band is used.
  *
- * Use bladerf_get_frequency_range() to determine the range of supported
- * frequencies.
+ * @see bladerf_get_frequency_range() to determine the range of supported
+ *      frequencies.
  *
  * @param       dev         Device handle
  * @param[in]   ch          Channel
@@ -996,20 +1020,26 @@ int CALL_CONV bladerf_get_bandwidth_range(struct bladerf *dev,
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_select_band(struct bladerf *dev, bladerf_channel ch,
+int CALL_CONV bladerf_select_band(struct bladerf *dev,
+                                  bladerf_channel ch,
                                   uint64_t frequency);
 
 /**
  * Set channel's frequency in Hz.
  *
- * Use bladerf_get_frequency_range() to determine the range of supported
- * frequencies.
+ * @note On the bladeRF1 platform, it is recommended to keep the RX and TX
+ *       frequencies at least 1 MHz apart, and to digitally mix on the RX side
+ *       if reception closer to the TX frequency is required.
  *
- * For best results, it is recommended to keep the RX and TX frequencies at
- * least 1 MHz apart, and to digitally mix on the RX side if reception closer
- * to the TX frequency is required.
+ * @note On the bladeRF2, there is one oscillator for all RX channels and one
+ *       oscillator for all TX channels. Therefore, changing one channel will
+ *       change the frequency of all channels in that direction.
  *
- * This calls bladerf_select_band() internally.
+ * This function calls bladerf_select_band() internally, and performs all
+ * other tasks required to prepare the channel for the given frequency.
+ *
+ * @see bladerf_get_frequency_range() to determine the range of supported
+ *      frequencies.
  *
  * @param       dev         Device handle
  * @param[in]   ch          Channel
@@ -1036,7 +1066,7 @@ int CALL_CONV bladerf_get_frequency(struct bladerf *dev,
                                     uint64_t *frequency);
 
 /**
- * Get the supported range of frequency
+ * Get the supported range of frequencies for a channel
  *
  * @param       dev         Device handle
  * @param[in]   ch          Channel
@@ -1072,7 +1102,8 @@ int CALL_CONV bladerf_get_frequency_range(struct bladerf *dev,
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_set_rf_port(struct bladerf *dev, bladerf_channel ch,
+int CALL_CONV bladerf_set_rf_port(struct bladerf *dev,
+                                  bladerf_channel ch,
                                   const char *port);
 
 /**
@@ -1085,7 +1116,8 @@ int CALL_CONV bladerf_set_rf_port(struct bladerf *dev, bladerf_channel ch,
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_get_rf_port(struct bladerf *dev, bladerf_channel ch,
+int CALL_CONV bladerf_get_rf_port(struct bladerf *dev,
+                                  bladerf_channel ch,
                                   const char **port);
 
 /**
@@ -1100,19 +1132,21 @@ int CALL_CONV bladerf_get_rf_port(struct bladerf *dev, bladerf_channel ch,
  * @param[out]  count       Number to populate
  *
  * @return Number of RF ports on success, value from \ref RETCODES list on
- * failure
+ *         failure
  */
 API_EXPORT
-int CALL_CONV bladerf_get_rf_ports(struct bladerf *dev, bladerf_channel ch,
-                                   const char **ports, unsigned int count);
+int CALL_CONV bladerf_get_rf_ports(struct bladerf *dev,
+                                   bladerf_channel ch,
+                                   const char **ports,
+                                   unsigned int count);
 
 /** @} (End of FN_RF_PORTS) */
 
 /**
  * @defgroup FN_LOOPBACK Internal loopback
  *
- * The bladeRF provides a variety of loopback modes to aid in development
- * and testing.
+ * The bladeRF provides a variety of loopback modes to aid in development and
+ * testing.
  *
  * In general, the digital or baseband loopback modes provide the most "ideal"
  * operating conditions, while the internal RF loopback modes introduce more of
@@ -1127,29 +1161,19 @@ int CALL_CONV bladerf_get_rf_ports(struct bladerf *dev, bladerf_channel ch,
  * Loopback options
  */
 typedef enum {
-    /**
-     * Firmware loopback inside of the FX3
-     */
+    /** Firmware loopback inside of the FX3 */
     BLADERF_LB_FIRMWARE = 1,
 
-    /**
-     * Baseband loopback. TXLPF output is connected to the RXVGA2 input.
-     */
+    /** Baseband loopback. TXLPF output is connected to the RXVGA2 input. */
     BLADERF_LB_BB_TXLPF_RXVGA2,
 
-    /**
-     * Baseband loopback. TXVGA1 output is connected to the RXVGA2 input.
-     */
+    /** Baseband loopback. TXVGA1 output is connected to the RXVGA2 input. */
     BLADERF_LB_BB_TXVGA1_RXVGA2,
 
-    /**
-     * Baseband loopback. TXLPF output is connected to the RXLPF input.
-     */
+    /** Baseband loopback. TXLPF output is connected to the RXLPF input. */
     BLADERF_LB_BB_TXLPF_RXLPF,
 
-    /**
-     * Baseband loopback. TXVGA1 output is connected to RXLPF input.
-     */
+    /** Baseband loopback. TXVGA1 output is connected to RXLPF input. */
     BLADERF_LB_BB_TXVGA1_RXLPF,
 
     /**
@@ -1170,14 +1194,10 @@ typedef enum {
      */
     BLADERF_LB_RF_LNA3,
 
-    /**
-     * Disables loopback and returns to normal operation.
-     */
+    /** Disables loopback and returns to normal operation. */
     BLADERF_LB_NONE,
 
-    /**
-     * AD9361 digital loopback
-     */
+    /** AD9361 digital loopback (built-in self-test) */
     BLADERF_LB_AD9361_BIST,
 } bladerf_loopback;
 
@@ -1202,7 +1222,7 @@ struct bladerf_loopback_modes {
  * @param[out]  modes       Supported loopback modes
  *
  * @return Number of loopback modes on success, value from \ref RETCODES list
- * on failure
+ *         on failure
  */
 API_EXPORT
 int CALL_CONV bladerf_get_loopback_modes(
@@ -1222,13 +1242,13 @@ API_EXPORT bool CALL_CONV bladerf_is_loopback_mode_supported(
 /**
  * Apply specified loopback mode
  *
- * @param       dev     Device handle
- * @param[in]   lb      Loopback mode. Note that BLADERF_LB_NONE disables the
- *                      use of loopback functionality.
- *
  * @note Loopback modes should only be enabled or disabled while the RX and TX
  *       channels are both disabled (and therefore, when no samples are being
  *       actively streamed). Otherwise, unexpected behavior may occur.
+ *
+ * @param       dev     Device handle
+ * @param[in]   lb      Loopback mode. Note that BLADERF_LB_NONE disables the
+ *                      use of loopback functionality.
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
@@ -1257,28 +1277,28 @@ int CALL_CONV bladerf_get_loopback(struct bladerf *dev, bladerf_loopback *lb);
  *
  * The set of functions presented in this section of the API provides control
  * over this triggering functionality. It is intended that these functions be
- * used <b>prior</b> to starting sample streams. Attempting to use these
- * functions while streaming may yield undefined and undesirable behavior.
+ * used \b prior to starting sample streams. Attempting to use these functions
+ * while streaming may yield undefined and undesirable behavior.
+ *
  * These functions are thread-safe.
  *
  * For devices running at the same sample rate, the trigger event should
  * achieve synchronization within +/- 1 sample on each device in the chain.
  *
- *
- * bladeRF1 note: As of FPGA v0.6.0, J71 pin 4 (mini_exp_1) has been allocated
- * as the trigger signal. However, this API section is designed to allow future
- * signals to be added, including users' software and hardware customizations.
+ * @note bladeRF1 note: As of FPGA v0.6.0, J71 pin 4 (mini_exp_1) has been
+ *       allocated as the trigger signal. However, this API section is designed
+ *       to allow future signals to be added, including users' software and
+ *       hardware customizations.
  *
  * @note <b>Important</b>: Ensure that you disarm triggers <b>before</b>
- * stopping sample streams (i.e., calling bladerf_enable_module()
- * with `enable = false`).  Otherwise, the operation of shutting down streams
- * will block for the entire duration of the stream timeout (or infinitely if
- * the timeouts were set to 0).
+ *       stopping sample streams (i.e., calling bladerf_enable_module() with
+ *       `enable = false`).  Otherwise, the operation of shutting down streams
+ *       will block for the entire duration of the stream timeout (or infinitely
+ *       if the timeouts were set to 0).
  *
  * These functions are thread-safe.
  *
- * The standard usage of these functions is shown below. This example
- * assumes:
+ * The standard usage of these functions is shown below. This example assumes:
  *
  *  - The two devices are connected such they share a common ground and their
  *      J71-4 pins are connected.
@@ -1369,28 +1389,28 @@ int CALL_CONV bladerf_get_loopback(struct bladerf *dev, bladerf_loopback *lb);
 /**
  * This value denotes the role of a device in a trigger chain.
  */
-typedef enum  {
-    BLADERF_TRIGGER_ROLE_INVALID = -1,  /**< Invalid role selection */
+typedef enum {
+    /** Invalid role selection */
+    BLADERF_TRIGGER_ROLE_INVALID = -1,
 
-    BLADERF_TRIGGER_ROLE_DISABLED,      /**< Triggering functionality is
-                                         *   disabled on this device. Samples
-                                         *   are not gated and the trigger
-                                         *   signal is an input.
-                                         */
+    /**
+     * Triggering functionality is disabled on this device. Samples are not
+     * gated and the trigger signal is an input.
+     */
+    BLADERF_TRIGGER_ROLE_DISABLED,
 
-    BLADERF_TRIGGER_ROLE_MASTER,        /**< This device is the trigger master.
-                                         *   Its trigger signal will be an
-                                         *   output and this device will
-                                         *   determine when all devices shall
-                                         *   trigger.
-                                         */
+    /**
+     * This device is the trigger master. Its trigger signal will be an output
+     * and this device will determine when all devices shall trigger.
+     */
+    BLADERF_TRIGGER_ROLE_MASTER,
 
-    BLADERF_TRIGGER_ROLE_SLAVE,         /**< This device is the trigger slave.
-                                         *   This device's trigger signal will
-                                         *   be an input and this devices will
-                                         *   wait for the master's trigger
-                                         *   signal assertion.
-                                         */
+    /**
+     * This device is the trigger slave. This device's trigger signal will be an
+     * input and this devices will wait for the master's trigger signal
+     * assertion.
+     */
+    BLADERF_TRIGGER_ROLE_SLAVE,
 } bladerf_trigger_role;
 
 /**
@@ -1398,14 +1418,14 @@ typedef enum  {
  *
  * This selects pin or signal used for the trigger.
  *
- * ::BLADERF_TRIGGER_J71_4 is the only valid option as of FPGA v0.6.0.
+ * @note ::BLADERF_TRIGGER_J71_4 is the only valid option as of FPGA v0.6.0.
  *
- * The BLADERF_TRIGGER_USER_* values have been added to allow users to modify
+ * The `BLADERF_TRIGGER_USER_*` values have been added to allow users to modify
  * both hardware and software implementations to add custom triggers, while
  * maintaining libbladeRF API compatibility. Official bladeRF releases will
  * not utilize these user signal IDs.
  */
-typedef enum  {
+typedef enum {
     BLADERF_TRIGGER_INVALID = -1, /**< Invalid selection */
     BLADERF_TRIGGER_J71_4,        /**< J71 pin 4 (mini_exp_1) */
 
@@ -1423,26 +1443,24 @@ typedef enum  {
  * Trigger configuration
  *
  * It is <b>highly recommended</b> to keep a 1:1 relationship between triggers
- * in the physical setup and instances of this structure. (i.e., do not
- * re-use and change the same bladerf_trigger) for multiple triggers.)
+ * in the physical setup and instances of this structure. (i.e., do not re-use
+ * and change the same bladerf_trigger) for multiple triggers.)
  */
-struct bladerf_trigger
-{
+struct bladerf_trigger {
     bladerf_channel channel;       /**< RX/TX channel associated with trigger */
     bladerf_trigger_role role;     /**< Role of the device in a trigger chain */
     bladerf_trigger_signal signal; /**< Pin or signal being used */
     uint64_t options;              /**< Reserved field for future options. This
-                                    *   is unused and should be set to 0.
-                                    */
+                                    *   is unused and should be set to 0. */
 };
 
 /**
  * Initialize a bladerf_trigger structure based upon the current configuration
  * of the specified trigger signal.
  *
- * While it is possible to simply declare and manually fill in a
- * bladerf_trigger structure, it is recommended to use this function to
- * retrieve the current `role` and `options` values.
+ * While it is possible to simply declare and manually fill in a bladerf_trigger
+ * structure, it is recommended to use this function to retrieve the current
+ * `role` and `options` values.
  *
  * @param       dev         Device to query
  * @param[in]   ch          Channel
@@ -1460,9 +1478,9 @@ int CALL_CONV bladerf_trigger_init(struct bladerf *dev,
 /**
  * Configure and (dis)arm a trigger on the specified device.
  *
- * @note If trigger->role is set to ::BLADERF_TRIGGER_ROLE_DISABLED,
- *       this will inherently disarm an armed trigger and clear any fire
- *       requests, regardless of the value of `arm`.
+ * @note If trigger->role is set to ::BLADERF_TRIGGER_ROLE_DISABLED, this will
+ *       inherently disarm an armed trigger and clear any fire requests,
+ *       regardless of the value of `arm`.
  *
  * @param       dev     Device to configure
  * @param[in]   trigger Trigger configure
@@ -1470,18 +1488,19 @@ int CALL_CONV bladerf_trigger_init(struct bladerf *dev,
  * @param[in]   resv1   Reserved for future use. Set to 0.
  * @param[in]   resv2   Reserved for future use. Set to 0.
  *
- * @warning Configuring two devices in the trigger chain (or both RX and
- *          TX on a single device) as masters can damage the associated FPGA
- *          pins, as this would cause contention over the trigger signal.<b>
- *          Ensure only one device in the chain is configured as the master!
- *          </b>
+ * @warning Configuring two devices in the trigger chain (or both RX and TX on a
+ *          single device) as masters can damage the associated FPGA pins, as
+ *          this would cause contention over the trigger signal. <b>Ensure only
+ *          one device in the chain is configured as the master!</b>
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
 int CALL_CONV bladerf_trigger_arm(struct bladerf *dev,
                                   const struct bladerf_trigger *trigger,
-                                  bool arm, uint64_t resv1, uint64_t resv2);
+                                  bool arm,
+                                  uint64_t resv1,
+                                  uint64_t resv2);
 
 /**
  * Fire a trigger event.
@@ -1502,22 +1521,16 @@ int CALL_CONV bladerf_trigger_fire(struct bladerf *dev,
  * Query the fire request status of a master trigger
  *
  * @param       dev             Device handle
- *
  * @param[in]   trigger         Trigger to query
- *
  * @param[out]  is_armed        Set to true if the trigger is armed, and false
  *                              otherwise. May be NULL.
- *
  * @param[out]  has_fired       Set to true if the trigger has fired, and false
  *                              otherwise. May be NULL.
- *
  * @param[out]  fire_requested  Only applicable to a trigger master.
  *                              Set to true if a fire request has been
  *                              previously submitted. May be NULL.
- *
  * @param[out]  resv1           Reserved for future use.
  *                              This field is written as 0 if not set to NULL.
- *
  * @param[out]  resv2           Reserved for future use.
  *                              This field is written as 0 if not set to NULL.
  *
@@ -1549,14 +1562,10 @@ int CALL_CONV bladerf_trigger_state(struct bladerf *dev,
  * They map directly to rx_mux_mode_t inside the FPGA's source code.
  */
 typedef enum {
-    /**
-     * Invalid RX Mux mode selection
-     */
+    /** Invalid RX Mux mode selection */
     BLADERF_RX_MUX_INVALID = -1,
 
-    /**
-     * Read baseband samples. This is the default mode of operation.
-     */
+    /** Read baseband samples. This is the default mode of operation. */
     BLADERF_RX_MUX_BASEBAND = 0x0,
 
     /**
@@ -1575,9 +1584,7 @@ typedef enum {
 
     /* RX_MUX setting 0x3 is reserved for future use */
 
-    /**
-     * Read samples from the baseband TX input to the FPGA (from the host)
-     */
+    /** Read samples from the baseband TX input to the FPGA (from the host) */
     BLADERF_RX_MUX_DIGITAL_LOOPBACK = 0x4,
 } bladerf_rx_mux;
 
@@ -1622,12 +1629,14 @@ int CALL_CONV bladerf_get_rx_mux(struct bladerf *dev, bladerf_rx_mux *mode);
  * Specifies that scheduled retune should occur immediately when using
  * bladerf_schedule_retune().
  */
-#define BLADERF_RETUNE_NOW  0
+#define BLADERF_RETUNE_NOW 0
 
 /**
- * Quick Re-tune parameters. Note that these parameters, which are associated
- * with the RFIC's register values, are sensitive to changes in the operating
- * environment (e.g., temperature).
+ * Quick Re-tune parameters.
+ *
+ * @note These parameters, which are associated with the RFIC's register values,
+ *       are sensitive to changes in the operating environment (e.g.,
+ *       temperature).
  *
  * This structure should be filled in via bladerf_get_quick_tune().
  */
@@ -1635,18 +1644,18 @@ struct bladerf_quick_tune {
     union {
         /* bladeRF1 quick tune parameters */
         struct {
-            uint8_t freqsel;    /**< Choice of VCO and VCO division factor */
-            uint8_t vcocap;     /**< VCOCAP value */
-            uint16_t nint;      /**< Integer portion of LO frequency value */
-            uint32_t nfrac;     /**< Fractional portion of LO frequency value */
-            uint8_t  flags;     /**< Flag bits used internally by libbladeRF */
+            uint8_t freqsel; /**< Choice of VCO and VCO division factor */
+            uint8_t vcocap;  /**< VCOCAP value */
+            uint16_t nint;   /**< Integer portion of LO frequency value */
+            uint32_t nfrac;  /**< Fractional portion of LO frequency value */
+            uint8_t flags;   /**< Flag bits used internally by libbladeRF */
         };
         /* bladeRF2 quick tune parameters */
         struct {
             /* TODO: Define these */
             void *tbd;
         };
-   };
+    };
 };
 
 /**
@@ -1658,7 +1667,6 @@ struct bladerf_quick_tune {
  *      enabled in order to use this function.)
  *
  * @param       dev             Device handle
- *
  * @param[in]   ch              Channel
  * @param[in]   timestamp       Channel's sample timestamp to perform the
  *                              retune operation. If this value is in the past,
@@ -1672,12 +1680,12 @@ struct bladerf_quick_tune {
  *                              according to a previous state retrieved via
  *                              bladerf_get_quick_tune().
  *
+ * @return 0 on success, value from \ref RETCODES list on failure.
  *
- * @return 0 on success, value from \ref RETCODES list on failure. If the
- *         underlying queue of scheduled retune requests becomes full,
- *         \ref BLADERF_ERR_QUEUE_FULL will be returned. In this case, it
- *         should be possible to schedule a retune after the timestamp of one
- *         of the earlier requests occurs.
+ * @note If the underlying queue of scheduled retune requests becomes full, \ref
+ *       BLADERF_ERR_QUEUE_FULL will be returned. In this case, it should be
+ *       possible to schedule a retune after the timestamp of one of the earlier
+ *       requests occurs.
  */
 API_EXPORT
 int CALL_CONV bladerf_schedule_retune(struct bladerf *dev,
@@ -1706,10 +1714,12 @@ int CALL_CONV bladerf_cancel_scheduled_retunes(struct bladerf *dev,
  * Fetch parameters used to tune the transceiver to the current frequency for
  * use with bladerf_schedule_retune() to perform a "quick retune."
  *
- * This allows for a faster retune, with a potential trade off of
- * increased phase noise.  Note that these parameters are sensitive to
- * changes in the operating environment, and should be "refreshed" if planning
- * to use the "quick retune" functionality over a long period of time.
+ * This allows for a faster retune, with a potential trade off of increased
+ * phase noise.
+ *
+ * @note These parameters are sensitive to changes in the operating environment,
+ *       and should be "refreshed" if planning to use the "quick retune"
+ *       functionality over a long period of time.
  *
  * @pre bladerf_set_frequency() or bladerf_schedule_retune() have previously
  *      been used to retune to the desired frequency.
@@ -1741,16 +1751,16 @@ int CALL_CONV bladerf_get_quick_tune(struct bladerf *dev,
 /**
  * Correction parameter selection
  *
- * These values specify the correction parameter to modify or query when
- * calling bladerf_set_correction() or bladerf_get_correction(). Note that the
- * meaning of the `value` parameter to these functions depends upon the
- * correction parameter.
+ * These values specify the correction parameter to modify or query when calling
+ * bladerf_set_correction() or bladerf_get_correction(). Note that the meaning
+ * of the `value` parameter to these functions depends upon the correction
+ * parameter.
  *
  */
 typedef enum {
     /**
-     * Adjusts the in-phase DC offset. Valid values are [-2048, 2048], which
-     * are scaled to the available control bits.
+     * Adjusts the in-phase DC offset. Valid values are [-2048, 2048], which are
+     * scaled to the available control bits.
      */
     BLADERF_CORR_DCOFF_I,
 
@@ -1761,8 +1771,8 @@ typedef enum {
     BLADERF_CORR_DCOFF_Q,
 
     /**
-     * Adjusts phase correction of [-10, 10] degrees, via a provided count
-     * value of [-4096, 4096].
+     * Adjusts phase correction of [-10, 10] degrees, via a provided count value
+     * of [-4096, 4096].
      */
     BLADERF_CORR_PHASE,
 
@@ -1775,17 +1785,17 @@ typedef enum {
 
 /** @cond IGNORE */
 /* Backwards compatible mapping to `bladerf_correction`. */
-#define BLADERF_CORR_LMS_DCOFF_I    BLADERF_CORR_DCOFF_I
-#define BLADERF_CORR_LMS_DCOFF_Q    BLADERF_CORR_DCOFF_Q
-#define BLADERF_CORR_FPGA_PHASE     BLADERF_CORR_PHASE
-#define BLADERF_CORR_FPGA_GAIN      BLADERF_CORR_GAIN
+#define BLADERF_CORR_LMS_DCOFF_I BLADERF_CORR_DCOFF_I
+#define BLADERF_CORR_LMS_DCOFF_Q BLADERF_CORR_DCOFF_Q
+#define BLADERF_CORR_FPGA_PHASE BLADERF_CORR_PHASE
+#define BLADERF_CORR_FPGA_GAIN BLADERF_CORR_GAIN
 /** @endcond */
 
 /**
  * Set the value of the specified configuration parameter
  *
- * See the ::bladerf_correction description for the valid ranges of the
- * `value` parameter.
+ * @see The ::bladerf_correction description for the valid ranges of the `value`
+ *      parameter.
  *
  * @param       dev         Device handle
  * @param[in]   ch          Channel
@@ -1795,8 +1805,10 @@ typedef enum {
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_set_correction(struct bladerf *dev, bladerf_channel ch,
-                                     bladerf_correction corr, int16_t value);
+int CALL_CONV bladerf_set_correction(struct bladerf *dev,
+                                     bladerf_channel ch,
+                                     bladerf_correction corr,
+                                     int16_t value);
 
 /**
  * Obtain the current value of the specified configuration parameter
@@ -1809,8 +1821,10 @@ int CALL_CONV bladerf_set_correction(struct bladerf *dev, bladerf_channel ch,
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_get_correction(struct bladerf *dev, bladerf_channel ch,
-                                     bladerf_correction corr, int16_t *value);
+int CALL_CONV bladerf_get_correction(struct bladerf *dev,
+                                     bladerf_channel ch,
+                                     bladerf_correction corr,
+                                     int16_t *value);
 
 /** @} (End of FN_CORR) */
 
@@ -1828,18 +1842,18 @@ int CALL_CONV bladerf_get_correction(struct bladerf *dev, bladerf_channel ch,
  * Stream direction
  */
 typedef enum {
-    BLADERF_RX = 0,         /**< Receive direction */
-    BLADERF_TX = 1,         /**< Transmit direction */
+    BLADERF_RX = 0, /**< Receive direction */
+    BLADERF_TX = 1, /**< Transmit direction */
 } bladerf_direction;
 
 /**
  * Stream channel layout
  */
 typedef enum {
-    BLADERF_RX_X1  = 0,     /**< x1 RX (SISO) */
-    BLADERF_TX_X1  = 1,     /**< x1 TX (SISO) */
-    BLADERF_RX_X2  = 2,     /**< x2 RX (MIMO) */
-    BLADERF_TX_X2  = 3,     /**< x2 TX (MIMO) */
+    BLADERF_RX_X1 = 0, /**< x1 RX (SISO) */
+    BLADERF_TX_X1 = 1, /**< x1 TX (SISO) */
+    BLADERF_RX_X2 = 2, /**< x2 RX (MIMO) */
+    BLADERF_TX_X2 = 3, /**< x2 TX (MIMO) */
 } bladerf_channel_layout;
 
 /**
@@ -1875,9 +1889,11 @@ typedef enum {
      * </pre>
      *
      * When using this format the minimum required buffer size, in bytes, is:
-     * <pre>
-     *   buffer_size_min = [ 2 * num_samples * num_channels * sizeof(int16_t) ]
-     * </pre>
+     *
+     * \f$
+     *  buffer\_size\_min = (2 \times num\_samples \times num\_channels \times
+     *                      sizeof(int16\_t))
+     * \f$
      *
      * For example, to hold 2048 samples for one channel, a buffer must be at
      * least 8192 bytes large.
@@ -1940,28 +1956,38 @@ typedef enum {
      * responsible for manually packing/unpacking the above metadata into/from
      * their samples.
      *
-     * For more information, see the `src/streaming/metadata.h` header in the
-     * libbladeRF codebase.
+     * @see STREAMING_FORMAT_METADATA
+     * @see The `src/streaming/metadata.h` header in the libbladeRF codebase.
      */
     BLADERF_FORMAT_SC16_Q11_META,
 } bladerf_format;
 
+/**
+ * @defgroup STREAMING_FORMAT_METADATA Metadata structure and flags
+ *
+ * @{
+ */
+
 /*
  * Metadata status bits
  *
- * These are used in conjunction with the bladerf_metadata structure's
- * `status` field.
+ * These are used in conjunction with the bladerf_metadata structure's `status`
+ * field.
  */
 
 /**
- * A sample overrun has occurred. This indicates that either the host (more
- * likely) or the FPGA is not keeping up with the incoming samples.
+ * A sample overrun has occurred.
+ *
+ * This indicates that either the host (more likely) or the FPGA is not keeping
+ * up with the incoming samples.
  */
-#define BLADERF_META_STATUS_OVERRUN  (1 << 0)
+#define BLADERF_META_STATUS_OVERRUN (1 << 0)
 
 /**
- * A sample underrun has occurred. This generally only occurrs on the TX
- * channel when the FPGA is starved of samples.
+ * A sample underrun has occurred.
+ *
+ * This generally only occurs on the TX channel when the FPGA is starved of
+ * samples.
  *
  * @note libbladeRF does not report this status. It is here for future use.
  */
@@ -1970,13 +1996,14 @@ typedef enum {
 /*
  * Metadata flags
  *
- * These are used in conjunction with the bladerf_metadata structure's
- * `flags` field.
+ * These are used in conjunction with the bladerf_metadata structure's `flags`
+ * field.
  */
 
 /**
  * Mark the associated buffer as the start of a burst transmission.
- * This is only used for the bladerf_sync_tx() call.
+ *
+ * @note This is only used for the bladerf_sync_tx() call.
  *
  * When using this flag, the bladerf_metadata::timestamp field should contain
  * the timestamp at which samples should be sent.
@@ -1987,15 +2014,15 @@ typedef enum {
  * correct value is used, based upon the timestamp initially provided and
  * the number of samples that have been sent.
  */
-#define BLADERF_META_FLAG_TX_BURST_START   (1 << 0)
+#define BLADERF_META_FLAG_TX_BURST_START (1 << 0)
 
 /**
  * Mark the associated buffer as the end of a burst transmission. This will
  * flush the remainder of the sync interface's current working buffer and
  * enqueue samples into the hardware's transmit FIFO.
  *
- * As of libbladeRF v1.3.0, it is no longer necessary for the API user to
- * ensure that the final 3 samples of a burst are 0+0j. libbladeRF now ensures
+ * As of libbladeRF v1.3.0, it is no longer necessary for the API user to ensure
+ * that the final 3 samples of a burst are \f$0 + 0 j\f$. libbladeRF now ensures
  * this hardware requirement is upheld.
  *
  * Specifying this flag and flushing the sync interface's working buffer implies
@@ -2012,11 +2039,10 @@ typedef enum {
  * much time, consider using the ::BLADERF_META_FLAG_TX_UPDATE_TIMESTAMP
  * flag.
  *
- * This is only used for the bladerf_sync_tx() call. It is ignored by the
- * bladerf_sync_rx() call.
- *
+ * @note This is only used for the bladerf_sync_tx() call. It is ignored by the
+ *       bladerf_sync_rx() call.
  */
-#define BLADERF_META_FLAG_TX_BURST_END     (1 << 1)
+#define BLADERF_META_FLAG_TX_BURST_END (1 << 1)
 
 /**
  * Use this flag in conjunction with ::BLADERF_META_FLAG_TX_BURST_START to
@@ -2026,7 +2052,7 @@ typedef enum {
  * When this flag is used, there is no need to set the
  * bladerf_metadata::timestamp field.
  */
-#define BLADERF_META_FLAG_TX_NOW           (1 << 2)
+#define BLADERF_META_FLAG_TX_NOW (1 << 2)
 
 /**
  * Use this flag within a burst (i.e., between the use of
@@ -2036,15 +2062,15 @@ typedef enum {
  * samples will then be transmitted at that timestamp.
  *
  * Use this flag when potentially flushing an entire buffer via the
- * ::BLADERF_META_FLAG_TX_BURST_END would yield an unacceptably large gap in
- * the transmitted samples.
+ * ::BLADERF_META_FLAG_TX_BURST_END would yield an unacceptably large gap in the
+ * transmitted samples.
  *
- * In some applications where a transmitter is constantly transmitting
- * with extremely small gaps (less than a buffer), users may end up using a
- * single ::BLADERF_META_FLAG_TX_BURST_START, and then numerous calls to
- * bladerf_sync_tx() with the ::BLADERF_META_FLAG_TX_UPDATE_TIMESTAMP
- * flag set.  The ::BLADERF_META_FLAG_TX_BURST_END would only be used to end
- * the stream when shutting down.
+ * In some applications where a transmitter is constantly transmitting with
+ * extremely small gaps (less than a buffer), users may end up using a single
+ * ::BLADERF_META_FLAG_TX_BURST_START, and then numerous calls to
+ * bladerf_sync_tx() with the ::BLADERF_META_FLAG_TX_UPDATE_TIMESTAMP flag set.
+ * The ::BLADERF_META_FLAG_TX_BURST_END would only be used to end the stream
+ * when shutting down.
  */
 #define BLADERF_META_FLAG_TX_UPDATE_TIMESTAMP (1 << 3)
 
@@ -2053,7 +2079,7 @@ typedef enum {
  * samples, rather than wait until the timestamp indicated in the
  * bladerf_metadata timestamp field.
  */
-#define BLADERF_META_FLAG_RX_NOW           (1 << 31)
+#define BLADERF_META_FLAG_RX_NOW (1 << 31)
 
 /**
  * Sample metadata
@@ -2064,20 +2090,22 @@ typedef enum {
  */
 struct bladerf_metadata {
     /**
-     * Free-running FPGA counter that monotonically increases at the
-     * sample rate of the associated channel. */
+     * Free-running FPGA counter that monotonically increases at the sample rate
+     * of the associated channel.
+     */
     uint64_t timestamp;
 
     /**
      * Input bit field to control the behavior of the call that the metadata
-     * structure is passed to. API calls read this field from the provided
-     * data structure, and do not modify it.
+     * structure is passed to. API calls read this field from the provided data
+     * structure, and do not modify it.
      *
      * Valid flags include
-     *  ::BLADERF_META_FLAG_TX_BURST_START, ::BLADERF_META_FLAG_TX_BURST_END,
-     *  ::BLADERF_META_FLAG_TX_NOW, ::BLADERF_META_FLAG_TX_UPDATE_TIMESTAMP,
-     *  and ::BLADERF_META_FLAG_RX_NOW
-     *
+     *  ::BLADERF_META_FLAG_TX_BURST_START,
+     *  ::BLADERF_META_FLAG_TX_BURST_END,
+     *  ::BLADERF_META_FLAG_TX_NOW,
+     *  ::BLADERF_META_FLAG_TX_UPDATE_TIMESTAMP, and
+     *  ::BLADERF_META_FLAG_RX_NOW
      */
     uint32_t flags;
 
@@ -2086,32 +2114,33 @@ struct bladerf_metadata {
      * calls will write this field.
      *
      * Possible status flags include ::BLADERF_META_STATUS_OVERRUN and
-     * ::BLADERF_META_STATUS_UNDERRUN;
-     *
+     * ::BLADERF_META_STATUS_UNDERRUN.
      */
     uint32_t status;
 
     /**
      * This output parameter is updated to reflect the actual number of
-     * contiguous samples that have been populated in an RX buffer during
-     * a bladerf_sync_rx() call.
+     * contiguous samples that have been populated in an RX buffer during a
+     * bladerf_sync_rx() call.
      *
      * This will not be equal to the requested count in the event of a
      * discontinuity (i.e., when the status field has the
      * ::BLADERF_META_STATUS_OVERRUN flag set). When an overrun occurs, it is
-     * important not to read past the number of samples specified by this
-     * value, as the remaining contents of the buffer are undefined.
+     * important not to read past the number of samples specified by this value,
+     * as the remaining contents of the buffer are undefined.
      *
-     * This parameter is not currently used by bladerf_sync_tx().
+     * @note This parameter is not currently used by bladerf_sync_tx().
      */
     unsigned int actual_count;
 
     /**
-     * Reserved for future use. This is not used by any functions.
-     * It is recommended that users zero out this field.
+     * Reserved for future use. This is not used by any functions. It is
+     * recommended that users zero out this field.
      */
     uint8_t reserved[32];
 };
+
+/** @} (End of STREAMING_FORMAT_METADATA) */
 
 /**
  * Interleaves contiguous blocks of samples in preparation for MIMO TX.
@@ -2135,14 +2164,11 @@ struct bladerf_metadata {
  *  `-------------------`--------------`--------------`------------------`
  * </pre>
  *
- * where:
- * <pre>
- *   chsize = sizeof(buffer) / num_channels,
- * </pre>
+ * where \f$chsize = \frac{sizeof(buffer)}{num\_channels}\f$.
  *
- * this function interleaves the samples in the manner described by the
+ * This function interleaves the samples in the manner described by the
  * ::BLADERF_FORMAT_SC16_Q11 format, in place. Each channel must have
- * `buffer_size / num_channels` samples, and they must be concatenated in
+ * \f$buffer\_size / num\_channels\f$ samples, and they must be concatenated in
  * order.
  *
  * If the ::BLADERF_FORMAT_SC16_Q11_META format is specified, the first 16 bytes
@@ -2150,14 +2176,13 @@ struct bladerf_metadata {
  *
  * This function's inverse is bladerf_deinterleave_stream_buffer().
  *
- * @param[in]   layout          Stream direction and layout
- * @param[in]   format          Data format to use
- * @param[in]   buffer_size     The size of the buffer, in samples. Note that
- *                              this is the entire buffer, not just a single
- *                              channel.
- * @param       samples         Buffer to process. The user is responsible for
- *                              ensuring this buffer contains exactly
- *                              `buffer_size` samples.
+ * @param[in]   layout        Stream direction and layout
+ * @param[in]   format        Data format to use
+ * @param[in]   buffer_size   The size of the buffer, in samples. Note that this
+ *                            is the entire buffer, not just a single channel.
+ * @param       samples       Buffer to process. The user is responsible for
+ *                            ensuring this buffer contains exactly
+ *                            `buffer_size` samples.
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
@@ -2171,9 +2196,9 @@ int CALL_CONV bladerf_interleave_stream_buffer(bladerf_channel_layout layout,
  * Deinterleaves samples into contiguous blocks after MIMO RX.
  *
  * This function deinterleaves a multi-channel interleaved buffer, as described
- * by the ::BLADERF_FORMAT_SC16_Q11 format.
- * The output is in the format described as the input to this function's
- * inverse, bladerf_interleave_stream_buffer().
+ * by the ::BLADERF_FORMAT_SC16_Q11 format. The output is in the format
+ * described as the input to this function's inverse,
+ * bladerf_interleave_stream_buffer().
  *
  * If the ::BLADERF_FORMAT_SC16_Q11_META format is specified, the first 16 bytes
  * will skipped.
@@ -2203,13 +2228,13 @@ int CALL_CONV bladerf_deinterleave_stream_buffer(bladerf_channel_layout layout,
  * RF front ends must always be enabled prior to streaming samples on the
  * associated interface.
  *
- * When a synchronous stream is associated with the specified channel, this
- * will shut down the underlying asynchronous stream when `enable` = false.
+ * When a synchronous stream is associated with the specified channel, this will
+ * shut down the underlying asynchronous stream when `enable` = false.
  *
  * When transmitting samples, be sure to provide ample time for TX samples reach
  * the RF front-end before calling this function with `enable` = false. (This
  * can be achieved easily when using metadata, as shown on
- * <a class="el" href="sync_tx_meta_bursts.html">this page</a>.)
+ * \link sync_tx_meta_bursts.html this page\endlink.)
  *
  * @param       dev     Device handle
  * @param[in]   ch      Channel
@@ -2219,7 +2244,8 @@ int CALL_CONV bladerf_deinterleave_stream_buffer(bladerf_channel_layout layout,
  */
 API_EXPORT
 int CALL_CONV bladerf_enable_module(struct bladerf *dev,
-                                    bladerf_channel ch, bool enable);
+                                    bladerf_channel ch,
+                                    bool enable);
 
 /**
  * Retrieve the specified stream's current timestamp counter value from the
@@ -2237,24 +2263,24 @@ int CALL_CONV bladerf_enable_module(struct bladerf *dev,
  * When actively receiving a sample stream, instead use the
  * ::bladerf_metadata::timestamp field (provided when using the
  * ::BLADERF_FORMAT_SC16_Q11_META format) to retrieve the timestamp value
- * associated with a block of samples. See the
- * <a class="el" href="sync_rx_meta.html">RX with metadata</a> page for
- * examples of this.
+ * associated with a block of samples. See the \link sync_rx_meta.html RX with
+ * metadata\endlink page for examples of this.
  *
- * An example use-case of this function is to schedule an initial TX burst
- * in a set of bursts;
+ * An example use-case of this function is to schedule an initial TX burst in a
+ * set of bursts:
+ *
  *  - Configure and start a TX stream using the ::BLADERF_FORMAT_SC16_Q11_META
  *      format.
- *  - Retrieve timestamp `T`, a coarse estimate the TX's current timestamp via
- *      this function.
- *  - Schedule the first burst, `F` to occur in the future: `F = T + N`.
- *      Generally, adding `N` in tens to low hundreds of milliseconds is
+ *  - Retrieve timestamp \f$T\f$, a coarse estimate the TX's current timestamp
+ *      via this function.
+ *  - Schedule the first burst, \f$F\f$ to occur in the future: \f$F = T + N\f$.
+ *      Generally, adding \f$N\f$ in tens to low hundreds of milliseconds is
  *      sufficient to account for timestamp retrieval overhead and stream
  *      startup.
- *  - Schedule additional bursts relative to the first burst `F`.
+ *  - Schedule additional bursts relative to the first burst \f$F\f$.
  *
- * Examples of the above are shown on the <a class="el"
- * href="sync_tx_meta_bursts.html">TX with metadata</a> page.
+ * Examples of the above are shown on the \link sync_tx_meta.html TX with
+ * metadata\endlink page.
  *
  * @param       dev         Device handle
  * @param[in]   dir         Stream direction
@@ -2263,7 +2289,8 @@ int CALL_CONV bladerf_enable_module(struct bladerf *dev,
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_get_timestamp(struct bladerf *dev, bladerf_direction dir,
+int CALL_CONV bladerf_get_timestamp(struct bladerf *dev,
+                                    bladerf_direction dir,
                                     uint64_t *value);
 
 /**
@@ -2283,23 +2310,10 @@ int CALL_CONV bladerf_get_timestamp(struct bladerf *dev, bladerf_direction dir,
  * These functions are thread-safe.
  *
  * The following pages provide additional information and example usage:
- *  <ul>
- *      <li>
- *          <a class="el" href="sync_no_meta.html">
- *              Synchronous Interface: Basic usage without metadata
- *          </a>
- *      </li>
- *      <li>
- *          <a class="el" href="sync_rx_meta.html">
- *             Synchronous Interface: RX with metadata
- *          </a>
- *      </li>
- *      <li>
-            <a class="el" href="sync_tx_meta_bursts.html">
- *             Synchronous Interface: TX with metadata
- *          </a>
- *      </li>
- *  </ul>
+ *
+ *  - \link sync_no_meta.html Basic usage without metadata\endlink
+ *  - \link sync_rx_meta.html Synchronous RX with metadata\endlink
+ *  - \link sync_tx_meta_bursts.html Synchronous TX with metadata\endlink
  *
  * @{
  */
@@ -2319,10 +2333,13 @@ int CALL_CONV bladerf_get_timestamp(struct bladerf *dev, bladerf_direction dir,
  * Memory allocated by this function will be deallocated when bladerf_close()
  * is called.
  *
- * See the bladerf_init_stream() documentation for information on determining
- * appropriate values for `buffers_size`, `num_transfers`, and `stream_timeout`.
- * The `num_buffers` parameter should generally be increased as the amount of
- * work done between bladerf_sync_rx() or bladerf_sync_tx() calls increases.
+ * @see The bladerf_init_stream() documentation for information on determining
+ *      appropriate values for `buffers_size`, `num_transfers`, and
+ *      `stream_timeout`.
+ *
+ * @note The `num_buffers` parameter should generally be increased as the amount
+ *       of work done between bladerf_sync_rx() or bladerf_sync_tx() calls
+ *       increases.
  *
  * @param       dev             Device to configure
  * @param[in]   layout          Stream direction and layout
@@ -2365,6 +2382,13 @@ int CALL_CONV bladerf_sync_config(struct bladerf *dev,
  * number of samples required to fill a buffer corresponds to the `buffer_size`
  * parameter passed to bladerf_sync_config().
  *
+ * @pre A bladerf_sync_config() call has been to configure the device for
+ *      synchronous data transfer.
+ *
+ * @note A call to bladerf_enable_module() should be made before attempting to
+ *       transmit samples. Failing to do this may result in timeouts and other
+ *       errors.
+ *
  * @param       dev         Device handle
  * @param[in]   samples     Array of samples
  * @param[in]   num_samples Number of samples to write
@@ -2374,13 +2398,6 @@ int CALL_CONV bladerf_sync_config(struct bladerf *dev,
  *                          the ::BLADERF_FORMAT_SC16_Q11 format.
  * @param[in]   timeout_ms  Timeout (milliseconds) for this call to complete.
  *                          Zero implies "infinite."
- *
- * @pre A bladerf_sync_config() call has been to configure the device for
- *      synchronous data transfer.
- *
- * @pre A call to bladerf_enable_module() should be made before attempting to
- *      transmit samples. Failing to do this may result in timeouts and other
- *      errors.
  *
  * @return 0 on success,
  *         ::BLADERF_ERR_UNSUPPORTED if libbladeRF is not built with support
@@ -2401,6 +2418,13 @@ int CALL_CONV bladerf_sync_tx(struct bladerf *dev,
  * needed. This stream can be stopped by disabling the RX channel. (See
  * bladerf_enable_module for more details.)
  *
+ * @pre A bladerf_sync_config() call has been to configure the device for
+ *      synchronous data transfer.
+ *
+ * @note A call to bladerf_enable_module() should be made before attempting to
+ *       receive samples. Failing to do this may result in timeouts and other
+ *       errors.
+ *
  * @param       dev         Device handle
  * @param[out]  samples     Buffer to store samples in. The caller is
  *                          responsible for ensuring this buffer is sufficiently
@@ -2415,13 +2439,6 @@ int CALL_CONV bladerf_sync_tx(struct bladerf *dev,
  * @param[in]   timeout_ms  Timeout (milliseconds) for this call to complete.
  *                          Zero implies "infinite."
  *
- * @pre A bladerf_sync_config() call has been to configure the device for
- *      synchronous data transfer.
- *
- * @pre A call to bladerf_enable_module() should be made before attempting to
- *      receive samples. Failing to do this may result in timeouts and other
- *      errors.
- *
  * @return 0 on success,
  *         ::BLADERF_ERR_UNSUPPORTED if libbladeRF is not built with support
  *         for this functionality,
@@ -2429,7 +2446,8 @@ int CALL_CONV bladerf_sync_tx(struct bladerf *dev,
  */
 API_EXPORT
 int CALL_CONV bladerf_sync_rx(struct bladerf *dev,
-                              void *samples, unsigned int num_samples,
+                              void *samples,
+                              unsigned int num_samples,
                               struct bladerf_metadata *metadata,
                               unsigned int timeout_ms);
 
@@ -2442,9 +2460,9 @@ int CALL_CONV bladerf_sync_rx(struct bladerf *dev,
  * This interface gives the API user full control over the stream and buffer
  * management, at the cost of added complexity.
  *
- * New users are recommended to first evaluate the \ref FN_STREAMING_SYNC
- * interface, and to only use this interface if the former is found to not
- * yield suitable performance.
+ * @note New users are recommended to first evaluate the \ref FN_STREAMING_SYNC
+ *       interface, and to only use this interface if the former is found to not
+ *       yield suitable performance.
  *
  * These functions are either thread-safe or may be used in a thread-safe
  * manner (per the details noted in the function description).
@@ -2463,7 +2481,7 @@ int CALL_CONV bladerf_sync_rx(struct bladerf *dev,
  * provided. In this case, buffers are expected to be provided via
  * bladerf_submit_stream_buffer().
  */
-#define BLADERF_STREAM_NO_DATA  ((void*)(-1))
+#define BLADERF_STREAM_NO_DATA ((void *)(-1))
 
 /** This opaque structure is used to keep track of stream information */
 struct bladerf_stream;
@@ -2493,7 +2511,7 @@ struct bladerf_stream;
  * the order of lock acquisitions both in the callbacks, and the code
  * surrounding bladerf_submit_stream_buffer().
  *
- * <b>Note:</b>Do not call bladerf_submit_stream_buffer() from a callback.
+ * @note Do not call bladerf_submit_stream_buffer() from a callback.
  *
  * For both RX and TX, the stream callback receives:
  *  - dev:          Device structure
@@ -2514,7 +2532,6 @@ struct bladerf_stream;
  *  - Return value:     The user specifies the next buffer to fill with RX data,
  *                      which should be `num_samples` in size,
  *                      ::BLADERF_STREAM_SHUTDOWN, or ::BLADERF_STREAM_NO_DATA.
- *
  */
 typedef void *(*bladerf_stream_cb)(struct bladerf *dev,
                                    struct bladerf_stream *stream,
@@ -2583,8 +2600,7 @@ typedef void *(*bladerf_stream_cb)(struct bladerf *dev,
  * @note  This call should be later followed by a call to
  *        bladerf_deinit_stream() to avoid memory leaks.
  *
- * @return 0 on success,
- *          value from \ref RETCODES list on failure
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
 int CALL_CONV bladerf_init_stream(struct bladerf_stream **stream,
@@ -2602,8 +2618,10 @@ int CALL_CONV bladerf_init_stream(struct bladerf_stream **stream,
  *
  * Only 1 RX stream and 1 TX stream may be running at a time. Attempting to
  * call bladerf_stream() with more than one stream will yield unexpected (and
- * most likely undesirable) results. See the ::bladerf_stream_cb description
- * for additional thread-safety caveats.
+ * most likely undesirable) results.
+ *
+ * @note See the ::bladerf_stream_cb description for additional thread-safety
+ *       caveats.
  *
  * @pre This function should be preceded by a call to bladerf_enable_module()
  *      to enable the associated RX or TX directions before attempting to use
@@ -2613,7 +2631,7 @@ int CALL_CONV bladerf_init_stream(struct bladerf_stream **stream,
  *                      initialized via bladerf_init_stream()
  * @param[in]  layout   Stream direction and channel layout
  *
- * @return  0 on success, value from \ref RETCODES list on failure
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
 int CALL_CONV bladerf_stream(struct bladerf_stream *stream,
@@ -2644,7 +2662,7 @@ int CALL_CONV bladerf_stream(struct bladerf_stream *stream,
  *                              0 implies an "infinite" wait.
  *
  * @return 0 on success, ::BLADERF_ERR_TIMEOUT upon a timeout, or a value from
- * \ref RETCODES list on other failures
+ *         \ref RETCODES list on other failures
  */
 API_EXPORT
 int CALL_CONV bladerf_submit_stream_buffer(struct bladerf_stream *stream,
@@ -2664,9 +2682,9 @@ int CALL_CONV bladerf_submit_stream_buffer(struct bladerf_stream *stream,
  *                              This buffer is assumed to be the size specified
  *                              in the associated bladerf_init_stream() call.
  *
- * @return  0 on success,
- *          ::BLADERF_ERR_WOULD_BLOCK if the call would have to block to
- *          succeed, or another value from \ref RETCODES upon other failure
+ * @return  0 on success, ::BLADERF_ERR_WOULD_BLOCK if the call would have to
+ *          block to succeed, or another value from \ref RETCODES upon other
+ *          failure
  */
 API_EXPORT
 int CALL_CONV bladerf_submit_stream_buffer_nb(struct bladerf_stream *stream,
@@ -2676,9 +2694,10 @@ int CALL_CONV bladerf_submit_stream_buffer_nb(struct bladerf_stream *stream,
 /**
  * Deinitialize and deallocate stream resources.
  *
- * @pre    Stream is no longer being used (via bladerf_submit_stream_buffer() or
- *          bladerf_stream() calls.)
- * @post   Stream is deallocated and may no longer be used.
+ * @pre  Stream is no longer being used (via bladerf_submit_stream_buffer() or
+ *       bladerf_stream() calls.)
+ *
+ * @post Stream is deallocated and may no longer be used.
  *
  * @param   stream  Stream to deinitialize. This function does nothing if
  *                  stream is `NULL`.
@@ -2722,8 +2741,8 @@ int CALL_CONV bladerf_get_stream_timeout(struct bladerf *dev,
 /**
  * @defgroup FN_PROG  Firmware and FPGA
  *
- * These functions provide the ability to load and program devices
- * on the bladeRF board.
+ * These functions provide the ability to load and program devices on the
+ * bladeRF board.
  *
  * Care should be taken with bootloader recovery functions to ensure that
  * devices operated on are indeed a bladeRF, as opposed to another FX3-based
@@ -2745,12 +2764,12 @@ int CALL_CONV bladerf_get_stream_timeout(struct bladerf *dev,
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_flash_firmware(struct bladerf *dev,
-                                     const char *firmware);
+int CALL_CONV bladerf_flash_firmware(struct bladerf *dev, const char *firmware);
 
 /**
- * Load device's FPGA. Note that this FPGA configuration will be reset
- * at the next power cycle.
+ * Load device's FPGA.
+ *
+ * @note This FPGA configuration will be reset at the next power cycle.
  *
  * @param       dev         Device handle
  * @param[in]   fpga        Full path to FPGA bitstream
@@ -2771,13 +2790,14 @@ int CALL_CONV bladerf_load_fpga(struct bladerf *dev, const char *fpga);
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_flash_fpga(struct bladerf *dev,
-                                 const char *fpga_image);
+int CALL_CONV bladerf_flash_fpga(struct bladerf *dev, const char *fpga_image);
 
 /**
  * Erase the FPGA region of SPI flash, effectively disabling FPGA autoloading
  *
  * @param   dev         Device handle
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
 int CALL_CONV bladerf_erase_stored_fpga(struct bladerf *dev);
@@ -2839,9 +2859,9 @@ int CALL_CONV bladerf_get_bootloader_list(struct bladerf_devinfo **list);
  * Download firmware to the specified device that is enumarating an FX3
  * bootloader, and begin executing the firmware from RAM.
  *
- * Note that this function <b>does not</b> write the firmware to SPI flash.
- * If this is desired, open the newly enumerated device with bladerf_open() and
- * use bladerf_flash_firmware().
+ * @note This function <b>does not</b> write the firmware to SPI flash. If this
+ * is desired, open the newly enumerated device with bladerf_open() and use
+ * bladerf_flash_firmware().
  *
  * @param[in]   device_identifier   Device identifier string describing the
  *                                  backend to use via the
@@ -2861,7 +2881,8 @@ int CALL_CONV bladerf_get_bootloader_list(struct bladerf_devinfo **list);
 API_EXPORT
 int CALL_CONV bladerf_load_fw_from_bootloader(const char *device_identifier,
                                               bladerf_backend backend,
-                                              uint8_t bus, uint8_t addr,
+                                              uint8_t bus,
+                                              uint8_t addr,
                                               const char *file);
 
 /** @} (End of FN_PROG) */
@@ -2879,31 +2900,25 @@ int CALL_CONV bladerf_load_fw_from_bootloader(const char *device_identifier,
 
 /** Type of data stored in a flash image */
 typedef enum {
-    BLADERF_IMAGE_TYPE_INVALID = -1,  /**< Used to denote invalid value */
-    BLADERF_IMAGE_TYPE_RAW,           /**< Misc. raw data */
-    BLADERF_IMAGE_TYPE_FIRMWARE,      /**< Firmware data */
-    BLADERF_IMAGE_TYPE_FPGA_40KLE,    /**< FPGA bitstream for 40 KLE device */
-    BLADERF_IMAGE_TYPE_FPGA_115KLE,   /**< FPGA bitstream for 115  KLE device */
-    BLADERF_IMAGE_TYPE_CALIBRATION,   /**< Board calibration */
-    BLADERF_IMAGE_TYPE_RX_DC_CAL,     /**< RX DC offset calibration table */
-    BLADERF_IMAGE_TYPE_TX_DC_CAL,     /**< TX DC offset calibration table */
-    BLADERF_IMAGE_TYPE_RX_IQ_CAL,     /**< RX IQ balance calibration table */
-    BLADERF_IMAGE_TYPE_TX_IQ_CAL,     /**< TX IQ balance calibration table */
+    BLADERF_IMAGE_TYPE_INVALID = -1, /**< Used to denote invalid value */
+    BLADERF_IMAGE_TYPE_RAW,          /**< Misc. raw data */
+    BLADERF_IMAGE_TYPE_FIRMWARE,     /**< Firmware data */
+    BLADERF_IMAGE_TYPE_FPGA_40KLE,   /**< FPGA bitstream for 40 KLE device */
+    BLADERF_IMAGE_TYPE_FPGA_115KLE,  /**< FPGA bitstream for 115  KLE device */
+    BLADERF_IMAGE_TYPE_CALIBRATION,  /**< Board calibration */
+    BLADERF_IMAGE_TYPE_RX_DC_CAL,    /**< RX DC offset calibration table */
+    BLADERF_IMAGE_TYPE_TX_DC_CAL,    /**< TX DC offset calibration table */
+    BLADERF_IMAGE_TYPE_RX_IQ_CAL,    /**< RX IQ balance calibration table */
+    BLADERF_IMAGE_TYPE_TX_IQ_CAL,    /**< TX IQ balance calibration table */
 } bladerf_image_type;
 
-/**
- * Size of the magic signature at the beginning of bladeRF image files
- */
+/** Size of the magic signature at the beginning of bladeRF image files */
 #define BLADERF_IMAGE_MAGIC_LEN 7
 
-/**
- * Size of bladeRF flash image checksum
- */
+/** Size of bladeRF flash image checksum */
 #define BLADERF_IMAGE_CHECKSUM_LEN 32
 
-/**
- * Size of reserved region of flash image
- */
+/** Size of reserved region of flash image */
 #define BLADERF_IMAGE_RESERVED_LEN 128
 
 /**
@@ -2982,15 +2997,16 @@ struct bladerf_image {
  * This following bladerf_image fields are populated: `magic`, `version`,
  * `timestamp`, `type`, `address`, and `length`
  *
- * The following bladerf_image fields are zeroed out:  `checksum`, `serial`,
- * and `reserved`,
+ * The following bladerf_image fields are zeroed out: `checksum`, `serial`, and
+ * `reserved`
  *
  * If the `length` parameter is not 0, the ::bladerf_image `data` field will be
  * dynamically allocated. Otherwise, `data` will be set to NULL.
  *
  * @note A non-zero `length` should be use only with bladerf_image_write();
- * bladerf_image_read() allocates and sets `data` based upon size of the image
- * contents, and does not attempt to free() the `data` field before setting it.
+ *       bladerf_image_read() allocates and sets `data` based upon size of the
+ *       image contents, and does not attempt to free() the `data` field before
+ *       setting it.
  *
  * The `address` and `length` fields should be set 0 when reading an image from
  * a file.
@@ -2999,14 +3015,15 @@ struct bladerf_image {
  *         `NULL` on memory allocation failure or invalid address/length.
  */
 API_EXPORT
-struct bladerf_image * CALL_CONV bladerf_alloc_image(bladerf_image_type type,
-                                                     uint32_t address,
-                                                     uint32_t length);
+struct bladerf_image *CALL_CONV bladerf_alloc_image(bladerf_image_type type,
+                                                    uint32_t address,
+                                                    uint32_t length);
 
 /**
  * Create a flash image initialized to contain a calibration data region.
- * This is intended to be used in conjunction with bladerf_image_write(),
- * or a write of the image's `data` field to flash.
+ *
+ * This is intended to be used in conjunction with bladerf_image_write(), or a
+ * write of the image's `data` field to flash.
  *
  * @param[in]   fpga_size    Target FPGA size
  * @param[in]   vctcxo_trim  VCTCXO oscillator trim value.
@@ -3015,12 +3032,12 @@ struct bladerf_image * CALL_CONV bladerf_alloc_image(bladerf_image_type type,
  *         `NULL` on memory allocation failure
  */
 API_EXPORT
-struct bladerf_image * CALL_CONV bladerf_alloc_cal_image(
-                                                bladerf_fpga_size fpga_size,
-                                                uint16_t vctcxo_trim);
+struct bladerf_image *CALL_CONV
+    bladerf_alloc_cal_image(bladerf_fpga_size fpga_size, uint16_t vctcxo_trim);
 
 /**
  * Free a bladerf_image previously obtained via bladerf_alloc_image.
+ *
  * If the bladerf_image's `data` field is non-`NULL`, it will be freed.
  *
  * @param[inout]    image   Flash image
@@ -3049,24 +3066,23 @@ int CALL_CONV bladerf_image_write(struct bladerf_image *image,
 /**
  * Read flash image from a file.
  *
- * @param[out]   image      Flash image structure to populate.
- *
- * @param[in]    file       File to read image from.
- *
  * @pre  The `image` parameter has been obtained via a call to
  *       bladerf_alloc_image(), with a `length` of 0.
  *
- * @post The `image` fields will be populated upon success, overwriting
- *       any previous values.
+ * @post The `image` fields will be populated upon success, overwriting any
+ *       previous values.
  *
- * @note The contents of the `image` paramater should not be used if this
+ * @note The contents of the `image` parameter should not be used if this
  *       function fails.
  *
- * @return 0 upon success,<br>
- *         ::BLADERF_ERR_CHECKSUM upon detecting a checksum mismatch,<br>
- *         ::BLADERF_ERR_INVAL if any image fields are invalid,<br>
- *         ::BLADERF_ERR_IO on a file I/O error,<br>
- *         or a value from \ref RETCODES list on any other failure<br>
+ * @param[out]   image      Flash image structure to populate.
+ * @param[in]    file       File to read image from.
+ *
+ * @return 0 upon success,
+ *         ::BLADERF_ERR_CHECKSUM upon detecting a checksum mismatch,
+ *         ::BLADERF_ERR_INVAL if any image fields are invalid,
+ *         ::BLADERF_ERR_IO on a file I/O error,
+ *         or a value from \ref RETCODES list on any other failure
  */
 API_EXPORT
 int CALL_CONV bladerf_image_read(struct bladerf_image *image, const char *file);
@@ -3099,10 +3115,8 @@ int CALL_CONV bladerf_image_read(struct bladerf_image *image, const char *file);
  *
  * When supplying input into the VCTCXO tamer, a 1.8V signal must be provided.
  *
- * <b>
- * IMPORTANT: Exceeding 1.8V on J71-1 can damage the associated FPGA I/O bank.
- * Ensure that you provide only a 1.8V signal!
- * </b>
+ * @warning IMPORTANT: Exceeding 1.8V on J71-1 can damage the associated FPGA
+ *          I/O bank. Ensure that you provide only a 1.8V signal!
  */
 typedef enum {
     /** Denotes an invalid selection or state */
@@ -3128,7 +3142,7 @@ typedef enum {
  */
 API_EXPORT
 int CALL_CONV bladerf_set_vctcxo_tamer_mode(struct bladerf *dev,
-                                             bladerf_vctcxo_tamer_mode mode);
+                                            bladerf_vctcxo_tamer_mode mode);
 
 /**
  * Get the current VCTCXO tamer mode
@@ -3142,7 +3156,7 @@ int CALL_CONV bladerf_set_vctcxo_tamer_mode(struct bladerf *dev,
  */
 API_EXPORT
 int CALL_CONV bladerf_get_vctcxo_tamer_mode(struct bladerf *dev,
-                                             bladerf_vctcxo_tamer_mode *mode);
+                                            bladerf_vctcxo_tamer_mode *mode);
 
 /** @} (End of FN_VCTCXO_TAMER) */
 
@@ -3170,7 +3184,7 @@ int CALL_CONV bladerf_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim);
 /**
  * Write value to VCTCXO trim DAC.
  *
- * This should not be used when the VCTCXO tamer is enabled.
+ * @note This should not be used when the VCTCXO tamer is enabled.
  *
  * @param       dev     Device handle
  * @param[in]   val     Desired VCTCXO trim DAC value
@@ -3184,11 +3198,10 @@ int CALL_CONV bladerf_trim_dac_write(struct bladerf *dev, uint16_t val);
  * Read value from VCTCXO trim DAC.
  *
  * This is similar to bladerf_get_vctcxo_trim(), except that it returns the
- * current trim DAC value, as opposed to the calibration value read from
- * flash.
+ * current trim DAC value, as opposed to the calibration value read from flash.
  *
- * Use this if you are trying to query the value after having previously
- * made calls to bladerf_trim_dac_write().
+ * Use this if you are trying to query the value after having previously made
+ * calls to bladerf_trim_dac_write().
  *
  * @param       dev     Device handle
  * @param[out]  val     Current VCTCXO trim DAC value
@@ -3224,8 +3237,10 @@ int CALL_CONV bladerf_trim_dac_read(struct bladerf *dev, uint16_t *val);
  *  - FPGA       >= v0.2.0
  *
  * The default mode can be overridden by setting a BLADERF_DEFAULT_TUNING_MODE
- * environment variable to `host` or `fpga`. Overriding this value with a mode
- * not supported by the FPGA will result in failures or unexpected behavior.
+ * environment variable to `host` or `fpga`.
+ *
+ * @note Overriding this value with a mode not supported by the FPGA will result
+ *       in failures or unexpected behavior.
  */
 typedef enum {
     /** Indicates an invalid mode is set */
@@ -3237,10 +3252,7 @@ typedef enum {
      */
     BLADERF_TUNING_MODE_HOST,
 
-    /**
-     * Perform tuning algorithm on the FPGA for faster tuning.
-     *
-     */
+    /** Perform tuning algorithm on the FPGA for faster tuning. */
     BLADERF_TUNING_MODE_FPGA,
 } bladerf_tuning_mode;
 
@@ -3288,10 +3300,10 @@ int CALL_CONV bladerf_get_tuning_mode(struct bladerf *dev,
  * This bit arms (i.e., enables) the trigger controller when set to 1. Samples
  * will be gated until the "Fire" bit has been asserted.
  *
- * A 0 in this bit disables the trigger controller. Samples will continue
- * to flow as they normally do in this state.
+ * A 0 in this bit disables the trigger controller. Samples will continue to
+ * flow as they normally do in this state.
  */
-#define BLADERF_TRIGGER_REG_ARM     ((uint8_t) (1 << 0))
+#define BLADERF_TRIGGER_REG_ARM ((uint8_t)(1 << 0))
 
 /**
  * Trigger control register "Fire" bit
@@ -3302,25 +3314,25 @@ int CALL_CONV bladerf_get_tuning_mode(struct bladerf *dev,
  *
  * This bit has no effect on slave devices.
  */
-#define BLADERF_TRIGGER_REG_FIRE    ((uint8_t) (1 << 1))
+#define BLADERF_TRIGGER_REG_FIRE ((uint8_t)(1 << 1))
 
 /**
  * Trigger control register "Master" bit
  *
- * Selects whether the device is a trigger master (1) or trigger slave (0).
- * The trigger master drives the trigger signal as an output.
+ * Selects whether the device is a trigger master (1) or trigger slave (0). The
+ * trigger master drives the trigger signal as an output.
  *
  * Slave devices configure the trigger signal as an input.
  */
-#define BLADERF_TRIGGER_REG_MASTER  ((uint8_t) (1 << 2))
+#define BLADERF_TRIGGER_REG_MASTER ((uint8_t)(1 << 2))
 
 /**
  * Trigger control registers "line" bit
  *
- * This is a read-only register bit that denotes the current state of the
- * the trigger signal.
+ * This is a read-only register bit that denotes the current state of the the
+ * trigger signal.
  */
-#define BLADERF_TRIGGER_REG_LINE    ((uint8_t) (1 << 3))
+#define BLADERF_TRIGGER_REG_LINE ((uint8_t)(1 << 3))
 
 /**
  * Read trigger control register
@@ -3382,9 +3394,11 @@ API_EXPORT
 int CALL_CONV bladerf_config_gpio_read(struct bladerf *dev, uint32_t *val);
 
 /**
- * Write the configuration GPIO register. Callers should be sure to perform a
- * read-modify-write sequence to avoid accidentally clearing other GPIO bits
- * that may be set by the library internally.
+ * Write the configuration GPIO register.
+ *
+ * @note Callers should be sure to perform a read-modify-write sequence to
+ *       avoid accidentally clearing other GPIO bits that may be set by the
+ *       library internally.
  *
  * @param       dev     Device handle
  * @param[out]  val     Desired configuration GPIO value
@@ -3401,11 +3415,11 @@ int CALL_CONV bladerf_config_gpio_write(struct bladerf *dev, uint32_t val);
  *
  * These functions provide the ability to erase, read, and write the SPI flash.
  *
- * Use of SPI flash functions requires an understanding of the underlying SPI
- * flash device, and the bladeRF's flash memory map. Be sure to review the
- * following page and the associated flash datasheet before using these
- * functions:
- *   https://github.com/nuand/bladeRF/wiki/FX3-Firmware#spi-flash-layout
+ * @warning Use of SPI flash functions requires an understanding of the
+ *          underlying SPI flash device, and the bladeRF's flash memory map. Be
+ *          sure to review the following page and the associated flash datasheet
+ *          before using these functions:
+ *      https://github.com/nuand/bladeRF/wiki/FX3-Firmware#spi-flash-layout
  *
  * These functions are thread-safe.
  *
@@ -3415,23 +3429,25 @@ int CALL_CONV bladerf_config_gpio_write(struct bladerf *dev, uint32_t val);
 /**
  * Erase regions of the bladeRF's SPI flash
  *
- * This function operates in units of 64KiB erase blocks
+ * @note This function operates in units of 64 KiB erase blocks
  *
  * @param       dev             Device handle
- * @param[in]   erase_block     Erase block to start erasing at
- * @param[in]   count           Number of blocks to erase.
+ * @param[in]   erase_block     Erase block from which to start erasing
+ * @param[in]   count           Number of blocks to erase
  *
- * @return 0 on success, or ::BLADERF_ERR_INVAL on an invalid `erase_block` or
- * `count` value, or a value from \ref RETCODES list on other failures
+ * @return 0 on success,
+ *         or ::BLADERF_ERR_INVAL on an invalid `erase_block` or `count` value,
+ *         or a value from \ref RETCODES list on other failures
  */
 API_EXPORT
 int CALL_CONV bladerf_erase_flash(struct bladerf *dev,
-                                  uint32_t erase_block, uint32_t count);
+                                  uint32_t erase_block,
+                                  uint32_t count);
 
 /**
  * Read data from the bladeRF's SPI flash
  *
- * This function operates in units of 256-byte pages.
+ * @note This function operates in units of 256-byte pages.
  *
  * @param       dev     Device handle
  * @param[in]   buf     Buffer to read data into. Must be `count` *
@@ -3439,27 +3455,35 @@ int CALL_CONV bladerf_erase_flash(struct bladerf *dev,
  * @param[in]   page    Page to begin reading from
  * @param[in]   count   Number of pages to read
  *
- * @return 0 on success, or ::BLADERF_ERR_INVAL on an invalid `page` or `count`
- * value, or a value from \ref RETCODES list on other failures.
+ * @return 0 on success,
+ *         or ::BLADERF_ERR_INVAL on an invalid `page` or `count` value,
+ *         or a value from \ref RETCODES list on other failures.
  */
 API_EXPORT
-int CALL_CONV bladerf_read_flash(struct bladerf *dev, uint8_t *buf,
-                                 uint32_t page, uint32_t count);
+int CALL_CONV bladerf_read_flash(struct bladerf *dev,
+                                 uint8_t *buf,
+                                 uint32_t page,
+                                 uint32_t count);
 
 /**
  * Write data to the bladeRF's SPI flash device
+ *
+ * @note This function operates in units of 256-byte pages.
  *
  * @param       dev     Device handle
  * @param[in]   buf     Data to write to flash
  * @param[in]   page    Page to begin writing at
  * @param[in]   count   Number of pages to write
  *
- * @return 0 on success, or ::BLADERF_ERR_INVAL on an invalid `page` or `count`
- * value, or a value from \ref RETCODES list on other failures.
+ * @return 0 on success,
+ *         or ::BLADERF_ERR_INVAL on an invalid `page` or `count` value,
+ *         or a value from \ref RETCODES list on other failures.
  */
 API_EXPORT
-int CALL_CONV bladerf_write_flash(struct bladerf *dev, const uint8_t *buf,
-                                  uint32_t page, uint32_t count);
+int CALL_CONV bladerf_write_flash(struct bladerf *dev,
+                                  const uint8_t *buf,
+                                  uint32_t page,
+                                  uint32_t count);
 
 /** @} (End of FN_SPI_FLASH) */
 
@@ -3474,9 +3498,9 @@ int CALL_CONV bladerf_write_flash(struct bladerf *dev, const uint8_t *buf,
  * In general, one should call bladerf_expansion_attach() immediately after
  * opening the device.
  *
- * Hotplug and expansion board removal is not supported. It is expected that
- * the expansion boards are attached at power-on and remain attached
- * until power is removed.
+ * @note Hotplug and expansion board removal is not supported. It is expected
+ *       that the expansion boards are attached at power-on and remain attached
+ *       until power is removed.
  *
  * These functions are thread-safe.
  *
@@ -3487,13 +3511,13 @@ int CALL_CONV bladerf_write_flash(struct bladerf *dev, const uint8_t *buf,
  * Expansion boards
  */
 typedef enum {
-    BLADERF_XB_NONE = 0,    /**< No expansion boards attached */
-    BLADERF_XB_100,         /**< XB-100 GPIO expansion board.
-                             *   This device is not yet supported in
-                             *   libbladeRF, and is here as a placeholder
-                             *   for future support. */
-    BLADERF_XB_200,         /**< XB-200 Transverter board */
-    BLADERF_XB_300          /**< XB-300 Amplifier board */
+    BLADERF_XB_NONE = 0, /**< No expansion boards attached */
+    BLADERF_XB_100,      /**< XB-100 GPIO expansion board.
+                          *   This device is not yet supported in
+                          *   libbladeRF, and is here as a placeholder
+                          *   for future support. */
+    BLADERF_XB_200,      /**< XB-200 Transverter board */
+    BLADERF_XB_300       /**< XB-300 Amplifier board */
 } bladerf_xb;
 
 /**
@@ -3516,7 +3540,8 @@ int CALL_CONV bladerf_expansion_attach(struct bladerf *dev, bladerf_xb xb);
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_expansion_get_attached(struct bladerf *dev, bladerf_xb *xb);
+int CALL_CONV bladerf_expansion_get_attached(struct bladerf *dev,
+                                             bladerf_xb *xb);
 
 /** @} (End of FN_XB) */
 
@@ -3545,9 +3570,10 @@ typedef enum {
 } bladerf_log_level;
 
 /**
- * Sets the filter level for displayed log messages. Messages that are at or
- * above the specified log level will be printed, while messages with a lower
- * log level will be suppressed.
+ * Sets the filter level for displayed log messages.
+ *
+ * Messages that are at or above the specified log level will be printed, while
+ * messages with a lower log level will be suppressed.
  *
  * @param[in]   level       The new log level filter value
  */
@@ -3588,6 +3614,7 @@ void CALL_CONV bladerf_version(struct bladerf_version *version);
  *
  * @{
  */
+// clang-format off
 #define BLADERF_ERR_UNEXPECTED  (-1)  /**< An unexpected failure occurred */
 #define BLADERF_ERR_RANGE       (-2)  /**< Provided parameter is out of range */
 #define BLADERF_ERR_INVAL       (-3)  /**< Invalid operation/parameter */
@@ -3614,6 +3641,7 @@ void CALL_CONV bladerf_version(struct bladerf_version *version);
                                        */
 #define BLADERF_ERR_NOT_INIT    (-19) /**< Device insufficiently initialized
                                        *   for operation */
+// clang-format on
 
 /**
  * Obtain a textual description of a value from the \ref RETCODES list
@@ -3623,7 +3651,7 @@ void CALL_CONV bladerf_version(struct bladerf_version *version);
  * @return  Error string
  */
 API_EXPORT
-const char * CALL_CONV bladerf_strerror(int error);
+const char *CALL_CONV bladerf_strerror(int error);
 
 /** @} (End RETCODES) */
 

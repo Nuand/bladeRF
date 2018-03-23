@@ -280,9 +280,9 @@ int CALL_CONV bladerf_adf4002_write(struct bladerf *dev,
  * Power sources
  */
 typedef enum {
-    BLADERF_UNKNOWN,     /**< Unknown; manual observation may be required */
-    BLADERF_PS_DC,       /**< DC Barrel Plug */
-    BLADERF_PS_USB_VBUS  /**< USB Bus */
+    BLADERF_UNKNOWN,    /**< Unknown; manual observation may be required */
+    BLADERF_PS_DC,      /**< DC Barrel Plug */
+    BLADERF_PS_USB_VBUS /**< USB Bus */
 } bladerf_power_sources;
 
 /**
@@ -317,8 +317,8 @@ int CALL_CONV bladerf_get_power_source(struct bladerf *dev,
  * Available clock sources
  */
 typedef enum {
-    CLOCK_SELECT_VCTCXO,   /**< Use onboard VCTCXO */
-    CLOCK_SELECT_EXTERNAL  /**< Use external clock input */
+    CLOCK_SELECT_VCTCXO,  /**< Use onboard VCTCXO */
+    CLOCK_SELECT_EXTERNAL /**< Use external clock input */
 } bladerf_clock_select;
 
 /**
@@ -366,8 +366,7 @@ int CALL_CONV bladerf_set_clock_select(struct bladerf *dev,
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_get_clock_output(struct bladerf *dev,
-                                       bool *state);
+int CALL_CONV bladerf_get_clock_output(struct bladerf *dev, bool *state);
 
 /**
  * Set the clock output (enable/disable)
@@ -378,8 +377,7 @@ int CALL_CONV bladerf_get_clock_output(struct bladerf *dev,
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_set_clock_output(struct bladerf *dev,
-                                       bool enable);
+int CALL_CONV bladerf_set_clock_output(struct bladerf *dev, bool enable);
 
 /** @} (End of FN_BLADERF2_LOW_LEVEL_SI53304_CLOCK_OUTPUT) */
 

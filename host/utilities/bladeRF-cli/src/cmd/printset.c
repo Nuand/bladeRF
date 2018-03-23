@@ -562,8 +562,7 @@ static int _do_print_biastee(struct cli_state *state, bladerf_channel ch)
         *err = status;
         rv   = CLI_RET_LIBBLADERF;
     } else {
-        printf("  Bias Tee (%s): %s\n", channel2str(ch),
-               enable ? "on" : "off");
+        printf("  Bias Tee (%s): %s\n", channel2str(ch), enable ? "on" : "off");
     }
 
     return rv;
@@ -1042,8 +1041,7 @@ int set_gain(struct cli_state *state, int argc, char **argv)
     gain = str2int(value_str, range.min, range.max, &ok);
     if (!ok) {
         invalid_gain(state, argv[0],
-                     (stage == NULL) ? channel2str(channel) : stage,
-                     value_str);
+                     (stage == NULL) ? channel2str(channel) : stage, value_str);
         rv = CLI_RET_INVPARAM;
         return rv;
     }
@@ -1917,16 +1915,16 @@ int print_power_source(struct cli_state *state, int argc, char **argv)
     }
 
     printf("  Power source: ");
-    switch( src ) {
-    case BLADERF_PS_DC:
-        printf("DC Barrel\n");
-        break;
-    case BLADERF_PS_USB_VBUS:
-        printf("USB Bus\n");
-        break;
-    default:
-        printf("Unknown. May require manual observation.\n");
-        break;
+    switch (src) {
+        case BLADERF_PS_DC:
+            printf("DC Barrel\n");
+            break;
+        case BLADERF_PS_USB_VBUS:
+            printf("USB Bus\n");
+            break;
+        default:
+            printf("Unknown. May require manual observation.\n");
+            break;
     }
 
     return 0;
@@ -1972,9 +1970,9 @@ int set_clock_sel(struct cli_state *state, int argc, char **argv)
         return CLI_RET_NARGS;
     }
 
-    if( !strcasecmp(argv[2], "VCTCXO") ) {
+    if (!strcasecmp(argv[2], "VCTCXO")) {
         clock_sel = CLOCK_SELECT_VCTCXO;
-    } else if( !strcasecmp(argv[2], "EXTERNAL") ) {
+    } else if (!strcasecmp(argv[2], "EXTERNAL")) {
         clock_sel = CLOCK_SELECT_EXTERNAL;
     } else {
         cli_err_nnl(state, "Invalid clock source selection", "%s\n", argv[2]);
@@ -2020,11 +2018,9 @@ int set_clock_out(struct cli_state *state, int argc, char **argv)
         return CLI_RET_NARGS;
     }
 
-    if( !strcasecmp(argv[2], "ENABLE") ||
-        !strcasecmp(argv[2], "1") ) {
+    if (!strcasecmp(argv[2], "ENABLE") || !strcasecmp(argv[2], "1")) {
         enable = true;
-    } else if( !strcasecmp(argv[2], "DISABLE") ||
-               !strcasecmp(argv[2], "0") ) {
+    } else if (!strcasecmp(argv[2], "DISABLE") || !strcasecmp(argv[2], "0")) {
         enable = false;
     } else {
         cli_err_nnl(state, "Invalid clock output setting", "%s\n", argv[2]);
@@ -2044,9 +2040,9 @@ int set_clock_out(struct cli_state *state, int argc, char **argv)
 
 static char const *_ad9361_rx_portstr(uint32_t port)
 {
-    const char *pstrs[] = {"A_BAL",   "B_BAL",     "C_BAL", "A_N", "A_P",
-                           "B_N",     "B_P",       "C_N",   "C_P", "TX_MON1",
-                           "TX_MON2", "TX_MON1_2", NULL};
+    const char *pstrs[] = { "A_BAL",   "B_BAL",     "C_BAL", "A_N", "A_P",
+                            "B_N",     "B_P",       "C_N",   "C_P", "TX_MON1",
+                            "TX_MON2", "TX_MON1_2", NULL };
 
     if (port > ARRAY_SIZE(pstrs)) {
         return NULL;
@@ -2057,7 +2053,7 @@ static char const *_ad9361_rx_portstr(uint32_t port)
 
 static char const *_ad9361_tx_portstr(uint32_t port)
 {
-    const char *pstrs[] = {"TXA", "TXB", NULL};
+    const char *pstrs[] = { "TXA", "TXB", NULL };
 
     if (port > ARRAY_SIZE(pstrs)) {
         return NULL;
@@ -2068,7 +2064,7 @@ static char const *_ad9361_tx_portstr(uint32_t port)
 
 static char const *_sky13374_portstr(uint32_t port)
 {
-    const char *pstrs[] = {"OPEN", "RF2(A)", "RF3(B)", NULL};
+    const char *pstrs[] = { "OPEN", "RF2(A)", "RF3(B)", NULL };
 
     if (port > ARRAY_SIZE(pstrs)) {
         return NULL;
