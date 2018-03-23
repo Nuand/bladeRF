@@ -87,6 +87,11 @@ def _print_cmd_info(device=None, devinfo=None, verbose=False):
         print("    Modes        ", _strify_list(b.loopback_modes))
         print("RX Mux           ", b.rx_mux)
 
+        print("ADF4002 Mode     ", _bool_to_onoff(b.adf4002_enable))
+        if b.adf4002_enable:
+            print("ADF4002 Refclk   ", b.adf4002_refclk)
+            print("ADF4002 Locked   ", _bool_to_onoff(b.adf4002_locked))
+
     print("RX Channel Count ", b.rx_channel_count)
     for c in range(b.rx_channel_count):
         ch = b.Channel(bladerf.CHANNEL_RX(c))

@@ -87,6 +87,7 @@ struct printset_entry {
 /* Declarations */
 PRINTSET_DECL(ad9361);
 PRINTSET_DECL(adf_enable);
+PRINTSET_DECL(adf_refclk);
 PRINTSET_DECL(agc);
 PRINTSET_DECL(power_source);
 PRINTSET_DECL(clock_sel);
@@ -140,6 +141,7 @@ struct printset_entry printset_table[] = {
     PRINTSET_ENTRY(samplerate,   PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
     PRINTSET_ENTRY(smb_mode,     PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF1),
     PRINTSET_ENTRY(adf_enable,   PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF2),
+    PRINTSET_ENTRY(adf_refclk,   PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF2),
     PRINTSET_ENTRY(biastee,      PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF2),
     PRINTSET_ENTRY(trimdac,      PRINTALL_OPTION_APPEND_NEWLINE, BOARD_ANY),
     PRINTSET_ENTRY(vctcxo_tamer, PRINTALL_OPTION_APPEND_NEWLINE, BOARD_BLADERF1),
@@ -254,6 +256,70 @@ int set_adf_enable(struct cli_state *state, int argc, char **argv)
                 rv   = CLI_RET_LIBBLADERF;
             } else {
                 rv = print_adf_enable(state, argc, argv);
+            }
+        }
+    } else {
+        rv = CLI_RET_NARGS;
+    }
+    return rv;
+}
+
+int print_adf_refclk(struct cli_state *state, int argc, char **argv)
+{
+    int rv   = CLI_RET_OK;
+    int *err = &state->last_lib_error;
+    int status;
+    uint64_t val;
+
+    status = bladerf_adf4002_get_refclk(state->dev, &val);
+    if (status < 0) {
+        *err = status;
+        rv   = CLI_RET_LIBBLADERF;
+    }
+
+    if (rv == CLI_RET_OK) {
+        printf("  ADF Ref Clock Frequency: %10" PRIu64 " Hz\n", val);
+    }
+
+    return rv;
+}
+
+int set_adf_refclk(struct cli_state *state, int argc, char **argv)
+{
+    /* set adf_refclk {frequency} */
+    int rv   = CLI_RET_OK;
+    int *err = &state->last_lib_error;
+    int status;
+    struct bladerf_range range;
+    uint64_t freq;
+
+    if (rv == CLI_RET_OK) {
+        /* Get valid frequency range */
+        status = bladerf_adf4002_get_refclk_range(state->dev, &range);
+        if (status < 0) {
+            *err = status;
+            rv   = CLI_RET_LIBBLADERF;
+        }
+    }
+
+    if (argc == 3) {
+        bool ok;
+
+        /* Parse frequency */
+        freq = str2uint64_suffix(argv[argc - 1], range.min, range.max,
+                                 freq_suffixes, NUM_FREQ_SUFFIXES, &ok);
+
+        if (!ok) {
+            cli_err_nnl(state, argv[0], "Invalid adf_refclk value (%s)\n",
+                        argv[2]);
+            rv = CLI_RET_INVPARAM;
+        } else {
+            status = bladerf_adf4002_set_refclk(state->dev, freq);
+            if (status < 0) {
+                *err = status;
+                rv   = CLI_RET_LIBBLADERF;
+            } else {
+                rv = print_adf_refclk(state, argc, argv);
             }
         }
     } else {

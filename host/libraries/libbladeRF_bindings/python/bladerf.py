@@ -585,10 +585,12 @@ ffi.cdef("""
     int bladerf_adf4002_get_locked(struct bladerf *dev, bool *locked);
     int bladerf_adf4002_get_enable(struct bladerf *dev, bool *enabled);
     int bladerf_adf4002_set_enable(struct bladerf *dev, bool enable);
-    int bladerf_adf4002_configure(struct bladerf *dev, uint16_t R,
-        uint16_t N);
-    int bladerf_adf4002_calculate_ratio(uint64_t ref_freq, uint64_t
-        clock_freq, uint16_t *R, uint16_t *N);
+    int bladerf_adf4002_get_refclk_range(struct bladerf *dev, struct
+        bladerf_range *range);
+    int bladerf_adf4002_get_refclk(struct bladerf *dev, uint64_t
+        *frequency);
+    int bladerf_adf4002_set_refclk(struct bladerf *dev, uint64_t
+        frequency);
     int bladerf_adf4002_read(struct bladerf *dev, uint8_t address,
         uint32_t *val);
     int bladerf_adf4002_write(struct bladerf *dev, uint8_t address,
@@ -1534,19 +1536,25 @@ class BladeRF:
     # ADF4002 Phase Detector/Frequency Synthesizer
 
     def get_adf4002_locked(self):
-        locked = ffi.new("bool *")
-        ret = libbladeRF.bladerf_adf4002_get_locked(self.dev[0], locked)
-        _check_error(ret)
-        return bool(locked[0])
+        try:
+            locked = ffi.new("bool *")
+            ret = libbladeRF.bladerf_adf4002_get_locked(self.dev[0], locked)
+            _check_error(ret)
+            return bool(locked[0])
+        except UnsupportedError:
+            return None
 
     adf4002_locked = property(get_adf4002_locked,
                               doc="ADF4002 PLL lock indication")
 
     def get_adf4002_enable(self):
-        enable = ffi.new("bool *")
-        ret = libbladeRF.bladerf_adf4002_get_enable(self.dev[0], enable)
-        _check_error(ret)
-        return bool(enable[0])
+        try:
+            enable = ffi.new("bool *")
+            ret = libbladeRF.bladerf_adf4002_get_enable(self.dev[0], enable)
+            _check_error(ret)
+            return bool(enable[0])
+        except UnsupportedError:
+            return None
 
     def set_adf4002_enable(self, enable):
         ret = libbladeRF.bladerf_adf4002_set_enable(self.dev[0], enable)
@@ -1555,20 +1563,21 @@ class BladeRF:
     adf4002_enable = property(get_adf4002_enable, set_adf4002_enable,
                               doc="ADF4002 Enable")
 
-    def set_adf4002_frequency(self, refclk, sysclk=BLADERF_VCTCXO_FREQUENCY):
-        r = ffi.new("uint16_t *")
-        n = ffi.new("uint16_t *")
-        # Calculate R and N values for clock ratio
-        ret = libbladeRF.bladerf_adf4002_calculate_ratio(int(refclk),
-                                                         int(sysclk), r, n)
+    def get_adf4002_refclk(self):
+        try:
+            freq = ffi.new("uint64_t *")
+            ret = libbladeRF.bladerf_adf4002_get_refclk(self.dev[0], freq)
+            _check_error(ret)
+            return int(freq[0])
+        except UnsupportedError:
+            return None
+
+    def set_adf4002_refclk(self, freq):
+        ret = libbladeRF.bladerf_adf4002_set_refclk(self.dev[0], freq)
         _check_error(ret)
 
-        # Configure w/ the ratios
-        ret = libbladeRF.bladerf_adf4002_configure(self.dev[0], r[0], n[0])
-        _check_error(ret)
-
-    adf4002_frequency = property(fset=set_adf4002_frequency,
-                                 doc="ADF4002 Reference Clock frequency")
+    adf4002_refclk = property(get_adf4002_refclk, set_adf4002_refclk,
+                              doc="ADF4002 Reference Clock frequency")
 
     # Power source
 

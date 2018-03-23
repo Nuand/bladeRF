@@ -198,38 +198,41 @@ API_EXPORT
 int CALL_CONV bladerf_adf4002_set_enable(struct bladerf *dev, bool enable);
 
 /**
- * Configure the ADF4002 Phase Detector/Frequency Synthesizer
- *
- * Use \ref bladerf_adf4002_calculate_ratio to compute the R and N from given
- * reference and system clock frequencies.
+ * Get the valid range of frequencies for the ADF4002 reference clock input
  *
  * @param       dev         Device handle
- * @param[in]   R           Reference counter divide ratio (1...16383)
- * @param[in]   N           N counter divide ratio (1...8191)
+ * @param[out]  range       Reference clock frequency range
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_adf4002_configure(struct bladerf *dev,
-                                        uint16_t R,
-                                        uint16_t N);
+int CALL_CONV bladerf_adf4002_get_refclk_range(struct bladerf *dev,
+                                               struct bladerf_range *range);
 
 /**
- * Calculate valid R and N values for given reference and system clock
- * frequencies.
+ * Get the currently-configured frequency for the ADF4002 reference clock
+ * input.
  *
- * @param[in]   ref_freq    Reference clock frequency, in Hz
- * @param[in]   clock_freq  System clock frequency, in Hz
- * @param[out]  R           Reference counter divide ratio (1...16383)
- * @param[out]  N           N counter divide ratio (1...8191)
+ * @param       dev         Device handle
+ * @param[out]  frequency   Reference clock frequency
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_adf4002_calculate_ratio(uint64_t ref_freq,
-                                              uint64_t clock_freq,
-                                              uint16_t *R,
-                                              uint16_t *N);
+int CALL_CONV bladerf_adf4002_get_refclk(struct bladerf *dev,
+                                         uint64_t *frequency);
+
+/**
+ * Set the expected frequency for the ADF4002 reference clock input.
+ *
+ * @param       dev         Device handle
+ * @param[in]   frequency   Reference clock frequency
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_adf4002_set_refclk(struct bladerf *dev,
+                                         uint64_t frequency);
 
 /**
  * Read value from ADF4002 Phase Detector/Frequency Synthesizer
