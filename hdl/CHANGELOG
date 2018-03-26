@@ -6,6 +6,15 @@ hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
 --------------------------------
+v0.7.2 (2018-03-26)
+--------------------------------
+ This version is part of development series of changes, not an official release.
+
+ * Redesign build system to support multiple product models
+ * Added support for the bladeRF Micro
+ * Refactoring, bug fixes, and other misc. improvements
+
+--------------------------------
 v0.7.1 (2017-12-07)
 --------------------------------
  * Minor fix-ups
