@@ -15,7 +15,7 @@ The version numbering scheme of the following components shall follow the
 [Semantic Versioning 2.0.0][semver] scheme in order to convey meaningful
 information about changes.
 
-In short, versions shall take the form ```major.minor.patch[-extra]``` and
+In short, versions shall take the form `major.minor.patch[-extra]` and
 are used to describe changes to a component's primary interface(s).
 
 * The major version shall be incremented to denote reverse-incompatible
@@ -29,7 +29,7 @@ are used to describe changes to a component's primary interface(s).
 * The patch version shall be incremented for reverse-compatible bug fixes and
   internal changes that do not affect the primary interface(s).
 
-The ```-extra``` portion will generally be used to include the git revision
+The `-extra` portion will generally be used to include the git revision
 associated with the component when it was built.
 
 Below are the versioned components and a brief description of their primary
@@ -55,22 +55,22 @@ The project-wide version number is based upon the release date. The rationale
 for this is that the individual components are already versioned; A number
 with major, minor, and patch values would not add additional value.
 
-The project-wide version number takes the format ```YYYY.MM[-rcN]``` where:
+The project-wide version number takes the format `YYYY.MM[-rcN]` where:
 
-* ```YYYY``` is a four digit year
-* ```MM``` is a two-digit month
-* ```-rcN``` is a release-candidate suffix
+* `YYYY` is a four digit year
+* `MM` is a two-digit month
+* `-rcN` is a release-candidate suffix
 
 Items marked with the `-rcN` should be regarded as betas. While more stable
 than nightly builds, these may contain new functionality still undergoing
 review and testing.
 
-As of Dec 2014, the `YYYY-MM` portions correspond to the date of the release
+As of Dec 2014, the `YYYY.MM` portions correspond to the date of the release
 (candidate).  Prior to this, these values were set to the scheduled release,
 which caused confusion and issues with systems trying to sort tags.
 
 For example, an release candidate in Dec 2014 will now be marked
-```2014-12-rc1```, whereas it might have been labeled ```2014-02-rc1` in the
+`2014.12-rc1`, whereas it might have been labeled `2014.02-rc1` in the
 past.
 
 
@@ -86,9 +86,9 @@ which commits are before/after a particular version number. **Users and
 package maintainers will generally only want to pay attention to the
 project-wide tags.**
 
-Tags shall be applied in the form, ```<component>_vX.Y.Z```.
+Tags shall be applied in the form, `<component>_vX.Y.Z`.
 
-Below is the list of ```<component>``` values to use:
+Below is the list of `<component>` values to use:
 
 * bladeRF-cli
 * libbladeRF
@@ -100,4 +100,5 @@ Below is the list of ```<component>``` values to use:
 
 ## Project-wide Tags ##
 
-The project-wide tags are the same as the project-wide version number: ```YYYY.MM[-rcN]```
+The project-wide tags are the same as the project-wide version number:
+`YYYY.MM[-rcN]`

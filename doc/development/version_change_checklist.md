@@ -26,15 +26,16 @@ FPGA
 
 * [ ] Update the ```hdl/CHANGELOG``` file
 
-* [ ] Update the version number in the NIOS II lms_spi_controller.c file.
+* [ ] Update the version number in the NIOS II ```fpga_version.h``` files (one
+      per platform)
 
 * [ ] Update the version compatibilty table in the libbladeRF
-      ```version_compat.c``` file.
+      ```compatibility.c``` files (one per platform)
 
 * [ ] Apply the tag: ```fpga_vX.Y.Z```
 
-* [ ] Generate the official bitstreams ***at*** the tag and have them uploaded to
-      https://www.nuand.com/fpga
+* [ ] Generate the official bitstreams ***at*** the tag and have them uploaded
+      to https://www.nuand.com/fpga
 
 * [ ] Update the ```bladerf-fpga-hostedx115.postinst``` and
       ```bladerf-fpga-hostedx40.postinst``` files under ```host/debian/```.
@@ -72,9 +73,13 @@ libbladeRF
 * [ ] Apply the tag: ```libbladeRF_vX.Y.Z```
 
 * [ ] Generate Doxygen pages ***at*** the tag with:
+    * ```-DBUILD_DOCUMENTATION=ON```
     * ```-DTAGGED_RELEASE=Yes``` (If building from top-level)
     * ```-DVERSION_INFO_EXTRA=""``` (If building in ```host/```)
 
+* [ ] Gather the Doxygen pages from
+      ```host/build/libraries/libbladeRF/doc/doxygen/html/``` and have them
+      uploaded to https://www.nuand.com/bladeRF-doc/libbladeRF/vX.Y.Z/
 
 bladeRF-cli
 ================================================================================
@@ -88,6 +93,19 @@ bladeRF-cli
 
 * [ ] Apply the tag ```bladeRF-cli_vX.Y.X```
 
+MATLAB Bindings
+================================================================================
+
+* [ ] Regenerate ```libbladeRF_proto.m``` if required (TODO: how?)
+
+* [ ] Apply the tag: ```matlab_vX.Y.X```
+
+Python Bindings
+================================================================================
+
+* [ ] Regenerate ```_cdef.py``` if required (TODO: how?)
+
+* [ ] Apply the tag: ```python_vX.Y.X```
 
 Project-wide items
 ================================================================================
@@ -98,6 +116,6 @@ Project-wide items
 
 * [ ] Update the ```debian/CHANGELOG``` file
 
-* [ ] Apply the tag: YYYY-MM[-rcN]
+* [ ] Apply the tag: ```YYYY.MM[-rcN]```
 
 * [ ] Prepare the API docs and binary packages
