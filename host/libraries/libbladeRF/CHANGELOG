@@ -5,6 +5,28 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.9.1 (2018-03-26)
+--------------------------------
+
+This version is part of development series of changes, not an official release.
+
+This version of libbladeRF is intended for use with:
+
+FX3 Firmware v2.1.0 (or v1.9.1)
+FPGA         v0.7.2
+
+Changes:
+ * Refactor to support for multiple product lines
+ * Add support for the bladeRF Micro product
+ * API: replace bladerf_module with bladerf_channel, a reverse-compatible
+   change to handle products with multiple independent RF paths in the same
+   direction
+ * API: BREAKING CHANGE - on bladerf_set_frequency, et al, the frequency
+   parameter is now uint64_t instead of unsigned int
+ * Significant code cleanup
+ * Various other changes that will be listed in more detail during an official
+   release
+
 v1.9.0 (2017-12-07)
 --------------------------------
 
