@@ -1,9 +1,27 @@
-#!/usr/bin/env python3
+# Copyright (c) 2013-2018 Nuand LLC
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
 
 import io
 import argparse
 
-import bladerf
+from bladerf import _bladerf
 
 
 __version__ = "1.0.0"
@@ -59,7 +77,7 @@ def _print_channel_details(ch, verbose):
 
 
 def _print_cmd_info(device=None, devinfo=None, verbose=False):
-    b = bladerf.BladeRF(device, devinfo)
+    b = _bladerf.BladeRF(device, devinfo)
 
     devinfo = b.get_devinfo()
     if verbose:
@@ -94,12 +112,12 @@ def _print_cmd_info(device=None, devinfo=None, verbose=False):
 
     print("RX Channel Count ", b.rx_channel_count)
     for c in range(b.rx_channel_count):
-        ch = b.Channel(bladerf.CHANNEL_RX(c))
+        ch = b.Channel(_bladerf.CHANNEL_RX(c))
         _print_channel_details(ch, verbose)
 
     print("TX Channel Count ", b.tx_channel_count)
     for c in range(b.tx_channel_count):
-        ch = b.Channel(bladerf.CHANNEL_TX(c))
+        ch = b.Channel(_bladerf.CHANNEL_TX(c))
         _print_channel_details(ch, verbose)
 
     b.close()
@@ -108,8 +126,8 @@ def _print_cmd_info(device=None, devinfo=None, verbose=False):
 def cmd_info(device=None, verbose=False, **kwargs):
     if device is None:
         try:
-            devinfos = bladerf.get_device_list()
-        except bladerf.NoDevError:
+            devinfos = _bladerf.get_device_list()
+        except _bladerf.NoDevError:
             print("No bladeRF devices available.")
             return
 
@@ -126,21 +144,21 @@ def cmd_info(device=None, verbose=False, **kwargs):
 
 def cmd_probe(**kwargs):
     try:
-        devinfos = bladerf.get_device_list()
+        devinfos = _bladerf.get_device_list()
         print("\n".join([str(devinfo) for devinfo in devinfos]))
-    except bladerf.NoDevError:
+    except _bladerf.NoDevError:
         print("No bladeRF devices available.")
 
     try:
-        devinfos = bladerf.get_bootloader_list()
+        devinfos = _bladerf.get_bootloader_list()
         print("*** Detected one or more FX3-based devices in bootloader mode:")
         print("Bootloader", "\n".join([str(devinfo) for devinfo in devinfos]))
-    except bladerf.NoDevError:
+    except _bladerf.NoDevError:
         pass
 
 
 def cmd_flash_fw(path, device=None, **kwargs):
-    b = bladerf.BladeRF(device)
+    b = _bladerf.BladeRF(device)
     b.flash_firmware(path)
     b.close()
 
@@ -150,8 +168,8 @@ def cmd_recover_fw(path, device=None, **kwargs):
         # Let's guess
         print("No device specified, trying to find one...")
         try:
-            devinfos = bladerf.get_bootloader_list()
-        except bladerf.NoDevError:
+            devinfos = _bladerf.get_bootloader_list()
+        except _bladerf.NoDevError:
             print("No devices in bootloader recovery mode found.")
             return
 
@@ -161,39 +179,37 @@ def cmd_recover_fw(path, device=None, **kwargs):
             print("\n".join([str(devinfo) for devinfo in devinfos]))
             return
 
-        devinfo = devinfos[0]
-
         device = "{backend}:device={usb_bus}:{usb_addr}".format(
                     **devinfos[0]._asdict())
         print("Choosing", device)
         print(devinfos[0])
 
     print("Calling load_fw_from_bootloader...")
-    bladerf.load_fw_from_bootloader(device_identifier=device, file=path)
+    _bladerf.load_fw_from_bootloader(device_identifier=device, file=path)
     print("Complete")
 
 
 def cmd_load_fpga(path, device=None, **kwargs):
-    b = bladerf.BladeRF(device)
+    b = _bladerf.BladeRF(device)
     b.load_fpga(path)
     b.close()
 
 
 def cmd_flash_fpga(path, device=None, **kwargs):
-    b = bladerf.BladeRF(device)
+    b = _bladerf.BladeRF(device)
     b.flash_fpga(path)
     b.close()
 
 
 def cmd_erase_fpga(device=None, **kwargs):
-    b = bladerf.BladeRF(device)
+    b = _bladerf.BladeRF(device)
     b.erase_stored_fpga()
     b.close()
 
 
 def cmd_rx(outfile, frequency, rate, gain, num_samples, device=None,
-           channel=bladerf.CHANNEL_RX(0), **kwargs):
-    b = bladerf.BladeRF(device)
+           channel=_bladerf.CHANNEL_RX(0), **kwargs):
+    b = _bladerf.BladeRF(device)
     ch = b.Channel(channel)
 
     # Get underlying binary stream for stdout case
@@ -206,8 +222,8 @@ def cmd_rx(outfile, frequency, rate, gain, num_samples, device=None,
     ch.gain = gain
 
     # Setup synchronous stream
-    b.sync_config(layout=bladerf.ChannelLayout.RX_X1,
-                  fmt=bladerf.Format.SC16_Q11,
+    b.sync_config(layout=_bladerf.ChannelLayout.RX_X1,
+                  fmt=_bladerf.Format.SC16_Q11,
                   num_buffers=16,
                   buffer_size=8192,
                   num_transfers=8,
@@ -248,8 +264,8 @@ def cmd_rx(outfile, frequency, rate, gain, num_samples, device=None,
 
 
 def cmd_tx(infile, frequency, rate, gain, device=None,
-           channel=bladerf.CHANNEL_TX(0), **kwargs):
-    b = bladerf.BladeRF(device)
+           channel=_bladerf.CHANNEL_TX(0), **kwargs):
+    b = _bladerf.BladeRF(device)
     ch = b.Channel(channel)
 
     # Get underlying binary stream for stdin case
@@ -261,8 +277,8 @@ def cmd_tx(infile, frequency, rate, gain, device=None,
     ch.gain = gain
 
     # Setup stream
-    b.sync_config(layout=bladerf.ChannelLayout.TX_X1,
-                  fmt=bladerf.Format.SC16_Q11,
+    b.sync_config(layout=_bladerf.ChannelLayout.TX_X1,
+                  fmt=_bladerf.Format.SC16_Q11,
                   num_buffers=16,
                   buffer_size=8192,
                   num_transfers=8,
@@ -298,11 +314,11 @@ def cmd_tx(infile, frequency, rate, gain, device=None,
 
 
 def cmd_version(**kwargs):
-    print("libbladeRF version:   ", bladerf.version())
+    print("libbladeRF version:   ", _bladerf.version())
     print("bladerf-tool version: ", "v" + __version__)
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(title='subcommands')
 
@@ -373,3 +389,7 @@ if __name__ == "__main__":
         parser.exit()
 
     args.func(**vars(args))
+
+
+if __name__ == "__main__":
+    main()

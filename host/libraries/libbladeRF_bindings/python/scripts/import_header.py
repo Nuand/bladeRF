@@ -1,10 +1,30 @@
-#!/usr/bin/env python3
+# Copyright (c) 2013-2018 Nuand LLC
 #
-# Reads in a libbladeRF header file and produces a string ready for CFFI to
-# parse.
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
 #
-# This is NOT a general-purpose tool; it should only be used on libbladeRF,
-# as it makes dangerous assumptions.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+__doc__ = """
+Reads in a libbladeRF header file and produces a string ready for CFFI to
+parse.
+
+This is NOT a general-purpose tool; it should only be used on libbladeRF,
+as it makes dangerous assumptions.
+"""
 
 from pycparser import parse_file, c_generator
 import os
@@ -73,9 +93,6 @@ def generate_cdef(data, print_omitted_lines=False):
             else:
                 line = ""
 
-        # Fix indentation...
-        line = line.replace("  ", "    ")
-
         # If we have an expression like:
         #   char magic[BLADERF_IMAGE_MAGIC_LEN + 1];
         # We need to boil it down to:
@@ -107,12 +124,14 @@ def main():
     for fn in sys.argv[1:]:
         f = parse_header(fn)
         fs = ast_to_c(f)
-        print("    /* Generated from {} by {} */".format(
+        print("# Generated from {} by {}".format(
             os.path.basename(fn),
             os.path.basename(sys.argv[0])))
-
+        print()
+        print("header = \"\"\"")
         for l in generate_cdef(fs):
-            print('    ' + '\n        '.join(textwrap.wrap(l)))
+            print('  ' + '\n    '.join(textwrap.wrap(l)))
+        print("\"\"\"")
 
 
 if __name__ == '__main__':
