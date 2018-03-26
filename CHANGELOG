@@ -6,6 +6,33 @@ hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
 --------------------------------------------------------------------------------
+ 2018.03-alpha1 (2018-03-26)
+--------------------------------------------------------------------------------
+
+FIXME: NEEDS A CHANGELOG SUMMARY
+
+This version is part of development series of changes, not an official release.
+
+    * FPGA bitstream                v0.7.2
+    * FX3 firmware                  v2.1.0
+    * libbladeRF                    v1.9.1
+    * bladeRF-cli                   v1.5.2
+    * MATLAB & Simulink bindings    v0.1.3
+    * Python bindings               v0.9.1
+
+--------------------------------------------------------------------------------
+ 2017.12-rc1 (2017-12-08)
+--------------------------------------------------------------------------------
+
+FIXME: NEEDS A CHANGELOG SUMMARY
+
+    * FPGA bitstream                v0.7.1
+    * FX3 firmware                  v2.0.0
+    * libbladeRF                    v1.9.0
+    * bladeRF-cli                   v1.5.1
+    * MATLAB & Simulink bindings    v0.1.2
+
+--------------------------------------------------------------------------------
  2016.06 (2016-06-29)
 --------------------------------------------------------------------------------
 
