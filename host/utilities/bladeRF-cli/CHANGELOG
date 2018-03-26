@@ -5,6 +5,17 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.5.2 (2018-03-26)
+--------------------------------
+
+This version is part of development series of changes, not an official release.
+
+This version depends upon libbladeRF v1.9.1 or later.
+
+  * Support for bladeRF Micro
+  * No longer initializes the bladeRF before loading a new FPGA image, to avoid
+    potential catch-22 problems
+
 v1.5.1 (2017-12-07)
 --------------------------------
 This version depends upon libbladeRF v1.8.1 or later.
