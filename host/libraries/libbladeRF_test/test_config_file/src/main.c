@@ -62,7 +62,7 @@ static char const DIR_DELIM[] = "/";
 typedef struct {
     struct bladerf_devinfo ident; /**< devinfo struct for this test */
     bladerf_fpga_size fpga_size;  /**< FPGA size */
-    uint64_t frequency;       /**< Expected frequency */
+    uint64_t frequency;           /**< Expected frequency */
 } test_state;
 
 /**
@@ -140,13 +140,15 @@ static test_state HISTORY[ARRAY_SIZE(states)];
  */
 int create_config(char const *filename, char const **config, size_t len)
 {
+    size_t i;
+
     FILE *f = fopen(filename, "w");
     if (NULL == f) {
         perror("fopen failed");
         return BLADERF_ERR_IO;
     }
 
-    for (size_t i = 0; i < len; ++i) {
+    for (i = 0; i < len; ++i) {
         fprintf(f, "%s\n", config[i]);
     }
 
@@ -212,11 +214,13 @@ int create_test_device(struct bladerf **device,
  */
 int update_test_state(struct bladerf *dev, char const *key, uint64_t value)
 {
+    size_t i;
+
     if (NULL == dev || NULL == key) {
         return BLADERF_ERR_INVAL;
     }
 
-    for (size_t i = 0; i < ARRAY_SIZE(states); ++i) {
+    for (i = 0; i < ARRAY_SIZE(states); ++i) {
         test_state const *t = &states[i];
 
         if (bladerf_devinfo_matches(&dev->ident, &t->ident)) {
@@ -243,11 +247,13 @@ int update_test_state(struct bladerf *dev, char const *key, uint64_t value)
  */
 bool check_test_state(struct bladerf *dev, char const *key)
 {
+    size_t i;
+
     if (NULL == dev || NULL == key) {
         return false;
     }
 
-    for (size_t i = 0; i < ARRAY_SIZE(states); ++i) {
+    for (i = 0; i < ARRAY_SIZE(states); ++i) {
         test_state const *t = &states[i];
 
         if (bladerf_devinfo_matches(&dev->ident, &t->ident)) {
@@ -302,6 +308,7 @@ int main(int argc, char *argv[])
     char *tmpbase     = NULL;
     bool result       = true;
     int rv;
+    size_t i;
 
     /* Get the TEMP variable from the environment, if it exists */
     tmpbase = getenv("TEMP");
@@ -359,7 +366,7 @@ int main(int argc, char *argv[])
     bladerf_log_set_verbosity(BLADERF_LOG_LEVEL_DEBUG);
 
     /* Iterate through the test cases */
-    for (size_t i = 0; i < ARRAY_SIZE(states); ++i) {
+    for (i = 0; i < ARRAY_SIZE(states); ++i) {
         test_state const *t = &states[i];
         struct bladerf *dev = NULL;
         bool check          = false;
