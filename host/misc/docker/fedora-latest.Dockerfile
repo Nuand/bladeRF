@@ -48,7 +48,7 @@ RUN echo "/usr/local/lib" > /etc/ld.so.conf.d/locallib.conf \
 
 WORKDIR /root
 
-# CentOS and Fedora lack libtecla packages, so download and build.
+# Fedora lacks libtecla packages, so download and build.
 RUN (curl http://www.astro.caltech.edu/~mcs/tecla/libtecla.tar.gz | tar xzf -) \
  && cd libtecla \
  && CC=gcc ./configure \

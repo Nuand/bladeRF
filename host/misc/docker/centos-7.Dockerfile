@@ -40,9 +40,14 @@ RUN yum groupinstall -y "Development Tools" \
     wget \
  && yum clean all
 
+# CentOS does not look in /usr/local/lib* for libraries, so we must add
+# this manually.
+RUN echo "/usr/local/lib" > /etc/ld.so.conf.d/locallib.conf \
+ && echo "/usr/local/lib64" >> /etc/ld.so.conf.d/locallib.conf
+
 WORKDIR /root
 
-# CentOS and Fedora lack libtecla packages, so download and build.
+# CentOS lacks libtecla packages, so download and build.
 RUN (curl http://www.astro.caltech.edu/~mcs/tecla/libtecla.tar.gz | tar xzf -) \
  && cd libtecla \
  && CC=gcc ./configure \
