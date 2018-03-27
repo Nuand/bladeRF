@@ -547,6 +547,7 @@ static int reset_and_reopen(libusb_context *context,
         libusb_close((*dev)->handle);
 #if 1 == BLADERF_OS_WINDOWS
         ReleaseMutex((*dev)->mutex);
+        CloseHandle((*dev)->mutex);
 #endif // BLADERF_OS_WINDOWS
 
         *dev = NULL;
@@ -651,6 +652,7 @@ static void lusb_close(void *driver)
     libusb_exit(lusb->context);
 #if 1 == BLADERF_OS_WINDOWS
     ReleaseMutex(lusb->mutex);
+    CloseHandle(lusb->mutex);
 #endif // BLADERF_OS_WINDOWS
     free(lusb);
 }
@@ -677,6 +679,7 @@ static void lusb_close_bootloader(void *driver)
 
 #if 1 == BLADERF_OS_WINDOWS
         ReleaseMutex(lusb->mutex);
+        CloseHandle(lusb->mutex);
 #endif // BLADERF_OS_WINDOWS
 
         free(lusb);
