@@ -279,6 +279,20 @@ include_directories(${LIBBLADERF_INCLUDES})
 ################################################################################
 # Configure source files
 ################################################################################
+set(LIBBLADERF_AD9361_SOURCE
+        src/driver/thirdparty/adi/ad9361.c
+        src/driver/thirdparty/adi/ad9361_api.c
+        src/driver/thirdparty/adi/ad9361_conv.c
+        src/driver/thirdparty/adi/adc_core.c
+        src/driver/thirdparty/adi/dac_core.c
+        src/driver/thirdparty/adi/util.c
+        src/driver/thirdparty/adi/platform.c
+)
+
+if(NOT MSVC)
+    set_source_files_properties(${LIBBLADERF_AD9361_SOURCE} PROPERTIES COMPILE_FLAGS "-std=gnu11")
+endif(NOT MSVC)
+
 set(LIBBLADERF_SOURCE
         src/backend/backend.c
         src/driver/spi_flash.c
@@ -288,13 +302,6 @@ set(LIBBLADERF_SOURCE
         src/driver/ina219.c
         src/driver/dac161s055.c
         src/driver/smb_clock.c
-        src/driver/thirdparty/adi/ad9361.c
-        src/driver/thirdparty/adi/ad9361_api.c
-        src/driver/thirdparty/adi/ad9361_conv.c
-        src/driver/thirdparty/adi/adc_core.c
-        src/driver/thirdparty/adi/dac_core.c
-        src/driver/thirdparty/adi/util.c
-        src/driver/thirdparty/adi/platform.c
         src/board/bladerf1/bladerf1.c
         src/board/bladerf1/capabilities.c
         src/board/bladerf1/compatibility.c
@@ -326,6 +333,7 @@ set(LIBBLADERF_SOURCE
         ${BLADERF_FPGA_COMMON_SOURCE_DIR}/lms.c
         ${BLADERF_FPGA_COMMON_SOURCE_DIR}/band_select.c
         ${BLADERF_HOST_COMMON_SOURCE_DIR}/parse.c
+        ${LIBBLADERF_AD9361_SOURCE}
 )
 
 if (MSVC)
@@ -385,6 +393,11 @@ if(MSVC)
             ${BLADERF_HOST_COMMON_SOURCE_DIR}/windows/clock_gettime.c
         )
     endif()
+
+    message(STATUS "Including setenv.c shim for Windows")
+    set(LIBBLADERF_SOURCE ${LIBBLADERF_SOURCE}
+        ${BLADERF_HOST_COMMON_SOURCE_DIR}/windows/setenv.c
+    )
 endif()
 
 add_library(libbladerf_shared SHARED ${LIBBLADERF_SOURCE})

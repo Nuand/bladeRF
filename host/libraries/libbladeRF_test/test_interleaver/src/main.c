@@ -11,9 +11,15 @@
 #define max(x, y) x > y ? x : y
 #endif  // !max
 
-#define PRINT_VERBOSE(args...) verbose ? printf(args) : 0
-#define PRINT_INFO(args...) quiet ? 0 : printf(args)
-#define PRINT_ERROR(args...) printf(args)
+#define PRINT_VERBOSE(...)                 \
+    {                                      \
+        verbose ? printf(__VA_ARGS__) : 0; \
+    }
+#define PRINT_INFO(...)                  \
+    {                                    \
+        quiet ? 0 : printf(__VA_ARGS__); \
+    }
+#define PRINT_ERROR(...) printf(__VA_ARGS__)
 
 bool verbose = false;
 bool quiet   = false;
@@ -26,6 +32,7 @@ void *create_buf(size_t buflen)
 {
     void *retbuf  = NULL;
     uint16_t *ptr = NULL;
+    size_t i;
 
     retbuf = malloc(buflen);
     if (NULL == retbuf) {
@@ -33,7 +40,7 @@ void *create_buf(size_t buflen)
         return retbuf;
     }
 
-    for (size_t i = 0; i < buflen / 2; ++i) {
+    for (i = 0; i < buflen / 2; ++i) {
         ptr  = (uint16_t *)retbuf + i;
         *ptr = (i % 65536);
     }
@@ -52,13 +59,14 @@ bool check_buf(void const *buf,
     bool retval   = true;
     uint32_t *ptr = NULL;
     uint32_t expect;
+    size_t i;
 
     if (NULL == buf) {
         PRINT_ERROR("%s: buf is null, unable to check\n", __FUNCTION__);
         return false;
     }
 
-    for (size_t i = 0; i < buflen / samplesize; i += stride) {
+    for (i = 0; i < buflen / samplesize; i += stride) {
         ptr = (uint32_t *)buf + i;
 
         count %= 65536;
@@ -90,23 +98,25 @@ void print_buf(void const *buf, size_t buflen, size_t num_columns)
     size_t const rowsize = sizeof(char) * (CELL_WIDTH * 2) * (columns + 1) + 1;
     size_t const rows    = max(buflen / columns / CELL_WIDTH, 1);
 
+    size_t row, column, byte;
+    uint8_t *u8buf = (uint8_t *)buf;
+
     char *rowstr = malloc(rowsize);
     if (NULL == rowstr) {
         PRINT_ERROR("%s: couldn't malloc rowstr\n", __FUNCTION__);
         return;
     }
 
-    for (size_t row = 0; row < rows; ++row) {
-        void const *bufptr = buf;
-        size_t rowidx      = 0;
+    for (row = 0; row < rows; ++row) {
+        uint8_t const *bufptr = u8buf;
+        size_t rowidx         = 0;
 
-        for (size_t column = 0; column < columns; ++column) {
+        for (column = 0; column < columns; ++column) {
             if (column > 0) {
                 rowstr[rowidx++] = ' ';
             }
-            for (size_t byte = 0; byte < CELL_WIDTH; ++byte) {
-                snprintf((rowstr + rowidx), rowsize - rowidx, "%02x",
-                         *((uint8_t *)buf++));
+            for (byte = 0; byte < CELL_WIDTH; ++byte) {
+                snprintf((rowstr + rowidx), rowsize - rowidx, "%02x", *u8buf++);
                 rowidx += 2;
             }
         }
@@ -114,7 +124,7 @@ void print_buf(void const *buf, size_t buflen, size_t num_columns)
         rowstr[rowidx] = '\0';
 
         if (rowidx >= rowsize) {
-            PRINT_ERROR("%s: WARNING: rowidx is %lu but rowsize is %lu\n",
+            PRINT_ERROR("%s: WARNING: rowidx is %zu but rowsize is %zu\n",
                         __FUNCTION__, rowidx, rowsize);
         }
 
@@ -133,6 +143,7 @@ int test(bladerf_channel_layout rxlay,
 {
     void *buf;
     int status;
+    size_t i;
 
     size_t const samplesize = _interleave_calc_bytes_per_sample(format);
     size_t const offset     = _interleave_calc_metadata_bytes(format);
@@ -145,18 +156,18 @@ int test(bladerf_channel_layout rxlay,
     }
 
     if (bytes < offset) {
-        PRINT_ERROR("bytes (%lu) cannot be less than offset (%lu)\n", bytes,
+        PRINT_ERROR("bytes (%zu) cannot be less than offset (%zu)\n", bytes,
                     offset);
         return -1;
     }
 
     if (num_chan < 1) {
-        PRINT_ERROR("num_chan (%lu) cannot be less than 1\n", num_chan);
+        PRINT_ERROR("num_chan (%zu) cannot be less than 1\n", num_chan);
         return -1;
     }
 
     PRINT_INFO("beginning test: rxlay = %d, txlay = %d, format = %d, "
-               "num_samples = %lu\n",
+               "num_samples = %zu\n",
                rxlay, txlay, format, num_samples);
 
     PRINT_INFO("creating test buffer... ");
@@ -171,7 +182,8 @@ int test(bladerf_channel_layout rxlay,
 
     print_buf(buf, bytes, NUM_COLUMNS);
 
-    status = _interleave_interleave_buf(txlay, format, num_samples, buf);
+    status = _interleave_interleave_buf(txlay, format,
+                                        (unsigned int)num_samples, buf);
     if (status != 0) {
         PRINT_ERROR("interleaver returned %d\n", status);
         goto error;
@@ -181,7 +193,7 @@ int test(bladerf_channel_layout rxlay,
 
     if (offset > 0) {
         // special case check
-        PRINT_INFO("checking metadata (%lu bytes starting at %p)... ", offset,
+        PRINT_INFO("checking metadata (%zu bytes starting at %p)... ", offset,
                    buf);
         print_buf(buf, offset, NUM_COLUMNS);
         if (!check_buf(buf, offset, samplesize, 1, 0)) {
@@ -205,9 +217,9 @@ int test(bladerf_channel_layout rxlay,
         }
     }
 
-    for (size_t i = 0; i < num_chan; ++i) {
+    for (i = 0; i < num_chan; ++i) {
         // get a pointer to the first interleaved sample for this channel
-        void *bufptr = buf + offset + (samplesize * i);
+        void *bufptr = (uint8_t *)buf + offset + (samplesize * i);
         // len is still the whole buffer
         size_t buflen = bytes - offset;
         // start the counting pattern at the right place
@@ -216,19 +228,20 @@ int test(bladerf_channel_layout rxlay,
 
         if (!verbose && !quiet && 0 == i) {
             verbose = true;
-            PRINT_VERBOSE("memory dump %p -> %p\n", buf, buf + bytes);
+            PRINT_VERBOSE("memory dump %p -> %p\n", buf,
+                          (uint8_t *)buf + bytes);
             if (bytes > 64 * 2) {
                 print_buf(buf, 48, 2);
                 PRINT_VERBOSE(" ...\n");
-                print_buf(buf + bytes - 48, 48, 2);
+                print_buf((uint8_t *)buf + bytes - 48, 48, 2);
             } else {
                 print_buf(buf, bytes, 2);
             }
             verbose = false;
         }
 
-        PRINT_INFO("checking interleaved data for ch %lu (*bufptr %p buflen "
-                   "%lu num_chan %lu startval %04x)... ",
+        PRINT_INFO("checking interleaved data for ch %zu (*bufptr %p buflen "
+                   "%zu num_chan %zu startval %04x)... ",
                    i, bufptr, buflen, num_chan, startval);
 
         if (!check_buf(bufptr, buflen, samplesize, num_chan, startval)) {
@@ -240,7 +253,8 @@ int test(bladerf_channel_layout rxlay,
         }
     }
 
-    status = _interleave_deinterleave_buf(rxlay, format, num_samples, buf);
+    status = _interleave_deinterleave_buf(rxlay, format,
+                                          (unsigned int)num_samples, buf);
     if (status != 0) {
         PRINT_ERROR("deinterleaver returned %d\n", status);
         goto error;

@@ -579,7 +579,7 @@ int32_t ad9361_spi_readm(struct spi_device *spi, uint32_t reg,
 		dev_err(&spi->dev, "Read Error %"PRId32, ret);
 		return ret;
 	}
-#ifdef _DEBUG
+#ifdef AD9361_DEBUG
 	{
 		int32_t i;
 		for (i = 0; i < num; i++)
@@ -669,7 +669,7 @@ int32_t ad9361_spi_write(struct spi_device *spi,
 		return ret;
 	}
 
-#ifdef _DEBUG
+#ifdef AD9361_DEBUG
 	dev_dbg(&spi->dev, "%s: reg 0x%"PRIX32" val 0x%X", __func__, reg, buf[2]);
 #endif
 
@@ -740,7 +740,7 @@ static int32_t ad9361_spi_writem(struct spi_device *spi,
 		return ret;
 	}
 
-#ifdef _DEBUG
+#ifdef AD9361_DEBUG
 	{
 		int32_t i;
 		for (i = 0; i < num; i++)
@@ -2264,7 +2264,10 @@ static int32_t ad9361_rx_adc_setup(struct ad9361_rf_phy *phy, uint32_t bbpll_fre
 
 	tmp = bbpll_freq * 10000ULL;
 	do_div(&tmp, 126906UL * phy->rxbbf_div);
-	bb_bw_Hz = tmp;
+	if (tmp > UINT32_MAX) {
+		return -EFAULT;
+	}
+	bb_bw_Hz = (uint32_t)tmp;
 
 	dev_dbg(&phy->spi->dev, "%s : BBBW %"PRIu32" : ADCfreq %"PRIu32,
 		__func__, bb_bw_Hz, adc_sampl_freq_Hz);
@@ -2327,29 +2330,29 @@ static int32_t ad9361_rx_adc_setup(struct ad9361_rf_phy *phy, uint32_t bbpll_fre
 	tmp = -50000000 + 8ULL * scale_snr_1e3 * sqrt_inv_rc_tconst_1e3 *
 		min_sqrt_term_1e3;
 	do_div(&tmp, 100000000UL);
-	data[7] = min_t(uint64_t, 124U, tmp);
+	data[7] = (uint8_t)min_t(uint64_t, 124U, tmp);
 
 	tmp = (invrc_tconst_1e6 >> 1) + 20 * inv_scaled_adc_clk_1e3 *
 		data[7] / 80 * 1000ULL;
 	do_div(&tmp, invrc_tconst_1e6);
-	data[8] = min_t(uint64_t, 255U, tmp);
+	data[8] = (uint8_t)min_t(uint64_t, 255U, tmp);
 
 	tmp = (-500000 + 77ULL * sqrt_inv_rc_tconst_1e3 * min_sqrt_term_1e3);
 	do_div(&tmp, 1000000UL);
-	data[10] = min_t(uint64_t, 127U, tmp);
+	data[10] = (uint8_t)min_t(uint64_t, 127U, tmp);
 
 	data[9] = min_t(uint32_t, 127U, ((800 * data[10]) / 1000));
 	tmp = ((invrc_tconst_1e6 >> 1) + (20 * inv_scaled_adc_clk_1e3 *
 		data[10] * 1000ULL));
 	do_div(&tmp, invrc_tconst_1e6 * 77);
-	data[11] = min_t(uint64_t, 255U, tmp);
+	data[11] = (uint8_t)min_t(uint64_t, 255U, tmp);
 	data[12] = min_t(uint32_t, 127U, (-500000 + 80 * sqrt_inv_rc_tconst_1e3 *
 		min_sqrt_term_1e3) / 1000000UL);
 
 	tmp = -3 * (long)(invrc_tconst_1e6 >> 1) + inv_scaled_adc_clk_1e3 *
 		data[12] * (1000ULL * 20 / 80);
 	do_div(&tmp, invrc_tconst_1e6);
-	data[13] = min_t(uint64_t, 255, tmp);
+	data[13] = (uint8_t)min_t(uint64_t, 255, tmp);
 
 	data[14] = 21 * (inv_scaled_adc_clk_1e3 / 10000);
 	data[15] = min_t(uint32_t, 127U, (500 + 1025 * data[7]) / 1000);
@@ -2478,7 +2481,7 @@ static int32_t ad9361_rx_bb_analog_filter_calib(struct ad9361_rf_phy *phy,
 	/* Write the BBBW into registers 0x1FB and 0x1FC */
 	ad9361_spi_write(phy->spi, REG_RX_BBBW_MHZ, rx_bb_bw / 1000000UL);
 
-	tmp = DIV_ROUND_CLOSEST((rx_bb_bw % 1000000UL) * 128, 1000000UL);
+	tmp = (uint8_t)DIV_ROUND_CLOSEST((rx_bb_bw % 1000000UL) * 128, 1000000UL);
 	ad9361_spi_write(phy->spi, REG_RX_BBBW_KHZ, min_t(uint8_t, 127, tmp));
 
 	ad9361_spi_write(phy->spi, REG_RX_MIX_LO_CM, RX_MIX_LO_CM(0x3F)); /* Set Rx Mix LO CM */
@@ -2850,7 +2853,7 @@ static int32_t ad9361_tx_quad_phase_search(struct ad9361_rf_phy *phy, uint32_t r
 
 	phy->last_tx_quad_cal_phase = (start + ret / 2) & 0x1F;
 
-#ifdef _DEBUG
+#ifdef AD9361_DEBUG
 	for (i = 0; i < 64; i++) {
 		printk("%c", (field[i] ? '#' : 'o'));
 	}
@@ -4542,14 +4545,14 @@ int32_t ad9361_calculate_rf_clock_chain(struct ad9361_rf_phy *phy,
 
 	} while ((bbpll_rate > MAX_BBPLL_FREQ) && (div >= MIN_BBPLL_DIV));
 
-	rx_path_clks[BBPLL_FREQ] = bbpll_rate;
+	rx_path_clks[BBPLL_FREQ] = (uint32_t)bbpll_rate;
 	rx_path_clks[ADC_FREQ] = adc_rate;
 	rx_path_clks[R2_FREQ] = rx_path_clks[ADC_FREQ] / clk_dividers[index_rx][1];
 	rx_path_clks[R1_FREQ] = rx_path_clks[R2_FREQ] / clk_dividers[index_rx][2];
 	rx_path_clks[CLKRF_FREQ] = rx_path_clks[R1_FREQ] / clk_dividers[index_rx][3];
 	rx_path_clks[RX_SAMPL_FREQ] = rx_path_clks[CLKRF_FREQ] / rx_intdec;
 
-	tx_path_clks[BBPLL_FREQ] = bbpll_rate;
+	tx_path_clks[BBPLL_FREQ] = (uint32_t)bbpll_rate;
 	tx_path_clks[DAC_FREQ] = dac_rate;
 	tx_path_clks[T2_FREQ] = tx_path_clks[DAC_FREQ] / clk_dividers[index_tx][1];
 	tx_path_clks[T1_FREQ] = tx_path_clks[T2_FREQ] / clk_dividers[index_tx][2];
@@ -5828,7 +5831,7 @@ int32_t ad9361_validate_enable_fir(struct ad9361_rf_phy *phy)
 
 	}
 
-#ifdef _DEBUG
+#ifdef AD9361_DEBUG
 	dev_dbg(&phy->spi->dev, "%s:RX %"PRIu32" %"PRIu32" %"PRIu32" %"PRIu32" %"PRIu32" %"PRIu32,
 		__func__, rx[BBPLL_FREQ], rx[ADC_FREQ],
 		rx[R2_FREQ], rx[R1_FREQ],
@@ -6289,18 +6292,18 @@ int32_t ad9361_bbpll_round_rate(struct refclk_scale *clk_priv, uint32_t rate,
 
 	temp = rate;
 	tmp = do_div(&temp, *prate);
-	rate = temp;
+	rate = (uint32_t)temp;
 	tmp = tmp * BBPLL_MODULUS + (*prate >> 1);
 	do_div(&tmp, *prate);
 
 	integer = rate;
-	fract = tmp;
+	fract = (uint32_t)tmp;
 
 	tmp = *prate * (uint64_t)fract;
 	do_div(&tmp, BBPLL_MODULUS);
 	tmp += *prate * integer;
 
-	return tmp;
+	return (int32_t)tmp;
 }
 
 /**
@@ -6348,12 +6351,12 @@ int32_t ad9361_bbpll_set_rate(struct refclk_scale *clk_priv, uint32_t rate,
 	/* Calculate and set BBPLL frequency word */
 	temp = rate;
 	tmp = do_div(&temp, parent_rate);
-	rate = temp;
+	rate = (uint32_t)temp;
 	tmp = tmp *(uint64_t)BBPLL_MODULUS + (parent_rate >> 1);
 	do_div(&tmp, parent_rate);
 
 	integer = rate;
-	fract = tmp;
+	fract = (uint32_t)tmp;
 
 	ad9361_spi_write(spi, REG_INTEGER_BB_FREQ_WORD, integer);
 	ad9361_spi_write(spi, REG_FRACT_BB_FREQ_WORD_3, fract);
@@ -6429,8 +6432,8 @@ static int32_t ad9361_calc_rfpll_int_divder(struct ad9361_rf_phy *phy,
 	tmp = do_div(&freq, parent_rate);
 	tmp = tmp * RFPLL_MODULUS + (parent_rate >> 1);
 	do_div(&tmp, parent_rate);
-	*integer = freq;
-	*fract = tmp;
+	*integer = (uint32_t)freq;
+	*fract = (uint32_t)tmp;
 
 	return 0;
 }
@@ -6598,7 +6601,7 @@ int32_t ad9361_rfpll_int_set_rate(struct refclk_scale *clk_priv, uint32_t rate,
 			((phy->pdata->fdd && !phy->pdata->fdd_independent_mode)  &&
 			(phy->current_tx_lo_freq != phy->current_rx_lo_freq) &&
 			(phy->current_tx_use_tdd_table || phy->current_rx_use_tdd_table))) {
-			unsigned long _rate;
+			uint64_t _rate;
 
 			switch (clk_priv->source) {
 			case RX_RFPLL_INT:
@@ -6619,7 +6622,7 @@ int32_t ad9361_rfpll_int_set_rate(struct refclk_scale *clk_priv, uint32_t rate,
 			}
 
 			if (phy->current_tx_lo_freq != phy->current_rx_lo_freq) {
-				ad9361_calc_rfpll_int_divder(phy, ad9361_from_clk(_rate),
+				ad9361_calc_rfpll_int_divder(phy, ad9361_from_clk((uint32_t)_rate),
 					parent_rate, &integer, &fract, &vco_div, &vco);
 
 				ad9361_fastlock_prepare(phy, clk_priv->source == RX_RFPLL_INT, 0, false);
@@ -6793,7 +6796,7 @@ int32_t ad9361_rfpll_set_rate(struct refclk_scale *clk_priv, uint32_t rate)
 		* so for now do nothing here.
 		*/
 		if (phy->auto_cal_en && !phy->pdata->use_ext_tx_lo)
-			if (labs((int64_t)(phy->last_tx_quad_cal_freq - ad9361_from_clk(rate))) >
+			if (llabs((int64_t)(phy->last_tx_quad_cal_freq - ad9361_from_clk(rate))) >
 				(int64_t)phy->cal_threshold_freq) {
 				ret = ad9361_do_calib_run(phy, TX_QUAD_CAL, -1);
 				if (ret < 0)
@@ -6930,10 +6933,10 @@ static struct clk *ad9361_clk_register(struct ad9361_rf_phy *phy, const char *na
 		clk->rate = ad9361_rfpll_int_recalc_rate(clk_priv, phy->clks[TX_REFCLK]->rate);
 		break;
 	case RX_RFPLL_DUMMY:
-		clk->rate = phy->pdata->rx_synth_freq;
+		clk->rate = (uint32_t)phy->pdata->rx_synth_freq;
 		break;
 	case TX_RFPLL_DUMMY:
-		clk->rate = phy->pdata->tx_synth_freq;
+		clk->rate = (uint32_t)phy->pdata->tx_synth_freq;
 		break;
 	case RX_RFPLL:
 		clk->rate = ad9361_rfpll_recalc_rate(clk_priv);

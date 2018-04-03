@@ -115,7 +115,7 @@ int sync_init(struct bladerf_sync *sync,
 
     sync->stream_config.layout = layout;
     sync->stream_config.format = format;
-    sync->stream_config.samples_per_buffer = buffer_size;
+    sync->stream_config.samples_per_buffer = (unsigned int)buffer_size;
     sync->stream_config.num_xfers = num_transfers;
     sync->stream_config.timeout_ms = stream_timeout;
     sync->stream_config.bytes_per_sample = bytes_per_sample;

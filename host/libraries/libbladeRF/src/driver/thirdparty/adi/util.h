@@ -73,34 +73,34 @@
 #define CLK_GET_RATE_NOCACHE					BIT(6)
 
 #if defined(HAVE_VERBOSE_MESSAGES)
-#define dev_err(dev, format, ...)		({printf(format, ## __VA_ARGS__);printf("\n"); })
-#define dev_warn(dev, format, ...)		({printf(format, ## __VA_ARGS__);printf("\n"); })
+#define dev_err(dev, format, ...)		{ printf(format, ## __VA_ARGS__);printf("\n"); }
+#define dev_warn(dev, format, ...)		{ printf(format, ## __VA_ARGS__);printf("\n"); }
 #if defined(HAVE_DEBUG_MESSAGES)
-#define dev_dbg(dev, format, ...)		({printf(format, ## __VA_ARGS__);printf("\n"); })
+#define dev_dbg(dev, format, ...)		{ printf(format, ## __VA_ARGS__);printf("\n"); }
 #else
-#define dev_dbg(dev, format, ...)	({ if (0) printf(format, ## __VA_ARGS__); })
+#define dev_dbg(dev, format, ...)		{;}
 #endif
 #define printk(format, ...)			printf(format, ## __VA_ARGS__)
 #else
-#define dev_err(dev, format, ...)	({ if (0) printf(format, ## __VA_ARGS__); })
-#define dev_warn(dev, format, ...)	({ if (0) printf(format, ## __VA_ARGS__); })
-#define dev_dbg(dev, format, ...)	({ if (0) printf(format, ## __VA_ARGS__); })
-#define printk(format, ...)			({ if (0) printf(format, ## __VA_ARGS__); })
+#define dev_err(dev, format, ...)		{;}
+#define dev_warn(dev, format, ...)		{;}
+#define dev_dbg(dev, format, ...)		{;}
+#define printk(format, ...)				{;}
 #endif
 
 struct spi_device {
-    void *userdata;
+	void *userdata;
 };
 
 struct gpio_device {
-    void *userdata;
+	void *userdata;
 };
 
 struct axiadc_state {
 	struct ad9361_rf_phy	*phy;
 	uint32_t				pcore_version;
 	struct dds_state dac_dds_state;
-    void *userdata;
+	void *userdata;
 };
 
 struct axiadc_chip_info {

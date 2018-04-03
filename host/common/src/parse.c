@@ -39,16 +39,19 @@ static char **add_arg(char **argv, int argc, const char *buf,
     quote_char = 0;
 
     rv = (char **)realloc(argv, sizeof(char *) * (argc + 1));
-    if (rv == NULL)
+    if (rv == NULL) {
         return NULL;
+    }
 
     rv[argc] = NULL;
 
     len = end - start + 1;
 
     d_ptr = (char *)malloc(len + 1 - quote_count * 2);
-    if (d_ptr == NULL)
+    if (d_ptr == NULL) {
+        free(rv);
         return NULL;
+    }
 
     rv[argc - 1] = d_ptr;
 
@@ -184,27 +187,34 @@ static struct config_options *add_opt(struct config_options *optv, int optc,
 {
 
     struct config_options *rv;
-    char *ptr;
+    char *ptr1, *ptr2;
     rv = (struct config_options *)
                 realloc(optv, sizeof(struct config_options) * optc);
-    if (rv == NULL)
-        return NULL;
-
-    ptr = (char *)malloc(strlen(key) + 1);
-    if (!ptr) {
+    if (rv == NULL) {
         return NULL;
     }
-    strcpy(ptr, key);
-    rv[optc - 1].key = ptr;
 
-    ptr = (char *)malloc(strlen(val) + 1);
-    if (!ptr) {
+    ptr1 = (char *)malloc(strlen(key) + 1);
+    if (ptr1 == NULL) {
+        free(rv);
         return NULL;
     }
-    strcpy(ptr, val);
-    rv[optc - 1].value = ptr;
+    strcpy(ptr1, key);
+    rv[optc - 1].key = ptr1;
+
+    ptr2 = (char *)malloc(strlen(val) + 1);
+    if (ptr2 == NULL) {
+        free(ptr1);
+        free(rv);
+        return NULL;
+    }
+    strcpy(ptr2, val);
+    rv[optc - 1].value = ptr2;
 
     rv[optc - 1].lineno = lineno;
+
+    free(ptr1);
+    free(ptr2);
 
     return rv;
 }

@@ -74,10 +74,11 @@ static uint16_t const CONSTANT_PATTERN_Q = 0x2cc;
 static uint16_t const SAMPLE_MIN = -2047;
 static uint16_t const SAMPLE_MAX = 2047;
 
-static size_t const NUM_BUFFERS   = 256;
-static size_t const NUM_TRANSFERS = 32;
-static size_t const BUFFER_SIZE   = 32 * 1024;
-static size_t const MAX_ERRORS    = 16;
+static size_t const NUM_BUFFERS = 256;
+static size_t const BUFFER_SIZE = 32 * 1024;
+static size_t const MAX_ERRORS  = 16;
+
+static unsigned int const NUM_TRANSFERS = 32;
 
 static struct option const long_options[] = {
     { "device", required_argument, NULL, 'd' },
@@ -110,7 +111,7 @@ static size_t const num_count_suffixes =
  * Globals
  ******************************************************************************/
 
-static bool shutdown       = false;
+static bool do_shutdown    = false;
 static uint64_t good_count = 0;
 static uint64_t bad_count  = 0;
 
@@ -131,6 +132,7 @@ void *tx_callback(struct bladerf *dev,
     uint64_t value;
     uint16_t i_val = 0;
     uint16_t q_val = 0;
+    size_t i;
 
     if (meta->status &
         (BLADERF_META_STATUS_OVERRUN | BLADERF_META_STATUS_UNDERRUN)) {
@@ -144,7 +146,7 @@ void *tx_callback(struct bladerf *dev,
     /* The AD9361 tends to swap channels when loopbacking */
     size_t skip_by = (LOOPBACK_RFIC == state->lb_mode) ? 4 : 2;
 
-    for (size_t i = 0; i < 2 * num_samples; i += skip_by) {
+    for (i = 0; i < 2 * num_samples; i += skip_by) {
         switch (state->mode) {
             case DATA_CONSTANT:
                 i_val = CONSTANT_PATTERN_I;
@@ -181,7 +183,7 @@ void *tx_callback(struct bladerf *dev,
         }
     }
 
-    if (shutdown) {
+    if (do_shutdown) {
         return BLADERF_STREAM_SHUTDOWN;
     }
 
@@ -197,7 +199,7 @@ void *tx_streamer(void *context)
     status = bladerf_stream(tx_stream, BLADERF_TX_X1);
     if (status < 0) {
         log_error("tx bladerf_stream(): %s\n", bladerf_strerror(status));
-        shutdown = true;
+        do_shutdown = true;
         return NULL;
     }
 
@@ -256,6 +258,7 @@ void *rx_callback(struct bladerf *dev,
 
     uint16_t expected_i, expected_q;
     uint64_t value;
+    size_t i;
 
     static uint64_t last_status_print = 0;
     static size_t block_count         = 0;
@@ -269,11 +272,11 @@ void *rx_callback(struct bladerf *dev,
         return BLADERF_STREAM_SHUTDOWN;
     }
 
-    if (shutdown) {
+    if (do_shutdown) {
         return BLADERF_STREAM_SHUTDOWN;
     }
 
-    for (size_t i = 0; i < 2 * num_samples; i += skip_by) {
+    for (i = 0; i < 2 * num_samples; i += skip_by) {
         switch (state->mode) {
             case DATA_CONSTANT:
                 expected_i = CONSTANT_PATTERN_I;
@@ -350,7 +353,7 @@ void *rx_callback(struct bladerf *dev,
 
     if ((state->max_count > 0) &&
         ((good_count + bad_count) > state->max_count)) {
-        shutdown = true;
+        do_shutdown = true;
     }
 
     return buf;
@@ -365,7 +368,7 @@ void *rx_streamer(void *context)
     status = bladerf_stream(rx_stream, BLADERF_RX_X1);
     if (status < 0) {
         log_error("rx bladerf_stream(): %s\n", bladerf_strerror(status));
-        shutdown = true;
+        do_shutdown = true;
         return NULL;
     }
 
@@ -381,7 +384,7 @@ void *rx_streamer(void *context)
 void handler(int signal)
 {
     if (signal == SIGTERM || signal == SIGINT) {
-        shutdown = true;
+        do_shutdown = true;
         log_error("Caught signal, canceling transfers\n");
         fflush(stdout);
     }

@@ -3121,7 +3121,7 @@ enum ad9361_pdata_rx_freq {
 };
 
 enum ad9361_pdata_tx_freq {
-	IGNORE,
+	IGNORE_FREQ,
 	DAC_FREQ,
 	T2_FREQ,
 	T1_FREQ,

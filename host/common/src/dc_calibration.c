@@ -331,7 +331,7 @@ struct rx_cal {
 
     uint64_t ts;
 
-    unsigned int tx_freq;
+    uint64_t tx_freq;
 };
 
 struct rx_cal_backup {
@@ -389,10 +389,10 @@ static int set_rx_cal_backup(struct bladerf *dev, struct rx_cal_backup *b)
 
 /* Ensure TX >= 1 MHz away from the RX frequency to avoid any potential
  * artifacts from the PLLs interfering with one another */
-static int rx_cal_update_frequency(struct rx_cal *cal, unsigned int rx_freq)
+static int rx_cal_update_frequency(struct rx_cal *cal, uint64_t rx_freq)
 {
     int status = 0;
-    unsigned int f_diff;
+    uint64_t f_diff;
 
     if (rx_freq < cal->tx_freq) {
         f_diff = cal->tx_freq - rx_freq;
@@ -795,6 +795,9 @@ static int perform_rx_cal(struct rx_cal *cal, struct dc_calibration_params *p)
 
     /* Apply the nominal correction values */
     status = set_rx_dc_corr(cal->dev, p->corr_i, p->corr_q);
+    if (status != 0) {
+        return status;
+    }
 
     /* Measure DC correction for AGC */
     status = save_gains(cal, &saved_gains);
@@ -1137,11 +1140,11 @@ static int set_tx_cal_backup(struct bladerf *dev, struct tx_cal_backup *b)
     return retval;
 }
 
-static int tx_cal_update_frequency(struct tx_cal *state, unsigned int freq)
+static int tx_cal_update_frequency(struct tx_cal *state, uint64_t freq)
 {
     int status;
     bladerf_loopback lb;
-    unsigned int rx_freq;
+    uint64_t rx_freq;
 
     status = bladerf_set_frequency(state->dev, BLADERF_MODULE_TX, freq);
     if (status != 0) {

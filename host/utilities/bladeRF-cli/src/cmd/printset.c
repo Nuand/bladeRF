@@ -299,6 +299,7 @@ int set_adf_refclk(struct cli_state *state, int argc, char **argv)
         if (status < 0) {
             *err = status;
             rv   = CLI_RET_LIBBLADERF;
+            return rv;
         }
     }
 
@@ -325,6 +326,7 @@ int set_adf_refclk(struct cli_state *state, int argc, char **argv)
     } else {
         rv = CLI_RET_NARGS;
     }
+
     return rv;
 }
 
@@ -510,13 +512,18 @@ int set_bandwidth(struct cli_state *state, int argc, char **argv)
         if (status < 0) {
             *err = status;
             rv   = CLI_RET_LIBBLADERF;
+        } else if (range.max >= UINT32_MAX) {
+            cli_err_nnl(state, argv[0],
+                        "Invalid range.max (this is a bug): %" PRIu64 "\n",
+                        range.max);
         }
     }
 
     if (rv == CLI_RET_OK) {
         /* Parse bandwidth */
-        bw = str2uint_suffix(argv[argc - 1], range.min, range.max,
-                             freq_suffixes, NUM_FREQ_SUFFIXES, &ok);
+        bw = str2uint_suffix(argv[argc - 1], (unsigned int)range.min,
+                             (unsigned int)range.max, freq_suffixes,
+                             NUM_FREQ_SUFFIXES, &ok);
 
         if (!ok) {
             cli_err_nnl(state, argv[0], "Invalid bandwidth (%s)\n",
@@ -848,6 +855,20 @@ int print_gain(struct cli_state *state, int argc, char **argv)
     size_t const max_len    = 16; /* Max length of a stage name */
     bool printed            = false;
     int status;
+    char **gain_names = NULL; /* Array of pointers to gain stage names */
+    char *stage_name  = NULL; /* Temporary stage name storage */
+
+    gain_names = calloc(max_count, sizeof(char *));
+    if (NULL == gain_names) {
+        rv = CLI_RET_MEM;
+        goto done;
+    }
+
+    stage_name = calloc(max_len, sizeof(char));
+    if (NULL == stage_name) {
+        rv = CLI_RET_MEM;
+        goto done;
+    }
 
     switch (argc) {
         /* NOTE: The lack of 'break' in these cases is intentional */
@@ -876,11 +897,13 @@ int print_gain(struct cli_state *state, int argc, char **argv)
             printf("    %-15s%s\n", "channel",
                    "Channel identifier (e.g. 'rx', 'tx2')");
             printf("    %-15s%s\n", "stage", "Name of gain stage to query");
-            return rv;
+            goto done;
     }
 
     /* Loop over direction */
-    for (bladerf_direction dir = BLADERF_RX; dir <= BLADERF_TX; ++dir) {
+    bladerf_direction dir;
+
+    for (dir = BLADERF_RX; dir <= BLADERF_TX; ++dir) {
         size_t chan_count;
 
         if (CLI_RET_OK != rv) {
@@ -892,8 +915,9 @@ int print_gain(struct cli_state *state, int argc, char **argv)
         chan_count = bladerf_get_channel_count(state->dev, (BLADERF_TX == dir));
 
         /* Loop over channels */
-        for (size_t ch = 0; ch < chan_count; ++ch) {
-            char *gain_names[max_count];
+        size_t ch;
+
+        for (ch = 0; ch < chan_count; ++ch) {
             int count;
             int gain;
             bladerf_channel brf_ch;
@@ -914,12 +938,13 @@ int print_gain(struct cli_state *state, int argc, char **argv)
 
             /* How many gain stages are available? */
             count = bladerf_get_gain_stages(
-                state->dev, brf_ch, (char const **)&gain_names, max_count);
+                state->dev, brf_ch, (char const **)gain_names, max_count);
 
             /* Loop over the gain stages */
-            for (int si = 0; si < count; ++si) {
+            int si;
+
+            for (si = 0; si < count; ++si) {
                 struct bladerf_range range;
-                char stage_name[max_len];
                 float range_min;
                 float range_max;
 
@@ -928,7 +953,7 @@ int print_gain(struct cli_state *state, int argc, char **argv)
                     break;
                 }
 
-                if (NULL != stage && 0 != strcmp(gain_names[si], stage)) {
+                if (NULL != stage && 0 != strcmp((gain_names[si]), stage)) {
                     /* This is not the stage we're looking for */
                     continue;
                 }
@@ -955,6 +980,7 @@ int print_gain(struct cli_state *state, int argc, char **argv)
                 };
 
                 /* Prepare human-readable stage name */
+
                 status =
                     snprintf(stage_name, (max_len - 1),
                              "%s %s:", channel2str(brf_ch), gain_names[si]);
@@ -978,6 +1004,10 @@ int print_gain(struct cli_state *state, int argc, char **argv)
                channel2str(channel), stage);
     }
 
+done:
+    free(gain_names);
+    free(stage_name);
+
     return rv;
 }
 
@@ -990,10 +1020,17 @@ int set_gain(struct cli_state *state, int argc, char **argv)
     char *value_str         = NULL;
     size_t const max_len    = 16; /* Max length of a stage name */
     struct bladerf_range range;
-    char stage_name[max_len];
     int gain;
     bool ok;
     int status;
+
+    /* C-string for holding stage names temporarily */
+    char *stage_name = NULL;
+    stage_name       = calloc(max_len, sizeof(char));
+    if (NULL == stage_name) {
+        rv = CLI_RET_MEM;
+        goto done;
+    }
 
     switch (argc) {
         case 4:
@@ -1013,14 +1050,14 @@ int set_gain(struct cli_state *state, int argc, char **argv)
                    "Channel identifier (e.g. 'rx', 'tx2')");
             printf("    %-15s%s\n", "stage", "Name of gain stage to set");
             printf("    %-15s%s\n", "value", "Gain value in dB");
-            return rv;
+            goto done;
     }
 
     channel = str2channel(argv[2]);
     if (BLADERF_CHANNEL_INVALID == channel) {
         invalid_channel(state, argv[0], argv[2]);
         rv = CLI_RET_INVPARAM;
-        return rv;
+        goto done;
     }
 
     if (stage != NULL) {
@@ -1035,15 +1072,20 @@ int set_gain(struct cli_state *state, int argc, char **argv)
     if (status < 0) {
         *err = status;
         rv   = CLI_RET_LIBBLADERF;
-        return rv;
+        goto done;
+    } else if (range.max >= UINT32_MAX) {
+        cli_err_nnl(state, argv[0],
+                    "Invalid range.max (this is a bug): %" PRIu64 "\n",
+                    range.max);
     }
 
-    gain = str2int(value_str, range.min, range.max, &ok);
+    gain = str2int(value_str, (unsigned int)range.min, (unsigned int)range.max,
+                   &ok);
     if (!ok) {
         invalid_gain(state, argv[0],
                      (stage == NULL) ? channel2str(channel) : stage, value_str);
         rv = CLI_RET_INVPARAM;
-        return rv;
+        goto done;
     }
 
     if (stage != NULL) {
@@ -1059,7 +1101,7 @@ int set_gain(struct cli_state *state, int argc, char **argv)
     if (status < 0) {
         *err = status;
         rv   = CLI_RET_LIBBLADERF;
-        return rv;
+        goto done;
     }
 
     if (stage != NULL) {
@@ -1071,7 +1113,7 @@ int set_gain(struct cli_state *state, int argc, char **argv)
     if (status < 0) {
         *err = status;
         rv   = CLI_RET_LIBBLADERF;
-        return rv;
+        goto done;
     }
 
     if (stage != NULL) {
@@ -1085,10 +1127,13 @@ int set_gain(struct cli_state *state, int argc, char **argv)
     if (status < 0) {
         *err = status;
         rv   = CLI_RET_UNKNOWN;
-        return rv;
+        goto done;
     }
 
     printf("  Gain %-12s %4d dB\n", stage_name, gain);
+
+done:
+    free(stage_name);
 
     return rv;
 }
@@ -1402,6 +1447,7 @@ static int str2xbgpio(struct cli_state *state,
     const struct xb_gpio_lut *lut = NULL;
     size_t lut_len;
     int status;
+    size_t i;
 
     *io = NULL;
 
@@ -1416,7 +1462,7 @@ static int str2xbgpio(struct cli_state *state,
         return CLI_RET_UNKNOWN;
     }
 
-    for (size_t i = 0; i < lut_len; i++) {
+    for (i = 0; i < lut_len; i++) {
         if (!strcasecmp(str, lut[i].name)) {
             *io = &lut[i];
             return 0;
@@ -1440,6 +1486,7 @@ static int print_xbio_base(struct cli_state *state,
     size_t lut_len;
     uint32_t val;
     int status;
+    size_t i;
 
     enum {
         PRINT_LIST,
@@ -1521,7 +1568,7 @@ static int print_xbio_base(struct cli_state *state,
     if (action == PRINT_ALL) {
         printf("\n");
 
-        for (size_t i = 0; i < lut_len; i++) {
+        for (i = 0; i < lut_len; i++) {
             uint32_t bit = (val & lut[i].bitmask) ? 1 : 0;
 
             if (is_dir) {
@@ -1531,7 +1578,7 @@ static int print_xbio_base(struct cli_state *state,
             }
         }
     } else if (action == PRINT_LIST) {
-        for (size_t i = 0; i < lut_len; i++) {
+        for (i = 0; i < lut_len; i++) {
             printf("%12s\n", lut[i].name);
         }
     } else if (action == PRINT_PIN) {
@@ -2131,8 +2178,9 @@ int print_rssi(struct cli_state *state, int argc, char **argv)
         case 2: {
             /* Do all RX channels */
             size_t chan_count = bladerf_get_channel_count(state->dev, false);
+            size_t chi;
 
-            for (size_t chi = 0; chi < chan_count; ++chi) {
+            for (chi = 0; chi < chan_count; ++chi) {
                 if (CLI_RET_OK == rv) {
                     rv = _do_print_rssi(state, BLADERF_CHANNEL_RX(chi));
                 }
@@ -2332,7 +2380,7 @@ int print_samplerate(struct cli_state *state, int argc, char **argv)
     int rv   = CLI_RET_OK;
     int *err = &state->last_lib_error;
     struct bladerf_rational_rate rate;
-    bladerf_channel channel;
+    bladerf_channel channel = BLADERF_CHANNEL_INVALID;
     int status;
 
     if (argc < 2 || argc > 3) {
@@ -2450,7 +2498,6 @@ int set_samplerate(struct cli_state *state, int argc, char **argv)
 
     if (rv == CLI_RET_OK) {
         /* Initialize values */
-        idx          = 0;
         usb_speed    = bladerf_device_speed(state->dev);
         rate.integer = 0;
         rate.num     = 0;
@@ -3000,7 +3047,9 @@ int set_txvga2(struct cli_state *state, int argc, char **argv)
 struct printset_entry *get_printset_entry(char *name)
 {
     struct printset_entry *entry = NULL;
-    for (size_t i = 0; entry == NULL && printset_table[i].print != NULL; ++i) {
+    size_t i;
+
+    for (i = 0; entry == NULL && printset_table[i].print != NULL; ++i) {
         if (strcasecmp(name, printset_table[i].name) == 0) {
             entry = &(printset_table[i]);
         }

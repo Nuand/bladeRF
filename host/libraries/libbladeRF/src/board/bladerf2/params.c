@@ -355,4 +355,4 @@ AD9361_TXFIRConfig ad9361_init_tx_fir_config = {
 	0				// tx_bandwidth
 };
 
-const float ina219_r_shunt = 0.001;
+const float ina219_r_shunt = 0.001F;

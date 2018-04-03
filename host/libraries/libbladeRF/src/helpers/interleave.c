@@ -63,11 +63,12 @@ size_t _interleave_calc_metadata_bytes(bladerf_format format)
 }
 
 int _interleave_interleave_buf(bladerf_channel_layout layout,
-                                     bladerf_format format,
-                                     unsigned int buffer_size,
-                                     void *samples)
+                               bladerf_format format,
+                               unsigned int buffer_size,
+                               void *samples)
 {
-    void *buf, *srcptr, *dstptr;
+    void *buf;
+    uint8_t *srcptr, *dstptr;
     size_t num_channels = _interleave_calc_num_channels(layout);
     size_t samp_size, meta_size, samps_per_ch;
     size_t srcidx, dstidx, samp, ch;
@@ -103,7 +104,8 @@ int _interleave_interleave_buf(bladerf_channel_layout layout,
         for (samp = 0; samp < samps_per_ch; ++samp) {
             dstidx = (samp * num_channels) + ch;
             memcpy(dstptr + (dstidx * samp_size),
-                   srcptr + ((srcidx + samp) * samp_size), samp_size);
+                   srcptr + ((srcidx + samp) * samp_size),
+                   samp_size);
         }
     }
 
@@ -117,11 +119,12 @@ int _interleave_interleave_buf(bladerf_channel_layout layout,
 }
 
 int _interleave_deinterleave_buf(bladerf_channel_layout layout,
-                                       bladerf_format format,
-                                       unsigned int buffer_size,
-                                       void *samples)
+                                 bladerf_format format,
+                                 unsigned int buffer_size,
+                                 void *samples)
 {
-    void *buf, *srcptr, *dstptr;
+    void *buf;
+    uint8_t *srcptr, *dstptr;
     size_t num_channels = _interleave_calc_num_channels(layout);
     size_t samp_size, meta_size, samps_per_ch;
     size_t srcidx, dstidx, samp, ch;

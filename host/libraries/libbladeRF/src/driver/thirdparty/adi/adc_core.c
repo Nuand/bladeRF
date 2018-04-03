@@ -209,9 +209,9 @@ int32_t adc_get_calib_scale_phase(struct ad9361_rf_phy *phy,
 	llval = tmp * 1000000ULL + (0x4000 / 2);
 	do_div(&llval, 0x4000);
 	if (*val == 0)
-		*val2 = llval * sign;
+		*val2 = (int32_t)llval * sign;
 	else
-		*val2 = llval;
+		*val2 = (int32_t)llval;
 
 	return 0;
 }

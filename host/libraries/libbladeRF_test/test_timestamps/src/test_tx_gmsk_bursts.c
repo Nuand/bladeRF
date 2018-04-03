@@ -52,22 +52,19 @@ static int backup_settings(struct bladerf *dev, struct app_params *p,
                            struct settings *s)
 {
     int status;
-    uint64_t frequency64;
+    uint64_t frequency;
 
     printf("\nBacking up device settings...\n");
 
     s->timeout_ms = p->timeout_ms;
     printf("  Stream timeout: %u ms\n", p->timeout_ms);
 
-    status = bladerf_get_frequency(dev, BLADERF_MODULE_TX, &frequency64);
+    status = bladerf_get_frequency(dev, BLADERF_MODULE_TX, &frequency);
     if (status != 0) {
         fprintf(stderr, "Failed to get frequency: %s\n",
                 bladerf_strerror(status));
         return status;
     }
-
-    /* FIXME migrate test to 64-bit frequency */
-    s->frequency = frequency64;
 
     printf("  Frequency: %u\n", s->frequency);
 

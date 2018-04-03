@@ -21,6 +21,7 @@
 
 #include <string.h>
 #include <errno.h>
+#include <limits.h>
 
 #include <libbladeRF.h>
 
@@ -721,7 +722,7 @@ static int bladerf1_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     struct bladerf1_board_data *board_data;
     struct bladerf_version required_fw_version;
     bladerf_dev_speed usb_speed;
-    char filename[NAME_MAX];
+    char filename[FILENAME_MAX];
     char *full_path;
     int status;
 
@@ -1473,6 +1474,7 @@ static int bladerf1_get_gain_stage_range(struct bladerf *dev,
 {
     const struct bladerf_gain_stage_info *stage_infos;
     unsigned int stage_infos_len;
+    size_t i;
 
     if (NULL == stage) {
         log_error("%s: stage is null\n", __FUNCTION__);
@@ -1489,7 +1491,7 @@ static int bladerf1_get_gain_stage_range(struct bladerf *dev,
         return BLADERF_ERR_INVAL;
     }
 
-    for (size_t i = 0; i < stage_infos_len; i++) {
+    for (i = 0; i < stage_infos_len; i++) {
         if (strcmp(stage_infos[i].name, stage) == 0) {
             if (NULL != range) {
                 *range = stage_infos[i].range;
@@ -1501,7 +1503,7 @@ static int bladerf1_get_gain_stage_range(struct bladerf *dev,
     return BLADERF_ERR_INVAL;
 }
 
-static int bladerf1_get_gain_stages(struct bladerf *dev, bladerf_channel ch, const char **stages, unsigned int count)
+static int bladerf1_get_gain_stages(struct bladerf *dev, bladerf_channel ch, const char **stages, size_t count)
 {
     const struct bladerf_gain_stage_info *stage_infos;
     unsigned int stage_infos_len;
@@ -1668,7 +1670,7 @@ static int bladerf1_set_frequency(struct bladerf *dev, bladerf_channel ch, uint6
 
     switch (board_data->tuning_mode) {
         case BLADERF_TUNING_MODE_HOST:
-            status = lms_set_frequency(dev, ch, frequency);
+            status = lms_set_frequency(dev, ch, (uint32_t)frequency);
             if (status != 0) {
                 return status;
             }
@@ -1691,7 +1693,7 @@ static int bladerf1_set_frequency(struct bladerf *dev, bladerf_channel ch, uint6
     }
 
     if (dc_cal != NULL) {
-        dc_cal_tbl_entry(dc_cal, frequency, &entry);
+        dc_cal_tbl_entry(dc_cal, (uint32_t)frequency, &entry);
 
         dc_i = entry.dc_i;
         dc_q = entry.dc_q;
@@ -1835,7 +1837,7 @@ static int bladerf1_schedule_retune(struct bladerf *dev, bladerf_channel ch, uin
     }
 
     if (quick_tune == NULL) {
-        status = lms_calculate_tuning_params(frequency, &f);
+        status = lms_calculate_tuning_params((uint32_t)frequency, &f);
         if (status != 0) {
             return status;
         }

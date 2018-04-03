@@ -19,7 +19,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#include "host_config.h"
+
+#if BLADERF_OS_WINDOWS || BLADERF_OS_OSX
+#include "clock_gettime.h"
+#else
 #include <time.h>
+#endif
 
 #include <libbladeRF.h>
 

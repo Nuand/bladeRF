@@ -557,7 +557,7 @@ uint32_t dds_to_signed_mag_fmt(int32_t val, int32_t val2)
 	val64 = (uint64_t)val2 * 0x4000UL + (1000000UL / 2);
 	do_div(&val64, 1000000UL);
 
-	return i | val64;
+	return i | (uint32_t)val64;
 }
 
 /***************************************************************************//**
@@ -586,9 +586,9 @@ void dds_from_signed_mag_fmt(uint32_t val,
 	do_div(&val64, 0x4000);
 
 	if (*r_val == 0)
-		*r_val2 = val64 * sign;
+		*r_val2 = (uint32_t)val64 * sign;
 	else
-		*r_val2 = val64;
+		*r_val2 = (uint32_t)val64;
 }
 
 /***************************************************************************//**

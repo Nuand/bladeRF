@@ -33,6 +33,9 @@
 #include "cmd.h"
 #include "version.h"
 
+#if BLADERF_OS_WINDOWS
+#include "setenv.h"
+#endif
 
 #define OPTSTR "e:L:d:f:l:s:ipv:h"
 
@@ -462,6 +465,7 @@ int main(int argc, char *argv[])
     init_rc_config(&rc);
 
     if (get_rc_config(argc, argv, &rc, &exec_list)) {
+        deinit_rc_config(&rc);
         return 1;
     }
 
@@ -469,6 +473,7 @@ int main(int argc, char *argv[])
 
     if (!state) {
         fprintf(stderr, "Failed to create state object\n");
+        deinit_rc_config(&rc);
         return 1;
     }
 

@@ -774,7 +774,7 @@ int bladerf_get_gain_stage_range(struct bladerf *dev,
 int bladerf_get_gain_stages(struct bladerf *dev,
                             bladerf_channel ch,
                             const char **stages,
-                            unsigned int count)
+                            size_t count)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -1411,10 +1411,11 @@ bool bladerf_is_loopback_mode_supported(struct bladerf *dev,
 {
     struct bladerf_loopback_modes modes;
     struct bladerf_loopback_modes const *modesptr = &modes;
+    int i, count;
 
-    int count = bladerf_get_loopback_modes(dev, &modesptr);
+    count = bladerf_get_loopback_modes(dev, &modesptr);
 
-    for (int i = 0; i < count; ++i) {
+    for (i = 0; i < count; ++i) {
         if (modesptr[i].mode == mode) {
             return true;
         }

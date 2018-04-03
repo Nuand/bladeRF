@@ -535,7 +535,7 @@ typedef int bladerf_channel;
  * bladerf_channel ch = BLADERF_CHANNEL_RX(1);
  * @endcode
  */
-#define BLADERF_CHANNEL_RX(ch) (((ch) << 1) | 0x0)
+#define BLADERF_CHANNEL_RX(ch) (bladerf_channel)(((ch) << 1) | 0x0)
 
 /**
  * TX Channel Macro
@@ -550,12 +550,12 @@ typedef int bladerf_channel;
  * bladerf_channel ch = BLADERF_CHANNEL_TX(1);
  * @endcode
  */
-#define BLADERF_CHANNEL_TX(ch) (((ch) << 1) | 0x1)
+#define BLADERF_CHANNEL_TX(ch) (bladerf_channel)(((ch) << 1) | 0x1)
 
 /**
  * Invalid channel
  */
-#define BLADERF_CHANNEL_INVALID (-1)
+#define BLADERF_CHANNEL_INVALID (bladerf_channel)(-1)
 
 /** @cond IGNORE */
 #define BLADERF_DIRECTION_MASK (0x1)
@@ -804,7 +804,7 @@ API_EXPORT
 int CALL_CONV bladerf_get_gain_stages(struct bladerf *dev,
                                       bladerf_channel ch,
                                       const char **stages,
-                                      unsigned int count);
+                                      size_t count);
 
 /** @} (End of FN_GAIN) */
 

@@ -19,6 +19,15 @@ else()
     add_definitions(-DLIBBLADERF_SEARCH_PREFIX="${CMAKE_INSTALL_PREFIX}")
 endif()
 
+if(MSVC)
+    find_package(LibPThreadsWin32 REQUIRED)
+    set(INCLUDES ${INCLUDES} ${LIBPTHREADSWIN32_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${LIBPTHREADSWIN32_LIBRARIES})
+else(MSVC)
+    find_package(Threads REQUIRED)
+    set(LIBS ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
+endif(MSVC)
+
 set(SRC
     src/main.c
     ${libbladeRF_SOURCE_DIR}/src/driver/fx3_fw.c

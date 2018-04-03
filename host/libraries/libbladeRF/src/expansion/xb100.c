@@ -59,7 +59,7 @@ int xb100_enable(struct bladerf *dev, bool enable)
         }
     }
 
-    return 0;
+    return status;
 }
 
 int xb100_init(struct bladerf *dev)

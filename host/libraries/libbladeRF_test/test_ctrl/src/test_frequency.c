@@ -23,12 +23,13 @@
  * THE SOFTWARE.
  */
 #include "test_ctrl.h"
+#include <inttypes.h>
 
 DECLARE_TEST_CASE(frequency);
 
 /* Due to some known rounding issues, the readback may be +/- 1 Hz. We'll not
  * fail out on this for now... */
-static inline bool freq_match(unsigned int a, unsigned int b)
+static inline bool freq_match(uint64_t a, uint64_t b)
 {
     if (a == b) {
         return true;
@@ -43,31 +44,27 @@ static inline bool freq_match(unsigned int a, unsigned int b)
 
 
 static int set_and_check(struct bladerf *dev, bladerf_module m,
-                         unsigned int freq, unsigned int prev_freq)
+                         uint64_t freq, uint64_t prev_freq)
 {
     int status;
-    uint64_t readback64;
-    unsigned int readback;
+    uint64_t readback;
 
     status = bladerf_set_frequency(dev, m, freq);
     if (status != 0) {
-        PR_ERROR("Failed to set frequency: %u Hz (Prev: %u Hz): %s\n",
+        PR_ERROR("Failed to set frequency: %"PRIu64" Hz (Prev: %"PRIu64" Hz): %s\n",
                  freq, prev_freq, bladerf_strerror(status));
         return status;
     }
 
-    status = bladerf_get_frequency(dev, m, &readback64);
+    status = bladerf_get_frequency(dev, m, &readback);
     if (status != 0) {
         PR_ERROR("Failed to get frequency: %s\n",
                  bladerf_strerror(status));
         return status;
     }
 
-    /* FIXME migrate test to 64-bit frequency */
-    readback = readback64;
-
     if (!freq_match(freq, readback)) {
-        PR_ERROR("Frequency (%u) != Readback value (%u)\n",
+        PR_ERROR("Frequency (%"PRIu64") != Readback value (%"PRIu64")\n",
                  freq, readback);
 
         return -1;

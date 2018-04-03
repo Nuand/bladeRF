@@ -105,8 +105,7 @@ static int init_module(struct bladerf *dev, struct test_params *p,
     const char *m_str = m == BLADERF_MODULE_RX ? "RX" : "TX";
     int status;
     unsigned int samplerate_actual;
-    uint64_t frequency_actual64;
-    unsigned int frequency_actual;
+    uint64_t frequency_actual;
 
     status = bladerf_set_sample_rate(dev, m, p->samplerate, &samplerate_actual);
 
@@ -124,15 +123,12 @@ static int init_module(struct bladerf *dev, struct test_params *p,
         return status;
     }
 
-    status = bladerf_get_frequency(dev, m, &frequency_actual64);
+    status = bladerf_get_frequency(dev, m, &frequency_actual);
     if (status != 0) {
         log_error("Failed to read back %s frequency: %s\n",
                 m_str, bladerf_strerror(status));
         return status;
     }
-
-    /* FIXME migrate test to 64-bit frequency */
-    frequency_actual = frequency_actual64;
 
     log_debug("%s Frequency = %u, %s Samplerate = %u\n",
               m_str, frequency_actual, m_str, samplerate_actual);

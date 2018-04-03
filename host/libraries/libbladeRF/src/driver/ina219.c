@@ -95,7 +95,7 @@ int ina219_read_shunt_voltage(struct bladerf *dev, float *voltage)
     }
 
     /* Scale by 1e-5 LSB / Volt */
-    *voltage = ((float)((int16_t)data)) * 1e-5;
+    *voltage = ((float)((int16_t)data)) * 1e-5F;
 
     return 0;
 }
@@ -116,7 +116,7 @@ int ina219_read_bus_voltage(struct bladerf *dev, float *voltage)
     }
 
     /* Scale by 0.004 LSB / Volt */
-    *voltage = ((float)(data >> 3)) * 0.004;
+    *voltage = ((float)(data >> 3)) * 0.004F;
 
     return 0;
 }
@@ -132,7 +132,7 @@ int ina219_read_current(struct bladerf *dev, float *current)
     }
 
     /* Scale by 0.001 LSB / Ampere */
-    *current = ((float)((int16_t)data)) * 0.001;
+    *current = ((float)((int16_t)data)) * 0.001F;
 
     return 0;
 }
@@ -148,7 +148,7 @@ int ina219_read_power(struct bladerf *dev, float *power)
     }
 
     /* Scale by 0.020 LSB / Watt */
-    *power = ((float)((int16_t)data)) * 0.020;
+    *power = ((float)((int16_t)data)) * 0.020F;
 
     return 0;
 }
