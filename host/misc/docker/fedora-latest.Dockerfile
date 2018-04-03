@@ -24,29 +24,26 @@
 FROM fedora:latest
 
 LABEL maintainer="Nuand LLC <bladeRF@nuand.com>"
-LABEL version="0.0.1"
-LABEL description="CI build environment for the bladeRF project (Fedora Latest)"
+LABEL version="0.0.2"
+LABEL description="CI build environment for the bladeRF project"
+LABEL com.nuand.ci.distribution.name="Fedora"
 
 # Install things
 RUN yum groupinstall -y "Development Tools" \
  && yum install -y \
+    clang \
     cmake \
     doxygen \
-    gcc-c++ \
     help2man \
     hostname \
     libusbx \
     libusbx-devel \
     pandoc \
     wget \
- && yum clean all
-
-# Fedora does not look in /usr/local/lib* for libraries, so we must add
-# this manually.
-RUN echo "/usr/local/lib" > /etc/ld.so.conf.d/locallib.conf \
+ && yum clean all \
+ && rm -rf /var/cache/yum \
+ && echo "/usr/local/lib" > /etc/ld.so.conf.d/locallib.conf \
  && echo "/usr/local/lib64" >> /etc/ld.so.conf.d/locallib.conf
-
-WORKDIR /root
 
 # Fedora lacks libtecla packages, so download and build.
 RUN (curl http://www.astro.caltech.edu/~mcs/tecla/libtecla.tar.gz | tar xzf -) \
@@ -57,14 +54,27 @@ RUN (curl http://www.astro.caltech.edu/~mcs/tecla/libtecla.tar.gz | tar xzf -) \
  && cd .. \
  && rm -rf libtecla
 
-COPY . /root/bladeRF
+# Copy in our build context
+WORKDIR /root
+COPY --from=nuand/bladerf-buildenv:base /root/bladeRF /root/bladeRF
 
-RUN test -d "/root/bladeRF/host/build" && rm -rf /root/bladeRF/host/build
+# Build arguments
+ARG compiler=gcc
+ARG buildtype=Release
+ARG taggedrelease=NO
 
-RUN cd bladeRF/host \
+# Do the build!
+RUN cd /root/bladeRF/ \
  && mkdir -p build \
  && cd build \
- && cmake -DBUILD_DOCUMENTATION=ON ../ \
- && make \
+ && cmake \
+        -DBUILD_DOCUMENTATION=ON \
+        -DCMAKE_C_COMPILER=${compiler} \
+        -DCMAKE_BUILD_TYPE=${buildtype} \
+        -DENABLE_FX3_BUILD=OFF \
+        -DENABLE_HOST_BUILD=ON \
+        -DTAGGED_RELEASE=${taggedrelease} \
+    ../ \
+ && make -j$(nproc) \
  && make install \
  && ldconfig

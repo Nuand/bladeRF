@@ -24,14 +24,17 @@
 FROM debian:stretch
 
 LABEL maintainer="Nuand LLC <bladeRF@nuand.com>"
-LABEL version="0.0.1"
-LABEL description="CI build environment for the bladeRF project (Debian Stretch)"
+LABEL version="0.0.2"
+LABEL description="CI build environment for the bladeRF project"
+LABEL com.nuand.ci.distribution.name="Debian"
+LABEL com.nuand.ci.distribution.codename="stretch"
+LABEL com.nuand.ci.distribution.version="9"
 
 # Install things
 RUN apt-get update \
- && apt-get upgrade -y \
  && apt-get install -y \
         build-essential \
+        clang \
         cmake \
         doxygen \
         git \
@@ -42,16 +45,27 @@ RUN apt-get update \
         pkg-config \
  && apt-get clean
 
+# Copy in our build context
 WORKDIR /root
+COPY --from=nuand/bladerf-buildenv:base /root/bladeRF /root/bladeRF
 
-COPY . /root/bladeRF
+# Build arguments
+ARG compiler=gcc
+ARG buildtype=Release
+ARG taggedrelease=NO
 
-RUN test -d "/root/bladeRF/host/build" && rm -rf /root/bladeRF/host/build
-
-RUN cd bladeRF/host \
+# Do the build!
+RUN cd /root/bladeRF/ \
  && mkdir -p build \
  && cd build \
- && cmake -DBUILD_DOCUMENTATION=ON ../ \
- && make \
+ && cmake \
+        -DBUILD_DOCUMENTATION=ON \
+        -DCMAKE_C_COMPILER=${compiler} \
+        -DCMAKE_BUILD_TYPE=${buildtype} \
+        -DENABLE_FX3_BUILD=OFF \
+        -DENABLE_HOST_BUILD=ON \
+        -DTAGGED_RELEASE=${taggedrelease} \
+    ../ \
+ && make -j$(nproc) \
  && make install \
  && ldconfig

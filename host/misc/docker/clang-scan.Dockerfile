@@ -21,14 +21,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-FROM ubuntu:trusty
+FROM ubuntu:bionic
 
 LABEL maintainer="Nuand LLC <bladeRF@nuand.com>"
 LABEL version="0.0.2"
 LABEL description="CI build environment for the bladeRF project"
 LABEL com.nuand.ci.distribution.name="Ubuntu"
-LABEL com.nuand.ci.distribution.codename="trusty"
-LABEL com.nuand.ci.distribution.version="14.04"
+LABEL com.nuand.ci.distribution.codename="bionic"
+LABEL com.nuand.ci.distribution.version="18.04"
 
 # Install things
 RUN apt-get update \
@@ -49,23 +49,11 @@ RUN apt-get update \
 WORKDIR /root
 COPY --from=nuand/bladerf-buildenv:base /root/bladeRF /root/bladeRF
 
-# Build arguments
-ARG compiler=gcc
-ARG buildtype=Release
-ARG taggedrelease=NO
+# Install clang-tools
+RUN apt-get update && apt-get install -y clang-tools && apt-get clean
 
-# Do the build!
-RUN cd /root/bladeRF/ \
+RUN cd bladeRF/host \
  && mkdir -p build \
  && cd build \
- && cmake \
-        -DBUILD_DOCUMENTATION=ON \
-        -DCMAKE_C_COMPILER=${compiler} \
-        -DCMAKE_BUILD_TYPE=${buildtype} \
-        -DENABLE_FX3_BUILD=OFF \
-        -DENABLE_HOST_BUILD=ON \
-        -DTAGGED_RELEASE=${taggedrelease} \
-    ../ \
- && make -j$(nproc) \
- && make install \
- && ldconfig
+ && cmake -DBUILD_DOCUMENTATION=ON -DCMAKE_C_COMPILER=/usr/share/clang/scan-build-6.0/libexec/ccc-analyzer ../ \
+ && /usr/share/clang/scan-build-6.0/bin/scan-build -analyze-headers -maxloop 100 -o ./report make -j$(nproc)
