@@ -53,7 +53,6 @@ architecture arch of bladerf_tb is
         end loop ;
     end procedure ;
 
-    signal c5_clock1    :   std_logic   := '1';
     signal c5_clock2    :   std_logic   := '1';
     signal adi_rx_clock :   std_logic   := '1';
     signal fx3_gpif     :   fx3_gpif_t;
@@ -62,7 +61,6 @@ architecture arch of bladerf_tb is
 begin
 
     -- Main 38.4MHz clock input
-    c5_clock1 <= not c5_clock1 after C5_CLOCK_HALF_PERIOD ;
     c5_clock2 <= not c5_clock2 after C5_CLOCK_HALF_PERIOD ;
 
     -- AD9361 clock input
@@ -72,7 +70,6 @@ begin
     U_bladerf : entity nuand.bladerf
       port map (
         -- Main system clock
-        c5_clock1           => c5_clock1,
         c5_clock2           => c5_clock2,
 
         -- Si53304 clock controls

@@ -27,7 +27,6 @@ library ieee ;
 entity bladerf is
   port (
     -- Main 38.4MHz system clock (3.3 V)
-    c5_clock1           :   in      std_logic ;
     c5_clock2           :   in      std_logic ;
 
     -- SI53304 clock controls (3.3 V)
