@@ -120,7 +120,7 @@ will be applied more than once; e.g. specifying `frequency 2.4G` and then
         Suffixes are supported.
 
         This option causes libbladeRF to call bladerf_set_frequency() on both
-        ::BLADERF_MODULE_RX and ::BLADERF_MODULE_TX.
+        ::BLADERF_RX and ::BLADERF_TX.
 
     <li><b>`samplerate <rate>`</b></li>
 
@@ -128,14 +128,14 @@ will be applied more than once; e.g. specifying `frequency 2.4G` and then
         per second. Suffixes are supported.
 
         This option causes libbladeRF to call bladerf_set_rational_sample_rate()
-        on both ::BLADERF_MODULE_RX and ::BLADERF_MODULE_TX.
+        on both ::BLADERF_RX and ::BLADERF_TX.
 
     <li><b>`bandwidth <Hz>`</b></li>
 
         Sets the RF bandwidth to a given value in Hz. Suffixes are supported.
 
         This option causes libbladeRF to call bladerf_set_bandwidth() on both
-        ::BLADERF_MODULE_RX and ::BLADERF_MODULE_TX.
+        ::BLADERF_RX and ::BLADERF_TX.
 
     <li><b>`agc <bool>`</b></li>
 

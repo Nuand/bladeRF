@@ -19,19 +19,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <limits.h>
 #include <errno.h>
+#include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include <libbladeRF.h>
 
-#include "rel_assert.h"
 #include "log.h"
+#include "rel_assert.h"
 #define LOGGER_ID_STRING
-#include "logger_id.h"
 #include "logger_entry.h"
+#include "logger_id.h"
 
 #include "backend/backend.h"
 #include "backend/usb/usb.h"
@@ -56,14 +56,12 @@
 /* TODO: move this somewhere more appropriate */
 /******************************************************************************/
 
-const struct numeric_suffix freq_suffixes[] = {
-    { "G",      1000 * 1000 * 1000 },
-    { "GHz",    1000 * 1000 * 1000 },
-    { "M",      1000 * 1000 },
-    { "MHz",    1000 * 1000 },
-    { "k",      1000 } ,
-    { "kHz",    1000 }
-};
+const struct numeric_suffix freq_suffixes[] = { { "G", 1000 * 1000 * 1000 },
+                                                { "GHz", 1000 * 1000 * 1000 },
+                                                { "M", 1000 * 1000 },
+                                                { "MHz", 1000 * 1000 },
+                                                { "k", 1000 },
+                                                { "kHz", 1000 } };
 #define NUM_FREQ_SUFFIXES (sizeof(freq_suffixes) / sizeof(freq_suffixes[0]))
 
 static int apply_config_options(struct bladerf *dev, struct config_options opt)
@@ -74,6 +72,7 @@ static int apply_config_options(struct bladerf *dev, struct config_options opt)
     uint32_t val;
     bool ok;
     bladerf_gain_mode gain_mode;
+    struct bladerf_range range;
     bladerf_sampling sampling_mode;
     bladerf_vctcxo_tamer_mode tamer_mode = BLADERF_VCTCXO_TAMER_INVALID;
 
@@ -85,51 +84,79 @@ static int apply_config_options(struct bladerf *dev, struct config_options opt)
         status = bladerf_load_fpga(dev, opt.value);
         if (status < 0) {
             log_warning("Config line %d: could not load FPGA from `%s'\n",
-                    opt.lineno, opt.value);
+                        opt.lineno, opt.value);
         }
         return status;
     } else if (!strcasecmp(opt.key, "frequency")) {
-        freq = str2uint64_suffix( opt.value,
-                0, BLADERF_FREQUENCY_MAX,
-                freq_suffixes, NUM_FREQ_SUFFIXES, &ok);
-        if (!ok)
+        status =
+            bladerf_get_frequency_range(dev, BLADERF_CHANNEL_RX(0), &range);
+        freq = str2uint64_suffix(opt.value, range.min, range.max, freq_suffixes,
+                                 NUM_FREQ_SUFFIXES, &ok);
+        if (!ok) {
             return BLADERF_ERR_INVAL;
+        }
 
-        status = bladerf_set_frequency(dev, BLADERF_MODULE_RX, (unsigned int)freq);
-        if (status < 0)
+        status =
+            bladerf_get_frequency_range(dev, BLADERF_CHANNEL_TX(0), &range);
+        if ((int64_t)freq < range.min || (int64_t)freq > range.max) {
+            return BLADERF_ERR_INVAL;
+        }
+
+        status = bladerf_set_frequency(dev, BLADERF_CHANNEL_RX(0),
+                                       (unsigned int)freq);
+        if (status < 0) {
             return status;
+        }
 
-        status = bladerf_set_frequency(dev, BLADERF_MODULE_TX, (unsigned int)freq);
+        status = bladerf_set_frequency(dev, BLADERF_CHANNEL_TX(0),
+                                       (unsigned int)freq);
     } else if (!strcasecmp(opt.key, "samplerate")) {
-        freq = str2uint64_suffix( opt.value,
-                0, UINT64_MAX,
-                freq_suffixes, NUM_FREQ_SUFFIXES, &ok);
-        if (!ok)
+        status =
+            bladerf_get_sample_rate_range(dev, BLADERF_CHANNEL_RX(0), &range);
+        freq = str2uint64_suffix(opt.value, range.min, range.max, freq_suffixes,
+                                 NUM_FREQ_SUFFIXES, &ok);
+        if (!ok) {
             return BLADERF_ERR_INVAL;
+        }
+
+        status =
+            bladerf_get_sample_rate_range(dev, BLADERF_CHANNEL_TX(0), &range);
+        if ((int64_t)freq < range.min || (int64_t)freq > range.max) {
+            return BLADERF_ERR_INVAL;
+        }
 
         rate.integer = freq;
-        rate.num = 0;
-        rate.den = 1;
+        rate.num     = 0;
+        rate.den     = 1;
 
-        status = bladerf_set_rational_sample_rate(dev, BLADERF_MODULE_RX,
-                                                    &rate, &actual);
+        status = bladerf_set_rational_sample_rate(dev, BLADERF_CHANNEL_RX(0),
+                                                  &rate, &actual);
         if (status < 0)
             return status;
 
-        status = bladerf_set_rational_sample_rate(dev, BLADERF_MODULE_TX,
-                                                    &rate, &actual);
+        status = bladerf_set_rational_sample_rate(dev, BLADERF_CHANNEL_TX(0),
+                                                  &rate, &actual);
     } else if (!strcasecmp(opt.key, "bandwidth")) {
-        bw = str2uint_suffix( opt.value,
-                BLADERF_BANDWIDTH_MIN, BLADERF_BANDWIDTH_MAX,
-                freq_suffixes, NUM_FREQ_SUFFIXES, &ok);
-        if (!ok)
+        status =
+            bladerf_get_bandwidth_range(dev, BLADERF_CHANNEL_RX(0), &range);
+        bw = str2uint_suffix(opt.value, range.min, range.max, freq_suffixes,
+                             NUM_FREQ_SUFFIXES, &ok);
+        if (!ok) {
             return BLADERF_ERR_INVAL;
+        }
 
-        status = bladerf_set_bandwidth(dev, BLADERF_MODULE_RX, bw, NULL);
-        if (status < 0)
+        status =
+            bladerf_get_bandwidth_range(dev, BLADERF_CHANNEL_TX(0), &range);
+        if ((int64_t)bw < range.min || (int64_t)bw > range.max) {
+            return BLADERF_ERR_INVAL;
+        }
+
+        status = bladerf_set_bandwidth(dev, BLADERF_CHANNEL_RX(0), bw, NULL);
+        if (status < 0) {
             return status;
+        }
 
-        status = bladerf_set_bandwidth(dev, BLADERF_MODULE_TX, bw, NULL);
+        status = bladerf_set_bandwidth(dev, BLADERF_CHANNEL_TX(0), bw, NULL);
     } else if (!strcasecmp(opt.key, "agc")) {
         bool agcval = false;
 
@@ -139,11 +166,12 @@ static int apply_config_options(struct bladerf *dev, struct config_options opt)
         }
 
         gain_mode = agcval ? BLADERF_GAIN_AUTOMATIC : BLADERF_GAIN_MANUAL;
-        status = bladerf_set_gain_mode(dev, BLADERF_MODULE_RX, gain_mode);
+        status = bladerf_set_gain_mode(dev, BLADERF_CHANNEL_RX(0), gain_mode);
     } else if (!strcasecmp(opt.key, "gpio")) {
         val = str2uint(opt.key, 0, -1, &ok);
-        if (!ok)
+        if (!ok) {
             return BLADERF_ERR_INVAL;
+        }
 
         status = bladerf_config_gpio_write(dev, val);
     } else if (!strcasecmp(opt.key, "sampling")) {
@@ -158,16 +186,20 @@ static int apply_config_options(struct bladerf *dev, struct config_options opt)
         status = bladerf_set_sampling(dev, sampling_mode);
     } else if (!strcasecmp(opt.key, "trimdac")) {
         val = str2uint(opt.value, 0, -1, &ok);
-        if (!ok)
+        if (!ok) {
             return BLADERF_ERR_INVAL;
+        }
 
         status = bladerf_dac_write(dev, val);
     } else if (!strcasecmp(opt.value, "vctcxo_tamer")) {
-        if (!strcasecmp(opt.value, "disabled")     || !strcasecmp(opt.value, "off")) {
+        if (!strcasecmp(opt.value, "disabled") ||
+            !strcasecmp(opt.value, "off")) {
             tamer_mode = BLADERF_VCTCXO_TAMER_DISABLED;
-        } else if (!strcasecmp(opt.value, "1PPS")  || !strcasecmp(opt.value, "1 PPS")) {
+        } else if (!strcasecmp(opt.value, "1PPS") ||
+                   !strcasecmp(opt.value, "1 PPS")) {
             tamer_mode = BLADERF_VCTCXO_TAMER_1_PPS;
-        } else if (!strcasecmp(opt.value, "10MHZ") || !strcasecmp(opt.value, "10 MHZ")) {
+        } else if (!strcasecmp(opt.value, "10MHZ") ||
+                   !strcasecmp(opt.value, "10 MHZ")) {
             tamer_mode = BLADERF_VCTCXO_TAMER_10_MHZ;
         } else if (!strcasecmp(opt.value, "10M")) {
             tamer_mode = BLADERF_VCTCXO_TAMER_10_MHZ;
@@ -181,8 +213,8 @@ static int apply_config_options(struct bladerf *dev, struct config_options opt)
     }
 
     if (status < 0)
-        log_warning("Error message for option (%s) on line %d:\n%s\n",
-                opt.key, opt.lineno, bladerf_strerror(status));
+        log_warning("Error message for option (%s) on line %d:\n%s\n", opt.key,
+                    opt.lineno, bladerf_strerror(status));
 
     return status;
 }
@@ -190,10 +222,10 @@ static int apply_config_options(struct bladerf *dev, struct config_options opt)
 int config_load_options_file(struct bladerf *dev)
 {
     char *filename = NULL;
-    int status = 0;
+    int status     = 0;
 
     uint8_t *buf = NULL;
-    size_t  buf_size;
+    size_t buf_size;
 
     int optc;
     int j;
@@ -223,8 +255,8 @@ int config_load_options_file(struct bladerf *dev)
     for (j = 0; j < optc; j++) {
         status = apply_config_options(dev, optv[j]);
         if (status < 0) {
-            log_warning("Invalid config option `%s' on line %d\n",
-                            optv[j].key, optv[j].lineno);
+            log_warning("Invalid config option `%s' on line %d\n", optv[j].key,
+                        optv[j].lineno);
             break;
         }
     }
@@ -236,7 +268,6 @@ out_buf:
 out:
     free(filename);
     return status;
-
 }
 
 /******************************************************************************/
@@ -381,7 +412,8 @@ int bladerf_get_bootloader_list(struct bladerf_devinfo **devices)
 
 int bladerf_load_fw_from_bootloader(const char *device_identifier,
                                     bladerf_backend backend,
-                                    uint8_t bus, uint8_t addr,
+                                    uint8_t bus,
+                                    uint8_t addr,
                                     const char *file)
 {
     int status;
@@ -392,8 +424,8 @@ int bladerf_load_fw_from_bootloader(const char *device_identifier,
 
     if (device_identifier == NULL) {
         bladerf_init_devinfo(&devinfo);
-        devinfo.backend = backend;
-        devinfo.usb_bus = bus;
+        devinfo.backend  = backend;
+        devinfo.usb_bus  = bus;
         devinfo.usb_addr = addr;
     } else {
         status = str2devinfo(device_identifier, &devinfo);
@@ -434,7 +466,8 @@ int bladerf_get_fw_log(struct bladerf *dev, const char *filename)
 
     MUTEX_LOCK(&dev->lock);
 
-    if (!have_cap(dev->board->get_capabilities(dev), BLADERF_CAP_READ_FW_LOG_ENTRY)) {
+    if (!have_cap(dev->board->get_capabilities(dev),
+                  BLADERF_CAP_READ_FW_LOG_ENTRY)) {
         struct bladerf_version fw_version;
 
         if (dev->board->get_fw_version(dev, &fw_version) == 0) {
@@ -584,22 +617,22 @@ int bladerf_fw_version(struct bladerf *dev, struct bladerf_version *version)
 
 void bladerf_version(struct bladerf_version *version)
 {
-    /* Sanity checks for version reporting mismatches */
-    #ifndef LIBBLADERF_API_VERSION
-    #   error LIBBLADERF_API_VERSION is missing
-    #endif
-    #if LIBBLADERF_VERSION_MAJOR != ((LIBBLADERF_API_VERSION >> 24) & 0xff)
-    #   error LIBBLADERF_API_VERSION: Major version mispatch
-    #endif
-    #if LIBBLADERF_VERSION_MINOR != ((LIBBLADERF_API_VERSION >> 16) & 0xff)
-    #   error LIBBLADERF_API_VERSION: Minor version mispatch
-    #endif
-    #if LIBBLADERF_VERSION_PATCH != ((LIBBLADERF_API_VERSION >> 8) & 0xff)
-    #   error LIBBLADERF_API_VERSION: Patch version mispatch
-    #endif
-    version->major = LIBBLADERF_VERSION_MAJOR;
-    version->minor = LIBBLADERF_VERSION_MINOR;
-    version->patch = LIBBLADERF_VERSION_PATCH;
+/* Sanity checks for version reporting mismatches */
+#ifndef LIBBLADERF_API_VERSION
+#error LIBBLADERF_API_VERSION is missing
+#endif
+#if LIBBLADERF_VERSION_MAJOR != ((LIBBLADERF_API_VERSION >> 24) & 0xff)
+#error LIBBLADERF_API_VERSION: Major version mismatch
+#endif
+#if LIBBLADERF_VERSION_MINOR != ((LIBBLADERF_API_VERSION >> 16) & 0xff)
+#error LIBBLADERF_API_VERSION: Minor version mismatch
+#endif
+#if LIBBLADERF_VERSION_PATCH != ((LIBBLADERF_API_VERSION >> 8) & 0xff)
+#error LIBBLADERF_API_VERSION: Patch version mismatch
+#endif
+    version->major    = LIBBLADERF_VERSION_MAJOR;
+    version->minor    = LIBBLADERF_VERSION_MINOR;
+    version->patch    = LIBBLADERF_VERSION_PATCH;
     version->describe = LIBBLADERF_VERSION;
 }
 
@@ -607,8 +640,7 @@ void bladerf_version(struct bladerf_version *version)
 /* Enable/disable */
 /******************************************************************************/
 
-int bladerf_enable_module(struct bladerf *dev, bladerf_channel ch,
-                          bool enable)
+int bladerf_enable_module(struct bladerf *dev, bladerf_channel ch, bool enable)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -645,7 +677,9 @@ int bladerf_get_gain(struct bladerf *dev, bladerf_channel ch, int *gain)
     return status;
 }
 
-int bladerf_set_gain_mode(struct bladerf *dev, bladerf_channel ch, bladerf_gain_mode mode)
+int bladerf_set_gain_mode(struct bladerf *dev,
+                          bladerf_channel ch,
+                          bladerf_gain_mode mode)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -656,7 +690,9 @@ int bladerf_set_gain_mode(struct bladerf *dev, bladerf_channel ch, bladerf_gain_
     return status;
 }
 
-int bladerf_get_gain_mode(struct bladerf *dev, bladerf_channel ch, bladerf_gain_mode *mode)
+int bladerf_get_gain_mode(struct bladerf *dev,
+                          bladerf_channel ch,
+                          bladerf_gain_mode *mode)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -680,7 +716,9 @@ int bladerf_get_gain_modes(struct bladerf *dev,
     return status;
 }
 
-int bladerf_get_gain_range(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range)
+int bladerf_get_gain_range(struct bladerf *dev,
+                           bladerf_channel ch,
+                           struct bladerf_range *range)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -691,7 +729,10 @@ int bladerf_get_gain_range(struct bladerf *dev, bladerf_channel ch, struct blade
     return status;
 }
 
-int bladerf_set_gain_stage(struct bladerf *dev, bladerf_channel ch, const char *stage, int gain)
+int bladerf_set_gain_stage(struct bladerf *dev,
+                           bladerf_channel ch,
+                           const char *stage,
+                           int gain)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -702,7 +743,10 @@ int bladerf_set_gain_stage(struct bladerf *dev, bladerf_channel ch, const char *
     return status;
 }
 
-int bladerf_get_gain_stage(struct bladerf *dev, bladerf_channel ch, const char *stage, int *gain)
+int bladerf_get_gain_stage(struct bladerf *dev,
+                           bladerf_channel ch,
+                           const char *stage,
+                           int *gain)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -713,7 +757,10 @@ int bladerf_get_gain_stage(struct bladerf *dev, bladerf_channel ch, const char *
     return status;
 }
 
-int bladerf_get_gain_stage_range(struct bladerf *dev, bladerf_channel ch, const char *stage, struct bladerf_range *range)
+int bladerf_get_gain_stage_range(struct bladerf *dev,
+                                 bladerf_channel ch,
+                                 const char *stage,
+                                 struct bladerf_range *range)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -724,7 +771,10 @@ int bladerf_get_gain_stage_range(struct bladerf *dev, bladerf_channel ch, const 
     return status;
 }
 
-int bladerf_get_gain_stages(struct bladerf *dev, bladerf_channel ch, const char **stages, unsigned int count)
+int bladerf_get_gain_stages(struct bladerf *dev,
+                            bladerf_channel ch,
+                            const char **stages,
+                            unsigned int count)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -739,8 +789,10 @@ int bladerf_get_gain_stages(struct bladerf *dev, bladerf_channel ch, const char 
 /* Sample Rate */
 /******************************************************************************/
 
-int bladerf_set_sample_rate(struct bladerf *dev, bladerf_channel ch,
-                            uint32_t rate, uint32_t *actual)
+int bladerf_set_sample_rate(struct bladerf *dev,
+                            bladerf_channel ch,
+                            uint32_t rate,
+                            uint32_t *actual)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -751,7 +803,8 @@ int bladerf_set_sample_rate(struct bladerf *dev, bladerf_channel ch,
     return status;
 }
 
-int bladerf_get_sample_rate(struct bladerf *dev, bladerf_channel ch,
+int bladerf_get_sample_rate(struct bladerf *dev,
+                            bladerf_channel ch,
                             unsigned int *rate)
 {
     int status;
@@ -763,7 +816,8 @@ int bladerf_get_sample_rate(struct bladerf *dev, bladerf_channel ch,
     return status;
 }
 
-int bladerf_get_sample_rate_range(struct bladerf *dev, bladerf_channel ch,
+int bladerf_get_sample_rate_range(struct bladerf *dev,
+                                  bladerf_channel ch,
                                   struct bladerf_range *range)
 {
     int status;
@@ -775,7 +829,8 @@ int bladerf_get_sample_rate_range(struct bladerf *dev, bladerf_channel ch,
     return status;
 }
 
-int bladerf_set_rational_sample_rate(struct bladerf *dev, bladerf_channel ch,
+int bladerf_set_rational_sample_rate(struct bladerf *dev,
+                                     bladerf_channel ch,
                                      struct bladerf_rational_rate *rate,
                                      struct bladerf_rational_rate *actual)
 {
@@ -788,7 +843,8 @@ int bladerf_set_rational_sample_rate(struct bladerf *dev, bladerf_channel ch,
     return status;
 }
 
-int bladerf_get_rational_sample_rate(struct bladerf *dev, bladerf_channel ch,
+int bladerf_get_rational_sample_rate(struct bladerf *dev,
+                                     bladerf_channel ch,
                                      struct bladerf_rational_rate *rate)
 {
     int status;
@@ -804,7 +860,8 @@ int bladerf_get_rational_sample_rate(struct bladerf *dev, bladerf_channel ch,
 /* Bandwidth */
 /******************************************************************************/
 
-int bladerf_set_bandwidth(struct bladerf *dev, bladerf_channel ch,
+int bladerf_set_bandwidth(struct bladerf *dev,
+                          bladerf_channel ch,
                           unsigned int bandwidth,
                           unsigned int *actual)
 {
@@ -817,8 +874,9 @@ int bladerf_set_bandwidth(struct bladerf *dev, bladerf_channel ch,
     return status;
 }
 
-int bladerf_get_bandwidth(struct bladerf *dev, bladerf_channel ch,
-                            unsigned int *bandwidth)
+int bladerf_get_bandwidth(struct bladerf *dev,
+                          bladerf_channel ch,
+                          unsigned int *bandwidth)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -829,7 +887,8 @@ int bladerf_get_bandwidth(struct bladerf *dev, bladerf_channel ch,
     return status;
 }
 
-int bladerf_get_bandwidth_range(struct bladerf *dev, bladerf_channel ch,
+int bladerf_get_bandwidth_range(struct bladerf *dev,
+                                bladerf_channel ch,
                                 struct bladerf_range *range)
 {
     int status;
@@ -846,7 +905,8 @@ int bladerf_get_bandwidth_range(struct bladerf *dev, bladerf_channel ch,
 /******************************************************************************/
 
 int bladerf_set_frequency(struct bladerf *dev,
-                          bladerf_channel ch, uint64_t frequency)
+                          bladerf_channel ch,
+                          uint64_t frequency)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -858,7 +918,8 @@ int bladerf_set_frequency(struct bladerf *dev,
 }
 
 int bladerf_get_frequency(struct bladerf *dev,
-                          bladerf_channel ch, uint64_t *frequency)
+                          bladerf_channel ch,
+                          uint64_t *frequency)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -869,7 +930,8 @@ int bladerf_get_frequency(struct bladerf *dev,
     return status;
 }
 
-int bladerf_get_frequency_range(struct bladerf *dev, bladerf_channel ch,
+int bladerf_get_frequency_range(struct bladerf *dev,
+                                bladerf_channel ch,
                                 struct bladerf_range *range)
 {
     int status;
@@ -881,7 +943,8 @@ int bladerf_get_frequency_range(struct bladerf *dev, bladerf_channel ch,
     return status;
 }
 
-int bladerf_select_band(struct bladerf *dev, bladerf_channel ch,
+int bladerf_select_band(struct bladerf *dev,
+                        bladerf_channel ch,
                         uint64_t frequency)
 {
     int status;
@@ -897,7 +960,8 @@ int bladerf_select_band(struct bladerf *dev, bladerf_channel ch,
 /* RF Ports*/
 /******************************************************************************/
 
-int bladerf_set_rf_port(struct bladerf *dev, bladerf_channel ch,
+int bladerf_set_rf_port(struct bladerf *dev,
+                        bladerf_channel ch,
                         const char *port)
 {
     int status;
@@ -909,7 +973,8 @@ int bladerf_set_rf_port(struct bladerf *dev, bladerf_channel ch,
     return status;
 }
 
-int bladerf_get_rf_port(struct bladerf *dev, bladerf_channel ch,
+int bladerf_get_rf_port(struct bladerf *dev,
+                        bladerf_channel ch,
                         const char **port)
 {
     int status;
@@ -921,8 +986,10 @@ int bladerf_get_rf_port(struct bladerf *dev, bladerf_channel ch,
     return status;
 }
 
-int bladerf_get_rf_ports(struct bladerf *dev, bladerf_channel ch,
-                         const char **ports, unsigned int count)
+int bladerf_get_rf_ports(struct bladerf *dev,
+                         bladerf_channel ch,
+                         const char **ports,
+                         unsigned int count)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -960,7 +1027,8 @@ int bladerf_schedule_retune(struct bladerf *dev,
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = dev->board->schedule_retune(dev, ch, timestamp, frequency, quick_tune);
+    status =
+        dev->board->schedule_retune(dev, ch, timestamp, frequency, quick_tune);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
@@ -981,8 +1049,10 @@ int bladerf_cancel_scheduled_retunes(struct bladerf *dev, bladerf_channel ch)
 /* DC/Phase/Gain Correction */
 /******************************************************************************/
 
-int bladerf_get_correction(struct bladerf *dev, bladerf_channel ch,
-                           bladerf_correction corr, int16_t *value)
+int bladerf_get_correction(struct bladerf *dev,
+                           bladerf_channel ch,
+                           bladerf_correction corr,
+                           int16_t *value)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -993,8 +1063,10 @@ int bladerf_get_correction(struct bladerf *dev, bladerf_channel ch,
     return status;
 }
 
-int bladerf_set_correction(struct bladerf *dev, bladerf_channel ch,
-                           bladerf_correction corr, int16_t value)
+int bladerf_set_correction(struct bladerf *dev,
+                           bladerf_channel ch,
+                           bladerf_correction corr,
+                           int16_t value)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -1025,7 +1097,9 @@ int bladerf_trigger_init(struct bladerf *dev,
 
 int bladerf_trigger_arm(struct bladerf *dev,
                         const struct bladerf_trigger *trigger,
-                        bool arm, uint64_t resv1, uint64_t resv2)
+                        bool arm,
+                        uint64_t resv1,
+                        uint64_t resv2)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -1059,7 +1133,8 @@ int bladerf_trigger_state(struct bladerf *dev,
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = dev->board->trigger_state(dev, trigger, is_armed, has_fired, fire_requested, reserved1, reserved2);
+    status = dev->board->trigger_state(dev, trigger, is_armed, has_fired,
+                                       fire_requested, reserved1, reserved2);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
@@ -1082,9 +1157,9 @@ int bladerf_init_stream(struct bladerf_stream **stream,
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = dev->board->init_stream(stream, dev, callback, buffers, num_buffers,
-                                     format, samples_per_buffer, num_transfers,
-                                     data);
+    status = dev->board->init_stream(stream, dev, callback, buffers,
+                                     num_buffers, format, samples_per_buffer,
+                                     num_transfers, data);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
@@ -1099,7 +1174,8 @@ int bladerf_submit_stream_buffer(struct bladerf_stream *stream,
                                  void *buffer,
                                  unsigned int timeout_ms)
 {
-    return stream->dev->board->submit_stream_buffer(stream, buffer, timeout_ms, false);
+    return stream->dev->board->submit_stream_buffer(stream, buffer, timeout_ms,
+                                                    false);
 }
 
 int bladerf_submit_stream_buffer_nb(struct bladerf_stream *stream, void *buffer)
@@ -1114,8 +1190,10 @@ void bladerf_deinit_stream(struct bladerf_stream *stream)
     }
 }
 
-int bladerf_set_stream_timeout(struct bladerf *dev, bladerf_direction dir,
-                               unsigned int timeout) {
+int bladerf_set_stream_timeout(struct bladerf *dev,
+                               bladerf_direction dir,
+                               unsigned int timeout)
+{
     int status;
     MUTEX_LOCK(&dev->lock);
 
@@ -1125,8 +1203,10 @@ int bladerf_set_stream_timeout(struct bladerf *dev, bladerf_direction dir,
     return status;
 }
 
-int bladerf_get_stream_timeout(struct bladerf *dev, bladerf_direction dir,
-                               unsigned int *timeout) {
+int bladerf_get_stream_timeout(struct bladerf *dev,
+                               bladerf_direction dir,
+                               unsigned int *timeout)
+{
     int status;
     MUTEX_LOCK(&dev->lock);
 
@@ -1147,7 +1227,9 @@ int bladerf_sync_config(struct bladerf *dev,
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = dev->board->sync_config(dev, layout, format, num_buffers, buffer_size, num_transfers, stream_timeout);
+    status =
+        dev->board->sync_config(dev, layout, format, num_buffers, buffer_size,
+                                num_transfers, stream_timeout);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;
@@ -1171,7 +1253,9 @@ int bladerf_sync_rx(struct bladerf *dev,
     return dev->board->sync_rx(dev, samples, num_samples, metadata, timeout_ms);
 }
 
-int bladerf_get_timestamp(struct bladerf *dev, bladerf_direction dir, uint64_t *value)
+int bladerf_get_timestamp(struct bladerf *dev,
+                          bladerf_direction dir,
+                          uint64_t *value)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -1465,7 +1549,10 @@ int bladerf_dac_write(struct bladerf *dev, uint16_t trim)
 /* Low-level Trigger control access */
 /******************************************************************************/
 
-int bladerf_read_trigger(struct bladerf *dev, bladerf_channel ch, bladerf_trigger_signal trigger, uint8_t *val)
+int bladerf_read_trigger(struct bladerf *dev,
+                         bladerf_channel ch,
+                         bladerf_trigger_signal trigger,
+                         uint8_t *val)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -1476,7 +1563,10 @@ int bladerf_read_trigger(struct bladerf *dev, bladerf_channel ch, bladerf_trigge
     return status;
 }
 
-int bladerf_write_trigger(struct bladerf *dev, bladerf_channel ch, bladerf_trigger_signal trigger, uint8_t val)
+int bladerf_write_trigger(struct bladerf *dev,
+                          bladerf_channel ch,
+                          bladerf_trigger_signal trigger,
+                          uint8_t val)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -1517,7 +1607,9 @@ int bladerf_config_gpio_write(struct bladerf *dev, uint32_t val)
 /* Low-level SPI Flash access */
 /******************************************************************************/
 
-int bladerf_erase_flash(struct bladerf *dev, uint32_t erase_block, uint32_t count)
+int bladerf_erase_flash(struct bladerf *dev,
+                        uint32_t erase_block,
+                        uint32_t count)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -1528,7 +1620,10 @@ int bladerf_erase_flash(struct bladerf *dev, uint32_t erase_block, uint32_t coun
     return status;
 }
 
-int bladerf_read_flash(struct bladerf *dev, uint8_t *buf, uint32_t page, uint32_t count)
+int bladerf_read_flash(struct bladerf *dev,
+                       uint8_t *buf,
+                       uint32_t page,
+                       uint32_t count)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -1539,7 +1634,10 @@ int bladerf_read_flash(struct bladerf *dev, uint8_t *buf, uint32_t page, uint32_
     return status;
 }
 
-int bladerf_write_flash(struct bladerf *dev, const uint8_t *buf, uint32_t page, uint32_t count)
+int bladerf_write_flash(struct bladerf *dev,
+                        const uint8_t *buf,
+                        uint32_t page,
+                        uint32_t count)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -1554,7 +1652,7 @@ int bladerf_write_flash(struct bladerf *dev, const uint8_t *buf, uint32_t page, 
 /* Helpers & Miscellaneous */
 /******************************************************************************/
 
-const char * bladerf_strerror(int error)
+const char *bladerf_strerror(int error)
 {
     switch (error) {
         case BLADERF_ERR_UNEXPECTED:
@@ -1592,7 +1690,8 @@ const char * bladerf_strerror(int error)
         case BLADERF_ERR_PERMISSION:
             return "Insufficient permissions for the requested operation";
         case BLADERF_ERR_WOULD_BLOCK:
-            return "The operation would block, but has been requested to be non-blocking";
+            return "The operation would block, but has been requested to be "
+                   "non-blocking";
         case BLADERF_ERR_NOT_INIT:
             return "Insufficient initialization for the requested operation";
         case 0:
@@ -1602,7 +1701,7 @@ const char * bladerf_strerror(int error)
     }
 }
 
-const char * bladerf_backend_str(bladerf_backend backend)
+const char *bladerf_backend_str(bladerf_backend backend)
 {
     return backend2str(backend);
 }
@@ -1679,7 +1778,8 @@ int bladerf_expansion_gpio_write(struct bladerf *dev, uint32_t val)
 }
 
 int bladerf_expansion_gpio_masked_write(struct bladerf *dev,
-                                        uint32_t mask, uint32_t val)
+                                        uint32_t mask,
+                                        uint32_t val)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -1713,7 +1813,8 @@ int bladerf_expansion_gpio_dir_write(struct bladerf *dev, uint32_t val)
 }
 
 int bladerf_expansion_gpio_dir_masked_write(struct bladerf *dev,
-                                            uint32_t mask, uint32_t val)
+                                            uint32_t mask,
+                                            uint32_t val)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -1803,8 +1904,8 @@ int bladerf_xb300_get_trx(struct bladerf *dev, bladerf_xb300_trx *trx)
 }
 
 int bladerf_xb300_set_amplifier_enable(struct bladerf *dev,
-                   bladerf_xb300_amplifier amp,
-                   bool enable)
+                                       bladerf_xb300_amplifier amp,
+                                       bool enable)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -1816,8 +1917,8 @@ int bladerf_xb300_set_amplifier_enable(struct bladerf *dev,
 }
 
 int bladerf_xb300_get_amplifier_enable(struct bladerf *dev,
-                   bladerf_xb300_amplifier amp,
-                   bool *enable)
+                                       bladerf_xb300_amplifier amp,
+                                       bool *enable)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -1828,8 +1929,7 @@ int bladerf_xb300_get_amplifier_enable(struct bladerf *dev,
     return status;
 }
 
-int bladerf_xb300_get_output_power(struct bladerf *dev,
-                   float *val)
+int bladerf_xb300_get_output_power(struct bladerf *dev, float *val)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
