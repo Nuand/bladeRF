@@ -964,7 +964,6 @@ void bladeRFAppThread_Entry( uint32_t input)
         char fpga_len[11] = {0};
         if (!NuandExtractField((void*)glAutoLoad, 0x100, "LEN", (char *)&fpga_len, 10)) {
             fpga_len[10] = 0;
-            FpgaBeginProgram();
             NuandLoadFromFlash(atoi(fpga_len));
         }
     }

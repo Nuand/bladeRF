@@ -101,6 +101,7 @@ static void NuandFpgaConfigStart(void)
     CyU3PReturnStatus_t apiRetStatus = CY_U3P_SUCCESS;
     CyU3PUSBSpeed_t usbSpeed = CyU3PUsbGetSpeed();
     static int first_call = 1;
+    bool doUsb = true;
 
     NuandAllowSuspend(CyFalse);
 
@@ -128,23 +129,30 @@ static void NuandFpgaConfigStart(void)
             size = 1024;
             break;
 
+        case CY_U3P_NOT_CONNECTED:
+            size = 1024;
+            doUsb = false;
+            break;
+
         default:
             LOG_ERROR(usbSpeed);
             CyFxAppErrorHandler(CY_U3P_ERROR_FAILURE);
             break;
     }
 
-    CyU3PMemSet((uint8_t *)&epCfg, 0, sizeof (epCfg));
-    epCfg.enable = CyTrue;
-    epCfg.epType = CY_U3P_USB_EP_BULK;
-    epCfg.burstLen = 1;
-    epCfg.streams = 0;
-    epCfg.pcktSize = size;
+    if (doUsb) {
+        CyU3PMemSet((uint8_t *)&epCfg, 0, sizeof (epCfg));
+        epCfg.enable = CyTrue;
+        epCfg.epType = CY_U3P_USB_EP_BULK;
+        epCfg.burstLen = 1;
+        epCfg.streams = 0;
+        epCfg.pcktSize = size;
 
-    apiRetStatus = CyU3PSetEpConfig(BLADE_FPGA_EP_PRODUCER, &epCfg);
-    if (apiRetStatus != CY_U3P_SUCCESS) {
-        LOG_ERROR(apiRetStatus);
-        CyFxAppErrorHandler (apiRetStatus);
+        apiRetStatus = CyU3PSetEpConfig(BLADE_FPGA_EP_PRODUCER, &epCfg);
+        if (apiRetStatus != CY_U3P_SUCCESS) {
+            LOG_ERROR(apiRetStatus);
+            CyFxAppErrorHandler (apiRetStatus);
+        }
     }
 
     dmaCfg.size  = size * 4;
@@ -170,8 +178,10 @@ static void NuandFpgaConfigStart(void)
         CyFxAppErrorHandler(apiRetStatus);
     }
 
-    /* Flush the endpoint memory */
-    CyU3PUsbFlushEp(BLADE_FPGA_EP_PRODUCER);
+    if (doUsb) {
+        /* Flush the endpoint memory */
+        CyU3PUsbFlushEp(BLADE_FPGA_EP_PRODUCER);
+    }
 
     /* Set DMA channel transfer size. */
     apiRetStatus = CyU3PDmaChannelSetXfer(&glChHandlebladeRFUtoP, BLADE_DMA_TX_SIZE);
@@ -358,7 +368,6 @@ CyBool_t NuandLoadFromFlash(int fpga_len)
     }
 
 out:
-
     CyU3PDmaBufferFree(ptr);
     CyU3PSpiDeInit();
 
