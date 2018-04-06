@@ -224,6 +224,8 @@ typedef enum {
 /**
  * Set the PA gain in dB
  *
+ * \deprecated Use either bladerf_set_gain() or bladerf_set_gain_stage().
+ *
  * Values outside the range of
  * [ \ref BLADERF_TXVGA2_GAIN_MIN, \ref BLADERF_TXVGA2_GAIN_MAX ]
  * will be clamped.
@@ -239,16 +241,19 @@ int CALL_CONV bladerf_set_txvga2(struct bladerf *dev, int gain);
 /**
  * Get the PA gain in dB
  *
+ * \deprecated Use either bladerf_get_gain() or bladerf_get_gain_stage().
+ *
  * @param       dev         Device handle
  * @param[out]  gain        Pointer to returned gain
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
-API_EXPORT int
-CALL_CONV bladerf_get_txvga2(struct bladerf *dev, int *gain);
+API_EXPORT int CALL_CONV bladerf_get_txvga2(struct bladerf *dev, int *gain);
 
 /**
  * Set the post-LPF gain in dB
+ *
+ * \deprecated Use either bladerf_set_gain() or bladerf_set_gain_stage().
  *
  * Values outside the range of
  * [ \ref BLADERF_TXVGA1_GAIN_MIN, \ref BLADERF_TXVGA1_GAIN_MAX ]
@@ -265,6 +270,8 @@ int CALL_CONV bladerf_set_txvga1(struct bladerf *dev, int gain);
 /**
  * Get the post-LPF gain in dB
  *
+ * \deprecated Use either bladerf_get_gain() or bladerf_get_gain_stage().
+ *
  * @param       dev         Device handle
  * @param[out]  gain        Pointer to returned gain
  *
@@ -275,6 +282,8 @@ int CALL_CONV bladerf_get_txvga1(struct bladerf *dev, int *gain);
 
 /**
  * Set the LNA gain
+ *
+ * \deprecated Use either bladerf_set_gain() or bladerf_set_gain_stage().
  *
  * @param       dev         Device handle
  * @param[in]   gain        Desired gain level
@@ -287,6 +296,8 @@ int CALL_CONV bladerf_set_lna_gain(struct bladerf *dev, bladerf_lna_gain gain);
 /**
  * Get the LNA gain
  *
+ * \deprecated Use either bladerf_get_gain() or bladerf_get_gain_stage().
+ *
  * @param       dev         Device handle
  * @param[out]  gain        Pointer to the set gain level
  *
@@ -297,6 +308,8 @@ int CALL_CONV bladerf_get_lna_gain(struct bladerf *dev, bladerf_lna_gain *gain);
 
 /**
  * Set the pre-LPF VGA gain
+ *
+ * \deprecated Use either bladerf_set_gain() or bladerf_set_gain_stage().
  *
  * Values outside the range of
  * [ \ref BLADERF_RXVGA1_GAIN_MIN, \ref BLADERF_RXVGA1_GAIN_MAX ]
@@ -313,6 +326,8 @@ int CALL_CONV bladerf_set_rxvga1(struct bladerf *dev, int gain);
 /**
  * Get the pre-LPF VGA gain
  *
+ * \deprecated Use either bladerf_get_gain() or bladerf_get_gain_stage().
+ *
  * @param       dev         Device handle
  * @param[out]  gain        Pointer to the set gain level
  *
@@ -323,6 +338,8 @@ int CALL_CONV bladerf_get_rxvga1(struct bladerf *dev, int *gain);
 
 /**
  * Set the post-LPF VGA gain
+ *
+ * \deprecated Use either bladerf_set_gain() or bladerf_set_gain_stage().
  *
  * Values outside the range of
  * [ \ref BLADERF_RXVGA2_GAIN_MIN, \ref BLADERF_RXVGA2_GAIN_MAX ]
@@ -338,6 +355,8 @@ int CALL_CONV bladerf_set_rxvga2(struct bladerf *dev, int gain);
 
 /**
  * Get the post-LPF VGA gain
+ *
+ * \deprecated Use either bladerf_get_gain() or bladerf_get_gain_stage().
  *
  * @param       dev         Device handle
  * @param[out]  gain        Pointer to the set gain level
@@ -1381,6 +1400,8 @@ int CALL_CONV bladerf_calibrate_dc(struct bladerf *dev,
 /**
  * Write value to VCTCXO trim DAC.
  *
+ * \deprecated Use bladerf_trim_dac_write().
+ *
  * This should not be used when the VCTCXO tamer is enabled.
  *
  * @param       dev     Device handle
@@ -1393,6 +1414,8 @@ int CALL_CONV bladerf_dac_write(struct bladerf *dev, uint16_t val);
 
 /**
  * Read value from VCTCXO trim DAC.
+ *
+ * \deprecated Use bladerf_trim_dac_read().
  *
  * This is similar to bladerf_get_vctcxo_trim(), except that it returns the
  * current trim DAC value, as opposed to the calibration value read from
