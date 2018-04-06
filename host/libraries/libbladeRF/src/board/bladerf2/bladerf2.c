@@ -236,6 +236,7 @@ static const uint64_t BLADERF_REFIN_DEFAULT    = 10000000;
 #define RFFE_CONTROL_MIMO_RX_EN_1   17
 #define RFFE_CONTROL_MIMO_TX_EN_1   18
 #define RFFE_CONTROL_ADF_MUXOUT     19   // input only
+#define RFFE_CONTROL_CTRL_OUT       24   // input only, 24 through 31
 #define RFFE_CONTROL_SPDT_MASK      0x3
 #define RFFE_CONTROL_SPDT_SHUTDOWN  0x0  // no connection
 #define RFFE_CONTROL_SPDT_LOWBAND   0x2  // RF1 <-> RF3
@@ -4164,6 +4165,36 @@ int bladerf_ad9361_get_rssi(struct bladerf *dev,
     }
 
     MUTEX_UNLOCK(&dev->lock);
+
+    return 0;
+}
+
+int bladerf_ad9361_get_ctrl_out(struct bladerf *dev, uint8_t *ctrl_out)
+{
+    int status;
+    uint32_t reg;
+
+    if (NULL == dev) {
+        RETURN_INVAL("dev", "not initialized");
+    }
+
+    if (dev->board != &bladerf2_board_fns) {
+        return BLADERF_ERR_UNSUPPORTED;
+    }
+
+    if (NULL == ctrl_out) {
+        RETURN_INVAL("ctrl_out", "is null");
+    }
+
+    CHECK_BOARD_STATE(STATE_FPGA_LOADED);
+
+    /* Read RFFE control register */
+    status = dev->backend->rffe_control_read(dev, &reg);
+    if (status < 0) {
+        RETURN_ERROR_STATUS("rffe_control_read", status);
+    }
+
+    *ctrl_out = (uint8_t)((reg >> RFFE_CONTROL_CTRL_OUT) & 0xFF);
 
     return 0;
 }

@@ -1936,7 +1936,9 @@ int print_ad9361(struct cli_state *state, int argc, char **argv)
     int status;
     int *err = &state->last_lib_error;
     float temperature;
+    uint8_t val;
 
+    /* Temperature */
     status = bladerf_ad9361_temperature(state->dev, &temperature);
     if (status < 0) {
         *err = status;
@@ -1945,6 +1947,33 @@ int print_ad9361(struct cli_state *state, int argc, char **argv)
 
     printf("  AD9361 RFIC status:\n");
     printf("    Temperature: %4.1f degrees C\n", temperature);
+
+    /* CTRL_OUT pins */
+    status = bladerf_ad9361_get_ctrl_out(state->dev, &val);
+    if (status < 0) {
+        *err = status;
+        return CLI_RET_LIBBLADERF;
+    }
+
+    printf("    CTRL_OUT:    0x%02x", val);
+
+    /* Control Output Pointer */
+    status = bladerf_ad9361_read(state->dev, 0x35, &val);
+    if (status < 0) {
+        *err = status;
+        return CLI_RET_LIBBLADERF;
+    }
+
+    printf(" (0x035=0x%02x", val);
+
+    /* Control Output Enable */
+    status = bladerf_ad9361_read(state->dev, 0x36, &val);
+    if (status < 0) {
+        *err = status;
+        return CLI_RET_LIBBLADERF;
+    }
+
+    printf(", 0x036=0x%02x)\n", val);
 
     return 0;
 }

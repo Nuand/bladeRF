@@ -925,6 +925,18 @@ class BladeRF:
         except UnsupportedError:
             return None
 
+    def get_ad9361_ctrl_out(self):
+        try:
+            ctrl_out = ffi.new("uint8_t *")
+            ret = libbladeRF.bladerf_ad9361_get_ctrl_out(self.dev[0], ctrl_out)
+            _check_error(ret)
+            return ctrl_out[0]
+        except UnsupportedError:
+            return None
+
+    ad9361_ctrl_out = property(get_ad9361_ctrl_out,
+                               doc="AD9361 CTRL_OUT status pins")
+
     # ADF4002 Phase Detector/Frequency Synthesizer
 
     def get_adf4002_locked(self):

@@ -109,7 +109,7 @@ header = """
   int bladerf_get_gain_stage_range(struct bladerf *dev, bladerf_channel
     ch, const char *stage, struct bladerf_range *range);
   int bladerf_get_gain_stages(struct bladerf *dev, bladerf_channel ch,
-    const char **stages, unsigned int count);
+    const char **stages, size_t count);
   struct bladerf_rational_rate
   {
     uint64_t integer;
@@ -575,6 +575,8 @@ header = """
   int bladerf_ad9361_temperature(struct bladerf *dev, float *val);
   int bladerf_ad9361_get_rssi(struct bladerf *dev, bladerf_channel ch,
     int32_t *pre_rssi, int32_t *sym_rssi);
+  int bladerf_ad9361_get_ctrl_out(struct bladerf *dev, uint8_t
+    *ctrl_out);
   int bladerf_adf4002_get_locked(struct bladerf *dev, bool *locked);
   int bladerf_adf4002_get_enable(struct bladerf *dev, bool *enabled);
   int bladerf_adf4002_set_enable(struct bladerf *dev, bool enable);

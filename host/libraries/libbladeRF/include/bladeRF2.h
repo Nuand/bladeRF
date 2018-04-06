@@ -151,6 +151,23 @@ int CALL_CONV bladerf_ad9361_get_rssi(struct bladerf *dev,
                                       int32_t *pre_rssi,
                                       int32_t *sym_rssi);
 
+/**
+ * Read the CTRL_OUT pins from the AD9361 RFIC
+ *
+ * @note  See AD9361 Reference Manual UG-570's "Control Output" chapter for
+ *        complete information about this feature.
+ *
+ * @see   bladerf_ad9361_write()
+ *
+ * @param      dev       Device handle
+ * @param[out] ctrl_out  Pointer for storing the retrieved value
+ *
+ * @return 0 on success, value from \ref RETCODES list on failure
+ */
+API_EXPORT
+int CALL_CONV bladerf_ad9361_get_ctrl_out(struct bladerf *dev,
+                                          uint8_t *ctrl_out);
+
 /** @} (End of FN_BLADERF2_LOW_LEVEL_AD9361) */
 
 /**
