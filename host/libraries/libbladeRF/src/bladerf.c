@@ -63,6 +63,8 @@ const struct numeric_suffix freq_suffixes[] = { { "G", 1000 * 1000 * 1000 },
                                                 { "k", 1000 },
                                                 { "kHz", 1000 } };
 #define NUM_FREQ_SUFFIXES (sizeof(freq_suffixes) / sizeof(freq_suffixes[0]))
+#define MAX(a, b) (a > b ? a : b)
+#define MIN(a, b) (a < b ? a : b)
 
 static int apply_config_options(struct bladerf *dev, struct config_options opt)
 {
@@ -72,7 +74,7 @@ static int apply_config_options(struct bladerf *dev, struct config_options opt)
     uint32_t val;
     bool ok;
     bladerf_gain_mode gain_mode;
-    struct bladerf_range range;
+    struct bladerf_range rx_range, tx_range;
     bladerf_sampling sampling_mode;
     bladerf_vctcxo_tamer_mode tamer_mode = BLADERF_VCTCXO_TAMER_INVALID;
 
@@ -89,39 +91,47 @@ static int apply_config_options(struct bladerf *dev, struct config_options opt)
         return status;
     } else if (!strcasecmp(opt.key, "frequency")) {
         status =
-            bladerf_get_frequency_range(dev, BLADERF_CHANNEL_RX(0), &range);
-        freq = str2uint64_suffix(opt.value, range.min, range.max, freq_suffixes,
-                                 NUM_FREQ_SUFFIXES, &ok);
-        if (!ok) {
-            return BLADERF_ERR_INVAL;
-        }
-
-        status =
-            bladerf_get_frequency_range(dev, BLADERF_CHANNEL_TX(0), &range);
-        if ((int64_t)freq < range.min || (int64_t)freq > range.max) {
-            return BLADERF_ERR_INVAL;
-        }
-
-        status = bladerf_set_frequency(dev, BLADERF_CHANNEL_RX(0),
-                                       (unsigned int)freq);
+            bladerf_get_frequency_range(dev, BLADERF_CHANNEL_RX(0), &rx_range);
         if (status < 0) {
             return status;
         }
 
-        status = bladerf_set_frequency(dev, BLADERF_CHANNEL_TX(0),
-                                       (unsigned int)freq);
-    } else if (!strcasecmp(opt.key, "samplerate")) {
         status =
-            bladerf_get_sample_rate_range(dev, BLADERF_CHANNEL_RX(0), &range);
-        freq = str2uint64_suffix(opt.value, range.min, range.max, freq_suffixes,
+            bladerf_get_frequency_range(dev, BLADERF_CHANNEL_TX(0), &tx_range);
+        if (status < 0) {
+            return status;
+        }
+
+        freq = str2uint64_suffix(opt.value, MAX(rx_range.min, tx_range.min),
+                                 MIN(rx_range.max, tx_range.max), freq_suffixes,
                                  NUM_FREQ_SUFFIXES, &ok);
         if (!ok) {
             return BLADERF_ERR_INVAL;
         }
 
-        status =
-            bladerf_get_sample_rate_range(dev, BLADERF_CHANNEL_TX(0), &range);
-        if ((int64_t)freq < range.min || (int64_t)freq > range.max) {
+        status = bladerf_set_frequency(dev, BLADERF_CHANNEL_RX(0), freq);
+        if (status < 0) {
+            return status;
+        }
+
+        status = bladerf_set_frequency(dev, BLADERF_CHANNEL_TX(0), freq);
+    } else if (!strcasecmp(opt.key, "samplerate")) {
+        status = bladerf_get_sample_rate_range(dev, BLADERF_CHANNEL_RX(0),
+                                               &rx_range);
+        if (status < 0) {
+            return status;
+        }
+
+        status = bladerf_get_sample_rate_range(dev, BLADERF_CHANNEL_TX(0),
+                                               &tx_range);
+        if (status < 0) {
+            return status;
+        }
+
+        freq = str2uint64_suffix(opt.value, MAX(rx_range.min, tx_range.min),
+                                 MIN(rx_range.max, tx_range.max), freq_suffixes,
+                                 NUM_FREQ_SUFFIXES, &ok);
+        if (!ok) {
             return BLADERF_ERR_INVAL;
         }
 
@@ -131,23 +141,34 @@ static int apply_config_options(struct bladerf *dev, struct config_options opt)
 
         status = bladerf_set_rational_sample_rate(dev, BLADERF_CHANNEL_RX(0),
                                                   &rate, &actual);
-        if (status < 0)
+        if (status < 0) {
             return status;
+        }
 
         status = bladerf_set_rational_sample_rate(dev, BLADERF_CHANNEL_TX(0),
                                                   &rate, &actual);
     } else if (!strcasecmp(opt.key, "bandwidth")) {
         status =
-            bladerf_get_bandwidth_range(dev, BLADERF_CHANNEL_RX(0), &range);
-        bw = str2uint_suffix(opt.value, range.min, range.max, freq_suffixes,
-                             NUM_FREQ_SUFFIXES, &ok);
-        if (!ok) {
-            return BLADERF_ERR_INVAL;
+            bladerf_get_bandwidth_range(dev, BLADERF_CHANNEL_RX(0), &rx_range);
+        if (status < 0) {
+            return status;
         }
 
         status =
-            bladerf_get_bandwidth_range(dev, BLADERF_CHANNEL_TX(0), &range);
-        if ((int64_t)bw < range.min || (int64_t)bw > range.max) {
+            bladerf_get_bandwidth_range(dev, BLADERF_CHANNEL_TX(0), &tx_range);
+        if (status < 0) {
+            return status;
+        }
+
+        if (MIN(rx_range.max, tx_range.max) >= UINT32_MAX) {
+            return BLADERF_ERR_INVAL;
+        }
+
+        bw = str2uint_suffix(opt.value,
+                             (unsigned int)MAX(rx_range.min, tx_range.min),
+                             (unsigned int)MIN(rx_range.max, tx_range.max),
+                             freq_suffixes, NUM_FREQ_SUFFIXES, &ok);
+        if (!ok) {
             return BLADERF_ERR_INVAL;
         }
 
