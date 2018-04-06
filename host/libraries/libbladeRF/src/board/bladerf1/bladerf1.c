@@ -2309,27 +2309,19 @@ static bool is_valid_fpga_size(bladerf_fpga_size fpga, size_t len)
 {
     static const char env_override[] = "BLADERF_SKIP_FPGA_SIZE_CHECK";
     bool valid;
+    size_t expected;
 
     switch (fpga) {
         case BLADERF_FPGA_40KLE:
-            valid = (len == FPGA_SIZE_X40);
+            expected = FPGA_SIZE_X40;
             break;
 
         case BLADERF_FPGA_115KLE:
-            valid = (len == FPGA_SIZE_X115);
+            expected = FPGA_SIZE_X115;
             break;
 
         default:
-            log_debug("Unknown FPGA type (%d). Using relaxed size criteria.\n",
-                      fpga);
-
-            if (len < (1 * 1024 * 1024)) {
-                valid = false;
-            } else if (len > BLADERF_FLASH_BYTE_LEN_FPGA) {
-                valid = false;
-            } else {
-                valid = true;
-            }
+            expected = 0;
             break;
     }
 
@@ -2340,13 +2332,28 @@ static bool is_valid_fpga_size(bladerf_fpga_size fpga, size_t len)
     if (getenv(env_override)) {
         log_info("Overriding FPGA size check per %s\n", env_override);
         valid = true;
+    } else if (expected > 0) {
+        valid = (len == expected);
+    } else {
+        log_debug("Unknown FPGA type (%d). Using relaxed size criteria.\n",
+                  fpga);
+
+        if (len < (1 * 1024 * 1024)) {
+            valid = false;
+        } else if (len > BLADERF_FLASH_BYTE_LEN_FPGA) {
+            valid = false;
+        } else {
+            valid = true;
+        }
     }
 
     if (!valid) {
-        log_warning("Detected potentially incorrect FPGA file.\n");
+        log_warning("Detected potentially incorrect FPGA file (length was %d, "
+                    "expected %d).\n", len, expected);
 
         log_debug("If you are certain this file is valid, you may define\n"
-                  "BLADERF_SKIP_FPGA_SIZE_CHECK in your environment to skip this check.\n\n");
+                  "BLADERF_SKIP_FPGA_SIZE_CHECK in your environment to skip "
+                  "this check.\n\n");
     }
 
     return valid;
