@@ -22,7 +22,10 @@ Build Tests
 
 ## FPGA Bitstream ##
 
-* Perform FPGA images build with Quartus II 13.1 for the following:
+* Perform FPGA images build with Quartus Prime (free edition) 17.1 (or latest
+  version) for the following:
+
+  * Board: bladeRF
     * Revision: hosted
       * [ ] Size: x40
       * [ ] Size: x115
@@ -31,6 +34,11 @@ Build Tests
       * [ ] Size: x40
       * [ ] Size: x115
 
+  * Board: bladeRF-micro
+    * Revision: hosted
+      * [ ] Size: A2
+      * [ ] Size: A4
+      * [ ] Size: A9
 
 ## FX Firmware ##
 
@@ -42,6 +50,13 @@ Build Tests
   * [ ] Windows
   * [ ] Linux
 
+* Flash the images to appropriate boards and verify:
+  * [ ] Correct version number reported by `bladeRF-cli -e 'version'` (tagged
+        builds should have no commit hash; other builds should)
+  * [ ] Correct VID/PID and product descriptors are present on `lsusb -v` or
+        `dmesg`
+    * bladeRF: "Nuand bladeRF" 2cf0:5246
+    * bladeRF Micro: "Nuand bladeRF 2.0" 2cf0:5250
 
 ## Host software ##
 
@@ -61,36 +76,27 @@ build and run.
 * [ ] Debug build: ```-DCMAKE_BUILD_TYPE=Debug```
 * [ ] Release build: ```-DCMAKE_BUILD_TYPE=Release -DTAGGED_RELEASE=Yes```
 
+Perform the above builds with the following:
 
-Linux/OSX: Perform the above builds with the following:
+* Linux (various distributions; see host/misc/docker)
+  * [ ] GCC
+  * [ ] Clang
 
-* [ ] GCC
-* [ ] Clang
-* [ ] Clang `ccc-analyzer` & `scan-build` (with `-maxloop 100` or greater)
-    * Any items in the static analysis report should be regarded as defects.
+* macOS (latest)
+  * [ ] Apple LLVM
 
-* [ ] Windows: Build with support for both libusb and the Cypress backend. This
-      should be the default behavior when both present on the build system.
+* Windows (currently Windows 10 w/ Visual Studio Community 2017)
+  * [ ] Build with support for both libusb and the Cypress backend. This should
+        be the default behavior when both present on the build system.
+  * [ ] Build with support for each of the two available backends.
+  * [ ] Perform builds targeting Win32 and x64
 
-* [ ] Windows: Build with support for only one of the two available backends.
-
-* [ ] Windows: Perform builds targeting Win32 and x64
-
-* [ ] Build with documentation (from a clean CMake directory):
+* Misc
+  * [ ] Build with documentation (from a clean CMake directory):
         ```-DENABLE_DOCUMENTATION=ON```
     * Any Doxygen warnings should be regarded as defects.
-
-
-At a minimum, builds with the following compilers should be verified:
-
-* [ ] GCC 4.8.x
-* [ ] Clang 3.4
-* [ ] Visual Studio 2012
-    * This has little to no C99 support.
-* [ ] Visual Studio 2013
-    * This introduced some C99 headers.
-
-
+  * [ ] Clang `ccc-analyzer` & `scan-build` (with `-maxloop 100` or greater)
+    * Any items in the static analysis report should be regarded as defects.
 
 
 Functional Tests
@@ -102,7 +108,8 @@ Unit tests, Built-in self-tests (BISTs), and top-level test-benches are
 very much desirable additions for improving QA and testing efforts.
 (Patches are always welcome!)
 
-When appropriate, each test for both  USB 2.0 and USB 3.0 connections.
+When appropriate, repeat each test for both USB 2.0 and USB 3.0 connections,
+and for both the bladeRF and bladeRF Micro.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -123,21 +130,21 @@ The following items are intended to exercise SPI flash accesses.
 ### OTP region readback ###
 
 There should be no warnings, info, or debug messages reported while performing
-this operations.
+this operation.
 
 * [ ] ```bladeRF-cli -e 'info' -v debug``` should report the serial number.
 
 ### Calibration region readback ###
 
+There should be no warnings, info, or debug messages reported while performing
+this operation.
+
 * [ ] ```bladeRF-cli -e 'info' -v debug``` should report the VCTCXO DAC
       calibration and FPGA size.
 
-There should be no warnings, info, or debug messages reported while performing
-this operations.
-
 ### Writing calibration data ###
 
-During the following steps, There should be no error, warning, info, or debug
+During the following steps, there should be no error, warning, info, or debug
 messages other than the information about flash page read operations.
 
 * [ ] Back up calibration data via:
@@ -177,13 +184,11 @@ bladeRF> load fx3 bladeRF_fw_vX.Y.Z.img
       and that the calibration data is intact:
       ```bladeRF-cli -e 'version' -e 'info' -v debug```
 
-
 * [ ] Flash a different version of firmware via:
-   ```bladeRF-cli -f bladeRF_fw_vA.B.C.img -v debug```
+      ```bladeRF-cli -f bladeRF_fw_vA.B.C.img -v debug```
 
 * [ ] Power cycle the device and verify that the new firmware has been loaded,
       and that the calibration data is correct.
-
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -202,7 +207,7 @@ host-based autoloading.
       ```bladeRF-cli -L X -v debug```
 
 * [ ] Power cycle the device, and verify that this has not corrupted the
-      caaalibration data or firmware:
+      calibration data or firmware:
       ```bladeRF-cli -e 'version' -e 'info' -v debug```
 
 * [ ] Write an FPGA bitstream to flash:
@@ -211,12 +216,14 @@ host-based autoloading.
 * [ ] Power cycle the device and verify that the firmware boots, the FPGA is
       loaded, and that the calibration data has not been corrupted.
       ```bladeRF-cli -e 'version' -e 'info' -v debug```
+  * Ensure this works when powered from a USB host, from a USB charger, and
+    from a power supply connected to the DC barrel plug.
 
 * [ ] Erase the FPGA and perform the associated verifications.
 
 ### Host-based Autoloading ###
 
-* [ ] (Re)add an FPGA image to an autoload directory.
+* [ ] Place a FPGA image to an autoload directory.
 
 * [ ] Power cycle the device.
 
@@ -225,7 +232,8 @@ host-based autoloading.
 
 ### Manual FPGA Loading ###
 
-* [ ] Verify that FPGA loading via ```bladeRF-cli -l <fpga> -v debug``` succeeds.
+* [ ] Verify that FPGA loading via ```bladeRF-cli -l <fpga> -v debug```
+      succeeds.
 
 * [ ] Verify that the expected version was loaded:
       ```bladeRF-cli -e 'version' -e 'info' -v debug```.
@@ -235,9 +243,9 @@ verification step again.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-## Basic Device Control ##
+## Basic Device Control: bladeRF ##
 
-These device control operations may be performed with the bladeRF-cli, or for
+These device control operations may be performed with the `bladeRF-cli`, or for
 simplicity, third party tools, as they should utilize the same underlying
 `libbladeRF` API calls.
 
@@ -252,34 +260,31 @@ internal device ranges.
 #### RX ####
 
 * [ ] Verify reception of reference signals at various frequencies in
-      300MHz - 3.8GHz, ***without*** an XB-200 attached.
-
-Verify reception of reference signals at various frequencies up to 3.8GHz,
-***with*** an XB-200 attached, using each filter configuration:
-
-* [ ] Auto 3dB filterbank
-* [ ] Auto 1dB filterbank
-* [ ] 6m filterbank
-* [ ] 2m filterbank
-* [ ] 1.25m filterbank
-* [ ] Custom path
+      300 MHz - 3.8 GHz, ***without*** a XB-200 attached.
+* [ ] Verify reception of reference signals at various frequencies up to
+      3.8 GHz, ***with*** a XB-200 attached, using each filter configuration:
+  * [ ] Auto 3 dB filterbank
+  * [ ] Auto 1 dB filterbank
+  * [ ] 6m filterbank
+  * [ ] 2m filterbank
+  * [ ] 1.25m filterbank
+  * [ ] Custom path
 
 #### TX ####
 
+Suggested reference signal: W-CDMA QPSK test pattern
+
 * [ ] Verify that a VSA can receive and demodulate reference signals at
-      frequencies in 300MHz - 3.8GHz, ***with*** an XB-200 attached.
-
-Verify that a VSA can receive and demodulate reference signals at frequencies
-in up to 3.8GHz, ***without*** an XB-200 attached, using each filter
-configuration:
-
-* [ ] Auto 3dB filterbank
-* [ ] Auto 1dB filterbank
-* [ ] 6m filterbank
-* [ ] 2m filterbank
-* [ ] 1.25m filterbank
-* [ ] Custom path
-
+      frequencies in 300 MHz - 3.8 GHz, ***without*** a XB-200 attached.
+* [ ] Verify that a VSA can receive and demodulate reference signals at
+      frequencies up to 3.8 GHz, ***with*** a XB-200 attached, using each
+      filter configuration:
+  * [ ] Auto 3 dB filterbank
+  * [ ] Auto 1 dB filterbank
+  * [ ] 6m filterbank
+  * [ ] 2m filterbank
+  * [ ] 1.25m filterbank
+  * [ ] Custom path
 
 ### Gain ###
 
@@ -288,6 +293,7 @@ configuration:
 Supply the device with a reference signal and verify the effect of changing
 the gain values for:
 
+* [ ] Overall system gain (`set gain rx <dB>`)
 * [ ] RX LNA
 * [ ] RX VGA1
 * [ ] RX VGA2
@@ -297,6 +303,7 @@ the gain values for:
 Transmit a reference signal to a VSA and verify the effect of changing the
 gain values for:
 
+* [ ] Overall system gain (`set gain tx <dB>`)
 * [ ] TX VGA1
 * [ ] TX VGA2
 
@@ -311,7 +318,6 @@ gain values for:
 
 * [ ] Transmit a reference signal of a wide bandwith to a VSA and verify the
       effect of changing the TX bandwidth.
-
 
 ### DC Offset ###
 
@@ -333,6 +339,138 @@ note of the results.
 * [ ] Create and load a TX calibration table. Verify that corrections are
       applied over the range of the table.
 
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+## Basic Device Control: bladeRF Micro ##
+
+These device control operations may be performed with the `bladeRF-cli`, or for
+simplicity, third party tools, as they should utilize the same underlying
+`libbladeRF` API calls.
+
+A signal generator and spectrum analyzer are required for many of these items.
+
+### Frequency Tuning ##
+
+When performing these tests, make notes of the frequencies that you are using.
+If issue occur, it is important to know if it is when crossing "bands" or
+internal device ranges.
+
+#### RX ####
+
+* [ ] Verify reception of reference signals at various frequencies in
+      70 MHz - 6 GHz
+  * [ ] RX1
+  * [ ] RX2
+* [ ] Verify that `print rssi` prints reasonable values that vary based on
+      signal level.
+  * [ ] RX1
+  * [ ] RX2
+
+#### TX ####
+
+Suggested reference signal: W-CDMA QPSK test pattern
+
+* [ ] Verify that a VSA can receive and demodulate reference signals at
+      frequencies in 70 MHz - 6.0 GHz
+  * [ ] TX1
+  * [ ] TX2
+
+### Gain ###
+
+#### RX ####
+
+Supply the device with a reference signal and verify the effect of changing
+the gain values for:
+
+* [ ] Overall system gain (`set gain rx{1,2} <dB>`)
+  * [ ] RX1
+  * [ ] RX2
+* [ ] `full` stage (`set gain rx{1,2} full <dB>`)
+  * [ ] RX1
+  * [ ] RX2
+
+#### TX ####
+
+Transmit a reference signal to a VSA and verify the effect of changing the
+gain values for:
+
+* [ ] Overall system gain (`set gain tx{1,2} <dB>`)
+  * [ ] TX1
+  * [ ] TX2
+* [ ] `dsa` stage (`set gain tx{1,2} dsa <dB>`)
+  * [ ] TX1
+  * [ ] TX2
+
+### Bandwidth ###
+
+#### RX ####
+
+* [ ] Supply a reference signal of a wide bandwith and verify the effect of
+      changing the RX bandwidth.
+  * [ ] RX1
+  * [ ] RX2
+
+#### TX ####
+
+* [ ] Transmit a reference signal of a wide bandwith to a VSA and verify the
+      effect of changing the TX bandwidth.
+  * [ ] TX1
+  * [ ] TX2
+
+### ADF4002 ###
+
+Connect a 10 MHz reference source (e.g. GPSDO, or 10 MHz ref output from VSA)
+to `REFIN` (J95). The signal should be [TODO: voltage here ... sine/square?]
+
+Note: Ensure the VSA is synchronized to the same clock.
+
+Caution: UFL connectors are fragile and have limited mating cycles.
+
+Transmit a reference signal (e.g. QPSK constellation into EVM analysis, or a
+tone into spectrum analysis) into a VSA.
+
+* [ ] With the ADF4002 disabled (`set adf_enable 0`), note the frequency offset
+      of the reference signal.
+  * [ ] `print adf_enable` should report `ADF Chip Enable: disabled`
+* [ ] Enable the ADF4002 (`set adf_enable 1`).
+  * [ ] `print adf_enable` should report `ADF Chip Enable: enabled`
+        and `ADF Chip Locked: locked`
+  * [ ] The frequency offset of the reference signal should be very small,
+        within a few Hz.
+  * [ ] `print trimdac` should report `0xc000` for current VCTCXO trim
+* [ ] Change the ADF4002's reference frequency: `set adf_refclk 9M`
+  * [ ] `print adf_enable` should report `ADF Chip Enable: enabled`
+        and `ADF Chip Locked: unlocked`
+* [ ] Change the ADF4002's reference frequency back to 10 MHz:
+      `set adf_refclk 10M`
+  * [ ] `print adf_enable` should report `ADF Chip Enable: enabled`
+        and `ADF Chip Locked: locked`
+* [ ] Disable the reference clock while the ADF is enabled (note: don't
+      do this on the UFL connector)
+  * [ ] `print adf_enable` should report `ADF Chip Enable: enabled`
+        and `ADF Chip Locked: unlocked`
+* [ ] Disable the ADF4002 (`set adf_enable 0`)
+  * [ ] `print adf_enable` should report `ADF Chip Enable: disabled`
+  * [ ] `print trimdac` should NOT report `0xc000` for current VCTCXO trim,
+        but should instead return to its previous value.
+
+### Bias tees ###
+
+Note: disconnect RX1/RX2/TX1/TX2 when testing the bias tees to avoid possible
+damage to test equipment.
+
+* [ ] Disable the bias tees: `set biastee rx 0 ; set biastee tx 0`
+* [ ] Verify 0 VDC between RX1/RX2/TX1/TX2 center pin and ground
+* [ ] Enable the RX bias tees: `set biastee rx 1`
+* [ ] Verify ~5 VDC between the center pins of RX1 & RX2 and ground, and
+      0 VDC between the center pins of TX1 & TX2 and ground
+* [ ] Enable the TX bias tees: `set biastee tx 1`
+* [ ] Verify ~5 VDC between the center pins of RX1/RX2/TX1/TX2 and ground
+* [ ] Disable the RX bias tees: `set biastee rx 0`
+* [ ] Verify ~5 VDC between the center pins of TX1 & TX2 and ground, and
+      0 VDC between the center pins of RX1 & RX2 and ground
+* [ ] Disable the TX bias tees: `set biastee tx 0`
+* [ ] Verify 0 VDC between RX1/RX2/TX1/TX2 center pin and ground
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -361,7 +499,7 @@ Run all of its tests **without** an XB-200 attached.
 * [ ] ```frequency```
 * [ ] ```threads```
 
-Run all of its tests ***with ** an XB-200 attached
+Run all of its tests **with** an XB-200 attached.
 
 * [ ] ```sampling```
 * [ ] ```lpf_mode```
