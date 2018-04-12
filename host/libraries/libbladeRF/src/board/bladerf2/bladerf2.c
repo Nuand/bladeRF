@@ -1690,7 +1690,7 @@ static int bladerf2_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
         val = (int)-_clamp_to_range(&range, gain);
 
         if (board_data->tx_mute[ch >> 1]) {
-            status = _set_tx_gain_cache(dev, ch, val);
+            status = _set_tx_gain_cache(dev, ch, val * 1000);
             if (status < 0) {
                 RETURN_ERROR_AD9361("_set_tx_gain_cache", status);
             }
