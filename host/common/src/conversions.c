@@ -138,13 +138,13 @@ const char * channel2str(bladerf_channel ch)
 {
     switch (ch) {
         case BLADERF_CHANNEL_RX(0):
-            return "RX0";
-        case BLADERF_CHANNEL_TX(0):
-            return "TX0";
-        case BLADERF_CHANNEL_RX(1):
             return "RX1";
-        case BLADERF_CHANNEL_TX(1):
+        case BLADERF_CHANNEL_TX(0):
             return "TX1";
+        case BLADERF_CHANNEL_RX(1):
+            return "RX2";
+        case BLADERF_CHANNEL_TX(1):
+            return "TX2";
         default:
             return "Unknown";
     }
