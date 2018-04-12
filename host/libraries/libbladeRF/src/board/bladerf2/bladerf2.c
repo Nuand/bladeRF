@@ -104,13 +104,6 @@ struct bladerf2_board_data {
 
 /* Macro for logging and returning an error status. This should be used for
  * errors defined in the \ref RETCODES list. */
-#define RETURN_ERROR_STATUS_ARG(_what, _arg, _status)                  \
-    {                                                                  \
-        log_error("%s: %s %s failed: %s\n", __FUNCTION__, _what, _arg, \
-                  bladerf_strerror(_status));                          \
-        return _status;                                                \
-    }
-
 #define RETURN_ERROR_STATUS(_what, _status)                   \
     {                                                         \
         log_error("%s: %s failed: %s\n", __FUNCTION__, _what, \
@@ -1269,8 +1262,9 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
             board_data->msg_size = USB_MSG_SIZE_HS;
             break;
         default:
-            RETURN_ERROR_STATUS_ARG("Got unsupported device speed", usb_speed,
-                                    BLADERF_ERR_UNEXPECTED);
+            log_error("%s: unsupported device speed (%d)\n", __FUNCTION__,
+                      usb_speed);
+            return BLADERF_ERR_UNSUPPORTED;
     }
 
     /* Verify that we have a sufficent firmware version before continuing. */
@@ -1325,9 +1319,9 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
                 break;
 
             default:
-                RETURN_ERROR_STATUS_ARG("Mapping FPGA size",
-                                        board_data->fpga_size,
-                                        BLADERF_ERR_UNEXPECTED);
+                log_error("%s: invalid FPGA size: %d\n", __FUNCTION__,
+                          board_data->fpga_size);
+                return BLADERF_ERR_UNEXPECTED;
         }
 
         if (full_path != NULL) {
@@ -1803,7 +1797,8 @@ static int bladerf2_set_gain_mode(struct bladerf *dev,
         ad9361_channel = 1;
         gc_mode        = ad9361_init_params.gc_rx2_mode;
     } else {
-        RETURN_ERROR_STATUS_ARG("channel", ch, BLADERF_ERR_UNSUPPORTED);
+        log_error("%s: unknown channel index (%d)\n", __FUNCTION__, ch);
+        return BLADERF_ERR_UNSUPPORTED;
     }
 
     /* Mode conversion */
@@ -1858,7 +1853,8 @@ static int bladerf2_get_gain_mode(struct bladerf *dev,
     } else if (ch == BLADERF_CHANNEL_RX(1)) {
         channel = 1;
     } else {
-        RETURN_ERROR_STATUS_ARG("channel", ch, BLADERF_ERR_UNSUPPORTED);
+        log_error("%s: unknown channel index (%d)\n", __FUNCTION__, ch);
+        return BLADERF_ERR_UNSUPPORTED;
     }
 
     /* Get the gain */
@@ -3271,7 +3267,8 @@ static bool is_valid_fpga_size(bladerf_fpga_size fpga, size_t len)
 
     if (!valid) {
         log_warning("Detected potentially incorrect FPGA file (length was %d, "
-                    "expected %d).\n", len, expected);
+                    "expected %d).\n",
+                    len, expected);
 
         log_debug("If you are certain this file is valid, you may define\n"
                   "BLADERF_SKIP_FPGA_SIZE_CHECK in your environment to skip "
@@ -3437,8 +3434,8 @@ static int bladerf2_set_loopback(struct bladerf *dev, bladerf_loopback l)
             bist_loopback = 1;
             break;
         default:
-            RETURN_ERROR_STATUS_ARG("decoding loopback mode", l,
-                                    BLADERF_ERR_UNSUPPORTED);
+            log_error("%s: unknown loopback mode (%d)\n", __FUNCTION__, l);
+            return BLADERF_ERR_UNEXPECTED;
     }
 
     /* Set digital loopback state */
