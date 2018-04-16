@@ -1032,7 +1032,9 @@ static int bladerf2_initialize(struct bladerf *dev)
     }
 
     /* Initialize AD9361 */
+    log_debug("%s: ad9361_init starting\n", __FUNCTION__);
     status = ad9361_init(&board_data->phy, &ad9361_init_params, dev);
+    log_debug("%s: ad9361_init complete, status = %d\n", __FUNCTION__, status);
     if (status < 0) {
         RETURN_ERROR_AD9361("ad9361_init", status);
     }
