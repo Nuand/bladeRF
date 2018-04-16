@@ -77,7 +77,7 @@ int32_t ad9361_init (struct ad9361_rf_phy **ad9361_phy,
 {
 	struct ad9361_rf_phy *phy;
 	int32_t ret = 0;
-	int32_t rev = 0;
+	//int32_t rev = 0;
 	int32_t i   = 0;
 
 	phy = (struct ad9361_rf_phy *)zmalloc(sizeof(*phy));
@@ -445,7 +445,7 @@ int32_t ad9361_init (struct ad9361_rf_phy **ad9361_phy,
 		ret = -ENODEV;
 		goto out;
 	}
-	rev = ret & REV_MASK;
+	//rev = ret & REV_MASK;
 
 	if (AD9364_DEVICE) {
 		phy->pdata->rx2tx2 = false;
@@ -484,7 +484,7 @@ int32_t ad9361_init (struct ad9361_rf_phy **ad9361_phy,
 		goto out;
 #endif
 
-	printf("%s : AD936x Rev %d successfully initialized\n", __func__, (int)rev);
+	//printf("%s : AD936x Rev %d successfully initialized\n", __func__, (int)rev);
 
 	*ad9361_phy = phy;
 
