@@ -33,7 +33,7 @@ int str2version(const char *str, struct bladerf_version *version)
 
     /* Major version */
     errno = 0;
-    tmp = strtoul(start, &end, 10);
+    tmp   = strtoul(start, &end, 10);
     if (errno != 0 || tmp > UINT16_MAX || end == start || *end != '.') {
         return -1;
     }
@@ -45,7 +45,7 @@ int str2version(const char *str, struct bladerf_version *version)
     }
     errno = 0;
     start = &end[1];
-    tmp = strtoul(start, &end, 10);
+    tmp   = strtoul(start, &end, 10);
     if (errno != 0 || tmp > UINT16_MAX || end == start || *end != '.') {
         return -1;
     }
@@ -57,9 +57,9 @@ int str2version(const char *str, struct bladerf_version *version)
     }
     errno = 0;
     start = &end[1];
-    tmp = strtoul(start, &end, 10);
+    tmp   = strtoul(start, &end, 10);
     if (errno != 0 || tmp > UINT16_MAX || end == start ||
-            (*end != '-' && *end != '\0')) {
+        (*end != '-' && *end != '\0')) {
         return -1;
     }
     version->patch = (uint16_t)tmp;
@@ -69,7 +69,7 @@ int str2version(const char *str, struct bladerf_version *version)
     return 0;
 }
 
-const char * devspeed2str(bladerf_dev_speed speed)
+const char *devspeed2str(bladerf_dev_speed speed)
 {
     switch (speed) {
         case BLADERF_DEVICE_SPEED_HIGH:
@@ -89,7 +89,7 @@ const char * devspeed2str(bladerf_dev_speed speed)
 bladerf_log_level str2loglevel(const char *str, bool *ok)
 {
     bladerf_log_level level = BLADERF_LOG_LEVEL_ERROR;
-    bool valid = true;
+    bool valid              = true;
 
     if (!strcasecmp(str, "critical")) {
         level = BLADERF_LOG_LEVEL_CRITICAL;
@@ -111,7 +111,7 @@ bladerf_log_level str2loglevel(const char *str, bool *ok)
     return level;
 }
 
-const char * module2str(bladerf_module m)
+const char *module2str(bladerf_module m)
 {
     switch (m) {
         case BLADERF_MODULE_RX:
@@ -134,7 +134,7 @@ bladerf_module str2module(const char *str)
     }
 }
 
-const char * channel2str(bladerf_channel ch)
+const char *channel2str(bladerf_channel ch)
 {
     switch (ch) {
         case BLADERF_CHANNEL_RX(0):
@@ -163,13 +163,13 @@ bladerf_channel str2channel(char const *str)
     } else if (strcasecmp(str, "tx2") == 0) {
         rv = BLADERF_CHANNEL_TX(1);
     } else {
-        rv  = BLADERF_CHANNEL_INVALID;
+        rv = BLADERF_CHANNEL_INVALID;
     }
 
     return rv;
 }
 
-const char * direction2str(bladerf_direction dir)
+const char *direction2str(bladerf_direction dir)
 {
     switch (dir) {
         case BLADERF_RX:
@@ -181,7 +181,7 @@ const char * direction2str(bladerf_direction dir)
     }
 }
 
-const char * trigger2str(bladerf_trigger_signal trigger)
+const char *trigger2str(bladerf_trigger_signal trigger)
 {
     switch (trigger) {
         case BLADERF_TRIGGER_J71_4:
@@ -255,7 +255,8 @@ const char *triggerrole2str(bladerf_trigger_role role)
     }
 }
 
-bladerf_trigger_role str2triggerrole(const char *str) {
+bladerf_trigger_role str2triggerrole(const char *str)
+{
     if (!strcasecmp("Master", str)) {
         return BLADERF_TRIGGER_ROLE_MASTER;
     } else if (!strcasecmp("Slave", str)) {
@@ -298,12 +299,49 @@ int str2loopback(const char *str, bladerf_loopback *loopback)
     return status;
 }
 
+char const *loopback2str(bladerf_loopback loopback)
+{
+    switch (loopback) {
+        case BLADERF_LB_BB_TXLPF_RXVGA2:
+            return "bb_txlpf_rxvga2";
+
+        case BLADERF_LB_BB_TXLPF_RXLPF:
+            return "bb_txlpf_rxlpf";
+
+        case BLADERF_LB_BB_TXVGA1_RXVGA2:
+            return "bb_txvga1_rxvga2";
+
+        case BLADERF_LB_BB_TXVGA1_RXLPF:
+            return "bb_txvga1_rxlpf";
+
+        case BLADERF_LB_RF_LNA1:
+            return "rf_lna1";
+
+        case BLADERF_LB_RF_LNA2:
+            return "rf_lna2";
+
+        case BLADERF_LB_RF_LNA3:
+            return "rf_lna3";
+
+        case BLADERF_LB_FIRMWARE:
+            return "firmware";
+
+        case BLADERF_LB_NONE:
+            return "none";
+
+        case BLADERF_LB_AD9361_BIST:
+            return "ad9361_bist";
+
+        default:
+            return "unknown";
+    }
+}
+
 int str2lnagain(const char *str, bladerf_lna_gain *gain)
 {
     *gain = BLADERF_LNA_GAIN_MAX;
 
-    if (!strcasecmp("max", str) ||
-        !strcasecmp("BLADERF_LNA_GAIN_MAX", str)) {
+    if (!strcasecmp("max", str) || !strcasecmp("BLADERF_LNA_GAIN_MAX", str)) {
         *gain = BLADERF_LNA_GAIN_MAX;
         return 0;
     } else if (!strcasecmp("mid", str) ||
@@ -348,8 +386,8 @@ void sc16q11_to_float(const int16_t *in, float *out, unsigned int n)
     unsigned int i;
 
     for (i = 0; i < (2 * n); i += 2) {
-        out[i]   = (float) in[i]   * (1.0f / 2048.0f);
-        out[i+1] = (float) in[i+1] * (1.0f / 2048.0f);
+        out[i]     = (float)in[i] * (1.0f / 2048.0f);
+        out[i + 1] = (float)in[i + 1] * (1.0f / 2048.0f);
     }
 }
 
@@ -358,8 +396,8 @@ void float_to_sc16q11(const float *in, int16_t *out, unsigned int n)
     unsigned int i;
 
     for (i = 0; i < (2 * n); i += 2) {
-        out[i]   = (int16_t) (in[i]   * 2048.0f);
-        out[i+1] = (int16_t) (in[i+1] * 2048.0f);
+        out[i]     = (int16_t)(in[i] * 2048.0f);
+        out[i + 1] = (int16_t)(in[i + 1] * 2048.0f);
     }
 }
 
@@ -370,9 +408,9 @@ bladerf_cal_module str_to_bladerf_cal_module(const char *str)
     if (!strcasecmp(str, "lpf_tuning") || !strcasecmp(str, "lpftuning") ||
         !strcasecmp(str, "tuning")) {
         module = BLADERF_DC_CAL_LPF_TUNING;
-    } else if (!strcasecmp(str, "tx_lpf")  || !strcasecmp(str, "txlpf")) {
+    } else if (!strcasecmp(str, "tx_lpf") || !strcasecmp(str, "txlpf")) {
         module = BLADERF_DC_CAL_TX_LPF;
-    } else if (!strcasecmp(str, "rx_lpf")  || !strcasecmp(str, "rxlpf")) {
+    } else if (!strcasecmp(str, "rx_lpf") || !strcasecmp(str, "rxlpf")) {
         module = BLADERF_DC_CAL_RX_LPF;
     } else if (!strcasecmp(str, "rx_vga2") || !strcasecmp(str, "rxvga2")) {
         module = BLADERF_DC_CAL_RXVGA2;
@@ -381,7 +419,7 @@ bladerf_cal_module str_to_bladerf_cal_module(const char *str)
     return module;
 }
 
-const char * smb_mode_to_str(bladerf_smb_mode mode)
+const char *smb_mode_to_str(bladerf_smb_mode mode)
 {
     switch (mode) {
         case BLADERF_SMB_MODE_DISABLED:
@@ -416,13 +454,16 @@ bladerf_smb_mode str_to_smb_mode(const char *str)
     }
 }
 
-unsigned int str2uint(const char *str, unsigned int min, unsigned int max, bool *ok)
+unsigned int str2uint(const char *str,
+                      unsigned int min,
+                      unsigned int max,
+                      bool *ok)
 {
     unsigned int ret;
     char *optr;
 
     errno = 0;
-    ret = strtoul(str, &optr, 0);
+    ret   = strtoul(str, &optr, 0);
 
     if (errno == ERANGE || (errno != 0 && ret == 0)) {
         *ok = false;
@@ -449,10 +490,10 @@ int str2int(const char *str, int min, int max, bool *ok)
     char *optr;
 
     errno = 0;
-    ret = strtol(str, &optr, 0);
+    ret   = strtol(str, &optr, 0);
 
-    if ((errno == ERANGE && (ret == LONG_MAX || ret == LONG_MIN))
-            || (errno != 0 && ret == 0)) {
+    if ((errno == ERANGE && (ret == LONG_MAX || ret == LONG_MIN)) ||
+        (errno != 0 && ret == 0)) {
         *ok = false;
         return 0;
     }
@@ -477,10 +518,9 @@ uint64_t str2uint64(const char *str, uint64_t min, uint64_t max, bool *ok)
     char *optr;
 
     errno = 0;
-    ret = (uint64_t)strtod(str, &optr);
+    ret   = (uint64_t)strtod(str, &optr);
 
-    if ((errno == ERANGE && ret == ULONG_MAX)
-            || (errno != 0 && ret == 0)) {
+    if ((errno == ERANGE && ret == ULONG_MAX) || (errno != 0 && ret == 0)) {
         *ok = false;
         return 0;
     }
@@ -505,7 +545,7 @@ double str2double(const char *str, double min, double max, bool *ok)
     char *optr;
 
     errno = 0;
-    ret = strtod(str, &optr);
+    ret   = strtod(str, &optr);
 
     if (errno == ERANGE || (errno != 0 && ret == 0)) {
         *ok = false;
@@ -527,8 +567,9 @@ double str2double(const char *str, double min, double max, bool *ok)
 }
 
 static uint64_t suffix_multiplier(const char *str,
-                      const struct numeric_suffix *suffixes, const size_t num_suff,
-                      bool *ok)
+                                  const struct numeric_suffix *suffixes,
+                                  const size_t num_suff,
+                                  bool *ok)
 {
     unsigned i;
 
@@ -547,9 +588,12 @@ static uint64_t suffix_multiplier(const char *str,
     return 0;
 }
 
-unsigned int str2uint_suffix(const char *str, unsigned int min, unsigned int max,
-                      const struct numeric_suffix *suffixes, const size_t num_suff,
-                      bool *ok)
+unsigned int str2uint_suffix(const char *str,
+                             unsigned int min,
+                             unsigned int max,
+                             const struct numeric_suffix *suffixes,
+                             const size_t num_suff,
+                             bool *ok)
 {
     uint64_t mult;
     unsigned int rv;
@@ -557,7 +601,7 @@ unsigned int str2uint_suffix(const char *str, unsigned int min, unsigned int max
     char *optr;
 
     errno = 0;
-    val = strtod(str, &optr);
+    val   = strtod(str, &optr);
 
     if (errno == ERANGE || (errno != 0 && val == 0)) {
         *ok = false;
@@ -583,16 +627,19 @@ unsigned int str2uint_suffix(const char *str, unsigned int min, unsigned int max
     return 0;
 }
 
-uint64_t str2uint64_suffix(const char *str, uint64_t min, uint64_t max,
-                      const struct numeric_suffix *suffixes, const size_t num_suff,
-                      bool *ok)
+uint64_t str2uint64_suffix(const char *str,
+                           uint64_t min,
+                           uint64_t max,
+                           const struct numeric_suffix *suffixes,
+                           const size_t num_suff,
+                           bool *ok)
 {
     uint64_t mult, rv;
     long double val;
     char *optr;
 
     errno = 0;
-    val = strtold(str, &optr);
+    val   = strtold(str, &optr);
 
     if (errno == ERANGE && (errno != 0 && val == 0)) {
         *ok = false;
@@ -621,7 +668,7 @@ int str2bool(const char *str, bool *val)
 {
     unsigned int i;
 
-    char *str_true[] = { "true", "t", "one", "1", "enable", "en", "on" };
+    char *str_true[]  = { "true", "t", "one", "1", "enable", "en", "on" };
     char *str_false[] = { "false", "f", "zero", "0", "disable", "dis", "off" };
 
     for (i = 0; i < ARRAY_SIZE(str_true); i++) {

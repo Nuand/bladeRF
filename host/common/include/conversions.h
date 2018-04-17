@@ -25,16 +25,16 @@
 #ifndef CONVERSIONS_H_
 #define CONVERSIONS_H_
 
-#include <stdint.h>
-#include <libbladeRF.h>
 #include <errno.h>
-#include <string.h>
-#include <stdlib.h>
+#include <libbladeRF.h>
 #include <limits.h>
 #include <math.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include "rel_assert.h"
 #include "host_config.h"
+#include "rel_assert.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -63,7 +63,7 @@ int str2version(const char *str, struct bladerf_version *version);
  * @param   speed   Device speed
  * @return  Const string describing the provided speed
  */
-const char * devspeed2str(bladerf_dev_speed speed);
+const char *devspeed2str(bladerf_dev_speed speed);
 
 /**
  * Convert a string to libbladeRF log verbosity level
@@ -83,7 +83,7 @@ bladerf_log_level str2loglevel(const char *str, bool *ok);
  * @param   module      Module to convert to string
  * @return  String representation of module
  */
-const char * module2str(bladerf_module m);
+const char *module2str(bladerf_module m);
 
 /**
  * Convert a string to a module enumeration value.
@@ -104,7 +104,7 @@ bladerf_module str2module(const char *str);
  * @param   ch          Channel
  * @return  String representation of channel
  */
-const char * channel2str(bladerf_channel ch);
+const char *channel2str(bladerf_channel ch);
 
 /**
  * Convert a string to a channel index
@@ -125,7 +125,7 @@ bladerf_channel str2channel(char const *str);
  * @param   dir         direction
  * @return  String representation of direction
  */
-const char * direction2str(bladerf_direction dir);
+const char *direction2str(bladerf_direction dir);
 
 /**
  * Convert a trigger signal enumeration value to a string
@@ -134,7 +134,7 @@ const char * direction2str(bladerf_direction dir);
  *
  * @return  String representation or "Unknown"
  */
-const char * trigger2str(bladerf_trigger_signal trigger);
+const char *trigger2str(bladerf_trigger_signal trigger);
 
 /**
  * Conver a string to a trigger signal enumeration value.
@@ -178,6 +178,15 @@ bladerf_trigger_role str2triggerrole(const char *str);
 int str2loopback(const char *str, bladerf_loopback *loopback);
 
 /**
+ * @brief      Convert a loopback mode to a string const
+ *
+ * @param[in]  loopback  The loopback mode
+ *
+ * @return     NUL-terminated string
+ */
+char const *loopback2str(bladerf_loopback loopback);
+
+/**
  * Convert RX LNA gain strings to their associated enum values
  *
  * @param[in]   str         Gain string to convert
@@ -211,7 +220,7 @@ const char *backend_description(bladerf_backend b);
  * @param[out]  out     Output buffer of float values
  * @param[in]   n       Number of samples to convert
  */
-void sc16q11_to_float(const int16_t *in, float * out, unsigned int n);
+void sc16q11_to_float(const int16_t *in, float *out, unsigned int n);
 
 /**
  * Convert float samples to bladeRF SC16Q11 DAC/ADC format
@@ -247,7 +256,7 @@ bladerf_cal_module str_to_bladerf_cal_module(const char *str);
  * @return      String representation of enumeration, or "Unknown" for an
  *              invalid value.
  */
-const char * smb_mode_to_str(bladerf_smb_mode mode);
+const char *smb_mode_to_str(bladerf_smb_mode mode);
 
 /**
  * Convert a string to bladerf_smb_mode value
@@ -269,7 +278,10 @@ bladerf_smb_mode str_to_smb_mode(const char *str);
  *
  * @return An unsigned integer converted from an ASCII string
  */
-unsigned int str2uint(const char *str, unsigned int min, unsigned int max, bool *ok);
+unsigned int str2uint(const char *str,
+                      unsigned int min,
+                      unsigned int max,
+                      bool *ok);
 
 /**
  * Convert an ASCII char string to an integer and check its bounds
@@ -326,9 +338,12 @@ typedef struct numeric_suffix numeric_suffix;
  *
  * @return An unsigned integer converted from an ASCII string
  */
-unsigned int str2uint_suffix(const char *str, unsigned int min, unsigned int max,
-                      const struct numeric_suffix *suffixes, const size_t num_suff,
-                      bool *ok);
+unsigned int str2uint_suffix(const char *str,
+                             unsigned int min,
+                             unsigned int max,
+                             const struct numeric_suffix *suffixes,
+                             const size_t num_suff,
+                             bool *ok);
 
 /**
  * Convert an ASCII char string that has a suffix multipler to an unsigned
@@ -343,9 +358,12 @@ unsigned int str2uint_suffix(const char *str, unsigned int min, unsigned int max
  *
  * @return An unsigned long long integer converted from an ASCII string
  */
-uint64_t str2uint64_suffix(const char *str, uint64_t min, uint64_t max,
-                      const struct numeric_suffix *suffixes, const size_t num_suff,
-                      bool *ok);
+uint64_t str2uint64_suffix(const char *str,
+                           uint64_t min,
+                           uint64_t max,
+                           const struct numeric_suffix *suffixes,
+                           const size_t num_suff,
+                           bool *ok);
 
 /**
  * Convert a string to a boolean
