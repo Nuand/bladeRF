@@ -58,6 +58,8 @@
  *                          bladeRF2 board state                              *
  ******************************************************************************/
 
+#define NUM_MODULES 2
+
 enum bladerf2_vctcxo_trim_source {
     TRIM_SOURCE_NONE,
     TRIM_SOURCE_TRIM_DAC,
@@ -79,6 +81,9 @@ struct bladerf2_board_data {
 
     /* Bitmask of capabilities determined by version numbers */
     uint64_t capabilities;
+
+    /* Format currently being used with a module, or -1 if module is not used */
+    bladerf_format module_format[NUM_MODULES];
 
     /* Board properties */
     bladerf_fpga_size fpga_size;
@@ -1212,6 +1217,9 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     board_data->fpga_version.describe = board_data->fpga_version_str;
     board_data->fw_version.describe   = board_data->fw_version_str;
 
+    board_data->module_format[BLADERF_RX] = -1;
+    board_data->module_format[BLADERF_TX] = -1;
+
     /* Read firmware version */
     status = dev->backend->get_fw_version(dev, &board_data->fw_version);
     if (status < 0) {
@@ -1497,6 +1505,8 @@ static int bladerf2_get_fw_version(struct bladerf *dev,
 /* Enable/disable */
 /******************************************************************************/
 
+static int perform_format_deconfig(struct bladerf *dev, bladerf_direction dir);
+
 static int bladerf2_enable_module(struct bladerf *dev,
                                   bladerf_channel ch,
                                   bool enable)
@@ -1566,6 +1576,8 @@ static int bladerf2_enable_module(struct bladerf *dev,
     if (dir_changing && !dir_enable) {
         sync_deinit(&board_data->sync[BLADERF_CHANNEL_IS_TX(ch) ? BLADERF_TX
                                                                 : BLADERF_RX]);
+        perform_format_deconfig(
+            dev, BLADERF_CHANNEL_IS_TX(ch) ? BLADERF_TX : BLADERF_RX);
     }
 
     /* Mute unused TX channels */
@@ -3074,6 +3086,129 @@ static int bladerf2_trigger_state(struct bladerf *dev,
 /* Streaming */
 /******************************************************************************/
 
+static inline int requires_timestamps(bladerf_format format, bool *required)
+{
+    int status = 0;
+
+    switch (format) {
+        case BLADERF_FORMAT_SC16_Q11_META:
+            *required = true;
+            break;
+
+        case BLADERF_FORMAT_SC16_Q11:
+            *required = false;
+            break;
+
+        default:
+            return BLADERF_ERR_INVAL;
+    }
+
+    return status;
+}
+
+/**
+ * Perform the neccessary device configuration for the specified format
+ * (e.g., enabling/disabling timestamp support), first checking that the
+ * requested format would not conflict with the other stream direction.
+ *
+ * @param           dev     Device handle
+ * @param[in]       dir     Direction that is currently being configured
+ * @param[in]       format  Format the channel is being configured for
+ *
+ * @return 0 on success, BLADERF_ERR_* on failure
+ */
+static int perform_format_config(struct bladerf *dev,
+                                 bladerf_direction dir,
+                                 bladerf_format format)
+{
+    int status;
+    bool use_timestamps;
+    bladerf_channel other;
+    bool other_using_timestamps;
+    uint32_t gpio_val;
+
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    struct bladerf2_board_data *board_data = dev->board_data;
+
+    status = requires_timestamps(format, &use_timestamps);
+    if (status != 0) {
+        log_debug("%s: Invalid format: %d\n", __FUNCTION__, format);
+        return status;
+    }
+
+    switch (dir) {
+        case BLADERF_RX:
+            other = BLADERF_TX;
+            break;
+
+        case BLADERF_TX:
+            other = BLADERF_RX;
+            break;
+
+        default:
+            log_debug("Invalid direction: %d\n", dir);
+            return BLADERF_ERR_INVAL;
+    }
+
+    status = requires_timestamps(board_data->module_format[other],
+                                 &other_using_timestamps);
+
+    if ((status == 0) && (other_using_timestamps != use_timestamps)) {
+        log_debug("Format conflict detected: RX=%d, TX=%d\n");
+        return BLADERF_ERR_INVAL;
+    }
+
+    status = dev->backend->config_gpio_read(dev, &gpio_val);
+    if (status != 0) {
+        return status;
+    }
+
+    if (use_timestamps) {
+        gpio_val |= (BLADERF_GPIO_TIMESTAMP | BLADERF_GPIO_TIMESTAMP_DIV2);
+    } else {
+        gpio_val &= ~(BLADERF_GPIO_TIMESTAMP | BLADERF_GPIO_TIMESTAMP_DIV2);
+    }
+
+    status = dev->backend->config_gpio_write(dev, gpio_val);
+    if (status == 0) {
+        board_data->module_format[dir] = format;
+    }
+
+    return status;
+}
+
+/**
+ * Deconfigure and update any state pertaining what a format that a stream
+ * direction is no longer using.
+ *
+ * @param       dev     Device handle
+ * @param[in]   dir     Direction that is currently being deconfigured
+ *
+ * @return 0 on success, BLADERF_ERR_* on failure
+ */
+static int perform_format_deconfig(struct bladerf *dev, bladerf_direction dir)
+{
+    CHECK_BOARD_STATE(STATE_INITIALIZED);
+
+    struct bladerf2_board_data *board_data = dev->board_data;
+
+    switch (dir) {
+        case BLADERF_RX:
+        case BLADERF_TX:
+            /* We'll reconfigure the HW when we call perform_format_config, so
+             * we just need to update our stored information */
+            board_data->module_format[dir] = -1;
+            break;
+
+        default:
+            log_debug("%s: Invalid direction: %d\n", __FUNCTION__, dir);
+            return BLADERF_ERR_INVAL;
+    }
+
+    return 0;
+}
+
 static int bladerf2_init_stream(struct bladerf_stream **stream,
                                 struct bladerf *dev,
                                 bladerf_stream_cb callback,
@@ -3094,9 +3229,32 @@ static int bladerf2_init_stream(struct bladerf_stream **stream,
 static int bladerf2_stream(struct bladerf_stream *stream,
                            bladerf_channel_layout layout)
 {
-    /* FIXME use layout to configure for MIMO here */
+    bladerf_direction dir = layout & BLADERF_DIRECTION_MASK;
+    int stream_status, fmt_status;
 
-    return async_run_stream(stream, layout & BLADERF_DIRECTION_MASK);
+    switch (layout) {
+        case BLADERF_RX_X1:
+        case BLADERF_RX_X2:
+        case BLADERF_TX_X1:
+        case BLADERF_TX_X2:
+            break;
+        default:
+            return -EINVAL;
+    }
+
+    fmt_status = perform_format_config(stream->dev, dir, stream->format);
+    if (fmt_status != 0) {
+        return fmt_status;
+    }
+
+    stream_status = async_run_stream(stream, layout);
+
+    fmt_status = perform_format_deconfig(stream->dev, dir);
+    if (fmt_status != 0) {
+        return fmt_status;
+    }
+
+    return stream_status;
 }
 
 static int bladerf2_submit_stream_buffer(struct bladerf_stream *stream,
@@ -3142,11 +3300,25 @@ static int bladerf2_sync_config(struct bladerf *dev,
 
     board_data = dev->board_data;
 
-    /* FIXME use layout to configure for MIMO here */
+    switch (layout) {
+        case BLADERF_RX_X1:
+        case BLADERF_RX_X2:
+        case BLADERF_TX_X1:
+        case BLADERF_TX_X2:
+            break;
+        default:
+            return -EINVAL;
+    }
 
-    status = sync_init(&board_data->sync[dir], dev, layout, format, num_buffers,
-                       buffer_size, board_data->msg_size, num_transfers,
-                       stream_timeout);
+    status = perform_format_config(dev, dir, format);
+    if (status == 0) {
+        status = sync_init(&board_data->sync[dir], dev, layout, format,
+                           num_buffers, buffer_size, board_data->msg_size,
+                           num_transfers, stream_timeout);
+        if (status != 0) {
+            perform_format_deconfig(dev, dir);
+        }
+    }
 
     return status;
 }
