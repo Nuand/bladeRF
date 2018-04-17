@@ -69,6 +69,17 @@ in the table.
 By default, tables are generated over the entire frequency range, in 10
 MHz steps.
 .RE
+.IP \[bu] 2
+Generate RX or TX I/Q DC correction parameter tables for AGC Look Up
+Table
+.RS 2
+.IP \[bu] 2
+\f[C]calibrate\ table\ agc\ <rx|tx>\ [<f_min>\ <f_max>\ [f_inc]]\f[]
+.PP
+Similar usage as \f[C]calibrate\ table\ dc\f[] except the call will set
+gains to the AGC\[aq]s base gain value before running
+\f[C]calibrate\ table\ dc\f[].
+.RE
 .SS clear
 .PP
 Usage: \f[C]clear\f[]
@@ -537,11 +548,15 @@ See the \f[C]bladerf_open()\f[] documentation in libbladeRF for the
 complete device specifier format.
 .SS peek
 .PP
-Usage: \f[C]peek\ <adi|dac|lms|si>\ <address>\ [num_addresses]\f[]
+Usage: \f[C]peek\ <adf|adi|dac|lms|si>\ <address>\ [num_addresses]\f[]
 .PP
-The peek command can read any of the devices hanging off the FPGA which
-includes the AD9361 or LMS6002D transceiver, VCTCXO trim DAC or the
-Si5338 clock generator chip.
+The peek command can read any of the devices hanging off the FPGA.
+This includes the:
+.IP \[bu] 2
+bladeRF 1: LMS6002D transceiver, VCTCXO trim DAC, Si5338 clock generator
+.IP \[bu] 2
+bladeRF 2: AD9361 transceiver, VCTCXO trim DAC, ADF4002 frequency
+synthesizer
 .PP
 If \f[C]num_addresses\f[] is supplied, the address is incremented by 1
 and another peek is performed for that many addresses.
@@ -557,6 +572,11 @@ T}@T{
 Address Range
 T}
 _
+T{
+\f[C]adf\f[]
+T}@T{
+0 to 3
+T}
 T{
 \f[C]adi\f[]
 T}@T{
@@ -584,11 +604,15 @@ Example:
 \f[C]peek\ si\ ...\f[]
 .SS poke
 .PP
-Usage: \f[C]poke\ <adi|dac|lms|si>\ <address>\ <data>\f[]
+Usage: \f[C]poke\ <adf|adi|dac|lms|si>\ <address>\ <data>\f[]
 .PP
-The poke command can write any of the devices hanging off the FPGA which
-includes the AD9361 or LMS6002D transceiver, VCTCXO trim DAC or the
-Si5338 clock generator chip.
+The poke command can write any of the devices hanging off the FPGA.
+This includes the:
+.IP \[bu] 2
+bladeRF 1: LMS6002D transceiver, VCTCXO trim DAC, Si5338 clock generator
+.IP \[bu] 2
+bladeRF 2: AD9361 transceiver, VCTCXO trim DAC, ADF4002 frequency
+synthesizer
 .PP
 Valid Address Ranges:
 .PP
@@ -601,6 +625,11 @@ T}@T{
 Address Range
 T}
 _
+T{
+\f[C]adf\f[]
+T}@T{
+0 to 3
+T}
 T{
 \f[C]adi\f[]
 T}@T{
@@ -656,9 +685,9 @@ T}@T{
 Frequency settings
 T}
 T{
-\f[C]gpio\f[]
+\f[C]agc\f[]
 T}@T{
-FX3 <\-> FPGA GPIO state
+Automatic gain control
 T}
 T{
 \f[C]loopback\f[]
@@ -671,6 +700,11 @@ T}@T{
 FPGA RX FIFO input mux setting
 T}
 T{
+\f[C]gain\f[]
+T}@T{
+Gain settings
+T}
+T{
 \f[C]samplerate\f[]
 T}@T{
 Samplerate settings
@@ -681,9 +715,9 @@ T}@T{
 VCTCXO Trim DAC settings
 T}
 T{
-\f[C]vctcxo_tamer\f[]
+\f[C]hardware\f[]
 T}@T{
-Current VCTCXO tamer mode.
+Low\-level hardware status
 T}
 .TE
 .PP
@@ -699,29 +733,34 @@ Description
 T}
 _
 T{
+\f[C]gpio\f[]
+T}@T{
+FX3 <\-> FPGA GPIO state
+T}
+T{
 \f[C]lnagain\f[]
 T}@T{
-Gain setting of the RX LNA, in dB
+Gain setting of the RX LNA, in dB (deprecated: see \f[C]print\ gain\f[])
 T}
 T{
 \f[C]rxvga1\f[]
 T}@T{
-Gain setting of RXVGA1, in dB
+Gain setting of RXVGA1, in dB (deprecated: see \f[C]print\ gain\f[])
 T}
 T{
 \f[C]rxvga2\f[]
 T}@T{
-Gain setting of RXVGA2, in dB
+Gain setting of RXVGA2, in dB (deprecated: see \f[C]print\ gain\f[])
 T}
 T{
 \f[C]txvga1\f[]
 T}@T{
-Gain setting of TXVGA1, in dB
+Gain setting of TXVGA1, in dB (deprecated: see \f[C]print\ gain\f[])
 T}
 T{
 \f[C]txvga2\f[]
 T}@T{
-Gain setting of TXVGA2, in dB
+Gain setting of TXVGA2, in dB (deprecated: see \f[C]print\ gain\f[])
 T}
 T{
 \f[C]sampling\f[]
@@ -734,6 +773,11 @@ T}@T{
 SMB clock port mode of operation
 T}
 T{
+\f[C]vctcxo_tamer\f[]
+T}@T{
+Current VCTCXO tamer mode
+T}
+T{
 \f[C]xb_gpio\f[]
 T}@T{
 Expansion board GPIO values
@@ -742,6 +786,49 @@ T{
 \f[C]xb_gpio_dir\f[]
 T}@T{
 Expansion board GPIO direction (1=output, 0=input)
+T}
+.TE
+.PP
+BladeRF2\-only parameters:
+.PP
+.TS
+tab(@);
+rw(13.6n) lw(54.4n).
+T{
+Parameter
+T}@T{
+Description
+T}
+_
+T{
+\f[C]clock_sel\f[]
+T}@T{
+System clock selection
+T}
+T{
+\f[C]clock_out\f[]
+T}@T{
+Clock output selection
+T}
+T{
+\f[C]rssi\f[]
+T}@T{
+Received signal strength indication
+T}
+T{
+\f[C]clock_ref\f[]
+T}@T{
+Enables (1) or disables (0) the ADF4002 chip
+T}
+T{
+\f[C]refin_freq\f[]
+T}@T{
+ADF4002 reference clock frequency
+T}
+T{
+\f[C]biastee\f[]
+T}@T{
+Enables or disables the bias tee on a given channel
 T}
 .TE
 .SS probe
@@ -898,6 +985,11 @@ Data stream timeout.
 With no suffix, the default unit is \f[C]ms\f[].
 The default value is 1000 ms (1 s).
 Valid suffixes are \f[C]ms\f[] and \f[C]s\f[].
+T}
+T{
+\f[C]channel\f[]
+T}@T{
+Physical RF channel to use, either 1 (default) or 2.
 T}
 .TE
 .PP
@@ -1180,6 +1272,11 @@ With no suffix, the default unit is ms.
 The default value is 1000 ms (1 s).
 Valid suffixes are \[aq]ms\[aq] and \[aq]s\[aq].
 T}
+T{
+\f[C]channel\f[]
+T}@T{
+Physical RF channel to use, either 1 (default) or 2.
+T}
 .TE
 .PP
 Example:
@@ -1238,9 +1335,15 @@ T}@T{
 Frequency settings
 T}
 T{
-\f[C]gpio\f[]
+\f[C]agc\f[]
 T}@T{
-FX3 <\-> FPGA GPIO state
+Automatic gain control (on, off)
+T}
+T{
+\f[C]loopback\f[]
+T}@T{
+Loopback settings.
+Run \[aq]set loopback\[aq] to list modes.
 T}
 T{
 \f[C]rx_mux\f[]
@@ -1249,20 +1352,24 @@ FPGA RX FIFO input mux mode.
 Options are: BASEBAND, 12BIT_COUNTER, 32BIT_COUNTER, DIGITAL_LOOPBACK
 T}
 T{
+\f[C]gain\f[]
+T}@T{
+Gain settings
+T}
+T{
 \f[C]samplerate\f[]
 T}@T{
-Sample rate settings
+Samplerate settings
 T}
 T{
 \f[C]trimdac\f[]
 T}@T{
-VCTCXO trim DAC settings
+VCTCXO Trim DAC settings
 T}
 T{
-\f[C]vctcxo_tamer\f[]
+\f[C]hardware\f[]
 T}@T{
-VCTCXO tamer mode.
-Options: Disabled, 1PPS, 10MHz
+Low\-level hardware status
 T}
 .TE
 .PP
@@ -1278,40 +1385,39 @@ Description
 T}
 _
 T{
-\f[C]loopback\f[]
+\f[C]gpio\f[]
 T}@T{
-Loopback settings.
-Run \[aq]set loopback\[aq] to list modes.
+FX3 <\-> FPGA GPIO state
 T}
 T{
 \f[C]lnagain\f[]
 T}@T{
 Gain setting of the RX LNA, in dB.
-Values: 0, 3, 6
+Values: 0, 3, 6 (deprecated: see \f[C]set\ gain\f[])
 T}
 T{
 \f[C]rxvga1\f[]
 T}@T{
 Gain setting of RXVGA1, in dB.
-Range: [5, 30]
+Range: [5, 30] (deprecated: see \f[C]set\ gain\f[])
 T}
 T{
 \f[C]rxvga2\f[]
 T}@T{
 Gain setting of RXVGA2, in dB.
-Range: [0, 30]
+Range: [0, 30] (deprecated: see \f[C]set\ gain\f[])
 T}
 T{
 \f[C]txvga1\f[]
 T}@T{
 Gain setting of TXVGA1, in dB.
-Range: [\-35, \-4]
+Range: [\-35, \-4] (deprecated: see \f[C]set\ gain\f[])
 T}
 T{
 \f[C]txvga2\f[]
 T}@T{
 Gain setting of TXVGA2, in dB.
-Range: [0, 25]
+Range: [0, 25] (deprecated: see \f[C]set\ gain\f[])
 T}
 T{
 \f[C]sampling\f[]
@@ -1324,6 +1430,12 @@ T}@T{
 SMB clock port mode of operation
 T}
 T{
+\f[C]vctcxo_tamer\f[]
+T}@T{
+VCTCXO tamer mode.
+Options: Disabled, 1PPS, 10MHz
+T}
+T{
 \f[C]xb_gpio\f[]
 T}@T{
 Expansion board GPIO values
@@ -1332,6 +1444,49 @@ T{
 \f[C]xb_gpio_dir\f[]
 T}@T{
 Expansion board GPIO direction (1=output, 0=input)
+T}
+.TE
+.PP
+BladeRF2\-only parameters:
+.PP
+.TS
+tab(@);
+rw(13.6n) lw(54.4n).
+T{
+Parameter
+T}@T{
+Description
+T}
+_
+T{
+\f[C]clock_sel\f[]
+T}@T{
+System clock selection
+T}
+T{
+\f[C]clock_out\f[]
+T}@T{
+Clock output selection
+T}
+T{
+\f[C]rssi\f[]
+T}@T{
+Received signal strength indication
+T}
+T{
+\f[C]clock_ref\f[]
+T}@T{
+Enables (1) or disables (0) the ADF4002 chip
+T}
+T{
+\f[C]refin_freq\f[]
+T}@T{
+ADF4002 reference clock frequency
+T}
+T{
+\f[C]biastee\f[]
+T}@T{
+Enables or disables the bias tee on a given channel
 T}
 .TE
 .SS version

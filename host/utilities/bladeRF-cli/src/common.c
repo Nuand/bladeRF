@@ -17,20 +17,20 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-#include <stdlib.h>
-#include <stdarg.h>
 #include <errno.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 #include <limits.h>
 #include <pthread.h>
-#include <string.h>
 #include <signal.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include "cmd.h"
 #include "cmd/rxtx.h"
-#include "script.h"
 #include "input.h"
+#include "script.h"
 
 /* There's currently only ever 1 active cli_state */
 static struct cli_state *cli_state;
@@ -39,7 +39,6 @@ static inline void ctrlc_handler_common(int signal)
 {
     bool waiting = false;
     if (signal == SIGINT || signal == SIGTERM) {
-
         if (cli_state) {
             /* Unblock any rx/tx "wait" commands */
             waiting = rxtx_release_wait(cli_state->rx);
@@ -64,7 +63,7 @@ static void init_signal_handling()
 {
     void *sigint_prev, *sigterm_prev;
 
-    sigint_prev = signal(SIGINT, ctrlc_handler);
+    sigint_prev  = signal(SIGINT, ctrlc_handler);
     sigterm_prev = signal(SIGTERM, ctrlc_handler);
 
     if (sigint_prev == SIG_ERR || sigterm_prev == SIG_ERR) {
@@ -74,7 +73,8 @@ static void init_signal_handling()
 }
 
 #else
-static void ctrlc_handler(int signal, siginfo_t *info, void *unused) {
+static void ctrlc_handler(int signal, siginfo_t *info, void *unused)
+{
     ctrlc_handler_common(signal);
 }
 
@@ -84,7 +84,7 @@ static void init_signal_handling()
 
     sigemptyset(&sigact.sa_mask);
     sigact.sa_sigaction = ctrlc_handler;
-    sigact.sa_flags = SA_SIGINFO;
+    sigact.sa_flags     = SA_SIGINFO;
 
     sigaction(SIGINT, &sigact, NULL);
     sigaction(SIGTERM, &sigact, NULL);
@@ -96,9 +96,9 @@ struct cli_state *cli_state_create()
     cli_state = malloc(sizeof(*cli_state));
 
     if (cli_state) {
-        cli_state->dev = NULL;
+        cli_state->dev            = NULL;
         cli_state->last_lib_error = 0;
-        cli_state->scripts = NULL;
+        cli_state->scripts        = NULL;
 
         pthread_mutex_init(&cli_state->dev_lock, NULL);
 
@@ -174,16 +174,18 @@ bool cli_device_is_opened(struct cli_state *s)
 bool cli_device_is_streaming(struct cli_state *s)
 {
     return cli_device_is_opened(s) &&
-            (rxtx_task_running(s->rx) || rxtx_task_running(s->tx));
+           (rxtx_task_running(s->rx) || rxtx_task_running(s->tx));
 }
 
-static void cli_err_base(struct cli_state *s, bool add_newlines,
-                         const char *pfx, const char *format,
+static void cli_err_base(struct cli_state *s,
+                         bool add_newlines,
+                         const char *pfx,
+                         const char *format,
                          va_list arg_list)
 {
     char lbuf[81];
     char *err;
-	int ret;
+    int ret;
 
     memset(lbuf, 0, sizeof(lbuf));
 
@@ -193,17 +195,16 @@ static void cli_err_base(struct cli_state *s, bool add_newlines,
                        cli_script_file_name(s->scripts),
                        cli_script_line(s->scripts));
 
-        if(ret < 0) {
+        if (ret < 0) {
             lbuf[0] = '\0';
-        } else if(((size_t)ret) >= sizeof(lbuf)) {
-            lbuf[sizeof(lbuf)-1] = '\0';
+        } else if (((size_t)ret) >= sizeof(lbuf)) {
+            lbuf[sizeof(lbuf) - 1] = '\0';
         }
     }
 
     /* +7 --> 2 newlines, 4 chars padding, NUL terminator */
     err = calloc(strlen(lbuf) + strlen(pfx) + strlen(format) + 7, 1);
     if (err) {
-
         if (add_newlines) {
             strcat(err, "\n");
         }
@@ -247,7 +248,7 @@ void cli_err_nnl(struct cli_state *s, const char *pfx, const char *format, ...)
     va_end(arg_list);
 }
 
-const char * cli_strerror(int error, int lib_error)
+const char *cli_strerror(int error, int lib_error)
 {
     switch (error) {
         case CLI_RET_MEM:
@@ -297,14 +298,14 @@ const char * cli_strerror(int error, int lib_error)
 void cli_error_init(struct cli_error *e)
 {
     pthread_mutex_init(&e->lock, NULL);
-    e->type = ETYPE_CLI;
+    e->type  = ETYPE_CLI;
     e->value = 0;
 }
 
 void set_last_error(struct cli_error *e, enum error_type type, int error)
 {
     pthread_mutex_lock(&e->lock);
-    e->type = type;
+    e->type  = type;
     e->value = error;
     pthread_mutex_unlock(&e->lock);
 }
@@ -312,7 +313,7 @@ void set_last_error(struct cli_error *e, enum error_type type, int error)
 void get_last_error(struct cli_error *e, enum error_type *type, int *error)
 {
     pthread_mutex_lock(&e->lock);
-    *type = e->type;
+    *type  = e->type;
     *error = e->value;
     pthread_mutex_unlock(&e->lock);
 }
@@ -322,7 +323,7 @@ int expand_and_open(const char *filename, const char *mode, FILE **file)
     int status;
     char *expanded_filename;
 
-    *file = NULL;
+    *file             = NULL;
     expanded_filename = input_expand_path(filename);
     if (expanded_filename == NULL) {
         return CLI_RET_UNKNOWN; /* Shouldn't really ever happen */

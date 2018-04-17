@@ -189,6 +189,9 @@ set(BLADERF_CLI_SOURCE
         src/cmd/peekpoke.c
         src/cmd/poke.c
         src/cmd/printset.c
+        src/cmd/printset_hardware.c
+        src/cmd/printset_impl.c
+        src/cmd/printset_xb.c
         src/cmd/probe.c
         src/cmd/xb.c
         src/cmd/xb100.c

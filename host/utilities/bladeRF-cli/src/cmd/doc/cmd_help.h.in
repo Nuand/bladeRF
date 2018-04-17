@@ -5,7 +5,7 @@
  *
  * This file is part of the bladeRF project
  *
- * Copyright (C) 2014-2016 Nuand LLC
+ * Copyright (C) 2014-2018 Nuand LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,12 +27,11 @@
  * Any manual modifications to this file will be overwritten!
  * To edit the content of help strings, please edit interactive-help.md
  *
- * Last generated: Tue May  9 18:51:08 PDT 2017 by vsergeev@vsergeev-laptop
+ * Last generated: Mon Apr 16 16:39:40 EDT 2018 by rtucker@rho
  */
 
 #ifndef BLADERF_CLI_DOC_CMD_HELP_H__
 #define BLADERF_CLI_DOC_CMD_HELP_H__
-
 
 
 #define CLI_CMD_HELPTEXT_calibrate \
@@ -87,12 +86,13 @@
   "    By default, tables are generated over the entire frequency range,\n" \
   "    in 10 MHz steps.\n" \
   "\n" \
-  "-   Generate RX or TX I/Q DC correction parameter tables for AGC Look Up Table\n" \
+  "-   Generate RX or TX I/Q DC correction parameter tables for AGC Look\n" \
+  "    Up Table\n" \
   "\n" \
-  "    -   `calibrate table agc <rx|tx> [<f_min> <f_max> [f_inc]]`\n" \
+  "    -   calibrate table agc <rx|tx> [<f_min> <f_max> [f_inc]]\n" \
   "\n" \
-  "     Similar usage as `calibrate table dc` except the call will set gains to\n" \
-  "     the AGC's base gain value before running `calibrate table dc`.\n" \
+  "    Similar usage as calibrate table dc except the call will set gains\n" \
+  "    to the AGC's base gain value before running calibrate table dc.\n" \
   "\n" \
 
 
@@ -439,11 +439,15 @@
 
 
 #define CLI_CMD_HELPTEXT_peek \
-  "Usage: peek <adi|dac|lms|si> <address> [num_addresses]\n" \
+  "Usage: peek <adf|adi|dac|lms|si> <address> [num_addresses]\n" \
   "\n" \
-  "The peek command can read any of the devices hanging off the FPGA\n" \
-  "which includes the AD9361 or LMS6002D transceiver, VCTCXO trim DAC or\n" \
-  "the Si5338 clock generator chip.\n" \
+  "The peek command can read any of the devices hanging off the FPGA.\n" \
+  "This includes the:\n" \
+  "\n" \
+  "-   bladeRF 1: LMS6002D transceiver, VCTCXO trim DAC, Si5338 clock\n" \
+  "    generator\n" \
+  "-   bladeRF 2: AD9361 transceiver, VCTCXO trim DAC, ADF4002 frequency\n" \
+  "    synthesizer\n" \
   "\n" \
   "If num_addresses is supplied, the address is incremented by 1 and\n" \
   "another peek is performed for that many addresses.\n" \
@@ -452,6 +456,7 @@
   "\n" \
   "    Device Address Range\n" \
   "  -------- -------------------\n" \
+  "       adf 0 to 3\n" \
   "       adi 0 to 0x3F7 (1015)\n" \
   "       dac 0 to 255\n" \
   "       lms 0 to 127\n" \
@@ -464,16 +469,21 @@
 
 
 #define CLI_CMD_HELPTEXT_poke \
-  "Usage: poke <adi|dac|lms|si> <address> <data>\n" \
+  "Usage: poke <adf|adi|dac|lms|si> <address> <data>\n" \
   "\n" \
-  "The poke command can write any of the devices hanging off the FPGA\n" \
-  "which includes the AD9361 or LMS6002D transceiver, VCTCXO trim DAC or\n" \
-  "the Si5338 clock generator chip.\n" \
+  "The poke command can write any of the devices hanging off the FPGA.\n" \
+  "This includes the:\n" \
+  "\n" \
+  "-   bladeRF 1: LMS6002D transceiver, VCTCXO trim DAC, Si5338 clock\n" \
+  "    generator\n" \
+  "-   bladeRF 2: AD9361 transceiver, VCTCXO trim DAC, ADF4002 frequency\n" \
+  "    synthesizer\n" \
   "\n" \
   "Valid Address Ranges:\n" \
   "\n" \
   "    Device Address Range\n" \
   "  -------- -------------------\n" \
+  "       adf 0 to 3\n" \
   "       adi 0 to 0x3F7 (1015)\n" \
   "       dac 0 to 255\n" \
   "       lms 0 to 127\n" \
@@ -498,26 +508,57 @@
   "  -------------- --------------------------------------------------------\n" \
   "       bandwidth Bandwidth settings\n" \
   "       frequency Frequency settings\n" \
-  "            gpio FX3 <-> FPGA GPIO state\n" \
+  "             agc Automatic gain control\n" \
   "        loopback Loopback settings\n" \
   "          rx_mux FPGA RX FIFO input mux setting\n" \
+  "            gain Gain settings\n" \
   "      samplerate Samplerate settings\n" \
   "         trimdac VCTCXO Trim DAC settings\n" \
-  "    vctcxo_tamer Current VCTCXO tamer mode.\n" \
+  "        hardware Low-level hardware status\n" \
   "\n" \
   "BladeRF1-only parameters:\n" \
   "\n" \
+  "  -----------------------------------------------------------------------\n" \
   "       Parameter Description\n" \
   "  -------------- --------------------------------------------------------\n" \
-  "         lnagain Gain setting of the RX LNA, in dB\n" \
-  "          rxvga1 Gain setting of RXVGA1, in dB\n" \
-  "          rxvga2 Gain setting of RXVGA2, in dB\n" \
-  "          txvga1 Gain setting of TXVGA1, in dB\n" \
-  "          txvga2 Gain setting of TXVGA2, in dB\n" \
+  "            gpio FX3 <-> FPGA GPIO state\n" \
+  "\n" \
+  "         lnagain Gain setting of the RX LNA, in dB (deprecated: see\n" \
+  "                 print gain)\n" \
+  "\n" \
+  "          rxvga1 Gain setting of RXVGA1, in dB (deprecated: see\n" \
+  "                 print gain)\n" \
+  "\n" \
+  "          rxvga2 Gain setting of RXVGA2, in dB (deprecated: see\n" \
+  "                 print gain)\n" \
+  "\n" \
+  "          txvga1 Gain setting of TXVGA1, in dB (deprecated: see\n" \
+  "                 print gain)\n" \
+  "\n" \
+  "          txvga2 Gain setting of TXVGA2, in dB (deprecated: see\n" \
+  "                 print gain)\n" \
+  "\n" \
   "        sampling External or internal sampling mode\n" \
+  "\n" \
   "        smb_mode SMB clock port mode of operation\n" \
+  "\n" \
+  "    vctcxo_tamer Current VCTCXO tamer mode\n" \
+  "\n" \
   "         xb_gpio Expansion board GPIO values\n" \
+  "\n" \
   "     xb_gpio_dir Expansion board GPIO direction (1=output, 0=input)\n" \
+  "  -----------------------------------------------------------------------\n" \
+  "\n" \
+  "BladeRF2-only parameters:\n" \
+  "\n" \
+  "       Parameter Description\n" \
+  "  -------------- --------------------------------------------------------\n" \
+  "       clock_sel System clock selection\n" \
+  "       clock_out Clock output selection\n" \
+  "            rssi Received signal strength indication\n" \
+  "       clock_ref Enables (1) or disables (0) the ADF4002 chip\n" \
+  "      refin_freq ADF4002 reference clock frequency\n" \
+  "         biastee Enables or disables the bias tee on a given channel\n" \
   "\n" \
 
 
@@ -629,6 +670,8 @@
   "           timeout Data stream timeout. With no suffix, the default unit\n" \
   "                   is ms. The default value is 1000 ms (1 s). Valid\n" \
   "                   suffixes are ms and s.\n" \
+  "\n" \
+  "           channel Physical RF channel to use, either 1 (default) or 2.\n" \
   "  -----------------------------------------------------------------------\n" \
   "\n" \
   "Example:\n" \
@@ -786,6 +829,8 @@
   "           timeout Data stream timeout. With no suffix, the default unit\n" \
   "                   is ms. The default value is 1000 ms (1 s). Valid\n" \
   "                   suffixes are 'ms' and 's'.\n" \
+  "\n" \
+  "           channel Physical RF channel to use, either 1 (default) or 2.\n" \
   "  -----------------------------------------------------------------------\n" \
   "\n" \
   "Example:\n" \
@@ -827,32 +872,65 @@
   "\n" \
   "           frequency Frequency settings\n" \
   "\n" \
-  "                gpio FX3 <-> FPGA GPIO state\n" \
+  "                 agc Automatic gain control (on, off)\n" \
+  "\n" \
+  "            loopback Loopback settings. Run 'set loopback' to list modes.\n" \
   "\n" \
   "              rx_mux FPGA RX FIFO input mux mode. Options are: BASEBAND, 12BIT_COUNTER,\n" \
   "                     32BIT_COUNTER, DIGITAL_LOOPBACK\n" \
   "\n" \
-  "          samplerate Sample rate settings\n" \
+  "                gain Gain settings\n" \
   "\n" \
-  "             trimdac VCTCXO trim DAC settings\n" \
+  "          samplerate Samplerate settings\n" \
   "\n" \
-  "        vctcxo_tamer VCTCXO tamer mode. Options: Disabled, 1PPS, 10MHz\n" \
+  "             trimdac VCTCXO Trim DAC settings\n" \
+  "\n" \
+  "            hardware Low-level hardware status\n" \
   "  -------------------------------------------------------------------------------------------\n" \
   "\n" \
   "BladeRF1-only parameters:\n" \
   "\n" \
+  "  -----------------------------------------------------------------------\n" \
   "       Parameter Description\n" \
   "  -------------- --------------------------------------------------------\n" \
-  "        loopback Loopback settings. Run 'set loopback' to list modes.\n" \
+  "            gpio FX3 <-> FPGA GPIO state\n" \
+  "\n" \
   "         lnagain Gain setting of the RX LNA, in dB. Values: 0, 3, 6\n" \
+  "                 (deprecated: see set gain)\n" \
+  "\n" \
   "          rxvga1 Gain setting of RXVGA1, in dB. Range: [5, 30]\n" \
+  "                 (deprecated: see set gain)\n" \
+  "\n" \
   "          rxvga2 Gain setting of RXVGA2, in dB. Range: [0, 30]\n" \
+  "                 (deprecated: see set gain)\n" \
+  "\n" \
   "          txvga1 Gain setting of TXVGA1, in dB. Range: [-35, -4]\n" \
+  "                 (deprecated: see set gain)\n" \
+  "\n" \
   "          txvga2 Gain setting of TXVGA2, in dB. Range: [0, 25]\n" \
+  "                 (deprecated: see set gain)\n" \
+  "\n" \
   "        sampling External or internal sampling mode\n" \
+  "\n" \
   "        smb_mode SMB clock port mode of operation\n" \
+  "\n" \
+  "    vctcxo_tamer VCTCXO tamer mode. Options: Disabled, 1PPS, 10MHz\n" \
+  "\n" \
   "         xb_gpio Expansion board GPIO values\n" \
+  "\n" \
   "     xb_gpio_dir Expansion board GPIO direction (1=output, 0=input)\n" \
+  "  -----------------------------------------------------------------------\n" \
+  "\n" \
+  "BladeRF2-only parameters:\n" \
+  "\n" \
+  "       Parameter Description\n" \
+  "  -------------- --------------------------------------------------------\n" \
+  "       clock_sel System clock selection\n" \
+  "       clock_out Clock output selection\n" \
+  "            rssi Received signal strength indication\n" \
+  "       clock_ref Enables (1) or disables (0) the ADF4002 chip\n" \
+  "      refin_freq ADF4002 reference clock frequency\n" \
+  "         biastee Enables or disables the bias tee on a given channel\n" \
   "\n" \
 
 

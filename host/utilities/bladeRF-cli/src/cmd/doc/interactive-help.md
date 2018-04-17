@@ -491,17 +491,19 @@ Common parameters:
 
 `frequency`     Frequency settings
 
-`gpio`          FX3 <-> FPGA GPIO state
+`agc`           Automatic gain control
 
 `loopback`      Loopback settings
 
 `rx_mux`        FPGA RX FIFO input mux setting
 
+`gain`          Gain settings
+
 `samplerate`    Samplerate settings
 
 `trimdac`       VCTCXO Trim DAC settings
 
-`vctcxo_tamer`  Current VCTCXO tamer mode
+`hardware`      Low-level hardware status
 ----------------------------------------------------------------------
 
 BladeRF1-only parameters:
@@ -509,19 +511,23 @@ BladeRF1-only parameters:
 ----------------------------------------------------------------------
     Parameter Description
 ------------- --------------------------------------------------------
-`lnagain`       Gain setting of the RX LNA, in dB
+`gpio`          FX3 <-> FPGA GPIO state
 
-`rxvga1`        Gain setting of RXVGA1, in dB
+`lnagain`       Gain setting of the RX LNA, in dB (deprecated: see `print gain`)
 
-`rxvga2`        Gain setting of RXVGA2, in dB
+`rxvga1`        Gain setting of RXVGA1, in dB (deprecated: see `print gain`)
 
-`txvga1`        Gain setting of TXVGA1, in dB
+`rxvga2`        Gain setting of RXVGA2, in dB (deprecated: see `print gain`)
 
-`txvga2`        Gain setting of TXVGA2, in dB
+`txvga1`        Gain setting of TXVGA1, in dB (deprecated: see `print gain`)
+
+`txvga2`        Gain setting of TXVGA2, in dB (deprecated: see `print gain`)
 
 `sampling`      External or internal sampling mode
 
 `smb_mode`      SMB clock port mode of operation
+
+`vctcxo_tamer`  Current VCTCXO tamer mode
 
 `xb_gpio`       Expansion board GPIO values
 
@@ -533,11 +539,17 @@ BladeRF2-only parameters:
 ----------------------------------------------------------------------
     Parameter Description
 ------------- --------------------------------------------------------
-`adf_enable`    Enables (1) or disables (0) the ADF4002 chip
+`clock_sel`     System clock selection
+
+`clock_out`     Clock output selection
+
+`rssi`          Received signal strength indication
+
+`clock_ref`     Enables (1) or disables (0) the ADF4002 chip
+
+`refin_freq`    ADF4002 reference clock frequency
 
 `biastee`       Enables or disables the bias tee on a given channel
-
-`ina219`        Voltage, current, and power information
 ----------------------------------------------------------------------
 
 probe
@@ -864,17 +876,21 @@ Common parameters:
 
 `frequency`     Frequency settings
 
-`gpio`          FX3 <-> FPGA GPIO state
+`agc`           Automatic gain control (on, off)
+
+`loopback`      Loopback settings. Run 'set loopback' to list modes.
 
 `rx_mux`        FPGA RX FIFO input mux mode. Options are:
                 BASEBAND, 12BIT_COUNTER, 32BIT_COUNTER,
                 DIGITAL_LOOPBACK
 
-`samplerate`    Sample rate settings
+`gain`          Gain settings
 
-`trimdac`       VCTCXO trim DAC settings
+`samplerate`    Samplerate settings
 
-`vctcxo_tamer`  VCTCXO tamer mode. Options: Disabled, 1PPS, 10MHz
+`trimdac`       VCTCXO Trim DAC settings
+
+`hardware`      Low-level hardware status
 ----------------------------------------------------------------------
 
 BladeRF1-only parameters:
@@ -882,21 +898,28 @@ BladeRF1-only parameters:
 ----------------------------------------------------------------------
     Parameter Description
 ------------- --------------------------------------------------------
-`loopback`      Loopback settings. Run 'set loopback' to list modes.
+`gpio`          FX3 <-> FPGA GPIO state
 
 `lnagain`       Gain setting of the RX LNA, in dB. Values: 0, 3, 6
+                (deprecated: see `set gain`)
 
 `rxvga1`        Gain setting of RXVGA1, in dB. Range: [5, 30]
+                (deprecated: see `set gain`)
 
 `rxvga2`        Gain setting of RXVGA2, in dB. Range: [0, 30]
+                (deprecated: see `set gain`)
 
 `txvga1`        Gain setting of TXVGA1, in dB. Range: [-35, -4]
+                (deprecated: see `set gain`)
 
 `txvga2`        Gain setting of TXVGA2, in dB. Range: [0, 25]
+                (deprecated: see `set gain`)
 
 `sampling`      External or internal sampling mode
 
 `smb_mode`      SMB clock port mode of operation
+
+`vctcxo_tamer`  VCTCXO tamer mode. Options: Disabled, 1PPS, 10MHz
 
 `xb_gpio`       Expansion board GPIO values
 
@@ -908,7 +931,15 @@ BladeRF2-only parameters:
 ----------------------------------------------------------------------
     Parameter Description
 ------------- --------------------------------------------------------
-`adf_enable`    Enables (1) or disables (0) the ADF4002 chip
+`clock_sel`     System clock selection
+
+`clock_out`     Clock output selection
+
+`rssi`          Received signal strength indication
+
+`clock_ref`     Enables (1) or disables (0) the ADF4002 chip
+
+`refin_freq`    ADF4002 reference clock frequency
 
 `biastee`       Enables or disables the bias tee on a given channel
 ----------------------------------------------------------------------
