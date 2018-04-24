@@ -1495,7 +1495,7 @@ int set_txvga2(struct cli_state *state, int argc, char **argv)
         return CLI_RET_NARGS;
     }
 
-    char *args[] = { "set", "gain", "tx2", "txvga2", argv[2] };
+    char *args[] = { "set", "gain", "tx1", "txvga2", argv[2] };
 
     return set_gain(state, 5, args);
 }
