@@ -2130,7 +2130,10 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
     }
 
     if (actual != NULL) {
-        return bladerf2_get_sample_rate(dev, ch, actual);
+        status = bladerf2_get_sample_rate(dev, ch, actual);
+        if (status < 0) {
+            RETURN_ERROR_STATUS("bladerf2_get_sample_rate", status);
+        }
     }
 
     /* Warn the user if this isn't achievable */
@@ -2186,7 +2189,10 @@ static int bladerf2_set_rational_sample_rate(
     }
 
     if (actual != NULL) {
-        return bladerf2_get_rational_sample_rate(dev, ch, actual);
+        status = bladerf2_get_rational_sample_rate(dev, ch, actual);
+        if (status < 0) {
+            RETURN_ERROR_STATUS("bladerf2_get_rational_sample_rate", status);
+        }
     }
 
     return 0;
