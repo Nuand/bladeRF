@@ -420,8 +420,12 @@ CyU3PReturnStatus_t NuandRFLinkResetEndpoint(uint8_t endpoint)
             break;
 
         case BLADE_RF_SAMPLE_EP_CONSUMER:
-            status = ClearDMAChannel(endpoint, &glChHandlePtoU,
-                                     BLADE_DMA_TX_SIZE);
+            if (!loopback_when_created) {
+                status = ClearDMAChannel(endpoint, &glChHandlePtoU,
+                                         BLADE_DMA_TX_SIZE);
+            } else {
+                status = CY_U3P_SUCCESS;
+            }
             break;
 
         case BLADE_UART_EP_PRODUCER:
