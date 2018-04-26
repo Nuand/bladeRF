@@ -30,9 +30,11 @@ extern "C" {
 #include <errno.h>
 #include "bladeRF.h"    /* Firmware interface */
 
+#include "devinfo.h"
 #include "backend/backend.h"
 #include "backend/usb/usb.h"
-#include "async.h"
+#include "streaming/async.h"
+#include "helpers/timeout.h"
 #include "log.h"
 }
 
@@ -624,7 +626,7 @@ static int cyapi_stream(void *driver, struct bladerf_stream *stream,
     MUTEX_LOCK(&stream->lock);
 
     for (unsigned int i = 0; i < data->num_transfers && status == 0; i++) {
-        if (dir == BLADERF_TX) {
+        if ((layout & BLADERF_DIRECTION_MASK) == BLADERF_TX) {
             next_buffer = stream->cb(stream->dev, stream, &meta, NULL,
                                      stream->samples_per_buffer,
                                      stream->user_data);
@@ -821,7 +823,7 @@ extern "C" {
     };
 
     struct usb_driver usb_driver_cypress = {
+        FIELD_INIT(.fn, &cypress_fns),
         FIELD_INIT(.id, BLADERF_BACKEND_CYPRESS),
-        FIELD_INIT(.fn, &cypress_fns)
     };
 }
