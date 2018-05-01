@@ -22,6 +22,8 @@ GTAGS
 GRTAGS
 tags
 TAGS
+cscope.files
+cscope.out
 
 hdl/quartus/work/*
 hdl/quartus/hostedx*
