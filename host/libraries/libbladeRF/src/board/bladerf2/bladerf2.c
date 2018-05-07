@@ -1298,7 +1298,13 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
 
     /* Get FPGA size */
     /* TODO: Actually get FPGA size from flash */
-    board_data->fpga_size = BLADERF_FPGA_A4;
+    if (getenv("BLADERF_FORCE_FPGA_A9")) {
+        log_info("BLADERF_FORCE_FPGA_A9 is set, assuming A9 FPGA\n");
+        board_data->fpga_size = BLADERF_FPGA_A9;
+    } else {
+        log_debug("assuming A4 FPGA - set BLADERF_FORCE_FPGA_A9 if using A9\n");
+        board_data->fpga_size = BLADERF_FPGA_A4;
+    }
 
     /* Skip further work if BLADERF_FORCE_NO_FPGA_PRESENT is set */
     if (getenv("BLADERF_FORCE_NO_FPGA_PRESENT")) {
