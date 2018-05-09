@@ -609,14 +609,20 @@ static int64_t _clamp_to_range(struct bladerf_range const *range, int64_t value)
     }
 
     if ((value / range->scale) < range->min) {
-        log_warning("%s: %" PRIi64 " below range [%" PRIi64 ",%" PRIi64 "]\n",
-                    __FUNCTION__, value, range->min, range->max);
+        log_warning("%s: requested value %" PRIi64 " is below range [%" PRIi64
+                    ",%" PRIi64 "]\n",
+                    __FUNCTION__, value,
+                    __round_int64(range->min * range->scale),
+                    __round_int64(range->max * range->scale));
         value = __round_int64(range->min * range->scale);
     }
 
     if ((value / range->scale) > range->max) {
-        log_warning("%s: %" PRIi64 " above range [%" PRIi64 ",%" PRIi64 "]\n",
-                    __FUNCTION__, value, range->min, range->max);
+        log_warning("%s: requested value %" PRIi64 " is above range [%" PRIi64
+                    ",%" PRIi64 "]\n",
+                    __FUNCTION__, value,
+                    __round_int64(range->min * range->scale),
+                    __round_int64(range->max * range->scale));
         value = __round_int64(range->max * range->scale);
     }
 
