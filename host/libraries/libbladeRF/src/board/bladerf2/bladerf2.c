@@ -1059,9 +1059,16 @@ static int bladerf2_initialize(struct bladerf *dev)
     }
 
     /* Set up AD9361 FIR filters */
+    /* TODO: permit selection of filter configurations */
+    /* TODO: permit specification of filter taps, for the truly brave */
     status = ad9361_set_tx_fir_config(phy, ad9361_init_tx_fir_config);
     if (status < 0) {
         RETURN_ERROR_AD9361("ad9361_set_tx_fir_config", status);
+    }
+
+    status = ad9361_set_tx_fir_en_dis(phy, 0);
+    if (status < 0) {
+        RETURN_ERROR_AD9361("ad9361_set_tx_fir_en_dis", status);
     }
 
     status = ad9361_set_rx_fir_config(phy, ad9361_init_rx_fir_config);
@@ -1069,7 +1076,6 @@ static int bladerf2_initialize(struct bladerf *dev)
         RETURN_ERROR_AD9361("ad9361_set_rx_fir_config", status);
     }
 
-    /* Enable RX FIR filter */
     status = ad9361_set_rx_fir_en_dis(phy, 1);
     if (status < 0) {
         RETURN_ERROR_AD9361("ad9361_set_rx_fir_en_dis", status);

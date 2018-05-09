@@ -294,65 +294,294 @@ AD9361_InitParam ad9361_init_params = {
 	NULL			// Future use (RX_EXT_LO, TX_EXT_LO control)						// (*ad9361_rfpll_ext_set_rate)()
 };
 
-AD9361_RXFIRConfig ad9361_init_rx_fir_config = {
-	3,				// rx (RX1 = 1, RX2 = 2, both = 3)
-	0,				// rx_gain (-12, -6, 0, or 6 dB)
-	1,				// rx_dec (decimate by 1, 2, or 4)
+/**
+ * AD9361 FIR Filters
+ *
+ * The AD9361 RFIC provides programmable FIR filters on both the RX and TX
+ * paths.
+ *
+ * On TX, the signal path is:
+ *
+ * DIGITAL:
+ *   [ Programmable TX FIR ] -> [ HB1 ] -> [ HB2 ] -> [ HB3/INT3 ] -> [ DAC ]
+ * ANALOG:
+ *   [ DAC ] -> [ BB LPF ] -> [ Secondary LPF ] -> ...
+ *
+ * The Programmable TX FIR is a programmable polyphase FIR filter, which can
+ * interpolate by 1, 2, 4, or be bypassed. Taps are stored in 16-bit
+ * twos-complement. If interpolating by 1, there is a limit of 64 taps;
+ * otherwise, the limit is 128 taps.
+ *
+ * HB1 and HB2 are fixed-coefficient half-band interpolating filters, and can
+ * interpolate by 2 or be bypassed. HB3/INT3 is a fixed-coefficient
+ * interpolating filter, and can interpolate by 2 or 3, or be bypassed.
+ *
+ * BB LPF is a third-order Butterworth LPF, and the Secondary LPF is a
+ * single-pole low-pass filter. Both have programmable corner frequencies.
+ *
+ * On RX, the signal path is:
+ *
+ * ANALOG:
+ *   ... -> [ TIA LPF ] -> [ BB LPF ] -> [ ADC ]
+ * DIGITAL:
+ *   [ ADC ] -> [ HB3/DEC3 ] -> [ HB2 ] -> [ HB1 ] -> [ Programmable RX FIR ]
+ *
+ * The TIA LPF is a transimpedance amplifier which applies a single-pole
+ * low-pass filter, and the BB LPF is a third-order Butterworth low-pass
+ * filter. Both have programmable corner frequencies.
+ *
+ * HB3/DEC3 is a fixed-coefficient decimating filter, and can decimate by a
+ * factor of 2 or 3, or be bypassed. HB2 is a fixed-coefficient half-band
+ * decimating filter, and can decimate by a factor of 2 or be bypassed. HB1
+ * is a fixed-coefficient half-band decimating filter, and can also decimate by
+ * a factor of 2 or be bypassed.
+ *
+ * The Programmable RX FIR filter is a programmable polyphase filter, which can
+ * decimate by a factor of 1, 2, or 4, or be bypassed. Similar to the TX FIR,
+ * taps are stored in 16-bit twos-complement. The maximum number of taps is
+ * limited to the ratio of the sample clock to the filter's output rate,
+ * multiplied by 16, up to a maximum of 128 taps. There is a fixed +6 dB gain,
+ * so the below RX filters are configured for a -6 dB gain to effect a net gain
+ * of 0 dB.
+ *
+ * In practice, the decimation/interpolation settings must match for both the
+ * RX and TX FIR filters. If they differ, TX quadrature calibration (and likely
+ * other calibrations) will fail.
+ *
+ *
+ * This file specifies four filters:
+ *  ad9361_init_rx_fir_config       = decimate by 1 RX FIR
+ *  ad9361_init_tx_fir_config       = interpolate by 1 TX FIR
+ *  ad9361_init_rx_fir_config_dec2  = decimate by 2 RX FIR
+ *  ad9361_init_tx_fir_config_int2  = interpolate by 2 TX FIR
+ *
+ * The first two (the 1x filters) are the default, and should provide
+ * reasonable performance under most circumstances. The other two filters are
+ * primarily intended for situations requiring a flatter TX spectrum,
+ * particularly when the ratio of sample rate to signal bandwidth is low.
+ */
 
-	// LPF corner at 0.9 fs, generated w/ Octave:
-	// >> b = fir1(63, 0.9);
-	// >> bb = round(b*32768);
-	// >> freqz(bb);
-	{
-	      22,     -27,      31,     -34,      34,     -28,      15,       7,
-	     -38,      77,    -121,     164,    -198,     214,    -204,     159,
-	     -75,     -48,     207,    -389,     578,    -751,     880,    -934,
-	     882,    -686,     306,     316,   -1287,    2884,   -6146,   20575,
-	   20575,   -6146,    2884,   -1287,     316,     306,    -686,     882,
-	    -934,     880,    -751,     578,    -389,     207,     -48,     -75,
-	     159,    -204,     214,    -198,     164,    -121,      77,     -38,
-	       7,      15,     -28,      34,     -34,      31,     -27,      22,
-	       0,       0,       0,       0,       0,       0,       0,       0,
-	       0,       0,       0,       0,       0,       0,       0,       0,
-	       0,       0,       0,       0,       0,       0,       0,       0,
-	       0,       0,       0,       0,       0,       0,       0,       0,
-	       0,       0,       0,       0,       0,       0,       0,       0,
-	       0,       0,       0,       0,       0,       0,       0,       0,
-	       0,       0,       0,       0,       0,       0,       0,       0,
-	       0,       0,       0,       0,       0,       0,       0,       0,
-	},				// rx_coef[128]
-	64,				// rx_coef_size
-	{0, 0, 0, 0, 0, 0},	//rx_path_clks[6]
-	0				// rx_bandwidth
+AD9361_RXFIRConfig ad9361_init_rx_fir_config = {
+    3,  // rx (RX1 = 1, RX2 = 2, both = 3)
+    -6, // rx_gain (-12, -6, 0, or 6 dB)
+    1,  // rx_dec (decimate by 1, 2, or 4)
+
+    /**
+     * RX FIR Filter
+     * Built using https://github.com/analogdevicesinc/libad9361-iio
+     * Branch: filter_generation
+     * Commit: f749cef974f687f696226455dc7684277886cf3b
+     *
+     * This filter is intended to improve the flatness of the RX spectrum. It
+     * is a 64-tap, decimate-by-1 filter.
+     *
+     * Design parameters:
+     *
+     * fdp.Rdata = 30720000;
+     * fdp.RxTx = "Rx";
+     * fdp.Type = "Lowpass";
+     * fdp.DAC_div = 1;
+     * fdp.HB3 = 2;
+     * fdp.HB2 = 2;
+     * fdp.HB1 = 2;
+     * fdp.FIR = 1;
+     * fdp.PLL_mult = 4;
+     * fdp.converter_rate = 245760000;
+     * fdp.PLL_rate = 983040000;
+     * fdp.Fpass = fdp.Rdata*0.42;
+     * fdp.Fstop = fdp.Rdata*0.50;
+     * fdp.Fcenter = 0;
+     * fdp.Apass = 0.125;
+     * fdp.Astop = 85;
+     * fdp.phEQ = -1;
+     * fdp.wnom = 17920000;
+     * fdp.caldiv = 7;
+     * fdp.RFbw = 22132002;
+     * fdp.FIRdBmin = 0;
+     * fdp.int_FIR = 1;
+     */
+    {
+          0,      0,      0,      1,     -1,      3,     -6,     11,
+        -19,     33,    -53,     84,   -129,    193,   -282,    404,
+       -565,    777,  -1052,   1401,  -1841,   2390,  -3071,   3911,
+      -4947,   6230,  -7833,   9888, -12416,  15624, -21140,  32767,
+      32767, -21140,  15624, -12416,   9888,  -7833,   6230,  -4947,
+       3911,  -3071,   2390,  -1841,   1401,  -1052,    777,   -565,
+        404,   -282,    193,   -129,     84,    -53,     33,    -19,
+         11,     -6,      3,     -1,      1,      0,      0,      0,
+          0,      0,      0,      0,      0,      0,      0,      0, // unused
+          0,      0,      0,      0,      0,      0,      0,      0, // unused
+          0,      0,      0,      0,      0,      0,      0,      0, // unused
+          0,      0,      0,      0,      0,      0,      0,      0, // unused
+          0,      0,      0,      0,      0,      0,      0,      0, // unused
+          0,      0,      0,      0,      0,      0,      0,      0, // unused
+          0,      0,      0,      0,      0,      0,      0,      0, // unused
+          0,      0,      0,      0,      0,      0,      0,      0, // unused
+    },                  // rx_coef[128]
+    64,                 // rx_coef_size
+    {0, 0, 0, 0, 0, 0}, // rx_path_clks[6]
+    0                   // rx_bandwidth
 };
 
 AD9361_TXFIRConfig ad9361_init_tx_fir_config = {
-	3,				// tx (TX1 = 1, TX2 = 2, both = 3)
-	-6,				// tx_gain (-6 or 0 dB)
-	1,				// tx_int (interpolate by 1, 2, or 4)
+    3,  // tx (TX1 = 1, TX2 = 2, both = 3)
+    0,  // tx_gain (-6 or 0 dB)
+    1,  // tx_int (interpolate by 1, 2, or 4)
 
-	// BPF PASSBAND 3/20 fs to 1/4 fs
-	{
-	      -4,      -6,     -37,      35,     186,      86,    -284,    -315,
-	     107,     219,      -4,     271,     558,    -307,   -1182,    -356,
-	     658,     157,     207,    1648,     790,   -2525,   -2553,     748,
-	     865,    -476,    3737,    6560,   -3583,  -14731,   -5278,   14819,
-	   14819,   -5278,  -14731,   -3583,    6560,    3737,    -476,     865,
-	     748,   -2553,   -2525,     790,    1648,     207,     157,     658,
-	    -356,   -1182,    -307,     558,     271,      -4,     219,     107,
-	    -315,    -284,      86,     186,      35,     -37,      -6,      -4,
-	       0,       0,       0,       0,       0,       0,       0,       0,
-	       0,       0,       0,       0,       0,       0,       0,       0,
-	       0,       0,       0,       0,       0,       0,       0,       0,
-	       0,       0,       0,       0,       0,       0,       0,       0,
-	       0,       0,       0,       0,       0,       0,       0,       0,
-	       0,       0,       0,       0,       0,       0,       0,       0,
-	       0,       0,       0,       0,       0,       0,       0,       0,
-	       0,       0,       0,       0,       0,       0,       0,       0,
-	},				// tx_coef[128]
-	64,				// tx_coef_size
-	{0, 0, 0, 0, 0, 0}, // tx_path_clks[6]
-	0				// tx_bandwidth
+    /**
+     * TX FIR Filter
+     *
+     * This filter literally does nothing, but it is here as a placeholder.
+     */
+    {
+      32768,      0,      0,      0,      0,      0,      0,      0,
+          0,      0,      0,      0,      0,      0,      0,      0,
+          0,      0,      0,      0,      0,      0,      0,      0,
+          0,      0,      0,      0,      0,      0,      0,      0,
+          0,      0,      0,      0,      0,      0,      0,      0,
+          0,      0,      0,      0,      0,      0,      0,      0,
+          0,      0,      0,      0,      0,      0,      0,      0,
+          0,      0,      0,      0,      0,      0,      0,      0,
+          0,      0,      0,      0,      0,      0,      0,      0, // unused
+          0,      0,      0,      0,      0,      0,      0,      0, // unused
+          0,      0,      0,      0,      0,      0,      0,      0, // unused
+          0,      0,      0,      0,      0,      0,      0,      0, // unused
+          0,      0,      0,      0,      0,      0,      0,      0, // unused
+          0,      0,      0,      0,      0,      0,      0,      0, // unused
+          0,      0,      0,      0,      0,      0,      0,      0, // unused
+          0,      0,      0,      0,      0,      0,      0,      0, // unused
+    },                  // tx_coef[128]
+    64,                 // tx_coef_size
+    {0, 0, 0, 0, 0, 0}, // tx_path_clks[6]
+    0                   // tx_bandwidth
+};
+
+AD9361_RXFIRConfig ad9361_init_rx_fir_config_dec2 = {
+    3,  // rx (RX1 = 1, RX2 = 2, both = 3)
+    -6, // rx_gain (-12, -6, 0, or 6 dB)
+    2,  // rx_dec (decimate by 1, 2, or 4)
+
+    /**
+     * RX FIR Filter
+     * Built using https://github.com/analogdevicesinc/libad9361-iio
+     * Branch: filter_generation
+     * Commit: f749cef974f687f696226455dc7684277886cf3b
+     *
+     * This filter is intended to improve the flatness of the RX spectrum.
+     *
+     * It is a 128-tap, decimate-by-2 filter. Note that you MUST use a
+     * interpolate-by-2 filter on TX if you are using this filter.
+     *
+     * Design parameters:
+     *
+     * fdp.Rdata = 15360000;
+     * fdp.RxTx = "Rx";
+     * fdp.Type = "Lowpass";
+     * fdp.DAC_div = 1;
+     * fdp.HB3 = 2;
+     * fdp.HB2 = 2;
+     * fdp.HB1 = 2;
+     * fdp.FIR = 2;
+     * fdp.PLL_mult = 4;
+     * fdp.converter_rate = 245760000;
+     * fdp.PLL_rate = 983040000;
+     * fdp.Fpass = fdp.Rdata*0.45;
+     * fdp.Fstop = fdp.Rdata*0.50;
+     * fdp.Fcenter = 0;
+     * fdp.Apass = 0.1250;
+     * fdp.Astop = 85;
+     * fdp.phEQ = 217;
+     * fdp.wnom = 8800000;
+     * fdp.caldiv = 19;
+     * fdp.RFbw = 8472407;
+     * fdp.FIRdBmin = 0;
+     * fdp.int_FIR = 1;
+     */
+    {
+         22,    125,    207,    190,     15,    -98,    -45,     91,
+         60,    -76,    -90,     69,    115,    -47,   -147,     22,
+        173,     18,   -198,    -66,    211,    127,   -214,   -194,
+        200,    269,   -168,   -345,    113,    419,    -36,   -484,
+        -66,    536,    193,   -566,   -343,    568,    513,   -535,
+       -699,    458,    897,   -329,  -1099,    140,   1296,    120,
+      -1479,   -464,   1636,    912,  -1750,  -1496,   1797,   2275,
+      -1734,  -3378,   1464,   5120,   -659,  -8461,  -2238,  18338,
+      32689,  24727,   4100,  -7107,  -2663,   4128,   2513,  -2578,
+      -2378,   1567,   2184,   -861,  -1953,    351,   1703,     22,
+      -1446,   -290,   1190,    474,   -942,   -590,    710,    650,
+       -498,   -664,    311,    642,   -150,   -593,     18,    524,
+         86,   -444,   -162,    357,    211,   -271,   -238,    189,
+        245,   -116,   -237,     53,    216,     -2,   -187,    -37,
+        154,     64,   -119,    -82,     87,     89,    -56,    -96,
+         30,     99,      3,   -120,   -107,      0,     56,     45,
+    },                  // rx_coef[128]
+    128,                // rx_coef_size
+    {0, 0, 0, 0, 0, 0}, // rx_path_clks[6]
+    0                   // rx_bandwidth
+};
+
+AD9361_TXFIRConfig ad9361_init_tx_fir_config_int2 = {
+    3,  // tx (TX1 = 1, TX2 = 2, both = 3)
+    0,  // tx_gain (-6 or 0 dB)
+    2,  // tx_int (interpolate by 1, 2, or 4)
+
+    /**
+     * TX FIR Filter
+     * Built using https://github.com/analogdevicesinc/libad9361-iio
+     * Branch: filter_generation
+     * Commit: f749cef974f687f696226455dc7684277886cf3b
+     *
+     * This filter is intended to improve the flatness of the TX spectrum.
+     *
+     * It is a 128-tap, interpolate-by-2 filter. Note that you MUST use a
+     * decimate-by-2 filter on RX if you are using this filter.
+     *
+     * Design parameters:
+     *
+     * fdp.Rdata = 15360000;
+     * fdp.RxTx = "Tx";
+     * fdp.Type = "Lowpass";
+     * fdp.DAC_div = 1;
+     * fdp.HB3 = 2;
+     * fdp.HB2 = 2;
+     * fdp.HB1 = 2;
+     * fdp.FIR = 2;
+     * fdp.PLL_mult = 4;
+     * fdp.converter_rate = 245760000;
+     * fdp.PLL_rate = 983040000;
+     * fdp.Fpass = fdp.Rdata*0.45;
+     * fdp.Fstop = fdp.Rdata*0.50;
+     * fdp.Fcenter = 0;
+     * fdp.Apass = 0.1250;
+     * fdp.Astop = 85;
+     * fdp.phEQ = 217;
+     * fdp.wnom = 8800000;
+     * fdp.caldiv = 19;
+     * fdp.RFbw = 8472407;
+     * fdp.FIRdBmin = 0;
+     * fdp.int_FIR = 1;
+     */
+    {
+         20,    104,    183,    161,      0,   -129,    -82,     61,
+         69,    -65,   -108,     31,    117,    -15,   -145,    -23,
+        155,     61,   -167,   -113,    163,    167,   -149,   -227,
+        116,    286,    -67,   -342,     -3,    388,     91,   -421,
+       -197,    433,    321,   -420,   -457,    376,    602,   -294,
+       -749,    171,    891,      1,  -1019,   -225,   1123,    507,
+      -1190,   -855,   1205,   1279,  -1148,  -1800,    984,   2456,
+       -656,  -3329,     31,   4619,   1275,  -6897,  -4889,  12679,
+      29822,  27710,   9244,  -5193,  -4330,   2732,   3367,  -1405,
+      -2793,    571,   2318,    -25,  -1901,   -338,   1527,    574,
+      -1189,   -716,    885,    787,   -617,   -802,    383,    774,
+       -187,   -714,     25,    632,    101,   -535,   -193,    432,
+        254,   -330,   -289,    232,    299,   -143,   -291,     66,
+        267,     -3,   -234,    -46,    192,     79,   -153,   -103,
+        107,    109,    -76,   -117,     32,    103,    -19,   -115,
+        -35,     83,     34,   -120,   -204,   -134,    -42,     12,
+    },                  // tx_coef[128]
+    128,                // tx_coef_size
+    {0, 0, 0, 0, 0, 0}, // tx_path_clks[6]
+    0                   // tx_bandwidth
 };
 
 const float ina219_r_shunt = 0.001F;
