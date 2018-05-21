@@ -5,6 +5,11 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v2.1.1 (2018-04-26)
+--------------------------------
+ * Fix loading FPGA bitstreams from flash when there is nothing connected to
+   the USB connector.
+
 v2.1.0 (2017-07-25)
 --------------------------------
  * Add support for the bladeRF 2.0 (2cf0:5250).
