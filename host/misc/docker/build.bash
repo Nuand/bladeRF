@@ -29,11 +29,12 @@
 # build.bash archlinux
 # build.bash debian-jessie
 
-
 # Initial assumptions...
 compilers="gcc clang"
 buildtypes="Release Debug Tagged"
 repository="nuand/bladerf-buildenv"
+make_jobs=8
+make_jobs_clangscan=4
 
 # assuming the script is 3 levels down (host/misc/docker)
 dfdir=$(dirname "${0}")
@@ -45,7 +46,9 @@ failure=""
 rels=""
 
 do_base () {
-    cd ${basedir}
+    # usage: do_base
+    # builds the base image
+    echo "*** Building ${repository}:base image..."
     docker build -f host/misc/docker/_base.Dockerfile \
                  -t ${repository}:base \
                  .
@@ -53,15 +56,20 @@ do_base () {
 }
 
 do_build () {
-    # do_build rel compiler buildtype
+    # usage: do_build rel compiler buildtype
+    # performs a build with the given settings
     [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ] && return 1
-
     rel=$1
     compiler=$2
     buildtype=$3
     tag="${rel}-${compiler}-${buildtype}"
-
     taggedrelease=NO
+
+    if [ "${rel}" == "clang-scan" ]; then
+        mj=${make_jobs_clangscan}
+    else
+        mj=${make_jobs}
+    fi
 
     if [ "${buildtype}" == "Tagged" ]; then
         # tagged means a Release with -DTAGGED_RELEASE=YES
@@ -69,33 +77,105 @@ do_build () {
         taggedrelease=YES
     fi
 
-    echo "*** ${tag}: building rel=${rel} compiler=${compiler} buildtype=${buildtype} taggedrelease=${taggedrelease}"
-    echo -ne '\033]2;'${tag} - building'\007'
+    echo "*** ${tag}: building rel=${rel} compiler=${compiler} buildtype=${buildtype} taggedrelease=${taggedrelease} parallel=${mj}"
 
-    cd ${basedir}
-    docker build -f host/misc/docker/${rel}.Dockerfile \
+    docker build -f ${rel}.Dockerfile \
                  --build-arg buildtype=${buildtype} \
                  --build-arg compiler=${compiler} \
                  --build-arg taggedrelease=${taggedrelease} \
+                 --build-arg parallel=${mj} \
                  -t ${repository}:${tag} \
                  .
     __status=$?
 }
 
 do_test () {
-    # do_test tag
+    # usage: do_test tag
+    # runs a cursory test on the given image
     [ -z "$1" ] && return 1
     tag=$1
 
     echo "*** ${tag}: testing ${repository}:${tag}"
-    echo -ne '\033]2;'${tag} - testing'\007'
 
     __cliversion=$(docker run --rm -t ${repository}:${tag} bladeRF-cli --version | tr -d '\n\r')
     __libversion=$(docker run --rm -t ${repository}:${tag} bladeRF-cli --lib-version | tr -d '\n\r')
     __status=$?
 }
 
+main () {
+    # usage: main rel [rel...]
+    # main program body
+    [ -z "$1" ] && return 1
+    rels="$*"
+
+    if [ -z "${rels}" ]; then
+        echo "could not find any Dockerfiles to build!"
+        exit 1
+    fi
+
+    echo "*** $0: build goals: ${rels}"
+    cd ${dfdir}
+
+    for df in ${rels}; do
+        rel=$(basename -s ".Dockerfile" ${df})
+
+        if [ "${rel}" == "clang-scan" ]; then
+            # special case: this one is just a self-contained build
+            tag="${rel}"
+            echo "*** ${tag}: preparing to build"
+            do_build clang-scan ccc-analyzer Release
+            status=$?
+            if [ $__status -ne 0 ]; then
+                echo "*** ${tag}: BUILD FAILED"
+                failure="${failure} ${tag}"
+                continue
+            else
+                echo "*** ${tag}: build successful"
+                success="${success} ${tag}"
+            fi
+        else
+            for compiler in ${compilers}; do
+                for buildtype in ${buildtypes}; do
+                    # this tag uniquely identifies the build target
+                    tag="${rel}-${compiler}-${buildtype}"
+
+                    echo "*** ${tag}: preparing to build"
+                    do_build ${rel} ${compiler} ${buildtype}
+                    echo "*** ${tag}: status=${__status}"
+                    if [ $__status -ne 0 ]; then
+                        echo "*** ${tag}: BUILD FAILED"
+                        failure="${failure} ${tag}"
+                        continue
+                    else
+                        echo "*** ${tag}: build successful"
+                    fi
+
+                    echo "*** ${tag}: preparing to test"
+                    do_test ${tag}
+                    echo "*** ${tag}: status=${__status} cliversion=${__cliversion} libversion=${__libversion}"
+                    if [ $__status -ne 0 ]; then
+                        echo "*** ${tag}: TEST FAILED"
+                        failure="${failure} ${tag}"
+                        continue
+                    else
+                        echo "*** ${tag}: test successful"
+                    fi
+
+                    echo "*** ${tag}: PASSED (${__libversion})"
+                    success="${success} ${tag}(${__libversion})"
+                done
+            done
+        fi
+    done
+
+    echo "RESULT:SUCCESS:${success}"
+    echo "RESULT:FAILED:${failure}"
+
+    [ -n "${failure}" ] && exit 1
+}
+
 if [ $# -gt 0 ]; then
+    # We have an argument, so just build those images...
     for rootname in "$*"; do
         if [ "${rootname}" == "_base" ]; then
             continue
@@ -103,6 +183,10 @@ if [ $# -gt 0 ]; then
         rels="${rels} ${rootname}"
     done
 else
+    # No argument, so build everything
+    cd ${basedir}
+    do_base
+
     for dff in $(ls ${dfdir}/*.Dockerfile); do
         rootname=$(basename -s ".Dockerfile" ${dff})
         if [ "${rootname}" == "_base" ]; then
@@ -112,70 +196,4 @@ else
     done
 fi
 
-echo "*** $0: building base"
-do_base
-
-if [ -z "${rels}" ]; then
-    echo "could not find any Dockerfiles to build!"
-    exit 1
-fi
-
-echo "*** $0: build goals: ${rels}"
-
-for df in ${rels}; do
-    rel=$(basename -s ".Dockerfile" ${df})
-
-    if [ "${rel}" == "clang-scan" ]; then
-        # special case: this one is just a self-contained build
-        tag="${rel}"
-        echo "*** ${tag}: preparing to build"
-        do_build clang-scan ccc-analyzer Release
-        status=$?
-        if [ $__status -ne 0 ]; then
-            echo "*** ${tag}: BUILD FAILED"
-            failure="${failure} ${tag}"
-            continue
-        else
-            echo "*** ${tag}: build successful"
-            success="${success} ${tag}"
-        fi
-    else
-        for compiler in ${compilers}; do
-            for buildtype in ${buildtypes}; do
-                # this tag identifies the build fairly uniquely
-                tag="${rel}-${compiler}-${buildtype}"
-
-                echo "*** ${tag}: preparing to build"
-                do_build ${rel} ${compiler} ${buildtype}
-                echo "*** ${tag}: status=${__status}"
-                if [ $__status -ne 0 ]; then
-                    echo "*** ${tag}: BUILD FAILED"
-                    failure="${failure} ${tag}"
-                    continue
-                else
-                    echo "*** ${tag}: build successful"
-                fi
-
-                echo "*** ${tag}: preparing to test"
-                do_test ${tag}
-                echo "*** ${tag}: status=${__status} cliversion=${__cliversion} libversion=${__libversion}"
-                if [ $__status -ne 0 ]; then
-                    echo "*** ${tag}: TEST FAILED"
-                    failure="${failure} ${tag}"
-                    continue
-                else
-                    echo "*** ${tag}: test successful"
-                fi
-
-                echo "*** ${tag}: PASSED (${__libversion})"
-                success="${success} ${tag}(${__libversion})"
-            done
-        done
-    fi
-done
-
-echo "RESULTS:"
-echo "Successful builds: ${success}"
-echo "Failed builds: ${failure}"
-
-[ -n "${failure}" ] && exit 1
+main ${rels}

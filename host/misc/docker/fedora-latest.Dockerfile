@@ -55,13 +55,15 @@ RUN (curl http://www.astro.caltech.edu/~mcs/tecla/libtecla.tar.gz | tar xzf -) \
  && rm -rf libtecla
 
 # Copy in our build context
-WORKDIR /root
 COPY --from=nuand/bladerf-buildenv:base /root/bladeRF /root/bladeRF
+COPY --from=nuand/bladerf-buildenv:base /root/.config /root/.config
+WORKDIR /root/bladeRF
 
 # Build arguments
 ARG compiler=gcc
 ARG buildtype=Release
 ARG taggedrelease=NO
+ARG parallel=1
 
 # Do the build!
 RUN cd /root/bladeRF/ \
@@ -75,6 +77,6 @@ RUN cd /root/bladeRF/ \
         -DENABLE_HOST_BUILD=ON \
         -DTAGGED_RELEASE=${taggedrelease} \
     ../ \
- && make -j$(nproc) \
+ && make -j${parallel} \
  && make install \
  && ldconfig

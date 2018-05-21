@@ -46,14 +46,17 @@ RUN apt-get update \
  && apt-get clean
 
 # Copy in our build context
-WORKDIR /root
 COPY --from=nuand/bladerf-buildenv:base /root/bladeRF /root/bladeRF
+COPY --from=nuand/bladerf-buildenv:base /root/.config /root/.config
+WORKDIR /root/bladeRF
 
 # Install clang-tools
 RUN apt-get update && apt-get install -y clang-tools && apt-get clean
 
-RUN cd bladeRF/host \
+ARG parallel=1
+
+RUN cd /root/bladeRF/host \
  && mkdir -p build \
  && cd build \
  && cmake -DBUILD_DOCUMENTATION=ON -DCMAKE_C_COMPILER=/usr/share/clang/scan-build-6.0/libexec/ccc-analyzer ../ \
- && /usr/share/clang/scan-build-6.0/bin/scan-build -analyze-headers -maxloop 100 -o ./report make -j$(nproc)
+ && /usr/share/clang/scan-build-6.0/bin/scan-build -analyze-headers -maxloop 100 -o ./report make -j${parallel}

@@ -23,15 +23,43 @@
 
 # This image is a cleaned version of the current working directory.
 # It is used to speed up the copy/clean process for later builds.
-FROM busybox AS first
+FROM ubuntu AS first
 
 LABEL maintainer="Nuand LLC <bladeRF@nuand.com>"
 
-WORKDIR /root
-COPY . /root/bladeRF
-RUN test -d "/root/bladeRF/host/build" && rm -rf /root/bladeRF/host/build || exit 0
-RUN test -d "/root/bladeRF/build" && rm -rf /root/bladeRF/build || exit 0
-RUN test -d "/root/bladeRF/hdl" && rm -rf /root/bladeRF/hdl || exit 0
+RUN apt-get update \
+ && apt-get install -y \
+        git \
+ && apt-get clean
 
+COPY . /root/bladeRF
+ENV work="/root/bladeRF/hdl/quartus/work"
+ENV rbf="output_files/hosted.rbf"
+ENV cfgdir="/root/.config/Nuand/bladeRF"
+
+# copy FPGA images from FPGA work dir
+# TODO: build these in docker, as well
+RUN mkdir -p ${cfgdir}
+RUN test -f "${work}/bladerf-40-hosted/${rbf}" \
+ && cp "${work}/bladerf-40-hosted/${rbf}" ${cfgdir}/hostedx40.rbf \
+ || exit 0
+RUN test -f "${work}/bladerf-115-hosted/${rbf}" \
+ && cp "${work}/bladerf-115-hosted/${rbf}" ${cfgdir}/hostedx115.rbf \
+ || exit 0
+RUN test -f "${work}/bladerf-micro-A2-hosted/${rbf}" \
+ && cp "${work}/bladerf-micro-A2-hosted/${rbf}" ${cfgdir}/hostedxA2.rbf \
+ || exit 0
+RUN test -f "${work}/bladerf-micro-A4-hosted/${rbf}" \
+ && cp "${work}/bladerf-micro-A4-hosted/${rbf}" ${cfgdir}/hostedxA4.rbf \
+ || exit 0
+RUN test -f "${work}/bladerf-micro-A9-hosted/${rbf}" \
+ && cp "${work}/bladerf-micro-A9-hosted/${rbf}" ${cfgdir}/hostedxA9.rbf \
+ || exit 0
+
+# clean up unnecessary stuff
+WORKDIR /root/bladeRF
+RUN git clean -xdf && git gc --aggressive
+
+# build a scratch image with nothing but the bladeRF source and FPGA images
 FROM scratch
-COPY --from=first /root/bladeRF /root/bladeRF
+COPY --from=first /root /root
