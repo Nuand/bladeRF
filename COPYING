@@ -16,6 +16,9 @@ source directories vary in their licenses (but are compatible with above items
 they are linked with). Please see the individual files and/or their associated
 files in the legal/licenses directory for additional information.
 
+Licenses may vary for FPGA IP located in the hdl/fpga/ip directory tree.
+Please see the individual files for additional information.
+
 All metadata and build scripts are MIT license unless otherwise stated.
 
 Please contact bladeRF@Nuand.com if you have any question or concerns.
