@@ -3,7 +3,7 @@
 
 <h1>Introduction</h1>
 
-This library supports the <a class="el" href="https://www.nuand.com">Nuand bladeRF1 and bladeRF2</a>
+This library supports the <a class="el" href="https://www.nuand.com">Nuand bladeRF and bladeRF Micro</a>
 USB 3.0 Software Defined Radio (SDR). It is intended to support developers looking to:
 <ul>
     <li>
@@ -26,6 +26,15 @@ accessible knowledge base of common questions and answers to be developed.
 
 Bugs, both in libbladeRF and this documentation, may be reported on the
 <a class="el" href="https://www.github.com/Nuand/bladeRF/issues">GitHub issue tracker</a>
+
+@attention libbladeRF 2.0.0 introduces breaking changes to the parameter lists
+           for bladerf_get_frequency(), bladerf_stream(), and
+           bladerf_sync_config().
+@attention Existing code using these functions @b must be updated to be
+           compatible with this version. See the
+           \ref relnotes_2_0_0_api_freq_uint64 and
+           \ref relnotes_2_0_0_api_stream sections of the \ref relnotes_2_0_0
+           document for guidance.
 
 <hr>
 
@@ -75,6 +84,9 @@ libbladeRF provides the ability to:
 
 The <a class="el" href="modules.html">API Sections</a> page presents a complete list of of the libbladeRF API sections,
 including the aforementioned items.
+
+The \ref relnotes_2_0_0 page summarizes the new features and changes in
+the second major release of libbladeRF.
 
 The following pages provide examples and more detailed usage information:
 <ul>
