@@ -2279,8 +2279,8 @@ int CALL_CONV bladerf_enable_module(struct bladerf *dev,
  *      startup.
  *  - Schedule additional bursts relative to the first burst \f$F\f$.
  *
- * Examples of the above are shown on the \link sync_tx_meta.html TX with
- * metadata\endlink page.
+ * Examples of the above are shown on the \link sync_tx_meta_bursts.html TX
+ * with metadata\endlink page.
  *
  * @param       dev         Device handle
  * @param[in]   dir         Stream direction

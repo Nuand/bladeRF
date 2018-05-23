@@ -352,9 +352,9 @@ int main(int argc, char *argv[])
 
     sps = atoi(argv[2]);
 
-    samples = malloc(num_samples * sizeof(samples[0]));
+    samples = calloc(num_samples, sizeof(samples[0]));
     if (samples == NULL) {
-        perror("malloc");
+        perror("calloc");
         goto out;
     }
 
@@ -365,9 +365,9 @@ int main(int argc, char *argv[])
     }
 
     //Convert sc16q11 to complex_sample
-    for (i = 0; i < num_samples*2; i += 2){
-    samples[i/2].i = raw_samples[i];
-    samples[i/2].q = raw_samples[i+1];
+    for (i = 0; i < num_samples; ++i) {
+        samples[i].i = raw_samples[(2*i)];
+        samples[i].q = raw_samples[(2*i)+1];
     }
 
     acquisition = corr_process(corr, samples, num_samples, timestamp);

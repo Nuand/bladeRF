@@ -434,7 +434,7 @@ AD9361_TXFIRConfig ad9361_init_tx_fir_config = {
      * This filter literally does nothing, but it is here as a placeholder.
      */
     {
-      32768,      0,      0,      0,      0,      0,      0,      0,
+      32767,      0,      0,      0,      0,      0,      0,      0,
           0,      0,      0,      0,      0,      0,      0,      0,
           0,      0,      0,      0,      0,      0,      0,      0,
           0,      0,      0,      0,      0,      0,      0,      0,

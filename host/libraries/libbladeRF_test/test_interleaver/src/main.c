@@ -34,9 +34,9 @@ void *create_buf(size_t buflen)
     uint16_t *ptr = NULL;
     size_t i;
 
-    retbuf = malloc(buflen);
+    retbuf = calloc(buflen, sizeof(uint8_t));
     if (NULL == retbuf) {
-        PRINT_ERROR("%s: malloc failed\n", __FUNCTION__);
+        PRINT_ERROR("%s: calloc failed\n", __FUNCTION__);
         return retbuf;
     }
 
@@ -89,34 +89,39 @@ bool check_buf(void const *buf,
  * columns with CELL_WIDTH bytes in each column */
 void print_buf(void const *buf, size_t buflen, size_t num_columns)
 {
+    size_t const columns = min(num_columns, buflen / CELL_WIDTH);
+    size_t const rowsize = sizeof(char) * (CELL_WIDTH * 2) * (columns + 1) + 1;
+    size_t const rows    = max(buflen / columns / CELL_WIDTH, 1);
+    uint8_t const *u8buf = (uint8_t *)buf;
+
+    size_t row, column, byte;
+    char *rowstr;
+
     // short circuit if we're going to print nothing
     if (!verbose) {
         return;
     }
 
-    size_t const columns = min(num_columns, buflen / CELL_WIDTH);
-    size_t const rowsize = sizeof(char) * (CELL_WIDTH * 2) * (columns + 1) + 1;
-    size_t const rows    = max(buflen / columns / CELL_WIDTH, 1);
 
-    size_t row, column, byte;
-    uint8_t *u8buf = (uint8_t *)buf;
-
-    char *rowstr = malloc(rowsize);
+    rowstr = malloc(rowsize);
     if (NULL == rowstr) {
         PRINT_ERROR("%s: couldn't malloc rowstr\n", __FUNCTION__);
         return;
     }
 
     for (row = 0; row < rows; ++row) {
-        uint8_t const *bufptr = u8buf;
+        uint8_t const *rowptr = u8buf + (row * columns * CELL_WIDTH);
         size_t rowidx         = 0;
 
         for (column = 0; column < columns; ++column) {
+            uint8_t const *colptr = rowptr + (column * CELL_WIDTH);
+
             if (column > 0) {
                 rowstr[rowidx++] = ' ';
             }
+
             for (byte = 0; byte < CELL_WIDTH; ++byte) {
-                snprintf((rowstr + rowidx), rowsize - rowidx, "%02x", *u8buf++);
+                snprintf((rowstr + rowidx), 3, "%02x", colptr[byte]);
                 rowidx += 2;
             }
         }
@@ -128,7 +133,7 @@ void print_buf(void const *buf, size_t buflen, size_t num_columns)
                         __FUNCTION__, rowidx, rowsize);
         }
 
-        PRINT_VERBOSE("  %p = %s\n", bufptr, rowstr);
+        PRINT_VERBOSE("  %p = %s\n", rowptr, rowstr);
     }
 
     free(rowstr);

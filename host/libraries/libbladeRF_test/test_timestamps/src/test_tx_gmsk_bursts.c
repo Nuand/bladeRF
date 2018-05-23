@@ -38,7 +38,8 @@
 
 struct settings {
     struct bladerf_rational_rate sample_rate;
-    unsigned int frequency, bandwidth, timeout_ms;
+    uint64_t frequency;
+    unsigned int bandwidth, timeout_ms;
     int txvga1, txvga2;
 };
 
@@ -52,21 +53,20 @@ static int backup_settings(struct bladerf *dev, struct app_params *p,
                            struct settings *s)
 {
     int status;
-    uint64_t frequency;
 
     printf("\nBacking up device settings...\n");
 
     s->timeout_ms = p->timeout_ms;
     printf("  Stream timeout: %u ms\n", p->timeout_ms);
 
-    status = bladerf_get_frequency(dev, BLADERF_MODULE_TX, &frequency);
+    status = bladerf_get_frequency(dev, BLADERF_MODULE_TX, &s->frequency);
     if (status != 0) {
         fprintf(stderr, "Failed to get frequency: %s\n",
                 bladerf_strerror(status));
         return status;
     }
 
-    printf("  Frequency: %u\n", s->frequency);
+    printf("  Frequency: %"PRIu64"\n", s->frequency);
 
     status = bladerf_get_rational_sample_rate(dev, BLADERF_MODULE_TX,
                                               &s->sample_rate);
@@ -111,7 +111,7 @@ static int setup_device(struct bladerf *dev, struct app_params *p)
 {
     int status;
     struct bladerf_rational_rate sample_rate = GMSK_SAMPLERATE_INITIALIZER;
-    const unsigned int frequency = 1000000000;
+    const uint64_t frequency = 1000000000;
     const unsigned int bandwidth = 1500000;
     const int txvga1 = -15;
     const int txvga2 = 0;
@@ -127,7 +127,7 @@ static int setup_device(struct bladerf *dev, struct app_params *p)
                 bladerf_strerror(status));
         return status;
     } else {
-        printf("  Frequency: %u\n", frequency);
+        printf("  Frequency: %"PRIu64"\n", frequency);
     }
 
     status = bladerf_set_rational_sample_rate(dev, BLADERF_MODULE_TX,
@@ -187,7 +187,7 @@ static int restore_settings(struct bladerf *dev, struct app_params *p,
                 bladerf_strerror(status));
         return status;
     } else {
-        printf("  Frequency: %u\n", s->frequency);
+        printf("  Frequency: %"PRIu64"\n", s->frequency);
     }
 
     status = bladerf_set_rational_sample_rate(dev, BLADERF_MODULE_TX,
