@@ -324,6 +324,7 @@ set(LIBBLADERF_SOURCE
         src/helpers/file.c
         src/helpers/version.c
         src/helpers/interleave.c
+        src/helpers/configfile.c
         src/version.h
         src/devinfo.c
         src/bladerf.c
