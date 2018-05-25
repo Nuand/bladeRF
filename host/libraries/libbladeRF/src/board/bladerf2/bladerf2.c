@@ -3191,9 +3191,9 @@ static int perform_format_config(struct bladerf *dev,
     }
 
     if (use_timestamps) {
-        gpio_val |= (BLADERF_GPIO_TIMESTAMP | BLADERF_GPIO_TIMESTAMP_DIV2);
+        gpio_val |= BLADERF_GPIO_TIMESTAMP;
     } else {
-        gpio_val &= ~(BLADERF_GPIO_TIMESTAMP | BLADERF_GPIO_TIMESTAMP_DIV2);
+        gpio_val &= ~BLADERF_GPIO_TIMESTAMP;
     }
 
     status = dev->backend->config_gpio_write(dev, gpio_val);
