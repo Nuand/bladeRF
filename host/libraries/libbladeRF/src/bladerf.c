@@ -500,7 +500,7 @@ int bladerf_get_gain_range(struct bladerf *dev,
 int bladerf_set_gain_stage(struct bladerf *dev,
                            bladerf_channel ch,
                            const char *stage,
-                           int gain)
+                           bladerf_gain gain)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -514,7 +514,7 @@ int bladerf_set_gain_stage(struct bladerf *dev,
 int bladerf_get_gain_stage(struct bladerf *dev,
                            bladerf_channel ch,
                            const char *stage,
-                           int *gain)
+                           bladerf_gain *gain)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -547,8 +547,8 @@ int bladerf_get_gain_stages(struct bladerf *dev,
 
 int bladerf_set_sample_rate(struct bladerf *dev,
                             bladerf_channel ch,
-                            uint32_t rate,
-                            uint32_t *actual)
+                            bladerf_sample_rate rate,
+                            bladerf_sample_rate *actual)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -561,7 +561,7 @@ int bladerf_set_sample_rate(struct bladerf *dev,
 
 int bladerf_get_sample_rate(struct bladerf *dev,
                             bladerf_channel ch,
-                            unsigned int *rate)
+                            bladerf_sample_rate *rate)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -612,8 +612,8 @@ int bladerf_get_rational_sample_rate(struct bladerf *dev,
 
 int bladerf_set_bandwidth(struct bladerf *dev,
                           bladerf_channel ch,
-                          unsigned int bandwidth,
-                          unsigned int *actual)
+                          bladerf_bandwidth bandwidth,
+                          bladerf_bandwidth *actual)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -626,7 +626,7 @@ int bladerf_set_bandwidth(struct bladerf *dev,
 
 int bladerf_get_bandwidth(struct bladerf *dev,
                           bladerf_channel ch,
-                          unsigned int *bandwidth)
+                          bladerf_bandwidth *bandwidth)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -650,7 +650,7 @@ int bladerf_get_bandwidth_range(struct bladerf *dev,
 
 int bladerf_set_frequency(struct bladerf *dev,
                           bladerf_channel ch,
-                          uint64_t frequency)
+                          bladerf_frequency frequency)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -663,7 +663,7 @@ int bladerf_set_frequency(struct bladerf *dev,
 
 int bladerf_get_frequency(struct bladerf *dev,
                           bladerf_channel ch,
-                          uint64_t *frequency)
+                          bladerf_frequency *frequency)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -683,7 +683,7 @@ int bladerf_get_frequency_range(struct bladerf *dev,
 
 int bladerf_select_band(struct bladerf *dev,
                         bladerf_channel ch,
-                        uint64_t frequency)
+                        bladerf_frequency frequency)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -757,8 +757,8 @@ int bladerf_get_quick_tune(struct bladerf *dev,
 
 int bladerf_schedule_retune(struct bladerf *dev,
                             bladerf_channel ch,
-                            uint64_t timestamp,
-                            uint64_t frequency,
+                            bladerf_timestamp timestamp,
+                            bladerf_frequency frequency,
                             struct bladerf_quick_tune *quick_tune)
 
 {
@@ -790,7 +790,7 @@ int bladerf_cancel_scheduled_retunes(struct bladerf *dev, bladerf_channel ch)
 int bladerf_get_correction(struct bladerf *dev,
                            bladerf_channel ch,
                            bladerf_correction corr,
-                           int16_t *value)
+                           bladerf_correction_value *value)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -804,7 +804,7 @@ int bladerf_get_correction(struct bladerf *dev,
 int bladerf_set_correction(struct bladerf *dev,
                            bladerf_channel ch,
                            bladerf_correction corr,
-                           int16_t value)
+                           bladerf_correction_value value)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
@@ -993,12 +993,12 @@ int bladerf_sync_rx(struct bladerf *dev,
 
 int bladerf_get_timestamp(struct bladerf *dev,
                           bladerf_direction dir,
-                          uint64_t *value)
+                          bladerf_timestamp *timestamp)
 {
     int status;
     MUTEX_LOCK(&dev->lock);
 
-    status = dev->board->get_timestamp(dev, dir, value);
+    status = dev->board->get_timestamp(dev, dir, timestamp);
 
     MUTEX_UNLOCK(&dev->lock);
     return status;

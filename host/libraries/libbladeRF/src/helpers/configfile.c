@@ -43,8 +43,8 @@ const struct numeric_suffix freq_suffixes[] = { { "G", 1000 * 1000 * 1000 },
 static int apply_config_options(struct bladerf *dev, struct config_options opt)
 {
     int status;
-    uint64_t freq;
-    unsigned int bw;
+    bladerf_frequency freq;
+    bladerf_bandwidth bw;
     uint32_t val;
     bool ok;
     bladerf_gain_mode gain_mode;
@@ -139,8 +139,8 @@ static int apply_config_options(struct bladerf *dev, struct config_options opt)
         }
 
         bw = str2uint_suffix(opt.value,
-                             (unsigned int)MAX(rx_range.min, tx_range.min),
-                             (unsigned int)MIN(rx_range.max, tx_range.max),
+                             (bladerf_bandwidth)MAX(rx_range.min, tx_range.min),
+                             (bladerf_bandwidth)MIN(rx_range.max, tx_range.max),
                              freq_suffixes, NUM_FREQ_SUFFIXES, &ok);
         if (!ok) {
             return BLADERF_ERR_INVAL;

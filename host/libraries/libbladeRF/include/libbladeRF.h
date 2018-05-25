@@ -356,6 +356,16 @@ void CALL_CONV bladerf_set_usb_reset_on_open(bool enabled);
  */
 
 /**
+ * Range structure
+ */
+struct bladerf_range {
+    int64_t min;  /**< Minimum value */
+    int64_t max;  /**< Maximum value */
+    int64_t step; /**< Step of value */
+    float scale;  /**< Unit scale */
+};
+
+/**
  * Version structure for FPGA, firmware, libbladeRF, and associated utilities
  */
 struct bladerf_version {
@@ -585,14 +595,11 @@ typedef bladerf_channel bladerf_module;
  */
 
 /**
- * Range structure
+ * Gain value, in decibels (dB)
+ *
+ * May be positive or negative.
  */
-struct bladerf_range {
-    int64_t min;  /**< Minimum value */
-    int64_t max;  /**< Maximum value */
-    int64_t step; /**< Step of value */
-    float scale;  /**< Unit scale */
-};
+typedef int bladerf_gain;
 
 /**
  * Gain control modes
@@ -645,7 +652,7 @@ struct bladerf_gain_modes {
 API_EXPORT
 int CALL_CONV bladerf_set_gain(struct bladerf *dev,
                                bladerf_channel ch,
-                               int gain);
+                               bladerf_gain gain);
 
 /**
  * Get overall system gain
@@ -659,7 +666,7 @@ int CALL_CONV bladerf_set_gain(struct bladerf *dev,
 API_EXPORT
 int CALL_CONV bladerf_get_gain(struct bladerf *dev,
                                bladerf_channel ch,
-                               int *gain);
+                               bladerf_gain *gain);
 
 /**
  * Set gain control mode
@@ -754,7 +761,7 @@ API_EXPORT
 int CALL_CONV bladerf_set_gain_stage(struct bladerf *dev,
                                      bladerf_channel ch,
                                      const char *stage,
-                                     int gain);
+                                     bladerf_gain gain);
 
 /**
  * Set the gain for a specific gain stage
@@ -772,7 +779,7 @@ API_EXPORT
 int CALL_CONV bladerf_get_gain_stage(struct bladerf *dev,
                                      bladerf_channel ch,
                                      const char *stage,
-                                     int *gain);
+                                     bladerf_gain *gain);
 
 /**
  * Get gain range of a specific gain stage
@@ -830,6 +837,11 @@ int CALL_CONV bladerf_get_gain_stages(struct bladerf *dev,
  */
 
 /**
+ * Sample rate, in samples per second (sps)
+ */
+typedef unsigned int bladerf_sample_rate;
+
+/**
  * Rational sample rate representation
  *
  * Sample rates are in the form of
@@ -856,7 +868,7 @@ struct bladerf_rational_rate {
  * @param       dev         Device handle
  * @param[in]   ch          Channel
  * @param[in]   rate        Sample rate
- * @param[out]  actual      If non-NULL. this is written with the actual
+ * @param[out]  actual      If non-NULL, this is written with the actual
  *                          sample rate achieved.
  *
  * @return 0 on success, value from \ref RETCODES list upon failure
@@ -864,8 +876,8 @@ struct bladerf_rational_rate {
 API_EXPORT
 int CALL_CONV bladerf_set_sample_rate(struct bladerf *dev,
                                       bladerf_channel ch,
-                                      unsigned int rate,
-                                      unsigned int *actual);
+                                      bladerf_sample_rate rate,
+                                      bladerf_sample_rate *actual);
 
 /**
  * Configure the channel's sample rate as a rational fraction of Hz.
@@ -899,7 +911,7 @@ int CALL_CONV
 API_EXPORT
 int CALL_CONV bladerf_get_sample_rate(struct bladerf *dev,
                                       bladerf_channel ch,
-                                      unsigned int *rate);
+                                      bladerf_sample_rate *rate);
 
 /**
  * Get the channel's supported range of sample rates
@@ -945,6 +957,11 @@ int CALL_CONV
  */
 
 /**
+ * Bandwidth, in hertz (Hz)
+ */
+typedef unsigned int bladerf_bandwidth;
+
+/**
  * Set the bandwidth of the channel to the specified value in Hz
  *
  * The underlying device is capable of a discrete set of bandwidth values. The
@@ -965,8 +982,8 @@ int CALL_CONV
 API_EXPORT
 int CALL_CONV bladerf_set_bandwidth(struct bladerf *dev,
                                     bladerf_channel ch,
-                                    unsigned int bandwidth,
-                                    unsigned int *actual);
+                                    bladerf_bandwidth bandwidth,
+                                    bladerf_bandwidth *actual);
 
 /**
  * Get the bandwidth of the channel
@@ -980,7 +997,7 @@ int CALL_CONV bladerf_set_bandwidth(struct bladerf *dev,
 API_EXPORT
 int CALL_CONV bladerf_get_bandwidth(struct bladerf *dev,
                                     bladerf_channel ch,
-                                    unsigned int *bandwidth);
+                                    bladerf_bandwidth *bandwidth);
 
 /**
  * Get the supported range of bandwidths for a channel
@@ -1012,6 +1029,14 @@ int CALL_CONV bladerf_get_bandwidth_range(struct bladerf *dev,
  */
 
 /**
+ * RF center frequency, in hertz (Hz)
+ *
+ * @remark Prior to libbladeRF 2.x.x, frequencies were specified as
+ *         `unsigned int`.
+ */
+typedef uint64_t bladerf_frequency;
+
+/**
  * Select the appropriate band path given a frequency in Hz.
  *
  * @note Most API users will not need to use this function, as
@@ -1032,7 +1057,7 @@ int CALL_CONV bladerf_get_bandwidth_range(struct bladerf *dev,
 API_EXPORT
 int CALL_CONV bladerf_select_band(struct bladerf *dev,
                                   bladerf_channel ch,
-                                  uint64_t frequency);
+                                  bladerf_frequency frequency);
 
 /**
  * Set channel's frequency in Hz.
@@ -1060,7 +1085,7 @@ int CALL_CONV bladerf_select_band(struct bladerf *dev,
 API_EXPORT
 int CALL_CONV bladerf_set_frequency(struct bladerf *dev,
                                     bladerf_channel ch,
-                                    uint64_t frequency);
+                                    bladerf_frequency frequency);
 /**
  * Get channel's current frequency in Hz
  *
@@ -1073,7 +1098,7 @@ int CALL_CONV bladerf_set_frequency(struct bladerf *dev,
 API_EXPORT
 int CALL_CONV bladerf_get_frequency(struct bladerf *dev,
                                     bladerf_channel ch,
-                                    uint64_t *frequency);
+                                    bladerf_frequency *frequency);
 
 /**
  * Get the supported range of frequencies for a channel
@@ -1636,10 +1661,19 @@ int CALL_CONV bladerf_get_rx_mux(struct bladerf *dev, bladerf_rx_mux *mode);
  */
 
 /**
+ * @ingroup STREAMING
+ *
+ * Timestamp, in ticks
+ *
+ * A channel's timestamp typically increments at the sample rate.
+ */
+typedef uint64_t bladerf_timestamp;
+
+/**
  * Specifies that scheduled retune should occur immediately when using
  * bladerf_schedule_retune().
  */
-#define BLADERF_RETUNE_NOW 0
+#define BLADERF_RETUNE_NOW (bladerf_timestamp)0
 
 /**
  * Quick Re-tune parameters.
@@ -1682,7 +1716,7 @@ struct bladerf_quick_tune {
  *                              retune operation. If this value is in the past,
  *                              the retune will occur immediately. To perform
  *                              the retune immediately, specify
- *                              BLADERF_RETUNE_NOW.
+ *                              ::BLADERF_RETUNE_NOW.
  * @param[in]   frequency       Desired frequency, in Hz.
  * @param[in]   quick_tune      If NULL, the `frequency` parameter will be used.
  *                              If non-NULL, the provided "quick retune" values
@@ -1700,8 +1734,8 @@ struct bladerf_quick_tune {
 API_EXPORT
 int CALL_CONV bladerf_schedule_retune(struct bladerf *dev,
                                       bladerf_channel ch,
-                                      uint64_t timestamp,
-                                      uint64_t frequency,
+                                      bladerf_timestamp timestamp,
+                                      bladerf_frequency frequency,
                                       struct bladerf_quick_tune *quick_tune);
 
 /**
@@ -1757,6 +1791,15 @@ int CALL_CONV bladerf_get_quick_tune(struct bladerf *dev,
  *
  * @{
  */
+
+/**
+ * Correction value, in arbitrary units
+ *
+ * @see ::bladerf_correction
+ * @see bladerf_get_correction()
+ * @see bladerf_set_correction()
+ */
+typedef int16_t bladerf_correction_value;
 
 /**
  * Correction parameter selection
@@ -1818,7 +1861,7 @@ API_EXPORT
 int CALL_CONV bladerf_set_correction(struct bladerf *dev,
                                      bladerf_channel ch,
                                      bladerf_correction corr,
-                                     int16_t value);
+                                     bladerf_correction_value value);
 
 /**
  * Obtain the current value of the specified configuration parameter
@@ -1834,7 +1877,7 @@ API_EXPORT
 int CALL_CONV bladerf_get_correction(struct bladerf *dev,
                                      bladerf_channel ch,
                                      bladerf_correction corr,
-                                     int16_t *value);
+                                     bladerf_correction_value *value);
 
 /** @} (End of FN_CORR) */
 
@@ -2103,7 +2146,7 @@ struct bladerf_metadata {
      * Free-running FPGA counter that monotonically increases at the sample rate
      * of the associated channel.
      */
-    uint64_t timestamp;
+    bladerf_timestamp timestamp;
 
     /**
      * Input bit field to control the behavior of the call that the metadata
@@ -2301,7 +2344,7 @@ int CALL_CONV bladerf_enable_module(struct bladerf *dev,
 API_EXPORT
 int CALL_CONV bladerf_get_timestamp(struct bladerf *dev,
                                     bladerf_direction dir,
-                                    uint64_t *value);
+                                    bladerf_timestamp *timestamp);
 
 /**
  * @defgroup FN_STREAMING_SYNC  Synchronous API

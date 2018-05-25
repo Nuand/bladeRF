@@ -36,6 +36,13 @@ header = """
     bladerf_devinfo *info);
   const char *bladerf_backend_str(bladerf_backend backend);
   void bladerf_set_usb_reset_on_open(bool enabled);
+  struct bladerf_range
+  {
+    int64_t min;
+    int64_t max;
+    int64_t step;
+    float scale;
+  };
   struct bladerf_version
   {
     uint16_t major;
@@ -70,13 +77,7 @@ header = """
   size_t bladerf_get_channel_count(struct bladerf *dev, bool tx);
   typedef int bladerf_channel;
   typedef bladerf_channel bladerf_module;
-  struct bladerf_range
-  {
-    int64_t min;
-    int64_t max;
-    int64_t step;
-    float scale;
-  };
+  typedef int bladerf_gain;
   typedef enum
   {
     BLADERF_GAIN_DEFAULT,
@@ -90,10 +91,10 @@ header = """
     const char *name;
     bladerf_gain_mode mode;
   };
-  int bladerf_set_gain(struct bladerf *dev, bladerf_channel ch, int
-    gain);
-  int bladerf_get_gain(struct bladerf *dev, bladerf_channel ch, int
-    *gain);
+  int bladerf_set_gain(struct bladerf *dev, bladerf_channel ch,
+    bladerf_gain gain);
+  int bladerf_get_gain(struct bladerf *dev, bladerf_channel ch,
+    bladerf_gain *gain);
   int bladerf_set_gain_mode(struct bladerf *dev, bladerf_channel ch,
     bladerf_gain_mode mode);
   int bladerf_get_gain_mode(struct bladerf *dev, bladerf_channel ch,
@@ -103,13 +104,14 @@ header = """
   int bladerf_get_gain_range(struct bladerf *dev, bladerf_channel ch,
     struct bladerf_range *range);
   int bladerf_set_gain_stage(struct bladerf *dev, bladerf_channel ch,
-    const char *stage, int gain);
+    const char *stage, bladerf_gain gain);
   int bladerf_get_gain_stage(struct bladerf *dev, bladerf_channel ch,
-    const char *stage, int *gain);
+    const char *stage, bladerf_gain *gain);
   int bladerf_get_gain_stage_range(struct bladerf *dev, bladerf_channel
     ch, const char *stage, struct bladerf_range *range);
   int bladerf_get_gain_stages(struct bladerf *dev, bladerf_channel ch,
     const char **stages, size_t count);
+  typedef unsigned int bladerf_sample_rate;
   struct bladerf_rational_rate
   {
     uint64_t integer;
@@ -117,28 +119,30 @@ header = """
     uint64_t den;
   };
   int bladerf_set_sample_rate(struct bladerf *dev, bladerf_channel ch,
-    unsigned int rate, unsigned int *actual);
+    bladerf_sample_rate rate, bladerf_sample_rate *actual);
   int bladerf_set_rational_sample_rate(struct bladerf *dev,
     bladerf_channel ch, struct bladerf_rational_rate *rate, struct
     bladerf_rational_rate *actual);
   int bladerf_get_sample_rate(struct bladerf *dev, bladerf_channel ch,
-    unsigned int *rate);
+    bladerf_sample_rate *rate);
   int bladerf_get_sample_rate_range(struct bladerf *dev, bladerf_channel
     ch, struct bladerf_range *range);
   int bladerf_get_rational_sample_rate(struct bladerf *dev,
     bladerf_channel ch, struct bladerf_rational_rate *rate);
+  typedef unsigned int bladerf_bandwidth;
   int bladerf_set_bandwidth(struct bladerf *dev, bladerf_channel ch,
-    unsigned int bandwidth, unsigned int *actual);
+    bladerf_bandwidth bandwidth, bladerf_bandwidth *actual);
   int bladerf_get_bandwidth(struct bladerf *dev, bladerf_channel ch,
-    unsigned int *bandwidth);
+    bladerf_bandwidth *bandwidth);
   int bladerf_get_bandwidth_range(struct bladerf *dev, bladerf_channel
     ch, struct bladerf_range *range);
+  typedef uint64_t bladerf_frequency;
   int bladerf_select_band(struct bladerf *dev, bladerf_channel ch,
-    uint64_t frequency);
+    bladerf_frequency frequency);
   int bladerf_set_frequency(struct bladerf *dev, bladerf_channel ch,
-    uint64_t frequency);
+    bladerf_frequency frequency);
   int bladerf_get_frequency(struct bladerf *dev, bladerf_channel ch,
-    uint64_t *frequency);
+    bladerf_frequency *frequency);
   int bladerf_get_frequency_range(struct bladerf *dev, bladerf_channel
     ch, struct bladerf_range *range);
   int bladerf_set_rf_port(struct bladerf *dev, bladerf_channel ch, const
@@ -217,6 +221,7 @@ header = """
   } bladerf_rx_mux;
   int bladerf_set_rx_mux(struct bladerf *dev, bladerf_rx_mux mux);
   int bladerf_get_rx_mux(struct bladerf *dev, bladerf_rx_mux *mode);
+  typedef uint64_t bladerf_timestamp;
   struct bladerf_quick_tune
   {
     union
@@ -236,12 +241,13 @@ header = """
     };
   };
   int bladerf_schedule_retune(struct bladerf *dev, bladerf_channel ch,
-    uint64_t timestamp, uint64_t frequency, struct bladerf_quick_tune
-    *quick_tune);
+    bladerf_timestamp timestamp, bladerf_frequency frequency, struct
+    bladerf_quick_tune *quick_tune);
   int bladerf_cancel_scheduled_retunes(struct bladerf *dev,
     bladerf_channel ch);
   int bladerf_get_quick_tune(struct bladerf *dev, bladerf_channel ch,
     struct bladerf_quick_tune *quick_tune);
+  typedef int16_t bladerf_correction_value;
   typedef enum
   {
     BLADERF_CORR_DCOFF_I,
@@ -250,9 +256,9 @@ header = """
     BLADERF_CORR_GAIN
   } bladerf_correction;
   int bladerf_set_correction(struct bladerf *dev, bladerf_channel ch,
-    bladerf_correction corr, int16_t value);
+    bladerf_correction corr, bladerf_correction_value value);
   int bladerf_get_correction(struct bladerf *dev, bladerf_channel ch,
-    bladerf_correction corr, int16_t *value);
+    bladerf_correction corr, bladerf_correction_value *value);
   typedef enum
   {
     BLADERF_RX = 0,
@@ -272,7 +278,7 @@ header = """
   } bladerf_format;
   struct bladerf_metadata
   {
-    uint64_t timestamp;
+    bladerf_timestamp timestamp;
     uint32_t flags;
     uint32_t status;
     unsigned int actual_count;
@@ -285,7 +291,7 @@ header = """
   int bladerf_enable_module(struct bladerf *dev, bladerf_channel ch,
     bool enable);
   int bladerf_get_timestamp(struct bladerf *dev, bladerf_direction dir,
-    uint64_t *value);
+    bladerf_timestamp *timestamp);
   int bladerf_sync_config(struct bladerf *dev, bladerf_channel_layout
     layout, bladerf_format format, unsigned int num_buffers, unsigned int
     buffer_size, unsigned int num_transfers, unsigned int stream_timeout);

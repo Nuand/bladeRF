@@ -42,7 +42,7 @@ this version.
 
 In libbladeRF 1.x, RF frequencies were specified as 32-bit `unsigned int`. To
 support the wider frequency range of the bladeRF Micro, frequencies are now
-specified as `uint64_t`.
+specified as `uint64_t`, which is typedef'd as `bladerf_frequency`.
 
 <table>
 <caption id="multi_row">Required actions</caption>
@@ -51,7 +51,7 @@ specified as `uint64_t`.
     <td>bladerf_get_frequency()</td>
     <td><b>Required</b></td>
     <td>
-        The `frequency` parameter is now `uint64_t*`.
+        The `frequency` parameter is now of type `bladerf_frequency*`.
 
         \warning Applications using this function must be modified to pass in
                  the correct type.
@@ -61,10 +61,10 @@ specified as `uint64_t`.
     <td>bladerf_set_frequency()</td>
     <td rowspan="3">Minor</td>
     <td rowspan="3">
-        The `frequency` parameter is now `uint64_t`.
+        The `frequency` parameter is now of type `bladerf_frequency`.
 
         \note Compilers will generally implicitly cast `unsigned int` to
-              `uint64_t`.
+              `bladerf_frequency`.
     </td>
 </tr>
 <tr><td>bladerf_select_band()</td></tr>
@@ -262,7 +262,7 @@ deprecated and replaced with a set of context-aware functions.
 An example use of bladerf_get_frequency_range():
 
 \code{.c}
-bool is_frequency_within_range(struct bladerf *dev, bladerf_channel channel, uint64_t frequency)
+bool is_frequency_within_range(struct bladerf *dev, bladerf_channel channel, bladerf_frequency frequency)
 {
     int status;
     struct bladerf_range range;
@@ -279,6 +279,41 @@ bool is_frequency_within_range(struct bladerf *dev, bladerf_channel channel, uin
 \see bladerf_get_gain_stages() - Get a list of available gain stages.
 \see bladerf_set_gain() - Set overall system gain.
 \see bladerf_get_gain() - Get overall system gain.
+
+\subsection relnotes_2_0_0_api_typedefs New type definitions for parameters
+
+The following types are now defined:
+
+\li ::bladerf_gain (gain value in dB; `int`)
+\li ::bladerf_sample_rate (sample rate in samples per second; `unsigned int`)
+\li ::bladerf_bandwidth (bandwidth in Hz; `unsigned int`)
+\li ::bladerf_frequency (center frequency in Hz; `uint64_t`)
+\li ::bladerf_timestamp (timestamp in ticks; `uint64_t`)
+\li ::bladerf_correction_value (correction value in arbitrary units; `int16_t`)
+
+With the exception of ::bladerf_frequency, none of the underlying types changed
+from libbladeRF 1.x.x and no changes are strictly necessary. However, the
+declarations changed for the following functions:
+
+\li bladerf_set_gain()
+\li bladerf_get_gain()
+\li bladerf_set_gain_stage()
+\li bladerf_get_gain_stage()
+\li bladerf_set_sample_rate()
+\li bladerf_get_sample_rate()
+\li bladerf_set_bandwidth()
+\li bladerf_get_bandwidth()
+\li bladerf_select_band()
+\li bladerf_set_frequency()
+\li bladerf_get_frequency()
+\li bladerf_schedule_retune()
+\li bladerf_set_correction()
+\li bladerf_get_correction()
+\li bladerf_get_timestamp()
+
+As well as:
+
+\li struct bladerf_metadata
 
 \section relnotes_2_0_0_feats New features
 

@@ -569,7 +569,7 @@ class BladeRF:
         _check_error(ret)
 
     def get_gain(self, ch):
-        gain = ffi.new("int *")
+        gain = ffi.new("bladerf_gain *")
         ret = libbladeRF.bladerf_get_gain(self.dev[0], ch, gain)
         _check_error(ret)
         return gain[0]
@@ -607,7 +607,7 @@ class BladeRF:
         _check_error(ret)
 
     def get_gain_stage(self, ch, stage):
-        gain = ffi.new("int *")
+        gain = ffi.new("bladerf_gain *")
         ret = libbladeRF.bladerf_get_gain_stage(self.dev[0], ch,
                                                 stage.encode(), gain)
         _check_error(ret)
@@ -633,7 +633,7 @@ class BladeRF:
     # Sample rate
 
     def set_sample_rate(self, ch, rate):
-        actual_rate = ffi.new("unsigned int *")
+        actual_rate = ffi.new("bladerf_sample_rate *")
         ret = libbladeRF.bladerf_set_sample_rate(self.dev[0], ch, int(rate),
                                                  actual_rate)
         _check_error(ret)
@@ -643,7 +643,7 @@ class BladeRF:
         raise NotImplementedError()
 
     def get_sample_rate(self, ch):
-        rate = ffi.new("unsigned int *")
+        rate = ffi.new("bladerf_sample_rate *")
         ret = libbladeRF.bladerf_get_sample_rate(self.dev[0], ch, rate)
         _check_error(ret)
         return rate[0]
@@ -661,14 +661,14 @@ class BladeRF:
     # Bandwidth
 
     def set_bandwidth(self, ch, bandwidth):
-        actual_bandwidth = ffi.new("unsigned int *")
+        actual_bandwidth = ffi.new("bladerf_bandwidth *")
         ret = libbladeRF.bladerf_set_bandwidth(self.dev[0], ch, int(bandwidth),
                                                actual_bandwidth)
         _check_error(ret)
         return actual_bandwidth[0]
 
     def get_bandwidth(self, ch):
-        bandwidth = ffi.new("unsigned int *")
+        bandwidth = ffi.new("bladerf_bandwidth *")
         ret = libbladeRF.bladerf_get_bandwidth(self.dev[0], ch, bandwidth)
         _check_error(ret)
         return bandwidth[0]
@@ -687,7 +687,7 @@ class BladeRF:
         _check_error(ret)
 
     def get_frequency(self, ch):
-        frequency = ffi.new("uint64_t *")
+        frequency = ffi.new("bladerf_frequency *")
         ret = libbladeRF.bladerf_get_frequency(self.dev[0], ch, frequency)
         _check_error(ret)
         return frequency[0]
@@ -786,7 +786,7 @@ class BladeRF:
     # DC/Phase/Gain Correction
 
     def get_correction(self, ch, corr):
-        value = ffi.new("int16_t *")
+        value = ffi.new("bladerf_correction_value *")
         ret = libbladeRF.bladerf_get_correction(self.dev[0], ch, corr.value,
                                                 value)
         _check_error(ret)

@@ -177,34 +177,34 @@ struct board_fns {
     int (*get_fw_version)(struct bladerf *dev, struct bladerf_version *version);
 
     /* Gain */
-    int (*set_gain)(struct bladerf *dev, bladerf_channel ch, int gain);
-    int (*get_gain)(struct bladerf *dev, bladerf_channel ch, int *gain);
+    int (*set_gain)(struct bladerf *dev, bladerf_channel ch, bladerf_gain gain);
+    int (*get_gain)(struct bladerf *dev, bladerf_channel ch, bladerf_gain *gain);
     int (*set_gain_mode)(struct bladerf *dev, bladerf_channel ch, bladerf_gain_mode mode);
     int (*get_gain_mode)(struct bladerf *dev, bladerf_channel ch, bladerf_gain_mode *mode);
     int (*get_gain_modes)(struct bladerf *dev, bladerf_channel ch, struct bladerf_gain_modes const **modes);
     int (*get_gain_range)(struct bladerf *dev, bladerf_channel ch, struct bladerf_range const **range);
-    int (*set_gain_stage)(struct bladerf *dev, bladerf_channel ch, const char *stage, int gain);
-    int (*get_gain_stage)(struct bladerf *dev, bladerf_channel ch, const char *stage, int *gain);
+    int (*set_gain_stage)(struct bladerf *dev, bladerf_channel ch, const char *stage, bladerf_gain gain);
+    int (*get_gain_stage)(struct bladerf *dev, bladerf_channel ch, const char *stage, bladerf_gain *gain);
     int (*get_gain_stage_range)(struct bladerf *dev, bladerf_channel ch, char const *stage, struct bladerf_range const **range);
     int (*get_gain_stages)(struct bladerf *dev, bladerf_channel ch, const char **stages, size_t count);
 
     /* Sample Rate */
-    int (*set_sample_rate)(struct bladerf *dev, bladerf_channel ch, unsigned int rate, unsigned int *actual);
+    int (*set_sample_rate)(struct bladerf *dev, bladerf_channel ch, bladerf_sample_rate rate, bladerf_sample_rate *actual);
     int (*set_rational_sample_rate)(struct bladerf *dev, bladerf_channel ch, struct bladerf_rational_rate *rate, struct bladerf_rational_rate *actual);
-    int (*get_sample_rate)(struct bladerf *dev, bladerf_channel ch, unsigned int *rate);
+    int (*get_sample_rate)(struct bladerf *dev, bladerf_channel ch, bladerf_sample_rate *rate);
     int (*get_sample_rate_range)(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range);
     int (*get_rational_sample_rate)(struct bladerf *dev, bladerf_channel ch, struct bladerf_rational_rate *rate);
 
     /* Bandwidth */
-    int (*set_bandwidth)(struct bladerf *dev, bladerf_channel ch, unsigned int bandwidth, unsigned int *actual);
-    int (*get_bandwidth)(struct bladerf *dev, bladerf_channel ch, unsigned int *bandwidth);
+    int (*set_bandwidth)(struct bladerf *dev, bladerf_channel ch, bladerf_bandwidth bandwidth, bladerf_bandwidth *actual);
+    int (*get_bandwidth)(struct bladerf *dev, bladerf_channel ch, bladerf_bandwidth *bandwidth);
     int (*get_bandwidth_range)(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range);
 
     /* Frequency */
-    int (*get_frequency)(struct bladerf *dev, bladerf_channel ch, uint64_t *frequency);
-    int (*set_frequency)(struct bladerf *dev, bladerf_channel ch, uint64_t frequency);
+    int (*get_frequency)(struct bladerf *dev, bladerf_channel ch, bladerf_frequency *frequency);
+    int (*set_frequency)(struct bladerf *dev, bladerf_channel ch, bladerf_frequency frequency);
     int (*get_frequency_range)(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range);
-    int (*select_band)(struct bladerf *dev, bladerf_channel ch, uint64_t frequency);
+    int (*select_band)(struct bladerf *dev, bladerf_channel ch, bladerf_frequency frequency);
 
     /* RF Ports */
     int (*set_rf_port)(struct bladerf *dev, bladerf_channel ch, const char *port);
@@ -213,7 +213,7 @@ struct board_fns {
 
     /* Scheduled Tuning */
     int (*get_quick_tune)(struct bladerf *dev, bladerf_channel ch, struct bladerf_quick_tune *quick_tune);
-    int (*schedule_retune)(struct bladerf *dev, bladerf_channel ch, uint64_t timestamp, uint64_t frequency, struct bladerf_quick_tune *quick_tune);
+    int (*schedule_retune)(struct bladerf *dev, bladerf_channel ch, bladerf_timestamp timestamp, bladerf_frequency frequency, struct bladerf_quick_tune *quick_tune);
     int (*cancel_scheduled_retunes)(struct bladerf *dev, bladerf_channel ch);
 
     /* DC/Phase/Gain Correction */
@@ -237,7 +237,7 @@ struct board_fns {
     int (*sync_config)(struct bladerf *dev, bladerf_channel_layout layout, bladerf_format format, unsigned int num_buffers, unsigned int buffer_size, unsigned int num_transfers, unsigned int stream_timeout);
     int (*sync_tx)(struct bladerf *dev, void const *samples, unsigned int num_samples, struct bladerf_metadata *metadata, unsigned int timeout_ms);
     int (*sync_rx)(struct bladerf *dev, void *samples, unsigned int num_samples, struct bladerf_metadata *metadata, unsigned int timeout_ms);
-    int (*get_timestamp)(struct bladerf *dev, bladerf_direction dir, uint64_t *value);
+    int (*get_timestamp)(struct bladerf *dev, bladerf_direction dir, bladerf_timestamp *timestamp);
 
     /* FPGA/Firmware Loading/Flashing */
     int (*load_fpga)(struct bladerf *dev, const uint8_t *buf, size_t length);
