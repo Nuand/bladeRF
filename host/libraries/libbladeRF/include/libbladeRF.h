@@ -620,13 +620,25 @@ struct bladerf_gain_modes {
 /**
  * Set overall system gain
  *
+ * This sets an overall system gain, optimally proportioning the gain between
+ * multiple gain stages if applicable.
+ *
+ * @see Use bladerf_get_gain_range() to determine the range of system gain.
+ *
+ * On receive channels, 60 dB is the maximum gain level.
+ *
+ * On transmit channels, 60 dB is defined as approximately 0 dBm. Note that
+ * this is not a calibrated value, and the actual output power will vary based
+ * on a multitude of factors.
+ *
+ * @todo The gain ranges are not shifted to account for external accessories,
+ *       such as amplifiers and LNAs.
+ *
  * @note Values outside the valid gain range will be clamped.
  *
  * @param       dev         Device handle
  * @param[in]   ch          Channel
  * @param[in]   gain        Desired gain, in dB
- *
- * @note `gain` may be negative (e.g. transmit channels).
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
@@ -641,8 +653,6 @@ int CALL_CONV bladerf_set_gain(struct bladerf *dev,
  * @param       dev         Device handle
  * @param[in]   ch          Channel
  * @param[out]  gain        Gain, in dB
- *
- * @note `gain` may be negative (e.g. transmit channels).
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
@@ -726,7 +736,7 @@ int CALL_CONV bladerf_get_gain_modes(struct bladerf *dev,
 API_EXPORT
 int CALL_CONV bladerf_get_gain_range(struct bladerf *dev,
                                      bladerf_channel ch,
-                                     struct bladerf_range *range);
+                                     const struct bladerf_range **range);
 
 /**
  * Set the gain for a specific gain stage
@@ -784,7 +794,7 @@ API_EXPORT
 int CALL_CONV bladerf_get_gain_stage_range(struct bladerf *dev,
                                            bladerf_channel ch,
                                            const char *stage,
-                                           struct bladerf_range *range);
+                                           const struct bladerf_range **range);
 
 /**
  * Get a list of available gain stages

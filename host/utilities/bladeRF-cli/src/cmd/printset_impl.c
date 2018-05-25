@@ -428,45 +428,60 @@ static int _do_print_gain(struct cli_state *state,
     int *err = &state->last_lib_error;
     int status;
 
+    char *stage = (char *)arg;
+
     size_t const max_count = 16; /* Max number of stages to display */
-    size_t const max_len   = 16; /* Max length of a stage name */
+    char **stages;
 
-    bool printed      = false;
-    char *stage       = (char *)arg;
-    char **gain_names = NULL; /* Array of pointers to gain stage names */
-    char *stage_name  = NULL; /* Temporary stage name storage */
+    struct bladerf_range const *range = NULL;
 
-    gain_names = calloc(max_count, sizeof(char *));
-    if (NULL == gain_names) {
+    bool printed = false;
+    int gain;
+    int count;
+    int i;
+
+    stages = calloc(max_count, sizeof(char *));
+    if (NULL == stages) {
         rv = CLI_RET_MEM;
         goto out;
     }
 
-    stage_name = calloc(max_len, sizeof(char));
-    if (NULL == stage_name) {
-        rv = CLI_RET_MEM;
-        goto out;
+    /* Print the overall gain, if no gain stage is specified */
+    if (NULL == stage) {
+        status = bladerf_get_gain_range(state->dev, ch, &range);
+        if (status < 0) {
+            *err = status;
+            rv   = CLI_RET_LIBBLADERF;
+            goto out;
+        };
+
+        status = bladerf_get_gain(state->dev, ch, &gain);
+        if (status < 0) {
+            *err = status;
+            rv   = CLI_RET_LIBBLADERF;
+            goto out;
+        };
+
+        printed = true;
+        printf("  Gain %-4soverall: %4d dB (Range: [%g, %g])\n",
+               channel2str(ch), gain, range->min * range->scale,
+               range->max * range->scale);
     }
 
     /* How many gain stages are available? */
-    int count = bladerf_get_gain_stages(state->dev, ch,
-                                        (char const **)gain_names, max_count);
+    count = bladerf_get_gain_stages(state->dev, ch, (char const **)stages,
+                                    max_count);
 
     /* Loop over the gain stages */
-    int si;
-
-    for (si = 0; si < count && rv == CLI_RET_OK; ++si) {
-        struct bladerf_range range;
-        int gain;
-
-        if (NULL != stage && 0 != strcmp((gain_names[si]), stage)) {
+    for (i = 0; i < count && rv == CLI_RET_OK; ++i) {
+        if (NULL != stage && 0 != strcmp((stages[i]), stage)) {
             /* This is not the stage we're looking for */
             continue;
         }
 
         /* Get the allowed range of gain values */
-        status = bladerf_get_gain_stage_range(state->dev, ch, gain_names[si],
-                                              &range);
+        status =
+            bladerf_get_gain_stage_range(state->dev, ch, stages[i], &range);
         if (status < 0) {
             *err = status;
             rv   = CLI_RET_LIBBLADERF;
@@ -474,26 +489,17 @@ static int _do_print_gain(struct cli_state *state,
         };
 
         /* Get the current value of the gain stage */
-        status = bladerf_get_gain_stage(state->dev, ch, gain_names[si], &gain);
+        status = bladerf_get_gain_stage(state->dev, ch, stages[i], &gain);
         if (status < 0) {
             *err = status;
             rv   = CLI_RET_LIBBLADERF;
             goto out;
         };
 
-        /* Prepare human-readable stage name */
-        status = snprintf(stage_name, (max_len - 1), "%s %s:", channel2str(ch),
-                          gain_names[si]);
-        if (status < 0) {
-            *err = status;
-            rv   = CLI_RET_UNKNOWN;
-            goto out;
-        }
-
         /* Send it out */
         printed = true;
-        printf("  Gain %-12s %4d dB (Range: [%g, %g])\n", stage_name, gain,
-               range.min * range.scale, range.max * range.scale);
+        printf("          %8s: %4d dB (Range: [%g, %g])\n", stages[i], gain,
+               range->min * range->scale, range->max * range->scale);
     }
 
     if (!printed) {
@@ -502,8 +508,7 @@ static int _do_print_gain(struct cli_state *state,
     }
 
 out:
-    free(gain_names);
-    free(stage_name);
+    free(stages);
 
     return rv;
 }
@@ -626,7 +631,9 @@ int set_gain(struct cli_state *state, int argc, char **argv)
     char *stage        = NULL;
     bladerf_channel ch = BLADERF_CHANNEL_INVALID;
     char *value_str    = NULL;
-    struct bladerf_range range;
+
+    struct bladerf_range const *range = NULL;
+
     int gain;
     bool ok;
 
@@ -672,14 +679,14 @@ int set_gain(struct cli_state *state, int argc, char **argv)
         *err = status;
         rv   = CLI_RET_LIBBLADERF;
         goto out;
-    } else if (range.max >= UINT32_MAX) {
+    } else if (range->max >= UINT32_MAX) {
         cli_err_nnl(state, argv[0],
-                    "Invalid range.max (this is a bug): %" PRIu64 "\n",
-                    range.max);
+                    "Invalid range->max (this is a bug): %" PRIu64 "\n",
+                    range->max);
     }
 
-    gain = str2int(value_str, (unsigned int)range.min, (unsigned int)range.max,
-                   &ok);
+    gain = str2int(value_str, (unsigned int)range->min,
+                   (unsigned int)range->max, &ok);
     if (!ok) {
         cli_err_nnl(state, argv[0], "Invalid gain setting for %s (%s)\n",
                     (stage == NULL) ? channel2str(ch) : stage, value_str);

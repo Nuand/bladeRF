@@ -492,7 +492,7 @@ int bladerf_get_gain_modes(struct bladerf *dev,
 
 int bladerf_get_gain_range(struct bladerf *dev,
                            bladerf_channel ch,
-                           struct bladerf_range *range)
+                           struct bladerf_range const **range)
 {
     return dev->board->get_gain_range(dev, ch, range);
 }
@@ -528,7 +528,7 @@ int bladerf_get_gain_stage(struct bladerf *dev,
 int bladerf_get_gain_stage_range(struct bladerf *dev,
                                  bladerf_channel ch,
                                  const char *stage,
-                                 struct bladerf_range *range)
+                                 struct bladerf_range const **range)
 {
     return dev->board->get_gain_stage_range(dev, ch, stage, range);
 }

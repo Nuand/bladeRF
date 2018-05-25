@@ -125,6 +125,17 @@ struct bladerf1_board_data {
 #define CHECK_BOARD_STATE(_state)           _CHECK_BOARD_STATE(_state, false)
 #define CHECK_BOARD_STATE_LOCKED(_state)    _CHECK_BOARD_STATE(_state, true)
 
+#define __round_int(x) (x >= 0 ? (int)(x + 0.5) : (int)(x - 0.5))
+#define __round_int64(x) (x >= 0 ? (int64_t)(x + 0.5) : (int64_t)(x - 0.5))
+
+#define __scale(r, v) ((float)(v) / (r)->scale)
+#define __scale_int(r, v) (__round_int(__scale(r, v)))
+#define __scale_int64(r, v) (__round_int64(__scale(r, v)))
+
+#define __unscale(r, v) ((float)(v) * (r)->scale)
+#define __unscale_int(r, v) (__round_int(__unscale(r, v)))
+#define __unscale_int64(r, v) (__round_int64(__unscale(r, v)))
+
 /******************************************************************************/
 /* Constants */
 /******************************************************************************/
@@ -138,20 +149,24 @@ static const char *bladerf1_state_to_string[] = {
     [STATE_INITIALIZED]     = "Initialized",
 };
 
-/* Overall RX gain range */
+/* RX gain offset */
+#define BLADERF1_RX_GAIN_OFFSET -6.0f
 
+/* Overall RX gain range */
 static const struct bladerf_range bladerf1_rx_gain_range = {
-    FIELD_INIT(.min, BLADERF_RXVGA1_GAIN_MIN + BLADERF_RXVGA2_GAIN_MIN),
-    FIELD_INIT(.max, BLADERF_LNA_GAIN_MAX_DB + BLADERF_RXVGA1_GAIN_MAX + BLADERF_RXVGA2_GAIN_MAX),
+    FIELD_INIT(.min, BLADERF_RXVGA1_GAIN_MIN + BLADERF_RXVGA2_GAIN_MIN + BLADERF1_RX_GAIN_OFFSET),
+    FIELD_INIT(.max, BLADERF_LNA_GAIN_MAX_DB + BLADERF_RXVGA1_GAIN_MAX + BLADERF_RXVGA2_GAIN_MAX + BLADERF1_RX_GAIN_OFFSET),
     FIELD_INIT(.step, 1),
     FIELD_INIT(.scale, 1),
 };
 
-/* Overall TX gain range */
+/* TX gain offset: 60 dB system gain ~= 0 dBm output */
+#define BLADERF1_TX_GAIN_OFFSET 52.0f
 
+/* Overall TX gain range */
 static const struct bladerf_range bladerf1_tx_gain_range = {
-    FIELD_INIT(.min, BLADERF_TXVGA1_GAIN_MIN + BLADERF_TXVGA2_GAIN_MIN),
-    FIELD_INIT(.max, BLADERF_TXVGA1_GAIN_MAX + BLADERF_TXVGA2_GAIN_MAX),
+    FIELD_INIT(.min, BLADERF_TXVGA1_GAIN_MIN + BLADERF_TXVGA2_GAIN_MIN + BLADERF1_TX_GAIN_OFFSET),
+    FIELD_INIT(.max, BLADERF_TXVGA1_GAIN_MAX + BLADERF_TXVGA2_GAIN_MAX + BLADERF1_TX_GAIN_OFFSET),
     FIELD_INIT(.step, 1),
     FIELD_INIT(.scale, 1),
 };
@@ -162,7 +177,15 @@ static const struct bladerf_gain_modes bladerf1_rx_gain_modes[] = {
     {
         FIELD_INIT(.name, "default"),
         FIELD_INIT(.mode, BLADERF_GAIN_DEFAULT)
-    }
+    },
+    {
+        FIELD_INIT(.name, "manual"),
+        FIELD_INIT(.mode, BLADERF_GAIN_MANUAL)
+    },
+    {
+        FIELD_INIT(.name, "automatic"),
+        FIELD_INIT(.mode, BLADERF_GAIN_AUTOMATIC)
+    },
 };
 
 struct bladerf_gain_stage_info {
@@ -196,7 +219,7 @@ static const struct bladerf_gain_stage_info bladerf1_rx_gain_stages[] = {
         FIELD_INIT(.range, {
             FIELD_INIT(.min, BLADERF_RXVGA2_GAIN_MIN),
             FIELD_INIT(.max, BLADERF_RXVGA2_GAIN_MAX),
-            FIELD_INIT(.step, 1),
+            FIELD_INIT(.step, 3),
             FIELD_INIT(.scale, 1),
         }),
     },
@@ -655,6 +678,12 @@ static int bladerf1_initialize(struct bladerf *dev)
 
         /* Set the calibrated VCTCXO DAC value */
         status = dac161s055_write(dev, board_data->dac_trim);
+        if (status != 0) {
+            return status;
+        }
+
+        /* Set the default gain mode */
+        status = bladerf_set_gain_mode(dev, BLADERF_CHANNEL_RX(0), BLADERF_GAIN_DEFAULT);
         if (status != 0) {
             return status;
         }
@@ -1122,7 +1151,28 @@ static int bladerf1_enable_module(struct bladerf *dev,
 /* Gain */
 /******************************************************************************/
 
-static bladerf_lna_gain convert_gain_to_lna_gain(int gain)
+/**
+ * @brief      applies overall_gain to stage_gain, within the range max
+ *
+ * "Moves" gain from overall_gain to stage_gain, ensuring that overall_gain
+ * doesn't go negative and stage_gain doesn't exceed range->max.
+ *
+ * @param[in]  range         The range for stage_gain
+ * @param      stage_gain    The stage gain
+ * @param      overall_gain  The overall gain
+ */
+static void _apportion_gain(struct bladerf_range const *range,
+                            int *stage_gain,
+                            int *overall_gain)
+{
+    int headroom  = __unscale_int(range, range->max) - *stage_gain;
+    int allotment = (headroom >= *overall_gain) ? *overall_gain : headroom;
+
+    *stage_gain += allotment;
+    *overall_gain -= allotment;
+}
+
+static bladerf_lna_gain _convert_gain_to_lna_gain(int gain)
 {
     if (gain >= BLADERF_LNA_GAIN_MAX_DB) {
         return BLADERF_LNA_GAIN_MAX;
@@ -1135,7 +1185,7 @@ static bladerf_lna_gain convert_gain_to_lna_gain(int gain)
     return BLADERF_LNA_GAIN_BYPASS;
 }
 
-static int convert_lna_gain_to_gain(bladerf_lna_gain lnagain)
+static int _convert_lna_gain_to_gain(bladerf_lna_gain lnagain)
 {
     switch (lnagain) {
         case BLADERF_LNA_GAIN_MAX:
@@ -1149,46 +1199,113 @@ static int convert_lna_gain_to_gain(bladerf_lna_gain lnagain)
     }
 }
 
+static int bladerf1_get_gain_stage_range(struct bladerf *dev,
+                                         bladerf_channel ch,
+                                         char const *stage,
+                                         struct bladerf_range const **range)
+{
+    struct bladerf_gain_stage_info const *stage_infos;
+    unsigned int stage_infos_len;
+    size_t i;
+
+    if (NULL == stage) {
+        log_error("%s: stage is null\n", __FUNCTION__);
+        return BLADERF_ERR_INVAL;
+    }
+
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
+        stage_infos     = bladerf1_tx_gain_stages;
+        stage_infos_len = ARRAY_SIZE(bladerf1_tx_gain_stages);
+    } else {
+        stage_infos     = bladerf1_rx_gain_stages;
+        stage_infos_len = ARRAY_SIZE(bladerf1_rx_gain_stages);
+    }
+
+    for (i = 0; i < stage_infos_len; i++) {
+        if (strcmp(stage_infos[i].name, stage) == 0) {
+            if (NULL != range) {
+                *range = &(stage_infos[i].range);
+            }
+            return 0;
+        }
+    }
+
+    return BLADERF_ERR_INVAL;
+}
+
 static int set_rx_gain(struct bladerf *dev, int gain)
 {
+    struct bladerf_range const *lna_range    = NULL;
+    struct bladerf_range const *rxvga1_range = NULL;
+    struct bladerf_range const *rxvga2_range = NULL;
+    bladerf_channel const ch                 = BLADERF_CHANNEL_RX(0);
+    int lna, rxvga1, rxvga2;
     int status;
-    bladerf_lna_gain lnagain;
-    int rxvga1;
-    int rxvga2;
 
-    if (gain <= BLADERF_LNA_GAIN_MID_DB) {
-        lnagain = BLADERF_LNA_GAIN_BYPASS;
-        rxvga1 = BLADERF_RXVGA1_GAIN_MIN;
-        rxvga2 = BLADERF_RXVGA2_GAIN_MIN;
-    } else if (gain <= BLADERF_LNA_GAIN_MID_DB + BLADERF_RXVGA1_GAIN_MIN) {
-        lnagain = BLADERF_LNA_GAIN_MID_DB;
-        rxvga1 = BLADERF_RXVGA1_GAIN_MIN;
-        rxvga2 = BLADERF_RXVGA2_GAIN_MIN;
-    } else if (gain <= (BLADERF_LNA_GAIN_MAX_DB + BLADERF_RXVGA1_GAIN_MAX)) {
-        lnagain = BLADERF_LNA_GAIN_MID;
-        rxvga1 = gain - BLADERF_LNA_GAIN_MID_DB;
-        rxvga2 = BLADERF_RXVGA2_GAIN_MIN;
-    } else if (gain < (BLADERF_LNA_GAIN_MAX_DB + BLADERF_RXVGA1_GAIN_MAX + BLADERF_RXVGA2_GAIN_MAX)) {
-        lnagain = BLADERF_LNA_GAIN_MAX;
-        rxvga1 = BLADERF_RXVGA1_GAIN_MAX;
-        rxvga2 = gain - (BLADERF_LNA_GAIN_MAX_DB + BLADERF_RXVGA1_GAIN_MAX);
-    } else {
-        lnagain = BLADERF_LNA_GAIN_MAX;
-        rxvga1 = BLADERF_RXVGA1_GAIN_MAX;
-        rxvga2 = BLADERF_RXVGA2_GAIN_MAX;
-    }
-
-    status = lms_lna_set_gain(dev, lnagain);
+    // get our gain stage ranges!
+    status = bladerf1_get_gain_stage_range(dev, ch, "lna", &lna_range);
     if (status < 0) {
         return status;
     }
 
-    status = lms_rxvga1_set_gain(dev, rxvga1);
+    status = bladerf1_get_gain_stage_range(dev, ch, "rxvga1", &rxvga1_range);
     if (status < 0) {
         return status;
     }
 
-    status = lms_rxvga2_set_gain(dev, rxvga2);
+    status = bladerf1_get_gain_stage_range(dev, ch, "rxvga2", &rxvga2_range);
+    if (status < 0) {
+        return status;
+    }
+
+    lna    = __unscale_int(lna_range, lna_range->min);
+    rxvga1 = __unscale_int(rxvga1_range, rxvga1_range->min);
+    rxvga2 = __unscale_int(rxvga2_range, rxvga2_range->min);
+
+    // offset gain so that we can use it as a counter when apportioning gain
+    gain -=
+        (BLADERF1_RX_GAIN_OFFSET + __unscale_int(lna_range, lna_range->min) +
+         __unscale_int(rxvga1_range, rxvga1_range->min) +
+         __unscale_int(rxvga2_range, rxvga2_range->min));
+
+    // apportion some gain to RXLNA (but only half of it for now)
+    _apportion_gain(lna_range, &lna, &gain);
+    if (lna > BLADERF_LNA_GAIN_MID_DB) {
+        gain += (lna - BLADERF_LNA_GAIN_MID_DB);
+        lna -= (lna - BLADERF_LNA_GAIN_MID_DB);
+    }
+
+    // apportion gain to RXVGA1
+    _apportion_gain(rxvga1_range, &rxvga1, &gain);
+
+    // apportion more gain to RXLNA
+    _apportion_gain(lna_range, &lna, &gain);
+
+    // apportion gain to RXVGA2
+    _apportion_gain(rxvga2_range, &rxvga2, &gain);
+
+    // if we still have remaining gain, it's because rxvga2 has a step size of
+    // 3 dB. Steal a few dB from rxvga1...
+    if (gain > 0 && rxvga1 >= __unscale_int(rxvga1_range, rxvga1_range->max)) {
+        rxvga1 -= __unscale_int(rxvga2_range, rxvga2_range->step);
+        gain += __unscale_int(rxvga2_range, rxvga2_range->step);
+
+        _apportion_gain(rxvga2_range, &rxvga2, &gain);
+        _apportion_gain(rxvga1_range, &rxvga1, &gain);
+    }
+
+    // that should do it.  actually apply the changes:
+    status = lms_lna_set_gain(dev, _convert_gain_to_lna_gain(lna));
+    if (status < 0) {
+        return status;
+    }
+
+    status = lms_rxvga1_set_gain(dev, __scale_int(rxvga1_range, rxvga1));
+    if (status < 0) {
+        return status;
+    }
+
+    status = lms_rxvga2_set_gain(dev, __scale_int(rxvga2_range, rxvga2));
     if (status < 0) {
         return status;
     }
@@ -1219,45 +1336,60 @@ static int get_rx_gain(struct bladerf *dev, int *gain)
         return status;
     }
 
-    if (lnagain == BLADERF_LNA_GAIN_BYPASS) {
-        lnagain_db = 0;
-    } else if (lnagain == BLADERF_LNA_GAIN_MID) {
-        lnagain_db = BLADERF_LNA_GAIN_MID_DB;
-    } else if (lnagain == BLADERF_LNA_GAIN_MAX) {
-        lnagain_db = BLADERF_LNA_GAIN_MAX_DB;
-    } else {
-        return BLADERF_ERR_UNEXPECTED;
+    switch (lnagain) {
+        case BLADERF_LNA_GAIN_BYPASS:
+            lnagain_db = 0;
+            break;
+
+        case BLADERF_LNA_GAIN_MID:
+            lnagain_db = BLADERF_LNA_GAIN_MID_DB;
+            break;
+
+        case BLADERF_LNA_GAIN_MAX:
+            lnagain_db = BLADERF_LNA_GAIN_MAX_DB;
+            break;
+
+        default:
+            return BLADERF_ERR_UNEXPECTED;
     }
 
-    *gain = lnagain_db + rxvga1 + rxvga2;
+    *gain = lnagain_db + rxvga1 + rxvga2 + BLADERF1_RX_GAIN_OFFSET;
 
     return 0;
 }
 
 static int set_tx_gain(struct bladerf *dev, int gain)
 {
+    struct bladerf_range const *txvga1_range = NULL;
+    struct bladerf_range const *txvga2_range = NULL;
+    bladerf_channel const ch                 = BLADERF_CHANNEL_RX(0);
+    int txvga1, txvga2;
     int status;
-    int txvga1;
-    int txvga2;
 
-    const int max_gain =
-        (BLADERF_TXVGA1_GAIN_MAX - BLADERF_TXVGA1_GAIN_MIN)
-            + BLADERF_TXVGA2_GAIN_MAX;
-
-    if (gain < 0) {
-        gain = 0;
+    // get our gain stage ranges!
+    status = bladerf1_get_gain_stage_range(dev, ch, "txvga1", &txvga1_range);
+    if (status < 0) {
+        return status;
     }
 
-    if (gain <= BLADERF_TXVGA2_GAIN_MAX) {
-        txvga1 = BLADERF_TXVGA1_GAIN_MIN;
-        txvga2 = gain;
-    } else if (gain <= max_gain) {
-        txvga1 = BLADERF_TXVGA1_GAIN_MIN + gain - BLADERF_TXVGA2_GAIN_MAX;
-        txvga2 = BLADERF_TXVGA2_GAIN_MAX;
-    } else {
-        txvga1 = BLADERF_TXVGA1_GAIN_MAX;
-        txvga2 = BLADERF_TXVGA2_GAIN_MAX;
+    status = bladerf1_get_gain_stage_range(dev, ch, "txvga2", &txvga2_range);
+    if (status < 0) {
+        return status;
     }
+
+    txvga1 = __unscale_int(txvga1_range, txvga1_range->min);
+    txvga2 = __unscale_int(txvga2_range, txvga2_range->min);
+
+    // offset gain so that we can use it as a counter when apportioning gain
+    gain -= (BLADERF1_TX_GAIN_OFFSET +
+             __unscale_int(txvga1_range, txvga1_range->min) +
+             __unscale_int(txvga2_range, txvga2_range->min));
+
+    // apportion gain to TXVGA2
+    _apportion_gain(txvga2_range, &txvga2, &gain);
+
+    // apportion gain to TXVGA1
+    _apportion_gain(txvga1_range, &txvga1, &gain);
 
     status = lms_txvga1_set_gain(dev, txvga1);
     if (status < 0) {
@@ -1288,7 +1420,7 @@ static int get_tx_gain(struct bladerf *dev, int *gain)
         return status;
     }
 
-    *gain = txvga1 + txvga2;
+    *gain = txvga1 + txvga2 + BLADERF1_TX_GAIN_OFFSET;
 
     return 0;
 }
@@ -1297,16 +1429,18 @@ static int bladerf1_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
 {
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
-    if (ch == BLADERF_CHANNEL_TX(0)) {
+    if (BLADERF_CHANNEL_TX(0) == ch) {
         return set_tx_gain(dev, gain);
-    } else if (ch == BLADERF_CHANNEL_RX(0)) {
+    } else if (BLADERF_CHANNEL_RX(0) == ch) {
         return set_rx_gain(dev, gain);
     }
 
     return BLADERF_ERR_INVAL;
 }
 
-static int bladerf1_set_gain_mode(struct bladerf *dev, bladerf_module mod, bladerf_gain_mode mode)
+static int bladerf1_set_gain_mode(struct bladerf *dev,
+                                  bladerf_module mod,
+                                  bladerf_gain_mode mode)
 {
     int status;
     uint32_t config_gpio;
@@ -1316,7 +1450,8 @@ static int bladerf1_set_gain_mode(struct bladerf *dev, bladerf_module mod, blade
         return BLADERF_ERR_UNSUPPORTED;
     }
 
-    if (!have_cap(board_data->capabilities, BLADERF_CAP_AGC_DC_LUT) || !board_data->cal.dc_rx) {
+    if (!have_cap(board_data->capabilities, BLADERF_CAP_AGC_DC_LUT) ||
+        !board_data->cal.dc_rx) {
         return BLADERF_ERR_UNSUPPORTED;
     }
 
@@ -1328,16 +1463,18 @@ static int bladerf1_set_gain_mode(struct bladerf *dev, bladerf_module mod, blade
         return status;
     }
 
-    if (mode == BLADERF_GAIN_AUTOMATIC) {
+    if (mode == BLADERF_GAIN_AUTOMATIC || mode == BLADERF_GAIN_DEFAULT) {
         config_gpio |= BLADERF_GPIO_AGC_ENABLE;
-    } else if (mode == BLADERF_GAIN_MANUAL) {
+    } else if (mode == BLADERF_GAIN_MANUAL || mode == BLADERF_GAIN_MGC) {
         config_gpio &= ~BLADERF_GPIO_AGC_ENABLE;
     }
 
     return dev->backend->config_gpio_write(dev, config_gpio);
 }
 
-static int bladerf1_get_gain_mode(struct bladerf *dev, bladerf_module mod, bladerf_gain_mode *mode)
+static int bladerf1_get_gain_mode(struct bladerf *dev,
+                                  bladerf_module mod,
+                                  bladerf_gain_mode *mode)
 {
     int status;
     uint32_t config_gpio;
@@ -1359,9 +1496,9 @@ static int bladerf1_get_gain(struct bladerf *dev, bladerf_channel ch, int *gain)
 {
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
-    if (ch == BLADERF_CHANNEL_TX(0)) {
+    if (BLADERF_CHANNEL_TX(0) == ch) {
         return get_tx_gain(dev, gain);
-    } else if (ch == BLADERF_CHANNEL_RX(0)) {
+    } else if (BLADERF_CHANNEL_RX(0) == ch) {
         return get_rx_gain(dev, gain);
     }
 
@@ -1375,7 +1512,7 @@ static int bladerf1_get_gain_modes(struct bladerf *dev,
     struct bladerf_gain_modes const *mode_infos;
     unsigned int mode_infos_len;
 
-    if (BLADERF_CHANNEL_TX(0) == ch) {
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
         mode_infos     = NULL;
         mode_infos_len = 0;
     } else {
@@ -1390,12 +1527,14 @@ static int bladerf1_get_gain_modes(struct bladerf *dev,
     return mode_infos_len;
 }
 
-static int bladerf1_get_gain_range(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range)
+static int bladerf1_get_gain_range(struct bladerf *dev,
+                                   bladerf_channel ch,
+                                   struct bladerf_range const **range)
 {
-    if (ch == BLADERF_CHANNEL_TX(0)) {
-        *range = bladerf1_tx_gain_range;
-    } else if (ch == BLADERF_CHANNEL_RX(0)) {
-        *range = bladerf1_rx_gain_range;
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
+        *range = &bladerf1_tx_gain_range;
+    } else {
+        *range = &bladerf1_rx_gain_range;
     }
 
     return 0;
@@ -1403,120 +1542,103 @@ static int bladerf1_get_gain_range(struct bladerf *dev, bladerf_channel ch, stru
 
 static int bladerf1_set_gain_stage(struct bladerf *dev,
                                    bladerf_channel ch,
-                                   const char *stage,
+                                   char const *stage,
                                    int gain)
 {
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     /* TODO implement gain clamping */
 
-    if (ch == BLADERF_CHANNEL_TX(0)) {
-        if (strcmp(stage, "txvga1") == 0) {
-            return lms_txvga1_set_gain(dev, gain);
-        } else if (strcmp(stage, "txvga2") == 0) {
-            return lms_txvga2_set_gain(dev, gain);
-        }
-    } else if (ch == BLADERF_CHANNEL_RX(0)) {
-        if (strcmp(stage, "rxvga1") == 0) {
-            return lms_rxvga1_set_gain(dev, gain);
-        } else if (strcmp(stage, "rxvga2") == 0) {
-            return lms_rxvga2_set_gain(dev, gain);
-        } else if (strcmp(stage, "lna") == 0) {
-            return lms_lna_set_gain(dev, convert_gain_to_lna_gain(gain));
-        }
-    } else {
-        log_error("%s: channel %d invalid\n", __FUNCTION__, ch);
-    }
+    switch (ch) {
+        case BLADERF_CHANNEL_TX(0):
+            if (strcmp(stage, "txvga1") == 0) {
+                return lms_txvga1_set_gain(dev, gain);
+            } else if (strcmp(stage, "txvga2") == 0) {
+                return lms_txvga2_set_gain(dev, gain);
+            } else {
+                log_warning("%s: gain stage '%s' invalid\n", __FUNCTION__,
+                            stage);
+                return 0;
+            }
 
-    log_warning("%s: gain stage '%s' invalid\n", __FUNCTION__, stage);
-    return 0;
+        case BLADERF_CHANNEL_RX(0):
+            if (strcmp(stage, "rxvga1") == 0) {
+                return lms_rxvga1_set_gain(dev, gain);
+            } else if (strcmp(stage, "rxvga2") == 0) {
+                return lms_rxvga2_set_gain(dev, gain);
+            } else if (strcmp(stage, "lna") == 0) {
+                return lms_lna_set_gain(dev, _convert_gain_to_lna_gain(gain));
+            } else {
+                log_warning("%s: gain stage '%s' invalid\n", __FUNCTION__,
+                            stage);
+                return 0;
+            }
+
+        default:
+            log_error("%s: channel %d invalid\n", __FUNCTION__, ch);
+            return BLADERF_ERR_INVAL;
+    }
 }
 
 static int bladerf1_get_gain_stage(struct bladerf *dev,
                                    bladerf_channel ch,
-                                   const char *stage,
+                                   char const *stage,
                                    int *gain)
 {
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
-    if (ch == BLADERF_CHANNEL_TX(0)) {
-        if (strcmp(stage, "txvga1") == 0) {
-            return lms_txvga1_get_gain(dev, gain);
-        } else if (strcmp(stage, "txvga2") == 0) {
-            return lms_txvga2_get_gain(dev, gain);
-        }
-    } else if (ch == BLADERF_CHANNEL_RX(0)) {
-        if (strcmp(stage, "rxvga1") == 0) {
-            return lms_rxvga1_get_gain(dev, gain);
-        } else if (strcmp(stage, "rxvga2") == 0) {
-            return lms_rxvga2_get_gain(dev, gain);
-        } else if (strcmp(stage, "lna") == 0) {
-            int status;
-            bladerf_lna_gain lnagain;
-            status = lms_lna_get_gain(dev, &lnagain);
-            if (status == 0) {
-                *gain = convert_lna_gain_to_gain(lnagain);
+    switch (ch) {
+        case BLADERF_CHANNEL_TX(0):
+            if (strcmp(stage, "txvga1") == 0) {
+                return lms_txvga1_get_gain(dev, gain);
+            } else if (strcmp(stage, "txvga2") == 0) {
+                return lms_txvga2_get_gain(dev, gain);
+            } else {
+                log_warning("%s: gain stage '%s' invalid\n", __FUNCTION__,
+                            stage);
+                return 0;
             }
-            return status;
-        }
-    } else {
-        log_error("%s: channel %d invalid\n", __FUNCTION__, ch);
-    }
 
-    log_warning("%s: gain stage '%s' invalid\n", __FUNCTION__, stage);
-    return 0;
+        case BLADERF_CHANNEL_RX(0):
+            if (strcmp(stage, "rxvga1") == 0) {
+                return lms_rxvga1_get_gain(dev, gain);
+            } else if (strcmp(stage, "rxvga2") == 0) {
+                return lms_rxvga2_get_gain(dev, gain);
+            } else if (strcmp(stage, "lna") == 0) {
+                int status;
+                bladerf_lna_gain lnagain;
+                status = lms_lna_get_gain(dev, &lnagain);
+                if (status == 0) {
+                    *gain = _convert_lna_gain_to_gain(lnagain);
+                }
+                return status;
+            } else {
+                log_warning("%s: gain stage '%s' invalid\n", __FUNCTION__,
+                            stage);
+                return 0;
+            }
+
+        default:
+            log_error("%s: channel %d invalid\n", __FUNCTION__, ch);
+            return BLADERF_ERR_INVAL;
+    }
 }
 
-static int bladerf1_get_gain_stage_range(struct bladerf *dev,
-                                         bladerf_channel ch,
-                                         const char *stage,
-                                         struct bladerf_range *range)
+static int bladerf1_get_gain_stages(struct bladerf *dev,
+                                    bladerf_channel ch,
+                                    char const **stages,
+                                    size_t count)
 {
-    const struct bladerf_gain_stage_info *stage_infos;
-    unsigned int stage_infos_len;
-    size_t i;
-
-    if (NULL == stage) {
-        log_error("%s: stage is null\n", __FUNCTION__);
-        return BLADERF_ERR_INVAL;
-    }
-
-    if (ch == BLADERF_CHANNEL_TX(0)) {
-        stage_infos     = bladerf1_tx_gain_stages;
-        stage_infos_len = ARRAY_SIZE(bladerf1_tx_gain_stages);
-    } else if (ch == BLADERF_CHANNEL_RX(0)) {
-        stage_infos     = bladerf1_rx_gain_stages;
-        stage_infos_len = ARRAY_SIZE(bladerf1_rx_gain_stages);
-    } else {
-        return BLADERF_ERR_INVAL;
-    }
-
-    for (i = 0; i < stage_infos_len; i++) {
-        if (strcmp(stage_infos[i].name, stage) == 0) {
-            if (NULL != range) {
-                *range = stage_infos[i].range;
-            }
-            return 0;
-        }
-    }
-
-    return BLADERF_ERR_INVAL;
-}
-
-static int bladerf1_get_gain_stages(struct bladerf *dev, bladerf_channel ch, const char **stages, size_t count)
-{
-    const struct bladerf_gain_stage_info *stage_infos;
+    struct bladerf_gain_stage_info const *stage_infos;
     unsigned int stage_infos_len;
     unsigned int i;
 
-    if (ch == BLADERF_CHANNEL_TX(0)) {
-        stage_infos = bladerf1_tx_gain_stages;
+    if (BLADERF_CHANNEL_IS_TX(ch)) {
+        stage_infos     = bladerf1_tx_gain_stages;
         stage_infos_len = ARRAY_SIZE(bladerf1_tx_gain_stages);
-    } else if (ch == BLADERF_CHANNEL_RX(0)) {
-        stage_infos = bladerf1_rx_gain_stages;
-        stage_infos_len = ARRAY_SIZE(bladerf1_rx_gain_stages);
     } else {
-        return BLADERF_ERR_INVAL;
+        stage_infos     = bladerf1_rx_gain_stages;
+        stage_infos_len = ARRAY_SIZE(bladerf1_rx_gain_stages);
     }
 
     if (stages != NULL) {

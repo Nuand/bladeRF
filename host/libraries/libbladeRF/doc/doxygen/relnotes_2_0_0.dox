@@ -306,11 +306,12 @@ you'll also find `board/` (product-specific code), `driver/` (device drivers),
 `expansion/` (expansion board drivers), `helpers/` (helpful utility functions),
 and `streaming/` (sample streaming code).
 
-\subsection relnotes_2_0_0_feats_gaincontrol Gain control improvements
+\subsection relnotes_2_0_0_feats_gc Gain control improvements
 
 The original manual gain control functionality in libbladeRF is very low-level
 and hardware-specific, and requires significant knowledge of the underlying
-RF module to adjust. As such, the following functions are now deprecated:
+RF module to adjust. As such, new gain control methods have been introduced
+to the API, and the following functions are now deprecated:
 
 \li bladerf_set_lna_gain() and bladerf_get_lna_gain()
 \li bladerf_set_rxvga1() and bladerf_get_rxvga1()
@@ -320,23 +321,139 @@ RF module to adjust. As such, the following functions are now deprecated:
 
 Instead, applications should use one of the following approaches:
 
-\li <b>Automatic proportioning</b> (preferred): use bladerf_get_gain_range() to
-    determine the minimum and maximum values for a channel's overall gain,
-    then use bladerf_set_gain() and bladerf_get_gain() to set/get the
-    overall gain.
-\li <b>Manual gain stage control</b>: use bladerf_get_gain_stages() to
-    enumerate the gain stages available on a given channel, then use
-    bladerf_set_gain_stage() and bladerf_get_gain_stage() to set/get the gain
-    for each individual stage.
+\subsubsection relnotes_2_0_0_feats_gc_agc Automatic Gain Control (AGC)
 
-The above approaches are not mutually-exclusive, although setting the overall
-gain will override all of the applicable gain stage settings.
+Automatic gain control is available for RX channels, starting with
+<a class="el" href="https://github.com/Nuand/bladeRF/releases/tag/libbladeRF_v1.9.0">libbladeRF v1.9.0</a>
+and
+<a class="el" href="https://github.com/Nuand/bladeRF/releases/tag/fpga_v0.7.0">FPGA v0.7.0</a>.
+AGC continually adjusts the system's gain to ensure the received signal has a
+high dynamic range, while avoiding clipping.
 
-A third approach, <b>automatic gain control</b>, is also available, starting
-with libbladeRF 1.9. This will override manually-set gains.
+\li bladerf_get_gain_modes() reports the available gain modes on a channel
+\li bladerf_get_gain_mode() reports the current gain mode for a channel
+\li bladerf_set_gain_mode() sets the gain mode for a channel
 
-\see bladerf_get_gain_modes() - Get available gain control modes.
-\see bladerf_set_gain_mode() - Set gain control mode.
+As of this writing, the available gain modes are:
+
+\li bladeRF: \b ::BLADERF_GAIN_AUTOMATIC (default), ::BLADERF_GAIN_MANUAL
+\li bladeRF Micro: ::BLADERF_GAIN_MGC, ::BLADERF_GAIN_FASTATTACK_AGC,
+                   \b ::BLADERF_GAIN_SLOWATTACK_AGC (default),
+                   ::BLADERF_GAIN_HYBRID_AGC
+
+\note bladerf_get_gain_mode() and bladerf_set_gain_mode() will return
+      ::BLADERF_ERR_UNSUPPORTED for TX channels.
+
+\code{.c}
+void agc_example(struct bladerf *dev, bladerf_channel channel)
+{
+    int i, status;
+    const struct bladerf_gain_modes *modes = NULL;
+    bladerf_gain_mode mode;
+
+    // What gain modes are available?
+    status = bladerf_get_gain_modes(dev, channel, &modes);
+    if (status < 0) {
+        // error case
+    }
+
+    for (i = 0; i < status; ++i) {
+        printf("enum %d is gain mode %s\n", modes[i]->mode, modes[i]->name);
+    }
+
+    // Get current gain mode
+    status = bladerf_get_gain_mode(dev, channel, &mode);
+    if (status < 0) {
+        // error case
+    }
+
+    printf("current gain mode: %d\n", mode);
+
+    // Enable AGC
+    mode = BLADERF_GAIN_AUTOMATIC;
+    status = bladerf_set_gain_mode(dev, channel, mode);
+    if (status < 0) {
+        // error case
+    }
+}
+\endcode
+
+\subsubsection relnotes_2_0_0_feats_gc_auto System gain proportioning
+
+In previous versions, setting the gain required careful proportioning of gain
+between LNAs and VGAs. To reduce the implementation burden, an overall gain may
+now be specified, and the RFIC's gain stages will be set appropriately.
+
+\li bladerf_get_gain_range() reports the allowable values for a channel's gain
+\li bladerf_get_gain() reports the current overall gain for a channel
+\li bladerf_set_gain() sets the overall gain for a channel
+
+The gain scales are defined such that a 60 dB gain on a TX channel is
+\em approximately 0 dBm CW output, and a 60 dB gain on a RX channel is the
+maximum available amplification.
+
+\note bladerf_set_gain() may be unavailable or may not operate as expected if
+      \ref relnotes_2_0_0_feats_gc_agc is enabled, or if the channel
+      is not currently enabled.
+
+\note The range returned by bladerf_get_gain_range() may vary depending on the
+      selected center frequency.
+
+\code{.c}
+void gain_example(struct bladerf *dev, bladerf_channel channel, int gain)
+{
+    int old_gain, status;
+    const struct bladerf_range *range = NULL;
+
+    // What is the valid range?
+    status = bladerf_get_gain_range(dev, channel, &range);
+    if (status < 0) {
+        // error case
+    }
+
+    // What is the current gain?
+    status = bladerf_get_gain(dev, channel, &old_gain);
+    if (status < 0) {
+        // error case
+    };
+
+    printf("Channel %d current gain: %4d dB (Range: [%g, %g])\n",
+           channel, old_gain, range->min * range->scale, range->max * range->scale);
+
+    // Set the new gain value
+    status = bladerf_set_gain(dev, channel, gain);
+    if (status < 0) {
+        // error case
+    };
+}
+
+...
+
+gain_example(dev, BLADERF_CHANNEL_TX(0), 60);  // set 60 dB TX gain (~ 0 dBm)
+gain_example(dev, BLADERF_CHANNEL_RX(0), 60);  // set 60 dB RX gain (max)
+\endcode
+
+\subsubsection relnotes_2_0_0_feats_gc_manual Individual gain stage control
+
+Advanced implementations that need to directly configure the gain stages may
+use the following family of functions:
+
+\li bladerf_get_gain_stages() reports the gain stages on a given channel
+\li bladerf_get_gain_stage_range() reports the range of allowable values for a
+    given gain stage
+\li bladerf_get_gain_stage() reports the current value for a gain stage
+\li bladerf_set_gain_stage() sets the gain for a given gain stage
+
+\note The values set here will be reflected in bladerf_get_gain(), but using
+      bladerf_set_gain() will override any individual gain stage settings on
+      a particular channel.
+
+\note bladerf_set_gain_stage() may be unavailable or may not operate as
+      expected if \ref relnotes_2_0_0_feats_gc_agc is enabled, or if
+      the channel is not currently enabled.
+
+\note The range returned by bladerf_get_gain_stage_range() may vary depending
+      on the selected center frequency.
 
 \subsection relnotes_2_0_0_feats_mimo MIMO
 
