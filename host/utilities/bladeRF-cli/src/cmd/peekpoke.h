@@ -27,11 +27,11 @@
 #include "common.h"
 
 // clang-format off
-#define ADI_MAX_ADDRESS     0x3F7
+#define RFIC_MAX_ADDRESS    0x3F7
 #define DAC_MAX_ADDRESS     127
 #define LMS_MAX_ADDRESS     127
 #define SI_MAX_ADDRESS      255
-#define ADF4002_MAX_ADDRESS 3
+#define PLL_MAX_ADDRESS     3
 
 #define MAX_NUM_ADDRESSES   256
 #define MAX_VALUE           (1<<24)

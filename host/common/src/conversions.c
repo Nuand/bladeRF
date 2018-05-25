@@ -288,8 +288,8 @@ int str2loopback(const char *str, bladerf_loopback *loopback)
         *loopback = BLADERF_LB_RF_LNA2;
     } else if (!strcasecmp("rf_lna3", str)) {
         *loopback = BLADERF_LB_RF_LNA3;
-    } else if (!strcasecmp("rf_bist", str)) {
-        *loopback = BLADERF_LB_AD9361_BIST;
+    } else if (!strcasecmp("rfic_bist", str)) {
+        *loopback = BLADERF_LB_RFIC_BIST;
     } else if (!strcasecmp("none", str)) {
         *loopback = BLADERF_LB_NONE;
     } else {
@@ -329,8 +329,8 @@ char const *loopback2str(bladerf_loopback loopback)
         case BLADERF_LB_NONE:
             return "none";
 
-        case BLADERF_LB_AD9361_BIST:
-            return "ad9361_bist";
+        case BLADERF_LB_RFIC_BIST:
+            return "rfic_bist";
 
         default:
             return "unknown";

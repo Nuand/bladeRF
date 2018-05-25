@@ -99,16 +99,16 @@ def _print_cmd_info(device=None, devinfo=None, verbose=False):
         print("Bus Voltage       {:.3f} V".format(b.bus_voltage or 0))
         print("Bus Current       {:.3f} A".format(b.bus_current or 0))
         print("Bus Power         {:.3f} W".format(b.bus_power or 0))
-        print("RFIC temperature  {:.3f} C".format(b.ad9361_temperature or 0))
+        print("RFIC temperature  {:.3f} C".format(b.rfic_temperature or 0))
 
         print("Loopback         ", b.loopback)
         print("    Modes        ", _strify_list(b.loopback_modes))
         print("RX Mux           ", b.rx_mux)
 
-        print("ADF4002 Mode     ", _bool_to_onoff(b.adf4002_enable))
-        if b.adf4002_enable:
-            print("ADF4002 Refclk   ", b.adf4002_refclk)
-            print("ADF4002 Locked   ", _bool_to_onoff(b.adf4002_locked))
+        print("PLL Mode         ", _bool_to_onoff(b.pll_enable))
+        if b.pll_enable:
+            print("PLL Refclk       ", b.pll_refclk)
+            print("PLL Locked       ", _bool_to_onoff(b.pll_locked))
 
     print("RX Channel Count ", b.rx_channel_count)
     for c in range(b.rx_channel_count):

@@ -25,26 +25,26 @@
 #include "conversions.h"
 #include "peekpoke.h"
 
-static inline bool matches_ad9361(const char *str)
+static inline bool matches_rfic(const char *str)
 {
-    return strcasecmp("adi", str) == 0 || strcasecmp("ad9361", str) == 0;
+    return strcasecmp("rfic", str) == 0;
 }
 
-static inline bool matches_adf4002(const char *str)
+static inline bool matches_pll(const char *str)
 {
-    return strcasecmp("adf", str) == 0 || strcasecmp("adf4002", str) == 0;
+    return strcasecmp("pll", str) == 0;
 }
 
 int cmd_poke(struct cli_state *state, int argc, char **argv)
 {
     /* Valid commands:
-        poke {adi,ad9361}   <address> <value>
-        poke {adf,adf4002}  <address> <value>
+        poke rfic           <address> <value>
+        poke pll            <address> <value>
         poke dac            <address> <value>
         poke lms            <address> <value>
         poke si             <address> <value>
     */
-    int rv = CLI_RET_OK;
+    int rv     = CLI_RET_OK;
     int status = 0;
     bool ok;
     int (*f)(struct bladerf *, uint8_t, uint8_t)   = NULL;
@@ -74,27 +74,27 @@ int cmd_poke(struct cli_state *state, int argc, char **argv)
             }
         }
 
-        /* Are we writing to the AD9361? */
-        else if (matches_ad9361(argv[1])) {
+        /* Are we writing to the RFIC? */
+        else if (matches_rfic(argv[1])) {
             /* Parse address */
-            address = str2uint(argv[2], 0, ADI_MAX_ADDRESS, &ok);
+            address = str2uint(argv[2], 0, RFIC_MAX_ADDRESS, &ok);
             if (!ok) {
                 invalid_address(state, argv[0], argv[2]);
                 rv = CLI_RET_INVPARAM;
             } else {
-                f2 = bladerf_ad9361_write;
+                f2 = bladerf_set_rfic_register;
             }
         }
 
-        /* Are we writing to the ADF4002? */
-        else if (matches_adf4002(argv[1])) {
+        /* Are we writing to the PLL? */
+        else if (matches_pll(argv[1])) {
             /* Parse address */
-            address = str2uint(argv[2], 0, ADF4002_MAX_ADDRESS, &ok);
+            address = str2uint(argv[2], 0, PLL_MAX_ADDRESS, &ok);
             if (!ok) {
                 invalid_address(state, argv[0], argv[2]);
                 rv = CLI_RET_INVPARAM;
             } else {
-                f3 = bladerf_adf4002_write;
+                f3 = bladerf_set_pll_register;
             }
         }
 

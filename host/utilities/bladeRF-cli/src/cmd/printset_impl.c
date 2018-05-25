@@ -772,7 +772,7 @@ int set_loopback(struct cli_state *state, int argc, char **argv)
         printf("  %-18s%s\n", "rf_lna3",
                "RF loopback: TXMIX --> RXMIX via LNA3 path\n");
         printf("  %-18s%s\n", "firmware", "Firmware-based sample loopback\n");
-        printf("  %-18s%s\n", "ad9361_bist", "AD9361 BIST loopback\n");
+        printf("  %-18s%s\n", "rfic_bist", "RFIC BIST loopback\n");
         printf("  %-18s%s\n", "none", "Loopback disabled - Normal operation\n");
 
         rv = CLI_RET_INVPARAM;
@@ -814,7 +814,7 @@ static int _do_print_rssi(struct cli_state *state,
 
     int pre_rssi, sym_rssi;
 
-    status = bladerf_ad9361_get_rssi(state->dev, ch, &pre_rssi, &sym_rssi);
+    status = bladerf_get_rfic_rssi(state->dev, ch, &pre_rssi, &sym_rssi);
     if (status < 0) {
         *err = status;
         rv   = CLI_RET_LIBBLADERF;

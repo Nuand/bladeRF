@@ -84,40 +84,40 @@ int CALL_CONV bladerf_set_bias_tee(struct bladerf *dev,
  */
 
 /**
- * @defgroup FN_BLADERF2_LOW_LEVEL_AD9361 AD9361 RFIC
+ * @defgroup FN_BLADERF2_LOW_LEVEL_RFIC RF Integrated Circuit
  *
  * @{
  */
 
 /**
- * Read an AD9361 register
+ * Read a RFIC register
  *
  * @param       dev         Device handle
- * @param[in]   address     AD9361 register address
+ * @param[in]   address     Register address
  * @param[out]  val         Register value
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_ad9361_read(struct bladerf *dev,
-                                  uint16_t address,
-                                  uint8_t *val);
+int CALL_CONV bladerf_get_rfic_register(struct bladerf *dev,
+                                        uint16_t address,
+                                        uint8_t *val);
 /**
- * Write an AD9361 register
+ * Write a RFIC register
  *
  * @param       dev         Device handle
- * @param[in]   address     AD9361 register address
+ * @param[in]   address     Register address
  * @param[in]   val         Value to write to register
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_ad9361_write(struct bladerf *dev,
-                                   uint16_t address,
-                                   uint8_t val);
+int CALL_CONV bladerf_set_rfic_register(struct bladerf *dev,
+                                        uint16_t address,
+                                        uint8_t val);
 
 /**
- * Read the temperature from the AD9361 RFIC
+ * Read the temperature from the RFIC
  *
  * @param       dev         Device handle
  * @param[out]  val         Temperature in degrees C
@@ -125,10 +125,10 @@ int CALL_CONV bladerf_ad9361_write(struct bladerf *dev,
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_ad9361_temperature(struct bladerf *dev, float *val);
+int CALL_CONV bladerf_get_rfic_temperature(struct bladerf *dev, float *val);
 
 /**
- * Read the RSSI for the selected channel from the AD9361 RFIC
+ * Read the RSSI for the selected channel from the RFIC
  *
  * @note  This is a relative value, not an absolute value. If an absolute
  *        value (e.g. in dBm) is desired, a calibration should be performed
@@ -146,18 +146,18 @@ int CALL_CONV bladerf_ad9361_temperature(struct bladerf *dev, float *val);
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_ad9361_get_rssi(struct bladerf *dev,
-                                      bladerf_channel ch,
-                                      int32_t *pre_rssi,
-                                      int32_t *sym_rssi);
+int CALL_CONV bladerf_get_rfic_rssi(struct bladerf *dev,
+                                    bladerf_channel ch,
+                                    int32_t *pre_rssi,
+                                    int32_t *sym_rssi);
 
 /**
- * Read the CTRL_OUT pins from the AD9361 RFIC
+ * Read the CTRL_OUT pins from the RFIC
  *
  * @note  See AD9361 Reference Manual UG-570's "Control Output" chapter for
  *        complete information about this feature.
  *
- * @see   bladerf_ad9361_write()
+ * @see   bladerf_set_rfic_register()
  *
  * @param      dev       Device handle
  * @param[out] ctrl_out  Pointer for storing the retrieved value
@@ -165,13 +165,12 @@ int CALL_CONV bladerf_ad9361_get_rssi(struct bladerf *dev,
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_ad9361_get_ctrl_out(struct bladerf *dev,
-                                          uint8_t *ctrl_out);
+int CALL_CONV bladerf_get_rfic_ctrl_out(struct bladerf *dev, uint8_t *ctrl_out);
 
-/** @} (End of FN_BLADERF2_LOW_LEVEL_AD9361) */
+/** @} (End of FN_BLADERF2_LOW_LEVEL_RFIC) */
 
 /**
- * @defgroup FN_BLADERF2_LOW_LEVEL_ADF4002 ADF4002 Phase Detector/Freq. Synth
+ * @defgroup FN_BLADERF2_LOW_LEVEL_PLL Phase Detector/Freq. Synth Control
  *
  * Reference:
  * http://www.analog.com/media/en/technical-documentation/data-sheets/ADF4002.pdf
@@ -180,7 +179,7 @@ int CALL_CONV bladerf_ad9361_get_ctrl_out(struct bladerf *dev,
  */
 
 /**
- * Fetch the lock state of the ADF4002 Phase Detector/Frequency Synthesizer
+ * Fetch the lock state of the Phase Detector/Frequency Synthesizer
  *
  * @param       dev         Device handle
  * @param[out]  locked      True if locked, False otherwise
@@ -188,10 +187,10 @@ int CALL_CONV bladerf_ad9361_get_ctrl_out(struct bladerf *dev,
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_adf4002_get_locked(struct bladerf *dev, bool *locked);
+int CALL_CONV bladerf_get_pll_lock_state(struct bladerf *dev, bool *locked);
 
 /**
- * Fetch the state of the ADF4002 Phase Detector/Frequency Synthesizer
+ * Fetch the state of the Phase Detector/Frequency Synthesizer
  *
  * @param       dev         Device handle
  * @param[out]  enabled     True if enabled, False otherwise
@@ -199,12 +198,12 @@ int CALL_CONV bladerf_adf4002_get_locked(struct bladerf *dev, bool *locked);
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_adf4002_get_enable(struct bladerf *dev, bool *enabled);
+int CALL_CONV bladerf_get_pll_enable(struct bladerf *dev, bool *enabled);
 
 /**
- * Enable the ADF4002 Phase Detector/Frequency Synthesizer
+ * Enable the Phase Detector/Frequency Synthesizer
  *
- * Enabling this disables the AD5621 VCTCXO trimmer DAC, and vice versa.
+ * Enabling this disables the VCTCXO trimmer DAC, and vice versa.
  *
  * @param       dev         Device handle
  * @param[in]   enable      True to enable, False otherwise
@@ -212,10 +211,10 @@ int CALL_CONV bladerf_adf4002_get_enable(struct bladerf *dev, bool *enabled);
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_adf4002_set_enable(struct bladerf *dev, bool enable);
+int CALL_CONV bladerf_set_pll_enable(struct bladerf *dev, bool enable);
 
 /**
- * Get the valid range of frequencies for the ADF4002 reference clock input
+ * Get the valid range of frequencies for the reference clock input
  *
  * @param       dev         Device handle
  * @param[out]  range       Reference clock frequency range
@@ -223,11 +222,11 @@ int CALL_CONV bladerf_adf4002_set_enable(struct bladerf *dev, bool enable);
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_adf4002_get_refclk_range(struct bladerf *dev,
-                                               struct bladerf_range *range);
+int CALL_CONV bladerf_get_pll_refclk_range(struct bladerf *dev,
+                                           struct bladerf_range *range);
 
 /**
- * Get the currently-configured frequency for the ADF4002 reference clock
+ * Get the currently-configured frequency for the reference clock
  * input.
  *
  * @param       dev         Device handle
@@ -236,11 +235,10 @@ int CALL_CONV bladerf_adf4002_get_refclk_range(struct bladerf *dev,
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_adf4002_get_refclk(struct bladerf *dev,
-                                         uint64_t *frequency);
+int CALL_CONV bladerf_get_pll_refclk(struct bladerf *dev, uint64_t *frequency);
 
 /**
- * Set the expected frequency for the ADF4002 reference clock input.
+ * Set the expected frequency for the reference clock input.
  *
  * @param       dev         Device handle
  * @param[in]   frequency   Reference clock frequency
@@ -248,47 +246,46 @@ int CALL_CONV bladerf_adf4002_get_refclk(struct bladerf *dev,
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_adf4002_set_refclk(struct bladerf *dev,
-                                         uint64_t frequency);
+int CALL_CONV bladerf_set_pll_refclk(struct bladerf *dev, uint64_t frequency);
 
 /**
- * Read value from ADF4002 Phase Detector/Frequency Synthesizer
+ * Read value from Phase Detector/Frequency Synthesizer
  *
  * The `address` is interpreted as the control bits (DB1 and DB0) used to write
  * to a specific latch.
  *
  * @param       dev         Device handle
- * @param[in]   address     ADF4002 latch address
- * @param[out]  val         Value to read from ADF4002
+ * @param[in]   address     Latch address
+ * @param[out]  val         Value to read from
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_adf4002_read(struct bladerf *dev,
-                                   uint8_t address,
-                                   uint32_t *val);
+int CALL_CONV bladerf_get_pll_register(struct bladerf *dev,
+                                       uint8_t address,
+                                       uint32_t *val);
 
 /**
- * Write value to ADF4002 Phase Detector/Frequency Synthesizer
+ * Write value to Phase Detector/Frequency Synthesizer
  *
  * The `address` is interpreted as the control bits (DB1 and DB0) used to write
  * to a specific latch.  These bits are masked out in `val`
  *
  * @param       dev         Device handle
- * @param[in]   address     ADF4002 latch address
- * @param[in]   val         Value to write to ADF4002
+ * @param[in]   address     Latch address
+ * @param[in]   val         Value to write to
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_adf4002_write(struct bladerf *dev,
-                                    uint8_t address,
-                                    uint32_t val);
+int CALL_CONV bladerf_set_pll_register(struct bladerf *dev,
+                                       uint8_t address,
+                                       uint32_t val);
 
-/** @} (End of FN_BLADERF2_LOW_LEVEL_ADF4002) */
+/** @} (End of FN_BLADERF2_LOW_LEVEL_PLL) */
 
 /**
- * @defgroup FN_BLADERF2_LOW_LEVEL_POWER_SOURCE TPS2115A Auto Power Multiplexer
+ * @defgroup FN_BLADERF2_LOW_LEVEL_POWER_SOURCE Power Multiplexer
  *
  * @{
  */
@@ -303,12 +300,12 @@ typedef enum {
 } bladerf_power_sources;
 
 /**
- * Get the active power source reported by the TPS2115A
+ * Get the active power source reported by the power multiplexer
  *
  * Reference: http://www.ti.com/product/TPS2115A
  *
  * @param       dev     Device handle
- * @param[out]  val     Value read from TPS2115A
+ * @param[out]  val     Value read from power multiplexer
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
@@ -319,13 +316,13 @@ int CALL_CONV bladerf_get_power_source(struct bladerf *dev,
 /** @} (End of FN_BLADERF2_LOW_LEVEL_POWER_SOURCE) */
 
 /**
- * @defgroup FN_BLADERF2_LOW_LEVEL_SI53304 Si53304 Clock Buffer
+ * @defgroup FN_BLADERF2_LOW_LEVEL_CLOCK_BUFFER Clock Buffer
  *
  * @{
  */
 
 /**
- * @defgroup FN_BLADERF2_LOW_LEVEL_SI53304_CLOCK_SELECT Clock input selection
+ * @defgroup FN_BLADERF2_LOW_LEVEL_CLOCK_BUFFER_SELECT Clock input selection
  *
  * @{
  */
@@ -366,10 +363,10 @@ API_EXPORT
 int CALL_CONV bladerf_set_clock_select(struct bladerf *dev,
                                        bladerf_clock_select sel);
 
-/** @} (End of FN_BLADERF2_LOW_LEVEL_SI53304_CLOCK_SELECT) */
+/** @} (End of FN_BLADERF2_LOW_LEVEL_CLOCK_BUFFER_SELECT) */
 
 /**
- * @defgroup FN_BLADERF2_LOW_LEVEL_SI53304_CLOCK_OUTPUT Clock output control
+ * @defgroup FN_BLADERF2_LOW_LEVEL_CLOCK_BUFFER_OUTPUT Clock output control
  *
  * @{
  */
@@ -396,45 +393,45 @@ int CALL_CONV bladerf_get_clock_output(struct bladerf *dev, bool *state);
 API_EXPORT
 int CALL_CONV bladerf_set_clock_output(struct bladerf *dev, bool enable);
 
-/** @} (End of FN_BLADERF2_LOW_LEVEL_SI53304_CLOCK_OUTPUT) */
+/** @} (End of FN_BLADERF2_LOW_LEVEL_CLOCK_BUFFER_OUTPUT) */
 
-/** @} (End of FN_BLADERF2_LOW_LEVEL_SI53304) */
+/** @} (End of FN_BLADERF2_LOW_LEVEL_CLOCK_BUFFER) */
 
 /**
- * @defgroup FN_BLADERF2_LOW_LEVEL_INA219 INA219 Current/Power Monitor
+ * @defgroup FN_BLADERF2_LOW_LEVEL_PMIC Power Monitoring
  *
  * @{
  */
 
 /**
- * Register identifiers for INA219
+ * Register identifiers for PMIC
  */
 typedef enum {
-    BLADERF_INA219_CONFIGURATION, /**< Configuration register (uint16_t) */
-    BLADERF_INA219_VOLTAGE_SHUNT, /**< Shunt voltage (float) */
-    BLADERF_INA219_VOLTAGE_BUS,   /**< Bus voltage (float) */
-    BLADERF_INA219_POWER,         /**< Load power (float) */
-    BLADERF_INA219_CURRENT,       /**< Load current (float) */
-    BLADERF_INA219_CALIBRATION,   /**< Calibration (uint16_t) */
-} bladerf_ina219_register;
+    BLADERF_PMIC_CONFIGURATION, /**< Configuration register (uint16_t) */
+    BLADERF_PMIC_VOLTAGE_SHUNT, /**< Shunt voltage (float) */
+    BLADERF_PMIC_VOLTAGE_BUS,   /**< Bus voltage (float) */
+    BLADERF_PMIC_POWER,         /**< Load power (float) */
+    BLADERF_PMIC_CURRENT,       /**< Load current (float) */
+    BLADERF_PMIC_CALIBRATION,   /**< Calibration (uint16_t) */
+} bladerf_pmic_register;
 
 /**
- * Read value from INA219 Current/Power Monitor
+ * Read value from Power Monitor IC
  *
  * Reference: http://www.ti.com/product/INA219
  *
  * @param       dev     Device handle
  * @param[in]   reg     Register to read from
- * @param[out]  val     Value read from INA219
+ * @param[out]  val     Value read from PMIC
  *
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_ina219_read(struct bladerf *dev,
-                                  bladerf_ina219_register reg,
-                                  void *val);
+int CALL_CONV bladerf_get_pmic_register(struct bladerf *dev,
+                                        bladerf_pmic_register reg,
+                                        void *val);
 
-/** @} (End of FN_BLADERF2_LOW_LEVEL_INA219) */
+/** @} (End of FN_BLADERF2_LOW_LEVEL_PMIC) */
 
 /**
  * @defgroup FN_BLADERF2_LOW_LEVEL_RF_SWITCHING RF Switching Control

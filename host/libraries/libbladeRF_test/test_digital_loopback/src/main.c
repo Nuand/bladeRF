@@ -640,7 +640,7 @@ int main(int argc, char *argv[])
             break;
 
         case LOOPBACK_RFIC:
-            status = bladerf_set_loopback(dev, BLADERF_LB_AD9361_BIST);
+            status = bladerf_set_loopback(dev, BLADERF_LB_RFIC_BIST);
             if (status < 0) {
                 log_error("bladerf_set_loopback(): %s\n",
                           bladerf_strerror(status));

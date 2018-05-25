@@ -149,7 +149,8 @@ header = """
     const char **ports, unsigned int count);
   typedef enum
   {
-    BLADERF_LB_FIRMWARE = 1,
+    BLADERF_LB_NONE = 0,
+    BLADERF_LB_FIRMWARE,
     BLADERF_LB_BB_TXLPF_RXVGA2,
     BLADERF_LB_BB_TXVGA1_RXVGA2,
     BLADERF_LB_BB_TXLPF_RXLPF,
@@ -157,8 +158,7 @@ header = """
     BLADERF_LB_RF_LNA1,
     BLADERF_LB_RF_LNA2,
     BLADERF_LB_RF_LNA3,
-    BLADERF_LB_NONE,
-    BLADERF_LB_AD9361_BIST
+    BLADERF_LB_RFIC_BIST
   } bladerf_loopback;
   struct bladerf_loopback_modes
   {
@@ -568,27 +568,24 @@ header = """
     *enable);
   int bladerf_set_bias_tee(struct bladerf *dev, bladerf_channel ch, bool
     enable);
-  int bladerf_ad9361_read(struct bladerf *dev, uint16_t address, uint8_t
-    *val);
-  int bladerf_ad9361_write(struct bladerf *dev, uint16_t address,
+  int bladerf_get_rfic_register(struct bladerf *dev, uint16_t address,
+    uint8_t *val);
+  int bladerf_set_rfic_register(struct bladerf *dev, uint16_t address,
     uint8_t val);
-  int bladerf_ad9361_temperature(struct bladerf *dev, float *val);
-  int bladerf_ad9361_get_rssi(struct bladerf *dev, bladerf_channel ch,
+  int bladerf_get_rfic_temperature(struct bladerf *dev, float *val);
+  int bladerf_get_rfic_rssi(struct bladerf *dev, bladerf_channel ch,
     int32_t *pre_rssi, int32_t *sym_rssi);
-  int bladerf_ad9361_get_ctrl_out(struct bladerf *dev, uint8_t
-    *ctrl_out);
-  int bladerf_adf4002_get_locked(struct bladerf *dev, bool *locked);
-  int bladerf_adf4002_get_enable(struct bladerf *dev, bool *enabled);
-  int bladerf_adf4002_set_enable(struct bladerf *dev, bool enable);
-  int bladerf_adf4002_get_refclk_range(struct bladerf *dev, struct
+  int bladerf_get_rfic_ctrl_out(struct bladerf *dev, uint8_t *ctrl_out);
+  int bladerf_get_pll_lock_state(struct bladerf *dev, bool *locked);
+  int bladerf_get_pll_enable(struct bladerf *dev, bool *enabled);
+  int bladerf_set_pll_enable(struct bladerf *dev, bool enable);
+  int bladerf_get_pll_refclk_range(struct bladerf *dev, struct
     bladerf_range *range);
-  int bladerf_adf4002_get_refclk(struct bladerf *dev, uint64_t
-    *frequency);
-  int bladerf_adf4002_set_refclk(struct bladerf *dev, uint64_t
-    frequency);
-  int bladerf_adf4002_read(struct bladerf *dev, uint8_t address,
+  int bladerf_get_pll_refclk(struct bladerf *dev, uint64_t *frequency);
+  int bladerf_set_pll_refclk(struct bladerf *dev, uint64_t frequency);
+  int bladerf_get_pll_register(struct bladerf *dev, uint8_t address,
     uint32_t *val);
-  int bladerf_adf4002_write(struct bladerf *dev, uint8_t address,
+  int bladerf_set_pll_register(struct bladerf *dev, uint8_t address,
     uint32_t val);
   typedef enum
   {
@@ -611,15 +608,15 @@ header = """
   int bladerf_set_clock_output(struct bladerf *dev, bool enable);
   typedef enum
   {
-    BLADERF_INA219_CONFIGURATION,
-    BLADERF_INA219_VOLTAGE_SHUNT,
-    BLADERF_INA219_VOLTAGE_BUS,
-    BLADERF_INA219_POWER,
-    BLADERF_INA219_CURRENT,
-    BLADERF_INA219_CALIBRATION
-  } bladerf_ina219_register;
-  int bladerf_ina219_read(struct bladerf *dev, bladerf_ina219_register
-    reg, void *val);
+    BLADERF_PMIC_CONFIGURATION,
+    BLADERF_PMIC_VOLTAGE_SHUNT,
+    BLADERF_PMIC_VOLTAGE_BUS,
+    BLADERF_PMIC_POWER,
+    BLADERF_PMIC_CURRENT,
+    BLADERF_PMIC_CALIBRATION
+  } bladerf_pmic_register;
+  int bladerf_get_pmic_register(struct bladerf *dev,
+    bladerf_pmic_register reg, void *val);
   typedef struct
   {
     uint32_t tx1_rfic_port;

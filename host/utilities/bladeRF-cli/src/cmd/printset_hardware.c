@@ -22,7 +22,7 @@
 #include <inttypes.h>
 
 /* hardware */
-static void _print_ad9361(struct cli_state *state)
+static void _print_rfic(struct cli_state *state)
 {
     int status;
 
@@ -30,30 +30,30 @@ static void _print_ad9361(struct cli_state *state)
     uint8_t ctrlout, reg35, reg36;
 
     /* Temperature */
-    status = bladerf_ad9361_temperature(state->dev, &temperature);
+    status = bladerf_get_rfic_temperature(state->dev, &temperature);
     if (status < 0) {
         return;
     }
 
     /* CTRL_OUT pins */
-    status = bladerf_ad9361_get_ctrl_out(state->dev, &ctrlout);
+    status = bladerf_get_rfic_ctrl_out(state->dev, &ctrlout);
     if (status < 0) {
         return;
     }
 
     /* Control Output Pointer */
-    status = bladerf_ad9361_read(state->dev, 0x35, &reg35);
+    status = bladerf_get_rfic_register(state->dev, 0x35, &reg35);
     if (status < 0) {
         return;
     }
 
     /* Control Output Enable */
-    status = bladerf_ad9361_read(state->dev, 0x36, &reg36);
+    status = bladerf_get_rfic_register(state->dev, 0x36, &reg36);
     if (status < 0) {
         return;
     }
 
-    printf("    AD9361 RFIC status:\n");
+    printf("    RFIC status:\n");
     printf("      Temperature:  %4.1f °C\n", temperature);
     printf("      CTRL_OUT:     0x%02x (0x035=0x%02x, 0x036=0x%02x)\n", ctrlout,
            reg35, reg36);
@@ -90,17 +90,19 @@ static void _print_power_monitor_bladerf2(struct cli_state *state)
 
     float vbus, iload, pload;
 
-    status = bladerf_ina219_read(state->dev, BLADERF_INA219_VOLTAGE_BUS, &vbus);
+    status =
+        bladerf_get_pmic_register(state->dev, BLADERF_PMIC_VOLTAGE_BUS, &vbus);
     if (status < 0) {
         return;
     }
 
-    status = bladerf_ina219_read(state->dev, BLADERF_INA219_CURRENT, &iload);
+    status =
+        bladerf_get_pmic_register(state->dev, BLADERF_PMIC_CURRENT, &iload);
     if (status < 0) {
         return;
     }
 
-    status = bladerf_ina219_read(state->dev, BLADERF_INA219_POWER, &pload);
+    status = bladerf_get_pmic_register(state->dev, BLADERF_PMIC_POWER, &pload);
     if (status < 0) {
         return;
     }
@@ -108,7 +110,7 @@ static void _print_power_monitor_bladerf2(struct cli_state *state)
     printf("    Power monitor:  %g V, %g A, %g W\n", vbus, iload, pload);
 }
 
-static char const *_ad9361_rx_portstr(uint32_t port)
+static char const *_rfic_rx_portstr(uint32_t port)
 {
     const char *pstrs[] = { "A_BAL",  "B_BAL",   "C_BAL", "A_N", "A_P",
                             "B_N",    "B_P",     "C_N",   "C_P", "TXMON1",
@@ -121,7 +123,7 @@ static char const *_ad9361_rx_portstr(uint32_t port)
     return pstrs[port];
 }
 
-static char const *_ad9361_tx_portstr(uint32_t port)
+static char const *_rfic_tx_portstr(uint32_t port)
 {
     const char *pstrs[] = { "TXA", "TXB", NULL };
 
@@ -132,7 +134,7 @@ static char const *_ad9361_tx_portstr(uint32_t port)
     return pstrs[port];
 }
 
-static char const *_sky13374_portstr(uint32_t port)
+static char const *_rfswitch_portstr(uint32_t port)
 {
     const char *pstrs[] = { "OPEN", "RF2(A)", "RF3(B)", NULL };
 
@@ -156,24 +158,24 @@ static void _print_rfconfig(struct cli_state *state)
 
     printf("    RF switch config:\n");
     printf("      TX1: RFIC 0x%x (%-7s) => SW 0x%x (%-7s)\n",
-           config.tx1_rfic_port, _ad9361_tx_portstr(config.tx1_rfic_port),
-           config.tx1_spdt_port, _sky13374_portstr(config.tx1_spdt_port));
+           config.tx1_rfic_port, _rfic_tx_portstr(config.tx1_rfic_port),
+           config.tx1_spdt_port, _rfswitch_portstr(config.tx1_spdt_port));
     printf("      TX2: RFIC 0x%x (%-7s) => SW 0x%x (%-7s)\n",
-           config.tx2_rfic_port, _ad9361_tx_portstr(config.tx2_rfic_port),
-           config.tx2_spdt_port, _sky13374_portstr(config.tx2_spdt_port));
+           config.tx2_rfic_port, _rfic_tx_portstr(config.tx2_rfic_port),
+           config.tx2_spdt_port, _rfswitch_portstr(config.tx2_spdt_port));
     printf("      RX1: RFIC 0x%x (%-7s) <= SW 0x%x (%-7s)\n",
-           config.rx1_rfic_port, _ad9361_rx_portstr(config.rx1_rfic_port),
-           config.rx1_spdt_port, _sky13374_portstr(config.rx1_spdt_port));
+           config.rx1_rfic_port, _rfic_rx_portstr(config.rx1_rfic_port),
+           config.rx1_spdt_port, _rfswitch_portstr(config.rx1_spdt_port));
     printf("      RX2: RFIC 0x%x (%-7s) <= SW 0x%x (%-7s)\n",
-           config.rx2_rfic_port, _ad9361_rx_portstr(config.rx2_rfic_port),
-           config.rx2_spdt_port, _sky13374_portstr(config.rx2_spdt_port));
+           config.rx2_rfic_port, _rfic_rx_portstr(config.rx2_rfic_port),
+           config.rx2_spdt_port, _rfswitch_portstr(config.rx2_spdt_port));
 }
 
 int print_hardware(struct cli_state *state, int argc, char **argv)
 {
     if (ps_is_board(state->dev, BOARD_BLADERF2)) {
         printf("  Hardware status:\n");
-        _print_ad9361(state);
+        _print_rfic(state);
         _print_power_source_bladerf2(state);
         _print_power_monitor_bladerf2(state);
         _print_rfconfig(state);
@@ -192,14 +194,14 @@ int print_clock_ref(struct cli_state *state, int argc, char **argv)
     bool enabled = false;
     bool locked  = false;
 
-    status = bladerf_adf4002_get_enable(state->dev, &enabled);
+    status = bladerf_get_pll_enable(state->dev, &enabled);
     if (status < 0) {
         *err = status;
         rv   = CLI_RET_LIBBLADERF;
         goto out;
     }
 
-    status = bladerf_adf4002_get_locked(state->dev, &locked);
+    status = bladerf_get_pll_lock_state(state->dev, &locked);
     if (status < 0) {
         *err = status;
         rv   = CLI_RET_LIBBLADERF;
@@ -233,7 +235,7 @@ int set_clock_ref(struct cli_state *state, int argc, char **argv)
         goto out;
     }
 
-    status = bladerf_adf4002_set_enable(state->dev, val);
+    status = bladerf_set_pll_enable(state->dev, val);
     if (status < 0) {
         *err = status;
         rv   = CLI_RET_LIBBLADERF;
@@ -256,7 +258,7 @@ int print_refin_freq(struct cli_state *state, int argc, char **argv)
     bool enabled;
     uint64_t refclk;
 
-    status = bladerf_adf4002_get_enable(state->dev, &enabled);
+    status = bladerf_get_pll_enable(state->dev, &enabled);
     if (status < 0) {
         *err = status;
         rv   = CLI_RET_LIBBLADERF;
@@ -267,7 +269,7 @@ int print_refin_freq(struct cli_state *state, int argc, char **argv)
         goto out;
     }
 
-    status = bladerf_adf4002_get_refclk(state->dev, &refclk);
+    status = bladerf_get_pll_refclk(state->dev, &refclk);
     if (status < 0) {
         *err = status;
         rv   = CLI_RET_LIBBLADERF;
@@ -297,7 +299,7 @@ int set_refin_freq(struct cli_state *state, int argc, char **argv)
     }
 
     /* Get valid frequency range */
-    status = bladerf_adf4002_get_refclk_range(state->dev, &range);
+    status = bladerf_get_pll_refclk_range(state->dev, &range);
     if (status < 0) {
         *err = status;
         rv   = CLI_RET_LIBBLADERF;
@@ -313,7 +315,7 @@ int set_refin_freq(struct cli_state *state, int argc, char **argv)
         goto out;
     }
 
-    status = bladerf_adf4002_set_refclk(state->dev, freq);
+    status = bladerf_set_pll_refclk(state->dev, freq);
     if (status < 0) {
         *err = status;
         rv   = CLI_RET_LIBBLADERF;

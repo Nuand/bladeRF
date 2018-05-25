@@ -201,6 +201,7 @@ class Format(enum.Enum):
 
 
 class Loopback(enum.Enum):
+    Disabled = libbladeRF.BLADERF_LB_NONE
     Firmware = libbladeRF.BLADERF_LB_FIRMWARE
     BB_TXLPF_RXVGA2 = libbladeRF.BLADERF_LB_BB_TXLPF_RXVGA2
     BB_TXVGA1_RXVGA2 = libbladeRF.BLADERF_LB_BB_TXVGA1_RXVGA2
@@ -209,8 +210,7 @@ class Loopback(enum.Enum):
     RF_LNA1 = libbladeRF.BLADERF_LB_RF_LNA1
     RF_LNA2 = libbladeRF.BLADERF_LB_RF_LNA2
     RF_LNA3 = libbladeRF.BLADERF_LB_RF_LNA3
-    Disabled = libbladeRF.BLADERF_LB_NONE
-    AD9361_BIST = libbladeRF.BLADERF_LB_AD9361_BIST
+    RFIC_BIST = libbladeRF.BLADERF_LB_RFIC_BIST
 
     def __str__(self):
         return self.name
@@ -256,13 +256,13 @@ class PowerSource(enum.Enum):
         return self.name
 
 
-class INA219_Register(enum.Enum):
-    Configuration = libbladeRF.BLADERF_INA219_CONFIGURATION
-    Voltage_shunt = libbladeRF.BLADERF_INA219_VOLTAGE_SHUNT
-    Voltage_bus = libbladeRF.BLADERF_INA219_VOLTAGE_BUS
-    Power = libbladeRF.BLADERF_INA219_POWER
-    Current = libbladeRF.BLADERF_INA219_CURRENT
-    Calibration = libbladeRF.BLADERF_INA219_CALIBRATION
+class PMICRegister(enum.Enum):
+    Configuration = libbladeRF.BLADERF_PMIC_CONFIGURATION
+    Voltage_shunt = libbladeRF.BLADERF_PMIC_VOLTAGE_SHUNT
+    Voltage_bus = libbladeRF.BLADERF_PMIC_VOLTAGE_BUS
+    Power = libbladeRF.BLADERF_PMIC_POWER
+    Current = libbladeRF.BLADERF_PMIC_CURRENT
+    Calibration = libbladeRF.BLADERF_PMIC_CALIBRATION
 
     @property
     def ctype(self):
@@ -437,7 +437,7 @@ def CHANNEL_TX(ch):
     return (ch << 1) | TX
 
 
-# defaults for ADF4002 on bladeRF 2
+# defaults for PLL on bladeRF 2
 BLADERF_VCTCXO_FREQUENCY = 38.4e6
 BLADERF_REFIN_DEFAULT = 10.0e6
 
@@ -900,88 +900,88 @@ class BladeRF:
         ret = libbladeRF.bladerf_set_bias_tee(self.dev[0], ch, enable)
         _check_error(ret)
 
-    # AD9361 RFIC
+    # RFIC
 
-    def get_ad9361_temperature(self):
+    def get_rfic_temperature(self):
         try:
             val = ffi.new("float *")
-            ret = libbladeRF.bladerf_ad9361_temperature(self.dev[0], val)
+            ret = libbladeRF.bladerf_get_rfic_temperature(self.dev[0], val)
             _check_error(ret)
             return val[0]
         except UnsupportedError:
             return None
 
-    ad9361_temperature = property(get_ad9361_temperature,
-                                  doc="AD9361 RFIC temperature")
+    rfic_temperature = property(get_rfic_temperature,
+                                doc="RFIC internal temperature")
 
-    def get_ad9361_rssi(self, ch):
+    def get_rfic_rssi(self, ch):
         try:
             preamble = ffi.new("int32_t *")
             symbol = ffi.new("int32_t *")
-            ret = libbladeRF.bladerf_ad9361_get_rssi(self.dev[0], ch,
-                                                     preamble, symbol)
+            ret = libbladeRF.bladerf_get_rfic_rssi(self.dev[0], ch,
+                                                   preamble, symbol)
             _check_error(ret)
             return RSSI(preamble[0], symbol[0])
         except UnsupportedError:
             return None
 
-    def get_ad9361_ctrl_out(self):
+    def get_rfic_ctrl_out(self):
         try:
             ctrl_out = ffi.new("uint8_t *")
-            ret = libbladeRF.bladerf_ad9361_get_ctrl_out(self.dev[0], ctrl_out)
+            ret = libbladeRF.bladerf_get_rfic_ctrl_out(self.dev[0], ctrl_out)
             _check_error(ret)
             return ctrl_out[0]
         except UnsupportedError:
             return None
 
-    ad9361_ctrl_out = property(get_ad9361_ctrl_out,
-                               doc="AD9361 CTRL_OUT status pins")
+    rfic_ctrl_out = property(get_rfic_ctrl_out,
+                             doc="RFIC CTRL_OUT status pins")
 
-    # ADF4002 Phase Detector/Frequency Synthesizer
+    # Phase Detector/Frequency Synthesizer
 
-    def get_adf4002_locked(self):
+    def get_pll_lock_state(self):
         try:
             locked = ffi.new("bool *")
-            ret = libbladeRF.bladerf_adf4002_get_locked(self.dev[0], locked)
+            ret = libbladeRF.bladerf_get_pll_lock_state(self.dev[0], locked)
             _check_error(ret)
             return bool(locked[0])
         except UnsupportedError:
             return None
 
-    adf4002_locked = property(get_adf4002_locked,
-                              doc="ADF4002 PLL lock indication")
+    pll_locked = property(get_pll_lock_state,
+                          doc="PLL lock indication")
 
-    def get_adf4002_enable(self):
+    def get_pll_enable(self):
         try:
             enable = ffi.new("bool *")
-            ret = libbladeRF.bladerf_adf4002_get_enable(self.dev[0], enable)
+            ret = libbladeRF.bladerf_get_pll_enable(self.dev[0], enable)
             _check_error(ret)
             return bool(enable[0])
         except UnsupportedError:
             return None
 
-    def set_adf4002_enable(self, enable):
-        ret = libbladeRF.bladerf_adf4002_set_enable(self.dev[0], enable)
+    def set_pll_enable(self, enable):
+        ret = libbladeRF.bladerf_set_pll_enable(self.dev[0], enable)
         _check_error(ret)
 
-    adf4002_enable = property(get_adf4002_enable, set_adf4002_enable,
-                              doc="ADF4002 Enable")
+    pll_enable = property(get_pll_enable, set_pll_enable,
+                          doc="PLL Enable")
 
-    def get_adf4002_refclk(self):
+    def get_pll_refclk(self):
         try:
             freq = ffi.new("uint64_t *")
-            ret = libbladeRF.bladerf_adf4002_get_refclk(self.dev[0], freq)
+            ret = libbladeRF.bladerf_get_pll_refclk(self.dev[0], freq)
             _check_error(ret)
             return int(freq[0])
         except UnsupportedError:
             return None
 
-    def set_adf4002_refclk(self, freq):
-        ret = libbladeRF.bladerf_adf4002_set_refclk(self.dev[0], freq)
+    def set_pll_refclk(self, freq):
+        ret = libbladeRF.bladerf_set_pll_refclk(self.dev[0], freq)
         _check_error(ret)
 
-    adf4002_refclk = property(get_adf4002_refclk, set_adf4002_refclk,
-                              doc="ADF4002 Reference Clock frequency")
+    pll_refclk = property(get_pll_refclk, set_pll_refclk,
+                          doc="PLL Reference Clock frequency")
 
     # Power source
 
@@ -1035,14 +1035,14 @@ class BladeRF:
     clock_output = property(get_clock_output, set_clock_output,
                             doc="Clock output enable")
 
-    # INA219 current/power monitor
+    # Current/power monitor IC
 
-    def get_ina219_register(self, reg):
+    def get_pmic_register(self, reg):
         try:
-            if not isinstance(reg, INA219_Register):
-                reg = INA219_Register(reg)
+            if not isinstance(reg, PMICRegister):
+                reg = PMICRegister(reg)
             val = ffi.new(reg.ctype)
-            ret = libbladeRF.bladerf_ina219_read(self.dev[0], reg.value, val)
+            ret = libbladeRF.bladerf_get_pmic_register(self.dev[0], reg.value, val)
             _check_error(ret)
             return val[0]
         except UnsupportedError:
@@ -1051,17 +1051,17 @@ class BladeRF:
     @property
     def bus_voltage(self):
         """Main power bus voltage, in Volts"""
-        return self.get_ina219_register(INA219_Register.Voltage_bus)
+        return self.get_pmic_register(PMICRegister.Voltage_bus)
 
     @property
     def bus_current(self):
         """Main power bus current, in Amps"""
-        return self.get_ina219_register(INA219_Register.Current)
+        return self.get_pmic_register(PMICRegister.Current)
 
     @property
     def bus_power(self):
         """Main power bus power, in Watts"""
-        return self.get_ina219_register(INA219_Register.Power)
+        return self.get_pmic_register(PMICRegister.Power)
 
     # Convenience objects
 
@@ -1115,7 +1115,7 @@ class BladeRF:
         @property
         def rssi(self):
             """RSSI report from RFIC"""
-            return self.dev.get_ad9361_rssi(self.channel)
+            return self.dev.get_rfic_rssi(self.channel)
 
         @property
         def preamble_rssi(self):

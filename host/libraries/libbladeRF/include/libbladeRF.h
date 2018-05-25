@@ -50,7 +50,7 @@
  *
  *  https://github.com/Nuand/bladeRF/blob/master/doc/development/versioning.md
  */
-#define LIBBLADERF_API_VERSION (0x01090100)
+#define LIBBLADERF_API_VERSION (0x01090200)
 
 #ifdef __cplusplus
 extern "C" {
@@ -1171,8 +1171,11 @@ int CALL_CONV bladerf_get_rf_ports(struct bladerf *dev,
  * Loopback options
  */
 typedef enum {
+    /** Disables loopback and returns to normal operation. */
+    BLADERF_LB_NONE = 0,
+
     /** Firmware loopback inside of the FX3 */
-    BLADERF_LB_FIRMWARE = 1,
+    BLADERF_LB_FIRMWARE,
 
     /** Baseband loopback. TXLPF output is connected to the RXVGA2 input. */
     BLADERF_LB_BB_TXLPF_RXVGA2,
@@ -1204,11 +1207,8 @@ typedef enum {
      */
     BLADERF_LB_RF_LNA3,
 
-    /** Disables loopback and returns to normal operation. */
-    BLADERF_LB_NONE,
-
-    /** AD9361 digital loopback (built-in self-test) */
-    BLADERF_LB_AD9361_BIST,
+    /** RFIC digital loopback (built-in self-test) */
+    BLADERF_LB_RFIC_BIST,
 } bladerf_loopback;
 
 /**

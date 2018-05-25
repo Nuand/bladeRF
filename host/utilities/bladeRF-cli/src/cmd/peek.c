@@ -27,14 +27,14 @@
 #include "conversions.h"
 #include "peekpoke.h"
 
-static inline bool matches_ad9361(const char *str)
+static inline bool matches_rfic(const char *str)
 {
-    return strcasecmp("adi", str) == 0 || strcasecmp("ad9361", str) == 0;
+    return strcasecmp("rfic", str) == 0;
 }
 
-static inline bool matches_adf4002(const char *str)
+static inline bool matches_pll(const char *str)
 {
-    return strcasecmp("adf", str) == 0 || strcasecmp("adf4002", str) == 0;
+    return strcasecmp("pll", str) == 0;
 }
 
 static inline bool matches_lms6002d(const char *str)
@@ -50,8 +50,8 @@ static inline bool matches_si5338(const char *str)
 int cmd_peek(struct cli_state *state, int argc, char **argv)
 {
     /* Valid commands:
-        peek {adi,ad9361}   <address> [num addresses]
-        peek {adf,adf4002}  <address> [num addresses]
+        peek rfic           <address> [num addresses]
+        peek pll            <address> [num addresses]
         peek dac            <address> [num addresses]
         peek lms            <address> [num addresses]
         peek si             <address> [num addresses]
@@ -76,29 +76,29 @@ int cmd_peek(struct cli_state *state, int argc, char **argv)
             }
         }
 
-        /* Are we reading from the AD9361 */
-        if (matches_ad9361(argv[1])) {
+        /* Are we reading from the RFIC */
+        if (matches_rfic(argv[1])) {
             /* Parse address */
-            address = str2uint(argv[2], 0, ADI_MAX_ADDRESS, &ok);
+            address = str2uint(argv[2], 0, RFIC_MAX_ADDRESS, &ok);
             if (!ok) {
                 invalid_address(state, argv[0], argv[2]);
                 rv = CLI_RET_INVPARAM;
             } else {
-                f2          = bladerf_ad9361_read;
-                max_address = ADI_MAX_ADDRESS;
+                f2          = bladerf_get_rfic_register;
+                max_address = RFIC_MAX_ADDRESS;
             }
         }
 
-        /* Are we reading from the ADF4002? */
-        else if (matches_adf4002(argv[1])) {
+        /* Are we reading from the PLL */
+        else if (matches_pll(argv[1])) {
             /* Parse address */
-            address = str2uint(argv[2], 0, ADF4002_MAX_ADDRESS, &ok);
+            address = str2uint(argv[2], 0, PLL_MAX_ADDRESS, &ok);
             if (!ok) {
                 invalid_address(state, argv[0], argv[2]);
                 rv = CLI_RET_INVPARAM;
             } else {
-                f3          = bladerf_adf4002_read;
-                max_address = ADF4002_MAX_ADDRESS;
+                f3          = bladerf_get_pll_register;
+                max_address = PLL_MAX_ADDRESS;
             }
         }
 

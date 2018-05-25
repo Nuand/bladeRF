@@ -63,8 +63,8 @@
 enum bladerf2_vctcxo_trim_source {
     TRIM_SOURCE_NONE,
     TRIM_SOURCE_TRIM_DAC,
-    TRIM_SOURCE_ADF4002,
-    TRIM_SOURCE_AD9361_AUXDAC
+    TRIM_SOURCE_PLL,
+    TRIM_SOURCE_AUXDAC
 };
 
 struct bladerf2_board_data {
@@ -460,7 +460,7 @@ static const struct bladerf_range bladerf2_tx_frequency_range = {
     FIELD_INIT(.scale,  1),
 };
 
-static const struct bladerf_range bladerf2_adf4002_refclk_range = {
+static const struct bladerf_range bladerf2_pll_refclk_range = {
     FIELD_INIT(.min, 5000000),
     FIELD_INIT(.max, 300000000),
     FIELD_INIT(.step, 1),
@@ -579,7 +579,7 @@ static const struct bladerf_loopback_modes bladerf2_loopback_modes[] = {
     },
     {
         FIELD_INIT(.name, "rf_bist"),
-        FIELD_INIT(.mode, BLADERF_LB_AD9361_BIST)
+        FIELD_INIT(.mode, BLADERF_LB_RFIC_BIST)
     },
 };
 
@@ -1203,10 +1203,10 @@ static int bladerf2_initialize(struct bladerf *dev)
 
     board_data->trim_source = TRIM_SOURCE_TRIM_DAC;
 
-    /* Configure ADF4002 */
-    status = bladerf_adf4002_set_refclk(dev, BLADERF_REFIN_DEFAULT);
+    /* Configure PLL */
+    status = bladerf_set_pll_refclk(dev, BLADERF_REFIN_DEFAULT);
     if (status < 0) {
-        RETURN_ERROR_STATUS("bladerf_adf4002_set_refclk", status);
+        RETURN_ERROR_STATUS("bladerf_set_pll_refclk", status);
     }
 
     /* Update device state */
@@ -3753,7 +3753,7 @@ static int bladerf2_set_loopback(struct bladerf *dev, bladerf_loopback l)
         case BLADERF_LB_FIRMWARE:
             firmware_loopback = true;
             break;
-        case BLADERF_LB_AD9361_BIST:
+        case BLADERF_LB_RFIC_BIST:
             bist_loopback = 1;
             break;
         default:
@@ -3807,7 +3807,7 @@ static int bladerf2_get_loopback(struct bladerf *dev, bladerf_loopback *l)
     ad9361_get_bist_loopback(board_data->phy, &ad9361_loopback);
 
     if (ad9361_loopback == 1) {
-        *l = BLADERF_LB_AD9361_BIST;
+        *l = BLADERF_LB_RFIC_BIST;
         return 0;
     }
 
@@ -4333,10 +4333,12 @@ int bladerf_set_bias_tee(struct bladerf *dev, bladerf_channel ch, bool enable)
 }
 
 /******************************************************************************/
-/* Low level AD9361 Accessors */
+/* Low level RFIC Accessors */
 /******************************************************************************/
 
-int bladerf_ad9361_read(struct bladerf *dev, uint16_t address, uint8_t *val)
+int bladerf_get_rfic_register(struct bladerf *dev,
+                              uint16_t address,
+                              uint8_t *val)
 {
     int status;
     uint64_t data;
@@ -4372,7 +4374,9 @@ int bladerf_ad9361_read(struct bladerf *dev, uint16_t address, uint8_t *val)
     return 0;
 }
 
-int bladerf_ad9361_write(struct bladerf *dev, uint16_t address, uint8_t val)
+int bladerf_set_rfic_register(struct bladerf *dev,
+                              uint16_t address,
+                              uint8_t val)
 {
     int status;
     uint64_t data;
@@ -4404,7 +4408,7 @@ int bladerf_ad9361_write(struct bladerf *dev, uint16_t address, uint8_t val)
     return 0;
 }
 
-int bladerf_ad9361_temperature(struct bladerf *dev, float *val)
+int bladerf_get_rfic_temperature(struct bladerf *dev, float *val)
 {
     struct bladerf2_board_data *board_data;
     struct ad9361_rf_phy *phy;
@@ -4427,10 +4431,10 @@ int bladerf_ad9361_temperature(struct bladerf *dev, float *val)
     return 0;
 }
 
-int bladerf_ad9361_get_rssi(struct bladerf *dev,
-                            bladerf_channel ch,
-                            int *pre_rssi,
-                            int *sym_rssi)
+int bladerf_get_rfic_rssi(struct bladerf *dev,
+                          bladerf_channel ch,
+                          int *pre_rssi,
+                          int *sym_rssi)
 {
     struct bladerf2_board_data *board_data;
     struct ad9361_rf_phy *phy;
@@ -4489,7 +4493,7 @@ int bladerf_ad9361_get_rssi(struct bladerf *dev,
     return 0;
 }
 
-int bladerf_ad9361_get_ctrl_out(struct bladerf *dev, uint8_t *ctrl_out)
+int bladerf_get_rfic_ctrl_out(struct bladerf *dev, uint8_t *ctrl_out)
 {
     int status;
     uint32_t reg;
@@ -4520,12 +4524,10 @@ int bladerf_ad9361_get_ctrl_out(struct bladerf *dev, uint8_t *ctrl_out)
 }
 
 /******************************************************************************/
-/* Low level ADF4002 Accessors */
+/* Low level PLL Accessors */
 /******************************************************************************/
 
-static int bladerf_adf4002_configure(struct bladerf *dev,
-                                     uint16_t R,
-                                     uint16_t N)
+static int bladerf_pll_configure(struct bladerf *dev, uint16_t R, uint16_t N)
 {
     int status;
     uint32_t init_array[3];
@@ -4551,16 +4553,16 @@ static int bladerf_adf4002_configure(struct bladerf *dev,
     CHECK_BOARD_STATE(STATE_FPGA_LOADED);
 
     /* Get the present state... */
-    status = bladerf_adf4002_get_enable(dev, &is_enabled);
+    status = bladerf_get_pll_enable(dev, &is_enabled);
     if (status < 0) {
-        RETURN_ERROR_STATUS("bladerf_adf4002_get_enable", status);
+        RETURN_ERROR_STATUS("bladerf_get_pll_enable", status);
     }
 
     /* Enable the chip if applicable */
     if (!is_enabled) {
-        bladerf_adf4002_set_enable(dev, true);
+        bladerf_set_pll_enable(dev, true);
         if (status < 0) {
-            RETURN_ERROR_STATUS("bladerf_adf4002_set_enable", status);
+            RETURN_ERROR_STATUS("bladerf_set_pll_enable", status);
         }
     }
 
@@ -4599,27 +4601,27 @@ static int bladerf_adf4002_configure(struct bladerf *dev,
     /* Write the values to the chip */
     for (i = 0; i < ARRAY_SIZE(init_array); ++i) {
         log_debug("reg %x gets 0x%08x\n", i, init_array[i]);
-        status = bladerf_adf4002_write(dev, i, init_array[i]);
+        status = bladerf_set_pll_register(dev, i, init_array[i]);
         if (status < 0) {
-            RETURN_ERROR_STATUS("bladerf_adf4002_write", status);
+            RETURN_ERROR_STATUS("bladerf_set_pll_register", status);
         }
     }
 
     /* Re-disable the chip if applicable */
     if (!is_enabled) {
-        bladerf_adf4002_set_enable(dev, false);
+        bladerf_set_pll_enable(dev, false);
         if (status < 0) {
-            RETURN_ERROR_STATUS("bladerf_adf4002_set_enable", status);
+            RETURN_ERROR_STATUS("bladerf_set_pll_enable", status);
         }
     }
 
     return 0;
 }
 
-static int bladerf_adf4002_calculate_ratio(uint64_t ref_freq,
-                                           uint64_t clock_freq,
-                                           uint16_t *R,
-                                           uint16_t *N)
+static int bladerf_pll_calculate_ratio(uint64_t ref_freq,
+                                       uint64_t clock_freq,
+                                       uint16_t *R,
+                                       uint16_t *N)
 {
     size_t const Rmax = 16383;
     double const tol  = 0.00001;
@@ -4639,7 +4641,7 @@ static int bladerf_adf4002_calculate_ratio(uint64_t ref_freq,
         RETURN_INVAL("N", "is null");
     }
 
-    if (!_is_within_range(&bladerf2_adf4002_refclk_range, ref_freq)) {
+    if (!_is_within_range(&bladerf2_pll_refclk_range, ref_freq)) {
         return BLADERF_ERR_RANGE;
     }
 
@@ -4668,7 +4670,7 @@ static int bladerf_adf4002_calculate_ratio(uint64_t ref_freq,
     RETURN_INVAL("requested ratio", "not achievable");
 }
 
-int bladerf_adf4002_get_locked(struct bladerf *dev, bool *locked)
+int bladerf_get_pll_lock_state(struct bladerf *dev, bool *locked)
 {
     int status;
     uint32_t reg;
@@ -4698,7 +4700,7 @@ int bladerf_adf4002_get_locked(struct bladerf *dev, bool *locked)
     return 0;
 }
 
-int bladerf_adf4002_get_enable(struct bladerf *dev, bool *enabled)
+int bladerf_get_pll_enable(struct bladerf *dev, bool *enabled)
 {
     int status;
     uint32_t data;
@@ -4732,7 +4734,7 @@ int bladerf_adf4002_get_enable(struct bladerf *dev, bool *enabled)
     return 0;
 }
 
-int bladerf_adf4002_set_enable(struct bladerf *dev, bool enable)
+int bladerf_set_pll_enable(struct bladerf *dev, bool enable)
 {
     int status;
     uint32_t data;
@@ -4752,7 +4754,7 @@ int bladerf_adf4002_set_enable(struct bladerf *dev, bool enable)
 
     CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
 
-    // Disable the trim DAC when we're using the ADF4002
+    // Disable the trim DAC when we're using the PLL
     if (enable) {
         status = bladerf2_set_trim_dac_enable(dev, false);
         if (status < 0) {
@@ -4767,7 +4769,7 @@ int bladerf_adf4002_set_enable(struct bladerf *dev, bool enable)
         RETURN_ERROR_STATUS("config_gpio_read", status);
     }
 
-    // Set the ADF4002 enable bit accordingly
+    // Set the PLL enable bit accordingly
     data &= ~(1 << 11);
     data |= ((enable ? 1 : 0) << 11);
 
@@ -4779,9 +4781,9 @@ int bladerf_adf4002_set_enable(struct bladerf *dev, bool enable)
     }
 
     // Update our state flag
-    board_data->trim_source = enable ? TRIM_SOURCE_ADF4002 : TRIM_SOURCE_NONE;
+    board_data->trim_source = enable ? TRIM_SOURCE_PLL : TRIM_SOURCE_NONE;
 
-    // Enable the trim DAC if we're done with the ADF4002
+    // Enable the trim DAC if we're done with the PLL
     if (!enable) {
         status = bladerf2_set_trim_dac_enable(dev, true);
         if (status < 0) {
@@ -4794,19 +4796,19 @@ int bladerf_adf4002_set_enable(struct bladerf *dev, bool enable)
     return 0;
 }
 
-int bladerf_adf4002_get_refclk_range(struct bladerf *dev,
-                                     struct bladerf_range *range)
+int bladerf_get_pll_refclk_range(struct bladerf *dev,
+                                 struct bladerf_range *range)
 {
     if (NULL == range) {
         RETURN_INVAL("range", "is null");
     }
 
-    *range = bladerf2_adf4002_refclk_range;
+    *range = bladerf2_pll_refclk_range;
 
     return 0;
 }
 
-int bladerf_adf4002_get_refclk(struct bladerf *dev, uint64_t *frequency)
+int bladerf_get_pll_refclk(struct bladerf *dev, uint64_t *frequency)
 {
     int status;
     uint32_t reg;
@@ -4829,16 +4831,16 @@ int bladerf_adf4002_get_refclk(struct bladerf *dev, uint64_t *frequency)
     }
 
     // Get the current R value (latch 0, bits 2-15)
-    status = bladerf_adf4002_read(dev, R_LATCH_REG, &reg);
+    status = bladerf_get_pll_register(dev, R_LATCH_REG, &reg);
     if (status < 0) {
-        RETURN_ERROR_STATUS("bladerf_adf4002_read", status);
+        RETURN_ERROR_STATUS("bladerf_get_pll_register", status);
     }
     R = (reg >> R_LATCH_SHIFT) & R_LATCH_MASK;
 
     // Get the current N value (latch 1, bits 8-20)
-    status = bladerf_adf4002_read(dev, N_LATCH_REG, &reg);
+    status = bladerf_get_pll_register(dev, N_LATCH_REG, &reg);
     if (status < 0) {
-        RETURN_ERROR_STATUS("bladerf_adf4002_read", status);
+        RETURN_ERROR_STATUS("bladerf_get_pll_register", status);
     }
     N = (reg >> N_LATCH_SHIFT) & N_LATCH_MASK;
 
@@ -4849,7 +4851,7 @@ int bladerf_adf4002_get_refclk(struct bladerf *dev, uint64_t *frequency)
     return 0;
 }
 
-int bladerf_adf4002_set_refclk(struct bladerf *dev, uint64_t frequency)
+int bladerf_set_pll_refclk(struct bladerf *dev, uint64_t frequency)
 {
     int status;
     uint16_t R, N;
@@ -4864,21 +4866,23 @@ int bladerf_adf4002_set_refclk(struct bladerf *dev, uint64_t frequency)
 
     // We assume the system clock frequency is BLADERF_VCTCXO_FREQUENCY.
     // If it isn't, do your own math
-    status = bladerf_adf4002_calculate_ratio(frequency,
-                                             BLADERF_VCTCXO_FREQUENCY, &R, &N);
+    status = bladerf_pll_calculate_ratio(frequency, BLADERF_VCTCXO_FREQUENCY,
+                                         &R, &N);
     if (status < 0) {
-        RETURN_ERROR_STATUS("bladerf_adf4002_calculate_ratio", status);
+        RETURN_ERROR_STATUS("bladerf_pll_calculate_ratio", status);
     }
 
-    status = bladerf_adf4002_configure(dev, R, N);
+    status = bladerf_pll_configure(dev, R, N);
     if (status < 0) {
-        RETURN_ERROR_STATUS("bladerf_adf4002_configure", status);
+        RETURN_ERROR_STATUS("bladerf_pll_configure", status);
     }
 
     return 0;
 }
 
-int bladerf_adf4002_read(struct bladerf *dev, uint8_t address, uint32_t *val)
+int bladerf_get_pll_register(struct bladerf *dev,
+                             uint8_t address,
+                             uint32_t *val)
 {
     int status;
     uint32_t data;
@@ -4914,7 +4918,7 @@ int bladerf_adf4002_read(struct bladerf *dev, uint8_t address, uint32_t *val)
     return 0;
 }
 
-int bladerf_adf4002_write(struct bladerf *dev, uint8_t address, uint32_t val)
+int bladerf_set_pll_register(struct bladerf *dev, uint8_t address, uint32_t val)
 {
     int status;
     uint32_t data;
@@ -5078,7 +5082,7 @@ int bladerf_set_clock_select(struct bladerf *dev, bladerf_clock_select sel)
 }
 
 /******************************************************************************/
-/* Low level SI53304 clock output accessors */
+/* Low level clock buffer output accessors */
 /******************************************************************************/
 
 int bladerf_get_clock_output(struct bladerf *dev, bool *state)
@@ -5158,9 +5162,9 @@ int bladerf_set_clock_output(struct bladerf *dev, bool enable)
 /* Low level INA219 Accessors */
 /******************************************************************************/
 
-int bladerf_ina219_read(struct bladerf *dev,
-                        bladerf_ina219_register reg,
-                        void *val)
+int bladerf_get_pmic_register(struct bladerf *dev,
+                              bladerf_pmic_register reg,
+                              void *val)
 {
     int status = 0;
 
@@ -5177,19 +5181,19 @@ int bladerf_ina219_read(struct bladerf *dev,
     CHECK_BOARD_STATE_LOCKED(STATE_FPGA_LOADED);
 
     switch (reg) {
-        case BLADERF_INA219_CONFIGURATION:
-        case BLADERF_INA219_CALIBRATION:
+        case BLADERF_PMIC_CONFIGURATION:
+        case BLADERF_PMIC_CALIBRATION:
             return BLADERF_ERR_UNSUPPORTED;
-        case BLADERF_INA219_VOLTAGE_SHUNT:
+        case BLADERF_PMIC_VOLTAGE_SHUNT:
             status = ina219_read_shunt_voltage(dev, (float *)val);
             break;
-        case BLADERF_INA219_VOLTAGE_BUS:
+        case BLADERF_PMIC_VOLTAGE_BUS:
             status = ina219_read_bus_voltage(dev, (float *)val);
             break;
-        case BLADERF_INA219_POWER:
+        case BLADERF_PMIC_POWER:
             status = ina219_read_power(dev, (float *)val);
             break;
-        case BLADERF_INA219_CURRENT:
+        case BLADERF_PMIC_CURRENT:
             status = ina219_read_current(dev, (float *)val);
             break;
     }

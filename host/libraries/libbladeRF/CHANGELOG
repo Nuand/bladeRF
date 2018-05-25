@@ -5,6 +5,15 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.9.2 (2018-05-22)
+--------------------------------
+
+This version is part of development series of changes, not an official release.
+
+Changes:
+ * Low level hardware control functions in bladeRF2.h have been renamed to be
+   hardware-independent
+
 v1.9.1 (2018-03-26)
 --------------------------------
 
