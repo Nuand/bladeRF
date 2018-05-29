@@ -181,11 +181,11 @@ struct board_fns {
     int (*get_gain)(struct bladerf *dev, bladerf_channel ch, bladerf_gain *gain);
     int (*set_gain_mode)(struct bladerf *dev, bladerf_channel ch, bladerf_gain_mode mode);
     int (*get_gain_mode)(struct bladerf *dev, bladerf_channel ch, bladerf_gain_mode *mode);
-    int (*get_gain_modes)(struct bladerf *dev, bladerf_channel ch, struct bladerf_gain_modes const **modes);
-    int (*get_gain_range)(struct bladerf *dev, bladerf_channel ch, struct bladerf_range const **range);
+    int (*get_gain_modes)(struct bladerf *dev, bladerf_channel ch, const struct bladerf_gain_modes **modes);
+    int (*get_gain_range)(struct bladerf *dev, bladerf_channel ch, const struct bladerf_range **range);
     int (*set_gain_stage)(struct bladerf *dev, bladerf_channel ch, const char *stage, bladerf_gain gain);
     int (*get_gain_stage)(struct bladerf *dev, bladerf_channel ch, const char *stage, bladerf_gain *gain);
-    int (*get_gain_stage_range)(struct bladerf *dev, bladerf_channel ch, char const *stage, struct bladerf_range const **range);
+    int (*get_gain_stage_range)(struct bladerf *dev, bladerf_channel ch, const char *stage, const struct bladerf_range **range);
     int (*get_gain_stages)(struct bladerf *dev, bladerf_channel ch, const char **stages, size_t count);
 
     /* Sample Rate */
@@ -235,7 +235,7 @@ struct board_fns {
     int (*set_stream_timeout)(struct bladerf *dev, bladerf_direction dir, unsigned int timeout);
     int (*get_stream_timeout)(struct bladerf *dev, bladerf_direction dir, unsigned int *timeout);
     int (*sync_config)(struct bladerf *dev, bladerf_channel_layout layout, bladerf_format format, unsigned int num_buffers, unsigned int buffer_size, unsigned int num_transfers, unsigned int stream_timeout);
-    int (*sync_tx)(struct bladerf *dev, void const *samples, unsigned int num_samples, struct bladerf_metadata *metadata, unsigned int timeout_ms);
+    int (*sync_tx)(struct bladerf *dev, const void *samples, unsigned int num_samples, struct bladerf_metadata *metadata, unsigned int timeout_ms);
     int (*sync_rx)(struct bladerf *dev, void *samples, unsigned int num_samples, struct bladerf_metadata *metadata, unsigned int timeout_ms);
     int (*get_timestamp)(struct bladerf *dev, bladerf_direction dir, bladerf_timestamp *timestamp);
 
@@ -251,7 +251,7 @@ struct board_fns {
     int (*get_tuning_mode)(struct bladerf *dev, bladerf_tuning_mode *mode);
 
     /* Loopback */
-    int (*get_loopback_modes)(struct bladerf *dev, struct bladerf_loopback_modes const **modes);
+    int (*get_loopback_modes)(struct bladerf *dev, const struct bladerf_loopback_modes **modes);
     int (*set_loopback)(struct bladerf *dev, bladerf_loopback l);
     int (*get_loopback)(struct bladerf *dev, bladerf_loopback *l);
 

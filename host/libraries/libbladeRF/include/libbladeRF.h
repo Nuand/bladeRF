@@ -726,7 +726,7 @@ int CALL_CONV bladerf_get_gain_mode(struct bladerf *dev,
 API_EXPORT
 int CALL_CONV bladerf_get_gain_modes(struct bladerf *dev,
                                      bladerf_channel ch,
-                                     struct bladerf_gain_modes const **modes);
+                                     const struct bladerf_gain_modes **modes);
 
 /**
  * Get range of overall system gain
@@ -1261,7 +1261,7 @@ struct bladerf_loopback_modes {
  */
 API_EXPORT
 int CALL_CONV bladerf_get_loopback_modes(
-    struct bladerf *dev, struct bladerf_loopback_modes const **modes);
+    struct bladerf *dev, const struct bladerf_loopback_modes **modes);
 
 /**
  * Test if a given loopback mode is supported on this device.
@@ -2459,7 +2459,7 @@ int CALL_CONV bladerf_sync_config(struct bladerf *dev,
  */
 API_EXPORT
 int CALL_CONV bladerf_sync_tx(struct bladerf *dev,
-                              void const *samples,
+                              const void *samples,
                               unsigned int num_samples,
                               struct bladerf_metadata *metadata,
                               unsigned int timeout_ms);
