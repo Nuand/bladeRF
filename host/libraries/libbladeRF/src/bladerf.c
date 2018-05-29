@@ -574,7 +574,7 @@ int bladerf_get_sample_rate(struct bladerf *dev,
 
 int bladerf_get_sample_rate_range(struct bladerf *dev,
                                   bladerf_channel ch,
-                                  struct bladerf_range *range)
+                                  const struct bladerf_range **range)
 {
     return dev->board->get_sample_rate_range(dev, ch, range);
 }
@@ -639,7 +639,7 @@ int bladerf_get_bandwidth(struct bladerf *dev,
 
 int bladerf_get_bandwidth_range(struct bladerf *dev,
                                 bladerf_channel ch,
-                                struct bladerf_range *range)
+                                const struct bladerf_range **range)
 {
     return dev->board->get_bandwidth_range(dev, ch, range);
 }
@@ -676,7 +676,7 @@ int bladerf_get_frequency(struct bladerf *dev,
 
 int bladerf_get_frequency_range(struct bladerf *dev,
                                 bladerf_channel ch,
-                                struct bladerf_range *range)
+                                const struct bladerf_range **range)
 {
     return dev->board->get_frequency_range(dev, ch, range);
 }

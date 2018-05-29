@@ -192,18 +192,18 @@ struct board_fns {
     int (*set_sample_rate)(struct bladerf *dev, bladerf_channel ch, bladerf_sample_rate rate, bladerf_sample_rate *actual);
     int (*set_rational_sample_rate)(struct bladerf *dev, bladerf_channel ch, struct bladerf_rational_rate *rate, struct bladerf_rational_rate *actual);
     int (*get_sample_rate)(struct bladerf *dev, bladerf_channel ch, bladerf_sample_rate *rate);
-    int (*get_sample_rate_range)(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range);
+    int (*get_sample_rate_range)(struct bladerf *dev, bladerf_channel ch, const struct bladerf_range **range);
     int (*get_rational_sample_rate)(struct bladerf *dev, bladerf_channel ch, struct bladerf_rational_rate *rate);
 
     /* Bandwidth */
     int (*set_bandwidth)(struct bladerf *dev, bladerf_channel ch, bladerf_bandwidth bandwidth, bladerf_bandwidth *actual);
     int (*get_bandwidth)(struct bladerf *dev, bladerf_channel ch, bladerf_bandwidth *bandwidth);
-    int (*get_bandwidth_range)(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range);
+    int (*get_bandwidth_range)(struct bladerf *dev, bladerf_channel ch, const struct bladerf_range **range);
 
     /* Frequency */
     int (*get_frequency)(struct bladerf *dev, bladerf_channel ch, bladerf_frequency *frequency);
     int (*set_frequency)(struct bladerf *dev, bladerf_channel ch, bladerf_frequency frequency);
-    int (*get_frequency_range)(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range);
+    int (*get_frequency_range)(struct bladerf *dev, bladerf_channel ch, const struct bladerf_range **range);
     int (*select_band)(struct bladerf *dev, bladerf_channel ch, bladerf_frequency frequency);
 
     /* RF Ports */

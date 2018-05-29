@@ -1670,9 +1670,9 @@ static int bladerf1_get_sample_rate(struct bladerf *dev, bladerf_channel ch, uns
     return si5338_get_sample_rate(dev, ch, rate);
 }
 
-static int bladerf1_get_sample_rate_range(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range)
+static int bladerf1_get_sample_rate_range(struct bladerf *dev, bladerf_channel ch, const struct bladerf_range **range)
 {
-    *range = bladerf1_sample_rate_range;
+    *range = &bladerf1_sample_rate_range;
     return 0;
 }
 
@@ -1745,9 +1745,9 @@ static int bladerf1_get_bandwidth(struct bladerf *dev, bladerf_channel ch, unsig
     return status;
 }
 
-static int bladerf1_get_bandwidth_range(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range)
+static int bladerf1_get_bandwidth_range(struct bladerf *dev, bladerf_channel ch, const struct bladerf_range **range)
 {
-    *range = bladerf1_bandwidth_range;
+    *range = &bladerf1_bandwidth_range;
     return 0;
 }
 
@@ -1893,12 +1893,12 @@ static int bladerf1_get_frequency(struct bladerf *dev, bladerf_channel ch, uint6
     return 0;
 }
 
-static int bladerf1_get_frequency_range(struct bladerf *dev, bladerf_channel ch, struct bladerf_range *range)
+static int bladerf1_get_frequency_range(struct bladerf *dev, bladerf_channel ch, const struct bladerf_range **range)
 {
     if (dev->xb == BLADERF_XB_200) {
-        *range = bladerf1_xb200_frequency_range;
+        *range = &bladerf1_xb200_frequency_range;
     } else {
-        *range = bladerf1_frequency_range;
+        *range = &bladerf1_frequency_range;
     }
 
     return 0;

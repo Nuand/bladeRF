@@ -48,7 +48,8 @@ static int apply_config_options(struct bladerf *dev, struct config_options opt)
     uint32_t val;
     bool ok;
     bladerf_gain_mode gain_mode;
-    struct bladerf_range rx_range, tx_range;
+    const struct bladerf_range *rx_range = NULL;
+    const struct bladerf_range *tx_range = NULL;
     bladerf_sampling sampling_mode;
     bladerf_vctcxo_tamer_mode tamer_mode = BLADERF_VCTCXO_TAMER_INVALID;
 
@@ -76,9 +77,9 @@ static int apply_config_options(struct bladerf *dev, struct config_options opt)
             return status;
         }
 
-        freq = str2uint64_suffix(opt.value, MAX(rx_range.min, tx_range.min),
-                                 MIN(rx_range.max, tx_range.max), freq_suffixes,
-                                 NUM_FREQ_SUFFIXES, &ok);
+        freq = str2uint64_suffix(opt.value, MAX(rx_range->min, tx_range->min),
+                                 MIN(rx_range->max, tx_range->max),
+                                 freq_suffixes, NUM_FREQ_SUFFIXES, &ok);
         if (!ok) {
             return BLADERF_ERR_INVAL;
         }
@@ -102,9 +103,9 @@ static int apply_config_options(struct bladerf *dev, struct config_options opt)
             return status;
         }
 
-        freq = str2uint64_suffix(opt.value, MAX(rx_range.min, tx_range.min),
-                                 MIN(rx_range.max, tx_range.max), freq_suffixes,
-                                 NUM_FREQ_SUFFIXES, &ok);
+        freq = str2uint64_suffix(opt.value, MAX(rx_range->min, tx_range->min),
+                                 MIN(rx_range->max, tx_range->max),
+                                 freq_suffixes, NUM_FREQ_SUFFIXES, &ok);
         if (!ok) {
             return BLADERF_ERR_INVAL;
         }
@@ -134,14 +135,14 @@ static int apply_config_options(struct bladerf *dev, struct config_options opt)
             return status;
         }
 
-        if (MIN(rx_range.max, tx_range.max) >= UINT32_MAX) {
+        if (MIN(rx_range->max, tx_range->max) >= UINT32_MAX) {
             return BLADERF_ERR_INVAL;
         }
 
-        bw = str2uint_suffix(opt.value,
-                             (bladerf_bandwidth)MAX(rx_range.min, tx_range.min),
-                             (bladerf_bandwidth)MIN(rx_range.max, tx_range.max),
-                             freq_suffixes, NUM_FREQ_SUFFIXES, &ok);
+        bw = str2uint_suffix(
+            opt.value, (bladerf_bandwidth)MAX(rx_range->min, tx_range->min),
+            (bladerf_bandwidth)MIN(rx_range->max, tx_range->max), freq_suffixes,
+            NUM_FREQ_SUFFIXES, &ok);
         if (!ok) {
             return BLADERF_ERR_INVAL;
         }

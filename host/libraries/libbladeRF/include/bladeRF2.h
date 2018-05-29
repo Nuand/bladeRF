@@ -223,7 +223,7 @@ int CALL_CONV bladerf_set_pll_enable(struct bladerf *dev, bool enable);
  */
 API_EXPORT
 int CALL_CONV bladerf_get_pll_refclk_range(struct bladerf *dev,
-                                           struct bladerf_range *range);
+                                           const struct bladerf_range **range);
 
 /**
  * Get the currently-configured frequency for the reference clock

@@ -925,7 +925,7 @@ int CALL_CONV bladerf_get_sample_rate(struct bladerf *dev,
 API_EXPORT
 int CALL_CONV bladerf_get_sample_rate_range(struct bladerf *dev,
                                             bladerf_channel ch,
-                                            struct bladerf_range *range);
+                                            const struct bladerf_range **range);
 
 /**
  * Get the channel's sample rate in rational Hz
@@ -1011,7 +1011,7 @@ int CALL_CONV bladerf_get_bandwidth(struct bladerf *dev,
 API_EXPORT
 int CALL_CONV bladerf_get_bandwidth_range(struct bladerf *dev,
                                           bladerf_channel ch,
-                                          struct bladerf_range *range);
+                                          const struct bladerf_range **range);
 
 /** @} (End of FN_BANDWIDTH) */
 
@@ -1112,7 +1112,7 @@ int CALL_CONV bladerf_get_frequency(struct bladerf *dev,
 API_EXPORT
 int CALL_CONV bladerf_get_frequency_range(struct bladerf *dev,
                                           bladerf_channel ch,
-                                          struct bladerf_range *range);
+                                          const struct bladerf_range **range);
 
 /** @} (End of FN_TUNING) */
 

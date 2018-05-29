@@ -2201,13 +2201,13 @@ static int bladerf2_get_gain_stages(struct bladerf *dev,
 
 static int bladerf2_get_sample_rate_range(struct bladerf *dev,
                                           bladerf_channel ch,
-                                          struct bladerf_range *range)
+                                          const struct bladerf_range **range)
 {
     if (NULL == range) {
         RETURN_INVAL("range", "is null");
     }
 
-    *range = bladerf2_sample_rate_range;
+    *range = &bladerf2_sample_rate_range;
 
     return 0;
 }
@@ -2244,7 +2244,7 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
                                     unsigned int *actual)
 {
     struct bladerf2_board_data *board_data;
-    struct bladerf_range range;
+    const struct bladerf_range *range = NULL;
     int status;
 
     CHECK_BOARD_STATE(STATE_INITIALIZED);
@@ -2256,7 +2256,7 @@ static int bladerf2_set_sample_rate(struct bladerf *dev,
         RETURN_ERROR_STATUS("bladerf2_get_sample_rate_range", status);
     }
 
-    if (!_is_within_range(&range, rate)) {
+    if (!_is_within_range(range, rate)) {
         return BLADERF_ERR_RANGE;
     }
 
@@ -2348,13 +2348,13 @@ static int bladerf2_set_rational_sample_rate(
 
 static int bladerf2_get_bandwidth_range(struct bladerf *dev,
                                         bladerf_channel ch,
-                                        struct bladerf_range *range)
+                                        const struct bladerf_range **range)
 {
     if (NULL == range) {
         RETURN_INVAL("range", "is null");
     }
 
-    *range = bladerf2_bandwidth_range;
+    *range = &bladerf2_bandwidth_range;
     return 0;
 }
 
@@ -2394,7 +2394,7 @@ static int bladerf2_set_bandwidth(struct bladerf *dev,
                                   unsigned int *actual)
 {
     struct bladerf2_board_data *board_data;
-    struct bladerf_range range;
+    const struct bladerf_range *range = NULL;
     int status;
 
     CHECK_BOARD_STATE(STATE_INITIALIZED);
@@ -2406,7 +2406,7 @@ static int bladerf2_set_bandwidth(struct bladerf *dev,
         RETURN_ERROR_STATUS("bladerf2_get_bandwidth_range", status);
     }
 
-    bandwidth = (unsigned int)_clamp_to_range(&range, bandwidth);
+    bandwidth = (unsigned int)_clamp_to_range(range, bandwidth);
 
     if (BLADERF_CHANNEL_IS_TX(ch)) {
         status = ad9361_set_tx_rf_bandwidth(board_data->phy, bandwidth);
@@ -2434,16 +2434,16 @@ static int bladerf2_set_bandwidth(struct bladerf *dev,
 
 static int bladerf2_get_frequency_range(struct bladerf *dev,
                                         bladerf_channel ch,
-                                        struct bladerf_range *range)
+                                        const struct bladerf_range **range)
 {
     if (NULL == range) {
         RETURN_INVAL("range", "is null");
     }
 
     if (BLADERF_CHANNEL_IS_TX(ch)) {
-        *range = bladerf2_tx_frequency_range;
+        *range = &bladerf2_tx_frequency_range;
     } else {
-        *range = bladerf2_rx_frequency_range;
+        *range = &bladerf2_rx_frequency_range;
     }
 
     return 0;
@@ -2499,7 +2499,7 @@ static int bladerf2_set_frequency(struct bladerf *dev,
                                   uint64_t frequency)
 {
     struct bladerf2_board_data *board_data;
-    struct bladerf_range range;
+    const struct bladerf_range *range = NULL;
     int status;
 
     CHECK_BOARD_STATE(STATE_INITIALIZED);
@@ -2511,7 +2511,7 @@ static int bladerf2_set_frequency(struct bladerf *dev,
         RETURN_ERROR_STATUS("bladerf2_get_frequency_range", status);
     }
 
-    if (!_is_within_range(&range, frequency)) {
+    if (!_is_within_range(range, frequency)) {
         return BLADERF_ERR_RANGE;
     }
 
@@ -4797,13 +4797,13 @@ int bladerf_set_pll_enable(struct bladerf *dev, bool enable)
 }
 
 int bladerf_get_pll_refclk_range(struct bladerf *dev,
-                                 struct bladerf_range *range)
+                                 const struct bladerf_range **range)
 {
     if (NULL == range) {
         RETURN_INVAL("range", "is null");
     }
 
-    *range = bladerf2_pll_refclk_range;
+    *range = &bladerf2_pll_refclk_range;
 
     return 0;
 }

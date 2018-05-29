@@ -191,7 +191,7 @@ static int _do_set_bandwidth(struct cli_state *state,
     int status;
 
     unsigned int bw;
-    struct bladerf_range range;
+    const struct bladerf_range *range = NULL;
     bool ok;
 
     /* Get valid bandwidth range */
@@ -200,16 +200,17 @@ static int _do_set_bandwidth(struct cli_state *state,
         *err = status;
         rv   = CLI_RET_LIBBLADERF;
         goto out;
-    } else if (range.max >= UINT32_MAX) {
+    } else if (range->max >= UINT32_MAX) {
         cli_err_nnl(state, __FUNCTION__,
-                    "Invalid range.max (this is a bug): %" PRIu64 "\n",
-                    range.max);
+                    "Invalid range->max (this is a bug): %" PRIu64 "\n",
+                    range->max);
         goto out;
     }
 
     /* Parse bandwidth */
-    bw = str2uint_suffix(arg, (unsigned int)range.min, (unsigned int)range.max,
-                         freq_suffixes, NUM_FREQ_SUFFIXES, &ok);
+    bw =
+        str2uint_suffix(arg, (unsigned int)range->min, (unsigned int)range->max,
+                        freq_suffixes, NUM_FREQ_SUFFIXES, &ok);
 
     if (!ok) {
         cli_err_nnl(state, __FUNCTION__, "Invalid bandwidth (%s)\n", arg);
@@ -330,7 +331,7 @@ static int _do_set_frequency(struct cli_state *state,
     int status;
 
     uint64_t freq;
-    struct bladerf_range range;
+    const struct bladerf_range *range = NULL;
     bool ok;
 
     /* Get valid frequency range */
@@ -342,7 +343,7 @@ static int _do_set_frequency(struct cli_state *state,
     }
 
     /* Parse frequency */
-    freq = str2uint64_suffix(arg, range.min, range.max, freq_suffixes,
+    freq = str2uint64_suffix(arg, range->min, range->max, freq_suffixes,
                              NUM_FREQ_SUFFIXES, &ok);
     if (!ok) {
         cli_err_nnl(state, __FUNCTION__, "Invalid frequency (%s)\n", arg);
