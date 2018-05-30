@@ -33,9 +33,9 @@
 #ifndef BACKEND_USB_NIOS_ACCESS_H_
 #define BACKEND_USB_NIOS_ACCESS_H_
 
-#include <stdlib.h>
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
 
 #include "board/board.h"
 #include "usb.h"
@@ -79,7 +79,8 @@ int nios_get_fpga_version(struct bladerf *dev, struct bladerf_version *ver);
  *
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
-int nios_get_timestamp(struct bladerf *dev, bladerf_direction dir,
+int nios_get_timestamp(struct bladerf *dev,
+                       bladerf_direction dir,
                        uint64_t *timestamp);
 
 /**
@@ -265,7 +266,9 @@ int nios_adf400x_read(struct bladerf *dev, uint8_t addr, uint32_t *data);
  *
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
-int nios_vctcxo_trim_dac_write(struct bladerf *dev, uint8_t addr, uint16_t value);
+int nios_vctcxo_trim_dac_write(struct bladerf *dev,
+                               uint8_t addr,
+                               uint16_t value);
 
 /**
  * Read from a VCTCXO trim DAC register.
@@ -276,7 +279,9 @@ int nios_vctcxo_trim_dac_write(struct bladerf *dev, uint8_t addr, uint16_t value
  *
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
-int nios_vctcxo_trim_dac_read(struct bladerf *dev, uint8_t addr, uint16_t *value);
+int nios_vctcxo_trim_dac_read(struct bladerf *dev,
+                              uint8_t addr,
+                              uint16_t *value);
 
 /**
  * Write VCTCXO tamer mode selection
@@ -310,7 +315,8 @@ int nios_get_vctcxo_tamer_mode(struct bladerf *dev,
  *
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
-int nios_get_iq_gain_correction(struct bladerf *dev, bladerf_channel ch,
+int nios_get_iq_gain_correction(struct bladerf *dev,
+                                bladerf_channel ch,
                                 int16_t *value);
 
 /**
@@ -323,7 +329,8 @@ int nios_get_iq_gain_correction(struct bladerf *dev, bladerf_channel ch,
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
 int nios_get_iq_phase_correction(struct bladerf *dev,
-                                 bladerf_channel ch, int16_t *value);
+                                 bladerf_channel ch,
+                                 int16_t *value);
 
 /**
  * Write an IQ gain correction value
@@ -335,7 +342,8 @@ int nios_get_iq_phase_correction(struct bladerf *dev,
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
 int nios_set_iq_gain_correction(struct bladerf *dev,
-                                bladerf_channel ch, int16_t value);
+                                bladerf_channel ch,
+                                int16_t value);
 
 /**
  * Write an IQ phase correction value
@@ -347,7 +355,8 @@ int nios_set_iq_gain_correction(struct bladerf *dev,
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
 int nios_set_iq_phase_correction(struct bladerf *dev,
-                                 bladerf_channel ch, int16_t value);
+                                 bladerf_channel ch,
+                                 int16_t value);
 
 /**
  * Write AGC DC LUT values
@@ -362,9 +371,13 @@ int nios_set_iq_phase_correction(struct bladerf *dev,
  *
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
-int nios_set_agc_dc_correction(struct bladerf *dev, int16_t q_max, int16_t i_max,
-                               int16_t q_mid, int16_t i_mid,
-                               int16_t q_low, int16_t i_low);
+int nios_set_agc_dc_correction(struct bladerf *dev,
+                               int16_t q_max,
+                               int16_t i_max,
+                               int16_t q_mid,
+                               int16_t i_mid,
+                               int16_t q_low,
+                               int16_t i_low);
 /**
  * Write a value to the XB-200's ADF4351 synthesizer
  *
@@ -416,7 +429,8 @@ int nios_expansion_gpio_dir_read(struct bladerf *dev, uint32_t *val);
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
 int nios_expansion_gpio_dir_write(struct bladerf *dev,
-                                  uint32_t mask, uint32_t outputs);
+                                  uint32_t mask,
+                                  uint32_t outputs);
 
 /**
  * Dummy handler for a retune request, which is not supported on
@@ -436,9 +450,15 @@ int nios_expansion_gpio_dir_write(struct bladerf *dev,
  *
  * @return BLADERF_ERR_UNSUPPORTED
  */
-int nios_retune(struct bladerf *dev, bladerf_channel ch, uint64_t timestamp,
-                uint16_t nint, uint32_t nfrac, uint8_t freqsel, uint8_t vcocap,
-                bool low_band, bool quick_tune);
+int nios_retune(struct bladerf *dev,
+                bladerf_channel ch,
+                uint64_t timestamp,
+                uint16_t nint,
+                uint32_t nfrac,
+                uint8_t freqsel,
+                uint8_t vcocap,
+                bool low_band,
+                bool quick_tune);
 
 /**
  * Read trigger register value
@@ -451,8 +471,10 @@ int nios_retune(struct bladerf *dev, bladerf_channel ch, uint64_t timestamp,
  *
  * @return 0 on success, BLADERF_ERR_* code on error
  */
-int nios_read_trigger(struct bladerf *dev, bladerf_channel ch,
-                      bladerf_trigger_signal trigger, uint8_t * value);
+int nios_read_trigger(struct bladerf *dev,
+                      bladerf_channel ch,
+                      bladerf_trigger_signal trigger,
+                      uint8_t *value);
 
 /**
  * Write trigger register value
@@ -464,7 +486,9 @@ int nios_read_trigger(struct bladerf *dev, bladerf_channel ch,
  *
  * @return 0 on success, BLADERF_ERR_* code on error
  */
-int nios_write_trigger(struct bladerf *dev, bladerf_channel ch,
-                       bladerf_trigger_signal trigger, uint8_t value);
+int nios_write_trigger(struct bladerf *dev,
+                       bladerf_channel ch,
+                       bladerf_trigger_signal trigger,
+                       uint8_t value);
 
 #endif

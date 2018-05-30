@@ -24,4 +24,4 @@
 
 int config_load_options_file(struct bladerf *dev);
 
-#endif // CONFIGFILE_H_
+#endif  // CONFIGFILE_H_

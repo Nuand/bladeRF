@@ -34,9 +34,9 @@
 #ifndef BACKEND_USB_NIOS_LEGACY_ACCESS_H_
 #define BACKEND_USB_NIOS_LEGACY_ACCESS_H_
 
-#include <stdlib.h>
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
 
 #include "board/board.h"
 #include "usb.h"
@@ -105,7 +105,8 @@ int nios_legacy_get_fpga_version(struct bladerf *dev,
  *
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
-int nios_legacy_get_timestamp(struct bladerf *dev, bladerf_direction dir,
+int nios_legacy_get_timestamp(struct bladerf *dev,
+                              bladerf_direction dir,
                               uint64_t *timestamp);
 
 /**
@@ -183,7 +184,9 @@ int nios_legacy_ina219_write(struct bladerf *dev, uint8_t addr, uint16_t data);
  *
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
-int nios_legacy_ad9361_spi_read(struct bladerf *dev, uint16_t cmd, uint64_t *data);
+int nios_legacy_ad9361_spi_read(struct bladerf *dev,
+                                uint16_t cmd,
+                                uint64_t *data);
 
 /**
  * Write to the AD9361 over SPI.
@@ -194,7 +197,9 @@ int nios_legacy_ad9361_spi_read(struct bladerf *dev, uint16_t cmd, uint64_t *dat
  *
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
-int nios_legacy_ad9361_spi_write(struct bladerf *dev, uint16_t cmd, uint64_t data);
+int nios_legacy_ad9361_spi_write(struct bladerf *dev,
+                                 uint16_t cmd,
+                                 uint64_t data);
 
 /**
  * Read the ADI AXI memory mapped region.
@@ -205,7 +210,9 @@ int nios_legacy_ad9361_spi_write(struct bladerf *dev, uint16_t cmd, uint64_t dat
  *
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
-int nios_legacy_adi_axi_read(struct bladerf *dev, uint32_t addr, uint32_t *data);
+int nios_legacy_adi_axi_read(struct bladerf *dev,
+                             uint32_t addr,
+                             uint32_t *data);
 
 /**
  * Write to the ADI AXI memory mapped region.
@@ -216,7 +223,9 @@ int nios_legacy_adi_axi_read(struct bladerf *dev, uint32_t addr, uint32_t *data)
  *
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
-int nios_legacy_adi_axi_write(struct bladerf *dev, uint32_t addr, uint32_t data);
+int nios_legacy_adi_axi_write(struct bladerf *dev,
+                              uint32_t addr,
+                              uint32_t data);
 
 /**
  * Read RFFE control register.
@@ -248,7 +257,8 @@ int nios_legacy_rffe_control_write(struct bladerf *dev, uint32_t value);
  *
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
-int nios_legacy_ad56x1_vctcxo_trim_dac_write(struct bladerf *dev, uint16_t value);
+int nios_legacy_ad56x1_vctcxo_trim_dac_write(struct bladerf *dev,
+                                             uint16_t value);
 
 /**
  * Read the AD56X1 VCTCXO trim DAC.
@@ -258,7 +268,8 @@ int nios_legacy_ad56x1_vctcxo_trim_dac_write(struct bladerf *dev, uint16_t value
  *
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
-int nios_legacy_ad56x1_vctcxo_trim_dac_read(struct bladerf *dev, uint16_t *value);
+int nios_legacy_ad56x1_vctcxo_trim_dac_read(struct bladerf *dev,
+                                            uint16_t *value);
 
 /**
  * Write to the ADF400X.
@@ -291,7 +302,9 @@ int nios_legacy_adf400x_read(struct bladerf *dev, uint8_t addr, uint32_t *data);
  *
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
-int nios_legacy_vctcxo_trim_dac_write(struct bladerf *dev, uint8_t addr, uint16_t value);
+int nios_legacy_vctcxo_trim_dac_write(struct bladerf *dev,
+                                      uint8_t addr,
+                                      uint16_t value);
 
 /**
  * Read a IQ gain correction value
@@ -303,7 +316,8 @@ int nios_legacy_vctcxo_trim_dac_write(struct bladerf *dev, uint8_t addr, uint16_
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
 int nios_legacy_get_iq_gain_correction(struct bladerf *dev,
-                                       bladerf_channel ch, int16_t *value);
+                                       bladerf_channel ch,
+                                       int16_t *value);
 
 /**
  * Read a IQ phase correction value
@@ -315,7 +329,8 @@ int nios_legacy_get_iq_gain_correction(struct bladerf *dev,
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
 int nios_legacy_get_iq_phase_correction(struct bladerf *dev,
-                                        bladerf_channel ch, int16_t *value);
+                                        bladerf_channel ch,
+                                        int16_t *value);
 
 /**
  * Write an IQ gain correction value
@@ -327,7 +342,8 @@ int nios_legacy_get_iq_phase_correction(struct bladerf *dev,
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
 int nios_legacy_set_iq_gain_correction(struct bladerf *dev,
-                                       bladerf_channel ch, int16_t value);
+                                       bladerf_channel ch,
+                                       int16_t value);
 
 /**
  * Write an IQ phase correction value
@@ -339,7 +355,8 @@ int nios_legacy_set_iq_gain_correction(struct bladerf *dev,
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
 int nios_legacy_set_iq_phase_correction(struct bladerf *dev,
-                                        bladerf_channel ch, int16_t value);
+                                        bladerf_channel ch,
+                                        int16_t value);
 
 /**
  * Write a value to the XB-200's ADF4351 synthesizer
@@ -371,7 +388,8 @@ int nios_legacy_expansion_gpio_read(struct bladerf *dev, uint32_t *val);
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
 int nios_legacy_expansion_gpio_write(struct bladerf *dev,
-                                     uint32_t mask, uint32_t val);
+                                     uint32_t mask,
+                                     uint32_t val);
 
 /**
  * Read from expansion GPIO direction register
@@ -393,7 +411,8 @@ int nios_legacy_expansion_gpio_dir_read(struct bladerf *dev, uint32_t *val);
  * @return 0 on success, BLADERF_ERR_* code on error.
  */
 int nios_legacy_expansion_gpio_dir_write(struct bladerf *dev,
-                                         uint32_t mask, uint32_t outputs);
+                                         uint32_t mask,
+                                         uint32_t outputs);
 
 /**
  * Read trigger register value
@@ -406,8 +425,10 @@ int nios_legacy_expansion_gpio_dir_write(struct bladerf *dev,
  *
  * @return 0 on success, BLADERF_ERR_* code on error
  */
-int nios_legacy_read_trigger(struct bladerf *dev, bladerf_channel ch,
-                             bladerf_trigger_signal trigger, uint8_t * value);
+int nios_legacy_read_trigger(struct bladerf *dev,
+                             bladerf_channel ch,
+                             bladerf_trigger_signal trigger,
+                             uint8_t *value);
 
 /**
  * Write trigger register value
@@ -419,7 +440,9 @@ int nios_legacy_read_trigger(struct bladerf *dev, bladerf_channel ch,
  *
  * @return 0 on success, BLADERF_ERR_* code on error
  */
-int nios_legacy_write_trigger(struct bladerf *dev, bladerf_channel ch,
-                              bladerf_trigger_signal trigger, uint8_t value);
+int nios_legacy_write_trigger(struct bladerf *dev,
+                              bladerf_channel ch,
+                              bladerf_trigger_signal trigger,
+                              uint8_t value);
 
 #endif

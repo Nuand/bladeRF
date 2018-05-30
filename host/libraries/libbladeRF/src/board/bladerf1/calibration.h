@@ -27,7 +27,7 @@
 #include <libbladeRF.h>
 
 struct dc_cal_entry {
-    unsigned int freq;          /* Frequency (Hz) associated with this entry */
+    unsigned int freq; /* Frequency (Hz) associated with this entry */
     int16_t dc_i;
     int16_t dc_q;
 
@@ -45,7 +45,7 @@ struct dc_cal_tbl {
     struct bladerf_lms_dc_cals reg_vals;
 
     unsigned int curr_idx;
-    struct dc_cal_entry *entries;  /* Sorted (increasing) by freq */
+    struct dc_cal_entry *entries; /* Sorted (increasing) by freq */
 };
 
 extern struct dc_cal_tbl rx_cal_test;
@@ -69,7 +69,8 @@ unsigned int dc_cal_tbl_lookup(const struct dc_cal_tbl *tbl, unsigned int freq);
  * @param[in]   freq     Desired frequency
  * @param[out]  entry    Found or interpolated DC calibration values
  */
-void dc_cal_tbl_entry(const struct dc_cal_tbl *tbl, unsigned int freq,
+void dc_cal_tbl_entry(const struct dc_cal_tbl *tbl,
+                      unsigned int freq,
                       struct dc_cal_entry *entry);
 
 /**
@@ -80,7 +81,7 @@ void dc_cal_tbl_entry(const struct dc_cal_tbl *tbl, unsigned int freq,
  *
  * @return Loaded DC calibration table, or NULL on error
  */
-struct dc_cal_tbl * dc_cal_tbl_load(const uint8_t *buf, size_t buf_len);
+struct dc_cal_tbl *dc_cal_tbl_load(const uint8_t *buf, size_t buf_len);
 
 /**
  * Load a DC calibration table from an image file

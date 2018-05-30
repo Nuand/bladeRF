@@ -78,39 +78,39 @@
  */
 
 /* Components of the metadata header */
-#define METADATA_RESV_SIZE      (sizeof(uint32_t))
+#define METADATA_RESV_SIZE (sizeof(uint32_t))
 #define METADATA_TIMESTAMP_SIZE (sizeof(uint64_t))
-#define METADATA_FLAGS_SIZE     (sizeof(uint32_t))
+#define METADATA_FLAGS_SIZE (sizeof(uint32_t))
 
-#define METADATA_RESV_OFFSET        0
-#define METADATA_TIMESTAMP_OFFSET   (METADATA_RESV_SIZE)
-#define METADATA_FLAGS_OFFSET       (METADATA_TIMESTAMP_OFFSET + \
-                                     METADATA_TIMESTAMP_SIZE)
+#define METADATA_RESV_OFFSET 0
+#define METADATA_TIMESTAMP_OFFSET (METADATA_RESV_SIZE)
+#define METADATA_FLAGS_OFFSET \
+    (METADATA_TIMESTAMP_OFFSET + METADATA_TIMESTAMP_SIZE)
 
-#define METADATA_HEADER_SIZE        (METADATA_FLAGS_OFFSET + \
-                                     METADATA_FLAGS_SIZE)
+#define METADATA_HEADER_SIZE (METADATA_FLAGS_OFFSET + METADATA_FLAGS_SIZE)
 
 static inline uint64_t metadata_get_timestamp(const uint8_t *header)
 {
-   uint64_t ret;
-   assert(sizeof(ret) == METADATA_TIMESTAMP_SIZE);
-   memcpy(&ret, &header[METADATA_TIMESTAMP_OFFSET], METADATA_TIMESTAMP_SIZE);
+    uint64_t ret;
+    assert(sizeof(ret) == METADATA_TIMESTAMP_SIZE);
+    memcpy(&ret, &header[METADATA_TIMESTAMP_OFFSET], METADATA_TIMESTAMP_SIZE);
 
-   ret = LE64_TO_HOST(ret);
+    ret = LE64_TO_HOST(ret);
 
-   return ret;
+    return ret;
 }
 
 static inline uint32_t metadata_get_flags(const uint8_t *header)
 {
-   uint32_t ret;
-   assert(sizeof(ret) == METADATA_FLAGS_SIZE);
-   memcpy(&ret, &header[METADATA_FLAGS_OFFSET], METADATA_FLAGS_SIZE);
-   return LE32_TO_HOST(ret);
+    uint32_t ret;
+    assert(sizeof(ret) == METADATA_FLAGS_SIZE);
+    memcpy(&ret, &header[METADATA_FLAGS_OFFSET], METADATA_FLAGS_SIZE);
+    return LE32_TO_HOST(ret);
 }
 
 static inline void metadata_set(uint8_t *header,
-                                uint64_t timestamp, uint32_t flags)
+                                uint64_t timestamp,
+                                uint32_t flags)
 {
     timestamp = HOST_TO_LE64(timestamp);
 
@@ -121,13 +121,10 @@ static inline void metadata_set(uint8_t *header,
 
     memset(&header[METADATA_RESV_OFFSET], 0, METADATA_RESV_SIZE);
 
-    memcpy(&header[METADATA_TIMESTAMP_OFFSET],
-           &timestamp,
+    memcpy(&header[METADATA_TIMESTAMP_OFFSET], &timestamp,
            METADATA_TIMESTAMP_SIZE);
 
-    memcpy(&header[METADATA_FLAGS_OFFSET],
-           &flags,
-           METADATA_FLAGS_SIZE);
+    memcpy(&header[METADATA_FLAGS_OFFSET], &flags, METADATA_FLAGS_SIZE);
 }
 
 #endif

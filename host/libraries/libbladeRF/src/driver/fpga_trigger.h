@@ -36,8 +36,10 @@
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
-int fpga_trigger_read(struct bladerf *dev, bladerf_channel ch,
-                      bladerf_trigger_signal trigger, uint8_t *val);
+int fpga_trigger_read(struct bladerf *dev,
+                      bladerf_channel ch,
+                      bladerf_trigger_signal trigger,
+                      uint8_t *val);
 
 /**
  * Write trigger control register
@@ -50,8 +52,10 @@ int fpga_trigger_read(struct bladerf *dev, bladerf_channel ch,
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
-int fpga_trigger_write(struct bladerf *dev, bladerf_channel ch,
-                       bladerf_trigger_signal trigger, uint8_t val);
+int fpga_trigger_write(struct bladerf *dev,
+                       bladerf_channel ch,
+                       bladerf_trigger_signal trigger,
+                       uint8_t val);
 
 
 /**
@@ -65,7 +69,8 @@ int fpga_trigger_write(struct bladerf *dev, bladerf_channel ch,
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
-int fpga_trigger_init(struct bladerf *dev, bladerf_channel ch,
+int fpga_trigger_init(struct bladerf *dev,
+                      bladerf_channel ch,
                       bladerf_trigger_signal signal,
                       struct bladerf_trigger *trigger);
 
@@ -81,7 +86,8 @@ int fpga_trigger_init(struct bladerf *dev, bladerf_channel ch,
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
 int fpga_trigger_arm(struct bladerf *dev,
-                     const struct bladerf_trigger *trigger, bool arm);
+                     const struct bladerf_trigger *trigger,
+                     bool arm);
 
 /**
  * Fire a trigger event.
@@ -113,7 +119,10 @@ int fpga_trigger_fire(struct bladerf *dev,
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
-int fpga_trigger_state(struct bladerf *dev, const struct bladerf_trigger *trigger,
-                       bool *is_armed, bool *has_fired, bool *fire_requested);
+int fpga_trigger_state(struct bladerf *dev,
+                       const struct bladerf_trigger *trigger,
+                       bool *is_armed,
+                       bool *has_fired,
+                       bool *fire_requested);
 
 #endif

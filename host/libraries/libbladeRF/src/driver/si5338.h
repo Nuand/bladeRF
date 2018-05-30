@@ -40,7 +40,8 @@
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
-int si5338_set_rational_sample_rate(struct bladerf *dev, bladerf_channel ch,
+int si5338_set_rational_sample_rate(struct bladerf *dev,
+                                    bladerf_channel ch,
                                     const struct bladerf_rational_rate *rate,
                                     struct bladerf_rational_rate *actual);
 
@@ -53,7 +54,8 @@ int si5338_set_rational_sample_rate(struct bladerf *dev, bladerf_channel ch,
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
-int si5338_get_rational_sample_rate(struct bladerf *dev, bladerf_channel ch,
+int si5338_get_rational_sample_rate(struct bladerf *dev,
+                                    bladerf_channel ch,
                                     struct bladerf_rational_rate *rate);
 
 /**
@@ -66,8 +68,10 @@ int si5338_get_rational_sample_rate(struct bladerf *dev, bladerf_channel ch,
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
-int si5338_set_sample_rate(struct bladerf *dev, bladerf_channel ch,
-                           uint32_t rate, uint32_t *actual);
+int si5338_set_sample_rate(struct bladerf *dev,
+                           bladerf_channel ch,
+                           uint32_t rate,
+                           uint32_t *actual);
 
 /**
  * Get the integral sample rate of the specified channel.
@@ -78,7 +82,8 @@ int si5338_set_sample_rate(struct bladerf *dev, bladerf_channel ch,
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
-int si5338_get_sample_rate(struct bladerf *dev, bladerf_channel ch,
+int si5338_get_sample_rate(struct bladerf *dev,
+                           bladerf_channel ch,
                            unsigned int *rate);
 
 /**

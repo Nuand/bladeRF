@@ -16,7 +16,9 @@
  *
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
-int spi_flash_write_fx3_fw(struct bladerf *dev, const uint8_t *image, size_t len);
+int spi_flash_write_fx3_fw(struct bladerf *dev,
+                           const uint8_t *image,
+                           size_t len);
 
 /**
  * Write the provided FPGA bitstream to flash and enable autoloading via
@@ -29,7 +31,8 @@ int spi_flash_write_fx3_fw(struct bladerf *dev, const uint8_t *image, size_t len
  * @return 0 on success, BLADERF_ERR_* value on failure
  */
 int spi_flash_write_fpga_bitstream(struct bladerf *dev,
-                                   const uint8_t *bitstream, size_t len);
+                                   const uint8_t *bitstream,
+                                   size_t len);
 
 /**
  * Erase FPGA metadata and bitstream regions of flash.
@@ -50,8 +53,10 @@ int spi_flash_erase_fpga(struct bladerf *dev);
  *
  * @return 0 on success, BLADERF_ERR_* on failure
  */
-int spi_flash_read_otp(struct bladerf *dev, char *field,
-                       char *data, size_t data_size);
+int spi_flash_read_otp(struct bladerf *dev,
+                       char *field,
+                       char *data,
+                       size_t data_size);
 
 /**
  * Read data from calibration ("cal") section of flash.
@@ -63,8 +68,10 @@ int spi_flash_read_otp(struct bladerf *dev, char *field,
  *
  * @return 0 on success, BLADERF_ERR_* on failure
  */
-int spi_flash_read_cal(struct bladerf *dev, char *field,
-                       char *data, size_t data_size);
+int spi_flash_read_cal(struct bladerf *dev,
+                       char *field,
+                       char *data,
+                       size_t data_size);
 
 /**
  * Retrieve the device serial from flash.
@@ -101,7 +108,8 @@ int spi_flash_read_fpga_size(struct bladerf *dev, bladerf_fpga_size *fpga_size);
 /**
  * Encode a binary key-value pair.
  *
- * @param[in]       ptr     Pointer to data buffer that will contain encoded data
+ * @param[in]       ptr     Pointer to data buffer that will contain encoded
+ * data
  * @param[in]       len     Length of data buffer that will contain encoded data
  * @param[inout]    idx     Pointer indicating next free byte inside of data
  *                          buffer that will contain encoded data
@@ -110,8 +118,8 @@ int spi_flash_read_fpga_size(struct bladerf *dev, bladerf_fpga_size *fpga_size);
  *
  * @return 0 on success, BLADERF_ERR_* on failure
  */
-int binkv_encode_field(char *ptr, int len, int *idx, const char *field,
-                       const char *val);
+int binkv_encode_field(
+    char *ptr, int len, int *idx, const char *field, const char *val);
 
 /**
  * Decode a binary key-value pair.
@@ -124,8 +132,8 @@ int binkv_encode_field(char *ptr, int len, int *idx, const char *field,
  *
  * @return 0 on success, BLADERF_ERR_* on failure
  */
-int binkv_decode_field(char *ptr, int len, char *field,
-                       char *val, size_t maxlen);
+int binkv_decode_field(
+    char *ptr, int len, char *field, char *val, size_t maxlen);
 
 /**
  * Add a binary key-value pair to an existing binkv data buffer.

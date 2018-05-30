@@ -37,28 +37,28 @@
  */
 
 /** Minimum sample rate, in Hz */
-#define BLADERF_SAMPLERATE_MIN      80000u
+#define BLADERF_SAMPLERATE_MIN 80000u
 
 /**
  * Maximum recommended sample rate, in Hz.
  *
  * The max sample rate of the LMS6002D is 40 MHz, but this API allows for larger
- * values to allow users to leverage FPGA customizations (e.g., to generate
- * test samples or mux other data into the sample stream).
+ * values to allow users to leverage FPGA customizations (e.g., to generate test
+ * samples or mux other data into the sample stream).
  *
  * If you are not performing such customizations, treat this as the max allowed
  * values.
  */
-#define BLADERF_SAMPLERATE_REC_MAX  40000000u
+#define BLADERF_SAMPLERATE_REC_MAX 40000000u
 
 /** Minimum bandwidth, in Hz */
-#define BLADERF_BANDWIDTH_MIN       1500000u
+#define BLADERF_BANDWIDTH_MIN 1500000u
 
 /** Maximum bandwidth, in Hz */
-#define BLADERF_BANDWIDTH_MAX       28000000u
+#define BLADERF_BANDWIDTH_MAX 28000000u
 
 /**
- * Minimum tunable frequency (with an XB-200 attached), in HZ.
+ * Minimum tunable frequency (with an XB-200 attached), in Hz.
  *
  * While this value is the lowest permitted, note that the components on the
  * XB-200 are only rated down to 50 MHz. Be aware that performance will likely
@@ -67,81 +67,83 @@
 #define BLADERF_FREQUENCY_MIN_XB200 0u
 
 /** Minimum tunable frequency (without an XB-200 attached), in Hz */
-#define BLADERF_FREQUENCY_MIN       237500000u
+#define BLADERF_FREQUENCY_MIN 237500000u
 
 /** Maximum tunable frequency, in Hz */
-#define BLADERF_FREQUENCY_MAX       3800000000u
+#define BLADERF_FREQUENCY_MAX 3800000000u
 
 /** Total size of bladeRF SPI flash, in bytes */
-#define BLADERF_FLASH_TOTAL_SIZE  (4 * 1024 * 1024)
+#define BLADERF_FLASH_TOTAL_SIZE (4 * 1024 * 1024)
 
 /** SPI flash page size, in bytes */
-#define BLADERF_FLASH_PAGE_SIZE   256
+#define BLADERF_FLASH_PAGE_SIZE 256
 
 /** SPI flash 64KiB erase block size, in bytes */
-#define BLADERF_FLASH_EB_SIZE     (64 * 1024)
+#define BLADERF_FLASH_EB_SIZE (64 * 1024)
 
 /** Size of the SPI flash, in pages */
 #define BLADERF_FLASH_NUM_PAGES \
     (BLADERF_FLASH_TOTAL_SIZE / BLADERF_FLASH_PAGE_SIZE)
 
 /** Size of the SPI flash, in 64KiB erase blocks */
-#define BLADERF_FLASH_NUM_EBS \
-    (BLADERF_FLASH_TOTAL_SIZE / BLADERF_FLASH_EB_SIZE)
+#define BLADERF_FLASH_NUM_EBS (BLADERF_FLASH_TOTAL_SIZE / BLADERF_FLASH_EB_SIZE)
 
 /** Convert byte addresses to units of flash pages */
 #define BLADERF_FLASH_TO_PAGES(bytes) ((bytes) / BLADERF_FLASH_PAGE_SIZE)
 
 /** Convert byte addresses to units of flash erase blocks */
-#define BLADERF_FLASH_TO_EB(bytes)    ((bytes) / BLADERF_FLASH_EB_SIZE)
+#define BLADERF_FLASH_TO_EB(bytes) ((bytes) / BLADERF_FLASH_EB_SIZE)
 
 /** Byte address of FX3 firmware */
-#define BLADERF_FLASH_ADDR_FIRMWARE     0x00000000
+#define BLADERF_FLASH_ADDR_FIRMWARE 0x00000000
 
 /** Flash page where FX3 firmware starts */
 #define BLADERF_FLASH_PAGE_FIRMWARE \
-            (BLADERF_FLASH_TO_PAGES(BLADERF_FLASH_ADDR_FIRMWARE))
+    (BLADERF_FLASH_TO_PAGES(BLADERF_FLASH_ADDR_FIRMWARE))
 
 /** Flash erase block where FX3 firmware starts */
 #define BLADERF_FLASH_EB_FIRMWARE \
-            (BLADERF_FLASH_TO_EB(BLADERF_FLASH_ADDR_FIRMWARE))
+    (BLADERF_FLASH_TO_EB(BLADERF_FLASH_ADDR_FIRMWARE))
 
 /** Length of firmware region of flash, in bytes */
 #define BLADERF_FLASH_BYTE_LEN_FIRMWARE 0x00030000
 
 /** Length of firmware region of flash, in pages */
 #define BLADERF_FLASH_PAGE_LEN_FIRMWARE \
-            (BLADERF_FLASH_TO_PAGES(BLADERF_FLASH_BYTE_LEN_FIRMWARE))
+    (BLADERF_FLASH_TO_PAGES(BLADERF_FLASH_BYTE_LEN_FIRMWARE))
 
 /** Length of firmware region of flash, in erase blocks */
 #define BLADERF_FLASH_EB_LEN_FIRMWARE \
-            (BLADERF_FLASH_TO_EB(BLADERF_FLASH_BYTE_LEN_FIRMWARE))
+    (BLADERF_FLASH_TO_EB(BLADERF_FLASH_BYTE_LEN_FIRMWARE))
 
 /** Byte address of calibration data region */
-#define BLADERF_FLASH_ADDR_CAL  0x00030000
+#define BLADERF_FLASH_ADDR_CAL 0x00030000
 
 /** Flash page where calibration data starts */
-#define BLADERF_FLASH_PAGE_CAL  (BLADERF_FLASH_TO_PAGES(BLADERF_FLASH_ADDR_CAL))
+#define BLADERF_FLASH_PAGE_CAL (BLADERF_FLASH_TO_PAGES(BLADERF_FLASH_ADDR_CAL))
 
 /** Flash erase block where calibration data starts */
-#define BLADERF_FLASH_EB_CAL    (BLADERF_FLASH_TO_EB(BLADERF_FLASH_ADDR_CAL))
+#define BLADERF_FLASH_EB_CAL (BLADERF_FLASH_TO_EB(BLADERF_FLASH_ADDR_CAL))
 
 /** Length of calibration data, in bytes */
 #define BLADERF_FLASH_BYTE_LEN_CAL 0x100
 
 /** Length of calibration data, in pages */
-#define BLADERF_FLASH_PAGE_LEN_CAL \
-            (BLADERF_FLASH_TO_PAGES(FLASH_BYTE_LEN_CAL))
+#define BLADERF_FLASH_PAGE_LEN_CAL (BLADERF_FLASH_TO_PAGES(FLASH_BYTE_LEN_CAL))
 
 /**
- * Length of calibration data, in erase blocks. This is a special case,
- * as the entire remainder of the erase block is reserved for future calibration
- * data use. When updating calibration data, the whole block will be erased,
- * even though the current firmware only uses one page of it. */
+ * Length of calibration data, in erase blocks.
+ *
+ * This is a special case, as the entire remainder of the erase block is
+ * reserved for future calibration data use. When updating calibration data, the
+ * whole block will be erased, even though the current firmware only uses one
+ * page of it.
+ */
 #define BLADERF_FLASH_EB_LEN_CAL 1
 
 /**
  * Byte address of of the autoloaded FPGA and associated metadata.
+ *
  * The first page is allocated for metadata, and the FPGA bitstream resides
  * in the following pages.
  */
@@ -149,18 +151,17 @@
 
 /** Flash page where FPGA metadata and bitstream start */
 #define BLADERF_FLASH_PAGE_FPGA \
-            (BLADERF_FLASH_TO_PAGES(BLADERF_FLASH_ADDR_FPGA))
+    (BLADERF_FLASH_TO_PAGES(BLADERF_FLASH_ADDR_FPGA))
 
 /** Flash erase block where FPGA metadata and bitstream start */
-#define BLADERF_FLASH_EB_FPGA \
-            (BLADERF_FLASH_TO_EB(BLADERF_FLASH_ADDR_FPGA))
+#define BLADERF_FLASH_EB_FPGA (BLADERF_FLASH_TO_EB(BLADERF_FLASH_ADDR_FPGA))
 
 /** Length of entire FPGA region, including both metadata and bitstream. */
 #define BLADERF_FLASH_BYTE_LEN_FPGA 0x00370000
 
 /** Length of entire FPGA region, in units of erase blocks */
 #define BLADERF_FLASH_EB_LEN_FPGA \
-            (BLADERF_FLASH_TO_EB(BLADERF_FLASH_BYTE_LEN_FPGA))
+    (BLADERF_FLASH_TO_EB(BLADERF_FLASH_BYTE_LEN_FPGA))
 
 /** @} (End of BLADERF1_CONSTANTS) */
 
@@ -175,8 +176,8 @@
  */
 
 /**
- * In general, the gains should be incremented in the following order
- * (and decremented in the reverse order).
+ * In general, the gains should be incremented in the following order (and
+ * decremented in the reverse order).
  *
  * <b>TX:</b> `TXVGA1`, `TXVGA2`
  *
@@ -185,41 +186,41 @@
  */
 
 /** Minimum RXVGA1 gain, in dB */
-#define BLADERF_RXVGA1_GAIN_MIN     5
+#define BLADERF_RXVGA1_GAIN_MIN 5
 
 /** Maximum RXVGA1 gain, in dB */
-#define BLADERF_RXVGA1_GAIN_MAX     30
+#define BLADERF_RXVGA1_GAIN_MAX 30
 
 /** Minimum RXVGA2 gain, in dB */
-#define BLADERF_RXVGA2_GAIN_MIN     0
+#define BLADERF_RXVGA2_GAIN_MIN 0
 
 /** Maximum RXVGA2 gain, in dB */
-#define BLADERF_RXVGA2_GAIN_MAX     30
+#define BLADERF_RXVGA2_GAIN_MAX 30
 
 /** Minimum TXVGA1 gain, in dB */
-#define BLADERF_TXVGA1_GAIN_MIN     (-35)
+#define BLADERF_TXVGA1_GAIN_MIN (-35)
 
 /** Maximum TXVGA1 gain, in dB */
-#define BLADERF_TXVGA1_GAIN_MAX     (-4)
+#define BLADERF_TXVGA1_GAIN_MAX (-4)
 
 /** Minimum TXVGA2 gain, in dB */
-#define BLADERF_TXVGA2_GAIN_MIN     0
+#define BLADERF_TXVGA2_GAIN_MIN 0
 
 /** Maximum TXVGA2 gain, in dB */
-#define BLADERF_TXVGA2_GAIN_MAX     25
+#define BLADERF_TXVGA2_GAIN_MAX 25
 
 /**
  * LNA gain options
  */
 typedef enum {
-    BLADERF_LNA_GAIN_UNKNOWN,    /**< Invalid LNA gain */
-    BLADERF_LNA_GAIN_BYPASS,     /**< LNA bypassed - 0dB gain */
-    BLADERF_LNA_GAIN_MID,        /**< LNA Mid Gain (MAX-6dB) */
-    BLADERF_LNA_GAIN_MAX         /**< LNA Max Gain */
+    BLADERF_LNA_GAIN_UNKNOWN, /**< Invalid LNA gain */
+    BLADERF_LNA_GAIN_BYPASS,  /**< LNA bypassed - 0dB gain */
+    BLADERF_LNA_GAIN_MID,     /**< LNA Mid Gain (MAX-6dB) */
+    BLADERF_LNA_GAIN_MAX      /**< LNA Max Gain */
 } bladerf_lna_gain;
 
-#define BLADERF_LNA_GAIN_MID_DB    3 /**< Gain in dB of the LNA at mid setting */
-#define BLADERF_LNA_GAIN_MAX_DB    6 /**< Gain in db of the LNA at max setting */
+#define BLADERF_LNA_GAIN_MID_DB 3 /**< Gain in dB of the LNA at mid setting */
+#define BLADERF_LNA_GAIN_MAX_DB 6 /**< Gain in db of the LNA at max setting */
 
 /**
  * Set the PA gain in dB
@@ -387,10 +388,11 @@ typedef enum {
 } bladerf_sampling;
 
 /**
- * Configure the sampling of the LMS6002D to be either internal or
- * external.  Internal sampling will read from the RXVGA2 driver internal
- * to the chip.  External sampling will connect the ADC inputs to the
- * external inputs for direct sampling.
+ * Configure the sampling of the LMS6002D to be either internal or external.
+ *
+ * Internal sampling will read from the RXVGA2 driver internal to the chip.
+ * External sampling will connect the ADC inputs to the external inputs for
+ * direct sampling.
  *
  * @param       dev         Device handle
  * @param[in]   sampling    Sampling connection
@@ -431,9 +433,9 @@ int CALL_CONV bladerf_get_sampling(struct bladerf *dev,
  * Low-Pass Filter (LPF) mode
  */
 typedef enum {
-    BLADERF_LPF_NORMAL,     /**< LPF connected and enabled */
-    BLADERF_LPF_BYPASSED,   /**< LPF bypassed */
-    BLADERF_LPF_DISABLED    /**< LPF disabled */
+    BLADERF_LPF_NORMAL,   /**< LPF connected and enabled */
+    BLADERF_LPF_BYPASSED, /**< LPF bypassed */
+    BLADERF_LPF_DISABLED  /**< LPF disabled */
 } bladerf_lpf_mode;
 
 /**
@@ -446,7 +448,8 @@ typedef enum {
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_set_lpf_mode(struct bladerf *dev, bladerf_channel ch,
+int CALL_CONV bladerf_set_lpf_mode(struct bladerf *dev,
+                                   bladerf_channel ch,
                                    bladerf_lpf_mode mode);
 
 /**
@@ -459,7 +462,8 @@ int CALL_CONV bladerf_set_lpf_mode(struct bladerf *dev, bladerf_channel ch,
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_get_lpf_mode(struct bladerf *dev, bladerf_channel ch,
+int CALL_CONV bladerf_get_lpf_mode(struct bladerf *dev,
+                                   bladerf_channel ch,
                                    bladerf_lpf_mode *mode);
 
 /** @} (End of FN_BLADERF1_LPF_BYPASS) */
@@ -470,18 +474,18 @@ int CALL_CONV bladerf_get_lpf_mode(struct bladerf *dev, bladerf_channel ch,
  * The SMB clock port (J62) may be used to synchronize sampling on multiple
  * devices, or to generate an arbitrary clock output for a different device.
  *
- * For MIMO configurations, one device is the clock "master" and outputs
- * its 38.4 MHz reference on this port.  The clock "slave" devices configure
- * the SMB port as an input and expect to see this 38.4 MHz reference on this
- * port. This implies that the "master" must be configured first.
+ * For MIMO configurations, one device is the clock "master" and outputs its
+ * 38.4 MHz reference on this port.  The clock "slave" devices configure the SMB
+ * port as an input and expect to see this 38.4 MHz reference on this port. This
+ * implies that the "master" must be configured first.
  *
  * Alternatively, this port may be used to generate an arbitrary clock signal
  * for use with other devices via the bladerf_set_smb_frequency() and
  * bladerf_set_rational_smb_frequency() functions.
  *
  * @warning <b>Do not</b> use these functions when operating an expansion board.
- *          A different clock configuration is required for the XB devices
- *          which cannot be used simultaneously with the SMB clock port.
+ * A different clock configuration is required for the XB devices which cannot
+ * be used simultaneously with the SMB clock port.
  *
  * These functions are thread-safe.
  *
@@ -491,42 +495,39 @@ int CALL_CONV bladerf_get_lpf_mode(struct bladerf *dev, bladerf_channel ch,
 /**
  * Maximum output frequency on SMB connector, if no expansion board attached.
  */
-#define BLADERF_SMB_FREQUENCY_MAX   200000000u
+#define BLADERF_SMB_FREQUENCY_MAX 200000000u
 
 /**
  * Minimum output frequency on SMB connector, if no expansion board attached.
  */
-#define BLADERF_SMB_FREQUENCY_MIN   ((38400000u * 66u) / (32 * 567))
+#define BLADERF_SMB_FREQUENCY_MIN ((38400000u * 66u) / (32 * 567))
 
 
 /**
  * SMB clock port mode of operation
  */
 typedef enum {
-    BLADERF_SMB_MODE_INVALID = -1,  /**< Invalid selection */
+    BLADERF_SMB_MODE_INVALID = -1, /**< Invalid selection */
 
-    BLADERF_SMB_MODE_DISABLED,      /**< Not in use. Device operates from
-                                     *   its onboard clock and does not
-                                     *   use J62. */
+    BLADERF_SMB_MODE_DISABLED, /**< Not in use. Device operates from its onboard
+                                * clock and does not use J62.
+                                */
 
-    BLADERF_SMB_MODE_OUTPUT,        /**< Device outputs a 38.4 MHz reference
-                                     *   clock on J62. This may be used to
-                                     *   drive another device that is
-                                     *   configured with
-                                     *   ::BLADERF_SMB_MODE_INPUT.
-                                     */
+    BLADERF_SMB_MODE_OUTPUT, /**< Device outputs a 38.4 MHz reference clock on
+                              * J62. This may be used to drive another device
+                              * that is configured with
+                              * ::BLADERF_SMB_MODE_INPUT.
+                              */
 
-    BLADERF_SMB_MODE_INPUT,         /**< Device configures J62 as an input
-                                     *   and expects a 38.4 MHz reference
-                                     *   to be available when this setting
-                                     *   is applied.
-                                     */
+    BLADERF_SMB_MODE_INPUT, /**< Device configures J62 as an input and expects a
+                             * 38.4 MHz reference to be available when this
+                             * setting is applied.
+                             */
 
-    BLADERF_SMB_MODE_UNAVAILBLE,    /**< SMB port is unavailable for use due
-                                     *   the underlying clock being used
-                                     *   elsewhere (e.g., for and expansion
-                                     *   board).
-                                     */
+    BLADERF_SMB_MODE_UNAVAILBLE, /**< SMB port is unavailable for use due to the
+                                  * underlying clock being used elsewhere (e.g.,
+                                  * for an expansion board).
+                                  */
 
 } bladerf_smb_mode;
 
@@ -581,10 +582,10 @@ int CALL_CONV bladerf_get_smb_mode(struct bladerf *dev, bladerf_smb_mode *mode);
  *         or a value from \ref RETCODES list on failure.
  */
 API_EXPORT
-int CALL_CONV bladerf_set_rational_smb_frequency(
-                                        struct bladerf *dev,
-                                        struct bladerf_rational_rate *rate,
-                                        struct bladerf_rational_rate *actual);
+int CALL_CONV
+    bladerf_set_rational_smb_frequency(struct bladerf *dev,
+                                       struct bladerf_rational_rate *rate,
+                                       struct bladerf_rational_rate *actual);
 
 /**
  * Set the SMB connector output frequency in Hz.
@@ -610,7 +611,8 @@ int CALL_CONV bladerf_set_rational_smb_frequency(
  */
 API_EXPORT
 int CALL_CONV bladerf_set_smb_frequency(struct bladerf *dev,
-                                        uint32_t rate, uint32_t *actual);
+                                        uint32_t rate,
+                                        uint32_t *actual);
 
 /**
  * Read the SMB connector output frequency in rational Hz
@@ -622,8 +624,7 @@ int CALL_CONV bladerf_set_smb_frequency(struct bladerf *dev,
  */
 API_EXPORT
 int CALL_CONV bladerf_get_rational_smb_frequency(
-                                        struct bladerf *dev,
-                                        struct bladerf_rational_rate *rate);
+    struct bladerf *dev, struct bladerf_rational_rate *rate);
 
 /**
  * Read the SMB connector output frequency in Hz
@@ -652,13 +653,13 @@ int CALL_CONV bladerf_get_smb_frequency(struct bladerf *dev,
  */
 
 /** Expansion pin GPIO number to bitmask */
-#define BLADERF_XB_GPIO(n) (1 << (n-1))
+#define BLADERF_XB_GPIO(n) (1 << (n - 1))
 
 /** Specifies a pin to be an output */
-#define BLADERF_XB_DIR_OUTPUT(pin)  (pin)
+#define BLADERF_XB_DIR_OUTPUT(pin) (pin)
 
 /** Specifies a pin to be an input */
-#define BLADERF_XB_DIR_INPUT(pin)   (0)
+#define BLADERF_XB_DIR_INPUT(pin) (0)
 
 /** Pin bitmask for Expansion GPIO 1 (U74 pin 11) */
 #define BLADERF_XB_GPIO_01 BLADERF_XB_GPIO(1)
@@ -758,16 +759,16 @@ int CALL_CONV bladerf_get_smb_frequency(struct bladerf *dev,
 
 
 /** Bitmask for XB-200 header J7, pin 1 */
-#define BLADERF_XB200_PIN_J7_1  BLADERF_XB_GPIO_10
+#define BLADERF_XB200_PIN_J7_1 BLADERF_XB_GPIO_10
 
 /** Bitmask for XB-200 header J7, pin 2 */
-#define BLADERF_XB200_PIN_J7_2  BLADERF_XB_GPIO_11
+#define BLADERF_XB200_PIN_J7_2 BLADERF_XB_GPIO_11
 
 /** Bitmask for XB-200 header J7, pin 5 */
-#define BLADERF_XB200_PIN_J7_5  BLADERF_XB_GPIO_08
+#define BLADERF_XB200_PIN_J7_5 BLADERF_XB_GPIO_08
 
 /** Bitmask for XB-200 header J7, pin 6 */
-#define BLADERF_XB200_PIN_J7_6  BLADERF_XB_GPIO_09
+#define BLADERF_XB200_PIN_J7_6 BLADERF_XB_GPIO_09
 
 /** Bitmask for XB-200 header J13, pin 1 */
 #define BLADERF_XB200_PIN_J13_1 BLADERF_XB_GPIO_17
@@ -799,25 +800,25 @@ int CALL_CONV bladerf_get_smb_frequency(struct bladerf *dev,
 #define BLADERF_XB100_PIN_J2_3 BLADERF_XB_GPIO_07
 
 /** Bitmask for XB-100 header J2, pin 4 */
-#define BLADERF_XB100_PIN_J2_4  BLADERF_XB_GPIO_08
+#define BLADERF_XB100_PIN_J2_4 BLADERF_XB_GPIO_08
 
 /** Bitmask for XB-100 header J3, pin 3 */
-#define BLADERF_XB100_PIN_J3_3  BLADERF_XB_GPIO_09
+#define BLADERF_XB100_PIN_J3_3 BLADERF_XB_GPIO_09
 
 /** Bitmask for XB-100 header J3, pin 4 */
-#define BLADERF_XB100_PIN_J3_4  BLADERF_XB_GPIO_10
+#define BLADERF_XB100_PIN_J3_4 BLADERF_XB_GPIO_10
 
 /** Bitmask for XB-100 header J4, pin 3 */
-#define BLADERF_XB100_PIN_J4_3  BLADERF_XB_GPIO_11
+#define BLADERF_XB100_PIN_J4_3 BLADERF_XB_GPIO_11
 
 /** Bitmask for XB-100 header J4, pin 4 */
-#define BLADERF_XB100_PIN_J4_4  BLADERF_XB_GPIO_12
+#define BLADERF_XB100_PIN_J4_4 BLADERF_XB_GPIO_12
 
 /** Bitmask for XB-100 header J5, pin 3 */
-#define BLADERF_XB100_PIN_J5_3  BLADERF_XB_GPIO_13
+#define BLADERF_XB100_PIN_J5_3 BLADERF_XB_GPIO_13
 
 /** Bitmask for XB-100 header J5, pin 4 */
-#define BLADERF_XB100_PIN_J5_4  BLADERF_XB_GPIO_14
+#define BLADERF_XB100_PIN_J5_4 BLADERF_XB_GPIO_14
 
 /** Bitmask for XB-100 header J11, pin 2 */
 #define BLADERF_XB100_PIN_J11_2 BLADERF_XB_GPIO_05
@@ -840,58 +841,58 @@ int CALL_CONV bladerf_get_smb_frequency(struct bladerf *dev,
 #define BLADERF_XB100_PIN_J12_5 BLADERF_XB_GPIO_02
 
 /** Bitmask for XB-100 LED_D1 (blue) */
-#define BLADERF_XB100_LED_D1    BLADERF_XB_GPIO_24
+#define BLADERF_XB100_LED_D1 BLADERF_XB_GPIO_24
 
 /** Bitmask for XB-100 LED_D2 (blue) */
-#define BLADERF_XB100_LED_D2    BLADERF_XB_GPIO_32
+#define BLADERF_XB100_LED_D2 BLADERF_XB_GPIO_32
 
 /** Bitmask for XB-100 LED_D3 (blue) */
-#define BLADERF_XB100_LED_D3    BLADERF_XB_GPIO_30
+#define BLADERF_XB100_LED_D3 BLADERF_XB_GPIO_30
 
 /** Bitmask for XB-100 LED_D4 (red) */
-#define BLADERF_XB100_LED_D4    BLADERF_XB_GPIO_28
+#define BLADERF_XB100_LED_D4 BLADERF_XB_GPIO_28
 
 /** Bitmask for XB-100 LED_D5 (red) */
-#define BLADERF_XB100_LED_D5    BLADERF_XB_GPIO_23
+#define BLADERF_XB100_LED_D5 BLADERF_XB_GPIO_23
 
 /** Bitmask for XB-100 LED_D6 (red) */
-#define BLADERF_XB100_LED_D6    BLADERF_XB_GPIO_25
+#define BLADERF_XB100_LED_D6 BLADERF_XB_GPIO_25
 
 /** Bitmask for XB-100 LED_D7 (green) */
-#define BLADERF_XB100_LED_D7    BLADERF_XB_GPIO_31
+#define BLADERF_XB100_LED_D7 BLADERF_XB_GPIO_31
 
 /** Bitmask for XB-100 LED_D8 (green) */
-#define BLADERF_XB100_LED_D8    BLADERF_XB_GPIO_29
+#define BLADERF_XB100_LED_D8 BLADERF_XB_GPIO_29
 
 /** Bitmask for XB-100 tricolor LED, red cathode */
-#define BLADERF_XB100_TLED_RED  BLADERF_XB_GPIO_22
+#define BLADERF_XB100_TLED_RED BLADERF_XB_GPIO_22
 
 /** Bitmask for XB-100 tricolor LED, green cathode */
-#define BLADERF_XB100_TLED_GREEN  BLADERF_XB_GPIO_21
+#define BLADERF_XB100_TLED_GREEN BLADERF_XB_GPIO_21
 
 /** Bitmask for XB-100 tricolor LED, blue cathode */
 #define BLADERF_XB100_TLED_BLUE BLADERF_XB_GPIO_20
 
 /** Bitmask for XB-100 DIP switch 1 */
-#define BLADERF_XB100_DIP_SW1   BLADERF_XB_GPIO_27
+#define BLADERF_XB100_DIP_SW1 BLADERF_XB_GPIO_27
 
 /** Bitmask for XB-100 DIP switch 2 */
-#define BLADERF_XB100_DIP_SW2   BLADERF_XB_GPIO_26
+#define BLADERF_XB100_DIP_SW2 BLADERF_XB_GPIO_26
 
 /** Bitmask for XB-100 DIP switch 3 */
-#define BLADERF_XB100_DIP_SW3   BLADERF_XB_GPIO_16
+#define BLADERF_XB100_DIP_SW3 BLADERF_XB_GPIO_16
 
 /** Bitmask for XB-100 DIP switch 4 */
-#define BLADERF_XB100_DIP_SW4   BLADERF_XB_GPIO_15
+#define BLADERF_XB100_DIP_SW4 BLADERF_XB_GPIO_15
 
 /** Bitmask for XB-100 button J6 */
-#define BLADERF_XB100_BTN_J6   BLADERF_XB_GPIO_19
+#define BLADERF_XB100_BTN_J6 BLADERF_XB_GPIO_19
 
 /** Bitmask for XB-100 button J7 */
-#define BLADERF_XB100_BTN_J7   BLADERF_XB_GPIO_18
+#define BLADERF_XB100_BTN_J7 BLADERF_XB_GPIO_18
 
 /** Bitmask for XB-100 button J8 */
-#define BLADERF_XB100_BTN_J8   BLADERF_XB_GPIO_17
+#define BLADERF_XB100_BTN_J8 BLADERF_XB_GPIO_17
 
 /* XB-100 buttons J9 and J10 are not mapped to the GPIO register,
  * but instead to reserved SPI pins. FPGA modifications are needed to
@@ -929,14 +930,15 @@ int CALL_CONV bladerf_expansion_gpio_write(struct bladerf *dev, uint32_t val);
  * Write values to the specified GPIO pins
  *
  * This function alleviates the need for the caller to perform a
- * read-modify-write sequence. The supplied mask is used by the FPGA to
- * perform the required RMW operation.
+ * read-modify-write sequence. The supplied mask is used by the FPGA to perform
+ * the required RMW operation.
  *
  * @param       dev     Device handle
  * @param[in]   mask    Mask of pins to write
  * @param[in]   value   Value to write.
  *
  * For example, to set XB200 pins J16-1 and J16-2, and clear J16-4 and J16-5:
+ *
  * @code{.c}
  *  const uint32_t pins_to_write =
  *      BLADERF_XB200_PIN_J16_1 |
@@ -996,16 +998,16 @@ int CALL_CONV bladerf_expansion_gpio_dir_write(struct bladerf *dev,
  * Configure the direction of the specified expansion GPIO pins
  *
  * This function alleviates the need for the caller to perform a
- * read-modify-write sequence. The supplied mask is used by the FPGA to
- * perform the required RMW operation.
+ * read-modify-write sequence. The supplied mask is used by the FPGA to perform
+ * the required RMW operation.
  *
  * @param       dev         Device handle
  * @param[in]   mask        Bitmask of pins to configure
  * @param[in]   outputs     Pins set to '1' will be configured as outputs.
  *                          Pins set to '0' will be configured as inputs.
  *
- * For example, to configure XB200 pins J16-1 and J16-2 and pins
- * J16-4 and J16-5 as inputs:
+ * For example, to configure XB200 pins J16-1 and J16-2 and pins J16-4 and J16-5
+ * as inputs:
  *
  * @code{.c}
  *  const uint32_t pins_to_config =
@@ -1096,28 +1098,28 @@ typedef enum {
  * XB-200 signal paths
  */
 typedef enum {
-    BLADERF_XB200_BYPASS = 0,   /**< Bypass the XB-200 mixer */
-    BLADERF_XB200_MIX           /**< Pass signals through the XB-200 mixer */
+    BLADERF_XB200_BYPASS = 0, /**< Bypass the XB-200 mixer */
+    BLADERF_XB200_MIX         /**< Pass signals through the XB-200 mixer */
 } bladerf_xb200_path;
 
 /**
  * XB-300 TRX setting
  */
 typedef enum {
-    BLADERF_XB300_TRX_INVAL = -1,   /**< Invalid TRX selection */
-    BLADERF_XB300_TRX_TX = 0,       /**< TRX antenna operates as TX */
-    BLADERF_XB300_TRX_RX,           /**< TRX antenna operates as RX */
-    BLADERF_XB300_TRX_UNSET         /**< TRX antenna unset */
+    BLADERF_XB300_TRX_INVAL = -1, /**< Invalid TRX selection */
+    BLADERF_XB300_TRX_TX    = 0,  /**< TRX antenna operates as TX */
+    BLADERF_XB300_TRX_RX,         /**< TRX antenna operates as RX */
+    BLADERF_XB300_TRX_UNSET       /**< TRX antenna unset */
 } bladerf_xb300_trx;
 
 /**
  * XB-300 Amplifier selection
  */
 typedef enum {
-    BLADERF_XB300_AMP_INVAL = -1,   /**< Invalid amplifier selection */
-    BLADERF_XB300_AMP_PA = 0,       /**< TX Power amplifier */
-    BLADERF_XB300_AMP_LNA,          /**< RX LNA */
-    BLADERF_XB300_AMP_PA_AUX        /**< Auxillary Power amplifier */
+    BLADERF_XB300_AMP_INVAL = -1, /**< Invalid amplifier selection */
+    BLADERF_XB300_AMP_PA    = 0,  /**< TX Power amplifier */
+    BLADERF_XB300_AMP_LNA,        /**< RX LNA */
+    BLADERF_XB300_AMP_PA_AUX      /**< Auxillary Power amplifier */
 } bladerf_xb300_amplifier;
 
 /**
@@ -1186,8 +1188,7 @@ int CALL_CONV bladerf_xb200_get_path(struct bladerf *dev,
  * @return 0 on success, BLADERF_ERR_* on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_xb300_set_trx(struct bladerf *dev,
-                   bladerf_xb300_trx trx);
+int CALL_CONV bladerf_xb300_set_trx(struct bladerf *dev, bladerf_xb300_trx trx);
 
 /**
  * Get the current XB-300 signal path
@@ -1199,7 +1200,7 @@ int CALL_CONV bladerf_xb300_set_trx(struct bladerf *dev,
  */
 API_EXPORT
 int CALL_CONV bladerf_xb300_get_trx(struct bladerf *dev,
-                   bladerf_xb300_trx *trx);
+                                    bladerf_xb300_trx *trx);
 
 /**
  * Enable or disable selected XB-300 amplifier
@@ -1212,8 +1213,8 @@ int CALL_CONV bladerf_xb300_get_trx(struct bladerf *dev,
  */
 API_EXPORT
 int CALL_CONV bladerf_xb300_set_amplifier_enable(struct bladerf *dev,
-                   bladerf_xb300_amplifier amp,
-                   bool enable);
+                                                 bladerf_xb300_amplifier amp,
+                                                 bool enable);
 /**
  * Get state of selected XB-300 amplifier
  *
@@ -1225,8 +1226,8 @@ int CALL_CONV bladerf_xb300_set_amplifier_enable(struct bladerf *dev,
  */
 API_EXPORT
 int CALL_CONV bladerf_xb300_get_amplifier_enable(struct bladerf *dev,
-                   bladerf_xb300_amplifier amp,
-                   bool *enable);
+                                                 bladerf_xb300_amplifier amp,
+                                                 bool *enable);
 /**
  * Get current PA PDET output power in dBm
  *
@@ -1302,28 +1303,28 @@ int CALL_CONV bladerf_calibrate_dc(struct bladerf *dev,
  *
  * @note This bit is set/cleared by bladerf_enable_module()
  */
-#define BLADERF_GPIO_LMS_TX_ENABLE  (1 << 2)
+#define BLADERF_GPIO_LMS_TX_ENABLE (1 << 2)
 
 /**
  * Switch to use TX low band (300MHz - 1.5GHz)
  *
  * @note This is set using bladerf_set_frequency().
  */
-#define BLADERF_GPIO_TX_LB_ENABLE   (2 << 3)
+#define BLADERF_GPIO_TX_LB_ENABLE (2 << 3)
 
 /**
  * Switch to use TX high band (1.5GHz - 3.8GHz)
  *
  * @note This is set using bladerf_set_frequency().
  */
-#define BLADERF_GPIO_TX_HB_ENABLE   (1 << 3)
+#define BLADERF_GPIO_TX_HB_ENABLE (1 << 3)
 
 /**
  * Counter mode enable
  *
- * Setting this bit to 1 instructs the FPGA to replace the (I, Q) pair in
- * sample data with an incrementing, little-endian, 32-bit counter value. A
- * 0 in bit specifies that sample data should be sent (as normally done).
+ * Setting this bit to 1 instructs the FPGA to replace the (I, Q) pair in sample
+ * data with an incrementing, little-endian, 32-bit counter value. A 0 in bit
+ * specifies that sample data should be sent (as normally done).
  *
  * This feature is useful when debugging issues involving dropped samples.
  */
@@ -1346,24 +1347,23 @@ int CALL_CONV bladerf_calibrate_dc(struct bladerf *dev,
  *
  * @note This is set using bladerf_set_frequency().
  */
-#define BLADERF_GPIO_RX_LB_ENABLE   (2 << 5)
+#define BLADERF_GPIO_RX_LB_ENABLE (2 << 5)
 
 /**
  * Switch to use RX high band (1.5GHz - 3.8GHz)
  *
  * @note This is set using bladerf_set_frequency().
  */
-#define BLADERF_GPIO_RX_HB_ENABLE   (1 << 5)
+#define BLADERF_GPIO_RX_HB_ENABLE (1 << 5)
 
 /**
- * This GPIO bit configures the FPGA to use smaller DMA
- * transfers (256 cycles instead of 512). This is required
- * when the device is not connected at Super Speed (i.e., when
- * it is connected at High Speed).
+ * This GPIO bit configures the FPGA to use smaller DMA transfers (256 cycles
+ * instead of 512). This is required when the device is not connected at Super
+ * Speed (i.e., when it is connected at High Speed).
  *
  * However, the caller need not set this in bladerf_config_gpio_write() calls.
- * The library will set this as needed; callers generally
- * do not need to be concerned with setting/clearing this bit.
+ * The library will set this as needed; callers generally do not need to be
+ * concerned with setting/clearing this bit.
  */
 #define BLADERF_GPIO_FEATURE_SMALL_DMA_XFER (1 << 7)
 
@@ -1372,28 +1372,27 @@ int CALL_CONV bladerf_calibrate_dc(struct bladerf *dev,
  *
  * @note This is set using bladerf_set_gain_mode().
  */
-#define BLADERF_GPIO_AGC_ENABLE     (1 << 12)
+#define BLADERF_GPIO_AGC_ENABLE (1 << 12)
 
 /**
  * Enable-bit for timestamp counter in the FPGA
  */
-#define BLADERF_GPIO_TIMESTAMP      (1 << 16)
+#define BLADERF_GPIO_TIMESTAMP (1 << 16)
 
 /**
  * Timestamp 2x divider control.
  *
  * @note <b>Important</b>: This bit has no effect and is always enabled (1) in
- *                         FPGA versions >= v0.3.0.
+ * FPGA versions >= v0.3.0.
  *
  * @note The remainder of the description of this bit is presented here for
- *       historical purposes only. It is relevant to FPGA versions <= v0.1.2.
- *
+ * historical purposes only. It is only relevant to FPGA versions <= v0.1.2.
  *
  * By default (value = 0), the sample counter is incremented with I and Q,
  * yielding two counts per sample.
  *
- * Set this bit to 1 to enable a 2x timestamp divider, effectively
- * achieving 1 timestamp count per sample.
+ * Set this bit to 1 to enable a 2x timestamp divider, effectively achieving 1
+ * timestamp count per sample.
  * */
 #define BLADERF_GPIO_TIMESTAMP_DIV2 (1 << 17)
 
@@ -1418,11 +1417,10 @@ int CALL_CONV bladerf_dac_write(struct bladerf *dev, uint16_t val);
  * \deprecated Use bladerf_trim_dac_read().
  *
  * This is similar to bladerf_get_vctcxo_trim(), except that it returns the
- * current trim DAC value, as opposed to the calibration value read from
- * flash.
+ * current trim DAC value, as opposed to the calibration value read from flash.
  *
- * Use this if you are trying to query the value after having previously
- * made calls to bladerf_dac_write().
+ * Use this if you are trying to query the value after having previously made
+ * calls to bladerf_dac_write().
  *
  * @param       dev     Device handle
  * @param[out]  val     Value to read from VCTCXO trim DAC
@@ -1443,7 +1441,8 @@ int CALL_CONV bladerf_dac_read(struct bladerf *dev, uint16_t *val);
  */
 API_EXPORT
 int CALL_CONV bladerf_si5338_read(struct bladerf *dev,
-                                  uint8_t address, uint8_t *val);
+                                  uint8_t address,
+                                  uint8_t *val);
 
 /**
  * Write a Si5338 register
@@ -1456,7 +1455,8 @@ int CALL_CONV bladerf_si5338_read(struct bladerf *dev,
  */
 API_EXPORT
 int CALL_CONV bladerf_si5338_write(struct bladerf *dev,
-                                   uint8_t address, uint8_t val);
+                                   uint8_t address,
+                                   uint8_t val);
 
 /**
  * Read a LMS register
@@ -1469,7 +1469,8 @@ int CALL_CONV bladerf_si5338_write(struct bladerf *dev,
  */
 API_EXPORT
 int CALL_CONV bladerf_lms_read(struct bladerf *dev,
-                               uint8_t address, uint8_t *val);
+                               uint8_t address,
+                               uint8_t *val);
 
 /**
  * Write a LMS register
@@ -1482,17 +1483,17 @@ int CALL_CONV bladerf_lms_read(struct bladerf *dev,
  */
 API_EXPORT
 int CALL_CONV bladerf_lms_write(struct bladerf *dev,
-                                uint8_t address, uint8_t val);
+                                uint8_t address,
+                                uint8_t val);
 
 /**
  * This structure is used to directly apply DC calibration register values to
  * the LMS, rather than use the values resulting from an auto-calibration.
  *
- * A value < 0 is used to denote that the specified value should not
- * be written.  If a value is to be written, it will be truncated to 8-bits.
+ * A value < 0 is used to denote that the specified value should not be written.
+ * If a value is to be written, it will be truncated to 8-bits.
  */
-struct bladerf_lms_dc_cals
-{
+struct bladerf_lms_dc_cals {
     int16_t lpf_tuning; /**< LPF tuning module */
     int16_t tx_lpf_i;   /**< TX LPF I filter */
     int16_t tx_lpf_q;   /**< TX LPF Q filter */
@@ -1518,8 +1519,8 @@ struct bladerf_lms_dc_cals
  * @return 0 on success, value from \ref RETCODES list on failure
  */
 API_EXPORT
-int CALL_CONV bladerf_lms_set_dc_cals(struct bladerf *dev,
-                                     const struct bladerf_lms_dc_cals *dc_cals);
+int CALL_CONV bladerf_lms_set_dc_cals(
+    struct bladerf *dev, const struct bladerf_lms_dc_cals *dc_cals);
 
 /**
  * Retrieve the current DC calibration values from the LMS6002

@@ -27,8 +27,8 @@
 #ifndef DRIVER_SPI_FLASH_H_
 #define DRIVER_SPI_FLASH_H_
 
-#include <stdint.h>
 #include <assert.h>
+#include <stdint.h>
 
 #include <libbladeRF.h>
 
@@ -56,8 +56,10 @@ int spi_flash_erase(struct bladerf *dev, uint32_t erase_block, uint32_t count);
  * @return 0 on success, or BLADERF_ERR_INVAL on an invalid `page` or `count`
  * value, or a value from \ref RETCODES list on other failures.
  */
-int spi_flash_read(struct bladerf *dev, uint8_t *buf,
-                   uint32_t page, uint32_t count);
+int spi_flash_read(struct bladerf *dev,
+                   uint8_t *buf,
+                   uint32_t page,
+                   uint32_t count);
 
 /**
  * Verify data in flash
@@ -72,8 +74,10 @@ int spi_flash_read(struct bladerf *dev, uint8_t *buf,
  * @return 0 on success, or BLADERF_ERR_INVAL on an invalid `page` or `count`
  * value, or a value from \ref RETCODES list on other failures.
  */
-int spi_flash_verify(struct bladerf *dev, uint8_t *readback_buf,
-                     const uint8_t *expected_buf, uint32_t page,
+int spi_flash_verify(struct bladerf *dev,
+                     uint8_t *readback_buf,
+                     const uint8_t *expected_buf,
+                     uint32_t page,
                      uint32_t count);
 
 /**
@@ -87,7 +91,9 @@ int spi_flash_verify(struct bladerf *dev, uint8_t *readback_buf,
  * @return 0 on success, or BLADERF_ERR_INVAL on an invalid `page` or `count`
  * value, or a value from \ref RETCODES list on other failures.
  */
-int spi_flash_write(struct bladerf *dev, const uint8_t *buf,
-                    uint32_t page, uint32_t count);
+int spi_flash_write(struct bladerf *dev,
+                    const uint8_t *buf,
+                    uint32_t page,
+                    uint32_t count);
 
 #endif

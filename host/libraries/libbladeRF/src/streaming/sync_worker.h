@@ -20,9 +20,9 @@
 #define STREAMING_SYNC_WORKER_H_
 
 #include "host_config.h"
-#include <pthread.h>
-#include <libbladeRF.h>
 #include "sync.h"
+#include <libbladeRF.h>
+#include <pthread.h>
 
 #if BLADERF_OS_WINDOWS || BLADERF_OS_OSX
 #include "clock_gettime.h"
@@ -37,8 +37,8 @@
  */
 
 /* Request flags */
-#define SYNC_WORKER_START    (1 << 0)
-#define SYNC_WORKER_STOP     (1 << 1)
+#define SYNC_WORKER_START (1 << 0)
+#define SYNC_WORKER_STOP (1 << 1)
 
 typedef enum {
     SYNC_WORKER_STATE_STARTUP,
@@ -58,9 +58,9 @@ struct sync_worker {
     sync_worker_state state;
     int err_code;
     MUTEX state_lock;
-    pthread_cond_t state_changed;   /* Worker thread uses this to inform a
-                                     * waiting main thread about a state
-                                     * change */
+    pthread_cond_t state_changed; /* Worker thread uses this to inform a
+                                   * waiting main thread about a state
+                                   * change */
 
     /* The requests lock should always be acquired AFTER
      * the sync->buf_mgmt.lock
@@ -90,7 +90,8 @@ int sync_worker_init(struct bladerf_sync *s);
  *                      workers.
  */
 void sync_worker_deinit(struct sync_worker *w,
-                        pthread_mutex_t *lock, pthread_cond_t *cond);
+                        pthread_mutex_t *lock,
+                        pthread_cond_t *cond);
 
 /**
  * Wait for state change with optional timeout
@@ -116,8 +117,7 @@ int sync_worker_wait_for_state(struct sync_worker *w,
  *
  * @return Worker's current state
  */
-sync_worker_state sync_worker_get_state(struct sync_worker *w,
-                                        int *err_code);
+sync_worker_state sync_worker_get_state(struct sync_worker *w, int *err_code);
 
 /**
  * Submit a request to the worker task

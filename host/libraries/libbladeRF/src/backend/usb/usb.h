@@ -31,38 +31,38 @@ extern bool bladerf_usb_reset_device_on_open;
 #endif
 
 #ifndef SAMPLE_EP_IN
-#   define SAMPLE_EP_IN 0x81
+#define SAMPLE_EP_IN 0x81
 #endif
 
 #ifndef SAMPLE_EP_OUT
-#   define SAMPLE_EP_OUT 0x01
+#define SAMPLE_EP_OUT 0x01
 #endif
 
 #ifndef PERIPHERAL_EP_IN
-#   define PERIPHERAL_EP_IN 0x82
+#define PERIPHERAL_EP_IN 0x82
 #endif
 
 #ifndef PERIPHERAL_EP_OUT
-#   define PERIPHERAL_EP_OUT 0x02
+#define PERIPHERAL_EP_OUT 0x02
 #endif
 
 #ifndef PERIPHERAL_TIMEOUT_MS
-#   define PERIPHERAL_TIMEOUT_MS 250
+#define PERIPHERAL_TIMEOUT_MS 250
 #endif
 
 /* Be careful when lowering this value. The control request for flash erase
  * operations take some time */
 #ifndef CTRL_TIMEOUT_MS
-#   define CTRL_TIMEOUT_MS 1000
+#define CTRL_TIMEOUT_MS 1000
 #endif
 
 #ifndef BULK_TIMEOUT_MS
-#   define BULK_TIMEOUT_MS  1000
+#define BULK_TIMEOUT_MS 1000
 #endif
 
 /* Size of a host<->FPGA message in BYTES */
-#define USB_MSG_SIZE_SS    2048
-#define USB_MSG_SIZE_HS    1024
+#define USB_MSG_SIZE_SS 2048
+#define USB_MSG_SIZE_HS 1024
 
 typedef enum {
     USB_TARGET_DEVICE,
@@ -112,25 +112,36 @@ struct usb_fns {
                             usb_target target_type,
                             usb_request req_type,
                             usb_direction direction,
-                            uint8_t request, uint16_t wvalue, uint16_t windex,
-                            void *buffer, uint32_t buffer_len,
+                            uint8_t request,
+                            uint16_t wvalue,
+                            uint16_t windex,
+                            void *buffer,
+                            uint32_t buffer_len,
                             uint32_t timeout_ms);
 
-    int (*bulk_transfer)(void *driver, uint8_t endpoint,
-                         void *buffer, uint32_t buffer_len,
+    int (*bulk_transfer)(void *driver,
+                         uint8_t endpoint,
+                         void *buffer,
+                         uint32_t buffer_len,
                          uint32_t timeout_ms);
 
-    int (*get_string_descriptor)(void *driver, uint8_t index, void *buffer,
+    int (*get_string_descriptor)(void *driver,
+                                 uint8_t index,
+                                 void *buffer,
                                  uint32_t buffer_len);
 
-    int (*init_stream)(void *driver, struct bladerf_stream *stream,
+    int (*init_stream)(void *driver,
+                       struct bladerf_stream *stream,
                        size_t num_transfers);
 
-    int (*stream)(void *driver, struct bladerf_stream *stream,
+    int (*stream)(void *driver,
+                  struct bladerf_stream *stream,
                   bladerf_channel_layout layout);
 
-    int (*submit_stream_buffer)(void *driver, struct bladerf_stream *stream,
-                                void *buffer, unsigned int timeout_ms,
+    int (*submit_stream_buffer)(void *driver,
+                                struct bladerf_stream *stream,
+                                void *buffer,
+                                unsigned int timeout_ms,
                                 bool nonblock);
 
     int (*deinit_stream)(void *driver, struct bladerf_stream *stream);

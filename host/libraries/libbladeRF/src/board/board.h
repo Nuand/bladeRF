@@ -41,34 +41,34 @@
 /**
  * Prior to FPGA 0.0.4, the DAC register were located at a different address
  */
-#define BLADERF_CAP_UPDATED_DAC_ADDR    (1 << 0)
+#define BLADERF_CAP_UPDATED_DAC_ADDR (1 << 0)
 
 /**
  * FPGA version 0.0.5 introduced XB-200 support
  */
-#define BLADERF_CAP_XB200               (1 << 1)
+#define BLADERF_CAP_XB200 (1 << 1)
 
 /**
  * FPGA version 0.1.0 introduced timestamp support
  */
-#define BLADERF_CAP_TIMESTAMPS          (1 << 2)
+#define BLADERF_CAP_TIMESTAMPS (1 << 2)
 
 /**
  * FPGA version 0.2.0 introduced NIOS-based tuning support.
  */
-#define BLADERF_CAP_FPGA_TUNING         (1 << 3)
+#define BLADERF_CAP_FPGA_TUNING (1 << 3)
 
 /**
  * FPGA version 0.2.0 also introduced scheduled retune support. The
  * re-use of this capability bit is intentional.
  */
-#define BLADERF_CAP_SCHEDULED_RETUNE    (1 << 3)
+#define BLADERF_CAP_SCHEDULED_RETUNE (1 << 3)
 
 /**
  * FPGA version 0.3.0 introduced new packet handler formats that pack
  * operations into a single requests.
  */
-#define BLADERF_CAP_PKT_HANDLER_FMT     (1 << 4)
+#define BLADERF_CAP_PKT_HANDLER_FMT (1 << 4)
 
 /**
  * A bug fix in FPGA version 0.3.2 allowed support for reading back
@@ -90,13 +90,13 @@
  * as a capability and disallow masked writes unless an FPGA with the
  * fix is being used.
  */
-#define BLADERF_CAP_MASKED_XBIO_WRITE   (1 << 7)
+#define BLADERF_CAP_MASKED_XBIO_WRITE (1 << 7)
 
 /**
  * FPGA v0.5.0 introduces the ability to tame the VCTCXO via a 1 pps or 10 MHz
  * input source on the mini expansion header.
  */
-#define BLADERF_CAP_VCTCXO_TAMING_MODE  (1 << 8)
+#define BLADERF_CAP_VCTCXO_TAMING_MODE (1 << 8)
 
 /**
  * FPGA v0.6.0 introduced trx synchronization trigger via J71-4
@@ -106,12 +106,12 @@
 /**
  * FPGA v0.7.0 introduced AGC DC correction Look-Up-Table
  */
-#define BLADERF_CAP_AGC_DC_LUT          (1 << 10)
+#define BLADERF_CAP_AGC_DC_LUT (1 << 10)
 
 /**
  * Firmware 1.7.1 introduced firmware-based loopback
  */
-#define BLADERF_CAP_FW_LOOPBACK         (((uint64_t) 1) << 32)
+#define BLADERF_CAP_FW_LOOPBACK (((uint64_t)1) << 32)
 
 /**
  * FX3 firmware version 1.8.0 introduced the ability to query when the
@@ -119,18 +119,18 @@
  * opening and attempting to use the device while flash-based FPGA autoloading
  * was occurring.
  */
-#define BLADERF_CAP_QUERY_DEVICE_READY  (((uint64_t) 1) << 33)
+#define BLADERF_CAP_QUERY_DEVICE_READY (((uint64_t)1) << 33)
 
 /**
  * FX3 firmware v1.9.0 introduced a vendor request by which firmware log
  * events could be retrieved.
  */
-#define BLADERF_CAP_READ_FW_LOG_ENTRY   (((uint64_t) 1) << 34)
+#define BLADERF_CAP_READ_FW_LOG_ENTRY (((uint64_t)1) << 34)
 
 /**
  * FX3 firmware v2.1.0 introduced support for bladeRF 2
  */
-#define BLADERF_CAP_FW_SUPPORTS_BLADERF2 (((uint64_t) 1) << 35)
+#define BLADERF_CAP_FW_SUPPORTS_BLADERF2 (((uint64_t)1) << 35)
 
 struct bladerf {
     /* Handle lock - to ensure atomic access to control and configuration
@@ -173,77 +173,193 @@ struct board_fns {
     size_t (*get_channel_count)(struct bladerf *dev, bool tx);
 
     /* Versions */
-    int (*get_fpga_version)(struct bladerf *dev, struct bladerf_version *version);
+    int (*get_fpga_version)(struct bladerf *dev,
+                            struct bladerf_version *version);
     int (*get_fw_version)(struct bladerf *dev, struct bladerf_version *version);
 
     /* Gain */
     int (*set_gain)(struct bladerf *dev, bladerf_channel ch, bladerf_gain gain);
-    int (*get_gain)(struct bladerf *dev, bladerf_channel ch, bladerf_gain *gain);
-    int (*set_gain_mode)(struct bladerf *dev, bladerf_channel ch, bladerf_gain_mode mode);
-    int (*get_gain_mode)(struct bladerf *dev, bladerf_channel ch, bladerf_gain_mode *mode);
-    int (*get_gain_modes)(struct bladerf *dev, bladerf_channel ch, const struct bladerf_gain_modes **modes);
-    int (*get_gain_range)(struct bladerf *dev, bladerf_channel ch, const struct bladerf_range **range);
-    int (*set_gain_stage)(struct bladerf *dev, bladerf_channel ch, const char *stage, bladerf_gain gain);
-    int (*get_gain_stage)(struct bladerf *dev, bladerf_channel ch, const char *stage, bladerf_gain *gain);
-    int (*get_gain_stage_range)(struct bladerf *dev, bladerf_channel ch, const char *stage, const struct bladerf_range **range);
-    int (*get_gain_stages)(struct bladerf *dev, bladerf_channel ch, const char **stages, size_t count);
+    int (*get_gain)(struct bladerf *dev,
+                    bladerf_channel ch,
+                    bladerf_gain *gain);
+    int (*set_gain_mode)(struct bladerf *dev,
+                         bladerf_channel ch,
+                         bladerf_gain_mode mode);
+    int (*get_gain_mode)(struct bladerf *dev,
+                         bladerf_channel ch,
+                         bladerf_gain_mode *mode);
+    int (*get_gain_modes)(struct bladerf *dev,
+                          bladerf_channel ch,
+                          const struct bladerf_gain_modes **modes);
+    int (*get_gain_range)(struct bladerf *dev,
+                          bladerf_channel ch,
+                          const struct bladerf_range **range);
+    int (*set_gain_stage)(struct bladerf *dev,
+                          bladerf_channel ch,
+                          const char *stage,
+                          bladerf_gain gain);
+    int (*get_gain_stage)(struct bladerf *dev,
+                          bladerf_channel ch,
+                          const char *stage,
+                          bladerf_gain *gain);
+    int (*get_gain_stage_range)(struct bladerf *dev,
+                                bladerf_channel ch,
+                                const char *stage,
+                                const struct bladerf_range **range);
+    int (*get_gain_stages)(struct bladerf *dev,
+                           bladerf_channel ch,
+                           const char **stages,
+                           size_t count);
 
     /* Sample Rate */
-    int (*set_sample_rate)(struct bladerf *dev, bladerf_channel ch, bladerf_sample_rate rate, bladerf_sample_rate *actual);
-    int (*set_rational_sample_rate)(struct bladerf *dev, bladerf_channel ch, struct bladerf_rational_rate *rate, struct bladerf_rational_rate *actual);
-    int (*get_sample_rate)(struct bladerf *dev, bladerf_channel ch, bladerf_sample_rate *rate);
-    int (*get_sample_rate_range)(struct bladerf *dev, bladerf_channel ch, const struct bladerf_range **range);
-    int (*get_rational_sample_rate)(struct bladerf *dev, bladerf_channel ch, struct bladerf_rational_rate *rate);
+    int (*set_sample_rate)(struct bladerf *dev,
+                           bladerf_channel ch,
+                           bladerf_sample_rate rate,
+                           bladerf_sample_rate *actual);
+    int (*set_rational_sample_rate)(struct bladerf *dev,
+                                    bladerf_channel ch,
+                                    struct bladerf_rational_rate *rate,
+                                    struct bladerf_rational_rate *actual);
+    int (*get_sample_rate)(struct bladerf *dev,
+                           bladerf_channel ch,
+                           bladerf_sample_rate *rate);
+    int (*get_sample_rate_range)(struct bladerf *dev,
+                                 bladerf_channel ch,
+                                 const struct bladerf_range **range);
+    int (*get_rational_sample_rate)(struct bladerf *dev,
+                                    bladerf_channel ch,
+                                    struct bladerf_rational_rate *rate);
 
     /* Bandwidth */
-    int (*set_bandwidth)(struct bladerf *dev, bladerf_channel ch, bladerf_bandwidth bandwidth, bladerf_bandwidth *actual);
-    int (*get_bandwidth)(struct bladerf *dev, bladerf_channel ch, bladerf_bandwidth *bandwidth);
-    int (*get_bandwidth_range)(struct bladerf *dev, bladerf_channel ch, const struct bladerf_range **range);
+    int (*set_bandwidth)(struct bladerf *dev,
+                         bladerf_channel ch,
+                         bladerf_bandwidth bandwidth,
+                         bladerf_bandwidth *actual);
+    int (*get_bandwidth)(struct bladerf *dev,
+                         bladerf_channel ch,
+                         bladerf_bandwidth *bandwidth);
+    int (*get_bandwidth_range)(struct bladerf *dev,
+                               bladerf_channel ch,
+                               const struct bladerf_range **range);
 
     /* Frequency */
-    int (*get_frequency)(struct bladerf *dev, bladerf_channel ch, bladerf_frequency *frequency);
-    int (*set_frequency)(struct bladerf *dev, bladerf_channel ch, bladerf_frequency frequency);
-    int (*get_frequency_range)(struct bladerf *dev, bladerf_channel ch, const struct bladerf_range **range);
-    int (*select_band)(struct bladerf *dev, bladerf_channel ch, bladerf_frequency frequency);
+    int (*get_frequency)(struct bladerf *dev,
+                         bladerf_channel ch,
+                         bladerf_frequency *frequency);
+    int (*set_frequency)(struct bladerf *dev,
+                         bladerf_channel ch,
+                         bladerf_frequency frequency);
+    int (*get_frequency_range)(struct bladerf *dev,
+                               bladerf_channel ch,
+                               const struct bladerf_range **range);
+    int (*select_band)(struct bladerf *dev,
+                       bladerf_channel ch,
+                       bladerf_frequency frequency);
 
     /* RF Ports */
-    int (*set_rf_port)(struct bladerf *dev, bladerf_channel ch, const char *port);
-    int (*get_rf_port)(struct bladerf *dev, bladerf_channel ch, const char **port);
-    int (*get_rf_ports)(struct bladerf *dev, bladerf_channel ch, const char **ports, unsigned int count);
+    int (*set_rf_port)(struct bladerf *dev,
+                       bladerf_channel ch,
+                       const char *port);
+    int (*get_rf_port)(struct bladerf *dev,
+                       bladerf_channel ch,
+                       const char **port);
+    int (*get_rf_ports)(struct bladerf *dev,
+                        bladerf_channel ch,
+                        const char **ports,
+                        unsigned int count);
 
     /* Scheduled Tuning */
-    int (*get_quick_tune)(struct bladerf *dev, bladerf_channel ch, struct bladerf_quick_tune *quick_tune);
-    int (*schedule_retune)(struct bladerf *dev, bladerf_channel ch, bladerf_timestamp timestamp, bladerf_frequency frequency, struct bladerf_quick_tune *quick_tune);
+    int (*get_quick_tune)(struct bladerf *dev,
+                          bladerf_channel ch,
+                          struct bladerf_quick_tune *quick_tune);
+    int (*schedule_retune)(struct bladerf *dev,
+                           bladerf_channel ch,
+                           bladerf_timestamp timestamp,
+                           bladerf_frequency frequency,
+                           struct bladerf_quick_tune *quick_tune);
     int (*cancel_scheduled_retunes)(struct bladerf *dev, bladerf_channel ch);
 
     /* DC/Phase/Gain Correction */
-    int (*get_correction)(struct bladerf *dev, bladerf_channel ch, bladerf_correction corr, int16_t *value);
-    int (*set_correction)(struct bladerf *dev, bladerf_channel ch, bladerf_correction corr, int16_t value);
+    int (*get_correction)(struct bladerf *dev,
+                          bladerf_channel ch,
+                          bladerf_correction corr,
+                          int16_t *value);
+    int (*set_correction)(struct bladerf *dev,
+                          bladerf_channel ch,
+                          bladerf_correction corr,
+                          int16_t value);
 
     /* Trigger */
-    int (*trigger_init)(struct bladerf *dev, bladerf_channel ch, bladerf_trigger_signal signal, struct bladerf_trigger *trigger);
-    int (*trigger_arm)(struct bladerf *dev, const struct bladerf_trigger *trigger, bool arm, uint64_t resv1, uint64_t resv2);
-    int (*trigger_fire)(struct bladerf *dev, const struct bladerf_trigger *trigger);
-    int (*trigger_state)(struct bladerf *dev, const struct bladerf_trigger *trigger, bool *is_armed, bool *has_fired, bool *fire_requested, uint64_t *resv1, uint64_t *resv2);
+    int (*trigger_init)(struct bladerf *dev,
+                        bladerf_channel ch,
+                        bladerf_trigger_signal signal,
+                        struct bladerf_trigger *trigger);
+    int (*trigger_arm)(struct bladerf *dev,
+                       const struct bladerf_trigger *trigger,
+                       bool arm,
+                       uint64_t resv1,
+                       uint64_t resv2);
+    int (*trigger_fire)(struct bladerf *dev,
+                        const struct bladerf_trigger *trigger);
+    int (*trigger_state)(struct bladerf *dev,
+                         const struct bladerf_trigger *trigger,
+                         bool *is_armed,
+                         bool *has_fired,
+                         bool *fire_requested,
+                         uint64_t *resv1,
+                         uint64_t *resv2);
 
     /* Streaming */
     int (*enable_module)(struct bladerf *dev, bladerf_channel ch, bool enable);
-    int (*init_stream)(struct bladerf_stream **stream, struct bladerf *dev, bladerf_stream_cb callback, void ***buffers, size_t num_buffers, bladerf_format format, size_t samples_per_buffer, size_t num_transfers, void *user_data);
+    int (*init_stream)(struct bladerf_stream **stream,
+                       struct bladerf *dev,
+                       bladerf_stream_cb callback,
+                       void ***buffers,
+                       size_t num_buffers,
+                       bladerf_format format,
+                       size_t samples_per_buffer,
+                       size_t num_transfers,
+                       void *user_data);
     int (*stream)(struct bladerf_stream *stream, bladerf_channel_layout layout);
-    int (*submit_stream_buffer)(struct bladerf_stream *stream, void *buffer, unsigned int timeout_ms, bool nonblock);
+    int (*submit_stream_buffer)(struct bladerf_stream *stream,
+                                void *buffer,
+                                unsigned int timeout_ms,
+                                bool nonblock);
     void (*deinit_stream)(struct bladerf_stream *stream);
-    int (*set_stream_timeout)(struct bladerf *dev, bladerf_direction dir, unsigned int timeout);
-    int (*get_stream_timeout)(struct bladerf *dev, bladerf_direction dir, unsigned int *timeout);
-    int (*sync_config)(struct bladerf *dev, bladerf_channel_layout layout, bladerf_format format, unsigned int num_buffers, unsigned int buffer_size, unsigned int num_transfers, unsigned int stream_timeout);
-    int (*sync_tx)(struct bladerf *dev, const void *samples, unsigned int num_samples, struct bladerf_metadata *metadata, unsigned int timeout_ms);
-    int (*sync_rx)(struct bladerf *dev, void *samples, unsigned int num_samples, struct bladerf_metadata *metadata, unsigned int timeout_ms);
-    int (*get_timestamp)(struct bladerf *dev, bladerf_direction dir, bladerf_timestamp *timestamp);
+    int (*set_stream_timeout)(struct bladerf *dev,
+                              bladerf_direction dir,
+                              unsigned int timeout);
+    int (*get_stream_timeout)(struct bladerf *dev,
+                              bladerf_direction dir,
+                              unsigned int *timeout);
+    int (*sync_config)(struct bladerf *dev,
+                       bladerf_channel_layout layout,
+                       bladerf_format format,
+                       unsigned int num_buffers,
+                       unsigned int buffer_size,
+                       unsigned int num_transfers,
+                       unsigned int stream_timeout);
+    int (*sync_tx)(struct bladerf *dev,
+                   const void *samples,
+                   unsigned int num_samples,
+                   struct bladerf_metadata *metadata,
+                   unsigned int timeout_ms);
+    int (*sync_rx)(struct bladerf *dev,
+                   void *samples,
+                   unsigned int num_samples,
+                   struct bladerf_metadata *metadata,
+                   unsigned int timeout_ms);
+    int (*get_timestamp)(struct bladerf *dev,
+                         bladerf_direction dir,
+                         bladerf_timestamp *timestamp);
 
     /* FPGA/Firmware Loading/Flashing */
     int (*load_fpga)(struct bladerf *dev, const uint8_t *buf, size_t length);
     int (*flash_fpga)(struct bladerf *dev, const uint8_t *buf, size_t length);
     int (*erase_stored_fpga)(struct bladerf *dev);
-    int (*flash_firmware)(struct bladerf *dev, const uint8_t *buf, size_t length);
+    int (*flash_firmware)(struct bladerf *dev,
+                          const uint8_t *buf,
+                          size_t length);
     int (*device_reset)(struct bladerf *dev);
 
     /* Tuning mode */
@@ -251,7 +367,8 @@ struct board_fns {
     int (*get_tuning_mode)(struct bladerf *dev, bladerf_tuning_mode *mode);
 
     /* Loopback */
-    int (*get_loopback_modes)(struct bladerf *dev, const struct bladerf_loopback_modes **modes);
+    int (*get_loopback_modes)(struct bladerf *dev,
+                              const struct bladerf_loopback_modes **modes);
     int (*set_loopback)(struct bladerf *dev, bladerf_loopback l);
     int (*get_loopback)(struct bladerf *dev, bladerf_loopback *l);
 
@@ -260,8 +377,10 @@ struct board_fns {
     int (*set_rx_mux)(struct bladerf *dev, bladerf_rx_mux mode);
 
     /* Low-level VCTCXO Tamer Mode */
-    int (*set_vctcxo_tamer_mode)(struct bladerf *dev, bladerf_vctcxo_tamer_mode mode);
-    int (*get_vctcxo_tamer_mode)(struct bladerf *dev, bladerf_vctcxo_tamer_mode *mode);
+    int (*set_vctcxo_tamer_mode)(struct bladerf *dev,
+                                 bladerf_vctcxo_tamer_mode mode);
+    int (*get_vctcxo_tamer_mode)(struct bladerf *dev,
+                                 bladerf_vctcxo_tamer_mode *mode);
 
     /* Low-level VCTCXO Trim DAC access */
     int (*get_vctcxo_trim)(struct bladerf *dev, uint16_t *trim);
@@ -269,17 +388,31 @@ struct board_fns {
     int (*trim_dac_write)(struct bladerf *dev, uint16_t trim);
 
     /* Low-level Trigger control access */
-    int (*read_trigger)(struct bladerf *dev, bladerf_channel ch, bladerf_trigger_signal trigger, uint8_t *val);
-    int (*write_trigger)(struct bladerf *dev, bladerf_channel ch, bladerf_trigger_signal trigger, uint8_t val);
+    int (*read_trigger)(struct bladerf *dev,
+                        bladerf_channel ch,
+                        bladerf_trigger_signal trigger,
+                        uint8_t *val);
+    int (*write_trigger)(struct bladerf *dev,
+                         bladerf_channel ch,
+                         bladerf_trigger_signal trigger,
+                         uint8_t val);
 
     /* Low-level Configuration GPIO access */
     int (*config_gpio_read)(struct bladerf *dev, uint32_t *val);
     int (*config_gpio_write)(struct bladerf *dev, uint32_t val);
 
     /* Low-level SPI flash access */
-    int (*erase_flash)(struct bladerf *dev, uint32_t erase_block, uint32_t count);
-    int (*read_flash)(struct bladerf *dev, uint8_t *buf, uint32_t page, uint32_t count);
-    int (*write_flash)(struct bladerf *dev, const uint8_t *buf, uint32_t page, uint32_t count);
+    int (*erase_flash)(struct bladerf *dev,
+                       uint32_t erase_block,
+                       uint32_t count);
+    int (*read_flash)(struct bladerf *dev,
+                      uint8_t *buf,
+                      uint32_t page,
+                      uint32_t count);
+    int (*write_flash)(struct bladerf *dev,
+                       const uint8_t *buf,
+                       uint32_t page,
+                       uint32_t count);
 
     /* Expansion support */
     int (*expansion_attach)(struct bladerf *dev, bladerf_xb xb);

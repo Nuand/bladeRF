@@ -31,17 +31,16 @@
 #include "format.h"
 
 typedef enum {
-    STREAM_IDLE,            /* Idle and initialized */
-    STREAM_RUNNING,         /* Currently running */
-    STREAM_SHUTTING_DOWN,   /* Currently tearing down.
-                             * See bladerf_stream->error_code to determine
-                             * whether or not the shutdown was a clean exit
-                             * or due to an error. */
-    STREAM_DONE             /* Done and deallocated */
+    STREAM_IDLE,          /* Idle and initialized */
+    STREAM_RUNNING,       /* Currently running */
+    STREAM_SHUTTING_DOWN, /* Currently tearing down.
+                           * See bladerf_stream->error_code to determine
+                           * whether or not the shutdown was a clean exit
+                           * or due to an error. */
+    STREAM_DONE           /* Done and deallocated */
 } bladerf_stream_state;
 
 struct bladerf_stream {
-
     /* These items are configured in async_init_stream() and should only be
      * read (NOT MODIFIED) during the execution of the stream */
     struct bladerf *dev;
@@ -65,7 +64,8 @@ struct bladerf_stream {
 };
 
 /* Get the number of bytes per stream buffer */
-static inline size_t async_stream_buf_bytes(struct bladerf_stream *s) {
+static inline size_t async_stream_buf_bytes(struct bladerf_stream *s)
+{
     return samples_to_bytes(s->format, s->samples_per_buffer);
 }
 
@@ -80,7 +80,8 @@ int async_init_stream(struct bladerf_stream **stream,
                       void *user_data);
 
 /* Backend code is responsible for acquiring stream->lock in their callbacks */
-int async_run_stream(struct bladerf_stream *stream, bladerf_channel_layout layout);
+int async_run_stream(struct bladerf_stream *stream,
+                     bladerf_channel_layout layout);
 
 
 /* This function WILL acquire stream->lock before calling backend code.

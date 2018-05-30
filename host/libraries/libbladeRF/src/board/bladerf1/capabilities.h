@@ -53,6 +53,7 @@ uint64_t bladerf1_get_fw_capabilities(const struct bladerf_version *fw_version);
  *
  * @return  Capabilities bitmask
  */
-uint64_t bladerf1_get_fpga_capabilities(const struct bladerf_version *fpga_version);
+uint64_t bladerf1_get_fpga_capabilities(
+    const struct bladerf_version *fpga_version);
 
 #endif

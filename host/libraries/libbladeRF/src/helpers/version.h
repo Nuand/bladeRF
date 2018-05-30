@@ -68,7 +68,8 @@ bool version_less_than(const struct bladerf_version *v1,
  * @return true for greater or equal than, false otherwise
  */
 bool version_fields_greater_or_equal(const struct bladerf_version *version,
-                                     unsigned int major, unsigned int minor,
+                                     unsigned int major,
+                                     unsigned int minor,
                                      unsigned int patch);
 
 /**
@@ -83,7 +84,8 @@ bool version_fields_greater_or_equal(const struct bladerf_version *version,
  * @return true for less than, false otherwise
  */
 bool version_fields_less_than(const struct bladerf_version *version,
-                              unsigned int major, unsigned int minor,
+                              unsigned int major,
+                              unsigned int minor,
                               unsigned int patch);
 
 
@@ -92,7 +94,7 @@ struct version_compat_table {
     const struct compat {
         struct bladerf_version ver;
         struct bladerf_version requires;
-    } *table;
+    } * table;
     unsigned int len;
 };
 

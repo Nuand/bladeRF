@@ -26,16 +26,16 @@
 #ifndef BACKEND_BACKEND_H_
 #define BACKEND_BACKEND_H_
 
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 #include <libbladeRF.h>
 
 #include "logger_entry.h"
 
-#define BACKEND_STR_ANY    "*"
+#define BACKEND_STR_ANY "*"
 #define BACKEND_STR_LIBUSB "libusb"
-#define BACKEND_STR_LINUX  "linux"
+#define BACKEND_STR_LINUX "linux"
 #define BACKEND_STR_CYPRESS "cypress"
 
 /**
@@ -83,7 +83,8 @@ struct backend_fns {
     int (*open)(struct bladerf *dev, struct bladerf_devinfo *info);
 
     /* Set the FPGA protocol */
-    int (*set_fpga_protocol)(struct bladerf *dev, backend_fpga_protocol fpga_protocol);
+    int (*set_fpga_protocol)(struct bladerf *dev,
+                             backend_fpga_protocol fpga_protocol);
 
     /* Closing of the device and freeing of the data */
     void (*close)(struct bladerf *dev);
@@ -92,12 +93,15 @@ struct backend_fns {
     int (*is_fw_ready)(struct bladerf *dev);
 
     /* FPGA Loading and checking */
-    int (*load_fpga)(struct bladerf *dev, const uint8_t *image, size_t image_size);
+    int (*load_fpga)(struct bladerf *dev,
+                     const uint8_t *image,
+                     size_t image_size);
     int (*is_fpga_configured)(struct bladerf *dev);
 
     /* Version checking */
     int (*get_fw_version)(struct bladerf *dev, struct bladerf_version *version);
-    int (*get_fpga_version)(struct bladerf *dev, struct bladerf_version *version);
+    int (*get_fpga_version)(struct bladerf *dev,
+                            struct bladerf_version *version);
 
     /* Flash operations */
 
@@ -106,11 +110,15 @@ struct backend_fns {
 
     /* Read the specified number of pages */
     int (*read_flash_pages)(struct bladerf *dev,
-                            uint8_t *buf, uint32_t page, uint32_t count);
+                            uint8_t *buf,
+                            uint32_t page,
+                            uint32_t count);
 
     /* Write the specified number of pages */
-    int (*write_flash_pages)(struct bladerf *dev, const uint8_t *buf,
-                             uint32_t page, uint32_t count);
+    int (*write_flash_pages)(struct bladerf *dev,
+                             const uint8_t *buf,
+                             uint32_t page,
+                             uint32_t count);
 
     /* Device startup and reset */
     int (*device_reset)(struct bladerf *dev);
@@ -127,29 +135,41 @@ struct backend_fns {
 
     /* Expansion GPIO accessors */
     int (*expansion_gpio_write)(struct bladerf *dev,
-                                uint32_t mask, uint32_t val);
+                                uint32_t mask,
+                                uint32_t val);
     int (*expansion_gpio_read)(struct bladerf *dev, uint32_t *val);
     int (*expansion_gpio_dir_write)(struct bladerf *dev,
-                                    uint32_t mask, uint32_t outputs);
+                                    uint32_t mask,
+                                    uint32_t outputs);
     int (*expansion_gpio_dir_read)(struct bladerf *dev, uint32_t *outputs);
 
     /* IQ Correction Settings */
-    int (*set_iq_gain_correction)(struct bladerf *dev, bladerf_channel ch,
+    int (*set_iq_gain_correction)(struct bladerf *dev,
+                                  bladerf_channel ch,
                                   int16_t value);
-    int (*set_iq_phase_correction)(struct bladerf *dev, bladerf_channel ch,
+    int (*set_iq_phase_correction)(struct bladerf *dev,
+                                   bladerf_channel ch,
                                    int16_t value);
-    int (*get_iq_gain_correction)(struct bladerf *dev, bladerf_channel ch,
+    int (*get_iq_gain_correction)(struct bladerf *dev,
+                                  bladerf_channel ch,
                                   int16_t *value);
-    int (*get_iq_phase_correction)(struct bladerf *dev, bladerf_channel ch,
+    int (*get_iq_phase_correction)(struct bladerf *dev,
+                                   bladerf_channel ch,
                                    int16_t *value);
 
     /* AGC DC Correction Lookup Table */
     int (*set_agc_dc_correction)(struct bladerf *dev,
-                                 int16_t q_max, int16_t i_max, int16_t q_mid, int16_t i_mid,
-                                 int16_t q_low, int16_t i_low);
+                                 int16_t q_max,
+                                 int16_t i_max,
+                                 int16_t q_mid,
+                                 int16_t i_mid,
+                                 int16_t q_low,
+                                 int16_t i_low);
 
     /* Get current timestamp counter values */
-    int (*get_timestamp)(struct bladerf *dev, bladerf_direction dir, uint64_t *value);
+    int (*get_timestamp)(struct bladerf *dev,
+                         bladerf_direction dir,
+                         uint64_t *value);
 
     /* Si5338 accessors */
     int (*si5338_write)(struct bladerf *dev, uint8_t addr, uint8_t data);
@@ -200,33 +220,47 @@ struct backend_fns {
     int (*get_firmware_loopback)(struct bladerf *dev, bool *is_enabled);
 
     /* Sample stream */
-    int (*enable_module)(struct bladerf *dev, bladerf_direction dir, bool enable);
+    int (*enable_module)(struct bladerf *dev,
+                         bladerf_direction dir,
+                         bool enable);
 
     int (*init_stream)(struct bladerf_stream *stream, size_t num_transfers);
     int (*stream)(struct bladerf_stream *stream, bladerf_channel_layout layout);
-    int (*submit_stream_buffer)(struct bladerf_stream *stream, void *buffer,
-                                unsigned int timeout_ms, bool nonblock);
+    int (*submit_stream_buffer)(struct bladerf_stream *stream,
+                                void *buffer,
+                                unsigned int timeout_ms,
+                                bool nonblock);
     void (*deinit_stream)(struct bladerf_stream *stream);
 
     /* Schedule a frequency retune operation */
-    int (*retune)(struct bladerf *dev, bladerf_channel ch,
-                  uint64_t timestamp, uint16_t nint, uint32_t nfrac,
-                  uint8_t freqsel, uint8_t vcocap, bool low_band,
+    int (*retune)(struct bladerf *dev,
+                  bladerf_channel ch,
+                  uint64_t timestamp,
+                  uint16_t nint,
+                  uint32_t nfrac,
+                  uint8_t freqsel,
+                  uint8_t vcocap,
+                  bool low_band,
                   bool quick_tune);
 
     /* Load firmware from FX3 bootloader */
     int (*load_fw_from_bootloader)(bladerf_backend backend,
-                                   uint8_t bus, uint8_t addr,
+                                   uint8_t bus,
+                                   uint8_t addr,
                                    struct fx3_firmware *fw);
 
     /* Read a log entry from the FX3 firmware */
     int (*read_fw_log)(struct bladerf *dev, logger_entry *e);
 
     /* Read and Write access to trigger registers */
-    int (*read_trigger)(struct bladerf *dev, bladerf_channel ch,
-                        bladerf_trigger_signal trigger, uint8_t *val);
-    int (*write_trigger)(struct bladerf *dev, bladerf_channel ch,
-                         bladerf_trigger_signal trigger, uint8_t val);
+    int (*read_trigger)(struct bladerf *dev,
+                        bladerf_channel ch,
+                        bladerf_trigger_signal trigger,
+                        uint8_t *val);
+    int (*write_trigger)(struct bladerf *dev,
+                         bladerf_channel ch,
+                         bladerf_trigger_signal trigger,
+                         uint8_t val);
 
     /* Backend name */
     const char *name;
@@ -254,7 +288,8 @@ int backend_open(struct bladerf *dev, struct bladerf_devinfo *info);
  * @return 0 on success, BLADERF_ERR_* on failure
  */
 int backend_probe(backend_probe_target probe_target,
-                  struct bladerf_devinfo **devinfo_items, size_t *num_items);
+                  struct bladerf_devinfo **devinfo_items,
+                  size_t *num_items);
 
 /**
  * Search for bootloader via provided specification, download firmware,
@@ -268,7 +303,8 @@ int backend_probe(backend_probe_target probe_target,
  * @return 0 on success, BLADERF_ERR_* on failure
  */
 int backend_load_fw_from_bootloader(bladerf_backend backend,
-                                    uint8_t bus, uint8_t addr,
+                                    uint8_t bus,
+                                    uint8_t addr,
                                     struct fx3_firmware *fw);
 
 /**

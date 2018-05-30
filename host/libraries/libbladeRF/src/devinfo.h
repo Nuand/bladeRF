@@ -29,10 +29,10 @@
 #include <stddef.h>
 
 /* Reserved values for bladerf_devinfo fields to indicate "undefined" */
-#define DEVINFO_SERIAL_ANY    "ANY"
-#define DEVINFO_BUS_ANY       UINT8_MAX
-#define DEVINFO_ADDR_ANY      UINT8_MAX
-#define DEVINFO_INST_ANY      UINT_MAX
+#define DEVINFO_SERIAL_ANY "ANY"
+#define DEVINFO_BUS_ANY UINT8_MAX
+#define DEVINFO_ADDR_ANY UINT8_MAX
+#define DEVINFO_INST_ANY UINT_MAX
 
 struct bladerf_devinfo_list {
     struct bladerf_devinfo *elt;
@@ -100,8 +100,8 @@ int bladerf_devinfo_list_init(struct bladerf_devinfo_list *list);
  *
  * @return pointer to container on success, NULL on error
  */
-struct bladerf_devinfo_list *
-bladerf_get_devinfo_list(struct bladerf_devinfo *devinfo);
+struct bladerf_devinfo_list *bladerf_get_devinfo_list(
+    struct bladerf_devinfo *devinfo);
 
 /**
  * Add an item to our internal devinfo list

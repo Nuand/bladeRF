@@ -22,14 +22,13 @@
 #ifndef STREAMING_SYNC_H_
 #define STREAMING_SYNC_H_
 
-#include <pthread.h>
 #include <limits.h>
+#include <pthread.h>
 
 #include <libbladeRF.h>
 
 /* These parameters are only written during sync_init */
-struct stream_config
-{
+struct stream_config {
     bladerf_format format;
     bladerf_channel_layout layout;
 
@@ -41,15 +40,15 @@ struct stream_config
 };
 
 typedef enum {
-    SYNC_BUFFER_EMPTY = 0,      /**< Buffer contains no data */
-    SYNC_BUFFER_PARTIAL,        /**< sync_rx/tx is currently emptying/filling */
-    SYNC_BUFFER_FULL,           /**< Buffer is full of data */
-    SYNC_BUFFER_IN_FLIGHT,      /**< Currently being transferred */
+    SYNC_BUFFER_EMPTY = 0, /**< Buffer contains no data */
+    SYNC_BUFFER_PARTIAL,   /**< sync_rx/tx is currently emptying/filling */
+    SYNC_BUFFER_FULL,      /**< Buffer is full of data */
+    SYNC_BUFFER_IN_FLIGHT, /**< Currently being transferred */
 } sync_buffer_status;
 
 typedef enum {
-    SYNC_META_STATE_HEADER,       /**< Extract the metadata header */
-    SYNC_META_STATE_SAMPLES,      /**< Process samples */
+    SYNC_META_STATE_HEADER,  /**< Extract the metadata header */
+    SYNC_META_STATE_SAMPLES, /**< Process samples */
 } sync_meta_state;
 
 typedef enum {
@@ -71,9 +70,9 @@ struct buffer_mgmt {
     void **buffers;
     unsigned int num_buffers;
 
-    unsigned int prod_i;        /**< Producer index - next buffer to fill */
-    unsigned int cons_i;        /**< Consumer index - next buffer to empty */
-    unsigned int partial_off;   /**< Current index into partial buffer */
+    unsigned int prod_i;      /**< Producer index - next buffer to fill */
+    unsigned int cons_i;      /**< Consumer index - next buffer to empty */
+    unsigned int partial_off; /**< Current index into partial buffer */
 
     /* In the event of a SW RX overrun, this count is used to determine
      * how many more transfers should be considered invalid and require
@@ -86,8 +85,8 @@ struct buffer_mgmt {
 
 
     MUTEX lock;
-    pthread_cond_t  buf_ready;  /**< Buffer produced by RX callback, or
-                                 *   buffer emptied by TX callback */
+    pthread_cond_t buf_ready; /**< Buffer produced by RX callback, or
+                               *   buffer emptied by TX callback */
 };
 
 /* State of API-side sync interface */
@@ -101,12 +100,11 @@ typedef enum {
     SYNC_STATE_USING_BUFFER_META
 } sync_state;
 
-struct sync_meta
-{
-    sync_meta_state state;        /* State of metadata processing */
+struct sync_meta {
+    sync_meta_state state; /* State of metadata processing */
 
     uint8_t *curr_msg;            /* Points to current message in the buffer */
-    size_t   curr_msg_off;        /* Offset into current message (samples),
+    size_t curr_msg_off;          /* Offset into current message (samples),
                                    * ignoring the 4-samples worth of metadata */
     size_t msg_size;              /* Size of data message */
     unsigned int msg_per_buf;     /* Number of data messages per buffer */
@@ -117,8 +115,9 @@ struct sync_meta
     union {
         /* Used only for RX */
         struct {
-            uint64_t msg_timestamp; /* Timestamp contained in the current message */
-            uint32_t msg_flags;     /* Flags for the current message */
+            uint64_t
+                msg_timestamp;  /* Timestamp contained in the current message */
+            uint32_t msg_flags; /* Flags for the current message */
         };
 
         /* Used only for TX */
@@ -128,8 +127,8 @@ struct sync_meta
         };
     };
 
-    uint64_t curr_timestamp;    /* Timestamp at the sample we've
-                                 * consumed up to */
+    uint64_t curr_timestamp; /* Timestamp at the sample we've
+                              * consumed up to */
 };
 
 struct bladerf_sync {
@@ -184,6 +183,6 @@ int sync_tx(struct bladerf_sync *sync,
 
 unsigned int sync_buf2idx(struct buffer_mgmt *b, void *addr);
 
-void * sync_idx2buf(struct buffer_mgmt *b, unsigned int idx);
+void *sync_idx2buf(struct buffer_mgmt *b, unsigned int idx);
 
 #endif

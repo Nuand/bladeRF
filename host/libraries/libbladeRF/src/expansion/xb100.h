@@ -40,6 +40,8 @@ int xb100_gpio_write(struct bladerf *dev, uint32_t val);
 int xb100_gpio_masked_write(struct bladerf *dev, uint32_t mask, uint32_t val);
 int xb100_gpio_dir_read(struct bladerf *dev, uint32_t *val);
 int xb100_gpio_dir_write(struct bladerf *dev, uint32_t val);
-int xb100_gpio_dir_masked_write(struct bladerf *dev, uint32_t mask, uint32_t val);
+int xb100_gpio_dir_masked_write(struct bladerf *dev,
+                                uint32_t mask,
+                                uint32_t val);
 
 #endif

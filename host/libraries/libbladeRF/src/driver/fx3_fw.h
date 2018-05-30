@@ -25,9 +25,9 @@
 #ifndef DRIVER_FX3_FW_H_
 #define DRIVER_FX3_FW_H_
 
-#include <stdint.h>
-#include <stdbool.h>
 #include "host_config.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 #include "board/board.h"
 
@@ -64,8 +64,10 @@ void fx3_fw_free(struct fx3_firmware *fw);
  * @return true if this function returned section data, false if the end of the
  * FW has been reached and no data is available.
  */
-bool fx3_fw_next_section(struct fx3_firmware *fw, uint32_t *section_addr,
-                         uint8_t **section_data, uint32_t *section_len);
+bool fx3_fw_next_section(struct fx3_firmware *fw,
+                         uint32_t *section_addr,
+                         uint8_t **section_data,
+                         uint32_t *section_len);
 
 /**
  * @param[in]   fw              Handle FX3 firmware data

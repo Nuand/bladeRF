@@ -30,8 +30,8 @@
 #ifndef HELPERS_FILE_H_
 #define HELPERS_FILE_H_
 
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
 
 /**
  * Read file contents into a buffer allocated internally and returned to the
