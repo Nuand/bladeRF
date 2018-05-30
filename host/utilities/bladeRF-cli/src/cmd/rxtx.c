@@ -17,11 +17,11 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-#include <string.h>
-#include <limits.h>
-#include <pthread.h>
 #include <errno.h>
 #include <inttypes.h>
+#include <limits.h>
+#include <pthread.h>
+#include <string.h>
 
 #include "host_config.h"
 
@@ -31,13 +31,14 @@
 #include <time.h>
 #endif
 
+#include "cmd/cmd.h"
+#include "log.h"
+#include "minmax.h"
+#include "parse.h"
+#include "rel_assert.h"
 #include "rxtx.h"
 #include "rxtx_impl.h"
-#include "cmd/cmd.h"
-#include "rel_assert.h"
-#include "minmax.h"
 #include "thread.h"
-#include "log.h"
 
 /* A "seems good enough" arbitrary minimum */
 #define RXTX_BUFFERS_MIN 4
@@ -58,18 +59,18 @@ const struct numeric_suffix rxtx_time_suffixes[] = {
 const struct numeric_suffix rxtx_kmg_suffixes[] = {
     { FIELD_INIT(.suffix, "K"), FIELD_INIT(.multiplier, 1024) },
     { FIELD_INIT(.suffix, "k"), FIELD_INIT(.multiplier, 1024) },
-    { FIELD_INIT(.suffix, "M"), FIELD_INIT(.multiplier, 1024 * 1024)},
-    { FIELD_INIT(.suffix, "m"), FIELD_INIT(.multiplier, 1024 * 1024)},
-    { FIELD_INIT(.suffix, "G"), FIELD_INIT(.multiplier, 1024 * 1024 * 1024)},
-    { FIELD_INIT(.suffix, "g"), FIELD_INIT(.multiplier, 1024 * 1024 * 1024)}
+    { FIELD_INIT(.suffix, "M"), FIELD_INIT(.multiplier, 1024 * 1024) },
+    { FIELD_INIT(.suffix, "m"), FIELD_INIT(.multiplier, 1024 * 1024) },
+    { FIELD_INIT(.suffix, "G"), FIELD_INIT(.multiplier, 1024 * 1024 * 1024) },
+    { FIELD_INIT(.suffix, "g"), FIELD_INIT(.multiplier, 1024 * 1024 * 1024) }
 };
 
 const size_t rxtx_time_suffixes_len = ARRAY_LEN(rxtx_time_suffixes);
-const size_t rxtx_kmg_suffixes_len = ARRAY_LEN(rxtx_kmg_suffixes);
+const size_t rxtx_kmg_suffixes_len  = ARRAY_LEN(rxtx_kmg_suffixes);
 
 /* We need to disarm any pending triggers when shutting down a stream
  * to ensure that we don't stall waiting on a timeout. */
-static void disarm_triggers(struct cli_state *s, bladerf_channel c)
+static void disarm_triggers(struct cli_state *s, bladerf_direction dir)
 {
     int status;
     struct bladerf_trigger trig;
@@ -80,15 +81,20 @@ static void disarm_triggers(struct cli_state *s, bladerf_channel c)
         return;
     }
 
-    status = bladerf_trigger_init(s->dev, c, BLADERF_TRIGGER_J71_4, &trig);
+    status = bladerf_trigger_init(s->dev, dir, BLADERF_TRIGGER_J71_4, &trig);
     if (status == 0) {
         trig.role = BLADERF_TRIGGER_ROLE_DISABLED;
-        status = bladerf_trigger_arm(s->dev, &trig, false, 0, 0);
+        status    = bladerf_trigger_arm(s->dev, &trig, false, 0, 0);
     }
 
     if (status != 0 && status != BLADERF_ERR_UNSUPPORTED) {
         log_warning("Failed to disarm trigger - may stall on timeout.\n");
     }
+}
+
+static bladerf_channel dir_to_ch(bladerf_direction dir, int idx)
+{
+    return rxtx_is_tx(dir) ? BLADERF_CHANNEL_TX(idx) : BLADERF_CHANNEL_RX(idx);
 }
 
 bool rxtx_is_valid_channel(bladerf_channel ch)
@@ -97,9 +103,9 @@ bool rxtx_is_valid_channel(bladerf_channel ch)
             ch == BLADERF_CHANNEL_TX(0) || ch == BLADERF_CHANNEL_TX(1));
 }
 
-bool rxtx_is_tx(bladerf_channel ch)
+bool rxtx_is_tx(bladerf_direction dir)
 {
-    return (ch & BLADERF_TX);
+    return (dir & BLADERF_TX);
 }
 
 void rxtx_set_state(struct rxtx_data *rxtx, enum rxtx_state state)
@@ -169,7 +175,8 @@ unsigned char rxtx_get_requests(struct rxtx_data *rxtx, unsigned char mask)
 }
 
 void rxtx_print_state(struct rxtx_data *rxtx,
-                      const char *prefix, const char *suffix)
+                      const char *prefix,
+                      const char *suffix)
 {
     enum rxtx_state state = rxtx_get_state(rxtx);
 
@@ -204,18 +211,22 @@ void rxtx_print_state(struct rxtx_data *rxtx,
 }
 
 void rxtx_print_file(struct rxtx_data *rxtx,
-                     const char *prefix, const char *suffix)
+                     const char *prefix,
+                     const char *suffix)
 {
     MUTEX_LOCK(&rxtx->file_mgmt.file_meta_lock);
 
-    printf("%s%s%s", prefix,rxtx->file_mgmt.path != NULL ?
-           rxtx->file_mgmt.path : "Not configured", suffix);
+    printf("%s%s%s", prefix,
+           rxtx->file_mgmt.path != NULL ? rxtx->file_mgmt.path
+                                        : "Not configured",
+           suffix);
 
     MUTEX_UNLOCK(&rxtx->file_mgmt.file_meta_lock);
 }
 
 void rxtx_print_file_format(struct rxtx_data *rxtx,
-                            const char *prefix, const char *suffix)
+                            const char *prefix,
+                            const char *suffix)
 {
     enum rxtx_fmt fmt;
 
@@ -236,7 +247,8 @@ void rxtx_print_file_format(struct rxtx_data *rxtx,
 }
 
 void rxtx_print_error(struct rxtx_data *rxtx,
-                      const char *prefix, const char *suffix)
+                      const char *prefix,
+                      const char *suffix)
 {
     enum error_type type;
     int val;
@@ -266,14 +278,15 @@ void rxtx_print_error(struct rxtx_data *rxtx,
 }
 
 void rxtx_print_stream_info(struct rxtx_data *rxtx,
-                            const char *prefix, const char *suffix)
+                            const char *prefix,
+                            const char *suffix)
 {
     unsigned int bufs, samps, xfers, timeout;
 
     MUTEX_LOCK(&rxtx->data_mgmt.lock);
-    bufs = (unsigned int)rxtx->data_mgmt.num_buffers;
-    samps = (unsigned int)rxtx->data_mgmt.samples_per_buffer;
-    xfers = (unsigned int)rxtx->data_mgmt.num_transfers;
+    bufs    = (unsigned int)rxtx->data_mgmt.num_buffers;
+    samps   = (unsigned int)rxtx->data_mgmt.samples_per_buffer;
+    xfers   = (unsigned int)rxtx->data_mgmt.num_transfers;
     timeout = rxtx->data_mgmt.timeout_ms;
     MUTEX_UNLOCK(&rxtx->data_mgmt.lock);
 
@@ -287,20 +300,31 @@ void rxtx_print_channel(struct rxtx_data *rxtx,
                         const char *prefix,
                         const char *suffix)
 {
-    bladerf_channel channel;
-
-    MUTEX_LOCK(&rxtx->param_lock);
-    channel = rxtx->channel;
-    MUTEX_UNLOCK(&rxtx->param_lock);
+    int i;
+    bool exist = false;
 
     printf("%s", prefix);
 
-    if (!rxtx_is_valid_channel(channel)) {
-        printf("INVALID (%d)", channel);
-    } else if (rxtx_is_tx(channel)) {
-        printf("TX%d", (channel >> 1) + 1);
-    } else {
-        printf("RX%d", (channel >> 1) + 1);
+    MUTEX_LOCK(&rxtx->param_lock);
+
+    for (i = 0; i < RXTX_MAX_CHANNELS; ++i) {
+        if (rxtx->channel_enable[i]) {
+            bladerf_channel channel = dir_to_ch(rxtx->direction, i);
+
+            if (exist) {
+                printf(", ");
+            }
+
+            printf("%s", channel2str(channel));
+
+            exist = true;
+        }
+    }
+
+    MUTEX_UNLOCK(&rxtx->param_lock);
+
+    if (!exist) {
+        printf("none");
     }
 
     printf("%s", suffix);
@@ -319,11 +343,12 @@ enum rxtx_fmt rxtx_str2fmt(const char *str)
     return ret;
 }
 
-struct rxtx_data *rxtx_data_alloc(bladerf_channel channel)
+struct rxtx_data *rxtx_data_alloc(bladerf_direction dir)
 {
     struct rxtx_data *ret;
+    int i;
 
-    if (!rxtx_is_valid_channel(channel)) {
+    if (BLADERF_RX != dir && BLADERF_TX != dir) {
         return NULL;
     }
 
@@ -334,7 +359,7 @@ struct rxtx_data *rxtx_data_alloc(bladerf_channel channel)
     }
 
     /* Allocate and initialize channel-specific parameters */
-    if (rxtx_is_tx(channel)) {
+    if (rxtx_is_tx(dir)) {
         struct tx_params *tx_params;
 
         tx_params = malloc(sizeof(*tx_params));
@@ -342,9 +367,9 @@ struct rxtx_data *rxtx_data_alloc(bladerf_channel channel)
             free(ret);
             return NULL;
         } else {
-            tx_params->repeat = 1;
+            tx_params->repeat       = 1;
             tx_params->repeat_delay = 0;
-            ret->params = tx_params;
+            ret->params             = tx_params;
         }
     } else {
         struct rx_params *rx_params;
@@ -355,54 +380,56 @@ struct rxtx_data *rxtx_data_alloc(bladerf_channel channel)
             return NULL;
         } else {
             rx_params->n_samples = 100000;
-            ret->params = rx_params;
+            ret->params          = rx_params;
         }
     }
 
     MUTEX_INIT(&ret->param_lock);
 
+    /* Initialize channel map: default to the first channel active */
+    for (i = 0; i < RXTX_MAX_CHANNELS; ++i) {
+        ret->channel_enable[i] = (i == 0);
+    }
+
     /* Initialize data management items */
-    ret->data_mgmt.num_buffers = 32;
+    ret->data_mgmt.num_buffers        = 32;
     ret->data_mgmt.samples_per_buffer = 32 * 1024;
-    ret->data_mgmt.num_transfers = 16;
-    ret->data_mgmt.timeout_ms = 1000;
-    ret->data_mgmt.layout = rxtx_is_tx(channel) ? BLADERF_TX_X1 : BLADERF_RX_X1;
+    ret->data_mgmt.num_transfers      = 16;
+    ret->data_mgmt.timeout_ms         = 1000;
+    ret->data_mgmt.layout = rxtx_is_tx(dir) ? BLADERF_TX_X1 : BLADERF_RX_X1;
 
     MUTEX_INIT(&ret->data_mgmt.lock);
 
     /* Initialize file management items */
-    ret->file_mgmt.file = NULL;
-    ret->file_mgmt.path = NULL;
+    ret->file_mgmt.file   = NULL;
+    ret->file_mgmt.path   = NULL;
     ret->file_mgmt.format = RXTX_FMT_BIN_SC16Q11;
     MUTEX_INIT(&ret->file_mgmt.file_lock);
     MUTEX_INIT(&ret->file_mgmt.file_meta_lock);
 
     /* Initialize task management */
     ret->task_mgmt.started = false;
-    ret->task_mgmt.state = RXTX_STATE_IDLE;
-    ret->task_mgmt.req = 0;
+    ret->task_mgmt.state   = RXTX_STATE_IDLE;
+    ret->task_mgmt.req     = 0;
     MUTEX_INIT(&ret->task_mgmt.lock);
     pthread_cond_init(&ret->task_mgmt.signal_req, NULL);
     pthread_cond_init(&ret->task_mgmt.signal_done, NULL);
     pthread_cond_init(&ret->task_mgmt.signal_state_change, NULL);
     ret->task_mgmt.main_task_waiting = false;
 
+    /* Initialize error management */
     cli_error_init(&ret->last_error);
 
-    ret->channel = channel;
+    ret->direction = dir;
 
     return ret;
 }
 
-int rxtx_startup(struct cli_state *s, bladerf_channel channel)
+int rxtx_startup(struct cli_state *s, bladerf_direction dir)
 {
     int status;
 
-    if (!rxtx_is_valid_channel(channel)) {
-        return CLI_RET_INVPARAM;
-    }
-
-    if (rxtx_is_tx(channel)) {
+    if (rxtx_is_tx(dir)) {
         rxtx_set_state(s->tx, RXTX_STATE_INIT);
         status = pthread_create(&s->tx->task_mgmt.thread, NULL, tx_task, s);
 
@@ -443,7 +470,7 @@ bool rxtx_task_running(struct rxtx_data *rxtx)
 void rxtx_shutdown(struct cli_state *s, struct rxtx_data *rxtx)
 {
     if (s->dev && bladerf_is_fpga_configured(s->dev) == 1) {
-        disarm_triggers(s, rxtx->channel);
+        disarm_triggers(s, rxtx->direction);
     }
 
     if (rxtx->task_mgmt.started && rxtx_get_state(rxtx) != RXTX_STATE_FAIL) {
@@ -456,14 +483,17 @@ void rxtx_shutdown(struct cli_state *s, struct rxtx_data *rxtx)
 
 void rxtx_data_free(struct rxtx_data *rxtx)
 {
-    if(rxtx) {
+    if (rxtx) {
         free(rxtx->params);
         free(rxtx);
     }
 }
 
-int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
-                             const char *argv0, char *param, char **val)
+int rxtx_handle_config_param(struct cli_state *s,
+                             struct rxtx_data *rxtx,
+                             const char *argv0,
+                             char *param,
+                             char **val)
 {
     int status = 0;
     unsigned int tmp;
@@ -482,7 +512,7 @@ int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
 
     if (status == 0) {
         (*val)[0] = '\0';
-        (*val) = (*val) + 1;
+        (*val)    = (*val) + 1;
 
         if (!strcasecmp("file", param)) {
             status = rxtx_set_file_path(rxtx, *val);
@@ -501,9 +531,9 @@ int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
                 status = 1;
             }
         } else if (!strcasecmp("buffers", param)) {
-            tmp = str2uint_suffix(*val, RXTX_BUFFERS_MIN,
-                                  UINT_MAX, rxtx_kmg_suffixes,
-                                  rxtx_kmg_suffixes_len, &ok);
+            tmp =
+                str2uint_suffix(*val, RXTX_BUFFERS_MIN, UINT_MAX,
+                                rxtx_kmg_suffixes, rxtx_kmg_suffixes_len, &ok);
 
             if (!ok) {
                 cli_err(s, argv0, RXTX_ERRMSG_VALUE(param, *val));
@@ -516,35 +546,35 @@ int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
             }
 
         } else if (!strcasecmp("samples", param)) {
-            tmp = str2uint_suffix(*val, RXTX_BUFFERS_MIN,
-                                  UINT_MAX, rxtx_kmg_suffixes,
-                                  rxtx_kmg_suffixes_len, &ok);
+            tmp =
+                str2uint_suffix(*val, RXTX_BUFFERS_MIN, UINT_MAX,
+                                rxtx_kmg_suffixes, rxtx_kmg_suffixes_len, &ok);
 
             if (!ok) {
                 cli_err(s, argv0, RXTX_ERRMSG_VALUE(param, *val));
                 status = CLI_RET_INVPARAM;
             } else if (tmp % RXTX_SAMPLES_MIN != 0) {
                 cli_err(s, argv0,
-                        "The '%s' paramter must be a multiple of %u.\n",
-                        param, RXTX_SAMPLES_MIN);
+                        "The '%s' paramter must be a multiple of %u.\n", param,
+                        RXTX_SAMPLES_MIN);
                 status = CLI_RET_INVPARAM;
             } else {
                 MUTEX_LOCK(&rxtx->data_mgmt.lock);
-                rxtx->data_mgmt.samples_per_buffer= tmp;
+                rxtx->data_mgmt.samples_per_buffer = tmp;
                 MUTEX_UNLOCK(&rxtx->data_mgmt.lock);
                 status = 1;
             }
         } else if (!strcasecmp("xfers", param)) {
-            tmp = str2uint_suffix(*val, RXTX_BUFFERS_MIN - 1, UINT_MAX,
-                                  rxtx_kmg_suffixes, rxtx_kmg_suffixes_len,
-                                  &ok);
+            tmp =
+                str2uint_suffix(*val, RXTX_BUFFERS_MIN - 1, UINT_MAX,
+                                rxtx_kmg_suffixes, rxtx_kmg_suffixes_len, &ok);
 
             if (!ok) {
                 cli_err(s, argv0, RXTX_ERRMSG_VALUE(param, *val));
                 status = CLI_RET_INVPARAM;
             } else {
                 MUTEX_LOCK(&rxtx->data_mgmt.lock);
-                rxtx->data_mgmt.num_transfers= tmp;
+                rxtx->data_mgmt.num_transfers = tmp;
                 MUTEX_UNLOCK(&rxtx->data_mgmt.lock);
                 status = 1;
             }
@@ -570,7 +600,7 @@ int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
 /* Require a 10% margin on the sample rate to ensure we can keep up, and
  * warn if this margin is violated.
  *
- * We effectively ensuring:
+ * We are effectively ensuring:
  *
  * Min sample rate > (xfers / timeout period) * samples / buffer
  *                    ^
@@ -579,43 +609,64 @@ int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
 static void check_samplerate(struct cli_state *s, struct rxtx_data *rxtx)
 {
     int status;
-    uint64_t samplerate_min;        /* Min required sample rate */
-    unsigned int samplerate_dev;    /* Device's current sample rate */
+    uint64_t samplerate_min;     /* Min required sample rate */
+    unsigned int samplerate_dev; /* Device's current sample rate */
     unsigned int n_xfers, samp_per_buf, timeout_ms;
+    bool warned = false;
+    int i;
+
+    const char *SR_TOO_LOW_LT40M =
+        "\tWarning: The current sample rate may be too low. For %u transfers,\n"
+        "\t%u samples per buffer, and a %u ms timeout, a sample rate\n"
+        "\tover %" PRIu64 " Hz may be required. Alternatively, the 'timeout'\n"
+        "\tparameter could be increased, but may yield underruns.\n";
+
+    const char *SR_TOO_LOW_GT40M =
+        "\tWarning: The current configuration with %u transfers,\n"
+        "\t%u samples per buffer, and a %u ms timeout requires a\n"
+        "\tsample rate above 40 MHz. Timeouts may occur with these settings.\n";
 
     MUTEX_LOCK(&rxtx->data_mgmt.lock);
-    n_xfers = (unsigned int)rxtx->data_mgmt.num_transfers;
+    n_xfers      = (unsigned int)rxtx->data_mgmt.num_transfers;
     samp_per_buf = (unsigned int)rxtx->data_mgmt.samples_per_buffer;
-    timeout_ms = rxtx->data_mgmt.timeout_ms;
+    timeout_ms   = rxtx->data_mgmt.timeout_ms;
     MUTEX_UNLOCK(&rxtx->data_mgmt.lock);
 
     samplerate_min = (uint64_t)n_xfers * samp_per_buf * 1000 / timeout_ms;
     samplerate_min += (samplerate_min + 9) / 10;
 
-    status = bladerf_get_sample_rate(s->dev, rxtx->channel, &samplerate_dev);
-    if (status < 0) {
-        cli_err(s, "Error", "Failed read device's current sample rate. "
-                            "Unable to perform sanity check.\n");
-    } else if (samplerate_dev < samplerate_min) {
-        if (samplerate_min <= 40000000) {
-            printf("\n");
-            printf("    Warning: The current sample rate may be too low. For %u transfers,\n"
-                   "    %u samples per buffer, and a %u ms timeout, a sample rate\n"
-                   "    over %"PRIu64" Hz may be required. Alternatively, the 'timeout'\n"
-                   "    parameter could be increased, but may yield underruns.\n\n",
-                   n_xfers, samp_per_buf, timeout_ms, samplerate_min);
-        } else {
-            printf("\n");
-            printf("    Warning: The current configuraion with %u transfers,\n"
-                   "    %u samples per buffer, and a %u ms timeout requires a\n"
-                   "    sample rate above 40MHz. Timeouts may occur with these settings.\n\n",
-                   n_xfers, samp_per_buf, timeout_ms);
+    MUTEX_LOCK(&rxtx->param_lock);
+
+    for (i = 0; i < RXTX_MAX_CHANNELS; ++i) {
+        if (!warned && rxtx->channel_enable[i]) {
+            bladerf_channel channel = dir_to_ch(rxtx->direction, i);
+
+            status = bladerf_get_sample_rate(s->dev, channel, &samplerate_dev);
+            if (status < 0) {
+                cli_err(s, "Error", "Failed read device's current sample rate. "
+                                    "Unable to perform sanity check.\n");
+            } else if (samplerate_dev < samplerate_min) {
+                if (samplerate_min <= 40000000) {
+                    printf("\n");
+                    printf(SR_TOO_LOW_LT40M, n_xfers, samp_per_buf, timeout_ms,
+                           samplerate_min);
+                    printf("\n");
+                } else {
+                    printf("\n");
+                    printf(SR_TOO_LOW_GT40M, n_xfers, samp_per_buf, timeout_ms);
+                    printf("\n");
+                }
+                warned = true;
+            }
         }
     }
+
+    MUTEX_UNLOCK(&rxtx->param_lock);
 }
 
 /*   */
-static int validate_stream_params(struct cli_state *s, struct rxtx_data *rxtx,
+static int validate_stream_params(struct cli_state *s,
+                                  struct rxtx_data *rxtx,
                                   const char *argv0)
 {
     int status = 0;
@@ -627,10 +678,9 @@ static int validate_stream_params(struct cli_state *s, struct rxtx_data *rxtx,
     assert(rxtx->data_mgmt.num_buffers >= RXTX_BUFFERS_MIN);
 
     if (rxtx->data_mgmt.num_transfers >= rxtx->data_mgmt.num_buffers) {
-        cli_err(s, argv0,
-                "The 'xfers' parameter (%u) must be < the 'buffers'"
-                " parameter (%u).\n", rxtx->data_mgmt.num_transfers,
-                rxtx->data_mgmt.num_buffers);
+        cli_err(s, argv0, "The 'xfers' parameter (%u) must be < the 'buffers'"
+                          " parameter (%u).\n",
+                rxtx->data_mgmt.num_transfers, rxtx->data_mgmt.num_buffers);
 
         status = CLI_RET_INVPARAM;
     }
@@ -639,7 +689,8 @@ static int validate_stream_params(struct cli_state *s, struct rxtx_data *rxtx,
     return status;
 };
 
-int rxtx_cmd_start_check(struct cli_state *s, struct rxtx_data *rxtx,
+int rxtx_cmd_start_check(struct cli_state *s,
+                         struct rxtx_data *rxtx,
                          const char *argv0)
 {
     int status = CLI_RET_UNKNOWN;
@@ -674,7 +725,7 @@ int rxtx_cmd_stop(struct cli_state *s, struct rxtx_data *rxtx)
     if (rxtx_get_state(rxtx) != RXTX_STATE_RUNNING) {
         status = CLI_RET_STATE;
     } else {
-        disarm_triggers(s, rxtx->channel);
+        disarm_triggers(s, rxtx->direction);
         rxtx_submit_request(rxtx, RXTX_TASK_REQ_STOP);
         status = 0;
     }
@@ -686,7 +737,6 @@ void rxtx_task_exec_idle(struct rxtx_data *rxtx, unsigned char *requests)
 {
     /* Wait until we're asked to start or shutdown */
     while (!(*requests & (RXTX_TASK_REQ_START | RXTX_TASK_REQ_SHUTDOWN))) {
-
         MUTEX_LOCK(&rxtx->task_mgmt.lock);
         pthread_cond_wait(&rxtx->task_mgmt.signal_req, &rxtx->task_mgmt.lock);
         *requests = rxtx->task_mgmt.req;
@@ -705,11 +755,12 @@ void rxtx_task_exec_idle(struct rxtx_data *rxtx, unsigned char *requests)
     *requests = 0;
 }
 
-void rxtx_task_exec_stop(struct cli_state *s, struct rxtx_data *rxtx,
+void rxtx_task_exec_stop(struct cli_state *s,
+                         struct rxtx_data *rxtx,
                          unsigned char *requests)
 {
-    *requests = rxtx_get_requests(rxtx,
-                                  RXTX_TASK_REQ_STOP | RXTX_TASK_REQ_SHUTDOWN);
+    *requests =
+        rxtx_get_requests(rxtx, RXTX_TASK_REQ_STOP | RXTX_TASK_REQ_SHUTDOWN);
 
     MUTEX_LOCK(&rxtx->file_mgmt.file_lock);
     if (rxtx->file_mgmt.file != NULL) {
@@ -729,8 +780,10 @@ void rxtx_task_exec_stop(struct cli_state *s, struct rxtx_data *rxtx,
     rxtx_release_wait(rxtx);
 }
 
-int rxtx_handle_wait(struct cli_state *s, struct rxtx_data *rxtx,
-                     int argc, char **argv)
+int rxtx_handle_wait(struct cli_state *s,
+                     struct rxtx_data *rxtx,
+                     int argc,
+                     char **argv)
 {
     int status = CLI_RET_UNKNOWN;
     bool ok;
@@ -739,10 +792,7 @@ int rxtx_handle_wait(struct cli_state *s, struct rxtx_data *rxtx,
     enum rxtx_state state;
 
     static const struct numeric_suffix times[] = {
-        { "ms", 1 },
-        { "s", 1000 },
-        { "m", 60 * 1000 },
-        { "h", 60 * 60 * 1000 },
+        { "ms", 1 }, { "s", 1000 }, { "m", 60 * 1000 }, { "h", 60 * 60 * 1000 },
     };
 
     if (argc < 2 || argc > 3) {
@@ -757,7 +807,7 @@ int rxtx_handle_wait(struct cli_state *s, struct rxtx_data *rxtx,
 
     if (argc == 3) {
         timeout_ms = str2uint_suffix(argv[2], 0, UINT_MAX, times,
-                                     sizeof(times)/sizeof(times[0]), &ok);
+                                     sizeof(times) / sizeof(times[0]), &ok);
 
         if (!ok) {
             cli_err(s, argv[0], "Invalid wait timeout: \"%s\"\n", argv[2]);
@@ -790,9 +840,9 @@ int rxtx_handle_wait(struct cli_state *s, struct rxtx_data *rxtx,
         MUTEX_LOCK(&rxtx->task_mgmt.lock);
         rxtx->task_mgmt.main_task_waiting = true;
         while (rxtx->task_mgmt.main_task_waiting) {
-            status = pthread_cond_timedwait(&rxtx->task_mgmt.signal_done,
-                                            &rxtx->task_mgmt.lock,
-                                            &timeout_abs);
+            status =
+                pthread_cond_timedwait(&rxtx->task_mgmt.signal_done,
+                                       &rxtx->task_mgmt.lock, &timeout_abs);
 
             if (status == ETIMEDOUT) {
                 rxtx->task_mgmt.main_task_waiting = false;
@@ -832,7 +882,7 @@ bool rxtx_release_wait(struct rxtx_data *rxtx)
     bool was_waiting = false;
 
     MUTEX_LOCK(&rxtx->task_mgmt.lock);
-    was_waiting = rxtx->task_mgmt.main_task_waiting;
+    was_waiting                       = rxtx->task_mgmt.main_task_waiting;
     rxtx->task_mgmt.main_task_waiting = false;
     pthread_cond_signal(&rxtx->task_mgmt.signal_done);
     MUTEX_UNLOCK(&rxtx->task_mgmt.lock);
@@ -840,7 +890,8 @@ bool rxtx_release_wait(struct rxtx_data *rxtx)
     return was_waiting;
 }
 
-int rxtx_wait_for_state(struct rxtx_data *rxtx, enum rxtx_state req_state,
+int rxtx_wait_for_state(struct rxtx_data *rxtx,
+                        enum rxtx_state req_state,
                         unsigned int timeout_ms)
 {
     int status = 0;
@@ -849,7 +900,7 @@ int rxtx_wait_for_state(struct rxtx_data *rxtx, enum rxtx_state req_state,
     if (timeout_ms != 0) {
         const unsigned int timeout_sec = timeout_ms / 1000;
 
-        status  = clock_gettime(CLOCK_REALTIME, &timeout_abs);
+        status = clock_gettime(CLOCK_REALTIME, &timeout_abs);
         if (status != 0) {
             return -1;
         }
@@ -864,9 +915,9 @@ int rxtx_wait_for_state(struct rxtx_data *rxtx, enum rxtx_state req_state,
 
         MUTEX_LOCK(&rxtx->task_mgmt.lock);
         while (rxtx->task_mgmt.state != req_state && status == 0) {
-            status = pthread_cond_timedwait(&rxtx->task_mgmt.signal_state_change,
-                                            &rxtx->task_mgmt.lock,
-                                            &timeout_abs);
+            status =
+                pthread_cond_timedwait(&rxtx->task_mgmt.signal_state_change,
+                                       &rxtx->task_mgmt.lock, &timeout_abs);
         }
         MUTEX_UNLOCK(&rxtx->task_mgmt.lock);
 
@@ -884,4 +935,106 @@ int rxtx_wait_for_state(struct rxtx_data *rxtx, enum rxtx_state req_state,
     } else {
         return -1;
     }
+}
+
+int rxtx_handle_channel_list(struct cli_state *s,
+                             struct rxtx_data *rxtx,
+                             const char *val)
+{
+    int nargs, nchans, nactive, i;
+    int **args                     = NULL;
+    bool enable[RXTX_MAX_CHANNELS] = { 0 };
+
+    if (rxtx_task_running(rxtx)) {
+        cli_err(s, "channel", "Cannot update parameter while task is running");
+        return CLI_RET_STATE;
+    }
+
+    nchans = bladerf_get_channel_count(s->dev, rxtx_is_tx(rxtx->direction));
+    if (nchans < 0) {
+        set_last_error(&rxtx->last_error, ETYPE_BLADERF, nchans);
+        return CLI_RET_LIBBLADERF;
+    }
+
+    assert(nchans <= RXTX_MAX_CHANNELS);
+
+    nargs = csv2int(val, &args);
+    if (nargs < 0) {
+        return CLI_RET_INVPARAM;
+    }
+
+    nactive = 0;
+    for (i = 0; i < nargs; ++i) {
+        if (*args[i] <= nchans && *args[i] > 0) {
+            ++nactive;
+            enable[*args[i] - 1] = true;
+        } else {
+            free_csv2int(nargs, args);
+            return CLI_RET_INVPARAM;
+        }
+    }
+
+    free_csv2int(nargs, args);
+
+    assert(nactive <= RXTX_MAX_CHANNELS);
+
+    MUTEX_LOCK(&rxtx->param_lock);
+    for (i = 0; i < RXTX_MAX_CHANNELS; ++i) {
+        rxtx->channel_enable[i] = enable[i];
+    }
+    MUTEX_UNLOCK(&rxtx->param_lock);
+
+    MUTEX_LOCK(&rxtx->data_mgmt.lock);
+    switch (nactive) {
+        case 0:
+            break;
+        case 1:
+            rxtx->data_mgmt.layout =
+                rxtx_is_tx(rxtx->direction) ? BLADERF_TX_X1 : BLADERF_RX_X1;
+            break;
+        case 2:
+            rxtx->data_mgmt.layout =
+                rxtx_is_tx(rxtx->direction) ? BLADERF_TX_X2 : BLADERF_RX_X2;
+            break;
+    }
+    MUTEX_UNLOCK(&rxtx->data_mgmt.lock);
+
+    return 0;
+}
+
+int rxtx_apply_channels(struct cli_state *s,
+                        struct rxtx_data *rxtx,
+                        bool enable)
+{
+    int i, nchans, status = 0;
+
+    nchans = bladerf_get_channel_count(s->dev, rxtx_is_tx(rxtx->direction));
+    if (nchans < 0) {
+        set_last_error(&rxtx->last_error, ETYPE_BLADERF, nchans);
+        return CLI_RET_LIBBLADERF;
+    }
+
+    assert(nchans <= RXTX_MAX_CHANNELS);
+
+    MUTEX_LOCK(&rxtx->param_lock);
+    for (i = 0; i < nchans; ++i) {
+        if (rxtx->channel_enable[i]) {
+            bladerf_channel channel = rxtx_is_tx(rxtx->direction)
+                                          ? BLADERF_CHANNEL_TX(i)
+                                          : BLADERF_CHANNEL_RX(i);
+
+            MUTEX_LOCK(&s->dev_lock);
+            status = bladerf_enable_module(s->dev, channel, enable);
+            MUTEX_UNLOCK(&s->dev_lock);
+
+            if (status < 0) {
+                set_last_error(&rxtx->last_error, ETYPE_BLADERF, status);
+                status = CLI_RET_LIBBLADERF;
+                break;
+            }
+        }
+    }
+    MUTEX_UNLOCK(&rxtx->param_lock);
+
+    return status;
 }

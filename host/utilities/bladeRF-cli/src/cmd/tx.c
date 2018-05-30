@@ -17,24 +17,25 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-#include <stdlib.h>
-#include <stdio.h>
+#include <errno.h>
+#include <limits.h>
+#include <pthread.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <pthread.h>
-#include <limits.h>
-#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-#include "rel_assert.h"
 #include "conversions.h"
 #include "host_config.h"
-#include "rxtx_impl.h"
 #include "minmax.h"
+#include "parse.h"
+#include "rel_assert.h"
+#include "rxtx_impl.h"
 
 /* The DAC range is [-2048, 2047] */
-#define SC16Q11_IQ_MIN  (-2048)
-#define SC16Q11_IQ_MAX  (2047)
+#define SC16Q11_IQ_MIN (-2048)
+#define SC16Q11_IQ_MAX (2047)
 
 static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
 {
@@ -48,7 +49,8 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
     unsigned int delay_samples_remaining;
     bool repeat_infinite;
     unsigned int timeout_ms;
-    unsigned int sample_rate;
+    bladerf_sample_rate sample_rate = 0;
+    int i;
 
     enum state { INIT, READ_FILE, DELAY, PAD_TRAILING, DONE };
     enum state state = INIT;
@@ -56,20 +58,31 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
     /* Fetch the parameters required for the TX operation */
     MUTEX_LOCK(&tx->param_lock);
     repeats_remaining = tx_params->repeat;
-    delay_us = tx_params->repeat_delay;
+    delay_us          = tx_params->repeat_delay;
     MUTEX_UNLOCK(&tx->param_lock);
 
     repeat_infinite = (repeats_remaining == 0);
 
     MUTEX_LOCK(&tx->data_mgmt.lock);
     samples_per_buffer = (unsigned int)tx->data_mgmt.samples_per_buffer;
-    timeout_ms = tx->data_mgmt.timeout_ms;
+    timeout_ms         = tx->data_mgmt.timeout_ms;
     MUTEX_UNLOCK(&tx->data_mgmt.lock);
 
-    status = bladerf_get_sample_rate(s->dev, tx->channel, &sample_rate);
-    if (status != 0) {
-        set_last_error(&tx->last_error, ETYPE_BLADERF, status);
-        return CLI_RET_LIBBLADERF;
+    for (i = 0; i < RXTX_MAX_CHANNELS; ++i) {
+        if (tx->channel_enable[i]) {
+            status = bladerf_get_sample_rate(s->dev, BLADERF_CHANNEL_TX(i),
+                                             &sample_rate);
+            if (status != 0) {
+                set_last_error(&tx->last_error, ETYPE_BLADERF, status);
+                return CLI_RET_LIBBLADERF;
+            }
+            break;
+        }
+    }
+
+    if (0 == sample_rate) {
+        cli_err(s, "tx", "Could not read sample rate\n");
+        return CLI_RET_UNKNOWN;
     }
 
     /* Compute delay time as a sample count */
@@ -77,7 +90,7 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
     delay_samples_remaining = delay_samples;
 
     /* Allocate a buffer to hold each block of samples to transmit */
-    tx_buffer = (int16_t*) malloc(samples_per_buffer * 2 * sizeof(int16_t));
+    tx_buffer = (int16_t *)malloc(samples_per_buffer * 2 * sizeof(int16_t));
     if (tx_buffer == NULL) {
         status = CLI_RET_MEM;
         set_last_error(&tx->last_error, ETYPE_ERRNO,
@@ -87,10 +100,9 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
     /* Keep writing samples while there is more data to send and no failures
      * have occurred */
     while (state != DONE && status == 0) {
-
         unsigned char requests;
         unsigned int buffer_samples_remaining = samples_per_buffer;
-        int16_t *tx_buffer_current = tx_buffer;
+        int16_t *tx_buffer_current            = tx_buffer;
 
         /* Stop stream on STOP or SHUTDOWN, but only clear STOP. This will keep
          * the SHUTDOWN request around so we can read it when determining
@@ -111,10 +123,9 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
                     MUTEX_LOCK(&tx->file_mgmt.file_lock);
 
                     /* Read from the input file */
-                    samples_populated = fread(tx_buffer_current,
-                                              2 * sizeof(int16_t),
-                                              buffer_samples_remaining,
-                                              tx->file_mgmt.file);
+                    samples_populated =
+                        fread(tx_buffer_current, 2 * sizeof(int16_t),
+                              buffer_samples_remaining, tx->file_mgmt.file);
 
                     assert(samples_populated <= UINT_MAX);
 
@@ -127,10 +138,9 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
                         if ((repeats_remaining > 0) || repeat_infinite) {
                             if (delay_samples != 0) {
                                 delay_samples_remaining = delay_samples;
-                                state = DELAY;
+                                state                   = DELAY;
                             }
-                        }
-                        else {
+                        } else {
                             state = PAD_TRAILING;
                         }
 
@@ -167,7 +177,7 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
                 case PAD_TRAILING:
                     /* Populate the remainder of the buffer with zeros */
                     memset(tx_buffer_current, 0,
-                            buffer_samples_remaining * 2 * sizeof(uint16_t));
+                           buffer_samples_remaining * 2 * sizeof(uint16_t));
 
                     state = DONE;
                     break;
@@ -221,18 +231,14 @@ static int tx_task_exec_running(struct rxtx_data *tx, struct cli_state *s)
 static int tx_csv_to_sc16q11(struct cli_state *s)
 {
     struct rxtx_data *tx = s->tx;
-    const char delim[] = " \r\n\t,.:";
-    char buf[81] = { 0 };
-    char *token, *saveptr;
-    int tmp_int;
-    int16_t tmp_iq[2];
-    bool ok;
+    char buf[81]         = { 0 };
+    FILE *bin            = NULL;
+    FILE *csv            = NULL;
+    char *bin_name       = NULL;
+    int line             = 1;
+    size_t n_clamped     = 0;
+
     int status;
-    FILE *bin = NULL;
-    FILE *csv = NULL;
-    char *bin_name = NULL;
-    int line = 1;
-    unsigned int n_clamped = 0;
 
     assert(tx->file_mgmt.path != NULL);
 
@@ -252,13 +258,27 @@ static int tx_csv_to_sc16q11(struct cli_state *s)
         goto tx_csv_to_sc16q11_out;
     }
 
-    while (fgets(buf, sizeof(buf), csv))
-    {
-        /* I */
-        token = strtok_r(buf, delim, &saveptr);
+    while (fgets(buf, sizeof(buf), csv)) {
+        int i, cols, tmp_int;
+        int **args = NULL;
 
-        if (token) {
-            tmp_int = str2int(token, INT16_MIN, INT16_MAX, &ok);
+        cols = csv2int(buf, &args);
+
+        if (cols < 0) {
+            cli_err(s, "tx", "Line (%d): Parsing failed.\n", line);
+            status = CLI_RET_INVPARAM;
+            break;
+        }
+
+        if (cols == 0) {
+            // empty line...?
+            continue;
+        }
+
+        int16_t tmp_iq[cols];
+
+        for (i = 0; i < cols; ++i) {
+            tmp_int = *args[i];
 
             if (tmp_int < SC16Q11_IQ_MIN) {
                 tmp_int = SC16Q11_IQ_MIN;
@@ -268,57 +288,23 @@ static int tx_csv_to_sc16q11(struct cli_state *s)
                 n_clamped++;
             }
 
-            if (ok) {
-                tmp_iq[0] = tmp_int;
-            } else {
-                cli_err(s, "tx",
-                        "Line %d: Encountered invalid I value.\n", line);
-                status = CLI_RET_INVPARAM;
-                break;
-            }
+            tmp_iq[i] = tmp_int;
+        }
 
-            /* Q */
-            token = strtok_r(NULL, delim, &saveptr);
+        free_csv2int(cols, args);
 
-            if (token) {
-                tmp_int = str2int(token, INT16_MIN, INT16_MAX, &ok);
+        if (cols % 2 != 0) {
+            cli_err(
+                s, "tx",
+                "Line (%d): Encountered %d value%s (values must be in pairs)\n",
+                line, cols, 1 == cols ? "" : "s");
+            status = CLI_RET_INVPARAM;
+            break;
+        }
 
-                if (tmp_int < SC16Q11_IQ_MIN) {
-                    tmp_int = SC16Q11_IQ_MIN;
-                    n_clamped++;
-                } else if (tmp_int > SC16Q11_IQ_MAX) {
-                    tmp_int = SC16Q11_IQ_MAX;
-                    n_clamped++;
-                }
-
-                if (ok) {
-                    tmp_iq[1] = tmp_int;
-                } else {
-                    cli_err(s, "tx",
-                            "Line %d: encountered invalid Q value.\n", line);
-                    status = CLI_RET_INVPARAM;
-                    break;
-                }
-
-            } else {
-                cli_err(s, "tx", "Error: Q value missing.\n");
-                status = CLI_RET_INVPARAM;
-                break;
-            }
-
-            /* Check for extraneous tokens */
-            token = strtok_r(NULL, delim, &saveptr);
-            if (!token) {
-                if (fwrite(tmp_iq, sizeof(tmp_iq[0]), 2, bin) != 2) {
-                    status = CLI_RET_FILEOP;
-                    break;
-                }
-            } else {
-                cli_err(s, "tx",
-                        "Line (%d): Encountered extra token(s).\n", line);
-                status = CLI_RET_INVPARAM;
-                break;
-            }
+        if ((int)fwrite(tmp_iq, sizeof(tmp_iq[0]), cols, bin) != cols) {
+            status = CLI_RET_FILEOP;
+            break;
         }
 
         line++;
@@ -331,9 +317,10 @@ static int tx_csv_to_sc16q11(struct cli_state *s)
             tx->file_mgmt.path = bin_name;
 
             if (n_clamped != 0) {
-                printf("  Warning: %u values clamped within DAC SC16 Q11 "
+                printf("  Warning: %zu value%s clamped within DAC SC16 Q11 "
                        "range of [%d, %d].\n",
-                       n_clamped, SC16Q11_IQ_MIN, SC16Q11_IQ_MAX);
+                       n_clamped, 1 == n_clamped ? "" : "s", SC16Q11_IQ_MIN,
+                       SC16Q11_IQ_MAX);
             }
         } else {
             status = CLI_RET_FILEOP;
@@ -362,9 +349,8 @@ void *tx_task(void *cli_state_arg)
     int disable_status;
     unsigned char requests;
     enum rxtx_state task_state;
-    struct cli_state *cli_state = (struct cli_state *) cli_state_arg;
-    struct rxtx_data *tx = cli_state->tx;
-    MUTEX *dev_lock = &cli_state->dev_lock;
+    struct cli_state *cli_state = (struct cli_state *)cli_state_arg;
+    struct rxtx_data *tx        = cli_state->tx;
 
     /* We expect to be in the IDLE state when this is kicked off. We could
      * also get into the shutdown state if the program exits before we
@@ -386,8 +372,7 @@ void *tx_task(void *cli_state_arg)
                 rxtx_task_exec_idle(tx, &requests);
                 break;
 
-            case RXTX_STATE_START:
-            {
+            case RXTX_STATE_START: {
                 enum error_type err_type = ETYPE_BUG;
 
                 /* Clear out the last error */
@@ -399,13 +384,11 @@ void *tx_task(void *cli_state_arg)
                 MUTEX_UNLOCK(&tx->file_mgmt.file_meta_lock);
 
                 /* Initialize the TX synchronous data configuration */
-                status = bladerf_sync_config(cli_state->dev,
-                                             tx->data_mgmt.layout,
-                                             BLADERF_FORMAT_SC16_Q11,
-                                             tx->data_mgmt.num_buffers,
-                                             tx->data_mgmt.samples_per_buffer,
-                                             tx->data_mgmt.num_transfers,
-                                             tx->data_mgmt.timeout_ms);
+                status = bladerf_sync_config(
+                    cli_state->dev, tx->data_mgmt.layout,
+                    BLADERF_FORMAT_SC16_Q11, tx->data_mgmt.num_buffers,
+                    tx->data_mgmt.samples_per_buffer,
+                    tx->data_mgmt.num_transfers, tx->data_mgmt.timeout_ms);
 
                 if (status < 0) {
                     err_type = ETYPE_BLADERF;
@@ -417,14 +400,10 @@ void *tx_task(void *cli_state_arg)
                     set_last_error(&tx->last_error, err_type, status);
                     rxtx_set_state(tx, RXTX_STATE_IDLE);
                 }
-            }
-            break;
+            } break;
 
             case RXTX_STATE_RUNNING:
-                MUTEX_LOCK(dev_lock);
-                status = bladerf_enable_module(cli_state->dev,
-                                               tx->channel, true);
-                MUTEX_UNLOCK(dev_lock);
+                status = rxtx_apply_channels(cli_state, tx, true);
 
                 if (status < 0) {
                     set_last_error(&tx->last_error, ETYPE_BLADERF, status);
@@ -435,18 +414,14 @@ void *tx_task(void *cli_state_arg)
                         set_last_error(&tx->last_error, ETYPE_BLADERF, status);
                     }
 
-                    MUTEX_LOCK(dev_lock);
-                    disable_status = bladerf_enable_module(cli_state->dev,
-                                                           tx->channel, false);
-                    MUTEX_UNLOCK(dev_lock);
+                    disable_status = rxtx_apply_channels(cli_state, tx, false);
 
                     if (status == 0 && disable_status < 0) {
-                        set_last_error(
-                                &tx->last_error,
-                                ETYPE_BLADERF,
-                                disable_status);
+                        set_last_error(&tx->last_error, ETYPE_BLADERF,
+                                       disable_status);
                     }
                 }
+
                 rxtx_set_state(tx, RXTX_STATE_STOP);
                 break;
 
@@ -485,7 +460,7 @@ static int tx_cmd_start(struct cli_state *s)
 
         if (status == 0) {
             printf("  Converted CSV to SC16 Q11 file and "
-                    "switched to converted file.\n\n");
+                   "switched to converted file.\n\n");
         }
     }
 
@@ -524,13 +499,13 @@ static void tx_print_config(struct rxtx_data *tx)
     struct tx_params *tx_params = tx->params;
 
     MUTEX_LOCK(&tx->param_lock);
-    repetitions = tx_params->repeat;
+    repetitions  = tx_params->repeat;
     repeat_delay = tx_params->repeat_delay;
     MUTEX_UNLOCK(&tx->param_lock);
 
     printf("\n");
     rxtx_print_state(tx, "  State: ", "\n");
-    rxtx_print_channel(tx, "  Channel: ", "\n");
+    rxtx_print_channel(tx, "  Channels: ", "\n");
     rxtx_print_error(tx, "  Last error: ", "\n");
     rxtx_print_file(tx, "  File: ", "\n");
     rxtx_print_file_format(tx, "  File format: ", "\n");
@@ -567,7 +542,6 @@ static int tx_config(struct cli_state *s, int argc, char **argv)
     }
 
     for (i = 2; i < argc; i++) {
-
         status = rxtx_handle_config_param(s, s->tx, argv[0], argv[i], &val);
 
         if (status < 0) {
@@ -589,7 +563,6 @@ static int tx_config(struct cli_state *s, int argc, char **argv)
                 }
             } else if (!strcasecmp("delay", argv[i])) {
                 /* Configure the number of useconds between each repetition  */
-
                 unsigned int tmp;
                 bool ok;
 
@@ -600,27 +573,21 @@ static int tx_config(struct cli_state *s, int argc, char **argv)
                     tx_params->repeat_delay = tmp;
                     MUTEX_UNLOCK(&s->tx->param_lock);
                 } else {
-                    cli_err(s, argv[0], RXTX_ERRMSG_VALUE(argv[1], val));
+                    cli_err(s, argv[0], RXTX_ERRMSG_VALUE(argv[i], val));
                     return CLI_RET_INVPARAM;
                 }
             } else if (!strcasecmp("channel", argv[i])) {
-                /* Configure TX channel */
-                unsigned int n;
-                bool ok;
-
-                n = str2uint(val, 1, 2, &ok);
-
-                if (ok) {
-                    MUTEX_LOCK(&s->tx->param_lock);
-                    s->tx->channel = BLADERF_CHANNEL_TX(n-1);
-                    MUTEX_UNLOCK(&s->tx->param_lock);
-                } else {
-                    cli_err(s, argv[0], RXTX_ERRMSG_VALUE(argv[1], val));
-                    return CLI_RET_INVPARAM;
+                /* Configure TX channels */
+                status = rxtx_handle_channel_list(s, s->tx, val);
+                if (status < 0) {
+                    if (CLI_RET_INVPARAM == status) {
+                        cli_err(s, argv[0], RXTX_ERRMSG_VALUE(argv[i], val));
+                    }
+                    return status;
                 }
             } else {
-                cli_err(s, argv[0],
-                        "Unrecognized config parameter: %s\n", argv[i]);
+                cli_err(s, argv[0], "Unrecognized config parameter: %s\n",
+                        argv[i]);
                 return CLI_RET_INVPARAM;
             }
         }

@@ -28,6 +28,7 @@
 #define RXTX_IMPL_H__
 
 #include <libbladeRF.h>
+
 #include "cmd.h"
 #include "conversions.h"
 #include "thread.h"
@@ -36,75 +37,72 @@
     "Invalid value for \"%s\" (%s)\n", param, value
 
 /* Minimum required unit of sample acceses */
-#define LIBBLADERF_SAMPLE_BLOCK_SIZE    1024
+#define LIBBLADERF_SAMPLE_BLOCK_SIZE 1024
 
-#define RXTX_TASK_REQ_START     (1 << 0)    /* Request to start task */
-#define RXTX_TASK_REQ_STOP      (1 << 1)    /* Request to stop task */
-#define RXTX_TASK_REQ_SHUTDOWN  (1 << 2)    /* Request to shutdown */
-#define RXTX_TASK_REQ_ALL (\
-            RXTX_TASK_REQ_START | \
-            RXTX_TASK_REQ_STOP  | \
-            RXTX_TASK_REQ_SHUTDOWN)
+#define RXTX_TASK_REQ_START (1 << 0)    /* Request to start task */
+#define RXTX_TASK_REQ_STOP (1 << 1)     /* Request to stop task */
+#define RXTX_TASK_REQ_SHUTDOWN (1 << 2) /* Request to shutdown */
+#define RXTX_TASK_REQ_ALL \
+    (RXTX_TASK_REQ_START | RXTX_TASK_REQ_STOP | RXTX_TASK_REQ_SHUTDOWN)
 
 #define RXTX_CMD_START "start"
 #define RXTX_CMD_STOP "stop"
 #define RXTX_CMD_CONFIG "config"
 #define RXTX_CMD_WAIT "wait"
 
+#define RXTX_MAX_CHANNELS 2 /* how many channels to support per direction */
+
 #define TMP_FILE_NAME "bladeRF_samples_from_csv.bin"
 
 enum rxtx_fmt {
     RXTX_FMT_INVALID = -1,
-    RXTX_FMT_CSV_SC16Q11,   /* CSV (Comma-separated, one entry per line) */
-    RXTX_FMT_BIN_SC16Q11    /* Binary (big-endian), c16 I,Q */
+    RXTX_FMT_CSV_SC16Q11, /* CSV (Comma-separated, one entry per line) */
+    RXTX_FMT_BIN_SC16Q11  /* Binary (big-endian), c16 I,Q */
 };
 
 enum rxtx_state {
-    RXTX_STATE_FAIL,        /* Failed to create task */
-    RXTX_STATE_INIT,        /* Task is initializing */
-    RXTX_STATE_IDLE,        /* Awaiting rx/tx "start" command */
-    RXTX_STATE_START,       /* Perform an pre-run initializations.
-                             *   (Transition between IDLE -> RUNNING) */
-    RXTX_STATE_RUNNING,     /* Actively running */
-    RXTX_STATE_STOP,        /* Got "stop" command. Transition state between
-                             *    RUNNING -> IDLE */
-    RXTX_STATE_SHUTDOWN,    /* Clean up and deallocate; the program's exiting */
+    RXTX_STATE_FAIL,     /* Failed to create task */
+    RXTX_STATE_INIT,     /* Task is initializing */
+    RXTX_STATE_IDLE,     /* Awaiting rx/tx "start" command */
+    RXTX_STATE_START,    /* Perform an pre-run initializations.
+                          *   (Transition between IDLE -> RUNNING) */
+    RXTX_STATE_RUNNING,  /* Actively running */
+    RXTX_STATE_STOP,     /* Got "stop" command. Transition state between
+                          *    RUNNING -> IDLE */
+    RXTX_STATE_SHUTDOWN, /* Clean up and deallocate; the program's exiting */
 };
 
 /* Items pertaining to obtaining and managing sample data.
  * If acquiring locks from multiple *_mgmt structures, the data_mgmt.lock
  * should be acquired first.*/
-struct data_mgmt
-{
-    MUTEX lock;                     /* Should be acquired to change the
-                                     *    the following items */
-    unsigned int num_buffers;       /* # of buffers in 'buffers' list */
-    unsigned int samples_per_buffer;/* Size of each buffer (in samples) */
-    unsigned int num_transfers;     /* # of transfers to use in the stream */
-    unsigned int timeout_ms;        /* Stream timeout, in ms */
-    bladerf_channel_layout layout;  /* Channel layout (SISO vs MIMO, etc) */
+struct data_mgmt {
+    MUTEX lock;                      /* Should be acquired to change the
+                                      *    the following items */
+    unsigned int num_buffers;        /* # of buffers in 'buffers' list */
+    unsigned int samples_per_buffer; /* Size of each buffer (in samples) */
+    unsigned int num_transfers;      /* # of transfers to use in the stream */
+    unsigned int timeout_ms;         /* Stream timeout, in ms */
+    bladerf_channel_layout layout;   /* Channel layout (SISO vs MIMO, etc) */
 };
 
 /* Input/Ouput file and related metadata.
  * If acuiring both the locks, acquire file_meta_lock first, then file_lock */
-struct file_mgmt
-{
-    FILE *file;                 /* File to read/write samples from/to */
-    MUTEX file_lock;            /* Thread using 'file' must hold this lock */
+struct file_mgmt {
+    FILE *file;      /* File to read/write samples from/to */
+    MUTEX file_lock; /* Thread using 'file' must hold this lock */
 
 
-    MUTEX file_meta_lock;           /* Should be acquired when accessing any
-                                     * of the following file metadata items */
-    char *path;                     /* Path associated with 'file'. */
-    enum rxtx_fmt format;           /* File format */
+    MUTEX file_meta_lock; /* Should be acquired when accessing any
+                           * of the following file metadata items */
+    char *path;           /* Path associated with 'file'. */
+    enum rxtx_fmt format; /* File format */
 };
 
 
 /* Task and thread management */
-struct task_mgmt
-{
-    pthread_t thread;           /* Handle to thread in which the task runs */
-    bool started;               /* Has the thread been started? */
+struct task_mgmt {
+    pthread_t thread; /* Handle to thread in which the task runs */
+    bool started;     /* Has the thread been started? */
 
     enum rxtx_state state;      /* Task state */
     uint8_t req;                /* Requests for state change. See
@@ -113,14 +111,14 @@ struct task_mgmt
     pthread_cond_t signal_req;  /* Signal when a request has been made */
     pthread_cond_t signal_done; /* Signal when task finishes work */
     pthread_cond_t signal_state_change; /* Signal after state change */
-    bool main_task_waiting;     /* Main task is blocked waiting */
+    bool main_task_waiting;             /* Main task is blocked waiting */
 };
 
 /* RX or TX-specific parameters */
 struct params;
 
 struct rxtx_data {
-    bladerf_channel channel;
+    bladerf_direction direction;
 
     struct data_mgmt data_mgmt;
     struct file_mgmt file_mgmt;
@@ -130,17 +128,16 @@ struct rxtx_data {
     /* Must be held to access the following items */
     MUTEX param_lock;
     void *params;
+    bool channel_enable[RXTX_MAX_CHANNELS];
 };
 
-struct tx_params
-{
-    unsigned int repeat_delay;  /* us delay between repetitions */
-    unsigned int repeat;        /* # of repetitions */
+struct tx_params {
+    unsigned int repeat_delay; /* us delay between repetitions */
+    unsigned int repeat;       /* # of repetitions */
 };
 
-struct rx_params
-{
-    size_t n_samples;           /* Number of samples to receive */
+struct rx_params {
+    size_t n_samples; /* Number of samples to receive */
     int (*write_samples)(struct rxtx_data *rx, int16_t *samples, size_t n);
 };
 
@@ -149,11 +146,11 @@ extern const struct numeric_suffix rxtx_kmg_suffixes[];
 extern const size_t rxtx_kmg_suffixes_len;
 
 /* Forward declare thread entry points implemented by rx/tx code */
-void * rx_task(void *cli_state);
-void * tx_task(void *cli_state);
+void *rx_task(void *cli_state);
+void *tx_task(void *cli_state);
 
 bool rxtx_is_valid_channel(bladerf_channel ch);
-bool rxtx_is_tx(bladerf_channel ch);
+bool rxtx_is_tx(bladerf_direction dir);
 
 /**
  * Set tasks's current state
@@ -211,7 +208,8 @@ enum rxtx_fmt rxtx_str2fmt(const char *str);
  * @param   suffix  Suffix to print after task state
  */
 void rxtx_print_state(struct rxtx_data *rxtx,
-                      const char *prefix, const char *suffix);
+                      const char *prefix,
+                      const char *suffix);
 
 /**
  * Print the filename used by a task with the provided prefix and suffix
@@ -221,7 +219,8 @@ void rxtx_print_state(struct rxtx_data *rxtx,
  * @param   suffix  Suffix to print after task state
  */
 void rxtx_print_file(struct rxtx_data *rxtx,
-                     const char *prefix, const char *suffix);
+                     const char *prefix,
+                     const char *suffix);
 
 /**
  * Print the file format used by a task with the provided prefix and suffix
@@ -231,7 +230,8 @@ void rxtx_print_file(struct rxtx_data *rxtx,
  * @param   suffix  Suffix to print after task state
  */
 void rxtx_print_file_format(struct rxtx_data *rxtx,
-                            const char *prefix, const char *suffix);
+                            const char *prefix,
+                            const char *suffix);
 
 /**
  * Print the error status associated with a task, with
@@ -242,7 +242,8 @@ void rxtx_print_file_format(struct rxtx_data *rxtx,
  * @param   suffix  Suffix to print after task state
  */
 void rxtx_print_error(struct rxtx_data *rxtx,
-                      const char *prefix, const char *suffix);
+                      const char *prefix,
+                      const char *suffix);
 
 
 /**
@@ -253,7 +254,8 @@ void rxtx_print_error(struct rxtx_data *rxtx,
  * @param   suffix  Suffix to print after task state
  */
 void rxtx_print_stream_info(struct rxtx_data *rxtx,
-                            const char *prefix, const char *suffix);
+                            const char *prefix,
+                            const char *suffix);
 
 /**
  * Print the channel description for the task
@@ -265,6 +267,19 @@ void rxtx_print_stream_info(struct rxtx_data *rxtx,
 void rxtx_print_channel(struct rxtx_data *rxtx,
                         const char *prefix,
                         const char *suffix);
+
+/**
+ * @brief      Calls bladerf_enable_module() for all appropriate channels
+ *
+ * @param      s       CLI state, used for device handle
+ * @param      rxtx    RX/TX data handle
+ * @param[in]  enable  Enable (true) or disable (false) the channel
+ *
+ * @return     CLI_RET_*
+ */
+int rxtx_apply_channels(struct cli_state *s,
+                        struct rxtx_data *rxtx,
+                        bool enable);
 
 /**
  * Submit a request to the associated task
@@ -299,8 +314,24 @@ unsigned char rxtx_get_requests(struct rxtx_data *rxtx, unsigned char mask);
  *         CLI_RET_* if an error occurs. This function will print an error
  *         for CLI_RET_INVALID. param and val are undefined for an error.
  */
-int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
-                             const char *argv0, char *param, char **val);
+int rxtx_handle_config_param(struct cli_state *s,
+                             struct rxtx_data *rxtx,
+                             const char *argv0,
+                             char *param,
+                             char **val);
+
+/**
+ * @brief      Handle a comma-delimited list of channels
+ *
+ * @param      s     CLI state
+ * @param      rxtx  RX/TX data handle
+ * @param[in]  val   Nul-terminated string
+ *
+ * @return     0 if okay, CLI_RET_* otherwise
+ */
+int rxtx_handle_channel_list(struct cli_state *s,
+                             struct rxtx_data *rxtx,
+                             const char *val);
 
 /**
  * Handle an rx/tx wait command.
@@ -315,8 +346,10 @@ int rxtx_handle_config_param(struct cli_state *s, struct rxtx_data *rxtx,
  *
  * @return 0 on success, CLI_RET_* for any errors
  */
-int rxtx_handle_wait(struct cli_state *s, struct rxtx_data *rxtx,
-                     int argc, char **argv);
+int rxtx_handle_wait(struct cli_state *s,
+                     struct rxtx_data *rxtx,
+                     int argc,
+                     char **argv);
 
 /**
  * Perform pre-start checks for rx/tx check command
@@ -328,7 +361,8 @@ int rxtx_handle_wait(struct cli_state *s, struct rxtx_data *rxtx,
  * @return 0 on success, CLI_RET_* for any errors. An error will be printed
  *         for CLI_RET_INVPARAM
  */
-int rxtx_cmd_start_check(struct cli_state *s, struct rxtx_data *rxtx,
+int rxtx_cmd_start_check(struct cli_state *s,
+                         struct rxtx_data *rxtx,
                          const char *argv0);
 
 /**
@@ -364,8 +398,9 @@ void rxtx_task_exec_running(struct rxtx_data *rxtx, struct cli_state *s);
  * @param   rxtx        RX/TX data handle
  * @param   requests    Task's copy of pending requests
  */
-void rxtx_task_exec_stop(struct cli_state *s, struct rxtx_data *rxtx,
-                            unsigned char *requests);
+void rxtx_task_exec_stop(struct cli_state *s,
+                         struct rxtx_data *rxtx,
+                         unsigned char *requests);
 
 /**
  * Wait for a task to transition into the specified state
@@ -376,7 +411,8 @@ void rxtx_task_exec_stop(struct cli_state *s, struct rxtx_data *rxtx,
  *
  * @return 0 on the desired state change, -1 on a timeout or error
  */
-int rxtx_wait_for_state(struct rxtx_data *rxtx, enum rxtx_state state,
+int rxtx_wait_for_state(struct rxtx_data *rxtx,
+                        enum rxtx_state state,
                         unsigned int timeout_ms);
 
 #endif

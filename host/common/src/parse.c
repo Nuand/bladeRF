@@ -21,12 +21,14 @@
  */
 
 #include "parse.h"
+#include "conversions.h"
 #include "log.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
-static char **add_arg(char **argv, int argc, const char *buf,
-                        int start, int end, int quote_count)
+static char **add_arg(
+    char **argv, int argc, const char *buf, int start, int end, int quote_count)
 {
     char **rv;
     char *d_ptr;
@@ -77,7 +79,6 @@ static char **add_arg(char **argv, int argc, const char *buf,
     *d_ptr = '\0';
 
     return rv;
-
 }
 
 int str2args(const char *line, char comment_char, char ***argv)
@@ -95,12 +96,12 @@ int str2args(const char *line, char comment_char, char ***argv)
     int arg_start;
     int quote_count;
 
-    rv = NULL;
+    rv   = NULL;
     argc = 0;
 
     quote_char = 0;
 
-    arg_start = 0;
+    arg_start   = 0;
     quote_count = 0;
 
     len = strlen(line);
@@ -147,8 +148,8 @@ int str2args(const char *line, char comment_char, char ***argv)
                     quote_char = 0;
                 }
                 quote_count = 0;
-                arg_start = i;
-                in_arg = true;
+                arg_start   = i;
+                in_arg      = true;
             }
             /* else this is still whitespace */
         }
@@ -182,14 +183,13 @@ void free_args(int argc, char **argv)
     free(argv);
 }
 
-static struct config_options *add_opt(struct config_options *optv, int optc,
-                                            char *key, char *val, int lineno)
+static struct config_options *add_opt(
+    struct config_options *optv, int optc, char *key, char *val, int lineno)
 {
-
     struct config_options *rv;
     char *ptr1, *ptr2;
-    rv = (struct config_options *)
-                realloc(optv, sizeof(struct config_options) * optc);
+    rv = (struct config_options *)realloc(optv,
+                                          sizeof(struct config_options) * optc);
     if (rv == NULL) {
         return NULL;
     }
@@ -250,20 +250,22 @@ bool update_match(struct bladerf *dev, char *str)
     return status == 1;
 }
 
-int str2options(struct bladerf *dev, const char *buf, size_t buf_sz,
-                    struct config_options **opts)
+int str2options(struct bladerf *dev,
+                const char *buf,
+                size_t buf_sz,
+                struct config_options **opts)
 {
     char *line;
     char *d_ptr;
-    int   line_num;
-    char  c;
+    int line_num;
+    char c;
     unsigned i;
 
     struct config_options *optv;
-    int    optc;
+    int optc;
 
     char **line_argv;
-    int  line_argc;
+    int line_argc;
 
     bool match;
 
@@ -284,7 +286,7 @@ int str2options(struct bladerf *dev, const char *buf, size_t buf_sz,
         c = buf[i];
         if (c == '\n') {
             /* deal with the old line */
-            *d_ptr = 0;
+            *d_ptr    = 0;
             line_argc = str2args(line, '#', &line_argv);
             if (line_argc < 0)
                 goto out;
@@ -292,19 +294,21 @@ int str2options(struct bladerf *dev, const char *buf, size_t buf_sz,
             /* handle line */
             if (line_argc > 3) {
                 log_error("Too many arguments in bladeRF.conf on line %d\n",
-                                line_num);
+                          line_num);
                 goto out;
             } else if (match && line_argc == 2) {
                 optc++;
-                optv = add_opt(optv, optc, line_argv[0], line_argv[1], line_num);
+                optv =
+                    add_opt(optv, optc, line_argv[0], line_argv[1], line_num);
                 if (!optv) {
                     optc = -1;
                     goto out;
                 }
             } else if (line_argc == 1) {
                 if (*line_argv[0] != '[') {
-                    log_error("Expecting scoping line (requires [ and ]) on line %d\n",
-                                line_num);
+                    log_error("Expecting scoping line (requires [ and ]) on "
+                              "line %d\n",
+                              line_num);
                 }
                 match = update_match(dev, line_argv[0]);
             }
@@ -337,4 +341,118 @@ void free_opts(struct config_options *optv, int optc)
         free(optv[i].value);
     }
     free(optv);
+}
+
+int csv2int(const char *line, int ***args)
+{
+    const char delim[]   = " \r\n\t,.:"; /* supported delimiters */
+    static size_t arglen = 2; /* tunable: initial expected column count */
+
+    char *myline   = NULL; /* local copy of 'line' */
+    char *parsestr = NULL; /* ptr to 'myline' on first strtok_r */
+    char *saveptr  = NULL; /* strtok_r state pointer */
+    int **argout   = NULL; /* array of output values */
+    size_t count   = 0;    /* count of tokens extracted */
+    size_t i, len;
+
+    // Validity check
+    if (NULL == line) {
+        log_debug("line is null\n");
+        return 0;
+    }
+
+    if (NULL == args) {
+        log_error("args is null\n");
+        goto fail;
+    }
+
+    // strtok_r doesn't respect const, so make a copy of 'line'
+    len = strlen(line) + 1;
+
+    myline = calloc(len, 1);
+    if (NULL == myline) {
+        log_error("could not calloc myline\n");
+        goto fail;
+    }
+
+    myline = strncpy(myline, line, len);
+
+    // Initial allocation of argout
+    argout = malloc(arglen * sizeof(int **));
+    if (NULL == argout) {
+        log_error("could not malloc argout\n");
+        goto fail;
+    }
+
+    // Loop over input until strtok_r returns a NULL
+    for (i = 0, parsestr = myline; true; ++i, parsestr = NULL) {
+        char *token = NULL; /* return token from strtok_r */
+        bool ok;
+
+        token = strtok_r(parsestr, delim, &saveptr);
+        if (NULL == token) {
+            break;
+        }
+
+        // Expand argout if necessary
+        if (i >= arglen) {
+            arglen *= 2;
+            log_verbose("expanding allocation to %zu column(s)\n", arglen);
+            argout = realloc(argout, arglen * sizeof(int *));
+            if (NULL == argout) {
+                log_error("could not realloc(argout,%zu)\n", arglen);
+                goto fail;
+            }
+        }
+
+        // Allocate memory for this value
+        argout[i] = malloc(sizeof(int));
+        if (NULL == argout[i]) {
+            log_error("could not malloc argout[%zu]\n", i);
+            goto fail;
+        }
+
+        // Update the count now, in case str2int fails and we need to dealloc
+        ++count;
+
+        // Parse token into an integer value
+        *argout[i] = str2int(token, INT32_MIN, INT32_MAX, &ok);
+        if (!ok) {
+            log_error("str2int failed on '%s'\n", token);
+            goto fail;
+        }
+    }
+
+    // Success!
+    *args = argout;
+    free(myline);
+
+    // If arglen is too big, cut it in half next time...
+    if (count <= (arglen / 2)) {
+        arglen /= 2;
+        log_verbose("decreasing future arglen to %zu\n", arglen);
+    }
+
+    return count;
+
+fail:
+    // Deallocate everything...
+    free(myline);
+    free_csv2int(count, argout);
+    return -1;
+}
+
+void free_csv2int(int argc, int **args)
+{
+    int i;
+
+    if (NULL == args) {
+        return;
+    }
+
+    for (i = 0; i < argc; ++i) {
+        free(args[i]);
+    }
+
+    free(args);
 }

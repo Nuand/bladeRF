@@ -102,12 +102,12 @@ struct cli_state *cli_state_create()
 
         pthread_mutex_init(&cli_state->dev_lock, NULL);
 
-        cli_state->rx = rxtx_data_alloc(BLADERF_MODULE_RX);
+        cli_state->rx = rxtx_data_alloc(BLADERF_RX);
         if (!cli_state->rx) {
             goto cli_state_create_fail;
         }
 
-        cli_state->tx = rxtx_data_alloc(BLADERF_MODULE_TX);
+        cli_state->tx = rxtx_data_alloc(BLADERF_TX);
         if (!cli_state->tx) {
             goto cli_state_create_fail;
         }
@@ -126,13 +126,13 @@ int cli_start_tasks(struct cli_state *s)
 {
     int status;
 
-    status = rxtx_startup(cli_state, BLADERF_MODULE_RX);
+    status = rxtx_startup(cli_state, BLADERF_RX);
     if (status != 0) {
         cli_err(s, "Error", "Failed to start RX task.\n");
         return CLI_RET_UNKNOWN;
     }
 
-    status = rxtx_startup(cli_state, BLADERF_MODULE_TX);
+    status = rxtx_startup(cli_state, BLADERF_TX);
     if (status != 0) {
         cli_err(s, "Error", "Failed to start TX task.\n");
         return CLI_RET_UNKNOWN;

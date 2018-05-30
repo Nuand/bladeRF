@@ -26,9 +26,9 @@
 #ifndef PARSE_H_
 #define PARSE_H_
 
+#include "libbladeRF.h"
 #include <stdio.h>
 #include <string.h>
-#include "libbladeRF.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,6 +59,7 @@ struct config_options {
     char *value;
     int lineno;
 };
+
 /**
  * Convert a bladeRF options file to an array of strings
  *
@@ -70,8 +71,10 @@ struct config_options {
  *
  * @return  number of options on success, BLADERF_ERR_* values on other failures
  */
-int str2options(struct bladerf *dev, const char *buf, size_t buf_sz,
-                    struct config_options **opts);
+int str2options(struct bladerf *dev,
+                const char *buf,
+                size_t buf_sz,
+                struct config_options **opts);
 
 /**
  * Free an array of previously returned options
@@ -80,6 +83,27 @@ int str2options(struct bladerf *dev, const char *buf, size_t buf_sz,
  * @param[in]   optc    Number of config_options
  */
 void free_opts(struct config_options *optv, int optc);
+
+/**
+ * Convert comma-delimited string into integer arguments
+ *
+ * @param[in]   line    Line to split
+ * @param[out]  args    Pointer to double-pointer of successfully extracted
+ *                      integers
+ *
+ * @see free_csv2int()
+ *
+ * @return -1 on error, otherwise number of arguments
+ */
+int csv2int(const char *line, int ***args);
+
+/**
+ * Free array of previously-returned csv2int arguments
+ *
+ * @param[in]   argc    Number of arguments
+ * @param[in]   args    Pointer to array of pointers to ints
+ */
+void free_csv2int(int argc, int **args);
 
 #ifdef __cplusplus
 } /* extern "C" */

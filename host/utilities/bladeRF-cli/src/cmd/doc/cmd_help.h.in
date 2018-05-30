@@ -27,7 +27,7 @@
  * Any manual modifications to this file will be overwritten!
  * To edit the content of help strings, please edit interactive-help.md
  *
- * Last generated: Mon Apr 16 16:39:40 EDT 2018 by rtucker@rho
+ * Last generated: Wed May 30 15:24:57 EDT 2018 by rtucker@rho
  */
 
 #ifndef BLADERF_CLI_DOC_CMD_HELP_H__
@@ -643,36 +643,35 @@
   "specified in a single or multiple rx config invocations. Below is a\n" \
   "list of available parameters.\n" \
   "\n" \
-  "  -----------------------------------------------------------------------\n" \
-  "         Parameter Description\n" \
-  "  ---------------- ------------------------------------------------------\n" \
-  "                 n Number of samples to receive. 0 = inf.\n" \
+  "  ---------------------------------------------------------------------------\n" \
+  "          Parameter Description\n" \
+  "  ----------------- ---------------------------------------------------------\n" \
+  "                  n Number of samples to receive. 0 = inf.\n" \
   "\n" \
-  "              file Filename to write received samples to\n" \
+  "               file Filename to write received samples to\n" \
   "\n" \
-  "            format Output file format. One of the following:\n" \
+  "             format Output file format. One of the following:\n" \
   "\n" \
-  "                   csv: CSV of SC16 Q11 samples\n" \
+  "                    csv: CSV of SC16 Q11 samples\n" \
   "\n" \
-  "                   bin: Raw SC16 Q11 DAC samples\n" \
+  "                    bin: Raw SC16 Q11 DAC samples\n" \
   "\n" \
-  "           samples Number of samples per buffer to use in the\n" \
-  "                   asynchronous stream. Must be divisible by 1024 and >=\n" \
-  "                   1024.\n" \
+  "            samples Number of samples per buffer to use in the asynchronous\n" \
+  "                    stream. Must be divisible by 1024 and >= 1024.\n" \
   "\n" \
-  "           buffers Number of sample buffers to use in the asynchronous\n" \
-  "                   stream. The min value is 4.\n" \
+  "            buffers Number of sample buffers to use in the asynchronous\n" \
+  "                    stream. The min value is 4.\n" \
   "\n" \
-  "             xfers Number of simultaneous transfers to allow the\n" \
-  "                   asynchronous stream to use. This should be less than\n" \
-  "                   the buffers parameter.\n" \
+  "              xfers Number of simultaneous transfers to allow the\n" \
+  "                    asynchronous stream to use. This should be less than the\n" \
+  "                    buffers parameter.\n" \
   "\n" \
-  "           timeout Data stream timeout. With no suffix, the default unit\n" \
-  "                   is ms. The default value is 1000 ms (1 s). Valid\n" \
-  "                   suffixes are ms and s.\n" \
+  "            timeout Data stream timeout. With no suffix, the default unit is\n" \
+  "                    ms. The default value is 1000 ms (1 s). Valid suffixes\n" \
+  "                    are ms and s.\n" \
   "\n" \
-  "           channel Physical RF channel to use, either 1 (default) or 2.\n" \
-  "  -----------------------------------------------------------------------\n" \
+  "            channel Comma-delimited list of physical RF channels to use\n" \
+  "  ---------------------------------------------------------------------------\n" \
   "\n" \
   "Example:\n" \
   "\n" \
@@ -680,6 +679,11 @@
   "\n" \
   "    Receive (10240 = 10 * 1024) samples, writing them to /tmp/data.bin\n" \
   "    in the binary DAC format.\n" \
+  "\n" \
+  "-   rx config file=mimo.csv format=csv n=32768 channel=1,2\n" \
+  "\n" \
+  "    Receive 32768 samples from RX1 and RX2, outputting them to a file\n" \
+  "    named mimo.csv, with four columns (RX1 I, RX1 Q, RX2 I, RX2 Q).\n" \
   "\n" \
   "Notes:\n" \
   "\n" \
@@ -692,6 +696,10 @@
   "    format be used, and the output file be written to RAM (e.g. /tmp,\n" \
   "    /dev/shm), if space allows. For larger captures at higher sample\n" \
   "    rates, consider using an SSD instead of a HDD.\n" \
+  "-   The CSV format produces two columns per channel, with the first\n" \
+  "    two columns corresponding to the I,Q pair for the first channel\n" \
+  "    configured with the channel parameter; the next two columns\n" \
+  "    corresponding to the I,Q of the second channel, and so on.\n" \
   "\n" \
 
 
@@ -798,40 +806,39 @@
   "specified in a single or multiple tx config invocations. Below is a\n" \
   "list of available parameters.\n" \
   "\n" \
-  "  -----------------------------------------------------------------------\n" \
-  "         Parameter Description\n" \
-  "  ---------------- ------------------------------------------------------\n" \
-  "              file Filename to read samples from\n" \
+  "  ---------------------------------------------------------------------------\n" \
+  "          Parameter Description\n" \
+  "  ----------------- ---------------------------------------------------------\n" \
+  "               file Filename to read samples from\n" \
   "\n" \
-  "            format Input file format. One of the following:\n" \
+  "             format Input file format. One of the following:\n" \
   "\n" \
-  "                   csv: CSV of SC16 Q11 samples ([-2048, 2047])\n" \
+  "                    csv: CSV of SC16 Q11 samples ([-2048, 2047])\n" \
   "\n" \
-  "                   bin: Raw SC16 Q11 DAC samples ([-2048, 2047])\n" \
+  "                    bin: Raw SC16 Q11 DAC samples ([-2048, 2047])\n" \
   "\n" \
-  "            repeat The number of times the file contents should be\n" \
-  "                   transmitted. 0 implies repeat until stopped.\n" \
+  "             repeat The number of times the file contents should be\n" \
+  "                    transmitted. 0 implies repeat until stopped.\n" \
   "\n" \
-  "             delay The number of microseconds to delay between\n" \
-  "                   retransmitting file contents. 0 implies no delay.\n" \
+  "              delay The number of microseconds to delay between\n" \
+  "                    retransmitting file contents. 0 implies no delay.\n" \
   "\n" \
-  "           samples Number of samples per buffer to use in the\n" \
-  "                   asynchronous stream. Must be divisible by 1024 and >=\n" \
-  "                   1024.\n" \
+  "            samples Number of samples per buffer to use in the asynchronous\n" \
+  "                    stream. Must be divisible by 1024 and >= 1024.\n" \
   "\n" \
-  "           buffers Number of sample buffers to use in the asynchronous\n" \
-  "                   stream. The min value is 4.\n" \
+  "            buffers Number of sample buffers to use in the asynchronous\n" \
+  "                    stream. The min value is 4.\n" \
   "\n" \
-  "             xfers Number of simultaneous transfers to allow the\n" \
-  "                   asynchronous stream to use. This should be < the\n" \
-  "                   buffers parameter.\n" \
+  "              xfers Number of simultaneous transfers to allow the\n" \
+  "                    asynchronous stream to use. This should be < the buffers\n" \
+  "                    parameter.\n" \
   "\n" \
-  "           timeout Data stream timeout. With no suffix, the default unit\n" \
-  "                   is ms. The default value is 1000 ms (1 s). Valid\n" \
-  "                   suffixes are 'ms' and 's'.\n" \
+  "            timeout Data stream timeout. With no suffix, the default unit is\n" \
+  "                    ms. The default value is 1000 ms (1 s). Valid suffixes\n" \
+  "                    are 'ms' and 's'.\n" \
   "\n" \
-  "           channel Physical RF channel to use, either 1 (default) or 2.\n" \
-  "  -----------------------------------------------------------------------\n" \
+  "            channel Comma-delimited list of physical RF channels to use\n" \
+  "  ---------------------------------------------------------------------------\n" \
   "\n" \
   "Example:\n" \
   "\n" \
@@ -840,6 +847,12 @@
   "    Transmitting the contents of data.bin two times, with a ~250ms\n" \
   "    delay between transmissions.\n" \
   "\n" \
+  "-   tx config file=mimo.csv format=csv repeat=0 channel=1,2\n" \
+  "\n" \
+  "    Transmitting the contents of mimo.csv repeatedly, with the first\n" \
+  "    channel in the file mapped to channel TX1 and the second channel\n" \
+  "    mapped to TX2.\n" \
+  "\n" \
   "Notes:\n" \
   "\n" \
   "-   The n, samples, buffers, and xfers parameters support the suffixes\n" \
@@ -847,6 +860,12 @@
   "-   For higher sample rates, it is advised that the input file be\n" \
   "    stored in RAM (e.g. /tmp, /dev/shm) or on an SSD, rather than a\n" \
   "    HDD.\n" \
+  "-   The CSV format expects two columns per channel, with the first two\n" \
+  "    columns corresponding to the I,Q pair for the first channel\n" \
+  "    configured with the channel parameter; the next two columns\n" \
+  "    corresponding to the I,Q of the second channel, and so on. For\n" \
+  "    example, in the mimo.csv example above, -128,128,-256,256 would\n" \
+  "    transmit (-128,128) on TX1 and (-256,256) on TX2.\n" \
   "-   When providing CSV data, this command will first convert it to a\n" \
   "    binary format, stored in a file in the current working directory.\n" \
   "    During this process, out-of-range values will be clamped.\n" \

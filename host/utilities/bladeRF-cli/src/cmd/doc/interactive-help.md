@@ -665,7 +665,7 @@ available parameters.
                 unit is `ms`. The default value is 1000 ms (1 s).
                 Valid suffixes are `ms` and `s`.
 
-`channel`       Physical RF channel to use, either 1 (default) or 2.
+`channel`       Comma-delimited list of physical RF channels to use
 ----------------------------------------------------------------------
 
 Example:
@@ -674,6 +674,11 @@ Example:
 
     Receive (10240 = 10 * 1024) samples, writing them to `/tmp/data.bin` in
     the binary DAC format.
+
+ * `rx config file=mimo.csv format=csv n=32768 channel=1,2`
+
+    Receive 32768 samples from RX1 and RX2, outputting them to a file named
+    `mimo.csv`, with four columns (RX1 I, RX1 Q, RX2 I, RX2 Q).
 
 Notes:
 
@@ -686,6 +691,10 @@ Notes:
    used, and the output file be written to RAM (e.g. `/tmp`, `/dev/shm`), if
    space allows. For larger captures at higher sample rates, consider using
    an SSD instead of a HDD.
+ * The CSV format produces two columns per channel, with the first two columns
+   corresponding to the I,Q pair for the first channel configured with the
+   `channel` parameter; the next two columns corresponding to the I,Q of the
+   second channel, and so on.
 
 
 trigger
@@ -767,6 +776,7 @@ Notes:
    This is caused by different processing pipeline lengths of TX and RX. This
    value might change if the FPGA code is updated in the future.
 
+
 tx
 --
 
@@ -833,7 +843,7 @@ available parameters.
                 unit is ms. The default value is 1000 ms (1 s).
                 Valid suffixes are 'ms' and 's'.
 
-`channel`       Physical RF channel to use, either 1 (default) or 2.
+`channel`       Comma-delimited list of physical RF channels to use
 ----------------------------------------------------------------------
 
 Example:
@@ -843,6 +853,11 @@ Example:
     Transmitting the contents of `data.bin` two times, with a ~250ms delay
     between transmissions.
 
+ * `tx config file=mimo.csv format=csv repeat=0 channel=1,2`
+
+    Transmitting the contents of `mimo.csv` repeatedly, with the first channel
+    in the file mapped to channel TX1 and the second channel mapped to TX2.
+
 Notes:
 
  * The `n`, `samples`, `buffers`, and `xfers` parameters support the
@@ -850,6 +865,11 @@ Notes:
  * For higher sample rates, it is advised that the input file be
    stored in RAM (e.g. `/tmp`, `/dev/shm`) or on an SSD, rather than a
    HDD.
+ * The CSV format expects two columns per channel, with the first two columns
+   corresponding to the I,Q pair for the first channel configured with the
+   `channel` parameter; the next two columns corresponding to the I,Q of the
+   second channel, and so on.  For example, in the mimo.csv example above,
+   `-128,128,-256,256` would transmit (-128,128) on TX1 and (-256,256) on TX2.
  * When providing CSV data, this command will first convert it to a
    binary format, stored in a file in the current working directory.
    During this process, out-of-range values will be clamped.

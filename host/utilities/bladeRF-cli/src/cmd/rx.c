@@ -17,25 +17,25 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-#include <stdlib.h>
-#include <stdio.h>
+#include <errno.h>
+#include <inttypes.h>
+#include <limits.h>
+#include <pthread.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <pthread.h>
-#include <limits.h>
-#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <inttypes.h>
 
-#include "rel_assert.h"
 #include "host_config.h"
-#include "rxtx_impl.h"
 #include "minmax.h"
+#include "rel_assert.h"
+#include "rxtx_impl.h"
 
 #if BLADERF_OS_WINDOWS
-#   define EOL "\r\n"
+#define EOL "\r\n"
 #else
-#   define EOL "\n"
+#define EOL "\n"
 #endif
 
 /**
@@ -52,19 +52,19 @@ static inline void sc16q11_sample_fixup(int16_t *buf, size_t n)
 
     for (i = 0; i < n; i++) {
         /* I - Mask off the marker and sign extend */
-//        *buf &= (*buf) & 0x0fff;
-//        if (*buf & 0x800) {
-//            *buf |= 0xf000;
-//        }
+        //        *buf &= (*buf) & 0x0fff;
+        //        if (*buf & 0x800) {
+        //            *buf |= 0xf000;
+        //        }
 
         *buf = LE16_TO_HOST(*buf);
         buf++;
 
         /* Q - Mask off the marker and sign extend */
-//        *buf = HOST_TO_LE16(*buf) & 0x0fff;
-//        if (*buf & 0x800) {
-//            *buf |= 0xf000;
-//        }
+        //        *buf = HOST_TO_LE16(*buf) & 0x0fff;
+        //        if (*buf & 0x800) {
+        //            *buf |= 0xf000;
+        //        }
 
         *buf = LE16_TO_HOST(*buf);
         buf++;
@@ -76,13 +76,14 @@ static inline void sc16q11_sample_fixup(int16_t *buf, size_t n)
  *
  * returns 0 on success, CLI_RET_* on failure (and calls set_last_error()) */
 static int rx_write_bin_sc16q11(struct rxtx_data *rx,
-                                int16_t *samples, size_t n_samples)
+                                int16_t *samples,
+                                size_t n_samples)
 {
     size_t status;
 
     MUTEX_LOCK(&rx->file_mgmt.file_lock);
     status = fwrite(samples, sizeof(int16_t),
-                    2 * n_samples,  /* I and Q are each an int16_t */
+                    2 * n_samples, /* I and Q are each an int16_t */
                     rx->file_mgmt.file);
     MUTEX_UNLOCK(&rx->file_mgmt.file_lock);
 
@@ -96,17 +97,47 @@ static int rx_write_bin_sc16q11(struct rxtx_data *rx,
 
 /* returns 0 on success, CLI_RET_* on failure (and calls set_last_error()) */
 static int rx_write_csv_sc16q11(struct rxtx_data *rx,
-                                int16_t *samples, size_t n_samples)
+                                int16_t *samples,
+                                size_t n_samples)
 {
-    size_t i;
+    size_t i, j, nchans;
     int status = 0;
-    const size_t to_write = n_samples * 2;  /* int16_t for I, another for Q */
-    char line[32] = { 0 };
+
+    MUTEX_LOCK(&rx->data_mgmt.lock);
+    switch (rx->data_mgmt.layout) {
+        case BLADERF_RX_X1:
+            nchans = 1;
+            break;
+        case BLADERF_RX_X2:
+            nchans = 2;
+            break;
+        default:
+            set_last_error(&rx->last_error, ETYPE_BLADERF,
+                           BLADERF_ERR_UNSUPPORTED);
+            status = CLI_RET_LIBBLADERF;
+            break;
+    }
+    MUTEX_UNLOCK(&rx->data_mgmt.lock);
+
+    if (status != 0) {
+        return status;
+    }
 
     MUTEX_LOCK(&rx->file_mgmt.file_lock);
 
-    for (i = 0; i < to_write; i += 2) {
-        snprintf(line, sizeof(line), "%d, %d" EOL, samples[i], samples[i + 1]);
+    // Output 2 columns for each enabled channel
+    // (2 cols for BLADERF_RX_X1, 4 cols for BLADERF_RX_X2, etc)
+    for (i = 0; i < 2 * n_samples; i += 2 * nchans) {
+        char line[32] = { 0 };
+
+        for (j = 0; j < 2 * nchans; j += 2) {
+            char tmp[32];
+            snprintf(tmp, sizeof(tmp), "%s%d, %d", (j > 0) ? ", " : "",
+                     samples[i + j], samples[i + j + 1]);
+            strncat(line, tmp, sizeof(line) - 1);
+        }
+
+        strncat(line, EOL, sizeof(line) - 1);
 
         if (fputs(line, rx->file_mgmt.file) < 0) {
             set_last_error(&rx->last_error, ETYPE_ERRNO, errno);
@@ -126,18 +157,18 @@ static int rx_task_exec_running(struct rxtx_data *rx, struct cli_state *s)
     void *samples;
     size_t num_samples;
     size_t samples_read = 0;
-    int (*write_samples)(struct rxtx_data *rx, int16_t *samples, size_t n);
+    int (*write_samples)(struct rxtx_data * rx, int16_t * samples, size_t n);
     unsigned int timeout_ms;
 
     /* Read the parameters that will be used for the sync transfers */
     MUTEX_LOCK(&rx->data_mgmt.lock);
-    timeout_ms = rx->data_mgmt.timeout_ms;
+    timeout_ms         = rx->data_mgmt.timeout_ms;
     samples_per_buffer = rx->data_mgmt.samples_per_buffer;
     MUTEX_UNLOCK(&rx->data_mgmt.lock);
 
     MUTEX_LOCK(&rx->param_lock);
-    num_samples = ((struct rx_params*)rx->params)->n_samples;
-    write_samples = ((struct rx_params*)rx->params)->write_samples;
+    num_samples   = ((struct rx_params *)rx->params)->n_samples;
+    write_samples = ((struct rx_params *)rx->params)->write_samples;
     MUTEX_UNLOCK(&rx->param_lock);
 
     /* Allocate a buffer for the block of samples */
@@ -169,8 +200,8 @@ static int rx_task_exec_running(struct rxtx_data *rx, struct cli_state *s)
         if (status != 0) {
             set_last_error(&rx->last_error, ETYPE_BLADERF, status);
         } else {
-            size_t to_write = min_sz(samples_per_buffer,
-                                     (num_samples - samples_read));
+            size_t to_write =
+                min_sz(samples_per_buffer, (num_samples - samples_read));
 
             /* Write the samples to the output file */
             sc16q11_sample_fixup(samples, to_write);
@@ -194,14 +225,13 @@ static int rx_task_exec_running(struct rxtx_data *rx, struct cli_state *s)
 
 void *rx_task(void *cli_state_arg)
 {
-    int status = 0;
-    int disable_status;
+    int status         = 0;
+    int disable_status = 0;
     unsigned char requests;
     enum rxtx_state task_state;
-    struct cli_state *cli_state = (struct cli_state *) cli_state_arg;
-    struct rxtx_data *rx = cli_state->rx;
+    struct cli_state *cli_state = (struct cli_state *)cli_state_arg;
+    struct rxtx_data *rx        = cli_state->rx;
     struct rx_params *rx_params = rx->params;
-    MUTEX *dev_lock = &cli_state->dev_lock;
 
     task_state = rxtx_get_state(rx);
     assert(task_state == RXTX_STATE_INIT);
@@ -219,8 +249,7 @@ void *rx_task(void *cli_state_arg)
                 rxtx_task_exec_idle(rx, &requests);
                 break;
 
-            case RXTX_STATE_START:
-            {
+            case RXTX_STATE_START: {
                 /* This should be set to an appropriate value upon
                  * encountering an error condition */
                 enum error_type err_type = ETYPE_BUG;
@@ -257,13 +286,11 @@ void *rx_task(void *cli_state_arg)
                 if (status == 0) {
                     MUTEX_LOCK(&rx->data_mgmt.lock);
 
-                    status = bladerf_sync_config(cli_state->dev,
-                                                 rx->data_mgmt.layout,
-                                                 BLADERF_FORMAT_SC16_Q11,
-                                                 rx->data_mgmt.num_buffers,
-                                                 rx->data_mgmt.samples_per_buffer,
-                                                 rx->data_mgmt.num_transfers,
-                                                 rx->data_mgmt.timeout_ms);
+                    status = bladerf_sync_config(
+                        cli_state->dev, rx->data_mgmt.layout,
+                        BLADERF_FORMAT_SC16_Q11, rx->data_mgmt.num_buffers,
+                        rx->data_mgmt.samples_per_buffer,
+                        rx->data_mgmt.num_transfers, rx->data_mgmt.timeout_ms);
 
                     if (status < 0) {
                         err_type = ETYPE_BLADERF;
@@ -278,33 +305,31 @@ void *rx_task(void *cli_state_arg)
                     set_last_error(&rx->last_error, err_type, status);
                     rxtx_set_state(rx, RXTX_STATE_IDLE);
                 }
-            }
-            break;
+            } break;
 
             case RXTX_STATE_RUNNING:
-
-                MUTEX_LOCK(dev_lock);
-                status = bladerf_enable_module(cli_state->dev,
-                                               rx->channel, true);
-                MUTEX_UNLOCK(dev_lock);
+                status = rxtx_apply_channels(cli_state, rx, true);
 
                 if (status < 0) {
                     set_last_error(&rx->last_error, ETYPE_BLADERF, status);
                 } else {
                     status = rx_task_exec_running(rx, cli_state);
 
-                    MUTEX_LOCK(dev_lock);
-                    disable_status = bladerf_enable_module(cli_state->dev,
-                                                           rx->channel, false);
-                    MUTEX_UNLOCK(dev_lock);
+                    if (status < 0) {
+                        set_last_error(&rx->last_error, ETYPE_BLADERF, status);
+                    }
+
+                    disable_status = rxtx_apply_channels(cli_state, rx, false);
 
                     if (status == 0 && disable_status < 0) {
-                        set_last_error(&rx->last_error, ETYPE_BLADERF, status);
+                        set_last_error(&rx->last_error, ETYPE_BLADERF,
+                                       disable_status);
                     }
                 }
 
                 rxtx_set_state(rx, RXTX_STATE_STOP);
                 break;
+
 
             case RXTX_STATE_STOP:
                 rxtx_task_exec_stop(cli_state, rx, &requests);
@@ -336,9 +361,9 @@ static int rx_cmd_start(struct cli_state *s)
 
     /* Set up output file */
     MUTEX_LOCK(&s->rx->file_mgmt.file_lock);
-    if(s->rx->file_mgmt.format == RXTX_FMT_CSV_SC16Q11) {
-        status = expand_and_open(s->rx->file_mgmt.path, "w",
-                                 &s->rx->file_mgmt.file);
+    if (s->rx->file_mgmt.format == RXTX_FMT_CSV_SC16Q11) {
+        status =
+            expand_and_open(s->rx->file_mgmt.path, "w", &s->rx->file_mgmt.file);
 
     } else {
         /* RXTX_FMT_BIN_SC16Q11, open file in binary mode */
@@ -376,13 +401,13 @@ static void rx_print_config(struct rxtx_data *rx)
 
     printf("\n");
     rxtx_print_state(rx, "  State: ", "\n");
-    rxtx_print_channel(rx, "  Channel: ", "\n");
+    rxtx_print_channel(rx, "  Channels: ", "\n");
     rxtx_print_error(rx, "  Last error: ", "\n");
     rxtx_print_file(rx, "  File: ", "\n");
     rxtx_print_file_format(rx, "  File format: ", "\n");
 
     if (n_samples) {
-        printf("  # Samples: %" PRIu64  "\n", (uint64_t)n_samples);
+        printf("  # Samples: %" PRIu64 "\n", (uint64_t)n_samples);
     } else {
         printf("  # Samples: infinite\n");
     }
@@ -424,27 +449,21 @@ static int rx_cmd_config(struct cli_state *s, int argc, char **argv)
                     rx_params->n_samples = n;
                     MUTEX_UNLOCK(&s->rx->param_lock);
                 } else {
-                    cli_err(s, argv[0], RXTX_ERRMSG_VALUE(argv[1], val));
+                    cli_err(s, argv[0], RXTX_ERRMSG_VALUE(argv[i], val));
                     return CLI_RET_INVPARAM;
                 }
             } else if (!strcasecmp("channel", argv[i])) {
-                /* Configure RX channel */
-                unsigned int n;
-                bool ok;
-
-                n = str2uint(val, 1, 2, &ok);
-
-                if (ok) {
-                    MUTEX_LOCK(&s->rx->param_lock);
-                    s->rx->channel = BLADERF_CHANNEL_RX(n-1);
-                    MUTEX_UNLOCK(&s->rx->param_lock);
-                } else {
-                    cli_err(s, argv[0], RXTX_ERRMSG_VALUE(argv[1], val));
-                    return CLI_RET_INVPARAM;
+                /* Configure RX channels */
+                status = rxtx_handle_channel_list(s, s->rx, val);
+                if (status < 0) {
+                    if (CLI_RET_INVPARAM == status) {
+                        cli_err(s, argv[0], RXTX_ERRMSG_VALUE(argv[i], val));
+                    }
+                    return status;
                 }
             } else {
-                cli_err(s, argv[0],
-                        "Unrecognized config parameter: %s\n", argv[i]);
+                cli_err(s, argv[0], "Unrecognized config parameter: %s\n",
+                        argv[i]);
                 return CLI_RET_INVPARAM;
             }
         }
