@@ -25,15 +25,16 @@
  * THE SOFTWARE.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include <inttypes.h>
 #include <libbladeRF.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "example_common.h"
 
 /** [example_snippet] */
-struct bladerf * open_bladerf_from_serial(const char *serial)
+struct bladerf *open_bladerf_from_serial(const char *serial)
 {
     int status;
     struct bladerf *dev;
@@ -55,8 +56,8 @@ struct bladerf * open_bladerf_from_serial(const char *serial)
         printf("No devices available with serial=%s\n", serial);
         return NULL;
     } else if (status != 0) {
-        fprintf(stderr, "Failed to open device with serial=%s (%s)\n",
-                serial, bladerf_strerror(status));
+        fprintf(stderr, "Failed to open device with serial=%s (%s)\n", serial,
+                bladerf_strerror(status));
         return NULL;
     } else {
         return dev;
@@ -71,49 +72,52 @@ static int print_device_state(struct bladerf *dev)
     unsigned int bandwidth;
     struct bladerf_rational_rate rate;
 
-    status = bladerf_get_frequency(dev, BLADERF_CHANNEL_RX(0), &frequency);
+    const bladerf_channel rx_ch = BLADERF_CHANNEL_RX(0);
+    const bladerf_channel tx_ch = BLADERF_CHANNEL_TX(0);
+
+    status = bladerf_get_frequency(dev, rx_ch, &frequency);
     if (status != 0) {
         return status;
-    } else {
-        printf("  RX frequency: %zu Hz\n", frequency);
     }
 
-    status = bladerf_get_frequency(dev, BLADERF_CHANNEL_TX(0), &frequency);
+    printf("  RX frequency: %zu Hz\n", frequency);
+
+    status = bladerf_get_frequency(dev, tx_ch, &frequency);
     if (status != 0) {
         return status;
-    } else {
-        printf("  TX frequency: %zu Hz\n", frequency);
     }
 
-    status = bladerf_get_bandwidth(dev, BLADERF_CHANNEL_RX(0), &bandwidth);
+    printf("  TX frequency: %zu Hz\n", frequency);
+
+    status = bladerf_get_bandwidth(dev, rx_ch, &bandwidth);
     if (status != 0) {
         return status;
-    } else {
-        printf("  RX bandwidth: %u Hz\n", bandwidth);
     }
 
-    status = bladerf_get_bandwidth(dev, BLADERF_CHANNEL_TX(0), &bandwidth);
+    printf("  RX bandwidth: %u Hz\n", bandwidth);
+
+    status = bladerf_get_bandwidth(dev, tx_ch, &bandwidth);
     if (status != 0) {
         return status;
-    } else {
-        printf("  TX bandwidth: %u Hz\n", bandwidth);
     }
 
-    status = bladerf_get_rational_sample_rate(dev, BLADERF_CHANNEL_RX(0), &rate);
+    printf("  TX bandwidth: %u Hz\n", bandwidth);
+
+    status = bladerf_get_rational_sample_rate(dev, rx_ch, &rate);
     if (status != 0) {
         return status;
-    } else {
-        printf("  RX sample rate: %" PRIu64 " %" PRIu64 "/%" PRIu64" sps\n",
-                rate.integer, rate.num, rate.den);
     }
 
-    status = bladerf_get_rational_sample_rate(dev, BLADERF_CHANNEL_TX(0), &rate);
+    printf("  RX sample rate: %" PRIu64 " %" PRIu64 "/%" PRIu64 " sps\n",
+           rate.integer, rate.num, rate.den);
+
+    status = bladerf_get_rational_sample_rate(dev, tx_ch, &rate);
     if (status != 0) {
         return status;
-    } else {
-        printf("  TX sample rate: %" PRIu64 " %" PRIu64 "/%" PRIu64" sps\n",
-                rate.integer, rate.num, rate.den);
     }
+
+    printf("  TX sample rate: %" PRIu64 " %" PRIu64 "/%" PRIu64 " sps\n",
+           rate.integer, rate.num, rate.den);
 
     return 0;
 }

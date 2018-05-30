@@ -33,14 +33,14 @@
 #include "rel_assert.h"
 
 /* Settings used in examples */
-#define EXAMPLE_SAMPLERATE  2000000
-#define EXAMPLE_BANDWIDTH   BLADERF_BANDWIDTH_MIN
+#define EXAMPLE_SAMPLERATE 2000000
+#define EXAMPLE_BANDWIDTH BLADERF_BANDWIDTH_MIN
 
-#define EXAMPLE_RX_FREQ     910000000
-#define EXAMPLE_RX_GAIN     26
+#define EXAMPLE_RX_FREQ 910000000
+#define EXAMPLE_RX_GAIN 26
 
-#define EXAMPLE_TX_FREQ     920000000
-#define EXAMPLE_TX_GAIN     (-20)
+#define EXAMPLE_TX_FREQ 920000000
+#define EXAMPLE_TX_GAIN (-20)
 
 /**
  * Device initialization function for example snippets in this directory

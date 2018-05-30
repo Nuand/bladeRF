@@ -24,13 +24,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include <stdint.h>
+
 #include <inttypes.h>
 #include <libbladeRF.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "example_common.h"
 
 /* Just a dummy routine to produce a tone at the carrier frequency */
@@ -44,27 +46,29 @@ static void produce_samples(int16_t *samples, unsigned int num_samples)
     }
 
     for (i = 0; i < 2 * num_samples; i += 2) {
-        samples[i]      = 2000;
-        samples[i + 1]  = 2000;
+        samples[i]     = 2000;
+        samples[i + 1] = 2000;
     }
 }
 
 /** [wait_for_timestamp] */
-int wait_for_timestamp(struct bladerf *dev, bladerf_direction dir,
-                       uint64_t timestamp, unsigned int timeout_ms)
+int wait_for_timestamp(struct bladerf *dev,
+                       bladerf_direction dir,
+                       uint64_t timestamp,
+                       unsigned int timeout_ms)
 {
     int status;
-    uint64_t curr_ts = 0;
+    uint64_t curr_ts      = 0;
     unsigned int slept_ms = 0;
     bool done;
 
     do {
         status = bladerf_get_timestamp(dev, dir, &curr_ts);
-        done = (status != 0) || curr_ts >= timestamp;
+        done   = (status != 0) || curr_ts >= timestamp;
 
         if (!done) {
             if (slept_ms > timeout_ms) {
-                done = true;
+                done   = true;
                 status = BLADERF_ERR_TIMEOUT;
             } else {
                 usleep(10000);
@@ -78,7 +82,7 @@ int wait_for_timestamp(struct bladerf *dev, bladerf_direction dir,
 /** [wait_for_timestamp] */
 
 /** [tx_meta_init] */
-int16_t * init(struct bladerf *dev, int16_t num_samples)
+int16_t *init(struct bladerf *dev, int16_t num_samples)
 {
     int status = -1;
 
@@ -97,10 +101,10 @@ int16_t * init(struct bladerf *dev, int16_t num_samples)
     /* These items configure the underlying asynch stream used by the the sync
      * interface. The "buffer" here refers to those used internally by worker
      * threads, not the `samples` buffer above. */
-    const unsigned int num_buffers = 32;
-    const unsigned int buffer_size = 2048;
+    const unsigned int num_buffers   = 32;
+    const unsigned int buffer_size   = 2048;
     const unsigned int num_transfers = 16;
-    const unsigned int timeout_ms  = 1000;
+    const unsigned int timeout_ms    = 1000;
 
     samples = malloc(num_samples * 2 * sizeof(int16_t));
     if (samples == NULL) {
@@ -112,13 +116,9 @@ int16_t * init(struct bladerf *dev, int16_t num_samples)
 
     /* Configure the device's TX for use with the sync interface.
      * SC16 Q11 samples *with* metadata are used. */
-    status = bladerf_sync_config(dev,
-                                 BLADERF_TX_X1,
-                                 BLADERF_FORMAT_SC16_Q11_META,
-                                 num_buffers,
-                                 buffer_size,
-                                 num_transfers,
-                                 timeout_ms);
+    status = bladerf_sync_config(dev, BLADERF_TX_X1,
+                                 BLADERF_FORMAT_SC16_Q11_META, num_buffers,
+                                 buffer_size, num_transfers, timeout_ms);
 
     if (status != 0) {
         fprintf(stderr, "Failed to configure TX sync interface: %s\n",
@@ -134,8 +134,7 @@ int16_t * init(struct bladerf *dev, int16_t num_samples)
      * bladerf_sync_tx(). */
     status = bladerf_enable_module(dev, BLADERF_TX, true);
     if (status != 0) {
-        fprintf(stderr, "Failed to enable TX: %s\n",
-                bladerf_strerror(status));
+        fprintf(stderr, "Failed to enable TX: %s\n", bladerf_strerror(status));
 
         goto error;
     }
@@ -159,8 +158,7 @@ void deinit(struct bladerf *dev, int16_t *samples)
     /* Disable TX, shutting down our underlying TX stream */
     int status = bladerf_enable_module(dev, BLADERF_TX, false);
     if (status != 0) {
-        fprintf(stderr, "Failed to disable TX: %s\n",
-                bladerf_strerror(status));
+        fprintf(stderr, "Failed to disable TX: %s\n", bladerf_strerror(status));
     }
 
     /* Deinitialize and free resources */
@@ -170,8 +168,10 @@ void deinit(struct bladerf *dev, int16_t *samples)
 /** [tx_meta_deinit] */
 
 /** [tx_meta_now] */
-int sync_tx_meta_now_example(struct bladerf *dev, int16_t *samples,
-                             unsigned int num_samples, unsigned int tx_count,
+int sync_tx_meta_now_example(struct bladerf *dev,
+                             int16_t *samples,
+                             unsigned int num_samples,
+                             unsigned int tx_count,
                              unsigned int timeout_ms)
 {
     int status = 0;
@@ -181,8 +181,7 @@ int sync_tx_meta_now_example(struct bladerf *dev, int16_t *samples,
     memset(&meta, 0, sizeof(meta));
 
     /* Send entire burst worth of samples in one function call */
-    meta.flags = BLADERF_META_FLAG_TX_BURST_START |
-                 BLADERF_META_FLAG_TX_NOW |
+    meta.flags = BLADERF_META_FLAG_TX_BURST_START | BLADERF_META_FLAG_TX_NOW |
                  BLADERF_META_FLAG_TX_BURST_END;
 
     for (i = 0; i < tx_count && status == 0; i++) {
@@ -200,7 +199,7 @@ int sync_tx_meta_now_example(struct bladerf *dev, int16_t *samples,
                 fprintf(stderr, "Failed to get current TX timestamp: %s\n",
                         bladerf_strerror(status));
             } else {
-                printf("TX'd at approximately t=%016"PRIu64"\n", curr_ts);
+                printf("TX'd at approximately t=%016" PRIu64 "\n", curr_ts);
             }
 
             /* Delay next transmission by approximately 5 ms
@@ -219,9 +218,8 @@ int sync_tx_meta_now_example(struct bladerf *dev, int16_t *samples,
                     bladerf_strerror(status));
             return status;
         } else {
-            status = wait_for_timestamp(dev, BLADERF_TX,
-                                        meta.timestamp + 2 * num_samples,
-                                        timeout_ms);
+            status = wait_for_timestamp(
+                dev, BLADERF_TX, meta.timestamp + 2 * num_samples, timeout_ms);
             if (status != 0) {
                 fprintf(stderr, "Failed to wait for timestamp.\n");
             }
@@ -234,25 +232,27 @@ int sync_tx_meta_now_example(struct bladerf *dev, int16_t *samples,
 
 /** [tx_meta_sched] */
 int sync_tx_meta_sched_example(struct bladerf *dev,
-                             int16_t *samples, unsigned int num_samples,
-                             unsigned int tx_count, unsigned int samplerate,
-                             unsigned int timeout_ms)
+                               int16_t *samples,
+                               unsigned int num_samples,
+                               unsigned int tx_count,
+                               unsigned int samplerate,
+                               unsigned int timeout_ms)
 {
     int status = 0;
     unsigned int i;
     struct bladerf_metadata meta;
 
     /* 5 ms timestamp increment */
-    const uint64_t ts_inc_5ms = ((uint64_t) samplerate) * 5 / 1000;
+    const uint64_t ts_inc_5ms = ((uint64_t)samplerate) * 5 / 1000;
 
     /* 150 ms timestamp increment */
-    const uint64_t ts_inc_150ms = ((uint64_t) samplerate) * 150 / 1000;
+    const uint64_t ts_inc_150ms = ((uint64_t)samplerate) * 150 / 1000;
 
     memset(&meta, 0, sizeof(meta));
 
     /* Send entire burst worth of samples in one function call */
-    meta.flags = BLADERF_META_FLAG_TX_BURST_START |
-                 BLADERF_META_FLAG_TX_BURST_END;
+    meta.flags =
+        BLADERF_META_FLAG_TX_BURST_START | BLADERF_META_FLAG_TX_BURST_END;
 
     /* Retrieve the current timestamp so we can schedule our transmission
      * in the future. */
@@ -262,7 +262,7 @@ int sync_tx_meta_sched_example(struct bladerf *dev,
                 bladerf_strerror(status));
         return status;
     } else {
-        printf("Current TX timestamp: %016"PRIu64"\n", meta.timestamp);
+        printf("Current TX timestamp: %016" PRIu64 "\n", meta.timestamp);
     }
 
     /* Set initial timestamp ~150 ms in the future */
@@ -277,7 +277,7 @@ int sync_tx_meta_sched_example(struct bladerf *dev,
             fprintf(stderr, "TX failed: %s\n", bladerf_strerror(status));
             return status;
         } else {
-            printf("TX'd @ t=%016"PRIu64"\n", meta.timestamp);
+            printf("TX'd @ t=%016" PRIu64 "\n", meta.timestamp);
         }
 
         /* Schedule next burst 5 ms into the future */
@@ -288,8 +288,8 @@ int sync_tx_meta_sched_example(struct bladerf *dev,
     if (status == 0) {
         meta.timestamp += 2 * num_samples;
 
-        status = wait_for_timestamp(dev, BLADERF_TX,
-                                    meta.timestamp, timeout_ms);
+        status =
+            wait_for_timestamp(dev, BLADERF_TX, meta.timestamp, timeout_ms);
 
         if (status != 0) {
             fprintf(stderr, "Failed to wait for timestamp.\n");
@@ -301,14 +301,17 @@ int sync_tx_meta_sched_example(struct bladerf *dev,
 /** [tx_meta_sched] */
 
 
-static void usage(const char *argv0) {
+static void usage(const char *argv0)
+{
     printf("Usage: %s [device specifier]\n\n", argv0);
 }
 
 /** [tx_meta_update] */
 int sync_tx_meta_update_example(struct bladerf *dev,
-                                int16_t *samples, unsigned int num_samples,
-                                unsigned int tx_count, unsigned int samplerate,
+                                int16_t *samples,
+                                unsigned int num_samples,
+                                unsigned int tx_count,
+                                unsigned int samplerate,
                                 unsigned int timeout_ms)
 {
     int status = 0;
@@ -317,10 +320,10 @@ int sync_tx_meta_update_example(struct bladerf *dev,
     int16_t zero_sample[] = { 0, 0 }; /* A 0+0j sample */
 
     /* 5 ms timestamp increment */
-    const uint64_t ts_inc_5ms = ((uint64_t) samplerate) * 5 / 1000;
+    const uint64_t ts_inc_5ms = ((uint64_t)samplerate) * 5 / 1000;
 
     /* 1.25 ms timestmap increment */
-    const uint64_t ts_inc_1_25ms = ((uint64_t) samplerate) * 125 / 100000;
+    const uint64_t ts_inc_1_25ms = ((uint64_t)samplerate) * 125 / 100000;
 
     memset(&meta, 0, sizeof(meta));
 
@@ -342,7 +345,7 @@ int sync_tx_meta_update_example(struct bladerf *dev,
                 bladerf_strerror(status));
         return status;
     } else {
-        printf("Current TX timestamp: %016"PRIu64"\n", meta.timestamp);
+        printf("Current TX timestamp: %016" PRIu64 "\n", meta.timestamp);
     }
 
     /* Start 5 ms in the future */
@@ -357,7 +360,7 @@ int sync_tx_meta_update_example(struct bladerf *dev,
             fprintf(stderr, "TX failed: %s\n", bladerf_strerror(status));
             return status;
         } else {
-            printf("TX'd @ t=%016"PRIu64"\n", meta.timestamp);
+            printf("TX'd @ t=%016" PRIu64 "\n", meta.timestamp);
         }
 
         /* Instruct bladerf_sync_tx() to position samples within this burst at
@@ -368,21 +371,20 @@ int sync_tx_meta_update_example(struct bladerf *dev,
         /* Schedule samples to be transmitted 1.25 ms after the completion of
          * the previous burst */
         meta.timestamp += num_samples + ts_inc_1_25ms;
-
     }
 
     /* For simplicity, we use a single zero sample to end the burst and request
      * that all pending samples be flushed to the hardware. */
     meta.flags = BLADERF_META_FLAG_TX_BURST_END;
-    status = bladerf_sync_tx(dev, zero_sample, 1, &meta, timeout_ms);
+    status     = bladerf_sync_tx(dev, zero_sample, 1, &meta, timeout_ms);
     meta.timestamp++;
 
     /* Wait for samples to finish being transmitted. */
     if (status == 0) {
         meta.timestamp += 2 * num_samples;
 
-        status = wait_for_timestamp(dev, BLADERF_TX,
-                                    meta.timestamp, timeout_ms);
+        status =
+            wait_for_timestamp(dev, BLADERF_TX, meta.timestamp, timeout_ms);
 
         if (status != 0) {
             fprintf(stderr, "Failed to wait for timestamp.\n");
@@ -399,14 +401,14 @@ int sync_tx_meta_update_example(struct bladerf *dev,
 
 int main(int argc, char *argv[])
 {
-    int status = 0;
+    int status          = 0;
     struct bladerf *dev = NULL;
-    const char *devstr = NULL;
-    int16_t *samples = NULL;
+    const char *devstr  = NULL;
+    int16_t *samples    = NULL;
 
     const unsigned int num_samples = 4096;
-    const unsigned int tx_count = 15;
-    const unsigned int timeout_ms = 2500;
+    const unsigned int tx_count    = 15;
+    const unsigned int timeout_ms  = 2500;
 
     if (argc == 2) {
         if (!strcasecmp("-h", argv[1]) || !strcasecmp("--help", argv[1])) {
@@ -425,28 +427,23 @@ int main(int argc, char *argv[])
         samples = init(dev, num_samples);
         if (samples != NULL) {
             printf("Running TX meta \"now\" example...\n");
-            status = sync_tx_meta_now_example(dev,
-                                              samples, num_samples,
-                                              tx_count,
-                                              timeout_ms);
+            status = sync_tx_meta_now_example(dev, samples, num_samples,
+                                              tx_count, timeout_ms);
 
 
             if (status == 0) {
                 printf("\nRunning TX meta \"scheduled\" example...\n");
-                status = sync_tx_meta_sched_example(dev,
-                                                    samples, num_samples,
-                                                    tx_count,
-                                                    EXAMPLE_SAMPLERATE,
-                                                    timeout_ms);
+                status = sync_tx_meta_sched_example(
+                    dev, samples, num_samples, tx_count, EXAMPLE_SAMPLERATE,
+                    timeout_ms);
             }
 
             if (status == 0) {
-                printf("\nRunning TX meta \"scheduled with update\" example...\n");
-                status = sync_tx_meta_update_example(dev,
-                                                     samples, num_samples,
-                                                     tx_count,
-                                                     EXAMPLE_SAMPLERATE,
-                                                     timeout_ms);
+                printf(
+                    "\nRunning TX meta \"scheduled with update\" example...\n");
+                status = sync_tx_meta_update_example(
+                    dev, samples, num_samples, tx_count, EXAMPLE_SAMPLERATE,
+                    timeout_ms);
             }
         }
 

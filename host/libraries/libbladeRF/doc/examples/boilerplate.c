@@ -2,10 +2,11 @@
 /* Save to a file, e.g. boilerplate.c, and then compile:
  * $ gcc boilerplate.c -o libbladeRF_example_boilerplate -lbladeRF
  */
+
+#include <libbladeRF.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include <libbladeRF.h>
 
 /** [struct channel_config] */
 /* The RX and TX channels are configured independently for these parameters */
@@ -25,29 +26,28 @@ int configure_channel(struct bladerf *dev, struct channel_config *c)
 
     status = bladerf_set_frequency(dev, c->channel, c->frequency);
     if (status != 0) {
-        fprintf(stderr, "Failed to set frequency = %u: %s\n",
-                c->frequency, bladerf_strerror(status));
+        fprintf(stderr, "Failed to set frequency = %u: %s\n", c->frequency,
+                bladerf_strerror(status));
         return status;
     }
 
     status = bladerf_set_sample_rate(dev, c->channel, c->samplerate, NULL);
     if (status != 0) {
-        fprintf(stderr, "Failed to set samplerate = %u: %s\n",
-                c->samplerate, bladerf_strerror(status));
+        fprintf(stderr, "Failed to set samplerate = %u: %s\n", c->samplerate,
+                bladerf_strerror(status));
         return status;
     }
 
     status = bladerf_set_bandwidth(dev, c->channel, c->bandwidth, NULL);
     if (status != 0) {
-        fprintf(stderr, "Failed to set bandwidth = %u: %s\n",
-                c->bandwidth, bladerf_strerror(status));
+        fprintf(stderr, "Failed to set bandwidth = %u: %s\n", c->bandwidth,
+                bladerf_strerror(status));
         return status;
     }
 
     status = bladerf_set_gain(dev, c->channel, c->gain);
     if (status != 0) {
-        fprintf(stderr, "Failed to set gain: %s\n",
-                bladerf_strerror(status));
+        fprintf(stderr, "Failed to set gain: %s\n", bladerf_strerror(status));
         return status;
     }
 
@@ -124,6 +124,7 @@ int main(int argc, char *argv[])
      * Don't forget to call bladerf_enable_module() before attempting to
      * transmit or receive samples!
      */
+    printf("Hello world\n");
 
 out:
     bladerf_close(dev);

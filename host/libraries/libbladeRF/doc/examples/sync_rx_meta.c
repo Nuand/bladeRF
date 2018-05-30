@@ -25,13 +25,14 @@
  * THE SOFTWARE.
  */
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include <stdint.h>
 #include <inttypes.h>
 #include <libbladeRF.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "example_common.h"
 
 /* Initialize sync interface for metadata and allocate our "working"
@@ -40,7 +41,7 @@
  * Return sample buffer on success, or NULL on failure.
  */
 
-int16_t * init(struct bladerf *dev, int16_t num_samples)
+int16_t *init(struct bladerf *dev, int16_t num_samples)
 {
     int status = -1;
 
@@ -59,10 +60,10 @@ int16_t * init(struct bladerf *dev, int16_t num_samples)
     /* These items configure the underlying asynch stream used by the the sync
      * interface. The "buffer" here refers to those used internally by worker
      * threads, not the `samples` buffer above. */
-    const unsigned int num_buffers = 16;
-    const unsigned int buffer_size = 8192;
+    const unsigned int num_buffers   = 16;
+    const unsigned int buffer_size   = 8192;
     const unsigned int num_transfers = 8;
-    const unsigned int timeout_ms  = 1000;
+    const unsigned int timeout_ms    = 1000;
 
     samples = malloc(num_samples * 2 * sizeof(int16_t));
     if (samples == NULL) {
@@ -74,14 +75,9 @@ int16_t * init(struct bladerf *dev, int16_t num_samples)
 
     /* Configure the device's RX for use with the sync interface.
      * SC16 Q11 samples *with* metadata are used. */
-    status = bladerf_sync_config(dev,
-                                 BLADERF_RX_X1,
-                                 BLADERF_FORMAT_SC16_Q11_META,
-                                 num_buffers,
-                                 buffer_size,
-                                 num_transfers,
-                                 timeout_ms);
-
+    status = bladerf_sync_config(dev, BLADERF_RX_X1,
+                                 BLADERF_FORMAT_SC16_Q11_META, num_buffers,
+                                 buffer_size, num_transfers, timeout_ms);
     if (status != 0) {
         fprintf(stderr, "Failed to configure RX sync interface: %s\n",
                 bladerf_strerror(status));
@@ -96,8 +92,7 @@ int16_t * init(struct bladerf *dev, int16_t num_samples)
      * bladerf_sync_rx(). */
     status = bladerf_enable_module(dev, BLADERF_RX, true);
     if (status != 0) {
-        fprintf(stderr, "Failed to enable RX: %s\n",
-                bladerf_strerror(status));
+        fprintf(stderr, "Failed to enable RX: %s\n", bladerf_strerror(status));
 
         goto error;
     }
@@ -120,8 +115,7 @@ void deinit(struct bladerf *dev, int16_t *samples)
     /* Disable RX, shutting down our underlying RX stream */
     int status = bladerf_enable_module(dev, BLADERF_RX, false);
     if (status != 0) {
-        fprintf(stderr, "Failed to disable RX: %s\n",
-                bladerf_strerror(status));
+        fprintf(stderr, "Failed to disable RX: %s\n", bladerf_strerror(status));
     }
 
     /* Deinitialize and free resources */
@@ -131,8 +125,10 @@ void deinit(struct bladerf *dev, int16_t *samples)
 
 /** [rx_meta_now_example] */
 int sync_rx_meta_now_example(struct bladerf *dev,
-                             int16_t *samples, unsigned int samples_len,
-                             unsigned int rx_count, unsigned int timeout_ms)
+                             int16_t *samples,
+                             unsigned int samples_len,
+                             unsigned int rx_count,
+                             unsigned int timeout_ms)
 {
     int status = 0;
     struct bladerf_metadata meta;
@@ -146,7 +142,6 @@ int sync_rx_meta_now_example(struct bladerf *dev,
 
     /* Receive samples and do work on them */
     for (i = 0; i < rx_count && status == 0; i++) {
-
         status = bladerf_sync_rx(dev, samples, samples_len, &meta, timeout_ms);
         if (status != 0) {
             fprintf(stderr, "RX \"now\" failed: %s\n\n",
@@ -155,8 +150,8 @@ int sync_rx_meta_now_example(struct bladerf *dev,
             fprintf(stderr, "Overrun detected. %u valid samples were read.\n",
                     meta.actual_count);
         } else {
-            printf("RX'd %u samples at t=0x%016"PRIx64"\n",
-                   meta.actual_count, meta.timestamp);
+            printf("RX'd %u samples at t=0x%016" PRIx64 "\n", meta.actual_count,
+                   meta.timestamp);
 
             fflush(stdout);
 
@@ -173,8 +168,10 @@ int sync_rx_meta_now_example(struct bladerf *dev,
 
 /** [rx_meta_sched_example] */
 int sync_rx_meta_sched_example(struct bladerf *dev,
-                               int16_t *samples, unsigned int samples_len,
-                               unsigned int rx_count, unsigned int samplerate,
+                               int16_t *samples,
+                               unsigned int samples_len,
+                               unsigned int rx_count,
+                               unsigned int samplerate,
                                unsigned int timeout_ms)
 {
     int status;
@@ -182,7 +179,7 @@ int sync_rx_meta_sched_example(struct bladerf *dev,
     unsigned int i;
 
     /* 150 ms timestamp increment */
-    const uint64_t ts_inc_150ms = ((uint64_t) samplerate) * 150 / 1000;
+    const uint64_t ts_inc_150ms = ((uint64_t)samplerate) * 150 / 1000;
 
     /* 1 ms timestamp increment */
     const uint64_t ts_inc_1ms = samplerate / 1000;
@@ -199,7 +196,7 @@ int sync_rx_meta_sched_example(struct bladerf *dev,
         fprintf(stderr, "Failed to get current RX timestamp: %s\n",
                 bladerf_strerror(status));
     } else {
-        printf("Current RX timestamp: 0x%016"PRIx64"\n", meta.timestamp);
+        printf("Current RX timestamp: 0x%016" PRIx64 "\n", meta.timestamp);
     }
 
     /* Schedule first RX to be 150 ms in the future */
@@ -207,9 +204,8 @@ int sync_rx_meta_sched_example(struct bladerf *dev,
 
     /* Receive samples and do work on them */
     for (i = 0; i < rx_count && status == 0; i++) {
-
-        status = bladerf_sync_rx(dev, samples, samples_len,
-                                 &meta, 2 * timeout_ms);
+        status =
+            bladerf_sync_rx(dev, samples, samples_len, &meta, 2 * timeout_ms);
 
 
         if (status != 0) {
@@ -217,10 +213,11 @@ int sync_rx_meta_sched_example(struct bladerf *dev,
                     bladerf_strerror(status));
         } else if (meta.status & BLADERF_META_STATUS_OVERRUN) {
             fprintf(stderr, "Overrun detected in scheduled RX. "
-                    "%u valid samples were read.\n\n", meta.actual_count);
+                            "%u valid samples were read.\n\n",
+                    meta.actual_count);
         } else {
-            printf("RX'd %u samples at t=0x%016"PRIx64"\n",
-                   meta.actual_count, meta.timestamp);
+            printf("RX'd %u samples at t=0x%016" PRIx64 "\n", meta.actual_count,
+                   meta.timestamp);
 
             fflush(stdout);
 
@@ -244,15 +241,14 @@ static void usage(const char *argv0)
 
 int main(int argc, char *argv[])
 {
-    int status = -1;
+    int status          = -1;
     struct bladerf *dev = NULL;
-    const char *devstr = NULL;
-    int16_t *samples = NULL;
+    const char *devstr  = NULL;
+    int16_t *samples    = NULL;
 
     const unsigned int num_samples = 4096;
-    const unsigned int rx_count = 15;
-    const unsigned int timeout_ms = 2500;
-
+    const unsigned int rx_count    = 15;
+    const unsigned int timeout_ms  = 2500;
 
     if (argc == 2) {
         if (!strcasecmp("-h", argv[1]) || !strcasecmp("--help", argv[1])) {
@@ -271,18 +267,14 @@ int main(int argc, char *argv[])
         samples = init(dev, num_samples);
         if (samples != NULL) {
             printf("\nRunning RX meta \"now\" example...\n");
-            status = sync_rx_meta_now_example(dev,
-                                              samples, num_samples,
-                                              rx_count,
-                                              timeout_ms);
+            status = sync_rx_meta_now_example(dev, samples, num_samples,
+                                              rx_count, timeout_ms);
 
             if (status == 0) {
                 printf("\nRunning RX meta \"scheduled\" example...\n");
-                status = sync_rx_meta_sched_example(dev,
-                                                    samples, num_samples,
-                                                    rx_count,
-                                                    EXAMPLE_SAMPLERATE,
-                                                    timeout_ms);
+                status = sync_rx_meta_sched_example(
+                    dev, samples, num_samples, rx_count, EXAMPLE_SAMPLERATE,
+                    timeout_ms);
             }
         }
 

@@ -1,7 +1,7 @@
+#include <libbladeRF.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include <libbladeRF.h>
 
 #define NUM_FREQUENCIES 6
 #define ITERATIONS 10000
@@ -12,6 +12,7 @@ int example(struct bladerf *dev, bladerf_channel ch)
     int status;
     unsigned int i, j;
 
+    // clang-format off
     const unsigned int frequencies[NUM_FREQUENCIES] = {
         902000000,
         903000000,
@@ -20,6 +21,7 @@ int example(struct bladerf *dev, bladerf_channel ch)
         926000000,
         927000000,
     };
+    // clang-format on
 
     struct bladerf_quick_tune quick_tunes[NUM_FREQUENCIES];
 
@@ -57,7 +59,6 @@ int example(struct bladerf *dev, bladerf_channel ch)
         j = (j + 1) % NUM_FREQUENCIES;
 
         /* ... Handle signals at current frequency ... */
-
     }
 
     /** [example] */
@@ -94,8 +95,7 @@ int main(int argc, char *argv[])
 
     status = bladerf_enable_module(dev, BLADERF_TX, true);
     if (status != 0) {
-        fprintf(stderr, "Failed to enable TX: %s\n",
-                bladerf_strerror(status));
+        fprintf(stderr, "Failed to enable TX: %s\n", bladerf_strerror(status));
         return status;
     }
 

@@ -23,9 +23,10 @@
  * THE SOFTWARE.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
 #include <libbladeRF.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "example_common.h"
 
 struct bladerf *example_init(const char *devstr)
@@ -71,8 +72,7 @@ struct bladerf *example_init(const char *devstr)
         printf("RX bandwidth: %u Hz\n", EXAMPLE_BANDWIDTH);
     }
 
-    status = bladerf_set_gain(dev, BLADERF_CHANNEL_RX(0),
-                              EXAMPLE_RX_GAIN);
+    status = bladerf_set_gain(dev, BLADERF_CHANNEL_RX(0), EXAMPLE_RX_GAIN);
     if (status != 0) {
         fprintf(stderr, "Failed to set RX gain: %s\n",
                 bladerf_strerror(status));
@@ -110,8 +110,7 @@ struct bladerf *example_init(const char *devstr)
         printf("TX bandwidth: %u\n", EXAMPLE_BANDWIDTH);
     }
 
-    status = bladerf_set_gain(dev, BLADERF_CHANNEL_TX(0),
-                              EXAMPLE_TX_GAIN);
+    status = bladerf_set_gain(dev, BLADERF_CHANNEL_TX(0), EXAMPLE_TX_GAIN);
     if (status != 0) {
         fprintf(stderr, "Failed to set TX gain: %s\n",
                 bladerf_strerror(status));
