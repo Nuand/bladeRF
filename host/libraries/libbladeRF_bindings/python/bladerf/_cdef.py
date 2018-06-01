@@ -115,13 +115,13 @@ header = """
   int bladerf_get_gain_modes(struct bladerf *dev, bladerf_channel ch,
     const struct bladerf_gain_modes **modes);
   int bladerf_get_gain_range(struct bladerf *dev, bladerf_channel ch,
-    struct bladerf_range *range);
+    const struct bladerf_range **range);
   int bladerf_set_gain_stage(struct bladerf *dev, bladerf_channel ch,
     const char *stage, bladerf_gain gain);
   int bladerf_get_gain_stage(struct bladerf *dev, bladerf_channel ch,
     const char *stage, bladerf_gain *gain);
   int bladerf_get_gain_stage_range(struct bladerf *dev, bladerf_channel
-    ch, const char *stage, struct bladerf_range *range);
+    ch, const char *stage, const struct bladerf_range **range);
   int bladerf_get_gain_stages(struct bladerf *dev, bladerf_channel ch,
     const char **stages, size_t count);
   typedef unsigned int bladerf_sample_rate;
@@ -139,7 +139,7 @@ header = """
   int bladerf_get_sample_rate(struct bladerf *dev, bladerf_channel ch,
     bladerf_sample_rate *rate);
   int bladerf_get_sample_rate_range(struct bladerf *dev, bladerf_channel
-    ch, struct bladerf_range *range);
+    ch, const struct bladerf_range **range);
   int bladerf_get_rational_sample_rate(struct bladerf *dev,
     bladerf_channel ch, struct bladerf_rational_rate *rate);
   typedef unsigned int bladerf_bandwidth;
@@ -148,7 +148,7 @@ header = """
   int bladerf_get_bandwidth(struct bladerf *dev, bladerf_channel ch,
     bladerf_bandwidth *bandwidth);
   int bladerf_get_bandwidth_range(struct bladerf *dev, bladerf_channel
-    ch, struct bladerf_range *range);
+    ch, const struct bladerf_range **range);
   typedef uint64_t bladerf_frequency;
   int bladerf_select_band(struct bladerf *dev, bladerf_channel ch,
     bladerf_frequency frequency);
@@ -157,7 +157,7 @@ header = """
   int bladerf_get_frequency(struct bladerf *dev, bladerf_channel ch,
     bladerf_frequency *frequency);
   int bladerf_get_frequency_range(struct bladerf *dev, bladerf_channel
-    ch, struct bladerf_range *range);
+    ch, const struct bladerf_range **range);
   int bladerf_set_rf_port(struct bladerf *dev, bladerf_channel ch, const
     char *port);
   int bladerf_get_rf_port(struct bladerf *dev, bladerf_channel ch, const
@@ -586,8 +586,8 @@ header = """
   int bladerf_get_pll_lock_state(struct bladerf *dev, bool *locked);
   int bladerf_get_pll_enable(struct bladerf *dev, bool *enabled);
   int bladerf_set_pll_enable(struct bladerf *dev, bool enable);
-  int bladerf_get_pll_refclk_range(struct bladerf *dev, struct
-    bladerf_range *range);
+  int bladerf_get_pll_refclk_range(struct bladerf *dev, const struct
+    bladerf_range **range);
   int bladerf_get_pll_refclk(struct bladerf *dev, uint64_t *frequency);
   int bladerf_set_pll_refclk(struct bladerf *dev, uint64_t frequency);
   int bladerf_get_pll_register(struct bladerf *dev, uint8_t address,

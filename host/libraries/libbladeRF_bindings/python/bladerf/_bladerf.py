@@ -596,10 +596,11 @@ class BladeRF:
         return [GainMode(modes_arr[0][i].mode) for i in range(ret)]
 
     def get_gain_range(self, ch):
-        gain_range = ffi.new("struct bladerf_range *")
-        ret = libbladeRF.bladerf_get_gain_range(self.dev[0], ch, gain_range)
+        _range = ffi.new("struct bladerf_range *")
+        _range_ptr = ffi.new("struct bladerf_range **", _range)
+        ret = libbladeRF.bladerf_get_gain_range(self.dev[0], ch, _range_ptr)
         _check_error(ret)
-        return Range.from_struct(gain_range)
+        return Range.from_struct(_range)
 
     def set_gain_stage(self, ch, stage, gain):
         ret = libbladeRF.bladerf_set_gain_stage(self.dev[0], ch,
@@ -614,12 +615,13 @@ class BladeRF:
         return gain[0]
 
     def get_gain_stage_range(self, ch, stage):
-        gain_range = ffi.new("struct bladerf_range *")
+        _range = ffi.new("struct bladerf_range *")
+        _range_ptr = ffi.new("struct bladerf_range **", _range)
         ret = libbladeRF.bladerf_get_gain_stage_range(self.dev[0], ch,
                                                       stage.encode(),
-                                                      gain_range)
+                                                      _range_ptr)
         _check_error(ret)
-        return Range.from_struct(gain_range)
+        return Range.from_struct(_range)
 
     def get_gain_stages(self, ch):
         ret = libbladeRF.bladerf_get_gain_stages(self.dev[0], ch, ffi.NULL, 0)
@@ -652,11 +654,12 @@ class BladeRF:
         raise NotImplementedError()
 
     def get_sample_rate_range(self, ch):
-        sample_rate_range = ffi.new("struct bladerf_range *")
+        _range = ffi.new("struct bladerf_range *")
+        _range_ptr = ffi.new("struct bladerf_range **", _range)
         ret = libbladeRF.bladerf_get_sample_rate_range(self.dev[0], ch,
-                                                       sample_rate_range)
+                                                       _range_ptr)
         _check_error(ret)
-        return Range.from_struct(sample_rate_range)
+        return Range.from_struct(_range)
 
     # Bandwidth
 
@@ -674,11 +677,12 @@ class BladeRF:
         return bandwidth[0]
 
     def get_bandwidth_range(self, ch):
-        bandwidth_range = ffi.new("struct bladerf_range *")
+        _range = ffi.new("struct bladerf_range *")
+        _range_ptr = ffi.new("struct bladerf_range **", _range)
         ret = libbladeRF.bladerf_get_bandwidth_range(self.dev[0], ch,
-                                                     bandwidth_range)
+                                                     _range_ptr)
         _check_error(ret)
-        return Range.from_struct(bandwidth_range)
+        return Range.from_struct(_range)
 
     # Frequency
 
@@ -697,11 +701,12 @@ class BladeRF:
         _check_error(ret)
 
     def get_frequency_range(self, ch):
-        frequency_range = ffi.new("struct bladerf_range *")
+        _range = ffi.new("struct bladerf_range *")
+        _range_ptr = ffi.new("struct bladerf_range **", _range)
         ret = libbladeRF.bladerf_get_frequency_range(self.dev[0], ch,
-                                                     frequency_range)
+                                                     _range_ptr)
         _check_error(ret)
-        return Range.from_struct(frequency_range)
+        return Range.from_struct(_range)
 
     # RF Ports
 
