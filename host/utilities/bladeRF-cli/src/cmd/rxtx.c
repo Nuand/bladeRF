@@ -941,7 +941,9 @@ int rxtx_handle_channel_list(struct cli_state *s,
                              struct rxtx_data *rxtx,
                              const char *val)
 {
-    int nargs, nchans, nactive, i;
+    int nargs, nactive, i;
+    size_t nchans;
+
     int **args                     = NULL;
     bool enable[RXTX_MAX_CHANNELS] = { 0 };
 
@@ -951,10 +953,6 @@ int rxtx_handle_channel_list(struct cli_state *s,
     }
 
     nchans = bladerf_get_channel_count(s->dev, rxtx->direction);
-    if (nchans < 0) {
-        set_last_error(&rxtx->last_error, ETYPE_BLADERF, nchans);
-        return CLI_RET_LIBBLADERF;
-    }
 
     assert(nchans <= RXTX_MAX_CHANNELS);
 
@@ -963,9 +961,8 @@ int rxtx_handle_channel_list(struct cli_state *s,
         return CLI_RET_INVPARAM;
     }
 
-    nactive = 0;
-    for (i = 0; i < nargs; ++i) {
-        if (*args[i] <= nchans && *args[i] > 0) {
+    for (nactive = 0, i = 0; i < nargs; ++i) {
+        if (*args[i] > 0 && (size_t)*args[i] <= nchans) {
             ++nactive;
             enable[*args[i] - 1] = true;
         } else {
@@ -1006,13 +1003,10 @@ int rxtx_apply_channels(struct cli_state *s,
                         struct rxtx_data *rxtx,
                         bool enable)
 {
-    int i, nchans, status = 0;
+    size_t i, nchans;
+    int status = 0;
 
     nchans = bladerf_get_channel_count(s->dev, rxtx->direction);
-    if (nchans < 0) {
-        set_last_error(&rxtx->last_error, ETYPE_BLADERF, nchans);
-        return CLI_RET_LIBBLADERF;
-    }
 
     assert(nchans <= RXTX_MAX_CHANNELS);
 

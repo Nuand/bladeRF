@@ -176,6 +176,17 @@ struct bladerf2_board_data {
 #define CHECK_BOARD_STATE_LOCKED(_state)    _CHECK_BOARD_STATE(_state, true)
 // clang-format on
 
+#define __round_int(x) (x >= 0 ? (int)(x + 0.5) : (int)(x - 0.5))
+#define __round_int64(x) (x >= 0 ? (int64_t)(x + 0.5) : (int64_t)(x - 0.5))
+
+#define __scale(r, v) ((float)(v) / (r)->scale)
+#define __scale_int(r, v) (__round_int(__scale(r, v)))
+#define __scale_int64(r, v) (__round_int64(__scale(r, v)))
+
+#define __unscale(r, v) ((float)(v) * (r)->scale)
+#define __unscale_int(r, v) (__round_int(__unscale(r, v)))
+#define __unscale_int64(r, v) (__round_int64(__unscale(r, v)))
+
 
 /******************************************************************************/
 /* Constants */
@@ -393,8 +404,8 @@ static const struct bladerf_gain_range bladerf2_tx_gain_ranges[] = {
             FIELD_INIT(.scale,  1),
         }),
         FIELD_INIT(.gain, {
-            FIELD_INIT(.min,    1000*(-89.750 + 66.0)),
-            FIELD_INIT(.max,    1000*(0 + 66.0)),
+            FIELD_INIT(.min,    __round_int(1000*(-89.750 + 66.0))),
+            FIELD_INIT(.max,    __round_int(1000*(0 + 66.0))),
             FIELD_INIT(.step,   250),
             FIELD_INIT(.scale,  0.001F),
         }),
@@ -624,17 +635,6 @@ extern const float ina219_r_shunt;
 /******************************************************************************/
 /* Helpers */
 /******************************************************************************/
-
-#define __round_int(x) (x >= 0 ? (int)(x + 0.5) : (int)(x - 0.5))
-#define __round_int64(x) (x >= 0 ? (int64_t)(x + 0.5) : (int64_t)(x - 0.5))
-
-#define __scale(r, v) ((float)(v) / (r)->scale)
-#define __scale_int(r, v) (__round_int(__scale(r, v)))
-#define __scale_int64(r, v) (__round_int64(__scale(r, v)))
-
-#define __unscale(r, v) ((float)(v) * (r)->scale)
-#define __unscale_int(r, v) (__round_int(__unscale(r, v)))
-#define __unscale_int64(r, v) (__round_int64(__unscale(r, v)))
 
 static int errno_ad9361_to_bladerf(int err)
 {
@@ -1899,7 +1899,7 @@ static int bladerf2_set_gain(struct bladerf *dev, bladerf_channel ch, int gain)
         RETURN_ERROR_STATUS("_get_gain_offset", status);
     }
 
-    gain -= offset;
+    gain -= __round_int(offset);
 
     if (BLADERF_CHANNEL_IS_TX(ch)) {
         return bladerf2_set_gain_stage(dev, ch, "dsa", gain);
@@ -2003,7 +2003,7 @@ static int bladerf2_get_gain(struct bladerf *dev, bladerf_channel ch, int *gain)
         RETURN_ERROR_STATUS("bladerf2_get_gain_stage", status);
     }
 
-    *gain = val + offset;
+    *gain = __round_int(val + offset);
 
     return 0;
 }
@@ -2208,8 +2208,8 @@ static int bladerf2_get_gain_stages(struct bladerf *dev,
         }
     }
 
-    free(names);
-    return stage_count;
+    free((char **)names);
+    return (int)stage_count;
 }
 
 

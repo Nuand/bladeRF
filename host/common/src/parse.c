@@ -432,12 +432,12 @@ int csv2int(const char *line, int ***args)
         log_verbose("decreasing future arglen to %zu\n", arglen);
     }
 
-    return count;
+    return (int)count;
 
 fail:
     // Deallocate everything...
     free(myline);
-    free_csv2int(count, argout);
+    free_csv2int((int)count, argout);
     return -1;
 }
 

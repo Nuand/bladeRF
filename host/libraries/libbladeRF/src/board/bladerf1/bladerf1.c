@@ -154,8 +154,8 @@ static const char *bladerf1_state_to_string[] = {
 
 /* Overall RX gain range */
 static const struct bladerf_range bladerf1_rx_gain_range = {
-    FIELD_INIT(.min, BLADERF_RXVGA1_GAIN_MIN + BLADERF_RXVGA2_GAIN_MIN + BLADERF1_RX_GAIN_OFFSET),
-    FIELD_INIT(.max, BLADERF_LNA_GAIN_MAX_DB + BLADERF_RXVGA1_GAIN_MAX + BLADERF_RXVGA2_GAIN_MAX + BLADERF1_RX_GAIN_OFFSET),
+    FIELD_INIT(.min, __round_int64(BLADERF_RXVGA1_GAIN_MIN + BLADERF_RXVGA2_GAIN_MIN + BLADERF1_RX_GAIN_OFFSET)),
+    FIELD_INIT(.max, __round_int64(BLADERF_LNA_GAIN_MAX_DB + BLADERF_RXVGA1_GAIN_MAX + BLADERF_RXVGA2_GAIN_MAX + BLADERF1_RX_GAIN_OFFSET)),
     FIELD_INIT(.step, 1),
     FIELD_INIT(.scale, 1),
 };
@@ -165,8 +165,8 @@ static const struct bladerf_range bladerf1_rx_gain_range = {
 
 /* Overall TX gain range */
 static const struct bladerf_range bladerf1_tx_gain_range = {
-    FIELD_INIT(.min, BLADERF_TXVGA1_GAIN_MIN + BLADERF_TXVGA2_GAIN_MIN + BLADERF1_TX_GAIN_OFFSET),
-    FIELD_INIT(.max, BLADERF_TXVGA1_GAIN_MAX + BLADERF_TXVGA2_GAIN_MAX + BLADERF1_TX_GAIN_OFFSET),
+    FIELD_INIT(.min, __round_int64(BLADERF_TXVGA1_GAIN_MIN + BLADERF_TXVGA2_GAIN_MIN + BLADERF1_TX_GAIN_OFFSET)),
+    FIELD_INIT(.max, __round_int64(BLADERF_TXVGA1_GAIN_MAX + BLADERF_TXVGA2_GAIN_MAX + BLADERF1_TX_GAIN_OFFSET)),
     FIELD_INIT(.step, 1),
     FIELD_INIT(.scale, 1),
 };
@@ -1264,10 +1264,10 @@ static int set_rx_gain(struct bladerf *dev, int gain)
     rxvga2 = __unscale_int(rxvga2_range, rxvga2_range->min);
 
     // offset gain so that we can use it as a counter when apportioning gain
-    gain -=
-        (BLADERF1_RX_GAIN_OFFSET + __unscale_int(lna_range, lna_range->min) +
-         __unscale_int(rxvga1_range, rxvga1_range->min) +
-         __unscale_int(rxvga2_range, rxvga2_range->min));
+    gain -= __round_int((BLADERF1_RX_GAIN_OFFSET +
+                         __unscale_int(lna_range, lna_range->min) +
+                         __unscale_int(rxvga1_range, rxvga1_range->min) +
+                         __unscale_int(rxvga2_range, rxvga2_range->min)));
 
     // apportion some gain to RXLNA (but only half of it for now)
     _apportion_gain(lna_range, &lna, &gain);
@@ -1354,7 +1354,7 @@ static int get_rx_gain(struct bladerf *dev, int *gain)
             return BLADERF_ERR_UNEXPECTED;
     }
 
-    *gain = lnagain_db + rxvga1 + rxvga2 + BLADERF1_RX_GAIN_OFFSET;
+    *gain = __round_int(lnagain_db + rxvga1 + rxvga2 + BLADERF1_RX_GAIN_OFFSET);
 
     return 0;
 }
@@ -1382,9 +1382,9 @@ static int set_tx_gain(struct bladerf *dev, int gain)
     txvga2 = __unscale_int(txvga2_range, txvga2_range->min);
 
     // offset gain so that we can use it as a counter when apportioning gain
-    gain -= (BLADERF1_TX_GAIN_OFFSET +
-             __unscale_int(txvga1_range, txvga1_range->min) +
-             __unscale_int(txvga2_range, txvga2_range->min));
+    gain -= __round_int((BLADERF1_TX_GAIN_OFFSET +
+                         __unscale_int(txvga1_range, txvga1_range->min) +
+                         __unscale_int(txvga2_range, txvga2_range->min)));
 
     // apportion gain to TXVGA2
     _apportion_gain(txvga2_range, &txvga2, &gain);
@@ -1421,7 +1421,7 @@ static int get_tx_gain(struct bladerf *dev, int *gain)
         return status;
     }
 
-    *gain = txvga1 + txvga2 + BLADERF1_TX_GAIN_OFFSET;
+    *gain = __round_int(txvga1 + txvga2 + BLADERF1_TX_GAIN_OFFSET);
 
     return 0;
 }

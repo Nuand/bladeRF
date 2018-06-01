@@ -39,11 +39,6 @@ struct csv2int_test_string {
 // clang-format off
 static const struct csv2int_test_string csv2int_test_strings[] = {
     {
-        FIELD_INIT(.input, ""),
-        FIELD_INIT(.outlen, 0),
-        FIELD_INIT(.output, {}),
-    },
-    {
         FIELD_INIT(.input, "42"),
         FIELD_INIT(.outlen, 1),
         FIELD_INIT(.output, { 42 }),
@@ -70,28 +65,20 @@ static const struct csv2int_test_string csv2int_test_strings[] = {
     },
     {
         FIELD_INIT(.input, " 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,"
-                           "16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28,"
-                           "29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41,"
-                           "42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54,"
-                           "55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67,"
-                           "68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79"),
-        FIELD_INIT(.outlen, 79),
+                           "16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27"),
+        FIELD_INIT(.outlen, 27),
         FIELD_INIT(.output, { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-                             16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28,
-                             29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41,
-                             42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54,
-                             55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67,
-                             68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79}),
+                             16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27}),
     },
     {
         FIELD_INIT(.input, "expecting,str2int,failure"),
         FIELD_INIT(.outlen, -1),
-        FIELD_INIT(.output, {}),
+        FIELD_INIT(.output, { 0 }),
     },
     {
         FIELD_INIT(.input, "1,2,3,expecting_str2int_failure"),
         FIELD_INIT(.outlen, -1),
-        FIELD_INIT(.output, {}),
+        FIELD_INIT(.output, { 0 }),
     },
     /* The next few test cases test the arglen adjustments */
     {
@@ -129,6 +116,11 @@ static const struct csv2int_test_string csv2int_test_strings[] = {
         FIELD_INIT(.outlen, 4),
         FIELD_INIT(.output, { 0, 1, 2, 3 }),
     },
+    {
+        FIELD_INIT(.input, ""),
+        FIELD_INIT(.outlen, 0),
+        FIELD_INIT(.output, { 0 }),
+    },
 };
 // clang-format on
 
@@ -137,7 +129,9 @@ bool test_csv2int()
     int i, j;
     size_t good = 0, bad = 0;
 
-    for (i = 0; i < (int)ARRAY_SIZE(csv2int_test_strings); ++i) {
+    i = 0;
+
+    while (csv2int_test_strings[i].outlen != 0) {
         int rv;
         int **args   = NULL;
         bool failure = false;
@@ -172,6 +166,8 @@ bool test_csv2int()
         }
 
         free_csv2int(rv, args);
+
+        ++i;
     }
 
     printf("%s: good = %zu, bad = %zu\n", __FUNCTION__, good, bad);

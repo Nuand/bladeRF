@@ -235,6 +235,7 @@ static int tx_csv_to_sc16q11(struct cli_state *s)
     FILE *bin            = NULL;
     FILE *csv            = NULL;
     char *bin_name       = NULL;
+    int16_t *tmp_iq      = NULL;
     int line             = 1;
     size_t n_clamped     = 0;
 
@@ -275,7 +276,7 @@ static int tx_csv_to_sc16q11(struct cli_state *s)
             continue;
         }
 
-        int16_t tmp_iq[cols];
+        tmp_iq = realloc(tmp_iq, cols * sizeof(int16_t));
 
         for (i = 0; i < cols; ++i) {
             tmp_int = *args[i];
