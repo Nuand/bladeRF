@@ -215,6 +215,14 @@ static const uint64_t BLADERF_VCTCXO_FREQUENCY = 38400000;
 static const uint64_t BLADERF_REFIN_DEFAULT    = 10000000;
 
 // clang-format off
+
+// Config GPIO
+#define CFG_GPIO_POWERSOURCE        0
+#define CFG_GPIO_PLL_EN             11
+#define CFG_GPIO_CLOCK_OUTPUT       17
+#define CFG_GPIO_CLOCK_SELECT       18
+
+// RFFE control
 #define RFFE_CONTROL_RESET_N        0
 #define RFFE_CONTROL_ENABLE         1
 #define RFFE_CONTROL_TXNRX          2
@@ -236,6 +244,11 @@ static const uint64_t BLADERF_REFIN_DEFAULT    = 10000000;
 #define RFFE_CONTROL_SPDT_SHUTDOWN  0x0  // no connection
 #define RFFE_CONTROL_SPDT_LOWBAND   0x2  // RF1 <-> RF3
 #define RFFE_CONTROL_SPDT_HIGHBAND  0x1  // RF1 <-> RF2
+
+// Trim DAC control
+#define TRIMDAC_EN                  14   // 14 and 15
+#define TRIMDAC_EN_ACTIVE           0x0
+#define TRIMDAC_EN_HIGHZ            0x3
 
 /* Board state to string map */
 static const char *bladerf2_state_to_string[] = {
@@ -902,6 +915,8 @@ static int _set_tx_mute(struct bladerf *dev, bladerf_channel ch, bool state)
     int port;
     int status;
 
+    const uint32_t MUTED_ATTEN = 89750;
+
     CHECK_BOARD_STATE(STATE_FPGA_LOADED);
 
     board_data = dev->board_data;
@@ -916,7 +931,7 @@ static int _set_tx_mute(struct bladerf *dev, bladerf_channel ch, bool state)
 
     if (state) {
         cached = ad9361_get_tx_atten(phy, port);
-        atten  = 89750;
+        atten  = MUTED_ATTEN;
     } else {
         atten = cached;
     }
@@ -1009,6 +1024,8 @@ static int bladerf2_initialize(struct bladerf *dev)
     struct bladerf_version required_fw_version, required_fpga_version;
     uint32_t reg;
     int status;
+
+    const bladerf_frequency RESET_FREQUENCY = 70000000;
 
     /* Test for uninitialized dev struct */
     CHECK_BOARD_STATE(STATE_UNINITIALIZED);
@@ -1105,12 +1122,12 @@ static int bladerf2_initialize(struct bladerf *dev)
 
     /* Force AD9361 to a non-default freq. This will entice it to do a proper
      * re-tuning when we set it back to the default freq later on. */
-    status = ad9361_set_tx_lo_freq(board_data->phy, 70000000);
+    status = ad9361_set_tx_lo_freq(board_data->phy, RESET_FREQUENCY);
     if (status < 0) {
         RETURN_ERROR_AD9361("ad9361_set_tx_lo_freq", status);
     }
 
-    status = ad9361_set_rx_lo_freq(board_data->phy, 70000000);
+    status = ad9361_set_rx_lo_freq(board_data->phy, RESET_FREQUENCY);
     if (status < 0) {
         RETURN_ERROR_AD9361("ad9361_set_rx_lo_freq", status);
     }
@@ -3542,10 +3559,8 @@ static int bladerf2_get_timestamp(struct bladerf *dev,
 /* We do not build FPGAs with compression enabled. Therfore, they
  * will always have a fixed file size.
  */
-// clang-format off
-#define FPGA_SIZE_XA4   (2632660)
-#define FPGA_SIZE_XA9   (12858972)
-// clang-format on
+#define FPGA_SIZE_XA4 (2632660)
+#define FPGA_SIZE_XA9 (12858972)
 
 static bool is_valid_fpga_size(bladerf_fpga_size fpga, size_t len)
 {
@@ -3941,12 +3956,13 @@ static int bladerf2_get_trim_dac_enable(struct bladerf *dev, bool *enable)
     }
 
     // Determine if it's enabled...
-    *enable = (0 == (trim >> 14));
+    *enable = (TRIMDAC_EN_ACTIVE == (trim >> TRIMDAC_EN));
 
     log_debug("trim DAC is %s\n", (*enable ? "enabled" : "disabled"));
 
-    if ((trim >> 14) != 0 && (trim >> 14) != 3) {
-        log_warning("unknown trim DAC state: 0x%x\n", (trim >> 14));
+    if ((trim >> TRIMDAC_EN) != TRIMDAC_EN_ACTIVE &&
+        (trim >> TRIMDAC_EN) != TRIMDAC_EN_HIGHZ) {
+        log_warning("unknown trim DAC state: 0x%x\n", (trim >> TRIMDAC_EN));
     }
 
     return 0;
@@ -3982,11 +3998,11 @@ static int bladerf2_set_trim_dac_enable(struct bladerf *dev, bool enable)
     }
 
     // Set the trim DAC to high z if applicable
-    if (!enable && trim != (3 << 14)) {
+    if (!enable && trim != (TRIMDAC_EN_HIGHZ << TRIMDAC_EN)) {
         board_data->trimdac_value = trim;
         log_debug("saving current trim DAC value: 0x%04x\n", trim);
-        trim = 3 << 14;
-    } else if (enable && trim == (3 << 14)) {
+        trim = TRIMDAC_EN_HIGHZ << TRIMDAC_EN;
+    } else if (enable && trim == (TRIMDAC_EN_HIGHZ << TRIMDAC_EN)) {
         trim = board_data->trimdac_value;
         log_debug("restoring old trim DAC value: 0x%04x\n", trim);
     }
@@ -4728,7 +4744,7 @@ int bladerf_get_pll_enable(struct bladerf *dev, bool *enabled)
         RETURN_ERROR_STATUS("config_gpio_read", status);
     }
 
-    *enabled = (data >> 11) & 0x01;
+    *enabled = (data >> CFG_GPIO_PLL_EN) & 0x01;
 
     MUTEX_UNLOCK(&dev->lock);
 
@@ -4771,8 +4787,8 @@ int bladerf_set_pll_enable(struct bladerf *dev, bool enable)
     }
 
     // Set the PLL enable bit accordingly
-    data &= ~(1 << 11);
-    data |= ((enable ? 1 : 0) << 11);
+    data &= ~(1 << CFG_GPIO_PLL_EN);
+    data |= ((enable ? 1 : 0) << CFG_GPIO_PLL_EN);
 
     // Write back the config GPIO
     status = dev->backend->config_gpio_write(dev, data);
@@ -4982,7 +4998,7 @@ int bladerf_get_power_source(struct bladerf *dev, bladerf_power_sources *src)
         RETURN_ERROR_STATUS("config_gpio_read", status);
     }
 
-    if ((data >> 0) & 0x01) {
+    if ((data >> CFG_GPIO_POWERSOURCE) & 0x01) {
         *src = BLADERF_PS_USB_VBUS;
     } else {
         *src = BLADERF_PS_DC;
@@ -5024,7 +5040,7 @@ int bladerf_get_clock_select(struct bladerf *dev, bladerf_clock_select *sel)
         RETURN_ERROR_STATUS("config_gpio_read", status);
     }
 
-    if ((gpio & (1 << 18)) == 0x0) {
+    if ((gpio & (1 << CFG_GPIO_CLOCK_SELECT)) == 0x0) {
         *sel = CLOCK_SELECT_VCTCXO;
     } else {
         *sel = CLOCK_SELECT_EXTERNAL;
@@ -5061,10 +5077,10 @@ int bladerf_set_clock_select(struct bladerf *dev, bladerf_clock_select sel)
     // Set the clock select bit(s) accordingly
     switch (sel) {
         case CLOCK_SELECT_VCTCXO:
-            gpio &= ~(1 << 18);
+            gpio &= ~(1 << CFG_GPIO_CLOCK_SELECT);
             break;
         case CLOCK_SELECT_EXTERNAL:
-            gpio |= (1 << 18);
+            gpio |= (1 << CFG_GPIO_CLOCK_SELECT);
             break;
         default:
             break;
@@ -5113,7 +5129,7 @@ int bladerf_get_clock_output(struct bladerf *dev, bool *state)
         RETURN_ERROR_STATUS("config_gpio_read", status);
     }
 
-    *state = ((gpio & (1 << 17)) != 0x0);
+    *state = ((gpio & (1 << CFG_GPIO_CLOCK_OUTPUT)) != 0x0);
 
     MUTEX_UNLOCK(&dev->lock);
 
@@ -5144,8 +5160,8 @@ int bladerf_set_clock_output(struct bladerf *dev, bool enable)
     }
 
     // Set or clear the clock output enable bit
-    gpio &= ~(1 << 17);
-    gpio |= ((enable ? 1 : 0) << 17);
+    gpio &= ~(1 << CFG_GPIO_CLOCK_OUTPUT);
+    gpio |= ((enable ? 1 : 0) << CFG_GPIO_CLOCK_OUTPUT);
 
     // Write back the config GPIO
     status = dev->backend->config_gpio_write(dev, gpio);
