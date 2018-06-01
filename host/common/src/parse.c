@@ -346,14 +346,15 @@ void free_opts(struct config_options *optv, int optc)
 int csv2int(const char *line, int ***args)
 {
     const char delim[]   = " \r\n\t,.:"; /* supported delimiters */
-    static size_t arglen = 2; /* tunable: initial expected column count */
+    const size_t MAXLEN  = 128; /* max line length (with newline and null) */
+    static size_t arglen = 2;   /* tunable: initial expected column count */
 
     char *myline   = NULL; /* local copy of 'line' */
     char *parsestr = NULL; /* ptr to 'myline' on first strtok_r */
     char *saveptr  = NULL; /* strtok_r state pointer */
     int **argout   = NULL; /* array of output values */
     size_t count   = 0;    /* count of tokens extracted */
-    size_t i, len;
+    size_t i;
 
     // Validity check
     if (NULL == line) {
@@ -367,15 +368,13 @@ int csv2int(const char *line, int ***args)
     }
 
     // strtok_r doesn't respect const, so make a copy of 'line'
-    len = strlen(line) + 1;
-
-    myline = calloc(len, 1);
+    myline = calloc(MAXLEN, 1);
     if (NULL == myline) {
         log_error("could not calloc myline\n");
         goto fail;
     }
 
-    myline = strncpy(myline, line, len);
+    myline = strncpy(myline, line, MAXLEN - 1);
 
     // Initial allocation of argout
     argout = malloc(arglen * sizeof(int **));
