@@ -485,18 +485,6 @@ bladerf_dev_speed CALL_CONV bladerf_device_speed(struct bladerf *dev);
 API_EXPORT
 const char *CALL_CONV bladerf_get_board_name(struct bladerf *dev);
 
-/**
- * Get the number of RX or TX channels supported by the given device
- *
- * @param       dev     Device handle
- * @param       tx      If true, returns the number of TX channels. If false,
- *                      returns the number of RX channels.
- *
- * @return Number of channels
- */
-API_EXPORT
-size_t CALL_CONV bladerf_get_channel_count(struct bladerf *dev, bool tx);
-
 /** @} (End FN_INFO) */
 
 /**
@@ -583,6 +571,36 @@ typedef bladerf_channel bladerf_module;
  * Convenience macro: true if argument is a TX channel
  */
 #define BLADERF_CHANNEL_IS_TX(ch) (ch & BLADERF_TX)
+
+/**
+ * Stream direction
+ */
+typedef enum {
+    BLADERF_RX = 0, /**< Receive direction */
+    BLADERF_TX = 1, /**< Transmit direction */
+} bladerf_direction;
+
+/**
+ * Stream channel layout
+ */
+typedef enum {
+    BLADERF_RX_X1 = 0, /**< x1 RX (SISO) */
+    BLADERF_TX_X1 = 1, /**< x1 TX (SISO) */
+    BLADERF_RX_X2 = 2, /**< x2 RX (MIMO) */
+    BLADERF_TX_X2 = 3, /**< x2 TX (MIMO) */
+} bladerf_channel_layout;
+
+/**
+ * Get the number of RX or TX channels supported by the given device
+ *
+ * @param       dev     Device handle
+ * @param[in]   dir     Stream direction
+ *
+ * @return Number of channels
+ */
+API_EXPORT
+size_t CALL_CONV bladerf_get_channel_count(struct bladerf *dev,
+                                           bladerf_direction dir);
 
 /**
  * @defgroup FN_GAIN    Gain
@@ -1890,24 +1908,6 @@ int CALL_CONV bladerf_get_correction(struct bladerf *dev,
  *
  * @{
  */
-
-/**
- * Stream direction
- */
-typedef enum {
-    BLADERF_RX = 0, /**< Receive direction */
-    BLADERF_TX = 1, /**< Transmit direction */
-} bladerf_direction;
-
-/**
- * Stream channel layout
- */
-typedef enum {
-    BLADERF_RX_X1 = 0, /**< x1 RX (SISO) */
-    BLADERF_TX_X1 = 1, /**< x1 TX (SISO) */
-    BLADERF_RX_X2 = 2, /**< x2 RX (MIMO) */
-    BLADERF_TX_X2 = 3, /**< x2 TX (MIMO) */
-} bladerf_channel_layout;
 
 /**
  * @defgroup STREAMING_FORMAT Formats

@@ -1526,7 +1526,8 @@ static uint64_t bladerf2_get_capabilities(struct bladerf *dev)
     return board_data->capabilities;
 }
 
-static size_t bladerf2_get_channel_count(struct bladerf *dev, bool tx)
+static size_t bladerf2_get_channel_count(struct bladerf *dev,
+                                         bladerf_direction dir)
 {
     return 2;
 }

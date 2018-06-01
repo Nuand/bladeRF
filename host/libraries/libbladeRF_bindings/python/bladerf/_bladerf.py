@@ -543,18 +543,18 @@ class BladeRF:
     board_name = property(get_board_name,
                           doc="The board model name, as a string")
 
-    def get_channel_count(self, is_tx=False):
-        return libbladeRF.bladerf_get_channel_count(self.dev[0], is_tx)
+    def get_channel_count(self, direction):
+        return libbladeRF.bladerf_get_channel_count(self.dev[0], direction)
 
     @property
     def rx_channel_count(self):
         """Number of RX channels on the device"""
-        return self.get_channel_count(False)
+        return self.get_channel_count(BLADERF_RX)
 
     @property
     def tx_channel_count(self):
         """Number of TX channels on the device"""
-        return self.get_channel_count(True)
+        return self.get_channel_count(BLADERF_TX)
 
     # Enable/Disable
 

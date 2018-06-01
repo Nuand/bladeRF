@@ -158,7 +158,8 @@ int ps_foreach_chan(struct cli_state *state,
 
     // RX channels
     if (rx) {
-        for (chi = 0; chi < bladerf_get_channel_count(state->dev, 0); ++chi) {
+        for (chi = 0; chi < bladerf_get_channel_count(state->dev, BLADERF_RX);
+             ++chi) {
             if (CLI_RET_OK == rv) {
                 bladerf_channel const ch = BLADERF_CHANNEL_RX(chi);
 
@@ -171,7 +172,8 @@ int ps_foreach_chan(struct cli_state *state,
 
     // TX channels
     if (tx) {
-        for (chi = 0; chi < bladerf_get_channel_count(state->dev, 1); ++chi) {
+        for (chi = 0; chi < bladerf_get_channel_count(state->dev, BLADERF_TX);
+             ++chi) {
             if (CLI_RET_OK == rv) {
                 bladerf_channel const ch = BLADERF_CHANNEL_TX(chi);
 

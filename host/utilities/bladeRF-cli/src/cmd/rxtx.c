@@ -950,7 +950,7 @@ int rxtx_handle_channel_list(struct cli_state *s,
         return CLI_RET_STATE;
     }
 
-    nchans = bladerf_get_channel_count(s->dev, rxtx_is_tx(rxtx->direction));
+    nchans = bladerf_get_channel_count(s->dev, rxtx->direction);
     if (nchans < 0) {
         set_last_error(&rxtx->last_error, ETYPE_BLADERF, nchans);
         return CLI_RET_LIBBLADERF;
@@ -1008,7 +1008,7 @@ int rxtx_apply_channels(struct cli_state *s,
 {
     int i, nchans, status = 0;
 
-    nchans = bladerf_get_channel_count(s->dev, rxtx_is_tx(rxtx->direction));
+    nchans = bladerf_get_channel_count(s->dev, rxtx->direction);
     if (nchans < 0) {
         set_last_error(&rxtx->last_error, ETYPE_BLADERF, nchans);
         return CLI_RET_LIBBLADERF;

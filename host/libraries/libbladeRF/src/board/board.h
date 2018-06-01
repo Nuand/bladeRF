@@ -170,7 +170,7 @@ struct board_fns {
     int (*get_fpga_size)(struct bladerf *dev, bladerf_fpga_size *size);
     int (*is_fpga_configured)(struct bladerf *dev);
     uint64_t (*get_capabilities)(struct bladerf *dev);
-    size_t (*get_channel_count)(struct bladerf *dev, bool tx);
+    size_t (*get_channel_count)(struct bladerf *dev, bladerf_direction dir);
 
     /* Versions */
     int (*get_fpga_version)(struct bladerf *dev,

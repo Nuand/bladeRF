@@ -74,9 +74,22 @@ header = """
     *version);
   bladerf_dev_speed bladerf_device_speed(struct bladerf *dev);
   const char *bladerf_get_board_name(struct bladerf *dev);
-  size_t bladerf_get_channel_count(struct bladerf *dev, bool tx);
   typedef int bladerf_channel;
   typedef bladerf_channel bladerf_module;
+  typedef enum
+  {
+    BLADERF_RX = 0,
+    BLADERF_TX = 1
+  } bladerf_direction;
+  typedef enum
+  {
+    BLADERF_RX_X1 = 0,
+    BLADERF_TX_X1 = 1,
+    BLADERF_RX_X2 = 2,
+    BLADERF_TX_X2 = 3
+  } bladerf_channel_layout;
+  size_t bladerf_get_channel_count(struct bladerf *dev,
+    bladerf_direction dir);
   typedef int bladerf_gain;
   typedef enum
   {
@@ -259,18 +272,6 @@ header = """
     bladerf_correction corr, bladerf_correction_value value);
   int bladerf_get_correction(struct bladerf *dev, bladerf_channel ch,
     bladerf_correction corr, bladerf_correction_value *value);
-  typedef enum
-  {
-    BLADERF_RX = 0,
-    BLADERF_TX = 1
-  } bladerf_direction;
-  typedef enum
-  {
-    BLADERF_RX_X1 = 0,
-    BLADERF_TX_X1 = 1,
-    BLADERF_RX_X2 = 2,
-    BLADERF_TX_X2 = 3
-  } bladerf_channel_layout;
   typedef enum
   {
     BLADERF_FORMAT_SC16_Q11,

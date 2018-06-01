@@ -364,9 +364,9 @@ const char *bladerf_get_board_name(struct bladerf *dev)
     return dev->board->name;
 }
 
-size_t bladerf_get_channel_count(struct bladerf *dev, bool tx)
+size_t bladerf_get_channel_count(struct bladerf *dev, bladerf_direction dir)
 {
-    return dev->board->get_channel_count(dev, tx);
+    return dev->board->get_channel_count(dev, dir);
 }
 
 /******************************************************************************/
