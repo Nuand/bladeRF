@@ -100,6 +100,11 @@ static int rx_write_csv_sc16q11(struct rxtx_data *rx,
                                 int16_t *samples,
                                 size_t n_samples)
 {
+    const size_t MAXLEN = 128; /* max line length (with newline and null) */
+
+    char *line = NULL;
+    char *tmp  = NULL;
+
     size_t i, j, nchans;
     int status = 0;
 
@@ -120,7 +125,21 @@ static int rx_write_csv_sc16q11(struct rxtx_data *rx,
     MUTEX_UNLOCK(&rx->data_mgmt.lock);
 
     if (status != 0) {
-        return status;
+        goto out;
+    }
+
+    line = calloc(MAXLEN, 1);
+    if (NULL == line) {
+        status = errno;
+        set_last_error(&rx->last_error, ETYPE_ERRNO, status);
+        goto out;
+    }
+
+    tmp = calloc(MAXLEN, 1);
+    if (NULL == tmp) {
+        status = errno;
+        set_last_error(&rx->last_error, ETYPE_ERRNO, status);
+        goto out;
     }
 
     MUTEX_LOCK(&rx->file_mgmt.file_lock);
@@ -128,16 +147,16 @@ static int rx_write_csv_sc16q11(struct rxtx_data *rx,
     // Output 2 columns for each enabled channel
     // (2 cols for BLADERF_RX_X1, 4 cols for BLADERF_RX_X2, etc)
     for (i = 0; i < 2 * n_samples; i += 2 * nchans) {
-        char line[32] = { 0 };
+        memset(line, 0, MAXLEN);
+        memset(tmp, 0, MAXLEN);
 
         for (j = 0; j < 2 * nchans; j += 2) {
-            char tmp[32];
-            snprintf(tmp, sizeof(tmp), "%s%d, %d", (j > 0) ? ", " : "",
+            snprintf(tmp, MAXLEN, "%s%d, %d", (j > 0) ? ", " : "",
                      samples[i + j], samples[i + j + 1]);
-            strncat(line, tmp, sizeof(line) - 1);
+            strncat(line, tmp, MAXLEN - 1);
         }
 
-        strncat(line, EOL, sizeof(line) - 1);
+        strncat(line, EOL, MAXLEN - 1);
 
         if (fputs(line, rx->file_mgmt.file) < 0) {
             set_last_error(&rx->last_error, ETYPE_ERRNO, errno);
@@ -147,6 +166,11 @@ static int rx_write_csv_sc16q11(struct rxtx_data *rx,
     }
 
     MUTEX_UNLOCK(&rx->file_mgmt.file_lock);
+
+out:
+    free(line);
+    free(tmp);
+
     return status;
 }
 
