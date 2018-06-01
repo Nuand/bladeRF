@@ -191,4 +191,6 @@ int main(int argc, char *argv[])
         printf("*** testing csv2int: FAILED ***\n");
         ++bad;
     }
+
+    return bad;
 }
