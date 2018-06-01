@@ -429,6 +429,8 @@ set_target_properties(libbladerf_shared PROPERTIES OUTPUT_NAME bladeRF)
 # Set shared library version
 set_target_properties(libbladerf_shared PROPERTIES SOVERSION ${VERSION_INFO_MAJOR})
 
+include(Shortfile)
+define_file_basename_for_sources(libbladerf_shared)
 
 ################################################################################
 # Generate pkg-config file
