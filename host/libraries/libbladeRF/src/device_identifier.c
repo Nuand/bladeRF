@@ -136,8 +136,8 @@ static int handle_serial(struct bladerf_devinfo *d, char *value)
         }
     }
 
-    memset(d->serial, 0, sizeof(d->serial));
-    strncpy(d->serial, value, len);
+    strncpy(d->serial, value, sizeof(d->serial));
+    d->serial[sizeof(d->serial) - 1] = '\0';
 
     if (len == (BLADERF_SERIAL_LENGTH - 1)) {
         log_verbose("Requested serial number: %s\n", d->serial);
