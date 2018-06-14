@@ -28,6 +28,9 @@
 CyU3PReturnStatus_t NuandReadOtp(size_t offset, size_t size, void *buf);
 CyU3PReturnStatus_t NuandWriteOtp(size_t offset, size_t size, void *buf);
 CyU3PReturnStatus_t NuandLockOtp();
+uint8_t NuandGetSPIManufacturer();
+void cacheSPIManufacturer();
+
 
 CyU3PReturnStatus_t NuandFlashInit();
 void NuandFlashDeinit();

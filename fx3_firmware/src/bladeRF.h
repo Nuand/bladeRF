@@ -58,8 +58,6 @@
 // doesn't actually use BULK, EP exists for debugging purposes
 
 /* Extern definitions for the USB Descriptors */
-extern const uint8_t CyFxUSB20DeviceDscr[];
-extern const uint8_t CyFxUSB30DeviceDscr[];
 extern const uint8_t CyFxUSBDeviceQualDscr[];
 extern const uint8_t CyFxUSBFSConfigDscr[];
 extern const uint8_t CyFxUSBHSConfigDscr[];
@@ -67,7 +65,12 @@ extern const uint8_t CyFxUSBBOSDscr[];
 extern const uint8_t CyFxUSBSSConfigDscr[];
 extern const uint8_t CyFxUSBStringLangIDDscr[];
 extern const uint8_t CyFxUSBManufactureDscr[];
-extern const uint8_t CyFxUSBProductDscr[];
+extern const uint8_t CyFxUSB20DeviceDscr_bladeRF1[];
+extern const uint8_t CyFxUSB30DeviceDscr_bladeRF1[];
+extern const uint8_t CyFxUSBProductDscr_bladeRF1[];
+extern const uint8_t CyFxUSB20DeviceDscr_bladeRF2[];
+extern const uint8_t CyFxUSB30DeviceDscr_bladeRF2[];
+extern const uint8_t CyFxUSBProductDscr_bladeRF2[];
 
 #include "cyu3externcend.h"
 
@@ -80,6 +83,8 @@ void NuandAllowSuspend(CyBool_t set_allow_suspend);
 
 /* defined in bladerf{1,2}.c */
 void NuandFpgaConfigSwFlipLut(uint16_t flipLut[256]);
+void NuandFpgaConfigSwFlipLut_bladeRF1(uint16_t flipLut[256]);
+void NuandFpgaConfigSwFlipLut_bladeRF2(uint16_t flipLut[256]);
 
 extern uint32_t glAppMode;
 

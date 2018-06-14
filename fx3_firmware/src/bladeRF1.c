@@ -34,7 +34,7 @@
 #define BLADERF_PID_HIGH    (USB_NUAND_BLADERF_PRODUCT_ID >> 8)
 
 /* Standard device descriptor for USB 3.0 */
-const uint8_t CyFxUSB30DeviceDscr[] __attribute__ ((aligned (32))) __attribute__ ((section(".usbdscr"))) =
+const uint8_t CyFxUSB30DeviceDscr_bladeRF1[] __attribute__ ((aligned (32))) __attribute__ ((section(".usbdscr"))) =
 {
     0x12,                                   /* Descriptor size */
     CY_U3P_USB_DEVICE_DESCR,                /* Device descriptor type */
@@ -53,7 +53,7 @@ const uint8_t CyFxUSB30DeviceDscr[] __attribute__ ((aligned (32))) __attribute__
 };
 
 /* Standard device descriptor for USB 2.0 */
-const uint8_t CyFxUSB20DeviceDscr[] __attribute__ ((aligned (32))) __attribute__ ((section(".usbdscr"))) =
+const uint8_t CyFxUSB20DeviceDscr_bladeRF1[] __attribute__ ((aligned (32))) __attribute__ ((section(".usbdscr"))) =
 {
     0x12,                                   /* Descriptor size */
     CY_U3P_USB_DEVICE_DESCR,                /* Device descriptor type */
@@ -72,7 +72,7 @@ const uint8_t CyFxUSB20DeviceDscr[] __attribute__ ((aligned (32))) __attribute__
 };
 
 /* Standard product string descriptor */
-const uint8_t CyFxUSBProductDscr[] __attribute__ ((aligned (32))) __attribute__ ((section(".usbdscr"))) =
+const uint8_t CyFxUSBProductDscr_bladeRF1[] __attribute__ ((aligned (32))) __attribute__ ((section(".usbdscr"))) =
 {
     0x10,                           /* Descriptor size */
     CY_U3P_USB_STRING_DESCR,        /* Device descriptor type */
@@ -91,7 +91,7 @@ const uint8_t CyFxUSBProductDscr[] __attribute__ ((aligned (32))) __attribute__ 
  * same cache line. */
 const uint8_t CyFxUsbDscrAlignBuffer[32] __attribute__ ((aligned (32))) __attribute__ ((section(".usbdscr"))) = {};
 
-void NuandFpgaConfigSwFlipLut(uint16_t flipLut[256])
+void NuandFpgaConfigSwFlipLut_bladeRF1(uint16_t flipLut[256])
 {
     uint32_t i;
 

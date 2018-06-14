@@ -184,6 +184,21 @@ void NuandGPIOReconfigure(CyBool_t fullGpif, CyBool_t warm)
     }
 }
 
+uint16_t NuandGetProductID() {
+    if (NuandGetSPIManufacturer() == 0xEF) {
+        return USB_NUAND_BLADERF2_PRODUCT_ID;
+    }
+    return USB_NUAND_BLADERF_PRODUCT_ID;
+}
+
+void NuandFpgaConfigSwFlipLut(uint16_t flipLut[256]) {
+    if (NuandGetProductID() == USB_NUAND_BLADERF_PRODUCT_ID) {
+        NuandFpgaConfigSwFlipLut_bladeRF1(flipLut);
+    } else {
+        NuandFpgaConfigSwFlipLut_bladeRF2(flipLut);
+    }
+}
+
 void CyFxGpioInit(void)
 {
     CyU3PGpioClock_t gpioClock;
@@ -794,6 +809,9 @@ static void extractSerialAndCal(void)
 
     status = NuandReadOtp(0, 0x100, otp_buf);
 
+    /* Call this here while flash chip is init'd */
+    cacheSPIManufacturer();
+
     if (!NuandExtractField((void*)otp_buf, 0x100, "S", serial_buf, 32)) {
         for (i = 0; i < 32; i++) {
             CyFxUSBSerial[2+i*2] = serial_buf[i];
@@ -817,6 +835,19 @@ static void extractSerialAndCal(void)
 void bladeRFInit(void)
 {
     CyU3PReturnStatus_t apiRetStatus = CY_U3P_SUCCESS;
+    const uint8_t *usb3_device_descr;
+    const uint8_t *usb2_device_descr;
+    const uint8_t *usb_product_descr;
+
+    if (NuandGetProductID() == USB_NUAND_BLADERF_PRODUCT_ID) {
+        usb3_device_descr = CyFxUSB30DeviceDscr_bladeRF1;
+        usb2_device_descr = CyFxUSB20DeviceDscr_bladeRF1;
+        usb_product_descr = CyFxUSBProductDscr_bladeRF1;
+    } else {
+        usb3_device_descr = CyFxUSB30DeviceDscr_bladeRF2;
+        usb2_device_descr = CyFxUSB20DeviceDscr_bladeRF2;
+        usb_product_descr = CyFxUSBProductDscr_bladeRF2;
+    }
 
     /* Start the USB functionality. */
     apiRetStatus = CyU3PUsbStart();
@@ -839,14 +870,14 @@ void bladeRFInit(void)
     /* Set the USB Enumeration descriptors */
 
     /* Super speed device descriptor. */
-    apiRetStatus = CyU3PUsbSetDesc(CY_U3P_USB_SET_SS_DEVICE_DESCR, 0, (uint8_t *)CyFxUSB30DeviceDscr);
+    apiRetStatus = CyU3PUsbSetDesc(CY_U3P_USB_SET_SS_DEVICE_DESCR, 0, (uint8_t *)usb3_device_descr);
     if (apiRetStatus != CY_U3P_SUCCESS) {
         LOG_ERROR(apiRetStatus);
         CyFxAppErrorHandler(apiRetStatus);
     }
 
     /* High speed device descriptor. */
-    apiRetStatus = CyU3PUsbSetDesc(CY_U3P_USB_SET_HS_DEVICE_DESCR, 0, (uint8_t *)CyFxUSB20DeviceDscr);
+    apiRetStatus = CyU3PUsbSetDesc(CY_U3P_USB_SET_HS_DEVICE_DESCR, 0, (uint8_t *)usb2_device_descr);
     if (apiRetStatus != CY_U3P_SUCCESS) {
         LOG_ERROR(apiRetStatus);
         CyFxAppErrorHandler(apiRetStatus);
@@ -907,7 +938,7 @@ void bladeRFInit(void)
     /* Product string descriptor */
     apiRetStatus = CyU3PUsbSetDesc(CY_U3P_USB_SET_STRING_DESCR,
                                    BLADE_USB_STR_INDEX_PRODUCT,
-                                   (uint8_t *)CyFxUSBProductDscr);
+                                   (uint8_t *)usb_product_descr);
 
     if (apiRetStatus != CY_U3P_SUCCESS) {
         LOG_ERROR(apiRetStatus);

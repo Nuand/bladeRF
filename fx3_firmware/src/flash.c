@@ -97,6 +97,30 @@ CyU3PReturnStatus_t NuandExso() {
     return status;
 }
 
+static uint8_t spi_mfn[2];
+static CyBool_t cached_spi_mfn = CyFalse;
+void cacheSPIManufacturer() {
+    uint8_t location[4];
+
+    location[0] = 0x90; // RD Manu
+    location[1] = 0x0;
+    location[2] = 0x0;
+    location[3] = 0x0;
+
+    CyU3PSpiSetSsnLine (CyFalse);
+    CyU3PSpiTransmitWords (location, 4);
+    CyU3PSpiReceiveWords(spi_mfn, 2);
+    CyU3PSpiSetSsnLine (CyTrue);
+    cached_spi_mfn = CyTrue;
+}
+
+uint8_t NuandGetSPIManufacturer() {
+    if (!cached_spi_mfn) {
+        cacheSPIManufacturer();
+    }
+    return spi_mfn[0];
+}
+
 CyU3PReturnStatus_t NuandReadOtp(size_t offset, size_t size, void *buf) {
     CyU3PReturnStatus_t status;
 
