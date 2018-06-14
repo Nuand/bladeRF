@@ -338,7 +338,7 @@ void CyU3PUsbSendRetCode(CyU3PReturnStatus_t ret_status) {
 
 static CyU3PReturnStatus_t NuandReadCalTable(uint8_t *cal_buff) {
     CyU3PReturnStatus_t apiRetStatus;
-    apiRetStatus = CyFxSpiTransfer(CAL_PAGE, CAL_BUFFER_SIZE, cal_buff, CyTrue);
+    apiRetStatus = CyFxSpiTransfer(CAL_PAGE, CAL_BUFFER_SIZE, cal_buff, CyTrue, CyFalse);
 
     /* FIXME: Validate table */
 
@@ -347,7 +347,7 @@ static CyU3PReturnStatus_t NuandReadCalTable(uint8_t *cal_buff) {
 
 static CyU3PReturnStatus_t NuandReadAutoLoad(uint8_t *cal_buff) {
     CyU3PReturnStatus_t apiRetStatus;
-    apiRetStatus = CyFxSpiTransfer(AUTOLOAD_PAGE, AUTOLOAD_BUFFER_SIZE, cal_buff, CyTrue);
+    apiRetStatus = CyFxSpiTransfer(AUTOLOAD_PAGE, AUTOLOAD_BUFFER_SIZE, cal_buff, CyTrue, CyFalse);
 
     /* FIXME: Validate table */
 
@@ -527,7 +527,7 @@ CyBool_t NuandHandleVendorRequest(
 
         apiRetStatus = CyFxSpiTransfer (
                 wIndex, 0x100,
-                glPageBuffer, CyTrue);
+                glPageBuffer, CyTrue, CyFalse);
         CyU3PUsbSendRetCode(apiRetStatus);
     break;
 
@@ -538,7 +538,7 @@ CyBool_t NuandHandleVendorRequest(
 
         apiRetStatus = CyFxSpiTransfer (
                 wIndex, 0x100,
-                glPageBuffer, CyFalse);
+                glPageBuffer, CyFalse, CyFalse);
         CyU3PUsbSendRetCode(apiRetStatus);
     break;
 
@@ -615,7 +615,7 @@ CyBool_t NuandHandleVendorRequest(
         apiRetStatus = CyFxSpiTransfer (
                 /* Page */ 0,
                 sizeof(bootloader_header), bootloader_header,
-                CyFalse /* Writing */
+                CyFalse, CyFalse /* Writing */
                 );
 
         CyU3PUsbAckSetup();

@@ -118,7 +118,8 @@ void CyFxSpiFastRead(CyBool_t v) {
 }
 
 /* SPI read / write for programmer application. */
-CyU3PReturnStatus_t CyFxSpiTransfer(uint16_t pageAddress, uint16_t byteCount, uint8_t *buffer, CyBool_t isRead)
+CyU3PReturnStatus_t CyFxSpiTransfer(uint16_t pageAddress, uint16_t byteCount,
+                               uint8_t *buffer, CyBool_t isRead, CyBool_t isOtp)
 {
     uint8_t location[4];
     uint32_t byteAddress = 0;

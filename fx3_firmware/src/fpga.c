@@ -326,7 +326,7 @@ CyBool_t NuandLoadFromFlash(int fpga_len)
         if (apiRetStatus)
             break;
 
-        if (CyFxSpiTransfer(sector_idx++, 0x100, ptr, CyTrue) != CY_U3P_SUCCESS)
+        if (CyFxSpiTransfer(sector_idx++, 0x100, ptr, CyTrue, CyFalse) != CY_U3P_SUCCESS)
             break;
 
         uint8_t *end_in_b = &( ((uint8_t *)ptr)[255]);
