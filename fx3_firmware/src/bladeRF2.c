@@ -93,7 +93,7 @@ const uint8_t CyFxUSBProductDscr_bladeRF2[] __attribute__ ((aligned (32))) __att
  * other variable / code shares the same cache line. Do not add any other
  * variables / arrays in section. This will lead to variables sharing the
  * same cache line. */
-const uint8_t CyFxUsbDscrAlignBuffer[32] __attribute__ ((aligned (32))) __attribute__ ((section(".usbdscr"))) = {};
+const uint8_t CyFxUsbDscrAlignBuffer_bladeRF2[32] __attribute__ ((aligned (32))) __attribute__ ((section(".usbdscr"))) = {};
 
 void NuandFpgaConfigSwFlipLut_bladeRF2(uint16_t flipLut[256])
 {
