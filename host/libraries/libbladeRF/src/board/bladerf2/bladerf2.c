@@ -1377,13 +1377,15 @@ static int bladerf2_open(struct bladerf *dev, struct bladerf_devinfo *devinfo)
     }
 
     /* Get FPGA size */
-    /* TODO: Actually get FPGA size from flash */
+    status = spi_flash_read_fpga_size(dev, &board_data->fpga_size);
+    if (status < 0) {
+        log_warning("Failed to get FPGA size %s\n",
+                bladerf_strerror(status));
+    }
+
     if (getenv("BLADERF_FORCE_FPGA_A9")) {
         log_info("BLADERF_FORCE_FPGA_A9 is set, assuming A9 FPGA\n");
         board_data->fpga_size = BLADERF_FPGA_A9;
-    } else {
-        log_debug("assuming A4 FPGA - set BLADERF_FORCE_FPGA_A9 if using A9\n");
-        board_data->fpga_size = BLADERF_FPGA_A4;
     }
 
     /* Skip further work if BLADERF_FORCE_NO_FPGA_PRESENT is set */
@@ -4021,16 +4023,24 @@ static int bladerf2_set_trim_dac_enable(struct bladerf *dev, bool enable)
 
 static int bladerf2_get_vctcxo_trim(struct bladerf *dev, uint16_t *trim)
 {
+    int status;
+
     if (NULL == trim) {
         RETURN_INVAL("trim", "is null");
     }
 
     CHECK_BOARD_STATE(STATE_FIRMWARE_LOADED);
 
-    /* FIXME fetch factory value from SPI flash */
-    *trim = 0x1ffc;
+    status = spi_flash_read_vctcxo_trim(dev, trim);
+    if (status < 0) {
+        log_warning("Failed to get VCTCXO trim value: %s\n",
+                bladerf_strerror(status));
+        log_debug("Defaulting DAC trim to 0x1ffc.\n");
+        *trim = 0x1ffc;
+        return 0;
+    }
 
-    return 0;
+    return status;
 }
 
 static int bladerf2_trim_dac_read(struct bladerf *dev, uint16_t *trim)
