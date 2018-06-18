@@ -40,7 +40,7 @@ static CyU3PReturnStatus_t FlashReadStatus(uint8_t *val)
     return status;
 }
 
-CyU3PReturnStatus_t NuandLockOtp() {
+CyU3PReturnStatus_t NuandLockOtpMacronix() {
     CyU3PReturnStatus_t status = CY_U3P_SUCCESS;
     uint8_t location[1];
     uint8_t read_status;
@@ -73,6 +73,36 @@ CyU3PReturnStatus_t NuandLockOtp() {
     return status;
 }
 
+CyU3PReturnStatus_t NuandLockOtpWinbond() {
+    CyU3PReturnStatus_t status = CY_U3P_SUCCESS;
+    uint8_t location[4];
+    uint8_t val[2];
+
+    location[0] = 0x35; // Read Status Register 2
+    status = CyU3PSpiSetSsnLine (CyFalse);
+    status = CyU3PSpiTransmitWords (location, 1);
+    status = CyU3PSpiReceiveWords(val, 1);
+    status = CyU3PSpiSetSsnLine (CyTrue);
+
+    val[0] |= 0x8; // Set LB-1
+
+    location[0] = 0x31; // Write Status Register 2
+    location[1] = val[0];
+
+    status = CyU3PSpiSetSsnLine (CyFalse);
+    status = CyU3PSpiTransmitWords (location, 2);
+    status = CyU3PSpiSetSsnLine (CyTrue);
+
+    return status;
+}
+
+CyU3PReturnStatus_t NuandLockOtp() {
+    if (NuandGetSPIManufacturer() == 0xEF) {
+        return NuandLockOtpWinbond();
+    }
+    return NuandLockOtpMacronix();
+}
+
 CyU3PReturnStatus_t NuandEnso() {
     CyU3PReturnStatus_t status = CY_U3P_SUCCESS;
     uint8_t location[1];
@@ -95,6 +125,19 @@ CyU3PReturnStatus_t NuandExso() {
     status = CyU3PSpiSetSsnLine (CyTrue);
 
     return status;
+}
+
+void NuandEraseWBSec() {
+    uint8_t location[4];
+
+    location[0] = 0x44; // Erase security register
+    location[1] = 0x0;
+    location[2] = 0x1f;
+    location[3] = 0x0;
+
+    CyU3PSpiSetSsnLine (CyFalse);
+    CyU3PSpiTransmitWords (location, 4);
+    CyU3PSpiSetSsnLine (CyTrue);
 }
 
 static uint8_t spi_mfn[2];
@@ -124,9 +167,17 @@ uint8_t NuandGetSPIManufacturer() {
 CyU3PReturnStatus_t NuandReadOtp(size_t offset, size_t size, void *buf) {
     CyU3PReturnStatus_t status;
 
-    status = NuandEnso();
-    status = CyFxSpiTransfer(offset, size, buf, CyTrue);
-    status = NuandExso();
+    if (NuandGetSPIManufacturer() == 0xEF) {
+        offset = (1 << 12) / FLASH_PAGE_SIZE;
+    } else {
+        status = NuandEnso();
+    }
+
+    status = CyFxSpiTransfer(offset, size, buf, CyTrue, CyTrue);
+
+    if (NuandGetSPIManufacturer() != 0xEF) {
+        status = NuandExso();
+    }
 
     return status;
 }
@@ -134,9 +185,18 @@ CyU3PReturnStatus_t NuandReadOtp(size_t offset, size_t size, void *buf) {
 CyU3PReturnStatus_t NuandWriteOtp(size_t offset, size_t size, void *buf) {
     CyU3PReturnStatus_t status;
 
-    status = NuandEnso();
-    status = CyFxSpiTransfer(offset, size, buf, CyFalse);
-    status = NuandExso();
+    if (NuandGetSPIManufacturer() == 0xEF) {
+        NuandEraseWBSec();
+        offset = (1 << 12) / FLASH_PAGE_SIZE;
+    } else {
+        status = NuandEnso();
+    }
+
+    status = CyFxSpiTransfer(offset, size, buf, CyFalse, CyTrue);
+
+    if (NuandGetSPIManufacturer() != 0xEF) {
+        status = NuandExso();
+    }
 
     return status;
 }

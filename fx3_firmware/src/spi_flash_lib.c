@@ -34,6 +34,7 @@
 
 #include "cyu3spi.h"
 #include "spi_flash_lib.h"
+#include "flash.h"
 
 #define THIS_FILE LOGGER_ID_SPI_FLASH_LIB_C
 
@@ -121,7 +122,7 @@ void CyFxSpiFastRead(CyBool_t v) {
 CyU3PReturnStatus_t CyFxSpiTransfer(uint16_t pageAddress, uint16_t byteCount,
                                uint8_t *buffer, CyBool_t isRead, CyBool_t isOtp)
 {
-    uint8_t location[4];
+    uint8_t location[5];
     uint32_t byteAddress = 0;
     uint16_t pageCount = (byteCount / FLASH_PAGE_SIZE);
     CyU3PReturnStatus_t status = CY_U3P_SUCCESS;
@@ -140,9 +141,15 @@ CyU3PReturnStatus_t CyFxSpiTransfer(uint16_t pageAddress, uint16_t byteCount,
         location[1] = (byteAddress >> 16) & 0xFF;       /* MS byte */
         location[2] = (byteAddress >> 8) & 0xFF;
         location[3] = byteAddress & 0xFF;               /* LS byte */
+        location[4] = 0;                       /* Dummy byte for Winbond chip */
 
         if (isRead) {
-            location[0] = 0x03; /* Read command. */
+            /* Read command. */
+            if (isOtp && NuandGetSPIManufacturer() == 0xEF) {
+                location[0] = 0x48;
+            } else {
+                location[0] = 0x03;
+            }
 
             if (!spiFastRead) {
                 status = CyFxSpiWaitForStatus();
@@ -151,7 +158,7 @@ CyU3PReturnStatus_t CyFxSpiTransfer(uint16_t pageAddress, uint16_t byteCount,
             }
 
             CyU3PSpiSetSsnLine(CyFalse);
-            status = CyU3PSpiTransmitWords(location, 4);
+            status = CyU3PSpiTransmitWords(location, location[0] == 0x03 ? 4 : 5);
 
             if (status != CY_U3P_SUCCESS) {
                 LOG_ERROR(status);
@@ -167,7 +174,12 @@ CyU3PReturnStatus_t CyFxSpiTransfer(uint16_t pageAddress, uint16_t byteCount,
 
             CyU3PSpiSetSsnLine(CyTrue);
         } else { /* Write */
-            location[0] = 0x02; /* Write command */
+            /* Write command */
+            if (isOtp && NuandGetSPIManufacturer() == 0xEF) {
+                location[0] = 0x42;
+            } else {
+                location[0] = 0x02;
+            }
 
             status = CyFxSpiWaitForStatus();
             if (status != CY_U3P_SUCCESS)
