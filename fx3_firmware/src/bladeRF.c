@@ -983,6 +983,8 @@ void bladeRFAppThread_Entry( uint32_t input)
     populateVersionString();
     extractSerialAndCal();
 
+    NuandFpgaConfigSwInit();
+
     bladeRFInit();
     /* XXX Why do we need an 800ms delay here? It appears required for the FPGA
      * load...
@@ -1057,8 +1059,6 @@ int main(void)
 
     /* Initialize the logger so we can record failures past this point */
     logger_init();
-
-    NuandFpgaConfigSwInit();
 
     /* This is a non returnable call for initializing the RTOS kernel */
     CyU3PKernelEntry();
