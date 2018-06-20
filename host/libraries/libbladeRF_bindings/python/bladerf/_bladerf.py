@@ -543,6 +543,18 @@ class BladeRF:
     board_name = property(get_board_name,
                           doc="The board model name, as a string")
 
+    def trim_dac_write(self, val):
+        libbladeRF.bladerf_trim_dac_write(self.dev[0], val)
+
+    def trim_dac_read(self):
+        try:
+            trim_val = ffi.new("uint16_t *")
+            ret = libbladeRF.bladerf_trim_dac_read(self.dev[0], trim_val)
+            _check_error(ret)
+            return trim_val[0]
+        except UnsupportedError:
+            return None
+
     def get_channel_count(self, direction):
         return libbladeRF.bladerf_get_channel_count(self.dev[0], direction)
 
