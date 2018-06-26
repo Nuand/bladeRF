@@ -684,7 +684,7 @@ static int bladerf1_initialize(struct bladerf *dev)
 
         /* Set the default gain mode */
         status = bladerf_set_gain_mode(dev, BLADERF_CHANNEL_RX(0), BLADERF_GAIN_DEFAULT);
-        if (status != 0) {
+        if (status != 0 && status != BLADERF_ERR_UNSUPPORTED) {
             return status;
         }
     } else {
