@@ -1481,20 +1481,20 @@ static int bladerf1_set_gain_mode(struct bladerf *dev,
         return BLADERF_ERR_UNSUPPORTED;
     }
 
-    if (!have_cap(board_data->capabilities, BLADERF_CAP_AGC_DC_LUT) ||
-        !board_data->cal.dc_rx) {
-        return BLADERF_ERR_UNSUPPORTED;
-    }
-
-    if (board_data->cal.dc_rx->version != 2) {
-        return BLADERF_ERR_UNSUPPORTED;
-    }
-
     if ((status = dev->backend->config_gpio_read(dev, &config_gpio))) {
         return status;
     }
 
     if (mode == BLADERF_GAIN_AUTOMATIC || mode == BLADERF_GAIN_DEFAULT) {
+        if (!have_cap(board_data->capabilities, BLADERF_CAP_AGC_DC_LUT) ||
+            !board_data->cal.dc_rx) {
+            return BLADERF_ERR_UNSUPPORTED;
+        }
+
+        if (board_data->cal.dc_rx->version != 2) {
+            return BLADERF_ERR_UNSUPPORTED;
+        }
+
         config_gpio |= BLADERF_GPIO_AGC_ENABLE;
     } else if (mode == BLADERF_GAIN_MANUAL || mode == BLADERF_GAIN_MGC) {
         config_gpio &= ~BLADERF_GPIO_AGC_ENABLE;
