@@ -238,6 +238,8 @@ classdef bladeRF < handle
         % For Windows users, the simplest approach is to copy the following
         % to this directory:
         %   - libbladeRF.h
+        %   - bladeRF1.h
+        %   - bladeRF2.h
         %   - bladeRF.dll
         %   - libusb-1.0.dll and/or CyUSB.dll
         %   - pthreadVC2.dll
@@ -256,7 +258,7 @@ classdef bladeRF < handle
             proto_output = 'delete_this_file';
             switch arch
                 case 'win64'
-                    [notfound, warnings] = loadlibrary('bladeRF', 'libbladeRF.h', 'includepath', this_dir, 'addheader', 'stdbool.h', 'alias', 'libbladeRF', 'notempdir', 'mfilename', proto_output);
+                    [notfound, warnings] = loadlibrary('bladeRF', 'libbladeRF.h', 'includepath', this_dir, 'addheader', 'stdbool.h', 'addheader', 'bladeRF1.h', 'addheader', 'bladeRF2.h', 'alias', 'libbladeRF', 'notempdir', 'mfilename', proto_output);
                 case 'glnxa64'
                     [notfound, warnings] = loadlibrary('libbladeRF', 'libbladeRF.h', 'includepath', this_dir, 'notempdir', 'mfilename', proto_output);
                 case 'maci64'
