@@ -108,7 +108,12 @@ classdef bladeRF < handle
             if status ~= 0
                 err_num = num2str(status);
                 err_str = calllib('libbladeRF', 'bladerf_strerror', status);
-                error([ 'libbladeRF error (' err_num ') in ' fn '(): ' err_str]);
+                str = [ 'libbladeRF error (' err_num ') in ' fn '(): ' err_str];
+                if status == -8
+                    warning(str);
+                else
+                    error(str);
+                end
             end
         end
     end
