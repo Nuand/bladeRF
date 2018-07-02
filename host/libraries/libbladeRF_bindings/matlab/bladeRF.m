@@ -78,7 +78,7 @@
 classdef bladeRF < handle
 
     % Read-only handle properties
-    properties(Access={?bladeRF_XCVR, ?bladeRF_IQCorr, ?bladeRF_VCTCXO})
+    properties(Access={?bladeRF_XCVR, ?bladeRF_IQCorr, ?bladeRF_VCTCXO, ?bladeRF_Misc})
         device  % Device handle
     end
 
@@ -86,6 +86,7 @@ classdef bladeRF < handle
         rx          % Receive chain
         tx          % Transmit chain
         vctcxo      % VCTCXO control
+        misc        % Misc
     end
 
     properties(Dependent)
@@ -518,6 +519,11 @@ classdef bladeRF < handle
             else
                 obj.xb = 'None';
             end
+
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            % Misc
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            obj.misc = bladeRF_Misc(obj);
 
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % VCTCXO control
