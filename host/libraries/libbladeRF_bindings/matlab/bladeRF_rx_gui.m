@@ -51,6 +51,22 @@ function varargout = bladeRF_fft(varargin)
     end
 end
 
+function set_agc_selection(agc_widget, handles, value)
+    strings = agc_widget.String;
+
+    if strcmpi(value, 'manual')
+        handles.gain1.Enable = 'on';
+    else
+        handles.gain1.Enable = 'off';
+    end
+
+    for n = 1:length(strings)
+        if strcmpi(value,strings{n})
+            agc_widget.Value = n;
+        end
+    end
+end
+
 function set_bandwidth_selection(bandwidth_widget, value)
     strings = bandwidth_widget.String;
 
@@ -131,6 +147,22 @@ function [root] = get_root_object(hObject)
     else
         root = get_root_object(hObject.Parent);
     end
+end
+
+% Get the state of the 'Enable Biastee' flag
+function [enable_biastee] = get_enable_biastee(hObject)
+    root = get_root_object(hObject);
+    enable_biastee = getappdata(root, 'enable_biastee');
+    if isempty(enable_biastee)
+        error('Failed to access app data: enable_biastee');
+    end
+end
+
+% Set the state of the 'Enable Biastree' flag
+function set_enable_biastee(handles, hObject, value)
+    handles.bladerf.rx.biastee = value;
+    root = get_root_object(hObject);
+    setappdata(root, 'enable_biastee', value);
 end
 
 % Get the state of the 'Print Overruns' flag
@@ -294,22 +326,25 @@ end
 
 % Update GUI fields with parameter values from device
 function read_device_parameters(hObject, handles)
-    handles.vga1.String = num2str(handles.bladerf.rx.vga1);
-    handles.vga2.String = num2str(handles.bladerf.rx.vga2);
-    set_lnagain_selection(handles.lnagain, handles.bladerf.rx.lna);
 
+    set_agc_selection(handles.agc, handles, handles.bladerf.rx.agc);
     handles.corr_dc_i.String  = num2str(handles.bladerf.rx.corrections.dc_i);
     handles.corr_dc_q.String  = num2str(handles.bladerf.rx.corrections.dc_q);
     handles.corr_gain.String  = num2str(handles.bladerf.rx.corrections.gain);
     handles.corr_phase.String = num2str(handles.bladerf.rx.corrections.phase);
 
-    handles.frequency.String  = num2str(handles.bladerf.rx.frequency);
-    handles.samplerate.String = num2str(handles.bladerf.rx.samplerate);
+    handles.frequency.String  = addcommas(num2str(handles.bladerf.rx.frequency));
+    handles.samplerate.String = addcommas(num2str(handles.bladerf.rx.samplerate));
     set_bandwidth_selection(handles.bandwidth, handles.bladerf.rx.bandwidth);
 
     handles.num_buffers.String = num2str(handles.bladerf.rx.config.num_buffers);
     handles.buffer_size.String = num2str(handles.bladerf.rx.config.buffer_size);
     handles.num_transfers.String = num2str(handles.bladerf.rx.config.num_transfers);
+    handles.frequency.TooltipString = sprintf('Configures RX frequency. Valid values are %u MHz to %u GHz', ...
+                            handles.bladerf.rx.min_frequency/1e6, handles.bladerf.rx.max_frequency/1e9);
+
+    handles.samplerate.TooltipString = sprintf('Configures the RX sample rate. Suggested valuse are [%.2f, %.2f] MHz.', ...
+                            handles.bladerf.rx.min_sampling/1e6, handles.bladerf.rx.max_sampling/1e6);
 
     guidata(hObject, handles);
 end
@@ -397,7 +432,11 @@ function actionbutton_Callback(hObject, ~, handles)
 
             % We'll window our samples. However, we want to normalize
             % this to account for some of its inherent loss.
-            win = blackmanharris(num_samples);
+            if license('test', 'Signal_Toolbox')
+                win = blackmanharris(num_samples);
+            else
+                win = ones(num_samples,1);
+            end
             win_norm = (1 / sum(abs(win) ./ num_samples) .* win);
             win_norm = win_norm ./ 4096;
 
@@ -415,12 +454,23 @@ function actionbutton_Callback(hObject, ~, handles)
             end
 
             run = 1;
+            runidx = 0;
             setappdata(hObject.Parent.Parent, 'run', 1);
 
             while run == 1
 
                 [samples(:), ~, ~, overrun] = ...
                     handles.bladerf.receive(num_samples);
+
+                if mod(runidx, 1000) == 0
+                    handles.gain1.String = handles.bladerf.rx.gain;
+                    if handles.bladerf.info.gen == 2
+                        handles.power.Visible = 'on';
+                        handles.power.String = sprintf('Power Source: %s   Consumption: %2.2f W    Temperature: %2.2f ''C', ...
+                                handles.bladerf.misc.dc_source, handles.bladerf.misc.dc_power, handles.bladerf.misc.temperature);
+                    end
+                end
+                runidx = runidx + 1;
 
                 if overrun
                     print_overrun = get_print_overruns(hObject);
@@ -504,61 +554,43 @@ function actionbutton_Callback(hObject, ~, handles)
     end
 end
 
-function lnagain_Callback(hObject, ~, handles)
+function agc_Callback(hObject, ~, handles)
     items = hObject.String;
     index = hObject.Value;
 
     %fprintf('GUI Request to set LNA gain to: %s\n', items{index})
 
-    handles.bladerf.rx.lna = items{index};
+    handles.bladerf.rx.agc = items{index};
+
+    set_agc_selection(hObject, handles, handles.bladerf.rx.agc);
+    %i = cellfun(@(x)strcmpi(x,handles.bladerf.rx.agc),hObject.String);
+    %hObject.Value = find(i);
     guidata(hObject, handles);
 end
 
-function lnagain_CreateFcn(hObject, ~, ~)
+function agc_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
         hObject.BackgroundColor = white;
     end
 end
 
-function vga1_Callback(hObject, ~, handles)
+function gain1_Callback(hObject, ~, handles)
     val = str2num(hObject.String);
     if isempty(val)
         val = handles.bladerf.rx.vga1;
     end
 
-    val = min(30, val);
-    val = max(5, val);
+    %val = min(30, val);
+    %val = max(5, val);
 
-    %fprintf('GUI request to set VGA1: %d\n', val);
+    %fprintf('GUI request to set Gain1: %d\n', val);
 
-    handles.bladerf.rx.vga1 = val;
-    hObject.String = num2str(handles.bladerf.rx.vga1);
+    handles.bladerf.rx.gain = val;
+    hObject.String = num2str(handles.bladerf.rx.gain);
     guidata(hObject, handles);
 end
 
-function vga1_CreateFcn(hObject, ~, ~)
-    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-        hObject.BackgroundColor = 'white';
-    end
-end
-
-function vga2_Callback(hObject, ~, handles)
-    val = str2num(hObject.String);
-    if isempty(val)
-        val = handles.bladerf.rx.vga2;
-    end
-
-    val = min(30, val);
-    val = max(0, val);
-
-    %fprintf('GUI request to set VGA2: %d\n', val);
-
-    handles.bladerf.rx.vga2 = val;
-    hObject.String = num2str(handles.bladerf.rx.vga2);
-    guidata(hObject, handles);
-end
-
-function vga2_CreateFcn(hObject, ~, ~)
+function gain1_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
         hObject.BackgroundColor = 'white';
     end
@@ -665,19 +697,19 @@ function corr_phase_CreateFcn(hObject, ~, ~)
 end
 
 function samplerate_Callback(hObject, ~, handles)
-    val = str2num(hObject.String);
+    val = str2num(removecommas(hObject.String));
     if isempty(val)
         val = handles.bladerf.rx.samplerate;
     end
 
-    val = min(40e6, val);
-    val = max(160e3, val);
+    val = min(handles.bladerf.rx.max_sampling, val);
+    val = max(handles.bladerf.rx.min_sampling, val);
 
     %fprintf('GUI request to set samplerate to: %f\n', val);
 
     handles.bladerf.rx.samplerate = val;
     val = handles.bladerf.rx.samplerate;
-    hObject.String = num2str(val);
+    hObject.String = addcommas(num2str(val));
 
     update_plot_axes(hObject, handles);
 end
@@ -688,19 +720,33 @@ function samplerate_CreateFcn(hObject, ~, ~)
     end
 end
 
+function val = addcommas(strval)
+    idxend = strfind(strval, '.');
+    if isempty(idxend)
+        idxend = size(strval, 2)+1;
+    end
+    strval(2, idxend - 4: -3 : 1) = ',';
+    val = transpose(strval(strval ~= char(0)));
+end
+
+function val = removecommas(strval)
+    val = regexprep(strval,',','');
+end
+
 function frequency_Callback(hObject, ~, handles)
-    val = str2num(hObject.String);
+    val = str2num(removecommas(hObject.String));
     if isempty(val)
         val = handles.bladerf.rx.frequency;
     end
 
-    val = min(3.8e9, val);
+    val = min(handles.bladerf.rx.max_frequency, val);
     val = max(handles.bladerf.rx.min_frequency, val);
 
     %fprintf('GUI request to set frequency: %d\n', val);
 
     handles.bladerf.rx.frequency = val;
-    hObject.String = num2str(val);
+
+    hObject.String = addcommas(num2str(val));
     hObject.Value = val;
 
     update_plot_axes(hObject, handles);
@@ -839,6 +885,14 @@ end
 function num_transfers_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
         hObject.BackgroundColor = 'white';
+    end
+end
+
+function enable_biastee_Callback(hObject, ~, handles)
+    if hObject.Value ~= 0
+        set_enable_biastee(handles, hObject, 1);
+    else
+        set_enable_biastee(handles, hObject, 0);
     end
 end
 
