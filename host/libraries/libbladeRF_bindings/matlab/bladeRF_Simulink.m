@@ -64,14 +64,12 @@ classdef bladeRF_Simulink < matlab.System & ...
     properties
         verbosity           = 'Info'    % libbladeRF verbosity
 
-        rx_frequency        = 915e6;    % Frequency [230e6, 3.8e9]
-        rx_lna              = 6         % LNA Gain  [0, 3, 6]
-        rx_vga1             = 30;       % VGA1 Gain [5, 30]
-        rx_vga2             = 0;        % VGA2 Gain [0, 30]
+        rx_frequency        = 915e6;    % Frequency (Hz)
+        rx_gain             = 0;        % RX Gain [-10, 90]
+        rx_agc              = 'MANUAL'; % AGC mode
 
-        tx_frequency        = 920e6;    % Frequency [230e6, 3.8e9]
-        tx_vga1             = -8;       % VGA1 Gain [-35, -4]
-        tx_vga2             = 16;       % VGA2 Gain [0, 25]
+        tx_frequency        = 920e6;    % Frequency (Hz)
+        tx_gain             = 60;       % TX Gain [-10, 90]
     end
 
     properties(Nontunable)
@@ -97,8 +95,10 @@ classdef bladeRF_Simulink < matlab.System & ...
 
     properties(Logical, Nontunable)
         enable_rx           = true;     % Enable Receiver
+        enable_rx_biastee   = false;    % Enable RX Biastee
         enable_overrun      = false;    % Enable Overrun output
         enable_tx           = false;    % Enable Transmitter
+        enable_tx_biastee   = false;    % Enable TX Biastee
         enable_underrun     = false;    % Enable Underrun output (for future use)
         xb200               = false     % Enable use of XB-200 (must be attached)
     end
@@ -108,14 +108,29 @@ classdef bladeRF_Simulink < matlab.System & ...
             '1.5',  '1.75', '2.5',  '2.75',  ...
             '3',    '3.84', '5',    '5.5',   ...
             '6',    '7',    '8.75', '10',    ...
-            '12',   '14',   '20',   '28'     ...
+            '12',   '14',   '20',   '28',    ...
+            '30',   '32',   '34',   '36',    ...
+            '38',   '40',   '42',   '44',    ...
+            '46',   '48',   '50',   '52',    ...
+            '54',   '56',   '58',   '60',    ...
+            '62',   '64',   '64.11'  ...
         });
 
         tx_bandwidthSet = matlab.system.StringSet({ ...
             '1.5',  '1.75', '2.5',  '2.75',  ...
             '3',    '3.84', '5',    '5.5',   ...
             '6',    '7',    '8.75', '10',    ...
-            '12',   '14',   '20',   '28'     ...
+            '12',   '14',   '20',   '28',    ...
+            '30',   '32',   '34',   '36',    ...
+            '38',   '40',   '42',   '44',    ...
+            '46',   '48',   '50',   '52',    ...
+            '54',   '56',   '58',   '60',    ...
+            '62',   '64',   '64.11'  ...
+        });
+
+        rx_agcSet = matlab.system.StringSet({
+            'AUTO', 'MANUAL', ...
+            'SLOW', 'FAST', 'HYBRID' ...
         });
 
         loopback_modeSet = matlab.system.StringSet({
@@ -139,9 +154,15 @@ classdef bladeRF_Simulink < matlab.System & ...
         curr_rx_lna
         curr_rx_vga1
         curr_rx_vga2
+        curr_rx_gain
+        curr_rx_agc
+        curr_rx_biastee
         curr_tx_frequency
         curr_tx_vga1
         curr_tx_vga2
+        curr_tx_gain
+        curr_tx_biastee
+
     end
 
     %% Static Methods
@@ -154,7 +175,7 @@ classdef bladeRF_Simulink < matlab.System & ...
 
             rx_gain_section = matlab.system.display.Section(...
                 'Title', 'Gain', ...
-                'PropertyList', { 'rx_lna', 'rx_vga1', 'rx_vga2'} ...
+                'PropertyList', { 'rx_gain', 'enable_rx_biastee', 'rx_agc'  } ...
             );
 
             rx_stream_section = matlab.system.display.Section(...
@@ -170,7 +191,7 @@ classdef bladeRF_Simulink < matlab.System & ...
 
             tx_gain_section = matlab.system.display.Section(...
                 'Title', 'Gain', ...
-                'PropertyList', { 'tx_vga1', 'tx_vga2'} ...
+                'PropertyList', { 'tx_gain', 'enable_tx_biastee' } ...
             );
 
             tx_stream_section = matlab.system.display.Section(...
@@ -350,19 +371,25 @@ classdef bladeRF_Simulink < matlab.System & ...
             obj.device.rx.config.timeout_ms    = obj.rx_timeout_ms;
 
             obj.device.rx.frequency  = obj.rx_frequency;
+            %obj.rx_frequency         = obj.device.rx.frequency;
             obj.curr_rx_frequency    = obj.device.rx.frequency;
 
             obj.device.rx.samplerate = obj.rx_samplerate;
             obj.device.rx.bandwidth  = str2double(obj.rx_bandwidth) * 1e6;
 
-            obj.device.rx.lna        = obj.rx_lna;
-            obj.curr_rx_lna          = bladeRF.str2lna(obj.device.rx.lna);
+            obj.device.rx.biastee    = obj.enable_rx_biastee;
+            obj.curr_rx_biastee      = obj.device.rx.biastee;
 
-            obj.device.rx.vga1       = obj.rx_vga1;
-            obj.curr_rx_vga1         = obj.device.rx.vga1;
+            obj.device.rx.agc        = obj.rx_agc;
+            %obj.rx_agc               = obj.device.rx.agc;
+            obj.curr_rx_agc          = obj.device.rx.agc;
 
-            obj.device.rx.vga2       = obj.rx_vga2;
-            obj.curr_rx_vga2         = obj.device.rx.vga2;
+            if strcmpi(obj.curr_rx_agc, 'manual')
+                obj.device.rx.gain       = obj.rx_gain;
+                %obj.rx_gain              = obj.device.rx.gain;
+                obj.curr_rx_gain         = obj.device.rx.gain;
+                warning([ 'Cannot set RX gain because AGC is set to ' (obj.curr_rx_agc) ' mode'])
+            end
 
             %% TX Setup
             obj.device.tx.config.num_buffers   = obj.tx_num_buffers;
@@ -374,13 +401,15 @@ classdef bladeRF_Simulink < matlab.System & ...
             obj.device.tx.bandwidth  = str2double(obj.tx_bandwidth) * 1e6;
 
             obj.device.tx.frequency  = obj.tx_frequency;
+            %obj.tx_frequency         = obj.device.tx.frequency;
             obj.curr_tx_frequency    = obj.device.tx.frequency;
 
-            obj.device.tx.vga1       = obj.tx_vga1;
-            obj.curr_tx_vga1         = obj.device.tx.vga1;
+            obj.device.tx.biastee    = obj.enable_tx_biastee;
+            obj.curr_tx_biastee      = obj.device.tx.biastee;
 
-            obj.device.tx.vga2       = obj.tx_vga2;
-            obj.curr_tx_vga2         = obj.device.tx.vga2;
+            obj.device.tx.gain       = obj.tx_gain;
+            %obj.tx_gain              = obj.device.tx.gain;
+            obj.curr_tx_gain         = obj.device.tx.gain;
 
         end
 
@@ -430,26 +459,26 @@ classdef bladeRF_Simulink < matlab.System & ...
             %% RX Properties
             if isChangedProperty(obj, 'rx_frequency') && obj.rx_frequency ~= obj.curr_rx_frequency
                 obj.device.rx.frequency = obj.rx_frequency;
+                %obj.rx_frequency = obj.device.rx.frequency;
+
                 obj.curr_rx_frequency   = obj.device.rx.frequency;
                 %disp('Updated RX frequency');
             end
 
-            if isChangedProperty(obj, 'rx_lna') && obj.rx_lna ~= obj.curr_rx_lna
-                obj.device.rx.lna = obj.rx_lna;
-                obj.curr_rx_lna   = bladeRF.str2lna(obj.device.rx.lna);
-                %disp('Updated RX LNA gain');
+            if isChangedProperty(obj, 'rx_gain') && obj.rx_gain ~= obj.curr_rx_gain
+                obj.device.rx.gain = obj.rx_gain;
+                %obj.rx_gain = obj.device.rx.gain;
+
+                obj.curr_rx_gain = obj.device.rx.gain;
+                %disp('Updated RX gain');
             end
 
-            if isChangedProperty(obj, 'rx_vga1') && obj.rx_vga1 ~= obj.curr_rx_vga1
-                obj.device.rx.vga1 = obj.rx_vga1;
-                obj.curr_rx_vga1   = obj.device.rx.vga1;
-                %disp('Updated RX VGA1 gain');
-            end
+            if isChangedProperty(obj, 'rx_agc') && obj.rx_agc ~= obj.curr_rx_agc
+                obj.device.rx.agc = obj.rx_agc;
+                %obj.rx_agc = obj.device.rx.agc;
 
-            if isChangedProperty(obj, 'rx_vga2') && obj.rx_vga2 ~= obj.curr_rx_vga2
-                obj.device.rx.vga2 = obj.rx_vga2;
-                obj.curr_rx_vga2   = obj.device.rx.vga2;
-                %disp('Updated RX VGA2 gain');
+                obj.curr_rx_agc   = obj.device.rx.agc;
+                %disp('Updated RX AGC gain');
             end
 
             %% TX Properties
@@ -480,10 +509,25 @@ classdef bladeRF_Simulink < matlab.System & ...
 
             if isempty(obj.device)
                 tx_min_freq = 0;
+                tx_max_freq = 0;
+                tx_min_sampling = 0;
+                tx_max_sampling = 0;
+
                 rx_min_freq = 0;
+                rx_max_freq = 0;
+                rx_min_sampling = 0;
+                rx_max_sampling = 0;
+                return
             else
                 tx_min_freq = obj.device.tx.min_frequency;
+                tx_max_freq = obj.device.tx.max_frequency;
+                tx_min_sampling = obj.device.tx.min_sampling;
+                tx_max_sampling = obj.device.tx.max_sampling;
+
                 rx_min_freq = obj.device.rx.min_frequency;
+                rx_max_freq = obj.device.rx.max_frequency;
+                rx_min_sampling = obj.device.rx.min_sampling;
+                rx_max_sampling = obj.device.rx.max_sampling;
             end
 
             %% Validate RX properties
@@ -507,32 +551,16 @@ classdef bladeRF_Simulink < matlab.System & ...
                 error('rx_step_size must be > 0.');
             end
 
-            if obj.rx_samplerate < 160.0e3
-                error('rx_samplerate must be >= 160 kHz.');
+            if obj.rx_samplerate < rx_min_sampling
+                error(['rx_samplerate must be >= ' (num2str(rx_min_sampling)/1e6) ' MHz.']);
             elseif obj.rx_samplerate > 40e6
-                error('rx_samplerate must be <= 40 MHz.')
+                error(['rx_samplerate must be <= ' (num2str(rx_max_sampling)/1e6) ' MHz.']);
             end
 
             if obj.rx_frequency < rx_min_freq
-                error(['rx_frequency must be >= ' num2str(rx_min_freq) '.']);
-            elseif obj.rx_frequency > 3.8e9
-                error('rx_frequency must be <= 3.8 GHz.');
-            end
-
-            if obj.rx_lna ~= 0 && obj.rx_lna ~= 3 && obj.rx_lna ~= 6
-                error('rx_lna must be one of the following: 0, 3, 6');
-            end
-
-            if obj.rx_vga1 < 5
-                error('rx_vga1 gain must be >= 5.')
-            elseif obj.rx_vga1 > 30
-                error('rx_vga1 gain must be <= 30.');
-            end
-
-            if obj.rx_vga2 < 0
-                error('rx_vga2 gain must be >= 0.');
-            elseif obj.rx_vga2 > 30
-                error('rx_vga2 gain must be <= 30.');
+                error(['rx_frequency must be >= ' (num2str(rx_min_freq)/1e6) ' MHz.']);
+            elseif obj.rx_frequency > rx_max_freq
+                error(['rx_frequency must be <= ' (num2str(rx_max_freq)/1e6) ' MHz.']);
             end
 
             %% Validate TX Properties
@@ -566,18 +594,6 @@ classdef bladeRF_Simulink < matlab.System & ...
                 error(['tx_frequency must be >= ' num2str(tx_min_freq) '.']);
             elseif obj.tx_frequency > 3.8e9
                 error('tx_frequency must be <= 3.8 GHz.');
-            end
-
-            if obj.tx_vga1 < -35
-                error('tx_vga1 gain must be >= -35.')
-            elseif obj.tx_vga1 > -4
-                error('tx_vga1 gain must be <= -4.');
-            end
-
-            if obj.tx_vga2 < 0
-                error('tx_vga2 gain must be >= 0.');
-            elseif obj.tx_vga2 > 25
-                error('tx_vga2 gain must be <= 25.');
             end
         end
     end
