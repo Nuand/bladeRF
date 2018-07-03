@@ -35,6 +35,9 @@ classdef bladeRF_XCVR < handle
     end
 
     properties(Dependent = true)
+        agc             % Enable automatic gain control ['AUTO', 'MANUAL', 'FAST', 'SLOW']
+        gain            % Universal gain setting. This value is standardized to output 0dBm when set to 60.
+        biastee         % Control biastee
         samplerate      % Samplerate. Must be within 160 kHz and 40 MHz. A 2-3 MHz minimum is suggested unless external filters are being used.
         frequency       % Frequency. Must be within [237.5 MHz, 3.8 GHz] when no XB-200 is attached, or [0 GHz, 3.8 GHz] when an XB-200 is attached.
         bandwidth       % LPF bandwidth seting. This is rounded to the nearest of the available discrete settings. It is recommended to set this and read back the actual value.
@@ -50,6 +53,9 @@ classdef bladeRF_XCVR < handle
         module          % Module specifier (as a libbladeRF enum)
         direction       % Module direction: { 'RX', 'TX' }
         min_frequency   % Lower frequency tuning limit
+        max_frequency   % Higher frequency tuning limit
+        min_sampling    % Lower sampling rate tuning limit
+        max_sampling    % Higher sampling rate  tuning limit
         xb200_attached; % Modify behavior due to XB200 being attached
     end
 
@@ -137,6 +143,101 @@ classdef bladeRF_XCVR < handle
             %fprintf('Read %s bandwidth: %f\n', obj.direction, bw_val);
         end
 
+        % Configures the automatic gain control setting
+        function set.agc(obj, val)
+            if strcmpi(obj.direction,'RX') == true
+                ch = 'BLADERF_CHANNEL_RX1';
+            else
+                ch = 'BLADERF_CHANNEL_TX1';
+            end
+
+            switch lower(val)
+                case 'auto'
+                    agc_val = 'BLADERF_GAIN_DEFAULT';
+                case 'manual'
+                    agc_val = 'BLADERF_GAIN_MGC';
+                case 'fast'
+                    agc_val = 'BLADERF_GAIN_FASTATTACK_AGC';
+                case 'enable'
+                    agc_val = 'BLADERF_GAIN_SLOWATTACK_AGC';
+                case 'slow'
+                    agc_val = 'BLADERF_GAIN_SLOWATTACK_AGC';
+                case 'hybrid'
+                    agc_val = 'BLADERF_GAIN_HYBRID_AGC';
+                otherwise
+                    error(strcat('Invalid AGC setting: ', val));
+            end
+            [status, ~] = calllib('libbladeRF', 'bladerf_set_gain_mode', obj.bladerf.device, ch, agc_val);
+            if status == -8
+                if obj.bladerf.info.gen == 1
+                    disp('Cannot enable AGC. AGC DC LUT file is missing, run `cal table agc rx'' in bladeRF-cli.')
+                end
+            else
+                bladeRF.check_status('bladerf_set_gain_mode', status);
+            end
+        end
+
+        % Reads the current automatic gain control setting
+        function val = get.agc(obj)
+            val = int32(0);
+            if strcmpi(obj.direction,'RX') == true
+                ch = 'BLADERF_CHANNEL_RX1';
+            else
+                ch = 'BLADERF_CHANNEL_TX1';
+            end
+
+            tmp = int32(0);
+            [status, ~, mode] = calllib('libbladeRF', 'bladerf_get_gain_mode', obj.bladerf.device, ch, tmp);
+            bladeRF.check_status('bladerf_get_gain_mode', status);
+
+            switch mode
+                case 'BLADERF_GAIN_DEFAULT'
+                    val = 'auto';
+                case 'BLADERF_GAIN_MGC'
+                    val = 'manual';
+                case 'BLADERF_GAIN_FASTATTACK_AGC'
+                    val = 'fast';
+                case 'BLADERF_GAIN_SLOWATTACK_AGC'
+                    val = 'slow';
+                case 'BLADERF_GAIN_HYBRID_AGC'
+                    val = 'hybrid';
+                otherwise
+                    error(strcat('Invalid AGC setting: ', val));
+            end
+            %fprintf('Read %s gain: %d\n', obj.direction, val);
+        end
+
+        % Configures the universal gain
+        function set.gain(obj, val)
+            if strcmpi(obj.direction,'RX') == true && strcmpi(obj.agc,'manual') == 0
+                warning(['Cannot set ' obj.direction ' gain when AGC is in ' obj.agc ' mode'])
+            end
+
+            if strcmpi(obj.direction,'RX') == true
+                ch = 'BLADERF_CHANNEL_RX1';
+            else
+                ch = 'BLADERF_CHANNEL_TX1';
+            end
+            [status, ~] = calllib('libbladeRF', 'bladerf_set_gain', obj.bladerf.device, ch, val);
+            bladeRF.check_status('bladerf_set_gain', status);
+        end
+
+        % Reads the current universal gain configuration
+        function val = get.gain(obj)
+            val = int32(0);
+            if strcmpi(obj.direction,'RX') == true
+                ch = 'BLADERF_CHANNEL_RX1';
+            else
+                ch = 'BLADERF_CHANNEL_TX1';
+            end
+
+            tmp = int32(0);
+            [status, ~, val] = calllib('libbladeRF', 'bladerf_get_gain', obj.bladerf.device, ch, tmp);
+            bladeRF.check_status('bladerf_get_gain', status);
+
+            %fprintf('Read %s gain: %d\n', obj.direction, val);
+        end
+
         % Configures the gain of VGA1
         function set.vga1(obj, val)
             if strcmpi(obj.direction,'RX') == true
@@ -152,6 +253,11 @@ classdef bladeRF_XCVR < handle
 
         % Reads the current VGA1 gain configuration
         function val = get.vga1(obj)
+            if obj.bladerf.info.gen ~= 1
+                val = 0;
+                return
+            end
+
             val = int32(0);
             if strcmpi(obj.direction,'RX') == true
                 [status, ~, val] = calllib('libbladeRF', 'bladerf_get_rxvga1', obj.bladerf.device, val);
@@ -179,6 +285,11 @@ classdef bladeRF_XCVR < handle
 
         % Reads the current VGA2 configuration
         function val = get.vga2(obj)
+            if obj.bladerf.info.gen ~= 1
+                val = 0;
+                return
+            end
+
             val = int32(0);
             if strcmpi(obj.direction,'RX') == true
                 [status, ~, val] = calllib('libbladeRF', 'bladerf_get_rxvga2', obj.bladerf.device, val);
@@ -237,6 +348,10 @@ classdef bladeRF_XCVR < handle
 
         % Read current RX LNA gain setting
         function val = get.lna(obj)
+            if obj.bladerf.info.gen ~= 1
+                val = 0;
+                return
+            end
             if strcmpi(obj.direction,'TX') == true
                 error('LNA gain is not applicable to the TX path');
             end
@@ -256,6 +371,32 @@ classdef bladeRF_XCVR < handle
             end
 
             %fprintf('Got RX LNA gain: %s\n', val);
+        end
+
+        % Configures the bias tee
+        function set.biastee(obj, val)
+            if strcmpi(obj.direction,'RX') == true
+                ch = 'BLADERF_CHANNEL_RX1';
+            else
+                ch = 'BLADERF_CHANNEL_TX1';
+            end
+
+            [status, ~] = calllib('libbladeRF', 'bladerf_set_bias_tee', obj.bladerf.device, ch, val);
+
+            %fprintf('Set %s biastee: %d\n', obj.direction, obj.vga2);
+        end
+
+        % Reads the current bias tee configuration
+        function val = get.biastee(obj)
+            if strcmpi(obj.direction,'RX') == true
+                ch = 'BLADERF_CHANNEL_RX1';
+            else
+                ch = 'BLADERF_CHANNEL_TX1';
+            end
+            tmp = int32(0);
+            [status, ~, val] = calllib('libbladeRF', 'bladerf_get_bias_tee', obj.bladerf.device, ch, tmp);
+
+            %fprintf('Get %s biastee: %d\n', obj.direction, val);
         end
 
         % Read the timestamp counter from the associated module
@@ -364,13 +505,44 @@ classdef bladeRF_XCVR < handle
             obj.frequency = 1.0e9;
             obj.bandwidth = 1.5e6;
 
-            if strcmpi(dir, 'RX') == true
-                obj.vga1 = 30;
-                obj.vga2 = 0;
-                obj.lna = 'MAX';
-            else
-                obj.vga1 = -8;
-                obj.vga2 = 16;
+            freqrange = libstruct('bladerf_range');
+
+            status = calllib('libbladeRF', 'bladerf_get_frequency_range', obj.bladerf.device, obj.module, freqrange);
+            bladeRF.check_status('bladerf_get_frequency_range', status);
+            obj.min_frequency = freqrange.min;
+            obj.max_frequency = freqrange.max;
+
+            samplerange = libstruct('bladerf_range');
+
+            status = calllib('libbladeRF', 'bladerf_get_sample_rate_range', obj.bladerf.device, obj.module, samplerange);
+            bladeRF.check_status('bladerf_get_frequency_range', status);
+            obj.min_sampling = samplerange.min;
+            obj.max_sampling = samplerange.max;
+
+            if strcmpi(dir,'RX') == true
+                status = calllib('libbladeRF', 'bladerf_set_gain_mode', obj.bladerf.device, obj.module, 'BLADERF_GAIN_DEFAULT');
+                if status == -8
+                    if obj.bladerf.info.gen == 1
+                        disp('Cannot enable AGC. AGC DC LUT file is missing, run `cal table agc rx'' in bladeRF-cli.')
+                    end
+                else
+                    bladeRF.check_status('bladerf_set_gain_mode', status);
+                end
+
+                gainmode = int32(0);
+                [status, ~, gainmode] = calllib('libbladeRF', 'bladerf_get_gain_mode', obj.bladerf.device, obj.module, gainmode);
+            end
+
+
+            if dev.info.gen == 1
+                if strcmpi(dir, 'RX') == true
+                    obj.vga1 = 30;
+                    obj.vga2 = 0;
+                    obj.lna = 'MAX';
+                else
+                    obj.vga1 = -8;
+                    obj.vga2 = 16;
+                end
             end
 
             obj.corrections = bladeRF_IQCorr(dev, obj.module, 0, 0, 0, 0);
