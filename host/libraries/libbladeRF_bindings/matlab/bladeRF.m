@@ -475,10 +475,16 @@ classdef bladeRF < handle
             switch fpga_size
                 case 'BLADERF_FPGA_40KLE'
                     obj.info.fpga_size = '40 kLE';
+                    obj.info.gen = 1;
                 case 'BLADERF_FPGA_115KLE'
                     obj.info.fpga_size = '115 kLE';
-                otherwise
-                    error(strcat('Unexpected FPGA size: ', fpga_size))
+                    obj.info.gen = 1;
+                case 'BLADERF_FPGA_A4'
+                    obj.info.fpga_size = 'A4 49 kLE';
+                    obj.info.gen = 2;
+                case 'BLADERF_FPGA_A9'
+                    obj.info.fpga_size = 'A9 301 kLE';
+                    obj.info.gen = 2;
             end
 
             % USB Speed
@@ -761,13 +767,12 @@ classdef bladeRF < handle
 
             %fprintf('SOB=%d, EOB=%d, TS=0x%s, flags=0x%s\n', ...
             %        sob, eob, dec2hex(metad.timestamp), dec2hex(metad.flags));
-
             status = calllib('libbladeRF', 'bladerf_sync_tx', ...
                              obj.device, ...
                              s16, ...
                              length(samples), ...
                              pmetad, ...
-                             timeout_ms);
+                             timeout_ms * 1000);
 
             bladeRF.check_status('bladerf_sync_tx', status);
         end
