@@ -165,16 +165,10 @@ static char get_key()
 #define GAIN_RXVGA2_MIN     0
 #define GAIN_RXVGA2_MAX     30
 
-#define KEY_DEC_TXVGA1      '1'
-#define KEY_INC_TXVGA1      '2'
-#define KEY_DEC_TXVGA2      '3'
-#define KEY_INC_TXVGA2      '4'
-#define KEY_DEC_RXVGA1      '5'
-#define KEY_INC_RXVGA1      '6'
-#define KEY_DEC_RXVGA2      '7'
-#define KEY_INC_RXVGA2      '8'
-#define KEY_DEC_LNAGAIN     '9'
-#define KEY_INC_LNAGAIN     '0'
+#define KEY_DEC_TX          '1'
+#define KEY_INC_TX          '2'
+#define KEY_DEC_RX          '3'
+#define KEY_INC_RX          '4'
 #define KEY_QUIT            'q'
 #define KEY_HELP            'h'
 
@@ -213,11 +207,11 @@ struct repeater
 
     struct buf_mgmt buf_mgmt;
 
-    int gain_txvga1;            /**< TX VGA1 gain */
-    int gain_txvga2;            /**< TX VGA2 gain */
-    int gain_rxvga1;            /**< RX VGA1 gain */
-    int gain_rxvga2;            /**< RX VGA2 gain */
-    bladerf_lna_gain gain_lna;  /**< LNA gain */
+    int gain_tx;                /**< TX gain */
+    int gain_rx;                /**< RX gain */
+
+    struct bladerf_range gain_range_rx;
+    struct bladerf_range gain_range_tx;
 };
 
 void repeater_config_init(struct repeater_config *c)
@@ -401,6 +395,7 @@ static int init_device(struct repeater *repeater, struct repeater_config *config
 {
     int status = 0;
     unsigned int actual_value;
+    const struct bladerf_range *gain_ptr;
 
     status = bladerf_open(&repeater->device, config->device_str);
     if (!repeater->device) {
@@ -503,49 +498,52 @@ static int init_device(struct repeater *repeater, struct repeater_config *config
         printf("Enabled TX module\r\n");
     }
 
-    status = bladerf_get_txvga1(repeater->device, &repeater->gain_txvga1);
+    status = bladerf_get_gain(repeater->device,
+                    BLADERF_CHANNEL_TX(0), &repeater->gain_tx);
     if (status < 0) {
-        fprintf(stderr, "Failed to get TXVGA1 gain: %s\r\n",
+        fprintf(stderr, "Failed to get TX gain: %s\r\n",
                 bladerf_strerror(status));
         goto init_device_error;
     } else {
-        printf("TXVGA1 gain is: %d\r\n", repeater->gain_txvga1);
+        printf("TX gain is: %d\r\n", repeater->gain_tx);
     }
 
-    status = bladerf_get_txvga2(repeater->device, &repeater->gain_txvga2);
+    status = bladerf_get_gain_range(repeater->device,
+                    BLADERF_CHANNEL_TX(0), &gain_ptr);
     if (status < 0) {
-        fprintf(stderr, "Failed to get TXVGA2 gain: %s\r\n",
+        fprintf(stderr, "Failed to get TX gain range: %s\r\n",
                 bladerf_strerror(status));
         goto init_device_error;
     } else {
-        printf("TXVGA2 gain is: %d\r\n", repeater->gain_txvga2);
+        memcpy(&repeater->gain_range_tx, gain_ptr,
+                                        sizeof(struct bladerf_range));
+
+        printf("TX gain range is: [%ld, %ld]\r\n", repeater->gain_range_tx.min,
+                                           repeater->gain_range_tx.max);
     }
 
-    status = bladerf_get_rxvga1(repeater->device, &repeater->gain_rxvga1);
+    status = bladerf_get_gain(repeater->device,
+                    BLADERF_CHANNEL_RX(0), &repeater->gain_rx);
     if (status < 0) {
-        fprintf(stderr, "Failed to get RXVGA1 gain: %s\r\n",
+        fprintf(stderr, "Failed to get RX gain: %s\r\n",
                 bladerf_strerror(status));
         goto init_device_error;
     } else {
-        printf("RXVGA1 gain is: %d\r\n", repeater->gain_rxvga1);
+        printf("RX gain is: %d\r\n", repeater->gain_rx);
     }
 
-    status = bladerf_get_rxvga2(repeater->device, &repeater->gain_rxvga2);
+    status = bladerf_get_gain_range(repeater->device,
+                    BLADERF_CHANNEL_RX(0), &gain_ptr);
     if (status < 0) {
-        fprintf(stderr, "Failed to get RXVGA2 gain: %s\r\n",
+        fprintf(stderr, "Failed to get RX gain range: %s\r\n",
                 bladerf_strerror(status));
         goto init_device_error;
     } else {
-        printf("RXVGA2 gain is: %d\r\n", repeater->gain_rxvga2);
-    }
+        memcpy(&repeater->gain_range_rx, gain_ptr,
+                                        sizeof(struct bladerf_range));
 
-    status = bladerf_get_lna_gain(repeater->device, &repeater->gain_lna);
-    if (status < 0) {
-        fprintf(stderr, "Failed to get LNA gain: %s\r\n",
-                bladerf_strerror(status));
-        goto init_device_error;
-    } else {
-        printf("LNA gain is: %d\r\n", repeater->gain_lna);
+        printf("RX gain range is: [%ld, %ld]\r\n", repeater->gain_range_rx.min,
+                                           repeater->gain_range_rx.max);
     }
 
     return status;
@@ -686,37 +684,14 @@ static void repeater_help()
 {
     printf("\r\nHotkeys\r\n");
     printf("------------------------------------------------\r\n");
-    printf("TXVGA1: Decrement = %c, Increment = %c\r\n",
-           KEY_DEC_TXVGA1, KEY_INC_TXVGA1);
+    printf("TX Gain: Decrement = %c, Increment = %c\r\n",
+           KEY_DEC_TX, KEY_INC_TX);
 
-    printf("TXVGA2: Decrement = %c, Increment = %c\r\n",
-           KEY_DEC_TXVGA2, KEY_INC_TXVGA2);
-
-    printf("RXVGA1: Decrement = %c, Increment = %c\r\n",
-           KEY_DEC_RXVGA1, KEY_INC_RXVGA1);
-
-    printf("RXVGA2: Decrement = %c, Increment = %c\r\n",
-           KEY_DEC_RXVGA2, KEY_INC_RXVGA2);
-
-    printf("LNA Gain: Decrement = %c, Increment = %c\r\n",
-            KEY_DEC_LNAGAIN, KEY_INC_LNAGAIN);
+    printf("RX Gain: Decrement = %c, Increment = %c\r\n",
+           KEY_DEC_RX, KEY_INC_RX);
 
     printf("Quit: q\r\n");
     printf("Hotkey list: h\r\n\r\n");
-}
-
-static const char *lnagain2str(bladerf_lna_gain gain)
-{
-    switch (gain) {
-        case BLADERF_LNA_GAIN_BYPASS:
-            return "Bypass";
-        case BLADERF_LNA_GAIN_MAX:
-            return "Max (6dB)";
-        case BLADERF_LNA_GAIN_MID:
-            return "Mid (3dB)";
-        default:
-            return "Uknown";
-    }
 }
 
 static int repeater_handle_key(struct repeater *repeater, char key)
@@ -724,165 +699,70 @@ static int repeater_handle_key(struct repeater *repeater, char key)
     int status = 0;
 
     switch (key) {
-        case KEY_DEC_TXVGA1:
-            if (repeater->gain_txvga1 > GAIN_TXVGA1_MIN) {
-                status = bladerf_set_txvga1(repeater->device,
-                                            --repeater->gain_txvga1);
+        case KEY_DEC_TX:
+            if (repeater->gain_tx >= repeater->gain_range_tx.min) {
+                status = bladerf_set_gain(repeater->device,
+                                            BLADERF_CHANNEL_TX(0),
+                                            --repeater->gain_tx);
 
                 if (status < 0) {
-                    repeater->gain_txvga1++;
-                    fprintf(stderr, "Failed to increase TXVGA1 gain: %s\r\n",
+                    repeater->gain_tx++;
+                    fprintf(stderr, "Failed to increase TX gain: %s\r\n",
                             bladerf_strerror(status));
                 } else {
-                    printf("TXVGA1 gain decreased to: %d\r\n",
-                            repeater->gain_txvga1);
+                    printf("TX gain decreased to: %d\r\n",
+                            repeater->gain_tx);
                 }
             }
             break;
 
-        case KEY_INC_TXVGA1:
-            if (repeater->gain_txvga1 < GAIN_TXVGA1_MAX) {
-                status = bladerf_set_txvga1(repeater->device,
-                                            ++repeater->gain_txvga1);
+        case KEY_INC_TX:
+            if (repeater->gain_tx <= repeater->gain_range_tx.max) {
+                status = bladerf_set_gain(repeater->device,
+                                            BLADERF_CHANNEL_TX(0),
+                                            ++repeater->gain_tx);
 
                 if (status < 0) {
-                    repeater->gain_txvga1--;
-                    fprintf(stderr, "Failed to increase TXVGA1 gain: %s\r\n",
+                    repeater->gain_tx--;
+                    fprintf(stderr, "Failed to increase TX gain: %s\r\n",
                             bladerf_strerror(status));
                 } else {
-                    printf("TXVGA1 gain increased to: %d\r\n",
-                            repeater->gain_txvga1);
+                    printf("TX gain increased to: %d\r\n",
+                            repeater->gain_tx);
                 }
             }
             break;
 
-        case KEY_DEC_TXVGA2:
-            if (repeater->gain_txvga2 > GAIN_TXVGA2_MIN) {
-                status = bladerf_set_txvga2(repeater->device,
-                                            --repeater->gain_txvga2);
+        case KEY_DEC_RX:
+            if (repeater->gain_rx >= repeater->gain_range_rx.min) {
+                status = bladerf_set_gain(repeater->device,
+                        BLADERF_CHANNEL_RX(0),
+                        --repeater->gain_rx);
 
                 if (status < 0) {
-                    repeater->gain_txvga2++;
-                    fprintf(stderr, "Failed to decrease TXVGA2 gain: %s\r\n",
+                    repeater->gain_rx++;
+                    fprintf(stderr, "Failed to decrease RX gain: %s\r\n",
                             bladerf_strerror(status));
                 } else {
-                    printf("TXVGA2 gain decreased to: %d\r\n",
-                            repeater->gain_txvga2);
+                    printf("RX gain decreased to %d\r\n",
+                            repeater->gain_rx);
                 }
             }
             break;
 
-        case KEY_INC_TXVGA2:
-            if (repeater->gain_txvga2 < GAIN_TXVGA2_MAX) {
-                status = bladerf_set_txvga2(repeater->device,
-                                            ++repeater->gain_txvga2);
+        case KEY_INC_RX:
+            if (repeater->gain_rx <= repeater->gain_range_tx.max) {
+                status = bladerf_set_gain(repeater->device,
+                        BLADERF_CHANNEL_RX(0),
+                        ++repeater->gain_rx);
 
                 if (status < 0) {
-                    repeater->gain_txvga2--;
-                    fprintf(stderr, "Failed to increase TXVGA2 gain: %s\r\n",
+                    repeater->gain_rx--;
+                    fprintf(stderr, "Failed to increase RX gain: %s\r\n",
                             bladerf_strerror(status));
                 } else {
-                    printf("TXVGA2 gain increased to: %d\r\n",
-                            repeater->gain_txvga2);
-                }
-            }
-            break;
-
-        case KEY_DEC_RXVGA1:
-            if (repeater->gain_rxvga1 > GAIN_RXVGA1_MIN) {
-                status = bladerf_set_rxvga1(repeater->device,
-                        --repeater->gain_rxvga1);
-
-                if (status < 0) {
-                    repeater->gain_rxvga1++;
-                    fprintf(stderr, "Failed to decrease RXVGA1 gain: %s\r\n",
-                            bladerf_strerror(status));
-                } else {
-                    printf("RXVGA1 gain decreased to %d\r\n",
-                            repeater->gain_rxvga1);
-                }
-            }
-            break;
-
-        case KEY_INC_RXVGA1:
-            if (repeater->gain_rxvga1 < GAIN_RXVGA1_MAX) {
-                status = bladerf_set_rxvga1(repeater->device,
-                        ++repeater->gain_rxvga1);
-
-                if (status < 0) {
-                    repeater->gain_rxvga1--;
-                    fprintf(stderr, "Failed to increase RXVGA1 gain: %s\r\n",
-                            bladerf_strerror(status));
-                } else {
-                    printf("RXVGA1 gain increased to %d\r\n",
-                            repeater->gain_rxvga1);
-                }
-            }
-            break;
-
-        case KEY_DEC_RXVGA2:
-            if (repeater->gain_rxvga2 > GAIN_RXVGA2_MIN) {
-                status = bladerf_set_rxvga2(repeater->device,
-                        --repeater->gain_rxvga2);
-
-                if (status < 0) {
-                    repeater->gain_rxvga2++;
-                    fprintf(stderr, "Failed to decrease RXVGA2 gain: %s\r\n",
-                            bladerf_strerror(status));
-                } else {
-                    printf("RXVGA2 gain decreased to %d\r\n",
-                            repeater->gain_rxvga2);
-                }
-            }
-            break;
-
-        case KEY_INC_RXVGA2:
-            if (repeater->gain_rxvga2 < GAIN_RXVGA2_MAX)
-            {
-                status = bladerf_set_rxvga2(repeater->device,
-                        ++repeater->gain_rxvga2);
-
-                if (status < 0) {
-                    repeater->gain_rxvga2--;
-                    fprintf(stderr, "Failed to increase RXVGA2 gain: %s\r\n",
-                            bladerf_strerror(status));
-                } else {
-                    printf("RXVGA2 gain increased to %d\r\n",
-                            repeater->gain_rxvga2);
-                }
-            }
-            break;
-
-        case KEY_DEC_LNAGAIN:
-            if (repeater->gain_lna > BLADERF_LNA_GAIN_BYPASS)
-            {
-                status = bladerf_set_lna_gain(repeater->device,
-                                              --repeater->gain_lna);
-
-                if (status < 0) {
-                    repeater->gain_lna++;
-                    fprintf(stderr, "Failed to decrease LNA gain: %s\r\n",
-                            bladerf_strerror(status));
-                } else {
-                    printf("LNA gain decreased to %s\r\n",
-                           lnagain2str(repeater->gain_lna));
-                }
-            }
-            break;
-
-        case KEY_INC_LNAGAIN:
-            if (repeater->gain_lna < BLADERF_LNA_GAIN_MAX)
-            {
-                status = bladerf_set_lna_gain(repeater->device,
-                                              ++repeater->gain_lna);
-
-                if (status < 0) {
-                    repeater->gain_lna--;
-                    fprintf(stderr, "Failed to increase LNA gain: %s\r\n",
-                            bladerf_strerror(status));
-                } else {
-                    printf("LNA gain increased to %s\r\n",
-                           lnagain2str(repeater->gain_lna));
+                    printf("RX gain increased to %d\r\n",
+                            repeater->gain_rx);
                 }
             }
             break;
