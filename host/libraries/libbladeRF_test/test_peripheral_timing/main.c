@@ -163,26 +163,72 @@ int time_si5338_writes(struct bladerf *dev, double *duration)
     return 0;
 }
 
-int main(int argc, char *argv[])
+int time_rfic_reads(struct bladerf *dev, double *duration)
 {
     int status;
-    struct bladerf *dev = NULL;
-    const char *devstr = NULL;
-    double duration;
+    struct timespec start, end;
+    unsigned int i;
+    uint8_t data;
 
-    if (argc > 1 && (!strcmp(argv[1], "-h") || !strcmp(argv[1], "--help"))) {
-        fprintf(stderr, "Usage: %s [device string]\n", argv[0]);
-        return 1;
-    } else {
-        devstr = argv[1];
-    }
-
-    status = bladerf_open(&dev, devstr);
+    status = clock_gettime(CLOCK_MONOTONIC_RAW, &start);
     if (status != 0) {
-        fprintf(stderr, "Unable to open device: %s\n",
-                bladerf_strerror(status));
-        return status;
+        fprintf(stderr, "Failed to get start time. Erroring out.\n");
+        return -1;
     }
+
+    for (i = 0; i < ITERATIONS; i++) {
+        status = bladerf_get_rfic_register(dev, 0x00, &data);
+        if (status != 0) {
+            fprintf(stderr, "RFIC Read failed: %s\n",
+                    bladerf_strerror(status));
+            return -1;
+        }
+    }
+
+    status = clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+    if (status != 0) {
+        fprintf(stderr, "Failed to get end time. Erroring out.\n");
+        return -1;
+    }
+
+    *duration = calc_avg_duration(&start, &end, ITERATIONS);
+    return 0;
+}
+
+int time_rfic_writes(struct bladerf *dev, double *duration)
+{
+    int status;
+    struct timespec start, end;
+    unsigned int i;
+
+    status = clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+    if (status != 0) {
+        fprintf(stderr, "Failed to get start time. Erroring out.\n");
+        return -1;
+    }
+
+    for (i = 0; i < ITERATIONS; i++) {
+        status = bladerf_set_rfic_register(dev, 0x00, 0xaa);
+        if (status != 0) {
+            fprintf(stderr, "RFIC Read failed: %s\n",
+                    bladerf_strerror(status));
+            return -1;
+        }
+    }
+
+    status = clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+    if (status != 0) {
+        fprintf(stderr, "Failed to get end time. Erroring out.\n");
+        return -1;
+    }
+
+    *duration = calc_avg_duration(&start, &end, ITERATIONS);
+    return 0;
+}
+
+int test_bladeRF1(struct bladerf *dev) {
+    int status;
+    double duration;
 
     printf("Timing LMS6002D reads over %u iterations...\n", ITERATIONS);
     status = time_lms_reads(dev, &duration);
@@ -217,7 +263,73 @@ int main(int argc, char *argv[])
     }
 
 out:
-    bladerf_close(dev);
     return status;
 }
 
+int test_bladeRF2(struct bladerf *dev) {
+    int status;
+    double duration;
+
+    printf("Timing RFIC reads over %u iterations...\n", ITERATIONS);
+    status = time_rfic_reads(dev, &duration);
+    if (status != 0) {
+        goto out;
+    } else {
+        printf("  Average access time: %f s\n\n", duration);
+    }
+
+    printf("Timing RFIC writes over %u iterations...\n", ITERATIONS);
+    status = time_rfic_writes(dev, &duration);
+    if (status != 0) {
+        goto out;
+    } else {
+        printf("  Average access time: %f s\n\n", duration);
+    }
+
+out:
+    return status;
+}
+
+int main(int argc, char *argv[])
+{
+    int status;
+    struct bladerf *dev = NULL;
+    const char *devstr = NULL;
+    bladerf_fpga_size fpga_size;
+
+    if (argc > 1 && (!strcmp(argv[1], "-h") || !strcmp(argv[1], "--help"))) {
+        fprintf(stderr, "Usage: %s [device string]\n", argv[0]);
+        return 1;
+    } else {
+        devstr = argv[1];
+    }
+
+    status = bladerf_open(&dev, devstr);
+    if (status != 0) {
+        fprintf(stderr, "Unable to open device: %s\n",
+                bladerf_strerror(status));
+        return status;
+    }
+
+    status = bladerf_get_fpga_size(dev, &fpga_size);
+    if (status != 0) {
+        fprintf(stderr, "Unable to query FPGA size: %s\n",
+                bladerf_strerror(status));
+        return status;
+    }
+
+    switch (fpga_size) {
+        default:
+        case BLADERF_FPGA_40KLE:
+        case BLADERF_FPGA_115KLE:
+            status = test_bladeRF1(dev);
+            break;
+
+        case BLADERF_FPGA_A4:
+        case BLADERF_FPGA_A9:
+            status = test_bladeRF2(dev);
+            break;
+    }
+    bladerf_close(dev);
+    return status;
+}
