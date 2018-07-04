@@ -47,13 +47,13 @@ int cmd_erase(struct cli_state *state, int argc, char **argv)
         return CLI_RET_INVPARAM;
     }
 
-    addr = eb_offset * BLADERF_FLASH_EB_SIZE;
-    len  = n_ebs * BLADERF_FLASH_EB_SIZE;
+    addr = eb_offset;
+    len  = n_ebs;
 
     status = bladerf_erase_flash(state->dev, addr, len);
 
     if (status >= 0) {
-        printf("\n  Erased %d bytes at 0x%02x\n\n", status, addr);
+        printf("\n  Erased %d blocks at 0x%02x\n\n", len, addr);
         return CLI_RET_OK;
     } else {
         state->last_lib_error = status;
