@@ -39,6 +39,71 @@
 #include "board/board.h"
 #include "helpers/timeout.h"
 
+#ifdef ENABLE_LIBBLADERF_SYNC_LOG_VERBOSE
+static inline void dump_buf_states(struct bladerf_sync *s)
+{
+    static char *out      = NULL;
+    struct buffer_mgmt *b = &s->buf_mgmt;
+    char *statestr        = "UNKNOWN";
+
+    if (out == NULL) {
+        out = malloc((b->num_buffers + 1) * sizeof(char));
+    }
+
+    if (out == NULL) {
+        log_verbose("%s: malloc failed\n");
+        return;
+    }
+
+    out[b->num_buffers] = '\0';
+
+    for (size_t i = 0; i < b->num_buffers; ++i) {
+        switch (b->status[i]) {
+            case SYNC_BUFFER_EMPTY:
+                out[i] = '_';
+                break;
+            case SYNC_BUFFER_IN_FLIGHT:
+                out[i] = '-';
+                break;
+            case SYNC_BUFFER_FULL:
+                out[i] = '*';
+                break;
+            case SYNC_BUFFER_PARTIAL:
+                out[i] = 'o';
+                break;
+        }
+    }
+
+    switch (s->state) {
+        case SYNC_STATE_BUFFER_READY:
+            statestr = "BUFFER_READY";
+            break;
+        case SYNC_STATE_CHECK_WORKER:
+            statestr = "CHECK_WORKER";
+            break;
+        case SYNC_STATE_RESET_BUF_MGMT:
+            statestr = "RESET_BUF_MGMT";
+            break;
+        case SYNC_STATE_START_WORKER:
+            statestr = "START_WORKER";
+            break;
+        case SYNC_STATE_USING_BUFFER:
+            statestr = "USING_BUFFER";
+            break;
+        case SYNC_STATE_USING_BUFFER_META:
+            statestr = "USING_BUFFER_META";
+            break;
+        case SYNC_STATE_WAIT_FOR_BUFFER:
+            statestr = "WAIT_FOR_BUFFER";
+            break;
+    }
+
+    log_verbose("%s: %s (%s)\n", __FUNCTION__, out, statestr);
+}
+#else
+#define dump_buf_states(...)
+#endif  // ENABLE_LIBBLADERF_SYNC_LOG_VERBOSE
+
 static inline size_t samples2bytes(struct bladerf_sync *s, size_t n) {
     return s->stream_config.bytes_per_sample * n;
 }
@@ -215,8 +280,10 @@ void sync_deinit(struct bladerf_sync *sync)
     }
 }
 
-static int wait_for_buffer(struct buffer_mgmt *b, unsigned int timeout_ms,
-                           const char *dbg_name, unsigned int dbg_idx)
+static int wait_for_buffer(struct buffer_mgmt *b,
+                           unsigned int timeout_ms,
+                           const char *dbg_name,
+                           unsigned int dbg_idx)
 {
     int status;
     struct timespec timeout;
@@ -226,8 +293,8 @@ static int wait_for_buffer(struct buffer_mgmt *b, unsigned int timeout_ms,
                     dbg_name, dbg_idx, b->status[dbg_idx]);
         status = pthread_cond_wait(&b->buf_ready, &b->lock);
     } else {
-        log_verbose("%s: Timed wait for buffer[%d] (status: %d).\n",
-                    dbg_name, dbg_idx, b->status[dbg_idx]);
+        log_verbose("%s: Timed wait for buffer[%d] (status: %d).\n", dbg_name,
+                    dbg_idx, b->status[dbg_idx]);
         status = populate_abs_timeout(&timeout, timeout_ms);
         if (status == 0) {
             status = pthread_cond_timedwait(&b->buf_ready, &b->lock, &timeout);
@@ -235,6 +302,8 @@ static int wait_for_buffer(struct buffer_mgmt *b, unsigned int timeout_ms,
     }
 
     if (status == ETIMEDOUT) {
+        log_error("%s: Timed out waiting for buf_ready after %d ms\n",
+                  __FUNCTION__, timeout_ms);
         status = BLADERF_ERR_TIMEOUT;
     } else if (status != 0) {
         status = BLADERF_ERR_UNEXPECTED;
@@ -312,6 +381,7 @@ int sync_rx(struct bladerf_sync *s, void *samples, unsigned num_samples,
     log_verbose("%s: Requests %u samples.\n", __FUNCTION__, num_samples);
 
     while (!exit_early && samples_returned < num_samples && status == 0) {
+        dump_buf_states(s);
 
         switch (s->state) {
             case SYNC_STATE_CHECK_WORKER: {
@@ -1130,4 +1200,3 @@ unsigned int sync_buf2idx(struct buffer_mgmt *b, void *addr)
     log_critical("Bug: Buffer not found.");
     return 0;
 }
-

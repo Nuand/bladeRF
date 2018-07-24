@@ -51,6 +51,7 @@
 #include "devinfo.h"
 #include "helpers/file.h"
 #include "helpers/version.h"
+#include "helpers/wallclock.h"
 #include "version.h"
 
 
@@ -1660,6 +1661,8 @@ static int bladerf2_enable_module(struct bladerf *dev,
 
     bladerf_frequency freq = 0;
 
+    static uint64_t lastrun = 0; /* nsec value at last run */
+
     CHECK_BOARD_STATE(STATE_INITIALIZED);
 
     board_data = dev->board_data;
@@ -1765,11 +1768,15 @@ static int bladerf2_enable_module(struct bladerf *dev,
     backend_clear = enable && !dir_pending && BLADERF_RX == dir;
 
     /* Debug logging */
+    uint64_t nsec = wallclock_get_current_nsec();
+
     log_debug("%s: %s%d ch_en=%d ch_pend=%d dir_en=%d dir_pend=%d be_clr=%d "
-              "reg=0x%08x->0x%08x\n",
+              "reg=0x%08x->0x%08x nsec=%" PRIu64 " (delta: %" PRIu64 ")\n",
               __FUNCTION__, BLADERF_TX == dir ? "TX" : "RX", (ch >> 1) + 1,
               enable, ch_pending, dir_enable, dir_pending, backend_clear,
-              reg_old, reg);
+              reg_old, reg, nsec, nsec - lastrun);
+
+    lastrun = nsec;
 
     /* Write RFFE control register */
     if (reg_old != reg) {

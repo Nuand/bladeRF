@@ -428,7 +428,8 @@ int nios_get_fpga_version(struct bladerf *dev, struct bladerf_version *ver)
     return status;
 }
 
-int nios_get_timestamp(struct bladerf *dev, bladerf_direction dir,
+int nios_get_timestamp(struct bladerf *dev,
+                       bladerf_direction dir,
                        uint64_t *timestamp)
 {
     int status;
@@ -460,8 +461,8 @@ int nios_get_timestamp(struct bladerf *dev, bladerf_direction dir,
     nios_pkt_8x64_resp_unpack(buf, NULL, NULL, NULL, timestamp, &success);
 
     if (success) {
-        log_verbose("%s: Read %s timstamp: 0x%"PRIu64"\n",
-                    __FUNCTION__, direction2str(dir), timestamp);
+        log_verbose("%s: Read %s timestamp: %" PRIu64 "\n", __FUNCTION__,
+                    direction2str(dir), *timestamp);
         return 0;
     } else {
         log_debug("%s: response packet reported failure.\n", __FUNCTION__);

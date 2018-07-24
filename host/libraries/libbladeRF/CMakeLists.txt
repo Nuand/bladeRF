@@ -323,6 +323,7 @@ set(LIBBLADERF_SOURCE
         src/helpers/timeout.c
         src/helpers/file.c
         src/helpers/version.c
+        src/helpers/wallclock.c
         src/helpers/interleave.c
         src/helpers/configfile.c
         src/version.h

@@ -187,32 +187,29 @@ static void *tx_callback(struct bladerf *dev,
 int sync_worker_init(struct bladerf_sync *s)
 {
     int status = 0;
-    s->worker = (struct sync_worker*) calloc(1, sizeof(*s->worker));
+    s->worker  = (struct sync_worker *)calloc(1, sizeof(*s->worker));
 
     if (s->worker == NULL) {
         status = BLADERF_ERR_MEM;
         goto worker_init_out;
     }
 
-    s->worker->state = SYNC_WORKER_STATE_STARTUP;
+    s->worker->state    = SYNC_WORKER_STATE_STARTUP;
     s->worker->err_code = 0;
 
-    s->worker->cb = (s->stream_config.layout & BLADERF_DIRECTION_MASK) == BLADERF_RX ?
-                        rx_callback : tx_callback;
+    s->worker->cb =
+        (s->stream_config.layout & BLADERF_DIRECTION_MASK) == BLADERF_RX
+            ? rx_callback
+            : tx_callback;
 
-    status = async_init_stream(&s->worker->stream,
-                               s->dev,
-                               s->worker->cb,
-                               &s->buf_mgmt.buffers,
-                               s->buf_mgmt.num_buffers,
-                               s->stream_config.format,
-                               s->stream_config.samples_per_buffer,
-                               s->stream_config.num_xfers,
-                               s);
+    status = async_init_stream(
+        &s->worker->stream, s->dev, s->worker->cb, &s->buf_mgmt.buffers,
+        s->buf_mgmt.num_buffers, s->stream_config.format,
+        s->stream_config.samples_per_buffer, s->stream_config.num_xfers, s);
 
     if (status != 0) {
-        log_debug("%s worker: Failed to init stream: %s\n",
-                  worker2str(s), bladerf_strerror(status));
+        log_debug("%s worker: Failed to init stream: %s\n", worker2str(s),
+                  bladerf_strerror(status));
         goto worker_init_out;
     }
 
@@ -222,25 +219,34 @@ int sync_worker_init(struct bladerf_sync *s)
 
     status = pthread_cond_init(&s->worker->state_changed, NULL);
     if (status != 0) {
+        log_debug("%s worker: pthread_cond_init(state_changed) failed: %d\n",
+                  worker2str(s), status);
         status = BLADERF_ERR_UNEXPECTED;
         goto worker_init_out;
     }
 
     status = pthread_cond_init(&s->worker->requests_pending, NULL);
     if (status != 0) {
+        log_debug("%s worker: pthread_cond_init(requests_pending) failed: %d\n",
+                  worker2str(s), status);
         status = BLADERF_ERR_UNEXPECTED;
         goto worker_init_out;
     }
 
     status = pthread_create(&s->worker->thread, NULL, sync_worker_task, s);
     if (status != 0) {
+        log_debug("%s worker: pthread_create failed: %d\n", worker2str(s),
+                  status);
         status = BLADERF_ERR_UNEXPECTED;
         goto worker_init_out;
     }
 
     /* Wait until the worker thread has initialized and is ready to go */
-    status = sync_worker_wait_for_state(s->worker, SYNC_WORKER_STATE_IDLE, 1000);
+    status =
+        sync_worker_wait_for_state(s->worker, SYNC_WORKER_STATE_IDLE, 1000);
     if (status != 0) {
+        log_debug("%s worker: sync_worker_wait_for_state failed: %d\n",
+                  worker2str(s), status);
         status = BLADERF_ERR_TIMEOUT;
         goto worker_init_out;
     }

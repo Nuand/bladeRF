@@ -985,7 +985,7 @@ static int submit_transfer(struct bladerf_stream *stream, void *buffer);
 static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
 {
     struct bladerf_stream *stream = transfer->user_data;
-    void *next_buffer = NULL;
+    void *next_buffer             = NULL;
     struct bladerf_metadata metadata;
     struct lusb_stream_data *stream_data = stream->backend_data;
     size_t transfer_i;
@@ -1010,11 +1010,10 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
 
     /* Check to see if the transfer has been cancelled or errored */
     if (transfer->status != LIBUSB_TRANSFER_COMPLETED) {
-
         /* Errored out for some reason .. */
         stream->state = STREAM_SHUTTING_DOWN;
 
-        switch(transfer->status) {
+        switch (transfer->status) {
             case LIBUSB_TRANSFER_CANCELLED:
                 /* We expect this case when we begin tearing down the stream */
                 break;
@@ -1030,14 +1029,16 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
                 stream->error_code = BLADERF_ERR_IO;
                 break;
 
-            case LIBUSB_TRANSFER_OVERFLOW :
+            case LIBUSB_TRANSFER_OVERFLOW:
                 log_error("Got transfer over for buffer %p, "
-                            "transfer \"actual_length\" = %d\n",
-                            transfer->buffer, transfer->actual_length);
+                          "transfer \"actual_length\" = %d\n",
+                          transfer->buffer, transfer->actual_length);
                 stream->error_code = BLADERF_ERR_IO;
                 break;
 
             case LIBUSB_TRANSFER_TIMED_OUT:
+                log_error("Transfer timed out for buffer %p\n",
+                          transfer->buffer);
                 stream->error_code = BLADERF_ERR_TIMEOUT;
                 break;
 
@@ -1046,27 +1047,21 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
                 break;
 
             default:
-                log_error( "Unexpected transfer status: %d\n", transfer->status );
+                log_error("Unexpected transfer status: %d\n", transfer->status);
                 break;
         }
-
     }
 
     if (stream->state == STREAM_RUNNING) {
-
         /* Sanity check for debugging purposes */
         if (transfer->length != transfer->actual_length) {
-            log_warning( "Received short transfer\n" );
+            log_warning("Received short transfer\n");
         }
 
-       /* Call user callback requesting more data to transmit */
+        /* Call user callback requesting more data to transmit */
         next_buffer = stream->cb(
-                        stream->dev,
-                        stream,
-                        &metadata,
-                        transfer->buffer,
-                        bytes_to_sc16q11(transfer->actual_length),
-                        stream->user_data);
+            stream->dev, stream, &metadata, transfer->buffer,
+            bytes_to_sc16q11(transfer->actual_length), stream->user_data);
 
         if (next_buffer == BLADERF_STREAM_SHUTDOWN) {
             stream->state = STREAM_SHUTTING_DOWN;
@@ -1084,7 +1079,6 @@ static void LIBUSB_CALL lusb_stream_cb(struct libusb_transfer *transfer)
     /* Check to see if all the transfers have been cancelled,
      * and if so, clean up the stream */
     if (stream->state == STREAM_SHUTTING_DOWN) {
-
         /* We know we're done when all of our transfers have returned to their
          * "available" states */
         if (stream_data->num_avail == stream_data->num_transfers) {
