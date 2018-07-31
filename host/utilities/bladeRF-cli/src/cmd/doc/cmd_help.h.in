@@ -27,7 +27,7 @@
  * Any manual modifications to this file will be overwritten!
  * To edit the content of help strings, please edit interactive-help.md
  *
- * Last generated: Wed May 30 15:24:57 EDT 2018 by rtucker@rho
+ * Last generated: Tue Jul 31 18:40:12 EDT 2018 by rtucker@rho
  */
 
 #ifndef BLADERF_CLI_DOC_CMD_HELP_H__
@@ -439,7 +439,7 @@
 
 
 #define CLI_CMD_HELPTEXT_peek \
-  "Usage: peek <adf|adi|dac|lms|si> <address> [num_addresses]\n" \
+  "Usage: peek <rfic|pll|dac|lms|si> <address> [num_addresses]\n" \
   "\n" \
   "The peek command can read any of the devices hanging off the FPGA.\n" \
   "This includes the:\n" \
@@ -456,8 +456,8 @@
   "\n" \
   "    Device Address Range\n" \
   "  -------- -------------------\n" \
-  "       adf 0 to 3\n" \
-  "       adi 0 to 0x3F7 (1015)\n" \
+  "      rfic 0 to 0x3F7 (1015)\n" \
+  "       pll 0 to 3\n" \
   "       dac 0 to 255\n" \
   "       lms 0 to 127\n" \
   "        si 0 to 255\n" \
@@ -469,7 +469,7 @@
 
 
 #define CLI_CMD_HELPTEXT_poke \
-  "Usage: poke <adf|adi|dac|lms|si> <address> <data>\n" \
+  "Usage: poke <rfic|pll|dac|lms|si> <address> <data>\n" \
   "\n" \
   "The poke command can write any of the devices hanging off the FPGA.\n" \
   "This includes the:\n" \
@@ -483,8 +483,8 @@
   "\n" \
   "    Device Address Range\n" \
   "  -------- -------------------\n" \
-  "       adf 0 to 3\n" \
-  "       adi 0 to 0x3F7 (1015)\n" \
+  "      rfic 0 to 0x3F7 (1015)\n" \
+  "       pll 0 to 3\n" \
   "       dac 0 to 255\n" \
   "       lms 0 to 127\n" \
   "        si 0 to 255\n" \

@@ -548,7 +548,7 @@ See the \f[C]bladerf_open()\f[] documentation in libbladeRF for the
 complete device specifier format.
 .SS peek
 .PP
-Usage: \f[C]peek\ <adf|adi|dac|lms|si>\ <address>\ [num_addresses]\f[]
+Usage: \f[C]peek\ <rfic|pll|dac|lms|si>\ <address>\ [num_addresses]\f[]
 .PP
 The peek command can read any of the devices hanging off the FPGA.
 This includes the:
@@ -573,14 +573,14 @@ Address Range
 T}
 _
 T{
-\f[C]adf\f[]
-T}@T{
-0 to 3
-T}
-T{
-\f[C]adi\f[]
+\f[C]rfic\f[]
 T}@T{
 0 to 0x3F7 (1015)
+T}
+T{
+\f[C]pll\f[]
+T}@T{
+0 to 3
 T}
 T{
 \f[C]dac\f[]
@@ -604,7 +604,7 @@ Example:
 \f[C]peek\ si\ ...\f[]
 .SS poke
 .PP
-Usage: \f[C]poke\ <adf|adi|dac|lms|si>\ <address>\ <data>\f[]
+Usage: \f[C]poke\ <rfic|pll|dac|lms|si>\ <address>\ <data>\f[]
 .PP
 The poke command can write any of the devices hanging off the FPGA.
 This includes the:
@@ -626,14 +626,14 @@ Address Range
 T}
 _
 T{
-\f[C]adf\f[]
-T}@T{
-0 to 3
-T}
-T{
-\f[C]adi\f[]
+\f[C]rfic\f[]
 T}@T{
 0 to 0x3F7 (1015)
+T}
+T{
+\f[C]pll\f[]
+T}@T{
+0 to 3
 T}
 T{
 \f[C]dac\f[]
@@ -989,7 +989,7 @@ T}
 T{
 \f[C]channel\f[]
 T}@T{
-Physical RF channel to use, either 1 (default) or 2.
+Comma\-delimited list of physical RF channels to use
 T}
 .TE
 .PP
@@ -1000,6 +1000,13 @@ Example:
 .PP
 Receive (10240 = 10 * 1024) samples, writing them to
 \f[C]/tmp/data.bin\f[] in the binary DAC format.
+.RE
+.IP \[bu] 2
+\f[C]rx\ config\ file=mimo.csv\ format=csv\ n=32768\ channel=1,2\f[]
+.RS 2
+.PP
+Receive 32768 samples from RX1 and RX2, outputting them to a file named
+\f[C]mimo.csv\f[], with four columns (RX1 I, RX1 Q, RX2 I, RX2 Q).
 .RE
 .PP
 Notes:
@@ -1018,6 +1025,11 @@ format be used, and the output file be written to RAM (e.g.
 \f[C]/tmp\f[], \f[C]/dev/shm\f[]), if space allows.
 For larger captures at higher sample rates, consider using an SSD
 instead of a HDD.
+.IP \[bu] 2
+The CSV format produces two columns per channel, with the first two
+columns corresponding to the I,Q pair for the first channel configured
+with the \f[C]channel\f[] parameter; the next two columns corresponding
+to the I,Q of the second channel, and so on.
 .SS trigger
 .PP
 Usage:
@@ -1275,7 +1287,7 @@ T}
 T{
 \f[C]channel\f[]
 T}@T{
-Physical RF channel to use, either 1 (default) or 2.
+Comma\-delimited list of physical RF channels to use
 T}
 .TE
 .PP
@@ -1287,6 +1299,14 @@ Example:
 Transmitting the contents of \f[C]data.bin\f[] two times, with a ~250ms
 delay between transmissions.
 .RE
+.IP \[bu] 2
+\f[C]tx\ config\ file=mimo.csv\ format=csv\ repeat=0\ channel=1,2\f[]
+.RS 2
+.PP
+Transmitting the contents of \f[C]mimo.csv\f[] repeatedly, with the
+first channel in the file mapped to channel TX1 and the second channel
+mapped to TX2.
+.RE
 .PP
 Notes:
 .IP \[bu] 2
@@ -1297,6 +1317,13 @@ which are multiples of 1024.
 For higher sample rates, it is advised that the input file be stored in
 RAM (e.g.
 \f[C]/tmp\f[], \f[C]/dev/shm\f[]) or on an SSD, rather than a HDD.
+.IP \[bu] 2
+The CSV format expects two columns per channel, with the first two
+columns corresponding to the I,Q pair for the first channel configured
+with the \f[C]channel\f[] parameter; the next two columns corresponding
+to the I,Q of the second channel, and so on.
+For example, in the mimo.csv example above, \f[C]\-128,128,\-256,256\f[]
+would transmit (\-128,128) on TX1 and (\-256,256) on TX2.
 .IP \[bu] 2
 When providing CSV data, this command will first convert it to a binary
 format, stored in a file in the current working directory.

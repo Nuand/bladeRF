@@ -422,7 +422,7 @@ device specifier format.
 peek
 ----
 
-Usage: `peek <adf|adi|dac|lms|si> <address> [num_addresses]`
+Usage: `peek <rfic|pll|dac|lms|si> <address> [num_addresses]`
 
 The peek command can read any of the devices hanging off the FPGA. This
 includes the:
@@ -437,8 +437,8 @@ Valid Address Ranges:
 
      Device Address Range
 ----------- -----------------
-`adf`       0 to 3
-`adi`       0 to 0x3F7 (1015)
+`rfic`      0 to 0x3F7 (1015)
+`pll`       0 to 3
 `dac`       0 to 255
 `lms`       0 to 127
 `si`        0 to 255
@@ -451,7 +451,7 @@ Example:
 poke
 ----
 
-Usage: `poke <adf|adi|dac|lms|si> <address> <data>`
+Usage: `poke <rfic|pll|dac|lms|si> <address> <data>`
 
 The poke command can write any of the devices hanging off the FPGA. This
 includes the:
@@ -463,8 +463,8 @@ Valid Address Ranges:
 
      Device Address Range
 ----------- -----------------
-`adf`       0 to 3
-`adi`       0 to 0x3F7 (1015)
+`rfic`      0 to 0x3F7 (1015)
+`pll`       0 to 3
 `dac`       0 to 255
 `lms`       0 to 127
 `si`        0 to 255
