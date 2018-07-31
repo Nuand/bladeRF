@@ -90,4 +90,9 @@ void log_set_verbosity(bladerf_log_level level)
 {
     filter_level = level;
 }
+
+bladerf_log_level log_get_verbosity()
+{
+    return filter_level;
+}
 #endif

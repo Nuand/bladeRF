@@ -126,6 +126,16 @@ void log_set_verbosity(bladerf_log_level level);
 #define log_set_verbosity(level) do {} while (0)
 #endif
 
+/**
+ * @brief      Gets the current filter level for displayed log messages.
+ *
+ * @return     bladerf_log_level
+ */
+#ifdef LOGGING_ENABLED
+bladerf_log_level log_get_verbosity();
+#else
+#define log_get_verbosity(...) BLADERF_LOG_LEVEL_SILENT
+#endif
 
 #ifdef __cplusplus
 } /* extern "C" */
