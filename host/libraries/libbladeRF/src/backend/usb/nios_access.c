@@ -545,15 +545,34 @@ int nios_ina219_write(struct bladerf *dev, uint8_t addr, uint16_t data)
     return status;
 }
 
+#define VERBOSE_OUT_SINGLEBYTE "%s: %s 0x%02x @ addr 0x%04x\n"
+#define VERBOSE_OUT_MULTIBYTE "%s: %s 0x%02x @ addr 0x%04x (%d/%d)\n"
+
 int nios_ad9361_spi_read(struct bladerf *dev, uint16_t cmd, uint64_t *data)
 {
     int status;
 
     status = nios_16x64_read(dev, NIOS_PKT_16x64_TARGET_AD9361, cmd, data);
-    if (status == 0) {
-        log_verbose("%s: Read 0x%" PRIx64 " from addr 0x%04x\n",
-                    __FUNCTION__, *data, cmd);
+
+#ifdef LOGGING_ENABLED
+    if (log_get_verbosity() == BLADERF_LOG_LEVEL_VERBOSE && status == 0) {
+        size_t bytes = (((cmd >> 12) & 0x7) + 1);
+        size_t addr  = cmd & 0xFFF;
+
+        if (bytes > 1) {
+            size_t i;
+            for (i = 0; i < bytes; ++i) {
+                uint8_t byte = (*data >> (56 - 8 * i)) & 0xFF;
+                log_verbose(VERBOSE_OUT_MULTIBYTE, "ad9361_spi", " MRead", byte,
+                            addr - i, i + 1, bytes);
+            }
+        } else {
+            uint8_t byte = (*data >> 56) & 0xFF;
+            log_verbose(VERBOSE_OUT_SINGLEBYTE, "ad9361_spi", "  Read", byte,
+                        addr);
+        }
     }
+#endif
 
     return status;
 }
@@ -563,10 +582,26 @@ int nios_ad9361_spi_write(struct bladerf *dev, uint16_t cmd, uint64_t data)
     int status;
 
     status = nios_16x64_write(dev, NIOS_PKT_16x64_TARGET_AD9361, cmd, data);
-    if (status == 0) {
-        log_verbose("%s: Wrote 0x%" PRIx64 " to addr 0x%04x\n",
-                    __FUNCTION__, data, cmd);
+
+#ifdef LOGGING_ENABLED
+    if (log_get_verbosity() == BLADERF_LOG_LEVEL_VERBOSE && status == 0) {
+        size_t bytes = (((cmd >> 12) & 0x7) + 1) & 0xFF;
+        size_t addr  = cmd & 0xFFF;
+
+        if (bytes > 1) {
+            size_t i;
+            for (i = 0; i < bytes; ++i) {
+                uint8_t byte = (data >> (56 - 8 * i)) & 0xFF;
+                log_verbose(VERBOSE_OUT_MULTIBYTE, "ad9361_spi", "MWrite", byte,
+                            addr - i, i + 1, bytes);
+            }
+        } else {
+            uint8_t byte = (data >> 56) & 0xFF;
+            log_verbose(VERBOSE_OUT_SINGLEBYTE, "ad9361_spi", " Write", byte,
+                        addr);
+        }
     }
+#endif
 
     return status;
 }
@@ -577,7 +612,7 @@ int nios_adi_axi_read(struct bladerf *dev, uint32_t addr, uint32_t *data)
 
     status = nios_32x32_read(dev, NIOS_PKT_32x32_TARGET_ADI_AXI, addr, data);
     if (status == 0) {
-        log_verbose("%s: Read 0x%" PRIx64 " from addr 0x%04x\n",
+        log_verbose("%s:  Read  0x%08" PRIx32 " from addr 0x%04" PRIx32 "\n",
                     __FUNCTION__, *data, addr);
     }
 
@@ -590,7 +625,7 @@ int nios_adi_axi_write(struct bladerf *dev, uint32_t addr, uint32_t data)
 
     status = nios_32x32_write(dev, NIOS_PKT_32x32_TARGET_ADI_AXI, addr, data);
     if (status == 0) {
-        log_verbose("%s: Wrote 0x%" PRIx64 " to addr 0x%04x\n",
+        log_verbose("%s: Wrote 0x%08" PRIx32 " to   addr 0x%04" PRIx32 "\n",
                     __FUNCTION__, data, addr);
     }
 
