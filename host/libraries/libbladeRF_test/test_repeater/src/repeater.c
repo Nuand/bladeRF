@@ -62,6 +62,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <inttypes.h>
 #include <string.h>
 #include <pthread.h>
 #include <libbladeRF.h>
@@ -518,7 +519,8 @@ static int init_device(struct repeater *repeater, struct repeater_config *config
         memcpy(&repeater->gain_range_tx, gain_ptr,
                                         sizeof(struct bladerf_range));
 
-        printf("TX gain range is: [%ld, %ld]\r\n", repeater->gain_range_tx.min,
+        printf("TX gain range is: [%"PRIi64", %"PRIi64"]\r\n",
+                                           repeater->gain_range_tx.min,
                                            repeater->gain_range_tx.max);
     }
 
@@ -542,7 +544,8 @@ static int init_device(struct repeater *repeater, struct repeater_config *config
         memcpy(&repeater->gain_range_rx, gain_ptr,
                                         sizeof(struct bladerf_range));
 
-        printf("RX gain range is: [%ld, %ld]\r\n", repeater->gain_range_rx.min,
+        printf("RX gain range is: [%"PRIi64", %"PRIi64"]\r\n",
+                                           repeater->gain_range_rx.min,
                                            repeater->gain_range_rx.max);
     }
 
