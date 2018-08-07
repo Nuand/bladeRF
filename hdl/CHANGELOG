@@ -6,6 +6,13 @@ hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
 --------------------------------
+v0.7.3 (2018-08-07)
+--------------------------------
+ * Initial release with bladeRF Micro support
+ * bladeRF Micro: Update pin-outs and constraints for Rev1.1+ PCBs
+ * bladeRF Micro: Latch TX data going to the RFIC's DAC
+
+--------------------------------
 v0.7.2 (2018-03-26)
 --------------------------------
  This version is part of development series of changes, not an official release.
