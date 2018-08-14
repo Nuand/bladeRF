@@ -5,6 +5,26 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.0.0 (2018-08-13)
+--------------------------------
+
+This version is intended for use with libbladeRF v2.0.0.
+
+Changes:
+ * Add support for bladeRF 2.0 (Micro) products
+ * Change "not supported" (-8) library errors to Matlab warnings temporarily,
+   to permit some grace while others' scripts are updated.
+ * Update bladeRF_XCVR to use new unified gain control
+ * Add bladeRF_Misc for misc measurements and controls
+ * Update bladeRF_rx_gui to support unified gain
+ * Update Simulink block to match libbladeRF v2.0.0
+
+v0.1.3 (2017-02-21)
+--------------------------------
+
+Changes:
+ * Updates to README.md
+
 v0.1.2 (2016-06-29)
 --------------------------------
 
