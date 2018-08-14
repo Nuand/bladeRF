@@ -5,6 +5,14 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v1.6.0 (2018-08-13)
+--------------------------------
+This version depends on libbladeRF v2.0.0 or later.
+
+ * Initial public release with bladeRF 2.0 ("Micro") support
+ * Adds support for MIMO RX and TX using "channel=" parameter on rx/tx config
+ * Various code quality fixups
+
 v1.5.2 (2018-03-26)
 --------------------------------
 
