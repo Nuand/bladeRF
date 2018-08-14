@@ -758,20 +758,22 @@ int set_loopback(struct cli_state *state, int argc, char **argv)
         printf("Usage: %s %s <mode>, where <mode> is one of the following:\n",
                argv[0], argv[1]);
         printf("\n");
-        printf("  %-18s%s\n", "bb_txlpf_rxvga2",
-               "Baseband loopback: TXLPF output --> RXVGA2 input\n");
-        printf("  %-18s%s\n", "bb_txlpf_rxlpf",
-               "Baseband loopback: TXLPF output --> RXLPF input\n");
-        printf("  %-18s%s\n", "bb_txvga1_rxvga2",
-               "Baseband loopback: TXVGA1 output --> RXVGA2 input\n");
-        printf("  %-18s%s\n", "bb_txvga1_rxlpf",
-               "Baseband loopback: TXVGA1 output --> RXLPF input\n");
-        printf("  %-18s%s\n", "rf_lna1",
-               "RF loopback: TXMIX --> RXMIX via LNA1 path\n");
-        printf("  %-18s%s\n", "rf_lna2",
-               "RF loopback: TXMIX --> RXMIX via LNA2 path\n");
-        printf("  %-18s%s\n", "rf_lna3",
-               "RF loopback: TXMIX --> RXMIX via LNA3 path\n");
+        if (ps_is_board(state->dev, BOARD_BLADERF1)) {
+            printf("  %-18s%s\n", "bb_txlpf_rxvga2",
+                  "Baseband loopback: TXLPF output --> RXVGA2 input\n");
+            printf("  %-18s%s\n", "bb_txlpf_rxlpf",
+                  "Baseband loopback: TXLPF output --> RXLPF input\n");
+            printf("  %-18s%s\n", "bb_txvga1_rxvga2",
+                  "Baseband loopback: TXVGA1 output --> RXVGA2 input\n");
+            printf("  %-18s%s\n", "bb_txvga1_rxlpf",
+                  "Baseband loopback: TXVGA1 output --> RXLPF input\n");
+            printf("  %-18s%s\n", "rf_lna1",
+                  "RF loopback: TXMIX --> RXMIX via LNA1 path\n");
+            printf("  %-18s%s\n", "rf_lna2",
+                  "RF loopback: TXMIX --> RXMIX via LNA2 path\n");
+            printf("  %-18s%s\n", "rf_lna3",
+                  "RF loopback: TXMIX --> RXMIX via LNA3 path\n");
+        }
         printf("  %-18s%s\n", "firmware", "Firmware-based sample loopback\n");
         printf("  %-18s%s\n", "rfic_bist", "RFIC BIST loopback\n");
         printf("  %-18s%s\n", "none", "Loopback disabled - Normal operation\n");
