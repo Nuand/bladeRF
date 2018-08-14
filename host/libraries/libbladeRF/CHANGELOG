@@ -5,6 +5,27 @@ For more detailed information, please see the git change log and issue tracker
 hosted on GitHub: https://github.com/nuand/bladeRF
 ================================================================================
 
+v2.0.0 (2018-08-13)
+--------------------------------
+
+This version of libbladeRF is intended for use with:
+
+FX3 Firmware v2.2.0
+FPGA         v0.7.3
+
+Initial release supporting the bladeRF 2.0 series, which currently features the
+bladeRF Micro A4 and the bladeRF Micro A9.
+
+Please see the changes for 1.9.x, as well as doc/doxygen/relnotes_2_0_0.dox,
+for a fuller summary of the changes since the last public release.
+
+Changes:
+ * Add typedefs for common param types, such as bladerf_frequency -> uint64_t
+ * Use a double-pointer on the bladerf_get_*_range calls
+ * Omit unnecessary path elements on log printfs
+ * Add log_get_verbosity function
+ * Add detection of FPGA size for bladeRF Micro
+
 v1.9.2 (2018-05-22)
 --------------------------------
 
