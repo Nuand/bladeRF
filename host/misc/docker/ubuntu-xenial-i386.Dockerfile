@@ -21,39 +21,30 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-FROM fedora:latest
+FROM i386/ubuntu:xenial
 
 LABEL maintainer="Nuand LLC <bladeRF@nuand.com>"
 LABEL version="0.0.2"
 LABEL description="CI build environment for the bladeRF project"
-LABEL com.nuand.ci.distribution.name="Fedora"
-LABEL com.nuand.ci.distribution.version="latest"
+LABEL com.nuand.ci.distribution.name="Ubuntu"
+LABEL com.nuand.ci.distribution.codename="xenial-i386"
+LABEL com.nuand.ci.distribution.version="16.04"
 
 # Install things
-RUN yum groupinstall -y "Development Tools" \
- && yum install -y \
-    clang \
-    cmake \
-    doxygen \
-    help2man \
-    hostname \
-    libusbx \
-    libusbx-devel \
-    pandoc \
-    wget \
- && yum clean all \
- && rm -rf /var/cache/yum \
- && echo "/usr/local/lib" > /etc/ld.so.conf.d/locallib.conf \
- && echo "/usr/local/lib64" >> /etc/ld.so.conf.d/locallib.conf
-
-# Fedora lacks libtecla packages, so download and build.
-RUN (curl http://www.astro.caltech.edu/~mcs/tecla/libtecla.tar.gz | tar xzf -) \
- && cd libtecla \
- && CC=gcc ./configure \
- && make \
- && make install \
- && cd .. \
- && rm -rf libtecla
+RUN apt-get update \
+ && apt-get install -y \
+        build-essential \
+        clang \
+        cmake \
+        doxygen \
+        git \
+        help2man \
+        libtecla-dev \
+        libusb-1.0-0-dev \
+        pandoc \
+        pkg-config \
+        usbutils \
+ && apt-get clean
 
 # Copy in our build context
 COPY --from=nuand/bladerf-buildenv:base /root/bladeRF /root/bladeRF

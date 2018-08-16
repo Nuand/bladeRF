@@ -21,13 +21,13 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-FROM fedora:latest
+FROM i386/centos:7
 
 LABEL maintainer="Nuand LLC <bladeRF@nuand.com>"
 LABEL version="0.0.2"
 LABEL description="CI build environment for the bladeRF project"
-LABEL com.nuand.ci.distribution.name="Fedora"
-LABEL com.nuand.ci.distribution.version="latest"
+LABEL com.nuand.ci.distribution.name="CentOS"
+LABEL com.nuand.ci.distribution.version="7-i386"
 
 # Install things
 RUN yum groupinstall -y "Development Tools" \
@@ -36,7 +36,6 @@ RUN yum groupinstall -y "Development Tools" \
     cmake \
     doxygen \
     help2man \
-    hostname \
     libusbx \
     libusbx-devel \
     pandoc \
@@ -46,7 +45,7 @@ RUN yum groupinstall -y "Development Tools" \
  && echo "/usr/local/lib" > /etc/ld.so.conf.d/locallib.conf \
  && echo "/usr/local/lib64" >> /etc/ld.so.conf.d/locallib.conf
 
-# Fedora lacks libtecla packages, so download and build.
+# CentOS lacks libtecla packages, so download and build.
 RUN (curl http://www.astro.caltech.edu/~mcs/tecla/libtecla.tar.gz | tar xzf -) \
  && cd libtecla \
  && CC=gcc ./configure \

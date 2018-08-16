@@ -21,14 +21,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-FROM ubuntu:artful
+FROM i386/debian:stretch
 
 LABEL maintainer="Nuand LLC <bladeRF@nuand.com>"
 LABEL version="0.0.2"
 LABEL description="CI build environment for the bladeRF project"
-LABEL com.nuand.ci.distribution.name="Ubuntu"
-LABEL com.nuand.ci.distribution.codename="artful"
-LABEL com.nuand.ci.distribution.version="17.10"
+LABEL com.nuand.ci.distribution.name="Debian"
+LABEL com.nuand.ci.distribution.codename="stretch-i386"
+LABEL com.nuand.ci.distribution.version="9"
 
 # Install things
 RUN apt-get update \
