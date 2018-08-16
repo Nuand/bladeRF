@@ -4,7 +4,7 @@ UPSTREAM='https://www.nuand.com/fpga/v0.7.3/hostedxA4.rbf'
 CHECKSUM='52b5b797867512c038bc8ba653d455f9'
 DATAFILE='/usr/share/Nuand/bladeRF/hostedxA4.rbf'
 DESCRIPT='FPGA bitstream'
-MYNAMEIS='bladerf-fpga-hostedxA4'
+MYNAMEIS='bladerf-fpga-hostedxa4'
 
 checkfile () {
 	[ -z "$1" ] && exit 3

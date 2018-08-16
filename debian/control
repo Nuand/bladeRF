@@ -109,7 +109,7 @@ Description: nuand bladeRF FPGA bitstream downloader (hostedx115)
  Note that this will not upgrade the bladeRF itself.  That can be done
  with the bladeRF-cli utility.
 
-Package: bladerf-fpga-hostedxA4
+Package: bladerf-fpga-hostedxa4
 Section: comm
 Architecture: any
 Depends: wget, ${shlibs:Depends}, ${misc:Depends}
@@ -128,7 +128,7 @@ Description: nuand bladeRF FPGA bitstream downloader (hostedxA4)
  Note that this will not upgrade the bladeRF itself.  That can be done
  with the bladeRF-cli utility.
 
-Package: bladerf-fpga-hostedxA9
+Package: bladerf-fpga-hostedxa9
 Section: comm
 Architecture: any
 Depends: wget, ${shlibs:Depends}, ${misc:Depends}
