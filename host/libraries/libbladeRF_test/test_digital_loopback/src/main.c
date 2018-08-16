@@ -394,7 +394,7 @@ int configure_module(struct bladerf *dev,
                      bladerf_channel ch,
                      uint32_t sample_rate)
 {
-    uint64_t const FREQUENCY = 2400000000;
+    uint64_t const FREQUENCY = 2400000000UL;
     uint32_t const BANDWIDTH = 20000000;
 
     int status;
