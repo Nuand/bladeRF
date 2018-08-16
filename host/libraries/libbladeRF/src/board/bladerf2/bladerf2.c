@@ -312,8 +312,8 @@ static const struct bladerf_gain_range bladerf2_rx_gain_ranges[] = {
     {
         FIELD_INIT(.name, NULL),
         FIELD_INIT(.frequency, {
-            FIELD_INIT(.min,    1300000000),
-            FIELD_INIT(.max,    4000000000),
+            FIELD_INIT(.min,    1300000000UL),
+            FIELD_INIT(.max,    4000000000UL),
             FIELD_INIT(.step,   1),
             FIELD_INIT(.scale,  1),
         }),
@@ -328,8 +328,8 @@ static const struct bladerf_gain_range bladerf2_rx_gain_ranges[] = {
     {
         FIELD_INIT(.name, NULL),
         FIELD_INIT(.frequency, {
-            FIELD_INIT(.min,    4000000000),
-            FIELD_INIT(.max,    6000000000),
+            FIELD_INIT(.min,    4000000000UL),
+            FIELD_INIT(.max,    6000000000UL),
             FIELD_INIT(.step,   1),
             FIELD_INIT(.scale,  1),
         }),
@@ -360,8 +360,8 @@ static const struct bladerf_gain_range bladerf2_rx_gain_ranges[] = {
     {
         FIELD_INIT(.name, "full"),
         FIELD_INIT(.frequency, {
-            FIELD_INIT(.min,    1300000000),
-            FIELD_INIT(.max,    4000000000),
+            FIELD_INIT(.min,    1300000000UL),
+            FIELD_INIT(.max,    4000000000UL),
             FIELD_INIT(.step,   1),
             FIELD_INIT(.scale,  1),
         }),
@@ -376,8 +376,8 @@ static const struct bladerf_gain_range bladerf2_rx_gain_ranges[] = {
     {
         FIELD_INIT(.name, "full"),
         FIELD_INIT(.frequency, {
-            FIELD_INIT(.min,    4000000000),
-            FIELD_INIT(.max,    6000000000),
+            FIELD_INIT(.min,    4000000000UL),
+            FIELD_INIT(.max,    6000000000UL),
             FIELD_INIT(.step,   1),
             FIELD_INIT(.scale,  1),
         }),
@@ -399,8 +399,8 @@ static const struct bladerf_gain_range bladerf2_tx_gain_ranges[] = {
     {
         FIELD_INIT(.name, NULL),
         FIELD_INIT(.frequency, {
-            FIELD_INIT(.min,    70000000),
-            FIELD_INIT(.max,    6000000000),
+            FIELD_INIT(.min,    70000000UL),
+            FIELD_INIT(.max,    6000000000UL),
             FIELD_INIT(.step,   1),
             FIELD_INIT(.scale,  1),
         }),
@@ -415,8 +415,8 @@ static const struct bladerf_gain_range bladerf2_tx_gain_ranges[] = {
     {
         FIELD_INIT(.name, "dsa"),
         FIELD_INIT(.frequency, {
-            FIELD_INIT(.min,    70000000),
-            FIELD_INIT(.max,    6000000000),
+            FIELD_INIT(.min,    70000000UL),
+            FIELD_INIT(.max,    6000000000UL),
             FIELD_INIT(.step,   1),
             FIELD_INIT(.scale,  1),
         }),
@@ -517,8 +517,8 @@ static const struct range_band_map bladerf2_rx_range_band_map[] = {
     {
         FIELD_INIT(.band, BAND_LOW),
         FIELD_INIT(.range, {
-            FIELD_INIT(.min,    70000000),
-            FIELD_INIT(.max,    3000000000),
+            FIELD_INIT(.min,    70000000UL),
+            FIELD_INIT(.max,    3000000000UL),
             FIELD_INIT(.step,   2),
             FIELD_INIT(.scale,  1)
         }),
@@ -526,8 +526,8 @@ static const struct range_band_map bladerf2_rx_range_band_map[] = {
     {
         FIELD_INIT(.band, BAND_HIGH),
         FIELD_INIT(.range, {
-            FIELD_INIT(.min,    3000000000),
-            FIELD_INIT(.max,    6000000000),
+            FIELD_INIT(.min,    3000000000UL),
+            FIELD_INIT(.max,    6000000000UL),
             FIELD_INIT(.step,   2),
             FIELD_INIT(.scale,  1)
         }),
@@ -538,8 +538,8 @@ static const struct range_band_map bladerf2_tx_range_band_map[] = {
     {
         FIELD_INIT(.band, BAND_LOW),
         FIELD_INIT(.range, {
-            FIELD_INIT(.min,    46875000),
-            FIELD_INIT(.max,    3000000000),
+            FIELD_INIT(.min,    46875000UL),
+            FIELD_INIT(.max,    3000000000UL),
             FIELD_INIT(.step,   2),
             FIELD_INIT(.scale,  1)
         }),
@@ -547,8 +547,8 @@ static const struct range_band_map bladerf2_tx_range_band_map[] = {
     {
         FIELD_INIT(.band, BAND_HIGH),
         FIELD_INIT(.range, {
-            FIELD_INIT(.min,    3000000000),
-            FIELD_INIT(.max,    6000000000),
+            FIELD_INIT(.min,    3000000000UL),
+            FIELD_INIT(.max,    6000000000UL),
             FIELD_INIT(.step,   2),
             FIELD_INIT(.scale,  1)
         }),
