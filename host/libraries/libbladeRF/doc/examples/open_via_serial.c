@@ -80,14 +80,14 @@ static int print_device_state(struct bladerf *dev)
         return status;
     }
 
-    printf("  RX frequency: %zu Hz\n", frequency);
+    printf("  RX frequency: %" PRIu64 " Hz\n", frequency);
 
     status = bladerf_get_frequency(dev, tx_ch, &frequency);
     if (status != 0) {
         return status;
     }
 
-    printf("  TX frequency: %zu Hz\n", frequency);
+    printf("  TX frequency: %" PRIu64 " Hz\n", frequency);
 
     status = bladerf_get_bandwidth(dev, rx_ch, &bandwidth);
     if (status != 0) {

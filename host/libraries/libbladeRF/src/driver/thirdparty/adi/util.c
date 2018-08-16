@@ -331,7 +331,7 @@ uint32_t find_first_bit(uint32_t word)
 *******************************************************************************/
 void * ERR_PTR(long error)
 {
-	uint64_t val = error;
+	uintptr_t val = error;
 	return (void *) val;
 }
 
