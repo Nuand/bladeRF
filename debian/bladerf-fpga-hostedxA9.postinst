@@ -1,0 +1,50 @@
+#!/bin/sh -e
+
+UPSTREAM='https://www.nuand.com/fpga/v0.7.3/hostedxA9.rbf'
+CHECKSUM='0ad6afed4f05c90d26a3fdf34b7e042f'
+DATAFILE='/usr/share/Nuand/bladeRF/hostedxA9.rbf'
+DESCRIPT='FPGA bitstream'
+MYNAMEIS='bladerf-fpga-hostedxA9'
+
+checkfile () {
+	[ -z "$1" ] && exit 3
+	md5sum --check <<- EOMD5SUM
+	${CHECKSUM}  $1
+	EOMD5SUM
+}
+
+# Fetch firmware if needed
+if [ ! -s ${DATAFILE} ] || ! checkfile ${DATAFILE}; then
+	echo "Either your ${DESCRIPT} is missing, or it is out-of-date."
+	echo "Downloading ${DESCRIPT} from ${UPSTREAM}..."
+
+	# Try downloading it
+	NEWFILE=$(mktemp)
+	[ -z "${NEWFILE}" ] && (echo "Unable to create temporary file!"; exit 2)
+
+	if wget -O ${NEWFILE} ${UPSTREAM} && checkfile ${NEWFILE}; then
+		# We're good!  Copy it to its new home.
+		echo "Download successful, copying to ${DATAFILE}"
+		mv ${NEWFILE} ${DATAFILE}
+		chmod 0444 ${DATAFILE}
+	else
+		# It failed!  Print an error and nuke the temporary file.
+		rm -f ${NEWFILE}
+		cat <<- EOMSG 1>&2
+
+		Warning: Failed to download ${DESCRIPT}.
+		Please run "dpkg-reconfigure ${MYNAMEIS}"
+		again when networking is up, or download the file manually:
+
+		    URL:  ${UPSTREAM}
+		    File: ${DATAFILE}
+
+		EOMSG
+
+		# exit successfully, as otherwise the package is left
+		# half-configured and the surrounding install/upgrade fails
+		exit 0
+	fi
+fi
+
+#DEBHELPER#
