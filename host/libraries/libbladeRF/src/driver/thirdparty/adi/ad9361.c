@@ -39,7 +39,10 @@
 /******************************************************************************/
 /***************************** Include Files **********************************/
 /******************************************************************************/
+#include "host_config.h"
+#if 0 == BLADERF_OS_FREEBSD  
 #include <malloc.h>
+#endif // BLADERF_OS_FREEBSD
 #include <limits.h>
 #include <stdint.h>
 #include <stdio.h>

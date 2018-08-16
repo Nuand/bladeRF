@@ -19,11 +19,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#include "host_config.h"
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
 #include <errno.h>
 #include <libusb.h>
+#if 1 == BLADERF_OS_FREEBSD  
+#include <limits.h>
+#endif // BLADERF_OS_FREEBSD
 
 #include "log.h"
 
