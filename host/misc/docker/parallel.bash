@@ -30,6 +30,11 @@ max_builds=4
 max_load=$(nproc)
 repository="nuand/bladerf-buildenv"
 
+if [ -z "${max_load}" ]; then
+    echo "nproc not found, assuming max load of 8"
+    max_load=8
+fi
+
 # assuming the script is 3 levels down (host/misc/docker)
 dfdir=$(dirname "${0}")
 basedir=${dfdir}/../../..
@@ -43,7 +48,11 @@ rels=""
 loadavg () {
     # usage: loadavg
     # outputs the current load average as an integer
-    awk '{print int($1+0)}' /proc/loadavg
+    if [ -f "/proc/loadavg" ]; then
+        awk '{print int($1+0)}' /proc/loadavg
+    else
+        echo 1
+    fi
 }
 
 do_base () {
