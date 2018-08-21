@@ -148,6 +148,7 @@ void configure_module_sync(bladerf_module module) {
     are convenience functions written for clarity and portability, not
     performance.
 
+\see \ref relnotes_2_0_0_ref_channels
 \see \ref BLADERF_FORMAT_SC16_Q11 describes the sample interleaving format.
 \see bladerf_interleave_stream_buffer() - Interleaves contiguous blocks of
      samples in preparation for MIMO TX.
@@ -225,12 +226,13 @@ See the \ref relnotes_2_0_0_api_stream section elsewhere in this document.
 \li DO use the BLADERF_CHANNEL_RX(channel) and BLADERF_CHANNEL_TX(channel)
     convenience macros.
 
+\see \ref relnotes_2_0_0_ref_channels
 \see bladerf_get_channel_count() - Get the number of RX or TX channels
      supported by the given device.
 
 \subsection relnotes_2_0_0_api_range bladerf_get_*_range functions replace #define'd constants
 
-The `#define`'d constants for supported minimum/maximum values have been
+The precompiler constants for supported minimum/maximum values have been
 deprecated and replaced with a set of context-aware functions.
 
 <table>
@@ -601,5 +603,47 @@ environmental monitoring, or for determining if the RFIC's synthesizers should
 be retuned after a significant temperature shift.
 
 \see bladerf_get_rfic_temperature()
+
+\subsection relnotes_2_0_0_ref Further information
+
+\subsubsection relnotes_2_0_0_ref_channels What is a channel?
+
+In the bladeRF architecture, a channel is a single, unidirectional RF path.
+There is generally a 1:1 mapping between a ::bladerf_channel and a physical
+RF port.
+
+On the original bladeRF, there are two channels available:
+
+\li BLADERF_CHANNEL_RX(0) == J53 "RX"
+\li BLADERF_CHANNEL_TX(0) == J54 "TX"
+
+On the bladeRF Micro, there are four channels available:
+
+\li BLADERF_CHANNEL_RX(0) == J1 "RX1"
+\li BLADERF_CHANNEL_RX(1) == J3 "RX2"
+
+\li BLADERF_CHANNEL_TX(0) == J2 "TX1"
+\li BLADERF_CHANNEL_TX(1) == J4 "TX2"
+
+Generally speaking, you will want to apply settings to a specific channel.
+Note that some groups of channels may share some settings on some hardware: for
+example, if you bladerf_set_frequency() on a bladeRF Micro's
+BLADERF_CHANNEL_RX(0), it will also change the frequency of
+BLADERF_CHANNEL_RX(1), because both RX ports share the same local oscillator.
+
+There are some functions which always apply to all the RX channels or all the
+TX channels. These accept a ::bladerf_direction argument:
+
+\li bladerf_get_channel_count()
+\li bladerf_get_timestamp()
+\li bladerf_set_stream_timeout()
+\li bladerf_get_stream_timeout()
+
+Finally, there are two functions which accept a ::bladerf_channel_layout.
+This specifies two things: the direction (RX vs TX), and the number of channels
+interleaved in the sample buffers (currently 1 or 2).
+
+\li bladerf_sync_config()
+\li bladerf_stream()
 
 */
