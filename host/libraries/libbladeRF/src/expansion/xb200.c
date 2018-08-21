@@ -62,17 +62,15 @@ int xb200_attach(struct bladerf *dev)
     int status = 0;
     uint32_t val;
     uint8_t val8;
-    unsigned int muxout = 6;
-    const char *mux_lut[] = {
-        "THREE-STATE OUTPUT",
-        "DVdd",
-        "DGND",
-        "R COUNTER OUTPUT",
-        "N DIVIDER OUTPUT",
-        "ANALOG LOCK DETECT",
-        "DIGITAL LOCK DETECT",
-        "RESERVED"
-    };
+    unsigned int muxout   = 6;
+    const char *mux_lut[] = { "THREE-STATE OUTPUT",
+                              "DVdd",
+                              "DGND",
+                              "R COUNTER OUTPUT",
+                              "N DIVIDER OUTPUT",
+                              "ANALOG LOCK DETECT",
+                              "DIGITAL LOCK DETECT",
+                              "RESERVED" };
 
     xb_data = calloc(1, sizeof(struct xb200_xb_data));
     if (xb_data == NULL) {
@@ -107,7 +105,8 @@ int xb200_attach(struct bladerf *dev)
         goto error;
     }
 
-    if ((status = dev->backend->expansion_gpio_dir_write(dev, 0xffffffff, 0x3C00383E))) {
+    if ((status = dev->backend->expansion_gpio_dir_write(dev, 0xffffffff,
+                                                         0x3C00383E))) {
         goto error;
     }
 
@@ -130,7 +129,8 @@ int xb200_attach(struct bladerf *dev)
     }
     log_debug("  MUXOUT: %s\n", mux_lut[muxout]);
 
-    if ((status = dev->backend->xb_spi(dev, 0x60008E42 | (1<<8) | (muxout << 26)))) {
+    if ((status = dev->backend->xb_spi(dev, 0x60008E42 | (1 << 8) |
+                                                (muxout << 26)))) {
         goto error;
     }
     if ((status = dev->backend->xb_spi(dev, 0x08008011))) {
@@ -146,7 +146,8 @@ int xb200_attach(struct bladerf *dev)
     else {
         log_debug("  MUXOUT Bit not set: FAIL\n");
     }
-    if ((status = dev->backend->expansion_gpio_write(dev, 0xffffffff, 0x3C000800))) {
+    if ((status =
+             dev->backend->expansion_gpio_write(dev, 0xffffffff, 0x3C000800))) {
         goto error;
     }
 
@@ -154,6 +155,7 @@ int xb200_attach(struct bladerf *dev)
 
 error:
     free(dev->xb_data);
+    dev->xb_data = NULL;
     return status;
 }
 
@@ -161,6 +163,7 @@ void xb200_detach(struct bladerf *dev)
 {
     if (dev->xb_data) {
         free(dev->xb_data);
+        dev->xb_data = NULL;
     }
 }
 
@@ -343,13 +346,22 @@ static int set_filterbank_mux(struct bladerf *dev, bladerf_channel ch, bladerf_x
 }
 
 int xb200_set_filterbank(struct bladerf *dev,
-                         bladerf_channel ch, bladerf_xb200_filter filter) {
+                         bladerf_channel ch,
+                         bladerf_xb200_filter filter)
+{
     struct xb200_xb_data *xb_data = dev->xb_data;
-    int status = 0;
     uint64_t frequency;
 
-    if (ch != BLADERF_CHANNEL_RX(0) && ch != BLADERF_CHANNEL_TX(0))
+    int status = 0;
+
+    if (ch != BLADERF_CHANNEL_RX(0) && ch != BLADERF_CHANNEL_TX(0)) {
         return BLADERF_ERR_INVAL;
+    }
+
+    if (NULL == xb_data) {
+        log_error("xb_data is null (do you need to xb200_attach?)\n");
+        return BLADERF_ERR_INVAL;
+    }
 
     status = check_xb200_filter(filter);
     if (status != 0) {
@@ -368,24 +380,34 @@ int xb200_set_filterbank(struct bladerf *dev,
     } else {
         /* Invalidate the soft auto filter mode entry */
         xb_data->auto_filter[ch] = -1;
+
         status = set_filterbank_mux(dev, ch, filter);
     }
 
     return status;
 }
 
-int xb200_auto_filter_selection(struct bladerf *dev, bladerf_channel ch,
-                                uint64_t frequency) {
+int xb200_auto_filter_selection(struct bladerf *dev,
+                                bladerf_channel ch,
+                                uint64_t frequency)
+{
     struct xb200_xb_data *xb_data = dev->xb_data;
-    int status = 0;
     bladerf_xb200_filter filter;
+
+    int status = 0;
 
     if (frequency >= 300000000u) {
         return 0;
     }
 
-    if (ch != BLADERF_CHANNEL_RX(0) && ch != BLADERF_CHANNEL_TX(0))
+    if (ch != BLADERF_CHANNEL_RX(0) && ch != BLADERF_CHANNEL_TX(0)) {
         return BLADERF_ERR_INVAL;
+    }
+
+    if (NULL == xb_data) {
+        log_error("xb_data is null (do you need to xb200_attach?)\n");
+        return BLADERF_ERR_INVAL;
+    }
 
     if (xb_data->auto_filter[ch] == BLADERF_XB200_AUTO_1DB) {
         if (37774405 <= frequency && frequency <= 59535436) {
