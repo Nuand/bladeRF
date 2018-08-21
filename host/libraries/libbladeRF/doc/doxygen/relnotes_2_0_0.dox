@@ -2,10 +2,10 @@
 
 \page relnotes_2_0_0 libbladeRF 2.0.0 Release Notes
 
-This page describes many of the changes in libbladeRF 2.0.0, our first major
-version increment in more than three years. This release adds support for the
-bladeRF Micro, and improves the API for all bladeRF products. This is also the
-first release with bindings for the Python programming language.
+This document describes many of the changes in libbladeRF 2.0.0, our first
+major version increment in more than three years. This release adds support for
+the bladeRF 2.0 "Micro," and improves the API for all bladeRF products. This
+is also the first release with bindings for the Python programming language.
 
 @attention libbladeRF 2.0.0 introduces breaking changes to the parameter lists
            for bladerf_get_frequency(), bladerf_stream(), and
@@ -32,17 +32,15 @@ https://nuand.com/forums/ to discuss this release with other bladeRF users.
 
 We attempted to minimize the changes required to make existing applications
 work with libbladeRF 2.x. However, the nature of this project required some
-changes to the API.
-
-Many of the changes can be transparently handled by compilers. However,
-applications will generally need to be recompiled and relinked to work with
-this version.
+changes to the API. Many of the changes can be transparently handled by
+compilers. However, applications will generally need to be recompiled and
+relinked to work with this version.
 
 \subsection relnotes_2_0_0_api_freq_uint64 Tuning frequencies are now uint64_t
 
 In libbladeRF 1.x, RF frequencies were specified as 32-bit `unsigned int`. To
 support the wider frequency range of the bladeRF Micro, frequencies are now
-specified as `uint64_t`, which is typedef'd as `bladerf_frequency`.
+specified as `uint64_t`, which is typedef'd as ::bladerf_frequency.
 
 <table>
 <caption id="multi_row">Required actions</caption>
@@ -51,7 +49,7 @@ specified as `uint64_t`, which is typedef'd as `bladerf_frequency`.
     <td>bladerf_get_frequency()</td>
     <td><b>Required</b></td>
     <td>
-        The `frequency` parameter is now of type `bladerf_frequency*`.
+        The `frequency` parameter is now a pointer to a ::bladerf_frequency.
 
         \warning Applications using this function must be modified to pass in
                  the correct type.
@@ -61,15 +59,27 @@ specified as `uint64_t`, which is typedef'd as `bladerf_frequency`.
     <td>bladerf_set_frequency()</td>
     <td rowspan="3">Minor</td>
     <td rowspan="3">
-        The `frequency` parameter is now of type `bladerf_frequency`.
+        The `frequency` parameter is now of type ::bladerf_frequency.
 
         \note Compilers will generally implicitly cast `unsigned int` to
-              `bladerf_frequency`.
+              ::bladerf_frequency, but frequencies above `UINT32_MAX` will not
+              be available.
     </td>
 </tr>
 <tr><td>bladerf_select_band()</td></tr>
 <tr><td>bladerf_schedule_retune()</td></tr>
 </table>
+
+\remarks
+\li DO NOT be alarmed if there is a small discrepancy (a few Hz) in the value
+    returned by bladerf_get_frequency(), compared to what was requested by
+    bladerf_set_frequency().
+\li DO check bladerf_get_frequency_range() \em before using
+    bladerf_set_frequency() on a given device/channel.
+\li DO check bladerf_get_frequency() \em after doing bladerf_set_frequency(),
+    to verify that the expected frequency was achieved.
+\li DO expect bladerf_get_frequency() to return values larger than `UINT32_MAX`.
+\li DO use the ::bladerf_frequency type when possible.
 
 \subsection relnotes_2_0_0_api_stream MIMO support in streaming API
 
@@ -131,6 +141,13 @@ void configure_module_sync(bladerf_module module) {
 </tr>
 </table>
 
+\remarks
+\li DO NOT use the `BLADERF_MODULE_RX` and `BLADERF_MODULE_TX` values.
+\li DO feel free to re-implement bladerf_interleave_stream_buffer() and/or
+    bladerf_deinterleave_stream_buffer() in a more efficient fashion. These
+    are convenience functions written for clarity and portability, not
+    performance.
+
 \see \ref BLADERF_FORMAT_SC16_Q11 describes the sample interleaving format.
 \see bladerf_interleave_stream_buffer() - Interleaves contiguous blocks of
      samples in preparation for MIMO TX.
@@ -154,7 +171,7 @@ respectively.
 
 Note that some `bladerf_module` instances have been replaced with
 \ref bladerf_direction and \ref bladerf_channel_layout depending on context.
-See the \ref api_stream section elsewhere in this document.
+See the \ref relnotes_2_0_0_api_stream section elsewhere in this document.
 
 <table>
 <caption id="multi_row">Required actions</caption>
@@ -165,11 +182,11 @@ See the \ref api_stream section elsewhere in this document.
     <td rowspan="27">
         Replace `bladerf_module` with \ref bladerf_channel.
 
-        Replace `BLADERF_MODULE_RX` with `BLADERF_CHANNEL_RX(0)`, or
-        generally, `BLADERF_CHANNEL_RX(channel_number)`
+        Replace `BLADERF_MODULE_RX` with BLADERF_CHANNEL_RX(0), or
+        generally, BLADERF_CHANNEL_RX(channel_number)
 
-        Replace `BLADERF_MODULE_TX` with `BLADERF_CHANNEL_TX(0)`, or
-        generally, `BLADERF_CHANNEL_TX(channel_number)`
+        Replace `BLADERF_MODULE_TX` with BLADERF_CHANNEL_TX(0), or
+        generally, BLADERF_CHANNEL_TX(channel_number)
     </td>
 </tr>
 <tr><td>bladerf_set_gain()</td></tr>
@@ -199,6 +216,14 @@ See the \ref api_stream section elsewhere in this document.
 <tr><td>bladerf_read_trigger()</td></tr>
 <tr><td>bladerf_write_trigger()</td></tr>
 </table>
+
+\remarks
+\li DO NOT use `BLADERF_MODULE_RX` or `BLADERF_MODULE_TX`.
+\li DO NOT assume the number of channels available.
+\li DO always check bladerf_get_channel_count() to determine how many channels
+    are available in a given direction.
+\li DO use the BLADERF_CHANNEL_RX(channel) and BLADERF_CHANNEL_TX(channel)
+    convenience macros.
 
 \see bladerf_get_channel_count() - Get the number of RX or TX channels
      supported by the given device.
@@ -276,6 +301,24 @@ bool is_frequency_within_range(struct bladerf *dev, bladerf_channel channel, bla
 }
 \endcode
 
+\remarks
+\li DO NOT use the legacy `BLADERF_*_{MIN,MAX}` defines or any hardcoded values
+    derived from them.
+\li DO NOT assume that the ranges will remain constant throughout operation,
+    or that they are the same for all channels.
+\li DO NOT hardcode ranges, or guess them based on the board model.
+\li DO remember that the ranges can change depending on configuration, e.g.
+    bladerf_get_gain_range() may return different values for an RX channel
+    depending on the configured center frequency.
+\li DO call `bladerf_get_*_range()` every time you need to know -- don't
+    cache it!
+\li DO test to ensure user-supplied values are valid before using them, when
+    possible.
+\li DO handle \ref BLADERF_ERR_RANGE errors when setting values, especially if
+    you don't check for validity first. The library will only return this if
+    it is not sensible to clamp the value to be within range, e.g. with
+    bladerf_set_sample_rate().
+
 \see bladerf_get_gain_stages() - Get a list of available gain stages.
 \see bladerf_set_gain() - Set overall system gain.
 \see bladerf_get_gain() - Get overall system gain.
@@ -315,6 +358,18 @@ As well as:
 
 \li struct bladerf_metadata
 
+\remarks
+\li DO NOT use the underlying types (e.g. `uint64_t` instead of
+    `bladerf_frequency`) if it can be avoided.
+\li DO use these typedefs whereever possible! They exist to make implementation
+    easier.
+
+\todo
+<a class="el" href="https://github.com/Nuand/bladeRF/issues/577">Issue #577</a>:
+Using `printf()` with a ::bladerf_frequency or ::bladerf_timestamp currently
+require knowing that they are actually `uint64_t`, e.g.
+`printf("the frequency is %" PRIu64 " Hz\n", freq);`.
+
 \section relnotes_2_0_0_feats New features
 
 \subsection relnotes_2_0_0_feats_platform Multiple platform support
@@ -343,7 +398,7 @@ and `streaming/` (sample streaming code).
 
 \subsection relnotes_2_0_0_feats_gc Gain control improvements
 
-The original manual gain control functionality in libbladeRF is very low-level
+The original manual gain control functionality in libbladeRF was very low-level
 and hardware-specific, and requires significant knowledge of the underlying
 RF module to adjust. As such, new gain control methods have been introduced
 to the API, and the following functions are now deprecated:
@@ -354,7 +409,7 @@ to the API, and the following functions are now deprecated:
 \li bladerf_set_txvga1() and bladerf_get_txvga1()
 \li bladerf_set_txvga2() and bladerf_get_txvga2()
 
-Instead, applications should use one of the following approaches:
+Instead, applications should use one of approaches described below.
 
 \subsubsection relnotes_2_0_0_feats_gc_agc Automatic Gain Control (AGC)
 
@@ -468,6 +523,8 @@ gain_example(dev, BLADERF_CHANNEL_TX(0), 60);  // set 60 dB TX gain (~ 0 dBm)
 gain_example(dev, BLADERF_CHANNEL_RX(0), 60);  // set 60 dB RX gain (max)
 \endcode
 
+\see bladerf_get_rfic_rssi() - query received signal strength from the RFIC.
+
 \subsubsection relnotes_2_0_0_feats_gc_manual Individual gain stage control
 
 Advanced implementations that need to directly configure the gain stages may
@@ -490,8 +547,59 @@ use the following family of functions:
 \note The range returned by bladerf_get_gain_stage_range() may vary depending
       on the selected center frequency.
 
-\subsection relnotes_2_0_0_feats_mimo MIMO
+\subsection relnotes_2_0_0_feats_hw New hardware features
 
-\subsection relnotes_2_0_0_feats_python Python bindings
+libbladeRF 2.0 includes support for new hardware features on the bladeRF Micro.
+
+\subsubsection relnotes_2_0_0_feats_hw_biastee Bias tees
+
+The bias tees apply a +5 VDC bias to the SMA connectors, which may be used
+for powering active antennas or inline amplifiers.
+
+\warning Enabling the bias tee on one channel enables it for all channels in
+         that direction; e.g. enabling RX1 will enable both RX1 and RX2
+         simultaneously. Use caution if there are multiple devices attached
+         to the bladeRF Micro.
+
+\see bladerf_get_bias_tee() and bladerf_set_bias_tee()
+
+\subsubsection relnotes_2_0_0_feats_hw_clock Clock references and controls
+
+An external frequency reference may be connected to the J95 U.FL connector
+("REFIN") to discipline the onboard VCTCXO. By default, this port expects
+10 MHz, but it can be configured for reference frequencies between 5 MHz and
+300 MHz.
+
+\see bladerf_get_pll_enable(), bladerf_set_pll_enable() - enabling the PLL
+\see bladerf_get_pll_lock_state() - verifying PLL lock
+\see bladerf_get_pll_refclk_range(), bladerf_get_pll_refclk(),
+     bladerf_set_pll_refclk() - configure reference clock frequency
+
+Alternatively, a 38.4 MHz clock may be provided into the CLKIN port.
+
+\see bladerf_get_clock_select(), bladerf_set_clock_select() - select between
+     internal and external (J93) clock
+
+There is also a CLKOUT port, which can provide a buffered 38.4 MHz system clock
+output.
+
+\see bladerf_get_clock_output(), bladerf_set_clock_output() - enable or disable
+     clock output (J92)
+
+\subsubsection relnotes_2_0_0_feats_hw_power Power status
+
+Functions are provided to determine how the board is currently being powered,
+what the bus voltage is, and what the system current and power draws are.
+
+\see bladerf_get_power_source() - query how the board is currently powered
+\see bladerf_get_pmic_register() - get bus voltage, load current, load power
+
+\subsubsection relnotes_2_0_0_feats_hw_temperature RFIC temperature
+
+The RFIC has an onboard temperature sensor, which may be useful for
+environmental monitoring, or for determining if the RFIC's synthesizers should
+be retuned after a significant temperature shift.
+
+\see bladerf_get_rfic_temperature()
 
 */
